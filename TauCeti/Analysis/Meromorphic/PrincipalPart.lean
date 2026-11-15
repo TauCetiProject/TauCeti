@@ -13,8 +13,6 @@ public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 public import TauCeti.Analysis.Meromorphic.Germ
-public import Mathlib.RingTheory.Polynomial.Basic
-import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Topology.Algebra.Polynomial
 
 /-!
@@ -56,10 +54,6 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 * `TauCeti.multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul`: a polynomial that is
   `∏_{a ∈ D} (X - a)` times a function continuous at the points of `D` is divisible by that
   product.
-* `TauCeti.linearIndependent_multiset_prod_X_sub_C_sub_replicate` and
-  `TauCeti.span_range_multiset_prod_X_sub_C_sub_replicate`: for `P = ∏_{a ∈ D} (X - a)`, the
-  partial-fraction polynomials `P / (X - a) ^ (j + 1)`, for the points `⟨a, j⟩` of `D`, form a
-  basis of the polynomials of degree less than `|D|`.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
 * `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
@@ -172,7 +166,7 @@ theorem eq_zero_of_sum_div_sub_pow_eq [DecidableEq 𝕜] {D : Multiset 𝕜} {c 
       exact ⟨(Finset.mem_filter.1 hi).2, by simpa using hk.symm⟩,
     coeff_C_mul_X_pow, ite_eq_left rfl] at hP
 
-/-! ### Partial fractions of a split polynomial -/
+/-! ### Divisibility by a split polynomial -/
 
 /-- **A continuous quotient by a split polynomial is a polynomial.** Let `P = ∏_{a ∈ D} (X - a)`
 for a multiset `D` of points of `𝕜`. If a polynomial `Q` equals `P g` on all of `𝕜`, for a function
@@ -204,56 +198,6 @@ theorem multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul {D : Multiset 𝕜} {Q :
           (eventually_nhdsWithin_of_forall fun w hw ↦
             (hne w (Set.mem_compl_singleton_iff.1 hw)).symm))
     · exact hne z hz
-
-section PartialFractions
-
-variable [DecidableEq 𝕜]
-
-/-- **Partial-fraction polynomials are independent.** For a multiset `D` of points of `𝕜` and
-`P = ∏_{a ∈ D} (X - a)`, the polynomials `P / (X - a) ^ (j + 1)`, for the points `⟨a, j⟩` of `D`,
-are linearly independent. -/
-theorem linearIndependent_multiset_prod_X_sub_C_sub_replicate (D : Multiset 𝕜) :
-    LinearIndependent 𝕜 fun i : D.ToType ↦
-      ((D - Multiset.replicate ((i.2 : ℕ) + 1) i.1).map fun b ↦ X - C b).prod := by
-  refine Fintype.linearIndependent_iff.2 fun c hc ↦ congrFun (eq_zero_of_sum_div_sub_pow_eq
-    (g := 0) (fun _ _ ↦ continuousAt_const) fun z hz ↦ ?_)
-  -- At `z ∉ D`, dividing the vanishing combination by `P z` gives the polar terms.
-  have hsum := congrArg (Polynomial.eval z) hc
-  rw [eval_finsetSum, eval_zero] at hsum
-  rw [Pi.zero_apply, ← zero_div ((D.map fun b ↦ X - C b).prod.eval z), ← hsum, Finset.sum_div]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hQ : ((D - Multiset.replicate ((i.2 : ℕ) + 1) i.1).map fun b ↦ X - C b).prod.eval z ≠ 0 := by
-    simpa [eval_multiset_prod, Multiset.prod_eq_zero_iff, sub_eq_zero] using
-      fun h ↦ hz (Multiset.mem_of_le
-        (Multiset.sub_le_self D (Multiset.replicate ((i.2 : ℕ) + 1) i.1)) h)
-  rw [multiset_prod_X_sub_C_eq_pow_mul (by have := i.2.isLt; omega : (i.2 : ℕ) + 1 ≤ D.count i.1),
-    eval_mul, eval_pow, eval_sub, eval_X, eval_C, eval_smul, smul_eq_mul,
-    mul_div_mul_right _ _ hQ]
-
-/-- **Partial fractions of a split polynomial.** For a multiset `D` of points of `𝕜` and
-`P = ∏_{a ∈ D} (X - a)`, the polynomials `P / (X - a) ^ (j + 1)`, for the points `⟨a, j⟩` of `D`,
-span the polynomials of degree less than the degree of `P`. They form a basis by
-`TauCeti.linearIndependent_multiset_prod_X_sub_C_sub_replicate`. -/
-theorem span_range_multiset_prod_X_sub_C_sub_replicate (D : Multiset 𝕜) :
-    Submodule.span 𝕜 (Set.range fun i : D.ToType ↦
-      ((D - Multiset.replicate ((i.2 : ℕ) + 1) i.1).map fun b ↦ X - C b).prod) =
-      degreeLT 𝕜 (Multiset.card D) := by
-  have : FiniteDimensional 𝕜 (degreeLT 𝕜 (Multiset.card D)) :=
-    (degreeLTEquiv 𝕜 _).symm.finiteDimensional
-  refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.2 ?_) ?_
-  · rintro _ ⟨i, rfl⟩
-    have hle : Multiset.replicate ((i.2 : ℕ) + 1) i.1 ≤ D :=
-      Multiset.le_count_iff_replicate_le.1 (Nat.succ_le_of_lt i.2.isLt)
-    have hcard := Multiset.card_le_card hle
-    rw [Multiset.card_replicate] at hcard
-    rw [SetLike.mem_coe, mem_degreeLT, degree_eq_natDegree (monic_multiset_prod_of_monic _ _
-      fun b _ ↦ monic_X_sub_C b).ne_zero, natDegree_multiset_prod_X_sub_C_eq_card,
-      Multiset.card_sub hle, Multiset.card_replicate, Nat.cast_lt]
-    omega
-  · rw [finrank_span_eq_card (linearIndependent_multiset_prod_X_sub_C_sub_replicate D),
-      Multiset.card_coe, (degreeLTEquiv 𝕜 _).finrank_eq, Module.finrank_fin_fun]
-
-end PartialFractions
 
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
 `(z - a)⁻ᴺ h z = P((z - a)⁻¹) + q z` with `P = Σ_{j<N} c_j X ^ (N - j)`, where

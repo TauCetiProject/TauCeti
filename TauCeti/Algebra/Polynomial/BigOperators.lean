@@ -26,7 +26,7 @@ of geometric sums of mixed powers of equal-degree monic polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`, and
 a power of a linear factor splits off a product of linear factors over a multiset in which its
-root occurs often enough.
+root occurs often enough, and `∏_{a ∈ D} (X - a)` evaluates to `∏_{a ∈ D} (z - a)`.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -97,6 +97,12 @@ theorem multiset_prod_X_sub_C_eq_pow_mul [DecidableEq R] {D : Multiset R} {a : R
       (X - C a) ^ n * ((D - Multiset.replicate n a).map fun b ↦ X - C b).prod := by
   conv_lhs => rw [← add_tsub_cancel_of_le (Multiset.le_count_iff_replicate_le.1 hn)]
   rw [Multiset.map_add, Multiset.prod_add, Multiset.map_replicate, Multiset.prod_replicate]
+
+/-- The product `∏_{a ∈ D} (X - a)` evaluates at `z` to `∏_{a ∈ D} (z - a)`. -/
+@[simp]
+theorem eval_multiset_prod_X_sub_C (D : Multiset R) (z : R) :
+    (D.map fun a ↦ X - C a).prod.eval z = (D.map fun a ↦ z - a).prod := by
+  simp [eval_multiset_prod, Multiset.map_map]
 
 end ProdXSubCPow
 

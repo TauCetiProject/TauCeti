@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.KernelDimension
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Analysis.Meromorphic.PrincipalPart
 import TauCeti.Analysis.PDE.Vortex.AmplitudeForm
+import TauCeti.Analysis.PDE.Vortex.Kernel.Existence
+import TauCeti.Data.Multiset.Fintype
+import TauCeti.RingTheory.Polynomial.DegreeLT
+import TauCeti.RingTheory.Polynomial.PartialFractions
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Polynomial
@@ -31,7 +35,7 @@ Let `x` have section with zero divisor `D`. A variation `y` with section variati
 `P_D δα = α (P_D G + R)`  for a continuous `G`,
 
 that is, off the zeros, `δα / α - R / P_D` is continuous. If `R` has degree less than `|D|`, it
-is unique (`TauCeti.Vortex.IsDivisorVariation.eq`): a polynomial `Q` that is `P_D` times a
+is unique (`TauCeti.Vortex.IsDivisorVariation.unique`): a polynomial `Q` that is `P_D` times a
 continuous function is divisible by `P_D`
 (`TauCeti.multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul`).
 
@@ -54,7 +58,7 @@ whole kernel. Ontoness holds because the kernel element with
 has divisor variation `c P_D / (X - a)^(j+1)`
 (`TauCeti.Vortex.isDivisorVariation_of_sectionValue_eq`), and these polynomials span
 `ℂ[X]_{<m}` by partial fractions
-(`TauCeti.span_range_multiset_prod_X_sub_C_sub_replicate`).
+(`Polynomial.span_range_multiset_prod_X_sub_C_sub_replicate_eq_degreeLT`).
 
 The isomorphism is the expected one on translations. The covariant translation
 `y_v = (ι_v F_a, ∇_v α)` (`TauCeti.Vortex.covariantTranslation`) is the velocity of the curve of
@@ -74,7 +78,7 @@ identity with `G = ∂_v h / h + i b(v)`.
 
 ## Main results
 
-* `TauCeti.Vortex.IsDivisorVariation.eq`: uniqueness of the divisor variation of degree `< |D|`.
+* `TauCeti.Vortex.IsDivisorVariation.unique`: uniqueness of the divisor variation of degree `< |D|`.
 * `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_eq_iff`: the isomorphism sends a kernel element to
   its divisor variation.
 * `TauCeti.Vortex.coe_gaugeFixedKernelEquivDegreeLT_covariantTranslation`: it sends the covariant
@@ -138,7 +142,7 @@ theorem IsDivisorVariation.smul (hy : IsDivisorVariation x y D R) (t : ℝ) :
 
 /-- **Uniqueness of the divisor variation.** If the section of `x` has zero divisor `D`, a
 variation has at most one divisor variation of degree less than `|D|`. -/
-theorem IsDivisorVariation.eq (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+theorem IsDivisorVariation.unique (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
     (hR : IsDivisorVariation x y D R) (hR' : IsDivisorVariation x y D R')
     (hdeg : R.degree < Multiset.card D) (hdeg' : R'.degree < Multiset.card D) : R = R' := by
   obtain ⟨G, hG, h⟩ := hR
@@ -177,11 +181,10 @@ theorem isDivisorVariation_of_sectionValue_eq (i : D.ToType) (hα : sectionValue
   rcases eq_or_ne w i.1 with rfl | hw
   · -- At `a`, both `P` and `α` vanish.
     have hP : (D.map fun b ↦ X - C b).prod.eval i.1 = 0 := by
-      simp [eval_multiset_prod, Multiset.prod_eq_zero_iff, sub_eq_zero]
+      simp [Multiset.prod_eq_zero_iff, sub_eq_zero]
     rw [hP, hα, zero_mul, zero_mul]
-  · rw [hy w hw, multiset_prod_X_sub_C_eq_pow_mul (by have := i.2.isLt; omega :
-      (i.2 : ℕ) + 1 ≤ D.count i.1), eval_mul, eval_pow, eval_sub, eval_X, eval_C, eval_smul,
-      smul_eq_mul]
+  · rw [hy w hw, multiset_prod_X_sub_C_eq_pow_mul i.add_one_le_count]
+    simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C, eval_smul, smul_eq_mul]
     field_simp [pow_ne_zero _ (sub_ne_zero.2 hw)]
     ring
 
@@ -196,12 +199,10 @@ theorem isDivisorVariation_covariantTranslation (hb₁ : ContDiff ℝ 1 (fun w �
     IsDivisorVariation x (covariantTranslation x v) D (v • derivative (D.map fun a ↦ X - C a).prod)
     := by
   set P : ℂ[X] := (D.map fun a ↦ X - C a).prod
-  have hPf (w : ℂ) : (D.map fun a ↦ w - a).prod = P.eval w := by
-    simp [P, eval_multiset_prod, Multiset.map_map]
   -- The section is `h P` with `h` of class `C¹` and nowhere zero.
   obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul_prod_sub le_rfl hb₁ hb₂ hp hq
     hhol hD
-  simp only [hPf] at hα
+  simp only [← eval_multiset_prod_X_sub_C] at hα
   have hαfun : sectionValue x = fun w ↦ h w * P.eval w := funext hα
   refine ⟨fun w ↦ fderiv ℝ h w v / h w + I * ((x w 0 * v.re + x w 1 * v.im : ℝ) : ℂ),
     ((hh.continuous_fderiv one_ne_zero).clm_apply continuous_const).div hh.continuous hh₀ |>.add
@@ -245,12 +246,12 @@ private def divisorVariationMap (hD : IsZeroMultiplicity (sectionValue x) fun z 
     obtain ⟨h₁, h₂⟩ := (hV y y.2).choose_spec
     obtain ⟨h₁', h₂'⟩ := (hV y' y'.2).choose_spec
     obtain ⟨h₁'', h₂''⟩ := (hV _ (y + y').2).choose_spec
-    exact Subtype.ext (h₂''.eq hD (h₂.add h₂') (degree_lt_card_of_mem h₁'')
+    exact Subtype.ext (h₂''.unique hD (h₂.add h₂') (degree_lt_card_of_mem h₁'')
       (degree_lt_card_of_mem (add_mem h₁ h₁')))
   map_smul' t y := by
     obtain ⟨h₁, h₂⟩ := (hV y y.2).choose_spec
     obtain ⟨h₁'', h₂''⟩ := (hV _ (t • y).2).choose_spec
-    exact Subtype.ext (h₂''.eq hD (h₂.smul t) (degree_lt_card_of_mem h₁'')
+    exact Subtype.ext (h₂''.unique hD (h₂.smul t) (degree_lt_card_of_mem h₁'')
       (degree_lt_card_of_mem (Submodule.smul_of_tower_mem _ t h₁)))
 
 private theorem isDivisorVariation_divisorVariationMap
@@ -269,12 +270,19 @@ private theorem surjective_divisorVariationMap
     (h : ∀ R : degreeLT ℂ m, ∃ y ∈ V, IsDivisorVariation x y D R) :
     Function.Surjective (divisorVariationMap hD V hV) := fun R ↦ by
   obtain ⟨y, hy, hyR⟩ := h R
-  exact ⟨⟨y, hy⟩, Subtype.ext ((isDivisorVariation_divisorVariationMap _).eq hD hyR
+  exact ⟨⟨y, hy⟩, Subtype.ext ((isDivisorVariation_divisorVariationMap _).unique hD hyR
     (degree_lt_card_of_mem (Subtype.prop _)) (degree_lt_card_of_mem R.2))⟩
 
 variable (hx : ContDiff ℝ ∞ x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
   (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
   (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z)
+
+include hx hhol hlim hD in
+/-- The kernel of `L_x` and `ℂ[X]_{<m}` both have real dimension `2m`. -/
+private theorem finrank_gaugeFixedKernel_eq_finrank_degreeLT :
+    finrank ℝ (gaugeFixedKernel x) = finrank ℝ (degreeLT ℂ m) := by
+  rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD, Sym.card_coe,
+    ← Module.finrank_mul_finrank ℝ ℂ, Complex.finrank_real_complex, finrank_degreeLT]
 
 include hx hhol hlim hD in
 /-- Every polynomial of degree less than `m` is the divisor variation of a kernel element of
@@ -286,7 +294,7 @@ private theorem exists_mem_gaugeFixedKernel_isDivisorVariation (R : degreeLT ℂ
   set Q : (D : Multiset ℂ).ToType → ℂ[X] := fun i ↦
     (((D : Multiset ℂ) - Multiset.replicate ((i.2 : ℕ) + 1) i.1).map fun b ↦ X - C b).prod
   have hR : (R : ℂ[X]) ∈ Submodule.span ℂ (Set.range Q) := by
-    rw [span_range_multiset_prod_X_sub_C_sub_replicate, Sym.card_coe]
+    rw [span_range_multiset_prod_X_sub_C_sub_replicate_eq_degreeLT, Sym.card_coe]
     exact R.2
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℂ).1 hR
   -- A kernel element with divisor variation `c i • Q i` for each point `i` of `D`.
@@ -323,11 +331,7 @@ private theorem exists_isDivisorVariation :
     exact ⟨y, ⟨hy, R, R.2, hyR⟩, hyR⟩
   have hSK : S = gaugeFixedKernel x := by
     refine Submodule.eq_of_le_of_finrank_le (fun _ hy ↦ hy.1) ?_
-    have : FiniteDimensional ℂ (degreeLT ℂ m) := (degreeLTEquiv ℂ m).symm.finiteDimensional
-    have hL : finrank ℝ (degreeLT ℂ m) = 2 * m := by
-      rw [← Module.finrank_mul_finrank ℝ ℂ, Complex.finrank_real_complex,
-        (degreeLTEquiv ℂ m).finrank_eq, Module.finrank_fin_fun]
-    rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD, Sym.card_coe, ← hL]
+    rw [finrank_gaugeFixedKernel_eq_finrank_degreeLT hx hhol hlim hD]
     exact LinearMap.finrank_le_finrank_of_surjective hsurj
   intro y hy
   rw [← hSK] at hy
@@ -343,16 +347,11 @@ characterized by `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_eq_iff`. -/
 def gaugeFixedKernelEquivDegreeLT : gaugeFixedKernel x ≃ₗ[ℝ] degreeLT ℂ m :=
   have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := MeasureTheory.volume)
     (hx.of_le (by simp)) hhol hlim hD fun _ ↦ mem_gaugeFixedKernel.1
-  have : FiniteDimensional ℂ (degreeLT ℂ m) := (degreeLTEquiv ℂ m).symm.finiteDimensional
   have : FiniteDimensional ℝ (degreeLT ℂ m) := .trans ℝ ℂ _
   have hsurj := surjective_divisorVariationMap hD (exists_isDivisorVariation hx hhol hlim hD)
     (exists_mem_gaugeFixedKernel_isDivisorVariation hx hhol hlim hD)
-  have hK : finrank ℝ (gaugeFixedKernel x) = finrank ℝ (degreeLT ℂ m) := by
-    rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD, Sym.card_coe,
-      ← Module.finrank_mul_finrank ℝ ℂ, Complex.finrank_real_complex,
-      (degreeLTEquiv ℂ m).finrank_eq, Module.finrank_fin_fun]
-  LinearEquiv.ofBijective _
-    ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hK).2 hsurj, hsurj⟩
+  LinearEquiv.ofBijective _ ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (finrank_gaugeFixedKernel_eq_finrank_degreeLT hx hhol hlim hD)).2 hsurj, hsurj⟩
 
 /-- The image of a kernel element of `L_x` under `gaugeFixedKernelEquivDegreeLT` is a divisor
 variation of it. -/
@@ -366,7 +365,7 @@ theorem isDivisorVariation_gaugeFixedKernelEquivDegreeLT (y : gaugeFixedKernel x
 theorem gaugeFixedKernelEquivDegreeLT_eq_iff {y : gaugeFixedKernel x} {R : degreeLT ℂ m} :
     gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y = R ↔ IsDivisorVariation x y D R := by
   refine ⟨fun h ↦ h ▸ isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y,
-    fun h ↦ Subtype.ext ((isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y).eq
+    fun h ↦ Subtype.ext ((isDivisorVariation_gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y).unique
       hD h (degree_lt_card_of_mem (Subtype.prop _)) (degree_lt_card_of_mem R.2))⟩
 
 /-- **Covariant translations move the divisor rigidly.** At a smooth vortex with `|α|² → 1` at

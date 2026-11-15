@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.LogVariation
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.TranslationKernel
 import TauCeti.Analysis.Meromorphic.PrincipalPart
-import TauCeti.Analysis.PDE.Vortex.KernelExistence
+import TauCeti.Analysis.PDE.Vortex.Kernel.Existence
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -364,22 +364,6 @@ variable (hx : ContDiff ℝ ∞ x) (hhol : ∀ w, equation x w 1 = 0 ∧ equatio
   (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
 
 include hx hhol hlim hD
-
-/-- **Kernel elements with a prescribed pole.** At a smooth field with vanishing holomorphicity
-rows and `|α|² → 1` at infinity, whose section has zero divisor `D`, for every point `⟨a, j⟩` of `D`
-and every `c ∈ ℂ` there is a kernel element of `L_x` whose section variation is
-`δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continuous function `ξ`. -/
-theorem exists_mem_gaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : ℂ) :
-    ∃ y ∈ gaugeFixedKernel x, ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
-      sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
-  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
-  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
-    (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
-    (isZeroMultiplicity_iff.1 hD i.1)
-  obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
-    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf
-      i.2.isLt c
-  exact ⟨y, mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩, ξ, hξ.continuous, hyξ⟩
 
 /-- **Kernel elements with independent principal parts.** Choose, for each point `⟨a, j⟩` of `D`
 and each `c ∈ {1, i}`, a kernel element of `L_x` with `δα / α = c / (w - a)^(j+1) + ξ`, `ξ`

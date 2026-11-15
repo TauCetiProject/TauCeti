@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # Every framed plane vortex is a reconstructed amplitude field
@@ -104,8 +105,7 @@ theorem exists_contDiff_sectionValue_eq_mul_prod_sub {x : ℂ → EuclideanSpace
       ∀ z, sectionValue x z = h z * (D.map fun a ↦ z - a).prod := by
   set f : ℂ → ℂ := fun w ↦ (D.map fun a ↦ w - a).prod
   have hfd : Differentiable ℂ f := by
-    have hPf : (D.map fun a ↦ X - C a).prod.eval = f := funext fun w ↦ by
-      simp [f, eval_multiset_prod, Multiset.map_map]
+    have hPf : (D.map fun a ↦ X - C a).prod.eval = f := funext (eval_multiset_prod_X_sub_C D)
     exact hPf ▸ Polynomial.differentiable _
   -- Compare `x` with the field reconstructed from `f` and the zero amplitude.
   set y := amplitudeField (fun _ ↦ 0) f
