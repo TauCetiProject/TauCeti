@@ -36,6 +36,9 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
   `C^k` in both directions, and cuts out the boundary as the zero slice of its normal coordinate.
 * `TauCeti.EuclideanHalfSpace.homeomorphNormalIio`: that segment, read by its normal coordinate
   as the real interval `[0, ε)`.
+* `TauCeti.EuclideanHalfSpace.normalIioOpensZero` and
+  `TauCeti.EuclideanHalfSpace.homeomorphNormalIioOpens`: the origin of the open segment
+  `normalIioOpens ε`, and that open segment read as the real interval `[0, ε)`.
 * `TauCeti.IsProductCollarChart.homeomorphProd`: the local collar itself, a homeomorphism of the
   source of a product collar chart onto (its part of) the boundary times `[0, ε)`.
 * `TauCeti.IsProductCollarChart.sourceOpens` and
@@ -216,6 +219,52 @@ def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : �
 @[simp]
 theorem coe_homeomorphNormalIio {ε : ℝ} (t : ↥(normalIio ε)) :
     (homeomorphNormalIio ε t : ℝ) = t.1.1 0 := (rfl)
+
+/-- The origin of the one-dimensional half-space model, as a point of the open initial segment
+`normalIioOpens ε` of positive height. -/
+def normalIioOpensZero {ε : ℝ} (hε : 0 < ε) : normalIioOpens ε :=
+  ⟨0, zero_mem_normalIio hε⟩
+
+/-- The origin of the open initial segment is the origin of the half-space model. -/
+@[simp]
+theorem coe_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
+    (normalIioOpensZero hε : EuclideanHalfSpace 1) = 0 := (rfl)
+
+/-- The open initial segment `normalIioOpens ε`, read by its normal coordinate as the real
+interval `[0, ε)`. Its underlying set is `normalIio ε`, so this is `homeomorphNormalIio ε` with
+its source read as the open subspace. -/
+def homeomorphNormalIioOpens (ε : ℝ) : normalIioOpens ε ≃ₜ Ico (0 : ℝ) ε :=
+  homeomorphNormalIio ε
+
+/-- The interval reading of the open initial segment is the normal coordinate. -/
+@[simp]
+theorem coe_homeomorphNormalIioOpens {ε : ℝ} (t : normalIioOpens ε) :
+    (homeomorphNormalIioOpens ε t : ℝ) = (t : EuclideanHalfSpace 1).1 0 := (rfl)
+
+/-- The inverse of the interval reading of the open initial segment is the normal ray. -/
+@[simp]
+theorem coe_homeomorphNormalIioOpens_symm {ε : ℝ} (r : Ico (0 : ℝ) ε) :
+    ((homeomorphNormalIioOpens ε).symm r : EuclideanHalfSpace 1) = normalRay r := (rfl)
+
+/-- The interval reading sends the origin of the open initial segment to the origin of `[0, ε)`. -/
+@[simp]
+theorem homeomorphNormalIioOpens_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
+    homeomorphNormalIioOpens ε (normalIioOpensZero hε) = ⟨0, left_mem_Ico.2 hε⟩ :=
+  Subtype.ext (by simp)
+
+/-- The origin of `[0, ε)` corresponds to the origin of the open initial segment. -/
+@[simp]
+theorem homeomorphNormalIioOpens_symm_zero {ε : ℝ} (h : (0 : ℝ) ∈ Ico (0 : ℝ) ε) :
+    (homeomorphNormalIioOpens ε).symm ⟨0, h⟩ = normalIioOpensZero (left_mem_Ico.1 h) :=
+  (homeomorphNormalIioOpens ε).symm_apply_eq.2 (homeomorphNormalIioOpens_normalIioOpensZero _).symm
+
+/-- The origin of the unit interval `[0, 1)` corresponds to the origin of the open initial
+segment. This is the form `homeomorphNormalIioOpens_symm_zero` takes at height `1`, where
+`Set.Ico.mk_zero` rewrites the origin of `[0, 1)` to `0`. -/
+@[simp]
+theorem homeomorphNormalIioOpens_one_symm_zero :
+    (homeomorphNormalIioOpens 1).symm 0 = normalIioOpensZero one_pos :=
+  homeomorphNormalIioOpens_symm_zero _
 
 /-- The open embedding `t ↦ eᵗ` of the real line onto the open part `(0, ∞)` of the
 one-dimensional half-space. -/

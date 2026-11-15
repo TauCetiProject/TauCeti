@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Injective local diffeomorphisms on open sets
@@ -19,6 +20,8 @@ Main results:
 * `IsLocalDiffeomorphOn.contMDiffOn_invFunOn`: the inverse on an injective open set is smooth.
 * `IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn`: the partial diffeomorphism onto the image,
   with simp lemmas for its source, target, forward function and inverse.
+* `IsLocalDiffeomorph.diffeomorphOfInjective`: an injective local diffeomorphism as a
+  diffeomorphism onto its open image.
 
 The construction extends Mathlib's `IsLocalDiffeomorph.diffeomorphOfBijective`, using
 `Set.InjOn.toPartialEquiv` for the inverse and its inverse laws. Nonemptiness of the domain
@@ -93,3 +96,36 @@ def partialDiffeomorphOfInjOn (hf : IsLocalDiffeomorphOn I J n f s)
     (hf.partialDiffeomorphOfInjOn hs hinj).toPartialEquiv.symm y = invFunOn f s y := (rfl)
 
 end IsLocalDiffeomorphOn
+
+namespace IsLocalDiffeomorph
+
+/-- An injective local diffeomorphism is a diffeomorphism onto its image, the open subset
+`IsLocalDiffeomorph.image` with the charts Mathlib restricts to it. The inverse is smooth because
+it agrees near each image point with a local smooth inverse. -/
+def diffeomorphOfInjective (hf : IsLocalDiffeomorph I J n f) (hinj : Injective f) :
+    M ≃ₘ^n⟮I, J⟯ hf.image where
+  toEquiv := Equiv.ofInjective f hinj
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 hf.contMDiff
+  contMDiff_invFun := by
+    rintro ⟨_, x, rfl⟩
+    let h := hf x
+    refine (contMDiffAt_subtype_iff.2 h.contMDiffAt_localInverse).congr_of_eventuallyEq ?_
+    filter_upwards [(h.localInverse_open_source.preimage continuous_subtype_val).mem_nhds
+      h.localInverse_mem_source] with y hy
+    exact hinj ((Equiv.apply_ofInjective_symm hinj y).trans (h.localInverse_right_inv hy).symm)
+
+variable (hf : IsLocalDiffeomorph I J n f) (hinj : Injective f)
+
+/-- The diffeomorphism onto the image evaluates as the local diffeomorphism. -/
+@[simp]
+theorem coe_diffeomorphOfInjective_apply (x : M) : (hf.diffeomorphOfInjective hinj x : N) = f x :=
+  (rfl)
+
+/-- The local diffeomorphism undoes the inverse of the diffeomorphism onto its image.
+
+Not `@[simp]`: its left-hand side has the variable head `f`. -/
+theorem apply_diffeomorphOfInjective_symm (y : hf.image) :
+    f ((hf.diffeomorphOfInjective hinj).symm y) = y :=
+  Equiv.apply_ofInjective_symm hinj y
+
+end IsLocalDiffeomorph
