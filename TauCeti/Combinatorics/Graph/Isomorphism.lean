@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Basic
+public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Data.Set.Card
+public import TauCeti.Combinatorics.Graph.Union
 
 /-!
 # Isomorphisms of multigraphs
@@ -16,13 +17,18 @@ and edge types which preserve the link relation. Edge identities are part of the
 notion distinguishes parallel edges and retains loops.
 
 This file supplies identity, inverse, composition, the groupoid laws, and transport of ambient
-vertex and edge sets for multigraph isomorphisms.
+vertex and edge sets for multigraph isomorphisms. It also transports subgraphs: an isomorphism
+`G ≅ H` sends each subgraph of `G` to a subgraph of `H`, compatibly with inclusion, unions, and
+the groupoid operations, so that constructions recorded as sequences of subgraphs, such as ear
+decompositions, can be moved between isomorphic graphs.
 
 ## Main definitions
 
 * `Graph.Iso`: an isomorphism of multigraphs on possibly different ambient types.
 * `Graph.Iso.mapVertexSet`, `Graph.Iso.mapEdgeSet`: transport of ambient sets, restricted to the
   actual graph carriers.
+* `Graph.Iso.mapGraph`: transport of a graph on the ambient types, restricted to the actual graph
+  carriers; on subgraphs it is the image subgraph.
 -/
 
 public section
@@ -211,6 +217,18 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
   · intro h
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
 
+/-- A point lies in a transported vertex set exactly when it is the image of an actual vertex in
+the original set. -/
+theorem mem_mapVertexSet_iff_exists (f : Iso G H) (S : Set α) (y : α') :
+    y ∈ f.mapVertexSet S ↔ ∃ x : G.vertexSet, (x : α) ∈ S ∧ (f.vertexEquiv x : α') = y :=
+  ⟨fun ⟨_, h⟩ ↦ ⟨_, h, by simp⟩, fun ⟨x, hx, hxy⟩ ↦ hxy ▸ ⟨(f.vertexEquiv x).2, by simpa using hx⟩⟩
+
+/-- An edge lies in a transported edge set exactly when it is the image of an actual edge in the
+original set. -/
+theorem mem_mapEdgeSet_iff_exists (f : Iso G H) (F : Set β) (e : β') :
+    e ∈ f.mapEdgeSet F ↔ ∃ a : G.edgeSet, (a : β) ∈ F ∧ (f.edgeEquiv a : β') = e :=
+  ⟨fun ⟨_, h⟩ ↦ ⟨_, h, by simp⟩, fun ⟨a, ha, hae⟩ ↦ hae ▸ ⟨(f.edgeEquiv a).2, by simpa using ha⟩⟩
+
 /-- Transport preserves the extended cardinality of a set of actual edges. -/
 @[simp]
 theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
@@ -325,6 +343,35 @@ theorem mapEdgeSet_mono (f : Iso G H) {F F' : Set β} (hFF' : F ⊆ F') :
   rintro e ⟨he, hF⟩
   exact ⟨he, hFF' hF⟩
 
+/-- Transporting all actual vertices gives all actual vertices of the target. -/
+@[simp]
+theorem mapVertexSet_vertexSet (f : Iso G H) : f.mapVertexSet V(G) = V(H) :=
+  Subset.antisymm (f.mapVertexSet_subset_vertexSet _) fun _ hy ↦ ⟨hy, (f.vertexEquiv.symm _).2⟩
+
+/-- Transporting all actual edges gives all actual edges of the target. -/
+@[simp]
+theorem mapEdgeSet_edgeSet (f : Iso G H) : f.mapEdgeSet E(G) = E(H) :=
+  Subset.antisymm (f.mapEdgeSet_subset_edgeSet _) fun _ he ↦ ⟨he, (f.edgeEquiv.symm _).2⟩
+
+/-- Transporting the empty edge set gives the empty edge set. -/
+@[simp]
+theorem mapEdgeSet_empty (f : Iso G H) : f.mapEdgeSet (∅ : Set β) = ∅ :=
+  eq_empty_of_forall_notMem fun _ ⟨_, h⟩ ↦ h
+
+/-- Vertex-set transport commutes with unions. -/
+@[simp]
+theorem mapVertexSet_union (f : Iso G H) (S T : Set α) :
+    f.mapVertexSet (S ∪ T) = f.mapVertexSet S ∪ f.mapVertexSet T := by
+  ext y
+  simp only [mapVertexSet, mem_union, mem_ofPred_eq, exists_or]
+
+/-- Edge-set transport commutes with unions. -/
+@[simp]
+theorem mapEdgeSet_union (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F ∪ F') = f.mapEdgeSet F ∪ f.mapEdgeSet F' := by
+  ext e
+  simp only [mapEdgeSet, mem_union, mem_ofPred_eq, exists_or]
+
 /-- Transport along an isomorphism and its inverse recovers a set of actual vertices. -/
 @[simp]
 theorem symm_mapVertexSet_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
@@ -360,6 +407,144 @@ theorem map_inc_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x (f.vertexEquiv.symm ⟨y, hy.right_mem⟩)).1 ?_⟩,
     fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x ⟨y, hy.right_mem⟩).2 hy⟩⟩
   simpa using hy
+
+/-! ### Transport of subgraphs -/
+
+section mapGraph
+
+variable {L M : Graph α β}
+
+/-- Transport a graph on the ambient types of `G` along an isomorphism `G ≅ H`, keeping exactly
+the transported actual vertices and edge identities. For a subgraph of `G` this is its image, a
+subgraph of `H`. -/
+def mapGraph (f : Iso G H) (L : Graph α β) : Graph α' β' :=
+  (H.induce (f.mapVertexSet V(L))).restrict (f.mapEdgeSet E(L))
+
+
+@[simp]
+theorem vertexSet_mapGraph (f : Iso G H) (L : Graph α β) :
+    V(f.mapGraph L) = f.mapVertexSet V(L) :=
+  (rfl)
+
+/-- The links of a transported graph are the links of `H` along transported edges between
+transported vertices. -/
+theorem mapGraph_isLink (f : Iso G H) (L : Graph α β) (e : β') (x y : α') :
+    (f.mapGraph L).IsLink e x y ↔ e ∈ f.mapEdgeSet E(L) ∧ H.IsLink e x y ∧
+      x ∈ f.mapVertexSet V(L) ∧ y ∈ f.mapVertexSet V(L) := by
+  simp [mapGraph]
+
+/-- A transported graph is a subgraph of the target graph. -/
+theorem mapGraph_le (f : Iso G H) (L : Graph α β) : f.mapGraph L ≤ H :=
+  restrict_le.trans (H.induce_le (f.mapVertexSet_subset_vertexSet _))
+
+/-- Graph transport is monotone. -/
+theorem mapGraph_mono (f : Iso G H) (hLM : L ≤ M) : f.mapGraph L ≤ f.mapGraph M where
+  vertexSet_mono := f.mapVertexSet_mono hLM.vertexSet_mono
+  isLink_mono e x y h := by
+    rw [mapGraph_isLink] at h ⊢
+    exact ⟨f.mapEdgeSet_mono hLM.edgeSet_mono h.1, h.2.1,
+      f.mapVertexSet_mono hLM.vertexSet_mono h.2.2.1,
+      f.mapVertexSet_mono hLM.vertexSet_mono h.2.2.2⟩
+
+/-- For a subgraph `L ≤ G`, the transported graph links corresponding vertices by a
+corresponding edge exactly when `L` links the originals. -/
+@[simp]
+theorem mapGraph_isLink_edgeEquiv_iff (f : Iso G H) (hL : L ≤ G) (e : G.edgeSet)
+    (x y : G.vertexSet) :
+    (f.mapGraph L).IsLink (f.edgeEquiv e) (f.vertexEquiv x) (f.vertexEquiv y) ↔
+      L.IsLink e x y := by
+  simp only [mapGraph_isLink, mem_mapEdgeSet_iff, mem_mapVertexSet_iff, map_isLink_iff,
+    Equiv.symm_apply_apply]
+  constructor
+  · rintro ⟨he, hxy, -, -⟩
+    exact (hL.isLink_iff he).mpr hxy
+  · intro h
+    exact ⟨h.edge_mem, h.mono hL, h.left_mem, h.right_mem⟩
+
+/-- For a subgraph `L ≤ G`, the links of the transported graph are the links of `H` along
+transported edges. -/
+theorem mapGraph_isLink_of_le (f : Iso G H) (hL : L ≤ G) {e : β'} {x y : α'} :
+    (f.mapGraph L).IsLink e x y ↔ e ∈ f.mapEdgeSet E(L) ∧ H.IsLink e x y := by
+  refine ⟨fun h ↦ ((f.mapGraph_isLink L e x y).mp h).imp_right And.left, fun ⟨he, hxy⟩ ↦ ?_⟩
+  let e' : H.edgeSet := ⟨e, hxy.edge_mem⟩
+  let x' : H.vertexSet := ⟨x, hxy.left_mem⟩
+  let y' : H.vertexSet := ⟨y, hxy.right_mem⟩
+  have hL' : L.IsLink (f.edgeEquiv.symm e') (f.vertexEquiv.symm x') (f.vertexEquiv.symm y') :=
+    (hL.isLink_iff ((f.mem_mapEdgeSet_iff _ e').mp he)).mpr
+      ((f.symm.map_isLink_iff e' x' y').mpr hxy)
+  have h := (f.mapGraph_isLink_edgeEquiv_iff hL _ _ _).mpr hL'
+  simpa using h
+
+/-- The edge set of a transported subgraph is the transported edge set. -/
+@[simp]
+theorem edgeSet_mapGraph (f : Iso G H) (hL : L ≤ G) : E(f.mapGraph L) = f.mapEdgeSet E(L) := by
+  ext e
+  refine ⟨fun he ↦ ?_, fun he ↦ ?_⟩
+  · obtain ⟨x, _, hxy⟩ := (f.mapGraph L).exists_isLink_of_mem_edgeSet he
+    exact ((f.mapGraph_isLink_of_le hL).mp hxy).1
+  · obtain ⟨e', he'L, rfl⟩ : ∃ e' : G.edgeSet, (e' : β) ∈ E(L) ∧ (f.edgeEquiv e' : β') = e := by
+      obtain ⟨heH, h⟩ := he
+      exact ⟨_, h, by simp⟩
+    obtain ⟨x, y, hxy⟩ := L.exists_isLink_of_mem_edgeSet he'L
+    exact ((f.mapGraph_isLink_edgeEquiv_iff hL e' ⟨x, (hxy.mono hL).left_mem⟩
+      ⟨y, (hxy.mono hL).right_mem⟩).mpr hxy).edge_mem
+
+/-- Transporting the whole source graph gives the whole target graph. -/
+@[simp]
+theorem mapGraph_self (f : Iso G H) : f.mapGraph G = H :=
+  (Compatible.of_le (f.mapGraph_le G)).ext (by simp) (by simp)
+
+/-- The identity isomorphism fixes every subgraph. -/
+@[simp]
+theorem mapGraph_refl (hL : L ≤ G) : (refl G).mapGraph L = L :=
+  (Compatible.of_le_le ((refl G).mapGraph_le L) hL).ext
+    (by simp [inter_eq_left.mpr hL.vertexSet_mono])
+    (by simp [edgeSet_mapGraph _ hL, inter_eq_left.mpr hL.edgeSet_mono])
+
+/-- Transport along a composite isomorphism applies the two transports in order. -/
+theorem mapGraph_trans (f : Iso G H) (g : Iso H K) (hL : L ≤ G) :
+    (f.trans g).mapGraph L = g.mapGraph (f.mapGraph L) :=
+  (Compatible.of_le_le ((f.trans g).mapGraph_le L) (g.mapGraph_le _)).ext (by simp)
+    (by rw [edgeSet_mapGraph _ hL, edgeSet_mapGraph _ (f.mapGraph_le L),
+      edgeSet_mapGraph _ hL, mapEdgeSet_trans])
+
+/-- Transport along an isomorphism and its inverse recovers a subgraph. -/
+@[simp]
+theorem symm_mapGraph_mapGraph (f : Iso G H) (hL : L ≤ G) : f.symm.mapGraph (f.mapGraph L) = L := by
+  rw [← mapGraph_trans _ _ hL, self_trans_symm, mapGraph_refl hL]
+
+/-- Graph transport preserves and reflects inclusion of subgraphs. -/
+@[simp]
+theorem mapGraph_le_mapGraph_iff (f : Iso G H) (hL : L ≤ G) (hM : M ≤ G) :
+    f.mapGraph L ≤ f.mapGraph M ↔ L ≤ M := by
+  refine ⟨fun h ↦ ?_, f.mapGraph_mono⟩
+  simpa [hL, hM] using f.symm.mapGraph_mono h
+
+/-- Graph transport is injective on subgraphs. -/
+theorem mapGraph_inj (f : Iso G H) (hL : L ≤ G) (hM : M ≤ G) :
+    f.mapGraph L = f.mapGraph M ↔ L = M := by
+  refine ⟨fun h ↦ ?_, congrArg _⟩
+  rw [← f.symm_mapGraph_mapGraph hL, h, f.symm_mapGraph_mapGraph hM]
+
+/-- An isomorphism transports an edgeless single-vertex graph to the edgeless graph on the
+corresponding vertex. -/
+@[simp]
+theorem mapGraph_noEdge (f : Iso G H) (x : G.vertexSet) :
+    f.mapGraph (noEdge {(x : α)} β) = noEdge {(f.vertexEquiv x : α')} β' := by
+  exact (Compatible.of_le_le (f.mapGraph_le _)
+    (noEdge_le_iff.mpr (singleton_subset_iff.mpr (f.vertexEquiv x).2))).ext (by simp)
+    (by simp)
+
+/-- Graph transport commutes with the union of compatible subgraphs. -/
+theorem mapGraph_union (f : Iso G H) (hL : L ≤ G) (hM : M ≤ G) (h : L.Compatible M) :
+    f.mapGraph h.union =
+      (Compatible.of_le_le (f.mapGraph_le L) (f.mapGraph_le M)).union := by
+  have hLM : h.union ≤ G := IsSubgraph.union_le hL hM
+  exact (Compatible.of_le_le (f.mapGraph_le _)
+    (IsSubgraph.union_le (f.mapGraph_le L) (f.mapGraph_le M))).ext (by simp)
+    (by simp [edgeSet_mapGraph f hLM, edgeSet_mapGraph f hL, edgeSet_mapGraph f hM])
+
+end mapGraph
 
 end Iso
 

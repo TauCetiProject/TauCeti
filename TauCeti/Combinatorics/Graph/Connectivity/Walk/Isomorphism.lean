@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 
 import TauCeti.Data.List.Attach
 
@@ -16,7 +17,8 @@ import TauCeti.Data.List.Attach
 A multigraph isomorphism induces a prefunctor between the bidirected arrow families and hence
 transports edge-labelled walks between actual vertices. Transport respects the constructors,
 identity, composition, inverse, reversal, support, traversed edges, trails, paths, cycles, and
-reachability, including after deleting a transported edge set.
+reachability, including after deleting a transported edge set. The graph traced by a transported
+walk is the transported traced graph.
 
 ## Main definitions
 
@@ -397,6 +399,42 @@ theorem isCycle_mapWalk (f : Iso G H) {x : G.vertexSet} (p : G.Walk x x) :
     (f.vertexEquiv x).2, Walk.isCycle_iff_isCycle_toBidirected_and_isTrail p x.2]
   rw [isTrail_mapWalk]
   simp only [toBidirected_mapWalk, isCycle_mapPath]
+
+/-- The vertices of a transported walk are the images of the vertices of the original walk. -/
+theorem mem_support_mapWalk_iff (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) (z : α') :
+    z ∈ (f.mapWalk p).support ↔
+      ∃ w : G.vertexSet, (w : α) ∈ p.support ∧ (f.vertexEquiv w : α') = z := by
+  refine ⟨fun hz ↦ ?_, ?_⟩
+  · let z' : H.vertexSet := ⟨z, (f.mapWalk p).support_subset_vertexSet (f.vertexEquiv x).2 z hz⟩
+    refine ⟨f.vertexEquiv.symm z', ?_, by simp [z']⟩
+    rw [← f.vertexEquiv_mem_support_mapWalk_iff p, Equiv.apply_symm_apply]
+    exact hz
+  · rintro ⟨w, hw, rfl⟩
+    exact (f.vertexEquiv_mem_support_mapWalk_iff p w).mpr hw
+
+/-- The edges of a transported walk are the images of the edges of the original walk. -/
+theorem mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) (e : β') :
+    e ∈ (f.mapWalk p).edges ↔ ∃ a : G.edgeSet, (a : β) ∈ p.edges ∧ (f.edgeEquiv a : β') = e := by
+  refine ⟨fun he ↦ ?_, ?_⟩
+  · let e' : H.edgeSet := ⟨e, (f.mapWalk p).edges_subset_edgeSet he⟩
+    refine ⟨f.edgeEquiv.symm e', ?_, by simp [e']⟩
+    rw [← f.edgeEquiv_mem_edges_mapWalk_iff p, Equiv.apply_symm_apply]
+    exact he
+  · rintro ⟨a, ha, rfl⟩
+    exact (f.edgeEquiv_mem_edges_mapWalk_iff p a).mpr ha
+
+/-- Transporting the graph traced by a walk gives the graph traced by the transported walk. -/
+theorem mapGraph_walkGraph (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
+    f.mapGraph (G.walkGraph p) = H.walkGraph (f.mapWalk p) := by
+  have hp : G.walkGraph p ≤ G := p.walkGraph_le x.2
+  refine (Compatible.of_le_le (f.mapGraph_le _)
+    ((f.mapWalk p).walkGraph_le (f.vertexEquiv x).2)).ext ?_ ?_
+  · ext z
+    simp only [vertexSet_mapGraph, Walk.vertexSet_walkGraph, Set.mem_ofPred_eq,
+      mem_mapVertexSet_iff_exists, mem_support_mapWalk_iff]
+  · ext e
+    simp only [edgeSet_mapGraph f hp, Walk.edgeSet_walkGraph, Set.mem_ofPred_eq,
+      mem_mapEdgeSet_iff_exists, mem_edges_mapWalk_iff]
 
 /-- Reachability between actual vertices is invariant under graph isomorphism. -/
 theorem reachable_iff (f : Iso G H) (x y : G.vertexSet) :
