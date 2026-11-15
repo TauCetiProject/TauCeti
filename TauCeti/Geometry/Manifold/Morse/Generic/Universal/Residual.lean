@@ -15,10 +15,11 @@ import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 Let `M` be a compact smooth manifold without boundary, modelled on a finite-dimensional real
 space `E`, and `k ≥ 2` an integer. This file shows that the `C^k` functions on `M` all of whose
-critical points are nondegenerate form a residual set, by applying parametric transversality for
-Fredholm sections, `TauCeti.isMeagre_setOf_not_isRegularSectionParameter`, which rests on the
-Sard–Smale theorem, to the universal differential `S(x, f) = df_x`
-(`TauCeti.universalDifferential`). Its hypotheses hold as follows.
+critical points are nondegenerate form a residual set, as regular parameters, by applying
+parametric transversality for Fredholm sections,
+`TauCeti.isMeagre_setOf_not_isRegularSectionParameter`, which rests on the Sard–Smale theorem, to
+the universal differential `S(x, f) = df_x` (`TauCeti.universalDifferential`). Its hypotheses
+hold as follows.
 
 * **Parameter space.** On the compact manifold `M` a finite chart atlas with compact pieces makes
   `C^k(M, ℝ)` a Banach space (`ContMDiffMap.finiteAtlasNormedAddCommGroup`,
@@ -39,27 +40,26 @@ Sard–Smale theorem, to the universal differential `S(x, f) = df_x`
 So the regular parameters of the universal differential form a residual set
 (`TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`). They are exactly
 the functions whose critical points are all nondegenerate
-(`TauCeti.isRegularSectionParameter_universalDifferential_iff`), which gives
-`TauCeti.mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`.
+(`TauCeti.isRegularSectionParameter_universalDifferential_iff`).
 
 This is the Banach-space route to the genericity of Morse functions. The same set is also open, by
 the persistence of nondegenerate critical points under `C²`-small perturbations
 (`TauCeti.isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`), and
 dense, by finitely many local linear perturbations, each made generic in one chart
 (`TauCeti.dense_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`). That
-route proves the stronger statement that the set is open and dense, and it also applies to smooth
-functions, whose space is not a Banach space. The route here proves only residuality, but it
-treats all functions at once, with no chart patching, and uses only that the universal
-differential is a `C¹` Fredholm section of index zero transverse to the zero section. This is the
-form in which genericity is proved for moduli spaces cut out by Fredholm sections, where no local
-linear perturbations are available.
+route proves the stronger statement that the set is open and dense, from which its residuality
+already follows by `residual_of_dense_open`, and it also applies to smooth functions, whose space
+is not a Banach space. The route here proves only residuality, but it treats all functions at
+once, with no chart patching, and uses only that the universal differential is a `C¹` Fredholm
+section of index zero transverse to the zero section. This is the form in which genericity is
+proved for moduli spaces cut out by Fredholm sections, where no local linear perturbations are
+available.
 
 ## Main results
 
 * `TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`: the regular
-  parameters of the universal differential form a residual set.
-* `TauCeti.mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`:
-  the `C^k` functions all of whose critical points are nondegenerate form a residual set.
+  parameters of the universal differential, that is, the `C^k` functions all of whose critical
+  points are nondegenerate, form a residual set.
 
 ## References
 
@@ -87,7 +87,8 @@ the universal differential `(x, f) ↦ df_x` form a residual set in the weak Whi
 topology of the Banach space of `C^k` functions normed by a finite chart atlas. This is
 parametric transversality for the universal differential, a `C^(k-1)` section of the cotangent
 bundle over `M × C^k(M, ℝ)` with Fredholm slices of index zero and surjective total
-linearization. -/
+linearization. By `TauCeti.isRegularSectionParameter_universalDifferential_iff`, these regular
+parameters are exactly the `C^k` functions all of whose critical points are nondegenerate. -/
 theorem mem_residual_setOf_isRegularSectionParameter_universalDifferential {k : ℕ}
     (hk : 2 ≤ k) :
     {f : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ | IsRegularSectionParameter (F := E →L[ℝ] ℝ)
@@ -112,20 +113,5 @@ theorem mem_residual_setOf_isRegularSectionParameter_universalDifferential {k : 
   rw [index_sectionLinearization_of_finiteDimensional,
     ContinuousLinearMap.dual_finrank_eq (𝕜 := ℝ) (E := E), sub_self]
   simp
-
-/-- **Generic functions are Morse.** On a compact smooth manifold without boundary and for
-`k ≥ 2`, the `C^k` functions all of whose critical points are nondegenerate form a residual set in
-the weak Whitney topology, that is, in the Banach space of `C^k` functions normed by a finite chart
-atlas. The set is moreover open and dense
-(`TauCeti.isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`,
-`TauCeti.dense_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`). -/
-theorem mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint {k : ℕ}
-    (hk : 2 ≤ k) :
-    {f : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ | ∀ x ∈ criticalPoints 𝓘(ℝ, E) f,
-        IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x} ∈
-      residual C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := by
-  have hk' : (2 : WithTop ℕ∞) ≤ k := by exact_mod_cast hk
-  simpa only [isRegularSectionParameter_universalDifferential_iff hk'] using
-    mem_residual_setOf_isRegularSectionParameter_universalDifferential (E := E) (M := M) hk
 
 end TauCeti
