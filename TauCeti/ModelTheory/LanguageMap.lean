@@ -8,13 +8,30 @@ module
 public import Mathlib.ModelTheory.LanguageMap
 
 /-!
-# Expansions along composite language maps, and language maps for adjoining constants
+# Composite language maps, adjoining constants, and universe lifting of languages
 
-Additions to Mathlib's `Mathlib.ModelTheory.LanguageMap`: expansions compose along composite
-language maps, and the reduct of an expansion along a composite `h.comp g` along the outer map `h`
-is an expansion along the inner map `g`. Together they say that an `L''`-structure expands an
-`L`-structure along `h.comp g` exactly when it expands, along `h`, some `L'`-structure that expands
-the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
+Additions to Mathlib's `Mathlib.ModelTheory.LanguageMap` in three directions:
+
+* **Composite and sum expansions**: expansions compose along composite language maps, and the reduct
+  of an expansion along `h.comp g` along the outer map `h` is an expansion along the inner map `g`.
+  Together they say that an `L''`-structure expands an `L`-structure along `h.comp g` exactly when
+  it expands, along `h`, some `L'`-structure that expands the `L`-structure along `g`; the
+  `L'`-structure can be taken to be the reduct.
+* **Adjoining constants**: symbol and structure properties of `L[[γ]]` along `lhomWithConstants`,
+  including `sigmaFunctionsWithConstantsEquiv` splitting the function symbols of `L[[A]]` into those
+  of `L` and the added constants.
+* **Language equivalences and universe lifting**: both directions of a language equivalence are
+  injective (`FirstOrder.Language.LEquiv.toLHom_injective`,
+  `FirstOrder.Language.LEquiv.invLHom_injective`), and every language `L : Language.{u, v}` lifts
+  to an equivalent language `FirstOrder.Language.ulift` in `Language.{max u u', max v v'}` via
+  `FirstOrder.Language.uliftEquiv`, preserving relationality, algebraicity, and symbol countability.
+
+## Main definitions
+
+* `FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`: equivalence splitting the function symbols
+  of `L[[A]]` into those of `L` and the added constants from `A`.
+* `FirstOrder.Language.ulift` and `FirstOrder.Language.uliftEquiv`: universe lift of a first-order
+  language and its equivalence with the original language.
 
 ## Main results
 
@@ -29,27 +46,19 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
 * `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
   `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
   `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
-
-Adjoining constants to an algebraic language gives an algebraic language
-(`FirstOrder.Language.isAlgebraic_withConstants`).
-
-The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
-`L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
-added constants lie in the range of `lhomWithConstants`
-(`FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
-`FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
-the expansion of its `L`-reduct by the interpretations of the added constants
-(`FirstOrder.Language.withConstantsStructure_reduct_eq`).
-
-A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
-(`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
-
-Both directions of a language equivalence are injective
-(`FirstOrder.Language.LEquiv.toLHom_injective`, `FirstOrder.Language.LEquiv.invLHom_injective`),
-and every language `L : Language.{u, v}` lifts to an equivalent language
-`FirstOrder.Language.ulift` in `Language.{max u u', max v v'}` via
-`FirstOrder.Language.uliftEquiv`.
+* `FirstOrder.Language.isAlgebraic_withConstants`,
+  `FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`,
+  `FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
+  `FirstOrder.Language.subset_range_lhomWithConstants_onRelation`, and
+  `FirstOrder.Language.withConstantsStructure_reduct_eq`: adjoining constants to an algebraic
+  language, symbol ranges of `lhomWithConstants`, and recovering an `L[[γ]]`-structure from its
+  `L`-reduct.
+* `FirstOrder.Language.LEquiv.toLHom_injective` and `FirstOrder.Language.LEquiv.invLHom_injective`:
+  both directions of a language equivalence are injective.
+* `FirstOrder.Language.isRelational_ulift`, `FirstOrder.Language.isAlgebraic_ulift`,
+  `FirstOrder.Language.countable_functions_ulift`, and
+  `FirstOrder.Language.countable_relations_ulift`: universe lifting preserves relationality,
+  algebraicity, and symbol countability.
 -/
 
 public section

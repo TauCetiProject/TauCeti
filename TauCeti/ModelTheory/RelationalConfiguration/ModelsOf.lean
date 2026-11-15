@@ -8,25 +8,31 @@ module
 public import TauCeti.ModelTheory.Infinitary.Infinite
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
+import Mathlib.ModelTheory.Encoding
 import TauCeti.ModelTheory.Syntax
 
 /-!
-# Model classes of infinitary sentences
+# Model classes of infinitary sentences and first-order theories
 
-For a relational language `L`, a carrier `V` and an infinitary sentence `φ`, the **model class**
-`TauCeti.RelationalConfiguration.modelsOf φ` is the set of configurations on `V` whose decoded
-structures satisfy `φ`. Model classes are the basic objects of the descriptive set theory of
-countable models: counting the countable models of `φ` is counting the isomorphism classes met by
-its model classes on `ℕ` and on each `Fin n`.
+For a relational language `L` and a carrier `V`, the **model class**
+`TauCeti.RelationalConfiguration.modelsOf φ` of an infinitary sentence `φ` is the set of
+configurations on `V` whose decoded structures satisfy `φ`, and
+`TauCeti.RelationalConfiguration.modelsOfTheory T` is the set of configurations on `V` whose decoded
+structures are models of a first-order theory `T : L.Theory`. Model classes are the basic objects of
+the descriptive set theory of countable models: counting the countable models of a sentence or
+theory is counting the isomorphism classes met by its model classes on `ℕ` and on each `Fin n`.
 
 On a countable carrier, every infinitary formula with countable branching defines a Borel set of
 configurations at each valuation of its variables. In a relational language every term is a
 variable, so atomic formulas are cylinders or constant conditions; implication, countable
 conjunction and disjunction, and quantification over the countable carrier preserve Borelness.
-In particular model classes of `L_{ω₁ω}` sentences are Borel, hence standard Borel subspaces when
-the language has countably many relation symbols. Model classes are closed under isomorphism of
-the decoded structures, across carriers, and by `Equiv.realize_encodeVia` a structure transported
-to any bijective carrier lies in the model class of each sentence it satisfies.
+In particular model classes of `L_{ω₁ω}` sentences and of countable first-order theories are Borel;
+when the language has countably many relation symbols of each arity, every first-order theory is
+countable, so `modelsOf φ` and `modelsOfTheory T` are Borel and carry `StandardBorelSpace`
+instances. Model classes of sentences and theories are closed under isomorphism of the decoded
+structures across carriers, and by `Equiv.realize_encodeVia` and
+`Equiv.mem_modelsOfTheory_encodeVia_iff` a structure transported to any bijective carrier lies in
+the model class of each sentence or theory it satisfies.
 
 This is the easy direction of the López–Escobar theorem, which conversely presents every
 isomorphism-invariant Borel set of configurations on `ℕ` as a model class; see Gao, *Invariant
@@ -51,14 +57,17 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_realize`: on a countable carrier, the
   configurations realizing an infinitary formula with countable branching at a fixed valuation
   form a measurable set.
-* `TauCeti.RelationalConfiguration.measurableSet_modelsOf` and
-  `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory_of_countable`: model classes of
-  such sentences and of countable first-order theories are measurable, and
-  `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes sentence model classes
-  standard Borel.
-* `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
-  `FirstOrder.Language.Equiv.mem_modelsOfTheory_iff`: model classes are invariant under
-  isomorphism of the decoded structures.
+* `TauCeti.RelationalConfiguration.measurableSet_modelsOf`,
+  `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory_of_countable`, and
+  `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory`: model classes of such sentences,
+  of countable first-order theories, and of arbitrary first-order theories in countable relational
+  vocabularies are measurable, with `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf`
+  and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOfTheory` making them standard
+  Borel.
+* `FirstOrder.Language.Equiv.mem_modelsOf_iff`,
+  `FirstOrder.Language.Equiv.mem_modelsOfTheory_iff`, and `Equiv.mem_modelsOfTheory_encodeVia_iff`:
+  model classes of sentences and first-order theories are invariant under isomorphism of the decoded
+  structures and under encoding along a bijection of carriers.
 -/
 
 public section
@@ -277,6 +286,18 @@ theorem measurableSet_modelsOfTheory_of_countable [Countable V] {T : L.Theory}
   have : Countable T := hT
   rw [modelsOfTheory_eq_biInter_modelsOf, Set.biInter_eq_iInter]
   exact .iInter fun φ => measurableSet_modelsOf φ.1.toOmega
+
+/-- In a relational language with countably many relation symbols of each arity, the model class of
+every first-order theory on a countable carrier is measurable. -/
+theorem measurableSet_modelsOfTheory [∀ n, Countable (L.Relations n)] [Countable V]
+    (T : L.Theory) : MeasurableSet (modelsOfTheory (V := V) T) :=
+  measurableSet_modelsOfTheory_of_countable T.to_countable
+
+/-- In a relational language with countably many relation symbols of each arity, the model class of
+every first-order theory on a countable carrier is a standard Borel space. -/
+instance standardBorelSpace_modelsOfTheory [∀ n, Countable (L.Relations n)] [Countable V]
+    (T : L.Theory) : StandardBorelSpace (modelsOfTheory (V := V) T) :=
+  (measurableSet_modelsOfTheory T).standardBorel
 
 end TauCeti.RelationalConfiguration
 

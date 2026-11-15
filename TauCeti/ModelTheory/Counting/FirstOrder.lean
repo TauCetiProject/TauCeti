@@ -9,6 +9,7 @@ public import Mathlib.ModelTheory.Satisfiability
 public import TauCeti.ModelTheory.Counting.Vaught
 public import TauCeti.ModelTheory.Infinitary.Theory
 import Mathlib.ModelTheory.Encoding
+import TauCeti.Data.Setoid.Cardinal
 import TauCeti.ModelTheory.Counting.BoundedRank
 import TauCeti.ModelTheory.Counting.Scattered.Thin
 import TauCeti.ModelTheory.LanguageMap
@@ -27,9 +28,11 @@ In a relational language with countably many relation symbols of each arity, `L.
 `L.Sentence` are countable, so every first-order theory `T : L.Theory` is a countable set of
 sentences. Embedding `T` into `L_{ω₁ω}` and forming its countable conjunction
 `FirstOrder.Language.Theoryω.conjunction` turns `modelsOfTheory T` into the model class of a single
-`L_{ω₁ω}` sentence (`TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`). The
-Borel measurability of `modelsOfTheory T`, the finite-carrier dichotomy, Morley's dichotomy on `ℕ`,
-and the bounded-rank dichotomy on `ℕ` all follow immediately from the infinitary results.
+`L_{ω₁ω}` sentence (`TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`). Combined
+with the Borel measurability of `modelsOfTheory T`
+(`TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory`), the finite-carrier dichotomy,
+Morley's dichotomy on `ℕ`, and the bounded-rank dichotomy on `ℕ` all follow immediately from the
+infinitary results.
 
 Conjoining the countable conjunction of `T` with `FirstOrder.Language.infiniteSentence` removes the
 finite tiers while preserving `modelsOfTheory (V := ℕ) T`
@@ -46,7 +49,8 @@ universes (`TauCeti.firstOrderVaughtConjecture_iff_forall_universe`). Unconditio
 every complete theory whose model class on `ℕ` is back-and-forth scattered
 (`TauCeti.firstOrderVaughtConjecture_iff_bfScattered`), and under `ℵ₁ < 𝔠` to Vaught's cardinal
 dichotomy (`TauCeti.firstOrderVaughtConjecture_iff_cardinal`), whereas under CH the cardinal
-dichotomy holds unconditionally by Morley's theorem.
+dichotomy holds for every first-order theory (without completeness or `FirstOrderVaughtConjecture`)
+by Morley's theorem.
 
 ## Main definitions
 
@@ -57,10 +61,6 @@ dichotomy holds unconditionally by Morley's theorem.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory` and
-  `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOfTheory`: in a relational language
-  with countably many relation symbols of each arity, every first-order model class on a countable
-  carrier is Borel and standard Borel.
 * `TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`: the model class of a
   countable first-order theory is the model class of its `L_{ω₁ω}` conjunction.
 * `FirstOrder.Language.LEquiv.quotientIsoSetoidOnTheoryEquiv`,
@@ -102,33 +102,17 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
 
-/-- In a relational language with countably many relation symbols of each arity, every first-order
-theory is a countable set of sentences. -/
-private theorem countable_theory [∀ n, Countable (L.Relations n)] (T : L.Theory) : T.Countable :=
-  T.to_countable
-
-/-- In a relational language with countably many relation symbols of each arity, the model class of
-every first-order theory on a countable carrier is measurable. -/
-theorem measurableSet_modelsOfTheory [∀ n, Countable (L.Relations n)] [Countable V]
-    (T : L.Theory) : MeasurableSet (modelsOfTheory (V := V) T) :=
-  measurableSet_modelsOfTheory_of_countable (countable_theory T)
-
-/-- In a relational language with countably many relation symbols of each arity, the model class of
-every first-order theory on a countable carrier is a standard Borel space. -/
-instance standardBorelSpace_modelsOfTheory [∀ n, Countable (L.Relations n)] [Countable V]
-    (T : L.Theory) : StandardBorelSpace (modelsOfTheory (V := V) T) :=
-  (measurableSet_modelsOfTheory T).standardBorel
-
 /-- **A countable first-order theory has the model class of one `L_{ω₁ω}` sentence.** Embedding a
 countable first-order theory into `L_{ω₁ω}` and taking `Theoryω.conjunction` yields the same model
 class on every carrier `V`. -/
 @[simp]
-theorem modelsOf_conjunction_image_toOmega {T : L.Theory} (hT : T.Countable) :
-    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) (hT.image _)) =
+theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
+    (h : (BoundedFormula.toOmega '' T).Countable) :
+    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) h) =
       modelsOfTheory T := by
   ext c
   rw [mem_modelsOf, mem_modelsOfTheory,
-    @Theoryω.realize_conjunction_iff L _ V c.toStructure (hT.image _),
+    @Theoryω.realize_conjunction_iff L _ V c.toStructure h,
     @Theoryω.model_image_toOmega_iff L V c.toStructure T]
 
 variable (V) in
@@ -150,13 +134,8 @@ theorem isoSetoidOnTheory_apply {T : L.Theory} {c d : modelsOfTheory (V := V) T}
 classes of models on `V` as `T₂`. -/
 theorem mk_quotient_isoSetoidOnTheory_le_of_subset {T₁ T₂ : L.Theory}
     (h : modelsOfTheory (V := V) T₁ ⊆ modelsOfTheory T₂) :
-    #(Quotient (isoSetoidOnTheory V T₁)) ≤ #(Quotient (isoSetoidOnTheory V T₂)) := by
-  refine mk_le_of_injective (f := Quotient.map (inclusion h) fun _ _ hcd => hcd) ?_
-  intro p q
-  induction p, q using Quotient.inductionOn₂ with
-  | h c d =>
-    intro hcd
-    exact Quotient.sound (Quotient.exact (s := isoSetoidOnTheory V T₂) hcd)
+    #(Quotient (isoSetoidOnTheory V T₁)) ≤ #(Quotient (isoSetoidOnTheory V T₂)) :=
+  Setoid.mk_quotient_comap_val_le_of_subset h
 
 /-- Expanding a first-order theory can only shrink the number of isomorphism classes of its models
 on `V`. -/
@@ -178,12 +157,11 @@ theorem countable_quotient_isoSetoidOnTheory_or_hasPerfectAntichainOn
     [∀ n, Countable (L.Relations n)] (V : Type w) [Finite V] (T : L.Theory) :
     Countable (Quotient (isoSetoidOnTheory V T)) ∨
       (isoSetoid L V).HasPerfectAntichainOn (modelsOfTheory T) := by
-  have hT := countable_theory T
   have h := countable_quotient_isoSetoidOn_or_hasPerfectAntichainOn V
-    (Theoryω.conjunction (BoundedFormula.toOmega '' T) (hT.image _))
+    (Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _))
   unfold isoSetoidOn at h
   unfold isoSetoidOnTheory
-  rwa [modelsOf_conjunction_image_toOmega hT] at h
+  rwa [modelsOf_conjunction_image_toOmega] at h
 
 /-- **Finite-carrier dichotomy for first-order theories (cardinal form).** On a finite carrier, in
 a relational language with countably many relation symbols of each arity, the models of a
@@ -191,12 +169,11 @@ first-order theory have at most `ℵ₀` or `𝔠` isomorphism classes. -/
 theorem mk_quotient_isoSetoidOnTheory_le_aleph0_or_eq_continuum
     [∀ n, Countable (L.Relations n)] (V : Type w) [Finite V] (T : L.Theory) :
     #(Quotient (isoSetoidOnTheory V T)) ≤ ℵ₀ ∨ #(Quotient (isoSetoidOnTheory V T)) = 𝔠 := by
-  have hT := countable_theory T
   have h := mk_quotient_isoSetoidOn_le_aleph0_or_eq_continuum V
-    (Theoryω.conjunction (BoundedFormula.toOmega '' T) (hT.image _))
+    (Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _))
   unfold isoSetoidOn at h
   unfold isoSetoidOnTheory
-  rwa [modelsOf_conjunction_image_toOmega hT] at h
+  rwa [modelsOf_conjunction_image_toOmega] at h
 
 end TauCeti.RelationalConfiguration
 
@@ -303,34 +280,53 @@ theorem countable_quotient_isoSetoidOnTheory_nat_or_hasPerfectAntichainOn_of_sco
   countable_quotient_isoSetoidOnTheory_nat_or_hasPerfectAntichainOn_of_bounded
     (isIsolatingRank_scottHeight L) hβ hT
 
+/-! ### Reduction to `L_{ω₁ω}` and the first-order Vaught conjecture -/
+
+/-- **Countable first-order theories reduce to `L_{ω₁ω}` sentences.** Conjoining the `L_{ω₁ω}`
+conjunction of a countable first-order theory `T` with `infiniteSentence` turns `HasVaughtDichotomy`
+into the witnessed dichotomy for the models of `T` on `ℕ`. Neither completeness of `T` nor
+countability of `L` is needed. -/
+theorem hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff {T : L.Theory}
+    (h : (BoundedFormula.toOmega '' T).Countable) :
+    HasVaughtDichotomy
+        ((Theoryω.conjunction (BoundedFormula.toOmega '' T) h) ⊓ L.infiniteSentence) ↔
+      Countable (Quotient (isoSetoidOnTheory ℕ T)) ∨
+        (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T) := by
+  rw [hasVaughtDichotomy_inf_infiniteSentence_iff]
+  unfold isoSetoidOn isoSetoidOnTheory
+  rw [modelsOf_conjunction_image_toOmega]
+
 /-- A first-order theory in a countable relational vocabulary fails the witnessed dichotomy on `ℕ`
 if and only if it has `ℵ₁` countably infinite models up to isomorphism and no perfect antichain on
 `modelsOfTheory (V := ℕ) T`. No CH hypothesis is needed. -/
-theorem not_countable_and_not_hasPerfectAntichainOn_modelsOfTheory_iff
+theorem not_countable_quotient_isoSetoidOnTheory_nat_or_hasPerfectAntichainOn_iff
     [∀ n, Countable (L.Relations n)] {T : L.Theory} :
     ¬ (Countable (Quotient (isoSetoidOnTheory ℕ T)) ∨
         (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T)) ↔
       #(Quotient (isoSetoidOnTheory ℕ T)) = ℵ₁ ∧
         ¬ (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T) := by
-  rw [not_or, ← mk_le_aleph0_iff, not_le]
-  constructor
-  · rintro ⟨hgt, hthin⟩
-    have hle := (mk_quotient_isoSetoidOnTheory_nat_le_aleph_one_or_hasPerfectAntichainOn T)
-      |>.resolve_right hthin
-    exact ⟨hle.antisymm (aleph_one_le_iff.2 hgt), hthin⟩
-  · rintro ⟨heq, hthin⟩
-    exact ⟨heq ▸ aleph0_lt_aleph_one, hthin⟩
+  have h := not_hasVaughtDichotomy_iff (φ :=
+    Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
+      L.infiniteSentence)
+  rw [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
+    countableModelCount_inf_infiniteSentence,
+    hasPerfectlyManyCountableModels_inf_infiniteSentence_iff] at h
+  unfold isoSetoidOn at h
+  unfold isoSetoidOnTheory
+  rwa [modelsOf_conjunction_image_toOmega] at h
 
 /-- Under CH, the models on `ℕ` of every first-order theory in a countable relational vocabulary
 satisfy Vaught's cardinal dichotomy. -/
 theorem mk_quotient_isoSetoidOnTheory_nat_le_aleph0_or_eq_continuum_of_aleph_one_eq_continuum
     [∀ n, Countable (L.Relations n)] (hCH : ℵ₁ = (𝔠 : Cardinal.{v})) (T : L.Theory) :
     #(Quotient (isoSetoidOnTheory ℕ T)) ≤ ℵ₀ ∨ #(Quotient (isoSetoidOnTheory ℕ T)) = 𝔠 := by
-  rcases mk_quotient_isoSetoidOnTheory_nat_le_aleph_one_or_eq_continuum T with hle | heq
-  · by_cases h₀ : #(Quotient (isoSetoidOnTheory ℕ T)) ≤ ℵ₀
-    · exact .inl h₀
-    · exact .inr (hCH ▸ hle.antisymm (aleph_one_le_iff.2 (not_le.1 h₀)))
-  · exact .inr heq
+  have h := hasVaughtCount_of_aleph_one_eq_continuum hCH
+    (Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
+      L.infiniteSentence)
+  rw [hasVaughtCount_iff, countableModelCount_inf_infiniteSentence] at h
+  unfold isoSetoidOn at h
+  unfold isoSetoidOnTheory
+  rwa [modelsOf_conjunction_image_toOmega] at h
 
 /-- When `ℵ₁ < 𝔠`, the cardinal dichotomy on `ℕ` for a first-order theory `T` is equivalent to the
 witnessed perfect-set dichotomy on `ℕ`. -/
@@ -339,33 +335,14 @@ theorem mk_quotient_isoSetoidOnTheory_nat_le_aleph0_or_eq_continuum_iff
     (#(Quotient (isoSetoidOnTheory ℕ T)) ≤ ℵ₀ ∨ #(Quotient (isoSetoidOnTheory ℕ T)) = 𝔠) ↔
       (Countable (Quotient (isoSetoidOnTheory ℕ T)) ∨
         (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T)) := by
-  rw [← mk_le_aleph0_iff]
-  constructor
-  · rintro (hle | heq)
-    · exact .inl hle
-    · rcases mk_quotient_isoSetoidOnTheory_nat_le_aleph_one_or_hasPerfectAntichainOn T with
-        hle | hP
-      · exact (hc.not_ge (heq ▸ hle)).elim
-      · exact .inr hP
-  · rintro (hle | hP)
-    · exact .inl hle
-    · exact .inr hP.hasCantorAntichainOn.mk_quotient_comap_eq_continuum
-
-/-! ### Reduction to `L_{ω₁ω}` and the first-order Vaught conjecture -/
-
-/-- **Countable first-order theories reduce to `L_{ω₁ω}` sentences.** Conjoining the `L_{ω₁ω}`
-conjunction of a countable first-order theory `T` with `infiniteSentence` turns `HasVaughtDichotomy`
-into the witnessed dichotomy for the models of `T` on `ℕ`. Neither completeness of `T` nor
-countability of `L` is needed. -/
-theorem hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff {T : L.Theory}
-    (hT : T.Countable) :
-    HasVaughtDichotomy
-        ((Theoryω.conjunction (BoundedFormula.toOmega '' T) (hT.image _)) ⊓ L.infiniteSentence) ↔
-      Countable (Quotient (isoSetoidOnTheory ℕ T)) ∨
-        (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T) := by
-  rw [hasVaughtDichotomy_inf_infiniteSentence_iff]
-  unfold isoSetoidOn isoSetoidOnTheory
-  rw [modelsOf_conjunction_image_toOmega hT]
+  have h := hasVaughtCount_iff_hasVaughtDichotomy (φ :=
+    Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
+      L.infiniteSentence) hc
+  rw [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff, hasVaughtCount_iff,
+    countableModelCount_inf_infiniteSentence] at h
+  unfold isoSetoidOn at h
+  unfold isoSetoidOnTheory
+  rwa [modelsOf_conjunction_image_toOmega] at h
 
 /-- `VaughtConjecture` implies the witnessed dichotomy on `ℕ` for every first-order theory (complete
 or not) in every countable relational language in any universe `{u, v}`. -/
@@ -374,7 +351,7 @@ theorem VaughtConjecture.countable_quotient_isoSetoidOnTheory_or_hasPerfectAntic
     [Countable (Σ n, L.Relations n)] (T : L.Theory) :
     Countable (Quotient (isoSetoidOnTheory ℕ T)) ∨
       (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T) :=
-  (hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff T.to_countable).1
+  (hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff (T.to_countable.image _)).1
     (vaughtConjecture_iff_forall_universe.1 h L _)
 
 /-- **The first-order Vaught conjecture** (in perfect-set form): every complete first-order theory
@@ -424,9 +401,10 @@ theorem firstOrderVaughtConjecture_iff_forall_universe :
     rwa [e.countable_quotient_isoSetoidOnTheory_onTheory_iff,
       e.hasPerfectAntichainOn_modelsOfTheory_onTheory_iff] at h'
 
-/-- **The scattered formulation of the first-order Vaught conjecture.** Without CH,
+/-- **The scattered formulation of the first-order Vaught conjecture.** Unconditionally,
 `FirstOrderVaughtConjecture` holds if and only if every complete first-order theory whose model
-class on `ℕ` is back-and-forth scattered has countably many models on `ℕ` up to isomorphism. -/
+class on `ℕ` is back-and-forth scattered has countably many models on `ℕ` up to isomorphism.
+Neither CH nor its negation is assumed. -/
 theorem firstOrderVaughtConjecture_iff_bfScattered :
     FirstOrderVaughtConjecture ↔
       ∀ (L : Language.{0, 0}) [L.IsRelational] [Countable (Σ n, L.Relations n)]
