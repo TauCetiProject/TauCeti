@@ -26,7 +26,6 @@ the class of `-1` is the element of order two.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicK1.ofUnits`: the homomorphism `Aˣ →* K₁(A)`, `u ↦ [(u)]`.
 * `TauCeti.AlgebraicK1.det`: the determinant `K₁(R) →* Rˣ` of a commutative ring.
 * `TauCeti.specialAlgebraicK1`: the subgroup `SK₁(R)`, the kernel of the determinant.
 * `TauCeti.AlgebraicK1.equivUnitsProdSpecial`: the splitting `K₁(R) ≃* Rˣ × SK₁(R)`.
@@ -56,54 +55,11 @@ open Matrix
 
 namespace TauCeti
 
-/-! ## Units as `1 × 1` matrices -/
-
-namespace AlgebraicK1
-
-section Ring
-
-variable (A : Type*) [Ring A]
-
-/-- The class in algebraic `K₁` of an invertible `1 × 1` matrix: the homomorphism
-`Aˣ →* K₁(A)`, `u ↦ [(u)]`. -/
-def ofUnits : Aˣ →* AlgebraicK1 A :=
-  (mk A 1).comp (GeneralLinearGroup.scalar (Fin 1))
-
-variable {A}
-
-/-- `ofUnits` sends a unit `u` to the class of the `1 × 1` matrix `(u)`. -/
-theorem ofUnits_apply (u : Aˣ) : ofUnits A u = mk A 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
-  (rfl)
-
-/-- The homomorphism of algebraic `K₁` induced by a ring homomorphism sends the class of a unit
-`u` to the class of `f u`. -/
-@[simp]
-theorem map_ofUnits {B : Type*} [Ring B] (f : A →+* B) (u : Aˣ) :
-    map f (ofUnits A u) = ofUnits B (Units.map (f : A →* B) u) := by
-  rw [ofUnits_apply, ofUnits_apply, map_mk]
-  congr 1
-  ext
-  simp [diagonal_apply, apply_ite f]
-
-end Ring
-
-end AlgebraicK1
-
 /-! ## The determinant -/
 
 section CommRing
 
 variable {R : Type*} [CommRing R]
-
-/-- Stabilization `u ↦ u ⊕ 1` does not change the determinant of an invertible matrix over a
-commutative ring. -/
-@[simp]
-theorem det_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) R) :
-    GeneralLinearGroup.det (stabilizeGL R h u) = GeneralLinearGroup.det u := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
-  ext
-  simp [GeneralLinearGroup.val_det_apply, det_fromBlocks_zero₂₁]
 
 namespace AlgebraicK1
 
@@ -228,9 +184,13 @@ theorem det_int_injective : Function.Injective (det ℤ) :=
 def detEquivInt : AlgebraicK1 ℤ ≃* ℤˣ :=
   MulEquiv.ofBijective (det ℤ) ⟨det_int_injective, det_surjective⟩
 
+/-- The isomorphism `K₁(ℤ) ≃* ℤˣ` is the determinant. -/
+@[simp]
+theorem detEquivInt_apply (x : AlgebraicK1 ℤ) : detEquivInt x = det ℤ x :=
+  (rfl)
+
 /-- The isomorphism `K₁(ℤ) ≃* ℤˣ` sends the class of an invertible integer matrix to its
 determinant. -/
-@[simp]
 theorem detEquivInt_mk (n : ℕ) (g : GL (Fin n) ℤ) :
     detEquivInt (mk ℤ n g) = GeneralLinearGroup.det g :=
   det_mk n g
