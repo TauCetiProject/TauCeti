@@ -94,11 +94,9 @@ theorem hasSum_zetaMulPairCoeffs_div_cpow_mul_exp {σ β x : ℝ} (hσ : 0 < σ)
         ψ.LFunction (w + β) * (χ.mul ψ).LFunction (w + β))) x) := by
   set g : ℕ → ℂ := fun n ↦ χ.zetaMulPairCoeffs ψ n * (n : ℂ) ^ (-(β : ℂ))
   have hg0 : g 0 = 0 := by simp [g]
-  have hsumm : LSeriesSummable g σ := by
-    rw [LSeriesSummable,
-      funext (TauCeti.LSeries.term_mul_natCast_cpow_neg (χ.zetaMulPairCoeffs ψ) β σ)]
-    exact (LSeriesHasSum_zetaMulPairCoeffs χ ψ (s := (σ : ℂ) + β)
-      (by simp [hσβ])).LSeriesSummable
+  have hsumm : LSeriesSummable g σ :=
+    (TauCeti.LSeries.LSeriesSummable_mul_natCast_cpow_neg_iff _ _ _).mpr
+      (LSeriesHasSum_zetaMulPairCoeffs χ ψ (s := (σ : ℂ) + β) (by simp [hσβ])).LSeriesSummable
   have hsum := TauCeti.LSeries.hasSum_mellinInv_Gamma_mul_LSeries hg0 hσ hsumm hx
   have hterm : (fun n : ℕ ↦ χ.zetaMulPairCoeffs ψ n / (n : ℂ) ^ (β : ℂ) * Real.exp (-n * x)) =
       fun n : ℕ ↦ g n * Real.exp (-n * x) := by

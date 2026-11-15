@@ -7,8 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
@@ -61,37 +60,10 @@ private lemma differentiableOn_mul_integral_sub_natFloor :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       {s | 0 < s.re} := by
-  set u : ℝ → ℂ := (Set.Ioi (1 : ℝ)).indicator fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)
-  have hfl_meas : Measurable fun t : ℝ ↦ (⌊t⌋₊ : ℝ) := measurable_from_nat.comp Nat.measurable_floor
-  have hu_meas : Measurable u :=
-    (Complex.measurable_ofReal.comp (measurable_id.sub hfl_meas)).indicator measurableSet_Ioi
-  have hu_norm (t : ℝ) : ‖u t‖ ≤ 1 := by
-    dsimp only [u]
-    by_cases ht : 1 < t
-    · rw [Set.indicator_of_mem (Set.mem_Ioi.mpr ht)]
-      simpa only [norm_real, Real.norm_eq_abs] using Nat.abs_sub_floor_le (zero_lt_one.trans ht).le
-    · rw [Set.indicator_of_notMem (by simpa using ht)]
-      simp
-  have hloc : LocallyIntegrableOn u (Set.Ioi 0) :=
-    ((memLp_top_of_bound hu_meas.aestronglyMeasurable 1
-      (Eventually.of_forall hu_norm)).locallyIntegrable le_top).locallyIntegrableOn _
-  have hO_top : u =O[atTop] fun t : ℝ ↦ t ^ (-(0 : ℝ)) := by
-    refine isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ ?_⟩
-    simpa using hu_norm t
-  have hint_eq (z : ℂ) :
-      ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)) = mellin u (-z) := by
-    rw [mellin_indicator_Ioi _ zero_le_one (-z)]
-    congr 1; ext t; rw [smul_eq_mul, mul_comm, neg_add']
-  intro s (hs : 0 < s.re)
-  have hO_bot : u =O[𝓝[>] 0] fun t : ℝ ↦ t ^ (-((-s).re - 1)) := by
-    refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
-    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-    exact (Set.indicator_of_notMem (by simpa using ht.2.le) _).symm
-  have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin u (-z)) s :=
-    (mellin_differentiableAt_of_isBigO_rpow (a := 0) hloc hO_top (by simpa using hs) hO_bot
-      (by linarith)).comp s differentiableAt_id.neg
-  simp_rw [hint_eq]
-  exact (differentiableAt_id.mul hmellin).differentiableWithinAt
+  refine differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO (r := 0) ?_)
+  refine isBigO_iff.mpr ⟨1, (eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ ?_⟩
+  simpa only [Real.rpow_zero, Real.norm_eq_abs, abs_one, mul_one, norm_real] using
+    Nat.abs_sub_floor_le ht
 
 /-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
 `riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
@@ -154,20 +126,10 @@ theorem norm_riemannZeta₀_le_one_add_norm_div_re {s : ℂ} (hs : 0 < s.re) :
     ‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / s.re := by
   rw [riemannZeta₀_eq_one_sub_mul_integral hs]
   have hint_bound : ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
-      1 / s.re := by
-    calc ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
-        ≤ ∫ t in Set.Ioi (1 : ℝ), t ^ (-(s.re + 1)) := by
-          refine norm_integral_le_of_norm_le
-            (integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1) zero_lt_one) ?_
-          filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 1 < t)
-          have ht0 : 0 < t := zero_lt_one.trans ht
-          rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0]
-          simp only [neg_re, add_re, one_re]
-          exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _)
-            (by simpa only [norm_real, Real.norm_eq_abs] using Nat.abs_sub_floor_le ht0.le)
-      _ = 1 / s.re := by
-          rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow]
-          ring
+      1 / s.re :=
+    norm_integral_mul_cpow_le_of_bound (fun t (ht : 1 < t) ↦ by
+      simpa only [norm_real, Real.norm_eq_abs] using
+        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs
   calc ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
       ≤ ‖(1 : ℂ)‖ + ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ :=
         (norm_sub_le _ _).trans (by rw [norm_mul])
