@@ -28,6 +28,8 @@ curvature:
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 * `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
   `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
+* `OrthonormalBasis.sum_apply_self_eq`: for orthonormal bases `b`, `b'` of a real inner product
+  space and a bilinear map `B`, `∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i)`.
 * `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
   `x` given by `Complex.isometryOfOrthonormal b` is `⟪x, b₀⟫ + i ⟪x, b₁⟫`.
 -/
@@ -98,6 +100,31 @@ theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he
     (x y : E) :
     ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
   simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
+
+/-- **Basis independence of the trace of a real bilinear map.** For orthonormal bases `b` and `b'`
+of a real inner product space `V` and a bilinear map `B : V →ₗ[ℝ] V →ₗ[ℝ] M`,
+`∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i)`. -/
+theorem sum_apply_self_eq {V M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [AddCommMonoid M] [Module ℝ M] (b : OrthonormalBasis ι ℝ V) (b' : OrthonormalBasis κ ℝ V)
+    (B : V →ₗ[ℝ] V →ₗ[ℝ] M) :
+    ∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i) := by
+  classical
+  have hexp (k : ι) :
+      B (b k) (b k) = ∑ i, ∑ j, (⟪b' i, b k⟫_ℝ * ⟪b k, b' j⟫_ℝ) • B (b' i) (b' j) := by
+    conv_lhs => rw [← b'.sum_repr' (b k)]
+    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, Finset.smul_sum,
+      smul_smul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [mul_comm, real_inner_comm (b' j) (b k)]
+  simp_rw [hexp]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finset.sum_comm]
+  have hsum (j : κ) : (∑ k, (⟪b' i, b k⟫_ℝ * ⟪b k, b' j⟫_ℝ) • B (b' i) (b' j)) =
+      ⟪b' i, b' j⟫_ℝ • B (b' i) (b' j) := by
+    rw [← Finset.sum_smul, b.sum_inner_mul_inner]
+  simp [hsum, orthonormal_iff_ite.1 b'.orthonormal]
 
 end OrthonormalBasis
 

@@ -280,6 +280,16 @@ theorem withLpProdMap_zero :
   ext x
   simp
 
+/-- Composition of `L^p` block sums is the block sum of the compositions. -/
+@[simp]
+theorem withLpProdMap_comp {α'' β'' : Type*}
+    [TopologicalSpace α''] [AddCommGroup α''] [Module 𝕜 α'']
+    [TopologicalSpace β''] [AddCommGroup β''] [Module 𝕜 β'']
+    (f' : α' →L[𝕜] α'') (g' : β' →L[𝕜] β'') (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    f'.withLpProdMap p g' ∘L f.withLpProdMap p g = (f' ∘L f).withLpProdMap p (g' ∘L g) := by
+  ext x
+  rfl
+
 end Topological
 
 section Seminormed

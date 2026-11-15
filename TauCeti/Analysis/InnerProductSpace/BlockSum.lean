@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.FanDominance
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Data.Set.Card
 
 /-!
@@ -224,3 +225,23 @@ theorem map_prodMap_withLpMap_le
   N.map_le_of_kyFanSum_le (LinearMap.kyFanSum_prodMap_withLpMap_le hA hB)
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace ContinuousLinearMap
+
+/-- **Hilbert adjoint of an orthogonal block sum.** `(f ⊕ g)† = f† ⊕ g†` on `WithLp 2`. -/
+@[simp]
+theorem adjoint_withLpProdMap
+    [CompleteSpace E₁] [CompleteSpace E₂] [CompleteSpace F₁] [CompleteSpace F₂]
+    (f : E₁ →L[𝕜] F₁) (g : E₂ →L[𝕜] F₂) :
+    adjoint (f.withLpProdMap 2 g) = (adjoint f).withLpProdMap 2 (adjoint g) := by
+  refine ((eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm
+  simp [WithLp.prod_inner_apply, adjoint_inner_left]
+
+/-- An orthogonal block sum `f ⊕ g` on `WithLp 2` is self-adjoint when both blocks are. -/
+theorem _root_.IsSelfAdjoint.withLpProdMap [CompleteSpace E₁] [CompleteSpace E₂]
+    {f : E₁ →L[𝕜] E₁} {g : E₂ →L[𝕜] E₂} (hf : IsSelfAdjoint f) (hg : IsSelfAdjoint g) :
+    IsSelfAdjoint (f.withLpProdMap 2 g) := by
+  rw [isSelfAdjoint_iff, star_eq_adjoint, adjoint_withLpProdMap,
+    ← star_eq_adjoint, ← star_eq_adjoint, hf.star_eq, hg.star_eq]
+
+end ContinuousLinearMap
