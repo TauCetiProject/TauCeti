@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
 # The finite character of a presentation
@@ -28,18 +29,22 @@ Neukirch's `χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the arch
 monomial `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
 (`Grossencharacter.archimedeanValue_eq_embeddingCharacter`), and differs from it by a sign at a
 real place of `𝔪` where the parity of the Hecke character differs from that of `n`. With the
-monomial alone, the odd character modulo `4∞` of `ℚ`, of exponent `0`, would get the even finite
-character.
+monomial alone, the odd character `χ₄` modulo `4∞` of `ℚ`, of exponent `0`, would give the even
+function `a ↦ χ₄(|a|)` on `ℤ`, which is `1` at `-1` and `-1` at `3`, so does not even factor
+through the residues modulo `4`.
 
 The point of the correction is that `χ_f` only sees residues modulo the finite part `𝔪₀` of `𝔪`.
 On the fractions prime to `𝔪₀` (the subgroup `primeToSubgroup 𝔪` of `Kˣ`), the finite character
 `Grossencharacter.finiteCharacterK` is the ideal character of the presented Hecke character at
-`(x)` times `χ_∞(x)`. By Hecke's unit relation it is trivial on every `x ≡ 1 mod 𝔪₀`, whatever
-the signs of `x` at the real places, so it factors through the reduction to `(𝓞 K ⧸ 𝔪₀)ˣ`. The
-factor is the **residue character** `Grossencharacter.residueCharacter`, a Mathlib `MulChar` of
-`𝓞 K ⧸ 𝔪₀`. On algebraic integers, `Grossencharacter.finiteCharacter` is the coefficient that the
-twisted theta series attaches to a lattice point: it is `0` exactly at the integers not prime to
-`𝔪` (`0` included), and the residue character at the class of every nonzero integer
+`(x)` times `χ_∞(x)`. An `x ≡ 1 mod 𝔪₀` is congruent to `1` modulo the finite conductor, where
+the ideal character at `(x)` is `χ_∞(x)⁻¹` because the Hecke character is trivial on the principal
+idele of `x` (`HeckeCharacter.idealCharacter_apply_toPrincipalIdeal`). So the finite character is
+trivial on every `x ≡ 1 mod 𝔪₀`, whatever the signs of `x` at the real places, and it factors
+through the reduction to `(𝓞 K ⧸ 𝔪₀)ˣ`. The factor is the **residue character**
+`Grossencharacter.residueCharacter`, a Mathlib `MulChar` of `𝓞 K ⧸ 𝔪₀`. On algebraic integers,
+`Grossencharacter.finiteCharacter` is the coefficient that the twisted theta series attaches to a
+lattice point: it is `0` exactly at the integers not prime to `𝔪` (`0` included), and the residue
+character at the class of every nonzero integer
 (`Grossencharacter.finiteCharacter_eq_residueCharacter`), which pins the residue character down
 (`Grossencharacter.existsUnique_residueCharacter`).
 
@@ -309,15 +314,8 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
       ∀ a : 𝓞 K, a ≠ 0 → ψ (Ideal.Quotient.mk 𝔪.finitePart a) = χ.finiteCharacter a := by
   refine ⟨χ.residueCharacter, fun a ha ↦ (χ.finiteCharacter_eq_residueCharacter ha).symm,
     fun ψ hψ ↦ MulChar.ext' fun r ↦ ?_⟩
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
-  -- Replace `a` by a nonzero representative of its class.
-  obtain ⟨c, hc, hc₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot 𝔪.finitePart_ne_bot
-  obtain ⟨b, hb₀, hb⟩ : ∃ b : 𝓞 K, b ≠ 0 ∧ Ideal.Quotient.mk 𝔪.finitePart b =
-      Ideal.Quotient.mk 𝔪.finitePart a := by
-    by_cases ha : a = 0
-    · exact ⟨c, hc₀, by rw [ha, map_zero, Ideal.Quotient.eq_zero_iff_mem]; exact hc⟩
-    · exact ⟨a, ha, rfl⟩
-  rw [← hb, hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
+  obtain ⟨b, hb₀, rfl⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot r
+  rw [hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
 
 end Grossencharacter
 

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -577,15 +578,8 @@ theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (�
 /-- **An integer generates an ideal prime to the modulus exactly when it is a unit at the finite
 part**, that is, when it lies in `primeToSubgroup m`. -/
 theorem Modulus.isCoprimeTo_span_singleton_iff {m : Modulus K} {a : 𝓞 K} :
-    m.IsCoprimeTo (Ideal.span {a}) ↔ ∃ x : primeToSubgroup m, ((x : Kˣ) : K) = a := by
-  refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ ↦ isCoprimeTo_of_dvd_span_singleton hx x.2 dvd_rfl⟩
-  obtain ⟨hne, hdvd⟩ := isCoprimeTo_iff.mp h
-  have ha : (a : K) ≠ 0 := by
-    rwa [Ne, Ideal.span_singleton_eq_bot, ← RingOfIntegers.coe_eq_zero_iff] at hne
-  refine ⟨⟨Units.mk0 _ ha, mem_primeToSubgroup.mpr fun v hv ↦ ?_⟩, rfl⟩
-  rw [Units.val_mk0, valuation_of_algebraMap]
-  exact intValuation_eq_one_iff.mpr fun hmem ↦
-    hdvd v ((mem_support_iff m v).mpr hv) (Ideal.dvd_span_singleton.mpr hmem)
+    m.IsCoprimeTo (Ideal.span {a}) ↔ ∃ x : primeToSubgroup m, ((x : Kˣ) : K) = a :=
+  Ideal.isPrimeTo_span_singleton_iff K
 
 /-- **Being prime to the modulus is comaximality with its finite part.**  A prime dividing both `I`
 and the finite part is exactly a prime of the support dividing `I`, and such a prime exists as soon
