@@ -619,4 +619,46 @@ lemma subspaceTwistedChainComplexIso_inv_twistedChainComplexMap :
 
 end Subspace
 
+section Projective
+
+open Classical in
+/-- The projection of twisted chains onto the chains subordinate to `U`, keeping the summand of
+each simplex lying in a member of `U` and killing the summand of every other simplex. -/
+private def smallTwistedChainsRetraction (n : ℕ) :
+    L.twistedChainComplex.X n ⟶ ModuleCat.of R (smallTwistedChains L U n) :=
+  twistedChainComplexDesc L fun σ ↦
+    if hσ : σ ∈ (X.smallSingularSubcomplex U).obj _ then
+      ModuleCat.ofHom ((ιTwistedChainComplex L n σ).hom.codRestrict _
+        (ιTwistedChainComplex_mem_smallTwistedChains L U hσ))
+    else 0
+
+/-- The retraction fixes the chains subordinate to `U`. -/
+private lemma smallTwistedChainsRetraction_apply {n : ℕ} {c : L.twistedChainComplex.X n}
+    (hc : c ∈ smallTwistedChains L U n) :
+    ((smallTwistedChainsRetraction L U n).hom c : L.twistedChainComplex.X n) = c := by
+  -- Both sides are additive in `c`, and agree on the summand of each small simplex.
+  refine Submodule.iSup_induction _ (motive := fun c ↦
+    ((smallTwistedChainsRetraction L U n).hom c : L.twistedChainComplex.X n) = c) hc ?_
+    (by simp) fun _ _ h₁ h₂ ↦ by rw [map_add, Submodule.coe_add, h₁, h₂]
+  rintro ⟨σ, hσ⟩ _ ⟨x, rfl⟩
+  rw [← ModuleCat.comp_apply, smallTwistedChainsRetraction,
+    ιTwistedChainComplex_twistedChainComplexDesc, dite_eq_left_of_eq_true (eq_true hσ)]
+  -- A codomain restriction has the same underlying chain.
+  rfl
+
+private lemma smallTwistedChainComplexι_f_comp_smallTwistedChainsRetraction (n : ℕ) :
+    (smallTwistedChainComplexι L U).f n ≫ smallTwistedChainsRetraction L U n = 𝟙 _ := by
+  ext c
+  -- The inclusion sends `c` to its underlying chain, by `smallTwistedChainComplexι_f_apply`.
+  exact smallTwistedChainsRetraction_apply L U c.2
+
+/-- If every fibre of `L` is projective, then so is every degree of the complex of twisted chains
+subordinate to `U`: it is a retract of the corresponding degree of the twisted chain complex. -/
+instance projective_smallTwistedChainComplex_X [∀ x, Projective (L.obj x)] (n : ℕ) :
+    Projective ((smallTwistedChainComplex L U).X n) :=
+  Retract.projective ⟨(smallTwistedChainComplexι L U).f n, smallTwistedChainsRetraction L U n,
+    smallTwistedChainComplexι_f_comp_smallTwistedChainsRetraction L U n⟩
+
+end Projective
+
 end TauCeti.LocalCoefficientSystem

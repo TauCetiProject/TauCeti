@@ -15,7 +15,8 @@ For an open cover, the inclusion of subordinate twisted singular chains is a
 quasi-isomorphism. Thus homology with arbitrary module-valued local coefficients can be
 computed using only simplices lying in individual cover members. This is the homological
 small-chain comparison needed for excision; no projectivity or freeness of the fibres is
-required.
+required. The case of a cover by two open sets, the input of the Mayer–Vietoris sequence, is
+`TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexι_bool`.
 
 Subdivision makes each finite chain small. Its iterated prism identifies a cycle with its
 subdivision modulo a boundary. For injectivity, the prism of an already small cycle stays
@@ -92,5 +93,15 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
       ((twistedSubdivisionHomotopy L).idPow N).d_hom_apply_of_d_eq_zero _ hcycle,
       HomologicalComplex.id_f, ModuleCat.id_apply]
     abel
+
+/-- **The small-chain theorem with local coefficients for two open sets.** For open subsets `U`
+and `V` covering `X`, the inclusion of the twisted chains of the simplices lying in `U` or in `V`
+into all twisted singular chains is a quasi-isomorphism. -/
+theorem quasiIso_smallTwistedChainComplexι_bool {V W : Set X} (hV : IsOpen V) (hW : IsOpen W)
+    (hVW : V ∪ W = Set.univ) : QuasiIso (smallTwistedChainComplexι L (Bool.rec V W)) :=
+  quasiIso_smallTwistedChainComplexι L _ (fun b ↦ by cases b <;> assumption) <|
+    Set.eq_univ_of_forall fun x ↦ by
+      rcases (hVW ▸ Set.mem_univ x : x ∈ V ∪ W) with h | h
+      exacts [Set.mem_iUnion.2 ⟨false, h⟩, Set.mem_iUnion.2 ⟨true, h⟩]
 
 end TauCeti.LocalCoefficientSystem

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Excisive
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Excisive
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 
 /-!
@@ -22,18 +23,28 @@ include into the singular chains of `E` by a quasi-isomorphism, with coefficient
 (`TauCeti.TopCat.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage`), and by a chain
 homotopy equivalence with coefficients in a projective module
 (`TauCeti.TopCat.homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage`).
+The same holds with coefficients in any local coefficient system `L` on `E`: the twisted chains
+of the simplices lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the twisted singular chains of
+`E` by a quasi-isomorphism (`TauCeti.TopCat.quasiIso_smallTwistedChainComplexι_preimage`), and by
+a chain homotopy equivalence when the fibres of `L` are projective
+(`TauCeti.TopCat.homotopyEquivalences_smallTwistedChainComplexι_preimage`).
 
 The preimages are in general not open, so the small-chain theorem does not apply to them
 directly. Restricting `p` over the subsets of the base keeps the fibres, so the inclusions
 `p⁻¹(A₁) ⊆ p⁻¹(U₁)`, `p⁻¹(A₂) ⊆ p⁻¹(U₂)` and `p⁻¹(A₁ ∩ A₂) ⊆ p⁻¹(U₁ ∩ U₂)` are weak homotopy
 equivalences (`TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`), hence
-quasi-isomorphisms on singular chains, and the open preimages `p⁻¹(U₁)` and `p⁻¹(U₂)` cover `E`.
-This is the hypothesis of `TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds`.
+quasi-isomorphisms on singular chains, also with local coefficients, and the open preimages
+`p⁻¹(U₁)` and `p⁻¹(U₂)` cover `E`. This is the hypothesis of
+`TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι_of_nhds`, and of
+`TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexι_of_isWeakHomotopyEquivalence`
+for local coefficients.
 
 Products of cochains are defined on small chains: a cochain vanishing on `p⁻¹(A₁)` cupped with a
 cochain vanishing on `p⁻¹(A₂)` vanishes on `C(p⁻¹(A₁)) + C(p⁻¹(A₂))`. The chain homotopy
 equivalence above lets such relative products be computed on the preimages of the subcomplexes of
-a skeletal filtration, which is how the products of a Serre spectral sequence are constructed.
+a skeletal filtration, which is how the products of a Serre spectral sequence are constructed;
+the local-coefficient form serves the products of the spectral sequence with local coefficients
+paired by a map `M ⊗ N ⟶ P`.
 
 ## Main results
 
@@ -41,14 +52,17 @@ a skeletal filtration, which is how the products of a Serre spectral sequence ar
   subsets with weakly equivalent open neighbourhoods form an excisive couple.
 * `TauCeti.TopCat.homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage`: with
   projective coefficients the small-chain inclusion is a chain homotopy equivalence.
+* `TauCeti.TopCat.quasiIso_smallTwistedChainComplexι_preimage`,
+  `TauCeti.TopCat.homotopyEquivalences_smallTwistedChainComplexι_preimage`: the same with
+  coefficients in a local coefficient system on `E`.
 
 ## References
 
 * E. H. Spanier, *Algebraic Topology*, McGraw-Hill, 1966, Chapter 4, Section 6, excisive couples.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Chapter 5, the multiplicative structure of the Serre spectral sequence.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 2.2, and the
-  Appendix, Proposition A.5, for neighbourhoods of subcomplexes.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Sections 2.2 and 3.H, and
+  the Appendix, Proposition A.5, for neighbourhoods of subcomplexes.
 -/
 
 public section
@@ -99,5 +113,55 @@ theorem homotopyEquivalences_chainComplexMap_smallSingularSubcomplex_ι_preimage
   have := quasiIso_chainComplexMap_smallSingularSubcomplex_ι_preimage hp hU₁ hU₂ hU h₁ h₂ hw₁ hw₂
     hw R
   (ChainComplex.quasiIso_iff_of_projective _).1 this
+
+section LocalCoefficients
+
+open LocalCoefficientSystem
+
+/-- **Preimages under a Serre fibration of subsets with weakly equivalent neighbourhoods form an
+excisive couple for local coefficients.** Let `p : E ⟶ B` be a Serre fibration, and let
+`A₁ ⊆ U₁` and `A₂ ⊆ U₂` be subsets of `B` with `U₁` and `U₂` open and covering `B`, such that the
+inclusions `A₁ ⊆ U₁`, `A₂ ⊆ U₂` and `A₁ ∩ A₂ ⊆ U₁ ∩ U₂` are weak homotopy equivalences. Then, for
+every local coefficient system `L` on `E`, the twisted chains of the singular simplices of `E`
+lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the twisted singular chains of `E` by a
+quasi-isomorphism. -/
+theorem quasiIso_smallTwistedChainComplexι_preimage (hp : serreFibrations p)
+    {A₁ A₂ U₁ U₂ : Set B} (hU₁ : IsOpen U₁) (hU₂ : IsOpen U₂) (hU : U₁ ∪ U₂ = Set.univ)
+    (h₁ : A₁ ⊆ U₁) (h₂ : A₂ ⊆ U₂)
+    (hw₁ : (ContinuousMap.inclusion h₁).IsWeakHomotopyEquivalence)
+    (hw₂ : (ContinuousMap.inclusion h₂).IsWeakHomotopyEquivalence)
+    (hw : (ContinuousMap.inclusion (Set.inter_subset_inter h₁ h₂)).IsWeakHomotopyEquivalence)
+    {k : Type v} [Ring k] (L : LocalCoefficientSystem.{v, u, u} k E) :
+    QuasiIso (smallTwistedChainComplexι L (Bool.rec (p ⁻¹' A₁) (p ⁻¹' A₂))) :=
+  quasiIso_smallTwistedChainComplexι_of_isWeakHomotopyEquivalence L
+    (hU₁.preimage p.hom.continuous) (hU₂.preimage p.hom.continuous)
+    (by rw [← Set.preimage_union, hU, Set.preimage_univ]) (Set.preimage_mono h₁)
+    (Set.preimage_mono h₂) (isWeakHomotopyEquivalence_inclusion_preimage hp h₁ hw₁)
+    (isWeakHomotopyEquivalence_inclusion_preimage hp h₂ hw₂)
+    (isWeakHomotopyEquivalence_inclusion_preimage hp _ hw)
+
+/-- **The excisive couple of preimages with projective local coefficients.** Under the hypotheses
+of `TauCeti.TopCat.quasiIso_smallTwistedChainComplexι_preimage`, if every fibre of the local
+coefficient system `L` on `E` is projective, then the twisted chains of the singular simplices of
+`E` lying in `p⁻¹(A₁)` or in `p⁻¹(A₂)` include into the twisted singular chains of `E` by a chain
+homotopy equivalence. -/
+theorem homotopyEquivalences_smallTwistedChainComplexι_preimage (hp : serreFibrations p)
+    {A₁ A₂ U₁ U₂ : Set B} (hU₁ : IsOpen U₁) (hU₂ : IsOpen U₂) (hU : U₁ ∪ U₂ = Set.univ)
+    (h₁ : A₁ ⊆ U₁) (h₂ : A₂ ⊆ U₂)
+    (hw₁ : (ContinuousMap.inclusion h₁).IsWeakHomotopyEquivalence)
+    (hw₂ : (ContinuousMap.inclusion h₂).IsWeakHomotopyEquivalence)
+    (hw : (ContinuousMap.inclusion (Set.inter_subset_inter h₁ h₂)).IsWeakHomotopyEquivalence)
+    {k : Type v} [Ring k] (L : LocalCoefficientSystem.{v, u, u} k E)
+    [∀ x, Projective (L.obj x)] :
+    HomologicalComplex.homotopyEquivalences _ _
+      (smallTwistedChainComplexι L (Bool.rec (p ⁻¹' A₁) (p ⁻¹' A₂))) :=
+  homotopyEquivalences_smallTwistedChainComplexι_of_isWeakHomotopyEquivalence L
+    (hU₁.preimage p.hom.continuous) (hU₂.preimage p.hom.continuous)
+    (by rw [← Set.preimage_union, hU, Set.preimage_univ]) (Set.preimage_mono h₁)
+    (Set.preimage_mono h₂) (isWeakHomotopyEquivalence_inclusion_preimage hp h₁ hw₁)
+    (isWeakHomotopyEquivalence_inclusion_preimage hp h₂ hw₂)
+    (isWeakHomotopyEquivalence_inclusion_preimage hp _ hw)
+
+end LocalCoefficients
 
 end TauCeti.TopCat
