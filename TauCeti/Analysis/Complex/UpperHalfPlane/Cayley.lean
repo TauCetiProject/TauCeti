@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
@@ -56,6 +57,13 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsNE_one`: its inverse tends to infinity at `1`,
   within the closed upper half-plane when approached from the closed disc
   (`TauCeti.tendsto_I_mul_one_add_div_one_sub_nhdsWithin_closedBall_sdiff_one`).
+* `TauCeti.im_I_mul_sub_div_add`, `TauCeti.norm_mul_I_sub_div_add_I_le_one`,
+  `TauCeti.mul_I_sub_I_mul_sub_div_add_div_add_I` and
+  `TauCeti.I_mul_sub_mul_I_sub_div_add_I_div_add`: for a point `ζ` of the unit circle, the
+  rotated transform `z ↦ i (ζ - z) / (ζ + z)` carries the closed unit disc minus `-ζ` onto the
+  closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
+* `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
+  two maps are analytic away from their poles `-ζ` and `-i`.
 
 ## References
 
@@ -65,6 +73,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 public section
 
 open Bornology Complex Filter Metric Set Topology
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -378,5 +387,71 @@ theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
   field_simp
   ring
 
+/-! ### Cayley transforms of the closed unit disc centred at a boundary point -/
+
+/-- The imaginary part of `i (ζ - z) / (ζ + z)` is `(‖ζ‖² - ‖z‖²) / ‖ζ + z‖²`. -/
+theorem im_I_mul_sub_div_add (ζ z : ℂ) :
+    (I * (ζ - z) / (ζ + z)).im = (normSq ζ - normSq z) / normSq (ζ + z) := by
+  rw [div_im, ← sub_div, normSq_apply, normSq_apply, normSq_apply]
+  congr 1
+  simp only [mul_re, mul_im, I_re, I_im, sub_re, sub_im, add_re, add_im]
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` sends the closed disc of radius `‖ζ‖` into the closed upper
+half-plane. -/
+theorem im_I_mul_sub_div_add_nonneg {ζ z : ℂ} (hz : ‖z‖ ≤ ‖ζ‖) :
+    0 ≤ (I * (ζ - z) / (ζ + z)).im := by
+  rw [im_I_mul_sub_div_add, normSq_eq_norm_sq, normSq_eq_norm_sq]
+  exact div_nonneg (sub_nonneg.2 (pow_le_pow_left₀ (norm_nonneg _) hz 2)) (normSq_nonneg _)
+
+/-- For `‖ζ‖ ≤ 1`, the map `w ↦ ζ (i - w) / (w + i)` sends the closed upper half-plane into the
+closed unit disc. -/
+theorem norm_mul_I_sub_div_add_I_le_one {ζ w : ℂ} (hζ : ‖ζ‖ ≤ 1) (hw : 0 ≤ w.im) :
+    ‖ζ * (I - w) / (w + I)‖ ≤ 1 := by
+  rw [mul_div_assoc, norm_mul, norm_div, norm_sub_rev]
+  exact (mul_le_of_le_one_left (by positivity) hζ).trans
+    ((norm_sub_I_div_norm_add_I_le_one_iff (add_I_ne_zero_of_im_nonneg hw)).2 hw)
+
+/-- For `ζ ≠ 0`, the map `w ↦ ζ (i - w) / (w + i)` never takes the value `-ζ`. -/
+theorem mul_I_sub_div_add_I_ne_neg {ζ : ℂ} (hζ : ζ ≠ 0) (w : ℂ) : ζ * (I - w) / (w + I) ≠ -ζ := by
+  intro h
+  rcases eq_or_ne (w + I) 0 with hw | hw
+  · rw [hw, div_zero, eq_comm, neg_eq_zero] at h
+    exact hζ h
+  · rw [div_eq_iff hw] at h
+    have : ζ * (2 * I) = 0 := by linear_combination h
+    simp [hζ, I_ne_zero] at this
+
+/-- The map `w ↦ ζ (i - w) / (w + i)` inverts `z ↦ i (ζ - z) / (ζ + z)` away from `-ζ`. -/
+theorem mul_I_sub_I_mul_sub_div_add_div_add_I {ζ z : ℂ} (hζ : ζ ≠ 0) (hz : ζ + z ≠ 0) :
+    ζ * (I - I * (ζ - z) / (ζ + z)) / (I * (ζ - z) / (ζ + z) + I) = z := by
+  have h2 : I * (ζ - z) / (ζ + z) + I = 2 * I * ζ / (ζ + z) := by
+    field_simp
+    ring
+  rw [h2, div_eq_iff (by simp [hζ, hz, I_ne_zero])]
+  field_simp
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` inverts `w ↦ ζ (i - w) / (w + i)` away from `-i`. -/
+theorem I_mul_sub_mul_I_sub_div_add_I_div_add {ζ w : ℂ} (hζ : ζ ≠ 0) (hw : w + I ≠ 0) :
+    I * (ζ - ζ * (I - w) / (w + I)) / (ζ + ζ * (I - w) / (w + I)) = w := by
+  have h2 : ζ + ζ * (I - w) / (w + I) = 2 * I * ζ / (w + I) := by
+    field_simp
+    ring
+  rw [h2, div_eq_iff (by simp [hζ, hw, I_ne_zero])]
+  field_simp
+  ring
+
+/-- The map `z ↦ i (ζ - z) / (ζ + z)` is analytic away from its pole `-ζ`. -/
+theorem contDiffAt_I_mul_sub_div_add {n : ℕ∞ω} (ζ : ℂ) {z : ℂ} (hz : ζ + z ≠ 0) :
+    ContDiffAt ℂ n (fun z : ℂ ↦ I * (ζ - z) / (ζ + z)) z :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_const.add contDiffAt_id) hz
+
+/-- The map `w ↦ ζ (i - w) / (w + i)` is analytic away from its pole `-i`. -/
+theorem contDiffAt_mul_I_sub_div_add_I {n : ℕ∞ω} (ζ : ℂ) {w : ℂ} (hw : w + I ≠ 0) :
+    ContDiffAt ℂ n (fun w : ℂ ↦ ζ * (I - w) / (w + I)) w :=
+  (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
+    (contDiffAt_id.add contDiffAt_const) hw
 
 end TauCeti

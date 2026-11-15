@@ -7,16 +7,22 @@ module
 
 public import Mathlib.Topology.Compactness.CompactlyCoherentSpace
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
-public import Mathlib.Topology.Instances.Shrink
+import Mathlib.Topology.Instances.Shrink
 
 /-!
-# Universe-polymorphic compact generation and compact Hausdorff test maps
+# Continuity and universe-polymorphic transfer for compactly generated topologies
 
-Mathlib's `UCompactlyGeneratedSpace.{u} X` characterizes spaces whose topology is coinduced by
-continuous maps from compact Hausdorff spaces in `Type u`, with `u` independent of the universe of
-`X`. This file provides basic universe-polymorphic transfer and recognition lemmas for
-`UCompactlyGeneratedSpace.{u}` and `CompHaus.{u}` test maps:
+Mathlib's `TopologicalSpace.compactlyGenerated X` is the topology on `X` coinduced by continuous
+maps from compact Hausdorff spaces in `Type u`, and `UCompactlyGeneratedSpace.{u} X` asserts that
+the topology of `X` agrees with `TopologicalSpace.compactlyGenerated.{u} X` (with `u` independent
+of the universe of `X`). This file provides basic continuity, transfer, and recognition lemmas for
+`TopologicalSpace.compactlyGenerated.{u}`, `UCompactlyGeneratedSpace.{u}`, and `CompHaus.{u}` test
+maps:
 
+* `TauCeti.continuous_compactlyGenerated_iff`: a map out of
+  `TopologicalSpace.compactlyGenerated.{u} X` is continuous if and only if its composites with the
+  continuous maps from compact Hausdorff spaces in `Type u` are, complementing Mathlib's
+  `continuous_from_compactlyGenerated`.
 * `IsCompact.exists_compHaus_isCompact_image_eq`: every `u`-small compact subset of a Hausdorff
   space is the image of a compact subset of a compact Hausdorff space in `Type u` under a continuous
   map.
@@ -63,6 +69,18 @@ theorem uCompactlyGeneratedSpace_iff {X : Type v} {Y : Type w}
 end Homeomorph
 
 namespace TauCeti
+
+open Topology
+
+/-- A map out of the compactly generated topology is continuous if and only if its composites with
+the continuous maps from compact Hausdorff spaces are. -/
+theorem continuous_compactlyGenerated_iff {X : Type w} [TopologicalSpace X] {Y : Type v}
+    [t : TopologicalSpace Y] {f : X → Y} :
+    Continuous[TopologicalSpace.compactlyGenerated.{u} X, t] f ↔
+      ∀ (S : CompHaus.{u}) (g : C(S, X)), Continuous (f ∘ g) := by
+  refine ⟨fun hf S g => ?_, continuous_from_compactlyGenerated f⟩
+  rw [TopologicalSpace.compactlyGenerated, continuous_coinduced_dom, continuous_sigma_iff] at hf
+  exact hf ⟨S, g⟩
 
 /-- A `u`-small Hausdorff compactly coherent space is `u`-compactly generated. -/
 theorem uCompactlyGeneratedSpace_of_compactlyCoherentSpace (X : Type w)
