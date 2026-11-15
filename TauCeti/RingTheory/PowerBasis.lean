@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
 public import Mathlib.RingTheory.PowerBasis
@@ -27,7 +28,10 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
   of Mathlib's `charpoly_leftMulMatrix`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
-  `S →ₐ[R] E`, each counted once.
+  `S →ₐ[R] E`, each counted once, when enumerated by `Fin pb.dim`.
+* `PowerBasis.aroots_minpoly_gen_eq_map_algHom`: over a base field `K`, when `minpoly K pb.gen` is
+  separable, its roots in any domain `K`-algebra `E` are `σ pb.gen` over all `σ : S →ₐ[K] E`,
+  without requiring `minpoly K pb.gen` to split in `E`.
 -/
 
 public section
@@ -94,3 +98,35 @@ theorem PowerBasis.roots_map_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] 
   rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   exact (card_roots' _).trans (by
     rw [(minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap R E), pb.natDegree_minpoly])
+
+open Polynomial in
+/-- Over a base field `K`, when the minimal polynomial of `pb.gen` is separable, its roots in any
+domain `K`-algebra `E` are the images `σ pb.gen` over all `K`-algebra homomorphisms `σ : S →ₐ[K] E`
+(each occurring once), without requiring `minpoly K pb.gen` to split in `E`. -/
+theorem PowerBasis.aroots_minpoly_gen_eq_map_algHom {K S E : Type*} [Field K] [Ring S]
+    [Algebra K S] [CommRing E] [IsDomain E] [Algebra K E] [Fintype (S →ₐ[K] E)]
+    (pb : PowerBasis K S) (hsep : (minpoly K pb.gen).Separable) :
+    (minpoly K pb.gen).aroots E =
+      (Finset.univ : Finset (S →ₐ[K] E)).val.map fun σ ↦ σ pb.gen := by
+  classical
+  have hnodup : ((minpoly K pb.gen).aroots E).Nodup := nodup_roots hsep.map
+  refine Multiset.ext.mpr fun y ↦ ?_
+  have hbij : Function.Bijective (pb.liftEquiv' (B := E)) := (pb.liftEquiv' (B := E)).bijective
+  by_cases hy : y ∈ (minpoly K pb.gen).aroots E
+  · obtain ⟨σ, hσ⟩ := hbij.surjective ⟨y, hy⟩
+    have hσy : σ pb.gen = y := by
+      simpa [PowerBasis.liftEquiv'] using congrArg Subtype.val hσ
+    have hinj : ∀ τ : S →ₐ[K] E, τ pb.gen = y → τ = σ := fun τ hτ ↦
+      hbij.injective <| Subtype.ext <| by
+        simpa [PowerBasis.liftEquiv'] using hτ.trans hσy.symm
+    rw [(Multiset.nodup_iff_count_le_one.mp hnodup y).antisymm
+      (Multiset.one_le_count_iff_mem.mpr hy), Multiset.count_map, ← Finset.filter_val,
+      Finset.card_val]
+    have hfilt : (Finset.univ : Finset (S →ₐ[K] E)).filter (fun τ ↦ y = τ pb.gen) = {σ} := by
+      ext τ
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
+      exact ⟨fun h ↦ hinj τ h.symm, fun h ↦ by subst h; exact hσy.symm⟩
+    rw [hfilt, Finset.card_singleton]
+  · rw [Multiset.count_eq_zero.mpr hy, eq_comm, Multiset.count_eq_zero, Multiset.mem_map]
+    rintro ⟨σ, -, rfl⟩
+    exact hy ((pb.liftEquiv' (B := E)) σ).2

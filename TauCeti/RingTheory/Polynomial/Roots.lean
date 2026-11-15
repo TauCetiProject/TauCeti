@@ -63,7 +63,8 @@ the gcd with the derivative as the number of distinct roots.
 * `Polynomial.rootSet_comp_X_add_C`: the roots of `f(X + t)` are the roots of `f` moved by `-t`.
 * `Polynomial.rootSetCompXAddCEquiv`: the bijection `x ↦ x + t` from the roots of `f(X + t)` to
   the roots of `f`.
-* `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
+* `Polynomial.separable_comp_X_add_C_iff` and `Polynomial.separable_comp_C_mul_X_add_C_iff`:
+  `f(X + t)` and, for a unit `a`, `f(a X + b)` are separable if and only if `f` is.
 * `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
   the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
 * `Polynomial.le_card_roots_iff_exists_prod_X_sub_C_dvd`: a nonzero polynomial over a domain has
@@ -233,6 +234,29 @@ theorem separable_comp_X_add_C_iff {t : F} :
     (f.comp (X + C t)).Separable ↔ f.Separable := by
   refine ⟨fun h => ?_, fun h => h.comp_X_add_C t⟩
   simpa [comp_assoc, add_assoc] using h.comp_X_add_C (-t)
+
+/-- Invertible affine substitution `X ↦ a X + b` preserves polynomial separability. -/
+theorem Separable.comp_C_mul_X_add_C (hf : f.Separable) {a : F} (ha : IsUnit a) (b : F) :
+    (f.comp (C a * X + C b)).Separable := by
+  have hd : (C a * X + C b).derivative = C a := by simp
+  rw [Separable, derivative_comp, hd, isCoprime_mul_unit_left_right (isUnit_C.mpr ha)]
+  exact IsCoprime.map hf (compRingHom (C a * X + C b))
+
+/-- For a unit `a`, `f(a X + b)` is separable if and only if `f` is. -/
+@[simp]
+theorem separable_comp_C_mul_X_add_C_iff {a : F} (ha : IsUnit a) {b : F} :
+    (f.comp (C a * X + C b)).Separable ↔ f.Separable := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_C_mul_X_add_C ha b⟩
+  obtain ⟨u, rfl⟩ := ha
+  have hinv :
+      (f.comp (C (u : F) * X + C b)).comp (C (↑u⁻¹ : F) * X + C (-(↑u⁻¹ : F) * b)) = f := by
+    rw [comp_assoc]
+    suffices (C (u : F) * X + C b).comp (C (↑u⁻¹ : F) * X + C (-(↑u⁻¹ : F) * b)) = X by
+      rw [this, comp_X]
+    simp only [add_comp, mul_comp, C_comp, X_comp]
+    rw [mul_add, ← mul_assoc, ← C_mul, Units.mul_inv, C_1, one_mul, ← C_mul, neg_mul, mul_neg,
+      ← mul_assoc, Units.mul_inv, one_mul, C_neg, add_assoc, neg_add_cancel, add_zero]
+  exact hinv ▸ h.comp_C_mul_X_add_C u⁻¹.isUnit _
 
 /-- If every root of a nonzero polynomial `p` is some `θ i`, and the multiplicity of each `θ i`
 as a root of `p` is `m i`, then the roots of `p` are the `θ i` with `0 < m i`. -/
