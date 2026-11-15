@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Classification
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalRealization
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
+import TauCeti.NumberTheory.QuadraticForm.Global.Squares
 
 /-!
 # Local classification of quadratic forms over a number field
@@ -26,11 +27,11 @@ at `v`.
 
 Combined with Sylvester's law at the real places, this characterizes local equivalence (at every
 finite and real place) by the rank, the discriminants at the finite places, the finite Hasse signs
-and the real positive indices. The criterion uses the discriminant at each finite place rather
-than the global discriminant: that two forms with the same discriminant at every place have the
-same global discriminant is the global square theorem. In particular, forms with the same system
-of local invariants `QuadraticForm.globalInvariants` are locally equivalent, and a global form
-whose system is `I` is isometric at every finite and real place to each family of local forms
+and the real positive indices. By the global square theorem, agreement of the localized
+discriminants outside a finite set of finite places forces equality of the global discriminants in
+`SquareClassGroup K`. Two regular forms are therefore locally equivalent if and only if they have
+the same system of local invariants `QuadraticForm.globalInvariants`, and a global form has system
+`I` if and only if it is isometric at every finite and real place to a family of local forms
 realizing `I`.
 
 In global notation, the two exceptions of the local realization theorem
@@ -50,11 +51,15 @@ In global notation, the two exceptions of the local realization theorem
 * `locallyEquivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq_and_realPositiveIndex_eq`:
   two regular forms are locally equivalent exactly when their ranks, their discriminants at every
   finite place, their finite Hasse signs and their real positive indices agree.
-* `QuadraticForm.LocallyEquivalent.of_globalInvariants_eq`: forms with the same system of local
-  invariants are locally equivalent.
+* `QuadraticForm.discr_eq_of_equivalent_atFinitePlace_of_notMem`,
+  `QuadraticForm.LocallyEquivalent.discr_eq`: local equivalence at all but finitely many finite
+  places (and in particular `LocallyEquivalent`) forces equality of the global discriminants.
+* `QuadraticForm.locallyEquivalent_iff_globalInvariants_eq`: two regular forms are locally
+  equivalent if and only if they have the same system of local invariants.
 * `GlobalFormInvariants.IsLocalRealization.equivalent_atFinitePlace`,
-  `GlobalFormInvariants.IsLocalRealization.equivalent_atRealPlace`: a form whose system is `I` is
-  isometric at every finite and real place to any family realizing `I`.
+  `GlobalFormInvariants.IsLocalRealization.equivalent_atRealPlace`,
+  `GlobalFormInvariants.IsLocalRealization.globalInvariants_eq_iff`: a regular form has system `I`
+  if and only if it is isometric at every finite and real place to a family realizing `I`.
 * `GlobalFormInvariants.IsLocalRealization.atFinitePlace_equivalent_iff_finiteHasse_eq`: a form
   with the rank and global discriminant of `I` is isometric at a finite place to a family
   realizing `I` exactly when its Hasse sign there is the prescribed one.
@@ -170,6 +175,48 @@ theorem LocallyEquivalent.of_globalInvariants_eq {Q : _root_.QuadraticForm K V}
   · simpa using congrArg GlobalFormInvariants.finiteHasse h
   · simpa using congrArg GlobalFormInvariants.realPositiveIndex h
 
+/-- Two regular forms over a number field whose localizations are isometric at all but finitely
+many finite places have the same global discriminant. -/
+theorem discr_eq_of_equivalent_atFinitePlace_of_notMem {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (h : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
+      (Q.atFinitePlace v).Equivalent (R.atFinitePlace v)) :
+    letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    RegularFormClass.discr (formClass Q hQ) = RegularFormClass.discr (formClass R hR) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  exact eq_of_squareClassMap_adicCompletion_eq_of_notMem S fun v hv =>
+    ((equivalent_atFinitePlace_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq Q hQ R hR v).mp
+      (h v hv)).2.1
+
+/-- Locally equivalent regular forms over a number field have the same global discriminant. -/
+theorem LocallyEquivalent.discr_eq {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyEquivalent R) (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    RegularFormClass.discr (formClass Q hQ) = RegularFormClass.discr (formClass R hR) :=
+  discr_eq_of_equivalent_atFinitePlace_of_notMem hQ hR ∅ fun v _ =>
+    ((locallyEquivalent_iff Q R).mp h).1 v
+
+/-- Locally equivalent regular forms over a number field have the same system of local
+invariants. -/
+theorem LocallyEquivalent.globalInvariants_eq {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (h : Q.LocallyEquivalent R) (hQ : Q.Nondegenerate)
+    (hR : R.Nondegenerate) :
+    Q.globalInvariants hQ = R.globalInvariants hR := by
+  obtain ⟨hrank, -, hs, hp⟩ :=
+    (locallyEquivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq_and_realPositiveIndex_eq
+      hQ hR).mp h
+  exact GlobalFormInvariants.ext (by simpa using hrank)
+    (by simpa [globalInvariants_discr] using h.discr_eq hQ hR)
+    (by simpa using hs) (by simpa using hp)
+
+/-- Two regular forms over a number field are locally equivalent if and only if they have the same
+system of local invariants. -/
+theorem locallyEquivalent_iff_globalInvariants_eq {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    Q.LocallyEquivalent R ↔ Q.globalInvariants hQ = R.globalInvariants hR :=
+  ⟨fun h => h.globalInvariants_eq hQ hR, .of_globalInvariants_eq⟩
+
 end QuadraticForm
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.IsLocalRealization
@@ -233,5 +280,27 @@ theorem equivalent_atRealPlace (hL : I.IsLocalRealization U R)
     QuadraticForm.globalInvariants_realNegativeIndex, QuadraticForm.realPositiveIndex_eq_sigPos,
     QuadraticForm.realNegativeIndex_eq_sigNeg]
   exact ⟨rfl, rfl⟩
+
+/-- A regular form has system of local invariants `I` if and only if it is isometric at every
+finite and real place to a family of local forms realizing `I`. -/
+theorem globalInvariants_eq_iff (hL : I.IsLocalRealization U R) (hQ : Q.Nondegenerate) :
+    Q.globalInvariants hQ = I ↔
+      (∀ v : HeightOneSpectrum (𝓞 K), (Q.atFinitePlace v).Equivalent (U v)) ∧
+        ∀ w : {w : InfinitePlace K // w.IsReal}, (Q.atRealPlace w).Equivalent (R w) := by
+  refine ⟨fun hQI => ⟨hL.equivalent_atFinitePlace hQI, hL.equivalent_atRealPlace hQI⟩, ?_⟩
+  rintro ⟨hfin, hreal⟩
+  have hv (v) := (Q.atFinitePlace_equivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq hQ v
+    (hL.nondegenerate_finite v)).mp (hfin v)
+  have hQr : Module.finrank K V = I.rank := by
+    simpa using (hv (Classical.arbitrary _)).1
+  have hQd : (Q.globalInvariants hQ).discr = I.discr := by
+    rw [QuadraticForm.globalInvariants_discr]
+    refine squareClassMap_adicCompletion_eq_iff.mp fun v => ?_
+    rw [(hv v).2.1, hL.discr_finite, GlobalFormInvariants.discrAtFinitePlace_def]
+  refine GlobalFormInvariants.ext (by simpa using hQr) hQd (funext fun v => ?_)
+    (funext fun w => ?_)
+  · rw [QuadraticForm.globalInvariants_finiteHasse, (hv v).2.2, hL.localHasse_finite]
+  · rw [QuadraticForm.globalInvariants_realPositiveIndex]
+    exact (hL.atRealPlace_equivalent_iff_realPositiveIndex_eq hQ hQr w).mp (hreal w)
 
 end TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.IsLocalRealization

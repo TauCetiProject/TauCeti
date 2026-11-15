@@ -11,7 +11,9 @@ public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # Finite places of number fields
@@ -30,13 +32,12 @@ These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
 and `FinitePlace.exists_apply_eq_one_forall_mul_mem_range` clears denominators of a finite
 `v`-integral tuple by a single algebraic integer of `v`-adic absolute value `1`.
 
-The file also records that a number field always *has* a finite place: the finite places are the
-height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
-field, so it has a maximal ideal. Recording this as a `Nonempty` instance lets local-global
-arguments pick a finite place with `Classical.arbitrary` whenever a hypothesis quantified over
-all finite places has to be used at some place — for instance to read off an invariant, such as
-the dimension of the underlying space, that is the same at every place. Without the instance
-each such argument has to rebuild the existence proof inline.
+The file also records that a number field has infinitely many finite places: contraction
+`HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ` is surjective and `HeightOneSpectrum ℤ` corresponds
+to the rational primes. Recording `Nonempty` and `Infinite` instances lets local-global arguments
+pick a finite place with `Classical.arbitrary` (or `Finset.exists_notMem` outside a finite
+exceptional set) whenever an invariant that is the same at every place must be read off at one
+place.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
@@ -80,6 +81,17 @@ variable {K : Type*} [Field K]
 instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
   ⟨(HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
     (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
+
+/-- A number field has infinitely many height-one primes: every rational prime lies under one. -/
+instance [NumberField K] : Infinite (HeightOneSpectrum (𝓞 K)) :=
+  letI : Infinite (HeightOneSpectrum ℤ) :=
+    Infinite.of_surjective _ Rat.HeightOneSpectrum.primesEquiv.surjective
+  Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
+
+/-- A number field has infinitely many finite places. -/
+instance [NumberField K] : Infinite (FinitePlace K) :=
+  Infinite.of_surjective (FinitePlace.equivHeightOneSpectrum (K := K))
+    (FinitePlace.equivHeightOneSpectrum (K := K)).surjective
 
 end TauCeti
 
