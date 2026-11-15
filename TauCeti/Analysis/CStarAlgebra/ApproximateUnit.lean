@@ -22,9 +22,11 @@ norm of a positive functional, from a C⋆-algebra to its quotients.
 Since an increasing approximate unit eventually lies in the closed unit ball, the convergence
 `e * a → a` is uniform for `a` in a compact set,
 `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is the convergence
-`a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
-`e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
-`α`, as needed for approximate units of twisted convolution algebras.
+`a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`, while the two-sided
+product `e * a * e` converges pointwise to `a`,
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_mul`. Uniform convergence controls
+`e * α_r(b) → α_r(b)` along a compact set of group elements `r` for a continuous action `α`, as
+needed for approximate units of twisted convolution algebras.
 
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
 that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
@@ -35,7 +37,7 @@ drives the proof of the C⋆-identity on the quotient by a closed two-sided idea
 
 public section
 
-open Filter
+open Filter Topology
 open scoped CStarAlgebra
 
 namespace Filter.IsIncreasingApproximateUnit
@@ -91,6 +93,21 @@ theorem tendstoUniformlyOn_mul_left {l : Filter A} (hl : l.IsIncreasingApproxima
         · exact hc c hct
         · exact hmul.trans_lt (by rw [dist_comm]; exact Metric.mem_ball.1 hac)
     _ = ε := by ring
+
+/-- Along an increasing approximate unit, the two-sided product `e * a * e` converges to `a`. -/
+theorem tendsto_mul_mul {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a : A) :
+    Tendsto (fun e => e * a * e) l (𝓝 a) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hzero : Tendsto (fun e => ‖e * a - a‖ + ‖a * e - a‖) l (𝓝 0) := by
+    simpa only [add_zero] using
+      (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right a)).add
+        (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left a))
+  refine squeeze_zero_norm' ?_ hzero
+  filter_upwards [hl.eventually_norm] with e he
+  have hsub : e * a * e - a = (e * a - a) * e + (a * e - a) := by noncomm_ring
+  rw [Real.norm_of_nonneg (norm_nonneg _), hsub]
+  exact (norm_add_le _ _).trans (add_le_add
+    ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) he)) le_rfl)
 
 end Uniform
 

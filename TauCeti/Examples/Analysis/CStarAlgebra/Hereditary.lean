@@ -1,0 +1,248 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.CStarAlgebra.Hereditary
+public import TauCeti.Examples.Analysis.CStarAlgebra.MatrixOrder
+
+/-!
+# Two-dimensional examples of hereditary C⋆-subalgebras and full vs strictly positive elements
+
+This file illustrates the hereditary C⋆-subalgebra API on `CStarMatrix (Fin 2) (Fin 2) ℂ`:
+
+* `diagonalSubalgebra`: the closed complex ⋆-subalgebra `ℂ e₁₁ ⊕ ℂ e₂₂` of diagonal `2 × 2`
+  matrices contains `1` and `0`, yet fails to be hereditary (`not_ordConnected_diagonalSubalgebra`)
+  because `0 ≤ averagingProjection ≤ 1` while `averagingProjection` has nonzero off-diagonal
+  entries.
+* `coe_hereditarySubalgebra_firstCoord` and `coe_hereditarySubalgebra_averagingProjection`: for the
+  rank-one projections `diagonal 1 0` and `averagingProjection`, the generated hereditary
+  C⋆-subalgebras are the one-dimensional corners `ℂ • diagonal 1 0` and `ℂ • averagingProjection`.
+  Moreover, `hereditarySubalgebra (diagonal 1 0)` is not closed under left multiplication by
+  `MatrixOrderExample.flip` (`hereditarySubalgebra_firstCoord_not_left_absorb`), separating closed
+  hereditary C⋆-subalgebras from closed left or two-sided ideals.
+* `isFullPositive_firstCoord`, `not_isStrictlyPositive_firstCoord`, and
+  `isStrictlyPositive_diagonal_of_pos`: the rank-one projection `diagonal 1 0` generates the whole
+  simple algebra `M₂(ℂ)` as a two-sided ideal (so it is full positive) without being invertible (so
+  it is not strictly positive), whereas `diagonal s t` with `0 < s` and `0 < t` is strictly
+  positive.
+-/
+
+public section
+
+noncomputable section
+
+open TauCeti.CStarAlgebra TauCeti.MatrixOrderExample
+open scoped ComplexOrder
+
+namespace TauCeti.HereditaryExample
+
+private lemma continuous_entry (i j : Fin 2) :
+    Continuous fun x : CStarMatrix (Fin 2) (Fin 2) ℂ ↦ x i j :=
+  (continuous_apply j).comp ((continuous_apply i).comp
+    (CStarMatrix.ofMatrixL (m := Fin 2) (n := Fin 2) (A := ℂ)).symm.continuous)
+
+/-- Every real diagonal `2 × 2` matrix is self-adjoint in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+@[simp, aesop safe apply (rule_sets := [CStarAlgebra])]
+theorem isSelfAdjoint_diagonal (s t : ℝ) : IsSelfAdjoint (diagonal s t) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [CStarMatrix.star_apply]
+
+/-- The averaging projection is self-adjoint. -/
+@[simp, aesop safe apply (rule_sets := [CStarAlgebra])]
+theorem isSelfAdjoint_averagingProjection : IsSelfAdjoint averagingProjection :=
+  isStarProjection_averagingProjection.isSelfAdjoint
+
+/-- The complex ⋆-subalgebra `ℂ e₁₁ ⊕ ℂ e₂₂` of diagonal matrices in
+`CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+def diagonalSubalgebra : NonUnitalStarSubalgebra ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) where
+  carrier := {x : CStarMatrix (Fin 2) (Fin 2) ℂ | x 0 1 = 0 ∧ x 1 0 = 0}
+  mul_mem' {x y} hx hy := by
+    simp only [Set.mem_ofPred, CStarMatrix.mul_apply, Fin.sum_univ_two] at hx hy ⊢
+    simp [hx.1, hx.2, hy.1, hy.2]
+  add_mem' {x y} hx hy := by
+    simp only [Set.mem_ofPred, CStarMatrix.add_apply] at hx hy ⊢
+    simp [hx.1, hx.2, hy.1, hy.2]
+  zero_mem' := by simp [CStarMatrix.zero_apply]
+  smul_mem' c {x} hx := by
+    simp only [Set.mem_ofPred, CStarMatrix.smul_apply] at hx ⊢
+    simp [hx.1, hx.2]
+  star_mem' {x} hx := by
+    simp only [Set.mem_ofPred, CStarMatrix.star_apply] at hx ⊢
+    simp [hx.2, hx.1]
+
+@[simp]
+theorem mem_diagonalSubalgebra {x : CStarMatrix (Fin 2) (Fin 2) ℂ} :
+    x ∈ diagonalSubalgebra ↔ x 0 1 = 0 ∧ x 1 0 = 0 :=
+  Iff.rfl
+
+/-- `diagonalSubalgebra` is closed in `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+instance isClosed_diagonalSubalgebra :
+    IsClosed (diagonalSubalgebra : Set (CStarMatrix (Fin 2) (Fin 2) ℂ)) :=
+  (isClosed_eq (continuous_entry 0 1) continuous_const).inter
+    (isClosed_eq (continuous_entry 1 0) continuous_const)
+
+/-- The closed C⋆-subalgebra of diagonal `2 × 2` matrices is not hereditary: `0 ≤ q ≤ 1` for the
+rank-one averaging projection `q`, with `0, 1 ∈ diagonalSubalgebra`, yet `q ∉ diagonalSubalgebra`.
+-/
+theorem not_ordConnected_diagonalSubalgebra :
+    ¬(diagonalSubalgebra : Set (CStarMatrix (Fin 2) (Fin 2) ℂ)).OrdConnected := by
+  intro h
+  have h1 : (1 : CStarMatrix (Fin 2) (Fin 2) ℂ) ∈ diagonalSubalgebra := by
+    rw [mem_diagonalSubalgebra]
+    exact ⟨CStarMatrix.one_apply_ne (i := (0 : Fin 2)) (j := (1 : Fin 2)) (by decide),
+      CStarMatrix.one_apply_ne (i := (1 : Fin 2)) (j := (0 : Fin 2)) (by decide)⟩
+  have hq : averagingProjection ∈ diagonalSubalgebra :=
+    h.out (zero_mem diagonalSubalgebra) h1
+      ⟨isStarProjection_averagingProjection.nonneg,
+        sub_nonneg.mp isStarProjection_averagingProjection.one_sub.nonneg⟩
+  have h01 := (mem_diagonalSubalgebra.mp hq).1
+  rw [averagingProjection_apply] at h01
+  norm_num at h01
+
+/-- The hereditary C⋆-subalgebra generated by the first coordinate projection `diagonal 1 0` is the
+one-dimensional corner `ℂ • diagonal 1 0`. -/
+theorem coe_hereditarySubalgebra_firstCoord :
+    (hereditarySubalgebra (diagonal 1 0) : Set (CStarMatrix (Fin 2) (Fin 2) ℂ)) =
+      Set.range fun c : ℂ ↦ c • diagonal 1 0 := by
+  rw [coe_hereditarySubalgebra]
+  have hrange : (Set.range fun x : CStarMatrix (Fin 2) (Fin 2) ℂ ↦
+      diagonal 1 0 * x * diagonal 1 0) = Set.range fun c : ℂ ↦ c • diagonal 1 0 := by
+    ext y
+    constructor
+    · rintro ⟨x, rfl⟩
+      refine ⟨x 0 0, ?_⟩
+      ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [CStarMatrix.mul_apply]
+    · rintro ⟨c, rfl⟩
+      refine ⟨c • 1, ?_⟩
+      ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [CStarMatrix.mul_apply]
+  have hset : (Set.range fun c : ℂ ↦ c • diagonal 1 0) =
+      {y : CStarMatrix (Fin 2) (Fin 2) ℂ | y 0 1 = 0 ∧ y 1 0 = 0 ∧ y 1 1 = 0} := by
+    ext y
+    simp only [Set.mem_range, Set.mem_ofPred]
+    constructor
+    · rintro ⟨c, rfl⟩
+      simp
+    · rintro ⟨h01, h10, h11⟩
+      refine ⟨y 0 0, ?_⟩
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [h01, h10, h11]
+  have hclosed : IsClosed (Set.range fun c : ℂ ↦ c • diagonal 1 0) := by
+    rw [hset]
+    exact (isClosed_eq (continuous_entry 0 1) continuous_const).inter
+      ((isClosed_eq (continuous_entry 1 0) continuous_const).inter
+        (isClosed_eq (continuous_entry 1 1) continuous_const))
+  rw [hrange, hclosed.closure_eq]
+
+/-- The hereditary C⋆-subalgebra generated by `averagingProjection` is the one-dimensional line
+`ℂ • averagingProjection`. -/
+theorem coe_hereditarySubalgebra_averagingProjection :
+    (hereditarySubalgebra averagingProjection : Set (CStarMatrix (Fin 2) (Fin 2) ℂ)) =
+      Set.range fun c : ℂ ↦ c • averagingProjection := by
+  rw [coe_hereditarySubalgebra]
+  have hrange : (Set.range fun x : CStarMatrix (Fin 2) (Fin 2) ℂ ↦
+      averagingProjection * x * averagingProjection) =
+      Set.range fun c : ℂ ↦ c • averagingProjection := by
+    ext y
+    constructor
+    · rintro ⟨x, rfl⟩
+      refine ⟨(x 0 0 + x 0 1 + x 1 0 + x 1 1) / 2, ?_⟩
+      ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [CStarMatrix.mul_apply] <;> ring
+    · rintro ⟨c, rfl⟩
+      refine ⟨c • averagingProjection, ?_⟩
+      have hidem := isStarProjection_averagingProjection.isIdempotentElem.eq
+      dsimp only
+      rw [mul_smul_comm, smul_mul_assoc, hidem, hidem]
+  have hset : (Set.range fun c : ℂ ↦ c • averagingProjection) =
+      {y : CStarMatrix (Fin 2) (Fin 2) ℂ | y 0 1 = y 0 0 ∧ y 1 0 = y 0 0 ∧ y 1 1 = y 0 0} := by
+    ext y
+    simp only [Set.mem_range, Set.mem_ofPred]
+    constructor
+    · rintro ⟨c, rfl⟩
+      simp
+    · rintro ⟨h01, h10, h11⟩
+      refine ⟨2 * y 0 0, ?_⟩
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [h01, h10, h11] <;> ring
+  have hclosed : IsClosed (Set.range fun c : ℂ ↦ c • averagingProjection) := by
+    rw [hset]
+    exact (isClosed_eq (continuous_entry 0 1) (continuous_entry 0 0)).inter
+      ((isClosed_eq (continuous_entry 1 0) (continuous_entry 0 0)).inter
+        (isClosed_eq (continuous_entry 1 1) (continuous_entry 0 0)))
+  rw [hrange, hclosed.closure_eq]
+
+/-- A closed hereditary C⋆-subalgebra need not be a left or two-sided ideal: `diagonal 1 0` belongs
+to `hereditarySubalgebra (diagonal 1 0)`, whereas `MatrixOrderExample.flip * diagonal 1 0` does
+not. -/
+theorem hereditarySubalgebra_firstCoord_not_left_absorb :
+    diagonal 1 0 ∈ hereditarySubalgebra (diagonal 1 0) ∧
+      MatrixOrderExample.flip * diagonal 1 0 ∉ hereditarySubalgebra (diagonal 1 0) := by
+  refine ⟨self_mem_hereditarySubalgebra (diagonal 1 0), fun hmem ↦ ?_⟩
+  rw [← SetLike.mem_coe, coe_hereditarySubalgebra_firstCoord] at hmem
+  obtain ⟨c, hc⟩ := hmem
+  have h10 := congrArg (fun m : CStarMatrix (Fin 2) (Fin 2) ℂ ↦ m 1 0) hc
+  simp [CStarMatrix.mul_apply] at h10
+
+/-- The rank-one projection `diagonal 1 0` is full positive in `CStarMatrix (Fin 2) (Fin 2) ℂ`: the
+two-sided ideal it generates is already the entire matrix algebra. -/
+theorem isFullPositive_firstCoord : IsFullPositive (diagonal 1 0) where
+  nonneg := (diagonal_nonneg_iff 1 0).mpr ⟨zero_le_one, le_rfl⟩
+  topologicalClosure_span_eq_top := by
+    rw [eq_top_iff]
+    intro x _
+    refine TwoSidedIdeal.le_topologicalClosure _ ?_
+    let I := TwoSidedIdeal.span ({diagonal 1 0} : Set (CStarMatrix (Fin 2) (Fin 2) ℂ))
+    have he : diagonal 1 0 ∈ I := TwoSidedIdeal.subset_span rfl
+    let f := MatrixOrderExample.flip
+    have hdecomp : x =
+        diagonal 1 0 * x * diagonal 1 0 +
+        diagonal 1 0 * (x * f) * diagonal 1 0 * f +
+        f * (diagonal 1 0 * (f * x) * diagonal 1 0) +
+        f * (diagonal 1 0 * (f * x * f) * diagonal 1 0) * f := by
+      ext i j
+      fin_cases i <;> fin_cases j <;>
+        simp [f, CStarMatrix.mul_apply]
+    rw [hdecomp]
+    have hmid (y : CStarMatrix (Fin 2) (Fin 2) ℂ) : diagonal 1 0 * y * diagonal 1 0 ∈ I :=
+      I.mul_mem_right _ _ (I.mul_mem_right _ _ he)
+    exact I.add_mem (I.add_mem (I.add_mem (hmid x) (I.mul_mem_right _ f (hmid (x * f))))
+      (I.mul_mem_left f _ (hmid (f * x))))
+      (I.mul_mem_right _ f (I.mul_mem_left f _ (hmid (f * x * f))))
+
+/-- Although `diagonal 1 0` is full positive, it is not strictly positive in
+`CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+theorem not_isStrictlyPositive_firstCoord :
+    ¬TauCeti.CStarAlgebra.IsStrictlyPositive (diagonal 1 0) := by
+  intro h
+  have hmul : diagonal 1 0 * diagonal 0 1 = 0 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [CStarMatrix.mul_apply]
+  have h01 := congrArg (fun m : CStarMatrix (Fin 2) (Fin 2) ℂ ↦ m 1 1)
+    (h.mul_right_eq_zero_iff.mp hmul)
+  simp at h01
+
+/-- Any diagonal `2 × 2` matrix with strictly positive diagonal entries is strictly positive in
+`CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
+theorem isStrictlyPositive_diagonal_of_pos {s t : ℝ} (hs : 0 < s) (ht : 0 < t) :
+    TauCeti.CStarAlgebra.IsStrictlyPositive (diagonal s t) := by
+  rw [isStrictlyPositive_iff_unital, _root_.IsStrictlyPositive.iff_of_unital]
+  refine ⟨(diagonal_nonneg_iff s t).mpr ⟨hs.le, ht.le⟩, ?_⟩
+  have hs0 : (s : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hs.ne'
+  have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
+  refine isUnit_iff_exists_and_exists.mpr ⟨⟨diagonal s⁻¹ t⁻¹, ?_⟩, ⟨diagonal s⁻¹ t⁻¹, ?_⟩⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [CStarMatrix.mul_apply, hs0, ht0]
+  · ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [CStarMatrix.mul_apply, hs0, ht0]
+
+end TauCeti.HereditaryExample
