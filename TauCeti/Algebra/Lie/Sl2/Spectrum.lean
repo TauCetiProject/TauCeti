@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Lie.Weights.Basic
 public import TauCeti.Algebra.Lie.Sl2.CompleteReducibility
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
-import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import TauCeti.LinearAlgebra.Eigenspace.BaseChange
@@ -264,13 +263,7 @@ in the ground field. -/
 theorem iSup_eigenspace_toEnd_eq_top (t : IsSl2Triple h e f) :
     ⨆ μ : K, (toEnd K L M h).eigenspace μ = ⊤ := by
   let A := AlgebraicClosure K
-  let tA : IsSl2Triple ((1 : A) ⊗ₜ[K] h) ((1 : A) ⊗ₜ[K] e) ((1 : A) ⊗ₜ[K] f) := {
-    h_ne_zero := by simpa using t.h_ne_zero
-    lie_e_f := by simp [t.lie_e_f]
-    lie_h_e_nsmul := by simp [t.lie_h_e_nsmul]
-    lie_h_f_nsmul := by
-      simp only [LieAlgebra.ExtendScalars.bracket_tmul, one_mul, t.lie_h_f_nsmul,
-        TensorProduct.tmul_neg, TensorProduct.tmul_smul] }
+  let tA := t.baseChange (R := K) (A := A) (by simpa using t.h_ne_zero)
   -- It suffices to span after scalar extension; every nonzero eigenspace there has an
   -- integral eigenvalue and is the scalar extension of its ground-field eigenspace.
   apply Submodule.baseChange_injective (A := A)

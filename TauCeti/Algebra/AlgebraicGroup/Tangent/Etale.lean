@@ -11,7 +11,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.TrivialIde
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 import Mathlib.RingTheory.Etale.Descent
-import Mathlib.RingTheory.Finiteness.Descent
 
 /-!
 # Étale affine groups and their Lie algebras
@@ -23,10 +22,8 @@ scheme-theoretic kernel of a homomorphism via the kernel of its differential.
 
 Over an algebraically closed field, a zero Lie algebra forces the identity component to be
 trivial. The component-group classification then identifies the group with a finite constant
-group, so every étale affine group of finite type over any field is finite-dimensional
-(`TauCeti.HopfAlgebra.moduleFinite_of_algebraEtale`). The general criterion descends from the
-algebraic closure: vanishing of the augmentation cotangent space is idempotence of the
-augmentation ideal, which is preserved by base change.
+group. The general criterion descends from the algebraic closure: vanishing of the augmentation
+cotangent space is idempotence of the augmentation ideal, which is preserved by base change.
 
 ## References
 
@@ -118,21 +115,6 @@ theorem algebraEtale_iff_finrank_lie_eq_zero :
       FiniteTypeCommHopfAlgCat.algebraEtale_of_identityComponentHopfIdeal_eq_augmentation
         HK hidentity
     exact Algebra.Etale.of_etale_tensorProduct_of_faithfullyFlat K
-
-/-- Every étale affine group of finite type over a field has finite-dimensional coordinate
-algebra: over the algebraic closure its Lie algebra vanishes, so its identity component is
-trivial and it is a finite constant group; finiteness descends by faithful flatness. -/
-theorem moduleFinite_of_algebraEtale [Algebra.Etale k H] : Module.Finite k H := by
-  let K := AlgebraicClosure k
-  let HK := FiniteTypeCommHopfAlgCat.of K (K ⊗[k] H)
-  have hlieK : Module.finrank K
-      (Derivation K HK (Bialgebra.CounitAlgebra K HK K)) = 0 :=
-    algebraEtale_iff_finrank_lie_eq_zero.mp (inferInstanceAs (Algebra.Etale K (K ⊗[k] H)))
-  have : Module.Finite K (K ⊗[k] H) :=
-    FiniteTypeCommHopfAlgCat.moduleFinite_of_identityComponentHopfIdeal_eq_augmentation HK
-      (FiniteTypeCommHopfAlgCat.identityComponentHopfIdeal_eq_augmentation_of_finrank_lie_eq_zero
-        HK hlieK)
-  exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat K
 
 end HopfAlgebra
 

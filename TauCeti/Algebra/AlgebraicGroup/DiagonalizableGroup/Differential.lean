@@ -81,19 +81,15 @@ theorem iSup_eigenspace_differential_eq_top (π : H →ₐc[R] MonoidAlgebra R X
   refine iSup_le fun x ↦ (weightSpace_le_eigenspace_differential V π d x).trans ?_
   exact le_iSup _ _
 
-/-- When a tangent vector of `D(X)` separates characters in a domain `R` and `V` has no `R`-torsion,
+/-- When a tangent vector of `D(X)` separates characters in a domain `R` and `V` is torsion-free,
 each character space equals the corresponding eigenspace of the differentiated action. -/
 theorem weightSpace_eq_eigenspace_differential_of_injective [IsDomain R] [Module.IsTorsionFree R V]
     (π : H →ₐc[R] MonoidAlgebra R X)
-    (d : Derivation R (MonoidAlgebra R X)
-      (Bialgebra.CounitAlgebra R (MonoidAlgebra R X) R))
-    (hd : Function.Injective fun x : X ↦
-      Bialgebra.CounitAlgebra.algEquivSelf R (MonoidAlgebra R X) R
-        (d (MonoidAlgebra.single x 1)))
-    (x : X) :
+    (d : Derivation R (MonoidAlgebra R X) (Bialgebra.CounitAlgebra R (MonoidAlgebra R X) R))
+    (hd : Function.Injective fun x : X ↦ Bialgebra.CounitAlgebra.algEquivSelf R
+      (MonoidAlgebra R X) R (d (MonoidAlgebra.single x 1))) (x : X) :
     weightSpace V π.toCoalgHom x =
-      Module.End.eigenspace
-        (Comodule.differential (R := R) (H := H) (M := V) (derivationComp π d))
+      Module.End.eigenspace (Comodule.differential (R := R) (H := H) (M := V) (derivationComp π d))
         (Bialgebra.CounitAlgebra.algEquivSelf R (MonoidAlgebra R X) R
           (d (MonoidAlgebra.single x 1))) := by
   classical
@@ -101,20 +97,16 @@ theorem weightSpace_eq_eigenspace_differential_of_injective [IsDomain R] [Module
   set μ : X → R := fun y ↦
     Bialgebra.CounitAlgebra.algEquivSelf R (MonoidAlgebra R X) R (d (MonoidAlgebra.single y 1))
   refine le_antisymm (weightSpace_le_eigenspace_differential V π d x) fun v hv ↦ ?_
-  have htop : weightSpace V π.toCoalgHom x ⊔ (⨆ (y : X) (_ : y ≠ x), weightSpace V π.toCoalgHom y) =
-      ⊤ := by
+  have htop : weightSpace V π.toCoalgHom x ⊔
+      (⨆ (y : X) (_ : y ≠ x), weightSpace V π.toCoalgHom y) = ⊤ := by
     rw [← iSup_split_single, (isInternal_weightSpace V π.toCoalgHom).submodule_iSup_eq_top]
-  have hmem : v ∈ weightSpace V π.toCoalgHom x ⊔
-      (⨆ (y : X) (_ : y ≠ x), weightSpace V π.toCoalgHom y) := htop ▸ Submodule.mem_top
-  obtain ⟨w₀, hw₀, w₁, hw₁, rfl⟩ := Submodule.mem_sup.mp hmem
-  have hw₀E : w₀ ∈ f.eigenspace (μ x) := weightSpace_le_eigenspace_differential V π d x hw₀
+  obtain ⟨w₀, hw₀, w₁, hw₁, rfl⟩ := Submodule.mem_sup.mp (htop ▸ Submodule.mem_top : v ∈ _)
   have hw₁E : w₁ ∈ f.eigenspace (μ x) := by
-    simpa only [add_sub_cancel_left] using (f.eigenspace (μ x)).sub_mem hv hw₀E
+    simpa only [add_sub_cancel_left] using
+      (f.eigenspace (μ x)).sub_mem hv (weightSpace_le_eigenspace_differential V π d x hw₀)
   have hw₁E' : w₁ ∈ ⨆ (y : X) (_ : y ≠ x), f.eigenspace (μ y) :=
     (iSup₂_mono fun y _ ↦ weightSpace_le_eigenspace_differential V π d y) hw₁
-  have hdisj : Disjoint (f.eigenspace (μ x)) (⨆ (y : X) (_ : y ≠ x), f.eigenspace (μ y)) :=
-    (f.eigenspaces_iSupIndep.comp hd) x
-  rw [Submodule.disjoint_def.mp hdisj w₁ hw₁E hw₁E', add_zero]
+  rw [Submodule.disjoint_def.mp ((f.eigenspaces_iSupIndep.comp hd) x) w₁ hw₁E hw₁E', add_zero]
   exact hw₀
 
 variable {k : Type*} [Field k] {A : Type*} [CommRing A] [Bialgebra k A]

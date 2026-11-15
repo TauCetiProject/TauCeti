@@ -5,9 +5,13 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.Adjoint
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 import Mathlib.Algebra.DirectSum.Decomposition
+import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Equiv
 
 /-!
 # Adjoint weights of dynamic tangent spaces
@@ -19,7 +23,11 @@ extracts the corresponding weight component.
 
 These statements use the existing adjoint comodule and its internal weight decomposition.
 They assume finite projectivity of the augmentation cotangent module, but impose no field,
-characteristic, reducedness or smoothness assumption.
+characteristic, reducedness or smoothness assumption. Over a characteristic-zero domain `R`,
+characters of `𝔾ₘ` are separated by the unit tangent vector, identifying the `m`-weight space on
+any torsion-free comodule and on `Lie(G)` with the `(m : R)`-eigenspace of the cocharacter's unit
+tangent differential (`BialgHom.weightSpace_cocharacter_eq_eigenspace`,
+`BialgHom.adjointWeightSpace_cocharacter_eq_eigenspace`).
 
 ## References
 
@@ -29,12 +37,45 @@ characteristic, reducedness or smoothness assumption.
 
 public section
 
-open TauCeti TauCeti.Cocharacter WithConv
-open scoped TensorProduct DirectSum
+open LieAlgebra TauCeti TauCeti.Cocharacter WithConv
+open scoped TensorProduct DirectSum LaurentPolynomial
 
 namespace BialgHom
 
 universe u
+
+section Eigenspace
+
+/-- Over a characteristic-zero domain `R`, the `m`-weight space of `l : H →ₐc[R] R[T;T⁻¹]` on any
+torsion-free `H`-comodule `V` equals the `(m : R)`-eigenspace of its unit tangent differential. -/
+theorem weightSpace_cocharacter_eq_eigenspace {R H : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    [CommRing H] [Bialgebra R H] (l : H →ₐc[R] LaurentPolynomial R) (V : Type*) [AddCommGroup V]
+    [Module R V] [Module.IsTorsionFree R V] [Comodule R H V] (m : ℤ) :
+    DiagonalizableGroup.weightSpace V
+        (((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l).toCoalgHom)
+        (Multiplicative.ofAdd m) =
+      Module.End.eigenspace (Comodule.differential (R := R) (H := H) (M := V)
+        (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (m : R) := by
+  let eMult := AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ
+  let π : H →ₐc[R] MonoidAlgebra R (Multiplicative ℤ) := eMult.toBialgHom.comp l
+  let d₁ := (MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1
+  let d₀ := derivationComp (B := R) eMult.symm.toBialgHom d₁
+  have hd₀ (x : Multiplicative ℤ) : Bialgebra.CounitAlgebra.algEquivSelf R
+      (MonoidAlgebra R (Multiplicative ℤ)) R (d₀ (MonoidAlgebra.single x 1)) = (x.toAdd : R) := by
+    rw [algEquivSelf_derivationComp_apply, BialgHom.coe_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
+      BialgEquiv.coe_toBialgHom, AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single,
+      ← LaurentPolynomial.T, MultiplicativeGroup.tangentLinearEquiv_symm_apply_T, zsmul_one]
+  have hinj : Function.Injective fun x : Multiplicative ℤ ↦ Bialgebra.CounitAlgebra.algEquivSelf R
+      (MonoidAlgebra R (Multiplicative ℤ)) R (d₀ (MonoidAlgebra.single x 1)) := fun x y hxy ↦
+    Multiplicative.toAdd.injective (Int.cast_inj.mp ((hd₀ x).symm.trans (hxy.trans (hd₀ y))))
+  have hπd₀ : derivationComp (B := R) π d₀ = derivationComp (B := R) l d₁ := by
+    rw [derivationComp_comp, LinearMap.comp_apply,
+      derivationComp_derivationComp_eq_self_of_comp_eq_id _ _ (BialgHom.ext eMult.symm_apply_apply)]
+  rw [DiagonalizableGroup.weightSpace_eq_eigenspace_differential_of_injective V π d₀ hinj
+      (Multiplicative.ofAdd m), hπd₀, hd₀, toAdd_ofAdd]
+
+end Eigenspace
 
 variable {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
@@ -228,5 +269,67 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule
     LieSubalgebra.mem_toSubmodule, mem_lieSubalgebra_unipotentDefiningHopfIdeal_iff]
   simpa only [Set.mem_Ioi, not_lt] using
     (mem_iSup_adjointWeightSpace_iff_coeff_conjugationAlgHom l (Set.Ioi 0) x).symm
+
+/-- Over a characteristic-zero domain `R`, the `m`-adjoint weight space of a cocharacter
+`l : H →ₐc[R] R[T;T⁻¹]` coincides with the `(m : R)`-eigenspace of `ad` of its unit tangent
+differential in the cotangent-dual Lie algebra. -/
+theorem adjointWeightSpace_cocharacter_eq_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) (m : ℤ) :
+    Derivation.adjointWeightSpace
+        ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l)
+        (Multiplicative.ofAdd m) =
+      Module.End.eigenspace (ad R (Module.Dual R (Bialgebra.CotangentSpace R H))
+        ((Derivation.cotangentDualLieEquiv (R := R) (H := H)).symm (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1)))) (m : R) := by
+  rw [Derivation.adjointWeightSpace_eq_weightSpace,
+    l.weightSpace_cocharacter_eq_eigenspace (Module.Dual R (Bialgebra.CotangentSpace R H)) m]
+  exact congrArg (Module.End.eigenspace · (m : R))
+    (LinearMap.ext fun x ↦ Derivation.differential_adjointComodule _ x)
+
+/-- Transporting the `n`-adjoint weight space of `l : H →ₐc[R] R[T;T⁻¹]` across
+`Derivation.cotangentLinearEquiv` yields the `(n : R)`-eigenspace of `ad` of its unit tangent
+differential on `Der_R(H, R)`. -/
+theorem map_cotangentLinearEquiv_adjointWeightSpace_cocharacter [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) :
+    Submodule.map (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R) : _ →ₗ[R] _)
+        (Derivation.adjointWeightSpace
+          ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l)
+          (Multiplicative.ofAdd n)) =
+      Module.End.eigenspace (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R))
+        (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.adjointWeightSpace_cocharacter_eq_eigenspace]; ext d
+  obtain ⟨x, rfl⟩ := (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).surjective d
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+    ← Derivation.cotangentDualLieEquiv_apply, Module.End.mem_eigenspace_iff,
+    Module.End.mem_eigenspace_iff, ad_apply, ad_apply]
+  simp only [← (Derivation.cotangentDualLieEquiv (R := R) (H := H)).injective.eq_iff,
+    LieEquiv.coe_toLieHom, LieEquiv.map_lie, LieEquiv.apply_symm_apply]
+  rw [Derivation.cotangentDualLieEquiv_apply, map_smul, ← Derivation.cotangentDualLieEquiv_apply]
+  rfl
+
+/-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(P_G(l))` is the
+supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 ≤ n`. -/
+theorem lieSubalgebra_parabolicDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    ((parabolicDefiningHopfIdeal l).lieSubalgebra (B := R)).toSubmodule =
+      ⨆ (n : ℤ) (_ : 0 ≤ n), Module.End.eigenspace
+        (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.lieSubalgebra_parabolicDefiningHopfIdeal_toSubmodule, Submodule.map_iSup]
+  refine iSup_congr fun n ↦ ?_; rw [Submodule.map_iSup]
+  exact iSup_congr fun _ ↦ l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter n
+
+/-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(U_G(l))` is the
+supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 < n`. -/
+theorem lieSubalgebra_unipotentDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    (l.unipotentDefiningHopfIdeal.lieSubalgebra (B := R)).toSubmodule =
+      ⨆ (n : ℤ) (_ : 0 < n), Module.End.eigenspace
+        (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule, Submodule.map_iSup]
+  refine iSup_congr fun n ↦ ?_; rw [Submodule.map_iSup]
+  exact iSup_congr fun _ ↦ l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter n
 
 end BialgHom

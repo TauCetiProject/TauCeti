@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Coaction
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 public import Mathlib.Data.Nat.Digits.Defs
 import Mathlib.Algebra.MvPolynomial.Coeff
@@ -134,6 +135,20 @@ theorem polynomialComodule_coact :
       (Comodule.polynomialCoact (coordinateHopfAlgebra R n) (Pi.basisFun R (Fin n))).toLinearMap :=
   Comodule.polynomial_coact _
 
+/-- The polynomial functions on the standard representation of `SLₙ` form a comodule algebra
+over `O(SLₙ)`, extending `polynomialComodule R n`. -/
+@[expose, implicit_reducible]
+noncomputable def polynomialComoduleAlgebra :
+    ComoduleAlgebra R (coordinateHopfAlgebra R n) (MvPolynomial (Fin n) R) where
+  toComodule := polynomialComodule R n
+  coact_one := by
+    let _ := polynomialComodule R n
+    rw [DFunLike.congr_fun (polynomialComodule_coact R n) 1, AlgHom.toLinearMap_apply, map_one]
+  coact_mul p q := by
+    let _ := polynomialComodule R n
+    simp only [DFunLike.congr_fun (polynomialComodule_coact R n), AlgHom.toLinearMap_apply,
+      map_mul]
+
 section Column
 
 /-- **Evaluation at a column is equivariant.** Evaluating a polynomial function on the standard
@@ -212,6 +227,18 @@ theorem mem_binaryForms {d : ℕ} {f : MvPolynomial (Fin 2) R} :
 theorem X_zero_pow_mem_binaryForms {d : ℕ} :
     (MvPolynomial.X 0 ^ d : MvPolynomial (Fin 2) R) ∈ binaryForms R d :=
   mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow 0 d)
+
+/-- The monomial `yᵈ` is a binary form of degree `d`. -/
+theorem X_one_pow_mem_binaryForms {d : ℕ} :
+    (MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) R) ∈ binaryForms R d :=
+  mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow 1 d)
+
+/-- The underlying submodule of `binaryForms R d` is the degree-`d` homogeneous submodule. -/
+@[simp]
+theorem binaryForms_toSubmodule (R : Type u) [CommRing R] (d : ℕ) :
+    letI := polynomialComodule R 2
+    (binaryForms R d).toSubmodule = MvPolynomial.homogeneousSubmodule (Fin 2) R d :=
+  SetLike.ext fun p ↦ mem_binaryForms.trans (MvPolynomial.mem_homogeneousSubmodule d p).symm
 
 /-- **The rational action of `SL₂` on binary forms.** A point with matrix `[[a, b], [c, d]]` acts
 by `(g • f)(x, y) = f(d x - b y, a y - c x)`. -/

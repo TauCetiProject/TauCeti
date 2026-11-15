@@ -26,6 +26,8 @@ action on the polynomial functions on `V`.
 ## Main declarations
 
 * `TauCeti.ComoduleAlgebra.differential_mul`: the Leibniz rule for the differentiated action.
+* `TauCeti.ComoduleAlgebra.differential_pow`: the power rule for the differentiated action on a
+  commutative comodule algebra.
 * `TauCeti.ComoduleAlgebra.differential_symmetricAlgebra_ι`: on a symmetric algebra, it commutes
   with the inclusion of generators.
 * `TauCeti.ComoduleAlgebra.differential_symmetricAlgebra`: on a symmetric algebra, it is the
@@ -63,6 +65,23 @@ theorem differential_mul (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a
   simp only [← Comodule.coactComponent_apply, Comodule.coactComponent_counit, LinearMap.id_apply]
 
 end Ring
+
+section CommRing
+
+variable {A : Type*} [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
+
+/-- **The power rule for a commutative comodule algebra.** A tangent vector at the identity
+differentiates `a ^ m` to `m • a ^ (m - 1) * (d • a)`. -/
+theorem differential_pow (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a : A) (m : ℕ) :
+    Comodule.differential (R := R) (H := H) d (a ^ m) =
+      m • a ^ (m - 1) * Comodule.differential (R := R) (H := H) d a := by
+  let D : Derivation R A A :=
+    Derivation.mk' (Comodule.differential (R := R) (H := H) d) fun x y ↦ by
+      rw [differential_mul, smul_eq_mul, smul_eq_mul]
+      ring
+  simpa only [D, Derivation.coe_mk', smul_eq_mul, smul_mul_assoc] using D.leibniz_pow a m
+
+end CommRing
 
 section SymmetricAlgebra
 

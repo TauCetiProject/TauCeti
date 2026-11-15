@@ -175,6 +175,24 @@ theorem differential_prod
   · simpa only [prodSnd_apply] using (prodSnd (R := R) (C := H) (M := M) (N := N)).map_differential
       d p
 
+/-- Differentiating `Comodule.finPi` acts coordinatewise. -/
+theorem differential_finPi :
+    ∀ (r : ℕ) (B : Fin r → Type*) [∀ i, AddCommGroup (B i)] [∀ i, Module R (B i)]
+      (c : ∀ i, Comodule R H (B i)) (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+      (f : ∀ i, B i) (i : Fin r),
+      (@differential R H (∀ j, B j) _ _ _ _ _ (finPi (R := R) (C := H) r B c) d f) i =
+        @differential R H (B i) _ _ _ _ _ (c i) d (f i)
+  | 0, _, _, _, _, _, _, i => Fin.elim0 i
+  | r + 1, B, _, _, c, d, f, i => by
+    let _ : Comodule R H (B 0) := c 0
+    let _ : Comodule R H (∀ j : Fin r, B j.succ) := finPi (R := R) (C := H) r (B ·.succ) (c ·.succ)
+    let _ : Comodule R H (B 0 × (∀ j : Fin r, B j.succ)) := Prod
+    rw [finPi, differential_transport (Fin.consLinearEquiv R B), differential_prod]
+    refine Fin.cases (by simp) (fun j ↦ ?_) i
+    simp only [Fin.consLinearEquiv_apply, Equiv.toFun_as_coe, Fin.consEquiv_apply, Fin.cons_succ,
+      Fin.consLinearEquiv_symm_apply, Equiv.invFun_as_coe, Fin.consEquiv_symm_apply]
+    exact differential_finPi r _ (c ·.succ) d (Fin.tail f) j
+
 end TauCeti.Comodule
 
 namespace Derivation

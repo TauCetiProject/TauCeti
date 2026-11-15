@@ -7,20 +7,24 @@ module
 
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Polynomial
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 
 /-!
 # Symmetric algebras of comodules as comodule algebras
 
-This file equips the symmetric algebra of a comodule with its natural comodule-algebra structure.
-It also records that homogeneous components of coinvariants remain coinvariant and constructs the
+This file equips the symmetric algebra of a comodule and the coordinate polynomial algebra on a
+finite-basis comodule over a Hopf algebra with their natural comodule-algebra structures. It also
+records that homogeneous components of coinvariants remain coinvariant and constructs the
 equivariant algebra map induced by the inclusion of a subcomodule into a comodule algebra.
 
 ## Main declarations
 
 * `TauCeti.ComoduleAlgebra.symmetricAlgebra`: the comodule-algebra structure on the symmetric
   algebra of a comodule.
+* `TauCeti.ComoduleAlgebra.polynomial`: the comodule-algebra structure on `MvPolynomial ι R`
+  extending `TauCeti.Comodule.polynomial H b`.
 * `TauCeti.ComoduleAlgebra.decompose_mem_coinvariants_symmetricAlgebra`: homogeneous components
   of a coinvariant in a symmetric algebra are coinvariant.
 * `TauCeti.ComoduleAlgebra.liftSubcomoduleHom`: the equivariant algebra map from the symmetric
@@ -113,6 +117,30 @@ theorem liftSubcomoduleHom_apply [Module.Flat R H] (V : Subcomodule R H A)
   (rfl)
 
 end Lift
+
+section Polynomial
+
+variable {R H V ι : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
+  [AddCommMonoid V] [Module R V] [Comodule R H V] [Fintype ι] [DecidableEq ι]
+
+variable (H) in
+/-- The polynomial functions `MvPolynomial ι R` on a comodule `V` with finite basis `b` form a
+comodule algebra over `H`, with underlying comodule `TauCeti.Comodule.polynomial H b`.
+
+Like `TauCeti.Comodule.polynomial`, this is deliberately not a global instance. -/
+@[expose, implicit_reducible]
+noncomputable def polynomial (b : Module.Basis ι R V) :
+    ComoduleAlgebra R H (MvPolynomial ι R) where
+  toComodule := Comodule.polynomial H b
+  coact_one := by
+    let _ := Comodule.polynomial H b
+    rw [Comodule.polynomial_coact_apply, map_one]
+  coact_mul p q := by
+    let _ := Comodule.polynomial H b
+    rw [Comodule.polynomial_coact_apply, Comodule.polynomial_coact_apply,
+      Comodule.polynomial_coact_apply, map_mul]
+
+end Polynomial
 
 end ComoduleAlgebra
 

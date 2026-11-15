@@ -113,26 +113,6 @@ theorem ringKrullDim_quotient_eq_finrank_lieSubalgebra [CharZero k] (I : HopfIde
     (smoothCommHopfAlgProperty_of_charZero k (CommHopfAlgCat.of k (H ⧸ I.toIdeal)))
   exact I.ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth
 
-/-- Two nested Hopf ideals over a field whose quotients are finite-dimensional of the same
-`k`-dimension are equal. -/
-theorem eq_of_le_of_finrank_quotient_eq {A : _root_.CommHopfAlgCat.{v} k}
-    {I J : HopfIdeal k A} (hIJ : I ≤ J)
-    [Module.Finite k (_root_.CommHopfAlgCat.quotient A I)]
-    [Module.Finite k (_root_.CommHopfAlgCat.quotient A J)]
-    (hdim : Module.finrank k (_root_.CommHopfAlgCat.quotient A I) =
-      Module.finrank k (_root_.CommHopfAlgCat.quotient A J)) :
-    I = J := by
-  have hsurj : Function.Surjective (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap :=
-    _root_.CommHopfAlgCat.quotientMapOfLe_surjective A hIJ
-  have hinj : Function.Injective ⇑(_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (f := (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap) hdim).mpr hsurj
-  refine le_antisymm hIJ fun x hx ↦ ?_
-  have hx0 : Ideal.Quotient.mkₐ k I.toIdeal x = 0 := hinj <| by
-    rw [_root_.CommHopfAlgCat.quotientMapOfLe_mk, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem.mpr (HopfIdeal.mem_toIdeal.mpr hx), map_zero]
-  exact HopfIdeal.mem_toIdeal.mp (Ideal.Quotient.eq_zero_iff_mem.mp hx0)
-
 end LieDimension
 
 end TauCeti.HopfIdeal

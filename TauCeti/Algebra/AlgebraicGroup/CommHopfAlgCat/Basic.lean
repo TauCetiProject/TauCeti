@@ -37,6 +37,7 @@ by pre-composition.
   a represented group-object map.
 * `CommHopfAlgCat.Hom.grpObjMap_injective`: represented group-object maps determine their coordinate
   Hopf-algebra morphisms.
+* `TauCeti.CommHopfAlgCat.hom_id`: the underlying bialgebra morphism of `𝟙 H` is `BialgHom.id`.
 * `CommHopfAlgCat.coe_ofIso`: the bialgebra equivalence of an isomorphism has the forward
   morphism as its underlying bialgebra morphism.
 
@@ -117,6 +118,13 @@ theorem _root_.CommHopfAlgCat.Hom.grpObjMap_id (H : _root_.CommHopfAlgCat.{u} R)
 theorem _root_.CommHopfAlgCat.Hom.grpObjMap_comp
     {H K L : _root_.CommHopfAlgCat.{u} R} (f : H ⟶ K) (g : K ⟶ L) :
     grpObjMap (f ≫ g) = grpObjMap g ≫ grpObjMap f := by
+  rfl
+
+/-- The underlying bialgebra morphism of the identity morphism in `CommHopfAlgCat` is
+`BialgHom.id`. -/
+@[simp]
+theorem hom_id (H : _root_.CommHopfAlgCat.{v} R) :
+    (𝟙 H : H ⟶ H).hom = BialgHom.id R H :=
   rfl
 
 /-- The bialgebra equivalence underlying an isomorphism of commutative Hopf algebras has the

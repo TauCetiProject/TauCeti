@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.Algebra.Coalgebra.Comodule.Zero
 public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 
@@ -18,13 +20,15 @@ coaction. For comodules `M` and `N`, the coaction on `M × N` is
 `ρ(m, n) = (inl ⊗ id) (ρ m) + (inr ⊗ id) (ρ n)`.
 
 The file also records that the four standard linear maps for a product, `fst`, `snd`, `inl`, and
-`inr`, are comodule morphisms for this coaction.
+`inr`, are comodule morphisms for this coaction, and constructs the finite Pi-product comodule
+`TauCeti.Comodule.finPi` inductively along `Fin.consLinearEquiv`.
 
 ## Main declarations
 
 * `TauCeti.Comodule.Prod`: the direct-sum comodule structure on `M × N`.
 * `TauCeti.Comodule.prodFst`, `prodSnd`, `prodInl`, `prodInr`: the four canonical comodule
   morphisms.
+* `TauCeti.Comodule.finPi`: the direct-sum comodule structure on `∀ i : Fin r, B i`.
 * `TauCeti.ComoduleCat.prod`: the bundled product comodule, with projections, inclusions,
   `prodLift`, and `prodDesc`.
 
@@ -394,6 +398,23 @@ theorem prodDesc_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C 
     (f : Hom R C M P) (g : Hom R C N P) (x : M × N) :
     prodDesc (R := R) (C := C) (M := M) (N := N) f g x = f x.1 + g x.2 :=
   rfl
+
+/-- The direct-sum comodule structure on a `Fin r`-indexed Pi-product `∀ i : Fin r, B i`,
+constructed inductively from `PUnit` and `Comodule.Prod` along `Fin.consLinearEquiv`.
+
+Like `Comodule.Prod`, this is deliberately not a global instance. -/
+@[expose, implicit_reducible]
+def finPi :
+    ∀ (r : ℕ) (B : Fin r → Type w) [∀ i, AddCommMonoid (B i)] [∀ i, Module R (B i)]
+      (_ : ∀ i, Comodule R C (B i)), Comodule R C (∀ i, B i)
+  | 0, B, _, _, _ =>
+    Transport (R := R) (C := C)
+      (LinearEquiv.ofSubsingleton (R := R) PUnit.{1} (∀ i : Fin 0, B i))
+  | r + 1, B, _, _, c =>
+    letI : Comodule R C (B 0) := c 0
+    letI : Comodule R C (∀ i : Fin r, B i.succ) := finPi r (B ·.succ) (c ·.succ)
+    letI : Comodule R C (B 0 × (∀ i : Fin r, B i.succ)) := Prod
+    Transport (R := R) (C := C) (Fin.consLinearEquiv R B)
 
 end Comodule
 

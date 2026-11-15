@@ -81,4 +81,31 @@ theorem specialLinearCenterQuotientIso_inv_comp :
   (specialLinearCenterQuotientIso n k).inv_comp_eq.mpr
     (specialLinearCenterQuotientIso_hom_comp n k).symm
 
+/-- Over any field and in every rank `n`, an affine-group morphism out of `SLₙ` factors (uniquely)
+through `SLₙ ⟶ PGLₙ` (`SpecialLinear.conjugationMap n k`) iff its kernel contains `Z(SLₙ)`. -/
+theorem existsUnique_comp_conjugationMap_iff {n : ℕ} {k : Type u} [Field k]
+    {K : _root_.CommHopfAlgCat.{u} k} (g : K ⟶ SpecialLinear.coordinateHopfAlgebra k n) :
+    (∃! ψ : K ⟶ coordinateHopfAlgebra n k, ψ ≫ SpecialLinear.conjugationMap n k = g) ↔
+      CommHopfAlgCat.kernelHopfIdeal g ≤
+        CommHopfAlgCat.centerDefiningIdeal (SpecialLinear.coordinateHopfAlgebra k n) := by
+  refine ⟨fun ⟨ψ, hψ, _⟩ ↦ hψ ▸ (SpecialLinear.kernelHopfIdeal_conjugationMap (n := n)
+    (k := k)).symm ▸ CommHopfAlgCat.kernelHopfIdeal_comp_le ψ _, fun hg ↦ ?_⟩
+  let hI := (SpecialLinear.isCentral_kernelHopfIdeal_conjugationMap n k).isNormal
+  have hbij := CommHopfAlgCat.bijective_liftCoinvariants_of_faithfullyFlat hI
+    (SpecialLinear.conjugationMap n k)
+    (SpecialLinear.isCentralIsogeny_conjugationMap n k).faithfullyFlat rfl
+  have : IsIso (CommHopfAlgCat.liftCoinvariants hI (SpecialLinear.conjugationMap n k) le_rfl) :=
+    (CommHopfAlgCat.isIsogeny_of_bijective _ hbij).isIso_iff_surjective.mpr hbij.2
+  let ψ₀ : K ⟶ coordinateHopfAlgebra n k := CommHopfAlgCat.liftCoinvariants hI g
+    (hg.trans (SpecialLinear.kernelHopfIdeal_conjugationMap (n := n) (k := k)).symm.le) ≫
+    inv (CommHopfAlgCat.liftCoinvariants hI (SpecialLinear.conjugationMap n k) le_rfl)
+  have hψ₀ : ψ₀ ≫ SpecialLinear.conjugationMap n k = g := by
+    have hu := CommHopfAlgCat.liftCoinvariants_comp_coinvariantsι hI
+      (SpecialLinear.conjugationMap n k) le_rfl
+    dsimp only [ψ₀]; rw [Category.assoc]; conv_lhs => rhs; rhs; rw [← hu]
+    rw [IsIso.inv_hom_id_assoc, CommHopfAlgCat.liftCoinvariants_comp_coinvariantsι]
+  exact ⟨ψ₀, hψ₀, fun ψ hψ ↦ _root_.CommHopfAlgCat.hom_ext (BialgHom.ext fun x ↦
+    SpecialLinear.injective_conjugationMap n k
+      (DFunLike.congr_fun (congrArg _root_.CommHopfAlgCat.Hom.hom (hψ.trans hψ₀.symm)) x))⟩
+
 end TauCeti.ProjectiveGeneralLinear

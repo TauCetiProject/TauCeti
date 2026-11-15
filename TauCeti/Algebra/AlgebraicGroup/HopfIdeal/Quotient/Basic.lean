@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
@@ -12,6 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Hopf-ideal quotients of commutative Hopf algebras
@@ -81,6 +83,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   an ambient isomorphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientBotIso`: quotienting by the zero Hopf ideal does
   not change a finite-type commutative Hopf algebra.
+* `TauCeti.HopfIdeal.eq_of_le_of_finrank_quotient_le`: nested Hopf ideals over a field are equal
+  when the smaller ideal has finite-dimensional quotient of dimension at most the larger's.
 
 ## References
 
@@ -672,6 +676,28 @@ theorem quotientMapOfLe_injective_iff (H : _root_.CommHopfAlgCat.{v} R)
     exact Function.injective_id
 
 end CommHopfAlgCat
+
+namespace TauCeti.HopfIdeal
+
+/-- Two nested Hopf ideals over a field are equal once the smaller ideal has finite-dimensional
+quotient of dimension at most that of the larger ideal's quotient. -/
+theorem eq_of_le_of_finrank_quotient_le {k : Type u} [Field k] {A : _root_.CommHopfAlgCat.{v} k}
+    {I J : HopfIdeal k A} (hIJ : I ≤ J)
+    [Module.Finite k (_root_.CommHopfAlgCat.quotient A I)]
+    (hdim : Module.finrank k (_root_.CommHopfAlgCat.quotient A I) ≤
+      Module.finrank k (_root_.CommHopfAlgCat.quotient A J)) :
+    I = J := by
+  have hsurj : Function.Surjective (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap :=
+    _root_.CommHopfAlgCat.quotientMapOfLe_surjective A hIJ
+  have : Module.Finite k (_root_.CommHopfAlgCat.quotient A J) :=
+    Module.Finite.of_surjective (_root_.CommHopfAlgCat.quotientMapOfLe A hIJ).hom.toLinearMap hsurj
+  have heq : Module.finrank k (_root_.CommHopfAlgCat.quotient A I) =
+      Module.finrank k (_root_.CommHopfAlgCat.quotient A J) :=
+    le_antisymm hdim (LinearMap.finrank_le_finrank_of_surjective hsurj)
+  exact (_root_.CommHopfAlgCat.quotientMapOfLe_injective_iff A hIJ).mp
+    ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank heq).mpr hsurj)
+
+end TauCeti.HopfIdeal
 
 end CommHopfAlgebras
 
