@@ -5,21 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Banach
-public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SecondCountable
-public import TauCeti.Geometry.Manifold.Morse.Generic.Universal.Differential
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Banach
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SecondCountable
+import TauCeti.Geometry.Manifold.Morse.Generic.Universal.Differential
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# Generic functions are Morse, by the Sard–Smale theorem
+# Examples: generic functions are Morse, by the Sard–Smale theorem
 
 Let `M` be a compact smooth manifold without boundary, modelled on a finite-dimensional real
-space `E`, and `k ≥ 2` an integer. This file shows that the `C^k` functions on `M` all of whose
-critical points are nondegenerate form a residual set, as regular parameters, by applying
-parametric transversality for Fredholm sections,
-`TauCeti.isMeagre_setOf_not_isRegularSectionParameter`, which rests on the Sard–Smale theorem, to
-the universal differential `S(x, f) = df_x` (`TauCeti.universalDifferential`). Its hypotheses
-hold as follows.
+space `E`, and `k ≥ 2` an integer. The example below checks that parametric transversality for
+Fredholm sections, `TauCeti.mem_residual_setOf_isRegularSectionParameter`, which rests on the
+Sard–Smale theorem, applies to the universal differential `S(x, f) = df_x`
+(`TauCeti.universalDifferential`), so that its regular parameters form a residual set of `C^k`
+functions. Its hypotheses hold as follows.
 
 * **Parameter space.** On the compact manifold `M` a finite chart atlas with compact pieces makes
   `C^k(M, ℝ)` a Banach space (`ContMDiffMap.finiteAtlasNormedAddCommGroup`,
@@ -37,10 +36,8 @@ hold as follows.
   of the product of the compact manifold `M` with the separable space `C^k(M, ℝ)`
   (`ContMDiffMap.secondCountableTopology_manifoldWeakWhitney_of_sigmaCompact`).
 
-So the regular parameters of the universal differential form a residual set
-(`TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`). They are exactly
-the functions whose critical points are all nondegenerate
-(`TauCeti.isRegularSectionParameter_universalDifferential_iff`).
+The regular parameters of the universal differential are exactly the functions whose critical
+points are all nondegenerate (`TauCeti.isRegularSectionParameter_universalDifferential_iff`).
 
 This is the Banach-space route to the genericity of Morse functions. The same set is also open, by
 the persistence of nondegenerate critical points under `C²`-small perturbations
@@ -55,12 +52,6 @@ section of index zero transverse to the zero section. This is the form in which 
 proved for moduli spaces cut out by Fredholm sections, where no local linear perturbations are
 available.
 
-## Main results
-
-* `TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`: the regular
-  parameters of the universal differential, that is, the `C^k` functions all of whose critical
-  points are nondegenerate, form a residual set.
-
 ## References
 
 * S. Smale, *An infinite dimensional version of Sard's theorem*, Amer. J. Math. **87** (1965),
@@ -71,8 +62,6 @@ available.
   §1 (genericity of Morse functions).
 -/
 
-public section
-
 open Bundle Function Module Set Filter
 open scoped Manifold ContDiff Topology TauCeti.ManifoldWeakWhitney
 
@@ -81,16 +70,11 @@ namespace TauCeti
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] [CompactSpace M]
 
-/-- **Regular parameters of the universal differential are generic.** On a compact smooth
-manifold without boundary and for `k ≥ 2`, the `C^k` functions which are regular parameters of
-the universal differential `(x, f) ↦ df_x` form a residual set in the weak Whitney topology, the
-topology of the Banach space of `C^k` functions normed by a finite chart atlas. This is
-parametric transversality for the universal differential, a `C^(k-1)` section of the cotangent
-bundle over `M × C^k(M, ℝ)` with Fredholm slices of index zero and surjective total
-linearization. By `TauCeti.isRegularSectionParameter_universalDifferential_iff`, these regular
-parameters are exactly the `C^k` functions all of whose critical points are nondegenerate. -/
-theorem mem_residual_setOf_isRegularSectionParameter_universalDifferential {k : ℕ}
-    (hk : 2 ≤ k) :
+-- Parametric transversality for the universal differential, a `C^(k-1)` section of the
+-- cotangent bundle over `M × C^k(M, ℝ)` with Fredholm slices of index zero and surjective total
+-- linearization: for `k ≥ 2` its regular parameters form a residual set in the weak Whitney
+-- topology, the topology of the Banach space of `C^k` functions normed by a finite chart atlas.
+example {k : ℕ} (hk : 2 ≤ k) :
     {f : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ | IsRegularSectionParameter (F := E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) E Prod.fst
         (universalDifferential 𝓘(ℝ, E)) f} ∈ residual C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := by
