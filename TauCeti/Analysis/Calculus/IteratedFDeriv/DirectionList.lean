@@ -318,12 +318,9 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → 
   induction k generalizing x with
   | zero => simp [Subsingleton.elim m Fin.elim0]
   | succ k ih =>
-    obtain ⟨u, hu, hcu⟩ := hf.contDiffOn (m := k) (by exact_mod_cast Nat.le_succ k) (by simp)
-    obtain ⟨s, hsu, hso, hxs⟩ := mem_nhds_iff.mp hu
     have hev : iteratedFDerivAlong 𝕜 (List.ofFn fun i => m i.succ) f =ᶠ[𝓝 x]
-        fun y => iteratedFDeriv 𝕜 k f y (fun i => m i.succ) := by
-      filter_upwards [hso.mem_nhds hxs] with y hy
-      exact ih (hcu.contDiffAt (Filter.mem_of_superset (hso.mem_nhds hy) hsu)) _
+        fun y => iteratedFDeriv 𝕜 k f y (fun i => m i.succ) :=
+      ((hf.of_le (by exact_mod_cast Nat.le_succ k)).eventually (by simp)).mono fun y hy ↦ ih hy _
     rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
       fderiv_continuousMultilinear_apply_const_apply
         (hf.differentiableAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k)),

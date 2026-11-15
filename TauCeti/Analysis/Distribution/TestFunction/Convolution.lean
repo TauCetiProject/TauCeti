@@ -198,7 +198,7 @@ private def integrableConvolutionSupportedIn (K : Compacts E) {S : Set E} (hS : 
           (κ t) (iteratedFDeriv ℝ i (f : E → F) (x - t)) =
           κ t • iteratedFDeriv ℝ i (f : E → F) (x - t) := by
         ext m
-        rfl
+        simp
       rw [heq, norm_smul]
       exact mul_le_mul_of_nonneg_left
         (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ hi) (norm_nonneg _) }
@@ -253,5 +253,61 @@ theorem cutoffConvolutionCLM_apply {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : 
     cutoffConvolutionCLM χ hK₀ φ x = χ x • (K₀ ⋆[lsmul ℝ ℝ, μ] (φ : E → F)) x := by
   -- Pointwise formula defining `cutoffConvolutionCLM`, whose body is not exported.
   exact rfl
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- The support of `cutoffConvolutionCLM χ hK₀ φ` is contained in the support of the cutoff `χ`. -/
+theorem tsupport_cutoffConvolutionCLM_subset {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
+    {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ)
+    (φ : 𝓓(Ω', F)) :
+    tsupport (cutoffConvolutionCLM χ hK₀ φ : E → F) ⊆ tsupport (χ : E → ℝ) := by
+  rw [funext (cutoffConvolutionCLM_apply χ hK₀ φ)]
+  exact tsupport_smul_subset_left _ _
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- Cutoff convolution with the zero cutoff vanishes. -/
+@[simp]
+theorem cutoffConvolutionCLM_zero {Ω' : Opens E} {K₀ : E → ℝ} {μ : Measure E}
+    [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (0 : 𝓓(Ω, ℝ)) hK₀ = 0 := by
+  ext φ x
+  simp
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- Cutoff convolution is additive in the cutoff. -/
+@[simp]
+theorem cutoffConvolutionCLM_add {Ω' : Opens E} (χ₁ χ₂ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
+    [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ + χ₂) hK₀ =
+      cutoffConvolutionCLM χ₁ hK₀ + cutoffConvolutionCLM χ₂ hK₀ := by
+  ext φ x
+  simp [add_smul]
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- Cutoff convolution commutes with negation of the cutoff. -/
+@[simp]
+theorem cutoffConvolutionCLM_neg {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
+    [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (-χ) hK₀ = -cutoffConvolutionCLM χ hK₀ := by
+  ext φ x
+  simp
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- Cutoff convolution commutes with subtraction of cutoffs. -/
+@[simp]
+theorem cutoffConvolutionCLM_sub {Ω' : Opens E} (χ₁ χ₂ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
+    [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ - χ₂) hK₀ =
+      cutoffConvolutionCLM χ₁ hK₀ - cutoffConvolutionCLM χ₂ hK₀ := by
+  ext φ x
+  simp [sub_smul]
+
+omit [FiniteDimensional ℝ E] [CompleteSpace F] in
+/-- Cutoff convolution commutes with scalar multiplication of the cutoff. -/
+@[simp]
+theorem cutoffConvolutionCLM_smul {Ω' : Opens E} (c : ℝ) (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
+    {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (c • χ) hK₀ = c • cutoffConvolutionCLM χ hK₀ := by
+  ext φ x
+  simp [mul_smul]
 
 end TestFunction

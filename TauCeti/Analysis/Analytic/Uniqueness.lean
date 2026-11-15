@@ -14,9 +14,9 @@ public import Mathlib.Analysis.RCLike.Basic
 -- `SeparatingDual.exists_continuousLinearEquiv_apply_eq` for the change of coordinates.
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Analytic.IteratedFDeriv
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
@@ -25,10 +25,11 @@ import Mathlib.Analysis.Normed.Module.Convex
 /-!
 # Analytic functions are determined by their jets and restrictions to lines
 
-Over a characteristic-zero nontrivially normed field, a function analytic at `p` vanishes on a
-neighbourhood of `p` if and only if all of its iterated Fréchet derivatives at `p` vanish
+Over a characteristic-zero nontrivially normed field, a function into a complete normed space
+(Banach space) analytic at `p` vanishes on a neighbourhood of `p` if and only if all of its
+iterated Fréchet derivatives at `p` vanish
 (`AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`): on a ball of convergence, the
-homogeneous term of degree `n` evaluated on `(y, …, y)` is `(n!)⁻¹` times `D^n f(p)(y, …, y)`.
+power series is given by `∑ n, (n!)⁻¹ • D^n f(p)(y, …, y)`.
 
 Over `ℝ` or `ℂ`, a function analytic at `p` also vanishes on a neighbourhood of `p` exactly when its
 restriction `t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The
@@ -47,7 +48,8 @@ lives.
 ## Main declarations
 
 * `AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`: over characteristic zero, an
-  analytic function vanishes near `p` exactly when all its iterated derivatives at `p` vanish.
+  analytic function into a complete normed space vanishes near `p` exactly when all its iterated
+  derivatives at `p` vanish.
 * `AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`: an analytic function
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
@@ -81,15 +83,9 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero [Complete
   have hsub : ContinuousAt (· - p) p := continuousAt_id.sub continuousAt_const
   filter_upwards [hsub.preimage_mem_nhds (by simpa using Metric.eball_mem_nhds (0 : E) hsr.r_pos)]
     with y hy
-  have hterm (n : ℕ) : s n (fun _ ↦ y - p) = 0 := by
-    have hsum := hsr.iteratedFDeriv_eq_sum_of_completeSpace (fun _ : Fin n ↦ y - p)
-    rw [h n, zero_apply, Finset.sum_const, Finset.card_univ,
-      Fintype.card_perm, Fintype.card_fin, ← Nat.cast_smul_eq_nsmul 𝕜] at hsum
-    exact (smul_eq_zero.1 hsum.symm).resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero n))
-  have hzero : HasSum (fun n ↦ s n fun _ ↦ y - p) (0 : F) := by
-    simp_rw [hterm]
-    exact hasSum_zero
-  simpa [add_sub_cancel] using (hsr.hasSum hy).unique hzero
+  have hs := hsr.hasSum_iteratedFDeriv hy
+  simp only [h, zero_apply, smul_zero, add_sub_cancel] at hs
+  exact hs.unique hasSum_zero
 
 end CharZero
 
