@@ -93,9 +93,9 @@ theorem IsSemialgebraic.semialgebraicDim_image_appendEquiv_prod
       Nat.cast_add] using add_le_add ha hb
   · -- Maximal-dimensional cells in the two factors attain the bound.
     obtain ⟨u, hus, _, hune, a, ha, f, hf⟩ :=
-      hs.exists_isOpenEmbedding_semialgebraicDim_eq hsne
+      exists_isOpenEmbedding_semialgebraicDim_eq hsne
     obtain ⟨v, hvt, _, hvne, b, hb, g, hg⟩ :=
-      ht.exists_isOpenEmbedding_semialgebraicDim_eq htne
+      exists_isOpenEmbedding_semialgebraicDim_eq htne
     rw [ha, hb, ← Nat.cast_add,
       ← semialgebraicDim_image_appendEquiv_prod_of_isOpenEmbedding hune hvne hf hg]
     exact semialgebraicDim_mono (image_mono (prod_mono hus hvt))

@@ -17,8 +17,9 @@ import TauCeti.FieldTheory.Galois.FixedField
 Let `K` be the `n`-th cyclotomic field over `ℚ`. Under Mathlib's identification
 `IsCyclotomicExtension.Rat.galEquivZMod` of `Gal(K/ℚ)` with `(ℤ/nℤ)ˣ`, the class `-1` is the
 automorphism `ζ ↦ ζ⁻¹`, and every complex embedding of `K` turns it into complex conjugation.
-Its fixed field is therefore the maximal real subfield `K⁺`, and an element of `K` lies in `K⁺` as
-soon as it is real under one complex embedding.
+Its fixed field is therefore the maximal real subfield `K⁺`. (That an element of `K` lies in `K⁺`
+as soon as it is real under one complex embedding holds for every abelian extension of `ℚ`:
+`IsAbelianGalois.mem_maximalRealSubfield_iff_star_eq`.)
 
 Under the correspondence `IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar` between
 intermediate fields of `K / ℚ` and groups of Dirichlet characters of level `n`, the maximal real
@@ -33,8 +34,6 @@ All results are in the namespace `TauCeti.IsCyclotomicExtension.Rat`.
 * `complexEmbedding_galEquivZMod_symm_neg_one_apply`: the automorphism attached to `-1` is
   complex conjugation under every complex embedding.
 * `galEquivZMod_symm_neg_one_apply_eq_self_iff`: its fixed points are the maximal real subfield.
-* `mem_maximalRealSubfield_iff_star_eq`: one complex embedding suffices to test membership in the
-  maximal real subfield.
 * `toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup`: the even characters cut out
   the maximal real subfield.
 
@@ -53,7 +52,7 @@ namespace TauCeti.IsCyclotomicExtension.Rat
 open TauCeti.DirichletCharacter
 
 variable (n : ℕ) [NeZero n] {K : Type*} [Field K] [NumberField K]
-  [hK : _root_.IsCyclotomicExtension {n} ℚ K]
+  [_root_.IsCyclotomicExtension {n} ℚ K]
 
 /-- **The automorphism of `ℚ(ζₙ)` attached to `-1` is complex conjugation.** Under every complex
 embedding `φ`, the automorphism `ζ ↦ ζ⁻¹` corresponds to complex conjugation. -/
@@ -89,14 +88,6 @@ theorem galEquivZMod_symm_neg_one_apply_eq_self_iff (x : K) :
   · rw [Complex.star_def, ← complexEmbedding_galEquivZMod_symm_neg_one_apply n, hx]
   · rw [complexEmbedding_galEquivZMod_symm_neg_one_apply n, ← Complex.star_def]
     exact hx φ
-
-include hK in
-/-- **One complex embedding detects the maximal real subfield of `ℚ(ζₙ)`.** An element lies in
-the maximal real subfield as soon as its image under a single complex embedding is real. -/
-theorem mem_maximalRealSubfield_iff_star_eq (φ : K →+* ℂ) (x : K) :
-    x ∈ maximalRealSubfield K ↔ star (φ x) = φ x := by
-  rw [← galEquivZMod_symm_neg_one_apply_eq_self_iff n, ← φ.injective.eq_iff,
-    complexEmbedding_galEquivZMod_symm_neg_one_apply n, Complex.star_def]
 
 variable (K)
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Perm.FinFour.Matching
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Symmetric.SignCharacter
 public import TauCeti.RepresentationTheory.Symmetric.Standard
