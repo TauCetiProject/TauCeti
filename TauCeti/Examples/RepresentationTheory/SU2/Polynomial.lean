@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial
+public import TauCeti.RepresentationTheory.SU2.Polynomial
 
 /-!
 # Binary monomials, substitution and the symmetric-power dictionary in small degree
 
-Checks of `TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` in two complex
-variables `x = X 0` and `y = X 1`. Each value below excludes a plausible wrong convention.
+Checks of `TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` and
+`TauCeti.RepresentationTheory.SU2.Polynomial` in two complex variables `x = X 0` and `y = X 1`. Each value below excludes a plausible wrong convention.
 
 * The monomial `e_0^0` is `1`, not an empty product read as `0`; `e_1^2` is `x y` with
   coefficient `1`, not `2 x y`; `e_2^1` is `0`, not `y²` from truncated subtraction.
@@ -34,8 +34,8 @@ namespace TauCeti.Examples
 /-! ### Binary monomials -/
 
 /-- The monomial `e_0^0` is the constant `1`. -/
-example : polynomialMonomial ℂ 0 0 = 1 := by
-  simp
+example : polynomialMonomial ℂ 0 0 = 1 :=
+  polynomialMonomial_zero_zero ℂ
 
 /-- The monomial `e_1^2` is `x y`. -/
 example : polynomialMonomial ℂ 2 1 = X 0 * X 1 := by
@@ -43,11 +43,11 @@ example : polynomialMonomial ℂ 2 1 = X 0 * X 1 := by
 
 /-- The monomial `e_1^2` has coefficient `1` at the exponent `(1, 1)`. -/
 example : (polynomialMonomial ℂ 2 1).coeff (Finsupp.single 0 1 + Finsupp.single 1 1) = 1 :=
-  coeff_polynomialMonomial_self ℂ (by norm_num)
+  coeff_polynomialMonomial_self (by norm_num)
 
 /-- The monomial `e_2^1` is zero. -/
 example : polynomialMonomial ℂ 1 2 = 0 :=
-  polynomialMonomial_of_lt ℂ (by norm_num)
+  polynomialMonomial_of_lt (by norm_num)
 
 /-! ### Substitution of standard vectors -/
 
@@ -79,11 +79,8 @@ example : polynomialAction !![1, 1; 0, 1] (X 1 : MvPolynomial (Fin 2) ℂ) = X 0
 
 /-- In degree `0` the dictionary sends the constant polynomial `1` to the unit tensor. -/
 example : (symPowerRepEquivPolynomialRep ℂ 2 0).symm
-      ⟨1, isHomogeneous_one (Fin 2) ℂ⟩ = ⨂ₛ[ℂ] i : Fin 0, Fin.elim0 i := by
-  apply EquivLike.injective (symPowerRepEquivPolynomialRep ℂ 2 0)
-  rw [Representation.Equiv.apply_symm_apply]
-  ext : 1
-  simp [coe_symPowerRepEquivPolynomialRep_tprod]
+      ⟨1, isHomogeneous_one (Fin 2) ℂ⟩ = ⨂ₛ[ℂ] i : Fin 0, Fin.elim0 i :=
+  symPowerRepEquivPolynomialRep_symm_one ℂ
 
 /-- In degree `2` the dictionary sends the pure symmetric tensor of the two standard vectors to
 the monomial `e_1^2 = x y`. -/

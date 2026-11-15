@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
-public import TauCeti.RepresentationTheory.SU2.SymmetricPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
@@ -25,18 +25,7 @@ Multiplying out a pure symmetric tensor identifies the symmetric power `Symᵈ(R
 of degree `d` in `n` variables (`TauCeti.SymmetricPower.equivHomogeneous` followed by
 `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivMvPolynomial`). This file proves that this
 dictionary intertwines the symmetric power `TauCeti.symPowerRep` of the standard representation
-with `TauCeti.polynomialRep` (`TauCeti.symPowerRepEquivPolynomialRep`), and hence also the
-symmetric powers `TauCeti.SU2.symPower` of the standard representation of `SU(2)` with the
-substitution action of `SU(2)`.
-
-In two variables the monomials `x ^ (d - i) * y ^ i` for `0 ≤ i ≤ d` form a basis of the forms
-of degree `d`; `TauCeti.polynomialMonomial R d i` denotes them, extended by zero for `i > d`.
-A diagonal matrix `diag(t₀, t₁)` scales it by `t₀ ^ (d - i) * t₁ ^ i`, so it has weight
-`(d - i, i)`, and the dictionary sends the pure symmetric tensor with `d - i` copies of the first
-standard vector and `i` copies of the second to it. With the substitution action and the
-dictionary, they give the polynomial model of the symmetric powers of `ℂ²` under `GL₂(ℂ)` and
-`SU(2)`, in which explicit computations with these representations are coordinate calculations
-with binary forms.
+with `TauCeti.polynomialRep` (`TauCeti.symPowerRepEquivPolynomialRep`).
 
 ## Main definitions
 
@@ -45,7 +34,6 @@ with binary forms.
   `GL σ R`.
 * `TauCeti.symPowerRepEquivPolynomialRep`: the symmetric power of the standard representation
   of `GL n k` is equivalent to the forms of degree `d` in `n` variables.
-* `TauCeti.polynomialMonomial`: the binary monomial `x ^ (d - i) * y ^ i`, zero for `i > d`.
 
 ## Main results
 
@@ -54,14 +42,8 @@ with binary forms.
   the coefficient vector.
 * `TauCeti.coe_symPowerRepEquivPolynomialRep_tprod`: the dictionary multiplies out a pure
   symmetric tensor.
-* `TauCeti.coe_symPowerRepEquivPolynomialRep_symPower`: the dictionary intertwines the symmetric
-  powers of the standard representation of `SU(2)` with substitution.
-* `TauCeti.coeff_polynomialMonomial_self`, `TauCeti.coeff_polynomialMonomial_of_ne`: the binary
-  monomial has coefficient `1` at the exponent `(d - i, i)` and `0` elsewhere.
-* `TauCeti.polynomialAction_diagonal_polynomialMonomial`: the binary monomial has weight
-  `(d - i, i)`.
-* `TauCeti.coe_symPowerRepEquivPolynomialRep_tprod_ite`: the dictionary sends the pure tensor
-  with `d - i` copies of the first and `i` copies of the second standard vector to the monomial.
+* `TauCeti.coe_symPowerRepEquivPolynomialRep_symPowerRep`: the dictionary intertwines the
+  symmetric power of the standard representation with substitution.
 
 ## References
 
@@ -87,24 +69,24 @@ noncomputable def polynomialAction (g : Matrix σ σ R) : MvPolynomial σ R →�
   linearSubst gᵀ
 
 /-- The substitution of standard vectors is the change of variables along the transpose. -/
-theorem polynomialAction_eq_linearSubst (g : Matrix σ σ R) :
+theorem polynomialAction_eq_linearSubst_transpose (g : Matrix σ σ R) :
     polynomialAction g = linearSubst gᵀ :=
   (rfl)
 
 @[simp]
 theorem polynomialAction_X (g : Matrix σ σ R) (j : σ) :
     polynomialAction g (X j) = ∑ i, C (g i j) * X i := by
-  simp [polynomialAction_eq_linearSubst]
+  simp [polynomialAction_eq_linearSubst_transpose]
 
 @[simp]
 theorem polynomialAction_one [DecidableEq σ] :
     polynomialAction (1 : Matrix σ σ R) = AlgHom.id R _ := by
-  simp [polynomialAction_eq_linearSubst]
+  simp [polynomialAction_eq_linearSubst_transpose]
 
 /-- The substitution of standard vectors is a left action of the matrix monoid. -/
 theorem polynomialAction_mul (g h : Matrix σ σ R) :
     polynomialAction (g * h) = (polynomialAction g).comp (polynomialAction h) := by
-  rw [polynomialAction_eq_linearSubst, transpose_mul, linearSubst_mul]
+  rw [polynomialAction_eq_linearSubst_transpose, transpose_mul, linearSubst_mul]
   rfl
 
 theorem polynomialAction_mul_apply (g h : Matrix σ σ R) (p : MvPolynomial σ R) :
@@ -125,7 +107,7 @@ theorem polynomialAction_sum_C_mul_X (g : Matrix σ σ R) (v : σ → R) :
 /-- A diagonal matrix rescales each variable by its diagonal entry. -/
 theorem polynomialAction_diagonal [DecidableEq σ] (t : σ → R) :
     polynomialAction (diagonal t) = rescale t := by
-  rw [polynomialAction_eq_linearSubst, diagonal_transpose, linearSubst_diagonal]
+  rw [polynomialAction_eq_linearSubst_transpose, diagonal_transpose, linearSubst_diagonal]
 
 /-- The substitution of standard vectors preserves homogeneity. -/
 theorem _root_.MvPolynomial.IsHomogeneous.polynomialAction {p : MvPolynomial σ R} {n : ℕ}
@@ -144,7 +126,7 @@ noncomputable def polynomialRep [DecidableEq σ] (d : ℕ) :
 theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
     (p : homogeneousSubmodule σ R d) :
     (polynomialRep σ R d g p : MvPolynomial σ R) = polynomialAction (g : Matrix σ σ R) p := by
-  simp [polynomialRep, polynomialAction_eq_linearSubst]
+  simp [polynomialRep, polynomialAction_eq_linearSubst_transpose]
 
 end Action
 
@@ -178,6 +160,17 @@ noncomputable def symPowerRepEquivPolynomialRep :
       Representation.symmetricPower_apply_tprod, stdRep_apply_apply, coe_polynomialRep_apply,
       coe_symmetricPowerHomogeneous_tprod, map_prod, polynomialAction_sum_C_mul_X]
 
+/-- The underlying linear equivalence of `TauCeti.symPowerRepEquivPolynomialRep` is the dictionary
+`TauCeti.SymmetricPower.equivHomogeneous` followed by
+`TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivMvPolynomial`. -/
+@[simp]
+theorem symPowerRepEquivPolynomialRep_toLinearEquiv :
+    (symPowerRepEquivPolynomialRep k n d).toLinearEquiv =
+      (SymmetricPower.equivHomogeneous d).trans
+        (SymmetricAlgebra.homogeneousSubmoduleEquivMvPolynomial k (Fin n → k)
+          (Pi.basisFun k (Fin n)) d) :=
+  (rfl)
+
 /-- The equivalence `TauCeti.symPowerRepEquivPolynomialRep` multiplies out a pure symmetric
 tensor of vectors `mᵢ`, as a product of the linear forms with coefficient vectors `mᵢ`. -/
 @[simp]
@@ -197,6 +190,17 @@ theorem coe_symPowerRepEquivPolynomialRep_tprod_single (f : Fin d → Fin n) :
   rw [Finset.sum_eq_single (f i) (fun j _ hj ↦ by simp [hj]) (by simp)]
   simp
 
+variable {n} in
+/-- In degree `0` the inverse of `TauCeti.symPowerRepEquivPolynomialRep` sends the constant
+polynomial `1` to the unit tensor. -/
+theorem symPowerRepEquivPolynomialRep_symm_one :
+    (symPowerRepEquivPolynomialRep k n 0).symm ⟨1, isHomogeneous_one (Fin n) k⟩ =
+      ⨂ₛ[k] i : Fin 0, Fin.elim0 i := by
+  apply EquivLike.injective (symPowerRepEquivPolynomialRep k n 0)
+  rw [Representation.Equiv.apply_symm_apply]
+  ext : 1
+  simp [coe_symPowerRepEquivPolynomialRep_tprod]
+
 /-- The equivalence `TauCeti.symPowerRepEquivPolynomialRep` intertwines the symmetric power of the
 standard representation with the substitution of standard vectors. -/
 theorem coe_symPowerRepEquivPolynomialRep_symPowerRep (g : GL (Fin n) k)
@@ -207,111 +211,6 @@ theorem coe_symPowerRepEquivPolynomialRep_symPowerRep (g : GL (Fin n) k)
   exact congrArg Subtype.val (Representation.IntertwiningMap.isIntertwining _ _
     (symPowerRepEquivPolynomialRep k n d).toIntertwiningMap g x)
 
-/-- The equivalence `TauCeti.symPowerRepEquivPolynomialRep` intertwines the symmetric powers
-`TauCeti.SU2.symPower` of the standard representation of `SU(2)` with the substitution of
-standard vectors. -/
-theorem coe_symPowerRepEquivPolynomialRep_symPower (g : SU2) (x : Sym[ℂ]^d(Fin 2 → ℂ)) :
-    (symPowerRepEquivPolynomialRep ℂ 2 d (SU2.symPower d g x) : MvPolynomial (Fin 2) ℂ) =
-      polynomialAction (g : Matrix (Fin 2) (Fin 2) ℂ) (symPowerRepEquivPolynomialRep ℂ 2 d x) := by
-  rw [SU2.symPower_apply, coe_symPowerRepEquivPolynomialRep_symPowerRep, SU2.coe_toGL]
-
 end SymmetricPower
-
-section Monomial
-
-variable (R : Type*) [CommSemiring R] (d i : ℕ)
-
-/-- The binary monomial `e_i^d = x ^ (d - i) * y ^ i` of degree `d`, where `x = X 0` and
-`y = X 1`, for `i ≤ d`; it is zero for `i > d`. -/
-noncomputable def polynomialMonomial : MvPolynomial (Fin 2) R :=
-  if i ≤ d then X 0 ^ (d - i) * X 1 ^ i else 0
-
-variable {d i}
-
-theorem polynomialMonomial_of_le (h : i ≤ d) :
-    polynomialMonomial R d i = X 0 ^ (d - i) * X 1 ^ i := by
-  simp [polynomialMonomial, h]
-
-theorem polynomialMonomial_of_lt (h : d < i) : polynomialMonomial R d i = 0 := by
-  simp [polynomialMonomial, h.not_ge]
-
-/-- The binary monomial `e_i^d` is the monomial with exponent `(d - i, i)` and coefficient `1`. -/
-theorem polynomialMonomial_eq_monomial (h : i ≤ d) :
-    polynomialMonomial R d i =
-      monomial (Finsupp.single 0 (d - i) + Finsupp.single 1 i) 1 := by
-  rw [polynomialMonomial_of_le R h, X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial,
-    one_mul]
-
-variable (d) in
-@[simp]
-theorem polynomialMonomial_zero_right : polynomialMonomial R d 0 = X 0 ^ d := by
-  simp [polynomialMonomial]
-
-variable (d) in
-@[simp]
-theorem polynomialMonomial_self : polynomialMonomial R d d = X 1 ^ d := by
-  simp [polynomialMonomial]
-
-variable (d i) in
-/-- The binary monomial `e_i^d` is homogeneous of degree `d`, also when it vanishes. -/
-theorem isHomogeneous_polynomialMonomial : (polynomialMonomial R d i).IsHomogeneous d := by
-  by_cases h : i ≤ d
-  · rw [polynomialMonomial_of_le R h]
-    simpa only [Nat.sub_add_cancel h] using (isHomogeneous_X_pow 0 (d - i)).mul
-      (isHomogeneous_X_pow 1 i)
-  · rw [polynomialMonomial_of_lt R (not_le.mp h)]
-    exact isHomogeneous_zero _ _ _
-
-variable (d i) in
-theorem polynomialMonomial_mem_homogeneousSubmodule :
-    polynomialMonomial R d i ∈ homogeneousSubmodule (Fin 2) R d :=
-  isHomogeneous_polynomialMonomial R d i
-
-/-- The binary monomial `e_i^d` has coefficient `1` at the exponent `(d - i, i)`. -/
-theorem coeff_polynomialMonomial_self (h : i ≤ d) :
-    (polynomialMonomial R d i).coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) = 1 := by
-  simp [polynomialMonomial_eq_monomial R h]
-
-/-- The binary monomial `e_i^d` has coefficient `0` away from the exponent `(d - i, i)`. -/
-theorem coeff_polynomialMonomial_of_ne {s : Fin 2 →₀ ℕ}
-    (hs : s ≠ Finsupp.single 0 (d - i) + Finsupp.single 1 i) :
-    (polynomialMonomial R d i).coeff s = 0 := by
-  by_cases h : i ≤ d
-  · rw [polynomialMonomial_eq_monomial R h, coeff_monomial, ite_eq_right_iff]
-    exact fun h' ↦ absurd h'.symm hs
-  · simp [polynomialMonomial_of_lt R (not_le.mp h)]
-
-variable (d i) in
-/-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
-binary monomial `e_i^d` by `t₀ ^ (d - i) * t₁ ^ i`. -/
-theorem polynomialAction_diagonal_polynomialMonomial (t : Fin 2 → R) :
-    polynomialAction (diagonal t) (polynomialMonomial R d i) =
-      (t 0 ^ (d - i) * t 1 ^ i) • polynomialMonomial R d i := by
-  by_cases h : i ≤ d
-  · rw [polynomialMonomial_of_le R h, polynomialAction_diagonal, map_mul, map_pow, map_pow,
-      rescale_X, rescale_X, smul_eq_C_mul, mul_pow, mul_pow, map_mul, map_pow, map_pow]
-    ring
-  · rw [polynomialMonomial_of_lt R (not_le.mp h), map_zero, smul_zero]
-
-end Monomial
-
-/-- **The dictionary on binary monomials**: the equivalence `TauCeti.symPowerRepEquivPolynomialRep`
-sends the pure symmetric tensor with `d - i` copies of the first standard vector of `k²` followed
-by `i` copies of the second to the binary monomial `e_i^d = x ^ (d - i) * y ^ i`. -/
-theorem coe_symPowerRepEquivPolynomialRep_tprod_ite (k : Type) [CommRing k] {d i : ℕ}
-    (h : i ≤ d) :
-    (symPowerRepEquivPolynomialRep k 2 d
-        (⨂ₛ[k] l : Fin d, Pi.single (if (l : ℕ) < d - i then 0 else 1) 1) :
-        MvPolynomial (Fin 2) k) =
-      polynomialMonomial k d i := by
-  rw [coe_symPowerRepEquivPolynomialRep_tprod_single, polynomialMonomial_of_le k h]
-  simp only [apply_ite X, Finset.prod_ite, Finset.prod_const]
-  congr 2
-  · rw [Fin.card_filter_val_lt, min_eq_right (Nat.sub_le d i)]
-  · have hcard := Finset.card_filter_add_card_filter_not
-      (s := (Finset.univ : Finset (Fin d))) (fun l : Fin d ↦ (l : ℕ) < d - i)
-    rw [Fin.card_filter_val_lt, min_eq_right (Nat.sub_le d i), Finset.card_univ,
-      Fintype.card_fin] at hcard
-    omega
 
 end TauCeti
