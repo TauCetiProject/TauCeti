@@ -50,6 +50,18 @@ theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
   -- Mathlib's `norm_tangentSpace_vectorSpace`.
   rfl
 
+/-- For a map into a real inner product space, the inner product of `mfderiv` values in the target
+tangent space equals the inner product of `mvfderiv` values in the model space. -/
+theorem inner_mfderiv_eq_inner_mvfderiv
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (f : M → F) (x : M) (v w : TangentSpace I x) :
+    inner ℝ (mfderiv I 𝓘(ℝ, F) f x v) (mfderiv I 𝓘(ℝ, F) f x w) =
+      inner ℝ (mvfderiv I f x v) (mvfderiv I f x w) := by
+  simp [inner_tangentSpace_vectorSpace, mvfderiv]
+
 /-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
 Mathlib's `gradient`. -/
 theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]

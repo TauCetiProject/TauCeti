@@ -238,9 +238,7 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
       (L.inner_map_map _ _).trans (orthonormal_iff_ite.1 b₀.orthonormal i j)
   refine exists_riemannianIsometry_ball_of_inner_mfderiv_eq hx₀ hW₂open hx₀W₂
     (inter_subset_left.trans hW₁U) L hΦ_smooth (by simp [Φ]) hΦ_mv_x₀ fun {y} hy v w ↦ ?_
-  rw [Manifold.inner_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, hΦ_mv hy v, hΦ_mv hy w]
+  rw [Manifold.inner_mfderiv_eq_inner_mvfderiv, hΦ_mv hy v, hΦ_mv hy w]
   simpa only [OrthonormalBasis.coe_mk] using
     (OrthonormalBasis.mk (horth₁ y hy.1) (hframe₁.generating hy.1)).inner_sum_inner_smul
       hLb_orth v w

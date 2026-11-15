@@ -10,9 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Flat
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ConformallyFlat.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
-import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
@@ -71,18 +69,6 @@ noncomputable section
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-private theorem inner_mfderiv_eq_inner_mvfderiv
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (ψ : X → F) (z : X) (u₁ u₂ : TangentSpace I z) :
-    ⟪mfderiv I 𝓘(ℝ, F) ψ z u₁, mfderiv I 𝓘(ℝ, F) ψ z u₂⟫_ℝ =
-      ⟪mvfderiv I ψ z u₁, mvfderiv I ψ z u₂⟫_ℝ := by
-  rw [TauCeti.Manifold.inner_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply]
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
@@ -116,32 +102,25 @@ theorem exists_eventually_curvatureTensor_rescale_eq_zero_of_partialDiffeomorph
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
   have : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale f hf hf_pos).inner, (g.rescale f hf hf_pos).contMDiff, fun _ _ _ ↦ rfl⟩
+  have hloc (z : W) : IsLocalDiffeomorphAt I 𝓘(ℝ, F) ∞ (φ ∘ (Subtype.val : W → M)) z :=
+    (TauCeti.isLocalDiffeomorph_subtype_val z).comp
+      (hg := φ.isLocalDiffeomorphAt I 𝓘(ℝ, F) ∞ (hW₀sub z.2).1)
   have hiso : TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, F) (φ ∘ (Subtype.val : W → M)) :=
-    { contMDiff z := (PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ (hW₀sub z.2).1).contMDiffAt
-        |>.comp z contMDiff_subtype_val.contMDiffAt
-      isInvertible_mfderiv z := by
-        have hloc := PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ (hW₀sub z.2).1
-        have hdι :=
-          (contMDiff_subtype_val (I := I) (U := W) (n := 1) z).mdifferentiableAt one_ne_zero
-        rw [mfderiv_comp z (hloc.mdifferentiableAt (by simp)) hdι]
-        exact ContinuousLinearMap.IsInvertible.comp (hloc.isInvertible_mfderiv (by simp))
-          ⟨TauCeti.Manifold.tangentSpaceOpenEquiv z, (TauCeti.Manifold.mfderiv_subtype_val z).symm⟩
+    { contMDiff z := (hloc z).contMDiffAt
+      isInvertible_mfderiv z := (hloc z).isInvertible_mfderiv (by simp)
       inner_mfderiv z v w := by
-        obtain ⟨hzφ, hzψ⟩ := hW₀sub z.2
+        have hzφ : (z : M) ∈ φ.source := (hW₀sub z.2).1
+        have hzψ : ψ z = -Real.log (h z) := (hW₀sub z.2).2
         have hdφ :=
           (PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ hzφ).mdifferentiableAt (by simp)
         have hdι :=
           (contMDiff_subtype_val (I := I) (U := W) (n := 1) z).mdifferentiableAt one_ne_zero
         have hfz : f z = (h z)⁻¹ := by
-          change Real.exp (ψ z) = (h z)⁻¹
-          rw [hzψ, Real.exp_neg, Real.exp_log (hh_pos z hzφ)]
+          simp only [f, hzψ, Real.exp_neg, Real.exp_log (hh_pos z hzφ)]
         rw [mfderiv_comp_apply z hdφ hdι, mfderiv_comp_apply z hdφ hdι,
-          ← (TauCeti.IsLocalRiemannianIsometry.subtype_val W).inner_mfderiv z v w]
-        change ⟪mfderiv I 𝓘(ℝ, F) φ z (mfderiv I I Subtype.val z v),
-            mfderiv I 𝓘(ℝ, F) φ z (mfderiv I I Subtype.val z w)⟫_ℝ =
-          (g.rescale f hf hf_pos).inner z (mfderiv I I Subtype.val z v)
-            (mfderiv I I Subtype.val z w)
-        rw [rescale_inner, hinner z hzφ, hfz, inv_mul_cancel_left₀ (hh_pos z hzφ).ne'] }
+          ← (TauCeti.IsLocalRiemannianIsometry.subtype_val W).inner_mfderiv z v w,
+          (g.rescale f hf hf_pos).inner_riemannianBundle, rescale_inner, hinner z hzφ, hfz,
+          inv_mul_cancel_left₀ (hh_pos z hzφ).ne'] }
   exact TauCeti.curvatureTensor_leviCivitaConnection_eq_zero_of_isLocalRiemannianIsometry hiso hy
 
 /-- If every point of `M` admits a partial diffeomorphism into a finite-dimensional real
@@ -195,7 +174,7 @@ theorem exists_eventually_curvatureTensor_rescale_eq_zero_iff_partialDiffeomorph
     have hφ_comp : (φ : M → F) ∘ (Subtype.val : W → M) = (Subtype.val : B → F) ∘ Ψ :=
       funext fun z ↦ Ψ.toDiffeomorph.toPartialDiffeomorphOpens_apply_coe ⟨⟨x₀, hx₀W⟩⟩ z
     refine ⟨φ, fun y ↦ (f y)⁻¹, by simpa [φ] using hx₀W,
-      (Ψ.toDiffeomorph.toPartialDiffeomorphOpens_apply_coe ⟨⟨x₀, hx₀W⟩⟩ ⟨x₀, hx₀W⟩).trans hΨ0,
+      (Ψ.toDiffeomorph.toPartialDiffeomorphOpens_apply ⟨⟨x₀, hx₀W⟩⟩ hx₀W).trans hΨ0,
       (hf.inv₀ fun y ↦ (hf_pos y).ne').contMDiffOn, fun y _ ↦ inv_pos.2 (hf_pos y),
       fun y hy v w ↦ ?_⟩
     have hyW : y ∈ W := by simpa [φ] using hy
@@ -216,8 +195,8 @@ theorem exists_eventually_curvatureTensor_rescale_eq_zero_iff_partialDiffeomorph
     have hiso : TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, F) ((Subtype.val : B → F) ∘ Ψ) :=
       (TauCeti.IsLocalRiemannianIsometry.subtype_val B).comp Ψ.isLocalRiemannianIsometry
     have hinner_eq : ⟪mfderiv I 𝓘(ℝ, F) φ y v, mfderiv I 𝓘(ℝ, F) φ y w⟫_ℝ = ⟪vW, wW⟫_ℝ := by
-      rw [inner_mfderiv_eq_inner_mvfderiv φ y v w, hmv v, hmv w,
-        ← inner_mfderiv_eq_inner_mvfderiv ((Subtype.val : B → F) ∘ Ψ) yW vW wW]
+      rw [TauCeti.Manifold.inner_mfderiv_eq_inner_mvfderiv φ y v w, hmv v, hmv w,
+        ← TauCeti.Manifold.inner_mfderiv_eq_inner_mvfderiv ((Subtype.val : B → F) ∘ Ψ) yW vW wW]
       exact hiso.inner_mfderiv yW vW wW
     have hinnerW : ⟪vW, wW⟫_ℝ = f y * g.inner y v w := by
       rw [(g'.restrictOpenTangentSpace W).inner_riemannianBundle yW vW wW,

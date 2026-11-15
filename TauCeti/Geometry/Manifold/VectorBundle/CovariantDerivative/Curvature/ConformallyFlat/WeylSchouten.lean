@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ConformallyFlat.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.RadialContraction
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
@@ -124,7 +124,8 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
         ∀ y ∈ V, ∀ u v : TangentSpace I y,
           hessian I (fun x ↦ φ (x, p)) y u v =
             (lc I M).conformalFlatteningForm y (mgradient I (fun x ↦ φ (x, p)) y) u v := by
-  have : FiniteDimensional ℝ (TangentSpace I x₀) := inferInstanceAs (FiniteDimensional ℝ E)
+  have : FiniteDimensional ℝ (TangentSpace I x₀) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x₀
   obtain ⟨U₀, hU₀WC, hU₀open, hx₀U₀⟩ := mem_nhds_iff.1 (hW.and hC)
   obtain ⟨W, hx₀W, Φ, hWU₀, -⟩ :=
     TauCeti.exists_diffeomorph_modelSpace_of_isInteriorPoint (le_rfl : ∞ ≤ ∞) hx₀
@@ -147,8 +148,9 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
         rw [inner_tangentSpace_open W, ← contMDiffRiemannianMetricOpen_inner (n := ∞) W,
           gE.inner_riemannianBundle, gW.pullback_inner] }
   have hΨ : TauCeti.IsLocalRiemannianIsometry 𝓘(ℝ, E) I Φ.symm := Ψsymm.isLocalRiemannianIsometry
-  have hcoe : (Ψsymm.symm : W → E) = Φ := funext fun w ↦
-    Ψsymm.injective ((Ψsymm.apply_symm_apply w).trans (Φ.symm_apply_apply w).symm)
+  have hcoe : (Ψsymm.symm : W → E) = Φ := by
+    rw [TauCeti.RiemannianIsometry.coe_symm, ← Diffeomorph.coe_toEquiv]
+    simp [Ψsymm]
   have hΦ : TauCeti.IsLocalRiemannianIsometry I 𝓘(ℝ, E) Φ :=
     hcoe ▸ Ψsymm.symm.isLocalRiemannianIsometry
   have hι : TauCeti.IsLocalRiemannianIsometry I I (Subtype.val : W → M) :=
@@ -159,6 +161,7 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
   have hCE (z : E) : (lc 𝓘(ℝ, E) E).cottonTensor z = 0 :=
     (hΨ.cottonTensor_eq_zero_iff z).1
       ((hι.cottonTensor_eq_zero_iff (Φ.symm z)).1 (hU₀WC (hWU₀ (Φ.symm z).2)).2)
+  -- Solve the conformal flattening equation in smooth families on the model space `E`.
   let L : TangentSpace I x₀ →L[ℝ] TangentSpace 𝓘(ℝ, E) z₀ :=
     (mfderiv I 𝓘(ℝ, E) Φ x₀W).comp
       (tangentSpaceOpenEquiv (I := I) x₀W).symm.toContinuousLinearMap
@@ -167,46 +170,30 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
   obtain ⟨φE, VE, QE, KE, hVE, hQE, hKE, hz₀VE, hp₀QE, hφE, hφE_supp, hφE_sol⟩ :=
     exists_contMDiff_hessian_eq_family_model_space
       (Eventually.of_forall hWE) (Eventually.of_forall hCE) c₀ (L ξ₀)
+  -- Pull the solution family back to `W` and extend by zero outside `W`.
   let KM : Set M := (Subtype.val ∘ Φ.symm) '' KE
   have hKM_cpt : IsCompact KM := hKE.image (continuous_subtype_val.comp Φ.symm.continuous)
   have hKMW : KM ⊆ (W : Set M) := by
     rintro _ ⟨z, -, rfl⟩
     exact (Φ.symm z).2
-  open Classical in
-  let φ : M × (ℝ × TangentSpace I x₀) → ℝ := fun r ↦
-    if hx : r.1 ∈ W then φE (Φ ⟨r.1, hx⟩, (r.2.1, L r.2.2)) else 0
+  let g : W × (ℝ × TangentSpace I x₀) → ℝ := fun q ↦ φE (Φ q.1, (q.2.1, L q.2.2))
+  have hg_supp (w : W) (hw : (w : M) ∉ KM) (p : ℝ × TangentSpace I x₀) : g (w, p) = 0 :=
+    hφE_supp (Φ w) (fun hz ↦ hw ⟨Φ w, hz, congrArg Subtype.val (Φ.symm_apply_apply w)⟩)
+      (p.1, L p.2)
+  have hg : ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ g :=
+    hφE.comp ((Φ.contMDiff.comp contMDiff_fst).prodMk
+      ((contMDiff_fst.comp contMDiff_snd).prodMk
+        (L.contDiff.contMDiff.comp (contMDiff_snd.comp contMDiff_snd))))
+  let φ : M × (ℝ × TangentSpace I x₀) → ℝ := (Prod.map (Subtype.val : W → M) id).extend g 0
+  have hφ : ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ :=
+    ContMDiff.extend_prodMap_subtypeVal_zero hKM_cpt.isClosed hKMW hg hg_supp
   have hφ_supp (x : M) (hxK : x ∉ KM) (p : ℝ × TangentSpace I x₀) : φ (x, p) = 0 := by
     by_cases hxW : x ∈ W
-    · have hzK : Φ ⟨x, hxW⟩ ∉ KE := fun hz ↦
-        hxK ⟨Φ ⟨x, hxW⟩, hz, congrArg Subtype.val (Φ.symm_apply_apply ⟨x, hxW⟩)⟩
-      simpa only [φ, hxW, ↓reduceDIte] using hφE_supp (Φ ⟨x, hxW⟩) hzK (p.1, L p.2)
-    · simp only [φ, hxW, ↓reduceDIte]
-  have hφ : ContMDiff (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞ φ := by
-    intro r
-    by_cases hxW : r.1 ∈ W
-    · let j := (W.partialDiffeomorphSubtypeCoe (I := I) (n := ∞) ⟨x₀W⟩).symm
-      have hj_at : ContMDiffAt I I ∞ j r.1 :=
-        (PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ j (by simpa [j] using hxW)).contMDiffAt
-      have hα : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))
-          (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace 𝓘(ℝ, E) z₀)) ∞ (Prod.map id L) :=
-        (contMDiff_id (I := 𝓘(ℝ)) (M := ℝ)).prodMap L.contDiff.contMDiff
-      have hloc : ContMDiffAt (I.prod (𝓘(ℝ).prod 𝓘(ℝ, TangentSpace I x₀))) 𝓘(ℝ) ∞
-          (fun q : M × (ℝ × TangentSpace I x₀) ↦ φE (Φ (j q.1), Prod.map id L q.2)) r :=
-        hφE.contMDiffAt.comp r
-          ((Φ.contMDiff.contMDiffAt.comp r (hj_at.comp r contMDiffAt_fst)).prodMk
-            (hα.contMDiffAt.comp r contMDiffAt_snd))
-      refine hloc.congr_of_eventuallyEq ?_
-      filter_upwards [(W.isOpen.prod isOpen_univ).mem_nhds ⟨hxW, mem_univ r.2⟩] with q hq
-      have hjq : j (⟨q.1, hq.1⟩ : W) = ⟨q.1, hq.1⟩ :=
-        W.partialDiffeomorphSubtypeCoe_symm_apply_coe ⟨x₀W⟩ ⟨q.1, hq.1⟩
-      have hqW : q.1 ∈ W := hq.1
-      simp only [φ, hqW, ↓reduceDIte]
-      exact congrArg (fun w ↦ φE (Φ w, (q.2.1, L q.2.2))) hjq.symm
-    · have hcompl : KMᶜ ×ˢ (univ : Set (ℝ × TangentSpace I x₀)) ∈ 𝓝 r :=
-        (hKM_cpt.isClosed.isOpen_compl.prod isOpen_univ).mem_nhds
-          ⟨fun hxK ↦ hxW (hKMW hxK), mem_univ r.2⟩
-      exact contMDiffAt_const.congr_of_eventuallyEq
-        (eventually_of_mem hcompl fun q hq ↦ hφ_supp q.1 hq.1 q.2)
+    · exact ((Subtype.val_injective.prodMap injective_id).extend_apply g 0 (⟨x, hxW⟩, p)).trans
+        (hg_supp ⟨x, hxW⟩ hxK p)
+    · exact extend_apply' _ _ _ fun ⟨q, hq⟩ ↦
+        hxW ((show (q.1 : M) = x from congrArg Prod.fst hq) ▸ q.1.2)
+  -- Transport initial data and the Hessian identity back from `E` to `VM ⊆ M`.
   let VM : Set M := Subtype.val '' (Φ.symm '' VE)
   have hVM : IsOpen VM :=
     W.isOpen.isOpenMap_subtype_val _ (Φ.symm.toHomeomorph.isOpenMap VE hVE)
@@ -219,11 +206,10 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
   set φEp : E → ℝ := fun z ↦ φE (z, (p.1, L p.2))
   have hφp : ContMDiff I 𝓘(ℝ) ∞ φp := hφ.comp (contMDiff_id.prodMk contMDiff_const)
   have hφEp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φEp := hφE.comp (contMDiff_id.prodMk contMDiff_const)
-  have hcompW : φp ∘ (Subtype.val : W → M) = φEp ∘ Φ := by
-    funext w
-    simp [φp, φEp, φ, w.2]
-  refine ⟨?_, ?_, ?_⟩
-  · simpa only [φ, hx₀W, ↓reduceDIte] using hvalE
+  have hcompW : φp ∘ (Subtype.val : W → M) = φEp ∘ Φ :=
+    funext fun w ↦ (Subtype.val_injective.prodMap injective_id).extend_apply g 0 (w, p)
+  refine ⟨((Subtype.val_injective.prodMap injective_id).extend_apply g 0 (x₀W, p)).trans hvalE,
+    ?_, ?_⟩
   · apply hL_inj
     have hgradι : mfderiv I I (Subtype.val : W → M) x₀W (mgradient I (φp ∘ Subtype.val) x₀W) =
         mgradient I φp x₀ :=
@@ -232,8 +218,9 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
         mgradient I (φp ∘ Subtype.val) x₀W := by
       rw [← hgradι, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
         ContinuousLinearEquiv.symm_apply_apply]
-    change mfderiv I 𝓘(ℝ, E) Φ x₀W
-        ((tangentSpaceOpenEquiv (I := I) x₀W).symm (mgradient I φp x₀)) = L p.2
+    conv_lhs =>
+      simp only [L, ContinuousLinearMap.coe_comp, Function.comp_apply,
+        ContinuousLinearEquiv.coe_coe]
     rw [hgradW, hcompW,
       hΦ.mfderiv_mgradient_comp (x := x₀W) (hφEp.contMDiffAt.mdifferentiableAt (by simp))]
     exact hgradE

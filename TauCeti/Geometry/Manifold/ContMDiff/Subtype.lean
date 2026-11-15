@@ -33,6 +33,11 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
 * `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
   to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
   map is.
+* `ContMDiff.extend_one_of_mulTSupport_subset`, `ContMDiff.extend_zero_of_tsupport_subset`,
+  `ContMDiff.extend_prodMap_subtypeVal_one`, and `ContMDiff.extend_prodMap_subtypeVal_zero`: global
+  `C^n` extension by `1` (or `0`) of a `C^n` map on an open submanifold whose topological support
+  lies in the submanifold, and of a `C^n` family `U × N → M'` trivial outside a closed subset of
+  `U` in the first factor.
 * `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
   of a normed real space is smooth on `[0, 1]` at every regularity.
 
@@ -120,6 +125,58 @@ theorem TauCeti.contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {
   rw [← contMDiffAt_subtype_iff] at h
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦
     (Subtype.val_injective.extend_apply g e z).symm)
+
+/-- If the topological multiplicative support of `Subtype.val.extend g 1` is contained in the open
+set `U` and `g : U → M'` is `C^n`, then `Subtype.val.extend g 1` is `C^n` on all of `M`. -/
+@[to_additive /-- If the topological support of `Subtype.val.extend g 0` is contained in the open
+set `U` and `g : U → M'` is `C^n`, then `Subtype.val.extend g 0` is `C^n` on all of `M`. -/]
+theorem ContMDiff.extend_one_of_mulTSupport_subset [One M'] {U : Opens M} {g : U → M'}
+    (hg : ContMDiff I I' n g) (hsupp : mulTSupport (Subtype.val.extend g 1) ⊆ (U : Set M)) :
+    ContMDiff I I' n (Subtype.val.extend g 1) :=
+  contMDiff_of_mulTSupport fun x hx ↦ (hg ⟨x, hsupp hx⟩).extend_subtypeVal 1
+
+/-- **Extending a smooth family from an open submanifold.** If `g : U × N → M'` is `C^n` on the
+product of an open subset `U ⊆ M` with a manifold `N` and equals `1` outside `s ×ˢ univ` for a
+closed set `s ⊆ U`, then extending `g` by `1` outside `U ×ˢ univ` yields a `C^n` map on `M × N`. -/
+@[to_additive ContMDiff.extend_prodMap_subtypeVal_zero
+/-- **Extending a smooth family by zero from an open submanifold.** If `g : U × N → M'` is `C^n` on
+the product of an open subset `U ⊆ M` with a manifold `N` and vanishes outside `s ×ˢ univ` for a
+closed set `s ⊆ U`, then extending `g` by `0` outside `U ×ˢ univ` yields a `C^n` map on
+`M × N`. -/]
+theorem ContMDiff.extend_prodMap_subtypeVal_one
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] [One M']
+    {U : Opens M} {s : Set M} (hs : IsClosed s) (hsU : s ⊆ U) {g : U × N → M'}
+    (hg : ContMDiff (I.prod I'') I' n g)
+    (hsupp : ∀ x : U, (x : M) ∉ s → ∀ y : N, g (x, y) = 1) :
+    ContMDiff (I.prod I'') I' n ((Prod.map (Subtype.val : U → M) id).extend g 1) := by
+  let V : Opens (M × N) := ⟨(U : Set M) ×ˢ univ, U.isOpen.prod isOpen_univ⟩
+  let g' : V → M' := fun v ↦ g (⟨v.1.1, v.2.1⟩, v.1.2)
+  have hπ₁ : ContMDiff (I.prod I'') I n (fun v : V ↦ (⟨v.1.1, v.2.1⟩ : U)) :=
+    (TauCeti.ContMDiff.subtypeVal_comp_iff U _).1 (contMDiff_fst.comp contMDiff_subtype_val)
+  have hg' : ContMDiff (I.prod I'') I' n g' :=
+    hg.comp (hπ₁.prodMk (contMDiff_snd.comp contMDiff_subtype_val))
+  have hext : (Prod.map (Subtype.val : U → M) id).extend g 1 = Subtype.val.extend g' 1 := by
+    ext ⟨x, y⟩
+    by_cases hx : x ∈ U
+    · exact ((Subtype.val_injective.prodMap Function.injective_id).extend_apply g 1
+        (⟨x, hx⟩, y)).trans (Subtype.val_injective.extend_apply g' 1 ⟨(x, y), hx, trivial⟩).symm
+    · rw [Function.extend_apply' _ _ _ fun ⟨q, hq⟩ ↦
+          hx ((show (q.1 : M) = x from congrArg Prod.fst hq) ▸ q.1.2),
+        Function.extend_apply' _ _ _ fun ⟨v, hv⟩ ↦
+          hx ((show v.1.1 = x from congrArg Prod.fst hv) ▸ v.2.1)]
+  rw [hext]
+  refine hg'.extend_one_of_mulTSupport_subset (Subset.trans (b := s ×ˢ univ)
+    (closure_minimal (fun r hr ↦ ⟨?_, trivial⟩) (hs.prod isClosed_univ))
+    (prod_mono hsU Subset.rfl))
+  by_contra hxs
+  refine hr ?_
+  by_cases hxU : r.1 ∈ U
+  · exact (Subtype.val_injective.extend_apply g' 1 ⟨r, hxU, trivial⟩).trans
+      (hsupp ⟨r.1, hxU⟩ hxs r.2)
+  · exact Function.extend_apply' _ _ _ fun ⟨v, hv⟩ ↦
+      hxU ((show v.1.1 = r.1 from congrArg Prod.fst hv) ▸ v.2.1)
 
 end Extend
 

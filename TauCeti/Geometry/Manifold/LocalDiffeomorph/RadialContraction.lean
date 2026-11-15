@@ -78,17 +78,16 @@ def radialContractionPartialDiffeomorph (c : E) (hn : n ≤ ∞) {r : ℝ} (hr :
 theorem coe_radialContractionPartialDiffeomorph (c : E) (hn : n ≤ ∞) {r : ℝ} (hr : 0 < r) :
     ⇑(radialContractionPartialDiffeomorph c hn hr) = radialContraction c (r⁻¹ ^ 2) := by
   let h := exists_radialContraction_eq_openPartialHomeomorph c (κ := r⁻¹ ^ 2) (by positivity)
-  change ⇑(radialContractionPartialDiffeomorph c hn hr).toPartialEquiv = _
+  ext x
   rw [radialContractionPartialDiffeomorph,
     PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
-  exact h.choose_spec.2.2.2
+  exact congrFun h.choose_spec.2.2.2 x
 
 /-- The source of `radialContractionPartialDiffeomorph` is `Set.univ`. -/
 @[simp]
 theorem radialContractionPartialDiffeomorph_source (c : E) (hn : n ≤ ∞) {r : ℝ} (hr : 0 < r) :
     (radialContractionPartialDiffeomorph c hn hr).source = univ := by
   let h := exists_radialContraction_eq_openPartialHomeomorph c (κ := r⁻¹ ^ 2) (by positivity)
-  change (radialContractionPartialDiffeomorph c hn hr).toPartialEquiv.source = univ
   rw [radialContractionPartialDiffeomorph,
     PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
   exact h.choose_spec.1
@@ -147,8 +146,8 @@ theorem exists_diffeomorph_modelSpace_of_isInteriorPoint
   let Φ : W ≃ₘ^n⟮I, 𝓘(ℝ, E)⟯ E :=
     Ξ.toDiffeomorphSourceTarget.symm.trans (Diffeomorph.ofTop _ hS)
   refine ⟨W, hx₀Ξ, Φ, ?_, ?_⟩
-  · intro y hy
-    change y ∈ Ξ.target at hy
+  · rw [TopologicalSpace.Opens.coe_mk]
+    intro y hy
     rw [PartialDiffeomorph.trans_target] at hy
     have hy' : y ∈ ψ.source := by simpa using hy.1
     rw [PartialDiffeomorph.restrOpen_source] at hy'

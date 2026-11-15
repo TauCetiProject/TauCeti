@@ -298,6 +298,13 @@ theorem partialDiffeomorphSubtypeCoe_symm_apply_coe (U : TopologicalSpace.Opens 
     (x : U) : (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).symm x = x :=
   U.partialDiffeomorphSubtypeCoe_toPartialEquiv_symm_apply_coe hU x
 
+/-- At a point `x ∈ U`, the inverse of `Opens.partialDiffeomorphSubtypeCoe` evaluates to
+`⟨x, hx⟩`. -/
+theorem partialDiffeomorphSubtypeCoe_symm_apply (U : TopologicalSpace.Opens M) (hU : Nonempty U)
+    {x : M} (hx : x ∈ U) :
+    (U.partialDiffeomorphSubtypeCoe (I := I) (n := n) hU).symm x = ⟨x, hx⟩ :=
+  U.partialDiffeomorphSubtypeCoe_symm_apply_coe hU ⟨x, hx⟩
+
 end TopologicalSpace.Opens
 
 namespace Diffeomorph
@@ -351,6 +358,11 @@ theorem toPartialDiffeomorphOpens_apply_coe (d : U ≃ₘ^n⟮I, J⟯ V) (hU : N
     (U.openPartialHomeomorphSubtypeCoe hU).left_inv (mem_univ x)
   exact congrArg (Subtype.val ∘ d) hx
 
+/-- At a point `x ∈ U`, `Diffeomorph.toPartialDiffeomorphOpens` evaluates as `d ⟨x, hx⟩`. -/
+theorem toPartialDiffeomorphOpens_apply (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U)
+    {x : M} (hx : x ∈ U) : d.toPartialDiffeomorphOpens hU x = d ⟨x, hx⟩ :=
+  d.toPartialDiffeomorphOpens_apply_coe hU ⟨x, hx⟩
+
 /-- On `V`, the inverse partial equivalence of `Diffeomorph.toPartialDiffeomorphOpens` evaluates as
 `d.symm`. -/
 @[simp]
@@ -367,6 +379,31 @@ theorem toPartialDiffeomorphOpens_toPartialEquiv_symm_apply_coe
 theorem toPartialDiffeomorphOpens_symm_apply_coe (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) (y : V) :
     (d.toPartialDiffeomorphOpens hU).symm y = d.symm y :=
   d.toPartialDiffeomorphOpens_toPartialEquiv_symm_apply_coe hU y
+
+/-- At a point `y ∈ V`, the inverse of `Diffeomorph.toPartialDiffeomorphOpens` evaluates as
+`d.symm ⟨y, hy⟩`. -/
+theorem toPartialDiffeomorphOpens_symm_apply (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U)
+    {y : N} (hy : y ∈ V) : (d.toPartialDiffeomorphOpens hU).symm y = d.symm ⟨y, hy⟩ :=
+  d.toPartialDiffeomorphOpens_symm_apply_coe hU ⟨y, hy⟩
+
+/-- The inverse of `Diffeomorph.toPartialDiffeomorphOpens` is `toPartialDiffeomorphOpens` of the
+inverse diffeomorphism. -/
+@[simp]
+theorem toPartialDiffeomorphOpens_symm (d : U ≃ₘ^n⟮I, J⟯ V) (hU : Nonempty U) :
+    (d.toPartialDiffeomorphOpens hU).symm = d.symm.toPartialDiffeomorphOpens (hU.map d) := by
+  suffices (d.toPartialDiffeomorphOpens hU).symm.toPartialEquiv =
+      (d.symm.toPartialDiffeomorphOpens (hU.map d)).toPartialEquiv by
+    revert this
+    cases (d.toPartialDiffeomorphOpens hU).symm
+    cases d.symm.toPartialDiffeomorphOpens (hU.map d)
+    rintro rfl
+    rfl
+  exact PartialEquiv.ext
+    (fun y ↦ by simp [PartialDiffeomorph.symm_toPartialEquiv,
+      toPartialDiffeomorphOpens_toPartialEquiv])
+    (fun x ↦ by simp [PartialDiffeomorph.symm_toPartialEquiv,
+      toPartialDiffeomorphOpens_toPartialEquiv])
+    (by simp)
 
 end Diffeomorph
 
