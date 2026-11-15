@@ -292,6 +292,20 @@ theorem IsGradedCoderivation.counit_comp (hb : IsGradedCoderivation G q b) :
     counit R M ∘ₗ b = 0 :=
   LinearMap.ext hb.counit_apply
 
+/-- The zero endomorphism is a signed coderivation. -/
+theorem isGradedCoderivation_zero :
+    IsGradedCoderivation G q (0 : TensorWords R M →ₗ[R] TensorWords R M) :=
+  isGradedCoderivation_iff.2 (by simp)
+
+/-- A sum of signed coderivations is a signed coderivation. -/
+theorem IsGradedCoderivation.add {b' : TensorWords R M →ₗ[R] TensorWords R M}
+    (hb : IsGradedCoderivation G q b) (hb' : IsGradedCoderivation G q b') :
+    IsGradedCoderivation G q (b + b') := by
+  rw [isGradedCoderivation_iff] at hb hb' ⊢
+  rw [LinearMap.comp_add, hb, hb', LinearMap.rTensor_add, LinearMap.lTensor_add,
+    LinearMap.add_comp, LinearMap.add_comp, LinearMap.add_comp]
+  abel
+
 end TensorWords
 
 end TauCeti

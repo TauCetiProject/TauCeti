@@ -51,6 +51,8 @@ pure tensors over a finite spanning family of the right factor.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
+* `TensorProduct.map_sum_left` and `TensorProduct.map_sum_right`: the tensor product of linear maps
+  is additive in each factor over finite sums.
 
 ## References
 
@@ -420,5 +422,15 @@ trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
+
+/-- The tensor product of linear maps is additive in its left factor, over a finite sum. -/
+theorem map_sum_left {ι : Type*} (s : Finset ι) (f : ι → M →ₗ[R] P) (g : N →ₗ[R] Q) :
+    map (∑ i ∈ s, f i) g = ∑ i ∈ s, map (f i) g := by
+  simp only [← mapBilinear_apply, map_sum, LinearMap.sum_apply]
+
+/-- The tensor product of linear maps is additive in its right factor, over a finite sum. -/
+theorem map_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[R] P) (g : ι → N →ₗ[R] Q) :
+    map f (∑ i ∈ s, g i) = ∑ i ∈ s, map f (g i) := by
+  simp only [← mapBilinear_apply, map_sum]
 
 end TensorProduct
