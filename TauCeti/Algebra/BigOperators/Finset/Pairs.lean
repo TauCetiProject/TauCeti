@@ -39,6 +39,9 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.prod_prod_erase_eq_prod_Ioi_mul_swap` (and additive
+  `TauCeti.sum_sum_erase_eq_sum_Ioi_add_swap`): an off-diagonal double product or sum over `j ≠ i`,
+  folded onto `j ∈ Ioi i`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
@@ -333,5 +336,35 @@ theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
   · rcases le_total (σ a) (σ b) with hab | hab
     · simp [hab]
     · simp [hab, hf]
+
+/-- **An off-diagonal double product, folded onto the increasing pairs.** Multiplying `f i j` over
+all `i` and `j ≠ i` equals multiplying `f i j * f j i` over `i` and `j ∈ Ioi i`. -/
+@[to_additive /-- **An off-diagonal double sum, folded onto the increasing pairs.** Summing `f i j`
+over all `i` and `j ≠ i` equals summing `f i j + f j i` over `i` and `j ∈ Ioi i`. -/]
+theorem prod_prod_erase_eq_prod_Ioi_mul_swap {ι M : Type*} [LinearOrder ι] [Fintype ι]
+    [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
+    (∏ i, ∏ j ∈ univ.erase i, f i j) = ∏ i, ∏ j ∈ Ioi i, f i j * f j i := by
+  have hsplit : (∏ i, ∏ j ∈ univ.erase i, f i j) =
+      (∏ i, ∏ j ∈ {j ∈ univ.erase i | i < j}, f i j) *
+        ∏ i, ∏ j ∈ {j ∈ univ.erase i | ¬ i < j}, f i j := by
+    rw [← prod_mul_distrib]
+    exact prod_congr rfl fun i _ ↦
+      (prod_filter_mul_prod_filter_not (univ.erase i) (fun j ↦ i < j) (f i)).symm
+  have hlt (i : ι) : {j ∈ univ.erase i | i < j} = Ioi i := by
+    ext j
+    simp only [mem_filter, mem_erase, mem_univ, and_true, mem_Ioi]
+    exact ⟨fun h ↦ h.2, fun h ↦ ⟨h.ne', h⟩⟩
+  have hgt : (∏ i, ∏ j ∈ {j ∈ univ.erase i | ¬ i < j}, f i j) =
+      ∏ i, ∏ j ∈ Ioi i, f j i := by
+    rw [prod_sigma', prod_sigma']
+    refine prod_nbij' (fun x ↦ ⟨x.2, x.1⟩) (fun y ↦ ⟨y.2, y.1⟩) ?_ ?_ (by simp) (by simp) (by simp)
+    · rintro ⟨a, b⟩ h
+      simp only [mem_sigma, mem_univ, mem_filter, mem_erase, mem_Ioi, true_and, and_true] at h ⊢
+      exact lt_of_le_of_ne (not_lt.1 h.2) h.1
+    · rintro ⟨a, b⟩ h
+      simp only [mem_sigma, mem_univ, mem_filter, mem_erase, mem_Ioi, true_and, and_true] at h ⊢
+      exact ⟨h.ne, h.not_gt⟩
+  rw [hsplit, hgt]
+  simp_rw [hlt, prod_mul_distrib]
 
 end TauCeti
