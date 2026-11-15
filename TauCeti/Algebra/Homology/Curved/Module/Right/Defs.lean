@@ -44,6 +44,8 @@ therefore returns the existing ordinary DG-module structure before any cohomolog
   curved right module into an ordinary differential graded right module.
 * `TauCeti.isCurvedDGRightModule_zero_iff`: the curved and ordinary notions agree at curvature
   zero.
+* `TauCeti.CurvedDGRightModuleCat.differential_smul`: the global right Leibniz rule on arbitrary
+  elements using `koszulTwist 1`.
 
 ## References
 
@@ -171,6 +173,26 @@ abbrev of (hM : IsCurvedDGRightModule h ℳ dM) : CurvedDGRightModuleCat h where
   grading := ℳ
   differential := dM
   isCurvedDGRightModule := hM
+
+/-- The global right Leibniz rule on a curved differential graded right module, expressed on
+arbitrary elements using `koszulTwist 1`. -/
+theorem differential_smul (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (a : Aᵐᵒᵖ) (m : M) :
+    M.differential (a • m) =
+      a • M.differential m +
+        op (d a.unop) • (InternalGrading.ofDecomposition M.grading).koszulTwist 1 m := by
+  induction m using DirectSum.Decomposition.inductionOn M.grading with
+  | zero => simp
+  | @homogeneous q m =>
+    rcases m with ⟨m, hm⟩
+    have hm' : m ∈ (InternalGrading.ofDecomposition M.grading).piece q := by
+      rwa [InternalGrading.ofDecomposition_piece]
+    conv_lhs => rw [← op_unop a]
+    rw [(InternalGrading.ofDecomposition M.grading).koszulTwist_one_apply_of_mem hm',
+      M.isCurvedDGRightModule.leibniz hm a.unop, op_unop]
+    simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (op _)]
+  | add m₁ m₂ hm₁ hm₂ =>
+    simp only [smul_add, map_add, hm₁, hm₂]
+    exact add_add_add_comm _ _ _ _
 
 end CurvedDGRightModuleCat
 

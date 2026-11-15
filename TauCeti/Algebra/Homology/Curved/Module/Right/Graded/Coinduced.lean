@@ -70,6 +70,8 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 /-- The **coinduced curved right module** `G⁻ N` associated to a graded right module `N`. Over `R`
 its carrier is `N × N` with degree-`p` piece `N_p × N_{p + 1}`, twisted right action
 `(x, y) · a = (x · a, y · a + (-1)^{|x|} x · d a)`, and differential `(x, y) ↦ (y, x · w)`. -/
+-- Exposed so that `coinducedObj h N` unifies with `(coinduced h).obj N` in morphism types.
+@[expose, implicit_reducible]
 noncomputable def coinducedObj (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     CurvedDGRightModuleCat.{uR, uA, uN} h :=
@@ -185,7 +187,7 @@ instance (h : IsCurvedDGAlgebra 𝒜 d w)
 
 end CoinducedObj
 
-/-! ### Functoriality, adjunction, contractibility, and injective hulls -/
+/-! ### Functoriality, adjunction, and closed monomorphisms into graded-injectives -/
 
 section Functor
 
@@ -199,31 +201,12 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
 
 /-- The **coinduction functor** `N ↦ G⁻ N` from graded right modules to curved right modules with
-closed degree-zero morphisms. -/
+closed degree-zero morphisms, realized as `N ↦ G⁺(N{-1})`. -/
 @[expose, implicit_reducible]
 noncomputable def coinduced (h : IsCurvedDGAlgebra 𝒜 d w) :
     GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece ⥤
-      ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) where
-  obj N := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h N)
-  map {N₁ N₂} f := closedHomOf
-    { toFun z := (coinducedEquiv h N₂).symm
-        (f.hom (coinducedEquiv h N₁ z).1, f.hom (coinducedEquiv h N₁ z).2)
-      map_add' _ _ := (coinducedEquiv h N₂).injective (by simp)
-      map_smul' a z := (coinducedEquiv h N₂).injective <| by
-        have htw : N₂.grading.koszulTwist 1 (f.hom (coinducedEquiv h N₁ z).1) =
-            f.hom (N₁.grading.koszulTwist 1 (coinducedEquiv h N₁ z).1) := by
-          simpa using (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-            f.isHomogeneous.map_mem hx : LinearMap.IsHomogeneous (f.hom.restrictScalars R)
-              N₁.grading.piece N₂.grading.piece 0).koszulTwist_apply 1 _
-        simp [htw] }
-    (fun p z hz ↦ by
-      rw [mem_coinducedObj_grading_iff] at hz ⊢
-      simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
-      exact ⟨by simpa using f.isHomogeneous.map_mem hz.1,
-        by simpa using f.isHomogeneous.map_mem hz.2⟩)
-    (fun z ↦ (coinducedEquiv h N₂).injective (by simp))
-  map_id N := closedHom_ext fun z ↦ (coinducedEquiv h N).injective (by simp)
-  map_comp f g := closedHom_ext fun z ↦ (coinducedEquiv h _).injective (by simp)
+      ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) :=
+  GradedModuleCat.shiftFunctor (-1) ⋙ induced h
 
 /-- The coinduction functor sends a graded right module `N` to `coinducedObj h N`. -/
 @[simp]
@@ -239,14 +222,14 @@ theorem coinducedEquiv_closedHom_coinduced_map_apply (h : IsCurvedDGAlgebra 𝒜
     (f : N₁ ⟶ N₂) (z : coinducedObj h N₁) :
     coinducedEquiv h N₂ (closedHom ((coinduced h).map f) z) =
       (f.hom (coinducedEquiv h N₁ z).1, f.hom (coinducedEquiv h N₁ z).2) := by
-  dsimp only [coinduced]; rw [closedHom_closedHomOf]; exact (coinducedEquiv h N₂).apply_symm_apply _
+  unfold coinduced coinducedObj coinducedEquiv at *
+  simp
 
-instance (h : IsCurvedDGAlgebra 𝒜 d w) : (coinduced h).Additive where
-  map_add := closedHom_ext fun z ↦ (coinducedEquiv h _).injective <| by rw [closedHom_add]; simp
+instance (h : IsCurvedDGAlgebra 𝒜 d w) : (coinduced h).Additive :=
+  inferInstanceAs (GradedModuleCat.shiftFunctor (-1) ⋙ induced h).Additive
 
-instance (h : IsCurvedDGAlgebra 𝒜 d w) : (coinduced h).Linear R where
-  map_smul _ _ := closedHom_ext fun z ↦ (coinducedEquiv h _).injective <| by
-    rw [closedHom_smul]; simp
+instance (h : IsCurvedDGAlgebra 𝒜 d w) : (coinduced h).Linear R :=
+  inferInstanceAs ((GradedModuleCat.shiftFunctor (-1) ⋙ induced h).Linear R)
 
 /-- The closed morphism `M ⟶ G⁻ N` adjunct to a morphism `f : U(M) ⟶ N` of graded right modules,
 sending `m` to `(f m, f (d_M m))`. -/
@@ -329,10 +312,13 @@ noncomputable def forgetDifferentialCoinducedAdj (h : IsCurvedDGAlgebra 𝒜 d w
           right_inv g := coinducedLift_forgetDifferential_map_comp_coinducedFst
             (M := ForgetEnrichment.to _ M) g }
       homEquiv_naturality_left_symm _ _ := by simp
-      homEquiv_naturality_right {M _ N₂} _ _ := by
-        dsimp only [coinduced]
-        exact closedHom_ext (M := ForgetEnrichment.to _ M) fun m ↦
-          (coinducedEquiv h N₂).injective (by simp) }
+      homEquiv_naturality_right {M _ N₂} _ _ :=
+        closedHom_ext (M := ForgetEnrichment.to _ M) (N := coinducedObj h N₂) fun m ↦
+          (coinducedEquiv h N₂).injective <| by
+            simp only [Equiv.coe_fn_mk, closedHom_comp, LinearMap.comp_apply]
+            rw [coinducedEquiv_closedHom_coinduced_map_apply,
+              coinducedEquiv_closedHom_coinducedLift_apply]
+            simp }
 
 /-- The forward adjunct of `forgetDifferentialCoinducedAdj` is `coinducedLift`. -/
 @[simp]

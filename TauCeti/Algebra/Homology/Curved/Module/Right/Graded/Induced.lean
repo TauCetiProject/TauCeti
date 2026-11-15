@@ -27,7 +27,7 @@ Induction is left adjoint to forgetting the differential from curved right modul
 degree-zero morphisms to graded right modules, via $(x, y) \mapsto f(x) + d_M(f(y))$. Every $G^+ N$
 is contractible in the curved homotopy category via $(x, y) \mapsto (y, 0)$ and sits in a graded
 short exact sequence $0 \to N \to G^+ N \to N\{1\} \to 0$. Consequently $G^+ P$ is
-graded-projective when $P$ is projective, giving closed projective covers.
+graded-projective when $P$ is projective, giving closed epimorphisms from graded-projectives.
 
 ## Main definitions
 
@@ -373,7 +373,7 @@ instance (h : IsCurvedDGAlgebra 𝒜 d w)
 
 end InducedObj
 
-/-! ### Functoriality, adjunction, contractibility, and projective covers -/
+/-! ### Functoriality, adjunction, and closed epimorphisms from graded-projectives -/
 
 section Functor
 

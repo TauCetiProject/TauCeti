@@ -37,9 +37,11 @@ base ring without changing the `A`-action; when `1 ∈ 𝒜₀`, the `k`-action 
   ungraded module, the ungraded restriction of scalars of the original module.
 * `TauCeti.GradedModuleCat.restrictScalarsEquivalenceOfAlgEquiv`: the equivalence of graded module
   categories induced by a graded algebra isomorphism.
-* `TauCeti.GradedModuleCat.restrictBase`, `TauCeti.GradedModuleCat.extendBase`, and
-  `TauCeti.GradedModuleCat.restrictBaseEquivalence`: base-ring change and equivalence along
-  `k₀ → k → A`.
+* `TauCeti.GradedModuleCat.restrictBase`, `TauCeti.GradedModuleCat.restrictBaseObjLinearEquiv`,
+  `TauCeti.GradedModuleCat.extendBase`, `TauCeti.GradedModuleCat.extendBaseObjLinearEquiv`,
+  `TauCeti.GradedModuleCat.restrictBaseUnitIso`, `TauCeti.GradedModuleCat.restrictBaseCounitIso`,
+  and `TauCeti.GradedModuleCat.restrictBaseEquivalence`: base-ring change, carrier comparisons, and
+  equivalence along `k₀ → k → A`.
 
 ## Main results
 
@@ -244,7 +246,6 @@ variable (k₀ : Type*) [CommRing k₀] [Algebra k₀ k] [Algebra k₀ A] [IsSca
 
 /-- **Restriction of the base ring** along a scalar tower `k₀ → k → A`: a graded `𝒜`-module becomes
 a graded module over `(𝒜 · |>.restrictScalars k₀)` with the same underlying `A`-module. -/
-@[expose]
 def restrictBase (𝒜 : ℤ → Submodule k A) :
     GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
   obj M :=
@@ -260,17 +261,42 @@ def restrictBase (𝒜 : ℤ → Submodule k A) :
   map g := ofHom g.hom (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
     rw [add_zero]; exact map_mem g hx)
 
-/-- Restricting the base ring leaves the underlying `A`-linear map of a morphism unchanged. -/
+/-- The `A`-linear equivalence identifying the underlying `A`-module of
+`(restrictBase k₀ 𝒜).obj M` with `M`. -/
+def restrictBaseObjLinearEquiv (𝒜 : ℤ → Submodule k A) (M : GradedModuleCat.{v} 𝒜) :
+    (restrictBase k₀ 𝒜).obj M ≃ₗ[A] M :=
+  LinearEquiv.refl A M
+
+/-- Restricting the base ring preserves membership in each homogeneous piece. -/
 @[simp]
-theorem restrictBase_map_hom {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (g : M ⟶ N) :
-    ((restrictBase k₀ 𝒜).map g).hom = g.hom := rfl
+theorem mem_restrictBase_obj_piece_iff {𝒜 : ℤ → Submodule k A} (M : GradedModuleCat.{v} 𝒜)
+    (p : ℤ) (x : (restrictBase k₀ 𝒜).obj M) :
+    x ∈ ((restrictBase k₀ 𝒜).obj M).grading.piece p ↔
+      restrictBaseObjLinearEquiv k₀ 𝒜 M x ∈ M.grading.piece p :=
+  Iff.rfl
+
+/-- On `(restrictBase k₀ 𝒜).obj M`, scalars in `k₀` act through `algebraMap k₀ k`. -/
+@[simp]
+theorem restrictBaseObjLinearEquiv_smul_base {𝒜 : ℤ → Submodule k A} (M : GradedModuleCat.{v} 𝒜)
+    (c₀ : k₀) (x : (restrictBase k₀ 𝒜).obj M) :
+    restrictBaseObjLinearEquiv k₀ 𝒜 M (c₀ • x) =
+      algebraMap k₀ k c₀ • restrictBaseObjLinearEquiv k₀ 𝒜 M x :=
+  (rfl)
+
+/-- Restricting the base ring acts on elements by conjugating the original `A`-linear map with
+`TauCeti.GradedModuleCat.restrictBaseObjLinearEquiv`. -/
+@[simp]
+theorem restrictBase_map_hom_apply {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜}
+    (g : M ⟶ N) (x : (restrictBase k₀ 𝒜).obj M) :
+    ((restrictBase k₀ 𝒜).map g).hom x =
+      (restrictBaseObjLinearEquiv k₀ 𝒜 N).symm (g.hom (restrictBaseObjLinearEquiv k₀ 𝒜 M x)) :=
+  (rfl)
 
 instance (𝒜 : ℤ → Submodule k A) : (restrictBase.{v} k₀ 𝒜).Additive where
   map_add := by intros; ext; rfl
 
 /-- **Extension of the base ring** along `k₀ → k → A` when `1 ∈ 𝒜₀`: every graded module over
 `(𝒜 · |>.restrictScalars k₀)` is a graded `𝒜`-module with `k` acting via `algebraMap k A`. -/
-@[expose]
 def extendBase (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
     GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) ⥤ GradedModuleCat.{v} 𝒜 where
   obj N :=
@@ -292,24 +318,111 @@ def extendBase (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
   map g := ofHom g.hom (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
     rw [add_zero]; exact map_mem g hx)
 
-/-- Extending the base ring leaves the underlying `A`-linear map of a morphism unchanged. -/
+/-- The `A`-linear equivalence identifying the underlying `A`-module of
+`(extendBase k₀ 𝒜).obj N` with `N`. -/
+def extendBaseObjLinearEquiv (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) :
+    (extendBase k₀ 𝒜).obj N ≃ₗ[A] N :=
+  LinearEquiv.refl A N
+
+/-- Extending the base ring preserves membership in each homogeneous piece. -/
 @[simp]
-theorem extendBase_map_hom {𝒜 : ℤ → Submodule k A} [SetLike.GradedOne 𝒜]
-    {M N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)} (g : M ⟶ N) :
-    ((extendBase k₀ 𝒜).map g).hom = g.hom := rfl
+theorem mem_extendBase_obj_piece_iff {𝒜 : ℤ → Submodule k A} [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) (p : ℤ)
+    (x : (extendBase k₀ 𝒜).obj N) :
+    x ∈ ((extendBase k₀ 𝒜).obj N).grading.piece p ↔
+      extendBaseObjLinearEquiv k₀ 𝒜 N x ∈ N.grading.piece p :=
+  Iff.rfl
+
+/-- On `(extendBase k₀ 𝒜).obj N`, scalars in `k` act through `algebraMap k A`. -/
+@[simp]
+theorem extendBaseObjLinearEquiv_smul_base {𝒜 : ℤ → Submodule k A} [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) (c : k)
+    (x : (extendBase k₀ 𝒜).obj N) :
+    extendBaseObjLinearEquiv k₀ 𝒜 N (c • x) =
+      algebraMap k A c • extendBaseObjLinearEquiv k₀ 𝒜 N x :=
+  (rfl)
+
+/-- Extending the base ring acts on elements by conjugating the original `A`-linear map with
+`TauCeti.GradedModuleCat.extendBaseObjLinearEquiv`. -/
+@[simp]
+theorem extendBase_map_hom_apply {𝒜 : ℤ → Submodule k A} [SetLike.GradedOne 𝒜]
+    {M N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)} (g : M ⟶ N)
+    (x : (extendBase k₀ 𝒜).obj M) :
+    ((extendBase k₀ 𝒜).map g).hom x =
+      (extendBaseObjLinearEquiv k₀ 𝒜 N).symm (g.hom (extendBaseObjLinearEquiv k₀ 𝒜 M x)) :=
+  (rfl)
 
 instance (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] : (extendBase.{v} k₀ 𝒜).Additive where
   map_add := by intros; ext; rfl
 
+/-- The unit natural isomorphism `𝟭 _ ≅ restrictBase k₀ 𝒜 ⋙ extendBase k₀ 𝒜`, acting as the
+identity on underlying `A`-modules. -/
+def restrictBaseUnitIso (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    𝟭 (GradedModuleCat.{v} 𝒜) ≅ restrictBase k₀ 𝒜 ⋙ extendBase k₀ 𝒜 :=
+  NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
+
+/-- Evaluating the forward map of `TauCeti.GradedModuleCat.restrictBaseUnitIso` transports an
+element across the two carrier equivalences. -/
+@[simp]
+theorem restrictBaseUnitIso_hom_app_hom_apply (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (M : GradedModuleCat.{v} 𝒜) (m : M) :
+    (dsimp% only [Functor.id_obj, Functor.comp_obj]
+      (((restrictBaseUnitIso k₀ 𝒜).hom.app M).hom m)) =
+      (extendBaseObjLinearEquiv k₀ 𝒜 ((restrictBase k₀ 𝒜).obj M)).symm
+        ((restrictBaseObjLinearEquiv k₀ 𝒜 M).symm m) :=
+  (rfl)
+
+/-- Evaluating the inverse map of `TauCeti.GradedModuleCat.restrictBaseUnitIso` transports an
+element back across the two carrier equivalences. -/
+@[simp]
+theorem restrictBaseUnitIso_inv_app_hom_apply (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (M : GradedModuleCat.{v} 𝒜)
+    (x : (extendBase k₀ 𝒜).obj ((restrictBase k₀ 𝒜).obj M)) :
+    (dsimp% only [Functor.id_obj, Functor.comp_obj]
+      (((restrictBaseUnitIso k₀ 𝒜).inv.app M).hom x)) =
+      restrictBaseObjLinearEquiv k₀ 𝒜 M
+        (extendBaseObjLinearEquiv k₀ 𝒜 ((restrictBase k₀ 𝒜).obj M) x) :=
+  (rfl)
+
+/-- The counit natural isomorphism `extendBase k₀ 𝒜 ⋙ restrictBase k₀ 𝒜 ≅ 𝟭 _`, acting as the
+identity on underlying `A`-modules. -/
+def restrictBaseCounitIso (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    extendBase k₀ 𝒜 ⋙ restrictBase k₀ 𝒜 ≅
+      𝟭 (GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) :=
+  NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
+
+/-- Evaluating the forward map of `TauCeti.GradedModuleCat.restrictBaseCounitIso` transports an
+element across the two carrier equivalences. -/
+@[simp]
+theorem restrictBaseCounitIso_hom_app_hom_apply (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀))
+    (x : (restrictBase k₀ 𝒜).obj ((extendBase k₀ 𝒜).obj N)) :
+    (dsimp% only [Functor.id_obj, Functor.comp_obj]
+      (((restrictBaseCounitIso k₀ 𝒜).hom.app N).hom x)) =
+      extendBaseObjLinearEquiv k₀ 𝒜 N
+        (restrictBaseObjLinearEquiv k₀ 𝒜 ((extendBase k₀ 𝒜).obj N) x) :=
+  (rfl)
+
+/-- Evaluating the inverse map of `TauCeti.GradedModuleCat.restrictBaseCounitIso` transports an
+element across the inverse carrier equivalences. -/
+@[simp]
+theorem restrictBaseCounitIso_inv_app_hom_apply (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) (n : N) :
+    (dsimp% only [Functor.id_obj, Functor.comp_obj]
+      (((restrictBaseCounitIso k₀ 𝒜).inv.app N).hom n)) =
+      (restrictBaseObjLinearEquiv k₀ 𝒜 ((extendBase k₀ 𝒜).obj N)).symm
+        ((extendBaseObjLinearEquiv k₀ 𝒜 N).symm n) :=
+  (rfl)
+
 /-- **Base-ring independence of graded modules.** When `1 ∈ 𝒜₀`, restricting the base ring of `𝒜`
 along a scalar tower `k₀ → k → A` is an equivalence of graded module categories. -/
-@[expose]
 def restrictBaseEquivalence (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
     GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
   functor := restrictBase k₀ 𝒜
   inverse := extendBase k₀ 𝒜
-  unitIso := NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
-  counitIso := NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
+  unitIso := restrictBaseUnitIso k₀ 𝒜
+  counitIso := restrictBaseCounitIso k₀ 𝒜
   functor_unitIso_comp _ := rfl
 
 /-- The forward functor of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is `restrictBase`. -/
@@ -321,6 +434,46 @@ theorem restrictBaseEquivalence_functor (𝒜 : ℤ → Submodule k A) [SetLike.
 @[simp]
 theorem restrictBaseEquivalence_inverse (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
     (restrictBaseEquivalence.{v} k₀ 𝒜).inverse = extendBase k₀ 𝒜 := (rfl)
+
+/-- The unit of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is `restrictBaseUnitIso` up to
+the functor-comparison transport. -/
+@[simp, reassoc]
+theorem restrictBaseEquivalence_unitIso_hom_app (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (M : GradedModuleCat.{v} 𝒜) :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).unitIso.hom.app M =
+      (restrictBaseUnitIso k₀ 𝒜).hom.app M ≫
+        eqToHom (by simp only [Functor.comp_obj, restrictBaseEquivalence_functor,
+          restrictBaseEquivalence_inverse]) := (rfl)
+
+/-- The inverse unit of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is the inverse of
+`restrictBaseUnitIso` after the functor-comparison transport. -/
+@[simp, reassoc]
+theorem restrictBaseEquivalence_unitIso_inv_app (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (M : GradedModuleCat.{v} 𝒜) :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).unitIso.inv.app M =
+      eqToHom (by simp only [Functor.comp_obj, restrictBaseEquivalence_functor,
+        restrictBaseEquivalence_inverse]) ≫
+        (restrictBaseUnitIso k₀ 𝒜).inv.app M := (rfl)
+
+/-- The counit of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is `restrictBaseCounitIso`
+after the functor-comparison transport. -/
+@[simp, reassoc]
+theorem restrictBaseEquivalence_counitIso_hom_app (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).counitIso.hom.app N =
+      eqToHom (by simp only [Functor.comp_obj, restrictBaseEquivalence_functor,
+        restrictBaseEquivalence_inverse]) ≫
+        (restrictBaseCounitIso k₀ 𝒜).hom.app N := (rfl)
+
+/-- The inverse counit of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is the inverse of
+`restrictBaseCounitIso` up to the functor-comparison transport. -/
+@[simp, reassoc]
+theorem restrictBaseEquivalence_counitIso_inv_app (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜]
+    (N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)) :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).counitIso.inv.app N =
+      (restrictBaseCounitIso k₀ 𝒜).inv.app N ≫
+        eqToHom (by simp only [Functor.comp_obj, restrictBaseEquivalence_functor,
+          restrictBaseEquivalence_inverse]) := (rfl)
 
 end RestrictBase
 

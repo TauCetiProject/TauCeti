@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Comparison
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Coinduced
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Induced
 public import TauCeti.CategoryTheory.Abelian.Injective.Dimension
 import Mathlib.CategoryTheory.Abelian.Exact
 
