@@ -14,11 +14,11 @@ public import TauCeti.LinearAlgebra.TotallyReal.Complex
 
 The real subspace `ℝⁿ ⊆ ℂⁿ` of vectors with real coordinates (`TauCeti.realSubspace`) is maximal
 totally real. Its image `M ℝⁿ` under a complex matrix (`Matrix.realImage`) is the real span of the
-columns of `M`. For invertible `M` it is again maximal totally real, and it only depends on `M` up
-to right multiplication by an invertible real matrix: two invertible matrices with the same image
-of `ℝⁿ` differ by such a matrix, which is orthogonal when both have columns orthonormal for the
-real inner product `Re ⟪·, ·⟫`. For unitary `M` it is moreover isotropic for the standard
-symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
+columns of `M`. It is again maximal totally real exactly when `M` is invertible, and it only
+depends on `M` up to right multiplication by an invertible real matrix: two invertible matrices
+with the same image of `ℝⁿ` differ by such a matrix, which is orthogonal when both have columns
+orthonormal for the real inner product `Re ⟪·, ·⟫`. For unitary `M` it is moreover isotropic for
+the standard symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
 
 ## Main declarations
 
@@ -27,7 +27,7 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   the real inner product `Re ⟪·, ·⟫`
   (`TauCeti.forall_re_inner_I_smul_eq_zero_iff_mem_realSubspace`).
 * `Matrix.realImage`: the image `M ℝⁿ` of `ℝⁿ` under a complex matrix `M`, maximal totally real
-  for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
+  exactly for invertible `M` (`Matrix.isMaximalTotallyReal_realImage_iff`).
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
   invertible `M` up to right multiplication by an invertible real matrix.
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
@@ -135,6 +135,28 @@ theorem isMaximalTotallyReal_realImage {M : Matrix n n ℂ} (hM : M.det ≠ 0) :
       M.realImage := by
   rw [realImage_eq_map_toEuclideanCLE hM]
   exact isMaximalTotallyReal_realSubspace.map_linearEquiv _
+
+/-- The image of `ℝⁿ` under a matrix is maximal totally real exactly when the matrix is
+invertible. -/
+theorem isMaximalTotallyReal_realImage_iff {M : Matrix n n ℂ} :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
+      M.realImage ↔ M.det ≠ 0 := by
+  refine ⟨fun h ↦ ?_, isMaximalTotallyReal_realImage⟩
+  -- `M ℝⁿ` and `i M ℝⁿ` lie in the complex range of `M`, which is therefore everything.
+  have hle : M.realImage ⊔ M.realImage.map
+      ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ) ≤
+      (LinearMap.range ((toEuclideanCLM (𝕜 := ℂ) M :
+        EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+          EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n)).restrictScalars ℝ := by
+    refine sup_le ?_ ?_
+    · rintro _ ⟨x, -, rfl⟩
+      exact ⟨x, rfl⟩
+    · rintro _ ⟨_, ⟨x, -, rfl⟩, rfl⟩
+      exact ⟨Complex.I • x, by simp⟩
+  rw [← isUnit_iff_ne_zero, ← isUnit_iff_isUnit_det, ← mulVec_surjective_iff_isUnit]
+  intro w
+  obtain ⟨x, hx⟩ := hle (h.sup_eq_top ▸ Submodule.mem_top : WithLp.toLp 2 w ∈ _)
+  exact ⟨x.ofLp, by simpa using congrArg WithLp.ofLp hx⟩
 
 /-- A real matrix maps `ℝⁿ` into itself. -/
 theorem realImage_map_ofReal_le (N : Matrix n n ℝ) :

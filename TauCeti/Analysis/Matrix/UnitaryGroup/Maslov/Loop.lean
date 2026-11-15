@@ -152,21 +152,24 @@ theorem intCast_maslovIndex_lagrangianLoop {U V : unitaryGroup n ℂ} (γ : Path
 
 /-- **Free homotopy invariance.** Let `F` be a continuous two-parameter family of unitary frames
 such that for every `s` the path of Lagrangians `t ↦ F (s, t) ℝⁿ` closes up, that is, the endpoint
-frames of `t ↦ F (s, t)` have the same Souriau map. Then the paths `t ↦ F (0, t)` and
-`t ↦ F (1, t)` have the same Robbin–Salamon index, although the endpoints move along the
-homotopy. -/
+frames of `t ↦ F (s, t)` have the same Souriau map. If `t ↦ F (0, t)` and `t ↦ F (1, t)` frame the
+same paths of Lagrangians as `γ₀` and `γ₁`, that is, have the same Souriau maps, then `γ₀` and
+`γ₁` have the same Robbin–Salamon index, although the endpoints move along the homotopy. -/
 theorem maslovIndex_eq_of_homotopy_of_souriau_eq {U₀ V₀ U₁ V₁ : unitaryGroup n ℂ}
     (γ₀ : Path U₀ V₀) (γ₁ : Path U₁ V₁) (F : I × I → unitaryGroup n ℂ) (hF : Continuous F)
-    (h₀ : ∀ t, F (0, t) = γ₀ t) (h₁ : ∀ t, F (1, t) = γ₁ t)
+    (h₀ : ∀ t, souriau (F (0, t)) = souriau (γ₀ t)) (h₁ : ∀ t, souriau (F (1, t)) = souriau (γ₁ t))
     (hF01 : ∀ s, souriau (F (s, 0)) = souriau (F (s, 1))) :
     maslovIndex γ₀ = maslovIndex γ₁ := by
-  have hγ₀ : souriau U₀ = souriau V₀ := by simpa [h₀] using hF01 0
-  have hγ₁ : souriau U₁ = souriau V₁ := by simpa [h₁] using hF01 1
+  have hγ₀ : souriau U₀ = souriau V₀ := by
+    simpa using (h₀ 0).symm.trans ((hF01 0).trans (h₀ 1))
+  have hγ₁ : souriau U₁ = souriau V₁ := by
+    simpa using (h₁ 0).symm.trans ((hF01 1).trans (h₁ 1))
   rw [← intCast_maslovIndex_lagrangianLoop γ₀ hγ₀,
     ← intCast_maslovIndex_lagrangianLoop γ₁ hγ₁]
   exact congrArg _ <| TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy _ _
     (fun p ↦ Unitary.toUnits (F p)) (Unitary.continuous_toUnits.comp hF)
-    (fun t ↦ by simp [h₀]) (fun t ↦ by simp [h₁])
+    (fun t ↦ by simpa using (souriau_eq_souriau_iff_realImage_eq.1 (h₀ t)).symm)
+    (fun t ↦ by simpa using (souriau_eq_souriau_iff_realImage_eq.1 (h₁ t)).symm)
     fun s ↦ souriau_eq_souriau_iff_realImage_eq.1 (hF01 s)
 
 end Matrix.UnitaryGroup

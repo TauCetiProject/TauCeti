@@ -255,7 +255,7 @@ theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
       (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
   -- `graphSubspace A` is by definition the image `(graphFrame A).realImage` of the real points.
   rw [coe_graphPhase]
-  exact (maslovPhase_eq_det_div_conj_det (det_graphFrame_ne_zero A) _ rfl).symm
+  exact (maslovPhase_eq_det_div_conj_det _ _ rfl).symm
 
 /-- The graph phase depends continuously on the symplectic matrix. -/
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by

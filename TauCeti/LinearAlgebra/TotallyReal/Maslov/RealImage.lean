@@ -82,15 +82,15 @@ open TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The Maslov phase of the maximal totally real subspace `M ℝⁿ` relative to `ℝⁿ`, for an
-invertible matrix `M`, is `det M / conj (det M)`. The subspace is given as any `L = M ℝⁿ`, so that
-the lemma applies whatever proof of maximal total reality the phase carries. -/
-theorem maslovPhase_eq_det_div_conj_det {M : Matrix n n ℂ} (hM : M.det ≠ 0)
-    {L : Submodule ℝ (EuclideanSpace ℂ n)}
+/-- The Maslov phase of the maximal totally real subspace `M ℝⁿ` relative to `ℝⁿ`, for a matrix
+`M` (necessarily invertible), is `det M / conj (det M)`. The subspace is given as any `L = M ℝⁿ`,
+so that the lemma applies whatever proof of maximal total reality the phase carries. -/
+theorem maslovPhase_eq_det_div_conj_det (M : Matrix n n ℂ) {L : Submodule ℝ (EuclideanSpace ℂ n)}
     (hL : IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ) L)
     (hLM : L = M.realImage) :
     isMaximalTotallyReal_realSubspace.maslovPhase hL = M.det / conj M.det := by
+  have hM : M.det ≠ 0 := isMaximalTotallyReal_realImage_iff.1 (hLM ▸ hL)
   -- `det_toEuclideanCLE` is stated over a general `RCLike` field, so its instances on
   -- `EuclideanSpace ℂ n` agree with the ones in the phase only up to unfolding and `rw` cannot
   -- match it; restate it for the `toLinearEquiv` coercion produced by `maslovPhase_map`.
@@ -113,7 +113,7 @@ theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (Eucli
     (hLU : L = (U : Matrix n n ℂ).realImage) :
     isMaximalTotallyReal_realSubspace.maslovPhase hL = (U : Matrix n n ℂ).det ^ 2 := by
   have hdet : (U : Matrix n n ℂ).det ≠ 0 := GeneralLinearGroup.det_ne_zero (Unitary.toUnits U)
-  rw [maslovPhase_eq_det_div_conj_det hdet hL hLU, div_eq_iff ((map_ne_zero _).2 hdet)]
+  rw [maslovPhase_eq_det_div_conj_det _ hL hLU, div_eq_iff ((map_ne_zero _).2 hdet)]
   -- `conj (det U) * det U = 1` since `det U` is unitary.
   have hconj : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 :=
     Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
