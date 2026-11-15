@@ -26,7 +26,8 @@ pseudo-gradient satisfying the Morse–Smale condition, both the mod-two Morse b
 signed trajectory count vanish. Each saddle receives two trajectories from the maximum `(v, w)`
 carrying opposite signs `+1` and `-1` (since `S¹ × S¹` is orientable), and emits two trajectories
 to the minimum `(-v, -w)` carrying opposite signs `+1` and `-1`
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`).
+(`IsMorseSmale.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two`,
+`IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`).
 Thus all differentials vanish over `ℤ` as well as over `ZMod 2`, recovering the integral and
 mod-two homology ranks `1`, `2` and `1` of the torus in degrees `0`, `1` and `2`. Unlike the height
 function on the sphere (`TauCeti.IsAdaptedPseudoGradient.isMorseSmale_sphereHeight`), this function
@@ -45,9 +46,9 @@ Mathlib's `modelWithCornersSelf_prod`. These differ from the charts `TauCeti.tor
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 * `morseBoundary_sphereHeight_comp_fst_add_comp_snd`: its mod-two Morse boundary vanishes.
-* `exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd`: between any consecutive-index
-  critical points (from `(v, w)` to either saddle, or from either saddle to `(-v, -w)`), the two
-  trajectories carry opposite signs `+1` and `-1`.
+* `exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd_eq_one_and_eq_neg_one`: between any
+  consecutive-index critical points (from `(v, w)` to either saddle, or from either saddle to
+  `(-v, -w)`), the two trajectories carry opposite signs `+1` and `-1`.
 * `signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd`: every signed trajectory count
   between consecutive-index critical points on `S¹ × S¹` vanishes.
 
@@ -116,10 +117,8 @@ pseudo-gradient adapted to `sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Pro
 between any critical points `p` and `q` of consecutive index (from `(v, w)` to either saddle
 `(v, -w)` or `(-v, w)`, or from either saddle to `(-v, -w)`), the two trajectories carry opposite
 signs `+1` and `-1`. -/
-theorem exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
-    {p q : sphere (0 : E) 1 × sphere (0 : E') 1}
+theorem exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd_eq_one_and_eq_neg_one
+    (h : hX.IsMorseSmale) {p q : sphere (0 : E) 1 × sphere (0 : E') 1}
     {φp : MorseChart (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
       (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) p}
     {φq : MorseChart (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
@@ -144,38 +143,24 @@ theorem exists_trajectorySign_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorse
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) q + 1) :
     ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
       hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 := by
+  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
+    rw [modelWithCornersSelf_prod]
+    exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
   have : Orientable (𝓡 1) (sphere (0 : E) 1) := orientable_sphere
   have : Orientable (𝓡 1) (sphere (0 : E') 1) := orientable_sphere
   have : Orientable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
       (sphere (0 : E) 1 × sphere (0 : E') 1) := orientable_chartedSpaceProd
-  have hfin : finrank ℝ (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1)) = 2 := by simp
-  have hle : manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) p ≤ 2 :=
-    manifoldMorseIndex_le_finrank.trans_eq hfin
-  have hpcrit := (φp.mfderiv_eq_zero_iff φp.mem_source).2 rfl
-  have hqcrit := (φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl
-  rcases (by omega :
-      manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-        (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) p = 2 ∨
-      manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-        (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) q = 0) with hp2 | hq0
-  · exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_finrank hf hφp hφq op oq
-      (hfin ▸ hp2) hpq fun y hy hy2 ↦
-      ((eq_poles_of_mfderiv_eq_zero hy (hfin ▸ hy2)).1 rfl).trans
-        ((eq_poles_of_mfderiv_eq_zero hpcrit hp2).1 rfl).symm
-  · exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_zero hf hφp hφq op oq hq0
-      hpq fun y hy hy0 ↦
-      ((eq_poles_of_mfderiv_eq_zero hy hy0).2 rfl).trans
-        ((eq_poles_of_mfderiv_eq_zero hqcrit hq0).2 rfl).symm
+  exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two hf (by simp)
+    (subsingleton_singleton.anti fun _ hz ↦ (eq_poles_of_mfderiv_eq_zero hz.1 hz.2).1 rfl)
+    (subsingleton_singleton.anti fun _ hz ↦ (eq_poles_of_mfderiv_eq_zero hz.1 hz.2).2 rfl)
+    hφp hφq op oq hpq
 
 /-- **Signed trajectory counts of the standard Morse function on the torus vanish.** For every
 Morse–Smale pseudo-gradient adapted to `sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd` on
 `S¹ × S¹`, every signed count of trajectories between critical points of consecutive index is
 zero. -/
-@[simp]
 theorem signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
-      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
     {p q : sphere (0 : E) 1 × sphere (0 : E') 1}
     {φp : MorseChart (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
       (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) p}
@@ -200,6 +185,10 @@ theorem signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorse
       manifoldMorseIndex 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
         (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) q + 1) :
     hX.signedTrajectoryCount φp φq op oq hpq = 0 := by
+  have hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) := by
+    rw [modelWithCornersSelf_prod]
+    exact isMorse_sphereHeight_comp_fst_add_comp_snd v w
   have : Orientable (𝓡 1) (sphere (0 : E) 1) := orientable_sphere
   have : Orientable (𝓡 1) (sphere (0 : E') 1) := orientable_sphere
   have : Orientable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))

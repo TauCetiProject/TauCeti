@@ -335,12 +335,8 @@ attribute [local instance low] chartedSpaceProd
 (`TauCeti.chartedSpaceProd`). -/
 theorem orientable_chartedSpaceProd [Orientable 𝓘(ℝ, E) N] [Orientable 𝓘(ℝ, E') N'] :
     Orientable 𝓘(ℝ, E × E') (N × N') := by
-  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E)) (M := N)
-  obtain ⟨o'⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E')) (M := N')
   rw [modelWithCornersSelf_prod]
-  constructor
-  rw [Module.finrank_prod]
-  exact ⟨o.prod o'⟩
+  exact (inferInstance : Orientable (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (N × N'))
 
 end ChartedSpaceProd
 

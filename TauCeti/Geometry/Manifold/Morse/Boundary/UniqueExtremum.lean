@@ -13,8 +13,7 @@ import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.Geometry.Manifold.Orientation.Flow
 import TauCeti.Geometry.Manifold.Orientation.Pullback
-import TauCeti.LinearAlgebra.Determinant.Prod
-import TauCeti.LinearAlgebra.Ray
+
 /-!
 # Morse trajectories and boundaries at a unique maximum and a unique minimum
 
@@ -54,8 +53,10 @@ signs of these two trajectories behave asymmetrically with respect to orientabil
 On a surface every coefficient of the Morse boundary joins a critical point of index `2` to one of
 index `1`, or a critical point of index `1` to one of index `0`. So the mod-two Morse boundary of a
 Morse–Smale pair on a compact surface vanishes as soon as `f` has at most one critical point of
-index `2` and at most one of index `0`, and on an orientable compact surface every signed
-trajectory count vanishes as well (`IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`).
+index `2` and at most one of index `0`, and on an orientable compact surface every pair of
+consecutive-index critical points has opposite-sign trajectories and vanishing signed count
+(`IsMorseSmale.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two`,
+`IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`).
 
 ## Main results
 
@@ -79,7 +80,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet`,
   `signedTrajectoryCount_eq_zero_of_stableSet`,
   `IsMorseSmale.exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_finrank`,
-  `IsMorseSmale.signedTrajectoryCount_eq_zero_of_unique_index_finrank`, and
+  `IsMorseSmale.signedTrajectoryCount_eq_zero_of_unique_index_finrank`,
+  `IsMorseSmale.exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two`, and
   `IsMorseSmale.signedTrajectoryCount_eq_zero_of_finrank_eq_two`: opposite signs and vanishing
   signed count from a top-index critical point on an orientable manifold, and on orientable
   surfaces with at most one maximum and one minimum.
@@ -99,59 +101,6 @@ open Filter Function Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-private theorem map_orientation_eq_neg_of_snd_eq_of_fst_neg {V W ι : Type*}
-    [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W] [Fintype ι]
-    (hcard : Fintype.card ι = Module.finrank ℝ (ℝ × W))
-    (o : Orientation ℝ V ι) {e₁ e₂ : V ≃ₗ[ℝ] ℝ × W}
-    (hsnd : ∀ v, (e₁ v).2 = (e₂ v).2) {v₀ : V} (hv₀ : (e₁ v₀).2 = 0)
-    (h₁ : 0 < (e₁ v₀).1) (h₂ : (e₂ v₀).1 < 0) :
-    Orientation.map ι e₂ o = -Orientation.map ι e₁ o := by
-  classical
-  set B := e₁.symm.trans e₂
-  have hBe (w : ℝ × W) : B w = e₂ (e₁.symm w) := LinearEquiv.trans_apply w
-  have hB (w : ℝ × W) : (B w).2 = w.2 := by
-    obtain ⟨v, rfl⟩ := e₁.surjective w
-    rw [hBe, e₁.symm_apply_apply, hsnd]
-  have he₁ : e₁ (((e₁ v₀).1)⁻¹ • v₀) = (1, 0) := by
-    rw [map_smul]
-    exact Prod.ext (inv_mul_cancel₀ h₁.ne') (by simp [hv₀])
-  have hfst : (B (1, 0)).1 < 0 := by
-    rw [hBe, e₁.symm_apply_eq.2 he₁.symm, map_smul, Prod.smul_fst, smul_eq_mul]
-    exact mul_neg_of_pos_of_neg (inv_pos.2 h₁) h₂
-  have hdet : B.toLinearMap.det < 0 := by
-    rw [LinearMap.det_eq_fst_of_snd_eq _ hB]
-    exact hfst
-  have hmap : Orientation.map ι e₂ o = Orientation.map ι B (Orientation.map ι e₁ o) := by
-    have hee : e₂ = e₁.trans B := LinearEquiv.ext fun v ↦ by
-      rw [LinearEquiv.trans_apply, hBe, e₁.symm_apply_apply]
-    rw [hee, Orientation.map_trans]
-  rcases (Orientation.map ι B (Orientation.map ι e₁ o)).eq_or_eq_neg
-      (Orientation.map ι e₁ o) hcard with hpos | hneg
-  · exact absurd (((Orientation.map ι e₁ o).map_eq_iff_det_pos B hcard).1 hpos) hdet.not_gt
-  · rw [hmap, hneg]
-
-private theorem map_orientation_eq_neg_of_trans_snd_eq_of_fst_neg {U V W ι : Type*}
-    [AddCommGroup U] [Module ℝ U]
-    [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W] [Fintype ι]
-    (hcard : Fintype.card ι = Module.finrank ℝ (ℝ × W))
-    {op : Orientation ℝ U ι} {o₁ : Orientation ℝ V ι}
-    {G₁ G₂ : U ≃ₗ[ℝ] V} {e₁ e₂ : U ≃ₗ[ℝ] ℝ × W}
-    (hGo₁ : Orientation.map ι G₁ op = o₁) (hGo₂ : Orientation.map ι G₂ op = o₁)
-    (hsnd : ∀ v, ((G₁.symm.trans e₁) v).2 = ((G₂.symm.trans e₂) v).2)
-    {v₀ : V} (hv₀ : ((G₁.symm.trans e₁) v₀).2 = 0)
-    (h₁ : 0 < ((G₁.symm.trans e₁) v₀).1) (h₂ : ((G₂.symm.trans e₂) v₀).1 < 0) :
-    Orientation.map ι e₂ op = -Orientation.map ι e₁ op := by
-  have hΨneg := map_orientation_eq_neg_of_snd_eq_of_fst_neg hcard o₁ hsnd hv₀ h₁ h₂
-  have he₁G : G₁.trans (G₁.symm.trans e₁) = e₁ := LinearEquiv.ext fun _ ↦ by simp
-  have he₂G : G₂.trans (G₂.symm.trans e₂) = e₂ := LinearEquiv.ext fun _ ↦ by simp
-  have hmap₁ : Orientation.map ι e₁ op = Orientation.map ι (G₁.symm.trans e₁) o₁ := by
-    rw [← hGo₁, ← Orientation.map_trans, he₁G]
-  have hmap₂ : Orientation.map ι e₂ op = Orientation.map ι (G₂.symm.trans e₂) o₁ := by
-    rw [← hGo₂, ← Orientation.map_trans, he₂G]
-  rw [hmap₂, hmap₁, hΨneg]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -273,136 +222,6 @@ section Signed
 
 variable {hX}
 
-private theorem trajectorySign_neg_of_map_eq_neg {p q : M} {φp : MorseChart E f p}
-    {φq : MorseChart E f q}
-    {op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))}
-    {oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q))}
-    {hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1}
-    {y₁ y₂ : M} (hC₁ : Bijective (hX.trajectoryComparison φp φq y₁))
-    (hC₂ : Bijective (hX.trajectoryComparison φp φq y₂))
-    (hneg : Orientation.map _
-        (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₂).toLinearMap hC₂) op =
-      -Orientation.map _
-        (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y₁).toLinearMap hC₁) op) :
-    hX.trajectorySign φp φq op oq hpq y₂ = -hX.trajectorySign φp φq op oq hpq y₁ := by
-  rw [trajectorySign_of_bijective hC₁, trajectorySign_of_bijective hC₂, hneg]
-  generalize Orientation.map _ (LinearEquiv.ofBijective _ hC₁) op = o
-  rcases φq.eq_or_eq_neg_trajectoryTargetOrientation (oq := oq) (hpq := hpq) o with rfl | rfl
-  · simp [(Module.Ray.ne_neg_self _).symm]
-  · simp [(Module.Ray.ne_neg_self _).symm, Module.Ray.neg_neg]
-
-private theorem exists_slice_of_trajectorySign_eq_neg {p q : M}
-    {φp : MorseChart E f p} {φq : MorseChart E f q}
-    (hφp : ∀ y ∈ φp.toChart.source,
-      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
-        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hφq : ∀ y ∈ φq.toChart.source,
-      φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
-        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
-    (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
-    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    {z₁ z₂ : M} (hz₁ : z₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (hz₂ : z₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (hsign : hX.trajectorySign φp φq op oq hpq z₂ = -hX.trajectorySign φp φq op oq hpq z₁) :
-    ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
-      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 := by
-  have hne : p ≠ q := by rintro rfl; omega
-  obtain ⟨t₁, ht₁, -⟩ := hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hne hz₁
-  obtain ⟨t₂, ht₂, -⟩ := hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hne hz₂
-  set w₁ := hX.flow t₁ z₁
-  set w₂ := hX.flow t₂ z₂
-  have hw₁ : w₁ ∈ hX.morseTrajectorySlice p q :=
-    hX.mem_morseTrajectorySlice.2 ⟨(Flow.apply_mem_unstableSet_iff _ t₁).2 hz₁.1,
-      (Flow.apply_mem_stableSet_iff _ t₁).2 hz₁.2, ht₁⟩
-  have hw₂ : w₂ ∈ hX.morseTrajectorySlice p q :=
-    hX.mem_morseTrajectorySlice.2 ⟨(Flow.apply_mem_unstableSet_iff _ t₂).2 hz₂.1,
-      (Flow.apply_mem_stableSet_iff _ t₂).2 hz₂.2, ht₂⟩
-  have hsw₁ := hX.trajectorySign_flow (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS hf hz₁ t₁
-  have hsw₂ := hX.trajectorySign_flow (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS hf hz₂ t₂
-  rcases hX.trajectorySign_eq_one_or_eq_neg_one (op := op) (oq := oq) (hpq := hpq) hφp hφq hMS
-      hf hz₁ with h₁ | h₁
-  · exact ⟨w₁, hw₁, w₂, hw₂, hsw₁.trans h₁, hsw₂.trans (hsign.trans (by rw [h₁]))⟩
-  · exact ⟨w₂, hw₂, w₁, hw₁, hsw₂.trans (hsign.trans (by rw [h₁]; ring)), hsw₁.trans h₁⟩
-
-private theorem signedTrajectoryCount_eq_zero_of_exists_trajectorySign {p q : M}
-    {φp : MorseChart E f p} {φq : MorseChart E f q}
-    (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))}
-    {oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q))}
-    {hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1}
-    (hncard : (hX.morseTrajectorySlice p q).ncard = 2)
-    (hex : ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
-      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1) :
-    hX.signedTrajectoryCount φp φq op oq hpq = 0 := by
-  obtain ⟨y₁, hy₁, y₂, hy₂, hs₁, hs₂⟩ := hex
-  have hyne : y₁ ≠ y₂ := fun h ↦ by have := h ▸ hs₁; omega
-  have hslice : hX.morseTrajectorySlice p q = {y₁, y₂} :=
-    (Set.eq_of_subset_of_ncard_le (pair_subset hy₁ hy₂)
-      (by rw [hncard, ncard_pair hyne]) (hMS.finite_morseTrajectorySlice hf hpq)).symm
-  rw [signedTrajectoryCount_def, hslice, finsum_mem_insert _ hyne (finite_singleton y₂),
-    finsum_mem_singleton, hs₁, hs₂]
-  ring
-
-/-- Along a local unstable ray `φq.toChart.symm (φq.negativeExtend (a • v₀))`, `0` is a time of
-linear backward flow, the point lies in `W^u(q) - {q}`, and the velocity is `a` times the unstable
-frame on `v₀`. -/
-private theorem localUnstablePoint_properties {q : M} {φq : MorseChart E f q}
-    (hφq : ∀ y ∈ φq.toChart.source,
-      φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
-        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
-    {v₀ : {i // φq.weight i < 0} → ℝ} (hv₀ : v₀ ≠ 0) {r : ℝ}
-    (hrT : ∀ z, ‖z‖ < r → φq.coord.symm z ∈ φq.toChart.target) {a : ℝ} (ha : a ≠ 0)
-    (har : ‖φq.coord (φq.negativeExtend (a • v₀))‖ < r) :
-    let y := φq.toChart.symm (φq.negativeExtend (a • v₀))
-    0 ∈ hX.linearBackwardTimes φq y ∧ y ∈ hX.flow.unstableSet q ∧ y ≠ q ∧
-      X y = a • hX.unstableFrame φq y v₀ := by
-  set c := φq.coord (φq.negativeExtend (a • v₀))
-  have hc_symm : φq.coord.symm c = φq.negativeExtend (a • v₀) := φq.coord.symm_apply_apply _
-  have htar : φq.negativeExtend (a • v₀) ∈ φq.toChart.target := hc_symm ▸ hrT c har
-  set y := φq.toChart.symm (φq.negativeExtend (a • v₀))
-  have hysrc : y ∈ φq.toChart.source := φq.toChart.map_target htar
-  have hyapp : φq.toChart y = φq.negativeExtend (a • v₀) := φq.toChart.right_inv htar
-  have hlin (t : ℝ) : φq.linearFlow t c = Real.exp t • c := by
-    simpa only [neg_neg] using φq.linearFlow_neg_coord_negativeExtend (-t) (a • v₀)
-  have hstay (t : ℝ) (ht : t ≤ 0) : φq.coord.symm (φq.linearFlow t c) ∈ φq.toChart.target := by
-    refine hrT _ ?_
-    rw [hlin t, norm_smul, Real.norm_of_nonneg (Real.exp_pos t).le]
-    exact (mul_le_of_le_one_left (norm_nonneg c) (Real.exp_le_one_iff.2 ht)).trans_lt har
-  have h0 : 0 ∈ hX.linearBackwardTimes φq y := by
-    rw [mem_linearBackwardTimes]
-    refine ⟨by simpa using hysrc, fun t ht ↦ ?_⟩
-    simpa [c, hyapp] using hstay t ht
-  have hyu : y ∈ hX.flow.unstableSet q := by
-    have htend : Tendsto (fun t ↦ Real.exp t • c) atBot (𝓝 0) := by
-      simpa using Real.tendsto_exp_atBot.smul_const c
-    refine Flow.mem_unstableSet.2 <|
-      (φq.tendsto_toChart_symm_coord_symm_nhds_zero.comp htend).congr' ?_
-    filter_upwards [eventually_le_atBot 0] with t ht
-    have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φq hφq (z := c) (t := t) fun s hs ↦
-      hstay s (by rw [uIcc_of_ge ht] at hs; exact hs.2)
-    rw [comp_apply, ← hlin t, ← hflow, hc_symm]
-  have hyne : y ≠ q := fun hyq ↦ by
-    have hzero : φq.negativeExtend (a • v₀) = 0 := by rw [← hyapp, hyq, φq.apply_self]
-    exact hv₀ ((smul_eq_zero.1 (φq.injective_negativeExtend
-      (hzero.trans (map_zero _).symm))).resolve_left ha)
-  have hXeq : X y = a • hX.unstableFrame φq y v₀ := by
-    have hcomp : φq.toChart ∘ hX.flow (-0) = φq.toChart := funext fun z ↦ by simp
-    have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φq) (T := -0)
-      (by simpa using hysrc)
-    rw [hcomp] at hinv
-    refine hinv.injective ?_
-    have hfr := hX.mfderiv_unstableFrame hφq h0 (a • v₀)
-    rw [hcomp, neg_zero, Real.exp_zero, one_smul, (hX.unstableFrame φq y).map_smul a v₀] at hfr
-    rw [hfr]
-    refine φq.coord.injective (funext fun i ↦ ?_)
-    rw [congrFun (hφq y hysrc) i, hyapp]
-    rcases φq.weight_eq_neg_one_or_eq_one i with hi | hi
-    · rw [hi, neg_one_mul, neg_neg]
-    · rw [φq.coord_negativeExtend_of_not_weight_neg _ (by rw [hi]; norm_num), mul_zero, neg_zero]
-  exact ⟨h0, hyu, hyne, hXeq⟩
-
 /-- **Opposite trajectory signs into an index-zero critical point.** Let `q` have Morse index `1`,
 `m` have Morse index `0`, and suppose that every point of `W^u(q) - {q}` lies in `W^s(m)`. Then for
 any Morse charts at `q` and `m` in which `X` is linear and any orientations `oq` and `om`, the two
@@ -437,10 +256,27 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_unstableSet {q m : M}
     dsimp only [δ]
     rw [div_mul_eq_mul_div, div_lt_iff₀ hpos]
     nlinarith [norm_nonneg (φq.coord (φq.negativeExtend v₀))]
-  obtain ⟨-, hz₁u, hz₁ne, hXz₁⟩ := hX.localUnstablePoint_properties hφq hv₀ hrT
-    (neg_ne_zero.2 hδ.ne') (hnorm (-δ) (by rw [abs_neg, abs_of_pos hδ]))
-  obtain ⟨-, hz₂u, hz₂ne, hXz₂⟩ := hX.localUnstablePoint_properties hφq hv₀ hrT
-    hδ.ne' (hnorm δ (abs_of_pos hδ))
+  have hpt (a : ℝ) (ha : a ≠ 0) (har : ‖φq.coord (φq.negativeExtend (a • v₀))‖ < r) :
+      let y := φq.toChart.symm (φq.negativeExtend (a • v₀))
+      y ∈ hX.flow.unstableSet q ∧ y ≠ q ∧ X y = a • hX.unstableFrame φq y v₀ := by
+    set y := φq.toChart.symm (φq.negativeExtend (a • v₀))
+    have htar : φq.negativeExtend (a • v₀) ∈ φq.toChart.target :=
+      φq.coord.symm_apply_apply (φq.negativeExtend (a • v₀)) ▸ hrT _ har
+    have hyapp : φq.toChart y = φq.negativeExtend (a • v₀) := φq.toChart.right_inv htar
+    have h0 : 0 ∈ hX.linearBackwardTimes φq y :=
+      hX.zero_mem_linearBackwardTimes_toChart_symm_negativeExtend hrT har
+    have hyu : y ∈ hX.flow.unstableSet q :=
+      hX.mem_unstableSet_of_zero_mem_linearBackwardTimes hφq h0 fun i hi ↦ by
+        rw [hyapp, φq.coord_negativeExtend_of_not_weight_neg _ hi]
+    have hyne : y ≠ q := fun hyq ↦
+      hv₀ ((smul_eq_zero.1 (φq.injective_negativeExtend
+        (by rw [← hyapp, hyq, φq.apply_self, map_zero]))).resolve_left ha)
+    have hXeq : X y = a • hX.unstableFrame φq y v₀ := by
+      rw [← map_smul, hX.unstableFrame_eq_of_zero_mem_linearBackwardTimes hφq h0 hyapp]
+    exact ⟨hyu, hyne, hXeq⟩
+  obtain ⟨hz₁u, hz₁ne, hXz₁⟩ := hpt (-δ) (neg_ne_zero.2 hδ.ne')
+    (hnorm (-δ) (by rw [abs_neg, abs_of_pos hδ]))
+  obtain ⟨hz₂u, hz₂ne, hXz₂⟩ := hpt δ hδ.ne' (hnorm δ (abs_of_pos hδ))
   set z₁ := φq.toChart.symm (φq.negativeExtend ((-δ) • v₀))
   set z₂ := φq.toChart.symm (φq.negativeExtend (δ • v₀))
   have hz₁ : z₁ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet m := ⟨hz₁u, hW z₁ hz₁u hz₁ne⟩
@@ -461,16 +297,18 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_unstableSet {q m : M}
       Module.finrank ℝ (ℝ × ({i // φm.weight i < 0} → ℝ)) := by
     rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φm.finrank_negativeWeight_fun]
     omega
-  have hmap := map_orientation_eq_neg_of_snd_eq_of_fst_neg hcard oq
+  have hmap := oq.map_eq_neg_map_of_snd_eq_of_fst_mul_neg hcard
     (e₁ := LinearEquiv.ofBijective (hX.trajectoryComparison φq φm z₁).toLinearMap hC₁)
     (e₂ := LinearEquiv.ofBijective (hX.trajectoryComparison φq φm z₂).toLinearMap hC₂)
     (fun _ ↦ hsub _ _) (hsub _ _)
-    (by simpa [LinearEquiv.ofBijective_apply] using
-      (neg_lt_zero.1 (by nlinarith : -mvfderiv 𝓘(ℝ, E) f z₁ (hX.unstableFrame φq z₁ v₀) < 0)))
-    (by simpa [LinearEquiv.ofBijective_apply] using (by nlinarith :
-      mvfderiv 𝓘(ℝ, E) f z₂ (hX.unstableFrame φq z₂ v₀) < 0))
-  exact exists_slice_of_trajectorySign_eq_neg hφq hφm hMS hf oq om hqm hz₁ hz₂
-    (trajectorySign_neg_of_map_eq_neg hC₁ hC₂ hmap)
+    (by
+      simp only [LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+        trajectoryComparison_apply]
+      exact mul_neg_of_pos_of_neg
+        (neg_lt_zero.1 (by nlinarith : -mvfderiv 𝓘(ℝ, E) f z₁ (hX.unstableFrame φq z₁ v₀) < 0))
+        (by nlinarith : mvfderiv 𝓘(ℝ, E) f z₂ (hX.unstableFrame φq z₂ v₀) < 0))
+  exact hX.exists_trajectorySign_eq_one_and_eq_neg_one_of_trajectorySign_eq_neg
+    hφq hφm hMS hf hz₁ hz₂ (hX.trajectorySign_eq_neg_of_map_eq_neg hC₁ hC₂ hmap)
 
 /-- **Vanishing of the signed trajectory count into an index-zero critical point.** If `q` has
 index `1`, `m` has index `0`, and every point of `W^u(q) - {q}` lies in `W^s(m)`, then the signed
@@ -490,42 +328,10 @@ theorem signedTrajectoryCount_eq_zero_of_unstableSet {q m : M}
     (hqm : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f m + 1)
     (hW : ∀ y ∈ hX.flow.unstableSet q, y ≠ q → y ∈ hX.flow.stableSet m) :
     hX.signedTrajectoryCount φq φm oq om hqm = 0 :=
-  signedTrajectoryCount_eq_zero_of_exists_trajectorySign hMS hf
+  hX.signedTrajectoryCount_eq_zero_of_exists_trajectorySign
     (hX.ncard_morseTrajectorySlice_eq_two_of_unstableSet hf
       ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl) (by omega) hW)
     (exists_trajectorySign_eq_one_and_eq_neg_one_of_unstableSet hφq hφm hMS hf oq om hm0 hqm hW)
-
-/-- At a critical point `p` of top index `dim M`, the unstable frame at any `y ∈ W^u(p)` is a
-linear equivalence onto `T_y M`. -/
-private noncomputable def unstableFrameEquiv {p : M} {φp : MorseChart E f p}
-    (hφp : ∀ y ∈ φp.toChart.source,
-      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
-        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hf : IsMorse 𝓘(ℝ, E) f) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E)
-    {y : M} (hy : y ∈ hX.flow.unstableSet p) :
-    ({i // φp.weight i < 0} → ℝ) ≃ₗ[ℝ] TangentSpace 𝓘(ℝ, E) y :=
-  LinearEquiv.ofBijective (hX.unstableFrame φp y).toLinearMap <| by
-    obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy).exists
-    have hinj := hX.injective_unstableFrame hφp hT
-    exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (by rw [φp.finrank_negativeWeight_fun, hp]; rfl)).1 hinj⟩
-
-omit [CompactSpace M] [T2Space M] in
-private theorem exists_equiv_to_model_of_isOrientationPreservingAt {ι : Type*} [Fintype ι]
-    {oM : Manifold.Orientation 𝓘(ℝ, E) M ι} {oE : Orientation ℝ E ι}
-    {hι : Fintype.card ι = Module.finrank ℝ E} {g : M → E} {z : M}
-    (h : Manifold.Orientation.IsOrientationPreservingAt oM
-      (Manifold.Orientation.model (I := 𝓘(ℝ, E)) oE hι) g z) :
-    ∃ D : TangentSpace 𝓘(ℝ, E) z ≃L[ℝ] E,
-      (∀ v, D v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) g z v) ∧
-      Orientation.map ι D.toLinearEquiv (oM.orientationAt z) = oE := by
-  obtain ⟨D₀, hD₀, hD₀o⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 h
-  refine ⟨D₀.trans (NormedSpace.fromTangentSpace (g z)), fun v ↦ ?_, ?_⟩
-  · have hD₀v : D₀ v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) g z v := DFunLike.congr_fun hD₀ v
-    rw [ContinuousLinearEquiv.trans_apply, hD₀v, NormedSpace.fromTangentSpace_apply]
-  · have htrans : (D₀.trans (NormedSpace.fromTangentSpace (g z))).toLinearEquiv =
-        D₀.toLinearEquiv.trans (NormedSpace.fromTangentSpace (g z)).toLinearEquiv := rfl
-    rw [htrans, Orientation.map_trans, hD₀o, Manifold.Orientation.map_orientationAt_model]
 
 /-- Moving backwards along the flow preserves whether the top-index unstable frame carries `op` to
 a manifold orientation `oM`. -/
@@ -555,44 +361,20 @@ private theorem map_unstableFrameEquiv_flow_neg_eq_iff {p : M} {φp : MorseChart
   have heq : hX.unstableFrameEquiv hφp hf hp ((Flow.apply_mem_unstableSet_iff _ (-T)).2 hy) =
       (eₛ.trans (hX.unstableFrameEquiv hφp hf hp hy)).trans Φe.toLinearEquiv := by
     refine LinearEquiv.ext fun c ↦ ?_
-    simp only [unstableFrameEquiv, LinearEquiv.ofBijective_apply, LinearEquiv.trans_apply, eₛ,
-      LinearEquiv.smulOfNeZero_apply, ContinuousLinearMap.coe_coe,
-      ContinuousLinearEquiv.coe_toLinearEquiv]
+    simp only [unstableFrameEquiv_apply, LinearEquiv.trans_apply, eₛ,
+      LinearEquiv.smulOfNeZero_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
     have hΦev : Φe (hX.unstableFrame φp y c) =
         mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow (-T)) y (hX.unstableFrame φp y c) :=
       DFunLike.congr_fun hΦe _
     rw [map_smul, map_smul, hΦev, hX.unstableFrame_flow hφp hT₀ (-T) c, neg_neg]
   have hsop : Orientation.map _ eₛ op = op :=
     (op.map_eq_iff_det_pos eₛ (by rw [Fintype.card_fin, φp.finrank_negativeWeight_fun])).2 <| by
-      have hsmul : eₛ.toLinearMap = Real.exp T • LinearMap.id := LinearMap.ext fun _ ↦ rfl
+      have hsmul : eₛ.toLinearMap = Real.exp T • LinearMap.id :=
+        LinearMap.ext fun _ ↦ by simp [eₛ]
       rw [hsmul, LinearMap.det_smul, LinearMap.det_id, mul_one]
       exact pow_pos (Real.exp_pos T) _
   rw [heq, Orientation.map_trans, Orientation.map_trans, hsop, ← hΦo]
   exact (Orientation.map _ Φe.toLinearEquiv).injective.eq_iff
-
-private theorem eventually_zero_mem_linearBackwardTimes_of_index_eq_finrank {p : M}
-    (φp : MorseChart E f p) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E) :
-    ∀ᶠ z in 𝓝 p, 0 ∈ hX.linearBackwardTimes φp z := by
-  have hall (i : Fin (Module.finrank ℝ E)) : φp.weight i = -1 := by
-    have huniv : {j : Fin (Module.finrank ℝ E) | φp.weight j < 0} = univ :=
-      Set.eq_of_subset_of_ncard_le (subset_univ _)
-        (by rw [φp.ncard_weight_neg, hp, ncard_univ, Nat.card_fin]) (toFinite _)
-    have hi : φp.weight i < 0 := by simpa using (huniv ▸ mem_univ i : i ∈ {j | φp.weight j < 0})
-    exact (φp.weight_eq_neg_one_or_eq_one i).resolve_right fun h ↦ by rw [h] at hi; norm_num at hi
-  obtain ⟨r, hr, hrT⟩ := φp.exists_pos_forall_norm_lt_mem_target
-  have hc : ContinuousAt (fun z ↦ ‖φp.coord (φp.toChart z)‖) p :=
-    φp.continuous_coord.norm.continuousAt.comp (φp.toChart.continuousAt φp.mem_source)
-  filter_upwards [φp.toChart.open_source.eventually_mem φp.mem_source,
-    hc.eventually (gt_mem_nhds (by simpa using hr))] with z hzsrc hzr
-  rw [mem_linearBackwardTimes]
-  refine ⟨by simpa using hzsrc, fun t ht ↦ hrT _ ?_⟩
-  have hlin : φp.linearFlow t (φp.coord (φp.toChart (hX.flow (-0) z))) =
-      Real.exp t • φp.coord (φp.toChart z) := by
-    funext i
-    rw [neg_zero, Flow.map_zero_apply, φp.linearFlow_of_weight_eq_neg_one (hall i),
-      Pi.smul_apply, smul_eq_mul]
-  rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos t).le]
-  exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hzr
 
 /-- On an orientable manifold, at a critical point `p` of top index `dim M`, some orientation `oM`
 of `M` agrees with the image of `op` under `unstableFrameEquiv` at every point of `W^u(p)`. -/
@@ -626,74 +408,29 @@ private theorem exists_orientation_forall_map_unstableFrameEquiv_eq [Orientable 
   have hchart_smooth : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 φp.toChart p :=
     ((contMDiffOn_of_mem_maximalAtlas φp.mem_maximalAtlas).contMDiffAt
       (φp.toChart.open_source.mem_nhds φp.mem_source)).of_le (by simp)
-  have hnear := (hX.eventually_zero_mem_linearBackwardTimes_of_index_eq_finrank φp hp).and
-    (Manifold.Orientation.eventually_isOrientationPreservingAt hchart_smooth hoMp)
+  have hnear :=
+    (hX.eventually_zero_mem_linearBackwardTimes_of_manifoldMorseIndex_eq_finrank φp hp).and
+      (Manifold.Orientation.eventually_isOrientationPreservingAt hchart_smooth hoMp)
   have htend : Tendsto (fun T : ℝ ↦ hX.flow (-T) y) atTop (𝓝 p) :=
     (Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot
   obtain ⟨T, hT0, hTpres⟩ := (htend.eventually hnear).exists
   rw [← hX.map_unstableFrameEquiv_flow_neg_eq_iff hφp hf hp op oM hy T]
-  obtain ⟨Dz, hDz, hDzo⟩ := exists_equiv_to_model_of_isOrientationPreservingAt hTpres
+  obtain ⟨Dz, hDz, hDzo⟩ :=
+    (Manifold.Orientation.isOrientationPreservingAt_model_iff _ _ _ _ _).1 hTpres
+  have hDzv (v : TangentSpace 𝓘(ℝ, E) (hX.flow (-T) y)) :
+      Dz v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart (hX.flow (-T) y) v := by
+    simpa [NormedSpace.fromTangentSpace_apply] using DFunLike.congr_fun hDz v
   have hcomp : φp.toChart ∘ hX.flow (-0) = φp.toChart := funext fun _ ↦ by simp
   have heq : (hX.unstableFrameEquiv hφp hf hp
       ((Flow.apply_mem_unstableSet_iff _ (-T)).2 hy)).trans Dz.toLinearEquiv = eExt := by
     refine LinearEquiv.ext fun c ↦ ?_
-    simp only [LinearEquiv.trans_apply, unstableFrameEquiv, LinearEquiv.ofBijective_apply,
-      ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, eExt]
+    simp only [LinearEquiv.trans_apply, unstableFrameEquiv_apply,
+      ContinuousLinearEquiv.coe_toLinearEquiv, eExt]
     have hfr := hX.mfderiv_unstableFrame hφp hT0 c
     rw [hcomp, neg_zero, Real.exp_zero, one_smul] at hfr
-    exact (hDz _).trans hfr
+    exact (hDzv _).trans hfr
   apply (Orientation.map _ Dz.toLinearEquiv).injective
   rw [← Orientation.map_trans, heq, hDzo]
-
-/-- Along a local stable ray `φq.toChart.symm (a • u₀)`, `0` is a time of linear forward flow, the
-point lies in `W^s(q) - {q}`, and the chart derivative of `X` there is `(-a) • u₀`. -/
-private theorem localStablePoint_properties {q : M} {φq : MorseChart E f q}
-    (hφq : ∀ y ∈ φq.toChart.source,
-      φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
-        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
-    {u₀ : φq.stableSubspace} (hu₀ : u₀ ≠ 0) {r : ℝ}
-    (hrT : ∀ z, ‖z‖ < r → φq.coord.symm z ∈ φq.toChart.target) {a : ℝ} (ha : a ≠ 0)
-    (har : ‖φq.coord (a • (u₀ : E))‖ < r / 2) :
-    let y := φq.toChart.symm (a • (u₀ : E))
-    0 ∈ hX.linearForwardTimes φq y ∧ y ∈ hX.flow.stableSet q ∧ y ≠ q ∧
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y) = (-a) • (u₀ : E) := by
-  have hr : 0 < r := by linarith [norm_nonneg (φq.coord (a • (u₀ : E)))]
-  set c := φq.coord (a • (u₀ : E))
-  have hc_def : φq.coord (a • (u₀ : E)) = c := rfl
-  have hc_symm : φq.coord.symm c = a • (u₀ : E) := φq.coord.symm_apply_apply _
-  have htar : a • (u₀ : E) ∈ φq.toChart.target := hc_symm ▸ hrT c (har.trans (half_lt_self hr))
-  set y := φq.toChart.symm (a • (u₀ : E))
-  have hysrc : y ∈ φq.toChart.source := φq.toChart.map_target htar
-  have hyapp : φq.toChart y = a • (u₀ : E) := φq.toChart.right_inv htar
-  have hu_zero (i : Fin (Module.finrank ℝ E)) (hi : φq.weight i < 0) : c i = 0 := by
-    simp [c, φq.mem_stableSubspace.1 u₀.2 i hi]
-  have h0 : 0 ∈ hX.linearForwardTimes φq y := by
-    rw [mem_linearForwardTimes]
-    refine ⟨by simpa using hysrc, fun t ht ↦ hrT _ ?_⟩
-    have hlin : φq.linearFlow t (φq.coord (φq.toChart (hX.flow 0 y))) = Real.exp (-t) • c := by
-      funext i
-      rw [Flow.map_zero_apply, hyapp, hc_def]
-      rcases φq.weight_eq_neg_one_or_eq_one i with hi | hi
-      · rw [φq.linearFlow_of_weight_eq_neg_one hi, Pi.smul_apply, smul_eq_mul,
-          hu_zero i (by rw [hi]; norm_num), mul_zero, mul_zero]
-      · rw [φq.linearFlow_of_weight_eq_one hi, Pi.smul_apply, smul_eq_mul]
-    rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact (mul_le_of_le_one_left (norm_nonneg c)
-      (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))).trans_lt (har.trans (half_lt_self hr))
-  have hys : y ∈ hX.flow.stableSet q :=
-    hX.mem_stableSet_of_forall_coord_eq_zero φq hφq hrT hysrc (by simpa [c, hyapp] using har)
-      fun i hi ↦ by simpa [c, hyapp] using hu_zero i hi
-  have hyne : y ≠ q := fun hyq ↦ by
-    have hzero : a • (u₀ : E) = 0 := by rw [← hyapp, hyq, φq.apply_self]
-    exact hu₀ (Subtype.ext ((smul_eq_zero.1 hzero).resolve_left ha))
-  have hXeq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y) = (-a) • (u₀ : E) := by
-    refine φq.coord.injective (funext fun i ↦ ?_)
-    rw [congrFun (hφq y hysrc) i, hyapp, map_smul, map_smul, Pi.smul_apply, Pi.smul_apply,
-      smul_eq_mul, smul_eq_mul]
-    rcases φq.weight_eq_neg_one_or_eq_one i with hi | hi
-    · simp [φq.mem_stableSubspace.1 u₀.2 i (by rw [hi]; norm_num)]
-    · rw [hi]; ring
-  exact ⟨h0, hys, hyne, hXeq⟩
 
 omit [CompactSpace M] [T2Space M] in
 /-- Choose a model orientation on `E`, a nonzero stable vector `u₀` at `q`, and a small radius `δ`
@@ -706,7 +443,7 @@ private theorem exists_localStable_ray_param {p q : M} (φq : MorseChart E f q)
     ∃ (o₁ : Orientation ℝ E (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
       (u₀ : φq.stableSubspace) (r δ : ℝ),
       u₀ ≠ 0 ∧ 0 < δ ∧ (∀ z, ‖z‖ < r → φq.coord.symm z ∈ φq.toChart.target) ∧
-      ∀ a : ℝ, |a| = δ → ‖φq.coord (a • (u₀ : E))‖ < r / 2 ∧
+      ∀ a : ℝ, |a| = δ → ‖φq.coord (a • (u₀ : E))‖ < r ∧
         Manifold.Orientation.IsOrientationPreservingAt oM
           (Manifold.Orientation.model (I := 𝓘(ℝ, E)) o₁ (by rw [Fintype.card_fin, hp]))
           φq.toChart (φq.toChart.symm (a • (u₀ : E))) := by
@@ -721,13 +458,7 @@ private theorem exists_localStable_ray_param {p q : M} (φq : MorseChart E f q)
         oM oEq₀ φq.toChart q Dq₀ hDq₀ with hpos | hneg
     · exact ⟨o₀, hpos⟩
     · refine ⟨-o₀, ?_⟩
-      have hmod : Manifold.Orientation.model (I := 𝓘(ℝ, E)) (-o₀)
-          (by rw [Fintype.card_fin, hp]) = -oEq₀ := by
-        ext x
-        apply (Orientation.map _ (NormedSpace.fromTangentSpace x).toLinearEquiv).injective
-        rw [Manifold.Orientation.map_orientationAt_model, Manifold.Orientation.orientationAt_neg,
-          Orientation.map_neg, Manifold.Orientation.map_orientationAt_model]
-      rw [hmod]
+      rw [Manifold.Orientation.model_neg]
       exact (Manifold.Orientation.isOrientationPreservingAt_neg_right oM oEq₀ φq.toChart q).2 hneg
   set oEq := Manifold.Orientation.model (I := 𝓘(ℝ, E)) o₁ (by rw [Fintype.card_fin, hp])
   have hchart_smooth : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 φq.toChart q :=
@@ -742,12 +473,12 @@ private theorem exists_localStable_ray_param {p q : M} (φq : MorseChart E f q)
       (continuous_id.smul continuous_const).continuousAt
     rw [zero_smul, ← φq.apply_self]
     exact φq.toChart.map_source φq.mem_source
-  have hev : ∀ᶠ a : ℝ in 𝓝 0, ‖φq.coord (a • (u₀ : E))‖ < r / 2 ∧
+  have hev : ∀ᶠ a : ℝ in 𝓝 0, ‖φq.coord (a • (u₀ : E))‖ < r ∧
       Manifold.Orientation.IsOrientationPreservingAt oM oEq φq.toChart
         (φq.toChart.symm (a • (u₀ : E))) := by
-    have hnorm_ev : ∀ᶠ a : ℝ in 𝓝 0, ‖φq.coord (a • (u₀ : E))‖ < r / 2 :=
+    have hnorm_ev : ∀ᶠ a : ℝ in 𝓝 0, ‖φq.coord (a • (u₀ : E))‖ < r :=
       ((φq.continuous_coord.norm.comp (continuous_id.smul continuous_const)).continuousAt
-        ).eventually (gt_mem_nhds (by simp [half_pos hr]))
+        ).eventually (gt_mem_nhds (by simp [hr]))
     have hpres_ev := Manifold.Orientation.eventually_isOrientationPreservingAt hchart_smooth hoMq
     have hγt : Tendsto (fun a : ℝ ↦ φq.toChart.symm (a • (u₀ : E))) (𝓝 0) (𝓝 q) := by
       simpa using hγ.tendsto
@@ -755,32 +486,6 @@ private theorem exists_localStable_ray_param {p q : M} (φq : MorseChart E f q)
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 hev
   exact ⟨o₁, u₀, r, ε / 2, hu₀, half_pos hε, hrT, fun a ha ↦
     hball a (by simp [ha, half_lt_self hε])⟩
-
-private theorem unstableFrameEquiv_symm_trans_trajectoryComparison_apply {p q z : M}
-    {φp : MorseChart E f p} {φq : MorseChart E f q}
-    (hφp : ∀ y ∈ φp.toChart.source,
-      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
-        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hφq : ∀ y ∈ φq.toChart.source,
-      φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
-        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
-    (hf : IsMorse 𝓘(ℝ, E) f) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E)
-    (hz : z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (h0 : 0 ∈ hX.linearForwardTimes φq z) (D : TangentSpace 𝓘(ℝ, E) z ≃L[ℝ] E)
-    (hD : ∀ v, D v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart z v)
-    (hC : Bijective (hX.trajectoryComparison φp φq z)) (w : E) :
-    (((hX.unstableFrameEquiv hφp hf hp hz.1).trans D.toLinearEquiv).symm.trans
-      (LinearEquiv.ofBijective (hX.trajectoryComparison φp φq z).toLinearMap hC)) w =
-    (mvfderiv 𝓘(ℝ, E) f z (D.symm w), φq.negativeCoord w) := by
-  have hcomp : φq.toChart ∘ hX.flow 0 = φq.toChart := funext fun _ ↦ by simp
-  set v := ((hX.unstableFrameEquiv hφp hf hp hz.1).trans D.toLinearEquiv).symm w
-  have hv : D (hX.unstableFrame φp z v) = w :=
-    ((hX.unstableFrameEquiv hφp hf hp hz.1).trans D.toLinearEquiv).apply_symm_apply w
-  have hsn := hX.stableNormal_apply hφq h0 (hX.unstableFrame φp z v)
-  rw [hcomp, neg_zero, Real.exp_zero, one_smul, ← hD _, hv] at hsn
-  rw [LinearEquiv.trans_apply, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
-    trajectoryComparison_apply]
-  exact Prod.ext (congrArg (mvfderiv 𝓘(ℝ, E) f z) (D.eq_symm_apply.2 hv)) hsn
 
 /-- **Opposite trajectory signs from a top-index critical point.** On an orientable compact
 manifold `M` of dimension `n`, let `p` have index `n`, `q` have index `n - 1`, and suppose that
@@ -807,27 +512,54 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet [Orientable �
   obtain ⟨o₁, u₀, r, δ, hu₀, hδ, hrT, hray⟩ := exists_localStable_ray_param φq hp hpq oM
   obtain ⟨har₁, hpres₁⟩ := hray δ (abs_of_pos hδ)
   obtain ⟨har₂, hpres₂⟩ := hray (-δ) (by rw [abs_neg, abs_of_pos hδ])
-  obtain ⟨h0₁, hzs₁, hzne₁, hXz₁⟩ := hX.localStablePoint_properties hφq hu₀ hrT hδ.ne' har₁
-  obtain ⟨h0₂, hzs₂, hzne₂, hXz₂⟩ :=
-    hX.localStablePoint_properties hφq hu₀ hrT (neg_ne_zero.2 hδ.ne') har₂
+  have hpt (a : ℝ) (ha : a ≠ 0) (har : ‖φq.coord (a • (u₀ : E))‖ < r) :
+      let y := φq.toChart.symm (a • (u₀ : E))
+      0 ∈ hX.linearForwardTimes φq y ∧ y ∈ hX.flow.stableSet q ∧ y ≠ q ∧
+        mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y) = (-a) • (u₀ : E) := by
+    set y := φq.toChart.symm (a • (u₀ : E))
+    have htar : a • (u₀ : E) ∈ φq.toChart.target :=
+      φq.coord.symm_apply_apply (a • (u₀ : E)) ▸ hrT _ har
+    have hysrc : y ∈ φq.toChart.source := φq.toChart.map_target htar
+    have hyapp : φq.toChart y = a • (u₀ : E) := φq.toChart.right_inv htar
+    have hu : a • (u₀ : E) ∈ φq.stableSubspace := φq.stableSubspace.smul_mem a u₀.2
+    have h0 : 0 ∈ hX.linearForwardTimes φq y :=
+      hX.zero_mem_linearForwardTimes_toChart_symm hrT hu har
+    have hys : y ∈ hX.flow.stableSet q :=
+      hX.mem_stableSet_of_zero_mem_linearForwardTimes hφq h0 (hyapp.symm ▸ hu)
+    have hyne : y ≠ q := fun hyq ↦
+      hu₀ (Subtype.ext ((smul_eq_zero.1 (by rw [← hyapp, hyq, φq.apply_self])).resolve_left ha))
+    have hXeq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y) = (-a) • (u₀ : E) := by
+      rw [φq.mfderiv_toChart_apply_of_mem_stableSubspace hφq hysrc (hyapp.symm ▸ hu), hyapp,
+        neg_smul]
+    exact ⟨h0, hys, hyne, hXeq⟩
+  obtain ⟨h0₁, hzs₁, hzne₁, hXz₁⟩ := hpt δ hδ.ne' har₁
+  obtain ⟨h0₂, hzs₂, hzne₂, hXz₂⟩ := hpt (-δ) (neg_ne_zero.2 hδ.ne') har₂
   set z₁ := φq.toChart.symm (δ • (u₀ : E))
   set z₂ := φq.toChart.symm ((-δ) • (u₀ : E))
   have hz₁ : z₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨hW z₁ hzs₁ hzne₁, hzs₁⟩
   have hz₂ : z₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨hW z₂ hzs₂ hzne₂, hzs₂⟩
   have hC₁ := bijective_trajectoryComparison hφp hφq hMS hf hpq hz₁
   have hC₂ := bijective_trajectoryComparison hφp hφq hMS hf hpq hz₂
-  obtain ⟨D₁, hD₁, hD₁o⟩ := exists_equiv_to_model_of_isOrientationPreservingAt hpres₁
-  obtain ⟨D₂, hD₂, hD₂o⟩ := exists_equiv_to_model_of_isOrientationPreservingAt hpres₂
+  obtain ⟨D₁, hD₁, hD₁o⟩ :=
+    (Manifold.Orientation.isOrientationPreservingAt_model_iff _ _ _ _ _).1 hpres₁
+  obtain ⟨D₂, hD₂, hD₂o⟩ :=
+    (Manifold.Orientation.isOrientationPreservingAt_model_iff _ _ _ _ _).1 hpres₂
+  have hD₁v (v : TangentSpace 𝓘(ℝ, E) z₁) :
+      D₁ v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart z₁ v := by
+    simpa [NormedSpace.fromTangentSpace_apply] using DFunLike.congr_fun hD₁ v
+  have hD₂v (v : TangentSpace 𝓘(ℝ, E) z₂) :
+      D₂ v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart z₂ v := by
+    simpa [NormedSpace.fromTangentSpace_apply] using DFunLike.congr_fun hD₂ v
   set G₁ := (hX.unstableFrameEquiv hφp hf hp hz₁.1).trans D₁.toLinearEquiv
   set G₂ := (hX.unstableFrameEquiv hφp hf hp hz₂.1).trans D₂.toLinearEquiv
   set e₁ := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq z₁).toLinearMap hC₁
   set e₂ := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq z₂).toLinearMap hC₂
   have hne : p ≠ q := by rintro rfl; omega
   have hDsymm₁ : D₁.symm (u₀ : E) = (-δ)⁻¹ • X z₁ :=
-    D₁.symm_apply_eq.2 (by rw [map_smul, hD₁ _, hXz₁, smul_smul,
+    D₁.symm_apply_eq.2 (by rw [map_smul, hD₁v _, hXz₁, smul_smul,
       inv_mul_cancel₀ (neg_ne_zero.2 hδ.ne'), one_smul])
   have hDsymm₂ : D₂.symm (u₀ : E) = δ⁻¹ • X z₂ :=
-    D₂.symm_apply_eq.2 (by rw [map_smul, hD₂ _, hXz₂, neg_neg,
+    D₂.symm_apply_eq.2 (by rw [map_smul, hD₂v _, hXz₂, neg_neg,
       smul_smul, inv_mul_cancel₀ hδ.ne', one_smul])
   have hneg₁ := hX.mvfderiv_apply_lt_zero z₁
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hz₁)
@@ -837,22 +569,32 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet [Orientable �
       Module.finrank ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)) := by
     rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
     omega
-  have hΨ₁ := hX.unstableFrameEquiv_symm_trans_trajectoryComparison_apply hφp hφq hf hp hz₁ h0₁
-    D₁ hD₁ hC₁
-  have hΨ₂ := hX.unstableFrameEquiv_symm_trans_trajectoryComparison_apply hφp hφq hf hp hz₂ h0₂
-    D₂ hD₂ hC₂
-  have hmap := map_orientation_eq_neg_of_trans_snd_eq_of_fst_neg hcard
-    (G₁ := G₁) (G₂ := G₂) (e₁ := e₁) (e₂ := e₂)
-    (by rw [Orientation.map_trans, hoM z₁ hz₁.1, hD₁o])
-    (by rw [Orientation.map_trans, hoM z₂ hz₂.1, hD₂o])
-    (fun w ↦ by rw [hΨ₁ w, hΨ₂ w])
-    (by rw [hΨ₁]; exact φq.mem_stableSubspace_iff_negativeCoord_eq_zero.1 u₀.2)
-    (by rw [hΨ₁, hDsymm₁, map_smul, smul_eq_mul]
-        exact mul_pos_of_neg_of_neg (inv_lt_zero.2 (neg_lt_zero.2 hδ)) hneg₁)
-    (by rw [hΨ₂, hDsymm₂, map_smul, smul_eq_mul]
-        exact mul_neg_of_pos_of_neg (inv_pos.2 hδ) hneg₂)
-  exact exists_slice_of_trajectorySign_eq_neg hφp hφq hMS hf op oq hpq hz₁ hz₂
-    (trajectorySign_neg_of_map_eq_neg hC₁ hC₂ hmap)
+  have hΨ₁ := hX.unstableFrameEquiv_symm_trans_trajectoryComparison_apply hφp hφq hf hp hz₁.1 h0₁
+    D₁ hD₁v hC₁
+  have hΨ₂ := hX.unstableFrameEquiv_symm_trans_trajectoryComparison_apply hφp hφq hf hp hz₂.1 h0₂
+    D₂ hD₂v hC₂
+  have hGo₁ : Orientation.map _ G₁ op = o₁ := by
+    rw [Orientation.map_trans, hoM z₁ hz₁.1, hD₁o]
+  have hGo₂ : Orientation.map _ G₂ op = o₁ := by
+    rw [Orientation.map_trans, hoM z₂ hz₂.1, hD₂o]
+  have hmap₁ : Orientation.map _ e₁ op = Orientation.map _ (G₁.symm.trans e₁) o₁ := by
+    rw [← hGo₁, ← Orientation.map_trans]
+    exact congrArg (Orientation.map _ · op) (LinearEquiv.ext fun _ ↦ by simp)
+  have hmap₂ : Orientation.map _ e₂ op = Orientation.map _ (G₂.symm.trans e₂) o₁ := by
+    rw [← hGo₂, ← Orientation.map_trans]
+    exact congrArg (Orientation.map _ · op) (LinearEquiv.ext fun _ ↦ by simp)
+  have hmap : Orientation.map _ e₂ op = -Orientation.map _ e₁ op := by
+    rw [hmap₂, hmap₁]
+    exact o₁.map_eq_neg_map_of_snd_eq_of_fst_mul_neg hcard
+      (fun w ↦ by rw [hΨ₁ w, hΨ₂ w])
+      (by rw [hΨ₁]; exact φq.mem_stableSubspace_iff_negativeCoord_eq_zero.1 u₀.2)
+      (by
+        rw [hΨ₁, hΨ₂, hDsymm₁, hDsymm₂, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
+        exact mul_neg_of_pos_of_neg
+          (mul_pos_of_neg_of_neg (inv_lt_zero.2 (neg_lt_zero.2 hδ)) hneg₁)
+          (mul_neg_of_pos_of_neg (inv_pos.2 hδ) hneg₂))
+  exact hX.exists_trajectorySign_eq_one_and_eq_neg_one_of_trajectorySign_eq_neg
+    hφp hφq hMS hf hz₁ hz₂ (hX.trajectorySign_eq_neg_of_map_eq_neg hC₁ hC₂ hmap)
 
 /-- **Vanishing of the signed trajectory count from a top-index critical point.** On an orientable
 compact manifold `M` of dimension `n`, if `p` has index `n`, `q` has index `n - 1`, and every point
@@ -873,7 +615,7 @@ theorem signedTrajectoryCount_eq_zero_of_stableSet [Orientable 𝓘(ℝ, E) M]
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hW : ∀ y ∈ hX.flow.stableSet q, y ≠ q → y ∈ hX.flow.unstableSet p) :
     hX.signedTrajectoryCount φp φq op oq hpq = 0 :=
-  signedTrajectoryCount_eq_zero_of_exists_trajectorySign hMS hf
+  hX.signedTrajectoryCount_eq_zero_of_exists_trajectorySign
     (hX.ncard_morseTrajectorySlice_eq_two_of_stableSet
       ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl) (by omega) hW)
     (exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet hφp hφq hMS hf op oq hp hpq hW)
@@ -1102,6 +844,39 @@ theorem signedTrajectoryCount_eq_zero_of_unique_index_finrank [Orientable 𝓘(�
     hX.signedTrajectoryCount φp φq op oq hpq = 0 :=
   signedTrajectoryCount_eq_zero_of_stableSet hφp hφq h hf op oq hp hpq fun _ ↦
     h.mem_unstableSet_of_unique_index_finrank hf (by omega) huniq
+
+/-- **Opposite trajectory signs on an orientable surface with at most one maximum and one
+minimum.** On an orientable compact surface, if `f` has at most one critical point of index `2` and
+at most one of index `0`, then for any critical points `p`, `q` of consecutive index with Morse
+charts in which `X` is linear and any orientations `op` and `oq`, the two trajectories from `p` to
+`q` carry opposite signs `+1` and `-1`. -/
+theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_finrank_eq_two [Orientable 𝓘(ℝ, E) M]
+    (hE : Module.finrank ℝ E = 2)
+    (hmax : {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧
+      manifoldMorseIndex 𝓘(ℝ, E) f x = 2}.Subsingleton)
+    (hmin : {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧
+      manifoldMorseIndex 𝓘(ℝ, E) f x = 0}.Subsingleton)
+    {p q : M} {φp : MorseChart E f p} {φq : MorseChart E f q}
+    (hφp : ∀ y ∈ φp.toChart.source,
+      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
+        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+    (hφq : ∀ y ∈ φq.toChart.source,
+      φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
+        fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    ∃ y₁ ∈ hX.morseTrajectorySlice p q, ∃ y₂ ∈ hX.morseTrajectorySlice p q,
+      hX.trajectorySign φp φq op oq hpq y₁ = 1 ∧ hX.trajectorySign φp φq op oq hpq y₂ = -1 := by
+  have hle : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ Module.finrank ℝ E := manifoldMorseIndex_le_finrank
+  have hpcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 := (φp.mfderiv_eq_zero_iff φp.mem_source).2 rfl
+  have hqcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := (φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl
+  rcases (by omega : manifoldMorseIndex 𝓘(ℝ, E) f p = 2 ∨
+      manifoldMorseIndex 𝓘(ℝ, E) f q = 0) with hp2 | hq0
+  · exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_finrank hf hφp hφq op oq
+      (hE ▸ hp2) hpq fun y hy hy2 ↦ hmax ⟨hy, hE ▸ hy2⟩ ⟨hpcrit, hp2⟩
+  · exact h.exists_trajectorySign_eq_one_and_eq_neg_one_of_unique_index_zero hf hφp hφq op oq
+      hq0 hpq fun y hy hy0 ↦ hmin ⟨hy, hy0⟩ ⟨hqcrit, hq0⟩
 
 /-- **Signed trajectory counts vanish on an orientable surface with at most one maximum and one
 minimum.** On an orientable compact surface, if `f` has at most one critical point of index `2` and

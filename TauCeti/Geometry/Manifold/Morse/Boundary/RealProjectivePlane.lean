@@ -33,9 +33,10 @@ function.
 * Even though `ℝℙ²` is non-orientable, the two trajectories from the index-`1` saddle to the
   index-`0` minimum carry opposite signs `+1` and `-1` from orientations of the unstable manifolds,
   which the mod-two complex does not see, so their signed trajectory count vanishes
-  (`signedTrajectoryCount_projectiveMomentFunction_real_of_index_zero`). Over `ℤ`, this is the
-  vanishing of the differential `d₁ = 0 : ℤ → ℤ` in `ℤ →^{±2} ℤ →^0 ℤ`, complementing the
-  same-sign pair `d₂ = ±2` from the maximum into the saddle that recovers `H₁(ℝℙ²; ℤ) = ℤ/2`.
+  (`signedTrajectoryCount_projectiveMomentFunction_real_eq_zero_of_manifoldMorseIndex_eq_zero`).
+  Over `ℤ`, this is the vanishing of the differential `d₁ = 0 : ℤ → ℤ` in `ℤ →^{±2} ℤ →^0 ℤ`,
+  complementing the same-sign pair `d₂ = ±2` from the maximum into the saddle that recovers
+  `H₁(ℝℙ²; ℤ) = ℤ/2`.
 
 ## Main declarations
 
@@ -45,9 +46,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   function on `ℝℙ²` is Morse–Smale.
 * `ncard_morseTrajectorySlice_projectiveMomentFunction_real`: between critical points whose indices
   differ by one there are exactly two trajectories.
-* `exists_trajectorySign_projectiveMomentFunction_real_of_index_zero` and
-  `signedTrajectoryCount_projectiveMomentFunction_real_of_index_zero`: the two trajectories from
-  the saddle to the minimum carry opposite signs `+1` and `-1`, so their signed count vanishes.
+* `exists_trajectorySign_projectiveMomentFunction_real_eq_one_and_eq_neg_one_of_index_zero`
+  and `signedTrajectoryCount_projectiveMomentFunction_real_eq_zero_of_manifoldMorseIndex_eq_zero`:
+  the two trajectories from the saddle to the minimum carry opposite signs `+1` and `-1`, so their
+  signed count vanishes.
 * `IsMorseSmale.morseBoundary_projectiveMomentFunction_real`: the mod-two Morse boundary is zero.
 * `IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`: the mod-two Morse
   homology has dimension `1` in degrees `0`, `1` and `2` and dimension `0` above.
@@ -116,7 +118,8 @@ theorem ncard_morseTrajectorySlice_projectiveMomentFunction_real (hw : Injective
 and every pseudo-gradient adapted to the moment function on `ℝℙ²`, the two trajectories from the
 index-`1` saddle `q` to the index-`0` minimum `m` carry opposite signs `+1` and `-1`, even though
 `ℝℙ²` is non-orientable. -/
-theorem exists_trajectorySign_projectiveMomentFunction_real_of_index_zero (hw : Injective w)
+theorem exists_trajectorySign_projectiveMomentFunction_real_eq_one_and_eq_neg_one_of_index_zero
+    (hw : Injective w)
     (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X) {q m : ℙ ℝ (Fin 3 → ℝ)}
     {φq : MorseChart (Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q}
     {φm : MorseChart (Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m}
@@ -146,7 +149,8 @@ theorem exists_trajectorySign_projectiveMomentFunction_real_of_index_zero (hw : 
 weights and every pseudo-gradient adapted to the moment function on `ℝℙ²`, the signed count of
 trajectories from the index-`1` saddle `q` to the index-`0` minimum `m` is zero (`d₁ = 0` in the
 integral Morse complex of `ℝℙ²`). -/
-theorem signedTrajectoryCount_projectiveMomentFunction_real_of_index_zero (hw : Injective w)
+theorem signedTrajectoryCount_projectiveMomentFunction_real_eq_zero_of_manifoldMorseIndex_eq_zero
+    (hw : Injective w)
     (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X) {q m : ℙ ℝ (Fin 3 → ℝ)}
     {φq : MorseChart (Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q}
     {φm : MorseChart (Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m}
@@ -163,13 +167,13 @@ theorem signedTrajectoryCount_projectiveMomentFunction_real_of_index_zero (hw : 
     (hm0 : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m = 0)
     (hqm : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q =
       manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) m + 1) :
-    hX.signedTrajectoryCount φq φm oq om hqm = 0 := by
-  have hmcrit := (φm.mfderiv_eq_zero_iff φm.mem_source).2 rfl
-  exact (hX.isMorseSmale_projectiveMomentFunction_real hw
-    ).signedTrajectoryCount_eq_zero_of_unique_index_zero
-    (isMorse_projectiveMomentFunction (𝕜 := ℝ) hw) hφq hφm oq om hm0 hqm fun y hy hy0 ↦
-    subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0
-      ⟨hy, hy0⟩ ⟨hmcrit, hm0⟩
+    hX.signedTrajectoryCount φq φm oq om hqm = 0 :=
+  hX.signedTrajectoryCount_eq_zero_of_exists_trajectorySign
+    (hX.ncard_morseTrajectorySlice_projectiveMomentFunction_real hw
+      ((φq.mfderiv_eq_zero_iff φq.mem_source).2 rfl)
+      ((φm.mfderiv_eq_zero_iff φm.mem_source).2 rfl) hqm)
+    (hX.exists_trajectorySign_projectiveMomentFunction_real_eq_one_and_eq_neg_one_of_index_zero
+      hw hφq hφm oq om hm0 hqm)
 
 namespace IsMorseSmale
 
