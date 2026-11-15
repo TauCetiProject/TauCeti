@@ -40,6 +40,7 @@ schemes. Neither noetherianity of `A` nor finite generation of `I` is needed.
 ## Main results
 
 * `TauCeti.ModuleTower.IsAdicSystem.pow_smul_top_eq_bot`: `I^{n+1} Mₙ = 0`.
+* `TauCeti.ModuleTower.IsAdicSystem.finite_obj`: every term `Mₙ` is finite once `M₀` is.
 * `TauCeti.ModuleTower.IsAdicSystem.finite_lim`: the limit is a finite module.
 * `TauCeti.ModuleTower.IsAdicSystem.ker_limπ`: the kernel of `L → Mₙ` is `I^{n+1} L`.
 
@@ -179,6 +180,12 @@ private theorem exists_fin_surjective_limπ_comp [Module.Finite A (F.obj (op 0))
   obtain ⟨φ, hφ⟩ := Module.projective_lifting_property (F.limπ 0) g
     (F.limπ_surjective hF.transition_surjective 0)
   exact ⟨k, φ, hF.surjective_limπ_comp (hφ ▸ hg)⟩
+
+/-- **Every term of an `I`-adic system with `M₀` finite is a finite module.** Neither
+noetherianity nor precompleteness of `A` is needed. -/
+theorem finite_obj [Module.Finite A (F.obj (op 0))] (n : ℕ) : Module.Finite A (F.obj (op n)) := by
+  obtain ⟨_, φ, hφ⟩ := hF.exists_fin_surjective_limπ_comp
+  exact .of_surjective (F.limπ n ∘ₗ φ) (hφ n)
 
 variable [IsPrecomplete I A] [Module.Finite A (F.obj (op 0))]
 

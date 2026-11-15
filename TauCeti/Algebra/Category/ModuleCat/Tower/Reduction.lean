@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+public import TauCeti.RingTheory.AdicCompletion.Finite
 public import TauCeti.RingTheory.Ideal.Quotient.PowTransition
-
-import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
 # Finite modules over a complete ring as adic systems
@@ -40,7 +41,10 @@ formal scheme as compatible systems of coherent modules on its thickenings.
 * `TauCeti.ModuleTower.limReductionEquiv`: the limit of the reduction is the adic completion.
 * `TauCeti.ModuleTower.toLimReduction`: the canonical map from `M` to the limit of its reduction.
 * `TauCeti.ModuleTower.FiniteAdicSystem`: the category of `I`-adic systems with finite `M₀`.
-* `TauCeti.ModuleTower.finiteReduction`: reduction of finite modules to finite adic systems.
+* `TauCeti.ModuleTower.finiteReduction`, `TauCeti.ModuleTower.finiteLim`: reduction of finite
+  modules to finite adic systems and inverse limit back to finite modules.
+* `TauCeti.ModuleTower.finiteReductionEquiv`: the equivalence between finite modules and finite
+  adic systems over a noetherian `I`-adically complete ring.
 
 ## Main results
 
@@ -90,6 +94,9 @@ noncomputable abbrev reduction : ModuleTower.{v} A :=
 /-- The quotient map from `M` onto the `n`-th term `M ⧸ I^{n+1} M` of its reduction. -/
 noncomputable abbrev reductionπ (n : ℕ) : M →ₗ[A] (reduction I M).obj (op n) :=
   quotientsπ _ (I.pow_succ_smul_top_antitone M) n
+
+instance [Module.Finite A M] (n : ℕ) : Module.Finite A ((reduction I M).obj (op n)) :=
+  .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) n)
 
 /-- **The reduction of a module is an `I`-adic system.** -/
 theorem isAdicSystem_reduction : (reduction I M).IsAdicSystem I where
@@ -305,6 +312,19 @@ theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
     limMap (reductionMap I u) (toLimReduction I M x) = toLimReduction I N (u x) :=
   Subtype.ext <| funext fun n ↦ by simp
 
+/-- `limReductionEquiv` intertwines `limMap` of a reduced linear map with `AdicCompletion.map`. -/
+@[simp]
+theorem limReductionEquiv_limMap_reductionMap (u : M →ₗ[A] N) (y : (reduction I M).lim) :
+    limReductionEquiv I N (limMap (reductionMap I u) y) =
+      AdicCompletion.map I u (limReductionEquiv I M y) := by
+  ext n
+  obtain ⟨m, hm⟩ := quotientsπ_surjective _ _ n ((reduction I M).limπ n y)
+  have hm' : (reduction I N).limπ n (limMap (reductionMap I u) y) = reductionπ I N n (u m) := by
+    rw [← LinearMap.comp_apply, limπ_comp_limMap, LinearMap.comp_apply, ← hm,
+      reductionMap_app_reductionπ]
+  rw [limReductionEquiv_apply_val I N hm', AdicCompletion.map_val_apply,
+    limReductionEquiv_apply_val I M hm.symm, LinearMap.reduceModIdeal_apply]
+
 /-- Reduction along `I` as a functor from `A`-modules to towers. -/
 @[expose, simps]
 noncomputable def reductionFunctor : ModuleCat.{v} A ⥤ ModuleTower.{v} A where
@@ -388,6 +408,11 @@ theorem isFiniteAdicSystem_iff (F : ModuleTower.{v} A) :
 `A`-modules. -/
 abbrev FiniteAdicSystem := (isFiniteAdicSystem.{v} I).FullSubcategory
 
+instance FiniteAdicSystem.finite_obj {I : Ideal A} (F : FiniteAdicSystem.{v} I) (n : ℕ) :
+    Module.Finite A (F.obj.obj (op n)) :=
+  have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+  ((isFiniteAdicSystem_iff I _).1 F.property).1.finite_obj n
+
 /-- Reduction of finite `A`-modules to `I`-adic systems with finite `M₀`. -/
 @[expose, simps! obj_obj map_hom]
 noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I :=
@@ -395,6 +420,23 @@ noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I
     (isFiniteAdicSystem_iff I _).2
       ⟨isAdicSystem_reduction I M,
         .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) 0)⟩
+
+instance : (finiteReduction.{v} I).Additive where
+  map_add {_ _ u v} :=
+    (isFiniteAdicSystem I).hom_ext ((reductionFunctor I).map_add (f := u.hom) (g := v.hom))
+
+/-- The inverse limit of a finite `I`-adic system over an `I`-adically precomplete ring, as a
+finite `A`-module (`ModuleTower.IsAdicSystem.finite_lim`). -/
+@[expose, simps! obj_obj map_hom]
+noncomputable def finiteLim [IsPrecomplete I A] :
+    FiniteAdicSystem.{v} I ⥤ FGModuleCat.{v} A :=
+  (ModuleCat.isFG A).lift ((isFiniteAdicSystem I).ι ⋙ limFunctor A) fun F ↦
+    have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+    ((isFiniteAdicSystem_iff I _).1 F.property).1.finite_lim
+
+instance [IsPrecomplete I A] : (finiteLim.{v} I).Additive where
+  map_add {_ _ f g} :=
+    (ModuleCat.isFG A).hom_ext ((limFunctor A).map_add (f := f.hom) (g := g.hom))
 
 instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Faithful where
   map_injective {M N} u v huv := by
@@ -420,6 +462,70 @@ instance [IsPrecomplete I A] : (finiteReduction.{v} I).EssSurj where
 `I`-adic systems with finite `M₀`, with quasi-inverse the limit. -/
 instance finiteReduction_isEquivalence [IsNoetherianRing A] [IsAdicComplete I A] :
     (finiteReduction.{v} I).IsEquivalence where
+
+/-- **Explicit equivalence between finite modules and finite adic systems** (EGA I, Ch. 0,
+7.2.9–7.2.10), with forward functor `finiteReduction I` and inverse functor `finiteLim I`. -/
+-- Expose the object maps so the unit and counit equations have homogeneous types.
+@[expose]
+noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A] :
+    FGModuleCat.{v} A ≌ FiniteAdicSystem.{v} I where
+  functor := finiteReduction.{v} I
+  inverse := finiteLim.{v} I
+  unitIso := NatIso.ofComponents
+    (fun M ↦
+      letI : IsAdicComplete I M := IsAdicComplete.of_finite I M
+      (ModuleCat.isFG A).isoMk
+        (LinearEquiv.ofBijective (toLimReduction I M) (toLimReduction_bijective I M)).toModuleIso)
+    fun {M N} f ↦ (ModuleCat.isFG A).hom_ext <| ModuleCat.hom_ext <| LinearMap.ext fun x ↦
+      (limMap_reductionMap_toLimReduction I f.hom.hom x).symm
+  counitIso := NatIso.ofComponents
+    (fun F ↦
+      letI := ((isFiniteAdicSystem_iff I _).1 F.property).2
+      (isFiniteAdicSystem I).isoMk
+        (((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso))
+    fun {F G} f ↦ (isFiniteAdicSystem I).hom_ext <| NatTrans.ext <| funext fun ⟨n⟩ ↦ by
+      have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+      have := ((isFiniteAdicSystem_iff I _).1 G.property).2
+      change (reductionMap I (limMap f.hom)).app (op n) ≫
+          (((isFiniteAdicSystem_iff I _).1 G.property).1.reductionLimIso.hom.app (op n)) =
+        (((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso.hom.app (op n)) ≫
+          f.hom.app (op n)
+      ext x
+      simp
+  functor_unitIso_comp M := (isFiniteAdicSystem I).hom_ext <| NatTrans.ext <| funext fun ⟨n⟩ ↦ by
+    have : IsAdicComplete I M := IsAdicComplete.of_finite I M
+    simp only [NatIso.ofComponents_hom_app]
+    change (reductionMap I (toLimReduction I M)).app (op n) ≫
+        (isAdicSystem_reduction I M).reductionLimIso.hom.app (op n) =
+      𝟙 ((reduction I M).obj (op n))
+    ext x
+    simp
+
+@[simp]
+theorem finiteReductionEquiv_functor [IsNoetherianRing A] [IsAdicComplete I A] :
+    (finiteReductionEquiv.{v} I).functor = finiteReduction.{v} I :=
+  (rfl)
+
+@[simp]
+theorem finiteReductionEquiv_inverse [IsNoetherianRing A] [IsAdicComplete I A] :
+    (finiteReductionEquiv.{v} I).inverse = finiteLim.{v} I :=
+  (rfl)
+
+@[simp]
+theorem finiteReductionEquiv_unitIso_hom_app_apply [IsNoetherianRing A] [IsAdicComplete I A]
+    (M : FGModuleCat.{v} A) (x : M) :
+    ((finiteReductionEquiv.{v} I).unitIso.hom.app M).hom.hom x = toLimReduction I M x := by
+  simp only [finiteReductionEquiv, NatIso.ofComponents_hom_app]
+  rfl
+
+@[simp]
+theorem finiteReductionEquiv_counitIso_hom_app_hom [IsNoetherianRing A] [IsAdicComplete I A]
+    (F : FiniteAdicSystem.{v} I) :
+    ((finiteReductionEquiv.{v} I).counitIso.hom.app F).hom =
+      (letI := ((isFiniteAdicSystem_iff I _).1 F.property).2
+      ((isFiniteAdicSystem_iff I _).1 F.property).1.reductionLimIso.hom) := by
+  simp only [finiteReductionEquiv, NatIso.ofComponents_hom_app]
+  rfl
 
 end Finite
 
