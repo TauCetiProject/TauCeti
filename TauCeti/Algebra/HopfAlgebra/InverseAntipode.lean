@@ -13,7 +13,9 @@ public import Mathlib.RingTheory.HopfAlgebra.Convolution
 For a Hopf algebra with explicitly supplied bijective antipode, `inverseAntipode`
 is its inverse linear map. It reverses multiplication, and its two inverse laws
 allow the contragredient actions through `S` and `S⁻¹` to cancel on mixed double
-duals. No commutativity or star structure is assumed.
+duals. No commutativity or star structure is assumed. In a finite representation
+`∑ a₁ ⊗ a₂` of the coproduct, its cancellation identities read `∑ S⁻¹(a₂) a₁ = ε(a)` and
+`∑ a₂ S⁻¹(a₁) = ε(a)`.
 
 Bijectivity holds in particular when `S²` is an inner automorphism `a ↦ g a g⁻¹`
 (`antipode_bijective_of_antipode_antipode`), as for the group-like element `K⁻¹` of
@@ -107,5 +109,23 @@ theorem mul_inverseAntipode_lTensor_comm_comul_apply
     | tmul x y => simp [inverseAntipode_mul]
     | add t s ht hs => simp [ht, hs]
   rw [← ht, mul_antipode_lTensor_comul_apply, inverseAntipode_algebraMap]
+
+/-- The inverse antipode cancels the first leg of the reversed coproduct, in any finite
+representation `∑ᵢ a₁ᵢ ⊗ a₂ᵢ` of the coproduct of `a`: `∑ᵢ S⁻¹(a₂ᵢ) a₁ᵢ = ε(a)`. -/
+theorem sum_inverseAntipode_mul_eq_algebraMap_counit
+    (hS : Function.Bijective (antipode R : H →ₗ[R] H)) {a : H} {ι : Type*}
+    (𝓡 : Coalgebra.Repr R a ι) :
+    ∑ i ∈ 𝓡.index, inverseAntipode hS (𝓡.right i) * 𝓡.left i =
+      algebraMap R H (Coalgebra.counit a) := by
+  simpa [← 𝓡.eq, map_sum] using mul_inverseAntipode_rTensor_comm_comul_apply hS a
+
+/-- The inverse antipode cancels the second leg of the reversed coproduct, in any finite
+representation `∑ᵢ a₁ᵢ ⊗ a₂ᵢ` of the coproduct of `a`: `∑ᵢ a₂ᵢ S⁻¹(a₁ᵢ) = ε(a)`. -/
+theorem sum_mul_inverseAntipode_eq_algebraMap_counit
+    (hS : Function.Bijective (antipode R : H →ₗ[R] H)) {a : H} {ι : Type*}
+    (𝓡 : Coalgebra.Repr R a ι) :
+    ∑ i ∈ 𝓡.index, 𝓡.right i * inverseAntipode hS (𝓡.left i) =
+      algebraMap R H (Coalgebra.counit a) := by
+  simpa [← 𝓡.eq, map_sum] using mul_inverseAntipode_lTensor_comm_comul_apply hS a
 
 end TauCeti.HopfAlgebra
