@@ -37,7 +37,7 @@ on:
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
       namespace-slot:
-        description: Namespace build concurrency slot, from 0 through 7
+        description: Namespace build concurrency slot, below the runtime cap (maximum 64)
         value: ${{ jobs.pick.outputs.namespace-slot }}
       hosted-slot:
         description: Native GitHub bulk-build concurrency slot, from 0 through 18
@@ -61,7 +61,7 @@ on:
         description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.namespace_busy }}
       namespace_cap:
-        description: Observational Namespace routing cap; build jobs also share eight scheduler groups
+        description: Runtime Namespace cap; build jobs share the corresponding scheduler groups
         value: ${{ jobs.pick.outputs.namespace_cap }}
 
 jobs:
@@ -74,7 +74,7 @@ jobs:
     continue-on-error: true
     outputs:
       hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
-      namespace-slot: ${{ steps.hosted-slot.outputs.namespace-slot }}
+      namespace-slot: ${{ steps.pick.outputs.namespace_slot }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -92,7 +92,6 @@ jobs:
           import os
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
-              print("namespace-slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 8), file=output)
           PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
@@ -104,10 +103,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e73fbfffcaa2cb0f7d474804288df508cdf57620
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e8d03de2dcea1887d0c0b2b5c3e151d5b2793d62
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e73fbfffcaa2cb0f7d474804288df508cdf57620
+          tools-ref: e8d03de2dcea1887d0c0b2b5c3e151d5b2793d62
           project-directory: .
       - name: Select destination in configured preference order
         id: pick
@@ -115,6 +114,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          NAMESPACE_ENABLED: ${{ vars.NAMESPACE_ENABLED }}
           NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
           API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
           FLEET_JOB_KIND: ${{ inputs.fleet-staging && 'staging' || inputs.fleet-pr && 'pr' || 'other' }}
