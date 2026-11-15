@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Ideal.Quotient.Star
 public import TauCeti.RingTheory.TraceFunctional.Radical
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
@@ -64,6 +65,12 @@ theorem star_mem_traceRadical_iff (τ : A →ₗ[R] R)
     intro y
     rw [hτ, ← star_star y, ← star_mul, hstar, ha, star_zero]
   exact ⟨fun hx ↦ by simpa only [star_star] using hmem hx, hmem⟩
+
+/-- A star-preserving trace has a star-stable multiplication-pairing radical. -/
+theorem isStar_traceRadical (τ : A →ₗ[R] R)
+    (hτ : ∀ x y, τ (x * y) = τ (y * x)) (hstar : ∀ x, τ (star x) = star (τ x)) :
+    (τ.traceRadical hτ).IsStar where
+  star_mem ha := (τ.star_mem_traceRadical_iff hτ hstar).mpr ha
 
 /-- For a star-preserving trace, the left kernel of its sesquilinear form is the underlying
 coefficient submodule of its multiplication-pairing radical. -/

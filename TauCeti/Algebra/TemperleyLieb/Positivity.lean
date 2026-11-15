@@ -10,6 +10,7 @@ public import TauCeti.QuantumGroups.QuantumInteger.Real
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
+import TauCeti.Algebra.TemperleyLieb.Neg
 import TauCeti.Algebra.TemperleyLieb.PathModel
 import TauCeti.Algebra.TemperleyLieb.SpinPositivity
 import Mathlib.Combinatorics.SimpleGraph.Hasse
@@ -22,7 +23,8 @@ For a real loop value `δ`, the analytic adjoint and a Markov trace `tr` give th
 `δ > 0` all of these forms are positive semidefinite exactly when `δ` lies in
 `{2 cos (π / m) : m ≥ 3} ∪ [2, ∞)`, the set `TauCeti.TemperleyLieb.jonesLoopParameters`; its
 squares are the Jones index values `4 cos² (π / m)` and `[4, ∞)`. This file proves both
-directions.
+directions, and transports them across the sign `⋆`-isomorphism `TauCeti.TemperleyLieb.equivNeg` to
+negative and arbitrary nonzero real loop parameters.
 
 Necessity: write `δ = 2 cos θ` with `θ = arccos (δ / 2)` and put `k = ⌊π / θ⌋`. When `0 < δ` is
 not admissible, `π / θ` is not an integer, so the quantum integers `[1], …, [k]` are positive and
@@ -38,6 +40,14 @@ the path graph on `m - 1` vertices, with the vertex `t` weighted by `√[t + 1]`
 integers `[1], …, [m - 1]` are positive, `[m] = 0`, and the recurrence
 `[t] + [t + 2] = δ [t + 1]` says that they form an eigenvector of the adjacency matrix with
 eigenvalue `δ`.
+
+Negative loop parameters: for `δ < 0`, pulling back `tr` along `equivNeg` and multiplying by
+`(-1) ^ n` on `n` strands yields a Markov trace at `-δ > 0`
+(`TauCeti.TemperleyLieb.IsMarkovTrace.comp_equivNeg`). Consequently the signed Hermitian forms
+`(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` are positive semidefinite on every number of strands precisely
+when `-δ ∈ jonesLoopParameters`, and for any `δ ≠ 0` the normalized trace forms
+`(x, y) ↦ (δ⁻¹) ^ n * tr n (x⋆ * y)` are positive semidefinite on every number of strands precisely
+when `|δ| ∈ jonesLoopParameters`.
 
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
 `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
@@ -66,13 +76,24 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_eq_two_mul_cos`: positivity
   at the loop values `2 cos (π / m)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff`,
-  `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem**.
+  `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem** for `δ > 0`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.exists_neg_one_pow_mul_map_star_mul_self_neg` and
+  `TauCeti.TemperleyLieb.IsMarkovTrace.lt_floor_of_forall_neg_one_pow_mul_nonneg`: failure of
+  positivity and the level bound for the signed forms at an inadmissible `δ < 0`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_neg_of_forall_neg_one_pow_mul_nonneg`
+  — **Jones's restriction** for the signed forms at `δ < 0`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff`,
+  `TauCeti.TemperleyLieb.markovTrace_neg_one_pow_nonneg_iff`: **positivity of the signed Markov
+  trace forms** for `δ < 0`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.forall_inv_pow_mul_map_star_mul_self_nonneg_iff`,
+  `TauCeti.TemperleyLieb.markovTrace_inv_pow_nonneg_iff`: **positivity of the normalized Markov
+  trace forms** for `δ ≠ 0`.
 
 ## References
 
 * V. F. R. Jones, *Index for subfactors*, Invent. Math. 72 (1983), 1–25.
 * D. Penneys, *Unitary Quantum Symmetries Lite*, Part I, Chapter 4, Lemma 4.3.8,
-  Theorem 4.3.17 and §4.5.
+  Theorem 4.3.17 and §§4.4–4.5.
 -/
 
 public section
@@ -283,6 +304,89 @@ theorem forall_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ (δ : ℂ) 
   · exact htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (by omega) hδm x
   · exact htr.map_star_mul_self_nonneg_of_two_le h2 x
 
+/-- **Failure of signed positivity from level `k` on.** Let `δ < 0` with `-δ` inadmissible and
+`k = ⌊π / arccos (-δ / 2)⌋`. On every number `n ≥ k` of strands the signed Hermitian form
+`(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` of a Markov trace takes a negative value. -/
+theorem exists_neg_one_pow_mul_map_star_mul_self_neg (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ < 0) (hδJ : -δ ∉ jonesLoopParameters) {n : ℕ}
+    (hn : ⌊π / arccos (-δ / 2)⌋₊ ≤ n) :
+    ∃ x : TemperleyLieb ℂ (δ : ℂ) n, (-1 : ℂ) ^ n * tr n (star x * x) < 0 := by
+  let : Fact (IsSelfAdjoint ((-δ : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-δ)⟩
+  have hneg : (δ : ℂ) = -((-δ : ℝ) : ℂ) := by rw [Complex.ofReal_neg, neg_neg]
+  obtain ⟨y, hy⟩ :=
+    (htr.comp_equivNeg hneg).exists_map_star_mul_self_neg (neg_pos.2 hδ) hδJ hn
+  exact ⟨equivNeg _ _ hneg n y, by simpa using hy⟩
+
+/-- **Jones's restriction at negative loop parameters.** If `δ < 0` and the signed Hermitian forms
+`(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every number of
+strands, then `-δ` is admissible: `-δ = 2 cos (π / m)` for some `m ≥ 3`, or `-δ ≥ 2` (equivalently,
+`δ = -2 cos (π / m)` or `δ ≤ -2`). -/
+theorem mem_jonesLoopParameters_neg_of_forall_neg_one_pow_mul_nonneg
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ < 0)
+    (h : ∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) :
+    -δ ∈ jonesLoopParameters := by
+  by_contra hδJ
+  obtain ⟨x, hx⟩ := htr.exists_neg_one_pow_mul_map_star_mul_self_neg hδ hδJ le_rfl
+  exact (h _ x).not_gt hx
+
+/-- At a negative loop parameter `δ < 0` with `-δ` inadmissible, the signed Hermitian form of a
+Markov trace on `n` strands can be positive semidefinite only below level
+`⌊π / arccos (-δ / 2)⌋`. -/
+theorem lt_floor_of_forall_neg_one_pow_mul_nonneg (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ < 0) (hδJ : -δ ∉ jonesLoopParameters) {n : ℕ}
+    (h : ∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) :
+    n < ⌊π / arccos (-δ / 2)⌋₊ := by
+  by_contra hn
+  obtain ⟨x, hx⟩ :=
+    htr.exists_neg_one_pow_mul_map_star_mul_self_neg hδ hδJ (not_lt.1 hn)
+  exact (h x).not_gt hx
+
+/-- **Jones's positivity theorem at negative loop parameters.** For `δ < 0`, the signed Hermitian
+forms `(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every
+number of strands exactly when `-δ` is an admissible loop parameter, `-δ = 2 cos (π / m)` for some
+`m ≥ 3` or `-δ ≥ 2` (equivalently, `δ = -2 cos (π / m)` or `δ ≤ -2`). -/
+theorem forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ < 0) :
+    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) ↔
+      -δ ∈ jonesLoopParameters := by
+  let : Fact (IsSelfAdjoint ((-δ : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-δ)⟩
+  have hneg : (δ : ℂ) = -((-δ : ℝ) : ℂ) := by rw [Complex.ofReal_neg, neg_neg]
+  rw [← (htr.comp_equivNeg hneg).forall_map_star_mul_self_nonneg_iff (neg_pos.2 hδ)]
+  refine forall_congr' fun n ↦ ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
+  · simpa using h (equivNeg _ _ hneg n y)
+  · simpa using h ((equivNeg _ _ hneg n).symm x)
+
+private theorem ofReal_pos_mul_nonneg_iff {r : ℝ} (hr : 0 < r) (z : ℂ) :
+    0 ≤ (r : ℂ) * z ↔ 0 ≤ z := by
+  simp [Complex.nonneg_iff, mul_nonneg_iff_of_pos_left hr, hr.ne', eq_comm]
+
+/-- **Jones's positivity theorem for the normalized Markov trace.** For any nonzero real loop
+parameter `δ ≠ 0`, the normalized Hermitian forms `(x, y) ↦ (δ⁻¹) ^ n * tr n (x⋆ * y)` of a Markov
+trace are positive semidefinite on every number of strands exactly when `|δ|` is an admissible loop
+parameter, `|δ| = 2 cos (π / m)` for some `m ≥ 3` or `|δ| ≥ 2`. -/
+theorem forall_inv_pow_mul_map_star_mul_self_nonneg_iff
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : δ ≠ 0) :
+    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
+      0 ≤ ((δ : ℂ)⁻¹) ^ n * tr n (star x * x)) ↔ |δ| ∈ jonesLoopParameters := by
+  rcases hδ.lt_or_gt with hneg | hpos
+  · rw [abs_of_neg hneg, ← htr.forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff hneg]
+    refine forall_congr' fun n ↦ forall_congr' fun x ↦ ?_
+    have hinv : (δ : ℂ)⁻¹ = (((-δ)⁻¹ : ℝ) : ℂ) * (-1 : ℂ) := by
+      push_cast
+      rw [inv_neg, neg_mul_neg, mul_one]
+    have hscale : ((δ : ℂ)⁻¹) ^ n * tr n (star x * x) =
+        ((((-δ)⁻¹ ^ n : ℝ) : ℂ)) * ((-1 : ℂ) ^ n * tr n (star x * x)) := by
+      rw [hinv, mul_pow, mul_assoc]
+      push_cast
+      rfl
+    rw [hscale]
+    exact ofReal_pos_mul_nonneg_iff (pow_pos (inv_pos.2 (neg_pos.2 hneg)) n) _
+  · rw [abs_of_pos hpos, ← htr.forall_map_star_mul_self_nonneg_iff hpos]
+    refine forall_congr' fun n ↦ forall_congr' fun x ↦ ?_
+    have hscale : ((δ : ℂ)⁻¹) ^ n = (((δ⁻¹ ^ n : ℝ) : ℂ)) := by push_cast; rfl
+    rw [hscale]
+    exact ofReal_pos_mul_nonneg_iff (pow_pos (inv_pos.2 hpos) n) _
+
 end IsMarkovTrace
 
 open scoped ComplexOrder in
@@ -294,5 +398,27 @@ theorem markovTrace_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ markovTrace q hq (star x * x)) ↔
       δ ∈ jonesLoopParameters :=
   (isMarkovTrace_markovTrace q hq).forall_map_star_mul_self_nonneg_iff hδ
+
+open scoped ComplexOrder in
+/-- **Jones's positivity theorem at negative loop parameters** for the spin-model trace. Let `δ < 0`
+and let `q` be a unit with `δ = -(q + q⁻¹)`. Then
+`(-1) ^ n * TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)` is real and nonnegative for every
+number of strands and every `x` exactly when `-δ` is an admissible loop parameter. -/
+theorem markovTrace_neg_one_pow_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ < 0)
+    (q : ℂˣ) (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
+    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
+      0 ≤ (-1 : ℂ) ^ n * markovTrace q hq (star x * x)) ↔ -δ ∈ jonesLoopParameters :=
+  (isMarkovTrace_markovTrace q hq).forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff hδ
+
+open scoped ComplexOrder in
+/-- **Jones's positivity theorem for the normalized spin-model trace.** Let `δ ≠ 0` and let `q` be a
+unit with `δ = -(q + q⁻¹)`. Then `(δ⁻¹) ^ n * TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)` is
+real and nonnegative for every number of strands and every `x` exactly when `|δ|` is an admissible
+loop parameter. -/
+theorem markovTrace_inv_pow_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ≠ 0)
+    (q : ℂˣ) (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
+    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
+      0 ≤ ((δ : ℂ)⁻¹) ^ n * markovTrace q hq (star x * x)) ↔ |δ| ∈ jonesLoopParameters :=
+  (isMarkovTrace_markovTrace q hq).forall_inv_pow_mul_map_star_mul_self_nonneg_iff hδ
 
 end TauCeti.TemperleyLieb

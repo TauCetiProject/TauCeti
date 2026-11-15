@@ -42,6 +42,8 @@ computes the same values from the three-term recurrence.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
 * `TauCeti.qInt_dvd_qInt`: `[m] ∣ [n]` whenever `m ∣ n`.
+* `TauCeti.qInt_neg_left`, `TauCeti.isUnit_qInt_neg_left`: negating the loop parameter multiplies
+  `[n]` by `(-1)^(n+1)` and preserves invertibility.
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
@@ -125,6 +127,20 @@ theorem qInt_dvd_qInt (δ : R) {m n : ℕ} (h : m ∣ n) : qInt R δ m ∣ qInt 
   obtain ⟨k, rfl⟩ := h
   exact Dvd.intro _ (qInt_mul δ m k).symm
 
+/-- Negating the loop parameter multiplies the quantum integer `[n]` by `(-1) ^ (n + 1)`. -/
+theorem qInt_neg_left (δ : R) : ∀ n : ℕ, qInt R (-δ) n = (-1) ^ (n + 1) * qInt R δ n
+  | 0 => by simp
+  | 1 => by simp
+  | n + 2 => by
+    rw [qInt_add_two, qInt_add_two, qInt_neg_left δ (n + 1), qInt_neg_left δ n]
+    simp only [pow_succ]
+    ring
+
+/-- Negating the loop parameter preserves and reflects invertibility of `[n]`. -/
+theorem isUnit_qInt_neg_left (δ : R) (n : ℕ) :
+    IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
+  simp [qInt_neg_left]
+
 /-- At the loop parameter `δ = 2` the quantum integer `[n]` is the integer `n`. -/
 @[simp]
 theorem qInt_two_left (n : ℕ) : qInt R 2 n = n := by
@@ -133,9 +149,7 @@ theorem qInt_two_left (n : ℕ) : qInt R 2 n = n := by
 /-- At the loop parameter `δ = -2` the quantum integer `[n]` is `(-1)^(n+1) n`. -/
 @[simp]
 theorem qInt_neg_two_left (n : ℕ) : qInt R (-2) n = (-1) ^ (n + 1) * n := by
-  rcases n with _ | n
-  · simp
-  · simp [qInt_def, pow_succ]
+  rw [qInt_neg_left, qInt_two_left]
 
 end TauCeti
 
