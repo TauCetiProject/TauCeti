@@ -436,22 +436,16 @@ theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.In
   constructor
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨hne, hdis, hρσ⟩ := mem_link_nonempty.mp hρ
-    refine mem_link_nonempty.mpr ⟨hne.image f, ?_, ?_⟩
-    · refine disjoint_left.mpr fun y hyρ hyσ => ?_
-      obtain ⟨x₁, hx₁, rfl⟩ := mem_image.mp hyρ
-      obtain ⟨x₂, hx₂, hfeq⟩ := mem_image.mp hyσ
-      exact disjoint_left.mp hdis hx₁ (hf hfeq ▸ hx₂)
-    · rw [← image_union]
-      exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+    refine mem_link_nonempty.mpr ⟨hne.image f, (disjoint_image hf).mpr hdis, ?_⟩
+    rw [← image_union]
+    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
   · intro hω
     obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
     obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
     obtain ⟨τ, hτK, hτ⟩ := mem_map_iff.mp hωσ
     rw [← image_union] at hτ
     obtain rfl := (image_inj hf).mp hτ
-    refine mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, ?_, hτK⟩, rfl⟩
-    exact disjoint_left.mpr fun x hxρ hxσ =>
-      disjoint_left.mp hdis (mem_image_of_mem f hxρ) (mem_image_of_mem f hxσ)
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (disjoint_image hf).mp hdis, hτK⟩, rfl⟩
 
 end PreAbstractSimplicialComplex
 

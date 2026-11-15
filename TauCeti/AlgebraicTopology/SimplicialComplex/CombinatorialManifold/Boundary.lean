@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Link
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Link
+import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.ZeroDimensional
 
 /-!
 # The boundary of a combinatorial manifold
@@ -16,9 +16,9 @@ combinatorial `n`-sphere and a boundary vertex when its link is a combinatorial 
 generally, a face `σ` of a combinatorial manifold lies in the boundary precisely when `link K σ` is
 a combinatorial ball. This file defines the boundary subcomplex `K.boundary` of a
 `PreAbstractSimplicialComplex` and proves that the boundary of a combinatorial `(n + 1)`-manifold is
-a closed combinatorial `n`-manifold: in dimension `1` its vertex links are void (`0`-manifold), in
-higher dimensions `n + 2` every vertex link in `K.boundary` is a combinatorial `n`-sphere, and in
-every dimension `K.boundary.boundary = ⊥`.
+a combinatorial `n`-manifold without boundary: in dimension `1` its vertex links are void
+(`0`-manifold), in higher dimensions `n + 2` every vertex link in `K.boundary` is a combinatorial
+`n`-sphere, and in every dimension `K.boundary.boundary = ⊥`.
 
 To define `K.boundary` as a `PreAbstractSimplicialComplex` without bundling a manifold hypothesis
 into the carrier, its faces are the faces `σ ∈ K` all of whose nonempty subsets `τ ⊆ σ` have
@@ -32,8 +32,8 @@ Boundary formation commutes with injective relabelings (`map_boundary`) and with
 at a fresh vertex (`IsCombinatorialManifold.boundary_stellarSubdivision`). Combined with
 `(simplex V).boundary = simplexBoundary V`, this shows that the boundary of a combinatorial
 `(n + 1)`-ball is a combinatorial `n`-sphere (`IsCombinatorialBall.isCombinatorialSphere_boundary`).
-Since `link K.boundary {v} = (link K {v}).boundary` at every vertex `v`
-(`IsCombinatorialManifold.link_boundary_singleton`), the manifold structure of `K.boundary` follows
+Since `link K.boundary σ = (link K σ).boundary` for every `σ`
+(`IsCombinatorialManifold.link_boundary`), the manifold structure of `K.boundary` follows
 immediately from the ball link of each boundary vertex `v` in `K`.
 
 ## Main definitions
@@ -43,24 +43,27 @@ immediately from the ball link of each boundary vertex `v` in `K`.
 
 ## Main results
 
-* `PreAbstractSimplicialComplex.singleton_mem_boundary_iff` and
+* `PreAbstractSimplicialComplex.mem_boundary_iff`,
+  `PreAbstractSimplicialComplex.singleton_mem_boundary_iff`, and
   `PreAbstractSimplicialComplex.IsCombinatorialManifold.mem_boundary_iff`: vertex and face
   characterizations of boundary membership.
-* `PreAbstractSimplicialComplex.boundary_simplex` and
+* `PreAbstractSimplicialComplex.IsCombinatorialManifold.boundary_eq_bot_iff`,
+  `PreAbstractSimplicialComplex.boundary_simplex`, and
   `PreAbstractSimplicialComplex.IsCombinatorialSphere.boundary_eq_bot`: boundaries of standard
-  simplices and combinatorial spheres.
+  simplices, combinatorial spheres, and manifolds without boundary.
 * `PreAbstractSimplicialComplex.IsCombinatorialManifold.boundary_stellarSubdivision` and
   `PreAbstractSimplicialComplex.IsCombinatorialManifold.stellarEquivalentUpToRelabeling_boundary`:
   interaction of the boundary with stellar moves and intrinsic stellar equivalence.
 * `PreAbstractSimplicialComplex.IsCombinatorialBall.isCombinatorialSphere_boundary`: the boundary of
   a combinatorial `(n + 1)`-ball is a combinatorial `n`-sphere.
-* `PreAbstractSimplicialComplex.IsCombinatorialManifold.link_boundary_singleton`: at every vertex,
-  the link in the boundary is the boundary of the link.
-* `PreAbstractSimplicialComplex.IsCombinatorialManifold.isCombinatorialManifold_boundary`,
-  `PreAbstractSimplicialComplex.IsCombinatorialManifold.isCombinatorialSphere_link_boundary`, and
-  `PreAbstractSimplicialComplex.IsCombinatorialManifold.boundary_boundary_eq_bot`: the boundary of a
-  combinatorial `(n + 1)`-manifold is a closed combinatorial `n`-manifold.
-* `PreAbstractSimplicialComplex.IsCombinatorialManifold.mem_boundary_iff_exists_ridge`: a face of a
+* `PreAbstractSimplicialComplex.IsCombinatorialManifold.link_boundary`: taking links commutes with
+  taking the combinatorial boundary.
+* `IsCombinatorialManifold.isCombinatorialManifold_boundary`,
+  `IsCombinatorialManifold.isCombinatorialSphere_link_boundary`,
+  `IsCombinatorialManifold.isCombinatorialSphere_link_boundary_singleton`, and
+  `IsCombinatorialManifold.boundary_boundary_eq_bot`: the boundary of a combinatorial
+  `(n + 1)`-manifold is a combinatorial `n`-manifold without boundary.
+* `IsCombinatorialManifold.mem_boundary_iff_exists_link_eq_simplex_singleton`: a face of a
   combinatorial `(n + 1)`-manifold lies in the boundary iff it is contained in a codimension-one
   face whose link is a single vertex.
 
@@ -95,14 +98,14 @@ def boundary (K : PreAbstractSimplicialComplex ι) : PreAbstractSimplicialComple
       ⟨(K.isRelLowerSet_faces hσ).2 hρσ hρ, fun _ hτ hτρ => hsub hτ (hτρ.trans hρσ)⟩⟩
 
 /-- Defining characterization of membership in the boundary subcomplex. -/
-theorem mem_boundary_def :
+theorem mem_boundary_iff :
     σ ∈ K.boundary ↔
       σ ∈ K ∧ ∀ ⦃τ⦄, τ.Nonempty → τ ⊆ σ → ∃ k, IsCombinatorialBall (link K τ) k :=
   (Iff.rfl)
 
 /-- The boundary of a complex is a subcomplex. -/
 theorem boundary_le : K.boundary ≤ K :=
-  fun _ hσ => (mem_boundary_def.mp hσ).1
+  fun _ hσ => (mem_boundary_iff.mp hσ).1
 
 /-- A vertex belongs to the boundary precisely when it is a vertex of `K` whose link is a
 combinatorial ball. -/
@@ -110,7 +113,7 @@ combinatorial ball. -/
 theorem singleton_mem_boundary_iff :
     ({v} : Finset ι) ∈ K.boundary ↔
       ({v} : Finset ι) ∈ K ∧ ∃ k, IsCombinatorialBall (link K {v}) k := by
-  rw [mem_boundary_def]
+  rw [mem_boundary_iff]
   refine ⟨fun ⟨hv, h⟩ => ⟨hv, h (singleton_nonempty v) Subset.rfl⟩, fun ⟨hv, hb⟩ => ⟨hv, ?_⟩⟩
   intro τ hτne hτsub
   obtain rfl := hτne.subset_singleton_iff.mp hτsub
@@ -128,17 +131,17 @@ theorem map_boundary {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Functio
   refine SetLike.ext fun ω => ?_
   constructor
   · rintro ⟨σ, hσ, rfl⟩
-    obtain ⟨hσK, hsub⟩ := mem_boundary_def.mp hσ
-    refine mem_boundary_def.mpr ⟨mem_map_iff.mpr ⟨σ, hσK, rfl⟩, fun ρ hρne hρsub => ?_⟩
+    obtain ⟨hσK, hsub⟩ := mem_boundary_iff.mp hσ
+    refine mem_boundary_iff.mpr ⟨mem_map_iff.mpr ⟨σ, hσK, rfl⟩, fun ρ hρne hρsub => ?_⟩
     obtain ⟨τ, hτσ, rfl⟩ := subset_image_iff.mp hρsub
     obtain ⟨k, hk⟩ := hsub (image_nonempty.mp hρne) hτσ
     refine ⟨k, ?_⟩
     rw [← map_link f hf, isCombinatorialBall_map_iff f hf]
     exact hk
   · intro hω
-    obtain ⟨hωK, hsub⟩ := mem_boundary_def.mp hω
+    obtain ⟨hωK, hsub⟩ := mem_boundary_iff.mp hω
     obtain ⟨σ, hσK, rfl⟩ := mem_map_iff.mp hωK
-    refine mem_map_iff.mpr ⟨σ, mem_boundary_def.mpr ⟨hσK, fun τ hτne hτσ => ?_⟩, rfl⟩
+    refine mem_map_iff.mpr ⟨σ, mem_boundary_iff.mpr ⟨hσK, fun τ hτne hτσ => ?_⟩, rfl⟩
     obtain ⟨k, hk⟩ := hsub (hτne.image f) (image_subset_image hτσ)
     rw [← map_link f hf, isCombinatorialBall_map_iff f hf] at hk
     exact ⟨k, hk⟩
@@ -147,7 +150,7 @@ theorem map_boundary {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Functio
 combinatorial ball; the ball-link condition on proper nonempty faces is automatic. -/
 theorem IsCombinatorialManifold.mem_boundary_iff (hK : IsCombinatorialManifold K n) :
     σ ∈ K.boundary ↔ σ ∈ K ∧ ∃ k, IsCombinatorialBall (link K σ) k := by
-  rw [mem_boundary_def]
+  rw [PreAbstractSimplicialComplex.mem_boundary_iff]
   refine ⟨fun ⟨hσ, h⟩ => ⟨hσ, h (K.isRelLowerSet_faces hσ).1 Subset.rfl⟩,
     fun ⟨hσ, k, hball⟩ => ⟨hσ, fun τ hτne hτσ => ?_⟩⟩
   have hσcard : σ.card ≤ n := by
@@ -213,16 +216,28 @@ theorem IsCombinatorialManifold.boundary_eq_bot_zero (hK : IsCombinatorialManifo
   exact hbv.ne_bot
     (isCombinatorialManifold_zero_iff.mp hK (singleton_mem_of_mem (boundary_le hσ) hv))
 
+/-- A combinatorial `(n + 1)`-manifold has void boundary if and only if every vertex link is a
+combinatorial `n`-sphere. -/
+theorem IsCombinatorialManifold.boundary_eq_bot_iff (hK : IsCombinatorialManifold K (n + 1)) :
+    K.boundary = ⊥ ↔ ∀ ⦃v : ι⦄, ({v} : Finset ι) ∈ K → IsCombinatorialSphere (link K {v}) n := by
+  constructor
+  · intro hbot v hv
+    have hvnot : ({v} : Finset ι) ∉ K.boundary := hbot ▸ notMem_bot
+    simpa using (hK.notMem_boundary_iff_isCombinatorialSphere hv (by simp)).mp hvnot
+  · intro hsph
+    refine eq_bot_iff.mpr fun σ hσ => ?_
+    obtain ⟨v, hv⟩ := (K.boundary.isRelLowerSet_faces hσ).1
+    obtain ⟨hvK, hb⟩ := hK.singleton_mem_boundary_succ_iff.mp (singleton_mem_of_mem hσ hv)
+    exact (hsph hvK).not_isCombinatorialBall hb
+
 /-- Every combinatorial sphere has void boundary. -/
 theorem IsCombinatorialSphere.boundary_eq_bot (hK : IsCombinatorialSphere K n) :
     K.boundary = ⊥ := by
   cases n with
   | zero => exact hK.isCombinatorialManifold.boundary_eq_bot_zero
   | succ n =>
-    refine eq_bot_iff.mpr fun σ hσ => ?_
-    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces (boundary_le hσ)).1
-    obtain ⟨hvK, _, hball⟩ := singleton_mem_boundary_iff.mp (singleton_mem_of_mem hσ hv)
-    exact (hK.isCombinatorialSphere_link_singleton hvK).not_isCombinatorialBall hball
+    exact hK.isCombinatorialManifold.boundary_eq_bot_iff.mpr fun _ hv =>
+      hK.isCombinatorialSphere_link_singleton hv
 
 /-- The boundary of any standard simplex is its `simplexBoundary`, including the empty and
 one-vertex cases. -/
@@ -263,31 +278,6 @@ theorem boundary_simplexBoundary (V : Finset ι) : (simplexBoundary V).boundary 
 
 /-! ### Stellar moves on the boundary -/
 
-private theorem link_stellarSubdivision_insert_map_eq_join
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) {ρ : Finset ι}
-    (hvρ : v ∉ ρ) (hnot : ¬ σ ⊆ ρ) (hρσ : ρ ∪ σ ∈ K) :
-    (link (stellarSubdivision K σ v) (insert v ρ)).map (TauCeti.partitionEmbedding (· ∈ σ)) =
-      join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
-  let e := TauCeti.partitionEmbedding (· ∈ σ)
-  rw [link_stellarSubdivision_insert hv hvρ, map_link e e.injective,
-    map_closedStar_inf_deletion_eq_join hσ, image_partitionEmbedding]
-  have hf₁ : ρ.filter (· ∈ σ) = ρ ∩ σ := filter_mem_eq_inter
-  have hf₂ : ρ.filter (fun x => x ∉ σ) = ρ \ σ := filter_notMem_eq_sdiff
-  rw [hf₁, hf₂]
-  have hs : ρ ∩ σ = ∅ ∨ ρ ∩ σ ∈ simplexBoundary σ := by
-    by_cases h : ρ ∩ σ = ∅
-    · exact Or.inl h
-    · exact Or.inr (mem_simplexBoundary.mpr ⟨nonempty_iff_ne_empty.mpr h,
-        Finset.ssubset_iff_subset_ne.mpr ⟨inter_subset_right, fun heq =>
-          hnot (heq ▸ inter_subset_left)⟩⟩)
-  have ht : ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
-    by_cases h : ρ \ σ = ∅
-    · exact Or.inl h
-    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
-        sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
-  rw [link_join hs ht, link_simplexBoundary inter_subset_right, sdiff_inter_self_right,
-    link_link disjoint_sdiff_self_right, union_comm σ (ρ \ σ), sdiff_union_self_eq_union]
-
 private theorem exists_isCombinatorialBall_join_simplexBoundary_iff
     {W : Finset ι} {M : PreAbstractSimplicialComplex ι} (hWne : W.Nonempty)
     (hM : M = ⊥ ∨ ∃ q, IsCombinatorialSphere M q ∨ IsCombinatorialBall M q) :
@@ -311,7 +301,7 @@ private theorem exists_isCombinatorialBall_join_simplexBoundary_iff
       exact ⟨W.card - 2 + q + 1, hsW.join_ball hbM⟩
 
 private theorem boundary_stellarSubdivision_succ_of_mem {m : ℕ}
-    (hK : IsCombinatorialManifold K (m + 1)) (hσK : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
+    (hK : IsCombinatorialManifold K (m + 1)) (hv : ({v} : Finset ι) ∉ K) :
     (stellarSubdivision K σ v).boundary = stellarSubdivision K.boundary σ v := by
   have hB : IsCombinatorialManifold (stellarSubdivision K σ v) (m + 1) :=
     hK.stellarSubdivision hv
@@ -336,7 +326,7 @@ private theorem boundary_stellarSubdivision_succ_of_mem {m : ℕ}
           (insert v (τ.erase v))) k) ↔
             ∃ q, IsCombinatorialBall (link K (τ.erase v ∪ σ)) q := by
         refine (exists_congr fun k => (isCombinatorialBall_map_iff _ hemb).symm).trans ?_
-        rw [link_stellarSubdivision_insert_map_eq_join hσK hv hvρ hnot hρσ]
+        rw [map_link_stellarSubdivision_insert_eq_join hv hnot hρσ]
         exact exists_isCombinatorialBall_join_simplexBoundary_iff (sdiff_nonempty.mpr hnot) hM
     · exact hiff.mp hball
     · exact hiff.mpr hball
@@ -369,8 +359,8 @@ theorem IsCombinatorialManifold.boundary_stellarSubdivision
       have hB : IsCombinatorialManifold
           (PreAbstractSimplicialComplex.stellarSubdivision K σ v) 0 := hK.stellarSubdivision hv
       rw [hK.boundary_eq_bot_zero, hB.boundary_eq_bot_zero,
-        stellarSubdivision_eq_self_of_notMem (Set.notMem_empty _) hσne (Set.notMem_empty _)]
-    | succ m => exact boundary_stellarSubdivision_succ_of_mem hK hσK hv
+        stellarSubdivision_eq_self_of_notMem notMem_bot hσne notMem_bot]
+    | succ m => exact boundary_stellarSubdivision_succ_of_mem hK hv
   · have hσb : σ ∉ K.boundary := fun h => hσK (boundary_le h)
     rw [stellarSubdivision_eq_self_of_notMem hv hσne hσK,
       stellarSubdivision_eq_self_of_notMem hv' hσne hσb]
@@ -381,7 +371,7 @@ theorem IsCombinatorialManifold.boundary_stellarSubdivision_of_notMem
     (hσne : σ.Nonempty) (hσ : σ ∉ K.boundary) :
     (PreAbstractSimplicialComplex.stellarSubdivision K σ v).boundary = K.boundary := by
   rw [hK.boundary_stellarSubdivision hv,
-    stellarSubdivision_eq_self_of_notMem (fun h => hv (boundary_le h)) hσne hσ]
+     stellarSubdivision_eq_self_of_notMem (fun h => hv (boundary_le h)) hσne hσ]
 
 /-- Same-type stellar equivalence between combinatorial manifolds induces stellar equivalence of
 their boundaries. -/
@@ -433,44 +423,41 @@ theorem IsCombinatorialBall.isCombinatorialSphere_boundary (hK : IsCombinatorial
   rw [← boundary_simplex V]
   exact hK.isCombinatorialManifold.stellarEquivalentUpToRelabeling_boundary he
 
-/-! ### The boundary is a closed combinatorial manifold -/
+/-! ### The boundary is a combinatorial manifold without boundary -/
 
-/-- At any vertex of a combinatorial manifold, the link in the boundary is the boundary of its
-link in the manifold (both sides are `⊥` when `{v} ∉ K.boundary`). -/
-theorem IsCombinatorialManifold.link_boundary_singleton (hK : IsCombinatorialManifold K n) :
-    link K.boundary {v} = (link K {v}).boundary := by
-  have hlv : IsCombinatorialManifold (link K {v}) (n - 1) := by
-    by_cases hvK : ({v} : Finset ι) ∈ K
-    · cases n with
-      | zero =>
-        rw [isCombinatorialManifold_zero_iff.mp hK hvK]
-        simp
-      | succ m =>
-        exact (isCombinatorialManifold_succ_iff.mp hK hvK).elim
-          IsCombinatorialSphere.isCombinatorialManifold
-          IsCombinatorialBall.isCombinatorialManifold
-    · have hbot : link K {v} = ⊥ := eq_bot_iff.mpr fun ρ hρ => hvK
-        (singleton_mem_of_mem (mem_link_nonempty.mp hρ).2.2
-          (mem_union_right _ (mem_singleton_self v)))
-      rw [hbot]
-      simp
+/-- For any vertex set `σ`, taking the link at `σ` commutes with taking the combinatorial boundary
+of a combinatorial manifold (both sides are `⊥` when `σ` is a facet, a nonempty non-face, or an
+interior face, and equal `K.boundary` when `σ = ∅`). -/
+theorem IsCombinatorialManifold.link_boundary (hK : IsCombinatorialManifold K n) (σ : Finset ι) :
+    link K.boundary σ = (link K σ).boundary := by
+  have hlσ := hK.isCombinatorialManifold_link σ
   refine SetLike.ext fun ρ => ?_
-  rw [mem_link_nonempty, hK.mem_boundary_iff, hlv.mem_boundary_iff, mem_link_nonempty]
+  rw [mem_link_nonempty, hK.mem_boundary_iff, hlσ.mem_boundary_iff, mem_link_nonempty]
   constructor
   · rintro ⟨hne, hdis, hface, k, hball⟩
     refine ⟨⟨hne, hdis, hface⟩, k, ?_⟩
-    rwa [link_link hdis.symm, singleton_union, ← union_singleton]
+    rwa [link_link hdis.symm, union_comm σ ρ]
   · rintro ⟨⟨hne, hdis, hface⟩, k, hball⟩
     refine ⟨hne, hdis, hface, k, ?_⟩
-    rwa [link_link hdis.symm, singleton_union, ← union_singleton] at hball
+    rwa [link_link hdis.symm, union_comm σ ρ] at hball
+
+/-- For any non-maximal boundary face `σ` of a combinatorial `(n + 1)`-manifold (`σ.card ≤ n`), its
+link in `K.boundary` is a combinatorial `(n - σ.card)`-sphere. -/
+theorem IsCombinatorialManifold.isCombinatorialSphere_link_boundary
+    (hK : IsCombinatorialManifold K (n + 1)) (hσ : σ ∈ K.boundary) (hcard : σ.card ≤ n) :
+    IsCombinatorialSphere (link K.boundary σ) (n - σ.card) := by
+  rw [hK.link_boundary σ]
+  obtain ⟨-, -, hball⟩ := hK.mem_boundary_iff_isCombinatorialBall.mp hσ
+  have hsub : n + 1 - σ.card = (n - σ.card) + 1 := by omega
+  rw [hsub] at hball
+  exact hball.isCombinatorialSphere_boundary
 
 /-- Every vertex link in the boundary of a combinatorial `(n + 2)`-manifold is a combinatorial
 `n`-sphere. -/
-theorem IsCombinatorialManifold.isCombinatorialSphere_link_boundary
+theorem IsCombinatorialManifold.isCombinatorialSphere_link_boundary_singleton
     (hK : IsCombinatorialManifold K (n + 2)) (hv : ({v} : Finset ι) ∈ K.boundary) :
     IsCombinatorialSphere (link K.boundary {v}) n := by
-  rw [hK.link_boundary_singleton]
-  exact (hK.singleton_mem_boundary_succ_iff.mp hv).2.isCombinatorialSphere_boundary
+  simpa using hK.isCombinatorialSphere_link_boundary hv (by simp)
 
 /-- **The boundary of a combinatorial `(n + 1)`-manifold is a combinatorial `n`-manifold.** -/
 theorem IsCombinatorialManifold.isCombinatorialManifold_boundary
@@ -479,11 +466,11 @@ theorem IsCombinatorialManifold.isCombinatorialManifold_boundary
   cases n with
   | zero =>
     refine isCombinatorialManifold_zero_iff.mpr fun v hv => ?_
-    rw [hK.link_boundary_singleton]
+    rw [hK.link_boundary {v}]
     exact (hK.singleton_mem_boundary_succ_iff.mp hv).2.isCombinatorialManifold.boundary_eq_bot_zero
   | succ m =>
     exact isCombinatorialManifold_succ_iff.mpr fun v hv =>
-      Or.inl (hK.isCombinatorialSphere_link_boundary hv)
+      Or.inl (hK.isCombinatorialSphere_link_boundary_singleton hv)
 
 /-- The boundary of a combinatorial manifold has void boundary (`∂² = ∅`). -/
 theorem IsCombinatorialManifold.boundary_boundary_eq_bot (hK : IsCombinatorialManifold K n) :
@@ -494,11 +481,8 @@ theorem IsCombinatorialManifold.boundary_boundary_eq_bot (hK : IsCombinatorialMa
     cases m with
     | zero => exact hK.isCombinatorialManifold_boundary.boundary_eq_bot_zero
     | succ k =>
-      refine eq_bot_iff.mpr fun σ hσ => ?_
-      obtain ⟨v, hv⟩ := (K.boundary.isRelLowerSet_faces (boundary_le hσ)).1
-      have hv_b : ({v} : Finset ι) ∈ K.boundary := singleton_mem_of_mem (boundary_le hσ) hv
-      obtain ⟨-, _, hball⟩ := singleton_mem_boundary_iff.mp (singleton_mem_of_mem hσ hv)
-      exact (hK.isCombinatorialSphere_link_boundary hv_b).not_isCombinatorialBall hball
+      exact hK.isCombinatorialManifold_boundary.boundary_eq_bot_iff.mpr fun _ hv =>
+        hK.isCombinatorialSphere_link_boundary_singleton hv
 
 /-- The boundary of a combinatorial `(n + 1)`-manifold is pure of dimension `n`. -/
 theorem IsCombinatorialManifold.isPure_boundary (hK : IsCombinatorialManifold K (n + 1)) :
@@ -519,7 +503,7 @@ theorem IsCombinatorialManifold.dimension_boundary_eq (hK : IsCombinatorialManif
 /-- A face of a combinatorial `(n + 1)`-manifold lies in the boundary if and only if it is a
 nonempty subset of a codimension-one face (`τ.card = n + 1`) whose link is a single vertex, i.e.
 a ridge contained in a unique top-dimensional simplex of `K`. -/
-theorem IsCombinatorialManifold.mem_boundary_iff_exists_ridge
+theorem IsCombinatorialManifold.mem_boundary_iff_exists_link_eq_simplex_singleton
     (hK : IsCombinatorialManifold K (n + 1)) :
     σ ∈ K.boundary ↔
       ∃ τ ∈ K, σ.Nonempty ∧ σ ⊆ τ ∧ τ.card = n + 1 ∧ ∃ w, link K τ = simplex {w} := by

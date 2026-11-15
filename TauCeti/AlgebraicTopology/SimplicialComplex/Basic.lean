@@ -85,6 +85,35 @@ both. -/
 theorem mem_inf {ρ : Finset ι} : ρ ∈ K ⊓ L ↔ ρ ∈ K ∧ ρ ∈ L :=
   Iff.rfl
 
+/-- The void precomplex has no faces. -/
+@[simp]
+theorem notMem_bot : σ ∉ (⊥ : PreAbstractSimplicialComplex ι) :=
+  False.elim
+
+/-- Mapping the void precomplex along any vertex function produces the void precomplex. -/
+@[simp]
+theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (⊥ : PreAbstractSimplicialComplex ι).map f = ⊥ :=
+  eq_bot_iff.mpr fun _ ⟨_, hσ, _⟩ => (notMem_bot hσ).elim
+
+/-- Mapping a precomplex gives the void precomplex if and only if the source precomplex is void. -/
+@[simp]
+theorem map_eq_bot_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} :
+    K.map f = ⊥ ↔ K = ⊥ := by
+  refine ⟨fun h => eq_bot_iff.mpr fun σ hσ => ?_, fun h => h ▸ map_bot f⟩
+  have hmem : σ.image f ∈ K.map f := mem_map_iff.mpr ⟨σ, hσ, rfl⟩
+  rw [h] at hmem
+  exact (notMem_bot hmem).elim
+
+/-- Two vertex maps that agree on every vertex of every face of `K` induce the same image
+precomplex. -/
+theorem map_eq_of_eqOn_faces {κ : Type*} [DecidableEq κ] {f g : ι → κ}
+    (hfg : ∀ σ ∈ K, ∀ x ∈ σ, f x = g x) : K.map f = K.map g := by
+  refine SetLike.ext fun τ => ?_
+  simp only [mem_map_iff]
+  refine exists_congr fun σ => and_congr_right fun hσ => ?_
+  rw [Finset.image_congr (hfg σ hσ)]
+
 /-- Every vertex of a face spans a singleton face. -/
 theorem singleton_mem_of_mem (hσ : σ ∈ K) (hv : v ∈ σ) : ({v} : Finset ι) ∈ K :=
   (K.isRelLowerSet_faces hσ).2 (Finset.singleton_subset_iff.mpr hv) (Finset.singleton_nonempty v)
@@ -94,6 +123,20 @@ to say that a vertex is *unused* by a complex, as needed when a construction adj
 vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
+
+/-- A singleton `{w}` is a face of `K.map f` if and only if `w` is the image of a vertex of `K`.
+No injectivity assumption on `f` is needed. -/
+@[simp]
+theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {w : κ} :
+    ({w} : Finset κ) ∈ K.map f ↔ ∃ v, ({v} : Finset ι) ∈ K ∧ f v = w := by
+  constructor
+  · intro hw
+    obtain ⟨σ, hσ, hσeq⟩ := mem_map_iff.mp hw
+    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
+    exact ⟨v, singleton_mem_of_mem hσ hv,
+      Finset.mem_singleton.mp (hσeq ▸ Finset.mem_image_of_mem f hv)⟩
+  · rintro ⟨v, hv, rfl⟩
+    exact mem_map_iff.mpr ⟨{v}, hv, by simp⟩
 
 end PreAbstractSimplicialComplex
 

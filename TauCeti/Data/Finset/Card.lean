@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Basic
+import Mathlib.Logic.Equiv.Fintype
 
 /-!
-# Cardinalities of set differences of finsets
+# Cardinalities of set differences and injective images of finsets
 
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
   elements of `T` outside `S` by one.
@@ -17,6 +18,8 @@ import Mathlib.Data.Finset.Basic
   `S ∪ {a}` to `S`. Mathlib's `Finset.induction_on'` is the upward analogue.
 * `Finset.card_sdiff_lt_of_card_eq_min`: if `F ⊆ U` has `min k #U` elements of a nonempty `U`
   and `T ⊆ U` has fewer than `k`, then fewer elements of `T` lie outside `F` than in `F`.
+* `Finset.exists_injective_image_eq`: given any injective `f : α → β`, finsets `s : Finset α` and
+  `t : Finset β` of equal cardinality satisfy `s.image g = t` for some injective `g : α → β`.
 -/
 
 public section
@@ -57,5 +60,17 @@ theorem card_sdiff_lt_of_card_eq_min {F T U : Finset ι} {k : ℕ}
   · exact (card_le_card sdiff_subset).trans_lt (by omega)
   · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
     exact hU.card_pos
+
+/-- Given an injective map `f : α → β`, any two finsets `s : Finset α` and `t : Finset β` of equal
+cardinality are matched by some injective map `g : α → β` with `s.image g = t`. -/
+theorem exists_injective_image_eq {α β : Type*} [DecidableEq β]
+    {f : α → β} (hf : Function.Injective f) {s : Finset α} {t : Finset β}
+    (hcard : #s = #t) :
+    ∃ g : α → β, Function.Injective g ∧ s.image g = t := by
+  classical
+  obtain ⟨Φ, hΦ⟩ := Equiv.Perm.exists_map_finset_eq (s.image f) t
+    (by rwa [card_image_of_injective s hf])
+  refine ⟨Φ ∘ f, Φ.injective.comp hf, ?_⟩
+  simpa only [map_eq_image, Equiv.coe_toEmbedding, image_image] using hΦ
 
 end Finset

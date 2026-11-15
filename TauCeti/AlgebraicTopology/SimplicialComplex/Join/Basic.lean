@@ -165,27 +165,23 @@ theorem map_join_swap [DecidableEq α] [DecidableEq β] :
 @[simp]
 theorem bot_join [DecidableEq α] [DecidableEq β] :
     join (⊥ : PreAbstractSimplicialComplex α) L = L.map Sum.inr := by
+  have hinr (t : Finset β) : t.image (Sum.inr : β → α ⊕ β) = t.map Embedding.inr := by
+    ext x
+    simp
   refine SetLike.ext fun τ => ?_
+  rw [mem_map_iff]
   constructor
   · intro hτ
     obtain ⟨hne, hl, hr⟩ := mem_join_iff.mp hτ
-    have hl' : τ.toLeft = ∅ := hl.resolve_right False.elim
+    have hl' : τ.toLeft = ∅ := hl.resolve_right notMem_bot
     have hr' : τ.toRight ∈ L := hr.resolve_left fun h =>
       hne.ne_empty (by
         rw [← toLeft_disjSum_toRight (u := τ), hl', h, empty_disjSum, map_empty])
-    refine mem_map_iff.mpr ⟨τ.toRight, hr', ?_⟩
-    ext (a | b)
-    · simp only [mem_image, reduceCtorEq, and_false, exists_false, false_iff, ← mem_toLeft, hl']
-      exact notMem_empty a
-    · simp
+    refine ⟨τ.toRight, hr', ?_⟩
+    rw [hinr, ← empty_disjSum, ← hl', toLeft_disjSum_toRight]
   · rintro ⟨t, ht, rfl⟩
-    refine mem_join_iff.mpr ⟨(L.isRelLowerSet_faces ht).1.image _, Or.inl ?_, Or.inr ?_⟩
-    · ext a
-      simp
-    · have heq : (t.image inr : Finset (α ⊕ β)).toRight = t := by
-        ext b
-        simp
-      rwa [heq]
+    rw [hinr]
+    exact map_inr_mem_join ht
 
 /-- Joining the void complex on the right embeds the left factor into the left summand. -/
 @[simp]

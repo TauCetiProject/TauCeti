@@ -85,6 +85,19 @@ theorem isCombinatorialSphere_zero_iff :
   · rintro ⟨v, w, hvw, rfl⟩
     exact isCombinatorialSphere_simplexBoundary (by simp [hvw])
 
+/-- A precomplex is a zero-dimensional combinatorial manifold if and only if its dimension is at
+most zero. -/
+theorem isCombinatorialManifold_zero_iff_dimension_le_zero :
+    IsCombinatorialManifold K 0 ↔ dimension K ≤ 0 := by
+  refine ⟨IsCombinatorialManifold.dimension_le, fun hdim => ?_⟩
+  refine isCombinatorialManifold_zero_iff.mpr fun v _ => eq_bot_iff.mpr fun ρ hρ => ?_
+  obtain ⟨⟨x, hx⟩, hdis, hface⟩ := mem_link_nonempty.mp hρ
+  obtain ⟨w, hw⟩ := dimension_le_zero_iff.mp hdim (ρ ∪ {v}) hface
+  have hxw : x = w := Finset.mem_singleton.mp (hw ▸ Finset.mem_union_left _ hx)
+  have hvw : v = w :=
+    Finset.mem_singleton.mp (hw ▸ Finset.mem_union_right _ (Finset.mem_singleton_self v))
+  exact Finset.disjoint_singleton_right.mp hdis (hvw.trans hxw.symm ▸ hx)
+
 end PreAbstractSimplicialComplex
 
 namespace AbstractSimplicialComplex

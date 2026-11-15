@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Link
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Star
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
 
 /-!
@@ -31,6 +32,9 @@ the empty set gives the void complex, whereas joining a void factor retains the 
   induce an equivalence of joins.
 * `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.join`: the same transport for
   intrinsic stellar equivalence.
+* `PreAbstractSimplicialComplex.map_link_stellarSubdivision_insert_eq_join`: tagging vertices by
+  membership in `σ` identifies the link of a new face `insert v ρ` in `stellarSubdivision K σ v`
+  with `join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ))`.
 
 ## References
 
@@ -44,6 +48,8 @@ public section
 open Finset
 
 namespace PreAbstractSimplicialComplex
+
+section JoinEquivalence
 
 variable {α β : Type*} [DecidableEq α] [DecidableEq β]
   {K K' : PreAbstractSimplicialComplex α} {L L' : PreAbstractSimplicialComplex β}
@@ -185,5 +191,37 @@ theorem StellarEquivalentUpToRelabeling.join (hK : StellarEquivalentUpToRelabeli
     (hL : StellarEquivalentUpToRelabeling L L') :
     StellarEquivalentUpToRelabeling (join K L) (join K' L') :=
   (hK.join_left L).trans (hL.join_right K')
+
+end JoinEquivalence
+
+/-- Tagging vertices according to membership in `σ` identifies the link of a new face `insert v ρ`
+in `stellarSubdivision K σ v` with `join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ))`. -/
+theorem map_link_stellarSubdivision_insert_eq_join {ι : Type*} [DecidableEq ι]
+    {K : PreAbstractSimplicialComplex ι} {σ ρ : Finset ι} {v : ι}
+    (hv : ({v} : Finset ι) ∉ K) (hnot : ¬ σ ⊆ ρ) (hρσ : ρ ∪ σ ∈ K) :
+    (link (stellarSubdivision K σ v) (insert v ρ)).map (TauCeti.partitionEmbedding (· ∈ σ)) =
+      join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
+  have hσne : σ.Nonempty := nonempty_of_ne_empty fun h => hnot (h ▸ empty_subset ρ)
+  have hσ : σ ∈ K := (K.isRelLowerSet_faces hρσ).2 subset_union_right hσne
+  have hvρ : v ∉ ρ := fun h => notMem_of_singleton_notMem hv hρσ (mem_union_left σ h)
+  let e := TauCeti.partitionEmbedding (· ∈ σ)
+  rw [link_stellarSubdivision_insert hv hvρ, map_link e e.injective,
+    map_closedStar_inf_deletion_eq_join hσ, image_partitionEmbedding]
+  have hf₁ : ρ.filter (· ∈ σ) = ρ ∩ σ := filter_mem_eq_inter
+  have hf₂ : ρ.filter (fun x => x ∉ σ) = ρ \ σ := filter_notMem_eq_sdiff
+  rw [hf₁, hf₂]
+  have hs : ρ ∩ σ = ∅ ∨ ρ ∩ σ ∈ simplexBoundary σ := by
+    by_cases h : ρ ∩ σ = ∅
+    · exact Or.inl h
+    · exact Or.inr (mem_simplexBoundary.mpr ⟨nonempty_iff_ne_empty.mpr h,
+        Finset.ssubset_iff_subset_ne.mpr ⟨inter_subset_right, fun heq =>
+          hnot (heq ▸ inter_subset_left)⟩⟩)
+  have ht : ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
+    by_cases h : ρ \ σ = ∅
+    · exact Or.inl h
+    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+        sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
+  rw [link_join hs ht, link_simplexBoundary inter_subset_right, sdiff_inter_self_right,
+    link_link disjoint_sdiff_self_right, union_comm σ (ρ \ σ), sdiff_union_self_eq_union]
 
 end PreAbstractSimplicialComplex

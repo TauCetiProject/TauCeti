@@ -48,6 +48,8 @@ silently wrong rather than merely unused. The two cases are exposed by
 * `PreAbstractSimplicialComplex.IsCombinatorialBall.dimension_eq` and
   `PreAbstractSimplicialComplex.IsCombinatorialSphere.dimension_eq`: a combinatorial `n`-ball and
   a combinatorial `n`-sphere both have dimension `n`.
+* `PreAbstractSimplicialComplex.isCombinatorialManifold_bot`: the void precomplex is vacuously a
+  combinatorial `n`-manifold in every dimension.
 * `PreAbstractSimplicialComplex.isCombinatorialManifold_simplex`: the standard `n`-simplex is
   a combinatorial `n`-manifold.
 * `PreAbstractSimplicialComplex.isCombinatorialManifold_simplexBoundary`: the boundary of the
@@ -225,6 +227,14 @@ theorem isCombinatorialManifold_succ_iff :
     IsCombinatorialManifold K (n + 1) ↔ ∀ ⦃v : ι⦄, ({v} : Finset ι) ∈ K →
       IsCombinatorialSphere (link K {v}) n ∨ IsCombinatorialBall (link K {v}) n :=
   Iff.rfl
+
+/-- The void precomplex is vacuously a combinatorial `n`-manifold in every dimension. -/
+@[simp]
+theorem isCombinatorialManifold_bot (n : ℕ) :
+    IsCombinatorialManifold (⊥ : PreAbstractSimplicialComplex ι) n := by
+  cases n with
+  | zero => exact isCombinatorialManifold_zero_iff.mpr fun _ hw => (notMem_bot hw).elim
+  | succ _ => exact isCombinatorialManifold_succ_iff.mpr fun _ hw => (notMem_bot hw).elim
 
 /-- The standard `n`-simplex is a combinatorial `n`-manifold. -/
 theorem isCombinatorialManifold_simplex (hV : V.card = n + 1) :

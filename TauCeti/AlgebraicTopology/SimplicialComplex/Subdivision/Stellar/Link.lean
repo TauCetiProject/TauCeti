@@ -89,6 +89,24 @@ theorem stellarEquivalent_link_stellarSubdivision_of_notMem
   · exact stellarEquivalent_stellarSubdivision hrem hv
   · rw [stellarSubdivision_eq_self_of_notMem hv hne hrem]
 
+/-- Every vertex link of `K` is stellar equivalent to the link of some vertex of
+`stellarSubdivision K σ v`: if `σ = {w}`, the new vertex `v` inherits the old link of `w`
+unchanged; otherwise `w` survives in the subdivision with a stellar-equivalent link. -/
+theorem exists_stellarEquivalent_link_stellarSubdivision
+    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hw : ({w} : Finset ι) ∈ K) :
+    ∃ u, ({u} : Finset ι) ∈ stellarSubdivision K σ v ∧
+      StellarEquivalent (link K {w}) (link (stellarSubdivision K σ v) {u}) := by
+  by_cases hσw : σ = {w}
+  · subst hσw
+    refine ⟨v, singleton_mem_stellarSubdivision_iff.mpr hσ, ?_⟩
+    rw [link_stellarSubdivision_singleton hv, closedStar_singleton_inf_deletion_singleton]
+  · have hnot : ¬ σ ⊆ {w} := fun hsub =>
+      hσw ((K.isRelLowerSet_faces hσ).1.subset_singleton_iff.mp hsub)
+    have hvw : v ∉ ({w} : Finset ι) := mem_singleton.not.mpr fun h => hv (h ▸ hw)
+    exact ⟨w, (mem_stellarSubdivision_iff_of_notMem hvw).mpr ⟨hw, hnot⟩,
+      stellarEquivalent_link_stellarSubdivision_of_notMem
+        (notMem_link_of_notMem hv) hvw (sdiff_nonempty.mpr hnot)⟩
+
 /-- A surviving old vertex of a zero-dimensional combinatorial manifold still has void link
 after stellar subdivision. -/
 theorem IsCombinatorialManifold.link_stellarSubdivision_eq_bot
@@ -100,7 +118,7 @@ theorem IsCombinatorialManifold.link_stellarSubdivision_eq_bot
   have hlink := isCombinatorialManifold_zero_iff.mp hK hwK
   have hvlink : ({v} : Finset ι) ∉ link K {w} := by
     rw [hlink]
-    exact Set.notMem_empty _
+    exact notMem_bot
   have he := stellarEquivalent_link_stellarSubdivision_of_notMem
     hvlink hvw (sdiff_nonempty.mpr havoid)
   apply dimension_eq_bot_iff.mp
