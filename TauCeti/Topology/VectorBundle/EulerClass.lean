@@ -352,6 +352,24 @@ theorem thomPairOverProj_apply {W : Set B} (v : (thomPairOver F E W).fst) :
     thomPairOverProj F E W v = ⟨v.1.proj, v.2⟩ :=
   (rfl)
 
+/-- For `W ⊆ W'`, the restriction map of Thom pairs commutes with `TauCeti.thomPairOverProj` and the
+inclusion `W ↪ W'`. -/
+@[reassoc]
+theorem thomPairOverMap_fst_comp_thomPairOverProj {W W' : Set B} (h : W ⊆ W') :
+    TopPair.Hom.fst (thomPairOverMap F E h) ≫ thomPairOverProj F E W' =
+      thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.inclusion h) :=
+  TopCat.ext fun _ ↦ rfl
+
+/-- The inclusion of `(E|_W, E₀|_W)` into `(E, E₀)` commutes with `TauCeti.thomPairOverProj`,
+`TauCeti.thomPairProj`, and the subtype inclusion `W ↪ B`. -/
+@[reassoc]
+theorem restrictPreimagePairMap_fst_comp_thomPairProj (W : Set B) :
+    TopPair.Hom.fst (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+      (zeroSectionCompl F E) W) ≫ thomPairProj F E =
+      thomPairOverProj F E W ≫ TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :=
+  TopCat.ext fun v ↦ (TopCat.comp_app _ _ v).trans
+    (congrArg (thomPairProj F E) (TopCat.restrictPreimagePairMap_fst_apply _ _ W v))
+
 /-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
 Thom pair of the restriction to `W`. -/
 def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
@@ -374,6 +392,14 @@ theorem fiberThomPairOverMap_fst {W : Set B} {b : B} (hb : b ∈ W) :
       TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
         (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩ :=
   (rfl)
+
+/-- The fibre inclusion over `b ∈ W` into `(E|_W, E₀|_W)` followed by `TauCeti.thomPairOverProj` is
+constant at `⟨b, hb⟩`. -/
+@[reassoc]
+theorem fiberThomPairOverMap_fst_comp_thomPairOverProj {W : Set B} {b : B} (hb : b ∈ W) :
+    TopPair.Hom.fst (fiberThomPairOverMap F E hb) ≫ thomPairOverProj F E W =
+      TopCat.ofHom (ContinuousMap.const _ ⟨b, hb⟩) :=
+  TopCat.ext fun _ ↦ rfl
 
 /-- The fibre inclusion into `(E|_W, E₀|_W)` followed by the inclusion of `(E|_W, E₀|_W)` into
 `(E, E₀)` is the fibre inclusion into the Thom pair `(E, E₀)`. -/

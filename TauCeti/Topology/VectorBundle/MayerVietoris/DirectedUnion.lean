@@ -210,21 +210,24 @@ theorem singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_
             (thomPairOverUnivIso F E).hom) R n := by
   simp [TopPair.singularHomologyMap_comp]
 
-/-- Homology of `thomPairOver` over a finite trivializing union equals the mapped diagram object. -/
-theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq
+/-- Applying `TopPair.singularHomologyFunctor` to `thomPairFiniteTrivializingUnionDiagram` at `s`
+gives the singular homology of `thomPairOver` over that finite trivializing union. -/
+theorem singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
     (R : C) (n : ℕ) (s : Finset B) :
-    (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology R n =
-      (TopPair.singularHomologyFunctor R n).obj
-        ((thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)).obj s) := by
+    (TopPair.singularHomologyFunctor R n).obj
+        ((thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)).obj s) =
+      (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology R n := by
   rw [thomPairFiniteTrivializingUnionDiagram_obj, TopPair.singularHomologyFunctor_obj]
 
-/-- Homology of `thomPair` is the mapped cocone point of `thomPairFiniteTrivializingUnionCocone`. -/
-theorem singularHomology_thomPair_eq
+/-- Applying `TopPair.singularHomologyFunctor` to the cocone point of
+`thomPairFiniteTrivializingUnionCocone` gives the singular homology of `thomPair F E`. -/
+theorem singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
     (R : C) (n : ℕ) :
-    (thomPair F E).singularHomology R n = (TopPair.singularHomologyFunctor R n).obj
-      (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt := by
+    (TopPair.singularHomologyFunctor R n).obj
+        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt =
+      (thomPair F E).singularHomology R n := by
   rw [thomPairFiniteTrivializingUnionCocone_pt, TopPair.singularHomologyFunctor_obj]
 
 section BaseDirectedUnion

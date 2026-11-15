@@ -230,11 +230,8 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
   have hu_W : TopPair.singularCohomologyMap φ.hom (finrank ℝ F) u_prod = u_W := by
     simp [u_prod, ← TopPair.singularCohomologyMap_comp_apply]
   have hproj : TopPair.Hom.fst φ.hom ≫ prodThomPairProj W F =
-      thomPairOverProj F E W ≫ 𝟙 (TopCat.of W) := by
-    rw [Category.comp_id]
-    refine TopCat.ext fun v ↦ (TopCat.comp_app _ _ v).trans ?_
-    exact (congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply ℝ hW v)).trans
-      ((prodThomPairProj_apply F _).trans (thomPairOverProj_apply F E v).symm)
+      thomPairOverProj F E W ≫ 𝟙 (TopCat.of W) :=
+    (e.thomPairOverIso_hom_fst_comp_prodThomPairProj ℝ hW).trans (Category.comp_id _).symm
   rw [← hu_W, TopPair.bijective_pullbackCup_iff_of_isIso φ.hom (𝟙 (TopCat.of W)) hproj h u_prod]
   refine bijective_pullbackCup_prodThomPair M p m h fun b ↦ ?_
   have h₁ : prodThomPairFiberMap F b ≫ φ.inv =

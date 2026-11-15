@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
@@ -460,6 +461,23 @@ lemma uliftBoolHomeomorphSphereZero_apply (b : ULift.{u} Bool) :
     uliftBoolHomeomorphSphereZero b =
       (if b.down then spherePlus else sphereMinus : TopCat.diskBoundary.{u} 1) := (rfl)
 
+open Classical in
+/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` tests equality with `spherePlus`. -/
+lemma uliftBoolHomeomorphSphereZero_symm_apply (x : TopCat.sphere.{u} 0) :
+    uliftBoolHomeomorphSphereZero.symm x = ULift.up (decide (x = spherePlus)) := (rfl)
+
+/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` maps `spherePlus` to `true`. -/
+@[simp]
+lemma uliftBoolHomeomorphSphereZero_symm_spherePlus :
+    uliftBoolHomeomorphSphereZero.symm spherePlus = ULift.up.{u} true :=
+  uliftBoolHomeomorphSphereZero.symm_apply_apply ⟨true⟩
+
+/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` maps `sphereMinus` to `false`. -/
+@[simp]
+lemma uliftBoolHomeomorphSphereZero_symm_sphereMinus :
+    uliftBoolHomeomorphSphereZero.symm sphereMinus = ULift.up.{u} false :=
+  uliftBoolHomeomorphSphereZero.symm_apply_apply ⟨false⟩
+
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
 instance isEmpty_diskBoundaryPair_zero_snd : IsEmpty (diskBoundaryPair.{u} 0).snd :=
@@ -749,44 +767,6 @@ namespace TopCat
 
 open MonoidalCategory CartesianMonoidalCategory
 
-/-- The inclusion `Y ⟶ S⁰ × Y` at the positive pole `y ↦ (e₀, y)`. -/
-def sphereZeroProdPlusι (Y : TopCat.{u}) : Y ⟶ sphere.{u} 0 ⊗ Y :=
-  lift (TopCat.const TauCeti.spherePlus) (𝟙 Y)
-
-/-- The inclusion `Y ⟶ S⁰ × Y` at the negative pole `y ↦ (-e₀, y)`. -/
-def sphereZeroProdMinusι (Y : TopCat.{u}) : Y ⟶ sphere.{u} 0 ⊗ Y :=
-  lift (TopCat.const TauCeti.sphereMinus) (𝟙 Y)
-
-/-- Evaluating `TopCat.sphereZeroProdPlusι` at `y` pairs the positive pole with `y`. -/
-@[simp]
-theorem sphereZeroProdPlusι_apply (Y : TopCat.{u}) (y : Y) :
-    sphereZeroProdPlusι Y y = (TauCeti.spherePlus, y) := (rfl)
-
-/-- Evaluating `TopCat.sphereZeroProdMinusι` at `y` pairs the negative pole with `y`. -/
-@[simp]
-theorem sphereZeroProdMinusι_apply (Y : TopCat.{u}) (y : Y) :
-    sphereZeroProdMinusι Y y = (TauCeti.sphereMinus, y) := (rfl)
-
-/-- Composing `TopCat.sphereZeroProdPlusι` with `fst` gives `TopCat.const TauCeti.spherePlus`. -/
-@[reassoc (attr := simp)]
-theorem sphereZeroProdPlusι_fst (Y : TopCat.{u}) :
-    sphereZeroProdPlusι Y ≫ fst _ Y = TopCat.const TauCeti.spherePlus := lift_fst _ _
-
-/-- Composing `TopCat.sphereZeroProdPlusι` with `snd` is the identity. -/
-@[reassoc (attr := simp)]
-theorem sphereZeroProdPlusι_snd (Y : TopCat.{u}) : sphereZeroProdPlusι Y ≫ snd _ Y = 𝟙 Y :=
-  lift_snd _ _
-
-/-- Composing `TopCat.sphereZeroProdMinusι` with `fst` gives `TopCat.const TauCeti.sphereMinus`. -/
-@[reassoc (attr := simp)]
-theorem sphereZeroProdMinusι_fst (Y : TopCat.{u}) :
-    sphereZeroProdMinusι Y ≫ fst _ Y = TopCat.const TauCeti.sphereMinus := lift_fst _ _
-
-/-- Composing `TopCat.sphereZeroProdMinusι` with `snd` is the identity. -/
-@[reassoc (attr := simp)]
-theorem sphereZeroProdMinusι_snd (Y : TopCat.{u}) : sphereZeroProdMinusι Y ≫ snd _ Y = 𝟙 Y :=
-  lift_snd _ _
-
 /-- The isomorphism `(Σ _ : ULift Bool, Y) ≅ S⁰ × Y` in `TopCat` identifying `S⁰ × Y` with the
 disjoint union of two copies of `Y`. -/
 def sigmaSphereZeroProdIso (Y : TopCat.{u}) :
@@ -813,18 +793,22 @@ theorem sigmaSphereZeroProdIso_inv_apply (Y : TopCat.{u}) (q : (sphere.{u} 0 ⊗
     (sigmaSphereZeroProdIso Y).inv q = ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩ :=
   (rfl)
 
-/-- The `true` summand inclusion composes with `sigmaSphereZeroProdIso` to `sphereZeroProdPlusι`. -/
+/-- Each summand inclusion composes with `(sigmaSphereZeroProdIso Y).hom` to `prodFiberInclusion`
+at the corresponding pole. -/
 @[reassoc (attr := simp)]
-theorem sigmaι_true_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) :
-    sigmaι (fun _ : ULift.{u} Bool ↦ Y) ⟨true⟩ ≫ (sigmaSphereZeroProdIso Y).hom =
-      sphereZeroProdPlusι Y := TopCat.ext fun _ ↦ rfl
+theorem sigmaι_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) (b : ULift.{u} Bool) :
+    sigmaι (fun _ : ULift.{u} Bool ↦ Y) b ≫ (sigmaSphereZeroProdIso Y).hom =
+      prodFiberInclusion (sphere.{u} 0) Y (TauCeti.uliftBoolHomeomorphSphereZero b) :=
+  TopCat.ext fun y ↦ (prodFiberInclusion_apply _ Y _ y).symm
 
-/-- The `false` summand inclusion composes with `sigmaSphereZeroProdIso` to `sphereZeroProdMinusι`.
--/
+/-- Fibre inclusion at `x ∈ S⁰` composes with `(sigmaSphereZeroProdIso Y).inv` to the summand
+inclusion at `uliftBoolHomeomorphSphereZero.symm x`. -/
 @[reassoc (attr := simp)]
-theorem sigmaι_false_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) :
-    sigmaι (fun _ : ULift.{u} Bool ↦ Y) ⟨false⟩ ≫ (sigmaSphereZeroProdIso Y).hom =
-      sphereZeroProdMinusι Y := TopCat.ext fun _ ↦ rfl
+theorem prodFiberInclusion_comp_sigmaSphereZeroProdIso_inv (Y : TopCat.{u}) (x : sphere.{u} 0) :
+    prodFiberInclusion (sphere.{u} 0) Y x ≫ (sigmaSphereZeroProdIso Y).inv =
+      sigmaι (fun _ : ULift.{u} Bool ↦ Y) (TauCeti.uliftBoolHomeomorphSphereZero.symm x) :=
+  TopCat.ext fun y ↦ (TopCat.comp_app _ _ y).trans
+    (congrArg (sigmaSphereZeroProdIso Y).inv (prodFiberInclusion_apply _ Y x y))
 
 end TopCat
 

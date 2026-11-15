@@ -508,8 +508,8 @@ private def thomPairFiniteTrivializingUnionSingularHomologyFinrankIso :
       @asIso _ _ _ _ (thomPairOverSingularHomologyFinrankInv K F E
         (⋃ b ∈ s, (trivializationAt F E b).baseSet))
           (isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion s) ≪≫
-      eqToIso (singularHomology_thomPairOver_finiteTrivializingUnion_eq
-        (ModuleCat.of K K) (finrank ℝ F) s))
+      eqToIso (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
+        (ModuleCat.of K K) (finrank ℝ F) s).symm)
     fun {s t} f ↦ by
       have := isIso_thomPairOverSingularHomologyFinrankInv_finiteTrivializingUnion (K := K)
         (F := F) (E := E) s
@@ -535,7 +535,8 @@ private theorem singularHomologyMap_ι_thomPairSingularHomologyFinrankInv (s : F
       eqToHom (congrArg (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj)
         (baseFiniteTrivializingUnionCocone_pt F E)) ≫
       thomPairSingularHomologyFinrankInv K F E ≫
-      eqToHom (singularHomology_thomPair_eq (ModuleCat.of K K) (finrank ℝ F)) =
+      eqToHom (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+        (ModuleCat.of K K) (finrank ℝ F)).symm =
       (thomPairFiniteTrivializingUnionSingularHomologyFinrankIso K F E).hom.app s ≫
         (TopPair.singularHomologyFunctor (ModuleCat.of K K) (finrank ℝ F)).map
           ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s) := by
@@ -559,20 +560,18 @@ private instance : IsIso (thomPairSingularHomologyFinrankInv K F E) := by
   let α := thomPairFiniteTrivializingUnionSingularHomologyFinrankIso K F E
   let hbase := congrArg (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj)
     (baseFiniteTrivializingUnionCocone_pt F E)
-  have h : eqToHom hbase ≫ thomPairSingularHomologyFinrankInv K F E ≫
-      eqToHom (singularHomology_thomPair_eq (ModuleCat.of K K) (finrank ℝ F)) =
-        (P₁.coconePointsIsoOfNatIso P₂ α).hom :=
+  let hthom := (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+    (F := F) (E := E) (ModuleCat.of K K) (finrank ℝ F)).symm
+  have h : eqToHom hbase ≫ thomPairSingularHomologyFinrankInv K F E ≫ eqToHom hthom =
+      (P₁.coconePointsIsoOfNatIso P₂ α).hom :=
     P₁.hom_ext fun s ↦ (singularHomologyMap_ι_thomPairSingularHomologyFinrankInv s).trans
       (P₁.comp_coconePointsIsoOfNatIso_hom P₂ α s).symm
-  have : IsIso (eqToHom hbase ≫ thomPairSingularHomologyFinrankInv K F E ≫
-      eqToHom (singularHomology_thomPair_eq (ModuleCat.of K K) (finrank ℝ F))) := by
+  have : IsIso (eqToHom hbase ≫ thomPairSingularHomologyFinrankInv K F E ≫ eqToHom hthom) := by
     rw [h]
     exact (P₁.coconePointsIsoOfNatIso P₂ α).isIso_hom
-  have : IsIso (thomPairSingularHomologyFinrankInv K F E ≫
-      eqToHom (singularHomology_thomPair_eq (ModuleCat.of K K) (finrank ℝ F))) :=
+  have : IsIso (thomPairSingularHomologyFinrankInv K F E ≫ eqToHom hthom) :=
     IsIso.of_isIso_comp_left (eqToHom hbase) _
-  exact IsIso.of_isIso_comp_right _
-    (eqToHom (singularHomology_thomPair_eq (ModuleCat.of K K) (finrank ℝ F)))
+  exact IsIso.of_isIso_comp_right _ (eqToHom hthom)
 
 variable (K F E) in
 /-- **The homology of the Thom pair in the rank degree**: for a real vector bundle `E → B` of

@@ -25,18 +25,20 @@ Under the Kronecker pairing (`TopPair.singularCap_comp_singularKronecker`) and g
 (`TopPair.singularCup_gradedComm`), `pushforwardCap` is transpose to `TopPair.pullbackCup` up to
 `(-1)^(n p)`: `⟨a, p₀_*(x ⌢ u)⟩ = (-1)^(n p) ⟨p₀^* a ⌣ u, x⟩`
 (`TopPair.pushforwardCap_comp_singularKronecker`). Over a field `K`, universal coefficient duality
-(`TopCat.singularCohomologyDualEquiv`, `TopCat.singularKroneckerEquivOfProjectiveHomology`, and
-their `TopPair` counterparts) implies that bijectivity of `p₀_*(- ⌢ u)` on `K`-homology is
-equivalent to that of `p₀^*(-) ⌣ u` on `K`-cohomology (`TopPair.bijective_pushforwardCap_iff`)
-and yields bijectivity of `TopPair.pullbackCup` for every `K`-vector space `M`
+(`TopCat.singularCohomologyDualEquiv`, `TopPair.singularCohomologyDualEquiv`) implies that
+bijectivity of `p₀_*(- ⌢ u)` on `K`-homology is equivalent to that of `p₀^*(-) ⌣ u` on
+`K`-cohomology (`TopPair.bijective_pushforwardCap_iff`). Over any commutative ring `K`, when the
+`K`-homology of `Y` below degree `p` and of `(X, Z)` below degree `m` are projective, invertibility
+of `p₀_*(- ⌢ u)` yields bijectivity of `TopPair.pullbackCup` for every `K`-module `M`
 (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`).
 
 ## Main definitions and results
 
 * `TopPair.pushforwardCap`, `TopPair.pushforwardCap_naturality`: `x ↦ p₀_*(x ⌢ u)` and naturality.
 * `TopPair.pushforwardCap_comp_singularKronecker`: Kronecker duality with `TopPair.pullbackCup`.
-* `TopPair.bijective_pushforwardCap_iff`, `TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`:
-  field duality between `pushforwardCap` and `pullbackCup`.
+* `TopPair.bijective_pushforwardCap_iff`: field duality between `pushforwardCap` and `pullbackCup`.
+* `TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`: UCT duality under projective homology
+  below degrees `p` and `m`.
 
 ## References
 
@@ -67,7 +69,6 @@ def pushforwardCap {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}} 
     P.singularCap K (λ_ A).inv (λ_ A).hom n p m h
 
 /-- `TopPair.pushforwardCap` is `TopPair.singularCap` postcomposed with `(Hₚ(-; A)).map p₀`. -/
-@[simp]
 theorem pushforwardCap_apply {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}}
     (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K) {n p m : ℕ} (h : n + p = m)
     (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
@@ -131,24 +132,30 @@ theorem bijective_pushforwardCap_iff {K : Type w} [Field K] (P : TopPair.{w}) {Y
   rw [e, EquivLike.comp_bijective, EquivLike.comp_bijective, EquivLike.bijective_comp,
     LinearMap.dualMap_bijective_iff]
 
-/-- Over a field `K`, if `TopPair.pushforwardCap` in degree `m = n + p` is an isomorphism in
-`ModuleCat K`, then `TopPair.pullbackCup` in degree `p` (`p + n = m`) is bijective for every
-`K`-vector space `M`. -/
-theorem bijective_pullbackCup_of_isIso_pushforwardCap {K : Type w} [Field K] (P : TopPair.{w})
+/-- Over a commutative ring `K`, if `Hⱼ(Y; K)` (`j < p`) and `Hⱼ(P; K)` (`j < m`) are projective
+and `TopPair.pushforwardCap` in degree `m = n + p` is an isomorphism in `ModuleCat K`, then
+`TopPair.pullbackCup` in degree `p` (`p + n = m`) is bijective for every `K`-module `M`. -/
+theorem bijective_pullbackCup_of_isIso_pushforwardCap {K : Type w} [CommRing K] (P : TopPair.{w})
     {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) (M : ModuleCat.{w} K) {n p m : ℕ} (h : p + n = m)
-    (h' : n + p = m) (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (h' : n + p = m)
+    (hY : ∀ j < p, Projective
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) j).obj (ModuleCat.of K K)).obj
+        Y))
+    (hP : ∀ j < m, Projective (P.singularHomology (ModuleCat.of K K) j))
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
     [IsIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h' u)] :
     Function.Bijective (P.pullbackCup M p₀ n p m h u) := by
   let T := asIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h' u)
-  let eY := Y.singularKroneckerEquivOfProjectiveHomology (ModuleCat.of K K) M p
-  let eP := P.singularKroneckerEquivOfProjectiveHomology (ModuleCat.of K K) M m
+  let eY := LinearEquiv.ofBijective (Y.singularKronecker (R := ModuleCat.of K K) (M := M) K p)
+    (Y.singularKronecker_bijective_of_projective_homology_lt M p hY)
+  let eP := LinearEquiv.ofBijective (P.singularKronecker (R := ModuleCat.of K K) (M := M) K m)
+    (P.singularKronecker_bijective_of_projective_homology_lt (ModuleCat.of K K) M m hP)
   have hcomp : ⇑(P.pullbackCup M p₀ n p m h u) = ⇑eP.symm ∘ (fun ψ ↦ ((-1 : ℤ) ^ (n * p)) • ψ) ∘
       ⇑(Linear.homCongr K T.symm (Iso.refl M)) ∘ ⇑eY :=
     funext fun a ↦ eP.injective <| by
       simp only [Function.comp_apply, LinearEquiv.apply_symm_apply, Linear.homCongr_apply,
         Iso.symm_inv, Iso.refl_hom, Category.comp_id, eP, eY, T, asIso_hom,
-        TopPair.singularKroneckerEquivOfProjectiveHomology_apply,
-        TopCat.singularKroneckerEquivOfProjectiveHomology_apply]
+        LinearEquiv.ofBijective_apply]
       have hx := congrArg (((-1 : ℤ) ^ (n * p)) • ·)
         (P.pushforwardCap_comp_singularKronecker p₀ h' u a)
       have hc : (-1 : ℤ) ^ (n * p) * (-1 : ℤ) ^ (n * p) = 1 := by rw [← mul_pow]; simp

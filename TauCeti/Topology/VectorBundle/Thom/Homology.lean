@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
-public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
@@ -221,13 +220,9 @@ private theorem homologyThomMapOver_naturality {K : Type w} [CommRing K] (A : Mo
   dsimp only [homologyThomMapOver]
   rw [← thomPairOverMap_comp_restrictPreimagePairMap F E hWW',
     TopPair.singularCohomologyMap_comp_apply]
-  refine TopPair.pushforwardCap_naturality (thomPairOverMap F E hWW') (thomPairOverProj F E W')
-    (thomPairOverProj F E W) (TopCat.ofHom (ContinuousMap.inclusion hWW')) (TopCat.ext fun v ↦ ?_)
-    A h _
-  rw [TopCat.comp_app, TopCat.comp_app]
-  exact ((congrArg (thomPairOverProj F E W') (thomPairOverMap_fst_apply F E hWW' v)).trans
-    (thomPairOverProj_apply F E _)).trans
-    (congrArg (TopCat.ofHom (ContinuousMap.inclusion hWW')) (thomPairOverProj_apply F E v)).symm
+  exact TopPair.pushforwardCap_naturality (thomPairOverMap F E hWW') (thomPairOverProj F E W')
+    (thomPairOverProj F E W) (TopCat.ofHom (ContinuousMap.inclusion hWW'))
+    (thomPairOverMap_fst_comp_thomPairOverProj F E hWW') A h _
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K]
@@ -244,14 +239,9 @@ private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K
     rw [thomPairOverUnivIso_hom, thomPairOverMap_comp_restrictPreimagePairMap]
   dsimp only [homologyThomMapOver]
   rw [← hι, homologyThomMap_def]
-  refine TopPair.pushforwardCap_naturality _ (thomPairProj F E) (thomPairOverProj F E W)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) (TopCat.ext fun v ↦ ?_) A h u
-  rw [TopPair.Hom.fst_comp, TopCat.comp_app, TopCat.comp_app, TopCat.comp_app]
-  exact ((congrArg (thomPairProj F E) ((congrArg (TopPair.Hom.fst (thomPairOverUnivIso F E).hom)
-      (thomPairOverMap_fst_apply F E (subset_univ W) v)).trans
-      (thomPairOverUnivIso_hom_fst_apply F E _))).trans (thomPairProj_apply F E v.1)).trans
-    (congrArg (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-      (thomPairOverProj_apply F E v)).symm
+  exact TopPair.pushforwardCap_naturality _ (thomPairProj F E) (thomPairOverProj F E W)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (by rw [hι, restrictPreimagePairMap_fst_comp_thomPairProj]) A h u
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem bijective_homologyThomMapOver_iff (W : Set B) {n p m : ℕ} (h : n + p = m)
@@ -283,8 +273,8 @@ private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
       baseFiniteTrivializingUnionDiagram F E ⋙
         (singularHomologyFunctor (ModuleCat.{w} K) p).obj (ModuleCat.of K K) :=
   NatIso.ofComponents
-    (fun s ↦ eqToIso (singularHomology_thomPairOver_finiteTrivializingUnion_eq
-        (ModuleCat.of K K) m s).symm ≪≫
+    (fun s ↦ eqToIso (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
+        (ModuleCat.of K K) m s) ≪≫
       @asIso _ _ _ _ (homologyThomMapOver (ModuleCat.of K K)
         (⋃ b ∈ s, (trivializationAt F E b).baseSet) (finrank ℝ F) p m h u)
         (isIso_homologyThomMapOver_finiteTrivializingUnion h hu s) ≪≫ eqToIso (by simp))
@@ -312,7 +302,8 @@ theorem isIso_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
     (ModuleCat.of K K) m
   let P₂ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E (ModuleCat.of K K) p
   let α := homologyThomMapOverNatIso h hu
-  let hthom := (singularHomology_thomPair_eq (F := F) (E := E) (ModuleCat.of K K) m).symm
+  let hthom := singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+    (F := F) (E := E) (ModuleCat.of K K) m
   let hbase := congrArg (((singularHomologyFunctor (ModuleCat.{w} K) p).obj (ModuleCat.of K K)).obj)
     (baseFiniteTrivializingUnionCocone_pt F E).symm
   have hcocone : eqToHom hthom ≫
@@ -374,7 +365,8 @@ theorem bijective_thomMap_of_field (M : ModuleCat.{w} K) (p m : ℕ) (h : p + fi
   have : IsIso ((thomPair F E).pushforwardCap (thomPairProj F E) (ModuleCat.of K K)
       (finrank ℝ F) p m h' u) := isIso_homologyThomMap_of_field p m h' hu
   rw [thomMap_def]
-  exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h h' u
+  exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h h'
+    (fun _ _ ↦ inferInstance) (fun _ _ ↦ inferInstance) u
 
 variable (F E) in
 /-- **The cohomology Thom isomorphism over a field and an arbitrary base**, bundled as
