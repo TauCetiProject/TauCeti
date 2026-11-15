@@ -81,6 +81,10 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   space is.
 * `ContinuousOn.extend_comp_extend_symm`: the coordinate expression of a map continuous on a set
   is continuous on its domain, for extended charts over any models.
+* `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
+  chart target is locally compact.
+* `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
+  is covered by the sources of countably many charts, whose targets have compact exhaustions.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -105,7 +109,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
   charts read in the model vector space and moved by a homeomorphism, and their smooth transition
-  maps.
+  maps; `OpenPartialHomeomorph.coe_extendTrans` and
+  `OpenPartialHomeomorph.toPartialEquiv_extendTrans_refl` relate them to
+  `OpenPartialHomeomorph.extend`.
 * `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
   `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
   `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
@@ -451,6 +457,30 @@ theorem _root_.ContinuousOn.extend_comp_extend_symm {𝕜' : Type*} [Nontriviall
   refine ψ.continuousOn_extend.comp (hu.comp (φ.continuousOn_extend_symm.mono
     Set.inter_subset_left) fun _ hz ↦ hz.2.1) fun _ hz ↦ ?_
   simpa using hz.2.2
+
+/-- On a manifold with locally compact model, each extended chart target is locally compact: it is
+the intersection of an open subset with the closed range of the model. -/
+instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
+    LocallyCompactSpace (extChartAt I x).target := by
+  rw [extChartAt_target]
+  exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
+    I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- On a sigma-compact manifold with locally compact model, select a countable set of chart
+centres whose chart sources cover the manifold, together with compact exhaustions of their chart
+targets. The empty manifold uses the empty set of centres. -/
+theorem exists_countable_chartExhaustion [LocallyCompactSpace E] [SigmaCompactSpace M] :
+    ∃ s : Set M, s.Countable ∧ (∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source) ∧
+      Nonempty (∀ i : s, CompactExhaustion (extChartAt I (i : M)).target) := by
+  have := ProperSpace.of_locallyCompactSpace 𝕜 (E := E)
+  obtain ⟨s, hs, hcover⟩ := countable_cover_nhds_of_sigmaCompact
+    (fun x : M ↦ extChartAt_source_mem_nhds (I := I) x)
+  have hc : ∀ x : M, ∃ i : s, x ∈ (extChartAt I (i : M)).source := by
+    intro x
+    have hx : x ∈ ⋃ y ∈ s, (extChartAt I y).source := by rw [hcover]; trivial
+    obtain ⟨y, hy, hx⟩ := Set.mem_iUnion₂.mp hx
+    exact ⟨⟨y, hy⟩, hx⟩
+  exact ⟨s, hs, hc, ⟨fun i ↦ CompactExhaustion.choice (extChartAt I (i : M)).target⟩⟩
 
 /-- The coordinate image of an open subset of a chart source is measurable, without a
 measurable structure on the manifold. -/
@@ -985,6 +1015,31 @@ theorem extendTrans_apply (w : M) : c.extendTrans I Ψ w = Ψ (I (c w)) := by
 theorem extendTrans_symm_apply (v : F) :
     (c.extendTrans I Ψ).symm v = c.symm (I.symm (Ψ.symm v)) := by
   simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
+
+/-- The coordinates of `c.extendTrans I Ψ` are those of the extended chart `c.extend I`, moved
+by `Ψ`. -/
+theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := by
+  funext w
+  simp
+
+/-- Moved by the identity, the chart `c.extendTrans I` is the extended chart `c.extend I`. -/
+theorem toPartialEquiv_extendTrans_refl :
+    (c.extendTrans I (Homeomorph.refl E)).toPartialEquiv = c.extend I :=
+  PartialEquiv.ext (fun w ↦ by simp) (fun v ↦ by simp) (by simp)
+
+/-- Moved by the identity, the coordinates of `c.extendTrans I` are those of the extended chart
+`c.extend I`. -/
+theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
+  congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
+
+/-- A chart with values in a normed space, read in its own self model and moved by the identity,
+is the chart itself. -/
+@[simp]
+theorem extendTrans_modelWithCornersSelf_refl (e : OpenPartialHomeomorph M E) :
+    e.extendTrans 𝓘(𝕜, E) (Homeomorph.refl E) = e := by
+  refine OpenPartialHomeomorph.ext _ _ (fun w ↦ ?_) (fun v ↦ ?_) (extendTrans_source _ _ _)
+  · simp
+  · simp
 
 /-- The transition map between two charts `c.extendTrans I Ψ` is `C^m` when `c` runs over the
 maximal atlas of `M` and `Ψ` over homeomorphisms that are `C^m` with `C^m` inverses. -/

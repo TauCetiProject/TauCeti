@@ -111,14 +111,9 @@ variable [μ.IsOpenPosMeasure]
 function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
-  refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)
-  have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
-    filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
-    exact hx ▸ h
-  -- A closed conull set is everything, since `μ` charges every nonempty open set.
-  have hclosed : IsClosed {x | ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖} := isClosed_le (by fun_prop) (by fun_prop)
-  exact Set.eq_univ_iff_forall.1 (hclosed.ae_eq_univ_iff_eq.1 (ae_eq_univ.2 hae)) x
+  exact (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2
+    fun _ ↦ Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_toLpTop μ f)
+      f.continuous.continuousAt)
 
 /-- If `μ` is positive on nonempty open sets, a bounded continuous function is determined by its
 class in `L∞`. -/
