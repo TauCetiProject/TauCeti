@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: pi
+Authors: pi, The Tau Ceti contributors
 -/
 module
 
@@ -90,6 +90,32 @@ def trivial : LeftModuleAlgebra R H A where
 theorem trivial_action (h : H) (a : A) :
     (trivial (R := R) (H := H) (A := A)).action h a = counit (R := R) h • a :=
   (rfl)
+
+/-- Every left `H`-module algebra structure on the base semiring `R` coincides with `trivial`,
+since `h · r = r • (h · 1) = ε(h) • r`. -/
+theorem eq_trivial_of_self_left (μ : LeftModuleAlgebra R H R) : μ = trivial := by
+  ext h r
+  have hr : r = r • (1 : R) := by simp
+  conv_lhs => rw [hr]
+  rw [map_smul, μ.action_one, smul_comm, ← hr, trivial_action]
+
+instance : Unique (LeftModuleAlgebra R H R) where
+  default := trivial
+  uniq := eq_trivial_of_self_left
+
+/-- Every left `R`-module algebra structure on an `R`-algebra `A` coincides with `trivial`,
+since `r · a = (r • 1) · a = r • a`. -/
+theorem eq_trivial_of_self_right (μ : LeftModuleAlgebra R R A) : μ = trivial := by
+  ext r a
+  have hr : r = r • (1 : R) := by simp
+  calc
+    μ.action r a = μ.action (r • (1 : R)) a := by rw [← hr]
+    _ = r • a := by rw [map_smul, map_one]; rfl
+    _ = trivial.action r a := by simp
+
+instance : Unique (LeftModuleAlgebra R R A) where
+  default := trivial
+  uniq := eq_trivial_of_self_right
 
 variable {K : Type*} [Semiring K] [Bialgebra R K]
 
@@ -284,6 +310,16 @@ theorem mapInvariants_comp {C : Type*} [Semiring C] [Algebra R C]
     (g.comp f).mapInvariants = g.mapInvariants.comp f.mapInvariants := by
   ext
   rfl
+
+/-- Restrict an `H`-equivariant algebra homomorphism along a bialgebra homomorphism `K →ₐc[R] H`. -/
+def restrict (f : Hom μ ν) (g : K →ₐc[R] H) : Hom (μ.restrict g) (ν.restrict g) where
+  toAlgHom := f.toAlgHom
+  map_action' h a := by simp
+
+@[simp]
+theorem restrict_apply (f : Hom μ ν) (g : K →ₐc[R] H) (a : A) :
+    f.restrict g a = f a :=
+  (rfl)
 
 end Hom
 end LeftModuleAlgebra
