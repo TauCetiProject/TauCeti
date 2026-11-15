@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Topology.Category.TopCat.Pushout
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
@@ -50,6 +51,8 @@ are reindexed to the standard discs by relabelling the coordinates
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handles`: **Milnor's handle attachment theorem** in
   pushout form, for a Morse function with a compact band around a critical value, with one handle
   of index `λ` at each critical point of index `λ` on the level.
+* `TauCeti.IsMorse.exists_isPushout_sublevel_handle`: the same theorem when the level holds a single
+  critical point, with one handle attached and no coproducts.
 
 ## References
 
@@ -296,6 +299,53 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband hx⟩, (hψp _).1⟩⟩
+
+/-- **Attaching a single handle across a critical level** (Milnor, Theorem 3.2). Let `f` be a Morse
+function on a Hausdorff manifold of dimension `m` whose band `f⁻¹[c - δ, c + δ]` is compact, for
+some `0 < δ`, and suppose that `p` is the only critical point on the level `f⁻¹(c)`. Write
+`M_a = {f ≤ a}` and `λ` for the Morse index of `f` at `p`. Then for some width `0 < ε ≤ δ`, the
+sublevel `M_{c+ε}` is obtained from `M_{c-ε}` by attaching the single handle `𝔻 λ × 𝔻 (m - λ)`:
+there are maps `α : ∂𝔻 λ × 𝔻 (m - λ) → M_{c-ε}`, `χ : 𝔻 λ × 𝔻 (m - λ) → M_{c+ε}` and
+`j : M_{c-ε} → M_{c+ε}` forming a pushout square in `TopCat`. The attaching map `α` is a closed
+embedding into the level `f⁻¹(c - ε)`, and the level `f⁻¹(c + ε)` consists of the image of the top
+`𝔻 λ × ∂𝔻 (m - λ)` of the handle and of the points of `f⁻¹(c - ε)` off the attaching region. This
+is `TauCeti.IsMorse.exists_isPushout_sublevel_handles` with its coproducts over the single critical
+point removed. -/
+theorem IsMorse.exists_isPushout_sublevel_handle (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) {p : M}
+    (hp : criticalPoints I f ∩ f ⁻¹' {c} = {p}) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ (α : TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
+          TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p)) ⟶
+          TopCat.of {x | f x ≤ c - ε})
+        (χ : TopCat.of (TopCat.disk.{u} (manifoldMorseIndex I f p) ×
+          TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p)) ⟶
+          TopCat.of {x | f x ≤ c + ε})
+        (j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε}),
+        IsPushout α (TopCat.ofHom ((TopCat.diskBoundaryInclusion
+          (manifoldMorseIndex I f p)).hom.prodMap (ContinuousMap.id _))) j χ ∧
+        IsClosedEmbedding α ∧ (∀ s, f (α s : M) = c - ε) ∧
+        (∀ w, f (χ w : M) = c + ε ↔ w.2 ∈ range
+          (TopCat.diskBoundaryInclusion (Module.finrank ℝ E - manifoldMorseIndex I f p))) ∧
+        ∀ x, x ∉ range α → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
+  -- The critical points on the level form a one-point index type, whose element is `p`.
+  have hpc : p ∈ criticalPoints I f ∩ f ⁻¹' {c} := hp ▸ mem_singleton p
+  let : Unique ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    { default := ⟨p, hpc⟩
+      uniq := fun q ↦ Subtype.ext (by simpa [hp] using q.2) }
+  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, hα, -, hαc, hχc, hj⟩ :=
+    hf.exists_isPushout_sublevel_handles hδ hcompact
+  -- A coproduct over a one-point index type is its unique summand.
+  refine ⟨ε, hε, hεδ, α default, χ default, j, hpush.of_iso'
+    (coproductUniqueIso fun q : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+      TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f q) ×
+        TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f q))).symm (Iso.refl _)
+    (coproductUniqueIso fun q : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
+      TopCat.of (TopCat.disk.{u} (manifoldMorseIndex I f q) ×
+        TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f q))).symm (Iso.refl _)
+    (by simp) (by simp) (by simp) (by simp), hα default, hαc default, hχc default,
+    fun x hx ↦ hj x fun q ↦ ?_⟩
+  rwa [Unique.eq_default q]
 
 end HandlePushout
 
