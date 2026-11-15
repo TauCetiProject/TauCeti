@@ -30,6 +30,9 @@ the disc coordinates centred at a point and at its image, in
 * `TauCeti.moebius_sub_moebius`: the difference formula for a linear fractional transformation.
 * `TauCeti.moebius_sub_of_fixed`: the difference formula for a linear fractional
   transformation at a fixed point.
+* `TauCeti.neg_mul_moebius_add_ne_zero`, `TauCeti.moebius_inv_moebius`: away from the pole
+  `c * t + d = 0`, the adjugate transformation `y ↦ (d * y - b) / (-c * y + a)` has nonzero
+  denominator at `y = (a * t + b) / (c * t + d)` and recovers `t` when `a * d - b * c ≠ 0`.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
 * `TauCeti.div_sub_inv_sub_div_sq_eq_div_sub_sub_div`: the partial-fraction identity for a pole
@@ -65,6 +68,23 @@ theorem moebius_sub_of_fixed {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜}
     (a * t + b) / (c * t + d) - w =
       (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d)) := by
   rw [← moebius_sub_moebius hj hjt, (div_eq_iff hj).mpr hw]
+
+/-- Away from the pole `c * t + d = 0`, a linear fractional transformation of nonzero determinant
+`a * d - b * c` takes a value outside the pole `-c * y + a = 0` of its adjugate inverse. -/
+theorem neg_mul_moebius_add_ne_zero {𝕜 : Type*} [Field 𝕜] {a b c d t : 𝕜}
+    (hdet : a * d - b * c ≠ 0) (hjt : c * t + d ≠ 0) :
+    -c * ((a * t + b) / (c * t + d)) + a ≠ 0 := by
+  have hy : (a * t + b) / (c * t + d) * (c * t + d) = a * t + b := div_mul_cancel₀ _ hjt
+  exact fun h0 ↦ hdet (by linear_combination (c * t + d) * h0 + c * hy)
+
+/-- **Left-inverse identity for a linear fractional transformation.** Away from the pole
+`c * t + d = 0`, the adjugate transformation `y ↦ (d * y - b) / (-c * y + a)` recovers `t` from
+`y = (a * t + b) / (c * t + d)` whenever `a * d - b * c ≠ 0`. -/
+theorem moebius_inv_moebius {𝕜 : Type*} [Field 𝕜] {a b c d t : 𝕜}
+    (hdet : a * d - b * c ≠ 0) (hjt : c * t + d ≠ 0) :
+    (d * ((a * t + b) / (c * t + d)) - b) / (-c * ((a * t + b) / (c * t + d)) + a) = t := by
+  rw [div_eq_iff (neg_mul_moebius_add_ne_zero hdet hjt)]
+  linear_combination (div_mul_cancel₀ (a * t + b) hjt)
 
 /-- **Maps with factorized difference quotients preserve cross-ratios.** If
 `φ s - φ t = κ * (s - t) / (d s * d t)` for all `s` and `t` in `S`, with `κ` and the values of `d`

@@ -7,7 +7,11 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 public import TauCeti.NumberTheory.Height.Naive
--- Proof-only: Northcott finiteness for the naive height.
+-- Proof-only: Northcott finiteness, Möbius identities and field invariance, and Mahler's exponent
+-- at rationals.
+import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Mobius
+import TauCeti.NumberTheory.DiophantineApproximation.MahlerExponent
 import TauCeti.NumberTheory.Height.Counting
 
 /-!
@@ -23,6 +27,12 @@ Where Mahler's exponent `wₙ(ξ)` measures how small nonzero values `P(ξ)` of 
 of degree at most `n` can be, Koksma's exponent `w*ₙ(ξ)` measures how closely `ξ` is approximated
 by the roots of such polynomials.
 
+Like `irrationalityExponent` and `mahlerExponent n`, Koksma's exponent `w*ₙ` is invariant under
+rational Möbius transformations `ξ ↦ (a ξ + b) / (c ξ + d)` of nonzero determinant `a d - b c`:
+nonsingular rational Möbius transformations preserve degree over `ℚ`, distort distances near `ξ`
+by a bounded factor away from the pole, and change the naive height by at most a constant factor
+(`TauCeti.naiveHeight_mul_add_div_mul_add_le`).
+
 ## Main results
 
 * `algebraicApproximation_infinite_iff_allow_eq`: allowing the exact approximation `α = ξ` does
@@ -33,9 +43,17 @@ by the roots of such polynomials.
   no hypothesis on `ξ`: the conjugates of an algebraic `ξ` are only finitely many approximations.
 * `algebraicApproximationExponent_one_add`: `w*₁(ξ) + 1 = μ(ξ)`, where `μ` is the irrationality
   exponent.
+* `algebraicApproximationExponent_ratCast`: rational numbers have Koksma exponent `0` in every
+  degree.
+* `algebraicApproximationExponent_mul_add_div_mul_add`: `w*ₙ` is invariant under rational Möbius
+  transformations of nonzero determinant; in particular under adding or multiplying by a nonzero
+  rational number, negation, and inversion (`algebraicApproximationExponent_add_ratCast`,
+  `algebraicApproximationExponent_ratCast_mul`, `algebraicApproximationExponent_neg`,
+  `algebraicApproximationExponent_inv`).
 
 ## References
 
+* Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), Chapter 3.
 * Y. Bugeaud, *Exponents of Diophantine approximation*, §2, Definition 2.1 and Theorem 2.5.
 * J.-H. Evertse, *Diophantine Approximation* (2019), ch. 7, Theorem 7.8.
 -/
@@ -319,5 +337,298 @@ theorem algebraicApproximationExponent_one_add (ξ : ℝ) :
         gcongr
         exact le_algebraicApproximationExponent_of_infinite
           (infinite_algebraicApproximations_one_of_infinite (by linarith) (by linarith) hp)
+
+/-- Rational numbers have Koksma exponent `0` in every degree. -/
+@[simp]
+theorem algebraicApproximationExponent_ratCast (n : ℕ) (q : ℚ) :
+    algebraicApproximationExponent n q = 0 :=
+  le_antisymm ((algebraicApproximationExponent_le_mahlerExponent n q).trans
+    (mahlerExponent_ratCast n q).le) bot_le
+
+/-! ### Invariance under rational Möbius transformations -/
+
+section Mobius
+
+/-- Metric and left-inverse estimates for a complex approximant `α` close to `ξ` under an integer
+Möbius transformation of nonzero determinant `a * d - b * c` away from its pole `c ξ + d = 0`. -/
+private theorem mobius_sub_and_inv {ξ : ℝ} {a b c d : ℤ} (hdet : a * d - b * c ≠ 0)
+    (hξ : (c : ℝ) * ξ + d ≠ 0) {α : ℂ} (hpos : 0 < ‖(ξ : ℂ) - α‖)
+    (hclose : ‖(ξ : ℂ) - α‖ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1))) :
+    let ξ' : ℝ := ((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d);
+    let β : ℂ := ((a : ℂ) * α + b) / ((c : ℂ) * α + d);
+    ((d : ℂ) * β - b) / (-(c : ℂ) * β + a) = α ∧
+      0 < ‖(ξ' : ℂ) - β‖ ∧
+      ‖(ξ' : ℂ) - β‖ ≤
+        (2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2) * ‖(ξ : ℂ) - α‖ := by
+  intro ξ' β
+  set Dξ : ℝ := |(c : ℝ) * ξ + d|
+  have hDξ : 0 < Dξ := abs_pos.2 hξ
+  have hnorm_ξ : ‖(c : ℂ) * (ξ : ℂ) + d‖ = Dξ := by
+    rw [← Complex.ofReal_intCast c, ← Complex.ofReal_intCast d, ← Complex.ofReal_mul,
+      ← Complex.ofReal_add, Complex.norm_real, Real.norm_eq_abs]
+  have hξ_den : (c : ℂ) * (ξ : ℂ) + d ≠ 0 := norm_pos_iff.mp (hnorm_ξ ▸ hDξ)
+  have hden_lb : Dξ / 2 ≤ ‖(c : ℂ) * α + d‖ := by
+    have hsub : (c : ℂ) * α + d = ((c : ℂ) * (ξ : ℂ) + d) - (c : ℂ) * ((ξ : ℂ) - α) := by ring
+    have htri := norm_sub_norm_le ((c : ℂ) * (ξ : ℂ) + d) ((c : ℂ) * ((ξ : ℂ) - α))
+    rw [← hsub, hnorm_ξ, norm_mul, Complex.norm_intCast] at htri
+    have hc_le : |(c : ℝ)| * ‖(ξ : ℂ) - α‖ ≤ Dξ / 2 := calc
+      |(c : ℝ)| * ‖(ξ : ℂ) - α‖
+          ≤ (|(c : ℝ)| + 1) * (Dξ / (2 * (|(c : ℝ)| + 1))) :=
+            mul_le_mul (by linarith) hclose (norm_nonneg _) (by positivity)
+      _ = Dξ / 2 := by
+            have : |(c : ℝ)| + 1 ≠ 0 := by positivity
+            field_simp
+    linarith
+  have hα_den : (c : ℂ) * α + d ≠ 0 := norm_pos_iff.mp (by linarith)
+  have hdetC : (a : ℂ) * d - b * c ≠ 0 := by exact_mod_cast hdet
+  have hinv : ((d : ℂ) * β - b) / (-(c : ℂ) * β + a) = α := moebius_inv_moebius hdetC hα_den
+  have hξ'ℂ : (ξ' : ℂ) = ((a : ℂ) * (ξ : ℂ) + b) / ((c : ℂ) * (ξ : ℂ) + d) := by simp [ξ']
+  have hnorm_diff : ‖(ξ' : ℂ) - β‖ =
+      |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ * ‖(c : ℂ) * α + d‖) := by
+    rw [hξ'ℂ, moebius_sub_moebius hα_den hξ_den, ← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub,
+      norm_div, norm_mul, norm_mul, hnorm_ξ, Complex.norm_intCast]
+  have : 0 < |((a * d - b * c : ℤ) : ℝ)| := abs_pos.2 (Int.cast_ne_zero.mpr hdet)
+  refine ⟨hinv, by rw [hnorm_diff]; positivity, ?_⟩
+  rw [hnorm_diff]
+  calc |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ * ‖(c : ℂ) * α + d‖)
+      ≤ |((a * d - b * c : ℤ) : ℝ)| * ‖(ξ : ℂ) - α‖ / (Dξ ^ 2 / 2) :=
+        div_le_div_of_nonneg_left (by positivity) (by positivity) (by nlinarith)
+    _ = (2 * |((a * d - b * c : ℤ) : ℝ)| / Dξ ^ 2) * ‖(ξ : ℂ) - α‖ := by ring
+
+/-- Single-approximant transfer: for `0 < w' < w`, an approximant
+`α ∈ algebraicApproximations n ξ w` whose naive height exceeds both
+`(|c ξ + d| / (2 (|c| + 1)))⁻¹` and the constant-absorption threshold maps into
+`algebraicApproximations n ξ' w'`. -/
+private theorem mobius_mem_algebraicApproximations {n : ℕ} {ξ w w' : ℝ} {a b c d : ℤ}
+    (hw' : 0 < w') (hww' : w' < w) (hdet : a * d - b * c ≠ 0) (hξ : (c : ℝ) * ξ + d ≠ 0)
+    {α : ℂ} (hα : α ∈ algebraicApproximations n ξ w)
+    (hH_close : (|(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)))⁻¹ ≤ naiveHeight α)
+    (hH_abs : (2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2) *
+      (max 1 ((2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n)) ^ (w' + 1) ≤
+      naiveHeight α ^ (w - w')) :
+    (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) ∈
+      algebraicApproximations n (((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)) w' ∧
+      ((d : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) - b) /
+        (-(c : ℂ) * (((a : ℂ) * α + b) / ((c : ℂ) * α + d)) + a) = α := by
+  obtain ⟨halg, hdeg, hpos, hle⟩ := hα
+  set H := naiveHeight α
+  have hH₁ : 1 ≤ H := one_le_naiveHeight α
+  have hH₀ : 0 < H := zero_lt_one.trans_le hH₁
+  have hδ₀ : 0 < |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := by
+    have := abs_pos.2 hξ; positivity
+  have hclose : ‖(ξ : ℂ) - α‖ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := calc
+    ‖(ξ : ℂ) - α‖ ≤ H ^ (-w - 1) := hle
+    _ ≤ H ^ (-1 : ℝ) := Real.rpow_le_rpow_of_exponent_le hH₁ (by linarith)
+    _ = H⁻¹ := Real.rpow_neg_one H
+    _ ≤ |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1)) := inv_le_of_inv_le₀ hδ₀ hH_close
+  obtain ⟨hinv, hβ_pos, hβ_le⟩ := mobius_sub_and_inv hdet hξ hpos hclose
+  set β : ℂ := ((a : ℂ) * α + b) / ((c : ℂ) * α + d)
+  set K₁ : ℝ := 2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2
+  set M : ℝ := 2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)
+  set K₂ : ℝ := max 1 (M ^ n)
+  have hK₂ : 0 < K₂ := zero_lt_one.trans_le (le_max_left _ _)
+  have hdetQ : (a : ℚ) * d - b * c ≠ 0 := by exact_mod_cast hdet
+  have hβ_alg : IsAlgebraic ℚ β := by
+    simpa [β] using (isAlgebraic_mul_add_div_mul_add_iff (K := ℚ) α hdetQ).mpr halg
+  have hβ_deg : (minpoly ℚ β).natDegree ≤ n := by
+    have hdeg_eq : (minpoly ℚ β).natDegree = (minpoly ℚ α).natDegree := by
+      simpa [β] using TauCeti.minpoly.natDegree_mul_add_div_mul_add (K := ℚ) α hdetQ
+    exact hdeg_eq.trans_le hdeg
+  have hHβ : naiveHeight β ≤ K₂ * H := by
+    refine (naiveHeight_mul_add_div_mul_add_le α hdet).trans (mul_le_mul_of_nonneg_right ?_ hH₀.le)
+    rcases le_or_gt M 1 with hM | hM
+    · exact (pow_le_one₀ (by positivity) hM).trans (le_max_left _ _)
+    · exact (pow_le_pow_right₀ hM.le hdeg).trans (le_max_right _ _)
+  refine ⟨⟨hβ_alg, hβ_deg, hβ_pos, ?_⟩, hinv⟩
+  have hK₁ : 0 ≤ K₁ := by
+    have := abs_pos.2 hξ; positivity
+  have hexp : w - w' + (-w - 1) = -w' - 1 := by ring
+  calc ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) - β‖
+      ≤ K₁ * H ^ (-w - 1) := hβ_le.trans (mul_le_mul_of_nonneg_left hle hK₁)
+    _ = K₁ * K₂ ^ (w' + 1) * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by
+        rw [mul_assoc K₁, ← Real.rpow_add hK₂]
+        ring_nf
+        simp
+    _ ≤ H ^ (w - w') * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by gcongr
+    _ = (K₂ * H) ^ (-w' - 1) := by
+        rw [mul_right_comm, ← Real.rpow_add hH₀, hexp, mul_comm, Real.mul_rpow hK₂.le hH₀.le]
+    _ ≤ naiveHeight β ^ (-w' - 1) :=
+        Real.rpow_le_rpow_of_nonpos (zero_lt_one.trans_le (one_le_naiveHeight β)) hHβ
+          (by linarith)
+
+/-- Infinitely many `w`-approximations of `ξ` yield infinitely many `w'`-approximations of
+`(a ξ + b) / (c ξ + d)` for every `0 < w' < w`. -/
+private theorem infinite_algebraicApproximations_of_mobius_int {n : ℕ} {ξ w w' : ℝ}
+    {a b c d : ℤ} (hw' : 0 < w') (hww' : w' < w) (hdet : a * d - b * c ≠ 0)
+    (hξ : (c : ℝ) * ξ + d ≠ 0) (hinf : (algebraicApproximations n ξ w).Infinite) :
+    (algebraicApproximations n (((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)) w').Infinite := by
+  set K₁ : ℝ := 2 * |((a * d - b * c : ℤ) : ℝ)| / |(c : ℝ) * ξ + d| ^ 2
+  set K₂ : ℝ := max 1 ((2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ n)
+  set δ₀ : ℝ := |(c : ℝ) * ξ + d| / (2 * (|(c : ℝ)| + 1))
+  obtain ⟨R₁, hR₁⟩ := eventually_atTop.1 <|
+    (tendsto_rpow_atTop (sub_pos.2 hww')).eventually_ge_atTop (K₁ * K₂ ^ (w' + 1))
+  set R : ℝ := max δ₀⁻¹ R₁
+  set S := algebraicApproximations n ξ w \
+    {α : ℂ | IsAlgebraic ℚ α ∧ (minpoly ℚ α).natDegree ≤ n ∧ naiveHeight α ≤ R}
+  have hS : S.Infinite := hinf.sdiff (finite_setOf_naiveHeight_le n R).1
+  set f : ℂ → ℂ := fun α ↦ ((a : ℂ) * α + b) / ((c : ℂ) * α + d)
+  have hmem : ∀ α ∈ S, f α ∈ algebraicApproximations n
+      (((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d)) w' ∧
+      ((d : ℂ) * f α - b) / (-(c : ℂ) * f α + a) = α := by
+    rintro α ⟨hα, hnot⟩
+    simp only [Set.mem_ofPred_eq, not_and, not_le] at hnot
+    have hHR : R < naiveHeight α := hnot hα.1 hα.2.1
+    exact mobius_mem_algebraicApproximations hw' hww' hdet hξ hα
+      ((le_max_left _ _).trans hHR.le) (hR₁ _ ((le_max_right _ _).trans hHR.le))
+  have hinj : Set.InjOn f S := fun α₁ h₁ α₂ h₂ heq ↦ by
+    rw [← (hmem α₁ h₁).2, ← (hmem α₂ h₂).2, heq]
+  refine (hS.image hinj).mono fun _ h ↦ ?_
+  obtain ⟨α, hα, rfl⟩ := h
+  exact (hmem α hα).1
+
+/-- One-sided Koksma-exponent inequality under an integer Möbius transformation away from its
+pole. -/
+private theorem algebraicApproximationExponent_le_mul_add_div_mul_add_of_int (n : ℕ) {ξ : ℝ}
+    {a b c d : ℤ} (hdet : a * d - b * c ≠ 0) (hξ : (c : ℝ) * ξ + d ≠ 0) :
+    algebraicApproximationExponent n ξ ≤
+      algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) := by
+  refine algebraicApproximationExponent_le_iff.2 fun w hw ↦ ?_
+  rcases le_or_gt w 0 with hw₀ | hw₀
+  · simp [ENNReal.ofReal_eq_zero.2 hw₀]
+  refine le_of_forall_lt fun t ht ↦ ?_
+  have htt : t ≠ ⊤ := ht.ne_top
+  have htw : t.toReal < w := (ENNReal.lt_ofReal_iff_toReal_lt htt).1 ht
+  have ht₀ : 0 ≤ t.toReal := ENNReal.toReal_nonneg
+  calc t < ENNReal.ofReal ((t.toReal + w) / 2) :=
+        (ENNReal.lt_ofReal_iff_toReal_lt htt).2 (by linarith)
+    _ ≤ algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) :=
+        le_algebraicApproximationExponent_of_infinite
+          (infinite_algebraicApproximations_of_mobius_int (by linarith) (by linarith) hdet hξ hw)
+
+/-- Koksma's exponent is invariant under a Möbius transformation with integer coefficients and
+nonzero determinant away from its pole. -/
+private theorem algebraicApproximationExponent_mul_add_div_mul_add_of_int (n : ℕ) {ξ : ℝ}
+    {a b c d : ℤ} (hdet : a * d - b * c ≠ 0) (hξ : (c : ℝ) * ξ + d ≠ 0) :
+    algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) =
+      algebraicApproximationExponent n ξ := by
+  refine le_antisymm ?_ (algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n hdet hξ)
+  set η : ℝ := (a * ξ + b) / (c * ξ + d)
+  have hdetR : (a : ℝ) * d - b * c ≠ 0 := by exact_mod_cast hdet
+  have hη : ((-c : ℤ) : ℝ) * η + a ≠ 0 := by
+    simpa using neg_mul_moebius_add_ne_zero hdetR hξ
+  have hinv : ((d : ℝ) * η + ((-b : ℤ) : ℝ)) / (((-c : ℤ) : ℝ) * η + a) = ξ := by
+    simpa [sub_eq_add_neg] using moebius_inv_moebius hdetR hξ
+  have hdet' : d * a - (-b) * (-c) ≠ 0 := fun h0 ↦ hdet (by linear_combination h0)
+  have := algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n (ξ := η) hdet' hη
+  rwa [hinv] at this
+
+/-- **Möbius invariance of Koksma's exponent.** For rational `a, b, c, d` with `a d - b c ≠ 0`,
+`w*ₙ((a ξ + b) / (c ξ + d)) = w*ₙ(ξ)`. At the pole `ξ = -d / c`, where Lean's convention
+`x / 0 = 0` applies, both sides vanish because both points are rational. -/
+theorem algebraicApproximationExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
+    (h : a * d - b * c ≠ 0) :
+    algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) =
+      algebraicApproximationExponent n ξ := by
+  by_cases hξ : (c : ℝ) * ξ + d = 0
+  · -- At the pole `ξ = -d / c`, both `ξ` and its image `0` are rational.
+    have hc : c ≠ 0 := by
+      rintro rfl
+      have hd : d = 0 := by exact_mod_cast (by simpa using hξ : (d : ℝ) = 0)
+      simp [hd] at h
+    have hxq : ξ = ((-d / c : ℚ) : ℝ) := by
+      have hc' : (c : ℝ) ≠ 0 := Rat.cast_ne_zero.2 hc
+      push_cast
+      field_simp
+      linarith
+    rw [hξ, div_zero, hxq, ← Rat.cast_zero, algebraicApproximationExponent_ratCast,
+      algebraicApproximationExponent_ratCast]
+  -- Scale `(a, b, c, d)` by the product `m` of their denominators to obtain integer coefficients.
+  have hscale (q : ℚ) (k : ℕ) : ((q.num * (k : ℤ) : ℤ) : ℝ) = ((q.den * k : ℕ) : ℝ) * q := by
+    have hQ : ((q.num * (k : ℤ) : ℤ) : ℚ) = (q.den * k : ℕ) * q := by
+      push_cast
+      linear_combination (k : ℚ) * (Rat.mul_den_eq_num q).symm
+    exact_mod_cast hQ
+  set m : ℕ := a.den * b.den * c.den * d.den
+  have hm : (m : ℝ) ≠ 0 := by positivity
+  let a' : ℤ := a.num * ((b.den * c.den * d.den : ℕ) : ℤ)
+  let b' : ℤ := b.num * ((a.den * c.den * d.den : ℕ) : ℤ)
+  let c' : ℤ := c.num * ((a.den * b.den * d.den : ℕ) : ℤ)
+  let d' : ℤ := d.num * ((a.den * b.den * c.den : ℕ) : ℤ)
+  have ha' : (a' : ℝ) = m * a := by rw [hscale]; push_cast [m]; ring
+  have hb' : (b' : ℝ) = m * b := by rw [hscale]; push_cast [m]; ring
+  have hc' : (c' : ℝ) = m * c := by rw [hscale]; push_cast [m]; ring
+  have hd' : (d' : ℝ) = m * d := by rw [hscale]; push_cast [m]; ring
+  have hdet : a' * d' - b' * c' ≠ 0 := fun h0 ↦ by
+    have hR : ((a * d - b * c : ℚ) : ℝ) ≠ 0 := Rat.cast_ne_zero.2 h
+    push_cast at hR
+    have h0R : (a' : ℝ) * d' - b' * c' = 0 := by exact_mod_cast h0
+    rw [ha', hb', hc', hd'] at h0R
+    exact mul_ne_zero (pow_ne_zero 2 hm) hR (by linear_combination h0R)
+  have hden : (c' : ℝ) * ξ + d' = m * (c * ξ + d) := by rw [hc', hd']; ring
+  have hnum : (a' : ℝ) * ξ + b' = m * (a * ξ + b) := by rw [ha', hb']; ring
+  have key : ((a : ℝ) * ξ + b) / (c * ξ + d) = (a' * ξ + b') / (c' * ξ + d') := by
+    rw [hden, hnum, mul_div_mul_left _ _ hm]
+  rw [key]
+  exact algebraicApproximationExponent_mul_add_div_mul_add_of_int n hdet
+    (by rw [hden]; exact mul_ne_zero hm hξ)
+
+/-- Adding a rational number does not change Koksma's exponent. -/
+@[simp]
+theorem algebraicApproximationExponent_add_ratCast (n : ℕ) (ξ : ℝ) (q : ℚ) :
+    algebraicApproximationExponent n (ξ + q) = algebraicApproximationExponent n ξ := by
+  simpa using algebraicApproximationExponent_mul_add_div_mul_add n ξ
+    (a := 1) (b := q) (c := 0) (d := 1) (by simp)
+
+/-- Multiplying by a nonzero rational number does not change Koksma's exponent. -/
+@[simp]
+theorem algebraicApproximationExponent_ratCast_mul (n : ℕ) (q : ℚ) (ξ : ℝ) (hq : q ≠ 0) :
+    algebraicApproximationExponent n (q * ξ) = algebraicApproximationExponent n ξ := by
+  simpa using algebraicApproximationExponent_mul_add_div_mul_add n ξ
+    (a := q) (b := 0) (c := 0) (d := 1) (by simpa)
+
+/-- Negation does not change Koksma's exponent. -/
+@[simp]
+theorem algebraicApproximationExponent_neg (n : ℕ) (ξ : ℝ) :
+    algebraicApproximationExponent n (-ξ) = algebraicApproximationExponent n ξ := by
+  simpa using algebraicApproximationExponent_ratCast_mul n (-1) ξ (by norm_num)
+
+/-- Inversion does not change Koksma's exponent. -/
+@[simp]
+theorem algebraicApproximationExponent_inv (n : ℕ) (ξ : ℝ) :
+    algebraicApproximationExponent n ξ⁻¹ = algebraicApproximationExponent n ξ := by
+  simpa using algebraicApproximationExponent_mul_add_div_mul_add n ξ
+    (a := 0) (b := 1) (c := 1) (d := 0) (by simp)
+
+end Mobius
+
+/-! ### Boundary examples -/
+
+/- Neither `mahlerExponent 1` nor `algebraicApproximationExponent 1` equals
+`irrationalityExponent`: at `0` both degree-`1` exponents vanish while `irrationalityExponent 0 = 1`
+(`w₁(ξ) + 1 = w*₁(ξ) + 1 = μ(ξ)`). -/
+example : mahlerExponent 1 (0 : ℝ) ≠ irrationalityExponent 0 ∧
+    algebraicApproximationExponent 1 (0 : ℝ) ≠ irrationalityExponent 0 := by
+  have hμ : irrationalityExponent 0 = 1 := by
+    rw [← algebraicApproximationExponent_one_add, ← Rat.cast_zero,
+      algebraicApproximationExponent_ratCast, zero_add]
+  rw [hμ, ← Rat.cast_zero, mahlerExponent_ratCast, algebraicApproximationExponent_ratCast]
+  exact ⟨zero_ne_one, zero_ne_one⟩
+
+/- The nonzero-determinant hypothesis `a * d - b * c ≠ 0` in
+`algebraicApproximationExponent_mul_add_div_mul_add` cannot be dropped: the singular matrix
+`a = b = c = 0, d = 1` maps `√2` (with `w*₁(√2) ≥ 1`) to `0` (with `w*₁(0) = 0`). -/
+example : ∃ (a b c d : ℚ) (ξ : ℝ),
+    algebraicApproximationExponent 1 ((a * ξ + b) / (c * ξ + d)) ≠
+      algebraicApproximationExponent 1 ξ := by
+  refine ⟨0, 0, 0, 1, √2, ?_⟩
+  have h2 : (2 : ℝ≥0∞) ≤ algebraicApproximationExponent 1 √2 + 1 := by
+    rw [algebraicApproximationExponent_one_add]
+    exact (two_le_irrationalityExponent_iff √2).2 irrational_sqrt_two
+  intro heq
+  have hzero : (((0 : ℚ) : ℝ) * √2 + (0 : ℚ)) / (((0 : ℚ) : ℝ) * √2 + (1 : ℚ)) =
+      ((0 : ℚ) : ℝ) := by norm_num
+  rw [hzero, algebraicApproximationExponent_ratCast] at heq
+  rw [← heq, zero_add] at h2
+  exact absurd h2 (by norm_num)
 
 end TauCeti

@@ -8,9 +8,13 @@ module
 public import TauCeti.FieldTheory.Minpoly.Primitive
 public import TauCeti.Analysis.Polynomial.SupNorm.Roots
 public import Mathlib.NumberTheory.Height.NumberField
+import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.Algebra.Polynomial.Homogenize
+import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.Analysis.Polynomial.SupNorm.Factor
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Mobius
 import TauCeti.RingTheory.Polynomial.Primitive
 import Mathlib.Analysis.Normed.Ring.Int
-import TauCeti.Analysis.Polynomial.L1Norm
 
 /-!
 # Naive height of an algebraic number
@@ -22,14 +26,17 @@ The value at a transcendental element is one.
 
 For rational numbers it agrees with the multiplicative Weil height. For general
 algebraic numbers it instead measures the size of their defining polynomial;
-its bounds control denominators and the norms of real or complex roots, and
+its bounds control denominators and the norms of real or complex roots,
 `norm_aeval_primitiveMinpoly_le` bounds the primitive minimal polynomial near its
-complex roots.
+complex roots, and `naiveHeight_mul_add_div_mul_add_le` controls how the naive height
+grows under nonsingular integer Möbius transformations.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation* (2019), ch. 3, §3.1,
   Exercise 3.1, and ch. 6, §6.1.
+* Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), ch. 3
+  and Appendix A.
 -/
 
 public section
@@ -237,5 +244,65 @@ theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) :
       _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ :=
           le_mul_of_one_le_right (by positivity) hz.le
       _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
+
+/-- **Naive height under an integer Möbius transformation.** For any `x` in a field of
+characteristic zero and integers `a, b, c, d` with `a * d - b * c ≠ 0`,
+`H((a x + b) / (c x + d)) ≤ (2 (|a| + |b| + |c| + |d|)) ^ deg(x) H(x)`. The bound holds at
+transcendental elements (where `deg(x) = 0` and both heights are `1`) and at the pole
+`c x + d = 0` (where the left-hand side is `H(0) = 1`). -/
+theorem naiveHeight_mul_add_div_mul_add_le (x : F) {a b c d : ℤ} (hdet : a * d - b * c ≠ 0) :
+    naiveHeight (((a : F) * x + b) / ((c : F) * x + d)) ≤
+      (2 * (|(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|)) ^ (minpoly ℚ x).natDegree *
+        naiveHeight x := by
+  set y : F := ((a : F) * x + b) / ((c : F) * x + d)
+  set S : ℝ := |(a : ℝ)| + |(b : ℝ)| + |(c : ℝ)| + |(d : ℝ)|
+  by_cases hpole : (c : F) * x + d = 0
+  · have hab : (1 : ℤ) ≤ |a| + |b| := by
+      rcases eq_or_ne a 0 with rfl | ha
+      · simpa using Int.one_le_abs (fun hb ↦ hdet (by simp [hb]))
+      · linarith [Int.one_le_abs ha, abs_nonneg b]
+    have habR : (1 : ℝ) ≤ |(a : ℝ)| + |(b : ℝ)| := by exact_mod_cast hab
+    simp only [y, hpole, div_zero, naiveHeight_zero]
+    exact one_le_mul_of_one_le_of_one_le
+      (one_le_pow₀ (by linarith [abs_nonneg (c : ℝ), abs_nonneg (d : ℝ)])) (one_le_naiveHeight x)
+  have hdetQ : (a : ℚ) * d - b * c ≠ 0 := by exact_mod_cast hdet
+  have halg_iff : IsAlgebraic ℚ y ↔ IsAlgebraic ℚ x := by
+    simpa [y] using isAlgebraic_mul_add_div_mul_add_iff (K := ℚ) x hdetQ
+  by_cases hx : IsAlgebraic ℚ x
+  swap
+  · rw [naiveHeight_of_not_isAlgebraic (mt halg_iff.mp hx), naiveHeight_of_not_isAlgebraic hx,
+      minpoly.eq_zero (isAlgebraic_iff_isIntegral.not.mp hx), natDegree_zero, pow_zero, one_mul]
+  set P : ℤ[X] := primitiveMinpoly x
+  set g₁ : ℤ[X] := C d * X + C (-b)
+  set g₂ : ℤ[X] := C (-c) * X + C a
+  set Q : ℤ[X] := MvPolynomial.aeval ![g₁, g₂] (P.homogenize P.natDegree)
+  have hdet' : d * a - (-b) * (-c) ≠ 0 := fun h0 ↦ hdet (by linear_combination h0)
+  have hQ0 : Q ≠ 0 := aeval_linear_homogenize_ne_zero (primitiveMinpoly_ne_zero x) le_rfl hdet'
+  have hdetF : (a : F) * d - b * c ≠ 0 := by exact_mod_cast hdet
+  have hyQ : aeval y Q = 0 := by
+    rw [MvPolynomial.comp_aeval_apply, aeval_homogenize le_rfl _
+      (by simpa [g₂] using neg_mul_moebius_add_ne_zero hdetF hpole)]
+    have hdiv : aeval y g₁ / aeval y g₂ = x := by
+      simpa [g₁, g₂, sub_eq_add_neg] using moebius_inv_moebius hdetF hpole
+    simp [P, hdiv, aeval_primitiveMinpoly hx]
+  have hdvd : primitiveMinpoly y ∣ Q := (primitiveMinpoly_dvd_iff (halg_iff.mpr hx)).mpr hyQ
+  have hQdeg : Q.natDegree ≤ P.natDegree := (isHomogeneous_homogenize P).natDegree_aeval_le
+    fun i ↦ by fin_cases i <;> exact natDegree_linear_le
+  have hl1 (u v : ℤ) : (C u * X + C v).l1Norm ≤ |(u : ℝ)| + |(v : ℝ)| :=
+    (l1Norm_add_le (C u * X) (C v)).trans_eq
+      (by rw [← pow_one X, l1Norm_mul_X_pow, l1Norm_C, l1Norm_C, Int.norm_eq_abs, Int.norm_eq_abs])
+  have hg : g₁.l1Norm + g₂.l1Norm ≤ S := by
+    have h₁ := hl1 d (-b); have h₂ := hl1 (-c) a
+    rw [Int.cast_neg, abs_neg] at h₁ h₂; linarith
+  have hQsup : Q.supNorm ≤ P.supNorm * S ^ P.natDegree :=
+    ((supNorm_le_l1Norm Q).trans (l1Norm_aeval_homogenize_le P P.natDegree g₁ g₂)).trans
+      (mul_le_mul_of_nonneg_left
+        (pow_le_pow_left₀ (add_nonneg g₁.l1Norm_nonneg g₂.l1Norm_nonneg) hg _) P.supNorm_nonneg)
+  calc naiveHeight y = (primitiveMinpoly y).supNorm := rfl
+    _ ≤ 2 ^ Q.natDegree * Q.supNorm := supNorm_le_two_pow_mul_supNorm_of_dvd hdvd hQ0
+    _ ≤ 2 ^ P.natDegree * (P.supNorm * S ^ P.natDegree) :=
+        mul_le_mul (pow_le_pow_right₀ one_le_two hQdeg) hQsup Q.supNorm_nonneg (by positivity)
+    _ = (2 * S) ^ (minpoly ℚ x).natDegree * naiveHeight x := by
+        rw [← natDegree_primitiveMinpoly x, ← naiveHeight_def x, mul_pow]; ring
 
 end TauCeti
