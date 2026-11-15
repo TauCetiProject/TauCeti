@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
+import Mathlib.GroupTheory.FiniteAbelian.Duality
+import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
@@ -80,6 +82,13 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
   `TauCeti.ClassFieldTheory.ker_ideleClassArtinMap`,
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_surjective`: the global Artin map of an abelian
   extension is `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
+
+* `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_fixedField_iff`: an idele class is a norm
+  from the fixed field of a subgroup exactly when its Artin symbol belongs to that subgroup.
+* `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_iff_forall_fixedField_ker`: an idele class
+  is a norm from an abelian extension if and only if it is a norm from each subextension cut out
+  by a character `χ : Gal(L/K) →* Mˣ`, where `M` is a commutative monoid satisfying
+  `HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`.
 
 ## References
 
@@ -298,6 +307,44 @@ theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap 
       σ))
   refine ⟨c.toMul, Group.Abelianization.of_injective ?_⟩
   rw [of_ideleClassArtinMap K L IsSepClosed.lift, ofMul_toMul, hc, toMul_ofMul]
+
+open _root_.IntermediateField GlobalNumberFields in
+/-- An idele class is a norm from the fixed field of a subgroup of the Galois group of a finite
+abelian extension exactly when its Artin symbol belongs to that subgroup. -/
+theorem mem_range_ideleClassNormMap_fixedField_iff (H : Subgroup Gal(L/K))
+    (c : IdeleClassGroup (𝓞 K) K) :
+    c ∈ (ideleClassNormMap K (fixedField H) :
+      IdeleClassGroup (𝓞 (fixedField H)) (fixedField H) →*
+        IdeleClassGroup (𝓞 K) K).range ↔ ideleClassArtinMap K L c ∈ H := by
+  have := IsAbelianGalois.tower_bot K (fixedField H) L
+  rw [← globalArtinMap_eq_zero_iff K _ (IsSepClosed.lift.comp (fixedField H).val)]
+  have h := DFunLike.congr_fun
+    (globalArtinMap_comp K L (fixedField H).val IsSepClosed.lift) (Additive.ofMul c)
+  rw [← h, AddMonoidHom.comp_apply, ← ofMul_toMul (globalArtinMap K L _ _),
+    ← of_ideleClassArtinMap K L IsSepClosed.lift c]
+  simp only [MonoidHom.coe_toAdditive, Function.comp_apply, toMul_ofMul,
+    Group.Abelianization.map_of, ofMul_eq_zero,
+    IntermediateField.restrictNormalHom_val,
+    abelianization_of_restrictNormalHom_fixedField_eq_one_iff]
+
+open _root_.IntermediateField GlobalNumberFields in
+/-- An idele class is a norm from an abelian extension exactly when it is a norm from
+the fixed field of the kernel of every character `χ : Gal(L/K) →* Mˣ`, for a commutative
+monoid `M` satisfying `HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))`. -/
+theorem mem_range_ideleClassNormMap_iff_forall_fixedField_ker
+    (M : Type*) [CommMonoid M] [HasEnoughRootsOfUnity M (Monoid.exponent Gal(L/K))]
+    (c : IdeleClassGroup (𝓞 K) K) :
+    c ∈ (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →*
+      IdeleClassGroup (𝓞 K) K).range ↔
+      ∀ χ : Gal(L/K) →* Mˣ,
+        c ∈ (ideleClassNormMap K (fixedField χ.ker) :
+          IdeleClassGroup (𝓞 (fixedField χ.ker)) (fixedField χ.ker) →*
+            IdeleClassGroup (𝓞 K) K).range := by
+  simp_rw [mem_range_ideleClassNormMap_fixedField_iff K L, MonoidHom.mem_ker]
+  rw [← ker_ideleClassArtinMap, MonoidHom.mem_ker]
+  simpa only [map_one] using
+    (CommGroup.forall_apply_eq_apply_iff Gal(L/K) (M := M)
+      (g := ideleClassArtinMap K L c) (g' := 1)).symm
 
 end Abelian
 

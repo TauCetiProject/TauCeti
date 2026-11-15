@@ -307,6 +307,10 @@ section OfBaseSet
 variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet}
 
 @[simp]
+theorem chart_ofBaseSet (i : Fin A.n) : (A.ofBaseSet h).chart i = A.chart i :=
+  rfl
+
+@[simp]
 theorem image_ofBaseSet (i : Fin A.n) : (A.ofBaseSet h).image i = A.image i :=
   SetLike.ext fun _ ↦ (mem_image (A := A.ofBaseSet h) (i := i)).trans (mem_image (A := A)).symm
 

@@ -26,9 +26,7 @@ jobs:
         contains(github.event.comment.body, 'help wanted')
       )
     # Keep comment commands responsive when GitHub-hosted runners are backlogged.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       # No checkout: neither PR code nor comment text is ever executed.

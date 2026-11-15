@@ -178,6 +178,28 @@ theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
 
+/-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
+because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t ≤ cdf μ x} := by
+  obtain ⟨a, ha⟩ :=
+    eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds ht))
+  refine ⟨a, fun x hx ↦ ?_⟩
+  by_contra hxa
+  exact absurd (ha x (not_le.mp hxa).le) (not_lt.mpr hx)
+
+/-- Below the level `1` some point has cumulative mass strictly above the level, because the
+cumulative distribution function tends to `1` at `+∞`. -/
+theorem nonempty_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
+    {x : ℝ | t < cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists
+
+/-- Above the level `0` the points whose cumulative mass strictly exceeds the level are bounded
+below, because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t < cdf μ x} :=
+  (bddBelow_setOf_le_cdf μ ht).mono (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
+
 /-- The upper tail of a probability measure on the reals is one minus its cumulative distribution
 function. -/
 theorem measureReal_Ioi_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :

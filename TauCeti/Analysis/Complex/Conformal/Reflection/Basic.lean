@@ -38,7 +38,10 @@ the boundary values are real.
 `starSchwarzReflection` is the same extension for functions valued in any additive monoid with a
 `star` operation, whose fixed points play the role of the real values: it is `ξ z` on the closed
 upper half-plane and `star (ξ (conj z))` below it, and it agrees with `schwarzReflection` for
-scalar functions. It is the reflection used by the weak Schwarz reflection principle.
+scalar functions. It is the reflection used by the weak Schwarz reflection principle. It is
+continuous across the real axis when the values there are fixed by `star`, which gives the scalar
+continuity lemma as a special case, and a bound `O((z - z₀)ⁿ)` within the closed upper half-plane
+at a point `z₀` of it passes to the reflection on a full neighbourhood of `z₀`.
 
 The last section turns conjugation symmetry into a statement about limits at a real point: a
 holomorphic function on a punctured disc about a real point which commutes with conjugation has a
@@ -297,46 +300,6 @@ lemma image_conj_inter_im_nonneg_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (
     · rw [starRingEnd_self_apply]
 
 /--
-If a domain `Ω` is closed under conjugation, `f` is continuous on its closed upper half-plane
-part, and `f` takes real values at the real-axis points of `Ω`, then the explicit
-Schwarz-reflection extension is continuous on `Ω`.
--/
-lemma continuousOn_schwarzReflection_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
-    (hf : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) :
-    ContinuousOn (schwarzReflection f) Ω := by
-  have hUclosed : IsClosed {z : ℂ | 0 ≤ z.im} :=
-    isClosed_Ici.preimage Complex.continuous_im
-  have hlower : ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-      (Ω ∩ {z : ℂ | z.im ≤ 0}) := by
-    rw [← image_conj_inter_im_nonneg_of_symmetric hΩ]
-    exact continuousOn_conj_conj (S := Ω ∩ {z : ℂ | 0 ≤ z.im}) (f := f) hf
-  have hpiece :
-      ContinuousOn (fun z : ℂ =>
-        if 0 ≤ z.im then f z else (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) Ω := by
-    refine ContinuousOn.if ?_ ?_ ?_
-    · intro z hz
-      rw [Set.mem_inter_iff, Complex.frontier_setOfPred_le_im, Set.mem_ofPred_eq] at hz
-      exact apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero (f := f) hz.2
-        (hreal z hz.1 hz.2)
-    · rwa [hUclosed.closure_eq]
-    · simp only [not_le]
-      rw [Complex.closure_setOfPred_im_lt]
-      exact hlower
-  exact hpiece.congr fun z _ => schwarzReflection_def f z
-
-/--
-If `f` is continuous on the closed upper half-plane and takes real values on the real axis,
-then its explicit Schwarz-reflection extension is continuous on the plane.
--/
-lemma continuous_schwarzReflection (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im})
-    (hreal : ∀ z : ℂ, z.im = 0 → (f z).im = 0) :
-    Continuous (schwarzReflection f) := by
-  rw [← continuousOn_univ]
-  refine continuousOn_schwarzReflection_of_symmetric (Ω := Set.univ)
-    (Set.mapsTo_univ _ _) ?_ (fun z _ => hreal z)
-  rwa [Set.univ_inter]
-
-/--
 Antiholomorphic-composition prerequisite for Schwarz reflection.
 
 If `f` is holomorphic on `S`, then `z ↦ conj (f (conj z))` is holomorphic on the reflected
@@ -498,6 +461,11 @@ coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` bel
 noncomputable def starSchwarzReflection (ξ : ℂ → F) (z : ℂ) : F :=
   if 0 ≤ z.im then ξ z else star (ξ (conj z))
 
+/-- The reflection is the explicit upper/lower half-plane witness. -/
+theorem starSchwarzReflection_def (ξ : ℂ → F) (z : ℂ) :
+    starSchwarzReflection ξ z = if 0 ≤ z.im then ξ z else star (ξ (conj z)) := by
+  rw [starSchwarzReflection]
+
 @[simp]
 theorem starSchwarzReflection_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
     starSchwarzReflection ξ z = ξ z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
@@ -511,6 +479,65 @@ theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
     starSchwarzReflection f = schwarzReflection f := by
   ext z
   rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
+
+/-- On a subset of the closed upper half-plane, the reflection agrees with the original map. -/
+theorem eqOn_starSchwarzReflection_of_subset_im_nonneg {S : Set ℂ}
+    (hS : S ⊆ {z : ℂ | 0 ≤ z.im}) : Set.EqOn (starSchwarzReflection ξ) ξ S :=
+  fun _ hz ↦ starSchwarzReflection_of_im_nonneg (hS hz)
+
+/-- The reflection commutes with multiplication by a scalar fixed by `star`, such as a real
+scalar. -/
+theorem starSchwarzReflection_const_smul {R : Type*} [Star R] [TrivialStar R] [SMul R F]
+    [StarModule R F] (c : R) (ξ : ℂ → F) :
+    starSchwarzReflection (fun z ↦ c • ξ z) = fun z ↦ c • starSchwarzReflection ξ z := by
+  ext z
+  by_cases hz : 0 ≤ z.im
+  · simp only [starSchwarzReflection_of_im_nonneg hz]
+  · simp only [starSchwarzReflection_of_im_neg (not_le.1 hz), star_smul, star_trivial]
+
+/-- **Continuity of the reflection.** On a conjugation-invariant set, a map continuous up to the
+real axis and real there, in the sense that its values are fixed by `star`, has a continuous
+reflection. -/
+theorem continuousOn_starSchwarzReflection_of_symmetric [TopologicalSpace F] [ContinuousStar F]
+    {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hξ : ContinuousOn ξ (Ω ∩ {z | 0 ≤ z.im}))
+    (hreal : ∀ x : ℝ, (x : ℂ) ∈ Ω → star (ξ x) = ξ x) :
+    ContinuousOn (starSchwarzReflection ξ) Ω := by
+  have hlower : ContinuousOn (fun z ↦ star (ξ (conj z))) (Ω ∩ {z | z.im ≤ 0}) :=
+    continuous_star.comp_continuousOn (hξ.comp Complex.continuous_conj.continuousOn
+      fun z hz ↦ ⟨hΩ hz.1, by simpa using hz.2⟩)
+  refine (ContinuousOn.if (fun z hz ↦ ?_) ?_ ?_).congr fun z _ ↦ starSchwarzReflection_def ξ z
+  · rw [mem_inter_iff, Complex.frontier_setOfPred_le_im, mem_ofPred_eq] at hz
+    have hzx : z = (z.re : ℂ) := Complex.ext rfl (by simpa using hz.2)
+    rw [Complex.conj_eq_iff_im.2 hz.2, eq_comm, hzx]
+    exact hreal z.re (hzx ▸ hz.1)
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp only [not_le]
+    rwa [Complex.closure_setOfPred_im_lt]
+
+/--
+If a domain `Ω` is closed under conjugation, `f` is continuous on its closed upper half-plane
+part, and `f` takes real values at the real-axis points of `Ω`, then the explicit
+Schwarz-reflection extension is continuous on `Ω`.
+-/
+lemma continuousOn_schwarzReflection_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hf : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) :
+    ContinuousOn (schwarzReflection f) Ω := by
+  rw [← starSchwarzReflection_eq_schwarzReflection]
+  refine continuousOn_starSchwarzReflection_of_symmetric hΩ hf fun x hx ↦ ?_
+  rw [Complex.star_def]
+  exact Complex.conj_eq_iff_im.2 (hreal x hx (Complex.ofReal_im x))
+
+/--
+If `f` is continuous on the closed upper half-plane and takes real values on the real axis,
+then its explicit Schwarz-reflection extension is continuous on the plane.
+-/
+lemma continuous_schwarzReflection (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hreal : ∀ z : ℂ, z.im = 0 → (f z).im = 0) :
+    Continuous (schwarzReflection f) := by
+  rw [← continuousOn_univ]
+  refine continuousOn_schwarzReflection_of_symmetric (Ω := Set.univ)
+    (Set.mapsTo_univ _ _) ?_ (fun z _ => hreal z)
+  rwa [Set.univ_inter]
 
 @[simp]
 theorem starSchwarzReflection_zero {F : Type*} [AddMonoid F] [StarAddMonoid F] :
@@ -527,6 +554,42 @@ theorem starSchwarzReflection_conj {F : Type*} [InvolutiveStar F] {ξ : ℂ → 
       starSchwarzReflection_of_im_neg hz, star_star]
   · rw [starSchwarzReflection_of_im_neg (by simpa using hz),
       starSchwarzReflection_of_im_nonneg hz.le, conj_conj]
+
+open Asymptotics Topology in
+/-- **Vanishing order transfers to the reflection.** At a point `z₀` of the closed upper
+half-plane, a bound `ξ = O((z - z₀)ⁿ)` within the closed upper half-plane gives the same bound for
+the reflection in a full neighbourhood of `z₀`. -/
+theorem isBigO_starSchwarzReflection_sub_pow {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [StarAddMonoid F] [StarModule ℝ F] [ContinuousStar F] {ξ : ℂ → F} {z₀ : ℂ} (hz₀ : 0 ≤ z₀.im)
+    {n : ℕ} (h : ξ =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n) :
+    starSchwarzReflection ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
+  have hup : starSchwarzReflection ξ =O[𝓝[{z | 0 ≤ z.im}] z₀] fun z ↦ (z - z₀) ^ n :=
+    h.congr' (eventually_nhdsWithin_of_forall fun z hz ↦
+      (starSchwarzReflection_of_im_nonneg hz.out).symm) EventuallyEq.rfl
+  rcases hz₀.lt_or_eq with hpos | hzero
+  · rwa [nhdsWithin_eq_nhds.2 (mem_of_superset
+      ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hpos)
+      fun w hw ↦ mem_ofPred.2 hw.out.le)] at hup
+  · have hc : conj z₀ = z₀ := Complex.conj_eq_iff_im.2 hzero.symm
+    have ht : Tendsto (starRingEnd ℂ) (𝓝[{z | z.im < 0}] z₀) (𝓝[{z | 0 ≤ z.im}] z₀) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦ ?_⟩
+      · have := (Complex.continuous_conj.tendsto z₀).mono_left
+          (nhdsWithin_le_nhds (s := {z : ℂ | z.im < 0}))
+        rwa [hc] at this
+      · simpa using hz.out.le
+    have hlow : starSchwarzReflection ξ =O[𝓝[{z | z.im < 0}] z₀] fun z ↦ (z - z₀) ^ n := by
+      have h2 := ((starL' ℝ : F ≃L[ℝ] F).toContinuousLinearMap.isBigO_comp _ _).trans
+        (h.comp_tendsto ht)
+      simp only [ContinuousLinearEquiv.coe_coe, starL'_apply, Function.comp_def] at h2
+      refine (h2.trans (isBigO_of_le _ fun z ↦ ?_)).congr'
+        (eventually_nhdsWithin_of_forall fun z hz ↦
+          (starSchwarzReflection_of_im_neg hz.out).symm) EventuallyEq.rfl
+      have hz : conj z - z₀ = conj (z - z₀) := by rw [map_sub, hc]
+      rw [hz, ← map_pow, Complex.norm_conj]
+    have hU : {z : ℂ | 0 ≤ z.im} ∪ {z | z.im < 0} = univ := by
+      ext z; simp [le_or_gt]
+    have := hup.sup hlow
+    rwa [← nhdsWithin_union, hU, nhdsWithin_univ] at this
 
 /-- **Check.** The reflection of the identity, which is real on the real axis, is the identity. -/
 theorem starSchwarzReflection_id : starSchwarzReflection (id : ℂ → ℂ) = id := by
