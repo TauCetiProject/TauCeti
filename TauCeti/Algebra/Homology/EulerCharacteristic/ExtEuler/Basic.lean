@@ -42,7 +42,7 @@ The value is defined by truncating the sum to the degrees below an explicit boun
   Ext-Euler characteristic of the pair `(X, Y)` exists.
 * `TauCeti.IsExtBoundedOn` and `TauCeti.IsEulerAdmissibleOn`: respectively, uniform boundedness
   and pointwise Euler-admissibility for a pair of object properties; the latter is the hypothesis
-  Layer 5's descent to Grothendieck groups will consume.
+  of the descent to Grothendieck groups, `TauCeti.extEulerPairing`.
 * `TauCeti.truncatedExtEuler` and `TauCeti.extEuler`: the truncated alternating sum, and the
   Ext-Euler characteristic of an Euler-admissible pair.
 
@@ -65,10 +65,10 @@ The value is defined by truncating the sum to the degrees below an explicit boun
   `Ext`-finiteness, and is kept as a separate predicate.
 * `TauCeti.extEuler_projective`: **projective evaluation**, `χ(P, Y) = dim_k Hom(P, Y)`.
 
-The remaining Layer 5 targets — the long exact sequences cut off by the vanishing bound, the
-resulting additivity of `χ` in both variables, and the descent of `χ` to a biadditive pairing on
-Grothendieck groups — are not proved here; this file supplies the finiteness interface they are
-stated over.
+Additivity of `χ` in both variables, obtained by cutting the long exact `Ext` sequences off at the
+vanishing bound, and the descent of `χ` to a biadditive pairing on Grothendieck groups are proved
+in `TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Descent`; this file supplies the
+finiteness interface they are stated over.
 
 ## References
 
@@ -79,9 +79,6 @@ stated over.
   Associative Algebras, Volume 1*, LMS Student Texts 65, Cambridge University Press (2006),
   Chapter III, Section 3, Proposition 3.13, for the Euler form of an algebra of finite global
   dimension.
-* [The Tau Ceti Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 5, whose "Ext-finite pairs" bullet and the first half of its "Ext-Euler value" bullet are
-  the targets proved here.
 -/
 
 public section
@@ -215,6 +212,13 @@ returning its `0` fallback elsewhere. Truncating at an explicit bound is what ke
 summand a genuine dimension, and a vanishing bound for `N`. -/
 noncomputable def truncatedExtEuler (X Y : C) (N : ℕ) : ℤ :=
   ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ)
+
+/-- The truncated Ext-Euler characteristic is the alternating sum of the `Ext` dimensions below
+`N`. -/
+theorem truncatedExtEuler_def (X Y : C) (N : ℕ) :
+    truncatedExtEuler.{w} k X Y N =
+      ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ) := by
+  rw [truncatedExtEuler]
 
 /-- The empty truncation of the alternating sum is zero. -/
 @[simp]
@@ -452,8 +456,7 @@ theorem isExtBoundedBy_one_of_projective (P Y : C) [Projective P] : IsExtBounded
     simpa [Nat.add_comm] using Ext.subsingleton_of_projective.{w} P Y m⟩
 
 /-- If every object satisfying `P` is projective, then `1` is a uniform `Ext`-vanishing bound for
-`P` against an arbitrary `Q`. This is the degenerate case of a uniform global-dimension bound, and
-the one Layer 4's Cartan comparison uses on the subcategory of projectives. -/
+`P` against an arbitrary `Q`. This is the degenerate case of a uniform global-dimension bound. -/
 theorem isExtBoundedOn_one_of_projective {P : ObjectProperty C} (hP : ∀ X, P X → Projective X)
     (Q : ObjectProperty C) : IsExtBoundedOn.{w} P Q 1 :=
   ⟨fun X Y hX _ ↦ haveI := hP X hX

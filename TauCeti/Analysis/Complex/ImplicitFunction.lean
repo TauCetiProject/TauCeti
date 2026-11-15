@@ -60,13 +60,13 @@ theorem exists_jointImplicitFunction_of_eventually_differentiableAt {G : E₁ ×
     ∃ ψ : E₁ × F → E₂, (∀ᶠ p in 𝓝 (u.1, G u), AnalyticAt ℂ ψ p) ∧ ψ (u.1, G u) = u.2 ∧
       (∀ᶠ p in 𝓝 (u.1, G u), G (p.1, ψ p) = p.2) ∧
       ∀ᶠ q in 𝓝 (u, G u), G q.1 = q.2 ↔ ψ (q.1.1, q.2) = q.1.2 := by
-  have := FiniteDimensional.complete ℂ E₁
-  have := FiniteDimensional.complete ℂ E₂
+  have := FiniteDimensional.completeSpace ℂ E₁
+  have := FiniteDimensional.completeSpace ℂ E₂
   -- `F` is isomorphic to `E₂` through the partial derivative, hence complete
   have : FiniteDimensional ℂ F :=
     let ⟨e, _⟩ := hinv
     LinearEquiv.finiteDimensional e.toLinearEquiv
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have hGa : AnalyticAt ℂ G u := DifferentiableOn.analyticAt_of_finiteDimensional
     (s := {x | DifferentiableAt ℂ G x}) (fun _ hx ↦ hx.differentiableWithinAt) hG
   have dfu := hGa.hasStrictFDerivAt

@@ -42,8 +42,7 @@ The node numbering and the Cartan matrix follow Bourbaki, *Lie Groups and Lie Al
 Chapters 4--6*, Plate VIII. The coordinate tables here are not in Bourbaki's orthonormal model, in
 which the long roots are `±eᵢ ± eⱼ` and the short roots are `±eᵢ` and `(±e₁ ± e₂ ± e₃ ± e₄) / 2`:
 they are written in the fundamental-weight basis for the roots and the simple-coroot basis for the
-coroots. This is the `F4` branch of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+coroots.
 -/
 
 public section

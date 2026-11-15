@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Integrability criteria
@@ -29,7 +30,9 @@ integrability of the corresponding absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
-integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`).
+integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
+a set containing the support of an integrable function keeps it integrable
+(`MeasureTheory.Integrable.smul_of_support_subset`).
 -/
 
 public section
@@ -75,8 +78,8 @@ theorem Integrable.isFiniteMeasure_of_one_le_norm {X F : Type*} [MeasurableSpace
     [SeminormedAddGroup F] {f : X → F} {μ : Measure X} (hf : Integrable f μ)
     (h_one : ∀ᵐ x ∂μ, 1 ≤ ‖f x‖) : IsFiniteMeasure μ :=
   (hasFiniteIntegral_const_iff_isFiniteMeasure (one_ne_zero (α := ℝ))).1 <|
-    hf.hasFiniteIntegral.mono_enorm <| h_one.mono fun _ hx ↦ by
-      rwa [enorm_le_iff_norm_le, norm_one]
+    hf.hasFiniteIntegral.mono_eNorm <| h_one.mono fun _ hx ↦ by
+      rwa [eNorm_le_iff_norm_le, norm_one]
 
 /-- The pointwise supremum over a nonempty finset of integrable functions with values in a normed
 lattice is integrable. -/
@@ -104,6 +107,16 @@ theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {
     (Filter.Eventually.of_forall fun y => by
       simpa only [Real.norm_eq_abs, abs_abs] using Real.abs_rpow_le_abs_rpow (g y) p)
 
+/-- An integrable function times a multiplier bounded on a set containing its support is
+integrable. -/
+theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+    Integrable (fun x ↦ g x • f x) μ :=
+  (hf.norm.const_mul K).mono' (hg.smul hf.1)
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
 end MeasureTheory
 
 namespace TauCeti
@@ -117,7 +130,7 @@ theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGr
     (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
   -- Apply the normed-target moment lemma to the real-valued norm.
   simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
-    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+    (hν.of_le_eNorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
 
 /-- For a positive real order, `Lᵖ` membership of the identity on the real line is
 equivalent to integrability of the absolute power. -/

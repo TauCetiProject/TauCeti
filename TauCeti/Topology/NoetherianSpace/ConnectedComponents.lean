@@ -28,9 +28,9 @@ components is a finite discrete space, and every connected component is open as 
 
 * The Stacks Project, Tag 0052, *Noetherian topological spaces*.
 
-The finite-component conclusion is used for the identity-component and component-group
-milestone in Layer 3 of the ReductiveGroups roadmap. Applied to the spectrum of a finite-type
-coordinate algebra, it supplies the finiteness input for the construction of `π₀`.
+The finite-component conclusion is the finiteness input for the component group `π₀` of an affine
+algebraic group: applied to the spectrum of a finite-type coordinate algebra, it gives
+`TauCeti.FiniteTypeCommHopfAlgCat.instFiniteConnectedComponents`.
 -/
 
 public section

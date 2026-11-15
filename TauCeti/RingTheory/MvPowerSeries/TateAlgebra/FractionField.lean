@@ -180,7 +180,7 @@ variable [IsEmpty σ]
 theorem algebraMap_gaussFractionField_surjective :
     Function.Surjective (algebraMap K (GaussFractionField σ K c)) := by
   intro x
-  obtain ⟨f, g, hg, rfl⟩ := IsFractionRing.div_surjective Tate x
+  obtain ⟨f, g, _, rfl⟩ := IsFractionRing.div_surjective Tate x
   obtain ⟨a, ha⟩ := C_surjective (f : _root_.MvPowerSeries σ K)
   obtain ⟨b, hb⟩ := C_surjective (g : _root_.MvPowerSeries σ K)
   have hf : f = algebraMap K Tate a := Subtype.ext ha.symm

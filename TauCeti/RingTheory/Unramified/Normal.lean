@@ -43,7 +43,7 @@ By the local structure of unramified algebras
 induced map `A_Q → S_q` is surjective. As `A` is étale over `R` and `R_p` is a normal domain,
 `A_Q` is a (normal) domain (Stacks, Lemma 10.163.9 (033C)), and `ht Q ≤ ht p ≤ ht q` because `A`
 is quasi-finite over `R`. A surjection from a domain of finite dimension onto a ring of at least
-the same dimension is injective (`RingHom.injective_of_surjective_of_ringKrullDim_le`), so
+the same dimension is injective (`RingHom.injective_iff_ringKrullDim_le_of_surjective`), so
 `S_q ≅ A_Q` is formally étale over `R`.
 
 ## Main results
@@ -119,7 +119,7 @@ theorem IsEtaleAt.of_isUnramifiedAt_of_height_le [IsNoetherianRing R] [FiniteTyp
       IsLocalization.AtPrime.ringKrullDim_eq_height q T]
     exact_mod_cast (Ideal.height_le_height_of_quasiFiniteAt (Q.under R) Q).trans h
   have hinj : Function.Injective θ :=
-    θ.toRingHom.injective_of_surjective_of_ringKrullDim_le hsurj hD
+    (θ.toRingHom.injective_iff_ringKrullDim_le_of_surjective hsurj).2 hD
   exact FormallyEtale.of_equiv (AlgEquiv.ofBijective θ ⟨hinj, hsurj⟩)
 
 /-- Let `S` be an integral, torsion-free algebra of essentially finite type over a Noetherian

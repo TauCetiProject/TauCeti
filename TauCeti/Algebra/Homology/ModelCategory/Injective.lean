@@ -105,7 +105,7 @@ theorem rlp_monomorphisms_f {X Y : CochainComplex C ℤ} {p : X ⟶ Y}
       (u ≫ (HomologicalComplex.doubleXIso₀ (𝟙 N) hn).inv)
       (u ≫ (HomologicalComplex.doubleXIso₁ (𝟙 N) hn hn').inv)
       (by simp [HomologicalComplex.double_d _ _ hn'])
-      (fun k hk ↦ by rw [HomologicalComplex.double_d_eq_zero₀ _ _ _ _ (by omega),
+      (fun k _ ↦ by rw [HomologicalComplex.double_d_eq_zero₀ _ _ _ _ (by omega),
         comp_zero])
   have hDu {K : CochainComplex C ℤ} (g : HomologicalComplex.double (𝟙 N) hn ⟶ K) :
       (e M).homEquiv (Du ≫ g) = u ≫ (e N).homEquiv g := by

@@ -116,7 +116,6 @@ the integer difference of the coordinates gives the centered discrete Laplace la
 theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
     ((geometricMeasure p).prod (geometricMeasure p)).map (fun z : ℕ × ℕ => (z.1 : ℤ) - z.2) =
       discreteLaplaceMeasure 0 (1 - p) := by
-  have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
   have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
   refine Measure.ext_of_singleton fun k => ?_
   obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg

@@ -126,3 +126,24 @@ theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (h
   exact hx
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearEquiv
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F]
+
+/-- The affine map `z ↦ x + L⁻¹ (t • z)` sends a subset of the unit ball into the ball of radius
+`R` around `x` as soon as `t ‖L⁻¹‖ < R`. -/
+theorem image_add_symm_smul_subset_ball (L : E ≃L[ℝ] F) (x : E) {t R : ℝ} (ht : 0 ≤ t)
+    (htR : t * ‖(L.symm : F →L[ℝ] E)‖ < R) {S : Set F} (hS : S ⊆ Metric.ball 0 1) :
+    (fun z ↦ x + L.symm (t • z)) '' S ⊆ Metric.ball x R := by
+  rintro _ ⟨z, hz, rfl⟩
+  have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hS hz)
+  rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left]
+  calc ‖L.symm (t • z)‖
+      ≤ ‖(L.symm : F →L[ℝ] E)‖ * ‖t • z‖ := (L.symm : F →L[ℝ] E).le_opNorm _
+    _ = t * ‖(L.symm : F →L[ℝ] E)‖ * ‖z‖ := by rw [norm_smul, Real.norm_of_nonneg ht]; ring
+    _ ≤ t * ‖(L.symm : F →L[ℝ] E)‖ := mul_le_of_le_one_right (by positivity) hz1.le
+    _ < R := htR
+
+end ContinuousLinearEquiv

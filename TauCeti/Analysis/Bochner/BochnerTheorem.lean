@@ -87,7 +87,6 @@ than through `MeasureTheory.charFun`.
 
 * S. Bochner, *Vorlesungen über Fouriersche Integrale*, Akademische Verlagsgesellschaft (1932).
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section
@@ -220,12 +219,12 @@ theorem exists_isFiniteMeasure_integral_fourierAtom_eq
     rw [integral_smul_measure, ENNReal.toReal_ofReal hpos.le, hμ_rep v, hG_def,
       Complex.real_smul, ← mul_assoc, mul_inv_cancel₀ hcne, one_mul]
 
-/-- **Converse half of Bochner's theorem.** The Fourier-convention transform of a finite measure
-is continuous and positive definite. -/
+/-- **Converse half of Bochner's theorem.** The Fourier-convention transform of a measure is
+continuous and positive definite. -/
 theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq
     {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
     [OpensMeasurableSpace V] {F : V → ℂ}
-    (μ : Measure V) [IsFiniteMeasure μ] (hrep : ∀ v, F v = ∫ q, fourierAtom v q ∂μ) :
+    (μ : Measure V) (hrep : ∀ v, F v = ∫ q, fourierAtom v q ∂μ) :
     Continuous F ∧ IsPositiveDefiniteSub F := by
   refine ⟨?_, IsPositiveDefiniteSub.of_posSemidef ?_⟩
   · rw [funext hrep]
@@ -253,8 +252,7 @@ theorem bochner (F : V → ℂ) :
     have := hνfin
     exact Measure.ext_of_forall_integral_fourierAtom_eq
       fun v => (hνrep v).symm.trans (hrep v)
-  · rintro ⟨μ, ⟨hfin, hrep⟩, -⟩
-    have := hfin
+  · rintro ⟨μ, ⟨-, hrep⟩, -⟩
     exact continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq μ hrep
 
 /-- **Bochner's theorem, kernel form.** The subtraction kernel `(a, b) ↦ F (a - b)` of a

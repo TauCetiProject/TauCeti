@@ -453,7 +453,7 @@ theorem exists_eq_smul_linearIsometry_inversion_add_of_inner_fderiv
     · rintro ⟨x, hx, rfl⟩
       exact ⟨(inversion_eq_center one_ne_zero).not.2 (hbU x hx),
         by simpa [inversion_inversion b one_ne_zero] using hx⟩
-    · rintro ⟨hy, hyU⟩
+    · rintro ⟨_, hyU⟩
       exact ⟨inversion b 1 y, hyU, inversion_inversion b one_ne_zero y⟩
   have hVo : IsOpen (inversion b 1 '' U) := by
     rw [hV]

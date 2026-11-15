@@ -168,7 +168,7 @@ private theorem terminal_pair_hexagon {x y z : GridState n}
     dsimp only [D]
     rw [P.right_eq]
     exact hcol
-  obtain ⟨hfr, hsl, hfb, hft, hsb, hst⟩ :=
+  obtain ⟨_, _, _, _, hsb, hst⟩ :=
     D.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol' hp hq
   have hsb' : E.second.bottom = Q.bottom := hsb
   have hst' : E.second.top = P.top := hst

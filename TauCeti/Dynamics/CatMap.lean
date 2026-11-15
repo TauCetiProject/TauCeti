@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Symplectic
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -21,7 +22,10 @@ the numerical data of `P` that enter the zeta function of its iterates:
 * `det (1 - t P) = 1 - 3 t + t ^ 2` and `det (1 - P) = -1`;
 * every iterate is nondegenerate: `det (1 - P ^ n) < 0` for `n ≥ 1`, so `1` is never an eigenvalue
   of `P ^ n`;
-* `det (1 - t P) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`.
+* `det (1 - t P) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`;
+* this is the homological zeta function `exp (∑ₙ L (φ ^ n) tⁿ / n)` of the cat map `φ`, whose
+  Lefschetz numbers `L (φ ^ n) = 2 - tr (P ^ n)` come from its action by `1`, `P` and `det P = 1`
+  on `H₀`, `H₁` and `H₂` of the torus.
 
 ## Main results
 
@@ -30,6 +34,8 @@ the numerical data of `P` that enter the zeta function of its iterates:
 * `TauCeti.charpolyRev_catMap`, `TauCeti.det_one_sub_catMap`: `det (1 - t P)` and `det (1 - P)`.
 * `TauCeti.det_one_sub_catMap_pow_neg`: `det (1 - P ^ n) < 0` for `n ≠ 0`.
 * `TauCeti.coe_charpolyRev_catMap_mul_mk_one_sq`: the expansion of `det (1 - t P) / (1 - t) ^ 2`.
+* `TauCeti.subst_exp_two_sub_trace_catMap_pow`: the homological zeta function of the cat map is
+  `1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`.
 -/
 
 public section
@@ -99,5 +105,48 @@ theorem coe_charpolyRev_catMap_mul_mk_one_sq :
   · subst hn
     simp [charpolyRev_catMap]
   · exact coeff_coe_charpolyRev_catMap_mul_mk_one_sq hn
+
+/-- **The homological zeta function of the cat map.** The cat map `φ` acts on `H₀`, `H₁` and `H₂`
+of the torus by `1`, `P` and `det P = 1`, so the Lefschetz number of `φ ^ n` is
+`L (φ ^ n) = 2 - tr (P ^ n)`. Its homological zeta function `exp (∑ₙ L (φ ^ n) tⁿ / n)` is
+`det (1 - t P) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`, by the trace–determinant formula
+`Matrix.logOf_charpolyRev`. -/
+theorem subst_exp_two_sub_trace_catMap_pow :
+    (PowerSeries.exp ℚ).subst
+        (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))) =
+      PowerSeries.mk fun n ↦ if n = 0 then 1 else -(n : ℚ) := by
+  set P := catMap.map (Int.castRingHom ℚ) with hP
+  set L : PowerSeries ℚ := PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))
+  have htr (n : ℕ) : (((catMap ^ n).trace : ℤ) : ℚ) = (P ^ n).trace := by
+    rw [hP, ← RingHom.mapMatrix_apply, ← map_pow]
+    exact AddMonoidHom.map_trace (Int.castRingHom ℚ).toAddMonoidHom _
+  have hL : PowerSeries.constantCoeff L = 0 := by simp [L]
+  have hX : (1 - PowerSeries.X : PowerSeries ℚ) = 1 - PowerSeries.C 1 * PowerSeries.X := by
+    rw [map_one, one_mul]
+  have hc : PowerSeries.constantCoeff (1 - PowerSeries.X : PowerSeries ℚ) = 1 := by simp
+  -- `exp L (1 - t) ^ 2 = det (1 - t P)`, comparing logarithms.
+  have hkey : (PowerSeries.exp ℚ).subst L * (1 - PowerSeries.X) ^ 2 =
+      (P.charpolyRev : PowerSeries ℚ) := by
+    rw [← PowerSeries.logOf_inj (by simp [hL]) (Matrix.constantCoeff_coe_charpolyRev P), pow_two,
+      PowerSeries.logOf_mul (PowerSeries.constantCoeff_subst_exp hL) (by simp),
+      PowerSeries.logOf_mul hc hc, PowerSeries.logOf_subst_exp hL, Matrix.logOf_charpolyRev, hX,
+      PowerSeries.logOf_one_sub_C_mul_X]
+    ext n
+    simp only [L, map_add, PowerSeries.coeff_mk, htr, one_pow]
+    rw [← smul_add, ← smul_add]
+    congr 1
+    ring
+  have hone : (1 - PowerSeries.X : PowerSeries ℚ) ^ 2 * PowerSeries.mk 1 ^ 2 = 1 := by
+    rw [← mul_pow, mul_comm, PowerSeries.mk_one_mul_one_sub_eq_one, one_pow]
+  have hmk : PowerSeries.map (Int.castRingHom ℚ) (PowerSeries.mk 1) = PowerSeries.mk 1 := by
+    ext n
+    simp
+  -- Map the integral expansion of `det (1 - t P) / (1 - t) ^ 2` to `ℚ`.
+  have hmap := congrArg (PowerSeries.map (Int.castRingHom ℚ)) coe_charpolyRev_catMap_mul_mk_one_sq
+  rw [map_mul, map_pow, ← Polynomial.polynomial_map_coe, ← charpolyRev_map, ← hP, hmk] at hmap
+  rw [← mul_one ((PowerSeries.exp ℚ).subst L), ← hone, ← mul_assoc, hkey, hmap]
+  ext n
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk]
+  split_ifs <;> simp
 
 end TauCeti

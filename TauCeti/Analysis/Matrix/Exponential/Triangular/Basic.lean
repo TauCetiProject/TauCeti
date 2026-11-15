@@ -487,7 +487,6 @@ theorem triangularExpRemainder_congr {m : â„•} {X Y : Matrix (Fin m) (Fin m) ğ•
   intro a b hab
   apply hXY
   simp only [Fin.intervalOrderEmbOfLt_apply_val]
-  have hi := hij
   omega
 
 /-- In the `(i,j)` entry of the exponential, the coefficient of `X i j` is the divided

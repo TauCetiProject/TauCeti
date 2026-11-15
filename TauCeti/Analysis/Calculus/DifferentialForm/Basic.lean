@@ -149,7 +149,7 @@ theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
   rw [extDerivWithin_congr_set h]
   apply Filter.EventuallyEq.extDerivWithin_eq
-  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+  · filter_upwards [(Filter.Eventually.eventually_nhds h).filter_mono nhdsWithin_le_nhds] with y hy
     exact extDerivWithin_congr_set hy
   · exact extDerivWithin_congr_set h
 
@@ -262,7 +262,7 @@ theorem extDeriv_pullback_eq_zero {E' : Type*} [NormedAddCommGroup E'] [NormedSp
     (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
     extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
   rw [A.extDeriv_pullback hω, hdω]
-  ext v
+  ext _
   simp
 
 /-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on

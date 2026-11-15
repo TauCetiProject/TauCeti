@@ -116,13 +116,13 @@ private theorem ofReal_abs_integral_mul_inner_polarDensity_le
   have hφ : (φ : E → ℝ) = ψ := coe_mk
   simp only [divergenceCLM_postcompCLM_toSpanSingleton, postcompCLM_apply, comp_apply,
     ContinuousLinearMap.toSpanSingleton_apply, hφ, real_inner_smul_left] at h
-  rw [← abs_neg, ← h, ← Real.enorm_eq_ofReal_abs]
-  refine (enorm_integral_le_lintegral_enorm _).trans <|
+  rw [← abs_neg, ← h, ← Real.eNorm_eq_ofReal_abs]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans <|
     (lintegral_mono fun y => ?_).trans (lintegral_indicator_const_le _ _)
   have hd : ∂_{v} φ y = fderiv ℝ ψ y v := by
     rw [lineDerivOp_apply]
     exact (hψ.differentiable (by simp) y).lineDeriv_eq_fderiv
-  rw [hd, enorm_mul]
+  rw [hd, eNorm_mul]
   refine le_trans ?_ (enorm_fderiv_mul_indicator_le_indicator hψ01 hψ1 hψR hψK s y)
   gcongr
   exact (fderiv ℝ ψ y).le_opENorm_of_le (by simpa [← ofReal_norm] using hv) |>.trans_eq (mul_one _)
@@ -149,7 +149,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
         (by rwa [Subtype.range_coe]))
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
   choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
-    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hr hh ht
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hh ht
   -- The pairings with the cutoffs converge to `⟪v, Dχ_s (closedBall x r)⟫`.
   have hlim : Tendsto (fun h => ∫ y, ψ h y * ⟪v, σ y⟫ ∂ν) (𝓝[>] 0)
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by
@@ -202,7 +202,7 @@ theorem enorm_setIntegral_polarDensity_closedBall_le_liminf (hΩ : closedBall x 
     simpa using ENNReal.le_add_of_forall_one_lt_le_add_mul (b := 0) fun t ht => by
       simpa using ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf hu hfin hr hΩ hv ht
   rcases eq_or_ne w 0 with hw | hw
-  · rw [hw, enorm_zero]
+  · rw [hw, eNorm_zero]
     exact zero_le
   have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw
   have h := key (‖w‖⁻¹ • w) (by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hw'.ne'])
@@ -300,16 +300,10 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     {t : ℝ≥0} (ht : 1 < t) :
     ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_variationMeasure_closedBall_le hx ht, Ioc_mem_nhdsGT hε]
-    with r hr hrε
-  have hball : ball x r ⊆ closedBall x r := ball_subset_closedBall
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin
-    (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
-  exact (measure_mono (preimage_mono hball)).trans hr
+  filter_upwards [eventually_variationMeasure_closedBall_le hx ht,
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r hr hP
+  exact hP.trans hr
 
 /-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
 an additive Haar measure on a space of dimension `n`. Every set `A` of points of the reduced

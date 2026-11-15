@@ -26,12 +26,6 @@ Nothing here is specific to Young symmetrizers; taking `a` to be one is the Weyl
 * `TauCeti.tensorPowerPermMap`: acting on `⨂[R]^d M` by an element of `R[S_d]`, as an
   intertwining map of the tensor power with itself.
 * `TauCeti.tensorPowerRange`: the image of that map, as a subrepresentation.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", whose Weyl-module target consumes this
-  construction.
 -/
 
 public section

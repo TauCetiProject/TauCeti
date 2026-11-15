@@ -43,9 +43,9 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
     {μ : Measure X}
     (hf : ContinuousOn f K) (hK : IsCompact K) (hs : MeasurableSet s) (hsK : s ⊆ K) :
     MemLp f ∞ (μ.restrict s) := by
-  obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnnorm.comp_continuousOn hf)).bddAbove
-  refine memLp_top_of_bound_enorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
-  filter_upwards [ae_restrict_mem hs] with x hx using enorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+  obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
+  refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
+  filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
 
 section CLMComp
 

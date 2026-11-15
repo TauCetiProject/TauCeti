@@ -65,11 +65,6 @@ universe u v w
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance instContinuousSMulOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    ContinuousSMul G A.obj.V := A.property.continuousSMul
-
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
@@ -372,7 +367,6 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
   (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
 
 local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
-local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
 
 variable [CompactSpace G]
 
@@ -382,8 +376,7 @@ noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G
   let e := discreteCoindEquivAlgebraic R G U A.obj.V
   let V := Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
-  letI : TopologicalSpace
-      V := ⊥
+  letI : TopologicalSpace V := ⊥
   letI : DiscreteTopology V := ⟨rfl⟩
   letI : DistribMulAction G V := e.symm.toAddEquiv.distribMulAction G
   letI : SMulCommClass G R V := ⟨fun g r f ↦ by

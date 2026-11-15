@@ -19,7 +19,7 @@ import TauCeti.Analysis.Matrix.LDL
 import TauCeti.Analysis.Matrix.Triangular
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.Topology.Algebra.UnitaryGroup
-import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
 
 /-!
 # The Iwasawa decomposition of `GL n ℝ` and `GL n ℂ`
@@ -90,25 +90,6 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
-/-- A matrix is upper triangular with positive diagonal: the shape of the factor `a u` of the
-Iwasawa decomposition `k a u`. -/
-private abbrev IsPosUpper (b : Matrix (Fin n) (Fin n) 𝕜) : Prop :=
-  b.IsUpperTriangular ∧ ∀ i, 0 < b i i
-
-private theorem IsPosUpper.mul {b c : Matrix (Fin n) (Fin n) 𝕜} (hb : IsPosUpper b)
-    (hc : IsPosUpper c) : IsPosUpper (b * c) :=
-  ⟨hb.1.mul hc.1, fun i => by
-    rw [mul_apply_diag_of_isUpperTriangular hb.1 hc.1]
-    exact mul_pos (hb.2 i) (hc.2 i)⟩
-
-private theorem IsPosUpper.inv {b : GL (Fin n) 𝕜} (hb : IsPosUpper (b : Matrix (Fin n) (Fin n) 𝕜)) :
-    IsPosUpper ((b⁻¹ : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) := by
-  let _ := b.invertible
-  rw [coe_units_inv]
-  refine ⟨blockTriangular_inv_of_blockTriangular hb.1, fun i => ?_⟩
-  rw [eq_inv_of_mul_eq_one_left (inv_apply_diag_mul_of_isUpperTriangular hb.1 i)]
-  exact RCLike.inv_pos.2 (hb.2 i)
-
 /-- The matrix of a positive real diagonal matrix, read over `𝕜`. -/
 private theorem coe_map_of_mem_posDiagonalSubgroup {a : GL (Fin n) ℝ}
     {d : Fin n → ℝ} (ha : (a : Matrix (Fin n) (Fin n) ℝ) = diagonal d) :
@@ -116,44 +97,41 @@ private theorem coe_map_of_mem_posDiagonalSubgroup {a : GL (Fin n) ℝ}
       diagonal fun i => (d i : 𝕜) := by
   rw [GeneralLinearGroup.val_map_apply, ha, diagonal_map (map_zero _)]
 
-/-- A positive real diagonal matrix times an upper unitriangular matrix is upper triangular with
-positive diagonal. -/
-private theorem isPosUpper_map_mul {a : GL (Fin n) ℝ} {u : GL (Fin n) 𝕜}
+/-- A positive real diagonal matrix times an upper unitriangular matrix belongs to the
+positive upper-triangular group. -/
+private theorem map_mul_mem_posUpperTriangularGroup {a : GL (Fin n) ℝ} {u : GL (Fin n) 𝕜}
     (ha : a ∈ posDiagonalSubgroup (Fin n) ℝ) (hu : u ∈ upperUnitriangularGroup (Fin n) 𝕜) :
-    IsPosUpper ((GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u : GL (Fin n) 𝕜) :
-      Matrix (Fin n) (Fin n) 𝕜) := by
-  obtain ⟨d, hd, had⟩ := mem_posDiagonalSubgroup_iff.1 ha
-  have hu' := UpperUnitriangularGroup.mem_iff.1 hu
-  rw [Units.val_mul, coe_map_of_mem_posDiagonalSubgroup had]
-  exact IsPosUpper.mul ⟨blockTriangular_diagonal _, fun i => by simpa using hd i⟩
-    ⟨hu'.isUpperTriangular, fun i => by rw [hu'.apply_diag]; exact one_pos⟩
+    GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u ∈ posUpperTriangularGroup (Fin n) 𝕜 :=
+  (posUpperTriangularGroup (Fin n) 𝕜).mul_mem
+    (posDiagonalSubgroup_map_le_posUpperTriangularGroup (Subgroup.mem_map.mpr ⟨a, ha, rfl⟩))
+    (upperUnitriangularGroup_le_posUpperTriangularGroup hu)
 
 /-- **`K ∩ A N = 1`, in the form of uniqueness of the unitary factor**: if `k b = k' b'` with `k`,
 `k'` unitary and `b`, `b'` upper triangular with positive diagonal, then `k = k'`. -/
 private theorem eq_of_mul_eq_mul {k k' b b' : GL (Fin n) 𝕜}
     (hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜)) (hk' : k' ∈ unitarySubgroup (GL (Fin n) 𝕜))
-    (hb : IsPosUpper (b : Matrix (Fin n) (Fin n) 𝕜))
-    (hb' : IsPosUpper (b' : Matrix (Fin n) (Fin n) 𝕜)) (h : k * b = k' * b') : k = k' := by
+    (hb : b ∈ posUpperTriangularGroup (Fin n) 𝕜)
+    (hb' : b' ∈ posUpperTriangularGroup (Fin n) 𝕜) (h : k * b = k' * b') : k = k' := by
   have hw : k'⁻¹ * k = b' * b⁻¹ := by
     rw [eq_mul_inv_iff_mul_eq, mul_assoc, h, inv_mul_cancel_left]
   have hwU : ((k'⁻¹ * k : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) ∈ unitaryGroup (Fin n) 𝕜 :=
     mem_unitarySubgroup_GL_iff_mem_unitaryGroup.1 (mul_mem (inv_mem hk') hk)
-  have hwT : IsPosUpper ((k'⁻¹ * k : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) := by
-    rw [hw, Units.val_mul]
-    exact hb'.mul hb.inv
-  exact (inv_mul_eq_one.1 (Units.ext ((hwT.1.eq_one_of_mem_unitaryGroup hwU hwT.2).trans
+  have hwT : k'⁻¹ * k ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
+    rw [hw]
+    exact mul_mem hb' (inv_mem hb)
+  have hwT' := PosUpperTriangularGroup.mem_iff.mp hwT
+  exact (inv_mul_eq_one.1 (Units.ext ((hwT'.1.eq_one_of_mem_unitaryGroup hwU hwT'.2).trans
     Units.val_one.symm))).symm
 
 /-- **Existence of the Iwasawa decomposition**: every invertible matrix `g` is a unitary matrix
 times an upper triangular matrix `b` with positive diagonal. Here `b` is chosen with
 `bᴴ b = gᴴ g`, and then `g b⁻¹` is unitary. -/
-private theorem exists_mem_unitarySubgroup_isPosUpper (g : GL (Fin n) 𝕜) :
+private theorem exists_mem_unitarySubgroup_mul_mem_posUpperTriangularGroup (g : GL (Fin n) 𝕜) :
     ∃ k ∈ unitarySubgroup (GL (Fin n) 𝕜),
-      IsPosUpper ((k⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) := by
+      k⁻¹ * g ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
   obtain ⟨B, hBT, hBpos, hBB⟩ :=
     (PosDef.conjTranspose_mul_self _ (mulVec_injective_of_isUnit g.isUnit)
       ).exists_isUpperTriangular_conjTranspose_mul_self_eq
-  have hB : IsPosUpper B := ⟨hBT, hBpos⟩
   -- `B` is invertible, being triangular with nonzero diagonal
   have hBu : IsUnit B := by
     rw [isUnit_iff_isUnit_det, isUnit_iff_ne_zero, hBT.det_ne_zero_iff]
@@ -172,36 +150,41 @@ private theorem exists_mem_unitarySubgroup_isPosUpper (g : GL (Fin n) 𝕜) :
           simp only [Units.val_mul, conjTranspose_mul, Matrix.mul_assoc]
       _ = 1 := by rw [mul_inv_cancel, Units.val_one, conjTranspose_one, Matrix.one_mul]
   · rw [_root_.mul_inv_rev, inv_inv, inv_mul_cancel_right]
-    exact hB
+    exact PosUpperTriangularGroup.mem_iff.mpr ⟨hBT, hBpos⟩
 
 /-- The unitary factor `k` of the Iwasawa decomposition `g = k a u`. -/
 private def iwasawaUnitary (g : GL (Fin n) 𝕜) : GL (Fin n) 𝕜 :=
-  (exists_mem_unitarySubgroup_isPosUpper g).choose
+  (exists_mem_unitarySubgroup_mul_mem_posUpperTriangularGroup g).choose
 
 private theorem iwasawaUnitary_mem (g : GL (Fin n) 𝕜) :
     iwasawaUnitary g ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
-  (exists_mem_unitarySubgroup_isPosUpper g).choose_spec.1
+  (exists_mem_unitarySubgroup_mul_mem_posUpperTriangularGroup g).choose_spec.1
 
 /-- The triangular factor `a u = k⁻¹ g` of the Iwasawa decomposition `g = k a u`. -/
 private def iwasawaTriangular (g : GL (Fin n) 𝕜) : GL (Fin n) 𝕜 :=
   (iwasawaUnitary g)⁻¹ * g
 
-private theorem isPosUpper_iwasawaTriangular (g : GL (Fin n) 𝕜) :
-    IsPosUpper (iwasawaTriangular g : Matrix (Fin n) (Fin n) 𝕜) :=
-  (exists_mem_unitarySubgroup_isPosUpper g).choose_spec.2
+private theorem iwasawaTriangular_mem (g : GL (Fin n) 𝕜) :
+    iwasawaTriangular g ∈ posUpperTriangularGroup (Fin n) 𝕜 :=
+  (exists_mem_unitarySubgroup_mul_mem_posUpperTriangularGroup g).choose_spec.2
+
+/-- The diagonal of the triangular Iwasawa remainder is positive. -/
+private theorem iwasawaTriangular_diag_pos (g : GL (Fin n) 𝕜) (i : Fin n) :
+    0 < (iwasawaTriangular g : Matrix (Fin n) (Fin n) 𝕜) i i :=
+  (PosUpperTriangularGroup.mem_iff.mp (iwasawaTriangular_mem g)).2 i
 
 /-- The unitary factor of `k b` is `k`, for `k` unitary and `b` upper triangular with positive
 diagonal. -/
 private theorem iwasawaUnitary_mul {k b : GL (Fin n) 𝕜} (hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜))
-    (hb : IsPosUpper (b : Matrix (Fin n) (Fin n) 𝕜)) : iwasawaUnitary (k * b) = k :=
-  eq_of_mul_eq_mul (iwasawaUnitary_mem _) hk (isPosUpper_iwasawaTriangular _) hb <| by
+    (hb : b ∈ posUpperTriangularGroup (Fin n) 𝕜) : iwasawaUnitary (k * b) = k :=
+  eq_of_mul_eq_mul (iwasawaUnitary_mem _) hk (iwasawaTriangular_mem _) hb <| by
     rw [iwasawaTriangular, mul_inv_cancel_left]
 
 /-- The positive diagonal factor `a` of the Iwasawa decomposition `g = k a u`: the real parts of
 the diagonal entries of `k⁻¹ g`, which are positive reals. -/
 private def iwasawaDiagonal (g : GL (Fin n) 𝕜) : GL (Fin n) ℝ :=
   diagGL fun i => Units.mk0 (RCLike.re ((iwasawaTriangular g : Matrix (Fin n) (Fin n) 𝕜) i i))
-    (RCLike.pos_iff.1 ((isPosUpper_iwasawaTriangular g).2 i)).1.ne'
+    (RCLike.pos_iff.1 (iwasawaTriangular_diag_pos g i)).1.ne'
 
 private theorem coe_iwasawaDiagonal (g : GL (Fin n) 𝕜) :
     (iwasawaDiagonal g : Matrix (Fin n) (Fin n) ℝ) =
@@ -216,7 +199,9 @@ private theorem coe_inv_iwasawaDiagonal (g : GL (Fin n) 𝕜) :
 private theorem iwasawaDiagonal_mem (g : GL (Fin n) 𝕜) :
     iwasawaDiagonal g ∈ posDiagonalSubgroup (Fin n) ℝ :=
   mem_posDiagonalSubgroup_iff.2 ⟨_,
-    fun i => (RCLike.pos_iff.1 ((isPosUpper_iwasawaTriangular g).2 i)).1, coe_iwasawaDiagonal g⟩
+    fun i ↦ (RCLike.pos_iff.1
+      (iwasawaTriangular_diag_pos g i)).1,
+    coe_iwasawaDiagonal g⟩
 
 /-- Read over `𝕜`, the positive diagonal factor of `g` is the diagonal of `k⁻¹ g`. -/
 private theorem coe_map_iwasawaDiagonal (g : GL (Fin n) 𝕜) :
@@ -225,7 +210,8 @@ private theorem coe_map_iwasawaDiagonal (g : GL (Fin n) 𝕜) :
   rw [coe_map_of_mem_posDiagonalSubgroup (coe_iwasawaDiagonal g)]
   congr 1
   funext i
-  obtain ⟨x, -, hx⟩ := RCLike.pos_iff_exists_ofReal.1 ((isPosUpper_iwasawaTriangular g).2 i)
+  obtain ⟨x, -, hx⟩ := RCLike.pos_iff_exists_ofReal.1
+    (iwasawaTriangular_diag_pos g i)
   rw [← hx, RCLike.ofReal_re]
 
 /-- The upper unitriangular factor `a⁻¹ k⁻¹ g` of the Iwasawa decomposition `g = k a u`. -/
@@ -234,12 +220,12 @@ private def iwasawaUnitriangular (g : GL (Fin n) 𝕜) : GL (Fin n) 𝕜 :=
 
 private theorem iwasawaUnitriangular_mem (g : GL (Fin n) 𝕜) :
     iwasawaUnitriangular g ∈ upperUnitriangularGroup (Fin n) 𝕜 := by
-  have hb := isPosUpper_iwasawaTriangular g
+  have htri := (PosUpperTriangularGroup.mem_iff.mp (iwasawaTriangular_mem g)).1
   rw [UpperUnitriangularGroup.mem_iff, iwasawaUnitriangular, Units.val_mul,
     coe_inv_of_coe_eq_diagonal (coe_map_iwasawaDiagonal g), isUpperUnitriangular_def]
   refine ⟨fun i j hji => ?_, fun i => ?_⟩
-  · rw [diagonal_mul, hb.1 hji, mul_zero]
-  · rw [diagonal_mul, Pi.inv_apply, inv_mul_cancel₀ (hb.2 i).ne']
+  · rw [diagonal_mul, htri hji, mul_zero]
+  · rw [diagonal_mul, Pi.inv_apply, inv_mul_cancel₀ (iwasawaTriangular_diag_pos g i).ne']
 
 /-- The Iwasawa factors of `k a u` are `k`, `a` and `u`. -/
 private theorem iwasawa_mul_mul {k : GL (Fin n) 𝕜} {a : GL (Fin n) ℝ} {u : GL (Fin n) 𝕜}
@@ -250,7 +236,7 @@ private theorem iwasawa_mul_mul {k : GL (Fin n) 𝕜} {a : GL (Fin n) ℝ} {u : 
       iwasawaUnitriangular (k * GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u) = u := by
   have hK : iwasawaUnitary (k * GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u) = k := by
     rw [mul_assoc]
-    exact iwasawaUnitary_mul hk (isPosUpper_map_mul ha hu)
+    exact iwasawaUnitary_mul hk (map_mul_mem_posUpperTriangularGroup ha hu)
   have hT : iwasawaTriangular (k * GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u) =
       GeneralLinearGroup.map (algebraMap ℝ 𝕜) a * u := by
     rw [iwasawaTriangular, hK, mul_assoc, inv_mul_cancel_left]
@@ -273,29 +259,22 @@ private theorem continuous_iwasawaUnitary : Continuous (iwasawaUnitary (𝕜 := 
     isCompact_iff_compactSpace.1 GeneralLinearGroup.isCompact_unitarySubgroup
   let f : GL (Fin n) 𝕜 → unitarySubgroup (GL (Fin n) 𝕜) :=
     fun g => ⟨iwasawaUnitary g, iwasawaUnitary_mem g⟩
-  have hgraph : f.graph = (fun p : GL (Fin n) 𝕜 × unitarySubgroup (GL (Fin n) 𝕜) =>
-      (((p.2 : GL (Fin n) 𝕜)⁻¹ * p.1 : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜)) ⁻¹'
-        {M | M.IsUpperTriangular ∧ ∀ i, 0 ≤ M i i} := by
+  have hgraph : f.graph = (fun p : GL (Fin n) 𝕜 × unitarySubgroup (GL (Fin n) 𝕜) ↦
+      (p.2 : GL (Fin n) 𝕜)⁻¹ * p.1) ⁻¹'
+        (posUpperTriangularGroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜)) := by
     ext ⟨g, x⟩
-    simp only [Function.mem_graph, Set.mem_preimage, Set.mem_ofPred_eq]
+    simp only [Function.mem_graph, Set.mem_preimage, SetLike.mem_coe]
     constructor
     · rintro rfl
-      exact ⟨(isPosUpper_iwasawaTriangular g).1, fun i =>
-        ((isPosUpper_iwasawaTriangular g).2 i).le⟩
-    · rintro ⟨htri, hnonneg⟩
-      refine Subtype.ext ?_
-      -- `x⁻¹ g` is invertible, so its diagonal entries are nonzero, hence positive
-      have hdiag := (htri.det_ne_zero_iff).1
-        ((isUnit_iff_isUnit_det _).1 ((x : GL (Fin n) 𝕜)⁻¹ * g).isUnit).ne_zero
-      have h := iwasawaUnitary_mul x.2 ⟨htri, fun i => (hnonneg i).lt_of_ne (hdiag i).symm⟩
+      exact iwasawaTriangular_mem g
+    · intro hx
+      apply Subtype.ext
+      have h := iwasawaUnitary_mul x.2 hx
       rwa [mul_inv_cancel_left] at h
   have hclosed : IsClosed f.graph := by
     rw [hgraph]
-    have hset : IsClosed {M : Matrix (Fin n) (Fin n) 𝕜 | M.IsUpperTriangular ∧ ∀ i, 0 ≤ M i i} :=
-      (isClosed_setOfPred_blockTriangular (b := id)).inter isClosed_setOfPred_nonneg_diag
-    exact hset.preimage
-      (Units.continuous_val.comp ((continuous_subtype_val.comp continuous_snd).inv.mul
-        continuous_fst))
+    exact (isClosed_posUpperTriangularGroup (Fin n) 𝕜).preimage
+      ((continuous_subtype_val.comp continuous_snd).inv.mul continuous_fst)
   exact continuous_subtype_val.comp (continuous_of_isClosed_graph hclosed)
 
 variable (𝕜 n) in
@@ -336,7 +315,8 @@ def iwasawaHomeomorph :
       Units.continuous_iff.2
         ⟨((continuous_pi hdiag).matrix_diagonal).congr fun g => (coe_iwasawaDiagonal g).symm,
           ((continuous_pi fun i => (hdiag i).inv₀ fun g =>
-            (RCLike.pos_iff.1 ((isPosUpper_iwasawaTriangular g).2 i)).1.ne').matrix_diagonal).congr
+            (RCLike.pos_iff.1
+              (iwasawaTriangular_diag_pos g i)).1.ne').matrix_diagonal).congr
             fun g => (coe_inv_iwasawaDiagonal g).symm⟩
     have hU : Continuous (iwasawaUnitriangular (𝕜 := 𝕜) (n := n)) :=
       (((RCLike.continuous_ofReal (K := 𝕜)).generalLinearGroup_map (n := Fin n)).comp hA).inv.mul
@@ -370,10 +350,12 @@ theorem iwasawaHomeomorph_symm_unitary_eq_iff (g k : GL (Fin n) 𝕜)
   rw [iwasawaHomeomorph_symm_apply]
   constructor
   · rintro rfl
-    exact isPosUpper_iwasawaTriangular g
+    exact ⟨(PosUpperTriangularGroup.mem_iff.mp (iwasawaTriangular_mem g)).1,
+      iwasawaTriangular_diag_pos g⟩
   · intro hb
     simpa only [mul_inv_cancel_left] using
-      (iwasawaUnitary_mul (k := k) (b := k⁻¹ * g) hk hb)
+      (iwasawaUnitary_mul (k := k) (b := k⁻¹ * g) hk
+        (PosUpperTriangularGroup.mem_iff.mpr hb))
 
 /-- The real diagonal factor consists of the real parts of the triangular remainder's diagonal. -/
 theorem coe_iwasawaHomeomorph_symm_diagonal (g : GL (Fin n) 𝕜) :

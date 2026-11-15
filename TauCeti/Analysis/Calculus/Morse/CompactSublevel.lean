@@ -169,11 +169,20 @@ theorem finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hM : HasNondegenerateCriticalPointsOn f univ)
     (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) {p q : E}
-    (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hind : morseIndex f p = morseIndex f q + 1) {c : ℝ} (hc : f q < c ∧ c < f p)
     (htr : IsMorseSmale f hf) :
     (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}).Finite := by
+  rcases eq_empty_or_nonempty (Flow.unstableSet (negativeGradientFlow f hf) p ∩
+    Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}) with hS | ⟨z, hz⟩
+  · exact hS ▸ finite_empty
+  -- The endpoints of a connecting orbit are rest points, hence critical, hence nondegenerate.
+  have hcrit {x : E} (hx : ∀ t, negativeGradientFlow f hf t x = x) :
+      IsNondegenerateCriticalPoint f x :=
+    hasNondegenerateCriticalPointsOn_iff.1 hM (mem_univ x)
+      (gradient_eq_zero_iff.1 ((forall_negativeGradientFlow_eq_self_iff f hf x).1 hx))
+  have hp := hcrit (Flow.fixed_of_mem_unstableSet hz.1.1)
+  have hq := hcrit (Flow.fixed_of_mem_stableSet hz.1.2)
   apply hp.finite_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc
     (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _))
     (fun {_} hy ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel

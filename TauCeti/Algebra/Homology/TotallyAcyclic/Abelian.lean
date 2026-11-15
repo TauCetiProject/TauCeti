@@ -141,7 +141,7 @@ lemma isTotallyAcyclicProjective_iff_factor :
   · rintro ⟨hproj, hac, h⟩
     refine ⟨hproj, hac, fun n Q _ f ↦ ?_⟩
     have hφ : ∀ k, (ComplexShape.up ℤ).Rel k n →
-        P.d k n ≫ f.f n ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) n Q).hom = 0 := fun k hk ↦ by
+        P.d k n ≫ f.f n ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) n Q).hom = 0 := fun k _ ↦ by
       rw [← Category.assoc, ← f.comm, HomologicalComplex.single_obj_d, comp_zero, zero_comp]
     have hf : f = HomologicalComplex.mkHomToSingle _ hφ :=
       HomologicalComplex.to_single_hom_ext (by simp [HomologicalComplex.mkHomToSingle_f])

@@ -123,10 +123,10 @@ noncomputable def ofPreAbstractSimplicialComplex (K : PreAbstractSimplicialCompl
   exact {
     faces := fun k _ => (insert ∅ hfinite.toFinset).filter (fun s => s.card = k)
     face_card := by
-      intro k hk s hs
+      intro k _ s hs
       exact (mem_filter.mp hs).2
     down_closed := by
-      intro k hk s hs t hts htr
+      intro k _ s hs t hts _
       refine mem_filter.mpr ⟨?_, rfl⟩
       rcases mem_insert.mp (mem_filter.mp hs).1 with rfl | hs
       · simp [subset_empty.mp hts]

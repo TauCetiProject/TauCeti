@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.LinearAlgebra.AffineSpace.Ordered
+public import Mathlib.Topology.Algebra.Affine
 public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
 public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
@@ -40,6 +42,15 @@ a scalar between `ρ² / 2` and `ρ²`. So `A_χ` is an elliptic homogeneous sym
 the product. The first cut-off factor agrees with `σ_P` on the cone `‖ξ‖ ≥ ‖η‖`, and the second
 with `σ_Q` on the cone `‖η‖ ≥ ‖ξ‖`.
 
+Interpolating each cutoff coefficient from `1` to its `χ` value, `c = (1 - t) + t χ`, joins the
+uncut product `A` at `t = 0` to `A_χ` at `t = 1` (`HomogeneousSymbol.externalProductHomotopy`).
+For factors of positive degree, which are continuous across their own zero covector
+(`HomogeneousSymbol.continuous_coefficient`), this homotopy is jointly continuous in the time and
+the covector `(ξ, η) ≠ 0`, and it is homogeneous of the same degree at each time. Since `c ≥ χ`
+for `t ≤ 1`, the lower bound above persists: for normalized factors, every `H_t`
+with `t ∈ [0, 1]` satisfies the same ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖H_t w‖²` and
+`ρ² ‖w‖² ≤ 2 ‖H_t* w‖²` as `A_χ`.
+
 ## Main declarations
 
 * `TauCeti.ConicCutoff`: smooth cutoffs `ℝ → [0, 1]` vanishing on `t ≤ 1/4` and equal to `1` on
@@ -56,6 +67,15 @@ with `σ_Q` on the cone `‖η‖ ≥ ‖ξ‖`.
 * `TauCeti.HomogeneousSymbol.le_two_mul_norm_coefficient_externalProduct_apply_sq`,
   `TauCeti.HomogeneousSymbol.le_two_mul_norm_adjoint_coefficient_externalProduct_apply_sq`: the
   ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖A_χ w‖²` and `ρ² ‖w‖² ≤ 2 ‖A_χ* w‖²`.
+* `TauCeti.HomogeneousSymbol.externalProductHomotopy`: the coefficient homotopy `H_t` from `A`
+  (`HomogeneousSymbol.externalProductHomotopy_zero`) to `A_χ`
+  (`HomogeneousSymbol.externalProductHomotopy_one`).
+* `TauCeti.HomogeneousSymbol.externalProductHomotopy_smul` and
+  `TauCeti.HomogeneousSymbol.continuousOn_externalProductHomotopy`: each `H_t` is homogeneous,
+  and the homotopy is jointly continuous at nonzero covectors.
+* `TauCeti.HomogeneousSymbol.le_two_mul_norm_externalProductHomotopy_apply_sq`,
+  `TauCeti.HomogeneousSymbol.le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq`: the
+  ellipticity bounds `ρ² ‖w‖² ≤ 2 ‖H_t w‖²` and `ρ² ‖w‖² ≤ 2 ‖H_t* w‖²` for `t ≤ 1`.
 
 ## References
 
@@ -163,6 +183,24 @@ theorem sq_mul_add_sq_mul_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
   have h₁ : χ (a / (a + b)) ^ 2 ≤ 1 := pow_le_one₀ (χ.nonneg _) (χ.le_one _)
   have h₂ : χ (b / (a + b)) ^ 2 ≤ 1 := pow_le_one₀ (χ.nonneg _) (χ.le_one _)
   nlinarith
+
+/-- The interpolation `lineMap 1 (χ s) t = (1 - t) + t χ(s)` from `1` to the cutoff stays above
+the cutoff for `t ≤ 1`. -/
+theorem le_lineMap {t : ℝ} (ht : t ≤ 1) (s : ℝ) : χ s ≤ AffineMap.lineMap 1 (χ s) t := by
+  simpa using lineMap_mono_left (b := χ s) (χ.le_one s) ht
+
+/-- The lower bound `ConicCutoff.add_le_two_mul` persists along the interpolation from `1` to the
+cutoff: for `t ≤ 1`, with `c(s) = lineMap 1 (χ s) t`, the weighted sum
+`c(a / (a + b))² a + c(b / (a + b))² b` is at least `(a + b) / 2`. -/
+theorem add_le_two_mul_lineMap {a b t : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ht : t ≤ 1) :
+    a + b ≤ 2 * (AffineMap.lineMap 1 (χ (a / (a + b))) t ^ 2 * a +
+      AffineMap.lineMap 1 (χ (b / (a + b))) t ^ 2 * b) := by
+  refine (χ.add_le_two_mul ha hb).trans ?_
+  have h₁ := χ.le_lineMap ht (a / (a + b))
+  have h₂ := χ.le_lineMap ht (b / (a + b))
+  have h₁' := χ.nonneg (a / (a + b))
+  have h₂' := χ.nonneg (b / (a + b))
+  gcongr
 
 end ConicCutoff
 
@@ -323,9 +361,180 @@ theorem coefficient_externalProduct (χ : ConicCutoff) (a : HomogeneousSymbol X 
         (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) • b.coefficient (y, η)) :=
   (rfl)
 
+/-! ### The coefficient homotopy from the uncut to the cut-off external product -/
+
+/-- The coefficient homotopy from the uncut external product of `a` and `b` to the cut-off one
+`HomogeneousSymbol.externalProduct`. At time `t` and `((x, y), (ξ, η))` it is the external product
+block of `c₁ • a (x, ξ)` and `c₂ • b (y, η)`, whose coefficients
+`c₁ = (1 - t) + t χ(‖ξ‖² / ρ²)` and `c₂ = (1 - t) + t χ(‖η‖² / ρ²)`, with `ρ² = ‖ξ‖² + ‖η‖²`,
+interpolate from `1` to the two cutoffs. At `t = 0` it is the uncut block of `a (x, ξ)` and
+`b (y, η)`, which need not be smooth along the axes `ξ = 0` and `η = 0`
+(`HomogeneousSymbol.externalProductHomotopy_zero`); at `t = 1` it is the cut-off external product
+(`HomogeneousSymbol.externalProductHomotopy_one`). -/
+def externalProductHomotopy (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
+    (b : HomogeneousSymbol Y F W₀ W₁ m) (t : ℝ) (p : (X × Y) × (E × F)) :
+    WithLp 2 ((V₀ ⊗[ℂ] W₀) × (V₁ ⊗[ℂ] W₁)) →L[ℂ] WithLp 2 ((V₁ ⊗[ℂ] W₀) × (V₀ ⊗[ℂ] W₁)) :=
+  externalProductBlock
+    (AffineMap.lineMap 1 (χ (‖p.2.1‖ ^ 2 / (‖p.2.1‖ ^ 2 + ‖p.2.2‖ ^ 2))) t •
+      a.coefficient (p.1.1, p.2.1))
+    (AffineMap.lineMap 1 (χ (‖p.2.2‖ ^ 2 / (‖p.2.1‖ ^ 2 + ‖p.2.2‖ ^ 2))) t •
+      b.coefficient (p.1.2, p.2.2))
+
+@[simp]
+theorem externalProductHomotopy_apply (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
+    (b : HomogeneousSymbol Y F W₀ W₁ m) (t : ℝ) (x : X) (y : Y) (ξ : E) (η : F) :
+    a.externalProductHomotopy χ b t ((x, y), (ξ, η)) =
+      externalProductBlock
+        (AffineMap.lineMap 1 (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t • a.coefficient (x, ξ))
+        (AffineMap.lineMap 1 (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t • b.coefficient (y, η)) :=
+  (rfl)
+
+/-- At time `0` the homotopy is the uncut external product block of `a (x, ξ)` and `b (y, η)`. -/
+@[simp]
+theorem externalProductHomotopy_zero (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
+    (b : HomogeneousSymbol Y F W₀ W₁ m) (p : (X × Y) × (E × F)) :
+    a.externalProductHomotopy χ b 0 p =
+      externalProductBlock (a.coefficient (p.1.1, p.2.1)) (b.coefficient (p.1.2, p.2.2)) := by
+  simp [externalProductHomotopy]
+
+/-- At time `1` the homotopy is the cut-off external product. -/
+@[simp]
+theorem externalProductHomotopy_one (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
+    (b : HomogeneousSymbol Y F W₀ W₁ m) :
+    a.externalProductHomotopy χ b 1 = (a.externalProduct χ b).coefficient := by
+  funext ⟨⟨x, y⟩, ξ, η⟩
+  simp
+
+/-- At every time the homotopy is positively homogeneous of degree `m` in the covector
+`(ξ, η)`. The real scalar `r ^ m` acts on block operators through `ℂ`. -/
+theorem externalProductHomotopy_smul (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
+    (b : HomogeneousSymbol Y F W₀ W₁ m) (t : ℝ) (x : X) (y : Y) (ξ : E) (η : F) {r : ℝ}
+    (hr : 0 < r) :
+    a.externalProductHomotopy χ b t ((x, y), r • (ξ, η)) =
+      ((r ^ m : ℝ) : ℂ) • a.externalProductHomotopy χ b t ((x, y), (ξ, η)) := by
+  have h₁ : AffineMap.lineMap 1 (χ (‖r • ξ‖ ^ 2 / (‖r • ξ‖ ^ 2 + ‖r • η‖ ^ 2))) t •
+      a.coefficient (x, r • ξ) = ((r ^ m : ℝ) : ℂ) •
+        (AffineMap.lineMap 1 (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t • a.coefficient (x, ξ)) := by
+    rw [norm_smul_sq_div_add_norm_smul_sq _ _ hr.ne', a.homogeneous _ _ _ hr, Complex.coe_smul,
+      smul_comm]
+  have h₂ : AffineMap.lineMap 1 (χ (‖r • η‖ ^ 2 / (‖r • ξ‖ ^ 2 + ‖r • η‖ ^ 2))) t •
+      b.coefficient (y, r • η) = ((r ^ m : ℝ) : ℂ) •
+        (AffineMap.lineMap 1 (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t • b.coefficient (y, η)) := by
+    rw [add_comm (‖r • ξ‖ ^ 2), norm_smul_sq_div_add_norm_smul_sq _ _ hr.ne', add_comm (‖η‖ ^ 2),
+      b.homogeneous _ _ _ hr, Complex.coe_smul, smul_comm]
+  rw [Prod.smul_mk, externalProductHomotopy_apply, externalProductHomotopy_apply, h₁, h₂,
+    ← RCLike.ofReal_eq_complex_ofReal]
+  exact externalProductBlock_ofReal_smul _ _ _
+
+/-- For positive degree, proper frequency spaces and weakly locally compact (for instance
+finite-dimensional) spaces of positions, the homotopy is jointly continuous in the time and the
+point at every nonzero covector `(ξ, η) ≠ 0`, including along the axes `ξ = 0` and `η = 0`. -/
+theorem continuousOn_externalProductHomotopy [ProperSpace E] [ProperSpace F]
+    [WeaklyLocallyCompactSpace X] [WeaklyLocallyCompactSpace Y] (χ : ConicCutoff)
+    (a : HomogeneousSymbol X E V₀ V₁ m) (b : HomogeneousSymbol Y F W₀ W₁ m) (hm : 0 < m) :
+    ContinuousOn (fun q : ℝ × (X × Y) × (E × F) ↦ a.externalProductHomotopy χ b q.1 q.2)
+      {q | q.2.2 ≠ 0} := by
+  refine continuousOn_of_forall_continuousAt fun q hq ↦ ?_
+  have hρ : ‖q.2.2.1‖ ^ 2 + ‖q.2.2.2‖ ^ 2 ≠ 0 := by
+    have h : q.2.2.1 ≠ 0 ∨ q.2.2.2 ≠ 0 := by
+      by_contra! h
+      exact hq (Prod.ext h.1 h.2)
+    rcases h with h | h <;> positivity
+  -- The interpolated cutoff `lineMap 1 (χ (‖ζ‖² / ρ²)) t` is continuous wherever `ρ ≠ 0`.
+  have hc : ∀ ζ : (X × Y) × (E × F) → ℝ, Continuous ζ → ContinuousAt
+      (fun q : ℝ × (X × Y) × (E × F) ↦
+        AffineMap.lineMap (1 : ℝ) (χ (ζ q.2 ^ 2 / (‖q.2.2.1‖ ^ 2 + ‖q.2.2.2‖ ^ 2))) q.1) q :=
+    fun ζ hζ ↦ continuousAt_const.lineMap (χ.continuous.continuousAt.comp
+      (ContinuousAt.div (by fun_prop) (by fun_prop) hρ)) continuousAt_fst
+  have h₁ : ContinuousAt (fun q : ℝ × (X × Y) × (E × F) ↦
+      AffineMap.lineMap (1 : ℝ) (χ (‖q.2.2.1‖ ^ 2 / (‖q.2.2.1‖ ^ 2 + ‖q.2.2.2‖ ^ 2))) q.1 •
+        a.coefficient (q.2.1.1, q.2.2.1)) q :=
+    (hc (fun p ↦ ‖p.2.1‖) (by fun_prop)).smul
+      ((a.continuous_coefficient hm).comp (by fun_prop)).continuousAt
+  have h₂ : ContinuousAt (fun q : ℝ × (X × Y) × (E × F) ↦
+      AffineMap.lineMap (1 : ℝ) (χ (‖q.2.2.2‖ ^ 2 / (‖q.2.2.1‖ ^ 2 + ‖q.2.2.2‖ ^ 2))) q.1 •
+        b.coefficient (q.2.1.2, q.2.2.2)) q :=
+    (hc (fun p ↦ ‖p.2.2‖) (by fun_prop)).smul
+      ((b.continuous_coefficient hm).comp (by fun_prop)).continuousAt
+  have hblock : Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦
+      externalProductBlock AB.1 AB.2 :=
+    (contDiff_externalProductBlock (n := 0)).continuous
+  exact hblock.continuousAt.comp (h₁.prodMk h₂)
+
 variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁)] [CompleteSpace (V₁ ⊗[ℂ] W₀)]
-  [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ 1}
-  {b : HomogeneousSymbol Y F W₀ W₁ 1}
+  [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ m}
+  {b : HomogeneousSymbol Y F W₀ W₁ m}
+
+/-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the homotopy at
+time `t` satisfies `H_t* H_t = c₁² ‖ξ‖² + c₂² ‖η‖²`, where `c₁ = lineMap 1 (χ(‖ξ‖² / ρ²)) t` and
+`c₂ = lineMap 1 (χ(‖η‖² / ρ²)) t` are its two interpolated cutoffs and `ρ² = ‖ξ‖² + ‖η‖²`. -/
+theorem adjoint_comp_externalProductHomotopy (χ : ConicCutoff) (t : ℝ)
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1) :
+    (a.externalProductHomotopy χ b t ((x, y), (ξ, η))).adjoint ∘L
+        a.externalProductHomotopy χ b t ((x, y), (ξ, η)) =
+      ((AffineMap.lineMap 1 (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t ^ 2 * ‖ξ‖ ^ 2 +
+        AffineMap.lineMap 1 (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
+  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
+  simp only [externalProductHomotopy_apply, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
+  rw [adjoint_externalProductBlock_comp_self_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
+    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
+    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
+
+/-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the homotopy at
+time `t` satisfies `H_t H_t* = c₁² ‖ξ‖² + c₂² ‖η‖²`, with the interpolated cutoffs `c₁` and `c₂` of
+`HomogeneousSymbol.adjoint_comp_externalProductHomotopy`. -/
+theorem externalProductHomotopy_comp_adjoint (χ : ConicCutoff) (t : ℝ)
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1) :
+    a.externalProductHomotopy χ b t ((x, y), (ξ, η)) ∘L
+        (a.externalProductHomotopy χ b t ((x, y), (ξ, η))).adjoint =
+      ((AffineMap.lineMap 1 (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t ^ 2 * ‖ξ‖ ^ 2 +
+        AffineMap.lineMap 1 (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2))) t ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
+  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
+  simp only [externalProductHomotopy_apply, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
+  rw [externalProductBlock_comp_adjoint_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
+    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
+    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
+
+/-- **The homotopy stays elliptic.** For normalized factors and every time `t ≤ 1`, in particular
+along `[0, 1]`, `(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖H_t w‖²`. -/
+theorem le_two_mul_norm_externalProductHomotopy_apply_sq (χ : ConicCutoff) {t : ℝ} (ht : t ≤ 1)
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (w : WithLp 2 ((V₀ ⊗[ℂ] W₀) × (V₁ ⊗[ℂ] W₁))) :
+    (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
+      2 * ‖a.externalProductHomotopy χ b t ((x, y), (ξ, η)) w‖ ^ 2 := by
+  rw [norm_apply_sq_of_adjoint_comp_eq_smul
+    (adjoint_comp_externalProductHomotopy χ t x y ξ η ha ha' hb hb') w, ← mul_assoc]
+  gcongr
+  exact χ.add_le_two_mul_lineMap (by positivity) (by positivity) ht
+
+/-- **The adjoint of the homotopy stays elliptic.** For normalized factors and every time `t ≤ 1`,
+`(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖H_t* w‖²`. -/
+theorem le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq (χ : ConicCutoff) {t : ℝ}
+    (ht : t ≤ 1) (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (w : WithLp 2 ((V₁ ⊗[ℂ] W₀) × (V₀ ⊗[ℂ] W₁))) :
+    (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
+      2 * ‖(a.externalProductHomotopy χ b t ((x, y), (ξ, η))).adjoint w‖ ^ 2 := by
+  rw [norm_apply_sq_of_adjoint_comp_eq_smul (by
+    rw [ContinuousLinearMap.adjoint_adjoint]
+    exact externalProductHomotopy_comp_adjoint χ t x y ξ η ha ha' hb hb') w, ← mul_assoc]
+  gcongr
+  exact χ.add_le_two_mul_lineMap (by positivity) (by positivity) ht
 
 /-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the cut-off external
 product satisfies `A_χ* A_χ = χ(‖ξ‖² / ρ²)² ‖ξ‖² + χ(‖η‖² / ρ²)² ‖η‖²`, with
@@ -340,11 +549,7 @@ theorem adjoint_comp_coefficient_externalProduct (χ : ConicCutoff)
         (a.externalProduct χ b).coefficient ((x, y), (ξ, η)) =
       ((χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖ξ‖ ^ 2 +
         χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
-  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
-  simp only [coefficient_externalProduct, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
-  rw [adjoint_externalProductBlock_comp_self_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
-    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
-    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
+  simpa using adjoint_comp_externalProductHomotopy χ 1 x y ξ η ha ha' hb hb'
 
 /-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the cut-off external
 product satisfies `A_χ A_χ* = χ(‖ξ‖² / ρ²)² ‖ξ‖² + χ(‖η‖² / ρ²)² ‖η‖²`, with
@@ -359,11 +564,7 @@ theorem coefficient_externalProduct_comp_adjoint (χ : ConicCutoff)
         ((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint =
       ((χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖ξ‖ ^ 2 +
         χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
-  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
-  simp only [coefficient_externalProduct, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
-  rw [externalProductBlock_comp_adjoint_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
-    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
-    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
+  simpa using externalProductHomotopy_comp_adjoint χ 1 x y ξ η ha ha' hb hb'
 
 /-- Ellipticity of the cut-off external product of normalized factors:
 `(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖A_χ w‖²`. -/
@@ -376,10 +577,7 @@ theorem le_two_mul_norm_coefficient_externalProduct_apply_sq (χ : ConicCutoff)
     (w : WithLp 2 ((V₀ ⊗[ℂ] W₀) × (V₁ ⊗[ℂ] W₁))) :
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖(a.externalProduct χ b).coefficient ((x, y), (ξ, η)) w‖ ^ 2 := by
-  rw [norm_apply_sq_of_adjoint_comp_eq_smul
-    (adjoint_comp_coefficient_externalProduct χ x y ξ η ha ha' hb hb') w, ← mul_assoc]
-  gcongr
-  exact χ.add_le_two_mul (by positivity) (by positivity)
+  simpa using le_two_mul_norm_externalProductHomotopy_apply_sq χ le_rfl x y ξ η ha ha' hb hb' w
 
 /-- Ellipticity of the adjoint of the cut-off external product of normalized factors:
 `(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖A_χ* w‖²`. -/
@@ -392,11 +590,8 @@ theorem le_two_mul_norm_adjoint_coefficient_externalProduct_apply_sq (χ : Conic
     (w : WithLp 2 ((V₁ ⊗[ℂ] W₀) × (V₀ ⊗[ℂ] W₁))) :
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint w‖ ^ 2 := by
-  rw [norm_apply_sq_of_adjoint_comp_eq_smul (by
-    rw [ContinuousLinearMap.adjoint_adjoint]
-    exact coefficient_externalProduct_comp_adjoint χ x y ξ η ha ha' hb hb') w, ← mul_assoc]
-  gcongr
-  exact χ.add_le_two_mul (by positivity) (by positivity)
+  simpa using
+    le_two_mul_norm_adjoint_externalProductHomotopy_apply_sq χ le_rfl x y ξ η ha ha' hb hb' w
 
 end ExternalProduct
 

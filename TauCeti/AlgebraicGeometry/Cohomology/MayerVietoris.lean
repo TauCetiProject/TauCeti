@@ -46,9 +46,7 @@ coefficients, the affine-open variants use the acyclicity of quasi-coherent shea
 opens; users may either supply an affine intersection directly
 or obtain it from an affine diagonal.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`: … vanishing above dimension (`H² = 0` on a curve)". No formalization is
-vendored: the long exact sequence is Mathlib's
+No formalization is vendored: the long exact sequence is Mathlib's
 `CategoryTheory.GrothendieckTopology.MayerVietorisSquare.sequence_exact`, the square attached to
 two open subsets is Mathlib's `TopologicalSpace.Opens.mayerVietorisSquare`, and the comparison
 between the cohomology of the terminal open subset and the cohomology of the site comes from

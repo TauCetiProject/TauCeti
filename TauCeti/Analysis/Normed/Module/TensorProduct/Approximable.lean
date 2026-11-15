@@ -19,7 +19,9 @@ Neither completeness nor reflexivity of `E` is needed.
 
 The map `TauCeti.InjectiveTensor.toOperator` gives the algebraic identification, and
 `TauCeti.CompletedInjectiveTensor.toOperator` is its isometric extension. The range
-statements characterize their images without introducing another operator carrier.
+statements characterize their images without introducing another operator carrier. On the
+projective tensor product, `TauCeti.ProjectiveTensor.toOperator` gives the corresponding bounded
+contraction `E* ⊗π F →L[𝕜] E →L[𝕜] F` over any nontrivially normed field.
 
 ## References
 
@@ -206,3 +208,37 @@ theorem range_toOperator :
 end CompletedInjectiveTensor
 
 end TauCeti
+
+namespace TauCeti.ProjectiveTensor
+
+section ToOperator
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+variable (𝕜 E F) in
+/-- Canonical contraction from the projective tensor product `StrongDual 𝕜 E ⊗π F` to bounded
+operators `E →L[𝕜] F`, sending `⟨f ⊗ₜ y⟩` to `x ↦ f x • y`. -/
+noncomputable def toOperator : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
+  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (ContinuousLinearMap.smulRightL 𝕜 E F)
+
+/-- On wrapped algebraic tensors, `ProjectiveTensor.toOperator` agrees with
+`TensorProduct.toOperator`. -/
+@[simp] theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
+    toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by
+  rw [toOperator, liftIsometry_apply, TensorProduct.toOperator]; rfl
+
+/-- `ProjectiveTensor.toOperator` sends a pure tensor `⟨f ⊗ₜ y⟩` to the rank-one operator
+`f.smulRight y`. -/
+theorem toOperator_tmul (f : StrongDual 𝕜 E) (y : F) :
+    toOperator 𝕜 E F ⟨f ⊗ₜ y⟩ = f.smulRight y := by simp
+
+/-- The canonical operator `StrongDual 𝕜 E ⊗π F →L[𝕜] E →L[𝕜] F` is a contraction. -/
+theorem norm_toOperator_le : ‖toOperator 𝕜 E F‖ ≤ 1 := by
+  -- `ContinuousLinearMap.norm_smulRightL_le` assumes `NormedAddCommGroup`.
+  rw [toOperator, LinearIsometryEquiv.norm_map]
+  exact ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun _ _ ↦ by simp
+
+end ToOperator
+
+end TauCeti.ProjectiveTensor
