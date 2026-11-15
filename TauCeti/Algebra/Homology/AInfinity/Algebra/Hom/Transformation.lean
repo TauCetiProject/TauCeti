@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Basic
 
 /-!
 # The complex of reduced transformations between A-infinity morphisms
@@ -24,7 +24,9 @@ reduced bar constructions: linear maps `D : Tᶜ(sA) ⟶ Tᶜ(sB)` raising the s
 `Δ ∘ D = (D ⊗ G) ∘ Δ + (F ⊗ D) ∘ (τ ⊗ 1) ∘ Δ`,
 
 with `τ` the letterwise Koszul twist of parameter `p` of `Tᶜ(sA)`.  Such a map is determined by its
-suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`.  The differential of a
+suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`, and conversely any
+degree-`p` linear map `Tᶜ(sA) ⟶ sB` expands uniquely to a reduced transformation via
+`AInfinityHom.reducedTransformationCochains.ofTaylor`.  The differential of a
 reduced transformation is its graded commutator with the bar differentials,
 
 `δD = b_B ∘ D - (-1)^p D ∘ b_A`,
@@ -52,8 +54,9 @@ morphisms.
 
 * `TauCeti.AInfinityHom.reducedTransformationCochains`: the reduced transformations of degree `p`
   from `f` to `g`, the `(F, G)`-coderivations of degree `p` between reduced bar constructions.
-* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor`: the suspended Taylor components of
-  a reduced transformation.
+* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor` and
+  `TauCeti.AInfinityHom.reducedTransformationCochains.ofTaylor`: the suspended Taylor components of
+  a reduced transformation and the inverse Taylor-expansion constructor.
 * `TauCeti.AInfinityHom.reducedTransformationDifferential`: the graded commutator with the bar
   differentials.
 * `TauCeti.AInfinityHom.reducedTransformationComplex`: the complex of reduced transformations from
@@ -61,8 +64,9 @@ morphisms.
 * `TauCeti.AInfinityHom.reducedTransformationCochains.compRight` and
   `TauCeti.AInfinityHom.reducedTransformationCochains.compLeft`: composition of reduced
   transformations with an `A∞` morphism after or before them.
-* `TauCeti.AInfinityHom.Homotopy.equivCochains`: homotopies from `f` to `g` are the reduced
-  transformations of degree `-1` bounding `F - G`.
+* `TauCeti.AInfinityHom.Homotopy.equivCochains` and `TauCeti.AInfinityHom.Homotopy.ofTaylor`:
+  homotopies from `f` to `g` as the reduced transformations of degree `-1` bounding `F - G`, and
+  construction of a homotopy from its suspended Taylor components.
 
 ## Main results
 
@@ -209,6 +213,40 @@ theorem taylor_injective :
 @[ext]
 theorem ext {D D' : reducedTransformationCochains f g p} (e : taylor D = taylor D') : D = D' :=
   taylor_injective e
+
+/-- Construct a reduced transformation of degree `p` from a degree-`p` Taylor map. -/
+noncomputable def ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B)
+    (hφ : LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    reducedTransformationCochains f g p :=
+  ⟨ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap φ,
+    ReducedTensorWords.isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) p
+      f.isCoalgHom_barMap g.isCoalgHom_barMap φ,
+    ReducedTensorWords.isHomogeneous_gradedCoderivAlong f.isHomogeneous_barMap
+      g.isHomogeneous_barMap hφ⟩
+
+/-- Underlying bar coderivation of `ofTaylor`. -/
+@[simp]
+theorem coe_ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B)
+    (hφ : LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    (ofTaylor (f := f) (g := g) φ hφ : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) =
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap φ :=
+  (rfl)
+
+/-- Taylor map of `ofTaylor`. -/
+@[simp]
+theorem taylor_ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B)
+    (hφ : LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    taylor (ofTaylor (f := f) (g := g) φ hφ) = φ :=
+  ReducedTensorWords.letter_comp_gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap φ
+
+/-- Rebuilding a reduced transformation from its Taylor map recovers the transformation. -/
+@[simp]
+theorem ofTaylor_taylor (D : reducedTransformationCochains f g p) :
+    ofTaylor (taylor D) (isHomogeneous_taylor D) = D :=
+  ext (taylor_ofTaylor _ _)
 
 end reducedTransformationCochains
 
@@ -411,6 +449,50 @@ theorem barHomotopy_equivCochains_symm (H : {H : reducedTransformationCochains f
       ((H : reducedTransformationCochains f g (-1)) :
         ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) :=
   (rfl)
+
+/-- Construct a homotopy from `f` to `g` from a degree-`-1` Taylor map satisfying the suspended
+component equation. -/
+noncomputable def ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B)
+    (hφ : LinearMap.IsHomogeneous φ (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece (-1))
+    (e : f.taylor - g.taylor = BB.taylor ∘ₗ
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap φ +
+        φ ∘ₗ AA.barDifferential) :
+    Homotopy f g :=
+  ofCoderivation
+    (ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap φ)
+    (ReducedTensorWords.isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 1
+      f.isCoalgHom_barMap g.isCoalgHom_barMap φ)
+    (ReducedTensorWords.isHomogeneous_gradedCoderivAlong f.isHomogeneous_barMap
+      g.isHomogeneous_barMap hφ)
+    (by
+      rw [ReducedTensorWords.letter_comp_gradedCoderivAlong]
+      exact e)
+
+/-- Bar homotopy of `ofTaylor`. -/
+@[simp]
+theorem barHomotopy_ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B) (hφ e) :
+    (ofTaylor (f := f) (g := g) φ hφ e).barHomotopy =
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) 1 f.barMap g.barMap φ := by
+  rw [ofTaylor, barHomotopy_ofCoderivation]
+
+/-- Taylor map of `ofTaylor`. -/
+@[simp]
+theorem taylor_ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B) (hφ e) :
+    (ofTaylor (f := f) (g := g) φ hφ e).taylor = φ := by
+  rw [ofTaylor, taylor_ofCoderivation, ReducedTensorWords.letter_comp_gradedCoderivAlong]
+
+/-- Rebuilding a homotopy from its Taylor map recovers the homotopy. -/
+@[simp]
+theorem ofTaylor_taylor (h : Homotopy f g) (hφ e) :
+    ofTaylor (f := f) (g := g) h.taylor hφ e = h :=
+  ext (taylor_ofTaylor _ _ _)
+
+/-- Linear homotopy component of `ofTaylor`. -/
+@[simp]
+theorem linearHomotopy_ofTaylor (φ : ReducedTensorWords R A →ₗ[R] B) (hφ e) :
+    (ofTaylor (f := f) (g := g) φ hφ e).linearHomotopy = φ ∘ₗ ReducedTensorWords.ofLetter R A :=
+  LinearMap.ext fun a ↦ by rw [linearHomotopy_apply, taylor_ofTaylor, LinearMap.comp_apply]
 
 end Homotopy
 

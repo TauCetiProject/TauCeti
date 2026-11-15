@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Basic
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Basic
 public import TauCeti.Algebra.Homology.Contraction.TensorTrick.Perturbation.Homotopy
 
 /-!

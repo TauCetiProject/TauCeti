@@ -46,7 +46,9 @@ correspondence is the one describing `A∞` morphisms through their components `
   Taylor components `f`.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.eq_of_letter_comp_eq`: a coalgebra morphism is determined
   by its Taylor components, and on the words of length at most `n` by its Taylor components on
-  those words (`TauCeti.ReducedTensorWords.IsCoalgHom.apply_eq_of_mem_filtration`).
+  those words (`TauCeti.ReducedTensorWords.IsCoalgHom.apply_eq_of_mem_filtration`); perturbing the
+  Taylor components above length `n` shifts the expansion on length `n + 1` by a single letter
+  (`TauCeti.ReducedTensorWords.coalgHom_add_apply_of_mem_filtration_succ`).
 * `TauCeti.ReducedTensorWords.coalgHom_comp_letter`: the letterwise map of a linear map is the
   coalgebra morphism whose only nonzero Taylor component is that map in arity one.
 * `TauCeti.ReducedTensorWords.IsCoalgHom.mem_filtration`: a coalgebra morphism does not increase
@@ -396,6 +398,40 @@ theorem IsCoalgHom.mem_filtration {F : ReducedTensorWords R M →ₗ[R] ReducedT
     F z ∈ filtration R N n := by
   rw [hF.eq_coalgHom]
   exact coalgHom_mem_filtration _ hz
+
+/-- Two Taylor expansions whose Taylor components agree on the words of length at most `n` agree on
+those words. -/
+theorem coalgHom_apply_eq_of_mem_filtration {f g : ReducedTensorWords R M →ₗ[R] N} {n : ℕ}
+    (h : ∀ z ∈ filtration R M n, f z = g z) {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : coalgHom R f z = coalgHom R g z :=
+  (isCoalgHom_coalgHom f).apply_eq_of_mem_filtration (isCoalgHom_coalgHom g)
+    (fun w hw ↦ by
+      rw [← LinearMap.comp_apply (letter R N), ← LinearMap.comp_apply (letter R N),
+        letter_comp_coalgHom, letter_comp_coalgHom, h w hw]) hz
+
+/-- Perturbing Taylor components `f` by a map `φ` that vanishes on the words of length at most `n`
+changes `coalgHom` on the words of length at most `n + 1` only by the single letter `φ z`: every
+proper cut of `z` has both halves of length at most `n`, where `coalgHom (f + φ)` and `coalgHom f`
+already agree. -/
+theorem coalgHom_add_apply_of_mem_filtration_succ {f φ : ReducedTensorWords R M →ₗ[R] N} {n : ℕ}
+    (hφ : ∀ z ∈ filtration R M n, φ z = 0) {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M (n + 1)) :
+    coalgHom R (f + φ) z = coalgHom R f z + ofLetter R N (φ z) := by
+  have heq : ∀ u ∈ filtration R M n, coalgHom R (f + φ) u = coalgHom R f u := fun u hu ↦
+    coalgHom_apply_eq_of_mem_filtration (fun w hw ↦ by rw [LinearMap.add_apply, hφ w hw, add_zero])
+      hu
+  refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ ?_
+  · obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
+    rw [(isCoalgHom_coalgHom _).deconcatenation_apply, map_add, deconcatenation_ofLetter, add_zero,
+      (isCoalgHom_coalgHom _).deconcatenation_apply, ← hw]
+    clear hw
+    induction w using TensorProduct.inductionOn with
+    | tmul u v =>
+        simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
+        rw [heq _ u.2, heq _ v.2]
+    | add u v hu hv => simp only [map_add, hu, hv]
+  · rw [← LinearMap.comp_apply (letter R N), letter_comp_coalgHom, LinearMap.add_apply, map_add,
+      ← LinearMap.comp_apply (letter R N), letter_comp_coalgHom, letter_ofLetter]
 
 /-- A coalgebra morphism sends a single letter to the single letter given by its arity-one Taylor
 component. -/
