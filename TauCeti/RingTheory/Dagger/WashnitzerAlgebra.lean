@@ -42,7 +42,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   algebra.
 * `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
   restricted at a polyradius bounded below by some `ρ > 1`.
-* `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
+* `TauCeti.Dagger.washnitzerAlgebra.renameAlgEquiv`: renaming the variables along an equivalence.
 * `TauCeti.Dagger.washnitzerAlgebra.isEmptyAlgEquiv`: with no variables, `W` is the coefficient
   ring, via the constant coefficient.
 
@@ -206,7 +206,8 @@ theorem algebraMap_surjective [IsEmpty σ] :
   obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ R)
   exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
 
-/-- Renaming variables along an equivalence preserves overconvergence. -/
+/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
+`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
 noncomputable def renameAlgEquiv {τ : Type*} (e : σ ≃ τ) :
     washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
   AlgEquiv.ofRingEquiv
@@ -335,34 +336,10 @@ theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i,
     (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
   (rfl)
 
-/-- A renamed series is overconvergent iff the original one is. -/
-private theorem renameEquiv_mem_iff {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R) :
-    f ∈ washnitzerAlgebra σ R ↔
-      _root_.MvPowerSeries.renameEquiv R e f ∈ washnitzerAlgebra τ R := by
-  simp only [mem_washnitzerAlgebra]
-  exact exists_congr fun ρ ↦
-    and_congr_right' (isRestricted_renameEquiv_iff e (c := fun _ ↦ ρ)).symm
-
-/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
-`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
-noncomputable def renameEquiv {τ : Type*} (e : σ ≃ τ) :
-    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
-  AlgEquiv.ofRingEquiv
-    (f := (_root_.MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ (renameEquiv_mem_iff e))
-    fun r ↦ Subtype.ext (rename_C _ r)
-
-/-- The renaming isomorphism of overconvergent series is `MvPowerSeries.renameEquiv` on the
-underlying series. -/
-@[simp]
-theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
-    (washnitzerAlgebra.renameEquiv e f : MvPowerSeries τ R) =
-      _root_.MvPowerSeries.renameEquiv R e f :=
-  (rfl)
-
 /-- Renaming the variables commutes with the inclusion of the polynomials. -/
 @[simp]
-theorem renameEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
-    washnitzerAlgebra.renameEquiv e (ofMvPolynomial σ R p) =
+theorem renameAlgEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    renameAlgEquiv e (ofMvPolynomial σ R p) =
       ofMvPolynomial τ R (MvPolynomial.rename e p) :=
   Subtype.ext (by simp [_root_.MvPowerSeries.rename_coe])
 
