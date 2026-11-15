@@ -732,6 +732,27 @@ theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
     rfl
   exact key X.ρ.restrictScalarsInt (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
 
+/-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
+a homogeneous cocycle. -/
+-- Not a `simp` lemma, for the same reason as `iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`.
+theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply
+    (w : cocycles (ofDiscreteModule ℤ G X.V) 2) (g₀ g₁ g₂ : G) :
+    ((homogeneousCochains X).iCycles 2
+        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).hom w)).val g₀ g₁ g₂ =
+      ((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂ := by
+  rw [ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
+  refine (iCycles_cocyclesRestrictScalarsIntEquiv_two_apply X _ g₀ g₁ g₂).trans ?_
+  -- The transport along the equality of objects is a `cast` of values once that equality has a
+  -- variable side; here both carriers are `X.V`, so the `cast` is the identity.
+  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G X.V = B),
+      ((homogeneousCochains B).iCycles 2
+          (eqToHom (congrArg (cocycles · 2) h) w)).val g₀ g₁ g₂ =
+        cast (congrArg TopRep.V h)
+          (((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂) := by
+    rintro B rfl
+    simp only [eqToHom_refl, CategoryTheory.id_apply, cast_eq]
+  exact (hev _ (ofDiscreteModule_eq_restrictScalarsInt_obj X)).trans (cast_eq _ _)
+
 /-- `Hⁿ(G, X)` vanishes exactly when the `ℤ`-cohomology of the carrier of the discrete `X`
 vanishes. -/
 theorem subsingleton_continuousCohomology_ofDiscreteModule_iff :

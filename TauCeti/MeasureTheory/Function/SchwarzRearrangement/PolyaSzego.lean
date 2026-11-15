@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
@@ -270,26 +271,19 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
     Set.ext fun x ↦ (ENNReal.ofReal_lt_iff_lt_toReal ht.le (hv_ne_top x)).symm
   have hh_level {t : ℝ} (ht : 0 < t) : {x | ENNReal.ofReal t < f x} = {x | t < h x} :=
     Set.ext fun _ ↦ ENNReal.ofReal_lt_ofReal_iff_of_nonneg ht.le
-  have hv_vol {t : ℝ} (ht : 0 < t) : volume {x | t < v x} = volume {x | t < h x} := by
-    rw [hv_level ht, addHaar_setOf_lt_schwarzRearrangement, hh_level ht]
   have hcrit := hh.volume_image_setOf_fderiv_toReal_schwarzRearrangement_eq_zero volume
   filter_upwards [compl_mem_ae_iff.2 hcrit, hh.ae_restrict_inter_setOf_regular_preimage_eq univ,
     hv_lip.ae_restrict_inter_setOf_regular_preimage_eq univ,
     hh.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure_preimage,
     hv_lip.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure_preimage,
     ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv hfin,
-    ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv
-      hv_lip.continuous.measurable.aemeasurable (fun t ht ↦ hv_vol ht ▸ hfin t ht) hcrit]
+    hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin]
     with t hcritt hregh hregv hperh hperv hdisth hdistv ht
   rw [finrank_self, univ_inter, univ_inter,
     setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero h] at hregh
   rw [finrank_self, univ_inter, univ_inter,
     setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero v] at hregv
-  have hderiv_eq : deriv (fun s ↦ volume.real {x | s < v x}) t =
-      deriv (fun s ↦ volume.real {x | s < h x}) t :=
-    EventuallyEq.deriv_eq (eventually_of_mem (Ioi_mem_nhds ht) fun _ hs ↦ by
-      simp [measureReal_def, hv_vol hs])
-  refine ⟨hcritt, ?_, hdistv ht ▸ hderiv_eq ▸ hdisth ht, (hdistv ht) ▸ ENNReal.ofReal_lt_top⟩
+  refine ⟨hcritt, ?_, hdistv ht ▸ hdisth ht, (hdistv ht) ▸ ENNReal.ofReal_lt_top⟩
   rw [show μHE[finrank ℝ E - 1] ({x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}) =
       μHE[finrank ℝ E - 1] (v ⁻¹' {t}) by
         simpa using congrArg (fun ν : Measure E ↦ ν univ) hregv.symm,

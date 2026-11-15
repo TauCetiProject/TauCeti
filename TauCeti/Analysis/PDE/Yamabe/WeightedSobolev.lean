@@ -15,7 +15,7 @@ import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
