@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # Values of fundamental-discriminant characters
 
 The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
-zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
-character.
+zero when `n` is not coprime to `D`. Because `fundamentalDiscriminant d` differs from `d` by `1` or
+`4 = 2²`, which is a square coprime to every odd integer, `jacobiSym` at odd `n` and `legendreSym`
+at odd primes `p` agree on `D` and on its squarefree radicand `fundamentalDiscriminantRadicand D`.
+At even arguments the Jacobi and Legendre symbols need not agree with the character.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +37,67 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- At an odd natural number `n`, `fundamentalDiscriminant d` has the same Jacobi symbol as `d`
+(no squarefreeness needed), since they differ by `1` or `2²`. -/
+theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  rw [← hcd]
+  refine TauCeti.jacobiSym_sq_mul_of_isCoprime ?_ d
+  rcases hc with rfl | rfl
+  · exact isCoprime_one_left
+  · exact hn.natCast.isCoprime_two.symm
+
+/-- At an odd prime `p`, `fundamentalDiscriminant d` has the same Legendre symbol as `d`
+(no squarefreeness needed). -/
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
+    jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp)]
+
+/-- At an odd natural number `n`, a fundamental discriminant `D` and its squarefree radicand have
+the same Jacobi symbol. -/
+theorem jacobiSym_fundamentalDiscriminantRadicand {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminantRadicand D) n = jacobiSym D n := by
+  conv_rhs => rw [← fundamentalDiscriminant_fundamentalDiscriminantRadicand hD,
+    jacobiSym_fundamentalDiscriminant _ hn]
+
+/-- At an odd prime `p`, a fundamental discriminant `D` and its squarefree radicand have the same
+Legendre symbol, including `0` at odd primes dividing `D`. -/
+theorem legendreSym_fundamentalDiscriminantRadicand {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminantRadicand D) = legendreSym p D := by
+  conv_rhs => rw [← fundamentalDiscriminant_fundamentalDiscriminantRadicand hD,
+    legendreSym_fundamentalDiscriminant _ hp]
+
+/-- At an odd natural number `n`, `fundamentalDiscriminantChar D hD` equals the Jacobi symbol of
+the squarefree radicand of `D`. -/
+theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym_radicand {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
+    fundamentalDiscriminantChar D hD (n : ℤ) =
+      jacobiSym (fundamentalDiscriminantRadicand D) n := by
+  rw [fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
+    jacobiSym_fundamentalDiscriminantRadicand hD hn]
+
+/-- At an odd prime `p`, `fundamentalDiscriminantChar D hD` equals the Legendre symbol modulo `p`
+of the squarefree radicand of `D`, including `0` when `p ∣ D`. -/
+theorem fundamentalDiscriminantChar_natCast_eq_legendreSym_radicand {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantChar D hD (p : ℤ) =
+      legendreSym p (fundamentalDiscriminantRadicand D) := by
+  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp,
+    legendreSym_fundamentalDiscriminantRadicand hD hp]
+
+/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` for squarefree `d` equals
+`legendreSym p d`, including `0` when `p ∣ d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_legendreSym {d : ℤ}
+    (hd : Squarefree d) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d)
+      (isFundamentalDiscr_fundamentalDiscriminant hd) (p : ℤ) = legendreSym p d := by
+  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym _ hp,
+    legendreSym_fundamentalDiscriminant _ hp]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
