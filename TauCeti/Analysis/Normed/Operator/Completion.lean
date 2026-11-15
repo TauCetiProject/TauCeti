@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Normed.Group.HomCompletion
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
-public import TauCeti.Topology.Algebra.LinearMapCompletion
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!

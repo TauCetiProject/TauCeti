@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Completion
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Approximation
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Bernstein
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
@@ -13,6 +12,7 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Completion
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
+import TauCeti.Analysis.InnerProductSpace.Completion
 import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
@@ -210,35 +210,6 @@ variable {𝕜 H₁ F : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup H₁] [InnerProductSpace 𝕜 H₁]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-omit [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] in
-/-- Mapping a submodule `M` of codimension at most `n` into `Completion H₁` leaves an orthogonal
-complement of dimension at most `n`: the orthogonal projection onto `M₀ᗮ` descends to `H₁ ⧸ M`
-with dense, finite-dimensional, hence closed range. -/
-private theorem rank_orthogonal_map_toComplL_le {M : Submodule 𝕜 H₁} {n : ℕ}
-    (hM : Module.rank 𝕜 (H₁ ⧸ M) ≤ n) :
-    Module.rank 𝕜 (M.map (Completion.toComplL : H₁ →L[𝕜] Completion H₁).toLinearMap)ᗮ ≤ n := by
-  let j : H₁ →L[𝕜] Completion H₁ := Completion.toComplL
-  let M₀ : Submodule 𝕜 (Completion H₁) := M.map j.toLinearMap
-  let φ : H₁ →L[𝕜] M₀ᗮ := M₀ᗮ.orthogonalProjectionOnto ∘L j
-  have hker : M ≤ LinearMap.ker φ.toLinearMap := fun x hx ↦
-    LinearMap.mem_ker.mpr <| M₀ᗮ.orthogonalProjectionOnto_eq_zero_iff.mpr
-      (M₀.le_orthogonal_orthogonal (Submodule.mem_map_of_mem hx))
-  let ψ : (H₁ ⧸ M) →ₗ[𝕜] M₀ᗮ := M.liftQ φ.toLinearMap hker
-  have hrange_le : Module.rank 𝕜 (LinearMap.range φ.toLinearMap) ≤ n := by
-    rw [← M.liftQ_mkQ φ.toLinearMap hker]
-    exact (LinearMap.rank_comp_le_left M.mkQ ψ).trans ((LinearMap.rank_le_domain ψ).trans hM)
-  have : FiniteDimensional 𝕜 (LinearMap.range φ.toLinearMap) :=
-    Module.rank_lt_aleph0_iff.mp (hrange_le.trans_lt Cardinal.natCast_lt_aleph0)
-  have hsurj : Function.Surjective M₀ᗮ.orthogonalProjectionOnto :=
-    fun y ↦ ⟨y, M₀ᗮ.orthogonalProjectionOnto_mem_subspace_eq_self y⟩
-  have hdense : DenseRange φ :=
-    hsurj.denseRange.comp Completion.denseRange_coe M₀ᗮ.orthogonalProjectionOnto.continuous
-  have htop : LinearMap.range φ.toLinearMap = ⊤ :=
-    SetLike.coe_injective <|
-      (LinearMap.range φ.toLinearMap).isClosed_of_finiteDimensional.closure_eq.symm.trans
-        hdense.closure_range
-  rwa [← rank_top, ← htop]
-
 /-- From a seminormed inner product space into an arbitrary seminormed space over `ℝ` or `ℂ`, the
 Gelfand numbers coincide with the approximation numbers across arbitrary universes. -/
 theorem gelfandNumber_eq_singularValue (T : H₁ →L[𝕜] F) (n : ℕ) :
@@ -248,10 +219,13 @@ theorem gelfandNumber_eq_singularValue (T : H₁ →L[𝕜] F) (n : ℕ) :
   · simpa [gelfandNumber_eq_zero_of_rank_le hR] using R.gelfandNumber_add_le (T - R) n
   · let M₀ : Submodule 𝕜 (Completion H₁) :=
       M.map (Completion.toComplL : H₁ →L[𝕜] Completion H₁).toLinearMap
+    have : FiniteDimensional 𝕜 (H₁ ⧸ M) :=
+      Module.rank_lt_aleph0_iff.mp (hM.trans_lt Cardinal.natCast_lt_aleph0)
     calc T.singularValue n
         = T.completion.singularValue n := (T.singularValue_completion n).symm
       _ ≤ ‖T.completion ∘L M₀ᗮᗮ.subtypeL‖₊ :=
-          T.completion.singularValue_le_nnnorm_comp_orthogonal (rank_orthogonal_map_toComplL_le hM)
+          T.completion.singularValue_le_nnnorm_comp_orthogonal
+            (M.rank_orthogonal_map_toComplL_le.trans hM)
       _ = ‖T.completion ∘L M₀.topologicalClosure.subtypeL‖₊ := by
           rw [M₀.orthogonal_orthogonal_eq_closure]
       _ = ‖T.completion ∘L M₀.subtypeL‖₊ :=

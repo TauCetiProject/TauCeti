@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
+import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Approximation numbers of completed operators
