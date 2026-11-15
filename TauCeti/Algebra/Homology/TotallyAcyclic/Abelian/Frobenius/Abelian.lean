@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Extension
-public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius.Basic
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Equivalence
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
@@ -32,7 +32,7 @@ category of `C` itself.
 ## Main definitions
 
 * `CategoryTheory.GorensteinProjective.equivalenceOfIsFrobenius`: the inclusion
-  `Gproj C ⥤ C` as an equivalence, when every object is Gorenstein-projective.
+  `Gproj C ⥤ C` as an equivalence, when the abelian exact structure of `C` is Frobenius.
 * `CategoryTheory.GorensteinProjective.stableEquivalenceOfIsFrobenius`: the induced equivalence of
   stable categories.
 
@@ -40,6 +40,9 @@ category of `C` itself.
 
 * `CategoryTheory.isGorensteinProjective_of_isFrobenius`: in a Frobenius abelian category, every
   object is Gorenstein-projective.
+* `CategoryTheory.GorensteinProjective.isConflationExact_equivalenceOfIsFrobenius_functor` and
+  `isConflationExact_equivalenceOfIsFrobenius_inverse`: the equivalence and its inverse preserve
+  conflations.
 * `CategoryTheory.GorensteinProjective.stableEquivalenceOfIsFrobenius_isTriangulated`: the stable
   equivalence is a triangle equivalence for Happel's triangulations.
 
@@ -63,10 +66,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
   (hE : (ExactStructure.abelian C).IsFrobenius)
 
 include hE in
-/-- **In a Frobenius abelian category every object is Gorenstein-projective.** If the abelian exact
-structure of `C` is Frobenius, the spliced complete resolution of an object is a totally acyclic
-complex of projectives: its cycles have no extensions by projective objects, since these are
-injective. -/
+/-- **In a Frobenius abelian category every object is Gorenstein-projective**: if the abelian
+exact structure of `C` is Frobenius, every object of `C` is Gorenstein-projective. -/
 theorem isGorensteinProjective_of_isFrobenius (X : C) : isGorensteinProjective C X := by
   let := HasExt.standard C
   let r := hE.completeResolution X
@@ -86,7 +87,7 @@ namespace GorensteinProjective
 /-- The Frobenius exact structure on the Gorenstein-projective objects. -/
 local notation "hG" => (exactStructure_isFrobenius (C := C))
 
-/-- When every object of `C` is Gorenstein-projective, the inclusion of the Gorenstein-projective
+/-- When the abelian exact structure of `C` is Frobenius, the inclusion of the Gorenstein-projective
 objects is an equivalence of categories. -/
 @[expose, simps]
 noncomputable def equivalenceOfIsFrobenius : GorensteinProjective C ≌ C where
@@ -99,20 +100,31 @@ instance : (equivalenceOfIsFrobenius hE).functor.Additive := by
   dsimp [equivalenceOfIsFrobenius]
   infer_instance
 
-instance : (equivalenceOfIsFrobenius hE).inverse.Additive := by
-  dsimp [equivalenceOfIsFrobenius]
-  infer_instance
+/-- The inclusion of the Gorenstein-projective objects, as an equivalence, preserves
+conflations. -/
+theorem isConflationExact_equivalenceOfIsFrobenius_functor :
+    (exactStructure C).IsConflationExact (ExactStructure.abelian C)
+      (equivalenceOfIsFrobenius hE).functor :=
+  -- The functor of the equivalence is the inclusion `ι` (`equivalenceOfIsFrobenius_functor`).
+  ⟨fun hS ↦ (ExactStructure.abelian_conflation _).mpr ((exactStructure_conflation_iff _).mp hS)⟩
+
+/-- The inverse of the inclusion of the Gorenstein-projective objects preserves conflations. -/
+theorem isConflationExact_equivalenceOfIsFrobenius_inverse :
+    (ExactStructure.abelian C).IsConflationExact (exactStructure C)
+      (equivalenceOfIsFrobenius hE).inverse :=
+  -- `(S.map inverse).map ι` is `S.map (inverse ⋙ functor)` (`ShortComplex.map_comp`), which is
+  -- isomorphic to `S.map (𝟭 C) = S` (`ShortComplex.map_id`) through the counit.
+  ⟨fun {S} hS ↦ (exactStructure_conflation_iff _).mpr (ShortComplex.shortExact_of_iso
+    (S.mapNatIso (equivalenceOfIsFrobenius hE).counitIso.symm)
+    ((ExactStructure.abelian_conflation S).mp hS))⟩
 
 /-- The inclusion of the Gorenstein-projective objects, as an equivalence, preserves conflations
 and projective-injective objects. -/
 theorem stableConflationExact_equivalenceOfIsFrobenius_functor :
     StableConflationExact (exactStructure C) (ExactStructure.abelian C)
       (equivalenceOfIsFrobenius hE).functor :=
-  ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
-    ⟨fun hS ↦ (ExactStructure.abelian_conflation _).mpr
-      ((exactStructure_conflation_iff _).mp hS)⟩
-    ⟨fun {S} hS ↦ (exactStructure_conflation_iff _).mpr
-      ((ExactStructure.abelian_conflation S).mp hS)⟩
+  (isConflationExact_equivalenceOfIsFrobenius_functor hE).stableConflationExact_of_equivalence
+    (isConflationExact_equivalenceOfIsFrobenius_inverse hE)
 
 /-- The inverse of the inclusion of the Gorenstein-projective objects preserves conflations and
 projective-injective objects. -/
@@ -121,14 +133,10 @@ theorem stableConflationExact_equivalenceOfIsFrobenius_inverse :
       (equivalenceOfIsFrobenius hE).inverse :=
   have : (equivalenceOfIsFrobenius hE).symm.functor.Additive :=
     inferInstanceAs (equivalenceOfIsFrobenius hE).inverse.Additive
-  have : (equivalenceOfIsFrobenius hE).symm.inverse.Additive :=
-    inferInstanceAs (equivalenceOfIsFrobenius hE).functor.Additive
   ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
     (e := (equivalenceOfIsFrobenius hE).symm)
-    ⟨fun {S} hS ↦ (exactStructure_conflation_iff _).mpr
-      ((ExactStructure.abelian_conflation S).mp hS)⟩
-    ⟨fun hS ↦ (ExactStructure.abelian_conflation _).mpr
-      ((exactStructure_conflation_iff _).mp hS)⟩
+    (isConflationExact_equivalenceOfIsFrobenius_inverse hE)
+    (isConflationExact_equivalenceOfIsFrobenius_functor hE)
 
 /-- **The stable category of a Frobenius abelian category is the stable category of its
 Gorenstein-projective objects.** When the abelian exact structure of `C` is Frobenius, the
@@ -139,6 +147,10 @@ noncomputable abbrev stableEquivalenceOfIsFrobenius :
   StableConflationExact.stableEquivalence (equivalenceOfIsFrobenius hE)
     (stableConflationExact_equivalenceOfIsFrobenius_functor hE)
     (stableConflationExact_equivalenceOfIsFrobenius_inverse hE) (hG) hE
+
+instance : (stableEquivalenceOfIsFrobenius hE).functor.Additive := by
+  rw [StableConflationExact.stableEquivalence_functor, StableConflationExact.stableFunctor_eq_map]
+  infer_instance
 
 /-- The stable equivalence `stableEquivalenceOfIsFrobenius` is a triangle equivalence for Happel's
 triangulations of the two stable categories. -/
@@ -155,7 +167,6 @@ theorem stableEquivalenceOfIsFrobenius_isTriangulated :
     letI := StableConflationExact.stableEquivalenceInverseCommShift
       (stableConflationExact_equivalenceOfIsFrobenius_functor hE)
       (stableConflationExact_equivalenceOfIsFrobenius_inverse hE) (hG) hE
-    letI := (stableEquivalenceOfIsFrobenius hE).commShift_of_functor ℤ
     (stableEquivalenceOfIsFrobenius hE).IsTriangulated :=
   StableConflationExact.stableEquivalenceIsTriangulated _ _ _ _
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Frobenius
-public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.FrobeniusAbelian
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius.Abelian
 public import TauCeti.Algebra.Homology.TotallyAcyclic.FGModuleCat
 
 /-!

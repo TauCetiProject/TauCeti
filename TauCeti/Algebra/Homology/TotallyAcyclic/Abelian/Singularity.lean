@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.ShortExact
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
-public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius.Basic
 public import TauCeti.CategoryTheory.Triangulated.TriangleIso
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
