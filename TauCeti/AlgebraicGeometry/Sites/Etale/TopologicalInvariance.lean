@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.UniversalHomeomorphism
+public import TauCeti.AlgebraicGeometry.Sites.Etale.BaseChange
 
 /-!
 # Base change of étale schemes along a universal homeomorphism
 
-For a morphism `f : X ⟶ Y`, base change along `f` gives a functor
-`f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` between the categories of étale schemes. When `f`
-is a universal homeomorphism, this functor is fully faithful: base change along `f` is bijective
-on morphisms into an étale `Y`-scheme
+For a morphism `f : X ⟶ Y`, base change along `f` gives the functor
+`f.smallEtaleBaseChange : Y.Etale ⥤ X.Etale` (`TauCeti.AlgebraicGeometry.Sites.Etale.BaseChange`).
+When `f` is a universal homeomorphism, this functor is fully faithful: base change along `f` is
+bijective on morphisms into an étale `Y`-scheme
 (`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.overPullback_map_bijective`), because
 universal homeomorphisms have the unique left lifting property with respect to étale morphisms.
 This is the full faithfulness half of the topological invariance of the small étale site
@@ -21,9 +22,9 @@ This is the full faithfulness half of the topological invariance of the small é
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.smallEtaleBaseChange`: base change `Y.Etale ⥤ X.Etale` along
-  `f : X ⟶ Y`, with `AlgebraicGeometry.Scheme.Hom.full_smallEtaleBaseChange` and
-  `AlgebraicGeometry.Scheme.Hom.faithful_smallEtaleBaseChange` for a universal homeomorphism `f`.
+* `AlgebraicGeometry.Scheme.Hom.faithful_smallEtaleBaseChange` and
+  `AlgebraicGeometry.Scheme.Hom.full_smallEtaleBaseChange`: `f.smallEtaleBaseChange` is fully
+  faithful when `f : X ⟶ Y` is a universal homeomorphism.
 
 ## References
 
@@ -41,19 +42,7 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 open TauCeti.AlgebraicGeometry
 
-variable {X Y : Scheme.{u}} (f : X ⟶ Y)
-
-/-- Base change along `f : X ⟶ Y`, from schemes étale over `Y` to schemes étale over `X`: an étale
-`V ⟶ Y` is sent to `V ×_Y X ⟶ X`. -/
-noncomputable def smallEtaleBaseChange : Y.Etale ⥤ X.Etale :=
-  MorphismProperty.Over.pullback @Etale ⊤ f
-
-/-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
-noncomputable def smallEtaleBaseChangeCompForgetIso :
-    f.smallEtaleBaseChange ⋙ Etale.forget X ≅ Etale.forget Y ⋙ Over.pullback f :=
-  Iso.refl _
-
-variable [IsUniversalHomeomorphism f]
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsUniversalHomeomorphism f]
 
 /-- Base change along a universal homeomorphism `f : X ⟶ Y` is faithful on schemes étale over
 `Y`. -/

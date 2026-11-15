@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
-public import TauCeti.CategoryTheory.MorphismProperty.Over
+public import TauCeti.CategoryTheory.MorphismProperty.Over.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 import TauCeti.AlgebraicGeometry.FiniteEtale.Faithful
 
