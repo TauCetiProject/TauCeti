@@ -25,8 +25,10 @@ comparison are separate results. No smoothness or reducedness hypothesis is impo
 the group; when the group is reduced, so is the orbit scheme.
 
 The geometric orbit is closed in projective space if and only if its inclusion is a closed
-immersion, equivalently the orbit scheme is proper over the base field
-(`Comodule.isProper_projectiveOrbitToSpec_iff_isClosed`), without reducedness or connectedness
+immersion (`Comodule.isClosedImmersion_projectiveOrbitι_iff_isClosed`), equivalently the orbit
+scheme is proper over the base field
+(`Comodule.isProper_projectiveOrbitToSpec_iff_isClosedImmersion`,
+`Comodule.isProper_projectiveOrbitToSpec_iff_isClosed`), without reducedness or connectedness
 assumptions on the group.
 
 The construction combines `Comodule.isLocallyClosed_range_projectiveOrbitMap` with
@@ -154,18 +156,14 @@ instance instIsSeparatedProjectiveOrbitToSpec (m : M) (hm : Module.IsUnimodular 
   rw [projectiveOrbitToSpec_def]
   infer_instance
 
-variable (M) in
-/-- A projective orbit with closed geometric image is proper over the base field.
-The group need not be reduced, smooth, or connected. -/
-theorem isProper_projectiveOrbitToSpec_of_isClosed
-    (m : M) (hm : Module.IsUnimodular k m)
-    (hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))) :
-    IsProper (projectiveOrbitToSpec (H := H) m hm) := by
-  let _ : IsClosedImmersion (projectiveOrbitι (H := H) m hm) :=
-    IsClosedImmersion.of_isPreimmersion _ (by
-      simpa only [range_projectiveOrbitι] using hclosed)
-  rw [projectiveOrbitToSpec_def]
-  infer_instance
+/-- The inclusion of the projective orbit scheme into projective space is a closed immersion if and
+only if the geometric orbit is closed in projective space. -/
+theorem isClosedImmersion_projectiveOrbitι_iff_isClosed (m : M) (hm : Module.IsUnimodular k m) :
+    IsClosedImmersion (projectiveOrbitι (H := H) m hm) ↔
+      IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  rw [← range_projectiveOrbitι]
+  exact ⟨fun h ↦ (have := h; (projectiveOrbitι (H := H) m hm).isClosedMap.isClosed_range),
+    IsClosedImmersion.of_isPreimmersion _⟩
 
 /-- If the projective orbit scheme is proper over `Spec k`, its immersion into projective space is
 a closed immersion. -/
@@ -181,14 +179,16 @@ theorem isClosedImmersion_projectiveOrbitι_of_isProper (m : M) (hm : Module.IsU
   exact IsClosedImmersion.of_isPreimmersion _
     (projectiveOrbitι (H := H) m hm).isClosedMap.isClosed_range
 
-/-- If the projective orbit scheme is proper over `Spec k`, its geometric orbit is closed in the
-ambient projective space. -/
-theorem isClosed_range_projectiveOrbitMap_of_isProper (m : M) (hm : Module.IsUnimodular k m)
-    [IsProper (projectiveOrbitToSpec (H := H) m hm)] :
-    IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
-  let _ := isClosedImmersion_projectiveOrbitι_of_isProper (H := H) m hm
-  rw [← range_projectiveOrbitι]
-  exact (projectiveOrbitι (H := H) m hm).isClosedMap.isClosed_range
+/-- The projective orbit scheme is proper over `Spec k` if and only if its inclusion into
+projective space is a closed immersion. -/
+theorem isProper_projectiveOrbitToSpec_iff_isClosedImmersion
+    (m : M) (hm : Module.IsUnimodular k m) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
+      IsClosedImmersion (projectiveOrbitι (H := H) m hm) :=
+  ⟨fun _ ↦ isClosedImmersion_projectiveOrbitι_of_isProper (H := H) m hm, fun h ↦ by
+    have := h
+    rw [projectiveOrbitToSpec_def]
+    infer_instance⟩
 
 /-- **Properness criterion for projective orbits.** Over an algebraically closed field `k`, the
 projective orbit scheme of a line under a finite-type affine group scheme is proper over `Spec k`
@@ -196,8 +196,24 @@ if and only if the geometric orbit is closed in projective space. -/
 theorem isProper_projectiveOrbitToSpec_iff_isClosed (m : M) (hm : Module.IsUnimodular k m) :
     IsProper (projectiveOrbitToSpec (H := H) m hm) ↔
       IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) :=
-  ⟨fun _ ↦ isClosed_range_projectiveOrbitMap_of_isProper (H := H) m hm,
-   isProper_projectiveOrbitToSpec_of_isClosed M m hm⟩
+  (isProper_projectiveOrbitToSpec_iff_isClosedImmersion (H := H) m hm).trans
+    (isClosedImmersion_projectiveOrbitι_iff_isClosed (H := H) m hm)
+
+variable (M) in
+/-- A projective orbit with closed geometric image is proper over the base field.
+The group need not be reduced, smooth, or connected. -/
+theorem isProper_projectiveOrbitToSpec_of_isClosed
+    (m : M) (hm : Module.IsUnimodular k m)
+    (hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) :=
+  (isProper_projectiveOrbitToSpec_iff_isClosed m hm).2 hclosed
+
+/-- If the projective orbit scheme is proper over `Spec k`, its geometric orbit is closed in the
+ambient projective space. -/
+theorem isClosed_range_projectiveOrbitMap_of_isProper (m : M) (hm : Module.IsUnimodular k m)
+    [IsProper (projectiveOrbitToSpec (H := H) m hm)] :
+    IsClosed (Set.range (projectiveOrbitMap (H := H) m hm)) :=
+  (isProper_projectiveOrbitToSpec_iff_isClosed (H := H) m hm).1 inferInstance
 
 /-- The orbit factorization is a morphism over the base field. -/
 @[reassoc (attr := simp)]

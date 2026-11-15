@@ -25,6 +25,8 @@ convolution points of `H` to `(CommAlgCat.pointsSheaf Y).obj`.
   convolution points of `H` and the fppf sheaf of points of `Spec H` over `Spec R`.
 * `CommHopfAlgCat.specPointsHomEquiv`: equivalence between `R`-scheme morphisms `Spec H ⟶ Y` and
   natural transformations `HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor ⟶ (pointsSheaf Y).obj`.
+* `CommHopfAlgCat.over_hom_ext_of_mapMulEquiv`: extensionality for `R`-scheme morphisms
+  `Spec H ⟶ Y` along `Spec.mapMulEquiv` on convolution points.
 
 ## References
 
@@ -51,15 +53,13 @@ variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
 of the fppf sheaf of points of `Spec H` over `Spec R`. -/
 def pointsPresheafUliftIsoPointsSheaf :
     HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ≅
-      (CommAlgCat.pointsSheaf
-        ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)))).obj :=
+      (CommAlgCat.pointsSheaf ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)))).obj :=
   Functor.isoWhiskerRight
     (TauCeti.CommHopfAlgCat.pointsPresheafIsoSchemePointsPresheaf H) uliftFunctor.{u + 1, u}
 
 /-- Forward evaluation of `pointsPresheafUliftIsoPointsSheaf` applies `Spec.mapMulEquiv` inside
 `ULift`. -/
-@[simp]
-theorem pointsPresheafUliftIsoPointsSheaf_hom_app_apply
+@[simp] theorem pointsPresheafUliftIsoPointsSheaf_hom_app_apply
     (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
     dsimp% (pointsPresheafUliftIsoPointsSheaf H).hom.app A (ULift.up g) =
       ULift.up (Spec.mapMulEquiv g) :=
@@ -68,9 +68,7 @@ theorem pointsPresheafUliftIsoPointsSheaf_hom_app_apply
 
 /-- Inverse evaluation of `pointsPresheafUliftIsoPointsSheaf` applies `Spec.mapMulEquiv.symm`
 inside `ULift`. -/
-@[simp]
-theorem pointsPresheafUliftIsoPointsSheaf_inv_app_apply
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+@[simp] theorem pointsPresheafUliftIsoPointsSheaf_inv_app_apply (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
     (p : (algSpec (CommRingCat.of R)).obj A.unop ⟶
       (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) :
     dsimp% (pointsPresheafUliftIsoPointsSheaf H).inv.app A (ULift.up p) =
@@ -82,8 +80,7 @@ theorem pointsPresheafUliftIsoPointsSheaf_inv_app_apply
 `Y` correspond to `R`-scheme morphisms `Spec H ⟶ Y`. -/
 def specPointsHomEquiv (Y : Over (Spec (CommRingCat.of R))) :
     ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y) ≃
-      (HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-        (CommAlgCat.pointsSheaf Y).obj) :=
+      (HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ (CommAlgCat.pointsSheaf Y).obj) :=
   (CommAlgCat.pointsSheafHomEquiv _ Y).trans <|
     (fullyFaithfulSheafToPresheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).homEquiv.trans
       (Iso.homFromEquiv (pointsPresheafUliftIsoPointsSheaf H)).symm
@@ -96,28 +93,22 @@ theorem specPointsHomEquiv_eq_comp {Y : Over (Spec (CommRingCat.of R))}
       (pointsPresheafUliftIsoPointsSheaf H).hom ≫ (CommAlgCat.pointsSheafMap q).hom := by
   unfold specPointsHomEquiv
   simp only [Equiv.trans_apply, CommAlgCat.pointsSheafHomEquiv_apply,
-    Functor.FullyFaithful.homEquiv_apply, ObjectProperty.ι_map,
-    Iso.homFromEquiv_symm_apply]
+    Functor.FullyFaithful.homEquiv_apply, ObjectProperty.ι_map, Iso.homFromEquiv_symm_apply]
 
 /-- Forward evaluation of `specPointsHomEquiv` sends an `A`-point `g` of `H` to
 `Spec.mapMulEquiv g ≫ q`. -/
-@[simp]
-theorem specPointsHomEquiv_apply_app_apply {Y : Over (Spec (CommRingCat.of R))}
+@[simp] theorem specPointsHomEquiv_apply_app_apply {Y : Over (Spec (CommRingCat.of R))}
     (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y)
     (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    dsimp% (specPointsHomEquiv H Y q).app A (ULift.up g) =
-      ULift.up (Spec.mapMulEquiv g ≫ q) := by
+    dsimp% (specPointsHomEquiv H Y q).app A (ULift.up g) = ULift.up (Spec.mapMulEquiv g ≫ q) := by
   rw [specPointsHomEquiv_eq_comp]
   simp only [NatTrans.comp_app, ConcreteCategory.comp_apply,
     pointsPresheafUliftIsoPointsSheaf_hom_app_apply]
   exact CommAlgCat.pointsSheafMap_hom_app_apply q A (Spec.mapMulEquiv g)
 
-/-- Precomposing `(specPointsHomEquiv H Y).symm f` with `Spec.mapMulEquiv g` evaluates `f` at
-`g`. -/
-@[reassoc (attr := simp)]
-theorem comp_specPointsHomEquiv_symm {Y : Over (Spec (CommRingCat.of R))}
-    (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (CommAlgCat.pointsSheaf Y).obj)
+/-- Precomposing `(specPointsHomEquiv H Y).symm f` with `Spec.mapMulEquiv g` evaluates `f`. -/
+@[reassoc (attr := simp)] theorem comp_specPointsHomEquiv_symm {Y : Over (Spec (CommRingCat.of R))}
+    (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ (CommAlgCat.pointsSheaf Y).obj)
     {A : CommAlgCat.{u} R} (g : HopfAlgebra.points (R := R) (H := H) A) :
     Spec.mapMulEquiv g ≫ (specPointsHomEquiv H Y).symm f =
       (f.app (op (op A)) (ULift.up g)).down := by
@@ -126,8 +117,7 @@ theorem comp_specPointsHomEquiv_symm {Y : Over (Spec (CommRingCat.of R))}
   rwa [specPointsHomEquiv_apply_app_apply] at h
 
 /-- `specPointsHomEquiv` is natural with respect to postcomposition by `R`-scheme morphisms. -/
-@[simp]
-theorem specPointsHomEquiv_comp {Y Z : Over (Spec (CommRingCat.of R))}
+@[simp] theorem specPointsHomEquiv_comp {Y Z : Over (Spec (CommRingCat.of R))}
     (q : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y) (f : Y ⟶ Z) :
     specPointsHomEquiv H Z (q ≫ f) =
       specPointsHomEquiv H Y q ≫ (CommAlgCat.pointsSheafMap f).hom := by
@@ -136,15 +126,24 @@ theorem specPointsHomEquiv_comp {Y Z : Over (Spec (CommRingCat.of R))}
 
 /-- Inverse `specPointsHomEquiv` is natural with respect to postcomposition by `R`-scheme
 morphisms. -/
-@[simp]
-theorem specPointsHomEquiv_symm_comp {Y Z : Over (Spec (CommRingCat.of R))}
-    (α : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (CommAlgCat.pointsSheaf Y).obj)
+@[simp] theorem specPointsHomEquiv_symm_comp {Y Z : Over (Spec (CommRingCat.of R))}
+    (α : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ (CommAlgCat.pointsSheaf Y).obj)
     (f : Y ⟶ Z) :
     (specPointsHomEquiv H Z).symm (α ≫ (CommAlgCat.pointsSheafMap f).hom) =
-      (specPointsHomEquiv H Y).symm α ≫ f := by
-  apply (specPointsHomEquiv H Z).injective
-  simp
+      (specPointsHomEquiv H Y).symm α ≫ f :=
+  (specPointsHomEquiv H Z).injective <| by simp
+
+omit H in
+/-- Two `R`-scheme morphisms `Spec H ⟶ Y` are equal when they agree after precomposition with
+`Spec.mapMulEquiv g` for every `A`-valued convolution point `g` of `H`. -/
+theorem over_hom_ext_of_mapMulEquiv {H : _root_.CommHopfAlgCat.{u} R}
+    {Y : Over (Spec (CommRingCat.of R))}
+    {q₁ q₂ : (Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R)) ⟶ Y}
+    (h : ∀ (A : CommAlgCat.{u} R) (g : HopfAlgebra.points (R := R) (H := H) A),
+      Spec.mapMulEquiv g ≫ q₁ = Spec.mapMulEquiv g ≫ q₂) : q₁ = q₂ := by
+  apply (specPointsHomEquiv H Y).injective; ext A ⟨g⟩
+  exact (specPointsHomEquiv_apply_app_apply H q₁ A g).trans <|
+    congrArg ULift.up (h A.unop.unop g) |>.trans (specPointsHomEquiv_apply_app_apply H q₂ A g).symm
 
 end
 
