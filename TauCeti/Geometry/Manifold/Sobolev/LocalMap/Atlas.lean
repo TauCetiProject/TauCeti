@@ -115,7 +115,7 @@ private theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph 
   have hW' : W ⊆ (φ'.symm.trans φ).source := hsrc ▸ hW
   have hΦ : ContDiffOn ℝ 1 (φ'.symm.trans φ) (φ'.symm.trans φ).source := fun z hz ↦
     (contDiffAt_symm_trans_of_mem_maximalAtlas hφ'R hφR hz).contDiffWithinAt
-  refine hg.comp_contDiffOn_diffeo (Φ := φ'.symm.trans φ) hk (φ'.symm.trans φ).open_source hΦ
+  exact hg.comp_contDiffOn_diffeo (Φ := φ'.symm.trans φ) hk (φ'.symm.trans φ).open_source hΦ
     ((φ'.symm.trans φ).injOn.mono hW')
     (fun z hz ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ'R hφR (hW' hz)) hW' hmaps
 
