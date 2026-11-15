@@ -31,7 +31,9 @@ form, for any group having `∞` as a cusp.
 On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
 `θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
 there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
-divisible by `8`.
+divisible by `8`. Moreover, for a sublattice `M ≤ L`, splitting `L` into cosets of `M` expresses
+`θ_{γ+L}(i y)` as `θ_{γ+M}(i y)` plus a positive contribution from every nontrivial coset, so
+`θ_{γ+M}(i y) < θ_{γ+L}(i y)` and `Θ_M(i y) < Θ_L(i y)` whenever `M < L`.
 
 ## Main statements
 
@@ -51,6 +53,10 @@ divisible by `8`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
   `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
   `Θ_L ≥ 1`.
+* `ZLattice.re_thetaCoset_le_re_thetaCoset`, `ZLattice.re_thetaCoset_lt_re_thetaCoset`,
+  `ZLattice.re_thetaSeries_lt_re_thetaSeries`, `ZLattice.thetaSeries_ne_thetaSeries_of_lt`: on the
+  imaginary axis, strict enlargement `M < L` of a discrete subgroup strictly increases `θ_{γ+L}`
+  and `Θ_L`.
 
 ## References
 
@@ -262,6 +268,68 @@ theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries 
 /-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
+
+variable {L}
+
+/-- For `M ≤ L`, the real part of `θ_{γ+L}(τ)` is the sum of the real parts of `θ_{γ+y+M}(τ)` over
+the classes `y` of `L` modulo `M`. -/
+theorem hasSum_re_thetaCoset_add_out {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ) :
+    HasSum (fun y : L ⧸ M.submoduleOf L => (thetaCoset M (γ + ((Quotient.out y : L) : E)) τ).re)
+      (thetaCoset L γ τ).re :=
+  Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML γ τ)
+
+/-- On the imaginary axis, strictly enlarging a discrete subgroup strictly increases the real part
+of every translate's theta series. -/
+theorem re_thetaCoset_lt_re_thetaCoset {M : Submodule ℤ E} (hML : M < L) (γ : E) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaCoset M γ τ).re < (thetaCoset L γ τ).re := by
+  have : DiscreteTopology M := DiscreteTopology.of_subset ‹_› hML.le
+  obtain ⟨x, hxL, hxM⟩ := IsConcreteLE.exists_of_lt hML
+  have h0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M := by
+    have := (Submodule.Quotient.mk_eq_zero _).mp
+      (Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L))
+    simpa [Submodule.submoduleOf] using this
+  have hy : (Submodule.Quotient.mk ⟨x, hxL⟩ : L ⧸ M.submoduleOf L) ≠ 0 := by
+    rw [Ne, Submodule.Quotient.mk_eq_zero]
+    simpa [Submodule.submoduleOf] using hxM
+  calc (thetaCoset M γ τ).re
+      = (thetaCoset M (γ + ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E)) τ).re := by
+        rw [thetaCoset_add_mem M γ h0]
+    _ < (thetaCoset L γ τ).re :=
+        lt_hasSum (hasSum_re_thetaCoset_add_out hML.le γ τ) 0
+          (fun _ _ => (re_thetaCoset_pos M _ hτ).le) (Submodule.Quotient.mk ⟨x, hxL⟩) hy
+          (re_thetaCoset_pos M _ hτ)
+
+/-- On the imaginary axis, strictly enlarging a discrete subgroup strictly increases the real part
+of its theta series. -/
+theorem re_thetaSeries_lt_re_thetaSeries {M : Submodule ℤ E} (hML : M < L) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_lt_re_thetaCoset hML 0 hτ
+
+/-- On the imaginary axis, enlarging a discrete subgroup increases or preserves the real part of
+every translate's theta series. -/
+theorem re_thetaCoset_le_re_thetaCoset {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
+  rcases eq_or_lt_of_le hML with rfl | hlt
+  · exact le_rfl
+  · exact (re_thetaCoset_lt_re_thetaCoset hlt γ hτ).le
+
+/-- On the imaginary axis, enlarging a discrete subgroup increases or preserves the real part of
+its theta series. -/
+theorem re_thetaSeries_le_re_thetaSeries {M : Submodule ℤ E} (hML : M ≤ L) {τ : ℍ}
+    (hτ : τ.re = 0) : (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_le_re_thetaCoset hML 0 hτ
+
+/-- On the imaginary axis, a proper sublattice of a discrete subgroup never has the same translate
+theta series. -/
+theorem thetaCoset_ne_thetaCoset_of_lt {M : Submodule ℤ E} (hML : M < L) (γ : E) {τ : ℍ}
+    (hτ : τ.re = 0) : thetaCoset M γ τ ≠ thetaCoset L γ τ :=
+  fun h => (re_thetaCoset_lt_re_thetaCoset hML γ hτ).ne (congrArg Complex.re h)
+
+/-- On the imaginary axis, a proper sublattice of a discrete subgroup never has the same theta
+series. -/
+theorem thetaSeries_ne_thetaSeries_of_lt {M : Submodule ℤ E} (hML : M < L) {τ : ℍ}
+    (hτ : τ.re = 0) : thetaSeries M τ ≠ thetaSeries L τ := by
+  simpa using thetaCoset_ne_thetaCoset_of_lt hML 0 hτ
 
 end ImaginaryAxis
 

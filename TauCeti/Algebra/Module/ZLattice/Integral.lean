@@ -51,7 +51,10 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
-* `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
+* `ZLattice.isIntegral_dual_iff`: a discrete lattice in a finite-dimensional space contains its
+  dual if and only if its dual is integral.
+* `ZLattice.isIntegral_span_singleton_iff`, `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v`
+  is integral if and only if `‖v‖² ∈ ℤ`, and even if and only if `‖v‖² ∈ 2ℤ`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
@@ -143,6 +146,35 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
 
+/-- The lattice spanned by a single vector `v` is integral if and only if `‖v‖²` is an
+integer. -/
+theorem isIntegral_span_singleton_iff {v : E} :
+    IsIntegral (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = m := by
+  refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ isIntegral_iff.mpr fun x hx y hy ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := isIntegral_iff.mp h v (mem_span_singleton_self v) v
+      (mem_span_singleton_self v)
+    exact ⟨m, real_inner_self_eq_norm_sq v ▸ hm⟩
+  · obtain ⟨a, rfl⟩ := mem_span_singleton.mp hx
+    obtain ⟨b, rfl⟩ := mem_span_singleton.mp hy
+    refine ⟨a * b * m, ?_⟩
+    rw [← Int.cast_smul_eq_zsmul ℝ a, ← Int.cast_smul_eq_zsmul ℝ b, real_inner_smul_left,
+      real_inner_smul_right, real_inner_self_eq_norm_sq, hm]
+    push_cast
+    ring
+
+/-- If the dual lattice is strictly contained in `L`, then `L` is not integral. -/
+theorem not_isIntegral_of_dual_lt {L : Submodule ℤ E} (h : dual L < L) : ¬ IsIntegral L :=
+  not_le_of_gt h
+
+/-- If `L` contains its dual, then `dual L` is integral. -/
+theorem isIntegral_dual_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) : IsIntegral (dual L) :=
+  h.trans (le_dual_dual L)
+
+/-- For a natural number `n > 1`, the lattice `n⁻¹ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_inv_natCast {n : ℕ} (hn : 1 < n) :
+    ¬ IsIntegral (span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) :=
+  not_isIntegral_of_dual_lt (dual_span_inv_natCast_lt hn)
+
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
     DiscreteTopology L := by
@@ -219,6 +251,37 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
 
+/-- If the dual of `L` in a finite-dimensional real inner product space is integral, then `L`
+spans `E` over `ℝ`. -/
+theorem span_eq_top_of_isIntegral_dual [FiniteDimensional ℝ E] {L : Submodule ℤ E}
+    (h : IsIntegral (dual L)) : span ℝ (L : Set E) = ⊤ := by
+  -- A nonzero vector orthogonal to `L` has all real multiples in `L^∨`, including one of squared
+  -- norm `1 / 2`, contradicting integrality of `L^∨`.
+  by_contra hne
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (mt Submodule.orthogonal_eq_bot_iff.1 hne)
+  have hmem (t : ℝ) : t • v ∈ dual L := mem_dual.mpr fun y hy ↦ ⟨0, by
+    rw [real_inner_smul_left, real_inner_comm,
+      Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
+    simp⟩
+  obtain ⟨m, hm⟩ := isIntegral_iff.1 h _ (hmem (1 / (√2 * ‖v‖))) _ (hmem (1 / (√2 * ‖v‖)))
+  rw [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
+  have h2 : (1 / (√2 * ‖v‖)) * ((1 / (√2 * ‖v‖)) * ‖v‖ ^ 2) = 1 / 2 := by
+    field_simp
+    rw [Real.sq_sqrt (by norm_num)]
+  rw [h2] at hm
+  have h3 : (2 : ℝ) * m = 1 := by linarith
+  have h4 : (2 : ℤ) * m = 1 := by exact_mod_cast h3
+  omega
+
+/-- A discrete `ℤ`-submodule of a finite-dimensional real inner product space contains its dual
+if and only if its dual is integral. -/
+theorem isIntegral_dual_iff [FiniteDimensional ℝ E] {L : Submodule ℤ E} [DiscreteTopology L] :
+    IsIntegral (dual L) ↔ dual L ≤ L := by
+  refine ⟨fun h ↦ ?_, isIntegral_dual_of_dual_le⟩
+  have : IsZLattice ℝ L := ⟨span_eq_top_of_isIntegral_dual h⟩
+  exact h.trans_eq (dual_dual L)
+
 /-! ### Unimodular lattices -/
 
 /-- A lattice is unimodular if it is equal to its dual. -/
@@ -238,28 +301,8 @@ theorem IsUnimodular.isIntegral {L : Submodule ℤ E} (h : IsUnimodular L) : IsI
 /-- A unimodular lattice in a finite-dimensional real inner product space spans the space over
 `ℝ`; in particular it is a full lattice. -/
 theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E} (h : IsUnimodular L) :
-    span ℝ (L : Set E) = ⊤ := by
-  -- A nonzero vector `v` orthogonal to `L` lies in `L = L^∨`, and so do all its real multiples,
-  -- including one of squared norm `1 / 2`, which is not an integer.
-  by_contra hne
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (mt Submodule.orthogonal_eq_bot_iff.1 hne)
-  have hmem (t : ℝ) : t • v ∈ L := by
-    rw [← h.dual_eq, mem_dual]
-    refine fun y hy ↦ ⟨0, ?_⟩
-    rw [real_inner_smul_left, real_inner_comm,
-      Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
-    simp
-  obtain ⟨m, hm⟩ := isIntegral_iff.1 h.isIntegral _ (hmem (1 / (√2 * ‖v‖))) _
-    (hmem (1 / (√2 * ‖v‖)))
-  rw [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
-  have h2 : (1 / (√2 * ‖v‖)) * ((1 / (√2 * ‖v‖)) * ‖v‖ ^ 2) = 1 / 2 := by
-    field_simp
-    rw [Real.sq_sqrt (by norm_num)]
-  rw [h2] at hm
-  have h3 : (2 : ℝ) * m = 1 := by linarith
-  have h4 : (2 : ℤ) * m = 1 := by exact_mod_cast h3
-  omega
+    span ℝ (L : Set E) = ⊤ :=
+  span_eq_top_of_isIntegral_dual (by rw [h.dual_eq]; exact h.isIntegral)
 
 /-- An integral lattice is unimodular as soon as its dual is contained in it. -/
 theorem IsIntegral.isUnimodular_iff {L : Submodule ℤ E} (h : IsIntegral L) :

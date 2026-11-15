@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
+import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
 # Coset theta series on the discriminant group
@@ -32,8 +33,12 @@ all of these eigenvalues (`ZLattice.IsEven.level_dvd_iff_discriminantQuadraticCh
 For an integral full lattice, `A_L = L^∨ ⧸ L` is finite and the theta series of the dual lattice is
 the sum of the coset theta series, `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ`
 (`ZLattice.IsIntegral.thetaSeries_dual_eq_sum`), by splitting `L^∨` into the cosets of `L`.
-Integrality is needed: for `L = ½ ℤ ⊆ ℝ` the dual `L^∨ = 2 ℤ` lies in `L`, the discriminant group
-is trivial, and the identity would read `Θ_{2ℤ} = Θ_{½ℤ}`, which is false.
+Integrality is needed (`ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`): whenever a
+discrete lattice strictly contains its dual (`L^∨ < L`), its discriminant group is trivial so the
+coset sum collapses to `Θ_L` (`ZLattice.sum_thetaCosetClass_of_dual_le`), whereas on the imaginary
+axis `(Θ_{L^∨}(τ)).re < (Θ_L(τ)).re`. In particular, for `L = ½ ℤ ⊆ ℝ` with `L^∨ = 2 ℤ < ½ ℤ`,
+`Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` (`ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two`,
+`ZLattice.thetaSeries_dual_span_inv_two_ne_sum`).
 
 ## Main definitions
 
@@ -49,6 +54,12 @@ is trivial, and the identity would read `Θ_{2ℤ} = Θ_{½ℤ}`, which is false
 * `ZLattice.IsEven.thetaCosetClass_slash_T`, `ZLattice.IsEven.thetaCosetClass_slash_T_zpow`:
   `θ_γ ∣[k] T ^ n = e(q_L(γ))^n • θ_γ` for an even full lattice `L`.
 * `ZLattice.IsIntegral.thetaSeries_dual_eq_sum`: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` for integral `L`.
+* `ZLattice.sum_thetaCosetClass_of_dual_le`,
+  `ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`: when `L^∨ ≤ L` the coset sum over
+  `A_L` collapses to `Θ_L`, and when `L^∨ < L` the dual-sum identity fails on the imaginary axis.
+* `ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two`,
+  `ZLattice.thetaSeries_dual_span_inv_two_ne_sum`: the non-integral counterexample
+  `L = ½ ℤ ⊆ ℝ` (`Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`).
 
 ## References
 
@@ -154,6 +165,24 @@ theorem IsIntegral.thetaSeries_dual_eq_sum (h : IsIntegral L) [Fintype (Discrimi
   refine Finset.sum_congr rfl fun γ _ => ?_
   rw [← thetaCosetClass_mk, Submodule.Quotient.mk_out]
 
+omit [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- When `L^∨ ≤ L`, the discriminant group `L^∨ ⧸ (L ∩ L^∨)` is trivial, so the sum of the coset
+theta series over it collapses to the single term `θ_0 = Θ_L`. -/
+theorem sum_thetaCosetClass_of_dual_le (h : dual L ≤ L) [Fintype (DiscriminantGroup L)] (τ : ℍ) :
+    ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ = thetaSeries L τ := by
+  have := subsingleton_discriminantGroup_iff.mpr h
+  rw [Fintype.sum_subsingleton _ 0, thetaCosetClass_zero]
+
+omit [IsZLattice ℝ L] in
+/-- When `L^∨ < L`, `L` is not integral, its discriminant group is trivial, and on the imaginary
+axis `(Θ_{L^∨}(τ)).re < (Θ_L(τ)).re`, so the dual-sum identity
+`ZLattice.IsIntegral.thetaSeries_dual_eq_sum` fails at `τ`. -/
+theorem thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (h : dual L < L)
+    [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (dual L) τ ≠ ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
+  rw [sum_thetaCosetClass_of_dual_le h.le τ]
+  exact thetaSeries_ne_thetaSeries_of_lt h hτ
+
 namespace IsEven
 
 /-- The translation law of a coset theta series on the discriminant group of an even full lattice:
@@ -195,5 +224,82 @@ theorem thetaCosetClass_slash_T (hL : IsEven L) (γ : DiscriminantGroup L) (k : 
   simpa using hL.thetaCosetClass_slash_T_zpow γ k 1
 
 end IsEven
+
+/-! ### Counterexamples without integrality -/
+
+section NonIntegralCounterexamples
+
+/-- The dual of `½ ℤ ⊆ ℝ` is `2 ℤ`. -/
+theorem dual_span_inv_two :
+    dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = Submodule.span ℤ {(2 : ℝ)} :=
+  dual_span_inv two_ne_zero
+
+/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is strictly contained in `½ ℤ`. -/
+theorem dual_span_inv_two_lt :
+    dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) < Submodule.span ℤ {(2⁻¹ : ℝ)} :=
+  dual_span_inv_natCast_lt one_lt_two
+
+/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_inv_two :
+    ¬ IsIntegral (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) :=
+  not_isIntegral_span_inv_natCast one_lt_two
+
+/-- For a nonzero natural number `n`, the discriminant group of `n⁻¹ ℤ ⊆ ℝ` is trivial. -/
+theorem subsingleton_discriminantGroup_span_inv_natCast {n : ℕ} (hn : n ≠ 0) :
+    Subsingleton (DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ)) :=
+  subsingleton_discriminantGroup_iff.mpr (dual_span_inv_natCast_le hn)
+
+/-- The discriminant group of `½ ℤ ⊆ ℝ` is trivial. -/
+instance instSubsingletonDiscriminantGroupSpanInvTwo :
+    Subsingleton (DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
+  subsingleton_discriminantGroup_span_inv_natCast two_ne_zero
+
+/-- The trivial discriminant group of `½ ℤ ⊆ ℝ` as a `Fintype`. -/
+noncomputable instance instFintypeDiscriminantGroupSpanInvTwo :
+    Fintype (DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
+  Fintype.ofSubsingleton 0
+
+/-- For a natural number `n > 1`, `(Θ_{nℤ}(τ)).re < (Θ_{n⁻¹ℤ}(τ)).re` on the imaginary axis. -/
+theorem re_thetaSeries_span_natCast_lt_re_thetaSeries_span_inv_natCast {n : ℕ} (hn : 1 < n)
+    {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries (Submodule.span ℤ {(n : ℝ)} : Submodule ℤ ℝ) τ).re <
+      (thetaSeries (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) τ).re :=
+  re_thetaSeries_lt_re_thetaSeries (span_natCast_lt_span_inv_natCast hn) hτ
+
+/-- For a natural number `n > 1`, `Θ_{nℤ}(τ) ≠ Θ_{n⁻¹ℤ}(τ)` on the imaginary axis. -/
+theorem thetaSeries_span_natCast_ne_thetaSeries_span_inv_natCast {n : ℕ} (hn : 1 < n)
+    {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries (Submodule.span ℤ {(n : ℝ)} : Submodule ℤ ℝ) τ ≠
+      thetaSeries (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) τ :=
+  thetaSeries_ne_thetaSeries_of_lt (span_natCast_lt_span_inv_natCast hn) hτ
+
+/-- The theta series of `2 ℤ ⊆ ℝ` and `½ ℤ ⊆ ℝ` differ at `i`: `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`. -/
+theorem thetaSeries_span_two_ne_thetaSeries_span_inv_two :
+    thetaSeries (Submodule.span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
+      thetaSeries (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I :=
+  thetaSeries_span_natCast_ne_thetaSeries_span_inv_natCast one_lt_two UpperHalfPlane.I_re
+
+/-- For a natural number `n > 1`, the dual-sum identity fails for `L = n⁻¹ ℤ ⊆ ℝ` on the imaginary
+axis. Here `DiscriminantGroup (n⁻¹ ℤ)` is a `Subsingleton`
+(`ZLattice.subsingleton_discriminantGroup_span_inv_natCast`), so a `Fintype` instance exists via
+`Fintype.ofSubsingleton 0`. -/
+theorem thetaSeries_dual_span_inv_natCast_ne_sum {n : ℕ} (hn : 1 < n)
+    [Fintype (DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ))] {τ : ℍ}
+    (hτ : τ.re = 0) :
+    thetaSeries (dual (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ)) τ ≠
+      ∑ γ : DiscriminantGroup (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ),
+        thetaCosetClass (Submodule.span ℤ {(n : ℝ)⁻¹} : Submodule ℤ ℝ) γ τ :=
+  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (dual_span_inv_natCast_lt hn) hτ
+
+/-- For the non-integral lattice `L = ½ ℤ ⊆ ℝ`, `L^∨ = 2 ℤ < L`, the discriminant group `A_L` is
+trivial (`ZLattice.instSubsingletonDiscriminantGroupSpanInvTwo`), and at `τ = i`
+`Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`. -/
+theorem thetaSeries_dual_span_inv_two_ne_sum :
+    thetaSeries (dual (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
+      ∑ γ : DiscriminantGroup (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ),
+        thetaCosetClass (Submodule.span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) γ UpperHalfPlane.I :=
+  thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt dual_span_inv_two_lt UpperHalfPlane.I_re
+
+end NonIntegralCounterexamples
 
 end ZLattice
