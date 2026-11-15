@@ -273,7 +273,7 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
     (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) :
     HomogeneousIdeal.irrelevant (veroneseGrading ℬ d) ≤
       (HomogeneousIdeal.irrelevant (veroneseGrading 𝒜 d)).map (veroneseMap d f) := by
-  set J := ((HomogeneousIdeal.irrelevant (veroneseGrading 𝒜 d)).map (veroneseMap d f)).toIdeal
+  set J := (HomogeneousIdeal.irrelevant (veroneseGrading 𝒜 d)).toIdeal.map (veroneseMap d f)
   -- The components of degree `d k`, `k > 0`, of every element of `B` lie in `J`, by induction
   -- along the span of the image of `f` over `ℬ 0`.
   have key (b : B) (k : ℕ) (hk : 0 < k) :
@@ -288,10 +288,8 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
         mem_veroneseGrading.2 (SetLike.coe_mem _)
       convert Ideal.mem_map_of_mem (veroneseMap d f)
         (HomogeneousIdeal.mem_irrelevant_of_mem (veroneseGrading 𝒜 d) hk ha) using 1
-      · -- `J` is `Ideal.map` of the irrelevant ideal, as in `HomogeneousIdeal.toIdeal_map`
-        rfl
-      · refine Subtype.ext ?_
-        simp
+      refine Subtype.ext ?_
+      simp
     | zero =>
       convert J.zero_mem using 1
       refine Subtype.ext ?_
@@ -305,7 +303,8 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
       refine Subtype.ext ?_
       rw [Algebra.smul_def]
       exact coe_decompose_mul_of_left_mem_zero ℬ c.2
-  rw [HomogeneousIdeal.irrelevant_le]
+  rw [← toIdeal_le_toIdeal_iff, HomogeneousIdeal.toIdeal_map,
+    HomogeneousIdeal.toIdeal_irrelevant_le]
   intro k hk x (hx : x ∈ veroneseGrading ℬ d k)
   rw [show x = ⟨decompose ℬ (x : B) (d * k), mem_veronese_of_mem (SetLike.coe_mem _)⟩ from
     Subtype.ext (decompose_of_mem_same ℬ (mem_veroneseGrading.1 hx)).symm]

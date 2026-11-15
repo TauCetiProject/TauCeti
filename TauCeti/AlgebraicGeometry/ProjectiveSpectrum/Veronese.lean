@@ -38,7 +38,8 @@ compatible with the transitions between charts.
   standard opens `D₊(f)` of `Proj A^{(d)}` and `Proj A`.
 * `AlgebraicGeometry.Proj.map_veroneseMap_comp_veroneseIso_hom`: the isomorphism is natural in
   graded ring homomorphisms, through `Proj.map`.
-* `AlgebraicGeometry.Proj.veroneseIso_hom_toSpecZero` and
+* `AlgebraicGeometry.Proj.veroneseIso_hom_toSpecZero`,
+  `AlgebraicGeometry.Proj.veroneseIso_inv_toSpecZero` and
   `AlgebraicGeometry.Proj.veroneseIso_hom_toSpecCoeff`: the isomorphism lies over
   `Spec A₀`, the degree-zero parts being identified, and over `Spec R`.
 
@@ -174,15 +175,26 @@ private theorem awayι_projToVeronese {f : veronese 𝒜 d} {k : ℕ}
       projToVeronese 𝒜 d = fromProjChart 𝒜 d hf hk :=
   (veroneseAffineOpenCover 𝒜 d).openCover.ι_glueMorphisms _ _ ⟨⟨k, hk⟩, ⟨f, hf⟩⟩
 
+/-- `Spec` of the chart isomorphism `A^{(d)}_{(f)} ≃ A_{(f)}` is inverse to `Spec` of its
+inverse: these are the two directions of `Spec` of the isomorphism of rings. -/
+@[reassoc]
+private theorem SpecMap_awayVeroneseEquiv_comp_SpecMap_symm (f : veronese 𝒜 d) :
+    Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).symm.toRingHom) = 𝟙 _ :=
+  (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).hom_inv_id
+
+@[reassoc]
+private theorem SpecMap_awayVeroneseEquiv_symm_comp_SpecMap (f : veronese 𝒜 d) :
+    Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).symm.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) = 𝟙 _ :=
+  (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).inv_hom_id
+
 private theorem awayι_veroneseToProj_projToVeronese {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
     awayι (veroneseGrading 𝒜 d) f hf hk ≫ veroneseToProj 𝒜 d ≫ projToVeronese 𝒜 d =
       awayι (veroneseGrading 𝒜 d) f hf hk := by
   rw [awayι_veroneseToProj_assoc, toProjChart, Category.assoc, awayι_projToVeronese 𝒜 d hf hk,
-    fromProjChart, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
-    show (awayVeroneseEquiv f).symm.toRingHom.comp (awayVeroneseEquiv f).toRingHom = .id _ from
-      RingHom.ext (awayVeroneseEquiv f).symm_apply_apply,
-    CommRingCat.ofHom_id, Spec.map_id, Category.id_comp]
+    fromProjChart, SpecMap_awayVeroneseEquiv_symm_comp_SpecMap_assoc]
 
 private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
@@ -190,11 +202,7 @@ private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : 
       projToVeronese 𝒜 d ≫ veroneseToProj 𝒜 d =
       awayι 𝒜 (f : A) (mem_veroneseGrading.1 hf) (Nat.mul_pos (NeZero.pos d) hk) := by
   rw [awayι_projToVeronese_assoc 𝒜 d hf hk, fromProjChart, Category.assoc,
-    awayι_veroneseToProj 𝒜 d hf hk,
-    toProjChart, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
-    show (awayVeroneseEquiv f).toRingHom.comp (awayVeroneseEquiv f).symm.toRingHom = .id _ from
-      RingHom.ext (awayVeroneseEquiv f).apply_symm_apply,
-    CommRingCat.ofHom_id, Spec.map_id, Category.id_comp]
+    awayι_veroneseToProj 𝒜 d hf hk, toProjChart, SpecMap_awayVeroneseEquiv_comp_SpecMap_symm_assoc]
 
 /-- **The projective spectrum of a Veronese subalgebra.** For `d ≠ 0`, the projective spectra of
 `A^{(d)} = ⨁ₖ 𝒜 (d k)` and of `A` are isomorphic. On the chart of `f ∈ 𝒜 (d k)`, `k > 0`, it is
@@ -279,7 +287,7 @@ end Map
 
 /-- The isomorphism `Proj A^{(d)} ≅ Proj A` lies over the identification `A^{(d)}_0 ≃ A_0` of
 the degree-zero parts. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem veroneseIso_hom_toSpecZero :
     (veroneseIso 𝒜 d).hom ≫ toSpecZero 𝒜 = toSpecZero (veroneseGrading 𝒜 d) ≫
       Spec.map (CommRingCat.ofHom (veroneseGradingZeroEquiv 𝒜 d).symm.toRingHom) := by
@@ -293,6 +301,16 @@ theorem veroneseIso_hom_toSpecZero :
     exact RingHom.ext awayVeroneseEquiv_symm_fromZeroRingHom
   exact (affineOpenCover (veroneseGrading 𝒜 d)).openCover.hom_ext _ _ fun i ↦
     this _ _ i.2.2 i.1.pos
+
+/-- The inverse isomorphism `Proj A ≅ Proj A^{(d)}` lies over the identification
+`A_0 ≃ A^{(d)}_0` of the degree-zero parts. -/
+@[reassoc (attr := simp)]
+theorem veroneseIso_inv_toSpecZero :
+    (veroneseIso 𝒜 d).inv ≫ toSpecZero (veroneseGrading 𝒜 d) = toSpecZero 𝒜 ≫
+      Spec.map (CommRingCat.ofHom (veroneseGradingZeroEquiv 𝒜 d).toRingHom) := by
+  rw [Iso.inv_comp_eq, veroneseIso_hom_toSpecZero_assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.symm_comp, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
 
 end
 
