@@ -46,6 +46,8 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
 
 * `TauCeti.tangentRepresentation`: the representation of the stabilizer of `x` on `T_x M` by
   derivatives at `x`.
+* `TauCeti.tangentAut`: the tangent representation as a homomorphism to the linear automorphisms
+  of `T_x M`.
 * `TauCeti.tangentInvariants I G x`: for a group acting by smooth maps, the invariants of the
   tangent representation, the tangent vectors fixed by every differential `d(g •)_x`.
 * `TauCeti.fixedPointsFinrank I G M d`: the stratum of the fixed set made of the fixed points `p`
@@ -119,6 +121,28 @@ theorem tangentRepresentation_apply
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
     (g : stabilizer G x) :
     tangentRepresentation hd g = mfderiv I I (fun y : M ↦ (g : G) • y) x :=
+  (rfl)
+
+/-- The tangent representation of the stabilizer of `x`, as a homomorphism to the group of linear
+automorphisms of `T_x M`. -/
+noncomputable def tangentAut
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    stabilizer G x →* TangentSpace I x ≃ₗ[𝕜] TangentSpace I x :=
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv 𝕜 (TangentSpace I x)).toMonoidHom.comp
+    (tangentRepresentation hd).toRepresentation.asGroupHom
+
+@[simp]
+theorem tangentAut_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    tangentAut hd g v = tangentRepresentation hd g v :=
+  (rfl)
+
+@[simp]
+theorem tangentAut_symm_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    (tangentAut hd g).symm v = tangentRepresentation hd g⁻¹ v :=
   (rfl)
 
 /-- The invariant vectors of the tangent representation at `x` are the tangent vectors fixed by
