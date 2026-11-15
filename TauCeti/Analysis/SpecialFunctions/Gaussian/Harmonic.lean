@@ -33,13 +33,8 @@ function whose Fourier transform is the same monomial times the dual Gaussian:
 These are the real- and complex-place factors of the polynomial-weighted theta kernels used in
 Hecke's method. At `b = π y`, the scalar at a real place is `y^(-ε - 1/2) (-i)^ε` (`ε ≤ 1`) and at
 a complex place is `y^(-n - 1) (-i)^n`, where both complex orientations occur according to the sign
-of a character's angular frequency.
-
-The linear inner-product identity differentiates `SchwartzMap.gaussian` in direction `v` and reads
-the derivative on the Fourier side via Mathlib's `SchwartzMap.fourier_lineDerivOp_eq`. On `ℂ`, the
-planar conjugate Wirtinger derivative kills `z^n`, turns the Gaussian into `-b z` times itself, and
-acts as the Fourier multiplier `π i ξ`. The base Gaussian transform in both cases is Mathlib's
-`fourier_gaussian_innerProductSpace` (S. Gouëzel).
+of a character's angular frequency. At degree zero, both specialize to Mathlib's Gaussian Fourier
+transform `fourier_gaussian_innerProductSpace` (S. Gouëzel).
 
 ## References
 

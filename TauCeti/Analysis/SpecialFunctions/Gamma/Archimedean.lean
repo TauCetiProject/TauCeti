@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Zero values and duplication of the archimedean gamma factors
+# Zero values of `Gammaℂ` and `Gammaℝ` at doubled arguments
 
 Mathlib uses total division for the gamma function, so the archimedean factor `Gammaℂ`
 has value zero at the nonpositive integers. These are poles of its meromorphic germ.

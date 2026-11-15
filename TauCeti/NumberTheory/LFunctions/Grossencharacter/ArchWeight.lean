@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.HarmonicFactor
 public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 import Mathlib.MeasureTheory.Integral.Pi
+import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -26,7 +27,8 @@ is
 Under `unitScale u`, `χ.archWeight` multiplies by `∏_w |u|_w ^ P_w` (`archWeight_unitScale`),
 cancelling the inverse factor picked up when the twisted theta sum is reindexed by `u`. Under
 `surfaceScale x t` (`0 ≤ t`), it scales by `t ^ (Tr(p) / (2 [K : ℚ]))`
-(`archWeight_surfaceScale`), shifting the Mellin variable by `Tr(p) / [K : ℚ]`. Against the
+(`archWeight_surfaceScale`), shifting the radial Mellin variable `s / 2` by `Tr(p) / (2 [K : ℚ])`
+(and `s` by `Tr(p) / [K : ℚ]`). Against the
 factor `∏_w y_w ^ (-P_w)` of Hecke's lemma (`mixedFourier_harmonicFactor_mul_archGaussian`),
 `χ.archWeight y` produces `χ.archWeight y⁻¹` (`archWeight_mul_prod_inv_pow`).
 

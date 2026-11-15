@@ -53,42 +53,9 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### One place -/
-
-/-- The Gaussian `t ↦ exp (-π a² t)` at one place (`0 < a`) is integrable against
-`t ^ (z / 2) dt / t` whenever `0 < z.re`. -/
-theorem integrable_cpow_div_two_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {z : ℂ}
-    (hz : 0 < z.re) :
-    Integrable (fun t : ℝ ↦ (t : ℂ) ^ (z / 2) * (Real.exp (-(π * a ^ 2 * t)) : ℂ))
-      multHaar := by
-  have hz2 : 0 < (z / 2).re := by
-    rw [div_ofNat_re]
-    exact half_pos hz
-  simpa only [smul_eq_mul] using integrable_multHaar_cpow_smul_iff.mpr
-    (mellinConvergent_exp_neg_mul (by positivity) hz2)
-
-/-- The one-place Mellin integral of `t ↦ exp (-π a² t)` against `t ^ (z / 2) dt / t`, for `0 < a`
-and `0 < z.re`: `∫_0^∞ e^(-π t a²) t^(z / 2) dt / t = Γ_ℝ(z) a^(-z)`. -/
-theorem integral_cpow_div_two_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {z : ℂ}
-    (hz : 0 < z.re) :
-    ∫ t, (t : ℂ) ^ (z / 2) * (Real.exp (-(π * a ^ 2 * t)) : ℂ) ∂multHaar =
-      Gammaℝ z * (a : ℂ) ^ (-z) := by
-  have hz2 : 0 < (z / 2).re := by
-    rw [div_ofNat_re]
-    exact half_pos hz
-  have hc : 0 < π * a ^ 2 := by positivity
-  have hpow : ((π * a ^ 2 : ℝ) : ℂ) ^ (-(z / 2)) = (π : ℂ) ^ (-z / 2) * (a : ℂ) ^ (-z) := by
-    rw [ofReal_mul, ofReal_mul_cpow Real.pi_pos.le, ofReal_pow, ofReal_pow_cpow ha.le]
-    congr 2 <;> ring
-  have h := integral_multHaar_cpow_smul (fun t : ℝ ↦ (Real.exp (-(π * a ^ 2 * t)) : ℂ)) (z / 2)
-  simp only [smul_eq_mul, mellin, ofReal_exp, ofReal_neg, ofReal_mul (π * a ^ 2)] at h ⊢
-  rw [h, integral_cpow_mul_exp_neg_mul_Ioi hz2 hc, one_div, inv_cpow_ofReal_nonneg hc.le,
-    ← cpow_neg, hpow, Gammaℝ_def]
-  ring
-
 /-! ### The product over the places -/
 
-/-- The coordinates of a point of nonzero norm are positive at every place. -/
+/-- The placewise norms of a point of nonzero norm are positive at every place. -/
 theorem normAtPlace_pos_of_norm_ne_zero {x : mixedSpace K}
     (hx : mixedEmbedding.norm x ≠ 0) (w : InfinitePlace K) : 0 < normAtPlace w x :=
   (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
