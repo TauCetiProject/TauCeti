@@ -85,8 +85,8 @@ def precomp (e : E ≃ₗᵢ[𝕜] F) : (F →L[𝕜] G) ≃ₗᵢ[𝕜] (E →L
   invFun g := g.comp e.symm.toLinearIsometry.toContinuousLinearMap
   left_inv f := by ext x; simp
   right_inv g := by ext x; simp
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' _ _ := ContinuousLinearMap.add_comp _ _ _
+  map_smul' _ _ := ContinuousLinearMap.smul_comp _ _ _
   norm_map' f := by
     apply le_antisymm
     · exact (f.opNorm_comp_le _).trans <|

@@ -197,8 +197,9 @@ theorem mul'_comp_mulLeft (c : A) :
 `Δ (c · m) = c * Δ m`. -/
 @[simp]
 theorem mul'_mulLeft_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
-    mul' 𝕜 A (mulLeft 𝕜 A c m) = c * mul' 𝕜 A m :=
-  congr($(mul'_comp_mulLeft c) m)
+    mul' 𝕜 A (mulLeft 𝕜 A c m) = c * mul' 𝕜 A m := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply'] using
+    congr($(mul'_comp_mulLeft c) m)
 
 /-- Operator form of right-action intertwining for the multiplication map:
 `Δ ∘L mulRight c = (mul.flip c) ∘L Δ`. -/
@@ -211,8 +212,9 @@ theorem mul'_comp_mulRight (c : A) :
 `Δ (m · c) = Δ m * c`. -/
 @[simp]
 theorem mul'_mulRight_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
-    mul' 𝕜 A (mulRight 𝕜 A c m) = mul' 𝕜 A m * c :=
-  congr($(mul'_comp_mulRight c) m)
+    mul' 𝕜 A (mulRight 𝕜 A c m) = mul' 𝕜 A m * c := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.mul_apply'] using congr($(mul'_comp_mulRight c) m)
 
 end Multiplication
 
@@ -313,8 +315,7 @@ theorem isApproximateDiagonal_pure_zero [Subsingleton A] :
     IsApproximateDiagonal 𝕜 (pure (0 : CompletedProjectiveTensor 𝕜 A A)) where
   tendsto_mulLeft_sub_mulRight a := by
     simpa using tendsto_pure_nhds (fun m ↦ mulLeft 𝕜 A a m - mulRight 𝕜 A a m) 0
-  tendsto_mul_mul' a := by
-    convert tendsto_pure_nhds (fun m : CompletedProjectiveTensor 𝕜 A A ↦ a * mul' 𝕜 A m) 0
+  tendsto_mul_mul' a := by simp [Subsingleton.elim a 0]
 
 end ApproximateDiagonal
 

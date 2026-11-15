@@ -48,10 +48,10 @@ of norm at most `C` if and only if it has an approximate diagonal bounded by `C`
 
 * `TauCeti.isVirtualDiagonal_iff`: pointwise characterization of `IsVirtualDiagonal` on
   `(A ⊗̂π A)*` and `A*`.
-* `TauCeti.IsVirtualDiagonal.dualAction_mul_flip_precomp_mul'`,
-  `TauCeti.IsVirtualDiagonal.arensMul_precomp_mul'`,
-  `TauCeti.IsVirtualDiagonal.arensMulRev_precomp_mul'`: right-action symmetry and mixed-identity
-  laws for `Δ** M`.
+* `TauCeti.IsVirtualDiagonal.dualAction_mul_flip_precomp_precomp_mul'`,
+  `TauCeti.IsVirtualDiagonal.arensMul_precomp_precomp_mul'`,
+  `TauCeti.IsVirtualDiagonal.arensMulRev_precomp_precomp_mul'`: right-action symmetry and
+  mixed-identity laws for `Δ** M`.
 * `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_of_mapClusterPt`,
   `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_inclusionInDoubleDual`, and
   `TauCeti.IsApproximateDiagonal.exists_isVirtualDiagonal`: passage from approximate diagonals to
@@ -103,7 +103,7 @@ structure IsVirtualDiagonal
   dualAction_mulLeft_eq_mulRight (a : A) :
     dualAction (dualAction (mulLeft 𝕜 A)) a M = dualAction (dualAction (mulRight 𝕜 A)) a M
   /-- Left action of `a` on `Δ** M` recovers the canonical image `J_A a`. -/
-  dualAction_mul_precomp_mul' (a : A) :
+  dualAction_mul_precomp_precomp_mul' (a : A) :
     dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a
       (precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A)) M) = inclusionInDoubleDual 𝕜 A a
 
@@ -124,7 +124,7 @@ theorem apply_comp_mulLeft_eq_mulRight (hM : IsVirtualDiagonal 𝕜 M) (a : A)
 /-- Pointwise form of `a · Δ** M = J_A a`: `M (f ∘ mul a ∘ Δ) = f a` for every `f ∈ A*`. -/
 theorem apply_comp_mul_comp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) (f : StrongDual 𝕜 A) :
     M ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = f a := by
-  have h := congr($(hM.dualAction_mul_precomp_mul' a) f)
+  have h := congr($(hM.dualAction_mul_precomp_precomp_mul' a) f)
   simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply, dual_def]
     using h
 
@@ -144,7 +144,7 @@ theorem isVirtualDiagonal_iff
       { dualAction_mulLeft_eq_mulRight a := ext fun φ ↦ by
           simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply] using
             hcomm a φ
-        dualAction_mul_precomp_mul' a := ext fun f ↦ by
+        dualAction_mul_precomp_precomp_mul' a := ext fun f ↦ by
           simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply,
             dual_def] using hmul a f }⟩
 
@@ -172,7 +172,7 @@ theorem apply_comp_mul_flip_comp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) (f
     comp_assoc, mul'_comp_mulLeft, ← comp_assoc, hM.apply_comp_mul_comp_mul']
 
 /-- Right action of `a` on `Δ** M` also recovers `J_A a`: `Δ** M · a = J_A a`. -/
-theorem dualAction_mul_flip_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) :
+theorem dualAction_mul_flip_precomp_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) :
     dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A).flip) a
       (precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A)) M) = inclusionInDoubleDual 𝕜 A a :=
   ext fun f ↦ by
@@ -181,7 +181,8 @@ theorem dualAction_mul_flip_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A)
 
 /-- The image `Δ** M` of a virtual diagonal in `A**` is a right identity for the first Arens
 product. -/
-theorem arensMul_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
+theorem arensMul_precomp_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M)
+    (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     arensMul 𝕜 A F (precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A)) M) = F := by
   ext f
   rw [arensMul_apply]
@@ -194,7 +195,7 @@ theorem arensMul_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (F : StrongDual �
 
 /-- The image `Δ** M` of a virtual diagonal in `A**` is a left identity for the second Arens
 product. -/
-theorem arensMulRev_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M)
+theorem arensMulRev_precomp_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M)
     (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     arensMulRev 𝕜 A (precomp 𝕜 (precomp 𝕜 (mul' 𝕜 A)) M) F = F := by
   ext f

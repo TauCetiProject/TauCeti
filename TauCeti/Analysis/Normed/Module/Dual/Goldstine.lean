@@ -12,6 +12,7 @@ import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Goldstine's theorem and norm approximation from the bidual
@@ -31,8 +32,9 @@ Combined with weak-star continuity of bidual adjoints and convex weak-norm closu
 bidual ball into norm-bounded approximate solutions in the original space: if `Φ ∈ E**` has
 `‖Φ‖ ≤ r` and `T** Φ = J_F y`, then `y ∈ closure (T '' closedBall 0 r)`. Applied to a finite
 product, finitely many equations `Sᵢ** Φ = J (zᵢ)` can be approximately solved simultaneously in
-norm by a single vector of norm at most `r` (used to construct bounded approximate identities and
-bounded approximate diagonals from bidual witnesses).
+norm by a single vector of norm at most `r`, and for an arbitrary family of equations this yields
+a proper filter eventually bounded in norm by `r` along which every `Sₖ x → zₖ` (used to construct
+bounded approximate identities and bounded approximate diagonals from bidual witnesses).
 
 ## Main results
 
@@ -43,6 +45,9 @@ bounded approximate diagonals from bidual witnesses).
   `T** Φ = J_F y`, then `y ∈ closure (T '' closedBall 0 r)`.
 * `StrongDual.exists_norm_le_and_forall_norm_sub_lt`: simultaneous norm approximation on a closed
   ball for finitely many operators whose bidual adjoints send `Φ` into canonical images.
+* `StrongDual.exists_neBot_eventually_norm_le_and_forall_tendsto`: proper filter on a closed ball
+  approximating an arbitrary family of operators whose bidual adjoints send `Φ` into canonical
+  images.
 
 ## References
 
@@ -51,7 +56,8 @@ bounded approximate diagonals from bidual witnesses).
 
 public section
 
-open Metric NormedSpace RCLike Set
+open Filter Metric NormedSpace RCLike Set
+open scoped Topology
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
@@ -203,6 +209,27 @@ theorem exists_norm_le_and_forall_norm_sub_lt
     simpa only [hz] using ContinuousLinearMap.sum_comp_single (L := F) (v := z)
   obtain ⟨_, ⟨x, hx, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1 hmem ε hε
   rw [dist_comm, dist_eq_norm] at hdist
-  exact ⟨x, mem_closedBall_zero_iff.1 hx, (pi_norm_lt_iff hε).1 hdist⟩
+  exact ⟨x, mem_closedBall_zero_iff.1 hx, fun i ↦ by
+    simpa only [Pi.sub_apply, ContinuousLinearMap.pi_apply] using (pi_norm_lt_iff hε).1 hdist i⟩
+
+/-- Simultaneous filter approximation from a bidual element: if `Φ ∈ E**` satisfies `‖Φ‖ ≤ r` and
+`Φ (f ∘ S k) = f (z k)` for every `k` in an arbitrary index type and every `f ∈ (Z k)*`, then there
+is a proper filter on `E` eventually bounded in norm by `r` along which `S k x → z k` for every
+`k`. -/
+theorem exists_neBot_eventually_norm_le_and_forall_tendsto
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) {κ : Type*} {Z : κ → Type*}
+    [∀ k, SeminormedAddCommGroup (Z k)] [∀ k, NormedSpace 𝕜 (Z k)]
+    (S : ∀ k, E →L[𝕜] Z k) (z : ∀ k, Z k)
+    (hz : ∀ k (f : StrongDual 𝕜 (Z k)), Φ (f.comp (S k)) = f (z k))
+    {r : ℝ} (hr : ‖Φ‖ ≤ r) :
+    ∃ l : Filter E, l.NeBot ∧ (∀ᶠ x in l, ‖x‖ ≤ r) ∧ ∀ k, Tendsto (S k) l (𝓝 (z k)) := by
+  obtain ⟨l, hl, hle, ht⟩ :=
+    (TauCeti.exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun x : E ↦ ‖x‖ ≤ r)
+      (F := fun k x ↦ ‖S k x - z k‖) (x := fun _ ↦ (0 : ℝ))).2 fun s ε hε ↦ by
+    obtain ⟨x, hx, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
+      (fun k : s ↦ S k.1) (fun k : s ↦ z k.1) (fun k ↦ hz k.1) hr hε
+    exact ⟨x, hx, fun k hk ↦ by
+      simpa only [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)] using happrox ⟨k, hk⟩⟩
+  exact ⟨l, hl, hle, fun k ↦ tendsto_iff_norm_sub_tendsto_zero.2 (ht k)⟩
 
 end StrongDual

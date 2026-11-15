@@ -30,15 +30,15 @@ This file proves Johnson's equivalent characterizations of amenability:
 
 1. **Sufficiency of virtual and approximate diagonals.** Over any complete nontrivially normed
    field `𝕜`, if a Banach algebra `A` has a virtual diagonal `M ∈ (A ⊗̂π A)**`, then every bounded
-   derivation `D : A →L[𝕜] E*` into the dual of a normed `A`-bimodule `E` (in any universe, without
-   requiring completeness of `E` or essentiality of the actions) is inner. Over a proper scalar
-   field, a bounded approximate diagonal gives a virtual diagonal by Banach–Alaoglu and hence also
-   implies amenability.
+   derivation `D : A →L[𝕜] E*` into the dual of a seminormed `A`-bimodule `E` (in any universe,
+   without requiring completeness of `E` or essentiality of the actions) is inner. Over a proper
+   scalar field, a bounded approximate diagonal gives a virtual diagonal by Banach–Alaoglu and hence
+   also implies amenability.
 2. **Bounded approximate identities from amenability.** Over `ℝ` or `ℂ`, applying amenability to
    the canonical inclusion `J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)` and
    `(0, mul.flip)` produces elements in `A**` that Goldstine's theorem approximates in norm on
    finite subsets, yielding bounded left and right approximate identities and hence a bounded
-   two-sided approximate identity by Dixon's combination.
+   two-sided approximate identity by Dixon's combination (without requiring completeness of `A`).
 3. **Necessity of virtual and approximate diagonals.** Over `ℝ` or `ℂ`, given a bounded two-sided
    approximate identity `(eᵢ)` of an amenable Banach algebra `A`, a weak-star cluster point `E₀` of
    `eᵢ ⊗ eᵢ` in `(A ⊗̂π A)**` satisfies `a · Δ** E₀ = J_A a = Δ** E₀ · a`, so `a ↦ a · E₀ - E₀ · a`
@@ -48,9 +48,9 @@ This file proves Johnson's equivalent characterizations of amenability:
    and Goldstine's theorem turns `M` into a bounded approximate diagonal.
 
 Consequently, for a Banach algebra `A` over `ℝ` or `ℂ`, amenability is equivalent to the existence
-of a virtual diagonal and to the existence of a bounded approximate diagonal, and implies innerness
-of bounded derivations into `E*` (hence `H¹(A, E*) = 0`) for normed bimodules `E` in arbitrary
-universes.
+of a virtual diagonal and to the existence of a bounded approximate diagonal, implies innerness of
+bounded derivations into `E*` for seminormed bimodules `E` in arbitrary universes, and implies
+`H¹(A, E*) = 0` for normed bimodules `E` in arbitrary universes.
 
 ## Main definitions
 
@@ -66,7 +66,7 @@ universes.
   the vanishing of `H¹(A, E*)` for all Banach bimodules `E` in the universe of `A`.
 * `TauCeti.IsVirtualDiagonal.isAmenable` and `TauCeti.IsApproximateDiagonal.isAmenable`:
   sufficiency of virtual and bounded approximate diagonals for amenability.
-* `TauCeti.IsAmenable.exists_isApproximateUnit`: every amenable Banach algebra over `ℝ` or `ℂ` has
+* `TauCeti.IsAmenable.exists_isApproximateUnit`: every amenable normed algebra over `ℝ` or `ℂ` has
   a bounded two-sided approximate identity.
 * `TauCeti.IsAmenable.exists_isVirtualDiagonal` and
   `TauCeti.IsAmenable.exists_isApproximateDiagonal`: every amenable Banach algebra over `ℝ` or `ℂ`
@@ -91,10 +91,11 @@ between `A : Type u` and `𝕜 : Type v`:
   innerness without assuming `E` is essential.
 * For necessity, `IsAmenable 𝕜 A` quantifies over Banach bimodules in `Type u`, whereas for
   `X : Type u` and `𝕜 : Type v` the dual `X* = X →L[𝕜] 𝕜` lies in `Type (max u v)`. When `A` is
-  nontrivial, Hahn–Banach supplies `e : A` and `π ∈ A*` with `π e = 1`, exhibiting `X*` as a
-  bounded bimodule retract of the Banach bimodule `X →L[𝕜] A : Type u`; when `A` is subsingleton,
-  every derivation is zero. Thus `IsAmenable 𝕜 A` applies directly to derivations into `A**` and
-  `(ker Δ)**` without tying `u` and `v`.
+  nontrivial, Hahn–Banach supplies a nonzero `e` in the completion `Â` of `A` and `π ∈ Â*` with
+  `π e = 1`, exhibiting `X*` as a bounded bimodule retract of the Banach bimodule
+  `X →L[𝕜] Â : Type u`; when `A` is subsingleton, every derivation is zero. Thus `IsAmenable 𝕜 A`
+  applies directly to derivations into `A**` and `(ker Δ)**` without requiring completeness of `A`
+  or tying `u` and `v`.
 
 ## References
 
@@ -127,12 +128,13 @@ section Derivation
 
 variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {L R : A →L[𝕜] E →L[𝕜] E}
 
 /-- The bounded operator `A ⊗̂π A → E*` induced by the bounded bilinear map `(a, b) ↦ a · D b`. -/
 private abbrev leftDerivationLift [CompleteSpace 𝕜] (R : A →L[𝕜] E →L[𝕜] E)
     (D : A →L[𝕜] StrongDual 𝕜 E) : CompletedProjectiveTensor 𝕜 A A →L[𝕜] StrongDual 𝕜 E :=
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
   liftIsometry 𝕜 A A (StrongDual 𝕜 E) ((compL 𝕜 E E 𝕜).bilinearComp D R).flip
 
 /-- The commutator of `Φ m` with `a`, where `Φ` is induced by `(a, b) ↦ a · D b`:
@@ -145,6 +147,7 @@ private theorem dualAction_leftDerivationLift_sub [CompleteSpace 𝕜]
     dualAction R a (leftDerivationLift R D m) - dualAction L a (leftDerivationLift R D m) =
       leftDerivationLift R D (mulLeft 𝕜 A a m - mulRight 𝕜 A a m) +
         dualAction R (mul' 𝕜 A m) (D a) := by
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
   have key : (dualAction R a - dualAction L a) ∘L leftDerivationLift R D =
       leftDerivationLift R D ∘L (mulLeft 𝕜 A a - mulRight 𝕜 A a) +
         (compL 𝕜 E E 𝕜 (D a) ∘L R) ∘L mul' 𝕜 A := by
@@ -156,7 +159,7 @@ private theorem dualAction_leftDerivationLift_sub [CompleteSpace 𝕜]
   simpa using congr($key m x)
 
 /-- If a Banach algebra `A` over a complete scalar field has a virtual diagonal `M`, then every
-bounded derivation `D` of `A` into the dual `E*` of a normed `A`-bimodule `E` is inner:
+bounded derivation `D` of `A` into the dual `E*` of a seminormed `A`-bimodule `E` is inner:
 `D a = a · φ - φ · a` for some `φ ∈ E*`, where `E*` has left action `dualAction R` and right action
 `dualAction L`. Neither `A` nor the actions need to be unital or contractive, and `E` need not be
 complete or essential. -/
@@ -213,7 +216,7 @@ theorem IsVirtualDiagonal.exists_eq_dualAction_sub_dualAction [CompleteSpace �
   ring
 
 /-- If a Banach algebra `A` over a proper scalar field has a bounded approximate diagonal, then
-every bounded derivation `D` of `A` into the dual `E*` of a normed `A`-bimodule `E` is inner:
+every bounded derivation `D` of `A` into the dual `E*` of a seminormed `A`-bimodule `E` is inner:
 `D a = a · φ - φ · a` for some `φ ∈ E*`, where `E*` has left action `dualAction R` and right action
 `dualAction L`. Neither `A` nor the actions need to be unital or contractive, and `E` need not be
 complete or essential. -/
@@ -312,21 +315,37 @@ theorem isAmenable_of_subsingleton [Subsingleton A] : IsAmenable 𝕜 A :=
   fun _ _ _ _ _ _ _ _ _ _ _ ↦ ⟨0, fun a ↦ by simp [Subsingleton.elim a 0]⟩
 
 variable (𝕜) in
-/-- A complete base field is amenable over itself. -/
-theorem isAmenable_self [CompleteSpace 𝕜] : IsAmenable 𝕜 𝕜 :=
-  (isVirtualDiagonal_inclusionInDoubleDual_one_tmul_one 𝕜).isAmenable
+/-- Every nontrivially normed field is amenable over itself. -/
+theorem isAmenable_self : IsAmenable 𝕜 𝕜 := by
+  intro E _ _ _ L R hL hR hLR D hD
+  have h1 : D 1 = dualAction R 1 (D 1) + dualAction L 1 (D 1) := by
+    simpa only [mul_one] using hD 1 1
+  have hRR : dualAction R 1 (dualAction R 1 (D 1)) = dualAction R 1 (D 1) := by
+    rw [← dualAction_mul_apply_of_right hR, mul_one]
+  have hLL : dualAction L 1 (dualAction L 1 (D 1)) = dualAction L 1 (D 1) := by
+    rw [← dualAction_mul_apply_of_left hL, mul_one]
+  have hRL : dualAction R 1 (dualAction L 1 (D 1)) = 0 := by
+    have h := congrArg (dualAction R 1) h1
+    rw [map_add, hRR] at h
+    exact left_eq_add.mp h
+  have hLR' : dualAction L 1 (dualAction R 1 (D 1)) = 0 := by
+    rw [← dualAction_apply_dualAction_apply_comm hLR, hRL]
+  refine ⟨dualAction R 1 (D 1) - dualAction L 1 (D 1), fun a ↦ ?_⟩
+  have ha : a = a • (1 : 𝕜) := ((smul_eq_mul a 1).trans (mul_one a)).symm
+  rw [ha, map_smul, map_smul, map_smul, smul_apply, smul_apply, ← smul_sub, map_sub, map_sub,
+    hRR, hRL, hLR', hLL, sub_zero, zero_sub, sub_neg_eq_add, ← h1]
 
 end Amenable
 
-section DiagonalCharacterization
+section ApproximateUnit
 
 variable {𝕜 : Type v} {A : Type u} [RCLike 𝕜] [NonUnitalNormedRing A]
-  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
-/-- In an amenable Banach algebra `A : Type u` over `𝕜 : Type v` (`ℝ` or `ℂ`), every bounded
+/-- In an amenable normed algebra `A : Type u` over `𝕜 : Type v` (`ℝ` or `ℂ`), every bounded
 derivation into the bidual `X**` of a normed `A`-bimodule `X : Type u` is inner, with no
-completeness hypothesis on `X` and no universe constraint between `u` and `v`. -/
+completeness hypothesis on `A` or `X` and no universe constraint between `u` and `v`. -/
 private theorem IsAmenable.exists_eq_bidual_dualAction_sub_dualAction
     (h : IsAmenable 𝕜 A) {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     {L R : A →L[𝕜] X →L[𝕜] X}
@@ -340,28 +359,40 @@ private theorem IsAmenable.exists_eq_bidual_dualAction_sub_dualAction
       ∀ a, D a = dualAction (dualAction L) a Φ - dualAction (dualAction R) a Φ := by
   by_cases hA : Subsingleton A
   · exact ⟨0, fun a ↦ by simp [hA.elim a 0]⟩
-  -- When `A` is nontrivial, a functional `π ∈ A*` with `π e = 1` exhibits `X* : Type (max u v)`
-  -- as a bounded bimodule retract of the Banach bimodule `X →L[𝕜] A : Type u`.
+  -- When `A` is nontrivial, `UniformSpace.Completion A : Type u` is a nontrivial Banach space, and
+  -- any functional `π ∈ Y*` with `π e = 1` exhibits `X* : Type (max u v)` as a bounded bimodule
+  -- retract of the Banach bimodule `X →L[𝕜] Y : Type u`.
   rw [not_subsingleton_iff_nontrivial] at hA
-  obtain ⟨e, he⟩ := exists_ne (0 : A)
+  have : Nontrivial (UniformSpace.Completion A) :=
+    (UniformSpace.Completion.coe_injective A).nontrivial
+  suffices ∀ (Y : Type u) [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y] [Nontrivial Y],
+      ∃ Φ : StrongDual 𝕜 (StrongDual 𝕜 X),
+        ∀ a, D a = dualAction (dualAction L) a Φ - dualAction (dualAction R) a Φ from
+    this (UniformSpace.Completion A)
+  intro Y _ _ _ _
+  obtain ⟨e, he⟩ := exists_ne (0 : Y)
   obtain ⟨π, hπe⟩ := SeparatingDual.exists_eq_one (R := 𝕜) he
-  let L₀ : A →L[𝕜] (X →L[𝕜] A) →L[𝕜] (X →L[𝕜] A) := (compL 𝕜 X X A).flip ∘L R
-  let R₀ : A →L[𝕜] (X →L[𝕜] A) →L[𝕜] (X →L[𝕜] A) := (compL 𝕜 X X A).flip ∘L L
-  have hL₀ (a b : A) (T : X →L[𝕜] A) : L₀ (a * b) T = L₀ a (L₀ b T) := by ext x; simp [L₀, hR]
-  have hR₀ (a b : A) (T : X →L[𝕜] A) : R₀ (a * b) T = R₀ b (R₀ a T) := by ext x; simp [R₀, hL]
-  have hLR₀ (a b : A) (T : X →L[𝕜] A) : L₀ a (R₀ b T) = R₀ b (L₀ a T) := by
+  let L₀ : A →L[𝕜] (X →L[𝕜] Y) →L[𝕜] (X →L[𝕜] Y) := (compL 𝕜 X X Y).flip ∘L R
+  let R₀ : A →L[𝕜] (X →L[𝕜] Y) →L[𝕜] (X →L[𝕜] Y) := (compL 𝕜 X X Y).flip ∘L L
+  have hL₀ (a b : A) (T : X →L[𝕜] Y) : L₀ (a * b) T = L₀ a (L₀ b T) := by
+    ext x; simp [L₀, hR]
+  have hR₀ (a b : A) (T : X →L[𝕜] Y) : R₀ (a * b) T = R₀ b (R₀ a T) := by
+    ext x; simp [R₀, hL]
+  have hLR₀ (a b : A) (T : X →L[𝕜] Y) : L₀ a (R₀ b T) = R₀ b (L₀ a T) := by
     ext x; simp [L₀, R₀, hLR]
-  let p : (X →L[𝕜] A) →L[𝕜] StrongDual 𝕜 X := compL 𝕜 X A 𝕜 π
-  let ι : StrongDual 𝕜 X →L[𝕜] (X →L[𝕜] A) :=
-    compL 𝕜 X 𝕜 A ((ContinuousLinearMap.id 𝕜 𝕜).smulRight e)
+  let p : (X →L[𝕜] Y) →L[𝕜] StrongDual 𝕜 X := compL 𝕜 X Y 𝕜 π
+  let ι : StrongDual 𝕜 X →L[𝕜] (X →L[𝕜] Y) :=
+    compL 𝕜 X 𝕜 Y ((ContinuousLinearMap.id 𝕜 𝕜).smulRight e)
   have hpι (f : StrongDual 𝕜 X) : p (ι f) = f := by ext x; simp [p, ι, hπe]
-  have hpL (a : A) (T : X →L[𝕜] A) : p (L₀ a T) = dualAction R a (p T) := by ext x; simp [p, L₀]
-  have hpR (a : A) (T : X →L[𝕜] A) : p (R₀ a T) = dualAction L a (p T) := by ext x; simp [p, R₀]
+  have hpL (a : A) (T : X →L[𝕜] Y) : p (L₀ a T) = dualAction R a (p T) := by
+    ext x; simp [p, L₀]
+  have hpR (a : A) (T : X →L[𝕜] Y) : p (R₀ a T) = dualAction L a (p T) := by
+    ext x; simp [p, R₀]
   have hιL (a : A) (f : StrongDual 𝕜 X) : ι (dualAction R a f) = L₀ a (ι f) := by
     ext x; simp [ι, L₀]
   have hιR (a : A) (f : StrongDual 𝕜 X) : ι (dualAction L a f) = R₀ a (ι f) := by
     ext x; simp [ι, R₀]
-  let D₀ : A →L[𝕜] StrongDual 𝕜 (X →L[𝕜] A) := precomp 𝕜 p ∘L D
+  let D₀ : A →L[𝕜] StrongDual 𝕜 (X →L[𝕜] Y) := precomp 𝕜 p ∘L D
   have hD₀ (a b : A) : D₀ (a * b) = dualAction R₀ a (D₀ b) + dualAction L₀ b (D₀ a) := by
     simp only [D₀, comp_apply, hD, map_add, precomp_dualAction_apply hpR,
       precomp_dualAction_apply hpL]
@@ -370,20 +401,7 @@ private theorem IsAmenable.exists_eq_bidual_dualAction_sub_dualAction
   have hDa : D a = precomp 𝕜 ι (D₀ a) := by ext f; simp [D₀, hpι]
   rw [hDa, hΨ a, map_sub, precomp_dualAction_apply hιR, precomp_dualAction_apply hιL]
 
-omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] in
-/-- If `Φ ∈ A**` satisfies `Φ (f ∘ T a) = f a` for all `a : A` and `f ∈ A*`, then there is a proper
-filter on `A` bounded by `‖Φ‖` along which `T a e → a` for every `a`. -/
-private theorem exists_tendsto_of_forall_apply_comp_eq (T : A →L[𝕜] A →L[𝕜] A)
-    (Φ : StrongDual 𝕜 (StrongDual 𝕜 A))
-    (hΦ : ∀ (a : A) (f : StrongDual 𝕜 A), Φ (f.comp (T a)) = f a) :
-    ∃ l : Filter A, l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ ‖Φ‖) ∧ ∀ a, Tendsto (T a) l (𝓝 a) := by
-  refine (exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun e : A ↦ ‖e‖ ≤ ‖Φ‖)
-    (F := fun a e ↦ T a e) (x := id)).2 fun s ε hε ↦ ?_
-  obtain ⟨e, he, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
-    (fun a : s ↦ T a.1) (fun a : s ↦ a.1) (fun a ↦ hΦ a.1) le_rfl hε
-  exact ⟨e, he, fun a ha ↦ by simpa only [dist_eq_norm, id_eq] using happrox ⟨a, ha⟩⟩
-
-/-- Every amenable Banach algebra over `ℝ` or `ℂ` has a bounded right approximate identity. -/
+/-- Every amenable normed algebra over `ℝ` or `ℂ` has a bounded right approximate identity. -/
 private theorem IsAmenable.exists_tendsto_mul_left (h : IsAmenable 𝕜 A) :
     ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (a * ·) l (𝓝 a) := by
   -- Apply bidual innerness to `J_A : A →L[𝕜] A**` for the one-sided actions `(mul, 0)`.
@@ -392,14 +410,16 @@ private theorem IsAmenable.exists_tendsto_mul_left (h : IsAmenable 𝕜 A) :
         dualAction (dualAction (0 : A →L[𝕜] A →L[𝕜] A)) b (inclusionInDoubleDual 𝕜 A a) := by
     ext f; simp
   obtain ⟨Φ, hΦ⟩ := h.exists_eq_bidual_dualAction_sub_dualAction
-    (fun a b x ↦ mul_assoc a b x) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+    (fun a b x ↦ by simp [mul_assoc]) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
     (inclusionInDoubleDual 𝕜 A) hD
-  refine ⟨‖Φ‖, exists_tendsto_of_forall_apply_comp_eq (ContinuousLinearMap.mul 𝕜 A) Φ fun a f ↦ ?_⟩
-  have ha := congr($(hΦ a) f)
-  simpa only [sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply, precomp_apply,
-    zero_apply, comp_zero, map_zero, sub_zero, dual_def] using ha.symm
+  obtain ⟨l, hl, hle, ht⟩ := Φ.exists_neBot_eventually_norm_le_and_forall_tendsto
+    (fun a ↦ ContinuousLinearMap.mul 𝕜 A a) id (fun a f ↦ by
+      have ha := congr($(hΦ a) f)
+      simpa only [sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply, precomp_apply,
+        zero_apply, comp_zero, map_zero, sub_zero, dual_def, id_eq] using ha.symm) le_rfl
+  exact ⟨‖Φ‖, l, hl, hle, fun a ↦ (ht a).congr fun e ↦ mul_apply' 𝕜 A a e⟩
 
-/-- Every amenable Banach algebra over `ℝ` or `ℂ` has a bounded left approximate identity. -/
+/-- Every amenable normed algebra over `ℝ` or `ℂ` has a bounded left approximate identity. -/
 private theorem IsAmenable.exists_tendsto_mul_right (h : IsAmenable 𝕜 A) :
     ∃ (C : ℝ) (l : Filter A), l.NeBot ∧ (∀ᶠ e in l, ‖e‖ ≤ C) ∧ ∀ a, Tendsto (· * a) l (𝓝 a) := by
   -- Apply bidual innerness to `-J_A : A →L[𝕜] A**` for the one-sided actions `(0, mul.flip)`.
@@ -409,20 +429,29 @@ private theorem IsAmenable.exists_tendsto_mul_right (h : IsAmenable 𝕜 A) :
           ((-inclusionInDoubleDual 𝕜 A) a) := by
     ext f; simp
   obtain ⟨Φ, hΦ⟩ := h.exists_eq_bidual_dualAction_sub_dualAction
-    (fun _ _ _ ↦ by simp) (fun a b x ↦ (mul_assoc x a b).symm) (fun _ _ _ ↦ by simp)
+    (fun _ _ _ ↦ by simp) (fun a b x ↦ by simp [mul_assoc]) (fun _ _ _ ↦ by simp)
     (-inclusionInDoubleDual 𝕜 A) hD
-  refine ⟨‖Φ‖, exists_tendsto_of_forall_apply_comp_eq (ContinuousLinearMap.mul 𝕜 A).flip Φ
-    fun a f ↦ ?_⟩
-  have ha := congr($(hΦ a) f)
-  simpa only [neg_apply, sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply,
-    precomp_apply, zero_apply, comp_zero, map_zero, zero_sub, neg_inj, dual_def] using ha.symm
+  obtain ⟨l, hl, hle, ht⟩ := Φ.exists_neBot_eventually_norm_le_and_forall_tendsto
+    (fun a ↦ (ContinuousLinearMap.mul 𝕜 A).flip a) id (fun a f ↦ by
+      have ha := congr($(hΦ a) f)
+      simpa only [neg_apply, sub_apply, dualAction_apply_apply, dualAction_apply, comp_apply,
+        precomp_apply, zero_apply, comp_zero, map_zero, zero_sub, neg_inj, dual_def, id_eq]
+        using ha.symm) le_rfl
+  exact ⟨‖Φ‖, l, hl, hle, fun a ↦ (ht a).congr fun _ ↦ by simp⟩
 
-/-- Every amenable Banach algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity. -/
+/-- Every amenable normed algebra over `ℝ` or `ℂ` has a bounded two-sided approximate identity. -/
 theorem IsAmenable.exists_isApproximateUnit (h : IsAmenable 𝕜 A) :
     ∃ (C : ℝ) (l : Filter A), l.IsApproximateUnit ∧ ∀ᶠ e in l, ‖e‖ ≤ C := by
   obtain ⟨C, hleft⟩ := h.exists_tendsto_mul_right
   obtain ⟨D, hright⟩ := h.exists_tendsto_mul_left
   exact ⟨C + D + C * D, exists_isApproximateUnit_of_left_of_right hleft hright⟩
+
+end ApproximateUnit
+
+section DiagonalCharacterization
+
+variable {𝕜 : Type v} {A : Type u} [RCLike 𝕜] [NonUnitalNormedRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
 
 /-- If a Banach algebra `A` over `ℝ` or `ℂ` has a bounded two-sided approximate identity, then
 there is `E₀ ∈ (A ⊗̂π A)**` satisfying `E₀ (f ∘ mul a ∘ Δ) = f a` and
@@ -481,17 +510,7 @@ private theorem commutatorDerivation_mulLeft_mulRight_mul
   ring
 
 omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] in
-/-- Any action intertwined by a linear operator `T` with a linear action on the codomain preserves
-`ker T`. -/
-private theorem mem_ker_of_intertwine {X Y : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {T : X →L[𝕜] Y}
-    {M : A →L[𝕜] X →L[𝕜] X} {N : A →L[𝕜] Y →L[𝕜] Y} (hTM : ∀ a x, T (M a x) = N a (T x))
-    (a : A) (x : X) (hx : x ∈ T.ker) : M a x ∈ T.ker := by
-  simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
-  rw [hTM, hx, map_zero]
-
-omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
-/-- In an amenable Banach algebra `A` over `ℝ` or `ℂ`, if `T : X →L[𝕜] Y` is a closed-range
+/-- In an amenable normed algebra `A` over `ℝ` or `ℂ`, if `T : X →L[𝕜] Y` is a closed-range
 operator between Banach spaces in `Type u` whose kernel is invariant under bounded bimodule actions
 `L` and `R` on `X`, then every bounded derivation `D₀ : A →L[𝕜] X**` taking values in `ker T**` is
 implemented by an element `N ∈ ker T**`. -/
@@ -576,14 +595,19 @@ private theorem IsAmenable.exists_ker_mul'_eq_commutator
     (mulLeft_mul_apply (𝕜 := 𝕜) (A := A))
     (mulRight_mul_apply (𝕜 := 𝕜) (A := A))
     (mulLeft_mulRight_apply_comm (𝕜 := 𝕜) (A := A))
-    (mem_ker_of_intertwine (N := ContinuousLinearMap.mul 𝕜 A) (mul'_mulLeft_apply (𝕜 := 𝕜)))
-    (mem_ker_of_intertwine (N := (ContinuousLinearMap.mul 𝕜 A).flip) (mul'_mulRight_apply (𝕜 := 𝕜)))
+    (fun a x hx ↦ by
+      simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
+      rw [mul'_mulLeft_apply, hx, mul_zero])
+    (fun a x hx ↦ by
+      simp only [LinearMap.mem_ker, coe_coe] at hx ⊢
+      rw [mul'_mulRight_apply, hx, zero_mul])
     D₀ (commutatorDerivation_mulLeft_mulRight_mul E₀) fun a ↦ by
       rw [LinearMap.mem_ker]
       ext f
       simpa only [D₀, coe_coe, precomp_apply, comp_apply, sub_apply, flip_apply,
         dualAction_apply, sub_eq_zero, zero_apply] using hE₀ a f
-  exact ⟨N, LinearMap.mem_ker.mp hN_ker, fun a ↦ (hN_comm a).symm⟩
+  exact ⟨N, LinearMap.mem_ker.mp hN_ker, fun a ↦ by
+    simpa only [D₀, sub_apply, flip_apply] using (hN_comm a).symm⟩
 
 /-- **Amenability implies the existence of a virtual diagonal.** Every amenable Banach algebra over
 `ℝ` or `ℂ` has a virtual diagonal `M ∈ (A ⊗̂π A)**`. -/
@@ -634,10 +658,10 @@ theorem isAmenable_iff_exists_isApproximateDiagonal :
     exists_isVirtualDiagonal_iff_exists_isApproximateDiagonal
 
 /-- Universe-polymorphic innerness for amenable Banach algebras over `ℝ` or `ℂ`: every bounded
-derivation into the dual `E*` of a normed `A`-bimodule `E` in *any* universe (without requiring
+derivation into the dual `E*` of a seminormed `A`-bimodule `E` in *any* universe (without requiring
 completeness of `E`) is inner. -/
 theorem IsAmenable.exists_eq_dualAction_sub_dualAction' (h : IsAmenable 𝕜 A) {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {L R : A →L[𝕜] E →L[𝕜] E}
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] {L R : A →L[𝕜] E →L[𝕜] E}
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (D : A →L[𝕜] StrongDual 𝕜 E)
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) :
