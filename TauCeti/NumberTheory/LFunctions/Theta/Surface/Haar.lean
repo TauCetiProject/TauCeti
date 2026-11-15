@@ -262,7 +262,7 @@ private theorem toSurface_smul {c : ℝ} (hc : 0 < c) (y : realSpace K) :
     forall_congr' fun w ↦ (mul_pos_iff_of_pos_left hc)
   by_cases hy : ∀ w, 0 < y w
   · exact Subtype.ext <| by rw [toSurface_of_pos (hpos.mpr hy), toSurface_of_pos hy,
-      surfacePart_smul hc (archNorm_pos hy).le]
+      surfacePart_smul hc]
   · have hcy : ¬∀ w, 0 < c * y w := hpos.not.mpr hy
     simp [toSurface, hy, hcy]
 

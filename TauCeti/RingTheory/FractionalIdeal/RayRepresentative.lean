@@ -66,7 +66,7 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_of_valuation_le_one
       (le_bot_iff.mp (h0 ▸ hden))
     let v : HeightOneSpectrum R := ⟨P, hP, hP0⟩
     have hxI : x ∈ I := by
-      rw [← mem_coe, ← hs]
+      rw [← mem_coeToSubmodule, ← hs]
       exact Submodule.subset_span hx
     exact denIdeal_not_le K
       (hI v (Ideal.dvd_iff_le.mpr hmP) x hxI) hden
@@ -120,7 +120,7 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_isCoprime
   have hP0 : P ≠ ⊥ := fun h0 ↦ hJ0 (le_bot_iff.mp (h0 ▸ hJP))
   let v : HeightOneSpectrum R := ⟨P, hP, hP0⟩
   have hzero := hcount v (Ideal.dvd_iff_le.mpr hmP)
-  rw [count_coe K v hJ0, Int.natCast_eq_zero] at hzero
+  rw [count_coeIdeal K v hJ0, Int.natCast_eq_zero] at hzero
   exact (Associates.count_ne_zero_iff_dvd hJ0 v.irreducible).mpr
     (Ideal.dvd_iff_le.mpr hJP) hzero
 

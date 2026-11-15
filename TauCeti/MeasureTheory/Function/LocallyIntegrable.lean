@@ -61,7 +61,8 @@ integrable on that set.
 Likewise, a function locally integrable on `s` times a continuous function whose compact support
 lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
 linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
-keeps it locally integrable on `s`.
+keeps it locally integrable on `s`, as does applying a locally integrable field of operators to a
+continuous function.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
@@ -122,6 +123,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`, with `U` not required to be open.
+* `Continuous.integrable_clm_apply_of_continuousOn`: the same for a continuous compactly
+  supported function to which an operator family continuous on `U` is applied.
 * `Continuous.integrable_sum_mul_of_continuousOn` and
   `Continuous.integrable_mul_sum_sq_of_continuousOn`: the same for the coordinatewise pairing of a
   family of coordinate vectors continuous on `U` with a continuous one compactly supported in `U`,
@@ -533,6 +536,21 @@ theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [Topological
   (hb.smul_of_continuousOn_of_tsupport_subset hbU ha).integrable_of_hasCompactSupport
     hbc.smul_left
 
+/-- An operator family `L` continuous on a set `U`, applied to a continuous compactly supported
+function `u` whose support lies in `U`, is integrable, for any measure finite on compact sets. The
+family `L` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_clm_apply_of_continuousOn {𝕜 V W : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] {L : X → V →L[𝕜] W} {u : X → V} {U : Set X} (hu : Continuous u)
+    (huc : HasCompactSupport u) (huU : tsupport u ⊆ U) (hL : ContinuousOn L U) :
+    Integrable (fun x ↦ L x (u x)) μ := by
+  have hK : ContinuousOn (fun x ↦ L x (u x)) (tsupport u) :=
+    (hL.mono huU).clm_apply hu.continuousOn
+  have hsupp : Function.support (fun x ↦ L x (u x)) ⊆ Function.support u :=
+    fun x hx h0 ↦ hx (by simp [h0])
+  rw [← integrableOn_iff_integrable_of_support_subset (hsupp.trans (subset_tsupport u))]
+  exact hK.integrableOn_compact' huc.isCompact (isClosed_tsupport u).measurableSet
+
 /-- The coordinatewise pairing `x ↦ ∑ k ∈ s, g x k * f x k` of a continuous compactly supported
 family of coordinate vectors `f`, whose support lies in a set `U`, with a family `g` continuous on
 `U` is integrable, for any measure finite on compact sets. The family `g` need not be continuous
@@ -657,6 +675,23 @@ theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
   exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
     ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
     (hf k hks hk).aestronglyMeasurable
+
+/-- Applying a field of continuous linear maps that is locally integrable on a locally closed set
+`s` to a function continuous on `s` gives a function locally integrable on `s`. This is the
+counterpart of `MeasureTheory.LocallyIntegrableOn.continuousOn_clm_apply` with the roles of the
+operator and the vector exchanged. -/
+theorem clm_apply_continuousOn {f : X → F} {A : X → F →L[𝕜] G} (hs : IsLocallyClosed s)
+    (hA : LocallyIntegrableOn A s μ) (hf : ContinuousOn f s) :
+    LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
+  rw [locallyIntegrableOn_iff hs] at hA ⊢
+  intro k hks hk
+  obtain ⟨C, hC⟩ := hk.exists_bound_of_continuousOn (hf.mono hks)
+  refine Integrable.mono' ((hA k hks hk).norm.mul_const C) ?_
+    ((ae_restrict_iff' hk.measurableSet).2 <| ae_of_all _ fun x hx ↦ (A x).le_opNorm_of_le
+      (hC x hx))
+  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
+    (hA k hks hk).aestronglyMeasurable
+    ((hf.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
 

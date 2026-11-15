@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 public import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Continuous representatives and endpoint traces on an interval
@@ -16,13 +17,15 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 For every `1 ≤ p ≤ ∞`, a real Sobolev class on `(a,b)`, with `a < b`, has a unique
 continuous representative on `[a,b]`. The map `W1p.intervalRepresentativeL` into the
 supremum-normed continuous functions is bounded, with an explicit constant depending only
-on the interval length and `p`. Its representative is absolutely continuous and its
-classical derivative agrees almost everywhere with the weak gradient. In particular,
-evaluating it at the two endpoints defines the bounded trace `W1p.intervalTraceL`.
+on the interval length and `p`; in particular the Sobolev value is essentially bounded. Its
+representative is absolutely continuous and its classical derivative agrees almost everywhere
+with the weak gradient. In particular, evaluating it at the two endpoints defines the bounded
+trace `W1p.intervalTraceL`.
 
 The construction uses the weak fundamental theorem of calculus in
 `TauCeti.Analysis.Sobolev.WeakDeriv.Interval`, not smooth density, so it also applies at
-`p = ∞`. Integration by parts is stated for two Sobolev representatives.
+`p = ∞`. Bounds on the weak gradient give mean-value bounds on the representative, and
+integration by parts is stated for two Sobolev representatives.
 
 ## References
 
@@ -141,6 +144,12 @@ theorem value_ae_eq_intervalRepresentativeL (hab : a < b)
       fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t) :=
   intervalRepresentative_ae hab u
 
+/-- The representative, extended to `ℝ` by projection onto `[a,b]`, is continuous. -/
+theorem continuous_intervalRepresentativeL_projIcc (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    Continuous fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t) :=
+  (intervalRepresentativeL hab u).continuous.comp continuous_projIcc
+
 /-- Characterization and uniqueness of the continuous representative, including its endpoint
 values: it is the unique continuous function agreeing almost everywhere with the class. -/
 theorem intervalRepresentativeL_eq_iff (hab : a < b)
@@ -151,7 +160,7 @@ theorem intervalRepresentativeL_eq_iff (hab : a < b)
   have hae := (value_ae_eq_intervalRepresentativeL hab u).symm.trans h
   rw [restrict_Ioo_eq_restrict_Icc] at hae
   have heq := Measure.eqOn_Icc_of_ae_eq volume hab.ne hae
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (w.continuous.comp continuous_projIcc).continuousOn
   ext t
   simpa only [projIcc_of_mem hab.le t.property] using heq t.property
@@ -187,6 +196,21 @@ theorem norm_intervalRepresentativeL_le (hab : a < b)
         (ENNReal.ofReal (b - a) ^ (1 - 1 / p.toReal)).toReal) * ‖u‖ :=
   norm_intervalRepresentativeₗ_le hab u
 
+/-- The Sobolev value is essentially bounded by the supremum norm of the interval
+representative. -/
+theorem ae_norm_value_le (hab : a < b) (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    ∀ᵐ t ∂volume.restrict (Ioo a b), ‖value u t‖ ≤ ‖intervalRepresentativeL hab u‖ := by
+  filter_upwards [value_ae_eq_intervalRepresentativeL hab u] with t ht
+  rw [ht]
+  exact (intervalRepresentativeL hab u).norm_coe_le_norm _
+
+/-- On a bounded interval the Sobolev value is essentially bounded. -/
+theorem memLp_top_value (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    MemLp (value u) ⊤ (volume.restrict (Ioo a b)) := by
+  rcases le_or_gt b a with hab | hab
+  · simp [Ioo_eq_empty_of_le hab]
+  exact memLp_top_of_bound (Lp.memLp (value u)).aestronglyMeasurable _ (ae_norm_value_le hab u)
+
 /-- The representative is absolutely continuous on the closed interval, also at `p = ∞`. -/
 theorem absolutelyContinuousOnInterval_intervalRepresentativeL (hab : a < b)
     (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
@@ -195,7 +219,7 @@ theorem absolutelyContinuousOnInterval_intervalRepresentativeL (hab : a < b)
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value u) (gradient u) 1 := by
     simpa using (hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
   exact hw.absolutelyContinuousOnInterval ((Lp.memLp _).integrable (by exact Fact.out))
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+    (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (value_ae_eq_intervalRepresentativeL hab u) hab.le
 
 /-- The fundamental theorem of calculus for the interval representative, with both endpoints
@@ -209,8 +233,40 @@ theorem integral_gradient_eq_intervalRepresentativeL_sub (hab : a < b)
   simpa only [Function.comp_apply, projIcc_of_mem hab.le s.property,
     projIcc_of_mem hab.le t.property] using
     hw.integral_eq_sub ((Lp.memLp _).integrable (by exact Fact.out))
-      ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+      (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
       (value_ae_eq_intervalRepresentativeL hab u) s.property t.property
+
+/-- The weak gradient is interval integrable between any two points of `[a,b]`. -/
+theorem intervalIntegrable_gradient (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : ℝ}
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : IntervalIntegrable (gradient u) volume s t :=
+  IntegrableOn.intervalIntegrable_of_mem_Icc ((Lp.memLp _).integrable (by exact Fact.out)) hs ht
+
+/-- **Mean-value lower bound.** If the weak gradient is at least `σ` almost everywhere on
+`(s, t)`, then the representative increases by at least `(t - s) σ` from `s` to `t`. -/
+theorem mul_le_intervalRepresentativeL_sub_of_le_gradient (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) {σ : ℝ}
+    (hσ : ∀ᵐ r, r ∈ Ioo (s : ℝ) t → σ ≤ gradient u r) :
+    ((t : ℝ) - s) * σ ≤ intervalRepresentativeL hab u t - intervalRepresentativeL hab u s := by
+  have h := intervalIntegral.integral_mono_ae_restrict hst intervalIntegrable_const
+    (intervalIntegrable_gradient u s.property t.property) (f := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
+
+/-- **Mean-value upper bound.** If the weak gradient is at most `σ` almost everywhere on
+`(s, t)`, then the representative increases by at most `(t - s) σ` from `s` to `t`. -/
+theorem intervalRepresentativeL_sub_le_mul_of_gradient_le (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) {s t : Icc a b} (hst : (s : ℝ) ≤ t) {σ : ℝ}
+    (hσ : ∀ᵐ r, r ∈ Ioo (s : ℝ) t → gradient u r ≤ σ) :
+    intervalRepresentativeL hab u t - intervalRepresentativeL hab u s ≤ ((t : ℝ) - s) * σ := by
+  have h := intervalIntegral.integral_mono_ae_restrict hst
+    (intervalIntegrable_gradient u s.property t.property) intervalIntegrable_const
+    (g := fun _ ↦ σ) (by
+      rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
+      exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
+  rwa [intervalIntegral.integral_const, smul_eq_mul,
+    integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
 
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/
@@ -220,8 +276,7 @@ theorem ae_hasDerivAt_intervalRepresentativeL (hab : a < b)
       (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) (gradient u t) t := by
   have hw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value u) (gradient u) 1 := by
     simpa using (hasWeakFDerivOn u).hasWeakLineDerivOn (1 : ℝ)
-  exact hw.ae_hasDerivAt
-    ((intervalRepresentativeL hab u).continuous.comp continuous_projIcc).continuousOn
+  exact hw.ae_hasDerivAt (continuous_intervalRepresentativeL_projIcc hab u).continuousOn
     (value_ae_eq_intervalRepresentativeL hab u) hab.le
 
 /-- The pair of endpoint values of a Sobolev class as a bounded linear trace. -/

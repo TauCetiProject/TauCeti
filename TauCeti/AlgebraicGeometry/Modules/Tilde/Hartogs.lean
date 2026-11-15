@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Regular.RegularSequence
 import Mathlib.RingTheory.Regular.Flat
 
+import TauCeti.RingTheory.Regular.Pair
+
 /-!
 # Extending sections of `M~` across a closed subset of depth at least two
 

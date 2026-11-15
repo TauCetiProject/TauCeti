@@ -143,19 +143,15 @@ theorem hasSum_twistedQExpansion (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
         (mdifferentiable_cuspTwist D k f hhol))
       (isBoundedAtImInfty_cuspTwist_inv_smul D k f hbound) hq_norm
 
-/-- The coefficient at the lowest permitted exponent `-k` is the limiting value of the twisted
-function in the scaling coordinate. -/
+/-- The coefficient at the lowest permitted exponent `-k` is the `valueAtInfty` of the twisted
+function in the scaling coordinate. This is a genuine limit under the holomorphy and growth
+hypotheses of `analyticAt_twistedExtension_zero`; without them `valueAtInfty` is a junk value. -/
 theorem laurentQExpansion_coeff_neg_eq_valueAtInfty (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
+    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z) :
     (laurentQExpansion D k f).coeff (-k) =
       valueAtInfty (fun z : ℍ ↦
         Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z)) := by
-  rw [laurentQExpansion_coeff_neg,
-    twistedExtension_zero_eq_valueAtInfty D k f hf
-      (.of_forall fun z ↦ hhol (D.scaling⁻¹ • z)) hbound]
+  rw [laurentQExpansion_coeff_neg, twistedExtension_zero_eq_valueAtInfty D k f hf]
 
 /-- The Laurent q-expansion converges to the cusp extension throughout the punctured unit disc,
 when reindexed over its potentially nonzero coefficients. -/
@@ -169,7 +165,7 @@ theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
       (laurentQExpansion D k f).coeff ((n : ℤ) - k) * q ^ ((n : ℤ) - k))
       (cuspExtension D f q) := by
   rw [cuspExtension_eq_zpow_mul_twistedExtension_of_ne_zero_of_norm_lt_one
-    D k f hf hq hq_norm]
+    D k f hq hq_norm]
   simp_rw [laurentQExpansion_coeff_natCast_sub]
   apply (hasSum_mul_zpow_natCast_sub_iff hq k).2
   simpa only [zpow_neg, mul_inv_cancel_left₀ (zpow_ne_zero k hq)] using
