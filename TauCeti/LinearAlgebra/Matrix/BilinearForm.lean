@@ -357,7 +357,7 @@ private theorem Equivalent.of_toMatrix_mul_eq_smul {B₁ D₁ : BilinForm R M₁
     ext x y
     simp [e.map_app]
   -- The candidate Gram matrix `P' * H₂ * P'ᵀ` of `D₂` pulled back is `D₁`'s, after cancelling `c`.
-  have hX := Matrix.mul_mul_transpose_eq_of_mul_eq_smul hc hPP' hG h₁ h₂
+  have hX := Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one hc hPP' hG h₁ h₂
   let f : M₁ ≃ₗ[R] M₂ := LinearEquiv.ofLinearMap (Matrix.toLin b₁ b₂ P'ᵀ) (Matrix.toLin b₂ b₁ Pᵀ)
     (by rw [← Matrix.toLin_mul, ← Matrix.transpose_mul, hPP', Matrix.transpose_one,
       Matrix.toLin_one])
