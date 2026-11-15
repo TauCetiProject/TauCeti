@@ -78,37 +78,10 @@ theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
               ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ := by
           simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
             ContinuousLinearMap.adjoint_inner_left]
-    _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ := by
-      -- Rescale `μ` against a Haar measure on real linear functionals of the compact-support
-      -- integrand, where the modular inversion formula applies.
-      set F : G → ℂ := fun g => ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ
-      have hFc : Continuous F := continuous_const.inner (P.continuous_integrand f w)
-      have hFcs : HasCompactSupport F :=
-        (P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v)
-      have hsmul_inv {E : Type} [Zero E] [SMulZeroClass ℝ E] {u : G → E}
-          (hu : HasCompactSupport u) :
-          HasCompactSupport fun g => (Measure.modularCharacter g : ℝ) • u g⁻¹ := by
-        rw [hasCompactSupport_iff_eventuallyEq]
-        refine (hasCompactSupport_iff_eventuallyEq.1
-          (hu.comp_homeomorph (Homeomorph.inv G))).mono fun g hg =>
-          smul_eq_zero_of_right _ hg
-      have hΨc : Continuous fun g => (Measure.modularCharacter g : ℝ) • F g⁻¹ :=
-        (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hFc.comp continuous_inv)
-      refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
-      set Fφ : G → ℝ := fun g => φ (F g)
-      have hFφc : Continuous Fφ := φ.continuous.comp hFc
-      have hFφcs : HasCompactSupport Fφ := hFcs.comp_left (map_zero φ)
-      have hΨφc : Continuous fun g => (Measure.modularCharacter g : ℝ) • Fφ g⁻¹ :=
-        (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hFφc.comp continuous_inv)
-      rw [← φ.integral_comp_comm (hΨc.integrable_of_hasCompactSupport (hsmul_inv hFcs)),
-        ← φ.integral_comp_comm (hFc.integrable_of_hasCompactSupport hFcs)]
-      simp_rw [map_smul]
-      rw [Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar
-          hΨφc (hsmul_inv hFφcs),
-        Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar
-          hFφc hFφcs,
-        integral_smul_nnreal_measure, integral_smul_nnreal_measure]
-      exact congrArg _ (integral_modularCharacter_smul_inv_eq_self (μ := Measure.haar) hFφc hFφcs)
+    _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ :=
+      integral_modularCharacter_smul_inv_eq_self (μ := μ)
+        (continuous_const.inner (P.continuous_integrand f w))
+        ((P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v))
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on the compact-support
 convolution algebra. Its values are defined by Hilbert-space vector integrals. -/

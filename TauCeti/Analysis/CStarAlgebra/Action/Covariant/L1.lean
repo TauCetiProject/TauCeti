@@ -24,7 +24,7 @@ abstract `L¹` completion `UniformSpace.Completion (ConvolutionAlgebra α μ)`.
 
 Here we construct the integrated form directly on the Bochner space `Lp A 1 μ` by Hilbert-space
 vector integration,
-`(P.integratedLp μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
+`(P.integratedOperatorBochnerL1 μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
 for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`), and
 prove that it matches `P.integratedOperatorL1 μ` across `ConvolutionAlgebra.completionEquivL1`. The
 vector-integral operator construction, covariance identities, and elementary-tensor comparison
@@ -46,23 +46,23 @@ measures need not have full support.
 
 * `CovariantRepresentation.integrable_integrand_of_integrable`: for `hf : Integrable f μ`, the
   Hilbert-space integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner integrable.
-* `CovariantRepresentation.integratedLp`: the contractive continuous linear map
+* `CovariantRepresentation.integratedOperatorBochnerL1`: the contractive continuous linear map
   `Lp A 1 μ →L[ℂ] (H →L[ℂ] H)` given by the vector integral.
 * `CovariantRepresentation.exists_integratedOperator`: every Bochner-integrable `f : G → A` has a
   bounded integrated operator `T` with `T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` and
   `‖T‖ ≤ ∫ g, ‖f g‖ ∂μ`.
-* `CovariantRepresentation.integratedLp_compLp_mul`,
-  `CovariantRepresentation.integratedLp_translateLp`,
-  `CovariantRepresentation.integratedLp_convolutionL1`: left coefficient covariance, group
-  covariance, and multiplicativity under `CStarAction.convolutionL1` directly on `Lp A 1 μ` without
-  local compactness.
-* `CovariantRepresentation.integratedLp_completionEquivL1`,
+* `CovariantRepresentation.integratedOperatorBochnerL1_compLp_mul`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_translateLp`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_convolutionL1`: left coefficient covariance,
+  group covariance, and multiplicativity under `CStarAction.convolutionL1` directly on `Lp A 1 μ`
+  without local compactness.
+* `CovariantRepresentation.integratedOperatorBochnerL1_completionEquivL1`,
   `CovariantRepresentation.integratedOperatorL1_completionEquivL1_symm`,
-  `CovariantRepresentation.integratedLp_twistedInvolutionL1`: agreement of `P.integratedLp μ` with
-  `P.integratedOperatorL1 μ` across `completionEquivL1` and compatibility with
-  `CStarAction.twistedInvolutionL1`.
-* `CovariantRepresentation.integratedLp_compLp_smulRight`,
-  `CovariantRepresentation.integratedLp_trivial`: comparison with the scalar
+  `CovariantRepresentation.integratedOperatorBochnerL1_twistedInvolutionL1`: agreement of
+  `P.integratedOperatorBochnerL1 μ` with `P.integratedOperatorL1 μ` across `completionEquivL1` and
+  compatibility with `CStarAction.twistedInvolutionL1`.
+* `CovariantRepresentation.integratedOperatorBochnerL1_compLp_smulRight`,
+  `CovariantRepresentation.integratedOperatorBochnerL1_trivial`: comparison with the scalar
   `ContRepresentation.integratedOperatorL1` on elementary tensors `φ ⊗ a` and specialization to the
   trivial covariant representation.
 
@@ -82,7 +82,7 @@ open scoped CompactlySupported InnerProductSpace CStarAlgebra
 
 namespace TauCeti.CStarAction.CovariantRepresentation
 
-section IntegratedLp
+section IntegratedOperatorBochnerL1
 
 variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableSpace G]
   [BorelSpace G] [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
@@ -120,7 +120,7 @@ private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : 
 
 /-- **Vector-valued `L¹` integrated form** of a covariant representation on `Lp A 1 μ`, sending
 `f` to the bounded operator `v ↦ ∫ g, P.coefficient (f g) (P.group g v) ∂μ`. -/
-def integratedLp (μ : Measure G) [μ.InnerRegularCompactLTTop] :
+def integratedOperatorBochnerL1 (μ : Measure G) [μ.InnerRegularCompactLTTop] :
     Lp A 1 μ →L[ℂ] (H →L[ℂ] H) :=
   LinearMap.mkContinuous₂
     (LinearMap.mk₂ ℂ
@@ -147,34 +147,34 @@ def integratedLp (μ : Measure G) [μ.InnerRegularCompactLTTop] :
       simpa only [LinearMap.mk₂_apply, one_mul, L1.norm_eq_integral_norm] using
         P.norm_integral_integrand_le (L1.integrable_coeFn f) v
 
-/-- The defining Hilbert-space vector integral for `P.integratedLp μ`. -/
-theorem integratedLp_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
+/-- The defining Hilbert-space vector integral for `P.integratedOperatorBochnerL1 μ`. -/
+theorem integratedOperatorBochnerL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (f : Lp A 1 μ) (v : H) :
-    P.integratedLp μ f v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ :=
+    P.integratedOperatorBochnerL1 μ f v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ :=
   (rfl)
 
 @[simp]
-theorem integratedLp_toL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
+theorem integratedOperatorBochnerL1_toL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     {f : G → A} (hf : Integrable f μ) (v : H) :
-    P.integratedLp μ (hf.toL1 f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
-  rw [integratedLp_apply]
+    P.integratedOperatorBochnerL1 μ (hf.toL1 f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
+  rw [integratedOperatorBochnerL1_apply]
   refine integral_congr_ae ?_
   filter_upwards [hf.coeFn_toL1] with g hg
   rw [hg]
 
 /-- The `L¹` integrated form is a contraction on each element: `‖(π ⋊ U)(f)‖ ≤ ‖f‖₁`. -/
-theorem norm_integratedLp_apply_le {μ : Measure G} [μ.InnerRegularCompactLTTop]
-    (f : Lp A 1 μ) : ‖P.integratedLp μ f‖ ≤ ‖f‖ := by
+theorem norm_integratedOperatorBochnerL1_apply_le {μ : Measure G} [μ.InnerRegularCompactLTTop]
+    (f : Lp A 1 μ) : ‖P.integratedOperatorBochnerL1 μ f‖ ≤ ‖f‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun v => ?_
-  rw [integratedLp_apply, L1.norm_eq_integral_norm]
+  rw [integratedOperatorBochnerL1_apply, L1.norm_eq_integral_norm]
   exact P.norm_integral_integrand_le (L1.integrable_coeFn f) v
 
-/-- The operator norm of `P.integratedLp μ` is at most `1`, including zero algebras and zero
-Hilbert spaces. -/
-theorem norm_integratedLp_le (μ : Measure G) [μ.InnerRegularCompactLTTop] :
-    ‖P.integratedLp μ‖ ≤ 1 :=
+/-- The operator norm of `P.integratedOperatorBochnerL1 μ` is at most `1`, including zero algebras
+and zero Hilbert spaces. -/
+theorem norm_integratedOperatorBochnerL1_le (μ : Measure G) [μ.InnerRegularCompactLTTop] :
+    ‖P.integratedOperatorBochnerL1 μ‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => by
-    simpa only [one_mul] using P.norm_integratedLp_apply_le f
+    simpa only [one_mul] using P.norm_integratedOperatorBochnerL1_apply_le f
 
 /-- **Integrated operator of an integrable coefficient function**: for every Bochner-integrable
 `f : G → A`, the vector integrals `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` assemble to a
@@ -183,54 +183,57 @@ theorem exists_integratedOperator (μ : Measure G) [μ.InnerRegularCompactLTTop]
     (f : G → A) (hf : Integrable f μ) :
     ∃ T : H →L[ℂ] H,
       (∀ ξ, T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ) ∧ ‖T‖ ≤ ∫ g, ‖f g‖ ∂μ := by
-  refine ⟨P.integratedLp μ (hf.toL1 f), P.integratedLp_toL1_apply hf, ?_⟩
-  refine (P.norm_integratedLp_apply_le (hf.toL1 f)).trans_eq ?_
+  refine ⟨P.integratedOperatorBochnerL1 μ (hf.toL1 f),
+    P.integratedOperatorBochnerL1_toL1_apply hf, ?_⟩
+  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
   rw [L1.norm_eq_integral_norm]
   exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
 
-/-- Matrix coefficients of `P.integratedLp μ f` are integrals of orbit matrix coefficients. -/
-theorem inner_integratedLp_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
+/-- Matrix coefficients of `P.integratedOperatorBochnerL1 μ f` are integrals of orbit matrix
+coefficients. -/
+theorem inner_integratedOperatorBochnerL1_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (f : Lp A 1 μ) (w v : H) :
-    ⟪w, P.integratedLp μ f v⟫_ℂ =
+    ⟪w, P.integratedOperatorBochnerL1 μ f v⟫_ℂ =
       ∫ g, ⟪w, P.coefficient (f g) (P.group g v)⟫_ℂ ∂μ := by
-  rw [integratedLp_apply,
+  rw [integratedOperatorBochnerL1_apply,
     integral_inner (P.integrable_integrand_of_integrable (L1.integrable_coeFn f) v)]
 
 /-- A coefficient operator on the right moves inside the `L¹` vector integral with the action
 twist. -/
-theorem integratedLp_coefficient_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
+theorem integratedOperatorBochnerL1_coefficient_apply {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (f : Lp A 1 μ) (a : A) (v : H) :
-    P.integratedLp μ f (P.coefficient a v) =
+    P.integratedOperatorBochnerL1 μ f (P.coefficient a v) =
       ∫ g, P.coefficient (f g * α g a) (P.group g v) ∂μ := by
-  rw [integratedLp_apply]
+  rw [integratedOperatorBochnerL1_apply]
   simp_rw [P.covariance, map_mul, mul_apply_eq_comp]
 
-/-- `P.integratedLp μ` intertwines pointwise left coefficient multiplication on `Lp A 1 μ` with
-`P.coefficient`. -/
+/-- `P.integratedOperatorBochnerL1 μ` intertwines pointwise left coefficient multiplication on
+`Lp A 1 μ` with `P.coefficient`. -/
 @[simp]
-theorem integratedLp_compLp_mul {μ : Measure G} [μ.InnerRegularCompactLTTop]
+theorem integratedOperatorBochnerL1_compLp_mul {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (a : A) (f : Lp A 1 μ) :
-    P.integratedLp μ ((ContinuousLinearMap.mul ℂ A a).compLp f) =
-      P.coefficient a * P.integratedLp μ f := by
+    P.integratedOperatorBochnerL1 μ ((ContinuousLinearMap.mul ℂ A a).compLp f) =
+      P.coefficient a * P.integratedOperatorBochnerL1 μ f := by
   ext v
-  rw [mul_apply_eq_comp, integratedLp_apply, integratedLp_apply,
+  rw [mul_apply_eq_comp, integratedOperatorBochnerL1_apply, integratedOperatorBochnerL1_apply,
     ← (P.coefficient a).integral_comp_comm
       (P.integrable_integrand_of_integrable (L1.integrable_coeFn f) v)]
   refine integral_congr_ae ?_
   filter_upwards [(ContinuousLinearMap.mul ℂ A a).coeFn_compLp f] with g hg
   rw [hg, ContinuousLinearMap.mul_apply', map_mul, mul_apply_eq_comp]
 
-/-- `P.integratedLp μ` intertwines twisted left translation `CStarAction.translateLp` on `Lp A 1 μ`
-with the group representation `P.group`. -/
+/-- `P.integratedOperatorBochnerL1 μ` intertwines twisted left translation `CStarAction.translateLp`
+on `Lp A 1 μ` with the group representation `P.group`. -/
 @[simp]
-theorem integratedLp_translateLp [MeasurableMul G] {μ : Measure G}
+theorem integratedOperatorBochnerL1_translateLp [MeasurableMul G] {μ : Measure G}
     [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant] (r : G) (f : Lp A 1 μ) :
-    P.integratedLp μ (α.translateLp μ 1 r f) = P.group r * P.integratedLp μ f := by
+    P.integratedOperatorBochnerL1 μ (α.translateLp μ 1 r f) =
+      P.group r * P.integratedOperatorBochnerL1 μ f := by
   ext v
   calc
-    P.integratedLp μ (α.translateLp μ 1 r f) v =
+    P.integratedOperatorBochnerL1 μ (α.translateLp μ 1 r f) v =
         ∫ s, P.coefficient (α r (f (r⁻¹ * s))) (P.group s v) ∂μ := by
-      rw [integratedLp_apply]
+      rw [integratedOperatorBochnerL1_apply]
       refine integral_congr_ae ?_
       filter_upwards [α.coeFn_translateLp r f] with s hs
       rw [hs]
@@ -238,42 +241,43 @@ theorem integratedLp_translateLp [MeasurableMul G] {μ : Measure G}
       rw [← integral_mul_left_eq_self _ r]
       refine integral_congr_ae (.of_forall fun s => ?_)
       simp only [inv_mul_cancel_left, map_mul, mul_apply_eq_comp, ← P.covariance]
-    _ = (P.group r * P.integratedLp μ f) v := by
-      rw [mul_apply_eq_comp, integratedLp_apply,
+    _ = (P.group r * P.integratedOperatorBochnerL1 μ f) v := by
+      rw [mul_apply_eq_comp, integratedOperatorBochnerL1_apply,
         (P.group r).integral_comp_comm
           (P.integrable_integrand_of_integrable (L1.integrable_coeFn f) v)]
 
-/-- On compactly supported continuous coefficient functions, `P.integratedLp μ` agrees with
-`P.integratedOperator μ`. -/
+/-- On compactly supported continuous coefficient functions, `P.integratedOperatorBochnerL1 μ`
+agrees with `P.integratedOperator μ`. -/
 @[simp]
-theorem integratedLp_toLp {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
+theorem integratedOperatorBochnerL1_toLp {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
     [μ.InnerRegularCompactLTTop] (f : C_c(G, A)) :
-    P.integratedLp μ (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
+    P.integratedOperatorBochnerL1 μ (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
       P.integratedOperator μ f := by
   ext v
-  rw [integratedLp_apply, integratedOperator_apply]
+  rw [integratedOperatorBochnerL1_apply, integratedOperator_apply]
   refine integral_congr_ae ?_
   filter_upwards [CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ f] with g hg
   rw [hg]
 
 @[simp]
-theorem integratedLp_convolutionAlgebra_toL1 {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
-    [μ.InnerRegularCompactLTTop] (f : ConvolutionAlgebra α μ) :
-    P.integratedLp μ (ConvolutionAlgebra.toL1 f) = P.integratedOperator μ f.ofConv := by
-  rw [ConvolutionAlgebra.toL1_eq_toLp, P.integratedLp_toLp]
+theorem integratedOperatorBochnerL1_convolutionAlgebra_toL1 {μ : Measure G}
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] (f : ConvolutionAlgebra α μ) :
+    P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.toL1 f) =
+      P.integratedOperator μ f.ofConv := by
+  rw [ConvolutionAlgebra.toL1_eq_toLp, P.integratedOperatorBochnerL1_toLp]
 
 /-- For the trivial covariant representation attached to `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)`, the `L¹`
 integrated form evaluates `π` at the Bochner integral `∫ g, f g ∂μ`. -/
 @[simp]
-theorem integratedLp_trivial {μ : Measure G} [μ.InnerRegularCompactLTTop]
+theorem integratedOperatorBochnerL1_trivial {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (f : Lp A 1 μ) :
-    (trivial (G := G) π).integratedLp μ f = π (∫ g, f g ∂μ) := by
+    (trivial (G := G) π).integratedOperatorBochnerL1 μ f = π (∫ g, f g ∂μ) := by
   ext v
-  simpa only [integratedLp_apply, trivial_coefficient, trivial_group,
+  simpa only [integratedOperatorBochnerL1_apply, trivial_coefficient, trivial_group,
     ContRepresentation.trivial_apply, one_apply_eq_self] using
     (trivial (G := G) π).integral_coefficient_apply (L1.integrable_coeFn f) v
 
-end IntegratedLp
+end IntegratedOperatorBochnerL1
 
 section Convolution
 
@@ -283,25 +287,27 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
   {μ : Measure G} [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
-/-- `P.integratedLp μ` is multiplicative with respect to twisted `L¹` convolution
+/-- `P.integratedOperatorBochnerL1 μ` is multiplicative with respect to twisted `L¹` convolution
 `CStarAction.convolutionL1`. -/
 @[simp]
-theorem integratedLp_convolutionL1 (f g : Lp A 1 μ) :
-    P.integratedLp μ (α.convolutionL1 μ f g) =
-      P.integratedLp μ f * P.integratedLp μ g := by
+theorem integratedOperatorBochnerL1_convolutionL1 (f g : Lp A 1 μ) :
+    P.integratedOperatorBochnerL1 μ (α.convolutionL1 μ f g) =
+      P.integratedOperatorBochnerL1 μ f * P.integratedOperatorBochnerL1 μ g := by
   ext v
-  let L : Lp A 1 μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H v).comp (P.integratedLp μ)
+  let L : Lp A 1 μ →L[ℂ] H :=
+    (ContinuousLinearMap.apply ℂ H v).comp (P.integratedOperatorBochnerL1 μ)
   calc
-    P.integratedLp μ (α.convolutionL1 μ f g) v =
+    P.integratedOperatorBochnerL1 μ (α.convolutionL1 μ f g) v =
         ∫ r, L ((ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) ∂μ := by
       simpa only [L, α.convolutionL1_apply, ContinuousLinearMap.comp_apply,
         ContinuousLinearMap.apply_apply] using
         (L.integral_comp_comm (α.integrable_mul_translateLp (L1.integrable_coeFn f) g)).symm
-    _ = (P.integratedLp μ f * P.integratedLp μ g) v := by
-      rw [mul_apply_eq_comp, integratedLp_apply]
+    _ = (P.integratedOperatorBochnerL1 μ f * P.integratedOperatorBochnerL1 μ g) v := by
+      rw [mul_apply_eq_comp, integratedOperatorBochnerL1_apply]
       refine integral_congr_ae (.of_forall fun r => ?_)
       simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-        P.integratedLp_compLp_mul, P.integratedLp_translateLp, mul_apply_eq_comp]
+        P.integratedOperatorBochnerL1_compLp_mul, P.integratedOperatorBochnerL1_translateLp,
+        mul_apply_eq_comp]
 
 end Convolution
 
@@ -313,39 +319,43 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
   {μ : Measure G} [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
-/-- **Agreement of the concrete and abstract `L¹` integrated forms**: `P.integratedLp μ` composed
-with `ConvolutionAlgebra.completionEquivL1` equals `P.integratedOperatorL1 μ`. -/
+/-- **Agreement of the concrete and abstract `L¹` integrated forms**:
+`P.integratedOperatorBochnerL1 μ` composed with `ConvolutionAlgebra.completionEquivL1` equals
+`P.integratedOperatorL1 μ`. -/
 @[simp]
-theorem integratedLp_completionEquivL1 (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedLp μ (ConvolutionAlgebra.completionEquivL1 α μ x) =
+theorem integratedOperatorBochnerL1_completionEquivL1 (x : Completion (ConvolutionAlgebra α μ)) :
+    P.integratedOperatorBochnerL1 μ (ConvolutionAlgebra.completionEquivL1 α μ x) =
       P.integratedOperatorL1 μ x := by
   induction x using Completion.induction_on with
   | hp =>
     exact isClosed_eq
-      ((P.integratedLp μ).continuous.comp (ConvolutionAlgebra.completionEquivL1 α μ).continuous)
+      ((P.integratedOperatorBochnerL1 μ).continuous.comp
+        (ConvolutionAlgebra.completionEquivL1 α μ).continuous)
       (P.continuous_integratedOperatorL1 μ)
   | ih f =>
-    rw [ConvolutionAlgebra.completionEquivL1_coe, P.integratedLp_convolutionAlgebra_toL1,
-      P.integratedOperatorL1_coe]
+    rw [ConvolutionAlgebra.completionEquivL1_coe,
+      P.integratedOperatorBochnerL1_convolutionAlgebra_toL1, P.integratedOperatorL1_coe]
 
 @[simp]
 theorem integratedOperatorL1_completionEquivL1_symm (f : Lp A 1 μ) :
     P.integratedOperatorL1 μ ((ConvolutionAlgebra.completionEquivL1 α μ).symm f) =
-      P.integratedLp μ f := by
-  rw [← P.integratedLp_completionEquivL1, LinearIsometryEquiv.apply_symm_apply]
+      P.integratedOperatorBochnerL1 μ f := by
+  rw [← P.integratedOperatorBochnerL1_completionEquivL1, LinearIsometryEquiv.apply_symm_apply]
 
 /-- Evaluation of `P.integratedOperatorL1 μ` on the class in the completion corresponding to
 `f : Lp A 1 μ` is given by the Hilbert-space vector integral. -/
 theorem integratedOperatorL1_completionEquivL1_symm_apply (f : Lp A 1 μ) (v : H) :
     P.integratedOperatorL1 μ ((ConvolutionAlgebra.completionEquivL1 α μ).symm f) v =
       ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
-  rw [P.integratedOperatorL1_completionEquivL1_symm, P.integratedLp_apply]
+  rw [P.integratedOperatorL1_completionEquivL1_symm, P.integratedOperatorBochnerL1_apply]
 
 /-- For a left-invariant measure finite on compact sets and inner regular on sets of finite measure,
-`P.integratedLp μ` sends `CStarAction.twistedInvolutionL1` to the operator adjoint. -/
+`P.integratedOperatorBochnerL1 μ` sends `CStarAction.twistedInvolutionL1` to the operator adjoint.
+-/
 @[simp]
-theorem integratedLp_twistedInvolutionL1 (f : Lp A 1 μ) :
-    P.integratedLp μ (α.twistedInvolutionL1 μ f) = star (P.integratedLp μ f) := by
+theorem integratedOperatorBochnerL1_twistedInvolutionL1 (f : Lp A 1 μ) :
+    P.integratedOperatorBochnerL1 μ (α.twistedInvolutionL1 μ f) =
+      star (P.integratedOperatorBochnerL1 μ f) := by
   rw [← P.integratedOperatorL1_completionEquivL1_symm,
     ConvolutionAlgebra.completionEquivL1_symm_twistedInvolutionL1, P.integratedOperatorL1_star,
     P.integratedOperatorL1_completionEquivL1_symm]
@@ -359,10 +369,12 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
   [CompleteSpace H] {α : CStarAction G A} (P : CovariantRepresentation α H)
   {μ : Measure G} [μ.InnerRegularCompactLTTop]
 
-/-- On an elementary `L¹` tensor `φ ⊗ a` (`φ : Lp ℂ 1 μ`, `a : A`), `P.integratedLp μ` factors as
-`P.coefficient a` times the scalar `ContRepresentation.integratedOperatorL1` of `P.group`. -/
-theorem integratedLp_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
-    P.integratedLp μ ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) =
+/-- On an elementary `L¹` tensor `φ ⊗ a` (`φ : Lp ℂ 1 μ`, `a : A`),
+`P.integratedOperatorBochnerL1 μ` factors as `P.coefficient a` times the scalar
+`ContRepresentation.integratedOperatorL1` of `P.group`. -/
+theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
+    P.integratedOperatorBochnerL1 μ
+        ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) =
       P.coefficient a *
         (P.group.restrict (MulEquiv.multiplicativeAdditive G).toMonoidHom).integratedOperatorL1
           (G := Additive G) (fun v => (P.continuous_orbit v).comp continuous_toMul)
@@ -397,9 +409,10 @@ theorem integratedLp_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
       (.of_forall fun g => ?_)
     rw [norm_smul, P.isUnitary.norm_map]
   calc
-    P.integratedLp μ ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) v =
+    P.integratedOperatorBochnerL1 μ
+        ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) v =
         P.coefficient a (∫ g, φ g • P.group g v ∂μ) := by
-      rw [integratedLp_apply, ← (P.coefficient a).integral_comp_comm hi]
+      rw [integratedOperatorBochnerL1_apply, ← (P.coefficient a).integral_comp_comm hi]
       refine integral_congr_ae ?_
       filter_upwards [(ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).coeFn_compLp φ] with g hg
       rw [hg, ContinuousLinearMap.smulRight_apply, one_apply_eq_self, map_smul, smul_apply,

@@ -13,10 +13,10 @@ public import Mathlib.Topology.Separation.Hausdorff
 
 The type tags `Multiplicative X` and `Additive X` carry the topology of `X`, and Mathlib records
 that compactness, local compactness and total disconnectedness pass to them. This file does the
-same for the separation axioms `R1Space`, `T1Space`, and `T2Space`, which are what inner-regular
-integration and continuous homomorphisms on a type tag need: compact sets are closed or measurable
-in an `R1` space, the kernel of a continuous homomorphism into a `T1` group is closed, and two
-continuous maps into a `T2` space agreeing on a dense set agree.
+same for the separation axioms `T1Space` and `T2Space` on both tags and `R1Space` on `Additive X`,
+which are what inner-regular integration and continuous homomorphisms on a type tag need: compact
+sets are closed or measurable in an `R1` space, the kernel of a continuous homomorphism into a `T1`
+group is closed, and two continuous maps into a `T2` space agreeing on a dense set agree.
 
 These instances are needed as soon as a multiplicative or additive type tag is put on a group whose
 separation is known only from an ambient construction, for instance a quotient of a topological
@@ -26,8 +26,6 @@ module by a closed submodule, rather than from a topological-group instance chai
 public section
 
 variable {X : Type*} [TopologicalSpace X]
-
-instance [R1Space X] : R1Space (Multiplicative X) := ‹R1Space X›
 
 instance [R1Space X] : R1Space (Additive X) := ‹R1Space X›
 
