@@ -103,6 +103,11 @@ theorem convexOn_Icc_of_overlap {a b c d : 𝕜} {f : 𝕜 → 𝕜} (hbc : b < 
       (f v - f u) / (v - u) * (v - u) + (f w - f v) / (w - v) * (w - v) := by
     rw [div_mul_cancel₀ _ (sub_pos.2 (huv.trans hvw)).ne', div_mul_cancel₀ _ (sub_pos.2 huv).ne',
       div_mul_cancel₀ _ (sub_pos.2 hvw).ne']; ring
+  have sec_left {u v w : 𝕜} (hu : u ∈ Icc a c) (hv : v ∈ Icc a c) (hw : w ∈ Icc a c)
+      (huv : u < v) (hvw : v < w) : (f w - f u) / (w - u) ≤ (f w - f v) / (w - v) := by
+    rw [← slope_def_field, slope_comm, slope_def_field, ← slope_def_field f v w, slope_comm,
+      slope_def_field]
+    exact hl.secant_mono hw hu hv (huv.trans hvw).ne hvw.ne huv.le
   refine convexOn_of_slope_mono_adjacent (convex_Icc a d) fun {x y z} hx hz hxy hyz => ?_
   rcases le_or_gt z c with hzc | hcz
   · exact hl.slope_mono_adjacent ⟨hx.1, (hxy.trans hyz).le.trans hzc⟩
@@ -113,20 +118,22 @@ theorem convexOn_Icc_of_overlap {a b c d : 𝕜} {f : 𝕜 → 𝕜} (hbc : b < 
   have hzr : z ∈ Icc b d := ⟨(hbc.trans hcz).le, hz.2⟩
   have hcl : c ∈ Icc a c := ⟨hx.1.trans (hxb.trans hbc).le, le_rfl⟩
   have hbr : b ∈ Icc b d := ⟨le_rfl, (hbc.trans hcz).le.trans hz.2⟩
+  have hcr : c ∈ Icc b d := ⟨hbc.le, hcz.le.trans hz.2⟩
   rcases lt_trichotomy y b with hyb | rfl | hby
   · have h₁ := hl.slope_mono_adjacent hxl hcl hxy (hyb.trans hbc)
-    have h₂ := (hl.secant_mono_aux3 ⟨hx.1.trans hxy.le, (hyb.trans hbc).le⟩ hcl hyb hbc).trans
-      (hr.slope_mono_adjacent hbr hzr hbc hcz)
+    have h₂ := (sec_left ⟨hx.1.trans hxy.le, (hyb.trans hbc).le⟩ ⟨(hx.1.trans hxy.le).trans hyb.le,
+      hbc.le⟩ hcl hyb hbc).trans (hr.slope_mono_adjacent hbr hzr hbc hcz)
     refine le_of_mul_le_mul_right ?_ (sub_pos.2 hyz); rw [avg (hyb.trans hbc) hcz]
     linarith [mul_le_mul_of_nonneg_right (h₁.trans h₂) (sub_pos.2 hcz).le,
       mul_le_mul_of_nonneg_right h₁ (sub_pos.2 (hyb.trans hbc)).le]
-  · exact (hl.slope_mono_adjacent hxl hcl hxb hbc).trans (hr.secant_mono_aux2 hbr hzr hbc hcz)
+  · exact (hl.slope_mono_adjacent hxl hcl hxb hbc).trans
+      (hr.secant_mono hbr hcr hzr hbc.ne' (hbc.trans hcz).ne' hcz.le)
   · rcases le_or_gt y c with hyc | hcy
-    · exact (hl.secant_mono_aux3 hxl ⟨hx.1.trans hxy.le, hyc⟩ hxb hby).trans
+    · exact (sec_left hxl ⟨(hx.1.trans hxb.le), hbc.le⟩ ⟨hx.1.trans hxy.le, hyc⟩ hxb hby).trans
         (hr.slope_mono_adjacent hbr hzr hby hyz)
     · have h₁ := hr.slope_mono_adjacent hbr hzr hby hyz
       have h₂ := (hl.slope_mono_adjacent hxl hcl hxb hbc).trans
-        (hr.secant_mono_aux2 hbr ⟨hby.le, hyz.le.trans hz.2⟩ hbc hcy)
+        (hr.secant_mono hbr hcr ⟨hby.le, hyz.le.trans hz.2⟩ hbc.ne' hby.ne' hcy.le)
       refine le_of_mul_le_mul_right ?_ (sub_pos.2 hxy); rw [avg hxb hby]
       linarith [mul_le_mul_of_nonneg_right (h₂.trans h₁) (sub_pos.2 hxb).le,
         mul_le_mul_of_nonneg_right h₁ (sub_pos.2 hby).le]
@@ -173,8 +180,8 @@ theorem convexOn_Icc_of_local {a b : ℝ} {f : ℝ → ℝ}
     ConvexOn ℝ (Icc a b) f := by
   rcases le_or_gt b a with hba | hab
   · refine ⟨convex_Icc a b, fun x hx y hy u v _ _ huv => ?_⟩
-    obtain rfl : x = y := le_antisymm (hx.2.trans (hba.trans hy.1)) (hy.2.trans (hba.trans hx.1))
-    rw [← add_smul, ← add_smul, huv, one_smul, one_smul]
+    rw [le_antisymm (hx.2.trans (hba.trans hy.1)) (hy.2.trans (hba.trans hx.1)),
+      ← add_smul, ← add_smul, huv, one_smul, one_smul]
   · have hL : 0 < b - a := sub_pos.mpr hab
     choose V hVnhds hVconv using fun x : Icc a b => h x.1 x.2
     choose U hUo hxU hUV using fun x : Icc a b => mem_nhdsWithin.mp (hVnhds x)
@@ -192,24 +199,22 @@ theorem convexOn_Icc_of_local {a b : ℝ} {f : ℝ → ℝ}
     have ht0 : t 0 = a := by simp [t]
     have ht_last : t (Fin.last (N + 2)) = b := by
       simp only [t, Fin.val_last, Nat.cast_add, Nat.cast_ofNat, div_self hN_pos.ne']; ring
-    have hsub {u v : ℝ} (hau : a ≤ u) (huv : u ≤ v) (hvb : v ≤ b)
-        (hlen : v - u ≤ 2 * (b - a) / ((N : ℝ) + 2)) : ConvexOn ℝ (Icc u v) f := by
-      obtain ⟨idx, hidx⟩ := hball u ⟨hau, huv.trans hvb⟩
-      refine (hVconv idx).subset (fun s hs => hUV idx ⟨hidx ?_, ⟨hau.trans hs.1, hs.2.trans hvb⟩⟩)
-        (convex_Icc u v)
+    have hsub (i j : Fin (N + 3)) (hij : i ≤ j)
+        (hlen : t j - t i ≤ 2 * (b - a) / ((N : ℝ) + 2)) : ConvexOn ℝ (Icc (t i) (t j)) f := by
+      have hi : a ≤ t i := ht0 ▸ ht_mono.monotone (Fin.zero_le i)
+      have hj : t j ≤ b := ht_last ▸ ht_mono.monotone (Fin.le_last j)
+      obtain ⟨idx, hidx⟩ := hball (t i) ⟨hi, (ht_mono.monotone hij).trans hj⟩
+      refine (hVconv idx).subset (fun s hs => hUV idx ⟨hidx ?_, ⟨hi.trans hs.1, hs.2.trans hj⟩⟩)
+        (convex_Icc _ _)
       rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hs.1)]
-      exact (sub_le_sub_right hs.2 u).trans_lt (hlen.trans_lt hstep_lt)
+      exact (sub_le_sub_right hs.2 _).trans_lt (hlen.trans_lt hstep_lt)
     rw [← ht0, ← ht_last]
-    refine convexOn_Icc_of_subdivision ht_mono
-      (hsub (ht0 ▸ le_rfl) (ht_mono.monotone (Fin.zero_le _))
-        (ht_last ▸ ht_mono.monotone (Fin.le_last _)) ?_)
-      fun k => hsub (ht0 ▸ ht_mono.monotone (Fin.zero_le _))
-        (ht_mono.monotone (by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega))
-        (ht_last ▸ ht_mono.monotone (Fin.le_last _)) (le_of_eq
-          (by simp only [t, Fin.val_succ, Fin.val_castSucc, Nat.cast_add, Nat.cast_one]; ring))
+    refine convexOn_Icc_of_subdivision ht_mono (hsub 0 1 (Fin.zero_le 1) ?_) fun k =>
+      hsub _ _ (by simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ]; omega)
+        (le_of_eq (by
+          simp only [t, Fin.val_succ, Fin.val_castSucc, Nat.cast_add, Nat.cast_one]; ring))
     simp only [t, Fin.val_zero, Fin.val_one, Nat.cast_zero, Nat.cast_one]
-    exact (le_of_eq (by ring : a + 1 / ((N : ℝ) + 2) * (b - a) -
-      (a + 0 / ((N : ℝ) + 2) * (b - a)) = (b - a) / ((N : ℝ) + 2))).trans
+    exact (le_of_eq (by ring : _ = (b - a) / ((N : ℝ) + 2))).trans
       (div_le_div_of_nonneg_right (by linarith) hN_pos.le)
 
 /-- Local-to-global concavity on a compact interval: if every point `x ∈ [a, b]` admits a relative
