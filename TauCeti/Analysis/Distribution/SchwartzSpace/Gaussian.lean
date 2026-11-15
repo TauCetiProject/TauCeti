@@ -105,7 +105,7 @@ def gaussian {b : ℂ} (hb : 0 < b.re) : 𝓢(V, ℂ) where
           simp only [m, mul_pow, ← pow_mul, pow_add]
           ring
       _ ≤ _ := mul_le_mul_of_nonneg_left
-          (one_add_pow_mul_exp_neg_mul_sq_le hb m (norm_nonneg x)) (by positivity)
+          (one_add_pow_mul_exp_neg_mul_sq_le hb m) (by positivity)
 
 /-- The value of the Schwartz Gaussian at `x` is `exp (-b ‖x‖²)`. -/
 @[simp]

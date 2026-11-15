@@ -51,9 +51,8 @@ theorem sameGenus_iff_of_isUnimodular (hLu : L.IsUnimodular) (hMu : M.IsUnimodul
   have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
   have : M.IsNondegenerate := ⟨hMu.nondegenerate⟩
   -- Read off the positive and negative indices from the signature equality.
-  have hsig' := hsig
-  simp only [signature, Prod.mk.injEq] at hsig'
-  obtain ⟨hpos, -, hneg⟩ := hsig'
+  have hpos : L.sigPos = M.sigPos := congrArg (fun s ↦ s.1) hsig
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
   -- Both determinants are `(-1) ^ n₋`, since both discriminants are `1`.
   have hdet : L.determinant = M.determinant := by
     rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
@@ -76,8 +75,6 @@ theorem sameGenus_iff_of_isUnimodular (hLu : L.IsUnimodular) (hMu : M.IsUnimodul
   rw [hpos, hneg] at hLw
   refine (L.localIntegralForm_two_equivalent_iff_of_isCharacteristicVector M
     (hL.map (Int.castRingHom ℤ_[2])) (hM.map (Int.castRingHom ℤ_[2])) hw hw').mpr
-    ⟨L.finrank_eq_of_signature_eq hsig, heven, ?_, hLw.symm.trans hMw⟩
-  rw [hdet]
-  exact IsSquare.mul_self _
+    ⟨L.finrank_eq_of_signature_eq hsig, heven, hdet ▸ IsSquare.mul_self _, hLw.symm.trans hMw⟩
 
 end TauCeti.IntegralLattice
