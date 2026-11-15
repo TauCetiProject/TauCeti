@@ -158,8 +158,8 @@ theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     hcoercive.formSolutionMap W1p0.valueL f = weakSolutionDirichlet hcoeff hcoercive f := by
   refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v ↦ ?_).symm
-  rw [W1p0.valueL_apply]
-  exact (isWeakSolutionDirichlet_iff_forall_energyFormH1L0_eq_inner hcoeff f _).mp
+  rw [energyFormH1L0_apply, W1p0.valueL_apply]
+  exact (isWeakSolutionDirichlet_iff_inner f _).mp
     (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive f) v
 
 /-- The solution operator returns the value component of the weak solution. -/
