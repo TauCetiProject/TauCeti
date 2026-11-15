@@ -97,13 +97,12 @@ private theorem ker_le_ker_spinCOfPair :
   intro p hp
   rcases Quaternion.mem_ker_unitaryProdCircleToUnitaryGroup_iff.mp hp with rfl | rfl
   · exact one_mem _
-  · have hc : Quaternion.circleToUnitary (-1 : Circle)⁻¹ = -1 :=
+  · have hc : Quaternion.circleToUnitary (-1 : Circle) = -1 :=
       Subtype.ext (by ext <;> simp [Unitary.coe_neg])
-    rw [MonoidHom.mem_ker, spinCOfPair_apply, Prod.fst_neg, Prod.snd_neg, Prod.fst_one,
-      Prod.snd_one, hc, ← Prod.neg_mk, Prod.mk_one_one, (MulEquiv.symm_apply_eq _).mpr
-        (realSpinFourEquivQuaternionUnitaryProd_negOne
-          (nondegenerate_realCliffordForm 4 0).ne_zero).symm,
-      spinCGroup.mk_negOne_neg_one]
+    have hs : realSpinFourEquivQuaternionUnitaryProd.symm (-1, -1) =
+        spinGroup.negOne _ (nondegenerate_realCliffordForm 4 0).ne_zero :=
+      (MulEquiv.symm_apply_eq _).mpr (realSpinFourEquivQuaternionUnitaryProd_negOne _).symm
+    simp [spinCOfPair_apply, hc, hs]
 
 /-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model, descended from `spinCOfPair`. -/
 private def realSpinCUnitary :
@@ -133,12 +132,11 @@ private theorem toSpecialOrthogonal_spinCOfPair_coordVec (p : unitary ℍ[ℝ] �
     ← spinGroup_smul_apply]
   -- Compare quaternion coordinates: both sides are `a q w`.
   refine EquivLike.injective realCliffordFourZeroQuaternionEquiv ?_
-  rw [realSpinFourEquivQuaternionUnitaryProd_action, MulEquiv.apply_symm_apply, coordVec,
-    coordVec, QuadraticMap.IsometryEquiv.apply_symm_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply, Unitary.star_eq_inv, ← map_inv, inv_inv,
-    Quaternion.coe_circleToUnitary,
-    Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec,
+  rw [realSpinFourEquivQuaternionUnitaryProd_action,
+    Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec, coordVec, coordVec,
     Quaternion.ofFirstColumn_smul, Quaternion.ofFirstColumn_toComplexMatrix_mulVec]
+  simp only [MulEquiv.apply_symm_apply, QuadraticMap.IsometryEquiv.apply_symm_apply,
+    Unitary.star_eq_inv, ← map_inv, inv_inv, Quaternion.coe_circleToUnitary]
 
 private theorem det_spinCOfPair (p : unitary ℍ[ℝ] × Circle) :
     spinCGroup.det _ _ (spinCOfPair p) =
