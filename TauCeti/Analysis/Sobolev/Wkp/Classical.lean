@@ -225,16 +225,16 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
             (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
         exact .of_forall fun x => norm_iteratedGradientChain f k x
 
-/-- The `Lᵖ` norm of the value of a Sobolev function is the `Lᵖ` seminorm of any representative
-that is continuous on the domain. -/
-private theorem Wkp.norm_value_eq_lpNorm_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
-    {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
+/-- The `Lᵖ` norm of the value of a Sobolev function agrees with the order-zero classical
+derivative seminorm for any representative that is `C^0` on the domain. -/
+theorem Wkp.norm_value_eq_lpNorm_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
+    {f : E → ℝ} (hf : ContDiffOn ℝ 0 f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
   rw [Lp.norm_def, lpNorm]
   congr 1
   refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
+    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen le_rfl).aestronglyMeasurable
       Omega.isOpen.measurableSet) ?_
   filter_upwards [hu] with x hx
   rw [hx, norm_iteratedFDeriv_zero]
@@ -251,7 +251,7 @@ theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
   | 1, u, f, hf, hu => by
       have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
       rw [Finset.sum_range_succ, Finset.sum_range_one,
-        ← norm_value_eq_lpNorm_of_contDiffOn 1 u hf hu, value_one,
+        ← norm_value_eq_lpNorm_of_contDiffOn 1 u (hf.of_le (by simp)) hu, value_one,
         ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
       simpa only [lowerOrder_zero, iteratedGradient_zero] using h
   | k + 2, u, f, hf, hu => by

@@ -47,9 +47,12 @@ Consequently `S(u)` and `‖u‖` are equivalent up to a universal factor of `�
 * `TauCeti.Wkp.seminorm_toOrderL`, `TauCeti.Wkp.seminorm_lowerOrder`,
   `TauCeti.Wkp.seminorm_zero_eq_zero_iff`, `TauCeti.Wkp.continuous_seminorm`: compatibility with
   order truncation, vanishing of the order-zero seminorm, and continuity.
-* `TauCeti.Wkp.seminorm_eq_lpNorm_of_contDiffOn`, `TauCeti.Wkp.seminorm_top_le_of_contDiffOn`,
-  `TauCeti.Wkp.norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn`: classical identification of
-  seminorms for `C^j` representatives and pointwise `L^∞` bounds.
+* `TauCeti.Wkp.seminorm_eq_lpNorm_of_contDiffOn`,
+  `TauCeti.Wkp.seminorm_rpow_eq_integral_norm_iteratedFDeriv_rpow_of_contDiffOn`,
+  `TauCeti.Wkp.seminorm_exponent_top_le_of_contDiffOn`,
+  `TauCeti.Wkp.norm_iteratedFDeriv_le_seminorm_exponent_top_of_contDiffOn`: classical
+  identification, finite-exponent integral formula, and pointwise `L^∞` bounds for `C^j`
+  representatives.
 * `TauCeti.Wkp.seminorm_restrictL_le`, `TauCeti.Wkp.seminorm_ofExponentLEL_le`: monotonicity under
   subdomain restriction and Hölder scaling `μ(Ω) ^ (1/p - 1/q)` under exponent lowering.
 * `TauCeti.Wkp.norm_eq_sqrt_sum_seminorm_sq`, `TauCeti.Wkp.norm_le_sqrt_two_mul`,
@@ -71,7 +74,7 @@ noncomputable section
 namespace TauCeti.Wkp
 
 open MeasureTheory TopologicalSpace
-open scoped ENNReal ContDiff
+open scoped ENNReal
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -201,21 +204,14 @@ theorem seminorm_restrictL_le (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) (u : 
   cases j with
   | zero =>
       rw [seminorm_zero_apply, seminorm_zero_apply]
-      have h0 := norm_restrictL_le hU 0 (value k u)
-      rwa [restrictL_zero hU, ← value_restrictL hU k u] at h0
+      exact (Lp.norm_eq_lpNorm_of_ae_eq (value_restrictL_ae hU k u)).trans_le
+        (lpNorm_le_norm_of_ae_eq_of_le
+          (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.2 hU)) .rfl)
   | succ j =>
-      rw [seminorm_succ_apply, seminorm_succ_apply, toOrderL_restrictL, iteratedGradient_restrictL]
-      let r : Lp (IteratedGradient E j) p (mu.restrict Omega) →L[ℝ]
-          Lp (IteratedGradient E j) p (mu.restrict U) :=
-        Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
-          simpa only [one_smul] using
-            Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
-      have hop : ‖r‖ ≤ 1 := by
-        simpa only [ENNReal.toReal_one, Real.one_rpow] using
-          Lp.norm_LpToLpOfMeasureLeSMul_le (E := IteratedGradient E j) (p := p) (c := 1) (by simp)
-            (by simpa only [one_smul] using
-              Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
-      simpa only [one_mul] using r.le_of_opNorm_le hop (iteratedGradient j (toOrderL h u))
+      rw [seminorm_succ_apply, seminorm_succ_apply]
+      exact (Lp.norm_eq_lpNorm_of_ae_eq (iteratedGradient_toOrderL_restrictL_ae hU h u)).trans_le
+        (lpNorm_le_norm_of_ae_eq_of_le
+          (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.2 hU)) .rfl)
 
 /-- On a finite-measure domain, lowering the integrability exponent from `q` to `p ≤ q` scales each
 Sobolev seminorm by at most `μ(Ω) ^ (1/p - 1/q)`. -/
@@ -242,14 +238,7 @@ theorem seminorm_eq_lpNorm_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wkp mu O
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     seminorm k j h u = lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega) := by
   cases j with
-  | zero =>
-      rw [seminorm_zero_apply, Lp.norm_def, lpNorm]
-      congr 1
-      refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-        ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen le_rfl).aestronglyMeasurable
-          Omega.isOpen.measurableSet) ?_
-      filter_upwards [hu] with x hx
-      rw [hx, norm_iteratedFDeriv_zero]
+  | zero => exact (seminorm_zero_apply k h u).trans (norm_value_eq_lpNorm_of_contDiffOn k u hf hu)
   | succ j =>
       rw [seminorm_succ_apply]
       exact norm_iteratedGradient_eq_lpNorm_of_contDiffOn j (toOrderL h u) hf
@@ -258,54 +247,32 @@ theorem seminorm_eq_lpNorm_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wkp mu O
 /-- At exponent `p = ∞`, if `u ∈ W^{k,∞}(Ω)` is represented almost everywhere on `Ω` by a `C^j`
 function `f` with `j ≤ k` whose `j`-th Fréchet derivative has norm at most `C ≥ 0` on `Ω`, then
 `seminorm k j h u ≤ C`. -/
-theorem seminorm_top_le_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega ∞ k)
+theorem seminorm_exponent_top_le_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega ∞ k)
     {f : E → ℝ} (hf : ContDiffOn ℝ j f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ x ∈ Omega, ‖iteratedFDeriv ℝ j f x‖ ≤ C) :
     seminorm k j h u ≤ C := by
-  cases j with
-  | zero =>
-      rw [seminorm_zero_apply]
-      refine Lp.norm_top_le_of_ae_bound hC ?_
-      filter_upwards [hu, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
-      simpa only [hx, norm_iteratedFDeriv_zero] using hbound x hxΩ
-  | succ j =>
-      rw [seminorm_succ_apply]
-      refine Lp.norm_top_le_of_ae_bound hC ?_
-      filter_upwards [iteratedGradient_toOrderL_ae_eq_of_contDiffOn h u hf hu,
-        ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
-      rw [hx, norm_iteratedGradientChain]
-      exact hbound x hxΩ
+  have hmem := memLp_iteratedFDeriv_of_contDiffOn j (toOrderL h u) hf
+    (by rwa [value_toOrderL]) j le_rfl
+  rw [seminorm_eq_lpNorm_of_contDiffOn h u hf hu, ← Lp.norm_eq_lpNorm_of_ae_eq hmem.coeFn_toLp]
+  refine Lp.norm_top_le_of_ae_bound hC ?_
+  filter_upwards [hmem.coeFn_toLp, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+  exact hx ▸ hbound x hxΩ
 
 /-- At exponent `p = ∞`, if `u ∈ W^{k,∞}(Ω)` is represented almost everywhere on `Ω` by a `C^j`
 function `f` with `j ≤ k`, then `‖iteratedFDeriv ℝ j f x₀‖ ≤ seminorm k j h u` at every point
 `x₀ ∈ Omega`. -/
-theorem norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn {j k : ℕ} (h : j ≤ k)
+theorem norm_iteratedFDeriv_le_seminorm_exponent_top_of_contDiffOn {j k : ℕ} (h : j ≤ k)
     (u : Wkp mu Omega ∞ k) {f : E → ℝ} (hf : ContDiffOn ℝ j f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) {x₀ : E} (hx₀ : x₀ ∈ Omega) :
     ‖iteratedFDeriv ℝ j f x₀‖ ≤ seminorm k j h u := by
-  have hae : ∀ᵐ x ∂mu.restrict Omega, ‖iteratedFDeriv ℝ j f x‖ ≤ seminorm k j h u := by
-    cases j with
-    | zero =>
-        rw [seminorm_zero_apply]
-        filter_upwards [hu, Lp.ae_norm_le_norm_top (value k u)] with x hx hle
-        rwa [norm_iteratedFDeriv_zero, ← hx]
-    | succ j =>
-        rw [seminorm_succ_apply]
-        filter_upwards [iteratedGradient_toOrderL_ae_eq_of_contDiffOn h u hf hu,
-          Lp.ae_norm_le_norm_top (iteratedGradient j (toOrderL h u))] with x hx hle
-        rwa [← norm_iteratedGradientChain, ← hx]
-  by_contra! hlt
-  let V : Set E := (Omega : Set E) ∩ (fun x => ‖iteratedFDeriv ℝ j f x‖) ⁻¹'
-    Set.Ioi (seminorm k j h u)
-  have hVopen : IsOpen V :=
-    ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen le_rfl).norm).isOpen_inter_preimage
-      Omega.isOpen isOpen_Ioi
-  have hVpos : mu.restrict Omega V ≠ 0 := by
-    rw [Measure.restrict_apply hVopen.measurableSet, Set.inter_eq_left.2 Set.inter_subset_left]
-    exact hVopen.measure_ne_zero mu ⟨x₀, hx₀, hlt⟩
-  exact hVpos (measure_eq_zero_iff_ae_notMem.2
-    (hae.mono fun _ hx hxV => not_lt_of_ge hx hxV.2))
+  rw [seminorm_eq_lpNorm_of_contDiffOn h u hf hu]
+  have hae := ae_le_lpNorm_exponent_top
+    (memLp_iteratedFDeriv_of_contDiffOn j (toOrderL h u) hf (by rwa [value_toOrderL]) j le_rfl)
+  exact sup_eq_right.1 (Measure.eqOn_open_of_ae_eq (hae.mono fun _ => sup_eq_right.2) Omega.isOpen
+    (((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen le_rfl).norm).sup
+      continuousOn_const)
+    continuousOn_const hx₀)
 
 /-! ### Comparison between the Sobolev norm and the seminorms -/
 
@@ -422,6 +389,22 @@ theorem tendsto_iff_forall_seminorm_sub (k : ℕ) {I : Type*} {l : Filter I}
       simpa using (Real.continuous_sqrt.continuousAt.tendsto.comp hsum).const_mul √2
     exact squeeze_zero (fun i => norm_nonneg _) (fun i => norm_le_sqrt_two_mul k (v i - u)) hbound
 
+/-- For a finite exponent `p ≠ ∞`, if `u ∈ W^{k,p}(Ω)` is represented almost everywhere on `Ω` by a
+`C^j` function `f` with `j ≤ k`, then the `p`-th power of the order-`j` seminorm equals the integral
+over `Ω` of `‖iteratedFDeriv ℝ j f x‖ ^ p.toReal`. -/
+theorem seminorm_rpow_eq_integral_norm_iteratedFDeriv_rpow_of_contDiffOn (hp : p ≠ ∞) {j k : ℕ}
+    (h : j ≤ k) (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ j f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    seminorm k j h u ^ p.toReal = ∫ x in Omega, ‖iteratedFDeriv ℝ j f x‖ ^ p.toReal ∂mu := by
+  have hmem := memLp_iteratedFDeriv_of_contDiffOn j (toOrderL h u) hf
+    (by rwa [value_toOrderL]) j le_rfl
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  rw [seminorm_eq_lpNorm_of_contDiffOn h u hf hu, ← Lp.norm_eq_lpNorm_of_ae_eq hmem.coeFn_toLp,
+    ← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
+  refine integral_congr_ae ?_
+  filter_upwards [hmem.coeFn_toLp] with _ hx
+  rw [hx]
+
 /-- At exponent `p = 2`, if `u ∈ W^{k,2}(Ω)` is represented almost everywhere on `Ω` by a `C^j`
 function `f` with `j ≤ k`, then the squared order-`j` seminorm equals the integral over `Ω` of
 `‖iteratedFDeriv ℝ j f x‖ ^ 2`. -/
@@ -429,17 +412,8 @@ theorem seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn {j k : ℕ}
     (u : Wkp mu Omega 2 k) {f : E → ℝ} (hf : ContDiffOn ℝ j f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     seminorm k j h u ^ 2 = ∫ x in Omega, ‖iteratedFDeriv ℝ j f x‖ ^ 2 ∂mu := by
-  cases j with
-  | zero =>
-      rw [seminorm_zero_apply, ← Lp.integral_norm_sq_eq_norm_sq]
-      refine integral_congr_ae ?_
-      filter_upwards [hu] with x hx
-      rw [hx, norm_iteratedFDeriv_zero]
-  | succ j =>
-      rw [seminorm_succ_apply, ← Lp.integral_norm_sq_eq_norm_sq]
-      refine integral_congr_ae ?_
-      filter_upwards [iteratedGradient_toOrderL_ae_eq_of_contDiffOn h u hf hu] with x hx
-      rw [hx, norm_iteratedGradientChain]
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
+    seminorm_rpow_eq_integral_norm_iteratedFDeriv_rpow_of_contDiffOn (by norm_num) h u hf hu
 
 /-! ### Concrete checks -/
 
@@ -455,7 +429,7 @@ private theorem seminorm_two_Ioo_eq_sqrt_intervalIntegral {a b : ℝ} (hab : a �
     ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hab]
   simp only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs, sq_abs]
 
-private theorem seminorm_top_eq_of_iteratedDeriv_le {Ω : Opens ℝ} {j k : ℕ} (h : j ≤ k)
+private theorem seminorm_exponent_top_eq_of_iteratedDeriv_le {Ω : Opens ℝ} {j k : ℕ} (h : j ≤ k)
     (u : Wkp volume Ω ∞ k) {f : ℝ → ℝ} (hf : ContDiffOn ℝ j f Ω)
     (hu : (value k u : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] f) {C : ℝ}
     (hbound : ∀ x ∈ Ω, |iteratedDeriv j f x| ≤ C) {x₀ : ℝ} (hx₀ : x₀ ∈ Ω)
@@ -463,11 +437,11 @@ private theorem seminorm_top_eq_of_iteratedDeriv_le {Ω : Opens ℝ} {j k : ℕ}
     seminorm k j h u = C := by
   have hC : 0 ≤ C := (abs_nonneg _).trans (hbound x₀ hx₀)
   apply le_antisymm
-  · refine seminorm_top_le_of_contDiffOn h u hf hu hC fun x hx => ?_
+  · refine seminorm_exponent_top_le_of_contDiffOn h u hf hu hC fun x hx => ?_
     simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs] using hbound x hx
   · refine hattain.trans ?_
     simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs] using
-      norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn h u hf hu hx₀
+      norm_iteratedFDeriv_le_seminorm_exponent_top_of_contDiffOn h u hf hu hx₀
 
 -- Check 1: On Ω = (0, 1) with p = 2, u(x) = x in W^{1,2}(0, 1) has toOrderL le_rfl u = u,
 -- |u|_{0,2} = 1 / √3, |u|_{1,2} = 1, and graph norm ‖u‖ = 2 / √3.
@@ -537,11 +511,11 @@ example :
     (p := ∞) 1 isOpen_univ Real.contDiff_sin.contDiffOn isCompact_Icc
     Set.Ioo_subset_Icc_self (Set.subset_univ _)
   have h0 : seminorm 1 0 (Nat.zero_le 1) u = 1 :=
-    seminorm_top_eq_of_iteratedDeriv_le (Nat.zero_le 1) u Real.contDiff_sin.contDiffOn hu
+    seminorm_exponent_top_eq_of_iteratedDeriv_le (Nat.zero_le 1) u Real.contDiff_sin.contDiffOn hu
       (fun x _ => by simpa using Real.abs_sin_le_one x)
       (x₀ := Real.pi / 2) ⟨by positivity, by linarith [Real.pi_pos]⟩ (by simp)
   have h1 : seminorm 1 1 le_rfl u = 1 :=
-    seminorm_top_eq_of_iteratedDeriv_le le_rfl u Real.contDiff_sin.contDiffOn hu
+    seminorm_exponent_top_eq_of_iteratedDeriv_le le_rfl u Real.contDiff_sin.contDiffOn hu
       (fun x _ => by simpa [iteratedDeriv_one] using Real.abs_cos_le_one x)
       (x₀ := Real.pi) ⟨Real.pi_pos, by linarith [Real.pi_pos]⟩ (by simp [iteratedDeriv_one])
   let u₁ : W1p volume Ω ∞ := u
@@ -586,13 +560,12 @@ example :
   have hv : (value 1 v : ℝ → ℝ) =ᵐ[volume.restrict (Set.Ioo (0 : ℝ) 2)] (fun _ : ℝ => (1 : ℝ)) :=
     (value_ofExponentLEL_ae (p := 1) (q := 2) (by norm_num) 1 u).trans hu
   have hv0 : seminorm 1 0 (Nat.zero_le 1) v = 2 := by
-    rw [seminorm_zero_apply, L1.norm_eq_integral_norm]
-    have hcongr : (fun x => ‖value 1 v x‖) =ᵐ[volume.restrict
-        ((⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)] (fun _ : ℝ => (1 : ℝ)) :=
-      hv.mono fun _ hx => by simpa only [norm_one] using congrArg norm hx
-    rw [integral_congr_ae hcongr, Opens.coe_mk, ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le zero_le_two, intervalIntegral.integral_const]
-    norm_num
+    have hpow := seminorm_rpow_eq_integral_norm_iteratedFDeriv_rpow_of_contDiffOn
+      ENNReal.one_ne_top (Nat.zero_le 1) v (contDiff_const (c := (1 : ℝ))).contDiffOn hv
+    rw [ENNReal.toReal_one, Real.rpow_one, Opens.coe_mk,
+      ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
+      ← intervalIntegral.integral_of_le zero_le_two] at hpow
+    simpa [norm_iteratedFDeriv_zero] using hpow
   exact ⟨u, hu, h0, hv0⟩
 
 end
