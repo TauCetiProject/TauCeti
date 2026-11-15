@@ -48,12 +48,16 @@ notation on the structure morphism.
 
 ## Main results
 
-* `TauCeti.range_specialFiberι`: the special fibre of a scheme over a local ring is the preimage
-  of the closed point;
+* `TauCeti.range_specialFiberι` and `TauCeti.range_genericFiberι`: the special fibre is the
+  preimage of the closed point, and over a domain the generic fibre is the preimage of the generic
+  point (`TauCeti.range_genericFiberι_eq_setOf_ne_closedPoint`,
+  `TauCeti.range_genericFiberι_of_isDiscreteValuationRing`, and
+  `AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint`);
 * `TauCeti.ker_specialFiberι_le_vanishingIdeal_iff`: a closed subset lies in the special fibre
   exactly when its reduced induced closed subscheme is a closed subscheme of the special fibre, as
   for the closure of a point of the special fibre
-  (`AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_le_vanishingIdeal_closure_singleton`);
+  (`AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_le_vanishingIdeal_closure_singleton` and
+  `AlgebraicGeometry.Scheme.Hom.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton`);
 * `AlgebraicGeometry.Scheme.Hom.maximalIdeal_ne_bot_of_base_ne_closedPoint`: a local ring over
   which some point of a scheme lies away from the closed point is not a field;
 * `AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint`: under the same hypothesis, a
@@ -97,6 +101,24 @@ namespace TauCeti
 
 universe u
 
+/-- The image of the generic fibre `X_K ⟶ X` over a domain `R` with fraction ring `K` is the
+preimage of the generic point of `Spec R`. -/
+theorem range_genericFiberι (R K : Type u) [CommRing R] [IsDomain R] [CommRing K] [Algebra R K]
+    [IsFractionRing R K] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = toBase ⁻¹' {genericPoint (Spec (.of R))} :=
+  calc Set.range (genericFiberι R K toBase)
+      = Set.range (genericFiberι R K toBase ∘
+          (genericFiberIsoFiberGenericPoint (K := K) toBase).inv) :=
+        ((genericFiberIsoFiberGenericPoint (K := K) toBase).inv.surjective.range_comp _).symm
+    _ = Set.range ((genericFiberIsoFiberGenericPoint (K := K) toBase).inv ≫
+          genericFiberι R K toBase) :=
+        congrArg Set.range (funext fun x ↦ (Scheme.Hom.comp_apply _ _ x).symm)
+    _ = Set.range (toBase.fiberι (genericPoint (Spec (.of R)))) :=
+        congrArg (fun g : toBase.fiber (genericPoint (Spec (.of R))) ⟶ X ↦ Set.range g)
+          (genericFiberIsoFiberGenericPoint_inv_genericFiberι toBase)
+    _ = toBase ⁻¹' {genericPoint (Spec (.of R))} :=
+        Scheme.Hom.range_fiberι toBase (genericPoint (Spec (.of R)))
+
 section LocalRing
 
 variable (R : Type u) [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
@@ -137,6 +159,19 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_le_vanishingIdeal
     ((isClosed_singleton_closedPoint R).preimage toBase.continuous)
 
 variable {R} in
+/-- The closure of a point of the special fibre, with its reduced structure, is a closed subscheme
+of the reduced special fibre `V(√(𝔪·𝒪_X))`. -/
+theorem
+  _root_.AlgebraicGeometry.Scheme.Hom.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
+    {x : X} (hx : toBase x = closedPoint R) :
+    (specialFiberι R toBase).ker.radical ≤
+      Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩ := by
+  rw [← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal,
+    Scheme.IdealSheafData.support_radical,
+    Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal]
+  exact toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hx
+
+variable {R} in
 /-- If some point of a scheme over a local ring does not lie over the closed point, then the local
 ring is not a field: over a field every point maps to the closed point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.maximalIdeal_ne_bot_of_base_ne_closedPoint {x : X}
@@ -154,6 +189,29 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint {x : 
 
 end LocalRing
 
+/-- **The generic fibre is the complement of the special fibre.** Over a local domain `R` of Krull
+dimension at most one which is not a field, with fraction ring `K`, a point of `X` lies in the
+image of `genericFiberι R K toBase` if and only if it does not map to the closed point of
+`Spec R`. -/
+theorem range_genericFiberι_eq_setOf_ne_closedPoint (R K : Type u) [CommRing R] [IsDomain R]
+    [IsLocalRing R] [Ring.DimensionLEOne R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+    (hR : maximalIdeal R ≠ ⊥) {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = {x : X | toBase x ≠ closedPoint R} := by
+  rw [range_genericFiberι]
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, genericPoint_eq_bot_of_affine]
+  refine ⟨fun h hc ↦ hR ?_, fun h ↦ PrimeSpectrum.ext (by_contra fun hne ↦ h ?_)⟩
+  · exact (congrArg PrimeSpectrum.asIdeal (h.symm.trans hc)).symm
+  · exact PrimeSpectrum.ext (IsLocalRing.eq_maximalIdeal ((toBase x).isPrime.isMaximal hne))
+
+/-- Over a discrete valuation ring `R` with fraction ring `K`, the range of `genericFiberι` is the
+complement of the special fibre. -/
+theorem range_genericFiberι_of_isDiscreteValuationRing (R K : Type u) [CommRing R] [IsDomain R]
+    [IsDiscreteValuationRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = {x : X | toBase x ≠ closedPoint R} :=
+  range_genericFiberι_eq_setOf_ne_closedPoint R K (IsDiscreteValuationRing.not_a_field R) toBase
+
 section DimensionLEOne
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
@@ -167,6 +225,19 @@ theorem _root_.PrimeSpectrum.mem_asIdeal_iff_eq_closedPoint (p : PrimeSpectrum R
   exact PrimeSpectrum.ext (IsLocalRing.eq_maximalIdeal (p.isPrime.isMaximal hne))
 
 variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+/-- If a scheme over a local domain `R` of dimension at most one has a point outside the special
+fibre, then its generic fibre `X_K` over a fraction ring `K` of `R` is nonempty. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_genericFiber_of_base_ne_closedPoint
+    [IsDomain R] (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+    {x : X} (hx : toBase x ≠ closedPoint R) :
+    Nonempty (genericFiber R K toBase).left := by
+  have hx' : x ∈ Set.range (genericFiberι R K toBase) := by
+    rw [range_genericFiberι_eq_setOf_ne_closedPoint R K
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hx)]
+    exact hx
+  obtain ⟨y, -⟩ := hx'
+  exact ⟨y⟩
 
 /-- A point of a scheme over a local ring of dimension at most one lies over the closed point
 exactly when the pullback of a nonzero element `π` of the maximal ideal vanishes at it. -/

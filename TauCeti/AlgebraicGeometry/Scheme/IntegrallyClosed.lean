@@ -21,7 +21,8 @@ rings of the scheme at points of `V`.
   stalk is equivalent to normality of the corresponding localization of affine sections.
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over an affine
   open is integrally closed when its local rings are.
-* `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
+* `TauCeti.AlgebraicGeometry.isDomain_stalk_of_isOpenImmersion` and
+  `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
   immersions preserve the domain and integral-closure conditions on stalks.
 -/
 
@@ -32,6 +33,11 @@ open CategoryTheory AlgebraicGeometry
 universe u
 
 namespace TauCeti.AlgebraicGeometry
+
+/-- The stalks of the source of an open immersion into a scheme with domain stalks are domains. -/
+theorem isDomain_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    [∀ x : X, IsDomain (X.presheaf.stalk x)] (u : U) : IsDomain (U.presheaf.stalk u) :=
+  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.symm.toMulEquiv.isDomain _
 
 /-- An open immersion identifies the local rings at corresponding points, preserving the
 conjunction of domain and integral-closure properties. -/

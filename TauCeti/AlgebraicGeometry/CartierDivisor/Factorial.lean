@@ -10,48 +10,33 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
-import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
-import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
-import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
-import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
-import TauCeti.RingTheory.Ideal.Quotient.Colon
-import TauCeti.RingTheory.SerreCondition.Normal
+import TauCeti.AlgebraicGeometry.Scheme.Regular
 
 /-!
 # Divisors on normal and locally factorial schemes
 
-Let `X` be a locally Noetherian normal integral scheme. Each local ring `𝒪_{X,x}` is a Noetherian
-integrally closed domain, so by Serre's criterion
-(`TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed`) it satisfies `(S_2)`, and for every
-nonzerodivisor `b ∈ 𝒪_{X,x}` the associated primes of `𝒪_{X,x} ⧸ (b)` have height one
-(`Module.SatisfiesSerreS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton`). This gives
-the **algebraic Hartogs' principle** in arbitrary dimension: a rational function on `X` whose order
-of vanishing is nonnegative at every codimension-one point of a nonempty open subset `U` is regular
-on `U` (`exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme`), and one whose order
-vanishes at every codimension-one point of `U` is a regular unit
-(`exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme`). Consequently, on any
+On a locally Noetherian normal integral scheme, algebraic Hartogs' principle
+(`exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme` in
+`TauCeti.AlgebraicGeometry.Scheme.Regular`) implies that two nonzero rational functions with the
+same orders at every codimension-one point of an open subset represent the same Cartier divisor
+section (`rationalUnitClass_eq_of_forall_orderAt_eq_of_isNormalScheme`). Consequently, on any
 Noetherian normal integral scheme, the map `CartierDivisor X →+ SchemeWeilDivisor X` is injective
 (`CartierDivisor.toWeilDivisorHom_injective`).
 
 Now suppose that `X` is a Noetherian integral scheme whose local rings are unique factorization
-domains, for instance a regular Noetherian integral scheme of dimension at most two such as a
-regular model of a curve over a discrete valuation ring. Every prime divisor `closure {η}` is an
-effective Cartier ideal sheaf (`isEffectiveCartier_vanishingIdeal_closure_singleton`). Gluing local
-equations turns any effective Cartier ideal sheaf `I` on an integral scheme into an effective
-Cartier divisor `CartierDivisor.ofEffectiveCartier hI` with `[𝒪_X(D)] = [I]⁻¹`; for `closure {η}`
-its associated Weil divisor is the single generator `Finsupp.single η 1`. Thus Cartier divisors and
-Weil divisors are canonically isomorphic (`CartierDivisor.toWeilDivisorAddEquiv`), and the Weil
-divisor class group `Cl(X)` is isomorphic to `Pic(X)`
+domains, for instance a regular Noetherian integral scheme such as a regular model of a curve over
+a discrete valuation ring. Every prime divisor `closure {η}` is an effective Cartier ideal sheaf
+(`isEffectiveCartier_vanishingIdeal_closure_singleton`), and its associated Cartier divisor
+`CartierDivisor.ofEffectiveCartier` has associated Weil divisor `Finsupp.single η 1`. Thus Cartier
+divisors and Weil divisors are canonically isomorphic (`CartierDivisor.toWeilDivisorAddEquiv`),
+and the Weil divisor class group `Cl(X)` is isomorphic to `Pic(X)`
 (`CartierDivisor.weilClassGroupAddEquivLineBundleClass`) without any curve-dimension restriction.
 Open-immersion Picard excision built on this equivalence is in
 `TauCeti.AlgebraicGeometry.CartierDivisor.Excision`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.ofEffectiveCartier`: the Cartier divisor on an
-  integral scheme attached to an effective Cartier ideal sheaf `I`.
 * `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.toWeilDivisorAddEquiv`: the additive equivalence
   `CartierDivisor X ≃+ SchemeWeilDivisor X` on a Noetherian locally factorial integral scheme.
 * `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.weilToLineBundleClassHom` and
@@ -61,10 +46,10 @@ Open-immersion Picard excision built on this equivalence is in
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme`:
-  algebraic Hartogs' principle on locally Noetherian normal integral schemes.
 * `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.toWeilDivisorHom_injective`: injectivity of
   `CartierDivisor X →+ SchemeWeilDivisor X` on Noetherian normal integral schemes.
+* `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.toWeilDivisorHom_surjective`: surjectivity of
+  `CartierDivisor X →+ SchemeWeilDivisor X` on Noetherian locally factorial integral schemes.
 
 ## References
 
@@ -75,8 +60,7 @@ Open-immersion Picard excision built on this equivalence is in
 
 public section
 
-open AlgebraicGeometry CategoryTheory IsLocalRing Opposite Order TopologicalSpace
-open scoped nonZeroDivisors
+open AlgebraicGeometry CategoryTheory TopologicalSpace
 
 namespace TauCeti
 
@@ -86,141 +70,11 @@ universe u
 
 noncomputable section
 
-/-! ### Locally factorial schemes are normal -/
-
-/-- A scheme whose local rings are unique factorization domains is normal. -/
-theorem IsNormalScheme.of_uniqueFactorizationMonoid_stalk {X : Scheme.{u}}
-    [∀ x : X, IsDomain (X.presheaf.stalk x)]
-    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] : IsNormalScheme X where
-  isDomain_stalk := inferInstance
-  isIntegrallyClosed_stalk _ := inferInstance
-
 namespace Scheme
-
-/-! ### Primes of stalks and algebraic Hartogs' principle on normal schemes -/
-
-/-- Every prime ideal `P` of a local ring `𝒪_{X,x}` of a locally Noetherian scheme arises from a
-generization `η ⤳ x` whose codimension equals `P.height`. -/
-theorem exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq {X : Scheme.{u}}
-    [IsLocallyNoetherian X] {x : X} (P : Ideal (X.presheaf.stalk x)) [P.IsPrime] :
-    ∃ η : X, coheight η = P.height ∧ ∃ h : η ⤳ x,
-      (maximalIdeal (X.presheaf.stalk η)).comap (X.presheaf.stalkSpecializes h).hom = P := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  replace hU : IsAffineOpen U := hU
-  let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  have := hU.isLocalization_stalk ⟨x, hxU⟩
-  set p := hU.primeIdealOf ⟨x, hxU⟩
-  let q : Spec Γ(X, U) := ⟨P.comap (algebraMap Γ(X, U) (X.presheaf.stalk x)), inferInstance⟩
-  have hqp : q.asIdeal ≤ p.asIdeal := by
-    rw [← IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk x) p.asIdeal]
-    exact Ideal.comap_mono (le_maximalIdeal Ideal.IsPrime.ne_top')
-  have hηx : hU.fromSpec q ⤳ x :=
-    (((PrimeSpectrum.le_iff_specializes q p).mp hqp).map hU.fromSpec.continuous).trans
-      (specializes_of_eq (hU.fromSpec_primeIdealOf ⟨x, hxU⟩))
-  have hprime : hU.primeIdealOf ⟨_, hηx.mem_open U.isOpen hxU⟩ = q :=
-    hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf _)
-  have hdisj : Disjoint (p.asIdeal.primeCompl : Set Γ(X, U)) q.asIdeal :=
-    Set.disjoint_left.mpr fun a ha haq ↦ ha (hqp haq)
-  have hmap : q.asIdeal.map (algebraMap Γ(X, U) (X.presheaf.stalk x)) = P :=
-    IsLocalization.map_under p.asIdeal.primeCompl _ P
-  have hcoh : coheight (hU.fromSpec q) = P.height := by
-    rw [coheight_eq_of_isOpenImmersion hU.fromSpec, ← idealHeight_eq_coheight,
-      ← IsLocalization.height_map_of_disjoint (S := X.presheaf.stalk x) p.asIdeal.primeCompl
-        q.asIdeal hdisj, hmap]
-  refine ⟨hU.fromSpec q, hcoh, hηx, ?_⟩
-  rw [← IsLocalization.map_under p.asIdeal.primeCompl (X.presheaf.stalk x)
-      ((maximalIdeal _).comap (X.presheaf.stalkSpecializes hηx).hom), ← hmap]
-  exact congrArg _ ((comap_germ_comap_stalkSpecializes_maximalIdeal hU hxU hηx).trans
-    (congrArg _ hprime))
 
 section Normal
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X] [IsNormalScheme X]
-
-/-- **Local algebraic Hartogs' principle.** At a point `x` of a locally Noetherian normal integral
-scheme, a rational function `f` whose order of vanishing is nonnegative at every codimension-one
-generization of `x` lies in the local ring `𝒪_{X,x}`. -/
-theorem exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme {x : X} {f : X.functionField}
-    (hf : ∀ η : CodimensionOnePoint X, (η : X) ⤳ x → 0 ≤ X.ord f η) :
-    ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
-  set A := X.presheaf.stalk x
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := A) f
-  by_cases hab : a ∈ Ideal.span {b}
-  · obtain ⟨g, rfl⟩ := Ideal.mem_span_singleton'.mp hab
-    refine ⟨g, ?_⟩
-    have hb0 : algebraMap A X.functionField b ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
-    rw [map_mul, mul_div_cancel_right₀ _ hb0]
-  exfalso
-  -- `A` is a Noetherian normal domain, so it satisfies `(S_2)` and every associated prime `P` of
-  -- `A ⧸ (b)` containing `((b) : a)` has height one.
-  have hS : Module.SatisfiesSerreS 2 A A :=
-    TauCeti.satisfiesSerreS_two_of_forall_isIntegrallyClosed fun p _ ↦
-      ⟨inferInstance, isIntegrallyClosed_of_isLocalization _ p.primeCompl
-        p.primeCompl_le_nonZeroDivisors⟩
-  obtain ⟨P, hPass, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing A
-    (Ideal.Quotient.mk (Ideal.span {b}) a) (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem])
-  have := hPass.isPrime
-  have hP1 : P.height = 1 :=
-    hS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hPass
-  obtain ⟨η, hηcoh, hηx, hcomap⟩ := exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq P
-  rw [hP1] at hηcoh
-  have : IsDiscreteValuationRing (X.presheaf.stalk η) :=
-    IsNormalScheme.isDiscreteValuationRing_stalk η hηcoh
-  -- Nonnegative order at `η` puts `a / b` in `𝒪_{X,η} = A_P`, giving `s * a ∈ (b)` for `s ∉ P`.
-  obtain ⟨c, hc⟩ := exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨η, hηcoh⟩ hηx)
-  let := (X.presheaf.stalkSpecializes hηx).hom.toAlgebra
-  set Q := (maximalIdeal (X.presheaf.stalk η)).comap (X.presheaf.stalkSpecializes hηx).hom
-  have := isLocalization_stalkSpecializes hηx
-  obtain ⟨⟨d, s⟩, hds⟩ := IsLocalization.surj Q.primeCompl c
-  have hba : algebraMap A X.functionField (s * a) = algebraMap A X.functionField (b * d) := by
-    have hb0 : algebraMap A X.functionField b ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
-    have hcd := congrArg (algebraMap (X.presheaf.stalk η) X.functionField) hds
-    rw [map_mul] at hcd
-    change algebraMap (X.presheaf.stalk η) X.functionField c *
-        algebraMap (X.presheaf.stalk η) X.functionField
-          ((X.presheaf.stalkSpecializes hηx).hom s.1) =
-      algebraMap (X.presheaf.stalk η) X.functionField
-        ((X.presheaf.stalkSpecializes hηx).hom d) at hcd
-    rw [algebraMap_stalkSpecializes, algebraMap_stalkSpecializes, hc,
-      mul_comm _ (algebraMap A _ (s : A))] at hcd
-    have hcd' := congrArg (· * algebraMap A X.functionField b) hcd
-    rw [mul_div_assoc', div_mul_cancel₀ _ hb0, mul_comm _ (algebraMap A X.functionField b)] at hcd'
-    rw [map_mul, map_mul]
-    exact hcd'
-  have hsa : (s : A) * a ∈ Ideal.span {b} :=
-    Ideal.mem_span_singleton'.mpr ⟨d, mul_comm d b ▸
-      IsFractionRing.injective A X.functionField hba.symm⟩
-  exact (hcomap ▸ s.2 : (s : A) ∉ P) (hle (TauCeti.Ideal.Quotient.mem_colon_singleton_mk.mpr hsa))
-
-/-- **Algebraic Hartogs' principle on normal Noetherian schemes.** On a locally Noetherian normal
-integral scheme, a rational function whose order of vanishing is nonnegative at every
-codimension-one point of a nonempty open subset `U` is regular on `U`. -/
-theorem exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme {U : X.Opens} [Nonempty U]
-    {f : X.functionField} (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → 0 ≤ X.ord f y) :
-    ∃ a : Γ(X, U), X.germToFunctionField U a = f :=
-  exists_germToFunctionField_eq_of_forall_mem_range fun _ hx ↦
-    exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme fun y hyx ↦
-      hf y (hyx.mem_open U.isOpen hx)
-
-/-- **A rational function without zeros or poles on a normal scheme is a regular unit.** On a
-locally Noetherian normal integral scheme, a nonzero rational function whose order vanishes at
-every codimension-one point of a nonempty open subset `U` comes from a unit of `Γ(X, U)`. -/
-theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme {U : X.Opens}
-    [Nonempty U] {f : X.functionFieldˣ}
-    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
-    ∃ u : Γ(X, U)ˣ, X.germToFunctionField U (u : Γ(X, U)) = (f : X.functionField) := by
-  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme (U := U)
-    (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
-  obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg_of_isNormalScheme (U := U)
-    (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
-  have hab : a * b = 1 := X.germToFunctionField_injective U <| by
-    rw [map_mul, ha, hb, map_one, Units.mul_inv]
-  exact ⟨⟨a, b, hab, (mul_comm b a).trans hab⟩, ha⟩
 
 /-- On a locally Noetherian normal integral scheme, two nonzero rational functions with the same
 orders at all codimension-one points of a nonempty open subset `U` represent the same Cartier
@@ -269,9 +123,9 @@ theorem toWeilDivisorHom_injective : Function.Injective (toWeilDivisorHom (X := 
       SchemeWeilDivisor.orderAt y g = SchemeWeilDivisor.orderAt y 0 := fun y hy ↦ by
     rw [map_zero, ← orderAt_eq_of_restrict_eq_rationalUnitClass D y (U x) hy g hDg,
       ← coeff_toWeilDivisor, hD0, WeilDivisor.coeff_zero]
-  change D |_ U x = (0 : CartierDivisor X) |_ U x
-  rw [hDg, rationalUnitClass_eq_of_forall_orderAt_eq_of_isNormalScheme hord, map_zero]
-  exact (map_zero ((cartierDivisorSheaf X).obj.map (homOfLE le_top).op).hom).symm
+  have hres : D |_ U x = 0 := by
+    rw [hDg, rationalUnitClass_eq_of_forall_orderAt_eq_of_isNormalScheme hord, map_zero]
+  simpa only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_zero] using hres
 
 /-- On a Noetherian normal integral scheme, a Cartier divisor is principal if and only if its
 associated Weil divisor is principal. -/
@@ -285,169 +139,6 @@ theorem mem_principalSubgroup_iff_toWeilDivisor_mem {D : CartierDivisor X} :
     rw [toWeilDivisorHom_apply, toWeilDivisorHom_apply, toWeilDivisor_principalCartierDivisor, hg]
 
 end NormalNoetherian
-
-/-! ### The Cartier divisor of an effective Cartier ideal sheaf -/
-
-section OfEffectiveCartier
-
-variable {X : Scheme.{u}} [IsIntegral X] {I : X.IdealSheafData}
-
-/-- If an ideal sheaf `I` on an integral scheme is generated on two affine opens `U` and `V` by
-nonzero sections `a` and `b`, then on any nonempty open `W ≤ U ⊓ V` their images in the function
-field have the same Cartier-divisor class. -/
-private lemma rationalUnitClass_eq_of_ideal_eq_span {U V : X.affineOpens} {W : X.Opens}
-    [Nonempty U.1] [Nonempty V.1] [Nonempty W] (hWU : W ≤ U.1) (hWV : W ≤ V.1)
-    {a : Γ(X, U)} {b : Γ(X, V)} (ha : IsSMulRegular Γ(X, U) a) (hb : IsSMulRegular Γ(X, V) b)
-    (hIa : I.ideal U = Ideal.span {a}) (hIb : I.ideal V = Ideal.span {b})
-    (fa fb : X.functionFieldˣ) (hfa : X.germToFunctionField U.1 a = fa)
-    (hfb : X.germToFunctionField V.1 b = fb) :
-    rationalUnitClass X W (Additive.ofMul fa) = rationalUnitClass X W (Additive.ofMul fb) := by
-  have hbW : X.presheaf.map (homOfLE hWV).op b ∈ I.sections W :=
-    I.map_mem_sections (homOfLE hWV) (I.mem_sections_of_ideal_eq_span hIb)
-  have haW : X.presheaf.map (homOfLE hWU).op a ∈ I.sections W :=
-    I.map_mem_sections (homOfLE hWU) (I.mem_sections_of_ideal_eq_span hIa)
-  obtain ⟨u, hu⟩ := I.exists_mul_eq_of_ideal_eq_span ha hIa hWU hbW
-  obtain ⟨v, hv⟩ := I.exists_mul_eq_of_ideal_eq_span hb hIb hWV haW
-  have hfaW : X.germToFunctionField W (X.presheaf.map (homOfLE hWU).op a) = fa := by
-    rw [← hfa]
-    exact X.presheaf.germ_res_apply (homOfLE hWU) (genericPoint X) (genericPoint_mem W) a
-  have hfbW : X.germToFunctionField W (X.presheaf.map (homOfLE hWV).op b) = fb := by
-    rw [← hfb]
-    exact X.presheaf.germ_res_apply (homOfLE hWV) (genericPoint X) (genericPoint_mem W) b
-  have hu' : X.germToFunctionField W u * fa = fb := by
-    have := congrArg (X.germToFunctionField W) hu
-    rwa [map_mul, hfaW, hfbW, mul_comm] at this
-  have hv' : X.germToFunctionField W v * fb = fa := by
-    have := congrArg (X.germToFunctionField W) hv
-    rwa [map_mul, hfbW, hfaW, mul_comm] at this
-  have huv : u * v = 1 := X.germToFunctionField_injective W <| by
-    apply mul_right_cancel₀ fa.ne_zero
-    rw [map_mul, map_one, one_mul, mul_assoc, mul_comm (X.germToFunctionField W v), ← mul_assoc,
-      hu', mul_comm, hv']
-  let r : Γ(X, W)ˣ := ⟨u, v, huv, (mul_comm v u).trans huv⟩
-  refine ((rationalUnitClass_eq_rationalUnitClass_iff X W fb fa).mpr ⟨r, Units.ext ?_⟩).symm
-  rw [Units.val_mul, regularUnitToFunctionField_apply, Units.coe_map]
-  exact hu'
-
-/-- **Existence and uniqueness of the Cartier divisor of an effective Cartier ideal sheaf.** On an
-integral scheme, an effective Cartier ideal sheaf `I` determines a unique Cartier divisor whose
-restriction to every affine open `U` where `I(U) = (a)` is generated by a nonzerodivisor `a` is the
-rational class of `a`. -/
-theorem existsUnique_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
-    ∃! D : CartierDivisor X, ∀ (U : X.affineOpens) [Nonempty U.1] (a : Γ(X, U))
-      (f : X.functionFieldˣ), IsSMulRegular Γ(X, U) a → I.ideal U = Ideal.span {a} →
-        X.germToFunctionField U.1 a = f →
-          D |_ U.1 = rationalUnitClass X U.1 (Additive.ofMul f) := by
-  choose U hxU a ha hIa using (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI
-  have hne (x : X) : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
-  have hfnz (x : X) : X.germToFunctionField (U x).1 (a x) ≠ 0 := by
-    have := hne x
-    have : Nontrivial Γ(X, U x) :=
-      (X.germToFunctionField (U x).1).hom.domain_nontrivial
-    intro h0
-    have ha0 : a x = 0 := X.germToFunctionField_injective (U x).1 (h0.trans (map_zero _).symm)
-    exact one_ne_zero (α := Γ(X, U x)) (ha x (by simp [ha0]))
-  let f (x : X) : X.functionFieldˣ :=
-    letI := hne x
-    Units.mk0 (X.germToFunctionField (U x).1 (a x)) (hfnz x)
-  have hcompat : TopCat.Presheaf.IsCompatible (cartierDivisorSheaf X).obj (fun x ↦ (U x).1)
-      fun x ↦ letI := hne x; rationalUnitClass X (U x).1 (Additive.ofMul (f x)) := by
-    intro x y
-    have := hne x
-    have := hne y
-    let W : X.Opens := (U x).1 ⊓ (U y).1
-    have : Nonempty W := by
-      simpa [W] using nonempty_preirreducible_inter (U x).1.isOpen (U y).1.isOpen
-        (by simpa using hne x) (by simpa using hne y)
-    have hx := rationalUnitClass_restrict X (U := (U x).1) (V := W) inf_le_left
-      (Additive.ofMul (f x))
-    have hy := rationalUnitClass_restrict X (U := (U y).1) (V := W) inf_le_right
-      (Additive.ofMul (f y))
-    exact hx.trans ((rationalUnitClass_eq_of_ideal_eq_span inf_le_left inf_le_right
-      (ha x) (ha y) (hIa x) (hIa y) (f x) (f y) rfl rfl).trans hy.symm)
-  obtain ⟨D, hD, -⟩ := (cartierDivisorSheaf X).existsUnique_gluing' (fun x ↦ (U x).1) ⊤
-    (fun _ ↦ homOfLE le_top) (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ hcompat
-  refine ⟨D, fun V hV b g hb hIb hbg ↦ ?_, fun D' hD' ↦ ?_⟩
-  · refine (cartierDivisorSheaf X).eq_of_locally_eq' (fun x : X ↦ (U x).1 ⊓ V.1) V.1
-      (fun _ ↦ homOfLE inf_le_right) (fun x hx ↦ Opens.mem_iSup.mpr ⟨x, hxU x, hx⟩) _ _ fun x ↦ ?_
-    have := hne x
-    let W : X.Opens := (U x).1 ⊓ V.1
-    have : Nonempty W := by
-      simpa [W] using nonempty_preirreducible_inter (U x).1.isOpen V.1.isOpen
-        (by simpa using hne x) (by simpa using hV)
-    have hDx : D |_ (U x).1 = rationalUnitClass X (U x).1 (Additive.ofMul (f x)) := hD x
-    have hleft : (D |_ V.1) |_ W = rationalUnitClass X W (Additive.ofMul (f x)) := by
-      rw [TopCat.Presheaf.restrict_restrict (inf_le_right : W ≤ V.1) le_top D,
-        ← TopCat.Presheaf.restrict_restrict (inf_le_left : W ≤ (U x).1) le_top D, hDx,
-        rationalUnitClass_restrict X inf_le_left]
-    change (D |_ V.1) |_ W = (rationalUnitClass X V.1 (Additive.ofMul g)) |_ W
-    rw [hleft, rationalUnitClass_restrict X inf_le_right]
-    exact rationalUnitClass_eq_of_ideal_eq_span inf_le_left inf_le_right (ha x) hb (hIa x) hIb
-      (f x) g rfl hbg
-  · refine (cartierDivisorSheaf X).eq_of_locally_eq' (fun x ↦ (U x).1) ⊤
-      (fun _ ↦ homOfLE le_top) (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩) _ _ fun x ↦ ?_
-    have := hne x
-    exact (hD' (U x) (a x) (f x) (ha x) (hIa x) rfl).trans (hD x).symm
-
-/-- The Cartier divisor on an integral scheme attached to an effective Cartier ideal sheaf `I`. -/
-def ofEffectiveCartier (hI : I.IsEffectiveCartier) : CartierDivisor X :=
-  (existsUnique_ofEffectiveCartier hI).choose
-
-/-- Over an affine open `U` where `I(U) = (a)` is generated by a nonzerodivisor `a`, the Cartier
-divisor `ofEffectiveCartier hI` restricts to the class of `a`. -/
-theorem ofEffectiveCartier_restrict (hI : I.IsEffectiveCartier) (U : X.affineOpens) [Nonempty U.1]
-    {a : Γ(X, U)} {f : X.functionFieldˣ} (ha : IsSMulRegular Γ(X, U) a)
-    (hIa : I.ideal U = Ideal.span {a}) (hf : X.germToFunctionField U.1 a = f) :
-    ofEffectiveCartier hI |_ U.1 = rationalUnitClass X U.1 (Additive.ofMul f) :=
-  (existsUnique_ofEffectiveCartier hI).choose_spec.1 U a f ha hIa hf
-
-/-- The Cartier divisor of an effective Cartier ideal sheaf is effective. -/
-theorem isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
-    (ofEffectiveCartier hI).IsEffective := by
-  refine isEffective_iff_exists.mpr fun x ↦ ?_
-  obtain ⟨U, hxU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
-  have : Nonempty U.1 := ⟨⟨x, hxU⟩⟩
-  have : Nontrivial Γ(X, U) := (X.germToFunctionField U.1).hom.domain_nontrivial
-  have hfnz : X.germToFunctionField U.1 a ≠ 0 := fun h0 ↦
-    one_ne_zero (α := Γ(X, U)) (ha (by
-      simp [X.germToFunctionField_injective U.1 (h0.trans (map_zero _).symm)]))
-  let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField U.1 a) hfnz
-  refine ⟨f, isLocalEquationAt_of_rationalUnitClass_eq
-    (ofEffectiveCartier_restrict hI U ha hIa rfl).symm hxU, ?_⟩
-  rw [Units.val_mk0, ← X.algebraMap_germ_eq_germToFunctionField hxU]
-  exact RingHom.mem_range_self _ _
-
-/-- Recovering the closed-subscheme ideal sheaf of `ofEffectiveCartier hI` returns `I`. -/
-@[simp]
-theorem idealSheaf_isEffective_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
-    (isEffective_ofEffectiveCartier hI).idealSheaf = I := by
-  choose U hxU a ha hIa using (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI
-  let 𝒰 : X.OpenCover := X.openCoverOfIsOpenCover (fun x ↦ (U x).1)
-    (eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxU x⟩)
-  refine Scheme.IdealSheafData.ext_of_comap_openCover 𝒰 fun (x : X) ↦ ?_
-  have : Nonempty (U x).1 := ⟨⟨x, hxU x⟩⟩
-  have : Nontrivial Γ(X, U x) := (X.germToFunctionField (U x).1).hom.domain_nontrivial
-  have hfnz : X.germToFunctionField (U x).1 (a x) ≠ 0 := fun h0 ↦
-    one_ne_zero (α := Γ(X, U x)) (ha x (by
-      simp [X.germToFunctionField_injective (U x).1 (h0.trans (map_zero _).symm)]))
-  let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField (U x).1 (a x)) hfnz
-  have hspan := (isEffective_ofEffectiveCartier hI).idealSheaf_ideal_eq_span (U x)
-    (ofEffectiveCartier_restrict hI (U x) (ha x) (hIa x) (f := f) rfl).symm
-    (a := a x) rfl
-  change ((isEffective_ofEffectiveCartier hI).idealSheaf).comap (U x).1.ι = I.comap (U x).1.ι
-  rw [Scheme.IdealSheafData.comap_ι_eq_ofIdealTop, Scheme.IdealSheafData.comap_ι_eq_ofIdealTop,
-    hspan, hIa x]
-
-/-- **The line-bundle class of `ofEffectiveCartier hI` is `[I]⁻¹`.** -/
-@[simp]
-theorem toLineBundleClass_ofEffectiveCartier (hI : I.IsEffectiveCartier) :
-    (ofEffectiveCartier hI).toLineBundleClass = (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ := by
-  have h := (isEffective_ofEffectiveCartier hI).mk_idealSheaf_eq_inv
-  rw [LineBundleClass.mk_toInvertibleSheaf_congr _ hI
-    (idealSheaf_isEffective_ofEffectiveCartier hI)] at h
-  rw [h, inv_inv]
-
-end OfEffectiveCartier
 
 /-! ### Weil–Cartier–Picard equivalence on Noetherian locally factorial schemes -/
 
@@ -473,10 +164,8 @@ theorem toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton
   refine WeilDivisor.ext fun y ↦ ?_
   obtain ⟨U, hyU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff _).mp hη y
   have : Nonempty U.1 := ⟨⟨y, hyU⟩⟩
-  have : Nontrivial Γ(X, U) := (X.germToFunctionField U.1).hom.domain_nontrivial
-  have hfnz : X.germToFunctionField U.1 a ≠ 0 := fun h0 ↦
-    one_ne_zero (α := Γ(X, U)) (ha (by
-      simp [X.germToFunctionField_injective U.1 (h0.trans (map_zero _).symm)]))
+  have hfnz : X.germToFunctionField U.1 a ≠ 0 :=
+    germToFunctionField_ne_zero_of_isSMulRegular ha
   let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField U.1 a) hfnz
   rw [coeff_toWeilDivisor_eq_ord _ y hyU f (ofEffectiveCartier_restrict hη U ha hIa rfl).symm]
   have hgerm_ne : X.presheaf.germ U.1 y hyU a ≠ 0 := fun h0 ↦
@@ -534,15 +223,39 @@ lemma toWeilDivisorAddEquiv_apply (D : CartierDivisor X) :
     toWeilDivisorAddEquiv X D = D.toWeilDivisor :=
   toWeilDivisorHom_apply D
 
-/-- Applying `toWeilDivisorAddEquiv.symm` to `1 · [η]` gives the Cartier divisor of
+/-- Applying `toWeilDivisorAddEquiv.symm` to the Weil divisor of `D` recovers `D`. -/
+@[simp]
+lemma toWeilDivisorAddEquiv_symm_toWeilDivisor (D : CartierDivisor X) :
+    (toWeilDivisorAddEquiv X).symm D.toWeilDivisor = D := by
+  rw [← toWeilDivisorAddEquiv_apply, AddEquiv.symm_apply_apply]
+
+/-- Applying `toWeilDivisorAddEquiv.symm` to `n · [η]` gives `n` times the Cartier divisor of
 `closure {η}`. -/
 @[simp]
+lemma toWeilDivisorAddEquiv_symm_single (η : CodimensionOnePoint X) (n : ℤ) :
+    (toWeilDivisorAddEquiv X).symm (Finsupp.single η n) =
+      n • ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2) := by
+  apply (toWeilDivisorAddEquiv X).injective
+  rw [AddEquiv.apply_symm_apply, toWeilDivisorAddEquiv_apply, ← toWeilDivisorHom_apply, map_zsmul,
+    toWeilDivisorHom_apply, toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton,
+    Finsupp.smul_single, smul_eq_mul, mul_one]
+
+/-- Applying `toWeilDivisorAddEquiv.symm` to `1 · [η]` gives the Cartier divisor of
+`closure {η}`. -/
 lemma toWeilDivisorAddEquiv_symm_single_one (η : CodimensionOnePoint X) :
     (toWeilDivisorAddEquiv X).symm (Finsupp.single η 1) =
       ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2) := by
+  rw [toWeilDivisorAddEquiv_symm_single, one_zsmul]
+
+/-- Applying `toWeilDivisorAddEquiv.symm` to a principal Weil divisor gives the corresponding
+principal Cartier divisor. -/
+@[simp]
+lemma toWeilDivisorAddEquiv_symm_principalDivisor (g : Additive X.functionFieldˣ) :
+    (toWeilDivisorAddEquiv X).symm ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) =
+      principalCartierDivisor X g.toMul := by
   apply (toWeilDivisorAddEquiv X).injective
   rw [AddEquiv.apply_symm_apply, toWeilDivisorAddEquiv_apply,
-    toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton]
+    toWeilDivisor_principalCartierDivisor]
 
 /-- The homomorphism `SchemeWeilDivisor X →+ Additive (LineBundleClass X)` sending a Weil divisor
 to the isomorphism class of its associated Cartier line bundle on a Noetherian locally factorial
@@ -552,16 +265,36 @@ def weilToLineBundleClassHom (X : Scheme.{u}) [IsIntegral X] [IsNoetherian X]
     SchemeWeilDivisor X →+ Additive (LineBundleClass X) :=
   (toLineBundleClassHom (X := X)).comp (toWeilDivisorAddEquiv X).symm.toAddMonoidHom
 
+/-- Unfolding `weilToLineBundleClassHom` through `toWeilDivisorAddEquiv.symm`. -/
+lemma weilToLineBundleClassHom_apply (D : SchemeWeilDivisor X) :
+    weilToLineBundleClassHom X D =
+      Additive.ofMul ((toWeilDivisorAddEquiv X).symm D).toLineBundleClass := by
+  rw [weilToLineBundleClassHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    toLineBundleClassHom_apply]
+
+/-- Evaluating `weilToLineBundleClassHom` on the Weil divisor of a Cartier divisor `D` gives the
+line-bundle class of `D`. -/
+@[simp]
+lemma weilToLineBundleClassHom_toWeilDivisor (D : CartierDivisor X) :
+    weilToLineBundleClassHom X D.toWeilDivisor = Additive.ofMul D.toLineBundleClass := by
+  rw [weilToLineBundleClassHom_apply, toWeilDivisorAddEquiv_symm_toWeilDivisor]
+
+/-- Principal Weil divisors map to the trivial line-bundle class under
+`weilToLineBundleClassHom`. -/
+@[simp]
+lemma weilToLineBundleClassHom_principalDivisor (g : Additive X.functionFieldˣ) :
+    weilToLineBundleClassHom X ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) = 0 := by
+  rw [weilToLineBundleClassHom_apply, toWeilDivisorAddEquiv_symm_principalDivisor,
+    toLineBundleClass_principalCartierDivisor, ofMul_one]
+
 /-- `weilToLineBundleClassHom` sends `n · [η]` to `n • [𝒪_X(closure {η})]`. -/
 @[simp]
 theorem weilToLineBundleClassHom_single (η : CodimensionOnePoint X) (n : ℤ) :
     weilToLineBundleClassHom X (Finsupp.single η n) =
       n • Additive.ofMul (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton η.2).toInvertibleSheaf)⁻¹ := by
-  have hsingle : Finsupp.single η n = n • Finsupp.single η (1 : ℤ) := by
-    rw [Finsupp.smul_single, smul_eq_mul, mul_one]
-  rw [hsingle, map_zsmul, weilToLineBundleClassHom, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, toWeilDivisorAddEquiv_symm_single_one, toLineBundleClassHom_apply,
+  rw [weilToLineBundleClassHom_apply, toWeilDivisorAddEquiv_symm_single,
+    ← toLineBundleClassHom_apply, map_zsmul, toLineBundleClassHom_apply,
     toLineBundleClass_ofEffectiveCartier]
 
 /-- `weilToLineBundleClassHom` is surjective onto `Additive (LineBundleClass X)`. -/
@@ -569,9 +302,8 @@ theorem weilToLineBundleClassHom_surjective :
     Function.Surjective (weilToLineBundleClassHom X) := by
   intro a
   obtain ⟨D, hD⟩ := toLineBundleClass_surjective a.toMul
-  refine ⟨toWeilDivisorAddEquiv X D, ?_⟩
-  rw [weilToLineBundleClassHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    AddEquiv.symm_apply_apply, toLineBundleClassHom_apply, hD, ofMul_toMul]
+  refine ⟨D.toWeilDivisor, ?_⟩
+  rw [weilToLineBundleClassHom_toWeilDivisor, hD, ofMul_toMul]
 
 /-- The kernel of `weilToLineBundleClassHom` is the subgroup of principal Weil divisors. -/
 theorem ker_weilToLineBundleClassHom :
@@ -601,6 +333,24 @@ lemma weilClassGroupAddEquivLineBundleClass_divisorClass (D : SchemeWeilDivisor 
   rw [WeilDivisor.OrderSystem.divisorClass_eq_mk']
   exact QuotientAddGroup.liftEquiv_mk _ weilToLineBundleClassHom_surjective
     ker_weilToLineBundleClassHom.symm D
+
+/-- Evaluating `weilClassGroupAddEquivLineBundleClass.symm` on `weilToLineBundleClassHom X D`
+returns the divisor class of `D`. -/
+@[simp]
+lemma weilClassGroupAddEquivLineBundleClass_symm_weilToLineBundleClassHom
+    (D : SchemeWeilDivisor X) :
+    (weilClassGroupAddEquivLineBundleClass X).symm (weilToLineBundleClassHom X D) =
+      (WeilDivisor.OrderSystem.ofScheme X).divisorClass D := by
+  rw [← weilClassGroupAddEquivLineBundleClass_divisorClass, AddEquiv.symm_apply_apply]
+
+/-- Evaluating `weilClassGroupAddEquivLineBundleClass.symm` on the line-bundle class of a Cartier
+divisor `D` returns the divisor class of `D.toWeilDivisor`. -/
+@[simp]
+lemma weilClassGroupAddEquivLineBundleClass_symm_toLineBundleClass (D : CartierDivisor X) :
+    (weilClassGroupAddEquivLineBundleClass X).symm (Additive.ofMul D.toLineBundleClass) =
+      (WeilDivisor.OrderSystem.ofScheme X).divisorClass D.toWeilDivisor := by
+  rw [← weilToLineBundleClassHom_toWeilDivisor,
+    weilClassGroupAddEquivLineBundleClass_symm_weilToLineBundleClassHom]
 
 end Factorial
 
