@@ -547,11 +547,11 @@ namespace TauCeti.SmoothTwoForm
 open Floer Floer.PSSPlane
 
 variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
-  {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] [IsManifold I (⊤ : ℕ∞) M]
   {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {e : M → F}
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- A map differentiable on the part `‖w‖ > exp (2πa)` of the plane is differentiable at the image
 under the end lift of the positive plane of every point of the half-cylinder `s > a`. -/
 private theorem mdifferentiableAt_realChart_positive {a : ℝ}
