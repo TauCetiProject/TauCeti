@@ -68,7 +68,7 @@ theorem orthogonalComplement_codeInZeroLatticeDiscriminantBilinearModule
       codeInZeroLatticeDiscriminantBilinearModule m ι
         (AddSubgroup.toZModSubmodule m C).euclideanDual.toAddSubgroup := by
   rw [codeInZeroLatticeDiscriminantBilinearModule,
-    (discriminantIsometry m ι).comap_orthogonalComplement,
+    (discriminantIsometry m ι).orthogonalComplement_comap,
     orthogonalComplement_coordinatePower_zmodStandard,
     codeInZeroLatticeDiscriminantBilinearModule]
 

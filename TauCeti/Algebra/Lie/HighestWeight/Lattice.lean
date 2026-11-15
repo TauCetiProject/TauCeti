@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.Basis
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.HighestWeight
 public import Mathlib.Algebra.Module.Lattice
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit.Weight
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
@@ -151,8 +152,7 @@ theorem mem_iSup_jointWeightSpace_of_mem_highestWeightLattice
     x ∈ ⨆ wt : ι → ℤ,
       jointWeightSpace b.h (representation ℚ L (irreducibleQuotient b.base lam)) wt := by
   obtain ⟨wt, hwt⟩ := b.exists_isCartanWeightVector_generator lam hlam
-  exact b.mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton _ hwt
-    (b.representation_e_generator lam) hx
+  exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hwt hx
 
 /-- Every dominant integral rational highest-weight module has a finite integral weight basis
 of its specified highest-weight lattice. -/

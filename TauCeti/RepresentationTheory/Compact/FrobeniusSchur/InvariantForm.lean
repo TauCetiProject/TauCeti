@@ -90,22 +90,14 @@ open Module TauCeti
 
 namespace ContRepresentation
 
-section CompactGroup
-
-variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
-
-variable (π : ContRepresentation ℂ G V)
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] [FiniteDimensional ℂ V] in
 /-- A count of invariants that is at most `1` is `1` exactly when there is a nonzero invariant form
 of the kind the count records; on an irreducible representation such a form is the same thing as a
 nondegenerate one. This is the shape both the symmetric and the alternating case take. -/
-private theorem finrank_eq_one_iff_exists_nondegenerate {M : Type*} [AddCommGroup M] [Module ℂ M]
-    [FiniteDimensional ℂ M] {S : Submodule ℂ M} {P : BilinForm ℂ V → Prop}
-    (hirr : Representation.IsIrreducible π.toRepresentation) (hle : finrank ℂ S ≤ 1)
+private theorem finrank_eq_one_iff_exists_nondegenerate {G V M : Type*} [Group G]
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] (π : ContRepresentation ℂ G V)
+    [AddCommGroup M] [Module ℂ M] [FiniteDimensional ℂ M] {S : Submodule ℂ M}
+    {P : BilinForm ℂ V → Prop} (hirr : Representation.IsIrreducible π.toRepresentation)
+    (hle : finrank ℂ S ≤ 1)
     (hiff : (∃ B : BilinForm ℂ V, Representation.IsInvariantForm π.toRepresentation B ∧ P B ∧
         B ≠ 0) ↔ S ≠ ⊥) :
     finrank ℂ S = 1 ↔ ∃ B : BilinForm ℂ V,
@@ -122,7 +114,12 @@ private theorem finrank_eq_one_iff_exists_nondegenerate {M : Type*} [AddCommGrou
     have h1 := Submodule.one_le_finrank_iff.mpr hne
     omega
 
-variable (hπ : Continuous π)
+section CompactGroup
+
+variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+  (π : ContRepresentation ℂ G V) (hπ : Continuous π)
 
 include hπ
 
