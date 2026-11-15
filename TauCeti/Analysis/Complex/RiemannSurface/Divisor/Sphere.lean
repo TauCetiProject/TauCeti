@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Sphere
 
 /-!
@@ -40,8 +40,7 @@ structure sheaf, of the Riemann sphere vanishes. -/
 theorem isZero_divisorCechCohomology_zero_one_sphere :
     IsZero (divisorCechCohomology (0 : AlgebraicGeometry.WeilDivisor (OnePoint ℂ)) 1) :=
   isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere.of_iso
-    ((cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{0} ℂ) 1).mapIso
-      ((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso (OnePoint ℂ))))
+    (divisorCechCohomologyZeroIso (OnePoint ℂ) 1)
 
 /-- The degree one Čech cohomology of the divisor sheaf `𝒪_0` of the Riemann sphere has dimension
 zero. -/

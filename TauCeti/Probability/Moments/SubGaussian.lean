@@ -104,7 +104,7 @@ theorem integrable_exp_mul_sq (h : HasSubgaussianMGF X c μ) {s : ℝ} (hs : 2 *
   by_cases hs0 : 0 ≤ s
   · refine ⟨haesm, ?_⟩
     have henorm : (fun ω ↦ ‖exp (s * X ω ^ 2)‖ₑ) = fun ω ↦ ENNReal.ofReal (exp (s * X ω ^ 2)) :=
-      funext fun _ ↦ Real.enorm_eq_ofReal (exp_pos _).le
+      funext fun _ ↦ Real.eNorm_eq_ofReal (exp_pos _).le
     rw [hasFiniteIntegral_def, henorm]
     exact (h.lintegral_ofReal_exp_mul_sq_le hs0 hs).trans_lt ENNReal.ofReal_lt_top
   · refine Integrable.of_bound haesm 1 (.of_forall fun _ ↦ ?_)

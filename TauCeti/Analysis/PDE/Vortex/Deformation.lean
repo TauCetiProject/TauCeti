@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -90,6 +91,14 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
+
+/-- The section is `c` exactly when the real section coordinates are `c.re / 2` and
+`c.im / 2`. -/
+theorem sectionValue_eq_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z c : ℂ} :
+    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
+  simp only [Complex.ext_iff, sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re,
+    ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
 /-- Two fields agree at a point when their connection coordinates and their sections agree
 there. -/
@@ -245,6 +254,74 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
     ofRealCLM_apply, smul_eq_mul]
   ring
 
+/-- Where the section is nonzero, its modulus `|α| = √|α|²` is differentiable, with derivative
+`d |α|² / (2 |α|)`. -/
+theorem hasFDerivAt_norm_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hα : sectionValue x z ≠ 0) :
+    HasFDerivAt (fun w ↦ ‖sectionValue x w‖)
+      ((1 / (2 * ‖sectionValue x z‖)) • fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z) z := by
+  have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z := by fun_prop
+  have hsqrt (w : ℂ) : Real.sqrt (4 * (x w 2 ^ 2 + x w 3 ^ 2)) = ‖sectionValue x w‖ := by
+    rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
+  have h := hs.hasFDerivAt.sqrt
+    (by rw [← sq_norm_sectionValue]; exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hα))
+  simpa only [hsqrt] using h
+
+/-- Where `|α|² ≥ 1 / 4`, the derivative of the modulus `|α|` of the section is at most that of
+`|α|²`. -/
+theorem norm_fderiv_norm_sectionValue_le {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hquarter : 1 / 4 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ‖fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z‖ ≤
+      ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ := by
+  have hN : 1 / 2 ≤ ‖sectionValue x z‖ := by
+    nlinarith [sq_norm_sectionValue x z, norm_nonneg (sectionValue x z)]
+  rw [(hasFDerivAt_norm_sectionValue hp hq (norm_pos_iff.mp (by linarith))).fderiv, norm_smul,
+    Real.norm_eq_abs, abs_of_pos (by positivity)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ?_
+  rw [div_le_one (by positivity)]
+  linarith
+
+/-- The derivative of a field is controlled by those of its connection coefficients and of its
+section: `‖D x‖ ≤ ‖D b₁‖ + ‖D b₂‖ + ‖D α‖ / 2`. -/
+theorem norm_fderiv_le_add_norm_fderiv_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖fderiv ℝ x z‖ ≤ ‖fderiv ℝ (fun w ↦ x w 0) z‖ + ‖fderiv ℝ (fun w ↦ x w 1) z‖ +
+      ‖fderiv ℝ (sectionValue x) z‖ / 2 := by
+  by_cases hx : DifferentiableAt ℝ x z
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hx, norm_zero]
+    positivity
+  have hi := differentiableAt_euclidean.mp hx
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  have h0 := (fderiv ℝ (fun w ↦ x w 0) z).le_opNorm v
+  have h1 := (fderiv ℝ (fun w ↦ x w 1) z).le_opNorm v
+  have hσ := (fderiv ℝ (sectionValue x) z).le_opNorm v
+  rw [fderiv_sectionValue_apply (hi 2) (hi 3)] at hσ
+  simp only [hx.fderiv_piLp_apply, Real.norm_eq_abs] at h0 h1 hσ
+  have hσsq : ‖(2 : ℂ) * ((fderiv ℝ x z v 2 : ℂ) + (fderiv ℝ x z v 3 : ℂ) * I)‖ ^ 2 =
+      4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp
+    ring
+  set A := ‖fderiv ℝ (fun w ↦ x w 0) z‖ * ‖v‖
+  set B := ‖fderiv ℝ (fun w ↦ x w 1) z‖ * ‖v‖
+  set S := ‖fderiv ℝ (sectionValue x) z‖ * ‖v‖
+  have hA : 0 ≤ A := by positivity
+  have hB : 0 ≤ B := by positivity
+  have hS : 0 ≤ S := by positivity
+  have hS' : 4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) ≤ S ^ 2 := by
+    rw [← hσsq]
+    exact pow_le_pow_left₀ (norm_nonneg _) hσ 2
+  have hsq : ‖fderiv ℝ x z v‖ ^ 2 ≤ (A + B + S / 2) ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+    nlinarith [sq_abs (fderiv ℝ x z v 0), sq_abs (fderiv ℝ x z v 1),
+      abs_nonneg (fderiv ℝ x z v 0), abs_nonneg (fderiv ℝ x z v 1), mul_nonneg hA hB,
+      mul_nonneg hA hS, mul_nonneg hB hS]
+  calc ‖fderiv ℝ x z v‖ ≤ A + B + S / 2 :=
+        (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+    _ = _ := by ring
+
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
 def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
@@ -390,6 +467,17 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
+
+/-- In the real field coordinates, `2 ∂bar_a α = ∇₁ α + i ∇₂ α` is twice the complex-equation
+defect: `∇₁ α + i ∇₂ α = 2 (E₁ + i E₂)`, where `E₁` and `E₂` are the second and third components
+of `TauCeti.Vortex.equation`. -/
+theorem covariantDerivative_one_add_I_mul_covariantDerivative_I {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    covariantDerivative x z 1 + I * covariantDerivative x z I =
+      2 * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I) := by
+  apply Complex.ext <;>
+    simp [covariantDerivative_re hp hq, covariantDerivative_im hp hq] <;> ring
 
 /-- The vortex defects at a point depend only on the germ of the field there. -/
 theorem equation_congr_nhds {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : x =ᶠ[𝓝 z] y) :

@@ -55,6 +55,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
+  perfect.
 -/
 
 public section
@@ -206,6 +208,19 @@ theorem mem_of_pow_mem_of_isIntegrallyClosedIn {S : Subring A} [IsIntegrallyClos
   have hpow : IsIntegral S (a ^ n) := isIntegral_algebraMap (R := S) (x := (⟨a ^ n, ha⟩ : S))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
   exact hy ▸ y.2
+
+/-- **A subring integrally closed in a perfect ring is perfect**: the `p`-th root in `A` of an
+element of `S` has a power in `S`, so it lies in `S`. -/
+instance perfectRing_of_isIntegrallyClosedIn (S : Subring A) [IsIntegrallyClosedIn S A] (p : ℕ)
+    [PerfectRing A p] : PerfectRing S p := by
+  have hA := PerfectRing.bijective_frobenius (R := A) (p := p)
+  refine ⟨⟨fun x y hxy ↦ Subtype.ext (hA.injective ?_), fun x ↦ ?_⟩⟩
+  · simpa using congrArg Subtype.val hxy
+  obtain ⟨y, hy⟩ := hA.surjective x
+  have hy : y ^ p = x := hy
+  rcases Nat.eq_zero_or_pos p with rfl | hp
+  · exact ⟨1, Subtype.ext (by simpa using hy)⟩
+  · exact ⟨⟨y, mem_of_pow_mem_of_isIntegrallyClosedIn hp (hy ▸ x.2)⟩, Subtype.ext hy⟩
 
 /-- A surjective ring homomorphism carries an integrally closed subring to an integrally closed
 subring if its kernel is contained in that subring. -/

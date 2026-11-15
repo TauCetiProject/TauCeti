@@ -233,11 +233,13 @@ private theorem finite_setOf_r (b₂ b₄ b₆ c d : A) :
   by_cases h3 : (3 : A) = 0
   · have h4 : (4 : A) ≠ 0 := fun h4 ↦ one_ne_zero (α := A) (by linear_combination h4 - h3)
     have hp : (C 4 * X ^ 3 + C b₂ * X ^ 2 + C (2 * b₄) * X ^ 1 + C d : A[X]) ≠ 0 := fun h ↦
-      h4 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 3) h)
+      h4 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using
+        congrArg (fun p : A[X] ↦ p.coeff 3) h)
     exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.2
   · have hp : (C 3 * X ^ 4 + C b₂ * X ^ 3 + C (3 * b₄) * X ^ 2 + C (3 * b₆) * X ^ 1 + C c :
         A[X]) ≠ 0 := fun h ↦
-      h3 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 4) h)
+      h3 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using
+        congrArg (fun p : A[X] ↦ p.coeff 4) h)
     exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.1
 
 /-- **The automorphism group of an elliptic curve is finite**, over any integral domain and in
@@ -252,7 +254,7 @@ instance finite_autGroup [E.IsElliptic] : Finite E.autGroup := by
   -- a monic quadratic has finitely many roots
   have quad (a b : A) : {x : A | x ^ 2 + a * x + b = 0}.Finite := by
     have hp : (Polynomial.X ^ 2 + Polynomial.C a * Polynomial.X + Polynomial.C b :
-        Polynomial A) ≠ 0 := fun h ↦ by simpa using congrArg (Polynomial.coeff · 2) h
+        Polynomial A) ≠ 0 := fun h ↦ by simpa using congrArg (fun p : Polynomial A ↦ p.coeff 2) h
     exact (Polynomial.finite_setOfPred_isRoot hp).subset fun x hx ↦ by simpa using hx
   have hV : V.Finite := (Polynomial.finite_setOfPred_isRoot
     (Polynomial.X_pow_sub_C_ne_zero (by norm_num : 0 < 12) (1 : A))).subset

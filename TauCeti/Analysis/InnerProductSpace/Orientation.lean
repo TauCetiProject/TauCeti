@@ -23,7 +23,8 @@ It also evaluates the volume form on an arbitrary, not necessarily orthonormal, 
 its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
 dependent families, and on a basis its sign records whether the basis is positively oriented. In
 a coordinate frame of a Riemannian manifold this is the familiar formula
-`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A linear equivalence to another inner product space, oriented
+by transport, preserves positivity of the volume form (`Orientation.volumeForm_map_comp_pos_iff`).
 
 Two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -138,6 +139,31 @@ theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
     exact (neg_neg b.orientation).symm
   have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
   rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
+
+/-- A linear equivalence `f` preserves positivity of the volume form when the target carries the
+transported orientation: the volume form of `o.map f` is positive on the image of a family of
+vectors exactly when the volume form of `o` is positive on the family. -/
+theorem volumeForm_map_comp_pos_iff {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fact (Module.finrank ℝ F = n)] (o : Orientation ℝ E (Fin n)) (f : E ≃ₗ[ℝ] F)
+    (v : Fin n → E) :
+    0 < (Orientation.map (Fin n) f o).volumeForm (f ∘ v) ↔ 0 < o.volumeForm v := by
+  rcases n with - | n
+  · refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;>
+      simp [Orientation.map_positiveOrientation_of_isEmpty]
+  by_cases hv : LinearIndependent ℝ v
+  · have hcard : Fintype.card (Fin (n + 1)) = Module.finrank ℝ E := by
+      simp [Fact.out (p := Module.finrank ℝ E = n + 1)]
+    let b := basisOfLinearIndependentOfCardEqFinrank hv hcard
+    have hb : ⇑b = v := coe_basisOfLinearIndependentOfCardEqFinrank hv hcard
+    have hbf : ⇑(b.map f) = f ∘ v := by
+      ext i
+      simp [hb]
+    rw [← hbf, ← hb, volumeForm_apply_pos_iff, volumeForm_apply_pos_iff,
+      Module.Basis.orientation_map]
+    exact (Orientation.map (Fin (n + 1)) f).injective.eq_iff
+  · have hfv : ¬LinearIndependent ℝ (f ∘ v) := fun h ↦ hv (h.of_comp f.toLinearMap)
+    rw [not_ne_iff.mp (mt volumeForm_apply_ne_zero_iff.mp hv),
+      not_ne_iff.mp (mt volumeForm_apply_ne_zero_iff.mp hfv)]
 
 section LinearIsometryEquiv
 

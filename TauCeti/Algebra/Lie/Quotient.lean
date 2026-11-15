@@ -44,8 +44,8 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
-* `LieIdeal.liftQ_injective_iff` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is
-  injective exactly when the ideal exhausts the kernel, and surjective when the original
+* `LieIdeal.liftQ_injective_iff` and `LieIdeal.liftQ_surjective_iff`: the lifted homomorphism is
+  injective exactly when the ideal exhausts the kernel, and surjective exactly when the original
   homomorphism is.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
@@ -54,7 +54,8 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.factor_refl`, `LieIdeal.factor_comp` and `LieIdeal.factor_surjective`: the transitions
   between nested quotients are the identity at equal ideals, compose, and are surjective.
 * `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
-* `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
+* `LieIdeal.mkQ_comp_incl_surjective_iff`: a Lie subalgebra `P` maps onto `L ⧸ I` exactly when
+  `I + P = L`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 * `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
   complement of `I` in `L`.
@@ -128,12 +129,13 @@ theorem liftQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
   exact Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') _ <| by
     rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
 
-/-- The homomorphism induced on the quotient by a surjective homomorphism is surjective. -/
-theorem liftQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : Function.Surjective f) :
-    Function.Surjective (I.liftQ f h) := by
+/-- The homomorphism induced on the quotient is surjective exactly when the original homomorphism
+is. -/
+@[simp]
+theorem liftQ_surjective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    Function.Surjective (I.liftQ f h) ↔ Function.Surjective f := by
   rw [← LieHom.coe_toLinearMap, ← LinearMap.range_eq_top, coe_liftQ, Submodule.range_liftQ,
     LinearMap.range_eq_top, LieHom.coe_toLinearMap]
-  exact h'
 
 /-- The induced homomorphism on the quotient composed with the quotient map is the original
 homomorphism. -/
@@ -199,23 +201,22 @@ theorem factor_comp {I J K : LieIdeal R L} (hIJ : I ≤ J) (hJK : J ≤ K) :
 
 /-- Quotient transitions are surjective. -/
 theorem factor_surjective {I J : LieIdeal R L} (h : I ≤ J) : Function.Surjective (factor h) :=
-  liftQ_surjective _ _ _ J.surjective_mkQ
+  (liftQ_surjective_iff _ _ _).2 J.surjective_mkQ
 
 section Supplement
 
 variable {P : LieSubalgebra R L}
 
-/-- A Lie subalgebra `P` supplementing an ideal `I`, in the sense that `I + P = L`, maps onto the
-quotient `L ⧸ I`. -/
-theorem mkQ_comp_incl_surjective (hIP : Codisjoint I.toSubmodule P.toSubmodule) :
-    Function.Surjective (I.mkQ.comp P.incl) := by
-  intro y
-  obtain ⟨x, rfl⟩ := I.surjective_mkQ y
-  obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
-  refine ⟨⟨s, hs⟩, ?_⟩
-  rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
-    mkQ_ker, Subtype.coe_mk, sub_add_cancel_right]
-  exact I.neg_mem hi
+/-- A Lie subalgebra `P` maps onto the quotient `L ⧸ I` exactly when it supplements the ideal
+`I`, in the sense that `I + P = L`. -/
+theorem mkQ_comp_incl_surjective_iff :
+    Function.Surjective (I.mkQ.comp P.incl) ↔ Codisjoint I.toSubmodule P.toSubmodule := by
+  -- As a function, `P → L ⧸ I` is the restriction of the quotient map of submodules to `P`.
+  have hfun : ⇑(I.mkQ.comp P.incl) = I.toSubmodule.mkQ.domRestrict P.toSubmodule := by
+    ext x
+    simp
+  rw [hfun, LinearMap.surjective_domRestrict_iff I.toSubmodule.mkQ_surjective,
+    Submodule.ker_mkQ, codisjoint_comm]
 
 /-- The kernel of the map `P → L ⧸ I` induced by a Lie subalgebra `P` is the ideal `I ∩ P` of
 `P`. -/
@@ -278,7 +279,7 @@ by its kernel is isomorphic to the target. -/
 noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
     (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
   LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
-    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, (f.ker.liftQ_surjective_iff f le_rfl).2 hf⟩
 
 /-- The first isomorphism theorem sends the class of `x` to `f x`. -/
 @[simp]
@@ -406,7 +407,7 @@ theorem mapQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ J.comap f) :
 /-- Surjectivity of the original map implies surjectivity on quotients. -/
 theorem mapQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ J.comap f)
     (hf : Function.Surjective f) : Function.Surjective (I.mapQ J f h) :=
-  I.liftQ_surjective _ _ (J.surjective_mkQ.comp hf)
+  (I.liftQ_surjective_iff _ _).2 (J.surjective_mkQ.comp hf)
 
 section Nested
 

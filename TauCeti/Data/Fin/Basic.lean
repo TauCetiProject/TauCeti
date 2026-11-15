@@ -68,6 +68,7 @@ range, so the value is a `dite` rather than a plain application.
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.succ_sub_one_eq_castSucc`: subtracting one from `i.succ` gives `i.castSucc`.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
@@ -151,8 +152,6 @@ range, so the value is a `dite` rather than a plain application.
 -/
 
 public section
-
-open scoped BigOperators
 
 namespace Finset
 
@@ -300,7 +299,7 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
-    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    ← Finset.insert_Iio, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
   simp only [castLEEmb_apply]
 
@@ -545,6 +544,11 @@ theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
 /-- Subtracting one from `0` gives the last index. -/
 theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
   (eq_sub_of_add_eq (last_add_one n)).symm
+
+/-- Subtracting one from a successor gives the corresponding `Fin.castSucc`. -/
+@[simp]
+theorem succ_sub_one_eq_castSucc {n : ℕ} (i : Fin n) : i.succ - 1 = castSucc i :=
+  (eq_sub_of_add_eq coeSucc_eq_succ).symm
 
 /-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
 theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=

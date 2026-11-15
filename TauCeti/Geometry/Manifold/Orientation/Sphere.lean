@@ -41,11 +41,13 @@ both the point `u` and the tangent vectors. So it preserves the outward-normal o
 when `n` is odd and reverses it when `n` is even. When `n ≥ 1` the sphere is connected
 (`TauCeti.connectedSpace_sphere`), so it has exactly two orientations, and the antipodal map has
 orientation sign `(-1)^(n+1)` for every orientation of `Sⁿ`. Since every point has exactly one
-antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
+antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value, and every value is
+regular, so its mapping degree `TauCeti.degree` is `(-1)^(n+1)`.
 
 ## Main declarations
 
 * `Orientation.sphereVolumeForm`: the nowhere-vanishing top form `vol(u, ·)` of the unit sphere.
+* `Orientation.sphereVolumeForm_neg`: reversing the orientation of `E` negates it.
 * `Orientation.mpullback_neg_sphereVolumeForm`: the antipodal map pulls the volume form of `Sⁿ`
   back to `(-1)^(n+1)` times itself.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
@@ -67,6 +69,8 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
   `Sⁿ`, the antipodal map has orientation sign `(-1)^(n+1)` at every point.
 * `TauCeti.Manifold.Orientation.degreeAtRegularValue_neg_sphere`: for `n ≥ 1` the antipodal map
   of `Sⁿ` has degree `(-1)^(n+1)`.
+* `TauCeti.Manifold.Orientation.degree_neg_sphere`: for `n ≥ 1` the mapping degree of the
+  antipodal map of `Sⁿ` is `(-1)^(n+1)`.
 
 ## References
 
@@ -130,6 +134,14 @@ theorem _root_.Orientation.sphereVolumeForm_apply_ne_zero (o : Orientation ℝ E
   rw [Orientation.sphereVolumeForm_apply] at hb
   exact Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u b.linearIndependent) (by simpa using hb)
+
+/-- Reversing the orientation of `E` negates the volume form of its unit sphere. -/
+@[simp]
+theorem _root_.Orientation.sphereVolumeForm_neg (o : Orientation ℝ E (Fin (n + 1))) :
+    (-o).sphereVolumeForm = -o.sphereVolumeForm := by
+  refine Subtype.ext (funext fun u ↦ ?_)
+  ext v
+  simp [Orientation.volumeForm_neg_orientation]
 
 /-- The **outward-normal orientation** of the unit sphere `Sⁿ` of an oriented real inner product
 space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is positive exactly when
@@ -275,6 +287,21 @@ theorem Manifold.Orientation.degreeAtRegularValue_neg_sphere [NeZero n]
   rw [degreeAtRegularValue_eq_sum (s := {-y}) fun x ↦ by
     rw [Finset.mem_singleton, neg_eq_iff_eq_neg], Finset.sum_singleton,
     orientationSign_neg_sphere]
+
+/-- **The mapping degree of the antipodal map.** For `n ≥ 1` and every orientation of `Sⁿ`, the
+antipodal map has mapping degree `(-1)^(n+1)`. -/
+@[simp]
+theorem Manifold.Orientation.degree_neg_sphere [NeZero n]
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) :
+    degree o o (fun x : sphere (0 : E) 1 ↦ -x) = (-1) ^ (n + 1) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  -- Every point is regular, since the orientation sign `(-1)^(n+1)` is nonzero.
+  have hreg (y : sphere (0 : E) 1) : IsRegularValue (𝓡 n) (𝓡 n)
+      (fun x : sphere (0 : E) 1 ↦ -x) y := isRegularValue_iff.2 fun x _ ↦
+    (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <| not_not.1 <|
+      orientationSign_eq_zero_iff.not.1 <| (orientationSign_neg_sphere o x).trans_ne (by simp)
+  obtain ⟨y⟩ := (connectedSpace_sphere (E := E) n).toNonempty
+  rw [degree_eq_degreeAtRegularValue_choose ⟨y, hreg y⟩, degreeAtRegularValue_neg_sphere]
 
 /-- The unit sphere of a finite-dimensional real inner product space is orientable. -/
 theorem orientable_sphere : Orientable (𝓡 n) (sphere (0 : E) 1) := by

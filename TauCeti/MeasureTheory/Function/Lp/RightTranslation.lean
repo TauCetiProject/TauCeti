@@ -129,8 +129,8 @@ theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
   rcases eq_or_ne p ∞ with rfl | hptop
   · -- For `p = ∞` the weight is `1`, and `μ` and `μ.inv` have the same null sets.
     simp only [ENNReal.toReal_top, inv_zero, Real.rpow_zero, one_smul] at hJf ⊢
-    rw [eLpNorm_exponent_top hJf, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_enorm,
-      eLpNormEssSup_eq_essSup_enorm]
+    rw [eLpNorm_exponent_top hJf, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_eNorm,
+      eLpNormEssSup_eq_essSup_eNorm]
     have h := (MeasurableEquiv.inv G).measurableEmbedding.essSup_map_measure (μ := μ)
       (g := fun x => ‖f x‖ₑ)
     rw [MeasurableEquiv.inv_apply, ← Measure.inv] at h
@@ -139,12 +139,12 @@ theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
       (essSup_mono_measure (absolutelyContinuous_inv_of_regular μ))
   -- For `0 < p < ∞`, the weight raised to the power `p` is the density `c` of `μ.inv`.
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hJf,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hJf,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf]
   congr 1
   have hweight (x : G) : ‖(modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹‖ₑ ^ p.toReal =
       modularCharacter x * ‖f x⁻¹‖ₑ ^ p.toReal := by
-    rw [enorm_smul, ENNReal.mul_rpow_of_nonneg _ _ hq.le, Real.enorm_of_nonneg (by positivity),
+    rw [eNorm_smul, ENNReal.mul_rpow_of_nonneg _ _ hq.le, Real.eNorm_of_nonneg (by positivity),
       ENNReal.ofReal_rpow_of_nonneg (by positivity) hq.le, ← Real.rpow_mul (by positivity),
       inv_mul_cancel₀ hq.ne', Real.rpow_one, ENNReal.ofReal_coe_nnreal]
   have h := lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular (μ := μ)
@@ -433,9 +433,9 @@ theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : 
   have h : Tendsto (fun g => a g • Lp.rightTranslation μ p ℝ g F - F) (𝓝 1) (𝓝 0) := by
     simpa [a] using ((ha.tendsto 1).smul
       ((Lp.continuous_rightTranslation_apply hp F).tendsto 1)).sub_const F
-  refine (enorm_zero (E := Lp E p μ) ▸ (continuous_enorm.tendsto 0).comp h).congr' <|
+  refine (eNorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
     Eventually.of_forall fun g => ?_
-  rw [Function.comp_apply, Lp.enorm_def]
+  rw [Function.comp_apply, Lp.eNorm_def]
   refine eLpNorm_congr_ae ?_
   filter_upwards [Lp.coeFn_sub (a g • Lp.rightTranslation μ p ℝ g F) F,
     Lp.coeFn_smul (a g) (Lp.rightTranslation μ p ℝ g F),

@@ -61,7 +61,7 @@ theorem Integrable.eVariationOn_integral_Iic_le (hf : Integrable f μ) :
       edist (∫ s in Iic (u (i + 1)), f s ∂μ) (∫ s in Iic (u i), f s ∂μ) ≤
         ENNReal.ofReal ((∫ s in Iic (u (i + 1)), ‖f s‖ ∂μ) -
           ∫ s in Iic (u i), ‖f s‖ ∂μ) := by
-    rw [edist_eq_enorm_sub, ← ofReal_norm, ← setIntegral_sdiff measurableSet_Iic
+    rw [eDist_eq_eNorm_sub, ← ofReal_norm, ← setIntegral_sdiff measurableSet_Iic
       hf.integrableOn (Iic_subset_Iic.mpr (hu (Nat.le_succ i))),
       ← setIntegral_sdiff measurableSet_Iic hf.norm.integrableOn
         (Iic_subset_Iic.mpr (hu (Nat.le_succ i)))]
@@ -93,6 +93,21 @@ theorem IntegrableOn.continuousOn_integral_Ioc [FirstCountableTopology ι]
   refine hf.continuous_integral_Iic.continuousOn.congr ?_
   intro t ht
   simp only [Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le ht]
+
+/-- Local integrability on every finite horizon gives a continuous accumulated integral
+for a measure vanishing on singletons. No integrability on the whole space is required. -/
+theorem continuous_integral_Ioc [FirstCountableTopology ι] [NullSingletonClass μ]
+    {a : ι} (hf : ∀ b, IntegrableOn f (Ioc a b) μ) :
+    Continuous (fun t => ∫ s in Ioc a t, f s ∂μ) := by
+  refine continuous_iff_continuousAt.2 fun t ↦ ?_
+  by_cases ht : ∃ T, t < T
+  · obtain ⟨T, ht⟩ := ht
+    exact ((hf T).continuousOn_integral_Ioc t ht.le).continuousAt (Iic_mem_nhds ht)
+  · have htop : Iic t = univ := by
+      ext u
+      simp only [mem_Iic, mem_univ, iff_true]
+      exact le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)
+    exact ((hf t).continuousOn_integral_Ioc t le_rfl).continuousAt (by rw [htop]; exact univ_mem)
 
 /-- The variation of an accumulated integral on a finite horizon is bounded by its pathwise
 integral norm. No atomlessness or integrability outside the horizon is required. -/

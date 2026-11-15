@@ -74,7 +74,7 @@ private theorem sq_lt_mul_of_schneider_eq_zero {l β : ℝ} (hl : l ≠ 0) (hβ 
   have heval (j : Fin D₂) (x : ℝ) : (p j).eval x = ∑ i, a i j * x ^ (i : ℕ) := by
     simp [p, eval_finsetSum]
   have hcoeff (i : Fin D₁) (j : Fin D₂) : (p j).coeff i = a i j := by
-    simp [p, finsetSum_coeff, coeff_C_mul, coeff_X_pow, Fin.val_inj]
+    simp [p, coeff_C_mul, coeff_X_pow, Fin.val_inj]
   have hdeg (j : Fin D₂) (hj : p j ≠ 0) : (p j).natDegree < D₁ :=
     (natDegree_lt_iff_degree_lt hj).2 (degree_sum_fin_lt _)
   set s := univ.filter fun j ↦ p j ≠ 0

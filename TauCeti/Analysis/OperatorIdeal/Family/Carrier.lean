@@ -72,7 +72,7 @@ theorem comp_left_mem_finiteSubmodule {G : Type w}
     (L : F →L[𝕜] G) {A : E →L[𝕜] F} (hA : A ∈ (Φ.operatorGauge E F).finiteSubmodule) :
     L ∘L A ∈ (Φ.operatorGauge E G).finiteSubmodule := by
   simp only [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply] at hA ⊢
-  exact (Φ.gauge_comp_left_le L A).trans_lt (ENNReal.mul_lt_top enorm_lt_top hA)
+  exact (Φ.gauge_comp_left_le L A).trans_lt (ENNReal.mul_lt_top eNorm_lt_top hA)
 
 /-- The ideal of a family is stable under composition on the right with a bounded operator. -/
 theorem comp_right_mem_finiteSubmodule {H : Type v}
@@ -80,7 +80,7 @@ theorem comp_right_mem_finiteSubmodule {H : Type v}
     {A : E →L[𝕜] F} (hA : A ∈ (Φ.operatorGauge E F).finiteSubmodule) (R : H →L[𝕜] E) :
     A ∘L R ∈ (Φ.operatorGauge H F).finiteSubmodule := by
   simp only [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply] at hA ⊢
-  exact (Φ.gauge_comp_right_le A R).trans_lt (ENNReal.mul_lt_top hA enorm_lt_top)
+  exact (Φ.gauge_comp_right_le A R).trans_lt (ENNReal.mul_lt_top hA eNorm_lt_top)
 
 /-! ### Completeness -/
 
