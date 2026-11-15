@@ -56,7 +56,10 @@ the entire function equal to `g` on `V` and to `h` off `K`.
 ## References
 
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, third edition,
-  Theorem 1.2.2 and its proof (the decomposition along a compact set by Cauchy integrals).
+  Theorem 1.2.2 (the solution of the inhomogeneous Cauchy-Riemann equation with compactly supported
+  right-hand side, by the Cauchy transform). Applied to the Cauchy-Riemann derivative of `χ f` for
+  a cutoff `χ` equal to `1` near `K` and supported in `V`, it gives the decomposition; this file
+  obtains it from Cauchy integrals over cycles instead.
 * H. Komatsu, *An introduction to the theory of hyperfunctions*, in *Hyperfunctions and
   pseudo-differential equations*, Lecture Notes in Mathematics 287 (1973), 3–40, §1 (the
   identification of `O(V ∖ K) / O(V)` with holomorphic functions on `ℂ ∖ K` vanishing at
@@ -131,8 +134,7 @@ private theorem cauchyPart_one_eq (hV : IsOpen V) (hK : IsClosed K)
     (hΓL : ∀ z ∈ L, Cycle.windingNumber z Γ = 1) {w : ℂ} (hw : w ∈ L) :
     cauchyPart V K f 1 w = (2 * π * I)⁻¹ * Cycle.integral (fun z ↦ f z / (z - w)) Γ := by
   have hwΓ : w ∉ Cycle.trace Γ := fun h ↦ (Cycle.isIn_iff.mp hΓ h).2 hw
-  rw [← hΓL w hw, cauchyPart_eq hV hK hf
-    (Cycle.isIn_iff.mpr fun z hz ↦ sdiff_subset_sdiff_right hKL (Cycle.isIn_iff.mp hΓ hz)) hΓV
+  rw [← hΓL w hw, cauchyPart_eq hV hK hf (hΓ.mono (sdiff_subset_sdiff_right hKL)) hΓV
     (fun z hz ↦ hΓL z (hKL hz)) hwΓ]
 
 /-- A cycle in `V' ∖ K`, null-homologous in an open `V' ⊆ V`, winding once around `K`. It computes
@@ -144,30 +146,31 @@ private theorem cauchyPart_zero_eq (hV : IsOpen V) (hK : IsClosed K)
     cauchyPart V K f 0 w = (2 * π * I)⁻¹ * Cycle.integral (fun z ↦ f z / (z - w)) Γ := by
   have hwΓ : w ∉ Cycle.trace Γ := fun h ↦ hw (Cycle.isIn_iff.mp hΓ h).1
   rw [← Cycle.isNullHomologous_iff.mp hΓV' w hw, cauchyPart_eq hV hK hf
-    (Cycle.isIn_iff.mpr fun z hz ↦ sdiff_subset_sdiff_left hV'V (Cycle.isIn_iff.mp hΓ hz))
-    (hΓV'.mono hV'V) hΓK hwΓ]
+    (hΓ.mono (sdiff_subset_sdiff_left hV'V)) (hΓV'.mono hV'V) hΓK hwΓ]
 
-/-- A point of an open set has a closed disc of positive radius inside it. -/
-private theorem exists_closedBall_subset {U : Set ℂ} (hU : IsOpen U) {w : ℂ} (hw : w ∈ U) :
-    ∃ r > 0, Metric.closedBall w r ⊆ U := by
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hU w hw
-  exact ⟨ε / 2, half_pos hε, (Metric.closedBall_subset_ball (half_lt_self hε)).trans hball⟩
+/-- A function agreeing near a point `w₀` off the trace of `Γ` with the Cauchy integral
+`(2πi)⁻¹ ∮_Γ f(z)/(z - w) dz` is differentiable at `w₀`. -/
+private theorem differentiableWithinAt_of_eventuallyEq_integral {F : ℂ → ℂ} {Γ : Cycle}
+    {s : Set ℂ} {w₀ : ℂ} (hw₀ : w₀ ∉ Cycle.trace Γ)
+    (hF : F =ᶠ[𝓝 w₀] fun w ↦ (2 * π * I)⁻¹ * Cycle.integral (fun z ↦ f z / (z - w)) Γ) :
+    DifferentiableWithinAt ℂ F s w₀ :=
+  (((Cycle.differentiableOn_integral_div_sub f Γ).differentiableAt
+    ((Cycle.isCompact_trace Γ).isClosed.isOpen_compl.mem_nhds hw₀)).const_mul
+      (2 * π * I)⁻¹).congr_of_eventuallyEq hF |>.differentiableWithinAt
 
 /-- The part of `f` holomorphic on `V` is holomorphic there. -/
 private theorem differentiableOn_cauchyPart_one (hK : IsCompact K) (hV : IsOpen V)
     (hKV : K ⊆ V) (hf : DifferentiableOn ℂ f (V \ K)) :
     DifferentiableOn ℂ (cauchyPart V K f 1) V := by
   intro w₀ hw₀
-  obtain ⟨r, hr, hrV⟩ := exists_closedBall_subset hV hw₀
+  obtain ⟨r, hr, hrV⟩ := Metric.nhds_basis_closedBall.mem_iff.mp (hV.mem_nhds hw₀)
   -- One cycle winding once around `K ∪ closedBall w₀ r` computes the part near `w₀`.
   obtain ⟨Γ, hΓ, hΓV, hΓL⟩ :=
     (hK.union (isCompact_closedBall w₀ r)).exists_cycle_windingNumber_eq_one hV
       (union_subset hKV hrV)
   have hw₀Γ : w₀ ∉ Cycle.trace Γ := fun h ↦
     (Cycle.isIn_iff.mp hΓ h).2 (Or.inr (Metric.mem_closedBall_self hr.le))
-  refine (((Cycle.differentiableOn_integral_div_sub f Γ).differentiableAt
-    ((Cycle.isCompact_trace Γ).isClosed.isOpen_compl.mem_nhds hw₀Γ)).const_mul
-      (2 * π * I)⁻¹).congr_of_eventuallyEq ?_ |>.differentiableWithinAt
+  refine differentiableWithinAt_of_eventuallyEq_integral (f := f) hw₀Γ ?_
   filter_upwards [Metric.ball_mem_nhds w₀ hr] with w hw
   exact cauchyPart_one_eq hV hK.isClosed hf subset_union_left hΓ hΓV hΓL
     (Or.inr (Metric.ball_subset_closedBall hw))
@@ -177,16 +180,15 @@ private theorem differentiableOn_cauchyPart_zero (hK : IsCompact K) (hV : IsOpen
     (hKV : K ⊆ V) (hf : DifferentiableOn ℂ f (V \ K)) :
     DifferentiableOn ℂ (cauchyPart V K f 0) Kᶜ := by
   intro w₀ hw₀
-  obtain ⟨r, hr, hrK⟩ := exists_closedBall_subset hK.isClosed.isOpen_compl hw₀
+  obtain ⟨r, hr, hrK⟩ :=
+    Metric.nhds_basis_closedBall.mem_iff.mp (hK.isClosed.isOpen_compl.mem_nhds hw₀)
   -- One cycle around `K` avoiding `closedBall w₀ r` computes the part near `w₀`.
   have hV' : IsOpen (V \ Metric.closedBall w₀ r) := hV.sdiff Metric.isClosed_closedBall
   have hKV' : K ⊆ V \ Metric.closedBall w₀ r := fun z hz ↦ ⟨hKV hz, fun h ↦ hrK h hz⟩
   obtain ⟨Γ, hΓ, hΓV, hΓK⟩ := hK.exists_cycle_windingNumber_eq_one hV' hKV'
   have hw₀Γ : w₀ ∉ Cycle.trace Γ := fun h ↦
     (Cycle.isIn_iff.mp hΓ h).1.2 (Metric.mem_closedBall_self hr.le)
-  refine (((Cycle.differentiableOn_integral_div_sub f Γ).differentiableAt
-    ((Cycle.isCompact_trace Γ).isClosed.isOpen_compl.mem_nhds hw₀Γ)).const_mul
-      (2 * π * I)⁻¹).congr_of_eventuallyEq ?_ |>.differentiableWithinAt
+  refine differentiableWithinAt_of_eventuallyEq_integral (f := f) hw₀Γ ?_
   filter_upwards [Metric.ball_mem_nhds w₀ hr] with w hw
   exact cauchyPart_zero_eq hV hK.isClosed hf sdiff_subset hΓ hΓV hΓK
     fun h ↦ h.2 (Metric.ball_subset_closedBall hw)
@@ -226,9 +228,8 @@ private theorem eqOn_cauchyPart_one_sub_cauchyPart_zero (hK : IsCompact K) (hV :
   -- The difference `Γ₁ - Γ₀` is null-homologous in `V ∖ K` and winds once around `w`.
   have hin : (Γ₁ - Γ₀).IsIn (V \ K) := by
     rw [sub_eq_add_neg]
-    exact (Cycle.isIn_iff.mpr fun z hz ↦ sdiff_subset_sdiff_right subset_union_left
-      (Cycle.isIn_iff.mp hΓ₁ hz)).add (Cycle.isIn_neg_iff.mpr (Cycle.isIn_iff.mpr fun z hz ↦
-        sdiff_subset_sdiff_left sdiff_subset (Cycle.isIn_iff.mp hΓ₀ hz)))
+    exact (hΓ₁.mono (sdiff_subset_sdiff_right subset_union_left)).add
+      (Cycle.isIn_neg_iff.mpr (hΓ₀.mono (sdiff_subset_sdiff_left sdiff_subset)))
   have hnull : (Γ₁ - Γ₀).IsNullHomologous (V \ K) := by
     refine Cycle.isNullHomologous_iff.mpr fun z hz ↦ ?_
     rw [map_sub, sub_eq_zero]

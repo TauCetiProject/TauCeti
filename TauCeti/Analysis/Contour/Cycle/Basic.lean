@@ -305,6 +305,10 @@ theorem IsIn.add {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) 
   rw [isIn_iff] at hC hD ⊢
   exact (trace_add_subset C D).trans (union_subset hC hD)
 
+/-- A cycle in `Ω` lies in every larger set. -/
+theorem IsIn.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsIn C Ω) (hΩ : Ω ⊆ Ω') : IsIn C Ω' :=
+  hC.trans hΩ
+
 /-- Negation preserves containment in a set. -/
 @[simp]
 theorem isIn_neg_iff {C : Cycle} {Ω : Set ℂ} : IsIn (-C) Ω ↔ IsIn C Ω := by

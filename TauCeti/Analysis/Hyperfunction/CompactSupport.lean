@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Hyperfunction.OneDimensional
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Analysis.Contour.Cycle.Basic
+import TauCeti.Topology.Sets.Closeds
 import TauCeti.Topology.Sets.Compacts
 import TauCeti.Analysis.Complex.SeparationOfSingularities
 
@@ -33,7 +35,7 @@ records this in the ambient-function encoding of
 
 The representative in `O₀(ℂ ∖ K)` of the class of `f ∈ O(V ∖ K)` is the Cauchy integral
 `w ↦ -(2πi)⁻¹ ∮_Γ f(z)/(z - w) dz` over a cycle `Γ` around `K` in `V ∖ K`
-(`IsCompact.integral_div_sub_eq_of_windingNumber_eq_zero`).
+(`TauCeti.Hyperfunction.vanishingAtInfinityEquiv_symm_mk_apply`).
 
 ## Main declarations
 
@@ -43,7 +45,8 @@ The representative in `O₀(ℂ ∖ K)` of the class of `f ∈ O(V ∖ K)` is th
   holomorphically across `K`.
 * `TauCeti.Hyperfunction.vanishingAtInfinityEquiv`: the isomorphism
   `O₀(ℂ ∖ K) ≃ O(V ∖ K) / O(V)`, with its naturality in `V`
-  (`TauCeti.Hyperfunction.mapQ_vanishingAtInfinityEquiv`).
+  (`TauCeti.Hyperfunction.mapQ_vanishingAtInfinityEquiv`) and the Cauchy integral formula for its
+  inverse (`TauCeti.Hyperfunction.vanishingAtInfinityEquiv_symm_mk_apply`).
 * `TauCeti.Hyperfunction.vanishingAtInfinityToHyperfunction`: the class in `O(ℂ ∖ ℝ) / O(W(U))` of
   a function in `O₀(ℂ ∖ K)` for compact `K ⊆ ℝ`, with
   `TauCeti.Hyperfunction.vanishingAtInfinityToHyperfunction_injective` and
@@ -64,7 +67,7 @@ noncomputable section
 
 open Filter Set TopologicalSpace
 
-open scoped Topology
+open scoped Real Topology
 
 namespace TauCeti.Hyperfunction
 
@@ -105,6 +108,14 @@ private theorem indicator_mem_vanishingAtInfinitySections {K : Compacts ℂ} {h 
   ⟨indicator_mem_holomorphicSections_of_differentiableOn (U := K.toCloseds.compl) hh,
     hlim.congr' (eventuallyEq_of_mem K.isCompact.compl_mem_cocompact fun _ hz =>
       (indicator_of_mem hz h).symm)⟩
+
+/-- At a point of `V ∖ K` where `f = g + h`, minus the regular part `g` made zero off `V` is the
+singular part `h` made zero on `K`, minus `f`. -/
+private theorem neg_indicator_eq_indicator_sub {V K : Set ℂ} {f g h : ℂ → ℂ} {z : ℂ}
+    (hzV : z ∈ V) (hzK : z ∉ K) (hfz : f z = (g + h) z) :
+    (-V.indicator g) z = Kᶜ.indicator h z - f z := by
+  rw [Pi.neg_apply, indicator_of_mem hzV, indicator_of_mem (mem_compl hzK), hfz, Pi.add_apply]
+  ring
 
 /-! ### The quotient `O(V ∖ K) / O(V)` -/
 
@@ -174,13 +185,9 @@ theorem vanishingAtInfinityToQuotient_surjective {K : Compacts ℂ} {V : Opens �
     -- The difference with `f` is minus the regular part.
     refine ⟨-(V : Set ℂ).indicator g, neg_mem
       (indicator_mem_holomorphicSections_of_differentiableOn hg), fun z hz => ?_⟩
-    have hfz := hfgh hz
-    rw [Pi.add_apply] at hfz
-    rw [Pi.neg_apply, indicator_of_mem hz.1, Submodule.coe_sub, Pi.sub_apply,
-      coe_holomorphicRestrict, indicator_of_mem (Compacts.mem_inf_compl_toCloseds.mpr hz)]
-    dsimp only
-    rw [indicator_of_mem (mem_compl hz.2), hfz]
-    ring
+    rw [Submodule.coe_sub, Pi.sub_apply, coe_holomorphicRestrict,
+      indicator_of_mem (Compacts.mem_inf_compl_toCloseds.mpr hz)]
+    exact neg_indicator_eq_indicator_sub hz.1 hz.2 (hfgh hz)
 
 /-- **The quotient `O(V ∖ K) / O(V)` is the space of holomorphic functions on `ℂ ∖ K` vanishing at
 infinity.** For a compact set `K` contained in an open set `V ⊆ ℂ`, restriction to `V ∖ K` induces
@@ -196,6 +203,35 @@ theorem vanishingAtInfinityEquiv_apply {K : Compacts ℂ} {V : Opens ℂ} (hKV :
     (h : vanishingAtInfinitySections K) :
     vanishingAtInfinityEquiv hKV h = vanishingAtInfinityToQuotient K V h :=
   (rfl)
+
+/-- **The inverse of `vanishingAtInfinityEquiv` is a Cauchy integral.** The function in
+`O₀(ℂ ∖ K)` representing the class of `f ∈ O(V ∖ K)` is `w ↦ -(2πi)⁻¹ ∮_Γ f(z)/(z - w) dz`, for a
+cycle `Γ` in `V ∖ K`, null-homologous in `V` and winding once around every point of `K`, at every
+point `w` off `Γ` around which `Γ` winds zero times. -/
+theorem vanishingAtInfinityEquiv_symm_mk_apply {K : Compacts ℂ} {V : Opens ℂ}
+    (hKV : (K : Set ℂ) ⊆ V) (f : holomorphicSections (V ⊓ K.toCloseds.compl))
+    {Γ : Contour.Cycle} (hΓ : Γ.IsIn ((V : Set ℂ) \ K)) (hΓV : Γ.IsNullHomologous V)
+    (hΓK : ∀ z ∈ (K : Set ℂ), Contour.Cycle.windingNumber z Γ = 1) {w : ℂ}
+    (hw : w ∉ Contour.Cycle.trace Γ) (hw₀ : Contour.Cycle.windingNumber w Γ = 0) :
+    ((vanishingAtInfinityEquiv hKV).symm (Submodule.Quotient.mk f) : ℂ → ℂ) w =
+      -(2 * π * Complex.I)⁻¹ * Contour.Cycle.integral (fun z ↦ (f : ℂ → ℂ) z / (z - w)) Γ := by
+  set h := (vanishingAtInfinityEquiv hKV).symm (Submodule.Quotient.mk f)
+  have hq : vanishingAtInfinityToQuotient K V h = Submodule.Quotient.mk f :=
+    (vanishingAtInfinityEquiv hKV).apply_symm_apply _
+  rw [vanishingAtInfinityToQuotient_apply, Submodule.Quotient.eq, mem_throughCompact_iff] at hq
+  obtain ⟨g, hg, hgf⟩ := hq
+  obtain ⟨hd, -, hlim⟩ := of_mem_vanishingAtInfinitySections h.2
+  -- `f = -g + h` on `V ∖ K`, so `h` is the singular part of `f`.
+  have hfgh : EqOn f ((fun z => -g z) + (h : ℂ → ℂ)) ((V : Set ℂ) \ K) := fun z hz => by
+    have hz' := hgf hz
+    rw [Submodule.coe_sub, Pi.sub_apply, coe_holomorphicRestrict,
+      indicator_of_mem (Compacts.mem_inf_compl_toCloseds.mpr hz)] at hz'
+    simp only [Pi.add_apply]
+    linear_combination hz'
+  have hint := K.isCompact.integral_div_sub_eq_of_windingNumber_eq_zero V.isOpen hKV
+    (mem_holomorphicSections_iff.mp hg).1.neg hd hlim hfgh hΓ hΓV hΓK hw hw₀
+  rw [hint]
+  field_simp [Real.pi_ne_zero, Complex.I_ne_zero]
 
 /-- Restriction maps functions on `V ∖ K` extending across `K` to functions on `V' ∖ K` extending
 across `K`. -/
@@ -251,7 +287,7 @@ theorem complexNeighborhood_inf_compl (U : Opens ℝ) (K : Compacts ℝ) :
       complexNeighborhood U ⊓ (ofRealCompacts K).toCloseds.compl := by
   ext z
   simp only [SetLike.mem_coe, Opens.mem_inf, mem_complexNeighborhood_iff,
-    Compacts.mem_compl_toCloseds, mem_ofRealCompacts_iff]
+    Closeds.mem_compl, Compacts.mem_toCloseds, mem_ofRealCompacts_iff]
   by_cases him : z.im = 0 <;> simp [him]
 
 /-- The class in `O(ℂ ∖ ℝ) / O(W(U))` of a holomorphic function on `ℂ ∖ K` vanishing at infinity,
@@ -335,13 +371,8 @@ theorem range_vanishingAtInfinityToHyperfunction {K : Compacts ℝ} {U : Opens �
       have hzW : z ∈ complexNeighborhood U := nonRealOpen_le_complexNeighborhood U hz
       have hzK : z ∈ (ofRealCompacts K).toCloseds.compl :=
         nonRealOpen_le_compl_ofRealCompacts K hz
-      have hFz := hFgh ⟨hzW, hzK⟩
-      rw [Pi.add_apply] at hFz
-      rw [Pi.neg_apply, indicator_of_mem hzW, Submodule.coe_sub, Pi.sub_apply,
-        coe_holomorphicRestrict, indicator_of_mem hz, ← hFf hz]
-      dsimp only
-      rw [indicator_of_mem (mem_compl (Compacts.mem_compl_toCloseds.mp hzK)), hFz]
-      ring
+      rw [Submodule.coe_sub, Pi.sub_apply, coe_holomorphicRestrict, indicator_of_mem hz, ← hFf hz]
+      exact neg_indicator_eq_indicator_sub hzW (Closeds.mem_compl.mp hzK) (hFgh ⟨hzW, hzK⟩)
 
 /-- **Hyperfunctions with compact support.** For a compact set `K` contained in an open set
 `U ⊆ ℝ`, the space of one-dimensional hyperfunctions on `U` supported in `K`, the classes in
