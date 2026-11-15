@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.FunctionField
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Basic
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Naturality
 public import TauCeti.FieldTheory.FunctionField.Repartition.Basic
 
 /-!
@@ -116,7 +116,7 @@ private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
       WithZero.exp_zero]
     exact ha_integral
   classical
-  exact dfinsuppOfFiniteSupport q hq
+  exact DFinsupp.ofSupportFinite q hq
 
 @[simp]
 private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X)
@@ -125,7 +125,7 @@ private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X
     repartitionToPrincipalPartsFamily hex hdim D a x =
       Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField)
         (X.toPlace (k := k) (x.1 : X))) := by
-  simp only [repartitionToPrincipalPartsFamily, dfinsuppOfFiniteSupport_apply,
+  simp only [repartitionToPrincipalPartsFamily, DFinsupp.ofSupportFinite_apply,
     CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim]
 
 /-- A repartition determines a global family of principal parts by taking, at each
@@ -175,6 +175,17 @@ theorem repartitionToPrincipalParts_apply (D : SchemeWeilDivisor X)
       ((principalPartsSectionsEquiv D ⊤).symm
         (repartitionToPrincipalPartsFamily hex hdim D a)) x = _
   rw [AddEquiv.apply_symm_apply, repartitionToPrincipalPartsFamily_apply]
+
+/-- The principal-parts map of a repartition is natural under enlargement of the divisor. -/
+lemma repartitionToPrincipalParts_naturality {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (a : repartitionSpace k X.functionField) :
+    (principalPartsHomOfLE h).app ⊤ (repartitionToPrincipalParts hex hdim D a) =
+      repartitionToPrincipalParts hex hdim E a := by
+  apply (principalPartsSectionsEquiv E ⊤).injective
+  apply DFinsupp.ext
+  intro x
+  rw [principalPartsHomOfLE_app_apply, repartitionToPrincipalParts_apply,
+    repartitionToPrincipalParts_apply, principalPartMapOfLE_mk]
 
 /-- The kernel of the repartition-to-principal-parts map is the step of the repartition
 filtration bounded by the corresponding function-field divisor. -/

@@ -45,15 +45,13 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.valuation_algebraMap_le_one_of_ne_infinity`: the coordinate ring is regular at
+  every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
+* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
+  equality of sets.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
-
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 0, **The point--place dictionary**: for elliptic
-`W`, identify `W.toAffine.Point` with the degree-one places, taking `O` to `infinityPlace` and an
-affine point to its maximal ideal.
 
 ## Provenance
 
@@ -168,23 +166,30 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
 
+/-- **A function of the coordinate ring is regular at every place other than the place at
+infinity**: `x` has a pole only at infinity, and the coordinate ring is integral over the
+polynomials in `x`. No hypothesis on `W` is needed. -/
+theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
+    (hQ : Q ≠ infinity W) (r : W.CoordinateRing) :
+    Q.valuation (algebraMap W.CoordinateRing W.FunctionField r) ≤ 1 :=
+  Q.valuation.algebraMap_coordinateRing_le_one (le_of_not_gt fun hx ↦
+    hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
+
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
--- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
--- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Forwards, a place that is not the place at infinity is regular on the whole coordinate ring
+-- (`valuation_algebraMap_le_one_of_ne_infinity`); backwards, `x` has a pole at infinity.
 -- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
 -- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
 -- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
 @[simp]
-theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity
     (Q : Place F W.FunctionField) :
     (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
       Q = infinity W := by
   constructor
   · rintro ⟨r, hr⟩
-    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
-    · exact h
-    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
-        (by simpa using hr)
+    by_contra hQ
+    exact absurd (valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
     rw [valuation_infinity,
@@ -324,10 +329,6 @@ open TauCeti WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F) [W.IsElliptic]
 
-local instance : IsDedekindDomain W.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing W
-  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- **The point--place dictionary for an elliptic curve**: rational points correspond to the
 degree-one normalized places of the function field.  The point at infinity goes to
 `Place.infinity W`, while `(x, y)` goes to the adic place of `(X - x, Y - y)`. -/
@@ -380,6 +381,22 @@ theorem pointEquivDegreeOnePlace_symm_ofPrime {x y : F} (h : W.Equation x y) :
   apply (pointEquivDegreeOnePlace W).injective
   apply Subtype.ext
   simp
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+open TauCeti
+
+variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets, the shape `Divisor.degreeZeroClassGroupEquiv`
+consumes. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 end WeierstrassCurve.Affine
 

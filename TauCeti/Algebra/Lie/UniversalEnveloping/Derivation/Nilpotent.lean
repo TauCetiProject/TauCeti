@@ -47,8 +47,8 @@ theorem envelopingDerivation_pow_apply_ι (D : LieDerivation R L L) (n : ℕ) (x
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, envelopingDerivation_ι,
-      pow_succ', Module.End.mul_apply]
+    rw [pow_succ', mul_apply_eq_comp, ih, envelopingDerivation_ι,
+      pow_succ', mul_apply_eq_comp]
     simp only [LieDerivation.coeFn_coe]
 
 /-- The `simp`-normal form of `envelopingDerivation_pow_apply_ι`, stated for the canonical
@@ -93,7 +93,7 @@ theorem isNilpotent_envelopingDerivation_quotient (D : LieDerivation R L L)
         (envelopingDerivation R L D : Module.End R U) δ :=
       fun a ↦ (derivationQuotientHom_apply_mk R J
         ⟨envelopingDerivation R L D, hJ⟩ a).symm
-    simpa only [← Module.End.pow_apply, hn, map_zero] using (hcomm.iterate_right n a).symm
+    simpa only [← pow_apply_eq_iterate, hn, map_zero] using (hcomm.iterate_right n a).symm
   exact Module.End.isNilpotent_iff_of_finite.mpr hlocal
 
 end TauCeti.UniversalEnvelopingAlgebra

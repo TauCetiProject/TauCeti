@@ -52,7 +52,7 @@ theorem isDoublyEven_span_iff_of_isSelfOrthogonal {s : Set (ι → ZMod 2)}
     | add x y hx hy ihx ihy =>
       exact (four_dvd_hammingNorm_add_iff ihx ihy).mpr
         (Submodule.isSelfOrthogonal_iff.mp hs x hx y hy)
-    | smul a x hx ih =>
+    | smul a x _ ih =>
       by_cases ha : a = 0
       · simp [ha]
       · rwa [hammingNorm_smul (fun _ => smul_right_injective (ZMod 2) ha)]
@@ -83,13 +83,10 @@ theorem isDoublyEven_generatedBy_iff [Fintype ρ] {G : Matrix ρ ι (ZMod 2)} :
   constructor
   · intro h
     refine ⟨fun r => isDoublyEven_iff.mp h _ (G.row_mem_generatedBy r), ?_⟩
-    rw [← Matrix.generatedBy_le_checkedBy_iff, Matrix.checkedBy_eq_euclideanDual_generatedBy]
-    exact h.isSelfOrthogonal.le_euclideanDual
+    exact (Matrix.generatedBy_isSelfOrthogonal_iff_mul_transpose_eq_zero G).mp h.isSelfOrthogonal
   · rintro ⟨hwt, hgram⟩
-    have horth : G.generatedBy.IsSelfOrthogonal := by
-      rw [Submodule.isSelfOrthogonal_iff_le, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
-        Matrix.generatedBy_le_checkedBy_iff]
-      exact hgram
+    have horth : G.generatedBy.IsSelfOrthogonal :=
+      (Matrix.generatedBy_isSelfOrthogonal_iff_mul_transpose_eq_zero G).mpr hgram
     rw [Matrix.generatedBy_eq_span_rows] at horth ⊢
     apply (isDoublyEven_span_iff_of_isSelfOrthogonal horth).mpr
     simpa only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff] using hwt

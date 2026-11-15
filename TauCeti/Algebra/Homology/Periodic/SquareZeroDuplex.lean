@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Periodic.Duplex
+public import TauCeti.Algebra.Homology.Periodic.Duplex.Basic
 public import TauCeti.Algebra.Homology.Curved.SquareZeroDuplex
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 

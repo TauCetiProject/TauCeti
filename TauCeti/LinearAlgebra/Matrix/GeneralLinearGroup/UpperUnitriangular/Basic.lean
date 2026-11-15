@@ -19,7 +19,7 @@ that their natural linear action is unipotent in the commutative case.
 The nilpotence calculation is valid over every ring: if `N` is a strictly upper-triangular
 `n × n` matrix, then `N ^ n = 0`. Applying it to `g - 1` proves that every element of `Uₙ(R)`
 is unipotent. This is the matrix-group input for the upper-unitriangular embedding
-characterization in Layer 5, "Unipotent groups", of the ReductiveGroups roadmap.
+characterization of unipotent groups.
 
 ## Main declarations
 
@@ -27,6 +27,7 @@ characterization in Layer 5, "Unipotent groups", of the ReductiveGroups roadmap.
 * `TauCeti.UpperUnitriangularGroup.ext`: upper-unitriangular group elements are determined
   by their entries strictly above the diagonal.
 * `TauCeti.UpperUnitriangularGroup.map`: base change along a ring homomorphism.
+* `OrderIso.reindexUpperUnitriangularGroup`: order-preserving reindexing as a group isomorphism.
 * `TauCeti.UpperUnitriangularGroup.isUnipotent_toLin`: the natural representation of every
   element of `Uₙ(R)` is unipotent.
 
@@ -220,3 +221,63 @@ end CommRing
 end UpperUnitriangularGroup
 
 end TauCeti
+
+namespace OrderIso
+
+open Matrix TauCeti
+
+variable {m m' : Type*} [Fintype m] [Fintype m'] [LinearOrder m] [LinearOrder m']
+  (e : m ≃o m') (R : Type*) [Ring R]
+
+/-- Order-preserving reindexing identifies the corresponding upper-unitriangular groups. -/
+def reindexUpperUnitriangularGroup :
+    upperUnitriangularGroup m R ≃* upperUnitriangularGroup m' R := by
+  let reindexEquiv : GL m R ≃* GL m' R :=
+    Units.mapEquiv (Matrix.reindexRingEquiv R e.toEquiv).toMulEquiv
+  let inverseReindexEquiv : GL m' R ≃* GL m R :=
+    Units.mapEquiv (Matrix.reindexRingEquiv R e.symm.toEquiv).toMulEquiv
+  refine (MulEquiv.subgroupMap reindexEquiv (upperUnitriangularGroup m R)).trans
+    (MulEquiv.subgroupCongr ?_)
+  ext g
+  constructor
+  · rintro ⟨h, hh, rfl⟩
+    exact (UpperUnitriangularGroup.mem_iff.mp hh).submatrix e.symm.strictMono
+  · intro hg
+    refine ⟨inverseReindexEquiv g, ?_, ?_⟩
+    · exact (UpperUnitriangularGroup.mem_iff.mp hg).submatrix e.strictMono
+    · exact inverseReindexEquiv.symm_apply_apply g
+
+/-- Reindexing an upper-unitriangular group element reindexes its underlying matrix. -/
+@[simp]
+theorem coe_reindexUpperUnitriangularGroup (g : upperUnitriangularGroup m R) :
+    ((e.reindexUpperUnitriangularGroup R g : GL m' R) : Matrix m' m' R) =
+      ((g : GL m R) : Matrix m m R).submatrix e.symm e.symm := (rfl)
+
+/-- Reindexing by the identity order isomorphism is the identity. -/
+@[simp]
+theorem reindexUpperUnitriangularGroup_refl :
+    (OrderIso.refl m).reindexUpperUnitriangularGroup R =
+      MulEquiv.refl (upperUnitriangularGroup m R) := by
+  ext g i j
+  simp
+
+/-- Reindexing by the inverse order isomorphism is the inverse group isomorphism. -/
+@[simp]
+theorem reindexUpperUnitriangularGroup_symm :
+    e.symm.reindexUpperUnitriangularGroup R = (e.reindexUpperUnitriangularGroup R).symm := by
+  apply MulEquiv.ext
+  intro g
+  apply (e.reindexUpperUnitriangularGroup R).injective
+  ext i j
+  simp
+
+/-- Successive order-preserving reindexings agree with reindexing by the composite. -/
+@[simp]
+theorem reindexUpperUnitriangularGroup_trans {m'' : Type*} [Fintype m''] [LinearOrder m'']
+    (e' : m' ≃o m'') :
+    (e.trans e').reindexUpperUnitriangularGroup R =
+      (e.reindexUpperUnitriangularGroup R).trans (e'.reindexUpperUnitriangularGroup R) := by
+  ext g i j
+  simp
+
+end OrderIso

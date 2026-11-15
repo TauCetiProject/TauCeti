@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.FiniteDifference.Laplace
+public import TauCeti.Analysis.CompletelyMonotone.Laplace.Convolution
 
 /-!
 # Hausdorff--Bernstein--Widder theorem
@@ -25,15 +26,15 @@ uniqueness live in `Laplace/Representation.lean`.
 * `TauCeti.exists_representsLaplace_of_isContinuousCompletelyMonotoneOnIoi`
 * `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_existsUnique`
 * `TauCeti.bernsteinMeasure`: the canonical representing measure, with its uniqueness,
-  total-mass, and algebraic API.
+  total-mass, and algebraic API: sums and nonnegative multiples of functions go to sums and
+  multiples of measures, products to convolutions (`TauCeti.bernsteinMeasure_mul`), dilations of
+  the variable to pushforwards along dilations, and exponential factors `e^{-tp}` to translations.
+  The exponential `t ↦ e^{-tp}` itself has the point mass at `p` as its Bernstein measure.
 
 ## References
 
 The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, after
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone).
 -/
 
 public section
@@ -156,8 +157,49 @@ theorem bernsteinMeasure_add {g : ℝ → ℝ} (hf : IsContinuousCompletelyMonot
 
 /-- The Bernstein measure turns nonnegative scalar multiples of functions into scalar multiples of
 measures. -/
-theorem bernsteinMeasure_const_mul (hf : IsContinuousCompletelyMonotoneOnIoi f) (c : ℝ≥0) :
-    bernsteinMeasure (fun t => (c : ℝ) * f t) = (c : ℝ≥0∞) • bernsteinMeasure f :=
-  (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure hf).smul c)).symm
+theorem bernsteinMeasure_const_mul (c : ℝ≥0) :
+    bernsteinMeasure (fun t => (c : ℝ) * f t) = (c : ℝ≥0∞) • bernsteinMeasure f := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  by_cases h : ∃ μ : Measure ℝ≥0, RepresentsLaplace μ f
+  · obtain ⟨μ, hμ⟩ := h
+    exact (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure
+      hμ.isContinuousCompletelyMonotoneOnIoi).smul c)).symm
+  · rw [bernsteinMeasure_eq_zero_of_not h, smul_zero]
+    refine bernsteinMeasure_eq_zero_of_not fun ⟨ν, hν⟩ ↦ h ⟨((c⁻¹ : ℝ≥0) : ℝ≥0∞) • ν, ?_⟩
+    refine (hν.smul c⁻¹).congr fun t _ ↦ ?_
+    simp [hc]
+
+/-- The Bernstein measure of the exponential `t ↦ e^{-tp}` is the point mass at `p`. -/
+@[simp]
+theorem bernsteinMeasure_exp_neg_mul (p : ℝ≥0) :
+    bernsteinMeasure (fun t => Real.exp (-(t * (p : ℝ)))) = Measure.dirac p :=
+  (eq_bernsteinMeasure _ (representsLaplace_dirac p)).symm
+
+/-- The Bernstein measure of the constant function `1` is the point mass at `0`, the unit of
+convolution. -/
+@[simp]
+theorem bernsteinMeasure_one : bernsteinMeasure (fun _ : ℝ => (1 : ℝ)) = Measure.dirac 0 := by
+  simpa using bernsteinMeasure_exp_neg_mul 0
+
+/-- **The Bernstein measure turns products of functions into convolutions of measures.** -/
+theorem bernsteinMeasure_mul {g : ℝ → ℝ} (hf : IsContinuousCompletelyMonotoneOnIoi f)
+    (hg : IsContinuousCompletelyMonotoneOnIoi g) :
+    bernsteinMeasure (f * g) = bernsteinMeasure f ∗ bernsteinMeasure g :=
+  (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure hf).conv
+    (representsLaplace_bernsteinMeasure hg))).symm
+
+/-- The Bernstein measure turns the dilation `t ↦ f (c t)` of the variable into the pushforward
+along the dilation `x ↦ c x`. -/
+theorem bernsteinMeasure_comp_const_mul (hf : IsContinuousCompletelyMonotoneOnIoi f) (c : ℝ≥0) :
+    bernsteinMeasure (fun t => f (c * t)) = (bernsteinMeasure f).map (c * ·) :=
+  (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure hf).comp_const_mul c)).symm
+
+/-- The Bernstein measure turns multiplication by the exponential `t ↦ e^{-tp}` into the
+pushforward along the translation `x ↦ x + p`. -/
+theorem bernsteinMeasure_exp_neg_mul_mul (hf : IsContinuousCompletelyMonotoneOnIoi f) (p : ℝ≥0) :
+    bernsteinMeasure (fun t => Real.exp (-(t * (p : ℝ))) * f t) =
+      (bernsteinMeasure f).map (· + p) :=
+  (eq_bernsteinMeasure _ ((representsLaplace_bernsteinMeasure hf).exp_neg_mul_mul p)).symm
 
 end TauCeti

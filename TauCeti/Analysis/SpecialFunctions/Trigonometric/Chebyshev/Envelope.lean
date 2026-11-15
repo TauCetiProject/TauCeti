@@ -153,11 +153,10 @@ private theorem memLp_normalizedChebyshevT_weighted (n : ℕ) :
   memLp_two_bareNormalized (𝕜 := 𝕜) ⟨1, one_pos, integrable_exp_mul_abs_chebyshevWeight 1⟩
     (fun n => T ℝ n) chebyshevTNormSq n
 
-/-- **The Chebyshev envelope functions are a Hilbert basis of `L²((-1, 1]; dx)`.** The
-weight-in-the-function normalization of Part C of the `OrthogonalL2Bases` roadmap, assembled from
-the same bridge as the weight-in-the-measure basis `TauCeti.chebyshevTHilbertBasis`: orthonormality
-from the Chebyshev orthogonality relation, completeness from moment determinacy applied to the
-exact-degree family `Tₙ`. -/
+/-- **The Chebyshev envelope functions are a Hilbert basis of `L²((-1, 1]; dx)`.** It is the
+weight-in-the-function normalization, assembled from the same bridge as the weight-in-the-measure
+basis `TauCeti.chebyshevTHilbertBasis`: orthonormality from the Chebyshev orthogonality relation,
+completeness from moment determinacy applied to the exact-degree family `Tₙ`. -/
 noncomputable def chebyshevTEnvelopeHilbertBasis :
     HilbertBasis ℕ 𝕜 (Lp 𝕜 2 (volume.restrict (Set.Ioc (-1 : ℝ) 1))) :=
   hilbertBasisOfOrthogonalSystem (𝕜 := 𝕜) (fun n x => (T ℝ n).eval x)
@@ -204,9 +203,9 @@ theorem coeFn_chebyshevTEnvelopeLp (n : ℕ) :
       fun x => (algebraMap ℝ 𝕜) (chebyshevTEnvelope n x) :=
   MemLp.coeFn_toLp _
 
-/-- **The basis is the envelope family, as an equality of `ℕ`-indexed families of `L²` vectors.**
-This is the shape the roadmap's element-level export asks for; it upgrades the almost-everywhere
-`TauCeti.coeFn_chebyshevTEnvelopeHilbertBasis` to an identity of `Lp` vectors. -/
+/-- **The basis is the envelope family, as an equality of `ℕ`-indexed families of `L²` vectors.** It
+upgrades the almost-everywhere `TauCeti.coeFn_chebyshevTEnvelopeHilbertBasis` to an identity of `Lp`
+vectors. -/
 @[simp]
 theorem coe_chebyshevTEnvelopeHilbertBasis :
     ⇑(chebyshevTEnvelopeHilbertBasis 𝕜) = chebyshevTEnvelopeLp 𝕜 := by

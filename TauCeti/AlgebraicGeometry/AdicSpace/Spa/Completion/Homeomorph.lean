@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Basic
+public import TauCeti.RingTheory.Huber.Completion.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
 
 /-!
@@ -18,7 +19,7 @@ the completion map `ι : A → Â` is a homeomorphism
 Spa (Â, Â⁺) ≃ₜ Spa (A, A⁺),
 ```
 
-where `Â⁺` is the closure in `Â` of the image of `A⁺`.
+where `Â⁺ = TauCeti.Huber.completionPlus A⁺` is the closure in `Â` of the image of `A⁺`.
 
 This is Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), **Proposition 7.48**. The two halves are
 already available and this file only assembles them: pullback along a dense map is inducing
@@ -38,11 +39,6 @@ direction is available for any dense map, as
 `exists_mem_spaRationalFamily_spaComap_preimage_eq_of_denseRange`; the other rests on
 `TauCeti.Huber.isOpen_map_coeRingHom`, that the image of an open ideal of `A` generates an open
 ideal of `Â`.
-
-## Main definitions
-
-* `TauCeti.ValuationSpectrum.completionPlus`: the plus ring `Â⁺` of the completion, the closure of
-  the image of `A⁺`. It is opaque; `completionPlus_def` is its characterisation.
 
 ## Main results
 
@@ -66,26 +62,6 @@ open Topology TauCeti.Huber UniformSpace
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
 
-/-- The plus ring of the completion: the closure in `Â` of the image of `A⁺`. When `A⁺` is a ring
-of integral elements so is this, by `TauCeti.Huber.IsRingOfIntegralElements.completion`, which is
-Wedhorn's Lemma 7.47. -/
-noncomputable def completionPlus (Aplus : Subring A) : Subring (Completion A) :=
-  (Aplus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure
-
-/-- `completionPlus` is the closure of the image of `A⁺`. This is the bridge to the unbundled
-statements, whose plus ring is spelled out — `completionPlus` is opaque, so unfolding goes through
-this lemma. -/
-theorem completionPlus_def (Aplus : Subring A) :
-    completionPlus Aplus =
-      (Aplus.map (Completion.coeRingHom : A →+* Completion A)).topologicalClosure :=
-  (rfl)
-
-/-- The completion map carries `A⁺` into `Â⁺`: this is the `hplus` argument `spaComap` takes
-along `A → Â`. -/
-theorem map_mem_completionPlus {Aplus : Subring A} {a : A} (ha : a ∈ Aplus) :
-    Completion.coeRingHom a ∈ completionPlus Aplus :=
-  Subring.le_topologicalClosure _ ⟨a, ha, rfl⟩
-
 variable [IsHuberRing A]
 
 /-- **Wedhorn Proposition 7.48.** Pullback along the completion map is a homeomorphism from
@@ -94,7 +70,16 @@ noncomputable def spaCompletionHomeomorph (Aplus : Subring A) :
     spa (completionPlus Aplus) ≃ₜ spa Aplus :=
   (isInducing_spaComap_of_denseRange Completion.continuous_coeRingHom Completion.denseRange_coe
       Aplus (completionPlus Aplus) fun _ ha ↦ map_mem_completionPlus ha).isEmbedding
-    |>.toHomeomorphOfSurjective (spaComap_coeRingHom_surjective Aplus)
+    |>.toHomeomorphOfSurjective <| by
+      -- `spaComap_coeRingHom_surjective` spells `Â⁺` out as a closure. The domain `spa Â⁺` depends
+      -- on `Â⁺`, so `completionPlus_def` is applied by substitution rather than by rewriting.
+      suffices ∀ (B : Subring (Completion A)) (hB : ∀ a ∈ Aplus, Completion.coeRingHom a ∈ B),
+          B = (Aplus.map Completion.coeRingHom).topologicalClosure →
+            Function.Surjective
+              (spaComap Completion.coeRingHom Completion.continuous_coeRingHom Aplus B hB) from
+        this _ _ (completionPlus_def Aplus)
+      rintro _ _ rfl
+      exact spaComap_coeRingHom_surjective Aplus
 
 /-- The completion homeomorphism is pullback along the completion map. -/
 @[simp]

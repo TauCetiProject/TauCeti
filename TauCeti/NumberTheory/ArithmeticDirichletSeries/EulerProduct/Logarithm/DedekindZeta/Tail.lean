@@ -8,9 +8,13 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
 
+import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The higher prime powers in the logarithm of the Dedekind Euler product
@@ -41,9 +45,12 @@ Two elementary inputs carry the argument.
 * `TauCeti.summable_neg_log_one_sub_sub_absNorm_rpow`: the termwise difference between the
   Euler-factor logarithm and the prime Dirichlet term is summable for every `s > 1 / 2`.
 * `TauCeti.tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg`: termwise nonnegativity for `s > 0`
-  yields a nonnegative `tsum`; convergence is supplied separately for `s > 1 / 2`.
+  yields a nonnegative `tsum` (and for `s ≤ 0` the `tsum` is `0`); convergence is supplied
+  separately for `s > 1 / 2`.
 * `TauCeti.tsum_neg_log_one_sub_sub_absNorm_rpow_le`: it is at most `2 [K : ℚ]` for every
   `s ≥ 1`; together the two bound the sum in `[0, 2 [K : ℚ]]` on `s ≥ 1`.
+* `TauCeti.tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow`: as `s → 1⁺` the sum tends to its
+  value at `s = 1`, by dominated convergence against `∑_𝔭 N(𝔭) ^ (-2)`.
 * `TauCeti.abs_tsum_neg_log_one_sub_sub_primeIdealZetaSum_le`: for `s > 1`, where the
   two sums converge separately, the sum of the Euler-factor logarithms differs from
   `NumberField.Set.primeIdealZetaSum Set.univ s` by at most `2 [K : ℚ]`.
@@ -55,10 +62,11 @@ is the closed condition `1 ≤ s` rather than a neighbourhood of `1`: both are f
 consumer that wants an eventual statement near `s = 1` gets it by weakening, whereas the
 converse costs work.
 
-The two halves carry different hypotheses on purpose. Nonnegativity holds as soon as
-`N(𝔭) ^ (-s) < 1`, so it is stated on `0 < s`; the uniform upper bound uses
-`N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as `s ↓ 1 / 2`, where the dominating
-prime series approaches its convergence endpoint.
+The two halves carry different hypotheses on purpose. The `tsum` is nonnegative for every real
+`s`, with no hypothesis: for `0 < s` the terms are termwise nonnegative, since
+`N(𝔭) ^ (-s) < 1`, and for `s ≤ 0` the family is not summable, so the `tsum` is `0` by convention.
+The uniform upper bound uses `N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as
+`s ↓ 1 / 2`, where the dominating prime series approaches its convergence endpoint.
 
 The one-variable estimate behind the termwise bound is not proved again: it is Mathlib's
 `Complex.norm_log_one_sub_inv_sub_self_le` read along the reals, which is where the factor `2`
@@ -79,8 +87,8 @@ either: it is `TauCeti.summable_absNorm_rpow_primes_of_one_lt`.
 
 public section
 
-open IsDedekindDomain NumberField
-open scoped NumberField
+open Filter IsDedekindDomain NumberField
+open scoped NumberField Topology
 
 namespace TauCeti
 
@@ -107,14 +115,46 @@ theorem summable_neg_log_one_sub_sub_absNorm_rpow {s : ℝ} (hs : 1 / 2 < s) :
   simpa only [div_eq_mul_inv, mul_comm] using
     Real.neg_log_one_sub_rpow_sub_le_div (two_le_absNorm_asIdeal_real 𝔭) hs0
 
-/-- **The prime-power tail is termwise nonnegative.** For every `s > 0`, termwise nonnegativity
-yields a nonnegative `tsum`. This statement does not assert summability; that is supplied by
-`TauCeti.summable_neg_log_one_sub_sub_absNorm_rpow` for `s > 1 / 2`. -/
-theorem tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg {s : ℝ} (hs : 0 < s) :
+/-- **The prime-power tail has nonnegative sum.** For `s > 0` the terms are nonnegative, so the
+`tsum` is nonnegative. This statement does not assert summability, which is supplied by
+`TauCeti.summable_neg_log_one_sub_sub_absNorm_rpow` for `s > 1 / 2`. For `s ≤ 0` the terms are
+bounded above by `-1` off a finite set of primes, so the family is not summable and the `tsum` is
+`0`. -/
+theorem tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg {s : ℝ} :
     0 ≤ ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (-Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) -
-      (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) :=
-  tsum_nonneg fun 𝔭 ↦ Real.neg_log_one_sub_rpow_sub_nonneg
-    (one_lt_two.trans_le (two_le_absNorm_asIdeal_real 𝔭)) hs
+      (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) := by
+  rcases lt_or_ge 0 s with hs | hs
+  · exact tsum_nonneg fun 𝔭 ↦ Real.neg_log_one_sub_rpow_sub_nonneg
+      (one_lt_two.trans_le (two_le_absNorm_asIdeal_real 𝔭)) hs
+  rw [tsum_eq_zero_of_not_summable]
+  intro hsum
+  -- Off the primes of norm at most `B`, every term is at most `-1`.
+  obtain ⟨B, hB⟩ : ∃ B : ℕ, ∀ 𝔭 : HeightOneSpectrum (𝓞 K), B < Ideal.absNorm 𝔭.asIdeal →
+      -Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) -
+        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ -1 := by
+    rcases hs.eq_or_lt with rfl | hlt
+    · exact ⟨0, fun 𝔭 _ ↦ by simp⟩
+    · refine ⟨⌈(2 : ℝ) ^ (-s)⁻¹⌉₊, fun 𝔭 hlt' ↦ ?_⟩
+      have hN : (2 : ℝ) ^ (-s)⁻¹ ≤ Ideal.absNorm 𝔭.asIdeal :=
+        (Nat.le_ceil _).trans (by exact_mod_cast hlt'.le)
+      have hy : 2 ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) :=
+        (Real.rpow_inv_le_iff_of_pos (by positivity) (by positivity) (neg_pos.mpr hlt)).mp hN
+      have hlog : 0 ≤ Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) := by
+        rw [← neg_sub, Real.log_neg_eq_log]
+        exact Real.log_nonneg (by linarith)
+      linarith
+  have hfin := (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le (S := 𝓞 K) B)
+  have hinf : Infinite (HeightOneSpectrum (𝓞 K)) :=
+    haveI : Infinite (HeightOneSpectrum ℤ) :=
+      Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
+        Rat.HeightOneSpectrum.primesEquiv.surjective
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
+  have hlim := hsum.tendsto_cofinite_zero
+  obtain ⟨𝔭, h1, h2⟩ := ((hlim.eventually (Metric.ball_mem_nhds 0 one_pos)).and
+    (hfin.eventually_cofinite_notMem)).exists
+  have := hB 𝔭 (by simpa using h2)
+  rw [Real.dist_eq, sub_zero, abs_lt] at h1
+  linarith [h1.1]
 
 /-- **The prime-power tail is bounded uniformly on `s ≥ 1`.** The constant `2 [K : ℚ]` does not
 depend on `s`, so this survives the passage to the limit `s → 1⁺` that the Dirichlet-density
@@ -126,6 +166,34 @@ theorem tsum_neg_log_one_sub_sub_absNorm_rpow_le {s : ℝ} (hs : 1 ≤ s) :
       ((by norm_num : (1 / 2 : ℝ) < 1).trans_le hs)).tsum_le_tsum
     (fun 𝔭 ↦ Real.neg_log_one_sub_rpow_sub_le (two_le_absNorm_asIdeal_real 𝔭) hs)
     (summable_absNorm_rpow_primes_of_one_lt one_lt_two)).trans tsum_absNorm_rpow_neg_two_le
+
+/-- **The prime-power tail is continuous at `s = 1` from the right.** As `s → 1⁺`, the sum
+`∑_𝔭 (-log (1 - N(𝔭) ^ (-s)) - N(𝔭) ^ (-s))` tends to its value at `s = 1`, by dominated
+convergence against `∑_𝔭 N(𝔭) ^ (-2)`. -/
+theorem tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow :
+    Tendsto (fun s : ℝ ↦ ∑' 𝔭 : HeightOneSpectrum (𝓞 K),
+        (-Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) -
+          (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s))) (𝓝[>] 1)
+      (𝓝 (∑' 𝔭 : HeightOneSpectrum (𝓞 K),
+        (-Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹) - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹))) := by
+  refine tendsto_tsum_of_dominated_convergence
+    (bound := fun 𝔭 ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)))
+    (summable_absNorm_rpow_primes_of_one_lt one_lt_two) (fun 𝔭 ↦ ?_) ?_
+  · have h2 := two_le_absNorm_asIdeal_real 𝔭
+    have hN : (Ideal.absNorm 𝔭.asIdeal : ℝ) ≠ 0 := (zero_lt_two.trans_le h2).ne'
+    have hpos : 1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ)) ≠ 0 := by
+      rw [Real.rpow_neg_one]
+      exact (sub_pos.mpr (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le h2))).ne'
+    have hr : ContinuousAt (fun s : ℝ ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) 1 :=
+      (Real.continuousAt_const_rpow hN).comp continuousAt_neg
+    have hc : ContinuousAt (fun s : ℝ ↦ -Real.log (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) -
+        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)) 1 :=
+      ((continuousAt_const.sub hr).log hpos).neg.sub hr
+    simpa only [Real.rpow_neg_one] using hc.tendsto.mono_left nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s) 𝔭
+    rw [Real.norm_of_nonneg (Real.neg_log_one_sub_rpow_sub_nonneg
+      (one_lt_two.trans_le (two_le_absNorm_asIdeal_real 𝔭)) (zero_lt_one.trans hs))]
+    exact Real.neg_log_one_sub_rpow_sub_le (two_le_absNorm_asIdeal_real 𝔭) hs.le
 
 /-- **The Euler-factor logarithms sum to the prime Dirichlet series up to `O(1)`.** For `s > 1`,
 where both series converge, `∑_𝔭 -log (1 - N(𝔭) ^ (-s))` differs from
@@ -145,7 +213,7 @@ theorem abs_tsum_neg_log_one_sub_sub_primeIdealZetaSum_le {s : ℝ} (hs : 1 < s)
   -- Both series converge separately, so their difference is the sum of the prime-power tail.
   rw [NumberField.Set.primeIdealZetaSum_def, tsum_univ fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
       (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s), ← hsumL.tsum_sub hsumP,
-    abs_of_nonneg (TauCeti.tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg (zero_lt_one.trans hs))]
+    abs_of_nonneg TauCeti.tsum_neg_log_one_sub_sub_absNorm_rpow_nonneg]
   exact TauCeti.tsum_neg_log_one_sub_sub_absNorm_rpow_le hs.le
 
 end TauCeti

@@ -8,12 +8,14 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Tensor-product basis coordinates
 
 This file records how contractions against one factor of a tensor product detect equality when
-that factor is free, and how coordinates in a basis of one factor commute with maps of the other.
+that factor is projective, how contracting against a basis of one factor extracts coefficients,
+and how coordinates in a basis of one factor commute with maps of the other.
 It also proves that the coordinates in bases obtained by scalar extension commute with a map of
 the scalar-extension algebras, and that over a basis with at most one index a scalar extension
 consists of pure tensors.
@@ -22,10 +24,15 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
+  right factor detect membership in the tensor product with a submodule of the left factor.
+* `Module.Basis.tensorComponent_coord_sum_tmul`: contracting against a coordinate functional of a
+  basis of the right factor recovers the corresponding coefficient.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
+* `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -35,7 +42,7 @@ consists of pure tensors.
   bases are obtained by mapping entries.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
-* `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended endomorphisms
+* `Module.Basis.toMatrix_baseChange_baseChange`: matrices of scalar-extended linear maps
   are obtained by mapping entries.
 -/
 
@@ -62,47 +69,47 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
   let b := Finsupp.basisSingleOne (R := R) (ι := N)
-  have hcomponent (φ : (N →₀ R) →ₗ[R] R) (t : M ⊗[R] (N →₀ R)) :
-      TensorProduct.rid R M (φ.lTensor M t) =
-        _root_.LinearMap.tensorComponent φ t := by
-    induction t using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul m n => simp
-  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
-    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+  have hmap : map LinearMap.id s x = map LinearMap.id s y := by
+    apply (equivFinsuppOfBasisRight b (M := M)).injective
     ext i
-    rw [TensorProduct.equivFinsuppOfBasisRight_apply,
-      TensorProduct.equivFinsuppOfBasisRight_apply]
-    calc
-      TensorProduct.rid R M
-          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s x)) =
-          _root_.LinearMap.tensorComponent (b.coord i)
-            (TensorProduct.map LinearMap.id s x) := by
-            exact hcomponent (b.coord i) _
-      _ = LinearMap.id (_root_.LinearMap.tensorComponent ((b.coord i).comp s) x) :=
-        _root_.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s x
-      _ = LinearMap.id (_root_.LinearMap.tensorComponent ((b.coord i).comp s) y) := by
-        rw [h ((b.coord i).comp s)]
-      _ = _root_.LinearMap.tensorComponent (b.coord i)
-          (TensorProduct.map LinearMap.id s y) :=
-        (_root_.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s y).symm
-      _ = TensorProduct.rid R M
-          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s y)) := by
-            exact (hcomponent (b.coord i) _).symm
-  let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
-  have hleft (z : M ⊗[R] N) :
-      TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul m n =>
-        simp only [TensorProduct.map_tmul, LinearMap.id_apply]
-        rw [← LinearMap.comp_apply, hs, LinearMap.id_apply]
-  calc
-    x = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s x) := (hleft x).symm
-    _ = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s y) := congrArg _ hmap
-    _ = y := hleft y
+    have hcoord :
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s x) =
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s y) := by
+      simpa only [_root_.LinearMap.tensorComponent_map, LinearMap.id_apply] using
+        h ((b.coord i).comp s)
+    simpa only [equivFinsuppOfBasisRight_apply,
+      _root_.LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe] using hcoord
+  have := congrArg (map LinearMap.id (Finsupp.linearCombination R id)) hmap
+  simpa only [map_map, LinearMap.id_comp, hs, map_id,
+    LinearMap.id_apply] using this
 
 end TensorProduct
+
+namespace Submodule
+
+variable {R M N : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N]
+
+/-- A tensor lies in the tensor product with a submodule exactly when all its contractions
+against linear functionals on the projective right factor lie in that submodule. -/
+theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z : M ⊗[R] N) :
+    z ∈ LinearMap.range (TensorProduct.map S.subtype (LinearMap.id : N →ₗ[R] N)) ↔
+      ∀ f : N →ₗ[R] R, LinearMap.tensorComponent f z ∈ S := by
+  constructor
+  · rintro ⟨w, hw⟩ f
+    rw [← hw]
+    have h := LinearMap.tensorComponent_map f S.subtype (LinearMap.id : N →ₗ[R] N) w
+    rw [LinearMap.comp_id] at h
+    rw [h]
+    exact (LinearMap.tensorComponent f w).property
+  · intro h
+    rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
+    apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+    intro f
+    rw [map_zero, LinearMap.tensorComponent_rTensor]
+    simpa only [mkQ_apply, Quotient.mk_eq_zero] using h f
+
+end Submodule
 
 namespace Module.Basis
 
@@ -111,6 +118,14 @@ universe u v w
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
+
+/-- Contracting `∑ⱼ xⱼ ⊗ bⱼ` against the `i`-th coordinate functional of a basis `b` of the right
+factor recovers the coefficient `xᵢ`. -/
+theorem tensorComponent_coord_sum_tmul {ι : Type*} [Fintype ι] (b : Module.Basis ι R N)
+    (x : ι → M) (i : ι) :
+    LinearMap.tensorComponent (b.coord i) (∑ j, x j ⊗ₜ[R] b j) = x i := by
+  classical
+  simp [Finsupp.single_apply]
 
 section EquivFinsuppOfBasisLeft
 
@@ -148,6 +163,11 @@ section Repr
 
 variable {S : Type v} [Semiring S] [Algebra R S]
 variable {T : Type w} [Semiring T] [Algebra R T]
+
+/-- Scalar extension of a basis commutes with reindexing it. -/
+theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
+    (b.reindex e).baseChange S = (b.baseChange S).reindex e :=
+  eq_of_apply_eq fun i => by simp
 
 /-- Coordinates in a base-changed basis are natural in the scalar-extension algebra. -/
 @[simp] theorem map_baseChange_repr (b : Basis ι R M) (φ : S →ₗ[R] T)
@@ -188,11 +208,12 @@ of the change-of-basis matrix between the original bases. -/
 
 variable [Fintype ι] [DecidableEq ι]
 
-/-- The matrix of a scalar-extended endomorphism is the entrywise scalar extension of its
-matrix in the original basis. -/
-theorem toMatrix_baseChange_baseChange (b : Basis ι R M) (f : M →ₗ[R] M) :
-    LinearMap.toMatrix (b.baseChange S) (b.baseChange S) (f.baseChange S) =
-      (LinearMap.toMatrix b b f).map (algebraMap R S) := by
+/-- The matrix of a scalar-extended linear map is the entrywise scalar extension of its
+matrix in the original source and target bases. -/
+@[simp] theorem toMatrix_baseChange_baseChange {κ N : Type*} [Finite κ]
+    [AddCommMonoid N] [Module R N] (b : Basis ι R M) (c : Basis κ R N) (f : M →ₗ[R] N) :
+    LinearMap.toMatrix (b.baseChange S) (c.baseChange S) (f.baseChange S) =
+      (LinearMap.toMatrix b c f).map (algebraMap R S) := by
   ext i j
   simp [LinearMap.toMatrix_apply, baseChange_apply, Algebra.smul_def]
 

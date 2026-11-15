@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Distributions.Gaussian.Basic
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The standard Gaussian measure on a finite product
@@ -31,6 +34,8 @@ basis that consumes them.
   vanishes, so
   `volume^ι`-null sets are exactly `γ^ι`-null sets in the direction one needs to move an
   almost-everywhere statement from `γ^ι` to `volume^ι`.
+* `ProbabilityTheory.isGaussian_pi`: a finite product of Gaussian measures is Gaussian. In
+  particular `γ^ι` is Gaussian, so the Gaussian moment and integrability API applies to it.
 -/
 
 public section
@@ -38,6 +43,35 @@ public section
 open MeasureTheory ProbabilityTheory Real
 
 open scoped ENNReal
+
+namespace ProbabilityTheory
+
+/-- A finite product of Gaussian measures on second-countable real normed Borel spaces
+is Gaussian. -/
+instance isGaussian_pi {ι : Type*} [Fintype ι] {E : ι → Type*}
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)] [∀ i, MeasurableSpace (E i)]
+    [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+    (μ : (i : ι) → Measure (E i)) [∀ i, IsGaussian (μ i)] : IsGaussian (Measure.pi μ) := by
+  classical
+  refine isGaussian_of_charFunDual_eq fun L ↦ ?_
+  -- A linear form on the product is the sum of its restrictions to the factors.
+  have hL : ⇑L = ∑ i, fun x : (i : ι) → E i ↦ L.comp (.single ℝ E i) (x i) := by
+    funext x
+    simpa only [Finset.sum_apply] using
+      (ContinuousLinearMap.sum_comp_single (L := L) (v := x)).symm
+  have hmean : (Measure.pi μ)[L] = ∑ i, (μ i)[L.comp (.single ℝ E i)] := by
+    simp only [hL, Finset.sum_apply]
+    rw [integral_finsetSum _ fun i _ ↦ integrable_comp_eval (IsGaussian.integrable_dual _ _)]
+    exact Finset.sum_congr rfl fun i _ ↦ integral_comp_eval (by fun_prop)
+  have hvar : Var[L; Measure.pi μ] = ∑ i, Var[L.comp (.single ℝ E i); μ i] := by
+    rw [hL]
+    exact variance_sum_pi fun i ↦ IsGaussian.memLp_dual (μ i) _ 2 (by simp)
+  rw [charFunDual_pi, integral_complex_ofReal, hmean, hvar]
+  simp_rw [IsGaussian.charFunDual_eq, ← Complex.exp_sum, integral_complex_ofReal]
+  push_cast
+  rw [Finset.sum_sub_distrib, Finset.sum_mul, Finset.sum_div]
+
+end ProbabilityTheory
 
 namespace TauCeti.Probability
 
@@ -54,11 +88,8 @@ theorem prod_gaussianPDFReal_zero_one (x : ι → ℝ) :
     ∏ i, gaussianPDFReal 0 1 (x i)
       = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-(∑ i, x i ^ 2) / 2) := by
   have hπ : (0 : ℝ) < 2 * π := by positivity
-  have hconst : (√(2 * π))⁻¹ ^ Fintype.card ι = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hπ.le, ← Real.rpow_natCast _ (Fintype.card ι),
-      ← Real.rpow_mul hπ.le]
-    congr 1
-    ring
+  have hconst : (√(2 * π))⁻¹ ^ Fintype.card ι = (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) :=
+    Real.inv_sqrt_pow_eq_rpow hπ.le _
   have hexp : ∑ i, -(x i ^ 2 / 2) = -(∑ i, x i ^ 2) / 2 := by
     rw [Finset.sum_neg_distrib, ← Finset.sum_div]
     ring
@@ -101,9 +132,7 @@ theorem pi_volume_absolutelyContinuous_pi_gaussianReal :
     (Measure.pi fun _ : ι => (volume : Measure ℝ))
       ≪ Measure.pi fun _ : ι => (gaussianReal 0 1 : Measure ℝ) := by
   rw [pi_gaussianReal_eq_withDensity]
-  exact withDensity_absolutelyContinuous'
-    (measurable_prod_gaussianPDFReal ι).ennreal_ofReal.aemeasurable
-    (Filter.Eventually.of_forall fun x =>
-      (ENNReal.ofReal_pos.2 (prod_gaussianPDFReal_pos ι x)).ne')
+  exact absolutelyContinuous_withDensity_ofReal (measurable_prod_gaussianPDFReal ι).aemeasurable
+    (.of_forall (prod_gaussianPDFReal_pos ι))
 
 end TauCeti.Probability

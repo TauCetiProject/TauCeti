@@ -14,7 +14,7 @@ The spin^c structures of a plumbed three-manifold are encoded by characteristic 
 plumbing lattice, and spin^c **conjugation** acts by negating the covector. The involution itself,
 `PlumbingGraph.conjugate`, lives at the characteristic-covector layer in `Characteristic.lean`;
 this file proves its compatibility with the characteristic weight function `χ_k(x)` from
-`Weight.lean`: conjugating the covector while negating the lattice point leaves the weight
+`Weight/Basic.lean`: conjugating the covector while negating the lattice point leaves the weight
 unchanged,
 
 `χ_{-k}(-x) = χ_k(x)`,
@@ -43,11 +43,8 @@ equation `two_mul_characteristicWeight`, with no integer division to discharge.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose programme includes the conjugation symmetry of the weight function and
-the resulting involution of lattice homology. The convention follows Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
-[arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
+The convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after
+Ozsváth--Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
 
 public section

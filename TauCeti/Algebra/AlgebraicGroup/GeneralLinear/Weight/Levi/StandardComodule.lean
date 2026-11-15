@@ -120,7 +120,7 @@ theorem weightLeviCoordinateSubcomodule_toSubmodule (s : Set (Fin N))
   Module.Basis.coordinateSpanSubcomodule_toSubmodule _ _ _
 
 /-- Membership in a coordinate subcomodule means vanishing outside its chosen weight blocks. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviCoordinateSubcomodule (s : Set (Fin N))
     (hs : ∀ i j, w i = w j → j ∈ s → i ∈ s) (v : Fin N → R) :
     v ∈ weightLeviCoordinateSubcomodule R w s hs ↔ ∀ i ∉ s, v i = 0 := by

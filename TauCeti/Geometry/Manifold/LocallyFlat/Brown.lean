@@ -46,21 +46,8 @@ theorem brownBicollaring (n : ℕ) : BrownBicollaring n := by
       (X := sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)
     exact hf.isLocallyBicollared.isBicollared_of_finite hf.injective
   · apply hf.isBicollared_of_not_isPreconnected_compl_range hn
-    intro hconn
-    have hclosed : IsClosed (range f) := by
-      simpa using (isCompact_univ.image hf.continuous).isClosed
-    have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (n + 1)))
-      (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
-    have := hclosed.isOpen_compl.locallyPathConnectedSpace
-    have := isPreconnected_iff_preconnectedSpace.1 hconn
-    have hcard := natCard_zerothHomotopy_sphere_compl_range_eq_two
+    exact not_isPreconnected_compl_range_sphere
       (by simp : Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 2))) =
         Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) + 1) hf.continuous hf.injective
-    have hle : Nat.card (ZerothHomotopy ↥(range f)ᶜ) ≤ 1 := by
-      rw [← Nat.card_congr connectedComponentsEquivZerothHomotopy]
-      simpa using Nat.card_le_card_of_injective
-        (f := fun _ : ConnectedComponents ↥(range f)ᶜ => ())
-        (fun _ _ _ => Subsingleton.elim _ _)
-    omega
 
 end TauCeti

@@ -148,7 +148,7 @@ theorem localLift_swapForest_orbitCount (factor base : Perm (Fin 3 × Fin 4))
     simp only [List.map_map]
     congr 1
     apply List.map_congr_left
-    intro p hp
+    intro p _
     exact localLift_swap D c p.1 p.2
   rw [hprod, mul_assoc]
   have hcount := (hforest.map (triangleEmbedding D c)).orbitCount_prod_mul_add_length
@@ -222,5 +222,23 @@ theorem localLift_slots :
     rw [← triangleEmbedding_apply D c, localLift_apply, triangleEmbedding_apply,
       triangleEmbedding_apply, reidemeisterThreePerm_apply_crossing]
   · rw [localLift_fixed D c _ hi, reidemeisterThreePerm_crossing_of_notMem D c hi]
+
+/-- Conjugating `L * exteriorSlots D c slots * (D.reidemeisterThreePerm c).permCongr E` by
+`(D.reidemeisterThreePerm c).symm` conjugates `L` by the inverse of the half-edge permutation of
+the move, leaves the exterior slot permutation `exteriorSlots D c slots` fixed (it commutes with
+that half-edge permutation), and untwists `E`. -/
+theorem reidemeisterThreePerm_symm_permCongr_mul (L : Perm (Fin (4 * n)))
+    (slots : Fin n → Perm (Fin 4)) (E : Perm (Fin (4 * n))) :
+    (D.reidemeisterThreePerm c).symm.permCongr
+        (L * exteriorSlots D c slots * (D.reidemeisterThreePerm c).permCongr E) =
+      (D.reidemeisterThreePerm c)⁻¹ * L * D.reidemeisterThreePerm c *
+        exteriorSlots D c slots * E := by
+  rw [Equiv.permCongr_eq_mul, Equiv.permCongr_eq_mul, ← Perm.inv_def]
+  have hc := (localLift_commute_exteriorSlots D c reidemeisterThreeSlots slots).eq
+  rw [localLift_slots] at hc
+  calc
+    _ = (D.reidemeisterThreePerm c)⁻¹ * L *
+        (exteriorSlots D c slots * D.reidemeisterThreePerm c) * E := by group
+    _ = _ := by rw [← hc]; group
 
 end TauCeti.PDCode.ReidemeisterThree

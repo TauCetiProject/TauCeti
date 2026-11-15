@@ -10,9 +10,10 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Opposite
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
-public import TauCeti.RingTheory.Idempotents.Primitive.Basic
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
+public import TauCeti.RingTheory.Idempotents.TensorProduct
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 
 /-!
@@ -126,19 +127,14 @@ noncomputable def zigzagBraidBimodule (i : V) : Ideal (𝒵ᵉ) :=
 
 variable {k G}
 
-/-- `e_i ⊗ e_i` is an idempotent of the enveloping algebra. -/
-theorem isIdempotentElem_tmul_zigzagAlgebraBasis_inl (i : V) :
-    IsIdempotentElem (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k]
-      op (zigzagAlgebraBasis k G (.inl i))) := by
-  rw [IsIdempotentElem, Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
-  simp
-
 /-- An element lies in `P_i ⊗_k e_i Z` exactly when it is fixed by right multiplication by the
 idempotent `e_i ⊗ e_i`. -/
 theorem mem_zigzagBraidBimodule_iff {i : V} {u : 𝒵ᵉ} :
     u ∈ zigzagBraidBimodule k G i ↔
-      u * (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inl i))) = u :=
-  mem_span_singleton_iff_mul_eq_self (isIdempotentElem_tmul_zigzagAlgebraBasis_inl i)
+      u * (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inl i))) = u := by
+  have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+  exact mem_span_singleton_iff_mul_eq_self (he.tmul (k := k)
+    (by rw [IsIdempotentElem, ← op_mul, he.eq]))
 
 /-- The pure tensor `x e_i ⊗ e_i y` lies in `P_i ⊗_k e_i Z`. -/
 theorem tmul_mem_zigzagBraidBimodule (i : V) (x y : 𝒵) :
@@ -200,9 +196,11 @@ noncomputable def zigzagBraidCoevaluation (i : V) :
 
 variable {k G}
 
+end Coevaluation
+
 section Formula
 
-variable [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
+variable {k G} [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
 
 /-- **The Casimir element cut down at a vertex**:
 `C (e_i ⊗ e_i) = e_i ⊗ x_i + x_i ⊗ e_i + ∑_{d.fst = i} a_d ⊗ a_{d.symm}`. -/
@@ -278,8 +276,6 @@ theorem coe_zigzagBraidCoevaluation_of_one (i : V) :
 
 end Formula
 
-end Coevaluation
-
 /-! ### Internal degrees -/
 
 section Grading
@@ -289,8 +285,9 @@ variable [Finite V]
 /-- **The internal grading of the enveloping algebra** `Z ⊗[k] Zᵐᵒᵖ`: the tensor product of the
 signed path-length grading of `Z` with its transport to `Zᵐᵒᵖ`, so that `x ⊗ op y` has degree
 `deg x + deg y`. -/
-noncomputable def zigzagEnvelopingGrading : InternalGrading k (𝒵ᵉ) :=
-  let Γ : InternalGrading k 𝒵 :=
+-- The tensor bifunctor and its instances need this category index to reduce to the factor gradings.
+noncomputable abbrev zigzagEnvelopingGrading : InternalGrading k (𝒵ᵉ) ℤ :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   Γ.tensorProduct Γ.opposite
 
@@ -331,7 +328,7 @@ theorem mul_mem_zigzagEnvelopingGrading {m n : ℤ} {u v : 𝒵ᵉ}
     (hu : u ∈ (zigzagEnvelopingGrading k G).piece m)
     (hv : v ∈ (zigzagEnvelopingGrading k G).piece n) :
     u * v ∈ (zigzagEnvelopingGrading k G).piece (m + n) := by
-  let Γ : InternalGrading k 𝒵 :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   have hle : (zigzagEnvelopingGrading k G).piece m ≤
       (LinearMap.homogeneousSubmodule (S := k) (zigzagEnvelopingGrading k G).piece
@@ -407,19 +404,21 @@ theorem isHomogeneous_zigzagBraidBimodule (i : V) :
   set e := zigzagAlgebraBasis k G (.inl i)
   have he : e ∈ zigzagAlgebraIntegerGrade k G 0 :=
     (zigzagAlgebraIntegerGrade_ofNat k G 0).ge (zigzagAlgebraBasis_inl_mem_grade_zero k G i)
+  have hid := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+  have htid : IsIdempotentElem (e ⊗ₜ[k] op e : 𝒵ᵉ) :=
+    hid.tmul (k := k) (by rw [IsIdempotentElem, ← op_mul, hid.eq])
   have hrange : (zigzagBraidBimodule k G i).restrictScalars k =
       LinearMap.range (LinearMap.mulRight k (e ⊗ₜ[k] op e : 𝒵ᵉ)) := by
     ext u
     rw [Submodule.restrictScalars_mem, mem_zigzagBraidBimodule_iff]
     refine ⟨fun h ↦ ⟨u, h⟩, ?_⟩
     rintro ⟨v, rfl⟩
-    rw [LinearMap.mulRight_apply, mul_assoc,
-      (isIdempotentElem_tmul_zigzagAlgebraBasis_inl (k := k) (G := G) i).eq]
+    rw [LinearMap.mulRight_apply, mul_assoc, htid.eq]
   -- Right multiplication by `e_i ⊗ e_i` is the tensor product of right multiplications.
   have hmul : LinearMap.mulRight k (e ⊗ₜ[k] op e : 𝒵ᵉ) =
       TensorProduct.map (LinearMap.mulRight k e) (LinearMap.mulRight k (op e)) :=
     TensorProduct.ext' fun _ _ ↦ by simp
-  let Γ : InternalGrading k 𝒵 :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   have hleft : LinearMap.IsHomogeneous (LinearMap.mulRight k e) Γ.piece Γ.piece 0 :=
     LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ mul_mem_zigzagAlgebraIntegerGrade k G hx he

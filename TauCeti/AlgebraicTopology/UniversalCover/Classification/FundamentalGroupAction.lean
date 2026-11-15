@@ -74,15 +74,11 @@ categorical action on the fibre is `IsCoveringMap.fundamentalGroupMulAction`, an
 
 ## References
 
-This is the `π₁(X)`-set form of the alternative lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks to "phrase the classification of
-connected covers via transitive `π₁(X)`-sets / the monodromy functor, with disconnected covers
-as functors out of the fundamental groupoid"; see Hatcher, *Algebraic Topology*, Section 1.3. It
-consumes the fundamental-groupoid classification of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which rests on the
-based-path universal cover adapted from Kim Morrison's
+This is the `π₁(X)`-set form of the classification of covering spaces; see Hatcher, *Algebraic
+Topology*, Section 1.3. It consumes the fundamental-groupoid classification of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which
+rests on the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and Mathlib's
 `CategoryTheory.Action.functorCategoryEquivalence`; no Mathlib proof is vendored.
 -/
@@ -121,7 +117,7 @@ theorem fiberActionFunctor_obj_V (p : CoveringSpace X) :
 @[simp]
 theorem fiberActionFunctor_obj_ρ_apply (p : CoveringSpace X) (g : FundamentalGroup X x₀)
     (e : ⇑p.proj ⁻¹' {x₀}) :
-    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g e :=
+    ((fiberActionFunctor x₀).obj p).ρ g e = p.isCoveringMap_proj.monodromy g.toPath e :=
   (rfl)
 
 /-- The `MulAction` carried by the fundamental-group set attached to a cover is Mathlib's
@@ -251,7 +247,7 @@ theorem exists_fiberAction_iso (A : Action (Type u) (FundamentalGroup X x₀))
   -- The cover has to be spelled out for the rewrite: the type of `e` mentions it only under the
   -- unfolding of `fiberActionFunctor`, so unification cannot read it off.
   rw [types_comp_apply, types_comp_apply, CoveringSpace.fiberActionFunctor_obj_ρ_apply x₀
-    ((forget X).obj (UniversalCover.stabilizerCover x₀ a)) g e, ← smul_eq_ρ_apply A g]
+    ((forget X).obj (UniversalCover.stabilizerCover x₀ a)) g e, Action.ρ_apply_eq_smul A g]
   -- The one step left is `Equiv.toIso_hom_hom_apply`, which `rw` refuses here: the type of `e`
   -- is the `.V` projection rather than the fibre itself, so the rewritten target is not
   -- type-correct at `implicit` transparency.

@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.NumberTheory.ModularForms.Bounds
 public import TauCeti.NumberTheory.Modular
--- proof-only: `CuspForm.coe_translate_gl`
-import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The Petersson inner product
@@ -288,7 +286,7 @@ theorem integrableOn_petersson_of_measure_lt_top {F F' : Type*} [FunLike F ℍ �
 open ConjAct in
 /-- **The Petersson integrand of a *singly* slashed cusp form against a cusp form is integrable
 over any set of finite measure** — the orientation
-`peterssonInner_sum_slash_left_adjugateGL` asks its caller for.
+`peterssonInner_sum_slash_left_adjugate` asks its caller for.
 
 Arithmeticity of the conjugate is taken as an instance rather than derived, so that a caller with
 a rational `σ` supplies it from `Subgroup.IsArithmetic.conj` and one with any other source of it
@@ -300,7 +298,7 @@ theorem integrableOn_petersson_slash_left_of_measure_lt_top {F F' : Type*} [FunL
     IntegrableOn (fun τ ↦ petersson k (⇑f ∣[k] σ) ⇑g τ) S μ := by
   have := integrableOn_petersson_of_measure_lt_top k ((toConjAct σ)⁻¹ • Γ) Γ'
     (CuspForm.translate f σ) g μ hS
-  rwa [CuspForm.coe_translate_gl] at this
+  rwa [CuspForm.coe_translate] at this
 
 open ConjAct in
 /-- The mirror of `integrableOn_petersson_slash_left_of_measure_lt_top`, with the *second*
@@ -312,7 +310,7 @@ theorem integrableOn_petersson_slash_right_of_measure_lt_top {F F' : Type*} [Fun
     IntegrableOn (fun τ ↦ petersson k ⇑f (⇑g ∣[k] σ) τ) S μ := by
   have := integrableOn_petersson_of_measure_lt_top k Γ ((toConjAct σ)⁻¹ • Γ')
     f (CuspForm.translate g σ) μ hS
-  rwa [CuspForm.coe_translate_gl] at this
+  rwa [CuspForm.coe_translate] at this
 
 /-- The Petersson integrand of a slashed cusp form and modular form is integrable over `𝒟`:
 slashing by an element of `SL₂(ℤ)` moves the integrand along the action, where the cusp-form

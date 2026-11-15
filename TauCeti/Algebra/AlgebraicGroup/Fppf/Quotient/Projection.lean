@@ -43,8 +43,7 @@ characterization of epimorphisms of type-valued sheaves.
 * J. S. Milne, *Algebraic Groups* (2017), Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 14.
 
-This is the local-surjectivity part of the quotient and torsor interface in Layer 3,
-"Normality and quotients", of the ReductiveGroups roadmap.
+This is the local-surjectivity part of the quotient and torsor interface.
 -/
 
 public section

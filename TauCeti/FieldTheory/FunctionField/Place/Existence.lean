@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.LocalSubring
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
+public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 /-!
@@ -36,6 +37,8 @@ subring is discrete, and that is
   the constants has a zero and a pole (Stichtenoth, Corollary 1.1.20).
 * `TauCeti.Place.nonempty`: an algebraic function field has at least one place.
 * `TauCeti.Place.infinite`: an algebraic function field has infinitely many places.
+* `TauCeti.Place.infinite_setOf_degree_eq_one`: over an algebraically closed field there are
+  infinitely many rational places.
 * `TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers` and
   `TauCeti.Place.coe_algebraicClosure_eq_iInter_integers`: `algebraicClosure k F = ⋂_P 𝒪_P`, the
   constants are the everywhere-regular functions.
@@ -145,6 +148,14 @@ theorem infinite (hF : IsFunctionField k F) : Infinite (Place k F) := by
   obtain ⟨P⟩ := nonempty hF
   obtain ⟨Q, hQ⟩ := exists_ord_neg hF (P.transcendental_of_ord_ne_zero (f := g) (by simp [hg]))
   simp [hg] at hQ
+
+/-- Over an algebraically closed constant field, an algebraic function field has infinitely many
+rational places. -/
+theorem infinite_setOf_degree_eq_one [IsAlgClosed k] (hF : IsFunctionField k F) :
+    {P : Place k F | P.degree = 1}.Infinite := by
+  have := infinite hF
+  simpa [degree_eq_one_of_isAlgClosed_of_isFunctionField _ hF] using
+    Set.infinite_univ (α := Place k F)
 
 /-! ### The constants are the everywhere-regular functions -/
 

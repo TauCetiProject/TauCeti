@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-10-15T06:02:01Z",
+  "groups": {
+    "fleet": {
+      "source_through": "2026-10-12T11:02:42Z",
+      "published_through": null,
+      "status": "stale",
+      "reason": "coverage older than 36 hours",
+      "files": []
+    },
+    "daily": {
+      "source_through": "2026-10-12T11:02:42Z",
+      "published_through": null,
+      "status": "stale",
+      "reason": "coverage older than 36 hours",
+      "files": []
+    },
+    "details": {
+      "source_through": "2026-10-12T11:02:42Z",
+      "published_through": null,
+      "status": "stale",
+      "reason": "coverage older than 36 hours",
+      "files": []
+    },
+    "queue": {
+      "source_through": "2026-10-14T22:42:38Z",
+      "published_through": "2026-10-14T22:42:38Z",
+      "status": "updated",
+      "files": [
+        "ci-queue-size.svg"
+      ],
+      "gaps": 0
+    },
+    "staging": {
+      "source_through": "2026-10-14T21:58:28Z",
+      "published_through": "2026-10-14T21:58:28Z",
+      "status": "updated",
+      "files": [
+        "ci-bors-staging.svg"
+      ],
+      "gaps": 0
+    }
+  }
+}

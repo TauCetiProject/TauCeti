@@ -21,6 +21,8 @@ This file defines the radius and its power functional at the measurable pseudome
 Fréchet barycenter is required to have finite radius and to minimize it globally; the finiteness
 clause prevents an identically infinite functional from making every point a barycenter. For a
 finite positive exponent, minimizing the radius is equivalent to minimizing its `p`-th power.
+For a finite weighted family of points, given as a finite weighted sum of Dirac masses, the power
+functional is the weighted sum of the powers of the distances to those points.
 
 For `1 ≤ p`, on a proper metric space, a probability law whose radius is finite somewhere has a
 nonempty compact set of Fréchet barycenters. The proof uses the reverse triangle inequality for
@@ -79,6 +81,17 @@ theorem frechetRadius_rpow_eq_frechetPower {p : ℝ≥0∞} (hp₀ : p ≠ 0) (h
   rw [frechetRadius_def, frechetPower_def]
   exact eLpNorm_rpow_eq_lintegral hp₀ hp_top hx
 
+/-- The Fréchet power functional of a finite weighted family of points is the weighted sum of the
+powers of the distances to those points. -/
+theorem frechetPower_sum_smul_dirac [OpensMeasurableSpace X] {ι R : Type*} [SMul R ℝ≥0∞]
+    [IsScalarTower R ℝ≥0∞ ℝ≥0∞] (s : Finset ι) (w : ι → R) (y : ι → X) (p : ℝ≥0∞) (x : X) :
+    frechetPower p (∑ i ∈ s, w i • Measure.dirac (y i)) x =
+      ∑ i ∈ s, w i • edist x (y i) ^ p.toReal := by
+  have hm : Measurable fun z ↦ edist x z ^ p.toReal :=
+    (continuous_const.edist continuous_id).measurable.pow_const _
+  simp only [frechetPower_def, lintegral_finsetSum_measure, lintegral_smul_measure,
+    lintegral_dirac' _ hm]
+
 /-- A raw minimizer of the extended-valued Fréchet radius. If the radius is identically infinite,
 every point satisfies this predicate; use `TauCeti.IsFrechetBarycenter` when finiteness matters. -/
 def IsFrechetMinimizer (p : ℝ≥0∞) (μ : Measure X) (x : X) : Prop :=
@@ -114,7 +127,6 @@ theorem mem_frechetBarycenters {p : ℝ≥0∞} {μ : Measure X} {x : X} :
 minimizes the power functional. -/
 theorem isFrechetBarycenter_iff_forall_frechetPower_le {p : ℝ≥0∞} (hp₀ : p ≠ 0)
     (hp_top : p ≠ ⊤) {μ : Measure X} {x : X}
-    (hxm : AEMeasurable (fun y ↦ edist x y) μ)
     (hm : ∀ z, AEMeasurable (fun y ↦ edist z y) μ) :
     IsFrechetBarycenter p μ x ↔
       frechetRadius p μ x ≠ ⊤ ∧ ∀ z, frechetPower p μ x ≤ frechetPower p μ z := by
@@ -122,7 +134,7 @@ theorem isFrechetBarycenter_iff_forall_frechetPower_le {p : ℝ≥0∞} (hp₀ :
   rw [isFrechetMinimizer_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun z ↦ ?_
   rw [← ENNReal.rpow_le_rpow_iff (ENNReal.toReal_pos hp₀ hp_top),
-    frechetRadius_rpow_eq_frechetPower hp₀ hp_top hxm,
+    frechetRadius_rpow_eq_frechetPower hp₀ hp_top (hm x),
     frechetRadius_rpow_eq_frechetPower hp₀ hp_top (hm z)]
 
 /-! ### The essential-supremum endpoint -/
@@ -183,7 +195,7 @@ theorem frechetRadius_le_add [OpensMeasurableSpace X] (x₀ x₁ : X) :
   calc
     eLpNorm (fun y ↦ edist x₁ y) p μ ≤
         eLpNorm ((fun _ : X ↦ edist x₁ x₀) + fun y ↦ edist x₀ y) p μ :=
-      eLpNorm_mono_enorm hmeas fun y ↦ by simpa using edist_triangle x₁ x₀ y
+      eLpNorm_mono_eNorm hmeas fun y ↦ by simpa using edist_triangle x₁ x₀ y
     _ ≤ eLpNorm (fun _ : X ↦ edist x₁ x₀) p μ +
         eLpNorm (fun y ↦ edist x₀ y) p μ :=
       eLpNorm_add_le hp
@@ -201,11 +213,20 @@ theorem edist_le_frechetRadius_add (x₀ x₁ : X) :
   calc
     eLpNorm (fun _ : X ↦ edist x₀ x₁) p μ ≤
         eLpNorm ((fun y ↦ edist x₀ y) + fun y ↦ edist x₁ y) p μ :=
-      eLpNorm_mono_enorm hmeas fun y ↦ by
+      eLpNorm_mono_eNorm hmeas fun y ↦ by
         simpa [edist_comm y x₁] using edist_triangle x₀ y x₁
     _ ≤ eLpNorm (fun y ↦ edist x₀ y) p μ +
         eLpNorm (fun y ↦ edist x₁ y) p μ :=
       eLpNorm_add_le hp
+
+variable {μ} in
+/-- A Fréchet barycenter lies within twice the Fréchet radius of any center. -/
+theorem IsFrechetBarycenter.edist_le_two_mul_frechetRadius {y : X}
+    (hy : IsFrechetBarycenter p μ y) (z : X) : edist z y ≤ 2 * frechetRadius p μ z :=
+  calc edist z y ≤ frechetRadius p μ z + frechetRadius p μ y := edist_le_frechetRadius_add hp μ z y
+    _ ≤ frechetRadius p μ z + frechetRadius p μ z := by
+      gcongr; exact isFrechetMinimizer_iff.1 (isFrechetBarycenter_iff.1 hy).2 z
+    _ = 2 * frechetRadius p μ z := (two_mul _).symm
 
 end Estimates
 

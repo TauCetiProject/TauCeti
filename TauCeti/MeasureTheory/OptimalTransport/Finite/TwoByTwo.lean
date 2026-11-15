@@ -105,10 +105,10 @@ def ofZeroZeroReal (μ ν : PMF (Fin 2)) (t : ℝ)
       fin_cases i <;> fin_cases j <;> simp [f] <;> linarith
     · intro i
       fin_cases i <;> simp [f, Fin.sum_univ_two]
-      all_goals linarith
+      linarith
     · intro j
       fin_cases j <;> simp [f, Fin.sum_univ_two]
-      all_goals linarith
+      linarith
   exact ofRealFun hf
 
 /-- The entries of the two by two matrix constructed from a point of the coupling interval. -/

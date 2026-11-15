@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.GreenFunction.Disk
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.Complex.Poisson.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.HarmonicContOnCl
-import TauCeti.Analysis.PDE.FundamentalSolution.Gradient
+import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Gradient
 import Mathlib.Analysis.Complex.Harmonic.Poisson
 
 /-!
@@ -125,7 +125,7 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
     HasDerivAt (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c)))
       (-(poissonKernel c a z) / (2 * Real.pi)) 1 := by
-  have hz' := norm_inv_smul_sub_eq_one_of_norm_sub_eq hR hz
+  have hz' := (norm_inv_smul_eq_one_iff hR).2 hz
   have hfun : (fun t : ℝ => planarGreenKernelDisk c R a (c + t • (z - c))) =
       fun t : ℝ => planarGreenKernel (R⁻¹ • (a - c)) (t • (R⁻¹ • (z - c))) := by
     funext t
@@ -135,7 +135,7 @@ theorem hasDerivAt_planarGreenKernelDisk_radial {c a z : ℂ} {R : ℝ}
     rw [mul_comm R⁻¹ t]
   rw [hfun, ← poissonKernel_inv_mul_sub (Complex.ofReal_ne_zero.mpr hR.ne')]
   simp only [← Complex.ofReal_inv, Complex.real_smul]
-  exact hasDerivAt_planarGreenKernel_radial (norm_inv_smul_sub_lt_one hR ha) hz'
+  exact hasDerivAt_planarGreenKernel_radial ((norm_inv_smul_lt_one_iff hR).2 ha) hz'
 
 /-- The spatial derivative of the disk Green kernel on the outward unit normal is the
 negative Poisson kernel divided by `2πR`. -/

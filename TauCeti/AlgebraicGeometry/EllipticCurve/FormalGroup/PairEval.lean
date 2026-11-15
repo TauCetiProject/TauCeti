@@ -85,8 +85,7 @@ which matters here, because the ambient adic ring need not be.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`, whose full expansion is
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at
 `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`),
 `EllipticCurves/WeierstrassFormalGroup/Eval.lean` — its pair-evaluation layer, declarations
 `slopeEval`, `interceptEval`, `thirdRootEval`, `addEval`, `hasEval_pairElim`, `eval_pair_rename`,
@@ -274,19 +273,23 @@ theorem formalInterceptEval_eq_inr {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t
     Sum.elim_inr, PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
     MvPowerSeries.eval₂_X] using h
 
+omit [IsTopologicalRing O] [IsLinearTopology O O] in
 /-- The slope of the chord at parameters of `I ^ k` again lies in `I ^ k`: the slope series has
 vanishing constant coefficient. -/
 theorem formalSlopeEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
     (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalSlopeEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
       (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
       (pair_mem hk₁ hk₂) W.formalSlope (by simp)
 
+omit [IsTopologicalRing O] [IsLinearTopology O O] in
 /-- The third point's parameter at parameters of `I ^ k` again lies in `I ^ k`. -/
 theorem formalThirdRootEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
     (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalThirdRootEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
@@ -404,8 +407,7 @@ theorem formalAddEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
 /-- **The inverse law at parameters**: `F(t, ι(t)) = 0`, so the value of the inverse series at `t`
 is the additive inverse of `t` under the group law read at parameters. -/
 @[simp]
-theorem formalAddEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t)
-    (hι : PowerSeries.HasEval (W.formalInverseEval t)) :
+theorem formalAddEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t) :
     W.formalAddEval t (W.formalInverseEval t) = 0 := by
   have hid : (algebraMap O O) = RingHom.id O := rfl
   -- Evaluating the substituted pair at `t` is evaluating at the pair `(t, ι(t))`.
@@ -418,7 +420,7 @@ theorem formalAddEval_formalInverseEval {t : O} (ht : PowerSeries.HasEval t)
       (fun s : Unit ⊕ Unit ↦ MvPowerSeries.aeval (PowerSeries.hasEval ht)
         (Sum.elim MvPowerSeries.X (fun _ ↦ formalInverse W) s)) := by
     simp only [MvPowerSeries.coe_aeval, hid, hfam]
-    exact hasEval_pair ht hι
+    exact hasEval_pair ht (W.hasEval_formalInverseEval ht)
   have h := MvPowerSeries.aeval_subst W.hasSubst_invPair
     (MvPowerSeries.continuous_aeval (PowerSeries.hasEval ht)) hpair W.formalAdd
   rw [W.subst_invPair_formalAdd] at h
@@ -530,8 +532,7 @@ theorem formalAddEval_zero_right {t : O} (ht : PowerSeries.HasEval t) :
     funext s
     rcases s with _ | _
     · simp
-    · simpa using
-        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+    · simp
   have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
       MvPowerSeries.aeval (PowerSeries.hasEval ht)
         ((Sum.elim MvPowerSeries.X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit O) s) := by
@@ -554,8 +555,7 @@ theorem formalAddEval_zero_left {t : O} (ht : PowerSeries.HasEval t) :
       Sum.elim (fun _ ↦ (0 : O)) fun _ ↦ t := by
     funext s
     rcases s with _ | _
-    · simpa using
-        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+    · simp
     · simp
   have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
       MvPowerSeries.aeval (PowerSeries.hasEval ht)

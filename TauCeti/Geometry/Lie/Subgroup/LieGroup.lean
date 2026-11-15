@@ -138,7 +138,7 @@ theorem contMDiff_iff_comp_subtypeVal_chartedSpaceOfIsSliceChart (f : M → K) :
         mem_chart_source F (f x)
     filter_upwards [hf_cont.continuousAt
         ((preferredSliceChart K e he (f x)).open_source.mem_nhds
-          hfx_source)] with y hy
+          hfx_source)] with y _
     simp [extChartAt, chartedSpaceOfIsSliceChart_chartAt]
 
 /-- Multiplication inherited by a subgroup is smooth for its slice-chart manifold structure. -/

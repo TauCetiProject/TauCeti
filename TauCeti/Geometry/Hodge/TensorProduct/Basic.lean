@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Geometry.Hodge.WeilOperator
 
 /-!
@@ -51,7 +51,8 @@ variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]
   [AddCommGroup W₂] [Module ℂ W₂]
 variable {ω₁ : Conjugation W₁} {ω₂ : Conjugation W₂} {n₁ n₂ : ℤ}
 
-private noncomputable def pieceGrading (hs : HodgeStructureOn W₁ ω₁ n₁) : InternalGrading ℂ W₁ where
+private noncomputable def pieceGrading (hs : HodgeStructureOn W₁ ω₁ n₁) :
+    InternalGrading ℂ W₁ ℤ where
   piece := hs.piece
   isInternal := hs.isInternal_piece
 
@@ -133,7 +134,7 @@ noncomputable def tensorProduct (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
       by_cases hq : q < a₁
       · rw [hs₁.piece_eq_bot_of_F_eq_top ha₁ hq]
         simp
-      · have hq' : a₁ ≤ q := le_of_not_gt hq
+      · have _ : a₁ ≤ q := le_of_not_gt hq
         have hpq : p - q < a₂ := by omega
         rw [hs₂.piece_eq_bot_of_F_eq_top ha₂ hpq]
         simp }

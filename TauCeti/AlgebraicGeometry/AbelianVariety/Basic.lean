@@ -12,28 +12,26 @@ public import Mathlib.AlgebraicGeometry.Group.Smooth
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.Topology.KrullDimension
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 
 /-!
 # Abelian varieties
 
-This file opens the Jacobian roadmap's Layer E by defining an **abelian variety** over a field
-`K`.
+This file defines an **abelian variety** over a field `K`.
 
-Following the roadmap, an abelian variety is bundled as a proper geometrically integral group
-scheme over `K`. From geometric integrality and the group-scheme smoothness theorem we derive the
-roadmap's smooth and geometrically connected interface, while Mathlib's rigidity theorem gives
-commutativity.
+An abelian variety is bundled as a proper geometrically integral group scheme over `K`. From
+geometric integrality and the group-scheme smoothness theorem we derive that it is smooth and
+geometrically connected, while Mathlib's rigidity theorem gives commutativity.
 
-We bundle the data as a structure `AbelianVariety K`, so that later roadmap targets can write
-`JacobianVariety X x₀ : AbelianVariety k` and refer to `(JacobianVariety X x₀).toScheme` and
-its base changes, matching `TauCetiRoadmap/JacobianChallenge/Suggested.lean`. From the bundled
+We bundle the data as a structure `AbelianVariety K`, so that an abelian variety `A` is a single
+term, with underlying scheme `A.toScheme` and base changes `A.baseChange L`. From the bundled
 hypotheses we derive:
 
 * `AbelianVariety.isCommMonObj`: the group law is commutative, straight from Mathlib's rigidity
   theorem `AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral`;
 * `AbelianVariety.isIntegral`: the underlying scheme is integral;
-* `AbelianVariety.smooth` and `AbelianVariety.geometricallyConnected`: the roadmap's geometric
-  hypotheses derived from geometric integrality;
+* `AbelianVariety.smooth` and `AbelianVariety.geometricallyConnected`: the structure morphism is
+  smooth and geometrically connected, derived from geometric integrality;
 * `AbelianVariety.isLocallyNoetherian`: the underlying scheme is locally Noetherian, since the
   structure morphism is locally of finite type; this is what makes the tangent space at the
   identity finite-dimensional downstream;
@@ -53,10 +51,7 @@ with the ground field, with its `K`-algebra instance. These specialize the ratio
 `TauCeti.AlgebraicGeometry.RationalPoint.Basic` at the unit section; the tangent space built on
 them lives in `TauCeti.AlgebraicGeometry.AbelianVariety.TangentSpace`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API ... Commutativity is automatic
-(rigidity, `Group/Abelian.lean`)", and the roadmap's base-change compatibility. No external
-mathematics is vendored; the proofs reuse Mathlib's `Over`/`GrpObj` monoidal API, the
+No external mathematics is vendored; the proofs reuse Mathlib's `Over`/`GrpObj` monoidal API, the
 `GeometricallyIntegral`/`IsProper` morphism-property instances, and the commutativity theorem in
 `Mathlib.AlgebraicGeometry.Group.Abelian`.
 -/
@@ -70,19 +65,6 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 universe u
-
-/-- A geometrically irreducible morphism is geometrically connected. Kept `private` as an
-implementation helper for `AbelianVariety.geometricallyConnected`; it is not part of the
-abelian-variety public interface. -/
-private lemma GeometricallyConnected.of_geometricallyIrreducible {X S : Scheme.{u}} {f : X ⟶ S}
-    [GeometricallyIrreducible f] : GeometricallyConnected f := by
-  refine ⟨?_⟩
-  have h : geometrically (IrreducibleSpace ·) f :=
-    GeometricallyIrreducible.geometrically_irreducibleSpace ..
-  rw [geometrically_eq_universally] at h ⊢
-  refine MorphismProperty.universally_mono (fun {X Y} f hf hint hsub ↦ ?_) _ h
-  have := hf hint hsub
-  infer_instance
 
 /-- An **abelian variety** over a field `K`: a proper geometrically integral group scheme over
 `Spec K`.
@@ -135,7 +117,7 @@ instance isLocallyNoetherian (A : AbelianVariety K) : IsLocallyNoetherian A.toSc
 /-- An abelian variety is geometrically connected over the base field. -/
 instance geometricallyConnected (A : AbelianVariety K) :
     GeometricallyConnected A.toOver.hom :=
-  GeometricallyConnected.of_geometricallyIrreducible
+  inferInstance
 
 /-- The group law of an abelian variety is commutative: a proper geometrically integral group
 scheme over a field is a commutative group object. This is the abstract rigidity theorem
@@ -276,8 +258,7 @@ back the group scheme along `Spec L → Spec K`.
 
 Properness and geometric integrality are stable under base change, and the monoidal pullback
 functor carries the group-object structure (`Functor.grpObjObj`), so the result is again an
-abelian variety. This realizes the roadmap's base-change compatibility of the Jacobian at the
-level of abelian varieties. -/
+abelian variety. -/
 noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
     [Algebra K L] : AbelianVariety L where
   toOver := (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver

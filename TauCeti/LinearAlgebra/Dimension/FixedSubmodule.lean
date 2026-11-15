@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.FixedSubmodule
 import TauCeti.LinearAlgebra.FixedSubmodule
 
@@ -17,6 +18,11 @@ idempotent endomorphisms when each new fixed-point condition has an explicitly e
 complementary eigenspace. The only input on the scalars is rank-nullity, so the results hold over
 any ring with `HasRankNullity`, such as a division ring or a commutative domain.
 
+Over a field, the fixed space of an endomorphism `f` is the kernel of `f - 1`, and the fixed space
+of the transpose is the kernel of the transpose of `f - 1`, so the quotients by the two fixed spaces
+have the same `finrank`, that of the range of `f - 1`. In finite dimension, both fixed spaces have
+codimension the rank of `f - 1`.
+
 ## Main results
 
 * `IsIdempotentElem.two_mul_finrank_fixedSubmodule`: an idempotent whose fixed submodule is
@@ -27,6 +33,9 @@ any ring with `HasRankNullity`, such as a division ring or a commutative domain.
   common fixed-space dimension.
 * `TauCeti.pow_card_mul_finrank_iInf_fixedSubmodule`: iterating the construction multiplies the
   common fixed-space dimension by a power of two.
+* `LinearMap.finrank_quotient_fixedSubmodule_dualMap`: the quotients by the fixed spaces of an
+  endomorphism and of its transpose have the same `finrank`; in finite dimension, the two fixed
+  spaces have the same codimension.
 -/
 
 public section
@@ -87,12 +96,12 @@ theorem two_mul_finrank_iInf_fixedSubmodule_insert
   have hS {f : Module.End K V} (hf : ∀ i ∈ s, Commute (p i) f) : ∀ x ∈ S, f x ∈ S :=
     LinearMap.iInf_invariant f fun i => LinearMap.iInf_invariant f fun hi x hx => by
       have hfi : Function.Semiconj f (p i) (p i) := fun y => by
-        simpa only [Module.End.mul_apply] using LinearMap.congr_fun (hf i hi).eq.symm y
+        simpa only [mul_apply_eq_comp] using LinearMap.congr_fun (hf i hi).eq.symm y
       rw [LinearMap.mem_fixedSubmodule_iff, ← Function.mem_fixedPoints_iff] at hx ⊢
       exact hfi.mapsTo_fixedPoints hx
   let q : Module.End K S := (p a).restrict (hS hcomm)
   have hq : IsIdempotentElem q := LinearMap.ext fun x => Subtype.ext <| by
-    simpa only [q, Module.End.mul_apply, LinearMap.coe_restrict_apply] using
+    simpa only [q, mul_apply_eq_comp, LinearMap.coe_restrict_apply] using
       LinearMap.congr_fun hpa.eq (x : V)
   -- Membership in the fixed submodule and in the kernel of `q` is read off in `V`.
   have hf {x : S} : x ∈ q.fixedSubmodule ↔ p a x = x := by
@@ -171,3 +180,19 @@ theorem pow_card_mul_finrank_iInf_fixedSubmodule
         _ = finrank K V := ih'
 
 end TauCeti
+
+/-- **The fixed spaces of a map and of its transpose have equal finrank quotients.** For an
+endomorphism `f` of a vector space, the quotients by the fixed spaces of `f` and of its transpose
+`f.dualMap` have the same `finrank`, that of the range of `f - 1`. In finite dimension, the two
+fixed spaces therefore have the same codimension; in particular `f` fixes a hyperplane exactly when
+its transpose does. -/
+@[simp]
+theorem LinearMap.finrank_quotient_fixedSubmodule_dualMap {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] (f : V →ₗ[K] V) :
+    finrank K (Module.Dual K V ⧸ f.dualMap.fixedSubmodule) = finrank K (V ⧸ f.fixedSubmodule) := by
+  have h : f.dualMap - LinearMap.id = (f - LinearMap.id).dualMap := by
+    rw [LinearMap.dualMap_def (f - _), map_sub, ← LinearMap.dualMap_def, ← LinearMap.dualMap_def,
+      LinearMap.dualMap_id]
+  rw [LinearMap.fixedSubmodule_eq_ker, LinearMap.fixedSubmodule_eq_ker, h,
+    (LinearMap.quotKerEquivRange _).finrank_eq, (LinearMap.quotKerEquivRange _).finrank_eq,
+    LinearMap.finrank_range_dualMap_eq_finrank_range]

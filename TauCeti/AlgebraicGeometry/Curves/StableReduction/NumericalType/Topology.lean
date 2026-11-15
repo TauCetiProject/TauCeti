@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
+import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -70,7 +71,19 @@ lemma intersectionGraph_connected : T.intersectionGraph.Connected := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
   induction T.reflTransGen_adj i j with
   | refl => exact .refl
-  | tail hab hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
+  | tail _ hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
+
+/-- For a graph on ordered indices, positivity on increasing adjacent pairs suffices for
+positivity on all adjacent pairs, by symmetry of the intersection form. -/
+lemma intersection_pos_of_adj_of_forall_lt {ι : Type*} [LinearOrder ι]
+    {G : SimpleGraph ι} {l : ι → T.Component}
+    (h : ∀ i j, i < j → G.Adj i j → 0 < T.intersection (l i) (l j))
+    {i j : ι} (hij : G.Adj i j) : 0 < T.intersection (l i) (l j) := by
+  rcases lt_trichotomy i j with hlt | rfl | hgt
+  · exact h i j hlt hij
+  · exact (G.loopless.irrefl i hij).elim
+  · rw [T.intersection_comm]
+    exact h j i hgt hij.symm
 
 /-! ### Topological genus -/
 
@@ -87,15 +100,31 @@ lemma topologicalGenus_def :
       1 - (Nat.card T.Component : ℤ) + (T.intersectionGraph.edgeSet.ncard : ℤ) := by
   rw [topologicalGenus]
 
+open Classical in
+/-- The sum of the degrees in the intersection graph is twice its number of edges. -/
+lemma sum_degrees_eq_twice_ncard_edges :
+    ∑ v, T.intersectionGraph.degree v = 2 * T.intersectionGraph.edgeSet.ncard := by
+  classical
+  rw [T.intersectionGraph.sum_degrees_eq_twice_card_edges,
+    SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+
+open Classical in
+/-- If every component has at least two neighbours, the topological genus is positive. -/
+lemma topologicalGenus_pos_of_two_le_degree
+    (h : ∀ v, 2 ≤ T.intersectionGraph.degree v) : 0 < T.topologicalGenus := by
+  classical
+  have hdeg : 2 * Fintype.card T.Component ≤ ∑ v, T.intersectionGraph.degree v := by
+    simpa [mul_comm 2] using Finset.sum_le_sum fun v (_ : v ∈ Finset.univ) ↦ h v
+  rw [T.sum_degrees_eq_twice_ncard_edges] at hdeg
+  rw [T.topologicalGenus_def, Nat.card_eq_fintype_card]
+  omega
+
 /-- The topological genus of a numerical type is nonnegative. -/
 theorem topologicalGenus_nonneg : 0 ≤ T.topologicalGenus := by
   have hcard := T.intersectionGraph_connected.card_vert_le_card_edgeSet_add_one
   have hcard' : Nat.card T.Component ≤ T.intersectionGraph.edgeSet.ncard + 1 := by
     simpa only [Nat.card_coe_set_eq] using hcard
   rw [topologicalGenus_def]
-  have hcard'' : (Nat.card T.Component : ℤ) ≤
-      (T.intersectionGraph.edgeSet.ncard : ℤ) + 1 := by
-    exact_mod_cast hcard'
   omega
 
 /-- The topological genus vanishes exactly when the intersection graph is a tree. -/
@@ -120,6 +149,15 @@ theorem topologicalGenus_eq_zero_iff :
       exact_mod_cast hcardNat
     rw [topologicalGenus_def]
     omega
+
+/-- If three components pairwise meet, the intersection graph contains a triangle, so it is not a
+tree and its topological genus is positive. -/
+theorem topologicalGenus_pos_of_adj_of_adj_of_adj {a b c : T.Component} (hab : T.Adj a b)
+    (hac : T.Adj a c) (hbc : T.Adj b c) : 0 < T.topologicalGenus := by
+  refine T.topologicalGenus_nonneg.lt_of_ne fun h ↦ ?_
+  exact (T.topologicalGenus_eq_zero_iff.mp h.symm).isAcyclic.cliqueFree le_rfl {a, b, c}
+    (SimpleGraph.is3Clique_triple_iff.mpr ⟨(T.intersectionGraph_adj_iff).mpr hab,
+      (T.intersectionGraph_adj_iff).mpr hac, (T.intersectionGraph_adj_iff).mpr hbc⟩)
 
 end NumericalType
 

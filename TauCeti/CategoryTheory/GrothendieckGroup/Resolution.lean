@@ -310,7 +310,7 @@ variable [EssentiallySmall.{w} C]
 
 variable (E P) in
 /-- The classes of the objects satisfying `P`, as a subset of exact `K₀`. -/
-def propClasses : Set (ExactK0 E) := (ExactK0.of (E := E)) '' {X : C | P X}
+noncomputable def propClasses : Set (ExactK0 E) := (ExactK0.of (E := E)) '' {X : C | P X}
 
 /-- Membership in the generator set `propClasses E P`: an element of exact `K₀` lies in it
 exactly when it is the class of an object satisfying `P`. -/

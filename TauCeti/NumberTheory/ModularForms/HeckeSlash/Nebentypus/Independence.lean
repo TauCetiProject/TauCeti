@@ -67,9 +67,9 @@ omit [NeZero N] in
 representatives `x`, `y` of `Δ₀(N)` lying in the same right coset of `Γ₀(N)`, the weighted slashes
 agree.
 
-This is the twisted counterpart of `slash_eq_of_rightCoset_eq`, and it is where the whole content
-of the independence below sits: there invariance makes the bare slash coset-dependent, here it is
-the character weight that does it. The cancellation itself is
+This is the twisted counterpart of `SlashAction.slash_eq_of_rightCoset_eq`, and it is where the
+whole content of the independence below sits: there invariance makes the bare slash
+coset-dependent, here it is the character weight that does it. The cancellation itself is
 `delta0NebentypusChar_smul_slash_mapGL_mul`; all this adds is the passage from a right-coset
 equality to the factorisation `y = γ · x` that lemma consumes. -/
 theorem smul_slash_eq_of_rightCoset_eq (f : ℍ → ℂ) (hf : f ∈ functionCharSpace k χ)

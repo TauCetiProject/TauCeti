@@ -18,9 +18,10 @@ permutation classes. This lets additive invariants of representations, such as d
 Euler characteristics, be evaluated on virtual module classes without choosing a module model.
 
 `TauCeti.liftFDRepK0` is the induced homomorphism, `TauCeti.liftFDRepK0_of` computes its value on
-an actual representation, and `TauCeti.liftFDRepK0_unique` is its uniqueness property. No separate
-isomorphism-invariance hypothesis is necessary: short-exact additivity already implies it, as
-proved by `TauCeti.ExactK0.AdditiveInvariant.map_iso`.
+an actual representation, and `TauCeti.liftFDRepK0_unique` is its uniqueness property, an instance
+of `TauCeti.hom_ext_fdRep`: homomorphisms out of `G₀(k[G])` are determined by their values on
+finite representations. No separate isomorphism-invariance hypothesis is necessary: short-exact
+additivity already implies it, as proved by `TauCeti.ExactK0.AdditiveInvariant.map_iso`.
 
 The construction uses the exact equivalence `TauCeti.fdRepEquivalence` and the universal property
 `TauCeti.ExactK0.lift` of exact Grothendieck groups.
@@ -73,20 +74,20 @@ theorem liftFDRepK0_of (f : FDRep k G → A)
   rw [hV, liftFDRepK0, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.symm_apply_apply, ExactK0.lift_of]
 
-/-- An additive homomorphism out of the group-algebra Grothendieck group is the descended
-invariant if it agrees with that invariant on every finite representation. -/
-theorem liftFDRepK0_unique (f : FDRep k G → A)
-    (hf : ∀ ⦃S : ShortComplex (FDRep k G)⦄, S.ShortExact → f S.X₂ = f S.X₁ + f S.X₃)
-    (F : ExactK0 (finiteModulesExactStructure k[G]) →+ A)
-    (hF : ∀ V : FDRep k G,
+/-- **Extensionality on finite representations.** Two additive homomorphisms out of the
+group-algebra Grothendieck group agree if they agree on the class of every finite
+representation's group-algebra module. -/
+theorem hom_ext_fdRep {F F' : ExactK0 (finiteModulesExactStructure k[G]) →+ A}
+    (h : ∀ V : FDRep k G,
       letI : Module.Finite k[G] (_root_.Representation.asModule V.ρ) :=
         Module.Finite.of_restrictScalars_finite k k[G] _
-      F (ExactK0.of (FGModuleCat.of k[G] (_root_.Representation.asModule V.ρ))) = f V) :
-    F = liftFDRepK0 f hf := by
+      F (ExactK0.of (FGModuleCat.of k[G] (_root_.Representation.asModule V.ρ))) =
+        F' (ExactK0.of (FGModuleCat.of k[G] (_root_.Representation.asModule V.ρ)))) :
+    F = F' := by
   let e := ExactK0.mapEquiv (fdRepEquivalence k G)
     (isConflationExact_fdRepEquivalence_functor k G)
     (isConflationExact_fdRepEquivalence_inverse k G)
-  suffices h : F.comp e.toAddMonoidHom = (liftFDRepK0 f hf).comp e.toAddMonoidHom by
+  suffices h : F.comp e.toAddMonoidHom = F'.comp e.toAddMonoidHom by
     apply DFunLike.ext
     intro x
     obtain ⟨y, rfl⟩ := e.surjective x
@@ -101,7 +102,19 @@ theorem liftFDRepK0_unique (f : FDRep k G → A)
     rw [ExactK0.mapEquiv_of]
     exact ExactK0.of_congr (ObjectProperty.isoMk _
       (eqToIso (fdRepEquivalence_functor_obj_obj k G V)))
-  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hV, liftFDRepK0_of]
-  exact hF V
+  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hV]
+  exact h V
+
+/-- An additive homomorphism out of the group-algebra Grothendieck group is the descended
+invariant if it agrees with that invariant on every finite representation. -/
+theorem liftFDRepK0_unique (f : FDRep k G → A)
+    (hf : ∀ ⦃S : ShortComplex (FDRep k G)⦄, S.ShortExact → f S.X₂ = f S.X₁ + f S.X₃)
+    (F : ExactK0 (finiteModulesExactStructure k[G]) →+ A)
+    (hF : ∀ V : FDRep k G,
+      letI : Module.Finite k[G] (_root_.Representation.asModule V.ρ) :=
+        Module.Finite.of_restrictScalars_finite k k[G] _
+      F (ExactK0.of (FGModuleCat.of k[G] (_root_.Representation.asModule V.ρ))) = f V) :
+    F = liftFDRepK0 f hf :=
+  hom_ext_fdRep fun V ↦ by rw [liftFDRepK0_of]; exact hF V
 
 end TauCeti

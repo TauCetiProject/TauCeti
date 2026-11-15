@@ -493,7 +493,6 @@ theorem dedekindCubic_ncard_primesOver_two_eq_finrank :
   rw [dedekindCubic_primesOver_two_eq hmin hgen, ncard_dedekindPrimes hmin hgen,
     dedekindCubic_finrank_eq_three hmin hgen]
 
-open RamificationInertia in
 /-- Every prime above `2` is unramified with residue degree one. -/
 theorem dedekindCubic_ramificationIdx_eq_one_and_inertiaDeg_eq_one {P : Ideal (𝓞 K)}
     (hP : P ∈ (span {(2 : ℤ)}).primesOver (𝓞 K)) :
@@ -545,9 +544,8 @@ theorem dedekindCubic_isCommonIndexDivisor_two : IsCommonIndexDivisor 2 K := by
 
 /-- **Dedekind's cubic field is not monogenic**: its ring of integers is not `ℤ[α]` for any
 algebraic integer `α`. -/
-theorem dedekindCubic_not_isMonogenic : ¬ IsMonogenic K := by
-  rw [isMonogenic_iff_exists_index_eq_one]
-  exact (dedekindCubic_isCommonIndexDivisor_two hmin hgen).not_exists_index_eq_one (by norm_num)
+theorem dedekindCubic_not_isMonogenic : ¬ IsMonogenic K :=
+  (dedekindCubic_isCommonIndexDivisor_two hmin hgen).not_isMonogenic (by norm_num)
 
 end TauCeti.NumberField
 

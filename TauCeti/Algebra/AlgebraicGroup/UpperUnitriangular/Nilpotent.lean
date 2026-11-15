@@ -26,10 +26,6 @@ solvable.
 
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
-
-This is the upper-unitriangular case of the solvability target in Layer 5 of the ReductiveGroups
-roadmap. Once the upper-unitriangular embedding characterization is complete, subgroup closure
-transfers this result to every smooth connected unipotent affine group.
 -/
 
 public section

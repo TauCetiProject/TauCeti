@@ -5,7 +5,11 @@ Authors: Codex
 -/
 module
 
+-- Equality of the canonical versions uses that condDistrib chooses from the joint law.
+import all Mathlib.Probability.Kernel.CondDistrib
+
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
+public import TauCeti.Probability.Process.Array.Context
 public import Mathlib.Probability.Kernel.CondDistrib
 public import TauCeti.Probability.Kernel.Randomization
 
@@ -15,7 +19,8 @@ public import TauCeti.Probability.Kernel.Randomization
 Fix two sequences of hidden row and column indices, `e` and `f`. A visible cell `(i,j)` is
 observed together with the hidden block, its row against the hidden columns, and its column
 against the hidden rows. `cellContext e f i j` packages these three observations in the same
-measurable space for every visible cell.
+measurable space for every visible cell. These observations and their deterministic transport
+identities are defined in `TauCeti.Probability.Process.Array.Context`.
 
 For a separately exchangeable array law, the joint law of this context and the cell is
 independent of the choice of `i` and `j`, as long as they lie outside the two hidden index
@@ -42,56 +47,6 @@ open MeasureTheory ProbabilityTheory unitInterval
 namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- The hidden block and the two hidden strips adjacent to cell `(i,j)`. The first component
-contains the block and the row strip, and the second contains the column strip. -/
-def cellContext (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
-    ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) :=
-  ((fun p => x (e p.1, f p.2), fun b => x (i, f b)), fun a => x (e a, j))
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_block_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
-    (cellContext e f i j x).1.1 p = x (e p.1, f p.2) :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_rowStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (b : ℕ) :
-    (cellContext e f i j x).1.2 b = x (i, f b) :=
-  (rfl)
-
-omit [MeasurableSpace α] in
-@[simp]
-theorem cellContext_colStrip_apply (e f : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) (a : ℕ) :
-    (cellContext e f i j x).2 a = x (e a, j) :=
-  (rfl)
-
-/-- Reading a cell context from an array is measurable. -/
-theorem measurable_cellContext (e f : ℕ → ℕ) (i j : ℕ) :
-    Measurable (cellContext (α := α) e f i j) :=
-  ((Measurable.of_eval fun p => measurable_pi_apply (e p.1, f p.2)).prodMk
-    (Measurable.of_eval fun b => measurable_pi_apply (i, f b))).prodMk
-      (Measurable.of_eval fun a => measurable_pi_apply (e a, j))
-
-omit [MeasurableSpace α] in
-/-- Reindexing while fixing the hidden indices transports the visible cell context to the
-context at the reindexed cell. -/
-theorem cellContext_pairReindex (e f : ℕ → ℕ) (i j : ℕ)
-    (rowPerm colPerm : Equiv.Perm ℕ)
-    (he : ∀ a, rowPerm (e a) = e a) (hf : ∀ b, colPerm (f b) = f b)
-    (x : ℕ × ℕ → α) :
-    cellContext e f i j (pairReindex rowPerm colPerm x) =
-      cellContext e f (rowPerm i) (colPerm j) x := by
-  simp only [cellContext, pairReindex_apply]
-  congr 1
-  · congr 1
-    · funext p
-      rw [he p.1, hf p.2]
-    · funext b
-      rw [hf b]
-  · funext a
-    rw [he a]
 
 /-- The joint law of a cell and its hidden context is invariant under reindexing that fixes the
 hidden rows and columns pointwise. -/
@@ -147,31 +102,35 @@ theorem SeparatelyExchangeable.condDistrib_cellContext_eq
     condDistrib (fun x : ℕ × ℕ → α => x (i', j')) (cellContext e f i' j') ρ =
       condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ := by
   -- `condDistrib` chooses its kernel from the joint law, which the preceding theorem identifies.
-  simp only [condDistrib]
-  simp only [hρ.map_cellContext_cell_eq e f hi hi' hj hj']
+  simp only [condDistrib, hρ.map_cellContext_cell_eq e f hi hi' hj hj']
 
-/-- **A single measurable cell coding realizes every visible cell's conditional law.** Given a
-reference visible cell, the canonical conditional kernel of that cell can be randomized by a
-uniform variable. The common-kernel theorem makes the same coding work at every other visible
-position, with its own hidden block and adjacent strips as input. This statement concerns each
-cell's conditional law separately; it does not assert independence of the randomizations. -/
+/-- **A single measurable cell coding realizes every visible cell's conditional law.** The
+canonical conditional kernel of a reference visible cell can be randomized by a uniform
+variable. The common-kernel theorem makes the same coding work at every other visible position,
+with its own hidden block and adjacent strips as input. If every row or every column is hidden,
+there is no visible cell and any coding serves. This statement concerns each cell's conditional
+law separately; it does not assert independence of the randomizations. -/
 theorem SeparatelyExchangeable.exists_common_cell_coding
     [StandardBorelSpace α] [Nonempty α]
     {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
     (hρ : SeparatelyExchangeable ρ fun p x => x p)
-    (e f : ℕ → ℕ) {i₀ j₀ : ℕ}
-    (hi₀ : i₀ ∉ Set.range e) (hj₀ : j₀ ∉ Set.range f) :
+    (e f : ℕ → ℕ) :
     ∃ g : (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) → I → α,
       Measurable (Function.uncurry g) ∧
         ∀ (i j : ℕ), i ∉ Set.range e → j ∉ Set.range f →
           ∀ z, (volume : Measure I).map (g z) =
             condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ z := by
-  obtain ⟨g, hg, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
-    (condDistrib (fun x : ℕ × ℕ → α => x (i₀, j₀)) (cellContext e f i₀ j₀) ρ)
-  refine ⟨g, hg, ?_⟩
-  intro i j hi hj z
-  rw [hρ.condDistrib_cellContext_eq e f hi₀ hi hj₀ hj]
-  exact hmap z
+  by_cases hex : ∃ i₀ j₀ : ℕ, i₀ ∉ Set.range e ∧ j₀ ∉ Set.range f
+  · obtain ⟨i₀, j₀, hi₀, hj₀⟩ := hex
+    obtain ⟨g, hg, hmap⟩ := Kernel.exists_measurable_map_eq_unitInterval
+      (condDistrib (fun x : ℕ × ℕ → α => x (i₀, j₀)) (cellContext e f i₀ j₀) ρ)
+    refine ⟨g, hg, ?_⟩
+    intro i j hi hj z
+    rw [hρ.condDistrib_cellContext_eq e f hi₀ hi hj₀ hj]
+    exact hmap z
+  · obtain ⟨g, hg, -⟩ := Kernel.exists_measurable_map_eq_unitInterval
+      (condDistrib (fun x : ℕ × ℕ → α => x (0, 0)) (cellContext e f 0 0) ρ)
+    exact ⟨g, hg, fun i j hi hj _ ↦ (hex ⟨i, j, hi, hj⟩).elim⟩
 
 end TauCeti.Probability
 

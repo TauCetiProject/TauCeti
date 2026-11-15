@@ -22,8 +22,10 @@ representation.  It is used in Clifford theory to show that induction preserves 
 lying over a constituent.
 
 The scalar field and the group share one universe: `Rep.indResAdjunction` relates functors on a
-single `Rep` carrier universe, so its unit at the forgotten `A` lives in the same universe as `G`,
-exactly as for `TauCeti.indFDRepForgetIso` and `TauCeti.finrank_hom_indFDRep`.
+single `Rep` carrier universe, as does the comparison `TauCeti.indFDRepForgetIso` used here.
+The linear reciprocity maps in
+`TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction` instead use the adjunctions
+on `FDRep` and allow separate scalar and group universes.
 
 ## Main definitions
 
@@ -123,34 +125,6 @@ theorem indFDRepUnit_injective (A : FDRep k S) : Function.Injective (indFDRepUni
       (indFDRepForgetIso A).hom.hom (indFDRepUnit A b) :=
     congrArg (indFDRepForgetIso A).hom.hom hab
   rw [indFDRepUnit_apply, indFDRepUnit_apply] at h
-  let _ : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
-  -- The universes of `Rep.indCoindIso` are pinned throughout: left to unification, the
-  -- constraint `max ?w u = u` makes the `rw [show …]` below cost seconds (see #8353).
-  have h' := congrArg
-    (fun x => ((Rep.indCoindIso.{u, u, u}
-      ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom x).1 1) h
-  have heval (x : (forget₂ (FDRep k S) (Rep k S)).obj A) :
-      ((Rep.indCoindIso.{u, u, u} ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom
-        (Representation.IndV.mk S.subtype
-          ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 x)).1 1 = x := by
-    -- Pass from the bundled representation morphism to its linear map so the generated
-    -- `indCoindIso_hom_hom_toLinearMap` equation can rewrite it.
-    change (((Rep.indCoindIso.{u, u, u}
-      ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom.toLinearMap
-        (Representation.IndV.mk S.subtype
-          ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 x))).1 1 = x
-    rw [show (Rep.indCoindIso.{u, u, u}
-      ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom.toLinearMap =
-        Rep.indToCoind ((forget₂ (FDRep k S) (Rep k S)).obj A) from
-      Rep.indCoindIso_hom_hom_toLinearMap.{u, u, u} _]
-    simp only [FGModuleCat.obj_carrier, LinearMap.coe_comp, Function.comp_apply,
-      TensorProduct.mk_apply, Representation.Coinvariants.lift_mk, TensorProduct.lift.tmul,
-      LinearEquiv.coe_coe, MonoidAlgebra.coeffLinearEquiv_apply,
-      MonoidAlgebra.coeff_single, Finsupp.linearCombination_single, one_smul]
-    -- The remaining subtype coercion is the defining codomain restriction in `indToCoind`.
-    change (Rep.indToCoindAux
-      ((forget₂ (FDRep k S) (Rep k S)).obj A) 1 x) 1 = x
-    exact Rep.indToCoindAux_self 1 x
-  exact (heval a).symm.trans (h'.trans (heval b))
+  exact Representation.IndV.mk_one_injective S ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ h
 
 end FDRep

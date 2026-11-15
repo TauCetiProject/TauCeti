@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.SquareRoot
-public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Table
+import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 
 /-!
 # The Frobenius-Schur involution count
@@ -72,11 +73,6 @@ The field is taken in `Type` rather than an arbitrary universe, matching
 `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Basic.lean`.
 
 ## References
-
-This implements the involution-counting item of Layer 7 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-whose `Suggested.lean` pins it as `card_sq_eq_sum_frobeniusSchur` over `ℂ` and the `ℂ`-valued
-character table, together with the per-row indicator `frobeniusSchurIndicatorRow`.
 
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Corollary 4.6, or J.-P. Serre,
 *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2, Proposition 39.
@@ -164,7 +160,7 @@ section Formula
 
 variable {k : Type} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
   (hcard : Nat.card ι = Nat.card (ConjClasses G))
@@ -221,9 +217,9 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
   simp
 
 variable {G} in
-/-- **The row indicator takes only the values `1`, `0` and `-1`** in characteristic zero, by the
-Frobenius-Schur trichotomy applied to a representation affording the row. -/
-theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one [CharZero k]
+/-- **The row indicator takes only the values `1`, `0` and `-1`** for a finite group over an
+algebraically closed field in which `|G|` is invertible, without assuming characteristic zero. -/
+theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one
     (i : Fin (Nat.card (ConjClasses G))) :
     frobeniusSchurIndicatorRow k i = 1 ∨ frobeniusSchurIndicatorRow k i = 0 ∨
       frobeniusSchurIndicatorRow k i = -1 := by

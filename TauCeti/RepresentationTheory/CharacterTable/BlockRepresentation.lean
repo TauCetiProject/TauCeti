@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.SetTheory.Cardinal.Finite
 public import TauCeti.RepresentationTheory.CharacterTable.Wedderburn
 public import TauCeti.RepresentationTheory.Irreducible
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -45,11 +46,8 @@ irreducible representations of `G` indexed by the conjugacy classes of `G`.
 
 ## References
 
-This supplies one half of the block ⇆ irreducible-representation matching that Layer 2.5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-asks for, in the concrete form needed by Layer 3's completeness statement. See J.-P. Serre, *Linear
-Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character Theory of Finite
-Groups*, Chapter 1.
+See J.-P. Serre, *Linear Representations of Finite Groups*, Section 6.4, or I. M. Isaacs, *Character
+Theory of Finite Groups*, Chapter 1.
 -/
 
 public section
@@ -166,7 +164,7 @@ end Inequivalent
 
 section Existence
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [NeZero (Nat.card G : k)]
   [IsAlgClosed k]
 
 /-- **There are as many pairwise inequivalent irreducible representations of `G` as `G` has
@@ -180,6 +178,7 @@ theorem exists_irreducible_family_conjClasses :
     ∃ (d : ConjClasses G → ℕ) (ρ : ∀ C, Representation k G (Fin (d C) → k)),
       (∀ C, (ρ C).IsIrreducible) ∧ (Pairwise fun C D => IsEmpty ((ρ C).Equiv (ρ D))) ∧
         ∑ᶠ C, d C ^ 2 = Nat.card G := by
+  have : Finite G := TauCeti.finite_of_natCast_card_ne_zero (NeZero.ne (Nat.card G : k))
   obtain ⟨d, hd, hsum, ⟨e⟩⟩ := exists_algEquiv_pi_matrix_conjClasses k G
   have := hd
   exact ⟨d, blockRepresentation e, fun C => isIrreducible_blockRepresentation e C,

@@ -168,8 +168,8 @@ evaluates `h` at `x`. -/
 theorem eq_zero_of_characterPairing_indSpan_eq_zero [Invertible (Nat.card G : k)]
     {𝒮 : Set (Subgroup G)}
     (h𝒮 : ∀ x : G, ∃ S ∈ 𝒮, ∃ y : G, y * x * y⁻¹ ∈ S) {h : ClassFunction k G}
-    (hh : ∀ f ∈ indSpan k G 𝒮,
-      (@characterPairing k G _ _ (Fintype.ofFinite G)) f h = 0) :
+    (hh : let := Fintype.ofFinite G
+      ∀ f ∈ indSpan k G 𝒮, characterPairing f h = 0) :
     h = 0 := by
   classical
   let _ := Fintype.ofFinite G

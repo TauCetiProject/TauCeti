@@ -49,6 +49,10 @@ surjectivity results.
   of `ι v` and its grade involute multiply to the scalar `Q v`. This is stated for every unit of
   the classical Clifford group, so it also serves the identification of that group with the
   Lipschitz group in `TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup`.
+* `CliffordAlgebra.involute_mul_mul_inv_eq_neg_one_pow_smul`: on a product of `r` vectors,
+  twisted conjugation is `(-1) ^ r` times ordinary conjugation.
+* `CliffordAlgebra.unitι_mul_ι_mul_inv_eq_neg_ι_reflection`: ordinary conjugation by a vector is
+  the negative of the reflection in its orthogonal hyperplane.
 * `CliffordAlgebra.lipschitzVectorAction_unitι`: **a vector acts by the reflection in its
   orthogonal hyperplane.** This is the identification of the generators referred to above.
 * `CliffordAlgebra.lipschitzVectorAction_map_app`: twisted conjugation by a Lipschitz
@@ -111,6 +115,19 @@ private theorem twistedConj_mul (x y : (CliffordAlgebra Q)ˣ) (a : CliffordAlgeb
     twistedConj Q (x * y) a = twistedConj Q x (twistedConj Q y a) := by
   simp only [twistedConj_apply, Units.val_mul, mul_inv_rev, map_mul]
   noncomm_ring
+
+/-- For a Clifford unit that is a product of `r` vectors, twisted conjugation is `(-1) ^ r` times
+ordinary conjugation. This records the sign relating the two conventions without requiring the
+vectors to be orthogonal. -/
+theorem involute_mul_mul_inv_eq_neg_one_pow_smul (x : (CliffordAlgebra Q)ˣ) (l : List M)
+    (hx : (x : CliffordAlgebra Q) = (l.map (ι Q)).prod) (a : CliffordAlgebra Q) :
+    involute (Q := Q) (x : CliffordAlgebra Q) * a *
+        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (-1 : R) ^ l.length •
+        ((x : CliffordAlgebra Q) * a *
+          ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
+  rw [hx, involute_prod_map_ι]
+  simp only [smul_mul_assoc]
 
 variable {Q}
 
@@ -212,6 +229,22 @@ private theorem twistedConj_ι_eq_reflection (v : M) [Invertible (Q v)]
   rw [twistedConj_apply, hx, hinv]
   simp only [involute_ι, neg_mul, ι_mul_ι_mul_invOf_ι, QuadraticMap.reflection_apply]
   rw [← map_neg, neg_sub]
+
+omit [Invertible (2 : R)] in
+/-- Ordinary Clifford conjugation by a vector `v` of invertible norm is the negative of the
+reflection in the hyperplane orthogonal to `v`. This is the one-vector case of the sign
+comparison between ordinary and twisted conjugation. -/
+theorem unitι_mul_ι_mul_inv_eq_neg_ι_reflection (v m : M) [Invertible (Q v)] :
+    (unitι Q v : CliffordAlgebra Q) * ι Q m *
+        (((unitι Q v)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      -ι Q (QuadraticMap.reflection Q v m) := by
+  have hsign := involute_mul_mul_inv_eq_neg_one_pow_smul Q (unitι Q v) [v]
+    (by simp only [coe_unitι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one])
+    (ι Q m)
+  simp only [List.length_cons, List.length_nil, zero_add, pow_one, neg_smul, one_smul] at hsign
+  have htwisted := twistedConj_ι_eq_reflection Q v (coe_unitι v) m
+  rw [twistedConj_apply] at htwisted
+  simpa only [neg_neg] using (congrArg Neg.neg (htwisted.symm.trans hsign)).symm
 
 /-- Twisted conjugation by a vector of invertible norm is the reflection in its orthogonal
 hyperplane. Only the value of the unit matters, so this is stated for an arbitrary unit whose value

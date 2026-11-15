@@ -20,10 +20,9 @@ the dilated Hermite polynomials `Hₙ(x√2)`, whose `√w`-envelope is exactly 
 
 * `TauCeti.degree_hermiteDilated` — `Hₙ(x√2)` has degree exactly `n`.
 * `TauCeti.integral_hermiteDilated_mul_hermiteDilated_mul_gaussianWeight` — the orthogonality
-  relation with normalization `cₙ = n!√π`, obtained from the Hermite function orthonormality
-  (milestone A2).
-* `TauCeti.hermiteHilbertBasis` — **milestone A3**: the Hermite functions as a `HilbertBasis` of
-  `L²(ℝ)`, the principal result of this file.
+  relation with normalization `cₙ = n!√π`, obtained from the Hermite function orthonormality.
+* `TauCeti.hermiteHilbertBasis` — the Hermite functions as a `HilbertBasis` of `L²(ℝ)`, the
+  principal result of this file.
 * `TauCeti.coe_hermiteHilbertBasis` — its normal form: the `n`-th basis vector really is `ψₙ`.
 -/
 
@@ -54,12 +53,10 @@ private theorem exp_moment_gaussianWeight :
 
 /-- The Hermite normalization `cₙ = n!·√π` is positive. -/
 theorem hermiteNormalization_pos (n : ℕ) : (0 : ℝ) < (n.factorial : ℝ) * Real.sqrt Real.pi := by
-  have hfac : (0 : ℝ) < (n.factorial : ℝ) := by exact_mod_cast Nat.factorial_pos n
-  have hpi : (0 : ℝ) < Real.sqrt Real.pi := Real.sqrt_pos.mpr Real.pi_pos
   positivity
 
-/-- **Orthogonality against the Gaussian weight.** `∫ Hₘ(x√2)Hₙ(x√2)e^{-x²} = δₘₙ·n!√π`. This is
-the Hermite function orthonormality (milestone A2) with the normalizations put back. -/
+/-- **Orthogonality against the Gaussian weight.** `∫ Hₘ(x√2)Hₙ(x√2)e^{-x²} = δₘₙ·n!√π`. This is the
+Hermite function orthonormality with the normalizations put back. -/
 theorem integral_hermiteDilated_mul_hermiteDilated_mul_gaussianWeight (m n : ℕ) :
     (∫ x : ℝ, (hermiteDilated m).eval x * (hermiteDilated n).eval x * Real.exp (-x ^ 2))
       = if m = n then (n.factorial : ℝ) * Real.sqrt Real.pi else 0 := by
@@ -73,8 +70,6 @@ theorem integral_hermiteDilated_mul_hermiteDilated_mul_gaussianWeight (m n : ℕ
       ring_nf
     have hm : Real.sqrt ((m.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
       ne_of_gt (Real.sqrt_pos.mpr (hermiteNormalization_pos m))
-    have hn : Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
-      ne_of_gt (Real.sqrt_pos.mpr (hermiteNormalization_pos n))
     rw [eval_hermiteDilated, eval_hermiteDilated, hermiteFunction_def, hermiteFunction_def, ← he]
     field_simp
   simp_rw [hpt]
@@ -99,8 +94,8 @@ private theorem memLp_hermiteDilated_normalized (n : ℕ) :
   memLp_two_bareNormalized (𝕜 := 𝕜) exp_moment_gaussianWeight
     hermiteDilated (fun n => (n.factorial : ℝ) * Real.sqrt Real.pi) n
 
-/-- **Roadmap A3: the Hermite functions are a Hilbert basis of `L²(ℝ)`.** Orthonormality comes from
-the weighted-measure machinery and completeness from moment determinacy
+/-- **The Hermite functions are a Hilbert basis of `L²(ℝ)`.** Orthonormality comes from the
+weighted-measure machinery and completeness from moment determinacy
 (`TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot`), applied to the exact-degree family
 `Hₙ(x√2)` against the Gaussian weight `e^{-x²}`. -/
 noncomputable def hermiteHilbertBasis : HilbertBasis ℕ 𝕜 (Lp 𝕜 2 (volume : Measure ℝ)) :=

@@ -1,0 +1,147 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Module.ZLattice.Basic
+import Mathlib.LinearAlgebra.FreeModule.PID
+
+/-!
+# A rank criterion for discrete integer submodules
+
+A finitely generated integer submodule of a real normed space is discrete
+if and only if its integer rank equals the dimension of its real span.
+The necessity direction follows from `ZLattice.rank` and extends the rank comparison in
+Mathlib's `Real.finrank_eq_int_finrank_of_discrete` to arbitrary ambient dimension.
+
+This criterion allows logarithmic images of finitely generated unit groups to be proved
+discrete from their rank and real span, without a separate compactness argument.
+
+## Main results
+
+- `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
+  integer submodule is equivalent to equality of its integer rank and its real span's dimension.
+- `Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_span`: a discrete integer
+  submodule with finite-dimensional real span is finitely generated.
+- `setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology` and
+  `setFinrank_real_eq_finrank_int`: a set of vectors of a discrete integer submodule has the same
+  real and integer rank, and the real rank of the submodule itself is its integer rank. These two
+  statements and their names follow Kevin H. Wilson's successive-minima proposal for Mathlib,
+  `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
+  <https://github.com/khwilson/mathlib4>.
+
+Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
+discreteness from a rank equality `hr`.
+-/
+
+public section
+
+open Submodule Module
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+private theorem discreteTopology_of_span_eq_top_of_finrank_eq
+    (L : Submodule ℤ E) [Module.Finite ℤ L]
+    (hs : Submodule.span ℝ (L : Set E) = ⊤)
+    (hr : Module.finrank ℤ L = Module.finrank ℝ E) : DiscreteTopology L := by
+  classical
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
+  let b := Module.Free.chooseBasis ℤ L
+  let v := fun i ↦ (b i : E)
+  have hz : Submodule.span ℤ (Set.range v) = L := by
+    have hv : Set.range v = L.subtype '' Set.range b := Set.range_comp _ _
+    rw [hv, Submodule.span_image, b.span_eq, Submodule.map_top, Submodule.range_subtype]
+  have hspan : Submodule.span ℝ (Set.range v) = ⊤ := by
+    rw [← Submodule.span_span_of_tower ℤ, hz, hs]
+  have hc : Fintype.card (Module.Free.ChooseBasisIndex ℤ L) = Module.finrank ℝ E := by
+    rw [← Module.finrank_eq_card_chooseBasisIndex, hr]
+  let B := basisOfTopLeSpanOfCardEqFinrank v hspan.ge hc
+  have he : Submodule.span ℤ (Set.range B) = L := by
+    simpa only [coe_basisOfTopLeSpanOfCardEqFinrank, B] using hz
+  rw [← he]
+  infer_instance
+
+/-- A discrete integer submodule whose real span `F` is finite-dimensional is finitely generated:
+it is isomorphic to its pullback to `F`, a discrete subgroup of a finite-dimensional space. -/
+theorem _root_.Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_span
+    (L : Submodule ℤ E) [DiscreteTopology L] [FiniteDimensional ℝ (Submodule.span ℝ (L : Set E))] :
+    Module.Finite ℤ L := by
+  let F := Submodule.span ℝ (L : Set E)
+  let L' : Submodule ℤ F := ZLattice.comap ℝ L F.subtype
+  have : DiscreteTopology L' :=
+    ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
+  -- `ZLattice.comap` is the pullback of `L` along the subtype map, viewed `ℤ`-linearly.
+  have hL' : L' = L.comap (F.restrictScalars ℤ).subtype := rfl
+  have e : L' ≃ₗ[ℤ] L := hL' ▸
+    Submodule.comapSubtypeEquivOfLe (p := L) (q := F.restrictScalars ℤ) Submodule.subset_span
+  exact Module.Finite.equiv e
+
+/-- A finitely generated integer submodule is discrete exactly when its integer rank is
+the dimension of its real span. The ambient space need not be finite-dimensional. -/
+theorem discreteTopology_iff_finrank_eq_finrank_span
+    {L : Submodule ℤ E} [Module.Finite ℤ L] :
+    DiscreteTopology L ↔
+      Module.finrank ℤ L = Module.finrank ℝ (Submodule.span ℝ (L : Set E)) := by
+  -- Work inside the real span; the original submodule need not have full ambient rank.
+  let F := Submodule.span ℝ (L : Set E)
+  have hLF : L ≤ F.restrictScalars ℤ := Submodule.subset_span
+  let L' : Submodule ℤ F := L.comap (F.restrictScalars ℤ).subtype
+  let e := Submodule.comapSubtypeEquivOfLe hLF
+  -- After coercing to E, both directions are subtype projections.
+  have he : Continuous e := by
+    exact (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+  have he' : Continuous e.symm := by
+    exact (continuous_subtype_val.subtype_mk _).subtype_mk _
+  have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
+  -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
+  have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage
+  have : FiniteDimensional ℝ F :=
+    Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp inferInstance : L.FG).span)
+  constructor
+  · intro h
+    have : DiscreteTopology L' := DiscreteTopology.of_continuous_injective
+      he e.injective
+    have : IsZLattice ℝ L' := ⟨hs⟩
+    exact e.symm.finrank_eq.trans (ZLattice.rank ℝ L')
+  · intro hr
+    have : DiscreteTopology L' := discreteTopology_of_span_eq_top_of_finrank_eq L' hs
+      (e.finrank_eq.trans hr)
+    exact DiscreteTopology.of_continuous_injective (β := L')
+      he' e.symm.injective
+
+end TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  (L : Submodule ℤ E) [DiscreteTopology L]
+
+/-- A set of vectors of a discrete integer submodule has the same rank over `ℝ` as over `ℤ`. -/
+theorem setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology {s : Set E}
+    (hs : s ⊆ L) : Set.finrank ℝ s = Set.finrank ℤ s := by
+  have : DiscreteTopology (span ℤ s) := ‹DiscreteTopology L›.of_subset (Submodule.span_le.mpr hs)
+  have hspan : Submodule.span ℝ ((span ℤ s : Submodule ℤ E) : Set E) = Submodule.span ℝ s :=
+    Submodule.span_span_of_tower ℤ ℝ s
+  by_cases hM : Module.Finite ℤ (span ℤ s)
+  · rw [Set.finrank, Set.finrank, TauCeti.discreteTopology_iff_finrank_eq_finrank_span.mp ‹_›,
+      hspan]
+  -- Otherwise the real span is infinite-dimensional, and so is the integer rank.
+  have hinf : ¬ FiniteDimensional ℝ (Submodule.span ℝ s) := fun h ↦ by
+    have : FiniteDimensional ℝ (Submodule.span ℝ ((span ℤ s : Submodule ℤ E) : Set E)) := by
+      rw [hspan]
+      exact h
+    exact hM (span ℤ s).moduleFinite_of_discreteTopology_of_finiteDimensional_span
+  rw [Set.finrank, Set.finrank, Module.finrank_of_not_finite hinf]
+  have hle : Cardinal.aleph0 ≤ Module.rank ℤ (span ℤ s) := by
+    refine le_trans ?_ (Submodule.rank_span_le_rank_span (R := ℤ) (K := ℝ) s)
+    rw [← not_lt, Module.rank_lt_aleph0_iff]
+    exact fun h ↦ hinf h
+  rw [Module.finrank, Cardinal.toNat_apply_of_aleph0_le hle]
+
+/-- The real rank of a discrete integer submodule is its integer rank. -/
+@[simp]
+theorem setFinrank_real_eq_finrank_int : Set.finrank ℝ (L : Set E) = Module.finrank ℤ L := by
+  rw [setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology L le_rfl, Set.finrank,
+    Submodule.span_eq]

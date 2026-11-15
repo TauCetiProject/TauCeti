@@ -21,10 +21,6 @@ bilinear pairing, and the corresponding character formulas.
 * `TauCeti.stdOrthogonalFDRep` is its finite-dimensional bundled form.
 * `TauCeti.stdOrthogonalDualRep` is its contragredient.
 * `TauCeti.stdOrthogonalRepEquivDual` is the equivariant self-duality induced by the dot product.
-
-## References
-
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
 -/
 
 public section

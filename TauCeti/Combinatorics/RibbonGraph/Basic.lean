@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Cycle.Factors
-public import Mathlib.Data.Setoid.Basic
+public import Mathlib.Order.Setoid.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient

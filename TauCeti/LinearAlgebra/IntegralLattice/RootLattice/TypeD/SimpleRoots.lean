@@ -62,7 +62,6 @@ the lattice.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, §4.7.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `Dₙ` rows of the ADE table.
 -/
 
 public section
@@ -112,7 +111,7 @@ private theorem ratOfIntVec_injective : Function.Injective (ratOfIntVec n) := by
 sum is `0` or `2`. -/
 theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n) :
     checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n :=
-  mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
+  mem_checkerboardCarrier_of_even_sum (DynkinType.typeDSimpleRoot n hn i)
     (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot hn i)
 
 /-! ## The Gram matrix -/

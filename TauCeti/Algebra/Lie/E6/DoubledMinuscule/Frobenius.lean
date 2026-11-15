@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.PointsFunctor
 -- The toral-closure Frobenius is used only inside the proof of `frobenius_weightTorusPoints`, so
@@ -80,17 +81,12 @@ carrier's root datum, or any finiteness or simplicity statement.
   weight-torus matrix from
   `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Frobenius`.
 
-## Roadmap
+## Applications
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points", whose "the
-`q`-power Frobenius is the case a consumer asks for first", in Layer 9, "pinned
-Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`. Its
-consumer is milestone L1, "ordinary and graph Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose Steinberg map for the twisted family `²E₆(q)` is
-`γ₂ ∘ Frob_q` on the points of a carrier for the `E₆` diagram over an algebraic closure of
-`ZMod p`; the identification of this carrier with the pinned simply connected Chevalley--Demazure
-group that milestone requires remains pending.
+The Steinberg map of the twisted family `²E₆(q)` is `γ ∘ Frob_q`, the graph automorphism `γ` after
+the `q`-power Frobenius, on the points of a carrier for the `E₆` diagram over an algebraic closure
+of `ZMod p`. This file does not identify the carrier with the pinned simply connected
+Chevalley--Demazure group.
 -/
 
 public section
@@ -175,10 +171,9 @@ Frobenius of the doubled minuscule carrier, in the endomorphism monoid of its po
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem frobenius_pow (m : ℕ) :
-    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add p (k * m) A k]; rfl
+    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius p j A) (frobenius_zero p A)
+    (fun a b => frobenius_add p a A b) k m
 
 /-- A doubled minuscule carrier point is fixed by Frobenius exactly when all of its matrix entries
 lie in the Frobenius-fixed subring. -/

@@ -156,11 +156,8 @@ private theorem toMatrixAlgHom_ofMatrixLinear {M : Matrix (Fin 2) (Fin 2) k}
   ext i j
   fin_cases i <;> fin_cases j <;> simp [h₁₀]
 
-private theorem range_toMatrixAlgHom : (toMatrixAlgHom (A := A) k).range
-      = Matrix.blockTriangularSubalgebra k k (id : Fin 2 → Fin 2) := by
-  refine le_antisymm ?_ fun M hM => ⟨ofMatrixLinear k M, toMatrixAlgHom_ofMatrixLinear k hM⟩
-  rintro _ ⟨f, rfl⟩
-  rw [Matrix.mem_blockTriangularSubalgebra]
+private theorem blockTriangular_toMatrixAlgHom (f : pathAlgebra k (Kronecker A)) :
+    (toMatrixAlgHom k f).BlockTriangular (id : Fin 2 → Fin 2) := by
   induction f using PathAlgebra.induction_linear with
   | zero => simp
   | add f g ihf ihg => simpa [map_add] using ihf.add ihg
@@ -174,14 +171,14 @@ vertex idempotents go to the two diagonal matrix units and the arrow to the entr
 diagonal. -/
 noncomputable def upperTriangularAlgEquiv :
     pathAlgebra k (Kronecker A) ≃ₐ[k] Matrix.blockTriangularSubalgebra k k (id : Fin 2 → Fin 2) :=
-  (AlgEquiv.ofInjective (toMatrixAlgHom k)
-        (Function.LeftInverse.injective (ofMatrixLinear_toMatrixAlgHom k))).trans
-    (Subalgebra.equivOfEq _ _ (range_toMatrixAlgHom k))
+  { (toMatrixAlgHom k).codRestrict _ (blockTriangular_toMatrixAlgHom k) with
+    invFun := fun M ↦ ofMatrixLinear k M
+    left_inv := ofMatrixLinear_toMatrixAlgHom k
+    right_inv := fun M ↦ Subtype.ext (toMatrixAlgHom_ofMatrixLinear k M.2) }
 
 private theorem coe_upperTriangularAlgEquiv (f : pathAlgebra k (Kronecker A)) :
-    (upperTriangularAlgEquiv (A := A) k f : Matrix (Fin 2) (Fin 2) k) = toMatrixAlgHom k f := by
-  rw [upperTriangularAlgEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
-    AlgEquiv.ofInjective_apply]
+    (upperTriangularAlgEquiv (A := A) k f : Matrix (Fin 2) (Fin 2) k) = toMatrixAlgHom k f :=
+  (rfl)
 
 /-- The identification sends a path to the matrix unit in the row of its target and the column of
 its source. -/
@@ -200,12 +197,8 @@ theorem upperTriangularAlgEquiv_symm_apply
     (upperTriangularAlgEquiv (A := A) k).symm M
       = PathAlgebra.single ⟨tgt, tgt, Path.nil⟩ ((M : Matrix (Fin 2) (Fin 2) k) 0 0)
         + PathAlgebra.single ⟨src, tgt, arrowPath default⟩ ((M : Matrix (Fin 2) (Fin 2) k) 0 1)
-        + PathAlgebra.single ⟨src, src, Path.nil⟩ ((M : Matrix (Fin 2) (Fin 2) k) 1 1) := by
-  rw [AlgEquiv.symm_apply_eq]
-  refine Subtype.ext ?_
-  rw [coe_upperTriangularAlgEquiv]
-  exact (toMatrixAlgHom_ofMatrixLinear (A := A) k
-    (Matrix.mem_blockTriangularSubalgebra.mp M.2)).symm
+        + PathAlgebra.single ⟨src, src, Path.nil⟩ ((M : Matrix (Fin 2) (Fin 2) k) 1 1) :=
+  (rfl)
 
 /-- The vertex idempotent at the target goes to the first diagonal matrix unit. -/
 @[simp]

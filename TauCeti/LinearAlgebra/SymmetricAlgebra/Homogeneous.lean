@@ -33,12 +33,13 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv`,
   `TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv`: the homogeneous pieces of degree zero
   and one are the scalars and the module itself.
+* `AlgHom.apply_eq_pow_mul_of_forall_ι_eq`: rescaling generator values in the target
+  algebra rescales homogeneous values by the corresponding power.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
-This is the homogeneous-piece prerequisite for the degreewise PBW comparison map in
-Layer 3, “PBW, a substantial sub-project”, of the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
+These pieces are the domains of the degreewise PBW comparison maps in
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 -/
 
 public section
@@ -59,19 +60,32 @@ theorem ι_mem_homogeneousSubmodule (x : M) :
     SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
   simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
 
+variable {R M} in
+/-- Algebra maps whose values on generators differ by a scalar in the target algebra
+have degree-`n` values differing by its `n`th power. -/
+theorem _root_.AlgHom.apply_eq_pow_mul_of_forall_ι_eq {A : Type*}
+    [CommSemiring A] [Algebra R A] (f g : SymmetricAlgebra R M →ₐ[R] A)
+    (c : A) (h : ∀ m, g (SymmetricAlgebra.ι R M m) = c * f (SymmetricAlgebra.ι R M m))
+    {n : ℕ} {s : SymmetricAlgebra R M} (hs : s ∈ homogeneousSubmodule R M n) :
+    g s = c ^ n * f s := by
+  induction hs using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y _ _ _ ihx ihy => simp [ihx, ihy, mul_add]
+  | mem_mul m hm _ _ _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    simp only [map_mul, h, ih, pow_succ]
+    ring
+
 /-- Scaling a linear evaluation by `r` scales the value of a homogeneous polynomial of
 degree `n` by `rⁿ`. -/
 theorem lift_smul_of_mem_homogeneousSubmodule {A : Type*} [CommSemiring A] [Algebra R A]
     (f : M →ₗ[R] A) (r : R) {n : ℕ} {p : SymmetricAlgebra R M}
     (hp : p ∈ homogeneousSubmodule R M n) :
     SymmetricAlgebra.lift (r • f) p = r ^ n • SymmetricAlgebra.lift f p := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap a => simp
-  | add x y i hx hy ihx ihy => simp [ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
-      obtain ⟨y, rfl⟩ := hm
-      simp only [map_mul, SymmetricAlgebra.lift_ι_apply, LinearMap.smul_apply, ih]
-      simp [pow_succ, Algebra.smul_def, mul_left_comm, mul_assoc]
+  simpa only [Algebra.smul_def, map_pow] using
+    AlgHom.apply_eq_pow_mul_of_forall_ι_eq (SymmetricAlgebra.lift f)
+      (SymmetricAlgebra.lift (r • f)) (algebraMap R A r)
+      (fun m ↦ by simp [Algebra.smul_def]) hp
 
 /-- A product of `n` symmetric-algebra generators is homogeneous of degree `n`. -/
 theorem prod_map_ι_mem_homogeneousSubmodule (l : List M) :
@@ -100,16 +114,6 @@ theorem homogeneousSubmodule_eq_span (n : ℕ) :
 internal grading; directness is not asserted here. -/
 theorem iSup_homogeneousSubmodule_eq_top :
     (⨆ n, homogeneousSubmodule R M n) = ⊤ := by
-  have hadjoin :
-      _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M)) = ⊤ := by
-    apply top_unique
-    intro x hx
-    clear hx
-    induction x using _root_.SymmetricAlgebra.induction with
-    | algebraMap r => exact (_root_.Algebra.adjoin R _).algebraMap_mem r
-    | ι x => exact _root_.Algebra.subset_adjoin (Set.mem_range_self x)
-    | mul a b ha hb => exact (_root_.Algebra.adjoin R _).mul_mem ha hb
-    | add a b ha hb => exact (_root_.Algebra.adjoin R _).add_mem ha hb
   calc
     (⨆ n, homogeneousSubmodule R M n) =
         ⨆ k, TauCeti.Algebra.wordFiltration (SymmetricAlgebra.ι R M) k := by
@@ -122,7 +126,7 @@ theorem iSup_homogeneousSubmodule_eq_top :
     _ = (_root_.Algebra.adjoin R
         (Set.range (SymmetricAlgebra.ι R M))).toSubmodule :=
       TauCeti.Algebra.iSup_wordFiltration_eq_adjoin (SymmetricAlgebra.ι R M)
-    _ = ⊤ := by rw [hadjoin]; rfl
+    _ = ⊤ := by rw [SymmetricAlgebra.adjoin_range_ι]; rfl
 
 /-- The degree-zero homogeneous submodule of a symmetric algebra is the image of the scalars,
 which embed injectively. -/
@@ -150,7 +154,7 @@ theorem algebraMap_homogeneousSubmoduleZeroEquiv_apply (x : homogeneousSubmodule
 /-- The degree-one homogeneous submodule of a symmetric algebra is the image of the module, which
 embeds injectively. -/
 noncomputable def homogeneousSubmoduleOneEquiv : homogeneousSubmodule R M 1 ≃ₗ[R] M :=
-  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (ι_injective R M)).trans
+  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (SymmetricAlgebra.ι_injective R M)).trans
     (LinearEquiv.ofEq _ _ (pow_one _).symm)).symm
 
 /-- The inverse of `homogeneousSubmoduleOneEquiv` sends an element of the module to its

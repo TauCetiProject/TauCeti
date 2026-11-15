@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Ramification of the orbit projection of a Fuchsian group
@@ -70,7 +70,7 @@ theorem localMultiplicity_quotientMk (z : ℍ) :
     localMultiplicity (Quotient.mk (orbitRel Γ ℍ)) z = Nat.card (stabilizer Γ z) := by
   have : Finite (stabilizer Γ z) :=
     (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
-  obtain ⟨ε, hε, hopen⟩ := exists_pos_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z
+  obtain ⟨ε, hε, hopen⟩ := exists_pos_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall Γ z
   have hsource : Quotient.mk (orbitRel Γ ℍ) z ∈
       (stabilizerBallQuotientChart hε hopen).source :=
     (mem_stabilizerBallQuotientChart_source_iff hε hopen).2 ⟨1, by simpa using hε⟩

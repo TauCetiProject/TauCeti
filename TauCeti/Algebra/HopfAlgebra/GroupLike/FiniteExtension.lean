@@ -42,7 +42,7 @@ theorem exists_finiteDimensional_surjective_groupLikeScalarTowerHom :
     ∃ L : IntermediateField k K, FiniteDimensional k L ∧
       Function.Surjective (groupLikeScalarTowerHom (k := k) (L := L) (K := K) (A := A)) := by
   obtain ⟨s, hs⟩ := Group.exists_of_isMulFG (_root_.GroupLike K (K ⊗[k] A))
-  obtain ⟨L, hL, hdef⟩ := Set.exists_finiteDimensional_intermediateField_tensor_range
+  obtain ⟨L, hL, hdef⟩ := Set.exists_finiteDimensional_intermediateField_subset_range_rTensor
     (_root_.GroupLike.val '' (s : Set (_root_.GroupLike K (K ⊗[k] A))))
     (s.finite_toSet.image _)
   -- Supplying the scalar field explicitly resolves the inherited intermediate-field instances.

@@ -37,9 +37,8 @@ unfolding the chosen defining ideals.
 The formal organization follows the existing center-isomorphism interface in
 `TauCeti.Algebra.AlgebraicGroup.Center.Isomorphism`.
 
-This completes the isomorphism-invariance interface of the unipotent-radical construction in
-Layer 5 of the ReductiveGroups roadmap. It lets the Layer 6 structure theory use the radical
-independently of a chosen coordinate presentation.
+This supplies the isomorphism-invariance interface of the unipotent-radical construction. It lets
+the radical be used independently of a chosen coordinate presentation.
 -/
 
 public section

@@ -6,14 +6,18 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
-# Separating tensors by linear functionals
+# Separating tensors by linear maps
 
-Separating families of linear functionals detect zero tensors by contraction, first in one
-factor and then in both, over a commutative semiring with a projective right factor.
+Families of linear maps detecting zero in the left factor also detect zero after tensoring
+with a projective right factor over a commutative semiring. Products of separating families
+of linear functionals likewise detect zero tensors by contraction in both factors.
 These lemmas supply the shared separation step for rational-point separation and reducedness
-of tensor products of algebras. Over a field, every module is projective.
+of tensor products of algebras. Over a field, every module is projective. In particular, over a
+commutative semiring without zero divisors, the tensor product of nonzero vectors of projective
+modules is nonzero (`TauCeti.tmul_ne_zero`).
 -/
 
 public section
@@ -22,22 +26,22 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- Contracting against a separating family in the left factor detects zero tensors when the
-right factor is projective. -/
-theorem tensor_eq_zero_of_forall_lid_rTensor_eq_zero
-    {R M N ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+/-- Tensoring a family of linear maps detecting zero with a projective module preserves
+zero detection. The maps may take values in any module. -/
+theorem tensor_eq_zero_of_forall_rTensor_eq_zero
+    {R M N P ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] [Module.Projective R N]
-    (f : ι → M →ₗ[R] R) (hf : ∀ m, (∀ i, f i m = 0) → m = 0)
-    (x : M ⊗[R] N)
-    (hx : ∀ i, TensorProduct.lid R N ((f i).rTensor N x) = 0) :
+    [AddCommMonoid P] [Module R P]
+    (f : ι → M →ₗ[R] P) (hf : ∀ m, (∀ i, f i m = 0) → m = 0)
+    (x : M ⊗[R] N) (hx : ∀ i, (f i).rTensor N x = 0) :
     x = 0 := by
   apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
   intro φ
   simp only [map_zero]
   apply hf
   intro i
-  exact (DFunLike.congr_fun ((f i).comp_tensorComponent φ) x).trans
-    (by simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hx i, map_zero])
+  simpa only [← LinearMap.rTensor_def, hx i, map_zero, LinearMap.comp_id] using
+    (LinearMap.tensorComponent_map φ (f i) LinearMap.id x).symm
 
 /-- Products of separating families of linear functionals detect zero tensors when the
 right factor is projective. -/
@@ -50,8 +54,10 @@ theorem tensor_eq_zero_of_forall_lid_map_eq_zero
     (x : M ⊗[R] N)
     (hx : ∀ i j, TensorProduct.lid R R (TensorProduct.map (f i) (g j) x) = 0) :
     x = 0 := by
-  apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero f hf x
+  apply tensor_eq_zero_of_forall_rTensor_eq_zero f hf x
   intro i
+  apply (TensorProduct.lid R N).injective
+  simp only [map_zero]
   apply hg
   intro j
   have hcomp : (g j).comp ((TensorProduct.lid R N).toLinearMap.comp
@@ -60,5 +66,17 @@ theorem tensor_eq_zero_of_forall_lid_map_eq_zero
     ext m n
     simp
   exact (DFunLike.congr_fun hcomp x).trans (hx i j)
+
+/-- Over a commutative semiring without zero divisors, for instance a field, the tensor product of
+nonzero vectors of projective modules is nonzero: functionals not vanishing at the two vectors
+contract their tensor product to a nonzero product of scalars. -/
+theorem tmul_ne_zero {R M N : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommMonoid M]
+    [Module R M] [Module.Projective R M] [AddCommMonoid N] [Module R N] [Module.Projective R N]
+    {m : M} {n : N} (hm : m ≠ 0) (hn : n ≠ 0) : m ⊗ₜ[R] n ≠ 0 := by
+  obtain ⟨f, hf⟩ := Module.Projective.exists_dual_ne_zero R hm
+  obtain ⟨g, hg⟩ := Module.Projective.exists_dual_ne_zero R hn
+  intro h
+  apply mul_ne_zero hf hg
+  simpa using congrArg (TensorProduct.lid R R ∘ TensorProduct.map f g) h
 
 end TauCeti

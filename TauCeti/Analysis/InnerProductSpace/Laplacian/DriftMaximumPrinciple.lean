@@ -40,7 +40,9 @@ Gilbarg--Trudinger, *Elliptic Partial Differential Equations of Second Order*, C
 
 * `TauCeti.laplacian_exp_inner`: `Δ (exp (α ⟪u, ·⟫)) x = α² ‖u‖² exp (α ⟪u, x⟫)`, the
   exponential barrier's Laplacian.
-* `TauCeti.fderiv_exp_inner_apply`: the directional derivative of the same barrier.
+* `TauCeti.fderiv_exp_inner_apply`, `TauCeti.fderiv_fderiv_exp_inner_apply`: the first and
+  second derivatives of the same barrier.
+* `TauCeti.gradient_exp_inner`: the gradient of the same barrier.
 * `TauCeti.not_isLocalMax_of_laplacian_add_fderiv_pos` /
   `TauCeti.not_isLocalMin_of_laplacian_add_fderiv_neg`: a strict sign of `Δ u + ⟪b, ∇u⟫`
   forbids an interior local extremum, with no hypothesis on `b`.
@@ -93,6 +95,26 @@ theorem contDiff_exp_inner (α : ℝ) (u : E) :
   rw [(hasFDerivAt_exp_inner α u x).fderiv]
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul]
 
+/-- The second derivative of the exponential barrier `y ↦ exp (α ⟪u, y⟫)`: it is the rank-one
+form `α² ⟪u, v⟫ ⟪u, w⟫` scaled by the barrier itself. -/
+@[simp] theorem fderiv_fderiv_exp_inner_apply (α : ℝ) (u x v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x v w
+      = α ^ 2 * ⟪u, v⟫ * ⟪u, w⟫ * Real.exp (α * ⟪u, x⟫) := by
+  rw [funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv,
+    ((hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)).fderiv]
+  simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul]
+  ring
+
+/-- The gradient of the exponential barrier `y ↦ exp (α ⟪u, y⟫)` is `α exp (α ⟪u, x⟫) • u`. -/
+@[simp] theorem gradient_exp_inner [CompleteSpace E] (α : ℝ) (u x : E) :
+    gradient (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x = (α * Real.exp (α * ⟪u, x⟫)) • u := by
+  refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
+  refine (hasFDerivAt_exp_inner α u x).congr_fderiv ?_
+  ext v
+  rw [toDual_apply_apply, real_inner_smul_left, smul_apply, smul_apply, innerSL_apply_apply,
+    smul_eq_mul, smul_eq_mul]
+  ring
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
@@ -106,21 +128,13 @@ maximum principle with drift. -/
     Δ (fun y : E ↦ Real.exp (α * ⟪u, y⟫)) x
       = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
   set w : E → ℝ := fun y ↦ Real.exp (α * ⟪u, y⟫)
-  -- The first derivative of `w`, as a function of the base point.
-  have hfw : fderiv ℝ w = fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u) :=
-    funext fun y ↦ (hasFDerivAt_exp_inner α u y).fderiv
-  -- The second derivative at `x`.
-  have hw2 : HasFDerivAt (fun y ↦ Real.exp (α * ⟪u, y⟫) • (α • innerSL ℝ u))
-      ((Real.exp (α * ⟪u, x⟫) • (α • innerSL ℝ u)).smulRight (α • innerSL ℝ u)) x :=
-    (hasFDerivAt_exp_inner α u x).smul_const (α • innerSL ℝ u)
   -- Each diagonal Hessian entry along the standard orthonormal basis.
   have hterm : ∀ i, iteratedFDeriv ℝ 2 w x
       ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]
       = α ^ 2 * ⟪u, (stdOrthonormalBasis ℝ E) i⟫ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
     intro i
-    rw [iteratedFDeriv_two_apply, hfw, hw2.fderiv]
-    simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
-      Matrix.cons_val_zero, Matrix.cons_val_one]
+    rw [iteratedFDeriv_two_apply, fderiv_fderiv_exp_inner_apply]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     ring
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis w
     (stdOrthonormalBasis ℝ E)) x]
@@ -168,7 +182,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hpos : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
+  exact hK.exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hne hcont
     fun {_} hx ↦ not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
 
 /-- **Strict boundary minimum principle for `Δ + b·∇`.** The dual of
@@ -178,7 +192,7 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_neg {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hneg : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
+  exact hK.exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hne hcont
     fun {_} hx ↦ not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
 
 section Nontrivial
@@ -246,39 +260,21 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
     (hwlap : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ w x + fderiv ℝ w x (b x)) :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
   intro x hxK
-  -- `w` is bounded above by some `C` on the compact set `K`; perturbing `f` to `f + ε w`
-  -- makes it a strict subsolution, so `f x ≤ m + ε (C - w x)`, and letting `ε → 0` gives `f x ≤ m`.
-  obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := w) hwcont
-  have hxC : w x ≤ C := hCub (Set.mem_image_of_mem w hxK)
-  have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * (C - w x) := by
-    intro ε hε
-    set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
-    have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
-    have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
-      fun y hy ↦ (hcd hy).add ((hwcd hy).const_smul ε)
-    -- The perturbed function is a strict subsolution of `Δ + b·∇`.
-    have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
-      intro y hy
-      rw [hgdef, laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd hy)]
-      linarith [mul_pos hε (hwlap hy), hlap hy]
-    -- Its maximum over `K` is attained on the frontier.
-    obtain ⟨z, hzfr, hzmax⟩ :=
-      exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
-    have hzK : z ∈ K := hK.isClosed.frontier_subset hzfr
-    have hgx : g x = f x + ε * w x := by
-      rw [hgdef]
-      simp [smul_eq_mul]
-    have hgz : g z = f z + ε * w z := by
-      rw [hgdef]
-      simp [smul_eq_mul]
-    have hxle : f x + ε * w x ≤ f z + ε * w z := by
-      rw [← hgx, ← hgz]
-      exact hzmax hxK
-    have hzC : ε * w z ≤ ε * C :=
-      mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
-    have hexp : ε * (C - w x) = ε * C - ε * w x := by ring
-    linarith [hbdry hzfr]
-  exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
+  refine (hK.bddAbove_image hwcont).le_of_forall_pos_exists_add_mul_le fun ε hε => ?_
+  set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
+  have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
+  have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
+    fun y hy ↦ (hcd hy).add ((hwcd hy).const_smul ε)
+  -- The perturbed function is a strict subsolution of `Δ + b·∇`.
+  have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
+    intro y hy
+    rw [hgdef, laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd hy)]
+    linarith [mul_pos hε (hwlap hy), hlap hy]
+  -- Its maximum over `K` is attained on the frontier.
+  obtain ⟨z, hzfr, hzmax⟩ :=
+    exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
+  exact ⟨z, hK.isClosed.frontier_subset hzfr,
+    by simpa only [hgdef, smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK, hbdry hzfr⟩
 
 /-- **Weak maximum principle for `Δ + b·∇` with bounded drift.**
 
@@ -372,7 +368,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry ↦
+  exact hK.exists_mem_frontier_isMaxOn_of_le_frontier hne
+    (hcont.mono hK.isClosed.frontier_subset) fun hbdry ↦
     le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap hbdry
 
 /-- The `∃`-form of the weak minimum principle for `Δ + b·∇`: a supersolution with bounded

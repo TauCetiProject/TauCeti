@@ -23,8 +23,6 @@ compute characters and weight spaces; the matrices themselves, and the torus the
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 1.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # The Liouville form on a linear cotangent space
@@ -41,6 +41,8 @@ nothing in this file assumes finite dimension. The construction follows McDuff--
 * `TauCeti.neg_extDeriv_cotangentLiouvilleForm`: the exactness identity `ω = -dλ`, as an equality
   of alternating two-forms, and `TauCeti.neg_extDeriv_cotangentLiouvilleForm_apply`, its
   evaluation on a pair of tangent vectors.
+* `ContinuousLinearEquiv.cotangentLiouvilleForm_cotangent`: the cotangent lift of a continuous
+  linear equivalence preserves the Liouville forms.
 -/
 
 public section
@@ -161,5 +163,22 @@ lemma neg_extDeriv_cotangentLiouvilleForm (x : V × StrongDual ℝ V) :
   simp
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+open TauCeti
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
+/-- The cotangent lift of a continuous linear equivalence preserves the Liouville forms:
+`λ_(g · x)(g · v) = λ_x(v)`. -/
+theorem cotangentLiouvilleForm_cotangent (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V)
+    (v : Fin 1 → V × StrongDual ℝ V) :
+    cotangentLiouvilleForm (g.cotangent x) (fun i ↦ g.cotangent (v i)) =
+      cotangentLiouvilleForm x v := by
+  simp
+
+end ContinuousLinearEquiv
 
 end

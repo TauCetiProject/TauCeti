@@ -1,0 +1,380 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+
+/-!
+# The error function
+
+This file defines the Gauss error function `erf x = (2 / √π) * ∫ t in 0..x, exp (-t ^ 2)` and its
+complement `erfc x = 1 - erf x`, and develops their elementary real-variable theory: oddness,
+strict monotonicity, the derivative, and the limits at both infinities.
+
+Since `erf` is a strictly increasing continuous bijection from `ℝ` onto `(-1, 1)`, it has an
+inverse `erfInv` on that interval, which expresses the quantile function of the Gaussian law.
+
+The names and statement shapes follow those proposed for Mathlib in
+[mathlib4#34053](https://github.com/leanprover-community/mathlib4/pull/34053), so that the
+declarations here can be replaced by Mathlib's once it provides them.  The identification
+`erf x = regularizedGamma (1 / 2) (x ^ 2)`, which holds for `0 ≤ x` — the right-hand side is even
+in `x` while `erf` is odd — needs the incomplete gamma function and is not proved here.
+
+The limits at infinity come from Mathlib's Gaussian integral `integral_gaussian_Ioi` together
+with the improper-integral comparison `MeasureTheory.intervalIntegral_tendsto_integral_Ioi`; the
+derivative is the fundamental theorem of calculus for a continuous integrand.
+
+## Main declarations
+
+* `TauCeti.Real.erf` and `TauCeti.Real.erfc` — the error function and its complement.
+* `TauCeti.Real.erf_neg` — the error function is odd.
+* `TauCeti.Real.hasDerivAt_erf` — its derivative is `2 / √π * exp (-x ^ 2)`.
+* `TauCeti.Real.strictMono_erf` — it is strictly monotone.
+* `TauCeti.Real.tendsto_erf_atTop` and `TauCeti.Real.tendsto_erf_atBot` — its limits are `1` and
+  `-1`, whence `TauCeti.Real.abs_erf_lt_one`.
+* `Real.range_erf` and `Real.erfOrderIso` — the range of `erf` is `(-1, 1)`, and
+  `erf` is an order isomorphism onto it.
+* `Real.erfInv` — the inverse error function, `0` outside `(-1, 1)`, with the inverse identities
+  `Real.erf_erfInv` and `Real.erfInv_erf` and the characterization `Real.erfInv_le_iff`.
+* `Real.strictMonoOn_erfInv`, `Real.continuousOn_erfInv`, `Real.measurable_erfInv`,
+  `Real.hasDerivAt_erfInv`, `Real.tendsto_erfInv_nhdsLT_one` and
+  `Real.tendsto_erfInv_nhdsGT_neg_one` —
+  monotonicity, regularity, the derivative, and the limits `±∞` at `±1`.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Filter Set Real
+open scoped Topology
+
+namespace TauCeti
+
+namespace Real
+
+/-- The Gauss error function, `erf x = (2 / √π) * ∫ t in 0..x, exp (-t ^ 2)`. -/
+def erf (x : ℝ) : ℝ := 2 / √π * ∫ t in (0 : ℝ)..x, rexp (-t ^ 2)
+
+/-- The complementary error function, `erfc x = 1 - erf x`. -/
+def erfc (x : ℝ) : ℝ := 1 - erf x
+
+/-- The defining integral formula for the error function. -/
+theorem erf_def (x : ℝ) : erf x = 2 / √π * ∫ t in (0 : ℝ)..x, rexp (-t ^ 2) := (rfl)
+
+/-- The defining formula for the complementary error function. -/
+theorem erfc_def (x : ℝ) : erfc x = 1 - erf x := (rfl)
+
+/-- The error function vanishes at the origin. -/
+@[simp]
+theorem erf_zero : erf 0 = 0 := by simp [erf_def]
+
+/-- The complementary error function is `1` at the origin. -/
+@[simp]
+theorem erfc_zero : erfc 0 = 1 := by simp [erfc_def]
+
+/-- The error function is odd. -/
+@[simp]
+theorem erf_neg (x : ℝ) : erf (-x) = -erf x := by
+  have h : (∫ t in (0 : ℝ)..x, rexp (-t ^ 2)) = ∫ t in (-x)..(0 : ℝ), rexp (-t ^ 2) := by
+    have hcomp := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := x)
+      fun t : ℝ => rexp (-t ^ 2)
+    simp only [neg_sq, neg_zero] at hcomp
+    exact hcomp
+  rw [erf_def, erf_def, h, intervalIntegral.integral_symm]
+  ring
+
+/-- The complementary error function reflects around the value `1`. -/
+@[simp]
+theorem erfc_neg (x : ℝ) : erfc (-x) = 2 - erfc x := by
+  rw [erfc_def, erfc_def, erf_neg]; ring
+
+/-- The error function is strictly differentiable, with derivative `2 / √π * exp (-x ^ 2)`. -/
+theorem hasStrictDerivAt_erf (x : ℝ) : HasStrictDerivAt erf (2 / √π * rexp (-x ^ 2)) x :=
+  ((by fun_prop : Continuous fun t : ℝ => rexp (-t ^ 2)).integral_hasStrictDerivAt 0 x).const_mul
+    (2 / √π)
+
+/-- The derivative of the error function. -/
+theorem hasDerivAt_erf (x : ℝ) : HasDerivAt erf (2 / √π * rexp (-x ^ 2)) x :=
+  (hasStrictDerivAt_erf x).hasDerivAt
+
+/-- The derivative of the error function, in `deriv` form. -/
+@[simp]
+theorem deriv_erf : deriv erf = fun x => 2 / √π * rexp (-x ^ 2) :=
+  funext fun x => (hasDerivAt_erf x).deriv
+
+/-- The error function is differentiable. -/
+theorem differentiable_erf : Differentiable ℝ erf := fun x => (hasDerivAt_erf x).differentiableAt
+
+/-- The error function is continuous. -/
+@[fun_prop]
+theorem continuous_erf : Continuous erf := differentiable_erf.continuous
+
+/-- The complementary error function is strictly differentiable, with derivative
+`-(2 / √π * exp (-x ^ 2))`. -/
+theorem hasStrictDerivAt_erfc (x : ℝ) :
+    HasStrictDerivAt erfc (-(2 / √π * rexp (-x ^ 2))) x := by
+  rw [funext erfc_def]
+  exact (hasStrictDerivAt_erf x).const_sub 1
+
+/-- The derivative of the complementary error function. -/
+theorem hasDerivAt_erfc (x : ℝ) : HasDerivAt erfc (-(2 / √π * rexp (-x ^ 2))) x :=
+  (hasStrictDerivAt_erfc x).hasDerivAt
+
+/-- The derivative of the complementary error function, in `deriv` form. -/
+@[simp]
+theorem deriv_erfc : deriv erfc = fun x => -(2 / √π * rexp (-x ^ 2)) :=
+  funext fun x => (hasDerivAt_erfc x).deriv
+
+/-- The complementary error function is differentiable. -/
+theorem differentiable_erfc : Differentiable ℝ erfc := fun x =>
+  (hasDerivAt_erfc x).differentiableAt
+
+/-- The complementary error function is continuous. -/
+@[fun_prop]
+theorem continuous_erfc : Continuous erfc := differentiable_erfc.continuous
+
+/-- The error function is strictly increasing. -/
+theorem strictMono_erf : StrictMono erf :=
+  strictMono_of_hasDerivAt_pos hasDerivAt_erf fun x => by positivity
+
+/-- The complementary error function is strictly decreasing. -/
+theorem strictAnti_erfc : StrictAnti erfc := fun _ _ h => by
+  simpa only [erfc_def, sub_lt_sub_iff_left] using strictMono_erf h
+
+/-- The error function is positive on the positive half-line. -/
+theorem erf_pos {x : ℝ} (hx : 0 < x) : 0 < erf x := by simpa using strictMono_erf hx
+
+/-- The error function is nonnegative on the nonnegative half-line. -/
+theorem erf_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ erf x := by simpa using strictMono_erf.monotone hx
+
+/-- The Gaussian integral over the half-line, in the interval-integral form used by `erf`. -/
+private theorem tendsto_intervalIntegral_exp_neg_sq_atTop :
+    Tendsto (fun x : ℝ => ∫ t in (0 : ℝ)..x, rexp (-t ^ 2)) atTop (𝓝 (√π / 2)) := by
+  have h := intervalIntegral_tendsto_integral_Ioi (μ := volume)
+    (f := fun t : ℝ => rexp (-t ^ 2)) 0
+      (by simpa using (integrable_exp_neg_mul_sq (b := 1) one_pos).integrableOn) tendsto_id
+  have hgauss : ∫ t in Ioi (0 : ℝ), rexp (-t ^ 2) = √π / 2 := by
+    simpa using integral_gaussian_Ioi 1
+  rwa [hgauss] at h
+
+/-- The error function tends to `1` at `+∞`. -/
+theorem tendsto_erf_atTop : Tendsto erf atTop (𝓝 1) := by
+  have hπ : √π ≠ 0 := by positivity
+  have h := tendsto_intervalIntegral_exp_neg_sq_atTop.const_mul (2 / √π)
+  convert h.congr fun x => (erf_def x).symm using 2
+  field_simp
+
+/-- The error function tends to `-1` at `-∞`. -/
+theorem tendsto_erf_atBot : Tendsto erf atBot (𝓝 (-1)) := by
+  have h := (tendsto_erf_atTop.comp tendsto_neg_atBot_atTop).neg
+  exact h.congr fun x => by simp [Function.comp_apply, erf_neg]
+
+/-- The complementary error function tends to `0` at `+∞`. -/
+theorem tendsto_erfc_atTop : Tendsto erfc atTop (𝓝 0) := by
+  have h : Tendsto (fun x => 1 - erf x) atTop (𝓝 (1 - 1)) :=
+    tendsto_const_nhds.sub tendsto_erf_atTop
+  rw [sub_self] at h
+  exact h.congr fun x => (erfc_def x).symm
+
+/-- The complementary error function tends to `2` at `-∞`. -/
+theorem tendsto_erfc_atBot : Tendsto erfc atBot (𝓝 2) := by
+  have h : Tendsto (fun x => 1 - erf x) atBot (𝓝 (1 - -1)) :=
+    tendsto_const_nhds.sub tendsto_erf_atBot
+  norm_num at h
+  exact h.congr fun x => (erfc_def x).symm
+
+/-- The error function is bounded above by `1`. -/
+theorem erf_le_one (x : ℝ) : erf x ≤ 1 :=
+  ge_of_tendsto tendsto_erf_atTop <| eventually_atTop.2 ⟨x, fun _ hy => strictMono_erf.monotone hy⟩
+
+/-- The error function never attains the value `1`. -/
+theorem erf_lt_one (x : ℝ) : erf x < 1 :=
+  (strictMono_erf (lt_add_one x)).trans_le (erf_le_one (x + 1))
+
+/-- The error function never attains the value `-1`. -/
+theorem neg_one_lt_erf (x : ℝ) : -1 < erf x := by
+  have h := erf_lt_one (-x)
+  rw [erf_neg] at h
+  linarith
+
+/-- The error function takes values in the open interval `(-1, 1)`. -/
+theorem abs_erf_lt_one (x : ℝ) : |erf x| < 1 :=
+  abs_lt.2 ⟨neg_one_lt_erf x, erf_lt_one x⟩
+
+/-- The complementary error function is positive. -/
+theorem erfc_pos (x : ℝ) : 0 < erfc x := by
+  rw [erfc_def]; linarith [erf_lt_one x]
+
+/-- The complementary error function is bounded above by `2`, strictly. -/
+theorem erfc_lt_two (x : ℝ) : erfc x < 2 := by
+  rw [erfc_def]; linarith [neg_one_lt_erf x]
+
+end Real
+
+end TauCeti
+
+namespace Real
+
+open TauCeti.Real
+
+/-! ## The inverse error function -/
+
+/- The construction below follows Mathlib's `Real.tanOrderIso` and its totalized inverse
+`Real.arctan`. -/
+
+/-- The error function maps the real line onto the open interval `(-1, 1)`. -/
+@[simp]
+theorem range_erf : range erf = Ioo (-1) 1 := by
+  refine Subset.antisymm (range_subset_iff.2 fun x => ⟨neg_one_lt_erf x, erf_lt_one x⟩)
+    fun y hy => mem_range_of_exists_le_of_exists_ge continuous_erf ?_ ?_
+  · obtain ⟨x, hx⟩ := (tendsto_erf_atBot.eventually (gt_mem_nhds hy.1)).exists
+    exact ⟨x, hx.le⟩
+  · obtain ⟨x, hx⟩ := (tendsto_erf_atTop.eventually (lt_mem_nhds hy.2)).exists
+    exact ⟨x, hx.le⟩
+
+/-- The error function as an order isomorphism between `ℝ` and the open interval `(-1, 1)`. -/
+def erfOrderIso : ℝ ≃o Ioo (-1 : ℝ) 1 :=
+  (strictMono_erf.orderIso erf).trans (Set.orderIsoOfEq _ _ range_erf)
+
+/-- `Real.erfOrderIso` evaluates to the error function. -/
+@[simp]
+theorem coe_erfOrderIso_apply (x : ℝ) : (erfOrderIso x : ℝ) = erf x := (rfl)
+
+/-- The inverse error function. On the open interval `(-1, 1)` it is the inverse of
+`TauCeti.Real.erf`; outside that interval it takes the junk value `0`. -/
+def erfInv (y : ℝ) : ℝ :=
+  if h : y ∈ Ioo (-1) 1 then erfOrderIso.symm ⟨y, h⟩ else 0
+
+variable {x y : ℝ}
+
+/-- On `(-1, 1)`, the inverse error function is the inverse of `Real.erfOrderIso`. -/
+@[simp]
+theorem erfOrderIso_symm_apply (y : Ioo (-1 : ℝ) 1) : erfOrderIso.symm y = erfInv y := by
+  rw [erfInv, dite_eq_left y.2]
+
+/-- Outside the open interval `(-1, 1)`, the inverse error function is `0`. -/
+theorem erfInv_of_notMem (hy : y ∉ Ioo (-1) 1) : erfInv y = 0 :=
+  dite_eq_right hy
+
+/-- For `1 ≤ y`, the inverse error function is `0`. -/
+@[simp]
+theorem erfInv_of_one_le (hy : 1 ≤ y) : erfInv y = 0 :=
+  erfInv_of_notMem fun h => (not_lt.2 hy) h.2
+
+/-- For `y ≤ -1`, the inverse error function is `0`. -/
+@[simp]
+theorem erfInv_of_le_neg_one (hy : y ≤ -1) : erfInv y = 0 :=
+  erfInv_of_notMem fun h => (not_lt.2 hy) h.1
+
+/-- The error function undoes its inverse on `(-1, 1)`. -/
+@[simp]
+theorem erf_erfInv (hy : y ∈ Ioo (-1) 1) : erf (erfInv y) = y := by
+  rw [← erfOrderIso_symm_apply ⟨y, hy⟩, ← coe_erfOrderIso_apply, OrderIso.apply_symm_apply]
+
+/-- The inverse error function undoes the error function. -/
+@[simp]
+theorem erfInv_erf (x : ℝ) : erfInv (erf x) = x := by
+  rw [← coe_erfOrderIso_apply, ← erfOrderIso_symm_apply, OrderIso.symm_apply_apply]
+
+/-- On `(-1, 1)`, the value of the inverse error function is the unique solution of
+`erf x = y`. -/
+theorem erfInv_eq_iff (hy : y ∈ Ioo (-1) 1) : erfInv y = x ↔ erf x = y :=
+  ⟨fun h => h ▸ erf_erfInv hy, fun h => h ▸ erfInv_erf x⟩
+
+/-- Comparison with the inverse error function is comparison after applying the error function. -/
+theorem erfInv_le_iff (hy : y ∈ Ioo (-1) 1) : erfInv y ≤ x ↔ y ≤ erf x := by
+  conv_rhs => rw [← erf_erfInv hy]
+  exact strictMono_erf.le_iff_le.symm
+
+/-- The strict form of `Real.erfInv_le_iff`. -/
+theorem erfInv_lt_iff (hy : y ∈ Ioo (-1) 1) : erfInv y < x ↔ y < erf x := by
+  conv_rhs => rw [← erf_erfInv hy]
+  exact strictMono_erf.lt_iff_lt.symm
+
+/-- The negation of `Real.erfInv_le_iff`. -/
+theorem lt_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x < erfInv y ↔ erf x < y := by
+  simpa only [not_le] using (erfInv_le_iff hy).not
+
+/-- The negation of `Real.erfInv_lt_iff`. -/
+theorem le_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x ≤ erfInv y ↔ erf x ≤ y := by
+  simpa only [not_lt] using (erfInv_lt_iff hy).not
+
+/-- The inverse error function vanishes at the origin. -/
+@[simp]
+theorem erfInv_zero : erfInv 0 = 0 := by
+  simpa using erfInv_erf 0
+
+/-- The inverse error function is positive exactly on `(0, 1)`, including at the junk values
+outside `(-1, 1)`. -/
+@[simp]
+theorem erfInv_pos_iff : 0 < erfInv y ↔ y ∈ Ioo 0 1 := by
+  by_cases hy : y ∈ Ioo (-1) 1
+  · rw [lt_erfInv_iff hy, erf_zero]
+    exact ⟨fun h => ⟨h, hy.2⟩, fun h => h.1⟩
+  · rw [erfInv_of_notMem hy, lt_self_iff_false, false_iff]
+    exact fun h => hy ⟨by linarith [h.1], h.2⟩
+
+/-- The inverse error function is odd, including at the junk values outside `(-1, 1)`. -/
+@[simp]
+theorem erfInv_neg (y : ℝ) : erfInv (-y) = -erfInv y := by
+  by_cases hy : y ∈ Ioo (-1) 1
+  · rw [erfInv_eq_iff ⟨by linarith [hy.2], by linarith [hy.1]⟩, erf_neg, erf_erfInv hy]
+  · have hy' : -y ∉ Ioo (-1) 1 := fun h => hy ⟨by linarith [h.2], by linarith [h.1]⟩
+    rw [erfInv_of_notMem hy, erfInv_of_notMem hy', neg_zero]
+
+/-- The inverse error function is strictly increasing on `(-1, 1)`. -/
+theorem strictMonoOn_erfInv : StrictMonoOn erfInv (Ioo (-1) 1) := fun a ha b hb hab => by
+  rw [← erfOrderIso_symm_apply ⟨a, ha⟩, ← erfOrderIso_symm_apply ⟨b, hb⟩]
+  exact erfOrderIso.symm.strictMono hab
+
+/-- The inverse error function is continuous on `(-1, 1)`. -/
+theorem continuousOn_erfInv : ContinuousOn erfInv (Ioo (-1) 1) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact erfOrderIso.symm.continuous.congr erfOrderIso_symm_apply
+
+/-- The inverse error function is continuous at every point of `(-1, 1)`. -/
+theorem continuousAt_erfInv (hy : y ∈ Ioo (-1) 1) : ContinuousAt erfInv y :=
+  continuousOn_erfInv.continuousAt (Ioo_mem_nhds hy.1 hy.2)
+
+/-- The inverse error function, totalized by `0` outside `(-1, 1)`, is measurable. -/
+@[fun_prop]
+theorem measurable_erfInv : Measurable erfInv := by
+  have h := continuousOn_erfInv.measurable_piecewise (g := fun _ : ℝ => 0) continuousOn_const
+    measurableSet_Ioo
+  convert h using 1
+  funext y
+  by_cases hy : y ∈ Ioo (-1 : ℝ) 1
+  · simp [hy]
+  · simp [hy, erfInv_of_notMem hy]
+
+/-- The inverse error function tends to `+∞` as its argument increases to `1`. -/
+theorem tendsto_erfInv_nhdsLT_one : Tendsto erfInv (𝓝[<] 1) atTop := by
+  refine tendsto_atTop.2 fun b => ?_
+  filter_upwards [Ioo_mem_nhdsLT (erf_lt_one b)] with y hy
+  exact (le_erfInv_iff ⟨(neg_one_lt_erf b).trans hy.1, hy.2⟩).2 hy.1.le
+
+/-- The inverse error function tends to `-∞` as its argument decreases to `-1`. -/
+theorem tendsto_erfInv_nhdsGT_neg_one : Tendsto erfInv (𝓝[>] (-1)) atBot := by
+  refine tendsto_atBot.2 fun b => ?_
+  filter_upwards [Ioo_mem_nhdsGT (neg_one_lt_erf b)] with y hy
+  exact (erfInv_le_iff ⟨hy.1, hy.2.trans (erf_lt_one b)⟩).2 hy.2.le
+
+/-- The inverse error function is strictly differentiable on `(-1, 1)`, with derivative
+`√π / 2 * exp (erfInv y ^ 2)`. -/
+theorem hasStrictDerivAt_erfInv (hy : y ∈ Ioo (-1) 1) :
+    HasStrictDerivAt erfInv (√π / 2 * rexp (erfInv y ^ 2)) y := by
+  have h := (hasStrictDerivAt_erf (erfInv y)).of_local_left_inverse (continuousAt_erfInv hy)
+    (by positivity) (by filter_upwards [Ioo_mem_nhds hy.1 hy.2] with z hz using erf_erfInv hz)
+  rwa [mul_inv, inv_div, ← Real.exp_neg, neg_neg] at h
+
+/-- The derivative of the inverse error function on `(-1, 1)`. -/
+theorem hasDerivAt_erfInv (hy : y ∈ Ioo (-1) 1) :
+    HasDerivAt erfInv (√π / 2 * rexp (erfInv y ^ 2)) y :=
+  (hasStrictDerivAt_erfInv hy).hasDerivAt
+
+end Real

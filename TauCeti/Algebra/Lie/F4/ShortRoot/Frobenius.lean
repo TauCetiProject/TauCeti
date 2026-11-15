@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PointsFunctor
@@ -75,7 +76,7 @@ the functorial map on points induced by the iterated Frobenius endomorphism of t
 For `p` prime, `0 < k` and `A` an algebraic closure of `ZMod p`, this is the `q`-power Frobenius
 of the carrier's points for `q = p ^ k`. -/
 def frobenius : points A →* points A :=
-  pointsMap (iterateFrobenius A p k)
+  (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k)
 
 /-- The Frobenius endomorphism of the short-root type-`F₄` carrier acts by entrywise Frobenius.
 
@@ -84,7 +85,7 @@ normal form. -/
 theorem coe_frobenius (g : points A) :
     (frobenius p k A g : _root_.Matrix.GeneralLinearGroup (Fin 26) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [frobenius, coe_pointsMap]
+  rw [frobenius, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its `p ^ k`-th
 power. -/
@@ -103,7 +104,7 @@ theorem frobenius_rootSubgroupPoints (i : Fin 4 ⊕ Fin 4) (u : Multiplicative A
     frobenius p k A (rootSubgroupPoints i A u) =
       rootSubgroupPoints i A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
-  rw [frobenius, pointsMap_rootSubgroupPoints]
+  rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
@@ -111,18 +112,19 @@ power.** -/
 @[simp]
 theorem frobenius_weightTorusPoints (s : Fin 4 → Aˣ) :
     frobenius p k A (weightTorusPoints A s) = weightTorusPoints A (s ^ p ^ k) := by
-  rw [frobenius, pointsMap_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
+  rw [frobenius, map_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
 
 /-- The zeroth Frobenius iterate is the identity on the short-root type-`F₄` carrier's point
 group. -/
 @[simp]
 theorem frobenius_zero : frobenius p 0 A = MonoidHom.id _ := by
-  rw [frobenius, iterateFrobenius_zero, pointsMap_id]
+  rw [frobenius, iterateFrobenius_zero, GeneralLinear.IntegralPointsPresentation.map_id]
 
 /-- Frobenius iterates add under composition on the short-root type-`F₄` carrier's point group. -/
 theorem frobenius_add (m : ℕ) :
     frobenius p (k + m) A = (frobenius p k A).comp (frobenius p m A) := by
-  rw [frobenius, frobenius, frobenius, iterateFrobenius_add, pointsMap_comp]
+  rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
+    GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation A)]
 
 /-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
 Frobenius of the short-root type-`F₄` carrier, in the endomorphism monoid of its points, is its
@@ -130,10 +132,9 @@ Frobenius of the short-root type-`F₄` carrier, in the endomorphism monoid of i
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem frobenius_pow (m : ℕ) :
-    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add p (k * m) A k]; rfl
+    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius p j A) (frobenius_zero p A)
+    (fun a b => frobenius_add p a A b) k m
 
 /-- A short-root type-`F₄` carrier point is fixed by Frobenius exactly when all of its matrix
 entries lie in the Frobenius-fixed subring. -/

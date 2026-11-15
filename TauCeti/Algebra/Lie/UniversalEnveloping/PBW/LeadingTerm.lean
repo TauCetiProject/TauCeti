@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.List.Sort
+public import Mathlib.Data.Multiset.Sort
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 
@@ -39,11 +41,6 @@ an arbitrary permutation.
   the same statement for words in an indexed family.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious`:
   every word has the same leading term as its ordered version.
-
-This is the first part of the associated-graded-map target in Layer 3, "PBW, a substantial
-sub-project", of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. The next stage
-uses these permutation-invariant leading terms to define the map from `SymmetricAlgebra R L` to the
-associated graded of `U(L)`.
 
 ## References
 
@@ -90,7 +87,7 @@ theorem prod_map_ι_sub_prod_map_ι_mem_pbwFiltrationPrevious_of_perm {l₁ l₂
         mul_mem_pbwFiltrationPrevious_right (R := R) (L := L)
           (ι_mem_pbwFiltration_one R L x) ih
   | swap x y l => exact prod_map_ι_sub_swap_mem_pbwFiltrationPrevious R L y x l
-  | trans h₁ h₂ ih₁ ih₂ =>
+  | trans h₁ _ ih₁ ih₂ =>
       rw [← h₁.length_eq] at ih₂
       simpa only [sub_add_sub_cancel] using
         (pbwFiltrationPrevious R L _).add_mem ih₁ ih₂
@@ -170,5 +167,15 @@ theorem pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious
       pbwFiltrationPrevious R L word.length :=
   pbwMonomial_sub_pbwMonomial_mem_pbwFiltrationPrevious_of_perm R L e
     (List.perm_insertionSort r word).symm
+
+/-- Relabelling the indices of an exponent vector along an order embedding relabels its ordered
+PBW monomial. -/
+theorem pbwMonomial_sort_toMultiset_mapDomain {ι₁ ι₂ : Type*} [LinearOrder ι₁]
+    [LinearOrder ι₂] (g : ι₁ ↪o ι₂) (e : ι₂ → L) (n : ι₁ →₀ ℕ) :
+    pbwMonomial R L e ((n.mapDomain g).toMultiset.sort (· ≤ ·)) =
+      pbwMonomial R L (e ∘ g) (n.toMultiset.sort (· ≤ ·)) := by
+  rw [← Finsupp.toMultiset_map, ← Multiset.map_sort g n.toMultiset (· ≤ ·) (· ≤ ·)
+    (fun _ _ _ _ ↦ g.le_iff_le.symm)]
+  simp only [pbwMonomial_def, List.map_map, Function.comp_def]
 
 end TauCeti.UniversalEnvelopingAlgebra

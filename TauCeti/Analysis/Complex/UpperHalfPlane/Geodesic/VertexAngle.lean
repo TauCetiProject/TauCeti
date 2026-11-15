@@ -124,17 +124,16 @@ theorem vertexAngle_inl_eq_interiorAngle (A : ℍ) (q r : ℍ ⊕ OnePoint ℝ) 
   rw [vertexAngle_inl, interiorAngle_def, ← rayToward_eq_geodesicBetween,
     ← rayToward_eq_geodesicBetween]
 
-/-- The angle at a finite vertex is positive when the second target lies strictly to the left
-of the ray towards the first target. -/
-theorem vertexAngle_pos_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ}
-    (hr : r ∈ extLeftHalfPlane (rayToward A q)) : 0 < vertexAngle (.inl A) q r := by
+/-- A ray towards a point strictly in the other ray's left half-plane is not on its line. -/
+private theorem rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane
+    {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ} (hr : r ∈ extLeftHalfPlane (rayToward A q)) :
+    geodesicLine (rayToward A r) 1 ∉
+      Set.range (geodesicLine (geodesicBetween A (geodesicLine (rayToward A q) 1))) := by
   have hAr : (.inl A : ℍ ⊕ OnePoint ℝ) ≠ r := by
     intro h
     rw [← h, inl_mem_extLeftHalfPlane_iff] at hr
     exact notMem_range_geodesicLine_of_mem_leftHalfPlane hr
       ⟨0, geodesicLine_rayToward_zero A q⟩
-  rw [vertexAngle_inl_eq_interiorAngle]
-  apply interiorAngle_pos
   rw [← rayToward_eq_geodesicBetween]
   rintro ⟨t, ht⟩
   have ht₀ : t ≠ 0 := by
@@ -166,6 +165,20 @@ theorem vertexAngle_pos_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoin
           simp
     exact (heq ▸ isGeodesicFromTo_rayToward hAr).right_notMem_extLeftHalfPlane hr
 
+/-- The angle at a finite vertex is positive when the second target lies strictly to the left
+of the ray towards the first target. -/
+theorem vertexAngle_pos_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ}
+    (hr : r ∈ extLeftHalfPlane (rayToward A q)) : 0 < vertexAngle (.inl A) q r := by
+  rw [vertexAngle_inl_eq_interiorAngle]
+  exact interiorAngle_pos (rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane hr)
+
+/-- The angle at a finite vertex is less than `π` when the second target lies strictly to the
+left of the ray towards the first target. -/
+theorem vertexAngle_lt_pi_of_mem_extLeftHalfPlane {A : ℍ} {q r : ℍ ⊕ OnePoint ℝ}
+    (hr : r ∈ extLeftHalfPlane (rayToward A q)) : vertexAngle (.inl A) q r < π := by
+  rw [vertexAngle_inl_eq_interiorAngle]
+  exact interiorAngle_lt_pi (rayToward_one_notMem_geodesicBetween_of_mem_extLeftHalfPlane hr)
+
 /-- Angles at a vertex are invariant under the action. -/
 theorem vertexAngle_smul (h : PSL(2, ℝ)) {p q r : ℍ ⊕ OnePoint ℝ} (hpq : p ≠ q) (hpr : p ≠ r) :
     vertexAngle (h • p) (h • q) (h • r) = vertexAngle p q r := by
@@ -196,7 +209,7 @@ private theorem normSq_geodesicLine_rayToward_one_sub {A : ℍ} {q : ℍ ⊕ One
   have hQm : Complex.normSq ((Q : ℂ) - m) = r := by
     rw [← hQ]
     exact hg.normSq_geodesicLine_sub hp hq (by rwa [toComplex_inl]) hqm hre' 1
-  have hlt := hg.re_toComplex_lt_iff hgQ hp hq hre'
+  have hlt := hg.re_toComplex_lt_iff hgQ hq hre'
   rw [toComplex_inl, toComplex_inl, coe_re, coe_re] at hlt
   -- `Q ≠ A` are two points of `ℍ` on the same circle, so they have different real parts
   have hAQ : A.re ≠ Q.re := fun h ↦ by
@@ -252,7 +265,8 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     have hμ' : 0 < -μ := neg_pos.2 (neg_of_mul_neg_left hμ (sub_pos.2 hpq).le)
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
-      Complex.angle_I_I_mul, Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
+      Complex.angle_self_mul_right Complex.I_ne_zero,
+      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
     simp
   · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
@@ -276,7 +290,8 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hp hqm hpm hpq.ne'
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
-      Complex.angle_I_I_mul, Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
+      Complex.angle_self_mul_right Complex.I_ne_zero,
+      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
     simp
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
@@ -290,7 +305,6 @@ second, to the right of `A` (each possibly an ideal endpoint), with `p` strictly
 second semicircle. Then the angle at `A` between the directions to `p` and `q` is the sum of the
 angles they make with the upward vertical through `A`. -/
 theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ} {m₁ ρ₁ m₂ ρ₂ : ℝ}
-    (hp : p ≠ .inr ∞) (hq : q ≠ .inr ∞)
     (hA₁ : Complex.normSq ((A : ℂ) - m₁) = ρ₁ ^ 2)
     (hp₁ : Complex.normSq (toComplex p - m₁) = ρ₁ ^ 2)
     (hA₂ : Complex.normSq ((A : ℂ) - m₂) = ρ₂ ^ 2)
@@ -299,6 +313,11 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     (hp₂ : ρ₂ ^ 2 < Complex.normSq (toComplex p - m₂)) :
     vertexAngle (.inl A) p q =
       vertexAngle (.inl A) p (.inr ∞) + vertexAngle (.inl A) (.inr ∞) q := by
+  -- an ideal vertex `∞` among `p`, `q` makes one of the two summands vanish
+  rcases eq_or_ne p (.inr ∞) with rfl | hp
+  · rw [vertexAngle_self, zero_add]
+  rcases eq_or_ne q (.inr ∞) with rfl | hq
+  · rw [vertexAngle_self, add_zero]
   -- the angles at `A` are interior angles towards the points `B`, `C`, `D` at parameter `1` of
   -- the rays towards `q`, `∞` and `p`
   obtain ⟨hBm, hB⟩ := normSq_geodesicLine_rayToward_one_sub hq hA₂ hq₂ hAq.ne

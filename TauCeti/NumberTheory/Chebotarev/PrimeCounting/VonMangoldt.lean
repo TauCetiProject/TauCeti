@@ -66,7 +66,6 @@ open IsDedekindDomain (HeightOneSpectrum)
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- The powered-class convention follows `TauCetiRoadmap/Chebotarev/Suggested.lean`.
 variable (K L) in
 /-- The prime powers whose powered Artin class is `C`. A prime power `𝔭 ^ j` is included when
 `𝔭` is unramified in `L` and `(artinSymbol 𝔭) ^ j = C`. -/
@@ -429,7 +428,7 @@ theorem frobeniusPsi_sub_frobeniusTheta_isLittleO (C : ConjClasses (L ≃ₐ[K] 
     (fun x ↦ frobeniusPsi K L C x - frobeniusTheta K L C x) =o[atTop]
       fun x : ℝ ↦ x := by
   simpa only [frobeniusPsi_sub_frobeniusTheta_eq_primePowerSummatory] using
-    primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K zero_le_one fun A ↦ by
+    primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K fun A ↦ by
       rw [Real.norm_of_nonneg (Set.indicator_nonneg
         (fun A _ ↦ higherPrimePowerWeight_nonneg A) A), one_mul]
       exact Set.indicator_apply_le' (fun _ ↦ le_rfl) fun _ ↦ higherPrimePowerWeight_nonneg A

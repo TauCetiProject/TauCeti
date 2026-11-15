@@ -1,0 +1,212 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Bivariate
+public import Mathlib.Algebra.Polynomial.Eval.Degree
+public import Mathlib.Topology.Algebra.Polynomial
+public import Mathlib.Topology.Algebra.Ring.Basic
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import Mathlib.Topology.Instances.Matrix
+
+/-!
+# Continuity of polynomial families
+
+For a family of polynomials `f x` over a topological semiring, indexed by a parameter `x`, the
+coefficients of a product are finite sums of products of coefficients of the factors. Hence if
+every coefficient of each factor is continuous at a point, so is every coefficient of the product.
+This is used to treat the product of a finite family of polynomials with continuous coefficients
+as a single polynomial family.
+
+If the degrees of the family are bounded and its coefficients are continuous, then the evaluation
+`(x, t) ↦ (f x).eval t` is jointly continuous, since it is a finite sum of products of
+coefficients with powers of `t`. The basic example of a family with continuous coefficients is
+the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its coefficient tuple
+`a`.
+
+## Main results
+
+* `Polynomial.continuousAt_eval`: evaluation along a continuous point for a family of locally
+  bounded degree.
+* `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
+* `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
+* `Polynomial.continuousOn_coeff_of_monic`: for a monic family of fixed degree, continuity of
+  the lower coefficients gives continuity of the leading one.
+* `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
+  of bounded degree.
+* `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
+* `Polynomial.tendsto_resultant`: continuity of the resultant at fixed formal degrees in the
+  coefficients of its arguments.
+* `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
+  continuous in `a`.
+* `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
+  are continuous in the tuple of roots `f`.
+* `TauCeti.isProperMap_pow`: on a proper normed ring with multiplicative norm, `x ↦ xᵏ` is proper
+  for `k ≠ 0`.
+-/
+
+public section
+
+open Filter Topology
+open scoped Polynomial.Bivariate
+
+namespace Polynomial
+
+/-- Evaluation of a bivariate polynomial is jointly continuous in its two arguments. -/
+theorem continuous_evalEval {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] (P : R[X][Y]) :
+    Continuous fun z : R × R ↦ P.evalEval z.1 z.2 := by
+  have key (x y : R) : P.evalEval x y =
+      ∑ j ∈ P.support, (P.coeff j).eval x * y ^ j := by
+    rw [Polynomial.evalEval, Polynomial.eval_eq_sum (p := P)]
+    simp only [Polynomial.sum_def, Polynomial.eval_finsetSum, Polynomial.eval_mul,
+      Polynomial.eval_pow, Polynomial.eval_C]
+  simp only [key]
+  exact continuous_finsetSum _ fun j _ ↦
+    ((P.coeff j).continuous.comp continuous_fst).mul (continuous_snd.pow j)
+
+end Polynomial
+
+namespace Polynomial
+
+/-- Evaluation along a point continuous at `x₀` is continuous at `x₀` if the coefficients of
+index at most `d` are continuous there and the family has degree bounded by `d` nearby. -/
+theorem continuousAt_eval {X R : Type*} [TopologicalSpace X] [TopologicalSpace R]
+    [Semiring R] [IsTopologicalSemiring R] {f : X → R[X]} {r : X → R} {x₀ : X} {d : ℕ}
+    (hf : ∀ i ≤ d, ContinuousAt (fun x ↦ (f x).coeff i) x₀)
+    (hd : ∀ᶠ x in 𝓝 x₀, (f x).natDegree ≤ d) (hr : ContinuousAt r x₀) :
+    ContinuousAt (fun x ↦ (f x).eval (r x)) x₀ := by
+  have heq : (fun x ↦ (f x).eval (r x)) =ᶠ[𝓝 x₀]
+      fun x ↦ ∑ i ∈ Finset.range (d + 1), (f x).coeff i * r x ^ i := by
+    filter_upwards [hd] with x hx
+    exact eval_eq_sum_range' (Nat.lt_succ_of_le hx) _
+  have hc : ContinuousAt (fun x ↦ ∑ i ∈ Finset.range (d + 1),
+      (f x).coeff i * r x ^ i) x₀ :=
+    tendsto_finsetSum _ fun i hi ↦ (hf i (Finset.mem_range_succ_iff.1 hi)).mul (hr.pow i)
+  exact hc.congr_of_eventuallyEq heq
+
+variable {X R ι : Type*} [TopologicalSpace X] [TopologicalSpace R] {x₀ : X}
+
+/-- The coefficient of index `i` in a product of two polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in both factors are continuous there. -/
+theorem continuousAt_coeff_mul [Semiring R] [IsTopologicalSemiring R] {f g : X → R[X]} {i : ℕ}
+    (hf : ∀ j ≤ i, ContinuousAt (fun x ↦ (f x).coeff j) x₀)
+    (hg : ∀ j ≤ i, ContinuousAt (fun x ↦ (g x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (f x * g x).coeff i) x₀ := by
+  simp only [coeff_mul]
+  refine tendsto_finsetSum _ fun p hp ↦ ?_
+  have hp := Finset.mem_antidiagonal.mp hp
+  exact (hf p.1 (by omega)).mul (hg p.2 (by omega))
+
+/-- The coefficient of index `i` in a finite product of polynomial families is continuous at `x₀`
+if the coefficients of indices at most `i` in every factor are continuous there. -/
+theorem continuousAt_coeff_prod [CommSemiring R] [IsTopologicalSemiring R]
+    {f : ι → X → R[X]} (s : Finset ι) {i : ℕ}
+    (hf : ∀ k ∈ s, ∀ j ≤ i, ContinuousAt (fun x ↦ (f k x).coeff j) x₀) :
+    ContinuousAt (fun x ↦ (∏ k ∈ s, f k x).coeff i) x₀ := by
+  classical
+  induction s using Finset.induction_on generalizing i with
+  | empty =>
+    simp only [Finset.prod_empty]
+    exact continuousAt_const
+  | insert k s hk ih =>
+    simp only [Finset.prod_insert hk]
+    exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
+      (fun j hj ↦ ih fun l hl m hm ↦ hf l (Finset.mem_insert_of_mem hl) m (hm.trans hj))
+
+/-- For a family of monic polynomials of degree `n` on `s`, continuity of the coefficients of
+index less than `n` on `s` gives continuity of every coefficient of index at most `n`, the leading
+one being `1`. -/
+theorem continuousOn_coeff_of_monic [Semiring R] {f : X → R[X]} {s : Set X} {n : ℕ}
+    (hm : ∀ x ∈ s, (f x).Monic) (hd : ∀ x ∈ s, (f x).natDegree = n)
+    (hc : ∀ k < n, ContinuousOn (fun x ↦ (f x).coeff k) s) {k : ℕ} (hk : k ≤ n) :
+    ContinuousOn (fun x ↦ (f x).coeff k) s := by
+  rcases hk.lt_or_eq with hk | rfl
+  · exact hc k hk
+  · exact continuousOn_const.congr fun x hx ↦ by rw [← hd x hx, (hm x hx).coeff_natDegree]
+
+/-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
+continuous, then its evaluation is jointly continuous in the parameter and the point. -/
+theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring R]
+    {f : X → R[X]} {d : ℕ}
+    (hf : ∀ i ≤ d, Continuous fun x => (f x).coeff i) (hd : ∀ x, (f x).natDegree ≤ d) :
+    Continuous fun z : X × R => (f z.1).eval z.2 := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  exact continuousAt_eval (fun i hi ↦ ((hf i hi).comp continuous_fst).continuousAt)
+    (.of_forall fun y ↦ hd y.1) continuous_snd.continuousAt
+
+/-- The resultant at fixed formal degrees `m` and `n` depends continuously on the coefficients:
+if, along a filter, the coefficients of index at most `m` of `f i` and those of index at most `n`
+of `g i` converge to those of `f₀` and `g₀`, then the resultants converge. -/
+theorem tendsto_resultant [CommRing R] [IsTopologicalRing R] {l : Filter ι} {f g : ι → R[X]}
+    {f₀ g₀ : R[X]} {m n : ℕ} (hf : ∀ k ≤ m, Tendsto (fun i ↦ (f i).coeff k) l (𝓝 (f₀.coeff k)))
+    (hg : ∀ k ≤ n, Tendsto (fun i ↦ (g i).coeff k) l (𝓝 (g₀.coeff k))) :
+    Tendsto (fun i ↦ resultant (f i) (g i) m n) l (𝓝 (resultant f₀ g₀ m n)) := by
+  simp only [resultant]
+  refine (continuous_id.matrix_det.tendsto _).comp
+    (tendsto_pi_nhds.2 fun a ↦ tendsto_pi_nhds.2 fun b ↦ ?_)
+  induction b using Fin.addCases with
+  | left b =>
+    simp only [Matrix.of_apply, Fin.addCases_left]
+    split_ifs with h
+    · exact hg _ (by simp only [Set.mem_Icc] at h; omega)
+    · exact tendsto_const_nhds
+  | right b =>
+    simp only [Matrix.of_apply, Fin.addCases_right]
+    split_ifs with h
+    · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
+    · exact tendsto_const_nhds
+
+end Polynomial
+
+namespace TauCeti.Polynomial
+
+open _root_.Polynomial
+
+/-- Each coefficient of the monic polynomial `monicOfCoeff a` is a continuous function of the
+coefficient tuple `a`: it is either constant or a coordinate of `a`. -/
+theorem continuous_coeff_monicOfCoeff {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    {n : ℕ} (j : ℕ) : Continuous fun a : Fin n → R ↦ (monicOfCoeff a).coeff j := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+  rcases lt_trichotomy j n with hj | rfl | hj
+  · rw [funext fun a ↦ coeff_monicOfCoeff a ⟨j, hj⟩]
+    exact continuous_apply _
+  · rw [funext (coeff_monicOfCoeff_self (R := R))]
+    exact continuous_const
+  · rw [funext fun a ↦ coeff_eq_zero_of_natDegree_lt ((natDegree_monicOfCoeff a).trans_lt hj)]
+    exact continuous_const
+
+/-- The coefficients of `∏ i ∈ s, (X - C (f i))` depend continuously on the tuple `f` of roots.
+
+Each coefficient is, up to sign, an elementary symmetric function of the roots, so continuity of the
+ring operations is all that is used. -/
+theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] (s : Finset ι) (k : ℕ) :
+    Continuous fun f : ι → R => (∏ i ∈ s, (X - C (f i))).coeff k := by
+  refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
+  refine continuousAt_coeff_prod (f := fun i (f : ι → R) ↦ X - C (f i)) s fun i _ j _ ↦ ?_
+  simp only [coeff_sub, coeff_X, coeff_C]
+  split_ifs <;>
+    first
+    | exact continuousAt_const
+    | exact (continuous_const.sub (continuous_apply i)).continuousAt
+
+end TauCeti.Polynomial
+
+namespace TauCeti
+
+/-- On a proper normed ring with multiplicative norm, such as a proper normed field, the power
+map `x ↦ xᵏ` is proper for `k ≠ 0`, as evaluation of the nonconstant monomial `Xᵏ`. -/
+theorem isProperMap_pow {R : Type*} [NormedRing R] [IsAbsoluteValue (norm : R → ℝ)]
+    [ProperSpace R] {k : ℕ} (hk : k ≠ 0) : IsProperMap fun x : R ↦ x ^ k := by
+  cases subsingleton_or_nontrivial R
+  · exact (continuous_pow k).isProperMap
+  simpa using (Polynomial.monomial k (1 : R)).isProperMap_eval (by simp [Nat.pos_of_ne_zero hk])
+
+end TauCeti

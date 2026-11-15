@@ -124,6 +124,20 @@ theorem pbwHomogeneousComponentMap_prod_map_ι (l : List L) :
   rw [pbwHomogeneousComponentMap_apply, pbwAssociatedGradedMap_prod_map_ι]
   exact DirectSum.of_eq_same (β := PBWGradedPiece R L) l.length _
 
+/-- A product of generators of length `n` maps to the corresponding degree-`n` PBW class. -/
+theorem pbwHomogeneousComponentMap_prod_map_ι_of_length_eq {n : ℕ} (l : List L)
+    (hl : l.length = n) :
+    pbwHomogeneousComponentMap R L n
+        ⟨(l.map (SymmetricAlgebra.ι R L)).prod,
+          by simpa only [hl] using prod_map_ι_mem_homogeneousSubmodule R L l⟩ =
+      (Submodule.Quotient.mk
+        ⟨(l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod,
+          prod_map_mem_wordFiltration
+            (_root_.UniversalEnvelopingAlgebra.ι R (L := L)).toLinearMap hl.le⟩ :
+        PBWGradedPiece R L n) := by
+  subst n
+  exact pbwHomogeneousComponentMap_prod_map_ι R L l
+
 /-- Every PBW graded piece has a homogeneous symmetric representative of the same degree. This
 is the degreewise form of surjectivity of the canonical map `Sym(L) → gr U(L)`. -/
 theorem pbwHomogeneousComponentMap_surjective (n : ℕ) :

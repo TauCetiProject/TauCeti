@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.Extension.Basic
-public import Mathlib.Topology.Homotopy.Path
 
 /-!
 # A cofibration which is a homotopy equivalence is a strong deformation retract
@@ -68,72 +67,6 @@ theorem HasHomotopyExtensionProperty.exists_retraction_homotopic
   · simpa using hG₁ 1 a
   · exact { toContinuousMap := G, map_zero_left := hG₀, map_one_left := fun _ => rfl }
 
-/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
-`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
-private def tent (t : I) : I :=
-  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
-    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h => by linarith) fun h => by linarith⟩
-
-private lemma continuous_tent : Continuous tent := by
-  unfold tent
-  fun_prop
-
-private lemma tent_zero : tent 0 = 0 := by
-  ext
-  simp [tent]
-
-private lemma tent_one : tent 1 = 0 := by
-  ext
-  norm_num [tent]
-
-section Relative
-
-variable {r : C(X, A)} (hr : ∀ a : A, r a = a)
-  (h : (ContinuousMap.id X).Homotopy ((subtypeVal A).comp r))
-
-/-- The path which runs along the homotopy `h` from `x` to `r x`, and then back along `h` from
-`r x` to itself. -/
-private def outAndBack (x : X) : Path (ContinuousMap.id X x) (r x) :=
-  (h.evalAt x).trans ((h.evalAt (r x)).symm.cast (by simp [hr]) (ContinuousMap.id_apply _).symm)
-
-private lemma continuous_outAndBack : Continuous ↿(outAndBack hr h) :=
-  Path.trans_continuous_family _ (h.continuous.comp continuous_swap) _
-    (h.continuous.comp ((continuous_symm.comp continuous_snd).prodMk
-      (continuous_subtype_val.comp (r.continuous.comp continuous_fst))))
-
-/-- For a point `x` of `A`, the path `outAndBack hr h x` is `λ * λ⁻¹`, with `λ` the loop
-`t ↦ h (t, x)`, so it is `λ` reparametrised by the tent map. -/
-private lemma outAndBack_apply_of_mem {x : X} (hx : x ∈ A) (t : I) :
-    outAndBack hr h x t = h (tent t, x) := by
-  have hrx : (r x : X) = x := congrArg Subtype.val (hr ⟨x, hx⟩)
-  rw [outAndBack, Path.trans_apply]
-  split_ifs with ht
-  · rw [Homotopy.evalAt_apply]
-    congr 2
-    ext
-    simp [tent, min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t)]
-  · simp only [Path.cast_coe, Path.symm_apply, Function.comp_apply, Homotopy.evalAt_apply, hrx]
-    congr 2
-    ext
-    simp only [tent, coe_symm_eq]
-    rw [min_eq_right (by linarith)]
-    ring
-
-/-- The contraction of the paths `outAndBack hr h a`, for `a ∈ A`, onto the constant paths.  At
-time `u` it follows the loop `t ↦ h (t, a)` only up to time `tent t - u`, so it is constant at
-`a` wherever `u ≥ tent t`. -/
-private def contraction : C(I × A, C(I, X)) :=
-  ContinuousMap.curry
-    ⟨fun p : (I × A) × I => h (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by
-      have := continuous_tent
-      fun_prop⟩
-
-private lemma contraction_apply (u : I) (a : A) (t : I) :
-    contraction h (u, a) t = h (projIcc 0 1 zero_le_one ((tent t : ℝ) - u), a) :=
-  rfl
-
-end Relative
-
 /-- A retraction `r` of `X` onto a subset `A` with the homotopy extension property whose
 composite with the inclusion is homotopic to the identity of `X` is homotopic to the identity
 relative to `A`. -/
@@ -142,27 +75,12 @@ theorem HasHomotopyExtensionProperty.homotopicRel_of_retraction
     (hr' : ((subtypeVal A).comp r).Homotopic (ContinuousMap.id X)) :
     (ContinuousMap.id X).HomotopicRel ((subtypeVal A).comp r) A := by
   obtain ⟨h⟩ := hr'.symm
-  obtain ⟨G, hG₀, hG₁⟩ := hA.exists_extension
-    (ContinuousMap.curry ⟨↿(outAndBack hr h), continuous_outAndBack hr h⟩) (contraction h)
-    fun a => ContinuousMap.ext fun t => by
-      rw [contraction_apply, Set.Icc.coe_zero, sub_zero, projIcc_val]
-      exact (outAndBack_apply_of_mem hr h a.2 t).symm
-  -- Read the extended contraction off along the path `s ↦ (tent s, s)` in the square.
-  refine ⟨{ toFun := fun p => G (tent p.1, p.2) p.1
-            continuous_toFun := by
-              have := continuous_tent
-              fun_prop
-            map_zero_left := fun x => ?_
-            map_one_left := fun x => ?_
-            prop' := fun s x hx => ?_ }⟩
-  · rw [tent_zero, hG₀, curry_apply]
-    exact (outAndBack hr h x).source
-  · rw [tent_one, hG₀, curry_apply]
-    exact (outAndBack hr h x).target
-  · simp only [ContinuousMap.coe_mk, id_apply]
-    rw [hG₁ _ ⟨x, hx⟩, contraction_apply, sub_self,
-      projIcc_of_le_left _ le_rfl]
-    exact h.apply_zero x
+  -- Follow `h` from the identity to `r`, then follow `h` backwards from `r x` to `r (r x) = r x`;
+  -- at the points of `A`, which `r` fixes, the second homotopy retraces the first.
+  refine hA.homotopicRel_of_retracing h ((h.symm.compContinuousMap ((subtypeVal A).comp r)).cast
+    (ContinuousMap.ext fun x => by simp [hr]) (ContinuousMap.id_comp _)) fun t x hx => ?_
+  have hrx : (r x : X) = x := congrArg Subtype.val (hr ⟨x, hx⟩)
+  simp [hrx]
 
 /-- **A cofibration which is a homotopy equivalence is a strong deformation retract.**  If the
 inclusion of a subset `A` with the homotopy extension property is a homotopy equivalence, with

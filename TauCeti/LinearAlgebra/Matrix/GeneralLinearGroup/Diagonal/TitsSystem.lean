@@ -202,7 +202,7 @@ def glTitsSystem (n : ℕ) : TitsSystem (GL (Fin (n + 1)) k) where
   intersection_normal := inferInstance
   simple := Set.range fun i : Fin n ↦ QuotientGroup.mk (glSimpleRep k n i)
   closure_simple := closure_range_mk_glSimpleRep k n
-  exists_simpleRep_sq_mem s hs := by
+  exists_simpleRep_mul_self_mem s hs := by
     obtain ⟨i, rfl⟩ := hs
     refine ⟨glSimpleRep k n i, rfl, ?_⟩
     rw [glSimpleRep, ← map_mul, Equiv.swap_mul_self, map_one]

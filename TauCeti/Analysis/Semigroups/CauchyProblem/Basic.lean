@@ -87,39 +87,43 @@ theorem IsClassicalSolution.continuousOn {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ
 
 /-- A mild solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`.  The integral is pointwise
 Bochner integration in `X`.  Requiring the integral to lie in the domain makes the expression
-`A (∫ s in (0, t], u s)` meaningful for an unbounded operator. -/
-def IsMildSolution [CompleteSpace X] (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
-  ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
+`A (∫ s in (0, t], u s)` meaningful for an unbounded operator.
+
+The predicate requires `X` to be complete, so the integral is not the default zero value
+assigned by Bochner integration on incomplete spaces. -/
+def IsMildSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
+  CompleteSpace X ∧ ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
       A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x
 
 /-- A mild solution is continuous on the nonnegative half-line. -/
-theorem IsMildSolution.continuousOn [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.continuousOn {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) : ContinuousOn u (Set.Ici 0) :=
-  hu.1
-
-/-- A mild solution takes its prescribed initial value at time zero. -/
-theorem IsMildSolution.apply_zero [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
-    (hu : IsMildSolution A x u) : u 0 = x :=
   hu.2.1
 
-/-- Characterization of a mild solution by continuity and its integrated Cauchy equation. -/
-theorem isMildSolution_iff [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
-    IsMildSolution A x u ↔ ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
+/-- A mild solution takes its prescribed initial value at time zero. -/
+theorem IsMildSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+    (hu : IsMildSolution A x u) : u 0 = x :=
+  hu.2.2.1
+
+/-- Characterization of a mild solution by completeness, continuity, and its integrated
+Cauchy equation. -/
+theorem isMildSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
+    IsMildSolution A x u ↔ CompleteSpace X ∧ ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
       ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
         A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x :=
   Iff.rfl
 
 /-- The time integral of a mild solution belongs to the operator domain. -/
-theorem IsMildSolution.integral_mem_domain [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.integral_mem_domain {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) {t : ℝ} (ht : 0 ≤ t) : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain :=
-  (hu.2.2 t ht).choose
+  (hu.2.2.2 t ht).choose
 
 /-- The integrated Cauchy equation satisfied by a mild solution. -/
-theorem IsMildSolution.map_integral_eq_sub [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.map_integral_eq_sub {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
     A ⟨∫ s in Set.Ioc 0 t, u s, hu.integral_mem_domain ht⟩ = u t - x := by
-  obtain ⟨hut, hmap⟩ := hu.2.2 t ht
+  obtain ⟨hut, hmap⟩ := hu.2.2.2 t ht
   simpa only [Submodule.coe_mk] using hmap
 
 namespace StronglyContinuousSemigroup
@@ -136,20 +140,21 @@ theorem isClassicalSolution_realOperator (S : StronglyContinuousSemigroup X) (x 
     S.realOperator_continuousOn_Ici z, fun t ht => ?_⟩
   let hut : S.realOperator t (x : X) ∈ S.generator.domain := by
     rw [S.generator_domain]
-    exact S.realOperator_mem_domain ht x.property
+    exact S.realOperator_mem_domain x.property
   refine ⟨hut, ?_⟩
   refine ⟨?_, ?_⟩
   · dsimp only [z]
-    rw [← S.realOperator_generator_map ht x]
+    rw [← S.realOperator_generator_map x]
     simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
-  · simpa only [z, hut] using (S.realOperator_generator_map ht x).symm
+  · simpa only [z, hut] using (S.realOperator_generator_map x).symm
 
 /-- Every orbit is a mild solution of the abstract Cauchy problem for the generator. -/
 theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) :
     IsMildSolution S.generator x (fun t => S.realOperator t x) := by
   rw [isMildSolution_iff]
-  refine ⟨S.realOperator_continuousOn_Ici x, S.realOperator_zero_apply x, fun t ht => ?_⟩
-  rcases ht.eq_or_lt with rfl | ht
+  refine ⟨inferInstance, S.realOperator_continuousOn_Ici x,
+    S.realOperator_zero_apply x, fun t ht => ?_⟩
+  rcases ht.eq_or_lt with rfl | _
   · refine ⟨?_, ?_⟩
     · simp
     · have harg : (⟨∫ s in Set.Ioc 0 0, S.realOperator s x, by simp⟩ :
@@ -160,9 +165,9 @@ theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) 
       simp
   · let hut : (∫ s in Set.Ioc 0 t, S.realOperator s x) ∈ S.generator.domain := by
       rw [S.generator_domain]
-      exact S.integral_orbit_mem_domain x ht
+      exact S.integral_orbit_mem_domain x t
     refine ⟨hut, ?_⟩
-    simpa only [Submodule.coe_mk] using S.generator_integral_orbit x ht
+    simpa only [Submodule.coe_mk] using S.generator_integral_orbit x t
 
 end StronglyContinuousSemigroup
 

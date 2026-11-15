@@ -98,9 +98,9 @@ theorem append_left (pre : BraidWord n) {w w' : BraidWord n} (h : ArtinEquiv w w
           simpa only [List.append_assoc] using ArtinStep.braid (pre ++ u) v ε hij
   · intro w
     exact refl _
-  · intro w w' h ih
+  · intro w w' _ ih
     exact ih.symm
-  · intro w w' w'' h h' ih ih'
+  · intro w w' w'' _ _ ih ih'
     exact ih.trans ih'
 
 /-- Adding a common suffix preserves Artin equivalence. -/
@@ -117,9 +117,9 @@ theorem append_right {w w' : BraidWord n} (h : ArtinEquiv w w') (suf : BraidWord
           simpa only [List.cons_append, List.append_assoc] using ArtinStep.braid u (v ++ suf) ε hij
   · intro w
     exact refl _
-  · intro w w' h ih
+  · intro w w' _ ih
     exact ih.symm
-  · intro w w' w'' h h' ih ih'
+  · intro w w' w'' _ _ ih ih'
     exact ih.trans ih'
 
 /-- Appending Artin-equivalent words preserves Artin equivalence. -/

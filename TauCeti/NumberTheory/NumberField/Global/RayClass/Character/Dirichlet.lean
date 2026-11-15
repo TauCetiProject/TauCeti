@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Ray class characters of `ℚ` and Dirichlet characters
@@ -214,13 +215,13 @@ theorem absNorm_conductor_finitePart :
     exact η.conductor.finitePart_ne_bot
   generalize Ideal.absNorm η.conductor.finitePart = d at hspan hd ⊢
   -- The conductor divides `(m)·∞` exactly when the Dirichlet character factors through `m`.
-  have hcond : ∀ {m : ℕ} (hm : m ≠ 0) (h : ratModulus m hm ∣ ratModulus n hn),
+  have hcond : ∀ {m : ℕ} (hm : m ≠ 0) (_ : ratModulus m hm ∣ ratModulus n hn),
       η.conductor ∣ ratModulus m hm ↔ (ratDirichletEquiv n hn η).FactorsThrough m :=
     fun _ h ↦ by rw [conductor_dvd_iff h, factorsThrough_ratDirichletEquiv_iff h]
   have hspan_dvd : ∀ {m : ℕ}, η.conductor.finitePart ∣ Ideal.span {(m : 𝓞 ℚ)} ↔ d ∣ m :=
     fun {m} ↦ by
       rw [← hspan, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-        Rat.RingOfIntegers.natCast_dvd_natCast]
+        NumberField.RingOfIntegers.natCast_dvd_natCast]
   have hdn : d ∣ n := by
     have := (Modulus.dvd_iff.mp η.conductor_dvd).1
     rwa [ratModulus_finitePart, hspan_dvd] at this

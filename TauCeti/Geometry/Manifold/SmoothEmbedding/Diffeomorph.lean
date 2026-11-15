@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
-public import TauCeti.Geometry.Manifold.Immersion
+public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -32,22 +33,29 @@ transport moves it by the ambient diffeomorphism, and the two assemble into an a
 self-diffeomorphism group `TauCeti.Diff` of the target and a right action of that of the source;
 the two actions commute, which is recorded as a `SMulCommClass` instance.
 
-This is the transport layer that layer 4 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`) needs for its geometric presentations, where a knot
-presentation is a smooth embedding of the circle into the ambient manifold `N`: reversing the
-orientation of such a presentation and rotating its parametrisation are precisely precomposition
-with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postcomposition.
+This is the transport needed by geometric knot presentations, where a knot presentation is a
+smooth embedding of the circle into the ambient manifold `N`: reversing the orientation of such a
+presentation and rotating its parametrisation are precisely precomposition with a diffeomorphism
+of the circle, while the ambient `Diff(N)`-action is postcomposition.
 
 ## Main results
 
 * `TauCeti.isSmoothEmbedding_comp_diffeomorph` and
   `TauCeti.isSmoothEmbedding_diffeomorph_comp`, with their `_iff` companions: smooth embeddings are
   stable under composition with a diffeomorphism on either side.
+* `TauCeti.isSmoothEmbedding_comp_continuousLinearEquiv`: a smooth embedding of a vector space stays
+  one after a linear change of coordinates of the source, which changes its model.
+* `Diffeomorph.isSmoothEmbedding_comp`: from a boundaryless source, a diffeomorphism onto a
+  boundaryless manifold with a different finite-dimensional model transports smooth embeddings.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
+* `TauCeti.isSmoothEmbedding_continuousLinearEquiv`: a continuous linear equivalence between normed
+  spaces is a smooth embedding.
 
 ## Main definitions
 
 * `TauCeti.SmoothEmbedding.ofDiffeomorph`: a diffeomorphism as a bundled smooth embedding.
+* `TauCeti.SmoothEmbedding.ofContinuousLinearEquiv`: a continuous linear equivalence as a bundled
+  smooth embedding.
 * `TauCeti.SmoothEmbedding.compDiffeomorph`: reparametrise a bundled smooth embedding by a
   diffeomorphism of its source.
 * `TauCeti.SmoothEmbedding.transDiffeomorph`: transport a bundled smooth embedding by a
@@ -67,8 +75,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Manifold Set
-open scoped Manifold ContDiff
+open _root_.Manifold Set
+open scoped _root_.Manifold ContDiff
 
 section IsSmoothEmbedding
 
@@ -89,6 +97,14 @@ theorem isSmoothEmbedding_comp_diffeomorph [IsManifold I n M']
     (e : M' ≃ₘ^n⟮I, I⟯ M) (h : IsSmoothEmbedding I J n f) :
     IsSmoothEmbedding I J n (f ∘ e) :=
   ⟨isImmersion_comp_diffeomorph e h.isImmersion, h.isEmbedding.comp e.toHomeomorph.isEmbedding⟩
+
+/-- Precomposing a smooth embedding of a vector space with a continuous linear equivalence gives a
+smooth embedding, for the new source model. -/
+theorem isSmoothEmbedding_comp_continuousLinearEquiv {E₀ : Type*} [NormedAddCommGroup E₀]
+    [NormedSpace 𝕜 E₀] {g : E → N} (e : E₀ ≃L[𝕜] E) (h : IsSmoothEmbedding 𝓘(𝕜, E) J n g) :
+    IsSmoothEmbedding 𝓘(𝕜, E₀) J n (g ∘ e) :=
+  ⟨isImmersion_comp_continuousLinearEquiv e h.isImmersion,
+    h.isEmbedding.comp e.toHomeomorph.isEmbedding⟩
 
 /-- Transporting a smooth embedding by a diffeomorphism of the target gives a smooth embedding. -/
 theorem isSmoothEmbedding_diffeomorph_comp [IsManifold J n P]
@@ -123,7 +139,35 @@ theorem isSmoothEmbedding_diffeomorph [IsManifold I n M] [IsManifold I n M']
     (e : M ≃ₘ^n⟮I, I⟯ M') : IsSmoothEmbedding I I n e :=
   ⟨e.isImmersion, e.toHomeomorph.isEmbedding⟩
 
+/-- A continuous linear equivalence between normed spaces is a smooth embedding. -/
+theorem isSmoothEmbedding_continuousLinearEquiv (e : E ≃L[𝕜] E') :
+    IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n e := by
+  simpa using isSmoothEmbedding_comp_continuousLinearEquiv e IsSmoothEmbedding.id
+
 end IsSmoothEmbedding
+
+section ChangeOfModel
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E E' E'' H G G' M N P : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [FiniteDimensional 𝕜 E'']
+  [TopologicalSpace H] [TopologicalSpace G] [TopologicalSpace G']
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G} {K : ModelWithCorners 𝕜 E'' G'}
+  [I.Boundaryless] [K.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  [TopologicalSpace P] [ChartedSpace G' P]
+  {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] [IsManifold K n P] {f : M → N}
+
+omit [IsManifold J n N] in
+/-- Transporting a smooth embedding from a boundaryless manifold by a diffeomorphism of the target
+onto a boundaryless manifold gives a smooth embedding, also when the new target has a different
+finite-dimensional model. -/
+theorem _root_.Diffeomorph.isSmoothEmbedding_comp (Φ : N ≃ₘ^n⟮J, K⟯ P) (hn : 1 ≤ n)
+    (h : IsSmoothEmbedding I J n f) : IsSmoothEmbedding I K n (Φ ∘ f) :=
+  ⟨Φ.isImmersion_comp hn h.isImmersion, Φ.toHomeomorph.isEmbedding.comp h.isEmbedding⟩
+
+end ChangeOfModel
 
 namespace SmoothEmbedding
 
@@ -156,6 +200,21 @@ theorem coe_ofDiffeomorph [IsManifold I n M] [IsManifold I n M'] (e : M ≃ₘ^n
     ⇑(ofDiffeomorph e) = e := by
   funext x
   exact ofDiffeomorph_apply e x
+
+/-- A continuous linear equivalence between normed spaces, as a bundled smooth embedding. -/
+def ofContinuousLinearEquiv (e : E ≃L[𝕜] E') : SmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n E E' :=
+  SmoothEmbedding.ofIsSmoothEmbedding e (isSmoothEmbedding_continuousLinearEquiv e)
+
+@[simp]
+theorem ofContinuousLinearEquiv_apply (e : E ≃L[𝕜] E') (x : E) :
+    ofContinuousLinearEquiv (n := n) e x = e x := by
+  simp only [ofContinuousLinearEquiv, ofIsSmoothEmbedding_apply]
+
+@[simp]
+theorem coe_ofContinuousLinearEquiv (e : E ≃L[𝕜] E') :
+    ⇑(ofContinuousLinearEquiv (n := n) e) = e := by
+  funext x
+  exact ofContinuousLinearEquiv_apply e x
 
 /-- A diffeomorphism is onto, so as a smooth embedding it has full image.
 

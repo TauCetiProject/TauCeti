@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.LinearAlgebra.Semisimple
 import Mathlib.Tactic.NoncommRing
@@ -30,6 +31,8 @@ one-sided tensor endomorphism acts componentwise.
   semisimple.
 * `IsNilpotent.tensorProduct_map_sub_one`: `TensorProduct.map f g - 1` is nilpotent when
   `f - 1` and `g - 1` are nilpotent.
+* `Module.End.iSup_wordKer_lTensor_eq_top`: the family `1 ⊗ f i` is locally nilpotent when the
+  family `f i` is.
 -/
 
 public section
@@ -190,6 +193,39 @@ theorem _root_.Module.End.IsSemisimple.tensorProduct {f : _root_.Module.End K V}
     (Module.End.IsSemisimple.lTensor hg) (Module.End.IsSemisimple.rTensor hf)
 
 end PerfectField
+
+section WordKer
+
+variable [CommSemiring K] [AddCommMonoid V] [Module K V] {ι : Type*}
+
+/-- If `x` is killed by all composites of `d` members of a family `f`, then `w ⊗ x` is killed by
+all composites of `d` members of the family `1 ⊗ f i`. -/
+theorem _root_.Module.End.tmul_mem_wordKer_lTensor (W : Type*) [AddCommMonoid W] [Module K W]
+    {f : ι → _root_.Module.End K V} {d : ℕ} {x : V} (hx : x ∈ Module.End.wordKer f d) (w : W) :
+    w ⊗ₜ[K] x ∈ Module.End.wordKer (fun i ↦ (f i).lTensor W) d := by
+  induction d generalizing x with
+  | zero =>
+    rw [Module.End.wordKer_zero, Submodule.mem_bot] at hx ⊢
+    rw [hx, TensorProduct.tmul_zero]
+  | succ d ih =>
+    rw [Module.End.mem_wordKer_succ] at hx ⊢
+    exact fun i ↦ by simpa only [LinearMap.lTensor_tmul] using ih (hx i)
+
+/-- **Local nilpotence is preserved by tensoring.** If every vector of `V` is killed by all
+sufficiently long composites of members of a family `f`, then every element of `W ⊗ V` is killed
+by all sufficiently long composites of members of the family `1 ⊗ f i`. -/
+theorem _root_.Module.End.iSup_wordKer_lTensor_eq_top (W : Type*) [AddCommMonoid W] [Module K W]
+    {f : ι → _root_.Module.End K V} (hf : ⨆ d, Module.End.wordKer f d = ⊤) :
+    ⨆ d, Module.End.wordKer (fun i ↦ (f i).lTensor W) d = ⊤ := by
+  rw [Module.End.iSup_wordKer_eq_top_iff] at hf
+  refine Submodule.eq_top_iff'.2 fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | tmul w x =>
+    obtain ⟨d, hd⟩ := hf x
+    exact Submodule.mem_iSup_of_mem d (Module.End.tmul_mem_wordKer_lTensor W hd w)
+  | add y z hy hz => exact Submodule.add_mem _ hy hz
+
+end WordKer
 
 end
 

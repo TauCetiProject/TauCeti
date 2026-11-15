@@ -23,11 +23,9 @@ root subgroup have an equalizer, which is a closed subgroup scheme containing al
 minimality forces it to be everything. In coordinate terms the equalizer Hopf ideal is squeezed
 below the defining ideal, so it vanishes.
 
-This supplies the generated-carrier universal property needed by Layer 9's explicit
-Chevalley--Demazure construction: the theorems below quantify over the *whole* family
-`e : I → L` of represented root subgroups used to define the carrier. They do not establish the
-separate isomorphism theorem for pinned groups, whose uniqueness statement only assumes agreement
-on the simple root subgroups.
+The theorems below quantify over the *whole* family `e : I → L` of represented root subgroups used
+to define the carrier. They do not establish the isomorphism theorem for pinned groups, whose
+uniqueness statement only assumes agreement on the simple root subgroups.
 
 ## Main declarations
 
@@ -40,9 +38,7 @@ on the simple root subgroups.
 
 The determination of a homomorphism by a generating family of root subgroups is standard in the
 Chevalley--Demazure construction; see J. E. Humphreys, *Linear Algebraic Groups*, §27, and
-R. W. Carter, *Simple Groups of Lie Type*, §12.2. It advances the explicit
-"Chevalley--Demazure construction" and "Root subgroup maps" targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+R. W. Carter, *Simple Groups of Lie Type*, §12.2.
 -/
 
 public section

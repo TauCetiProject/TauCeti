@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.ValuationRing
-public import TauCeti.NumberTheory.IntegralLattice.Localization
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!

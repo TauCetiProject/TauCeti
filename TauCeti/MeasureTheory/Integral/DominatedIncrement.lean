@@ -72,15 +72,11 @@ pseudo-emetric target; neither measurability of `φ` nor finiteness of the integ
 theorem ediam_image_le_of_edist_le_setLIntegral (hs : s.OrdConnected)
     (hdom : ∀ x ∈ s, ∀ y ∈ s, x ≤ y → edist (g x) (g y) ≤ ∫⁻ t in Ioc x y, φ t ∂μ) :
     Metric.ediam (g '' s) ≤ ∫⁻ t in s, φ t ∂μ := by
-  have key : ∀ u ∈ s, ∀ v ∈ s, u ≤ v → edist (g u) (g v) ≤ ∫⁻ t in s, φ t ∂μ :=
-    fun u hu v hv huv =>
-      (hdom u hu v hv huv).trans
-        (lintegral_mono_set (Ioc_subset_Icc_self.trans (hs.out hu hv)))
   refine Metric.ediam_image_le_iff.2 fun x hx y hy => ?_
-  rcases le_total x y with hxy | hxy
-  · exact key x hx y hy hxy
+  wlog hxy : x ≤ y generalizing x y
   · rw [edist_comm]
-    exact key y hy x hx hxy
+    exact this y hy x hx (le_of_not_ge hxy)
+  exact (hdom x hx y hy hxy).trans (lintegral_mono_set (Ioc_subset_Icc_self.trans (hs.out hx hy)))
 
 end WeakEMetric
 
@@ -105,23 +101,20 @@ theorem uniformContinuousOn_of_edist_le_setLIntegral (hs : s.OrdConnected)
   intro ε hε
   obtain ⟨δ, hδ, hδlt⟩ := exists_pos_setLIntegral_lt_of_measure_lt
     (μ := volume.restrict s) (f := φ) hfin hε.ne'
-  -- the estimate for a pair in increasing order
-  have key : ∀ x ∈ s, ∀ y ∈ s, x ≤ y → edist x y < δ → edist (g x) (g y) < ε := by
-    intro x hx y hy hxy hgap
-    have hsub : Ioc x y ⊆ s := Ioc_subset_Icc_self.trans (hs.out hx hy)
-    have hmeas : (volume.restrict s) (Ioc x y) < δ := by
-      refine (Measure.restrict_apply_le _ _).trans_lt ?_
-      simpa [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hxy)] using hgap
-    have hlt := hδlt (Ioc x y) hmeas
-    rw [Measure.restrict_restrict_of_subset hsub] at hlt
-    exact (hdom x hx y hy hxy).trans_lt hlt
-  refine ⟨δ, hδ, fun {x} hx {y} hy hxy => ?_⟩
-  rcases le_total x y with hle | hle
-  · exact key x hx y hy hle hxy
-  · rw [edist_comm] at hxy ⊢
-    exact key y hy x hx hle hxy
+  refine ⟨δ, hδ, fun {x} hx {y} hy hgap => ?_⟩
+  wlog hxy : x ≤ y generalizing x y
+  · rw [edist_comm] at hgap ⊢
+    exact this hy hx hgap (le_of_not_ge hxy)
+  have hmeas : (volume.restrict s) (Ioc x y) < δ := by
+    refine (Measure.restrict_apply_le _ _).trans_lt ?_
+    simpa [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hxy)] using hgap
+  have hlt := hδlt (Ioc x y) hmeas
+  rw [Measure.restrict_restrict_of_subset (Ioc_subset_Icc_self.trans (hs.out hx hy))] at hlt
+  exact (hdom x hx y hy hxy).trans_lt hlt
 
 end EMetric
+
+section Metric
 
 variable {α X : Type*} [LinearOrder α] [MeasurableSpace α] {μ : Measure α}
   [PseudoMetricSpace X] {g : α → X} {φ : α → ℝ≥0∞} {s : Set α}
@@ -135,5 +128,7 @@ theorem isBounded_image_of_edist_le_setLIntegral (hs : s.OrdConnected)
     Bornology.IsBounded (g '' s) :=
   Metric.isBounded_iff_ediam_ne_top.2
     (ne_top_of_le_ne_top hfin (ediam_image_le_of_edist_le_setLIntegral hs hdom))
+
+end Metric
 
 end Set.OrdConnected

@@ -23,7 +23,7 @@ O(T_bar) → O(G_m).
 
 The canonical group-like evaluation equivalence reconstructs the geometric fibre from
 its characters. Full faithfulness of the diagonalizable-group coordinate-ring functor then
-identifies these geometric morphisms with the integral dual of the geometric character lattice.
+identifies these geometric morphisms with the integral dual of the geometric character group.
 This comparison, rather than the definition of cocharacters, supplies the evaluation pairing. The
 dual description is specific to groups of multiplicative type: a semisimple group can have trivial
 character group and nontrivial cocharacters. For tori, the character lattice is finite free and the
@@ -45,13 +45,6 @@ evaluation pairing is invariant under the diagonal action.
 * `TauCeti.MultiplicativeTypeCommHopfAlgCat.characterCocharacterPairing`: the evaluation pairing
   between characters and cocharacters, intrinsically characterized by composition of their
   group-scheme morphisms.
-
-## Roadmap
-
-This completes the lattice-and-pairing part of Layer 4, "Tori: split and non-split; the
-character lattice `X*(T)` and cocharacter lattice `X_*(T)` with their perfect pairing", in the
-reductive-groups roadmap. Continuity of the Galois actions and the descent classification of
-non-split tori remain separate steps.
 
 ## References
 
@@ -115,7 +108,7 @@ private theorem geometricCoordinateIso_hom_single (T : MultiplicativeTypeCommHop
         (baseChange_groupLike_span_eq_top T)
           (_root_.MonoidAlgebra.single x 1) = x.val
   rw [TauCeti.GroupLike.evaluationBialgEquiv_apply,
-    TauCeti.GroupLike.evaluationBialgHom_single, one_smul]
+    MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
 
 @[simp]
 private theorem geometricCoordinateIso_hom_single' (T : MultiplicativeTypeCommHopfAlgCat k)
@@ -133,8 +126,8 @@ private noncomputable def geometricCharacterCoordinateMap (T : MultiplicativeTyp
         DiagonalizableGroup.multiplicativeCharacterGroup ⟶
       FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj :=
   FiniteTypeCommHopfAlgCat.ofHom <|
-    (TauCeti.GroupLike.evaluationBialgHom (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp <|
+    (MonoidAlgebra.liftGroupLikeBialgHom (R := AlgebraicClosure k)
+      (A := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp <|
         _root_.MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (DiagonalizableGroup.uliftZPowersMulEquiv
             (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) x.toMul)
@@ -158,15 +151,15 @@ private theorem coordinateMap_comp_geometricCoordinateIso
           (DiagonalizableGroup.uliftZPowersMulEquiv (geometricCharacterFG T)
             (geometricCharacterFGEquiv T x.toMul)))).hom.hom
               (_root_.MonoidAlgebra.single z 1)) =
-    ((TauCeti.GroupLike.evaluationBialgHom (AlgebraicClosure k)
-      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp
+    ((MonoidAlgebra.liftGroupLikeBialgHom (R := AlgebraicClosure k)
+      (A := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) T.obj)).comp
         (_root_.MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (DiagonalizableGroup.uliftZPowersMulEquiv
             (CommHopfAlgCat.geometricCharacterGroup T.obj.obj) x.toMul)))
               (_root_.MonoidAlgebra.single z 1)
   rw [DiagonalizableGroup.coordinateMap_single, geometricCoordinateIso_hom_single',
     BialgHom.comp_apply, _root_.MonoidAlgebra.mapDomainBialgHom_single,
-    TauCeti.GroupLike.evaluationBialgHom_single, one_smul]
+    MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
   rw [geometricCharacterFGEquiv]
   rfl
 
@@ -196,7 +189,7 @@ abbrev cocharacterLattice (T : MultiplicativeTypeCommHopfAlgCat k) :=
     geometricFiberGroupScheme T
 
 /-- A geometric character, as the corresponding group-scheme morphism from the geometric fibre
-of the torus to the multiplicative group. -/
+of `T` to the multiplicative group. -/
 noncomputable def geometricCharacterGroupSchemeMap (T : MultiplicativeTypeCommHopfAlgCat k)
     (x : CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :
     geometricFiberGroupScheme T ⟶
@@ -216,18 +209,23 @@ private theorem geometricCharacterGroupSchemeMap_eq (T : MultiplicativeTypeCommH
           (geometricCharacterFG T)).symm ≫
           DiagonalizableGroup.characterGroupSchemeMap (geometricCharacterFG T)
             (geometricCharacterFGEquiv T x.toMul) := by
-  let hG := DiagonalizableGroup.groupScheme_def (AlgebraicClosure k)
-    (geometricCharacterFG T)
-  rw [DiagonalizableGroup.characterGroupSchemeMap_def,
-    DiagonalizableGroup.groupSchemeMap_def]
-  simp only [geometricCharacterGroupSchemeMap, geometricFiberGroupSchemeIso,
-    Functor.mapIso_hom, Iso.op_hom]
-  rw [← Category.assoc (eqToHom hG.symm) (eqToHom hG), eqToHom_trans,
-    eqToHom_refl, Category.id_comp]
-  rw [← Category.assoc, cancel_mono, ← Functor.map_comp]
-  apply congrArg (AlgebraicGeometry.hopfSpec
-    (CommRingCat.of (AlgebraicClosure k))).map
-  exact congrArg (fun q => q.hom.op) (coordinateMap_comp_geometricCoordinateIso T x).symm
+  -- Expand the reconstruction isomorphism and the diagonalizable character map into `hopfSpec` of
+  -- coordinate maps. Naming the character groups keeps the transports from `groupSchemeMap_def`
+  -- syntactically equal to the statement's, so they cancel cheaply.
+  rw [geometricFiberGroupSchemeIso, DiagonalizableGroup.characterGroupSchemeMap_def,
+    DiagonalizableGroup.groupSchemeMap_def (AlgebraicClosure k)
+      (G := DiagonalizableGroup.multiplicativeCharacterGroup) (H := geometricCharacterFG T)]
+  simp only [Functor.mapIso_hom, Iso.op_hom,
+    FiniteTypeCommHopfAlgCat.forget₂_commHopfAlgCat_map,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  rw [← Functor.map_comp_assoc]
+  -- Unfolded, the left side ends with the same transport; cancel it and compare coordinate maps.
+  conv_lhs => rw [geometricCharacterGroupSchemeMap]
+  rw [cancel_mono]
+  apply congrArg (AlgebraicGeometry.hopfSpec (CommRingCat.of (AlgebraicClosure k))).map
+  -- The coordinate maps agree by the reconstruction identity.
+  rw [← op_comp, ← ObjectProperty.FullSubcategory.comp_hom,
+    coordinateMap_comp_geometricCoordinateIso]
 
 /-- Character-group morphisms to the lifted integer group are integral linear functionals on
 the additive character group. -/
@@ -292,19 +290,21 @@ private theorem cocharacter_comp_geometricFiberGroupSchemeIso
         eqToHom (DiagonalizableGroup.groupScheme_def (AlgebraicClosure k)
           (geometricCharacterFG T)).symm =
       DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (cocharacterFGMap T f) := by
-  -- Unfold the composite target isomorphism so full faithfulness can identify the reconstructed
-  -- character-group map.
-  change f ≫ (geometricFiberDiagonalizableIso T).hom = _
-  rw [← diagonalizableGroupSchemeHomEquiv_apply]
-  exact (diagonalizableGroupSchemeHomEquiv (k := k) (geometricCharacterFG T)
-    DiagonalizableGroup.multiplicativeCharacterGroup).apply_symm_apply _ |>.symm
+  -- Full faithfulness identifies the reconstructed character-group map: by definition,
+  -- `cocharacterFGMap T f` is the preimage of `f ≫ (geometricFiberDiagonalizableIso T).hom`.
+  rw [← diagonalizableGroupSchemeHomEquiv_apply, cocharacterFGMap, cocharacterLatticeEquivFG]
+  simp only [Equiv.trans_apply, Equiv.apply_symm_apply, Iso.homCongr_apply,
+    Iso.refl_inv, Category.id_comp]
+  -- Unfold the composite target isomorphism: the coordinate reconstruction, then `eqToHom`.
+  rw [geometricFiberDiagonalizableIso]
+  simp only [Iso.trans_hom, eqToIso.hom, Category.assoc]
 
 /-- The ordinary-integer-valued homomorphism underlying the lifted character-group map of a
 geometric cocharacter. -/
 private noncomputable def cocharacterMonoidHom (T : MultiplicativeTypeCommHopfAlgCat k)
     (f : cocharacterLattice T) : geometricCharacterFG T →* Multiplicative ℤ :=
   (MulEquiv.ulift : ULift.{u} (Multiplicative ℤ) ≃* Multiplicative ℤ).toMonoidHom.comp
-    (FGCommGrpCat.toMonoidHom (cocharacterFGMap T f))
+    (cocharacterFGMap T f).hom.hom
 
 private theorem cocharacterGroupSchemeMap_eq (T : MultiplicativeTypeCommHopfAlgCat k)
     (f : cocharacterLattice T) :
@@ -328,16 +328,19 @@ noncomputable instance instCocharacterLatticeAddCommGroup
     AddCommGroup (cocharacterLattice T) :=
   (cocharacterLatticeEquivDual T).addCommGroup
 
-noncomputable instance instCocharacterLatticeModule (T : MultiplicativeTypeCommHopfAlgCat k) :
-    Module ℤ (cocharacterLattice T) :=
-  (cocharacterLatticeEquivDual T).addEquiv.module ℤ
-
 /-- The canonical equivalence from geometric cocharacters to the character dual, as a linear
 equivalence. -/
 noncomputable def cocharacterLatticeLinearEquivDual (T : MultiplicativeTypeCommHopfAlgCat k) :
     cocharacterLattice T ≃ₗ[ℤ]
       Module.Dual ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-  (cocharacterLatticeEquivDual T).addEquiv.linearEquiv ℤ
+  (cocharacterLatticeEquivDual T).addEquiv.toIntLinearEquiv
+
+/-- Two geometric cocharacters are equal when their functionals agree on every character. -/
+theorem cocharacterLattice_ext {T : MultiplicativeTypeCommHopfAlgCat k}
+    {f g : cocharacterLattice T}
+    (h : ∀ x, cocharacterLatticeLinearEquivDual T f x = cocharacterLatticeLinearEquivDual T g x) :
+    f = g :=
+  (cocharacterLatticeLinearEquivDual T).injective (LinearMap.ext h)
 
 private theorem pairing_cocharacterMonoidHom (T : MultiplicativeTypeCommHopfAlgCat k)
     (x : CommHopfAlgCat.additiveCharacterGroup T.obj.obj) (f : cocharacterLattice T) :
@@ -408,49 +411,6 @@ theorem cocharacter_comp_geometricCharacterGroupSchemeMap
     DiagonalizableGroup.cocharacterGroupSchemeMap_comp_characterGroupSchemeMap,
     characterCocharacterPairing_apply, pairing_cocharacterMonoidHom]
 
-private theorem powEndGroupSchemeMap_injective :
-    Function.Injective
-      (DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k)) := by
-  intro m n h
-  let q (z : ℤ) : DiagonalizableGroup.multiplicativeCharacterGroup ⟶
-      DiagonalizableGroup.multiplicativeCharacterGroup :=
-    FGCommGrpCat.ofHom (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd z)))
-  have hmap :
-      DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (q m) =
-      DiagonalizableGroup.groupSchemeMap (AlgebraicClosure k) (q n) := by
-    rw [DiagonalizableGroup.powEndGroupSchemeMap_def,
-      DiagonalizableGroup.powEndGroupSchemeMap_def,
-      DiagonalizableGroup.characterGroupSchemeMap_def,
-      DiagonalizableGroup.characterGroupSchemeMap_def] at h
-    exact h
-  have hopmap :
-      (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map (q m).op =
-        (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map (q n).op := by
-    rw [DiagonalizableGroup.schemeFunctor_map, DiagonalizableGroup.schemeFunctor_map]
-    simp only [Quiver.Hom.unop_op]
-    rw [hmap]
-  have hop := (DiagonalizableGroup.schemeFunctor (AlgebraicClosure k)).map_injective hopmap
-  have hq : q m = q n := by
-    simpa using congrArg Quiver.Hom.unop hop
-  have heval := DFunLike.congr_fun
-    (congrArg FGCommGrpCat.toMonoidHom hq)
-      (ULift.up (Multiplicative.ofAdd (1 : ℤ)))
-  -- Expose the underlying lifted-power homomorphisms before evaluating them at the generator.
-  change (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd m)))
-          (ULift.up (Multiplicative.ofAdd (1 : ℤ))) =
-    (DiagonalizableGroup.uliftZPowersMulEquiv
-      DiagonalizableGroup.multiplicativeCharacterGroup
-        (ULift.up (Multiplicative.ofAdd n)))
-          (ULift.up (Multiplicative.ofAdd (1 : ℤ))) at heval
-  rw [DiagonalizableGroup.uliftZPowersMulEquiv_apply,
-    DiagonalizableGroup.uliftZPowersMulEquiv_apply] at heval
-  have := congrArg (fun z : ULift.{u} (Multiplicative ℤ) => z.down.toAdd) heval
-  simpa using this
-
 /-- The pairing is the unique exponent whose power map is the composite of the corresponding
 geometric cocharacter and character. -/
 theorem characterCocharacterPairing_eq_iff_comp_eq_powEndGroupSchemeMap
@@ -459,13 +419,8 @@ theorem characterCocharacterPairing_eq_iff_comp_eq_powEndGroupSchemeMap
     characterCocharacterPairing T x f = n ↔
       f ≫ geometricCharacterGroupSchemeMap T x =
         DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k) n := by
-  constructor
-  · intro h
-    rw [cocharacter_comp_geometricCharacterGroupSchemeMap, h]
-  · intro h
-    apply powEndGroupSchemeMap_injective (k := k)
-    rw [← cocharacter_comp_geometricCharacterGroupSchemeMap]
-    exact h
+  rw [cocharacter_comp_geometricCharacterGroupSchemeMap]
+  simp
 
 /-- The character--cocharacter pairing is invariant under the diagonal absolute-Galois action. -/
 theorem characterCocharacterPairing_galois_invariant (T : MultiplicativeTypeCommHopfAlgCat k)

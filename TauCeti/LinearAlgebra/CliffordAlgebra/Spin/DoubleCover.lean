@@ -31,10 +31,9 @@ separably closed field.
 
 ## References
 
-This supplies the Spin short exact sequence of Layer 2 over a separably closed field; the Pin/O(V)
-sequence and the general-field spinor-norm version are not covered. See
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+This supplies the Spin short exact sequence over a separably closed field; the Pin/O(V) sequence and
+the general-field spinor-norm version are not covered here. See H. B. Lawson and M.-L. Michelsohn,
+*Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section

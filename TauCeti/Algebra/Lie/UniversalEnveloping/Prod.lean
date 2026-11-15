@@ -42,8 +42,9 @@ The componentwise product representation preserves products of stable lattices.
 * Mathlib's product-equivalence proof architecture in
   `Mathlib.LinearAlgebra.CliffordAlgebra.Prod`, adapted here to ordinary tensor products and
   universal enveloping algebras.
-* The tensor-lift, commuting-factor induction, and inverse-composition proof pattern in
-  `TauCeti.Algebra.Bialgebra.MonoidAlgebra.Product`, adapted here to universal enveloping algebras.
+* The tensor-lift, commuting-factor induction, and inverse-composition proof pattern of an
+  earlier Tau Ceti proof of `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`, adapted here to
+  universal enveloping algebras.
 * Mathlib's `UniversalEnvelopingAlgebra.lift` in `Mathlib.Algebra.Lie.UniversalEnveloping`.
 * Mathlib's `Algebra.TensorProduct.lift` in `Mathlib.RingTheory.TensorProduct.Maps`.
 -/

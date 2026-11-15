@@ -24,8 +24,8 @@ integer-valued normalization whose associated absolute value is rational.
 
 * `WithZeroMulInt.toNNRat_strictMono`: the map is strictly increasing when `1 < e`.
 
-The construction and proofs follow Mathlib's `WithZeroMulInt.toNNReal`, with codomain `ℚ≥0`
-instead of `ℝ≥0`.
+The statements follow Mathlib's `WithZeroMulInt.toNNReal`, with codomain `ℚ≥0` instead of
+`ℝ≥0`; the map itself is built from Mathlib's `WithZero.lift'` and `zpowersHom`.
 -/
 
 public section
@@ -49,42 +49,21 @@ theorem toNNRat_coe {e : ℚ≥0} (he : e ≠ 0) (n : Multiplicative ℤ) :
     toNNRat he (n : ℤᵐ⁰) = e ^ n.toAdd := by
   simp [toNNRat]
 
-/-- The value of `toNNRat` at a nonzero exponent is the corresponding integer power. -/
+/-- The value of `toNNRat` at a nonzero element `x` is `e ^ WithZero.log x`. -/
 theorem toNNRat_apply_of_ne_zero {e : ℚ≥0} (he : e ≠ 0) {x : ℤᵐ⁰} (hx : x ≠ 0) :
-    toNNRat he x = e ^ (WithZero.unzero hx).toAdd := by
-  simpa only [WithZero.coe_unzero] using toNNRat_coe he (WithZero.unzero hx)
-
-/-- `toNNRat` sends nonzero exponents to nonzero values. -/
-theorem toNNRat_ne_zero {e : ℚ≥0} {x : ℤᵐ⁰} (he : e ≠ 0) (hx : x ≠ 0) :
-    toNNRat he x ≠ 0 := by
-  simp only [ne_eq, map_eq_zero, hx, not_false_eq_true]
-
-/-- `toNNRat` sends nonzero exponents to positive values. -/
-theorem toNNRat_pos {e : ℚ≥0} {x : ℤᵐ⁰} (he : e ≠ 0) (hx : x ≠ 0) :
-    0 < toNNRat he x :=
-  (toNNRat_ne_zero he hx).pos
+    toNNRat he x = e ^ log x := by
+  rw [← toAdd_unzero_eq_log hx, ← toNNRat_coe, coe_unzero]
 
 /-- The map `toNNRat` is strictly increasing when its base is greater than one. -/
 theorem toNNRat_strictMono {e : ℚ≥0} (he : 1 < e) :
     StrictMono (toNNRat he.ne_zero) := by
-  intro x y hxy
-  cases y
-  · exact (not_lt_of_ge bot_le hxy).elim
-  cases x
-  · simpa using zpow_pos he.pos _
-  · rw [toNNRat_coe, toNNRat_coe]
-    exact (zpow_right_strictMono₀ he) <|
-      Multiplicative.toAdd_lt.mpr (WithZero.coe_lt_coe.mp hxy)
+  simp [StrictMono, WithZero.forall, zpow_pos he.pos, he]
 
 /-- For a base different from zero and one, `toNNRat` takes the value one only at exponent
 one, which represents the integer exponent zero in `ℤᵐ⁰`. -/
 theorem toNNRat_eq_one_iff {e : ℚ≥0} (x : ℤᵐ⁰) (he0 : e ≠ 0) (he1 : e ≠ 1) :
     toNNRat he0 x = 1 ↔ x = 1 := by
-  by_cases hx : x = 0
-  · simp only [hx, map_zero, zero_ne_one]
-  · refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_one _⟩
-    rw [toNNRat_apply_of_ne_zero he0 hx, zpow_eq_one_iff_right₀ bot_le he1, toAdd_eq_zero] at h
-    rw [← WithZero.coe_unzero hx, h, coe_one]
+  cases x <;> simp [zpow_eq_one_iff_right₀ bot_le he1, ← coe_one]
 
 /-- For a base greater than one, strict comparison with one in `ℚ≥0` is strict comparison with
 one in `ℤᵐ⁰`. -/

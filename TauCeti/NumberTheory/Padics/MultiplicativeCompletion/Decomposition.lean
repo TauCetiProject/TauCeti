@@ -9,10 +9,11 @@ public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.NumberTheory.LocalField.TameFrameModule.Torsion
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.Algebra.MonoidAlgebra.FractionRing
+import TauCeti.Algebra.MonoidAlgebra.Maschke
 import TauCeti.NumberTheory.Padics.GroupAlgebra.RelationModule
 import TauCeti.NumberTheory.Padics.GroupAlgebra.StableIsomorphism
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Transpose
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # The integral decomposition of an extension of the augmentation ideal by `A(L)`
@@ -43,7 +44,7 @@ The proof applies the cancellation theory of `ℤ_p[G]`-modules.
   most one, so they are stably isomorphic
   (`TauCeti.exists_projective_prod_linearEquiv_of_torsion`).
 * Rationally, the extensions `0 → A(L) → Y → I_G → 0` and `0 → I_G → ℤ_p[G] → ℤ_p → 0` split
-  (`TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact`). With the rational
+  (`TauCeti.MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact`). With the rational
   decomposition `A(L) ⊗ ℚ_p ≃ ℚ_p[G]^N ⊕ ℚ_p`
   (`TauCeti.nonempty_padicCompletionUnits_tensorRat_linearEquiv`) and `M₀ ⊗ ℚ_p ≃ ℚ_p[G]`
   (`TauCeti.nonempty_tameFrameModule_tensorRat_linearEquiv`), this gives
@@ -63,9 +64,9 @@ NSW (7.4.1).
 
 * `TauCeti.nonempty_linearEquiv_tameFrameModule_prod`: an extension of `I_G` by `A(L)` of
   projective dimension at most one is isomorphic to `M₀ ⊕ ℤ_p[G]^N`.
-* `TauCeti.exists_relationModule_surjective_of_tameFrame`: on a layer with a generating pair
-  `σ, τ`, `τ` of order prime to `p`, the relation module of every generating family of size
-  `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
+* `TauCeti.exists_relationModule_surjective_of_tameFrame_of_exact`: given such a `Y`, on a layer
+  with a generating pair `σ, τ`, `τ` of order prime to `p`, the relation module of every
+  generating family of size `N + 2` maps onto `A(L)` with kernel `ℤ_p[G]`.
 
 ## References
 
@@ -112,7 +113,7 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
     Nonempty (Y ≃ₗ[Λ] (TameFrameModule ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p]) ×
       (Fin (Module.finrank ℚ_[p] K) → Λ))) := by
   have := Module.Finite.right ℚ_[p] K L
-  have : NeZero (Nat.card (L ≃ₐ[K] L) : ℤ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  have : NeZero (Nat.card (L ≃ₐ[K] L) : ℚ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   -- Restrict the scalars of `Y` to `ℤ_p`.
   let _ : Module ℤ_[p] Y := .compHom Y (algebraMap ℤ_[p] Λ)
   have : IsScalarTower ℤ_[p] Λ Y := .of_compHom _ _ _
@@ -143,8 +144,8 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
     (((Submodule.equivMapOfInjective ι hι _).trans
       (LinearEquiv.ofEq _ _ (map_pPowerTorsion_of_exact hιπ hι hI))).symm.trans eT.symm)
   -- Rationally, `Y ≃ A(L) ⊕ I_G ≃ (ℤ_p[G]^N ⊕ ℤ_p) ⊕ I_G ≃ ℤ_p[G]^N ⊕ ℤ_p[G] ≃ ℤ_p[G]^N ⊕ M₀`.
-  obtain ⟨eY⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p] hιπ hι hπ
-  obtain ⟨eA⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
+  obtain ⟨eY⟩ := MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p] hιπ hι hπ
+  obtain ⟨eA⟩ := MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
     (LinearMap.exact_subtype_mkQ (RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))))
     (Submodule.injective_subtype _) (Submodule.mkQ_surjective _)
   obtain ⟨eL⟩ := nonempty_padicCompletionUnits_tensorRat_linearEquiv (p := p) (L := L) (K := K)
@@ -163,8 +164,9 @@ generated projective `ℤ_p[G]`-modules, which is an extension `0 → A(L) → Y
 augmentation ideal by the `p`-adic completion `A(L)` of `Lˣ`. Let `σ, τ` generate `G`, with the
 order of `τ` prime to `p`. Then for every generating family `g` of `G` of size `N + 2`, the relation
 module of `g` maps onto `A(L)` with kernel isomorphic to `ℤ_p[G]`. -/
-theorem exists_relationModule_surjective_of_tameFrame [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L]
-    [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L] [IsGalois K L]
+theorem exists_relationModule_surjective_of_tameFrame_of_exact
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Algebra ℚ_[p] K]
+    [IsScalarTower ℚ_[p] K L] [IsGalois K L]
     {Y P₀ P₁ : Type*} [AddCommGroup Y] [Module Λ Y]
     [AddCommGroup P₀] [Module Λ P₀] [Module.Finite Λ P₀] [Module.Projective Λ P₀]
     [AddCommGroup P₁] [Module Λ P₁] [Module.Finite Λ P₁] [Module.Projective Λ P₁]

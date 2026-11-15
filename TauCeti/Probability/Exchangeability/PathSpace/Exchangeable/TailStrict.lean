@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
+public import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.Sigma
 import Mathlib.MeasureTheory.MeasurableSpace.NCard
 
 /-!
@@ -20,18 +20,18 @@ coordinates.  Every time permutation preserves the cardinality of that finite vi
 event is exchangeable.  It is not a tail event: changing coordinate zero alone changes the parity
 without changing any coordinate from time one onward.
 
-This completes the strict comparison between the path tail and exchangeable sigma-algebras in
-Layer 2 of the exchangeability roadmap.  Together with `invariants_shift_lt_pathTail`, it gives
-the strict chain
+Together with `invariants_shift_lt_pathTail`, it gives the strict chain
 
 `invariants (shift Bool) < pathTail Bool < exchangeableSigma Bool`
 
 under the hypotheses of the two results.
 
-## Main result
+## Main results
 
 * `pathTail_lt_exchangeableSigma` -- the path tail is a proper sub-sigma-algebra of the
   exchangeable sigma-algebra.
+* `invariants_shift_lt_exchangeableSigma` -- for `Bool`-valued paths, so is the shift-invariant
+  sigma-algebra.
 -/
 
 public section
@@ -180,6 +180,12 @@ theorem pathTail_lt_exchangeableSigma
   simp only [Set.mem_compl_iff] at ha
   exact not_measurableSet_pathTail_evenFiniteVisits ha hb
     (hle _ (measurableSet_exchangeableSigma_evenFiniteVisits hs))
+
+/-- For `Bool`-valued paths the shift-invariant σ-algebra is a proper sub-σ-algebra of the
+exchangeable σ-algebra. -/
+theorem invariants_shift_lt_exchangeableSigma :
+    MeasurableSpace.invariants (shift Bool) < exchangeableSigma Bool :=
+  invariants_shift_lt_pathTail.trans_le pathTail_le_exchangeableSigma
 
 end Probability
 

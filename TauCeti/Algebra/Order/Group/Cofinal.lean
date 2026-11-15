@@ -158,7 +158,8 @@ theorem IsCofinalElement.mul_of_lt_of_mem {Γ' Δ : ConvexSubgroup Γ}
     {γ : Γ} (hγ : IsCofinalElement Γ'.toSubgroup γ) (hlt : Δ < Γ') {δ : Γ}
     (hδ : δ ∈ Δ) : IsCofinalElement Γ'.toSubgroup (δ * γ) := by
   intro h hh
-  obtain ⟨z, hzQ, hzD, hz_gt⟩ := Subgroup.exists_one_lt_of_lt (ConvexSubgroup.toSubgroup_lt.mpr hlt)
+  obtain ⟨z, hzQ, hzD, hz_gt⟩ :=
+    Subgroup.not_le_iff_exists_one_lt.mp (ConvexSubgroup.toSubgroup_lt.mpr hlt).not_ge
   obtain ⟨n, hn⟩ := hγ z⁻¹ (inv_mem hzQ)
   have hzi_lt : z⁻¹ < 1 := inv_lt_one'.mpr hz_gt
   have hγ_lt : γ < 1 := hγ.lt_one
@@ -240,8 +241,8 @@ vertical generization `v / H` of a continuous valuation is again continuous. -/
 theorem IsCofinalElement.quotientMk {Δ : ConvexSubgroup Γ} (hΔ : Δ ≠ ⊤) {γ : Γ}
     (hγ : IsCofinalElement (⊤ : Subgroup Γ) γ) :
     IsCofinalElement (⊤ : Subgroup (Γ ⧸ Δ.toSubgroup)) (QuotientGroup.mk' Δ.toSubgroup γ) := by
-  obtain ⟨d, -, hdΔ, hd1⟩ := Subgroup.exists_one_lt_of_lt
-    (by simpa using ConvexSubgroup.toSubgroup_lt.mpr (lt_top_iff_ne_top.mpr hΔ))
+  obtain ⟨d, -, hdΔ, hd1⟩ := Subgroup.not_le_iff_exists_one_lt.mp
+    (ConvexSubgroup.toSubgroup_le.not.mpr (top_le_iff.not.mpr hΔ))
   intro q _
   induction q using Quotient.inductionOn with | _ h =>
   obtain ⟨n, hn⟩ := hγ (d⁻¹ * h) trivial

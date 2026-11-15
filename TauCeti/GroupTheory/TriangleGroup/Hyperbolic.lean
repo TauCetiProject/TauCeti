@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
