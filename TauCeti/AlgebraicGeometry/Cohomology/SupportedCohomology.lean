@@ -7,14 +7,12 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.Algebra.Homology.LocalCohomology.RightDerived
+public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.RingTheory.Depth.LocalCohomology
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Derived
-import Mathlib.CategoryTheory.Abelian.ShortExact
+import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Flasque
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
-import TauCeti.CategoryTheory.Abelian.AcyclicResolution
-import TauCeti.Topology.Sheaves.Flasque.Locality
 import TauCeti.Topology.Sheaves.SupportedCohomology.Resolution
 
 /-!
@@ -54,8 +52,6 @@ for the closed vanishing locus of `I` in `Spec R`.
 
 ## Main definitions
 
-* `PrimeSpectrum.zeroLocusClosed s` and `AlgebraicGeometry.Spec.zeroLocusClosed s`: the closed
-  vanishing locus `V(s)` bundled in `TopologicalSpace.Closeds`.
 * `TauCeti.AlgebraicGeometry.tildeSheafFunctor R`: the exact functor `M ↦ M~` from `ModuleCat R` to
   sheaves of `R`-modules on `Spec R`.
 * `TauCeti.AlgebraicGeometry.tildeCompSupportedSubmoduleSectionsTopIso`: the degree-zero natural
@@ -93,127 +89,11 @@ open CategoryTheory Limits Opposite TopologicalSpace AlgebraicGeometry
 
 universe u
 
-namespace PrimeSpectrum
-
-section Semiring
-
-variable {R : Type u} [CommSemiring R]
-
-/-- The closed subset `V(s)` of `PrimeSpectrum R` bundled as an element of
-`TopologicalSpace.Closeds`. -/
-@[expose, simps]
-def zeroLocusClosed (s : Set R) : Closeds (PrimeSpectrum R) :=
-  ⟨zeroLocus s, isClosed_zeroLocus s⟩
-
-@[simp]
-theorem mem_zeroLocusClosed {s : Set R} {p : PrimeSpectrum R} :
-    p ∈ zeroLocusClosed s ↔ s ⊆ p.asIdeal :=
-  Iff.rfl
-
-@[simp]
-theorem zeroLocusClosed_span (s : Set R) :
-    zeroLocusClosed (Ideal.span s : Set R) = zeroLocusClosed s :=
-  Closeds.ext (zeroLocus_span s)
-
-/-- The open complement of `V(s)` in `PrimeSpectrum R` is the union of `D(r)` for `r ∈ s`. -/
-theorem compl_zeroLocusClosed_eq_iSup_basicOpen (s : Set R) :
-    (zeroLocusClosed s).compl = ⨆ r ∈ s, basicOpen r := by
-  ext p
-  simp [basicOpen_eq_zeroLocus_compl, Set.subset_def]
-
-end Semiring
-
-end PrimeSpectrum
-
-namespace AlgebraicGeometry.Spec
-
-variable {R : CommRingCat.{u}}
-
-/-- The closed subset `V(s)` of `Spec R` bundled as an element of
-`TopologicalSpace.Closeds (Spec R)`. -/
-@[expose, simps]
-def zeroLocusClosed (s : Set R) : Closeds (Spec R) :=
-  ⟨PrimeSpectrum.zeroLocus s, PrimeSpectrum.isClosed_zeroLocus s⟩
-
-@[simp]
-theorem zeroLocusClosed_span (s : Set R) :
-    zeroLocusClosed (R := R) (Ideal.span s : Set R) = zeroLocusClosed s :=
-  Closeds.ext (PrimeSpectrum.zeroLocus_span s)
-
-/-- The open complement of `V(s)` in `Spec R` is the union of the basic opens `D(r)` for
-`r ∈ s`. -/
-theorem compl_zeroLocusClosed_eq_iSup_basicOpen (s : Set R) :
-    (zeroLocusClosed (R := R) s).compl =
-      ⨆ r ∈ s, (PrimeSpectrum.basicOpen r : Opens (Spec R)) :=
-  PrimeSpectrum.compl_zeroLocusClosed_eq_iSup_basicOpen s
-
-end AlgebraicGeometry.Spec
-
 noncomputable section
 
 namespace TauCeti.AlgebraicGeometry
 
 open PrimeSpectrum CategoryTheory.Sheaf
-
-section TildeSheafFunctor
-
-variable {R : CommRingCat.{u}}
-
-/-- `modulesSpecToSheaf` is additive: addition of module-sheaf morphisms is sectionwise. -/
-instance additive_modulesSpecToSheaf : (modulesSpecToSheaf (R := R)).Additive where
-  map_add {_ _ _ _} := by
-    ext
-    rfl
-
-/-- Forgetting `R`-module structures after `modulesSpecToSheaf` recovers
-`Scheme.Modules.toSheaf`. -/
-private def modulesSpecToSheafCompForgetIso :
-    modulesSpecToSheaf (R := R) ⋙
-        sheafCompose (Opens.grothendieckTopology (Spec R))
-          (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ≅
-      Scheme.Modules.toSheaf (Spec R) :=
-  NatIso.ofComponents
-    (fun _ ↦ ObjectProperty.isoMk _ (NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl))
-    fun _ ↦ by ext; rfl
-
-/-- `modulesSpecToSheaf` preserves short exact sequences, checked on underlying abelian sheaves. -/
-theorem shortExact_map_modulesSpecToSheaf {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact) :
-    (S.map (modulesSpecToSheaf (R := R))).ShortExact := by
-  apply CategoryTheory.ShortExact.reflects_shortExact_of_faithful
-    (sheafCompose (Opens.grothendieckTopology (Spec R))
-      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}))
-  rw [← ShortComplex.map_comp]
-  exact (ShortComplex.shortExact_iff_of_iso
-    (S.mapNatIso (modulesSpecToSheafCompForgetIso (R := R)).symm)).2
-      (Scheme.Modules.shortExact_map_toSheaf hS)
-
-instance preservesFiniteLimits_modulesSpecToSheaf :
-    PreservesFiniteLimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).mono_f⟩
-
-instance preservesFiniteColimits_modulesSpecToSheaf :
-    PreservesFiniteColimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).epi_g⟩
-
-instance additive_tildeFunctor : (tilde.functor R).Additive :=
-  Functor.additive_of_preserves_binary_products _
-
-/-- Over a Noetherian ring `R`, the sheaf of `R`-modules associated with an injective object of
-`ModuleCat.{u} R` is flasque. -/
-lemma isFlasque_modulesSpecToSheaf_tilde_of_injective [IsNoetherianRing R]
-    (M : ModuleCat.{u} R) [Injective M] :
-    TopCat.Presheaf.IsFlasque (modulesSpecToSheaf.obj (tilde M)).obj := by
-  have : Module.Injective R M := Module.injective_module_of_injective_object R M
-  have hfl : TopCat.Presheaf.IsFlasque
-      ((modulesSpecToSheaf.obj (tilde M)).obj ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) :=
-    isFlasque_tilde_of_injective M
-  exact (TopCat.Presheaf.isFlasque_comp_iff _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).1 hfl
-
-end TildeSheafFunctor
 
 section Comparison
 
@@ -249,25 +129,23 @@ theorem tilde_toOpen_top_mem_supportedSubmodule_iff (s : Set R) (M : ModuleCat.{
     let Uf : Opens (Spec R) := basicOpen f
     have hle : Uf ≤ ⊤ ⊓ Z.compl :=
       hU ▸ le_iSup₂ (f := fun f (_ : f ∈ s) ↦ (basicOpen f : Opens (Spec R))) f hf
-    have hmf : tilde.toOpen M (basicOpen f) m = 0 :=
-      (ConcreteCategory.congr_hom
-        (tilde.toOpen_res M (⊤ ⊓ Z.compl) Uf (homOfLE hle)) m).symm.trans <| by
-        simp only [ModuleCat.comp_apply]
-        change F.obj.map (homOfLE hle).op (tilde.toOpen M (⊤ ⊓ Z.compl) m) = 0
-        rw [hm, map_zero]
+    have hresf : F.obj.map (homOfLE hle).op (tilde.toOpen M (⊤ ⊓ Z.compl) m) =
+        tilde.toOpen M Uf m :=
+      ConcreteCategory.congr_hom (tilde.toOpen_res M (⊤ ⊓ Z.compl) Uf (homOfLE hle)) m
+    have hmf : tilde.toOpen M (basicOpen f) m = 0 := by
+      rw [← hresf, hm, map_zero]
     obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalizedModule.eq_zero_iff (.powers f)
       (tilde.toOpen M (basicOpen f)).hom).mp hmf
     exact ⟨n, hn⟩
   · intro hm
     refine TopCat.Presheaf.IsSheaf.section_ext F.2 fun p hp ↦ ?_
-    change p ∈ (⊤ ⊓ Z.compl : Opens (Spec R)) at hp
-    rw [hU] at hp
-    obtain ⟨f, hp⟩ := Opens.mem_iSup.mp hp
-    obtain ⟨hf, hp⟩ := Opens.mem_iSup.mp hp
+    have hp' : p ∈ ⨆ f ∈ s, (basicOpen f : Opens (Spec R)) := hU ▸ hp
+    obtain ⟨f, hp'⟩ := Opens.mem_iSup.mp hp'
+    obtain ⟨hf, hp'⟩ := Opens.mem_iSup.mp hp'
     have hle : (basicOpen f : Opens (Spec R)) ≤ ⊤ ⊓ Z.compl :=
       hU ▸ le_iSup₂ (f := fun f (_ : f ∈ s) ↦ (basicOpen f : Opens (Spec R))) f hf
     obtain ⟨n, hn⟩ := hm f hf
-    refine ⟨basicOpen f, hle, hp, ?_⟩
+    refine ⟨basicOpen f, hle, hp', ?_⟩
     rw [map_zero]
     refine (ConcreteCategory.congr_hom
       (tilde.toOpen_res M (⊤ ⊓ Z.compl) (basicOpen f) (homOfLE hle)) m).trans ?_
@@ -301,9 +179,9 @@ def primaryComponentEquivSupportedSubmoduleTop {I : Ideal R} (hI : I.FG) (M : Mo
         ((modulesSpecToSheaf.obj (tilde M)).supportedSubmodule _ ⊤).subtype).codRestrict
       _ fun s ↦ by
         refine (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M _).mp ?_
-        have h : tilde.toOpen M ⊤ ((tilde.isoTop M).inv s.1) = s.1 :=
+        simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+        have h : tilde.toOpen M ⊤ ((tilde.isoTop M).inv.hom s.1) = s.1 :=
           ConcreteCategory.congr_hom (tilde.isoTop M).inv_hom_id s.1
-        change tilde.toOpen M ⊤ ((tilde.isoTop M).inv s.1) ∈ _
         rw [h]
         exact s.2)
     (LinearMap.ext fun s ↦ Subtype.ext <|
@@ -319,33 +197,29 @@ lemma coe_primaryComponentEquivSupportedSubmoduleTop_apply
       tilde.toOpen M ⊤ m.1 :=
   (rfl)
 
-private lemma mono_supportedSubmoduleι_hom_app {X : TopCat.{u}} (S : Closeds X)
-    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (W : Opens X) :
-    Mono ((F.supportedSubmoduleι S).hom.app (op W)) :=
-  (ModuleCat.mono_iff_injective _).2 fun x y h ↦ Subtype.ext <|
-    (F.supportedSubmoduleι_hom_app_apply S (op W) x).symm.trans <|
-      h.trans (F.supportedSubmoduleι_hom_app_apply S (op W) y)
+private def tildeToOpenTop (M : ModuleCat.{u} R) :
+    M ⟶ ((tildeSheafFunctor R).obj M).obj.obj (op ⊤) :=
+  tilde.toOpen M ⊤
 
-private lemma supportedSubmoduleSectionsFunctor_map_comp_ι_app
-    {X : TopCat.{u}} (S : Closeds X)
-    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}
-    (g : F ⟶ G) (W : Opens X) :
-    (supportedSubmoduleSectionsFunctor S W).map g ≫ (G.supportedSubmoduleι S).hom.app (op W) =
-      (F.supportedSubmoduleι S).hom.app (op W) ≫ g.hom.app (op W) := by
-  change ((supportedSubmoduleFunctor S).map g ≫ G.supportedSubmoduleι S).hom.app (op W) = _
-  rw [supportedSubmoduleFunctor_map_ι]
-  rfl
+private lemma tildeToOpenTop_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) :
+    tildeToOpenTop M ≫ ((tildeSheafFunctor R).map f).hom.app (op ⊤) =
+      f ≫ tildeToOpenTop N :=
+  tilde.toOpen_map_app f ⊤
 
-private lemma primaryComponentEquivSupportedSubmoduleTop_hom_comp_ι
+private def primaryComponentIsoSupportedSubmoduleTop
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
-    ((primaryComponentEquivSupportedSubmoduleTop hI M).toModuleIso.hom :
-        I.primaryComponentFunctor.obj M ⟶
-          (tildeSheafFunctor R ⋙
-            supportedSubmoduleSectionsFunctor (R := R)
-              (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).obj M) ≫
+    I.primaryComponentFunctor.obj M ≅
+      (tildeSheafFunctor R ⋙
+        supportedSubmoduleSectionsFunctor (R := R)
+          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).obj M :=
+  (primaryComponentEquivSupportedSubmoduleTop hI M).toModuleIso
+
+private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
+    {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
+    (primaryComponentIsoSupportedSubmoduleTop hI M).hom ≫
         (((tildeSheafFunctor R).obj M).supportedSubmoduleι
           (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
-      I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ := by
+      I.primaryComponentFunctorι.app M ≫ tildeToOpenTop M := by
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro m
@@ -361,43 +235,17 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
         supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ ≅
       I.primaryComponentFunctor :=
-  let Z := Spec.zeroLocusClosed (R := R) (I : Set R)
-  let e (M : ModuleCat.{u} R) :
-      I.primaryComponentFunctor.obj M ≅
-        (tildeSheafFunctor R ⋙ supportedSubmoduleSectionsFunctor (R := R) Z ⊤).obj M :=
-    (primaryComponentEquivSupportedSubmoduleTop hI M).toModuleIso
-  (NatIso.ofComponents e fun {M N} f ↦ by
-    let ιM := (((tildeSheafFunctor R).obj M).supportedSubmoduleι Z).hom.app (op ⊤)
-    let ιN := (((tildeSheafFunctor R).obj N).supportedSubmoduleι Z).hom.app (op ⊤)
-    have := mono_supportedSubmoduleι_hom_app Z ((tildeSheafFunctor R).obj N) ⊤
-    refine (cancel_mono ιN).1 ?_
-    have h1 : (I.primaryComponentFunctor.map f ≫ (e N).hom) ≫ ιN =
-        I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N ≫ tilde.toOpen N ⊤ :=
-      (Category.assoc _ _ _).trans
-        (whisker_eq (I.primaryComponentFunctor.map f)
-          (primaryComponentEquivSupportedSubmoduleTop_hom_comp_ι hI N))
-    have h2 : I.primaryComponentFunctor.map f ≫
-          I.primaryComponentFunctorι.app N ≫ tilde.toOpen N ⊤ =
-        (I.primaryComponentFunctorι.app M ≫ f) ≫ tilde.toOpen N ⊤ :=
-      (Category.assoc _ _ _).symm.trans
-        (eq_whisker (I.primaryComponentFunctorι.naturality f) (tilde.toOpen N ⊤))
-    have h3 : (I.primaryComponentFunctorι.app M ≫ f) ≫ tilde.toOpen N ⊤ =
-        I.primaryComponentFunctorι.app M ≫
-          tilde.toOpen M ⊤ ≫ ((tildeSheafFunctor R).map f).hom.app (op ⊤) :=
-      (Category.assoc _ _ _).trans
-        (whisker_eq (I.primaryComponentFunctorι.app M) (tilde.toOpen_map_app f ⊤).symm)
-    have h4 : I.primaryComponentFunctorι.app M ≫
-          tilde.toOpen M ⊤ ≫ ((tildeSheafFunctor R).map f).hom.app (op ⊤) =
-        ((e M).hom ≫ ιM) ≫ ((tildeSheafFunctor R).map f).hom.app (op ⊤) :=
-      (Category.assoc _ _ _).symm.trans
-        (eq_whisker (primaryComponentEquivSupportedSubmoduleTop_hom_comp_ι hI M).symm _)
-    have h5 : ((e M).hom ≫ ιM) ≫ ((tildeSheafFunctor R).map f).hom.app (op ⊤) =
-        (e M).hom ≫ (supportedSubmoduleSectionsFunctor Z ⊤).map ((tildeSheafFunctor R).map f) ≫
-          ιN :=
-      (Category.assoc _ _ _).trans
-        (whisker_eq (e M).hom (supportedSubmoduleSectionsFunctor_map_comp_ι_app Z
-          ((tildeSheafFunctor R).map f) ⊤).symm)
-    exact h1.trans (h2.trans (h3.trans (h4.trans (h5.trans (Category.assoc _ _ _).symm))))).symm
+  (NatIso.ofComponents (primaryComponentIsoSupportedSubmoduleTop hI) fun {M N} f ↦ by
+    refine (cancel_mono
+      ((((tildeSheafFunctor R).obj N).supportedSubmoduleι
+        (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤))).1 ?_
+    simp only [Category.assoc]
+    rw [Functor.comp_map, primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI N,
+      I.primaryComponentFunctorι.naturality_assoc f, Functor.id_map,
+      supportedSubmoduleSectionsFunctor_map_ι_hom_app,
+      ← Category.assoc (primaryComponentIsoSupportedSubmoduleTop hI M).hom,
+      primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI M, Category.assoc]
+    exact congrArg (I.primaryComponentFunctorι.app M ≫ ·) (tildeToOpenTop_naturality f).symm).symm
 
 /-- **Derived supported global sections agree with derived `I`-power torsion (Stacks 0955).**
 Over a Noetherian ring `R`, composing `M ↦ M~` with the `q`-th right derived functor of
@@ -520,7 +368,7 @@ def nonNoetherianRelIdeal : Ideal (MvPolynomial ℕ k) :=
   Ideal.span { MvPolynomial.X j ^ (j + 2) | j : ℕ }
 
 /-- The non-Noetherian ring `A = k[X₀, X₁, …] ⧸ (X₀², X₁³, …)` on which geometric and algebraic
-degree-zero local cohomology disagree at the maximal variable ideal `(x₀, x₁, …)`. -/
+degree-zero local cohomology disagree at the variable ideal `(x₀, x₁, …)`. -/
 abbrev NonNoetherianExampleRing : Type u :=
   MvPolynomial ℕ k ⧸ nonNoetherianRelIdeal k
 
@@ -538,46 +386,24 @@ omit [Nontrivial k] in
 multi-indices `d` satisfying `∀ j, d j < j + 2` vanish. -/
 private lemma mem_nonNoetherianRelIdeal_iff (p : MvPolynomial ℕ k) :
     p ∈ nonNoetherianRelIdeal k ↔ ∀ d : ℕ →₀ ℕ, (∀ j, d j < j + 2) → p.coeff d = 0 := by
+  have hspan : nonNoetherianRelIdeal k =
+      Ideal.span ((fun s ↦ MvPolynomial.monomial s (1 : k)) ''
+        Set.range fun j : ℕ ↦ Finsupp.single j (j + 2)) := by
+    unfold nonNoetherianRelIdeal
+    congr 1
+    ext x
+    simp [MvPolynomial.X_pow_eq_monomial]
+  rw [hspan, MvPolynomial.mem_ideal_span_monomial_image]
+  simp only [MvPolynomial.mem_support_iff, Set.mem_range, exists_exists_eq_and,
+    Finsupp.single_le_iff]
   constructor
-  · intro hp
-    let J' : Ideal (MvPolynomial ℕ k) :=
-      { carrier := { q | ∀ d : ℕ →₀ ℕ, (∀ j, d j < j + 2) → q.coeff d = 0 }
-        zero_mem' := fun _ _ ↦ by simp
-        add_mem' := fun {a b} ha hb d hd ↦ by simp [ha d hd, hb d hd]
-        smul_mem' := fun r {q} hq d hd ↦ by
-          rw [smul_eq_mul, MvPolynomial.coeff_mul]
-          refine Finset.sum_eq_zero fun x hx ↦ ?_
-          have hxle : ∀ j, x.2 j < j + 2 := fun j ↦ by
-            have hxj : x.1 j + x.2 j = d j := congr($(Finset.mem_antidiagonal.mp hx) j)
-            exact lt_of_le_of_lt (Nat.le_add_left (x.2 j) (x.1 j) |>.trans_eq hxj) (hd j)
-          rw [hq x.2 hxle, mul_zero] }
-    have hle : nonNoetherianRelIdeal k ≤ J' := by
-      refine Ideal.span_le.mpr ?_
-      rintro x ⟨j, hxj⟩ d hd
-      rw [← hxj, MvPolynomial.X_pow_eq_monomial, MvPolynomial.coeff_monomial]
-      split_ifs with h
-      · exact False.elim ((hd j).ne (by simpa using congr($h.symm j)))
-      · rfl
-    exact hle hp
-  · intro hp
-    rw [p.as_sum]
-    refine Ideal.sum_mem _ fun d hd ↦ ?_
-    have hne : p.coeff d ≠ 0 := MvPolynomial.mem_support_iff.mp hd
-    have hnot : ¬ ∀ j, d j < j + 2 := fun hall ↦ hne (hp d hall)
-    push Not at hnot
-    obtain ⟨j, hj⟩ := hnot
-    have hdecomp : d - Finsupp.single j (j + 2) + Finsupp.single j (j + 2) = d := by
-      ext i
-      by_cases hi : i = j
-      · subst hi
-        simpa using Nat.sub_add_cancel hj
-      · simp [hi]
-    have hmon : MvPolynomial.monomial d (p.coeff d) =
-        MvPolynomial.monomial (d - Finsupp.single j (j + 2)) (p.coeff d) *
-          MvPolynomial.X j ^ (j + 2) := by
-      rw [MvPolynomial.X_pow_eq_monomial, MvPolynomial.monomial_mul_monomial, mul_one, hdecomp]
-    rw [hmon]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨j, rfl⟩)
+  · intro hp d hd
+    by_contra hne
+    obtain ⟨j, hj⟩ := hp d hne
+    exact (hd j).not_ge hj
+  · intro hp d hne
+    by_contra! hlt
+    exact hne (hp d hlt)
 
 instance instNontrivialNonNoetherianExampleRing : Nontrivial (NonNoetherianExampleRing k) := by
   refine Ideal.Quotient.nontrivial_iff.mpr fun htop ↦ ?_
@@ -590,15 +416,13 @@ omit [Nontrivial k] in
 theorem zeroLocusClosed_nonNoetherianVarIdeal :
     Spec.zeroLocusClosed (R := nonNoetherianExampleRingCat k)
       (nonNoetherianVarIdeal k : Set (nonNoetherianExampleRingCat k)) = ⊤ := by
-  apply Closeds.ext
-  change PrimeSpectrum.zeroLocus
-    (nonNoetherianVarIdeal k : Set (NonNoetherianExampleRing k)) = Set.univ
-  ext 𝔭
-  simp only [Set.mem_univ, iff_true, PrimeSpectrum.mem_zeroLocus]
-  rw [SetLike.coe_subset_coe, nonNoetherianVarIdeal, Ideal.map_le_iff_le_comap, Ideal.span_le]
+  rw [← Closeds.coe_eq_univ, Set.eq_univ_iff_forall]
+  intro 𝔭
+  rw [SetLike.mem_coe, Spec.mem_zeroLocusClosed, SetLike.coe_subset_coe, nonNoetherianVarIdeal,
+    Ideal.map_le_iff_le_comap, Ideal.span_le]
   rintro _ ⟨j, rfl⟩
+  rw [SetLike.mem_coe, Ideal.mem_comap]
   refine 𝔭.isPrime.mem_of_pow_mem (j + 2) ?_
-  change Ideal.Quotient.mk (nonNoetherianRelIdeal k) (MvPolynomial.X j) ^ (j + 2) ∈ 𝔭.asIdeal
   have hj0 : Ideal.Quotient.mk (nonNoetherianRelIdeal k) (MvPolynomial.X j ^ (j + 2)) = 0 :=
     Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span ⟨j, rfl⟩)
   rw [← map_pow, hj0]
@@ -623,8 +447,7 @@ theorem nontrivial_supportedModuleH_zero_nonNoetherianExampleRing :
     rw [hZ, tilde_toOpen_top_mem_supportedSubmodule_iff]
     rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
     refine ⟨j + 2, ?_⟩
-    change (Ideal.Quotient.mk (nonNoetherianRelIdeal k) (MvPolynomial.X j)) ^ (j + 2) * 1 = 0
-    rw [mul_one, ← map_pow]
+    rw [smul_eq_mul, mul_one, ← map_pow]
     exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span ⟨j, rfl⟩)
   have hne : (⟨tilde.toOpen (.of A A) ⊤ (1 : A), h1⟩ : F.supportedSubmodule Z ⊤) ≠
       0 := fun h0 ↦ one_ne_zero (α := A) <| by

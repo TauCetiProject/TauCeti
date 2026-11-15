@@ -36,6 +36,9 @@ contained in the Jacobson radical is the whole spectrum: every prime ideal is co
 maximal ideal, which is a point of that zero locus, and an open set contains every point that
 specializes to one of its points. For the maximal ideal of a local ring, whose zero locus is the
 closed point, this is Mathlib's `IsLocalRing.closedPoint_mem_iff`.
+
+The closed subset `V(s)` of `PrimeSpectrum R` is also bundled in `TopologicalSpace.Closeds` as
+`PrimeSpectrum.zeroLocusClosed s`, whose open complement is `⨆ r ∈ s, basicOpen r`.
 -/
 
 public section
@@ -170,5 +173,33 @@ theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] 
     exact hI.trans (Ideal.jacobson_bot.trans_le (Ring.jacobson_le_of_isMaximal m))
   · rw [hU, TopologicalSpace.Opens.coe_top]
     exact Set.subset_univ _
+
+/-- The closed subset `V(s)` of `PrimeSpectrum R` bundled as an element of
+`TopologicalSpace.Closeds`. -/
+def zeroLocusClosed (s : Set R) : TopologicalSpace.Closeds (PrimeSpectrum R) :=
+  ⟨zeroLocus s, isClosed_zeroLocus s⟩
+
+@[simp]
+theorem coe_zeroLocusClosed (s : Set R) :
+    (zeroLocusClosed s : Set (PrimeSpectrum R)) = zeroLocus s :=
+  (rfl)
+
+/-- A prime ideal lies in `zeroLocusClosed s` precisely when it contains `s`. -/
+@[simp]
+theorem mem_zeroLocusClosed {s : Set R} {p : PrimeSpectrum R} :
+    p ∈ zeroLocusClosed s ↔ s ⊆ p.asIdeal :=
+  (Iff.rfl)
+
+/-- The bundled zero locus of `Ideal.span s` agrees with that of `s`. -/
+@[simp]
+theorem zeroLocusClosed_span (s : Set R) :
+    zeroLocusClosed (Ideal.span s : Set R) = zeroLocusClosed s :=
+  TopologicalSpace.Closeds.ext (zeroLocus_span s)
+
+/-- The open complement of `V(s)` in `PrimeSpectrum R` is the union of `D(r)` for `r ∈ s`. -/
+theorem compl_zeroLocusClosed_eq_iSup_basicOpen (s : Set R) :
+    (zeroLocusClosed s).compl = ⨆ r ∈ s, basicOpen r := by
+  ext p
+  simp [basicOpen_eq_zeroLocus_compl, Set.subset_def]
 
 end PrimeSpectrum

@@ -299,12 +299,7 @@ noncomputable def extObjIsoLinearExtFunctor (X : C) (n : ℕ) :
     (fun Y ↦ (projectiveResolution X).isoExt n Y ≪≫
       (projectiveResolution X).homologyLinearYonedaIso k (Y := Y) n)
     fun {Y Y'} g ↦ by
-      change ((_root_.Ext k C n).obj (op X)).map g ≫
-          ((projectiveResolution X).isoExt n Y').hom ≫
-          ((projectiveResolution X).homologyLinearYonedaIso k (Y := Y') n).hom =
-        (((projectiveResolution X).isoExt n Y).hom ≫
-          ((projectiveResolution X).homologyLinearYonedaIso k (Y := Y) n).hom) ≫
-          ((Abelian.linearExtFunctor k C n).obj (op X)).map g
+      simp only [Iso.trans_hom]
       rw [(projectiveResolution X).isoExt_hom_naturality_right_assoc g n, Category.assoc]
       congr 1
       ext x
