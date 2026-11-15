@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.NormalizedIncrements
-public import TauCeti.Probability.Distributions.Gaussian.Hermite.Pi.Pullback
+public import TauCeti.Probability.BrownianMotion.Hermite
 public import TauCeti.Probability.Process.DyadicGrid
 import TauCeti.Probability.BrownianMotion.RightContinuity
-import TauCeti.Probability.Process.FiniteGrid
 
 /-!
 # Density of dyadic Hermite products for Brownian claims
@@ -83,50 +81,27 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap
     {k : ℕ} {t : Fin (k + 1) → ℝ≥0} (ht : StrictMono t) (ht0 : t 0 = 0) :
     (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements ht)
-      (measurable_normalizedBrownianIncrements hmeas)))).topologicalClosure =
+      (measurable_normalizedBrownianIncrements fun i ↦ hmeas (t i))))).topologicalClosure =
       lpMeas ℝ ℝ (⨆ j, (inferInstance : MeasurableSpace ℝ).comap (W (t j))) 2 P := by
   have hX := hW.hasLaw_normalizedBrownianIncrements ht
-  have hY := measurable_normalizedBrownianIncrements (t := t) hmeas
+  have hY := measurable_normalizedBrownianIncrements (t := t) fun i ↦ hmeas (t i)
+  have hobs : Measurable (fun ω i ↦ W (t i) ω) := Measurable.of_eval fun i ↦ hmeas (t i)
+  rw [← MeasurableSpace.comap_process_pi]
   refine le_antisymm (Submodule.topologicalClosure_minimal _ ?_
-    (isClosed_aestronglyMeasurable (iSup_le fun j ↦ (hmeas (t j)).comap_le))) fun u hu ↦ ?_
+    (isClosed_aestronglyMeasurable hobs.comap_le)) fun u hu ↦ ?_
   · -- Each Hermite product is a function of the observations at the grid times.
     refine Submodule.span_le.2 ?_
     rintro _ ⟨a, rfl⟩
-    set f := gaussianHermitePiBasis ℝ (Fin k) a
-    have hYG := measurable_normalizedBrownianIncrements_iSup_comap W t
     rw [← HasLaw.gaussianVectorL2Isometry_gaussianHermitePiBasis hX hY,
       SetLike.mem_coe, mem_lpMeas_iff_aestronglyMeasurable]
-    refine ⟨(Lp.aestronglyMeasurable f).mk f ∘ normalizedBrownianIncrements W t,
-      (Lp.aestronglyMeasurable f).stronglyMeasurable_mk.comp_measurable hYG, ?_⟩
-    exact (HasLaw.coeFn_gaussianVectorL2Isometry hX hY f).trans
-      ((hX.measurePreserving hY).quasiMeasurePreserving.ae_eq_comp
-        (Lp.aestronglyMeasurable f).ae_eq_mk)
-  -- Conversely, write an observation-measurable claim as a Borel function of the
-  -- standardized increments.
-  obtain ⟨g₀, hg₀, hug₀⟩ := mem_lpMeas_iff_aestronglyMeasurable.1 hu
-  rw [← MeasurableSpace.comap_process_pi] at hg₀
-  have ha (i : Fin k) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
-    Real.sqrt_ne_zero'.2 (sub_pos.2 (NNReal.coe_lt_coe.2
-      (ht Fin.castSucc_lt_succ)))
-  have h0 : ∀ᵐ ω ∂P, W (t 0) ω = 0 := by
-    simpa only [ht0] using hW.eval_zero_ae_eq_zero
-  obtain ⟨g, hg, hg₀g⟩ := exists_measurable_comp_increments_ae (fun ω k ↦ W (t k) ω)
-    _ ha 0 h0 hg₀.measurable
-  have hug : (u : Ω → ℝ) =ᵐ[P] g ∘ normalizedBrownianIncrements W t :=
-    hug₀.trans (hg₀g.trans (EventuallyEq.of_eq (funext fun ω ↦ congrArg g
-      (funext fun i ↦ (normalizedBrownianIncrements_apply ω i).symm))))
-  -- The Borel function is square-integrable for the Gaussian law of the increments.
-  have hgLp : MemLp g 2 (Measure.pi fun _ : Fin k ↦ gaussianReal 0 1) := by
-    rw [← hX.map_eq]
-    exact (memLp_map_measure_iff hg.aestronglyMeasurable hY.aemeasurable).2
-      ((Lp.memLp u).ae_eq hug)
-  -- So the claim is the Gaussian pullback of its class, which has a Hermite expansion.
-  have hpull : HasLaw.gaussianVectorL2Isometry hX hY (hgLp.toLp g) = u := by
-    refine Lp.ext ((HasLaw.coeFn_gaussianVectorL2Isometry hX hY _).trans ?_)
-    exact ((hX.measurePreserving hY).quasiMeasurePreserving.ae_eq_comp
-      hgLp.coeFn_toLp).trans hug.symm
-  rw [← hpull, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-  exact mem_closure_of_tendsto (HasLaw.hasSum_gaussianVectorHermite hX hY (hgLp.toLp g))
+    exact (hW.mem_range_gaussianVectorL2Isometry_iff ht ht0 hY _).1
+      ⟨gaussianHermitePiBasis ℝ (Fin k) a, rfl⟩
+  -- The upstream finite-grid Hermite expansion puts every observation-measurable claim
+  -- in the closed span.
+  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+  exact mem_closure_of_tendsto
+    (hW.hasSum_gaussianVectorHermite_of_aestronglyMeasurable_comap ht ht0 hY u
+      (mem_lpMeas_iff_aestronglyMeasurable.1 hu))
     (Eventually.of_forall fun s ↦ Submodule.sum_mem _
       fun a _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨a, rfl⟩))
 
@@ -137,7 +112,8 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
     (hW : IsPreBrownianReal W P) (hmeas : ∀ t, Measurable (W t)) (hT : 0 < T) (n : ℕ) :
     (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
-      (measurable_normalizedBrownianIncrements hmeas)))).topologicalClosure =
+      (measurable_normalizedBrownianIncrements fun i ↦
+        hmeas (dyadicTime T n i))))).topologicalClosure =
       lpMeas ℝ ℝ (Filtration.dyadicNatural W hmeas T n) 2 P := by
   rw [Filtration.dyadicNatural_eq_iSup]
   exact hW.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap hmeas
@@ -156,8 +132,8 @@ theorem mem_topologicalClosure_span_gaussianVectorHermite (hW : IsBrownianReal W
     (hξ : AEStronglyMeasurable[((Filtration.natural W hmeas).nullAugment P).rightCont T] ξ P) :
     ξ ∈ (Submodule.span ℝ (⋃ n, range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
-      (measurable_normalizedBrownianIncrements fun t ↦
-        (hmeas t).measurable)))).topologicalClosure := by
+      (measurable_normalizedBrownianIncrements fun i ↦
+        (hmeas (dyadicTime T n i)).measurable)))).topologicalClosure := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   set G := Filtration.dyadicNatural W (fun t ↦ (hmeas t).measurable) T
   -- Right continuity of the null-augmented natural filtration removes the right limit.
@@ -186,8 +162,8 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_natural (hW : Is
     (hmeas : ∀ t, StronglyMeasurable (W t)) (hT : 0 < T) :
     (Submodule.span ℝ (⋃ n, range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
-      (measurable_normalizedBrownianIncrements fun t ↦
-        (hmeas t).measurable)))).topologicalClosure =
+      (measurable_normalizedBrownianIncrements fun i ↦
+        (hmeas (dyadicTime T n i)).measurable)))).topologicalClosure =
       lpMeas ℝ ℝ (Filtration.natural W hmeas T) 2 P := by
   refine le_antisymm (Submodule.topologicalClosure_minimal _ ?_
     (isClosed_aestronglyMeasurable ((Filtration.natural W hmeas).le T))) fun ξ hξ ↦ ?_

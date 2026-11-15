@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Limits
 import Mathlib.RingTheory.RingHom.FinitePresentation
 
 /-!
-# Cancellation for morphisms locally of finite presentation
+# Morphisms locally of finite presentation
 
 Let `f : X ⟶ Y` and `g : Y ⟶ Z` be morphisms of schemes. If `f ≫ g` is locally of finite
 presentation and `g` is locally of finite type, then `f` is locally of finite presentation
@@ -24,6 +25,9 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
   presentation and `g` is locally of finite type, then `f` is locally of finite presentation.
+
+* `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
+  the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
 
 ## References
 
@@ -62,3 +66,33 @@ theorem locallyOfFinitePresentation_of_comp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (
   exact H.of_comp_finiteType _ (HasRingHomProperty.appLE _ g hg ⟨W, hW⟩ ⟨U, hU⟩ hUW)
 
 end AlgebraicGeometry
+
+open AlgebraicGeometry CategoryTheory.Limits
+
+namespace CommRingCat
+
+/-- The spectrum of a ring `R` is locally of finite presentation over the terminal scheme
+`Spec ℤ` if and only if `R` is of finite presentation over `ℤ`. -/
+@[simp]
+lemma locallyOfFinitePresentation_terminal_from_Spec_iff (R : CommRingCat.{u}) :
+    LocallyOfFinitePresentation (terminal.from (Spec R)) ↔ Algebra.FinitePresentation ℤ R := by
+  let g : CommRingCat.of (ULift.{u} ℤ) ⟶ R :=
+    CommRingCat.ofHom ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom)
+  have : MorphismProperty.RespectsIso @LocallyOfFinitePresentation :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
+  rw [← terminal.comp_from (Spec.map g),
+    MorphismProperty.cancel_right_of_respectsIso (P := @LocallyOfFinitePresentation),
+    LocallyOfFinitePresentation.SpecMap_iff, ← RingHom.finitePresentation_algebraMap]
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (.of_bijective ULift.ringEquiv.bijective)⟩
+  have : algebraMap ℤ R = g.hom.comp ULift.ringEquiv.symm.toRingHom := by
+    ext; simp [g]
+  rw [this]
+  exact h.comp (.of_bijective ULift.ringEquiv.symm.bijective)
+
+instance (R : CommRingCat.{u}) [Algebra.FiniteType ℤ R] :
+    LocallyOfFinitePresentation (terminal.from (Spec R)) :=
+  (locallyOfFinitePresentation_terminal_from_Spec_iff R).mpr
+    (Algebra.FinitePresentation.of_finiteType.mp inferInstance)
+
+end CommRingCat
