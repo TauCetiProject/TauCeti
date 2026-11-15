@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Sum
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.LogFactorial
+import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
 # Mertens's first theorem over `ℚ`
@@ -33,7 +34,8 @@ The proof is Chebyshev's. By `Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`,
 with `k ≥ 2` contribute at most the convergent series `∑_{n not prime} Λ(n) / n`, by
 `TauCeti.sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum`. For the prime divisors of `N`,
 the primes `p ≤ log N` contribute `log log N + O(1)` by the prime form, and the primes
-`p > log N` dividing `N` contribute at most `(∑_{p ∣ N} log p) / log N ≤ 1`.
+`p > log N` dividing `N` contribute at most `(∑_{p ∣ N} log p) / log N ≤ 1`, by
+`TauCeti.sum_primeFactors_log_le_log`.
 
 `TauCeti.LFunctions.isBigO_primeSummatory_log_absNorm_div_sub_log` proves Mertens's first theorem
 for every number field as an asymptotic statement over prime ideals; the statements here are the
@@ -44,7 +46,6 @@ uniform bounds over rational primes, with explicit constants.
 * `TauCeti.abs_sum_vonMangoldt_div_sub_log_le`: `|∑_{n ≤ x} Λ(n) / n - log x| ≤ log 4 + 4`.
 * `TauCeti.abs_sum_primesLE_log_div_sub_log_le`: `∑_{p ≤ x} log p / p = log x + O(1)`, with an
   explicit constant.
-* `TauCeti.sum_primeFactors_log_le_log`: `∑_{p ∣ N} log p ≤ log N`.
 * `TauCeti.sum_primeFactors_log_div_le_log_log_add`:
   `∑_{p ∣ N} log p / p ≤ log log N + O(1)`, with an explicit constant.
 
@@ -98,24 +99,12 @@ theorem abs_sum_vonMangoldt_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
 theorem abs_sum_primesLE_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
     |∑ p ∈ Nat.primesLE ⌊x⌋₊, log p / p - log x| ≤
       log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
-  have hB : 0 ≤ ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n :=
-    tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
+  have hB := vonMangoldt.tsum_nonprime_div_nonneg
   have hM := abs_le.mp (abs_sum_vonMangoldt_div_sub_log_le hx)
   have h₂ := sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊
   have h₁ := sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum ⌊x⌋₊
   rw [abs_le]
   constructor <;> linarith [hM.1, hM.2]
-
-/-- The sum of `log p` over the prime divisors of `N` is at most `log N`, since their product
-divides `N`. -/
-theorem sum_primeFactors_log_le_log (N : ℕ) :
-    ∑ p ∈ N.primeFactors, log p ≤ log N := by
-  rcases eq_or_ne N 0 with rfl | hN
-  · simp
-  rw [← log_prod (fun p hp ↦ by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero),
-    ← Nat.cast_prod]
-  exact log_le_log (by exact_mod_cast prod_pos fun p hp ↦ Nat.pos_of_mem_primeFactors hp)
-    (by exact_mod_cast Nat.le_of_dvd (by lia) (Nat.prod_primeFactors_dvd N))
 
 /-- The sum of `log p / p` over the prime divisors of `N` is `O(log log N)`: for every natural
 number `N`, `∑_{p ∣ N} log p / p ≤ log log N + log 4 + 5 + ∑_{n not prime} Λ(n) / n`. -/
@@ -124,9 +113,8 @@ theorem sum_primeFactors_log_div_le_log_log_add (N : ℕ) :
       log (log N) + (log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n + 1) := by
   set C := log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n
   have hC : 4 ≤ C := by
-    have hB : 0 ≤ ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n :=
-      tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
-    linarith [log_nonneg (show (1 : ℝ) ≤ 4 by norm_num)]
+    have hlog4 : 0 ≤ log (4 : ℝ) := log_nonneg (by norm_num)
+    linarith [vonMangoldt.tsum_nonprime_div_nonneg]
   obtain hN | hN := lt_or_ge N 3
   · -- For `N ≤ 2` the bound is numerical: `log 2 / 2 < 1` and `log log 2 ≥ 1 - (log 2)⁻¹ ≥ -1`.
     interval_cases N

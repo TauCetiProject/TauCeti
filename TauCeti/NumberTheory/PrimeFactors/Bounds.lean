@@ -9,7 +9,10 @@ public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
-# Subpower bounds for products over prime divisors
+# Bounds for sums and products over prime divisors
+
+The sum of `log p` over the prime divisors `p` of `N` is at most `log N`, since their product
+divides `N`.
 
 For every fixed `C ≥ 1` and `ε > 0`, the product `C ^ ω(n)` is at most `A n ^ ε`, with
 `A` independent of the positive integer `n`. Here `ω(n)` counts distinct prime divisors.
@@ -24,6 +27,17 @@ public section
 open Finset Filter
 
 namespace TauCeti
+
+/-- The sum of `log p` over the prime divisors of `N` is at most `log N`, since their product
+divides `N`. -/
+theorem sum_primeFactors_log_le_log (N : ℕ) :
+    ∑ p ∈ N.primeFactors, Real.log p ≤ Real.log N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp
+  rw [← Real.log_prod (fun p hp ↦ by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero),
+    ← Nat.cast_prod]
+  exact Real.log_le_log (by exact_mod_cast prod_pos fun p hp ↦ Nat.pos_of_mem_primeFactors hp)
+    (by exact_mod_cast Nat.le_of_dvd (by lia) (Nat.prod_primeFactors_dvd N))
 
 /-- A fixed exponential of the number of distinct prime factors grows more slowly than any
 positive power, uniformly over all positive integers. -/

@@ -25,6 +25,7 @@ this constant, uniformly in `N`.
 
 * `ArithmeticFunction.vonMangoldt.summable_nonprime_div`: `∑ₙ (if n is prime then 0 else Λ(n)) / n`
   converges.
+* `ArithmeticFunction.vonMangoldt.tsum_nonprime_div_nonneg`: its sum is nonnegative.
 * `TauCeti.sum_primesLE_log_div_eq_sum_vonMangoldt_div_filter`:
   `∑_{p ≤ N} log p / p = ∑_{n ≤ N, n prime} Λ(n) / n`.
 * `TauCeti.sum_primesLE_log_div_le_sum_vonMangoldt_div`:
@@ -46,6 +47,11 @@ theorem summable_nonprime_div :
   have h (n : ℕ) : residueClass (1 : ZMod 1) n = vonMangoldt n :=
     Set.indicator_of_mem (Subsingleton.elim (n : ZMod 1) 1) _
   simpa only [h] using summable_residueClass_non_primes_div (1 : ZMod 1)
+
+/-- The series `∑ₙ (if n is prime then 0 else Λ(n)) / n` has nonnegative sum. -/
+theorem tsum_nonprime_div_nonneg :
+    0 ≤ ∑' n : ℕ, (if n.Prime then 0 else vonMangoldt n) / n :=
+  tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
 
 end ArithmeticFunction.vonMangoldt
 
