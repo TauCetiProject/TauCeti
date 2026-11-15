@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
+import TauCeti.Analysis.SpecialFunctions.Complex.LogTaylor
+import Mathlib.Algebra.BigOperators.Intervals
+
 /-!
 # Taylor series bounds for `-log (1 - ·)` and `log (1 + ·)`
 
@@ -141,17 +144,12 @@ sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)
 theorem norm_log_one_sub_inv_sub_sum_Icc_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 - z)⁻¹ - ∑ j ∈ Finset.Icc 1 n, z ^ j / j‖ ≤
       ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
-  have hT : ∀ n : ℕ, logTaylor (n + 1) (-z) = -∑ j ∈ Finset.Icc 1 n, z ^ j / j := by
-    intro n
-    induction n with
-    | zero => simp [logTaylor_succ, logTaylor_zero]
-    | succ n ih =>
-      rw [logTaylor_succ, Pi.add_apply, ih, Finset.sum_Icc_succ_top (by lia), neg_pow z]
-      have : ((-1 : ℂ) ^ (n + 1 + 1) * (-1) ^ (n + 1)) = -1 := by
-        rw [← pow_add, show n + 1 + 1 + (n + 1) = 2 * (n + 1) + 1 by ring, pow_succ, pow_mul]
-        simp
-      linear_combination (z ^ (n + 1) / ((n + 1 : ℕ) : ℂ)) * this
-  simpa [hT, sub_eq_add_neg] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
+  have hsum : (∑ j ∈ Finset.Icc 1 n, z ^ j / j) =
+      ∑ k ∈ Finset.range n, z ^ (k + 1) / (k + 1) := by
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range]
+    simp only [Nat.add_sub_cancel, Nat.add_comm 1, Nat.cast_add, Nat.cast_one]
+  rw [hsum, ← neg_logTaylor_succ_neg_eq_sum]
+  simpa only [sub_neg_eq_add] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
 
 /-- For `2 ≤ p` and `‖w‖ ≤ 1`, the partial sum of the Taylor series of `log (1 - w / p)⁻¹` up to
 degree `K` is within `2 / p ^ (K + 1)` of it. This is the local comparison at a single prime in an

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.Analytic.Order
 
 import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Analysis.SpecialFunctions.Complex.LogTaylor
 
 /-!
 # Weierstrass elementary factors
@@ -30,11 +31,12 @@ The paired rational logarithmic derivative retains this genus-one specialization
 The all-genus elementary-factor definition, normalization and simple-zero formalization are
 adapted from Matteo Cipollina's
 [PNT+ development](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/fc979d1d71a79bdcd497ee2881413224c59a46b0/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/WeierstrassFactor.lean).
-The generic logarithmic-Taylor formulation here also retains the existing native genus-one
-estimates and their Mathlib-based proofs.
+The radial-profile proof of the sharp all-genus bound adapts the nonnegative-coefficient
+argument of Rudin, Lemma 15.8.
 
 ## References
 
+* W. Rudin, *Real and Complex Analysis*, 3rd ed., Lemma 15.8 (the sharp bound for every genus).
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 11 (the genus-one case).
 -/
 
@@ -53,22 +55,11 @@ theorem weierstrassFactor_def (p : ℕ) (z : ℂ) :
     weierstrassFactor p z = (1 - z) * exp (-logTaylor (p + 1) (-z)) := by
   rfl
 
-private theorem neg_logTaylor_neg_eq_sum (p : ℕ) (z : ℂ) :
-    -logTaylor (p + 1) (-z) = ∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1) := by
-  have hsign (j : ℕ) : (-1 : ℂ) ^ (j + 1) * (-z) ^ j = -z ^ j := by
-    calc
-      _ = -((-1 : ℂ) ^ j * (-z) ^ j) := by rw [pow_succ]; ring
-      _ = -(((-1 : ℂ) * (-z)) ^ j) := by rw [mul_pow]
-      _ = _ := by simp
-  simp only [logTaylor, hsign, neg_div, ← Finset.sum_neg_distrib, neg_neg]
-  rw [Finset.sum_range_succ']
-  simp
-
 /-- The finite-sum formula for the primary factor, including the empty sum at genus zero. -/
 theorem weierstrassFactor_eq_mul_exp_sum (p : ℕ) (z : ℂ) :
     weierstrassFactor p z =
       (1 - z) * exp (∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1)) := by
-  rw [weierstrassFactor_def, neg_logTaylor_neg_eq_sum]
+  rw [weierstrassFactor_def, neg_logTaylor_succ_neg_eq_sum]
 
 /-- The genus-zero factor is linear. -/
 @[simp]
@@ -97,13 +88,7 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
   rw [weierstrassFactor_def, mul_eq_zero, or_iff_left (exp_ne_zero _), sub_eq_zero]
   exact eq_comm
 
-private theorem hasDerivAt_neg_logTaylor_neg (p : ℕ) (z : ℂ) :
-    HasDerivAt (fun w : ℂ ↦ -logTaylor (p + 1) (-w))
-      (∑ j ∈ Finset.range p, z ^ j) z := by
-  have h := ((hasDerivAt_logTaylor p (-z)).comp z (hasDerivAt_neg z)).neg
-  simpa only [← mul_pow, neg_one_mul, neg_neg, mul_neg, mul_one, Function.comp_def] using! h
-
-/-- The derivative of a primary factor vanishes to its genus at the origin. -/
+/-- The derivative of `E_p` is `-z ^ p * exp (-logTaylor (p + 1) (-z))`. -/
 theorem hasDerivAt_weierstrassFactor (p : ℕ) (z : ℂ) :
     HasDerivAt (weierstrassFactor p)
       (-z ^ p * exp (-logTaylor (p + 1) (-z))) z := by
@@ -159,7 +144,7 @@ private theorem norm_primaryFactor_derivative_smul_le (p : ℕ) {t : ℝ} (ht : 
       ‖z‖ ^ p * primaryFactorProfile p t := by
   have hs : (-logTaylor (p + 1) (-(t • z))).re ≤
       ∑ k ∈ Finset.range p, t ^ (k + 1) / (k + 1) := by
-    rw [neg_logTaylor_neg_eq_sum, Complex.re_sum]
+    rw [neg_logTaylor_succ_neg_eq_sum, Complex.re_sum]
     refine Finset.sum_le_sum fun k _ ↦ ?_
     calc
       _ ≤ ‖(t • z) ^ (k + 1) / (k + 1 : ℂ)‖ := re_le_norm _
@@ -178,46 +163,45 @@ private theorem norm_primaryFactor_derivative_smul_le (p : ℕ) {t : ℝ} (ht : 
       dsimp only [primaryFactorProfile]
       ring
 
+private theorem mul_integral_deriv_weierstrassFactor (p : ℕ) (z : ℂ) :
+    z * ∫ t : ℝ in 0..1, deriv (weierstrassFactor p) (t • z) =
+      weierstrassFactor p z - 1 := by
+  have hcont : ContinuousOn
+      (fun t : ℝ ↦ deriv (weierstrassFactor p) (0 + t • z)) (Set.Icc 0 1) := by
+    simp only [deriv_weierstrassFactor]
+    unfold logTaylor
+    fun_prop
+  simpa only [zero_add, smul_eq_mul, weierstrassFactor_zero] using
+    (intervalIntegral.integral_unitInterval_deriv_eq_sub
+      (f := weierstrassFactor p) (f' := deriv (weierstrassFactor p)) (z₀ := 0) (z₁ := z)
+      hcont (fun t _ ↦ (differentiable_weierstrassFactor p _).hasDerivAt))
+
 private theorem integral_primaryFactorProfile (p : ℕ) :
     ∫ t : ℝ in 0..1, primaryFactorProfile p t = 1 := by
   have hd (t : ℝ) :
       -((t : ℂ) ^ p) * exp (-logTaylor (p + 1) (-(t : ℂ))) =
         -(primaryFactorProfile p t : ℂ) := by
-    rw [neg_logTaylor_neg_eq_sum]
+    rw [neg_logTaylor_succ_neg_eq_sum]
     simp only [primaryFactorProfile, Complex.ofReal_mul, Complex.ofReal_pow,
       Complex.ofReal_exp, Complex.ofReal_sum, Complex.ofReal_div ]
     push_cast
     ring
-  let D : ℂ → ℂ := fun w ↦ -w ^ p * exp (-logTaylor (p + 1) (-w))
-  have hcont : ContinuousOn (fun t : ℝ ↦ D (0 + t • (1 : ℂ))) (Set.Icc 0 1) := by
-    dsimp only [D, logTaylor]
-    fun_prop
-  have heq : ∫ t : ℝ in 0..1, D (t : ℂ) = -1 := by
-    simpa only [zero_add, real_smul, smul_eq_mul, mul_one, one_mul, weierstrassFactor_one,
-      weierstrassFactor_zero, zero_sub] using
-      (intervalIntegral.integral_unitInterval_deriv_eq_sub hcont
-        (fun t _ ↦ hasDerivAt_weierstrassFactor p (0 + t • (1 : ℂ))))
-  simp only [D, hd, intervalIntegral.integral_neg, intervalIntegral.integral_ofReal,
-    neg_inj] at heq
+  have heq := mul_integral_deriv_weierstrassFactor p 1
+  simp only [one_mul, real_smul, mul_one, weierstrassFactor_one,
+    zero_sub, deriv_weierstrassFactor, hd, intervalIntegral.integral_neg,
+    intervalIntegral.integral_ofReal, neg_inj] at heq
   exact_mod_cast heq
 
 /-- Every primary factor differs from one by at most its first omitted power on the entire
 closed unit disk, including zero genus and the factor's simple zero at one. -/
 theorem norm_weierstrassFactor_sub_one_le (p : ℕ) {z : ℂ} (hz : ‖z‖ ≤ 1) :
     ‖weierstrassFactor p z - 1‖ ≤ ‖z‖ ^ (p + 1) := by
-  let D : ℂ → ℂ := fun w ↦ -w ^ p * exp (-logTaylor (p + 1) (-w))
-  have hcont : ContinuousOn (fun t : ℝ ↦ D (0 + t • z)) (Set.Icc 0 1) := by
-    dsimp only [D, logTaylor]
-    fun_prop
-  have heq : z * ∫ t : ℝ in 0..1, D (t • z) = weierstrassFactor p z - 1 := by
-    simpa only [zero_add, smul_eq_mul, weierstrassFactor_zero] using
-      (intervalIntegral.integral_unitInterval_deriv_eq_sub hcont
-        (fun t _ ↦ hasDerivAt_weierstrassFactor p (0 + t • z)))
   have hbound : ∀ᵐ t : ℝ, t ∈ Set.Ioc 0 1 →
-      ‖D (t • z)‖ ≤ ‖z‖ ^ p * primaryFactorProfile p t := by
+      ‖deriv (weierstrassFactor p) (t • z)‖ ≤ ‖z‖ ^ p * primaryFactorProfile p t := by
     filter_upwards with t ht
+    rw [deriv_weierstrassFactor]
     exact norm_primaryFactor_derivative_smul_le p ht.1.le hz
-  rw [← heq, norm_mul]
+  rw [← mul_integral_deriv_weierstrassFactor p z, norm_mul]
   calc
     _ ≤ ‖z‖ * ∫ t : ℝ in 0..1, ‖z‖ ^ p * primaryFactorProfile p t := by
       gcongr
@@ -312,11 +296,12 @@ theorem norm_weierstrassFactor_one_le_exp_sq (z : ℂ) :
   by_cases hz : ‖z‖ ≤ 1
   · calc
       _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor 1 z - 1‖ := norm_le_norm_add_norm_sub' _ _
-      _ ≤ 3 * ‖z‖ ^ 2 + 1 := by
-        rw [norm_one, add_comm]
-        exact add_le_add_left ((norm_weierstrassFactor_sub_one_le 1 hz).trans
-          (by norm_num only [Nat.reduceAdd]; nlinarith [sq_nonneg ‖z‖])) 1
-      _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.add_one_le_exp _
+      _ ≤ ‖z‖ ^ 2 + 1 := by
+        have hsharp : ‖weierstrassFactor 1 z - 1‖ ≤ ‖z‖ ^ 2 :=
+          norm_weierstrassFactor_sub_one_le 1 hz
+        simpa only [norm_one, add_comm] using add_le_add_left hsharp 1
+      _ ≤ Real.exp (‖z‖ ^ 2) := Real.add_one_le_exp _
+      _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.exp_le_exp.mpr (by nlinarith [sq_nonneg ‖z‖])
   · exact (norm_weierstrassFactor_one_le_exp z).trans
       (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg z]))
 

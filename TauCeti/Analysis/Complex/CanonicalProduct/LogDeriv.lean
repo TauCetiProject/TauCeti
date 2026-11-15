@@ -133,7 +133,7 @@ theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :
 
 /-- Off the roots, the logarithmic derivative is the absolutely convergent weighted paired
 series. -/
-theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
+theorem logDeriv_tprod_weierstrassFactor_one_pow {z : ℂ}
     (hz : ∀ i, m i ≠ 0 → a i * z ≠ 1) :
     logDeriv (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w) ^ m i) z =
       ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z) := by
@@ -145,7 +145,7 @@ theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
       intro hzero
       exact hz i hmi ((weierstrassFactor_eq_zero_iff 1).mp hzero)
   have hp : (∏' i, weierstrassFactor 1 (a i * z) ^ m i) ≠ 0 := by
-    rw [ne_eq, tprod_weierstrassFactorOne_pow_eq_zero_iff a m hm]
+    rw [ne_eq, tprod_weierstrassFactor_one_pow_eq_zero_iff a m hm]
     rintro ⟨i, hi, hzero⟩
     exact hz i hi hzero
   have hs : Summable (fun i ↦ logDeriv (fun w ↦ weierstrassFactor 1 (a i * w) ^ m i) z) := by
@@ -156,7 +156,7 @@ theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
     fun_prop
   have ht := logDeriv_tprod_eq_tsum (f := fun i w ↦ weierstrassFactor 1 (a i * w) ^ m i)
     isOpen_univ (Set.mem_univ z) hne hd hs
-    (hasProdLocallyUniformlyOn_weierstrassFactorOne_pow a m hm).multipliableLocallyUniformlyOn hp
+    (hasProdLocallyUniformlyOn_weierstrassFactor_one_pow a m hm).multipliableLocallyUniformlyOn hp
   simpa only [logDeriv_weierstrassFactor_one_mul_pow] using ht
 
 end Complex

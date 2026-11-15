@@ -59,7 +59,7 @@ open scoped Real
 namespace Complex
 
 /-- One factor of Euler's product: `s + k = k E₁(-s/k) e^{s/k}` for `k = j + 1`. -/
-theorem add_natCast_succ_eq_mul_weierstrassFactorOne (s : ℂ) (j : ℕ) :
+theorem add_natCast_succ_eq_mul_weierstrassFactor_one (s : ℂ) (j : ℕ) :
     s + (j + 1 : ℕ) = (j + 1 : ℕ) * weierstrassFactor 1 (-s / (j + 1)) * exp (s / (j + 1)) := by
   have hj : (j + 1 : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
   rw [weierstrassFactor_one_left, mul_assoc, mul_assoc, ← exp_add, neg_div, neg_add_cancel,
@@ -79,7 +79,7 @@ theorem inv_GammaSeq_eq (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
       s * (n.factorial : ℂ) * (∏ j ∈ range n, weierstrassFactor 1 (-s / (j + 1))) *
         exp (s * harmonic n) := by
     rw [prod_range_succ', Nat.cast_zero, add_zero]
-    simp_rw [add_natCast_succ_eq_mul_weierstrassFactorOne, prod_mul_distrib, ← exp_sum,
+    simp_rw [add_natCast_succ_eq_mul_weierstrassFactor_one, prod_mul_distrib, ← exp_sum,
       ← Nat.cast_prod, prod_range_add_one_eq_factorial, harmonic, Rat.cast_sum, mul_sum,
       div_eq_mul_inv]
     push_cast
@@ -92,78 +92,71 @@ private theorem norm_GammaSeq_harmonic_correction_le (s : ℂ) (n : ℕ) :
   by_cases hn : n = 0
   · subst n
     simp
-  let r := ‖s‖
+  set r := ‖s‖
   have hr : 0 ≤ r := norm_nonneg s
   have hH₀ : Real.log n ≤ harmonic n :=
     (Real.log_le_log (y := ((n + 1 : ℕ) : ℝ)) (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn))
       (by push_cast; linarith)).trans (by exact_mod_cast log_add_one_le_harmonic n)
   have hH₁ : (harmonic n : ℝ) ≤ 1 + Real.log n := harmonic_le_one_add_log n
-  have hexp : ‖exp (s * ((harmonic n : ℂ) - Real.log n))‖ ≤ Real.exp r := by
-    rw [norm_exp]
-    refine Real.exp_le_exp.mpr ?_
-    have : (s * ((harmonic n : ℂ) - Real.log n)).re = s.re * ((harmonic n : ℝ) - Real.log n) := by
-      rw [← ofReal_ratCast, ← ofReal_sub, re_mul_ofReal]
-    rw [this]
-    calc
-      _ ≤ |s.re| * ((harmonic n : ℝ) - Real.log n) :=
-        mul_le_mul_of_nonneg_right (le_abs_self _) (by linarith)
-      _ ≤ r * 1 := mul_le_mul (abs_re_le_norm s) (by linarith) (by linarith) hr
-      _ = r := mul_one r
-  exact hexp
+  rw [norm_exp]
+  refine Real.exp_le_exp.mpr ?_
+  have : (s * ((harmonic n : ℂ) - Real.log n)).re = s.re * ((harmonic n : ℝ) - Real.log n) := by
+    rw [← ofReal_ratCast, ← ofReal_sub, re_mul_ofReal]
+  rw [this]
+  calc
+    _ ≤ |s.re| * ((harmonic n : ℝ) - Real.log n) :=
+      mul_le_mul_of_nonneg_right (le_abs_self _) (by linarith)
+    _ ≤ r * 1 := mul_le_mul (abs_re_le_norm s) (by linarith) (by linarith) hr
+    _ = r := mul_one r
 
 private theorem sum_GammaSeq_small_exponents_le (s : ℂ) (n : ℕ) :
     ∑ j ∈ (range n).filter (fun j ↦ j + 1 ≤ ⌊‖s‖⌋₊ + 1),
         2 * (‖s‖ / (j + 1)) ≤ 2 * ‖s‖ * (1 + Real.log (1 + ‖s‖)) := by
-  let r := ‖s‖
+  set r := ‖s‖
   have hr : 0 ≤ r := norm_nonneg s
-  let N := ⌊r⌋₊ + 1
+  set N := ⌊r⌋₊ + 1
   have hN_le : (N : ℝ) ≤ r + 1 := by dsimp [N]; push_cast; linarith [Nat.floor_le hr]
-  have hsmall : ∑ j ∈ (range n).filter (fun j ↦ j + 1 ≤ N), 2 * (r / (j + 1)) ≤
-      2 * r * (1 + Real.log (1 + r)) := by
-    calc
-      _ ≤ ∑ j ∈ range N, 2 * (r / (j + 1)) := by
-        refine sum_le_sum_of_subset_of_nonneg (fun j hj ↦ ?_) (fun _ _ _ ↦ by positivity)
-        simp only [mem_filter] at hj
-        exact mem_range.mpr (by omega)
-      _ = 2 * r * (harmonic N : ℝ) := by
-        simp only [harmonic, Rat.cast_sum, mul_sum, div_eq_mul_inv]
-        push_cast
-        ring_nf
-      _ ≤ 2 * r * (1 + Real.log (1 + r)) := by
-        refine mul_le_mul_of_nonneg_left ((harmonic_le_one_add_log N).trans ?_) (by positivity)
-        have : (0 : ℝ) < N := by positivity
-        linarith [Real.log_le_log this (by linarith : (N : ℝ) ≤ 1 + r)]
-  exact hsmall
+  calc
+    _ ≤ ∑ j ∈ range N, 2 * (r / (j + 1)) := by
+      refine sum_le_sum_of_subset_of_nonneg (fun j hj ↦ ?_) (fun _ _ _ ↦ by positivity)
+      simp only [mem_filter] at hj
+      exact mem_range.mpr (by omega)
+    _ = 2 * r * (harmonic N : ℝ) := by
+      simp only [harmonic, Rat.cast_sum, mul_sum, div_eq_mul_inv]
+      push_cast
+      ring_nf
+    _ ≤ 2 * r * (1 + Real.log (1 + r)) := by
+      refine mul_le_mul_of_nonneg_left ((harmonic_le_one_add_log N).trans ?_) (by positivity)
+      have : (0 : ℝ) < N := by positivity
+      linarith [Real.log_le_log this (by linarith : (N : ℝ) ≤ 1 + r)]
 
 private theorem sum_GammaSeq_large_exponents_le (s : ℂ) (n : ℕ) :
     ∑ j ∈ (range n).filter (fun j ↦ ¬j + 1 ≤ ⌊‖s‖⌋₊ + 1),
         3 * (‖s‖ / (j + 1)) ^ 2 ≤ 6 * ‖s‖ := by
-  let r := ‖s‖
+  set r := ‖s‖
   have hr : 0 ≤ r := norm_nonneg s
-  let N := ⌊r⌋₊ + 1
+  set N := ⌊r⌋₊ + 1
   have hNr : r < N := by dsimp [N]; push_cast; exact Nat.lt_floor_add_one r
-  have hlarge : ∑ j ∈ (range n).filter (fun j ↦ ¬j + 1 ≤ N), 3 * (r / (j + 1)) ^ 2 ≤ 6 * r := by
-    calc
-      _ = ∑ i ∈ ((range n).filter (fun j ↦ ¬j + 1 ≤ N)).image (fun j : ℕ ↦ j + 1),
-            3 * r ^ 2 * ((i : ℝ) ^ 2)⁻¹ := by
-        rw [sum_image (fun _ _ _ _ h ↦ by omega)]
-        refine sum_congr rfl fun j _ ↦ ?_
-        push_cast
-        rw [div_pow, div_eq_mul_inv]
-        ring
-      _ ≤ ∑ i ∈ Ioo N (n + 1), 3 * r ^ 2 * ((i : ℝ) ^ 2)⁻¹ := by
-        refine sum_le_sum_of_subset_of_nonneg (fun i hi ↦ ?_) (fun _ _ _ ↦ by positivity)
-        simp only [mem_image, mem_filter, mem_range] at hi
-        obtain ⟨j, ⟨hj, hjN⟩, rfl⟩ := hi
-        exact mem_Ioo.mpr ⟨by omega, by omega⟩
-      _ = 3 * r ^ 2 * ∑ i ∈ Ioo N (n + 1), ((i : ℝ) ^ 2)⁻¹ := (mul_sum _ _ _).symm
-      _ ≤ 3 * r ^ 2 * (2 / (N + 1)) :=
-        mul_le_mul_of_nonneg_left (sum_Ioo_inv_sq_le N (n + 1)) (by positivity)
-      _ ≤ 6 * r := by
-        rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-        -- `6 r² ≤ 6 r (N + 1)` since `r < N`.
-        nlinarith
-  exact hlarge
+  calc
+    _ = ∑ i ∈ ((range n).filter (fun j ↦ ¬j + 1 ≤ N)).image (fun j : ℕ ↦ j + 1),
+          3 * r ^ 2 * ((i : ℝ) ^ 2)⁻¹ := by
+      rw [sum_image (fun _ _ _ _ h ↦ by omega)]
+      refine sum_congr rfl fun j _ ↦ ?_
+      push_cast
+      rw [div_pow, div_eq_mul_inv]
+      ring
+    _ ≤ ∑ i ∈ Ioo N (n + 1), 3 * r ^ 2 * ((i : ℝ) ^ 2)⁻¹ := by
+      refine sum_le_sum_of_subset_of_nonneg (fun i hi ↦ ?_) (fun _ _ _ ↦ by positivity)
+      simp only [mem_image, mem_filter, mem_range] at hi
+      obtain ⟨j, ⟨hj, hjN⟩, rfl⟩ := hi
+      exact mem_Ioo.mpr ⟨by omega, by omega⟩
+    _ = 3 * r ^ 2 * ∑ i ∈ Ioo N (n + 1), ((i : ℝ) ^ 2)⁻¹ := (mul_sum _ _ _).symm
+    _ ≤ 3 * r ^ 2 * (2 / (N + 1)) :=
+      mul_le_mul_of_nonneg_left (sum_Ioo_inv_sq_le N (n + 1)) (by positivity)
+    _ ≤ 6 * r := by
+      rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+      -- `6 r² ≤ 6 r (N + 1)` since `r < N`.
+      nlinarith
 
 private theorem norm_GammaSeq_primary_product_le (s : ℂ) (n : ℕ) :
     ‖∏ j ∈ range n, weierstrassFactor 1 (-s / (j + 1))‖ ≤
@@ -195,7 +188,7 @@ private theorem norm_GammaSeq_primary_product_le (s : ℂ) (n : ℕ) :
         (sum_GammaSeq_large_exponents_le s n)
 
 /-- Explicit growth of the reciprocals of Euler's sequence, uniformly in every natural index. -/
-theorem norm_inv_GammaSeq_le (s : ℂ) {n : ℕ} :
+theorem norm_inv_GammaSeq_le (s : ℂ) (n : ℕ) :
     ‖(GammaSeq s n)⁻¹‖ ≤ Real.exp (2 * ‖s‖ * Real.log (1 + ‖s‖) + 10 * ‖s‖) := by
   by_cases hn : n = 0
   · subst n
@@ -226,7 +219,7 @@ theorem norm_inv_Gamma_le (s : ℂ) :
   · rw [h, inv_zero, norm_zero]
     positivity
   exact le_of_tendsto ((GammaSeq_tendsto_Gamma s).inv₀ h).norm
-    (Eventually.of_forall fun n ↦ norm_inv_GammaSeq_le s (n := n))
+    (Eventually.of_forall (norm_inv_GammaSeq_le s))
 
 /-- `1/Γ` is bounded by `exp (22 (1 + ‖s‖) log (2 + ‖s‖))` on all of `ℂ`. -/
 theorem norm_inv_Gamma_le_exp_mul_log (s : ℂ) :
