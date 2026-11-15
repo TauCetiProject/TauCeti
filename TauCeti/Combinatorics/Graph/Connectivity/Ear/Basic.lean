@@ -558,6 +558,13 @@ theorem isCycle_iff_of_heq {K L : Graph α β} {s₁ : G.EarStart K} {s₂ : G.E
   cases eq_of_heq hs
   rfl
 
+/-- Transporting an initial stage along an equality of its base graphs preserves whether it is a
+cycle. -/
+@[simp]
+theorem isCycle_eqRec {K L : Graph α β} (h : K = L) (s : G.EarStart K) :
+    (h ▸ s).IsCycle ↔ s.IsCycle :=
+  isCycle_iff_of_heq h.symm (eqRec_heq h s)
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)

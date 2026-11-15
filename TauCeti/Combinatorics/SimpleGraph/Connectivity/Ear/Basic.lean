@@ -772,8 +772,8 @@ theorem kindAt_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) (j : F
     (d.prefix k).kindAt j = d.kindAt (j.castLE k.is_le) := (rfl)
 
 @[simp]
-theorem prefix_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H')
-    (k : Fin ((d.copy h).length + 1)) : (d.copy h).prefix k = d.prefix k := rfl
+theorem prefix_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
+    (d.copy h).prefix = d.prefix := (rfl)
 
 theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen) (k : Fin (d.length + 1)) :
     (d.prefix k).IsOpen :=

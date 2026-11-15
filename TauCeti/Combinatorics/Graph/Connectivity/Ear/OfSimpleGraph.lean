@@ -346,7 +346,7 @@ variable {V : Type u} {G : SimpleGraph V} {K : Graph V (Sym2 V)}
 ears over `K.toSimpleGraphSubgraph hK`. -/
 def earEquivSimpleGraph (hK : K ≤ Graph.ofSimpleGraph G) :
     (Graph.ofSimpleGraph G).Ear K ≃ G.Ear (K.toSimpleGraphSubgraph hK) where
-  toFun e := e.toSimpleGraph.copy (toSimpleGraphSubgraph_congr rfl e.base_le hK)
+  toFun := Graph.Ear.toSimpleGraph
   invFun e := e.toGraph.copy (K.toGraph_toSimpleGraphSubgraph hK)
   left_inv e := by simp
   right_inv e := by simp
@@ -354,8 +354,7 @@ def earEquivSimpleGraph (hK : K ≤ Graph.ofSimpleGraph G) :
 @[simp]
 theorem earEquivSimpleGraph_apply (hK : K ≤ Graph.ofSimpleGraph G)
     (e : (Graph.ofSimpleGraph G).Ear K) :
-    earEquivSimpleGraph hK e =
-      e.toSimpleGraph.copy (toSimpleGraphSubgraph_congr rfl e.base_le hK) := (rfl)
+    earEquivSimpleGraph hK e = e.toSimpleGraph := (rfl)
 
 @[simp]
 theorem earEquivSimpleGraph_symm_apply (hK : K ≤ Graph.ofSimpleGraph G)
@@ -452,13 +451,11 @@ theorem heq_toGraph_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
 theorem isCycle_toGraph (s : G.EarStart H) : s.toGraph.IsCycle ↔ s.IsCycle := by
   cases s with
   | vertex v =>
-      exact (Graph.EarStart.isCycle_iff_of_heq
-        (SimpleGraph.Subgraph.toGraph_singletonSubgraph v) (heq_toGraph_vertex v)).trans
+      exact (Graph.EarStart.isCycle_eqRec _ _).trans
         ((Graph.EarStart.isCycle_vertex ⟨v, by simp⟩).trans
           (SimpleGraph.EarStart.isCycle_vertex v).symm)
   | cycle c hc =>
-      exact (Graph.EarStart.isCycle_iff_of_heq
-        (SimpleGraph.Walk.toGraph_toSubgraph c) (heq_toGraph_cycle c hc)).trans
+      exact (Graph.EarStart.isCycle_eqRec _ _).trans
         ((Graph.EarStart.isCycle_cycle c.toGraph _).trans
           (SimpleGraph.EarStart.isCycle_cycle c hc).symm)
 
@@ -525,11 +522,6 @@ namespace SimpleGraph.Subgraph
 
 variable {V : Type u} {G : SimpleGraph V}
 
-private theorem earStart_subst_heq {H₁ H₂ : G.Subgraph} (h : H₁ = H₂) (s : G.EarStart H₁) :
-    HEq (h ▸ s) s := by
-  subst h
-  rfl
-
 /-- Initial-stage witnesses on `H : G.Subgraph` are canonically equivalent to initial-stage
 witnesses on `H.toGraph` in `Graph.ofSimpleGraph G`. -/
 def earStartEquivOfSimpleGraph (H : G.Subgraph) :
@@ -537,14 +529,14 @@ def earStartEquivOfSimpleGraph (H : G.Subgraph) :
   toFun := SimpleGraph.EarStart.toGraph
   invFun s := H.toSimpleGraphSubgraph_toGraph s.le ▸ s.toSimpleGraph
   left_inv s := eq_of_heq <|
-    (earStart_subst_heq (H.toSimpleGraphSubgraph_toGraph s.toGraph.le)
+    (eqRec_heq (H.toSimpleGraphSubgraph_toGraph s.toGraph.le)
       s.toGraph.toSimpleGraph).trans s.heq_toSimpleGraph_toGraph
   right_inv s := by
     dsimp only
     exact eq_of_heq <|
       (SimpleGraph.EarStart.heq_toGraph_of_heq
         (H.toSimpleGraphSubgraph_toGraph s.le).symm
-        (earStart_subst_heq (H.toSimpleGraphSubgraph_toGraph s.le) s.toSimpleGraph)).trans
+        (eqRec_heq (H.toSimpleGraphSubgraph_toGraph s.le) s.toSimpleGraph)).trans
         s.heq_toGraph_toSimpleGraph
 
 @[simp]
@@ -563,42 +555,27 @@ namespace Graph
 
 variable {V : Type u} {G : SimpleGraph V} {K : Graph V (Sym2 V)}
 
-private theorem earStart_subst_heq {K₁ K₂ : Graph V (Sym2 V)} (h : K₁ = K₂)
-    (s : (Graph.ofSimpleGraph G).EarStart K₁) : HEq (h ▸ s) s := by
-  subst h
-  rfl
-
 /-- Initial-stage witnesses of `Graph.ofSimpleGraph G` on `K ≤ Graph.ofSimpleGraph G` are
 canonically equivalent to initial-stage witnesses on `K.toSimpleGraphSubgraph hK`. -/
 def earStartEquivSimpleGraph (hK : K ≤ Graph.ofSimpleGraph G) :
     (Graph.ofSimpleGraph G).EarStart K ≃ G.EarStart (K.toSimpleGraphSubgraph hK) where
-  toFun s := toSimpleGraphSubgraph_congr rfl s.le hK ▸ s.toSimpleGraph
+  toFun := Graph.EarStart.toSimpleGraph
   invFun s := K.toGraph_toSimpleGraphSubgraph hK ▸ s.toGraph
-  left_inv s := by
-    dsimp only
-    exact eq_of_heq <|
-      (earStart_subst_heq (K.toGraph_toSimpleGraphSubgraph hK) _).trans <|
-        (SimpleGraph.EarStart.heq_toGraph_of_heq
-          (toSimpleGraphSubgraph_congr rfl s.le hK).symm
-          (SimpleGraph.Subgraph.earStart_subst_heq
-            (toSimpleGraphSubgraph_congr rfl s.le hK) s.toSimpleGraph)).trans
-          s.heq_toGraph_toSimpleGraph
+  left_inv s := eq_of_heq <|
+    (eqRec_heq (K.toGraph_toSimpleGraphSubgraph hK) s.toSimpleGraph.toGraph).trans
+      s.heq_toGraph_toSimpleGraph
   right_inv s := by
     dsimp only
     exact eq_of_heq <|
-      (SimpleGraph.Subgraph.earStart_subst_heq
-        (toSimpleGraphSubgraph_congr rfl (K.toGraph_toSimpleGraphSubgraph hK ▸ s.toGraph).le hK)
-        (K.toGraph_toSimpleGraphSubgraph hK ▸ s.toGraph).toSimpleGraph).trans <|
-        (Graph.EarStart.heq_toSimpleGraph_of_heq
-          (K.toGraph_toSimpleGraphSubgraph hK).symm
-          (earStart_subst_heq (K.toGraph_toSimpleGraphSubgraph hK) s.toGraph)).trans
-          s.heq_toSimpleGraph_toGraph
+      (Graph.EarStart.heq_toSimpleGraph_of_heq
+        (K.toGraph_toSimpleGraphSubgraph hK).symm
+        (eqRec_heq (K.toGraph_toSimpleGraphSubgraph hK) s.toGraph)).trans
+        s.heq_toSimpleGraph_toGraph
 
 @[simp]
 theorem earStartEquivSimpleGraph_apply (hK : K ≤ Graph.ofSimpleGraph G)
     (s : (Graph.ofSimpleGraph G).EarStart K) :
-    earStartEquivSimpleGraph hK s =
-      (toSimpleGraphSubgraph_congr rfl s.le hK ▸ s.toSimpleGraph) := (rfl)
+    earStartEquivSimpleGraph hK s = s.toSimpleGraph := (rfl)
 
 @[simp]
 theorem earStartEquivSimpleGraph_symm_apply (hK : K ≤ Graph.ofSimpleGraph G)
@@ -1138,7 +1115,7 @@ decompositions of `K.toSimpleGraphSubgraph hK`. -/
 def earDecompositionEquivSimpleGraph (hK : K ≤ Graph.ofSimpleGraph G) :
     (Graph.ofSimpleGraph G).EarDecomposition K ≃
       G.EarDecomposition (K.toSimpleGraphSubgraph hK) where
-  toFun d := d.toSimpleGraph.copy (toSimpleGraphSubgraph_congr rfl d.final_le hK)
+  toFun := Graph.EarDecomposition.toSimpleGraph
   invFun d := d.toGraph.copy (K.toGraph_toSimpleGraphSubgraph hK)
   left_inv d := by simp
   right_inv d := by simp
@@ -1146,8 +1123,7 @@ def earDecompositionEquivSimpleGraph (hK : K ≤ Graph.ofSimpleGraph G) :
 @[simp]
 theorem earDecompositionEquivSimpleGraph_apply (hK : K ≤ Graph.ofSimpleGraph G)
     (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
-    earDecompositionEquivSimpleGraph hK d =
-      d.toSimpleGraph.copy (toSimpleGraphSubgraph_congr rfl d.final_le hK) := (rfl)
+    earDecompositionEquivSimpleGraph hK d = d.toSimpleGraph := (rfl)
 
 @[simp]
 theorem earDecompositionEquivSimpleGraph_symm_apply (hK : K ≤ Graph.ofSimpleGraph G)
