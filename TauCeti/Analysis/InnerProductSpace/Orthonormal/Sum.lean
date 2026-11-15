@@ -16,6 +16,11 @@ curvature:
 
 * `OrthonormalBasis.sum_apply_mul_inner`: a linear functional `ℓ` satisfies
   `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`, the expansion of `a` in `b` pushed through `ℓ`.
+* `OrthonormalBasis.sum_conj_apply_mul_apply_eq` and `OrthonormalBasis.sum_apply_mul_apply_eq`:
+  contracting two linear functionals `∑ i, conj (ℓ₁ (b i)) * ℓ₂ (b i)` does not depend on the
+  orthonormal basis `b`, and `OrthonormalBasis.sum_sum_conj_apply_mul_apply_eq` and
+  `OrthonormalBasis.sum_sum_apply_mul_apply_eq` give the same basis independence for double
+  contractions of bilinear forms.
 * `OrthonormalBasis.sum_inner_smul_rankOne`: an operator is the sum of its matrix coefficients
   times the corresponding rank-one operators.
 * `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the two-basis expansion
@@ -98,6 +103,66 @@ theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he
     (x y : E) :
     ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
   simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
+
+/-- Contracting two linear functionals over a finite orthonormal basis does not depend on the
+basis: `∑ i, conj (ℓ₁ (b₁ i)) * ℓ₂ (b₁ i) = ∑ j, conj (ℓ₁ (b₂ j)) * ℓ₂ (b₂ j)`. -/
+theorem sum_conj_apply_mul_apply_eq {ι' F₁ F₂ : Type*} [Fintype ι']
+    [FunLike F₁ E 𝕜] [LinearMapClass F₁ 𝕜 E 𝕜] [FunLike F₂ E 𝕜] [LinearMapClass F₂ 𝕜 E 𝕜]
+    (b₁ : OrthonormalBasis ι 𝕜 E) (b₂ : OrthonormalBasis ι' 𝕜 E) (ℓ₁ : F₁) (ℓ₂ : F₂) :
+    ∑ i, conj (ℓ₁ (b₁ i)) * ℓ₂ (b₁ i) = ∑ j, conj (ℓ₁ (b₂ j)) * ℓ₂ (b₂ j) := by
+  calc ∑ i, conj (ℓ₁ (b₁ i)) * ℓ₂ (b₁ i)
+      = ∑ i, conj (ℓ₁ (b₁ i)) * ∑ j, ℓ₂ (b₂ j) * ⟪b₂ j, b₁ i⟫_𝕜 := by
+        simp_rw [b₂.sum_apply_mul_inner ℓ₂]
+    _ = ∑ j, (∑ i, conj (ℓ₁ (b₁ i)) * ⟪b₂ j, b₁ i⟫_𝕜) * ℓ₂ (b₂ j) := by
+        simp_rw [Finset.mul_sum]
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ ↦ by ring
+    _ = ∑ j, conj (ℓ₁ (b₂ j)) * ℓ₂ (b₂ j) := by
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [← b₁.sum_apply_mul_inner ℓ₁ (b₂ j), map_sum]
+        simp_rw [map_mul, inner_conj_symm]
+
+/-- Contracting two real linear functionals over a finite orthonormal basis does not depend on the
+basis: `∑ i, ℓ₁ (b₁ i) * ℓ₂ (b₁ i) = ∑ j, ℓ₁ (b₂ j) * ℓ₂ (b₂ j)`. -/
+theorem sum_apply_mul_apply_eq {V ι₁ ι₂ F₁ F₂ : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [Fintype ι₁] [Fintype ι₂]
+    [FunLike F₁ V ℝ] [LinearMapClass F₁ ℝ V ℝ] [FunLike F₂ V ℝ] [LinearMapClass F₂ ℝ V ℝ]
+    (b₁ : OrthonormalBasis ι₁ ℝ V) (b₂ : OrthonormalBasis ι₂ ℝ V) (ℓ₁ : F₁) (ℓ₂ : F₂) :
+    ∑ i, ℓ₁ (b₁ i) * ℓ₂ (b₁ i) = ∑ j, ℓ₁ (b₂ j) * ℓ₂ (b₂ j) := by
+  simpa using b₁.sum_conj_apply_mul_apply_eq b₂ ℓ₁ ℓ₂
+
+/-- Double contraction of two bilinear forms over finite orthonormal bases does not depend on the
+bases: `∑ i, ∑ j, conj (B₁ (u₁ i) (v₁ j)) * B₂ (u₁ i) (v₁ j) =
+∑ p, ∑ q, conj (B₁ (u₂ p) (v₂ q)) * B₂ (u₂ p) (v₂ q)`. -/
+theorem sum_sum_conj_apply_mul_apply_eq {ι' κ' : Type*} [Fintype ι'] [Fintype κ']
+    (u₁ : OrthonormalBasis ι 𝕜 E) (u₂ : OrthonormalBasis ι' 𝕜 E)
+    (v₁ : OrthonormalBasis κ 𝕜 F) (v₂ : OrthonormalBasis κ' 𝕜 F)
+    (B₁ B₂ : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜) :
+    ∑ i, ∑ j, conj (B₁ (u₁ i) (v₁ j)) * B₂ (u₁ i) (v₁ j) =
+      ∑ p, ∑ q, conj (B₁ (u₂ p) (v₂ q)) * B₂ (u₂ p) (v₂ q) := by
+  calc ∑ i, ∑ j, conj (B₁ (u₁ i) (v₁ j)) * B₂ (u₁ i) (v₁ j)
+      = ∑ i, ∑ q, conj (B₁ (u₁ i) (v₂ q)) * B₂ (u₁ i) (v₂ q) :=
+        Finset.sum_congr rfl fun i _ ↦ v₁.sum_conj_apply_mul_apply_eq v₂ (B₁ (u₁ i)) (B₂ (u₁ i))
+    _ = ∑ q, ∑ i, conj (B₁.flip (v₂ q) (u₁ i)) * B₂.flip (v₂ q) (u₁ i) := Finset.sum_comm
+    _ = ∑ q, ∑ p, conj (B₁.flip (v₂ q) (u₂ p)) * B₂.flip (v₂ q) (u₂ p) :=
+        Finset.sum_congr rfl fun q _ ↦
+          u₁.sum_conj_apply_mul_apply_eq u₂ (B₁.flip (v₂ q)) (B₂.flip (v₂ q))
+    _ = ∑ p, ∑ q, conj (B₁ (u₂ p) (v₂ q)) * B₂ (u₂ p) (v₂ q) := Finset.sum_comm
+
+/-- Double contraction of two real bilinear forms over finite orthonormal bases does not depend on
+the bases:
+`∑ i, ∑ j, B₁ (u₁ i) (v₁ j) * B₂ (u₁ i) (v₁ j) = ∑ p, ∑ q, B₁ (u₂ p) (v₂ q) * B₂ (u₂ p) (v₂ q)`. -/
+theorem sum_sum_apply_mul_apply_eq {V W ι₁ ι₂ κ₁ κ₂ : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [Fintype ι₁] [Fintype ι₂] [Fintype κ₁] [Fintype κ₂]
+    (u₁ : OrthonormalBasis ι₁ ℝ V) (u₂ : OrthonormalBasis ι₂ ℝ V)
+    (v₁ : OrthonormalBasis κ₁ ℝ W) (v₂ : OrthonormalBasis κ₂ ℝ W)
+    (B₁ B₂ : V →ₗ[ℝ] W →ₗ[ℝ] ℝ) :
+    ∑ i, ∑ j, B₁ (u₁ i) (v₁ j) * B₂ (u₁ i) (v₁ j) =
+      ∑ p, ∑ q, B₁ (u₂ p) (v₂ q) * B₂ (u₂ p) (v₂ q) := by
+  simpa using u₁.sum_sum_conj_apply_mul_apply_eq u₂ v₁ v₂ B₁ B₂
 
 end OrthonormalBasis
 
