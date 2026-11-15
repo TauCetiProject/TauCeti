@@ -34,6 +34,8 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
 
 * `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst`: associativity of the antidiagonal
   convolution.
+* `Finset.Nat.prod_antidiagonal_prod_antidiagonal_comm`: four-way antidiagonal interchange between
+  `(a₁ + b₁) + (a₂ + b₂) = n` and `(a₁ + a₂) + (b₁ + b₂) = n`.
 * `Finset.Nat.natCast_add_one_smul_sum_antidiagonal_succ`: the weighted split of a sum over
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
@@ -56,6 +58,39 @@ theorem prod_antidiagonal_prod_antidiagonal_fst {M : Type*} [CommMonoid M] (n : 
   -- reindex the triples: `((a + b, c), (a, b)) ↦ ((a, b + c), (b, c))`
   apply prod_nbij' (fun x => ⟨(x.2.1, x.2.2 + x.1.2), (x.2.2, x.1.2)⟩)
     (fun x => ⟨(x.1.1 + x.2.1, x.2.2), (x.1.1, x.2.1)⟩) <;> aesop (add simp [add_assoc])
+
+/-- **Four-way antidiagonal interchange**: the product of `f a₁ b₁ a₂ b₂` over
+`(a₁ + b₁) + (a₂ + b₂) = n` agrees with the product over `(a₁ + a₂) + (b₁ + b₂) = n`. -/
+@[to_additive /-- **Four-way antidiagonal interchange**: the sum of `f a₁ b₁ a₂ b₂` over
+`(a₁ + b₁) + (a₂ + b₂) = n` agrees with the sum over `(a₁ + a₂) + (b₁ + b₂) = n`. -/]
+theorem prod_antidiagonal_prod_antidiagonal_comm {M : Type*} [CommMonoid M] (n : ℕ)
+    (f : ℕ → ℕ → ℕ → ℕ → M) :
+    (∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 u.2 v.1 v.2) =
+      ∏ p ∈ antidiagonal n, ∏ u ∈ antidiagonal p.1, ∏ v ∈ antidiagonal p.2, f u.1 v.1 u.2 v.2 := by
+  simp only [prod_sigma']
+  let swap : (_ : ℕ × ℕ) × (_ : ℕ × ℕ) × ℕ × ℕ → (_ : ℕ × ℕ) × (_ : ℕ × ℕ) × ℕ × ℕ :=
+    fun ⟨_, ⟨u, v⟩⟩ ↦ ⟨(u.1 + v.1, u.2 + v.2), ⟨(u.1, v.1), (u.2, v.2)⟩⟩
+  refine prod_nbij' swap swap ?_ ?_ ?_ ?_ ?_
+  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
+    dsimp only [swap]
+    simp only [mem_sigma, mem_antidiagonal] at hy ⊢
+    rcases hy with ⟨_, rfl, rfl⟩
+    exact ⟨by omega, trivial, trivial⟩
+  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
+    dsimp only [swap]
+    simp only [mem_sigma, mem_antidiagonal] at hy ⊢
+    rcases hy with ⟨_, rfl, rfl⟩
+    exact ⟨by omega, trivial, trivial⟩
+  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
+    simp only [mem_sigma, mem_antidiagonal] at hy
+    rcases hy with ⟨_, rfl, rfl⟩
+    rfl
+  · rintro ⟨⟨r, s⟩, ⟨⟨a₁, b₁⟩, ⟨a₂, b₂⟩⟩⟩ hy
+    simp only [mem_sigma, mem_antidiagonal] at hy
+    rcases hy with ⟨_, rfl, rfl⟩
+    rfl
+  · rintro ⟨_, ⟨_, _⟩⟩ _
+    rfl
 
 variable {M : Type*}
 
