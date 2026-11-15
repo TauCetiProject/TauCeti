@@ -87,6 +87,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   `AlgHom.sectionBaseChange_sectionBaseChange` along `A → A' → T`.
 * `AlgHom.semilinearTwist y σ φ hφ`: the twist `(σ⁻¹ ⊗ T) ∘ y ∘ φ` of an algebra map
   `y : D →ₐ[C] C ⊗[A] T` by a ring homomorphism `φ` semilinear over an automorphism `σ` of `C`.
+* `AlgEquiv.baseChangeRight e he`: swaps the tensor factors of `e : T ⊗[A] B ≃ₐ[T] S` sending
+  `1 ⊗ b` to `algebraMap B S b`, producing a `B`-algebra equivalence `B ⊗[A] T ≃ₐ[B] S`.
 -/
 
 public section
@@ -515,3 +517,34 @@ theorem semilinearTwist_apply {E : Type*} [Semiring E] [Algebra C E] (y : D →�
 end SemilinearTwist
 
 end AlgHom
+
+namespace AlgEquiv
+
+open scoped TensorProduct
+
+variable {A B T S : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring T] [Semiring S]
+  [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
+
+/-- From a `T`-algebra equivalence `e : T ⊗[A] B ≃ₐ[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
+precomposing with `Algebra.TensorProduct.comm` produces a `B`-algebra equivalence
+`B ⊗[A] T ≃ₐ[B] S`. -/
+noncomputable def baseChangeRight (e : T ⊗[A] B ≃ₐ[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) : B ⊗[A] T ≃ₐ[B] S :=
+  AlgEquiv.ofRingEquiv
+    (f := (Algebra.TensorProduct.comm A B T).toRingEquiv.trans e.toRingEquiv)
+    fun b ↦ by simp [Algebra.TensorProduct.algebraMap_apply, he]
+
+/-- `AlgEquiv.baseChangeRight` swaps tensor factors and applies `e`. -/
+@[simp]
+theorem baseChangeRight_apply (e : T ⊗[A] B ≃ₐ[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (z : B ⊗[A] T) :
+    e.baseChangeRight he z = e (Algebra.TensorProduct.comm A B T z) := (rfl)
+
+/-- The inverse of `AlgEquiv.baseChangeRight` applies `e.symm` and swaps tensor factors. -/
+@[simp]
+theorem baseChangeRight_symm_apply (e : T ⊗[A] B ≃ₐ[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (s : S) :
+    (e.baseChangeRight he).symm s = (Algebra.TensorProduct.comm A B T).symm (e.symm s) := (rfl)
+
+end AlgEquiv
+

@@ -481,39 +481,18 @@ theorem adicCompletionPointsContinuousMulEquiv_mapValue_proj (v : HeightOneSpect
       ∀ w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal},
         w'.1.adicCompletion E :=
     AlgHom.pi fun w' ↦ (FiniteAdeleRing.proj E w'.1 : _ →ₐ[E] _)
-  have hp := pointsMulEquivOfBaseChange_mapValue
-    (finiteAdeleBaseChangeEquiv F E).toAlgEquiv (finiteAdeleBaseChangeEquiv_one_tmul F E)
-    (TauCeti.semilocalContinuousEquiv E v).toAlgEquiv (semilocalContinuousEquiv_one_tmul F E v)
-    pT pS (fun a b ↦ funext fun w' ↦ finiteAdeleBaseChangeEquiv_proj_tmul F E v a b w') x
-  have hpi : (Pi.evalAlgHom E
-      (fun w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal} ↦
-        w'.1.adicCompletion E) w).comp pS =
-      (FiniteAdeleRing.proj E w.1 : FiniteAdeleRing (𝓞 E) E →ₐ[E] w.1.adicCompletion E) :=
-    AlgHom.ext fun _ ↦ rfl
-  calc
-    adicCompletionPointsContinuousMulEquiv F E H v (AlgHom.mapValue pT x) w
-      = AlgHom.mapValue
-          (Pi.evalAlgHom E
-            (fun w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal} ↦
-              w'.1.adicCompletion E) w)
-          (pointsMulEquivOfBaseChange F E H
-            (TauCeti.semilocalContinuousEquiv E v).toAlgEquiv
-            (semilocalContinuousEquiv_one_tmul F E v) (AlgHom.mapValue pT x)) := by
-        rw [adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-          TauCeti.PointTopology.piPointsContinuousMulEquiv_apply]
-        exact congrArg _
-          (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _)
-    _ = AlgHom.mapValue
-          ((Pi.evalAlgHom E
-            (fun w' : {w' : HeightOneSpectrum (𝓞 E) // w'.asIdeal.LiesOver v.asIdeal} ↦
-              w'.1.adicCompletion E) w).comp pS)
-          (finiteAdelicPointsContinuousMulEquiv F E H x) := by
-        rw [hp, AlgHom.mapValue_comp, MonoidHom.comp_apply,
-          finiteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]
-    _ = AlgHom.mapValue (FiniteAdeleRing.proj E w.1 :
-          FiniteAdeleRing (𝓞 E) E →ₐ[E] w.1.adicCompletion E)
-          (finiteAdelicPointsContinuousMulEquiv F E H x) := by
-        rw [hpi]
+  have hloc : pointsContinuousMulEquivOfBaseChange F E H
+        (TauCeti.semilocalContinuousEquiv E v) (semilocalContinuousEquiv_one_tmul F E v)
+        (AlgHom.mapValue pT x) =
+      AlgHom.mapValue pS (finiteAdelicPointsContinuousMulEquiv F E H x) := by
+    rw [finiteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]
+    exact (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _).trans <|
+      pointsMulEquivOfBaseChange_mapValue _ _ _ _ pT pS
+        (fun a b ↦ funext fun w' ↦ finiteAdeleBaseChangeEquiv_proj_tmul F E v a b w') x
+  rw [adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
+    TauCeti.PointTopology.piPointsContinuousMulEquiv_apply, hloc,
+    ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp]
+  exact congrArg (fun f ↦ AlgHom.mapValue f _) (AlgHom.ext fun _ ↦ rfl)
 
 /-- **Compatibility with projection from full adeles to a finite place.** -/
 theorem adicCompletionPointsContinuousMulEquiv_mapValue_proj_comp_snd (v : HeightOneSpectrum (𝓞 F))
@@ -550,37 +529,18 @@ theorem infiniteCompletionPointsContinuousMulEquiv_mapValue_eval (v : InfinitePl
   let pS : InfiniteAdeleRing E →ₐ[E]
       ∀ w' : {w' : InfinitePlace E // w'.LiesOver v}, w'.1.Completion :=
     AlgHom.pi fun w' ↦ Pi.evalAlgHom E (fun u : InfinitePlace E ↦ u.Completion) w'.1
-  have hp := pointsMulEquivOfBaseChange_mapValue
-    (infiniteAdeleBaseChangeEquiv F E).toAlgEquiv (infiniteAdeleBaseChangeEquiv_one_tmul F E)
-    (infiniteSemilocalContinuousEquiv E v).toAlgEquiv
-    (infiniteSemilocalContinuousEquiv_one_tmul F E v)
-    pT pS (fun a b ↦ funext fun w' ↦ infiniteAdeleBaseChangeEquiv_eval_tmul F E v a b w') x
-  have hpi : (Pi.evalAlgHom E
-      (fun w' : {w' : InfinitePlace E // w'.LiesOver v} ↦ w'.1.Completion) w).comp pS =
-      Pi.evalAlgHom E (fun u : InfinitePlace E ↦ u.Completion) w.1 :=
-    AlgHom.ext fun _ ↦ rfl
-  calc
-    infiniteCompletionPointsContinuousMulEquiv F E H v (AlgHom.mapValue pT x) w
-      = AlgHom.mapValue
-          (Pi.evalAlgHom E
-            (fun w' : {w' : InfinitePlace E // w'.LiesOver v} ↦ w'.1.Completion) w)
-          (pointsMulEquivOfBaseChange F E H
-            (infiniteSemilocalContinuousEquiv E v).toAlgEquiv
-            (infiniteSemilocalContinuousEquiv_one_tmul F E v) (AlgHom.mapValue pT x)) := by
-        rw [infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-          TauCeti.PointTopology.piPointsContinuousMulEquiv_apply]
-        exact congrArg _
-          (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _)
-    _ = AlgHom.mapValue
-          ((Pi.evalAlgHom E
-            (fun w' : {w' : InfinitePlace E // w'.LiesOver v} ↦ w'.1.Completion) w).comp pS)
-          (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
-        rw [hp, AlgHom.mapValue_comp, MonoidHom.comp_apply,
-          infiniteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]
-    _ = AlgHom.mapValue (Pi.evalAlgHom E (fun w' : InfinitePlace E ↦ w'.Completion) w.1 :
-          InfiniteAdeleRing E →ₐ[E] w.1.Completion)
-          (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
-        rw [hpi]
+  have hloc : pointsContinuousMulEquivOfBaseChange F E H
+        (infiniteSemilocalContinuousEquiv E v) (infiniteSemilocalContinuousEquiv_one_tmul F E v)
+        (AlgHom.mapValue pT x) =
+      AlgHom.mapValue pS (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
+    rw [infiniteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]
+    exact (DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChange _ _) _).trans <|
+      pointsMulEquivOfBaseChange_mapValue _ _ _ _ pT pS
+        (fun a b ↦ funext fun w' ↦ infiniteAdeleBaseChangeEquiv_eval_tmul F E v a b w') x
+  rw [infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
+    TauCeti.PointTopology.piPointsContinuousMulEquiv_apply, hloc,
+    ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp]
+  exact congrArg (fun f ↦ AlgHom.mapValue f _) (AlgHom.ext fun _ ↦ rfl)
 
 /-- **Compatibility with projection from full adeles to an infinite place.** -/
 theorem infiniteCompletionPointsContinuousMulEquiv_mapValue_eval_comp_fst (v : InfinitePlace F)

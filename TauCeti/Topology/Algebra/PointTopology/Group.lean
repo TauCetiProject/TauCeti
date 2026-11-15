@@ -200,9 +200,9 @@ inverse bialgebra equivalence. -/
 @[simp]
 theorem BialgEquiv.mapDomainContinuousMulEquiv_symm (e : H₁ ≃ₐc[k] H₂) :
     (e.mapDomainContinuousMulEquiv (R := R)).symm = e.symm.mapDomainContinuousMulEquiv :=
-  ContinuousMulEquiv.ext fun f ↦ by
-    change e.mapDomainMulEquiv.symm f = e.symm.mapDomainMulEquiv f
-    simp
+  ContinuousMulEquiv.ext fun f ↦ e.mapDomainContinuousMulEquiv.symm_apply_eq.2 <| by
+    simp only [BialgEquiv.mapDomainContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
+      ← BialgHom.mapDomain_comp, BialgEquiv.symm_comp, BialgHom.mapDomain_id, MonoidHom.id_apply]
 
 end DomainEquiv
 
@@ -249,9 +249,11 @@ the inverse continuous algebra equivalence. -/
 @[simp]
 theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm (e : R ≃A[k] R') :
     (e.mapValueContinuousMulEquiv (H := H)).symm = e.symm.mapValueContinuousMulEquiv :=
-  ContinuousMulEquiv.ext fun f ↦ by
-    change e.toAlgEquiv.mapValueMulEquiv.symm f = e.symm.toAlgEquiv.mapValueMulEquiv f
-    simp
+  ContinuousMulEquiv.ext fun f ↦ e.mapValueContinuousMulEquiv.symm_apply_eq.2 <| by
+    have hcomp : (e : R →ₐ[k] R').comp (e.symm : R' →ₐ[k] R) = AlgHom.id k R' :=
+      AlgHom.ext fun x ↦ e.apply_symm_apply x
+    simp only [ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
+      ← AlgHom.mapValue_comp, hcomp, AlgHom.mapValue_id, MonoidHom.id_apply]
 
 end ValueEquiv
 

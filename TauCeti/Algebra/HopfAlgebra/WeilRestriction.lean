@@ -639,36 +639,6 @@ end Composition
 
 section BaseChange
 
-/-- From a `T`-algebra equivalence `e : T ⊗[A] B ≃ₐ[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
-precomposing with `Algebra.TensorProduct.comm` produces a `B`-algebra equivalence
-`B ⊗[A] T ≃ₐ[B] S`. -/
-noncomputable def baseChangeRightAlgEquiv {A B T S : Type*} [CommRing A] [CommRing B]
-    [CommRing T] [CommRing S] [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
-    (e : T ⊗[A] B ≃ₐ[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    B ⊗[A] T ≃ₐ[B] S :=
-  AlgEquiv.ofRingEquiv
-    (f := (Algebra.TensorProduct.comm A B T).toRingEquiv.trans e.toRingEquiv)
-    fun b ↦ by
-      change e (Algebra.TensorProduct.comm A B T (b ⊗ₜ[A] 1)) = algebraMap B S b
-      simpa only [Algebra.TensorProduct.comm_tmul] using he b
-
-/-- `WeilRestriction.baseChangeRightAlgEquiv` swaps tensor factors and applies `e`. -/
-@[simp]
-theorem baseChangeRightAlgEquiv_apply {A B T S : Type*} [CommRing A] [CommRing B]
-    [CommRing T] [CommRing S] [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
-    (e : T ⊗[A] B ≃ₐ[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
-    (z : B ⊗[A] T) :
-    baseChangeRightAlgEquiv e he z = e (Algebra.TensorProduct.comm A B T z) := (rfl)
-
-/-- The inverse of `WeilRestriction.baseChangeRightAlgEquiv` applies `e.symm` and swaps tensor
-factors. -/
-@[simp]
-theorem baseChangeRightAlgEquiv_symm_apply {A B T S : Type*} [CommRing A] [CommRing B]
-    [CommRing T] [CommRing S] [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
-    (e : T ⊗[A] B ≃ₐ[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (s : S) :
-    (baseChangeRightAlgEquiv e he).symm s =
-      (Algebra.TensorProduct.comm A B T).symm (e.symm s) := (rfl)
-
 section Single
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
@@ -683,16 +653,16 @@ algebra). -/
 noncomputable def pointsMulEquivOfBaseChange (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
     WithConv (WeilRestriction A B H →ₐ[A] T) ≃* WithConv (H →ₐ[B] S) :=
-  (pointsMulEquiv A B H T).trans (baseChangeRightAlgEquiv e he).mapValueMulEquiv
+  (pointsMulEquiv A B H T).trans (e.baseChangeRight he).mapValueMulEquiv
 
 variable {A B H}
 
 /-- `pointsMulEquivOfBaseChange` is the composite of `pointsMulEquiv` with
-`AlgEquiv.mapValueMulEquiv` of `baseChangeRightAlgEquiv`. -/
+`AlgEquiv.mapValueMulEquiv` of `AlgEquiv.baseChangeRight`. -/
 theorem pointsMulEquivOfBaseChange_eq_trans (e : T ⊗[A] B ≃ₐ[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
     pointsMulEquivOfBaseChange A B H e he =
-      (pointsMulEquiv A B H T).trans (baseChangeRightAlgEquiv e he).mapValueMulEquiv := (rfl)
+      (pointsMulEquiv A B H T).trans (e.baseChangeRight he).mapValueMulEquiv := (rfl)
 
 /-- Evaluating `pointsMulEquivOfBaseChange` swaps the tensor factors of `pointsMulEquiv` and
 applies `e`. -/
@@ -702,6 +672,15 @@ theorem pointsMulEquivOfBaseChange_apply (e : T ⊗[A] B ≃ₐ[T] S)
     (x : WithConv (WeilRestriction A B H →ₐ[A] T)) (h : H) :
     (pointsMulEquivOfBaseChange A B H e he x).ofConv h =
       e (Algebra.TensorProduct.comm A B T ((pointsMulEquiv A B H T x).ofConv h)) := by
+  simp [pointsMulEquivOfBaseChange]
+
+/-- Applying `WeilRestriction.pointsMulEquiv` to the inverse of `pointsMulEquivOfBaseChange`
+post-composes with the inverse of `AlgEquiv.baseChangeRight`. -/
+@[simp]
+theorem pointsMulEquiv_pointsMulEquivOfBaseChange_symm (e : T ⊗[A] B ≃ₐ[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (y : WithConv (H →ₐ[B] S)) :
+    pointsMulEquiv A B H T ((pointsMulEquivOfBaseChange A B H e he).symm y) =
+      AlgHom.mapValue (e.baseChangeRight he).symm.toAlgHom y := by
   simp [pointsMulEquivOfBaseChange]
 
 /-- **Rational diagonal compatibility.** Under `pointsMulEquivOfBaseChange`, the image of an
@@ -768,7 +747,7 @@ theorem pointsMulEquivOfBaseChange_mapDomain_mapBialgHom {A B H₁ H₂ T S : Ty
   simp only [pointsMulEquivOfBaseChange, MulEquiv.trans_apply, AlgEquiv.mapValueMulEquiv_apply,
     pointsMulEquiv_mapDomain_mapBialgHom]
   exact (DFunLike.congr_fun
-    (BialgHom.mapValue_mapDomain φ (baseChangeRightAlgEquiv e he : B ⊗[A] T →ₐ[B] S))
+    (BialgHom.mapValue_mapDomain φ (e.baseChangeRight he : B ⊗[A] T →ₐ[B] S))
     (pointsMulEquiv A B H₂ T x)).symm
 
 /-- **Tower compatibility of `pointsMulEquivOfBaseChange`.** In a tower `A → B → C` of finite
@@ -793,9 +772,9 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
           (BialgHom.mapDomain (compBialgEquiv A B C H :
             WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x)) =
       pointsMulEquivOfBaseChange A C H e₁₃ he₁₃ x := by
-  let ψ₁₂ := (baseChangeRightAlgEquiv e₁₂ he₁₂ : B ⊗[A] T →ₐ[B] S₁)
-  let ψ₂₃ := (baseChangeRightAlgEquiv e₂₃ he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂)
-  let ψ₁₃ := (baseChangeRightAlgEquiv e₁₃ he₁₃ : C ⊗[A] T →ₐ[C] S₂)
+  let ψ₁₂ := (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)
+  let ψ₂₃ := (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂)
+  let ψ₁₃ := (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂)
   have hcomp : ψ₂₃.comp (Algebra.TensorProduct.lTensor (S := C) C ψ₁₂) =
       ψ₁₃.comp (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
     refine AlgHom.ext fun z ↦ ?_
@@ -810,7 +789,7 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
             _ = b • e₁₂ (t ⊗ₜ[A] 1) := (Algebra.smul_def b _).symm
         simp only [ψ₁₂, ψ₂₃, ψ₁₃, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
           Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-          Algebra.TensorProduct.cancelBaseChange_tmul, baseChangeRightAlgEquiv_apply,
+          Algebra.TensorProduct.cancelBaseChange_tmul, AlgEquiv.baseChangeRight_apply,
           Algebra.TensorProduct.comm_tmul]
         rw [hb, TensorProduct.smul_tmul, htower]
       | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]

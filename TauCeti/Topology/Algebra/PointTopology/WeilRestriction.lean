@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.HopfAlgebra.WeilRestriction
 public import TauCeti.Topology.Algebra.PointTopology.Group
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.Module.TensorProduct
 
 /-!
 # The point topology and Weil restriction
@@ -27,7 +27,7 @@ upgrade to topological multiplicative equivalences of convolution monoids (or to
 `pointsContinuousMulEquiv` and `basePointsContinuousMulEquiv`. Given a continuous scalar-extension
 equivalence `T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
 `pointsContinuousMulEquivOfBaseChange` combines `pointsContinuousMulEquiv` with the continuous
-factor swap `baseChangeRightContinuousEquiv` to identify `(Res_{B/A} G)(T)` with `G(S)` as
+factor swap `ContinuousAlgEquiv.baseChangeRight` to identify `(Res_{B/A} G)(T)` with `G(S)` as
 topological monoids (or topological groups).
 
 The comparison uses `TauCeti.Algebra.WeilRestriction.homEquiv` and the right tensor unitor.
@@ -278,72 +278,19 @@ theorem basePointsContinuousMulEquiv_apply (f : WithConv (WeilRestriction A B H 
       Algebra.TensorProduct.rid A B B ((pointsMulEquiv A B H A f).ofConv h) :=
   basePointsMulEquiv_apply f h
 
+/-- Applying `WeilRestriction.pointsMulEquiv` to the inverse of `basePointsContinuousMulEquiv`
+post-composes with the inverse right tensor unitor. -/
+@[simp]
+theorem pointsMulEquiv_basePointsContinuousMulEquiv_symm (g : WithConv (H →ₐ[B] B)) :
+    pointsMulEquiv A B H A ((basePointsContinuousMulEquiv A B H).symm g) =
+      AlgHom.mapValue (Algebra.TensorProduct.rid A B B).symm.toAlgHom g :=
+  pointsMulEquiv_basePointsMulEquiv_symm g
+
 end BasePoints
 
 section BaseChange
 
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
-
-section Swap
-
-variable {A B T S : Type*} [CommRing A] [CommRing B] [CommRing T] [CommRing S]
-  [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
-  [TopologicalSpace T] [TopologicalSpace S]
-  [TopologicalSpace (B ⊗[A] T)] [IsModuleTopology T (B ⊗[A] T)]
-  [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
-
-/-- Continuous upgrade of `WeilRestriction.baseChangeRightAlgEquiv`: when `B ⊗[A] T` and `T ⊗[A] B`
-carry their `T`-module topologies, swapping tensor factors and applying `e : T ⊗[A] B ≃A[T] S` is a
-continuous `B`-algebra equivalence `B ⊗[A] T ≃A[B] S`. -/
-def baseChangeRightContinuousEquiv (e : T ⊗[A] B ≃A[T] S)
-    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) : B ⊗[A] T ≃A[B] S where
-  toAlgEquiv := baseChangeRightAlgEquiv e.toAlgEquiv he
-  continuous_toFun := by
-    let hcomm := (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv
-      |>.toContinuousLinearEquivOfIsModuleTopology
-    have hswap (z : B ⊗[A] T) :
-        (Algebra.TensorProduct.commRight A T B).symm z =
-          Algebra.TensorProduct.comm A B T z := by
-      induction z using TensorProduct.inductionOn with
-      | tmul b t => rfl
-      | add x y hx hy => simp only [map_add, hx, hy]
-    refine (e.continuous.comp hcomm.continuous).congr fun z ↦ ?_
-    change e (hcomm z) = baseChangeRightAlgEquiv e.toAlgEquiv he z
-    rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, AlgEquiv.toLinearEquiv_apply,
-      hswap, baseChangeRightAlgEquiv_apply]
-    rfl
-  continuous_invFun := by
-    let hcomm := (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv
-      |>.toContinuousLinearEquivOfIsModuleTopology
-    have hswap (w : T ⊗[A] B) :
-        (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv.symm w =
-          (Algebra.TensorProduct.comm A B T).symm w := by
-      induction w using TensorProduct.inductionOn with
-      | tmul t b => rfl
-      | add x y hx hy => simp only [map_add, hx, hy]
-    refine (hcomm.symm.continuous.comp e.symm.continuous).congr fun s ↦ ?_
-    change hcomm.symm (e.symm s) = (baseChangeRightAlgEquiv e.toAlgEquiv he).symm s
-    rw [LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
-      LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, hswap,
-      baseChangeRightAlgEquiv_symm_apply]
-    rfl
-
-/-- Forgetting continuity from `baseChangeRightContinuousEquiv` recovers
-`baseChangeRightAlgEquiv`. -/
-@[simp]
-theorem baseChangeRightContinuousEquiv_toAlgEquiv (e : T ⊗[A] B ≃A[T] S)
-    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
-    (baseChangeRightContinuousEquiv e he).toAlgEquiv =
-      baseChangeRightAlgEquiv e.toAlgEquiv he := (rfl)
-
-/-- `baseChangeRightContinuousEquiv` swaps tensor factors and applies `e`. -/
-@[simp]
-theorem baseChangeRightContinuousEquiv_apply (e : T ⊗[A] B ≃A[T] S)
-    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (z : B ⊗[A] T) :
-    baseChangeRightContinuousEquiv e he z = e (Algebra.TensorProduct.comm A B T z) :=
-  baseChangeRightAlgEquiv_apply e.toAlgEquiv he z
-
-end Swap
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
   [Module.Finite A B] [Module.Projective A B] [Bialgebra B H] [Algebra.FinitePresentation B H]
@@ -356,20 +303,17 @@ private def pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
     WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) :=
   letI : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
   haveI : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
-  (pointsContinuousMulEquiv A B H T).trans
-    (baseChangeRightContinuousEquiv e he).mapValueContinuousMulEquiv
+  (pointsContinuousMulEquiv A B H T).trans (e.baseChangeRight he).mapValueContinuousMulEquiv
 
 private theorem toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
     (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
     (pointsContinuousMulEquivOfBaseChangeAux A B H e he).toMulEquiv =
       pointsMulEquivOfBaseChange A B H e.toAlgEquiv he := by
-  let _ : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
-  have _ : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
-  change (pointsContinuousMulEquiv A B H T).toMulEquiv.trans
-    (baseChangeRightContinuousEquiv e he).mapValueContinuousMulEquiv.toMulEquiv = _
+  unfold pointsContinuousMulEquivOfBaseChangeAux
+  dsimp only [ContinuousMulEquiv.trans]
   simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, toMulEquiv_pointsContinuousMulEquiv,
     ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv,
-    baseChangeRightContinuousEquiv_toAlgEquiv, pointsMulEquivOfBaseChange_eq_trans]
+    ContinuousAlgEquiv.baseChangeRight_toAlgEquiv, pointsMulEquivOfBaseChange_eq_trans]
 
 /-- **Topological points of a Weil restriction along a scalar-extension equivalence.** Given a
 continuous `T`-algebra equivalence `e : T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`
@@ -408,6 +352,16 @@ theorem pointsContinuousMulEquivOfBaseChange_apply (e : T ⊗[A] B ≃A[T] S)
     (pointsContinuousMulEquivOfBaseChange A B H e he x).ofConv h =
       e (Algebra.TensorProduct.comm A B T ((pointsMulEquiv A B H T x).ofConv h)) :=
   pointsMulEquivOfBaseChange_apply e.toAlgEquiv he x h
+
+/-- Applying `WeilRestriction.pointsMulEquiv` to the inverse of
+`pointsContinuousMulEquivOfBaseChange` post-composes with the inverse of
+`AlgEquiv.baseChangeRight`. -/
+@[simp]
+theorem pointsMulEquiv_pointsContinuousMulEquivOfBaseChange_symm (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (y : WithConv (H →ₐ[B] S)) :
+    pointsMulEquiv A B H T ((pointsContinuousMulEquivOfBaseChange A B H e he).symm y) =
+      AlgHom.mapValue (e.toAlgEquiv.baseChangeRight he).symm.toAlgHom y :=
+  pointsMulEquiv_pointsMulEquivOfBaseChange_symm e.toAlgEquiv he y
 
 end BaseChange
 
