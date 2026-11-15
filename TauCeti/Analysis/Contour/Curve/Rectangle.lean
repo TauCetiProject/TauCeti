@@ -150,6 +150,49 @@ theorem isPiecewiseC1On_rectBoundary (z w : ℂ) :
   simpa [rectBoundary_def] using
     (rectPolygon z w).isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
 
+/-- Two rectangles with the same real-part bounds have `rectBoundary` curves with identical real
+parts at every time `t`. -/
+theorem re_rectBoundary_eq_of_re_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.re = z₂.re) (hw : w₁.re = w₂.re)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).re = (rectBoundary z₂ w₂ t).re := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+/-- Two rectangles with the same imaginary-part bounds have `rectBoundary` curves with identical
+imaginary parts at every time `t`. -/
+theorem im_rectBoundary_eq_of_im_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.im = z₂.im) (hw : w₁.im = w₂.im)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).im = (rectBoundary z₂ w₂ t).im := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+private theorem rectBoundary_eq_linear_comb (z w : ℂ) (t : ℝ) :
+    rectBoundary z w t =
+      z.re • rectBoundary 1 0 t + z.im • rectBoundary I 0 t +
+        w.re • rectBoundary 0 1 t + w.im • rectBoundary 0 I t := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> (apply Complex.ext <;> simp [finRotate_apply] <;> ring)
+
+/-- The rectangle boundary `rectBoundary z w` is continuous on `ℝ`. -/
+theorem continuous_rectBoundary (z w : ℂ) : Continuous (rectBoundary z w) :=
+  (rectPolygon z w).continuous_boundaryParam
+
+/-- The rectangle boundary `rectBoundary z w t` is jointly continuous in `(z, w)` and `t : ℝ`. -/
+theorem continuous_uncurry_rectBoundary :
+    Continuous (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) := by
+  have hbase (a b : ℂ) : Continuous (rectBoundary a b) := continuous_rectBoundary a b
+  have heq : (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) =
+      fun p : (ℂ × ℂ) × ℝ ↦
+        p.1.1.re • rectBoundary 1 0 p.2 + p.1.1.im • rectBoundary I 0 p.2 +
+          p.1.2.re • rectBoundary 0 1 p.2 + p.1.2.im • rectBoundary 0 I p.2 :=
+    funext fun p ↦ rectBoundary_eq_linear_comb p.1.1 p.1.2 p.2
+  rw [heq]
+  fun_prop
+
 /-- The trace of the rectangle boundary over `[0, 4]` is the frontier of the rectangle. -/
 theorem image_rectBoundary (z w : ℂ) :
     rectBoundary z w '' Icc 0 4 = frontier (Rectangle z w) := by
