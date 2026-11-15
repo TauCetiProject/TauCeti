@@ -46,7 +46,8 @@ boundary points.
   for `m + 1 ≤ n`. `ContMDiffAt.contMDiffAt_curveVelocity_fst` is the same statement for the
   curves `q ↦ f q r`. `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` and
   `ContMDiffAt.contMDiffAt_curveVelocity_fst_slice` restrict these fields to a fixed time and
-  a fixed first parameter, respectively.
+  a fixed first parameter, respectively, and `ContMDiffAt.contMDiffAt_curveVelocity_snd_along`
+  restricts the velocities of the curves `f q` to the single curve `f u`.
 * `ContMDiffAt.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
   is a `C^m` field along its central curve for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
@@ -186,6 +187,14 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst_slice {f : 𝕜 → �
     ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
       (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (fun q ↦ f q r) u)) v :=
   (hf.contMDiffAt_curveVelocity_fst hmn).comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
+
+/-- At a fixed first parameter `u`, the velocities of the curve `f u` of a family which is jointly
+`C^n` at `(u, v)` form a `C^m` map along `f u` at `v`, for every `m` with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd_along {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (f u) r)) v :=
+  (hf.contMDiffAt_curveVelocity_snd hmn).comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
 
 /-- **Regularity of the variation field.** The variation field of a family `f : 𝕜 → 𝕜 → M` which
 is jointly `C^n` at `(0, v)` is a `C^m` field along the central curve `f 0` at `v`, for every `m`

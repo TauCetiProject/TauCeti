@@ -162,9 +162,8 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hγcoord : DifferentiableAt ℝ
       (sectionCoord (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t :=
     differentiableAt_sectionCoord (F 0) _
-      (((hf.contMDiffAt_curveVelocity_snd (m := 2) (by norm_num)).comp t
-        (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 2) (0 : ℝ))).contMDiffAt)
-        |>.mdifferentiableAt two_ne_zero) hbase
+      ((hf.contMDiffAt_curveVelocity_snd_along (m := 2) (by norm_num)).mdifferentiableAt
+        two_ne_zero) hbase
   have hγt : MDifferentiableAt 𝓘(ℝ, ℝ) I (F 0) t :=
     (hf.comp t (contMDiff_iff_contDiff.mpr
       (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt).mdifferentiableAt (by norm_num)
@@ -290,9 +289,8 @@ theorem hasDerivAt_deriv_energy {a b : ℝ}
   have hk : ContDiffOn ℝ 1 k O := contMDiffOn_iff_contDiffOn.mp
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := F 0)
       (fun t ht ↦ (contMDiffAt_acceleration_slice (hsurf ht)).contMDiffWithinAt)
-      (fun t ht ↦ (((hsurf ht).contMDiffAt_curveVelocity_snd (m := 1) (by norm_num)).comp t
-        (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 1) (0 : ℝ))).contMDiffAt)
-        |>.contMDiffWithinAt))
+      (fun t ht ↦ ((hsurf ht).contMDiffAt_curveVelocity_snd_along (m := 1)
+        (by norm_num)).contMDiffWithinAt))
   -- Integrate the pointwise identity over `[a, b]`.
   have hIint : IntervalIntegrable
       (indexFormIntegrand I (F 0) (variationField I F) (variationField I F)) volume a b := by
