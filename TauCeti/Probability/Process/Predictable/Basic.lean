@@ -55,26 +55,15 @@ theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
   classical
   let : MeasurableSpace Ω := ℱ s
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  let g (n : ℕ) : SimpleFunc (ι × Ω) E :=
-    { toFun := fun p ↦ (Ioc s t).indicator (fun _ ↦ ha.approx n p.2) p.1
-      measurableSet_fiber' := fun c ↦ by
-        have hI := measurableSet_predictable_Ioc_prod s t ((ha.approx n).measurableSet_fiber c)
-        by_cases hc : c = 0
-        · convert hI.union (measurableSet_predictable_Ioc_prod s t
-            (𝓕 := ℱ) MeasurableSet.univ).compl using 1
-          ext p
-          by_cases hp : p.1 ∈ Ioc s t <;> simp [hp, hc]
-        · convert hI using 1
-          ext p
-          by_cases hp : p.1 ∈ Ioc s t <;> simp [hp, Ne.symm hc]
-      finite_range' := ((ha.approx n).finite_range.insert 0).subset <| by
-        rintro _ ⟨p, rfl⟩
-        by_cases hp : p.1 ∈ Ioc s t <;> simp [hp] }
-  refine ⟨g, fun p ↦ ?_⟩
-  by_cases hp : p.1 ∈ Ioc s t
-  · simpa only [g, SimpleFunc.coe_mk, indicator_of_mem hp] using ha.tendsto_approx p.2
-  · simpa only [g, SimpleFunc.coe_mk, indicator_of_notMem hp] using
-      (tendsto_const_nhds : Tendsto (fun _ : ℕ ↦ (0 : E)) atTop (𝓝 0))
+  let S : Set (ι × Ω) := Ioc s t ×ˢ univ
+  have hS : MeasurableSet S := measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.1.2) := by
+    intro A hA
+    refine ⟨Ioc s t ×ˢ A, measurableSet_predictable_Ioc_prod s t hA, ?_⟩
+    ext p
+    simp [S, p.2.1]
+  simpa [S, indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
 
 section Arithmetic
 
