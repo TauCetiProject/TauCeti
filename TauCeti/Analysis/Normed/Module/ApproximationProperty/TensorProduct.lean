@@ -107,8 +107,7 @@ theorem eq_zero_of_hasApproximationProperty_right (hF : HasApproximationProperty
   obtain ⟨B, rfl⟩ := (liftIsometry 𝕜 E F 𝕜).surjective Λ
   obtain ⟨x, y, hxy, hx, hy⟩ := exists_hasSum_tmul_tendsto_zero u
   refine norm_le_zero_iff.1 (le_of_forall_pos_le_add fun ε hε ↦ ?_)
-  set S := ∑' n, ‖x n‖ with hS_def
-  have hS : 0 ≤ S := tsum_nonneg fun n ↦ norm_nonneg _
+  set S := ∑' n, ‖x n‖
   set δ := ε / ((‖B‖ + 1) * (S + 1)) with hδ_def
   have hδ : 0 < δ := by positivity
   -- A finite-rank operator `R` within `δ` of the identity on the compact set `{y n} ∪ {0}`.

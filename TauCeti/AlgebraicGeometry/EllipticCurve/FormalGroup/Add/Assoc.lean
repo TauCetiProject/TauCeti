@@ -383,7 +383,7 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   have hns₁ := chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ
   have hns₂ := chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
-    hw₁0 hw₂0 hwT0 hxρ hns₁ hns₂
+    hwT0 hxρ hns₁ hns₂
   rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
   exact ⟨h₃, hadd⟩
 

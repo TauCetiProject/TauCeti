@@ -10,7 +10,6 @@ public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Constructions
 public import Mathlib.GroupTheory.GroupAction.Defs
-public import TauCeti.Topology.Instances.AddCircle.Defs
 import TauCeti.Topology.Homeomorph.Semiconj
 import Mathlib.Topology.Algebra.ConstMulAction
 

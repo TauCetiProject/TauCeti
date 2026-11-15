@@ -33,8 +33,8 @@ for every `x ∈ Ω` and all vectors `η`, `ξ`, together with the quantitative 
 `0 < λ` and `λ ≤ Λ`. The lower bound is the coercivity hypothesis; the bilinear upper bound
 controls nonsymmetric coefficient fields for weak-form boundedness.
 
-This is the coefficient hypothesis named in the PDE roadmap before the energy bilinear form
-and Lax--Milgram arguments: constants are parameters, not hidden existential data.
+This is the coefficient hypothesis of the energy bilinear form and Lax--Milgram arguments:
+constants are parameters, not hidden existential data.
 
 ## Main declarations
 
@@ -101,7 +101,7 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   coefficient field by its symmetric part preserves uniform ellipticity with the same
   constants.
 
-The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subsets of
+The vectors `η`, `ξ` lie in `EuclideanSpace ℝ n`, the space of gradients of functions on
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
 directly.
 -/

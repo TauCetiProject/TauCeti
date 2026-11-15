@@ -258,7 +258,7 @@ end Semiring
 section Coderivation
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
-  {G : InternalGrading R M} {q : ℤ} {d : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+  {G : InternalGrading R M ℤ} {q : ℤ} {d : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
   {V : ℕ → ℕ → ReducedTensorWords R M}
 
 /-- **A graded coderivation vanishing on the letters of a block family vanishes on it**: if the

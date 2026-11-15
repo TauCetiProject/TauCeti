@@ -61,9 +61,9 @@ theorem bruhatCell_subset_of_mem {P : Subgroup G} (hB : T.subgroupB ≤ P)
   obtain ⟨a, ha, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
   exact P.mul_mem (P.mul_mem (hB ha) hP) (hB hb)
 
-/-- If a simple reflection shortens a cell contained in a subgroup containing `B`, both the
-simple cell and the shortened cell lie in that subgroup. -/
-theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G} (hB : T.subgroupB ≤ P)
+/-- If a simple reflection shortens a cell contained in a subgroup, both the simple cell and the
+shortened cell lie in that subgroup. -/
+theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G}
     {s w : T.WeylGroup} (hs : s ∈ T.simple) (hw : T.bruhatCell w ⊆ P)
     (hlt : ℓ (s * w) < ℓ w) :
     T.bruhatCell s ⊆ P ∧ T.bruhatCell (s * w) ⊆ P := by
@@ -76,15 +76,15 @@ theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G} (hB : T.subgroupB �
     have he : a = (n : G) * b⁻¹ := by rw [← hab, mul_inv_cancel_right]
     rw [he]
     exact P.mul_mem (hw hn) (P.inv_mem (hw hb))
-  have hsP := T.bruhatCell_subset_of_mem hB ha haP
+  have hsP := T.bruhatCell_subset_of_mem (T.subgroupB_le_of_bruhatCell_subset hw) ha haP
   refine ⟨hsP, ?_⟩
   intro x hx
   obtain ⟨a, ha, b, hb, rfl⟩ := T.subset_bruhatCell_mul_of_mem_simple hs w hx
   exact P.mul_mem (hsP ha) (hw hb)
 
-/-- The Bruhat cell of every letter of a reduced word lies in a subgroup containing `B` if
-the cell of that word lies in the subgroup. -/
-theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G} (hB : T.subgroupB ≤ P)
+/-- The Bruhat cell of every letter of a reduced word lies in a subgroup if the cell of that word
+lies in the subgroup. -/
+theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G}
     {l : List T.WeylGroup} (hl : ∀ s ∈ l, s ∈ T.simple)
     (hlen : l.length = ℓ l.prod) (hP : T.bruhatCell l.prod ⊆ P) :
     ∀ s ∈ l, T.bruhatCell s ⊆ P := by
@@ -97,7 +97,7 @@ theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G} (hB : T.subgroupB
       simp only [List.prod_cons, T.simple_mul_simple_cancel_left hs]
       simp only [List.length_cons, List.prod_cons] at hlen
       omega
-    obtain ⟨hsP, htailP⟩ := T.bruhatCell_subset_of_wordLength_lt hB hs hP hshort
+    obtain ⟨hsP, htailP⟩ := T.bruhatCell_subset_of_wordLength_lt hs hP hshort
     have htailLen : l.length = ℓ l.prod := by
       have hbound := T.wordLength_simple_mul_le hs l.prod
       simp only [List.length_cons, List.prod_cons] at hlen
@@ -118,7 +118,7 @@ theorem standardParabolic_eq_of_subgroupB_le {P : Subgroup G} (hB : T.subgroupB 
   · intro g hg
     obtain ⟨w, hw, _⟩ := T.existsUnique_mem_bruhatCell g
     obtain ⟨l, hl, hlen, rfl⟩ := T.exists_prod_eq_of_wordLength w
-    have hletters := T.bruhatCell_subset_of_mem_reduced_word hB hl hlen
+    have hletters := T.bruhatCell_subset_of_mem_reduced_word hl hlen
       (T.bruhatCell_subset_of_mem hB hw hg)
     apply T.bruhatCell_subset_standardParabolic_of_mem_closure (w := l.prod) ?_ hw
     apply Subgroup.list_prod_mem

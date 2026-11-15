@@ -531,7 +531,6 @@ theorem apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations
     rw [h1, Nat.cast_one, one_mul]
     exact hd
   · have hsq : 0 ≤ B (cls c) (cls c) := not_lt.1 fun hneg ↦ by have := hmult c hneg; omega
-    have h' : (2 : ℤ) ≤ l c := by exact_mod_cast h
     nlinarith
 
 variable [CommSemiring R] {w : ι → ℕ → R}

@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.Basic.ENNReal.Holder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Schur's test and Young's inequality for integral operators
@@ -54,6 +56,8 @@ and column integrals are only required almost everywhere.
 * `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: the constant
   `A ^ (1 - 1/p) * B ^ (1/p)` of this bound is finite for finite `A` and `B`.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
+* `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
+  `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
 
 ## References
 
@@ -206,30 +210,29 @@ theorem eLpNorm_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β → �
   · simp only [eLpNorm_exponent_top hmeas.aestronglyMeasurable,
       eLpNorm_exponent_top hg.aestronglyMeasurable, ENNReal.toReal_top, inv_zero, sub_zero,
       ENNReal.rpow_one, ENNReal.rpow_zero, mul_one]
-    refine eLpNormEssSup_le_of_ae_enorm_bound ?_
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
     filter_upwards [hA, Measure.ae_ae_of_ae_prod hk.ae_eq_mk] with x hx hx'
     have hkx : AEMeasurable (k x) ν :=
       (hk.measurable_mk.comp measurable_prodMk_left).aemeasurable.congr (hx'.mono fun _ ↦ Eq.symm)
     calc ‖(∫⁻ y, k x y * g y ∂ν : ℝ≥0∞)‖ₑ ≤ ∫⁻ y, k x y * eLpNormEssSup g ν ∂ν := by
-          rw [enorm_eq_self]
+          rw [eNorm_eq_self]
           refine lintegral_mono_ae ?_
           filter_upwards [ae_le_eLpNormEssSup (f := g) (μ := ν)] with y hy
           gcongr
-          simpa only [enorm_eq_self] using hy
+          simpa only [eNorm_eq_self] using hy
       _ = (∫⁻ y, k x y ∂ν) * eLpNormEssSup g ν := lintegral_mul_const'' _ hkx
       _ ≤ A * eLpNormEssSup g ν := by gcongr
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hg.aestronglyMeasurable]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg.aestronglyMeasurable]
+  simp only [eNorm_eq_self]
   calc (∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal)
       ≤ (A ^ (p.toReal - 1) * B * ∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
         gcongr
         exact lintegral_rpow_lintegral_mul_le hk hg hr hA hB
     _ = A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ *
           (∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        have hr0 : 0 < p.toReal := zero_lt_one.trans_le hr
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
           ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div,
           show (p.toReal - 1) * p.toReal⁻¹ = 1 - p.toReal⁻¹ by field_simp]
@@ -246,5 +249,32 @@ theorem memLp_lintegral_mul [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0
   (eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.aemeasurable hp hA hB).trans_lt
     (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
       hg.eLpNorm_lt_top)
+
+/-- **Schur's test** for the bilinear form of a kernel: if `k` has row integrals
+`∫⁻ y, k x y ∂ν` at most `A` for almost every `x` and column integrals `∫⁻ x, k x y ∂μ` at most
+`B` for almost every `y`, then for Hölder conjugate `p` and `q`,
+`∫∫ f(x) k(x, y) g(y) ≤ A ^ (1 - 1/q) * B ^ (1/q) * ‖f‖_p * ‖g‖_q`. -/
+theorem lintegral_lintegral_mul_mul_le [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0∞}
+    (hk : AEMeasurable (Function.uncurry k) (μ.prod ν)) {f : α → ℝ≥0∞} {g : β → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g ν) {p q : ℝ≥0∞} [ENNReal.HolderConjugate p q]
+    {A B : ℝ≥0∞} (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ∂ν ≤ A) (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ∂μ ≤ B) :
+    ∫⁻ x, ∫⁻ y, f x * (k x y * g y) ∂ν ∂μ ≤
+      A ^ (1 - q.toReal⁻¹) * B ^ q.toReal⁻¹ * eLpNorm f p μ * eLpNorm g q ν := by
+  have hkg : AEMeasurable (Function.uncurry fun x y ↦ k x y * g y) (μ.prod ν) :=
+    hk.mul hg.comp_snd
+  set H := fun x ↦ ∫⁻ y, k x y * g y ∂ν
+  have hH : AEMeasurable H μ := hkg.lintegral_prod_right'
+  calc ∫⁻ x, ∫⁻ y, f x * (k x y * g y) ∂ν ∂μ = eLpNorm (f * H) 1 μ := by
+        rw [eLpNorm_one_eq_lintegral_eNorm (hf.mul hH).aestronglyMeasurable]
+        refine lintegral_congr_ae ?_
+        filter_upwards [hkg.prodMk_left] with x hx
+        rw [eNorm_eq_self, Pi.mul_apply]
+        exact lintegral_const_mul'' _ hx
+    _ ≤ eLpNorm f p μ * eLpNorm H q μ := eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal_of_pos one_pos
+    _ ≤ eLpNorm f p μ * (A ^ (1 - q.toReal⁻¹) * B ^ q.toReal⁻¹ * eLpNorm g q ν) := by
+        gcongr
+        exact eLpNorm_lintegral_mul_le hk hg (ENNReal.HolderConjugate.one_le (p := q) (q := p))
+          hA hB
+    _ = _ := by ring
 
 end TauCeti

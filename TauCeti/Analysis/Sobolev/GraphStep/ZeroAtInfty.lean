@@ -109,7 +109,7 @@ private theorem eLpNorm_weakFDeriv_apply_one_le
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     eLpNorm (fun s ↦ weakFDeriv _ u s 1) p volume ≤ ‖weakFDeriv _ u‖ₑ := by
-  rw [Lp.enorm_def]
+  rw [Lp.eNorm_def]
   refine (eLpNorm_mono_measure _ volume_restrict_top.ge).trans (eLpNorm_mono
     ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure volume_restrict_top.le)
     fun s ↦ ?_)
@@ -153,8 +153,8 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
     exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
         (eLpNorm_mono_measure _ volume_restrict_top.ge)
-  · rw [← toReal_enorm]
-    exact ENNReal.toReal_mono enorm_ne_top <|
+  · rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono eNorm_ne_top <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
         (eLpNorm_weakFDeriv_apply_one_le u)
 
@@ -299,7 +299,7 @@ theorem integral_weakFDeriv_apply_one_eq_sub (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) (s t : ℝ) :
     ∫ r in s..t, weakFDeriv _ u r 1 = toZeroAtInfty hp u t - toZeroAtInfty hp u s := by
-  obtain ⟨a, b, hab, hs, ht⟩ : ∃ a b : ℝ, a < b ∧ s ∈ Icc a b ∧ t ∈ Icc a b :=
+  obtain ⟨a, b, _, hs, ht⟩ : ∃ a b : ℝ, a < b ∧ s ∈ Icc a b ∧ t ∈ Icc a b :=
     ⟨min s t - 1, max s t + 1, by linarith [min_le_max (a := s) (b := t)],
       ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩,
       ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩⟩

@@ -59,10 +59,6 @@ rather than on the ambient weight module, and is not attempted here.
 
 ## References
 
-This is the "Weyl denominator identity, proved combinatorially" step of Layer 6 ("the Weyl
-character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.3.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.
 -/

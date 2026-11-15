@@ -7,9 +7,11 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
+public import Mathlib.RingTheory.OrderOfVanishing.Basic
 import TauCeti.FieldTheory.Separable.SimpleRoot
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 import TauCeti.RingTheory.DedekindDomain.Different.Length
+import TauCeti.RingTheory.Trace.Length
 
 /-!
 # The different of a fierce biquadratic extension
@@ -21,7 +23,8 @@ The tower formula therefore gives `differentIdeal A B = (t²)`. When the residue
 although the lower ramification groups have orders four and then one. Thus the
 classical Hilbert sum would give three, not two: residue separability cannot be
 omitted from that formula. The full residue degree is four, and the complementary
-module modulo `B` has length eight over `A`.
+module modulo `B` has length eight over `A`. Equivalently, the discriminant of every
+`A`-basis of `B`, the determinant of its trace Gram matrix, has valuation eight.
 
 The calculation uses the monogenic derivative formula and transitivity of the
 different, as in J.-P. Serre, *Local Fields*, Chapter III, §6. No separability of
@@ -149,7 +152,6 @@ theorem length_quotient_differentIdeal_ringYZ :
     Module.length A (RingYZ t s u ⧸ differentIdeal A (RingYZ t s u)) = 8 := by
   have hmem := (mem_maximalIdeal t).mpr ht.not_isUnit
   have := isDiscreteValuationRing_ringYZ hmem hs hu
-  have := isLocalHom_algebraMap_ringYZ hmem hs hu
   have hm := multiplicity_differentIdeal_ringYZ ht hs hu
   have hd : differentIdeal A (RingYZ t s u) ≠ ⊥ := by
     intro hd
@@ -178,6 +180,20 @@ theorem length_traceDual_quotient_ringYZ :
     Module.Finite.of_isLocalization A (RingYZ t s u) A⁰
   rw [TauCeti.length_traceDual_quotient_eq_length_quotient_differentIdeal,
     length_quotient_differentIdeal_ringYZ ht hs hu]
+
+/-- The trace Gram determinant of any `A`-basis of the fierce biquadratic algebra has
+valuation eight: the full residue degree four times the different exponent two. -/
+theorem ord_discr_ringYZ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι A (RingYZ t s u)) : Ring.ord A (Algebra.discr A b) = 8 := by
+  have hred := irreducible_map_residue_quadratic ((mem_maximalIdeal t).mpr ht.not_isUnit) hs
+  have : IsDomain (RingY t s) := (monic_quadratic t s).isDomain_adjoinRoot hred
+  have := isSeparable_fractionRing_ringYZ (s := s) (u := u) ht.ne_zero
+  have : FiniteDimensional (FractionRing A) (FractionRing (RingYZ t s u)) :=
+    Module.Finite.of_isLocalization A (RingYZ t s u) A⁰
+  rw [← b.length_traceDual_quotient_eq_ord_discr (K := FractionRing A)
+      (L := FractionRing (RingYZ t s u)),
+    ← b.length_traceDual_quotient_eq_length_quotient_range_algebraToTraceDual]
+  exact length_traceDual_quotient_ringYZ ht hs hu
 
 omit [IsDomain (RingYZ t s u)] in
 /-- The classical lower-group sum is three in this extension. It does not compute

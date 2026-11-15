@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 
 /-!
@@ -43,7 +43,7 @@ least `δ`.
 The window `D` may contain the pole disc, where the perturbation vanishes and the equation is the
 Cauchy–Riemann equation for `J`. This is the interior part of Gromov–Floer compactness for PSS
 planes, in the form proved for the pair of pants in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness`: the regularity of the limit, the
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Basic`: the regularity of the limit, the
 bubbles at the points of `Z`, breaking along the end, and symplectic manifold targets are not
 treated here.
 

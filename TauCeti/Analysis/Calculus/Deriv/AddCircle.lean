@@ -192,7 +192,7 @@ omit hT in
 metric of the circle. -/
 theorem lipschitzWith_of_lift {φ : AddCircle T → AddCircle T} (hF : ∀ x, HasDerivAt F (F' x) x)
     (hφ : ∀ x : ℝ, φ x = F x) {C : NNReal} (hC : ∀ x, ‖F' x‖₊ ≤ C) : LipschitzWith C φ := by
-  have hL : LipschitzWith C F := lipschitzWith_of_nnnorm_deriv_le
+  have hL : LipschitzWith C F := lipschitzWith_of_nnNorm_deriv_le
     (fun x ↦ (hF x).differentiableAt) fun x ↦ (hF x).deriv ▸ hC x
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
   obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective x
@@ -219,7 +219,7 @@ theorem lipschitzWith_toNNReal_of_lift {φ : AddCircle T → AddCircle T} {M : �
     (hF : ∀ x, HasDerivAt F (F' x) x) (hφ : ∀ x : ℝ, φ x = F x) (h0F : ∀ x, 0 ≤ F' x)
     (hMF : ∀ x, F' x ≤ M) : LipschitzWith M.toNNReal φ :=
   lipschitzWith_of_lift hF hφ fun x ↦ by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (h0F x)]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_of_nonneg (h0F x)]
     exact (hMF x).trans (Real.le_coe_toNNReal M)
 
 end AddCircle

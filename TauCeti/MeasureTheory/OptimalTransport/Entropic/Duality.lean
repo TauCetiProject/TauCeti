@@ -487,7 +487,7 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
       simp only [entropicGibbsFactor_of_ne_top hcz] at hz
       have := Real.exp_injective <|
         (ENNReal.ofReal_eq_ofReal_iff (Real.exp_pos _).le (Real.exp_pos _).le).1 hz
-      rw [div_left_inj' hε'] at this
+      rw [div_left_inj₀ hε'] at this
       linarith
   exact ⟨a, hφa.mono fun x hx ↦ by simp only at hx; linarith,
     hψa.mono fun y hy ↦ by simp only at hy; linarith⟩

@@ -78,7 +78,7 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler_of_rungeLenz_ne_zero
 /-- The rotation field of the angular momentum acts on the Runge–Lenz component along
 `⟪A, b 0⟫ • b 1 - ⟪A, b 1⟫ • b 0` by `‖A‖²`, where `A` is the Runge–Lenz vector at the point. -/
 private theorem fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum
-    [FiniteDimensional ℝ V] {m κ : ℝ} {x : V × V} (hq : x.1 ≠ 0) :
+    [FiniteDimensional ℝ V] {m κ : ℝ} {x : V × V} :
     fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, ⟪rungeLenz m κ x, b 0⟫_ℝ • b 1 -
         ⟪rungeLenz m κ x, b 1⟫_ℝ • b 0⟫_ℝ) x
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum (b 0) (b 1)) x) =
@@ -86,7 +86,7 @@ private theorem fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum
   set A := rungeLenz m κ x
   set e := ⟪A, b 0⟫_ℝ • b 1 - ⟪A, b 1⟫_ℝ • b 0
   rw [← SymplecticForm.poissonBracket_eq_fderiv,
-    stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum m κ (b 0) (b 1) e hq]
+    stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum m κ (b 0) (b 1) e]
   have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
     orthonormal_iff_ite.1 b.orthonormal
   have hnorm : ‖A‖ ^ 2 = ⟪A, b 0⟫_ℝ ^ 2 + ⟪A, b 1⟫_ℝ ^ 2 := by
@@ -123,12 +123,12 @@ theorem exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero
   -- Rotation kills the first two integrals and detects the component of `A` along its rotation.
   have hHrot : fderiv ℝ H x R = 0 := by
     rw [← SymplecticForm.poissonBracket_eq_fderiv]
-    exact stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum hU hq _ _
+    exact stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum _ _
   have hLrot : fderiv ℝ L x R = 0 := by
     rw [← SymplecticForm.poissonBracket_eq_fderiv]
     exact SymplecticForm.poissonBracket_self _ _ _
   have hGrot : fderiv ℝ G x R = ‖A‖ ^ 2 :=
-    fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum b hq
+    fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum b
   -- The existing central-force regularity criterion supplies independence of `dH` and `dL`.
   have hsurj : Surjective (ContinuousLinearMap.pi ![fderiv ℝ H x, fderiv ℝ L x]) := by
     have hreg :=

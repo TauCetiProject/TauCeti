@@ -17,19 +17,19 @@ This file defines the cut norm of a bounded symmetric kernel on a finite measure
 `‖K‖□ = sup |∫_(S × T) K|`,
 
 where the supremum ranges over measurable sets `S` and `T`.  The file develops the interface needed
-by the cut-distance and counting-lemma layers: the bound of every rectangle by the cut norm, the
+by the cut distance and the counting lemma: the bound of every rectangle by the cut norm, the
 seminorm laws, and the comparison with the `L¹` norm.  The integrals themselves —
 `rectIntegral`, `testIntegral`, `partialIntegral` and their analytic API — are in
-`Kernel.Integral`, so a consumer needing only those does not reach the supremum layer.
+`Kernel.Integral`, so a consumer needing only those need not import this file.
 
 The definition uses strict representatives, consistently with `SymmKernel`.  Consequently all
-pointwise algebra happens before integration; a later layer proves invariance under a.e. equality.
+pointwise algebra happens before integration; invariance under a.e. equality is
+`TauCeti.DenseGraphLimits.cutNorm_congr_ae`.
 
 ## Main definitions
 
 * `TauCeti.DenseGraphLimits.cutNorm` is the supremum of the absolute rectangle integrals.
-* `TauCeti.DenseGraphLimits.cutNormSet` is the separately roadmap-pinned textbook set-form name for
-  the same quantity.
+* `TauCeti.DenseGraphLimits.cutNormSet` is the textbook set-form name for the same quantity.
 * `TauCeti.DenseGraphLimits.cutNormSigned` is the signed cut norm: the same supremum taken over
   measurable `[-1,1]`-valued test functions rather than over indicators.
 
@@ -57,8 +57,6 @@ pointwise algebra happens before integration; a later layer proves invariance un
 
 * L. Lovász, *Large Networks and Graph Limits*, §8.2.1.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, §4.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the cut norm, its set form, and
-  the signed form; the signatures follow `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 * The definition and rectangle-integral interface follow `Graphon/CutNorm.lean` in
   `cameronfreer/graphon` (Apache 2.0) at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`; the strict-kernel integrability and full seminorm
@@ -110,9 +108,8 @@ section FiniteMeasure
 
 variable [IsFiniteMeasure μ]
 
-/-- The cut norm is definitionally its separately roadmap-pinned measurable-set form.  This is not
-a `simp` lemma: `cutNorm` is the normal form that the rest of the API, and hence the `simp` set, is
-stated in. -/
+/-- The cut norm is definitionally its measurable-set form.  This is not a `simp` lemma: `cutNorm`
+is the normal form that the rest of the API, and hence the `simp` set, is stated in. -/
 theorem cutNorm_eq_cutNormSet (K : SymmKernel Ω μ) : cutNorm μ K = cutNormSet μ K := (rfl)
 
 /-- The set-form cut norm is the iterated supremum over measurable rectangles. -/
@@ -197,7 +194,7 @@ theorem cutNorm_le_iff {K : SymmKernel Ω μ} {C : ℝ} :
     cutNorm μ K ≤ C ↔
       ∀ S, MeasurableSet S → ∀ T, MeasurableSet T → |K.rectIntegral μ S T| ≤ C := by
   constructor
-  · intro h S hS T hT
+  · intro h S _ T _
     exact (abs_rectIntegral_le_cutNorm μ K S T).trans h
   · exact cutNorm_le μ
 
@@ -236,7 +233,7 @@ theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
   have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
     K.measurable.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK]
   simp only [Real.norm_eq_abs]
 
 end FiniteMeasure
@@ -288,7 +285,7 @@ theorem cutNorm_sub_rev (K L : SymmKernel Ω μ) :
 theorem cutNorm_add_le (K L : SymmKernel Ω μ) :
     cutNorm μ (K + L) ≤ cutNorm μ K + cutNorm μ L := by
   apply cutNorm_le μ
-  intro S hS T hT
+  intro S _ T _
   rw [SymmKernel.rectIntegral_add]
   exact (abs_add_le _ _).trans (add_le_add
     (abs_rectIntegral_le_cutNorm μ K S T) (abs_rectIntegral_le_cutNorm μ L S T))

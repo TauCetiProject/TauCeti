@@ -6,14 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import Mathlib.Order.Hom.Basic
 public import Mathlib.Topology.Homeomorph.Defs
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.IntervalIntegral.Periodic
+import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
-# Reparametrizing periodic integral curves
+# Reparametrizing integral curves
+
+Let `γ` be an integral curve of a vector field `X` on a manifold, and let
+`Y (γ t) = h t • X (γ t)` for a continuous positive function `h`. If `ψ` solves `ψ' = h ∘ ψ`, then
+`γ ∘ ψ` is an integral curve of `Y` (`IsMIntegralCurve.comp_of_hasDerivAt`). When `h` is moreover
+bounded above, such a `ψ` is an order automorphism of `ℝ`: the inverse of `t ↦ ∫₀ᵗ 1 / h`
+(`TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral`). So `γ ∘ ψ` traces the same oriented
+orbit as `γ`, with the same limits at `±∞`. This is how the trajectories of a vector field and of a
+positive multiple of it correspond: if `h` is also bounded below by a positive constant, the same
+argument with the factor `1 / h` goes back.
 
 Let `γ` be a `T`-periodic integral curve of a vector field `X` on a manifold, and let `Y` be a
 second vector field which is a nonzero multiple of `X` along `γ`: `Y (γ t) = h t • X (γ t)` with
@@ -34,6 +45,10 @@ field, each with its own period.
 
 ## Main results
 
+* `IsMIntegralCurve.comp_of_hasDerivAt`: a change of time solving `ψ' = h ∘ ψ` turns an integral
+  curve of `X` into one of `Y`.
+* `IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp`: reparametrization by an order
+  automorphism of `ℝ`, for a continuous positive factor which is bounded above.
 * `IsMIntegralCurve.exists_homeomorph_isMIntegralCurve_comp_of_periodic`: reparametrization by a
   given continuous, periodic, nonvanishing factor.
 * `IsMIntegralCurve.exists_homeomorph_isMIntegralCurve_comp`: reparametrization when `Y` is
@@ -58,6 +73,33 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 namespace IsMIntegralCurve
 
+/-- **Changing the time of an integral curve.** Let `γ` be an integral curve of `X`, and let
+`Y (γ t) = h t • X (γ t)` for every `t`. If `ψ` solves `ψ' = h ∘ ψ`, then `γ ∘ ψ` is an integral
+curve of `Y`. -/
+theorem comp_of_hasDerivAt (hγ : IsMIntegralCurve γ X) (hY : ∀ t, Y (γ t) = h t • X (γ t))
+    {ψ : ℝ → ℝ} (hψ : ∀ s, HasDerivAt ψ (h (ψ s)) s) : IsMIntegralCurve (γ ∘ ψ) Y := fun s ↦ by
+  have hcomp := (hγ (ψ s)).comp s (hψ s).hasFDerivAt.hasMFDerivAt
+  have heq : (1 : ℝ →L[ℝ] ℝ).smulRight (Y ((γ ∘ ψ) s)) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (X (γ (ψ s))) ∘L .toSpanSingleton ℝ (h (ψ s)) := by
+    ext
+    simp [hY]
+  rw [heq]
+  exact hcomp
+
+/-- **Reparametrizing an integral curve along a positive multiple of the field.** Let `γ` be an
+integral curve of `X`, and let `Y (γ t) = h t • X (γ t)` for a continuous function `h` with
+`0 < h ≤ c`. Then `γ ∘ ψ` is an integral curve of `Y` for an order automorphism `ψ` of `ℝ` fixing
+`0`. In particular `γ ∘ ψ` has the same image as `γ`, run in the same direction, and the same
+limits at `±∞` (`OrderIso.tendsto_atTop`, `OrderIso.tendsto_atBot`). -/
+theorem exists_orderIso_isMIntegralCurve_comp (hγ : IsMIntegralCurve γ X) (hh : Continuous h)
+    (hpos : ∀ t, 0 < h t) {c : ℝ} (hc : ∀ t, h t ≤ c) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
+    ∃ ψ : ℝ ≃o ℝ, ψ 0 = 0 ∧ IsMIntegralCurve (γ ∘ ψ) Y := by
+  -- The inverse of the new time `θ t = ∫₀ᵗ 1 / h`, where `1 / h ≥ 1 / c > 0`.
+  obtain ⟨ψ, -, hψθ, -, hψd⟩ := TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral
+    (hh.inv₀ fun t ↦ (hpos t).ne') (inv_pos.2 ((hpos 0).trans_le (hc 0)))
+    (fun t ↦ inv_anti₀ (hpos t) (hc t)) 0
+  exact ⟨ψ, by simpa using hψθ 0, hγ.comp_of_hasDerivAt hY fun s ↦ by simpa using hψd s⟩
+
 /-- The reparametrization for a positive factor `h`, by the time change
 `Function.Periodic.exists_homeomorph_hasDerivAt_of_pos`. -/
 private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegralCurve γ X)
@@ -70,14 +112,8 @@ private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegra
     rcases hT.lt_or_gt with hT | hT
     exacts [⟨-T, neg_pos.2 hT, hper.neg, hhT.neg⟩, ⟨T, hT, hper, hhT⟩]
   obtain ⟨ψ, hψ0, ⟨T', hT', hψT'⟩, hψd⟩ := hhT₀.exists_homeomorph_hasDerivAt_of_pos hT₀ hh hpos
-  refine ⟨ψ, hψ0, T', hT', fun s ↦ by simp only [comp_apply, hψT', hper₀ (ψ s)], fun s ↦ ?_⟩
-  have hcomp := (hγ (ψ s)).comp s (hψd s).hasFDerivAt.hasMFDerivAt
-  have heq : (1 : ℝ →L[ℝ] ℝ).smulRight (Y ((γ ∘ ψ) s)) =
-      (1 : ℝ →L[ℝ] ℝ).smulRight (X (γ (ψ s))) ∘L .toSpanSingleton ℝ (h (ψ s)) := by
-    ext
-    simp [hY]
-  rw [heq]
-  exact hcomp
+  exact ⟨ψ, hψ0, T', hT', fun s ↦ by simp only [comp_apply, hψT', hper₀ (ψ s)],
+    hγ.comp_of_hasDerivAt hY hψd⟩
 
 /-- **Reparametrizing a periodic integral curve.** Let `γ` be an integral curve of `X` of nonzero
 period `T`, and let `Y (γ t) = h t • X (γ t)` for a continuous, `T`-periodic, nowhere vanishing

@@ -106,12 +106,12 @@ theorem of_mem_closure {G : Type*} [Group G] [HasDistribNeg G] {S : Set G}
     (hx : x ∈ Subgroup.closure S) (hy : y ∈ Subgroup.closure S) : CommuteOrNeg x y := by
   induction hx, hy using Subgroup.closure_induction₂ with
   | mem x y hx hy => exact h x hx y hy
-  | one_left y hy => exact one_left y
-  | one_right x hx => exact one_right x
-  | mul_left x y z hx hy hz ihx ihy => exact mul_left ihx ihy
-  | mul_right x y z hx hy hz ihx ihy => exact mul_right ihx ihy
-  | inv_left x y hx hy ih => exact inv_left ih
-  | inv_right x y hx hy ih => exact inv_right ih
+  | one_left y _ => exact one_left y
+  | one_right x _ => exact one_right x
+  | mul_left x y z _ _ _ ihx ihy => exact mul_left ihx ihy
+  | mul_right x y z _ _ _ ihx ihy => exact mul_right ihx ihy
+  | inv_left x y _ _ ih => exact inv_left ih
+  | inv_right x y _ _ ih => exact inv_right ih
 
 end CommuteOrNeg
 

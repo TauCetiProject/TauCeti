@@ -19,8 +19,7 @@ harmonic functions.
 
 Smoothness enters here, where the `ContDiffAt` half of `InnerProductSpace.HarmonicAt` is
 transported across the equivalence: harmonicity is invariant under the full isometry group, the
-symmetry that underlies the mean-value property and the construction of radial harmonic functions
-(PDE roadmap, Lane C, item 12).
+symmetry that underlies the mean-value property and the construction of radial harmonic functions.
 
 ## Main declarations
 

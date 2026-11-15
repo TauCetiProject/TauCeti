@@ -201,7 +201,6 @@ private theorem add_add_le_div {q r C N M A B I₁ I₂ I₃ I₄ : ℝ} (hq1 : 
     (hI₃ : I₃ ≤ B / r) (hI₄ : I₄ ≤ A) :
     (q + 4 * (C * q + 2 * C + N)) * I₁ + r * q / 4 * I₂ + 2 * M * (q * I₃ + I₄ / q) ≤
       (C + A / 4 + 12 * C ^ 2 + 4 * C * N + 2 * M * (A + B)) / q := by
-  have hq : 0 < q := by linarith
   have b1 : (q + 4 * (C * q + 2 * C + N)) * I₁ ≤ (C + 4 * C ^ 2 + 8 * C ^ 2 + 4 * C * N) / q := by
     calc (q + 4 * (C * q + 2 * C + N)) * I₁ ≤ (q + 4 * (C * q + 2 * C + N)) * (C / r) := by
           gcongr

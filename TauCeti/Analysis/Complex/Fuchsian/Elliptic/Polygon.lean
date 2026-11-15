@@ -190,7 +190,7 @@ theorem injective_quotientMk_selfPairedSideFixedPoint
     Function.Injective (fun i : {i : Fin n // σ.pair i = i} ↦
       (Quotient.mk'' (σ.selfPairedSideFixedPoint i) : orbitRel.Quotient Γ ℍ)) := by
   intro i j heq
-  obtain ⟨hi, hip, hiq, -⟩ := σ.selfPairedSideFixedPoint_spec i
+  obtain ⟨hi, _, _, -⟩ := σ.selfPairedSideFixedPoint_spec i
   obtain ⟨hj, hjp, hjq, hjfix⟩ := σ.selfPairedSideFixedPoint_spec j
   have hij : σ.selfPairedSideFixedPoint i = σ.selfPairedSideFixedPoint j :=
     (σ.mem_orbit_iff_eq_of_mem_side_map_smul_eq_self (hmap j) hdisj

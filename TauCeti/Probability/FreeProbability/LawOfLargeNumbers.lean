@@ -82,7 +82,7 @@ theorem IsFreelyIndependentElements.apply_average_sub_mean_sq
   rw [freeCumulant_pair φ _ (by omega : (0 : ℕ) < 1),
     freeCumulant_pair φ _ (by omega : (0 : ℕ) < 1)] at hc
   simp only [← sq, hmean] at hc
-  generalize hx : (N : R)⁻¹ • ∑ j ∈ range N, a j = x at hmean hc ⊢
+  generalize (N : R)⁻¹ • ∑ j ∈ range N, a j = x at hmean hc ⊢
   simp only [sq, sub_mul, mul_sub, Algebra.algebraMap_eq_smul_one, smul_mul_assoc,
     mul_smul_comm, mul_one, one_mul, map_sub, map_smul, smul_eq_mul, hφ, hmean,
     div_eq_mul_inv] at hc ⊢

@@ -116,7 +116,7 @@ theorem loopClass_zsmulLoop (n : ℤ) :
 
 /-- Winding `n` times around a circle multiplies its circuit class by `n`.
 Negative windings reverse orientation. -/
-@[simp]
+@[simp↓]
 theorem H₁AddEquivHomology_loopClass_zsmulLoop (n : ℤ) :
     H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n)) =
       n • fundamentalClass p := by

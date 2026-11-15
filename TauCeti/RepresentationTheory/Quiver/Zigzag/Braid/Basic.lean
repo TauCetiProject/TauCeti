@@ -286,8 +286,8 @@ variable [Finite V]
 signed path-length grading of `Z` with its transport to `Zᵐᵒᵖ`, so that `x ⊗ op y` has degree
 `deg x + deg y`. -/
 -- The tensor bifunctor and its instances need this category index to reduce to the factor gradings.
-noncomputable abbrev zigzagEnvelopingGrading : InternalGrading k (𝒵ᵉ) :=
-  let Γ : InternalGrading k 𝒵 :=
+noncomputable abbrev zigzagEnvelopingGrading : InternalGrading k (𝒵ᵉ) ℤ :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   Γ.tensorProduct Γ.opposite
 
@@ -328,7 +328,7 @@ theorem mul_mem_zigzagEnvelopingGrading {m n : ℤ} {u v : 𝒵ᵉ}
     (hu : u ∈ (zigzagEnvelopingGrading k G).piece m)
     (hv : v ∈ (zigzagEnvelopingGrading k G).piece n) :
     u * v ∈ (zigzagEnvelopingGrading k G).piece (m + n) := by
-  let Γ : InternalGrading k 𝒵 :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   have hle : (zigzagEnvelopingGrading k G).piece m ≤
       (LinearMap.homogeneousSubmodule (S := k) (zigzagEnvelopingGrading k G).piece
@@ -418,7 +418,7 @@ theorem isHomogeneous_zigzagBraidBimodule (i : V) :
   have hmul : LinearMap.mulRight k (e ⊗ₜ[k] op e : 𝒵ᵉ) =
       TensorProduct.map (LinearMap.mulRight k e) (LinearMap.mulRight k (op e)) :=
     TensorProduct.ext' fun _ _ ↦ by simp
-  let Γ : InternalGrading k 𝒵 :=
+  let Γ : InternalGrading k 𝒵 ℤ :=
     ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
   have hleft : LinearMap.IsHomogeneous (LinearMap.mulRight k e) Γ.piece Γ.piece 0 :=
     LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ mul_mem_zigzagAlgebraIntegerGrade k G hx he

@@ -93,7 +93,6 @@ theorem maximalIntegralCurve_neg_mgradient_pow_four {x₀ t : ℝ} (ht : 0 < 1 +
   set q := 1 + 8 * x₀ ^ 2 * m
   have hq : 0 < q := by
     rcases min_choice t 0 with h | h <;> simp only [q, m, h] <;> linarith
-  have hx : 0 ≤ 8 * x₀ ^ 2 := by positivity
   set a := m - q / (8 * x₀ ^ 2 + 1)
   have hpos : ∀ s, a < s → 0 < 1 + 8 * x₀ ^ 2 * s := by
     intro s hs

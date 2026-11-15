@@ -56,7 +56,6 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
       exact apply_eq_zero_of_mem_span_single (fun j : Fin (n + 1) ↦ (j : ℕ)) hx
         (by
           rintro ⟨j, hj⟩
-          have hjlt := j.isLt
           simp only at hj
           omega)
     exact_mod_cast (diagonalCLM (p := p) d).le_singularValue_of_linearIndependent hv (fun x hx ↦ by

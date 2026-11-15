@@ -119,7 +119,6 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
   set V := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   have hV : 0 < V := measureReal_ball_pos mu 0 one_pos
   set K' := max K 1
-  have hK' : 0 < K' := lt_max_of_lt_right one_pos
   refine ⟨p₀, hp₀, min_le_right _ _, K' ^ p₀⁻¹ * D * V ^ p₀⁻¹, by positivity, ?_⟩
   intro Omega a u ε x₀ r h ha hu hε hεu hball
   rcases le_or_gt r 0 with hr | hr

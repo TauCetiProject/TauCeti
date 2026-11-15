@@ -255,6 +255,8 @@ end Preconnected
 
 section OfMeromorphic
 
+omit [IsManifold 𝓘(ℂ) 1 X]
+
 variable [Nonempty X] {h : X → ℂ} (hh : ∀ x, MeromorphicAt h x)
 
 /-- The meromorphic function on a nonempty Riemann surface defined by a function `h : X → ℂ`
@@ -308,7 +310,8 @@ theorem eq_ofMeromorphic_iff {p : X → Prop} (hp : ∀ x, ∀ᶠ y in 𝓝[≠]
 /-- On a connected Riemann surface, a meromorphic function is the one defined by its finite
 part. -/
 @[simp]
-theorem ofMeromorphic_finitePart [PreconnectedSpace X] (f : MeromorphicFunction X) :
+theorem ofMeromorphic_finitePart [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
+    (f : MeromorphicFunction X) :
     ofMeromorphic f.meromorphicAt_finitePart = f :=
   DFunLike.coe_injective (sphereMap_finitePart f)
 
@@ -357,18 +360,22 @@ instance : NatCast (MeromorphicFunction X) :=
 instance : IntCast (MeromorphicFunction X) :=
   ⟨fun n ↦ ofMeromorphic fun _ ↦ meromorphicAt_const (n : ℂ) _⟩
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem coe_zero : ⇑(0 : MeromorphicFunction X) = fun _ ↦ ((0 : ℂ) : OnePoint ℂ) :=
   sphereMap_const 0
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem coe_one : ⇑(1 : MeromorphicFunction X) = fun _ ↦ ((1 : ℂ) : OnePoint ℂ) :=
   sphereMap_const 1
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem finitePart_zero : (0 : MeromorphicFunction X).finitePart = 0 :=
   funext fun _ ↦ finitePart_of_eq_coe (congrFun coe_zero _)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
 @[simp]
 theorem finitePart_one : (1 : MeromorphicFunction X).finitePart = 1 :=
   funext fun _ ↦ finitePart_of_eq_coe (congrFun coe_one _)
@@ -735,7 +742,7 @@ zeros.** -/
 theorem finite_setOf_eq_zero (hf : f ≠ 0) : {x | f x = ((0 : ℂ) : OnePoint ℂ)}.Finite := by
   have h : {x | f x ≠ ((0 : ℂ) : OnePoint ℂ)} ∈ Filter.codiscrete X := by
     refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
-    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y hy hy0
+    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y _ hy0
     exact fun h ↦ hy0 (finitePart_of_eq_coe h)
   exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
     ⟨mem_univ y, (· hy)⟩
@@ -744,9 +751,8 @@ theorem finite_setOf_eq_zero (hf : f ≠ 0) : {x | f x = ((0 : ℂ) : OnePoint �
 Riemann surface is constant. -/
 theorem exists_algebraMap_eq_of_forall_ne_infty (h : ∀ x, f x ≠ ∞) :
     ∃ c : ℂ, algebraMap ℂ (MeromorphicFunction X) c = f := by
-  have hmd : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f.finitePart := fun x ↦
-    (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h x)).comp x (f.mdifferentiable x)
-  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace hmd
+  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace
+    fun x ↦ mdifferentiableAt_finitePart (h x)
   refine ⟨c, ext fun x ↦ ?_⟩
   rw [coe_algebraMap, ← coe_finitePart (h x), hc, Function.const_apply]
 

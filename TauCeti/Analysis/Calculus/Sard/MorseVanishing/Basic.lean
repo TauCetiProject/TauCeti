@@ -142,7 +142,7 @@ private theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel
       (fun c : Fin n → ℤ =>
         (⟨A ∩ closedBall (fun j => (c j : ℝ)) 1,
             n, fun a : Fin n → ℝ => (fun j => (c j : ℝ)) + a⟩ : Piece n)) with
-    hPdef
+    _
   refine ⟨∅, P, countable_empty, countable_range _, ?_, ?_, ?_⟩
   · intro x hx
     refine Or.inr (mem_iUnion₂.mpr ⟨_, ⟨fun j => ⌊x j⌋, rfl⟩, hx, ?_⟩)
@@ -173,7 +173,7 @@ private theorem hasDecompRel_order_zero (A : Set (Fin n → ℝ)) : HasDecompRel
         ε hε
     refine ⟨δ, hδ, ?_⟩
     intro a ha b hb haS _ hab s hs
-    set cc : Fin n → ℝ := fun j => (c j : ℝ) with hccdef
+    set cc : Fin n → ℝ := fun j => (c j : ℝ)
     have hmem : ∀ t : ℝ, t ∈ Icc (0 : ℝ) 1 → cc + (a + t • (b - a)) ∈ closedBall cc 1 := by
       intro t ht
       rw [mem_closedBall_iff_norm]
@@ -241,7 +241,7 @@ private theorem hasDecompRel_graph {A N : Set (Fin (n + 1) → ℝ)} (hk : 1 ≤
     HasDecompRel k A (A ∩ N) := by
   classical
   set Γ : (Fin n → ℝ) → (Fin (n + 1) → ℝ) :=
-    fun y => Fin.insertNth (α := fun _ => ℝ) i (θ y) y with hΓdef
+    fun y => Fin.insertNth (α := fun _ => ℝ) i (θ y) y
   have hΓinj : Function.Injective Γ := fun _ _ h ↦ (Fin.insertNth_injective2 h).2
   have hΓk : ContDiff ℝ k Γ := hθ.finInsertNth i contDiff_id
   have hΓ1 : ContDiff ℝ 1 Γ := hΓk.of_le (by exact_mod_cast hk)
@@ -311,7 +311,7 @@ private theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), H
       -- the set of points at which every `C^(k+1)` function vanishing on `A` is critical
       set U : Set (Fin (m + 1) → ℝ) :=
         {x | x ∈ A ∧ ∀ f : (Fin (m + 1) → ℝ) → ℝ, ContDiff ℝ (k + 1) f →
-          (∀ y ∈ A, f y = 0) → fderiv ℝ f x = 0} with hUdef
+          (∀ y ∈ A, f y = 0) → fderiv ℝ f x = 0}
       have hUA : U ⊆ A := fun x hx => hx.1
       have hUdec : HasDecompRel (k + 1) A U :=
         hasDecompRel_succ_of_critical hUA (fun x hx => hx.2) (ihk (m + 1) U)

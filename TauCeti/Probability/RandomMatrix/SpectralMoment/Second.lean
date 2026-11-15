@@ -191,9 +191,6 @@ private theorem wignerCoordinate_variance_bound (n : ℕ)
       8 * V / (n + 1 : ℝ) ^ 2 := by
   have hV : 0 ≤ V :=
     (variance_nonneg (wignerCoordinateSquare ξ η (n + 1) (.inl 0)) P).trans (hv (.inl 0))
-  have hN : 1 ≤ (n + 1 : ℝ) := by
-    have hn0 : (0 : ℝ) ≤ n := Nat.cast_nonneg n
-    linarith
   have hn : (n + 1 : ℝ) ≠ 0 := by positivity
   have hc : (Fintype.card (Fin (n + 1) ⊕ FinStrictUpper (n + 1)) : ℝ) ≤
       2 * (n + 1 : ℝ) ^ 2 := by

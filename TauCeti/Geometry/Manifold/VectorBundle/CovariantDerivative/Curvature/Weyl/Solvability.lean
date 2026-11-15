@@ -220,8 +220,7 @@ private theorem hessian_sub_conformalFlatteningForm_model_space {φ : E → ℝ}
       (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φ y)
         ((tangentSpaceCastModel 𝓘(ℝ, E) y).symm u) ((tangentSpaceCastModel 𝓘(ℝ, E) y).symm v) =
       fderiv ℝ (fderiv ℝ φ) y u v - (flatteningField E (y, φ y, fderiv ℝ φ y) u).2 v := by
-  rw [hessian_model_space_eq_fderiv_sub_christoffelSecondKind inner_eq_metricCoeff
-      (contDiff_metricCoeff.differentiable (by simp) y) hφ,
+  rw [hessian_model_space_eq_fderiv_sub_christoffelSecondKind inner_eq_metricCoeff hφ,
     CovariantDerivative.conformalFlatteningForm_apply, flatteningField_apply_snd,
     inner_mgradient_model_space, inner_mgradient_model_space,
     norm_mgradient_sq_model_space (inner_eq_metricCoeff y),
@@ -242,8 +241,7 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
       (flatteningField_apply_snd_comm p)
   have hφ2 (z : E) : ContDiffAt ℝ 2 φ z := hφ.contDiffAt.of_le (by simp)
   refine isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm flatteningField_apply_fst
-    flatteningField_apply_snd_comm (contDiff_flatteningField.differentiable (by simp) p) (hφ2 y)
-    hφy hDφ (fun u v ↦ by simp [hD2φ, B, p]) fun u v w ↦ ?_
+    flatteningField_apply_snd_comm (hφ2 y) hφy hDφ (fun u v ↦ by simp [hD2φ, B, p]) fun u v w ↦ ?_
   -- Along `φ`, the coordinate system is `B` minus the defect of the equation.
   let C (a : E) (z : E) : TangentSpace 𝓘(ℝ, E) z := (tangentSpaceCastModel 𝓘(ℝ, E) z).symm a
   have hCs (a : E) : CMDiff ∞ (T% (C a)) :=

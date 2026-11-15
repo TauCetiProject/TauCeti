@@ -93,7 +93,7 @@ theorem coe_restrictedAnalyticSubst_mem_washnitzerAlgebra (g : Fin k → washnit
   have : Fact (0 < ρf) := ⟨zero_lt_one.trans hρf⟩
   let g' (i : Fin k) : IsRestricted.subring (R := R) (fun _ : τ ↦ ρ) := ⟨g i, (hρg i).1⟩
   have hg' (i : Fin k) : ‖g' i‖ ≤ ρf :=
-    (norm_le_iff (zero_lt_one.trans hρf).le).2 fun t ↦ by
+    norm_le_iff.2 fun t ↦ by
       simpa [g', Finsupp.prod_pow_eq_pow_degree] using ((hρg i).2 t).le
   -- The substitution at the radii `ρf` and `ρ` has the same coefficients as at unit radii.
   have h : (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg

@@ -42,9 +42,8 @@ weight spaces. For a single Cartan direction the decomposition is packaged as a 
 `TauCeti.UniversalEnvelopingAlgebra.iSup_weightComponent_eq` together with
 `TauCeti.UniversalEnvelopingAlgebra.iSupIndep_weightComponent`.
 
-This is the input the pinned Chevalley--Demazure group scheme of Layer 9 needs before its split
-maximal torus can be written down, since the torus is exactly what acts by a character on each
-weight component.
+This is the input the pinned Chevalley--Demazure group scheme needs before its split maximal torus
+can be written down, since the torus is exactly what acts by a character on each weight component.
 
 ## Main declarations
 

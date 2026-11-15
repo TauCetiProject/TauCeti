@@ -37,10 +37,10 @@ Similarly, the components of `C * D⁻¹`, the change of variables carrying `D �
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
-`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
+`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`). In particular `C • W` is
+elliptic exactly when `W` is (`isElliptic_smul_iff`).
 
-The negation is the nontrivial automorphism in the `Aut (E, O)`
-milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
+The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
 `j(E) ∉ {0, 1728}`.
 
@@ -56,7 +56,7 @@ satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` need
 be elliptic over a nontrivial ring.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at
 `bc2fe8ff7396` (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude), generalised here from
 FLT's field-level statements to a commutative ring.
 -/
@@ -240,6 +240,13 @@ theorem span_variableChange_c₄_Δ (W : WeierstrassCurve R) (C : VariableChange
   rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
     Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
     Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
+
+/-- **Changes of variables preserve ellipticity**: `C • W` is elliptic exactly when `W` is. -/
+theorem isElliptic_smul_iff (C : VariableChange R) (W : WeierstrassCurve R) :
+    (C • W).IsElliptic ↔ W.IsElliptic := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  have : (C⁻¹ • C • W).IsElliptic := inferInstance
+  rwa [inv_smul_smul] at this
 
 section BaseChange
 

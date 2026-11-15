@@ -87,7 +87,6 @@ theorem norm_coeff_le_of_roots_erase_le [DecidableEq K] {p : K[X]} {B : ℝ} (hp
   set q := p /ₘ (X - C w)
   have hfac : (X - C w) * q = p := mul_divByMonic_eq_iff_isRoot.mpr hw
   have hqmono : q.Monic := (monic_X_sub_C w).of_mul_monic_left (by rw [hfac]; exact hp)
-  have hq0 : q ≠ 0 := hqmono.ne_zero
   have hqdeg : q.natDegree = p.natDegree - 1 := by
     simpa [q] using natDegree_divByMonic p (monic_X_sub_C w)
   have hqroots : q.roots = p.roots.erase w := by

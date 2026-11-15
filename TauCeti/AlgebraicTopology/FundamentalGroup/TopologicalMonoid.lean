@@ -21,7 +21,7 @@ commutative.
 Both facts are the Eckmann–Hilton argument, applied through Mathlib's `EckmannHilton.mul` and
 `EckmannHilton.mul_comm`. Multiplication `M × M → M` induces a homomorphism
 `π₁(M, 1) × π₁(M, 1) ≃ π₁(M × M, (1, 1)) → π₁(M, 1)`, the first map being
-`TauCeti.FundamentalGroup.prodMulEquiv`, and on a pair of loop classes it is the class of the
+`FundamentalGroup.prodMulEquiv`, and on a pair of loop classes it is the class of the
 pointwise product. So pointwise multiplication of loop classes is a binary operation on
 `π₁(M, 1)` over which the group law distributes, and since `1` is a strict unit of `M`, the
 constant loop is a two-sided unit for it. Eckmann–Hilton then says that the two operations agree
@@ -58,7 +58,7 @@ private def mulHom :
     FundamentalGroup M 1 × FundamentalGroup M 1 →* FundamentalGroup M 1 :=
   (mapOfEq ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩
       (mul_one (1 : M))).comp
-    (TauCeti.FundamentalGroup.prodMulEquiv (1 : M) (1 : M)).symm.toMonoidHom
+    (prodMulEquiv (1 : M) (1 : M)).symm.toMonoidHom
 
 /-- The homomorphism induced by multiplication sends a pair of loop classes to the class of the
 pointwise product. -/
