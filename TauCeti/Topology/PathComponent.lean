@@ -77,6 +77,7 @@ abbrev pathComponentSelf : (pathComponent x₀ : Set X) :=
   ⟨x₀, mem_pathComponent_self x₀⟩
 
 /-- Two points lie in the same path component exactly when they are joined by a path. -/
+@[simp]
 theorem _root_.ZerothHomotopy.mk_eq_mk_iff {x y : X} :
     ZerothHomotopy.mk x = ZerothHomotopy.mk y ↔ Joined x y :=
   ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩

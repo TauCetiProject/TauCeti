@@ -77,16 +77,6 @@ namespace TauCeti.HasHomotopyLiftingProperty
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b b₀ b₁ b₂ : B}
 
-omit [TopologicalSpace B] in
-/-- A map of the interval into `E` lying over `b` joins its end points within the fibre over
-`b`. -/
-private theorem joined_of_forall {u v : p ⁻¹' {b}} (c : C(I, E)) (hc : ∀ t, p (c t) = b)
-    (h₀ : c 0 = u) (h₁ : c 1 = v) : Joined u v :=
-  ⟨{ toFun t := ⟨c t, hc t⟩
-     continuous_toFun := c.continuous.subtype_mk _
-     source' := Subtype.ext h₀
-     target' := Subtype.ext h₁ }⟩
-
 /-- **A path over a null-homotopic loop joins points of one fibre component.** If `p` has the
 homotopy lifting property with respect to the interval, and a path of `E` between two points of
 the fibre over `b` lies over a loop at `b` homotopic to the constant loop, then the two points are
@@ -103,12 +93,14 @@ theorem joined_of_homotopic_refl (hp : HasHomotopyLiftingProperty p I) {γ : Pat
   have hbot (s : I) : p (G (s, 0)) = b := (hGF _).trans (F.source s)
   have htop (s : I) : p (G (s, 1)) = b := (hGF _).trans (F.target s)
   have hend (t : I) : p (G (1, t)) = b := (hGF _).trans (F.apply_one t)
-  refine ((joined_of_forall (v := ⟨G (1, 0), hbot 1⟩) (G.comp ⟨fun s ↦ (s, 0), by fun_prop⟩)
-    hbot ((hG₀ 0).trans Γ.source) rfl).trans
-    (joined_of_forall (v := ⟨G (1, 1), htop 1⟩) (G.comp ⟨fun t ↦ (1, t), by fun_prop⟩)
-      hend rfl rfl)).trans
-    (joined_of_forall (G.comp ⟨fun s ↦ (s, 1), by fun_prop⟩) htop ((hG₀ 1).trans Γ.target)
-      rfl).symm
+  -- The bottom, right and top sides of the lifted square, as paths in `E` within the fibre.
+  have hbot' : JoinedIn (p ⁻¹' {b}) (u : E) (G (1, 0)) :=
+    ⟨⟨G.comp ⟨fun s ↦ (s, 0), by fun_prop⟩, (hG₀ 0).trans Γ.source, rfl⟩, hbot⟩
+  have hend' : JoinedIn (p ⁻¹' {b}) (G (1, 0)) (G (1, 1)) :=
+    ⟨⟨G.comp ⟨fun t ↦ (1, t), by fun_prop⟩, rfl, rfl⟩, hend⟩
+  have htop' : JoinedIn (p ⁻¹' {b}) (v : E) (G (1, 1)) :=
+    ⟨⟨G.comp ⟨fun s ↦ (s, 1), by fun_prop⟩, (hG₀ 1).trans Γ.target, rfl⟩, htop⟩
+  exact (hbot'.trans (hend'.trans htop'.symm)).joined_subtype
 
 /-- **Lifts of homotopic paths end in one fibre component.** Let `Γ` and `Γ'` be paths of `E`
 lying over paths `γ` and `γ'` of `B` from `b₀` to `b₁` which are homotopic relative to their
