@@ -65,20 +65,6 @@ public section
 open Filter Function MeasureTheory Set
 open scoped Topology
 
-namespace TauCeti
-
-/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
-number `a + i b`, where `(a, b)` is the image of `(1, 0)`, so its determinant is `a² + b²`. -/
-theorem IsComplexLinearMap.det_eq_sq_add_sq {L : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ}
-    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ) L) :
-    LinearMap.det L = (L stdComplexLineReal).1 ^ 2 + (L stdComplexLineReal).2 ^ 2 := by
-  rw [LinearMap.det_finTwoProd, ← stdComplexLineReal_eq, ← stdComplexLineImag_eq,
-    hL.apply_stdComplexLineImag, AlmostComplexStructure.product_apply]
-  ring
-
-end TauCeti
-
 namespace TauCeti.SymplecticForm
 
 open Floer
@@ -121,10 +107,7 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
   have h2 := hP' stdComplexLineImag
   simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
     stdComplexLineImag_snd, one_smul, zero_smul, sub_zero] at h1 h2
-  have hLi : fderiv ℝ φ w stdComplexLineImag = (-b, a) := by
-    have h := hφJ.apply_stdComplexLineImag
-    rw [ContinuousLinearMap.coe_coe, AlmostComplexStructure.product_apply] at h
-    exact h
+  have hLi : fderiv ℝ φ w stdComplexLineImag = (-b, a) := hφJ.apply_stdComplexLineImag_eq
   rw [floerOperator_def, floerOperator_def, comp_apply, h1, h2, hLi,
     hP (fderiv ℝ φ w stdComplexLineReal), hP (-b, a),
     ← perturbedFDeriv_apply_stdComplexLineReal ω Ks Kt u (φ w),
@@ -132,26 +115,6 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
   simp only [LinearMap.coe_toContinuousLinearMap', map_add, map_smul, map_neg,
     AlmostComplexStructure.apply_apply, neg_smul]
   module
-
-/-- **The derivative of the Hamiltonian vector field of a pulled-back component.** If the
-Hamiltonians `K_s` and `K_t` at `φ w` are differentiable near `x` and their Hamiltonian vector
-fields are differentiable at `x`, then the derivative at `x` of the Hamiltonian vector field of
-the component `(φ^*K)(v)` at `w` is the corresponding combination of the derivatives of `X_{K_s}`
-and `X_{K_t}`. -/
-theorem fderiv_hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V) {x : V}
-    (hKs : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Ks (φ w)) y)
-    (hKt : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Kt (φ w)) y)
-    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) x)
-    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) x) (v : ℝ × ℝ) :
-    fderiv ℝ (ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w)) x =
-      (fderiv ℝ φ w v).1 • fderiv ℝ (ω.hamiltonianVectorField (Ks (φ w))) x +
-        (fderiv ℝ φ w v).2 • fderiv ℝ (ω.hamiltonianVectorField (Kt (φ w))) x := by
-  have hX : ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) =ᶠ[𝓝 x]
-      fun y ↦ (fderiv ℝ φ w v).1 • ω.hamiltonianVectorField (Ks (φ w)) y +
-        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) y :=
-    (hKs.and hKt).mono fun y hy ↦ ω.hamiltonianVectorField_perturbationPullback hy.1 hy.2 v
-  rw [hX.fderiv_eq]
-  exact ((hXs.hasFDerivAt.const_smul _).add (hXt.hasFDerivAt.const_smul _)).fderiv
 
 /-- **Holomorphic changes of coordinates multiply the linearized Floer operator by `a - b J`.** Let
 `dφ_w` be complex linear, with `(a, b) = dφ_w (1, 0)`, and let `u` solve the Floer equation at
@@ -178,9 +141,7 @@ theorem floerLinearization_perturbationPullback (ω : SymplecticForm V)
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (φ w)) := by
   obtain ⟨a, b, hab⟩ : ∃ a b : ℝ, fderiv ℝ φ w stdComplexLineReal = (a, b) := ⟨_, _, rfl⟩
   have hLi : fderiv ℝ φ w stdComplexLineImag = (-b, a) := by
-    have h := hφJ.apply_stdComplexLineImag
-    rw [ContinuousLinearMap.coe_coe, hab, AlmostComplexStructure.product_apply] at h
-    exact h
+    simpa only [ContinuousLinearMap.coe_coe, hab] using hφJ.apply_stdComplexLineImag_eq
   -- Derivatives of the reparametrized maps, expanded on the columns of `dφ_w`.
   have hcol {f : ℝ × ℝ → V} (hf : DifferentiableAt ℝ f (φ w)) (v : ℝ × ℝ) :
       fderiv ℝ (f ∘ φ) w v = (fderiv ℝ φ w v).1 • fderiv ℝ f (φ w) stdComplexLineReal +
