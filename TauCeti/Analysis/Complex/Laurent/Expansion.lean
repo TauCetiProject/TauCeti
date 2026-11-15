@@ -451,18 +451,9 @@ theorem laurentNegPart_eq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c
   · refine ⟨laurentPosPart a₁ c - laurentPosPart a₂ c,
       (h₁.analyticOnNhd_laurentPosPart c (mem_eball_self h₁.outerRadius_pos)).sub
         (h₂.analyticOnNhd_laurentPosPart c (mem_eball_self h₂.outerRadius_pos)), ?_⟩
-    have hball : eball c (min R₁ R₂) ∈ 𝓝 c :=
-      isOpen_eball.mem_nhds (mem_eball_self (lt_min h₁.outerRadius_pos h₂.outerRadius_pos))
-    have hmem : eball c (min R₁ R₂) \ closedBall c 0 ∈ 𝓝[≠] c := by
-      rw [closedBall_zero]
-      exact Filter.inter_mem (nhdsWithin_le_nhds hball) self_mem_nhdsWithin
-    filter_upwards [hmem] with w hw
-    have hw₁ : w ∈ eball c R₁ \ closedBall c 0 :=
-      ⟨eball_subset_eball (min_le_left _ _) hw.1, hw.2⟩
-    have hw₂ : w ∈ eball c R₂ \ closedBall c 0 :=
-      ⟨eball_subset_eball (min_le_right _ _) hw.1, hw.2⟩
-    simp only [Pi.sub_apply, h₁.eq_laurentPosPart_add_laurentNegPart hw₁,
-      h₂.eq_laurentPosPart_add_laurentNegPart hw₂, congrFun hneg w, add_sub_add_right_eq_sub]
+    filter_upwards [h₁.eventuallyEq_laurentPosPart_add_laurentNegPart,
+      h₂.eventuallyEq_laurentPosPart_add_laurentNegPart] with w hw₁ hw₂
+    simp only [Pi.sub_apply, hw₁, hw₂, Pi.add_apply, congrFun hneg w, add_sub_add_right_eq_sub]
   · have hk := (h₁.exists_analyticAt_sub_eventuallyEq_iff h₂).mp h
     funext w
     simp_rw [laurentNegPart_def, hk]

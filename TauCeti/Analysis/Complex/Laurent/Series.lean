@@ -209,6 +209,14 @@ theorem outerRadius_pos {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R :
     (h : HasLaurentSeriesOnAnnulus f a c r R) : 0 < R :=
   lt_of_le_of_lt zero_le h.r_lt
 
+/-- For a convergent Laurent series on a punctured disk (`r = 0`), the domain
+`Metric.eball c R \ Metric.closedBall c 0` is a punctured neighborhood of `c`. -/
+theorem eball_sdiff_closedBall_mem_nhdsNE {f : ℂ → E} {a : ℤ → E} {c : ℂ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    eball c R \ closedBall c 0 ∈ 𝓝[≠] c := by
+  rw [closedBall_zero]
+  exact sdiff_mem_nhdsWithin_compl (eball_mem_nhds c h.outerRadius_pos) {c}
+
 /-- Every convergent Laurent series on `Metric.eball c R \ Metric.closedBall c r` admits an
 interior circle radius `ρ` with `r < ρ` and `ENNReal.ofReal ρ < R`. -/
 theorem exists_radius {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
@@ -577,6 +585,23 @@ theorem differentiableOn_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ
     DifferentiableOn ℂ (laurentNegPart a c) (closedBall c r)ᶜ :=
   h.analyticOnNhd_laurentNegPart.differentiableOn
 
+/-- On a punctured disk (`r = 0`), the negative part `laurentNegPart a c` is complex-analytic on
+the whole punctured plane `{c}ᶜ`. -/
+theorem analyticOnNhd_laurentNegPart_compl_singleton
+    {f : ℂ → E} {a : ℤ → E} {c : ℂ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    AnalyticOnNhd ℂ (laurentNegPart a c) {c}ᶜ := by
+  rw [← closedBall_zero]
+  exact h.analyticOnNhd_laurentNegPart
+
+/-- On a punctured disk (`r = 0`), the negative part `laurentNegPart a c` is complex-differentiable
+on the whole punctured plane `{c}ᶜ`. -/
+theorem differentiableOn_laurentNegPart_compl_singleton
+    {f : ℂ → E} {a : ℤ → E} {c : ℂ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    DifferentiableOn ℂ (laurentNegPart a c) {c}ᶜ :=
+  h.analyticOnNhd_laurentNegPart_compl_singleton.differentiableOn
+
 /-- The negative part `laurentNegPart a c` vanishes at infinity (`Filter.cocompact ℂ`). -/
 theorem tendsto_laurentNegPart_cocompact {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
     (h : HasLaurentSeriesOnAnnulus f a c r R) :
@@ -652,6 +677,15 @@ theorem eq_laurentPosPart_add_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c 
     simpa only [zpow_natCast] using h.hasSum_laurentPosPart hw.1
   have hn := h.hasSum_laurentNegPart hw.2
   exact (h.hasSum hw).unique (hp.of_nat_of_neg_add_one hn)
+
+/-- On a punctured disk (`r = 0`), `f` agrees on `𝓝[≠] c` with the sum of its nonnegative and
+negative Laurent parts. -/
+theorem eventuallyEq_laurentPosPart_add_laurentNegPart
+    {f : ℂ → E} {a : ℤ → E} {c : ℂ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    f =ᶠ[𝓝[≠] c] laurentPosPart a c + laurentNegPart a c :=
+  eventually_of_mem h.eball_sdiff_closedBall_mem_nhdsNE fun _ hw =>
+    h.eq_laurentPosPart_add_laurentNegPart hw
 
 /-- Any function admitting a convergent Laurent series on an open annulus is complex-analytic on
 that annulus. -/

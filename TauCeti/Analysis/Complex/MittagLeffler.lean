@@ -11,6 +11,7 @@ public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Complex.UniformLimit
@@ -57,19 +58,19 @@ The file also establishes:
 On an open set `Ω`, `TauCeti.exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt`
 extracts at each `a : E` a convergent punctured-disk Laurent series with coefficients `c a`, whose
 negative part `s a := laurentNegPart (c a) a.val` (`TauCeti.laurentNegPart`) is holomorphic on all
-of `ℂ \ {a.val}` (`TauCeti.HasLaurentSeriesOnAnnulus.differentiableOn_laurentNegPart`) and differs
+of `ℂ \ {a.val}`
+(`TauCeti.HasLaurentSeriesOnAnnulus.differentiableOn_laurentNegPart_compl_singleton`) and differs
 from `P a` near `a.val` by a power-series-analytic nonnegative part. Exhausting `Ω` by compact sets
-`K n` filled in `Ω` (`IsOpen.exists_isFilledIn_compact_exhaustion`), each `K n` meets `E` in a
-finite set `A n : Finset E`, partitioning `E` into disjoint finite shells `B 0 = A 0` and
-`B (n + 1) = A (n + 1) \ A n`. For `a ∈ B (n + 1)`, `a.val ∉ K n`, so `s a` is uniformly
-approximated on `K n` by a finite polynomial in `(z - a.val)⁻¹`, which in turn is uniformly
-approximated on `K n` by a function holomorphic on `Ω` via
-`TauCeti.IsFilledIn.exists_differentiableOn_norm_sum_zpow_neg_sub_lt` (from
-`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`). Setting `Q 0 = 0` and subtracting
-holomorphic corrections `Q (n + 1)` with error `< 2⁻⁽ⁿ⁺¹⁾` on `K n` makes the series
-`∑' k, ((∑ a ∈ B k, s a) - Q k)` converge uniformly on `interior (K m)` after splitting off the
-first `m + 1` shells, yielding holomorphy on `Ω \ E` (`TendstoUniformlyOn.differentiableOn`) and
-analyticity of each local remainder.
+`K k` filled in `Ω` (`IsOpen.exists_isFilledIn_compact_exhaustion`), each `K k` meets `E` in a
+finite set `A k : Finset E`, with partial sums `S k := ∑ a ∈ A k, s a`. For `a ∈ A (k + 1) \ A k`,
+`a.val ∉ K k`, so `s a` is uniformly approximated on `K k` by a finite polynomial in
+`(z - a.val)⁻¹`, which in turn is uniformly approximated on `K k` by a function holomorphic on `Ω`
+via `TauCeti.IsFilledIn.exists_differentiableOn_norm_sum_zpow_neg_sub_lt` (from
+`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`). Choosing holomorphic corrections
+`Q k` on `Ω` approximating `S (k + 1) - S k = ∑ a ∈ A (k + 1) \ A k, s a` within `2⁻ᵏ` on `K k`,
+the telescoping lemma `TauCeti.exists_differentiableOn_eqOn_add_tsum` expresses
+`S 0 + ∑' k, (S (k + 1) - S k - Q k)` on each `interior (K m)` as `S m` plus a holomorphic
+remainder, yielding holomorphy on `Ω \ E` and analyticity of each local remainder.
 
 ## Main results
 
@@ -225,10 +226,8 @@ theorem prescribed_isolated_singularities_comp_add_right
           (fun z ↦ f (z + c) - P ⟨b + c, hb.2⟩ (z + c)) =ᶠ[𝓝[≠] b] g := by
   have hφ : AnalyticOnNhd ℂ (· + c) ((· + c) ⁻¹' Ω) :=
     fun z _ ↦ analyticAt_id.add analyticAt_const
-  have hnc : ∀ z ∈ (· + c) ⁻¹' Ω, ¬EventuallyConst (· + c) (𝓝 z) := fun z _ h ↦
-    let ⟨y, hy⟩ := h.eventuallyEq_const
-    one_ne_zero (((hasDerivAt_id z).add_const c).unique
-      ((hasDerivAt_const z y).congr_of_eventuallyEq hy))
+  have hnc : ∀ z ∈ (· + c) ⁻¹' Ω, ¬EventuallyConst (· + c) (𝓝 z) := fun z _ ↦
+    ((hasDerivAt_id z).add_const c).not_eventuallyConst one_ne_zero
   exact prescribed_isolated_singularities_comp hE hφ hnc (mapsTo_preimage (· + c) Ω) hf
     fun a ha ↦ hsing a ((image_preimage_subset (· + c) Ω) ha)
 
@@ -246,10 +245,8 @@ theorem prescribed_isolated_singularities_comp_mul_left
           (fun z ↦ f (c * z) - P ⟨c * b, hb.2⟩ (c * z)) =ᶠ[𝓝[≠] b] g := by
   have hφ : AnalyticOnNhd ℂ (c * ·) ((c * ·) ⁻¹' Ω) :=
     fun z _ ↦ analyticAt_const.mul analyticAt_id
-  have hnc : ∀ z ∈ (c * ·) ⁻¹' Ω, ¬EventuallyConst (c * ·) (𝓝 z) := fun z _ h ↦
-    let ⟨y, hy⟩ := h.eventuallyEq_const
-    hc ((by simpa using (hasDerivAt_id z).const_mul c : HasDerivAt (c * ·) c z).unique
-      ((hasDerivAt_const z y).congr_of_eventuallyEq hy))
+  have hnc : ∀ z ∈ (c * ·) ⁻¹' Ω, ¬EventuallyConst (c * ·) (𝓝 z) := fun z _ ↦
+    ((hasDerivAt_id z).const_mul c).not_eventuallyConst (by rwa [mul_one])
   exact prescribed_isolated_singularities_comp hE hφ hnc (mapsTo_preimage (c * ·) Ω) hf
     fun a ha ↦ hsing a ((image_preimage_subset (c * ·) Ω) ha)
 
@@ -267,9 +264,7 @@ private theorem HasLaurentSeriesOnAnnulus.exists_differentiableOn_norm_laurentNe
     (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (ha : a ∉ K)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖laurentNegPart c a z - g z‖ < ε := by
-  have hKr : K ⊆ (closedBall a 0)ᶜ := by
-    rw [closedBall_zero]
-    exact fun z hz hza ↦ ha (mem_singleton_iff.mp hza ▸ hz)
+  have hKr : K ⊆ (closedBall a 0)ᶜ := by rwa [closedBall_zero, subset_compl_singleton_iff]
   obtain ⟨N, hN⟩ := (Metric.tendstoUniformlyOn_iff.mp
     (h.tendstoUniformlyOn_laurentNegPart_of_isCompact hK hKr) (ε / 2) (half_pos hε)).exists
   obtain ⟨g, hg, hgK⟩ := hfill.exists_differentiableOn_norm_sum_zpow_neg_sub_lt hΩ hK hKΩ ha N
@@ -302,63 +297,29 @@ private theorem exists_differentiableOn_norm_sum_laurentNegPart_sub_lt
         mul_lt_mul_of_pos_right (lt_add_one _) (by positivity)
     _ = ε := mul_div_cancel₀ ε (by positivity)
 
-/-- Core series assembly along a filled compact exhaustion `K` of an open set `Ω`: given Laurent
-data `(c a, R a)` at `a : E` and the finite pole sets `A n` in `K n`, constructs `f : ℂ → F` whose
-restriction to each `interior (K m)` is `∑ a ∈ A m, laurentNegPart (c a) a.val` plus a holomorphic
-remainder. -/
-private theorem exists_tsum_eqOn_sum_laurentNegPart_add_differentiableOn
-    {Ω E : Set ℂ} (hΩ : IsOpen Ω) {K : ℕ → Set ℂ}
-    (hKcpt : ∀ n, IsCompact (K n)) (hKsub : ∀ n, K n ⊆ K (n + 1)) (hKΩ : ∀ n, K n ⊆ Ω)
-    (hKfill : ∀ n, IsFilledIn (K n) Ω) {A : ℕ → Finset E}
-    (hA : ∀ n (a : E), a ∈ A n ↔ a.val ∈ K n)
-    {P : E → ℂ → F} {c : E → ℤ → F} {R : E → ℝ≥0∞}
-    (hcR : ∀ a : E, HasLaurentSeriesOnAnnulus (P a) (c a) a.val 0 (R a)) :
-    ∃ f : ℂ → F, ∀ m : ℕ, ∃ H : ℂ → F, DifferentiableOn ℂ H (interior (K m)) ∧
-      EqOn f ((fun z ↦ ∑ a ∈ A m, laurentNegPart (c a) a.val z) + H) (interior (K m)) := by
+/-- If `f` agrees on a neighborhood `U` of `a.val` (`a ∈ s`) with
+`(∑ b ∈ s, laurentNegPart (c b) b.val) + H` for `H` analytic at `a.val`, then `f - P a` agrees on
+`𝓝[≠] a.val` with a function analytic at `a.val`. -/
+private theorem exists_analyticAt_eventuallyEq_sub_of_eqOn_sum_laurentNegPart_add
+    {U E : Set ℂ} {P : E → ℂ → F} {c : E → ℤ → F} {R : E → ℝ≥0∞}
+    (hcR : ∀ b : E, HasLaurentSeriesOnAnnulus (P b) (c b) b.val 0 (R b))
+    {s : Finset E} {a : E} (has : a ∈ s) {f H : ℂ → F} (hU : U ∈ 𝓝 a.val)
+    (hH : AnalyticAt ℂ H a.val)
+    (hf : EqOn f ((fun z ↦ ∑ b ∈ s, laurentNegPart (c b) b.val z) + H) U) :
+    ∃ g : ℂ → F, AnalyticAt ℂ g a.val ∧ f - P a =ᶠ[𝓝[≠] a.val] g := by
   classical
-  have hKmono : Monotone K := monotone_nat_of_le_succ hKsub
-  have hAmono : Monotone A := fun i j hij a ha ↦ (hA j a).mpr (hKmono hij ((hA i a).mp ha))
-  let B : ℕ → Finset E := fun k ↦ Nat.rec (A 0) (fun n _ ↦ A (n + 1) \ A n) k
-  have hB_avoid (n : ℕ) : ∀ a ∈ B (n + 1), a.val ∉ K n :=
-    fun a ha haK ↦ (Finset.mem_sdiff.mp ha).2 ((hA n a).mpr haK)
-  choose Q hQdiff hQlt using fun n : ℕ ↦
-    exists_differentiableOn_norm_sum_laurentNegPart_sub_lt hcR (hKfill n) hΩ (hKcpt n) (hKΩ n)
-      (B (n + 1)) (hB_avoid n) (pow_pos (by norm_num : (0 : ℝ) < 1 / 2) (n + 1))
-  let Q' : ℕ → ℂ → F := fun k ↦ Nat.rec 0 (fun n _ ↦ Q n) k
-  let term : ℕ → ℂ → F := fun k z ↦ (∑ a ∈ B k, laurentNegPart (c a) a.val z) - Q' k z
-  refine ⟨fun z ↦ ∑' k, term k z, fun m ↦ ?_⟩
-  have hsumm : Summable fun k : ℕ ↦ (1 / 2 : ℝ) ^ (k + (m + 1)) :=
-    (summable_nat_add_iff (m + 1)).mpr summable_geometric_two
-  have hle (k : ℕ) {z : ℂ} (hz : z ∈ interior (K m)) :
-      ‖term (k + (m + 1)) z‖ ≤ (1 / 2 : ℝ) ^ (k + (m + 1)) := by
-    have hzK : z ∈ K (k + m) := hKmono (Nat.le_add_left m k) (interior_subset hz)
-    exact (hQlt (k + m) z hzK).le
-  have hterm_diff (k : ℕ) : DifferentiableOn ℂ (term (k + (m + 1))) (interior (K m)) := by
-    refine (DifferentiableOn.fun_sum fun a ha ↦ ?_).sub
-      ((hQdiff (k + m)).mono (interior_subset.trans (hKΩ m)))
-    refine (hcR a).differentiableOn_laurentNegPart.mono fun z hz hza ↦ ?_
-    exact hB_avoid (k + m) a ha
-      ((mem_singleton_iff.mp (by simpa only [closedBall_zero] using hza)) ▸
-        hKmono (Nat.le_add_left m k) (interior_subset hz))
-  refine ⟨fun z ↦ (∑' k, term (k + (m + 1)) z) - ∑ k ∈ Finset.range (m + 1), Q' k z, ?_, ?_⟩
-  · refine (TendstoUniformlyOn.differentiableOn
-      (tendstoUniformlyOn_tsum hsumm fun k _ hz ↦ hle k hz)
-      (Eventually.of_forall fun S ↦ DifferentiableOn.fun_sum fun k _ ↦ hterm_diff k)
-      isOpen_interior).sub (DifferentiableOn.fun_sum fun k _ ↦ ?_)
-    cases k with
-    | zero => exact differentiableOn_const 0
-    | succ n => exact (hQdiff n).mono (interior_subset.trans (hKΩ m))
-  · intro z hz
-    have hs : Summable fun k ↦ term k z :=
-      (summable_nat_add_iff (m + 1)).mp (.of_norm_bounded hsumm fun k ↦ hle k hz)
-    have hhead : ∑ k ∈ Finset.range (m + 1), term k z =
-        (∑ a ∈ A m, laurentNegPart (c a) a.val z) - ∑ k ∈ Finset.range (m + 1), Q' k z := by
-      rw [Finset.sum_sub_distrib, Finset.sum_range_succ']
-      dsimp [B]
-      simp_rw [Finset.sum_sdiff_eq_sub (hAmono (Nat.le_succ _))]
-      rw [Finset.sum_range_sub (fun k ↦ ∑ a ∈ A k, laurentNegPart (c a) a.val z) m, sub_add_cancel]
-    simp only [Pi.add_apply]
-    rw [← hs.sum_add_tsum_nat_add (m + 1), hhead]
+  refine ⟨-laurentPosPart (c a) a.val +
+      (fun z ↦ (∑ b ∈ s.erase a, laurentNegPart (c b) b.val z) + H z), ?_, ?_⟩
+  · refine ((hcR a).analyticOnNhd_laurentPosPart a.val
+        (mem_eball_self (hcR a).outerRadius_pos)).neg.add <|
+      (Finset.analyticAt_fun_sum _ fun b hb ↦
+        (hcR b).analyticOnNhd_laurentNegPart_compl_singleton a.val
+          (mem_compl_singleton_iff.mpr (Subtype.val_injective.ne (Finset.ne_of_mem_erase hb).symm)))
+        |>.add hH
+  · filter_upwards [nhdsWithin_le_nhds hU,
+      (hcR a).eventuallyEq_laurentPosPart_add_laurentNegPart] with z hz₁ hz₂
+    simp only [Pi.sub_apply, Pi.add_apply, Pi.neg_apply, hf hz₁, hz₂,
+      ← Finset.add_sum_erase s (fun b ↦ laurentNegPart (c b) b.val z) has]
     abel
 
 /-- Open-set case of `exists_holomorphic_prescribed_isolated_singularities`. -/
@@ -369,53 +330,53 @@ private theorem exists_holomorphic_prescribed_isolated_singularities_of_isOpen
       ∀ a : E, ∃ g : ℂ → F, AnalyticAt ℂ g a.val ∧ f - P a =ᶠ[𝓝[≠] a.val] g := by
   classical
   obtain ⟨K, hKcpt, hKint, hKunion, hKfill⟩ := hΩ.exists_isFilledIn_compact_exhaustion
-  have hKsub (n : ℕ) : K n ⊆ K (n + 1) := (hKint n).trans interior_subset
+  have hKmono : Monotone K := monotone_nat_of_le_succ fun n ↦ (hKint n).trans interior_subset
   have hKΩ (n : ℕ) : K n ⊆ Ω := hKunion ▸ subset_iUnion K n
-  have hfin (n : ℕ) : (((↑) : E → ℂ) ⁻¹' K n).Finite := by
-    have hKE : (K n ∩ E).Finite := by
-      simpa only [Set.sdiff_compl] using
-        (hKcpt n).finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono (hKΩ n) hE)
-    exact (hKE.preimage Subtype.val_injective.injOn).subset fun a ha ↦ ⟨ha, a.prop⟩
+  have hfin (n : ℕ) : (((↑) : E → ℂ) ⁻¹' K n).Finite :=
+    (((hKcpt n).finite_sdiff_of_mem_codiscreteWithin
+      (codiscreteWithin_mono (hKΩ n) hE)).preimage Subtype.val_injective.injOn).subset
+      fun a ha ↦ ⟨ha, by simp⟩
   let A : ℕ → Finset E := fun n ↦ (hfin n).toFinset
+  have hAmono : Monotone A := fun i j hij a ha ↦ by
+    simpa only [A, Finite.mem_toFinset, mem_preimage] using hKmono hij (by simpa [A] using ha)
+  have havoid (k : ℕ) : ∀ a ∈ A (k + 1) \ A k, a.val ∉ K k := fun a ha haK ↦
+    (Finset.mem_sdiff.mp ha).2 (by simp [A, haK])
   choose c R hcR using fun a : E ↦
     exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt (hP a)
-  obtain ⟨f, hfK⟩ := exists_tsum_eqOn_sum_laurentNegPart_add_differentiableOn hΩ hKcpt hKsub hKΩ
-    hKfill (A := A) (fun n a ↦ by simp [A]) hcR
+  choose Q hQdiff hQlt using fun k : ℕ ↦
+    exists_differentiableOn_norm_sum_laurentNegPart_sub_lt hcR (hKfill k) hΩ (hKcpt k) (hKΩ k)
+      (A (k + 1) \ A k) (havoid k) (pow_pos (by norm_num : (0 : ℝ) < 1 / 2) k)
+  let S : ℕ → ℂ → F := fun k z ↦ ∑ a ∈ A k, laurentNegPart (c a) a.val z
+  have hS_sub (k : ℕ) :
+      S (k + 1) - S k = fun z ↦ ∑ a ∈ A (k + 1) \ A k, laurentNegPart (c a) a.val z :=
+    funext fun _ ↦ (Finset.sum_sdiff_eq_sub (hAmono k.le_succ)).symm
+  let f : ℂ → F := fun z ↦ S 0 z + ∑' k, (S (k + 1) - S k - Q k) z
+  have hfK (m : ℕ) : ∃ H : ℂ → F, DifferentiableOn ℂ H (interior (K m)) ∧
+      EqOn f (S m + H) (interior (K m)) :=
+    exists_differentiableOn_eqOn_add_tsum isOpen_interior
+      (fun k ↦ (hQdiff k).mono (interior_subset.trans (hKΩ m))) summable_geometric_two m
+      (fun k hmk ↦ hS_sub k ▸ DifferentiableOn.fun_sum fun a ha ↦
+        (hcR a).differentiableOn_laurentNegPart_compl_singleton.mono
+          (subset_compl_singleton_iff.mpr fun hz ↦
+            havoid k a ha (hKmono hmk (interior_subset hz))))
+      fun k hmk z hz ↦ by rw [hS_sub k]; exact (hQlt k z (hKmono hmk (interior_subset hz))).le
   refine ⟨f, fun z₀ hz₀ ↦ ?_, fun a ↦ ?_⟩
   · obtain ⟨n, hz₀n⟩ := mem_iUnion.mp (hKunion ▸ hz₀.1)
     obtain ⟨H, hH, hfH⟩ := hfK (n + 1)
     have hopen : IsOpen (interior (K (n + 1)) \ E) := (Set.sdiff_eq _ _).symm ▸
       isOpen_interior.inter_of_mem_codiscreteWithin
         (codiscreteWithin_mono (interior_subset.trans (hKΩ (n + 1))) hE)
-    have hsum_diff : DifferentiableOn ℂ
-        ((fun z ↦ ∑ b ∈ A (n + 1), laurentNegPart (c b) b.val z) + H)
-        (interior (K (n + 1)) \ E) := by
+    have hsum_diff : DifferentiableOn ℂ (S (n + 1) + H) (interior (K (n + 1)) \ E) := by
       refine (DifferentiableOn.fun_sum fun b _ ↦ ?_).add (hH.mono sdiff_subset)
-      exact (hcR b).differentiableOn_laurentNegPart.mono fun z hz hzb ↦
-        hz.2 ((mem_singleton_iff.mp (by simpa only [closedBall_zero] using hzb)) ▸ b.prop)
+      exact (hcR b).differentiableOn_laurentNegPart_compl_singleton.mono
+        (subset_compl_singleton_iff.mpr fun h ↦ h.2 b.prop)
     exact ((hsum_diff.congr (hfH.mono sdiff_subset)).differentiableAt
       (hopen.mem_nhds ⟨hKint n hz₀n, hz₀.2⟩)).differentiableWithinAt
   · obtain ⟨n, han⟩ := mem_iUnion.mp (hKunion ▸ hEΩ a.prop)
     obtain ⟨H, hH, hfH⟩ := hfK (n + 1)
-    have haA : a ∈ A (n + 1) := by simp [A, hKsub n han]
-    have ha_int : a.val ∈ interior (K (n + 1)) := hKint n han
-    refine ⟨-laurentPosPart (c a) a.val +
-        (fun z ↦ (∑ b ∈ (A (n + 1)).erase a, laurentNegPart (c b) b.val z) + H z), ?_, ?_⟩
-    · refine ((hcR a).analyticOnNhd_laurentPosPart a.val
-          (mem_eball_self (hcR a).outerRadius_pos)).neg.add ?_
-      refine (Finset.analyticAt_fun_sum _ fun b hb ↦ ?_).add
-        (hH.analyticAt (isOpen_interior.mem_nhds ha_int))
-      exact (hcR b).analyticOnNhd_laurentNegPart a.val
-        (by simpa [closedBall_zero] using Subtype.val_injective.ne (Finset.ne_of_mem_erase hb).symm)
-    · have hball : eball a.val (R a) \ closedBall a.val 0 ∈ 𝓝[≠] a.val := by
-        rw [closedBall_zero]
-        exact inter_mem (nhdsWithin_le_nhds
-          (isOpen_eball.mem_nhds (mem_eball_self (hcR a).outerRadius_pos))) self_mem_nhdsWithin
-      filter_upwards [nhdsWithin_le_nhds (isOpen_interior.mem_nhds ha_int), hball] with z hz₁ hz₂
-      simp only [Pi.sub_apply, Pi.add_apply, Pi.neg_apply, hfH hz₁,
-        (hcR a).eq_laurentPosPart_add_laurentNegPart hz₂,
-        ← Finset.add_sum_erase (A (n + 1)) (fun b ↦ laurentNegPart (c b) b.val z) haA]
-      abel
+    have hmem : interior (K (n + 1)) ∈ 𝓝 a.val := isOpen_interior.mem_nhds (hKint n han)
+    exact exists_analyticAt_eventuallyEq_sub_of_eqOn_sum_laurentNegPart_add hcR
+      (by simp [A, hKmono n.le_succ han]) hmem (hH.analyticAt hmem) hfH
 
 /-- **Global realization of prescribed isolated singularities.** Let `E ⊆ Ω` be discrete and
 relatively closed in `Ω ⊆ ℂ` (`Eᶜ ∈ codiscreteWithin Ω`), and let `F` be a complex Banach space.
