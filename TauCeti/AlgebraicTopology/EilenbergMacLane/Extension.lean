@@ -162,15 +162,14 @@ theorem bijective_homotopyGroupMap_of_ker_eq {z : Z}
   exact (Function.Bijective.of_comp_iff' (hZ'.bijective.comp Additive.ofMul.bijective) _).1 h
 
 /-- **Maps out of the wedge into a `K(G, n + 2)` extend to weak equivalences out of the model.**
-Let `Z` be an Eilenberg--Mac Lane space of type `K(G, n + 2)` and `f : W → Z` a map from the wedge
-of `(n + 2)`-spheres, sending its base point to the base point of `Z`. If the induced map
+Let `f : W → Z` be a map from the wedge of `(n + 2)`-spheres to an Eilenberg--Mac Lane space `Z` of
+type `K(G, n + 2)`, based at the image of the base point of the wedge. If the induced map
 `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` is surjective with kernel the kernel of `ψ`, then `f` extends to a weak
 homotopy equivalence from the presentation complex with its homotopy groups above dimension `n + 2`
 killed. In general this source is a `K(im ψ, n + 2)`; it is the model `K(A, n + 2)` when `ψ` is
 surjective. -/
 theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G : Type*} [Group G]
-    {z : Z} (hZ : IsEilenbergMacLaneSpace G (n + 2) Z z) (f : wedge A n ⟶ Z)
-    (hfz : f (wedgeBase A n) = z)
+    (f : wedge A n ⟶ Z) (hZ : IsEilenbergMacLaneSpace G (n + 2) Z (f (wedgeBase A n)))
     (hker : LinearMap.ker (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
       (ModuleCat.of ℤ ℤ)).map f).hom = LinearMap.ker ψ)
     (hsurj : Function.Surjective (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
@@ -185,15 +184,12 @@ theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G :
   obtain ⟨F₁, hF₁⟩ := (exists_cellAttachmentIncl_comp_eq_iff hZ' f).2 fun h hh ↦ by
     rw [← hker] at hh
     exact hh
-  have hF₁z : F₁ (presentationBase A n ψ) = z := by
-    rw [← hfz, ← hF₁, ConcreteCategory.comp_apply]
-  subst hF₁z
   -- The extension is bijective on `πₙ₊₂`, so it extends to a weak equivalence out of the model.
   have : PathConnectedSpace (presentation A n ψ) :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
       (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
   obtain ⟨F, hF, hweq⟩ := F₁.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence
-    (fun k _ hk ↦ subsingleton_homotopyGroup_presentation A n ψ k hk) hZ
+    (fun k _ hk ↦ subsingleton_homotopyGroup_presentation A n ψ k hk) (hZ.of_basepoint _)
     (bijective_homotopyGroupMap_of_ker_eq (hZ' _) F₁ rfl (hF₁ ▸ hker) (hF₁ ▸ hsurj))
   exact ⟨F, by rw [hF, hF₁], hweq⟩
 
