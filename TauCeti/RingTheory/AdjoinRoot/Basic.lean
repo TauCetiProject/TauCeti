@@ -349,7 +349,6 @@ end TensorProduct
 
 end AdjoinRoot
 
-
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
@@ -387,6 +386,5 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
     exact map_mul _ _ _
 
 end Polynomial
-
 
 end

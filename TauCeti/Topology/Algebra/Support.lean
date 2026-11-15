@@ -34,6 +34,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   family is that member.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
+  supported exactly when every coordinate is, with multiplicative version
+  `TauCeti.hasCompactMulSupport_pi_iff`.
 -/
 
 public section
@@ -146,3 +149,16 @@ theorem prod_eventuallyEq_of_pairwiseDisjoint_mulTSupport {A : Finset α} {φ : 
   rw [Finset.prod_apply, prod_eq_single_of_mem a ha fun b hb hba ↦ hy b (mem_erase.2 ⟨hba, hb⟩)]
 
 end Finset
+
+namespace TauCeti
+
+/-- A function with values in a finite product has compact multiplicative support exactly when
+each coordinate has compact multiplicative support. -/
+@[to_additive /-- A function with values in a finite product is compactly supported exactly when
+each coordinate is compactly supported. -/]
+theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite ι]
+    {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
+    HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
+  simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+end TauCeti
