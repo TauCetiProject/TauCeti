@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.LinearAlgebra.Determinant
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -48,6 +49,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.repr`: the coordinates of `f` in a finite basis have temperate
+  growth.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
@@ -107,6 +110,19 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- The coordinates `x ↦ b.repr (f x) i` of a function of temperate growth in a finite basis `b`
+have temperate growth. -/
+theorem repr {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+    [Finite ι] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
+    (fun x ↦ b.repr (f x) i).HasTemperateGrowth := by
+  have h : (fun x ↦ b.repr (f x) i) =
+      ((ContinuousLinearMap.proj i).comp (b.equivFunL : F →L[𝕜] ι → 𝕜)).restrictScalars ℝ ∘ f := by
+    funext x
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.hasTemperateGrowth _).comp hf
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
