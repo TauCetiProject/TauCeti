@@ -112,9 +112,15 @@ lemma singularCohomologyMap_lift_const_eq_of_joined {Z : TopCat.{w}} {x x' : X} 
     TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
         (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x)) g) n =
       TopCat.singularCohomologyMap
-        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x')) g) n :=
-  Homotopy.congr_singularCohomologyMap
-    (h.somePath.toHomotopyConst.prodMk (.refl g.hom) :) R k M n
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x')) g) n := by
+  -- pairing a path from `x` to `x'` with the constant homotopy at `g` connects the two maps
+  have hlift (x₁ : X) : (ContinuousMap.const Z x₁).prodMk g.hom =
+      (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x₁)) g).hom := by
+    ext z
+    · exact (congrArg Prod.fst (TopCat.lift_apply (x := z))).symm
+    · exact (congrArg Prod.snd (TopCat.lift_apply (x := z))).symm
+  exact Homotopy.congr_singularCohomologyMap
+    ((h.somePath.toHomotopyConst.prodMk (.refl g.hom)).cast (hlift x) (hlift x')) R k M n
 
 end TopCat
 
