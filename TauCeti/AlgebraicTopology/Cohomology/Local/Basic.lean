@@ -235,25 +235,24 @@ theorem exists_span_singularCohomology_complSingleton_eq_top :
 /-- **Local cohomology in the top degree for modules isomorphic to the base ring**: at a point
 with a chart to a real normed space of dimension `d`, linear equivalences `eR : R ≃ₗ[k] k` and
 `eN : N ≃ₗ[k] k` identify `Hᵈ(M, M ∖ {x}; R, N)` with `k`. -/
-def singularCohomologyComplSingletonFinrankEquivOfLinearEquiv {R : ModuleCat.{w} k}
-    {N : ModuleCat.{w} k} (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) :
-    (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N
-        (finrank ℝ E) ≃ₗ[k] k :=
-  haveI : Module.Projective k R := Module.Projective.of_equiv eR.symm
+def singularCohomologyComplSingletonFinrankEquivOfLinearEquiv {R N : ModuleCat.{w} k}
+    (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) :
+    (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E) ≃ₗ[k] k :=
+  haveI : Module.Projective k R := .of_equiv eR.symm
   singularCohomologyComplSingletonFinrankEquiv R N φ hx ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
     eR.arrowCongr eN ≪≫ₗ LinearMap.ringLmapEquivSelf k k k
 
 /-- `TauCeti.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv` evaluates the relative
 Kronecker map of a class on `(singularHomologyComplSingletonFinrankIso R φ hx).inv (eR.symm 1)` and
 applies `eN`. -/
-lemma singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply {R : ModuleCat.{w} k}
-    {N : ModuleCat.{w} k} (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k)
+lemma singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply {R N : ModuleCat.{w} k}
+    (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k)
     (α : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularCohomology R k N (finrank ℝ E)) :
-    haveI : Module.Projective k R := Module.Projective.of_equiv eR.symm
+    haveI : Module.Projective k R := .of_equiv eR.symm
     singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ hx eR eN α =
       eN (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularKronecker k (finrank ℝ E) α).hom
         ((singularHomologyComplSingletonFinrankIso R φ hx).inv.hom (eR.symm 1))) := by
-  have : Module.Projective k R := Module.Projective.of_equiv eR.symm
+  have : Module.Projective k R := .of_equiv eR.symm
   rw [singularCohomologyComplSingletonFinrankEquivOfLinearEquiv, LinearEquiv.trans_apply,
     LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     singularCohomologyComplSingletonFinrankEquiv_apply, ModuleCat.homLinearEquiv_apply,
@@ -265,16 +264,14 @@ lemma singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply {R : Modul
 homology generator `(singularHomologyComplSingletonFinrankIso R φ hx).inv (eR.symm 1)` gives
 `eN.symm r`. -/
 lemma singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm
-    {R : ModuleCat.{w} k} {N : ModuleCat.{w} k} (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) (r : k) :
-    haveI : Module.Projective k R := Module.Projective.of_equiv eR.symm
+    {R N : ModuleCat.{w} k} (eR : R ≃ₗ[k] k) (eN : N ≃ₗ[k] k) (r : k) :
+    haveI : Module.Projective k R := .of_equiv eR.symm
     ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularKronecker k (finrank ℝ E)
       ((singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ hx eR eN).symm r)).hom
-        ((singularHomologyComplSingletonFinrankIso R φ hx).inv.hom (eR.symm 1)) =
-      eN.symm r := by
-  have : Module.Projective k R := Module.Projective.of_equiv eR.symm
-  apply eN.injective
-  rw [eN.apply_symm_apply,
+        ((singularHomologyComplSingletonFinrankIso R φ hx).inv.hom (eR.symm 1)) = eN.symm r := by
+  have : Module.Projective k R := .of_equiv eR.symm
+  exact eN.injective (by rw [eN.apply_symm_apply,
     ← singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_apply φ hx eR eN,
-    LinearEquiv.apply_symm_apply]
+    LinearEquiv.apply_symm_apply])
 
 end TauCeti

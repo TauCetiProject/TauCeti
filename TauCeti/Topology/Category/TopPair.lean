@@ -702,36 +702,34 @@ end TopCat
 
 namespace TauCeti
 
-/-- A point of `V₁ × V₂` distinct from `(x₁, x₂)` differs from `x₁` in its first component or from
-`x₂` in its second component. -/
-theorem compl_singleton_prod_subset {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
-    (x₁ : V₁) (x₂ : V₂) :
-    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
-      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
-        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ := by
-  intro v hv
-  by_contra hc
-  simp only [Set.mem_union, Set.mem_preimage, Set.mem_compl_singleton_iff, not_or, not_not] at hc
-  exact hv (Prod.ext hc.1 hc.2)
+section ComplSingletonProd
 
-/-- A point of `V₁ × V₂` that differs from `x₁` in its first component or from `x₂` in its second
-component is distinct from `(x₁, x₂)`. -/
-theorem subset_compl_singleton_prod {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
-    (x₁ : V₁) (x₂ : V₂) :
-    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
-      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ ⊆
-        ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) := by
-  rintro v (hv | hv) h0
-  · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.fst h0)
-  · exact Set.mem_compl_singleton_iff.1 hv (congrArg Prod.snd h0)
+variable {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂] (x₁ : V₁) (x₂ : V₂)
 
 /-- The complement of `{(x₁, x₂)}` in `V₁ × V₂` is the union of the preimages of `{x₁}ᶜ` and
 `{x₂}ᶜ` under the two projections. -/
-theorem compl_singleton_prod_eq {V₁ V₂ : Type u} [TopologicalSpace V₁] [TopologicalSpace V₂]
-    (x₁ : V₁) (x₂ : V₂) :
+theorem compl_singleton_prod_eq :
     ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) =
       (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
         (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ :=
-  Set.Subset.antisymm (compl_singleton_prod_subset x₁ x₂) (subset_compl_singleton_prod x₁ x₂)
+  Set.ext fun _ ↦ by simp [Prod.ext_iff, imp_iff_not_or]
+
+/-- A point of `V₁ × V₂` distinct from `(x₁, x₂)` differs from `x₁` in its first component or from
+`x₂` in its second component. -/
+theorem compl_singleton_prod_subset :
+    ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
+      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ :=
+  (compl_singleton_prod_eq x₁ x₂).subset
+
+/-- A point of `V₁ × V₂` that differs from `x₁` in its first component or from `x₂` in its second
+component is distinct from `(x₁, x₂)`. -/
+theorem subset_compl_singleton_prod :
+    (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {x₁}ᶜ ∪
+      (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {x₂}ᶜ ⊆
+        ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂))) :=
+  (compl_singleton_prod_eq x₁ x₂).superset
+
+end ComplSingletonProd
 
 end TauCeti

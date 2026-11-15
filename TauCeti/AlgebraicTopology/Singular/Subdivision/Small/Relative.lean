@@ -117,20 +117,15 @@ lemma chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
     {Z W : TopCat.{w}} {ι : Type*} (U : ι → Set W) (f : Z ⟶ W) {i : ι} (hf : ∀ z, f z ∈ U i)
     (T : A) :
     SSet.chainComplexMap (TopCat.toSSet.map f) T ≫
-        (W.smallSingularSubcomplex U).pair.chainComplexπ T =
-      0 := by
-  have hι : SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T ≫
-      (W.smallSingularSubcomplex U).pair.chainComplexπ T = 0 :=
-    (W.smallSingularSubcomplex U).pair.chainComplex_condition T
-  have hmap : SSet.chainComplexMap (TopCat.toSSet.map f) T =
-      SSet.chainComplexMap
-        (TopCat.toSSet.map (TopCat.ofHom ⟨fun z ↦ ⟨f z, hf z⟩, f.hom.continuous.subtype_mk hf⟩) ≫
-          TopCat.toSmallSingularSubcomplex U (subset_refl (U i))) T ≫
-      SSet.chainComplexMap (W.smallSingularSubcomplex U).ι T := by
-    refine Eq.trans ?_ (((SSet.chainComplexFunctor A).obj T).map_comp _ _)
-    congr 2
-    rw [Category.assoc, TopCat.toSmallSingularSubcomplex_ι, ← TopCat.toSSet.map_comp]
-    rfl
-  exact (eq_whisker hmap _).trans ((Category.assoc _ _ _).trans ((whisker_eq _ hι).trans comp_zero))
+      (W.smallSingularSubcomplex U).pair.chainComplexπ T = 0 := by
+  have hf' : TopCat.toSSet.map f =
+      (TopCat.toSSet.map (TopCat.ofHom ⟨fun z ↦ ⟨f z, hf z⟩, f.hom.continuous.subtype_mk hf⟩) ≫
+        TopCat.toSmallSingularSubcomplex U (subset_refl (U i))) ≫
+        (W.smallSingularSubcomplex U).ι := by
+    rw [Category.assoc, TopCat.toSmallSingularSubcomplex_ι, ← TopCat.toSSet.map_comp]; rfl
+  exact (eq_whisker ((congrArg (SSet.chainComplexMap · T) hf').trans
+      (((SSet.chainComplexFunctor A).obj T).map_comp _ _)) _).trans <|
+    (Category.assoc _ _ _).trans <|
+    (whisker_eq _ ((W.smallSingularSubcomplex U).pair.chainComplex_condition T)).trans comp_zero
 
 end TauCeti

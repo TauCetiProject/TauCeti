@@ -16,43 +16,33 @@ import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 /-!
 # The cross product of local cohomology classes
 
-For `T₁` topological spaces `V₁` and `V₂` and points `x₁ : V₁` and `x₂ : V₂`, a point of `V₁ × V₂`
-is distinct from `(x₁, x₂)` if and only if it differs from `x₁` in its first component or from `x₂`
-in its second component (`TauCeti.compl_singleton_prod_eq`), so the pair
-`(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)})` receives the relative cup product
+For `T₁` spaces `V₁` and `V₂` and `x₁ : V₁`, `x₂ : V₂`, `p : V₁ × V₂` is distinct from `(x₁, x₂)`
+iff `p.1 ≠ x₁` or `p.2 ≠ x₂` (`TauCeti.compl_singleton_prod_eq`), so `(V₁ × V₂, {(x₁, x₂)}ᶜ)`
+receives the relative cup product
 (`TopCat.singularRelativeCupPullback`) of classes pulled back along the two projections:
 
 `Hᵖ(V₁, V₁ ∖ {x₁}) × H^q(V₂, V₂ ∖ {x₂}) ⟶ Hᵖ⁺^q(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)})`
 
-(`TauCeti.complSingletonPairCross`). It is natural in continuous maps carrying `{x₁}ᶜ` into `{y₁}ᶜ`
-and `{x₂}ᶜ` into `{y₂}ᶜ` (`TauCeti.complSingletonPairCross_naturality`) — in particular under
-products of continuous linear equivalences at `0`
-(`TauCeti.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`) — and pairs
+(`TauCeti.complSingletonPairCross`). It is natural in singleton-complement maps
+(`TauCeti.complSingletonPairCross_naturality`) and continuous linear equivalences at `0`
+(`TauCeti.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`), and pairs
 multiplicatively with `TauCeti.complSingletonPairHomologyCross`
-(`TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`).
-
-At Euclidean chart points `x₁ ∈ φ₁.source` and `x₂ ∈ φ₂.source`, when the chain and value modules
-over a commutative ring `k` are isomorphic to `k` (`Rᵢ ≃ₗ[k] k`, `Mᵢ ≃ₗ[k] k`) and
-`u : R₃ ⟶ R₁ ⊗ R₂`, `μ : M₁ ⊗ M₂ ⟶ M₃` are isomorphisms — in particular for scalar coefficients
-`ModuleCat.of k k` with the standard unitor pairings — `TauCeti.complSingletonPairCross` produces a
-top-degree generator if and only if both factors generate.
+(`TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`). At
+Euclidean chart points `xᵢ ∈ φᵢ.source` with `Rᵢ, Mᵢ ≃ₗ[k] k` and isomorphisms `u, μ`, it produces
+a top-degree generator iff both factors generate.
 
 ## Main definitions
 
-* `TauCeti.complSingletonPairCross`: the product of local classes of the pairs `(V₁, V₁ ∖ {x₁})` and
-  `(V₂, V₂ ∖ {x₂})`, a class of `(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)})`.
+* `TauCeti.complSingletonPairCross`: local cross product of `(V₁, {x₁}ᶜ)` and `(V₂, {x₂}ᶜ)`.
 
 ## Main results
 
-* `TauCeti.complSingletonPairCross_naturality` and
-  `TauCeti.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`: naturality of the
-  product under singleton-complement maps and products of continuous linear equivalences.
+* `TauCeti.complSingletonPairCross_naturality`,
+  `TauCeti.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`: naturality.
 * `TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`:
   Kronecker multiplicativity `⟨g₁ × g₂, z₁ × z₂⟩ = μ (⟨g₁, z₁⟩ ⊗ ⟨g₂, z₂⟩)`.
 * `TauCeti.span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso`
-  and `TauCeti.span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso` (with ring-valued
-  specialization `TauCeti.span_complSingletonPairCross_eq_top_iff`): generator preservation and
-  reflection for coefficient modules isomorphic to `k` and isomorphism pairings `u`, `μ`.
+  and `TauCeti.span_complSingletonPairCross_eq_top_iff`: generator preservation and reflection.
 
 ## References
 
@@ -263,66 +253,8 @@ end ComplSingletonPairHomologyCross
 
 section SpanEqTop
 
-/-- The local cross product of dual chart generators maps to a unit under the product chart. -/
-private lemma isUnit_complSingletonPairCross_symm_one {k : Type w} [CommRing k]
-    {V₁ V₂ : Type w} [TopologicalSpace V₁] [T1Space V₁]
-    [TopologicalSpace V₂] [T1Space V₂]
-    {E₁ E₂ : Type w} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
-    {R₁ R₂ R₃ M₁ M₂ M₃ : ModuleCat.{w} k}
-    (eR₁ : R₁ ≃ₗ[k] k) (eR₂ : R₂ ≃ₗ[k] k) (eR₃ : R₃ ≃ₗ[k] k)
-    (eM₁ : M₁ ≃ₗ[k] k) (eM₂ : M₂ ≃ₗ[k] k) (eM₃ : M₃ ≃ₗ[k] k)
-    (φ₁ : OpenPartialHomeomorph V₁ E₁) {x₁ : V₁} (hx₁ : x₁ ∈ φ₁.source)
-    (φ₂ : OpenPartialHomeomorph V₂ E₂) {x₂ : V₂} (hx₂ : x₂ ∈ φ₂.source)
-    (hx₁₂ : (x₁, x₂) ∈ (φ₁.prod φ₂).source)
-    {u : R₃ ⟶ R₁ ⊗ R₂} [IsIso u] {μ : M₁ ⊗ M₂ ⟶ M₃} [IsIso μ] :
-    let e₁ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₁ hx₁ eR₁ eM₁
-    let e₂ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₂ hx₂ eR₂ eM₂
-    let e₁₂ :=
-      singularCohomologyComplSingletonFinrankEquivOfLinearEquiv (φ₁.prod φ₂) hx₁₂ eR₃ eM₃
-    IsUnit (e₁₂ (complSingletonPairCross k x₁ x₂ u μ _ _ _ Module.finrank_prod.symm
-      (e₁.symm 1) (e₂.symm 1))) := by
-  have : Module.Projective k R₁ := Module.Projective.of_equiv eR₁.symm
-  have : Module.Projective k R₂ := Module.Projective.of_equiv eR₂.symm
-  let e₁ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₁ hx₁ eR₁ eM₁
-  let e₂ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₂ hx₂ eR₂ eM₂
-  let e₁₂ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv (φ₁.prod φ₂) hx₁₂ eR₃ eM₃
-  let z₁ := (singularHomologyComplSingletonFinrankIso R₁ φ₁ hx₁).inv.hom (eR₁.symm 1)
-  let z₂ := (singularHomologyComplSingletonFinrankIso R₂ φ₂ hx₂).inv.hom (eR₂.symm 1)
-  let z := (complSingletonPairHomologyCross x₁ x₂ (inv u) (Module.finrank ℝ E₁)
-    (Module.finrank ℝ E₂) (Module.finrank ℝ (E₁ × E₂)) Module.finrank_prod.symm).hom (z₁ ⊗ₜ[k] z₂)
-  let g₀ := complSingletonPairCross k x₁ x₂ u μ _ _ _ Module.finrank_prod.symm
-    (e₁.symm 1) (e₂.symm 1)
-  have hpair : ((TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularKronecker k
-      (Module.finrank ℝ (E₁ × E₂)) g₀).hom z = μ.hom (eM₁.symm 1 ⊗ₜ[k] eM₂.symm 1) := by
-    have hk := congrArg (fun f ↦ f.hom (z₁ ⊗ₜ[k] z₂))
-      (complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross k x₁ x₂
-        (IsIso.inv_hom_id u) μ _ _ _ Module.finrank_prod.symm (e₁.symm 1) (e₂.symm 1))
-    dsimp only [g₀, z] at hk ⊢
-    rw [ModuleCat.hom_comp, LinearMap.comp_apply] at hk
-    rw [hk, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_tensorHom,
-      TensorProduct.map_tmul,
-      singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm,
-      singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm]
-  let ψ : M₃ →ₗ[k] k :=
-    (TensorProduct.lid k k).toLinearMap.comp
-      ((TensorProduct.map eM₁.toLinearMap eM₂.toLinearMap).comp (inv μ).hom)
-  let Ψ : (TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularCohomology R₃ k M₃
-      (Module.finrank ℝ (E₁ × E₂)) →ₗ[k] k :=
-    ψ.comp ((LinearMap.applyₗ z).comp (ModuleCat.homLinearEquiv.toLinearMap.comp
-      ((TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularKronecker k
-        (Module.finrank ℝ (E₁ × E₂)))))
-  refine e₁₂.isUnit_apply_of_apply_eq_one Ψ ?_
-  simp only [Ψ, ψ, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearMap.applyₗ_apply_apply,
-    ModuleCat.homLinearEquiv_apply, AddEquiv.toFun_eq_coe, ModuleCat.homAddEquiv_apply]
-  rw [hpair, ← LinearMap.comp_apply (inv μ).hom μ.hom, ← ModuleCat.hom_comp,
-    IsIso.hom_inv_id, ModuleCat.hom_id, LinearMap.id_apply, TensorProduct.map_tmul,
-    LinearEquiv.coe_coe, eM₁.apply_symm_apply, LinearEquiv.coe_coe, eM₂.apply_symm_apply,
-    TensorProduct.lid_tmul, one_smul]
-
 /-- **Local cross products preserve and reflect generators at Euclidean chart points** for
-coefficient modules isomorphic to `k` (`Rᵢ ≃ₗ[k] k`, `Mᵢ ≃ₗ[k] k`) and isomorphism pairings
-`u : R₃ ⟶ R₁ ⊗ R₂`, `μ : M₁ ⊗ M₂ ⟶ M₃`. -/
+`Rᵢ, Mᵢ ≃ₗ[k] k` and isomorphism pairings `u : R₃ ⟶ R₁ ⊗ R₂`, `μ : M₁ ⊗ M₂ ⟶ M₃`. -/
 theorem span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
     {k : Type w} [CommRing k]
     {V₁ V₂ : Type w} [TopologicalSpace V₁] [T1Space V₁]
@@ -345,15 +277,43 @@ theorem span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHom
   have hn : n = Module.finrank ℝ (E₁ × E₂) := h.symm.trans Module.finrank_prod.symm
   subst hn
   have hx₁₂ : (x₁, x₂) ∈ (φ₁.prod φ₂).source := by
-    rw [OpenPartialHomeomorph.prod_source]
-    exact ⟨hx₁, hx₂⟩
+    rw [OpenPartialHomeomorph.prod_source]; exact ⟨hx₁, hx₂⟩
+  have : Module.Projective k R₁ := .of_equiv eR₁.symm
+  have : Module.Projective k R₂ := .of_equiv eR₂.symm
   let e₁ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₁ hx₁ eR₁ eM₁
   let e₂ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv φ₂ hx₂ eR₂ eM₂
   let e₁₂ := singularCohomologyComplSingletonFinrankEquivOfLinearEquiv (φ₁.prod φ₂) hx₁₂ eR₃ eM₃
   let g₀ := complSingletonPairCross k x₁ x₂ u μ _ _ _ Module.finrank_prod.symm
     (e₁.symm 1) (e₂.symm 1)
-  have hunit₀ : IsUnit (e₁₂ g₀) :=
-    isUnit_complSingletonPairCross_symm_one eR₁ eR₂ eR₃ eM₁ eM₂ eM₃ φ₁ hx₁ φ₂ hx₂ hx₁₂
+  have hunit₀ : IsUnit (e₁₂ g₀) := by
+    let z₁ := (singularHomologyComplSingletonFinrankIso R₁ φ₁ hx₁).inv.hom (eR₁.symm 1)
+    let z₂ := (singularHomologyComplSingletonFinrankIso R₂ φ₂ hx₂).inv.hom (eR₂.symm 1)
+    let z := (complSingletonPairHomologyCross x₁ x₂ (inv u) (Module.finrank ℝ E₁)
+      (Module.finrank ℝ E₂) (Module.finrank ℝ (E₁ × E₂)) Module.finrank_prod.symm).hom
+      (z₁ ⊗ₜ[k] z₂)
+    have hpair : ((TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularKronecker k
+        (Module.finrank ℝ (E₁ × E₂)) g₀).hom z = μ.hom (eM₁.symm 1 ⊗ₜ[k] eM₂.symm 1) := by
+      have hk := congrArg (fun f ↦ f.hom (z₁ ⊗ₜ[k] z₂))
+        (complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross k x₁ x₂
+          (IsIso.inv_hom_id u) μ _ _ _ Module.finrank_prod.symm (e₁.symm 1) (e₂.symm 1))
+      dsimp only [g₀, z] at hk ⊢
+      rw [ModuleCat.hom_comp, LinearMap.comp_apply] at hk
+      rw [hk, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_tensorHom,
+        TensorProduct.map_tmul,
+        singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm,
+        singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm]
+    let ψ : M₃ →ₗ[k] k := (TensorProduct.lid k k).toLinearMap.comp
+      ((TensorProduct.map eM₁.toLinearMap eM₂.toLinearMap).comp (inv μ).hom)
+    refine e₁₂.isUnit_apply_of_apply_eq_one (ψ.comp ((LinearMap.applyₗ z).comp
+      (ModuleCat.homLinearEquiv.toLinearMap.comp
+        ((TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularKronecker k
+          (Module.finrank ℝ (E₁ × E₂)))))) ?_
+    simp only [ψ, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearMap.applyₗ_apply_apply,
+      ModuleCat.homLinearEquiv_apply, AddEquiv.toFun_eq_coe, ModuleCat.homAddEquiv_apply]
+    rw [hpair, ← LinearMap.comp_apply (inv μ).hom μ.hom, ← ModuleCat.hom_comp, IsIso.hom_inv_id,
+      ModuleCat.hom_id, LinearMap.id_apply, TensorProduct.map_tmul, LinearEquiv.coe_coe,
+      eM₁.apply_symm_apply, LinearEquiv.coe_coe, eM₂.apply_symm_apply, TensorProduct.lid_tmul,
+      one_smul]
   have hg₁ : g₁ = e₁ g₁ • e₁.symm 1 := by simp [← map_smul]
   have hg₂ : g₂ = e₂ g₂ • e₂.symm 1 := by simp [← map_smul]
   have he₁₂ : e₁₂ (complSingletonPairCross k x₁ x₂ u μ _ _ _ h g₁ g₂) =
@@ -366,7 +326,7 @@ theorem span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHom
     e₂.span_singleton_eq_top_iff_isUnit, he₁₂, IsUnit.mul_iff, hunit₀, and_true]
 
 /-- **Local cross products on finite-dimensional real normed spaces preserve and reflect
-generators**, for coefficient modules isomorphic to `k` and isomorphism pairings `u` and `μ`. -/
+generators** for `Rᵢ, Mᵢ ≃ₗ[k] k` and isomorphism pairings `u` and `μ`. -/
 theorem span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso {k : Type w} [CommRing k]
     {F₁ F₂ : Type w} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
@@ -382,12 +342,11 @@ theorem span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso {k : Typ
     Submodule.span k {complSingletonPairCross k x₁ x₂ u μ _ _ _ h g₁ g₂} = ⊤ ↔
       Submodule.span k {g₁} = ⊤ ∧ Submodule.span k {g₂} = ⊤ :=
   span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
-    eR₁ eR₂ eR₃ eM₁ eM₂ eM₃
-    (OpenPartialHomeomorph.refl F₁) (mem_univ x₁) (OpenPartialHomeomorph.refl F₂) (mem_univ x₂)
-    h g₁ g₂
+    eR₁ eR₂ eR₃ eM₁ eM₂ eM₃ (OpenPartialHomeomorph.refl F₁) (mem_univ x₁)
+    (OpenPartialHomeomorph.refl F₂) (mem_univ x₂) h g₁ g₂
 
-/-- **Local cross products on finite-dimensional real normed spaces preserve and reflect
-generators** for scalar coefficients `ModuleCat.of k k` with the standard unitor pairings. -/
+/-- **Local cross products preserve and reflect generators** for `ModuleCat.of k k` with
+standard unitors. -/
 theorem span_complSingletonPairCross_eq_top_iff {k : Type w} [CommRing k]
     {F₁ F₂ : Type w} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
@@ -402,8 +361,7 @@ theorem span_complSingletonPairCross_eq_top_iff {k : Type w} [CommRing k]
   span_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_isIso
     (.refl k k) (.refl k k) (.refl k k) (.refl k k) (.refl k k) (.refl k k) h g₁ g₂
 
-/-- Over any commutative ring `k`, `complSingletonPairCross` of top-degree local generators
-generates. -/
+/-- `complSingletonPairCross` of top-degree local generators generates over any `CommRing k`. -/
 theorem span_complSingletonPairCross_eq_top {k : Type w} [CommRing k]
     {F₁ F₂ : Type w} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
