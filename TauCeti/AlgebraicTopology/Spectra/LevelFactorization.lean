@@ -402,15 +402,12 @@ lemma free_map_mem_llp_levelFibrations {K L : PointedSSet.{0}} {j : K ⟶ L}
 cofibrant. -/
 lemma projectiveCofibrations_initial_to_free (K : PointedSSet.{0}) (n : ℕ) :
     projectiveCofibrations (initial.to ((free n).obj K)) := by
-  let u : Under.mk (𝟙 (Δ[0] : SSet.{0})) ⟶ K := Under.homMk K.hom
-  have : Mono u.right := SSet.stdSimplex.isTerminalObj₀.mono_from K.hom
-  let hI := Under.mkIdInitial.isInitialObj (free n) (Under.mk (𝟙 (Δ[0] : SSet.{0})))
-  let e : (free n).obj (Under.mk (𝟙 (Δ[0] : SSet.{0}))) ≅ ⊥_ SymmetricSpectrum :=
-    hI.uniqueUpToIso initialIsInitial
-  have he : e.inv ≫ (free n).map u = initial.to ((free n).obj K) :=
+  let hI := initialIsInitial.isInitialObj (free n) (⊥_ PointedSSet.{0})
+  have he : (hI.uniqueUpToIso initialIsInitial).inv ≫ (free n).map (initial.to K) =
+      initial.to ((free n).obj K) :=
     initialIsInitial.hom_ext _ _
   rw [← he, projectiveCofibrations.cancel_left_of_respectsIso]
-  exact free_map_mem_projectiveCofibrations u n
+  exact free_map_mem_projectiveCofibrations (initial.to K) n
 
 /-- The sphere spectrum `𝟙_ SymmetricSpectrum` is projectively cofibrant. -/
 lemma projectiveCofibrations_initial_to_unit :

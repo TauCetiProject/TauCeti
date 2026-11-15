@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
+import Mathlib.AlgebraicTopology.SimplicialSet.Monomorphisms
 -- The degreewise formulas below compute through the native undercategory presentation.
 import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
@@ -225,10 +226,7 @@ lemma addBasepoint_map_right_mem (W : MorphismProperty SSet.{u})
 
 /-- Adjoining a disjoint basepoint preserves monomorphisms on underlying simplicial sets. -/
 instance mono_addBasepoint_map_right {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
-    Mono (addBasepoint.map f).right := by
-  rw [NatTrans.mono_iff_mono_app]
-  intro n
-  rw [mono_iff_injective]
-  exact Option.map_injective ((mono_iff_injective (f.app n)).1 inferInstance)
+    Mono (addBasepoint.map f).right :=
+  addBasepoint_map_right_mem (MorphismProperty.monomorphisms SSet.{u}) (.infer_property f)
 
 end TauCeti.PointedSSet

@@ -126,24 +126,26 @@ noncomputable def mappingSpaceBifunctor :
   obj X := mappingSpace X.unop
   map {X X'} f :=
     { app Y := (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y)
-      naturality {Y Y'} g :=
-        ((evaluation 0).map_comp ((CategoryTheory.ihom X.unop).map g)
-          ((MonoidalClosed.pre f.unop).app Y')).symm.trans <|
-          (congrArg (evaluation 0).map ((MonoidalClosed.pre f.unop).naturality g)).trans <|
-            (evaluation 0).map_comp ((MonoidalClosed.pre f.unop).app Y)
-              ((CategoryTheory.ihom X'.unop).map g) }
+      naturality {Y Y'} g := by
+        -- `mappingSpace X` unfolds to `ihom X ⋙ evaluation 0`.
+        change (evaluation 0).map ((ihom X.unop).map g) ≫
+            (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y') =
+          (evaluation 0).map ((MonoidalClosed.pre f.unop).app Y) ≫
+            (evaluation 0).map ((ihom X'.unop).map g)
+        rw [← (evaluation 0).map_comp, ← (evaluation 0).map_comp,
+          (MonoidalClosed.pre f.unop).naturality g] }
   map_id X := by
     apply NatTrans.ext
     funext Y
-    have h := congrArg (fun p : ihom X.unop ⟶ ihom X.unop ↦ (evaluation 0).map (p.app Y))
-      (by simp only [unop_id, MonoidalClosed.pre_id] : MonoidalClosed.pre (𝟙 X).unop = 𝟙 _)
-    exact h.trans ((evaluation 0).map_id _)
+    change (evaluation 0).map ((MonoidalClosed.pre (𝟙 X).unop).app Y) = 𝟙 _
+    simp
   map_comp {X Y Z} f g := by
     apply NatTrans.ext
     funext W
-    have h := congrArg (fun p : ihom X.unop ⟶ ihom Z.unop ↦ (evaluation 0).map (p.app W))
-      (MonoidalClosed.pre_map g.unop f.unop)
-    exact h.trans ((evaluation 0).map_comp _ _)
+    change (evaluation 0).map ((MonoidalClosed.pre (f ≫ g).unop).app W) =
+      (evaluation 0).map ((MonoidalClosed.pre f.unop).app W) ≫
+        (evaluation 0).map ((MonoidalClosed.pre g.unop).app W)
+    simp [MonoidalClosed.pre_map]
 
 @[simp]
 lemma mappingSpaceBifunctor_obj (X : SymmetricSpectrumᵒᵖ) :
@@ -161,21 +163,25 @@ lemma mappingSpaceBifunctor_map_app {X X' : SymmetricSpectrumᵒᵖ} (f : X ⟶ 
 noncomputable def levelSmashMappingSpaceAdjunction₂ :
     levelSmashBifunctor ⊣₂ mappingSpaceBifunctor :=
   ParametrizedAdjunction.mk' levelSmashMappingSpaceAdjunction fun {X Y} f {K} {Z} g ↦ by
-    let g' : (levelSmash Y).obj K ⟶ Z := g
+    -- Unfold `levelSmashBifunctor` and `mappingSpaceBifunctor` on objects and maps, and view
+    -- `(MonoidalClosed.pre f).app Z` as a `Mod.internalHom` map so `rw` sees matching types.
+    change (levelSmash Y).obj K ⟶ Z at g
     let p : (Mod.internalHom Y).obj Z ⟶ (Mod.internalHom X).obj Z := (MonoidalClosed.pre f).app Z
     have hp : p.hom ≫ Mod.ihomι X Z = Mod.ihomι Y Z ≫ (MonoidalClosed.pre f.hom).app Z.X :=
       Mod.pre_app_hom_comp_ihomι f Z
-    have hcur : Mod.ihomHomEquiv X _ Z ((levelSmashRight K).map f ≫ g') =
-        Mod.ihomHomEquiv Y _ Z g' ≫ p.hom := by
+    change (levelSmashMappingSpaceAdjunction X).homEquiv K Z ((levelSmashRight K).map f ≫ g) =
+      (levelSmashMappingSpaceAdjunction Y).homEquiv K Z g ≫ (evaluation 0).map p
+    have hcur : Mod.ihomHomEquiv X _ Z ((levelSmashRight K).map f ≫ g) =
+        Mod.ihomHomEquiv Y _ Z g ≫ p.hom := by
       apply Mod.ihom_hom_ext
       rw [Mod.ihomHomEquiv_apply_comp_ihomι, Category.assoc, hp,
         Mod.ihomHomEquiv_apply_comp_ihomι_assoc, MonoidalClosed.curry_pre_app]
       simp only [Mod.comp_hom', Mod.Hom.mk'_hom]
-    refine (levelSmashMappingSpaceAdjunction_homEquiv_apply X
-      ((levelSmashRight K).map f ≫ g')).trans ?_
-    refine Eq.trans ?_ (congrArg (· ≫ (evaluation 0).map p)
-      (levelSmashMappingSpaceAdjunction_homEquiv_apply Y g').symm)
-    rw [hcur, DayFunctor.comp_natTrans, NatTrans.comp_app, Category.assoc]
+    rw [levelSmashMappingSpaceAdjunction_homEquiv_apply,
+      levelSmashMappingSpaceAdjunction_homEquiv_apply, hcur, DayFunctor.comp_natTrans,
+      NatTrans.comp_app]
+    -- `(evaluation 0).map p` unfolds to `p.hom.natTrans.app (FiniteBijection.mk 0)`.
+    exact (Category.assoc _ _ _).symm
 
 /-- At each spectrum `X`, `levelSmashMappingSpaceAdjunction₂` specializes to
 `levelSmashMappingSpaceAdjunction X`. -/
@@ -189,15 +195,18 @@ lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
 noncomputable def levelSmashCotensorAdjunction₂ :
     levelSmashBifunctor.flip ⊣₂ cotensorBifunctor :=
   ParametrizedAdjunction.mk' levelSmashCotensorAdjunction fun {K L} j {E} {F} g ↦ by
-    let g' : (levelSmashRight L).obj E ⟶ F := g
-    refine (levelSmashCotensorAdjunction_homEquiv_apply K ((levelSmash E).map j ≫ g')).trans ?_
-    refine Eq.trans ?_ (congrArg (· ≫ (MonoidalClosed.pre ((free 0).map j)).app F)
-      (levelSmashCotensorAdjunction_homEquiv_apply L g').symm)
-    refine (Mod.curry_eq_tensorHomEquiv ((free 0).obj K) E F _).symm.trans ?_
-    refine Eq.trans ?_ (congrArg (· ≫ (MonoidalClosed.pre ((free 0).map j)).app F)
-      (Mod.curry_eq_tensorHomEquiv ((free 0).obj L) E F _))
-    refine Eq.trans ?_ (MonoidalClosed.curry_pre_app ((free 0).map j) _).symm
-    refine congrArg MonoidalClosed.curry ?_
+    -- Unfold `levelSmashBifunctor.flip` and `cotensorBifunctor` on objects and maps.
+    change (levelSmashRight L).obj E ⟶ F at g
+    change (levelSmashCotensorAdjunction K).homEquiv E F ((levelSmash E).map j ≫ g) =
+      (levelSmashCotensorAdjunction L).homEquiv E F g ≫
+        (MonoidalClosed.pre ((free 0).map j)).app F
+    rw [levelSmashCotensorAdjunction_homEquiv_apply, levelSmashCotensorAdjunction_homEquiv_apply,
+      ← Mod.curry_eq_tensorHomEquiv, ← Mod.curry_eq_tensorHomEquiv]
+    -- `cotensor K` (`Mod.internalHom ((free 0).obj K)`) is definitionally `ihom ((free 0).obj K)`.
+    change MonoidalClosed.curry _ =
+      MonoidalClosed.curry _ ≫ (MonoidalClosed.pre ((free 0).map j)).app F
+    rw [MonoidalClosed.curry_pre_app]
+    congr 1
     have hnat : (E ◁ (free 0).map j) ≫
         (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj L) =
       (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫ (levelSmash E).map j :=
@@ -317,20 +326,18 @@ lemma simplicialTensorCotensorAdjunction₂_adj (K : SSet.{0}) :
 noncomputable def simplicialTensorMappingSpaceAdjunction₂ :
     simplicialTensor.flip ⊣₂ simplicialMappingSpace :=
   ParametrizedAdjunction.mk' simplicialTensorMappingSpaceAdjunction fun {X Y} f {K} {Z} g ↦ by
-    let g' : (levelSmash Y).obj (addBasepoint.obj K) ⟶ Z := g
-    have h1 := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g'
-    have h2 := addBasepointForgetAdjunction.homEquiv_naturality_right
-      ((levelSmashMappingSpaceAdjunction Y).homEquiv (addBasepoint.obj K) Z g')
-      ((mappingSpaceBifunctor.map f.op).app Z)
-    have hX := congrFun (congrFun (addBasepointForgetAdjunction.comp_homEquiv
-      (levelSmashMappingSpaceAdjunction X)) K) Z
-    have hY := congrFun (congrFun (addBasepointForgetAdjunction.comp_homEquiv
-      (levelSmashMappingSpaceAdjunction Y)) K) Z
-    refine (congrFun (congrArg DFunLike.coe hX)
-      ((levelSmashRight (addBasepoint.obj K)).map f ≫ g')).trans ?_
-    refine Eq.trans ?_ (congrArg (· ≫ ((mappingSpaceBifunctor.map f.op).app Z).right)
-      (congrFun (congrArg DFunLike.coe hY) g').symm)
-    exact (congrArg (addBasepointForgetAdjunction.homEquiv K _) h1).trans h2
+    -- Unfold `simplicialTensor.flip` and `mappingSpaceBifunctor` on objects and maps.
+    change (addBasepoint ⋙ levelSmash Y).obj K ⟶ Z at g
+    let m : (mappingSpace Y).obj Z ⟶ (mappingSpace X).obj Z :=
+      (mappingSpaceBifunctor.map f.op).app Z
+    change (addBasepointForgetAdjunction.comp (levelSmashMappingSpaceAdjunction X)).homEquiv K Z
+      ((levelSmashRight (addBasepoint.obj K)).map f ≫ g) =
+      (addBasepointForgetAdjunction.comp (levelSmashMappingSpaceAdjunction Y)).homEquiv K Z g ≫
+        forgetBasepoint.map m
+    rw [Adjunction.comp_homEquiv, Adjunction.comp_homEquiv, Equiv.trans_apply, Equiv.trans_apply,
+      ← addBasepointForgetAdjunction.homEquiv_naturality_right]
+    exact congrArg (addBasepointForgetAdjunction.homEquiv K _)
+      (levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f g)
 
 /-- At each spectrum `X`, `simplicialTensorMappingSpaceAdjunction₂` specializes to
 `simplicialTensorMappingSpaceAdjunction X`. -/
@@ -364,11 +371,11 @@ lemma simplicialTensorHomEquiv_apply (K : SSet.{0}) (X Y : SymmetricSpectrum)
     simplicialTensorHomEquiv K X Y f =
       addBasepointHomEquiv K ((mappingSpace X).obj Y)
         ((levelSmashMappingSpaceAdjunction X).homEquiv (addBasepoint.obj K) Y f) := by
-  let f' : (addBasepoint ⋙ levelSmash X).obj K ⟶ Y := f
-  have h := congrFun (congrFun (addBasepointForgetAdjunction.comp_homEquiv
-    (levelSmashMappingSpaceAdjunction X)) K) Y
-  refine (congrArg (fun e ↦ e f') h).trans ?_
-  rw [Equiv.trans_apply, addBasepointForgetAdjunction_homEquiv]
+  -- `(simplicialTensor.obj K).obj X` unfolds to `(addBasepoint ⋙ levelSmash X).obj K`.
+  change (addBasepoint ⋙ levelSmash X).obj K ⟶ Y at f
+  change (addBasepointForgetAdjunction.comp (levelSmashMappingSpaceAdjunction X)).homEquiv K Y f =
+    _
+  rw [Adjunction.comp_homEquiv, Equiv.trans_apply, addBasepointForgetAdjunction_homEquiv]
 
 /-- The inverse of `simplicialTensorHomEquiv` extends a simplicial map `K ⟶ Map(X, Y)` to a based
 map `K₊ ⟶ Map(X, Y)` and takes its pointed smash-mapping adjoint. -/
@@ -377,10 +384,11 @@ lemma simplicialTensorHomEquiv_symm_apply (K : SSet.{0}) (X Y : SymmetricSpectru
     (simplicialTensorHomEquiv K X Y).symm g =
       ((levelSmashMappingSpaceAdjunction X).homEquiv (addBasepoint.obj K) Y).symm
         ((addBasepointHomEquiv K ((mappingSpace X).obj Y)).symm g) := by
-  have h := congrFun (congrFun (addBasepointForgetAdjunction.comp_homEquiv
-    (levelSmashMappingSpaceAdjunction X)) K) Y
-  refine (congrArg (fun e ↦ e.symm g) h).trans ?_
-  rw [Equiv.symm_trans_apply, addBasepointForgetAdjunction_homEquiv]
+  -- `((mappingSpace X).obj Y).right` unfolds to `(mappingSpace X ⋙ forgetBasepoint).obj Y`.
+  change K ⟶ (mappingSpace X ⋙ forgetBasepoint).obj Y at g
+  change ((addBasepointForgetAdjunction.comp
+    (levelSmashMappingSpaceAdjunction X)).homEquiv K Y).symm g = _
+  rw [Adjunction.comp_homEquiv, Equiv.symm_trans_apply, addBasepointForgetAdjunction_homEquiv]
 
 /-- The universal property of the simplicial cotensor on symmetric spectra: maps `X ⟶ Y^(K₊)`
 correspond to maps of simplicial sets `K ⟶ Map(X, Y)`. -/
