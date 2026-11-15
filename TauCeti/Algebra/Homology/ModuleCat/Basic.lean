@@ -20,7 +20,8 @@ public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 For a homological complex `K` of modules over a ring, the inclusion of the degree-`n` cycles into
 `K.X n` is injective and the class map from the cycles onto the degree-`n` homology is surjective.
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
-`K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
+`K.homologyπ n` is an epimorphism; `HomologicalComplex.chosenCycle` chooses a cycle representing
+a given class.  Chain maps commute with the differentials and the square of
 the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
@@ -48,9 +49,10 @@ When the homology is finitely generated, finitely many cycles generate all cycle
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
 (`HomologicalComplex.moduleCatCyclesToKer`), that kernel has a homology class map
-(`HomologicalComplex.moduleCatKerHomologyClass`), surjective and compatible with chain maps
-(`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`), and the image of the incoming
-differential, the kernel and the homology form an exact sequence
+(`HomologicalComplex.moduleCatKerHomologyClass`), surjective, compatible with chain maps
+(`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`) and sending the underlying element
+of a cycle to its class (`HomologicalComplex.moduleCatKerHomologyClass_eq_homologyπ`), and the
+image of the incoming differential, the kernel and the homology form an exact sequence
 (`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
@@ -72,7 +74,11 @@ that is locally nilpotent on the degree-`n` term is locally nilpotent on the deg
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
 
-For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes of modules, the connecting map
+For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes of modules, the maps are
+injective, exact and surjective in each degree
+(`CategoryTheory.ShortComplex.ShortExact.moduleCat_injective_f_f`,
+`CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_f_f_g_f`,
+`CategoryTheory.ShortComplex.ShortExact.moduleCat_surjective_g_f`), and the connecting map
 sends the class of a cycle of `X₃` with lift `x₂` to the class of the cycle of `X₁` mapping to
 `d x₂` (`CategoryTheory.ShortComplex.ShortExact.moduleCat_δ_homologyπ`). Conversely, if a cycle
 `z₁` of `X₁` represents the image of a class `x₃` under the connecting map, then `x₃` is
@@ -229,6 +235,17 @@ lemma moduleCat_iCycles_injective : Function.Injective (K.iCycles n) :=
 degree-`n` homology is surjective. -/
 lemma moduleCat_homologyπ_surjective : Function.Surjective (K.homologyπ n) :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+variable {K n} in
+/-- A cycle representing a homology class of a complex of modules, chosen by `Function.surjInv`. -/
+noncomputable def chosenCycle (x : K.homology n) : K.cycles n :=
+  Function.surjInv (K.moduleCat_homologyπ_surjective n) x
+
+variable {K n} in
+/-- The cycle `chosenCycle x` represents the homology class `x`. -/
+@[simp]
+lemma chosenCycle_spec (x : K.homology n) : K.homologyπ n (chosenCycle x) = x :=
+  Function.surjInv_eq (K.moduleCat_homologyπ_surjective n) x
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
 elements. -/
@@ -392,6 +409,14 @@ lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
   congr 1
   exact K.moduleCat_iCycles_injective _
     ((K.iCycles_moduleCatCyclesMk _ _ _ _ _).trans (K.coe_moduleCatCyclesToKer n m y))
+
+/-- The homology class of an element of the kernel of the outgoing differential is the class of
+the cycle it comes from. -/
+lemma moduleCatKerHomologyClass_eq_homologyπ (z : K.cycles n) (x : LinearMap.ker (K.d n m).hom)
+    (hx : (x : K.X n) = K.iCycles n z) : K.moduleCatKerHomologyClass hm x = K.homologyπ n z := by
+  rw [← K.moduleCatKerHomologyClass_moduleCatCyclesToKer hm z]
+  congr 1
+  exact Subtype.ext (hx.trans (K.coe_moduleCatCyclesToKer n m z).symm)
 
 /-- Every homology class is the class of an element of the kernel of the outgoing differential. -/
 lemma moduleCatKerHomologyClass_surjective :
@@ -679,6 +704,24 @@ namespace CategoryTheory.ShortComplex.ShortExact
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {S : ShortComplex (HomologicalComplex (ModuleCat R) c)} (hS : S.ShortExact)
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the first map is injective in each degree. -/
+theorem moduleCat_injective_f_f (i : ι) : Function.Injective (S.f.f i).hom :=
+  ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).moduleCat_injective_f
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the two maps form an exact sequence in each
+degree. -/
+theorem moduleCat_exact_f_f_g_f (i : ι) : Function.Exact (S.f.f i).hom (S.g.f i).hom :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).exact
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the second map is surjective in each
+degree. -/
+theorem moduleCat_surjective_g_f (i : ι) : Function.Surjective (S.g.f i).hom :=
+  ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).moduleCat_surjective_g
 
 /-- **The connecting map of a short exact sequence of complexes of modules, on classes.** Let `z₃`
 be a cycle of `S.X₃` in degree `i`, `x₂` an element of `S.X₂` in degree `i` lifting it, and `z₁` a

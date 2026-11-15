@@ -87,6 +87,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   basis `b'` has determinant `b'.det b`.
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
+* `Module.Basis.det_comp_equiv`: reordering a family changes its determinant by the sign of the
+  reordering.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
@@ -240,6 +242,15 @@ under a linear map `f : M → M'` gives its value on `f ∘ b` times the determi
 theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R] M') (v : ι → M) :
     b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
   DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
+
+/-- Reading a family `v` in two orders `e` and `e'` changes its determinant in a basis by the sign
+of the permutation `e.trans e'.symm` relating them. -/
+theorem det_comp_equiv {κ : Type*} (b : Basis ι R M) (v : κ → M) (e e' : ι ≃ κ) :
+    b.det (v ∘ e) = Equiv.Perm.sign (e.trans e'.symm) • b.det (v ∘ e') := by
+  rw [← AlternatingMap.map_perm]
+  congr 1
+  ext i
+  simp
 
 end Module.Basis
 

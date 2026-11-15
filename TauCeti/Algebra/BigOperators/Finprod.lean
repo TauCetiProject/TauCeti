@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Ring.NegOnePow
 
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.FiniteSupport.Basic
+import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 
 /-!
@@ -17,7 +19,8 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 `Fintype.prod_sum_type` splits a product over `α ⊕ β` into the two partial products, but it needs
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
-arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
+arbitrary map is also available, without finiteness assumptions on the fibers, as is regrouping a
+product over `ℤ` by the residues modulo some `m`, and cancelling a
 finitely supported factor whose product is `1`. A finitely supported telescoping product
 `∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`, and a family indexed by `S × ℕ` telescopes along each
 ray `{i} × ℕ` to its starting values. Shifting the index of an alternating product over
@@ -37,6 +40,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
+* `TauCeti.finprod_eq_finprod_prod_mul_add`: regroup a finitely supported product over `ℤ` by
+  the residues modulo `m`, `∏ᶠ n, f n = ∏ᶠ q, ∏ r : Fin m, f (q * m + r)`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
@@ -125,6 +130,20 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
+
+/-- Regroup a finitely supported product over `ℤ` by the residues modulo `m`: the factor of index
+`q * m + r` goes to the block `q`. -/
+@[to_additive /-- Regroup a finitely supported sum over `ℤ` by the residues modulo `m`: the term of
+index `q * m + r` goes to the block `q`. -/]
+theorem finprod_eq_finprod_prod_mul_add {M : Type*} [CommMonoid M] (m : ℕ) [NeZero m] (f : ℤ → M)
+    (hf : (mulSupport f).Finite) : ∏ᶠ n, f n = ∏ᶠ q : ℤ, ∏ r : Fin m, f (q * m + r) := by
+  have hf' : HasFiniteMulSupport fun p : ℤ × Fin m ↦ f (p.1 * m + p.2) :=
+    HasFiniteMulSupport.comp_of_injective (g := fun p : ℤ × Fin m ↦ p.1 * m + p.2)
+      (Int.divModEquiv m).symm.injective hf
+  rw [← finprod_comp_equiv (Int.divModEquiv m).symm]
+  simp only [Int.divModEquiv_symm_apply]
+  rw [finprod_curry _ hf']
+  exact finprod_congr fun q ↦ finprod_eq_prod_of_fintype _
 
 /-- Regroup a product over a preimage `g ⁻¹' t` by the fibers of `g` over the points of `t`, when
 only finitely many factors over `t` differ from `1`. -/
