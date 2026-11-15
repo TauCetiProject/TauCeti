@@ -20,7 +20,7 @@ import TauCeti.ModelTheory.Infinitary.Sublanguage
 
 Fix a binary relation symbol `lt` of an arbitrary language. An `L_{ω₁ω}` sentence `φ` whose models
 carry `lt`-chains of every countable length also has a countable model carrying an `lt`-chain
-indexed by the rationals (Marker, *Lectures on Infinitary Model Theory*, 4.4.1). Such a chain is
+indexed by the rationals (Marker, *Lectures on Infinitary Model Theory*, §4.4). Such a chain is
 not well-founded, so a sentence all of whose models are well-founded for `lt` bounds their chains
 by a countable ordinal. Consequently the order types of the models of a sentence all of whose
 models are well-ordered are bounded by a countable ordinal, and no sentence defines the class of
@@ -644,7 +644,7 @@ private theorem exists_model_relChain_rat_of_countable [Countable (Σ n, L.Funct
   · exact ((L.lhomWithConstants ℕ).map_onRelation lt _).mp ((realize_ltSentence lt _ _).1
       (Theoryω.Model.realize_of_mem hN (Set.mem_insert_of_mem _ ⟨q, r, hqr, rfl⟩)))
 
-/-- **Boundedness of well-ordered chains, positive form** (Marker, 4.4.1). If models of `φ`
+/-- **Boundedness of well-ordered chains, positive form** (Marker, §4.4). If models of `φ`
 carry `lt`-chains of every countable length, then `φ` has a countable nonempty model, in any
 universe, carrying an `lt`-chain indexed by the rationals. The language is arbitrary. -/
 theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
@@ -679,9 +679,9 @@ theorem exists_model_relChain_rat (h : HasWellOrderedChains.{u, v, w} φ lt) :
 
 /-- **Boundedness of chains.** If `lt` is well-founded in every countable nonempty model of `φ`
 in `Type w'`, then some countable ordinal indexes an `lt`-chain in no nonempty model of `φ` in
-`Type w`, of any cardinality; the universes `w` and `w'` are independent. Marker's statements
-(Theorem 4.27, Corollary 4.28) assume their hypothesis on `lt` in every model of `φ`; that form
-is the special case obtained by forgetting countability. -/
+`Type w`, of any cardinality; the universes `w` and `w'` are independent. Taking `w' = w` and
+forgetting `Countable M` recovers the form of chain boundedness in Marker, §4.4, where `lt` is
+assumed well-founded in every nonempty model of `φ` in `Type w`. -/
 theorem wellFounded_boundedness
     (hwf : ∀ (M : Type w') (_ : L.Structure M), Nonempty M → Countable M →
       SentenceInf.Realize φ M → WellFounded fun x y : M => RelMap lt ![x, y]) :
@@ -725,10 +725,10 @@ private def ltStructure (lt : L.Relations 2) {M : Type w} [LT M] (m : M) : L.Str
     | 2, R, xs => R = lt ∧ xs 0 < xs 1
     | _, _, _ => False
 
-/-- **Undefinability of well-ordering.** No `L_{ω₁ω}` sentence holds in exactly those countable
-nonempty structures in `Type w` in which `lt` is a well-order. A fortiori no sentence has as its
-models exactly the structures in `Type w` in which `lt` is a well-order, which is Marker's
-statement (Corollary 4.28). -/
+/-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
+`L_{ω₁ω}` sentence holds in a structure if and only if `lt` is a well-order. A fortiori no
+sentence has as its models exactly the structures in `Type w` in which `lt` is a well-order, which
+is the statement in Marker, §4.4. -/
 theorem wellOrdering_undefinable (lt : L.Relations 2) :
     ¬∃ φ : L.Sentenceω, ∀ (M : Type w) (_ : L.Structure M), Nonempty M → Countable M →
       (SentenceInf.Realize φ M ↔ IsWellOrder M fun x y : M => RelMap lt ![x, y]) := by
