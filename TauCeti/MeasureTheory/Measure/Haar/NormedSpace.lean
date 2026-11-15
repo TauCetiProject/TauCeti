@@ -34,10 +34,10 @@ ball of the same radius likewise agrees with it up to a null set. In a nontrivia
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
 measure below `m` form a set of measure `m`. The ratio of the measures of two closed balls is
 controlled by the ratio of their radii raised to the dimension, also for the restriction of the
-measure to a set of positive density in the balls, the shell between concentric balls
-has measure the difference of the powers of the radii, and the part of a ball outside a translate of
-itself is controlled by the distance between the centres. The measure of an affine image
-`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
+measure to a set of positive density in the balls, the closed and open shells between concentric
+balls have measure the difference of the powers of the radii, and the part of a ball outside a
+translate of itself is controlled by the distance between the centres. The measure of an affine
+image `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`, and an
 invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
@@ -88,6 +88,9 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
+* `MeasureTheory.Measure.addHaar_real_ball_sdiff_closedBall`: the open annulus between the closed
+  ball of radius `r ≥ 0` and the concentric open ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)`
+  times that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
   same radius `s` whose centre is at distance `d` is no larger than a spherical shell of radii `s`
   and `s + d`.
@@ -418,6 +421,21 @@ theorem addHaar_real_closedBall_sdiff_ball
   rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall hrs))
     measurableSet_ball measure_closedBall_lt_top.ne, mu.addHaar_real_closedBall x (hr.le.trans hrs),
     mu.addHaar_real_ball_of_pos x hr, sub_mul]
+
+/-- The open annulus between the closed ball of radius `r ≥ 0` and the concentric open ball of
+radius `s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is
+the dimension. -/
+theorem addHaar_real_ball_sdiff_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) :
+    mu.real (ball x s \ closedBall x r) =
+      (s ^ finrank ℝ E - r ^ finrank ℝ E) * mu.real (ball 0 1) := by
+  rcases hrs.eq_or_lt with rfl | hrs
+  · rw [Set.sdiff_eq_empty.2 ball_subset_closedBall, measureReal_empty, sub_self, zero_mul]
+  rw [measureReal_sdiff (closedBall_subset_ball hrs) measurableSet_closedBall
+    measure_ball_lt_top.ne, mu.addHaar_real_ball_of_pos x (hr.trans_lt hrs),
+    mu.addHaar_real_closedBall x hr, sub_mul]
 
 /-- The part of the ball `ball y s` outside the ball `ball z s` of the same radius `s > 0` has
 measure at most `((s + dist y z)ⁿ - sⁿ)` times the measure of the unit ball, the measure of the
