@@ -386,12 +386,6 @@ private lemma chain_sum_lt_sixteen (hcard : 4 < Fintype.card T.Component)
   ring_nf at hdet ⊢
   omega
 
-/-- A component `i` that does not meet `k` differs from every component `l` that does. -/
-private lemma ne_of_intersection_eq_zero_of_pos {i k l : T.Component}
-    (hik : T.intersection i k = 0) (hkl : 0 < T.intersection k l) : i ≠ l := by
-  rintro rfl
-  linarith [T.intersection_comm k i]
-
 /-- The factor data used to classify a chain of four components. Besides proving that all three
 nonconsecutive intersections vanish, this bounds every divisibility factor by two and records the
 normalized determinant inequality. -/
