@@ -48,6 +48,8 @@ of the tube to `s₀`.
 * `TauCeti.IsFramedTube f τ`: `τ : S × V → M` is an open embedding extending `f` along the zero
   section.
 * `TauCeti.pontryaginThomCollapse τ`: the Pontryagin–Thom collapse `M → OnePoint V`.
+* `TauCeti.IsFramedTube.normalCoord`: the normal coordinate `range τ → V` of a framed tube, which
+  the collapse extends (`TauCeti.IsFramedTube.pontryaginThomCollapse_eq_normalCoord`).
 * `TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
   is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
@@ -149,6 +151,45 @@ when it lies on the core of the framed tube. -/
 theorem pontryaginThomCollapse_eq_zero_iff (h : IsFramedTube f τ) {m : M} :
     pontryaginThomCollapse τ m = (0 : V) ↔ m ∈ range f := by
   simp [pontryaginThomCollapse_eq_coe_iff h.isOpenEmbedding.injective, h.apply_zero, mem_range]
+
+/-- The core `f = τ ∘ (·, 0)` of a framed tube is an embedding. -/
+theorem isEmbedding (h : IsFramedTube f τ) : IsEmbedding f := by
+  have hf : f = τ ∘ fun x ↦ (x, (0 : V)) := funext fun x ↦ (h.apply_zero x).symm
+  exact hf ▸ h.isOpenEmbedding.isEmbedding.comp (isEmbedding_prodMkLeft 0)
+
+/-- The core of a framed tube lies in the tube. -/
+theorem range_subset_range (h : IsFramedTube f τ) : range f ⊆ range τ :=
+  range_subset_iff.2 fun x ↦ ⟨(x, 0), h.apply_zero x⟩
+
+/-- The **normal coordinate** of a point of a framed tube `τ : S × V → M`: the `V`-component of
+its preimage under `τ`. -/
+noncomputable def normalCoord (h : IsFramedTube f τ) (y : range τ) : V :=
+  (h.isOpenEmbedding.isEmbedding.toHomeomorph.symm y).2
+
+theorem normalCoord_def (h : IsFramedTube f τ) (y : range τ) :
+    h.normalCoord y = (h.isOpenEmbedding.isEmbedding.toHomeomorph.symm y).2 :=
+  (rfl)
+
+theorem continuous_normalCoord (h : IsFramedTube f τ) : Continuous h.normalCoord :=
+  continuous_snd.comp h.isOpenEmbedding.isEmbedding.toHomeomorph.symm.continuous
+
+@[simp]
+theorem normalCoord_apply (h : IsFramedTube f τ) (x : S) (v : V) :
+    h.normalCoord ⟨τ (x, v), mem_range_self _⟩ = v := by
+  simp [normalCoord_def]
+
+/-- On the tube, the Pontryagin–Thom collapse is the normal coordinate. -/
+theorem pontryaginThomCollapse_eq_normalCoord (h : IsFramedTube f τ) (y : range τ) :
+    pontryaginThomCollapse τ y = h.normalCoord y := by
+  obtain ⟨_, ⟨x, v⟩, rfl⟩ := y
+  rw [normalCoord_apply, pontryaginThomCollapse_apply h.isOpenEmbedding.injective]
+
+/-- The normal coordinate of a point of the tube vanishes exactly when the point lies on the core
+of the tube. -/
+theorem normalCoord_eq_zero_iff (h : IsFramedTube f τ) (y : range τ) :
+    h.normalCoord y = 0 ↔ (y : M) ∈ range f := by
+  rw [← h.pontryaginThomCollapse_eq_zero_iff, h.pontryaginThomCollapse_eq_normalCoord,
+    OnePoint.coe_eq_coe]
 
 end IsFramedTube
 
