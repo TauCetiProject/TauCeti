@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.AmbientGroup
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.Graph.Steinberg
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.GraphAutomorphism
 
 /-!
 # Graph-twisted Steinberg maps on the canonical ambient group
@@ -16,7 +17,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
 `ValidLieTypeIndex.CanonicalAmbientGroup`. It specializes `GraphTwistedIndex.scSteinberg`
 through the equality of the simply connected Chevalley points with the full-weight Kostant
 toral points. This identification leaves every underlying matrix unchanged; it is not a
-comparison with a represented family model.
+comparison with a represented family model. The map factors as `γ_σ ∘ Frob_q`, for the pinned
+graph automorphism `DynkinType.chevalleyGraphAut` of the simply connected Chevalley group and the
+datum's `q`-power Frobenius, and these two factors commute.
 
 The positive and negative simple-root equations use the canonical root maps, and the character
 pullback uses `ValidLieTypeIndex.canonicalTorus` in fundamental-weight coordinates. The native
@@ -98,6 +101,33 @@ theorem coe_canonicalSteinberg (g : d.1.CanonicalAmbientGroup) :
             d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) d.1.Closure)⁻¹ := by
   have h := congrArg Subtype.val (d.pointEquiv_canonicalSteinberg g)
   simpa only [coe_pointEquiv, coe_scSteinberg] using h
+
+/-- **The canonical Steinberg map is the graph automorphism after Frobenius**:
+`Fᶜ = γ_σ ∘ Frob_q`, for the pinned graph automorphism `γ_σ` of the simply connected Chevalley
+group at the index's diagram permutation and the `q`-power Frobenius. -/
+theorem canonicalSteinberg_eq_chevalleyGraphAut_comp_frobenius :
+    d.canonicalSteinberg =
+      (d.1.dynkinType.chevalleyGraphAut d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
+          d.1.Closure).toMonoidHom.comp
+        ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).frobenius d.1.characteristic
+          d.1.fieldExponent d.1.Closure) := by
+  refine MonoidHom.ext fun g => Subtype.ext <| (d.coe_canonicalSteinberg g).trans ?_
+  refine Eq.trans ?_ (coe_chevalleyGraphAut _ _ _ _).symm
+  exact congrArg (fun x : Matrix.GeneralLinearGroup
+      (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure => _ * x * _)
+    ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).coe_frobenius d.1.characteristic
+      d.1.fieldExponent d.1.Closure g).symm
+
+/-- **The graph and Frobenius factors of the canonical Steinberg map commute**:
+`Fᶜ = Frob_q ∘ γ_σ`. -/
+theorem canonicalSteinberg_eq_frobenius_comp_chevalleyGraphAut :
+    d.canonicalSteinberg =
+      ((d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).frobenius d.1.characteristic
+          d.1.fieldExponent d.1.Closure).comp
+        (d.1.dynkinType.chevalleyGraphAut d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
+          d.1.Closure).toMonoidHom :=
+  d.canonicalSteinberg_eq_chevalleyGraphAut_comp_frobenius.trans
+    (chevalleyGraphAut_comp_frobenius _ _ _ _ _)
 
 private theorem pointEquiv_root (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.pointEquiv
