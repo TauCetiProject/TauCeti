@@ -44,7 +44,7 @@ adjunction `Center.induction k C ⊣ Center.forget C`.
   `CategoryTheory.Center.map_ι_comp_inductionMapDesc`,
   `CategoryTheory.Center.map_coendι_comp_inductionMapDesc`, and
   `CategoryTheory.Center.inductionObj_map_hom_ext_ι`: the universal coend descent and uniqueness
-  principle under an additive functor `F : C ⥤ D`;
+  principle under a functor `F : C ⥤ D`;
 * `CategoryTheory.Center.inductionDesc`, `CategoryTheory.Center.ι_comp_inductionDesc`,
   `CategoryTheory.Center.coendι_comp_inductionDesc`, and
   `CategoryTheory.Center.inductionObj_hom_ext_coendι`: the universal coend descent and uniqueness
@@ -321,10 +321,12 @@ section UniversalCoend
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RightRigidCategory C]
   [Fintype (SimpleClasses C)]
 
-/-- Morphisms out of `F.obj (inductionObj X)` for an additive functor `F : C ⥤ D` agree once they
-agree after every summand inclusion `F.map (biproduct.ι (inductionSummand X) S)`. -/
-theorem inductionObj_map_hom_ext_ι {D : Type*} [Category* D] [Preadditive D]
-    {F : C ⥤ D} [F.Additive] {X : C} {W : D}
+/-- Morphisms out of `F.obj (inductionObj X)` for a functor `F : C ⥤ D` preserving the biproduct
+of `inductionSummand X` agree once they agree after every summand inclusion
+`F.map (biproduct.ι (inductionSummand X) S)`. -/
+theorem inductionObj_map_hom_ext_ι {D : Type*} [Category* D] [HasZeroMorphisms D]
+    {F : C ⥤ D} [F.PreservesZeroMorphisms] {X : C}
+    [PreservesBiproduct (inductionSummand X) F] {W : D}
     {f₁ f₂ : F.obj (inductionObj X) ⟶ W}
     (h : ∀ S : SimpleClasses C,
       F.map (biproduct.ι (inductionSummand X) S) ≫ f₁ =

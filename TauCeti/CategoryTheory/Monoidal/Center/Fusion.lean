@@ -18,37 +18,28 @@ public import TauCeti.CategoryTheory.Semisimple.Split
 /-!
 # The Drinfeld centre of a fusion category is a fusion category
 
-Let `C` be a fusion category over an algebraically closed field `k`, equipped with a pivotal
-structure. The forgetful functor `forget C : Center C ⥤ C` has both a right adjoint and a left
-adjoint given by the induction functor `induction k C : C ⥤ Center C`
-(`forgetInductionAdjunction k C` and `inductionForgetAdjunction k C`).
+This file establishes the fusion structure, ribbon structure, and global dimension of the Drinfeld
+centre `Center C` of a pivotal fusion category `C` over an algebraically closed field `k`
+(Müger; Etingof–Nikshych–Ostrik):
 
-Evaluating the composite
-`Z ⟶ (induction k C).obj Z.1 ⟶ Z`
-of the unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` on each
-simple summand `S ⊗ Z.1 ⊗ Sᘁ` cancels the half-braiding `(Z.2.β S).hom` against `(Z.2.β S).inv`
-and closes the `S`-strand with the swapped simple pairing, producing the loop
-`leftDim S ≫ rightDim S`. Summing over all simple classes `S` yields the **averaging identity**
-
-`(forgetInductionAdjunction k C).unit.app Z ≫ (inductionForgetAdjunction k C).counit.app Z =
-  dim(C) • 𝟙 Z`,
-
-where `dim(C) ∈ k` is `globalDim C` read as a scalar via `endAlgEquivOfSimple k (𝟙_ C)`.
-
-Whenever `globalDim C ≠ 0`, dividing the counit by `dim(C)` splits the unit of
-`forgetInductionAdjunction` at every `Z : Center C`. Applying the Maschke-type criterion
-`IsFiniteSemisimpleCategory.of_natTrans` along `forget C` then shows that `Center C` is finite
-semisimple, and `(forget C).finite_simpleClasses_of_faithful_leftAdjoint` transfers finiteness of
-simple isomorphism classes from `C` to `Center C`. Over a field of characteristic zero,
-`TauCeti.globalDim_ne_zero` supplies `globalDim C ≠ 0` unconditionally, so `Center C` is a fusion
-category (and a modular/ribbon fusion category when `C` is spherical, by Müger's theorem).
-
-Finally, Frobenius reciprocity along `forgetInductionAdjunction` identifies the multiplicity of a
-simple object `Z` of `Center C` in `(induction k C).obj S` with the multiplicity of `S` in `Z.1`.
-Comparing `leftDim (inductionObj S) = leftDim S ≫ globalDim C` with the simple decomposition of
-`(induction k C).obj S` in `Center C` and summing against `rightDim S` proves
-`globalDim (Center C) = (globalDim C)²` (`CategoryTheory.Center.endAlgEquivOfSimple_globalDim` and
-`CategoryTheory.Center.globalDim_f`).
+* **Averaging identity**: the composite
+  `(forgetInductionAdjunction k C).unit.app Z ≫ (inductionForgetAdjunction k C).counit.app Z` of
+  the unit of the right adjunction `forget C ⊣ induction k C` with the counit of the left
+  adjunction `induction k C ⊣ forget C` acts on every `Z : Center C` as scalar multiplication by
+  `globalDim C` (read in `k` via `endAlgEquivOfSimple k (𝟙_ C)`), making each component of the
+  unit of `forgetInductionAdjunction` a split monomorphism whenever `globalDim C ≠ 0`.
+* **Fusion and ribbon structure on `Center C`**: when `globalDim C ≠ 0`, and unconditionally when
+  `CharZero k`, `Center C` is finite semisimple with finitely many simple isomorphism classes
+  (supplementing the existing `Abelian (Center C)`, `instFiniteDimensionalHom`, and
+  `instSimpleUnit` instances). If `C` is moreover spherical, `Center C` is a ribbon category for
+  its canonical twist.
+* **Multiplicities and dimensions**: whenever `Center C` is finite semisimple, it has finitely many
+  simple classes and Frobenius reciprocity identifies the multiplicity of a simple class `Z` of
+  `Center C` in `(induction k C).obj S.repr` with the multiplicity of `S` in `Z.repr.1` (without
+  assuming a pivotal structure or simple tensor unit). For pivotal `C`, the left and right
+  dimensions of `inductionObj X` multiply those of `X` by `globalDim C`, and whenever `Center C` is
+  finite semisimple with finitely many simple classes (in particular under `globalDim C ≠ 0` or
+  `CharZero k`), `globalDim (Center C) = (globalDim C)²`.
 
 ## Main declarations
 
@@ -190,8 +181,13 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f (
       coevaluation_comp_simpleSwapExactPairing_evaluation k]
   let u : Z.1 ⟶ inductionObj Z.1 := ((forgetInductionAdjunction k C).unit.app Z).f
   let v : inductionObj Z.1 ⟶ Z.1 := ((inductionForgetAdjunction k C).counit.app Z).f
+  -- `unit.app Z` and `counit.app Z` have dependent endpoints `(𝟭 (Center C)).obj Z` and
+  -- `(forget C ⋙ induction k C).obj Z` in the semireducible `Center C`, so `dsimp` and `rw`
+  -- cannot reduce the implicit middle object `((forget C ⋙ induction k C).obj Z).1` of `_ ≫ _` to
+  -- `inductionObj Z.1`; convert through the typed aliases `u` and `v` so `Category.id_comp` and
+  -- `biproduct.total` apply.
+  change u ≫ v = _
   set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C))
-  change u ≫ v = d • 𝟙 Z.1
   rw [← Category.id_comp v, ← biproduct.total]
   simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
   have hsum :

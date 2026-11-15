@@ -350,15 +350,12 @@ private theorem tensorLeftHomEquiv_counitTerm (U : C) (S T : SimpleClasses C)
     rw [tensorHom_def', Category.assoc]
     rfl
   rw [hφ]
+  apply (@tensorLeftHomEquiv C _ _ (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
+    (simpleSwapExactPairing S.repr)).symm.injective
   simp only [counitDualEquiv, LinearEquiv.trans_apply, tensorRightHomLinearEquiv_symm_apply,
-    tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv, Equiv.coe_fn_mk]
-  change _ = h ≫ (λ_ T.reprᘁ).inv ≫ swapCoeval S.repr ▷ (T.reprᘁ : C) ≫
-    (α_ S.reprᘁ S.repr T.reprᘁ).hom ≫ (S.reprᘁ : C) ◁ φ
-  calc _ = 𝟙 _ ⊗≫ (swapCoeval S.repr ▷ (S.reprᘁ ⊗ U) ≫ ((S.reprᘁ : C) ⊗ S.repr) ◁ h) ⊗≫
-            (S.reprᘁ : C) ◁ φ := by
-          simp only [whiskerLeft_comp]; monoidal
-    _ = _ := by
-          rw [← whisker_exchange]; monoidal
+    tensorLeftHomLinearEquiv_apply]
+  rw [Equiv.symm_apply_apply, @tensorLeftHomEquiv_symm_naturality C _ _ (S.reprᘁ ⊗ U) T.reprᘁ
+    S.reprᘁ S.repr U (simpleSwapExactPairing S.repr), Equiv.symm_apply_apply]
 
 /-- `counitDualEquiv k U S T` and `inductionMate k U` preserve the composition pairing of simple
 morphisms. -/
@@ -621,8 +618,7 @@ variable [Fintype (SimpleClasses C)]
 private theorem counitLF_comm {A : C} (b : HalfBraiding A) (U : C) :
     counitLF b ▷ U ≫ (b.β U).hom = inductionβHom k A U ≫ U ◁ counitLF b := by
   refine inductionObj_map_hom_ext_ι (F := tensorRight U) fun S ↦ ?_
-  change biproduct.ι (inductionSummand A) S ▷ U ≫ (counitLF b ▷ U ≫ (b.β U).hom) =
-    biproduct.ι (inductionSummand A) S ▷ U ≫ (inductionβHom k A U ≫ U ◁ counitLF b)
+  simp only [Functor.flip_obj_map, curriedTensor_map_app]
   rw [← Category.assoc, ← comp_whiskerRight, ι_comp_counitLF]
   have hlhs : counitLFComponent b S ▷ U ≫ (b.β U).hom =
       (α_ S.repr (A ⊗ S.reprᘁ) U).hom ≫
