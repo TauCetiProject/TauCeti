@@ -15,55 +15,43 @@ import Mathlib.Topology.ContinuousMap.Compact
 /-!
 # The branch of a continuable germ on the universal cover
 
-`Conformal/GlobalBranch.lean` proves that on a *simply connected* domain `U ⊆ ℂ`, a germ `f₀` at
-`z₀ ∈ U` satisfying `TauCeti.ContinuesInside f₀ U z₀` extends to a single-valued analytic function
-on `U`. On a multiply connected domain — such as `ℂ \ {0}` for `Complex.log`, or `ℂ \ {0, 1}` for
-the polylogarithm tower — loops around punctures carry nontrivial monodromy, so no single-valued
-analytic extension on `U` need exist. Instead, by `TauCeti.monodromy_theorem`, the terminal germ
-delivered at `z ∈ U` depends only on the endpoint-preserving homotopy class in `U` of the path from
-`z₀` to `z`. Assembling those terminal values yields a single-valued **universal-cover branch**
-`H.universalCoverBranch : TauCeti.UniversalCover z₀ → E`.
+On a multiply connected domain `U ⊆ ℂ` — such as `ℂ \ {0}` for `Complex.log`, or `ℂ \ {0, 1}` for
+the polylogarithm tower — loops around punctures carry nontrivial monodromy, so a germ `f₀` at
+`z₀ ∈ U` satisfying `TauCeti.ContinuesInside f₀ U z₀` need not admit a single-valued analytic
+extension on `U`. By `TauCeti.monodromy_theorem`, the terminal germ at `z ∈ U` depends only on the
+endpoint-preserving homotopy class in `U` of the path from `z₀` to `z`, assembling into a
+single-valued **universal-cover branch** `H.universalCoverBranch : TauCeti.UniversalCover z₀ → E`.
 
 ## Main definitions and results
 
-* `TauCeti.ContinuesInside.eventuallyEq_of_homotopic` — **homotopy invariance in `U`**: two
-  continuations of `f₀` along homotopic paths in `U` carry the same terminal germ.
+* `TauCeti.ContinuesInside.eventuallyEq_of_homotopic` — two continuations of `f₀` along homotopic
+  paths in `U` carry the same terminal germ.
 * `TauCeti.ContinuesInside.continuesAlong_path`, `TauCeti.ContinuesInside.universalCoverBranch` —
   continuability along paths in `U` and the induced function on `UniversalCover z₀`, valued in any
-  complex normed space `E` (completeness is discharged internally by embedding into
-  `UniformSpace.Completion E`).
-* `TauCeti.ContinuesInside.exists_isAnalyticContinuationAlong_universalCoverBranch`,
-  `TauCeti.ContinuesInside.universalCoverBranch_eq_of_isAnalyticContinuationAlong`,
-  `TauCeti.ContinuesInside.universalCoverBranch_congr` — characterization by terminal values of
-  continuations along representative paths and invariance under initial-germ congruence.
-* `TauCeti.ContinuesInside.universalCoverBranch_mk_refl`,
-  `TauCeti.ContinuesInside.universalCoverBranch_basepointLift` — evaluation at the basepoint lift.
-* `TauCeti.ContinuesInside.universalCoverBranch_trans` — evaluation on a concatenated path class.
-* `TauCeti.ContinuesInside.universalCoverBranch_comp_analyticOnNhd_univ` — compatibility with
-  post-composition by entire maps (including continuous linear maps, coordinate projections, and
-  polynomial maps).
-* `TauCeti.ContinuesInside.universalCoverBranch_eq_of_analyticAt` — agreement with a single-valued
-  function analytic along the representative path.
-* `TauCeti.ContinuesInside.continuous_universalCoverBranch` — continuity on `UniversalCover z₀`
-  in the quotient compact-open topology, with no openness assumption on `U`.
-* `TauCeti.ContinuesInside.eventuallyEq_universalCoverBranch_comp_of_continuousAt`,
-  `TauCeti.ContinuesInside.analyticAt_universalCoverBranch_comp_of_continuousAt`,
-  `TauCeti.ContinuesInside.analyticOnNhd_universalCoverBranch_comp` — a local determination formed
-  by precomposing with a continuous section of `UniversalCover.proj` carries the continued germ and
-  is complex analytic. Over a simply connected open `V ⊆ U`, unique continuous sections through any
-  prescribed cover point are supplied by `TauCeti.UniversalCover.isCoveringMap` together with
-  Mathlib's `IsCoveringMap.existsUnique_continuousMap_lifts`.
+  complex normed space `E` (via `UniformSpace.Completion E`).
+* `TauCeti.ContinuesInside.universalCoverBranch_eq_of_isAnalyticContinuationAlong`,
+  `TauCeti.ContinuesInside.exists_isAnalyticContinuationAlong_universalCoverBranch`,
+  `TauCeti.ContinuesInside.universalCoverBranch_mk_refl`,
+  `TauCeti.ContinuesInside.universalCoverBranch_basepointLift`,
+  `TauCeti.ContinuesInside.universalCoverBranch_congr`,
+  `TauCeti.ContinuesInside.universalCoverBranch_trans`,
+  `TauCeti.ContinuesInside.universalCoverBranch_comp_analyticOnNhd_univ`,
+  `TauCeti.ContinuesInside.universalCoverBranch_eq_of_analyticAt` — characterization, basepoint,
+  congruence, concatenation, entire post-composition, and single-valued comparison rules.
 * `TauCeti.ContinuesInside.universalCoverBranch_inv_smul_of_loop`,
-  `TauCeti.ContinuesInside.universalCoverBranch_smul_of_closure` — deck-transformation monodromy:
-  prefixing a loop whose germ monodromy is an entire transformation `Φ` applies `Φ` to the branch,
-  and generator formulas extend to equivariance under the full fundamental group.
+  `TauCeti.ContinuesInside.universalCoverBranch_smul_of_closure` — deck-transformation monodromy
+  along loops and fundamental-group equivariance from generators.
+* `TauCeti.ContinuesInside.continuous_universalCoverBranch`,
+  `TauCeti.ContinuesInside.eventuallyEq_universalCoverBranch_comp_of_continuousAt`,
+  `TauCeti.ContinuesInside.analyticAt_universalCoverBranch_comp_of_continuousAt`,
+  `TauCeti.ContinuesInside.analyticOnNhd_universalCoverBranch_comp` — continuity on
+  `UniversalCover z₀` and complex analyticity of local determinations along continuous sections.
 
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 8 §1.3.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. IX §§2–3.
-* J. Oesterlé, *Polylogarithmes*, Séminaire Bourbaki, exposé 762, Astérisque 216 (1993), §2,
-  pp. 51–53.
+* J. Oesterlé, *Polylogarithmes*, Séminaire Bourbaki, exposé 762, Astérisque 216 (1993), §2.
 -/
 
 public section
@@ -79,11 +67,8 @@ section General
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Homotopy invariance of analytic continuation inside `U`.** Two continuations of one initial
-germ along paths in `U` that are homotopic rel endpoints in `U` deliver the same terminal germ.
-
-Completeness of `E` is not assumed: the continuations are pushed forward into
-`UniformSpace.Completion E` to apply `TauCeti.monodromy_theorem` and pulled back along the
-injective completion map. -/
+germ along paths in `U` homotopic rel endpoints in `U` deliver the same terminal germ, without
+assuming completeness of `E`. -/
 theorem eventuallyEq_of_homotopic {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {γ δ : Path z₀ z} (hγδ : Path.Homotopic γ δ)
     {f g : I → ℂ → E}
@@ -120,16 +105,15 @@ theorem eventuallyEq_of_homotopic {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     UniformSpace.Completion.coe_injective E hx
 
 /-- A germ `f₀` that continues inside `U` from `z₀` continues along the underlying `ℂ`-path of
-every path `γ : Path z₀ z` in the subtype `U`. -/
+every path `γ : Path z₀ z` in `U`. -/
 theorem continuesAlong_path {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (γ : Path z₀ z) :
     ContinuesAlong f₀ (fun t => (γ t : ℂ)) :=
   H.continuesAlong (continuous_subtype_val.comp γ.continuous) (fun t => (γ t).2)
     (congrArg Subtype.val γ.source)
 
-/-- **The universal-cover branch of a continuable germ.** For `H : ContinuesInside f₀ U z₀` with
-`z₀ : U`, `H.universalCoverBranch p` evaluates at `p.proj` the terminal germ of any analytic
-continuation of `f₀` along a representative path of `p.path`. -/
+/-- **The universal-cover branch of a continuable germ.** Evaluates at `p.proj` the terminal germ
+of any analytic continuation of `f₀` along a representative path of `p.path`. -/
 noncomputable def universalCoverBranch {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (p : UniversalCover z₀) : E :=
   Quotient.liftOn p.path
@@ -143,8 +127,7 @@ noncomputable def universalCoverBranch {U : Set ℂ} {z₀ : U} {f₀ : ℂ → 
       exact (H.eventuallyEq_of_homotopic hγδ hc₁.choose_spec.1 h1 hc₂.choose_spec.1 h2).eq_of_nhds
 
 /-- **Introduction/uniqueness rule for `universalCoverBranch`.** Any analytic continuation `f` of
-`f₀` along a representative path `γ` of a point of the universal cover evaluates at time `1` and
-endpoint `z` to `H.universalCoverBranch`. -/
+`f₀` along `γ` evaluates at time `1` and endpoint `z` to `H.universalCoverBranch ⟨z, ⟦γ⟧⟩`. -/
 theorem universalCoverBranch_eq_of_isAnalyticContinuationAlong {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {γ : Path z₀ z} {f : I → ℂ → E}
     (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ)
@@ -157,8 +140,8 @@ theorem universalCoverBranch_eq_of_isAnalyticContinuationAlong {U : Set ℂ} {z�
   rw [γ.target] at heq
   exact heq.eq_of_nhds
 
-/-- **Elimination rule for `universalCoverBranch`.** Every path `γ : Path z₀ z` in `U` admits an
-analytic continuation of `f₀` whose terminal value at `z` is the branch value at `⟨z, ⟦γ⟧⟩`. -/
+/-- **Elimination rule for `universalCoverBranch`.** Every `γ : Path z₀ z` in `U` admits an
+analytic continuation of `f₀` whose terminal value at `z` is `H.universalCoverBranch ⟨z, ⟦γ⟧⟩`. -/
 theorem exists_isAnalyticContinuationAlong_universalCoverBranch {U : Set ℂ} {z₀ z : U}
     {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ)) (γ : Path z₀ z) :
     ∃ f : I → ℂ → E,
@@ -169,8 +152,7 @@ theorem exists_isAnalyticContinuationAlong_universalCoverBranch {U : Set ℂ} {z
   have hf0' : f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ := by simpa [γ.source] using hf0
   exact ⟨f, hf, hf0', H.universalCoverBranch_eq_of_isAnalyticContinuationAlong hf hf0'⟩
 
-/-- At the constant-path class over `z₀`, the universal-cover branch takes the initial value
-`f₀ z₀`. -/
+/-- At the constant-path class over `z₀`, `universalCoverBranch` equals `f₀ z₀`. -/
 @[simp]
 theorem universalCoverBranch_mk_refl {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) :
@@ -180,16 +162,13 @@ theorem universalCoverBranch_mk_refl {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (.const (continuous_subtype_val.comp (Path.refl z₀).continuous).continuousOn
       fun _ _ => H.analyticAt z₀.2) .rfl
 
-/-- At `UniversalCover.basepointLift z₀`, the universal-cover branch takes the initial value
-`f₀ z₀`. Not marked `@[simp]` because `UniversalCover.basepointLift_coe` already simplifies its
-left-hand side to `universalCoverBranch_mk_refl`. -/
+/-- At `UniversalCover.basepointLift z₀`, `universalCoverBranch` equals `f₀ z₀`. -/
 theorem universalCoverBranch_basepointLift {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) :
     H.universalCoverBranch (UniversalCover.basepointLift z₀ : UniversalCover z₀) = f₀ (z₀ : ℂ) := by
   simp
 
-/-- Replacing `f₀` by a function with the same germ at `z₀` leaves `universalCoverBranch`
-unchanged. -/
+/-- Replacing `f₀` by an eventually equal germ at `z₀` leaves `universalCoverBranch` unchanged. -/
 theorem universalCoverBranch_congr {U : Set ℂ} {z₀ : U} {f₀ g₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (hfg : f₀ =ᶠ[𝓝 (z₀ : ℂ)] g₀) :
     (H.congr hfg).universalCoverBranch = H.universalCoverBranch := by
@@ -201,8 +180,7 @@ theorem universalCoverBranch_congr {U : Set ℂ} {z₀ : U} {f₀ g₀ : ℂ →
       (hf0.trans hfg)).trans hval.symm
 
 /-- **Concatenation rule for `universalCoverBranch`.** Continuing `f₀` along `γ` to `f 1` and then
-continuing `f 1` along `δ` to `g 1` evaluates `universalCoverBranch` on the concatenated class
-`⟦γ.trans δ⟧` to `g 1 z₂`. -/
+along `δ` to `g 1` evaluates `universalCoverBranch` on `⟦γ.trans δ⟧` to `g 1 z₂`. -/
 theorem universalCoverBranch_trans {U : Set ℂ} {z₀ z₁ z₂ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {γ : Path z₀ z₁} {δ : Path z₁ z₂} {f g : I → ℂ → E}
     (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ)
@@ -213,17 +191,11 @@ theorem universalCoverBranch_trans {U : Set ℂ} {z₀ z₁ z₂ : U} {f₀ : �
   let γ' : Path (z₀ : ℂ) (z₁ : ℂ) := γ.map continuous_subtype_val
   let δ' : Path (z₁ : ℂ) (z₂ : ℂ) := δ.map continuous_subtype_val
   have htr : IsAnalyticContinuationAlong (transFamily f g) (fun t => ((γ.trans δ) t : ℂ)) univ :=
-    (hf.trans (p := γ') (q := δ') hg hg0.symm).congr_path fun t _ => by
-      rw [← Path.map_trans]
-      rfl
-  have htr0 : transFamily f g 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ := by
-    rw [transFamily_zero]
-    exact hf0
+    (hf.trans (p := γ') (q := δ') hg hg0.symm).congr_path fun t _ => by rw [← Path.map_trans]; rfl
+  have htr0 : transFamily f g 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ := transFamily_zero f g ▸ hf0
   simpa using H.universalCoverBranch_eq_of_isAnalyticContinuationAlong htr htr0
 
-/-- **Naturality of `universalCoverBranch` under entire post-composition.** Composing the initial
-germ with an entire map `Φ : E → F` composes the universal-cover branch with `Φ`. This covers
-continuous linear maps, coordinate projections, tower truncations, and polynomial maps. -/
+/-- **Naturality of `universalCoverBranch` under entire post-composition.** -/
 theorem universalCoverBranch_comp_analyticOnNhd_univ
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
     {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
@@ -237,10 +209,7 @@ theorem universalCoverBranch_comp_analyticOnNhd_univ
     exact (H.comp_analyticOnNhd_univ hΦ).universalCoverBranch_eq_of_isAnalyticContinuationAlong
       (hf.comp_analyticAt fun _ _ => hΦ _ (mem_univ _)) (hf0.fun_comp Φ)
 
-/-- **Comparison with a single-valued analytic function along a path.** If `F` is complex analytic
-at every point of a path `γ` in `U` and has the same germ as `f₀` at `z₀`, then the universal-cover
-branch at `⟨z, ⟦γ⟧⟩` equals `F z`, even if `F` has branch cuts elsewhere outside the range of
-`γ`. -/
+/-- **Comparison with a single-valued function analytic along a path.** -/
 theorem universalCoverBranch_eq_of_analyticAt {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (γ : Path z₀ z) {F : ℂ → E}
     (hF : ∀ t, AnalyticAt ℂ F (γ t)) (hF0 : F =ᶠ[𝓝 (z₀ : ℂ)] f₀) :
@@ -250,10 +219,8 @@ theorem universalCoverBranch_eq_of_analyticAt {U : Set ℂ} {z₀ z : U} {f₀ :
 
 /-! ### Deck-transformation monodromy -/
 
-/-- **Monodromy along a single loop.** If continuing `f₀` around a loop `γ` at `z₀` delivers the
-germ `Φ ∘ f₀` for an entire transformation `Φ : E → E`, then acting on any point of
-`UniversalCover z₀` by `(FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))⁻¹` (which
-prefixes `γ`) applies `Φ` to the universal-cover branch. -/
+/-- **Monodromy along a single loop.** If continuing `f₀` around a loop `γ` at `z₀` delivers
+`Φ ∘ f₀` for an entire map `Φ : E → E`, then acting by `(fromPath ⟦γ⟧)⁻¹` applies `Φ`. -/
 theorem universalCoverBranch_inv_smul_of_loop {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {γ : Path z₀ z₀} {f : I → ℂ → E}
     (hf : IsAnalyticContinuationAlong f (fun t => (γ t : ℂ)) univ)
@@ -266,19 +233,14 @@ theorem universalCoverBranch_inv_smul_of_loop {U : Set ℂ} {z₀ : U} {f₀ : �
   induction q with
   | mk δ =>
     obtain ⟨g, hg, hg0, hval⟩ := H.exists_isAnalyticContinuationAlong_universalCoverBranch δ
-    rw [UniversalCover.inv_smul_mk, hval]
-    have hpath :
-        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)).toPath.trans
-          (Path.Homotopic.Quotient.mk δ) =
-        Path.Homotopic.Quotient.mk (γ.trans δ) := by
-      rw [← Path.Homotopic.Quotient.mk_trans]
-    rw [hpath]
+    rw [UniversalCover.inv_smul_mk, hval,
+      show (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)).toPath.trans
+        (Path.Homotopic.Quotient.mk δ) = Path.Homotopic.Quotient.mk (γ.trans δ) from
+        (Path.Homotopic.Quotient.mk_trans γ δ).symm]
     exact H.universalCoverBranch_trans hf hf0 (hg.comp_analyticAt fun _ _ => hΦ _ (mem_univ _))
       ((hg0.fun_comp Φ).trans hf1.symm)
 
-/-- **Equivariance from generators of the fundamental group.** If `S` generates
-`FundamentalGroup U z₀` and `H.universalCoverBranch` is equivariant under `g⁻¹` for every `g ∈ S`,
-then `H.universalCoverBranch` is equivariant under the entire fundamental group. -/
+/-- **Equivariance from generators of the fundamental group.** -/
 theorem universalCoverBranch_smul_of_closure {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) {ρ : FundamentalGroup U z₀ →* Equiv.Perm E}
     {S : Set (FundamentalGroup U z₀)} (hS : Subgroup.closure S = ⊤)
@@ -304,8 +266,7 @@ end General
 
 section LocalSheet
 
-/-- Points of `UniversalCover z₀` projecting into `ball w ρ₀` where every continuation of `f₀`
-delivers the germ of `G`. -/
+/-- Points of `UniversalCover z₀` over `ball w ρ₀` where every continuation delivers `G`. -/
 private def germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {U : Set ℂ} (z₀ : U) (f₀ : ℂ → E) (w : ℂ) (ρ₀ : ℝ) (G : ℂ → E) : Set (UniversalCover z₀) :=
   {q | (q.proj : ℂ) ∈ ball w ρ₀ ∧
@@ -314,8 +275,6 @@ private def germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
       IsAnalyticContinuationAlong g (fun t => (δ t : ℂ)) univ →
       (g 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) → g 1 =ᶠ[𝓝 (q.proj : ℂ)] G}
 
-/-- `germSet` is open in `UniversalCover z₀` whenever `E` is complete and `G` is analytic on
-`ball w ρ₀`, by uniform perturbation stability in `BasedPath z₀`. -/
 private theorem isOpen_germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [CompleteSpace E] {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
     {w : ℂ} {ρ₀ : ℝ} {G : ℂ → E} (hGan : AnalyticOnNhd ℂ G (ball w ρ₀)) :
@@ -333,9 +292,8 @@ private theorem isOpen_germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   have hKan : AnalyticAt ℂ (K 1) z₁ := (hGan z₁ hz₁).congr hKG.symm
   obtain ⟨ρ₂, hρ₂, hρ₂eq⟩ :=
     Metric.eventually_nhds_iff.mp (eventually_eventuallyEq_iff_of_analyticAt hKan (hGan z₁ hz₁))
-  have hr₀ : 0 < ρ₀ - dist z₁ w := sub_pos.mpr (mem_ball.mp hz₁)
   let r := min ρ₁ (min ρ₂ (ρ₀ - dist z₁ w))
-  have hr : 0 < r := lt_min hρ₁ (lt_min hρ₂ hr₀)
+  have hr : 0 < r := lt_min hρ₁ (lt_min hρ₂ (sub_pos.mpr (mem_ball.mp hz₁)))
   refine ⟨Subtype.val ⁻¹' Metric.ball α.1 r, fun β hβ => ?_,
     Metric.isOpen_ball.preimage continuous_subtype_val, Metric.mem_ball_self hr⟩
   rw [mem_preimage, UniversalCover.ofBasedPath_def]
@@ -344,22 +302,18 @@ private theorem isOpen_germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       (Metric.mem_ball.mp hβ)
   have hβ1 := hβ_le 1
   have hr_le : r ≤ ρ₀ - dist z₁ w := (min_le_right _ _).trans (min_le_right _ _)
-  have hβ_ball : (β 1 : ℂ) ∈ ball w ρ₀ := by
-    rw [mem_ball]
-    linarith [dist_triangle (β 1 : ℂ) z₁ w, hr_le, hβ1]
-  refine ⟨hβ_ball, fun δ g' hδ hg' hg'0 => ?_⟩
+  refine ⟨show (β 1 : ℂ) ∈ ball w ρ₀ from mem_ball.mpr
+      (by linarith [dist_triangle (β 1 : ℂ) z₁ w, hr_le, hβ1]),
+    fun δ g' hδ hg' hg'0 => ?_⟩
   have hKβ : IsAnalyticContinuationAlong K (fun t => (β.toPath t : ℂ)) univ :=
     hKcont _ (continuous_subtype_val.comp β.toPath.continuous).continuousOn
       fun t _ => lt_of_lt_of_le (hβ_le t) (min_le_left _ _)
-  have hK0g : K 0 =ᶠ[𝓝 (z₀ : ℂ)] g 0 := by simpa [α.toPath.source] using hKg 0 (mem_univ 0)
-  have hK0 : K 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ := hK0g.trans hg0
+  have hK0 : K 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ :=
+    (by simpa [α.toPath.source] using hKg 0 (mem_univ 0) : K 0 =ᶠ[𝓝 (z₀ : ℂ)] g 0).trans hg0
   have hK1G : K 1 =ᶠ[𝓝 (β 1 : ℂ)] G :=
     (hρ₂eq (lt_of_lt_of_le hβ1 ((min_le_right _ _).trans (min_le_left _ _)))).mpr hKG
   exact (H.eventuallyEq_of_homotopic (Path.Homotopic.Quotient.exact hδ) hg' hg'0 hKβ hK0).trans hK1G
 
-/-- In a complete target space `E`, every point `p : UniversalCover z₀` has an open neighborhood
-on which `H.universalCoverBranch` agrees with `G ∘ proj` for an analytic representative `G` of the
-terminal germ at `p`. -/
 private theorem exists_isOpen_universalCoverBranch_eq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
     {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
@@ -374,23 +328,22 @@ private theorem exists_isOpen_universalCoverBranch_eq
   have hw_eq : (γ 1 : ℂ) = w := congrArg Subtype.val γ.target
   have hGan : AnalyticOnNhd ℂ (F₀ 1) (ball w ρ₀) := hw_eq ▸ hF₀an 1 (mem_univ 1)
   have hGf : F₀ 1 =ᶠ[𝓝 w] f 1 := hw_eq ▸ hF₀eq 1 (mem_univ 1)
-  refine ⟨germSet z₀ f₀ w ρ₀ (F₀ 1), F₀ 1, isOpen_germSet H hGan, ?_,
+  refine ⟨germSet z₀ f₀ w ρ₀ (F₀ 1), F₀ 1, isOpen_germSet H hGan,
+    ⟨mem_ball_self hρ₀, fun δ g hδ hg hg0 =>
+      (H.eventuallyEq_of_homotopic (Path.Homotopic.Quotient.exact (hδ.trans hγ.symm))
+        hg hg0 hf hf0).trans hGf.symm⟩,
     hGan w (mem_ball_self hρ₀), hGf, ?_⟩
-  · refine ⟨mem_ball_self hρ₀, fun δ g hδ hg hg0 => ?_⟩
-    exact (H.eventuallyEq_of_homotopic (Path.Homotopic.Quotient.exact (hδ.trans hγ.symm))
-      hg hg0 hf hf0).trans hGf.symm
-  · rintro ⟨z, qpath⟩ hq
-    induction qpath with
-    | mk δ =>
-      obtain ⟨g, hg, hg0, hbr⟩ := H.exists_isAnalyticContinuationAlong_universalCoverBranch δ
-      exact hbr.trans (hq.2 δ g rfl hg hg0).eq_of_nhds
+  rintro ⟨z, qpath⟩ hq
+  induction qpath with
+  | mk δ =>
+    obtain ⟨g, hg, hg0, hbr⟩ := H.exists_isAnalyticContinuationAlong_universalCoverBranch δ
+    exact hbr.trans (hq.2 δ g rfl hg hg0).eq_of_nhds
 
 section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- **Continuity of the universal-cover branch.** `H.universalCoverBranch` is continuous on
-`UniversalCover z₀` for every subset `U ⊆ ℂ` and every complex normed space `E`. -/
+/-- **Continuity of the universal-cover branch.** -/
 theorem continuous_universalCoverBranch {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) :
     Continuous H.universalCoverBranch := by
@@ -410,10 +363,7 @@ theorem continuous_universalCoverBranch {U : Set ℂ} {z₀ : U} {f₀ : ℂ →
       (continuous_subtype_val.comp (UniversalCover.continuous_proj z₀)).continuousAt
   exact hcontG.congr (eventually_of_mem (hSo.mem_nhds hpS) fun q hq => (hval q hq).symm)
 
-/-- **Germ of a local determination along a continuous section.** If `sec : ℂ → UniversalCover z₀`
-is continuous at `w` and is locally a section of `UniversalCover.proj` near `w`, then
-`H.universalCoverBranch ∘ sec` has the terminal germ `f 1` at `w` of any continuation `f` of `f₀`
-along a representative path of `(sec w).path`. -/
+/-- **Germ of a local determination along a continuous section.** -/
 theorem eventuallyEq_universalCoverBranch_comp_of_continuousAt
     {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
     {sec : ℂ → UniversalCover z₀} {w : ℂ} (hsec : ContinuousAt sec w)
@@ -433,9 +383,7 @@ theorem eventuallyEq_universalCoverBranch_comp_of_continuousAt
   have hcomp := H.universalCoverBranch_comp_analyticOnNhd_univ (e.analyticOnNhd univ) (sec z)
   exact hcomp.symm.trans ((hval (sec z) hzS).trans (by simpa [hzproj, e] using hzG))
 
-/-- **Local determinations are complex analytic.** Precomposing `H.universalCoverBranch` with a map
-`sec : ℂ → UniversalCover z₀` that is continuous at `w` and locally a section of `proj` near `w`
-yields a function complex analytic at `w`. -/
+/-- **Local determinations are complex analytic.** -/
 theorem analyticAt_universalCoverBranch_comp_of_continuousAt
     {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
     {sec : ℂ → UniversalCover z₀} {w : ℂ} (hsec : ContinuousAt sec w)
@@ -448,9 +396,7 @@ theorem analyticAt_universalCoverBranch_comp_of_continuousAt
   exact han.congr
     (H.eventuallyEq_universalCoverBranch_comp_of_continuousAt hsec hproj hγ hf hf0).symm
 
-/-- **Determinations over open sets are analytic.** For an open set `V ⊆ ℂ` and a continuous
-section `sec : ℂ → UniversalCover z₀` of `UniversalCover.proj` on `V`,
-`H.universalCoverBranch ∘ sec` is analytic on `V`. -/
+/-- **Determinations over open sets are analytic.** -/
 theorem analyticOnNhd_universalCoverBranch_comp
     {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E} (H : ContinuesInside f₀ U (z₀ : ℂ))
     {V : Set ℂ} (hVo : IsOpen V) {sec : ℂ → UniversalCover z₀} (hsec : ContinuousOn sec V)
