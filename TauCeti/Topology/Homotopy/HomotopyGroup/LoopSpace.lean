@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.GenLoop.Loop
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
+import TauCeti.Topology.PathComponent
 
 /-!
 # The loop-space shift for higher homotopy groups
@@ -242,7 +243,7 @@ theorem HomotopyGroup.mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
     (⟦p⟧ : HomotopyGroup N X x) = ⟦q⟧ ↔ Joined (p 0) (q 0) := by
   refine (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).apply_eq_iff_eq.symm.trans ?_
   rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
-  exact ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩
+  exact ZerothHomotopy.mk_eq_mk_iff
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
