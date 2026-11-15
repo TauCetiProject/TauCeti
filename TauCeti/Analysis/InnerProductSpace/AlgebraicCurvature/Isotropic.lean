@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 public import TauCeti.Analysis.Normed.Module.Complexification
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Compact
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Complexified curvature, isotropic curvature, and the PIC2 cone
@@ -21,31 +22,36 @@ identity yield for every `f : Fin 4 → V` and `l, m : ℝ` the real-valued iden
 `l = m = 1`).
 
 Nonnegativity on orthonormal four-frames defines `IsPICFourFrame`, while nonnegativity for all
-`l, m ∈ [-1, 1]` defines `IsPIC2FourFrame` (nonnegative isotropic curvature of `r` zero-extended to
-`V ⊕ ℝ²`). Both cut out closed convex `O(V)`-invariant cones in `FourTensor V`. In finite
-dimensions, the interior of the PIC2 cone inside `algebraicCurvatureSubmodule V` is characterized by
-strict positivity of `pic2Expression` on all orthonormal four-frames and `l, m ∈ [-1, 1]` (and by
-`0 < pic2Min r` when `4 ≤ finrank ℝ V`).
+`l, m ∈ [-1, 1]` defines `IsPIC2FourFrame`. When `4 ≤ Module.finrank ℝ V`, `IsPIC2FourFrame r`
+coincides with nonnegative isotropic curvature of `r` zero-extended to `V ⊕ ℝ²`; when
+`Module.finrank ℝ V < 4`, no orthonormal four-frame exists in `V` and both `IsPICFourFrame` and
+`IsPIC2FourFrame` hold vacuously for every four-tensor. Both predicates cut out closed convex
+`O(V)`-invariant cones in `FourTensor V`. In finite dimensions, the interior of the `PIC2` cone
+inside `algebraicCurvatureSubmodule V` is characterized by strict positivity of `pic2Expression` on
+all orthonormal four-frames and `l, m ∈ [-1, 1]` (hence equals `Set.univ` when `finrank ℝ V < 4`,
+and is characterized by `0 < pic2Min r` when `4 ≤ finrank ℝ V`).
 
 ## Main definitions
 
-* `TauCeti.FourTensor.toLinearMap₄`, `TauCeti.FourTensor.complexify`: curried real four-linear map
-  and complex-multilinear extension to `TauCeti.Complexification V`.
+* `TauCeti.FourTensor.complexify`: complex-multilinear extension to `TauCeti.Complexification V`.
 * `TauCeti.FourTensor.pic2Expression`, `TauCeti.FourTensor.isotropicExpression`,
   `TauCeti.FourTensor.pic2Min`: isotropic-curvature expressions and compact-domain infimum.
-* `TauCeti.FourTensor.IsPICFourFrame`, `TauCeti.FourTensor.IsPIC2FourFrame`: real four-frame PIC
-  and PIC2 cones.
-* `TauCeti.FourTensor.algebraicCurvatureLinearIsometryEquiv`: isometric pullback on
-  `algebraicCurvatureSubmodule`.
+* `TauCeti.FourTensor.IsPICFourFrame`, `TauCeti.FourTensor.IsPIC2FourFrame`: real four-frame `PIC`
+  and `PIC2` cones.
 
 ## Main statements
 
-* `TauCeti.isCompact_setOf_orthonormal`, `Orthonormal.exists_fin_four_extension`.
+* `TauCeti.FourTensor.complexify_apply`, `TauCeti.FourTensor.complexify_apply_four`,
+  `TauCeti.FourTensor.complexify_zero`, `TauCeti.FourTensor.complexify_add`,
+  `TauCeti.FourTensor.complexify_smul`: evaluation and `ℝ`-linearity of `complexify`.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.complexify_apply_conj`: complexified isotropic identity.
-* `TauCeti.FourTensor.isClosed_setOf_isPIC2FourFrame`,
+* `TauCeti.FourTensor.isClosed_setOf_le_pic2Expression`,
+  `TauCeti.FourTensor.convex_setOf_le_pic2Expression`,
+  `TauCeti.FourTensor.isClosed_setOf_isPIC2FourFrame`,
   `TauCeti.FourTensor.convex_setOf_isPIC2FourFrame`, `TauCeti.FourTensor.lipschitzWith_pic2Min`.
 * `TauCeti.FourTensor.mem_interior_isPIC2FourFrame_iff_forall_pos`,
-  `TauCeti.FourTensor.mem_interior_isPIC2FourFrame_iff_exists_pos_le`.
+  `TauCeti.FourTensor.mem_interior_isPIC2FourFrame_iff_exists_pos_le`,
+  `TauCeti.FourTensor.mem_interior_isPIC2FourFrame_iff_pic2Min_pos`.
 
 ## References
 
@@ -62,106 +68,14 @@ open scoped InnerProductSpace NNReal
 
 noncomputable section
 
-namespace TauCeti
+namespace TauCeti.FourTensor
 
-/-! ### Compactness and extension of orthonormal frames -/
-
-section OrthonormalFrames
-
-variable {ι V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- The set of orthonormal `ι`-tuples in a real inner product space is closed in the product
-topology. -/
-theorem isClosed_setOf_orthonormal : IsClosed {f : ι → V | Orthonormal ℝ f} := by
-  have heq : {f : ι → V | Orthonormal ℝ f} = (⋂ i : ι, {f : ι → V | ‖f i‖ = 1}) ∩
-      (⋂ (i : ι) (j : ι) (_ : i ≠ j), {f : ι → V | ⟪f i, f j⟫_ℝ = 0}) := by
-    ext f; simp only [mem_ofPred_eq, Orthonormal, mem_inter_iff, mem_iInter]; rfl
-  rw [heq]
-  exact (isClosed_iInter fun i ↦ isClosed_eq (continuous_norm.comp (continuous_apply i))
-    continuous_const).inter (isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
-      isClosed_eq (Continuous.inner (continuous_apply i) (continuous_apply j)) continuous_const)
-
-/-- On a finite-dimensional real inner product space, the set of orthonormal `ι`-tuples is compact
-in the product topology. -/
-theorem isCompact_setOf_orthonormal [FiniteDimensional ℝ V] :
-    IsCompact {f : ι → V | Orthonormal ℝ f} := by
-  refine (isCompact_univ_pi fun _ : ι ↦ isCompact_closedBall (0 : V) 1).of_isClosed_subset
-    isClosed_setOf_orthonormal fun f hf i _ ↦ ?_
-  simp [(hf.1 i).le]
-
-/-- On a finite-dimensional real inner product space, an orthonormal `ι`-tuple exists if and only if
-`card ι ≤ finrank ℝ V`. -/
-theorem nonempty_setOf_orthonormal_iff [Fintype ι] [FiniteDimensional ℝ V] :
-    {f : ι → V | Orthonormal ℝ f}.Nonempty ↔ Fintype.card ι ≤ Module.finrank ℝ V := by
-  refine ⟨fun ⟨f, hf⟩ ↦ hf.linearIndependent.fintype_card_le_finrank, fun h ↦ ?_⟩
-  let emb : ι ↪ Fin (Module.finrank ℝ V) :=
-    (Fintype.equivFin ι).toEmbedding.trans (Fin.castLEEmb h)
-  exact ⟨fun i ↦ stdOrthonormalBasis ℝ V (emb i),
-    (stdOrthonormalBasis ℝ V).orthonormal.comp emb emb.injective⟩
-
-/-- In dimension at least four, every orthonormal pair `(u, v)` extends to an orthonormal four-frame
-`f` with `f 0 = u` and `f 2 = v`. -/
-theorem _root_.Orthonormal.exists_fin_four_extension {u v : V}
-    (huv : Orthonormal ℝ ![u, v]) (hn : 4 ≤ Module.finrank ℝ V) :
-    ∃ f : Fin 4 → V, Orthonormal ℝ f ∧ f 0 = u ∧ f 2 = v := by
-  classical
-  have hu : ‖u‖ = 1 := huv.1 0
-  have hv : ‖v‖ = 1 := huv.1 1
-  have huv0 : ⟪u, v⟫_ℝ = 0 := huv.2 (by decide : (0 : Fin 2) ≠ 1)
-  obtain ⟨w₁, hw₁_norm, hw₁_orth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-    (𝕜 := ℝ) ({u, v} : Finset V) (Finset.card_le_two.trans_lt (by omega))
-  have huw₁ : ⟪u, w₁⟫_ℝ = 0 := hw₁_orth u (by simp)
-  have hvw₁ : ⟪v, w₁⟫_ℝ = 0 := hw₁_orth v (by simp)
-  have hcard3 : ({u, v, w₁} : Finset V).card < Module.finrank ℝ V :=
-    ((Finset.card_insert_le u {v, w₁}).trans (Nat.succ_le_succ Finset.card_le_two)).trans_lt
-      (by omega)
-  obtain ⟨w₂, hw₂_norm, hw₂_orth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
-    (𝕜 := ℝ) ({u, v, w₁} : Finset V) hcard3
-  have huw₂ : ⟪u, w₂⟫_ℝ = 0 := hw₂_orth u (by simp)
-  have hvw₂ : ⟪v, w₂⟫_ℝ = 0 := hw₂_orth v (by simp)
-  have hw₁w₂ : ⟪w₁, w₂⟫_ℝ = 0 := hw₂_orth w₁ (by simp)
-  refine ⟨![u, w₁, v, w₂], ⟨fun i ↦ by fin_cases i <;> simp [hu, hv, hw₁_norm, hw₂_norm], ?_⟩,
-    rfl, rfl⟩
-  intro i j hij; fin_cases i <;> fin_cases j <;> dsimp only <;> first
-    | exact absurd rfl hij | exact huv0 | exact huw₁ | exact huw₂ | exact hvw₁ | exact hvw₂
-    | exact hw₁w₂
-    | (rw [real_inner_comm]; first
-        | exact huv0 | exact huw₁ | exact huw₂ | exact hvw₁ | exact hvw₂ | exact hw₁w₂)
-
-end OrthonormalFrames
-
-namespace FourTensor
-
-/-! ### Currying, complexification, and the isotropic curvature expressions -/
+/-! ### Complexification and the isotropic curvature expressions -/
 
 section NormedSpace
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-- An element of `algebraicCurvatureSubmodule V` satisfies `IsAlgebraicCurvature`. -/
-theorem IsAlgebraicCurvature.of_mem (r : algebraicCurvatureSubmodule V) :
-    IsAlgebraicCurvature r.1 :=
-  mem_algebraicCurvatureSubmodule.1 r.2
-
-/-- The curried real four-linear form underlying a continuous four-tensor:
-`r.toLinearMap₄ u v z w = r ![u, v, z, w]`. -/
-def toLinearMap₄ (r : FourTensor V) : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ
-    (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
-      (fun z₁ z₂ w ↦ r.apply_add_third u v w z₁ z₂)
-      (fun c z w ↦ r.apply_smul_third u v w z c)
-      (fun z w₁ w₂ ↦ r.apply_add_fourth u v z w₁ w₂)
-      (fun c z w ↦ r.apply_smul_fourth u v z w c))
-    (fun u₁ u₂ v ↦ by ext z w; exact r.apply_add_first v z w u₁ u₂)
-    (fun c u v ↦ by ext z w; exact r.apply_smul_first v z w u c)
-    (fun u v₁ v₂ ↦ by ext z w; exact r.apply_add_second u z w v₁ v₂)
-    (fun c u v ↦ by ext z w; exact r.apply_smul_second u z w v c)
-
-/-- `toLinearMap₄` evaluates the four-tensor on its four arguments. -/
-@[simp]
-theorem toLinearMap₄_apply (r : FourTensor V) (u v z w : V) :
-    r.toLinearMap₄ u v z w = r ![u, v, z, w] := (rfl)
 
 private def partBit (z : Complexification V) (b : Bool) : V :=
   if b then z.im else z.re
@@ -184,6 +98,54 @@ private theorem sum_weightBit_partBit_smul (L : V →ₗ[ℝ] ℝ) (c : ℂ) (x 
     simp only [Complex.I_sq]
     ring
 
+/-- Auxiliary `ℂ`-homogeneity in slot `i` for the 16-term real/imaginary expansion of `r`:
+multiplying `x` by `c : ℂ` mixes its real and imaginary parts, so individual bit-tuples `b` are not
+`ℂ`-homogeneous in isolation. Pairing each `b : Fin 4 → Bool` with the involutive bit-flip
+`τ b = Function.update b i (!b i)` groups the two terms `1 * L((c • x).re) + I * L((c • x).im)` (for
+the real linear functional `L` obtained by freezing the three entries `j ≠ i`), where
+`sum_weightBit_partBit_smul` gives `ℂ`-homogeneity of each pair; doubling the sum via `τ` recovers
+the full 16-term sum. -/
+private theorem complexifyMultilinear_map_update_smul (r : FourTensor V)
+    (m : Fin 4 → Complexification V) (i : Fin 4) (c : ℂ) (x : Complexification V) :
+    (∑ b : Fin 4 → Bool, (∏ j : Fin 4, weightBit (b j)) *
+      (r (fun j ↦ partBit (Function.update m i (c • x) j) (b j)) : ℂ)) =
+    c * ∑ b : Fin 4 → Bool, (∏ j : Fin 4, weightBit (b j)) *
+      (r (fun j ↦ partBit (Function.update m i x j) (b j)) : ℂ) := by
+  let τ : Equiv.Perm (Fin 4 → Bool) :=
+    { toFun := fun b ↦ Function.update b i (!b i)
+      invFun := fun b ↦ Function.update b i (!b i)
+      left_inv := fun b ↦ by ext j; by_cases hj : j = i <;> simp [hj]
+      right_inv := fun b ↦ by ext j; by_cases hj : j = i <;> simp [hj] }
+  let term (z : Complexification V) (b : Fin 4 → Bool) : ℂ :=
+    (∏ j : Fin 4, weightBit (b j)) *
+      (r (fun j ↦ partBit (Function.update m i z j) (b j)) : ℂ)
+  suffices ∑ b, term (c • x) b = c * ∑ b, term x b from this
+  apply mul_left_cancel₀ (by norm_num : (2 : ℂ) ≠ 0)
+  have hdoub (z : Complexification V) :
+      2 * ∑ b, term z b = ∑ b, (term z b + term z (τ b)) := by
+    rw [two_mul, Finset.sum_add_distrib, ← Equiv.sum_comp τ (term z)]
+  rw [hdoub (c • x), mul_left_comm, hdoub x, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  have hτne : ∀ j ≠ i, τ b j = b j := fun j hj ↦ by simp [τ, hj]
+  let L : V →ₗ[ℝ] ℝ := r.toMultilinearMap.toLinearMap (fun j ↦ partBit (m j) (b j)) i
+  have hterm (b' : Fin 4 → Bool) (hb' : ∀ j ≠ i, b' j = b j) (z : Complexification V) :
+      term z b' = (∏ j ∈ Finset.univ.erase i, weightBit (b j)) * weightBit (b' i) *
+        (L (partBit z (b' i)) : ℂ) := by
+    have hupd : (fun j ↦ partBit (Function.update m i z j) (b' j)) =
+        Function.update (fun j ↦ partBit (m j) (b j)) i (partBit z (b' i)) := by
+      ext j; by_cases hj : j = i <;> simp [hj, hb']
+    have hprod : (∏ j : Fin 4, weightBit (b' j)) =
+        (∏ j ∈ Finset.univ.erase i, weightBit (b j)) * weightBit (b' i) := by
+      rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), mul_comm]
+      exact congr_arg₂ (· * ·) (Finset.prod_congr rfl fun j hj ↦
+        congrArg weightBit (hb' j (Finset.ne_of_mem_erase hj))) rfl
+    dsimp only [term, L]
+    rw [hupd, hprod, ← ContinuousMultilinearMap.coe_coe, ← MultilinearMap.toLinearMap_apply]
+  rw [hterm b (fun _ _ ↦ rfl), hterm (τ b) hτne, hterm b (fun _ _ ↦ rfl), hterm (τ b) hτne,
+    show τ b i = !b i by simp [τ]]
+  linear_combination (∏ j ∈ Finset.univ.erase i, weightBit (b j)) *
+    sum_weightBit_partBit_smul L c x (b i)
+
 /-- Auxiliary complex-multilinear extension of a real four-tensor to `Complexification V`, written
 as the 16-term expansion over real and imaginary parts. -/
 private def complexifyMultilinear (r : FourTensor V) :
@@ -200,42 +162,8 @@ private def complexifyMultilinear (r : FourTensor V) :
         cases b <;> simp [partBit]
       simp_rw [hupd, hadd, r.map_update_add, Complex.ofReal_add, mul_add, Finset.sum_add_distrib])
     (fun m i c x ↦ by
-      simp only [RingHom.id_apply, smul_eq_mul]
-      let τ : Equiv.Perm (Fin 4 → Bool) :=
-        { toFun := fun b ↦ Function.update b i (!b i)
-          invFun := fun b ↦ Function.update b i (!b i)
-          left_inv := fun b ↦ by ext j; by_cases hj : j = i <;> simp [hj]
-          right_inv := fun b ↦ by ext j; by_cases hj : j = i <;> simp [hj] }
-      let term (z : Complexification V) (b : Fin 4 → Bool) : ℂ :=
-        (∏ j : Fin 4, weightBit (b j)) * (r (fun j ↦ partBit (Function.update m i z j) (b j)) : ℂ)
-      change ∑ b, term (c • x) b = c * ∑ b, term x b
-      apply mul_left_cancel₀ (by norm_num : (2 : ℂ) ≠ 0)
-      have hdoub (z : Complexification V) :
-          2 * ∑ b, term z b = ∑ b, (term z b + term z (τ b)) := by
-        rw [two_mul, Finset.sum_add_distrib, ← Equiv.sum_comp τ (term z)]
-      rw [hdoub (c • x), mul_left_comm, hdoub x, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun b _ ↦ ?_
-      have hτne : ∀ j ≠ i, τ b j = b j := fun j hj ↦ by simp [τ, hj]
-      have hupd (b' : Fin 4 → Bool) (hb' : ∀ j ≠ i, b' j = b j) (z : Complexification V) :
-          (fun j ↦ partBit (Function.update m i z j) (b' j)) =
-            Function.update (fun j ↦ partBit (m j) (b j)) i (partBit z (b' i)) := by
-        ext j; by_cases hj : j = i <;> simp [hj, hb']
-      have hprod (b' : Fin 4 → Bool) (hb' : ∀ j ≠ i, b' j = b j) :
-          (∏ j : Fin 4, weightBit (b' j)) =
-            (∏ j ∈ Finset.univ.erase i, weightBit (b j)) * weightBit (b' i) := by
-        rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), mul_comm]
-        exact congr_arg₂ (· * ·) (Finset.prod_congr rfl fun j hj ↦
-          congrArg weightBit (hb' j (Finset.ne_of_mem_erase hj))) rfl
-      dsimp only [term]
-      rw [hupd b (fun _ _ ↦ rfl), hupd (τ b) hτne, hupd b (fun _ _ ↦ rfl), hupd (τ b) hτne,
-        hprod b (fun _ _ ↦ rfl), hprod (τ b) hτne, show τ b i = !b i by simp [τ]]
-      set P : ℂ := ∏ j ∈ Finset.univ.erase i, weightBit (b j)
-      let L : V →ₗ[ℝ] ℝ := r.toMultilinearMap.toLinearMap (fun j ↦ partBit (m j) (b j)) i
-      change P * weightBit (b i) * (L (partBit (c • x) (b i)) : ℂ) +
-          P * weightBit (!b i) * (L (partBit (c • x) (!b i)) : ℂ) =
-        c * (P * weightBit (b i) * (L (partBit x (b i)) : ℂ) +
-          P * weightBit (!b i) * (L (partBit x (!b i)) : ℂ))
-      linear_combination P * sum_weightBit_partBit_smul L c x (b i))
+      simpa only [RingHom.id_apply, smul_eq_mul] using
+        complexifyMultilinear_map_update_smul r m i c x)
 
 /-- The complex-multilinear extension of a continuous real four-tensor `r : FourTensor V` to the
 complexification `Complexification V`, characterized on real vectors by
@@ -257,14 +185,27 @@ def complexify (r : FourTensor V) :
         Finset.prod_const, Fintype.card_fin, nsmul_eq_mul, Nat.cast_pow, Nat.cast_ofNat]
       ring
 
-private theorem complexify_apply_four (r : FourTensor V) (z₀ z₁ z₂ z₃ : Complexification V) :
+/-- Expansion of `r.complexify m` into the `16`-term sum over the real and imaginary parts of
+`m 0, m 1, m 2, m 3`. -/
+theorem complexify_apply (r : FourTensor V) (m : Fin 4 → Complexification V) :
+    r.complexify m =
+      ∑ b : Fin 4 → Bool,
+        (∏ j : Fin 4, if b j then (Complex.I : ℂ) else 1) *
+          (r (fun j ↦ if b j then (m j).im else (m j).re) : ℂ) := by
+  simp only [complexify, MultilinearMap.coe_mkContinuous, complexifyMultilinear,
+    MultilinearMap.mk'_apply, weightBit, partBit]
+
+/-- Four-variable expansion of `r.complexify ![z₀, z₁, z₂, z₃]` over `b₀, b₁, b₂, b₃ : Bool`
+selecting the imaginary (`true`, weighted by `I`) or real (`false`, weighted by `1`) part of each
+slot. -/
+theorem complexify_apply_four (r : FourTensor V) (z₀ z₁ z₂ z₃ : Complexification V) :
     r.complexify ![z₀, z₁, z₂, z₃] =
       ∑ b₀ : Bool, ∑ b₁ : Bool, ∑ b₂ : Bool, ∑ b₃ : Bool,
-        weightBit b₀ * weightBit b₁ * weightBit b₂ * weightBit b₃ *
-          (r.toLinearMap₄ (partBit z₀ b₀) (partBit z₁ b₁)
-            (partBit z₂ b₂) (partBit z₃ b₃) : ℂ) := by
-  change (∑ b : Fin 4 → Bool,
-    (∏ j : Fin 4, weightBit (b j)) * (r (fun j ↦ partBit (![z₀, z₁, z₂, z₃] j) (b j)) : ℂ)) = _
+        (if b₀ then (Complex.I : ℂ) else 1) * (if b₁ then (Complex.I : ℂ) else 1) *
+          (if b₂ then (Complex.I : ℂ) else 1) * (if b₃ then (Complex.I : ℂ) else 1) *
+          (toLinearMap₄ r (if b₀ then z₀.im else z₀.re) (if b₁ then z₁.im else z₁.re)
+            (if b₂ then z₂.im else z₂.re) (if b₃ then z₃.im else z₃.re) : ℂ) := by
+  rw [complexify_apply]
   let e : (Bool × Bool × Bool × Bool) ≃ (Fin 4 → Bool) :=
     { toFun := fun ⟨b₀, b₁, b₂, b₃⟩ ↦ ![b₀, b₁, b₂, b₃]
       invFun := fun b ↦ (b 0, b 1, b 2, b 3)
@@ -273,11 +214,34 @@ private theorem complexify_apply_four (r : FourTensor V) (z₀ z₁ z₂ z₃ : 
   rw [← e.sum_comp]; simp_rw [Fintype.sum_prod_type]
   refine Finset.sum_congr rfl fun b₀ _ ↦ Finset.sum_congr rfl fun b₁ _ ↦
     Finset.sum_congr rfl fun b₂ _ ↦ Finset.sum_congr rfl fun b₃ _ ↦ ?_
-  have harg : (fun j : Fin 4 ↦ partBit (![z₀, z₁, z₂, z₃] j) (e (b₀, b₁, b₂, b₃) j)) =
-      ![partBit z₀ b₀, partBit z₁ b₁, partBit z₂ b₂, partBit z₃ b₃] := by
+  have harg :
+      (fun j : Fin 4 ↦
+        if e (b₀, b₁, b₂, b₃) j then (![z₀, z₁, z₂, z₃] j).im else (![z₀, z₁, z₂, z₃] j).re) =
+        ![if b₀ then z₀.im else z₀.re, if b₁ then z₁.im else z₁.re,
+          if b₂ then z₂.im else z₂.re, if b₃ then z₃.im else z₃.re] := by
     ext j; fin_cases j <;> rfl
   rw [harg, ← toLinearMap₄_apply, Fin.prod_univ_four]
-  dsimp only [e, Equiv.coe_fn_mk, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
+  cases b₀ <;> cases b₁ <;> cases b₂ <;> cases b₃ <;> rfl
+
+/-- Complexifying the zero four-tensor gives `0`. -/
+@[simp]
+theorem complexify_zero : (0 : FourTensor V).complexify = 0 := by
+  ext m
+  simp [complexify_apply]
+
+/-- Complexification of four-tensors is additive. -/
+@[simp]
+theorem complexify_add (r q : FourTensor V) :
+    (r + q).complexify = r.complexify + q.complexify := by
+  ext m
+  simp [complexify_apply, mul_add, Finset.sum_add_distrib]
+
+/-- Complexification of four-tensors is `ℝ`-homogeneous. -/
+@[simp]
+theorem complexify_smul (c : ℝ) (r : FourTensor V) :
+    (c • r).complexify = (c : ℂ) • r.complexify := by
+  ext m
+  simp [complexify_apply, Finset.mul_sum, mul_left_comm]
 
 /-- On real vectors embedded into `Complexification V`, `r.complexify` agrees with `r`. -/
 @[simp]
@@ -286,7 +250,7 @@ theorem complexify_ofReal (r : FourTensor V) (u v z w : V) :
       ![Complexification.ofReal u, Complexification.ofReal v,
         Complexification.ofReal z, Complexification.ofReal w] = (r ![u, v, z, w] : ℂ) := by
   rw [complexify_apply_four]
-  simp only [Fintype.sum_bool, weightBit, partBit, ↓reduceIte, Bool.false_eq_true,
+  simp only [Fintype.sum_bool, ↓reduceIte, Bool.false_eq_true,
     Complexification.ofReal_re, Complexification.ofReal_im, map_zero, LinearMap.zero_apply,
     Complex.ofReal_zero]; simp
 
@@ -366,7 +330,7 @@ theorem IsAlgebraicCurvature.complexify_apply_conj {r : FourTensor V} (hr : IsAl
         Complexification.conj V ⟨f 2, l • f 3⟩] =
       (pic2Expression r f l m : ℂ) := by
   rw [complexify_apply_four]
-  simp only [Fintype.sum_bool, weightBit, partBit, ↓reduceIte, Bool.false_eq_true,
+  simp only [Fintype.sum_bool, ↓reduceIte, Bool.false_eq_true,
     Complexification.conj_re, Complexification.conj_im,
     map_neg, map_smul, LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul]
   simp only [toLinearMap₄_apply, Complex.ofReal_mul, Complex.ofReal_neg, pic2Expression_def,
@@ -378,13 +342,29 @@ theorem IsAlgebraicCurvature.complexify_apply_conj {r : FourTensor V} (hr : IsAl
       -r ![f 0, f 1, f 2, f 3] by
       linarith [hr.cyclic_eq_zero (f 0) (f 1) (f 2) (f 3),
         hr.antisymm_first (f 2) (f 0) (f 1) (f 3), hr.swap_pairs (f 1) (f 2) (f 0) (f 3)])
-  have hI4 : (Complex.I : ℂ) ^ 4 = 1 := by
-    rw [show (4 : ℕ) = 2 * 2 by rfl, pow_mul, Complex.I_sq]; norm_num
-  rw [hr.swap_pairs (f 1) (f 3) (f 0) (f 2), hr.swap_pairs (f 1) (f 2) (f 0) (f 3),
-    hr.swap_pairs (f 0) (f 3) (f 0) (f 2), hr.swap_pairs (f 1) (f 2) (f 0) (f 2),
-    hr.swap_pairs (f 1) (f 3) (f 0) (f 3), hr.swap_pairs (f 1) (f 3) (f 1) (f 2)]
-  ring_nf; simp only [Complex.I_sq, hI4]
-  linear_combination 2 * (l : ℂ) * (m : ℂ) * hbianchiℂ
+  have hswap1 : (r ![f 1, f 3, f 0, f 2] : ℂ) = r ![f 0, f 2, f 1, f 3] := by
+    exact_mod_cast hr.swap_pairs (f 1) (f 3) (f 0) (f 2)
+  have hswap2 : (r ![f 1, f 2, f 0, f 3] : ℂ) = r ![f 0, f 3, f 1, f 2] := by
+    exact_mod_cast hr.swap_pairs (f 1) (f 2) (f 0) (f 3)
+  have hswap3 : (r ![f 0, f 3, f 0, f 2] : ℂ) = r ![f 0, f 2, f 0, f 3] := by
+    exact_mod_cast hr.swap_pairs (f 0) (f 3) (f 0) (f 2)
+  have hswap4 : (r ![f 1, f 2, f 0, f 2] : ℂ) = r ![f 0, f 2, f 1, f 2] := by
+    exact_mod_cast hr.swap_pairs (f 1) (f 2) (f 0) (f 2)
+  have hswap5 : (r ![f 1, f 3, f 0, f 3] : ℂ) = r ![f 0, f 3, f 1, f 3] := by
+    exact_mod_cast hr.swap_pairs (f 1) (f 3) (f 0) (f 3)
+  have hswap6 : (r ![f 1, f 3, f 1, f 2] : ℂ) = r ![f 1, f 2, f 1, f 3] := by
+    exact_mod_cast hr.swap_pairs (f 1) (f 3) (f 1) (f 2)
+  linear_combination
+    Complex.I * (l : ℂ) * hswap3 +
+    Complex.I * (m : ℂ) * hswap4 -
+    Complex.I ^ 3 * (l : ℂ) ^ 2 * (m : ℂ) * hswap5 -
+    Complex.I ^ 3 * (l : ℂ) * (m : ℂ) ^ 2 * hswap6 +
+    Complex.I ^ 2 * (l : ℂ) * (m : ℂ) * hswap1 -
+    Complex.I ^ 2 * (l : ℂ) * (m : ℂ) * hswap2 -
+    2 * Complex.I ^ 2 * (l : ℂ) * (m : ℂ) * hbianchiℂ +
+    (-((l : ℂ) ^ 2 * r ![f 0, f 3, f 0, f 3]) - (m : ℂ) ^ 2 * r ![f 1, f 2, f 1, f 2] +
+      2 * (l : ℂ) * (m : ℂ) * r ![f 0, f 1, f 2, f 3]) * Complex.I_sq +
+    (l : ℂ) ^ 2 * (m : ℂ) ^ 2 * r ![f 1, f 3, f 1, f 3] * Complex.I_pow_four
 
 /-- Unit-parameter complexified isotropic-curvature identity: for `z = f 0 + i f 1` and
 `w = f 2 + i f 3`, `r_ℂ(z, w, conj z, conj w) = isotropicExpression r f`. -/
@@ -406,29 +386,8 @@ section InnerProductSpace
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
 
-/-- Pullback of algebraic curvature tensors along a linear isometric equivalence `e : W ≃ₗᵢ[ℝ] V`,
-packaged as a `LinearIsometryEquiv` between the algebraic curvature submodules. -/
-def algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
-    algebraicCurvatureSubmodule V ≃ₗᵢ[ℝ] algebraicCurvatureSubmodule W where
-  toFun r := ⟨r.1.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V),
-    compContinuousLinearMap_mem_algebraicCurvatureSubmodule r.2 (e : W →L[ℝ] V)⟩
-  map_add' _ _ := by ext m; rfl
-  map_smul' _ _ := by ext m; rfl
-  invFun q := ⟨q.1.compContinuousLinearMap fun _ ↦ (e.symm : V →L[ℝ] W),
-    compContinuousLinearMap_mem_algebraicCurvatureSubmodule q.2 (e.symm : V →L[ℝ] W)⟩
-  left_inv r := by ext m; simp
-  right_inv q := by ext m; simp
-  norm_map' r := r.1.norm_compContinuous_linearIsometryEquiv fun _ ↦ e
-
-/-- Coercion of `algebraicCurvatureLinearIsometryEquiv` to `FourTensor`. -/
-@[simp]
-theorem coe_algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V)
-    (r : algebraicCurvatureSubmodule V) :
-    (algebraicCurvatureLinearIsometryEquiv e r).1 =
-      r.1.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V) := (rfl)
-
 /-- Nonnegative isotropic curvature in real four-frame form: `isotropicExpression r f ≥ 0` on every
-orthonormal four-frame `f` in `V`. -/
+orthonormal four-frame `f` in `V` (vacuously satisfied when `Module.finrank ℝ V < 4`). -/
 def IsPICFourFrame (r : FourTensor V) : Prop :=
   ∀ f : Fin 4 → V, Orthonormal ℝ f → 0 ≤ isotropicExpression r f
 
@@ -437,9 +396,11 @@ theorem isPICFourFrame_def (r : FourTensor V) :
     IsPICFourFrame r ↔ ∀ f : Fin 4 → V, Orthonormal ℝ f → 0 ≤ isotropicExpression r f :=
   Iff.rfl
 
-/-- The real four-frame form of PIC2 (nonnegative isotropic curvature of the zero extension of `r`
-to `V ⊕ ℝ²`): `pic2Expression r f l m ≥ 0` for every orthonormal four-frame `f` and all parameters
-`l, m ∈ [-1, 1]`. -/
+/-- The real four-frame form of `PIC2`: `pic2Expression r f l m ≥ 0` for every orthonormal
+four-frame `f` in `V` and all parameters `l, m ∈ [-1, 1]`. When `4 ≤ Module.finrank ℝ V`, this
+agrees with nonnegative isotropic curvature of the zero extension of `r` to `V ⊕ ℝ²`; when
+`Module.finrank ℝ V < 4`, no orthonormal four-frame exists in `V` and `IsPIC2FourFrame r` holds
+vacuously for every four-tensor `r`. -/
 def IsPIC2FourFrame (r : FourTensor V) : Prop :=
   ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
     ∀ m ∈ Icc (-1 : ℝ) 1, 0 ≤ pic2Expression r f l m
@@ -450,7 +411,7 @@ theorem isPIC2FourFrame_def (r : FourTensor V) :
       ∀ m ∈ Icc (-1 : ℝ) 1, 0 ≤ pic2Expression r f l m :=
   Iff.rfl
 
-/-- PIC2 implies PIC in the real four-frame formulation (`l = 1`, `m = 1`). -/
+/-- `PIC2` implies `PIC` in the real four-frame formulation (`l = 1`, `m = 1`). -/
 theorem IsPIC2FourFrame.isPICFourFrame {r : FourTensor V} (hr : IsPIC2FourFrame r) :
     IsPICFourFrame r :=
   fun f hf ↦ hr f hf 1 (by norm_num) 1 (by norm_num)
@@ -485,13 +446,25 @@ theorem IsPIC2FourFrame.smul {r : FourTensor V} (hr : IsPIC2FourFrame r) {c : �
     IsPIC2FourFrame (c • r) := fun f hf l hl m hm ↦ by
   rw [pic2Expression_smul]; exact mul_nonneg hc (hr f hf l hl m hm)
 
-/-- The PIC four-frame cone is convex in `FourTensor V`. -/
+/-- For any real threshold `ε`, the superlevel set of four-tensors satisfying
+`ε ≤ pic2Expression r f l m` on all orthonormal four-frames `f` and `l, m ∈ [-1, 1]` is convex in
+`FourTensor V`. -/
+theorem convex_setOf_le_pic2Expression (ε : ℝ) :
+    Convex ℝ {r : FourTensor V | ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
+      ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r f l m} :=
+  fun _ h₁ _ h₂ a b ha hb hab f hf l hl m hm ↦ by
+    rw [pic2Expression_add, pic2Expression_smul, pic2Expression_smul]
+    linarith [mul_le_mul_of_nonneg_left (h₁ f hf l hl m hm) ha,
+      mul_le_mul_of_nonneg_left (h₂ f hf l hl m hm) hb,
+      show a * ε + b * ε = ε by rw [← add_mul, hab, one_mul]]
+
+/-- The `PIC` four-frame cone is convex in `FourTensor V`. -/
 theorem convex_setOf_isPICFourFrame : Convex ℝ {r : FourTensor V | IsPICFourFrame r} :=
   fun _ hr _ hq _ _ ha hb _ ↦ (hr.smul ha).add (hq.smul hb)
 
-/-- The PIC2 four-frame cone is convex in `FourTensor V`. -/
+/-- The `PIC2` four-frame cone is convex in `FourTensor V`. -/
 theorem convex_setOf_isPIC2FourFrame : Convex ℝ {r : FourTensor V | IsPIC2FourFrame r} :=
-  fun _ hr _ hq _ _ ha hb _ ↦ (hr.smul ha).add (hq.smul hb)
+  convex_setOf_le_pic2Expression 0
 
 /-- Joint continuity of `(r, f, l, m) ↦ pic2Expression r f l m`. -/
 theorem continuous_pic2Expression :
@@ -512,18 +485,27 @@ theorem continuous_pic2Expression :
   simp only [pic2Expression_def]
   fun_prop
 
-/-- The PIC2 four-frame cone is closed in `FourTensor V`. -/
-theorem isClosed_setOf_isPIC2FourFrame : IsClosed {r : FourTensor V | IsPIC2FourFrame r} := by
-  have heq : {r : FourTensor V | IsPIC2FourFrame r} =
+/-- For any real threshold `ε`, the superlevel set of four-tensors satisfying
+`ε ≤ pic2Expression r f l m` on all orthonormal four-frames `f` and `l, m ∈ [-1, 1]` is closed in
+`FourTensor V`. -/
+theorem isClosed_setOf_le_pic2Expression (ε : ℝ) :
+    IsClosed {r : FourTensor V | ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
+      ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r f l m} := by
+  have heq : {r : FourTensor V | ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
+      ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r f l m} =
       ⋂ (f : {f : Fin 4 → V // Orthonormal ℝ f}) (l : Icc (-1 : ℝ) 1) (m : Icc (-1 : ℝ) 1),
-        {r : FourTensor V | 0 ≤ pic2Expression r f.1 l.1 m.1} := by
-    ext r; simp only [mem_ofPred_eq, IsPIC2FourFrame, mem_iInter, Subtype.forall]
+        {r : FourTensor V | ε ≤ pic2Expression r f.1 l.1 m.1} := by
+    ext r; simp only [mem_ofPred_eq, mem_iInter, Subtype.forall]
   rw [heq]
   exact isClosed_iInter fun f ↦ isClosed_iInter fun l ↦ isClosed_iInter fun m ↦
     isClosed_le continuous_const
       (continuous_pic2Expression.comp (Continuous.prodMk_left (f.1, l.1, m.1)))
 
-/-- The PIC four-frame cone is closed in `FourTensor V`. -/
+/-- The `PIC2` four-frame cone is closed in `FourTensor V`. -/
+theorem isClosed_setOf_isPIC2FourFrame : IsClosed {r : FourTensor V | IsPIC2FourFrame r} :=
+  isClosed_setOf_le_pic2Expression 0
+
+/-- The `PIC` four-frame cone is closed in `FourTensor V`. -/
 theorem isClosed_setOf_isPICFourFrame : IsClosed {r : FourTensor V | IsPICFourFrame r} := by
   have heq : {r : FourTensor V | IsPICFourFrame r} =
       ⋂ (f : {f : Fin 4 → V // Orthonormal ℝ f}),
@@ -534,7 +516,7 @@ theorem isClosed_setOf_isPICFourFrame : IsClosed {r : FourTensor V | IsPICFourFr
   exact isClosed_iInter fun f ↦ isClosed_le continuous_const
     (continuous_pic2Expression.comp (Continuous.prodMk_left (f.1, 1, 1)))
 
-/-- Pulling a PIC2 four-tensor back along a linear isometry preserves `IsPIC2FourFrame`. -/
+/-- Pulling a `PIC2` four-tensor back along a linear isometry preserves `IsPIC2FourFrame`. -/
 theorem IsPIC2FourFrame.compContinuousLinearMap_linearIsometry {r : FourTensor V}
     (hr : IsPIC2FourFrame r) (L : W →ₗᵢ[ℝ] V) :
     IsPIC2FourFrame (r.compContinuousLinearMap fun _ ↦ L.toContinuousLinearMap) :=
@@ -565,7 +547,7 @@ theorem isPICFourFrame_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗ
       h (e ∘ f) (e.toLinearIsometry.orthonormal_comp_iff.2 hf)
 
 /-- `algebraicCurvatureLinearIsometryEquiv e` preserves and reflects membership in the topological
-interior of the PIC2 cone. -/
+interior of `{q : algebraicCurvatureSubmodule _ | IsPIC2FourFrame q.1}`. -/
 @[simp]
 theorem algebraicCurvatureLinearIsometryEquiv_mem_interior_isPIC2FourFrame_iff (e : W ≃ₗᵢ[ℝ] V)
     {r : algebraicCurvatureSubmodule V} :
@@ -575,7 +557,7 @@ theorem algebraicCurvatureLinearIsometryEquiv_mem_interior_isPIC2FourFrame_iff (
   let φ := (algebraicCurvatureLinearIsometryEquiv e).toHomeomorph
   have hpre : φ ⁻¹' {q : algebraicCurvatureSubmodule W | IsPIC2FourFrame q.1} =
       {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
-    ext q; exact isPIC2FourFrame_compContinuousLinearMap_linearIsometryEquiv e
+    ext q; simp [φ]
   rw [← hpre, ← φ.preimage_interior]; rfl
 
 /-- Operator-norm bound on `pic2Expression` over orthonormal four-frames and `l, m ∈ [-1, 1]`:
@@ -583,11 +565,8 @@ theorem algebraicCurvatureLinearIsometryEquiv_mem_interior_isPIC2FourFrame_iff (
 theorem abs_pic2Expression_le_six_mul_norm (r : FourTensor V) {f : Fin 4 → V}
     (hf : Orthonormal ℝ f) {l m : ℝ} (hl : l ∈ Icc (-1 : ℝ) 1) (hm : m ∈ Icc (-1 : ℝ) 1) :
     |pic2Expression r f l m| ≤ 6 * ‖r‖ := by
-  have hentry (i₀ i₁ i₂ i₃ : Fin 4) : |r ![f i₀, f i₁, f i₂, f i₃]| ≤ ‖r‖ := by
-    have h := r.le_opNorm ![f i₀, f i₁, f i₂, f i₃]
-    rw [Real.norm_eq_abs, Fin.prod_univ_four] at h
-    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val,
-      hf.1 i₀, hf.1 i₁, hf.1 i₂, hf.1 i₃, mul_one] using h
+  have hentry (i₀ i₁ i₂ i₃ : Fin 4) : |r ![f i₀, f i₁, f i₂, f i₃]| ≤ ‖r‖ :=
+    abs_apply_le_norm_of_norm_eq_one r (hf.1 i₀) (hf.1 i₁) (hf.1 i₂) (hf.1 i₃)
   have hscale (a b : ℝ) (ha : |a| ≤ 1) (hb : |b| ≤ ‖r‖) : |a * b| ≤ ‖r‖ := by
     rw [abs_mul]; nlinarith [abs_nonneg a, abs_nonneg b]
   have hl_sq : |l ^ 2| ≤ 1 := by rw [abs_of_nonneg (sq_nonneg l)]; nlinarith [hl.1, hl.2]
@@ -643,23 +622,11 @@ theorem le_pic2Min_of_forall_le {r : FourTensor V} {c : ℝ}
   rintro _ ⟨⟨f, l, m⟩, ⟨hf, hl, hm⟩, rfl⟩; exact hc f hf l hl m hm
 
 /-- `pic2Min` is `6`-Lipschitz on `FourTensor V`. -/
-theorem lipschitzWith_pic2Min : LipschitzWith 6 (pic2Min (V := V)) := by
-  refine LipschitzWith.of_dist_le_mul fun r q ↦ ?_
-  simp only [NNReal.coe_ofNat, dist_eq_norm, Real.norm_eq_abs]
-  set S := {f : Fin 4 → V | Orthonormal ℝ f} ×ˢ Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1
-  rcases S.eq_empty_or_nonempty with hS | hS
-  · dsimp only [pic2Min]
-    rw [show {f : Fin 4 → V | Orthonormal ℝ f} ×ˢ Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1 = ∅ from hS]
-    simp
-  · have hle (r₁ r₂ : FourTensor V) : pic2Min r₁ - 6 * ‖r₁ - r₂‖ ≤ pic2Min r₂ := by
-      refine le_csInf (hS.image _) ?_
-      rintro _ ⟨⟨f, l, m⟩, ⟨hf, hl, hm⟩, rfl⟩
-      have hdiff : pic2Expression r₁ f l m - pic2Expression r₂ f l m ≤ 6 * ‖r₁ - r₂‖ := by
-        rw [← pic2Expression_sub]
-        exact (le_abs_self _).trans (abs_pic2Expression_le_six_mul_norm (r₁ - r₂) hf hl hm)
-      linarith [pic2Min_le_pic2Expression r₁ hf hl hm]
-    rw [abs_sub_le_iff]; refine ⟨by linarith [hle r q], ?_⟩
-    have := hle q r; rw [norm_sub_rev] at this; linarith
+theorem lipschitzWith_pic2Min : LipschitzWith 6 (pic2Min (V := V)) :=
+  TauCeti.lipschitzWith_sInf_image bddBelow_pic2Image fun ⟨f, l, m⟩ ⟨hf, hl, hm⟩ ↦
+    LipschitzWith.of_dist_le_mul fun r q ↦ by
+      simpa only [dist_eq_norm, Real.norm_eq_abs, NNReal.coe_ofNat, ← pic2Expression_sub] using
+        abs_pic2Expression_le_six_mul_norm (r - q) hf hl hm
 
 /-- `pic2Min` is continuous on `FourTensor V`. -/
 theorem continuous_pic2Min : Continuous (pic2Min (V := V)) :=
@@ -678,8 +645,9 @@ theorem pic2Min_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ
     dsimp only; rw [pic2Expression_compContinuousLinearMap]; congr 2; funext i; simp
 
 /-- If a uniform positive margin `ε > 0` bounds `pic2Expression r.1 f l m` below on all orthonormal
-four-frames and `l, m ∈ [-1, 1]`, then `r` lies in the topological interior of the PIC2 cone inside
-`algebraicCurvatureSubmodule V`. -/
+four-frames and `l, m ∈ [-1, 1]`, then `r` lies in the topological interior of
+`{q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}` (which coincides with the `PIC2` cone
+when `4 ≤ Module.finrank ℝ V` and equals `Set.univ` when `Module.finrank ℝ V < 4`). -/
 theorem mem_interior_isPIC2FourFrame_of_exists_pos_le {r : algebraicCurvatureSubmodule V}
     {ε : ℝ} (hε : 0 < ε)
     (hle : ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
@@ -729,29 +697,46 @@ theorem isPIC2FourFrame_smul_constantCurvature {κ : ℝ} (hκ : 0 ≤ κ) :
 theorem isPIC2FourFrame_smul_constantCurvature_iff (hn : 4 ≤ Module.finrank ℝ V) {κ : ℝ} :
     IsPIC2FourFrame (κ • constantCurvature V) ↔ 0 ≤ κ := by
   refine ⟨fun h ↦ ?_, isPIC2FourFrame_smul_constantCurvature⟩
-  obtain ⟨f, hf⟩ := (nonempty_setOf_orthonormal_iff (ι := Fin 4) (V := V)).2 (by simpa using hn)
+  obtain ⟨f, hf⟩ :=
+    (TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 4) (E := V)).2 (by simpa using hn)
   have h0 := h f hf 0 (by norm_num) 0 (by norm_num)
   rw [pic2Expression_smul, pic2Expression_constantCurvature hf] at h0; linarith
+
+/-- In dimension at least four, `pic2Min r` is attained at an orthonormal four-frame and parameters
+`l, m ∈ [-1, 1]`. -/
+theorem exists_orthonormal_eq_pic2Min (hn : 4 ≤ Module.finrank ℝ V) (r : FourTensor V) :
+    ∃ (f : Fin 4 → V) (l m : ℝ), Orthonormal ℝ f ∧ l ∈ Icc (-1 : ℝ) 1 ∧ m ∈ Icc (-1 : ℝ) 1 ∧
+      pic2Expression r f l m = pic2Min r := by
+  set K := {f : Fin 4 → V | Orthonormal ℝ f} ×ˢ Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1
+  have hK : IsCompact K :=
+    TauCeti.isCompact_setOfPred_orthonormal.prod (isCompact_Icc.prod isCompact_Icc)
+  obtain ⟨f₀, hf₀⟩ :=
+    (TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 4) (E := V)).2 (by simpa using hn)
+  have hcont : Continuous fun p : (Fin 4 → V) × ℝ × ℝ ↦ pic2Expression r p.1 p.2.1 p.2.2 :=
+    continuous_pic2Expression.comp (Continuous.prodMk_right r)
+  obtain ⟨⟨f, l, m⟩, ⟨hf, hl, hm⟩, hmin⟩ :=
+    hK.exists_isMinOn ⟨(f₀, 0, 0), hf₀, by norm_num, by norm_num⟩ hcont.continuousOn
+  exact ⟨f, l, m, hf, hl, hm, le_antisymm
+    (le_pic2Min_of_forall_le ⟨f₀, hf₀⟩ fun f' hf' l' hl' m' hm' ↦
+      isMinOn_iff.1 hmin (f', l', m') ⟨hf', hl', hm'⟩) (pic2Min_le_pic2Expression r hf hl hm)⟩
 
 private theorem exists_pos_le_pic2Expression_of_forall_pos {r : FourTensor V}
     (hpos : ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
       ∀ m ∈ Icc (-1 : ℝ) 1, 0 < pic2Expression r f l m) :
     ∃ ε > 0, ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
       ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r f l m := by
-  set K := {f : Fin 4 → V | Orthonormal ℝ f} ×ˢ Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1
-  have hK : IsCompact K := isCompact_setOf_orthonormal.prod (isCompact_Icc.prod isCompact_Icc)
-  rcases K.eq_empty_or_nonempty with hKe | hKne
-  · refine ⟨1, zero_lt_one, fun f hf l hl m hm ↦ False.elim ?_⟩
-    exact Set.notMem_empty (f, l, m) (hKe ▸ ⟨hf, hl, hm⟩)
-  · have hcont : Continuous fun p : (Fin 4 → V) × ℝ × ℝ ↦ pic2Expression r p.1 p.2.1 p.2.2 :=
-      continuous_pic2Expression.comp (Continuous.prodMk_right r)
-    obtain ⟨⟨f₀, l₀, m₀⟩, ⟨hf₀, hl₀, hm₀⟩, hmin⟩ := hK.exists_isMinOn hKne hcont.continuousOn
-    exact ⟨pic2Expression r f₀ l₀ m₀, hpos f₀ hf₀ l₀ hl₀ m₀ hm₀,
-      fun f hf l hl m hm ↦ isMinOn_iff.1 hmin (f, l, m) ⟨hf, hl, hm⟩⟩
+  by_cases hn : 4 ≤ Module.finrank ℝ V
+  · obtain ⟨f₀, l₀, m₀, hf₀, hl₀, hm₀, hmin⟩ := exists_orthonormal_eq_pic2Min hn r
+    exact ⟨pic2Min r, hmin ▸ hpos f₀ hf₀ l₀ hl₀ m₀ hm₀,
+      fun _ hf _ hl _ hm ↦ pic2Min_le_pic2Expression r hf hl hm⟩
+  · refine ⟨1, zero_lt_one, fun f hf ↦ ?_⟩
+    have hcard := hf.linearIndependent.fintype_card_le_finrank
+    rw [Fintype.card_fin] at hcard; omega
 
 /-- On a finite-dimensional real inner product space, `r ∈ algebraicCurvatureSubmodule V` lies in
-the interior of the PIC2 cone if and only if `0 < pic2Expression r.1 f l m` for every orthonormal
-four-frame `f` and all `l, m ∈ [-1, 1]`. -/
+`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}` if and only if
+`0 < pic2Expression r.1 f l m` for every orthonormal four-frame `f` and all `l, m ∈ [-1, 1]`
+(in particular, when `Module.finrank ℝ V < 4`, both sides hold vacuously for every `r`). -/
 theorem mem_interior_isPIC2FourFrame_iff_forall_pos {r : algebraicCurvatureSubmodule V} :
     r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔
       ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
@@ -779,8 +764,9 @@ theorem mem_interior_isPIC2FourFrame_iff_forall_pos {r : algebraicCurvatureSubmo
     exact mem_interior_isPIC2FourFrame_of_exists_pos_le hε hle
 
 /-- On a finite-dimensional real inner product space, `r ∈ algebraicCurvatureSubmodule V` lies in
-the interior of the PIC2 cone if and only if there is a uniform margin `ε > 0` bounding
-`pic2Expression` below on all orthonormal four-frames and `l, m ∈ [-1, 1]`. -/
+`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}` if and only if there is a
+uniform margin `ε > 0` bounding `pic2Expression` below on all orthonormal four-frames and
+`l, m ∈ [-1, 1]` (vacuously satisfied with any `ε > 0` when `Module.finrank ℝ V < 4`). -/
 theorem mem_interior_isPIC2FourFrame_iff_exists_pos_le {r : algebraicCurvatureSubmodule V} :
     r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔
       ∃ ε > 0, ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
@@ -789,7 +775,8 @@ theorem mem_interior_isPIC2FourFrame_iff_exists_pos_le {r : algebraicCurvatureSu
     (mem_interior_isPIC2FourFrame_iff_forall_pos.1 hint),
     fun ⟨_, hε, hle⟩ ↦ mem_interior_isPIC2FourFrame_of_exists_pos_le hε hle⟩
 
-/-- Every positive multiple of `constantCurvature V` lies in the interior of the PIC2 cone. -/
+/-- Every positive multiple of `constantCurvature V` lies in
+`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}`. -/
 theorem smul_constantCurvature_mem_interior_isPIC2FourFrame {κ : ℝ} (hκ : 0 < κ) :
     (⟨κ • constantCurvature V,
       Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.2
@@ -798,35 +785,18 @@ theorem smul_constantCurvature_mem_interior_isPIC2FourFrame {κ : ℝ} (hκ : 0 
   rw [mem_interior_isPIC2FourFrame_iff_forall_pos]; intro f hf l _ m _
   rw [pic2Expression_smul, pic2Expression_constantCurvature hf]; positivity
 
-/-- In dimension at least four, `pic2Min r` is attained at an orthonormal four-frame and parameters
-`l, m ∈ [-1, 1]`. -/
-theorem exists_orthonormal_eq_pic2Min (hn : 4 ≤ Module.finrank ℝ V) (r : FourTensor V) :
-    ∃ (f : Fin 4 → V) (l m : ℝ), Orthonormal ℝ f ∧ l ∈ Icc (-1 : ℝ) 1 ∧ m ∈ Icc (-1 : ℝ) 1 ∧
-      pic2Expression r f l m = pic2Min r := by
-  set K := {f : Fin 4 → V | Orthonormal ℝ f} ×ˢ Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1
-  have hK : IsCompact K := isCompact_setOf_orthonormal.prod (isCompact_Icc.prod isCompact_Icc)
-  obtain ⟨f₀, hf₀⟩ := (nonempty_setOf_orthonormal_iff (ι := Fin 4) (V := V)).2 (by simpa using hn)
-  have hcont : Continuous fun p : (Fin 4 → V) × ℝ × ℝ ↦ pic2Expression r p.1 p.2.1 p.2.2 :=
-    continuous_pic2Expression.comp (Continuous.prodMk_right r)
-  obtain ⟨⟨f, l, m⟩, ⟨hf, hl, hm⟩, hmin⟩ :=
-    hK.exists_isMinOn ⟨(f₀, 0, 0), hf₀, by norm_num, by norm_num⟩ hcont.continuousOn
-  exact ⟨f, l, m, hf, hl, hm, le_antisymm
-    (le_pic2Min_of_forall_le ⟨f₀, hf₀⟩ fun f' hf' l' hl' m' hm' ↦
-      isMinOn_iff.1 hmin (f', l', m') ⟨hf', hl', hm'⟩) (pic2Min_le_pic2Expression r hf hl hm)⟩
-
-/-- In dimension at least four, `r ∈ algebraicCurvatureSubmodule V` lies in the interior of the PIC2
-cone if and only if `0 < pic2Min r.1`. -/
+/-- In dimension at least four, `r ∈ algebraicCurvatureSubmodule V` lies in the interior of the
+`PIC2` cone if and only if `0 < pic2Min r.1`. -/
 theorem mem_interior_isPIC2FourFrame_iff_pic2Min_pos (hn : 4 ≤ Module.finrank ℝ V)
     {r : algebraicCurvatureSubmodule V} :
     r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔ 0 < pic2Min r.1 := by
   rw [mem_interior_isPIC2FourFrame_iff_exists_pos_le]
   refine ⟨fun ⟨ε, hε, hle⟩ ↦ ?_, fun hpos ↦ ⟨pic2Min r.1, hpos, fun _ hf _ hl _ hm ↦
     pic2Min_le_pic2Expression r.1 hf hl hm⟩⟩
-  obtain ⟨f₀, hf₀⟩ := (nonempty_setOf_orthonormal_iff (ι := Fin 4) (V := V)).2 (by simpa using hn)
+  obtain ⟨f₀, hf₀⟩ :=
+    (TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 4) (E := V)).2 (by simpa using hn)
   exact hε.trans_le (le_pic2Min_of_forall_le ⟨f₀, hf₀⟩ hle)
 
 end FiniteDimensional
 
-end FourTensor
-
-end TauCeti
+end TauCeti.FourTensor
