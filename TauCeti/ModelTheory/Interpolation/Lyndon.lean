@@ -583,21 +583,16 @@ theorem lyndon_interpolation (φ ψ : L.Sentenceω) (h : φ.Entails ψ) :
       θ.relationsInSigned true ⊆ φ.relationsInSigned true ∩ ψ.relationsInSigned true ∧
       θ.relationsInSigned false ⊆ φ.relationsInSigned false ∩ ψ.relationsInSigned false ∧
       φ.Entails θ ∧ θ.Entails ψ := by
+  -- 1. Translate `φ ⊨ ψ` into the relational graph language and apply relational Lyndon.
   let Aφ := (graphAxioms φ.functionsIn).conjunction φ.functionsIn_countable.graphAxioms
   let Aψ := (graphAxioms ψ.functionsIn).conjunction ψ.functionsIn_countable.graphAxioms
   have htr : (Aφ ⊓ φ.relationalize).Entails (Aψ.imp ψ.relationalize) := by
-    have hg := Sentenceω.entails_iff_graphTranslation.1 h
-    refine Sentenceω.entails_iff.2 fun N _ _ hN => ?_
-    have hconj {F : Set (Σ n, L.Functions n)} (hF : F.Countable) :
-        SentenceInf.Realize ((graphAxioms F).conjunction hF.graphAxioms) N ↔
-          SentenceInf.Realize (graphAxiomsSentence F hF) N := by
-      rw [Theoryω.realize_conjunction_iff, model_graphAxioms_iff, realize_graphAxiomsSentence,
-        Sigma.forall]
-    rw [SentenceInf.realize_inf, hconj φ.functionsIn_countable] at hN
-    have hψN := hg.realize N (SentenceInf.realize_inf.2 hN)
-    rw [SentenceInf.realize_imp, ← hconj ψ.functionsIn_countable] at hψN
-    exact SentenceInf.realize_imp.2 hψN
+    simpa only [Aφ, Aψ, Sentenceω.entails_iff, SentenceInf.realize_inf, SentenceInf.realize_imp,
+      realize_conjunction_graphAxioms_iff_realize_graphAxiomsSentence φ.functionsIn_countable,
+      realize_conjunction_graphAxioms_iff_realize_graphAxiomsSentence ψ.functionsIn_countable]
+      using Sentenceω.entails_iff_graphTranslation.1 h
   obtain ⟨θ, hpos, hneg, hφθ, hθψ⟩ := lyndon_interpolation_relational _ _ htr
+  -- 2. Bound the signed relation occurrences of `θ` in `L.graphLanguage`.
   have hsym (s : Bool)
       (hs : θ.relationsInSigned s ⊆
         (Aφ ⊓ φ.relationalize).relationsInSigned s ∩
@@ -610,29 +605,16 @@ theorem lyndon_interpolation (φ ψ : L.Sentenceω) (h : φ.Entails ψ) :
       relSym_inter] at hs
   have hsym_pos := hsym true hpos
   have hsym_neg := hsym false hneg
-  refine ⟨θ.backTranslate, ?_, ?_, ?_, ?_, ?_⟩
+  -- 3. Back-translate `θ` to `L`, reading off the symbol bounds and entailments.
+  refine ⟨θ.backTranslate, ?_, ?_, ?_,
+    Sentenceω.entails_backTranslate_of_graphAxioms_inf_relationalize hφθ,
+    Sentenceω.backTranslate_entails_of_graphAxioms_imp_relationalize hθψ⟩
   · rw [functionsIn_backTranslate, ← relationsInSigned_union_not true θ, Set.preimage_union]
     exact Set.union_subset
       (by simpa using Set.preimage_mono (f := graphRelSym) hsym_pos)
       (by simpa using Set.preimage_mono (f := graphRelSym) hsym_neg)
   · simpa using Set.preimage_mono (f := baseRelSym) hsym_pos
   · simpa using Set.preimage_mono (f := baseRelSym) hsym_neg
-  · refine Sentenceω.entails_iff.2 fun M _ _ hφM => ?_
-    let := graphExpansion L M
-    have hAφ : SentenceInf.Realize Aφ M :=
-      (Theoryω.realize_conjunction_iff _).2 (model_graphAxioms_graphExpansion L M _)
-    have hθM := hφθ.realize M (SentenceInf.realize_inf.2 ⟨hAφ, by
-      simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_relationalize]
-        using hφM⟩)
-    simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate] using hθM
-  · refine Sentenceω.entails_iff.2 fun M _ _ hθM => ?_
-    let := graphExpansion L M
-    have hAψ : SentenceInf.Realize Aψ M :=
-      (Theoryω.realize_conjunction_iff _).2 (model_graphAxioms_graphExpansion L M _)
-    have hψM := SentenceInf.realize_imp.1 (hθψ.realize M (by
-      simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_backTranslate]
-        using hθM)) hAψ
-    simpa only [SentenceInf.realize_def, FormulaInf.realize_def, realize_relationalize] using hψM
 
 /-- **Countable-theory Lyndon interpolation.** If a countable `L_{ω₁ω}` theory `T` entails `ψ`,
 there is an interpolant `θ` with `T ⊨ θ` and `θ ⊨ ψ` whose occurring function symbols appear in
