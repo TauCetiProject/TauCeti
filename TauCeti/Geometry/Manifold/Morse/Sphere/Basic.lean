@@ -393,6 +393,17 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
   ext x
   simp
 
+/-- The critical points of index `m` of the height function on the sphere `Sⁿ` are the north pole
+`v` if `m = n` and the south pole `-v` if `m = 0`. -/
+theorem sep_criticalPoints_sphereHeight_manifoldMorseIndex_eq (v : sphere (0 : E) 1) (m : ℕ) :
+    {x ∈ criticalPoints (𝓡 n) (sphereHeight v) | manifoldMorseIndex (𝓡 n) (sphereHeight v) x = m} =
+      (if m = n then {v} else ∅) ∪ (if m = 0 then {-v} else ∅) := by
+  ext x
+  rw [criticalPoints_sphereHeight, mem_sep_iff, mem_insert_iff, mem_singleton_iff, mem_union]
+  constructor
+  · rintro ⟨rfl | rfl, rfl⟩ <;> simp
+  · rintro (h | h) <;> split_ifs at h with hm <;> simp_all
+
 /-- **Every level of the height except the poles is regular.** The only critical points of the
 height function are the poles, where its values are `1` and `-1`. -/
 theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
