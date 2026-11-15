@@ -103,7 +103,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
     rcases lt_trichotomy k n with hkn | rfl | hnk
     · obtain ⟨i, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
       have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hk hn (by omega) (by omega)
-      have hs := hh.sub_le_mul_slope hk hn hi hn hkn.le le_rfl
+      have hs := hh.sub_le_mul_slope hk hn hkn.le le_rfl
       have hb := hleft i rfl hi
       rw [Nat.cast_sub hkn.le] at hs
       have hdiff : (0 : ℝ) ≤ (i + 1 : ℕ) - (k : ℝ) :=
@@ -111,7 +111,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
       nlinarith
     · simp
     · have hn' := hh.ne_top_of_le_of_le hn hk (Nat.le_succ n) hnk
-      have hs := hh.mul_slope_le_sub hn hk hn hn' hnk.le le_rfl
+      have hs := hh.mul_slope_le_sub hk hn hnk.le le_rfl
       have hb := hright hn'
       rw [Nat.cast_sub hnk.le] at hs
       have hdiff : 0 ≤ (k : ℝ) - n := sub_nonneg.mpr (Nat.cast_le.mpr hnk.le)
@@ -343,7 +343,7 @@ theorem unitSlope_lt (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     omega
   have hi_strict : c + σ * i < (h i).untop₀ :=
     lt_of_le_of_ne hi_lower hi_ne.symm
-  have hs := hh.mul_slope_le_sub hif.1 hf.left_ne_top hif.1 hif.2 hil.le le_rfl
+  have hs := hh.mul_slope_le_sub hf.left_ne_top hif.1 hil.le le_rfl
   rw [hl_real, Nat.cast_sub hil.le] at hs
   have hil_real : (i : ℝ) < l := Nat.cast_lt.mpr hil
   nlinarith
@@ -385,13 +385,11 @@ theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     omega
   have hi_strict : c + σ * (i + 1) < (h (i + 1)).untop₀ :=
     lt_of_le_of_ne hi_lower hi_ne.symm
-  have hs := hh.sub_le_mul_slope hf.right_ne_top hif.2 hif.1 hif.2
+  have hs := hh.sub_le_mul_slope hf.right_ne_top hif.2
     (hui.trans (Nat.le_succ i)) le_rfl
   rw [hu_real, Nat.cast_sub (hui.trans (Nat.le_succ i))] at hs
   push_cast at hs
   have hui_real : (u : ℝ) ≤ i := Nat.cast_le.mpr hui
-  have hui_succ_real : (u : ℝ) < i + 1 := by
-    exact_mod_cast (lt_of_le_of_lt hui (Nat.lt_succ_self i))
   nlinarith
 
 /-- A finite face's left endpoint is the first finite index plus the number of finite unit
@@ -562,7 +560,7 @@ theorem IsConvexSeq.supportingFace_subset_Iic_of_lt_unitSlope {h : ℕ → WithT
     rw [mem_supportingFace] at hn
     rw [hn]
     exact WithTop.coe_ne_top
-  have hs := hh.mul_slope_le_sub hmf.1 hn_top hmf.1 hmf.2 hmn.le le_rfl
+  have hs := hh.mul_slope_le_sub hn_top hmf.1 hmn.le le_rfl
   rw [Nat.cast_sub hmn.le] at hs
   have hcm := hc m
   rw [← WithTop.coe_untop₀_of_ne_top hmf.1, WithTop.coe_le_coe] at hcm
@@ -596,7 +594,7 @@ theorem IsConvexSeq.exists_isFiniteFace_of_lt_unitSlope {h : ℕ → WithTop ℝ
     · have hcn : c ≤ (h n).untop₀ - σ * n := hmin n ⟨hnm, hn⟩
       linarith
     · have hmn : m ≤ n := (lt_of_not_ge hnm).le
-      have htail := hh.mul_slope_le_sub hmf.1 hn hmf.1 hmf.2 hmn le_rfl
+      have htail := hh.mul_slope_le_sub hn hmf.1 hmn le_rfl
       rw [Nat.cast_sub hmn] at htail
       have hprod := mul_nonneg (sub_nonneg.mpr hσ.le)
         (sub_nonneg.mpr (Nat.cast_le.mpr hmn) : (0 : ℝ) ≤ n - m)
@@ -670,12 +668,12 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
     rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_lt_coe] at hlt
     simp only [gap, hak, ↓reduceIte]
     linarith
-  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap with hε
+  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap
   have hεpos : 0 < ε := (Finset.lt_inf'_iff _).mpr fun k hk =>
     hgap k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
   -- Tilting the line about the abscissa `n + 1 / 2` gives a convex minorant of the points
   -- lying strictly above the envelope at `n`.
-  set δ := ε / (2 * n + 2) with hδ
+  set δ := ε / (2 * n + 2)
   have hδpos : 0 < δ := div_pos hεpos (by positivity)
   have hδε : δ * (2 * n + 2) = ε := div_mul_cancel₀ ε (by positivity)
   have hminor : (fun k : ℕ => ((c + δ * (2 * n + 1) + (σ - 2 * δ) * k : ℝ) : WithTop ℝ)) ≤ a := by
@@ -686,7 +684,6 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
       have hεk : ε ≤ gap k := Finset.inf'_le _ (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
       simp only [gap, hak, ↓reduceIte] at hεk
       rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_le_coe]
-      have hk' : (k : ℝ) ≤ n := Nat.cast_le.mpr hk
       nlinarith
     · refine le_trans ?_ (hc k)
       rw [WithTop.coe_le_coe]

@@ -153,6 +153,11 @@ theorem summatory_eq_zero_of_lt {M : Type*} [AddCommMonoid M] {b x : ℝ}
     (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) (w : ι → M) : summatory N w x = 0 := by
   simp [summatory, normLE_eq_empty_of_lt N hb hx]
 
+/-- A summatory function vanishes below the cutoff `0`, since `N` takes natural values. -/
+theorem summatory_eq_zero_of_neg {M : Type*} [AddCommMonoid M] {x : ℝ} (hx : x < 0) (w : ι → M) :
+    summatory N w x = 0 :=
+  summatory_eq_zero_of_lt N (b := 0) (fun _ ↦ Nat.cast_nonneg _) hx w
+
 /-- For a nonnegative cutoff, a summatory function has the same value at the cutoff and at its
 natural floor. -/
 theorem summatory_eq_summatory_natFloor {M : Type*} [AddCommMonoid M] (w : ι → M) {x : ℝ}

@@ -132,7 +132,7 @@ theorem IsRegularPoint.exists_contMDiffOn_section [IsManifold J n N] {f : M → 
   have : IsManifold J 1 N := IsManifold.of_le hn
   set φ := extChartAt J (f x) with hφ
   -- Read `f` in the chart at `f x`, on the open set `u'` of points of `u` mapped into the chart.
-  set u' := u ∩ f ⁻¹' φ.source with hu'
+  set u' := u ∩ f ⁻¹' φ.source
   have hu'o : IsOpen u' := hf.continuousOn.isOpen_inter_preimage hu (isOpen_extChartAt_source _)
   have hxu' : x ∈ u' := ⟨hx, mem_extChartAt_source _⟩
   have hφs : ContMDiffOn J 𝓘(ℝ, F) n φ φ.source := by
@@ -150,7 +150,7 @@ theorem IsRegularPoint.exists_contMDiffOn_section [IsManifold J n N] {f : M → 
     hgreg.exists_contMDiffOn_section_normedSpace hg hu'o hxu' hn
   simp only [Function.comp_apply] at hxt₀ hs₀x hgs₀
   -- Shrink `t₀` so that `s₀` lands in `u'`, then pull it back to `N` by the chart.
-  set t₁ := t₀ ∩ s₀ ⁻¹' u' with ht₁
+  set t₁ := t₀ ∩ s₀ ⁻¹' u'
   have ht₁o : IsOpen t₁ := hs₀.continuousOn.isOpen_inter_preimage ht₀ hu'o
   have hxt₁ : φ (f x) ∈ t₁ := ⟨hxt₀, by rw [mem_preimage, hs₀x]; exact hxu'⟩
   refine ⟨φ.source ∩ φ ⁻¹' t₁,

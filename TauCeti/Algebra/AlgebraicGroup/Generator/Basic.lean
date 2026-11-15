@@ -51,7 +51,7 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
 ## Main results
 
-* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a finite free `G` has an
+* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a free `G` has an
   `A`-generator, the order of `A` is the rank of `G`.
 * `TauCeti.IsAGenerator.baseChange`, `TauCeti.IsAGenerator.of_baseChange` and
   `TauCeti.isAGenerator_baseChange_iff`: `A`-generators are stable under arbitrary base change and
@@ -99,13 +99,13 @@ variable {φ : A →* WithConv (H →ₐ[R] R)}
 theorem isAGenerator_iff : IsAGenerator φ ↔ IsFullSetOfSections fun a ↦ (φ a).ofConv :=
   Iff.rfl
 
-variable [Module.Finite R H]
-
-/-- Over a nontrivial ring, if a finite free `G` has an `A`-generator then the order of `A` is
+/-- Over a nontrivial ring, if a free `G` has an `A`-generator then the order of `A` is
 the rank of `G`. -/
 theorem IsAGenerator.card_eq_finrank [Module.Free R H] [Nontrivial R] (h : IsAGenerator φ) :
     Fintype.card A = Module.finrank R H :=
   IsFullSetOfSections.card_eq_finrank h
+
+variable [Module.Finite R H]
 
 variable [Module.Flat R H]
 

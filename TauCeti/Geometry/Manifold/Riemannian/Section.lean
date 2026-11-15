@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Symmetric
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -69,14 +70,11 @@ theorem convex_positiveDefiniteBilinearSections :
   rintro b hb c hc a d ha hd had
   refine ⟨(symmetricBilinearSections (IB := IB) (F := F) (V := V)
     (G := ℝ) (n := n)).add_mem
-      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x v hv ↦ ?_⟩
-  have heval : (a • b + d • c) x v v = a * b x v v + d * c x v v := by simp
-  rw [heval]
-  rcases ha.eq_or_lt with rfl | ha
-  · have hd1 : d = 1 := by simpa using had
-    simpa [hd1] using hc.2 x v hv
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha (hb.2 x v hv))
-      (mul_nonneg hd (hc.2 x v hv).le)
+      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x ↦ ?_⟩
+  have h := convex_setOfPred_symm_pos
+    ⟨(mem_symmetricBilinearSections b).1 hb.1 x, hb.2 x⟩
+    ⟨(mem_symmetricBilinearSections c).1 hc.1 x, hc.2 x⟩ ha hd had
+  simpa using h.2
 
 /-! ### The cone in the bundle of symmetric bilinear forms -/
 
@@ -162,6 +160,14 @@ def toSymmetricSection (g : ContMDiffRiemannianMetric IB n F V) :
 theorem coe_toSymmetricSection_apply (g : ContMDiffRiemannianMetric IB n F V) (x : B) :
     (g.toSymmetricSection x : V x →L[ℝ] V x →L[ℝ] ℝ) = g.inner x :=
   coe_symmetricBilinearSectionEquiv_symm_apply _ x
+
+/-- Lowering the smoothness of a metric does not change its symmetric tensor at any point. -/
+@[simp]
+theorem toSymmetricSection_ofLE_apply (g : ContMDiffRiemannianMetric IB n F V)
+    {m : ℕ∞ω} (h : m ≤ n) (x : B) :
+    (g.ofLE h).toSymmetricSection x = g.toSymmetricSection x := by
+  apply Subtype.ext
+  simp only [coe_toSymmetricSection_apply, ofLE_inner]
 
 /-- Under the identification of sections of the symmetric bundle with symmetric bilinear
 sections, the section of a metric is its bilinear section. -/

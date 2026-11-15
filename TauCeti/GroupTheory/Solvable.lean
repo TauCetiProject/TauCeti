@@ -59,8 +59,7 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
   identity.
 
 This is a prerequisite for descending geometric solvability along schematically dense morphisms
-from smooth affine groups. That descent supplies the multiplication-image step in the construction
-of the solvable radical in Layer 6 of the ReductiveGroups roadmap.
+from smooth affine groups, which is done in `TauCeti.Algebra.AlgebraicGroup.Solvable.Reduced`.
 -/
 
 public section

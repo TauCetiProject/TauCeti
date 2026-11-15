@@ -328,7 +328,6 @@ theorem norm_le_mul_sqrt_add_sqrt {a : A} {b : B} {Da : F₁} {Db : F₂} {d : F
     (hgrad : ‖Da‖ ^ 2 + r * ‖Db‖ ^ 2 ≤ C * r * max (1 - ‖a‖ ^ 2) 0 + C)
     (hd : ‖d‖ ≤ C * (‖Db‖ + ‖a‖ + ‖b‖)) :
     ‖d‖ ≤ C * (√(2 * C) + √(2 * (1 + C))) := by
-  have hr₀ : 0 < r := by linarith
   -- The gradient bound with `w₊ ≤ 1` and `r ≥ 1` gives `|∇β|² ≤ 2 C`.
   have hDb : ‖Db‖ ≤ √(2 * C) := by
     refine Real.le_sqrt_of_sq_le ?_

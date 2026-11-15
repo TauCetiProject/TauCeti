@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Taylor.Basic
+public import TauCeti.Analysis.Calculus.Taylor.Parameter
 
 /-!
 # Accumulated Taylor remainders
@@ -44,7 +44,7 @@ theorem sub_sum_taylor_two_eq_sum_sub_taylorWithinEval (f : ℝ → ℝ) (x : �
   rw [← Finset.sum_range_sub (fun i ↦ f (x i)) n, ← Finset.sum_sub_distrib,
     Finset.mul_sum, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [taylorWithinEval_univ_two]
   ring
 
@@ -96,30 +96,20 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
       1 / 2 * ∑ i ∈ Finset.range (n k),
         deriv (deriv f) (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
-  have hK : 0 ≤ max K 0 := le_max_right _ _
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le
-    hf (div_pos hε (by positivity : 0 < max K 0 + 1))
-  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hQ] with k hk hxk hδk hQk
-  have hstep i (hi : i ∈ Finset.range (n k)) :
-      ‖f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1))‖ ≤
-        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
-    have hi' := Finset.mem_range.1 hi
-    simpa only [Real.norm_eq_abs] using
-      hTaylor _ (hxk i hi'.le) _ (hxk (i + 1) hi') ((hδk i hi').trans_lt hk)
-  have hbound : |∑ i ∈ Finset.range (n k),
-      (f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1)))| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) *
-          ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2 := by
-        simpa only [Real.norm_eq_abs, ← Finset.mul_sum] using
-          norm_sum_le_of_le (Finset.range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hQk.trans (le_max_left _ _)
-  rw [Real.dist_eq, sub_zero]
-  apply hbound.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
-  linarith
+  simp_rw [← Fin.sum_univ_eq_sum_range]
+  have h₂ : ContinuousOn (fun p : ℝ × ℝ ↦ iteratedDeriv 2 f p.2) ({0} ×ˢ Icc a b) := by
+    intro p hp
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero, Function.comp_def] using
+      ((((hf p.2 hp.2).derivWithin (m := 1) (by norm_num)).derivWithin
+        (m := 0) (by norm_num)).continuousAt.comp continuousAt_snd).continuousWithinAt
+  exact tendsto_sum_sub_taylorWithinEval_two_param
+    (isCompact_singleton (x := (0 : ℝ))) (f := fun _ ↦ f) (K := K) (n := n)
+    (fun _ _ ↦ hf) h₂
+    (u := fun _ _ ↦ 0) (x := fun k i ↦ x k i) (y := fun k i ↦ x k (i + 1))
+    (Eventually.of_forall fun _ _ ↦ mem_singleton 0)
+    (hx.mono fun k hk i ↦ hk i i.isLt.le)
+    (hx.mono fun k hk i ↦ hk (i + 1) i.isLt)
+    (hδ.mono fun k hk i ↦ hk i i.isLt) hδ0
+    (hQ.mono fun k hk ↦ by simpa only [← Fin.sum_univ_eq_sum_range] using hk)
 
 end TauCeti

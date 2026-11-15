@@ -166,8 +166,9 @@ theorem range_orientationNeTwo (hn : 1 < n) :
   · exact one_mem _
 
 /-- **The image of the standard orientation of the `q ≠ 2` normal form is `1 + qℤ_p`**: for
-`1 < n` and `q = p^f` with `f ≥ 1`, and `f ≥ 2` when `p = 2`, the character with
-`χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise has image `U^(f) = 1 + qℤ_p`. -/
+`1 < n` and `q = p^f`, with `f ≥ 2` when `p = 2`, the character with
+`χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise has image `U^(f) = 1 + qℤ_p`. (The relation
+`u (1 - q) = 1` already forces `f ≥ 1`.) -/
 theorem range_orientationNeTwo_eq_unitsPrincipal (hn : 1 < n) {f : ℕ} (hq : q = p ^ f)
     (hf₂ : p = 2 → 2 ≤ f) (hu' : (u : ℤ_[p]) * (1 - (q : ℤ_[p])) = 1) :
     (orientationNeTwo q n u hu).toMonoidHom.range = unitsPrincipal p f := by

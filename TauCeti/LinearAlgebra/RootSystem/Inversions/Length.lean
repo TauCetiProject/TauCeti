@@ -25,8 +25,8 @@ that both halves are available at once. Everything here is stated and proved pur
 level, in terms of `TauCeti.inversions` and `TauCeti.wordProd`: no Coxeter presentation is
 mentioned, assumed, or needed. Downstream it *is* the root-level form of the Coxeter length of a
 Weyl group, because Mathlib defines `CoxeterSystem.length` to be exactly the least length of a
-word in the simple reflections; so once the Coxeter presentation lands, the Coxeter-length
-spelling of this theorem is a rewrite of it rather than a further theorem.
+word in the simple reflections; so the Coxeter-length spelling of this theorem is a rewrite of it
+rather than a further theorem.
 
 The subadditivity, inversion-invariance and descent consequences recorded here are the standard
 length-function axioms in their inversion-count spelling.
@@ -44,8 +44,7 @@ length-function axioms in their inversion-count spelling.
   length parity, namely that of the inversion count.
 * `RootPairing.finite_weylGroup_of_base`: the Weyl group of a base with finitely many roots is
   finite, whether or not the roots span.
-* `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_mul_le`: the inversion count is
-  invariant under inversion and subadditive.
+* `TauCeti.ncard_inversions_mul_le`: the inversion count is subadditive.
 * `TauCeti.ncard_inversions_mul_ofIdx_lt_of_mem`,
   `TauCeti.ncard_inversions_mul_ofIdx_lt_iff` and
   `TauCeti.lt_ncard_inversions_mul_ofIdx_iff`: right multiplication by the reflection in a
@@ -57,19 +56,10 @@ length-function axioms in their inversion-count spelling.
 
 ## References
 
-This file iterates over a whole word the root-level exchange step of "Inversion sets and the
-exchange step" in Layer 1 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, the item
-that asks for exactly that iteration: the step "iterated, is the exchange/deletion condition for
-the geometric action and the combinatorial core that Layer 2's generation and presentation
-consume". Nothing beyond that Layer 1 material is consumed, and all of it is on `main`
-(`TauCeti/LinearAlgebra/RootSystem/Inversions/StrongExchange.lean` and its imports).
-
-What Layer 2's presentation takes from the iteration is that a nonempty word of least length
-spells an element other than the identity, equivalently that its inversion set is nonempty: that
-is how the roadmap proves the lift from the presented group injective in Tits' theorem, "a
-nonempty reduced word has a nonempty inversion set". This file therefore precedes
-`weylCoxeterSystem` rather than waiting on it, and the Coxeter-length identity
-`(weylCoxeterSystem b).length w = (inversions b w).ncard` is not proved here.
+This file iterates over a whole word the root-level exchange step of
+`TauCeti/LinearAlgebra/RootSystem/Inversions/StrongExchange.lean`. The Coxeter-length identity
+`TauCeti.length_weylCoxeterSystem_eq` is not proved here but in
+`TauCeti/LinearAlgebra/RootSystem/Coxeter/Presentation.lean`, which builds on this file.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3, and in Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
@@ -167,21 +157,6 @@ theorem _root_.RootPairing.finite_weylGroup_of_base : Finite P.weylGroup := by
   obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
   exact ⟨l, hlen.trans_le (ncard_inversions_le P b w), hl⟩
 
-/-- **The inversion count is invariant under inversion**: reversing a word spelling `w` spells
-`w⁻¹`, since a simple reflection is its own inverse. -/
-@[simp]
-theorem ncard_inversions_inv (w : P.weylGroup) :
-    (inversions P b w⁻¹).ncard = (inversions P b w).ncard := by
-  have key : ∀ v : P.weylGroup, (inversions P b v⁻¹).ncard ≤ (inversions P b v).ncard := by
-    intro v
-    obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b v
-    have hrev : wordProd P b l.reverse = v⁻¹ := by rw [wordProd_reverse, hl]
-    calc
-      (inversions P b v⁻¹).ncard ≤ l.reverse.length := by
-        rw [← hrev]; exact ncard_inversions_wordProd_le_length P b l.reverse
-      _ = (inversions P b v).ncard := by rw [List.length_reverse, hlen]
-  exact le_antisymm (key w) (by simpa using key w⁻¹)
-
 /-- **The inversion count is subadditive**: concatenating shortest words for `v` and `w` spells
 `v * w`. -/
 theorem ncard_inversions_mul_le (v w : P.weylGroup) :
@@ -234,14 +209,6 @@ theorem lt_ncard_inversions_mul_ofIdx_iff (w : P.weylGroup) {i : ι} (hi : b.IsP
   · have hback := ncard_inversions_mul_ofIdx_lt_of_mem P b (w * RootPairing.weylGroup.ofIdx P i)
       ((mem_inversions_mul_ofIdx_iff_not_mem P w b hi).mpr h)
     rwa [mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one] at hback
-
-/-- Left multiplication by a reflection has the same inversion count as right multiplication by it
-on the inverse element; this is what turns the left criteria into the right ones. -/
-private theorem ncard_inversions_ofIdx_mul (w : P.weylGroup) (i : ι) :
-    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard =
-      (inversions P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i)).ncard := by
-  rw [← ncard_inversions_inv P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i), mul_inv_rev,
-    RootPairing.weylGroup.ofIdx_inv_eq, inv_inv]
 
 /-- **Left descent criterion.** Left multiplication by the reflection in a positive root shortens
 an element exactly when that root is an inversion of the inverse element. -/

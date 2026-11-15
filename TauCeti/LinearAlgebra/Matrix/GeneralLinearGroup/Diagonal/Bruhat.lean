@@ -57,10 +57,6 @@ its normalizer is all of `GL₂` and the displayed rank-one intersection would i
 
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 26.2–26.3 and 28.1.
 * T. A. Springer, *Linear Algebraic Groups*, second edition (1998), Sections 8.3–8.4.
-
-This advances Layer 7, "Bruhat decomposition and BN-pairs / Tits systems", of the
-ReductiveGroups roadmap by identifying the intersection subgroup, including in the rank-one
-`GL₂` example.
 -/
 
 public section

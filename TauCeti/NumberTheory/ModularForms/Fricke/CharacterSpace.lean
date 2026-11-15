@@ -47,8 +47,7 @@ inversion happens in `ℂˣ`.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 Three changes from the source. Its `chiConj` is dropped in favour of mathlib's `χ⁻¹`, as above.
 Its `private frickeOperator_sq_apply` is dropped: `frickeOperator_frickeOperator_apply` of

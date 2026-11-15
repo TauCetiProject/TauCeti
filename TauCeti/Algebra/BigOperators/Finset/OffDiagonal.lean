@@ -46,14 +46,14 @@ theorem even_sum_sum_erase {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f 
     have hstep : ∀ i ∈ s, ∑ j ∈ (insert a s).erase i, f i j = f i a + ∑ j ∈ s.erase i, f i j := by
       intro i hi
       have hai : a ≠ i := fun h ↦ ha (h ▸ hi)
-      rw [Finset.erase_insert_of_ne hai,
-        Finset.sum_insert (fun h ↦ ha (Finset.mem_of_mem_erase h))]
-    rw [Finset.sum_insert ha, Finset.erase_insert ha, Finset.sum_congr rfl hstep,
-      Finset.sum_add_distrib, ← add_assoc]
+      rw [erase_insert_of_ne hai,
+        sum_insert (fun h ↦ ha (mem_of_mem_erase h))]
+    rw [sum_insert ha, erase_insert ha, sum_congr rfl hstep,
+      sum_add_distrib, ← add_assoc]
     refine Even.add ?_ (ih fun i hi j hj ↦
-      hf i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_of_mem hj))
-    rw [Finset.sum_congr rfl fun i hi ↦
-      hf i (Finset.mem_insert_of_mem hi) a (Finset.mem_insert_self a s)]
+      hf i (mem_insert_of_mem hi) j (mem_insert_of_mem hj))
+    rw [sum_congr rfl fun i hi ↦
+      hf i (mem_insert_of_mem hi) a (mem_insert_self a s)]
     exact ⟨_, rfl⟩
 
 /-- **The off-diagonal sum of an antisymmetric function vanishes.** The ordered pairs of distinct
@@ -62,16 +62,16 @@ antisymmetric off the diagonal of `s`. -/
 theorem sum_sum_erase_eq_zero {α M : Type*} [DecidableEq α] [AddCommMonoid M] {f : α → α → M}
     (s : Finset α) (hf : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → f i j + f j i = 0) :
     ∑ i ∈ s, ∑ j ∈ s.erase i, f i j = 0 := by
-  rw [Finset.sum_sigma']
-  refine Finset.sum_involution (fun x _ ↦ ⟨x.2, x.1⟩) ?_ ?_ ?_ ?_
+  rw [sum_sigma']
+  refine sum_involution (fun x _ ↦ ⟨x.2, x.1⟩) ?_ ?_ ?_ ?_
   · rintro ⟨i, j⟩ hx
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx
+    simp only [mem_sigma, mem_erase] at hx
     exact hf i hx.1 j hx.2.2 (Ne.symm hx.2.1)
   · rintro ⟨i, j⟩ hx _ h
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx
+    simp only [mem_sigma, mem_erase] at hx
     exact hx.2.1 (congrArg Sigma.fst h)
   · rintro ⟨i, j⟩ hx
-    simp only [Finset.mem_sigma, Finset.mem_erase] at hx ⊢
+    simp only [mem_sigma, mem_erase] at hx ⊢
     exact ⟨hx.2.2, Ne.symm hx.2.1, hx.1⟩
   · rintro ⟨i, j⟩ _
     rfl
@@ -83,6 +83,6 @@ theorem sum_sum_eq_zero_of_diag {α M : Type*} [AddCommMonoid M] {f : α → α 
     ∑ i ∈ s, ∑ j ∈ s, f i j = 0 := by
   classical
   rw [← s.sum_sum_erase_eq_zero hf]
-  exact Finset.sum_congr rfl fun i hi ↦ by rw [← Finset.add_sum_erase s _ hi, hdiag i hi, zero_add]
+  exact sum_congr rfl fun i hi ↦ by rw [← add_sum_erase s _ hi, hdiag i hi, zero_add]
 
 end Finset

@@ -415,38 +415,64 @@ theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := b
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   exact Submodule.finrank_eq_zero.1 (by omega)
 
-/-- **A polarization with no remainder has even dimension.** This is the converse of
-`SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can be stated
-with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module needs. -/
+omit [FiniteDimensional K V] in
+/-- **A polarization with no remainder has even dimension.** For finite-dimensional `V` this is the
+converse of `SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can
+be stated with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module
+needs. No finiteness hypothesis is required: an infinite-dimensional `V` has `finrank K V = 0`,
+which is even, so in that case the conclusion carries no information about an even finite
+dimension. -/
 theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) := by
+  by_cases hV : FiniteDimensional K V
+  swap
+  · rw [finrank_of_not_finite hV]
+    exact ⟨0, rfl⟩
   have h := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   rw [hline, finrank_bot] at h
   exact ⟨finrank K P.W, by omega⟩
 
+omit [FiniteDimensional K V] in
 /-- **In even dimension the isotropic summand has half the dimension.** The isotropic summand `W`
-of a polarization of a `2l`-dimensional space has dimension `l`. This is the type `Dₗ` case, where
-the spinor module `⋀·W` has dimension `2ˡ`. -/
+of a polarization of a `2l`-dimensional space has dimension `l`. For finite-dimensional `V` this
+is the type `Dₗ` case, where the spinor module `⋀·W` has dimension `2ˡ`. No finiteness hypothesis
+is required: an infinite-dimensional `V` has `finrank K V = 0`, forcing `l = 0`, and then `W` is
+infinite-dimensional too, so `finrank K P.W = 0`; this degenerate case says nothing about the
+spinor module. -/
 theorem finrank_W_eq_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
     finrank K P.W = l := by
+  by_cases hfd : FiniteDimensional K V
+  swap
+  · -- Infinite-dimensional `V` forces `l = 0`, and then `W` is infinite-dimensional too.
+    rw [finrank_of_not_finite hfd] at hV
+    have hW : ¬ Module.Finite K P.W := fun hW ↦ hfd <| by
+      have : Module.Finite K P.W' := .equiv P.pairingEquiv.symm
+      have : Module.Finite K P.line := .of_injective P.lineCoordinate P.lineCoordinate_injective
+      exact .equiv P.decompositionEquiv
+    rw [finrank_of_not_finite hW]
+    omega
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
+omit [FiniteDimensional K V] in
 /-- **In odd dimension the isotropic summand again has half the dimension, rounded down.** The
 isotropic summand `W` of a polarization of a `2l + 1`-dimensional space has dimension `l`, the odd
 dimension being taken up by the remainder. This is the type `Bₗ` case, where the spinor module
 `⋀·W` again has dimension `2ˡ` but the parity splitting is not one of representations. -/
 theorem finrank_W_eq_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.W = l := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
+omit [FiniteDimensional K V] in
 /-- **In odd dimension the remainder is exactly a line.** It is spanned by an anisotropic vector,
 whose action mixes the two exterior parities of the spinor module, which is why they are not
 subrepresentations in the type `Bₗ` case. -/
 theorem finrank_line_eq_one_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.line = 1 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega

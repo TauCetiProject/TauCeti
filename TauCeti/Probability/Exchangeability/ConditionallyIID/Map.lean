@@ -31,14 +31,12 @@ original process.
 ## Implementation
 
 These are the conditional counterparts of `MixedIIDWith.map_values` and
-`mixedIID_of_mixedIID_pathLaw`; the roadmap refers to the second as `conditionallyIID_transfer`,
-and asks for the first as the closure of each symmetry class under a coordinatewise pushforward
-(`TauCetiRoadmap/Exchangeability/README.md`, Layer 0). Where the mixture predicate needs only the
-block identity to move, the conditional predicate carries the directing measure along as a
-coordinate of a joint law, so `map_values` transports the *whole* disintegration identity along
-`(Q, x) ↦ (Q.map f, f ∘ x)`. That map splits as a product, which is what lets
-`Measure.map_prod_map` reduce the mixture side to `Measure.map_dirac'` on the tag and
-`Measure.pi_map_pi` on the sampled block.
+`mixedIID_of_mixedIID_pathLaw`; the first is the closure of the class under a coordinatewise
+pushforward. Where the mixture predicate needs only the block identity to move, the conditional
+predicate carries the directing measure along as a coordinate of a joint law, so `map_values`
+transports the *whole* disintegration identity along `(Q, x) ↦ (Q.map f, f ∘ x)`. That map
+splits as a product, which is what lets `Measure.map_prod_map` reduce the mixture side to
+`Measure.map_dirac'` on the tag and `Measure.pi_map_pi` on the sampled block.
 
 The path-law transfer is the pullback along the path map `φ ω = fun i => X i ω`, under which the
 directing measure transfers as `ν ∘ φ`. Its purpose is to remove `[StandardBorelSpace Ω]` from
@@ -154,9 +152,8 @@ theorem ConditionallyIIDWith.of_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α
     ConditionallyIIDWith μ X fun ω => ν fun i => X i ω :=
   ConditionallyIIDWith.of_map (Measurable.of_eval hX_meas) (by rwa [pathLaw_def] at hν)
 
-/-- **Path-law transfer for the conditional predicate**, existential form. The roadmap names this
-`conditionallyIID_transfer`; the name here matches its mixture counterpart
-`mixedIID_of_mixedIID_pathLaw`. -/
+/-- **Path-law transfer for the conditional predicate**, existential form. Its mixture
+counterpart is `mixedIID_of_mixedIID_pathLaw`. -/
 theorem conditionallyIID_of_conditionallyIID_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX_meas : ∀ n, Measurable (X n))
     (h : ConditionallyIID (pathLaw μ X) fun n p => p n) :

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
 /-!
 # Complements on ideals of a Dedekind domain
@@ -58,22 +59,21 @@ The file also identifies any height-one prime of a discrete valuation ring with 
 (`IsDedekindDomain.HeightOneSpectrum.eq_maximalIdeal`), which is what lets a condition stated at
 the height-one primes of such a ring be read as a condition on its valuation. It was split out of
 material adapted from Michael Stoll's elliptic-curves formalisation
-(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at the roadmap's pin `66889eada51a`,
+(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at commit `66889eada51a`,
 Apache 2.0, by Michael Stoll), where it is the step behind `valuation_adicCompletion_algebraMap`.
 
 The theorem `IsDedekindDomain.HeightOneSpectrum.exists_mem_notMem` was split out of material
 adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
 
 `IsDedekindDomain.HeightOneSpectrum.comapOfNeBot` and its projection are likewise adapted from that
 formalisation (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/Basic.lean`
-line 539, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael
-Stoll). The construction is the source's; what changed is the hypothesis — the source and this
-version take the nonvanishing of the contraction as a hypothesis, where Mathlib's
-`HeightOneSpectrum.comap` instead derives it from surjectivity of the map.
+line 539, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael Stoll).
+The construction is the source's; what changed is the hypothesis — the source and this version
+take the nonvanishing of the contraction as a hypothesis, where Mathlib's `HeightOneSpectrum.comap`
+instead derives it from surjectivity of the map.
 
 `Ideal.ne_bot_of_comap_ne_bot` plays the role of the source's
 `comap_ne_bot_of_comap_comap_ne_bot` (`EllipticCurves/Mathlib/Basic.lean` line 270): it is what
@@ -107,8 +107,7 @@ theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
   change Ideal.map (e : R →+* R') I ∣ Ideal.map (e : R →+* R') J ↔ I ∣ J
   refine ⟨fun h ↦ ?_, fun h ↦ by
     simpa only [mapHom_apply] using map_dvd (mapHom (e : R →+* R')) h⟩
-  have hcomp : (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R := by ext x; simp
-  simpa only [mapHom_apply, Ideal.map_map, hcomp, Ideal.map_id] using
+  simpa only [mapHom_apply, Ideal.map_of_equiv] using
     map_dvd (mapHom (e.symm : R' →+* R)) h
 
 /-- The prime-power divisibility `p ^ n ∣ I` is unchanged by pushing forward along a ring
@@ -126,31 +125,44 @@ variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedek
 
 /-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
 isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
-`p` divides `I`. -/
-theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} (hp : Prime p) (hI : I ≠ ⊥) :
+`p` divides `I`. The identity also holds, with both sides `0`, when `p` is not prime or `I = ⊥`. -/
+theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
     (Associates.mk (Ideal.map e p)).count (Associates.mk (Ideal.map e I)).factors =
       (Associates.mk p).count (Associates.mk I).factors := by
   classical
-  have hpb : p ≠ ⊥ := by simpa only [zero_eq_bot] using hp.ne_zero
-  have hpmapb : Ideal.map e p ≠ ⊥ := by
-    simpa only [ne_eq, map_eq_bot_iff_of_injective e.injective] using hpb
-  have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
-  -- `map_isPrime_of_equiv` is an instance, so it fires once `p.IsPrime` is in the context.
-  have : p.IsPrime := (prime_iff_isPrime hpb).mp hp
-  have hpmap : Prime (Ideal.map e p) := (prime_iff_isPrime hpmapb).mpr (map_isPrime_of_equiv e)
-  have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
-    (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
-  have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
-  -- Both counts are pinned by the same `n ≤ ·` characterisation, through `prime_pow_dvd_iff_le`.
-  have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
-        (Associates.mk (Ideal.map e I)).factors ↔
-      n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
-    rw [← Associates.prime_pow_dvd_iff_le hmkImap (Associates.irreducible_mk.mpr hpmap.irreducible),
-      ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
-      ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
-      Associates.mk_le_mk_iff_dvd]
-    exact map_pow_dvd_map_iff_of_ringEquiv e p I n
-  exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  by_cases hI : I = ⊥
+  · subst hI
+    rw [Ideal.map_bot]
+    simp only [← zero_eq_bot, Associates.mk_zero, Associates.factors_zero, Associates.count_top]
+  by_cases hp : Prime p
+  · have hpmap := Ideal.map_prime_of_equiv e hp hp.ne_zero
+    have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
+    have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
+      (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
+    have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
+    -- Both counts are pinned by the same `n ≤ ·` characterisation, through
+    -- `prime_pow_dvd_iff_le`.
+    have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
+          (Associates.mk (Ideal.map e I)).factors ↔
+        n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
+      rw [← Associates.prime_pow_dvd_iff_le hmkImap
+          (Associates.irreducible_mk.mpr hpmap.irreducible),
+        ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
+        ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
+        Associates.mk_le_mk_iff_dvd]
+      exact map_pow_dvd_map_iff_of_ringEquiv e p I n
+    exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  · -- Neither `p` nor `Ideal.map e p` is prime, so both counts are the junk value `0`.
+    have hp' : ¬ Prime (Ideal.map e p) := fun h ↦ hp <| by
+      have := Ideal.map_prime_of_equiv e.symm h h.ne_zero
+      -- `Ideal.map_prime_of_equiv` states `Ideal.map` through the isomorphism class coercion; read
+      -- it through `RingHom` coercions, as `Ideal.map_of_equiv` is stated.
+      change Prime (Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') p)) at this
+      rwa [Ideal.map_of_equiv] at this
+    rw [Associates.count_reducible (mt Associates.irreducible_mk.mp
+        (mt (irreducible_iff_prime.mp) hp')),
+      Associates.count_reducible (mt Associates.irreducible_mk.mp (mt irreducible_iff_prime.mp hp))]
+    rfl
 
 end RingEquivDedekind
 
@@ -257,8 +269,8 @@ apply, nor integral `Algebra` maps, so `HeightOneSpectrum.under` does not either
 flat, not integral.) The `ne_bot` hypothesis has to be supplied by hand.
 
 Adapted from Michael Stoll's `EllipticCurves` (`EllipticCurves/Mathlib/Basic.lean` line 539, Apache
-2.0, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis
-formulation is the source's. -/
+2.0, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis formulation
+is the source's. -/
 def comapOfNeBot (ψ : B →+* C) (w : HeightOneSpectrum C) (hne : w.asIdeal.comap ψ ≠ ⊥) :
     HeightOneSpectrum B where
   asIdeal := w.asIdeal.comap ψ

@@ -95,7 +95,7 @@ theorem ext {x y : ProjectiveTensorProduct p}
   (toPiTensorProductEquiv p).injective h
 
 /-- The canonical pure-tensor multilinear map into the projective tensor product. -/
-def tprod : MultilinearMap 𝕜 E (ProjectiveTensorProduct p) :=
+def tprod : MultilinearMap (RingHom.id 𝕜) E (ProjectiveTensorProduct p) :=
   (toPiTensorProductLinearEquiv p).symm.toLinearMap.compMultilinearMap
     (PiTensorProduct.tprod 𝕜)
 
@@ -108,17 +108,17 @@ theorem tprod_apply (x : ∀ i, E i) :
 variable {F : Type*} [AddCommGroup F] [Module 𝕜 F]
 
 /-- The algebraic lift of a multilinear map from the projective tensor product. -/
-def lift (f : MultilinearMap 𝕜 E F) : ProjectiveTensorProduct p →ₗ[𝕜] F :=
+def lift (f : MultilinearMap (RingHom.id 𝕜) E F) : ProjectiveTensorProduct p →ₗ[𝕜] F :=
   (PiTensorProduct.lift f).comp (toPiTensorProductLinearEquiv p).toLinearMap
 
 @[simp]
-theorem lift_tprod (f : MultilinearMap 𝕜 E F) (x : ∀ i, E i) :
+theorem lift_tprod (f : MultilinearMap (RingHom.id 𝕜) E F) (x : ∀ i, E i) :
     lift p f ⟨⨂ₜ[𝕜] i, x i⟩ = f x := by
   simp [lift]
 
 /-- A linear map out of the projective tensor product is determined by its values on pure
 tensors. -/
-theorem lift_unique (f : MultilinearMap 𝕜 E F) (g : ProjectiveTensorProduct p →ₗ[𝕜] F)
+theorem lift_unique (f : MultilinearMap (RingHom.id 𝕜) E F) (g : ProjectiveTensorProduct p →ₗ[𝕜] F)
     (h : ∀ x, g (tprod p x) = f x) : g = lift p f := by
   apply LinearMap.ext
   rintro ⟨x⟩
@@ -229,7 +229,7 @@ theorem continuous_tprod [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSemino
 The selected finite families and the bound may depend on the target seminorm. -/
 theorem continuous_lift {τ : Type*} [TopologicalSpace F]
     (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
-    (f : MultilinearMap 𝕜 E F)
+    (f : MultilinearMap (RingHom.id 𝕜) E F)
     (hf : ∀ j, ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
       ∀ (x : ∀ i, E i), q j (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i)) :
     Continuous (lift p f) := by

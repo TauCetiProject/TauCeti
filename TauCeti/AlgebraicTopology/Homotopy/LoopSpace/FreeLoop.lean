@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
+public import TauCeti.Topology.MappingSpace.HomotopyGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
-public import TauCeti.Topology.Homotopy.SerreFibration.Section
 public import TauCeti.Topology.MappingSpace.Fibration
 
 /-!
@@ -17,8 +16,9 @@ public import TauCeti.Topology.MappingSpace.Fibration
 Evaluation `𝓛Q = C(S¹, Q) → Q` at `1 ∈ S¹` is a Hurewicz fibration
 (`TauCeti.isHurewiczFibration_mappingSpaceEval_one`) with fibre the based loops
 `Ω_x Q = Map_*(S¹, Q)` over `x`, and the constant loops are a section. So its exact homotopy
-sequence splits (`TauCeti.TopCat.fibrationBoundary_eq_of_section`): for `n ≥ 1` there are split
-short exact sequences of groups
+sequence splits (`TauCeti.injective_homotopyGroupMap_basedMap_val`,
+`TauCeti.mem_range_homotopyGroupMap_basedMap_val_iff`): for `n ≥ 1` there are split short exact
+sequences of groups
 
 `1 → π_{n+1}(Q, x) → π_n(𝓛Q, x) → π_n(Q, x) → 1`,
 
@@ -36,15 +36,12 @@ sequence of the contractible loop space underlying the capped loop cover of Floe
 
 ## Main declarations
 
-* `TauCeti.injective_homotopyGroupMap_basedMapCircle_val`: the based loops inject into the free
-  loops on positive-dimensional homotopy groups.
-* `TauCeti.mem_range_homotopyGroupMap_basedMapCircle_val_iff`: the image is the kernel of
-  evaluation.
 * `TauCeti.basedMapCircleHomotopyGroupMulEquiv`: the loop-space shift `π_n(Ω_x Q) ≅ π_{n+1}(Q, x)`
   on the based-loop fibre.
 * `TauCeti.freeLoopHomotopyGroupHom`: the injection `π_{n+1}(Q, x) → π_n(𝓛Q, x)`, with
   `TauCeti.injective_freeLoopHomotopyGroupHom` and `TauCeti.range_freeLoopHomotopyGroupHom`,
-  split by `TauCeti.mapHom_mappingSpaceEval_comp_mapHom_const`.
+  split by `TauCeti.mapHom_mappingSpaceEval_comp_mapHom_const`, the general splitting of
+  evaluation by the constant maps.
 * `TauCeti.contractibleLoopsHomotopyGroupMulEquiv`: `π_n(𝓛₀Q, x) ≅ π_n(𝓛Q, x)` for `n ≥ 1`.
 * `TauCeti.contractibleLoopHomotopyGroupHom`: the injection `π_{n+1}(Q, x) → π_n(𝓛₀Q, x)`, with
   `TauCeti.injective_contractibleLoopHomotopyGroupHom` and
@@ -69,93 +66,7 @@ namespace TauCeti
 
 variable {Q : Type u} [TopologicalSpace Q] (x : Q) {N : Type*}
 
-/-! ### The evaluation fibration as a morphism of `TopCat` -/
-
-/-- Evaluation of free loops at `1 ∈ S¹`, as a morphism of topological spaces. -/
-private abbrev freeLoopEval : _root_.TopCat.of C(Circle, Q) ⟶ _root_.TopCat.of Q :=
-  _root_.TopCat.ofHom (mappingSpaceEval 1)
-
-/-- The constant loop at `x`, as a point of the fibre of evaluation over `x`. -/
-private def freeLoopEvalFiberConst : (freeLoopEval (Q := Q)).fiber x :=
-  ⟨ContinuousMap.const Circle x, by simp⟩
-
-private theorem mem_serreFibrations_freeLoopEval :
-    TopCat.serreFibrations (freeLoopEval (Q := Q)) :=
-  isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations
-
-/-- The constant loops are a section of evaluation. -/
-private theorem freeLoopConst_comp_freeLoopEval :
-    _root_.TopCat.ofHom ContinuousMap.const' ≫ freeLoopEval (Q := Q) = 𝟙 _ := by
-  ext q
-  simp
-
-/-- The fibre of evaluation over `x` is the space of based loops at `x`. -/
-private def freeLoopEvalFiberHomeomorph :
-    (freeLoopEval (Q := Q)).fiber x ≃ₜ BasedMap Circle Q 1 x :=
-  Homeomorph.setCongr (t := {f : C(Circle, Q) | f 1 = x}) (by ext; simp [mappingSpaceEval_apply])
-
-private theorem freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst :
-    freeLoopEvalFiberHomeomorph x (freeLoopEvalFiberConst x) =
-      ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ :=
-  Subtype.ext rfl
-
-/-- Pushed into the free loops, the based loops at `x` give the fibre inclusion. -/
-private theorem subtypeVal_comp_freeLoopEvalFiberHomeomorph :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(BasedMap Circle Q 1 x, C(Circle, Q))).comp
-      ⟨freeLoopEvalFiberHomeomorph x, (freeLoopEvalFiberHomeomorph x).continuous⟩ =
-      ((freeLoopEval (Q := Q)).fiberι x).hom :=
-  ContinuousMap.ext fun f ↦ (TopCat.Hom.fiberι_apply _ _ f).symm
-
-/-- On homotopy groups, the inclusion of the based loops is the fibre inclusion of evaluation,
-up to the identification of the fibre with the based loops. -/
-private theorem homotopyGroupMap_basedMapCircle_val_eq :
-    HomotopyGroup.map (N := N)
-        (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ :
-          BasedMap Circle Q 1 x))
-        ⟨Subtype.val, continuous_subtype_val⟩ rfl =
-      HomotopyGroup.map ((freeLoopEval (Q := Q)).fiberι x).hom
-          (TopCat.Hom.fiberι_apply _ _ (freeLoopEvalFiberConst x)) ∘
-        (HomotopyGroup.homeomorphEquivOfEq (freeLoopEvalFiberHomeomorph x)
-          (freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst x)).symm := by
-  funext a
-  obtain ⟨a, rfl⟩ := (HomotopyGroup.homeomorphEquivOfEq (freeLoopEvalFiberHomeomorph x)
-    (freeLoopEvalFiberHomeomorph_freeLoopEvalFiberConst x)).surjective a
-  rw [Function.comp_apply, Equiv.symm_apply_apply, HomotopyGroup.homeomorphEquivOfEq_apply,
-    HomotopyGroup.map_comp_apply]
-  exact HomotopyGroup.map_congr (subtypeVal_comp_freeLoopEvalFiberHomeomorph x) _ _ a
-
 /-! ### Based loops in free loops -/
-
-/-- **The based loops inject into the free loops on homotopy groups.** In positive dimension, the
-inclusion `Ω_x Q → 𝓛Q` of the loops based at `x` induces an injection on homotopy groups at the
-constant loop: evaluation has the constant loops as a section, so the boundary maps of its exact
-homotopy sequence vanish. -/
-theorem injective_homotopyGroupMap_basedMapCircle_val [Finite N] [Nonempty N] :
-    Function.Injective (HomotopyGroup.map (N := N)
-      (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ : BasedMap Circle Q 1 x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) := by
-  rw [homotopyGroupMap_basedMapCircle_val_eq]
-  exact (TopCat.injective_homotopyGroupMap_fiberι_of_section (e := freeLoopEvalFiberConst x)
-    mem_serreFibrations_freeLoopEval freeLoopConst_comp_freeLoopEval rfl).comp
-      (Equiv.injective _)
-
-/-- **Exactness at the free loops.** In every dimension, a class of `π_N(𝓛Q)` at the constant
-loop at `x` comes from the based loops exactly when its evaluation at `1 ∈ S¹` is trivial. -/
-theorem mem_range_homotopyGroupMap_basedMapCircle_val_iff [Finite N]
-    {a : HomotopyGroup N C(Circle, Q) (ContinuousMap.const Circle x)} :
-    a ∈ Set.range (HomotopyGroup.map (N := N)
-      (x := (⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩ : BasedMap Circle Q 1 x))
-      ⟨Subtype.val, continuous_subtype_val⟩ rfl) ↔
-      HomotopyGroup.map (mappingSpaceEval 1) (leftInverse_mappingSpaceEval_const 1 x) a =
-        (⟦GenLoop.const⟧ : HomotopyGroup N Q x) := by
-  have h := congrFun (homotopyGroupMap_basedMapCircle_val_eq (N := N) x)
-  refine Iff.trans ?_ (TopCat.mem_range_homotopyGroupMap_fiberι_iff (e := freeLoopEvalFiberConst x)
-    mem_serreFibrations_freeLoopEval)
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, (h b).symm⟩
-  · rintro ⟨c, rfl⟩
-    exact ⟨_, (h _).trans (congrArg _ (Equiv.symm_apply_apply _ c))⟩
 
 /-- **The based-loop fibre computes the next homotopy group.** The loop-space shift
 `π_{m+1}(Ω_x Q) ≅ π_{m+2}(Q, x)`, on the based loops `Map_*(S¹, Q)` at the constant loop. -/
@@ -187,11 +98,10 @@ theorem basedMapCircleHomotopyGroupMulEquiv_apply (m : ℕ)
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` at the constant loop: the inverse of the
 loop-space shift `TauCeti.basedMapCircleHomotopyGroupMulEquiv`, followed by the inclusion of the
-based loops. -/
+based loops (`TauCeti.basedMapHomotopyGroupHom`). -/
 def freeLoopHomotopyGroupHom (m : ℕ) :
     π_ (m + 2) Q x →* π_ (m + 1) C(Circle, Q) (ContinuousMap.const Circle x) :=
-  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp
-    (basedMapCircleHomotopyGroupMulEquiv x m).symm.toMonoidHom
+  basedMapHomotopyGroupHom (basedMapCircleHomotopyGroupMulEquiv x m)
 
 /-- On the loop-space shift of a class of based loops, `TauCeti.freeLoopHomotopyGroupHom` is the
 map induced by the inclusion of the based loops. Not `@[simp]`: the simp normal form unfolds
@@ -200,41 +110,23 @@ theorem freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv (m : ℕ)
     (a : π_ (m + 1) (BasedMap Circle Q 1 x)
       ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
     freeLoopHomotopyGroupHom x m (basedMapCircleHomotopyGroupMulEquiv x m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a :=
+  basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is injective. -/
 theorem injective_freeLoopHomotopyGroupHom (m : ℕ) :
-    Function.Injective (freeLoopHomotopyGroupHom x m) := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.coe_comp]
-  exact (injective_homotopyGroupMap_basedMapCircle_val x).comp (MulEquiv.injective _)
+    Function.Injective (freeLoopHomotopyGroupHom x m) :=
+  injective_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-- **Exactness of the free-loop sequence.** The image of `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is the
 kernel of evaluation `π_{m+1}(𝓛Q, x) → π_{m+1}(Q, x)`. -/
 theorem range_freeLoopHomotopyGroupHom (m : ℕ) :
     (freeLoopHomotopyGroupHom x m).range =
       (HomotopyGroup.mapHom (N := Fin (m + 1)) (mappingSpaceEval (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x)).ker := by
-  ext a
-  rw [MonoidHom.mem_ker, HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
-    ← mem_range_homotopyGroupMap_basedMapCircle_val_iff]
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, rfl⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨basedMapCircleHomotopyGroupMulEquiv x m b,
-      freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv x m b⟩
-
-/-- **The constant loops split the free-loop sequence.** Evaluation undoes the constant loops on
-homotopy groups. -/
-theorem mapHom_mappingSpaceEval_comp_mapHom_const [DecidableEq N] [Nonempty N] :
-    (HomotopyGroup.mapHom (mappingSpaceEval (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x)).comp
-        (HomotopyGroup.mapHom (N := N) (x := x) ContinuousMap.const' rfl) =
-      MonoidHom.id (HomotopyGroup N Q x) :=
-  MonoidHom.ext fun a ↦ HomotopyGroup.map_map_of_comp_eq_id _ _ rfl _
-    (mappingSpaceEval_comp_const' 1) a
+        (leftInverse_mappingSpaceEval_const 1 x)).ker :=
+  range_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-! ### Contractible free loops -/
 

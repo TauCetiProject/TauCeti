@@ -148,7 +148,7 @@ theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
     apply hdel
     exact reachable_deleteVerts_iff_exists_walk.mpr
       ⟨p, huw.left_mem, fun z hz hzv ↦ hvp (hzv ▸ hz)⟩
-  obtain ⟨q, r, hp⟩ := Walk.mem_support_iff_exists_append.mp hvp
+  obtain ⟨q, _, _⟩ := Walk.mem_support_iff_exists_append.mp hvp
   exact ⟨u, huv, q.reachable huw.left_mem⟩
 
 /-- A cut vertex is an actual vertex of the graph. -/

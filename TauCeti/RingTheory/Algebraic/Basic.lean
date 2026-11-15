@@ -8,10 +8,11 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.Algebraic.Integral
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
-# Transcendental elements under translations and algebra maps
+# Transcendental elements under translations, algebra maps, and automorphisms
 
 Adding a base-ring constant to a transcendental element preserves transcendence, over an
 arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
@@ -25,6 +26,12 @@ The kernel of an algebra map into a field algebraic over the base field is a max
 (`AlgHom.ker_isMaximal_of_isAlgebraic`).
 Every element of a finite-dimensional left ideal of an algebra over a field is algebraic
 (`Submodule.isAlgebraic_of_mem`).
+In a domain `A` faithful over `R`, the iterates of an `R`-algebra endomorphism on an algebraic
+element eventually collide (`IsAlgebraic.exists_pow_apply_eq_of_algHom`), every algebraic element is
+fixed by some positive power of any `R`-algebra automorphism
+(`IsAlgebraic.exists_pow_apply_eq_self_of_algEquiv`), and an element moved by every positive power
+of an `R`-algebra automorphism is transcendental over `R`
+(`AlgEquiv.transcendental_of_forall_pow_algEquiv_ne_self`).
 -/
 
 public section
@@ -109,3 +116,43 @@ theorem aeval_map {K : Type*} [Field K] [Algebra K R] (hx : Transcendental R x)
       (leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hq)).isUnit.map _)
 
 end Transcendental
+
+namespace IsAlgebraic
+
+variable {R A : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A] [FaithfulSMul R A]
+
+/-- In a domain `A` faithful over `R`, the iterates of an `R`-algebra endomorphism `σ : A →ₐ[R] A`
+on an algebraic element `x` eventually repeat. -/
+theorem exists_pow_apply_eq_of_algHom {x : A} (hx : IsAlgebraic R x) (σ : A →ₐ[R] A) :
+    ∃ i j : ℕ, i < j ∧ (σ ^ i) x = (σ ^ j) x := by
+  obtain ⟨p, hp0, hpx⟩ := hx
+  have hx_mem : x ∈ p.rootSet A :=
+    mem_rootSet'.2 ⟨(Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective R A)).2 hp0, hpx⟩
+  obtain ⟨i, j, hij⟩ := Finite.exists_ne_map_eq_of_infinite
+    (fun n : ℕ ↦ (⟨(σ ^ n) x, rootSet_maps_to' id (σ ^ n) hx_mem⟩ : p.rootSet A))
+  rcases lt_or_gt_of_ne hij.1 with hlt | hgt
+  · exact ⟨i, j, hlt, congrArg Subtype.val hij.2⟩
+  · exact ⟨j, i, hgt, (congrArg Subtype.val hij.2).symm⟩
+
+/-- In a domain `A` faithful over `R`, every element algebraic over `R` is fixed by some nonzero
+power of any `R`-algebra automorphism `σ : A ≃ₐ[R] A`. -/
+theorem exists_pow_apply_eq_self_of_algEquiv {x : A} (hx : IsAlgebraic R x) (σ : A ≃ₐ[R] A) :
+    ∃ n : ℕ, n ≠ 0 ∧ (σ ^ n) x = x := by
+  obtain ⟨i, j, hij, heq⟩ := hx.exists_pow_apply_eq_of_algHom σ.toAlgHom
+  simp only [AlgHom.coe_pow, AlgEquiv.coe_toAlgHom, ← AlgEquiv.coe_pow] at heq
+  refine ⟨j - i, Nat.sub_ne_zero_of_lt hij, (σ ^ i).injective ?_⟩
+  rw [← AlgEquiv.mul_apply, ← pow_add, Nat.add_sub_of_le hij.le, heq]
+
+end IsAlgebraic
+
+namespace AlgEquiv
+
+variable {R A : Type*} [CommRing R] [CommRing A] [IsDomain A] [Algebra R A] [FaithfulSMul R A]
+
+/-- In a domain `A` faithful over `R`, an element moved by every positive power of an `R`-algebra
+automorphism `σ : A ≃ₐ[R] A` is transcendental over `R`. -/
+theorem transcendental_of_forall_pow_algEquiv_ne_self (σ : A ≃ₐ[R] A) {x : A}
+    (h : ∀ n : ℕ, n ≠ 0 → (σ ^ n) x ≠ x) : Transcendental R x :=
+  fun hx ↦ let ⟨n, hn0, hnx⟩ := hx.exists_pow_apply_eq_self_of_algEquiv σ; h n hn0 hnx
+
+end AlgEquiv

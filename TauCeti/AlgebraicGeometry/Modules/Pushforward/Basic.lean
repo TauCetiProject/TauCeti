@@ -39,6 +39,21 @@ lemma pushforward_comp_toSheaf (f : X ⟶ Y) :
         TopCat.Sheaf.pushforward AddCommGrpCat.{u} f.base :=
   (rfl)
 
+/-- Forgetting the module structure commutes with direct image, on underlying presheaves: the
+abelian presheaf of `f_* M` is the abelian presheaf of `M` precomposed with inverse image of
+opens. -/
+def pushforwardCompToPresheafIso (f : X ⟶ Y) :
+    pushforward f ⋙ Scheme.Modules.toPresheaf Y ≅
+      Scheme.Modules.toPresheaf X ⋙ TopCat.Presheaf.pushforward AddCommGrpCat.{u} f.base :=
+  Functor.isoWhiskerLeft (pushforward f)
+      (SheafOfModules.toSheafCompSheafToPresheafIso Y.ringCatSheaf).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (eqToIso (pushforward_comp_toSheaf f)) _ ≪≫
+    Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _ (TopCat.Sheaf.pushforwardForgetIso AddCommGrpCat.{u} f.base) ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (SheafOfModules.toSheafCompSheafToPresheafIso X.ringCatSheaf) _
+
 /-- A function `r` on an open `U` of `Y` acts on sections of `f_* M` over `U` through `f.app U r`,
 as a section of `M` over `f ⁻¹ᵁ U`. -/
 lemma pushforward_obj_smul (f : X ⟶ Y) (M : X.Modules) {U : Y.Opens} (r : Γ(Y, U))

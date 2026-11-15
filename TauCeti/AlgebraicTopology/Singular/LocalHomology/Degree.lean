@@ -65,9 +65,11 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
-  connected oriented manifold acts on top homology by multiplication by its degree, and
-  `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: it is bijective there exactly
-  when its degree is `±1`.
+  connected oriented manifold acts on top homology by multiplication by its degree.
+* `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: for compact connected `M`
+  and `N`, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` is bijective exactly when `deg f = ±1`; the same holds for
+  the `ULift ℤ` coefficients of the fundamental classes
+  (`TauCeti.HomologicalOrientation.bijective_singularHomologyFunctor_map_iff`).
 
 ## References
 
@@ -92,8 +94,7 @@ variable {M N P E F G : Type} [TopologicalSpace M] [T2Space M] [TopologicalSpace
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [ChartedSpace G P]
   {n : ℕ} (o : HomologicalOrientation M E n) (o' : HomologicalOrientation N F n)
-  (o'' : HomologicalOrientation P G n) (hE : finrank ℝ E = n) (hF : finrank ℝ F = n)
-  (hG : finrank ℝ G = n)
+  (o'' : HomologicalOrientation P G n) (hE : finrank ℝ E = n)
 
 open scoped Classical in
 /-- The **local degree** of `f : M → N` at `y ∈ N`: the integer `d` with
@@ -122,21 +123,21 @@ theorem localDegree_of_not_isCompact (f : C(M, N)) {y : N} (h : ¬IsCompact (f �
     o.localDegree o' hE f y = 0 := by
   rw [localDegree, dite_eq_right h]
 
-include hF in
 /-- **The defining property of the local degree**: at a point `y` with compact fibre, the local
 degree is the integer `c` with `f_*[M]_{f⁻¹(y)} = c • o' y`. -/
-theorem localDegree_eq_iff (f : C(M, N)) {y : N} (h : IsCompact (f ⁻¹' {y})) {c : ℤ} :
+theorem localDegree_eq_iff (hF : finrank ℝ F = n) (f : C(M, N)) {y : N}
+    (h : IsCompact (f ⁻¹' {y})) {c : ℤ} :
     o.localDegree o' hE f y = c ↔
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_refl _) n
         (o.fundamentalClassOn hE h) = c • (o' y).val := by
   rw [localHomologyMap_fundamentalClassOn_preimage_singleton o o' hE f h]
   exact ⟨fun h ↦ h ▸ rfl, fun h ↦ o'.zsmul_left_injective hF y h⟩
 
-include hF in
 /-- The local degree at a point outside the range of `f` vanishes: the fibre is empty, and the
 fundamental class along the empty set is zero. -/
 @[simp]
-theorem localDegree_eq_zero_of_notMem_range (f : C(M, N)) {y : N} (hy : y ∉ range f) :
+theorem localDegree_eq_zero_of_notMem_range (hF : finrank ℝ F = n) (f : C(M, N)) {y : N}
+    (hy : y ∉ range f) :
     o.localDegree o' hE f y = 0 := by
   have h : f ⁻¹' {y} = ∅ := eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
   have hc : IsCompact (f ⁻¹' {y}) := h ▸ isCompact_empty
@@ -161,9 +162,8 @@ theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn (f : C(M, N
     ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     localHomologyRestriction_comp_localHomologyMap]
 
-include hF in
 /-- **The local degree of a proper map is locally constant.** -/
-theorem isLocallyConstant_localDegree {f : C(M, N)} (hf : IsProperMap f) :
+theorem isLocallyConstant_localDegree (hF : finrank ℝ F = n) {f : C(M, N)} (hf : IsProperMap f) :
     IsLocallyConstant (o.localDegree o' hE f) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun y ↦ ?_
   obtain ⟨B, hB, hBc, hiso⟩ := exists_isCompact_mem_nhds_isIso_localHomologyRestriction
@@ -205,9 +205,9 @@ theorem degree_eq_localDegree_some (f : C(M, N)) (h : Nonempty N) :
 theorem degree_of_isEmpty [IsEmpty N] (f : C(M, N)) : o.degree o' hE f = 0 := by
   rw [degree, dite_eq_right (not_nonempty_iff.2 ‹_›)]
 
-include hF in
 /-- The local degree of a proper map onto a preconnected manifold is its degree at every point. -/
-theorem localDegree_eq_degree [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f) (y : N) :
+theorem localDegree_eq_degree (hF : finrank ℝ F = n) [PreconnectedSpace N] {f : C(M, N)}
+    (hf : IsProperMap f) (y : N) :
     o.localDegree o' hE f y = o.degree o' hE f := by
   rw [degree_eq_localDegree_some o o' hE f ⟨y⟩]
   exact (o.isLocallyConstant_localDegree o' hE hF hf).apply_eq_of_preconnectedSpace _ _
@@ -216,8 +216,8 @@ theorem localDegree_eq_degree [PreconnectedSpace N] {f : C(M, N)} (hf : IsProper
 preconnected manifold and every compact `K ⊆ N`, `f_*[M]_{f⁻¹(K)} = deg f • [N]_K`. In particular
 the degree may be read off from any nonempty compact `K`
 (`TauCeti.HomologicalOrientation.degree_eq_iff`). -/
-theorem localHomologyMap_fundamentalClassOn_preimage [PreconnectedSpace N] {f : C(M, N)}
-    (hf : IsProperMap f) {K : Set N} (hK : IsCompact K) :
+theorem localHomologyMap_fundamentalClassOn_preimage (hF : finrank ℝ F = n) [PreconnectedSpace N]
+    {f : C(M, N)} (hf : IsProperMap f) {K : Set N} (hK : IsCompact K) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_refl _) n
       (o.fundamentalClassOn hE (hf.isCompact_preimage hK)) =
       o.degree o' hE f • o'.fundamentalClassOn hF hK := by
@@ -229,8 +229,8 @@ theorem localHomologyMap_fundamentalClassOn_preimage [PreconnectedSpace N] {f : 
 /-- **The degree is determined by any nonempty compact set**: for a proper map `f` onto a
 preconnected manifold and nonempty compact `K ⊆ N`, the degree is the integer `c` with
 `f_*[M]_{f⁻¹(K)} = c • [N]_K`. -/
-theorem degree_eq_iff [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f) {K : Set N}
-    (hK : IsCompact K) (hK₀ : K.Nonempty) {c : ℤ} :
+theorem degree_eq_iff (hF : finrank ℝ F = n) [PreconnectedSpace N] {f : C(M, N)}
+    (hf : IsProperMap f) {K : Set N} (hK : IsCompact K) (hK₀ : K.Nonempty) {c : ℤ} :
     o.degree o' hE f = c ↔
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_refl _) n
         (o.fundamentalClassOn hE (hf.isCompact_preimage hK)) = c • o'.fundamentalClassOn hF hK := by
@@ -242,10 +242,9 @@ theorem degree_eq_iff [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f) {
   rw [map_zsmul, map_zsmul, o'.localHomologyRestriction_fundamentalClassOn hF hK hy] at h'
   exact o'.zsmul_left_injective hF y h'
 
-include hF in
 /-- A proper map of nonzero degree onto a preconnected manifold is surjective. -/
-theorem surjective_of_degree_ne_zero [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f)
-    (h : o.degree o' hE f ≠ 0) : Function.Surjective f := by
+theorem surjective_of_degree_ne_zero (hF : finrank ℝ F = n) [PreconnectedSpace N] {f : C(M, N)}
+    (hf : IsProperMap f) (h : o.degree o' hE f ≠ 0) : Function.Surjective f := by
   intro y
   by_contra hy
   exact h (o.localDegree_eq_degree o' hE hF hf y ▸
@@ -263,10 +262,9 @@ theorem localDegree_id (y : M) : o.localDegree o hE (ContinuousMap.id M) y = 1 :
 theorem degree_id [Nonempty M] : o.degree o hE (ContinuousMap.id M) = 1 := by
   rw [degree_eq_localDegree_some o o hE _ ‹_›, localDegree_id]
 
-include hF in
 /-- Reversing the orientation of the source negates the local degree. -/
 @[simp]
-theorem localDegree_neg_left (f : C(M, N)) (y : N) :
+theorem localDegree_neg_left (hF : finrank ℝ F = n) (f : C(M, N)) (y : N) :
     (-o).localDegree o' hE f y = -o.localDegree o' hE f y := by
   by_cases h : IsCompact (f ⁻¹' {y})
   · rw [localDegree_eq_iff (-o) o' hE hF f h, fundamentalClassOn_neg, map_neg,
@@ -274,10 +272,9 @@ theorem localDegree_neg_left (f : C(M, N)) (y : N) :
   · rw [localDegree_of_not_isCompact _ _ hE f h, localDegree_of_not_isCompact o o' hE f h,
       neg_zero]
 
-include hF in
 /-- Reversing the orientation of the target negates the local degree. -/
 @[simp]
-theorem localDegree_neg_right (f : C(M, N)) (y : N) :
+theorem localDegree_neg_right (hF : finrank ℝ F = n) (f : C(M, N)) (y : N) :
     o.localDegree (-o') hE f y = -o.localDegree o' hE f y := by
   by_cases h : IsCompact (f ⁻¹' {y})
   · rw [localDegree_eq_iff o (-o') hE hF f h, localHomologyMap_fundamentalClassOn_preimage_singleton
@@ -285,30 +282,29 @@ theorem localDegree_neg_right (f : C(M, N)) (y : N) :
   · rw [localDegree_of_not_isCompact _ _ hE f h, localDegree_of_not_isCompact o o' hE f h,
       neg_zero]
 
-include hF in
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]
-theorem degree_neg_left (f : C(M, N)) : (-o).degree o' hE f = -o.degree o' hE f := by
+theorem degree_neg_left (hF : finrank ℝ F = n) (f : C(M, N)) :
+    (-o).degree o' hE f = -o.degree o' hE f := by
   rcases isEmpty_or_nonempty N with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
   · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
       localDegree_neg_left o o' hE hF]
 
-include hF in
 /-- Reversing the orientation of the target negates the degree. -/
 @[simp]
-theorem degree_neg_right (f : C(M, N)) : o.degree (-o') hE f = -o.degree o' hE f := by
+theorem degree_neg_right (hF : finrank ℝ F = n) (f : C(M, N)) :
+    o.degree (-o') hE f = -o.degree o' hE f := by
   rcases isEmpty_or_nonempty N with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
   · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
       localDegree_neg_right o o' hE hF]
 
-include hG in
 /-- **Local degrees multiply under composition**: for proper maps `f : M → N` and `g : N → P` with
 `N` preconnected, the local degree of `g ∘ f` at `z` is `deg f` times the local degree of `g` at
 `z`. -/
-theorem localDegree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)} (hg : IsProperMap g)
-    (hf : IsProperMap f) (z : P) :
+theorem localDegree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [PreconnectedSpace N]
+    {g : C(N, P)} {f : C(M, N)} (hg : IsProperMap g) (hf : IsProperMap f) (z : P) :
     o.localDegree o'' hE (g.comp f) z = o.degree o' hE f * o'.localDegree o'' hF g z := by
   have hz : IsCompact (g ⁻¹' {z}) := hg.isCompact_preimage isCompact_singleton
   rw [localDegree_eq_iff o o'' hE hG _ (hf.isCompact_preimage hz), mul_zsmul,
@@ -316,23 +312,21 @@ theorem localDegree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)} (hg :
     ← o.localHomologyMap_fundamentalClassOn_preimage o' hE hF hf hz,
     ← ModuleCat.comp_apply, localHomologyMap_comp]
 
-include hG in
 /-- **The degree is multiplicative**: for proper maps `f : M → N` and `g : N → P` with `N`
 preconnected, `deg (g ∘ f) = deg g * deg f`. -/
-theorem degree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)}
-    (hg : IsProperMap g) (hf : IsProperMap f) :
+theorem degree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [PreconnectedSpace N]
+    {g : C(N, P)} {f : C(M, N)} (hg : IsProperMap g) (hf : IsProperMap f) :
     o.degree o'' hE (g.comp f) = o'.degree o'' hF g * o.degree o' hE f := by
   rcases isEmpty_or_nonempty P with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty, zero_mul]
   · rw [degree_eq_localDegree_some _ _ hE _ h, degree_eq_localDegree_some _ _ hF _ h,
       localDegree_comp o o' o'' hE hF hG hg hf, mul_comm]
 
-include hF in
 /-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
 to `f₁` which is proper as a map `[0, 1] × M → N`, then `f₀` and `f₁` have the same local degree at
 every point. -/
-theorem localDegree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH : IsProperMap H)
-    (y : N) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
+theorem localDegree_eq_of_homotopy (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁)
+    (hH : IsProperMap H) (y : N) : o.localDegree o' hE f₀ y = o.localDegree o' hE f₁ y := by
   -- Both fibres over `y` lie in the compact projection `A` of `H⁻¹(y)` to `M`.
   set A : Set M := Prod.snd '' (H ⁻¹' {y})
   have hA : IsCompact A := (hH.isCompact_preimage isCompact_singleton).image continuous_snd
@@ -358,10 +352,10 @@ theorem localDegree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁
   rw [hmap, hdeg f₁ h₁] at h
   exact o'.zsmul_left_injective hF y h.symm
 
-include hF in
 /-- **Invariance of the degree under proper homotopies**: maps joined by a homotopy which is
 proper as a map `[0, 1] × M → N` have the same degree. -/
-theorem degree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH : IsProperMap H) :
+theorem degree_eq_of_homotopy (hF : finrank ℝ F = n) {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁)
+    (hH : IsProperMap H) :
     o.degree o' hE f₀ = o.degree o' hE f₁ := by
   rcases isEmpty_or_nonempty N with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty]
@@ -370,11 +364,8 @@ theorem degree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH
 
 section CompactSpace
 
-variable [CompactSpace M] [CompactSpace N]
+variable (hF : finrank ℝ F = n) [CompactSpace M] [CompactSpace N] [PreconnectedSpace N]
 
-variable [PreconnectedSpace N]
-
-include hF in
 /-- **The degree computes the image of the fundamental class**: for a map `f : M → N` between
 compact oriented `n`-manifolds with `N` preconnected, `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`. -/
 theorem mapFundamentalClass_eq_degree_smul (f : C(M, N)) :
@@ -395,7 +386,6 @@ theorem mapFundamentalClass_eq_degree_smul (f : C(M, N)) :
       (o'.singularHomologyπ_fundamentalClass hF isCompact_univ)).symm.trans
       (map_zsmul _ _ _).symm))
 
-include hF in
 /-- **The degree of a composite with a further map**: for `f : M → N` between compact oriented
 `n`-manifolds with `N` preconnected and any continuous `g : N → X`,
 `(g ∘ f)_*[M] = deg f • g_*[N]` in `Hₙ(X; ℤ)`. -/
@@ -419,25 +409,56 @@ theorem singularHomologyMap_eq_degree_smul [ConnectedSpace M] (f : C(M, M))
   rw [mapFundamentalClass_def] at h
   exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (zsmul_comm _ _ _))
 
-/-- **A self-map is bijective on top homology exactly when its degree is `±1`**, for a compact
-connected oriented manifold. -/
-theorem bijective_singularHomologyMap_iff [ConnectedSpace M] (f : C(M, M)) :
-    Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
-        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom ↔
-      o.degree o hE f = 1 ∨ o.degree o hE f = -1 := by
-  have hmap := funext (o.singularHomologyMap_eq_degree_smul hE f)
-  rw [hmap]
-  refine ⟨fun hb ↦ ?_, ?_⟩
-  · -- The fundamental class is hit by some `e • [M]`, so `deg f * e = 1`.
-    obtain ⟨γ, hγ⟩ := hb.2 (o.fundamentalClass hE)
-    obtain ⟨e, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hE γ
-    refine Int.eq_one_or_neg_one_of_mul_eq_one (v := e) ((o.fundamentalClassEquiv hE).injective ?_)
-    simp only [fundamentalClassEquiv_apply, mul_smul, one_smul]
-    exact hγ
-  · -- Multiplication by `±1` is an involution.
-    rintro (h | h) <;> exact Function.Involutive.bijective fun γ ↦ by simp [h]
-
 end CompactSpace
+
+/-- **The degree detects isomorphisms on top homology.** For a map `f : M → N` between compact
+connected oriented `n`-manifolds, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` is bijective exactly when the degree
+of `f` is `±1`: in the generators `[M]` and `[N]` of these infinite cyclic groups, `f_*` is
+multiplication by the degree. -/
+theorem bijective_singularHomologyFunctor_map_iff (hF : finrank ℝ F = n)
+    [CompactSpace M] [CompactSpace N] [ConnectedSpace M] [ConnectedSpace N] (f : C(M, N)) :
+    Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom ↔
+      o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
+  -- `f_*`, typed on the homology groups in which the fundamental classes live.
+  let φ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ) →ₗ[ℤ]
+      ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+        ModuleCat.{0} ℤ) :=
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom
+  -- In the bases `[M]` and `[N]`, `f_*` is multiplication by the degree.
+  have key : ⇑φ = o'.fundamentalClassEquiv hF ∘ (· * o.degree o' hE f) ∘
+      (o.fundamentalClassEquiv hE).symm := by
+    funext γ
+    obtain ⟨c, rfl⟩ := (o.fundamentalClassEquiv hE).surjective γ
+    have h := o.mapFundamentalClass_eq_degree_smul o' hE hF f
+    rw [mapFundamentalClass_def] at h
+    rw [Function.comp_apply, Function.comp_apply, LinearEquiv.symm_apply_apply,
+      fundamentalClassEquiv_apply, fundamentalClassEquiv_apply, map_zsmul]
+    exact (congrArg (c • ·) h).trans (smul_smul _ _ _)
+  change Function.Bijective φ ↔ _
+  rw [key, (o'.fundamentalClassEquiv hF).bijective.of_comp_iff',
+    Function.Bijective.of_comp_iff _ (o.fundamentalClassEquiv hE).symm.bijective, ← Int.isUnit_iff]
+  exact IsUnit.isUnit_iff_mulRight_bijective.symm
+
+/-- **The degree detects isomorphisms on integral top homology.** For a map `f : M → N` between
+compact connected oriented `n`-manifolds, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` on singular homology with
+coefficients in the ring `ℤ` is bijective exactly when the degree of `f` is `±1`. -/
+theorem bijective_singularHomologyMap_iff (hF : finrank ℝ F = n)
+    [CompactSpace M] [CompactSpace N] [ConnectedSpace M] [ConnectedSpace N] (f : C(M, N)) :
+    Function.Bijective (ContinuousMap.singularHomologyMap ℤ n f) ↔
+      o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
+  -- The coefficient modules `ULift ℤ` and `ℤ` give naturally isomorphic homology functors.
+  let α := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
+    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
+  -- `ContinuousMap.singularHomologyMap ℤ n f` is by definition the map of the homology functor
+  -- with coefficients `ℤ`, but its source and target are stated through `singularChains`.
+  change Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+    (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)) ↔ _
+  rw [← o.bijective_singularHomologyFunctor_map_iff o' hE hF f,
+    ← ConcreteCategory.isIso_iff_bijective, ← ConcreteCategory.isIso_iff_bijective]
+  exact (NatIso.isIso_map_iff α (TopCat.ofHom f)).symm
 
 end HomologicalOrientation
 

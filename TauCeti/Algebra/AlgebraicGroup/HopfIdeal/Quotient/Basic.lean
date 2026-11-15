@@ -56,6 +56,9 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   Hopf ideal `J/I` is the surjective kernel of the induced quotient map.
 * `CommHopfAlgCat.ker_quotientMapOfLe`: over a field, the Hopf ideal `J/I` is the
   kernel of the induced quotient map.
+* `CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`,
+  `CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom`: the third isomorphism
+  theorem `H ⧸ J ≅ (H ⧸ I) ⧸ (J / I)` for `I ≤ J`, compatible with the quotient morphisms.
 * `CommHopfAlgCat.quotientBotIso`: quotienting by the zero Hopf ideal does not
   change a commutative Hopf algebra.
 * `CommHopfAlgCat.Hom.quotientIsoOfSurjective`: a surjective ambient morphism identifies
@@ -598,6 +601,30 @@ lemma mkQuotient_comp_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     mkQuotient H I ≫ quotientMapOfLe H hIJ = mkQuotient H J :=
   mkQuotient_comp_liftQuotient I (mkQuotient H J)
     (toIdeal_le_ker_mkQuotient_of_le H hIJ)
+
+/-- **Third isomorphism theorem.** For Hopf ideals `I ≤ J` of `H`, the quotient of `H` by `J` is
+the quotient of `H ⧸ I` by the image of `J`: it is the inverse of the identification of that
+quotient with `H ⧸ J` along `quotientMapOfLe`. The quotient morphism `q : H ⟶ H ⧸ I` is taken
+together with `hq : q = mkQuotient H I`, so that this applies verbatim to a coordinate map that
+is only propositionally the quotient morphism. -/
+noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoQuotientQuotient
+    {I J : HopfIdeal R H} (q : H ⟶ quotient H I)
+    (hq : q = mkQuotient H I) (hIJ : I ≤ J) :
+    quotient H J ≅ quotient (quotient H I) (J.map q.hom) :=
+  (quotientIsoOfKerOfSurjectiveEq (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ)
+    (by rw [hq, hom_mkQuotient]; exact kerOfSurjective_quotientMapOfLe H hIJ)).symm
+
+/-- The third isomorphism `H ⧸ J ≅ (H ⧸ I) ⧸ (J / I)` commutes with the quotient morphisms
+from `H`. -/
+@[reassoc (attr := simp)]
+lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom
+    {I J : HopfIdeal R H} (q : H ⟶ quotient H I)
+    (hq : q = mkQuotient H I) (hIJ : I ≤ J) :
+    mkQuotient H J ≫ (q.quotientIsoQuotientQuotient hq hIJ).hom =
+      q ≫ mkQuotient (quotient H I) (J.map q.hom) := by
+  subst hq
+  rw [← mkQuotient_comp_quotientMapOfLe H hIJ, Category.assoc, quotientIsoQuotientQuotient,
+    Iso.symm_hom, comp_quotientIsoOfKerOfSurjectiveEq_inv]
 
 /-- **A lift through the larger of two Hopf ideals is recognized by its precomposition with the
 quotient morphism.** Composing `H ⧸ I ⟶ H ⧸ J` with the lift of `f : H ⟶ K` through `H ⧸ J` gives

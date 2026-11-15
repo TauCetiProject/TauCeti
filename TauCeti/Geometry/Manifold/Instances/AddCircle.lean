@@ -7,13 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -63,6 +64,9 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
   the quotient map on their targets.
+* `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
+  `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
+  derivative.
 * `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group. In particular,
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
@@ -75,6 +79,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
   identity of `ℝ × ℝ`.
+* `AddCircle.mvfderiv_prodMap_coe_apply`: the differential of a vector-valued function on
+  `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -522,6 +528,35 @@ theorem mfderiv_extChartAt_symm (x : AddCircle p) {z : ℝ}
   -- The identification `tangentSpaceCast` of tangent spaces at equal points is the identity.
   rfl
 
+variable {p} in
+/-- A `C^k` map out of `AddCircle p`, precomposed with the quotient map `ℝ → AddCircle p` and read
+in a chart of its target, is `C^k`. -/
+theorem contDiffAt_chartAt_comp_coe {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace N] [ChartedSpace E' N] {k : ℕ∞ω} {f : AddCircle p → N} {t : ℝ}
+    (hf : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, E') k f t) :
+    ContDiffAt ℝ k (fun s : ℝ ↦ chartAt E' (f t) (f s)) t := by
+  have h := (contMDiffAt_iff.1 (hf.comp t ((contMDiff_coe p k) t))).2
+  simpa [Function.comp_def, contDiffWithinAt_univ] using h
+
+variable {p} in
+/-- A map out of `AddCircle p` with derivative `L`, precomposed with the quotient map
+`ℝ → AddCircle p` and read in a chart of its target, has derivative `L`. -/
+theorem hasFDerivAt_chartAt_comp_coe {E' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace N] [ChartedSpace E' N] {f : AddCircle p → N} {t : ℝ} {L : ℝ →L[ℝ] E'}
+    (hf : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E') f t L) :
+    HasFDerivAt (fun s : ℝ ↦ chartAt E' (f t) (f s)) L t := by
+  have h := (hf.comp t (hasMFDerivAt_coe p t)).2
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.comp_id, modelWithCornersSelf_coe, Set.range_id,
+    hasFDerivWithinAt_univ] at h
+  -- The tangent spaces are the model spaces, and the casts between them are identities.
+  convert h using 1
+  · funext s
+    simp
+  · ext
+    rfl
+  · rfl
+
 /-! ### Maps between circles lifting maps of `ℝ` -/
 
 section Lift
@@ -707,5 +742,20 @@ theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
       ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
   (hasMFDerivAt_prodMap_coe p q z).mfderiv
+
+variable {p q} in
+/-- At the image of `z`, the differential of a vector-valued function `σ` on
+`AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`. -/
+theorem mvfderiv_prodMap_coe_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {σ : AddCircle p × AddCircle q → F} {z : ℝ × ℝ}
+    (hσ : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, F) σ
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)) (v : ℝ × ℝ) :
+    mvfderiv (𝓘(ℝ).prod 𝓘(ℝ)) σ
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z) v =
+      fderiv ℝ (σ ∘ Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v := by
+  have hπ := hasMFDerivAt_prodMap_coe p q z
+  have h := mvfderiv_comp_apply z hσ hπ.mdifferentiableAt v
+  rw [hπ.mfderiv, mvfderiv_eq_fderiv] at h
+  exact h.symm
 
 end AddCircle

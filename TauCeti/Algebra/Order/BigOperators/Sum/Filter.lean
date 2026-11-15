@@ -26,10 +26,14 @@ namespace Finset
 /-- For a positive family on a finite type with at least two elements, the sum over all indices
 other than a given one is positive. -/
 theorem sum_filter_ne_pos {ι M : Type*} [Fintype ι] [DecidableEq ι] [Nontrivial ι]
-    [AddCommMonoid M] [Preorder M] [IsOrderedCancelAddMonoid M] [AddLeftStrictMono M] {a : ι → M}
+    [AddCommMonoid M] [Preorder M] [AddLeftStrictMono M] {a : ι → M}
     (ha : ∀ i, 0 < a i) (i : ι) : 0 < ∑ j with j ≠ i, a j := by
   obtain ⟨j, hj⟩ := exists_ne i
-  exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
+  suffices ∀ t : Finset ι, t.Nonempty → 0 < ∑ k ∈ t, a k from this _ ⟨j, by simpa using hj⟩
+  intro t ht
+  induction ht using Finset.Nonempty.cons_induction with
+  | singleton k => simpa using ha k
+  | cons k t hk _ ih => rw [sum_cons]; exact (ha k).trans (lt_add_of_pos_right _ ih)
 
 variable {ι α M : Type*} [DecidableEq α] [AddCommMonoid M] {a : ι → α} {e : ι → M} {p q : α}
 

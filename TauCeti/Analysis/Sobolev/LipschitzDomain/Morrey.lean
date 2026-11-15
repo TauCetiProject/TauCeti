@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.SupercriticalMultiplication
 public import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -19,8 +20,11 @@ Hölder there of exponent `1 - n/p`, and the resulting map `W^{1,p}(Ω) → C^{0
 a bounded linear map. Unlike the interior statements, the estimate reaches the boundary.
 Composed with the compact inclusion of Hölder spaces, the embedding into `C^{0,β}(closure Ω)` is
 a compact operator for every `β < 1 - n/p`; this is the Hölder range of the Rellich–Kondrachov
-theorem on Lipschitz domains. Finally `W^{1,p}(Ω)` is a Banach algebra under pointwise
-multiplication: the product is a bounded bilinear map `W^{1,p}(Ω) × W^{1,p}(Ω) → W^{1,p}(Ω)`.
+theorem on Lipschitz domains. The representative is continuous on `closure Ω`, and its
+restriction to the frontier is the trace `TauCeti.W1p.frontierTrace u` almost everywhere for
+surface measure, so for `p > n` the boundary values of `u` are pointwise values. Finally
+`W^{1,p}(Ω)` is a Banach algebra under pointwise multiplication: the product is a bounded
+bilinear map `W^{1,p}(Ω) × W^{1,p}(Ω) → W^{1,p}(Ω)`.
 
 The boundary regularity enters only through the extension operator
 `TauCeti.W1p.exists_extensionL_of_isLipschitzDomainWith`: each map factors as extension to
@@ -35,6 +39,10 @@ values at almost every point of `Ω`, so the maps below do not depend on the ext
   `W^{1,p}(Ω) →L[ℝ] C^{0,1-n/p}(closure Ω)`.
 * `TauCeti.W1p.exists_isCompactOperator_holder_of_isLipschitzDomainWith`: the embedding into
   `C^{0,β}(closure Ω)` is compact for `β < 1 - n/p`.
+* `TauCeti.W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith`: a representative
+  continuous on `closure Ω`.
+* `TauCeti.W1p.exists_continuousOn_frontierTrace_ae_eq`: the trace is the boundary restriction of
+  the continuous representative.
 * `TauCeti.W1p.exists_mulL_of_isLipschitzDomainWith`: multiplication on `W^{1,p}(Ω)` as a bounded
   bilinear map.
 
@@ -106,6 +114,44 @@ theorem W1p.exists_isCompactOperator_holder_of_isLipschitzDomainWith
     (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
   filter_upwards [hT u] with x hx hxΩ
   rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+
+/-- **Continuous representatives up to the boundary.** If `Ω ⊆ ℝ × E` is a bounded Lipschitz
+domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees almost everywhere on
+`Ω` with a function continuous on `closure Ω`. -/
+theorem W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
+    (hp : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < p)
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω p) :
+    ∃ f : WithLp 2 (ℝ × E) → ℝ, ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
+      W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f := by
+  classical
+  obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith hp hΩ hb
+  refine ⟨fun x => if hx : x ∈ closure (Ω : Set (WithLp 2 (ℝ × E))) then T u ⟨x, hx⟩ else 0,
+    ?_, ?_⟩
+  · rw [continuousOn_iff_continuous_domRestrict]
+    convert (T u).continuous using 1
+    ext x
+    exact dite_eq_left x.property
+  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+    filter_upwards [hT u] with x hx hxΩ
+    rw [dite_eq_left (subset_closure hxΩ)]
+    exact (hx hxΩ).symm
+
+/-- **The trace is the boundary value of the continuous representative.** If `Ω ⊆ ℝ × E` is a
+bounded Lipschitz domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `Ω` with a function continuous on `closure Ω` whose restriction to the
+frontier is the trace `W1p.frontierTrace u`, almost everywhere for surface measure. -/
+theorem W1p.exists_continuousOn_frontierTrace_ae_eq
+    (hp : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) < p)
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω p) :
+    ∃ f : WithLp 2 (ℝ × E) → ℝ, ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
+      W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f ∧
+      W1p.frontierTrace ENNReal.coe_ne_top hΩ hb u
+        =ᵐ[(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+          (frontier (Ω : Set (WithLp 2 (ℝ × E))))] f := by
+  obtain ⟨f, hf, hu⟩ := W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith hp hΩ hb u
+  exact ⟨f, hf, hu, W1p.frontierTrace_ae_eq_of_continuousOn ENNReal.coe_ne_top hΩ hb hf hu⟩
 
 /-- **Supercritical multiplication on bounded Lipschitz domains.** If `Ω ⊆ ℝ × E` is a bounded
 Lipschitz domain of dimension `n` and `n < p < ∞`, then the pointwise product of two functions in

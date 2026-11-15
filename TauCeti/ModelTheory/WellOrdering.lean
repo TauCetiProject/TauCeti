@@ -22,14 +22,16 @@ Fix a binary relation symbol `lt` of an arbitrary language. An `L_{ω₁ω}` sen
 carry `lt`-chains of every countable length also has a countable model carrying an `lt`-chain
 indexed by the rationals (Marker, *Lectures on Infinitary Model Theory*, 4.4.1). Such a chain is
 not well-founded, so a sentence all of whose models are well-founded for `lt` bounds their chains
-by a countable ordinal. Consequently the well-ordered models of a sentence have uniformly bounded
-countable order type, and no sentence defines the class of well-orders.
+by a countable ordinal. Consequently the order types of the models of a sentence all of whose
+models are well-ordered are bounded by a countable ordinal, and no sentence defines the class of
+well-orders.
 
 The proof applies model existence to a consistency property. Name each rational `q` by a Henkin
 constant `d_q`. A member is `{φ} ∪ {d_q < d_r : q < r} ∪ σ` with `σ` finite and mentioning finitely
 many constants, such that for every countable `α` some model of `φ` carries a well-ordered chain
-in which the rational constants of `σ` are placed in order with gaps of length more than `α`,
-including before the first and after the last. The disjunctive clauses hold because `ω₁` is
+in which the rational constants of `σ` are placed in order with gaps of length more than `α`:
+before the first, between consecutive ones, and from the last one to the top (each gap measured
+from the position of its left end). The disjunctive clauses hold because `ω₁` is
 regular: countably many choices, each failing below some countable `α`, cannot all fail at the
 supremum of these bounds, and the gap condition is downward closed in `α`. A new rational is placed
 inside a gap of a model chosen for a larger bound. Witnesses are obtained by reinterpreting a
@@ -43,10 +45,10 @@ constant that does not occur in `σ`.
 
 ## Main results
 
-* `FirstOrder.Language.RelChain.not_wellFounded`: a chain indexed by an order without a least
-  element makes `lt` ill-founded.
-* `FirstOrder.Language.RelChain.injective_of_irreflexive`: a chain for an irreflexive `lt` is
-  injective.
+* `FirstOrder.Language.RelChain.not_wellFounded`: a chain indexed by a nonempty type in which
+  every element has a smaller one makes `lt` ill-founded.
+* `FirstOrder.Language.RelChain.injective_of_irreflexive`: a chain indexed by a linear
+  order, for an irreflexive `lt`, is injective.
 * `FirstOrder.Language.Sentenceω.exists_model_relChain_rat`: a sentence with well-ordered chains of
   every countable length has a countable nonempty model with a chain indexed by `ℚ`.
 * `FirstOrder.Language.Sentenceω.wellFounded_boundedness`: if `lt` is well-founded in every nonempty
@@ -96,7 +98,8 @@ theorem relChain_iff [LT β] {f : β → M} :
     RelChain lt f ↔ ∀ x y, x < y → RelMap lt ![f x, f y] :=
   Iff.rfl
 
-/-- A chain indexed by a nonempty order without a least element makes `lt` ill-founded. -/
+/-- A chain indexed by a nonempty type in which every element has a smaller one (no minimal
+element) makes `lt` ill-founded. -/
 theorem RelChain.not_wellFounded [LT β] [NoMinOrder β] [Nonempty β] {f : β → M}
     (h : RelChain lt f) : ¬WellFounded fun x y : M => RelMap lt ![x, y] := by
   intro wf
@@ -104,7 +107,7 @@ theorem RelChain.not_wellFounded [LT β] [NoMinOrder β] [Nonempty β] {f : β �
   obtain ⟨y, hy⟩ := exists_lt x
   exact hx _ ⟨y, rfl⟩ (h y x hy)
 
-/-- A chain for an irreflexive relation is injective. -/
+/-- A chain indexed by a linear order, for an irreflexive relation, is injective. -/
 theorem RelChain.injective_of_irreflexive [LinearOrder β] {f : β → M} (h : RelChain lt f)
     (hlt : ∀ x : M, ¬RelMap lt ![x, x]) : Function.Injective f := by
   have : Std.Irrefl (fun x y : M => RelMap lt ![x, y]) := ⟨hlt⟩
@@ -211,7 +214,7 @@ end Sat
 
 /-! ### Rational constants and gaps -/
 
-/-- The Henkin constant naming a rational. These are the even constants, so the odd constants
+/-- The Henkin constant naming a rational. These constants have even indices, so the odd constants
 remain free to serve as witnesses. -/
 private def ratCon (q : ℚ) : ℕ := 2 * Encodable.encode q
 
@@ -226,8 +229,8 @@ private theorem mem_ratsIn {S : Set ℕ} {hS : S.Finite} {q : ℚ} : q ∈ ratsI
   Set.Finite.mem_toFinset _
 
 /-- The positions `x q`, for `q ∈ Q`, follow the order of `Q` inside the ordinal `γ`, with
-gaps of length more than `α` between consecutive positions and before the first and after the
-last. -/
+`α < x q` before the first, `x q + α < x r` between consecutive positions `q < r`, and
+`x q + α < γ` after the last (each gap is measured from the position of its left end). -/
 private structure Gapped (Q : Finset ℚ) (x : ℚ → Ordinal.{w}) (γ α : Ordinal.{w}) : Prop where
   lt_top : α < γ
   lt_position {q : ℚ} : q ∈ Q → α < x q
@@ -680,8 +683,7 @@ theorem wellFounded_boundedness
       SentenceInf.Realize φ M → ∀ f : α.ToType → M, ¬RelChain lt f := by
   by_contra hcon
   push Not at hcon
-  obtain ⟨M, _, hne, -, hφ, f, hf⟩ := exists_model_relChain_rat.{u, v, w, w}
-    fun α hα => (hcon α hα).imp fun M h => h.imp fun _ h => ⟨h.1, h.2.1, h.2.2⟩
+  obtain ⟨M, _, hne, -, hφ, f, hf⟩ := exists_model_relChain_rat.{u, v, w, w} hcon
   exact hf.not_wellFounded (hwf M _ hne hφ)
 
 /-- **Boundedness of order types** (Marker, Chapter 4). If `lt` well-orders every model of `φ` in

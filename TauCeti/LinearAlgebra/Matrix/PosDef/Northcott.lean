@@ -90,15 +90,31 @@ theorem IsSymm.posSemidef_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
   refine PosSemidef.of_dotProduct_mulVec_nonneg (by simpa using hA) ?_
   simpa [q] using hnonneg
 
-/-- A symmetric real matrix whose quadratic form has the Northcott property on the integer
-lattice has no nonzero real null vector. -/
-theorem IsSymm.eq_zero_of_mulVec_eq_zero_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
+/-- A real matrix, not necessarily symmetric, whose quadratic form has the Northcott property on
+the integer lattice has no nonzero real null vector. -/
+theorem eq_zero_of_mulVec_eq_zero_of_northcott {A : Matrix ι ι ℝ}
     (hN : Northcott (fun z : ι → ℤ ↦
       (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))))
     {x : ι → ℝ} (hx : A *ᵥ x = 0) : x = 0 := by
   classical
-  let := hN
-  let q : (ι → ℝ) → ℝ := fun x ↦ x ⬝ᵥ A *ᵥ x
+  -- The symmetric part `S` of `A` has the same quadratic form, so it is positive semidefinite,
+  -- and `x`, being isotropic for that form, is a null vector of `S`.
+  obtain ⟨S, hS, hSN, hSx⟩ : ∃ S : Matrix ι ι ℝ, S.IsSymm ∧
+      Northcott (fun z : ι → ℤ ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ S *ᵥ (fun i ↦ (z i : ℝ))) ∧
+      S *ᵥ x = 0 := by
+    let S : Matrix ι ι ℝ := (2⁻¹ : ℝ) • (A + Aᵀ)
+    have hS : S.IsSymm := (isSymm_add_transpose_self A).smul _
+    have hq (y : ι → ℝ) : y ⬝ᵥ S *ᵥ y = y ⬝ᵥ A *ᵥ y := by
+      simp only [S, smul_mulVec, add_mulVec, mulVec_transpose, dotProduct_smul, dotProduct_add,
+        dotProduct_comm y (y ᵥ* A), ← dotProduct_mulVec, smul_eq_mul]
+      ring
+    have hSN : Northcott (fun z : ι → ℤ ↦
+        (fun i ↦ (z i : ℝ)) ⬝ᵥ S *ᵥ (fun i ↦ (z i : ℝ))) := by
+      simpa only [hq] using hN
+    refine ⟨S, hS, hSN, (hS.posSemidef_of_northcott hSN).dotProduct_mulVec_zero_iff.mp ?_⟩
+    rw [star_trivial, hq, hx, dotProduct_zero]
+  let := hSN
+  let q : (ι → ℝ) → ℝ := fun x ↦ x ⬝ᵥ S *ᵥ x
   have hcont : Continuous q := by
     unfold q Matrix.mulVec dotProduct
     fun_prop
@@ -118,10 +134,10 @@ theorem IsSymm.eq_zero_of_mulVec_eq_zero_of_northcott {A : Matrix ι ι ℝ} (hA
         dsimp [e, r]
         linarith
       · exact sub_nonpos.mpr (Int.floor_le (t * x i))
-    have hcross : x ⬝ᵥ A *ᵥ (fun i ↦ (r t i : ℝ)) = 0 := by
-      rw [hA.dotProduct_mulVec_comm, hx, dotProduct_zero]
+    have hcross : x ⬝ᵥ S *ᵥ (fun i ↦ (r t i : ℝ)) = 0 := by
+      rw [hS.dotProduct_mulVec_comm, hSx, dotProduct_zero]
     have hq : q e = q (fun i ↦ (r t i : ℝ)) := by
-      simp [q, e, mulVec_sub, mulVec_smul, hx, sub_dotProduct, smul_dotProduct, hcross]
+      simp [q, e, mulVec_sub, mulVec_smul, hSx, sub_dotProduct, smul_dotProduct, hcross]
     simpa only [Set.mem_ofPred_eq, hq] using hC (Set.mem_image_of_mem q he)
   ext i
   by_contra hi
@@ -142,6 +158,6 @@ theorem IsSymm.posDef_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
   apply (hA.posSemidef_of_northcott hN).posDef_iff_det_ne_zero.mpr
   intro hdet
   obtain ⟨v, hv, hAv⟩ := exists_mulVec_eq_zero_iff.mpr hdet
-  exact hv (hA.eq_zero_of_mulVec_eq_zero_of_northcott hN hAv)
+  exact hv (eq_zero_of_mulVec_eq_zero_of_northcott hN hAv)
 
 end Matrix

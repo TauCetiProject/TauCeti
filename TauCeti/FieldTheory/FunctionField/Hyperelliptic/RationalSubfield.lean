@@ -206,7 +206,7 @@ theorem
     fun _ ↦ hhyp.isSeparable_of_finrank_adjoin_eq_two hex⟩, ?_⟩
   rintro ⟨hg, ⟨A, hA, hdim⟩, hsep⟩
   obtain ⟨x, hx, hdeg⟩ :=
-    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex hA hdim
   exact ⟨hg, x, hx, hdeg, hsep x hdeg⟩
 
 end TauCeti

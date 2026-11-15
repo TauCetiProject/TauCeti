@@ -206,7 +206,6 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (hA : A.IsSymm) {N 
       rw [hpv, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul]
       ring
     have hp' : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hp
-    have hM' : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne M)
     rw [hsq, hN]
     push_cast
     field_simp

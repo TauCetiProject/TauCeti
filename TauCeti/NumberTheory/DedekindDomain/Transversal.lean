@@ -22,7 +22,7 @@ one prime from each pair gives many ideals `A`, each satisfying
 `A * σ A = ∏ p ∈ S, p.asIdeal`.
 
 This is the combinatorial core behind counting the ideals `𝔄` with `𝔄 · σ 𝔄` a fixed product of
-split primes — the engine of the prime-splitting layer of the multiquadratic roadmap.
+split primes.
 
 ## Main results
 
@@ -178,7 +178,7 @@ theorem exists_transversal_family (σ : R ≃+* R) (S : Finset (IsDedekindDomain
   · refine ⟨{1}, by simp, fun A hA => ?_⟩
     rw [Finset.mem_singleton.mp hA, Finset.prod_empty, one_mul, Ideal.one_eq_top, Ideal.map_top]
   obtain ⟨p, hpS⟩ := hS
-  set q := IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p with hqdef
+  set q := IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p
   have hqS : q ∈ S := hinv p hpS
   have hS'sub : S \ {p, q} ⊂ S :=
     Finset.sdiff_ssubset (Finset.insert_subset_iff.mpr ⟨hpS, Finset.singleton_subset_iff.mpr hqS⟩)

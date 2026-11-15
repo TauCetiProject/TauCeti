@@ -46,10 +46,9 @@ finite-dimensional indecomposables is finite, so that "the indecomposables" may 
 
 ## Implementation notes
 
-The definition does not carry `[Finite Q]`. The roadmap pins `IsFiniteRepType` with that instance
-binder, to record the intended setting, but nothing in the statement consumes it and an unused
+The definition does not carry `[Finite Q]`: nothing in the statement consumes it, and an unused
 instance argument is a linter error here; a consumer that needs a finite vertex set -- Gabriel's
-dichotomy does -- states it where it is used. Dropping it costs nothing: the definition reads the
+dichotomy does -- states it where it is used. Omitting it costs nothing: the definition reads the
 same, and it stays meaningful over an infinite quiver.
 
 The skeleton is Mathlib's `CategoryTheory.Skeleton`, so `IsFiniteRepType` is a finiteness statement
@@ -62,12 +61,6 @@ The two results are stated for a family `M : α → QuiverRep k Q` rather than f
 representations: a family is what the worked examples produce -- the loop quiver's family is
 indexed by the base field -- and injectivity up to isomorphism is expressed directly on the index
 type.
-
-## References
-
-This implements the "finite representation type" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, on which its Gabriel
-dichotomy and the loop-quiver and Kronecker worked examples are stated.
 -/
 
 public section

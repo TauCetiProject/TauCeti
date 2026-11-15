@@ -381,29 +381,38 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
 
 end Derivative
 
+omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 are continuous in time. -/
 theorem continuous_lyapunovPerronIntegral
     (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
     (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s, ‖g s‖ ≤ M) :
-    Continuous (lyapunovPerronIntegral A P g) :=
-  continuous_iff_continuousAt.2 fun t ↦
-    (hasDerivAt_lyapunovPerronIntegral hu hα hg hgM t).continuousAt
+    Continuous (lyapunovPerronIntegral A P g) := by
+  by_cases hX : CompleteSpace X
+  · exact continuous_iff_continuousAt.2 fun t ↦
+      (hasDerivAt_lyapunovPerronIntegral hu hα hg hgM t).continuousAt
+  · have : lyapunovPerronIntegral A P g = fun _ ↦ 0 := by
+      ext t
+      simp [lyapunovPerronIntegral, intervalIntegral, integral_of_not_completeSpace hX]
+    rw [this]
+    exact continuous_const
 
+omit [CompleteSpace X] in
 /-- When `P` is idempotent and commutes with `A`, the integral terms of the Lyapunov--Perron
 equation have vanishing `P`-component at time `0`: there only the backward integral of the parts
 `g s - P (g s)` survives. -/
-theorem apply_lyapunovPerronIntegral_zero
-    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
-    (hα : 0 < α) (hP : IsIdempotentElem P) (hAP : Commute A P) (hg : ContinuousOn g (Ioi 0))
-    (hgM : ∀ s ∈ Ioi (0 : ℝ), ‖g s‖ ≤ M) :
+theorem apply_lyapunovPerronIntegral_zero (hP : IsIdempotentElem P) (hAP : Commute A P) :
     P (lyapunovPerronIntegral A P g 0) = 0 := by
-  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg,
-    ← P.integral_comp_comm (integrableOn_lyapunovPerron_unstable hu hα 0 hg hgM), neg_eq_zero]
-  refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
-  dsimp only [Pi.zero_apply]
-  rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
-    ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
+  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg, neg_eq_zero]
+  by_cases hX : CompleteSpace X
+  · by_cases hint : IntegrableOn (fun s ↦ exp ((0 - s) • A) (g s - P (g s))) (Ioi 0)
+    · rw [← P.integral_comp_comm hint]
+      refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
+      dsimp only [Pi.zero_apply]
+      rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
+        ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
+    · rw [integral_undef hint, map_zero]
+  · rw [integral_of_not_completeSpace hX, map_zero]
 
 /-- Under the backward exponential estimate, a vector `v` with `P v = 0` whose forward orbit
 `t ↦ exp (t A) v` stays bounded is zero, provided `P` commutes with `A`.
@@ -626,13 +635,8 @@ theorem apply_lyapunovPerronSolution_zero (hP : IsIdempotentElem P) (hAP : Commu
     (ξ : X) : P (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ 0) = P ξ := by
   set γ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ
   set g : ℝ → X := fun s ↦ N (γ s.toNNReal)
-  have hg : Continuous g :=
-    ((γ.comp N hN).compContinuous ⟨Real.toNNReal, continuous_real_toNNReal⟩).continuous
-  have hgM (s : ℝ) : ‖g s‖ ≤ ‖N 0‖ + ε * ‖γ‖ :=
-    ((γ.comp N hN).norm_coe_le_norm s.toNNReal).trans
-      (TauCeti.norm_boundedContinuousFunction_comp_le hN γ)
   rw [lyapunovPerronSolution_apply, NNReal.coe_zero, map_add,
-    apply_lyapunovPerronIntegral_zero hu hα hP hAP hg.continuousOn fun s _ ↦ hgM s, add_zero,
+    apply_lyapunovPerronIntegral_zero hP hAP, add_zero,
     zero_smul, exp_zero, one_apply_eq_self, ← mul_apply_eq_comp P, hP.eq]
 
 /-- When `P` is idempotent and commutes with `A`, restarting a Lyapunov--Perron solution from its
@@ -689,8 +693,7 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
   have hz0 : z 0 = 0 := by
     refine eq_zero_of_norm_exp_smul_apply_le hu hα hAP ?_ (C := B + (K * ‖y 0‖ +
       2 * K * (‖N 0‖ + ε * ‖γ‖) / α)) fun t ht ↦ ?_
-    · have hint := apply_lyapunovPerronIntegral_zero hu hα hP hAP hg.continuousOn
-        fun s _ ↦ hgM s
+    · have hint := apply_lyapunovPerronIntegral_zero (g := g) hP hAP
       simp only [z, w, zero_smul, exp_zero, one_apply_eq_self, map_sub, map_add, hint, add_zero,
         ← mul_apply_eq_comp P P, hP.eq, sub_self]
     · rw [← hz_exp t ht]
@@ -855,7 +858,7 @@ theorem tendsto_lyapunovPerronSolution (hN0 : N 0 = 0) (ξ : X) :
   rw [Real.coe_toNNReal t ht] at h
   simpa only [C, mul_right_comm _ (Real.exp _)] using h
 
-include hs hu hα hN hsmall in
+include hs hu hN in
 /-- **Weighted bounds for bounded forward solutions.** When the nonlinearity vanishes at the
 origin and `P` is idempotent and commutes with `A`, every solution of `y' = A y + N y` that stays
 bounded on `[0, ∞)` is bounded by a constant times `exp (-β t)` for every `β ≥ 0` with
@@ -865,6 +868,10 @@ theorem norm_le_of_isIntegralCurveOn_of_bounded (hN0 : N 0 = 0) (hP : IsIdempote
     (hy : IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Ici 0)) {B : ℝ}
     (hB : ∀ t ∈ Ici (0 : ℝ), ‖y t‖ ≤ B) {t : ℝ} (ht : 0 ≤ t) :
     ‖y t‖ ≤ K / (1 - 2 * K * ε / (α - β)) * Real.exp (-β * t) * ‖y 0‖ := by
+  have hsmall : 2 * K * ε < α := by
+    have : (2 * K * ε : ℝ) < α := by linarith
+    exact_mod_cast this
+  have hα : 0 < α := zero_le.trans_lt hsmall
   have h := norm_lyapunovPerronSolution_le hs hu hα hN hsmall hN0 hβ hβα (y 0) t.toNNReal
   have hyt : y t = lyapunovPerronSolution A P N hs hu hα hN hsmall (y 0) t.toNNReal :=
     eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hN hsmall hP hAP hy hB (mem_Ici.2 ht)

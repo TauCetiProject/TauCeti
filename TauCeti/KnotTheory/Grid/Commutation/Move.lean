@@ -52,10 +52,9 @@ is an involution and preserves non-interleaving of the swapped pair.
 
 ## References
 
-This is a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5,
-"Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization": the later pentagon-counting
-chain maps are attached to the elementary moves defined here. The definition follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The pentagon-counting chain maps of commutation invariance are attached to the elementary moves
+defined here. The definition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section

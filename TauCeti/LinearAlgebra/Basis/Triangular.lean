@@ -58,7 +58,7 @@ theorem flag_eq_of_triangular (b : Basis (Fin n) K E) {e : Basis (Fin n) K E}
 
 section Det
 
-variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [DecidableEq ι]
+variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
   [LinearOrder ι]
 
 /-- The determinant of a family `v` that is triangular with respect to a basis `b`, in the sense
@@ -107,7 +107,7 @@ theorem det_pos_of_sub_smul_mem_span_image_fst_lt (b : Basis (ι × κ) R M) {v 
   have hdet := b.det_reindex_symm v (toLex (α := ι × κ)).symm
   rw [Equiv.symm_symm] at hdet
   rw [← hdet]
-  refine (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hc (ofLex p)) fun p ↦ ?_
+  convert (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hc (ofLex p)) fun p ↦ ?_
   refine span_mono ?_ (by simpa using hv (ofLex p))
   rintro _ ⟨q, hq, rfl⟩
   exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.Analysis.InnerProductSpace.Convex

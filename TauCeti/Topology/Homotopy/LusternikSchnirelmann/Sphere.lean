@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
-public import TauCeti.AlgebraicTopology.Cohomology.Sphere
+public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Sphere.Contractible
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph

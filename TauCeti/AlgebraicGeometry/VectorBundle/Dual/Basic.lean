@@ -7,6 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.AlgebraicGeometry.VectorBundle.Quasicoherent
+public import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Duals of finite locally free sheaves
@@ -35,7 +37,9 @@ quasicoherent sheaf whose underlying module is finite locally free has the left 
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.freeIsoDual`: the free sheaf on a finite type
   is isomorphic to its dual;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`: a
-  finite locally free quasicoherent sheaf is dualizable in `QuasicoherentSheaf X`.
+  finite locally free quasicoherent sheaf is dualizable in `QuasicoherentSheaf X`;
+* `AlgebraicGeometry.Scheme.Modules.shortExact_map_tensorLeft`: tensoring with a finite locally
+  free sheaf preserves short exact sequences of sheaves of modules.
 -/
 
 public section
@@ -168,3 +172,24 @@ end
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- Tensoring with a finite locally free sheaf `E` preserves short exact sequences of sheaves of
+modules: `E` is dualizable, so tensoring with it is right adjoint to tensoring with its dual, as
+well as a left adjoint. -/
+theorem shortExact_map_tensorLeft (E : X.Modules) [E.IsLocallyFree] [E.IsFiniteType]
+    {S : ShortComplex X.Modules} (hS : S.ShortExact) : (S.map (tensorLeft E)).ShortExact := by
+  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E :=
+    TauCeti.exactPairingOfIsIsoDualTensorIhom (Y := E)
+  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) :=
+    BraidedCategory.exactPairing_swap _ _
+  have : Limits.PreservesLimits (tensorLeft E) :=
+    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
+  exact hS.map_of_exact (tensorLeft E)
+
+end AlgebraicGeometry.Scheme.Modules

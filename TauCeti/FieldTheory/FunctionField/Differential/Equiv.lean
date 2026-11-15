@@ -241,7 +241,7 @@ theorem Divisor.classGroupEquivOfRingEquiv_canonicalClass
     (hex : IsIntegrallyClosedIn k F) (hex' : IsIntegrallyClosedIn k' F') :
     Divisor.classGroupEquivOfRingEquiv σ τ h hF hF' (canonicalClass hF hex) =
       canonicalClass hF' hex' := by
-  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   have hmem' : repartitionDualEquivOfRingEquiv σ τ h ω ∈ weilDifferentialSpace k' F' := by
     simpa only [coe_weilDifferentialSpaceEquivOfRingEquiv_apply] using
       (weilDifferentialSpaceEquivOfRingEquiv σ τ h ⟨ω, hmem⟩).2

@@ -179,15 +179,17 @@ theorem map_separatingSpace_le (U : F →L[R] G) :
   rw [mem_separatingSpace_iff_mapClusterPt]
   exact hy.continuousAt_comp U.continuous.continuousAt
 
+omit [IsTopologicalAddGroup G] [ContinuousConstSMul R G] in
 /-- If `U ∘ T` is continuous for a continuous linear map `U` into a Hausdorff space, then `U`
 vanishes on the separating space of `T`. -/
 theorem separatingSpace_le_ker_of_continuous_comp [T2Space G] (U : F →L[R] G)
     (hU : Continuous ((U : F →ₗ[R] G) ∘ₗ T)) :
     T.separatingSpace ≤ ker (U : F →ₗ[R] G) := by
   intro y hy
-  have h := T.map_separatingSpace_le U ⟨y, hy, rfl⟩
-  rw [separatingSpace_eq_bot_of_continuous _ hU] at h
-  simpa using h
+  have hT0 : Tendsto ((U : F →ₗ[R] G) ∘ₗ T) (𝓝 0) (𝓝 0) := by simpa using hU.tendsto 0
+  have h := ((T.mem_separatingSpace_iff_mapClusterPt).1 hy).continuousAt_comp
+    U.continuous.continuousAt
+  exact eq_of_nhds_neBot (h.clusterPt.mono hT0).neBot
 
 /-- Precomposing with a continuous linear map can only shrink the separating space. -/
 theorem separatingSpace_comp_le (V : D →L[R] E) :
@@ -264,7 +266,7 @@ theorem continuous_mkQ_comp : Continuous (T.separatingSpace.mkQ ∘ₗ T) := by
 Hausdorff space, `W ∘ T` is continuous if and only if `W` vanishes on the separating space
 of `T`. -/
 theorem continuous_comp_iff_separatingSpace_le_ker [AddCommGroup G] [Module 𝕜 G]
-    [TopologicalSpace G] [IsTopologicalAddGroup G] [ContinuousConstSMul 𝕜 G] [T2Space G]
+    [TopologicalSpace G] [T2Space G]
     (W : F →L[𝕜] G) :
     Continuous ((W : F →ₗ[𝕜] G) ∘ₗ T) ↔ T.separatingSpace ≤ ker (W : F →ₗ[𝕜] G) := by
   refine ⟨T.separatingSpace_le_ker_of_continuous_comp W, fun h ↦ ?_⟩

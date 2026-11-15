@@ -67,11 +67,6 @@ the given element is conjugate to, where the closed forms below apply.
 
 ## References
 
-This serves the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the
-maximal torus", which asks for the character on the torus in the closed forms
-`sin ((n+1)θ) / sin θ` and `(e^{i(n+1)θ} - e^{-i(n+1)θ}) / (e^{iθ} - e^{-iθ})`.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 18.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter II, §5.

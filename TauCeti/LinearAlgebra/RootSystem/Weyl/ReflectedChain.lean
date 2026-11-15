@@ -120,21 +120,25 @@ variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
   {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
 
+omit [P.flip.IsReduced] in
 @[simp]
 theorem length_simpleMul : (simpleMul hlam C i hC).length = C.length :=
   (rfl)
 
+omit [P.flip.IsReduced] in
 @[simp]
 theorem simpleMul_apply (k : Fin ((simpleMul hlam C i hC).length + 1)) :
     ((simpleMul hlam C i hC) k).1 =
       (weylCoxeterSystem P b).simple i * (C ⟨k, by simpa using k.2⟩).1 :=
   (rfl)
 
+omit [P.flip.IsReduced] in
 @[simp]
 theorem head_simpleMul :
     (simpleMul hlam C i hC).head.1 = (weylCoxeterSystem P b).simple i * C.head.1 :=
   (rfl)
 
+omit [P.flip.IsReduced] in
 @[simp]
 theorem last_simpleMul :
     (simpleMul hlam C i hC).last.1 = (weylCoxeterSystem P b).simple i * C.last.1 :=
@@ -188,6 +192,7 @@ theorem isAChain_simpleMul_iff :
 
 end _root_.CoxeterSystem.MinimalCosetRepChain
 
+omit [P.flip.IsReduced] in
 /-- **The cover `u ⋖ sᵢ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
 representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, the saturated chain `sᵢ u ⋗ u` has the
 single bond `⟨u λ, αᵢ^∨⟩`. -/

@@ -74,13 +74,13 @@ noncomputable def fibreInclusionChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of F) ⟶
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of (TauCeti.MappingTorus φ)) :=
   ((singularChainComplexFunctor C).obj R).map
-    (TopCat.ofHom (TauCeti.MappingTorus.incl φ))
+    (TopCat.ofHom (incl φ))
 
 /-- The fibre-inclusion chain map is the singular-chain functor applied to the fibre inclusion. -/
 lemma fibreInclusionChainMap_def :
     fibreInclusionChainMap φ R =
       ((singularChainComplexFunctor C).obj R).map
-        (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) :=
+        (TopCat.ofHom (incl φ)) :=
   (rfl)
 
 /-- The singular-chain map induced by monodromy followed by fibre inclusion is chain-homotopic
@@ -91,13 +91,13 @@ def singularChainHomotopy :
       (fibreInclusionChainMap φ R) := by
   let f : TopCat.of F ⟶ TopCat.of F := TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))
   let i : TopCat.of F ⟶ TopCat.of (TauCeti.MappingTorus φ) :=
-    TopCat.ofHom (TauCeti.MappingTorus.incl φ)
+    TopCat.ofHom (incl φ)
   refine (_root_.Homotopy.ofEq
     (((singularChainComplexFunctor C).obj R).map_comp f i).symm).trans ?_
   -- `TopCat.Homotopy (f ≫ i) i` unfolds to a homotopy between the underlying continuous maps,
   -- whose composite `(incl φ).comp φ` is exactly the source of `monodromyHomotopy φ`.
   exact (show TopCat.Homotopy (f ≫ i) i from
-    TauCeti.MappingTorus.monodromyHomotopy φ).singularChainComplexFunctorObjMap R
+    monodromyHomotopy φ).singularChainComplexFunctorObjMap R
 
 /-- The components of the singular-chain homotopy are those induced by the cylinder homotopy. -/
 @[simp]
@@ -105,8 +105,8 @@ lemma singularChainHomotopy_hom (i j : ℕ) :
     (singularChainHomotopy φ R).hom i j =
       (TopCat.Homotopy.singularChainComplexFunctorObjMap (monodromyHomotopy φ : TopCat.Homotopy
         (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
-          TopCat.ofHom (TauCeti.MappingTorus.incl φ))
-        (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R).hom i j := by
+          TopCat.ofHom (incl φ))
+        (TopCat.ofHom (incl φ))) R).hom i j := by
   simp [singularChainHomotopy, _root_.Homotopy.trans, _root_.Homotopy.ofEq]
 
 /-- On singular homology, the map induced by the fibre inclusion is unchanged after
@@ -220,14 +220,14 @@ noncomputable def mappingTorusChainMap :
     ((singularChainComplexFunctor C).obj R).obj (TopCat.of (TauCeti.MappingTorus φ)) ⟶
       ((singularChainComplexFunctor C).obj R).obj (TopCat.of (TauCeti.MappingTorus ψ)) :=
   ((singularChainComplexFunctor C).obj R).map
-    (TopCat.ofHom (TauCeti.MappingTorus.map φ ψ g h))
+    (TopCat.ofHom (map φ ψ g h))
 
 /-- The mapping-torus chain map is the singular-chain functor applied to the map of mapping
 tori. -/
 lemma mappingTorusChainMap_def :
     mappingTorusChainMap φ R ψ g h =
       ((singularChainComplexFunctor C).obj R).map
-        (TopCat.ofHom (TauCeti.MappingTorus.map φ ψ g h)) :=
+        (TopCat.ofHom (map φ ψ g h)) :=
   (rfl)
 
 /-- A map intertwining two monodromies gives a commuting square on singular chains. -/

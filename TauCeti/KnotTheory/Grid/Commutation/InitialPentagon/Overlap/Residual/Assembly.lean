@@ -119,7 +119,7 @@ theorem commutationMap_comp_unblockedDifferential :
     ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C)
       (f := G.pentagonRectangleWeight C R)] at hterminal
   have hinitial := G.sum_initialPentagonRectangleWeight_overlap_eq_sum_partners C R hzx
-  rw [← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R) hzx,
+  rw [← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R),
     ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C)
       (f := G.initialPentagonRectangleWeight C R)] at hinitial
   -- Remove each disjoint recut-partner union once, leaving exactly the turn cuts.

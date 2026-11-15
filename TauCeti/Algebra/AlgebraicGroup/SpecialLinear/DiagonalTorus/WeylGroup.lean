@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.RootDatum
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 
 /-!
 # The Weyl group of the diagonal torus of the special linear group

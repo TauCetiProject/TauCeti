@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Section
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 
 /-!
@@ -36,6 +38,14 @@ particular, for a compact simply connected manifold the restriction is an isomor
 No orientability hypothesis is involved: orientability enters only through the action of loops at
 `x` on the local homology `Hₙ(M, M ∖ {x})`, which is trivial when `M` is simply connected.
 
+Without connectedness, a compact manifold has finitely many path components, so finitely many
+points detect its top homology (`TauCeti.exists_finset_hom_ext_localHomologySystemCone`), and
+`Hₙ(M; N)` embeds into a finite direct sum of copies of `N`. Over a ring over which every module
+has projective dimension at most one, such as `ℤ`, with `N` projective, the top homology is
+therefore projective (`TauCeti.projective_localHomology_univ`), and so is `Hₘ(M; N)` for every
+`m ≥ n` (`TauCeti.projective_singularHomology_of_compactSpace`). This is the input the universal
+coefficient theorem needs for the vanishing of the cohomology of `M` above its dimension.
+
 ## Main results
 
 * `TauCeti.localHomologySystemCone`: the restrictions `Hₖ(M) ⟶ Hₖ(M, M ∖ {x})`, as a cone over
@@ -45,9 +55,15 @@ No orientability hypothesis is involved: orientability enters only through the a
   `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact `M`, restriction to a point
   has image the classes invariant under transport along loops in degree `n`, and it is injective
   if `M` is connected.
+* `TauCeti.singularHomologyToLocalHomology_injective`: for compact connected `M`, the map
+  `Hₙ(M) → Hₙ(M, M ∖ {x})` is injective.
 * `TauCeti.isIso_localHomologySystemCone_π_app` and
   `TauCeti.singularHomologyIsoOfSimplyConnectedSpace`: for compact simply connected `M`,
   `Hₙ(M) ≅ Hₙ(M, M ∖ {x}) ≅ N`.
+* `TauCeti.exists_finset_hom_ext_localHomologySystemCone`: for compact `M`, restrictions to
+  finitely many points detect the top homology.
+* `TauCeti.projective_localHomology_univ` and `TauCeti.projective_singularHomology_of_compactSpace`:
+  over a hereditary ring, the homology of a compact manifold is projective from the dimension on.
 
 ## References
 
@@ -118,6 +134,22 @@ theorem localHomologySystemCone_π_app_injective [CompactSpace M] [ConnectedSpac
   -- Transport the equality at `x` along a path from `x` to `y`.
   let f : x ⟶ y := Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
   rw [← Cone.w _ f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h]
+
+/-- **A top-dimensional class of a compact connected manifold is determined at one point**: the map
+`Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is injective. -/
+theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) (x : M) :
+    Function.Injective (singularHomologyToLocalHomology N x n) := by
+  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
+    simp only [compl_univ]
+    exact inferInstanceAs (IsEmpty (∅ : Set M))
+  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{w} Λ) N n) := inferInstance
+  intro γ δ h
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+    ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at h
+  exact ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
+    (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x) h)
 
 /-- **The image of the top homology of a compact manifold in local homology.** A local
 class at `x` is the restriction of a class of `Hₙ(M, M ∖ M; N)` exactly when it is fixed by the
@@ -201,5 +233,70 @@ theorem singularHomologyIsoOfSimplyConnectedSpace_hom [CompactSpace M] [SimplyCo
           (singularHomologyComplSingletonIsoOfFinrankEq N (chartAt E x) (mem_chart_source E x)
             hn).hom :=
   (rfl)
+
+/-- **Finitely many points detect the top homology of a compact manifold.** For a compact
+Hausdorff space modelled on a real normed space of finite dimension `n`, there is a finite set `F`
+of points, meeting every path component, such that two morphisms into `Hₙ(M, M ∖ M; N)` agree as
+soon as their composites with the restrictions `Hₙ(M, M ∖ M; N) ⟶ Hₙ(M, M ∖ {x}; N)` agree for
+every `x ∈ F`. -/
+theorem exists_finset_hom_ext_localHomologySystemCone [CompactSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) :
+    ∃ F : Finset M, ∀ {Z : ModuleCat.{w} Λ} (u v : Z ⟶ localHomology N (univ : Set M) n),
+      (∀ x ∈ F, u ≫ (localHomologySystemCone N M E n).π.app (.mk x) =
+        v ≫ (localHomologySystemCone N M E n).π.app (.mk x)) → u = v := by
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  obtain ⟨F, hF⟩ := isCompact_univ.elim_finite_subcover (fun x : M ↦ pathComponent x)
+    (fun x ↦ IsOpen.pathComponent x) fun y _ ↦ mem_iUnion.2 ⟨y, mem_pathComponent_self y⟩
+  refine ⟨F, fun u v h ↦ (isLimitLocalHomologySystemCone N M E hn).hom_ext fun y ↦ ?_⟩
+  obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.1 (hF (mem_univ y.as))
+  -- Transport the equality at `x` along a path from `x` to `y`.
+  let f : FundamentalGroupoid.mk x ⟶ y := Path.Homotopic.Quotient.mk (Joined.somePath hxy)
+  rw [← Cone.w _ f]
+  exact (Category.assoc _ _ _).symm.trans ((h x hx =≫ _).trans (Category.assoc _ _ _))
+
+/-- **The top homology of a compact manifold is projective over a hereditary ring.** Let `Λ` be a
+ring over which every module has projective dimension at most one, such as `ℤ` or any principal
+ideal domain, and let `N` be a projective `Λ`-module. For a compact Hausdorff space modelled on a
+real normed space of finite dimension `n`, the top homology `Hₙ(M, M ∖ M; N)` is projective: it
+embeds into the finite direct sum of the local homology modules `Hₙ(M, M ∖ {x}; N) ≅ N` at the
+points of `TauCeti.exists_finset_hom_ext_localHomologySystemCone`. -/
+theorem projective_localHomology_univ [∀ V : ModuleCat.{w} Λ, HasProjectiveDimensionLE V 1]
+    [Projective N] [CompactSpace M] {n : ℕ} (hn : finrank ℝ E = n) :
+    Projective (localHomology N (univ : Set M) n) := by
+  obtain ⟨F, hF⟩ := exists_finset_hom_ext_localHomologySystemCone N (M := M) hn
+  have (x : M) : Projective (localHomology N ({x} : Set M) n) := by
+    subst hn
+    exact Projective.of_iso
+      (singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x)).symm
+      inferInstance
+  let g : localHomology N (univ : Set M) n ⟶ ⨁ fun x : F ↦ localHomology N ({x.1} : Set M) n :=
+    biproduct.lift fun x ↦ localHomologyRestriction N (subset_univ {x.1}) n
+  have : Mono g := ⟨fun u v huv ↦ hF u v fun x hx ↦ by
+    have h := huv =≫ biproduct.π _ ⟨x, hx⟩
+    rw [Category.assoc, Category.assoc, biproduct.lift_π] at h
+    exact h⟩
+  exact (forall_hasProjectiveDimensionLE_one_iff_projective_of_mono _).1 inferInstance g
+
+/-- **The homology of a compact manifold is projective from the dimension on.** Over a ring `Λ`
+over which every module has projective dimension at most one, with a projective coefficient module
+`N`, the singular homology `Hₘ(M; N)` of a compact Hausdorff space modelled on a real normed space
+of finite dimension `n` is projective for every `m ≥ n`: it is the projective top homology for
+`m = n` (`TauCeti.projective_localHomology_univ`) and zero for `m > n`
+(`TauCeti.isZero_singularHomology_of_compactSpace`). With `Λ = N = ℤ`, the integral homology of a
+compact manifold is free abelian from the dimension on. -/
+theorem projective_singularHomology_of_compactSpace
+    [∀ V : ModuleCat.{w} Λ, HasProjectiveDimensionLE V 1] [Projective N] [CompactSpace M]
+    {n m : ℕ} (hn : finrank ℝ E = n) (hm : n ≤ m) :
+    Projective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) m).obj N).obj
+      (TopCat.of M)) := by
+  obtain rfl | hm := hm.eq_or_lt
+  · have : IsEmpty (TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).snd := by
+      simp only [compl_univ]
+      exact inferInstanceAs (IsEmpty (∅ : Set M))
+    exact Projective.of_iso
+      (asIso ((TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).singularHomologyπ N n)).symm
+      (projective_localHomology_univ N hn)
+  · exact Projective.of_iso (isZero_singularHomology_of_compactSpace N hn hm).isoZero.symm
+      inferInstance
 
 end TauCeti

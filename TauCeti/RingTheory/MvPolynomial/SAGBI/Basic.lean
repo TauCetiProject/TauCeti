@@ -255,11 +255,13 @@ theorem monomial_one_mem_adjoin_leadingTerm_iff :
     | zero => simp
     | add a b _ _ iha ihb => simpa using mul_mem iha ihb
 
-/-- Over a field, the leading terms of `B` generate the leading term of a nonzero polynomial `f`
+/-- Over a field, the leading terms of `B` generate the leading term of a polynomial `f`
 if and only if its leading exponent is a sum of leading exponents of nonzero elements of `B`. -/
-theorem leadingTerm_mem_adjoin_leadingTerm_iff (hf : f ≠ 0) :
+theorem leadingTerm_mem_adjoin_leadingTerm_iff :
     m.leadingTerm f ∈ Algebra.adjoin k (m.leadingTerm '' B) ↔
       m.degree f ∈ AddSubmonoid.closure (m.degree '' (B \ {0})) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
   rw [m.leadingTerm_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf).isUnit,
     monomial_one_mem_adjoin_leadingTerm_iff]
 
@@ -363,12 +365,12 @@ theorem isSAGBIBasis_iff_degree_mem_closure :
     m.IsSAGBIBasis B A ↔
       B ⊆ A ∧ ∀ f ∈ A, f ≠ 0 → m.degree f ∈ AddSubmonoid.closure (m.degree '' (B \ {0})) := by
   rw [isSAGBIBasis_iff_initialAlgebra_le, initialAlgebra_def, Algebra.adjoin_le_iff]
-  refine and_congr_right fun _ ↦ ⟨fun h f hf hf0 ↦
-    (leadingTerm_mem_adjoin_leadingTerm_iff hf0).1 (h ⟨f, hf, rfl⟩), ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h f hf _ ↦
+    leadingTerm_mem_adjoin_leadingTerm_iff.1 (h ⟨f, hf, rfl⟩), ?_⟩
   rintro h _ ⟨f, hf, rfl⟩
   rcases eq_or_ne f 0 with rfl | hf0
   · simp
-  · exact (leadingTerm_mem_adjoin_leadingTerm_iff hf0).2 (h f hf hf0)
+  · exact leadingTerm_mem_adjoin_leadingTerm_iff.2 (h f hf hf0)
 
 /-- Over a field, `B ⊆ A` is a SAGBI basis of `A` if and only if every nonzero element of `A` has
 the same leading exponent as some nonzero product of elements of `B`. -/

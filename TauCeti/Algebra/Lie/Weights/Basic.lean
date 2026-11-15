@@ -34,6 +34,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
 * `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
   module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
   the weights taking that eigenvalue there.
+* `LieModule.genWeightSpace_le_posFittingComp_of_ne_zero`: a generalized weight space of a nonzero
+  weight lies in the positive Fitting component.
 * `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
   dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
@@ -212,6 +214,31 @@ theorem genWeightSpaceOf_eq_iSup_genWeightSpace (μ : K) (x : L) :
     exact hdisj.eq_bot.le.trans bot_le
 
 end Field
+
+section Fitting
+
+variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+
+/-- **A nonzero generalized weight space lies in the positive Fitting component.** If a nilpotent
+Lie algebra acts on a finite-dimensional module and `χ ≠ 0`, some `z` has `χ z ≠ 0`, so `z` acts
+invertibly on the `χ`-weight space, which therefore lies in the image of every power of `z`. -/
+theorem genWeightSpace_le_posFittingComp_of_ne_zero {χ : L → K} (hχ : χ ≠ 0) :
+    genWeightSpace M χ ≤ posFittingComp K L M := by
+  obtain ⟨z, hz⟩ := Function.ne_iff.mp hχ
+  replace hz : χ z ≠ 0 := hz
+  have hunit : IsUnit (toEnd K L (genWeightSpace M χ) z) := by
+    simpa using (isNilpotent_toEnd_sub_algebraMap M χ z).isUnit_add_left_of_commute
+      ((isUnit_iff_ne_zero.mpr hz).map (algebraMap K (Module.End K (genWeightSpace M χ))))
+      (Algebra.commutes _ _).symm
+  intro x hx
+  refine posFittingCompOf_le_posFittingComp K L M z ?_
+  rw [mem_posFittingCompOf]
+  intro k
+  obtain ⟨n, hn⟩ := (Module.End.isUnit_iff _ |>.mp (hunit.pow k)).2 ⟨x, hx⟩
+  exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
+
+end Fitting
 
 end LieModule
 

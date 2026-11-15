@@ -142,7 +142,7 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
         (v := fun y => f.normalRepresentative y hn (e.localFrame b i y))
         (w := fun y => f.normalRepresentative y hn (e.localFrame b j y)) hi hj
     intro y hy
-    apply Bundle.contMDiffWithinAt_totalSpace.mpr
+    apply Bundle.contMDiffWithinAt_totalSpace_iff.mpr
     refine ⟨contMDiffWithinAt_id, ?_⟩
     simpa [A, Trivial.fiberBundle_trivializationAt'] using hpair y hy
   exact hform.contMDiffAt (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ x))

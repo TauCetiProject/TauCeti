@@ -19,11 +19,10 @@ A *weight vector* on a `Finset s` is a function `f : X → ℝ≥0∞` with `∑
 weights of a probability measure on its finite carrier are the motivating example.  This file
 records the arithmetic of comparing two weight vectors, and of rounding one onto a grid.
 
-Two weight vectors split against each other: the mass `min (f x) (g x)` matched at `x` and the
-excess `f x - g x` above `g` add up to `f x`.  When `g` is dominated by `f` away from one
-designated atom `x₀` -- so that `g` arises from `f` by transferring weight onto `x₀` -- the
-designated atom can only gain, and it gains exactly the total excess.  Only equality of the two
-finite total masses is used there, not normalization to one.
+When a weight vector `g` is dominated by `f` away from one designated atom `x₀` -- so that `g`
+arises from `f` by transferring weight onto `x₀` -- the designated atom can only gain, and it
+gains exactly the total excess `∑ x ∈ s, (f x - g x)`.  Only equality of the two finite total
+masses is used there, not normalization to one.
 
 A weighted sum with weights summing to one is at most twice its part over the large terms, as
 soon as it is at least twice the threshold separating large terms from small ones.
@@ -35,7 +34,6 @@ dominated away from `x₀` and lose less than `1 / M` each.
 
 ## Main results
 
-* `Finset.sum_min_add_sum_tsub` -- the matched mass and the excess mass add up to the total;
 * `ENNReal.toReal_sub_add_toReal_sub` -- the excesses in both directions add up to the distance;
 * `TauCeti.sum_mul_le_two_mul_sum_mul_ite` -- a weighted sum is dominated by its large terms;
 * `TauCeti.le_of_sum_eq_of_forall_ne_le` -- an atom dominating everywhere else can only gain;
@@ -50,12 +48,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {X : Type*}
-
-/-- The mass of `f` matched by `g` and the mass of `f` above `g` add up to `f`. -/
-theorem _root_.Finset.sum_min_add_sum_tsub (s : Finset X) (f g : X → ℝ≥0∞) :
-    ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
-  rw [← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun x _ => (add_comm _ _).trans tsub_add_min
 
 /-- The excess of `a` over `b` and the excess of `b` over `a` add up to their distance: for finite
 `a` and `b`, `(a - b) + (b - a) = |a - b|`, read in `ℝ`. -/
@@ -111,49 +103,37 @@ theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥
 
 variable {s : Finset X} {f g : X → ℝ≥0∞} {x₀ : X}
 
+/-- The total weight of `g` away from `x₀` is finite and at most that of `f`. -/
+private theorem sum_erase_le_and_ne_top [DecidableEq X]
+    (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x) (hne : ∑ x ∈ s, f x ≠ ⊤)
+    (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
+    ∑ x ∈ s.erase x₀, g x ≤ ∑ x ∈ s.erase x₀, f x ∧ ∑ x ∈ s.erase x₀, g x ≠ ⊤ :=
+  ⟨Finset.sum_le_sum fun x hx => hdom x (Finset.mem_of_mem_erase hx) (Finset.ne_of_mem_erase hx),
+    ne_top_of_le_ne_top (hfg ▸ hne) (Finset.sum_le_sum_of_subset (Finset.erase_subset _ _))⟩
+
 /-- Away from `x₀` the smaller of two weight vectors of equal finite total mass is `g`, so the
 designated atom `x₀` can only gain weight. -/
 theorem le_of_sum_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
     (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) : f x₀ ≤ g x₀ := by
-  by_contra hlt
-  push Not at hlt
-  have hmin : ∀ x ∈ s, min (f x) (g x) = g x := fun x hx => by
-    rcases eq_or_ne x x₀ with rfl | hx'
-    · exact min_eq_right hlt.le
-    · exact min_eq_right (hdom x hx hx')
-  have hsum : ∑ x ∈ s, g x + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
-    have h := Finset.sum_min_add_sum_tsub s f g
-    rwa [Finset.sum_congr rfl hmin] at h
-  have key : ∑ x ∈ s, g x + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, g x + 0 := by
-    rw [add_zero, hsum, hfg]
-  have hzero : ∑ x ∈ s, (f x - g x) = 0 :=
-    (ENNReal.add_right_inj (by rw [← hfg]; exact hne)).1 key
-  exact absurd (tsub_eq_zero_iff_le.1 (Finset.sum_eq_zero_iff.1 hzero x₀ hx₀)) (not_le.2 hlt)
+  classical
+  obtain ⟨hle, hfin⟩ := sum_erase_le_and_ne_top hfg hne hdom
+  refine (ENNReal.add_le_add_iff_right hfin).1 ?_
+  calc f x₀ + ∑ x ∈ s.erase x₀, g x ≤ f x₀ + ∑ x ∈ s.erase x₀, f x := by gcongr
+    _ = g x₀ + ∑ x ∈ s.erase x₀, g x := by simpa only [Finset.add_sum_erase _ _ hx₀] using hfg
 
-open scoped Classical in
 /-- The designated atom `x₀` absorbs exactly the total weight transferred onto it. -/
 theorem add_sum_tsub_eq_of_forall_ne_le (hx₀ : x₀ ∈ s) (hfg : ∑ x ∈ s, f x = ∑ x ∈ s, g x)
     (hne : ∑ x ∈ s, f x ≠ ⊤) (hdom : ∀ x ∈ s, x ≠ x₀ → g x ≤ f x) :
     f x₀ + ∑ x ∈ s, (f x - g x) = g x₀ := by
-  have hx := le_of_sum_eq_of_forall_ne_le hx₀ hfg hne hdom
-  have hsplit : ∀ x ∈ s, min (f x) (g x) + (if x = x₀ then g x₀ - f x₀ else 0) = g x := by
-    intro x hxs
-    split_ifs with hxx
-    · subst hxx
-      rw [min_eq_left hx, add_tsub_cancel_of_le hx]
-    · rw [add_zero]
-      exact min_eq_right (hdom x hxs hxx)
-  have hsum : ∑ x ∈ s, min (f x) (g x) + (g x₀ - f x₀) = ∑ x ∈ s, g x := by
-    have h1 : ∑ x ∈ s, (min (f x) (g x) + (if x = x₀ then g x₀ - f x₀ else 0)) = ∑ x ∈ s, g x :=
-      Finset.sum_congr rfl hsplit
-    rw [Finset.sum_add_distrib, Finset.sum_ite_eq' s x₀ fun _ => g x₀ - f x₀] at h1
-    simpa [hx₀] using h1
-  have hfin : ∑ x ∈ s, min (f x) (g x) ≠ ⊤ :=
-    ne_top_of_le_ne_top hne (Finset.sum_le_sum fun x _ => min_le_left _ _)
-  have hdiff : ∑ x ∈ s, (f x - g x) = g x₀ - f x₀ :=
-    (ENNReal.add_right_inj hfin).1
-      (((Finset.sum_min_add_sum_tsub s f g).trans hfg).trans hsum.symm)
-  rw [hdiff, add_tsub_cancel_of_le hx]
+  classical
+  refine (ENNReal.add_left_inj (sum_erase_le_and_ne_top hfg hne hdom).2).1 ?_
+  have hsub : ∑ x ∈ s.erase x₀, (f x - g x) + ∑ x ∈ s.erase x₀, g x = ∑ x ∈ s.erase x₀, f x := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun x hx => tsub_add_cancel_of_le
+      (hdom x (Finset.mem_of_mem_erase hx) (Finset.ne_of_mem_erase hx))
+  rw [← Finset.add_sum_erase s (fun x => f x - g x) hx₀,
+    tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le hx₀ hfg hne hdom), zero_add, add_assoc, hsub,
+    Finset.add_sum_erase _ _ hx₀, hfg, Finset.add_sum_erase _ _ hx₀]
 
 /-- **Rounding a weight vector to a common denominator.**  A weight vector of total mass one is
 turned into one whose entries are the multiples `m x / M` of `1 / M`, by rounding every weight but
@@ -171,25 +151,17 @@ theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s,
   have hfin : ∀ y ∈ s, f y ≠ ⊤ := fun y hy =>
     ne_top_of_le_ne_top ENNReal.one_ne_top
       (hf ▸ Finset.single_le_sum (f := f) (fun z _ => zero_le) hy)
-  have hfloor_le : ∀ y ∈ s, ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ M * f y := by
-    intro y hy
-    calc ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞)
-        = ENNReal.ofReal (⌊(M : ℝ) * (f y).toReal⌋₊ : ℝ) := by rw [ENNReal.ofReal_natCast]
-      _ ≤ ENNReal.ofReal ((M : ℝ) * (f y).toReal) :=
-          ENNReal.ofReal_le_ofReal (Nat.floor_le (by positivity))
-      _ = M * f y := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (hfin y hy)]
-  have hlt_floor : ∀ y ∈ s, (M : ℝ≥0∞) * f y ≤ ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 := by
-    intro y hy
-    calc (M : ℝ≥0∞) * f y = ENNReal.ofReal ((M : ℝ) * (f y).toReal) := by
-          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
-            ENNReal.ofReal_toReal (hfin y hy)]
-      _ ≤ ENNReal.ofReal ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℝ) + 1) :=
-          ENNReal.ofReal_le_ofReal (Nat.lt_floor_add_one _).le
-      _ = ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 := by
-          rw [ENNReal.ofReal_add (by positivity) zero_le_one, ENNReal.ofReal_natCast,
-            ENNReal.ofReal_one]
+  have hmul : ∀ y ∈ s, (M : ℝ≥0∞) * f y = ENNReal.ofReal ((M : ℝ) * (f y).toReal) := fun y hy => by
+    rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
+      ENNReal.ofReal_toReal (hfin y hy)]
+  have hfloor_le : ∀ y ∈ s, ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ M * f y := fun y hy => by
+    rw [hmul y hy, ← ENNReal.ofReal_natCast]
+    exact ENNReal.ofReal_le_ofReal (Nat.floor_le (by positivity))
+  have hlt_floor : ∀ y ∈ s, (M : ℝ≥0∞) * f y ≤ ((⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) + 1 :=
+    fun y hy => by
+      rw [hmul y hy, ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_one,
+        ← ENNReal.ofReal_add (by positivity) zero_le_one]
+      exact ENNReal.ofReal_le_ofReal (Nat.lt_floor_add_one _).le
   have herase : ∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (f y).toReal⌋₊ ≤ M := by
     have hcast : ((∑ y ∈ s.erase x₀, ⌊(M : ℝ) * (f y).toReal⌋₊ : ℕ) : ℝ≥0∞) ≤ (M : ℝ≥0∞) := by
       push_cast

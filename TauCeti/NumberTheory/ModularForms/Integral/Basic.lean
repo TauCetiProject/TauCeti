@@ -179,11 +179,6 @@ section Finite
 
 variable (R Γ k)
 
-/-- The number of coefficients at `∞` that determine a form of weight `k` on `Γ`, one more
-than the Sturm bound. -/
-private noncomputable def sturmLength : ℕ :=
-  (k * Nat.card (𝒮ℒ ⧸ Γ.subgroupOf 𝒮ℒ)).toNat / 12 + 1
-
 /-- The first `sturmLength Γ k` coefficients at `∞` of an integral form, as elements of `R`. -/
 private noncomputable def truncCoeffs : integralAtCusps R Γ k →ₗ[ℤ] Fin (sturmLength Γ k) → R where
   toFun f i := ⟨(qExpansionAt 1 (f : ModularForm Γ k)).coeff i, f.2 1 i⟩
@@ -194,16 +189,9 @@ private noncomputable def truncCoeffs : integralAtCusps R Γ k →ₗ[ℤ] Fin (
     ext i
     simp [-qExpansionAt_one]
 
-omit [Γ.HasDetOne] [Γ.IsArithmetic] in
-/-- Every index up to the Sturm bound is below `sturmLength Γ k`. -/
-private theorem lt_sturmLength {i : ℕ} (hi : i ≤ (k * Nat.card (𝒮ℒ ⧸ Γ.subgroupOf 𝒮ℒ)).toNat / 12) :
-    i < sturmLength Γ k := by
-  unfold sturmLength
-  exact Nat.lt_succ_of_le hi
-
 private theorem truncCoeffs_injective : Function.Injective (truncCoeffs R Γ k) :=
-  fun f g h ↦ Subtype.ext <| eq_of_sturm_bound _ _ fun i hi ↦ by
-    simpa [truncCoeffs] using congrArg (fun F ↦ (F ⟨i, lt_sturmLength Γ k hi⟩ : ℂ)) h
+  fun f g h ↦ Subtype.ext <| eq_of_coeff_eq_of_lt_sturmLength _ _ fun i hi ↦ by
+    simpa [truncCoeffs] using congrArg (fun F ↦ (F ⟨i, hi⟩ : ℂ)) h
 
 /-- When `R` is a finitely generated abelian group, the integral forms make up a finitely
 generated `ℤ`-module: by the Sturm bound they embed into finitely many copies of `R`. -/

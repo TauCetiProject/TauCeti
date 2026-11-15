@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Rank
+public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.HighestWeight.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.LeftRegular
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.CartanExists
+import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.HighestWeight.Weyl.Dimension
 import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 import TauCeti.Algebra.Lie.Weights.Dimension
@@ -49,6 +52,9 @@ the Weyl dimension formula. The two divisions by two are exact, since `d = l + 2
 * `CliffordAlgebra.kostant_isotypic`: any two irreducible submodules are isomorphic.
 * `CliffordAlgebra.kostant_multiplicity`: the decomposition into copies of an irreducible submodule,
   with no choice of Cartan subalgebra or base in the statement.
+* `CliffordAlgebra.kostant_multiplicity_of_finrank_eq_three`: in dimension three, Kostant's
+  module is four copies of a two-dimensional irreducible module.
+* `CliffordAlgebra.kostant_multiplicity_sl_fin_two`: the same for `𝔰𝔩₂`.
 
 ## References
 
@@ -158,5 +164,30 @@ theorem kostant_multiplicity :
     ⟨E.trans (DirectSum.lieModuleEquivCongrRight fun _ ↦ e.symm)⟩⟩
   rw [e.toLinearEquiv.finrank_eq, finrank_irreducibleQuotient_weylVector,
     H.rank_eq_finrank_cartan]
+
+/-- **Kostant's module in dimension three is four copies of a two-dimensional irreducible.** For a
+three-dimensional Killing-semisimple Lie algebra over an algebraically closed field of
+characteristic zero, the left-regular action on the eight-dimensional Clifford algebra of the
+Killing form is a direct sum of four copies of one irreducible submodule of dimension two. This is
+`CliffordAlgebra.kostant_multiplicity` at `d = 3` and `l = 1`; contrast
+`CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three` for the commutator action
+on the same carrier. -/
+theorem kostant_multiplicity_of_finrank_eq_three (h : finrank K L = 3) :
+    ∃ S : LieSubmodule K L (CliffordAlgebra (killingQuadraticForm K L)),
+      IsIrreducible K L S ∧ finrank K S = 2 ∧
+        Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆ ⨁ _ : Fin 4, S) := by
+  have hk := kostant_multiplicity (K := K) (L := L)
+  rw [h, rank_eq_one_of_finrank_eq_three h] at hk
+  norm_num at hk
+  exact hk
+
+open _root_.LieAlgebra.SpecialLinear in
+/-- **Kostant's module for `𝔰𝔩₂`** is four copies of a two-dimensional irreducible module. -/
+theorem kostant_multiplicity_sl_fin_two :
+    ∃ S : LieSubmodule K (sl (Fin 2) K) (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K))),
+      IsIrreducible K (sl (Fin 2) K) S ∧ finrank K S = 2 ∧
+        Nonempty (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K)) ≃ₗ⁅K,sl (Fin 2) K⁆
+          ⨁ _ : Fin 4, S) :=
+  kostant_multiplicity_of_finrank_eq_three (by simp [finrank_sl])
 
 end CliffordAlgebra

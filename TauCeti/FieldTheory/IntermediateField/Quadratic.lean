@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Field.Subfield.Quadratic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.QuadraticDiscriminant
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Minpoly
@@ -157,9 +158,7 @@ theorem finrank_adjoin_simple_eq_two_of_not_isSquare {a : K} {x : L}
     rw [hx]; exact IntermediateField.algebraMap_mem _ _
   have hxb : x ∉ (⊥ : IntermediateField K L) := by
     rw [IntermediateField.mem_bot]
-    rintro ⟨t, ht⟩
-    refine ha ⟨t, FaithfulSMul.algebraMap_injective K L ?_⟩
-    rw [map_mul, ht, ← sq, hx]
+    exact notMem_range_algebraMap_of_sq_eq_of_not_isSquare ha hx
   have h := (⊥ : IntermediateField K L).finrank_sup_adjoin_simple_eq_mul_two hx2 hxb
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 

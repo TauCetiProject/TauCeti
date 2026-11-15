@@ -185,6 +185,23 @@ def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n 
   have : NeZero n := NeZero.of_neZero_natCast K
   addEquivOfAddCyclicCardEq <| by rw [Nat.card_zmod, natCard_kummerCoeff hn]
 
+variable {K n} in
+/-- **In characteristic `n` there are no nontrivial `n`-th roots of unity**: the Kummer coefficient
+module `μₙ(Kˢ)` is trivial for a prime `n` with `CharP K n`. -/
+theorem subsingleton_kummerCoeff_of_charP [Fact n.Prime] [CharP K n] :
+    Subsingleton (KummerCoeff K n) := by
+  have : CharP (SeparableClosure K) n :=
+    charP_of_injective_algebraMap (algebraMap K (SeparableClosure K)).injective n
+  have : ExpChar (SeparableClosure K) n := ExpChar.prime Fact.out
+  refine ⟨fun x y ↦ ?_⟩
+  have h1 (z : KummerCoeff K n) : z = 0 := by
+    have hz : (z.toMul : (SeparableClosure K)ˣ) ∈
+        rootsOfUnity (n ^ 1 * 1) (SeparableClosure K) := by simp
+    rw [mem_rootsOfUnity_prime_pow_mul_iff (SeparableClosure K) n 1 1, rootsOfUnity_one,
+      Subgroup.mem_bot] at hz
+    exact Additive.toMul.injective (Subtype.ext hz)
+  rw [h1 x, h1 y]
+
 variable {K} in
 /-- **`μ_ℓ` is a line over `ℤ/ℓℤ`** for `ℓ` invertible in `K`, in particular a line over `𝔽_ℓ` for
 a prime `ℓ`. -/

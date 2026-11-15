@@ -29,8 +29,8 @@ product, whose row and column sums are the real marginal masses, and the total
 are basic transportation-matrix API rather than duality results, and the cost is allowed to be
 negative because the finite transport problem is a linear program.
 
-This is the finite transportation-matrix acceptance case of Layer 0 of the optimal-transport
-roadmap. It is also the representation used by later finite primal and dual problems.
+It is the representation used by the finite primal and dual problems, as in
+`TauCeti.MeasureTheory.OptimalTransport.Finite.Duality`.
 -/
 
 public section

@@ -171,6 +171,19 @@ theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
     (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
   (rfl)
 
+/-- Completing the valuation-ring embedding agrees with first completing both rings
+and then applying the completed extension. -/
+@[simp]
+theorem completionIntegersExtension_completionIntegersEmbedding
+    (x : (P'.restrict k F).integers) :
+    (P'.restrict k F).completionIntegersExtension P' rfl
+        ((P'.restrict k F).completionIntegersEmbedding x) =
+      P'.completionIntegersEmbedding
+        (algebraMap (P'.restrict k F).integers P'.integers x) := by
+  apply Subtype.ext
+  simp only [coe_completionIntegersExtension, completionIntegersEmbedding_apply,
+    completionExtension_completionEmbedding, coe_algebraMap_integers]
+
 /-- The map of completed valuation rings is local. -/
 instance isLocalHom_completionIntegersExtension :
     IsLocalHom (P.completionIntegersExtension P' hP) where
@@ -194,6 +207,14 @@ theorem algebraMap_completionIntegersExtensionAlgebra :
     algebraMap P.completionPlace.integers P'.completionPlace.integers =
       P.completionIntegersExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
+
+/-- The algebra map of the chosen completed valuation-ring extension is local, so
+it induces the canonical extension of completed residue fields. -/
+instance isLocalHom_algebraMap_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsLocalHom (algebraMap P.completionPlace.integers P'.completionPlace.integers) := by
+  rw [algebraMap_completionIntegersExtensionAlgebra]
+  infer_instance
 
 /-- The chosen algebra map of completed valuation rings is the completed extension. -/
 theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace.integers) :

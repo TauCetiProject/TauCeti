@@ -25,9 +25,9 @@ For a function `f : E → EReal` with convex real epigraph, the effective domain
 * `TauCeti.convexOn_toReal` — the real representative is convex on the effective domain;
 * `TauCeti.convex_epigraph_coe_mul_iff` — scaling by a positive real preserves convexity of the
   epigraph;
-* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot` and `TauCeti.convex_epigraph_ite` — a real
-  function convex on `Ω` and extended by `⊤` off `Ω` has effective domain `Ω`, never takes the
-  value `⊥`, and has convex real epigraph.
+* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot` and `TauCeti.convexOn_iff_convex_epigraph_ite`
+  — a real function extended by `⊤` off `Ω` has effective domain `Ω`, never takes the value `⊥`,
+  and has convex real epigraph exactly when it is convex on `Ω`.
 
 ## References
 
@@ -84,10 +84,12 @@ omit [AddCommMonoid E] [SMul ℝ E] in
 theorem ite_ne_bot (x : E) : (if x ∈ Ω then (u x : EReal) else ⊤) ≠ ⊥ := by
   split_ifs <;> simp
 
-/-- A function convex on `Ω` and extended by `⊤` off `Ω` has convex real epigraph. -/
-theorem convex_epigraph_ite (hu : ConvexOn ℝ Ω u) :
-    Convex ℝ {p : E × ℝ | (if p.1 ∈ Ω then (u p.1 : EReal) else ⊤) ≤ p.2} := by
-  convert hu.convex_epigraph using 3 with p
+/-- A real function `u` is convex on `Ω` if and only if its extension by `⊤` off `Ω` has convex
+real epigraph. -/
+theorem convexOn_iff_convex_epigraph_ite :
+    ConvexOn ℝ Ω u ↔ Convex ℝ {p : E × ℝ | (if p.1 ∈ Ω then (u p.1 : EReal) else ⊤) ≤ p.2} := by
+  rw [convexOn_iff_convex_epigraph]
+  congr! 3 with p
   by_cases hp : p.1 ∈ Ω <;> simp [hp]
 
 end Ite

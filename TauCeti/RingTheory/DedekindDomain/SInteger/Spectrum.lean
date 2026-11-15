@@ -44,17 +44,15 @@ and `valuation_integerPrimeUnder` for an arbitrary prime of `𝒪_S`.
 
 Inverting `S` therefore removes exactly the primes of `S` from the spectrum and changes nothing
 else, which is why the Selmer group of `𝒪_S` relative to `∅` is the Selmer group of `R` relative
-to `S`. That identification is what
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 needs for weak Mordell–Weil: the finiteness of
-`A(S, 2)` is the finiteness of a Selmer group over `𝒪_S`.
+to `S`. In the weak Mordell–Weil theorem, this is what makes the finiteness of `A(S, 2)` the
+finiteness of a Selmer group over `𝒪_S`.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), the source the roadmap's §Provenance
-names for the Layer 6 Mordell–Weil lane. Following this repository's convention for adapted
-material, the upstream authorship is credited here rather than in the copyright header. This is
-the height-one-spectrum half of that file; the Dedekind property came first, and the class-group
-computation `Cl(𝒪_S) ≃* Cl(R) ⧸ ⟨[v] : v ∈ S⟩` is
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
+This is the height-one-spectrum half of that file; the Dedekind property came first, and the
+class-group computation `Cl(𝒪_S) ≃* Cl(R) ⧸ ⟨[v] : v ∈ S⟩` is
 `IsDedekindDomain.integerClassGroupEquiv` in
 `TauCeti/RingTheory/DedekindDomain/SInteger/ClassGroup.lean`, which consumes this file.
 -/

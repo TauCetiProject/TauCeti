@@ -134,13 +134,13 @@ private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncros
     · have hmL := L.part_nonempty.1 (hbd ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx⟩))
       exact (hL.part_eq_part hmL (mem_filter.2 ⟨ha, hax⟩) hbd.symm hac hma hab hbc).symm
   · -- The last position is after `x`, which forces all four positions after `x`.
-    have hgt {y : α} (hy : y ∈ s) (hne : (glueKey m x L R y).2.Nonempty) : x < y := by
+    have hgt {y : α} (hne : (glueKey m x L R y).2.Nonempty) : x < y := by
       rw [glueKey_snd, R.part_nonempty] at hne
       exact (mem_filter.1 hne).2
-    have hbx : x < b := hgt hb <| by
+    have hbx : x < b := hgt <| by
       rw [hbd, glueKey_snd, R.part_nonempty]; exact mem_filter.2 ⟨hd, hxd⟩
     have hcx := hbx.trans hbc
-    have hax : x < a := hgt ha <| by
+    have hax : x < a := hgt <| by
       rw [hac, glueKey_snd, R.part_nonempty]; exact mem_filter.2 ⟨hc, hcx⟩
     simp only [glueKey_of_gt hax, glueKey_of_gt hbx, glueKey_of_gt hcx, glueKey_of_gt hxd,
       Prod.mk.injEq, true_and] at hac hbd ⊢
@@ -345,7 +345,7 @@ private theorem filter_parts_eq_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, 
       (P.restrict (filter_subset (x < ·) s)).parts := by
   have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
   -- A position outside the part of `m` is not in the same part as `m`.
-  have hnot {a : α} (ha : a ∈ s) (ham : m ∉ P.part a) : a ∉ P.part m := fun h =>
+  have hnot {a : α} (ham : m ∉ P.part a) : a ∉ P.part m := fun h =>
     ham (P.mem_part_comm.1 h)
   ext B
   simp only [mem_union, mem_filter]
@@ -361,7 +361,7 @@ private theorem filter_parts_eq_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, 
         ← Finpartition.part_restrict P (filter_subset _ s) hat]
       exact (P.restrict _).part_mem.2 hat
     · left
-      have hsub := part_subset_filter_between hP hm hxm hmax has hax (hnot has hmB)
+      have hsub := part_subset_filter_between hP hm hxm hmax has hax (hnot hmB)
       have hat : a ∈ {y ∈ s | y < x} := (mem_filter.1 (hsub (P.mem_part_self.2 has))).1
       have hL : (P.restrict (filter_subset (· < x) s)).part a = P.part a := by
         rw [Finpartition.part_restrict _ _ hat, inter_eq_left.2 (hsub.trans (filter_subset _ _))]
@@ -377,7 +377,7 @@ private theorem filter_parts_eq_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, 
       have ham : m ∉ P.part a := fun h => hmB <| mem_inter.2
         ⟨h, mem_filter.2 ⟨hms, (hm a has).trans_lt hax⟩⟩
       rw [inter_eq_left.2 ((part_subset_filter_between hP hm hxm hmax has hax.le
-        (hnot has ham)).trans (filter_subset _ _))]
+        (hnot ham)).trans (filter_subset _ _))]
       exact ⟨P.part_mem.2 has, ham⟩
     · obtain ⟨a, ha⟩ := (P.restrict _).nonempty_of_mem_parts hB
       have hat := (P.restrict _).le hB ha

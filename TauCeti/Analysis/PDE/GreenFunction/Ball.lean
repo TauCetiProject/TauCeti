@@ -57,6 +57,7 @@ dimension two that kernel vanishes identically, so the planar case is instead
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
+* `TauCeti.ballPoissonKernel_eq_zero_of_norm_eq_one_left`: it vanishes for a pole on the sphere.
 * `TauCeti.ballPoissonKernel_le_mul_ballPoissonKernel_zero`,
   `TauCeti.mul_ballPoissonKernel_zero_le_ballPoissonKernel`: on the unit sphere, the comparison of
   the Poisson kernel with pole `x` with the kernel with pole at the centre, the kernel bounds behind
@@ -337,7 +338,7 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
     ← Real.sq_rpow_div_two (norm_nonneg _), mul_sub]
   exact sub_pos.mpr (by simpa only [mul_sub] using
     (newtonianKernel_rpow_sq_lt n hn
-      (pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)) hsub hlt))
+      (pos_of_ne_euclideanSpace hxy) hsub hlt))
 
 /-- The Fréchet derivative of the Green kernel of the unit ball in `y`, away from the pole and
 wherever the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive. -/
@@ -372,11 +373,18 @@ theorem ballPoissonKernel_def (x y : EuclideanSpace ℝ (Fin n)) :
         ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖x - y‖ ^ n) := by
   rw [ballPoissonKernel]
 
+/-- The Poisson kernel of the unit ball vanishes for a pole `x` on the unit sphere. -/
+@[simp]
+theorem ballPoissonKernel_eq_zero_of_norm_eq_one_left {x : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ = 1) (y : EuclideanSpace ℝ (Fin n)) : ballPoissonKernel n x y = 0 := by
+  rw [ballPoissonKernel_def, hx]
+  simp
+
 /-- The Poisson kernel of the unit ball is positive for a pole in the open ball and any other
 point. -/
 theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hxy : x ≠ y) :
     0 < ballPoissonKernel n x y := by
-  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
+  have hn : 0 < n := pos_of_ne_euclideanSpace hxy
   have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   have hx' : 0 < 1 - ‖x‖ ^ 2 := by nlinarith [norm_nonneg x]
@@ -401,9 +409,8 @@ theorem ballPoissonKernel_le_mul_ballPoissonKernel_zero {x y : EuclideanSpace �
     (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
     ballPoissonKernel n x y ≤ (1 + ‖x‖) / (1 - ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y := by
   have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_euclideanSpace hy0).ne'
   have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
-  have ha : 0 < 1 - ‖x‖ := by linarith
   -- The distance from the pole to the boundary point is at least `1 - ‖x‖`.
   have hm : 1 - ‖x‖ ≤ ‖x - y‖ := by
     simpa [hy, norm_sub_rev] using norm_sub_norm_le y x
@@ -426,7 +433,7 @@ theorem mul_ballPoissonKernel_zero_le_ballPoissonKernel {x y : EuclideanSpace �
     (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
     (1 - ‖x‖) / (1 + ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y ≤ ballPoissonKernel n x y := by
   have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_euclideanSpace hy0).ne'
   have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
   have hm : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h ↦ by simp [h, hy] at hx)
   -- The distance from the pole to the boundary point is at most `1 + ‖x‖`.
@@ -451,7 +458,7 @@ theorem contDiffOn_ballPoissonKernel {k : WithTop ℕ∞} :
       ballPoissonKernel n p.1 p.2) {p | p.1 ≠ p.2} := by
   intro p hp
   have hsub : p.1 - p.2 ≠ 0 := sub_ne_zero.mpr hp
-  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_zero_euclideanSpace hsub
+  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_euclideanSpace hsub
   have hω := volume_real_unitBall_pos n
   have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖p.1 - p.2‖ ^ n ≠
       0 := by
@@ -463,12 +470,13 @@ theorem contDiffOn_ballPoissonKernel {k : WithTop ℕ∞} :
   · exact contDiffAt_const.mul (((contDiffAt_norm ℝ hsub).comp p
       (contDiffAt_fst.sub contDiffAt_snd)).pow n)
 
-/-- The Poisson kernel is continuous as a function of the boundary point when its pole
-lies off the unit sphere. -/
-theorem continuous_ballPoissonKernel_on_sphere
-    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ ≠ 1) :
+/-- The Poisson kernel is continuous as a function of the boundary point. -/
+theorem continuous_ballPoissonKernel_on_sphere (x : EuclideanSpace ℝ (Fin n)) :
     Continuous (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       ballPoissonKernel n x y) := by
+  by_cases hx : ‖x‖ = 1
+  · simp only [ballPoissonKernel_eq_zero_of_norm_eq_one_left hx]
+    exact continuous_const
   refine (contDiffOn_ballPoissonKernel (n := n) (k := 0)).continuousOn.comp_continuous
     (f := fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       (x, (y : EuclideanSpace ℝ (Fin n))))
@@ -476,17 +484,16 @@ theorem continuous_ballPoissonKernel_on_sphere
   intro y hxy
   exact hx ((congrArg norm hxy).trans (norm_eq_of_mem_sphere y))
 
-/-- The Poisson kernel is integrable over any subset of the sphere when its pole
-lies off the sphere. -/
+/-- The Poisson kernel is integrable over any subset of the sphere. -/
 theorem integrableOn_ballPoissonKernel
-    (x : EuclideanSpace ℝ (Fin n)) (hx : ‖x‖ ≠ 1)
+    (x : EuclideanSpace ℝ (Fin n))
     (s : Set (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)) :
     IntegrableOn (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       ballPoissonKernel n x y) s volume.toSphere := by
   have hint : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       ballPoissonKernel n x y) volume.toSphere := by
     simpa only [integrableOn_univ] using
-      (continuous_ballPoissonKernel_on_sphere x hx).continuousOn.integrableOn_compact
+      (continuous_ballPoissonKernel_on_sphere x).continuousOn.integrableOn_compact
         isCompact_univ
   exact hint.integrableOn
 
@@ -533,11 +540,15 @@ theorem harmonicOnNhd_ballPoissonKernel_left {y : EuclideanSpace ℝ (Fin n)} (h
   fun _ hx ↦ harmonicAt_ballPoissonKernel_left hy hx
 
 /-- **Outside dimension two, the Poisson kernel is the negative normal derivative of the Green
-kernel.** On the unit sphere, the derivative of the Green kernel with pole `x` off the sphere,
-taken in the direction of the outward unit normal `y`, is the negative of the Poisson kernel. -/
+kernel.** On the unit sphere, the derivative of the Green kernel with pole `x`, taken in the
+direction of the outward unit normal `y`, is the negative of the Poisson kernel. For a pole on
+the sphere both sides vanish. -/
 theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
-    (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
+    (hy : ‖y‖ = 1) :
     fderiv ℝ (ballGreenKernel n x) y y = -ballPoissonKernel n x y := by
+  by_cases hx : ‖x‖ = 1
+  · simp [funext (ballGreenKernel_eq_zero_of_norm_eq_one_left hx),
+      ballPoissonKernel_eq_zero_of_norm_eq_one_left hx]
   have hxy : y ≠ x := by
     rintro rfl
     exact hx hy
@@ -559,8 +570,11 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
 boundary point `y`, along the ray from the center through `y`, is the negative of the Poisson
 kernel. -/
 theorem hasDerivAt_ballGreenKernel_radial (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
-    (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
+    (hy : ‖y‖ = 1) :
     HasDerivAt (fun t : ℝ => ballGreenKernel n x (t • y)) (-ballPoissonKernel n x y) 1 := by
+  by_cases hx : ‖x‖ = 1
+  · simpa [ballPoissonKernel_eq_zero_of_norm_eq_one_left hx, hx] using
+      hasDerivAt_const (1 : ℝ) (0 : ℝ)
   have hxy : y ≠ x := by
     rintro rfl
     exact hx hy
@@ -573,7 +587,7 @@ theorem hasDerivAt_ballGreenKernel_radial (hn : n ≠ 2) {x y : EuclideanSpace �
       ((fun t : ℝ => t • y) 1) := by
     simpa only [one_smul] using hG.differentiableAt.hasFDerivAt
   have hcomp := hG'.comp_hasDerivAt (1 : ℝ) hcurve
-  rw [← fderiv_ballGreenKernel_normal hn hx hy]
+  rw [← fderiv_ballGreenKernel_normal hn hy]
   exact hcomp
 
 end TauCeti

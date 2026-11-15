@@ -38,7 +38,8 @@ convergent kernel itself.
   `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` for every `N` with `m - 2N < -n`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
-* `TauCeti.Symbol.continuousOn_offDiagonalKernel`: the kernel is continuous off the diagonal.
+* `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
+  the kernel is continuous, and indeed smooth, off the diagonal.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
@@ -163,6 +164,25 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
     continuousOn_const.div (by fun_prop) fun p hp ↦
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
+
+/-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
+each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
+(`TauCeti.Symbol.contDiff_quantizationKernel`). -/
+theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
+    ContDiffOn ℝ ∞ (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
+  refine contDiffOn_infty.2 fun k ↦ ?_
+  have hN := sub_two_mul_floor_lt (m + k) n
+  set N := ⌊(m + k + n) / 2⌋₊ + 1
+  have hd : ContDiff ℝ k fun p : CoordinateSpace n × CoordinateSpace n ↦ ‖p.1 - p.2‖ ^ (2 * N) := by
+    simp_rw [pow_mul]
+    exact ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N
+  have hs : ContDiffOn ℝ k (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} :=
+    contDiffOn_const.div hd.contDiffOn fun p hp ↦
+      pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
+  have hK := ((frequencyLaplacianPow N a).contDiff_quantizationKernel k
+    (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
+  exact (hs.smul hK).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
 
 /-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
 positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/

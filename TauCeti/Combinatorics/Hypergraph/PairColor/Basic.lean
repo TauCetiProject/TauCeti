@@ -79,31 +79,23 @@ theorem colorOfPair_of_ne (S : PairColorSystem κ V) {u v : V} (h : u ≠ v) :
 @[simp]
 theorem colorOfPair_eq_none_iff (S : PairColorSystem κ V) (u v : V) :
     S.colorOfPair u v = none ↔ u = v := by
-  classical
   simp [colorOfPair]
 
 /-- A prescribed pair color implies distinctness and identifies the underlying color. -/
 theorem colorOfPair_eq_some_iff (S : PairColorSystem κ V) (u v : V) (c : κ) :
     S.colorOfPair u v = some c ↔ ∃ h : u ≠ v, S.color ⟨(u, v), h⟩ = c := by
-  classical
-  by_cases h : u ≠ v <;> simp [colorOfPair, h]
+  by_cases h : u = v <;> simp [h]
 
 /-- Exchanging vertices applies palette reversal to the total color. -/
 theorem colorOfPair_swap (S : PairColorSystem κ V) (u v : V) :
     S.colorOfPair v u = (S.colorOfPair u v).map S.rev := by
-  by_cases h : u ≠ v
-  · rw [S.colorOfPair_of_ne h, S.colorOfPair_of_ne h.symm, Option.map_some]
-    exact congrArg some (S.color_rev ⟨(u, v), h⟩)
-  · obtain rfl := not_ne_iff.mp h
-    simp
+  by_cases h : u = v <;> simp [h, Ne.symm, ← S.color_rev]
 
 /-- A reversed pair has the reversed color exactly when the original pair has that color. -/
 theorem colorOfPair_swap_eq_some_iff (S : PairColorSystem κ V) (u v : V) (c : κ) :
     S.colorOfPair v u = some (S.rev c) ↔ S.colorOfPair u v = some c := by
-  rw [S.colorOfPair_swap]
-  simpa only [Option.map_some] using
-    (Option.map_injective S.rev_involutive.injective).eq_iff
-      (a := S.colorOfPair u v) (b := some c)
+  rw [S.colorOfPair_swap, Option.map_eq_some_iff]
+  simp only [S.rev_involutive.injective.eq_iff, exists_eq_right]
 
 /-- Make a directed coloring coherent by retaining the colors in both orientations.
 The palette is `κ × κ`, and reversal exchanges the coordinates. -/
@@ -159,10 +151,7 @@ theorem split_rev (S : PairColorSystem κ V) (f : Sym2 V → ι) (c : κ × ι) 
 /-- The total split color is the total original color together with the label of the pair. -/
 theorem colorOfPair_split (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V) :
     (S.split f).colorOfPair u v = (S.colorOfPair u v).map fun c ↦ (c, f s(u, v)) := by
-  by_cases h : u = v
-  · subst h
-    simp
-  · simp [h]
+  by_cases h : u = v <;> simp [h]
 
 @[simp]
 theorem colorOfPair_split_eq_some_iff (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V)
@@ -191,10 +180,7 @@ theorem comap_rev {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (c : κ) 
 @[simp]
 theorem colorOfPair_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (u v : V) :
     (S.comap f).colorOfPair u v = S.colorOfPair (f u) (f v) := by
-  by_cases h : u = v
-  · subst h
-    simp
-  · simp [h, f.injective.ne h]
+  by_cases h : u = v <;> simp [h]
 
 @[simp]
 theorem comap_refl (S : PairColorSystem κ V) : S.comap (.refl V) = S := by
@@ -234,11 +220,10 @@ theorem card_filter_coordPair_mem_le {V : Type*} [Fintype V] [DecidableEq V]
       #E * Fintype.card V := by
   rw [← card_univ (α := V), ← card_product]
   refine card_le_card_of_injOn (fun x ↦ (coordPair x i j hij, x.1 k))
-    (fun x hx ↦ mem_product.2 ⟨(mem_filter.1 hx).2, mem_univ _⟩) fun x _ y _ hxy ↦ ?_
+    (fun x hx ↦ mem_product.2 ⟨(mem_filter.1 hx).2, mem_univ _⟩)
+    fun x _ y _ hxy ↦ Subtype.ext <| funext fun l ↦ ?_
   simp only [Prod.mk.injEq, Subtype.ext_iff, coe_coordPair] at hxy
   obtain ⟨⟨hi, hj⟩, hk⟩ := hxy
-  refine Subtype.ext (funext fun l ↦ ?_)
-  obtain rfl | rfl | rfl := hl l
-  exacts [hi, hj, hk]
+  obtain rfl | rfl | rfl := hl l <;> assumption
 
 end TauCeti
