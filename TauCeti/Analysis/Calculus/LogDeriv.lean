@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.EvenFunction
+public import Mathlib.Analysis.Analytic.Constructions
+public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Calculus.LogDeriv
 
 /-!
-# Derivative and logarithmic derivative of an even function at the origin
+# Analyticity and parity of logarithmic derivatives
+
+The logarithmic derivative of an analytic function is analytic where the function is nonzero; the
+variable and value fields may differ provided the value field is complete.
 
 Over a nontrivially normed field of characteristic zero, the derivative `deriv f 0` and logarithmic
 derivative `logDeriv f 0` of any even function `f` (`Function.Even f`) vanish at `0`, with no
@@ -17,11 +21,20 @@ differentiability or nonvanishing hypothesis (by Lean's totalization of `deriv` 
 
 ## Main results
 
+* `AnalyticAt.logDeriv`: `logDeriv f` is analytic at `x` when `f` is analytic at `x` and `f x ≠ 0`.
 * `Function.Even.deriv_zero`: `deriv f 0 = 0` when `f.Even`.
 * `Function.Even.logDeriv_zero`: `logDeriv f 0 = 0` when `f.Even`.
 -/
 
 public section
+
+/-- The logarithmic derivative is analytic wherever the function is analytic and nonzero. -/
+@[fun_prop]
+protected theorem AnalyticAt.logDeriv {𝕜 𝕝 : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕝] [NormedAlgebra 𝕜 𝕝] [CompleteSpace 𝕝]
+    {f : 𝕜 → 𝕝} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) (hx : f x ≠ 0) :
+    AnalyticAt 𝕜 (logDeriv f) x :=
+  hf.deriv.div hf hx
 
 /-- The derivative of an even function vanishes at `0` over a field of characteristic zero,
 with no differentiability assumption (by totalization of `deriv`). -/
