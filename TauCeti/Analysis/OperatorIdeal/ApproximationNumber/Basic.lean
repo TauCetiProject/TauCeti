@@ -175,7 +175,7 @@ theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
       rw [Nat.cast_add]
       exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.2 R₂.2)).trans <| by
       rw [add_sub_add_comm]
-      exact nnnorm_add_le _ _
+      exact nnNorm_add_le _ _
 
 /-- **Perturbative triangle bound.** `aₙ(S + T) ≤ aₙ(S) + ‖T‖`. -/
 theorem singularValue_add_le (S T : E →L[𝕜] F) (n : ℕ) :
@@ -267,7 +267,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
     refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.1)
       ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.2)).trans ?_
     rw [← smul_sub]
-    exact nnnorm_smul_le _ _
+    exact nnNorm_smul_le _ _
   refine (hle c T).antisymm ?_
   rcases eq_or_ne c 0 with rfl | hc
   · simp
@@ -275,7 +275,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
         rw [inv_smul_smul₀ hc]
     _ ≤ ‖c‖₊ * (‖c⁻¹‖₊ * (c • T).singularValue n) := by gcongr; exact hle _ _
     _ = (c • T).singularValue n := by
-        rw [← mul_assoc, nnnorm_inv, mul_inv_cancel₀ (nnnorm_ne_zero_iff.mpr hc), one_mul]
+        rw [← mul_assoc, nnNorm_inv, mul_inv_cancel₀ (nnNorm_ne_zero_iff.mpr hc), one_mul]
 
 /-! ### The Ky Fan gauge -/
 

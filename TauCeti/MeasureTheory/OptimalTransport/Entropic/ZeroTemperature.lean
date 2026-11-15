@@ -259,7 +259,7 @@ theorem tendsto_entropicTransportCost_transportCost_of_forall_exists
   convert tendsto_entropicTransportCost_nhdsGT_zero c μ ν using 2
   refine le_antisymm ?_ ?_
   · rw [transportCost_def]
-    exact iInf₂_mono fun π hπ ↦ le_iInf fun _ ↦ le_rfl
+    exact iInf₂_mono fun π _ ↦ le_iInf fun _ ↦ le_rfl
   · rw [transportCost_def]
     refine le_iInf₂ fun π hπ ↦ ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
     obtain ⟨σ, hσ, hkl, hle⟩ := h π hπ δ hδ

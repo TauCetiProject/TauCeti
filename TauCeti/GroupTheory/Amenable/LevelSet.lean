@@ -79,7 +79,7 @@ theorem exists_finsupp_layerCake {p : X → ℝ} (hp : 0 ≤ p) (hfin : p.HasFin
         simp only [Finsupp.sum]
         rw [sum_comm]
         apply sum_congr rfl
-        intro t ht
+        intro t _
         simp [sum_ite, mul_comm]
   · intro g
     -- The distance is supported on this finite union, even when X is uncountable.

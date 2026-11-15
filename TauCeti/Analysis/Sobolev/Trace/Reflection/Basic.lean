@@ -851,7 +851,7 @@ private theorem integral_add_comp_normalReflection_mul_inner {a : ℝ}
       inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
         inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
     rw [inner_add_left, inner_normalLinearReflection_left_eq_right, hd, real_inner_smul_right]
-  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
+  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x)
   have hψ : ContDiff ℝ ∞ ψ := hφ.comp (contDiff_normalReflection a)
   have hψc : HasCompactSupport ψ := hφc.comp_homeomorph ρ.toHomeomorph
   have J1 : Integrable fun x => φ x * inner ℝ (G x) d := by

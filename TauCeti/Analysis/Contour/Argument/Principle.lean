@@ -44,15 +44,12 @@ meaningless — since the results are stated up to the meromorphic normal form o
   `∮_{C(c,R)} logDeriv f = 2πi · n` when the centre `c`, of order `n`, is the only point of the
   closed disc that may have nonzero meromorphic order.
 
-These are Layer 2 targets of the contour-integration roadmap, feeding the argument principle and,
-ultimately, the valence formula.
-
 ## Provenance
 
 Adapted from the AINTLIB `LeanModularForms` project (the argument-principle specialisation of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean`, where the residue theorem is applied to `logDeriv f`),
-specialised to a circle and to the raw-function design of the contour-integration roadmap.
+specialised to a circle (Mathlib's `circleIntegral`).
 
 ## References
 

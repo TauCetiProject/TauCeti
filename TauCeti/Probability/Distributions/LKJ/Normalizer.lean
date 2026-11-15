@@ -138,7 +138,7 @@ theorem lkjNormalizer_eq_prod_beta_self (p : ℕ) (η : ℝ) :
             (η + ((k : ℝ) - 1) / 2)) ^ k := by
   rw [lkjNormalizer]
   apply Finset.prod_congr rfl
-  intro k hk
+  intro k _
   rw [ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self]
 
 end TauCeti.Probability

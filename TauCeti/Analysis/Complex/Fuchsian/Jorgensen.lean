@@ -320,7 +320,7 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
     exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB
   rw [mk_inv_mul_mul, hAg] at hD
   group at hD
-  set X : SL(2, ℝ) := P⁻¹ * B * P with hX
+  set X : SL(2, ℝ) := P⁻¹ * B * P
   have hXcoe : (X : PSL(2, ℝ)) = (P : PSL(2, ℝ))⁻¹ * B * P := mk_inv_mul_mul P B
   -- the exceptional cases correspond under the change of frame
   have hconj (y : PSL(2, ℝ))

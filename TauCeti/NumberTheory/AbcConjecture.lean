@@ -128,7 +128,7 @@ integers `a` and `b` with `a + b = c`. -/
 theorem abcConjectureWithExponent_iff_nat (κ : ℝ) : AbcConjectureWithExponent κ ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
       (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (κ + ε) := by
-  refine forall₂_congr fun ε hε ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
+  refine forall₂_congr fun ε _ ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
     fun ⟨C, hC⟩ ↦ ⟨max C 1, fun a b c hab habc ↦ ?_⟩⟩
   · -- a triple of natural numbers is a triple of integers, whose largest entry is `c`
     have h := hC a b c (Nat.Coprime.isCoprime hab) (by exact_mod_cast habc)

@@ -36,8 +36,8 @@ displayed half-norm value.  When `n > 0`, the class of `ω₁` has additive orde
 because its last simple-root coordinate is `1 / (n + 1)`; at rank zero, the order statement is
 trivial.  The discriminant group has that same order, so `ω₁` generates.
 
-The half-norm convention is the one fixed by the integral-lattices roadmap: `q_L(x) = ⟨x,x⟩ / 2`
-in `ℚ/ℤ`.  Nikulin's full-norm value for this row is `n / (n + 1)`.
+The half-norm convention used here is `q_L(x) = ⟨x,x⟩ / 2` in `ℚ/ℤ`.
+Nikulin's full-norm value for this row is `n / (n + 1)`.
 
 Those values determine the finite quadratic module, not merely the group: since `ω₁` generates,
 the quadratic value `k² n / (2 (n + 1))` of `k • ω₁` and the pairing `j k n / (n + 1)` of `j • ω₁`
@@ -97,7 +97,6 @@ The identification of this simple-root model with the classical coordinate model
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §6.1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `Aₙ` row of the ADE table.
 -/
 
 public section
@@ -611,7 +610,7 @@ theorem typeAStandardQuadraticModule_one_quadratic (a : ZMod 2) :
     typeAOneZModStandardIsometry_apply, FiniteQuadraticModule.zmodStandard_quadratic,
     FiniteQuadraticModule.zmodStandardMap_val]
   have hlt : a.val < 2 := a.isLt
-  interval_cases hval : a.val <;> norm_num
+  interval_cases _ : a.val <;> norm_num
 
 /-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
 and `1/3` at either nonzero symbol. -/

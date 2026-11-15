@@ -137,7 +137,7 @@ theorem card_apply_neg_one_mul_apply_neg_one_eq_of_le_two {a b : ℕ} [NeZero a]
     rw [Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl), Nat.card_prod,
       card_eq_totient_of_hasEnoughRootsOfUnity R a, card_eq_totient_of_hasEnoughRootsOfUnity R b,
       htot ha, htot hb]
-  · have : IsEmpty {q : DirichletCharacter R a × DirichletCharacter R b // (1 : R) = ε} :=
+  · have : IsEmpty {_q : DirichletCharacter R a × DirichletCharacter R b // (1 : R) = ε} :=
       ⟨fun ⟨_, h⟩ ↦ hε h.symm⟩
     exact Nat.card_of_isEmpty
 

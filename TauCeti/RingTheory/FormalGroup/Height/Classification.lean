@@ -164,8 +164,6 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
     charP_of_injective_algebraMap (algebraMap K (PowerSeries K)).injective p
   set q := p ^ h
   set ψ := (G.heightFrobeniusIso hG).toHom.toPowerSeries
-  have hψ : constantCoeff (ψ : MvPowerSeries Unit K) = 0 :=
-    (G.heightFrobeniusIso hG).toHom.zero_constantCoeff
   have hq₀ := constantCoeff_pow_eq_zero (K := K) (p := p) (h := h)
   have hcX : PowerSeries.constantCoeff (c • PowerSeries.X ^ M : PowerSeries K) = 0 := by
     simp [hM]
@@ -290,7 +288,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
   have hp' := hp.out
   have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
   have hh := F.ne_zero_of_height_eq_natCast hF
-  set M := N + 1 with hM
+  set M := N + 1
   have hXM (c : K) : (M : ℕ∞) ≤ (f + c • PowerSeries.X ^ M - f).order := by
     rw [add_sub_cancel_left]
     exact PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [PowerSeries.coeff_X_pow, hi.ne]
@@ -383,7 +381,6 @@ private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c�
       ∀ j, p ^ j ≤ 1 → PowerSeries.coeff (p ^ j * p ^ h)
         (pSeriesError F G p (c₁ • PowerSeries.X ^ 1 : PowerSeries K)) = 0 := by
   have hp' := hp.out
-  have hu := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
   have hv := G.coeff_nsmulSeries_ne_zero_of_height_eq hG
   have h₀ : (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 + c₁ • PowerSeries.X ^ 1 := by
     rw [_root_.zero_add]

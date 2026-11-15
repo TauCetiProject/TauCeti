@@ -91,18 +91,15 @@ in each case, and the relations that are statements about it.
   on the simple roots the exponent is `1` exactly at a short node, read off as
   `TauCeti.DynkinType.IsLongSimpleRoot`.
 
-## Roadmap and references
+## References
 
-This is the target "Special isogenies in characteristics two and three" of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, at the level of root data; the group-scheme isogeny
-`τ` is built from it. Its consumer is milestone L2 of `TauCetiRoadmap/CFSGStatement/README.md`,
-which selects `τ_X` for a `TauCeti.SuzukiReeIndex` and takes odd powers of it, and whose exponent
-convention is stated against `TauCeti.DynkinType.IsLongSimpleRoot` and the length permutations
-pinned in `TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`. With `B₂` here the
-root-datum half of that target is complete, since
-`TauCeti.DynkinType.exists_isSpecialNodePerm_iff` shows that no other valid Dynkin type admits a
-length-exchanging node permutation at all; what the target still asks for is the lift of these
-three to morphisms of the pinned group schemes, and their action on the root subgroups.
+These are the special isogenies in characteristics two and three at the level of root data; the
+group-scheme isogeny `τ` is built from them. A `TauCeti.SuzukiReeIndex` selects `τ_X` and takes
+odd powers of it, with its exponent convention stated against
+`TauCeti.DynkinType.IsLongSimpleRoot` and the length permutations pinned in
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`. The three types here are all there
+is, since `TauCeti.DynkinType.exists_isSpecialNodePerm_iff` shows that no other valid Dynkin type
+admits a length-exchanging node permutation at all.
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
 * Schémas en groupes (SGA 3), Exposé XXI, 6.8, and Exposé XXII.

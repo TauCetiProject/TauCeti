@@ -40,8 +40,8 @@ distances less than `1`. -/
 theorem holderWith_of_norm_le_of_norm_fderiv_le {g : E → F} {N₀ N₁ α : ℝ≥0} (hα : α ≤ 1)
     (hg : Differentiable ℝ g) (hg0 : ∀ x, ‖g x‖ ≤ N₀) (hg1 : ∀ x, ‖fderiv ℝ g x‖ ≤ N₁) :
     HolderWith (N₁ + 2 * N₀) α g := by
-  have hL : LipschitzWith N₁ g := lipschitzWith_of_nnnorm_fderiv_le hg fun x => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+  have hL : LipschitzWith N₁ g := lipschitzWith_of_nnNorm_fderiv_le hg fun x => by
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact hg1 x
   have h := HolderOnWith.of_le_of_dist_le (s := univ) (δ := 1) (D := 2 * N₀)
     (fun x _ y _ _ => (holderWith_one.2 hL).dist_le x y) (fun x _ y _ => ?_) hα one_pos

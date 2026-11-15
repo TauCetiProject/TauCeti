@@ -85,7 +85,7 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ
   [ContinuousStar R]
 
 local instance finiteDimensionalCompleteSpaceUnitary : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- In the canonical algebra coordinates of the Lie algebra of `Rˣ`, an element generates a
 one-parameter subgroup of unitaries exactly when it is skew-adjoint. -/

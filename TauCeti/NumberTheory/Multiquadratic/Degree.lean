@@ -20,7 +20,7 @@ square-class descent shows the new root is genuinely outside the previous stage.
 
 * `TauCeti.Multiquadratic.finrank_sqrtTower`: `[K(root₀,…,rootₙ₋₁) : K] = 2ⁿ`.
 * `TauCeti.Multiquadratic.finrank_adjoin_range`: the same over a finite index type,
-  `[K(rootᵢ : i) : K] = 2^|ι|` — the multiquadratic degree target.
+  `[K(rootᵢ : i) : K] = 2^|ι|` — the multiquadratic degree theorem.
 * `TauCeti.Multiquadratic.finite_of_forall_not_isSquare_prod`: a square-class independent family
   of square roots in a finite extension is finite.
 * `TauCeti.Multiquadratic.finrank_adjoin_range_ne`: omitting one root from the generating family

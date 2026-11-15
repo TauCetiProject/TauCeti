@@ -167,7 +167,6 @@ private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf 
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
       ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-  have hs1 : s + 1 < 0 := by linarith
   have hR : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
   rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
@@ -308,7 +307,7 @@ theorem lintegral_rpow_le_of_rpow_mul_meas_lt_le (hv : AEMeasurable v μ)
       (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * (A₀ * ENNReal.ofReal (d ^ (-p₀))) +
         ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * (A₁ * ENNReal.ofReal (e ^ (-p₁)))) *
         ∫⁻ x, ‖v x‖ₑ ^ p ∂μ :=
-  lintegral_rpow_le_of_meas_ofReal_lt_le hv.enorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
+  lintegral_rpow_le_of_meas_ofReal_lt_le hv.eNorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
     meas_ofReal_lt_le_add_setLIntegral hv ht hp₀ (hp₀.trans (hlt₀.trans hlt₁)) hd he hde hadd
       hweak₀ hweak₁
 
@@ -345,7 +344,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
   have hp₁0 : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
   have hq₁ : 0 < p₁.toReal := ENNReal.toReal_pos hp₁0 hp₁
   set S := {x | s < ‖f x‖ₑ}
-  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).enorm
+  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).eNorm
   have hm₁ := (Lp.memLp f).indicator hS.nullMeasurableSet
   have hm₂ := (Lp.memLp f).indicator hS.compl.nullMeasurableSet
   set f₁ := hm₁.toLp (S.indicator f)
@@ -368,9 +367,9 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
         (‖T‖ₑ ^ p₁.toReal * ∫⁻ x in Sᶜ, ‖f x‖ₑ ^ p₁.toReal ∂μ) := by
     refine ENNReal.le_two_rpow_mul_inv_rpow_mul hs hs'
       ((mul_meas_ge_le_pow_eLpNorm' (μ := ν) hp₁0 hp₁ _).trans ?_)
-    rw [← Lp.enorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
-      lintegral_rpow_enorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
-        (Lp.aestronglyMeasurable _), ← Lp.enorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
+    rw [← Lp.eNorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
+      lintegral_rpow_eNorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
+        (Lp.aestronglyMeasurable _), ← Lp.eNorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
     exact ENNReal.rpow_le_rpow (T.le_opENorm _) hq₁.le
   have hSc : Sᶜ = {x | ‖f x‖ₑ ≤ s} := by
     ext x
@@ -383,7 +382,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
     simp only [mem_union, mem_ofPred_eq, not_or, not_lt, not_le] at hnot hlt
     refine (hlt.trans_le ?_).false
     rw [hTf, hy, Pi.add_apply, ← ENNReal.add_halves s]
-    exact (enorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
+    exact (eNorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
   calc ν {y | s < ‖T f y‖ₑ}
       ≤ ν {y | s / 2 < ‖T f₁ y‖ₑ} + ν {y | s / 2 ≤ ‖T f₂ y‖ₑ} :=
         (measure_mono_ae hsub).trans (measure_union_le _ _)
@@ -418,8 +417,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
   have hlt₀' : p₀.toReal < p.toReal := ENNReal.toReal_strict_mono hp_top hlt₀
   have hlt₁' : p.toReal < p₁.toReal := ENNReal.toReal_strict_mono hp₁ hlt₁
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
-  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).enorm
-    (Lp.aestronglyMeasurable (T f)).enorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
+  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).eNorm
+    (Lp.aestronglyMeasurable (T f)).eNorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
     (A₀ := 2 ^ p₀.toReal * A) (A₁ := 2 ^ p₁.toReal * ‖T‖ₑ ^ p₁.toReal) fun t ht => by
       have hinv (q : ℝ) : ENNReal.ofReal (t ^ (-q)) = (ENNReal.ofReal t ^ q)⁻¹ := by
         rw [← ENNReal.ofReal_rpow_of_pos ht, ENNReal.rpow_neg]
@@ -428,8 +427,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
         (ENNReal.ofReal_pos.2 ht).ne' ENNReal.ofReal_ne_top).trans_eq ?_
       ring
   simp only [Real.one_rpow, mul_one] at key
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
     ← ENNReal.mul_rpow_of_nonneg _ _ (one_div_nonneg.2 hq.le)]
   exact ENNReal.rpow_le_rpow key (one_div_nonneg.2 hq.le)
 

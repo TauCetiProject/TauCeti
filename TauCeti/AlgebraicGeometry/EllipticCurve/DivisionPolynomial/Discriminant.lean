@@ -56,18 +56,16 @@ statement about polynomials, usable by any caller with a common divisor in hand,
 `evalEval_ψ₂_sq` is an unconditional on-curve evaluation. The torsion input that turns them into
 the Nagell–Lutz disjunct lives in `Torsion/Discriminant.lean`.
 
-This is an ingredient for the Nagell–Lutz milestone of `TauCetiRoadmap/EllipticCurves/README.md`,
-Layer 6, item "The torsion subgroup and Nagell–Lutz", whose short-model target `lutz_nagell` asks
-for `x, y ∈ ℤ` together with `y = 0 ∨ y² ∣ Δ`. It is the algebraic step feeding the **second
-disjunct** of that disjunction, in the long-model form the roadmap also names
-(`lutz_nagell_integrality_general`, "with its discriminant companion"). Establishing the full
+This is an ingredient for the Nagell–Lutz theorem, whose short-model form `lutz_nagell` concludes
+`x, y ∈ ℤ` together with `y = 0 ∨ y² ∣ Δ`. It is the algebraic step feeding the **second
+disjunct** of that disjunction, for long Weierstrass models as well. Establishing the full
 disjunction additionally requires the torsion input above and a separate treatment of the `y = 0`
 branch.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDMain.lean`, declarations `kappa_sq_eq_Psi2Sq`, `bezout_identity`,
 `kappa_sq_dvd_four_delta`, `eval_Ψ₃` and `lutz_nagell_pid_discriminant`. Restated here against
 Mathlib's `ψ₂`, `Ψ₂Sq` and `Ψ₃` rather than the raw expressions the source carries, so no

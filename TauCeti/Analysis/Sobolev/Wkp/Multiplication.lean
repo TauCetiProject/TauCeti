@@ -99,10 +99,10 @@ private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
         simp [b, smul_eq_mul]
       rw [hbj, lpNorm_const_smul,
         lpNorm_norm (hmem (i - j) ((Nat.sub_le _ _).trans hi)).aestronglyMeasurable,
-        Real.nnnorm_of_nonneg (mul_nonneg (Nat.cast_nonneg _) hM)]
+        Real.nnNorm_of_nonneg (mul_nonneg (Nat.cast_nonneg _) hM)]
       rfl
     _ ≤ ∑ j ∈ Finset.range (i + 1), a j * ‖u‖ := by
-      gcongr with j hj
+      gcongr with j _
       exact Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu (i - j)
         ((Nat.sub_le _ _).trans hi)
     _ = 2 ^ i * M * ‖u‖ := by
@@ -147,12 +147,18 @@ private theorem norm_ofTestFunction_one_le_of_eqOn_mul {psi : E → ℝ}
 `Phi` agrees on `Ω` with the product of `f` and a smooth scalar function whose derivatives through
 order `k` are bounded by `M`, then the full `W^{k,p}` norm of `Phi` is at most `2^(k+1) M ‖u‖`. -/
 theorem Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ}
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f)
     (Phi : 𝓓(Omega, ℝ)) (hPhi : EqOn Phi (fun x => psi x * f x) Omega) :
     ‖ofTestFunctionₗ (mu := mu) (p := p) k Phi‖ ≤ 2 ^ (k + 1) * M * ‖u‖ := by
+  -- On an empty domain every Sobolev space is trivial, so both sides vanish.
+  rcases (Omega : Set E).eq_empty_or_nonempty with hO | ⟨x₀, hx₀⟩
+  · have := Wkp.subsingleton_of_eq_empty (mu := mu) (p := p) k hO
+    rw [Subsingleton.elim u 0, Subsingleton.elim (ofTestFunctionₗ (mu := mu) (p := p) k Phi) 0]
+    simp
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (Nat.zero_le k) x₀ hx₀)
   have hPhi_ae (j : ℕ) : (value j (ofTestFunctionₗ (mu := mu) (p := p) j Phi) : E → ℝ)
       =ᵐ[mu.restrict Omega] Phi := by
     rw [value_ofTestFunctionₗ]
@@ -199,13 +205,13 @@ theorem Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul (k : ℕ) {psi : E → ℝ}
 /-- Multiplying a test function by a smooth scalar function with derivatives through order
 `k` bounded by `M` increases its full `W^{k,p}` norm by at most `2^(k+1) M`. -/
 theorem Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ}
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (phi : 𝓓(Omega, ℝ)) :
     ‖ofTestFunctionₗ (mu := mu) (p := p) k
       (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi)‖ ≤
       2 ^ (k + 1) * M * ‖ofTestFunctionₗ (mu := mu) (p := p) k phi‖ :=
-  norm_ofTestFunctionₗ_le_of_eqOn_mul k hpsi hM hbound _
+  norm_ofTestFunctionₗ_le_of_eqOn_mul k hpsi hbound _
     (phi.contDiff.of_le (by simp)).contDiffOn
     (by rw [value_ofTestFunctionₗ]; exact testFunctionLp_apply_ae p phi) _
     (fun x _ => by simp [smul_eq_mul, mul_comm])
@@ -224,7 +230,7 @@ def contDiffSMulL (k : ℕ) {psi : E → ℝ} (hpsi : ContDiff ℝ (⊤ : ℕ∞
 /-- On a test function, zero-boundary smooth multiplication is ordinary pointwise
 multiplication. The product remains a test function in the same domain. -/
 theorem contDiffSMulL_apply_ofTestFunction (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ}
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (phi : 𝓓(Omega, ℝ)) :
     contDiffSMulL (mu := mu) (p := p) k hpsi
@@ -236,12 +242,12 @@ theorem contDiffSMulL_apply_ofTestFunction (k : ℕ) {psi : E → ℝ}
       simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← Submodule.norm_coe,
         Wkp0.coe_ofTestFunctionₗ] using
           Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (mu := mu) (p := p)
-            k hpsi hM hbound phi⟩ phi
+            k hpsi hbound phi⟩ phi
 
 /-- Smooth multiplication commutes with forgetting the highest weak derivative when the
 derivatives through order `k + 1` are bounded on `Ω`. -/
 theorem lowerOrderL_contDiffSMulL (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ}
     (hbound : ∀ i ≤ k + 1, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (u : Wkp0 mu Omega p (k + 1)) :
     lowerOrderL k (contDiffSMulL (k + 1) hpsi u) =
@@ -253,9 +259,9 @@ theorem lowerOrderL_contDiffSMulL (k : ℕ) {psi : E → ℝ}
     apply (Wkp0.denseRange_ofTestFunctionₗ (k + 1)).equalizer T.continuous S.continuous
     funext phi
     simp only [T, S, Function.comp_apply, ContinuousLinearMap.comp_apply]
-    rw [contDiffSMulL_apply_ofTestFunction (k + 1) hpsi hM hbound,
+    rw [contDiffSMulL_apply_ofTestFunction (k + 1) hpsi hbound,
       lowerOrderL_ofTestFunctionₗ, lowerOrderL_ofTestFunctionₗ,
-      contDiffSMulL_apply_ofTestFunction k hpsi hM
+      contDiffSMulL_apply_ofTestFunction k hpsi
         (fun i hi x hx => hbound i (hi.trans (Nat.le_succ k)) x hx)]
   exact congrFun heq u
 
@@ -270,29 +276,28 @@ theorem norm_contDiffSMulL_le (k : ℕ) {psi : E → ℝ}
       simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← Submodule.norm_coe,
         Wkp0.coe_ofTestFunctionₗ] using
           Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (mu := mu) (p := p)
-            k hpsi hM hbound phi)
+            k hpsi hbound phi)
 
-/-- Smooth multiplication is the unique continuous linear endomorphism of `W^{k,p}_0(Ω)`
-with its stated action on test functions. -/
+/-- Any continuous linear endomorphism of `W^{k,p}_0(Ω)` acting as pointwise multiplication by
+`psi` on test functions equals `contDiffSMulL k hpsi`. -/
 theorem contDiffSMulL_unique (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
-    (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi)
     (T : Wkp0 mu Omega p k →L[ℝ] Wkp0 mu Omega p k)
     (hT : ∀ phi : 𝓓(Omega, ℝ),
       T (Wkp0.ofTestFunctionₗ k phi) =
         Wkp0.ofTestFunctionₗ k
           (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi phi)) :
-    contDiffSMulL k hpsi = T := by
-  apply DFunLike.coe_injective
-  apply (Wkp0.denseRange_ofTestFunctionₗ k).equalizer (contDiffSMulL k hpsi).continuous
-    T.continuous
-  funext phi
-  exact (contDiffSMulL_apply_ofTestFunction k hpsi hM hbound phi).trans (hT phi).symm
+    contDiffSMulL k hpsi = T :=
+  LinearMap.extendOfNorm_unique (Wkp0.denseRange_ofTestFunctionₗ k) ‖T‖
+    (fun phi => by
+      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← hT phi] using
+        T.le_opNorm (Wkp0.ofTestFunctionₗ k phi))
+    T (LinearMap.ext hT)
 
 /-- The value of zero-boundary smooth multiplication is represented almost everywhere by
 the pointwise product, at every order and including the infinite exponent. -/
 theorem value_contDiffSMulL_ae (k : ℕ) {psi : E → ℝ}
-    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ}
     (hbound : ∀ i ≤ k, ∀ x ∈ Omega, ‖iteratedFDeriv ℝ i psi x‖ ≤ M)
     (u : Wkp0 mu Omega p k) :
     ∀ᵐ x ∂mu.restrict Omega,
@@ -313,7 +318,7 @@ theorem value_contDiffSMulL_ae (k : ℕ) {psi : E → ℝ}
     rw [ae_all_iff]
     intro j
     rw [← hphi j]
-    have he := contDiffSMulL_apply_ofTestFunction (mu := mu) (p := p) k hpsi hM hbound (phi j)
+    have he := contDiffSMulL_apply_ofTestFunction (mu := mu) (p := p) k hpsi hbound (phi j)
     have he' : T (Wkp0.ofTestFunctionₗ k (phi j)) = Wkp0.ofTestFunctionₗ k
         (TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ) hpsi (phi j)) := he
     rw [he']

@@ -184,12 +184,13 @@ theorem IsMorse.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma (hf 
   obtain ⟨c, hc, hcrit⟩ := hband.exists_mem_Ioo_forall_eq
   obtain ⟨e⟩ := hf.nonempty_singularHomology_sublevelPair_iso_sigma hc.1 hc.2 hband.isCompact
     hcrit R n
+  subst hq
   -- Reindex the critical points of the level `c` by those of the band.
   let σ : {x : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f x = n} ≃
-      {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a q) (a (q + 1))) // manifoldMorseIndex I f x = n} :=
+      {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a pq.2) (a (pq.2 + 1))) //
+        manifoldMorseIndex I f x = n} :=
     (Set.equivOfEq (criticalPoints_inter_preimage_singleton_eq hc hcrit)).subtypeEquiv
       fun _ ↦ Iff.rfl
-  subst hq
   exact ⟨filteredSpaceSpectralSequenceFirstPageXIso R ((sublevel_mono f).comp ha) pq pq.2
     (pq.2 + 1) rfl rfl _ rfl n hn ≪≫ e ≪≫ Sigma.whiskerEquiv σ fun _ ↦ Iso.refl R⟩
 

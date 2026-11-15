@@ -109,7 +109,7 @@ private theorem mem_range_powMonoidHom_of_unitEmbedding_mem_auxiliaryKummerIdele
     isCyclic_of_card_dvd_prime (p := p) (by rwa [IsGalois.card_aut_eq_finrank, hdeg])
   -- Every idele class is a norm from `K(a^{1/p})`, so this cyclic extension is trivial.
   have hnorm := ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
-    (E := AlgebraicClosure K) S T (Finset.disjoint_coe.1 hST) hcl hpS
+    (E := AlgebraicClosure K) S T hcl hpS
     (Subgroup.zpowers_le.2 <|
       (unitEmbedding_mem_auxiliaryKummerIdeleSubgroup_one_iff S T a).1 <|
         auxiliaryKummerIdeleSubgroup_le_one S T p ha)

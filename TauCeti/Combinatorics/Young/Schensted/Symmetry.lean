@@ -146,7 +146,7 @@ private theorem growth_succ (w : List (Fin n)) (hw : w.Nodup) (i : ℕ) (k : Fin
         refine ⟨if rowInsertIndex w[i] (growth w i k) = s then s + 1 else s, ?_, ?_⟩
         · exact le_length_rowInsert _ hs
         · rw [heq]
-          exact rowInsert_appendToRow (Fin.lt_def.mpr hlt) hA hs
+          exact rowInsert_appendToRow (Fin.lt_def.mpr hlt) hA
       · have hk : w[i] = k := Fin.ext heq
         simp only [heq, lt_irrefl, show (k : ℕ) < k + 1 by omega, ↓reduceIte]
         rw [hk] at hnot ⊢
@@ -245,7 +245,7 @@ private theorem growthRule_hLabel_vLabel (w : List (Fin n)) (hw : w.Nodup) {i : 
           appendToRow k (if rowInsertIndex w[i] (growth w i k) = s then s + 1 else s)
             (growth w (i + 1) k) := by
         simp only [growth_succ_left w hi, hlt, hlt', ↓reduceIte, hB]
-        exact rowInsert_appendToRow (Fin.lt_def.mpr hlt) hA hs
+        exact rowInsert_appendToRow (Fin.lt_def.mpr hlt) hA
       rw [vLabel_eq_some hs hB, vLabel_eq_some (by
           simp only [growth_succ_left w hi, hlt, ↓reduceIte]
           exact le_length_rowInsert _ hs) hB', hB,

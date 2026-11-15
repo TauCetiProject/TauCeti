@@ -52,9 +52,6 @@ as the pattern makes this denominator nonzero.
   carrier.
 -/
 
--- The statement of `integral_injHomDensity_sampleGraph` follows the `E_{G(m,W)}[t₀(F, ·)] =
--- t(F, W)` signature written down in the Tau Ceti `DenseGraphLimits` roadmap's `Suggested.lean`.
-
 public section
 
 noncomputable section

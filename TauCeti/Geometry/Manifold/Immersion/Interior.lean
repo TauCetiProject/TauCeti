@@ -202,7 +202,7 @@ theorem of_writtenInExtChartAt_of_isInteriorPoint [Nontrivial E] [IsManifold I n
     (infinite_of_mem_nhds p (isOpen_interior.mem_nhds hx)).nontrivial.exists_ne 0
   obtain ⟨b, hb, hb0⟩ :=
     (infinite_of_mem_nhds _ (isOpen_interior.mem_nhds hfx)).nontrivial.exists_ne 0
-  obtain ⟨σ, ρ, L, hσ, hρ, hpσ, hσp, hgρ, hρg, hσI, hLJ, hW⟩ :=
+  obtain ⟨σ, ρ, L, hσ, hρ, hpσ, hσp, hgρ, hρg, _, hLJ, hW⟩ :=
     h.exists_recentred_charts ha0 hb0 isOpen_interior ha isOpen_interior hb
   -- The preferred extended charts on interior points, followed by the recentred charts, are
   -- charts of the maximal atlases once read back through the interior charts of the models.
@@ -307,7 +307,7 @@ theorem ContMDiffOn.isImmersionAt_of_injective_mfderiv_of_isInteriorPoint
     IsImmersionAt I J n f x := by
   have : FiniteDimensional 𝕜 E :=
     FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
-  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv_of_isInteriorPoint hs hx hn hxi hfxi
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
 

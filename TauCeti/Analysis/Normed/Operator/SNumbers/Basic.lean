@@ -180,7 +180,7 @@ private theorem smul_le (c : 𝕜) (T : X →L[𝕜] Y) (n : ℕ) :
       simpa using hs.comp_le_left (c • ContinuousLinearMap.id 𝕜 Y) T n
     _ ≤ (‖c‖₊ * ‖ContinuousLinearMap.id 𝕜 Y‖₊) * s T n := by
       gcongr
-      exact nnnorm_smul_le _ _
+      exact nnNorm_smul_le _ _
     _ ≤ ‖c‖₊ * s T n := by gcongr; exact mul_le_of_le_one_right' hid
 
 /-- Every s-number sequence is absolutely homogeneous. -/

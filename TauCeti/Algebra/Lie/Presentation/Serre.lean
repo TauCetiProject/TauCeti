@@ -44,7 +44,7 @@ relators rather than about the geometry behind them. Accordingly no statement be
 system: `TauCeti.serreH`, `TauCeti.serreE` and `TauCeti.serreF` are named after the free generators
 `Hᵢ`, `Eᵢ`, `Fᵢ` they are the images of, and reading them as a coroot and a pair of simple root
 vectors of a split semisimple Lie algebra needs the identification of the presented algebra with
-one, which is not proved here (see the Roadmap section below).
+one, which is not proved here (see the Applications section below).
 
 ## Main definitions
 
@@ -81,18 +81,15 @@ one, which is not proved here (see the Roadmap section below).
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
   the presented algebra.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for the Chevalley--Demazure construction, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which builds the split reductive group scheme over `ℤ`
-of a pinned root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of
-the corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix
-is the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
-basis of it starts from. Consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. The presentation theorem identifying the presented algebra
-with a concrete split semisimple Lie algebra is a separate target, Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; it consumes `TauCeti.serreLift`
-to build its comparison map, and is not begun here.
+The Chevalley--Demazure construction builds the split reductive group scheme over `ℤ` of a pinned
+root datum from a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra of the
+corresponding split semisimple Lie algebra. The Serre presentation of the pinned Cartan matrix is
+the explicit carrier of that Lie algebra, and the generators named here are the ones a Chevalley
+basis of it starts from. The presentation theorem identifying the presented algebra with a concrete
+split semisimple Lie algebra uses `TauCeti.serreLift` to build its comparison map, and is not
+proved here.
 
 ## References
 

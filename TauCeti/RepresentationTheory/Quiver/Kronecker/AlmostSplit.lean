@@ -81,14 +81,6 @@ public section
 
 namespace TauCeti
 
--- Source. This file follows the "`A₂` quiver" worked example of
--- `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose acceptance
--- criterion asks for the Auslander--Reiten quiver of `A₂` to be "the three-vertex mesh
--- `S₂ → P₁ → S₁` with `τ S₁ = S₂`"; the sequence, the two almost-split properties and the
--- resulting mesh below are that bullet. Its path-algebra and classification halves are
--- `TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular` and
--- `TauCeti.RepresentationTheory.Quiver.Kronecker.Indecomposable`.
-
 open CategoryTheory CategoryTheory.Limits Quiver.Kronecker
 
 universe u
@@ -240,12 +232,20 @@ theorem kroneckerARSequence_g :
 
 /-! ### The arrow acts invertibly on `P₁` -/
 
-/-- **The arrow of the `A₂` quiver acts injectively on `P₁`.** -/
+omit [Unique A] in
+/-- **An arrow of the Kronecker quiver acts injectively on `P₁`.**  The source space is a line
+spanned by the trivial path, which the arrow carries to the basis vector of the arrow path. -/
 theorem indecProjRep_map_arrowPath_injective (a : A) :
-    Function.Injective ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a)).hom :=
-  fun x y h ↦ (kroneckerProjSrcEquiv k A).injective
-    ((kroneckerProjTgtEquiv_map a x).symm.trans
-      ((congrArg (⇑(kroneckerProjTgtEquiv k A)) h).trans (kroneckerProjTgtEquiv_map a y)))
+    Function.Injective ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a)).hom := by
+  refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
+  have hz' : z = kroneckerProjSrcEquiv k A z • indecProjRepBasis k src src Quiver.Path.nil :=
+    (kroneckerProjSrcEquiv k A).injective (by simp)
+  have h := hz
+  rw [hz', map_smul] at h
+  simp only [indecProjRep_map_basis, Quiver.Path.nil_comp, smul_eq_zero] at h
+  rcases h with h | h
+  · rw [hz', h, zero_smul]
+  · exact absurd h (Module.Basis.ne_zero _ _)
 
 /-- **The arrow of the `A₂` quiver acts surjectively on `P₁`.** -/
 theorem indecProjRep_map_arrowPath_surjective (a : A) :

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
 # The Laplacian of an integral over a compact parameter space

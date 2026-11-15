@@ -245,7 +245,7 @@ theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) 
   rcases isEmpty_or_nonempty B with hB | hB
   · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
   have := hS.trivialStar
-  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S with hFdef
+  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
   have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
   have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
     simpa [hFapply] using hS.posSemidef.dotProduct_mulVec_nonneg u

@@ -473,7 +473,7 @@ private theorem e_smul_string (j : ℕ) :
   have hk : k q • v = (ε * q ^ m : ℂ) • v := mem_weightSpace_iff.mp hv
   have hkInv := kInv_smul_of_mem_weightSpace hv
   -- Apply the commutator formula to `v`; only its `K`, `K⁻¹` term survives.
-  have h := congrArg (· • v) (e_mul_f_pow hq.sub_inv_ne_zero (j + 1))
+  have h := congrArg (· • v) (e_mul_f_pow (q := q) (j + 1))
   simp only [add_smul, mul_smul, he, smul_zero, zero_add, smul_assoc, sub_smul, hk, hkInv,
     Nat.add_sub_cancel, smul_sub, smul_comm (f q ^ j) (_ : ℂ)] at h
   have hj : quantumInteger q ((j : ℤ) + 1) ≠ 0 := quantumInteger_ne_zero hq (by omega)

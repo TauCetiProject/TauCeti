@@ -33,9 +33,9 @@ path to the deleted vertex and reindexes the matrix onto `starCartanMatrix`.
 
 ## References
 
-This is the simply-laced extraction step in Layer 5 of the root-systems roadmap.  See J. E.
-Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 11.4, and Bourbaki,
-*Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, Section 4.
+This is the simply-laced extraction step in the classification of finite-type Cartan matrices. See
+J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 11.4, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, Section 4.
 -/
 
 public section

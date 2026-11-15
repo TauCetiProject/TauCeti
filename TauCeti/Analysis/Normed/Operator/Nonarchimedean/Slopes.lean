@@ -191,7 +191,7 @@ theorem newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank [IsAlgClosed K
   have hfin : ({μ : K | v μ = σ} ∩ Function.support fun μ ↦
       Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ)).Finite := by
     refine ((PowerSeries.IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (L := K)
-      (hH.isRestricted (b ^ σ)) (Real.rpow_pos_of_pos hb0 σ) hH0).image (·⁻¹)).subset ?_
+      (hH.isRestricted (b ^ σ)) hH0).image (·⁻¹)).subset ?_
     rintro μ ⟨hμσ, hμ⟩
     rw [Function.mem_support, ← Nat.cast_ne_zero (R := ℕ∞), hord hμσ,
       PowerSeries.order_taylor_ne_zero_iff] at hμ

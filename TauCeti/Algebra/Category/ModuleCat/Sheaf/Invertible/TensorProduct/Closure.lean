@@ -27,8 +27,6 @@ These declarations provide the site-level closure result used to define tensor p
 bundles and, subsequently, the tensor operation in the Picard group.
 -/
 
--- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
-
 public section
 
 open CategoryTheory

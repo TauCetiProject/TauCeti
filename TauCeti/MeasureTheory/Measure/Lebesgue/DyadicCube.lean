@@ -19,7 +19,7 @@ For `k : ℤ` and `m : ι → ℤ`, the **dyadic cube** of level `k` at position
 (`TauCeti.dyadicCube`). The cubes of a fixed level partition `ι → ℝ`, the cube of level `k`
 containing `x` being `Q(k, ⌊x / 2ᵏ⌋)` (`TauCeti.dyadicIndex`), and the levels are nested: two
 dyadic cubes are either disjoint or one contains the other. Together with the **Lebesgue
-differentiation theorem along dyadic cubes**, which says that the averages of an integrable
+differentiation theorem along dyadic cubes**, which says that the averages of a locally integrable
 function over the dyadic cubes containing `x` converge to its value at `x` as the level tends to
 `-∞`, this is what the stopping-time arguments of harmonic analysis need, starting with the
 Calderón–Zygmund decomposition.
@@ -86,6 +86,11 @@ variable {j k : ℤ} {m m' : ι → ℤ} {x y : ι → ℝ}
 @[simp]
 theorem mem_dyadicCube : x ∈ dyadicCube k m ↔ dyadicIndex k x = m :=
   Iff.rfl
+
+/-- In dimension zero every dyadic cube is the whole space. -/
+@[simp]
+theorem dyadicCube_eq_univ [IsEmpty ι] (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
+  eq_univ_of_forall fun _ => mem_dyadicCube.2 (Subsingleton.elim _ _)
 
 /-- Every point lies in the dyadic cube of each level indexed by its own dyadic index. -/
 theorem mem_dyadicCube_dyadicIndex (k : ℤ) (x : ι → ℝ) : x ∈ dyadicCube k (dyadicIndex k x) :=
@@ -285,11 +290,9 @@ theorem exists_forall_lt_of_mul_volume_dyadicCube_lt [Nonempty ι] {a δ : ℝ�
   rw [volume_dyadicCube] at hlt hk
   exact (hlt.trans hk).false
 
-/-- **Lebesgue's differentiation theorem along dyadic cubes**: for an integrable `g`, at almost
-every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the level
-tends to `-∞`. -/
-theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : AEMeasurable g)
-    (hg' : ∫⁻ x, g x ≠ ∞) :
+/-- Lebesgue's differentiation theorem along dyadic cubes for an integrable `g`. -/
+private theorem ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top {g : (ι → ℝ) → ℝ≥0∞}
+    (hg : AEMeasurable g) (hg' : ∫⁻ x, g x ≠ ∞) :
     ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
       (𝓝 (g x)) := by
   let c : ℤ → (ι → ℝ) → ι → ℝ := fun k x i => ((dyadicIndex k x i : ℝ) + 2⁻¹) * 2 ^ k
@@ -310,6 +313,34 @@ theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg 
   simp only [Function.comp_apply, setLAverage_eq]
   rw [setLIntegral_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x)),
     measure_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x))]
+
+/-- **Lebesgue's differentiation theorem along dyadic cubes**: for a locally integrable `g`, at
+almost every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the
+level tends to `-∞`. -/
+theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : LocallyIntegrable g) :
+    ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
+      (𝓝 (g x)) := by
+  -- On each cube `Q` of level `0`, apply the integrable case to `g` restricted to `Q`; the cubes
+  -- of level at most `0` containing a point of `Q` lie in `Q`.
+  have hQ (m : ι → ℤ) : ∀ᵐ x, x ∈ dyadicCube 0 m → Tendsto
+      (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot (𝓝 (g x)) := by
+    have hm := measurableSet_dyadicCube (0 : ℤ) m
+    have hint : ∫⁻ x, (dyadicCube 0 m).indicator g x ≠ ∞ := by
+      rw [lintegral_indicator hm]
+      refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
+      simpa only [eNorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
+    filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
+      (hg.aestronglyMeasurable.aemeasurable.indicator hm) hint]
+      with x hx hxm
+    rw [indicator_of_mem hxm] at hx
+    refine hx.congr' ?_
+    filter_upwards [eventually_le_atBot 0] with k hk
+    have hsub : dyadicCube k (dyadicIndex k x) ⊆ dyadicCube 0 m := by
+      simpa only [mem_dyadicCube.1 hxm] using
+        dyadicCube_subset_dyadicCube hk (mem_dyadicCube_dyadicIndex k x)
+    simp only [setLAverage_eq]
+    rw [setLIntegral_indicator hm, inter_eq_right.2 hsub]
+  filter_upwards [ae_all_iff.2 hQ] with x hx using hx _ (mem_dyadicCube_dyadicIndex 0 x)
 
 end Fintype
 

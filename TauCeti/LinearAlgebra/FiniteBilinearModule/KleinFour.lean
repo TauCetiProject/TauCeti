@@ -52,8 +52,6 @@ value of its generator.
   discriminant forms and §1.8, Proposition 1.8.1 for the forms written `u₁` and `v₁` in the
   full-norm convention.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-
-This is part of Layer 3 of `TauCetiRoadmap/IntegralLattices/README.md`.
 -/
 
 public section

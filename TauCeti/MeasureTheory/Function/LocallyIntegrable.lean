@@ -46,6 +46,9 @@ Pointwise suprema and infima of locally integrable functions are locally integra
 normed lattice with solid norm, and finite sums of functions locally integrable on a set are
 locally integrable on it.
 
+Local integrability on the trace `U ∩ s` of a closed set on an open set is local integrability on
+`U` for the measure restricted to `s`.
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -58,13 +61,16 @@ integrable on that set.
 Likewise, a function locally integrable on `s` times a continuous function whose compact support
 lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
 linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
-keeps it locally integrable on `s`.
+keeps it locally integrable on `s`, as does applying a locally integrable field of operators to a
+continuous function.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
 In particular, the squared norm of a continuous compactly supported function is integrable, and so
 is the product of a continuous function whose compact support lies in a set `U` with a
-function continuous on `U`.
+function continuous on `U`, as are the coordinatewise pairing `∑ₖ gₖ fₖ` and the weighted squared
+length `h ∑ₖ fₖ²` of a continuous family of coordinate vectors `f` compactly supported in `U`, for
+`g` and `h` continuous on `U`.
 
 For a locally finite measure, the indicator of a constant on a set that is null-measurable for
 the restriction of the measure to `s` is locally integrable on `s`.
@@ -117,6 +123,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`, with `U` not required to be open.
+* `Continuous.integrable_sum_mul_of_continuousOn` and
+  `Continuous.integrable_mul_sum_sq_of_continuousOn`: the same for the coordinatewise pairing of a
+  family of coordinate vectors continuous on `U` with a continuous one compactly supported in `U`,
+  and for the squared length of the latter weighted by a function continuous on `U`.
 
 A function locally integrable for a measure `ν` becomes locally integrable for any measure `ρ`
 dominating `ν`, when `ν` has a Lebesgue decomposition with respect to `ρ`, after multiplication
@@ -283,6 +293,24 @@ theorem locallyIntegrableOn_iff_forall_isCompact_closure :
     exact hf.filter_mono nhdsWithin_le_nhds
 
 end RelativelyCompactSubdomains
+
+/-- Local integrability on the trace `U ∩ s` of a closed set `s` on an open set `U` is local
+integrability on `U` for the restriction of the measure to `s`: near points of `U` off `s` the
+restricted measure vanishes. -/
+theorem LocallyIntegrableOn.restrict_of_inter [OpensMeasurableSpace X] {F : Type*}
+    [NormedAddCommGroup F] {f : X → F} {U s : Set X} (hU : IsOpen U) (hs : IsClosed s)
+    (hf : LocallyIntegrableOn f (U ∩ s) μ) : LocallyIntegrableOn f U (μ.restrict s) := by
+  intro x hx
+  by_cases hxs : x ∈ s
+  · obtain ⟨t, ht, hint⟩ := hf x ⟨hx, hxs⟩
+    obtain ⟨u, hu, hxu, hut⟩ := mem_nhdsWithin.1 ht
+    refine ⟨U ∩ u, inter_mem_nhdsWithin _ (hu.mem_nhds hxu), ?_⟩
+    rw [IntegrableOn, Measure.restrict_restrict (hU.inter hu).measurableSet]
+    exact hint.mono_set fun z hz ↦ hut ⟨hz.1.2, hz.1.1, hz.2⟩
+  · refine ⟨sᶜ, mem_nhdsWithin_of_mem_nhds (hs.isOpen_compl.mem_nhds hxs), ?_⟩
+    rw [IntegrableOn, Measure.restrict_restrict hs.isOpen_compl.measurableSet,
+      compl_inter_self, Measure.restrict_empty]
+    exact integrable_zero_measure
 
 /-- For a locally finite measure, the indicator of a constant on a set `t` that is null-measurable
 for the restriction of the measure to `s` is locally integrable on `s`. -/
@@ -462,7 +490,7 @@ variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X]
 is locally integrable on `s`. -/
 theorem locallyIntegrableOn (g : Lp E p (μ.restrict s)) (hp : 1 ≤ p) :
     LocallyIntegrableOn g s μ := by
-  intro x hx
+  intro x _
   obtain ⟨U, hU, hgU⟩ := ((Lp.memLp g).locallyIntegrable hp) x
   refine ⟨s ∩ U, inter_mem_nhdsWithin s hU, ?_⟩
   rw [IntegrableOn, ← Measure.restrict_restrict_of_subset (inter_subset_left (s := s) (t := U))]
@@ -505,6 +533,34 @@ theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [Topological
     (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
   (hb.smul_of_continuousOn_of_tsupport_subset hbU ha).integrable_of_hasCompactSupport
     hbc.smul_left
+
+/-- The coordinatewise pairing `x ↦ ∑ k ∈ s, g x k * f x k` of a continuous compactly supported
+family of coordinate vectors `f`, whose support lies in a set `U`, with a family `g` continuous on
+`U` is integrable, for any measure finite on compact sets. The family `g` need not be continuous
+off `U`. -/
+theorem Continuous.integrable_sum_mul_of_continuousOn {R κ : Type*} [NormedRing R]
+    {s : Finset κ} {g f : X → κ → R} {U : Set X} (hf : Continuous f) (hcf : HasCompactSupport f)
+    (hfU : tsupport f ⊆ U) (hg : ContinuousOn g U) :
+    Integrable (fun x ↦ ∑ k ∈ s, g x k * f x k) μ :=
+  integrable_finsetSum _ fun k _ ↦
+    ((continuous_apply k).comp hf).integrable_smul_of_continuousOn
+      (hcf.comp_left (g := fun a : κ → R ↦ a k) rfl)
+      ((tsupport_comp_subset (g := fun a : κ → R ↦ a k) rfl f).trans hfU)
+      ((continuous_apply k).comp_continuousOn hg)
+
+/-- The weighted squared length `x ↦ h x * ∑ k ∈ s, f x k ^ 2` of a continuous compactly supported
+family of coordinate vectors `f`, whose support lies in a set `U`, with a weight `h` continuous on
+`U` is integrable, for any measure finite on compact sets. The weight `h` need not be continuous
+off `U`. -/
+theorem Continuous.integrable_mul_sum_sq_of_continuousOn {R κ : Type*} [NormedRing R]
+    {s : Finset κ} {h : X → R} {f : X → κ → R} {U : Set X} (hf : Continuous f)
+    (hcf : HasCompactSupport f) (hfU : tsupport f ⊆ U) (hh : ContinuousOn h U) :
+    Integrable (fun x ↦ h x * ∑ k ∈ s, f x k ^ 2) μ := by
+  set q : (κ → R) → R := fun a ↦ ∑ k ∈ s, a k ^ 2
+  have hq : q 0 = 0 := by simp [q]
+  exact (continuous_finsetSum s fun k _ ↦ ((continuous_apply k).comp hf).pow 2
+    ).integrable_smul_of_continuousOn (hcf.comp_left hq)
+      ((tsupport_comp_subset hq f).trans hfU) hh
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
@@ -602,6 +658,23 @@ theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
   exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
     ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
     (hf k hks hk).aestronglyMeasurable
+
+/-- Applying a field of continuous linear maps that is locally integrable on a locally closed set
+`s` to a function continuous on `s` gives a function locally integrable on `s`. This is the
+counterpart of `MeasureTheory.LocallyIntegrableOn.continuousOn_clm_apply` with the roles of the
+operator and the vector exchanged. -/
+theorem clm_apply_continuousOn {f : X → F} {A : X → F →L[𝕜] G} (hs : IsLocallyClosed s)
+    (hA : LocallyIntegrableOn A s μ) (hf : ContinuousOn f s) :
+    LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
+  rw [locallyIntegrableOn_iff hs] at hA ⊢
+  intro k hks hk
+  obtain ⟨C, hC⟩ := hk.exists_bound_of_continuousOn (hf.mono hks)
+  refine Integrable.mono' ((hA k hks hk).norm.mul_const C) ?_
+    ((ae_restrict_iff' hk.measurableSet).2 <| ae_of_all _ fun x hx ↦ (A x).le_opNorm_of_le
+      (hC x hx))
+  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
+    (hA k hks hk).aestronglyMeasurable
+    ((hf.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
 

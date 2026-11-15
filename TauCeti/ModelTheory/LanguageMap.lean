@@ -30,6 +30,9 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
   `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
 
+Adjoining constants to an algebraic language gives an algebraic language
+(`FirstOrder.Language.isAlgebraic_withConstants`).
+
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
 (`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
@@ -38,6 +41,9 @@ added constants lie in the range of `lhomWithConstants`
 `FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
 the expansion of its `L`-reduct by the interpretations of the added constants
 (`FirstOrder.Language.withConstantsStructure_reduct_eq`).
+
+A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
+(`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
 -/
 
 public section
@@ -140,6 +146,10 @@ namespace FirstOrder.Language
 
 variable {L : Language} {γ : Type*}
 
+/-- Adjoining constants to a language without relation symbols adds no relation symbols. -/
+instance isAlgebraic_withConstants [L.IsAlgebraic] : L[[γ]].IsAlgebraic :=
+  isAlgebraic_sum
+
 theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l) :
     (L.lhomWithConstants γ).onRelation ((Equiv.sumEmpty _ _) R) = R := by
   -- lhomWithConstants is sumInl, so its relation map restores the left summand.
@@ -178,5 +188,52 @@ theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
   rcases f with f | c
   · rfl
   · cases k with | zero => rw [Unique.eq_default xs]; rfl | succ _ => exact c.elim
+
+section WithConstantsSymbols
+
+variable {L : Language.{u, v}} (A : Type w)
+
+/-- A function symbol of `L[[A]]` is a function symbol of `L` or a constant from `A`. -/
+def sigmaFunctionsWithConstantsEquiv :
+    (Σ n, L[[A]].Functions n) ≃ (Σ n, L.Functions n) ⊕ A where
+  toFun
+    | ⟨n, Sum.inl f⟩ => Sum.inl ⟨n, f⟩
+    | ⟨0, Sum.inr a⟩ => Sum.inr a
+  invFun := Sum.elim (fun f => ⟨f.1, Sum.inl f.2⟩) fun a => ⟨0, Sum.inr a⟩
+  left_inv := by rintro ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
+  right_inv := by rintro (f | a) <;> rfl
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_inl {n : ℕ} (f : L.Functions n) :
+    sigmaFunctionsWithConstantsEquiv A ⟨n, (Sum.inl f : L[[A]].Functions n)⟩ = Sum.inl ⟨n, f⟩ :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_con (a : A) :
+    sigmaFunctionsWithConstantsEquiv A ⟨0, L.con a⟩ = Sum.inr a :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_inr (a : A) :
+    sigmaFunctionsWithConstantsEquiv A ⟨0, (Sum.inr a : L[[A]].Functions 0)⟩ = Sum.inr a :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_symm_inl (f : Σ n, L.Functions n) :
+    (sigmaFunctionsWithConstantsEquiv A).symm (Sum.inl f) = ⟨f.1, Sum.inl f.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_symm_inr (a : A) :
+    (sigmaFunctionsWithConstantsEquiv (L := L) A).symm (Sum.inr a) = ⟨0, L.con a⟩ :=
+  (rfl)
+
+/-- The arity of a function symbol of `L[[A]]`, read off its description as a function symbol
+of `L` or a constant from `A`. -/
+theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions n) :
+    Sum.elim Sigma.fst (fun _ => 0) (sigmaFunctionsWithConstantsEquiv A s) = s.1 := by
+  rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
+
+end WithConstantsSymbols
 
 end FirstOrder.Language

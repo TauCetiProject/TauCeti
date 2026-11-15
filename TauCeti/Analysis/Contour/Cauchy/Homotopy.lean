@@ -14,8 +14,8 @@ import TauCeti.Analysis.Contour.HomologyCauchy
 
 A closed piecewise-`C¹` path continuously homotopic to its constant path inside an open set is
 null-homologous there. Consequently, the homology form of Cauchy's theorem makes the contour
-integral of every holomorphic function vanish along such a path. This supplies the
-null-homotopic special case explicitly requested in Layer 3 of the Contour Integration roadmap.
+integral of every holomorphic function vanish along such a path. This is the null-homotopic special
+case of the homology Cauchy theorem.
 
 The homotopy is represented by Mathlib's `Path.Homotopy`; no differentiability of it is required.
 The source path itself is assumed piecewise `C¹`, matching the raw-curve interface expected by
@@ -34,8 +34,7 @@ The source path itself is assumed piecewise `C¹`, matching the raw-curve interf
 No formalization is vendored. The proof combines Tau Ceti's homotopy invariance of the winding
 number with its homology Cauchy theorem. The implication “null-homotopic implies
 null-homologous” and the resulting Cauchy theorem are standard; see S. Lang, *Complex Analysis*,
-Chapter VI, and L. Ahlfors, *Complex Analysis*, Chapter 4, as cited by the Contour Integration
-roadmap.
+Chapter VI, and L. Ahlfors, *Complex Analysis*, Chapter 4.
 -/
 
 public section

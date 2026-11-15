@@ -154,10 +154,10 @@ omit [SphericallyCompleteSpace K] in
 /-- Every finite-dimensional ultrametric space over a complete discretely normed field has
 an orthogonal basis. Neither local compactness nor a discrete module norm is required. -/
 theorem exists_basis_isTOrthogonalFamily_one_of_norm_eq_zpow [CompleteSpace K]
-    [FiniteDimensional K E] {b : ℝ} (hb : 1 < b)
+    [FiniteDimensional K E] {b : ℝ}
     (hdiscrete : ∀ a : K, a ≠ 0 → ∃ k : ℤ, ‖a‖ = b ^ k) :
     ∃ e : Module.Basis (Fin (Module.finrank K E)) K E, IsTOrthogonalFamily K 1 e := by
-  have : SphericallyCompleteSpace K := sphericallyCompleteSpace_of_dist_eq_zpow hb
+  have : SphericallyCompleteSpace K := sphericallyCompleteSpace_of_dist_eq_zpow
     fun x y hxy ↦ by
       simpa only [dist_eq_norm] using
         hdiscrete (x - y) (by simpa only [dist_eq_norm, ne_eq, norm_eq_zero] using hxy)

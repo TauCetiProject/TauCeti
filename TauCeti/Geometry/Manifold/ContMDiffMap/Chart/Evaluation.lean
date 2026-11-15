@@ -178,14 +178,14 @@ theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J
   obtain ⟨t, htC, hcover⟩ := hC.elim_nhdsWithin_subcover U hUnhds
   -- The piece `U c` is compact, so it gives an open chart derivative test around `f₀`.
   let K (c : E) : Set φ.target := Subtype.val ⁻¹' U c
-  have hKcompact (c : E) (hc : c ∈ C) : IsCompact (K c) := by
+  have hKcompact (c : E) : IsCompact (K c) := by
     refine Topology.IsEmbedding.subtypeVal.isCompact_iff.2 ?_
     rw [Subtype.image_preimage_coe, inter_eq_right.2 (inter_subset_left.trans hCx)]
     exact hC.inter_right Metric.isClosed_closedBall
   have hT : ⋂ c ∈ t, chartJetSet (J := J) (n := n) x y m (K c) (Metric.ball (D f₀ c) (ε / 4)) ∈
       𝓝 f₀ := by
     refine (biInter_finset_mem t).2 fun c hc ↦ ?_
-    refine (isOpen_chartJetSet x y m hm (hKcompact c (htC c hc)) Metric.isOpen_ball).mem_nhds ?_
+    refine (isOpen_chartJetSet x y m hm (hKcompact c) Metric.isOpen_ball).mem_nhds ?_
     rw [mem_chartJetSet]
     rintro ⟨z, hz⟩ ⟨hzC, hzc⟩
     refine ⟨hCy z hzC, ?_⟩

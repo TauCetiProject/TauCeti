@@ -175,6 +175,17 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
 
+/-- In a CSA group, an element conjugating `u` into its own centralizer centralizes `u`: if
+`g⁻¹ * u * g` commutes with `u`, then so does `g`. -/
+theorem IsCSA.mem_centralizer_of_conj_mem_centralizer (hG : IsCSA G) {u g : G}
+    (h : g⁻¹ * u * g ∈ Subgroup.centralizer {u}) : g ∈ Subgroup.centralizer {u} := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Subgroup.mem_centralizer_singleton_iff.2 (by simp)
+  have huu : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  refine inv_mem_iff.1 (hG.mem_centralizer_of_commute_conj huu hu huu hu ?_)
+  rw [inv_inv, commute_iff_eq]
+  exact (Subgroup.mem_centralizer_singleton_iff.1 h).symm
+
 /-- In a torsion-free CSA group, conjugates of nonzero powers of `u` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/
 theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}

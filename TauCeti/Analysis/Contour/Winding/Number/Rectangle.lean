@@ -95,7 +95,7 @@ theorem windingNumber_rectBoundary_eq_one (hp : p ∈ Ioo z.re w.re ×ℂ Ioo z.
     simp [Green.triangleDet_def, finRotate_apply]; nlinarith))
   -- The winding number of the closed curve is an integer, which must be `1`.
   obtain ⟨n, hn⟩ := (isPiecewiseC1On_rectBoundary z w).exists_int_windingNumber (by simp)
-    fun t ht (h : rectBoundary z w t = p) ↦
+    fun t _ (h : rectBoundary z w t = p) ↦
       hfr (h ▸ rectBoundary_mem_frontier t)
   have hre := congrArg re hsum
   simp only [add_re, hn, intCast_re] at hre

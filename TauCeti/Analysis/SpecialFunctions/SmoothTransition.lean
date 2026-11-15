@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -49,6 +50,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.lt_one`: `expNegInvGlue x < 1`.
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
+* `expNegInvGlue.hasFDerivAt_norm_sq`: on a real inner product space, the derivative of
+  `x ↦ expNegInvGlue (‖x‖²)` at `x` is `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
@@ -67,6 +70,9 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.integral_deriv_mul_sub`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`.
 * `Real.smoothTransition.lintegral_ofReal_deriv_mul_sub` and
   `Real.smoothTransition.lintegral_ofReal_deriv_sub_mul`: `∫⁻_ℝ ψ'(± (c y - a)) dy = |c|⁻¹`.
+* `Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul` and
+  `Real.smoothTransition.lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul`: the weight
+  `(t, x) ↦ c ψ'(c (t - g x)) w x` is measurable, and integrating it over `x` and `t` gives `∫ w`.
 * `Real.smoothTransition.tendsto_integral_deriv_mul_sub_mul`: `∫_ℝ ψ'(c y - T) a y dy` tends to
   `|c|⁻¹ a₀` as `T → ∞` when `a (c⁻¹ σ) → a₀` as `σ → ∞`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
@@ -74,6 +80,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
+* `DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub`: for `c ≥ 0`,
+  `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
 * `TauCeti.positiveCutoff`: the cutoff of `g` near zero.
@@ -93,7 +101,7 @@ public section
 noncomputable section
 
 open Filter Set MeasureTheory
-open scoped ContDiff NNReal Topology
+open scoped ContDiff ENNReal NNReal Topology
 
 namespace expNegInvGlue
 
@@ -108,6 +116,13 @@ theorem lt_one (x : ℝ) : expNegInvGlue x < 1 := by
 both sides vanish. -/
 theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
   simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
+
+/-- On a real inner product space, the derivative of `x ↦ expNegInvGlue (‖x‖ ^ 2)` at `x` is
+`‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`, also at `x = 0`, where it vanishes. -/
+theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x : E) :
+    HasFDerivAt (fun y ↦ expNegInvGlue (‖y‖ ^ 2))
+      (((‖x‖ ^ 2)⁻¹ ^ 2 * expNegInvGlue (‖x‖ ^ 2)) • (2 • innerSL ℝ x)) x :=
+  (hasDerivAt _).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
 
 end expNegInvGlue
 
@@ -253,6 +268,32 @@ theorem lintegral_ofReal_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
 theorem lintegral_ofReal_deriv_sub_mul (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
     ∫⁻ y, ENNReal.ofReal (deriv smoothTransition (a - c * y)) = ENNReal.ofReal |c|⁻¹ := by
   simpa [sub_eq_neg_add, add_comm] using lintegral_ofReal_deriv_mul_sub (-a) (neg_ne_zero.2 hc)
+
+/-- For measurable `g` and `w`, the weight `(t, x) ↦ c ψ'(c (t - g x)) w x` built from the
+derivative of the smooth transition function `ψ` is measurable. -/
+theorem measurable_ofReal_mul_deriv_mul_sub_mul {X : Type*} [MeasurableSpace X] {g : X → ℝ}
+    {w : X → ℝ≥0∞} (hg : Measurable g) (hw : Measurable w) (c : ℝ) :
+    Measurable fun p : ℝ × X =>
+      ENNReal.ofReal (c * deriv smoothTransition (c * (p.1 - g p.2))) * w p.2 := by
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
+  fun_prop
+
+/-- Integrating the weight `c ψ'(c (t - g x)) w x` over `x` and then over the level `t` gives
+`∫ w dμ`, because `t ↦ c ψ'(c (t - a))` has total integral one for `c > 0`. -/
+theorem lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul {X : Type*} [MeasurableSpace X]
+    (μ : Measure X) [SFinite μ] {g : X → ℝ} {w : X → ℝ≥0∞} (hg : Measurable g)
+    (hw : Measurable w) {c : ℝ} (hc : 0 < c) :
+    ∫⁻ t, ∫⁻ x, ENNReal.ofReal (c * deriv smoothTransition (c * (t - g x))) * w x ∂μ =
+      ∫⁻ x, w x ∂μ := by
+  rw [lintegral_lintegral_swap (measurable_ofReal_mul_deriv_mul_sub_mul hg hw c).aemeasurable]
+  refine lintegral_congr fun x => ?_
+  have hk : ∫⁻ t, ENNReal.ofReal (c * deriv smoothTransition (c * (t - g x))) = 1 := by
+    simp_rw [ENNReal.ofReal_mul hc.le, mul_sub]
+    rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+      lintegral_ofReal_deriv_mul_sub _ hc.ne', ← ENNReal.ofReal_mul hc.le,
+      abs_of_pos hc, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
+  have _ : Measurable (deriv smoothTransition) := measurable_deriv _
+  rw [lintegral_mul_const _ (by fun_prop), hk, one_mul]
 
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
 function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
@@ -400,6 +441,17 @@ theorem HasDerivAt.smoothTransition {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDeri
   (((Real.smoothTransition.contDiff (n := 1)).differentiable (by simp)
     (f x)).hasDerivAt).comp x hf
 
+/-- If `u` is differentiable at `x` and `c ≥ 0`, the derivative of `y ↦ ψ(c (t - u y))` at `x`,
+for the smooth transition function `ψ`, has norm `c ψ'(c (t - u x)) ‖du x‖`. -/
+theorem DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {u : E → ℝ} {x : E} (hu : DifferentiableAt ℝ u x)
+    {c : ℝ} (hc : 0 ≤ c) (t : ℝ) :
+    ‖fderiv ℝ (fun y => Real.smoothTransition (c * (t - u y))) x‖ₑ =
+      ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) * ‖fderiv ℝ u x‖ₑ := by
+  rw [((hu.hasFDerivAt.const_sub t).const_mul c).smoothTransition.fderiv, smul_smul, mul_comm,
+    eNorm_smul, eNorm_neg,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+
 /-- If `u` is locally Lipschitz on `s`, then so is `ψ (c (u - t))` for the smooth transition
 function `ψ`. -/
 theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricSpace α]
@@ -475,7 +527,7 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (hcont.continuousOn (s := Icc (m / 4) m))
   refine ⟨Real.toNNReal (max C K), fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm]
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
   refine le_trans ?_ (Real.le_coe_toNNReal _)
   rcases lt_or_ge t (m / 4) with ht | ht
   · -- Below `m/4` the derivative vanishes.

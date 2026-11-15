@@ -10,13 +10,17 @@ public import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.TensorProduct.DirectLimitFG
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.Algebra.Group.Idempotent
+import TauCeti.RingTheory.Ideal.Quotient.Nilpotent
+import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Connectedness over an algebraically closed field
 
-A connected algebra over an algebraically closed field remains connected after any extension
-of that field. No finite-type or reducedness assumption on the connected algebra is needed.
+The tensor product of two connected algebras over an algebraically closed field is connected. In
+particular, a connected algebra over an algebraically closed field remains connected after any
+extension of that field. No finite-type or reducedness assumption is needed.
 
 Thus ordinary connectedness of an affine scheme over an algebraically closed field implies
 geometric connectedness. In particular, this applies to identity components of affine groups.
@@ -33,9 +37,8 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- An idempotent in a family over a reduced finite-type parameter algebra is scalar when the
-other factor has connected spectrum and the ground field is algebraically closed. -/
-theorem exists_eq_tmul_one_of_isIdempotentElem
+-- The reduced finite-type case of `exists_eq_tmul_one_of_isIdempotentElem_of_finiteType`.
+private theorem exists_eq_tmul_one_of_isIdempotentElem_of_isReduced
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B] [IsReduced B]
@@ -59,40 +62,85 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
         one_smul]
     exact h.trans (by simp [hc, Algebra.TensorProduct.one_def])
 
-/-- A connected algebra over an algebraically closed field remains connected after every field
-extension, without finite-type or reducedness assumptions. -/
-theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
-    (k A K : Type*) [Field k] [IsAlgClosed k]
+/-- The finite-type case of `IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one`. -/
+private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
+    {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
-    [Field K] [Algebra k K] : ConnectedSpace (PrimeSpectrum (A ⊗[k] K)) := by
-  suffices h : ConnectedSpace (PrimeSpectrum (K ⊗[k] A)) from
-    (PrimeSpectrum.homeomorphOfRingEquiv
-      (Algebra.TensorProduct.comm k A K).toRingEquiv).connectedSpace_iff.mpr h
+    [CommRing B] [Algebra k B] [Algebra.FiniteType k B]
+    {e : B ⊗[k] A} (he : IsIdempotentElem e) :
+    ∃ c : B, IsIdempotentElem c ∧ e = c ⊗ₜ[k] (1 : A) := by
   let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  let : Nontrivial (K ⊗[k] A) :=
-    Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left k K A
+  let q : B →ₐ[k] B ⧸ nilradical B := Ideal.Quotient.mkₐ k (nilradical B)
+  have hq : Function.Surjective q := Ideal.Quotient.mkₐ_surjective k _
+  have hqker : RingHom.ker q = nilradical B := Ideal.Quotient.mkₐ_ker k _
+  let G := Algebra.TensorProduct.map q (AlgHom.id k A)
+  -- the kernel of `G` is the extension of the nilradical, which consists of nilpotents
+  have hker : ∀ x ∈ RingHom.ker G, IsNilpotent x := fun x hx ↦ by
+    rw [Algebra.TensorProduct.rTensor_ker q hq, hqker] at hx
+    simpa only [← mem_nilradical, nilradical, Ideal.zero_eq_bot, Ideal.map_bot] using
+      (⊥ : Ideal B).map_radical_le (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A) hx
+  obtain ⟨cb, hcb⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_isReduced (he.map G)
+  have hcbid : IsIdempotentElem cb :=
+    (IsIdempotentElem.map_iff (Algebra.TensorProduct.includeLeft_injective (S := k) (B := A)
+      (algebraMap k A).injective)).mp
+      (by rw [Algebra.TensorProduct.includeLeft_apply, ← hcb]; exact he.map G)
+  obtain ⟨c, hc, hcq⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent (q : B →+* _)
+    (fun x hx ↦ by simpa [mem_nilradical] using (hqker ▸ hx : x ∈ nilradical B)) cb
+    (RingHom.mem_range.mpr (hq cb)) hcbid
+  refine ⟨c, hc, eq_of_isNilpotent_sub_of_isIdempotentElem he ?_ (hker _ ?_)⟩
+  · simpa using hc.map (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A)
+  · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
+    simp [G, ← hcq]
+
+/-- In the tensor product `B ⊗[k] A` of commutative algebras over an algebraically closed field `k`
+with `PrimeSpectrum A` preconnected, every idempotent has the form `c ⊗ₜ 1` for an idempotent
+`c : B`. -/
+theorem _root_.IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one
+    {k A B : Type*} [Field k] [IsAlgClosed k]
+    [CommRing A] [Algebra k A] [PreconnectedSpace (PrimeSpectrum A)]
+    [CommRing B] [Algebra k B]
+    {e : B ⊗[k] A} (he : IsIdempotentElem e) :
+    ∃ c : B, IsIdempotentElem c ∧ e = c ⊗ₜ[k] (1 : A) := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · exact ⟨0, .zero, Subsingleton.elim _ _⟩
+  have : ConnectedSpace (PrimeSpectrum A) :=
+    ⟨PrimeSpectrum.nonempty_iff_nontrivial.mpr hA⟩
+  -- the idempotent comes from a finitely generated subalgebra `B'` of `B`, into which tensoring
+  -- over the field embeds injectively, so the finite-type case applies
+  obtain ⟨B', hB', x, hx⟩ := TensorProduct.Algebra.exists_of_fg e
+  let : Algebra.FiniteType k B' := B'.fg_iff_finiteType.mp hB'
+  let F := Algebra.TensorProduct.map B'.val (AlgHom.id k A)
+  have hFlin (y : B' ⊗[k] A) : F y = B'.val.toLinearMap.rTensor A y :=
+    (AlgHom.rTensor_toLinearMap_apply A B'.val y).symm
+  have hlin : Function.Injective (B'.val.toLinearMap.rTensor A) :=
+    Module.Flat.rTensor_preserves_injective_linearMap B'.val.toLinearMap Subtype.val_injective
+  have hF : Function.Injective F := fun a b h ↦
+    hlin ((hFlin a).symm.trans (h.trans (hFlin b)))
+  have hxe : F x = e := (hFlin x).trans hx
+  obtain ⟨c, hc, hcx⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_finiteType (A := A) (e := x)
+    ((IsIdempotentElem.map_iff hF).mp (by rwa [hxe]))
+  have hec : e = (c : B) ⊗ₜ[k] (1 : A) := by rw [← hxe, hcx]; simp [F]
+  exact ⟨c, hc.map B'.val, hec⟩
+
+/-- The tensor product of two connected algebras over an algebraically closed field has connected
+spectrum. -/
+theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
+    (k A B : Type*) [Field k] [IsAlgClosed k]
+    [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
+    [CommRing B] [Algebra k B] [ConnectedSpace (PrimeSpectrum B)] :
+    ConnectedSpace (PrimeSpectrum (A ⊗[k] B)) := by
+  suffices h : ConnectedSpace (PrimeSpectrum (B ⊗[k] A)) from
+    (PrimeSpectrum.homeomorphOfRingEquiv
+      (Algebra.TensorProduct.comm k A B).toRingEquiv).connectedSpace_iff.mpr h
+  let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let : Nontrivial B := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let : Nontrivial (B ⊗[k] A) :=
+    Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left k B A
       (FaithfulSMul.algebraMap_injective k A)
   apply connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr
   intro e he
-  obtain ⟨B, hB, x, hx⟩ := TensorProduct.Algebra.exists_of_fg e
-  let : Algebra.FiniteType k B := B.fg_iff_finiteType.mp hB
-  let F := Algebra.TensorProduct.map B.val (AlgHom.id k A)
-  have hF : Function.Injective F :=
-    Module.Flat.rTensor_preserves_injective_linearMap B.val.toLinearMap Subtype.val_injective
-  have hxe : F x = e := hx
-  have hxid : IsIdempotentElem x := by
-    apply hF
-    simpa only [map_mul, hxe] using he.eq
-  obtain ⟨c, hc⟩ := exists_eq_tmul_one_of_isIdempotentElem hxid
-  have hec : e = (c : K) ⊗ₜ[k] (1 : A) := by
-    rw [← hxe, hc]
-    simp [F]
-  have hinj : Function.Injective (Algebra.TensorProduct.includeLeft : K →ₐ[k] K ⊗[k] A) :=
-    (Algebra.TensorProduct.includeLeft : K →ₐ[k] K ⊗[k] A).injective
-  have hcid : IsIdempotentElem (c : K) := by
-    apply hinj
-    simpa only [map_mul, Algebra.TensorProduct.includeLeft_apply, ← hec] using he.eq
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcid with h | h <;>
+  obtain ⟨c, hcid, hec⟩ := he.exists_isIdempotentElem_eq_tmul_one
+  rcases hcid.eq_zero_or_eq_one_of_preconnectedSpace with h | h <;>
     simp [hec, h, Algebra.TensorProduct.one_def]
 
 end TauCeti

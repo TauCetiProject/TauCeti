@@ -38,7 +38,7 @@ F (x_i(u)) = x_{γ i}(u ^ q),
 
 where `γ` is the diagram permutation already attached to the index: the identity on `A_r(q)`, and
 on `²A_r(q)` the reversal `i ↦ i.rev` of the zero-based Bourbaki numbering. Finally,
-`TauCeti.TypeALieIndex.Group d` applies the roadmap's fixed-points, derived-subgroup, and
+`TauCeti.TypeALieIndex.Group d` applies the fixed-points, derived-subgroup, and
 central-quotient recipe to this endomorphism.
 
 The Steinberg map is also split back into its two factors. `TauCeti.TypeALieIndex.frobenius` is the
@@ -50,7 +50,7 @@ and the two factorizations
 ```text
 F = γ ∘ Frob_q = Frob_q ∘ γ
 ```
-carry the relations that milestone L1 asks of a graph-twisted Steinberg map: the twist order of the
+carry the relations of a graph-twisted Steinberg map: the twist order of the
 diagram permutation `γ` realizes annihilates `γ`, that is `γ = 1` on `A_r(q)` and `γ ^ 2 = 1` on
 `²A_r(q)`, and `γ` commutes with the Frobenius. Its exact order is not proved here.
 
@@ -58,8 +58,8 @@ The branch equations `steinberg_ofA` and `steinberg_ofTwistedA` name the Steinbe
 family as `TauCeti.SlStd.frobenius` and `TauCeti.SlStd.twistedFrobenius` outright, so the upstream
 results about those maps apply to `d.steinberg` directly and are not restated here. The upstream
 lemmas include the commutation `TauCeti.SlStd.graphAutomorphismPoints_comp_frobenius` and the
-involution equation `TauCeti.SlStd.graphAutomorphismPoints_graphAutomorphismPoints` required by
-milestone L1. Separately, `TauCeti.SlStd.twistedFrobenius_comp_self` supplies the square relation
+involution equation `TauCeti.SlStd.graphAutomorphismPoints_graphAutomorphismPoints` of the graph
+factor. Separately, `TauCeti.SlStd.twistedFrobenius_comp_self` supplies the square relation
 for the composite Steinberg map. The fixed-point identification
 `TauCeti.SlStd.map_subtype_fixedSubgroup_frobenius_eq` and the containment
 `TauCeti.SlStd.map_subtype_fixedSubgroup_twistedFrobenius_le` are available in the same way. The
@@ -108,10 +108,6 @@ constructed group is finite or simple.
 * R. W. Carter, *Simple Groups of Lie Type*, Chapters 2 and 14.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-* The target signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, the Steinberg map and its pinned equation `x_i(u) ↦ x_{γ i}(u ^ q)`, the fixed points,
-  and the derived central quotient, all taken on a validated-index subtype.
 -/
 
 public section
@@ -347,8 +343,8 @@ theorem graphAut_mul_self (d : TypeALieIndex) : d.graphAut * d.graphAut = 1 :=
   MulEquiv.ext fun g => by rw [MulAut.mul_apply, graphAut_graphAut, MulAut.one_apply]
 
 /-- **The twist order of a type-A index annihilates its graph automorphism**, so `γ = 1` on
-`A_r(q)` and `γ ^ 2 = 1` on `²A_r(q)`. This is the order relation milestone L1 asks of the graph
-factor of a Steinberg map, and it matches `TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder` on
+`A_r(q)` and `γ ^ 2 = 1` on `²A_r(q)`. This is the order relation of the graph factor of a
+Steinberg map, and it matches `TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder` on
 the diagram permutation that `γ` realizes. -/
 @[simp]
 theorem graphAut_pow_twistOrder (d : TypeALieIndex) :
@@ -367,7 +363,7 @@ theorem graphAut_frobenius (d : TypeALieIndex) (g : d.AmbientGroup) :
   · rw [graphAut_ofTwistedA, TypeALieIndex.frobenius, SlStd.graphAutomorphismPoints_frobenius]
 
 /-- The graph automorphism commutes with the Frobenius, as an identity of endomorphisms. This is
-the relation `γ ∘ Frob_q = Frob_q ∘ γ` required of the graph-twisted families by milestone L1. -/
+the relation `γ ∘ Frob_q = Frob_q ∘ γ` of the graph-twisted families. -/
 theorem graphAut_comp_frobenius (d : TypeALieIndex) :
     d.graphAut.toMonoidHom.comp d.frobenius = d.frobenius.comp d.graphAut.toMonoidHom :=
   MonoidHom.ext fun g => by
