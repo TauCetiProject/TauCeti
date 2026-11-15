@@ -348,6 +348,11 @@ theorem φ_of_fIter_eq_some (h : c.fIter i n x = some y) : c.φ i y + n = c.φ i
   rw [← dual_eIter] at h
   simpa using c.dual.ε_of_eIter_eq_some h
 
+/-- At most `φ i x` lowering steps can be taken from `x`. -/
+theorem le_φ_of_fIter_eq_some (h : c.fIter i n x = some y) : n ≤ c.φ i x := by
+  have := c.φ_of_fIter_eq_some h
+  omega
+
 /-- **String identity for lowering**: `f i ^ n x` is defined exactly when `n ≤ φ i x`. -/
 @[simp]
 theorem isSome_fIter_iff : (c.fIter i n x).isSome ↔ n ≤ c.φ i x := by
