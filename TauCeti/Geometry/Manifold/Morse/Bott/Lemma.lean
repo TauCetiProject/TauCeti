@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Morse–Bott lemma on a manifold
@@ -122,42 +124,20 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).mp hfx
   have hga : ContDiffAt ℝ 2 (f ∘ (e.extend I).symm ∘ L) (a, 0) :=
     hQ2.comp (a, 0) L.contDiff.contDiffAt
-  -- The Hessian at `(a, 0)` is the critical Hessian at `i s` read through `N = T⁻¹ ∘ L`, where
-  -- `T` is the derivative of the chart.
-  obtain ⟨T, hT⟩ : (mvfderiv I (e.extend I) (i s)).IsInvertible := by
-    unfold mvfderiv
-    exact ContinuousLinearMap.IsInvertible.comp
-      ⟨NormedSpace.fromTangentSpace (e.extend I (i s)), rfl⟩ (isInvertible_mfderiv_extend he1 hx)
-  let N := L.toLinearEquiv.trans T.symm.toLinearEquiv
-  -- In the chart, the critical Hessian is the Hessian of `f ∘ (e.extend I).symm` read through `T`.
-  have hchart (v w : E) : criticalHessian I f (i s) (T.symm v) (T.symm w) =
-      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0)) v w := by
-    have h := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hfx hcritx (T.symm v) (T.symm w)
-    simpa only [← hT, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-      hxL] using h
-  -- Composing with the linear map `L` at a critical point composes the Hessian with `L`.
+  -- Composing with the linear map `L` at a critical point composes the Hessian with `L`, so `L`
+  -- is an isometry between the two Hessians.
   have hlin (z z' : E' × F) : fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0) z z' =
       fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0)) (L z) (L z') := by
     have h := fderiv_fderiv_comp_apply_of_fderiv_eq_zero hQ2 L.contDiff.contDiffAt hQ0 z z'
     simp only [L.fderiv, ContinuousLinearEquiv.coe_coe] at h
     exact h
-  have hHess (z z' : E' × F) : fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0) z z' =
-      criticalHessian I f (i s) (N z) (N z') := by
-    simp only [N, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv, hlin, hchart]
-  have hcomap : (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0)).ker =
-      (criticalHessian I f (i s)).ker.comap N.toLinearMap := by
-    ext z
-    simp only [LinearMap.mem_ker, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-      LinearEquiv.coe_coe]
-    constructor
-    · refine fun hz ↦ ContinuousLinearMap.ext fun v ↦ ?_
-      obtain ⟨z', rfl⟩ := N.surjective v
-      have hzz' := congr($hz z')
-      rw [hHess] at hzz'
-      simpa using hzz'
-    · refine fun hz ↦ ContinuousLinearMap.ext fun z' ↦ ?_
-      rw [hHess]
-      simpa using congr($hz (N z'))
+  let ι : (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0)).toBilinForm.IsometryEquiv
+      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0))).toBilinForm :=
+    ⟨L.toLinearEquiv, fun z z' ↦ (hlin z z').symm⟩
+  have hker : Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0)).ker =
+      Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0))).ker := by
+    rw [← ContinuousLinearMap.ker_toBilinForm, ← ContinuousLinearMap.ker_toBilinForm, ← ι.map_ker,
+      LinearEquiv.finrank_map_eq]
   -- The base directions lie in the kernel, which has the dimension of `S`.
   have hrange : LinearMap.range (LinearMap.inl ℝ E' F) ≤
       (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0)).ker := by
@@ -165,7 +145,8 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     exact fderiv_fderiv_apply_inl_eq_zero hga hcrit u
   have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
   refine (Submodule.eq_of_le_of_finrank_le hrange ?_).ge
-  rw [hcomap, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq,
+  -- By the isometry `L`, the kernel has the dimension of the kernel of the critical Hessian.
+  rw [hker, ← hxL, ← finrank_ker_criticalHessian_eq_of_mem_maximalAtlas he hx hfx hcritx,
     hi.ker_criticalHessian hn s, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
   exact (LinearMap.finrank_range_of_inj (i.isImmersion.mfderiv_injective hn s)).le
 
