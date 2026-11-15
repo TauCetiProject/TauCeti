@@ -92,14 +92,14 @@ private theorem map_transitionRepHom_comp (hVU : V ≤ U) (n : ℕ) :
       exact (continuousFiniteQuotientMap_mk G hVU g).trans (QuotientGroup.mapOfLE_mk hVU g).symm
   · -- Every map in both composites is the identity on the underlying elements of `M`.
     refine LinearMap.ext fun m ↦ Subtype.ext ?_
-    simp only [Rep.hom_comp, Representation.IntertwiningMap.coe_toLinearMap,
-      Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply]
-    have hTP := LinearMap.congr_fun (transitionPair_hom_toLinearMap (Rep.ofDistribMulAction ℤ G M)
-      hVU) ((ofDistribMulActionFixedPointsIso M U.toSubgroup).hom.hom m)
+    simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+      LinearMap.coe_comp, Function.comp_apply, transitionPair_hom_toLinearMap,
+      invariantsInclusion_apply_coe]
+    -- `simp` cannot use `ofDistribMulActionFixedPointsIso_hom_hom_apply_coe` here, since `m` lives
+    -- in the carrier of a restricted representation, so the remaining steps are applied directly.
     exact (ofDistribMulActionFixedPointsIso_hom_hom_apply_coe M V.toSubgroup _).trans
       ((coe_fixedPointsInclusion hVU m).trans
-        ((ofDistribMulActionFixedPointsIso_hom_hom_apply_coe M U.toSubgroup m).symm.trans
-          ((invariantsInclusion_apply_coe _ hVU _).symm.trans (congrArg Subtype.val hTP).symm)))
+        (ofDistribMulActionFixedPointsIso_hom_hom_apply_coe M U.toSubgroup m).symm)
 
 /-- The degree-zero comparisons with `groupCohomology` carry the explicit finite-quotient transition
 to `TauCeti.finiteLevelTransition`. Not `@[simp]`: `simp` first unfolds the comparison by
