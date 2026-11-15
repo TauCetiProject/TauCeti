@@ -6,41 +6,38 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Hadamard.OrderOne
-import Mathlib.Analysis.Complex.RemovableSingularity
-import TauCeti.Analysis.Analytic.Order
-import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import TauCeti.Analysis.Complex.ExtractZeros
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 
 /-!
 # Hadamard factorization at order at most one with a zero at the origin
 
 For a nonzero entire function `f : ℂ → ℂ` of order at most one that may vanish at the origin, let
-`m = (analyticOrderAt f 0).toNat` be its finite order of vanishing at `0`. Iterated divided
-differences `dslope` factor `f` globally on `ℂ` as `f z = z ^ m * g z`, where `g` is entire,
-`g 0 = iteratedDeriv m f 0 / m! ≠ 0`, and `OrderLE g 1` holds because `‖g z‖ ≤ ‖f z‖` for
-`‖z‖ ≥ 1`.
+`m = (analyticOrderAt f 0).toNat` be its finite order of vanishing at `0`. By
+`Differentiable.exists_eq_pow_mul` and `TauCeti.OrderLE.of_eq_pow_mul`, `f` factors globally on `ℂ`
+as `f z = z ^ m * g z`, where `g` is entire, `g 0 = iteratedDeriv m f 0 / m! ≠ 0`, and
+`OrderLE g 1`.
 
 Applying `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` to `g` yields
 `f z = z ^ m * exp (a + b * z) * divisorProductOne f z`: away from `0` the whole-plane divisor of
-`g` coincides with that of `f`, while at `ρ = 0` the totalized factor `E₁(0⁻¹ * z) = E₁(0) = 1`
-leaves `divisorProductOne f = divisorProductOne g` unchanged. Equivalently, the canonical genus-one
-product runs over the nonzero complex plane `{ρ : ℂ // ρ ≠ 0}` (or over the nonzero divisor support
-`{ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}`) with locally uniform convergence
-on `ℂ`.
+`g` coincides with that of `f` (`AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne`), while at
+`ρ = 0` the totalized factor `E₁(0⁻¹ * z) = E₁(0) = 1` leaves
+`divisorProductOne f = divisorProductOne g` unchanged. Equivalently, the canonical genus-one product
+runs over the nonzero complex plane `{ρ : ℂ // ρ ≠ 0}` (or over the nonzero divisor support
+`{ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}`) with pointwise and locally
+uniform convergence on `ℂ`.
 
 ## Main results
 
-* `Differentiable.exists_eq_sub_pow_smul` and `Differentiable.exists_eq_sub_pow_mul`: global entire
-  factorization `f z = (z - z₀) ^ m • g z` with `g` entire and `g z₀ ≠ 0` at any finite-order point
-  `z₀ : ℂ`.
-* `TauCeti.OrderLE.of_eq_sub_pow_mul`: dividing an entire function by `(z - z₀) ^ m` preserves
-  `OrderLE · A` at every real exponent `A`.
-* `TauCeti.divisorProductOne_eq_of_eq_pow_mul` and `TauCeti.divisorProductOne_eq_tprod_ne_zero`:
-  invariance of `divisorProductOne` under factoring out `z ^ m`, and restriction of the product to
-  nonzero points.
-* `TauCeti.OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne` and
-  `TauCeti.hadamard_of_orderLE_one_of_ne_zero`: Hadamard factorization for any nonzero entire
-  function of order at most one, allowing a zero at the origin.
+* `TauCeti.divisorProductOne_eq_tprod_ne_zero` and `TauCeti.divisorProductOne_eq_of_eq_pow_mul`:
+  restriction of `divisorProductOne` to `{ρ : ℂ // ρ ≠ 0}` and invariance under factoring out
+  `z ^ m`.
+* `TauCeti.OrderLE.hasProd_divisorProductOne_ne_zero` and
+  `TauCeti.OrderLE.hasProdLocallyUniformlyOn_divisorProductOne_ne_zero`: pointwise and locally
+  uniform convergence of the nonzero genus-one divisor product for entire functions of order less
+  than two.
+* `TauCeti.OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne`: Hadamard factorization for any
+  nonzero entire function of order at most one, allowing a zero at the origin.
 
 ## References
 
@@ -50,139 +47,21 @@ on `ℂ`.
 
 public section
 
-open Complex Filter Metric Topology Bornology Asymptotics
+open Complex Filter Metric Topology
 open scoped BigOperators
-
-section EntireZeroExtraction
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-
-/-- The divided difference `dslope f z₀` of an entire function `f : ℂ → E` is entire. -/
-theorem Differentiable.dslope {f : ℂ → E} (hf : Differentiable ℂ f) (z₀ : ℂ) :
-    Differentiable ℂ (_root_.dslope f z₀) :=
-  differentiableOn_univ.mp ((Complex.differentiableOn_dslope Filter.univ_mem).mpr
-    hf.differentiableOn)
-
-/-- An entire function `f : ℂ → E` of finite analytic order `m` at `z₀` factors globally on `ℂ` as
-`f z = (z - z₀) ^ m • g z`, where `g` is entire, `g z₀ ≠ 0`, and
-`m! • g z₀ = iteratedDeriv m f z₀`. -/
-theorem Differentiable.exists_eq_sub_pow_smul {f : ℂ → E} (hf : Differentiable ℂ f) {z₀ : ℂ}
-    {m : ℕ} (hm : analyticOrderAt f z₀ = (m : ℕ∞)) :
-    ∃ g : ℂ → E, Differentiable ℂ g ∧ g z₀ ≠ 0 ∧ m.factorial • g z₀ = iteratedDeriv m f z₀ ∧
-      ∀ z : ℂ, f z = (z - z₀) ^ m • g z := by
-  suffices h : ∃ g : ℂ → E, Differentiable ℂ g ∧ g z₀ ≠ 0 ∧
-      ∀ z : ℂ, f z = (z - z₀) ^ m • g z by
-    obtain ⟨g, hg, hg0, hfg⟩ := h
-    refine ⟨g, hg, hg0, ?_, hfg⟩
-    have hfun : f = fun z ↦ (z - z₀) ^ m • g z := funext hfg
-    rw [hfun, TauCeti.iteratedDeriv_pow_sub_smul_self (hg.analyticAt z₀).contDiffAt]
-  induction m generalizing f with
-  | zero =>
-    have hf0 : f z₀ ≠ 0 := (hf.analyticAt z₀).analyticOrderAt_eq_zero.mp (by simpa using hm)
-    exact ⟨f, hf, hf0, fun z ↦ by simp⟩
-  | succ m ih =>
-    have hfz : f z₀ = 0 := by
-      by_contra hne
-      have h0 : analyticOrderAt f z₀ = 0 := (hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hne
-      rw [h0] at hm
-      exact Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m) hm.symm
-    have hd : Differentiable ℂ (_root_.dslope f z₀) := hf.dslope z₀
-    have hord_add : analyticOrderAt (_root_.dslope f z₀) z₀ + 1 = ((m + 1 : ℕ) : ℕ∞) :=
-      ((hf.analyticAt z₀).analyticOrderAt_dslope_add_one hfz).trans hm
-    have hord : analyticOrderAt (_root_.dslope f z₀) z₀ = (m : ℕ∞) := by
-      cases ho : analyticOrderAt (_root_.dslope f z₀) z₀ with
-      | top =>
-        rw [ho, top_add] at hord_add
-        exact absurd hord_add (ENat.top_ne_natCast (m + 1))
-      | coe k =>
-        rw [ho] at hord_add
-        have hk : k + 1 = m + 1 := by exact_mod_cast hord_add
-        exact congrArg Nat.cast (Nat.succ.inj hk)
-    obtain ⟨g, hg, hg0, hfg⟩ := ih hd hord
-    refine ⟨g, hg, hg0, fun z ↦ ?_⟩
-    calc f z = (z - z₀) • _root_.dslope f z₀ z := (sub_smul_dslope_of_zero hfz z).symm
-      _ = (z - z₀) • ((z - z₀) ^ m • g z) := by rw [hfg z]
-      _ = (z - z₀) ^ (m + 1) • g z := by rw [pow_succ', mul_smul]
-
-end EntireZeroExtraction
-
-/-- A scalar entire function `f : ℂ → ℂ` of finite analytic order `m` at `z₀` factors globally on
-`ℂ` as `f z = (z - z₀) ^ m * g z`, with `g` entire, `g z₀ ≠ 0`, and
-`g z₀ = iteratedDeriv m f z₀ / m!`. -/
-theorem Differentiable.exists_eq_sub_pow_mul {f : ℂ → ℂ} (hf : Differentiable ℂ f) {z₀ : ℂ}
-    {m : ℕ} (hm : analyticOrderAt f z₀ = (m : ℕ∞)) :
-    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ g z₀ ≠ 0 ∧
-      g z₀ = iteratedDeriv m f z₀ / (m.factorial : ℂ) ∧
-      ∀ z : ℂ, f z = (z - z₀) ^ m * g z := by
-  obtain ⟨g, hg, hg0, hder, hfg⟩ := hf.exists_eq_sub_pow_smul hm
-  refine ⟨g, hg, hg0, ?_, fun z ↦ by simpa only [smul_eq_mul] using hfg z⟩
-  have hfac : (m.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr m.factorial_ne_zero
-  rw [← hder, nsmul_eq_mul, mul_div_cancel_left₀ _ hfac]
-
-/-- A nonzero entire function `f : ℂ → ℂ` has finite analytic order at every point `z₀ : ℂ`. -/
-theorem Differentiable.analyticOrderAt_ne_top {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (hf0 : f ≠ 0) (z₀ : ℂ) : analyticOrderAt f z₀ ≠ ⊤ :=
-  (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero z₀ (fun z ↦ hf.analyticAt z)).not.mpr hf0
-
-/-- A nonzero entire function `f : ℂ → ℂ` factors at the origin as
-`f z = z ^ (analyticOrderAt f 0).toNat * g z`, with `g` entire and `g 0 ≠ 0`. -/
-theorem Differentiable.exists_eq_pow_mul {f : ℂ → ℂ} (hf : Differentiable ℂ f) (hf0 : f ≠ 0) :
-    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ g 0 ≠ 0 ∧
-      g 0 = iteratedDeriv (analyticOrderAt f 0).toNat f 0 /
-        ((analyticOrderAt f 0).toNat.factorial : ℂ) ∧
-      ∀ z : ℂ, f z = z ^ (analyticOrderAt f 0).toNat * g z := by
-  have htop : analyticOrderAt f 0 ≠ ⊤ := hf.analyticOrderAt_ne_top hf0 0
-  obtain ⟨g, hg, hg0, hder, hfg⟩ :=
-    hf.exists_eq_sub_pow_mul (z₀ := 0) (m := (analyticOrderAt f 0).toNat)
-      (ENat.natCast_toNat htop).symm
-  exact ⟨g, hg, hg0, hder, fun z ↦ by simpa only [sub_zero] using hfg z⟩
 
 namespace TauCeti
 
 variable {f g : ℂ → ℂ}
 
-/-- Dividing a function of order at most `A` by `(z - z₀) ^ m` preserves `OrderLE · A`, because
-`‖g z‖ ≤ ‖f z‖` whenever `‖z - z₀‖ ≥ 1`. -/
-theorem OrderLE.of_eq_sub_pow_mul {A : ℝ} (h : OrderLE f A) {z₀ : ℂ} {m : ℕ}
-    (hfg : ∀ z : ℂ, f z = (z - z₀) ^ m * g z) : OrderLE g A := by
-  refine (IsBigO.of_bound 1 ?_).orderLE h
-  filter_upwards [eventually_cobounded_le_norm (‖z₀‖ + 1)] with z hz
-  have hsub : 1 ≤ ‖z - z₀‖ := by
-    have htri := norm_sub_norm_le z z₀
-    linarith
-  have hpow : 1 ≤ ‖z - z₀‖ ^ m := one_le_pow₀ hsub
-  rw [one_mul, hfg z, norm_mul, norm_pow]
-  exact le_mul_of_one_le_left (norm_nonneg _) hpow
-
-/-- Dividing a function of order at most `A` by `z ^ m` preserves `OrderLE · A`. -/
-theorem OrderLE.of_eq_pow_mul {A : ℝ} (h : OrderLE f A) {m : ℕ}
-    (hfg : ∀ z : ℂ, f z = z ^ m * g z) : OrderLE g A :=
-  h.of_eq_sub_pow_mul (z₀ := 0) fun z ↦ by simpa only [sub_zero] using hfg z
-
-/-- If `f z = (z - z₀) ^ m * g z` with `g` entire and `g z₀ ≠ 0`, the whole-plane divisor of `g`
-agrees with that of `f` away from `z₀` and vanishes at `z₀`. -/
-theorem divisor_eq_update_of_eq_sub_pow_mul (hg : Differentiable ℂ g) {z₀ : ℂ} (hg0 : g z₀ ≠ 0)
-    {m : ℕ} (hfg : ∀ z : ℂ, f z = (z - z₀) ^ m * g z) (w : ℂ) :
-    MeromorphicOn.divisor g Set.univ w =
-      if w = z₀ then 0 else MeromorphicOn.divisor f Set.univ w := by
-  split_ifs with hw
-  · subst hw
-    exact (hg.analyticAt w).divisor_apply_eq_zero hg0
-  · have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ by
-      rw [funext hfg]
-      exact (((analyticAt_id.sub analyticAt_const).pow m).mul (hg.analyticAt z))
-    have hga : AnalyticOnNhd ℂ g Set.univ := fun z _ ↦ hg.analyticAt z
-    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hga.meromorphicOn (hga w trivial)
-      (Set.mem_univ w),
-      MeromorphicOn.divisor_eq_analyticOrderNatAt hfa.meromorphicOn (hfa w trivial)
-      (Set.mem_univ w), analyticOrderNatAt, analyticOrderNatAt]
-    have hpow_an : AnalyticAt ℂ (fun z : ℂ ↦ (z - z₀) ^ m) w := by fun_prop
-    have hpow_ne : (w - z₀) ^ m ≠ 0 := pow_ne_zero m (sub_ne_zero.mpr hw)
-    have hmul_eq : f = (fun z ↦ (z - z₀) ^ m) * g := funext hfg
-    have hord : analyticOrderAt f w = analyticOrderAt g w := by
-      rw [hmul_eq, analyticOrderAt_mul hpow_an (hg.analyticAt w),
-        hpow_an.analyticOrderAt_eq_zero.mpr hpow_ne, zero_add]
-    rw [hord]
+private theorem mulSupport_weierstrassFactorOne_pow_subset_ne_zero (f : ℂ → ℂ) (z : ℂ) :
+    Function.mulSupport (fun ρ : ℂ ↦
+      weierstrassFactorOne (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat) ⊆
+      {ρ : ℂ | ρ ≠ 0} := by
+  intro ρ hρ
+  rw [Set.mem_ofPred_eq]
+  rintro rfl
+  exact hρ (by simp)
 
 /-- Extending the genus-one divisor product over `{ρ : ℂ // ρ ≠ 0}` leaves `divisorProductOne f`
 unchanged, because the totalized factor at `ρ = 0` is `E₁(0⁻¹ * z) = 1`. -/
@@ -190,26 +69,35 @@ theorem divisorProductOne_eq_tprod_ne_zero (f : ℂ → ℂ) (z : ℂ) :
     divisorProductOne f z = ∏' ρ : {ρ : ℂ // ρ ≠ 0},
       weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   rw [divisorProductOne_eq_tprod]
-  refine (tprod_subtype_eq_of_mulSupport_subset (s := {ρ : ℂ | ρ ≠ 0}) ?_).symm
-  intro ρ hρ
-  rw [Set.mem_ofPred_eq]
-  rintro rfl
-  exact hρ (by simp)
+  exact (tprod_subtype_eq_of_mulSupport_subset
+    (mulSupport_weierstrassFactorOne_pow_subset_ne_zero f z)).symm
 
 /-- Factoring out `z ^ m` from an entire function leaves `divisorProductOne` unchanged. -/
-theorem divisorProductOne_eq_of_eq_pow_mul (hg : Differentiable ℂ g) (hg0 : g 0 ≠ 0)
+theorem divisorProductOne_eq_of_eq_pow_mul (hg : Differentiable ℂ g)
     {m : ℕ} (hfg : ∀ z : ℂ, f z = z ^ m * g z) :
     divisorProductOne f = divisorProductOne g := by
+  have hga : AnalyticOnNhd ℂ g Set.univ := Complex.analyticOnNhd_univ_iff_differentiable.mpr hg
   funext z
   rw [divisorProductOne_eq_tprod_ne_zero, divisorProductOne_eq_tprod_ne_zero]
   refine tprod_congr fun ρ ↦ ?_
-  have hd := divisor_eq_update_of_eq_sub_pow_mul hg hg0
-    (fun w ↦ by simpa only [sub_zero] using hfg w) ρ.1
-  rw [hd, ite_eq_right ρ.2]
+  rw [hga.divisor_eq_of_eq_sub_pow_smul_of_ne
+    (fun w ↦ by simpa only [sub_zero, smul_eq_mul] using hfg w) ρ.2]
+
+/-- Pointwise convergence on `ℂ` of the genus-one canonical product over `{ρ : ℂ // ρ ≠ 0}` for any
+entire function `f` of order less than two. -/
+theorem OrderLE.hasProd_divisorProductOne_ne_zero {A : ℝ}
+    (h : OrderLE f A) (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
+    HasProd (fun ρ : {ρ : ℂ // ρ ≠ 0} ↦
+      weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^
+        (MeromorphicOn.divisor f Set.univ ρ).toNat)
+      (divisorProductOne f z) :=
+  (hasProd_subtype_iff_of_mulSupport_subset
+    (mulSupport_weierstrassFactorOne_pow_subset_ne_zero f z)).mpr
+    (hasProd_divisorProductOne (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z)
 
 /-- Locally uniform convergence on `ℂ` of the genus-one canonical product over the nonzero divisor
-support `{ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}` for any nonzero entire
-function `f` of order less than two. -/
+support `{ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}` for any entire function
+`f` of order less than two. -/
 theorem OrderLE.hasProdLocallyUniformlyOn_divisorProductOne_ne_zero {A : ℝ}
     (h : OrderLE f A) (hf : Differentiable ℂ f) (hA : A < 2) :
     HasProdLocallyUniformlyOn
@@ -254,55 +142,9 @@ theorem OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne (h : OrderLE f 1)
   have hg_ord : OrderLE g 1 := h.of_eq_pow_mul hfg
   obtain ⟨a, ha, hga⟩ := hg_ord.exists_eq_cexp_mul_divisorProductOne hg hg0
   have hprod : divisorProductOne f = divisorProductOne g :=
-    divisorProductOne_eq_of_eq_pow_mul hg hg0 hfg
+    divisorProductOne_eq_of_eq_pow_mul hg hfg
   refine ⟨a, logDeriv g 0, ha.trans hg_der, fun z ↦ ?_⟩
   rw [hfg z, hga z, hprod, mul_assoc]
-
-/-- **Hadamard's theorem at order at most one for any nonzero entire function**, expressed over the
-nonzero complex plane `{ρ : ℂ // ρ ≠ 0}` together with locally uniform convergence of the nonzero
-divisor product on `ℂ`. -/
-theorem hadamard_of_orderLE_one_of_ne_zero (h : OrderLE f 1) (hf : Differentiable ℂ f)
-    (hf0 : f ≠ 0) :
-    ∃ a b : ℂ,
-      exp a = iteratedDeriv (analyticOrderAt f 0).toNat f 0 /
-        ((analyticOrderAt f 0).toNat.factorial : ℂ) ∧
-      HasProdLocallyUniformlyOn
-        (fun (ρ : {ρ : (MeromorphicOn.divisor f Set.univ).support // (ρ : ℂ) ≠ 0}) z ↦
-          weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^
-            (MeromorphicOn.divisor f Set.univ ρ.1).toNat)
-        (divisorProductOne f) Set.univ ∧
-      ∀ s : ℂ,
-        Multipliable (fun ρ : {ρ : ℂ // ρ ≠ 0} ↦
-          weierstrassFactorOne ((ρ : ℂ)⁻¹ * s) ^
-            (MeromorphicOn.divisor f Set.univ ρ).toNat) ∧
-        f s = s ^ (analyticOrderAt f 0).toNat * exp (a + b * s) *
-          ∏' ρ : {ρ : ℂ // ρ ≠ 0},
-            weierstrassFactorOne ((ρ : ℂ)⁻¹ * s) ^
-              (MeromorphicOn.divisor f Set.univ ρ).toNat := by
-  obtain ⟨g, hg, hg0, hg_der, hfg⟩ := hf.exists_eq_pow_mul hf0
-  have hg_ord : OrderLE g 1 := h.of_eq_pow_mul hfg
-  have hg_sum := hg_ord.summable_divisor_toNat_mul_norm_inv_sq hg (by norm_num)
-  obtain ⟨a, ha, hga⟩ := hg_ord.exists_eq_cexp_mul_divisorProductOne hg hg0
-  have hprod_eq : divisorProductOne f = divisorProductOne g :=
-    divisorProductOne_eq_of_eq_pow_mul hg hg0 hfg
-  refine ⟨a, logDeriv g 0, ha.trans hg_der,
-    h.hasProdLocallyUniformlyOn_divisorProductOne_ne_zero hf (by norm_num), fun s ↦ ?_⟩
-  refine ⟨?_, ?_⟩
-  · have hsupp : Function.mulSupport
-        (fun ρ : ℂ ↦ weierstrassFactorOne (ρ⁻¹ * s) ^
-          (MeromorphicOn.divisor g Set.univ ρ).toNat) ⊆ {ρ : ℂ | ρ ≠ 0} := by
-      intro ρ hρ
-      rw [Set.mem_ofPred_eq]
-      rintro rfl
-      exact hρ (by simp)
-    have hhp := (hasProd_subtype_iff_of_mulSupport_subset hsupp).mpr
-      (hasProd_divisorProductOne hg_sum s)
-    refine hhp.multipliable.congr fun ρ ↦ ?_
-    dsimp only [Function.comp_apply]
-    have hd := divisor_eq_update_of_eq_sub_pow_mul hg hg0
-      (fun w ↦ by simpa only [sub_zero] using hfg w) ρ.1
-    rw [hd, ite_eq_right ρ.2]
-  · rw [hfg s, hga s, ← hprod_eq, divisorProductOne_eq_tprod_ne_zero, mul_assoc]
 
 /-! ### Examples -/
 
@@ -326,7 +168,7 @@ example :
     have hmono : analyticOrderAt (fun z : ℂ ↦ (z - 0) ^ 2) 0 = 2 :=
       analyticOrderAt_centeredMonomial
     simpa only [sub_zero, ENat.toNat_ofNat] using congrArg ENat.toNat hmono
-  · rw [divisorProductOne_eq_of_eq_pow_mul differentiable_exp (exp_ne_zero 0) fun _ ↦ rfl]
+  · rw [divisorProductOne_eq_of_eq_pow_mul differentiable_exp fun _ ↦ rfl]
     simpa using divisorProductOne_cexp_mul 1
 
 /-- For `f z = 1 - z ^ 2`, the origin order is `0` and pairing `±1` gives

@@ -27,7 +27,13 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
-* `AnalyticAt.notMem_divisor_support_of_ne_zero` — such a point is off the divisor support.
+* `AnalyticAt.notMem_divisor_support_of_ne_zero` — such a point is off the divisor support, and
+  conversely `AnalyticAt.eq_zero_of_mem_divisor_support` forces `f z = 0` on the divisor support.
+* `AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne` and
+  `AnalyticOnNhd.divisor_eq_update_of_eq_sub_pow_smul` — factoring out `(z - z₀) ^ m` leaves the
+  divisor unchanged away from `z₀` and clears it at `z₀` when the quotient is nonzero there.
+* `AnalyticOnNhd.divisor_neg_eq_of_even` — the whole-space divisor of an even analytic function is
+  even.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
   norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
@@ -129,6 +135,70 @@ theorem AnalyticAt.notMem_divisor_support_of_ne_zero {𝕜 E : Type*} [Nontrivia
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
     (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
   Function.notMem_support.mpr (hf.divisor_apply_eq_zero hfz)
+
+/-- At a point where a function is analytic, membership in the support of its divisor on any set
+forces the function to vanish there. -/
+theorem AnalyticAt.eq_zero_of_mem_divisor_support {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hz : z ∈ (MeromorphicOn.divisor f U).support) : f z = 0 := by
+  by_contra hne
+  exact hf.notMem_divisor_support_of_ne_zero hne hz
+
+/-- If `f z = (z - z₀) ^ m • g z` with `g` analytic on a neighbourhood of `U`, then the divisors of
+`g` and `f` on `U` agree at every point `w ≠ z₀`. -/
+theorem AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f g : 𝕜 → E} {U : Set 𝕜} (hg : AnalyticOnNhd 𝕜 g U) {z₀ w : 𝕜} {m : ℕ}
+    (hfg : ∀ z, f z = (z - z₀) ^ m • g z) (hw : w ≠ z₀) :
+    MeromorphicOn.divisor g U w = MeromorphicOn.divisor f U w := by
+  by_cases hwU : w ∈ U
+  · have hsmul : f = (fun z : 𝕜 ↦ (z - z₀) ^ m) • g := funext hfg
+    have hf : AnalyticOnNhd 𝕜 f U := fun z hz ↦ by
+      rw [hsmul]
+      exact ((analyticAt_id.sub analyticAt_const).pow m).smul (hg z hz)
+    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg w hwU) hwU,
+      MeromorphicOn.divisor_eq_analyticOrderNatAt hf.meromorphicOn (hf w hwU) hwU,
+      analyticOrderNatAt, analyticOrderNatAt]
+    have hpow_an : AnalyticAt 𝕜 (fun z : 𝕜 ↦ (z - z₀) ^ m) w := by fun_prop
+    have hpow_ne : (w - z₀) ^ m ≠ 0 := pow_ne_zero m (sub_ne_zero.mpr hw)
+    rw [hsmul, analyticOrderAt_smul hpow_an (hg w hwU),
+      hpow_an.analyticOrderAt_eq_zero.mpr hpow_ne, zero_add]
+  · simp [hwU]
+
+/-- If `f z = (z - z₀) ^ m • g z` with `g` analytic on a neighbourhood of `U` and `g z₀ ≠ 0`, then
+the divisor of `g` on `U` vanishes at `z₀` and agrees with that of `f` elsewhere. -/
+theorem AnalyticOnNhd.divisor_eq_update_of_eq_sub_pow_smul
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f g : 𝕜 → E} {U : Set 𝕜} (hg : AnalyticOnNhd 𝕜 g U) {z₀ : 𝕜} (hg0 : g z₀ ≠ 0) {m : ℕ}
+    (hfg : ∀ z, f z = (z - z₀) ^ m • g z) (w : 𝕜) :
+    MeromorphicOn.divisor g U w = if w = z₀ then 0 else MeromorphicOn.divisor f U w := by
+  split_ifs with hw
+  · subst hw
+    by_cases hwU : w ∈ U
+    · exact (hg w hwU).divisor_apply_eq_zero hg0
+    · simp [hwU]
+  · exact hg.divisor_eq_of_eq_sub_pow_smul_of_ne hfg hw
+
+/-- The whole-space divisor of an even analytic function is invariant under negation. -/
+theorem AnalyticOnNhd.divisor_neg_eq_of_even
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {g : 𝕜 → E} (hg : AnalyticOnNhd 𝕜 g Set.univ) (heven : g.Even) (ρ : 𝕜) :
+    MeromorphicOn.divisor g Set.univ (-ρ) = MeromorphicOn.divisor g Set.univ ρ := by
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg (-ρ) (Set.mem_univ _))
+      (Set.mem_univ _),
+    MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg ρ (Set.mem_univ _))
+      (Set.mem_univ _), analyticOrderNatAt, analyticOrderNatAt]
+  have hcomp : g ∘ (-id : 𝕜 → 𝕜) = g := funext heven
+  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = (1 : ℕ) :=
+    (AnalyticAt.analyticOrderAt_eq_natCast (by fun_prop)).mpr
+      ⟨fun _ ↦ (-1 : 𝕜), analyticAt_const, neg_ne_zero.mpr one_ne_zero,
+        Filter.Eventually.of_forall fun z ↦ by simp only [pow_one, smul_eq_mul]; ring⟩
+  have hord := (hg (-ρ) (Set.mem_univ _)).analyticOrderAt_comp (g := (-id : 𝕜 → 𝕜))
+    (z₀ := ρ) analyticAt_id.neg
+  dsimp only [Pi.neg_apply, id_eq] at hord
+  rw [hcomp, hsub, Nat.cast_one, mul_one] at hord
+  rw [hord]
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

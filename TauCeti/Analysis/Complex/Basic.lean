@@ -32,7 +32,8 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal.
+Two integers whose images in `ℂ` are at distance less than `1` are equal. A purely imaginary
+complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I` (`Complex.eq_im_mul_I_of_re_eq_zero`).
 -/
 
 public section
@@ -151,5 +152,10 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       rw [← map_sub, norm_conj]
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
+
+/-- A purely imaginary complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I`. -/
+theorem eq_im_mul_I_of_re_eq_zero {z : ℂ} (hz : z.re = 0) : z = (z.im : ℂ) * I := by
+  have h := (re_add_im z).symm
+  rwa [hz, ofReal_zero, zero_add] at h
 
 end Complex

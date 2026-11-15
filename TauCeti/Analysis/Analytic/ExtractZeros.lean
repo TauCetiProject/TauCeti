@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # Dividing an analytic function by prescribed zeros
@@ -30,6 +31,9 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
   `k x` at the points `x ∈ s` is `∏ x ∈ s, (z - x) ^ k x` times an analytic function.
+* `AnalyticOnNhd.exists_eq_sub_pow_smul`: at a point `z₀` of exact finite analytic order `m`,
+  `f z = (z - z₀) ^ m • g z` with `g` analytic, `g z₀ ≠ 0`, and
+  `m! • g z₀ = iteratedDeriv m f z₀`.
 * `TauCeti.differentiableAt_of_eventuallyEq_div`: the removable singularity of a quotient `A / B`
   of two functions analytic and vanishing at `a`, with `deriv B a = b ≠ 0` and
   `deriv A a = c * b`, is differentiable once filled by the value `c`.
@@ -137,3 +141,30 @@ theorem AnalyticOnNhd.exists_eq_prod_pow_smul {U : Set 𝕜} (hf : AnalyticOnNhd
     obtain ⟨g, hg, hg₁⟩ := ih (f := g₁) (fun z hz ↦ (hf z hz).iterate_dslope (k a)) hk₁
     refine ⟨g, hg, fun z ↦ ?_⟩
     rw [hfg₁, hg₁, Finset.prod_insert ha, mul_smul]
+
+/-- **Single-zero extraction at exact finite order.** If `f` is analytic on a neighbourhood of `U`
+and vanishes at `z₀ ∈ U` to exact finite order `m`, then `f z = (z - z₀) ^ m • g z` globally for
+`g = (swap dslope z₀)^[m] f`, which is analytic on a neighbourhood of `U` and satisfies `g z₀ ≠ 0`
+and `m! • g z₀ = iteratedDeriv m f z₀`. -/
+theorem AnalyticOnNhd.exists_eq_sub_pow_smul [CompleteSpace E] {U : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) {z₀ : 𝕜} (hz₀ : z₀ ∈ U) {m : ℕ}
+    (hm : analyticOrderAt f z₀ = (m : ℕ∞)) :
+    ∃ g : 𝕜 → E, AnalyticOnNhd 𝕜 g U ∧ g z₀ ≠ 0 ∧
+      m.factorial • g z₀ = iteratedDeriv m f z₀ ∧ ∀ z, f z = (z - z₀) ^ m • g z := by
+  set g := (swap dslope z₀)^[m] f
+  have hg : AnalyticOnNhd 𝕜 g U := fun z hz ↦ (hf z hz).iterate_dslope m
+  have hfg (z : 𝕜) : f z = (z - z₀) ^ m • g z :=
+    (pow_sub_smul_iterate_dslope_of_zero m
+      (fun k hk ↦ TauCeti.iterate_dslope_apply_eq_zero_of_lt hm.ge hk) z).symm
+  have hg0 : g z₀ ≠ 0 := fun h0 ↦ by
+    have hsucc (z : 𝕜) : f z = (z - z₀) ^ (m + 1) • dslope g z₀ z := by
+      rw [hfg z, pow_succ, mul_smul, sub_smul_dslope_of_zero h0]
+    have hle : ((m + 1 : ℕ) : ℕ∞) ≤ analyticOrderAt f z₀ :=
+      (natCast_le_analyticOrderAt (hf z₀ hz₀)).mpr
+        ⟨dslope g z₀, (hg z₀ hz₀).dslope z₀, Filter.Eventually.of_forall hsucc⟩
+    rw [hm] at hle
+    exact (Nat.not_succ_le_self m) (ENat.natCast_le_natCast.mp hle)
+  have hder : m.factorial • g z₀ = iteratedDeriv m f z₀ := by
+    have hfun : f = fun z ↦ (z - z₀) ^ m • g z := funext hfg
+    rw [hfun, TauCeti.iteratedDeriv_pow_sub_smul_self (hg z₀ hz₀).contDiffAt]
+  exact ⟨g, hg, hg0, hder, hfg⟩
