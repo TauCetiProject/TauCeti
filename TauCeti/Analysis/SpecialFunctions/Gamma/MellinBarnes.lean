@@ -31,10 +31,15 @@ This is the integral that, inserted into Euler's integral for the Gauss hypergeo
 and into a Beta integral, gives the Mellin–Barnes representations of the Gauss function and
 Barnes's first lemma.
 
+The Beta integral of the first kind is likewise a Mellin transform: that of `t^a (1 - t)^b` on
+`(0, 1]` at `s` is `B(s + a, b + 1)`.
+
 ## Main results
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.hasMellin_cpow_mul_one_sub_cpow_Ioc`: the first-kind counterpart, the Mellin transform
+  of `t^a (1 - t)^b` on `(0, 1]` is the Beta integral `B(s + a, b + 1)`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
@@ -119,6 +124,32 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
         fun u hu ↦ abs_deriv_smul_cpow_mul_one_add_cpow s a hu,
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
+
+/-- **Euler's Beta integral of the first kind** as a Mellin transform. For `0 < Re(s + a)` and
+`-1 < Re b`, the Mellin transform of `t ↦ t^a (1 - t)^b` on `(0, 1]` converges at `s` and equals
+`B(s + a, b + 1)`. -/
+theorem hasMellin_cpow_mul_one_sub_cpow_Ioc {a b s : ℂ} (hs : 0 < s.re + a.re) (hb : -1 < b.re) :
+    HasMellin ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ a * (1 - (t : ℂ)) ^ b) s
+      (betaIntegral (s + a) (b + 1)) := by
+  set g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (s + a - 1) * (1 - (t : ℂ)) ^ (b + 1 - 1)
+  -- on `(0, ∞)` the Mellin integrand is the Beta integrand with parameters `s + a` and `b + 1`
+  have heq : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (Ioc 0 1).indicator
+      (fun t : ℝ ↦ (t : ℂ) ^ a * (1 - (t : ℂ)) ^ b) t) ((Ioc 0 1).indicator g) (Ioi 0) := by
+    intro t ht
+    by_cases htI : t ∈ Ioc (0 : ℝ) 1
+    · simp only [indicator_of_mem htI, smul_eq_mul, g]
+      rw [← mul_assoc, ← cpow_add _ _ (ofReal_ne_zero.mpr (ne_of_gt ht)), sub_add_eq_add_sub,
+        add_sub_cancel_right]
+    · simp [indicator_of_notMem htI]
+  have hg : IntegrableOn g (Ioc 0 1) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
+      (betaIntegral_convergent (by simpa using hs) (by simp; linarith))
+  refine ⟨?_, ?_⟩
+  · rw [MellinConvergent, integrableOn_congr_fun heq measurableSet_Ioi]
+    exact ((integrable_indicator_iff measurableSet_Ioc).mpr hg).integrableOn
+  · rw [mellin, setIntegral_congr_fun measurableSet_Ioi heq,
+      setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self,
+      ← intervalIntegral.integral_of_le zero_le_one, betaIntegral]
 
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
