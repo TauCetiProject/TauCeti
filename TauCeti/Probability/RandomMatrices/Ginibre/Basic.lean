@@ -177,6 +177,23 @@ instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
     (measurable_matrix_mul_conjTranspose (R := ℂ) continuous_star.measurable).aemeasurable).2
     inferInstance
 
+/-- With no samples the complex Gaussian Gram matrix is zero. -/
+@[simp]
+theorem gaussianGramComplex_zero_right (m : ℕ) : gaussianGramComplex m 0 = Measure.dirac 0 := by
+  have h : (fun X : Matrix (Fin m) (Fin 0) ℂ ↦ X * Xᴴ) = fun _ ↦ 0 := by
+    funext X
+    ext i j
+    simp [Matrix.mul_apply]
+  rw [gaussianGramComplex_def, h, Measure.map_const, measure_univ, one_smul]
+
+/-- In zero dimension the complex Gaussian Gram law is the point mass at the empty matrix. -/
+@[simp]
+theorem gaussianGramComplex_zero_left (n : ℕ) : gaussianGramComplex 0 n = Measure.dirac 0 := by
+  have h : (fun X : Matrix (Fin 0) (Fin n) ℂ ↦ X * Xᴴ) = fun _ ↦ 0 := by
+    funext X
+    exact Subsingleton.elim _ _
+  rw [gaussianGramComplex_def, h, Measure.map_const, measure_univ, one_smul]
+
 /-- Each entry of a real Ginibre matrix is a standard Gaussian. -/
 theorem map_apply_ginibreReal (m n : ℕ) (i : Fin m) (j : Fin n) :
     (ginibreReal m n).map (fun X ↦ X i j) = gaussianReal 0 1 :=

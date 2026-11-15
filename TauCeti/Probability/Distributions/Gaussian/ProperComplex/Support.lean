@@ -56,6 +56,23 @@ theorem support_properComplexGaussianMeasure {C : Matrix iota iota ℂ} (hC : C.
     ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
     ContinuousLinearEquiv.coe_toHomeomorph]
 
+/-- The identity-covariance proper complex Gaussian has full support. -/
+@[simp]
+theorem support_properComplexGaussianMeasure_one (ι : Type*)
+    [Fintype ι] [DecidableEq ι] :
+    (properComplexGaussianMeasure (0 : ι → ℂ) 1).support = Set.univ := by
+  have hcov : complexGaussianRealCovariance (1 : Matrix ι ι ℂ) =
+      (2⁻¹ : ℝ) • (1 : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) := by
+    simp [complexGaussianRealCovariance_def, Matrix.realify_one]
+  have hr : Function.Surjective
+      (Matrix.toEuclideanLin (complexGaussianRealCovariance (1 : Matrix ι ι ℂ))) := by
+    intro x
+    refine ⟨(2 : ℝ) • x, ?_⟩
+    simp [hcov, smul_smul]
+  rw [support_properComplexGaussianMeasure Matrix.PosSemidef.one,
+    LinearMap.range_eq_top.mpr hr]
+  simp
+
 /-- A proper complex Gaussian lies almost surely in its realified affine range. -/
 theorem ae_mem_affineRange_properComplexGaussianMeasure (C : Matrix iota iota ℂ)
     (m : iota → ℂ) :

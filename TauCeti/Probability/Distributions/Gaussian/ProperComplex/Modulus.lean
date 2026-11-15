@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Product
+public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Exponential.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
@@ -159,6 +160,33 @@ theorem map_norm_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   rw [Measure.map_map (by fun_prop) (by fun_prop), map_norm_pi_gaussianReal hvpos] at h
   simpa [Function.comp_def, EuclideanSpace.norm_eq, Fin.sum_univ_two,
     ← Complex.sub_re, ← Complex.sub_im, ← Complex.norm_eq_sqrt_sq_add_sq, hv] using h
+
+/-- The squared modulus of a standard proper complex Gaussian is a rate-one exponential. -/
+@[simp]
+theorem map_norm_sq_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (fun z ↦ ‖z‖ ^ 2) = expMeasure 1 := by
+  rw [properComplexGaussianScalar_def, Measure.map_map (by fun_prop) (by fun_prop)]
+  have h := map_norm_sq_sub_eval_properComplexGaussianMeasure
+    (0 : Unit → ℂ) Matrix.PosSemidef.one ()
+  simpa [Function.comp_def, Pi.zero_def] using h
+
+omit [DecidableEq ι] in
+/-- The sum of squared moduli of a nonempty family of independent standard proper complex
+Gaussians has gamma law with shape equal to the number of coordinates and rate one. -/
+theorem map_sum_norm_sq_pi_properComplexGaussianScalar [Nonempty ι] :
+    (Measure.pi fun _ : ι ↦ properComplexGaussianScalar).map (fun z ↦ ∑ i, ‖z i‖ ^ 2) =
+      gammaMeasure (Fintype.card ι) 1 := by
+  classical
+  have hind := (iIndepFun_pi (μ := fun _ : ι ↦ properComplexGaussianScalar)
+    (X := fun _ : ι ↦ (id : ℂ → ℂ))
+    (fun _ ↦ aemeasurable_id)).comp (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
+  have hlaw (i : ι) : HasLaw (fun z : ι → ℂ ↦ ‖z i‖ ^ 2)
+      (gammaMeasure 1 1) (Measure.pi fun _ : ι ↦ properComplexGaussianScalar) := by
+    have h := (measurePreserving_eval
+      (fun _ : ι ↦ properComplexGaussianScalar) i).hasLaw
+    exact (HasLaw.mk (by fun_prop) map_norm_sq_properComplexGaussianScalar).comp h
+  simpa using (hind.hasLaw_sum_gammaMeasure (by norm_num) Finset.univ_nonempty
+    (fun _ _ ↦ by norm_num) (fun i _ ↦ hlaw i)).map_eq
 
 end TauCeti.Probability
 

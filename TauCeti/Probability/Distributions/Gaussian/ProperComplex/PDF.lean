@@ -235,6 +235,36 @@ theorem integrable_properComplexGaussianPDFReal (m : ι → ℂ) (C : Matrix ι 
     rw [heq]
     exact integrable_zero _ _ _
 
+/-- The standard proper complex Gaussian density is the product of the coordinate densities. -/
+theorem properComplexGaussianPDF_one (z : ι → ℂ) :
+    properComplexGaussianPDF 0 1 z =
+      ENNReal.ofReal (exp (-(∑ i, ‖z i‖ ^ 2)) / π ^ Fintype.card ι) := by
+  have hq : (star z ⬝ᵥ z).re = ∑ i, ‖z i‖ ^ 2 := by
+    simp [dotProduct, Complex.conj_mul', ← Complex.ofReal_pow]
+  simp [properComplexGaussianPDF_eq_ofReal,
+    properComplexGaussianPDFReal_of_posDef _ _ Matrix.PosDef.one, hq]
+
+/-- The scalar standard proper complex Gaussian has density `π⁻¹ exp(-‖z‖²)` with respect
+to planar Lebesgue measure. -/
+theorem properComplexGaussianScalar_eq_withDensity :
+    properComplexGaussianScalar =
+      volume.withDensity (fun z : ℂ ↦ ENNReal.ofReal (exp (-‖z‖ ^ 2) / π)) := by
+  let e := MeasurableEquiv.piUnique (fun _ : Unit ↦ ℂ)
+  rw [properComplexGaussianScalar_def,
+    properComplexGaussianMeasure_eq_withDensity _ Matrix.PosDef.one]
+  have h := e.map_withDensity volume (properComplexGaussianPDF (0 : Unit → ℂ) 1)
+  rw [(volume_preserving_piUnique (fun _ : Unit ↦ ℂ)).map_eq] at h
+  convert h using 1
+  · rfl
+  · congr 1
+    funext z
+    simp [properComplexGaussianPDF_one, e, MeasurableEquiv.piUnique,
+      Equiv.piUnique, uniqueElim]
+
+instance : NullSingletonClass properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar_eq_withDensity]
+  infer_instance
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {Z : Ω → ι → ℂ} {m : ι → ℂ}
 
 /-- A random vector with a nondegenerate proper complex Gaussian law has a density. -/
