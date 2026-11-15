@@ -47,9 +47,10 @@ assumption on them, and the fibre `F`, total space `E`, and base `B` may lie in 
   trivial map is a Hurewicz fibration.
 * `FiberBundle.hasHomotopyLiftingProperty_proj` and `FiberBundle.isHurewiczFibration_proj`: over a
   normal paracompact base, the projection of a fibre bundle is a Hurewicz fibration.
-* `MulActionHom.hasHomotopyLiftingProperty_of_isQuotientCoveringMap` and
-  `MulActionHom.isHurewiczFibration_of_isQuotientCoveringMap`: the descent of a locally trivial
-  equivariant map along a quotient covering over a normal paracompact base is a Hurewicz fibration.
+* `MulActionHom.isHurewiczFibration_orbitRelQuotient_of_exists_trivialization` and
+  `MulActionHom.hasHomotopyLiftingProperty_orbitRelQuotient_of_exists_trivialization`: the descent
+  of a locally trivial equivariant map along a quotient covering over a normal paracompact base is a
+  Hurewicz fibration.
 
 ## References
 
@@ -181,36 +182,27 @@ end FiberBundle
 
 namespace MulActionHom
 
-variable {G : Type*} {X : Type u} {Y : Type*} {Z : Type v} {F : Type uF}
-  [Group G] [MulAction G X] [MulAction G Y]
-  [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace F]
-  [ContinuousConstSMul G X]
-  (p : X →[G] Y) (β : Y → Z) (f : MulAction.orbitRel.Quotient G X → Z)
-  (hf : ∀ x, f (Quotient.mk _ x) = β (p x))
+variable {G : Type*} {X : Type u} {Y : Type*} {Z : Type v} {F : Type uF} [Group G] [MulAction G X]
+  [MulAction G Y] [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  [TopologicalSpace F] [ContinuousConstSMul G X] (p : X →[G] Y) (β : Y → Z)
+  (f : MulAction.orbitRel.Quotient G X → Z) (hf : ∀ x, f (Quotient.mk _ x) = β (p x))
 include hf
 
-/-- If `p : X →[G] Y` is locally trivial with model fibre `F` and `β : Y → Z` is a quotient
-covering by `G` over a normal paracompact base `Z`, then the descended projection `f : X/G → Z` has
-the homotopy lifting property with respect to every space `A`. -/
-theorem hasHomotopyLiftingProperty_of_isQuotientCoveringMap [NormalSpace Z] [ParacompactSpace Z]
-    (hp : Continuous p) (hβ : IsQuotientCoveringMap β G)
-    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) (A : Type w) [TopologicalSpace A] :
-    TauCeti.HasHomotopyLiftingProperty f A := by
-  have hfc : Continuous f := isQuotientMap_quot_mk.continuous_iff.2 <| by
-    refine (hβ.continuous.comp hp).congr fun x ↦ (hf x).symm
-  exact TauCeti.hasHomotopyLiftingProperty_of_exists_trivialization
-    (p.exists_orbitRelQuotientTrivialization β f hf hp hβ hfc htriv) A
+/-- Descending a locally trivial `G`-equivariant map along a quotient covering over a normal
+paracompact base yields a Hurewicz fibration. -/
+theorem isHurewiczFibration_orbitRelQuotient_of_exists_trivialization [NormalSpace Z]
+    [ParacompactSpace Z] (hβ : IsQuotientCoveringMap β G)
+    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) : TauCeti.IsHurewiczFibration.{w} f :=
+  TauCeti.isHurewiczFibration_of_exists_trivialization
+    (p.exists_orbitRelQuotientTrivialization β f hf hβ htriv)
 
-/-- If `p : X →[G] Y` is locally trivial with model fibre `F` and `β : Y → Z` is a quotient
-covering by `G` over a normal paracompact base `Z`, then the descended projection `f : X/G → Z` is
-a Hurewicz fibration. -/
-theorem isHurewiczFibration_of_isQuotientCoveringMap [NormalSpace Z] [ParacompactSpace Z]
-    (hp : Continuous p) (hβ : IsQuotientCoveringMap β G)
-    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) :
-    TauCeti.IsHurewiczFibration.{w} f := by
-  have hfc : Continuous f := isQuotientMap_quot_mk.continuous_iff.2 <| by
-    refine (hβ.continuous.comp hp).congr fun x ↦ (hf x).symm
-  exact TauCeti.isHurewiczFibration_of_exists_trivialization
-    (p.exists_orbitRelQuotientTrivialization β f hf hp hβ hfc htriv)
+/-- Descending a locally trivial `G`-equivariant map along a quotient covering over a normal
+paracompact base satisfies the homotopy lifting property for every space `A`. -/
+theorem hasHomotopyLiftingProperty_orbitRelQuotient_of_exists_trivialization [NormalSpace Z]
+    [ParacompactSpace Z] (hβ : IsQuotientCoveringMap β G)
+    (htriv : ∀ y, ∃ e : Trivialization F p, y ∈ e.baseSet) (A : Type w) [TopologicalSpace A] :
+    TauCeti.HasHomotopyLiftingProperty f A :=
+  (p.isHurewiczFibration_orbitRelQuotient_of_exists_trivialization β f hf hβ htriv
+    |>.hasHomotopyLiftingProperty A)
 
 end MulActionHom

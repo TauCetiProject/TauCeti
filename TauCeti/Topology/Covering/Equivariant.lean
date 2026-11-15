@@ -136,133 +136,117 @@ noncomputable def orbitRelQuotientPullbackHomeomorph (hp : Continuous p)
   exact congrArg (fun v ↦ v.1.2)
     ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).apply_symm_apply w)
 
+variable (hp : Continuous p) (hβ : IsQuotientCoveringMap β G)
+
+include hf hp hβ in
+omit [ContinuousConstSMul G X] in
+private theorem continuous_of_quotient_eq : Continuous f :=
+  isQuotientMap_quotient_mk'.continuous_iff.2 ((hβ.continuous.comp hp).congr fun x ↦ (hf x).symm)
+
 /-- For any sheet `y : Y` over `z : Z` (`β y = z`), the orbit projection restricts to a
-homeomorphism between the fibre `p ⁻¹' {y}` upstairs and the fibre `f ⁻¹' {z}` of the descended
-projection downstairs. -/
-noncomputable def orbitRelQuotientFiberHomeomorph (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y)
-    (hy : β y = z := by rfl) : p ⁻¹' {y} ≃ₜ f ⁻¹' {z} where
-  toFun u := ⟨Quotient.mk _ u.1, (hf u.1).trans ((congrArg β u.2).trans hy)⟩
-  invFun v :=
-    ⟨(p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).symm ⟨(y, v.1), hy.trans v.2.symm⟩,
-      p.map_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _⟩
-  left_inv u := by
-    apply Subtype.ext
-    apply (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).injective
-    apply Subtype.ext
-    rw [Homeomorph.apply_symm_apply]
-    exact Prod.ext (u.2 : p u.1 = y).symm rfl
-  right_inv v := Subtype.ext (p.mk_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _)
-  continuous_toFun := (continuous_quot_mk.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun :=
-    ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).continuous_symm.comp
-      ((continuous_const.prodMk continuous_subtype_val).subtype_mk _)).subtype_mk _
+homeomorphism between the fibre `p ⁻¹' {y}` upstairs and `f ⁻¹' {z}` downstairs. -/
+noncomputable def orbitRelQuotientFiberHomeomorph {z : Z} (y : Y) (hy : β y = z := by rfl) :
+    p ⁻¹' {y} ≃ₜ f ⁻¹' {z} :=
+  let hfc := p.continuous_of_quotient_eq β f hf hp hβ
+  { toFun u := ⟨Quotient.mk _ u.1, (hf u.1).trans ((congrArg β u.2).trans hy)⟩
+    invFun v :=
+      ⟨(p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).symm ⟨(y, v.1), hy.trans v.2.symm⟩,
+        p.map_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _⟩
+    left_inv u := Subtype.ext <|
+      (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).injective <| Subtype.ext <| by
+        rw [Homeomorph.apply_symm_apply]; exact Prod.ext (u.2 : p u.1 = y).symm rfl
+    right_inv v := Subtype.ext (p.mk_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _)
+    continuous_toFun := (continuous_quot_mk.comp continuous_subtype_val).subtype_mk _
+    continuous_invFun :=
+      ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).continuous_symm.comp
+        ((continuous_const.prodMk continuous_subtype_val).subtype_mk _)).subtype_mk _ }
 
-/-- `MulActionHom.orbitRelQuotientFiberHomeomorph` sends `u : p ⁻¹' {y}` to its `G`-orbit
-`[u.1]`. -/
-@[simp] theorem orbitRelQuotientFiberHomeomorph_coe (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y) (hy : β y = z)
+/-- `MulActionHom.orbitRelQuotientFiberHomeomorph` sends `u : p ⁻¹' {y}` to its orbit `[u.1]`. -/
+@[simp] theorem orbitRelQuotientFiberHomeomorph_coe {z : Z} (y : Y) (hy : β y = z)
     (u : p ⁻¹' {y}) :
-    (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc y hy u :
-      MulAction.orbitRel.Quotient G X) = Quotient.mk _ u.1 :=
-  (rfl)
+    (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ y hy u : MulAction.orbitRel.Quotient G X) =
+      Quotient.mk _ u.1 := (rfl)
 
-/-- The inverse of `MulActionHom.orbitRelQuotientFiberHomeomorph` evaluates via
+/-- `(MulActionHom.orbitRelQuotientFiberHomeomorph ...).symm` evaluates via
 `MulActionHom.orbitRelQuotientPullbackHomeomorph`. -/
-theorem orbitRelQuotientFiberHomeomorph_symm_coe (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y) (hy : β y = z)
-    (v : f ⁻¹' {z}) :
-    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc y hy).symm v : X) =
-      (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).symm ⟨(y, v.1), hy.trans v.2.symm⟩ :=
-  (rfl)
+theorem orbitRelQuotientFiberHomeomorph_symm_coe {z : Z} (y : Y) (hy : β y = z) (v : f ⁻¹' {z}) :
+    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ y hy).symm v : X) =
+      (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ
+        (isQuotientMap_quotient_mk'.continuous_iff.2
+          ((hβ.continuous.comp hp).congr fun x ↦ (hf x).symm))).symm
+        ⟨(y, v.1), hy.trans v.2.symm⟩ := (rfl)
 
-/-- Pulling an orbit class `[x]` with `p x = g • y` back to the `y`-sheet fibre translates `x` by
-the inverse group element `g⁻¹`. -/
-theorem orbitRelQuotientFiberHomeomorph_symm_mk_of_smul (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y) (hy : β y = z)
-    (g : G) {x : X} (hx : p x = g • y) (hq : f (Quotient.mk _ x) = z) :
-    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc y hy).symm ⟨Quotient.mk _ x, hq⟩ : X) =
+/-- Pulling `[x]` with `p x = g • y` back to the `y`-sheet fibre translates `x` by `g⁻¹`. -/
+theorem orbitRelQuotientFiberHomeomorph_symm_mk_of_smul {z : Z} (y : Y) (hy : β y = z) (g : G)
+    {x : X} (hx : p x = g • y) (hq : f (Quotient.mk _ x) = z) :
+    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ y hy).symm ⟨Quotient.mk _ x, hq⟩ : X) =
       g⁻¹ • x := by
   rw [orbitRelQuotientFiberHomeomorph_symm_coe]
-  apply (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).injective
-  apply Subtype.ext
+  refine (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ
+    (p.continuous_of_quotient_eq β f hf hp hβ)).injective (Subtype.ext ?_)
   rw [Homeomorph.apply_symm_apply, orbitRelQuotientPullbackHomeomorph_apply,
     orbitRelQuotientPullback_val]
   exact Prod.ext ((p.map_smul g⁻¹ x).trans ((congrArg (g⁻¹ • ·) hx).trans (inv_smul_smul g y))).symm
     MulAction.orbitRel.Quotient.quotient_smul_eq.symm
 
-/-- Identifying the `(g • y)`-sheet fibre back with the `y`-sheet fibre through the common
-descended fibre `f ⁻¹' {z}` acts by the inverse element `g⁻¹`. -/
-@[simp] theorem orbitRelQuotientFiberHomeomorph_symm_apply_smul (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y) (hy : β y = z)
+/-- Identifying the `(g • y)`-sheet fibre back with the `y`-sheet fibre over `z` acts by `g⁻¹`. -/
+@[simp] theorem orbitRelQuotientFiberHomeomorph_symm_apply_smul {z : Z} (y : Y) (hy : β y = z)
     (g : G) (hgy : β (g • y) = z) (v : p ⁻¹' {g • y}) :
-    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc y hy).symm
-      (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc (g • y) hgy v) : X) = g⁻¹ • v.1 :=
-  p.orbitRelQuotientFiberHomeomorph_symm_mk_of_smul β f hf hp hβ hfc y hy g v.2 _
+    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ y hy).symm
+      (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ (g • y) hgy v) : X) = g⁻¹ • v.1 :=
+  p.orbitRelQuotientFiberHomeomorph_symm_mk_of_smul β f hf hp hβ y hy g v.2 _
 
-/-- Identifying the `y`-sheet fibre with the `(g • y)`-sheet fibre through the common descended
-fibre `f ⁻¹' {z}` acts by `g`. -/
-@[simp] theorem orbitRelQuotientFiberHomeomorph_smul_symm_apply (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {z : Z} (y : Y) (hy : β y = z)
+/-- Identifying the `y`-sheet fibre with the `(g • y)`-sheet fibre over `z` acts by `g`. -/
+@[simp] theorem orbitRelQuotientFiberHomeomorph_smul_symm_apply {z : Z} (y : Y) (hy : β y = z)
     (g : G) (hgy : β (g • y) = z) (u : p ⁻¹' {y}) :
-    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc (g • y) hgy).symm
-      (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ hfc y hy u) : X) = g • u.1 := by
-  have hu : p u.1 = g⁻¹ • (g • y) := u.2.trans (inv_smul_smul g y).symm
-  exact (p.orbitRelQuotientFiberHomeomorph_symm_mk_of_smul β f hf hp hβ hfc (g • y) hgy g⁻¹ hu
-    ((hf u.1).trans ((congrArg β u.2).trans hy))).trans (by rw [inv_inv])
+    ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ (g • y) hgy).symm
+      (p.orbitRelQuotientFiberHomeomorph β f hf hp hβ y hy u) : X) = g • u.1 :=
+  (p.orbitRelQuotientFiberHomeomorph_symm_mk_of_smul β f hf hp hβ (g • y) hgy g⁻¹
+    (u.2.trans (inv_smul_smul g y).symm) ((hf u.1).trans ((congrArg β u.2).trans hy))).trans
+    (by rw [inv_inv])
+
+variable {F : Type*} [TopologicalSpace F]
 
 open Classical in
-/-- Over the intersection of the source of `hβ.isLocalHomeomorph.localInverseAt y` with the
-preimage of `e.baseSet`, a local trivialization `e` of `p` descends along the local inverse of `β`
-to a local trivialization of `f`. -/
-noncomputable def orbitRelQuotientTrivialization (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {F : Type*} [TopologicalSpace F]
-    (e : Bundle.Trivialization F p) (y : Y) : Bundle.Trivialization F f :=
+/-- Over `(hβ.isLocalHomeomorph.localInverseAt y).source ∩ s ⁻¹' e.baseSet`, a local trivialization
+`e` of `p` descends along the local inverse `s` of `β` to a local trivialization of `f`. -/
+noncomputable def orbitRelQuotientTrivialization (e : Bundle.Trivialization F p) (y : Y) :
+    Bundle.Trivialization F f :=
+  let hfc := p.continuous_of_quotient_eq β f hf hp hβ
   let s := hβ.isLocalHomeomorph.localInverseAt y
   let Φ := p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc
   let U : Set Z := s.source ∩ s ⁻¹' e.baseSet
   have hUo : IsOpen U := s.continuousOn_toFun.isOpen_inter_preimage s.open_source e.open_baseSet
-  { toFun q :=
-      (f q,
-        if hz : f q ∈ s.source then
-          (e (Φ.symm ⟨(s (f q), q), hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hz⟩)).2
-        else (e q.out).2)
+  { toFun q := (f q, if hz : f q ∈ s.source then
+        (e (Φ.symm ⟨(s (f q), q), hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hz⟩)).2
+      else (e q.out).2)
     invFun w := Quotient.mk (MulAction.orbitRel G X) (e.toOpenPartialHomeomorph.symm (s w.1, w.2))
     source := f ⁻¹' U
     target := U ×ˢ univ
     map_source' _ hq := ⟨hq, mem_univ _⟩
     map_target' w hw := by
-      have hwU : w.1 ∈ U := hw.1
-      have hx : p (e.toOpenPartialHomeomorph.symm (s w.1, w.2)) = s w.1 :=
-        e.proj_symm_apply' hwU.2
+      have hx : p (e.toOpenPartialHomeomorph.symm (s w.1, w.2)) = s w.1 := e.proj_symm_apply' hw.1.2
       have hfw : f (Quotient.mk _ (e.toOpenPartialHomeomorph.symm (s w.1, w.2))) = w.1 :=
-        (hf _).trans ((congrArg β hx).trans
-          (hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hwU.1))
-      exact Set.mem_preimage.2 (hfw.symm ▸ hwU)
+        (hf _).trans <| (congrArg β hx).trans
+          (hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hw.1.1)
+      exact Set.mem_preimage.2 (hfw.symm ▸ hw.1)
     left_inv' q hq := by
-      dsimp only
-      rw [dite_eq_left hq.1]
+      dsimp only; rw [dite_eq_left hq.1]
       set x₀ := Φ.symm ⟨(s (f q), q), hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hq.1⟩
       have hx₀ : p x₀ = s (f q) := p.map_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _
       rw [← hx₀, e.symm_apply_mk_proj (e.mem_source.2 (hx₀.symm ▸ hq.2))]
       exact p.mk_orbitRelQuotientPullbackHomeomorph_symm β f hf hp hβ hfc _
     right_inv' w hw := by
-      have hwU : w.1 ∈ U := hw.1
       set x := e.toOpenPartialHomeomorph.symm (s w.1, w.2)
-      have hx : p x = s w.1 := e.proj_symm_apply' hwU.2
-      have hfw : f (Quotient.mk _ x) = w.1 :=
-        (hf x).trans ((congrArg β hx).trans
-          (hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hwU.1))
+      have hx : p x = s w.1 := e.proj_symm_apply' hw.1.2
+      have hfw : f (Quotient.mk _ x) = w.1 := (hf x).trans <| (congrArg β hx).trans
+        (hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hw.1.1)
       have hΦx : Φ.symm ⟨(s (f (Quotient.mk _ x)), Quotient.mk _ x),
-          hβ.isLocalHomeomorph.apply_localInverseAt_of_mem (hfw.symm ▸ hwU.1)⟩ = x := by
-        apply Φ.injective
-        apply Subtype.ext
-        rw [Φ.apply_symm_apply]
-        exact Prod.ext ((congrArg s hfw).trans hx.symm) rfl
-      refine Prod.ext hfw ?_
-      dsimp only
-      rw [dite_eq_left (hfw.symm ▸ hwU.1), hΦx]
-      exact congrArg Prod.snd (e.apply_symm_apply ((e.mem_target (x := (s w.1, w.2))).2 hwU.2))
+          hβ.isLocalHomeomorph.apply_localInverseAt_of_mem (hfw.symm ▸ hw.1.1)⟩ = x :=
+        Φ.injective <| Subtype.ext <| by
+          rw [Φ.apply_symm_apply]; exact Prod.ext ((congrArg s hfw).trans hx.symm) rfl
+      refine Prod.ext hfw ?_; dsimp only; rw [dite_eq_left (hfw.symm ▸ hw.1.1), hΦx]
+      exact congrArg Prod.snd (e.apply_symm_apply ((e.mem_target (x := (s w.1, w.2))).2 hw.1.2))
     open_source := hUo.preimage hfc
     open_target := hUo.prod isOpen_univ
     continuousOn_toFun := by
@@ -274,23 +258,18 @@ noncomputable def orbitRelQuotientTrivialization (hp : Continuous p)
       have hψ : Continuous ψ :=
         Φ.continuous_symm.comp ((hsf.prodMk continuous_subtype_val).subtype_mk _)
       have hψs : ∀ u : f ⁻¹' U, ψ u ∈ e.toOpenPartialHomeomorph.source := fun u ↦ e.mem_source.2 <|
-        by
-          rw [p.map_orbitRelQuotientPullbackHomeomorph_symm]
-          exact u.2.2
+        by rw [p.map_orbitRelQuotientPullbackHomeomorph_symm]; exact u.2.2
       refine ((hfc.comp continuous_subtype_val).prodMk
-        (continuous_snd.comp
-          (e.toOpenPartialHomeomorph.continuousOn.comp_continuous hψ hψs))).congr fun u ↦ ?_
-      refine Prod.ext rfl ?_
+        (continuous_snd.comp (e.toOpenPartialHomeomorph.continuousOn.comp_continuous hψ hψs))).congr
+        fun u ↦ Prod.ext rfl ?_
       dsimp only [Set.domRestrict_apply, Function.comp_apply, ψ, Bundle.Trivialization.coe_coe]
       rw [dite_eq_left u.2.1]
-    continuousOn_invFun := by
-      refine continuousOn_iff_continuous_domRestrict.2 ?_
-      have hsw : Continuous fun u : U ×ˢ (univ : Set F) ↦ (s u.1.1, u.1.2) :=
-        (s.continuousOn.comp_continuous (continuous_fst.comp continuous_subtype_val)
-          fun u ↦ u.2.1.1).prodMk (continuous_snd.comp continuous_subtype_val)
-      exact continuous_quot_mk.comp
-        (e.toOpenPartialHomeomorph.continuousOn_symm.comp_continuous hsw
-          fun u ↦ (e.mem_target (x := (s u.1.1, u.1.2))).2 u.2.1.2)
+    continuousOn_invFun := continuousOn_iff_continuous_domRestrict.2 <|
+      continuous_quot_mk.comp <| e.toOpenPartialHomeomorph.continuousOn_symm.comp_continuous
+        ((s.continuousOn.comp_continuous (continuous_fst.comp continuous_subtype_val)
+          fun u : U ×ˢ (univ : Set F) ↦ u.2.1.1).prodMk
+          (continuous_snd.comp continuous_subtype_val))
+        fun u ↦ (e.mem_target (x := (s u.1.1, u.1.2))).2 u.2.1.2
     baseSet := U
     open_baseSet := hUo
     source_eq := rfl
@@ -298,34 +277,67 @@ noncomputable def orbitRelQuotientTrivialization (hp : Continuous p)
     proj_toFun _ _ := rfl }
 
 /-- The base set of `MulActionHom.orbitRelQuotientTrivialization` at a sheet `y`. -/
-@[simp] theorem orbitRelQuotientTrivialization_baseSet (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {F : Type*} [TopologicalSpace F]
-    (e : Bundle.Trivialization F p) (y : Y) :
-    (p.orbitRelQuotientTrivialization β f hf hp hβ hfc e y).baseSet =
+@[simp] theorem orbitRelQuotientTrivialization_baseSet (e : Bundle.Trivialization F p) (y : Y) :
+    (p.orbitRelQuotientTrivialization β f hf hp hβ e y).baseSet =
       (hβ.isLocalHomeomorph.localInverseAt y).source ∩
-        (hβ.isLocalHomeomorph.localInverseAt y) ⁻¹' e.baseSet :=
-  (rfl)
+        (hβ.isLocalHomeomorph.localInverseAt y) ⁻¹' e.baseSet := (rfl)
 
-/-- If `y ∈ e.baseSet`, then `β y` lies in the base set of
-`MulActionHom.orbitRelQuotientTrivialization`. -/
-theorem apply_mem_orbitRelQuotientTrivialization_baseSet (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {F : Type*} [TopologicalSpace F]
-    {e : Bundle.Trivialization F p} {y : Y} (hy : y ∈ e.baseSet) :
-    β y ∈ (p.orbitRelQuotientTrivialization β f hf hp hβ hfc e y).baseSet :=
+/-- If `y ∈ e.baseSet`, then `β y` lies in `(p.orbitRelQuotientTrivialization ... e y).baseSet`. -/
+theorem apply_mem_orbitRelQuotientTrivialization_baseSet {e : Bundle.Trivialization F p} {y : Y}
+    (hy : y ∈ e.baseSet) : β y ∈ (p.orbitRelQuotientTrivialization β f hf hp hβ e y).baseSet :=
   ⟨hβ.isLocalHomeomorph.apply_self_mem_localInverseAt_source, by
     simpa [hβ.isLocalHomeomorph.localInverseAt_apply_self] using hy⟩
 
-include hf in
+/-- `(MulActionHom.orbitRelQuotientTrivialization ...).toOpenPartialHomeomorph.symm` lifts the base
+coordinate along `hβ.isLocalHomeomorph.localInverseAt y` and projects to `X/G`. -/
+@[simp] theorem orbitRelQuotientTrivialization_symm_apply (e : Bundle.Trivialization F p) (y : Y)
+    (w : Z × F) :
+    (p.orbitRelQuotientTrivialization β f hf hp hβ e y).toOpenPartialHomeomorph.symm w =
+      Quotient.mk (MulAction.orbitRel G X)
+        (e.toOpenPartialHomeomorph.symm (hβ.isLocalHomeomorph.localInverseAt y w.1, w.2)) := (rfl)
+
+/-- On `(hβ.isLocalHomeomorph.localInverseAt y).source`, `orbitRelQuotientTrivialization` evaluates
+`e` on the lift of `q` to the sheet `hβ.isLocalHomeomorph.localInverseAt y (f q)`. -/
+theorem orbitRelQuotientTrivialization_apply_of_mem (e : Bundle.Trivialization F p) (y : Y)
+    {q : MulAction.orbitRel.Quotient G X}
+    (hz : f q ∈ (hβ.isLocalHomeomorph.localInverseAt y).source) :
+    p.orbitRelQuotientTrivialization β f hf hp hβ e y q =
+      (f q, (e ((p.orbitRelQuotientFiberHomeomorph β f hf hp hβ
+        (hβ.isLocalHomeomorph.localInverseAt y (f q))
+        (hβ.isLocalHomeomorph.apply_localInverseAt_of_mem hz)).symm ⟨q, rfl⟩ : X)).2) :=
+  Prod.ext rfl (dite_eq_left hz)
+
+/-- For `p x ∈ (hβ.isLocalHomeomorph.localInverseAt y).target`, `orbitRelQuotientTrivialization`
+sends `⟦x⟧` to `(β (p x), (e x).2)`. -/
+theorem orbitRelQuotientTrivialization_mk_of_mem_target (e : Bundle.Trivialization F p) (y : Y)
+    {x : X} (hx : p x ∈ (hβ.isLocalHomeomorph.localInverseAt y).target) :
+    p.orbitRelQuotientTrivialization β f hf hp hβ e y (Quotient.mk _ x) = (β (p x), (e x).2) := by
+  have hz : f (Quotient.mk _ x) ∈ (hβ.isLocalHomeomorph.localInverseAt y).source := by
+    rw [hf x, ← congrFun (hβ.isLocalHomeomorph.localInverseAt_symm y)]
+    exact (hβ.isLocalHomeomorph.localInverseAt y).map_target hx
+  rw [p.orbitRelQuotientTrivialization_apply_of_mem β f hf hp hβ e y hz]
+  refine Prod.ext (hf x) (congrArg (fun u ↦ (e u).2) ?_)
+  rw [orbitRelQuotientFiberHomeomorph_symm_coe]
+  refine (p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ
+    (p.continuous_of_quotient_eq β f hf hp hβ)).injective (Subtype.ext ?_)
+  rw [Homeomorph.apply_symm_apply, orbitRelQuotientPullbackHomeomorph_apply,
+    orbitRelQuotientPullback_val]
+  exact Prod.ext ((congrArg (hβ.isLocalHomeomorph.localInverseAt y) (hf x)).trans
+    ((congrArg (hβ.isLocalHomeomorph.localInverseAt y)
+      (congrFun (hβ.isLocalHomeomorph.localInverseAt_symm y) (p x)).symm).trans
+      ((hβ.isLocalHomeomorph.localInverseAt y).right_inv hx))) rfl
+
+include hf hβ in
+omit hp in
 /-- If `p : X →[G] Y` is locally trivial with model fibre `F` and `β : Y → Z` is a quotient
-covering by `G`, then the descended projection `f : X/G → Z` is locally trivial with model fibre
-`F`. -/
-theorem exists_orbitRelQuotientTrivialization (hp : Continuous p)
-    (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) {F : Type*} [TopologicalSpace F]
+covering by `G`, then `f : X/G → Z` is locally trivial with model fibre `F`. -/
+theorem exists_orbitRelQuotientTrivialization
     (htriv : ∀ y, ∃ e : Bundle.Trivialization F p, y ∈ e.baseSet) (z : Z) :
     ∃ e' : Bundle.Trivialization F f, z ∈ e'.baseSet := by
-  obtain ⟨y, rfl⟩ := hβ.surjective z
-  obtain ⟨e, hy⟩ := htriv y
-  exact ⟨p.orbitRelQuotientTrivialization β f hf hp hβ hfc e y,
-    p.apply_mem_orbitRelQuotientTrivialization_baseSet β f hf hp hβ hfc hy⟩
+  have hp : Continuous p := continuous_iff_continuousAt.2 fun x ↦
+    let ⟨e, he⟩ := htriv (p x); e.continuousAt_proj (e.mem_source.2 he)
+  obtain ⟨y, rfl⟩ := hβ.surjective z; obtain ⟨e, hy⟩ := htriv y
+  exact ⟨p.orbitRelQuotientTrivialization β f hf hp hβ e y,
+    p.apply_mem_orbitRelQuotientTrivialization_baseSet β f hf hp hβ hy⟩
 
 end MulActionHom

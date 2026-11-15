@@ -380,21 +380,15 @@ def toTrivialization (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) : Trivial
   proj_toFun z _ := he z
 
 /-- The base set of `Homeomorph.toTrivialization` is `Set.univ`. -/
-@[simp]
-theorem toTrivialization_baseSet (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) :
-    (e.toTrivialization he).baseSet = univ :=
-  (rfl)
+@[simp] theorem toTrivialization_baseSet (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) :
+    (e.toTrivialization he).baseSet = univ := (rfl)
 
 /-- `Homeomorph.toTrivialization` agrees pointwise with the underlying homeomorphism. -/
-@[simp]
-theorem toTrivialization_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) (z : Z) :
-    e.toTrivialization he z = e z :=
-  (rfl)
+@[simp] theorem toTrivialization_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) (z : Z) :
+    e.toTrivialization he z = e z := (rfl)
 
 /-- The inverse of `Homeomorph.toTrivialization` agrees with `e.symm`. -/
-@[simp]
-theorem toTrivialization_symm_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z) (q : B × F) :
-    (e.toTrivialization he).toOpenPartialHomeomorph.symm q = e.symm q :=
-  (rfl)
+@[simp] theorem toTrivialization_symm_apply (e : Z ≃ₜ B × F) (he : ∀ z, (e z).1 = p z)
+    (q : B × F) : (e.toTrivialization he).toOpenPartialHomeomorph.symm q = e.symm q := (rfl)
 
 end Homeomorph
