@@ -250,28 +250,14 @@ theorem realProjectiveMorseSpectralSequence_page_d_eq_zero {r : ℤ} (hr : 3 ≤
       (isZero_page_X_of_rel R le_rfl hr (Or.inl hrel)) r (by lia)
   · exact HomologicalComplex.shape _ _ _ hrel
 
-/-- The moment function with the standard weights takes values in `[0, N]`. -/
-private theorem projectiveMomentFunction_natCast_mem_Icc (x : ℙ ℝ (Fin (N + 1) → ℝ)) :
-    projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ∈ Icc 0 (N : ℝ) := by
-  induction x using Projectivization.ind with
-  | h v hv =>
-    rw [projectiveMomentFunction_mk]
-    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 := by
-      obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-      exact Finset.sum_pos' (fun _ _ ↦ by positivity)
-        ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
-    refine ⟨div_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) hpos.le,
-      (div_le_iff₀ hpos).2 ?_⟩
-    rw [Finset.mul_sum]
-    exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right
-      (Nat.cast_le.2 (Nat.lt_succ_iff.1 i.2)) (by positivity)
-
 /-- The filtration of `ℝℙᴺ` by the sublevels `{f ≤ q - 1/2}` is empty at `q = 0`. -/
 private theorem sublevel_zero_eq_empty :
     ((fun c ↦ {x | projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ≤ c}) ∘
       fun q : ℤ ↦ (q : ℝ) - 2⁻¹) 0 = ∅ :=
   eq_empty_of_forall_notMem fun x hx ↦ by
-    have := (projectiveMomentFunction_natCast_mem_Icc x).1
+    have := (projectiveMomentFunction_mem_Icc
+      (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) (fun _ _ h ↦ Nat.cast_le.2 h) x).1
+    simp only [Fin.val_zero, Nat.cast_zero] at this
     simp only [Function.comp_apply, Int.cast_zero, zero_sub, mem_ofPred_eq] at hx
     linarith
 
@@ -280,7 +266,9 @@ private theorem sublevel_eq_univ {b : ℤ} (hb : N + 1 ≤ b) :
     ((fun c ↦ {x | projectiveMomentFunction ℝ (fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) x ≤ c}) ∘
       fun q : ℤ ↦ (q : ℝ) - 2⁻¹) b = univ :=
   eq_univ_of_forall fun x ↦ by
-    have := (projectiveMomentFunction_natCast_mem_Icc x).2
+    have := (projectiveMomentFunction_mem_Icc
+      (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ)) (fun _ _ h ↦ Nat.cast_le.2 h) x).2
+    simp only [Fin.val_last] at this
     have : ((N + 1 : ℤ) : ℝ) ≤ b := Int.cast_le.2 hb
     simp only [Function.comp_apply, mem_ofPred_eq]
     push_cast at this
