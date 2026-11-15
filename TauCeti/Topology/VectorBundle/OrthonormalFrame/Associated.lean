@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Isometry
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Principal
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Associated-bundle reconstruction and fibrewise naturality of orthonormal frames
@@ -440,55 +441,35 @@ variable (𝕜 F E V) in
 `AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V` onto `TotalSpace F E`, acting on each
 fibre by the linear isometric equivalence `associatedLinearIsometryEquiv`. -/
 def associatedBundleHomeomorph :
-    TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V) ≃ₜ TotalSpace F E where
-  toFun u := ⟨u.proj, associatedLinearIsometryEquiv 𝕜 F E V u.proj u.2⟩
-  invFun x := ⟨x.proj, (associatedLinearIsometryEquiv 𝕜 F E V x.proj).symm x.2⟩
-  left_inv := fun ⟨b, u⟩ ↦
-    congrArg (TotalSpace.mk' V b) ((associatedLinearIsometryEquiv 𝕜 F E V b).symm_apply_apply u)
-  right_inv := fun ⟨b, x⟩ ↦
-    congrArg (TotalSpace.mk' F b) ((associatedLinearIsometryEquiv 𝕜 F E V b).apply_symm_apply x)
-  continuous_toFun := by
-    rw [(AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk (unitary (V →L[𝕜] V))
-      (Fiber 𝕜 F E V) V).isQuotientMap.continuous_iff]
-    refine continuous_totalSpace_frame_apply.congr fun ⟨⟨b, φ⟩, v⟩ ↦ ?_
-    simp
-  continuous_invFun := by
-    rw [(isOpenQuotientMap_totalSpaceMk_frame_apply (E := E) hV.out).isQuotientMap.continuous_iff]
-    have hmk : Continuous fun q : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) × V ↦
-        (⟨q.1.proj, AssociatedBundle.mk (unitary (V →L[𝕜] V)) q.1.2 q.2⟩ :
-          TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V)) :=
-      (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk (unitary (V →L[𝕜] V))
-        (Fiber 𝕜 F E V) V).continuous
-    refine (hmk.comp (totalSpaceHomeomorph.symm.continuous.prodMap continuous_id)).congr
-      fun ⟨⟨b, φ⟩, v⟩ ↦ ?_
-    have hp : totalSpaceHomeomorph.symm (⟨b, φ⟩ : OrthonormalFrameBundle 𝕜 F E V) =
-        ⟨b, .ofFrame φ⟩ := by simp
-    exact (congrArg (fun p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) ↦
-      (⟨p.proj, AssociatedBundle.mk (unitary (V →L[𝕜] V)) p.2 v⟩ :
-        TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V))) hp).trans
-      (by simp [associatedLinearIsometryEquiv_symm_apply (.ofFrame φ) (φ v)])
+    TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V) ≃ₜ TotalSpace F E :=
+  bundleHomeomorph
+    (fun b ↦ (associatedLinearIsometryEquiv 𝕜 F E V b).toContinuousLinearEquiv) <| by
+      rw [(AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk (unitary (V →L[𝕜] V))
+        (Fiber 𝕜 F E V) V).isQuotientMap.continuous_iff]
+      refine continuous_totalSpace_frame_apply.congr fun ⟨⟨b, φ⟩, v⟩ ↦ ?_
+      simp
 
 @[simp]
 theorem associatedBundleHomeomorph_apply
     (u : TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V)) :
     associatedBundleHomeomorph 𝕜 F E V u =
       ⟨u.proj, associatedLinearIsometryEquiv 𝕜 F E V u.proj u.2⟩ :=
-  (rfl)
+  bundleHomeomorph_apply _ _ u
 
 theorem proj_associatedBundleHomeomorph
     (u : TotalSpace V (AssociatedBundle (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) V)) :
-    (associatedBundleHomeomorph 𝕜 F E V u).proj = u.proj :=
-  (rfl)
+    (associatedBundleHomeomorph 𝕜 F E V u).proj = u.proj := by
+  rw [associatedBundleHomeomorph_apply]
 
 @[simp]
 theorem associatedBundleHomeomorph_symm_apply (x : TotalSpace F E) :
     (associatedBundleHomeomorph 𝕜 F E V).symm x =
       ⟨x.proj, (associatedLinearIsometryEquiv 𝕜 F E V x.proj).symm x.2⟩ :=
-  (rfl)
+  bundleHomeomorph_symm_apply _ _ x
 
 theorem proj_associatedBundleHomeomorph_symm (x : TotalSpace F E) :
-    ((associatedBundleHomeomorph 𝕜 F E V).symm x).proj = x.proj :=
-  (rfl)
+    ((associatedBundleHomeomorph 𝕜 F E V).symm x).proj = x.proj := by
+  rw [associatedBundleHomeomorph_symm_apply]
 
 theorem associatedBundleHomeomorph_mk {b : B} (φ : Fiber 𝕜 F E V b) (v : V) :
     associatedBundleHomeomorph 𝕜 F E V ⟨b, AssociatedBundle.mk (unitary (V →L[𝕜] V)) φ v⟩ =

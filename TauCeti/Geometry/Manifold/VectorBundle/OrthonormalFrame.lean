@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Associated
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
@@ -557,71 +558,37 @@ diffeomorphism, acting on each fibre over `b` by the linear isometric equivalenc
 `associatedLinearIsometryEquiv ℝ F E V b` sending `[φ, v]` to `φ v`. -/
 def associatedBundleDiffeomorph :
     TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)
-      ≃ₘ^n⟮IB.prod 𝓘(ℝ, V), IB.prod 𝓘(ℝ, F)⟯ TotalSpace F E where
-  toEquiv := (associatedBundleHomeomorph ℝ F E V).toEquiv
-  contMDiff_toFun u₀ := by
-    let b₀ := u₀.proj
-    let e₀ := trivializationAt F E b₀
-    have hb₀ : b₀ ∈ e₀.baseSet := mem_baseSet_trivializationAt F E b₀
-    let c₀ := Module.finBasisOfFinrankEq ℝ F hV.out.symm
-    let b_mod := stdOrthonormalBasis ℝ V
-    have hproj : ContMDiffAt (IB.prod 𝓘(ℝ, V)) IB n
-        (TotalSpace.proj :
-          TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) → B) u₀ :=
-      Bundle.contMDiffAt_proj (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)
-    have hsec : ContMDiffAt (IB.prod 𝓘(ℝ, V)) (IB.prod (Unitary.model (V →L[ℝ] V))) n
-        (fun u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) ↦
-          ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)
-            ⟨u.proj, .ofFrame (e₀.orthonormalFrameAt c₀ b_mod u.proj)⟩) u₀ :=
-      ((e₀.contMDiffOn_orthonormalFrameAt (IB := IB) (n := n) c₀ b_mod).contMDiffAt
-        (e₀.open_baseSet.mem_nhds hb₀)).comp (f := TotalSpace.proj) u₀ hproj
-    have hcoord : ContMDiffAt (IB.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n
-        (fun u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) ↦
-          (trivializationAt V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)
-            b₀ u).2) u₀ :=
-      (Bundle.contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := u₀))).2
-    have hU : TotalSpace.proj ⁻¹' e₀.baseSet ∈ 𝓝 u₀ :=
-      (e₀.open_baseSet.preimage (FiberBundle.continuous_proj _ _)).mem_nhds hb₀
-    refine (hsec.totalSpaceMk_frame_apply hcoord).congr_of_eventuallyEq
-      (eventually_of_mem hU fun u hu ↦ ?_)
-    simpa only [Equiv.toFun_as_coe, Homeomorph.coe_toEquiv, associatedBundleHomeomorph_apply] using
-      congrArg (TotalSpace.mk' F u.proj)
-        (associatedLinearIsometryEquiv_eq_orthonormalFrameAt_apply hu u.2)
-  contMDiff_invFun x₀ := by
-    let b₀ := x₀.proj
-    let e₀ := trivializationAt F E b₀
-    have hb₀ : b₀ ∈ e₀.baseSet := mem_baseSet_trivializationAt F E b₀
-    let c₀ := Module.finBasisOfFinrankEq ℝ F hV.out.symm
-    let b_mod := stdOrthonormalBasis ℝ V
-    refine Bundle.contMDiffAt_totalSpace_iff.2 ⟨?_, ?_⟩
-    · exact (Bundle.contMDiffAt_proj E).congr_of_eventuallyEq (.of_forall fun x ↦ by simp)
-    · have hU : TotalSpace.proj ⁻¹' e₀.baseSet ∈ 𝓝 x₀ :=
-        (e₀.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hb₀
-      refine ((e₀.contMDiffOn_orthonormalFrameAt_symm c₀ b_mod).contMDiffAt
-        hU).congr_of_eventuallyEq (eventually_of_mem hU fun x hx ↦ ?_)
-      simp only [Homeomorph.coe_symm_toEquiv, associatedBundleHomeomorph_symm_apply]
-      rw [trivializationAt_associatedBundle_snd hx, LinearIsometryEquiv.apply_symm_apply]
-
-/-- Coercion of `associatedBundleDiffeomorph` to a function agrees with
-`associatedBundleHomeomorph`. -/
-@[simp]
-theorem coe_associatedBundleDiffeomorph :
-    ⇑(associatedBundleDiffeomorph n IB F E V) = associatedBundleHomeomorph ℝ F E V :=
-  (rfl)
-
-/-- Coercion of `(associatedBundleDiffeomorph n IB F E V).symm` to a function agrees with
-`(associatedBundleHomeomorph ℝ F E V).symm`. -/
-@[simp]
-theorem coe_associatedBundleDiffeomorph_symm :
-    ⇑(associatedBundleDiffeomorph n IB F E V).symm = (associatedBundleHomeomorph ℝ F E V).symm :=
-  (rfl)
-
-/-- The underlying homeomorphism of `associatedBundleDiffeomorph` is
-`associatedBundleHomeomorph`. -/
-@[simp]
-theorem toHomeomorph_associatedBundleDiffeomorph :
-    (associatedBundleDiffeomorph n IB F E V).toHomeomorph = associatedBundleHomeomorph ℝ F E V :=
-  Homeomorph.ext fun _ ↦ rfl
+      ≃ₘ^n⟮IB.prod 𝓘(ℝ, V), IB.prod 𝓘(ℝ, F)⟯ TotalSpace F E :=
+  bundleDiffeomorph
+    (fun b ↦ (associatedLinearIsometryEquiv ℝ F E V b).toContinuousLinearEquiv) <| by
+      intro u₀
+      let b₀ := u₀.proj
+      let e₀ := trivializationAt F E b₀
+      have hb₀ : b₀ ∈ e₀.baseSet := mem_baseSet_trivializationAt F E b₀
+      let c₀ := Module.finBasisOfFinrankEq ℝ F hV.out.symm
+      let b_mod := stdOrthonormalBasis ℝ V
+      have hproj : ContMDiffAt (IB.prod 𝓘(ℝ, V)) IB n
+          (TotalSpace.proj :
+            TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) → B) u₀ :=
+        Bundle.contMDiffAt_proj (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)
+      have hsec : ContMDiffAt (IB.prod 𝓘(ℝ, V)) (IB.prod (Unitary.model (V →L[ℝ] V))) n
+          (fun u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) ↦
+            ManifoldTotalSpace.homeomorph (unitary (V →L[ℝ] V)) (Fiber ℝ F E V)
+              ⟨u.proj, .ofFrame (e₀.orthonormalFrameAt c₀ b_mod u.proj)⟩) u₀ :=
+        ((e₀.contMDiffOn_orthonormalFrameAt (IB := IB) (n := n) c₀ b_mod).contMDiffAt
+          (e₀.open_baseSet.mem_nhds hb₀)).comp (f := TotalSpace.proj) u₀ hproj
+      have hcoord : ContMDiffAt (IB.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n
+          (fun u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V) ↦
+            (trivializationAt V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)
+              b₀ u).2) u₀ :=
+        (Bundle.contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := u₀))).2
+      have hU : TotalSpace.proj ⁻¹' e₀.baseSet ∈ 𝓝 u₀ :=
+        (e₀.open_baseSet.preimage (FiberBundle.continuous_proj _ _)).mem_nhds hb₀
+      refine (hsec.totalSpaceMk_frame_apply hcoord).congr_of_eventuallyEq
+        (eventually_of_mem hU fun u hu ↦ ?_)
+      simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+        congrArg (TotalSpace.mk' F u.proj)
+          (associatedLinearIsometryEquiv_eq_orthonormalFrameAt_apply hu u.2)
 
 /-- `associatedBundleDiffeomorph` acts on each fibre by the linear isometric equivalence
 `associatedLinearIsometryEquiv`. -/
@@ -629,28 +596,52 @@ theorem associatedBundleDiffeomorph_apply
     (u : TotalSpace V (AssociatedBundle (unitary (V →L[ℝ] V)) (Fiber ℝ F E V) V)) :
     associatedBundleDiffeomorph n IB F E V u =
       ⟨u.proj, associatedLinearIsometryEquiv ℝ F E V u.proj u.2⟩ :=
-  associatedBundleHomeomorph_apply u
+  bundleDiffeomorph_apply _ _ u
 
 /-- `(associatedBundleDiffeomorph n IB F E V).symm` acts on each fibre by the inverse linear
 isometric equivalence `(associatedLinearIsometryEquiv ℝ F E V ·).symm`. -/
 theorem associatedBundleDiffeomorph_symm_apply (x : TotalSpace F E) :
     (associatedBundleDiffeomorph n IB F E V).symm x =
       ⟨x.proj, (associatedLinearIsometryEquiv ℝ F E V x.proj).symm x.2⟩ :=
-  associatedBundleHomeomorph_symm_apply x
+  bundleDiffeomorph_symm_apply _ _ x
+
+/-- Coercion of `associatedBundleDiffeomorph` to a function agrees with
+`associatedBundleHomeomorph`. -/
+@[simp]
+theorem coe_associatedBundleDiffeomorph :
+    ⇑(associatedBundleDiffeomorph n IB F E V) = associatedBundleHomeomorph ℝ F E V :=
+  funext fun u ↦
+    (associatedBundleDiffeomorph_apply u).trans (associatedBundleHomeomorph_apply u).symm
+
+/-- Coercion of `(associatedBundleDiffeomorph n IB F E V).symm` to a function agrees with
+`(associatedBundleHomeomorph ℝ F E V).symm`. -/
+@[simp]
+theorem coe_associatedBundleDiffeomorph_symm :
+    ⇑(associatedBundleDiffeomorph n IB F E V).symm = (associatedBundleHomeomorph ℝ F E V).symm :=
+  funext fun x ↦
+    (associatedBundleDiffeomorph_symm_apply x).trans (associatedBundleHomeomorph_symm_apply x).symm
+
+/-- The underlying homeomorphism of `associatedBundleDiffeomorph` is
+`associatedBundleHomeomorph`. -/
+@[simp]
+theorem toHomeomorph_associatedBundleDiffeomorph :
+    (associatedBundleDiffeomorph n IB F E V).toHomeomorph = associatedBundleHomeomorph ℝ F E V :=
+  Homeomorph.ext fun u ↦
+    (associatedBundleDiffeomorph_apply u).trans (associatedBundleHomeomorph_apply u).symm
 
 /-- Evaluating `associatedBundleDiffeomorph` on the class `[φ, v]` over `b` of an orthonormal
 frame `φ` and a model vector `v` applies `φ` to `v` in `E b`. -/
 theorem associatedBundleDiffeomorph_mk {b : B} (φ : Fiber ℝ F E V b) (v : V) :
     associatedBundleDiffeomorph n IB F E V ⟨b, AssociatedBundle.mk (unitary (V →L[ℝ] V)) φ v⟩ =
-      ⟨b, φ.frame v⟩ :=
-  associatedBundleHomeomorph_mk φ v
+      ⟨b, φ.frame v⟩ := by
+  rw [coe_associatedBundleDiffeomorph, associatedBundleHomeomorph_mk]
 
 /-- Evaluating `(associatedBundleDiffeomorph n IB F E V).symm` on `⟨b, w⟩` expresses `w : E b` in
 any orthonormal frame `φ` of `E b` as the class `[φ, φ⁻¹ w]` over `b`. -/
 theorem associatedBundleDiffeomorph_symm_mk_apply {b : B} (φ : Fiber ℝ F E V b) (w : E b) :
     (associatedBundleDiffeomorph n IB F E V).symm ⟨b, w⟩ =
-      ⟨b, AssociatedBundle.mk (unitary (V →L[ℝ] V)) φ (φ.frame.symm w)⟩ :=
-  associatedBundleHomeomorph_symm_mk_apply φ w
+      ⟨b, AssociatedBundle.mk (unitary (V →L[ℝ] V)) φ (φ.frame.symm w)⟩ := by
+  rw [coe_associatedBundleDiffeomorph_symm, associatedBundleHomeomorph_symm_mk_apply]
 
 end Associated
 
