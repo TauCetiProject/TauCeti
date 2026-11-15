@@ -48,6 +48,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
+* `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
+  prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
@@ -309,6 +311,14 @@ theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] 
   · subst hNM
     rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
       ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
+
+/-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
+natural numbers prime to `N` and `0` at the others. -/
+theorem one_natCast {R : Type*} [CommMonoidWithZero R] {N : ℕ} (n : ℕ) :
+    (1 : DirichletCharacter R N) n = if n.Coprime N then 1 else 0 := by
+  split_ifs with hn
+  · exact MulChar.one_apply ((ZMod.isUnit_iff_coprime n N).mpr hn)
+  · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime n N).mp hn)
 
 /-- The product character at the least common multiple of the levels is the pointwise product
 on natural numbers, including the nonunits. -/
