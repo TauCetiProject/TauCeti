@@ -230,9 +230,7 @@ theorem face_castSucc_prismLast (H : ContinuousMap.Homotopy f g) {n : ℕ}
   -- The last coordinate is untouched, and the other ones form the face of the initial part.
   have hlast :
       (i.castSucc.insertNth (α := fun _ ↦ I) t x) (Fin.last (n + 1)) = x (Fin.last n) := by
-    have : (Fin.last (n + 1) : Fin (n + 2)) = i.castSucc.succAbove (Fin.last n) :=
-      (Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last i))).symm
-    rw [this, Fin.insertNth_apply_succAbove]
+    rw [← Fin.succAbove_ne_last_last (Fin.castSucc_lt_last i).ne, Fin.insertNth_apply_succAbove]
   have hinit : Fin.init (i.castSucc.insertNth (α := fun _ ↦ I) t x) =
       i.insertNth (α := fun _ ↦ I) t (Fin.init x) := by
     funext j

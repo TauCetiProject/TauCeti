@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 import TauCeti.Algebra.Ring.NegOnePow
-import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # The differential on a balanced tensor product of DG modules
@@ -243,59 +243,6 @@ section SecondFactor
 variable {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N'] {ℳN' : ℤ → Submodule R N'}
   [DirectSum.Decomposition ℳN'] [SetLike.GradedSMul 𝒜 ℳN'] {dN' : N' →ₗ[R] N'}
   {k : N →ₗ[R] N'}
-
-/-- Pairing the Koszul twist of the first factor with an odd graded linear map of the second is
-balanced: the two signs picked up by an element of the algebra agree. -/
-private theorem koszulTwist_tmul_balanced
-    (hk : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N, k (a • x) = p.negOnePow • (a • k x))
-    (a : A) (m : M) (x : N) :
-    tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 (op a • m)) (k x) =
-      tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 m) (k (a • x)) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add a b ha hb => simp only [op_add, add_smul, map_add, add_tmul, tmul_add, ha, hb]
-  | @homogeneous p a =>
-    induction m using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | add m m' hm hm' => simp only [smul_add, map_add, add_tmul, hm, hm']
-    | @homogeneous q m =>
-      have ham : op (a : A) • (m : M) ∈ (InternalGrading.ofDecomposition ℳ).piece (q + p) := by
-        simpa only [InternalGrading.ofDecomposition_piece] using op_smul_mem_of_mem_graded a.2 m.2
-      have hm : (m : M) ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
-        simpa only [InternalGrading.ofDecomposition_piece] using m.2
-      rw [InternalGrading.koszulTwist_one_apply_of_mem _ ham,
-        InternalGrading.koszulTwist_one_apply_of_mem _ hm, hk a.2, Int.negOnePow_add]
-      simp only [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast,
-        smul_tmul, tmul_smul, balance, Units.val_mul, Int.cast_mul, mul_comm, mul_smul]
-
-variable (ℳ) in
-/-- An odd graded linear map `k` in the second factor, tensored with the identity of the first:
-`m ⊗ x ↦ (-1) ^ |m| m ⊗ k x`. The sign is the Koszul sign of `k` passing `m`, and it makes the map
-well defined on the balanced tensor product. -/
-noncomputable def koszulMapRight
-    (hk : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N, k (a • x) = p.negOnePow • (a • k x)) :
-    BalancedTensorProduct R A M N →ₗ[R] BalancedTensorProduct R A M N' :=
-  lift (((mk R A).comp ((InternalGrading.ofDecomposition ℳ).koszulTwist 1)).compl₂ k)
-    (fun a m x ↦ by
-      simpa only [LinearMap.compl₂_apply, LinearMap.comp_apply, mk_apply] using
-        koszulTwist_tmul_balanced hk a m x)
-
-/-- On pure tensors, the first factor acquires its Koszul twist. -/
-@[simp]
-theorem koszulMapRight_tmul
-    (hk : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N, k (a • x) = p.negOnePow • (a • k x))
-    (m : M) (x : N) :
-    koszulMapRight ℳ hk (tmul R A m x) =
-      tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 m) (k x) := by
-  simp [koszulMapRight]
-
-/-- On a homogeneous first factor of degree `q`, the Koszul twist is the sign `(-1) ^ q`. -/
-theorem koszulMapRight_tmul_of_mem
-    (hk : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N, k (a • x) = p.negOnePow • (a • k x))
-    {q : ℤ} {m : M} (hm : m ∈ ℳ q) (x : N) :
-    koszulMapRight ℳ hk (tmul R A m x) = ((q.negOnePow : ℤ) : R) • tmul R A m (k x) := by
-  rw [koszulMapRight_tmul, (InternalGrading.ofDecomposition ℳ).koszulTwist_apply_of_mem
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hm) 1, one_mul, smul_tmul]
 
 /-- **Homotopies in the second factor.** Let `D` and `D'` be endomorphisms of `M ⊗_A N` and
 `M ⊗_A N'` given on homogeneous pure tensors by the signed tensor differential

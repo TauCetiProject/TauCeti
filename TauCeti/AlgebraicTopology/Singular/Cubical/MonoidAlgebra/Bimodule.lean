@@ -420,10 +420,10 @@ end LeftMap
 
 section Self
 
-variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
 
-/-- For a monoid acting on itself by left multiplication, the left action of chains is the
-Pontryagin product. -/
+/-- For a topological magma acting on itself by left multiplication, the left action of chains is
+the Pontryagin product. -/
 theorem NormalizedCubicalChain.leftAct_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
     (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
   have h : leftActMap G G = mulMap G :=
