@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 /-!
 # Uniform Coxeter-element and exponent theorems across all Dynkin types
@@ -27,8 +28,8 @@ classification-free theorems for any irreducible reduced crystallographic finite
 * **Order and root count**: `orderOf (wordProd P b l) = t.coxeterNumber` and `|Φ| = r · h`.
 * **Eigenvalues and positive roots**: `(W.map _).charpoly.roots` is
   `t.exponents.map (fun e => exp (2πi e / t.coxeterNumber))`, and `t.exponents.sum = |Φ⁺|`.
-* **Coprime residues are exponents** (`TauCeti.DynkinType.mem_exponents_of_coprime`): proved
-  uniformly across all nine families via Galois conjugacy over `ℚ` on `t.simplyConnectedRootDatum`.
+* **Coprime residues are exponents** (`TauCeti.DynkinType.mem_exponents_of_coprime`): every
+  `a < t.coxeterNumber` coprime to `t.coxeterNumber` belongs to `t.exponents`.
 
 ## Main results
 
@@ -71,17 +72,14 @@ theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.V
     simpa [DynkinType.coxeterNumber_A] using
       orderOf_wordProd_of_hasCartanType_A (DynkinType.valid_A.mp ht) h hnd hall
   | B n =>
-    have := DynkinType.valid_B.mp ht
     simpa [DynkinType.coxeterNumber_B] using
-      orderOf_wordProd_of_hasCartanType_B (by omega) h hnd hall
+      orderOf_wordProd_of_hasCartanType_B (by have := DynkinType.valid_B.mp ht; omega) h hnd hall
   | C n =>
-    have := DynkinType.valid_C.mp ht
     simpa [DynkinType.coxeterNumber_C] using
-      orderOf_wordProd_of_hasCartanType_C (by omega) h hnd hall
+      orderOf_wordProd_of_hasCartanType_C (by have := DynkinType.valid_C.mp ht; omega) h hnd hall
   | D n =>
-    have := DynkinType.valid_D.mp ht
     simpa [DynkinType.coxeterNumber_D] using
-      orderOf_wordProd_of_hasCartanType_D (by omega) h hnd hall
+      orderOf_wordProd_of_hasCartanType_D (by have := DynkinType.valid_D.mp ht; omega) h hnd hall
   | E6 => simpa [DynkinType.coxeterNumber_E6] using orderOf_wordProd_of_hasCartanType_E6 h hnd hall
   | E7 => simpa [DynkinType.coxeterNumber_E7] using orderOf_wordProd_of_hasCartanType_E7 h hnd hall
   | E8 => simpa [DynkinType.coxeterNumber_E8] using orderOf_wordProd_of_hasCartanType_E8 h hnd hall
@@ -89,23 +87,14 @@ theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.V
   | G2 => simpa [DynkinType.coxeterNumber_G2] using orderOf_wordProd_of_hasCartanType_G2 h hnd hall
 
 private theorem roots_eq_map_exponents {t : DynkinType} (ht : t.Valid) {r : Multiset ℂ}
-    {L : List ℕ} (hLs : (L : Multiset ℕ) = t.exponents) (hs_nd : t.exponents.Nodup)
-    (h : (∀ ζ, ζ ∈ r ↔ ∃ e ∈ L,
-      Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) = ζ) ∧ r.Nodup) :
+    (h : (∀ ζ, ζ ∈ r ↔ ∃ e ∈ t.exponents,
+      Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) = ζ) ∧ r.Nodup)
+    (hs_nd : t.exponents.Nodup := by simp) :
     r = t.exponents.map fun e : ℕ =>
       Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) := by
-  have hh : t.coxeterNumber ≠ 0 := (t.coxeterNumber_pos ht).ne'
-  have hnd : (t.exponents.map fun e : ℕ =>
-      Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber))).Nodup := by
-    refine hs_nd.map_on fun a ha b hb hab => ?_
-    have hpow : ∀ k : ℕ, Complex.exp (2 * Real.pi * Complex.I * (k / t.coxeterNumber)) =
-        Complex.exp (2 * Real.pi * Complex.I / t.coxeterNumber) ^ k := fun k => by
-      rw [← Complex.exp_nat_mul]; congr 1; ring
-    rw [hpow a, hpow b] at hab
-    exact (Complex.isPrimitiveRoot_exp _ hh).pow_inj
-      (t.lt_coxeterNumber_of_mem_exponents ht ha) (t.lt_coxeterNumber_of_mem_exponents ht hb) hab
-  refine (h.2.ext hnd).2 fun ζ => ?_
-  rw [h.1, ← hLs, Multiset.mem_map]; simp
+  refine (h.2.ext (Complex.nodup_map_exp_two_pi_I_mul_div hs_nd fun e he =>
+    t.lt_coxeterNumber_of_mem_exponents ht he)).2 fun ζ => ?_
+  rw [h.1, Multiset.mem_map]
 
 /-- **Complex eigenvalue multiset of every Coxeter element of a base of valid Cartan type `t` on the
 simple roots**: the roots of `W.charpoly` over `ℂ`, counted with multiplicity, are
@@ -121,37 +110,22 @@ theorem roots_charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] {t : DynkinTy
     simpa [DynkinType.exponents_A, DynkinType.coxeterNumber_A] using
       roots_charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW
   | B n =>
-    have := DynkinType.valid_B.mp ht
     simpa [DynkinType.exponents_B, DynkinType.coxeterNumber_B] using
-      roots_charpoly_of_hasCartanType_B_of_actsBy (by omega) h hnd hall hW
+      roots_charpoly_of_hasCartanType_B_of_actsBy
+        (by have := DynkinType.valid_B.mp ht; omega) h hnd hall hW
   | C n =>
-    have := DynkinType.valid_C.mp ht
     simpa [DynkinType.exponents_C, DynkinType.coxeterNumber_C] using
-      roots_charpoly_of_hasCartanType_C_of_actsBy (by omega) h hnd hall hW
+      roots_charpoly_of_hasCartanType_C_of_actsBy
+        (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW
   | D n =>
     have := DynkinType.valid_D.mp ht
     simpa [DynkinType.exponents_D, show n ≠ 0 by omega, DynkinType.coxeterNumber_D] using
       roots_charpoly_of_hasCartanType_D_of_actsBy (by omega) h hnd hall hW
-  | E6 =>
-    exact roots_eq_map_exponents ht (L := e6Exponents) (by rw [DynkinType.exponents_E6]; decide)
-      (by rw [DynkinType.exponents_E6]; decide)
-      (by simpa [DynkinType.coxeterNumber_E6] using eigenvalues_of_hasCartanType_E6 h hnd hall hW)
-  | E7 =>
-    exact roots_eq_map_exponents ht (L := e7Exponents) (by rw [DynkinType.exponents_E7]; decide)
-      (by rw [DynkinType.exponents_E7]; decide)
-      (by simpa [DynkinType.coxeterNumber_E7] using eigenvalues_of_hasCartanType_E7 h hnd hall hW)
-  | E8 =>
-    exact roots_eq_map_exponents ht (L := e8Exponents) (by rw [DynkinType.exponents_E8]; decide)
-      (by rw [DynkinType.exponents_E8]; decide)
-      (by simpa [DynkinType.coxeterNumber_E8] using eigenvalues_of_hasCartanType_E8 h hnd hall hW)
-  | F4 =>
-    exact roots_eq_map_exponents ht (L := f4Exponents) (by rw [DynkinType.exponents_F4]; decide)
-      (by rw [DynkinType.exponents_F4]; decide)
-      (by simpa [DynkinType.coxeterNumber_F4] using eigenvalues_of_hasCartanType_F4 h hnd hall hW)
-  | G2 =>
-    exact roots_eq_map_exponents ht (L := g2Exponents) (by rw [DynkinType.exponents_G2]; decide)
-      (by rw [DynkinType.exponents_G2]; decide)
-      (by simpa [DynkinType.coxeterNumber_G2] using eigenvalues_of_hasCartanType_G2 h hnd hall hW)
+  | E6 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_E6 h hnd hall hW)
+  | E7 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_E7 h hnd hall hW)
+  | E8 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_E8 h hnd hall hW)
+  | F4 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_F4 h hnd hall hW)
+  | G2 => exact roots_eq_map_exponents ht (eigenvalues_of_hasCartanType_G2 h hnd hall hW)
 
 /-- **For any finite reduced crystallographic root pairing with a base of valid Cartan type `t`, the
 number of roots equals the rank times the order of any Coxeter element**: `|Φ| = r · h`. -/
@@ -168,7 +142,7 @@ theorem sum_exponents_eq_ncard_posRoots_of_hasCartanType [Finite ι] [P.IsReduce
     {t : DynkinType} (ht : t.Valid) (h : HasCartanType P b t) :
     t.exponents.sum = (posRoots P b).ncard := by
   have := t.two_mul_sum_exponents_eq_numRoots
-  have := h.two_mul_ncard_posRoots ht
+  have := h.two_mul_ncard_posRoots_eq_numRoots ht
   omega
 
 end HasCartanType
@@ -177,12 +151,7 @@ end TauCeti.Coxeter
 
 namespace TauCeti.DynkinType
 
-/-- **Every residue `a < h` coprime to the Coxeter number `h` is an exponent of `t`.**
-
-Proved uniformly across all nine Dynkin types without case analysis via Galois conjugacy over `ℚ`
-(`IsPrimitiveRoot.exists_eq_of_isRoot_of_map_eq_prod`) applied to the integer characteristic
-polynomial of a Coxeter element on `t.simplyConnectedRootDatum ht` together with `1 ∈ t.exponents`.
--/
+/-- **Every residue `a < t.coxeterNumber` coprime to `t.coxeterNumber` is an exponent of `t`.** -/
 theorem mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
     (ha : a < t.coxeterNumber) (hcop : a.Coprime t.coxeterNumber) : a ∈ t.exponents := by
   classical
@@ -203,7 +172,7 @@ theorem mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
   have hroots : WC.charpoly.roots = t.exponents.map (ζ ^ ·) := by
     rw [Coxeter.roots_charpoly_of_hasCartanType_of_actsBy ht htype b₀.support.attach.nodup_toList
       (fun i => Finset.mem_toList.2 (Finset.mem_attach _ i)) (b₀.actsBy_wordProd l₀)]
-    exact Multiset.map_congr rfl fun e _ => by dsimp [ζ]; rw [← Complex.exp_nat_mul]; congr 1; ring
+    exact Multiset.map_congr rfl fun e _ => Complex.exp_two_pi_I_mul_div e h
   have hsplit : (WC.charpoly.roots.map fun r => X - Polynomial.C r).prod = WC.charpoly :=
     prod_multiset_X_sub_C_of_monic_of_roots_card_eq WC.charpoly_monic <| by
       rw [hroots, Multiset.card_map, t.card_exponents, WC.charpoly_natDegree_eq_dim,

@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coxeter.Restriction
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-public import TauCeti.LinearAlgebra.RootSystem.LongestElement
+import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 
 /-!
 # The Weyl group of type `Aₙ` is the symmetric group
@@ -34,8 +34,7 @@ The marking turns combinatorics of the Weyl group into combinatorics of permutat
 of a Weyl group element, which is its number of inversions among the positive roots, is the
 number of inversions of the corresponding permutation, and a simple root is sent to a positive
 root exactly when the permutation keeps the two letters of the corresponding adjacent
-transposition in order. Counting the inversions of the order-reversing permutation then gives
-`n (n + 1) / 2` positive roots and `n (n + 1)` roots in all.
+transposition in order. Type `Aₙ` has `n (n + 1) / 2` positive roots and `n (n + 1)` roots in all.
 
 ## Main definitions
 
@@ -194,39 +193,19 @@ theorem card_weylGroup_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
   obtain ⟨e⟩ := P.nonempty_weylGroup_mulEquiv_perm_of_typeA b h
   rw [Nat.card_congr e.toEquiv, Nat.card_perm, Nat.card_fin]
 
-include he in
-/-- The number of positive roots of a base labelled as `Aₙ` is the number of pairs of letters
-in `Fin (n + 1)`. -/
-private theorem ncard_posRoots_eq_choose_two : (posRoots P b).ncard = (n + 1).choose 2 := by
-  set φ := P.typeAWeylGroupEquiv b e he
-  have : Finite P.weylGroup := Finite.of_equiv _ φ.symm.toEquiv
-  have hpairs : #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2} = (n + 1).choose 2 := by
-    rw [Fintype.card_product_filter_lt, Fintype.card_fin]
-  rw [← hpairs]
-  refine le_antisymm ?_ ?_
-  · obtain ⟨w₀, hw₀⟩ := exists_inversions_eq_posRoots_of_finite_weylGroup P b
-    rw [← hw₀, P.ncard_inversions_eq_card_typeAWeylGroupEquiv b e he]
-    exact card_le_card fun p ↦ by simp +contextual
-  · obtain ⟨w, hw⟩ := φ.surjective Fin.revPerm
-    calc #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2}
-        = #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2 ∧ φ w p.2 < φ w p.1} := by
-          simp_rw [hw, Fin.revPerm_apply, Fin.rev_lt_rev, and_self]
-      _ = (inversions P b w).ncard := (P.ncard_inversions_eq_card_typeAWeylGroupEquiv b e he w).symm
-      _ ≤ (posRoots P b).ncard := ncard_inversions_le P b w
+/-- A root pairing with a base of Cartan type `Aₙ` has `n (n + 1)` roots. -/
+theorem natCard_eq_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
+    Nat.card ι = n * (n + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have : IsEmpty ι := ⟨fun i => P.ne_zero i
+      (by simpa [card_eq_zero.mp h.card_support] using b.root_mem_span_int i)⟩
+    simp
+  · simpa [DynkinType.numRoots_A] using
+      h.natCard_eq_numRoots (DynkinType.valid_A.mpr (Nat.pos_of_ne_zero hn))
 
 /-- A base of Cartan type `Aₙ` has `n (n + 1) / 2` positive roots. -/
 theorem ncard_posRoots_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
     (posRoots P b).ncard = n * (n + 1) / 2 := by
-  obtain ⟨e, he⟩ := exists_cartanMatrix_eq_A h
-  rw [P.ncard_posRoots_eq_choose_two b e he, Nat.choose_two_right, Nat.add_sub_cancel,
-    Nat.mul_comm]
-
-/-- A root pairing with a base of Cartan type `Aₙ` has `n (n + 1)` roots. -/
-theorem natCard_eq_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
-    Nat.card ι = n * (n + 1) := by
-  obtain ⟨e, he⟩ := exists_cartanMatrix_eq_A h
-  rw [← two_mul_ncard_posRoots P b, P.ncard_posRoots_eq_choose_two b e he, Nat.choose_two_right,
-    Nat.add_sub_cancel, Nat.mul_comm (n + 1),
-    Nat.mul_div_cancel' (Nat.even_mul_succ_self n).two_dvd]
+  rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_A b h]
 
 end RootPairing

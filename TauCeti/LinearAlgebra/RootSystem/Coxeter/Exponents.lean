@@ -64,12 +64,7 @@ def coxeterNumber : DynkinType → ℕ
 
 /-- Every valid Dynkin type has Coxeter number at least `2`. -/
 theorem two_le_coxeterNumber {t : DynkinType} (ht : t.Valid) : 2 ≤ t.coxeterNumber := by
-  cases t with
-  | A n => have := valid_A.mp ht; simp; omega
-  | B n => have := valid_B.mp ht; simp; omega
-  | C n => have := valid_C.mp ht; simp; omega
-  | D n => have := valid_D.mp ht; simp; omega
-  | E6 | E7 | E8 | F4 | G2 => simp
+  cases t <;> simp_all [valid_A, valid_B, valid_C, valid_D] <;> omega
 
 /-- Every valid Dynkin type has positive Coxeter number. -/
 theorem coxeterNumber_pos {t : DynkinType} (ht : t.Valid) : 0 < t.coxeterNumber :=
@@ -79,14 +74,13 @@ theorem coxeterNumber_pos {t : DynkinType} (ht : t.Valid) : 0 < t.coxeterNumber 
 theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
     t.numRoots = t.rank * t.coxeterNumber := by
   cases t with
-  | A n => simp
   | B n | C n => simp; ring
   | D n =>
     rcases n with _ | n
     · simp
-    · simp only [numRoots_D, rank_D, coxeterNumber_D]
-      rw [show 2 * (n + 1) - 2 = 2 * n by omega, Nat.add_sub_cancel]; ring
-  | E6 | E7 | E8 | F4 | G2 => simp
+    · simp only [numRoots_D, add_tsub_cancel_right, rank_D, coxeterNumber_D]
+      rw [show 2 * (n + 1) - 2 = 2 * n by omega]; ring
+  | _ => simp
 
 /-- For a valid Dynkin type, `h = |Φ| / r`. -/
 theorem coxeterNumber_eq_numRoots_div_rank {t : DynkinType} (ht : t.Valid) :
@@ -109,9 +103,8 @@ def exponents : DynkinType → Multiset ℕ
 @[simp] lemma exponents_A (n : ℕ) : (A n).exponents = (Multiset.range n).map (· + 1) := (rfl)
 @[simp] lemma exponents_B (n : ℕ) : (B n).exponents = (Multiset.range n).map (2 * · + 1) := (rfl)
 @[simp] lemma exponents_C (n : ℕ) : (C n).exponents = (Multiset.range n).map (2 * · + 1) := (rfl)
-@[simp] lemma exponents_D (n : ℕ) :
-    (D n).exponents =
-      if n = 0 then 0 else (n - 1) ::ₘ (Multiset.range (n - 1)).map (2 * · + 1) := (rfl)
+@[simp] lemma exponents_D (n : ℕ) : (D n).exponents =
+    if n = 0 then 0 else (n - 1) ::ₘ (Multiset.range (n - 1)).map (2 * · + 1) := (rfl)
 @[simp] lemma exponents_E6 : E6.exponents = {1, 4, 5, 7, 8, 11} := (rfl)
 @[simp] lemma exponents_E7 : E7.exponents = {1, 5, 7, 9, 11, 13, 17} := (rfl)
 @[simp] lemma exponents_E8 : E8.exponents = {1, 7, 11, 13, 17, 19, 23, 29} := (rfl)
@@ -121,9 +114,7 @@ def exponents : DynkinType → Multiset ℕ
 /-- **A Dynkin type has `t.rank` exponents**, counted with multiplicity. -/
 @[simp]
 theorem card_exponents (t : DynkinType) : t.exponents.card = t.rank := by
-  cases t with
-  | D n => rcases n with _ | n <;> simp
-  | _ => simp
+  cases t with | D n => rcases n with _ | n <;> simp | _ => simp
 
 /-- Every exponent of `t` is bounded above by `t.coxeterNumber`. -/
 theorem le_coxeterNumber_of_mem_exponents {t : DynkinType} {e : ℕ} (he : e ∈ t.exponents) :
@@ -134,11 +125,10 @@ theorem le_coxeterNumber_of_mem_exponents {t : DynkinType} {e : ℕ} (he : e ∈
       coxeterNumber_C, Multiset.mem_map, Multiset.mem_range] at he ⊢
     obtain ⟨k, _, rfl⟩ := he; omega
   | D n =>
-    rcases n with _ | n
-    · simp at he
-    · simp only [exponents_D, Nat.succ_ne_zero, ↓reduceIte, coxeterNumber_D, Multiset.mem_cons,
-        Multiset.mem_map, Multiset.mem_range] at he ⊢
-      rcases he with rfl | ⟨k, _, rfl⟩ <;> omega
+    rcases n with _ | n; · simp at he
+    simp only [exponents_D, Nat.succ_ne_zero, ↓reduceIte, coxeterNumber_D, Multiset.mem_cons,
+      Multiset.mem_map, Multiset.mem_range] at he ⊢
+    rcases he with rfl | ⟨k, _, rfl⟩ <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
 private theorem map_sub_map_range (m h : ℕ) (f : ℕ → ℕ) (hf : ∀ k < m, h - f k = f (m - 1 - k)) :
@@ -161,12 +151,11 @@ theorem map_coxeterNumber_sub_exponents (t : DynkinType) :
   | A n => exact map_sub_map_range n (n + 1) (· + 1) fun k hk => by omega
   | B n | C n => exact map_sub_map_range n (2 * n) (2 * · + 1) fun k hk => by omega
   | D n =>
-    rcases n with _ | n
-    · simp
-    · simp only [exponents_D, Nat.succ_ne_zero, ↓reduceIte, coxeterNumber_D, Nat.add_sub_cancel,
-        Multiset.map_cons]
-      rw [show 2 * (n + 1) - 2 - n = n by omega,
-        map_sub_map_range n (2 * (n + 1) - 2) (2 * · + 1) fun k hk => by omega]
+    rcases n with _ | n; · simp
+    simp only [exponents_D, Nat.succ_ne_zero, ↓reduceIte, coxeterNumber_D, Nat.add_sub_cancel,
+      Multiset.map_cons]
+    rw [show 2 * (n + 1) - 2 - n = n by omega,
+      map_sub_map_range n (2 * (n + 1) - 2) (2 * · + 1) fun k hk => by omega]
   | E6 | E7 | E8 | F4 | G2 => decide
 
 /-- **Twice the sum of the exponents of `t` equals its number of roots**: `2 ∑ eᵢ = |Φ|`. -/

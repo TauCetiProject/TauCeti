@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
-public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.RootsOfUnity.NthRoots
 
@@ -45,26 +45,16 @@ theorem nodup_roots_cyclotomic_complex (h : ℕ) : (cyclotomic h ℂ).roots.Nodu
   have : NeZero (h : ℂ) := ⟨Nat.cast_ne_zero.2 hh⟩
   exact roots_cyclotomic_nodup
 
-private lemma exp_two_pi_I_mul_div (k n : ℕ) :
-    Complex.exp (2 * Real.pi * Complex.I * (k / n)) =
-      Complex.exp (2 * Real.pi * Complex.I / n) ^ k := by
-  rw [← Complex.exp_nat_mul]; congr 1; ring
-
 /-- **The complex root multiset of `Φ_h`** consists of `exp (2πi e / h)` for `e < h` coprime to `h`,
 each once. -/
 theorem roots_cyclotomic_complex (h : ℕ) :
     (cyclotomic h ℂ).roots =
       (((List.range h).filter (Nat.Coprime · h) : Multiset ℕ)).map
         fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h)) := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · simp
   have hnd : ((((List.range h).filter (Nat.Coprime · h) : Multiset ℕ)).map
-      fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h))).Nodup := by
-    rw [Multiset.map_coe, Multiset.coe_nodup]
-    refine (List.nodup_range.filter _).map_on fun a ha b hb hab => ?_
-    rw [List.mem_filter, List.mem_range] at ha hb
-    rw [exp_two_pi_I_mul_div, exp_two_pi_I_mul_div] at hab
-    exact (Complex.isPrimitiveRoot_exp h hh).pow_inj ha.1 hb.1 hab
+      fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h))).Nodup :=
+    Complex.nodup_map_exp_two_pi_I_mul_div (Multiset.coe_nodup.2 (List.nodup_range.filter _))
+      fun _ he => List.mem_range.1 (List.mem_of_mem_filter (Multiset.mem_coe.1 he))
   refine (Multiset.Nodup.ext (nodup_roots_cyclotomic_complex h) hnd).2 fun ζ => ?_
   rw [mem_roots_cyclotomic_complex_iff, Multiset.mem_map]
   simp
@@ -78,7 +68,7 @@ theorem roots_geom_sum_complex (n : ℕ) :
   obtain rfl | hn := eq_or_ne n 0
   · simp
   rw [(Complex.isPrimitiveRoot_exp n hn).roots_geom_sum]
-  exact Multiset.map_congr rfl fun e _ => (exp_two_pi_I_mul_div (e + 1) n).symm
+  exact Multiset.map_congr rfl fun e _ => (Complex.exp_two_pi_I_mul_div (e + 1) n).symm
 
 /-- **The complex root multiset of `X ^ n + 1`** consists of `exp (2πi (2k + 1) / (2n))` for
 `k = 0, …, n - 1`, each once. -/
@@ -89,7 +79,7 @@ theorem roots_X_pow_add_one_complex (n : ℕ) :
   obtain rfl | hn := eq_or_ne n 0
   · rw [pow_zero, ← C_1, ← map_add, roots_C]; simp
   rw [(Complex.isPrimitiveRoot_exp (2 * n) (by positivity)).roots_X_pow_add_one]
-  exact Multiset.map_congr rfl fun k _ => (exp_two_pi_I_mul_div (2 * k + 1) (2 * n)).symm
+  exact Multiset.map_congr rfl fun k _ => (Complex.exp_two_pi_I_mul_div (2 * k + 1) (2 * n)).symm
 
 end Polynomial
 

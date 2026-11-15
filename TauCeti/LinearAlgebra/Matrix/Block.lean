@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
@@ -49,6 +50,8 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
   is unchanged by invertible triangular outer factors.
 * `Matrix.forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff`: preservation of the test on
   every leading block.
+* `Matrix.orderOf_fromBlocks_zero_zero`: `orderOf (fromBlocks A 0 0 D)` is the least common
+  multiple of `orderOf A` and `orderOf D`.
 
 ## References
 
@@ -208,4 +211,14 @@ public theorem forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff
 
 end LeadingBlocks
 
+/-- The multiplicative order of a two-by-two block-diagonal matrix `fromBlocks A 0 0 D` is the least
+common multiple of the multiplicative orders of its diagonal blocks `A` and `D`. -/
+@[simp]
+public theorem orderOf_fromBlocks_zero_zero {m n R : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [Semiring R] (A : Matrix m m R) (D : Matrix n n R) :
+    orderOf (fromBlocks A 0 0 D) = Nat.lcm (orderOf A) (orderOf D) := by
+  rw [← Prod.orderOf_mk]
+  refine orderOf_eq_orderOf_iff.2 fun k => ?_
+  rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj, Prod.ext_iff]
+  simp
 end Matrix

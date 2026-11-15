@@ -9,8 +9,9 @@ public import TauCeti.Data.List.OneDegenerateOrder
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 import Mathlib.Data.List.FinRange
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
+import TauCeti.Algebra.BigOperators.Group.List
+import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Semiconj
 
 /-!
 # Coxeter elements of the classical Cartan matrices
@@ -95,6 +96,11 @@ theorem isOneDegenerateOrder_D (n : ℕ) :
 
 /-! ### Prefix-product and intertwining helpers -/
 
+private theorem ext_of_mulVec_single_one {m n R : Type*} [Fintype n] [DecidableEq n]
+    [NonAssocSemiring R] {A B : Matrix m n R}
+    (h : ∀ j, A *ᵥ Pi.single j 1 = B *ᵥ Pi.single j 1) : A = B :=
+  ext_col fun j => by rw [← mulVec_single_one, ← mulVec_single_one, h j]
+
 private theorem take_finRange_succ {n m : ℕ} (hm : m < n) :
     (List.finRange n).take (m + 1) = (List.finRange n).take m ++ [⟨m, hm⟩] := by
   rw [List.take_add_one, List.getElem?_eq_getElem (by simp [hm])]; simp
@@ -113,44 +119,12 @@ private theorem mul_reflMatrix_apply {n : ℕ} (V A : Matrix (Fin n) (Fin n) ℤ
   simp only [reflMatrix_apply, mul_sub, Finset.sum_sub_distrib, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_ite_eq', Finset.sum_ite_eq']; simp
 
-private theorem mul_list_prod_eq_of_intertwine {n : ℕ} (V : Matrix (Fin n) (Fin n) ℤ)
-    (f g : Fin n → Matrix (Fin n) (Fin n) ℤ) (h : ∀ i, V * f i = g i * V) (l : List (Fin n)) :
-    V * (l.map f).prod = (l.map g).prod * V := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    simp only [List.map_cons, List.prod_cons]
-    rw [← Matrix.mul_assoc, h a, Matrix.mul_assoc, ih, ← Matrix.mul_assoc]
-
-/-- If `V * M = G * V` over `ℤ` and `V` is left-invertible over `ℚ`, then `M` and `G` have the same
-characteristic polynomial and multiplicative order. -/
-private theorem charpoly_and_orderOf_eq_of_intertwine {n : ℕ}
-    {V M G : Matrix (Fin n) (Fin n) ℤ} (hinter : V * M = G * V)
+private theorem charpoly_and_orderOf_eq_of_semiconjBy {n : ℕ}
+    {V M G : Matrix (Fin n) (Fin n) ℤ} (h : SemiconjBy V M G)
     {U : Matrix (Fin n) (Fin n) ℚ} (hUV : U * V.map (Int.castRingHom ℚ) = 1) :
-    M.charpoly = G.charpoly ∧ orderOf M = orderOf G := by
-  let φ : Matrix (Fin n) (Fin n) ℤ →+* Matrix (Fin n) (Fin n) ℚ := (Int.castRingHom ℚ).mapMatrix
-  have hφ_inj : Function.Injective φ := Matrix.map_injective (Int.castRingHom ℚ).injective_int
-  have hUV' : U * φ V = 1 := hUV
-  have hVU' : φ V * U = 1 := mul_eq_one_comm.1 hUV'
-  have hinterQ : φ V * φ M = φ G * φ V := by simpa only [map_mul] using congrArg φ hinter
-  have hconj : φ V * φ M * U = φ G := by rw [hinterQ, Matrix.mul_assoc, hVU', Matrix.mul_one]
-  refine ⟨Matrix.charpoly_eq_of_map_rat ?_, orderOf_eq_orderOf_iff.2 fun k => ?_⟩
-  · change (φ M).charpoly = G.charpoly.map (Int.castRingHom ℚ)
-    rw [← charpoly_map, ← RingHom.mapMatrix_apply, ← hconj, Matrix.charpoly_mul_comm,
-      ← Matrix.mul_assoc, hUV', Matrix.one_mul]
-  · have hpow : φ V * φ M ^ k = φ G ^ k * φ V := by
-      induction k with
-      | zero => simp
-      | succ k ih =>
-        rw [pow_succ, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, hinterQ, ← Matrix.mul_assoc,
-          ← pow_succ]
-    rw [← hφ_inj.eq_iff, map_pow, map_one, ← hφ_inj.eq_iff, map_pow, map_one]
-    exact ⟨fun hMk => by
-        rw [← Matrix.mul_one (φ G ^ k), ← hVU', ← Matrix.mul_assoc, ← hpow, hMk, Matrix.mul_one,
-          hVU'],
-      fun hGk => by
-        rw [← Matrix.one_mul (φ M ^ k), ← hUV', Matrix.mul_assoc, hpow, hGk, Matrix.one_mul,
-          hUV']⟩
+    M.charpoly = G.charpoly ∧ orderOf M = orderOf G :=
+  ⟨charpoly_eq_of_semiconjBy h (Int.castRingHom ℚ).injective_int hUV,
+   orderOf_eq_of_semiconjBy h (Int.castRingHom ℚ).injective_int hUV⟩
 
 /-! ### Type `Aₙ` -/
 
@@ -166,17 +140,13 @@ private theorem prod_take_reflMatrix_A_mulVec_single (n : ℕ) {m : ℕ} (hm : m
   induction m generalizing j with
   | zero =>
     rw [List.take_zero, List.map_nil, List.prod_nil, one_mulVec]; ext k
-    rcases eq_or_ne k j with rfl | hkj
-    · simp only [Pi.single_eq_same, aPrefixVec]; grind
-    · have := Fin.ext_iff.not.1 hkj
-      simp only [Pi.single_eq_of_ne hkj, aPrefixVec, Fin.ext_iff]; split_ifs <;> omega
+    rw [Pi.single_apply]; simp only [aPrefixVec, Fin.ext_iff]; grind
   | succ m ih =>
     have hmlt : m < n := by omega
     rw [take_finRange_succ hmlt, List.map_append, List.map_singleton, List.prod_append,
       List.prod_singleton, ← mulVec_mulVec, reflMatrix_mulVec_single, mulVec_sub, mulVec_smul,
       ih (by omega), ih (by omega)]
-    ext k
-    rw [Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
+    ext k; rw [Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
       show aPrefixVec n m ⟨m, hmlt⟩ k = if (k : ℕ) ≤ m then 1 else 0 by simp [aPrefixVec]]
     have _ := k.isLt; have _ := j.isLt
     simp only [CartanMatrix.A, of_apply, aPrefixVec, Fin.ext_iff]; grind
@@ -243,16 +213,7 @@ private theorem prod_take_swap_mulVec_single {n : ℕ} (g : Fin n → Matrix (Fi
     rw [take_finRange_succ hm0, List.map_append, List.map_singleton, List.prod_append,
       List.prod_singleton, ← mulVec_mulVec, hg m (by omega) hm, signedPerm_mulVec_single,
       Pi.one_apply, one_smul, ih hm0 (fun u hu hu1 => hg u (by omega) hu1)]
-    rcases eq_or_ne j ⟨m, hm0⟩ with rfl | hjm
-    · rw [Equiv.swap_apply_left]; ext k
-      simp only [swapPrefixVec, Fin.ext_iff]; split_ifs <;> omega
-    · rcases eq_or_ne j ⟨m + 1, hm⟩ with rfl | hjm1
-      · rw [Equiv.swap_apply_right]; ext k
-        simp only [swapPrefixVec, Fin.ext_iff]; split_ifs <;> omega
-      · rw [Equiv.swap_apply_of_ne_of_ne hjm hjm1]
-        have hjm' : (j : ℕ) ≠ m := fun h => hjm (Fin.ext h)
-        have hjm1' : (j : ℕ) ≠ m + 1 := fun h => hjm1 (Fin.ext h)
-        ext k; simp only [swapPrefixVec, Fin.ext_iff]; split_ifs <;> omega
+    ext k; simp only [swapPrefixVec, Equiv.swap_apply_def, Fin.ext_iff]; grind
 
 /-! ### Type `Bₙ` -/
 
@@ -263,26 +224,23 @@ private def invBasisB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   of fun k i => if (i : ℕ) ≤ (k : ℕ) then 1 else 0
 
 private theorem invBasisB_mul_basisB (n : ℕ) : invBasisB n * basisB n = 1 := by
-  ext k j
-  have hcol : (invBasisB n * basisB n) *ᵥ Pi.single j 1 =
-      (1 : Matrix (Fin n) (Fin n) ℤ) *ᵥ Pi.single j 1 := by
-    rw [← mulVec_mulVec, one_mulVec]
-    rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
-    · have hv : basisB n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
-        ext r; rw [mulVec_single_one, col_apply, basisB, of_apply]
-        simp [Pi.single_apply, Fin.ext_iff]
-      rw [hv, mulVec_sub, mulVec_single_one, mulVec_single_one]
-      ext r; have _ := j.isLt; have _ := r.isLt
-      simp only [Pi.sub_apply, col_apply, invBasisB, of_apply, Pi.single_apply, Fin.ext_iff]
-      split_ifs <;> omega
-    · have hv : basisB n *ᵥ Pi.single j 1 = Pi.single j 1 := by
-        ext r; have _ := r.isLt; rw [mulVec_single_one, col_apply, basisB, of_apply]
-        simp only [Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
-      rw [hv, mulVec_single_one]
-      ext r; have _ := j.isLt; have _ := r.isLt
-      simp only [col_apply, invBasisB, of_apply, Pi.single_apply, Fin.ext_iff]
-      split_ifs <;> omega
-  simpa only [mulVec_single_one, col_apply] using congrFun hcol k
+  refine ext_of_mulVec_single_one fun j => ?_
+  rw [← mulVec_mulVec, one_mulVec]
+  rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
+  · have hv : basisB n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
+      ext r; rw [mulVec_single_one, col_apply, basisB, of_apply]
+      simp [Pi.single_apply, Fin.ext_iff]
+    rw [hv, mulVec_sub, mulVec_single_one, mulVec_single_one]
+    ext r; have _ := j.isLt; have _ := r.isLt
+    simp only [Pi.sub_apply, col_apply, invBasisB, of_apply, Pi.single_apply, Fin.ext_iff]
+    split_ifs <;> omega
+  · have hv : basisB n *ᵥ Pi.single j 1 = Pi.single j 1 := by
+      ext r; have _ := r.isLt; rw [mulVec_single_one, col_apply, basisB, of_apply]
+      simp only [Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
+    rw [hv, mulVec_single_one]
+    ext r; have _ := j.isLt; have _ := r.isLt
+    simp only [col_apply, invBasisB, of_apply, Pi.single_apply, Fin.ext_iff]
+    split_ifs <;> omega
 
 private abbrev signFlipLast (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   signedPerm 1 (fun c => if (c : ℕ) + 1 = n then -1 else 1)
@@ -296,52 +254,39 @@ private theorem basisB_mul_reflMatrix_B (n : ℕ) (i : Fin n) :
   have _ := i.isLt; have _ := r.isLt; have _ := j.isLt
   rcases lt_or_ge ((i : ℕ) + 1) n with hi | hi
   · rw [dite_eq_left hi, signedPerm_mul_apply, Equiv.symm_swap, Pi.one_apply, one_mul]
-    rcases eq_or_ne r i with rfl | hri
-    · simp only [Equiv.swap_apply_left, basisB, CartanMatrix.B, of_apply, Fin.ext_iff]
-      split_ifs <;> omega
-    · rcases eq_or_ne r ⟨(i : ℕ) + 1, hi⟩ with rfl | hri1
-      · simp only [Equiv.swap_apply_right, basisB, CartanMatrix.B, of_apply, Fin.ext_iff]
-        split_ifs <;> omega
-      · rw [Equiv.swap_apply_of_ne_of_ne hri hri1, show basisB n r i = 0 by
-            simp [basisB, hri, show (r : ℕ) ≠ (i : ℕ) + 1 from fun h => hri1 (Fin.ext h)],
-          zero_mul, sub_zero]
+    simp only [Equiv.swap_apply_def, basisB, CartanMatrix.B, of_apply, Fin.ext_iff]; grind
   · rw [dite_eq_right (by omega), signedPerm_mul_apply,
       show (1 : Equiv.Perm (Fin n)).symm = 1 from rfl, Equiv.Perm.one_apply]
-    simp only [basisB, CartanMatrix.B, of_apply, Fin.ext_iff]
-    split_ifs <;> omega
+    simp only [basisB, CartanMatrix.B, of_apply, Fin.ext_iff]; grind
 
 private theorem prod_reflStdB_eq_companion {n : ℕ} (hn : 0 < n) :
     ((List.finRange n).map (reflStdB n)).prod = companion (Pi.single ⟨0, hn⟩ (1 : ℤ)) := by
   have hm : n - 1 < n := by omega
   have hlist : List.finRange n = (List.finRange n).take (n - 1) ++ [⟨n - 1, hm⟩] := by
     simpa [show n - 1 + 1 = n by omega, take_finRange_self] using take_finRange_succ hm
-  ext k j
-  have hcol : ((List.finRange n).map (reflStdB n)).prod *ᵥ Pi.single j 1 =
-      companion (Pi.single ⟨0, hn⟩ (1 : ℤ)) *ᵥ Pi.single j 1 := by
-    conv_lhs => rw [hlist]
-    rw [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
-      ← mulVec_mulVec, show reflStdB n ⟨n - 1, hm⟩ = signFlipLast n from
-        dite_eq_right (by simp; omega),
-      signedPerm_mulVec_single, Equiv.Perm.one_apply, mulVec_smul,
-      prod_take_swap_mulVec_single (reflStdB n) hm (fun u _ hu1 => by simp [reflStdB, hu1]) j]
-    rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
-    · rw [ite_eq_right (by omega), one_smul, companion_mulVec_single_of_lt _ hj]
-      ext r; simp only [swapPrefixVec, Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
-    · have hjeq : (j : ℕ) + 1 = n := by have := j.isLt; omega
-      rw [ite_eq_left hjeq, neg_one_smul, companion_mulVec_single_of_eq _ hjeq]
-      ext r; simp only [Pi.neg_apply, swapPrefixVec, Pi.single_apply, Fin.ext_iff]
-      split_ifs <;> omega
-  simpa only [mulVec_single_one, col_apply] using congrFun hcol k
+  refine ext_of_mulVec_single_one fun j => ?_
+  conv_lhs => rw [hlist]
+  rw [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
+    ← mulVec_mulVec, show reflStdB n ⟨n - 1, hm⟩ = signFlipLast n from
+      dite_eq_right (by simp; omega),
+    signedPerm_mulVec_single, Equiv.Perm.one_apply, mulVec_smul,
+    prod_take_swap_mulVec_single (reflStdB n) hm (fun u _ hu1 => by simp [reflStdB, hu1]) j]
+  rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
+  · rw [ite_eq_right (by omega), one_smul, companion_mulVec_single_of_lt _ hj]
+    ext r; simp only [swapPrefixVec, Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
+  · have hjeq : (j : ℕ) + 1 = n := by have := j.isLt; omega
+    rw [ite_eq_left hjeq, neg_one_smul, companion_mulVec_single_of_eq _ hjeq]
+    ext r; simp only [Pi.neg_apply, swapPrefixVec, Pi.single_apply, Fin.ext_iff]
+    split_ifs <;> omega
 
 private theorem charpoly_and_orderOf_B {n : ℕ} (hn : 0 < n) :
     (coxeterElement (CartanMatrix.B n)).charpoly =
         (companion (Pi.single ⟨0, hn⟩ (1 : ℤ))).charpoly ∧
       orderOf (coxeterElement (CartanMatrix.B n)) =
         orderOf (companion (Pi.single ⟨0, hn⟩ (1 : ℤ))) :=
-  charpoly_and_orderOf_eq_of_intertwine
-    (by rw [coxeterElement,
-          mul_list_prod_eq_of_intertwine (basisB n) _ _ (basisB_mul_reflMatrix_B n),
-          prod_reflStdB_eq_companion hn])
+  charpoly_and_orderOf_eq_of_semiconjBy
+    (by rw [coxeterElement, ← prod_reflStdB_eq_companion hn]
+        exact SemiconjBy.list_map_prod_right _ fun i _ => basisB_mul_reflMatrix_B n i)
     (U := (invBasisB n).map (Int.castRingHom ℚ))
     (by rw [← Matrix.map_mul, invBasisB_mul_basisB, Matrix.map_one _ (map_zero _) (map_one _)])
 
@@ -372,13 +317,12 @@ private theorem charpoly_and_orderOf_C (n : ℕ) :
         (coxeterElement (CartanMatrix.C n)).charpoly ∧
       orderOf (coxeterElement (CartanMatrix.B n)) =
         orderOf (coxeterElement (CartanMatrix.C n)) := by
-  refine charpoly_and_orderOf_eq_of_intertwine
-    (mul_list_prod_eq_of_intertwine (diagBC n) _ _ (diagBC_mul_reflMatrix_B n) _)
+  refine charpoly_and_orderOf_eq_of_semiconjBy
+    (by rw [coxeterElement, coxeterElement]
+        exact SemiconjBy.list_map_prod_right _ fun i _ => diagBC_mul_reflMatrix_B n i)
     (U := diagonal fun k : Fin n => if (k : ℕ) + 1 = n then (1 : ℚ) else 1 / 2) ?_
-  ext r j; rw [diagBC, diagonal_map (map_zero _), diagonal_mul]
-  rcases eq_or_ne r j with rfl | hne
-  · simp only [diagonal_apply_eq, Matrix.one_apply_eq]; split_ifs <;> norm_num
-  · simp [diagonal_apply_ne _ hne, Matrix.one_apply_ne hne]
+  rw [diagBC, diagonal_map (map_zero _), diagonal_mul_diagonal, ← diagonal_one]
+  congr 1; ext k; split_ifs <;> norm_num
 
 /-- **The characteristic polynomial of the `Cₙ` (`0 < n`) Coxeter element is `X^n + 1`.** -/
 theorem charpoly_coxeterElement_C {n : ℕ} (hn : 0 < n) :
@@ -408,28 +352,25 @@ private def twiceInvBasisD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
 
 private theorem twiceInvBasisD_mul_basisD {n : ℕ} (hn : 2 ≤ n) :
     twiceInvBasisD n * basisD n = (2 : ℤ) • 1 := by
-  ext k j
-  have hcol : (twiceInvBasisD n * basisD n) *ᵥ Pi.single j 1 =
-      ((2 : ℤ) • (1 : Matrix (Fin n) (Fin n) ℤ)) *ᵥ Pi.single j 1 := by
-    rw [← mulVec_mulVec, smul_mulVec, one_mulVec]
-    rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
-    · have hv : basisD n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
-        ext r; rw [mulVec_single_one, col_apply, basisD, of_apply, ite_eq_left hj]
-        simp [Pi.single_apply, Fin.ext_iff]
-      rw [hv, mulVec_sub, mulVec_single_one, mulVec_single_one]
-      ext r; have _ := j.isLt; have _ := r.isLt
-      simp only [Pi.sub_apply, col_apply, twiceInvBasisD, of_apply, Pi.smul_apply, smul_eq_mul,
-        Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
-    · have hv : basisD n *ᵥ Pi.single j 1 =
-          Pi.single ⟨n - 2, by omega⟩ 1 + Pi.single ⟨n - 1, by omega⟩ 1 := by
-        ext r; have _ := r.isLt
-        rw [mulVec_single_one, col_apply, basisD, of_apply, ite_eq_right (by omega)]
-        simp only [Pi.add_apply, Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
-      rw [hv, mulVec_add, mulVec_single_one, mulVec_single_one]
-      ext r; have _ := j.isLt; have _ := r.isLt
-      simp only [Pi.add_apply, col_apply, twiceInvBasisD, of_apply, Pi.smul_apply, smul_eq_mul,
-        Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
-  simpa only [mulVec_single_one, col_apply] using congrFun hcol k
+  refine ext_of_mulVec_single_one fun j => ?_
+  rw [← mulVec_mulVec, smul_mulVec, one_mulVec]
+  rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
+  · have hv : basisD n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
+      ext r; rw [mulVec_single_one, col_apply, basisD, of_apply, ite_eq_left hj]
+      simp [Pi.single_apply, Fin.ext_iff]
+    rw [hv, mulVec_sub, mulVec_single_one, mulVec_single_one]
+    ext r; have _ := j.isLt; have _ := r.isLt
+    simp only [Pi.sub_apply, col_apply, twiceInvBasisD, of_apply, Pi.smul_apply, smul_eq_mul,
+      Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
+  · have hv : basisD n *ᵥ Pi.single j 1 =
+        Pi.single ⟨n - 2, by omega⟩ 1 + Pi.single ⟨n - 1, by omega⟩ 1 := by
+      ext r; have _ := r.isLt
+      rw [mulVec_single_one, col_apply, basisD, of_apply, ite_eq_right (by omega)]
+      simp only [Pi.add_apply, Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
+    rw [hv, mulVec_add, mulVec_single_one, mulVec_single_one]
+    ext r; have _ := j.isLt; have _ := r.isLt
+    simp only [Pi.add_apply, col_apply, twiceInvBasisD, of_apply, Pi.smul_apply, smul_eq_mul,
+      Pi.single_apply, Fin.ext_iff]; split_ifs <;> omega
 
 private def negSwapLast {n : ℕ} (hn : 2 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
   signedPerm (Equiv.swap ⟨n - 2, by omega⟩ ⟨n - 1, by omega⟩)
@@ -438,48 +379,36 @@ private def negSwapLast {n : ℕ} (hn : 2 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
 private def reflStdD {n : ℕ} (hn : 2 ≤ n) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
   if hi : (i : ℕ) + 1 < n then swapMatrix i ⟨(i : ℕ) + 1, hi⟩ else negSwapLast hn
 
-private theorem basisD_sub_succ_eq_cartanD {n : ℕ} {i : Fin n} (hi : (i : ℕ) + 1 < n)
-    (j : Fin n) : basisD n i j - basisD n ⟨(i : ℕ) + 1, hi⟩ j = CartanMatrix.D n j i := by
-  have _ := i.isLt; have _ := j.isLt
-  simp only [basisD, CartanMatrix.D, of_apply, Fin.ext_iff]; grind
-
 private theorem basisD_mul_reflMatrix_D {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
     basisD n * reflMatrix (CartanMatrix.D n) i = reflStdD hn i * basisD n := by
+  have hm2 : n - 2 < n := by omega
+  have hm1 : n - 1 < n := by omega
   ext r j; rw [mul_reflMatrix_apply, reflStdD]
   have _ := i.isLt; have _ := r.isLt; have _ := j.isLt
   rcases lt_or_ge ((i : ℕ) + 1) n with hi | hi
   · rw [dite_eq_left hi, signedPerm_mul_apply, Equiv.symm_swap, Pi.one_apply, one_mul]
-    rcases eq_or_ne r i with rfl | hri
-    · rw [Equiv.swap_apply_left, show basisD n r r = 1 by simp [basisD, hi], one_mul,
-        ← basisD_sub_succ_eq_cartanD hi j]; ring
-    · rcases eq_or_ne r ⟨(i : ℕ) + 1, hi⟩ with rfl | hri1
-      · rw [Equiv.swap_apply_right, show basisD n ⟨(i : ℕ) + 1, hi⟩ i = -1 by
-            simp only [basisD, of_apply, ite_eq_left hi, Fin.ext_iff]; grind,
-          ← basisD_sub_succ_eq_cartanD hi j]; ring
-      · rw [Equiv.swap_apply_of_ne_of_ne hri hri1]
-        have := Fin.ext_iff.not.1 hri; have : (r : ℕ) ≠ (i : ℕ) + 1 := fun h => hri1 (Fin.ext h)
-        rw [show basisD n r i = 0 by
-            simp only [basisD, of_apply, ite_eq_left hi, Fin.ext_iff]; grind, zero_mul, sub_zero]
+    by_cases hj : (j : ℕ) + 1 < n <;> (
+      rcases eq_or_ne r i with rfl | hr1
+      · simp only [Equiv.swap_apply_left, basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte,
+          Fin.ext_iff]; grind
+      · rcases eq_or_ne r ⟨(i : ℕ) + 1, hi⟩ with rfl | hr2
+        · simp only [Equiv.swap_apply_right, basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte,
+            Fin.ext_iff]; grind
+        · rw [Equiv.swap_apply_of_ne_of_ne hr1 hr2]
+          simp only [basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte, Fin.ext_iff] at hr1 hr2 ⊢
+          grind)
   · have hni : ¬ ((i : ℕ) + 1 < n) := by omega
     rw [dite_eq_right hni, negSwapLast, signedPerm_mul_apply, Equiv.symm_swap]
-    have hm2 : n - 2 < n := by omega
-    have hm1 : n - 1 < n := by omega
-    rcases eq_or_ne r ⟨n - 2, hm2⟩ with rfl | hr2
-    · rw [Equiv.swap_apply_left, ite_eq_right (by simp; omega),
-        show basisD n ⟨n - 2, hm2⟩ i = 1 by simp only [basisD, of_apply, ite_eq_right hni]; grind]
-      by_cases hj : (j : ℕ) + 1 < n <;>
-        simp only [basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte, Fin.ext_iff] <;> grind
-    · rcases eq_or_ne r ⟨n - 1, hm1⟩ with rfl | hr1
-      · rw [Equiv.swap_apply_right, ite_eq_right (by simp; omega),
-          show basisD n ⟨n - 1, hm1⟩ i = 1 by simp only [basisD, of_apply, ite_eq_right hni]; grind]
-        by_cases hj : (j : ℕ) + 1 < n <;>
-          simp only [basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte, Fin.ext_iff] <;> grind
-      · rw [Equiv.swap_apply_of_ne_of_ne hr2 hr1]
-        have : (r : ℕ) ≠ n - 2 := fun h => hr2 (Fin.ext h)
-        have : (r : ℕ) ≠ n - 1 := fun h => hr1 (Fin.ext h)
-        rw [ite_eq_left (by omega), one_mul,
-          show basisD n r i = 0 by simp only [basisD, of_apply, ite_eq_right hni]; grind,
-          zero_mul, sub_zero]
+    by_cases hj : (j : ℕ) + 1 < n <;> (
+      rcases eq_or_ne r ⟨n - 2, hm2⟩ with rfl | hr1
+      · simp only [Equiv.swap_apply_left, basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte,
+          Fin.ext_iff]; grind
+      · rcases eq_or_ne r ⟨n - 1, hm1⟩ with rfl | hr2
+        · simp only [Equiv.swap_apply_right, basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte,
+            Fin.ext_iff]; grind
+        · rw [Equiv.swap_apply_of_ne_of_ne hr1 hr2]
+          simp only [basisD, CartanMatrix.D, of_apply, hj, ↓reduceIte, Fin.ext_iff] at hr1 hr2 ⊢
+          grind)
 
 private abbrev splitEquivD {n : ℕ} (hn : 2 ≤ n) : Fin (n - 1) ⊕ Fin 1 ≃ Fin n :=
   finSumFinEquiv.trans (finCongr (by omega))
@@ -521,48 +450,36 @@ private theorem prod_reflStdD_eq_modelD {n : ℕ} (hn : 2 ≤ n) :
   have hm1 : n - 1 < n := by omega
   have hlist : List.finRange n =
       (List.finRange n).take (n - 2) ++ [⟨n - 2, hm2⟩, ⟨n - 1, hm1⟩] := by
-    have h1 := take_finRange_succ hm1
-    rw [show n - 1 + 1 = n by omega, take_finRange_self] at h1
-    have h2 := take_finRange_succ hm2
-    rw [show n - 2 + 1 = n - 1 by omega] at h2
-    conv_lhs => rw [h1, h2]
-    simp
-  ext k j
-  have hcol : ((List.finRange n).map (reflStdD hn)).prod *ᵥ Pi.single j 1 =
-      modelD hn *ᵥ Pi.single j 1 := by
-    conv_lhs => rw [hlist]
-    rw [List.map_append, List.prod_append]
-    simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, Matrix.mul_one]
-    have hpen : reflStdD hn ⟨n - 2, hm2⟩ = swapMatrix ⟨n - 2, hm2⟩ ⟨n - 1, hm1⟩ := by
-      have hlt : (n - 2) + 1 < n := by omega
-      have hidx : (⟨(n - 2) + 1, hlt⟩ : Fin n) = ⟨n - 1, hm1⟩ := Fin.ext (by dsimp; omega)
-      simp [reflStdD, hlt, hidx]
-    rw [← mulVec_mulVec, ← mulVec_mulVec, hpen,
-      show reflStdD hn ⟨n - 1, hm1⟩ = negSwapLast hn from dite_eq_right (by simp; omega),
-      negSwapLast, signedPerm_mulVec_single, mulVec_smul, signedPerm_mulVec_single,
-      Pi.one_apply, one_smul, Equiv.swap_apply_self, mulVec_smul,
-      prod_take_swap_mulVec_single (reflStdD hn) hm2 (fun u _ hu1 => by simp [reflStdD, hu1]) j]
-    ext r
-    rw [Pi.smul_apply, smul_eq_mul, mulVec_single_one, col_apply, modelD_apply hn]
-    have _ := j.isLt; have _ := r.isLt
-    simp only [swapPrefixVec, Fin.ext_iff]; grind
-  simpa only [mulVec_single_one, col_apply] using congrFun hcol k
+    have h1 : List.finRange n = (List.finRange n).take (n - 1) ++ [⟨n - 1, hm1⟩] := by
+      simpa [show (n - 1) + 1 = n by omega, take_finRange_self] using take_finRange_succ hm1
+    have h2 : (List.finRange n).take (n - 1) =
+        (List.finRange n).take (n - 2) ++ [⟨n - 2, hm2⟩] := by
+      simpa [show (n - 2) + 1 = n - 1 by omega] using take_finRange_succ hm2
+    (conv_lhs => rw [h1, h2, List.append_assoc]); rfl
+  refine ext_of_mulVec_single_one fun j => ?_
+  conv_lhs => rw [hlist]
+  rw [List.map_append, List.prod_append]
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, Matrix.mul_one]
+  have hpen : reflStdD hn ⟨n - 2, hm2⟩ = swapMatrix ⟨n - 2, hm2⟩ ⟨n - 1, hm1⟩ := by
+    rw [reflStdD, dite_eq_left (by dsimp; omega)]; exact congrArg _ (Fin.ext (by dsimp; omega))
+  rw [← mulVec_mulVec, ← mulVec_mulVec, hpen,
+    show reflStdD hn ⟨n - 1, hm1⟩ = negSwapLast hn from dite_eq_right (by simp; omega),
+    negSwapLast, signedPerm_mulVec_single, mulVec_smul, signedPerm_mulVec_single,
+    Pi.one_apply, one_smul, Equiv.swap_apply_self, mulVec_smul,
+    prod_take_swap_mulVec_single (reflStdD hn) hm2 (fun u _ hu1 => by simp [reflStdD, hu1]) j]
+  ext r; rw [Pi.smul_apply, smul_eq_mul, mulVec_single_one, col_apply, modelD_apply hn]
+  have _ := j.isLt; have _ := r.isLt; simp only [swapPrefixVec, Fin.ext_iff]; grind
 
 private theorem charpoly_and_orderOf_D {n : ℕ} (hn : 2 ≤ n) :
     (coxeterElement (CartanMatrix.D n)).charpoly = (modelD hn).charpoly ∧
       orderOf (coxeterElement (CartanMatrix.D n)) = orderOf (modelD hn) := by
-  let φ : Matrix (Fin n) (Fin n) ℤ →+* Matrix (Fin n) (Fin n) ℚ := (Int.castRingHom ℚ).mapMatrix
-  refine charpoly_and_orderOf_eq_of_intertwine
-    (by rw [coxeterElement,
-          mul_list_prod_eq_of_intertwine (basisD n) _ _ (basisD_mul_reflMatrix_D hn),
-          prod_reflStdD_eq_modelD hn])
-    (U := (1 / 2 : ℚ) • φ (twiceInvBasisD n)) ?_
-  change ((1 / 2 : ℚ) • φ (twiceInvBasisD n)) * φ (basisD n) = 1
-  rw [smul_mul_assoc, ← map_mul, twiceInvBasisD_mul_basisD hn]
-  ext r j
-  change (1 / 2 : ℚ) * (Int.castRingHom ℚ (((2 : ℤ) • (1 : Matrix (Fin n) (Fin n) ℤ)) r j)) =
-    (1 : Matrix (Fin n) (Fin n) ℚ) r j
-  rcases eq_or_ne r j with rfl | hne <;> simp [*]
+  refine charpoly_and_orderOf_eq_of_semiconjBy
+    (by rw [coxeterElement, ← prod_reflStdD_eq_modelD hn]
+        exact SemiconjBy.list_map_prod_right _ fun i _ => basisD_mul_reflMatrix_D hn i)
+    (U := (1 / 2 : ℚ) • (twiceInvBasisD n).map (Int.castRingHom ℚ)) ?_
+  rw [smul_mul_assoc, ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_mul,
+    twiceInvBasisD_mul_basisD hn, map_zsmul, map_one, two_zsmul, ← two_smul ℚ, smul_smul]
+  norm_num
 
 /-- **The characteristic polynomial of the `Dₙ` (`2 ≤ n`) Coxeter element is
 `(X^{n-1} + 1)(X + 1)`.** -/
@@ -576,21 +493,11 @@ theorem charpoly_coxeterElement_D {n : ℕ} (hn : 2 ≤ n) :
 `2 n - 2`. -/
 theorem orderOf_coxeterElement_D {n : ℕ} (hn : 2 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.D n)) = 2 * n - 2 := by
-  rw [(charpoly_and_orderOf_D hn).2]
-  let C₁ : Matrix (Fin (n - 1)) (Fin (n - 1)) ℤ := companion (Pi.single ⟨0, by omega⟩ (1 : ℤ))
-  let D₁ : Matrix (Fin 1) (Fin 1) ℤ := -1
-  change orderOf ((reindexAlgEquiv ℤ ℤ (splitEquivD hn)).toMulEquiv (fromBlocks C₁ 0 0 D₁)) = _
-  rw [MulEquiv.orderOf_eq, show 2 * n - 2 = 2 * (n - 1) by omega]
-  have hordC : orderOf C₁ = 2 * (n - 1) := orderOf_companion_single_zero_one (by omega) (by decide)
-  refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun m hmlt hm0 hpow => ?_⟩
-  · rw [fromBlocks_diagonal_pow, show C₁ ^ (2 * (n - 1)) = 1 by rw [← hordC, pow_orderOf_eq_one],
-      show D₁ ^ (2 * (n - 1)) = 1 by simp [D₁, pow_mul], fromBlocks_one]
-  · rw [fromBlocks_diagonal_pow] at hpow
-    have hCpow : C₁ ^ m = 1 := by
-      ext i j; simpa only [fromBlocks_apply₁₁, Matrix.one_apply, Sum.inl.injEq] using
-        congrArg (fun M => M (Sum.inl i) (Sum.inl j)) hpow
-    have hdvd := hordC ▸ orderOf_dvd_iff_pow_eq_one.2 hCpow
-    exact absurd (Nat.le_of_dvd hm0 hdvd) (by omega)
+  rw [(charpoly_and_orderOf_D hn).2, modelD, ← coe_reindexRingEquiv ℤ (splitEquivD hn),
+    ← RingEquiv.coe_toMulEquiv, MulEquiv.orderOf_eq, orderOf_fromBlocks_zero_zero,
+    orderOf_companion_single_zero_one (by omega) (by decide)]
+  have h2 : orderOf (-1 : Matrix (Fin 1) (Fin 1) ℤ) = 2 := orderOf_eq_prime (by decide) (by decide)
+  rw [h2, Nat.lcm_eq_left ⟨n - 1, rfl⟩]; omega
 
 end TauCeti.Coxeter
 
