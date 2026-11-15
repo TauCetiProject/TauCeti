@@ -25,6 +25,8 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.image_symm_trans_source_inter` and
   `PartialEquiv.image_restr_symm_trans_source_inter`: transport of `e '' (e.source ∩ s)` onto
   `e' '' (e'.source ∩ s)` intersected with the transition target.
+* `PartialEquiv.image_inter_of_subset_source`: for `s ⊆ e.source`,
+  `e '' (s ∩ t) = e '' s ∩ e.symm ⁻¹' t`.
 * `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
   one of a family of partial equivalences `e x`, the preimage is the union of the images under
   `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
@@ -77,6 +79,13 @@ theorem image_restr_symm_trans_source_inter (e : PartialEquiv α β) (e' : Parti
     Set.inter_subset_left
   rw [(e.symm.trans e').image_restr_source_inter u, e.image_symm_trans_source_inter e',
     ← Set.inter_assoc, Set.inter_eq_self_of_subset_left hsub]
+
+/-- On a subset `s` of the source, the image of the part of `s` lying in `t` is the part of the
+image of `s` whose inverse image lies in `t`. -/
+theorem image_inter_of_subset_source (e : PartialEquiv α β) {s : Set α} (h : s ⊆ e.source)
+    (t : Set α) : e '' (s ∩ t) = e '' s ∩ e.symm ⁻¹' t := by
+  rw [e.image_eq_target_inter_inv_preimage (Set.inter_subset_left.trans h),
+    e.image_eq_target_inter_inv_preimage h, Set.preimage_inter, Set.inter_assoc]
 
 /-- **A preimage as a union of chart images.** Let `e x` be partial equivalences with
 `T x ⊆ (e x).target` such that a coordinate `w ∈ (e x).target` lies in `T x` exactly when its

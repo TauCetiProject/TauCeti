@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Projection
+import TauCeti.Logic.Equiv.PartialEquiv
 import TauCeti.Topology.VectorBundle.DiscSphere
 
 /-!
@@ -80,21 +81,6 @@ variable {E H M EN HN N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
   {f : M → ℝ} {c ε : ℝ} {Θ : PartialDiffeomorph IN I N M ∞} {T : Set N} {s t : N → ℝ}
   {φ : ℝ × N → N}
-
-/-- The points of `Θ '' T` whose preimage satisfies `p` are the image of the points of `T`
-satisfying `p`. -/
-private theorem setOf_mem_image_eq (hTΘ : T ⊆ Θ.source) (p : N → Prop) :
-    {y | y ∈ Θ '' T ∧ p (Θ.symm y)} = Θ '' {x | x ∈ T ∧ p x} := by
-  have hmem := Set.ext_iff.1 (Θ.toPartialEquiv.image_eq_target_inter_inv_preimage hTΘ)
-  ext y
-  constructor
-  · rintro ⟨hy, hp⟩
-    exact ⟨Θ.symm y, ⟨((hmem y).1 hy).2, hp⟩, Θ.right_inv ((hmem y).1 hy).1⟩
-  · rintro ⟨x, ⟨hx, hp⟩, rfl⟩
-    have hx' : Θ.symm (Θ x) = x := Θ.left_inv (hTΘ hx)
-    refine ⟨⟨x, hx, rfl⟩, ?_⟩
-    rw [hx']
-    exact hp
 
 /-- Along a curve `γ`, a function that is eventually constant has derivative `0` in the direction
 of `γ`, and one that is eventually `τ² a` has derivative `2a`. -/
@@ -187,7 +173,7 @@ private theorem exists_sublevel_union_image_deformation (hfs : ContMDiff I 𝓘(
     hinv _ (hφT' p)
   have hD : {y | y ∈ Θ '' T ∧ (t ∘ Θ.symm) y = 0 ∧ (s ∘ Θ.symm) y ≤ ε} =
       Θ '' {x | x ∈ T ∧ t x = 0 ∧ s x ≤ ε} :=
-    setOf_mem_image_eq hTΘ fun x ↦ t x = 0 ∧ s x ≤ ε
+    (Θ.toPartialEquiv.image_inter_of_subset_source hTΘ {x | t x = 0 ∧ s x ≤ ε}).symm
   rw [← hD]
   refine exists_sublevel_union_negativeDiscBundle_deformation hfs
     (Θ.toOpenPartialHomeomorph.isOpen_image_of_subset_source hT hTΘ) hsW htW
@@ -212,7 +198,7 @@ private theorem exists_sublevel_union_image_deformation (hfs : ContMDiff I 𝓘(
     exact Θ.right_inv ((hmem y).1 y.2).1
   · have hKW : {y | y ∈ Θ '' T ∧ (s ∘ Θ.symm) y + 2 * (t ∘ Θ.symm) y ≤ 2 * ε} =
         Θ '' {x | x ∈ T ∧ s x + 2 * t x ≤ 2 * ε} :=
-      setOf_mem_image_eq hTΘ fun x ↦ s x + 2 * t x ≤ 2 * ε
+      (Θ.toPartialEquiv.image_inter_of_subset_source hTΘ {x | s x + 2 * t x ≤ 2 * ε}).symm
     rw [hKW]
     exact hK.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hTΘ hx.1)
 
@@ -301,20 +287,6 @@ private theorem norm_tubeScale_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b,
   change ‖negPart hNP b w + τ • posPart hNP b w‖ ≤ ‖w‖
   rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), h₁, h₂]
   nlinarith [pow_le_one₀ hτ.1 hτ.2 (n := 2), sq_nonneg ‖posPart hNP b w‖]
-
-/-- The negative component is no longer than the vector. -/
-private theorem norm_negPart_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, inner ℝ v w = 0)
-    (b : B) (w : V b) : ‖negPart hNP b w‖ ≤ ‖w‖ := by
-  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
-    Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl (hNP b) (hgNP b) w]
-  exact le_add_of_nonneg_right (sq_nonneg _)
-
-/-- The positive component is no longer than the vector. -/
-private theorem norm_posPart_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, inner ℝ v w = 0)
-    (b : B) (w : V b) : ‖posPart hNP b w‖ ≤ ‖w‖ := by
-  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
-    Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl (hNP b) (hgNP b) w]
-  exact le_add_of_nonneg_left (sq_nonneg _)
 
 /-- On the negative directions, `‖u‖²` is minus half the quadratic form. -/
 private theorem tubeNeg_of_mem {x : TotalSpace F V} (hx : x.2 ∈ Nn x.proj) :
@@ -592,9 +564,10 @@ private theorem exists_tube_deformation (hQ : ∀ b, (Q b).IsSymm)
   have hT : IsOpen T := isOpen_lt (continuous_norm_bundle F V) continuous_const
   have hTΘ : T ⊆ Θ.source := fun x (hx : ‖x.2‖ < ρ) ↦ hρs x.proj (mem_univ _) x.2 hx.le
   have hsT := contMDiffOn_tubeNeg hNP (Q := Q) hfs hΘf hneg hTΘ
-    fun x hx ↦ (norm_negPart_le hNP hgNP x.proj x.2).trans_lt hx
+    fun x hx ↦ (Submodule.norm_projection_le_of_isCompl (hNP _) (hgNP _) x.2).trans_lt hx
   have htT := contMDiffOn_tubePos hNP (Q := Q) hfs hΘf hpos hTΘ
-    fun x hx ↦ (norm_posPart_le hNP hgNP x.proj x.2).trans_lt hx
+    fun x hx ↦ (Submodule.norm_projection_le_of_isCompl (hNP _).symm
+      (fun v hv w hw ↦ inner_eq_zero_symm.1 (hgNP _ w hw v hv)) x.2).trans_lt hx
   -- `‖u‖² + ‖v‖²` controls the fibre norm, so its small sublevels lie in the half tube.
   obtain ⟨m, hm, hmq⟩ := exists_mul_norm_sq_le hNP hQN hQP (half_pos hρ)
     ((hsT.continuousOn.add htT.continuousOn).mono fun x (hx : ‖x.2‖ = ρ / 2) ↦

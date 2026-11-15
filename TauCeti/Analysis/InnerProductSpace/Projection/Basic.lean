@@ -92,6 +92,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl`: Pythagoras for the components of a
   vector along a pair of mutually orthogonal complementary submodules.
+* `Submodule.norm_projection_le_of_isCompl`: the component of a vector along one of a pair of
+  mutually orthogonal complementary submodules is no longer than the vector.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -369,6 +371,14 @@ theorem norm_sq_eq_add_norm_sq_projection_of_isCompl {p q : Submodule 𝕜 E} (h
   conv_lhs => rw [← p.projection_add_projection_eq_self hpq x]
   simpa only [sq] using norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _
     (hpq' _ (p.projection_apply_mem hpq x) _ (q.projection_apply_mem hpq.symm x))
+
+/-- For complementary submodules `p` and `q` orthogonal to each other, the component of a vector
+along `p` is no longer than the vector. -/
+theorem norm_projection_le_of_isCompl {p q : Submodule 𝕜 E} (hpq : IsCompl p q)
+    (hpq' : ∀ v ∈ p, ∀ w ∈ q, ⟪v, w⟫_𝕜 = 0) (x : E) : ‖p.projection q hpq x‖ ≤ ‖x‖ := by
+  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
+    norm_sq_eq_add_norm_sq_projection_of_isCompl hpq hpq' x]
+  exact le_add_of_nonneg_right (sq_nonneg _)
 
 section Real
 
