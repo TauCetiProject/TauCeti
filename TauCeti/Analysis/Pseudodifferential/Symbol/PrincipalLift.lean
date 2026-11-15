@@ -21,12 +21,9 @@ prescribed full symbol at one parameter value.
 
 ## Main results
 
-* `TauCeti.ClassicalSymbol.replacePrincipal`: the classical symbol `b + χ(ξ) (a - b_m)(x, ξ)`
-  obtained from `b` by replacing its principal symbol with `a`. It keeps the lower order terms
-  and, for the same cutoff, the remainders after `N ≥ 1` terms
-  (`TauCeti.ClassicalSymbol.term_replacePrincipal_succ`,
-  `TauCeti.ClassicalSymbol.remainder_replacePrincipal_succ`), and its full symbol depends
-  continuously on `a` (`TauCeti.ClassicalSymbol.continuous_toSymbol_replacePrincipal`).
+* `TauCeti.ClassicalSymbol.continuous_toSymbol_replacePrincipal`: the full symbol of the
+  classical symbol `TauCeti.ClassicalSymbol.replacePrincipal χ b a = b + χ(ξ) (a - b_m)(x, ξ)`,
+  obtained from `b` by replacing its principal symbol with `a`, depends continuously on `a`.
 * `TauCeti.ClassicalSymbol.exists_lift_of_continuous`: **continuous lifts with a prescribed
   initial value.** A continuous family `t ↦ a_t` of homogeneous symbols of degree `m` is the
   family of principal symbols of classical symbols `b_t` whose full symbols depend continuously
@@ -48,52 +45,13 @@ namespace TauCeti
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-! ### Replacing the principal symbol of a classical symbol -/
+/-! ### Continuous lifts of principal symbols -/
 
 namespace ClassicalSymbol
 
 open HomogeneousSymbol
 
 variable (χ : FrequencyCutoff (CoordinateSpace n)) (b : ClassicalSymbol n V W m)
-  (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-
-/-- The classical symbol obtained from `b` by replacing its principal symbol with `a`:
-`b + χ(ξ) (a - b_m)(x, ξ)`. It has principal symbol `a` and the lower order terms of `b`. -/
-def replacePrincipal : ClassicalSymbol n V W m :=
-  b + ofHomogeneous χ (a - b.principal)
-
-@[simp]
-theorem toSymbol_replacePrincipal :
-    (b.replacePrincipal χ a).toSymbol = b.toSymbol + cutoffSymbol χ (a - b.principal) := by
-  simp [replacePrincipal]
-
-@[simp]
-theorem principal_replacePrincipal : (b.replacePrincipal χ a).principal = a := by
-  simp [replacePrincipal, principal_add]
-
-@[simp]
-theorem term_replacePrincipal_succ (j : ℕ) :
-    (b.replacePrincipal χ a).term (j + 1) = b.term (j + 1) := by
-  simp [replacePrincipal]
-
-/-- Replacing the principal symbol does not change the remainders after `N ≥ 1` terms for the
-cutoff `χ` used in the replacement. -/
-@[simp]
-theorem remainder_replacePrincipal_succ (N : ℕ) :
-    (b.replacePrincipal χ a).remainder χ (N + 1) = b.remainder χ (N + 1) := by
-  ext1
-  funext p
-  have h0 : ((b.replacePrincipal χ a).term 0).coefficient p = a.coefficient p := by
-    rw [← coefficient_principal, principal_replacePrincipal]
-  rw [coefficient_remainder, coefficient_remainder, Finset.sum_range_succ',
-    Finset.sum_range_succ', h0, toSymbol_replacePrincipal, ← coefficient_principal]
-  simp only [term_replacePrincipal_succ, Symbol.coefficient_add, Pi.add_apply,
-    coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub]
-  abel
-
-@[simp]
-theorem replacePrincipal_principal : b.replacePrincipal χ b.principal = b := by
-  simp [replacePrincipal]
 
 /-- The full symbol of `b.replacePrincipal χ a` depends continuously on `a`. -/
 theorem continuous_toSymbol_replacePrincipal :
