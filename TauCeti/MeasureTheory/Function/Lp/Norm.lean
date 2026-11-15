@@ -403,10 +403,7 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
     rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, measureReal_def]
   -- `∫_s ‖g‖² = ‖g‖²_{L²(s)}`.
   have hI : ∫ x in s, ‖g x‖ ^ 2 ∂μ = (eLpNorm g 2 (μ.restrict s)).toReal ^ 2 := by
-    rw [← Lp.norm_toLp g hg2, ← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [hg2.coeFn_toLp] with x hx
-    rw [hx]
+    rw [← hg2.norm_toLp_sq, Lp.norm_toLp]
   rw [hI]
   calc _ ≤ ((eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal)) ^ 2 :=
         pow_le_pow_left₀ ENNReal.toReal_nonneg hH 2

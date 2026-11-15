@@ -27,18 +27,19 @@ that is `∫_Ω ⟨a ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩ + ∫_Ω f φ` for e
 coefficient matrix `a`, a vector field `G` and a scalar datum `f`. This file proves the interior
 Schauder estimate: if the open `R`-thickening `S_R` of a set `S` lies in `Ω`, `a` is uniformly
 elliptic with constants `λ`, `Λ` at the points of `S`, `a` and `G` are `α`-Hölder on `S_R` with
-constants `K_a` and `K_G`, and `f ∈ L^q(S_R)` with `q ≥ 2`, then for every `β > 0` with `β ≤ α`
-and `β ≤ 1 - (n + 1) / q` the precise representative of `∇u` is `β`-Hölder on `S` with constant
+constants `K_a` and `K_G`, and `f ∈ L^q(S_R)` with `2 ≤ q ≤ ∞`, then for every `0 < β < 1` with
+`β ≤ α` and `β ≤ 1 - (n + 1) / q` the precise representative of `∇u` is `β`-Hölder on `S` with
+constant
 
 `C (K_G R^{α-β} + R^{1-(n+1)/q-β} ‖f‖_{L^q(S_R)} + R^{-(n+1)/2-β} ‖∇u‖_{L²(Ω)})`,
 
-where `C` depends only on `n`, `α`, `β`, `q`, `λ`, `Λ` and a bound `M ≥ R^α K_a`. The best exponent
-is `β = min α (1 - (n + 1) / q)`: the field `G` costs nothing, while the scalar datum costs
-`(n + 1) / q` of a derivative, and needs `q > n + 1`. Hölder continuity of the coefficients is
-measured in the operator norm of the attached bilinear forms `TauCeti.PDE.matrixBilinearForm`. The
-constant is invariant under dilations, since `R^α K_a` is. For `f = 0` the exponent is `β = α`
-for every `α < 1`. For the Laplacian, `a = 1`, `f = 0`, the estimate is
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`.
+where `C` depends only on `n`, `α`, `β`, `q`, `λ`, `Λ` and a bound `M ≥ R^α K_a`. The best
+exponent below `1` is `β = min α (1 - (n + 1) / q)`: the field `G` costs nothing, while the scalar
+datum costs `(n + 1) / q` of a derivative, and needs `q > n + 1`. Hölder continuity of the
+coefficients is measured in the operator norm of the attached bilinear forms
+`TauCeti.PDE.matrixBilinearForm`. The constant is invariant under dilations, since `R^α K_a` is.
+For `f = 0` the exponent is `β = α` for every `α < 1`. For the Laplacian, `a = 1`, `f = 0`, the
+estimate is `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`.
 
 ## The argument
 
@@ -83,8 +84,8 @@ Hölder estimate.
 
 All in the `TauCeti.PDE` namespace.
 
-* `exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm_of_memLp`: the
-  interior Schauder estimate for `∇u` with a scalar datum `f ∈ L^q`.
+* `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`:
+  the interior Schauder estimate for `∇u` with a scalar datum `f ∈ L^q`.
 * `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`: its
   case `f = 0`, with exponent `α`.
 
@@ -105,7 +106,7 @@ public section
 noncomputable section
 
 open InnerProductSpace MeasureTheory Metric Module Set TopologicalSpace TauCeti.MeasureTheory
-open scoped Distributions Gradient InnerProductSpace NNReal
+open scoped Distributions ENNReal Gradient InnerProductSpace NNReal
 
 namespace TauCeti
 
@@ -304,7 +305,7 @@ constants `K_a`, `K_G`, where `K_a R^α ≤ M`, and let `f ∈ L²(B_R)`. If the
 `r^{2α} K_G² r^{n+1} + 4 r² ∫_{B_r} f² ≤ V (r / R)^{n+1+2γ}` for `0 < r ≤ R` and
 `∫_{B_R} ‖∇u‖² ≤ V`, then `∫_{B_ρ} ‖∇u‖² ≤ C V (ρ / R)^{n+1-γ}` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα : 0 < α) {γ : ℝ}
-    (hγ : 0 < γ) {lam Lam M : ℝ} (hlam : 0 < lam) :
+    (hγ : 0 < γ) {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -413,7 +414,7 @@ elliptic with constants `λ`, `Λ`, let `a` and `G` be `α`-Hölder on `ball z R
 `∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C V (ρ / R)^τ` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α : ℝ≥0} (hα : 0 < α)
     {β γ τ : ℝ} (hτβ : τ ≤ 2 * (α : ℝ) + β) (hτγ : τ ≤ (n : ℝ) + 1 + 2 * γ)
-    (hτ : τ < (n : ℝ) + 3) {lam Lam M θ L : ℝ} (hlam : 0 < lam) (hθ : 0 < θ) (hθ1 : θ ≤ 1)
+    (hτ : τ < (n : ℝ) + 3) {lam Lam M θ L : ℝ} (hθ : 0 < θ) (hθ1 : θ ≤ 1)
     (hL : 0 ≤ L) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
@@ -756,7 +757,7 @@ private theorem norm_setAverage_closedBall_gradient_le_div
   refine Real.sqrt_le_sqrt ?_
   rwa [← le_div_iff₀ (by positivity)]
 
-/-- **Decay of the gradient at a centre.** Let `α > 0` and `0 < γ < 1` with `γ ≤ α`. There are
+/-- **Decay of the gradient at a centre.** Let `0 < γ < 1` with `γ ≤ α`. There are
 `θ ∈ (0, 1]` and `C`, depending only on `n`, `α`, `γ`, `λ`, `Λ` and `M`, such that the following
 holds. Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `Ω ⊆ ℝ^{n+1}`, let
 `ball z R ⊆ Ω`, let `a(z)` be uniformly elliptic with constants `λ`, `Λ`, let `a` and `G` be
@@ -765,8 +766,7 @@ If the data decay like `r^{2α} K_G² r^{n+1} + 4 r² ∫_{B_r} f² ≤ V (r / R
 `0 < r ≤ R` and `∫_{B_R} ‖∇u‖² ≤ V`, then
 `∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C V (ρ / R)^{n+1+2γ}` for `0 < ρ ≤ θ R`. -/
 private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith
-    {α : ℝ≥0} (hα : 0 < α) {γ : ℝ} (hγ : 0 < γ) (hγα : γ ≤ α) (hγ1 : γ < 1) {lam Lam M : ℝ}
-    (hlam : 0 < lam) :
+    {α : ℝ≥0} {γ : ℝ} (hγ : 0 < γ) (hγα : γ ≤ α) (hγ1 : γ < 1) {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -788,20 +788,21 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderO
       ∀ ρ, 0 < ρ → ρ ≤ θ * R →
         ∫ x in ball z ρ, ‖W1p.gradient u x - ⨍ y in ball z ρ, W1p.gradient u y‖ ^ 2 ≤
           C * V * (ρ / R) ^ (2 * γ + ((n : ℝ) + 1)) := by
+  have hα : 0 < α := by exact_mod_cast hγ.trans_le hγα
   -- Morrey decay with exponent `n + 1 - γ`.
   obtain ⟨θ, C₁, hθ, hθ1, hC₁, hΦ1⟩ :=
-    exists_setIntegral_norm_gradient_sq_le_rpow (n := n) hα hγ (Lam := Lam) (M := M) hlam
+    exists_setIntegral_norm_gradient_sq_le_rpow (n := n) hα hγ (Lam := Lam) (M := M)
   -- Campanato decay with exponent `n + 1 + γ`.
   obtain ⟨C₂, hC₂, hψ2⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow (n := n) hα
     (β := (n : ℝ) + 1 - γ) (γ := γ) (τ := (n : ℝ) + 1 + γ) (by linarith) (by linarith)
-    (by linarith) (Lam := Lam) (M := M) hlam hθ hθ1 hC₁
+    (by linarith) (Lam := Lam) (M := M) hθ hθ1 hC₁
   -- Bounded averages, hence Morrey decay with exponent `n + 1`.
   obtain ⟨C₃, hC₃, hΦ3⟩ := exists_setIntegral_norm_gradient_sq_le_pow (n := n) (κ := γ / 2)
     (by positivity) hθ hθ1 hC₂
   -- Campanato decay with exponent `n + 1 + 2γ`.
   obtain ⟨C₄, hC₄, hψ4⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow (n := n) hα
     (β := (n : ℝ) + 1) (γ := γ) (τ := 2 * γ + ((n : ℝ) + 1)) (by linarith) (by linarith)
-    (by linarith) (Lam := Lam) (M := M) hlam hθ hθ1 hC₃
+    (by linarith) (Lam := Lam) (M := M) hθ hθ1 hC₃
   refine ⟨θ, C₄, hθ, hθ1, hC₄, ?_⟩
   intro Omega u a G f s z R V Ka KG h hz haK hGK hu hf hball hR hM hD hΦR
   have hΦ1z := hΦ1 h hz haK hGK hu hf hball hR hM hD hΦR
@@ -816,56 +817,77 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderO
     push_cast
     ring_nf)
 
-/-- **The scalar datum on a small ball.** If `f ∈ L^q(T)` with `q ≥ 2` and `B(z, r) ⊆ T`, then by
-Hölder's inequality `4 r² ∫_{B(z, r)} f² ≤ 4 ω^{1-2/q} r^{2(1-(n+1)/q)} ‖f‖²_{L^q(T)} r^{n+1}`,
-where `ω` is the volume of the unit ball: the datum contributes to the comparison estimate on
-`B(z, r)` at the order `r^{n+1+2(1-(n+1)/q)}`. -/
-private theorem mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    {T : Set (EuclideanSpace ℝ (Fin (n + 1)))} {q : ℝ≥0} (hq : 2 ≤ q)
-    (hf : MemLp f q (volume.restrict T)) {z : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ} (hr : 0 < r)
-    (hsub : ball z r ⊆ T) :
-    4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤
-      4 * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ^ (1 - 2 / (q : ℝ)) *
-        (r ^ (2 * (1 - ((n : ℝ) + 1) / q)) *
-          ((eLpNorm f q (volume.restrict T)).toReal ^ 2 * r ^ ((n : ℝ) + 1))) := by
+/-- **The data on a small ball.** Let `f ∈ L^q(T)` with `q ≥ 2`, let `β ≤ α` and
+`β ≤ 1 - (n + 1) / q`, and let `Q` bound both `R^{α-β} K_G` and
+`R^{1-(n+1)/q-β} ‖f‖_{L^q(T)}`. If `B(z, r) ⊆ T` with `0 < r ≤ R`, then by Hölder's inequality the
+data term of the comparison estimate on `B(z, r)` decays with the exponent `n + 1 + 2β`:
+
+`r^{2α} K_G² r^{n+1} + 4 r² ∫_{B(z, r)} f² ≤ (1 + 4 ω^{1-2/q}) (R^{(n+1)/2+β} Q)² (r / R)^{n+1+2β}`,
+
+where `ω` is the volume of the unit ball. -/
+private theorem rpow_mul_add_mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    {T : Set (EuclideanSpace ℝ (Fin (n + 1)))} {q : ℝ≥0∞} (hq : 2 ≤ q)
+    (hf : MemLp f q (volume.restrict T)) {α β KG Q R r : ℝ} (hβα : β ≤ α)
+    (hβq : β ≤ 1 - ((n : ℝ) + 1) / q.toReal) (hKG : 0 ≤ KG) (hGQ : R ^ (α - β) * KG ≤ Q)
+    (hfQ : R ^ (1 - ((n : ℝ) + 1) / q.toReal - β) * (eLpNorm f q (volume.restrict T)).toReal ≤ Q)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} (hr : 0 < r) (hrR : r ≤ R) (hsub : ball z r ⊆ T) :
+    r ^ (2 * α) * (KG ^ 2 * r ^ ((n : ℝ) + 1)) + 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤
+      (1 + 4 * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ^ (1 - 2 / q.toReal)) *
+        (R ^ (((n : ℝ) + 1) / 2 + β) * Q) ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := by
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+  set Kf := (eLpNorm f q (volume.restrict T)).toReal
+  set X := R ^ (((n : ℝ) + 1) / 2 + β) * Q
   -- Hölder's inequality on `B_r`: `∫_{B_r} f² ≤ ‖f‖²_{L^q(T)} ω^{1-2/q} r^{(n+1)(1-2/q)}`.
-  have h2 := hf.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow (by exact_mod_cast hq) hr hsub
-  simp only [Real.norm_eq_abs, sq_abs, ENNReal.coe_toReal, finrank_euclideanSpace_fin] at h2
-  have hr2 : r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))) =
-      r ^ (2 * (1 - ((n : ℝ) + 1) / q)) * r ^ ((n : ℝ) + 1) := by
+  have h2 := hf.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow hq hr hsub
+  simp only [Real.norm_eq_abs, sq_abs, finrank_euclideanSpace_fin] at h2
+  have hr2 : r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / q.toReal)) =
+      r ^ (2 * (1 - ((n : ℝ) + 1) / q.toReal)) * r ^ ((n : ℝ) + 1) := by
     rw [← Real.rpow_natCast r 2, ← Real.rpow_add hr, ← Real.rpow_add hr]
     congr 1
     push_cast
     ring
-  calc 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2
-      ≤ 4 * r ^ 2 * ((eLpNorm f q (volume.restrict T)).toReal ^ 2 *
-          (ω ^ (1 - 2 / (q : ℝ)) * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))))) := by gcongr
-    _ = 4 * ω ^ (1 - 2 / (q : ℝ)) * ((eLpNorm f q (volume.restrict T)).toReal ^ 2 *
-          (r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / (q : ℝ))))) := by ring
-    _ = _ := by rw [hr2]; ring
+  have hF : 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤ 4 * ω ^ (1 - 2 / q.toReal) *
+      (r ^ (2 * (1 - ((n : ℝ) + 1) / q.toReal)) * (Kf ^ 2 * r ^ ((n : ℝ) + 1))) :=
+    calc 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2
+        ≤ 4 * r ^ 2 * (Kf ^ 2 *
+          (ω ^ (1 - 2 / q.toReal) * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / q.toReal)))) := by gcongr
+      _ = 4 * ω ^ (1 - 2 / q.toReal) *
+          (Kf ^ 2 * (r ^ 2 * r ^ (((n + 1 : ℕ) : ℝ) * (1 - 2 / q.toReal)))) := by ring
+      _ = _ := by rw [hr2]; ring
+  -- Both data decay with the exponent `n + 1 + 2β`.
+  have hG := Real.rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow (d := (n : ℝ) + 1) hr hrR
+    hβα hKG hGQ
+  have hF' := Real.rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow (d := (n : ℝ) + 1) hr
+    hrR hβq ENNReal.toReal_nonneg hfQ
+  calc _ ≤ X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) +
+        4 * ω ^ (1 - 2 / q.toReal) * (X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β)) :=
+        add_le_add hG (hF.trans (mul_le_mul_of_nonneg_left hF' (by positivity)))
+    _ = _ := by ring
 
 /-- **Interior Schauder estimate for divergence-form equations with a scalar datum.** Let
-`0 < β ≤ α`, `q ≥ 2` and `β ≤ 1 - (n + 1) / q`. There is a constant `C`, depending only on `n`,
-`α`, `β`, `q`, `λ`, `Λ` and `M`, such that the following holds. Let `Ω ⊆ ℝ^{n+1}` be open and let
-`u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` in `Ω`, that is
-`∫_Ω ⟨a ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩ + ∫_Ω f φ` for every test function `φ`. Let `S` be a set whose open
-`R`-thickening `S_R` lies in `Ω`, let `a` be uniformly elliptic with constants `λ`, `Λ` at the
-points of `S`, let `a` and `G` be `α`-Hölder on `S_R` with constants `K_a` and `K_G`, the
-oscillation of `a` measured in the operator norm of the attached bilinear forms, where
-`K_a R^α ≤ M`, and let `f ∈ L^q(S_R)`. Then the precise representative of `∇u` is `β`-Hölder on
-`S`, with constant
+`0 < β < 1` with `β ≤ α`, let `2 ≤ q ≤ ∞` and `β ≤ 1 - (n + 1) / q`, where `(n + 1) / ∞ = 0`.
+There is a constant `C`, depending only on `n`, `α`, `β`, `q`, `λ`, `Λ` and `M`, such that the
+following holds. Let `Ω ⊆ ℝ^{n+1}` be open and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` in `Ω`, that is `∫_Ω ⟨a ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩ + ∫_Ω f φ` for every
+test function `φ`. Let `S` be a set whose open `R`-thickening `S_R` lies in `Ω`, let `a` be
+uniformly elliptic with constants `λ`, `Λ` at the points of `S`, let `a` and `G` be `α`-Hölder on
+`S_R` with constants `K_a` and `K_G`, the oscillation of `a` measured in the operator norm of the
+attached bilinear forms, where `K_a R^α ≤ M`, and let `f ∈ L^q(S_R)`. Then the precise
+representative of `∇u` is `β`-Hölder on `S`, with constant
 
 `C (K_G R^{α-β} + R^{1-(n+1)/q-β} ‖f‖_{L^q(S_R)} + R^{-(n+1)/2-β} ‖∇u‖_{L²(Ω)})`.
 
-The largest admissible exponent is `β = min α (1 - (n + 1) / q)`, which needs `q > n + 1`: the
-datum `f` costs `(n + 1) / q` of a derivative. The hypothesis `q ≥ 2` follows from `q > n + 1`
-except in dimension one. Every term of the constant scales like `[∇u]_β`, so the estimate is
-invariant under dilations. The precise representative agrees with `∇u` almost everywhere on `Ω`
+The largest admissible exponent is `β = min α (1 - (n + 1) / q)` when this is less than `1`, which
+needs `q > n + 1`: the datum `f` costs `(n + 1) / q` of a derivative. For finite `q` the
+hypothesis `β < 1` follows from `β ≤ 1 - (n + 1) / q`, and `q ≥ 2` follows from `q > n + 1`
+except in dimension one. A bounded datum, `q = ∞`, allows every `β < 1` with `β ≤ α`. Every term
+of the constant scales like `[∇u]_β`, so the estimate is invariant under dilations. The precise
+representative agrees with `∇u` almost everywhere on `Ω`
 (`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`). -/
-theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm_of_memLp
-    {α β : ℝ≥0} (hβ : 0 < β) (hβα : β ≤ α) {q : ℝ≥0} (hq : 2 ≤ q)
-    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q) {lam Lam M : ℝ} :
+theorem
+    exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp
+    {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) {lam Lam M : ℝ} :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume Omega 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -881,22 +903,16 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
           ∫ x in Omega, f x * φ x) →
       0 < R → thickening R S ⊆ Omega →
         HolderOnWith (C * (KG * R ^ ((α : ℝ) - β) +
-            R ^ (1 - ((n : ℝ) + 1) / q - β) *
+            R ^ (1 - ((n : ℝ) + 1) / q.toReal - β) *
               (eLpNorm f q (volume.restrict (thickening R S))).toReal +
             R ^ (-(((n : ℝ) + 1) / 2 + β)) * ‖W1p.gradient u‖)).toNNReal β
           (preciseRepresentative volume
             (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))))
           S := by
-  by_cases hlam : 0 < lam
-  swap
-  · refine ⟨0, le_rfl, ?_⟩
-    intro Omega u a G f Ka KG S R h
-    exact absurd h.pos hlam
   have hβ' : (0 : ℝ) < β := hβ
-  have hβ1 : (β : ℝ) < 1 := hβq.trans_lt (sub_lt_self 1 (by positivity))
   obtain ⟨θ, C₀, hθ, hθ1, _, hdec⟩ :=
-    exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) (α := α)
-      (hβ.trans_le hβα) hβ' (by exact_mod_cast hβα) hβ1 (Lam := Lam) (M := M) hlam
+    exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith (n := n) (α := α) hβ'
+      (by exact_mod_cast hβα) (by exact_mod_cast hβ1) (lam := lam) (Lam := Lam) (M := M)
   obtain ⟨ω, hωdef⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     ⟨_, rfl⟩
   have hω : 0 < ω := hωdef ▸ measureReal_ball_pos volume _ one_pos
@@ -905,7 +921,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
   have hc : 0 ≤ c := hcdef ▸ div_nonneg (by positivity)
     (sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hβ'))).le
   -- The data enter the decay estimate through `V = c₀ (R^{(n+1)/2+β} Q)²`.
-  obtain ⟨c₀, hc₀def⟩ : ∃ c₀ : ℝ, c₀ = 1 + 4 * ω ^ (1 - 2 / (q : ℝ)) := ⟨_, rfl⟩
+  obtain ⟨c₀, hc₀def⟩ : ∃ c₀ : ℝ, c₀ = 1 + 4 * ω ^ (1 - 2 / q.toReal) := ⟨_, rfl⟩
   have hc₀ : 1 ≤ c₀ := hc₀def ▸ le_add_of_nonneg_right (by positivity)
   refine ⟨2 * 2 ^ (β : ℝ) * (c * √(C₀ * c₀ / ω) + θ ^ (-(β : ℝ)) / √(ω * θ ^ (n + 1))),
     by positivity, ?_⟩
@@ -913,11 +929,21 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
   obtain ⟨Kf, hKf⟩ : ∃ Kf, Kf = (eLpNorm f q (volume.restrict (thickening R S))).toReal :=
     ⟨_, rfl⟩
   rw [← hKf]
-  obtain ⟨Q, hQ⟩ : ∃ Q, Q = (KG : ℝ) * R ^ ((α : ℝ) - β) + R ^ (1 - ((n : ℝ) + 1) / q - β) * Kf +
+  obtain ⟨Q, hQ⟩ : ∃ Q, Q = (KG : ℝ) * R ^ ((α : ℝ) - β) +
+      R ^ (1 - ((n : ℝ) + 1) / q.toReal - β) * Kf +
       R ^ (-(((n : ℝ) + 1) / 2 + β)) * ‖W1p.gradient u‖ := ⟨_, rfl⟩
   rw [← hQ]
   have hKf0 : 0 ≤ Kf := hKf ▸ ENNReal.toReal_nonneg
+  have hRG : 0 ≤ (KG : ℝ) * R ^ ((α : ℝ) - β) := by positivity
+  have hRf : 0 ≤ R ^ (1 - ((n : ℝ) + 1) / q.toReal - β) * Kf := by positivity
+  have hRu : 0 ≤ R ^ (-(((n : ℝ) + 1) / 2 + β)) * ‖W1p.gradient u‖ := by positivity
   have hQ0 : 0 ≤ Q := hQ ▸ by positivity
+  have hGQ : R ^ ((α : ℝ) - β) * KG ≤ Q := by
+    rw [hQ, mul_comm]
+    linarith
+  have hfQ : R ^ (1 - ((n : ℝ) + 1) / q.toReal - β) * Kf ≤ Q := by
+    rw [hQ]
+    linarith
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
   have hball : ∀ z ∈ S, ball z R ⊆ Omega := fun z hz => (ball_subset_thickening hz R).trans hRS
   set X := R ^ (((n : ℝ) + 1) / 2 + β) * Q with hX
@@ -935,36 +961,10 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
   have hD : ∀ z ∈ S, ∀ r, 0 < r → r ≤ R →
       r ^ (2 * (α : ℝ)) * ((KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) +
         4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤
-          c₀ * X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := by
-    intro z hz r hr hrR
-    have hrR' : (0 : ℝ) ≤ (r / R) ^ ((n : ℝ) + 1 + 2 * β) := by positivity
-    have hG := Real.rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR (c := (KG : ℝ))
-      (d := (n : ℝ) + 1) (by exact_mod_cast hβα : (β : ℝ) ≤ α)
-    have hRG : 0 ≤ (KG : ℝ) * R ^ ((α : ℝ) - β) := by positivity
-    have hRf : 0 ≤ R ^ (1 - ((n : ℝ) + 1) / q - β) * Kf := by positivity
-    have hRu : 0 ≤ R ^ (-(((n : ℝ) + 1) / 2 + β)) * ‖W1p.gradient u‖ := by positivity
-    have hGQ : R ^ ((α : ℝ) - β) * KG ≤ Q := by
-      rw [hQ, mul_comm]
-      linarith
-    have hfQ : R ^ (1 - ((n : ℝ) + 1) / q - β) * Kf ≤ Q := by
-      rw [hQ]
-      linarith
-    have hGX : (R ^ ((α : ℝ) - β) * KG) ^ 2 * R ^ ((n : ℝ) + 1 + 2 * β) ≤ X ^ 2 :=
-      Real.sq_mul_rpow_add_two_mul_le hR (by positivity) hGQ
-    have hF := mul_setIntegral_sq_le hq hf hr ((ball_subset_ball hrR).trans
-      (ball_subset_thickening hz R))
-    rw [← hKf, ← hωdef] at hF
-    have hF' := Real.rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR (c := Kf) (d := (n : ℝ) + 1)
-      (a := 1 - ((n : ℝ) + 1) / q) hβq
-    have hFX : (R ^ (1 - ((n : ℝ) + 1) / q - β) * Kf) ^ 2 * R ^ ((n : ℝ) + 1 + 2 * β) ≤ X ^ 2 :=
-      Real.sq_mul_rpow_add_two_mul_le hR hRf hfQ
-    have hω4 : 0 ≤ 4 * ω ^ (1 - 2 / (q : ℝ)) := by positivity
-    calc _ ≤ X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) +
-          4 * ω ^ (1 - 2 / (q : ℝ)) * (X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β)) :=
-          add_le_add (hG.trans (mul_le_mul_of_nonneg_right hGX hrR'))
-            (hF.trans (mul_le_mul_of_nonneg_left
-              (hF'.trans (mul_le_mul_of_nonneg_right hFX hrR')) hω4))
-      _ = c₀ * X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := by rw [hc₀def]; ring
+          c₀ * X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := fun z hz r hr hrR => by
+    rw [hc₀def, hωdef]
+    exact rpow_mul_add_mul_setIntegral_sq_le hq hf (by exact_mod_cast hβα) hβq KG.2 hGQ
+      (hKf ▸ hfQ) hr hrR ((ball_subset_ball hrR).trans (ball_subset_thickening hz R))
   -- The mean oscillation of `∇u` on `closedBall z t` is at most `√(C₀ c₀ / ω) Q t^β`.
   have hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ θ * R →
       ⨍ y in closedBall z t, ‖W1p.gradient u y - ⨍ w in closedBall z t, W1p.gradient u w‖ ≤
@@ -975,7 +975,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm
       ((ball_subset_ball (htθ.trans hθR)).trans (hball z hz)) ht hR hQ0
       ((hdec h hz (haK.mono (ball_subset_thickening hz R)) (hGK.mono (ball_subset_thickening hz R))
         hu ((hf.mono_measure (Measure.restrict_mono (ball_subset_thickening hz R)
-          le_rfl)).mono_exponent (by exact_mod_cast hq)) (hball z hz) hR hM (hD z hz)
+          le_rfl)).mono_exponent hq) (hball z hz) hR hM (hD z hz)
         ((hV2 z hz).trans (le_mul_of_one_le_left (sq_nonneg X) hc₀)) t ht htθ).trans_eq
         (by ring))
   -- The average of `∇u` over `closedBall z (θ R)` is at most `R^β Q / √(ω θ^{n+1})`.
@@ -1007,8 +1007,8 @@ attached bilinear forms, where `K_a R^α ≤ M`. Then the precise representative
 The constant depends on the coefficients only through `λ`, `Λ` and the dimensionless bound `M`
 on `R^α [a]_α`, so the estimate is invariant under dilations. The precise representative agrees
 with `∇u` almost everywhere on `Ω` (`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`).
-This is the case `f = 0`, `β = α` of
-`exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm_of_memLp`;
+This is the case `f = 0`, `q = ∞`, `β = α` of
+`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`;
 for `a = 1` it is `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_gradient`. -/
 theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam Lam M : ℝ} :
@@ -1027,21 +1027,10 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
           (preciseRepresentative volume
             (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))))
           S := by
-  -- Any exponent `q ≥ (n + 1) / (1 - α)` makes `α ≤ 1 - (n + 1) / q`; the datum is `f = 0`.
-  have hα1' : (0 : ℝ) < 1 - α := sub_pos.2 (by exact_mod_cast hα1)
-  set q : ℝ≥0 := max 2 (((n : ℝ) + 1) / (1 - α)).toNNReal
-  have hq : 2 ≤ q := le_max_left _ _
-  have hαq : (α : ℝ) ≤ 1 - ((n : ℝ) + 1) / q := by
-    have hq1 : ((n : ℝ) + 1) / (1 - α) ≤ q := by
-      rw [NNReal.coe_max]
-      exact (Real.le_coe_toNNReal _).trans (le_max_right _ _)
-    have hq0 : (0 : ℝ) < q := by exact_mod_cast two_pos.trans_le hq
-    rw [div_le_iff₀ hα1'] at hq1
-    rw [le_sub_iff_add_le, ← le_sub_iff_add_le', div_le_iff₀ hq0]
-    linarith
+  -- The datum is `f = 0`, which lies in `L^∞`.
   obtain ⟨C, hC, h⟩ :=
-    exists_holderOnWith_preciseRepresentative_gradient_of_matrixBilinearForm_of_memLp
-      (n := n) hα le_rfl hq hαq (lam := lam) (Lam := Lam) (M := M)
+    exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp
+      (n := n) hα hα1 le_rfl le_top (by simpa using hα1.le) (lam := lam) (Lam := Lam) (M := M)
   refine ⟨C, hC, fun hell haK hGK hM hu hR hRS => ?_⟩
   have h' := h hell haK hGK hM (f := 0) MemLp.zero
     (fun φ => by rw [hu φ, Pi.zero_def]; simp only [zero_mul, integral_zero, add_zero]) hR hRS

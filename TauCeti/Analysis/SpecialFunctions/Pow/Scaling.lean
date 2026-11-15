@@ -23,7 +23,8 @@ This file collects the rearrangements of such powers that these arguments need.
   factor `θ` multiplies it by `θ^{-γ}`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
-  `0 ≤ c ≤ Q`.
+  `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
+  `r^{d+2a}` is at most `(R^{d/2+b} Q)² (r / R)^{d+2b}`.
 -/
 
 public section
@@ -90,5 +91,15 @@ theorem sq_mul_rpow_add_two_mul_le {R c Q d a : ℝ} (hR : 0 < R) (hc : 0 ≤ c)
     rw [← rpow_mul_natCast hR.le, Nat.cast_two, add_mul, div_mul_cancel₀ _ two_ne_zero, mul_comm]
   rw [h, mul_pow, mul_comm]
   gcongr
+
+/-- `r^{2a} c² r^d ≤ (R^{d/2+b} Q)² (r / R)^{d+2b}` for `0 < r ≤ R`, `b ≤ a` and
+`0 ≤ R^{a-b} c ≤ Q`: a quantity of order `r^{d+2a}` decays with the smaller exponent `d + 2b`,
+measured at the `L²` scale `(R^{d/2+b} Q)²` of a ball of radius `R` in dimension `d`. -/
+theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : ℝ} (hr : 0 < r)
+    (hrR : r ≤ R) (hba : b ≤ a) (hc : 0 ≤ c) (hcQ : R ^ (a - b) * c ≤ Q) :
+    r ^ (2 * a) * (c ^ 2 * r ^ d) ≤ (R ^ (d / 2 + b) * Q) ^ 2 * (r / R) ^ (d + 2 * b) := by
+  have hR : 0 < R := hr.trans_le hrR
+  exact (rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR hba).trans (mul_le_mul_of_nonneg_right
+    (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
 end Real

@@ -181,7 +181,7 @@ private theorem UniformlyEllipticOn.exists_memLp_mul_norm_gradient_restrictL_sub
     rw [real_inner_comm, inner_toEuclideanCLM, sub_mulVec, dotProduct_sub]
     ring
   exact ⟨hD, (hA.mul_norm_gradient_sub_le_add aestronglyMeasurable_const huw hw
-    (ℓ := fun v => ⟪hf.toLp, W1p.value v⟫_ℝ) hL hℓ hF).trans
+    (ℓ := fun v => ⟪hf.toLp, W1p.value (v : W1p mu B 2)⟫_ℝ) hL hℓ hF).trans
     (add_le_add_left (norm_add_le _ _) _)⟩
 
 /-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
@@ -263,11 +263,7 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
   set θ : EuclideanSpace ℝ ι → ℝ := fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
   have hgrad := W1p.gradient_restrictL_ae hB u
   -- The two parts of the field, measured in `L²(B)`.
-  have hG2 : ‖hGc.toLp‖ ^ 2 = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [hGc.coeFn_toLp] with x hx
-    rw [hx]
+  have hG2 : ‖hGc.toLp‖ ^ 2 = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := hGc.norm_toLp_sq
   -- Pointwise, `‖(A - a) ∇u‖ ≤ θ ‖∇u‖`, and `θ ≤ ε` on `B`.
   have hDx : ∀ᵐ x ∂mu.restrict B,
       ‖(hD.toLp : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x‖ ^ 2 ≤
@@ -305,7 +301,7 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with
-`B ⊆ B(x₀, r)`, `r ≥ 0`, and let `a` be uniformly elliptic with constants `0 < λ ≤ Λ` on a set
+`B ⊆ B(x₀, r)`, and let `a` be uniformly elliptic with constants `0 < λ ≤ Λ` on a set
 containing `x₀`. Suppose that on `B(x₀, r)` the coefficients are `α`-Hölder with constant `K_a`,
 in the operator norm of the attached bilinear forms, and `G` is `α`-Hölder with constant `K_G`,
 where `α > 0`, and that `f ∈ L²(B)`. Then there is `w ∈ H¹(B)` with the boundary values of `u`,
@@ -323,7 +319,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
     {x₀ : EuclideanSpace ℝ (Fin (n + 1))} (hx₀ : x₀ ∈ s) {r : ℝ} {α Ka KG : ℝ≥0} (hα : 0 < α)
     (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ r))
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hGK : HolderOnWith KG α G (ball x₀ r)) (hr : 0 ≤ r) (hB : B ≤ Omega)
+    (hGK : HolderOnWith KG α G (ball x₀ r)) (hB : B ≤ Omega)
     (hBr : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball x₀ r) {u : W1p volume Omega 2}
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
@@ -383,10 +379,16 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
     have hfv := abs_real_inner_le_norm hf.toLp (W1p.value (v : W1p volume B 2))
     have := mul_le_mul_of_nonneg_left hv (norm_nonneg hf.toLp)
     linarith
+  -- For `r < 0` the ball is empty, so `B` is empty and `‖f‖_{L²(B)} = 0`.
+  have hL : 0 ≤ 2 * r * ‖hf.toLp‖ := by
+    rcases le_or_gt 0 r with hr | hr
+    · positivity
+    · rw [Lp.norm_toLp, subset_empty_iff.1 (hBr.trans (ball_eq_empty.2 hr.le).subset),
+        Measure.restrict_empty, eLpNorm_measure_zero, ENNReal.toReal_zero, mul_zero]
   have hest := hA.mul_norm_gradient_restrictL_sub_le hB ha (ε := Ka * r ^ (α : ℝ))
     (fun x hx => by
       have := haK.dist_le_mul_rpow_of_mem_ball (hBr hx)
-      rwa [dist_eq_norm] at this) hu hGc hf (by positivity) hℓ hsub hw0
+      rwa [dist_eq_norm] at this) hu hGc hf hL hℓ hsub hw0
   -- The `L²(B)` norm of `G - G x₀` is at most `|B|^{1/2} K_G r^α`.
   have hGn := hGc.norm_toLp_le_measureReal_rpow_mul (by norm_num) hBfin
     ((ae_restrict_iff' hBm).2 (ae_of_all _ hGbd))
@@ -462,7 +464,7 @@ theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n
   have hω : 0 ≤ ω := measureReal_nonneg
   have hB : (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) ≤ Omega := hball
   obtain ⟨w, -, hw0, hest⟩ := h.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le hx₀ hα
-    haK hGK hr.le hB subset_rfl hu hf
+    haK hGK hB subset_rfl hu hf
   refine ⟨w, hw0, ?_⟩
   have hE := W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
   simp only [Opens.coe_mk] at hE
@@ -483,10 +485,7 @@ theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n
     rfl
   -- The squared norm of `f` in `L²(B_r)` is `∫_{B_r} f²`.
   have hF : ‖hf.toLp‖ ^ 2 = ∫ x in ball x₀ r, f x ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with x hx
-    rw [hx, Real.norm_eq_abs, sq_abs]
+    simp only [hf.norm_toLp_sq, Real.norm_eq_abs, sq_abs]
   have hr2 : (r ^ (α : ℝ)) ^ 2 = r ^ (2 * (α : ℝ)) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul hr.le]
     ring_nf

@@ -87,7 +87,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le_add [DecidableEq ι]
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u w : W1p mu Omega 2}
     (huw : u - w ∈ w1p0Submodule mu Omega 2)
     (hw : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 w (v : W1p mu Omega 2) = 0)
-    {G : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)} {ℓ : W1p mu Omega 2 → ℝ} {L : ℝ}
+    {G : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)} {ℓ : W1p0 mu Omega 2 → ℝ} {L : ℝ}
     (hL : 0 ≤ L)
     (hℓ : ∀ v : W1p0 mu Omega 2, |ℓ v| ≤ L * ‖W1p.gradient (v : W1p mu Omega 2)‖)
     (hG : ∀ v : W1p0 mu Omega 2,
@@ -100,7 +100,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le_add [DecidableEq ι]
   have hd : u - w ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw
   -- Test the equation for `u - w` against `u - w` itself.
   have henergy : energyFormH1 a 0 0 (u - w) (u - w) =
-      ⟪G, W1p.gradient (u - w)⟫_ℝ + ℓ (u - w) := by
+      ⟪G, W1p.gradient (u - w)⟫_ℝ + ℓ ⟨u - w, hd⟩ := by
     rw [energyFormH1_sub_left hcoeff]
     have hu := hG ⟨u - w, hd⟩
     have hw := hw ⟨u - w, hd⟩
