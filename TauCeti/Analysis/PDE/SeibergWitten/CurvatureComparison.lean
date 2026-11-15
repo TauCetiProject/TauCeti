@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
-public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -15,8 +14,8 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 import TauCeti.LinearAlgebra.Basis.Fin
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The cutoff current and the curvature current against test forms
@@ -50,14 +49,15 @@ compact set containing the support of `ζ`, `A₁` bounds `|dζ|` and `A₂` bou
 
 For large-parameter Seiberg–Witten solutions, with `h = (2r)^(-1/2)`, Taubes's coarse estimates
 give `∫_K |1 - |α|²| = O(h²)` (`TauCeti.SeibergWitten.mul_setIntegral_abs_one_sub_le`) and,
-through the `L²` bound on `∂bar_a α` and Cauchy–Schwarz on `K`, `∫_K |∂bar_a α| = O(h)`. So the
-right side is `O(h)`, uniformly over all fields satisfying the coarse bounds with a fixed constant
+through the `L²` bound on `∂bar_a α` and Cauchy–Schwarz on `K`, `∫_K |∂bar_a α| = O(h)`
+(`TauCeti.SeibergWitten.setIntegral_norm_le_div_sqrt`). So the right side is `O(h)`, uniformly
+over all fields satisfying the coarse bounds with a fixed constant
 (`TauCeti.SeibergWitten.exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le_div_add_div_sqrt`).
 Along a sequence of such fields with `r → ∞`, the pairings of `Θ` and of `i F_a` with each fixed
 `C²` test form therefore differ by a sequence tending to zero
 (`TauCeti.SeibergWitten.tendsto_integral_cutoffCurrent_add_extDeriv_wedge_nhds_zero`), and one
 converges exactly when the other does, to the same limit
-(`TauCeti.SeibergWitten.tendsto_integral_wedge_cutoffCurrent_iff`): `Θ / 2π` and `i F_a / 2π`
+(`TauCeti.SeibergWitten.tendsto_integral_cutoffCurrent_wedge_iff`): `Θ / 2π` and `i F_a / 2π`
 have the same weak limits. The coarse estimates themselves are hypotheses here.
 
 ## Main results
@@ -66,7 +66,7 @@ have the same weak limits. The coarse estimates themselves are hypotheses here.
   for a single field, in terms of `∫_K |1 - |α|²|` and `∫_K |∂bar_a α|`.
 * `TauCeti.SeibergWitten.exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le_div_add_div_sqrt`:
   the comparison is `O(r^(-1/2))` under the coarse bounds.
-* `TauCeti.SeibergWitten.tendsto_integral_wedge_cutoffCurrent_iff`: the cutoff currents and the
+* `TauCeti.SeibergWitten.tendsto_integral_cutoffCurrent_wedge_iff`: the cutoff currents and the
   curvature currents have the same limits against each fixed test form as `r → ∞`.
 
 ## References
@@ -275,26 +275,10 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le_div_add_div_sqrt
     rw [le_div_iff₀ hr, mul_comm]
     linarith
   -- The `∂bar_a α` term, by the `L²` bound and Cauchy–Schwarz on `K`.
-  have h₂ : ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar ≤
-      √V * (C * (√(2 * C * (C + V)) + 1)) / √r := by
-    have : IsFiniteMeasure (e.addHaar.restrict K) := isFiniteMeasure_restrict.2 hμK
-    have hsq := integral_norm_sq_le_div (μ := e.addHaar.restrict K) (Dα := covariantDeriv b α)
-      (Dβ := fun _ ↦ (0 : ℝ)) (Dα' := covariantDeriv b α) (Dbar := covariantDBar J b α) hr hC
-      hCr hδ hL1 ((ae_restrict_iff' hK.measurableSet).2 (.of_forall hβ))
-      ((ae_restrict_iff' hK.measurableSet).2 (.of_forall fun x hx ↦ by simpa using hgrad x hx))
-      (.of_forall fun _ ↦ le_rfl) hDbar
-    rw [measureReal_restrict_apply_univ] at hsq
-    have hcont : Continuous fun x ↦ ‖covariantDBar J b α x‖ :=
-      (continuous_covariantDBar J (hα.of_le one_le_two) hb.continuous).norm
-    have hcs := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ K hμK
-      ((hcont.pow 2).continuousOn.integrableOn_compact hK)
-    refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-    calc (∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) ^ 2
-        ≤ V * ∫ x in K, ‖covariantDBar J b α x‖ ^ 2 ∂e.addHaar := hcs
-      _ ≤ V * (C ^ 2 * (√(2 * C * (C + V)) + 1) ^ 2 / r) := by gcongr
-      _ = (√V * (C * (√(2 * C * (C + V)) + 1)) / √r) ^ 2 := by
-          rw [div_pow, mul_pow, mul_pow, Real.sq_sqrt hV, Real.sq_sqrt hr.le]
-          ring
+  have hcont : Continuous fun x ↦ ‖covariantDBar J b α x‖ :=
+    (continuous_covariantDBar J (hα.of_le one_le_two) hb.continuous).norm
+  have h₂ := setIntegral_norm_le_div_sqrt hK.measurableSet hμK hCr hδ hL1 hβ hgrad
+    ((hcont.pow 2).continuousOn.integrableOn_compact hK) hDbar
   calc |∫ x, wedge (cutoffCurrent χ b α x + extDeriv b x) (ζ x) e ∂e.addHaar|
       ≤ C₀ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e.addHaar +
           A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) :=
@@ -351,7 +335,7 @@ hypotheses of `TauCeti.SeibergWitten.tendsto_integral_cutoffCurrent_add_extDeriv
 for every fixed `C²` test form `ζ` supported in `K`, the pairings `∫ Θ_i ∧ ζ` of the cutoff
 currents converge to `T` exactly when the pairings `∫ i F_(a_i) ∧ ζ = ∫ (-d b_i) ∧ ζ` of the
 curvature currents do. -/
-theorem tendsto_integral_wedge_cutoffCurrent_iff (e : Module.Basis (Fin (2 + n)) ℝ E)
+theorem tendsto_integral_cutoffCurrent_wedge_iff (e : Module.Basis (Fin (2 + n)) ℝ E)
     {ι : Type*} {l : Filter ι} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → ℂ}
     {β : ι → E → B} {r : ι → ℝ} {K : Set E} {c C T : ℝ} (hc : 0 < c)
     (hχc : ∀ t < c, χ t = 0) (hχ₁ : ∀ t, |χ t| ≤ 1) (hχ : ContDiff ℝ 1 χ)

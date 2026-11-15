@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Coarse bounds near the zeros of a large-parameter Seiberg–Witten solution
@@ -37,6 +38,9 @@ function `χ` with `χ = 1` on `(1 / 2, ∞)`, that region contains the support 
   (`TauCeti.SeibergWitten.integral_norm_sq_le_of_add_mul_norm_sq_le`);
 * `‖∂bar_a α‖₂² ≤ C² (√(2 C (C + Vol X)) + 1)² / r`, so `‖∂bar_a α‖₂ = O(h)`
   (`TauCeti.SeibergWitten.integral_norm_sq_le_div`);
+* on a measurable set `S` of finite measure, with the gradient bound `|∇_a α|² ≤ C r w₊ + C`,
+  `∫_S |∂bar_a α| ≤ √μ(S) C (√(2 C (C + μ(S))) + 1) / √r`, so `∫_S |∂bar_a α| = O(h)`
+  (`TauCeti.SeibergWitten.setIntegral_norm_le_div_sqrt`);
 * the pointwise bound `|∂bar_a α| ≤ C (√(2 C) + √(2 (1 + C)))`
   (`TauCeti.SeibergWitten.norm_le_mul_sqrt_add_sqrt`).
 
@@ -365,6 +369,47 @@ theorem integral_norm_sq_le_div [IsFiniteMeasure μ] {Dα : X → F₁} {Dβ : X
     _ = C ^ 2 * (√(2 * C * (C + μ.real Set.univ)) + 1) ^ 2 / r := by
         rw [mul_pow, div_pow, Real.sq_sqrt hr.le]
         ring
+
+/-- **The `L¹` bound on `∂bar_a α` over a set.** Let `S` be a measurable set of finite measure on
+which the `L¹` defect bound `r ∫_S |1 - |α|² - |β|²| ≤ C`, the pointwise bound
+`|β|² ≤ (C / r) w₊ + C / r²` and the gradient bound `|∇_a α|² ≤ C r w₊ + C` hold, with
+`w₊ = max (1 - |α|²) 0` and `2 C ≤ r`. If `|∂bar_a α|²` is integrable on `S` and
+`‖∂bar_a α‖₂ ≤ C r^(-1/2) (‖∇_a α‖₂ + 1)`, with `L²` norms over `S`, then Cauchy–Schwarz on `S`
+gives `∫_S |∂bar_a α| ≤ √μ(S) C (√(2 C (C + μ(S))) + 1) / √r`, so `∫_S |∂bar_a α| = O(h)` for
+`h = (2 r)^(-1/2)`. Here `∇_a α` and `∂bar_a α` are any functions `Dα` and `Dbar` satisfying
+these hypotheses. -/
+theorem setIntegral_norm_le_div_sqrt {S : Set X} {Dα : X → F₁} {Dbar : X → F₂}
+    (hS : MeasurableSet S) (hμS : μ S ≠ ⊤) (hCr : 2 * C ≤ r)
+    (hδ : IntegrableOn (fun x ↦ 1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) S μ)
+    (hL1 : r * ∫ x in S, |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| ∂μ ≤ C)
+    (hβ : ∀ x ∈ S, ‖β x‖ ^ 2 ≤ C / r * max (1 - ‖α x‖ ^ 2) 0 + C / r ^ 2)
+    (hgrad : ∀ x ∈ S, ‖Dα x‖ ^ 2 ≤ C * r * max (1 - ‖α x‖ ^ 2) 0 + C)
+    (hint : IntegrableOn (fun x ↦ ‖Dbar x‖ ^ 2) S μ)
+    (hDbar : √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) ≤ C / √r * (√(∫ x in S, ‖Dα x‖ ^ 2 ∂μ) + 1)) :
+    ∫ x in S, ‖Dbar x‖ ∂μ ≤ √(μ.real S) * (C * (√(2 * C * (C + μ.real S)) + 1)) / √r := by
+  have hcs := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ S hμS hint
+  rcases le_or_gt r 0 with hr | hr
+  · -- For `r ≤ 0`, `√r = 0`, so the `L²` bound forces `∫_S |∂bar_a α|² = 0` and both sides vanish.
+    have h0 : √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) ≤ 0 := by simpa [Real.sqrt_eq_zero'.2 hr] using hDbar
+    replace h0 : ∫ x in S, ‖Dbar x‖ ^ 2 ∂μ ≤ 0 := by simpa using (Real.sqrt_le_left le_rfl).1 h0
+    have := mul_nonpos_of_nonneg_of_nonpos measureReal_nonneg h0 (a := μ.real S)
+    rw [Real.sqrt_eq_zero'.2 hr, div_zero]
+    nlinarith
+  have hC : 0 ≤ C := (mul_nonneg hr.le (integral_nonneg fun _ ↦ abs_nonneg _)).trans hL1
+  have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hμS
+  -- The `L²` bound on `∇_a α` over `S`.
+  have hα : ∫ x in S, ‖Dα x‖ ^ 2 ∂μ ≤ 2 * C * (C + μ.real S) := by
+    simpa [measureReal_restrict_apply_univ] using
+      integral_le_of_le_mul_max_one_sub (μ := μ.restrict S) hr hC hCr hδ hL1
+        ((ae_restrict_iff' hS).2 (.of_forall hβ)) (.of_forall fun _ ↦ by positivity)
+        ((ae_restrict_iff' hS).2 (.of_forall hgrad))
+  have hbound : √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) ≤ C / √r * (√(2 * C * (C + μ.real S)) + 1) :=
+    hDbar.trans (by gcongr)
+  calc ∫ x in S, ‖Dbar x‖ ∂μ ≤ √(μ.real S * ∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) :=
+        Real.le_sqrt_of_sq_le hcs
+    _ = √(μ.real S) * √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) := Real.sqrt_mul measureReal_nonneg _
+    _ ≤ √(μ.real S) * (C / √r * (√(2 * C * (C + μ.real S)) + 1)) := by gcongr
+    _ = √(μ.real S) * (C * (√(2 * C * (C + μ.real S)) + 1)) / √r := by ring
 
 /-- **The pointwise bound on `∂bar_a α`.** Let `r ≥ 1` and `C ≥ 0`. At a point where the spinor
 components satisfy `|α|² + |β|² ≤ 1 + C / r`, the gradient bound
