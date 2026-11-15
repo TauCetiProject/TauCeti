@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
@@ -255,10 +256,9 @@ private theorem range_toLp_prodMap_mapIncl_ker (A : V₀ →L[𝕜] V₁) (B : W
   ext w
   -- Each component condition is membership in the common kernel of `f ⊗ 1` and `1 ⊗ g`.
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, externalProductBlock_apply_eq_zero_iff,
-    LinearMap.range_comp, LinearMap.range_prodMap, Submodule.mem_map_equiv,
-    LinearEquiv.symm_symm, Submodule.mem_prod]
-  simp only [WithLp.coe_linearEquiv, WithLp.ofLp_fst, WithLp.ofLp_snd, rTensor_apply,
-    lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf, LinearMap.ker_rTensor_inf_ker_lTensor]
+    WithLp.mem_range_linearEquiv_symm_comp_prodMap]
+  simp only [rTensor_apply, lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf,
+    LinearMap.ker_rTensor_inf_ker_lTensor]
 
 /-- **The Künneth isomorphism for the kernel of the external product block**:
 `ker (externalProductBlock A B) ≃ (ker A ⊗ ker B) × (ker A† ⊗ ker B†)`, whose inverse is given by
@@ -271,10 +271,9 @@ noncomputable def kerExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁) (B : W
           LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :=
   ((LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
       (TensorProduct.mapIncl _ _).prodMap (TensorProduct.mapIncl _ _))
-    ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| by
-      rw [LinearMap.coe_prodMap]
-      exact .prodMap (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
-        (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
+    (WithLp.injective_linearEquiv_symm_comp_prodMap
+      (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
+      (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
     (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker A B))).symm
 
 @[simp]
@@ -380,10 +379,9 @@ private theorem range_toLp_prodMap_mapIncl_ker_adjoint (A : V₀ →L[𝕜] V₁
         WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) := by
   ext w
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    adjoint_externalProductBlock_apply_eq_zero_iff, LinearMap.range_comp, LinearMap.range_prodMap,
-    Submodule.mem_map_equiv, LinearEquiv.symm_symm, Submodule.mem_prod]
-  simp only [WithLp.coe_linearEquiv, WithLp.ofLp_fst, WithLp.ofLp_snd, rTensor_apply,
-    lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf, LinearMap.ker_rTensor_inf_ker_lTensor]
+    adjoint_externalProductBlock_apply_eq_zero_iff, WithLp.mem_range_linearEquiv_symm_comp_prodMap]
+  simp only [rTensor_apply, lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf,
+    LinearMap.ker_rTensor_inf_ker_lTensor]
 
 /-- **The Künneth isomorphism for the kernel of the adjoint of the external product block**, which
 is its cokernel when the range is closed: `ker (externalProductBlock A B)† ≃
@@ -396,10 +394,9 @@ noncomputable def kerAdjointExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁)
         (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :=
   ((LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
       (TensorProduct.mapIncl _ _).prodMap (TensorProduct.mapIncl _ _))
-    ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| by
-      rw [LinearMap.coe_prodMap]
-      exact .prodMap (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
-        (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
+    (WithLp.injective_linearEquiv_symm_comp_prodMap
+      (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
+      (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
     (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker_adjoint A B))).symm
 
 @[simp]
