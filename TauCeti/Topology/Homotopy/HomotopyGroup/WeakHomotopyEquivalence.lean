@@ -52,8 +52,10 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   left and right cancellation (two out of three).
 * `ContinuousMap.IsWeakHomotopyEquivalence.of_retract`: a retract of a weak homotopy equivalence is
   a weak homotopy equivalence.
-* `ContinuousMap.isWeakHomotopyEquivalence_of_contractibleSpace`: every map between contractible
-  spaces is a weak homotopy equivalence.
+* `ContinuousMap.isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup`,
+  `ContinuousMap.isWeakHomotopyEquivalence_of_contractibleSpace`: every map between path-connected
+  spaces with trivial positive-dimensional homotopy groups (in particular, between contractible
+  spaces) is a weak homotopy equivalence.
 * `ContinuousMap.IsWeakHomotopyEquivalence.forall_surjective_map_iff_of_comp_eq`,
   `ContinuousMap.IsWeakHomotopyEquivalence.forall_injective_map_iff_of_comp_eq`: in a square
   `g ∘ i = j ∘ f` with `f` and `g` weak homotopy equivalences, `j` induces surjections
@@ -414,15 +416,20 @@ theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :
   exists_joined y := ⟨e.invFun y, ⟨e.right_inv.some.evalAt y⟩⟩
   bijective _ x := HomotopyGroup.map_bijective_of_homotopyEquiv e x
 
+/-- **Every map between path-connected spaces with trivial positive-dimensional homotopy groups is a
+weak homotopy equivalence.** -/
+theorem isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup [PathConnectedSpace X]
+    [PathConnectedSpace Y] [∀ n x, Subsingleton (HomotopyGroup (Fin (n + 1)) X x)]
+    [∀ n y, Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)] (f : C(X, Y)) :
+    f.IsWeakHomotopyEquivalence :=
+  isWeakHomotopyEquivalence_iff_joined.2
+    ⟨fun y ↦ ⟨Classical.arbitrary X, PathConnectedSpace.joined _ y⟩,
+      fun a b _ ↦ PathConnectedSpace.joined a b,
+      fun _ _ ↦ Function.bijective_of_subsingleton' _⟩
 
-/-- **A map between contractible spaces is a weak homotopy equivalence.** It is homotopic to a
-homotopy equivalence, since any two maps into a contractible space are homotopic. -/
+/-- **A map between contractible spaces is a weak homotopy equivalence.** -/
 theorem isWeakHomotopyEquivalence_of_contractibleSpace [ContractibleSpace X] [ContractibleSpace Y]
-    (f : C(X, Y)) : f.IsWeakHomotopyEquivalence := by
-  obtain ⟨e⟩ := ContractibleSpace.hequiv X Y
-  obtain ⟨y, hy⟩ := id_nullhomotopic Y
-  have hconst (g : C(X, Y)) : g.Homotopic (ContinuousMap.const X y) := by
-    simpa using hy.comp (Homotopic.refl g)
-  exact e.isWeakHomotopyEquivalence.of_homotopic ((hconst _).trans (hconst f).symm)
+    (f : C(X, Y)) : f.IsWeakHomotopyEquivalence :=
+  f.isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup
 
 end ContinuousMap

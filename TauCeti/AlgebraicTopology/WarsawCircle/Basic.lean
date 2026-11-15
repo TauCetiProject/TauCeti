@@ -119,6 +119,7 @@ theorem mem_warsawCircleLimitSegment_iff {p : ℝ × ℝ} :
   simp [warsawCircleLimitSegment]
 
 /-- Membership characterization for `warsawCircleSineGraph`. -/
+@[simp]
 theorem mem_warsawCircleSineGraph_iff {p : ℝ × ℝ} :
     p ∈ warsawCircleSineGraph ↔ p.1 ∈ Ioc 0 1 ∧ p.2 = Real.sin p.1⁻¹ := by
   constructor
@@ -133,6 +134,7 @@ theorem mem_warsawCircleSineCurve_iff {p : ℝ × ℝ} :
   Iff.rfl
 
 /-- Membership characterization for `warsawCircleClosingArc`. -/
+@[simp]
 theorem mem_warsawCircleClosingArc_iff {p : ℝ × ℝ} :
     p ∈ warsawCircleClosingArc ↔
       (p.1 = 0 ∧ p.2 ∈ Icc (-2) (-1)) ∨
@@ -232,6 +234,10 @@ theorem isClosed_warsawCircleClosingArc : IsClosed warsawCircleClosingArc :=
 theorem isClosed_warsawCircleSet : IsClosed warsawCircleSet :=
   isClosed_warsawCircleSineCurve.union isClosed_warsawCircleClosingArc
 
+/-- `Real.sin 1 + 2` is strictly positive, since `-1 ≤ sin 1`. -/
+private theorem sin_one_add_two_pos : 0 < Real.sin 1 + 2 := by
+  linarith [Real.neg_one_le_sin 1]
+
 /-- The closed sine curve and the closing arc meet solely at `(0, -1)` and `(1, sin 1)`. -/
 theorem warsawCircleSineCurve_inter_warsawCircleClosingArc :
     warsawCircleSineCurve ∩ warsawCircleClosingArc = {(0, -1), (1, Real.sin 1)} := by
@@ -260,7 +266,7 @@ theorem warsawCircleSineCurve_inter_warsawCircleClosingArc :
         mem_warsawCircleClosingArc_iff.mpr (Or.inl ⟨rfl, by norm_num, le_rfl⟩)⟩
     · refine ⟨Or.inr (mem_warsawCircleSineGraph_iff.mpr ⟨⟨zero_lt_one, le_rfl⟩, by simp⟩), ?_⟩
       refine mem_warsawCircleClosingArc_iff.mpr (Or.inr (Or.inr ⟨rfl, ?_, le_rfl⟩))
-      linarith [Real.neg_one_le_sin 1]
+      linarith [sin_one_add_two_pos]
 
 /-- The Warsaw circle lies inside the rectangle `[0, 1] × [-2, 1]`. -/
 theorem warsawCircleSet_subset_box : warsawCircleSet ⊆ Icc 0 1 ×ˢ Icc (-2) 1 := by
@@ -289,9 +295,10 @@ theorem isCompact_warsawCircleSet : IsCompact warsawCircleSet :=
 /-! ### The space `WarsawCircle` and its half-line parameterization -/
 
 /-- **The Warsaw circle**: the compact planar continuum obtained by joining `(1, sin 1)` on the
-closed topologist's sine curve to `(0, -1)` along a polygonal arc. It is path-connected with
-trivial homotopy groups in all dimensions (`TauCeti.WarsawCircle.isAspherical`), yet it is not
-contractible (`TauCeti.WarsawCircle.not_contractibleSpace`). -/
+closed topologist's sine curve to `(0, -1)` along a polygonal arc. It is path-connected and simply
+connected (`TauCeti.WarsawCircle.instSimplyConnectedSpace`) with trivial homotopy groups in all
+dimensions (`TauCeti.WarsawCircle.instSubsingletonHomotopyGroup`), yet it is not contractible
+(`TauCeti.WarsawCircle.not_contractibleSpace`). -/
 abbrev WarsawCircle : Type := warsawCircleSet
 
 namespace WarsawCircle
@@ -365,11 +372,9 @@ private theorem rawOfHalfLine_mem {t : ℝ} (ht : 0 ≤ t) : rawOfHalfLine t ∈
     · exact Or.inr (mem_warsawCircleClosingArc_iff.mpr (Or.inl ⟨rfl, by linarith, by linarith⟩))
   · exact Or.inr (mem_warsawCircleClosingArc_iff.mpr
       (Or.inr (Or.inl ⟨⟨by linarith, by linarith⟩, rfl⟩)))
-  · refine Or.inr (mem_warsawCircleClosingArc_iff.mpr (Or.inr (Or.inr ⟨rfl, ?_, ?_⟩)))
-    · have : 0 ≤ Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
-      nlinarith
-    · have : 0 ≤ Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
-      nlinarith
+  · have hpos := sin_one_add_two_pos.le
+    exact Or.inr (mem_warsawCircleClosingArc_iff.mpr
+      (Or.inr (Or.inr ⟨rfl, by nlinarith, by nlinarith⟩)))
   · refine Or.inl (Or.inr (mem_warsawCircleSineGraph_iff.mpr ⟨⟨?_, ?_⟩, ?_⟩))
     · exact inv_pos.mpr (by linarith)
     · exact inv_le_one_of_one_le₀ (by linarith)
@@ -447,7 +452,7 @@ theorem coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc {t : Ici (0 : ℝ)}
     · rw [coe_ofHalfLine_of_mem_Icc_three_four ⟨h3.le, h4⟩, mem_warsawCircleClosingArc_iff]
       exact Or.inr (Or.inl ⟨⟨by dsimp; linarith, by dsimp; linarith⟩, rfl⟩)
     · rw [coe_ofHalfLine_of_mem_Icc_four_five ⟨h4.le, ht.2⟩, mem_warsawCircleClosingArc_iff]
-      have hpos : 0 ≤ Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+      have hpos := sin_one_add_two_pos.le
       exact Or.inr (Or.inr ⟨rfl, by dsimp; nlinarith [ht.2], by dsimp; nlinarith [ht.2]⟩)
 
 /-- Parameters `t ≥ 5` trace the oscillatory sine graph `warsawCircleSineGraph`. -/
@@ -473,7 +478,7 @@ private theorem ofHalfLine_region (t : Ici (0 : ℝ)) :
   · refine Or.inr (Or.inr (Or.inl ⟨⟨h4, h5⟩,
       coe_ofHalfLine_of_mem_Icc_four_five ⟨h4.le, h5.le⟩, ?_⟩))
     rw [coe_ofHalfLine_of_mem_Icc_four_five ⟨h4.le, h5.le⟩]
-    have hpos : 0 < Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+    have hpos := sin_one_add_two_pos
     exact ⟨by dsimp; nlinarith, by dsimp; nlinarith⟩
   · exact Or.inr (Or.inr (Or.inr ⟨h5, coe_ofHalfLine_of_five_le h5⟩))
 
@@ -493,7 +498,7 @@ theorem ofHalfLine_injective : Injective ofHalfLine := by
   intro s t hst
   have hval : (ofHalfLine s : ℝ × ℝ) = (ofHalfLine t : ℝ × ℝ) := congrArg Subtype.val hst
   ext
-  have hpos : 0 < Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+  have hpos := sin_one_add_two_pos
   have h54 : (5 : ℝ) - 4 = 1 := by norm_num
   rcases ofHalfLine_region s with ⟨_, eq_s⟩ | ⟨hs, eq_s⟩ | ⟨_, eq_s, hys⟩ | ⟨hs, eq_s⟩ <;>
     rcases ofHalfLine_region t with ⟨_, eq_t⟩ | ⟨ht, eq_t⟩ | ⟨_, eq_t, hyt⟩ | ⟨ht, eq_t⟩
@@ -557,7 +562,7 @@ theorem ofHalfLine_surjective : Surjective ofHalfLine := by
     · refine ⟨⟨x + 3, mem_Ici.mpr (by linarith)⟩, Subtype.ext ?_⟩
       rw [coe_ofHalfLine_of_mem_Icc_three_four ⟨by dsimp; linarith, by dsimp; linarith⟩]
       simp
-    · have hpos : 0 < Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+    · have hpos := sin_one_add_two_pos
       have hdiv0 : 0 ≤ (y + 2) / (Real.sin 1 + 2) := div_nonneg (by linarith) hpos.le
       have hdiv1 : (y + 2) / (Real.sin 1 + 2) ≤ 1 := (div_le_one hpos).mpr (by linarith)
       refine ⟨⟨4 + (y + 2) / (Real.sin 1 + 2), mem_Ici.mpr (by linarith)⟩, Subtype.ext ?_⟩
@@ -825,13 +830,8 @@ theorem not_locallyPathConnectedSpace : ¬ LocallyPathConnectedSpace WarsawCircl
   have hcomp : IsCompact (univ : Set (Ici (0 : ℝ))) := by
     rw [← hsurj.range_eq]
     exact isCompact_range g.continuous
-  have hbdd : Bornology.IsBounded (Ici (0 : ℝ)) :=
-    (hcomp.image continuous_subtype_val).isBounded.subset fun x hx ↦ ⟨⟨x, hx⟩, mem_univ _, rfl⟩
-  obtain ⟨R, hR⟩ := hbdd.subset_closedBall 0
-  have hpos : (0 : ℝ) ≤ max R 0 + 1 := by positivity
-  have hmem : max R 0 + 1 ∈ Metric.closedBall (0 : ℝ) R := hR hpos
-  rw [Metric.mem_closedBall, Real.dist_eq, sub_zero, abs_of_nonneg hpos] at hmem
-  linarith [le_max_left R 0]
+  exact not_bddAbove_Ici (0 : ℝ)
+    (Subtype.coe_image_univ (Ici (0 : ℝ)) ▸ hcomp.image continuous_subtype_val).bddAbove
 
 end WarsawCircle
 

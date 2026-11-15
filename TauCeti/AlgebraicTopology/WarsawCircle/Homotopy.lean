@@ -10,13 +10,12 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.WarsawCircle.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
-import Mathlib.Analysis.Convex.PathConnected
-import Mathlib.Topology.Algebra.Module.LocallyConvex
 import Mathlib.Topology.Covering.AddCircle
 import Mathlib.Topology.Homotopy.Lifting
 import Mathlib.Topology.Instances.ZMultiples
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.Topology.UnitInterval.PathConnected
 
 /-!
 # Homotopy groups and non-contractibility of the Warsaw circle
@@ -35,7 +34,8 @@ is simply connected and that `HomotopyGroup N WarsawCircle w` is a subsingleton 
 type `N` and base point `w`. Hence `WarsawCircle` is aspherical (`WarsawCircle.isAspherical`), is
 an Eilenberg--Mac Lane space of type `K(G, 1)` for every trivial group `G`
 (`WarsawCircle.isEilenbergMacLaneSpaceOne`), and every map in either direction between
-`WarsawCircle` and a contractible space is a weak homotopy equivalence.
+`WarsawCircle` and a contractible space is a weak homotopy equivalence by
+`ContinuousMap.isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup`.
 
 On the other hand, collapsing the vertical limit segment `{0} × [-1, 1]` to `0` defines a
 surjective quotient map `WarsawCircle.collapse : C(WarsawCircle, AddCircle (1 : ℝ))` that is **not**
@@ -45,7 +45,11 @@ universal cover `ℝ → AddCircle (1 : ℝ)`, a nullhomotopy of `collapse` woul
 to reach `c + 1/2` at the junction `t = 5`, and to equal `c + 1 - (2 * (t - 4))⁻¹` on `[5, ∞)`.
 Along `t_n = 4 + 2π(n + 1) → ∞`, the points `ofHalfLine t_n` converge in `WarsawCircle` to
 `WarsawCircle.origin = ofHalfLine 1`, forcing `c = c + 1`. Consequently `WarsawCircle` is neither
-contractible (`WarsawCircle.not_contractibleSpace`) nor of CW type (`WarsawCircle.not_cwType`).
+contractible (`WarsawCircle.not_contractibleSpace`) nor of CW type (`WarsawCircle.not_cwType`), and
+pairing `WarsawCircle` with `Unit` shows that `CWType` on only the source or only the target does
+not suffice in Whitehead's theorem
+(`TauCeti.exists_isWeakHomotopyEquivalence_cwType_left_isEmpty_homotopyEquiv`,
+`TauCeti.exists_isWeakHomotopyEquivalence_cwType_right_isEmpty_homotopyEquiv`).
 
 ## Main definitions
 
@@ -67,6 +71,9 @@ contractible (`WarsawCircle.not_contractibleSpace`) nor of CW type (`WarsawCircl
 * `TauCeti.WarsawCircle.not_nullhomotopic_collapse`,
   `TauCeti.WarsawCircle.not_contractibleSpace`, and `TauCeti.WarsawCircle.not_cwType`:
   `collapse` is essential, so `WarsawCircle` is neither contractible nor of CW type.
+* `TauCeti.exists_isWeakHomotopyEquivalence_cwType_left_isEmpty_homotopyEquiv` and
+  `TauCeti.exists_isWeakHomotopyEquivalence_cwType_right_isEmpty_homotopyEquiv`: `CWType` on only
+  the source or only the target does not suffice in Whitehead's theorem.
 
 ## References
 
@@ -138,7 +145,6 @@ theorem nullhomotopic_of_compactSpace {K : Type*} [TopologicalSpace K] [CompactS
 
 /-- **The Warsaw circle is simply connected.** -/
 instance instSimplyConnectedSpace : SimplyConnectedSpace WarsawCircle := by
-  have : LocallyPathConnectedSpace I := Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
   refine simply_connected_iff_paths_homotopic'.mpr ⟨inferInstance, fun {x y} p₁ p₂ ↦ ?_⟩
   refine homotopicRel_of_eqOn (f₀ := p₁.toContinuousMap) (f₁ := p₂.toContinuousMap) ?_
   rintro s (rfl | rfl) <;> simp
@@ -146,13 +152,9 @@ instance instSimplyConnectedSpace : SimplyConnectedSpace WarsawCircle := by
 /-- **All cubical homotopy groups of the Warsaw circle are trivial**, for any indexing type `N` of
 cube directions and any base point `w`. -/
 instance instSubsingletonHomotopyGroup (N : Type*) (w : WarsawCircle) :
-    Subsingleton (HomotopyGroup N WarsawCircle w) := by
-  have : LocallyPathConnectedSpace I := Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  have : PathConnectedSpace I := isPathConnected_iff_pathConnectedSpace.mp
-    ((convex_Icc (0 : ℝ) 1).isPathConnected ⟨0, left_mem_Icc.mpr zero_le_one⟩)
-  refine ⟨Quotient.ind₂ fun p q ↦ Quotient.sound ?_⟩
-  exact homotopicRel_of_eqOn fun y hy ↦
-    (GenLoop.boundary p y hy).trans (GenLoop.boundary q y hy).symm
+    Subsingleton (HomotopyGroup N WarsawCircle w) :=
+  ⟨Quotient.ind₂ fun p q ↦ Quotient.sound <| homotopicRel_of_eqOn fun y hy ↦
+    (GenLoop.boundary p y hy).trans (GenLoop.boundary q y hy).symm⟩
 
 /-- **The Warsaw circle is aspherical** at every base point. -/
 theorem isAspherical (w : WarsawCircle) : IsAspherical WarsawCircle w :=
@@ -164,20 +166,6 @@ theorem isEilenbergMacLaneSpaceOne (G : Type*) [Group G] [Subsingleton G] (w : W
     IsEilenbergMacLaneSpaceOne G WarsawCircle w :=
   IsEilenbergMacLaneSpaceOne.mk (isAspherical w)
     ⟨MulEquiv.ofBijective (1 : FundamentalGroup WarsawCircle w →* G) (bijective_of_subsingleton' _)⟩
-
-/-- **Every continuous map from a contractible space to the Warsaw circle is a weak homotopy
-equivalence.** -/
-theorem isWeakHomotopyEquivalence_of_contractibleSpace {X : Type*} [TopologicalSpace X]
-    [ContractibleSpace X] (f : C(X, WarsawCircle)) : f.IsWeakHomotopyEquivalence :=
-  (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (Classical.arbitrary X)).2
-    fun _ ↦ bijective_of_subsingleton' _
-
-/-- **Every continuous map from the Warsaw circle to a contractible space is a weak homotopy
-equivalence.** -/
-theorem isWeakHomotopyEquivalence_to_contractibleSpace {X : Type*} [TopologicalSpace X]
-    [ContractibleSpace X] (f : C(WarsawCircle, X)) : f.IsWeakHomotopyEquivalence :=
-  (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective basepoint).2
-    fun _ ↦ bijective_of_subsingleton' _
 
 /-! ### The quotient map `WarsawCircle.collapse` onto `AddCircle (1 : ℝ)` -/
 
@@ -203,13 +191,20 @@ private theorem sinePhase_one_fst (y : ℝ) : sinePhase (1, y) = 1 / 2 := by
 private theorem arcPhase_zero_neg_one : arcPhase (0, -1) = 0 := by
   unfold arcPhase; dsimp; norm_num
 
+/-- `Real.sin 1 + 2` is strictly positive, since `-1 ≤ sin 1`. -/
+private theorem sin_one_add_two_pos : 0 < Real.sin 1 + 2 := by
+  linarith [Real.neg_one_le_sin 1]
+
+/-- `4 + Real.sin 1` is strictly positive, since `0 < sin 1 + 2`. -/
+private theorem four_add_sin_one_pos : 0 < 4 + Real.sin 1 := by
+  linarith [sin_one_add_two_pos]
+
 /-- `arcPhase` evaluates to `1 / 2` at `(1, sin 1)`. -/
 private theorem arcPhase_one_sin_one : arcPhase (1, Real.sin 1) = 1 / 2 := by
-  have hL : 4 + Real.sin 1 ≠ 0 := by linarith [Real.neg_one_le_sin 1]
   unfold arcPhase
   dsimp
   have hnum : 1 + 1 + (1 - 2 * 1) * (-2 - Real.sin 1) = 4 + Real.sin 1 := by ring
-  rw [hnum, mul_comm 2 (4 + Real.sin 1), div_mul_eq_div_div, div_self hL]
+  rw [hnum, mul_comm 2 (4 + Real.sin 1), div_mul_eq_div_div, div_self four_add_sin_one_pos.ne']
 
 /-- At both junction points `(0, -1)` and `(1, sin 1)` where `warsawCircleSineCurve` meets
 `warsawCircleClosingArc`, `sinePhase` and `arcPhase` agree in `AddCircle (1 : ℝ)`. -/
@@ -260,11 +255,15 @@ def collapse : C(WarsawCircle, AddCircle (1 : ℝ)) where
   toFun := warsawCircleSet.domRestrict rawCollapse
   continuous_toFun := continuousOn_iff_continuous_domRestrict.mp continuousOn_rawCollapse
 
+/-- Pointwise evaluation of `collapse` as `rawCollapse` on the underlying point in `ℝ × ℝ`. -/
+private theorem collapse_apply (w : WarsawCircle) : collapse w = rawCollapse w :=
+  rfl
+
 /-- On `warsawCircleSineCurve`, `collapse` is `(1 - x / 2 : AddCircle (1 : ℝ))`. -/
 theorem collapse_eq_of_mem_warsawCircleSineCurve {w : WarsawCircle}
     (hw : (w : ℝ × ℝ) ∈ warsawCircleSineCurve) :
-    collapse w = ((1 - (w : ℝ × ℝ).1 / 2 : ℝ) : AddCircle (1 : ℝ)) :=
-  rawCollapse_eq_of_mem_warsawCircleSineCurve hw
+    collapse w = ((1 - (w : ℝ × ℝ).1 / 2 : ℝ) : AddCircle (1 : ℝ)) := by
+  rw [collapse_apply, rawCollapse_eq_of_mem_warsawCircleSineCurve hw, sinePhase]
 
 /-- On `warsawCircleClosingArc`, `collapse` is given by the rational phase formula from `0` at
 `(0, -1)` to `1 / 2` at `(1, sin 1)`. -/
@@ -272,8 +271,8 @@ theorem collapse_eq_of_mem_warsawCircleClosingArc {w : WarsawCircle}
     (hw : (w : ℝ × ℝ) ∈ warsawCircleClosingArc) :
     collapse w =
       ((((w : ℝ × ℝ).1 + 1 + (1 - 2 * (w : ℝ × ℝ).1) * (-2 - (w : ℝ × ℝ).2)) /
-        (2 * (4 + Real.sin 1)) : ℝ) : AddCircle (1 : ℝ)) :=
-  rawCollapse_eq_of_mem_warsawCircleClosingArc hw
+        (2 * (4 + Real.sin 1)) : ℝ) : AddCircle (1 : ℝ)) := by
+  rw [collapse_apply, rawCollapse_eq_of_mem_warsawCircleClosingArc hw, arcPhase]
 
 /-- On `warsawCircleLimitSegment`, `collapse` vanishes. -/
 theorem collapse_eq_zero_of_mem_warsawCircleLimitSegment {w : WarsawCircle}
@@ -317,12 +316,11 @@ private theorem coe_halfLinePhase (t : Ici (0 : ℝ)) :
   split_ifs with h2 h5
   · rw [QuotientAddGroup.mk_zero, collapse_eq_zero_of_mem_warsawCircleLimitSegment
       (coe_ofHalfLine_mem_warsawCircleLimitSegment_of_le_two h2)]
-  · symm
-    exact rawCollapse_eq_of_mem_warsawCircleClosingArc
-      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc ⟨le_of_not_ge h2, h5⟩)
-  · symm
-    exact rawCollapse_eq_of_mem_warsawCircleSineCurve (mem_warsawCircleSineCurve_iff.mpr
-      (Or.inr (coe_ofHalfLine_mem_warsawCircleSineGraph_of_five_le (le_of_not_ge h5))))
+  · rw [collapse_apply, rawCollapse_eq_of_mem_warsawCircleClosingArc
+      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc ⟨le_of_not_ge h2, h5⟩)]
+  · rw [collapse_apply, rawCollapse_eq_of_mem_warsawCircleSineCurve
+      (mem_warsawCircleSineCurve_iff.mpr
+        (Or.inr (coe_ofHalfLine_mem_warsawCircleSineGraph_of_five_le (le_of_not_ge h5))))]
 
 /-- Algebraic formula for `arcPhase (ofHalfLine t)` on `[0, 4]` and `(4, 5]`. -/
 private theorem arcPhase_ofHalfLine_formula {t : Ici (0 : ℝ)} (ht5 : (t : ℝ) ≤ 5) :
@@ -338,8 +336,8 @@ private theorem arcPhase_ofHalfLine_formula {t : Ici (0 : ℝ)} (ht5 : (t : ℝ)
 /-- For `t > 2`, `halfLinePhase t` lies strictly between `0` and `1`. -/
 private theorem halfLinePhase_mem_Ioo_of_two_lt {t : Ici (0 : ℝ)} (ht2 : 2 < (t : ℝ)) :
     halfLinePhase t ∈ Ioo (0 : ℝ) 1 := by
-  have hL : 0 < 4 + Real.sin 1 := by linarith [Real.neg_one_le_sin 1]
-  have hsin : 0 < Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+  have hL := four_add_sin_one_pos
+  have hsin := sin_one_add_two_pos
   unfold halfLinePhase
   rw [ite_eq_right (not_le.mpr ht2)]
   split_ifs with h5
@@ -368,8 +366,8 @@ private theorem strictMonoOn_halfLinePhase :
   have hs2 : 2 < (s : ℝ) := hs
   have ht2 : 2 < (t : ℝ) := ht
   have hst' : (s : ℝ) < (t : ℝ) := Subtype.coe_lt_coe.mpr hst
-  have hL : 0 < 2 * (4 + Real.sin 1) := by linarith [Real.neg_one_le_sin 1]
-  have hsin : 0 < Real.sin 1 + 2 := by linarith [Real.neg_one_le_sin 1]
+  have hL : 0 < 2 * (4 + Real.sin 1) := mul_pos two_pos four_add_sin_one_pos
+  have hsin := sin_one_add_two_pos
   unfold halfLinePhase
   rw [ite_eq_right (not_le.mpr hs2), ite_eq_right (not_le.mpr ht2)]
   rcases le_or_gt (s : ℝ) 5 with hs5 | hs5 <;> rcases le_or_gt (t : ℝ) 5 with ht5 | ht5
@@ -447,26 +445,28 @@ theorem collapse_surjective : Surjective collapse := by
   intro z
   obtain ⟨r, hr, rfl⟩ := AddCircle.eq_coe_Ico z
   rcases le_or_gt r (1 / 2) with hr_half | hr_half
-  · let φ : ℝ → ℝ := fun u ↦ arcPhase (ofHalfLine ⟨max u 0, le_max_right u 0⟩ : ℝ × ℝ)
-    have hφ_cont : Continuous φ := by unfold φ arcPhase; fun_prop
+  · let t : ℝ → Ici (0 : ℝ) := fun u ↦ ⟨max u 0, le_max_right u 0⟩
+    let φ : ℝ → ℝ := fun u ↦ arcPhase (ofHalfLine (t u) : ℝ × ℝ)
+    have hφ_cont : Continuous φ := by unfold φ t arcPhase; fun_prop
     have hφ2 : φ 2 = 0 := by
-      dsimp [φ]
+      dsimp [φ, t]
       have hmax : (⟨max (2 : ℝ) 0, le_max_right 2 0⟩ : Ici (0 : ℝ)) = ⟨2, by norm_num⟩ := by
         ext; norm_num
       rw [hmax, ofHalfLine_two, coe_basepoint, arcPhase_zero_neg_one]
     have hφ5 : φ 5 = 1 / 2 := by
-      dsimp [φ]
+      dsimp [φ, t]
       have hmax : (⟨max (5 : ℝ) 0, le_max_right 5 0⟩ : Ici (0 : ℝ)) = ⟨5, by norm_num⟩ := by
         ext; norm_num
       rw [hmax, ofHalfLine_five, coe_rightEndpoint, arcPhase_one_sin_one]
     have hivt : Icc (0 : ℝ) (1 / 2) ⊆ φ '' Icc 2 5 := by
       simpa [hφ2, hφ5] using intermediate_value_Icc (by norm_num : (2 : ℝ) ≤ 5) hφ_cont.continuousOn
     obtain ⟨u, hu, rfl⟩ := hivt ⟨hr.1, hr_half⟩
-    let t : Ici (0 : ℝ) := ⟨max u 0, le_max_right u 0⟩
-    have ht : (t : ℝ) ∈ Icc 2 5 := by
+    have ht : (t u : ℝ) ∈ Icc 2 5 := by
       dsimp [t]; rw [max_eq_left (by linarith [hu.1])]; exact hu
-    exact ⟨ofHalfLine t, rawCollapse_eq_of_mem_warsawCircleClosingArc
-      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc ht)⟩
+    refine ⟨ofHalfLine (t u), ?_⟩
+    dsimp only [φ]
+    rw [collapse_apply, rawCollapse_eq_of_mem_warsawCircleClosingArc
+      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc ht)]
   · let x : ℝ := 2 * (1 - r)
     have hx0 : 0 < x := by linarith [hr.2]
     have hx1 : x ≤ 1 := by linarith
@@ -510,7 +510,12 @@ private theorem lift_collapse_rightEndpoint_eq (g : C(WarsawCircle, ℝ))
           collapse_eq_zero_of_mem_warsawCircleLimitSegment
             (coe_ofHalfLine_mem_warsawCircleLimitSegment_of_le_two v.2.2)])
       ⟨2, by norm_num, le_rfl⟩ ⟨1, zero_le_one, by norm_num⟩
-    simpa [ψ, ι₀₂] using hconst
+    have h2 : (ψ.comp ι₀₂) ⟨2, by norm_num, le_rfl⟩ = ψ ⟨2, by norm_num⟩ := by
+      dsimp [ι₀₂]
+    have h1 : (ψ.comp ι₀₂) ⟨1, zero_le_one, by norm_num⟩ = g origin := by
+      dsimp [ψ, ι₀₂]
+      rw [ofHalfLine_one]
+    rwa [h2, h1] at hconst
   let ι₂₅ : C(Icc (2 : ℝ) 5, Ici (0 : ℝ)) :=
     ⟨fun u ↦ ⟨u.1, mem_Ici.mpr (by linarith [u.2.1])⟩, continuous_subtype_val.subtype_mk _⟩
   have : PreconnectedSpace (Icc (2 : ℝ) 5) :=
@@ -521,15 +526,20 @@ private theorem lift_collapse_rightEndpoint_eq (g : C(WarsawCircle, ℝ))
       ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ (ψ ∘ ι₂₅) = ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ φ₂₅ := by
     ext u
     dsimp [ψ, φ₂₅]
-    rw [hco, zero_add, hg]
-    exact rawCollapse_eq_of_mem_warsawCircleClosingArc
-      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc u.2)
+    rw [hco, zero_add, hg, collapse_apply, rawCollapse_eq_of_mem_warsawCircleClosingArc
+      (coe_ofHalfLine_mem_warsawCircleClosingArc_of_mem_Icc u.2)]
   have h2_eq : (ψ ∘ ι₂₅) ⟨2, le_rfl, by norm_num⟩ = φ₂₅ ⟨2, le_rfl, by norm_num⟩ := by
     dsimp [φ₂₅, ι₂₅]
     rw [h12, ofHalfLine_two, coe_basepoint, arcPhase_zero_neg_one, add_zero]
-  have heq := congrFun (cov.eq_of_comp_eq (ψ.comp ι₂₅).continuous hφ_cont hcomp_eq
+  have heq := congrFun (cov.eq_of_comp_eq (ψ.continuous.comp ι₂₅.continuous) hφ_cont hcomp_eq
     ⟨2, le_rfl, by norm_num⟩ h2_eq) ⟨5, by norm_num, le_rfl⟩
-  simpa [ψ, φ₂₅, ι₂₅, arcPhase_one_sin_one] using heq
+  have hψ5 : (ψ ∘ ι₂₅) ⟨5, by norm_num, le_rfl⟩ = g rightEndpoint := by
+    dsimp [ψ, ι₂₅]
+    rw [ofHalfLine_five]
+  have hφ5 : φ₂₅ ⟨5, by norm_num, le_rfl⟩ = g origin + 1 / 2 := by
+    dsimp [φ₂₅, ι₂₅]
+    rw [ofHalfLine_five, coe_rightEndpoint, arcPhase_one_sin_one]
+  rwa [hψ5, hφ5] at heq
 
 /-- Any hypothetical continuous lift `g : C(WarsawCircle, ℝ)` of `collapse` along
 `ℝ → AddCircle (1 : ℝ)` must equal `g origin + 1 - (ofHalfLine t).1 / 2` for all `t ≥ 5`. -/
@@ -543,7 +553,7 @@ private theorem lift_collapse_ofHalfLine_eq_of_five_le (g : C(WarsawCircle, ℝ)
     ⟨fun u ↦ ⟨u.1, mem_Ici.mpr (by linarith [mem_Ici.mp u.2])⟩,
       continuous_subtype_val.subtype_mk _⟩
   have : PreconnectedSpace (Ici (5 : ℝ)) :=
-    isPreconnected_iff_preconnectedSpace.mp (convex_Ici 5).isPreconnected
+    isPreconnected_iff_preconnectedSpace.mp isPreconnected_Ici
   let φ₅ : Ici (5 : ℝ) → ℝ := fun u ↦ g origin + sinePhase (ofHalfLine (ι₅ u) : ℝ × ℝ)
   have hφ₅_cont : Continuous φ₅ := by unfold φ₅ sinePhase; fun_prop
   have hcomp₅ :
@@ -551,16 +561,20 @@ private theorem lift_collapse_ofHalfLine_eq_of_five_le (g : C(WarsawCircle, ℝ)
     ext u
     dsimp [ψ, φ₅]
     have hu5 : 5 ≤ (ι₅ u : ℝ) := mem_Ici.mp u.2
-    rw [hco, zero_add, hg,
-      collapse_eq_of_mem_warsawCircleSineCurve (mem_warsawCircleSineCurve_iff.mpr
+    rw [hco, zero_add, hg, collapse_apply, rawCollapse_eq_of_mem_warsawCircleSineCurve
+      (mem_warsawCircleSineCurve_iff.mpr
         (Or.inr (coe_ofHalfLine_mem_warsawCircleSineGraph_of_five_le hu5)))]
-    rfl
   have h5_eq : (ψ ∘ ι₅) ⟨5, le_rfl⟩ = φ₅ ⟨5, le_rfl⟩ := by
     dsimp [ψ, φ₅, ι₅]
     rw [ofHalfLine_five, lift_collapse_rightEndpoint_eq g hg, coe_rightEndpoint, sinePhase_one_fst]
-  have heq := congrFun (cov.eq_of_comp_eq (ψ.comp ι₅).continuous hφ₅_cont hcomp₅
+  have heq := congrFun (cov.eq_of_comp_eq (ψ.continuous.comp ι₅.continuous) hφ₅_cont hcomp₅
     ⟨5, le_rfl⟩ h5_eq) ⟨t.1, ht⟩
-  simpa [ψ, φ₅, ι₅, sinePhase, add_sub_assoc] using heq
+  have hψt : (ψ ∘ ι₅) ⟨t.1, ht⟩ = g (ofHalfLine t) := by
+    dsimp [ψ, ι₅]
+  have hφt : φ₅ ⟨t.1, ht⟩ = g origin + 1 - (ofHalfLine t : ℝ × ℝ).1 / 2 := by
+    dsimp [φ₅, ι₅]
+    rw [sinePhase, add_sub_assoc]
+  rwa [hψt, hφt] at heq
 
 /-- **`WarsawCircle.collapse` admits no continuous lift to `ℝ`** along the universal cover
 `ℝ → AddCircle (1 : ℝ)`. -/
@@ -617,12 +631,12 @@ theorem not_contractibleSpace : ¬ ContractibleSpace WarsawCircle := fun _ ↦
   not_nullhomotopic_collapse ((id_nullhomotopic WarsawCircle).comp_right collapse)
 
 /-- **The Warsaw circle is not homotopy equivalent to any contractible space.** -/
-theorem isEmpty_homotopyEquiv_of_contractibleSpace {X : Type*} [TopologicalSpace X]
+theorem isEmpty_homotopyEquiv_contractibleSpace {X : Type*} [TopologicalSpace X]
     [ContractibleSpace X] : IsEmpty (WarsawCircle ≃ₕ X) :=
   ⟨fun e ↦ not_contractibleSpace e.contractibleSpace⟩
 
-/-- Symmetric form of `WarsawCircle.isEmpty_homotopyEquiv_of_contractibleSpace`. -/
-theorem isEmpty_homotopyEquiv_of_contractibleSpace' {X : Type*} [TopologicalSpace X]
+/-- **No contractible space is homotopy equivalent to the Warsaw circle.** -/
+theorem isEmpty_contractibleSpace_homotopyEquiv {X : Type*} [TopologicalSpace X]
     [ContractibleSpace X] : IsEmpty (X ≃ₕ WarsawCircle) :=
   ⟨fun e ↦ not_contractibleSpace e.symm.contractibleSpace⟩
 
@@ -634,3 +648,29 @@ theorem not_cwType : ¬ CWType WarsawCircle := fun _ ↦
     (contractibleSpace_of_subsingleton_homotopyGroup basepoint fun _ ↦ inferInstance)
 
 end TauCeti.WarsawCircle
+
+namespace TauCeti
+
+/-- **Sharpness of source-only `CWType` in Whitehead's theorem.** There exists a weak homotopy
+equivalence `f : C(X, Y)` in `Type` whose source `X` has CW type while `X ≃ₕ Y` is empty: take
+`X = Unit` and `Y = WarsawCircle`. -/
+theorem exists_isWeakHomotopyEquivalence_cwType_left_isEmpty_homotopyEquiv :
+    ∃ (X Y : Type) (_ : TopologicalSpace X) (_ : TopologicalSpace Y) (f : C(X, Y)),
+      CWType X ∧ f.IsWeakHomotopyEquivalence ∧ IsEmpty (X ≃ₕ Y) :=
+  ⟨Unit, WarsawCircle, inferInstance, inferInstance,
+    ContinuousMap.const Unit WarsawCircle.basepoint, inferInstance,
+    ContinuousMap.isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup _,
+    WarsawCircle.isEmpty_contractibleSpace_homotopyEquiv⟩
+
+/-- **Sharpness of target-only `CWType` in Whitehead's theorem.** There exists a weak homotopy
+equivalence `f : C(X, Y)` in `Type` whose target `Y` has CW type while `X ≃ₕ Y` is empty: take
+`X = WarsawCircle` and `Y = Unit`. -/
+theorem exists_isWeakHomotopyEquivalence_cwType_right_isEmpty_homotopyEquiv :
+    ∃ (X Y : Type) (_ : TopologicalSpace X) (_ : TopologicalSpace Y) (f : C(X, Y)),
+      CWType Y ∧ f.IsWeakHomotopyEquivalence ∧ IsEmpty (X ≃ₕ Y) :=
+  ⟨WarsawCircle, Unit, inferInstance, inferInstance,
+    ContinuousMap.const WarsawCircle (), inferInstance,
+    ContinuousMap.isWeakHomotopyEquivalence_of_subsingleton_homotopyGroup _,
+    WarsawCircle.isEmpty_homotopyEquiv_contractibleSpace⟩
+
+end TauCeti
