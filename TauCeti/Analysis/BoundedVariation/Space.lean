@@ -189,6 +189,7 @@ theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
 
 /-- Two BV classes constructed from functions are equal exactly when the functions agree almost
 everywhere on `Ω`. -/
+@[simp]
 theorem ofFunction_eq_ofFunction_iff {u v : E → ℝ} (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) :
     ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v :=
   ⟨fun h => (coeFn_ofFunction u hu).symm.trans
