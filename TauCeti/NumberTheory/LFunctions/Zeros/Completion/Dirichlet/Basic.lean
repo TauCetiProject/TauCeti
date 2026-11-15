@@ -119,6 +119,21 @@ theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction (hne : χ �
     analyticOrderAt_mul hΓ ((DirichletCharacter.differentiable_LFunction hne).analyticAt s),
     hΓ.analyticOrderAt_eq_zero.mpr hΓ0, zero_add]
 
+/-- The conductor factor changes no natural zero multiplicities of the completed Dirichlet
+function. -/
+theorem analyticOrderNatAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : ℂ) :
+    analyticOrderNatAt (dirichletData χ hχ).entireCompletion s =
+      analyticOrderNatAt χ.completedLFunction s :=
+  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion χ hχ hne s)
+
+/-- The entire completion and ordinary L-function have equal natural zero multiplicities on the
+positive half-plane. -/
+theorem analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction (hne : χ ≠ 1)
+    {s : ℂ} (hs : 0 < s.re) :
+    analyticOrderNatAt (dirichletData χ hχ).entireCompletion s =
+      analyticOrderNatAt χ.LFunction s :=
+  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs)
+
 /-- The entire completion and ordinary L-function have the same zeros
 on the positive half-plane. -/
 theorem dirichletData_entireCompletion_eq_zero_iff (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
