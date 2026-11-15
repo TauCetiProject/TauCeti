@@ -393,7 +393,6 @@ variable {C₀ : Type u₀} [Category.{v₀} C₀] [Abelian C₀]
 /-- Applying an additive functor `H : C₀ ⥤ C` to an injective resolution `I` of `W` produces the
 augmented cochain complex `H(W)[0] ⟶ H(I.cocomplex)`. When `H` is exact (`H.PreservesHomology`),
 this augmentation is a quasi-isomorphism. -/
-@[expose]
 noncomputable def mapι {W : C₀} (I : InjectiveResolution W) (H : C₀ ⥤ C) [H.Additive] :
     (single₀ C).obj (H.obj W) ⟶ (H.mapHomologicalComplex _).obj I.cocomplex :=
   (HomologicalComplex.singleMapHomologicalComplex H (ComplexShape.up ℕ) 0).inv.app W ≫

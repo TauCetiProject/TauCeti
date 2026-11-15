@@ -206,13 +206,22 @@ private lemma tildeToOpenTop_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) :
       f ≫ tildeToOpenTop N :=
   tilde.toOpen_map_app f ⊤
 
+private def primaryComponentEquivSupportedSubmoduleTopIso
+    {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
+    ModuleCat.of R (I.primaryComponent M) ≅
+      (tildeSheafFunctor R ⋙
+        supportedSubmoduleSectionsFunctor (R := R)
+          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).obj M :=
+  (primaryComponentEquivSupportedSubmoduleTop hI M).toModuleIso
+
 private def primaryComponentIsoSupportedSubmoduleTop
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
     I.primaryComponentFunctor.obj M ≅
       (tildeSheafFunctor R ⋙
         supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).obj M :=
-  (primaryComponentEquivSupportedSubmoduleTop hI M).toModuleIso
+  I.primaryComponentFunctorObjIso M ≪≫
+    primaryComponentEquivSupportedSubmoduleTopIso hI M
 
 private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
@@ -220,13 +229,21 @@ private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
         (((tildeSheafFunctor R).obj M).supportedSubmoduleι
           (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
       I.primaryComponentFunctorι.app M ≫ tildeToOpenTop M := by
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro m
-  exact (((tildeSheafFunctor R).obj M).supportedSubmoduleι_hom_app_apply
-    (Spec.zeroLocusClosed (R := R) (I : Set R)) (op ⊤)
-    (primaryComponentEquivSupportedSubmoduleTop hI M m)).trans
-    (coe_primaryComponentEquivSupportedSubmoduleTop_apply hI M m)
+  have he : (primaryComponentEquivSupportedSubmoduleTopIso hI M).hom ≫
+      (((tildeSheafFunctor R).obj M).supportedSubmoduleι
+        (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
+    ModuleCat.ofHom (I.primaryComponent M).subtype ≫ tildeToOpenTop M := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro m
+    exact (((tildeSheafFunctor R).obj M).supportedSubmoduleι_hom_app_apply
+      (Spec.zeroLocusClosed (R := R) (I : Set R)) (op ⊤)
+      (primaryComponentEquivSupportedSubmoduleTop hI M m)).trans
+      (coe_primaryComponentEquivSupportedSubmoduleTop_apply hI M m)
+  dsimp only [primaryComponentIsoSupportedSubmoduleTop]
+  rw [Iso.trans_hom, Category.assoc, he,
+    ← I.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc M (tildeToOpenTop M),
+    Iso.hom_inv_id_assoc]
 
 /-- For a finitely generated ideal `I` of `R`, `M ↦ Γ_{V(I)}(Spec R, M~)` is naturally isomorphic
 to the `I`-power torsion functor `I.primaryComponentFunctor`. -/
@@ -255,7 +272,7 @@ def tildeCompRightDerivedSupportedSectionsIso [IsNoetherianRing R] (I : Ideal R)
     tildeSheafFunctor R ⋙
         (supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerived q ≅
-      I.primaryComponentFunctor.rightDerived q :=
+      I.primaryComponentFunctor.{u}.rightDerived q :=
   Functor.compRightDerivedIsoOfResolution
     (supportedSubmoduleSectionsFunctor (R := R)
       (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤)
@@ -269,7 +286,7 @@ def tildeCompRightDerivedSupportedSectionsIso [IsNoetherianRing R] (I : Ideal R)
       have := isFlasque_iff.mp h₁
       exact shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque _ ⊤ hT)
     (tildeSheafFunctor R)
-    I.primaryComponentFunctor
+    I.primaryComponentFunctor.{u}
     (tildeCompSupportedSubmoduleSectionsTopIso (IsNoetherian.noetherian I))
     (fun M _ ↦ isFlasque_iff.mpr (isFlasque_modulesSpecToSheaf_tilde_of_injective M))
     q
@@ -496,19 +513,20 @@ omit [Nontrivial k] in
 disagreeing with geometric `H⁰_{V(I)}(Spec A, 𝒪_{Spec A})`. -/
 theorem isZero_localCohomology_zero_nonNoetherianExampleRing :
     IsZero ((localCohomology (nonNoetherianVarIdeal k) 0).obj
-      (.of (nonNoetherianExampleRingCat k) (nonNoetherianExampleRingCat k))) :=
-  IsZero.of_iso
-    (Ideal.isZero_primaryComponentFunctor_obj_of_eq_bot _
-      (primaryComponent_nonNoetherianVarIdeal_eq_bot k))
-    ((localCohomology.degreeZeroIsoPrimaryComponentFunctor (nonNoetherianVarIdeal k)).app _)
+      (.of (nonNoetherianExampleRingCat k) (nonNoetherianExampleRingCat k))) := by
+  have : Subsingleton ((nonNoetherianVarIdeal k).primaryComponent
+      (nonNoetherianExampleRingCat k)) :=
+    primaryComponent_nonNoetherianVarIdeal_eq_bot k ▸ inferInstance
+  exact IsZero.of_iso (ModuleCat.isZero_of_subsingleton _)
+    (localCohomology.degreeZeroEquivPrimaryComponent (nonNoetherianVarIdeal k)
+      (.of (nonNoetherianExampleRingCat k) (nonNoetherianExampleRingCat k))).toModuleIso
 
 /-- `nonNoetherianVarIdeal k` is not finitely generated; otherwise degree-zero geometric and
 algebraic local cohomology would agree. -/
 theorem not_fg_nonNoetherianVarIdeal : ¬ (nonNoetherianVarIdeal k).FG := fun hfg ↦ by
   let A := nonNoetherianExampleRingCat k
   have : Subsingleton ((nonNoetherianVarIdeal k).primaryComponent A) :=
-    (Submodule.eq_bot_iff _).mp (primaryComponent_nonNoetherianVarIdeal_eq_bot k) |> fun h ↦
-      ⟨fun x y ↦ Subtype.ext ((h x.1 x.2).trans (h y.1 y.2).symm)⟩
+    primaryComponent_nonNoetherianVarIdeal_eq_bot k ▸ inferInstance
   have : Subsingleton ((modulesSpecToSheaf.obj (tilde (.of A A))).supportedModuleH
       (Spec.zeroLocusClosed (R := A) (nonNoetherianVarIdeal k : Set A)) ⊤ 0) :=
     ((primaryComponentEquivSupportedSubmoduleTop hfg (.of A A)).trans

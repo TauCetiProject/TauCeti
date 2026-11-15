@@ -358,7 +358,12 @@ namespace Spec
 variable {R : CommRingCat.{u}}
 
 /-- The closed subset `V(s)` of `Spec R` bundled as an element of
-`TopologicalSpace.Closeds (Spec R)`. -/
+`TopologicalSpace.Closeds (Spec R)`.
+
+Because `Spec R` is semireducible rather than reducible, `Closeds (PrimeSpectrum R)` is not
+definitionally equal to `Closeds (Spec R)` at `implicit` or instance transparency; bundling at
+`Closeds (Spec R)` keeps sheaf and supported-cohomology constructions on `Spec R` type-correct
+under `rw`, `simp`, and typeclass synthesis without transparency overrides. -/
 def zeroLocusClosed (s : Set R) : TopologicalSpace.Closeds (Spec R) :=
   PrimeSpectrum.zeroLocusClosed s
 
