@@ -17,8 +17,9 @@ size times the value at zero. Consequently both sums converge to the integral as
 tends to zero through positive values, even on the unbounded interval and without continuity.
 These estimates allow step-function approximations in convolution limit theorems.
 Finite uniform-mesh sums also bracket the integral on `[0, δ * N]`, including zero mesh,
-and their gap vanishes under refinement of a fixed interval. A nonnegative decreasing
-integrable function on the positive half-line vanishes at infinity.
+and their gap vanishes under refinement of a fixed interval. A decreasing function on
+`[a, ∞)` that is integrable on `(a, ∞)` is automatically nonnegative on `[a, ∞)`, and a
+nonnegative decreasing integrable function on the positive half-line vanishes at infinity.
 
 The proofs use Mathlib's integral test (`AntitoneOn.summable_of_integrableOn_Ioi_zero`,
 `AntitoneOn.tsum_add_one_le_integral`, and `AntitoneOn.integral_le_tsum`) after dilation,
@@ -188,4 +189,34 @@ theorem tendsto_zero_of_integrableOn_Ioi (hf : AntitoneOn f (Ici 0))
     filter_upwards [eventually_ge_atTop (n : ℝ)] with x hx
     exact (hf (Nat.cast_nonneg n) ((Nat.cast_nonneg n).trans hx) hx).trans_lt hn'
 
+/-- A decreasing function on `[a, ∞)` that is Lebesgue-integrable on `(a, ∞)` is nonnegative
+everywhere on `[a, ∞)`: a strictly negative value would persist along an unbounded ray of infinite
+measure. -/
+theorem nonneg_of_integrableOn_Ioi {a : ℝ} (hf : AntitoneOn f (Ici a))
+    (hi : IntegrableOn f (Ioi a)) ⦃x : ℝ⦄ (hx : a ≤ x) : 0 ≤ f x := by
+  by_contra! hneg
+  have hle : ∀ y ∈ Ioi x, ENNReal.ofReal (-f x) ≤ ‖f y‖ₑ := fun y hy => by
+    have hfy : f y ≤ f x := hf hx (hx.trans hy.le) hy.le
+    rw [Real.eNorm_eq_ofReal_abs]
+    exact ENNReal.ofReal_le_ofReal (by linarith [neg_le_abs (f y)])
+  have htop : ∫⁻ _ in Ioi x, ENNReal.ofReal (-f x) ≤ ∫⁻ y in Ioi x, ‖f y‖ₑ :=
+    setLIntegral_mono' measurableSet_Ioi hle
+  rw [setLIntegral_const, Real.volume_Ioi,
+    ENNReal.mul_top (ENNReal.ofReal_pos.2 (neg_pos.2 hneg)).ne'] at htop
+  exact (hi.mono_set (Ioi_subset_Ioi hx)).2.ne (top_unique htop)
+
 end AntitoneOn
+
+namespace Antitone
+
+open scoped NNReal
+
+/-- An antitone function on `ℝ≥0` whose extension to `(0, ∞)` is Lebesgue-integrable is
+nonnegative everywhere on `ℝ≥0`, including at zero. -/
+theorem nonneg_of_integrableOn_Ioi_toNNReal {h : ℝ≥0 → ℝ} (hh : Antitone h)
+    (hi : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) (x : ℝ≥0) : 0 ≤ h x := by
+  have hf : AntitoneOn (fun y : ℝ => h y.toNNReal) (Ici 0) :=
+    fun _ _ _ _ hyz => hh (Real.toNNReal_mono hyz)
+  simpa only [Real.toNNReal_coe] using hf.nonneg_of_integrableOn_Ioi hi x.coe_nonneg
+
+end Antitone

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.LayerCake
+public import TauCeti.Probability.Renewal.Lattice.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -23,6 +24,8 @@ This is the candidate limiting distribution of the residual waiting time in an
 ordinary renewal process. Its construction does not require a nonlattice law;
 no convergence assertion is made here. Taking the inverse in `ℝ≥0∞` also makes
 the infinite-mean case explicit: the resulting measure is zero, not a probability.
+In particular, for a nondegenerate (and hence any nonlattice) probability law `F`,
+`F.equilibriumExcessLaw` is a probability measure precisely when `F` has finite mean.
 
 ## References
 
@@ -97,6 +100,22 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
   apply (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).1
   filter_upwards [hae] with u hu
   simpa using hu
+
+/-- For a probability interarrival law not concentrated at zero, the equilibrium excess-life
+measure has total mass one precisely when the extended mean is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
+    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
+  ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
+    F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
+
+/-- For a nonlattice probability interarrival law, the equilibrium excess-life measure is a
+probability measure if and only if the extended mean is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
+    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hNL : ¬ F.IsLattice) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
+  F.isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
+    (measure_singleton_zero_lt_one_of_not_isLattice hNL)
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)
