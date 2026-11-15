@@ -8,27 +8,25 @@ module
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
-import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
-# Order truncation and seminorms on arbitrary-order Sobolev spaces
+# Seminorms on arbitrary-order Sobolev spaces
 
-An element of `TauCeti.Wkp mu Omega p k` is built recursively by adjoining one weak derivative at a
-time through `TauCeti.Wkp.lowerOrderL`. Iterating `lowerOrderL` yields the order-truncation
-operators `TauCeti.Wkp.toOrderL (h : j ≤ k) : W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)`, which forget weak
-derivatives strictly above order `j`. Through `toOrderL`, each intermediate weak derivative of order
-`j + 1 ≤ k` is accessed uniformly as `TauCeti.Wkp.iteratedGradient j (toOrderL h u)`.
+Using the order-truncation operators `TauCeti.Wkp.toOrderL`, each intermediate weak derivative of
+order `j + 1 ≤ k` of `u ∈ TauCeti.Wkp mu Omega p k` is accessed uniformly as
+`TauCeti.Wkp.iteratedGradient j (toOrderL h u)`. Taking `Lᵖ` norms of the value (`j = 0`) and of
+each intermediate weak derivative (`1 ≤ j ≤ k`) defines the standard family of Sobolev seminorms
+`TauCeti.Wkp.seminorm k j h` on `W^{k,p}(Ω)`, bundled as Mathlib `Seminorm`s over `ℝ`.
 
-Taking `Lᵖ` norms of the value (`j = 0`) and of each intermediate weak derivative (`1 ≤ j ≤ k`)
-defines the standard family of Sobolev seminorms `TauCeti.Wkp.seminorm k j h` on `W^{k,p}(Ω)`,
-bundled as Mathlib `Seminorm`s over `ℝ`. Truncation, subdomain restriction
-(`TauCeti.Wkp.restrictL`), and exponent lowering on finite-measure domains
-(`TauCeti.Wkp.ofExponentLEL`) all commute with `toOrderL` and obey the corresponding seminorm
-estimates. On smooth representatives, each seminorm agrees with the classical multilinear
-derivative `Lᵖ` norm `MeasureTheory.lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega)`.
+Order truncation (`TauCeti.Wkp.toOrderL`), subdomain restriction (`TauCeti.Wkp.restrictL`), and
+exponent lowering on finite-measure domains (`TauCeti.Wkp.ofExponentLEL`) obey the natural seminorm
+identities and estimates. On smooth representatives, each seminorm agrees with the classical
+multilinear derivative `Lᵖ` norm
+`MeasureTheory.lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega)`.
 
 At `p = 2`, the iterated graph norm on `W^{k,2}(Ω)` equals the Euclidean combination
 `S(u) = √(∑_{j ≤ k} |u|_{j,2}²)` at every order `k`. For general `1 ≤ p ≤ ∞`, the first-order
@@ -41,26 +39,23 @@ Consequently `S(u)` and `‖u‖` are equivalent up to a universal factor of `�
 
 ## Main definitions
 
-* `TauCeti.Wkp.toOrderL`: continuous linear truncation `W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`.
 * `TauCeti.Wkp.seminorm`: the order-`j` Sobolev seminorm `|·|_{j,p}` on `W^{k,p}(Ω)` for `j ≤ k`,
   bundled as a `Seminorm ℝ (Wkp mu Omega p k)`.
 
 ## Main results
 
-* `TauCeti.Wkp.toOrderL_self`, `TauCeti.Wkp.toOrderL_comp_toOrderL`, `TauCeti.Wkp.value_toOrderL`:
-  functoriality of `toOrderL` and preservation of the `Lᵖ` value.
-* `TauCeti.Wkp.toOrderL_restrictL`, `TauCeti.Wkp.toOrderL_ofExponentLEL`: commutation of `toOrderL`
-  with subdomain restriction and with exponent lowering.
-* `TauCeti.Wkp.iteratedGradient_toOrderL_ae_eq_of_contDiffOn`,
-  `TauCeti.Wkp.seminorm_eq_lpNorm_of_contDiffOn`,
+* `TauCeti.Wkp.seminorm_toOrderL`, `TauCeti.Wkp.seminorm_lowerOrder`,
+  `TauCeti.Wkp.seminorm_zero_eq_zero_iff`, `TauCeti.Wkp.continuous_seminorm`: compatibility with
+  order truncation, vanishing of the order-zero seminorm, and continuity.
+* `TauCeti.Wkp.seminorm_eq_lpNorm_of_contDiffOn`, `TauCeti.Wkp.seminorm_top_le_of_contDiffOn`,
   `TauCeti.Wkp.norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn`: classical identification of
-  intermediate weak derivatives and seminorms for `C^j` representatives, together with pointwise
-  `L^∞` bounds.
+  seminorms for `C^j` representatives and pointwise `L^∞` bounds.
 * `TauCeti.Wkp.seminorm_restrictL_le`, `TauCeti.Wkp.seminorm_ofExponentLEL_le`: monotonicity under
   subdomain restriction and Hölder scaling `μ(Ω) ^ (1/p - 1/q)` under exponent lowering.
 * `TauCeti.Wkp.norm_eq_sqrt_sum_seminorm_sq`, `TauCeti.Wkp.norm_le_sqrt_two_mul`,
-  `TauCeti.Wkp.sqrt_le_sqrt_two_mul_norm`: exact `p = 2` identity and sharp `√2` norm comparisons
-  for every `k` and `p`.
+  `TauCeti.Wkp.sqrt_le_sqrt_two_mul_norm`, `TauCeti.Wkp.tendsto_iff_forall_seminorm_sub`: exact
+  `p = 2` identity, sharp `√2` norm comparisons for every `k` and `p`, and characterization of
+  convergence via seminorms.
 
 ## References
 
@@ -81,245 +76,6 @@ open scoped ENNReal ContDiff
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega U : Opens E} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-/-! ### Order truncation -/
-
-/-- Forget weak derivatives above order `j`, as a continuous linear map
-`W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`. At `j = k` this is the identity, and each step in `k`
-precomposes with `TauCeti.Wkp.lowerOrderL`. -/
-def toOrderL {j k : ℕ} (h : j ≤ k) : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j :=
-  Nat.leRec (motive := fun k _ => Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j)
-    (ContinuousLinearMap.id ℝ _) (fun k _ ih => ih.comp (lowerOrderL k)) h
-
-/-- Truncating a Sobolev space to its own order is the identity operator. -/
-@[simp]
-theorem toOrderL_self {k : ℕ} (h : k ≤ k) :
-    toOrderL (mu := mu) (Omega := Omega) (p := p) h = ContinuousLinearMap.id ℝ _ := by
-  obtain rfl : h = le_rfl := Subsingleton.elim _ _
-  exact Nat.leRec_self _ _
-
-/-- Truncation from order `k + 1` to order `j ≤ k` factors through forgetting the top derivative at
-order `k + 1` followed by truncation from `k` to `j`. -/
-theorem toOrderL_succ {j k : ℕ} (h₁ : j ≤ k) (h₂ : j ≤ k + 1) :
-    toOrderL (mu := mu) (Omega := Omega) (p := p) h₂ = (toOrderL h₁).comp (lowerOrderL k) := by
-  obtain rfl : h₂ = Nat.le_succ_of_le h₁ := Subsingleton.elim _ _
-  exact Nat.leRec_succ _ _ _
-
-/-- One-step truncation from `k + 1` to `k` is `TauCeti.Wkp.lowerOrderL`. -/
-theorem toOrderL_le_succ (k : ℕ) (h : k ≤ k + 1) :
-    toOrderL (mu := mu) (Omega := Omega) (p := p) h = lowerOrderL k := by
-  rw [toOrderL_succ le_rfl h, toOrderL_self, ContinuousLinearMap.id_comp]
-
-/-- Order truncations compose transitively as continuous linear maps. -/
-@[simp]
-theorem toOrderL_comp_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
-    (toOrderL (mu := mu) (Omega := Omega) (p := p) hij).comp (toOrderL hjk) =
-      toOrderL (hij.trans hjk) := by
-  induction hjk with
-  | refl => simp
-  | @step m hm ih =>
-      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ← ContinuousLinearMap.comp_assoc, ih,
-        ← toOrderL_succ (hij.trans hm) (hij.trans (Nat.le_succ_of_le hm))]
-
-/-- Applying two successive order truncations equals truncating directly to the lowest order. -/
-@[simp]
-theorem toOrderL_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (u : Wkp mu Omega p k) :
-    toOrderL hij (toOrderL hjk u) = toOrderL (hij.trans hjk) u := by
-  rw [← ContinuousLinearMap.comp_apply, toOrderL_comp_toOrderL]
-
-/-- Precomposing truncation with `lowerOrderL` increases the source order by one. -/
-theorem toOrderL_comp_lowerOrderL {j k : ℕ} (h : j ≤ k) :
-    (toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (lowerOrderL k) =
-      toOrderL (Nat.le_succ_of_le h) :=
-  (toOrderL_succ h (Nat.le_succ_of_le h)).symm
-
-/-- Truncating after `lowerOrder` equals truncating directly from order `k + 1`. -/
-@[simp]
-theorem toOrderL_lowerOrder {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1)) :
-    toOrderL h (lowerOrder k u) = toOrderL (Nat.le_succ_of_le h) u := by
-  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, toOrderL_comp_lowerOrderL]
-
-/-- Postcomposing truncation to order `j + 1` with `lowerOrderL j` truncates to order `j`. -/
-theorem lowerOrderL_comp_toOrderL {j k : ℕ} (h : j + 1 ≤ k) :
-    (lowerOrderL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) =
-      toOrderL (Nat.le_of_succ_le h) := by
-  rw [← toOrderL_le_succ j (Nat.le_succ j), toOrderL_comp_toOrderL]
-
-/-- Forgetting one further derivative after truncating to `j + 1` truncates to `j`. -/
-theorem lowerOrder_toOrderL {j k : ℕ} (h : j + 1 ≤ k) (u : Wkp mu Omega p k) :
-    lowerOrder j (toOrderL h u) = toOrderL (Nat.le_of_succ_le h) u := by
-  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, lowerOrderL_comp_toOrderL]
-
-/-- Evaluating truncation to order zero yields the `Lᵖ` value component. -/
-theorem toOrderL_zero_left_apply (k : ℕ) (h : 0 ≤ k) (u : Wkp mu Omega p k) :
-    toOrderL h u = value k u := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-      rw [toOrderL_succ (Nat.zero_le k) h, ContinuousLinearMap.comp_apply, lowerOrderL_apply,
-        ih (Nat.zero_le k), ← value_succ]
-
-/-- Truncating to order zero is the continuous `Lᵖ` value projection `valueL`. -/
-theorem toOrderL_zero_left (k : ℕ) (h : 0 ≤ k) :
-    toOrderL (mu := mu) (Omega := Omega) (p := p) h = valueL k :=
-  ContinuousLinearMap.ext fun u => (toOrderL_zero_left_apply k h u).trans (valueL_apply k u).symm
-
-/-- Evaluating truncation to order one on `W^{k+1,p}` agrees with `firstOrder`. -/
-theorem toOrderL_one_left_apply (k : ℕ) (h : 1 ≤ k + 1) (u : Wkp mu Omega p (k + 1)) :
-    toOrderL h u = firstOrder k u := by
-  induction k with
-  | zero =>
-      rw [toOrderL_self, ContinuousLinearMap.id_apply]
-      exact (firstOrder_zero u).symm
-  | succ k ih =>
-      rw [toOrderL_succ (Nat.succ_le_succ (Nat.zero_le k)) h, ContinuousLinearMap.comp_apply,
-        lowerOrderL_apply, ih (Nat.succ_le_succ (Nat.zero_le k)) (lowerOrder (k + 1) u),
-        ← firstOrder_succ]
-
-/-- Truncating a positive-order Sobolev space to order one is `firstOrderL`. -/
-theorem toOrderL_one_left (k : ℕ) (h : 1 ≤ k + 1) :
-    toOrderL (mu := mu) (Omega := Omega) (p := p) h = firstOrderL k :=
-  ContinuousLinearMap.ext fun u =>
-    (toOrderL_one_left_apply k h u).trans (firstOrderL_apply k u).symm
-
-/-- The `Lᵖ` value projection commutes with order truncation at the operator level. -/
-@[simp]
-theorem valueL_comp_toOrderL {j k : ℕ} (h : j ≤ k) :
-    (valueL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) = valueL k := by
-  rw [← toOrderL_zero_left j (Nat.zero_le j), toOrderL_comp_toOrderL, toOrderL_zero_left]
-
-/-- Order truncation preserves the `Lᵖ` value component. -/
-@[simp]
-theorem value_toOrderL {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
-    value j (toOrderL h u) = value k u := by
-  rw [← valueL_apply, ← ContinuousLinearMap.comp_apply, valueL_comp_toOrderL, valueL_apply]
-
-/-- Truncating `mk k u D hw` to any order `j ≤ k + 1` forgets the adjoined derivative `D` and
-truncates `u`. -/
-theorem toOrderL_mk {j k : ℕ} (h₁ : j ≤ k + 1) (h₂ : j ≤ k + 2) (u : Wkp mu Omega p (k + 1))
-    (D : Lp (IteratedGradient E (k + 1)) p (mu.restrict Omega))
-    (hw : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) :
-    toOrderL h₂ (mk k u D hw) = toOrderL h₁ u := by
-  rw [toOrderL_succ h₁ h₂, ContinuousLinearMap.comp_apply, lowerOrderL_apply, lowerOrder_mk]
-
-/-- Order truncation is injective because weak derivatives are determined uniquely by the `Lᵖ`
-value component. -/
-theorem toOrderL_injective {j k : ℕ} (h : j ≤ k) :
-    Function.Injective (toOrderL (mu := mu) (Omega := Omega) (p := p) h) := by
-  intro u v huv
-  apply ext k
-  rw [← value_toOrderL h u, ← value_toOrderL h v, huv]
-
-/-- Order truncation is norm-nonincreasing. -/
-theorem norm_toOrderL_le {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
-    ‖toOrderL h u‖ ≤ ‖u‖ := by
-  induction h with
-  | refl => simp
-  | @step m hm ih =>
-      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ContinuousLinearMap.comp_apply,
-        lowerOrderL_apply]
-      exact (ih (lowerOrder m u)).trans (norm_lowerOrder_le m u)
-
-/-- The operator norm of `toOrderL` is at most one. -/
-theorem norm_toOrderL_le_one {j k : ℕ} (h : j ≤ k) :
-    ‖toOrderL (mu := mu) (Omega := Omega) (p := p) h‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
-    simpa only [one_mul] using norm_toOrderL_le h u
-
-/-- For `1 ≤ k`, the `Lᵖ` value of `u ∈ W^{k,p}(Ω)` has weak Fréchet derivative given by pairing
-with the first weak gradient `iteratedGradient 0 (toOrderL h u)`. -/
-theorem hasWeakFDerivOn_value_toOrderL {k : ℕ} (h : 1 ≤ k) (u : Wkp mu Omega p k) :
-    HasWeakFDerivOn mu Omega (value k u)
-      (fun x => innerSL ℝ (iteratedGradient 0 (toOrderL h u) x)) := by
-  simpa only [value_toOrderL h u] using hasWeakFDerivOn_value (toOrderL h u)
-
-/-- Adjacent intermediate weak derivatives extracted via `toOrderL` satisfy the weak Fréchet
-derivative relation on `Ω`. -/
-theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
-    (u : Wkp mu Omega p k) :
-    HasWeakFDerivOn mu Omega
-      (iteratedGradient j (toOrderL (Nat.le_of_succ_le h) u))
-      (iteratedGradient (j + 1) (toOrderL h u)) := by
-  rw [← lowerOrder_toOrderL h u]
-  exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
-
-/-! ### Compatibility of truncation with restriction, exponent change, and smooth representatives -/
-
-/-- Order truncation commutes with restriction to an open subdomain. -/
-theorem toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
-    toOrderL h (restrictL hU k u) = restrictL hU j (toOrderL h u) := by
-  apply ext j
-  rw [value_toOrderL, value_restrictL, value_restrictL, value_toOrderL]
-
-/-- Subdomain restriction and order truncation commute as continuous linear maps. -/
-theorem restrictL_comp_toOrderL (hU : U ≤ Omega) {j k : ℕ} (h : j ≤ k) :
-    (restrictL (mu := mu) (p := p) hU j).comp (toOrderL h) =
-      (toOrderL h).comp (restrictL hU k) :=
-  ContinuousLinearMap.ext fun u => (toOrderL_restrictL hU h u).symm
-
-/-- Restricting to an open subdomain restricts each intermediate weak derivative via
-`MeasureTheory.Lp.LpToLpOfMeasureLeSMul`. -/
-theorem iteratedGradient_toOrderL_restrictL (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p k) :
-    iteratedGradient j (toOrderL h (restrictL hU k u)) =
-      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
-        simpa only [one_smul] using
-          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
-        (iteratedGradient j (toOrderL h u)) := by
-  rw [toOrderL_restrictL, iteratedGradient_restrictL]
-
-/-- Restricting to an open subdomain preserves each intermediate weak derivative almost everywhere
-on the subdomain. -/
-theorem iteratedGradient_toOrderL_restrictL_ae (hU : U ≤ Omega) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p k) :
-    iteratedGradient j (toOrderL h (restrictL hU k u)) =ᵐ[mu.restrict U]
-      iteratedGradient j (toOrderL h u) := by
-  rw [toOrderL_restrictL]
-  exact iteratedGradient_restrictL_ae hU j (toOrderL h u)
-
-section Exponent
-
-variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
-
-/-- On a finite-measure domain, order truncation commutes with lowering the integrability
-exponent. -/
-theorem toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega q k) :
-    toOrderL h (ofExponentLEL hpq k u) = ofExponentLEL hpq j (toOrderL h u) := by
-  apply ext j
-  rw [value_toOrderL, value_ofExponentLEL, value_ofExponentLEL, value_toOrderL]
-
-/-- Exponent lowering and order truncation commute as continuous linear maps. -/
-theorem ofExponentLEL_comp_toOrderL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) :
-    (ofExponentLEL (mu := mu) (Omega := Omega) hpq j).comp (toOrderL h) =
-      (toOrderL h).comp (ofExponentLEL hpq k) :=
-  ContinuousLinearMap.ext fun u => (toOrderL_ofExponentLEL hpq h u).symm
-
-/-- Lowering the exponent maps each intermediate weak derivative to its `Lᵖ` copy. -/
-theorem iteratedGradient_toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega q k) :
-    iteratedGradient j (toOrderL h (ofExponentLEL hpq k u)) =
-      Lp.ofExponentLEL ℝ _ hpq (iteratedGradient j (toOrderL h u)) := by
-  rw [toOrderL_ofExponentLEL, iteratedGradient_ofExponentLEL]
-
-/-- Lowering the exponent leaves each intermediate weak derivative unchanged almost everywhere. -/
-theorem iteratedGradient_toOrderL_ofExponentLEL_ae (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega q k) :
-    ⇑(iteratedGradient j (toOrderL h (ofExponentLEL hpq k u))) =ᵐ[mu.restrict Omega]
-      iteratedGradient j (toOrderL h u) := by
-  rw [toOrderL_ofExponentLEL]
-  exact iteratedGradient_ofExponentLEL_ae hpq j (toOrderL h u)
-
-end Exponent
-
-/-- For any `u ∈ W^{k,p}(Ω)` represented almost everywhere on `Ω` by a `C^{j+1}` function `f` with
-`j + 1 ≤ k`, the order-`(j + 1)` weak derivative `iteratedGradient j (toOrderL h u)` agrees almost
-everywhere on `Ω` with the classical iterated gradient `iteratedGradientChain f j`. -/
-theorem iteratedGradient_toOrderL_ae_eq_of_contDiffOn {j k : ℕ} (h : j + 1 ≤ k)
-    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ (j + 1) f Omega)
-    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
-    (iteratedGradient j (toOrderL h u) : E → IteratedGradient E j) =ᵐ[mu.restrict Omega]
-      iteratedGradientChain f j :=
-  iteratedGradient_ae_eq_of_contDiffOn j (toOrderL h u) hf (by rwa [value_toOrderL])
 
 /-! ### Sobolev seminorms -/
 
@@ -689,6 +445,30 @@ theorem seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn {j k : ℕ}
 
 section Examples
 
+private theorem seminorm_two_Ioo_eq_sqrt_intervalIntegral {a b : ℝ} (hab : a ≤ b) {j k : ℕ}
+    (h : j ≤ k) (u : Wkp volume ⟨Set.Ioo a b, isOpen_Ioo⟩ 2 k) {f : ℝ → ℝ}
+    (hf : ContDiffOn ℝ j f (Set.Ioo a b))
+    (hu : (value k u : ℝ → ℝ) =ᵐ[volume.restrict (Set.Ioo a b)] f) :
+    seminorm k j h u = √(∫ x in a..b, iteratedDeriv j f x ^ 2) := by
+  rw [← Real.sqrt_sq (apply_nonneg _ u),
+    seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn h u hf hu, Opens.coe_mk,
+    ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hab]
+  simp only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs, sq_abs]
+
+private theorem seminorm_top_eq_of_iteratedDeriv_le {Ω : Opens ℝ} {j k : ℕ} (h : j ≤ k)
+    (u : Wkp volume Ω ∞ k) {f : ℝ → ℝ} (hf : ContDiffOn ℝ j f Ω)
+    (hu : (value k u : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] f) {C : ℝ}
+    (hbound : ∀ x ∈ Ω, |iteratedDeriv j f x| ≤ C) {x₀ : ℝ} (hx₀ : x₀ ∈ Ω)
+    (hattain : C ≤ |iteratedDeriv j f x₀|) :
+    seminorm k j h u = C := by
+  have hC : 0 ≤ C := (abs_nonneg _).trans (hbound x₀ hx₀)
+  apply le_antisymm
+  · refine seminorm_top_le_of_contDiffOn h u hf hu hC fun x hx => ?_
+    simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs] using hbound x hx
+  · refine hattain.trans ?_
+    simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs] using
+      norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn h u hf hu hx₀
+
 -- Check 1: On Ω = (0, 1) with p = 2, u(x) = x in W^{1,2}(0, 1) has toOrderL le_rfl u = u,
 -- |u|_{0,2} = 1 / √3, |u|_{1,2} = 1, and graph norm ‖u‖ = 2 / √3.
 example :
@@ -699,32 +479,24 @@ example :
       seminorm 1 1 le_rfl u = 1 ∧
       ‖u‖ = 2 / √3 := by
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
-    (Omega := ⟨Set.Ioo 0 1, isOpen_Ioo⟩) (p := 2) 1 isOpen_univ contDiff_id.contDiffOn
+    (Omega := ⟨Set.Ioo 0 1, isOpen_Ioo⟩) (p := 2) 1 isOpen_univ contDiff_fun_id.contDiffOn
     isCompact_Icc Set.Ioo_subset_Icc_self (Set.subset_univ _)
-  have h0sq : seminorm 1 0 (Nat.zero_le 1) u ^ 2 = 1 / 3 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn (Nat.zero_le 1) u
-      contDiff_id.contDiffOn hu, Opens.coe_mk, ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le zero_le_one]
-    simp only [norm_iteratedFDeriv_zero, id_eq, Real.norm_eq_abs, sq_abs, integral_pow]
-    norm_num
-  have h1sq : seminorm 1 1 le_rfl u ^ 2 = 1 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn le_rfl u
-      contDiff_id.contDiffOn hu, Opens.coe_mk, ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le zero_le_one]
-    simp only [norm_iteratedFDeriv_one, fderiv_id, ContinuousLinearMap.norm_id, one_pow,
-      intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_one]
   have h0 : seminorm 1 0 (Nat.zero_le 1) u = 1 / √3 := by
-    rw [← Real.sqrt_sq (apply_nonneg _ u), h0sq, Real.sqrt_div zero_le_one, Real.sqrt_one]
-  have h1 : seminorm 1 1 le_rfl u = 1 := by
-    rw [← Real.sqrt_sq (apply_nonneg _ u), h1sq, Real.sqrt_one]
-  have hsqrt4 : √(4 : ℝ) = 2 := by
-    rw [← Real.sqrt_sq zero_le_two]
+    rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_one (Nat.zero_le 1) u
+      contDiff_fun_id.contDiffOn hu]
+    simp [integral_pow]
     norm_num
+  have h1 : seminorm 1 1 le_rfl u = 1 := by
+    rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_one le_rfl u
+      contDiff_fun_id.contDiffOn hu]
+    simp [iteratedDeriv_fun_id]
+  have hsqrt4 : √(4 : ℝ) = 2 := by rw [← Real.sqrt_sq zero_le_two]; norm_num
   have hnorm : ‖u‖ = 2 / √3 := by
     have hnsq : ‖u‖ ^ 2 = 4 / 3 := by
       rw [norm_sq_eq_sum_seminorm_sq 1 u, Fin.sum_univ_two]
-      simp only [Fin.val_zero, Fin.val_one]
-      linarith
+      simp only [Fin.val_zero, Fin.val_one, h0, h1, div_pow,
+        Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 3)]
+      norm_num
     rw [← Real.sqrt_sq (norm_nonneg u), hnsq, Real.sqrt_div (by positivity), hsqrt4]
   exact ⟨u, hu, by simp, h0, h1, hnorm⟩
 
@@ -736,55 +508,22 @@ example :
       seminorm 2 0 (Nat.zero_le 2) u = 1 / √5 ∧
       seminorm 2 1 (by decide) u = 2 / √3 ∧
       seminorm 2 2 le_rfl u = 2 := by
+  have hf : ContDiffOn ℝ 2 (· ^ 2 : ℝ → ℝ) (Set.Ioo 0 1) := (contDiff_fun_id.pow 2).contDiffOn
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
     (Omega := ⟨Set.Ioo 0 1, isOpen_Ioo⟩) (p := 2) 2 isOpen_univ (contDiff_fun_id.pow 2).contDiffOn
     isCompact_Icc Set.Ioo_subset_Icc_self (Set.subset_univ _)
-  have h0sq : seminorm 2 0 (Nat.zero_le 2) u ^ 2 = 1 / 5 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn (Nat.zero_le 2) u
-      (contDiff_fun_id.pow 2).contDiffOn hu, Opens.coe_mk,
-      ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le zero_le_one]
-    have hfun : (fun x : ℝ => ‖iteratedFDeriv ℝ 0 (fun y : ℝ => y ^ 2) x‖ ^ 2) =
-        fun x : ℝ => x ^ 4 := by
-      ext x
-      rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, sq_abs]
-      ring
-    rw [hfun, integral_pow]
-    norm_num
-  have h1sq : seminorm 2 1 (by decide) u ^ 2 = 4 / 3 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn (by decide) u
-      (contDiff_fun_id.pow 2).contDiffOn hu, Opens.coe_mk,
-      ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le zero_le_one]
-    have hfun : (fun x : ℝ => ‖iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2) x‖ ^ 2) =
-        fun x : ℝ => 4 * x ^ 2 := by
-      ext x
-      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_one, deriv_pow_field,
-        Real.norm_eq_abs, sq_abs]
-      ring
-    rw [hfun, intervalIntegral.integral_const_mul, integral_pow]
-    norm_num
-  have h2sq : seminorm 2 2 le_rfl u ^ 2 = 4 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn le_rfl u
-      (contDiff_fun_id.pow 2).contDiffOn hu, Opens.coe_mk,
-      ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le zero_le_one]
-    have hfun : (fun x : ℝ => ‖iteratedFDeriv ℝ 2 (fun y : ℝ => y ^ 2) x‖ ^ 2) =
-        fun _ : ℝ => (4 : ℝ) := by
-      ext x
-      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_succ', iteratedDeriv_one]
-      have hd : deriv (fun y : ℝ => y ^ 2) = fun y : ℝ => 2 * y := by
-        ext y
-        rw [deriv_pow_field]
-        ring
-      rw [hd, deriv_const_mul_field, deriv_id'', mul_one, Real.norm_eq_abs]
-      norm_num
-    rw [hfun, intervalIntegral.integral_const, sub_zero, smul_eq_mul]
-    norm_num
-  have hsqrt4 : √(4 : ℝ) = 2 := by
-    rw [← Real.sqrt_sq zero_le_two]
-    norm_num
   refine ⟨u, hu, ?_, ?_, ?_⟩
-  · rw [← Real.sqrt_sq (apply_nonneg _ u), h0sq, Real.sqrt_div zero_le_one, Real.sqrt_one]
-  · rw [← Real.sqrt_sq (apply_nonneg _ u), h1sq, Real.sqrt_div (by positivity), hsqrt4]
-  · rw [← Real.sqrt_sq (apply_nonneg _ u), h2sq, hsqrt4]
+  · rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_one (Nat.zero_le 2) u
+      (hf.of_le (by norm_num)) hu]
+    simp [← pow_mul, integral_pow]
+    norm_num
+  · rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_one (by decide) u
+      (hf.of_le (by norm_num)) hu]
+    simp [mul_pow, integral_pow]
+    norm_num
+    ring
+  · rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_one le_rfl u hf hu]
+    simp [Nat.descFactorial]
 
 -- Check 3: Sharpness of sqrt_le_sqrt_two_mul_norm at p = ∞, k = 1:
 -- on Ω = (0, 2π), u(x) = sin x has ‖u‖ = 1 while √(|u|_{0,∞}² + |u|_{1,∞}²) = √2 = √2 * ‖u‖.
@@ -797,78 +536,52 @@ example :
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume) (Omega := Ω)
     (p := ∞) 1 isOpen_univ Real.contDiff_sin.contDiffOn isCompact_Icc
     Set.Ioo_subset_Icc_self (Set.subset_univ _)
-  have h0 : seminorm 1 0 (Nat.zero_le 1) u = 1 := by
-    apply le_antisymm
-    · exact seminorm_top_le_of_contDiffOn (Nat.zero_le 1) u Real.contDiff_sin.contDiffOn hu
-        zero_le_one fun x _ => by
-          rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
-          exact Real.abs_sin_le_one x
-    · have hle := norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn (Nat.zero_le 1) u
-        Real.contDiff_sin.contDiffOn hu (x₀ := Real.pi / 2)
-        ⟨div_pos Real.pi_pos zero_lt_two, by linarith [Real.pi_pos]⟩
-      simpa only [norm_iteratedFDeriv_zero, Real.sin_pi_div_two, norm_one] using hle
-  have h1 : seminorm 1 1 le_rfl u = 1 := by
-    apply le_antisymm
-    · exact seminorm_top_le_of_contDiffOn le_rfl u Real.contDiff_sin.contDiffOn hu
-        zero_le_one fun x _ => by
-          rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_one, Real.deriv_sin,
-            Real.norm_eq_abs]
-          exact Real.abs_cos_le_one x
-    · have hle := norm_iteratedFDeriv_le_seminorm_top_of_contDiffOn le_rfl u
-        Real.contDiff_sin.contDiffOn hu (x₀ := Real.pi) ⟨Real.pi_pos, by linarith [Real.pi_pos]⟩
-      simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_one, Real.deriv_sin,
-        Real.cos_pi, norm_neg, norm_one] using hle
-  have hgrad : (W1p.gradient u : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] Real.cos := by
-    have hg := iteratedGradient_ae_eq_of_contDiffOn 0 u Real.contDiff_sin.contDiffOn hu
-    rw [iteratedGradient_zero] at hg
-    filter_upwards [hg] with x hx
-    rw [hx, iteratedGradientChain_zero, gradient, (Real.hasDerivAt_sin x).hasFDerivAt.fderiv]
-    exact (InnerProductSpace.toDual ℝ ℝ).injective (ContinuousLinearMap.ext fun y => by
-      simp [InnerProductSpace.toDual_apply_apply])
+  have h0 : seminorm 1 0 (Nat.zero_le 1) u = 1 :=
+    seminorm_top_eq_of_iteratedDeriv_le (Nat.zero_le 1) u Real.contDiff_sin.contDiffOn hu
+      (fun x _ => by simpa using Real.abs_sin_le_one x)
+      (x₀ := Real.pi / 2) ⟨by positivity, by linarith [Real.pi_pos]⟩ (by simp)
+  have h1 : seminorm 1 1 le_rfl u = 1 :=
+    seminorm_top_eq_of_iteratedDeriv_le le_rfl u Real.contDiff_sin.contDiffOn hu
+      (fun x _ => by simpa [iteratedDeriv_one] using Real.abs_cos_le_one x)
+      (x₀ := Real.pi) ⟨Real.pi_pos, by linarith [Real.pi_pos]⟩ (by simp [iteratedDeriv_one])
+  let u₁ : W1p volume Ω ∞ := u
+  have hgrad : (W1p.gradient u₁ : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] Real.cos := by
+    filter_upwards [W1p.gradient_ae_eq_of_contDiffOn u₁ Real.contDiff_sin.contDiffOn
+      (by simpa only [value_one] using hu)] with x hx
+    simp [hx, gradient_eq_deriv']
   have hu_norm : ‖u‖ = 1 := by
     apply le_antisymm
-    · have hu1 : ‖u.1‖ ≤ 1 := by
-        refine Lp.norm_top_le_of_ae_bound zero_le_one ?_
-        filter_upwards [W1p.norm_apply_sq_ae u, hu, hgrad] with x hsq hv hg
-        have hv' : W1p.value u x = Real.sin x := by
-          simpa only [value_one] using hv
-        have h1sq : ‖u.1 x‖ ^ 2 = 1 := by
-          rw [hsq, hv', hg, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs,
-            Real.sin_sq_add_cos_sq]
-        nlinarith [norm_nonneg (u.1 x)]
-      exact hu1
+    · refine (Submodule.norm_coe u₁).symm.trans_le (Lp.norm_top_le_of_ae_bound zero_le_one ?_)
+      filter_upwards [W1p.norm_apply_sq_ae u₁, hu, hgrad] with x hsq hv hg
+      have hv' : W1p.value u₁ x = Real.sin x := by simpa only [value_one] using hv
+      have h1sq : ‖(u₁ : Sobolev1JetLp volume Ω ∞) x‖ ^ 2 = 1 := by simp [hsq, hv', hg]
+      nlinarith [norm_nonneg ((u₁ : Sobolev1JetLp volume Ω ∞) x)]
     · exact h0.symm.le.trans (seminorm_le_norm (Nat.zero_le 1) u)
   refine ⟨u, hu, hu_norm, ?_⟩
-  rw [Fin.sum_univ_two]
-  simp only [Fin.val_zero, Fin.val_one]
-  rw [h0, h1]
+  simp [Fin.sum_univ_two, h0, h1]
   norm_num
+
+section
+
+local instance : IsFiniteMeasure
+    (volume.restrict ((⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+  Real.isFiniteMeasure_restrict_Ioo 0 2
 
 -- Check 4: Exponent lowering on Ω = (0, 2) from q = 2 to p = 1 for the constant function 1:
 -- |1|_{0,2} = √2, |1|_{0,1} = 2, and (volume Ω)^(1/1 - 1/2) * √2 = √2 * √2 = 2.
 example :
-    have : IsFiniteMeasure
-        (volume.restrict ((⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
-      Real.isFiniteMeasure_restrict_Ioo 0 2
     ∃ u : Wkp volume ⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ 2 1,
       (value 1 u : ℝ → ℝ) =ᵐ[volume.restrict (Set.Ioo (0 : ℝ) 2)] (fun _ : ℝ => (1 : ℝ)) ∧
       seminorm 1 0 (Nat.zero_le 1) u = √2 ∧
       seminorm 1 0 (Nat.zero_le 1) (ofExponentLEL (p := 1) (q := 2) (by norm_num) 1 u) = 2 := by
-  intro _
-  have : IsFiniteMeasure (volume.restrict ((⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
-    Real.isFiniteMeasure_restrict_Ioo 0 2
   obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := volume)
     (Omega := ⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩) (p := 2) 1 isOpen_univ
     (contDiff_const (c := (1 : ℝ))).contDiffOn isCompact_Icc Set.Ioo_subset_Icc_self
     (Set.subset_univ _)
-  have h0sq : seminorm 1 0 (Nat.zero_le 1) u ^ 2 = 2 := by
-    rw [seminorm_sq_eq_integral_norm_iteratedFDeriv_sq_of_contDiffOn (Nat.zero_le 1) u
-      (contDiff_const (c := (1 : ℝ))).contDiffOn hu, Opens.coe_mk,
-      ← MeasureTheory.integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le zero_le_two]
-    simp only [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_one, one_pow,
-      intervalIntegral.integral_const, sub_zero, smul_eq_mul, mul_one]
   have h0 : seminorm 1 0 (Nat.zero_le 1) u = √2 := by
-    rw [← Real.sqrt_sq (apply_nonneg _ u), h0sq]
+    rw [seminorm_two_Ioo_eq_sqrt_intervalIntegral zero_le_two (Nat.zero_le 1) u
+      (contDiff_const (c := (1 : ℝ))).contDiffOn hu]
+    simp
   let v := ofExponentLEL (p := 1) (q := 2) (by norm_num) 1 u
   have hv : (value 1 v : ℝ → ℝ) =ᵐ[volume.restrict (Set.Ioo (0 : ℝ) 2)] (fun _ : ℝ => (1 : ℝ)) :=
     (value_ofExponentLEL_ae (p := 1) (q := 2) (by norm_num) 1 u).trans hu
@@ -876,13 +589,13 @@ example :
     rw [seminorm_zero_apply, L1.norm_eq_integral_norm]
     have hcongr : (fun x => ‖value 1 v x‖) =ᵐ[volume.restrict
         ((⟨Set.Ioo (0 : ℝ) 2, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)] (fun _ : ℝ => (1 : ℝ)) :=
-      hv.mono fun _ hx => by
-        dsimp only at hx ⊢
-        rw [hx, Real.norm_eq_abs, abs_one]
+      hv.mono fun _ hx => by simpa only [norm_one] using congrArg norm hx
     rw [integral_congr_ae hcongr, Opens.coe_mk, ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
       ← intervalIntegral.integral_of_le zero_le_two, intervalIntegral.integral_const]
     norm_num
   exact ⟨u, hu, h0, hv0⟩
+
+end
 
 end Examples
 

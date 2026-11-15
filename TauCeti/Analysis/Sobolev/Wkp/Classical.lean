@@ -143,6 +143,16 @@ theorem Wkp.iteratedGradient_ae_eq_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p (
         (fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt (by simp))
       simpa only [iteratedGradientChain_succ] using hd
 
+/-- For any `u ∈ W^{k,p}(Ω)` represented almost everywhere on `Ω` by a `C^{j+1}` function `f` with
+`j + 1 ≤ k`, the order-`(j + 1)` weak derivative `iteratedGradient j (toOrderL h u)` agrees almost
+everywhere on `Ω` with the classical iterated gradient `iteratedGradientChain f j`. -/
+theorem Wkp.iteratedGradient_toOrderL_ae_eq_of_contDiffOn {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ (j + 1) f Omega)
+    (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    (iteratedGradient j (toOrderL h u) : E → IteratedGradient E j) =ᵐ[mu.restrict Omega]
+      iteratedGradientChain f j :=
+  iteratedGradient_ae_eq_of_contDiffOn j (toOrderL h u) hf (by rwa [value_toOrderL])
+
 /-- The `Lᵖ` norm of the highest weak derivative agrees with the classical derivative
 seminorm for a representative that is `C^{k+1}` on the domain. -/
 theorem Wkp.norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k : ℕ)
