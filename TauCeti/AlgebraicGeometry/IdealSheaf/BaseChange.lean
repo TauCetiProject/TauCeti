@@ -32,9 +32,10 @@ inverse image recovers the supremum with `j.ker`
 (`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). In
 
 of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`), and
-the same holds for the ideal sheaf of any quasi-compact morphism pulled back along an open
-immersion
-(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
+the same holds for the ideal sheaf of any quasi-compact morphism, and hence for schematic images
+of ideal sheaves, pulled back along an open immersion
+(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`,
+`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isPullback_of_isOpenImmersion`). In
 particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
 base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
@@ -177,6 +178,18 @@ theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : 
     (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
   ext W : 2
   rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
+
+/-- **Schematic images of quasi-compact morphisms commute with restriction to opens.** If
+`f' : U ⟶ V` is the base change of a quasi-compact morphism `f : X ⟶ Y` along an open immersion
+`iV : V ⟶ Y`, then restricting the schematic image `I.map f` to `V` gives the schematic image
+along `f'` of the restriction `I.comap iU`. -/
+theorem comap_map_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} (I : X.IdealSheafData)
+    {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [IsOpenImmersion iV] [QuasiCompact f]
+    (H : IsPullback f' iU iV f) : (I.map f).comap iV = (I.comap iU).map f' := by
+  have hI : IsPullback (I.comap iU).subschemeι (subschemeMap (I.comap iU) I iU (I.le_map_comap iU))
+      iU I.subschemeι :=
+    isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)
+  exact (ker_eq_comap_of_isPullback_of_isOpenImmersion iV (hI.paste_horiz H)).symm
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
