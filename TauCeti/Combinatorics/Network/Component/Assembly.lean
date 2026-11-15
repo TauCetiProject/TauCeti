@@ -58,6 +58,34 @@ theorem componentEquiv_apply (f : Assignment Q K) (C : @WeaklyConnectedComponent
     componentEquiv Q K f C = f.restrictComponent C :=
   (rfl)
 
+/-- Restriction to all components preserves the zero assignment. -/
+@[simp]
+theorem componentEquiv_zero [Zero K] :
+    componentEquiv Q K (0 : Assignment Q K) = 0 := by
+  funext C
+  exact restrictComponent_zero C
+
+/-- Restriction to all components preserves pointwise addition. -/
+@[simp]
+theorem componentEquiv_add [Add K] (f g : Assignment Q K) :
+    componentEquiv Q K (f + g) = componentEquiv Q K f + componentEquiv Q K g := by
+  funext C
+  exact restrictComponent_add C f g
+
+/-- Restriction to all components preserves pointwise negation. -/
+@[simp]
+theorem componentEquiv_neg [Neg K] (f : Assignment Q K) :
+    componentEquiv Q K (-f) = -componentEquiv Q K f := by
+  funext C
+  exact restrictComponent_neg C f
+
+/-- Restriction to all components preserves pointwise subtraction. -/
+@[simp]
+theorem componentEquiv_sub [Sub K] (f g : Assignment Q K) :
+    componentEquiv Q K (f - g) = componentEquiv Q K f - componentEquiv Q K g := by
+  funext C
+  exact restrictComponent_sub C f g
+
 /-- Assembly evaluates an arrow in the component of its source. -/
 @[simp]
 theorem componentEquiv_symm_apply
@@ -80,6 +108,29 @@ theorem componentEquiv_symm_zero [Zero K] :
   funext x y e
   simp
 
+/-- Assembly preserves pointwise addition. -/
+@[simp]
+theorem componentEquiv_symm_add [Add K]
+    (f g : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K) :
+    (componentEquiv Q K).symm (f + g) =
+      (componentEquiv Q K).symm f + (componentEquiv Q K).symm g :=
+  (rfl)
+
+/-- Assembly preserves pointwise negation. -/
+@[simp]
+theorem componentEquiv_symm_neg [Neg K]
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K) :
+    (componentEquiv Q K).symm (-f) = -(componentEquiv Q K).symm f :=
+  (rfl)
+
+/-- Assembly preserves pointwise subtraction. -/
+@[simp]
+theorem componentEquiv_symm_sub [Sub K]
+    (f g : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K) :
+    (componentEquiv Q K).symm (f - g) =
+      (componentEquiv Q K).symm f - (componentEquiv Q K).symm g :=
+  (rfl)
+
 /-- Restricting an assembled assignment recovers the supplied component assignment. -/
 @[simp high]
 theorem restrictComponent_componentEquiv_symm
@@ -88,6 +139,17 @@ theorem restrictComponent_componentEquiv_symm
     ((componentEquiv Q K).symm f).restrictComponent C = f C := by
   simpa only [componentEquiv_apply] using
     congrFun ((componentEquiv Q K).apply_symm_apply f) C
+
+/-- Assembly evaluates an arrow in any specified component containing both endpoints. -/
+theorem componentEquiv_symm_apply_of_mk_eq
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K)
+    {C : @WeaklyConnectedComponent V ⟨Q⟩} {x y : V}
+    (hx : @WeaklyConnectedComponent.mk V ⟨Q⟩ x = C)
+    (hy : @WeaklyConnectedComponent.mk V ⟨Q⟩ y = C) (e : Q x y) :
+    (componentEquiv Q K).symm f e = f C (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) e := by
+  simpa only [restrictComponent_apply] using
+    congrArg (fun g : Assignment (Quiver.ComponentHom Q C) K ↦
+      g (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) e) (restrictComponent_componentEquiv_symm f C)
 
 /-- Arrowwise inequalities hold globally exactly when they hold on every component. -/
 theorem le_iff_forall_restrictComponent [LE K] (f g : Assignment Q K) :
@@ -106,7 +168,41 @@ theorem mem_Icc_iff_forall_restrictComponent [Preorder K] (f lo hi : Assignment 
   simp only [Set.mem_Icc]
   rw [le_iff_forall_restrictComponent lo f, le_iff_forall_restrictComponent f hi, ← forall_and]
 
+/-- An assignment lies below an assembly exactly when each restriction lies below its part. -/
+@[simp]
+theorem le_componentEquiv_symm_iff [LE K] (g : Assignment Q K)
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K) :
+    g ≤ (componentEquiv Q K).symm f ↔ ∀ C, g.restrictComponent C ≤ f C := by
+  rw [le_iff_forall_restrictComponent]
+  simp only [restrictComponent_componentEquiv_symm]
+
+/-- An assembly lies below an assignment exactly when each part lies below its restriction. -/
+@[simp]
+theorem componentEquiv_symm_le_iff [LE K]
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K)
+    (g : Assignment Q K) :
+    (componentEquiv Q K).symm f ≤ g ↔ ∀ C, f C ≤ g.restrictComponent C := by
+  rw [le_iff_forall_restrictComponent]
+  simp only [restrictComponent_componentEquiv_symm]
+
+/-- An assembly satisfies arrow bounds exactly when every supplied part satisfies them. -/
+theorem componentEquiv_symm_mem_Icc_iff [Preorder K]
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K)
+    (lo hi : Assignment Q K) :
+    (componentEquiv Q K).symm f ∈ Set.Icc lo hi ↔
+      ∀ C, f C ∈ Set.Icc (lo.restrictComponent C) (hi.restrictComponent C) := by
+  simp only [Set.mem_Icc, le_componentEquiv_symm_iff, componentEquiv_symm_le_iff, forall_and]
+
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
+
+/-- Assembly preserves excess at a vertex in any specified component containing it. -/
+theorem excessAt_componentEquiv_symm_of_mk_eq
+    (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K)
+    {C : @WeaklyConnectedComponent V ⟨Q⟩} {x : V}
+    (hx : @WeaklyConnectedComponent.mk V ⟨Q⟩ x = C) :
+    excessAt ((componentEquiv Q K).symm f) x = excessAt (f C) ⟨x, hx⟩ := by
+  simpa only [restrictComponent_componentEquiv_symm] using
+    (excessAt_restrictComponent C ((componentEquiv Q K).symm f) ⟨x, hx⟩).symm
 
 /-- The excess of an assembled assignment is the excess computed in its vertex's component. -/
 @[simp]
@@ -114,11 +210,8 @@ theorem excessAt_componentEquiv_symm
     (f : (C : @WeaklyConnectedComponent V ⟨Q⟩) → Assignment (Quiver.ComponentHom Q C) K)
     (x : V) :
     excessAt ((componentEquiv Q K).symm f) x =
-      excessAt (f (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)) ⟨x, rfl⟩ := by
-  have h := excessAt_restrictComponent (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)
-    ((componentEquiv Q K).symm f) ⟨x, rfl⟩
-  rw [restrictComponent_componentEquiv_symm] at h
-  exact h.symm
+      excessAt (f (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)) ⟨x, rfl⟩ :=
+  excessAt_componentEquiv_symm_of_mk_eq f rfl
 
 /-- An assignment is a circulation exactly when each component restriction is a circulation. -/
 theorem isCirculation_iff_forall_restrictComponent (f : Assignment Q K) :
