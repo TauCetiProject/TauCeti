@@ -31,7 +31,9 @@ In particular, it supplies the common continuity step for
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`).
+`AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
+any ball about `0` into any neighbourhood of `0`
+(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -211,6 +213,14 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
   AddMonoidHomClass.tendsto_apply_of_eventually_bound
     (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
+
+/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
+about `0` into any prescribed neighbourhood of `0`. -/
+theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
+    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+  (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
+    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
