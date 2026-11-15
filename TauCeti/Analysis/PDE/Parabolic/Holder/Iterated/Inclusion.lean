@@ -75,14 +75,16 @@ private theorem eHolderNorm_mixedDerivL_le (hα : α ≤ 1)
         (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊)) := by
   have hspace : spaceEHolderNorm 1 (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) ≤
       ‖mixedDerivL r (m + 1) f‖₊ := by
-    refine spaceEHolderNorm_le_iff.2 fun t x y ↦ ?_
-    have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
-      (C := ‖mixedDerivL r (m + 1) f‖₊)
-      (fun z _ ↦ (hasFDerivAt_mixedDerivL f (r := r) (m := m) (by omega) t z).hasFDerivWithinAt)
-      fun z _ ↦ by
-        rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, ContinuousMultilinearMap.curryLeft_norm]
-        exact (mixedDerivL r (m + 1) f).norm_coe_le_norm _)
-    exact holderWith_one.2 hlip x y
+    -- Extend constantly in time, so as to apply the Lipschitz bound on `E × ℝ`.
+    rw [← ParabolicC2HolderSpace.timeExtension_space_slabTime hab.le
+      (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F)]
+    refine spaceEHolderNorm_one_le_of_hasFDerivAt
+      (w' := fun y t ↦ (mixedDerivL r (m + 1) f (slabMk y (projIcc a b hab.le t))).curryLeft)
+      (fun t ht y ↦ ?_) fun y t _ ↦ ?_
+    · simpa only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le ht] using
+        hasFDerivAt_mixedDerivL f (r := r) (m := m) (by omega) ⟨t, ht⟩ y
+    · rw [ContinuousMultilinearMap.curryLeft_norm, coe_nnNorm]
+      exact (mixedDerivL r (m + 1) f).norm_coe_le_norm _
   have htime : timeEHolderNorm ((1 + α) / 2)
       (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) ≤ ‖timeSliceL r m f‖₊ := by
     refine timeEHolderNorm_le_iff.2 fun x t s ↦ ?_
@@ -92,9 +94,7 @@ private theorem eHolderNorm_mixedDerivL_le (hα : α ≤ 1)
       (timeSliceL r m f x).holderWith_nnnorm.mono hnorm t s
   have hdist (p q : slab (E := E) a b) :
       dist (mixedDerivL r m f p) (mixedDerivL r m f q) ≤ ↑(2 * ‖mixedDerivL r m f‖₊) := by
-    push_cast
-    linarith [dist_le_norm_add_norm (mixedDerivL r m f p) (mixedDerivL r m f q),
-      (mixedDerivL r m f).norm_coe_le_norm p, (mixedDerivL r m f).norm_coe_le_norm q]
+    simpa using (mixedDerivL r m f).dist_le_two_norm p q
   simpa using eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le hspace htime hdist hα
     (by gcongr; exact le_add_self) one_pos one_pos
 
