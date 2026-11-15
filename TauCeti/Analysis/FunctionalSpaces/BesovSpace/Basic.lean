@@ -465,6 +465,11 @@ instance : Module ℂ (BesovSpace F φ s p q) :=
     (⟨⟨toDistr, toDistr_zero⟩, toDistr_add⟩ : BesovSpace F φ s p q →+ 𝓢'(E, F))
     (fun _ _ ↦ ext) toDistr_smul
 
+@[simp]
+theorem toDistr_sum {ι : Type*} (t : Finset ι) (u : ι → BesovSpace F φ s p q) :
+    (∑ i ∈ t, u i).toDistr = ∑ i ∈ t, (u i).toDistr :=
+  map_sum (⟨⟨toDistr, toDistr_zero⟩, toDistr_add⟩ : BesovSpace F φ s p q →+ 𝓢'(E, F)) u t
+
 variable (F φ s p q) in
 /-- The weighted Littlewood–Paley blocks `u ↦ (2^{js} Δⱼ u)ⱼ`, as an injective linear map into
 `ℓ^q(ℕ, Lᵖ)`. -/

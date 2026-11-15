@@ -33,6 +33,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.postcomp_smulLeftCLM`: multiplication by a function commutes with a
+  continuous linear map applied to the values.
 -/
 
 public section
@@ -55,6 +57,15 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
   simp [SchwartzMap.smulLeftCLM, hg]
+
+/-- Multiplication by a function acts on the test function and a continuous linear map `L` on the
+values of a tempered distribution, so the two commute. -/
+theorem postcomp_smulLeftCLM {G : Type*} [AddCommGroup G] [Module ℂ G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] [ContinuousConstSMul ℂ G] (L : F →L[ℂ] G) (g : E → ℂ)
+    (u : 𝓢'(E, F)) :
+    PointwiseConvergenceCLM.postcomp _ L (smulLeftCLM F g u) =
+      smulLeftCLM G g (PointwiseConvergenceCLM.postcomp _ L u) :=
+  (rfl)
 
 end TVS
 

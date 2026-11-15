@@ -91,7 +91,8 @@ blocks `Δⱼ u`.
   (`isVanishingOn_fourier_sum_littlewoodPaleyBlock`).
 * `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
   `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
-  derivatives.
+  derivatives, and `TemperedDistribution.postcomp_littlewoodPaleyBlock`: with continuous linear
+  maps applied to the values.
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
@@ -331,6 +332,13 @@ theorem littlewoodPaleyBlock_lineDerivOp (j : ℕ) (m : E) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (∂_{m} u) = ∂_{m} (littlewoodPaleyBlock F φ j u) := by
   rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, lineDerivOp_fourierMultiplierCLM
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- The Littlewood–Paley blocks commute with a continuous linear map applied to the values. -/
+theorem postcomp_littlewoodPaleyBlock {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (j : ℕ) (L : F →L[ℂ] G) (u : 𝓢'(E, F)) :
+    PointwiseConvergenceCLM.postcomp _ L (littlewoodPaleyBlock F φ j u) =
+      littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp _ L u) := by
+  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, postcomp_fourierMultiplierCLM]
 
 /-- The Littlewood–Paley blocks commute with iterated directional derivatives. -/
 theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k → E)

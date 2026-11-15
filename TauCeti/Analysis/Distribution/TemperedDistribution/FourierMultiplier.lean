@@ -31,6 +31,8 @@ the starting point of Bernstein's inequalities.
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
   Fourier multipliers.
+* `TemperedDistribution.postcomp_fourierMultiplierCLM`: a continuous linear map applied to the
+  values commutes with Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
@@ -69,6 +71,14 @@ theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemper
     fourierMultiplierCLM F (g₁ + g₂) = fourierMultiplierCLM F g₁ + fourierMultiplierCLM F g₂ := by
   ext f u
   simp [SchwartzMap.smulLeftCLM_add hg₁ hg₂]
+
+/-- A Fourier multiplier acts on the test function and a continuous linear map `L` on the values of
+a tempered distribution, so the two commute. -/
+theorem postcomp_fourierMultiplierCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (L : F →L[ℂ] G) (g : E → ℂ) (u : 𝓢'(E, F)) :
+    PointwiseConvergenceCLM.postcomp _ L (fourierMultiplierCLM F g u) =
+      fourierMultiplierCLM G g (PointwiseConvergenceCLM.postcomp _ L u) :=
+  (rfl)
 
 /-- A directional derivative, the Fourier multiplier with symbol `2πi ⟪ξ, m⟫`, commutes with every
 Fourier multiplier of temperate growth. -/
