@@ -141,15 +141,16 @@ instance sheafificationBraided :
 `sheafificationUnitIso`. -/
 @[simp]
 theorem sheafification_ε :
-    Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
-      (sheafificationUnitIso R).inv :=
+    dsimp% only [sheafCompose_obj_obj]
+    (Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
+      (sheafificationUnitIso R).inv) :=
   rfl
 
 /-- The inverse sheafification identification at the unit is the monoidal unit comparison. -/
 theorem sheafificationIso_unit_inv :
     (sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit (ringCatSheaf R))).inv =
       Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) := by
-  rw [sheafification_ε]
+  erw [sheafification_ε R]
   exact (Iso.inv_eq_inv _ _).2 ((sheafificationIso_hom _ _).trans
     (sheafificationUnitIso_hom R).symm)
 
@@ -157,8 +158,9 @@ theorem sheafificationIso_unit_inv :
 `sheafificationUnitIso`. -/
 @[simp]
 theorem sheafification_η :
-    Functor.OplaxMonoidal.η (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
-      (sheafificationUnitIso R).hom :=
+    dsimp% only [sheafCompose_obj_obj]
+    (Functor.OplaxMonoidal.η (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) =
+      (sheafificationUnitIso R).hom) :=
   rfl
 
 variable {R}
@@ -224,7 +226,8 @@ theorem _root_.SheafOfModules.leftUnitor_hom_eq (M : SheafOfModules.{u} (ringCat
         (𝟙_ _) M.val ≫
       (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (λ_ M.val).hom ≫
         (sheafificationIso _ M).hom := by
-  rw [Functor.Monoidal.map_leftUnitor, sheafification_η]
+  rw [Functor.Monoidal.map_leftUnitor]
+  erw [sheafification_η R]
   simp only [assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_def', ← comp_whiskerRight_assoc,
     Iso.inv_hom_id, id_whiskerRight, id_comp]
   -- The unit `SheafOfModules.unit` produced by the unit comparison is `𝟙_` by `tensorUnit_eq`.
@@ -238,7 +241,8 @@ theorem _root_.SheafOfModules.rightUnitor_hom_eq (M : SheafOfModules.{u} (ringCa
         M.val (𝟙_ _) ≫
       (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)).map (ρ_ M.val).hom ≫
         (sheafificationIso _ M).hom := by
-  rw [Functor.Monoidal.map_rightUnitor, sheafification_η]
+  rw [Functor.Monoidal.map_rightUnitor]
+  erw [sheafification_η R]
   simp only [assoc, Functor.Monoidal.μ_δ_assoc, tensorHom_def, ← whiskerLeft_comp_assoc,
     Iso.inv_hom_id, whiskerLeft_id]
   -- The unit `SheafOfModules.unit` produced by the unit comparison is `𝟙_` by `tensorUnit_eq`.
@@ -285,7 +289,8 @@ lemma forget_ε : Functor.LaxMonoidal.ε (_root_.SheafOfModules.forget (ringCatS
   have h : (sheafificationUnitIso R).hom =
       (sheafificationForgetAdjunction R).counit.app (𝟙_ _) :=
     sheafificationUnitIso_hom R
-  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε, sheafification_η, h]
+  rw [forgetLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε]
+  erw [sheafification_η R, h]
   exact ((sheafificationForgetAdjunction R).homEquiv_unit _ _ _).trans
     ((sheafificationForgetAdjunction R).right_triangle_components (𝟙_ _))
 

@@ -82,7 +82,7 @@ germs of `m` and `n`. -/
 theorem tensorStalkComparison_germ_unit_tmul (U : Opens X) (hx : x ∈ U)
     (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
     dsimp% only [PresheafOfModules.presheaf_obj_coe, CategoryTheory.Functor.id_obj,
-      CategoryTheory.Functor.comp_obj]
+      sheafCompose_obj_obj, CategoryTheory.Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     (tensorStalkComparison R M N x
         (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf U x hx
           ((tensorProductIso R M N).inv.val.app (op U)
