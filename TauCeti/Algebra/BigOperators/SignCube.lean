@@ -299,7 +299,7 @@ In a star-ordered ring, the sign functions `ε ↦ εₖ` are orthonormal for th
 
 section Bessel
 
-variable {R : Type*} [NonUnitalRing R] [StarRing R] [Module ℝ R] [StarModule ℝ R]
+variable {R : Type*} [NonUnitalRing R] [StarRing R] [Module ℝ R]
   [IsScalarTower ℝ R R] [SMulCommClass ℝ R R]
 
 omit [SMulCommClass ℝ R R] in
@@ -312,7 +312,7 @@ private theorem finiteMean_star_mul_rademacherSum (Φ : (ι → ℤˣ) → R) :
   simp only [rademacherSum_def, Finset.mul_sum, mul_smul_comm, ← smul_mul_assoc,
     finiteMean_sum, finiteMean_mul_const, star_finiteMean, star_zsmul]
 
-variable [PartialOrder R] [StarOrderedRing R]
+variable [PartialOrder R] [StarOrderedRing R] [StarModule ℝ R]
 
 /-- **Bessel's inequality for the sign functions.** For `Φ : (ι → ℤˣ) → R`, the coefficients
 `yₖ = 𝔼 εₖ Φ` satisfy `∑ₖ yₖ* yₖ ≤ 𝔼 Φ* Φ`. -/

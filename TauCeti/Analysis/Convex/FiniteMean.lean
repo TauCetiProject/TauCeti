@@ -122,11 +122,13 @@ theorem finiteMean_sum {κ : Type*} (s : Finset κ) (z : κ → ι → E) :
   simp only [finiteMean_eq_inv_smul_sum, smul_sum]
   exact sum_comm
 
-/-- The mean commutes with `star`. -/
+/-- The mean commutes with `star`. Since `star` is additive, it commutes with the weight
+`(card ι)⁻¹`, so no compatibility between `star` and the scalars is needed. -/
 @[simp]
-theorem star_finiteMean [Star R] [TrivialStar R] [StarAddMonoid E] [StarModule R E] (z : ι → E) :
+theorem star_finiteMean [StarAddMonoid E] (z : ι → E) :
     star (finiteMean R z) = finiteMean R fun i ↦ star (z i) := by
-  simp only [finiteMean_eq_inv_smul_sum, star_smul, star_sum, star_trivial]
+  simp only [finiteMean_eq_inv_smul_sum, ← star_sum]
+  exact map_inv_natCast_smul (starAddEquiv (R := E)) R R _ _
 
 section Ring
 

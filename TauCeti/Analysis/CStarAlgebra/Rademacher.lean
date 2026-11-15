@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import TauCeti.Algebra.BigOperators.SignCube
 public import TauCeti.Analysis.CStarAlgebra.Module.Constructions
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 
 /-!
 # Rademacher sums in C⋆-algebras
