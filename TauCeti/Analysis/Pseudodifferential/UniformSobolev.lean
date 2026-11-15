@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
 public import TauCeti.Analysis.Pseudodifferential.L2
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -44,10 +45,14 @@ Schwartz functions.
 
 * `TauCeti.Symbol.quantizeUniform`: the bounded extension `H^s(ℝⁿ; V) →L[ℂ] H^{s - m}(ℝⁿ; W)` of
   `Op(a)` for a uniform symbol `a` of order `m`, with
-  `TauCeti.Symbol.quantizeUniform_toBesselPotentialSpaceCLM` and
-  `TauCeti.Symbol.toDistr_quantizeUniform_toBesselPotentialSpaceCLM_apply`.
+  `TauCeti.Symbol.quantizeUniform_toBesselPotentialSpaceCLM`,
+  `TauCeti.Symbol.toDistr_quantizeUniform_toBesselPotentialSpaceCLM_apply`, and
+  `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM` (specializing to
+  `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_zero` and
+  `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul`).
 * `TauCeti.Symbol.exists_quantizeUniform`: all-real-order `H^s → H^{s - m}` boundedness for
-  finite-dimensional complex normed coefficient spaces.
+  finite-dimensional complex normed coefficient spaces (specializing to
+  `TauCeti.Symbol.exists_quantizeUniformSobolev_of_sub_eq_two_mul`).
 * `TauCeti.Symbol.quantizeUniform_eq_quantizeSobolev`,
   `TauCeti.Symbol.quantizeUniform_zero_eq_quantizeUniformOrderZero`: compatibility with the compact
   spatial support Sobolev extension and the order-zero `L²` extension.
@@ -98,16 +103,6 @@ private theorem isUniform_besselConjSymbol {a : Symbol n V W m} (ha : a.IsUnifor
   ((isUniform_besselPotential (s - m)).uniformSharp
     (ha.comp (isUniform_besselPotential (-s)))).inclusion (by linarith)
 
-omit [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] in
-private theorem fourierMultiplierCLM_neg_fourierMultiplierCLM (s : ℝ)
-    (u : 𝓢(CoordinateSpace n, V)) :
-    SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ))
-        (SchwartzMap.fourierMultiplierCLM V
-          (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u) = u := by
-  simpa only [neg_neg] using
-    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg (-s) u
-
 /-- Applying `Op(besselConjSymbol a ha s)` to `J^s u` gives `J^{s - m} (Op(a) u)`. -/
 private theorem quantizeSchwartzValue_besselConjSymbol {a : Symbol n V W m} (ha : a.IsUniform)
     (s : ℝ) (u : 𝓢(CoordinateSpace n, V)) :
@@ -119,20 +114,18 @@ private theorem quantizeSchwartzValue_besselConjSymbol {a : Symbol n V W m} (ha 
         (quantizeUniformCLM a ha u)) := by
   set v := SchwartzMap.fourierMultiplierCLM V
     (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u
-  have hbv : quantizeUniformCLM (besselPotential (-s) : Symbol n V V (-s))
-      (isUniform_besselPotential (-s)) v = u := by
-    ext y
-    rw [quantizeUniformCLM_apply, quantizeSchwartzValue_besselPotential]
-    exact congrArg (· y) (fourierMultiplierCLM_neg_fourierMultiplierCLM s u)
   have hav : quantizeUniformCLM (a.comp (besselPotential (-s)))
       (ha.comp (isUniform_besselPotential (-s))) v = quantizeUniformCLM a ha u := by
-    have hcoeff : (a.comp (besselPotential (-s))).coefficient =
-        (a.uniformSharp (besselPotential (-s)) (isUniform_besselPotential (-s))).coefficient :=
-      congrArg Symbol.coefficient (a.uniformSharp_besselPotential (-s)).symm
-    ext x
-    rw [quantizeUniformCLM_apply, hcoeff,
-      quantizeSchwartzValue_uniformSharp a (isUniform_besselPotential (-s)), hbv,
-      quantizeUniformCLM_apply]
+    have hcomp : quantizeUniformCLM (a.comp (besselPotential (-s)))
+          (ha.comp (isUniform_besselPotential (-s))) ∘L
+        SchwartzMap.fourierMultiplierCLM V
+          (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) =
+        quantizeUniformCLM a ha := by
+      rw [quantizeUniformCLM_comp_besselMultiplier]
+      exact quantizeUniformCLM_congr _ ha (by
+        rw [coefficient_comp_besselPotential_comp_besselPotential, neg_add_cancel,
+          coefficient_comp_besselPotential_zero])
+    exact congrArg (· u) hcomp
   funext x
   rw [besselConjSymbol, coefficient_inclusion,
     quantizeSchwartzValue_besselPotential_uniformSharp
@@ -241,6 +234,17 @@ theorem exists_quantizeUniform [FiniteDimensional ℂ V] [FiniteDimensional ℂ 
   rw [quantizeUniform_toBesselPotentialSpaceCLM_of_finiteDimensional ha s u,
     SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.coe_apply, coe_quantizeUniformCLM]
 
+/-- **Sobolev mapping of uniform symbols at even steps** between finite-dimensional complex normed
+spaces (`s - m = 2 * k`), a special case of `TauCeti.Symbol.exists_quantizeUniform`. -/
+theorem exists_quantizeUniformSobolev_of_sub_eq_two_mul
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] (a : Symbol n V W m) (ha : a.IsUniform)
+    {s : ℝ} {k : ℤ} (_hk : s - m = 2 * k) :
+    ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m}(CoordinateSpace n, W),
+      ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
+        (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+          ∫ x, φ x • quantizeSchwartzValue a.coefficient u x :=
+  exists_quantizeUniform a ha s
+
 end NormedSpace
 
 /-! ### Complex Hilbert coefficient spaces and operator calculus on `H^s` -/
@@ -281,6 +285,38 @@ theorem toDistr_quantizeUniform_toBesselPotentialSpaceCLM_apply {a : Symbol n V 
       ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
   rw [quantizeUniform_toBesselPotentialSpaceCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     SchwartzMap.coe_apply, coe_quantizeUniformCLM]
+
+/-- Uniform symbols of order `m` between complex Hilbert spaces quantize to bounded operators
+`H^s → H^{s - m}` for every real `s`. -/
+theorem hasSobolevExtension_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ) :
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) :=
+  SchwartzMap.hasSobolevExtension_iff.mpr
+    ⟨a.quantizeUniform ha s,
+      ContinuousLinearMap.ext (quantizeUniform_toBesselPotentialSpaceCLM ha s)⟩
+
+/-- **Calderón–Vaillancourt.** The quantization of a uniform symbol of order at most `0` extends
+to a bounded operator on `H⁰ = L²`. -/
+theorem hasSobolevExtension_quantizeUniformCLM_zero {b : Symbol n V W m}
+    (hb : b.IsUniform) (hm : m ≤ 0) :
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM b hb) 0 0 :=
+  (hasSobolevExtension_quantizeUniformCLM b hb 0).mono (by linarith)
+
+/-- Uniform symbols of order `m` quantize to bounded operators `H^s → H^{s - m}` when
+`s - m ∈ 2ℤ`, a special case of `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`. -/
+theorem hasSobolevExtension_quantizeUniformCLM_of_sub_eq_two_mul (a : Symbol n V W m)
+    (ha : a.IsUniform) {s : ℝ} {k : ℤ} (_hk : s - m = 2 * k) :
+    SchwartzMap.HasSobolevExtension (quantizeUniformCLM a ha) s (s - m) :=
+  hasSobolevExtension_quantizeUniformCLM a ha s
+
+/-- **Sobolev mapping of uniform symbols at even steps**, for complex Hilbert fibres, a special
+case of `TauCeti.Symbol.toDistr_quantizeUniform_toBesselPotentialSpaceCLM_apply`. -/
+theorem exists_quantizeUniformSobolevHilbert_of_sub_eq_two_mul (a : Symbol n V W m)
+    (ha : a.IsUniform) {s : ℝ} {k : ℤ} (_hk : s - m = 2 * k) :
+    ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m}(CoordinateSpace n, W),
+      ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
+        (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+          ∫ x, φ x • quantizeSchwartzValue a.coefficient u x :=
+  ⟨a.quantizeUniform ha s, toDistr_quantizeUniform_toBesselPotentialSpaceCLM_apply ha s⟩
 
 private theorem quantizeUniform_congr {a b : Symbol n V W m} (hab : a = b) (ha : a.IsUniform)
     (hb : b.IsUniform) (s : ℝ) : a.quantizeUniform ha s = b.quantizeUniform hb s := by
