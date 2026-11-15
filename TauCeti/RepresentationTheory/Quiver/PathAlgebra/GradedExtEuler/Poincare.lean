@@ -175,11 +175,13 @@ def extZeroGradedVertexSimpleShiftObjLinearEquiv (i : Q)
     (hY : ∀ p, p ≠ 0 → Y.grading.piece p = ⊥) :
     Ext.{t} (gradedVertexSimple k Q i) (Y.shiftObj 0) 0 ≃ₗ[k]
       ↥(vertexIdempotent k i • Y.grading.piece 0) := by
+  have hs := shortExact_gradedVertexSimpleResolution k Q i
+  rw [gradedVertexSimpleResolution_def] at hs
   let aug : (gradedVertexSimple k Q i ⟶ Y.shiftObj 0) ≃ₗ[k]
       (gradedVertexProjective k Q i ⟶ Y.shiftObj 0) :=
     LinearEquiv.ofBijective (Linear.leftComp k _ (gradedVertexProjectiveToSimple k Q i))
       ⟨fun _ _ h => (cancel_epi _).mp h, fun f =>
-        (shortExact_mk_gradedArrowSumToVertexProjective k Q i).exact.desc' f <|
+        hs.exact.desc' f <|
           (isLinear_gradedVertexSimpleProjectiveResolution k Q i).hom_eq_zero 1
             (by simpa [sub_eq_add_neg] using hY 1 one_ne_zero)
             (gradedArrowSumToVertexProjective k Q i ≫ f)⟩

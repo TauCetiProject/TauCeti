@@ -117,16 +117,6 @@ theorem gradedVertexSimple_piece_eq_bot (i : Q) {p : ℤ} (hp : p ≠ 0) :
     (vertexIdempotent_mul_self i)
     (vertexIdempotent_mem_integerGrade_zero k Q i) hp
 
-/-- The first-arrow short exactness restated directly on the explicit `ShortComplex.mk`, so its
-outer and middle objects reduce definitionally to `gradedArrowSum`, `gradedVertexProjective`, and
-`gradedVertexSimple`. -/
-theorem shortExact_mk_gradedArrowSumToVertexProjective (i : Q) :
-    (ShortComplex.mk (gradedArrowSumToVertexProjective k Q i)
-      (gradedVertexProjectiveToSimple k Q i)
-      (gradedArrowSumToVertexProjective_comp_gradedVertexProjectiveToSimple k Q i)).ShortExact := by
-  rw [← gradedVertexSimpleResolution_def]
-  exact shortExact_gradedVertexSimpleResolution k Q i
-
 /-- **The first-arrow graded projective resolution of a vertex simple `Sᵢ`.** Its degree-`0` term
 is `kQ eᵢ`, its degree-`1` term is `⨁_{a : i ⟶ j} (kQ eⱼ){1}`, and its terms vanish from
 homological degree `2` on.
@@ -137,7 +127,8 @@ abbrev gradedVertexSimpleProjectiveResolution (i : Q) :
     GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
       (integerGrade k Q) (gradedVertexSimple k Q i).grading :=
   GradedProjectiveResolution.ofShortExact
-    (shortExact_mk_gradedArrowSumToVertexProjective k Q i)
+    (Eq.mp (congrArg ShortComplex.ShortExact (gradedVertexSimpleResolution_def k Q i))
+      (shortExact_gradedVertexSimpleResolution k Q i))
 
 /-- In homological degree `0`, the resolution of `Sᵢ` has term `kQ eᵢ`. -/
 theorem gradedVertexSimpleProjectiveResolution_termObj_zero (i : Q) :
@@ -167,8 +158,7 @@ theorem gradedVertexSimpleProjectiveResolution_augmentation (i : Q) :
 `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is generated in degree `1`, and higher terms vanish. -/
 theorem isLinear_gradedVertexSimpleProjectiveResolution (i : Q) :
     (gradedVertexSimpleProjectiveResolution k Q i).IsLinear :=
-  (GradedProjectiveResolution.isLinear_ofShortExact_iff
-    (shortExact_mk_gradedArrowSumToVertexProjective k Q i)).2
+  (GradedProjectiveResolution.isLinear_ofShortExact_iff _).2
     ⟨isGeneratedInDegree_gradedVertexProjective k Q i,
       isGeneratedInDegree_gradedArrowSum k Q i⟩
 
