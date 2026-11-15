@@ -30,9 +30,9 @@ When `K` has prime characteristic `p`, `[p]` has degree `p² = deg_s [p] · deg_
   coefficient of `(formalGroup W).invariantDifferential` is nonzero.
 
 Consequently the formal group of every elliptic curve over a field of prime characteristic `p` has
-height `1` or `2` (in particular at most `2`), extending the characteristic `2` and `3` results of
-`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two` and
-`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three` to every prime.
+height `1` or `2` (in particular at most `2`), complementing the explicit characteristic `2` and `3`
+height-two criteria of `TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two` and
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three`.
 
 ## Main results
 
@@ -136,6 +136,13 @@ theorem order_nsmulSeries_formalGroup_eq_inseparableDegree {n : ℕ} (hn : (n : 
       ((mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree : ℕ∞) := by
   rw [← formalSeries_mulByIntIsogenyOfNeZero_natCast W hn, order_formalSeries_eq_inseparableDegree]
 
+private theorem separableDegree_mul_inseparableDegree_mulByIntIsogenyOfNeZero_natCast
+    {n : ℕ} (hn : (n : ℤ) ≠ 0) :
+    (mulByIntIsogenyOfNeZero W.toAffine hn).separableDegree *
+      (mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree = n ^ 2 := by
+  rw [(mulByIntIsogenyOfNeZero W.toAffine hn).separableDegree_mul_inseparableDegree,
+    degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast]
+
 private theorem not_isSupersingular_zero : ¬W.IsSupersingular 0 := by
   classical
   obtain ⟨P, hP⟩ := exists_ne (0 : (W.baseChange (AlgebraicClosure K)).toAffine.Point)
@@ -151,10 +158,7 @@ theorem isSupersingular_iff_height_formalGroup_eq_two {p : ℕ} [CharP K p] :
     -- `deg_i [p] = p²`, i.e. `[p]_Ê` has order `p²`.
     have : ExpChar K p := .prime hp
     have hpz : (p : ℤ) ≠ 0 := mod_cast expChar_ne_zero K p
-    set φ := mulByIntIsogenyOfNeZero W.toAffine hpz
-    have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-      rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
-        Int.natAbs_natCast]
+    have hdeg := W.separableDegree_mul_inseparableDegree_mulByIntIsogenyOfNeZero_natCast hpz
     rw [isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p W,
       ← Nat.cast_ofNat (R := ℕ∞) (n := 2), (formalGroup W).height_eq_natCast_iff,
       W.order_nsmulSeries_formalGroup_eq_inseparableDegree hpz, Nat.cast_inj (R := ℕ∞)]
@@ -172,10 +176,7 @@ theorem isOrdinary_iff_height_formalGroup_eq_one {p : ℕ} [hp : Fact p.Prime] [
   -- `deg_s [p] · deg_i [p] = p²`, so `deg_s [p] = p` iff `deg_i [p] = p`.
   have : ExpChar K p := .prime hp.out
   have hpz : (p : ℤ) ≠ 0 := mod_cast expChar_ne_zero K p
-  set φ := mulByIntIsogenyOfNeZero W.toAffine hpz
-  have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-    rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast]
+  have hdeg := W.separableDegree_mul_inseparableDegree_mulByIntIsogenyOfNeZero_natCast hpz
   rw [isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p W hp.out,
     ← Nat.cast_one (R := ℕ∞), (formalGroup W).height_eq_natCast_iff, pow_one,
     W.order_nsmulSeries_formalGroup_eq_inseparableDegree hpz, Nat.cast_inj (R := ℕ∞)]

@@ -92,8 +92,7 @@ variable {K : Type*} [DivisionRing K]
 def subLtOneSubfield (v : Valuation B Γ₀) (f c : K →+* B) (hc : ∀ a, v (c a) ≤ 1) : Subfield K :=
   { v.subLtOneSubring f c hc with
     inv_mem' := fun {a} ha ↦ by
-      change v (f a - c a) < 1 at ha
-      change v (f a⁻¹ - c a⁻¹) < 1
+      rw [Subring.mem_carrier, mem_subLtOneSubring] at ha ⊢
       rcases eq_or_ne a 0 with rfl | ha0
       · simp
       have hmul_c : v (c a) * v (c a⁻¹) = 1 := by

@@ -18,7 +18,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
 import TauCeti.RingTheory.LaurentSeries.Basic
-import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -217,10 +216,6 @@ end BaseChangeAndNeg
 
 /-! ### Projective formal points over `K⸨X⸩` and addition of formal series -/
 
-local instance instIsScalarTowerLaurentSeriesSelf {L : Type*} [Field L] :
-    IsScalarTower L L L⸨X⸩ :=
-  ⟨fun a b f ↦ mul_smul a b f⟩
-
 section FormalPointAddition
 
 variable {K : Type*} [Field K]
@@ -230,6 +225,11 @@ variable {K : Type*} [Field K]
 private noncomputable def formalPointRep (W : WeierstrassCurve K) (q : K⟦X⟧) : Fin 3 → K⸨X⸩ :=
   ofPowerSeries ℤ K ∘ ![q, -1, PowerSeries.subst q (formalW W)]
 
+private theorem map_ofPowerSeries_map_algebraMap (W : WeierstrassCurve K) :
+    (W.map (algebraMap K K⟦X⟧)).map (ofPowerSeries ℤ K) = W⁄K⸨X⸩ := by
+  rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map,
+    HahnSeries.ofPowerSeries_comp_algebraMap]
+
 private theorem nonsingular_formalPointRep (W : WeierstrassCurve K) [W.IsElliptic] {q : K⟦X⟧}
     (hq : PowerSeries.constantCoeff q = 0) :
     (W⁄K⸨X⸩).toProjective.Nonsingular (formalPointRep W q) := by
@@ -238,10 +238,7 @@ private theorem nonsingular_formalPointRep (W : WeierstrassCurve K) [W.IsEllipti
   have heq :=
     (W.toProjective.equation_neg_one_iff_wEquation q (PowerSeries.subst q (formalW W))).mpr
       (W.subst_formalW_wEquation (.of_constantCoeff_zero' hq))
-  have hcurve : (W.map (algebraMap K K⟦X⟧)).map (ofPowerSeries ℤ K) = W⁄K⸨X⸩ := by
-    rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map,
-      HahnSeries.ofPowerSeries_comp_algebraMap]
-  simpa only [hcurve, formalPointRep] using heq.map (ofPowerSeries ℤ K)
+  simpa only [map_ofPowerSeries_map_algebraMap, formalPointRep] using heq.map (ofPowerSeries ℤ K)
 
 private theorem formalPointRep_eq_of_toAffine_eq (W : WeierstrassCurve K) [W.IsElliptic]
     {q₁ q₂ : K⟦X⟧} (hq₁ : PowerSeries.constantCoeff q₁ = 0)
@@ -262,17 +259,16 @@ private theorem formalPointRep_eq_of_toAffine_eq (W : WeierstrassCurve K) [W.IsE
   simpa only [formalPointRep, Function.comp_apply, Pi.smul_apply, Units.smul_def, smul_eq_mul,
     Matrix.cons_val_zero, hu1, one_mul] using h0.symm
 
-/-- Specializing `dblAddXYZ_formalW_eq_smul` along two power series `q₁, q₂ ∈ K⟦X⟧` with vanishing
-constant coefficient. -/
-private theorem dblAddXYZ_formalW_powerSeries_eq_smul (W : WeierstrassCurve K) {q₁ q₂ : K⟦X⟧}
-    (hq₁ : PowerSeries.constantCoeff q₁ = 0) (hq₂ : PowerSeries.constantCoeff q₂ = 0) :
-    (W.toProjective.map (algebraMap K K⟦X⟧)).dblAddXYZ
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-        ![q₂, -1, PowerSeries.subst q₂ W.formalW] =
-      -(W.toProjective.map (algebraMap K K⟦X⟧)).dblAddY
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-        ![q₂, -1, PowerSeries.subst q₂ W.formalW] •
-        ![MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries, -1,
+/-- Specializing `dblAddXYZ_formalW_eq_smul` and `isUnit_dblAddY_formalW` along two power series
+`q₁, q₂ ∈ K⟦X⟧` with vanishing constant coefficient. -/
+private theorem exists_dblAddXYZ_formalW_powerSeries_eq_smul (W : WeierstrassCurve K)
+    {q₁ q₂ : K⟦X⟧} (hq₁ : PowerSeries.constantCoeff q₁ = 0)
+    (hq₂ : PowerSeries.constantCoeff q₂ = 0) :
+    ∃ u : K⟦X⟧, IsUnit u ∧
+      (W.toProjective.map (algebraMap K K⟦X⟧)).dblAddXYZ
+          ![q₁, -1, PowerSeries.subst q₁ W.formalW]
+          ![q₂, -1, PowerSeries.subst q₂ W.formalW] =
+        u • ![MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries, -1,
           PowerSeries.subst (MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries)
             W.formalW] := by
   have hs := (PowerSeries.hasSubst_pair hq₁ hq₂).comp_tendstoCofinite
@@ -300,34 +296,17 @@ private theorem dblAddXYZ_formalW_powerSeries_eq_smul (W : WeierstrassCurve K) {
     simp only [ev, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPowerSeries.coe_substAlgHom]
     rw [formalGroup_toPowerSeries, MvPowerSeries.subst_rename _ _
       (PowerSeries.hasSubst_pair hq₁ hq₂)]
+  refine ⟨-ev ((W.toProjective.map (algebraMap K (MvPowerSeries (Unit ⊕ Unit) K))).dblAddY
+      ![X (Sum.inl ()), -1, PowerSeries.subst (X (Sum.inl ())) W.formalW]
+      ![X (Sum.inr ()), -1, PowerSeries.subst (X (Sum.inr ())) W.formalW]),
+    (W.isUnit_dblAddY_formalW.map ev).neg, ?_⟩
   have hdbl := congrArg (ev ∘ ·) W.dblAddXYZ_formalW_eq_smul
   rw [← Projective.map_dblAddXYZ, hev_curve, h₁, h₂, hev₁, hev₂] at hdbl
-  have hY : ev ((W.toProjective.map (algebraMap K (MvPowerSeries (Unit ⊕ Unit) K))).dblAddY
-      ![X (Sum.inl ()), -1, PowerSeries.subst (X (Sum.inl ())) W.formalW]
-      ![X (Sum.inr ()), -1, PowerSeries.subst (X (Sum.inr ())) W.formalW]) =
-      (W.toProjective.map (algebraMap K K⟦X⟧)).dblAddY
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW] ![q₂, -1, PowerSeries.subst q₂ W.formalW] := by
-    rw [← Projective.map_dblAddY, hev_curve, h₁, h₂, hev₁, hev₂]
   refine hdbl.trans ?_
   funext k
   have hk := congrFun hF k
   rw [hevF] at hk
-  simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, map_mul, map_neg, hY, ← hk]
-
-private theorem constantCoeff_dblAddY_formalW (W : WeierstrassCurve K) {q₁ q₂ : K⟦X⟧}
-    (hq₁ : PowerSeries.constantCoeff q₁ = 0) (hq₂ : PowerSeries.constantCoeff q₂ = 0) :
-    PowerSeries.constantCoeff ((W.toProjective.map (algebraMap K K⟦X⟧)).dblAddY
-      ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-      ![q₂, -1, PowerSeries.subst q₂ W.formalW]) = 1 := by
-  have hc (q : K⟦X⟧) (hq : PowerSeries.constantCoeff q = 0) :
-      PowerSeries.constantCoeff ∘ ![q, -1, PowerSeries.subst q W.formalW] = ![0, -1, 0] := by
-    funext k
-    fin_cases k
-    · exact hq
-    · simp
-    · exact PowerSeries.constantCoeff_subst_eq_zero hq _ W.constantCoeff_formalW
-  rw [← Projective.map_dblAddY, hc q₁ hq₁, hc q₂ hq₂]
-  simp [Projective.dblAddY]
+  simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, map_mul, map_neg, ← hk]
 
 /-- On `W⁄K⸨X⸩`, adding the affine points of `[q₁ : -1 : w(q₁)]` and `[q₂ : -1 : w(q₂)]` yields
 the affine point of `[F(q₁, q₂) : -1 : w(F(q₁, q₂))]`. -/
@@ -339,38 +318,31 @@ private theorem toAffine_formalPointRep_add [DecidableEq K⸨X⸩] (W : Weierstr
       Projective.Point.toAffine (W⁄K⸨X⸩).toProjective (formalPointRep W q₂) =
     Projective.Point.toAffine (W⁄K⸨X⸩).toProjective
       (formalPointRep W (MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries)) := by
-  have hYc := constantCoeff_dblAddY_formalW W hq₁ hq₂
-  set Y := (W.toProjective.map (algebraMap K K⟦X⟧)).dblAddY
-    ![q₁, -1, PowerSeries.subst q₁ W.formalW] ![q₂, -1, PowerSeries.subst q₂ W.formalW]
-  have hY0 : ofPowerSeries ℤ K Y ≠ 0 :=
-    (map_ne_zero_iff _ ofPowerSeries_injective).mpr fun h ↦ by simp [h] at hYc
+  obtain ⟨u, hu_unit, hu_eq⟩ := exists_dblAddXYZ_formalW_powerSeries_eq_smul W hq₁ hq₂
+  have hu' : IsUnit (ofPowerSeries ℤ K u) := hu_unit.map (ofPowerSeries ℤ K)
   have hD : (W⁄K⸨X⸩).toProjective.dblAddXYZ (formalPointRep W q₁) (formalPointRep W q₂) =
-      (-ofPowerSeries ℤ K Y) •
+      ofPowerSeries ℤ K u •
         formalPointRep W (MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries) := by
     have hcurve : (W.toProjective.map (algebraMap K K⟦X⟧)).map (ofPowerSeries ℤ K) =
         (W⁄K⸨X⸩).toProjective :=
-      congrArg WeierstrassCurve.toProjective (by
-        rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map,
-          HahnSeries.ofPowerSeries_comp_algebraMap])
+      congrArg WeierstrassCurve.toProjective (map_ofPowerSeries_map_algebraMap W)
     have hmap := Projective.map_dblAddXYZ (W' := W.toProjective.map (algebraMap K K⟦X⟧))
       (ofPowerSeries ℤ K) ![q₁, -1, PowerSeries.subst q₁ W.formalW]
       ![q₂, -1, PowerSeries.subst q₂ W.formalW]
     rw [hcurve] at hmap
     refine hmap.trans ?_
-    rw [dblAddXYZ_formalW_powerSeries_eq_smul W hq₁ hq₂]
+    rw [hu_eq]
     funext k
-    simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, map_mul, map_neg, neg_mul,
-      formalPointRep, Y]
+    simp only [Function.comp_apply, Pi.smul_apply, smul_eq_mul, map_mul, formalPointRep]
   have hD0 : (W⁄K⸨X⸩).toProjective.dblAddXYZ (formalPointRep W q₁) (formalPointRep W q₂) ≠ 0 := by
     intro h0
     have h1 := congrFun (hD.symm.trans h0) 1
-    simp [formalPointRep, hY0] at h1
+    simp [formalPointRep, hu'.ne_zero] at h1
   have hN₁ := nonsingular_formalPointRep W hq₁
   have hN₂ := nonsingular_formalPointRep W hq₂
   rw [← Projective.Point.toAffine_add hN₁ hN₂,
     ← Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ hD0), hD,
-    Projective.Point.toAffine_of_equiv
-      (Projective.smul_equiv _ (isUnit_iff_ne_zero.mpr hY0).neg)]
+    Projective.Point.toAffine_of_equiv (Projective.smul_equiv _ hu')]
 
 /-- For a nonzero power series `q` with zero constant coefficient, `[q : -1 : w(q)]` represents
 the generic point evaluated along Laurent substitution by `q`. -/
@@ -558,32 +530,6 @@ private theorem pointMap_toAffine_formalPointRep {W₁ W₂ : WeierstrassCurve K
         φ.formalSeries_ne_zero hq₀ hq _
   rw [hσ]
 
-/-- For any formal group `F` over `K⸨X⸩`, `F(X, T X)` is nonzero: its linear coefficient is
-`1 + T ≠ 0`. -/
-private theorem subst_X_single_smul_X_formalGroup_ne_zero (F : FormalGroup K⸨X⸩) :
-    MvPowerSeries.subst
-      ![(PowerSeries.X : K⸨X⸩⟦X⟧), (HahnSeries.single 1 (1 : K) : K⸨X⸩) • PowerSeries.X]
-      F.toPowerSeries ≠ 0 := by
-  intro h0
-  have h1 := congrArg
-    (fun g : K⸨X⸩⟦X⟧ ↦ (PowerSeries.coeff 1 (homogeneousComponent 1 g)).coeff 1) h0
-  have hX0 : MvPowerSeries.constantCoeff (PowerSeries.X : K⸨X⸩⟦X⟧) = 0 :=
-    PowerSeries.constantCoeff_X
-  have hq₁c : MvPowerSeries.constantCoeff
-      ((HahnSeries.single 1 (1 : K) : K⸨X⸩) • (PowerSeries.X : K⸨X⸩⟦X⟧)) = 0 := by
-    simp [hX0]
-  rw [homogeneousComponent_one_subst_pair F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y
-    PowerSeries.constantCoeff_X hq₁c, map_zero, (PowerSeries.coeff 1).map_zero,
-    HahnSeries.coeff_zero] at h1
-  have hcoeff (g : K⸨X⸩⟦X⟧) : PowerSeries.coeff 1 (homogeneousComponent 1 g) =
-      PowerSeries.coeff 1 g := by
-    rw [PowerSeries.coeff_def Finsupp.single_eq_same, coeff_homogeneousComponent,
-      ite_eq_left (by simp)]
-  rw [map_add, hcoeff, hcoeff, PowerSeries.coeff_smul, PowerSeries.coeff_one_X, smul_eq_mul,
-    mul_one, HahnSeries.coeff_add, HahnSeries.coeff_one, ite_eq_right one_ne_zero,
-    HahnSeries.coeff_single_same, zero_add] at h1
-  exact one_ne_zero h1
-
 variable {W₁ W₂ W₃ : WeierstrassCurve K}
 
 private theorem map_homDefect_formalSeries {L : Type*} [Field L]
@@ -620,6 +566,12 @@ private theorem homDefect_formalSeries (φ : Isogeny W₁.toAffine W₂.toAffine
   have hF₁c : PowerSeries.constantCoeff F₁ = 0 :=
     MvPowerSeries.constantCoeff_subst_eq_zero (PowerSeries.hasSubst_pair hq₀c hq₁c)
       (fun i ↦ by fin_cases i; exacts [hq₀c, hq₁c]) (formalGroup (W₁.map ι)).zero_constantCoeff
+  have hF₁ : F₁ ≠ 0 := fun h0 ↦ by
+    dsimp only [F₁, q₀, q₁, ι] at h0
+    rw [map_formalGroup, FormalGroup.map_toPowerSeries] at h0
+    have h1 := (formalGroup W₁).lin_coeff_X
+    rw [LaurentSeries.eq_zero_of_subst_X_single_smul_X h0, map_zero] at h1
+    exact zero_ne_one h1
   have hφq₀c : PowerSeries.constantCoeff (PowerSeries.subst q₀ φ'.formalSeries) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero hq₀c _ φ'.constantCoeff_formalSeries
   have hφq₁c : PowerSeries.constantCoeff (PowerSeries.subst q₁ φ'.formalSeries) = 0 :=
@@ -631,7 +583,7 @@ private theorem homDefect_formalSeries (φ : Isogeny W₁.toAffine W₂.toAffine
     (PowerSeries.constantCoeff_subst_eq_zero hF₁c _ φ'.constantCoeff_formalSeries)
     (MvPowerSeries.constantCoeff_subst_eq_zero (PowerSeries.hasSubst_pair hφq₀c hφq₁c)
       (fun i ↦ by fin_cases i; exacts [hφq₀c, hφq₁c]) (formalGroup (W₂.map ι)).zero_constantCoeff)
-  rw [← pointMap_toAffine_formalPointRep φ' hF₁c (subst_X_single_smul_X_formalGroup_ne_zero _),
+  rw [← pointMap_toAffine_formalPointRep φ' hF₁c hF₁,
     ← toAffine_formalPointRep_add (W₂.map ι) hφq₀c hφq₁c,
     ← pointMap_toAffine_formalPointRep φ' hq₀c hq₀,
     ← pointMap_toAffine_formalPointRep φ' hq₁c hq₁]
