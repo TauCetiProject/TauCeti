@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
@@ -73,45 +74,8 @@ open FourierTransform MeasureTheory Metric Module Function LineDeriv
 
 namespace SchwartzMap
 
-variable {V H : Type*} [NormedAddCommGroup V]
-
-section Pointwise
-
-variable [NormedSpace ℝ V] [NormedAddCommGroup H] [NormedSpace ℝ H]
-
-/-- On a function vanishing outside `closedBall 0 t`, multiplication by a continuous linear
-functional `L` costs at most the factor `t ‖L‖`. -/
-private theorem norm_clm_smul_le_of_tsupport_subset {g : V → H} {t : ℝ}
-    (hg : tsupport g ⊆ closedBall 0 t) (L : V →L[ℝ] ℝ) (ξ : V) :
-    ‖L ξ • g ξ‖ ≤ t * ‖L‖ * ‖g ξ‖ := by
-  by_cases hξ : ξ ∈ tsupport g
-  · rw [norm_smul]
-    gcongr
-    refine (L.le_opNorm ξ).trans ?_
-    rw [mul_comm t]
-    gcongr
-    simpa using hg hξ
-  · simp [image_eq_zero_of_notMem_tsupport hξ]
-
-/-- For `σ` vanishing outside `closedBall 0 t` and `‖v‖ ≤ 1`, the Leibniz rule bounds the
-`(k + 1)`-st derivative of `L σ` along `v` by
-`t ‖L‖ ‖∂_v^(k+1) σ‖ + (k + 1) ‖L‖ ‖∂_v^k σ‖`. -/
-private theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t : ℝ}
-    (hσ : tsupport σ ⊆ closedBall 0 t) {v : V} (hv : ‖v‖ ≤ 1) (L : V →L[ℝ] ℝ) (k : ℕ) (ξ : V) :
-    ‖(∂_{v})^[k + 1] (smulLeftCLM H L σ) ξ‖ ≤
-      t * ‖L‖ * ‖(∂_{v})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{v})^[k] σ ξ‖ := by
-  rw [iterate_lineDerivOp_smulLeftCLM_clm, add_apply, smul_apply,
-    smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_add_le _ _).trans (add_le_add (norm_clm_smul_le_of_tsupport_subset
-    ((iteratedLineDerivOp_const_eq_iter_lineDerivOp (k + 1) v σ ▸
-      tsupport_iteratedLineDerivOp_subset _ σ).trans hσ) L ξ) ?_)
-  rw [norm_smul, norm_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  gcongr
-  exact (L.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg _) hv)
-
-end Pointwise
-
-variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
 
 section Real
 
@@ -165,7 +129,7 @@ private theorem norm_toLp_smulLeftCLM_clm_le (σ : 𝓢(V, H)) {t M : ℝ} (ht :
   refine norm_toLp_two_le_of_support_subset_closedBall _ ht ((subset_tsupport _).trans
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ))) fun ξ ↦ ?_
   rw [smulLeftCLM_apply_apply L.hasTemperateGrowth]
-  refine (norm_clm_smul_le_of_tsupport_subset hσ L ξ).trans ?_
+  refine (L.norm_smul_le_of_support_subset_closedBall ((subset_tsupport _).trans hσ) ξ).trans ?_
   gcongr
   exact hσM ξ
 
@@ -184,8 +148,9 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le {ι
   refine sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b _ (k + 1) ht.le (by positivity)
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ)) fun i ξ ↦ ?_
   calc ‖(∂_{b i})^[k + 1] (smulLeftCLM H L σ) ξ‖
-      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ :=
-        norm_iterate_lineDerivOp_smulLeftCLM_clm_le σ hσ (b.orthonormal.1 i).le L k ξ
+      ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ := by
+        simpa using norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall L σ
+          ((subset_tsupport _).trans hσ) (b i) k ξ
     _ ≤ t * ‖L‖ * (A / t ^ (k + 1)) + (k + 1) * ‖L‖ * (A / t ^ k) := by
         gcongr
         exacts [hσk' i ξ, hσk i ξ]
