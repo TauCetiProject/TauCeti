@@ -22,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -32,7 +32,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
-    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, pool=pool)))
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, pool=pool)))
     source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
@@ -74,7 +74,7 @@ class PickerWorkflow(unittest.TestCase):
                 output.unlink(missing_ok=True)
                 subprocess.run(["bash", "-e", "-c", step["run"]], check=True,
                                env=dict(os.environ, HOSTED_RUN_ID=str(run_id), GITHUB_OUTPUT=str(output)))
-                self.assertEqual(output.read_text(), "slot=" + str(run_id % 19) + "\nnamespace-slot=" + str(run_id % 8) + "\n")
+                self.assertEqual(output.read_text(), "slot=" + str(run_id % 19) + "\n")
 
     def test_shared_pr_pool_target_is_used_for_this_attempt_only(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -117,6 +117,29 @@ class PickerWorkflow(unittest.TestCase):
             self.assertEqual(expression(group,target=target,pool="namespace",attempt=2),"tauceti-hosted-bulk-0")
             self.assertEqual(concurrency["queue"],"max")
             self.assertFalse(concurrency["cancel-in-progress"])
+
+    def test_namespace_scheduler_groups_resize_with_runtime_cap(self):
+        target = json.dumps(["nscloud-ubuntu-24.04-amd64-8x16-with-features"])
+        for name, job, picker in (("pr-build.yml", "sandboxed-build", "pick-runner"),
+                                  ("nightly-verify.yml", "reference", "pick-reference-runner")):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            group = workflow["jobs"][job]["concurrency"]["group"].replace("needs." + picker, "needs.pick-runner")
+            for cap in (1, 4, 8, 20, 64):
+                actual = {expression(group, target=target, namespace_slot=str(slot), namespace_cap=str(cap))
+                          for slot in range(cap)}
+                self.assertEqual(actual, {f"tauceti-namespace-build-{slot}" for slot in range(cap)})
+                self.assertEqual(expression(group, target=target, namespace_slot=str(cap), namespace_cap=str(cap)),
+                                 "tauceti-namespace-build-0")
+            for cap in ("", "0", "65", "untrusted"):
+                self.assertEqual(expression(group, target=target, namespace_slot="1", namespace_cap=cap),
+                                 "tauceti-namespace-build-0")
+
+    def test_runtime_namespace_controls_and_slot_output_are_wired_to_picker(self):
+        job = PICKER["jobs"]["pick"]
+        step = next(s for s in job["steps"] if s.get("id") == "pick")
+        self.assertEqual(step["env"]["NAMESPACE_ENABLED"], "${{ vars.NAMESPACE_ENABLED }}")
+        self.assertEqual(step["env"]["NAMESPACE_BUILD_CAP"], "${{ vars.NAMESPACE_BUILD_CAP }}")
+        self.assertEqual(job["outputs"]["namespace-slot"], "${{ steps.pick.outputs.namespace_slot }}")
 
     def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
