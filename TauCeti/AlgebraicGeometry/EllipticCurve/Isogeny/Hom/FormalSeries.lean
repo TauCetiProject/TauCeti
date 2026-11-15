@@ -99,7 +99,9 @@ theorem formalSeries_inj {f g : Hom W₁.toAffine W₂.toAffine} :
   formalSeries_injective.eq_iff
 
 /-- **Every morphism's formal series has zero constant coefficient.** -/
-@[simp]
+-- Handle composites, negations, and scalar multiples before `formalSeries_*` rewrites them to
+-- substitutions.
+@[simp↓]
 theorem constantCoeff_formalSeries (f : Hom W₁.toAffine W₂.toAffine) :
     PowerSeries.constantCoeff f.formalSeries = 0 := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp

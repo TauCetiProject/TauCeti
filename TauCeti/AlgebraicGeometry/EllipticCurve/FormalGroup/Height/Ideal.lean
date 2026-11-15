@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
-import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
 # Landweber height ideals and regularity for Weierstrass formal groups
@@ -58,12 +57,14 @@ is the domain `𝔽ₚ[a₁, ⋯, a₆]`. The Hasse invariant is nonzero there, 
 unit on the nodal cubic `y² + xy = x³`, the Tate curve at `q = 0`
 (`WeierstrassCurve.Universal.not_natCast_dvd_coeff_invariantDifferential`). The ideal `(p, A)` is
 proper, since `A` vanishes modulo `p` at the cusp `y² = x³`, whose formal group is additive
-(`WeierstrassCurve.Universal.heightIdeal_formalGroup_ne_top`). Localizing `Δ` and descending along
-flat classifying morphisms yields full Landweber regularity `(v₀, v₁, …, v_(m-1))` for the
-universal elliptic curve
-(`WeierstrassCurve.Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve`)
-and for any elliptic curve over `R` with flat classifying morphism `W.specializeElliptic`
-(`WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat`).
+(`WeierstrassCurve.Universal.heightIdeal_formalGroup_ne_top`). Base-changing along any flat
+classifying morphism `W.specialize` gives weak regularity of `(p, A)` without an ellipticity
+hypothesis (`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat`), and
+combining this with the height-two reduction yields full Landweber regularity
+`(v₀, v₁, …, v_(m-1))` for any elliptic curve with flat `W.specialize`
+(`WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat`) and in particular
+for the universal elliptic curve over `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`
+(`WeierstrassCurve.Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve`).
 
 ## Main results
 
@@ -88,13 +89,16 @@ and for any elliptic curve over `R` with flat classifying morphism `W.specialize
 * `WeierstrassCurve.Universal.not_natCast_dvd_coeff_invariantDifferential` and
   `WeierstrassCurve.Universal.heightIdeal_formalGroup_ne_top`: the universal Hasse invariant is
   nonzero modulo `p`, and the height ideals of the universal curve are proper.
-* `WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential` and
+* `WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential`,
+  `WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat`, and
   `WeierstrassCurve.Universal.isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve`:
   `p` and the Hasse invariant form a regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆]` and a weakly
-  regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`.
-* `WeierstrassCurve.Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve` and
-  `WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat`: Landweber
-  regularity for the universal elliptic curve and for flat classifying morphisms.
+  regular sequence along any flat classifying morphism `W.specialize`, in particular on
+  `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`.
+* `WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat` and
+  `WeierstrassCurve.Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve`:
+  full Landweber regularity for elliptic curves with flat classifying morphism `W.specialize` and
+  for the universal elliptic curve.
 
 ## References
 
@@ -318,20 +322,59 @@ theorem isRegular_natCast_coeff_invariantDifferential (hp : p.Prime) :
       ← heightIdeal_formalGroup_two curve hp, Ideal.smul_eq_mul, Ideal.mul_top]
     exact (heightIdeal_formalGroup_ne_top hp.one_lt 2).symm
 
+end WeierstrassCurve.Universal
+
+/-- **Flat base change of `(p, A)`-regularity.** If `W` is a Weierstrass curve over `R` whose
+classifying ring homomorphism `W.specialize : ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` is flat, then for
+every prime `p`, the sequence `(p, A)` formed by `p` and the Hasse invariant of `W` is weakly
+regular on `R`. -/
+theorem WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat
+    {R : Type*} [CommRing R] (W : WeierstrassCurve R) (hflat : W.specialize.Flat) {p : ℕ}
+    (hp : p.Prime) :
+    IsWeaklyRegular R
+      [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
+  algebraize [W.specialize]
+  have h :=
+    (WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential
+      hp).toIsWeaklyRegular.of_flat (S := R)
+  have hA : algebraMap (MvPolynomial Coeff ℤ) R
+      (PowerSeries.coeff (p - 1)
+        (formalGroup WeierstrassCurve.Universal.curve).invariantDifferential) =
+      PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential := by
+    rw [RingHom.algebraMap_toAlgebra, ← PowerSeries.coeff_map,
+      FormalGroup.map_invariantDifferential,
+      ← WeierstrassCurve.Universal.curve.map_formalGroup W.specialize]
+    simp only [W.map_specialize]
+  simpa [hA] using h
+
+/-- **Landweber regularity for elliptic curves with flat classifying morphism.** If `W` is an
+elliptic Weierstrass curve over `R` whose classifying ring homomorphism
+`W.specialize : ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` is flat (equivalently, `W.specializeElliptic` is
+flat), then for every prime `p` and every `m : ℕ`, the Landweber sequence `(v₀, v₁, …, v_(m-1))`
+of `formalGroup W` is weakly regular on `R`. -/
+theorem WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat
+    {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
+    (hflat : W.specialize.Flat) {p : ℕ} (hp : p.Prime) (m : ℕ) :
+    IsWeaklyRegular R
+      (List.ofFn fun i : Fin m ↦
+        PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) :=
+  (W.forall_isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff hp R).mpr
+    (W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat hflat hp) m
+
+namespace WeierstrassCurve.Universal
+
+variable {p : ℕ}
+
 /-- On `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`, the sequence `(p, A)` formed by `p` and the Hasse invariant of
 the universal elliptic Weierstrass curve is weakly regular for every prime `p`. -/
 theorem isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve (hp : p.Prime) :
     IsWeaklyRegular EllipticRing
       [(p : EllipticRing),
         PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential] := by
-  have hreg := (isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular
-  have hloc := hreg.of_isLocalization EllipticRing (Submonoid.powers curve.Δ)
-  have hA : algebraMap (MvPolynomial Coeff ℤ) EllipticRing
-      (PowerSeries.coeff (p - 1) (formalGroup curve).invariantDifferential) =
-      PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential := by
-    rw [← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup]
-    rfl
-  simpa [hA] using hloc
+  refine ellipticCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat ?_ hp
+  rw [← ellipticCurve.specializeElliptic_comp_algebraMap, specializeElliptic_ellipticCurve,
+    RingHom.id_comp]
+  exact RingHom.Flat.holdsForLocalizationAway EllipticRing curve.Δ
 
 /-- **Landweber regularity of the universal elliptic Weierstrass curve.** For every prime `p` and
 every `m : ℕ`, the Landweber sequence `(v₀, v₁, …, v_(m-1))` of `formalGroup ellipticCurve` is
@@ -344,28 +387,3 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve (hp : p
     (isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve hp) m
 
 end WeierstrassCurve.Universal
-
-/-- **Landweber regularity for elliptic curves with flat classifying morphism.** If `W` is an
-elliptic Weierstrass curve over `R` whose classifying ring homomorphism
-`W.specializeElliptic : ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹] →+* R` is flat, then for every prime `p` and
-every `m : ℕ`, the Landweber sequence `(v₀, v₁, …, v_(m-1))` of `formalGroup W` is weakly regular
-on `R`. -/
-theorem WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat
-    {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
-    (hflat : W.specializeElliptic.Flat) {p : ℕ} (hp : p.Prime) (m : ℕ) :
-    IsWeaklyRegular R
-      (List.ofFn fun i : Fin m ↦
-        PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) := by
-  algebraize [W.specializeElliptic]
-  have h :=
-    (WeierstrassCurve.Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve hp
-      m).of_flat (S := R)
-  have hmap (j : ℕ) :
-      algebraMap WeierstrassCurve.Universal.EllipticRing R
-        (PowerSeries.coeff (p ^ j)
-          ((formalGroup WeierstrassCurve.Universal.ellipticCurve).nsmulSeries p)) =
-      PowerSeries.coeff (p ^ j) ((formalGroup W).nsmulSeries p) := by
-    rw [RingHom.algebraMap_toAlgebra, ← PowerSeries.coeff_map, FormalGroup.map_nsmulSeries,
-      ← WeierstrassCurve.Universal.ellipticCurve.map_formalGroup W.specializeElliptic,
-      W.map_specializeElliptic]
-  simpa [List.map_ofFn, Function.comp_def, hmap] using h

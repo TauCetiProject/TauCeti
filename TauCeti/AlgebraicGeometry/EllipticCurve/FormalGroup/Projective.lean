@@ -52,17 +52,21 @@ pairs of formal points `[q₁ : -1 : w(q₁)]` and `[q₂ : -1 : w(q₂)]`:
 * `WeierstrassCurve.isUnit_dblAddY_subst_formalW` and `WeierstrassCurve.isUnit_dblAddY_formalW`:
   the `Y`-coordinate of `dblAddXYZ` at formal points `[q₁ : -1 : w(q₁)]` and `[q₂ : -1 : w(q₂)]` is
   a unit.
-* `WeierstrassCurve.nonsingular_fracCurve_algebraMap_comp_subst_formalW` and
-  `WeierstrassCurve.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint`: nonsingularity of
-  `[q : -1 : w(q)]` on `fracCurve W σ KK` when `(fracCurve W σ KK).Δ ≠ 0`, and identification of
-  its affine point with `WeierstrassCurve.thetaPoint` when `q ≠ 0`.
+* `WeierstrassCurve.nonsingular_fracCurve_algebraMap_comp_subst_formalW`: nonsingularity of
+  `[q : -1 : w(q)]` on `fracCurve W σ KK` over an `MvPowerSeries σ O`-algebra field `KK` where
+  `(fracCurve W σ KK).Δ ≠ 0`.
 * `WeierstrassCurve.dblAddXYZ_formalW_eq_smul` and
   `WeierstrassCurve.dblAddXYZ_subst_formalW_eq_smul`: `dblAddXYZ` at formal points is a unit
   multiple of `(F(q₁, q₂), -1, w(F(q₁, q₂)))`.
-* `WeierstrassCurve.formalThetaPoint_zero`, `WeierstrassCurve.formalThetaPoint_eq_some`,
-  `WeierstrassCurve.formalThetaPoint_inj`, and `WeierstrassCurve.formalThetaPoint_add`: zero value,
-  explicit affine coordinates for `q ≠ 0`, injectivity, and compatibility with formal-group
-  addition for `WeierstrassCurve.formalThetaPoint`.
+* `WeierstrassCurve.formalThetaPoint_def`, `WeierstrassCurve.formalThetaPoint_zero`,
+  `WeierstrassCurve.formalThetaPoint_eq_thetaPoint`,
+  `WeierstrassCurve.exists_formalThetaPoint_eq_some`,
+  `WeierstrassCurve.formalThetaPoint_eq_zero_iff`, `WeierstrassCurve.formalThetaPoint_inj`,
+  `WeierstrassCurve.formalThetaPoint_add`, and `WeierstrassCurve.formalThetaPoint_subst_addInvX`:
+  definitional unfolding, zero value, identification with `WeierstrassCurve.thetaPoint` and
+  explicit affine coordinates for `q ≠ 0` (when `[FaithfulSMul (MvPowerSeries σ O) KK]`),
+  vanishing criterion, injectivity, and compatibility with formal-group addition and negation for
+  `WeierstrassCurve.formalThetaPoint`.
 
 ## References
 
@@ -109,14 +113,39 @@ theorem isUnit_dblAddY_formalW :
       ![X (Sum.inr ()), -1, PowerSeries.subst (X (Sum.inr ())) W.formalW]) :=
   W.isUnit_dblAddY_subst_formalW (constantCoeff_X _) (constantCoeff_X _)
 
-section FractionField
+section FormalThetaPoint
 
 variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
-  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK] [IsFractionRing (MvPowerSeries σ O) KK]
+  (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ O) KK]
 
-omit [IsFractionRing (MvPowerSeries σ O) KK] in
-/-- The formal point `[q : -1 : w(q)]` with `constantCoeff q = 0`, read over an algebra `KK` where
-`fracCurve W σ KK` has nonzero discriminant, is nonsingular on the projective curve. -/
+/-- **The affine formal point `[q : -1 : w(q)]` on `fracCurve W σ KK`**, over a field `KK` that is
+an `MvPowerSeries σ O`-algebra, defined uniformly for `q = 0` (giving `0`, the point at infinity)
+and `q ≠ 0` (giving `W.thetaPoint` when `[FaithfulSMul (MvPowerSeries σ O) KK]`,
+`constantCoeff q = 0`, and `(fracCurve W σ KK).Δ ≠ 0`). -/
+noncomputable def formalThetaPoint (q : MvPowerSeries σ O) : (fracCurve W σ KK).toAffine.Point :=
+  Projective.Point.toAffine (fracCurve W σ KK).toProjective
+    (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW])
+
+/-- `W.formalThetaPoint KK q` is the affine point of `[q : -1 : w(q)]` on `fracCurve W σ KK`. -/
+theorem formalThetaPoint_def (q : MvPowerSeries σ O) :
+    W.formalThetaPoint KK q =
+      Projective.Point.toAffine (fracCurve W σ KK).toProjective
+        (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) :=
+  (rfl)
+
+/-- At `q = 0`, `W.formalThetaPoint KK 0` is `0` (the point at infinity `[0 : -1 : 0]`). -/
+@[simp]
+theorem formalThetaPoint_zero : W.formalThetaPoint KK (0 : MvPowerSeries σ O) = 0 := by
+  have hw0 : PowerSeries.subst (0 : MvPowerSeries σ O) W.formalW = 0 :=
+    PowerSeries.subst_zero_of_constantCoeff_zero W.constantCoeff_formalW
+  rw [formalThetaPoint_def]
+  exact Projective.Point.toAffine_of_Z_eq_zero (by simp [hw0])
+
+variable {KK}
+
+/-- The formal point `[q : -1 : w(q)]` with `constantCoeff q = 0`, read over a field `KK` that is
+an `MvPowerSeries σ O`-algebra where `fracCurve W σ KK` has nonzero discriminant, is nonsingular on
+the projective curve. -/
 theorem nonsingular_fracCurve_algebraMap_comp_subst_formalW (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
     (fracCurve W σ KK).toProjective.Nonsingular
@@ -127,22 +156,68 @@ theorem nonsingular_fracCurve_algebraMap_comp_subst_formalW (hΔ : (fracCurve W 
   exact ((W.toProjective.equation_neg_one_iff_wEquation q _).mpr
     (W.subst_formalW_wEquation (PowerSeries.HasSubst.of_constantCoeff_zero hq))).map _
 
-/-- For a nonzero parameter `q` with `constantCoeff q = 0`, the affine point associated to
-`[q : -1 : w(q)]` over a fraction field `KK` of `MvPowerSeries σ O` where `fracCurve W σ KK` has
-nonzero discriminant is `W.thetaPoint`. -/
-theorem toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+variable [FaithfulSMul (MvPowerSeries σ O) KK]
+
+/-- For a nonzero parameter `q` with `constantCoeff q = 0`, over a field `KK` with
+`[FaithfulSMul (MvPowerSeries σ O) KK]` where `fracCurve W σ KK` has nonzero discriminant,
+`W.formalThetaPoint KK q` is `W.thetaPoint`. -/
+theorem formalThetaPoint_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    Projective.Point.toAffine (fracCurve W σ KK).toProjective
-      (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) =
-        W.thetaPoint hΔ hq hq0 := by
+    W.formalThetaPoint KK q = W.thetaPoint hΔ hq hq0 := by
   have hz : (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
     W.algebraMap_subst_formalW_ne_zero hq hq0
   have hN := W.nonsingular_fracCurve_algebraMap_comp_subst_formalW hΔ hq
-  rw [Projective.Point.toAffine_of_Z_ne_zero hN hz, W.thetaPoint_eq_some hΔ hq hq0
-    (by simpa using (Projective.nonsingular_of_Z_ne_zero hz).mp hN)]
+  rw [formalThetaPoint_def, Projective.Point.toAffine_of_Z_ne_zero hN hz,
+    W.thetaPoint_eq_some hΔ hq hq0 (by simpa using (Projective.nonsingular_of_Z_ne_zero hz).mp hN)]
   simp
 
-end FractionField
+/-- For a nonzero parameter `q` with `constantCoeff q = 0`, over a field `KK` with
+`[FaithfulSMul (MvPowerSeries σ O) KK]` where `fracCurve W σ KK` has nonzero discriminant,
+`W.formalThetaPoint KK q` is the finite nonsingular point `(q / w(q), -1 / w(q))`. -/
+theorem exists_formalThetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    ∃ hns : (fracCurve W σ KK).toAffine.Nonsingular
+      (algebraMap (MvPowerSeries σ O) KK q /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q W.formalW))
+      (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q W.formalW)),
+      W.formalThetaPoint KK q = .some _ _ hns := by
+  have hz : (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero hq hq0
+  have hN := (Projective.nonsingular_of_Z_ne_zero hz).mp
+    (W.nonsingular_fracCurve_algebraMap_comp_subst_formalW hΔ hq)
+  exact ⟨by simpa using hN,
+    (W.formalThetaPoint_eq_thetaPoint hΔ hq hq0).trans
+      (W.thetaPoint_eq_some hΔ hq hq0 (by simpa using hN))⟩
+
+/-- Over a field `KK` with `[FaithfulSMul (MvPowerSeries σ O) KK]` where `fracCurve W σ KK` has
+nonzero discriminant, `W.formalThetaPoint KK q` vanishes if and only if `q = 0` (for `q` with
+vanishing constant coefficient). -/
+theorem formalThetaPoint_eq_zero_iff (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
+    W.formalThetaPoint KK q = 0 ↔ q = 0 := by
+  refine ⟨fun h ↦ by_contra fun hq0 ↦ ?_, fun h ↦ by subst h; exact W.formalThetaPoint_zero KK⟩
+  obtain ⟨_, hθ⟩ := W.exists_formalThetaPoint_eq_some hΔ hq hq0
+  rw [hθ] at h
+  simp at h
+
+/-- Over a field `KK` with `[FaithfulSMul (MvPowerSeries σ O) KK]` where `fracCurve W σ KK` has
+nonzero discriminant, `W.formalThetaPoint KK` is injective on parameters with vanishing constant
+coefficient. -/
+theorem formalThetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q₁ q₂ : MvPowerSeries σ O} (hq₁ : constantCoeff q₁ = 0) (hq₂ : constantCoeff q₂ = 0) :
+    W.formalThetaPoint KK q₁ = W.formalThetaPoint KK q₂ ↔ q₁ = q₂ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
+  rcases eq_or_ne q₁ 0 with rfl | hq₁0
+  · rw [W.formalThetaPoint_zero KK, eq_comm, W.formalThetaPoint_eq_zero_iff hΔ hq₂] at h
+    exact h.symm
+  · rcases eq_or_ne q₂ 0 with rfl | hq₂0
+    · rw [W.formalThetaPoint_zero KK, W.formalThetaPoint_eq_zero_iff hΔ hq₁] at h
+      exact h
+    · rw [W.formalThetaPoint_eq_thetaPoint hΔ hq₁ hq₁0,
+        W.formalThetaPoint_eq_thetaPoint hΔ hq₂ hq₂0] at h
+      exact (W.thetaPoint_inj hΔ hq₁ hq₂ hq₁0 hq₂0).mp h
+
+end FormalThetaPoint
 
 -- Over a domain, with nonzero discriminant, the identity is read off the group law of the curve
 -- over a fraction field `KK` of `O⟦z₁, z₂⟧`, where `dblAddXYZ` represents the sum of the two
@@ -196,9 +271,11 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
     rw [← hD,
       Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ (hD ▸ hD0)),
       Projective.Point.toAffine_add hN₁ hN₂,
-      W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ' hz₁ hz₁0,
-      W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ' hz₂ hz₂0,
-      W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ' hFc hF0]
+      ← W.formalThetaPoint_def KK z₁, ← W.formalThetaPoint_def KK z₂,
+      ← W.formalThetaPoint_def KK F,
+      W.formalThetaPoint_eq_thetaPoint hΔ' hz₁ hz₁0,
+      W.formalThetaPoint_eq_thetaPoint hΔ' hz₂ hz₂0,
+      W.formalThetaPoint_eq_thetaPoint hΔ' hFc hF0]
     exact W.thetaPoint_add_of_subst_separates hΔ' hχ hz₁ hz₂ hz₁0 hz₂0 hχ₁ hχ₂ hFc hF0
   have hDN : W'.toProjective.Nonsingular (ρ ∘ D) :=
     (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ' hD0).mp
@@ -306,68 +383,11 @@ theorem dblAddXYZ_subst_formalW_eq_smul {σ : Type*} {q₁ q₂ : MvPowerSeries 
 
 end Algebra
 
-section FormalThetaPoint
+section FormalThetaPointAdd
 
 variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
-  (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ O) KK]
+  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
 
-/-- **The affine formal point `[q : -1 : w(q)]` on `fracCurve W σ KK`**, defined uniformly for
-`q = 0` (giving `0`, the point at infinity) and `q ≠ 0` (giving `W.thetaPoint` when
-`constantCoeff q = 0` and `(fracCurve W σ KK).Δ ≠ 0`). -/
-noncomputable def formalThetaPoint (q : MvPowerSeries σ O) : (fracCurve W σ KK).toAffine.Point :=
-  Projective.Point.toAffine (fracCurve W σ KK).toProjective
-    (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW])
-
-/-- At `q = 0`, `W.formalThetaPoint KK 0` is `0` (the point at infinity `[0 : -1 : 0]`). -/
-@[simp]
-theorem formalThetaPoint_zero : W.formalThetaPoint KK (0 : MvPowerSeries σ O) = 0 := by
-  have hw0 : PowerSeries.subst (0 : MvPowerSeries σ O) W.formalW = 0 :=
-    PowerSeries.subst_zero_of_constantCoeff_zero W.constantCoeff_formalW
-  exact Projective.Point.toAffine_of_Z_eq_zero (by simp [hw0])
-
-variable {KK} [IsFractionRing (MvPowerSeries σ O) KK]
-
-/-- For a nonzero parameter `q` with `constantCoeff q = 0`, over a fraction field `KK` of
-`MvPowerSeries σ O` where `fracCurve W σ KK` has nonzero discriminant, `W.formalThetaPoint KK q` is
-the finite nonsingular point `(q / w(q), -1 / w(q))`. -/
-theorem formalThetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    ∃ hns : (fracCurve W σ KK).toAffine.Nonsingular
-      (algebraMap (MvPowerSeries σ O) KK q /
-        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q W.formalW))
-      (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q W.formalW)),
-      W.formalThetaPoint KK q = .some _ _ hns := by
-  have hz : (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero hq hq0
-  have hN := (Projective.nonsingular_of_Z_ne_zero hz).mp
-    (W.nonsingular_fracCurve_algebraMap_comp_subst_formalW hΔ hq)
-  exact ⟨by simpa using hN,
-    (W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ hq hq0).trans
-      (W.thetaPoint_eq_some hΔ hq hq0 (by simpa using hN))⟩
-
-/-- Over a fraction field `KK` of `MvPowerSeries σ O` where `fracCurve W σ KK` has nonzero
-discriminant, `W.formalThetaPoint KK` is injective on parameters with vanishing constant
-coefficient. -/
-theorem formalThetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
-    {q₁ q₂ : MvPowerSeries σ O} (hq₁ : constantCoeff q₁ = 0) (hq₂ : constantCoeff q₂ = 0) :
-    W.formalThetaPoint KK q₁ = W.formalThetaPoint KK q₂ ↔ q₁ = q₂ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
-  rcases eq_or_ne q₁ 0 with rfl | hq₁0
-  · rcases eq_or_ne q₂ 0 with rfl | hq₂0
-    · rfl
-    · obtain ⟨_, hθ⟩ := W.formalThetaPoint_eq_some hΔ hq₂ hq₂0
-      rw [W.formalThetaPoint_zero KK, hθ] at h
-      simp at h
-  · rcases eq_or_ne q₂ 0 with rfl | hq₂0
-    · obtain ⟨_, hθ⟩ := W.formalThetaPoint_eq_some hΔ hq₁ hq₁0
-      rw [W.formalThetaPoint_zero KK, hθ] at h
-      simp at h
-    · rw [formalThetaPoint, formalThetaPoint,
-        W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ hq₁ hq₁0,
-        W.toAffine_algebraMap_comp_subst_formalW_eq_thetaPoint hΔ hq₂ hq₂0] at h
-      exact (W.thetaPoint_inj hΔ hq₁ hq₂ hq₁0 hq₂0).mp h
-
-omit [IsFractionRing (MvPowerSeries σ O) KK] in
 /-- **Addition of formal points via the Bosma–Lenstra law.** Over a field `KK` that is an
 `MvPowerSeries σ O`-algebra in which `fracCurve W σ KK` has nonzero discriminant, for any `q₁, q₂`
 with vanishing constant coefficients, the group-law sum of `W.formalThetaPoint KK q₁` and
@@ -415,11 +435,27 @@ theorem formalThetaPoint_add [DecidableEq KK] (hΔ : (fracCurve W σ KK).Δ ≠ 
     rw [hD]
     intro h0
     exact hu.ne_zero (by simpa [Units.smul_def, IsUnit.unit_spec] using congrFun h0 1)
-  rw [formalThetaPoint, formalThetaPoint, formalThetaPoint,
+  rw [formalThetaPoint_def, formalThetaPoint_def, formalThetaPoint_def,
     ← Projective.Point.toAffine_add hN₁ hN₂,
     ← Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ hD0), hD,
     Projective.Point.toAffine_of_equiv ⟨hu.unit, rfl⟩]
 
-end FormalThetaPoint
+/-- **Negation of formal points.** Over a field `KK` that is an `MvPowerSeries σ O`-algebra in
+which `fracCurve W σ KK` has nonzero discriminant, for any `q` with `constantCoeff q = 0`,
+`W.formalThetaPoint KK` at the formal inverse `PowerSeries.subst q (formalGroup W).addInvX` is
+`-W.formalThetaPoint KK q`. -/
+theorem formalThetaPoint_subst_addInvX (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
+    W.formalThetaPoint KK (PowerSeries.subst q (formalGroup W).addInvX) =
+      -W.formalThetaPoint KK q := by
+  classical
+  have hinv : constantCoeff (PowerSeries.subst q (formalGroup W).addInvX) = 0 :=
+    PowerSeries.constantCoeff_subst_eq_zero hq _ (formalGroup W).constantCoeff_addInvX
+  refine eq_neg_of_add_eq_zero_left ?_
+  rw [W.formalThetaPoint_add hΔ hinv hq,
+    (formalGroup W).subst_addInvX_self_eq_zero (.of_constantCoeff_zero hq),
+    W.formalThetaPoint_zero]
+
+end FormalThetaPointAdd
 
 end WeierstrassCurve

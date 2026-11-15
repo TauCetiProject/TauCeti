@@ -162,7 +162,7 @@ private theorem map_functionFieldLaurentExpansion_tautologicalPoint
   · rw [tautologicalPoint_zero, Affine.Point.mapAlong_zero, formalSeries_zero,
       W₂.formalThetaPoint_zero K⸨X⸩, _root_.map_zero]
   · have hΔ := W₂.fracCurve_Δ_ne_zero (σ := Unit) (KK := K⸨X⸩) W₂.isUnit_Δ.ne_zero
-    obtain ⟨hns, hθ⟩ := W₂.formalThetaPoint_eq_some hΔ φ.constantCoeff_formalSeries
+    obtain ⟨hns, hθ⟩ := W₂.exists_formalThetaPoint_eq_some hΔ φ.constantCoeff_formalSeries
       φ.formalSeries_ne_zero
     rw [formalSeries_ofIsogeny, hθ, AddEquiv.cast_apply,
       Affine.Point.cast_some (map_baseChange_functionFieldLaurentExpansion_eq_fracCurve W₁ W₂).symm,

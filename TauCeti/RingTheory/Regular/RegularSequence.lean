@@ -112,8 +112,7 @@ theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs
     IsWeaklyRegular M rs :=
   ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
 
-/-- Any finite sequence whose head is a unit is weakly regular: the head acts regularly and
-annihilates the quotient `M ⧸ v • ⊤`. -/
+/-- Any finite sequence whose head is a unit is weakly regular on `M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit {v : R} (hv : IsUnit v) (rs : List R) :
     IsWeaklyRegular M (v :: rs) := by
   have : Subsingleton (QuotSMulTop v M) :=
