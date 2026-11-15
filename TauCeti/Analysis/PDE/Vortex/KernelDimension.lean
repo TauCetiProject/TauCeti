@@ -57,7 +57,7 @@ degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`
   `TauCeti.Vortex.gaugeFixedKernelPrincipalPartEquiv` onto `Multiset.ToType D → ℂ`.
 
 The comparison with the weak `L²` kernel, and membership of kernel elements in every `H^s`, are
-proved in `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`.
+proved in `TauCeti.Analysis.PDE.Vortex.SobolevScale`.
 
 ## Main results
 

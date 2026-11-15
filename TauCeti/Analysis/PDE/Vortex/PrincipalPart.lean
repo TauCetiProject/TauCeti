@@ -66,7 +66,7 @@ At a framed vortex, `2 m` is the real dimension of the tangent space of the divi
 Surjectivity of the principal-part map and the resulting dimension `2 m` are proved in
 `TauCeti.Analysis.PDE.Vortex.KernelDimension`, and the comparison with the weak `L²` kernel, and
 membership of kernel elements in every `H^s`, are proved in
-`TauCeti.Analysis.PDE.Vortex.EllipticRegularity`.
+`TauCeti.Analysis.PDE.Vortex.SobolevScale`.
 
 ## References
 
