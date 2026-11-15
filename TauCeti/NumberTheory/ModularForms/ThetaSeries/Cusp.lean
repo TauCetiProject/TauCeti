@@ -31,7 +31,10 @@ form, for any group having `∞` as a cusp.
 On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
 `θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
 there; this is the nonvanishing used to show that the rank of an even unimodular lattice is
-divisible by `8`.
+divisible by `8`. Moreover, when `M ≤ L` and `L` is discrete, splitting `γ + L` into cosets of `M`
+writes `θ_{γ+L}(i y)` as `θ_{γ+M}(i y)` plus a positive real sum for each nontrivial coset, so
+`θ_{γ+M}(i y) ≤ θ_{γ+L}(i y)` with strict inequality whenever `M < L`; in particular no proper
+sublattice of `L` can share its theta series.
 
 ## Main statements
 
@@ -48,9 +51,15 @@ divisible by `8`.
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
-* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
-  `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
-  `Θ_L ≥ 1`.
+* `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`,
+  `ZLattice.im_thetaCoset_eq_zero`, `ZLattice.im_thetaSeries_eq_zero`,
+  `ZLattice.re_thetaCoset_pos`, `ZLattice.re_thetaSeries_pos`, `ZLattice.one_le_re_thetaSeries`:
+  on the imaginary axis `θ_{γ+L}` and `Θ_L` are real and positive, and `Θ_L ≥ 1`.
+* `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaSeries_mono`,
+  `ZLattice.re_thetaCoset_strictMono`, `ZLattice.re_thetaSeries_strictMono`,
+  `ZLattice.thetaCoset_eq_iff_eq_of_le`, `ZLattice.thetaSeries_eq_iff_eq_of_le`: on the imaginary
+  axis `θ_{γ+L}` and `Θ_L` are strictly increasing under subgroup inclusion, so for `M ≤ L` they
+  agree if and only if `M = L`.
 
 ## References
 
@@ -243,6 +252,20 @@ theorem thetaCoset_eq_ofReal_of_re_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0)
   push_cast
   linear_combination (π * ‖γ + (v : E)‖ ^ 2 * τ.im : ℂ) * I_sq
 
+/-- On the imaginary axis the theta series of `L` is real:
+`Θ_L(i y) = ∑_{v ∈ L} exp (-π y ‖v‖²)`. -/
+theorem thetaSeries_eq_ofReal_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries L τ = ((∑' v : L, Real.exp (-(π * τ.im) * ‖(v : E)‖ ^ 2) : ℝ) : ℂ) := by
+  simpa using thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ
+
+/-- On the imaginary axis the theta series of `γ + L` has zero imaginary part. -/
+theorem im_thetaCoset_eq_zero (γ : E) {τ : ℍ} (hτ : τ.re = 0) : (thetaCoset L γ τ).im = 0 := by
+  rw [thetaCoset_eq_ofReal_of_re_eq_zero L γ hτ, ofReal_im]
+
+/-- On the imaginary axis the theta series of `L` has zero imaginary part. -/
+theorem im_thetaSeries_eq_zero {τ : ℍ} (hτ : τ.re = 0) : (thetaSeries L τ).im = 0 := by
+  simpa using im_thetaCoset_eq_zero L 0 hτ
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- On the imaginary axis the theta series of `γ + L` has positive real part (and is real, by
@@ -253,15 +276,87 @@ theorem re_thetaCoset_pos (γ : E) {τ : ℍ} (hτ : τ.re = 0) : 0 < (thetaCose
     (fun _ => (Real.exp_pos _).le) 0 (Real.exp_pos _)
 
 /-- On the imaginary axis the theta series of a discrete subgroup has real part at least `1`, the
-contribution of the zero vector (and is real, by `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`). -/
+contribution of the zero vector (and is real, by `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`). -/
 theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries L τ).re := by
   rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re]
   simpa using (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0).le_tsum 0
     fun _ _ => (Real.exp_pos _).le
 
+/-- On the imaginary axis the theta series of a discrete subgroup has positive real part. -/
+theorem re_thetaSeries_pos {τ : ℍ} (hτ : τ.re = 0) : 0 < (thetaSeries L τ).re :=
+  zero_lt_one.trans_le (one_le_re_thetaSeries L hτ)
+
 /-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
+
+variable {L} {M : Submodule ℤ E}
+
+/-- On the imaginary axis, passing to a strictly larger discrete subgroup strictly increases the
+theta series of every translate: every nontrivial coset of `M` in `L` contributes a strictly
+positive sum. -/
+theorem re_thetaCoset_strictMono (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re < (thetaCoset L γ τ).re := by
+  classical
+  have : DiscreteTopology M :=
+    DiscreteTopology.of_subset ‹DiscreteTopology L› (SetLike.coe_subset_coe.mpr hML.le)
+  obtain ⟨x, hxL, hxM⟩ := IsConcreteLE.exists_of_lt hML
+  let y : L ⧸ M.submoduleOf L := Submodule.Quotient.mk ⟨x, hxL⟩
+  have hy0 : y ≠ 0 := fun hy ↦
+    hxM <| by simpa [Submodule.submoduleOf] using (Submodule.Quotient.mk_eq_zero _).mp hy
+  have hs := hasSum_re (hasSum_thetaCoset_add_out L hML.le γ τ)
+  have h0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M := by
+    simpa [Submodule.submoduleOf] using
+      (Submodule.Quotient.mk_eq_zero _).mp (Submodule.Quotient.mk_out (0 : L ⧸ M.submoduleOf L))
+  have hle := hs.summable.sum_le_tsum ({0, y} : Finset (L ⧸ M.submoduleOf L))
+    fun z _ ↦ (re_thetaCoset_pos M _ hτ).le
+  rw [Finset.sum_pair hy0.symm, hs.tsum_eq, thetaCoset_add_mem M γ h0] at hle
+  exact lt_of_lt_of_le (lt_add_of_pos_right _ (re_thetaCoset_pos M _ hτ)) hle
+
+/-- On the imaginary axis, passing to a strictly larger discrete subgroup strictly increases the
+theta series. -/
+theorem re_thetaSeries_strictMono (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_strictMono hML 0 hτ
+
+/-- On the imaginary axis, the theta series of a translate is monotone in the subgroup `M ≤ L`. -/
+theorem re_thetaCoset_mono (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
+  rcases eq_or_lt_of_le hML with rfl | hlt
+  · exact le_rfl
+  · exact (re_thetaCoset_strictMono hlt γ hτ).le
+
+/-- On the imaginary axis, the theta series is monotone in the subgroup `M ≤ L`. -/
+theorem re_thetaSeries_mono (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_mono hML 0 hτ
+
+/-- At any point of the imaginary axis, for `M ≤ L` with `L` discrete, `θ_{γ+M}(τ) = θ_{γ+L}(τ)` if
+and only if `M = L`. -/
+theorem thetaCoset_apply_eq_iff_eq_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaCoset M γ τ = thetaCoset L γ τ ↔ M = L :=
+  ⟨fun h ↦ hML.eq_of_not_lt fun hlt ↦ (re_thetaCoset_strictMono hlt γ hτ).ne (congrArg re h),
+    fun h ↦ h ▸ rfl⟩
+
+/-- At any point of the imaginary axis, for `M ≤ L` with `L` discrete, `Θ_M(τ) = Θ_L(τ)` if and
+only if `M = L`. -/
+theorem thetaSeries_apply_eq_iff_eq_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ = thetaSeries L τ ↔ M = L := by
+  simpa using thetaCoset_apply_eq_iff_eq_of_le hML 0 hτ
+
+/-- For `M ≤ L` with `L` discrete, the coset theta series `θ_{γ+M}` and `θ_{γ+L}` agree if and
+only if `M = L`. -/
+theorem thetaCoset_eq_iff_eq_of_le (hML : M ≤ L) (γ : E) :
+    thetaCoset M γ = thetaCoset L γ ↔ M = L :=
+  ⟨fun h ↦ (thetaCoset_apply_eq_iff_eq_of_le hML γ UpperHalfPlane.I_re).mp
+      (congrFun h UpperHalfPlane.I),
+    fun h ↦ h ▸ rfl⟩
+
+/-- For `M ≤ L` with `L` discrete, the theta series `Θ_M` and `Θ_L` agree if and only if
+`M = L`. -/
+theorem thetaSeries_eq_iff_eq_of_le (hML : M ≤ L) :
+    thetaSeries M = thetaSeries L ↔ M = L := by
+  simpa using thetaCoset_eq_iff_eq_of_le hML 0
 
 end ImaginaryAxis
 

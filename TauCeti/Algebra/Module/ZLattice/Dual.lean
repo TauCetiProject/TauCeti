@@ -65,6 +65,8 @@ defined from it.
 * `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
   meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.mem_dual_of_mem_orthogonal_span`: a vector orthogonal to `L` lies in `L^∨`.
+* `ZLattice.discreteTopology_dual_iff`: in a finite-dimensional space, `L^∨` is discrete if and
+  only if `L` spans the space over `ℝ`.
 * `ZLattice.dual_dual`: the dual of the dual of a discrete lattice in a finite-dimensional space is
   the lattice itself.
 * `ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`: a lattice in a
@@ -267,10 +269,34 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
 
-instance : DiscreteTopology (dual L) := by
-  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
-  rw [dual_span_basis]
-  infer_instance
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In a finite-dimensional real inner product space, the dual `L^∨` of a `ℤ`-submodule `L` is
+discrete if and only if `L` spans the space over `ℝ` (with no discreteness assumption on `L`: for
+instance `(ℚ : Submodule ℤ ℝ)` is dense in `ℝ` and has `ℚ^∨ = 0`). If `L` spans `E`, it contains
+an `ℝ`-basis `b` of `E`, so `L^∨` is contained in the discrete dual `(ℤ b)^∨`; conversely, a
+nonzero vector orthogonal to `L` spans a real line inside `L^∨`. -/
+theorem discreteTopology_dual_iff :
+    DiscreteTopology (dual L) ↔ span ℝ (L : Set E) = ⊤ := by
+  refine ⟨fun hd ↦ by_contra fun hne ↦ ?_, fun hspan ↦ ?_⟩
+  · obtain ⟨v, hv, hv0⟩ :=
+      Submodule.exists_mem_ne_zero_of_ne_bot (mt Submodule.orthogonal_eq_bot_iff.mp hne)
+    have : DiscreteTopology ℝ := DiscreteTopology.of_continuous_injective
+      (f := fun t : ℝ ↦ (⟨t • v,
+        mem_dual_of_mem_orthogonal_span (Submodule.smul_mem _ t hv)⟩ : dual L))
+      (Continuous.subtype_mk (continuous_id.smul continuous_const) _)
+      fun a b hab ↦ smul_left_injective ℝ hv0 (congrArg Subtype.val hab)
+    exact not_isOpen_singleton (0 : ℝ) (isOpen_discrete _)
+  · classical
+    let b := Basis.ofSpan hspan.ge
+    have := FiniteDimensional.fintypeBasisIndex b
+    have hd : DiscreteTopology (dual (span ℤ (Set.range b))) := by
+      rw [dual_span_basis]
+      infer_instance
+    exact DiscreteTopology.of_subset hd
+      (dual_anti (Submodule.span_le.mpr (Basis.ofSpan_subset hspan.ge)))
+
+instance : DiscreteTopology (dual L) :=
+  (discreteTopology_dual_iff L).mpr IsZLattice.span_top
 
 instance : IsZLattice ℝ (dual L) where
   span_top := by
