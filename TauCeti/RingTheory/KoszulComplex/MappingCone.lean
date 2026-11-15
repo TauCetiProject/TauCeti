@@ -60,66 +60,6 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
 
 namespace koszulComplex
 
-/-! ### The splitting `z = a + e ∧ b` on exterior powers -/
-
-section Splitting
-
-variable (n : ℕ)
-
-/-- The `⋀ M`-component of `a ∈ ⋀ M ⊆ ⋀ (M × R)` is `a`. -/
-private theorem map_fst_comp_map_inl :
-    exteriorPower.map n (LinearMap.fst R M R) ∘ₗ exteriorPower.map n (LinearMap.inl R M R) =
-      LinearMap.id := by
-  rw [← exteriorPower.map_comp, LinearMap.fst_comp_inl, exteriorPower.map_id]
-
-/-- The `⋀ M`-component of `e ∧ b` is zero, for `e = (0, 1)`. -/
-private theorem map_fst_comp_wedgeLeft :
-    exteriorPower.map (n + 1) (LinearMap.fst R M R) ∘ₗ
-        (ExteriorAlgebra.wedgeLeft (LinearMap.inr R M R 1) n ∘ₗ
-          exteriorPower.map n (LinearMap.inl R M R)) = 0 :=
-  LinearMap.ext fun b ↦ Subtype.ext <| by simp
-
-/-- The `b`-component of `e ∧ b` is `b`. -/
-private theorem map_fst_koszulDifferential_snd_comp_wedgeLeft :
-    (exteriorPower.map n (LinearMap.fst R M R) ∘ₗ koszulDifferential (LinearMap.snd R M R) n) ∘ₗ
-        (ExteriorAlgebra.wedgeLeft (LinearMap.inr R M R 1) n ∘ₗ
-          exteriorPower.map n (LinearMap.inl R M R)) = LinearMap.id :=
-  LinearMap.ext fun b ↦ Subtype.ext <| by
-    simpa [contractLeft_ι_mul, ExteriorAlgebra.contractLeft_map, LinearMap.snd_comp_inl] using
-      ExteriorAlgebra.leftInverse_map_fst_map_inl (N := R) b.1
-
-/-- The `b`-component of `a ∈ ⋀ M ⊆ ⋀ (M × R)` is zero. -/
-private theorem map_fst_koszulDifferential_snd_comp_map_inl :
-    (exteriorPower.map n (LinearMap.fst R M R) ∘ₗ koszulDifferential (LinearMap.snd R M R) n) ∘ₗ
-        exteriorPower.map (n + 1) (LinearMap.inl R M R) = 0 :=
-  LinearMap.ext fun b ↦ Subtype.ext <| by
-    simp [LinearMap.snd_comp_inl]
-
-/-- **The splitting `z = a + e ∧ b`** in `⋀ⁿ⁺¹ (M × R)`, with `a = ⋀ fst z` and
-`b = ⋀ fst (ι_snd z)`. -/
-private theorem wedgeLeft_comp_add_map_inl_comp :
-    (ExteriorAlgebra.wedgeLeft (LinearMap.inr R M R 1) n ∘ₗ
-          exteriorPower.map n (LinearMap.inl R M R)) ∘ₗ
-        (exteriorPower.map n (LinearMap.fst R M R) ∘ₗ
-          koszulDifferential (LinearMap.snd R M R) n) +
-      exteriorPower.map (n + 1) (LinearMap.inl R M R) ∘ₗ
-        exteriorPower.map (n + 1) (LinearMap.fst R M R) = LinearMap.id :=
-  LinearMap.ext fun z ↦ Subtype.ext <| by
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply, Submodule.coe_add,
-      ExteriorAlgebra.coe_wedgeLeft_apply, exteriorPower.coe_map, coe_koszulDifferential_apply]
-    rw [add_comm]
-    exact ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.1
-
-/-- In degree zero the splitting has no `e`-part. -/
-private theorem map_inl_comp_map_fst_zero :
-    exteriorPower.map 0 (LinearMap.inl R M R) ∘ₗ exteriorPower.map 0 (LinearMap.fst R M R) =
-      LinearMap.id :=
-  LinearMap.ext fun z ↦ Subtype.ext <| by
-    simpa [ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _ z.2] using
-      ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z.1
-
-end Splitting
-
 variable (φ : Module.Dual R M) (y : R)
 
 /-- The chain map `K(φ) → K(φ, y)` induced by the inclusion `inl : M → M × R`. -/
@@ -177,7 +117,7 @@ private theorem inlHom_f_projSnd (n : ℕ) : (inlHom φ y).f (n + 1) ≫ projSnd
 private theorem inlHomotopy_hom_projFst (n : ℕ) :
     (inlHomotopy φ y).hom n (n + 1) ≫ projFst φ y (n + 1) = 0 := by
   rw [inlHomotopy_hom]
-  exact ModuleCat.hom_ext (map_fst_comp_wedgeLeft n)
+  exact ModuleCat.hom_ext (map_fst_comp_wedgeLeft (1 : R) n)
 
 @[reassoc]
 private theorem inlHomotopy_hom_projSnd (n : ℕ) :
@@ -262,8 +202,7 @@ theorem inlX_homotopyCofiberIso_hom_f (n : ℕ) :
 theorem homotopyCofiberIso_inv_f_sndX (n : ℕ) :
     (homotopyCofiberIso φ y).inv.f n ≫ homotopyCofiber.sndX (y • 𝟙 (koszulComplex φ)) n =
       ModuleCat.ofHom (exteriorPower.map n (LinearMap.fst R M R)) := by
-  -- What remains is the definition of `projFst`.
-  cases n <;> simp [homotopyCofiberIso, coneInvX] <;> rfl
+  cases n <;> simpa [homotopyCofiberIso, coneInvX] using projFst.eq_1 φ y _
 
 /-- The first component of the inverse isomorphism `K(φ, y) → Cone(y)` in degree `n + 1` is
 `z ↦ ⋀ fst (ι_snd z)`, with `ι_snd` the contraction by the second coordinate. -/
@@ -273,9 +212,7 @@ theorem homotopyCofiberIso_inv_f_fstX (n : ℕ) :
         homotopyCofiber.fstX (y • 𝟙 (koszulComplex φ)) (n + 1) n (ComplexShape.down_mk _ _ rfl) =
       ModuleCat.ofHom (exteriorPower.map n (LinearMap.fst R M R) ∘ₗ
         koszulDifferential (LinearMap.snd R M R) n) := by
-  simp [homotopyCofiberIso, coneInvX]
-  -- What remains is the definition of `projSnd`.
-  rfl
+  simpa [homotopyCofiberIso, coneInvX] using projSnd.eq_1 φ y n
 
 end koszulComplex
 
