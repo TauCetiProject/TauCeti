@@ -74,9 +74,11 @@ private abbrev graphId : B.graph.Hom B.graph :=
 
 /-- The conjugation move A0 by a family `g_z ∈ A_[z]`: the vertex group `B_z` is replaced by
 `g_z B_z g_z⁻¹` and the label `f_α` of a dart `f` by `g_{o(f)} f_α`. The underlying graph, the type
-map and the base vertex are unchanged; the body is exposed so that vertices and darts of `B` are
-accepted as vertices and darts of the result. -/
-@[expose] def conj (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z)) :
+map and the base vertex are unchanged. The definition is exposed and unfolds at instance
+transparency, so that vertices and darts of `B` are accepted as vertices and darts of the result by
+rewriting, simplification and instance search, and moves can be chained. -/
+@[expose, instance_reducible]
+def conj (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z)) :
     AGraph.{u, v, w, x, u', v'} 𝔸 v₀ where
   graph := B.graph
   typ := B.typ
@@ -89,6 +91,15 @@ accepted as vertices and darts of the result. -/
 section conj
 
 variable (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z))
+
+@[simp] theorem conj_graph : (B.conj g).graph = B.graph :=
+  rfl
+
+@[simp] theorem conj_typ : (B.conj g).typ = B.typ :=
+  rfl
+
+@[simp] theorem conj_base : (B.conj g).base = B.base :=
+  rfl
 
 @[simp] theorem conj_grp (z : B.graph.V) :
     (B.conj g).grp z = (B.grp z).map (MulAut.conj (g z)).toMonoidHom :=
@@ -107,6 +118,54 @@ variable (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z))
   -- `g` at `o(f⁻¹)` and at `t(f)`, which are the same vertex by definition.
   simp only [MulEquiv.cast_apply, cast_cast]
   rfl
+
+/-- After a conjugation move the vertex group at the start of a dart `f` is conjugated by
+`g_{o(f)}`. -/
+@[simp] theorem conj_grpSrc (f : B.graph.E) : (B.conj g).grpSrc f = (B.grpSrc f).map
+    (MulAut.conj (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f).symm
+      (g (B.graph.src f)))).toMonoidHom := by
+  ext c
+  rw [mem_grpSrc, conj_grp, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, mem_grpSrc,
+    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+  -- The start of `f` in `B.conj g` is its start in `B` by definition.
+  rfl
+
+/-- After a conjugation move the vertex group at the end of a dart `f` is conjugated by
+`g_{t(f)}`. -/
+@[simp] theorem conj_grpTgt (f : B.graph.E) : (B.conj g).grpTgt f = (B.grpTgt f).map
+    (MulAut.conj (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f).symm
+      (g (B.graph.tgt f)))).toMonoidHom := by
+  ext c
+  rw [mem_grpTgt, conj_grp, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, mem_grpTgt,
+    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+  -- The end of `f` in `B.conj g` is its end in `B` by definition.
+  rfl
+
+/-- A conjugation move preserves the ranks of the vertex groups. -/
+@[simp] theorem conj_rankGrp (z : B.graph.V) : (B.conj g).rankGrp z = B.rankGrp z :=
+  rankGrp_congr (Subgroup.equivMapOfInjective (B.grp z) _ (MulAut.conj (g z)).injective).symm
+
+/-- The conjugation move by the trivial family is the identity. -/
+@[simp] theorem conj_one : B.conj 1 = B := by
+  cases B
+  unfold conj
+  congr 1
+  · funext z
+    simp [MulAut.one_def]
+  · funext f
+    rw [Pi.one_apply, map_one, one_mul]
+
+/-- Two conjugation moves compose to the conjugation move by the product family. -/
+@[simp] theorem conj_conj (g' : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z)) :
+    (B.conj g).conj g' = B.conj (g' * g) := by
+  unfold conj
+  congr 1
+  · funext z
+    simp [Subgroup.map_map, MulAut.mul_def]
+  · funext f
+    rw [Pi.mul_apply, map_mul, mul_assoc]
 
 /-- A conjugation move that is trivial at the base vertex preserves the represented subgroup
 (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for an admissible move A0). -/
@@ -140,8 +199,7 @@ theorem subgroup_conj (hg : g B.base = 1) : (B.conj g).subgroup = B.subgroup := 
 /-- A conjugation move preserves the complexity. -/
 @[simp] theorem complexity_conj : (B.conj g).complexity = B.complexity := by
   rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr fun z => rankGrp_congr
-    (Subgroup.equivMapOfInjective (B.grp z) _ (MulAut.conj (g z)).injective).symm)
+  exact congrArg _ (finsum_congr (B.conj_rankGrp g))
 
 end conj
 
@@ -149,8 +207,10 @@ end conj
 
 /-- The Bass–Serre move A1 by a family `c_f ∈ A_[f]`: the label `f_α` of a dart `f` is replaced by
 `f_α α_[f](c_f)⁻¹`. When `c` takes the same value on a dart and on its reverse, the label
-`(a, e, b)` of `f` becomes `(a α_e(c_f)⁻¹, e, ω_e(c_f) b)`. -/
-@[expose] def bassSerre (c : ∀ f : B.graph.E, 𝔸.edgeGroup (Γ.toGeomEdge (B.typ.mapE f))) :
+`(a, e, b)` of `f` becomes `(a α_e(c_f)⁻¹, e, ω_e(c_f) b)`. As for `AGraph.conj`, the definition
+is exposed and unfolds at instance transparency. -/
+@[expose, instance_reducible]
+def bassSerre (c : ∀ f : B.graph.E, 𝔸.edgeGroup (Γ.toGeomEdge (B.typ.mapE f))) :
     AGraph.{u, v, w, x, u', v'} 𝔸 v₀ where
   graph := B.graph
   typ := B.typ
@@ -163,6 +223,15 @@ section bassSerre
 
 variable (c : ∀ f : B.graph.E, 𝔸.edgeGroup (Γ.toGeomEdge (B.typ.mapE f)))
 
+@[simp] theorem bassSerre_graph : (B.bassSerre c).graph = B.graph :=
+  rfl
+
+@[simp] theorem bassSerre_typ : (B.bassSerre c).typ = B.typ :=
+  rfl
+
+@[simp] theorem bassSerre_base : (B.bassSerre c).base = B.base :=
+  rfl
+
 @[simp] theorem bassSerre_grp (z : B.graph.V) : (B.bassSerre c).grp z = B.grp z :=
   rfl
 
@@ -170,21 +239,54 @@ variable (c : ∀ f : B.graph.E, 𝔸.edgeGroup (Γ.toGeomEdge (B.typ.mapE f)))
     (B.bassSerre c).labelα f = B.labelα f * (𝔸.α (B.typ.mapE f) (c f))⁻¹ :=
   rfl
 
-/-- After a Bass–Serre move by a family taking the same value on a dart and on its reverse, the
-label `f_ω` of a dart `f` is `ω_[f](c_f) f_ω`. -/
-theorem bassSerre_labelω (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 𝔸.edgeGroup)
-      ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm (c f))
-    (f : B.graph.E) : (B.bassSerre c).labelω f = 𝔸.ω (B.typ.mapE f) (c f) * B.labelω f := by
+/-- After a Bass–Serre move the label `f_ω` of a dart `f` is `ω_[f](c_{f⁻¹}) f_ω`, where the
+element `c_{f⁻¹}` is read in `A_[f]` through `[f⁻¹] = [f]`. -/
+@[simp] theorem bassSerre_labelω (f : B.graph.E) : (B.bassSerre c).labelω f =
+    𝔸.ω (B.typ.mapE f) (MulEquiv.cast (M := 𝔸.edgeGroup)
+      ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)) (c (B.graph.rev f))) *
+      B.labelω f := by
   unfold bassSerre
-  rw [labelω_def, labelω_def, map_mul, mul_inv_rev, map_inv, inv_inv, hc f]
-  exact congrArg (· * _) (𝔸.cast_α_eq_ω (B.typ.map_rev f) _ _ _)
+  rw [labelω_def, labelω_def, map_mul, mul_inv_rev, map_inv, inv_inv,
+    ← 𝔸.cast_α_eq_ω (B.typ.map_rev f) ((congrArg Γ.src (B.typ.map_rev f)).trans (Γ.src_rev _))
+      ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+
+@[simp] theorem bassSerre_grpSrc (f : B.graph.E) : (B.bassSerre c).grpSrc f = B.grpSrc f := by
+  ext
+  rw [mem_grpSrc, mem_grpSrc]
+  -- The vertex groups and the start of `f` are those of `B` by definition.
+  rfl
+
+@[simp] theorem bassSerre_grpTgt (f : B.graph.E) : (B.bassSerre c).grpTgt f = B.grpTgt f := by
+  ext
+  rw [mem_grpTgt, mem_grpTgt]
+  -- The vertex groups and the end of `f` are those of `B` by definition.
+  rfl
+
+@[simp] theorem bassSerre_rankGrp (z : B.graph.V) : (B.bassSerre c).rankGrp z = B.rankGrp z :=
+  rankGrp_congr (MulEquiv.refl _)
+
+/-- The Bass–Serre move by the trivial family is the identity. -/
+@[simp] theorem bassSerre_one : B.bassSerre 1 = B := by
+  cases B
+  simp [bassSerre]
+
+/-- Two Bass–Serre moves compose to the Bass–Serre move by the product family. -/
+@[simp] theorem bassSerre_bassSerre
+    (c' : ∀ f : B.graph.E, 𝔸.edgeGroup (Γ.toGeomEdge (B.typ.mapE f))) :
+    (B.bassSerre c).bassSerre c' = B.bassSerre (c' * c) := by
+  unfold bassSerre
+  simp [mul_assoc]
 
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse preserves the
 represented subgroup (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A1). -/
 theorem subgroup_bassSerre (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 𝔸.edgeGroup)
     ((congrArg Γ.toGeomEdge (B.typ.map_rev f)).trans (Γ.toGeomEdge_rev _)).symm (c f)) :
     (B.bassSerre c).subgroup = B.subgroup := by
-  have hω := B.bassSerre_labelω c hc
+  have hω (e : B.graph.E) :
+      (B.bassSerre c).labelω e = 𝔸.ω (B.typ.mapE e) (c e) * B.labelω e := by
+    rw [bassSerre_labelω, hc e]
+    simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
   -- Every `𝔹`-path reads homotopic `𝔸`-paths in `B` and in `B.bassSerre c`: the letter of a dart
   -- changes from `a, e, b` to `a α(c)⁻¹, e, ω(c) b`.
   have key : ∀ {y z : B.toGraphOfGroups.LetterVertex} (p : B.toGraphOfGroups.Path y z),
@@ -221,7 +323,7 @@ theorem subgroup_bassSerre (hc : ∀ f, c (B.graph.rev f) = MulEquiv.cast (M := 
 /-- A Bass–Serre move preserves the complexity. -/
 @[simp] theorem complexity_bassSerre : (B.bassSerre c).complexity = B.complexity := by
   rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr fun z => rankGrp_congr (MulEquiv.refl _))
+  exact congrArg _ (finsum_congr (B.bassSerre_rankGrp c))
 
 end bassSerre
 
@@ -229,8 +331,9 @@ end bassSerre
 
 /-- The simple adjustment A2 by a family `a_f ∈ A_{o([f])}`: the label `f_α` of a dart `f` is
 replaced by `a_f f_α`. The move of Kapovich, Weidmann and Myasnikov takes `a_f` in the vertex group
-`B_{o(f)}`. -/
-@[expose] def adjust (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f))) :
+`B_{o(f)}`. As for `AGraph.conj`, the definition is exposed and unfolds at instance transparency. -/
+@[expose, instance_reducible]
+def adjust (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f))) :
     AGraph.{u, v, w, x, u', v'} 𝔸 v₀ where
   graph := B.graph
   typ := B.typ
@@ -242,6 +345,15 @@ replaced by `a_f f_α`. The move of Kapovich, Weidmann and Myasnikov takes `a_f`
 section adjust
 
 variable (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
+
+@[simp] theorem adjust_graph : (B.adjust a).graph = B.graph :=
+  rfl
+
+@[simp] theorem adjust_typ : (B.adjust a).typ = B.typ :=
+  rfl
+
+@[simp] theorem adjust_base : (B.adjust a).base = B.base :=
+  rfl
 
 @[simp] theorem adjust_grp (z : B.graph.V) : (B.adjust a).grp z = B.grp z :=
   rfl
@@ -255,6 +367,32 @@ variable (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
       (a (B.graph.rev f)))⁻¹ := by
   unfold adjust
   rw [labelω_def, labelω_def, map_mul, mul_inv_rev]
+
+@[simp] theorem adjust_grpSrc (f : B.graph.E) : (B.adjust a).grpSrc f = B.grpSrc f := by
+  ext
+  rw [mem_grpSrc, mem_grpSrc]
+  -- The vertex groups and the start of `f` are those of `B` by definition.
+  rfl
+
+@[simp] theorem adjust_grpTgt (f : B.graph.E) : (B.adjust a).grpTgt f = B.grpTgt f := by
+  ext
+  rw [mem_grpTgt, mem_grpTgt]
+  -- The vertex groups and the end of `f` are those of `B` by definition.
+  rfl
+
+@[simp] theorem adjust_rankGrp (z : B.graph.V) : (B.adjust a).rankGrp z = B.rankGrp z :=
+  rankGrp_congr (MulEquiv.refl _)
+
+/-- The simple adjustment by the trivial family is the identity. -/
+@[simp] theorem adjust_one : B.adjust 1 = B := by
+  cases B
+  simp [adjust]
+
+/-- Two simple adjustments compose to the simple adjustment by the product family. -/
+@[simp] theorem adjust_adjust (a' : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f))) :
+    (B.adjust a).adjust a' = B.adjust (a' * a) := by
+  unfold adjust
+  simp [mul_assoc]
 
 /-- A simple adjustment by elements of the vertex groups preserves the represented subgroup
 (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A2). -/
@@ -284,7 +422,7 @@ theorem subgroup_adjust (ha : ∀ f, a f ∈ B.grpSrc f) : (B.adjust a).subgroup
 /-- A simple adjustment preserves the complexity. -/
 @[simp] theorem complexity_adjust : (B.adjust a).complexity = B.complexity := by
   rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr fun z => rankGrp_congr (MulEquiv.refl _))
+  exact congrArg _ (finsum_congr (B.adjust_rankGrp a))
 
 end adjust
 
