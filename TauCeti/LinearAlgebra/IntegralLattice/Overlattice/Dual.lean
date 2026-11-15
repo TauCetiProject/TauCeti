@@ -58,6 +58,12 @@ computed componentwise on an orthogonal direct sum.
   carrier-level criterion for `L_H`: `(L_H)ᵛ = L_H` exactly when `H = H⊥`.
 * `TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`: the glued even
   overlattice `L_H` is `IntegralLattice.IsUnimodular` exactly when `H` is Lagrangian.
+* In the namespace `TauCeti.IntegralLattice`, for an integral lattice `N` for the form of `L`
+  containing `L`:
+  * `isUnimodular_iff_isLagrangian_discriminantSubgroup_toIntermediateCarrier`: `N` is unimodular
+    exactly when `N / L` is Lagrangian;
+  * `isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff`: for an even `L`, `N` is even
+    and unimodular exactly when `N / L` is a Lagrangian of the discriminant quadratic module.
 * `TauCeti.IntegralLattice.IntermediateCarrier.mem_dualCarrier_orthogonalSum_iff`: a vector is a
   dual vector of an assembled overlattice exactly when both of its components are dual vectors of
   the two factors.
@@ -323,6 +329,35 @@ theorem isUnimodular_ofIsotropicSubgroup_iff_isLagrangian (hL : L.IsEven)
     IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian,
     evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe,
     discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup]
+
+/-- **An integral overlattice is unimodular exactly when it cuts out a Lagrangian.** Let `N` be
+an integral lattice for the same form as `L` containing `L`. Then `N` is unimodular exactly when
+the subgroup `N / L` of the discriminant group of `L` is a Lagrangian of the discriminant bilinear
+module. No evenness is needed. -/
+theorem isUnimodular_iff_isLagrangian_discriminantSubgroup_toIntermediateCarrier
+    (N : IntegralLattice V) (hform : N.form = L.form) (hle : L.carrier ≤ N.carrier) :
+    N.IsUnimodular ↔
+      L.discriminantBilinearModule.IsLagrangian
+        (L.discriminantSubgroup (N.toIntermediateCarrier hform hle)) := by
+  have hP := N.isIntegral_toIntermediateCarrier hform hle
+  simpa only [N.toIntegralLattice_toIntermediateCarrier hform hle hP] using
+    hP.isUnimodular_toIntegralLattice_iff_isLagrangian
+
+/-- **An overlattice is even unimodular exactly when it cuts out a quadratic Lagrangian.** Let
+`L` be an even lattice and `N` an integral lattice for the same form containing `L`. Then `N` is
+even and unimodular exactly when the subgroup `N / L` of the discriminant group of `L` is a
+Lagrangian of the discriminant quadratic module. -/
+theorem isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff (hL : L.IsEven)
+    (N : IntegralLattice V) (hform : N.form = L.form) (hle : L.carrier ≤ N.carrier) :
+    (L.discriminantQuadraticModule hL).IsLagrangian
+        (L.discriminantSubgroup (N.toIntermediateCarrier hform hle)) ↔
+      N.IsEven ∧ N.IsUnimodular := by
+  refine (FiniteQuadraticModule.isLagrangian_def _ _).trans <| and_congr
+    ((isEven_iff_isIsotropic_discriminantSubgroup hL _).symm.trans
+      ⟨fun hP ↦ ?_, N.isEven_toIntermediateCarrier hform hle⟩)
+    (L.isUnimodular_iff_isLagrangian_discriminantSubgroup_toIntermediateCarrier N hform hle).symm
+  simpa only [N.toIntegralLattice_toIntermediateCarrier hform hle hP.isIntegral] using
+    hP.isEven_toIntegralLattice
 
 end Subgroups
 

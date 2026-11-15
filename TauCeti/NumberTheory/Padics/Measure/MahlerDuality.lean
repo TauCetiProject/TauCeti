@@ -22,7 +22,7 @@ moment sequences:
 
 * every integral is the convergent series `μ f = ∑ n, a_n(f) * b_n` in the Mahler coefficients
   `a_n(f) = Δ^n f (0)` of `f` (`AbstractMeasure.hasSum_mahlerEquiv_mul_coeff_amiceTransform`);
-* a bound `‖b_n‖ ≤ C` on the moments gives `‖μ f‖ ≤ C * ‖f‖`, and conversely
+* a bound `‖b_n‖ ≤ C` on the moments gives `‖μ f‖ ≤ C * ‖f‖`, and conversely when `‖1‖ = 1`
   (`AbstractMeasure.norm_apply_le_of_forall_norm_coeff_le`,
   `AbstractMeasure.norm_coeff_amiceTransform_le`).
 
@@ -68,13 +68,14 @@ No norm is installed on the measure carrier; norms are taken on its image under 
 * K. Mahler, *An interpolation series for continuous functions of a p-adic variable*,
   J. reine angew. Math. 199 (1958), 23–34.
 * Y. Amice, *Interpolation p-adique*, Bull. Soc. Math. France 92 (1964), 117–180.
-* P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.3 and §II.2.
+* P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.2 (Theorem I.2.3)
+  and §II.3 (Proposition II.3.1, §II.3.2).
 * J. Rodrigues Jacinto and C. Williams, *An introduction to p-adic L-functions*, §3.
 -/
 
 public section
 
-open scoped AbstractMeasure ENNReal PowerSeries ZeroAtInfty
+open scoped AbstractMeasure ENNReal PowerSeries
 open PadicInt ZeroAtInftyContinuousMap
 
 variable {p : ℕ} [Fact p.Prime]
