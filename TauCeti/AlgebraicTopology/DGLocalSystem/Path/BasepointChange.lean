@@ -313,6 +313,24 @@ theorem tensorPathChainPoint_tensorPathChainAct
     rw [tensorPathChainAct_tmul, tensorPathChainPoint_apply, balance,
       pathChainToLoopChain_smul_pathChainPoint, h, add_assoc, tensorPathChainHomotopy]
 
+/-- Without Moore paths from `a` to `b` there are no path chains, so tensoring with them gives
+the zero module. -/
+theorem eq_zero_of_isEmpty_moorePathBetween [IsEmpty (MoorePathBetween B a b)]
+    {L : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)}
+    (z : tensorBimoduleObj L (pathChainBimodule B a b R)) : z = 0 := by
+  have hc (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) : c = 0 := by
+    induction c using cubicalChainModule.induction_on with
+    | add c c' ih ih' => rw [ih, ih', add_zero]
+    | lof q c =>
+      induction c using NormalizedCubicalChain.induction_on with
+      | zero => exact map_zero _
+      | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
+      | smul r c ih => rw [map_smul, ih, smul_zero]
+      | ofCube c => exact isEmptyElim (c 0)
+  induction z using BalancedTensorProduct.induction_on with
+  | ht m c => rw [hc c, tmul_zero]
+  | ha z z' ih ih' => rw [ih, ih', add_zero]
+
 /-- **Changing the basepoint preserves quasi-isomorphisms.** For every quasi-isomorphism
 `f : M → N` of DG local systems at `a`, the tensored morphism
 `f ⊗ 1 : M ⊗ C_*(P_{a→b} B) → N ⊗ C_*(P_{a→b} B)` of DG local systems at `b` is a
@@ -329,25 +347,10 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
   let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
   let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
-  · -- Without Moore paths from `a` to `b`, there are no path chains, so both tensor products
-    -- vanish.
-    have hc (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) : c = 0 := by
-      induction c using cubicalChainModule.induction_on with
-      | add c c' ih ih' => rw [ih, ih', add_zero]
-      | lof q c =>
-        induction c using NormalizedCubicalChain.induction_on with
-        | zero => exact map_zero _
-        | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
-        | smul r c ih => rw [map_smul, ih, smul_zero]
-        | ofCube c => exact isEmptyElim (c 0)
-    have hz (L : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
-        (z : tensorBimoduleObj L (pathChainBimodule B a b R)) : z = 0 := by
-      induction z using BalancedTensorProduct.induction_on with
-      | ht m c => rw [hc c, tmul_zero]
-      | ha z z' ih ih' => rw [ih, ih', add_zero]
+  · -- Without Moore paths from `a` to `b`, both tensor products vanish.
     rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-    exact fun x y _ _ ↦ ⟨0, 0, by rw [map_zero, hz M x],
-      by rw [map_zero, map_zero, add_zero, hz N y]⟩
+    exact fun x y _ _ ↦ ⟨0, 0, by rw [map_zero, eq_zero_of_isEmpty_moorePathBetween x],
+      by rw [map_zero, map_zero, add_zero, eq_zero_of_isEmpty_moorePathBetween y]⟩
   · obtain ⟨δ⟩ := hB
     exact DGRightModuleHom.isQuasiIso_of_homotopyRetract
       (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) (f.toLinearMap.restrictScalars R)
