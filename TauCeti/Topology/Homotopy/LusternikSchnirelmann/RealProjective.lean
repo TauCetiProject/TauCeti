@@ -8,9 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Cohomology
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.CupLength
+import TauCeti.AlgebraicTopology.Cohomology.Cup.RealProjective
 
 /-!
-# The cup length of real projective space away from characteristic two
+# The cup length of real projective space
 
 Over a nontrivial commutative ring `k` in which `2` is a unit, for instance `k = ℚ`, the cohomology
 of `RPᴺ` is that of a point for even `N` and that of the sphere `Sᴺ` for odd `N`
@@ -23,8 +24,12 @@ For even `N`, in particular for the real projective plane, the cup-length lower 
 `lsCupLength X k + 1 ≤ lsCategoryCount X univ` therefore gives no information over such a ring:
 it only says that the nonempty space `RPᴺ` needs at least one categorical open set. The
 coefficients matter: over `ZMod 2` the cohomology ring of `RPᴺ` is `𝔽₂[α] / (α ^ (N + 1))` with `α`
-of degree `1` (Hatcher, Theorem 3.12), so its cup length there is `N`. That computation needs the
-mod `2` cup product of `RPᴺ` and is not made here.
+of degree `1` (Hatcher, Theorem 3.12), so its cup length there is `N`. For the real projective plane
+this is proved here: the square of the nonzero class of `H¹(ℝP²; 𝔽₂)` is nonzero
+(`TauCeti.RealProjectiveSpace.singularCup_self_ne_zero`), and the mod-two cohomology vanishes above
+degree `2`, so the cup length of `ℝP²` over `ZMod 2` is `2`. So every categorical cover of `ℝP²`
+has at least three members, while over `ℚ` the bound only asks for one. The general case needs the
+full mod-two cohomology ring of `RPᴺ` and is not made here.
 
 ## Main results
 
@@ -32,6 +37,9 @@ mod `2` cup product of `RPᴺ` and is not made here.
   nontrivial commutative ring in which `2` is a unit is `1` for odd `N` and `0` for even `N`.
 * `TauCeti.lsCupLength_projectivization_real_of_isUnit_two`: the same for the projectivization
   `ℙ ℝ (Fin (N + 1) → ℝ)`.
+* `TauCeti.lsCupLength_realProjectiveSpace_two_zmod_two` and
+  `TauCeti.lsCupLength_projectivization_real_fin_three_zmod_two`: the cup length of the real
+  projective plane over `ZMod 2` is `2`.
 
 ## References
 
@@ -79,5 +87,29 @@ theorem lsCupLength_projectivization_real_of_isUnit_two (h2 : IsUnit (2 : k)) :
     lsCupLength (ℙ ℝ (Fin (N + 1) → ℝ)) k = if Odd N then 1 else 0 := by
   rw [← (homeomorphProjectivization N).toHomotopyEquiv.lsCupLength_eq,
     lsCupLength_realProjectiveSpace_of_isUnit_two h2]
+
+/-- **The cup length of the real projective plane over `𝔽₂` is `2`.** The square of the nonzero
+class of `H¹(ℝP²; 𝔽₂)` is nonzero, and `Hᵖ(ℝP²; 𝔽₂)` vanishes for `p > 2`. Over a ring in which
+`2` is a unit the cup length of `ℝP²` is `0` instead
+(`TauCeti.lsCupLength_realProjectiveSpace_of_isUnit_two`). -/
+@[simp]
+theorem lsCupLength_realProjectiveSpace_two_zmod_two :
+    lsCupLength (RealProjectiveSpace 2) (ZMod 2) = 2 := by
+  refine le_antisymm (lsCupLength_le_of_subsingleton fun p hp ↦
+    subsingleton_singularCohomology_of_two_eq_zero (N := 2) rfl _ hp) ?_
+  have hrank := finrank_singularCohomology_of_two_eq_zero (N := 2) (k := ZMod 2) rfl 1
+  simp only [Nat.one_le_ofNat, ↓reduceIte] at hrank
+  have := Module.nontrivial_of_finrank_pos (R := ZMod 2) (hrank ▸ one_pos)
+  obtain ⟨a, ha⟩ := exists_ne (0 : (TopCat.of (RealProjectiveSpace 2)).singularCohomology
+    (ModuleCat.of (ZMod 2) (ZMod 2)) (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) 1)
+  exact_mod_cast le_lsCupLength (.cup one_ne_zero rfl a (.single one_ne_zero a))
+    (singularCup_self_ne_zero ha)
+
+/-- **The cup length of the projectivization of `ℝ³` over `𝔽₂` is `2`.** -/
+@[simp]
+theorem lsCupLength_projectivization_real_fin_three_zmod_two :
+    lsCupLength (ℙ ℝ (Fin 3 → ℝ)) (ZMod 2) = 2 := by
+  rw [← (homeomorphProjectivization 2).toHomotopyEquiv.lsCupLength_eq,
+    lsCupLength_realProjectiveSpace_two_zmod_two]
 
 end TauCeti

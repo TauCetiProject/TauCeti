@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Morse.LusternikSchnirelmann
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
+public import TauCeti.Geometry.Manifold.Morse.Projectivization
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.RealProjective
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Torus
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
@@ -36,7 +38,12 @@ sphere by the height function (`TauCeti.minCriticalCount_sphere`). On the torus 
 Lusternik–Schnirelmann count is `m + 1` (`TauCeti.lsCategoryCount_univ_pi_addCircle`), so every
 smooth function on `Tᵐ`, degenerate or not, has at least `m + 1` critical points
 (`TauCeti.card_add_one_le_totalCriticalCount_torus` and
-`TauCeti.card_add_one_le_minCriticalCount_torus`).
+`TauCeti.card_add_one_le_minCriticalCount_torus`). On the real projective plane the cup length over
+`𝔽₂` is `2`, so every smooth function on `ℝP²` has at least three critical points, and a moment
+function with three distinct weights has exactly three: `c(ℝP²) = 3`
+(`TauCeti.minCriticalCount_projectivization_real_fin_three`), and the Lusternik–Schnirelmann
+count of `ℝP²` is `3` (`TauCeti.lsCategoryCount_univ_projectivization_real_fin_three`). Over `ℚ`
+the cup length of `ℝP²` is `0`, so the coefficients matter.
 
 The minimum is additive over a finite cover by pairwise disjoint open sets
 (`TauCeti.minCriticalCount_eq_sum`), in particular over the connected components of a locally
@@ -67,6 +74,9 @@ components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), h
 * `TauCeti.card_add_one_le_totalCriticalCount_torus` and
   `TauCeti.card_add_one_le_minCriticalCount_torus`: every smooth function on the torus `Tᵐ` has at
   least `m + 1` critical points.
+* `TauCeti.minCriticalCount_projectivization_real_fin_three` and
+  `TauCeti.lsCategoryCount_univ_projectivization_real_fin_three`: the minimal number of critical
+  points and the Lusternik–Schnirelmann count of the real projective plane are both `3`.
 
 ## References
 
@@ -249,5 +259,42 @@ theorem card_add_one_le_minCriticalCount_torus (p : ι → ℝ) [∀ i, Fact (0 
   le_minCriticalCount_iff.2 fun _ ↦ card_add_one_le_totalCriticalCount_torus
 
 end Torus
+
+section ProjectivePlane
+
+open scoped LinearAlgebra.Projectivization
+
+/-- A moment function on the real projective plane with three distinct weights has exactly three
+critical points. -/
+private theorem totalCriticalCount_projectiveMomentFunction_fin_three :
+    totalCriticalCount 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ fun i : Fin 3 ↦ (i : ℝ)) =
+      3 :=
+  totalCriticalCount_projectiveMomentFunction (Nat.cast_injective.comp Fin.val_injective)
+
+/-- **The minimal number of critical points of the real projective plane is `3`.** Every smooth
+function on `ℝP²`, degenerate or not, has at least `3` critical points, since the cup length of
+`ℝP²` over `𝔽₂` is `2`, and a moment function with three distinct weights has exactly `3`. -/
+@[simp]
+theorem minCriticalCount_projectivization_real_fin_three :
+    minCriticalCount 𝓘(ℝ, Fin 2 → ℝ) (ℙ ℝ (Fin 3 → ℝ)) = 3 := by
+  refine le_antisymm ((minCriticalCount_le (contMDiff_projectiveMomentFunction (𝕜 := ℝ) _)).trans_eq
+    totalCriticalCount_projectiveMomentFunction_fin_three) ?_
+  have h := lsCupLength_add_one_le_minCriticalCount (I := 𝓘(ℝ, Fin 2 → ℝ))
+    (M := ℙ ℝ (Fin 3 → ℝ)) (ZMod 2)
+  rwa [lsCupLength_projectivization_real_fin_three_zmod_two, two_add_one_eq_three] at h
+
+/-- **The Lusternik–Schnirelmann count of the real projective plane is `3`.** The cup length of
+`ℝP²` over `𝔽₂` is `2`, and a moment function with three critical points bounds the count by
+`3`. -/
+@[simp]
+theorem lsCategoryCount_univ_projectivization_real_fin_three :
+    lsCategoryCount (ℙ ℝ (Fin 3 → ℝ)) univ = 3 := by
+  refine le_antisymm ((lsCategoryCount_univ_le_totalCriticalCount
+    (contMDiff_projectiveMomentFunction (𝕜 := ℝ) _)).trans_eq
+      totalCriticalCount_projectiveMomentFunction_fin_three) ?_
+  have h := lsCupLength_add_one_le_lsCategoryCount_univ (X := ℙ ℝ (Fin 3 → ℝ)) (R := ZMod 2)
+  rwa [lsCupLength_projectivization_real_fin_three_zmod_two, two_add_one_eq_three] at h
+
+end ProjectivePlane
 
 end TauCeti
