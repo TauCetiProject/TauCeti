@@ -246,40 +246,6 @@ theorem fppfHomogeneousQuotientRightMul_eq_id_of_mem
     fppfHomogeneousQuotientRightMul H q h = 𝟙 _ :=
   (fppfHomogeneousQuotientRightMul_eq_id_iff H h).mpr hq
 
-/-- The morphism `xP ↦ xgQ` is an isomorphism exactly when `g⁻¹Pg = Q`, that is, when `P` is
-the conjugate cut out by `J.conjugate g`. -/
-theorem isIso_fppfHomogeneousQuotientRightMul_iff
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) (h : J.conjugate g ≤ I) :
-    IsIso (fppfHomogeneousQuotientRightMul H g h) ↔ J.conjugate g = I := by
-  constructor
-  · intro hiso
-    refine le_antisymm h ((HopfIdeal.le_iff_forall_quotientPointsSubgroup_le _ _).mpr
-      fun A p hp ↦ ?_)
-    -- `pP` and `eP` have the same image `gQ` in `G/Q`, so they agree in `G/P`.
-    have hinj := (ConcreteCategory.bijective_of_isIso
-      ((fppfHomogeneousQuotientRightMul H g h).hom.app (op (op A)))).injective
-    have hpg := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g A p⁻¹).mpr
-      (inv_mem hp)
-    have hp1 : (fppfHomogeneousQuotientProjection H I).app (op (op A)) (ULift.up p) =
-        (fppfHomogeneousQuotientProjection H I).app (op (op A))
-          (ULift.up (1 : HopfAlgebra.points (R := R) (H := H) A)) := by
-      refine hinj ?_
-      rw [fppfHomogeneousQuotientRightMul_app_projection,
-        fppfHomogeneousQuotientRightMul_app_projection,
-        fppfHomogeneousQuotientProjection_app_eq_iff]
-      simpa only [mul_inv_rev, one_mul, mul_assoc] using hpg
-    simpa only [mul_one, inv_mem_iff] using
-      (fppfHomogeneousQuotientProjection_app_eq_iff H I (op (op A)) p 1).mp hp1
-  · intro heq
-    have h' : I.conjugate g⁻¹ ≤ J := by rw [← heq, HopfIdeal.conjugate_inv_conjugate]
-    refine ⟨⟨fppfHomogeneousQuotientRightMul H g⁻¹ h', ?_, ?_⟩⟩
-    · rw [fppfHomogeneousQuotientRightMul_comp, fppfHomogeneousQuotientRightMul_eq_id_iff,
-        mul_inv_cancel]
-      exact one_mem _
-    · rw [fppfHomogeneousQuotientRightMul_comp, fppfHomogeneousQuotientRightMul_eq_id_iff,
-        inv_mul_cancel]
-      exact one_mem _
-
 /-- The morphism `xP ↦ xgQ` is locally surjective, as the projection `G ⟶ G/Q` is. -/
 instance fppfHomogeneousQuotientRightMul_isLocallySurjective
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) (h : J.conjugate g ≤ I) :
@@ -321,10 +287,8 @@ theorem conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq
               (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g)) := by
   constructor
   · intro h A p hp
-    refine (fppfHomogeneousQuotientProjection_app_eq_iff H J A _ _).mpr ?_
-    have hp' := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g _ p⁻¹).mpr
-      (quotientPointsSubgroup_le_of_le H h _ (inv_mem hp))
-    simpa only [mul_inv_rev, mul_assoc] using hp'
+    simpa only [pointsRightMul_comp_projection_app_apply, one_mul] using
+      pointsRightMul_comp_projection_invariant H g h A 1 ⟨p, hp⟩
   · intro hfix
     refine (HopfIdeal.le_iff_forall_quotientPointsSubgroup_le _ _).mpr fun A p hp ↦ ?_
     refine (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g A p).mp ?_
@@ -345,21 +309,36 @@ theorem exists_fppfHomogeneousQuotientProjection_comp_eq_pointsRightMul_comp_iff
     ⟨_, fppfHomogeneousQuotientProjection_comp_rightMul H g h⟩⟩
   refine (conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq H g).mpr
     fun A p hp ↦ ?_
-  -- Evaluate both sides of `hf` at a lifted point.
-  have hval (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-      f.hom.app A ((fppfHomogeneousQuotientProjection H I).app A (ULift.up x)) =
-        (fppfHomogeneousQuotientProjection H J).app A
-          (ULift.up (x * HopfAlgebra.extendPoint H A.unop.unop g)) := by
-    rw [← pointsRightMul_comp_projection_app_apply, ← hf, NatTrans.comp_app,
-      ConcreteCategory.comp_apply]
-  -- `p` and `1` have the same image in `G/P`, hence the same image under `f`.
-  have hp1 : (fppfHomogeneousQuotientProjection H I).app A (ULift.up p) =
-      (fppfHomogeneousQuotientProjection H I).app A
-        (ULift.up (1 : HopfAlgebra.points (R := R) (H := H) A.unop.unop)) :=
-    (fppfHomogeneousQuotientProjection_app_eq_iff H I A _ _).mpr
-      (by simpa only [mul_one] using inv_mem hp)
-  have hp1g := (hval p).symm.trans ((congrArg _ hp1).trans (hval 1))
-  rwa [one_mul] at hp1g
+  -- The composite with `f` is invariant under `P`; evaluate this at the point `1`.
+  simpa only [fppfHomogeneousQuotientHomEquiv_apply, hf, pointsRightMul_comp_projection_app_apply,
+    one_mul] using (fppfHomogeneousQuotientHomEquiv H I _ f).property A 1 ⟨p, hp⟩
+
+/-- The morphism `xP ↦ xgQ` is an isomorphism exactly when `g⁻¹Pg = Q`, that is, when `P` is
+the conjugate cut out by `J.conjugate g`. -/
+theorem isIso_fppfHomogeneousQuotientRightMul_iff
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) (h : J.conjugate g ≤ I) :
+    IsIso (fppfHomogeneousQuotientRightMul H g h) ↔ J.conjugate g = I := by
+  constructor
+  · intro hiso
+    -- The inverse descends `x ↦ xg⁻¹P`, so `gPg⁻¹ ⊆ Q`.
+    have h' : I.conjugate g⁻¹ ≤ J :=
+      (exists_fppfHomogeneousQuotientProjection_comp_eq_pointsRightMul_comp_iff H g⁻¹).mp
+        ⟨inv (fppfHomogeneousQuotientRightMul H g h), by
+          rw [ObjectProperty.FullSubcategory.hom_inv, IsIso.comp_inv_eq, Category.assoc,
+            fppfHomogeneousQuotientProjection_comp_rightMul,
+            pointsRightMul_comp_pointsRightMul_assoc, inv_mul_cancel, pointsRightMul_one,
+            Category.id_comp]⟩
+    exact le_antisymm h (by simpa only [HopfIdeal.conjugate_conjugate_inv] using
+      HopfIdeal.conjugate_mono g h')
+  · intro heq
+    have h' : I.conjugate g⁻¹ ≤ J := by rw [← heq, HopfIdeal.conjugate_inv_conjugate]
+    refine ⟨⟨fppfHomogeneousQuotientRightMul H g⁻¹ h', ?_, ?_⟩⟩
+    · rw [fppfHomogeneousQuotientRightMul_comp, fppfHomogeneousQuotientRightMul_eq_id_iff,
+        mul_inv_cancel]
+      exact one_mem _
+    · rw [fppfHomogeneousQuotientRightMul_comp, fppfHomogeneousQuotientRightMul_eq_id_iff,
+        inv_mul_cancel]
+      exact one_mem _
 
 end
 
