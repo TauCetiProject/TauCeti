@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TraceWord.Counting
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Leading trace words and coupled walks via canonical tree walks
@@ -136,6 +137,22 @@ theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
     (ne_and_card_edge_fiber_eq_two_of_no_singleton_nonloop_edge_of_card_image_eq w
       (fun i _ ↦ h i) hv).2 i
 
+private theorem card_filter_range_edge_canonicalWalk (v : Fin (2 * m + 1) → α) (i : Fin (2 * m)) :
+    #{j ∈ range (2 * m) | s(canonicalWalk v j, canonicalWalk v (j + 1)) =
+        s(canonicalWalk v i.val, canonicalWalk v (i.val + 1))} =
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} := by
+  have hedge (a b : Fin (2 * m)) :
+      s(canonicalWalk v a.castSucc, canonicalWalk v a.succ) =
+        s(canonicalWalk v b.castSucc, canonicalWalk v b.succ) ↔
+      s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) := by
+    simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
+  refine card_bij (fun j hj ↦ (⟨j, mem_range.mp (mem_filter.mp hj).1⟩ : Fin (2 * m)))
+    (fun j hj ↦ mem_filter.mpr ⟨mem_univ _, (hedge _ i).mp
+      (by simpa only [Fin.val_castSucc, Fin.val_succ] using (mem_filter.mp hj).2)⟩)
+    (fun _ _ _ _ ↦ Fin.mk.inj) fun j hj ↦ ⟨j.val, mem_filter.mpr ⟨mem_range.mpr j.isLt,
+      by simpa only [Fin.val_castSucc, Fin.val_succ] using
+        (hedge j i).mpr (mem_filter.mp hj).2⟩, rfl⟩
+
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/
 theorem isTreeWalk_canonicalWalk (w : Fin (2 * m + 1) → α)
@@ -150,24 +167,7 @@ theorem isTreeWalk_canonicalWalk (w : Fin (2 * m + 1) → α)
     exact (canonicalWalk_eq_iff w (Fin.last _) 0).2 hclosed
   le_self i _ := canonicalWalk_le w i
   card_vertices := (card_fixed_canonicalWalk w).trans hv
-  card_edge i hi := by
-    have hedge (a b : Fin (2 * m)) :
-        s(canonicalWalk w a.castSucc, canonicalWalk w a.succ) =
-          s(canonicalWalk w b.castSucc, canonicalWalk w b.succ) ↔
-        s(w a.castSucc, w a.succ) = s(w b.castSucc, w b.succ) := by
-      simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-    refine Eq.trans ?_ (he ⟨i, hi⟩)
-    apply card_bij (fun j hj => (⟨j, mem_range.mp (mem_filter.mp hj).1⟩ : Fin (2 * m)))
-    · intro j hj
-      simp only [mem_filter, mem_univ, true_and]
-      apply (hedge _ ⟨i, hi⟩).mp
-      simpa only [Fin.val_castSucc, Fin.val_succ] using (mem_filter.mp hj).2
-    · intro j hj k hk h
-      exact Fin.mk.inj h
-    · intro j hj
-      refine ⟨j.val, mem_filter.mpr ⟨mem_range.mpr j.isLt, ?_⟩, rfl⟩
-      have hh := (hedge j ⟨i, hi⟩).mpr (mem_filter.mp hj).2
-      simpa only [Fin.val_castSucc, Fin.val_succ] using hh
+  card_edge i hi := (card_filter_range_edge_canonicalWalk w ⟨i, hi⟩).trans (he ⟨i, hi⟩)
 
 /-- The `canonicalWalk` of `v : Fin (2 * m + 1) → α` is a closed tree walk if and only if `v` is
 closed, visits `m + 1` distinct vertices, and traverses every unordered edge twice. -/
@@ -175,21 +175,11 @@ theorem isTreeWalk_canonicalWalk_iff (v : Fin (2 * m + 1) → α) :
     IsTreeWalk m (canonicalWalk v) ↔
       v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
         ∀ i : Fin (2 * m),
-          #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2 := by
-  refine ⟨fun hw ↦ ⟨(canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp
+          #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2 :=
+  ⟨fun hw ↦ ⟨(canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp
     (hw.closed.trans hw.root.symm), (card_fixed_canonicalWalk v).symm.trans hw.card_vertices,
-    fun i ↦ ?_⟩, fun ⟨hc, hv, he⟩ ↦ isTreeWalk_canonicalWalk v hc hv he⟩
-  have hedge (a b : Fin (2 * m)) :
-      s(canonicalWalk v a.castSucc, canonicalWalk v a.succ) =
-        s(canonicalWalk v b.castSucc, canonicalWalk v b.succ) ↔
-      s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) := by
-    simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-  refine Eq.trans (card_bij (fun j _ ↦ j.val) (fun j hj ↦ mem_filter.mpr ⟨mem_range.mpr j.isLt,
-    by simpa using (hedge j i).mpr (mem_filter.mp hj).2⟩) (fun _ _ _ _ ↦ Fin.ext) ?_)
-    (hw.card_edge i i.isLt)
-  intro j hj; obtain ⟨hj_lt, hj_eq⟩ := mem_filter.mp hj
-  exact ⟨⟨j, mem_range.mp hj_lt⟩, mem_filter.mpr ⟨mem_univ _,
-    (hedge ⟨j, mem_range.mp hj_lt⟩ i).mp (by simpa using hj_eq)⟩, rfl⟩
+    fun i ↦ (card_filter_range_edge_canonicalWalk v i).symm.trans (hw.card_edge i i.isLt)⟩,
+    fun ⟨hc, hv, he⟩ ↦ isTreeWalk_canonicalWalk v hc hv he⟩
 
 /-- A leading cyclic trace word becomes a tree walk under first-visit labeling. The endpoint
 is added by cycling back to the initial vertex. The no-singleton condition alone, together with
@@ -222,20 +212,12 @@ private theorem image_spliceWords [DecidableEq α] {n : ℕ} (u₁ u₂ : Fin n 
   ext x; simp only [mem_image, mem_univ, true_and, mem_union]
   exact (spliceEquiv n).surjective.exists.trans (by simp)
 
-private theorem val_finRotate_of_lt {n : ℕ} {i : Fin n} (h : i.val + 1 < n) :
-    (finRotate n i).val = i.val + 1 := by
-  rcases n with _ | n
-  · exact i.elim0
-  · simp [finRotate_apply, Fin.add_def]; omega
-
 private theorem spliceWords_edge {u₁ u₂ : Fin (m + 1) → α} (h0 : u₁ 0 = u₂ 0)
     (x : Fin (m + 1) ⊕ Fin (m + 1)) :
     s(spliceWords u₁ u₂ (spliceEquiv (m + 1) x),
         spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) x))) =
       Sum.elim (fun t ↦ s(u₁ t, u₁ (finRotate (m + 1) t)))
         (fun t ↦ s(u₂ t, u₂ (finRotate (m + 1) t))) x := by
-  have hcast (j : Fin m) : finRotate (m + 1) j.castSucc = j.succ := by
-    cases j with | mk j hj => exact finRotate_of_lt hj
   cases x with
   | inl i =>
     suffices spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl i))) =
@@ -243,12 +225,12 @@ private theorem spliceWords_edge {u₁ u₂ : Fin (m + 1) → α} (h0 : u₁ 0 =
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
     · have hrot : finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl (Fin.last m))) =
           spliceEquiv (m + 1) (.inr 0) := by
-        ext; rw [val_finRotate_of_lt (by simp [spliceEquiv])]; simp [spliceEquiv]
+        ext; rw [Fin.coe_finRotate_of_add_one_lt (by simp [spliceEquiv])]; simp [spliceEquiv]
       rw [hrot, spliceWords_spliceEquiv, finRotate_last, Sum.elim_inr, h0]
     · have hrot : finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl j.castSucc)) =
           spliceEquiv (m + 1) (.inl j.succ) := by
-        ext; rw [val_finRotate_of_lt (by simp [spliceEquiv]; omega)]; simp [spliceEquiv]
-      rw [hrot, spliceWords_spliceEquiv, hcast]; rfl
+        ext; rw [Fin.coe_finRotate_of_add_one_lt (by simp [spliceEquiv]; omega)]; simp [spliceEquiv]
+      rw [hrot, spliceWords_spliceEquiv, Fin.finRotate_castSucc]; rfl
   | inr i =>
     suffices spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i))) =
         u₂ (finRotate (m + 1) i) by rw [spliceWords_spliceEquiv, this]; rfl
@@ -261,8 +243,9 @@ private theorem spliceWords_edge {u₁ u₂ : Fin (m + 1) → α} (h0 : u₁ 0 =
       rw [hrot, spliceWords_spliceEquiv, finRotate_last, Sum.elim_inl, h0]
     · have hrot : finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr j.castSucc)) =
           spliceEquiv (m + 1) (.inr j.succ) := by
-        ext; rw [val_finRotate_of_lt (by simp [spliceEquiv]; omega)]; simp [spliceEquiv]; omega
-      rw [hrot, spliceWords_spliceEquiv, hcast]; rfl
+        ext; rw [Fin.coe_finRotate_of_add_one_lt (by simp [spliceEquiv]; omega)]
+        simp [spliceEquiv]; omega
+      rw [hrot, spliceWords_spliceEquiv, Fin.finRotate_castSucc]; rfl
 
 private theorem rotateWord_image [DecidableEq α] (w : Fin (m + 1) → α) (r : Fin (m + 1)) :
     univ.image (fun i ↦ w (i + r)) = univ.image w := by

@@ -21,6 +21,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
   finite constant vanishes as `h → 0`.
+* `TauCeti.tendsto_nhds_zero_of_eventually_le_ofReal`: an `ℝ≥0∞`-valued family eventually bounded
+  above by `ENNReal.ofReal (v i)` vanishes along any filter on which `v` tends to `0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
@@ -51,6 +53,14 @@ theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞
     continuous_eNorm.tendsto' 0 0 (by simp)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (.of_forall fun _ => zero_le) hG
+
+/-- An `ℝ≥0∞`-valued family eventually bounded above by `ENNReal.ofReal (v i)` tends to `0`
+along any filter on which `v` tends to `0`. -/
+theorem tendsto_nhds_zero_of_eventually_le_ofReal {ι : Type*} {l : Filter ι} {u : ι → ℝ≥0∞}
+    {v : ι → ℝ} (hv : Filter.Tendsto v l (𝓝 0)) (h : ∀ᶠ i in l, u i ≤ ENNReal.ofReal (v i)) :
+    Filter.Tendsto u l (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using ENNReal.tendsto_ofReal hv) (.of_forall fun _ ↦ zero_le) h
 
 /-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
 when `wᵢ → 0`. -/

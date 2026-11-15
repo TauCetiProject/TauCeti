@@ -40,9 +40,10 @@ and resolvent methods:
   independent (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero_of_ne`,
-  `integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries give `Lᵖ` matrix entries
-  (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is integrable when the entries
-  of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
+  `integral_wignerMatrix_apply_eq_zero`), a.e.-measurable entries give a.e.-strongly measurable
+  entry products (`aestronglyMeasurable_prod_wignerMatrix_apply`), `Lᵖ` entries give `Lᵖ` matrix
+  entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is integrable when
+  the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`).
@@ -404,6 +405,16 @@ theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p
     exact (hη _).ofReal.const_mul _
   · simp only [wignerMatrix_apply_of_gt _ _ _ h]
     exact (hξ _).star.const_mul _
+
+/-- A finite product of entries of a Wigner matrix is almost everywhere strongly measurable
+when the entries of the array are almost everywhere measurable. -/
+theorem aestronglyMeasurable_prod_wignerMatrix_apply {ι : Type*} [Fintype ι]
+    (hξ : ∀ ij, AEMeasurable (ξ ij) P) (hη : ∀ i, AEMeasurable (η i) P)
+    {n : ℕ} (u v : ι → Fin n) :
+    AEStronglyMeasurable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P :=
+  Finset.aestronglyMeasurable_fun_prod _ fun _ _ ↦
+    (Matrix.measurable_apply.comp_aemeasurable
+      (aemeasurable_wignerMatrix hξ hη n)).aestronglyMeasurable
 
 /-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
 is integrable when the entries of the array lie in `Lᵏ`. -/

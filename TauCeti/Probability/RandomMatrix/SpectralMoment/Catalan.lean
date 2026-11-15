@@ -16,22 +16,20 @@ import TauCeti.Data.Nat.Factorial.Basic
 
 For a Wigner matrix `Hₙ = wignerMatrix ξ η n` whose entry array has jointly independent coordinates,
 centered off-diagonal entries with unit second absolute moments in the `n × n` corner, and
-coordinates in `L ^ (2 * m)` with `2m`-th absolute moments uniformly bounded by `B`, combining the
-exact enumeration of leading cyclic words (`card_filter_leadingCyclicWords`) with the entry-product
-evaluation (`integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`) and the
-nonleading remainder bound (`norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le`,
-proved from `integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge` and
-`norm_sum_integral_prod_wignerMatrix_le`) identifies the `O(1 / n)` asymptotic of every even
-normalized expected trace: for every `m : ℕ` and `n ≠ 0`,
+coordinates in `L ^ (2 * m)` with `2m`-th absolute moments uniformly bounded by `B`, combining
+`card_filter_leading_cyclic_word_eq` with
+`integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one` and
+`norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le` (proved from
+`integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge` and
+`norm_sum_integral_prod_wignerMatrix_le`) gives for every `m : ℕ` and `n ≠ 0`:
 `‖n⁻¹ * E[tr(Hₙ ^ (2m))] - catalan m‖ ≤ (m ^ (2m) * B + catalan m * (m + 1).choose 2) / n`.
 
 Because `Hₙ` is Hermitian, `(Hₙ ^ k).trace` is real and `n⁻¹ * (Hₙ ^ k).trace` equals the `k`-th
-moment of the empirical spectral measure. Together with the `O(n ^ (-1/2))` bound on odd moments
-under `L ^ (2 * m + 1)` moment bound `B` and the semicircle moment formulas
-(`integral_pow_two_mul_semicircleReal_zero` and `integral_pow_two_mul_add_one_semicircleReal_zero`),
-every expected `k`-th empirical spectral moment of a Wigner matrix (or triangular Wigner array)
-with independent coordinates, centered unit-variance off-diagonal entries, and uniformly bounded
-`k`-th absolute moments converges to the corresponding moment of `semicircleReal 0 1`.
+moment of the empirical spectral measure. Together with the `O(n ^ (-1/2))` odd-moment bound under
+an `L ^ (2 * m + 1)` moment bound `B` and `integral_pow_two_mul_semicircleReal_zero` /
+`integral_pow_two_mul_add_one_semicircleReal_zero`, every expected `k`-th empirical spectral moment
+of a Wigner matrix (or triangular array) with independent coordinates, centered unit-variance
+off-diagonal entries, and uniformly bounded `k`-th moments tends to that of `semicircleReal 0 1`.
 
 ## Main results
 
@@ -102,7 +100,7 @@ theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0)
   have : NeZero m := ⟨hm⟩
   rw [sum_congr rfl fun w hw ↦
     integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one hindep hsecond w
-      (mem_filter.mp hw).2.1 (mem_filter.mp hw).2.2, sum_const, card_filter_leadingCyclicWords,
+      (mem_filter.mp hw).2.1 (mem_filter.mp hw).2.2, sum_const, card_filter_leading_cyclic_word_eq,
     Fintype.card_fin]
   simp [nsmul_eq_mul]
 

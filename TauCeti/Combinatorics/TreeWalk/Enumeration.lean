@@ -11,18 +11,27 @@ public import TauCeti.Combinatorics.TreeWalk.Relabeling
 /-!
 # Enumeration of closed tree paths and leading cyclic words
 
-Grouping closed walks on a vertex set `α` by their first-visit canonical labeling
-(`canonicalWalk`) fibers the leading words of length `2 * m` over `ClosedTreeWalk m`, with each
-fiber of size `(Nat.card α).descFactorial (m + 1)`. Combining `card_closedTreeWalk` and
-`card_canonicalWalk_eq` yields the exact count `catalan m * (Nat.card α).descFactorial (m + 1)`
-both for closed paths of length `2 * m` and (for `m ≠ 0`) for leading cyclic trace words.
+A *closed tree path* of length `2 * m` on a vertex type `α` is a closed path
+`v : Fin (2 * m + 1) → α` (`v (2 * m) = v 0`) that visits `m + 1` distinct vertices and traverses
+every unordered edge `s(v i, v (i + 1))` twice. For `m ≠ 0`, a *leading cyclic word* of length
+`2 * m` on `α` is a cyclic word `w : Fin (2 * m) → α` with no singleton unordered edge and `m + 1`
+distinct visited vertices.
+
+This file proves that both families have exact cardinality
+`catalan m * (Nat.card α).descFactorial (m + 1)` (for `m ≠ 0` in the cyclic-word case). In the
+expected trace `E[tr(Hₙ ^ (2m))]` of an `n × n` Wigner matrix, each leading cyclic word contributes
+`n⁻ᵐ`, so multiplying this exact count by `n⁻ᵐ` and normalizing by `n⁻¹` yields the semicircle
+moment `catalan m` as `n → ∞`.
 
 ## Main results
 
-* `TauCeti.TreeWalk.card_closedTreePath_eq`, `TauCeti.TreeWalk.card_filter_closedTreePath`: exact
-  count `catalan m * n.descFactorial (m + 1)` of closed tree paths on `n` vertices.
-* `TauCeti.TreeWalk.card_leadingCyclicWords_eq`, `TauCeti.TreeWalk.card_filter_leadingCyclicWords`:
-  exact count `catalan m * n.descFactorial (m + 1)` of leading cyclic words of length `2 * m`.
+* `TauCeti.TreeWalk.card_closed_tree_path_eq`,
+  `TauCeti.TreeWalk.card_filter_closed_tree_path_eq`: exact count
+  `catalan m * n.descFactorial (m + 1)` of closed tree paths of length `2 * m` on `n` vertices.
+* `TauCeti.TreeWalk.card_leading_cyclic_word_eq`,
+  `TauCeti.TreeWalk.card_filter_leading_cyclic_word_eq`: for `m ≠ 0`, exact count
+  `catalan m * n.descFactorial (m + 1)` of leading cyclic words of positive even length `2 * m` on
+  `n` vertices.
 
 ## References
 
@@ -40,7 +49,7 @@ section Enumeration
 
 variable {α : Type*} [DecidableEq α]
 
-private theorem card_closedTreePath_eq_of_finite [Finite α] (m : ℕ) :
+private theorem card_closed_tree_path_eq_of_finite [Finite α] (m : ℕ) :
     Nat.card {v : Fin (2 * m + 1) → α //
       v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
         ∀ i : Fin (2 * m),
@@ -75,14 +84,14 @@ private theorem card_closedTreePath_eq_of_finite [Finite α] (m : ℕ) :
 /-- On any vertex type `α`, there are `catalan m * (Nat.card α).descFactorial (m + 1)` closed
 paths of length `2 * m` visiting `m + 1` vertices and traversing every unordered edge twice (both
 sides are `0` when `α` is infinite). -/
-theorem card_closedTreePath_eq (m : ℕ) :
+theorem card_closed_tree_path_eq (m : ℕ) :
     Nat.card {v : Fin (2 * m + 1) → α //
       v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
         ∀ i : Fin (2 * m),
           #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2} =
       catalan m * (Nat.card α).descFactorial (m + 1) := by
   by_cases hfin : Finite α
-  · exact card_closedTreePath_eq_of_finite m
+  · exact card_closed_tree_path_eq_of_finite m
   · have : Infinite α := not_finite_iff_infinite.mp hfin
     let _ : Fintype (ClosedTreeWalk m) := Fintype.ofEquiv _ (closedTreeWalkEquiv m).symm
     have hc_pos : 0 < catalan m := pos_of_mul_pos_right
@@ -107,17 +116,17 @@ theorem card_closedTreePath_eq (m : ℕ) :
     rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite,
       Nat.descFactorial_of_lt (Nat.zero_lt_succ m), mul_zero]
 
-/-- `Finset.card` form of `card_closedTreePath_eq`. -/
-theorem card_filter_closedTreePath [Fintype α] (m : ℕ) :
+/-- `Finset.card` form of `card_closed_tree_path_eq`. -/
+theorem card_filter_closed_tree_path_eq [Fintype α] (m : ℕ) :
     #{v : Fin (2 * m + 1) → α |
       v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
         ∀ i : Fin (2 * m),
           #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2} =
       catalan m * (Fintype.card α).descFactorial (m + 1) := by
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, card_closedTreePath_eq,
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, card_closed_tree_path_eq,
     Nat.card_eq_fintype_card]
 
-private theorem isLeadingCyclicWord_of_closedTreePath {m : ℕ} [NeZero m]
+private theorem leading_cyclic_word_of_closed_tree_path {m : ℕ} [NeZero m]
     {v : Fin (2 * m + 1) → α} (hc : v (Fin.last (2 * m)) = v 0) (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
       #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
@@ -132,14 +141,10 @@ private theorem isLeadingCyclicWord_of_closedTreePath {m : ℕ} [NeZero m]
   have hw_edge (s : Fin (2 * m)) :
       s(w s, w (finRotate (2 * m) s)) = s(v s.castSucc, v s.succ) := by
     rw [← cyclicPath_castSucc w s, ← cyclicPath_succ w s, hcw]
-  obtain ⟨a, b, hab, hpair⟩ := card_eq_two.mp (he t)
-  simp_rw [hw_edge]
-  by_cases hat : a = t
-  · exact ⟨b, fun h ↦ hab (hat.trans h.symm),
-      by simpa using (Finset.ext_iff.mp hpair b).mpr (by simp)⟩
-  · exact ⟨a, hat, by simpa using (Finset.ext_iff.mp hpair a).mpr (by simp)⟩
+  obtain ⟨s, hs, hst⟩ := exists_mem_ne ((he t).symm ▸ one_lt_two) t
+  exact ⟨s, hst, by rw [hw_edge, hw_edge]; exact (mem_filter.mp hs).2⟩
 
-private def leadingCyclicWordEquivClosedTreePath (m : ℕ) [NeZero m] :
+private def leadingCyclicWordEquiv (m : ℕ) [NeZero m] :
     {w : Fin (2 * m) → α //
       (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1} ≃
@@ -150,28 +155,28 @@ private def leadingCyclicWordEquivClosedTreePath (m : ℕ) [NeZero m] :
   toFun w := ⟨cyclicPath w.1, by simp, by simpa using w.2.2,
     card_edge_fiber_cyclicPath w.1 w.2.1 w.2.2⟩
   invFun v := ⟨fun i ↦ v.1 i.castSucc,
-    (isLeadingCyclicWord_of_closedTreePath v.2.1 v.2.2.1 v.2.2.2).2⟩
+    (leading_cyclic_word_of_closed_tree_path v.2.1 v.2.2.1 v.2.2.2).2⟩
   left_inv w := Subtype.ext (funext fun i ↦ cyclicPath_castSucc w.1 i)
-  right_inv v := Subtype.ext (isLeadingCyclicWord_of_closedTreePath v.2.1 v.2.2.1 v.2.2.2).1
+  right_inv v := Subtype.ext (leading_cyclic_word_of_closed_tree_path v.2.1 v.2.2.1 v.2.2.2).1
 
 /-- `Nat.card` count of leading cyclic trace words of positive even length `2 * m` on any vertex
 type `α` (both sides are `0` when `α` is infinite). -/
-theorem card_leadingCyclicWords_eq (m : ℕ) [NeZero m] :
+theorem card_leading_cyclic_word_eq (m : ℕ) [NeZero m] :
     Nat.card {w : Fin (2 * m) → α //
       (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1} =
       catalan m * (Nat.card α).descFactorial (m + 1) := by
-  rw [Nat.card_congr (leadingCyclicWordEquivClosedTreePath m), card_closedTreePath_eq]
+  rw [Nat.card_congr (leadingCyclicWordEquiv m), card_closed_tree_path_eq]
 
 /-- On a `Fintype` vertex set `α`, there are `catalan m * (Fintype.card α).descFactorial (m + 1)`
 leading cyclic trace words of positive even length `2 * m` (those with no singleton unordered edge
 and `m + 1` distinct visited vertices). -/
-theorem card_filter_leadingCyclicWords [Fintype α] (m : ℕ) [NeZero m] :
+theorem card_filter_leading_cyclic_word_eq [Fintype α] (m : ℕ) [NeZero m] :
     #{w : Fin (2 * m) → α |
       (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1} =
       catalan m * (Fintype.card α).descFactorial (m + 1) := by
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, card_leadingCyclicWords_eq,
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, card_leading_cyclic_word_eq,
     Nat.card_eq_fintype_card]
 
 end Enumeration

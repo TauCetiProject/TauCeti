@@ -204,8 +204,8 @@ matrix. -/
 theorem integrable_spectralMeasure {E : Type*} [NormedAddCommGroup E]
     (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
     Integrable f (A.spectralMeasure hA : Measure ℝ) := by
-  rw [spectralMeasure_def, empiricalMeasureOfFintype_toMeasure, integrable_finsetSum_measure]
-  exact fun _ _ ↦ (integrable_dirac (by simp)).smul_measure (by simp)
+  rw [spectralMeasure_def]
+  exact integrable_empiricalMeasureOfFintype_of_measurableSingletonClass f
 
 /-- Integrating against the spectral measure is averaging over the eigenvalues. -/
 theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

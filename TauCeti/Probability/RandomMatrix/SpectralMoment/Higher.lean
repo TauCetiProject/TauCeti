@@ -8,14 +8,16 @@ module
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Catalan
 public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.Moments.WeakConvergence
-import TauCeti.Probability.Moments.Chebyshev
+import Mathlib.Analysis.PSeries
+import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Higher-moment concentration and Wigner's semicircle law under bounded moments
 
 Expanding `Var[n⁻¹ Re tr(Hₙᵏ)]` into a sum over pairs `(w₁, w₂)` of closed walks of length `k`
 cancels every pair with disjoint edge sets by independence
-(`indepFun_prod_wignerMatrix_apply_of_ne`) and vanishes on every pair whose combined `2 * k`-step
+(`indepFun_prod_wignerMatrix_apply`) and vanishes on every pair whose combined `2 * k`-step
 edge multiset contains a singleton nonloop edge (`integral_prod_wignerMatrix_apply_eq_zero_of_ne`).
 Every surviving pair shares at least one edge and has no combined singleton nonloop edge, so by
 `card_union_image_le_of_shared_edge_of_no_singleton_nonloop_edge` it visits at most `k` distinct
@@ -73,8 +75,7 @@ private theorem wordProd_mul_eq_prod_sum {k n : ℕ} (w₁ w₂ : Fin k → Fin 
     wordProd ξ η w₁ ω * wordProd ξ η w₂ ω =
       ∏ x : Fin k ⊕ Fin k, wignerMatrix ξ η n ω
         (Sum.elim w₁ w₂ x) (Sum.elim (w₁ ∘ finRotate k) (w₂ ∘ finRotate k) x) := by
-  rw [Fintype.prod_sum_type]
-  rfl
+  rw [Fintype.prod_sum_type]; rfl
 
 private theorem integrable_wordProd_mul [IsFiniteMeasure P] {k n : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
@@ -94,8 +95,7 @@ private theorem ofReal_inv_mul_re_trace_pow_eq_sum_wordProd {k : ℕ} (hk : k �
     simpa only [RCLike.re_to_complex, RCLike.ofReal_eq_complex_ofReal] using
       ((wignerMatrix_isHermitian ξ η ω n).pow k).coe_re_trace
   rw [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast, hre,
-    trace_pow_eq_sum_prod _ hk]
-  rfl
+    trace_pow_eq_sum_prod _ hk]; rfl
 
 omit [MeasurableSpace Ω] in
 private theorem sq_eq_inv_sq_mul_re_sum_product {ι : Type*} [Fintype ι] {r : ℝ} {n : ℕ}
@@ -177,19 +177,14 @@ private def IsSurvivingWordPair {k n : ℕ} (p : (Fin k → Fin n) × (Fin k →
 
 private theorem wordCov_eq_zero_of_disjoint_edges {k n : ℕ}
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξk : ∀ ij, MemLp (ξ ij) k P) (hηk : ∀ i, MemLp (η i) k P) {w₁ w₂ : Fin k → Fin n}
+    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P) {w₁ w₂ : Fin k → Fin n}
     (hdisj : ∀ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) ≠ s(w₂ t₂, w₂ (finRotate k t₂))) :
-    wordCov ξ η P w₁ w₂ = 0 := by
-  have := hindep.isProbabilityMeasure
-  have hind := indepFun_prod_wignerMatrix_apply_of_ne
-    (fun ij ↦ (hξk ij).aestronglyMeasurable.aemeasurable)
-    (fun i ↦ (hηk i).aestronglyMeasurable.aemeasurable)
-    hindep w₁ (w₁ ∘ finRotate k) w₂ (w₂ ∘ finRotate k) hdisj
-  exact sub_eq_zero.mpr <| hind.integral_fun_mul_eq_mul_integral
-    (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk) _
-      _).aestronglyMeasurable
-    (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk) _
-      _).aestronglyMeasurable
+    wordCov ξ η P w₁ w₂ = 0 :=
+  sub_eq_zero.mpr <|
+    (indepFun_prod_wignerMatrix_apply hξm hηm hindep w₁ (w₁ ∘ finRotate k) w₂ (w₂ ∘ finRotate k)
+      hdisj).integral_fun_mul_eq_mul_integral
+      (aestronglyMeasurable_prod_wignerMatrix_apply hξm hηm _ _)
+      (aestronglyMeasurable_prod_wignerMatrix_apply hξm hηm _ _)
 
 private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
@@ -197,11 +192,8 @@ private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
     {w₁ w₂ : Fin k → Fin n} (hnot : ¬ IsSurvivingWordPair (w₁, w₂)) :
     wordCov ξ η P w₁ w₂ = 0 := by
-  have := hindep.isProbabilityMeasure
   have hξm (ij : StrictUpper) := (hξp ij).aestronglyMeasurable.aemeasurable
   have hηm (i : ℕ) := (hηp i).aestronglyMeasurable.aemeasurable
-  have hξk : ∀ ij, MemLp (ξ ij) k P := fun ij ↦ (hξp ij).mono_exponent (by norm_cast; omega)
-  have hηk : ∀ i, MemLp (η i) k P := fun i ↦ (hηp i).mono_exponent (by norm_cast; omega)
   by_cases hshare : ∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) = s(w₂ t₂, w₂ (finRotate k t₂))
   · obtain ⟨x, hx⟩ := Classical.not_forall.mp fun h' ↦ hnot ⟨hshare, h'⟩
     obtain ⟨hx_ne, hx_not⟩ := not_imp.mp hx
@@ -228,7 +220,7 @@ private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
           integral_prod_wignerMatrix_apply_eq_zero_of_ne hξm hηm hindep hξzero w₂
             (w₂ ∘ finRotate k) (by simpa using hx_ne) (fun s hs ↦ Sum.inr.inj (hx_only (.inr s) hs))
     simp [wordCov, hprod0, hfac0]
-  · exact wordCov_eq_zero_of_disjoint_edges hindep hξk hηk fun t₁ t₂ h ↦ hshare ⟨t₁, t₂, h⟩
+  · exact wordCov_eq_zero_of_disjoint_edges hindep hξm hηm fun t₁ t₂ h ↦ hshare ⟨t₁, t₂, h⟩
 
 private theorem norm_wordCov_le [IsProbabilityMeasure P] {k n : ℕ} {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
@@ -397,9 +389,12 @@ theorem tendsto_spectralMoment_wignerMatrix_sub_mean_probability
       ∫ ω', (∫ x, x ^ k ∂((wignerMatrix (ξ n) (η n) (n + 1) ω').spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω' (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) :=
-  tendsto_measure_ge_nhds_zero_of_le_div_sq (E := ℝ) fun n ↦
-    measure_spectralMoment_wignerMatrix_sub_mean_ge
-      (hindep n) (hξzero n) (hξp n) (hηp n) (hξ n) (hη n) n hε
+  tendsto_nhds_zero_of_eventually_le_ofReal
+    (by simpa [div_eq_mul_inv, inv_pow] using
+      (((tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).pow 2).const_mul
+        (2 * (k : ℝ) ^ (2 * k) * B)).div_const (ε ^ 2))
+    (.of_forall fun n ↦ measure_spectralMoment_wignerMatrix_sub_mean_ge
+      (hindep n) (hξzero n) (hξp n) (hηp n) (hξ n) (hη n) n hε)
 
 /-- **Convergence in probability of empirical spectral moments** to the standard semicircle moments
 for triangular Wigner arrays with independent coordinates, centered off-diagonal entries with unit
@@ -456,8 +451,13 @@ theorem ae_tendsto_spectralMoment_wignerMatrix_sub_mean
       ∫ ω', (∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω').spectralMeasure
         (wignerMatrix_isHermitian ξ η ω' (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 0) :=
-  ae_tendsto_nhds_zero_of_measure_ge_le_div_sq fun n _ hε ↦
-    measure_spectralMoment_wignerMatrix_sub_mean_ge hindep hξzero hξp hηp hξ hη n hε
+  TauCeti.MeasureTheory.ae_tendsto_of_measure_ge_le_ofReal_div_sq
+    (by simpa only [Nat.cast_add, Nat.cast_one, div_eq_mul_inv] using
+          ((summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)).mul_left
+            (2 * (k : ℝ) ^ (2 * k) * B))
+    fun n _ hε ↦ by
+      simpa only [Real.dist_eq, sub_zero, div_eq_mul_inv] using
+        measure_spectralMoment_wignerMatrix_sub_mean_ge hindep hξzero hξp hηp hξ hη n hε
 
 /-- **Almost-sure convergence of empirical spectral moments.** Under independent coordinates,
 centered unit-variance off-diagonal entries, and uniformly bounded `2 * k`-th absolute moments, the

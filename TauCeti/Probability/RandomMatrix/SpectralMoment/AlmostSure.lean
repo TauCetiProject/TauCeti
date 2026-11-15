@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Second
-import TauCeti.Probability.Moments.Chebyshev
+import Mathlib.Analysis.PSeries
+import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
 # Almost-sure convergence of second Wigner spectral moments
@@ -51,8 +52,12 @@ theorem ae_tendsto_second_spectralMoment_sub_mean {V : ℝ}
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 0) :=
-  ae_tendsto_nhds_zero_of_measure_ge_le_div_sq fun n _ hε ↦
-    measure_second_spectralMoment_sub_mean_ge n (hindep n) (hmem n) (hvar n) hε
+  TauCeti.MeasureTheory.ae_tendsto_of_measure_ge_le_ofReal_div_sq
+    (by simpa only [Nat.cast_add, Nat.cast_one, div_eq_mul_inv] using
+          ((summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)).mul_left (8 * V))
+    fun n _ hε ↦ by
+      simpa only [Real.dist_eq, sub_zero, div_eq_mul_inv] using
+        measure_second_spectralMoment_sub_mean_ge n (hindep n) (hmem n) (hvar n) hε
 
 /-- With unit off-diagonal second absolute moments and constant diagonal second moment,
 the second empirical spectral moment tends almost surely to one. Square-integrable squared

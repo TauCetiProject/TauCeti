@@ -33,7 +33,7 @@ The path formulation includes the zero-step case and proves integrability first.
 
 ## Main results
 
-* `TauCeti.indepFun_prod_wignerMatrix_apply_of_ne`: two finite products of Wigner entries reading
+* `TauCeti.indepFun_prod_wignerMatrix_apply`: two finite products of Wigner entries reading
   disjoint sets of unordered positions are independent when the array entries are independent.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`,
   `TauCeti.integral_prod_wignerMatrix_apply_eq_zero_of_ne`: for independent entries with all (or
@@ -109,19 +109,10 @@ private theorem wignerMatrix_apply_eq_orientEntry {n : ℕ} (ω : Ω) (i j : Fin
     simp [orientEntry, entryIndex]
   · simp [orientEntry, entryIndex, h, h.not_gt]
 
-private theorem aestronglyMeasurable_prod_wignerMatrix_apply {ι : Type*} [Fintype ι]
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
-    {n : ℕ} (u v : ι → Fin n) :
-    AEStronglyMeasurable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  refine Finset.aestronglyMeasurable_fun_prod _ fun s _ ↦ ?_
-  simp only [wignerMatrix_apply_eq_orientEntry]
-  exact ((measurable_const.mul (measurable_orientEntry _ _)).comp_aemeasurable
-    (aemeasurable_sumElim_ofReal hξm hηm _)).aestronglyMeasurable
-
 /-- **Disjoint edges give independent entry products.** When the array entries are independent and
 almost everywhere measurable, two finite products of Wigner entries reading no unordered position in
 common are independent. -/
-theorem indepFun_prod_wignerMatrix_apply_of_ne {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+theorem indepFun_prod_wignerMatrix_apply {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
     (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
@@ -163,7 +154,7 @@ private theorem integral_prod_wignerMatrix_apply_eq_zero_of_step {ι : Type*} [F
   classical
   let u₂ : ↥(Finset.univ.erase t) → Fin n := fun s ↦ u s.1
   let v₂ : ↥(Finset.univ.erase t) → Fin n := fun s ↦ v s.1
-  have hind := indepFun_prod_wignerMatrix_apply_of_ne hξm hηm hindep
+  have hind := indepFun_prod_wignerMatrix_apply hξm hηm hindep
     (fun _ : Unit ↦ u t) (fun _ : Unit ↦ v t) u₂ v₂
     fun _ s hs ↦ (Finset.mem_erase.1 s.2).1 (ht s.1 hs.symm)
   have hsplit (ω : Ω) : ∏ s, wignerMatrix ξ η n ω (u s) (v s) =
