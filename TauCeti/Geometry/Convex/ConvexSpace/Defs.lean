@@ -257,10 +257,11 @@ theorem range_eq_of_map_eq {Z : Type*} {f₁ : X → Z} {x₁ : StdSimplex R X}
   Set.ext fun z ↦ by rw [← weights_map_ne_zero_iff f₁ hx₁, ← weights_map_ne_zero_iff f₂ hx₂, h]
 
 /-- Every point of `StdSimplex R (Fin (n + 1))` is the pushforward along a strictly monotone map
-`Fin (k + 1) → Fin (n + 1)` of an interior point (adapted from `PrismRealization`). -/
+`Fin (k + 1) → Fin (n + 1)` of an interior point. -/
 theorem exists_strictMono_map_eq : ∀ {n : ℕ} (w : StdSimplex R (Fin (n + 1))),
     ∃ (k : ℕ) (f : Fin (k + 1) → Fin (n + 1)) (w₀ : StdSimplex R (Fin (k + 1))),
       StrictMono f ∧ (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map f := by
+  -- Adapts the zero-weight face-stripping induction of `SimplicialSet.PrismRealization`.
   intro n
   induction n using Nat.strong_induction_on with | _ n ih =>
   intro w
@@ -289,8 +290,8 @@ theorem eq_dim_of_injective_map_eq {Z : Type*} {k₁ k₂ : ℕ} {f₁ : Fin (k�
   have hcard {k : ℕ} {f : Fin (k + 1) → Z} (hf : f.Injective)
       {w : StdSimplex R (Fin (k + 1))} (hw : ∀ j, w.weights j ≠ 0) :
       (w.map f).weights.support.card = k + 1 := by
-    rw [support_weights_map, show w.weights.support = Finset.univ by ext j; simp [hw j],
-      Finset.card_image_of_injective _ hf, Finset.card_fin]
+    have hsupp : w.weights.support = Finset.univ := Finset.ext fun j ↦ by simp [hw j]
+    rw [support_weights_map, hsupp, Finset.card_image_of_injective _ hf, Finset.card_fin]
   exact Nat.succ.inj ((hcard hf₁ hw₁).symm.trans ((congrArg (·.weights.support.card) h).trans
     (hcard hf₂ hw₂)))
 

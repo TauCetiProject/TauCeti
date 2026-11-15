@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 public import Mathlib.Topology.Homotopy.TopCat.ZerothHomotopy
-public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
 /-!
@@ -93,7 +90,7 @@ private lemma toTopToπ₀_toTopPoint (x : X _⦋0⦌) : toTopToπ₀ X (toTopPo
   rw [toTopToπ₀, Equiv.apply_symm_apply] at h
   dsimp at h
   rw [toπ₀_app_zero, constHomEquiv_symm_app_zero] at h
-  rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
+  rw [toTopPoint_def, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
   exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
 
 /-- The unit `X ⟶ Sing |X|` is injective on connected components: a path in `|X|` between the
@@ -110,7 +107,7 @@ lemma injective_mapπ₀_unit : Function.Injective (mapπ₀ (sSetTopAdj.unit.ap
       (TopCat.zerothHomotopyEquiv.symm z)
   refine Function.LeftInverse.injective (g := r) fun c ↦ ?_
   induction c using π₀.rec with | mk x => ?_
-  simp only [r, mapπ₀_mk, TopCat.zerothHomotopyEquiv_symm_mk]
+  simp only [r, mapπ₀_mk, TopCat.zerothHomotopyEquiv_symm_mk, ← toTopPoint_def]
   exact toTopToπ₀_toTopPoint X x
 
 /-- The unit `X ⟶ Sing |X|` is surjective on connected components: every point of `|X|` lies in
@@ -129,10 +126,7 @@ lemma surjective_mapπ₀_unit : Function.Surjective (mapπ₀ (sSetTopAdj.unit.
   let v : (uliftYoneda.{u}.obj j.left) _⦋0⦌ := ULift.up (SimplexCategory.const _ _ 0)
   refine ⟨π₀.mk (j.hom.app _ v), ?_⟩
   rw [mapπ₀_mk, TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk,
-    TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk, ← hy]
-  -- The singular vertex of the unit at a vertex is, by definition, the point of that vertex.
-  change TopCat.zerothHomotopyEquiv (.mk (toTopPoint (j.hom.app _ v))) = _
-  rw [← toTop_map_toTopPoint]
+    TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk, ← hy, ← toTopPoint_def, ← toTop_map_toTopPoint]
   exact congrArg _ (ZerothHomotopy.sound (((PathConnectedSpace.joined (toTopPoint v) y).map
     (toTop.map j.hom).hom.continuous).somePath))
 
@@ -149,8 +143,8 @@ noncomputable def π₀EquivZerothHomotopy : π₀ X ≃ ZerothHomotopy |X| :=
 /-- The component of a vertex corresponds to the path component of its point. -/
 @[simp]
 lemma π₀EquivZerothHomotopy_mk (x : X _⦋0⦌) :
-    X.π₀EquivZerothHomotopy (π₀.mk x) = .mk (toTopPoint x) :=
-  (rfl)
+    X.π₀EquivZerothHomotopy (π₀.mk x) = .mk (toTopPoint x) := by
+  simp [π₀EquivZerothHomotopy, toTopPoint_def]
 
 open modelCategoryQuillen in
 /-- A weak equivalence of simplicial sets induces a bijection on connected components. -/

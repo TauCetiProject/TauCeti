@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
-public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -50,12 +49,13 @@ section Points
 
 variable {X : SSet.{u}}
 
--- `@[expose]` is mandated by `module` so downstream realization modules (`PiZero`,
--- `FundamentalGroupoid`) can unfold `toTopPoint` to the unit's `0`-simplex component.
 /-- The point of `|X|` given by a vertex `x` of `X` via `(sSetTopAdj.unit.app X).app _ x`. -/
-@[expose]
 noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
   TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
+
+lemma toTopPoint_def {X : SSet.{u}} (x : X _⦋0⦌) :
+    toTopPoint x = TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x) :=
+  (rfl)
 
 /-- The realization of a map sends the point of a vertex to the point of its image. -/
 @[simp] lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
@@ -79,9 +79,10 @@ lemma toTopPoint_eq_toTopObjMk (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
 @[simp] lemma toTopObjMk_single {n : ℕ} (x : X _⦋n⦌) (i : Fin (n + 1)) :
     toTopObjMk x (StdSimplex.single i) =
       toTopPoint (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x) := by
-  rw [show (StdSimplex.single i : StdSimplex ℝ (Fin (n + 1))) =
-      StdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) (StdSimplex.single 0) by
-    rw [StdSimplex.map_single]; rfl, ← toTopObjMk_map, toTopObjMk_zero]
+  have hs : (StdSimplex.single i : StdSimplex ℝ (Fin (n + 1))) =
+      StdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) (StdSimplex.single 0) := by
+    rw [StdSimplex.map_single]; rfl
+  rw [hs, ← toTopObjMk_map, toTopObjMk_zero]
 
 /-- `toTopObjMk x w` is the image of `w` under the realized simplex `|Δ[n]| ⟶ |X|` of `x`. -/
 lemma toTopObjMk_eq_toTop_map {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
@@ -150,10 +151,11 @@ noncomputable def toTopConstIso (S : Type u) :
   inv := TopCat.ofHom (X := TopCat.discrete.obj S)
     ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
   hom_inv_id := toTop_hom_ext fun n x w ↦ by
+    have hx : x = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
+        (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x := by simp
     have hw : toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x w =
         toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x := by
-      conv_lhs => rw [show x = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
-        (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x by simp]
+      conv_lhs => rw [hx]
       rw [toTopObjMk_map, toTopObjMk_zero]
     simp only [ConcreteCategory.comp_apply, TopCat.id_app, hw, toTopConstHom_toTopPoint]; rfl
   inv_hom_id := by ext s; exact toTopConstHom_toTopPoint S s
@@ -380,10 +382,9 @@ theorem toTopObjMk_injective_of_weights_ne_zero (X : SSet.{u}) {n : ℕ}
       (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₂ hw)] at hc
   have hsimp : N.mk z₁.1 z₁.2 = N.mk z₂.1 z₂.2 := congrArg ToTopCell.simplex hc
   obtain rfl : r₁ = r₂ := congrArg (·.dim) hsimp
-  have hz : z₁ = z₂ := Subtype.ext (by injection hsimp with hS; injection hS)
-  subst hz
-  rw [SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero hw
-    (by injection hc : w.map π₁ = w.map π₂)]
+  obtain rfl : z₁ = z₂ := Subtype.ext (by simpa [N.mk, S.mk] using hsimp)
+  have hcoords : w.map π₁ = w.map π₂ := by injection hc
+  rw [SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero hw hcoords]
 
 /-- Evaluating `toTopObjMk · StdSimplex.barycenter` on `n`-simplices is injective. -/
 theorem toTopObjMk_barycenter_injective (X : SSet.{u}) (n : ℕ) :

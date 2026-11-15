@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
-public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
 /-!
 # Edge paths and fundamental groupoid functor for geometric realization
@@ -109,8 +108,11 @@ end EdgePath
 
 section FundamentalGroupoid
 
-/-- The canonical functor `SSet.FundamentalGroupoid X ⥤ _root_.FundamentalGroupoid |X|` sending `x`
-to `toTopPoint x` and `e` to `Path.Homotopic.Quotient.mk e.toTopPath`. -/
+-- `@[expose]` is required by `module` so dependent morphism equalities over
+-- `(toTopFundamentalGroupoid X).obj` typecheck in downstream public statements.
+/-- The canonical functor `SSet.FundamentalGroupoid X ⥤ _root_.FundamentalGroupoid |X|` sending
+`.mk x` to `.mk (toTopPoint x)` and `homMk e` to `FundamentalGroupoid.fromPath (.mk e.toTopPath)`.
+-/
 @[expose, implicit_reducible]
 noncomputable def toTopFundamentalGroupoid (X : SSet.{u}) :
     SSet.FundamentalGroupoid X ⥤ _root_.FundamentalGroupoid |X| :=
@@ -150,18 +152,10 @@ noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) 
       exact Quotient.sound (by rw [e.toTopPath_map])
 
 @[simp] lemma mapFundamentalGroupoidToTopIso_hom_app_mk {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
-    (mapFundamentalGroupoidToTopIso f).hom.app (.mk x) =
-      eqToHom (show (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
-          (toTopFundamentalGroupoid X ⋙
-            _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x)
-        from congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x).symm) := (rfl)
+    (mapFundamentalGroupoidToTopIso f).hom.app (.mk x) = eqToHom (by ext; simp) := (rfl)
 
 @[simp] lemma mapFundamentalGroupoidToTopIso_inv_app_mk {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
-    (mapFundamentalGroupoidToTopIso f).inv.app (.mk x) =
-      eqToHom (show (toTopFundamentalGroupoid X ⋙
-            _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) =
-          (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x)
-        from congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x)) := (rfl)
+    (mapFundamentalGroupoidToTopIso f).inv.app (.mk x) = eqToHom (by ext; simp) := (rfl)
 
 end FundamentalGroupoid
 

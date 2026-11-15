@@ -357,6 +357,7 @@ theorem nerveMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
   refine CategoryTheory.Functor.ext (fun X ↦ congr($(h₁ (𝟙 X)).left)) fun X Y f ↦ ?_
   obtain ⟨_, _, hf⟩ := (Arrow.mk_eq_mk_iff _ _).1 (h₁ f); exact hf
 
+/-- `nerveFunctor` is faithful in arbitrary object and morphism universes. -/
 instance : nerveFunctor.{v, u}.Faithful where
   map_injective h := Cat.Hom.ext (nerveMap_injective h)
 
@@ -365,7 +366,7 @@ instance : nerveFunctor.{v, u}.Faithful where
     nerveMap ((Functor.const C).obj Y) = SSet.const (nerve.objEquiv.symm (nerveEquiv.symm Y)) :=
   SSet.hom_ext fun ⟨⟨n⟩⟩ ↦ ConcreteCategory.hom_ext _ _ fun s ↦
     nerve.objEquiv.injective <| ComposableArrows.ext_of_totalArrow fun _ _ _ ↦ by
-      simp [SSet.const_app, nerveEquiv_symm_eq_mk₀]
-      simp [ComposableArrows.totalArrow_def, ComposableArrows.mk₀]
+      simp [SSet.const_app, nerveEquiv_symm_eq_mk₀, ComposableArrows.totalArrow_def,
+        ComposableArrows.mk₀, ComposableArrows.whiskerLeft]
 
 end TauCeti
