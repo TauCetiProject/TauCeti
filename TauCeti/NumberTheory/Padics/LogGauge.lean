@@ -43,8 +43,9 @@ rationals.
   `TauCeti.norm_eq_rpow_neg_padicRealValuation`, and `TauCeti.exists_int_padicRealValuation`:
   comparison with `Padic.addValuation`, normalisation at `p`, norm recovery, and integrality on
   nonzero elements.
-* `TauCeti.one_le_padicRealValuation_natCast`: a natural number divisible by `p` has valuation at
-  least one, as used to read off Eisenstein Newton polygons over `ℚ_[p]`.
+* `TauCeti.natCast_le_padicRealValuation_intCast_iff` and
+  `TauCeti.one_le_padicRealValuation_natCast_iff`: an integer has valuation at least `m` exactly
+  when `p ^ m` divides it, as used to read off Eisenstein Newton polygons over `ℚ_[p]`.
 * `TauCeti.NormedRing.PseudoUniformizer.isCommensurable_padic`: the norm of `ℚ_[p]` is
   commensurable with every multiplicative pseudo-uniformiser.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_padicAddValuation`: the rational
@@ -152,17 +153,31 @@ theorem exists_int_padicRealValuation {x : ℚ_[p]} (hx : x ≠ 0) :
   ⟨Padic.valuation x, by rw [padicRealValuation_eq_map, Padic.addValuation.apply hx,
     WithTop.map_coe]⟩
 
-/-- On `ℚ_[p]`, a natural number divisible by `p` has `padicRealValuation p` at least one. -/
-theorem one_le_padicRealValuation_natCast {n : ℕ} (hn : p ∣ n) :
-    1 ≤ padicRealValuation p (n : ℚ_[p]) := by
-  obtain ⟨k, rfl⟩ := hn
-  have hk : 0 ≤ padicRealValuation p (k : ℚ_[p]) := by
-    rcases eq_or_ne (k : ℚ_[p]) 0 with h | h
-    · simp [h]
-    rw [padicRealValuation_eq_map, Padic.addValuation.apply h, WithTop.map_coe,
-      Padic.valuation_natCast, ← WithTop.coe_zero, WithTop.coe_le_coe]
-    positivity
-  rw [Nat.cast_mul, AddValuation.map_mul, padicRealValuation_p]
-  exact le_add_of_nonneg_right hk
+/-- On `ℚ_[p]`, an integer has `padicRealValuation p` at least `m` exactly when `p ^ m` divides
+it. -/
+theorem natCast_le_padicRealValuation_intCast_iff {k : ℤ} {m : ℕ} :
+    ((m : ℝ) : WithTop ℝ) ≤ padicRealValuation p (k : ℚ_[p]) ↔ (p ^ m : ℤ) ∣ k := by
+  rw [padicRealValuation, NormedRing.PseudoUniformizer.addValuation_apply,
+    NormedRing.PseudoUniformizer.coe_le_logGauge_iff, norm_unit_padicPseudoUniformizer,
+    Real.inv_rpow (Nat.cast_nonneg p), Real.rpow_natCast, ← zpow_natCast, ← zpow_neg,
+    Padic.norm_int_le_pow_iff_dvd]
+
+/-- On `ℚ_[p]`, a natural number has `padicRealValuation p` at least `m` exactly when `p ^ m`
+divides it. -/
+theorem natCast_le_padicRealValuation_natCast_iff {n m : ℕ} :
+    ((m : ℝ) : WithTop ℝ) ≤ padicRealValuation p (n : ℚ_[p]) ↔ p ^ m ∣ n := by
+  rw [← Int.cast_natCast (R := ℚ_[p]), natCast_le_padicRealValuation_intCast_iff, ← Int.natCast_pow,
+    Int.natCast_dvd_natCast]
+
+/-- On `ℚ_[p]`, an integer has `padicRealValuation p` at least one exactly when `p` divides it. -/
+theorem one_le_padicRealValuation_intCast_iff {k : ℤ} :
+    1 ≤ padicRealValuation p (k : ℚ_[p]) ↔ (p : ℤ) ∣ k := by
+  simpa using natCast_le_padicRealValuation_intCast_iff (p := p) (k := k) (m := 1)
+
+/-- On `ℚ_[p]`, a natural number has `padicRealValuation p` at least one exactly when `p` divides
+it. -/
+theorem one_le_padicRealValuation_natCast_iff {n : ℕ} :
+    1 ≤ padicRealValuation p (n : ℚ_[p]) ↔ p ∣ n := by
+  simpa using natCast_le_padicRealValuation_natCast_iff (p := p) (n := n) (m := 1)
 
 end TauCeti

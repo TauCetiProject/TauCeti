@@ -70,7 +70,8 @@ theorem eventually_isDistinguished_map_C_add_X_add_X_sq :
     ∀ᶠ r in 𝓝[<] (1 : ℝ), PowerSeries.IsDistinguished r 1
       ((C (p : ℤ_[p]) + X + X ^ 2).map PadicInt.Coe.ringHom) := by
   filter_upwards [PowerSeries.eventually_isDistinguished_and_isLowestDominant_map_lambdaInvariant
-    PadicInt.norm_coe_ringHom_le_one (fun _ => PadicInt.norm_coe_ringHom_lt_one_iff.mpr)
+    PadicInt.norm_coe_ringHom_le_one
+    (fun _ => PadicInt.norm_coe_ringHom_lt_one_iff_mem_maximalIdeal.mpr)
     (muInvariant_C_add_X_add_X_sq (p := p))] with r hr
   rw [← lambdaInvariant_C_add_X_add_X_sq (p := p)]
   exact hr.1
@@ -80,7 +81,7 @@ unit-disc Weierstrass degree is the last index of a unit coefficient, not the fo
 theorem isDistinguished_one_map_C_add_X_add_X_sq :
     PowerSeries.IsDistinguished 1 2 ((C (p : ℤ_[p]) + X + X ^ 2).map PadicInt.Coe.ringHom) := by
   refine (PowerSeries.isDistinguished_one_map_iff PadicInt.norm_coe_ringHom_le_one
-    (fun _ => PadicInt.norm_coe_ringHom_lt_one_iff.mpr)
+    (fun _ => PadicInt.norm_coe_ringHom_lt_one_iff_mem_maximalIdeal.mpr)
     (muInvariant_eq_zero_iff.mp muInvariant_C_add_X_add_X_sq)).mpr
     ⟨by rw [coeff_C_add_X_add_X_sq]; simp, fun m hm => ?_⟩
   rw [coeff_C_add_X_add_X_sq]

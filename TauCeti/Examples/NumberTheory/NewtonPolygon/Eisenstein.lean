@@ -90,10 +90,9 @@ be the integral normalisation of `w`: it takes integer values on the nonzero ele
 some `ϖ` has `w ϖ = 1 / e`. If `L` contains a `p`-th root of `p`, then the ramification index `e`
 is `p`. -/
 theorem eq_of_pow_eq_of_finrank_eq (hw : ∀ x, w (algebraMap ℚ_[p] L x) = padicRealValuation p x)
-    (hfin : Module.finrank ℚ_[p] L = p) {e : ℕ}
-    (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ)) {ϖ : L}
-    (hϖ : w ϖ = (((e : ℝ)⁻¹ : ℝ) : WithTop ℝ)) {α : L} (hα : α ^ p = algebraMap ℚ_[p] L p) :
-    e = p := by
+    {e : ℕ} (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ)) {ϖ : L}
+    (hϖ : w ϖ = (((e : ℝ)⁻¹ : ℝ) : WithTop ℝ)) {α : L} (hα : α ^ p = algebraMap ℚ_[p] L p)
+    (hfin : Module.finrank ℚ_[p] L = p) : e = p := by
   have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
   have : Module.Finite ℚ_[p] L := Module.finite_of_finrank_pos (by omega)
   have hle : e ≤ p := hfin ▸ AddValuation.le_finrank_of_map_eq_inv_natCast
@@ -127,7 +126,7 @@ theorem newtonSlopes_cyclotomic_comp_X_add_one :
     fun n hn0 hnd => by
       rw [hdeg] at hnd
       rw [coeff_cyclotomic_prime_comp_X_add_one]
-      exact one_le_padicRealValuation_natCast
+      exact one_le_padicRealValuation_natCast_iff.mpr
         (Nat.Prime.dvd_choose_self Fact.out (by omega) (by omega))
   rwa [hdeg] at heis
 
