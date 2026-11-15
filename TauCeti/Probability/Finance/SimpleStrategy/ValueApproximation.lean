@@ -23,8 +23,9 @@ heights. In particular this applies to squared Brownian values at the left endpo
 This value approximation is independent of time-mesh approximation and needs no
 regularity of paths or Brownian noise.
 
-More generally, `eLpNorm_simpleHolding_sub_le` bounds the Lᵖ error by the sum of
-height errors weighted by time-cell masses. Thus `tendsto_eLpNorm_simpleHolding_sub_of_tendsto`
+More generally, for `1 ≤ p`, `eLpNorm_simpleHolding_sub_le` bounds the Lᵖ error by the sum
+of height Lᵖ errors weighted by `ν (Ioc (τ j) (τ (j + 1))) ^ (1 / p).toReal`.
+Thus `tendsto_eLpNorm_simpleHolding_sub_of_tendsto`
 transports height convergence along any filter, for `1 ≤ p`, to any fixed finite grid
 of measurable finite-mass cells in an s-finite time measure.
 
@@ -43,8 +44,37 @@ open scoped Topology ENNReal NNReal
 
 namespace TauCeti.Finance
 
-/-- The Lᵖ error on a fixed grid is bounded by the sum of the height errors weighted
-by the time-cell masses. Neither the grid nor the heights need be measurable globally;
+/-- For `1 ≤ p`, the Lᵖ seminorm of a fixed-grid holding is bounded by the sum of height
+Lᵖ seminorms weighted by `ν (Ioc (τ j) (τ (j + 1))) ^ (1 / p).toReal`.
+Neither the grid nor the heights need be measurable globally;
+only the finitely many time cells must be measurable. -/
+theorem eLpNorm_simpleHolding_le
+    {ι Ω : Type*} [LinearOrder ι] [MeasurableSpace ι] [MeasurableSpace Ω]
+    {ν : Measure ι} [SFinite ν] {P : Measure Ω} [SFinite P]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hI : ∀ j < n, MeasurableSet (Ioc (τ j) (τ (j + 1)))) :
+    eLpNorm (fun q : ι × Ω ↦ simpleHolding τ n a q.1 q.2) p (ν.prod P) ≤
+      ∑ j ∈ Finset.range n, ν (Ioc (τ j) (τ (j + 1))) ^ (1 / p).toReal *
+        eLpNorm (a j) p P := by
+  have heq : (fun q : ι × Ω ↦ simpleHolding τ n a q.1 q.2) =
+      ∑ j ∈ Finset.range n, (Prod.fst ⁻¹' Ioc (τ j) (τ (j + 1))).indicator
+        (a j ∘ Prod.snd) := by
+    funext q
+    simp only [simpleHolding_def, Finset.sum_apply, Set.indicator, mem_preimage,
+      Function.comp_apply]
+  rw [heq]
+  refine (eLpNorm_sum_le hp).trans (Finset.sum_le_sum fun j hj ↦ ?_)
+  have hIj := hI j (Finset.mem_range.mp hj)
+  rw [eLpNorm_indicator_eq_eLpNorm_restrict (hIj.preimage measurable_fst).nullMeasurableSet]
+  have hset : Prod.fst ⁻¹' Ioc (τ j) (τ (j + 1)) =
+      Ioc (τ j) (τ (j + 1)) ×ˢ (univ : Set Ω) := by ext q; simp
+  rw [hset, ← Measure.restrict_prod_eq_prod_univ]
+  exact eLpNorm_comp_le_of_map_le_smul measurable_snd.aemeasurable
+    (by simp [Measure.map_snd_prod]) p
+
+/-- For `1 ≤ p`, the fixed-grid Lᵖ error is bounded by the sum of height Lᵖ errors
+weighted by `ν (Ioc (τ j) (τ (j + 1))) ^ (1 / p).toReal`.
+Neither the grid nor the heights need be measurable globally;
 only the finitely many time cells must be measurable. -/
 theorem eLpNorm_simpleHolding_sub_le
     {ι Ω : Type*} [LinearOrder ι] [MeasurableSpace ι] [MeasurableSpace Ω]
@@ -57,23 +87,15 @@ theorem eLpNorm_simpleHolding_sub_le
         eLpNorm (a j - b j) p P := by
   have heq : (fun q : ι × Ω ↦ simpleHolding τ n a q.1 q.2 -
       simpleHolding τ n b q.1 q.2) =
-      ∑ j ∈ Finset.range n, (Prod.fst ⁻¹' Ioc (τ j) (τ (j + 1))).indicator
-        ((a j - b j) ∘ Prod.snd) := by
+      fun q : ι × Ω ↦ simpleHolding τ n (a - b) q.1 q.2 := by
     funext q
-    simp only [simpleHolding_def, ← Finset.sum_sub_distrib, Finset.sum_apply]
+    simp only [simpleHolding_def, ← Finset.sum_sub_distrib, Pi.sub_apply]
     apply Finset.sum_congr rfl
     intro j _
-    simp only [Set.indicator, mem_preimage, Function.comp_apply, Pi.sub_apply]
+    simp only [Set.indicator]
     split_ifs <;> simp
   rw [heq]
-  refine (eLpNorm_sum_le hp).trans (Finset.sum_le_sum fun j hj ↦ ?_)
-  have hIj := hI j (Finset.mem_range.mp hj)
-  rw [eLpNorm_indicator_eq_eLpNorm_restrict (hIj.preimage measurable_fst).nullMeasurableSet]
-  have hset : Prod.fst ⁻¹' Ioc (τ j) (τ (j + 1)) =
-      Ioc (τ j) (τ (j + 1)) ×ˢ (univ : Set Ω) := by ext q; simp
-  rw [hset, ← Measure.restrict_prod_eq_prod_univ]
-  exact eLpNorm_comp_le_of_map_le_smul measurable_snd.aemeasurable
-    (by simp [Measure.map_snd_prod]) p
+  exact eLpNorm_simpleHolding_le τ n (a - b) hp hI
 
 /-- On a fixed finite grid of finite-mass measurable cells, convergence of every height
 in Lᵖ implies convergence of the holding in time-product Lᵖ, along any filter. -/

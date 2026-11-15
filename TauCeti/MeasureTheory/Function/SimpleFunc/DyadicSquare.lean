@@ -41,6 +41,13 @@ def dyadicSquareApprox (k : ℕ) : SimpleFunc ℝ ℝ :=
     (SimpleFunc.const ℝ (((j : ℝ) / 2 ^ k) ^ 2)).restrict
       {x | |x| ∈ Ico ((j : ℝ) / 2 ^ k) ((j + 1 : ℝ) / 2 ^ k)}
 
+/-- The finite sum of restricted constant simple functions defining the approximation. -/
+theorem dyadicSquareApprox_def (k : ℕ) :
+    dyadicSquareApprox k = ∑ j ∈ Finset.range (2 ^ (2 * k)),
+      (SimpleFunc.const ℝ (((j : ℝ) / 2 ^ k) ^ 2)).restrict
+        {x | |x| ∈ Ico ((j : ℝ) / 2 ^ k) ((j + 1 : ℝ) / 2 ^ k)} :=
+  (rfl)
+
 /-- The explicit finite indicator-sum formula. -/
 theorem dyadicSquareApprox_apply (k : ℕ) (x : ℝ) :
     dyadicSquareApprox k x = ∑ j ∈ Finset.range (2 ^ (2 * k)),
@@ -63,7 +70,7 @@ private theorem mem_dyadicCell_iff (k j : ℕ) (x : ℝ) :
   simp only [mem_Ico, div_le_iff₀ (by positivity : (0 : ℝ) < 2 ^ k),
     lt_div_iff₀ (by positivity : (0 : ℝ) < 2 ^ k)]
 
-/-- Below the cutoff the approximation is the square of the lower dyadic rounding. -/
+/-- Below the cutoff the approximation is the square of the lower dyadic rounding of `|x|`. -/
 @[grind =]
 theorem dyadicSquareApprox_of_abs_lt {k : ℕ} {x : ℝ} (hx : |x| < 2 ^ k) :
     dyadicSquareApprox k x = ((⌊|x| * 2 ^ k⌋₊ : ℝ) / 2 ^ k) ^ 2 := by
@@ -113,7 +120,7 @@ theorem dyadicSquareApprox_le_sq (k : ℕ) (x : ℝ) : dyadicSquareApprox k x �
   · rw [dyadicSquareApprox_of_le_abs (le_of_not_gt hx)]
     positivity
 
-/-- Both the refining mesh and the expanding cutoff preserve monotonicity. -/
+/-- For each `x`, the approximation `dyadicSquareApprox k x` is monotone in `k`. -/
 theorem monotone_dyadicSquareApprox (x : ℝ) : Monotone (fun k ↦ dyadicSquareApprox k x) := by
   apply monotone_nat_of_le_succ
   intro k
@@ -160,25 +167,25 @@ theorem dyadicSquareApprox_lt_pow (k : ℕ) (x : ℝ) :
     positivity
 
 /-- The approximation vanishes at zero. -/
-@[simp]
+@[simp, grind =]
 theorem dyadicSquareApprox_apply_zero (k : ℕ) : dyadicSquareApprox k 0 = 0 := by
   exact le_antisymm (by simpa using dyadicSquareApprox_le_sq k 0)
     (dyadicSquareApprox_nonneg k 0)
 
 /-- The coarsest approximation is identically zero. -/
-@[simp]
+@[simp, grind =]
 theorem dyadicSquareApprox_zero : dyadicSquareApprox 0 = 0 := by
   ext x
   simp [dyadicSquareApprox_apply]
 
 /-- The approximation depends only on the magnitude of its argument. -/
-@[simp]
+@[simp, grind =]
 theorem dyadicSquareApprox_abs (k : ℕ) (x : ℝ) :
     dyadicSquareApprox k |x| = dyadicSquareApprox k x := by
   simp only [dyadicSquareApprox_apply, abs_abs]
 
 /-- Dyadic square approximation is even. -/
-@[simp]
+@[simp, grind =]
 theorem dyadicSquareApprox_neg (k : ℕ) (x : ℝ) :
     dyadicSquareApprox k (-x) = dyadicSquareApprox k x := by
   simp only [dyadicSquareApprox_apply, abs_neg]
