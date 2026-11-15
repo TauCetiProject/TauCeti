@@ -20,11 +20,7 @@ inverse (`TauCeti.fiberwiseCellReattachmentInv`) is the reattachment map of the 
 `(e i p)⁻¹` and of the reversed homotopies `(t, (p, x)) ↦ K i (1 - t, (p, (e i p)⁻¹ x))`, and both
 composites are homotopic to the identity relative to `P × A` through maps over `P`
 (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv`,
-`TauCeti.exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment`). On the
-`i`-th cell, `E` followed by its inverse is `x ↦ 4x` on the disc of radius `1/4`, while on the
-annulus `1/4 ≤ ‖x‖` it runs out along `K i` and back. Contracting this out-and-back track, and then
-undoing the radial push of radius `1/4`, gives the homotopy. The construction uses no left inverse
-of the comparison map `Φ₀`.
+`TauCeti.exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment`).
 
 The inverse is natural in the parameter space
 (`TauCeti.fiberwiseCellReattachmentInv_comp_fiberwiseCellAttachmentMap`), and, like `E`, it is
@@ -256,14 +252,15 @@ private theorem exists_reattachmentLoopCylinder (i : ι)
             ((continuous_symm.comp continuous_fst).prodMk (continuous_snd.comp continuous_snd))))
       map_zero_left := fun x ↦ by simp [F₁]
       map_one_left := fun x ↦ by simp [TopCat.diskRadialPush_zero] }
+  -- pointwise evaluation of `Θ₂`, so that the boundary case below rewrites rather than unfolds
+  have hΘ₂ : ∀ q, Θ₂ q = fiberwiseCellAttachmentCell α i
+      (q.2.1, TopCat.diskRadialPush (k i) hr (σ q.1, q.2.2)) := fun _ ↦ rfl
   refine ⟨(Θ₁.trans Θ₂).toContinuousMap, fun x ↦ (Θ₁.trans Θ₂).apply_zero x,
     fun x ↦ (Θ₁.trans Θ₂).apply_one x, fun t p s ↦ ?_, fun t x ↦ ?_⟩
   · rw [ContinuousMap.Homotopy.coe_toContinuousMap, ContinuousMap.Homotopy.trans_apply]
     split_ifs
     · exact reattachmentLoop_diskBoundaryInclusion (hH := hH) _ p s
-    · -- Unfold the local homotopy `Θ₂`: the cell composed with the reversed radial push.
-      change fiberwiseCellAttachmentCell α i (p, TopCat.diskRadialPush (k i) hr (_, _)) = _
-      rw [TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num),
+    · rw [hΘ₂, TopCat.diskRadialPush_diskBoundaryInclusion (by norm_num) (by norm_num),
         fiberwiseCellAttachmentCell_diskBoundaryInclusion]
   · rw [ContinuousMap.Homotopy.coe_toContinuousMap, ContinuousMap.Homotopy.trans_apply]
     split_ifs
@@ -370,6 +367,10 @@ private theorem fiberwiseCellReattachment_fiberwiseCellReattachment_fiberwiseCel
       fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
       reattachmentLoop_of_le_norm 0 p (by linarith), reattachmentTrack_apply]
 
+-- On the `i`-th cell, the composite is `x ↦ 4x` on the disc of radius `1/4`, while on the annulus
+-- `1/4 ≤ ‖x‖` it runs out along `K i` and back. Contracting this out-and-back track
+-- (`reattachmentLoop`) and then undoing the radial push of radius `1/4`
+-- (`exists_reattachmentLoopCylinder`) gives the homotopy, with no left inverse of `Φ₀`.
 include he he' hKK' in
 /-- **Reattaching back along the reversed homotopy undoes a reattachment, over `P` and relative to
 `P × A`.** Let `h i (p, ·)` act on the disc by linear isometries `e i p`, let `h' i (p, ·)` act by
