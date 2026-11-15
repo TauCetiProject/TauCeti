@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
+public import TauCeti.Analysis.Fredholm.IndexRange
 public import TauCeti.Analysis.InnerProductSpace.UnitaryPath
 import Mathlib.Tactic.Abel
 
@@ -22,16 +23,44 @@ an index-zero Fredholm operator. An affine compact perturbation followed by comp
 with an invertible path connects the original endpoints. Index invariance along the path
 is supplied by `Path.index_eq`.
 
-The proof is adapted from
+Consequently, the Fredholm index descends to the set of path components
+`ZerothHomotopy {T : E →L[𝕜] F // T.IsFredholm}` (`ZerothHomotopy.fredholmIndex`). Between
+finite-dimensional spaces over a complete nontrivially normed field with real-linear operator
+segments, every operator is Fredholm and affine segments make the Fredholm locus path connected.
+Between complex Hilbert spaces, `ZerothHomotopy.fredholmIndex` is always injective; when the domain
+is infinite-dimensional and continuously linearly equivalent (in particular unitarily equivalent) to
+the codomain, combining injectivity with `ContinuousLinearEquiv.exists_isFredholm_and_index_eq`
+identifies the norm-path components of the Fredholm locus bijectively with `ℤ`
+(`ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt`,
+`LinearIsometryEquiv.zerothHomotopyFredholmEquivInt`).
+
+The path construction is adapted from
 [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
 Its finite-defect and parametrix argument is supplementary to Lawson--Michelsohn,
-*Spin Geometry*, Chapter III, §7, Lemmas 7.6--7.7, p. 203, which prove the same path
-connectedness statements by first making the Fredholm endpoints surjective.
+*Spin Geometry*, Chapter III, §7, Lemmas 7.6--7.7 and Theorem 7.8, pp. 203--204, which prove the
+same path-component classification by first making the Fredholm endpoints surjective.
+
+## Main declarations
+
+* `ContinuousLinearMap.IsFredholm.exists_path_of_index_eq`,
+  `ContinuousLinearMap.nonempty_path_iff_index_eq`: two Fredholm operators between complex Hilbert
+  spaces are joined by a norm-continuous Fredholm path if and only if their indices agree.
+* `ContinuousLinearMap.instPathConnectedSpaceFredholmOfFiniteDimensional`: in finite dimensions,
+  the Fredholm locus is path connected.
+* `ZerothHomotopy.fredholmIndex`, `ZerothHomotopy.fredholmIndex_injective`: the Fredholm index on
+  path components and its injectivity for complex Hilbert spaces.
+* `ContinuousLinearMap.zerothHomotopyFredholmSelfEquivInt`,
+  `ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt`,
+  `LinearIsometryEquiv.zerothHomotopyFredholmEquivInt`: the bijection
+  `ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm} ≃ ℤ` for infinite-dimensional isomorphic complex
+  Hilbert spaces.
 
 ## References
 
+* D. S. Freed, *The Atiyah--Singer index theorem*, Bull. Amer. Math. Soc. **58** (2021), 517--566,
+  arXiv:2107.03557, display (3.13).
 * H. B. Lawson, Jr., and M.-L. Michelsohn, *Spin Geometry*, Princeton Mathematical Series 38,
-  Princeton University Press, 1989, Chapter III, §7, Lemmas 7.6--7.7, p. 203,
+  Princeton University Press, 1989, Chapter III, §7, Lemmas 7.6--7.7 and Theorem 7.8, pp. 203--204,
   [DOI](https://doi.org/10.1515/9781400883912).
 
 [fredholm-paths]: https://github.com/alpha-squared-labs/Lean-Atiyah-Singer/blob/09fc7bab3f9ff606901bde4b5a5580470da63a70/AtiyahSinger/Analysis/FredholmPaths.lean
@@ -43,6 +72,45 @@ noncomputable section
 
 open ContinuousLinearMap
 open scoped unitInterval
+
+section FiniteDimensional
+
+/-- Between finite-dimensional topological vector spaces over a complete nontrivially normed field
+(with Hausdorff target and continuous real scalar multiplication on operators), every continuous
+linear map is Fredholm and affine segments make the Fredholm locus path connected. -/
+instance ContinuousLinearMap.instPathConnectedSpaceFredholmOfFiniteDimensional
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+    [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [T2Space F]
+    [Module 𝕜 F] [ContinuousSMul 𝕜 F] [FiniteDimensional 𝕜 F]
+    [Module ℝ (E →L[𝕜] F)] [ContinuousSMul ℝ (E →L[𝕜] F)] :
+    PathConnectedSpace {T : E →L[𝕜] F // T.IsFredholm} :=
+  PathConnectedSpace.mk ⟨⟨0, isFredholm_of_finiteDimensional 0⟩⟩ fun S T ↦
+    (joinedIn_iff_joined (F := {U : E →L[𝕜] F | U.IsFredholm}) S.property T.property).mp
+      ⟨Path.segment S.val T.val, fun _ ↦ isFredholm_of_finiteDimensional _⟩
+
+end FiniteDimensional
+
+section ZerothHomotopy
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The Fredholm index descended to the path components of the Fredholm locus. -/
+def ZerothHomotopy.fredholmIndex :
+    ZerothHomotopy {T : E →L[𝕜] F // T.IsFredholm} → ℤ :=
+  ZerothHomotopy.lift (fun T ↦ T.val.index) fun _ _ γ ↦
+    (γ.map continuous_subtype_val).index_eq fun t ↦ (γ t).property
+
+/-- On the path component of a Fredholm operator `T`, `ZerothHomotopy.fredholmIndex` evaluates to
+`T.val.index`. -/
+@[simp]
+theorem ZerothHomotopy.fredholmIndex_mk (T : {T : E →L[𝕜] F // T.IsFredholm}) :
+    ZerothHomotopy.fredholmIndex (.mk T) = T.val.index := (rfl)
+
+end ZerothHomotopy
 
 section Hilbert
 
@@ -100,5 +168,92 @@ theorem ContinuousLinearMap.nonempty_path_iff_index_eq
     exact (joinedIn_iff_joined (F := {U : E →L[ℂ] F | U.IsFredholm})
       (x := S.val) (y := T.val) S.property T.property).mp
       (S.property.exists_path_of_index_eq T.property hind)
+
+/-- Two Fredholm operators between complex Hilbert spaces define the same path component in
+`ZerothHomotopy` if and only if they have the same Fredholm index. -/
+@[simp]
+theorem ZerothHomotopy.mk_eq_mk_iff_index_eq
+    (S T : {T : E →L[ℂ] F // T.IsFredholm}) :
+    ZerothHomotopy.mk S = ZerothHomotopy.mk T ↔ S.val.index = T.val.index :=
+  ⟨fun h ↦ (ContinuousLinearMap.nonempty_path_iff_index_eq S T).mp (Quotient.exact h),
+    fun h ↦ let ⟨γ⟩ := (ContinuousLinearMap.nonempty_path_iff_index_eq S T).mpr h
+      ZerothHomotopy.sound γ⟩
+
+/-- For complex Hilbert spaces `E` and `F`, the Fredholm index is injective on the path components
+of the Fredholm locus. -/
+theorem ZerothHomotopy.fredholmIndex_injective :
+    Function.Injective (ZerothHomotopy.fredholmIndex (𝕜 := ℂ) (E := E) (F := F)) :=
+  ZerothHomotopy.rec fun S ↦ ZerothHomotopy.rec fun T h ↦
+    (ZerothHomotopy.mk_eq_mk_iff_index_eq S T).mpr h
+
+/-- If `E` and `F` are continuously linearly equivalent infinite-dimensional complex Hilbert spaces,
+the Fredholm index identifies the norm-path components of the Fredholm locus `{T : E →L[ℂ] F //
+T.IsFredholm}` bijectively with `ℤ`. -/
+def ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt (e : E ≃L[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) :
+    ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm} ≃ ℤ :=
+  Equiv.ofBijective ZerothHomotopy.fredholmIndex
+    ⟨ZerothHomotopy.fredholmIndex_injective, fun n ↦ by
+      obtain ⟨T, hT⟩ := e.surjective_index_fredholm hE n
+      exact ⟨.mk T, hT⟩⟩
+
+/-- Forward application of `ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt` is the Fredholm
+index on path components. -/
+@[simp]
+theorem ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt_apply (e : E ≃L[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) (c : ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm}) :
+    e.zerothHomotopyFredholmEquivInt hE c = c.fredholmIndex := (rfl)
+
+/-- The inverse of `ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt` sends `n : ℤ` to the path
+component of Fredholm index `n`. -/
+@[simp]
+theorem ContinuousLinearEquiv.fredholmIndex_zerothHomotopyFredholmEquivInt_symm (e : E ≃L[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) (n : ℤ) :
+    ((e.zerothHomotopyFredholmEquivInt hE).symm n).fredholmIndex = n :=
+  (e.zerothHomotopyFredholmEquivInt hE).apply_symm_apply n
+
+/-- If `E` and `F` are unitarily equivalent infinite-dimensional complex Hilbert spaces, the
+Fredholm index identifies the norm-path components of `{T : E →L[ℂ] F // T.IsFredholm}` bijectively
+with `ℤ`. -/
+def LinearIsometryEquiv.zerothHomotopyFredholmEquivInt (e : E ≃ₗᵢ[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) :
+    ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm} ≃ ℤ :=
+  e.toContinuousLinearEquiv.zerothHomotopyFredholmEquivInt hE
+
+/-- Forward application of `LinearIsometryEquiv.zerothHomotopyFredholmEquivInt` is the Fredholm
+index on path components. -/
+@[simp]
+theorem LinearIsometryEquiv.zerothHomotopyFredholmEquivInt_apply (e : E ≃ₗᵢ[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) (c : ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm}) :
+    e.zerothHomotopyFredholmEquivInt hE c = c.fredholmIndex := (rfl)
+
+/-- The inverse of `LinearIsometryEquiv.zerothHomotopyFredholmEquivInt` sends `n : ℤ` to the path
+component of Fredholm index `n`. -/
+@[simp]
+theorem LinearIsometryEquiv.fredholmIndex_zerothHomotopyFredholmEquivInt_symm (e : E ≃ₗᵢ[ℂ] F)
+    (hE : ¬ FiniteDimensional ℂ E) (n : ℤ) :
+    ((e.zerothHomotopyFredholmEquivInt hE).symm n).fredholmIndex = n :=
+  (e.zerothHomotopyFredholmEquivInt hE).apply_symm_apply n
+
+/-- On an infinite-dimensional complex Hilbert space `E`, the Fredholm index identifies the
+norm-path components of `{T : E →L[ℂ] E // T.IsFredholm}` bijectively with `ℤ`. -/
+def ContinuousLinearMap.zerothHomotopyFredholmSelfEquivInt (hE : ¬ FiniteDimensional ℂ E) :
+    ZerothHomotopy {T : E →L[ℂ] E // T.IsFredholm} ≃ ℤ :=
+  (ContinuousLinearEquiv.refl ℂ E).zerothHomotopyFredholmEquivInt hE
+
+/-- Forward application of `ContinuousLinearMap.zerothHomotopyFredholmSelfEquivInt` is the Fredholm
+index on path components. -/
+@[simp]
+theorem ContinuousLinearMap.zerothHomotopyFredholmSelfEquivInt_apply
+    (hE : ¬ FiniteDimensional ℂ E) (c : ZerothHomotopy {T : E →L[ℂ] E // T.IsFredholm}) :
+    zerothHomotopyFredholmSelfEquivInt hE c = c.fredholmIndex := (rfl)
+
+/-- The inverse of `ContinuousLinearMap.zerothHomotopyFredholmSelfEquivInt` sends `n : ℤ` to the
+path component of Fredholm index `n`. -/
+@[simp]
+theorem ContinuousLinearMap.fredholmIndex_zerothHomotopyFredholmSelfEquivInt_symm
+    (hE : ¬ FiniteDimensional ℂ E) (n : ℤ) :
+    ((zerothHomotopyFredholmSelfEquivInt hE).symm n).fredholmIndex = n :=
+  (zerothHomotopyFredholmSelfEquivInt hE).apply_symm_apply n
 
 end Hilbert
