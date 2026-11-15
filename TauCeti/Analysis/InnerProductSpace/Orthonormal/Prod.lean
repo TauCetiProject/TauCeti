@@ -10,7 +10,12 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
-# Orthogonality of product orthonormal bases for a quadratic form
+# Orthonormal families and bases of an `L²` product
+
+Concatenating an orthonormal family of `V` with an orthonormal family of `W`, each placed in its
+own factor, gives an orthonormal family of the `L²` product `WithLp 2 (V × W)`
+(`Orthonormal.append_toLp_inl_toLp_inr`); these are the product frames on which forms on the
+two factors are combined.
 
 Let `V ⊕ W` be the `L²` product `WithLp 2 (V × W)` of two inner product spaces, with a quadratic
 form `Q` satisfying `Q (v, w) = Q₁ v + Q₂ w`. If orthonormal bases `b₁` of `V` and `b₂` of `W`
@@ -20,11 +25,32 @@ are orthogonal for the polar forms of `Q₁` and `Q₂`, then the product orthon
 
 ## Main results
 
+* `Orthonormal.append_toLp_inl_toLp_inr`: the concatenation of orthonormal families of the two
+  factors is orthonormal.
 * `OrthonormalBasis.isOrthoᵢ_associated_prod`: the product of orthogonal orthonormal bases is
   orthogonal for `Q`.
 -/
 
 public section
+
+namespace Orthonormal
+
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {k l : ℕ}
+
+/-- Concatenating an orthonormal family of the first factor with an orthonormal family of the
+second factor gives an orthonormal family of the `L²` product. -/
+theorem append_toLp_inl_toLp_inr {e : Fin k → V} {f : Fin l → W} (he : Orthonormal 𝕜 e)
+    (hf : Orthonormal 𝕜 f) :
+    Orthonormal 𝕜 (Fin.append (fun i ↦ WithLp.toLp 2 (e i, (0 : W)))
+      (fun j ↦ WithLp.toLp 2 ((0 : V), f j))) := by
+  classical
+  rw [orthonormal_iff_ite] at he hf ⊢
+  intro i j
+  cases i using Fin.addCases <;> cases j using Fin.addCases <;>
+    simp [he, hf, Fin.ext_iff] <;> omega
+
+end Orthonormal
 
 namespace OrthonormalBasis
 

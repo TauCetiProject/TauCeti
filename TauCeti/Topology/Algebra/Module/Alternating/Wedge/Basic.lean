@@ -41,6 +41,9 @@ It also proves the norm-free interior-product antiderivation law
 The normed counterpart is `ContinuousAlternatingMap.curryLeft_pairedWedge`. Consequently a wedge
 `α ∧ ψ` with a one-form `α`, evaluated on `(u, w)` where `α` kills every vector of `w`, is the
 pairing of `α u` with `ψ w` (`ContinuousAlternatingMap.pairedWedge_apply_vecCons_of_forall`).
+More generally, if `φ` vanishes whenever one of its arguments is a vector of `y`, the paired wedge
+of `φ` and `ψ` on the concatenation of `x` and `y` is the pairing of `φ x` with `ψ y`
+(`ContinuousAlternatingMap.pairedWedge_apply_append_of_forall`).
 
 The alternating-map API follows Mathlib's `AlternatingMap.curryLeft` and `map_insertNth`, and the
 paired-wedge design follows Yury Kudryashov's `DeRhamCohomology` project.
@@ -563,6 +566,64 @@ theorem pairedWedge_apply_eq_zero_of_forall {l : ℕ} (μ : F₁ →L[ℝ] F₂ 
     fin_cases i
     rfl
   simp [h, hw]
+
+/-- **A wedge on a concatenated tuple.** If `φ` vanishes as soon as one of its arguments is one
+of the vectors of `y`, then on the concatenation of `x` and `y` only the block-preserving
+permutations contribute, and the paired wedge is the pairing of `φ x` with `ψ y`. -/
+theorem pairedWedge_apply_append_of_forall {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) (x : Fin k → E) (y : Fin l → E)
+    (hφ : ∀ (w : Fin k → E) (i : Fin k) (j : Fin l), w i = y j → φ w = 0) :
+    pairedWedge μ hμ φ ψ (Fin.append x y) = μ (φ x) (ψ y) := by
+  classical
+  -- Reindex the permutations of `Fin (k + l)` by permutations of `Fin k ⊕ Fin l`.
+  let g : Equiv.Perm (Fin k ⊕ Fin l) → F₃ := fun τ ↦ Equiv.Perm.sign τ •
+    μ (φ fun i ↦ Sum.elim x y (τ (.inl i))) (ψ fun j ↦ Sum.elim x y (τ (.inr j)))
+  have hreindex : ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
+      μ (φ fun i ↦ Fin.append x y (σ (Fin.castAdd l i)))
+        (ψ fun j ↦ Fin.append x y (σ (Fin.natAdd k j))) = ∑ τ, g τ := by
+    refine Fintype.sum_equiv (finSumFinEquiv.symm.permCongr) _ _ fun σ ↦ ?_
+    simp only [g, Equiv.Perm.sign_permCongr, Equiv.permCongr_apply, Equiv.symm_symm]
+    have hv : Fin.append x y = Sum.elim x y ∘ finSumFinEquiv.symm := by
+      ext i
+      cases i using Fin.addCases <;> simp
+    simp [hv]
+  -- Only the permutations preserving the two blocks contribute.
+  have hsum : ∑ τ, g τ = ∑ _p : Equiv.Perm (Fin k) × Equiv.Perm (Fin l),
+      μ (φ x) (ψ y) := by
+    symm
+    refine Finset.sum_of_injOn (fun p ↦ Equiv.Perm.sumCongr p.1 p.2) ?_ (by simp) ?_ ?_
+    · intro _ _ _ _ h
+      have h' := DFunLike.congr_fun h
+      simp only [Equiv.Perm.sumCongr_apply, Sum.forall, Sum.map_inl, Sum.map_inr,
+        Sum.inl.injEq, Sum.inr.injEq] at h'
+      exact Prod.ext (Equiv.ext h'.1) (Equiv.ext h'.2)
+    · intro τ _ hτ
+      have hrange : τ ∉ (Equiv.Perm.sumCongrHom (Fin k) (Fin l)).range := by
+        rintro ⟨p, rfl⟩
+        exact hτ ⟨p, by simp, rfl⟩
+      have hmaps := mt Equiv.Perm.mem_sumCongrHom_range_of_perm_mapsTo_inl hrange
+      simp only [Set.MapsTo, Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff,
+        not_forall, not_exists] at hmaps
+      obtain ⟨a, ha⟩ := hmaps
+      rcases hb : τ (.inl a) with a' | b
+      · exact absurd hb.symm (ha a')
+      · have h0 : (φ fun i ↦ Sum.elim x y (τ (.inl i))) = 0 := hφ _ a b (by simp [hb])
+        simp only [g, h0, _root_.map_zero μ, _root_.zero_apply, smul_zero]
+    · rintro ⟨σ₁, σ₂⟩ _
+      simp only [g, Equiv.Perm.sumCongr_apply, Sum.map_inl, Sum.map_inr, Sum.elim_inl,
+        Sum.elim_inr, Equiv.Perm.sign_sumCongr]
+      have h₁ := φ.toAlternatingMap.map_perm x σ₁
+      have h₂ := ψ.toAlternatingMap.map_perm y σ₂
+      simp only [coe_toAlternatingMap] at h₁ h₂
+      simp only [Function.comp_def] at h₁ h₂
+      rw [h₁, h₂, map_zsmul_unit, ContinuousLinearMap.map_smul_of_tower, _root_.smul_apply,
+        smul_smul, smul_smul, mul_assoc (Equiv.Perm.sign σ₁), Int.units_mul_self, mul_one,
+        Int.units_mul_self, one_smul]
+  rw [pairedWedge_apply, hreindex, hsum, Finset.sum_const, Finset.card_univ, Fintype.card_prod,
+    Fintype.card_perm, Fintype.card_perm, Fintype.card_fin, Fintype.card_fin,
+    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul, inv_mul_cancel₀ (by positivity),
+    one_smul]
 
 section InteriorProduct
 
