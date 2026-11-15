@@ -33,19 +33,19 @@ transversality for Fredholm bundle sections (`TauCeti.mem_residual_setOf_isRegul
 therefore applies: the regular parameters of `S` form a residual set of `C^k` functions
 (`TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`). These are exactly
 the functions all of whose critical points are nondegenerate
-(`TauCeti.isRegularSectionParameter_universalDifferential_iff`), so such functions are residual
-(`TauCeti.mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`).
+(`TauCeti.isRegularSectionParameter_universalDifferential_iff`).
 
 The residual filter depends only on the topology of `C^k(M, ℝ)`, which for every finite atlas is
-the weak Whitney topology. The statements are therefore made for the weak Whitney topology and do
+the weak Whitney topology. The statement is therefore made for the weak Whitney topology and does
 not mention an atlas; one is chosen in the proof (`TauCeti.exists_finite_compact_chart_cover`).
 
 The same set of functions is open
 (`TauCeti.isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`) and dense
 (`TauCeti.dense_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint`, by linear
-perturbations in charts). The results here exhibit it instead as the set of regular parameters of
-a transverse Fredholm section, the form in which genericity is obtained for moduli spaces cut out
-by sections.
+perturbations in charts), for any boundaryless model and any regularity `2 ≤ n`, so its
+residuality as such already follows by `residual_of_dense_open`. The result here exhibits it
+instead as the set of regular parameters of a transverse Fredholm section, the form in which
+genericity is obtained for moduli spaces cut out by sections.
 
 ## References
 
@@ -108,22 +108,5 @@ theorem mem_residual_setOf_isRegularSectionParameter_universalDifferential (hk :
   · -- Smale's threshold at index `0` is `C¹`, and `k - 1 ≥ 1`.
     rw [hindex z]
     exact_mod_cast Nat.le_sub_of_add_le hk
-
-/-- **Functions with only nondegenerate critical points are residual**, by the Sard–Smale
-theorem. On a compact boundaryless Hausdorff manifold modelled on a real normed space and for
-`k ≥ 2`, the `C^k` functions all of whose critical points are nondegenerate form a residual set
-for the weak Whitney topology. -/
-theorem mem_residual_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint
-    (hk : 2 ≤ k) :
-    {f : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ |
-      ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x} ∈
-        residual C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := by
-  rcases isEmpty_or_nonempty M with hM | hM
-  · exact Filter.mem_of_superset univ_mem fun f _ x ↦ isEmptyElim x
-  have := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℝ, E)
-  have h := mem_residual_setOf_isRegularSectionParameter_universalDifferential (E := E) (M := M) hk
-  simp_rw [isRegularSectionParameter_universalDifferential_iff (n := k) (by exact_mod_cast hk)]
-    at h
-  exact h
 
 end TauCeti
