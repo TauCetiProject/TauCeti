@@ -73,9 +73,6 @@ include hQ in
 `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
 theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) :
     ⁅bivectorExterior Q J.kahlerForm, ι Q v⁆ = ι Q ((2 : ℝ) • J v) := by
-  have hpolar (x y : V) : QuadraticMap.polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
   rw [kahlerForm_def, map_smul, map_sum, Ring.lie_def, smul_mul_assoc, mul_smul_comm, ← smul_sub,
     Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
   simp only [← Ring.lie_def, bivectorExterior_apply_ιMulti, bivector_lie_ι, ← map_sum]
@@ -89,7 +86,8 @@ theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v,
       simp [map_sum, map_smul]
     calc _ = ∑ i, ((2 : ℝ) • (⟪b i, J v⟫ • b i) + (2 : ℝ) • (⟪b i, v⟫ • J (b i))) := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hpolar, hpolar, inner_apply_left hJ]
+          rw [QuadraticMap.polar_eq_neg_two_inner hQ, QuadraticMap.polar_eq_neg_two_inner hQ,
+            inner_apply_left hJ]
           module
       _ = (4 : ℝ) • J v := by
           rw [Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.smul_sum, hJv, hv]

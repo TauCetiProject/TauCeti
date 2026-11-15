@@ -42,7 +42,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   `CliffordAlgebra.ι_mul_ι_add_swap_of_orthonormal`: the Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`, and `c(eᵢ) c(eⱼ) + c(eⱼ) c(eᵢ) = -2 δᵢⱼ` on an orthonormal
   basis.
-* `Module.End.sum_sum_apply_apply_eq_of_anticomm`: for endomorphisms with
+* `TauCeti.sum_sum_apply_apply_eq_of_clifford_relation`: for endomorphisms with
   `cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, `∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
@@ -112,10 +112,7 @@ namespace CliffordAlgebra
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
     (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
-  rw [even_ι_bilin_add_swap]
-  congr 1
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
+  rw [even_ι_bilin_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
 
 /-- For `Q v = -‖v‖²`, the Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
@@ -134,8 +131,8 @@ omit hQ in
 /-- The algebra of the Weitzenböck formula: if endomorphisms `cⱼ` satisfy the Clifford relations
 `cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, then
 `∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`, a trace plus an antisymmetric part. -/
-theorem _root_.Module.End.sum_sum_apply_apply_eq_of_anticomm {K W : Type*} [Field K] [CharZero K]
-    [AddCommGroup W] [Module K W] {κ : Type*} [Fintype κ] [DecidableEq κ]
+theorem _root_.TauCeti.sum_sum_apply_apply_eq_of_clifford_relation {K W : Type*} [Field K]
+    [CharZero K] [AddCommGroup W] [Module K W] {κ : Type*} [Fintype κ] [DecidableEq κ]
     (c : κ → Module.End K W) (X : κ → κ → W)
     (hc : ∀ j k, c j * c k + c k * c j = if j = k then -2 else 0) :
     ∑ j, ∑ k, c j (c k (X j k)) =

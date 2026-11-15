@@ -41,7 +41,7 @@ vanishes on flat space.
 The proof is the classical one. The Clifford relations `c(eⱼ) c(eₖ) + c(eₖ) c(eⱼ) = -2 δⱼₖ` split
 `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ` into the trace `-∑ₖ ∇²_{eₖ, eₖ} ψ` and the
 antisymmetric part `½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`
-(`Module.End.sum_sum_apply_apply_eq_of_anticomm`). The Ricci identity
+(`TauCeti.sum_sum_apply_apply_eq_of_clifford_relation`). The Ricci identity
 `∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`
 (`TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`) and the expansion
 `∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ c(eⱼ) c(eₖ) = 2 c₂(F)` (`OrthonormalBasis.sum_sum_inner_smul_ι_mul_ι`)
@@ -230,7 +230,7 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
       if j = k then -2 else 0 := by
     rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_of_orthonormal hQ e j k]
     split_ifs <;> simp [map_ofNat]
-  rw [hDD, Module.End.sum_sum_apply_apply_eq_of_anticomm _ X hrel, hcurv, smul_smul]
+  rw [hDD, TauCeti.sum_sum_apply_apply_eq_of_clifford_relation _ X hrel, hcurv, smul_smul]
   rw [sub_eq_add_neg, ← neg_smul]
   congr 2
   ring
@@ -268,20 +268,6 @@ theorem cliffordRestriction_apply_of_add_hodgeStar_eq (hr : 0 ≤ r)
     cliffordRestriction o ρ F (φ + β) =
       (r / 4 * (1 - ‖φ + β‖ ^ 2)) • (φ + β) - (r / 2) • β -
         (2⁻¹ : ℝ) • cliffordRestriction o ρ η (φ + β) := by
-  -- Only the self-dual part of `F` acts on positive spinors.
-  have hasd : cliffordRestriction o ρ (F - o.hodgeStar hkl F) = 0 := by
-    refine cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl ?_
-    rw [map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, neg_sub]
-  have hsd : cliffordRestriction o ρ F =
-      (2⁻¹ : ℝ) • cliffordRestriction o ρ (F + o.hodgeStar hkl F) := by
-    have h : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
-      module
-    conv_lhs => rw [h]
-    rw [map_add, map_smul, map_smul, hasd]
-    -- `simp` does not find the zero-smul instance of this real action on the endomorphisms of
-    -- `W⁺` by itself, so the module is named.
-    simp only [add_eq_left]
-    exact smul_zero (A := positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) (2⁻¹ : ℝ)
   have hω₁ : cliffordRestriction o ρ ω φ = (2 : ℂ) • φ :=
     (cliffordProjection_apply_eq_self_iff o ρ).1 hφ
   have hω₂ : cliffordRestriction o ρ ω β = (-2 : ℂ) • β :=
@@ -293,11 +279,14 @@ theorem cliffordRestriction_apply_of_add_hodgeStar_eq (hr : 0 ≤ r)
       smul_apply, cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂,
       RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
     congr 1
+    -- The norm factor of `cliffordRestriction_quadraticTwoForm_apply_self` is cast through
+    -- `algebraMap ℝ ℂ`; rewrite it to `Complex.ofReal` to match the other casts.
+    simp only [Complex.coe_algebraMap]
     push_cast
-    ring_nf
-    rfl
-  rw [hsd, hF, map_sub, map_sub, map_smul, smul_apply, sub_apply, sub_apply, smul_apply,
-    map_add, hω₁, hω₂, hq]
+    ring
+  -- Only the self-dual part of `F` acts on positive spinors.
+  rw [cliffordRestriction_eq_inv_two_smul_add_hodgeStar o ρ hQ hkl, hF, map_sub, map_sub, map_smul,
+    smul_apply, sub_apply, sub_apply, smul_apply, map_add, hω₁, hω₂, hq]
   simp only [RCLike.real_smul_eq_coe_smul (K := ℂ)]
   push_cast
   module
