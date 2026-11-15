@@ -17,12 +17,13 @@ symmetric about the origin, and more generally against any measure invariant und
 In particular a law invariant under negation has mean zero. An even integrand integrates over
 `[-R, R]` to twice its integral from `0` to `R`.
 
-No integrability hypothesis is needed. The substitution `t ↦ -t` carries `[-R, R]` to itself, so
-`intervalIntegral.integral_comp_neg` identifies the integral with the integral of `t ↦ g (-t)`.
-For odd `g` that is the negative of the original integral, and in a real vector space an element
-equal to its own negative is zero. For even `g` it is the original integral, which gives the
-reflection `∫ t in 0..-R, g t = -∫ t in 0..R, g t` and hence the doubling formula. When `g` fails
-to be integrable, both sides of each statement are `0`.
+No integrability hypothesis is needed. The substitution `t ↦ -t` is used in two ways
+(`intervalIntegral.integral_comp_neg`). On `[-R, R]`, which it carries to itself, it identifies the
+integral of `g` with that of `t ↦ g (-t)`; for odd `g` this is the negative of the original
+integral, and in a real vector space an element equal to its own negative is zero. On `0..R` it
+carries the interval to `(-R)..0`, so for even `g` the integrals over `(-R)..0` and `0..R` agree:
+this is the reflection `∫ t in 0..-R, g t = -∫ t in 0..R, g t`, and splitting `[-R, R]` at `0`
+gives the doubling formula. When `g` fails to be integrable, both sides of each statement are `0`.
 
 ## Main results
 
