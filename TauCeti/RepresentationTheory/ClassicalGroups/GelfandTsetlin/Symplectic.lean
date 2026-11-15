@@ -62,6 +62,7 @@ and the worked `Sp₄` counts of the standard, the second fundamental and the ad
   unprimed row (the highest weight) and the intermediate row below it.
 * `TauCeti.SymplecticGTPattern.truncate` and `TauCeti.SymplecticGTPattern.extend`: deleting and
   prepending the two top rows.
+* `TauCeti.midInterlacingFinset`: the intermediate rows between `(λ, 0)` and `μ`, as a `Finset`.
 
 ## Main results
 
@@ -72,6 +73,8 @@ and the worked `Sp₄` counts of the standard, the second fundamental and the ad
 * `TauCeti.SymplecticGTPattern.truncateFiberEquiv`: the patterns over `λ` whose second unprimed row
   is `μ` are the intermediate rows between `(λ, 0)` and `μ` times the patterns over `μ`.
 * `TauCeti.SymplecticGTPattern.card_topRow_succ`: the branching recursion for the count.
+* `TauCeti.card_midInterlacingFinset`: how many intermediate rows lie between `(λ, 0)` and `μ`,
+  explicitly `TauCeti.card_midInterlacingFinset_two` in rank two.
 * `TauCeti.SymplecticGTPattern.nonempty_topRow_eq_iff`: a sequence is a top row exactly when it is
   weakly decreasing and nonnegative.
 * `TauCeti.SymplecticGTPattern.card_topRow_zero` and `TauCeti.SymplecticGTPattern.card_topRow_one`:
@@ -90,6 +93,62 @@ and the worked `Sp₄` counts of the standard, the second fundamental and the ad
 public section
 
 namespace TauCeti
+
+/-! ### The intermediate rows between two rows -/
+
+section MidInterlacing
+
+variable {r : ℕ}
+
+/-- The sequences `b` with `(l, 0) ≻ b ≻ m`, that is, interlacing `l` padded by a final zero and
+interlaced by `m`, collected into a `Finset`.
+
+Each of the two interlacings bounds `b` coordinatewise, so these sequences are the points of an
+interval of the pointwise order on `Fin (r + 1) → ℤ`: at index `j`, below by `max lⱼ₊₁ mⱼ` (by
+`0` at the last index) and above by `min lⱼ mⱼ₋₁` (by `l₀` at the first index);
+`TauCeti.mem_midInterlacingFinset` is that identification.  They are the possible intermediate
+rows of a symplectic pattern between the unprimed rows `l` and `m`. -/
+def midInterlacingFinset (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) : Finset (Fin (r + 1) → ℤ) :=
+  Finset.Icc (Fin.snoc (fun i => max (l i.succ) (m i)) 0)
+    (Fin.cons (l 0) fun i => min (l i.succ) (m i))
+
+/-- The members of `TauCeti.midInterlacingFinset l m` are exactly the sequences `b` with
+`(l, 0) ≻ b ≻ m`. -/
+@[simp]
+theorem mem_midInterlacingFinset {l : Fin (r + 1) → ℤ} {m : Fin r → ℤ} {b : Fin (r + 1) → ℤ} :
+    b ∈ midInterlacingFinset l m ↔ Interlaces (Fin.snoc l 0) b ∧ Interlaces b m := by
+  simp only [midInterlacingFinset, Finset.mem_Icc, Pi.le_def, interlaces_iff, forall_and]
+  rw [Fin.forall_fin_succ' (P := fun j => Fin.snoc (α := fun _ => ℤ) _ 0 j ≤ b j),
+    Fin.forall_fin_succ (P := fun j => b j ≤ Fin.cons (α := fun _ => ℤ) _ _ j),
+    Fin.forall_fin_succ (P := fun j => b j ≤ Fin.snoc (α := fun _ => ℤ) l 0 j.castSucc),
+    Fin.forall_fin_succ' (P := fun j => Fin.snoc (α := fun _ => ℤ) l 0 j.succ ≤ b j)]
+  simp only [Fin.snoc_castSucc, Fin.snoc_last, Fin.cons_zero, Fin.cons_succ, Fin.succ_last,
+    Fin.succ_castSucc, Fin.castSucc_zero, max_le_iff, le_min_iff, forall_and]
+  tauto
+
+/-- **How many intermediate rows lie between `(l, 0)` and `m`**: the coordinatewise bounds are
+independent, so the count is a product of interval lengths.  For nonnegative dominant `l` and `m`,
+Zhelobenko's branching rule reads it as the multiplicity of `V_m` in the restriction of `V_l` along
+`Sp₂ᵣ ⊂ Sp₂₍ᵣ₊₁₎`. -/
+theorem card_midInterlacingFinset (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) :
+    (midInterlacingFinset l m).card = ∏ j : Fin (r + 1),
+      ((Fin.cons (l 0) fun i => min (l i.succ) (m i) : Fin (r + 1) → ℤ) j + 1 -
+        (Fin.snoc (fun i => max (l i.succ) (m i)) 0 : Fin (r + 1) → ℤ) j).toNat := by
+  rw [midInterlacingFinset, Pi.card_Icc]
+  exact Finset.prod_congr rfl fun j _ => Int.card_Icc _ _
+
+/-- **The intermediate rows in rank two.**  The rows `b = (b₀, b₁)` with `(λ₀, λ₁, 0) ≻ b ≻ (μ)`
+are cut out by the independent bounds `max λ₁ μ ≤ b₀ ≤ λ₀` and `0 ≤ b₁ ≤ min λ₁ μ`.  For
+nonnegative dominant `λ` and `μ ≥ 0`, Zhelobenko's branching rule reads this count as the
+multiplicity of the irreducible representation of highest weight `μ` in the restriction of `V_λ`
+from `Sp₄` to `Sp₂`. -/
+theorem card_midInterlacingFinset_two (l : Fin 2 → ℤ) (m : Fin 1 → ℤ) :
+    (midInterlacingFinset l m).card
+      = (l 0 + 1 - max (l 1) (m 0)).toNat * (min (l 1) (m 0) + 1).toNat := by
+  rw [card_midInterlacingFinset, Fin.prod_univ_two]
+  simp [Fin.snoc]
+
+end MidInterlacing
 
 /-- A **symplectic Gelfand-Tsetlin pattern** of rank `r`: for each `k ≤ r` an unprimed row
 `entry · k` and an intermediate row `midEntry · k`, both of length `k`, such that the intermediate
@@ -220,12 +279,14 @@ theorem entry_le_midEntry_succ (P : SymplecticGTPattern r) {i k : ℕ} (hk : k <
   · rw [P.entry_eq_zero_of_le h]
     exact P.midEntry_nonneg _ _
 
-/-- The second interlacing inequality between rows, `bᵢ₊₁,ₖ₊₁ ≤ aᵢ,ₖ`, below the top row. -/
-theorem midEntry_succ_succ_le_entry (P : SymplecticGTPattern r) {i k : ℕ} (hk : k < r) :
+/-- The second interlacing inequality between rows, `bᵢ₊₁,ₖ₊₁ ≤ aᵢ,ₖ`.  It holds at every cell:
+off the triangle the left side vanishes and the right side is nonnegative. -/
+theorem midEntry_succ_succ_le_entry (P : SymplecticGTPattern r) (i k : ℕ) :
     P.midEntry (i + 1) (k + 1) ≤ P.entry i k := by
-  rcases lt_or_ge i k with h | h
-  · exact (P.interlacing' h hk).2
-  · rw [P.midEntry_eq_zero_of_le (by omega), P.entry_eq_zero_of_le h]
+  by_cases h : i < k ∧ k < r
+  · exact (P.interlacing' h.1 h.2).2
+  · rw [P.midEntry_eq_zero (by omega)]
+    exact P.entry_nonneg i k
 
 /-! ### The top rows -/
 
@@ -251,6 +312,14 @@ theorem topRow_antitone (P : SymplecticGTPattern r) : Antitone P.topRow :=
 /-- The top row is nonnegative. -/
 theorem topRow_nonneg (P : SymplecticGTPattern r) (i : Fin r) : 0 ≤ P.topRow i :=
   P.entry_nonneg i r
+
+/-- The top intermediate row decreases weakly. -/
+theorem topMidRow_antitone (P : SymplecticGTPattern r) : Antitone P.topMidRow :=
+  fun _ _ h => P.midEntry_antitone r h
+
+/-- The top intermediate row is nonnegative. -/
+theorem topMidRow_nonneg (P : SymplecticGTPattern r) (i : Fin r) : 0 ≤ P.topMidRow i :=
+  P.midEntry_nonneg i r
 
 /-- The top row padded by a final zero is read off the top row of the array, whose cell `aᵣ,ᵣ` is
 empty. -/
@@ -308,17 +377,18 @@ theorem topRow_truncate (P : SymplecticGTPattern (r + 1)) (i : Fin r) :
     P.truncate.topRow i = P.entry i r := by
   simp
 
+/-- The top intermediate row of a truncated pattern is the second intermediate row of the
+original. -/
+theorem topMidRow_truncate (P : SymplecticGTPattern (r + 1)) (i : Fin r) :
+    P.truncate.topMidRow i = P.midEntry i r := by
+  simp
+
 /-- The second unprimed row interlaces the top intermediate row. -/
 theorem interlaces_topMidRow_topRow_truncate (P : SymplecticGTPattern (r + 1)) :
     Interlaces P.topMidRow P.truncate.topRow :=
   interlaces_iff.mpr fun i => by
     rw [topRow_truncate]
-    exact ⟨P.entry_le_midEntry_succ (by omega), P.midEntry_succ_succ_le_entry (by omega)⟩
-
-/-- The top row padded by a zero, read at an explicit index. -/
-private theorem snoc_apply_mk (l : Fin (r + 1) → ℤ) (i : ℕ) (hi : i < r + 2) :
-    Fin.snoc (α := fun _ => ℤ) l 0 ⟨i, hi⟩ = if h : i < r + 1 then l ⟨i, h⟩ else 0 := by
-  simp [Fin.snoc]
+    exact ⟨P.entry_le_midEntry_succ (by omega), P.midEntry_succ_succ_le_entry _ _⟩
 
 /-- Prepend the top row `l` and the intermediate row `b` on top of a pattern of rank `r`, provided
 `b` interlaces `l` padded by a zero and the top row of the pattern interlaces `b`. -/
@@ -346,7 +416,7 @@ def extend (Q : SymplecticGTPattern r) (l b : Fin (r + 1) → ℤ)
       have h₁ := hb.le_castSucc ⟨i, hik⟩
       have h₂ := hb.succ_le ⟨i, hik⟩
       rw [Fin.snoc_castSucc] at h₁
-      rw [Fin.succ_mk, snoc_apply_mk] at h₂
+      simp only [Fin.succ_mk, Fin.snoc, Fin.castLT_mk, cast_eq] at h₂
       simp only [↓reduceIte, dite_eq_left hik]
       exact ⟨h₁, h₂⟩
     · simp only [hkr, ↓reduceIte]
@@ -482,15 +552,6 @@ theorem truncateEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ)
     ((truncateEquiv l).symm x).1 = x.2.1.extend l x.1 (mem_interlacingFinset.mp x.1.2) x.2.2 :=
   (rfl)
 
-/-- The patterns whose top row interlaces `b`, sorted by that top row. -/
-private def interlacesTopRowEquiv (b : Fin (r + 1) → ℤ) :
-    {Q : SymplecticGTPattern r // Interlaces b Q.topRow} ≃
-      Σ m : interlacingFinset b, {Q : SymplecticGTPattern r // Q.topRow = (m : Fin r → ℤ)} where
-  toFun Q := ⟨⟨Q.1.topRow, mem_interlacingFinset.mpr Q.2⟩, ⟨Q.1, rfl⟩⟩
-  invFun x := ⟨x.2.1, by rw [x.2.2]; exact mem_interlacingFinset.mp x.1.2⟩
-  left_inv _ := rfl
-  right_inv x := Sigma.subtype_ext (Subtype.ext x.2.2) rfl
-
 /-- **The patterns over `l`, sorted by their top intermediate row and their second unprimed row.**
 This is `TauCeti.SymplecticGTPattern.truncateEquiv` with the pattern of rank `r` further indexed
 by its own top row. -/
@@ -499,7 +560,34 @@ def truncateSigmaEquiv (l : Fin (r + 1) → ℤ) :
       Σ b : interlacingFinset (Fin.snoc l 0), Σ m : interlacingFinset (b : Fin (r + 1) → ℤ),
         {Q : SymplecticGTPattern r // Q.topRow = (m : Fin r → ℤ)} :=
   (truncateEquiv l).trans
-    (Equiv.sigmaCongrRight fun b => interlacesTopRowEquiv (b : Fin (r + 1) → ℤ))
+    (Equiv.sigmaCongrRight fun _ =>
+      (Equiv.sigmaSubtypeFiberEquivSubtype topRow fun _ => mem_interlacingFinset.symm).symm)
+
+@[simp]
+theorem truncateSigmaEquiv_apply_fst_coe (l : Fin (r + 1) → ℤ)
+    (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
+    ((truncateSigmaEquiv l P).1 : Fin (r + 1) → ℤ) = P.1.topMidRow :=
+  (rfl)
+
+@[simp]
+theorem truncateSigmaEquiv_apply_snd_fst_coe (l : Fin (r + 1) → ℤ)
+    (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
+    ((truncateSigmaEquiv l P).2.1 : Fin r → ℤ) = P.1.truncate.topRow :=
+  (rfl)
+
+@[simp]
+theorem truncateSigmaEquiv_apply_snd_snd_coe (l : Fin (r + 1) → ℤ)
+    (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l}) :
+    (truncateSigmaEquiv l P).2.2.1 = P.1.truncate :=
+  (rfl)
+
+@[simp]
+theorem truncateSigmaEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ)
+    (x : Σ b : interlacingFinset (Fin.snoc l 0), Σ m : interlacingFinset (b : Fin (r + 1) → ℤ),
+      {Q : SymplecticGTPattern r // Q.topRow = (m : Fin r → ℤ)}) :
+    ((truncateSigmaEquiv l).symm x).1 = x.2.2.1.extend l x.1 (mem_interlacingFinset.mp x.1.2)
+      (by rw [x.2.2.2]; exact mem_interlacingFinset.mp x.2.1.2) :=
+  (rfl)
 
 /-- **The multiplicity data of the branching.**  The patterns of rank `r + 1` with top row `l` and
 second unprimed row `m` are the intermediate rows `b` with `(l, 0) ≻ b ≻ m`, times the patterns of
@@ -508,18 +596,37 @@ the first factor as the multiplicity of `V_m` in the restriction of `V_l` along
 `Sp₂ᵣ ⊂ Sp₂₍ᵣ₊₁₎`. -/
 def truncateFiberEquiv (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) :
     {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m} ≃
-      {b : Fin (r + 1) → ℤ // Interlaces (Fin.snoc l 0) b ∧ Interlaces b m} ×
-        {Q : SymplecticGTPattern r // Q.topRow = m} where
-  toFun P := (⟨P.1.topMidRow,
-      by have h := P.1.interlaces_snoc_topRow_topMidRow; rwa [P.2.1] at h,
-      by have h := P.1.interlaces_topMidRow_topRow_truncate; rwa [P.2.2] at h⟩,
+      midInterlacingFinset l m × {Q : SymplecticGTPattern r // Q.topRow = m} where
+  toFun P := (⟨P.1.topMidRow, mem_midInterlacingFinset.mpr
+      ⟨by have h := P.1.interlaces_snoc_topRow_topMidRow; rwa [P.2.1] at h,
+        by have h := P.1.interlaces_topMidRow_topRow_truncate; rwa [P.2.2] at h⟩⟩,
     ⟨P.1.truncate, P.2.2⟩)
-  invFun x := ⟨x.2.1.extend l x.1.1 x.1.2.1 (by rw [x.2.2]; exact x.1.2.2),
+  invFun x := ⟨x.2.1.extend l x.1 (mem_midInterlacingFinset.mp x.1.2).1
+      (by rw [x.2.2]; exact (mem_midInterlacingFinset.mp x.1.2).2),
     by simp, by simpa using x.2.2⟩
   left_inv := by
     rintro ⟨P, rfl, rfl⟩
     exact Subtype.ext (extend_truncate P)
   right_inv x := Prod.ext (Subtype.ext (by simp)) (Subtype.ext (by simp))
+
+@[simp]
+theorem truncateFiberEquiv_apply_fst_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
+    (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m}) :
+    ((truncateFiberEquiv l m P).1 : Fin (r + 1) → ℤ) = P.1.topMidRow :=
+  (rfl)
+
+@[simp]
+theorem truncateFiberEquiv_apply_snd_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
+    (P : {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m}) :
+    (truncateFiberEquiv l m P).2.1 = P.1.truncate :=
+  (rfl)
+
+@[simp]
+theorem truncateFiberEquiv_symm_apply_coe (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ)
+    (x : midInterlacingFinset l m × {Q : SymplecticGTPattern r // Q.topRow = m}) :
+    ((truncateFiberEquiv l m).symm x).1 = x.2.1.extend l x.1 (mem_midInterlacingFinset.mp x.1.2).1
+      (by rw [x.2.2]; exact (mem_midInterlacingFinset.mp x.1.2).2) :=
+  (rfl)
 
 /-! ### Finitely many patterns share a top row -/
 
@@ -544,6 +651,16 @@ instance finite_topRow_eq (l : Fin r → ℤ) : Finite {P : SymplecticGTPattern 
   | zero => infer_instance
   | succ r ih => exact Finite.of_equiv _ (truncateSigmaEquiv l).symm
 
+/-- Only finitely many patterns share their two top unprimed rows. -/
+instance finite_topRow_eq_and_topRow_truncate_eq (l : Fin (r + 1) → ℤ) (m : Fin r → ℤ) :
+    Finite {P : SymplecticGTPattern (r + 1) // P.topRow = l ∧ P.truncate.topRow = m} :=
+  Finite.of_equiv _ (truncateFiberEquiv l m).symm
+
+/-- In rank zero the empty pattern is the only pattern over the empty top row. -/
+instance uniqueTopRowZero (l : Fin 0 → ℤ) : Unique {P : SymplecticGTPattern 0 // P.topRow = l} where
+  default := ⟨default, Subsingleton.elim _ _⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
+
 /-! ### Counting the patterns over a top row -/
 
 /-- **The branching recursion for the count.**  The symplectic patterns of rank `r + 1` and top row
@@ -566,10 +683,8 @@ theorem card_topRow_succ (l : Fin (r + 1) → ℤ) :
 
 /-- **The count in rank zero**: the empty pattern, the trivial representation of `Sp₀`. -/
 theorem card_topRow_zero (l : Fin 0 → ℤ) :
-    Nat.card {P : SymplecticGTPattern 0 // P.topRow = l} = 1 := by
-  have : Unique {P : SymplecticGTPattern 0 // P.topRow = l} :=
-    ⟨⟨⟨default, Subsingleton.elim _ _⟩⟩, fun _ => Subtype.ext (Subsingleton.elim _ _)⟩
-  exact Nat.card_unique
+    Nat.card {P : SymplecticGTPattern 0 // P.topRow = l} = 1 :=
+  Nat.card_unique
 
 /-- **The count in rank one.**  A pattern of rank one with top row `(λ₀)` is its single
 intermediate entry `λ₀ ≥ b ≥ 0`, so there are `(λ₀ + 1).toNat` of them.  For `λ₀ ≥ 0` this is the
@@ -588,106 +703,49 @@ theorem card_topRow_two (l : Fin 2 → ℤ) :
       = ∑ b₀ ∈ Finset.Icc (l 1) (l 0), ∑ b₁ ∈ Finset.Icc 0 (l 1), ∑ m ∈ Finset.Icc b₁ b₀,
           (m + 1).toNat := by
   rw [card_topRow_succ, ← Finset.sum_product']
-  refine Finset.sum_nbij' (fun b => (b 0, b 1)) (fun p => ![p.1, p.2]) ?_ ?_ ?_ ?_ ?_
-  · intro b hb
-    rw [mem_interlacingFinset] at hb
-    have h₀ := interlaces_iff.mp hb 0
-    have h₁ := interlaces_iff.mp hb 1
-    simp only [Finset.mem_product, Finset.mem_Icc]
-    exact ⟨⟨by simpa [Fin.snoc] using h₀.2, by simpa [Fin.snoc] using h₀.1⟩,
-      ⟨by simpa [Fin.snoc] using h₁.2, by simpa [Fin.snoc] using h₁.1⟩⟩
-  · rintro ⟨x, y⟩ hp
-    simp only [Finset.mem_product, Finset.mem_Icc] at hp
-    rw [mem_interlacingFinset, interlaces_iff]
-    intro i
-    fin_cases i
-    · simpa [Fin.snoc] using And.intro hp.1.2 hp.1.1
-    · simpa [Fin.snoc] using And.intro hp.2.2 hp.2.1
-  · intro b _
-    ext i
-    fin_cases i <;> rfl
-  · intro p _
-    rfl
-  · intro b _
-    refine Finset.sum_nbij' (fun m => m 0) (fun x => ![x]) ?_ ?_ ?_ ?_ ?_
-    · intro m hm
-      rw [mem_interlacingFinset] at hm
-      exact Finset.mem_Icc.mpr ⟨hm.succ_le 0, hm.le_castSucc 0⟩
-    · intro x hx
-      rw [Finset.mem_Icc] at hx
-      rw [mem_interlacingFinset, interlaces_iff]
-      intro i
-      fin_cases i
-      exact ⟨hx.2, hx.1⟩
-    · intro m _
-      ext i
-      fin_cases i
-      rfl
-    · intro x _
-      rfl
-    · intro m _
-      exact card_topRow_one m
+  refine Finset.sum_equiv (piFinTwoEquiv fun _ => ℤ) (fun b => ?_) fun b _ => ?_
+  · simp [Fin.forall_fin_two, Fin.snoc]
+    tauto
+  · refine Finset.sum_equiv (Equiv.funUnique (Fin 1) ℤ) (fun m => ?_) fun m _ => card_topRow_one m
+    simp [mem_interlacingFinset, and_comm]
 
 /-- **The standard representation of `Sp₄`.**  The top row `(1, 0)` carries `4` patterns. -/
-theorem card_topRow_one_zero : Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 0]} = 4 := by
+theorem card_topRow_two_one_zero :
+    Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 0]} = 4 := by
   rw [card_topRow_two]
   decide
 
 /-- **The second fundamental representation of `Sp₄`.**  The top row `(1, 1)` carries `5` patterns,
 the dimension of the traceless part of `Λ² ℂ⁴`. -/
-theorem card_topRow_one_one : Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 1]} = 5 := by
+theorem card_topRow_two_one_one :
+    Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 1]} = 5 := by
   rw [card_topRow_two]
   decide
 
 /-- **The adjoint representation of `Sp₄`.**  The top row `(2, 0)` carries `10` patterns, the
 dimension of `Sym² ℂ⁴ ≅ 𝔰𝔭₄`. -/
-theorem card_topRow_two_zero : Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![2, 0]} = 10 := by
+theorem card_topRow_two_two_zero :
+    Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![2, 0]} = 10 := by
   rw [card_topRow_two]
   decide
-
-/-- **The branching multiplicities in rank two.**  The intermediate rows `b = (b₀, b₁)` with
-`(λ₀, λ₁, 0) ≻ b ≻ (μ)` are cut out by the independent bounds `max λ₁ μ ≤ b₀ ≤ λ₀` and
-`0 ≤ b₁ ≤ min λ₁ μ`.  For nonnegative dominant `λ` and `μ ≥ 0`, Zhelobenko's branching rule reads
-this count as the multiplicity of the irreducible representation of highest weight `μ` in the
-restriction of `V_λ` from `Sp₄` to `Sp₂`. -/
-theorem card_midRows_two (l : Fin 2 → ℤ) (m : Fin 1 → ℤ) :
-    Nat.card {b : Fin 2 → ℤ // Interlaces (Fin.snoc l 0) b ∧ Interlaces b m}
-      = (l 0 + 1 - max (l 1) (m 0)).toNat * (min (l 1) (m 0) + 1).toNat := by
-  let e : {b : Fin 2 → ℤ // Interlaces (Fin.snoc l 0) b ∧ Interlaces b m} ≃
-      Finset.Icc (max (l 1) (m 0)) (l 0) ×ˢ Finset.Icc 0 (min (l 1) (m 0)) :=
-    { toFun b := ⟨(b.1 0, b.1 1), by
-        obtain ⟨h₁, h₂⟩ := b.2
-        have h₀ := interlaces_iff.mp h₁ 0
-        have h₁ := interlaces_iff.mp h₁ 1
-        have h₂ := interlaces_iff.mp h₂ 0
-        simp [Fin.snoc] at h₀ h₁ h₂
-        simp only [Finset.mem_product, Finset.mem_Icc, max_le_iff, le_min_iff]
-        omega⟩
-      invFun p := ⟨![p.1.1, p.1.2], by
-        have hp := p.2
-        simp only [Finset.mem_product, Finset.mem_Icc, max_le_iff, le_min_iff] at hp
-        refine ⟨interlaces_iff.mpr fun i => ?_, interlaces_iff.mpr fun i => ?_⟩ <;>
-          fin_cases i <;> simp [Fin.snoc] <;> omega⟩
-      left_inv b := Subtype.ext (funext fun i => by fin_cases i <;> rfl)
-      right_inv p := rfl }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_coe, Finset.card_product,
-    Int.card_Icc, Int.card_Icc, sub_zero]
 
 /-- **The intermediate row is multiplicity data.**  Of the `4` patterns over the standard
 representation `(1, 0)` of `Sp₄`, the `2` whose second unprimed row is the trivial weight `(0)` of
 `Sp₂` differ only in their intermediate row, `(1, 0)` or `(0, 0)`: the trivial representation
 occurs twice in the restriction.  Forgetting the intermediate rows would lose one of them. -/
-theorem card_topRow_one_zero_truncate_zero :
+theorem card_topRow_two_one_zero_truncate_zero :
     Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 0] ∧ P.truncate.topRow = ![0]} = 2 := by
-  rw [Nat.card_congr (truncateFiberEquiv _ _), Nat.card_prod, card_midRows_two, card_topRow_one]
+  rw [Nat.card_congr (truncateFiberEquiv _ _), Nat.card_prod, Nat.card_eq_finsetCard,
+    card_midInterlacingFinset_two, card_topRow_one]
   decide
 
 /-- The other `2` patterns over `(1, 0)` have second unprimed row `(1)`: a single intermediate row
 `(1, 0)`, over the `2` patterns of the standard representation of `Sp₂`.  Together with
-`TauCeti.SymplecticGTPattern.card_topRow_one_zero_truncate_zero` this is `4 = 1 + 1 + 2`. -/
-theorem card_topRow_one_zero_truncate_one :
+`TauCeti.SymplecticGTPattern.card_topRow_two_one_zero_truncate_zero` this is `4 = 1 + 1 + 2`. -/
+theorem card_topRow_two_one_zero_truncate_one :
     Nat.card {P : SymplecticGTPattern 2 // P.topRow = ![1, 0] ∧ P.truncate.topRow = ![1]} = 2 := by
-  rw [Nat.card_congr (truncateFiberEquiv _ _), Nat.card_prod, card_midRows_two, card_topRow_one]
+  rw [Nat.card_congr (truncateFiberEquiv _ _), Nat.card_prod, Nat.card_eq_finsetCard,
+    card_midInterlacingFinset_two, card_topRow_one]
   decide
 
 /-! ### Which sequences are top rows -/
@@ -701,7 +759,7 @@ theorem nonempty_topRow_eq_iff (l : Fin r → ℤ) :
     Nonempty {P : SymplecticGTPattern r // P.topRow = l} ↔ Antitone l ∧ ∀ i, 0 ≤ l i := by
   refine ⟨fun ⟨⟨P, hP⟩⟩ => hP ▸ ⟨P.topRow_antitone, P.topRow_nonneg⟩, ?_⟩
   induction r with
-  | zero => exact fun _ => ⟨⟨default, funext fun i => i.elim0⟩⟩
+  | zero => exact fun _ => inferInstance
   | succ r ih =>
     rintro ⟨hl, hl₀⟩
     obtain ⟨⟨Q, hQ⟩⟩ := ih (fun i => l i.castSucc)
