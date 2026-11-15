@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Order.ConditionallyCompleteLattice.Finset
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Local weights of subspaces
@@ -77,17 +78,6 @@ theorem mem_localWeightBases_iff_linearIndependent_card {L : ι → Module.Dual 
     apply hli.span_eq_top_of_card_eq_finrank'
     simpa [Subspace.dual_finrank_eq] using hcard
 
-omit [Fintype ι] in
-/-- Pulling a spanning family of forms back along an injective linear map still spans the dual. -/
-theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module K W]
-    {L : ι → Module.Dual K V} (hL : span K (range L) = ⊤) {f : W →ₗ[K] V}
-    (hf : Function.Injective f) :
-    span K (range fun i ↦ (L i).comp f) = ⊤ := by
-  have heq : (range fun i ↦ (L i).comp f) = f.dualMap '' range L :=
-    Set.range_comp f.dualMap L
-  rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
-  exact LinearMap.dualMap_surjective_of_injective hf
-
 /-- A generating family of ambient forms contains a basis after restriction to any subspace. -/
 theorem localWeightBases_nonempty {L : ι → Module.Dual K V}
     (hL : span K (range L) = ⊤) (U : Submodule K V) :
@@ -95,7 +85,7 @@ theorem localWeightBases_nonempty {L : ι → Module.Dual K V}
   classical
   let f : ι → Module.Dual K U := fun i ↦ (L i).comp U.subtype
   have hf : span K (range f) = ⊤ :=
-    span_range_comp_eq_top_of_injective hL U.injective_subtype
+    Module.Dual.span_range_comp_eq_top_of_injective hL U.injective_subtype
   obtain ⟨b, -, -, hbspan, hbi⟩ := exists_linearIndepOn_extension
     (v := f) (linearIndepOn_empty K f) (Set.empty_subset (Set.univ : Set ι))
   have hb : span K (f '' b) = ⊤ := by

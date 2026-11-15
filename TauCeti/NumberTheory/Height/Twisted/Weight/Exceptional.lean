@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Twisted.Weight.Global
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The exceptional subspace of a weighted system of forms
@@ -355,37 +356,32 @@ theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual 
     by_cases hL : ∀ v, span K (range (L v)) = ⊤
     · by_cases hc : HasFiniteSupport c
       · have hL' : ∀ v, span K (range (L' v)) = ⊤ := fun v ↦
-          span_range_comp_eq_top_of_injective (hL v) e.injective
+          Module.Dual.span_range_comp_eq_top_of_injective (hL v) e.injective
         obtain ⟨hE, hmax, hmin⟩ := exceptionalSubspace_spec hL' hc
-        refine (eq_exceptionalSubspace_iff hL hc _).mpr ⟨?_, ?_, ?_⟩
+        have hmap (U : Submodule K V) : (U.comap e.toLinearMap).map e.toLinearMap = U :=
+          Submodule.map_comap_eq_of_surjective e.surjective U
+        have hcomap_ne_top {U : Submodule K V} (hU : U ≠ ⊤) : U.comap e.toLinearMap ≠ ⊤ :=
+          fun h ↦ hU (by rw [← hmap U, h, Submodule.map_top, e.range])
+        refine (eq_exceptionalSubspace_iff hL hc _).mpr ⟨?_, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩
         · intro htop
           apply hE
           simpa [Submodule.comap_map_eq_of_injective e.injective] using
             congrArg (Submodule.comap e.toLinearMap) htop
-        · intro U hU
-          have hmap : (U.comap e.toLinearMap).map e.toLinearMap = U :=
-            Submodule.map_comap_eq_of_surjective e.surjective U
-          have hU' : U.comap e.toLinearMap ≠ ⊤ := fun h ↦
-            hU (by rw [← hmap, h, Submodule.map_top, e.range])
-          simpa only [L', weightRatio_comp_linearEquiv, hmap] using hmax _ hU'
-        · intro U hU heq
-          have hmap : (U.comap e.toLinearMap).map e.toLinearMap = U :=
-            Submodule.map_comap_eq_of_surjective e.surjective U
-          have hU' : U.comap e.toLinearMap ≠ ⊤ := fun h ↦
-            hU (by rw [← hmap, h, Submodule.map_top, e.range])
-          have heq' : weightRatio L' c (U.comap e.toLinearMap) =
+        · simpa only [L', weightRatio_comp_linearEquiv, hmap U] using hmax _ (hcomap_ne_top hU)
+        · have heq' : weightRatio L' c (U.comap e.toLinearMap) =
               weightRatio L' c (exceptionalSubspace L' c) := by
-            simpa only [L', weightRatio_comp_linearEquiv, hmap] using heq
-          have hle := hmin _ hU' heq'
+            simpa only [L', weightRatio_comp_linearEquiv, hmap U] using heq
+          have hle := hmin _ (hcomap_ne_top hU) heq'
           rwa [(Submodule.equivMapOfInjective e.toLinearMap e.injective _).finrank_eq,
             (Submodule.equivMapOfInjective e.toLinearMap e.injective
-              (U.comap e.toLinearMap)).finrank_eq, hmap] at hle
+              (U.comap e.toLinearMap)).finrank_eq, hmap U] at hle
       · simp [exceptionalSubspace_eq_bot_of_not_hasFiniteSupport hc]
     · have hL' : ¬∀ v, span K (range (L' v)) = ⊤ := fun h ↦ hL fun v ↦ by
         have hcomp : (fun i ↦ (L' v i).comp e.symm.toLinearMap) = L v := by
           ext i x
           simp [L']
-        simpa only [hcomp] using span_range_comp_eq_top_of_injective (h v) e.symm.injective
+        simpa only [hcomp] using
+          Module.Dual.span_range_comp_eq_top_of_injective (h v) e.symm.injective
       simp [L', exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL,
         exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL']
 
@@ -420,8 +416,7 @@ theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
   have htop : weight L c ⊤ = c v₀ 0 + c v₀ 1 := by
     rw [hwt, localWeight_top (hLi v₀) (hL v₀), Fin.sum_univ_two]
   let e₁ : Fin 2 → K := Pi.single 1 1
-  have he₁ : e₁ ≠ 0 := fun h ↦
-    (one_ne_zero : (1 : K) ≠ 0) (by simpa [e₁] using congrFun h (1 : Fin 2))
+  have he₁ : e₁ ≠ 0 := Pi.single_eq_zero_iff.not.mpr one_ne_zero
   have hdimE : finrank K (K ∙ e₁) = 1 := finrank_span_singleton he₁
   have hE_ne_top : (K ∙ e₁) ≠ ⊤ := fun h ↦ by
     have := hdimE; rw [h, finrank_top, Module.finrank_fin_fun] at this; omega

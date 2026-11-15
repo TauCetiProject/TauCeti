@@ -42,6 +42,8 @@ and so separate points.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
+* `Module.Dual.span_range_comp_eq_top_of_injective`: pulling a spanning family of forms back along
+  an injective linear map still spans the dual.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
@@ -218,6 +220,16 @@ theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
   simp only [map_smul, LinearEquiv.symm_apply_apply, smul_eq_mul] at h
   simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
     h, mul_comm, sub_self]
+
+/-- Pulling a spanning family of forms back along an injective linear map still spans the dual. -/
+theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module K W]
+    {L : ι → Dual K V} (hL : Submodule.span K (Set.range L) = ⊤) {f : W →ₗ[K] V}
+    (hf : Function.Injective f) :
+    Submodule.span K (Set.range fun i ↦ (L i).comp f) = ⊤ := by
+  have heq : (Set.range fun i ↦ (L i).comp f) = f.dualMap '' Set.range L :=
+    Set.range_comp f.dualMap L
+  rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
+  exact LinearMap.dualMap_surjective_of_injective hf
 
 end Field
 
