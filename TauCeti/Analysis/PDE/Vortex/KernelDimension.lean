@@ -365,9 +365,11 @@ variable (hx : ContDiff ℝ ∞ x) (hhol : ∀ w, equation x w 1 = 0 ∧ equatio
 
 include hx hhol hlim hD
 
-/-- For a point `⟨a, j⟩` of the divisor `D` and `c ∈ ℂ`, a kernel element of `L_x` whose section
-variation is `δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continuous function `ξ`. -/
-private theorem exists_mem_gaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : ℂ) :
+/-- **Kernel elements with a prescribed pole.** At a smooth field with vanishing holomorphicity
+rows and `|α|² → 1` at infinity, whose section has zero divisor `D`, for every point `⟨a, j⟩` of `D`
+and every `c ∈ ℂ` there is a kernel element of `L_x` whose section variation is
+`δα = α (c / (w - a)^(j+1) + ξ)` off `a`, for a continuous function `ξ`. -/
+theorem exists_mem_gaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : ℂ) :
     ∃ y ∈ gaugeFixedKernel x, ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
       sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
   have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
