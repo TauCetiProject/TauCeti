@@ -19,7 +19,8 @@ the graded pieces of a filtration.
 ## Main definitions
 
 * `CategoryTheory.Subobject.cokernelOfLEIsoOfEq`: the canonical isomorphism between the cokernels
-  of the inclusions of equal pairs of subobjects.
+  of the inclusions of equal pairs of subobjects. It is the identity when the equalities are
+  reflexive (`CategoryTheory.Subobject.cokernelOfLEIsoOfEq_refl`).
 -/
 
 public section
@@ -36,5 +37,12 @@ noncomputable def cokernelOfLEIsoOfEq {A B A' B' : Subobject X} (hA : A = A') (h
     (h : A ≤ B) (h' : A' ≤ B') [HasCokernel (ofLE A B h)] [HasCokernel (ofLE A' B' h')] :
     cokernel (ofLE A B h) ≅ cokernel (ofLE A' B' h') :=
   eqToIso (by subst hA hB; rfl)
+
+/-- Rewriting the subobjects `A` and `B` along `A = A` and `B = B` is the identity. -/
+@[simp]
+lemma cokernelOfLEIsoOfEq_refl {A B : Subobject X} (hA : A = A) (hB : B = B) (h h' : A ≤ B)
+    [HasCokernel (ofLE A B h)] :
+    cokernelOfLEIsoOfEq hA hB h h' = Iso.refl _ := by
+  simp [cokernelOfLEIsoOfEq]
 
 end CategoryTheory.Subobject

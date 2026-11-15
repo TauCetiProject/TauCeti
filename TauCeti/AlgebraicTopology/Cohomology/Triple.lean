@@ -31,6 +31,8 @@ cochains.
 * `TauCeti.TopTriple.singularCochainComplexShortComplex`: the cochain sequence
   `C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B)` of a triple `(X, A, B)`.
 * `TauCeti.TopTriple.shortExact_singularCochainComplexShortComplex`: it is short exact.
+* `TauCeti.TopTriple.singularCohomologyδ`: the connecting map `Hⁿ(A, B) ⟶ Hⁿ⁺¹(X, A)` of the
+  associated long exact sequence.
 
 ## References
 
@@ -80,6 +82,13 @@ lemma shortExact_singularCochainComplexShortComplex :
     (T.singularCochainComplexShortComplex R k M).ShortExact :=
   TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
     (T.shortExact_singularChainComplexShortComplex R)
+
+/-- The connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` of the long exact cohomology sequence of a
+triple `(X, A, B)`, where `n + 1 = m`. -/
+abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
+    (innerPair.obj T).singularCohomology R k M n ⟶
+      (outerPair.obj T).singularCohomology R k M m :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
 end TopTriple
 
