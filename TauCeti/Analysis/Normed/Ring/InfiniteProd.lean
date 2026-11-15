@@ -23,12 +23,17 @@ For any finite family `u : ι → R` in a seminormed commutative ring `R`, the d
 submultiplicative rescalings with `‖1‖ > 1`, and the zero ring, and is attained at `u = ![1, 1]`
 and `u = ![-1, 0]`.
 
-For infinite products with `Summable (fun i ↦ ‖f i‖)`, the same bound gives the sharp majorant
-`‖∏' i, (1 + f i) - 1‖ ≤ (∏' i, (1 + ‖f i‖)) - 1`, together with the exponential corollaries
-`‖∏' i, (1 + f i)‖ ≤ exp (∑' i, ‖f i‖)` and `‖∏' i, (1 + f i) - 1‖ ≤ exp (∑' i, ‖f i‖) - 1` used to
-bound theta products and Siegel functions on the upper half-plane, the exact zero-set
-characterization `(∏' i, (1 + f i)) = 0 ↔ ∃ i, 1 + f i = 0`, and the finite-head times cofinite-tail
-splitting `(∏ i ∈ t, (1 + f i)) * (∏' i : {i // i ∉ t}, (1 + f i)) = ∏' i, (1 + f i)`.
+More generally, `HasProd.norm_le_exp_of_sum_le` bounds any supplied infinite product from real
+exponential bounds on its factors and a common bound on all finite sums of the exponents, and
+`TauCeti.norm_tprod_le_exp_of_sum_le` gives the corresponding totalized product bound.
+
+For infinite products with `Summable (fun i ↦ ‖f i‖)`, these estimates give the sharp majorants
+`‖∏' i, (1 + f i) - 1‖ ≤ (∏' i, (1 + ‖f i‖)) - 1` and `‖∏' i, (1 + f i)‖ ≤ ∏' i, (1 + ‖f i‖)`,
+together with the exponential corollaries `‖∏' i, (1 + f i)‖ ≤ exp (∑' i, ‖f i‖)` (in a seminormed
+commutative ring) and `‖∏' i, (1 + f i) - 1‖ ≤ exp (∑' i, ‖f i‖) - 1` used to bound theta products
+and Siegel functions on the upper half-plane, the exact zero-set characterization
+`(∏' i, (1 + f i)) = 0 ↔ ∃ i, 1 + f i = 0`, and the finite-head times cofinite-tail splitting
+`(∏ i ∈ t, (1 + f i)) * (∏' i : {i // i ∉ t}, (1 + f i)) = ∏' i, (1 + f i)`.
 
 ## Main declarations
 
@@ -38,10 +43,14 @@ splitting `(∏ i ∈ t, (1 + f i)) * (∏' i : {i // i ∉ t}, (1 + f i)) = ∏
   `∏ i ∈ s, (1 - u i)`.
 * `Finset.norm_prod_one_add_le_prod_one_add_norm`: `‖∏ i ∈ s, (1 + u i)‖ ≤ ∏ i ∈ s, (1 + ‖u i‖)`
   under `NormOneClass`.
+* `HasProd.norm_le_exp_of_sum_le`: exponential norm bound for a supplied infinite product from
+  factor bounds `‖f i‖ ≤ exp (b i)` and finite-sum bounds `∑ i ∈ s, b i ≤ B`.
 * `TauCeti.norm_tprod_one_add_sub_one_le_tprod_one_add_norm_sub_one`: sharp infinite-product
   distance-to-one majorant in any `SeminormedCommRing`.
 * `TauCeti.norm_tprod_one_add_le_tprod_one_add_norm`: sharp infinite-product norm bound under
   `NormOneClass`.
+* `TauCeti.norm_tprod_le_exp_of_sum_le`: totalized infinite-product norm bound from factor bounds
+  `‖f i‖ ≤ exp (b i)` and finite-sum bounds `∑ i ∈ s, b i ≤ B`.
 * `TauCeti.norm_tprod_one_add_le_exp_tsum`, `TauCeti.norm_tprod_one_add_sub_one_le`: exponential
   upper bounds in terms of `exp (∑' i, ‖f i‖)`.
 * `TauCeti.tprod_one_add_eq_zero_iff`, `TauCeti.tprod_one_sub_eq_zero_iff`: an absolutely
@@ -55,6 +64,8 @@ splitting `(∏ i ∈ t, (1 + f i)) * (∏' i : {i // i ∉ t}, (1 + f i)) = ∏
 -/
 
 public section
+
+open scoped BigOperators
 
 namespace Finset
 
@@ -102,6 +113,18 @@ end SeminormedCommRing
 
 end Finset
 
+/-- A supplied infinite product has norm at most `exp B` if each factor has norm at most
+`exp (b i)` and every finite sum of the real exponents is at most `B`. -/
+theorem HasProd.norm_le_exp_of_sum_le {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {b : ι → ℝ} {B : ℝ}
+    (hb : ∀ i, ‖f i‖ ≤ Real.exp (b i))
+    (hB : ∀ s : Finset ι, ∑ i ∈ s, b i ≤ B) : ‖a‖ ≤ Real.exp B := by
+  refine le_of_tendsto' (Filter.Tendsto.norm hf) fun s ↦ ?_
+  exact (Finset.le_prod_of_submultiplicative_of_nonneg (norm : R → ℝ) norm_nonneg
+    norm_one.le norm_mul_le s f).trans <|
+    (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hb i).trans <|
+      (Real.exp_sum s b).symm.trans_le (Real.exp_le_exp.mpr (hB s))
+
 namespace TauCeti
 
 section SeminormedCommRing
@@ -123,9 +146,11 @@ theorem norm_tprod_one_add_sub_one_le_tprod_one_add_norm_sub_one {f : ι → R}
     simpa using Finset.prod_le_prod₀ (s := s) (f := fun _ ↦ (1 : ℝ)) (g := fun i ↦ 1 + ‖f i‖)
       (fun _ _ ↦ zero_le_one) fun i _ ↦ le_add_of_nonneg_right (norm_nonneg (f i))
 
+variable [NormOneClass R]
+
 /-- In a seminormed commutative ring with `‖1‖ = 1`,
 `‖∏' i, (1 + f i)‖ ≤ ∏' i, (1 + ‖f i‖)` whenever `∑' i, ‖f i‖` converges. -/
-theorem norm_tprod_one_add_le_tprod_one_add_norm [NormOneClass R] {f : ι → R}
+theorem norm_tprod_one_add_le_tprod_one_add_norm {f : ι → R}
     (hf : Summable fun i ↦ ‖f i‖) :
     ‖∏' i, (1 + f i)‖ ≤ ∏' i, (1 + ‖f i‖) := by
   have hm : Multipliable fun i ↦ 1 + ‖f i‖ := Real.multipliable_one_add_of_summable hf
@@ -137,24 +162,32 @@ theorem norm_tprod_one_add_le_tprod_one_add_norm [NormOneClass R] {f : ι → R}
     simpa using Finset.prod_le_prod₀ (s := s) (f := fun _ ↦ (1 : ℝ)) (g := fun i ↦ 1 + ‖f i‖)
       (fun _ _ ↦ zero_le_one) fun i _ ↦ le_add_of_nonneg_right (norm_nonneg (f i))
 
+/-- The totalized infinite product has norm at most `exp B` if each factor has norm at most
+`exp (b i)` and every finite sum of the real exponents is at most `B`. -/
+theorem norm_tprod_le_exp_of_sum_le {f : ι → R} {b : ι → ℝ} {B : ℝ}
+    (hb : ∀ i, ‖f i‖ ≤ Real.exp (b i))
+    (hB : ∀ s : Finset ι, ∑ i ∈ s, b i ≤ B) : ‖∏' i, f i‖ ≤ Real.exp B := by
+  by_cases h : Multipliable f
+  · exact h.hasProd.norm_le_exp_of_sum_le hb hB
+  · rw [tprod_eq_one_of_not_multipliable h, norm_one]
+    exact Real.one_le_exp (by simpa using hB ∅)
+
+/-- In a seminormed commutative ring, `‖∏' i, (1 + f i)‖ ≤ exp (∑' i, ‖f i‖)` whenever
+`‖f i‖` is summable. -/
+theorem norm_tprod_one_add_le_exp_tsum {f : ι → R} (hf : Summable fun i ↦ ‖f i‖) :
+    ‖∏' i, (1 + f i)‖ ≤ Real.exp (∑' i, ‖f i‖) := by
+  refine norm_tprod_le_exp_of_sum_le (b := fun i ↦ ‖f i‖) ?_ ?_
+  · intro i
+    calc
+      ‖1 + f i‖ ≤ 1 + ‖f i‖ := (norm_add_le _ _).trans_eq (by rw [norm_one])
+      _ ≤ Real.exp ‖f i‖ := by simpa only [add_comm] using Real.add_one_le_exp ‖f i‖
+  · exact fun s ↦ hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _
+
 end SeminormedCommRing
 
 section NormedCommRing
 
 variable {ι R : Type*} [NormedCommRing R] [NormOneClass R]
-
-/-- In a normed commutative ring, `‖∏' i, (1 + f i)‖ ≤ exp (∑' i, ‖f i‖)` whenever the norms
-`‖f i‖` are summable. -/
-theorem norm_tprod_one_add_le_exp_tsum {f : ι → R} (hf : Summable fun i ↦ ‖f i‖) :
-    ‖∏' i, (1 + f i)‖ ≤ Real.exp (∑' i, ‖f i‖) := by
-  by_cases h : Multipliable fun i ↦ 1 + f i
-  · refine le_of_tendsto' (Filter.Tendsto.norm h.hasProd) fun s ↦ ?_
-    calc ‖∏ i ∈ s, (1 + f i)‖ ≤ ∏ i ∈ s, (1 + ‖f i‖) := s.norm_prod_one_add_le_prod_one_add_norm f
-      _ ≤ Real.exp (∑ i ∈ s, ‖f i‖) := Real.prod_one_add_le_exp_sum s fun _ ↦ norm_nonneg _
-      _ ≤ Real.exp (∑' i, ‖f i‖) :=
-          Real.exp_le_exp.2 (hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _)
-  · rw [tprod_eq_one_of_not_multipliable h, norm_one]
-    exact Real.one_le_exp (tsum_nonneg fun _ ↦ norm_nonneg _)
 
 /-- In a normed commutative ring, `‖∏' i, (1 + f i) - 1‖ ≤ exp (∑' i, ‖f i‖) - 1` whenever the
 norms `‖f i‖` are summable. -/
