@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Henselian
+import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -21,11 +22,16 @@ modulo squares in `ℤ_p`. Global unimodularity is unnecessary: the hypotheses c
 determinants alone. The isometry preserves the actual integral forms on `ℤ_p ⊗[ℤ] L`.
 
 The forward implication holds at every prime and without any determinant-unit hypothesis.
+At every prime, a lattice of rank at least two that is unimodular at `p` splits off a rank-two
+perfect summand orthogonally after localization.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.isPerfPair_localIntegralForm_of_isUnit_determinant`: the localized
   integral form is a perfect pairing when the determinant is a unit at `p`.
+* `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: a
+  lattice of rank at least two unimodular at `p` splits off a perfect binary summand after
+  localization, at every prime.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_imp`: integral local isometry preserves
   the rank and determinant square class at every prime.
 * `TauCeti.IntegralLattice.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent`:
@@ -57,6 +63,19 @@ theorem isPerfPair_localIntegralForm_of_isUnit_determinant (L : IntegralLattice 
   rw [← L.det_toMatrix_localIntegralForm p (Module.finBasis ℤ L)] at hdet
   -- `LinearMap.BilinForm.toMatrix b` is defined as `LinearMap.toMatrix₂ b b`.
   exact Module.Basis.isPerfPair_of_isUnit_det _ _ _ hdet
+
+/-- **A lattice unimodular at `p` splits off a perfect binary summand.** If the rank is at least
+two and the determinant is a unit at `p`, the localization at `p` has a rank-two submodule
+carrying a perfect restriction of the local integral form and complementary to its orthogonal
+complement. This holds at every prime, including `2`, and the lattice need not be even. -/
+theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm (L : IntegralLattice V)
+    (p : ℕ) [Fact p.Prime] (hrank : 2 ≤ finrank ℤ L) (hdet : IsUnit (L.determinant : ℤ_[p])) :
+    ∃ S : Submodule ℤ_[p] (L.LocalCarrier p),
+      finrank ℤ_[p] S = 2 ∧ ((L.localIntegralForm p).restrict S).IsPerfPair ∧
+        IsCompl S ((L.localIntegralForm p).orthogonal S) := by
+  have := L.isPerfPair_localIntegralForm_of_isUnit_determinant p hdet
+  exact (L.isSymm_localIntegralForm p).exists_binary_isPerfPair_isCompl_orthogonal _
+    (by rwa [Module.finrank_baseChange])
 
 /-- Integrally isometric localizations have equal ranks and determinant products that are
 squares, at every prime and without any determinant-unit hypothesis. -/

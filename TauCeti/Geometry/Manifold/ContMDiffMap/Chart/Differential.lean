@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Joint continuity of coordinate differentials
@@ -22,6 +25,12 @@ operators, converge uniformly on compact subsets of the chart target
 (`TauCeti.tendstoUniformlyOn_fderivWithin_extChartAt`,
 `TauCeti.tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt`). This is the form of `C²`
 closeness used for the persistence of nondegenerate critical points.
+
+For `1 ≤ n` and a point `x` of `M`, taking the derivative at `x` of vector-valued `C^n` maps is
+therefore a continuous linear map `h ↦ dh_x : C^n(M, F) →L T_x M →L F` for the weak Whitney
+topology (`ContMDiffMap.mvfderivCLM`). This holds on manifolds with boundary or corners and in any
+regularity `n ≥ 1`, including the finite orders `C^k` on which the Banach space structure of a
+compact manifold lives.
 -/
 
 public section
@@ -112,3 +121,41 @@ theorem tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt {f₀ : C^n⟮I,
       (Eventually.of_forall fun f w hw ↦ hc _ (hCx hw))).congr_right fun w hw ↦ hc _ (hCx hw)
 
 end TauCeti
+
+namespace ContMDiffMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ∞ω} [IsManifold I n M]
+
+/-- The **derivative at `x`** of vector-valued `C^n` maps, `1 ≤ n`, as a continuous linear map for
+the weak Whitney topology. -/
+noncomputable def mvfderivCLM (hn : 1 ≤ n) (x : M) :
+    C^n⟮I, M; 𝓘(𝕜, F), F⟯ →L[𝕜] TangentSpace I x →L[𝕜] F where
+  toFun f := mvfderiv I f x
+  map_add' f g := mvfderiv_add (f.contMDiff.mdifferentiableAt (zero_lt_one.trans_le hn).ne')
+    (g.contMDiff.mdifferentiableAt (zero_lt_one.trans_le hn).ne')
+  map_smul' c f := TauCeti.mvfderiv_const_smul_field f x c
+  cont := by
+    refine (continuous_congr fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
+      TauCeti.mvfderiv_eq_fderivWithin_extChartAt_target
+        (f.contMDiff.mdifferentiableAt (zero_lt_one.trans_le hn).ne')).2
+      (continuous_iff_continuousAt.2 fun f₀ ↦ ?_)
+    -- The coordinate differentials converge uniformly on the compact set `{φ x}`.
+    have h := (TauCeti.tendstoUniformlyOn_fderivWithin_extChartAt (J := 𝓘(𝕜, F)) (y := f₀ x)
+      (f₀ := f₀) hn isCompact_singleton (singleton_subset_iff.2 (mem_extChartAt_target x))
+      (fun _ _ ↦ by simp)).tendsto_at (mem_singleton _)
+    simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp] at h
+    -- `ContinuousAt` is this limit, with `TangentSpace I x` read as the model space `E`.
+    exact h
+
+/-- The derivative at `x` of a `C^n` map. -/
+@[simp]
+theorem mvfderivCLM_apply (hn : 1 ≤ n) (x : M) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    mvfderivCLM hn x f = mvfderiv I f x :=
+  (rfl)
+
+end ContMDiffMap

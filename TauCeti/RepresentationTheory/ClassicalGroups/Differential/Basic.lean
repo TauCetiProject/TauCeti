@@ -125,7 +125,7 @@ private theorem comul_coefficients
   refine tensor_eq_of_forall_lift_generalLinearToPoint_eq fun g g' ↦ ?_
   have hmul : generalLinearToPoint (R := ℂ) (A := ℂ) n g * generalLinearToPoint n g' =
       generalLinearToPoint n (g * g') := by
-    simpa using ((pointsMulEquiv (R := ℂ) (A := ℂ) n).symm.map_mul g g').symm
+    simp
   rw [← AlgHom.convMul_apply, hmul, hY, map_sum, map_mul, LinearMap.toMatrix_mul,
     Matrix.mul_apply]
   simp [hY]

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Semi
-public import Mathlib.CategoryTheory.Types.Basic
+public import Mathlib.CategoryTheory.Limits.Final.Type
 public import Mathlib.Algebra.Module.Submodule.Basic
 public import Mathlib.LinearAlgebra.Pi
 
@@ -18,10 +18,13 @@ objects. This supplies linear operations on matching families without an additiv
 hypothesis. The construction follows Mathlib's `ModuleCat.sectionsSubmodule`, using the
 same `CategoryTheory.Functor.sections` carrier for semirings and semimodules.
 Natural transformations induce linear maps on these matching families, respecting
-identity and composition. Their underlying maps are Mathlib section maps.
+identity and composition. Restriction along an index functor is linear as well.
+Their underlying maps are Mathlib section maps.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `61509bfe75ce943898bc99cfa509fb40bb78c614`, under the Apache 2.0 license.
+The section-precomposition construction is adapted from the same source at commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`.
 -/
 
 public section
@@ -47,6 +50,41 @@ def sectionsSubmodule (F : J ⥤ SemimoduleCat R) : Submodule R (∀ j, F.obj j)
 @[simp]
 theorem mem_sectionsSubmodule {F : J ⥤ SemimoduleCat R} {s : ∀ j, F.obj j} :
     s ∈ sectionsSubmodule F ↔ ∀ {j j'} (f : j ⟶ j'), F.map f (s j) = s j' := Iff.rfl
+
+/-- Restrict matching sections along a functor of index categories, using Mathlib's
+section precomposition on the underlying type-valued diagrams. -/
+def sectionsPrecomp {K : Type*} [Category* K] (p : K ⥤ J) (F : J ⥤ SemimoduleCat R) :
+    sectionsSubmodule F →ₗ[R] sectionsSubmodule (p ⋙ F) where
+  toFun := p.sectionsPrecomp (P := F ⋙ forget (SemimoduleCat R))
+  map_add' _ _ := by ext j; rfl
+  map_smul' _ _ := by ext j; rfl
+
+/-- Restriction along an initial index functor is bijective on matching sections. -/
+theorem bijective_sectionsPrecomp {K : Type*} [Category* K]
+    (p : K ⥤ J) (F : J ⥤ SemimoduleCat R) [p.Initial] :
+    Function.Bijective (sectionsPrecomp p F) :=
+  p.bijective_sectionsPrecomp (F ⋙ forget (SemimoduleCat R))
+
+/-- Restricting a matching section reads its component at the image index. -/
+@[simp]
+theorem sectionsPrecomp_apply {K : Type*} [Category* K] (p : K ⥤ J)
+    (F : J ⥤ SemimoduleCat R) (s : sectionsSubmodule F) (k : K) :
+    (sectionsPrecomp p F s).val k = s.val (p.obj k) := (rfl)
+
+/-- Restricting along the identity leaves every matching section unchanged. -/
+@[simp]
+theorem sectionsPrecomp_id (F : J ⥤ SemimoduleCat R) :
+    sectionsPrecomp (𝟭 J) F = LinearMap.id := by
+  ext s j
+  rfl
+
+/-- Successive restrictions agree with restriction along the composite index functor. -/
+@[simp]
+theorem sectionsPrecomp_comp {K L : Type*} [Category* K] [Category* L]
+    (p : K ⥤ J) (q : L ⥤ K) (F : J ⥤ SemimoduleCat R) :
+    sectionsPrecomp (q ⋙ p) F = (sectionsPrecomp q (p ⋙ F)).comp (sectionsPrecomp p F) := by
+  ext s j
+  rfl
 
 section Maps
 
@@ -75,6 +113,39 @@ theorem sectionsMap_comp (α : F ⟶ G) (β : G ⟶ H) :
     sectionsMap (α ≫ β) = (sectionsMap β).comp (sectionsMap α) := by
   ext x j
   rfl
+
+/-- Restriction along an index functor commutes with changing coefficients. -/
+theorem sectionsPrecomp_naturality {K : Type*} [Category* K]
+    (p : K ⥤ J) (α : F ⟶ G) :
+    (sectionsMap (Functor.whiskerLeft p α)).comp (sectionsPrecomp p F) =
+      (sectionsPrecomp p G).comp (sectionsMap α) := by
+  ext s k
+  rfl
+
+/-- The pointwise form of coefficient naturality for section restriction. -/
+theorem sectionsPrecomp_naturality_apply {K : Type*} [Category* K]
+    (p : K ⥤ J) (α : F ⟶ G) (s : sectionsSubmodule F) :
+    sectionsMap (Functor.whiskerLeft p α) (sectionsPrecomp p F s) =
+      sectionsPrecomp p G (sectionsMap α s) :=
+  LinearMap.congr_fun (sectionsPrecomp_naturality p α) s
+
+/-- An index transformation transports restricted sections to the new restriction. -/
+@[simp]
+theorem sectionsMap_whiskerRight_comp_sectionsPrecomp {K : Type*} [Category* K]
+    {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R) :
+    (sectionsMap (Functor.whiskerRight β F)).comp (sectionsPrecomp p F) =
+      sectionsPrecomp q F := by
+  ext s k
+  exact (mem_sectionsSubmodule.mp s.property) (β.app k)
+
+/-- Pointwise transport along an index transformation agrees with restriction. -/
+@[simp]
+theorem sectionsMap_whiskerRight_sectionsPrecomp {K : Type*} [Category* K]
+    {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R)
+    (s : sectionsSubmodule F) :
+    sectionsMap (Functor.whiskerRight β F) (sectionsPrecomp p F s) =
+      sectionsPrecomp q F s :=
+  LinearMap.congr_fun (sectionsMap_whiskerRight_comp_sectionsPrecomp β F) s
 
 end Maps
 

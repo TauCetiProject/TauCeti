@@ -204,7 +204,7 @@ theorem integral_ball_re_mul_eq_zero_of_conjWirtingerDeriv_eq {u v : ℂ → ℂ
     (hv : (closedBall (0 : ℂ) 1).domRestrict v ∈ unitDiscAdjointKernel k) :
     ∫ z in ball (0 : ℂ) 1, (v z * f z).re = 0 := by
   obtain ⟨g, hg, hc, hgf⟩ :=
-    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq_of_contDiffAt hf
+    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq 1 hf
   have hfg (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : f z = g z :=
     (hgf z (ball_subset_closedBall hz)).eq_of_nhds.symm
   rw [setIntegral_congr_fun measurableSet_ball fun z hz ↦ by rw [hfg z hz]]
@@ -325,7 +325,7 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_iff
     ∀ v : ℂ → ℂ, (closedBall (0 : ℂ) 1).domRestrict v ∈ unitDiscAdjointKernel k →
       ∫ z in ball (0 : ℂ) 1, (v z * f z).re = 0 := by
   obtain ⟨g, hg, hc, hgf⟩ :=
-    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq_of_contDiffAt hf
+    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq 2 hf
   have hg1 : ContDiff ℝ 1 g := hg.of_le (by norm_num)
   have hfg (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : f z = g z :=
     (hgf z (ball_subset_closedBall hz)).eq_of_nhds.symm
