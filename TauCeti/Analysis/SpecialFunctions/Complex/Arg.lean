@@ -58,9 +58,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
   eventually, then `arg (f x) → arg Q`.
 * `Complex.arg_one_sub_ofReal_mul_ne_pi`: for `z` off `(1, ∞)` and `t ∈ [0, 1]`,
   `arg (1 - t * z) ≠ π`.
-* `Complex.tendsto_arg_one_sub_nhdsWithin_im_pos_of_one_lt_re_of_im_zero` and
-  `Complex.tendsto_arg_one_sub_nhdsWithin_im_pos`: approaching `(1, ∞)` from the open upper
-  half-plane sends `arg (1 - w)` to `-π`.
+* `Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero`: approaching the open negative real axis from
+  the open lower half-plane along an arbitrary filter sends `(f y).arg` to `-π`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -239,29 +238,16 @@ theorem arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) 
     · exact hzim hzim'
   · nlinarith [ht.1, ht.2]
 
-open Filter Topology in
-/-- Approaching a point `z` on the open ray `(1, ∞)` (`1 < z.re` and `z.im = 0`) from the open
-upper half-plane `{w | 0 < w.im}`, `(1 - w).arg` tends to `-π`. -/
-theorem tendsto_arg_one_sub_nhdsWithin_im_pos_of_one_lt_re_of_im_zero {z : ℂ}
-    (hre : 1 < z.re) (him : z.im = 0) :
-    Tendsto (fun w : ℂ ↦ (1 - w).arg) (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (-π)) := by
-  have hcont : Continuous fun w : ℂ ↦ 1 - w := by fun_prop
-  have hmap : Tendsto (fun w : ℂ ↦ 1 - w) (𝓝[{w : ℂ | 0 < w.im}] z)
-      (𝓝[{u : ℂ | u.im < 0}] (1 - z)) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨(hcont.tendsto z).mono_left nhdsWithin_le_nhds, ?_⟩
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    simpa using hw
-  exact (tendsto_arg_nhdsWithin_im_neg_of_re_neg_of_im_zero
-    (by simp [hre]) (by simp [him])).comp hmap
-
-open Filter Topology in
-/-- Approaching real `x > 1` from the open upper half-plane `{w | 0 < w.im}`, `(1 - w).arg` tends
-to `-π`. -/
-theorem tendsto_arg_one_sub_nhdsWithin_im_pos {x : ℝ} (hx : 1 < x) :
-    Tendsto (fun w : ℂ ↦ (1 - w).arg) (𝓝[{w : ℂ | 0 < w.im}] (x : ℂ)) (𝓝 (-π)) :=
-  tendsto_arg_one_sub_nhdsWithin_im_pos_of_one_lt_re_of_im_zero (by simpa using hx) (by simp)
-
 end Complex
+
+open Filter Topology in
+/-- Limit rule for `Complex.arg` along a filter eventually mapped into the open lower half-plane
+when the limiting value lies on the open negative real axis (`z.re < 0` and `z.im = 0`). -/
+theorem Filter.Tendsto.arg_of_im_neg_of_re_neg_of_im_zero {α : Type*} {l : Filter α} {f : α → ℂ}
+    {z : ℂ} (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, (f y).im < 0) (hre : z.re < 0)
+    (him₀ : z.im = 0) : Tendsto (fun y ↦ (f y).arg) l (𝓝 (-π)) :=
+  (Complex.tendsto_arg_nhdsWithin_im_neg_of_re_neg_of_im_zero hre him₀).comp
+    (tendsto_nhdsWithin_iff.mpr ⟨hf, him⟩)
 
 /-- If `f` has complex derivative `f'` at `z` and `f z` lies in the slit plane, then the argument
 `w ↦ arg (f w)` has real derivative `v ↦ Im (v * f' / f z)` at `z`, the imaginary part of the

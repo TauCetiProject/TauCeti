@@ -55,6 +55,7 @@ namespace TauCeti.Polylog
 
 /-- In nonpositive weights, `polylog (-r)` commutes with complex conjugation everywhere on `ℂ`,
 including the totalised value at `1`. -/
+@[simp]
 theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
     polylog (-(r : ℤ)) (conj z) = conj (polylog (-(r : ℤ)) z) := by
   induction r generalizing z with
@@ -69,6 +70,13 @@ theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
       have hd := congr_fun (deriv_conj_conj (f := polylog (-(r : ℤ)))) (conj z)
       simpa [hcomp] using hd
     rw [polylog_neg_nat_succ, polylog_neg_nat_succ, hderiv, map_mul]
+
+/-- Negative-numeral-weight polylogarithms commute with complex conjugation everywhere on `ℂ`,
+including the totalised value at `1`. -/
+@[simp]
+theorem polylog_neg_ofNat_conj (r : ℕ) (z : ℂ) :
+    polylog (-ofNat(r)) (conj z) = conj (polylog (-ofNat(r)) z) :=
+  polylog_neg_nat_conj r z
 
 /-- Every nonpositive-weight polylogarithm commutes with complex conjugation everywhere on `ℂ`,
 including the totalised value at `1`. -/
@@ -131,18 +139,27 @@ theorem im_polylog_neg_ofNat_ofReal (r : ℕ) (x : ℝ) :
     (polylog (-ofNat(r)) x).im = 0 :=
   im_polylog_neg_nat_ofReal r x
 
-/-- `polylog (-1)` takes real values at every real argument, including `1`. -/
-theorem im_polylog_neg_one_ofReal (x : ℝ) :
-    (polylog (-1) x).im = 0 := by
-  simp
-
 /-- Every nonpositive-weight polylogarithm is real-valued on all of `ℝ`, including `1`. -/
 theorem im_polylog_ofReal_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
     (polylog n x).im = 0 :=
   Complex.conj_eq_iff_im.mp (by simpa using (polylog_conj_of_nonpos hn x).symm)
 
-/-- On all of `ℝ`, a nonpositive-weight polylogarithm equals the coercion of its real part. -/
-theorem ofReal_re_polylog_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
+/-- On all of `ℝ` (including `1`), `polylog (-r) x` equals the coercion of its real part. -/
+@[simp]
+theorem ofReal_re_polylog_neg_nat_ofReal (r : ℕ) (x : ℝ) :
+    ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
+  Complex.conj_eq_iff_re.mp (by simpa using (polylog_neg_nat_conj r x).symm)
+
+/-- On all of `ℝ` (including `1`), a negative-numeral-weight polylogarithm equals the coercion of
+its real part. -/
+@[simp]
+theorem ofReal_re_polylog_neg_ofNat_ofReal (r : ℕ) (x : ℝ) :
+    ((polylog (-ofNat(r)) x).re : ℂ) = polylog (-ofNat(r)) x :=
+  ofReal_re_polylog_neg_nat_ofReal r x
+
+/-- On all of `ℝ` (including `1`), a nonpositive-weight polylogarithm equals the coercion of its
+real part. -/
+theorem ofReal_re_polylog_ofReal_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
     ((polylog n x).re : ℂ) = polylog n x :=
   Complex.conj_eq_iff_re.mp (by simpa using (polylog_conj_of_nonpos hn x).symm)
 

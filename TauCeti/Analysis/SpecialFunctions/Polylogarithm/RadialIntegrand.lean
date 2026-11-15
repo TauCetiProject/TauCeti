@@ -38,8 +38,8 @@ instead, translating `log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(
 * `TauCeti.Polylog.intervalIntegrable_radialIntegrand`: interval integrability on `[0, 1]` for
   every `z`.
 * `TauCeti.Polylog.ae_one_sub_ofReal_mul_ne_zero` and
-  `TauCeti.Polylog.integral_radialIntegrand_eq_of_eqOn`: `1 - t z` vanishes at most once on `ℝ`,
-  so modifying the radial integrand at `0`, `1`, and that point leaves the integral unchanged.
+  `TauCeti.Polylog.integral_eq_integral_radialIntegrand_of_eqOn`: `1 - t z` vanishes at most once on
+  `ℝ`, so modifying the radial integrand at `0`, `1`, and that point leaves the integral unchanged.
 * `TauCeti.Polylog.exists_le_norm_one_sub_ofReal_mul`: on a compact subset of the principal
   domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
@@ -209,7 +209,7 @@ theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) :
 
 /-- Any function agreeing with the polylogarithm's radial integrand on `(0, 1)` away from the
 possible zero of `1 - t z` has the same interval integral on `[0, 1]`. -/
-theorem integral_radialIntegrand_eq_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ}
+theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ}
     (hg : EqOn g (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t)
       {t ∈ Ioo (0 : ℝ) 1 | 1 - (t : ℂ) * z ≠ 0}) :
     (∫ t : ℝ in 0..1, g t) =
@@ -222,8 +222,9 @@ theorem integral_radialIntegrand_eq_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ
   filter_upwards [hIoo, ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
   exact hg ⟨ht₁ htIoc, ht₂⟩
 
-/-- Away from `t = 0` (`0 < a ≤ 1`), the `L^p` norm of the polylogarithm radial integrand on
-`(a, 1]` is bounded by `(|log a| ^ k / a) ^ p` times that of `t ↦ Log (1 - t * z)` on `(a, 1]`. -/
+/-- Away from `t = 0` (`0 < a ≤ 1`), the Lebesgue integral of the `p`-th power of the norm of the
+polylogarithm radial integrand on `(a, 1]` is bounded by `(|log a| ^ k / a) ^ p` times that of
+`t ↦ Log (1 - t * z)` on `(a, 1]`. -/
 theorem setLIntegral_norm_radialIntegrand_pow_Ioc_le (p k : ℕ) {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1)
     (z : ℂ) :
     ∫⁻ t in Ioc a 1,
