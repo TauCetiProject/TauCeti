@@ -155,8 +155,7 @@ private theorem isLocalRiemannianIsometry_rescale_opens
             (mfderiv I I (Opens.inclusion hW₁W) y w) =
           tangentSpaceOpenEquiv (I := I) y w := by
       simpa only [mfderiv_id, ContinuousLinearMap.id_apply] using
-        tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-          ((contMDiff_inclusion (n := ∞) hW₁W).mdifferentiableAt (by simp)) rfl w
+        tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion hW₁W) (A := id) rfl w
     have h₀ := hf.inner_mfderiv (Opens.inclusion hW₁W y)
       (mfderiv I I (Opens.inclusion hW₁W) y u) (mfderiv I I (Opens.inclusion hW₁W) y v)
     rwa [inner_riemannianBundle gN, inner_riemannianBundle (g.restrictOpenTangentSpace W),

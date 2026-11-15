@@ -459,8 +459,7 @@ private theorem isLocalRiemannianIsometry_opens_inclusion
           (mfderiv I I (Opens.inclusion hsub) y v) =
         tangentSpaceOpenEquiv (I := I) y v := by
     simpa only [mfderiv_id, ContinuousLinearMap.id_apply] using
-      tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-        ((contMDiff_inclusion hsub).mdifferentiableAt one_ne_zero) rfl v
+      tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion hsub) (A := id) rfl v
   refine ⟨{ contMDiff := contMDiff_inclusion hsub
             isInvertible_mfderiv := fun y ↦
               ⟨ContinuousLinearEquiv.refl ℝ (TangentSpace I y), by
