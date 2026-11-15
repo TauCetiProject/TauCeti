@@ -15,8 +15,12 @@ import TauCeti.Algebra.BigOperators.Intervals
 Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injective on a set `s ⊆ ι'`. The
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
-(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
-by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
+(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `g` comes from a bijection
+`e : ι ≃ ι'`, composition preserves `Memℓp` in both directions (`Equiv.memℓp_comp_iff`) and, for
+`1 ≤ p`, induces the coordinate-reindexing linear isometric equivalence
+`LinearIsometryEquiv.lpCongrLeft : lp (fun _ : ι ↦ G) p ≃ₗᵢ[𝕜] lp (fun _ : ι' ↦ G) p`, the
+infinite-domain analogue of `LinearIsometryEquiv.piLpCongrLeft`. Shifts of a sequence indexed
+by `ℕ` are the basic injective examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
 (`TauCeti.memℓp_nat_add_iff`).
 
@@ -43,6 +47,8 @@ geometrically decaying weights.
 public section
 
 open scoped ENNReal
+
+section IndicatorComp
 
 variable {ι ι' G : Type*} [NormedAddCommGroup G] {p : ℝ≥0∞}
 
@@ -88,6 +94,93 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     simp_rw [h]
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
+
+/-- Precomposing a sequence in `ℓᵖ` with an equivalence preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_equiv {f : ι → G} (hf : Memℓp f p) (e : ι' ≃ ι) : Memℓp (f ∘ e) p := by
+  simpa using hf.indicator_comp (s := Set.univ) e.injective.injOn
+
+/-- Precomposing with an equivalence preserves membership in `ℓᵖ` in both directions. -/
+@[simp]
+theorem Equiv.memℓp_comp_iff (e : ι' ≃ ι) {f : ι → G} : Memℓp (f ∘ e) p ↔ Memℓp f p :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.comp_equiv e.symm, fun hf ↦ hf.comp_equiv e⟩
+
+end IndicatorComp
+
+section lpCongrLeft
+
+variable {ι ι' ι'' : Type*} (p : ℝ≥0∞) (𝕜 G : Type*)
+  [NormedAddCommGroup G] [NormedRing 𝕜] [Module 𝕜 G] [IsBoundedSMul 𝕜 G] [Fact (1 ≤ p)]
+
+/-- An equivalence of index types induces a linear isometric equivalence of `lp` spaces, the
+arbitrary-domain analogue of `LinearIsometryEquiv.piLpCongrLeft`. -/
+def LinearIsometryEquiv.lpCongrLeft (e : ι ≃ ι') :
+    lp (fun _ : ι ↦ G) p ≃ₗᵢ[𝕜] lp (fun _ : ι' ↦ G) p where
+  toFun f := ⟨f ∘ e.symm, (lp.memℓp f).comp_equiv e.symm⟩
+  invFun f := ⟨f ∘ e, (lp.memℓp f).comp_equiv e⟩
+  map_add' _ _ := lp.ext rfl
+  map_smul' _ _ := lp.ext rfl
+  left_inv f := lp.ext <| funext fun i ↦ congrArg f (e.symm_apply_apply i)
+  right_inv f := lp.ext <| funext fun j ↦ congrArg f (e.apply_symm_apply j)
+  norm_map' f := by
+    have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    let f' : lp (fun _ : ι' ↦ G) p := ⟨f ∘ e.symm, (lp.memℓp f).comp_equiv e.symm⟩
+    exact le_antisymm
+      (lp.norm_le_of_forall_eq_indicator_comp (f := f) (f' := f') (s := Set.univ) hp
+        e.symm.injective.injOn fun j ↦ by simp [f'])
+      (lp.norm_le_of_forall_eq_indicator_comp (f := f') (f' := f) (s := Set.univ) hp
+        e.injective.injOn fun i ↦ by simp [f'])
+
+variable {p 𝕜 G}
+
+/-- Evaluating `LinearIsometryEquiv.lpCongrLeft e f` at `j` reads `f` at `e.symm j`. -/
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_apply (e : ι ≃ ι') (f : lp (fun _ : ι ↦ G) p) (j : ι') :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 G e f j = f (e.symm j) :=
+  (rfl)
+
+/-- Function-level form of `LinearIsometryEquiv.lpCongrLeft_apply`. -/
+theorem LinearIsometryEquiv.coeFn_lpCongrLeft (e : ι ≃ ι') (f : lp (fun _ : ι ↦ G) p) :
+    ⇑(LinearIsometryEquiv.lpCongrLeft p 𝕜 G e f) = f ∘ e.symm :=
+  (rfl)
+
+/-- Reindexing `lp` along the inverse equivalence gives the inverse linear isometry. -/
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_symm (e : ι ≃ ι') :
+    (LinearIsometryEquiv.lpCongrLeft p 𝕜 G e).symm =
+      LinearIsometryEquiv.lpCongrLeft p 𝕜 G e.symm := by
+  ext f i
+  exact (rfl)
+
+/-- Reindexing `lp` along the identity equivalence is the identity linear isometry. -/
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_refl :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 G (Equiv.refl ι) =
+      LinearIsometryEquiv.refl 𝕜 (lp (fun _ : ι ↦ G) p) := by
+  ext f i
+  exact (rfl)
+
+/-- Reindexing `lp` along a composite equivalence is the composition of the reindexing linear
+isometries. -/
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_trans (e₁ : ι ≃ ι') (e₂ : ι' ≃ ι'') :
+    (LinearIsometryEquiv.lpCongrLeft p 𝕜 G e₁).trans
+      (LinearIsometryEquiv.lpCongrLeft p 𝕜 G e₂) =
+        LinearIsometryEquiv.lpCongrLeft p 𝕜 G (e₁.trans e₂) := by
+  ext f k
+  exact (rfl)
+
+/-- `LinearIsometryEquiv.lpCongrLeft` moves a single-coordinate vector from `i` to `e i`. -/
+@[simp high]
+theorem LinearIsometryEquiv.lpCongrLeft_single [DecidableEq ι] [DecidableEq ι']
+    (e : ι ≃ ι') (i : ι) (v : G) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 G e (lp.single (E := fun _ : ι ↦ G) p i v) =
+      lp.single (E := fun _ : ι' ↦ G) p (e i) v := by
+  ext j
+  simp [lp.single_apply, Pi.single_apply, Equiv.symm_apply_eq]
+
+end lpCongrLeft
+
+variable {G : Type*} [NormedAddCommGroup G] {p : ℝ≥0∞}
 
 namespace TauCeti
 

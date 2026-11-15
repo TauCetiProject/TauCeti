@@ -36,9 +36,14 @@ most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_ls
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
 
-For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
-`E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
-dense subsets are dense.
+For a finite exponent `p`, the level sets `{i | ε ≤ ‖f i‖}` (`0 < ε`) of any `f ∈ ℓᵖ` are finite
+(`Memℓp.finite_le_norm`, `lp.finite_le_norm`), so every `ℓᵖ` vector has countable support
+(`Memℓp.countable_support`, `lp.countable_support`). Conversely, single-coordinate vectors for a
+nontrivial fiber are uniformly separated, and in `ℓ²` distinct unit coordinate vectors lie at
+distance `√2` (`lp.dist_single_eq_sqrt_two`, `lp.dist_single_one_eq_sqrt_two`). Thus for `1 ≤ p < ∞`
+and a countable index type, `lp E p` is separable when every `E i` is (`lp.separableSpace`), while
+for a nontrivial separable fiber `G`, `lp (fun _ : ι ↦ G) p` is separable if and only if `ι` is
+countable (`lp.separableSpace_iff`).
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
@@ -154,6 +159,37 @@ theorem hasSum_enorm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖ₑ) ‖y‖�
   simp only [eNorm_eq_nnNorm]
   exact ENNReal.hasSum_coe.2 (NNReal.hasSum_coe.1 (hasSum_norm_one y))
 
+/-- For a finite exponent `p` and `0 < ε`, only finitely many coordinates of `f ∈ ℓᵖ` have norm at
+least `ε`. -/
+theorem _root_.Memℓp.finite_le_norm {f : ∀ i, E i} (hf : Memℓp f p) (hp : p ≠ ∞) {ε : ℝ}
+    (hε : 0 < ε) : {i | ε ≤ ‖f i‖}.Finite := by
+  rcases eq_or_ne p 0 with rfl | hp₀
+  · exact hf.finite_dsupport.subset fun i (hi : ε ≤ ‖f i‖) hfi ↦ by simp [hfi, hε.not_ge] at hi
+  · have hp' : 0 < p.toReal := ENNReal.toReal_pos hp₀ hp
+    have h0 : Set.Iio (ε ^ p.toReal) ∈ 𝓝 (0 : ℝ) :=
+      isOpen_Iio.mem_nhds (Real.rpow_pos_of_pos hε _)
+    refine ((hf.summable hp').tendsto_cofinite_zero h0).subset fun i (hi : ε ≤ ‖f i‖) ↦ ?_
+    exact not_lt.2 (Real.rpow_le_rpow hε.le hi hp'.le)
+
+/-- Every `f ∈ ℓᵖ` at finite exponent has countable support. -/
+theorem _root_.Memℓp.countable_support {f : ∀ i, E i} (hf : Memℓp f p) (hp : p ≠ ∞) :
+    {i | f i ≠ 0}.Countable := by
+  -- Cover the support by the finite level sets `{i | 1 / (n + 1) ≤ ‖f i‖}`.
+  refine (Set.countable_iUnion fun n : ℕ ↦
+    (hf.finite_le_norm hp (Nat.one_div_pos_of_nat (n := n))).countable).mono fun i hi ↦ ?_
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (norm_pos_iff.2 hi)
+  exact Set.mem_iUnion.2 ⟨n, hn.le⟩
+
+/-- For a finite exponent `p` and `0 < ε`, only finitely many coordinates of `f : lp E p` have norm
+at least `ε`. -/
+theorem finite_le_norm (f : lp E p) (hp : p ≠ ∞) {ε : ℝ} (hε : 0 < ε) :
+    {i | ε ≤ ‖f i‖}.Finite :=
+  (lp.memℓp f).finite_le_norm hp hε
+
+/-- Every vector in `lp E p` at finite exponent has countable support. -/
+theorem countable_support (f : lp E p) (hp : p ≠ ∞) : {i | f i ≠ 0}.Countable :=
+  (lp.memℓp f).countable_support hp
+
 /-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
 -/
 theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
@@ -168,6 +204,34 @@ theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E
   refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
     mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span (Set.mem_iUnion.2 ⟨i, f i, rfl⟩)
+
+/-- If `lp (fun _ : ι ↦ G) p` (`1 ≤ p`) over a nontrivial normed group is separable, its index
+type is countable. -/
+theorem countable_of_separableSpace {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
+    [Fact (1 ≤ p)] [TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p)] :
+    Countable ι := by
+  classical
+  -- For `v ≠ 0`, the single-coordinate vectors `lp.single p i v` are separated by at least `‖v‖`.
+  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  obtain ⟨v, hv⟩ := exists_ne (0 : G)
+  have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv
+  refine Pairwise.countable_of_isOpen_disjoint
+    (s := fun i : ι ↦ Metric.ball (lp.single (E := fun _ : ι ↦ G) p i v) (‖v‖ / 2))
+    (fun i j hij ↦ Metric.ball_disjoint_ball ?_)
+    (fun _ ↦ Metric.isOpen_ball)
+    (fun _ ↦ Metric.nonempty_ball.2 (half_pos hv_pos))
+  rw [add_halves, dist_eq_norm]
+  simpa [lp.single_apply, Pi.single_apply, hij] using
+    lp.norm_apply_le_norm hp
+      (lp.single (E := fun _ : ι ↦ G) p i v - lp.single (E := fun _ : ι ↦ G) p j v) i
+
+/-- For `1 ≤ p < ∞` and a nontrivial separable fiber `G`, `lp (fun _ : ι ↦ G) p` is separable if
+and only if the index type `ι` is countable. -/
+theorem separableSpace_iff {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
+    [TopologicalSpace.SeparableSpace G] [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p) ↔ Countable ι :=
+  ⟨fun _ ↦ countable_of_separableSpace (ι := ι) (G := G) (p := p),
+    fun _ ↦ separableSpace (E := fun _ : ι ↦ G) hp⟩
 
 section Single
 
@@ -206,6 +270,32 @@ theorem norm_sum_single_sq {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] 
     (f : ∀ i, E i) (s : Finset ι) :
     ‖∑ i ∈ s, lp.single 2 i (f i)‖ ^ 2 = ∑ i ∈ s, ‖f i‖ ^ 2 := by
   simpa [Real.rpow_two] using lp.norm_sum_single (E := E) (p := 2) (by norm_num) f s
+
+/-- In `ℓ²`, the squared norm of the difference of single-coordinate vectors at distinct indices
+is the sum of their squared norms. -/
+theorem norm_single_sub_single_sq [DecidableEq ι] {i j : ι} (hij : i ≠ j) (x : E i) (y : E j) :
+    ‖lp.single 2 i x - lp.single 2 j y‖ ^ 2 = ‖x‖ ^ 2 + ‖y‖ ^ 2 := by
+  let f : ∀ k, E k := fun k ↦
+    if hk : k = i then hk ▸ x else if hk' : k = j then hk' ▸ (-y) else 0
+  have hsum :
+      lp.single 2 i x - lp.single 2 j y = ∑ k ∈ ({i, j} : Finset ι), lp.single 2 k (f k) := by
+    rw [Finset.sum_pair hij]
+    simp [f, hij.symm, lp.single_neg, sub_eq_add_neg]
+  rw [hsum, norm_sum_single_sq, Finset.sum_pair hij]
+  simp [f, hij.symm]
+
+/-- Distinct unit single-coordinate vectors in `ℓ²` lie at distance `√2`. -/
+theorem dist_single_eq_sqrt_two [DecidableEq ι] {i j : ι} (hij : i ≠ j) {x : E i} {y : E j}
+    (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
+    dist (lp.single 2 i x) (lp.single 2 j y) = √2 := by
+  rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _), norm_single_sub_single_sq hij, hx, hy]
+  norm_num
+
+/-- Distinct coordinate unit vectors `lp.single 2 i 1` in `ℓ²` lie at distance `√2`. -/
+theorem dist_single_one_eq_sqrt_two {G : Type*} [NormedAddCommGroup G] [One G] [NormOneClass G]
+    [DecidableEq ι] {i j : ι} (hij : i ≠ j) :
+    dist (lp.single (E := fun _ : ι ↦ G) 2 i 1) (lp.single (E := fun _ : ι ↦ G) 2 j 1) = √2 :=
+  dist_single_eq_sqrt_two hij norm_one norm_one
 
 /-- The extended `ℓ²` norm of a finite sum of single-coordinate vectors is the square root of the
 sum of the squared extended norms of the coordinates. -/
