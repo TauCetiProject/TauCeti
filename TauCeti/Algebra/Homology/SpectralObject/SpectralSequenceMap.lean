@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
+public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
@@ -38,6 +39,9 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`:
+  on the first page, identified with objects `H^n(f)` by `spectralSequenceFirstPageXIso`, the
+  morphism of pages is the component of `φ`.
 
 ## Implementation notes
 
@@ -274,5 +278,28 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+section FirstPage
+
+variable [data.HasFirstPageComputation]
+
+/-- **The morphism of spectral sequences on the first page.** Through the identifications
+`spectralSequenceFirstPageXIso` of the objects of the first page `r₀` with objects `H^n(f)`, the
+morphism of first pages induced by `φ` is the component of `φ` at `f`. -/
+@[reassoc]
+lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
+    spectralSequencePageXMap data φ r₀ le_rfl pq ≫
+        (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
+  rw [X.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
+    Y.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
+    Category.assoc, ← EMap_EIsoH_hom, ← spectralSequencePageXIso_hom_comp_EMap_assoc]
+  -- On the first page `i₀ = i₁` and `i₂ = i₃`, and the morphisms `homOfLE` of these equalities in
+  -- the preorder `ι` are the identities by proof irrelevance.
+  rfl
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject
