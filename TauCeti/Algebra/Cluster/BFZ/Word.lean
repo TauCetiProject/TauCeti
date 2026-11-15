@@ -20,6 +20,8 @@ index `w.length + 1` in the BFZ convention.
 
 An exchangeable position must be in the actual word and have a genuine successor. This
 combinatorics applies to arbitrary signed words; no reducedness hypothesis is needed.
+In the BFZ seed construction, these positions index seed variables, while exchangeable positions
+index the mutable variables and the columns of the extended exchange matrix.
 
 ## References
 
@@ -116,6 +118,7 @@ theorem bfzSuccessor_le (w : List (Fin r × Bool)) {k l : Fin (r + w.length)}
   Finset.min_le (by simp [hkl, hletter])
 
 /-- Exact characterization of a genuine successor, including its minimality. -/
+@[simp]
 theorem bfzSuccessor_eq_iff (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) :
     bfzSuccessor w k = l ↔ k < l ∧ (bfzLetter w l).1 = (bfzLetter w k).1 ∧
       ∀ j, k < j → (bfzLetter w j).1 = (bfzLetter w k).1 → l ≤ j := by
