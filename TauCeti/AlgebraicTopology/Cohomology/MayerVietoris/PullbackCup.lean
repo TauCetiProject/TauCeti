@@ -48,6 +48,8 @@ degree `0` the sequence of `Y` starts with an injective map, and the vanishing o
 
 ## Main results
 
+* `TopPair.singularCohomologyPairMayerVietorisδ_pullbackCup`: `a ↦ π^*a ⌣ u` commutes with the
+  connecting morphisms of the two Mayer–Vietoris sequences.
 * `TopPair.bijective_pullbackCup_union`: the Mayer–Vietoris step.
 * `TopCat.bijective_pullbackCup_of_union_eq_univ`: the step for the pair `(X, Z)` and an open
   cover of the base by two sets.
@@ -208,6 +210,31 @@ private lemma δ_comm (q mq m : ℕ) (hq : q + n = mq) (hm : mq + 1 = m) (h : q 
   simp only [ConcreteCategory.comp_apply] at e₁ e₂
   exact (congrArg (TopCat.singularCohomologyMap
     (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V'))) (q + 1)) e₁).symm.trans e₂.symm
+
+include hUV' in
+/-- **`a ↦ π^*a ⌣ u` commutes with the Mayer–Vietoris connecting morphisms.** With the notation of
+`TopPair.bijective_pullbackCup_union`, for `a ∈ H^q(U ∩ V; M)` the connecting morphism of the
+Mayer–Vietoris sequence of the pairs `(U', A)` and `(V', B)` sends the map over `U ∩ V` at `a`,
+with values in the cohomology of `(U' ∩ V', A ∩ B)`, to the map over `Y` at the image `δ a` of `a`
+under the connecting morphism of the cover `{U, V}` of `Y`. -/
+theorem singularCohomologyPairMayerVietorisδ_pullbackCup {q mq m : ℕ} (hq : q + n = mq)
+    (hm : mq + 1 = m) (h : q + 1 + n = m)
+    (a : (TopCat.of ↥(U ∩ V)).singularCohomology (ModuleCat.of K K) K M q) :
+    singularCohomologyPairMayerVietorisδ (ModuleCat.of K K) K M hAU hBV
+        (hU'.preimage continuous_subtype_val) (hV'.preimage continuous_subtype_val) hA hB mq m hm
+        ((TopPair.ofInclusion (inter_subset_inter hAU hBV)).pullbackCup M
+          (TopCat.ofHom ⟨(hπU.inter_inter hπV).restrict,
+            π.hom.continuous.restrict (hπU.inter_inter hπV)⟩ :
+              (TopPair.ofInclusion (inter_subset_inter hAU hBV)).fst ⟶ TopCat.of ↥(U ∩ V))
+          n q mq hq
+          (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) n u) a) =
+      (TopPair.ofInclusion (union_subset_union hAU hBV)).pullbackCup M
+        (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π) n (q + 1) m h u
+        (singularCohomologyMayerVietorisδ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl a) := by
+  have := ConcreteCategory.congr_hom
+    (δ_comm π hAU hBV hπU hπV u hU' hV' hUV' hA hB hU hV hUV q mq m hq hm h) a
+  simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at this
+  exact this
 
 include hU' hV' hA hB hU hV hUV in
 /-- The Mayer–Vietoris step in degree `0`. The sequence of `Y` starts with the injective
