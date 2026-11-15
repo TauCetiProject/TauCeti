@@ -18,10 +18,8 @@ the unit laws `1 * f = f` and `f * 1 = f` of the convolution product of Hecke co
 (where the two identities live at the two different levels), and assembles the
 `NonAssocSemiring (𝕋 Δ H R)` instance.
 
-Vendored from the in-review mathlib4 PR
-[#41279](https://github.com/leanprover-community/mathlib4/pull/41279) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41279](https://github.com/leanprover-community/mathlib4/pull/41279) (Chris Birkbeck).
 
 ## Main results
 

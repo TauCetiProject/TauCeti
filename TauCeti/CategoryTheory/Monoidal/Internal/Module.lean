@@ -123,6 +123,7 @@ attribute [local instance] MonObj.toCommRing
 /-- The category of commutative monoid objects in `ModuleCat R` is equivalent to the category of
 bundled commutative `R`-algebras. This is the restriction of
 `ModuleCat.monModuleEquivalenceAlgebra`. -/
+@[expose]
 noncomputable def commMonModuleEquivalenceCommAlgebra :
     CommMon (ModuleCat.{u} R) ≌ CommAlgCat.{u} R where
   functor := functor

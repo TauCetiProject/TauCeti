@@ -325,7 +325,7 @@ theorem exists_isIso_liuWangAffineD4AInfinityAlgebra (c : k) :
         (zigzagStrictAInfinityAlgebra k
           (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))),
       f.IsIso ∧ f.linearPart = LinearMap.id := by
-  have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (h : c₁ = c₂) hc₁ hc₂,
+  have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (_ : c₁ = c₂) hc₁ hc₂,
       zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₁
         hc₁ =
       zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₂

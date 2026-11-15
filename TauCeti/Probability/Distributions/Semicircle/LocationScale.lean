@@ -91,7 +91,7 @@ theorem support_semicircleReal (a : ℝ) (v : ℝ≥0) :
   by_cases hv : v = 0
   · subst v
     simp [Measure.support_dirac]
-  · have hs : 0 < Real.sqrt (v : ℝ) := Real.sqrt_pos.2 (by exact_mod_cast pos_iff_ne_zero.2 hv)
+  · have _ : 0 < Real.sqrt (v : ℝ) := Real.sqrt_pos.2 (by exact_mod_cast pos_iff_ne_zero.2 hv)
     rw [semicircleReal_def, support_map_affine (by positivity), support_semicircleMeasure]
     simpa [add_comm, sub_eq_add_neg] using
       (image_affine_Icc' (a := 2 * Real.sqrt (v : ℝ)) (by positivity) a (-1) 1)
@@ -155,8 +155,6 @@ The real square root makes the density zero outside the support interval. -/
 theorem semicircleReal_eq_withDensity (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
     semicircleReal a v = volume.withDensity
       (fun x ↦ ENNReal.ofReal ((2 * Real.pi * v)⁻¹ * Real.sqrt (4 * v - (x - a) ^ 2))) := by
-  have hv' : 0 < (v : ℝ) := by exact_mod_cast hv
-  have hs : 0 < Real.sqrt (v : ℝ) := Real.sqrt_pos.2 hv'
   have hs2 := Real.sq_sqrt v.coe_nonneg
   rw [semicircleReal_def, semicircleMeasure_eq_withDensity,
     map_affine_withDensity_volume _ (by positivity)]

@@ -218,7 +218,6 @@ theorem exists_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪
     rw [hq, inner_add_left, real_inner_smul_left, hpu, hdu, mul_zero, add_zero]
   have hqp : ‖q - p‖ = l * ‖d‖ := by
     rw [hq, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hl0]
-  have hnd : 0 < ‖d‖ := norm_pos_iff.2 hd0
   obtain ⟨t, hc, hsn⟩ := exists_cos_sin_two_pi_mul_eq (a := 1 - 2 / l) (b := 2 * s / (l * ‖d‖))
     (by
       field_simp

@@ -105,7 +105,7 @@ theorem cdf_noncentralChiSquaredMeasure_zero (hk : 0 ≤ k) (l : ℝ≥0) :
   have heq : (Iic 0 : Set ℝ) =ᵐ[noncentralChiSquaredMeasure k l] {0} := by
     filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k l] with y hy
     simp only [mem_Iic, mem_singleton_iff]
-    exact propext ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
+    exact ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
   rw [cdf_eq_real, measureReal_congr heq, measureReal_def]
   by_cases hk0 : k = 0
   · simp [hk0, noncentralChiSquaredMeasure_zero_degree_mass, le_of_lt (exp_pos _)]

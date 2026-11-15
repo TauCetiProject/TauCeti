@@ -19,12 +19,13 @@ root datum `TauCeti.DynkinType.e6SimplyConnectedRootDatum`. The twenty-seven wei
 in the fundamental-weight basis `Fin 6 → ℤ`. The first weight is `ϖ₁`, and the table is closed under
 the six Bourbaki-numbered simple reflections through explicit permutations of `Fin 27`.
 
-The reflection equation is the key interface for the future 27-dimensional minuscule module: a
-simple root operator can move a coordinate basis vector only when the corresponding weight pairs
-to `1` or `-1`. The table records that every such pairing lies in `{-1, 0, 1}`, identifies the table
-with the full Weyl orbit, and proves that its weights span the complete character lattice. The last
-property is what lets the represented weight torus of an admissible minuscule lattice be a closed
-immersion, rather than seeing only the index-three root lattice of the adjoint representation.
+The reflection equation is the key interface for the 27-dimensional minuscule representation
+`TauCeti.E6Minuscule.serreRepresentation`: a simple root operator can move a coordinate basis
+vector only when the corresponding weight pairs to `1` or `-1`. The table records that every such
+pairing lies in `{-1, 0, 1}`, identifies the table with the full Weyl orbit, and proves that its
+weights span the complete character lattice. The last property is what lets the represented weight
+torus of an admissible minuscule lattice be a closed immersion, rather than seeing only the
+index-three root lattice of the adjoint representation.
 
 The table is *not* stable under the pinned diagram symmetry `TauCeti.graphPermE6`, which exchanges
 `ϖ₁` and `ϖ₆` and so carries the weights of `V(ϖ₁)` to those of `V(ϖ₆) = V(ϖ₁)ˣ`, their negatives.
@@ -42,9 +43,9 @@ fifty-four doubled weights; this is the finite input identifying the shortest du
 `E₆` root lattice.
 
 No representation or group scheme is constructed here. This is the pinned weight-diagram input
-for the type-`E₆` full-weight Chevalley--Demazure carrier in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the CFSG statement roadmap,
-the doubled family being what its graph-twisted family `²E₆(q)` needs where `E₆(q)` does not.
+for the type-`E₆` full-weight Chevalley--Demazure carriers `TauCeti.E6Minuscule.groupScheme` and
+`TauCeti.E6DoubledMinuscule.groupScheme`, the doubled family being what the graph-twisted family
+`²E₆(q)` needs where `E₆(q)` does not.
 
 ## Main declarations
 

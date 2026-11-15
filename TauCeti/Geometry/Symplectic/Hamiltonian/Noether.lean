@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.MomentMap
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange.Covariance
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -258,11 +259,8 @@ theorem noetherCharge_eq_of_comp {L : ℝ → E × E → ℝ} {L' : ℝ → F ×
     (hL' : DifferentiableAt ℝ (fun u ↦ L' t (φ x.1, u)) (fderiv ℝ φ x.1 x.2))
     (hξ : ξ' (t, φ x.1) = fderiv ℝ φ x.1 (ξ (t, x.1))) (hB : B (t, x.1) = B' (t, φ x.1)) :
     noetherCharge L ξ B t x = noetherCharge L' ξ' B' t (φ x.1, fderiv ℝ φ x.1 x.2) := by
-  have h : fderiv ℝ (fun u ↦ L t (x.1, u)) x.2 =
-      (fderiv ℝ (fun u ↦ L' t (φ x.1, u)) (fderiv ℝ φ x.1 x.2)).comp (fderiv ℝ φ x.1) := by
-    rw [hL.fderiv_eq]
-    exact (hL'.hasFDerivAt.comp x.2 (fderiv ℝ φ x.1).hasFDerivAt).fderiv
-  rw [noetherCharge_apply, noetherCharge_apply, h, ContinuousLinearMap.comp_apply, hξ, hB]
+  rw [noetherCharge_apply, noetherCharge_apply, momentum_eq_comp_of_comp hL hL',
+    ContinuousLinearMap.comp_apply, hξ, hB]
 
 /-- **The infinitesimal variation is independent of coordinates.** Let `φ : E → F` be `C²` at `q`,
 and let `L'` be a Lagrangian on `F` with `L(t, y, u) = L'(t, φ y, Dφ_y u)` near `(q, v)`, with

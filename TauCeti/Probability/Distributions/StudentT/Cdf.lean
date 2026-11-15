@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.Calculus.RealCharts

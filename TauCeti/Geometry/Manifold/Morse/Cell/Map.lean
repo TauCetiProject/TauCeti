@@ -74,6 +74,8 @@ changes the sign of the attaching map in reduced homology
   disjoint sources are disjoint.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
+* `TauCeti.continuousOn_morseCellMap_family`: for a family of charts whose inverses are jointly
+  continuous, the cells depend continuously on the parameter.
 * `TauCeti.mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le`,
   `TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`: for `0 < ε`, a
   self-map `h` of the disc such that `χ ∘ h` sends the boundary sphere into the lower sublevel, for
@@ -242,11 +244,18 @@ theorem apply_morseCellMap_eq_sub_mul_norm_sq (hk : k ≤ n) (hε : 0 ≤ ε) (h
     EuclideanSpace.sum_ite_neg_one_mul_sq_eq, hv, hnorm, norm_zero]
   ring
 
-/-- The unit disc is sent into the sublevel `{f ≤ c}`. -/
-theorem apply_morseCellMap_le (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ ≤ 1) :
+/-- The unit disc is sent into the sublevel `{f ≤ c}`. For `ε < 0` the whole disc is sent to the
+centre `ψ⁻¹ 0` of the chart, where `f = c`. -/
+theorem apply_morseCellMap_le (hk : k ≤ n) (hw : ‖w‖ ≤ 1) :
     f (morseCellMap ψ hk ε w) ≤ c := by
-  rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw]
-  exact sub_le_self _ (by positivity)
+  by_cases hε : 0 ≤ ε
+  · rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw]
+    exact sub_le_self _ (by positivity)
+  · have h0 : (0 : EuclideanSpace ℝ (Fin n)) ∈ ψ.target :=
+      hball (mem_closedBall_self (Real.sqrt_nonneg _))
+    rw [morseCellMap_def, Real.sqrt_eq_zero_of_nonpos (not_le.1 hε).le, zero_smul,
+      hf _ (ψ.map_target h0), ψ.right_inv h0]
+    simp
 
 /-- The boundary sphere of the unit disc is sent into the level `f⁻¹(c - ε)`. -/
 theorem apply_morseCellMap_of_norm_eq_one (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ = 1) :
@@ -276,7 +285,7 @@ def morseCharacteristicMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fi
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2) :
     TopCat.disk.{u} k ⟶ TopCat.of {x | f x ≤ c + ε} :=
   TopCat.ofHom
-    { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk hε
+    { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk
         (mem_closedBall_zero_iff.1 w.down.2)).trans (le_add_of_nonneg_right hε)⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
         (continuous_subtype_val.comp continuous_uliftDown) fun w ↦ w.down.2).subtype_mk _ }
@@ -392,6 +401,30 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+section Family
+
+variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {ε : ℝ} {P : Type*} [TopologicalSpace P]
+
+/-- The cells `(p, w) ↦ (ψ p)⁻¹(√ε • (w, 0))` of a family of charts whose inverses are jointly
+continuous on the closed ball of radius `√ε` depend continuously on the parameter and the point of
+the unit disc. -/
+theorem continuousOn_morseCellMap_family
+    {ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n)
+    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε)) :
+    ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin k) ↦ (ψ q.1).morseCellMap hk ε q.2)
+      (univ ×ˢ closedBall 0 1) :=
+  (hs.comp (s := univ ×ˢ closedBall 0 1) (Continuous.continuousOn
+      (f := fun q : P × EuclideanSpace ℝ (Fin k) ↦
+        (q.1, √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) q.2)) (by fun_prop))
+    fun q hq ↦ ⟨mem_univ _, by
+      rw [mem_closedBall_zero_iff, norm_smul, LinearIsometry.norm_map,
+        Real.norm_of_nonneg (Real.sqrt_nonneg ε)]
+      exact mul_le_of_le_one_right (Real.sqrt_nonneg ε) (mem_closedBall_zero_iff.1 hq.2)⟩).congr
+    fun q _ ↦ OpenPartialHomeomorph.morseCellMap_def hk q.2
+
+end Family
 
 section Boundary
 

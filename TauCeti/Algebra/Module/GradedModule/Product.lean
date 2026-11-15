@@ -39,7 +39,7 @@ section BaseSemiring
 
 variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
   [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
-  (G : ∀ j, InternalGrading R (M j))
+  (G : ∀ j, InternalGrading R (M j) ℤ)
 
 /-- Families all of whose components have degree `p`. -/
 def productPiece (p : ℤ) : Submodule R (∀ j, M j) :=
@@ -155,7 +155,7 @@ theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
   exact LinearEquiv.ofInjective_apply _ _
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
-noncomputable def product : InternalGrading R (productCarrier G) :=
+noncomputable def product : InternalGrading R (productCarrier G) ℤ :=
   (ofDecomposition (DirectSum.summand R (fun p : ℤ ↦ productPiece G p))).map (productEquiv G)
 
 /-- An element of the graded product has degree `p` exactly when each component does. -/
@@ -185,7 +185,7 @@ theorem productEval_apply (j : J) (x : productCarrier G) : productEval G j x = x
 
 section Lift
 
-variable {N : Type z} [AddCommMonoid N] [Module R N] (H : InternalGrading R N)
+variable {N : Type z} [AddCommMonoid N] [Module R N] (H : InternalGrading R N ℤ)
   (r : ℤ) (f : ∀ j, N →ₗ[R] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous (f j) H.piece (G j).piece r)
 
@@ -200,7 +200,7 @@ theorem productLift_mem (x : N) : (fun j ↦ f j x) ∈ productCarrier G := by
     funext fun j ↦ (LinearMap.pi_apply f x j).symm]
   rw [← DirectSum.sum_support_decompose H.piece x, map_sum]
   apply (productCarrier G).sum_mem
-  intro p hp
+  intro p _
   apply productPiece_le_productCarrier G (p + r)
   exact (mem_productPiece_iff G (p + r) _).mpr fun j ↦
     (hf j).map_mem (DirectSum.decompose H.piece x p).2
@@ -232,7 +232,7 @@ section Scalars
 
 variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
   [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
-  (G : ∀ j, InternalGrading R (M j))
+  (G : ∀ j, InternalGrading R (M j) ℤ)
   {S : Type*} [Semiring S] [∀ j, Module S (M j)]
   {σ : Type*} [SetLike σ S] [AddSubmonoidClass σ S]
   (𝒜 : ℤ → σ) [DirectSum.Decomposition 𝒜]
@@ -253,7 +253,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
     rw [DirectSum.coeLinearMap_of]
     rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul]
     apply (productCarrier G).sum_mem
-    intro q hq
+    intro q _
     apply productPiece_le_productCarrier G (q + p)
     exact (mem_productPiece_iff G (q + p) _).mpr fun j ↦
       SetLike.GradedSMul.smul_mem (B := (G j).piece)
@@ -276,7 +276,7 @@ theorem productScalarSubmodule_restrictScalars :
   rfl
 
 variable {N : Type z} [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
-  (H : InternalGrading R N) (r : ℤ) (f : ∀ j, N →ₗ[S] M j)
+  (H : InternalGrading R N ℤ) (r : ℤ) (f : ∀ j, N →ₗ[S] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous ((f j).restrictScalars R) H.piece (G j).piece r)
 
 /-- The componentwise lift is linear over the acting scalars as well as the base ring. -/

@@ -102,9 +102,9 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le_mul_measure_rpow {x :
   -- Poincaré–Wirtinger in `L¹`, written in `ℝ≥0∞`.
   have hPW : ∫⁻ y in B, ‖W1p.value u y - m‖ₑ ∂mu ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * r) * eLpNorm (W1p.gradient u) 1 (mu.restrict B) := by
-    rw [← ofReal_integral_norm_eq_lintegral_enorm hint,
-      eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).mono_measure hle),
-      ← ofReal_integral_norm_eq_lintegral_enorm hgint, ← ENNReal.ofReal_mul (by positivity)]
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hint,
+      eLpNorm_one_eq_lintegral_eNorm ((Lp.aestronglyMeasurable _).mono_measure hle),
+      ← ofReal_integral_norm_eq_lintegral_eNorm hgint, ← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
     simpa only [Real.norm_eq_abs] using
       W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hball u

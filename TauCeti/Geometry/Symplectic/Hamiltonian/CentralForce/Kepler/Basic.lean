@@ -225,7 +225,7 @@ theorem kepler_radialAction_turningRadii (hm : 0 < m) (hκ : 0 < κ) (hℓ : ℓ
     rw [effectivePotential_apply] at this
     field_simp at this ⊢
     nlinarith
-  exact kepler_radialAction hm hℓ h₁
+  exact kepler_radialAction hm h₁
     (kepler_periapsisRadius_lt_apoapsisRadius hm hmin hE hℓ)
     (hturn _ h₁ (Or.inl rfl)) (hturn _ h₂ (Or.inr rfl))
 

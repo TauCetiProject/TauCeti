@@ -127,9 +127,9 @@ theorem isLocalization_integerRing :
     obtain ⟨a, ha, hax⟩ := exists_algebraMap_mul_mem_integerRing K L x
     refine ⟨⟨⟨_, hax⟩, ⟨_, a, mem_nonZeroDivisors_of_ne_zero ha, rfl⟩⟩, ?_⟩
     -- `algebraMap 𝒪[L] L` is the subring coercion; `change` exposes it so that
-    -- `coe_algebraMap_integerRing` applies.
+    -- `Valuation.HasExtension.val_algebraMap` applies.
     change x * ((algebraMap 𝒪[K] 𝒪[L] a : 𝒪[L]) : L) = algebraMap K L a * x
-    rw [coe_algebraMap_integerRing, mul_comm]
+    rw [Valuation.HasExtension.val_algebraMap, mul_comm]
   exists_of_eq {x y} h := ⟨1, by simpa using Subtype.ext h⟩
 
 /-- The rank of `𝒪[L]` as a free `𝒪[K]`-module is the degree `[L : K]`. -/

@@ -169,7 +169,7 @@ theorem suspensionToSphere_surjective : Function.Surjective suspensionToSphere :
     simpa [Fin.sum_univ_three] using hv
   have ha : v 0 ∈ Set.Icc (-1 : ℝ) 1 := by
     constructor <;> nlinarith [sq_nonneg (v 1), sq_nonneg (v 2)]
-  set θ := arccos (v 0) with hθ
+  set θ := arccos (v 0)
   have hθ0 : 0 ≤ θ := arccos_nonneg _
   have hθ1 : θ ≤ π := arccos_le_pi _
   let t : I := ⟨θ / π, div_nonneg hθ0 pi_pos.le, (div_le_one pi_pos).2 hθ1⟩
@@ -178,7 +178,6 @@ theorem suspensionToSphere_surjective : Function.Surjective suspensionToSphere :
     have ht : (t : ℝ) = θ / π := rfl
     rw [ht]
     field_simp
-  have hs : sin θ = Real.sqrt (1 - v 0 ^ 2) := sin_arccos _
   have hc : cos θ = v 0 := cos_arccos ha.1 ha.2
   have hsq : v 1 ^ 2 + v 2 ^ 2 = sin θ ^ 2 := by
     have : sin θ ^ 2 = 1 - v 0 ^ 2 := by
@@ -191,7 +190,7 @@ theorem suspensionToSphere_surjective : Function.Surjective suspensionToSphere :
     have h2 : v 2 = 0 := by nlinarith [sq_nonneg (v 1), sq_nonneg (v 2)]
     ext i
     fin_cases i <;> simp [suspensionToSphere, htθ, hz, hc, h1, h2]
-  · have hsp : 0 < sin θ := lt_of_le_of_ne (sin_nonneg_of_nonneg_of_le_pi hθ0 hθ1) (Ne.symm hz)
+  · have _ : 0 < sin θ := lt_of_le_of_ne (sin_nonneg_of_nonneg_of_le_pi hθ0 hθ1) (Ne.symm hz)
     have hw : ‖(⟨v 1 / sin θ, v 2 / sin θ⟩ : ℂ)‖ = 1 := by
       rw [Complex.norm_def, Complex.normSq_mk, Real.sqrt_eq_one]
       field_simp

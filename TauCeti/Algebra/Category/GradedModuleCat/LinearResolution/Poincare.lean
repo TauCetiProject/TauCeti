@@ -224,7 +224,7 @@ theorem forall_exists_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
   constructor
   · intro hlinear i
     apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
+    intro N _ _ hNzero n p hnp
     obtain ⟨r', hr'⟩ := hlinear i
     exact hr'.subsingleton_ext_shiftObj_of_ne hNzero n p hnp
   · intro hlinear i

@@ -102,7 +102,7 @@ theorem mem_lifts_of_forall_map_mapRingEquiv_eq
     {μ : (RatFunc K)[X]} (hμ : ∀ σ ∈ S, μ.map (mapRingEquiv σ : RatFunc K →+* RatFunc K) = μ) :
     μ ∈ Polynomial.lifts (algebraMap (RatFunc F) (RatFunc K)) :=
   (Polynomial.lifts_iff_coeff_lifts μ).mpr fun n ↦ mem_range_of_forall_mapRingEquiv_eq hX hS
-    fun σ hσ ↦ by simpa using congr(Polynomial.coeff $(hμ σ hσ) n)
+    fun σ hσ ↦ by simpa using congr($(hμ σ hσ).coeff n)
 
 /-- **Polynomials over `K(X)` fixed by a set of automorphisms.** Let `S` be a set of automorphisms
 of `K` whose common fixed points are exactly the image of `F`. A polynomial with coefficients in

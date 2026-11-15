@@ -57,6 +57,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
+  the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -300,5 +302,25 @@ theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g
     rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
       ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
       hg.natDegree_map, resultant_map_map] at hgh
+
+/-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
+`m` of the first polynomial and at most `n` of the second. -/
+theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
+    (hf : ∀ i ≤ m, f.coeff i = f'.coeff i) (hg : ∀ i ≤ n, g.coeff i = g'.coeff i) :
+    resultant f g m n = resultant f' g' m n := by
+  rw [resultant, resultant]
+  congr 1
+  ext i j
+  induction j using Fin.addCases with
+  | left j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_left]
+    split_ifs with h
+    · exact hg _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
+  | right j =>
+    simp only [sylvester, Matrix.of_apply, Fin.addCases_right]
+    split_ifs with h
+    · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
+    · rfl
 
 end Polynomial

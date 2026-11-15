@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.LocalToGlobal
 public import TauCeti.Analysis.Calculus.Morse.Stable
 -- Private: the gradient and the Fréchet derivative have the same norm.
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.ContDiff.Translation
 
 /-!
 # Global stable and unstable sets are embedded `C^n` submanifolds
@@ -32,11 +33,12 @@ The proof has two steps.
   (`Flow.IsNegativeGradient.dist_le_of_mem_stableSet`), so a point of the stable set close to
   `x` and with value close to `f x` never leaves the ball: it belongs to the confined local
   stable set of the Lyapunov--Perron construction.
-* **Transport along the flow.** A point `y` of the stable set reaches, at some time `T`, the
-  neighbourhood of `x` where the previous step applies and where the local straightening chart
-  of `IsNondegenerateCriticalPoint.exists_localStableSet_chart_of_contDiffAt` is defined.
-  Composing that chart with the time-`T` flow, a `C^n` diffeomorphism of the ambient space,
-  straightens the stable set around `y`.
+* **Transport along the flow.** On that neighbourhood, the local straightening chart of
+  `IsNondegenerateCriticalPoint.exists_localStableSet_chart_of_contDiffAt`, read in the
+  displacement from `x`, straightens the stable set; it is tangent to the identity at `x`. A
+  point `y` of the stable set reaches its domain at some time `T`, and composing it with the
+  time-`T` flow, a `C^n` diffeomorphism of the ambient space, straightens the stable set
+  around `y`.
 
 Without the first step the transported chart would only straighten the part of the stable set
 lying in the transported local disk; points of the stable set accumulating from far along the
@@ -47,6 +49,9 @@ flow could otherwise break embeddedness. For a gradient flow they cannot.
 * `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_stableSet` and
   `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_unstableSet`: near a
   nondegenerate critical point, stable and unstable trajectories stay in a given ball.
+* `IsNondegenerateCriticalPoint.exists_stableSet_chart_hasFDerivAt_id` and
+  `IsNondegenerateCriticalPoint.exists_unstableSet_chart_hasFDerivAt_id`: at the critical point
+  itself, the straightening charts can be taken with derivative the identity.
 * `IsNondegenerateCriticalPoint.exists_stableSet_chart`: for a globally `C^(n+1)`
   function, every point of the global stable set has a `C^n` straightening chart onto the stable
   Hessian subspace.
@@ -130,52 +135,106 @@ variable {K : ℝ≥0}
 
 variable [CompleteSpace E] in
 omit [FiniteDimensional ℝ E] in
-/-- Transport of a local straightening chart along the negative-gradient flow. Let `S` be an
-invariant set which, on an open set `V` of points `w` with displacement `w - x` in the source of
-a `C^n` chart `q` with `C^n` inverse, is cut out by `q (w - x) ∈ L`. If the trajectory of `y`
-reaches `V` and the source of `q` at time `T`, then composing `q` with the time-`T` flow gives a
+/-- Transport of a straightening chart along the negative-gradient flow. Let `S` be an invariant
+set cut out on the source of a `C^n` chart `q` with `C^n` inverse by `q w ∈ L`. If the trajectory
+of `y` reaches the source of `q` at time `T`, then composing `q` with the time-`T` flow gives a
 `C^n` chart around `y` cutting out `S` by the same condition. -/
 private theorem exists_chart_of_isInvariant {n : ℕ} (hfs : ContDiff ℝ (n + 1) f)
     (hf : LipschitzWith K (∇ f))
     {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S) {q : OpenPartialHomeomorph E E}
     (hqC : ∀ z ∈ q.source, ContDiffAt ℝ n q z) (hqCs : ∀ z ∈ q.target, ContDiffAt ℝ n q.symm z)
-    {L : Set E} {V : Set E} (hVo : IsOpen V)
-    (hVS : ∀ w ∈ V, w - x ∈ q.source → (w ∈ S ↔ q (w - x) ∈ L)) {y : E} {T : ℝ}
-    (hT : negativeGradientFlow f hf T y ∈ V ∧ negativeGradientFlow f hf T y - x ∈ q.source) :
+    {L : Set E} (hqS : ∀ w ∈ q.source, w ∈ S ↔ q w ∈ L) {y : E} {T : ℝ}
+    (hT : negativeGradientFlow f hf T y ∈ q.source) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
       (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
       (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
       ∀ z ∈ e.source, z ∈ S ↔ e z ∈ L := by
   set φ := negativeGradientFlow f hf
-  let Ψ : E ≃ₜ E := (φ.toHomeomorph T).trans (Homeomorph.subRight x)
-  let e := (Ψ.toOpenPartialHomeomorph.restrOpen _
-    ((φ.toHomeomorph T).continuous.isOpen_preimage V hVo)).trans q
-  have hesource : e.source = {z | φ T z ∈ V ∧ φ T z - x ∈ q.source} := by
+  let e := (φ.toHomeomorph T).toOpenPartialHomeomorph.trans q
+  have hesource : e.source = {z | φ T z ∈ q.source} := by
     ext z
-    simp [e, Ψ]
-  have he : (e : E → E) = q ∘ fun z ↦ φ T z - x := by
+    simp [e]
+  have he : (e : E → E) = q ∘ φ T := by
     ext z
-    simp [e, Ψ]
-  have hes : (e.symm : E → E) = (fun z ↦ φ (-T) (z + x)) ∘ q.symm := by
+    simp [e]
+  have hes : (e.symm : E → E) = φ (-T) ∘ q.symm := by
     ext z
-    simp [e, Ψ]
+    simp [e]
   refine ⟨e, by rw [hesource]; exact hT, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · rw [hesource] at hz
     rw [he]
-    exact (hqC _ hz.2).comp z
-      (((contDiff_negativeGradientFlow_apply f hf hfs T).sub
-        contDiff_const).contDiffAt)
+    exact (hqC _ hz).comp z (contDiff_negativeGradientFlow_apply f hf hfs T).contDiffAt
   · rw [OpenPartialHomeomorph.trans_target] at hz
     rw [hes]
-    exact ((contDiff_negativeGradientFlow_apply f hf hfs (-T)).comp
-      (contDiff_id.add contDiff_const)).contDiffAt.comp z (hqCs z hz.1)
+    exact (contDiff_negativeGradientFlow_apply f hf hfs (-T)).contDiffAt.comp z (hqCs z hz.1)
   · rw [hesource] at hz
     rw [he]
     have hinv : z ∈ S ↔ φ T z ∈ S :=
       ⟨fun hz ↦ hS T hz, fun hz ↦ by
         simpa only [← _root_.Flow.map_add, neg_add_cancel, _root_.Flow.map_zero_apply] using
           hS (-T) hz⟩
-    exact hinv.trans (hVS _ hz.1 hz.2)
+    exact hinv.trans (hqS _ hz)
+
+/-- **A stable-set chart at the critical point, tangent to the identity.** For a globally
+`C^(n+1)` function with globally Lipschitz gradient and a nondegenerate critical point `x`, there
+is a `C^n` ambient chart around `x`, with `C^n` inverse and derivative the identity at `x`,
+carrying the stable set of `x` onto the stable Hessian subspace. Near `x` the tangent spaces of
+the stable set are therefore close to the stable Hessian subspace. -/
+theorem exists_stableSet_chart_hasFDerivAt_id (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
+    (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) :
+    ∃ e : OpenPartialHomeomorph E E, x ∈ e.source ∧
+      HasFDerivAt e (ContinuousLinearMap.id ℝ E) x ∧
+      (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
+      ∀ z ∈ e.source, z ∈ Flow.stableSet (negativeGradientFlow f hf) x ↔
+        e z ∈ h.contDiffAt.stableLinearSubspace := by
+  obtain ⟨r, hr, ρ, hρ, q, hqs, -, -, hqd, hqC, hqCs, hqset, hconv⟩ :=
+    h.exists_localStableSet_chart_of_contDiffAt (hfs.contDiffAt)
+  obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
+    (h.eventually_forall_dist_le_of_mem_stableSet (isNegativeGradient_negativeGradientFlow f hf)
+      (hfs.differentiable (by norm_num)) hr)
+  have hxq : (0 : E) ∈ q.source := by simpa [hqs] using hρ
+  refine exists_chart_comp_sub hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
+  have hxw : x + (w - x) = w := add_sub_cancel x w
+  rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localStableSet_iff_negativeGradientFlow hf, hxw]
+  refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
+  · rw [mem_closedBall_zero_iff, ← dist_eq_norm]
+    exact hVconf hwV hw t ht
+  · rw [hqs] at hwq
+    exact (mem_ball_zero_iff.1 hwq).le
+  · have := image_add_localInvariantSet_Ici_subset_stableSet hf h.stableProjection hconv
+      ⟨w - x, (mem_localInvariantSet_Ici_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
+    simpa only [hxw] using this
+
+/-- **An unstable-set chart at the critical point, tangent to the identity.** The backward-time
+counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart_hasFDerivAt_id`: a `C^n`
+ambient chart around `x`, with `C^n` inverse and derivative the identity at `x`, carrying the
+unstable set of `x` onto the unstable Hessian subspace. -/
+theorem exists_unstableSet_chart_hasFDerivAt_id (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
+    (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) :
+    ∃ e : OpenPartialHomeomorph E E, x ∈ e.source ∧
+      HasFDerivAt e (ContinuousLinearMap.id ℝ E) x ∧
+      (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
+      ∀ z ∈ e.source, z ∈ Flow.unstableSet (negativeGradientFlow f hf) x ↔
+        e z ∈ h.contDiffAt.unstableLinearSubspace := by
+  obtain ⟨r, hr, ρ, hρ, q, hqs, -, -, hqd, hqC, hqCs, hqset, hconv⟩ :=
+    h.exists_localUnstableSet_chart_of_contDiffAt (hfs.contDiffAt)
+  obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
+    (h.eventually_forall_dist_le_of_mem_unstableSet
+      (isNegativeGradient_negativeGradientFlow f hf) (hfs.differentiable (by norm_num)) hr)
+  have hxq : (0 : E) ∈ q.source := by simpa [hqs] using hρ
+  refine exists_chart_comp_sub hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
+  have hxw : x + (w - x) = w := add_sub_cancel x w
+  rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localUnstableSet_iff_negativeGradientFlow hf, hxw]
+  refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
+  · rw [mem_closedBall_zero_iff, ← dist_eq_norm]
+    exact hVconf hwV hw t ht
+  · rw [hqs] at hwq
+    exact (mem_ball_zero_iff.1 hwq).le
+  · have := image_add_localInvariantSet_Iic_subset_unstableSet hf h.unstableProjection hconv
+      ⟨w - x, (mem_localInvariantSet_Iic_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
+    simpa only [hxw] using this
 
 /-- **The stable set of a Morse critical point is an embedded `C^n` submanifold.** For a globally
 `C^(n+1)` function with globally Lipschitz gradient, every point `y` of the stable set of a
@@ -190,26 +249,9 @@ theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
       (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
       ∀ z ∈ e.source, z ∈ Flow.stableSet (negativeGradientFlow f hf) x ↔
         e z ∈ h.contDiffAt.stableLinearSubspace := by
-  obtain ⟨r, hr, ρ, hρ, q, hqs, -, -, -, hqC, hqCs, hqset, hconv⟩ :=
-    h.exists_localStableSet_chart_of_contDiffAt (hfs.contDiffAt)
-  obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
-    (h.eventually_forall_dist_le_of_mem_stableSet (isNegativeGradient_negativeGradientFlow f hf)
-      (hfs.differentiable (by norm_num)) hr)
-  have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
-  obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hy).eventually ((hVo.inter
-    (q.open_source.preimage (continuous_sub_right x))).mem_nhds ⟨hxV, hxq⟩)).exists
-  refine exists_chart_of_isInvariant hfs hf (Flow.isInvariant_stableSet _ x) hqC hqCs hVo
-    (fun w hwV hwq ↦ ?_) hT
-  have hxw : x + (w - x) = w := add_sub_cancel x w
-  rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localStableSet_iff_negativeGradientFlow hf, hxw]
-  refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
-  · rw [mem_closedBall_zero_iff, ← dist_eq_norm]
-    exact hVconf hwV hw t ht
-  · rw [hqs] at hwq
-    exact (mem_ball_zero_iff.1 hwq).le
-  · have := image_add_localInvariantSet_Ici_subset_stableSet hf h.stableProjection hconv
-      ⟨w - x, (mem_localInvariantSet_Ici_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
-    simpa only [hxw] using this
+  obtain ⟨e, hxe, -, heC, heCs, heS⟩ := h.exists_stableSet_chart_hasFDerivAt_id hfs hf
+  obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hy).eventually (e.open_source.mem_nhds hxe)).exists
+  exact exists_chart_of_isInvariant hfs hf (Flow.isInvariant_stableSet _ x) heC heCs heS hT
 
 /-- **The unstable set of a Morse critical point is an embedded `C^n` submanifold.** The
 backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart`:
@@ -223,26 +265,10 @@ theorem exists_unstableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ
       (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
       ∀ z ∈ e.source, z ∈ Flow.unstableSet (negativeGradientFlow f hf) x ↔
         e z ∈ h.contDiffAt.unstableLinearSubspace := by
-  obtain ⟨r, hr, ρ, hρ, q, hqs, -, -, -, hqC, hqCs, hqset, hconv⟩ :=
-    h.exists_localUnstableSet_chart_of_contDiffAt (hfs.contDiffAt)
-  obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
-    (h.eventually_forall_dist_le_of_mem_unstableSet
-      (isNegativeGradient_negativeGradientFlow f hf) (hfs.differentiable (by norm_num)) hr)
-  have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
-  obtain ⟨T, hT⟩ := ((Flow.mem_unstableSet.1 hy).eventually ((hVo.inter
-    (q.open_source.preimage (continuous_sub_right x))).mem_nhds ⟨hxV, hxq⟩)).exists
-  refine exists_chart_of_isInvariant hfs hf (Flow.isInvariant_unstableSet _ x) hqC hqCs hVo
-    (fun w hwV hwq ↦ ?_) hT
-  have hxw : x + (w - x) = w := add_sub_cancel x w
-  rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localUnstableSet_iff_negativeGradientFlow hf, hxw]
-  refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
-  · rw [mem_closedBall_zero_iff, ← dist_eq_norm]
-    exact hVconf hwV hw t ht
-  · rw [hqs] at hwq
-    exact (mem_ball_zero_iff.1 hwq).le
-  · have := image_add_localInvariantSet_Iic_subset_unstableSet hf h.unstableProjection hconv
-      ⟨w - x, (mem_localInvariantSet_Iic_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
-    simpa only [hxw] using this
+  obtain ⟨e, hxe, -, heC, heCs, heS⟩ := h.exists_unstableSet_chart_hasFDerivAt_id hfs hf
+  obtain ⟨T, hT⟩ :=
+    ((Flow.mem_unstableSet.1 hy).eventually (e.open_source.mem_nhds hxe)).exists
+  exact exists_chart_of_isInvariant hfs hf (Flow.isInvariant_unstableSet _ x) heC heCs heS hT
 
 end IsNondegenerateCriticalPoint
 

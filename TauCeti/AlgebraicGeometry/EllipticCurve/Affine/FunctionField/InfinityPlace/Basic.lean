@@ -29,9 +29,9 @@ The valuation's `map_add_le_max'` rests on an ultrametric inequality in degree f
 the other three axioms are the norm's multiplicativity and Mathlib's place at infinity.
 * `WeierstrassCurve.Affine.infinityPlace.X`,
   `WeierstrassCurve.Affine.infinityPlace.mk_Y`: `v_∞ x = exp 2` and `v_∞ y = exp 3` — the double
-  and triple poles at infinity, `ord_∞ x = -2` and `ord_∞ y = -3`, which is what Layer 0 asks for
-  by name. They read this file's two `natDegree_norm_*` helpers through
-  `Algebra.norm_localization` and Mathlib's polynomial valuation.
+  and triple poles at infinity, `ord_∞ x = -2` and `ord_∞ y = -3`. They read this file's two
+  `natDegree_norm_*` helpers through `Algebra.norm_localization` and Mathlib's polynomial
+  valuation.
 * `WeierstrassCurve.Affine.infinityPlace_genericX` and
   `WeierstrassCurve.Affine.infinityPlace_genericY`: the same pole values for the generic-point
   coordinates, in `@[simp]` form.
@@ -66,15 +66,10 @@ cannot carry the tag themselves). The generic-point forms `infinityPlace_generic
 that builds the ultrametric inequality is `private`, and the norm-degree theory it rests on
 lives in `FunctionField/Norm.lean`.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0** (the function field, places, and divisors),
-whose §Places asks for the one further place `W.infinityPlace` beyond the affine ones, sitting
-"where `x` and `y` have their poles", with `ord_∞ x = -2`, `ord_∞ y = -3`. This file supplies the
-valuation, those two degrees, and the **uniformiser** `x / y` — §Places lists "`ord_v`,
-uniformisers, residue fields, the degree `deg v`" as the API the later layers consume.
-`Suggested.lean` seeds no declaration it competes with, recording that the function-field layer's
-"types are new API and are built there, not pinned here".
+Among the places of the function field, `W.infinityPlace` is the one further place beyond the
+affine ones, sitting where `x` and `y` have their poles. This file supplies the valuation, those
+two pole orders, and the **uniformiser** `x / y`, part of the per-place API (`ord_v`, uniformisers,
+residue fields, the degree `deg v`) that divisors on the curve are built from.
 
 ## Provenance
 

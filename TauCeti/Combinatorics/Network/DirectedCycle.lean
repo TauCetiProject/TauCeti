@@ -25,6 +25,8 @@ retain their identities. The results require no finiteness assumptions.
   target can reach its source.
 * `TauCeti.isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle`: the directed bridge
   criterion.
+* `TauCeti.ArrowWalk.exists_isCycle_two_le_length`: every strongly connected arrow family on at
+  least two vertices contains a directed cycle of length at least `2`.
 
 ## References
 
@@ -88,7 +90,7 @@ theorem nonempty_arrowWalk_of_symmetrify
   obtain ⟨p⟩ := p
   induction p with
   | nil => exact ⟨ArrowWalk.nil _⟩
-  | @cons x y p e ih =>
+  | @cons x y _ e ih =>
     obtain ⟨q⟩ := ih
     rcases e with e | e
     · exact ⟨q.cons e⟩
@@ -107,5 +109,26 @@ theorem isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle :
       fun ⦃s t⦄ e ↦ h.liesOnCycle e⟩
   · rintro ⟨hweak, hcycle⟩ s t
     exact nonempty_arrowWalk_of_symmetrify hcycle (hweak s t)
+
+/-- Every strongly connected arrow family on at least two vertices contains a directed cycle of
+length at least `2`. -/
+theorem ArrowWalk.exists_isCycle_two_le_length [Nontrivial V]
+    (hQ : @Quiver.IsStronglyConnected V ⟨Q⟩) :
+    ∃ (v : V) (c : ArrowWalk Q v v), c.IsCycle ∧ 2 ≤ c.length := by
+  obtain ⟨u, v, huv⟩ := exists_pair_ne V
+  obtain ⟨q₁⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ u v
+  obtain ⟨p₁, hp₁, _⟩ := ArrowWalk.exists_isPath_arrows_subset (Q := Q) q₁
+  cases p₁ with
+  | nil => exact (huv rfl).elim
+  | @cons x _ p₀ e =>
+    have hxv : x ≠ v := fun h ↦
+      hp₁.target_notMem_vertices_of_cons (h ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₀)
+    obtain ⟨q₂⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ v x
+    obtain ⟨r, hr, _⟩ := ArrowWalk.exists_isPath_arrows_subset (Q := Q) q₂
+    have hr_pos : 0 < r.length := by
+      cases r with
+      | nil => exact (hxv.symm rfl).elim
+      | cons _ _ => simp
+    exact ⟨v, r.cons e, hr.isCycle_cons e, Nat.succ_le_succ hr_pos⟩
 
 end TauCeti

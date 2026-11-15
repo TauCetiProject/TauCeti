@@ -112,7 +112,7 @@ theorem exists_flow_apply_eq_sub_of_isCompact (hf : ContMDiff I 𝓘(ℝ) ∞ f)
   let M' := BoundarylessModel I M
   set f' : M' → ℝ := f ∘ e.symm with hf'_def
   have : T2Space M' := e.symm.isEmbedding.t2Space
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f' := by
     have h := (BoundarylessModel.diffeomorph I (M := M) ∞).symm.contMDiff
     rw [BoundarylessModel.coe_diffeomorph_symm, ← he] at h

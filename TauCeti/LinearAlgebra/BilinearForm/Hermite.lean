@@ -12,6 +12,7 @@ import TauCeti.Data.Int.Round
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.LinearAlgebra.BilinearForm.Condensation
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Hermite's inequality for positive definite integral forms
@@ -54,6 +55,9 @@ positive integers.
 
 * `LinearMap.BilinForm.exists_isPrimitive_forall_apply_self_le`: a positive definite integral form
   attains its minimum at a primitive vector.
+* `LinearMap.BilinForm.apply_self_nonneg_of_forall_le` and
+  `LinearMap.BilinForm.apply_eq_zero_of_apply_self_eq_zero_of_forall_le`: the degenerate cases of
+  a least norm.
 * `LinearMap.BilinForm.three_mul_sq_le_four_mul_sub_of_forall_le`: the minimality step, which
   bounds the condensed form along a vector of least norm from below.
 * `LinearMap.BilinForm.exists_ne_zero_three_pow_mul_pow_le_four_pow_mul_det`: Hermite's
@@ -100,23 +104,56 @@ theorem exists_isPrimitive_forall_apply_self_le {M : Type*} [AddCommGroup M] [Mo
   have hd1 : d = 1 := by nlinarith
   rwa [hvw, hd1, one_smul]
 
+/-- A vector of least norm among the nonzero vectors of an integral form has nonnegative norm:
+`B(v, v) ≤ B(2 v, 2 v) = 4 B(v, v)` unless `2 v = 0`, and then `2 B(v, v) = B(2 v, v) = 0`. -/
+theorem apply_self_nonneg_of_forall_le {M : Type*} [AddCommGroup M] {B : LinearMap.BilinForm ℤ M}
+    {v : M} (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) : 0 ≤ B v v := by
+  by_cases h2 : (2 : ℤ) • v = 0
+  · have h := congrArg (fun x ↦ B x v) h2
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, map_zero, LinearMap.zero_apply] at h
+    omega
+  · have := hmin _ h2
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
+    nlinarith
+
+/-- If a vector `v` of least norm among the nonzero vectors of a symmetric integral form has
+norm `0`, then it is orthogonal to every vector `y`. -/
+theorem apply_eq_zero_of_apply_self_eq_zero_of_forall_le {M : Type*} [AddCommGroup M]
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v : M} (hv0 : B v v = 0)
+    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (y : M) : B y v = 0 := by
+  -- The form is nonnegative, so Cauchy-Schwarz gives `B(y, v)² ≤ B(y, y) B(v, v) = 0`.
+  have hnonneg : ∀ x, 0 ≤ B x x := fun x ↦ by
+    by_cases hx : x = 0
+    · simp [hx]
+    · exact hv0 ▸ hmin x hx
+  have hsq := B.apply_sq_le_of_symm hnonneg ⟨fun x y ↦ hB.eq x y⟩ y v
+  rw [hv0, mul_zero] at hsq
+  exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hsq (sq_nonneg _))
+
 /-- **The minimality step of Hermite's inequality.** Let `v` be a vector of least norm
-`μ = B(v, v) > 0` among the nonzero vectors, for a symmetric integral form `B`. Every `y` outside
-`ℤ v` satisfies `3 μ² ≤ 4 (μ B(y, y) - B(y, v) B(v, y))`. Indeed, adding to `y` a multiple `t v`
-with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with `4 B(v, y + t v)² ≤ μ²`, and
-completing the square along `v` (`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its
-norm, which is at least `μ`, with the condensed form. -/
+`μ = B(v, v)` among the nonzero vectors, for a symmetric integral form `B`. Every `y` outside
+`ℤ v` satisfies `3 μ² ≤ 4 (μ B(y, y) - B(y, v) B(v, y))`. If `μ = 0` then `B(y, v) = 0`
+(`apply_eq_zero_of_apply_self_eq_zero_of_forall_le`) and both sides vanish. Otherwise `μ > 0`,
+and adding to `y` a multiple `t v` with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with
+`4 B(v, y + t v)² ≤ μ²`, and completing the square along `v`
+(`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its norm, which is at least `μ`, with
+the condensed form. -/
 theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
-    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hμ : 0 < B v v)
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M}
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
+  have hne := Submodule.ne_zero_add_zsmul_of_notMem_span hy
+  by_cases hμ : 0 < B v v
+  swap
+  · -- A least norm is nonnegative, so here `B v v = 0`, and then `y` is orthogonal to `v`.
+    have hv0 : B v v = 0 := le_antisymm (not_lt.mp hμ) (apply_self_nonneg_of_forall_le hmin)
+    have hyv := apply_eq_zero_of_apply_self_eq_zero_of_forall_le hB hv0 hmin y
+    simp [hv0, hyv]
   obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ.ne'
   rw [abs_of_pos hμ] at hk
   have hk' : 0 ≤ B v v + 2 * |B v y - k * B v v| := by positivity
-  have hne : y + (-k) • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
-    ⟨k, (sub_eq_zero.mp (by simpa [sub_eq_add_neg] using h)).symm⟩)
   have hv : B v (y + (-k) • v) = B v y - k * B v v := by simp [sub_eq_add_neg]
-  have h := mul_le_mul_of_nonneg_left (hmin _ hne) hμ.le
+  have h := mul_le_mul_of_nonneg_left (hmin _ (hne (-k))) hμ.le
   rw [B.mul_apply_add_smul_add_smul, hB.eq (y + _) v, hv] at h
   rw [hB.eq y v] at h ⊢
   nlinarith [mul_nonneg (sub_nonneg.mpr hk) hk', sq_abs (B v y - k * B v v)]
@@ -184,7 +221,7 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
     exact hy (Subtype.ext (by simp [← ha]))
   rw [show (n + 1).choose 2 = n.choose 2 + n by simp [Nat.choose_succ_succ', add_comm]]
   exact three_pow_mul_pow_succ_le hμ
-    (hS y y ▸ three_mul_sq_le_four_mul_sub_of_forall_le hB hμ hmin hyv) hyb hdet
+    (hS y y ▸ three_mul_sq_le_four_mul_sub_of_forall_le hB hmin hyv) hyb hdet
 
 /-- Hermite's inequality for a basis indexed by `Fin n`, by induction on `n`. -/
 private theorem hermiteBound (n : ℕ) : HermiteBound.{u} n := by

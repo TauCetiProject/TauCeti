@@ -378,7 +378,7 @@ lemma mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
     obtain ⟨i, rfl⟩ := hw
     exact hrefl i hv
   | one => exact hv
-  | mul w₁ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
+  | mul _ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
 
 /-- A coreflection permutes the root functionals: `⟨αⱼ, s_{αᵢ} x⟩ = ⟨s_{αᵢ} αⱼ, x⟩`. -/
 lemma root'_coreflection (i j : ι) (x : N) :

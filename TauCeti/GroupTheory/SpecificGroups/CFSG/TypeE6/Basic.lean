@@ -18,15 +18,14 @@ full-weight Chevalley carrier for that diagram is `TauCeti.E6Minuscule.groupSche
 toral closure of the `27`-dimensional minuscule representation inside `GL₂₇` over `ℤ`. This file
 runs the classification recipe on it: for a validated `E₆` index it supplies the group of
 algebraic-closure-valued points of that carrier, its Bourbaki-numbered simple root subgroups, the
-Steinberg endomorphism milestone L1 prescribes for an untwisted family, and the candidate group
-milestone L3 builds from it,
+Steinberg endomorphism of an untwisted family, and the candidate group built from it,
 
 ```text
 H_d = fixedSubgroup d.steinberg,        d.Group = [H_d, H_d] / Z([H_d, H_d]).
 ```
 
-The Steinberg map is the `q`-power Frobenius outright. That is what L1's table asks of an untwisted
-family, and `TauCeti.TypeE6LieIndex.diagramPerm_toGraphTwistedIndex` is the check that the diagram
+The Steinberg map is the `q`-power Frobenius outright, as for every untwisted family, and
+`TauCeti.TypeE6LieIndex.diagramPerm_toGraphTwistedIndex` is the check that the diagram
 permutation this index carries is indeed trivial: the nontrivial symmetry of the `E₆` diagram
 belongs to `²E₆(q)`, a different constructor.
 
@@ -68,26 +67,19 @@ identification of numbered root characters,
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate V, for the numbering of the
   `E₆` diagram that the root subgroups below are indexed by.
-* The target signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, the Steinberg map with its pinned equation, and the fixed-point candidate, all taken
-  on a validated-index subtype.
 
-## Roadmap
+## Relation to the pinned group
 
-Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for the points of the *pinned* simply
-connected Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum` at the
-diagram the index names, with its root subgroups. **This file does not close L0, and the minuscule
-carrier is not offered as a substitute for that pinned group.** The pinned group scheme, its
-pinning, and any identification of a carrier with it are Layer 9 targets of
-`TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roadmap consumes rather than builds; none
-of them is proved of `TauCeti.E6Minuscule.groupScheme` here or in the files this one imports. What
+The points of the *pinned* simply connected Chevalley--Demazure group scheme of
+`TauCeti.DynkinType.simplyConnectedRootDatum` at the diagram the index names, with its root
+subgroups, are not constructed here, and **the minuscule carrier is not offered as a substitute for
+that pinned group.** Neither the pinned group scheme and its pinning nor any identification of
+`TauCeti.E6Minuscule.groupScheme` with it is constructed here or in the files this one imports. What
 this file supplies is the branch's explicit carrier, its numbered root characters read in the `E₆`
-root datum, the equation `Frob_q (x_i(u)) = x_i(u ^ q)` that milestone L1 asks of an ordinary
-Frobenius, and the milestone L3 recipe run on it, each in the shape those milestones state it; they
-transfer to the L0 carrier along that Layer 9 identification, and not before. The counterparts on
-the other branches already assembled are
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean` and
+root datum, the equation `Frob_q (x_i(u)) = x_i(u ^ q)` of an ordinary Frobenius, and the
+fixed-point recipe run on it; they transfer to the pinned group along such an identification, and
+not before. The counterparts on the other branches already assembled are
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA/Basic.lean` and
 `TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
 -/
 
@@ -108,8 +100,8 @@ variable (d : TypeE6LieIndex)
 /-- **The ambient group this file attaches to a validated `E₆` index**: the points of the explicit
 full-weight type-`E₆` minuscule Chevalley carrier over the algebraic closure of its prime field. No
 finiteness, reductivity, pinning or maximality statement is attached to it, and it is not claimed
-to be the pinned `E₆` group scheme's points that milestone L0 asks for, that identification being
-the Layer 9 target described in the module docstring. -/
+to be the points of the pinned `E₆` group scheme, an identification discussed in the module
+docstring. -/
 abbrev AmbientGroup : Type := E6Minuscule.points d.1.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `E₆` diagram. It is
@@ -175,8 +167,8 @@ theorem coe_steinberg_apply (g : d.AmbientGroup) (r c : Fin 27) :
   exact E6Minuscule.coe_frobenius_apply _ _ _ g r c
 
 /-- **The Steinberg map fixes the Bourbaki numbering of a simple-root subgroup and raises its
-parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the equation
-milestone L1 asks of the untwisted families. -/
+parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. This is the
+simple-root-subgroup equation of the Steinberg map of an untwisted family. -/
 @[simp]
 theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
@@ -231,8 +223,8 @@ theorem steinberg_eq_primeFrobenius_pow :
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for
 `TauCeti.ValidLieTypeIndex.fixedField`, the copy of the field of `q` elements inside the algebraic
-closure, the group `H_d` that the milestone L3 recipe is run on below is therefore the group of
-points of the minuscule carrier whose entries lie in `𝔽_q`.
+closure, the group `H_d` from which the classification candidate is built below is therefore the
+group of points of the minuscule carrier whose entries lie in `𝔽_q`.
 
 As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp`
 lemma: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
@@ -251,13 +243,12 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
 /-- **The candidate simple group of the untwisted family `E₆(q)`**: the derived subgroup of the
 fixed points of its Steinberg map, modulo the centre of that derived subgroup.
 
-This is the milestone L3 recipe on the `E₆` branch, run on the minuscule carrier. Nothing below
-asserts that it is finite, perfect, or simple, nor that the carrier is the one milestone L0 asks
-for. -/
+This is the fixed-point recipe on the `E₆` branch, run on the minuscule carrier. Nothing below
+asserts that it is finite, perfect, or simple, nor that the carrier is the pinned simply connected
+group of type `E₆`. -/
 abbrev Group : Type := FixedPointCandidate d.steinberg
 
-/-- Milestone L3 asks every valid branch to carry a group instance; the quotient construction
-supplies it. -/
+/-- The candidate carries a group instance, supplied by the quotient construction. -/
 example : _root_.Group d.Group := inferInstance
 
 end

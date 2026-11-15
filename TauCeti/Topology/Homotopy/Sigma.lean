@@ -76,7 +76,7 @@ theorem exists_map_sigmaMk_eq {i : ι} {x y : X i}
       γ'.map (⟨Sigma.mk i, continuous_sigmaMk⟩ : C(X i, Σ j, X j)) = γ := by
   obtain ⟨γ⟩ := γ
   obtain ⟨γ', hγ'⟩ := γ.exists_map_sigmaMk_eq
-  exact ⟨Path.Homotopic.Quotient.mk γ', by rw [← Path.Homotopic.Quotient.mk_map, hγ']; rfl⟩
+  exact ⟨mk γ', by rw [← mk_map, hγ']; rfl⟩
 
 end Homotopic.Quotient
 
@@ -92,7 +92,7 @@ variable {Y : Type*} [TopologicalSpace Y] {f g : ∀ i, C(X i, Y)}
 summands of a disjoint union is a homotopy of the maps `ContinuousMap.sigma f` and
 `ContinuousMap.sigma g` out of the disjoint union. -/
 def Homotopy.sigma (H : ∀ i, (f i).Homotopy (g i)) :
-    (ContinuousMap.sigma f).Homotopy (ContinuousMap.sigma g) where
+    (sigma f).Homotopy (sigma g) where
   toFun p := H p.2.1 (p.1, p.2.2)
   -- Through `I × Σ i, X i ≃ₜ Σ i, X i × I`, the map is `H i ∘ swap` on the `i`-th summand.
   continuous_toFun := by
@@ -111,7 +111,7 @@ theorem Homotopy.sigma_apply (H : ∀ i, (f i).Homotopy (g i)) (t : I) (i : ι) 
 /-- Maps out of a disjoint union whose restrictions to the summands are homotopic are
 homotopic. -/
 theorem Homotopic.sigma (h : ∀ i, (f i).Homotopic (g i)) :
-    (ContinuousMap.sigma f).Homotopic (ContinuousMap.sigma g) :=
+    (sigma f).Homotopic (sigma g) :=
   ⟨Homotopy.sigma fun i ↦ (h i).some⟩
 
 end ContinuousMap

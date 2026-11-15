@@ -55,7 +55,7 @@ theorem unitsMap_algebraMap_mem_unitFiltration {i : ℕ} {x : Kˣ}
     rw [map_sub, map_one, Ideal.map_pow, map_maximalIdeal_eq_maximalIdeal_pow K L] at hu'
     simpa only [Units.coe_map, MonoidHom.coe_ofClass, pow_mul] using hu'
   · simp only [Units.coe_map, MonoidHom.coe_ofClass]
-    rw [coe_algebraMap_integerRing]
+    rw [Valuation.HasExtension.val_algebraMap]
     exact congrArg (algebraMap K L) hux
 
 variable (K L) in

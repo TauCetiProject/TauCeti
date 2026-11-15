@@ -127,8 +127,8 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
   -- Hölder's inequality on `Γ`, then the Sobolev inequality.
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hpt := ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg v
   have hint₁ : Integrable (fun x ↦ ‖g x‖ ^ 2) μ := W1p.integrable_norm_gradient_sq v
   have hint₂ : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) μ :=
@@ -166,12 +166,12 @@ private theorem lintegral_enorm_gradient_mul_enorm_value_le
     ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega ≤
       ‖W1p.gradient v‖ₑ * (S * ‖W1p.gradient v‖ₑ * mu.restrict Omega Γ ^ (2⁻¹ - q.toReal⁻¹)) := by
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hsmul := eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2) (r := 1)
     (Lp.aestronglyMeasurable g).norm.restrict (Lp.aestronglyMeasurable f).restrict
     (μ := μ.restrict Γ)
-  rw [eLpNorm_one_eq_lintegral_enorm
+  rw [eLpNorm_one_eq_lintegral_eNorm
       (((Lp.aestronglyMeasurable g).norm.smul (Lp.aestronglyMeasurable f)).restrict),
     eLpNorm_norm _ (Lp.aestronglyMeasurable g).restrict] at hsmul
   have hf : eLpNorm f 2 (μ.restrict Γ) ≤ S * ‖g‖ₑ * μ Γ ^ (2⁻¹ - q.toReal⁻¹) := by
@@ -182,11 +182,11 @@ private theorem lintegral_enorm_gradient_mul_enorm_value_le
     exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans hsob
   calc ∫⁻ x in Γ, ‖g x‖ₑ * ‖f x‖ₑ ∂μ
       = ∫⁻ x in Γ, ‖((fun x ↦ ‖g x‖) • ⇑f) x‖ₑ ∂μ := by
-        simp only [smul_eq_mul, Pi.mul_apply, enorm_mul, enorm_norm]
+        simp only [smul_eq_mul, Pi.mul_apply, eNorm_mul, eNorm_norm]
     _ ≤ eLpNorm g 2 (μ.restrict Γ) * eLpNorm f 2 (μ.restrict Γ) := hsmul
     _ ≤ ‖g‖ₑ * (S * ‖g‖ₑ * μ Γ ^ (2⁻¹ - q.toReal⁻¹)) := by
         exact mul_le_mul'
-          ((eLpNorm_mono_measure _ Measure.restrict_le_self).trans_eq (Lp.enorm_def g).symm) hf
+          ((eLpNorm_mono_measure _ Measure.restrict_le_self).trans_eq (Lp.eNorm_def g).symm) hf
 
 /-- The energy estimate behind the weak maximum principle. Let `v ∈ H¹(Ω)` have nonpositive
 energy `a(v, v) ≤ 0` and satisfy `‖v‖_q ≤ S ‖∇v‖₂`, and let `Γ` be a measurable set outside of
@@ -205,8 +205,8 @@ private theorem ofReal_mul_enorm_sq_le_of_energyFormH1_self_nonpos
       ENNReal.ofReal beta * S * mu.restrict Omega Γ ^ (2⁻¹ - q.toReal⁻¹) *
         ‖W1p.gradient v‖ₑ ^ 2 := by
   set μ := mu.restrict Omega
-  set f := W1p.value v with hf_def
-  set g := W1p.gradient v with hg_def
+  set f := W1p.value v
+  set g := W1p.gradient v
   have hdrift := ofReal_mul_enorm_sq_le_ofReal_mul_lintegral h hcoeff hb_bound hc_nonneg henergy
     hΓ hgrad
   have hholder := lintegral_enorm_gradient_mul_enorm_value_le hq hsob Γ
@@ -278,7 +278,7 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_measure_rpow_of_not_ae_value_l
     filter_upwards [hv0, hvalue] with x h₁ h₂
     rw [h₂, Pi.zero_apply] at h₁
     linarith [le_max_left (W1p.value u x - l) 0]
-  exact (ENNReal.mul_le_mul_iff_left (pow_ne_zero 2 hN) (ENNReal.pow_ne_top enorm_ne_top)).1 hcore
+  exact (ENNReal.mul_le_mul_iff_left (pow_ne_zero 2 hN) (ENNReal.pow_ne_top eNorm_ne_top)).1 hcore
 
 /-- **The weak maximum principle with bounded drift**, under a Sobolev inequality. Let
 `Ω ⊆ ℝⁿ` be open, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
@@ -320,7 +320,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     have hl : 0 < l := hk.trans_lt hkl
     refine ne_top_of_le_ne_top ((Lp.memLp (W1p.value u)).meas_ge_lt_top (by norm_num)
       (by norm_num) (Real.toNNReal_pos.2 hl).ne').ne (measure_mono fun x hx ↦ ?_)
-    rw [mem_ofPred_eq, Real.toNNReal_le_iff_le_coe, coe_nnnorm, Real.norm_eq_abs]
+    rw [mem_ofPred_eq, Real.toNNReal_le_iff_le_coe, coe_nnNorm, Real.norm_eq_abs]
     exact (le_of_lt hx).trans (le_abs_self _)
   -- Along suitable levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure,
   -- the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.

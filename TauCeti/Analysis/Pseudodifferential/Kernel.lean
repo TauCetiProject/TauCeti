@@ -272,7 +272,7 @@ private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[�
         ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
       ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
         (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
-        gcongr with j hj
+        gcongr with j _
         · exact he_le j
         · exact hg_le (i - j) (Nat.sub_le i j)
     _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -330,7 +330,7 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, _root_.ContDiff.iteratedFDeriv_prod_left hΦ i (mod_cast hi')]
+    simp only [ftaylorSeries, hΦ.contDiffAt.iteratedFDeriv_prod_left i (mod_cast hi')]
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable

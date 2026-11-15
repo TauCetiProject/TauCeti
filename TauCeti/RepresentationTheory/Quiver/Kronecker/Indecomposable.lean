@@ -84,12 +84,10 @@ used.
 
 ## References
 
-This supplies the representation-level half of the "`A₂` quiver" worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose path-algebra half is
-`TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular`, together with the finite
-representation type asked for in its Layer 5. See Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. II and VII, and Schiffler, *Quiver
-Representations*, Ch. 2.
+The path-algebra counterpart of this classification is
+`TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular`. See Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II and VII, and Schiffler,
+*Quiver Representations*, Ch. 2.
 -/
 
 public section

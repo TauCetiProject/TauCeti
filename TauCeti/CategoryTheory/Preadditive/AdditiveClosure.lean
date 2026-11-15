@@ -10,6 +10,8 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # The additive closure of an object
@@ -27,6 +29,8 @@ Let `C` be a preadditive category with finite biproducts and `M` an object of `C
 
 * `TauCeti.additiveClosure_le_iff`: `add M` is the smallest property holding for `M` that is
   stable under retracts and closed under finite products.
+* `CategoryTheory.Functor.additiveClosure_le_inverseImage`: a functor preserving finite products
+  carries `add M` into `add (F M)`.
 -/
 
 public section
@@ -86,5 +90,11 @@ theorem additiveClosure_le_iff {Q : ObjectProperty C} [Q.IsStableUnderRetracts]
   refine ⟨fun h ↦ h _ (additiveClosure_self M), fun hM ↦ ?_⟩
   rw [ObjectProperty.retractClosure_le_iff, ObjectProperty.ofObj_le_iff]
   exact fun _ ↦ Q.prop_of_isLimit (biproduct.isLimit _) fun _ ↦ hM
+
+/-- A functor preserving finite products carries `add M` into `add (F M)`. -/
+theorem _root_.CategoryTheory.Functor.additiveClosure_le_inverseImage {D : Type*} [Category* D]
+    [Preadditive D] [HasFiniteBiproducts D] (F : C ⥤ D) [PreservesFiniteProducts F] (M : C) :
+    additiveClosure M ≤ (additiveClosure (F.obj M)).inverseImage F :=
+  additiveClosure_le_iff.2 (additiveClosure_self _)
 
 end TauCeti
