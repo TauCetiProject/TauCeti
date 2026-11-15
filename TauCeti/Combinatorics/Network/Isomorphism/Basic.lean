@@ -304,6 +304,22 @@ theorem assignmentEquiv_zero {R : Type w'} [Zero R] (e : N ≃ₙ N') :
   ext x y a
   simp
 
+/-- Assignment transport is additive. -/
+@[simp]
+theorem assignmentEquiv_add {R : Type w'} [Add R] (e : N ≃ₙ N') (f g : N.Assignment R) :
+    e.assignmentEquiv R (f + g) = e.assignmentEquiv R f + e.assignmentEquiv R g := by
+  apply (e.assignmentEquiv R).symm.injective
+  ext x y a
+  simp
+
+/-- Assignment transport commutes with sums of lists of assignments. -/
+theorem assignmentEquiv_list_sum {R : Type w'} [Zero R] [Add R] (e : N ≃ₙ N')
+    (l : List (N.Assignment R)) :
+    e.assignmentEquiv R l.sum = (l.map (e.assignmentEquiv R)).sum := by
+  induction l with
+  | nil => simp
+  | cons f l ih => simp [ih]
+
 /-- Transport along the identity network isomorphism is the identity on assignments. -/
 @[simp]
 theorem assignmentEquiv_refl (N : Network K V) (R : Type w') :
