@@ -58,6 +58,8 @@ hypothesis in the intended applications.
 
 * `TauCeti.smulTopMap S e f`: the restriction of an `R`-linear map `f : M →ₗ[R] N` to
   `e • M →ₗ[S] e • N`.
+* `TauCeti.centralFixedSubmodule M hc`: when `e` commutes with every element of `A`, the fixed-point
+  locus `{x : M | e • x = x}` as an `A`-submodule of `M`.
 
 ## Main results
 
@@ -312,6 +314,50 @@ theorem projectionFamilyOverlap_injective (hPsum : ∑ i, P i = 1)
   exact Finset.sum_congr rfl fun i _ ↦ hcomponents i
 
 end ProjectionFamily
+
+/-! ### The `A`-submodule fixed by a central element -/
+
+section CentralFixedSubmodule
+
+variable {A : Type*} [Semiring A] {e : A}
+
+/-- The `A`-submodule `{x : M | e • x = x}` of elements fixed by a central element `e ∈ A`.
+Centrality makes `{x | e • x = x}` closed under the full `A`-action, even when `A` is
+noncommutative. -/
+def centralFixedSubmodule (M : Type*) [AddCommMonoid M] [Module A M]
+    (hc : ∀ a : A, Commute e a) : Submodule A M where
+  carrier := {x : M | e • x = x}
+  zero_mem' := smul_zero e
+  add_mem' {x y} hx hy := by
+    rw [Set.mem_ofPred, smul_add, hx.out, hy.out]
+  smul_mem' a x hx := by
+    rw [Set.mem_ofPred, ← mul_smul, (hc a).eq, mul_smul, hx.out]
+
+/-- Membership in `centralFixedSubmodule M hc` is the fixed-point equation `e • x = x`. -/
+@[simp]
+theorem mem_centralFixedSubmodule {M : Type*} [AddCommMonoid M] [Module A M]
+    (hc : ∀ a : A, Commute e a) {x : M} :
+    x ∈ centralFixedSubmodule M hc ↔ e • x = x :=
+  Iff.rfl
+
+/-- For an idempotent central element `e`, restricting scalars of `centralFixedSubmodule M hc` to
+`k` recovers the Peirce piece `e • (⊤ : Submodule k M)`. -/
+theorem centralFixedSubmodule_restrictScalars {k M : Type*} [Semiring k] [SMul k A]
+    [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
+    (hc : ∀ a : A, Commute e a) (he : IsIdempotentElem e) :
+    (centralFixedSubmodule M hc).restrictScalars k = e • (⊤ : Submodule k M) := by
+  ext x
+  exact he.mem_smul_top_iff_smul_eq_self.symm
+
+/-- When `e` fixes `S` pointwise, every `A`-linear map out of `S` lands in `centralFixedSubmodule`.
+-/
+theorem apply_mem_centralFixedSubmodule {S M : Type*}
+    [AddCommMonoid S] [Module A S] [AddCommMonoid M] [Module A M]
+    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s) (f : S →ₗ[A] M) (s : S) :
+    f s ∈ centralFixedSubmodule M hc := by
+  rw [mem_centralFixedSubmodule, ← f.map_smul, heS]
+
+end CentralFixedSubmodule
 
 end TauCeti
 

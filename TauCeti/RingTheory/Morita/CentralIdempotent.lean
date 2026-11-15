@@ -43,18 +43,8 @@ sending `(s₁ ⊗ T₁, s₂ ⊗ T₂)` to `T₁ s₁ + T₂ s₂`.
 This is the situation of an odd-dimensional complexified Clifford algebra, which splits as
 `End_ℂ S_+ × End_ℂ S_-` along the `±1` eigenspaces of its central volume element.
 
-The first section records the companion facts on intertwiner spaces: an `A`-submodule containing
-every homomorphic image of `S` captures the whole intertwiner space
-(`Submodule.linearMapSubtypeEquiv`), and any `A`-linear map between modules on which an element
-`z ∈ A` acts by scalars `μ` and `ν` with `μ - ν` regular on the target vanishes
-(`LinearMap.eq_zero_of_smul_eq_of_isSMulRegular`).
-
 ## Main definitions
 
-* `Submodule.linearMapSubtypeEquiv`: postcomposition `(S →ₗ[A] p) ≃ₗ[k] (S →ₗ[A] M)` when every
-  `A`-linear map `S →ₗ[A] M` lands in `p`.
-* `TauCeti.centralFixedSubmodule`: the `A`-submodule `{x : M | e • x = x}` cut out by an element
-  `e` commuting with `A`.
 * `TauCeti.homOfDualOfCentral`: the multiplicity map `M →ₗ[k] (S →ₗ[A] M)` attached to a dual
   functional on `S` and a central idempotent factor.
 * `TauCeti.isotypicTensorEquivOfCentral`: single-factor evaluation
@@ -64,8 +54,6 @@ every homomorphic image of `S` captures the whole intertwiner space
 
 ## Main results
 
-* `LinearMap.eq_zero_of_smul_eq_of_isSMulRegular` and
-  `TauCeti.subsingleton_linearMap_of_smul_eq_of_ne`: cross-eigenvalue vanishing of `A`-linear maps.
 * `TauCeti.isIdempotentElem_of_smul_eq_self`: `e` is idempotent whenever it fixes `S` and kills the
   kernel of `lsmul`.
 * `TauCeti.sum_homOfDualOfCentral_coord_apply`: coordinate reconstruction of `e • x` in a finite
@@ -77,16 +65,15 @@ every homomorphic image of `S` captures the whole intertwiner space
   `TauCeti.finrank_eq_add_finrank_mul_finrank_linearMap_of_bijective_prod`: dimension formulas over
   a field.
 
-## Implementation notes
+## Relation to single-block Morita evaluation
 
-`TauCeti.homOfDualOfCentral` and `TauCeti.isotypicTensorEquivOfCentral` adapt the matrix-unit
-construction of `TauCeti.homOfDual` and `TauCeti.isotypicTensorEquivOfBijective` in
-`TauCeti.RingTheory.Morita.ModuleEnd` from a bijective action `A ≃ₐ[k] End_k S` to a surjective
-action with a central idempotent factor. Rather than choosing a splitting of `A →ₐ[k] End_k S`
-directly, the inverse lifts an endomorphism `f : End_k S` to `e * a` for any preimage `a` of `f`.
-The kernel hypothesis `lsmul a = lsmul b → e * a = e * b` makes `e * a` independent of the chosen
-preimage, so additivity, `k`-linearity, and left `A`-equivariance follow without additional
-assumptions on `A`.
+When the action `A →ₐ[k] End_k S` is already bijective (for example, for an even-dimensional
+complexified Clifford algebra), use `TauCeti.homOfDual` and `TauCeti.isotypicTensorEquivOfBijective`
+from `TauCeti.RingTheory.Morita.ModuleEnd`. The declarations `TauCeti.homOfDualOfCentral` and
+`TauCeti.isotypicTensorEquivOfCentral` adapt that single-block evaluation API to the case where
+`A →ₐ[k] End_k S` is only surjective and a central element `e ∈ A` isolates the corresponding block
+inside every `A`-module `M`; `TauCeti.isotypicProdTensorEquivOfBijective` packages the two-block
+product case `A →ₐ[k] End_k S₁ × End_k S₂` directly into an isomorphism onto `M`.
 
 ## References
 
@@ -97,190 +84,8 @@ assumptions on `A`.
 public section
 
 open Module TensorProduct
-open scoped Pointwise
-
-/-! ### Intertwiners into invariant submodules and cross-eigenvalue vanishing -/
-
-namespace Submodule
-
-variable (k : Type*) {A S M : Type*} [Semiring k] [Semiring A] [SMul k A]
-  [AddCommMonoid S] [Module A S]
-  [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
-
-/-- Postcomposition with `p.subtype` identifies `S →ₗ[A] p` with `S →ₗ[A] M` whenever every
-`A`-linear map from `S` to `M` lands inside the `A`-submodule `p`. -/
-def linearMapSubtypeEquiv (p : Submodule A M) (hp : ∀ (f : S →ₗ[A] M) (s : S), f s ∈ p) :
-    (S →ₗ[A] p) ≃ₗ[k] (S →ₗ[A] M) where
-  toFun g := p.subtype.comp g
-  invFun f := f.codRestrict p (hp f)
-  map_add' g₁ g₂ := by
-    ext s
-    simp
-  map_smul' c g := by
-    ext s
-    simp
-  left_inv g := by
-    ext s
-    rfl
-  right_inv f := by
-    ext s
-    rfl
-
-/-- Applying `p.linearMapSubtypeEquiv` postcomposes with `p.subtype`. -/
-@[simp]
-theorem linearMapSubtypeEquiv_apply (p : Submodule A M)
-    (hp : ∀ (f : S →ₗ[A] M) (s : S), f s ∈ p) (g : S →ₗ[A] p) :
-    p.linearMapSubtypeEquiv k hp g = p.subtype.comp g :=
-  (rfl)
-
-/-- Applying the inverse of `p.linearMapSubtypeEquiv` restricts the codomain to `p`. -/
-@[simp]
-theorem coe_linearMapSubtypeEquiv_symm_apply (p : Submodule A M)
-    (hp : ∀ (f : S →ₗ[A] M) (s : S), f s ∈ p) (f : S →ₗ[A] M) (s : S) :
-    ((p.linearMapSubtypeEquiv k hp).symm f s : M) = f s :=
-  (rfl)
-
-end Submodule
-
-namespace LinearMap
-
-section Semiring
-
-variable {k A S M : Type*} [Semiring k] [Semiring A] [SMul k A]
-  [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
-  [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
-
-/-- An `A`-linear map carries a `μ`-eigenvector of `z ∈ A` to a `μ`-eigenvector of `z`. -/
-theorem smul_apply_of_smul_eq (f : S →ₗ[A] M) {z : A} {μ : k}
-    (hz : ∀ s : S, z • s = μ • s) (s : S) :
-    z • f s = μ • f s := by
-  rw [← f.map_smul, hz, f.map_smul_of_tower]
-
-end Semiring
-
-section Ring
-
-variable {k A S M : Type*} [Ring k] [Semiring A] [SMul k A]
-  [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
-  [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-
-/-- **Cross-eigenvalue vanishing.** If `z ∈ A` acts on `S` by `μ : k` and on `M` by `ν : k`, and
-`μ - ν` acts regularly on `M`, then every `A`-linear map `S →ₗ[A] M` is zero. -/
-theorem eq_zero_of_smul_eq_of_isSMulRegular (f : S →ₗ[A] M) {z : A} {μ ν : k}
-    (hzS : ∀ s : S, z • s = μ • s) (hzM : ∀ x : M, z • x = ν • x)
-    (hreg : IsSMulRegular M (μ - ν)) :
-    f = 0 := by
-  ext s
-  refine hreg.eq_iff.mp ?_
-  rw [LinearMap.zero_apply, smul_zero, sub_smul, ← f.smul_apply_of_smul_eq hzS, hzM, sub_self]
-
-end Ring
-
-end LinearMap
 
 namespace TauCeti
-
-section Vanishing
-
-/-- The space of `A`-linear maps `S →ₗ[A] M` is a subsingleton when `z ∈ A` acts by scalars `μ` and
-`ν` whose difference `μ - ν` is regular on `M`. -/
-theorem subsingleton_linearMap_of_smul_eq_of_isSMulRegular
-    {k A S M : Type*} [Ring k] [Semiring A] [SMul k A]
-    [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
-    [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-    {z : A} {μ ν : k} (hzS : ∀ s : S, z • s = μ • s) (hzM : ∀ x : M, z • x = ν • x)
-    (hreg : IsSMulRegular M (μ - ν)) :
-    Subsingleton (S →ₗ[A] M) :=
-  subsingleton_of_forall_eq 0 fun f ↦ f.eq_zero_of_smul_eq_of_isSMulRegular hzS hzM hreg
-
-/-- Over a division ring, `S →ₗ[A] M` is trivial whenever `z ∈ A` acts on `S` and `M` by distinct
-scalars `μ ≠ ν`. -/
-theorem subsingleton_linearMap_of_smul_eq_of_ne
-    {k A S M : Type*} [DivisionRing k] [Semiring A] [SMul k A]
-    [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
-    [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-    {z : A} {μ ν : k} (hzS : ∀ s : S, z • s = μ • s) (hzM : ∀ x : M, z • x = ν • x)
-    (hne : μ ≠ ν) :
-    Subsingleton (S →ₗ[A] M) :=
-  subsingleton_linearMap_of_smul_eq_of_isSMulRegular hzS hzM
-    ((isUnit_iff_ne_zero.mpr (sub_ne_zero.mpr hne)).isSMulRegular M)
-
-end Vanishing
-
-/-! ### The `A`-submodule fixed by a central element -/
-
-section CentralFixedSubmodule
-
-variable {A : Type*} [Semiring A] {e : A}
-
-/-- The `A`-submodule `{x : M | e • x = x}` of elements fixed by a central element `e ∈ A`.
-Centrality makes `{x | e • x = x}` closed under the full `A`-action, even when `A` is
-noncommutative. -/
-def centralFixedSubmodule (M : Type*) [AddCommMonoid M] [Module A M]
-    (hc : ∀ a : A, Commute e a) : Submodule A M where
-  carrier := {x : M | e • x = x}
-  zero_mem' := smul_zero e
-  add_mem' {x y} hx hy := by
-    rw [Set.mem_ofPred, smul_add, hx.out, hy.out]
-  smul_mem' a x hx := by
-    rw [Set.mem_ofPred, ← mul_smul, (hc a).eq, mul_smul, hx.out]
-
-/-- Membership in `centralFixedSubmodule M hc` is the fixed-point equation `e • x = x`. -/
-@[simp]
-theorem mem_centralFixedSubmodule {M : Type*} [AddCommMonoid M] [Module A M]
-    (hc : ∀ a : A, Commute e a) {x : M} :
-    x ∈ centralFixedSubmodule M hc ↔ e • x = x :=
-  Iff.rfl
-
-/-- For an idempotent central element `e`, restricting scalars of `centralFixedSubmodule M hc` to
-`k` recovers the Peirce piece `e • (⊤ : Submodule k M)`. -/
-theorem centralFixedSubmodule_restrictScalars {k M : Type*} [Semiring k] [SMul k A]
-    [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
-    (hc : ∀ a : A, Commute e a) (he : IsIdempotentElem e) :
-    (centralFixedSubmodule M hc).restrictScalars k = e • (⊤ : Submodule k M) := by
-  ext x
-  exact he.mem_smul_top_iff_smul_eq_self.symm
-
-/-- When `e` fixes `S` pointwise, every `A`-linear map out of `S` lands in `centralFixedSubmodule`.
--/
-theorem apply_mem_centralFixedSubmodule {S M : Type*}
-    [AddCommMonoid S] [Module A S] [AddCommMonoid M] [Module A M]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s) (f : S →ₗ[A] M) (s : S) :
-    f s ∈ centralFixedSubmodule M hc := by
-  rw [mem_centralFixedSubmodule, ← f.map_smul, heS]
-
-/-- Postcomposition with `subtype` identifies `S →ₗ[A] centralFixedSubmodule M hc` with
-`S →ₗ[A] M` whenever `e` fixes `S` pointwise. -/
-def centralFixedSubmoduleLinearMapEquiv (k : Type*) {S M : Type*} [Semiring k] [SMul k A]
-    [AddCommMonoid S] [Module A S]
-    [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s) :
-    (S →ₗ[A] centralFixedSubmodule M hc) ≃ₗ[k] (S →ₗ[A] M) :=
-  (centralFixedSubmodule M hc).linearMapSubtypeEquiv k (apply_mem_centralFixedSubmodule hc heS)
-
-/-- Applying `centralFixedSubmoduleLinearMapEquiv` postcomposes with the submodule inclusion. -/
-@[simp]
-theorem centralFixedSubmoduleLinearMapEquiv_apply (k : Type*) {S M : Type*}
-    [Semiring k] [SMul k A] [AddCommMonoid S] [Module A S]
-    [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
-    (g : S →ₗ[A] centralFixedSubmodule M hc) :
-    centralFixedSubmoduleLinearMapEquiv k hc heS g =
-      (centralFixedSubmodule M hc).subtype.comp g :=
-  (rfl)
-
-/-- Applying the inverse of `centralFixedSubmoduleLinearMapEquiv` restricts the codomain to
-`centralFixedSubmodule M hc`. -/
-@[simp]
-theorem coe_centralFixedSubmoduleLinearMapEquiv_symm_apply (k : Type*) {S M : Type*}
-    [Semiring k] [SMul k A] [AddCommMonoid S] [Module A S]
-    [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M] [SMulCommClass A k M]
-    (hc : ∀ a : A, Commute e a) (heS : ∀ s : S, e • s = s)
-    (f : S →ₗ[A] M) (s : S) :
-    ((centralFixedSubmoduleLinearMapEquiv k hc heS).symm f s : M) = f s :=
-  (rfl)
-
-end CentralFixedSubmodule
 
 /-! ### Single-factor Morita evaluation at a central idempotent -/
 
@@ -496,7 +301,8 @@ theorem range_isotypicEval_eq_centralFixedSubmodule [Module.Finite k S] [Module.
       rw [map_add]
       exact (centralFixedSubmodule M hc).add_mem hy hz
   · exact ⟨isotypicEvalCentralInv hc hsurj hker s _ _ x,
-      (isotypicEval_isotypicEvalCentralInv hc hsurj hker s _ _ hs x).trans hx⟩
+      (isotypicEval_isotypicEvalCentralInv hc hsurj hker s _ _ hs x).trans
+        ((mem_centralFixedSubmodule hc).mp hx)⟩
 
 /-- A finite basis of `S` reconstructs the projection `e • x` of any vector `x : M` from its
 single-factor multiplicity components `homOfDualOfCentral hc hsurj hker (b.coord i) x`. -/
@@ -545,7 +351,7 @@ theorem isotypicTensorEquivOfCentral_symm_apply [Module.Finite k S] [Module.Proj
   apply Subtype.ext
   rw [LinearEquiv.apply_symm_apply, coe_isotypicTensorEquivOfCentral_apply]
   calc
-    (x : M) = e • (x : M) := x.2.symm
+    (x : M) = e • (x : M) := ((mem_centralFixedSubmodule hc).mp x.2).symm
     _ = isotypicEval k (isotypicEvalCentralInv hc hsurj hker s φ v (x : M)) :=
       (isotypicEval_isotypicEvalCentralInv hc hsurj hker s φ v hv (x : M)).symm
     _ = isotypicEval k (∑ i ∈ s, v i ⊗ₜ homOfDualOfCentral hc hsurj hker (φ i) (x : M)) := by
@@ -570,7 +376,8 @@ theorem isotypicTensorEquivOfCentral_symm_apply_map [Module.Finite k S] [Module.
     (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b)
     (g : M →ₗ[A] N) (x : centralFixedSubmodule M hc) :
     (isotypicTensorEquivOfCentral (M := N) hc heS hsurj hker).symm
-        ⟨g x, by rw [mem_centralFixedSubmodule, ← g.map_smul, x.2]⟩ =
+        ⟨g x, by
+          rw [mem_centralFixedSubmodule, ← g.map_smul, (mem_centralFixedSubmodule hc).mp x.2]⟩ =
       AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
         (LinearMap.compRight (M := S) k g)
         ((isotypicTensorEquivOfCentral hc heS hsurj hker).symm x) := by
@@ -692,24 +499,26 @@ theorem isotypicProdEval_bijective_of_bijective_prod :
   let inv : M → ((S₁ ⊗[k] (S₁ →ₗ[A] M)) × (S₂ ⊗[k] (S₂ →ₗ[A] M))) := fun m ↦
     (e₁.symm ⟨prodIdempotentFst h • m, by rw [mem_centralFixedSubmodule, ← mul_smul, idem₁]⟩,
      e₂.symm ⟨prodIdempotentSnd h • m, by rw [mem_centralFixedSubmodule, ← mul_smul, idem₂]⟩)
+  have coe_e₁ (z) : isotypicEval k z = (e₁ z : M) := by simp [e₁]
+  have coe_e₂ (z) : isotypicEval k z = (e₂ z : M) := by simp [e₂]
   refine ⟨Function.LeftInverse.injective (g := inv) fun ⟨x, y⟩ ↦ ?_,
     Function.RightInverse.surjective (g := inv) fun m ↦ ?_⟩
-  · have hx : prodIdempotentFst h • isotypicEval k x = isotypicEval k x := (e₁ x).2
-    have hy : prodIdempotentSnd h • isotypicEval k y = isotypicEval k y := (e₂ y).2
+  · have hx : prodIdempotentFst h • isotypicEval k x = isotypicEval k x := by
+      rw [coe_e₁]
+      exact (mem_centralFixedSubmodule _).mp (e₁ x).2
+    have hy : prodIdempotentSnd h • isotypicEval k y = isotypicEval k y := by
+      rw [coe_e₂]
+      exact (mem_centralFixedSubmodule _).mp (e₂ y).2
     have hxy : prodIdempotentFst h • isotypicEval k y = 0 := by
       rw [← hy, ← mul_smul, prodIdempotent_mul_fst_snd h, zero_smul]
     have hyx : prodIdempotentSnd h • isotypicEval k x = 0 := by
       rw [← hx, ← mul_smul, prodIdempotent_mul_snd_fst h, zero_smul]
     refine Prod.ext (e₁.injective (Subtype.ext ?_)) (e₂.injective (Subtype.ext ?_))
     · rw [e₁.apply_symm_apply]
-      simp only [LinearMap.coprod_apply, smul_add, hx, hxy, add_zero]
-      rfl
+      simpa only [inv, LinearMap.coprod_apply, smul_add, hx, hxy, add_zero] using coe_e₁ x
     · rw [e₂.apply_symm_apply]
-      simp only [LinearMap.coprod_apply, smul_add, hyx, hy, zero_add]
-      rfl
-  · have coe_e₁ (z) : isotypicEval k z = (e₁ z : M) := rfl
-    have coe_e₂ (z) : isotypicEval k z = (e₂ z : M) := rfl
-    simp only [inv, LinearMap.coprod_apply, coe_e₁, coe_e₂, e₁.apply_symm_apply,
+      simpa only [inv, LinearMap.coprod_apply, smul_add, hyx, hy, zero_add] using coe_e₂ y
+  · simp only [inv, LinearMap.coprod_apply, coe_e₁, coe_e₂, e₁.apply_symm_apply,
       e₂.apply_symm_apply]
     rw [← add_smul, prodIdempotent_add h, one_smul]
 

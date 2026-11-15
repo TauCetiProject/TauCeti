@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Morita.CentralIdempotent
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.Algebra.Module.LinearMap.SMul
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -40,10 +41,12 @@ This file develops Morita evaluation in odd dimension at two levels:
    `S`, and single-factor evaluation `S ⊗ Hom_Cl(S, E) ≃ₗ[Cl] E^μ`
    (`CliffordAlgebra.oddVolumeFactorEquiv`) identifies the `μ`-labelled tensor product with the
    `μ`-volume submodule. Cross-labelled intertwiners `Hom_Cl(S_∓, E^±)` vanish, while matched
-   intertwiners satisfy `Hom_Cl(S_±, E) ≃ Hom_Cl(S_±, E^±) ≃ Hom_even(S_±, E^±)`. Given spinor
-   factors `S_+` and `S_-` with labels `+1` and `-1`, the combined action identifies the full
-   Clifford algebra with `End_ℂ S_+ × End_ℂ S_-` (`CliffordAlgebra.bijective_lsmul_prod_of_odd`),
-   and assembling both evaluations gives the full Clifford-module isomorphism
+   intertwiners land in `E^±` (`CliffordAlgebra.apply_mem_oddVolumeSubmodule`) and restrict
+   isomorphically to `Hom_even(S_±, E^±)` (`CliffordAlgebra.oddVolumeSubmoduleRestrictEvenEquiv`).
+   Given spinor factors `S_+` and `S_-` with labels `+1` and `-1`, the combined action identifies
+   the full Clifford algebra with `End_ℂ S_+ × End_ℂ S_-`
+   (`CliffordAlgebra.bijective_lsmul_prod_of_odd`), and assembling both evaluations gives the full
+   Clifford-module isomorphism
 
    `(S_+ ⊗ Hom_Cl(S_+, E)) × (S_- ⊗ Hom_Cl(S_-, E)) ≃ₗ[Cl] E`
 
@@ -58,9 +61,8 @@ This file develops Morita evaluation in odd dimension at two levels:
 * `CliffordAlgebra.oddVolumeDecomposition`: the Clifford-linear sum of the two submodules.
 * `CliffordAlgebra.oddVolumeMultiplicityEquiv`: even-subalgebra evaluation from the two tensor
   products.
-* `CliffordAlgebra.oddVolumeSubmoduleLinearMapEquiv` and
-  `CliffordAlgebra.oddVolumeSubmoduleRestrictEvenEquiv`: canonical identifications
-  `Hom_Cl(S, E^μ) ≃ₗ[ℂ] Hom_Cl(S, E)` and `Hom_Cl(S, E^μ) ≃ₗ[ℂ] Hom_even(S, E^μ)`.
+* `CliffordAlgebra.oddVolumeSubmoduleRestrictEvenEquiv`: canonical identification
+  `Hom_Cl(S, E^μ) ≃ₗ[ℂ] Hom_even(S, E^μ)` for `μ ≠ 0`.
 * `CliffordAlgebra.oddVolumeFactorEquiv`: single-factor Clifford evaluation
   `S ⊗ Hom_Cl(S, E) ≃ₗ[Cl] E^μ`.
 * `CliffordAlgebra.oddVolumeTwoFactorEquiv`: two-factor Clifford evaluation
@@ -70,9 +72,10 @@ This file develops Morita evaluation in odd dimension at two levels:
 
 ## Main results
 
-* `CliffordAlgebra.subsingleton_linearMap_of_complexVolume_smul_ne` and
-  `CliffordAlgebra.subsingleton_linearMap_oddVolumeSubmodule_of_ne`: cross-labelled intertwiners
-  vanish for `μ ≠ ν`.
+* `CliffordAlgebra.apply_mem_oddVolumeSubmodule`,
+  `CliffordAlgebra.subsingleton_linearMap_of_complexVolume_smul_ne`, and
+  `CliffordAlgebra.subsingleton_linearMap_oddVolumeSubmodule_of_ne`: matched intertwiners land in
+  `E^μ` and cross-labelled intertwiners vanish for `μ ≠ ν`.
 * `CliffordAlgebra.bijective_lsmul_even_of_surjective_lsmul` and
   `CliffordAlgebra.finrank_eq_two_pow_of_odd_of_surjective_lsmul`: an odd spinor factor restricts
   bijectively to `even (Q.baseChange ℂ)` and has dimension `2 ^ (n / 2)`.
@@ -342,33 +345,6 @@ theorem apply_mem_oddVolumeSubmodule {μ : ℂ}
   rw [mem_oddVolumeSubmodule]
   exact f.smul_apply_of_smul_eq hω s
 
-/-- Postcomposition with the submodule inclusion identifies Clifford-linear maps `S →ₗ[Cℓ] E^μ`
-with Clifford-linear maps `S →ₗ[Cℓ] E` whenever `ω` acts on `S` by `μ`. -/
-def oddVolumeSubmoduleLinearMapEquiv {μ : ℂ}
-    (hω : ∀ s : S, complexVolume Q o • s = μ • s) :
-    (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] oddVolumeSubmodule (E := E) Q o hn μ) ≃ₗ[ℂ]
-      (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) :=
-  (oddVolumeSubmodule (E := E) Q o hn μ).linearMapSubtypeEquiv ℂ
-    (apply_mem_oddVolumeSubmodule Q o hn hω)
-
-/-- Applying `oddVolumeSubmoduleLinearMapEquiv` postcomposes with
-`(oddVolumeSubmodule ...).subtype`. -/
-@[simp]
-theorem oddVolumeSubmoduleLinearMapEquiv_apply {μ : ℂ}
-    (hω : ∀ s : S, complexVolume Q o • s = μ • s)
-    (g : S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] oddVolumeSubmodule (E := E) Q o hn μ) :
-    oddVolumeSubmoduleLinearMapEquiv Q o hn hω g =
-      (oddVolumeSubmodule (E := E) Q o hn μ).subtype.comp g :=
-  Submodule.linearMapSubtypeEquiv_apply ℂ _ _ g
-
-/-- The inverse of `oddVolumeSubmoduleLinearMapEquiv` restricts the codomain to `E^μ`. -/
-@[simp]
-theorem coe_oddVolumeSubmoduleLinearMapEquiv_symm_apply {μ : ℂ}
-    (hω : ∀ s : S, complexVolume Q o • s = μ • s)
-    (f : S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) (s : S) :
-    ((oddVolumeSubmoduleLinearMapEquiv Q o hn hω).symm f s : E) = f s :=
-  Submodule.coe_linearMapSubtypeEquiv_symm_apply ℂ _ _ f s
-
 /-- **Cross-eigenvalue vanishing for the complex volume.** In any dimension and for any quadratic
 form `Q`, if `complexVolume Q o` acts on `S` by `μ` and on `E` by `ν` with `μ ≠ ν`, every
 Clifford-linear map `S →ₗ[Cℓ] E` is zero. -/
@@ -396,15 +372,25 @@ section SingleFactor
 variable {S : Type*} [AddCommGroup S] [Module ℂ S]
   [Module (CliffordAlgebra (Q.baseChange ℂ)) S]
 
-/-- On any nontrivial module with `Q v = -‖v‖²`, a scalar volume action `ω • s = μ • s` satisfies
-`μ = 1` or `μ = -1`. -/
-theorem eq_one_or_eq_neg_one_of_complexVolume_smul [Nontrivial S] {μ : ℂ}
+omit hQ in
+/-- On any nontrivial module, if `complexVolume Q o` squares to `1` and acts by a scalar
+`ω • s = μ • s`, then `μ = 1` or `μ = -1`. -/
+theorem eq_one_or_eq_neg_one_of_complexVolume_smul_of_mul_self_eq_one [Nontrivial S]
+    (hsq : complexVolume Q o * complexVolume Q o = 1) {μ : ℂ}
     (hω : ∀ s : S, complexVolume Q o • s = μ • s) :
     μ = 1 ∨ μ = -1 := by
   obtain ⟨s, hs⟩ := exists_ne (0 : S)
   refine mul_self_eq_one_iff.mp (smul_left_injective ℂ hs ?_)
   dsimp only
-  rw [one_smul, mul_smul, ← hω, ← hω, complexVolume_smul_complexVolume_smul o hQ]
+  rw [one_smul, mul_smul, ← hω, ← hω, ← mul_smul, hsq, one_smul]
+
+/-- On any nontrivial module with `Q v = -‖v‖²`, a scalar volume action `ω • s = μ • s` satisfies
+`μ = 1` or `μ = -1`. -/
+theorem eq_one_or_eq_neg_one_of_complexVolume_smul [Nontrivial S] {μ : ℂ}
+    (hω : ∀ s : S, complexVolume Q o • s = μ • s) :
+    μ = 1 ∨ μ = -1 :=
+  eq_one_or_eq_neg_one_of_complexVolume_smul_of_mul_self_eq_one Q o
+    (complexVolume_mul_self o hQ) hω
 
 include hn
 
@@ -524,6 +510,20 @@ private def oddSpinorSplitEquiv {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
   have hsq : (μ • complexVolume Q o) * (μ • complexVolume Q o) = 1 := by
     rw [smul_mul_smul_comm, mul_self_eq_one_iff.mpr hμ, complexVolume_mul_self o hQ, one_smul]
   equivEvenProd (Q.baseChange ℂ) (μ • complexVolume Q o) hcomm hodd hsq
+
+private theorem coe_oddSpinorSplitEquiv_apply_fst {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
+    (a : CliffordAlgebra (Q.baseChange ℂ)) :
+    ((oddSpinorSplitEquiv Q o hn hQ hμ a).1 : CliffordAlgebra (Q.baseChange ℂ)) =
+      halfOneAdd ℂ (μ • complexVolume Q o) * a +
+        halfOneAdd ℂ (-(μ • complexVolume Q o)) * involute a :=
+  coe_equivEvenProd_apply_fst (Q.baseChange ℂ) (μ • complexVolume Q o) _ _ _ a
+
+private theorem coe_oddSpinorSplitEquiv_apply_snd {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
+    (a : CliffordAlgebra (Q.baseChange ℂ)) :
+    ((oddSpinorSplitEquiv Q o hn hQ hμ a).2 : CliffordAlgebra (Q.baseChange ℂ)) =
+      halfOneAdd ℂ (-(μ • complexVolume Q o)) * a +
+        halfOneAdd ℂ (μ • complexVolume Q o) * involute a :=
+  coe_equivEvenProd_apply_snd (Q.baseChange ℂ) (μ • complexVolume Q o) _ _ _ a
 
 private theorem lsmul_oddSpinorSplitEquiv_fst {μ : ℂ} (hμ : μ = 1 ∨ μ = -1)
     (hω : ∀ s : S, complexVolume Q o • s = μ • s) (a : CliffordAlgebra (Q.baseChange ℂ)) :
@@ -781,7 +781,9 @@ theorem bijective_lsmul_prod_of_odd :
     · have hsnd : ((split a).2 : CliffordAlgebra (Q.baseChange ℂ)) =
           ((oddSpinorSplitEquiv Q o hn hQ (Or.inr rfl : (-1 : ℂ) = 1 ∨ (-1 : ℂ) = -1) a).1 :
             CliffordAlgebra (Q.baseChange ℂ)) := by
-        simp [split, oddSpinorSplitEquiv]
+        dsimp only [split]
+        rw [coe_oddSpinorSplitEquiv_apply_snd, coe_oddSpinorSplitEquiv_apply_fst, one_smul,
+          neg_one_smul, neg_neg]
       exact ((congrArg (Algebra.lsmul ℂ ℂ S₂) hsnd).trans
         (lsmul_oddSpinorSplitEquiv_fst Q o hn hQ (Or.inr rfl) hω₂' a)).symm
   rw [hprod]
@@ -836,6 +838,26 @@ theorem oddVolumeTwoFactorEquiv_symm_apply (m : E) :
       (fun s ↦ by rw [neg_one_smul]; exact hω₂ s),
     LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
     ← oddVolumeDecomposition_apply Q o hn hQ, LinearEquiv.apply_symm_apply]
+
+/-- First component of the inverse of `oddVolumeTwoFactorEquiv`: project to `E⁺` and apply the
+inverse of `oddVolumeFactorEquiv`. -/
+@[simp]
+theorem oddVolumeTwoFactorEquiv_symm_fst (m : E) :
+    ((oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).1 =
+      (oddVolumeFactorEquiv Q o hn hQ hsurj₁ (μ := 1)
+          (fun s ↦ by rw [one_smul]; exact hω₁ s)).symm
+        ((oddVolumeDecomposition Q o hn hQ).symm m).1 :=
+  congrArg Prod.fst (oddVolumeTwoFactorEquiv_symm_apply Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
+
+/-- Second component of the inverse of `oddVolumeTwoFactorEquiv`: project to `E⁻` and apply the
+inverse of `oddVolumeFactorEquiv`. -/
+@[simp]
+theorem oddVolumeTwoFactorEquiv_symm_snd (m : E) :
+    ((oddVolumeTwoFactorEquiv Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂).symm m).2 =
+      (oddVolumeFactorEquiv Q o hn hQ hsurj₂ (μ := -1)
+          (fun s ↦ by rw [neg_one_smul]; exact hω₂ s)).symm
+        ((oddVolumeDecomposition Q o hn hQ).symm m).2 :=
+  congrArg Prod.snd (oddVolumeTwoFactorEquiv_symm_apply Q o hn hQ hsurj₁ hsurj₂ hω₁ hω₂ m)
 
 /-- Naturality of `oddVolumeTwoFactorEquiv` under any Clifford-linear map `g : E →ₗ[Cℓ] F`. -/
 theorem map_oddVolumeTwoFactorEquiv {F : Type*} [AddCommGroup F] [Module ℂ F]
