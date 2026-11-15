@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -252,13 +253,9 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
 theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
     (graphPhase A : ℂ) = isMaximalTotallyReal_realSubspace.maslovPhase
       (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
-  -- `graphSubspace A` is the image of the real points under the graph frame
-  -- (`graphSubspace_eq_map`), so the two maximal-totally-real proofs concern the same subspace.
-  rw [IsMaximalTotallyReal.maslovPhase_congr _ _
-      (isMaximalTotallyReal_realSubspace.map_linearEquiv (graphFrameEquiv A).toLinearEquiv)
-      (graphSubspace_eq_map A),
-    isMaximalTotallyReal_realSubspace.maslovPhase_map, coe_graphPhase]
-  simp [graphFrameEquiv]
+  -- `graphSubspace A` is by definition the image `(graphFrame A).realImage` of the real points.
+  rw [coe_graphPhase]
+  exact (maslovPhase_eq_det_div_conj_det (det_graphFrame_ne_zero A) _ rfl).symm
 
 /-- The graph phase depends continuously on the symplectic matrix. -/
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by
