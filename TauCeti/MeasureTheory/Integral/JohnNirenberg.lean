@@ -173,7 +173,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     · exact fun x hx => by simp only [g, indicator_of_mem (hsub q hq hx), Pi.sub_apply]
     · rw [pow_succ, mul_assoc]
   -- Off the cubes, `‖f - c‖ ≤ 2M` almost everywhere.
-  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm hg' ht0
+  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm le_rfl
+    (by simpa only [ENNReal.rpow_one] using hg') ht0
   -- Hence, up to a null set, the superlevel set at `2ⁿ⁺¹ (N + 1) M` lies in the union over the
   -- cubes `Q'` of the superlevel sets at `2ⁿ⁺¹ N M` of `‖f - f_{Q'}‖` on `Q'`.
   refine ⟨C, hsub, ?_, ?_⟩

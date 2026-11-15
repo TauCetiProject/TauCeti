@@ -14,27 +14,33 @@ public import TauCeti.AlgebraicTopology.Singular.Reduced
 # Degree-zero singular cohomology as functions on path components
 
 Let `k` be a commutative ring and `X` a space. A class `u ∈ H⁰(X; k)` has a value
-`u(x) ∈ k` at every point `x : X` (`TopCat.singularCohomologyZeroEval`): the Kronecker pairing of
+`u(x) ∈ k` at every point `x : X` (`TauCeti.singularCohomologyZeroEval`): the Kronecker pairing of
 `u` with the class `[x] ∈ H₀(X; k)` of the point, equivalently the value at the unique point of the
-pullback of `u` along `x : pt ⟶ X` (`TopCat.singularCohomologyZeroEval_naturality`). These values
-identify `H⁰(X; k)` with the functions `X → k` that are constant on path components:
+pullback of `u` along `x : pt ⟶ X` (`TauCeti.singularCohomologyZeroEval_naturality`). On the class
+of a `0`-cocycle it is the value of the cocycle on the point
+(`TauCeti.singularCohomologyZeroEval_homologyπ`). These values identify `H⁰(X; k)` with the
+functions `X → k` that are constant on path components:
 
-* a class is determined by its values (`TopCat.singularCohomologyZero_ext`), since the Kronecker
+* a class is determined by its values (`TauCeti.singularCohomologyZero_ext`), since the Kronecker
   map `H⁰(X; k) ⟶ Hom(H₀(X; k), k)` is bijective and the point classes generate `H₀(X; k)`;
-* its values agree at points joined by a path (`TopCat.singularCohomologyZeroEval_eq_of_joined`);
+* its values agree at points joined by a path (`TauCeti.singularCohomologyZeroEval_eq_of_joined`);
 * conversely every function constant on path components is the function of values of a class
-  (`TopCat.exists_singularCohomologyZeroEval_eq`), through Mathlib's identification of `H₀(X; k)`
+  (`TauCeti.exists_singularCohomologyZeroEval_eq`), through Mathlib's identification of `H₀(X; k)`
   with the coproduct of copies of `k` over the path components.
 
-The values are multiplicative for the cup product (`TopCat.singularCohomologyZeroEval_singularCup`)
-and the unit of the cup product, the class `TopCat.singularCohomologyZeroOne` of the constant
-cocycle `1`, has the value `1` everywhere. Pulling back to a point reduces multiplicativity to the
-unit law of the cup product on a point, where every degree-zero class is a multiple of the unit.
+The unit of the cup product, the class `TopCat.singularCohomologyZeroOne` of the constant
+cocycle `1`, has the value `1` everywhere, and on a path-connected space every degree-zero class
+is its value at any point times the unit
+(`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`). Pulling back along the
+constant map at `x` gives the value at `x` times the unit
+(`TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul`), which reduces
+multiplicativity of the values for the cup product
+(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
 
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
-invertible for the cup product (`TopCat.exists_singularCup_matrix_eq_one`), and in particular a
-class whose values are units is a unit (`TopCat.exists_singularCup_eq_one`). The inverse has, at
+invertible for the cup product (`TauCeti.exists_singularCup_matrix_eq_one`), and in particular a
+class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`). The inverse has, at
 every point, the inverse matrix of values; it is a class because the matrix of values, and so its
 inverse, is constant on path components.
 
@@ -49,11 +55,32 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory
+open CategoryTheory Limits MonoidalCategory AlgebraicTopology
 
-universe w
+universe w v u
 
-namespace TopCat
+namespace TauCeti
+
+section Kronecker
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] {R M : C}
+
+/-- The Kronecker pairing of the class of a `0`-cocycle `φ` with the class of a point `x` is `φ`
+evaluated on the `0`-simplex `x`. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularKronecker_homologyπ {X : TopCat.{w}} (k : Type*) [Ring k]
+    [Linear k C] (x : X) (φ : (X.singularCochainComplex R k M).cycles 0) :
+    singularHomology₀Section R x ≫
+        X.singularKronecker k 0 ((X.singularCochainComplex R k M).homologyπ 0 φ) =
+      (TopCat.toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x) ≫
+        (X.singularCochainComplex R k M).iCycles 0 φ := by
+  rw [singularHomology₀Section_def, SSet.ιHomology₀_def]
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex of
+  -- `TopCat.toSSet`; the Kronecker computation is applied as a term across that unfolding.
+  exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (X.singularKronecker_homologyπ k 0 φ)).trans
+    (HomologicalComplex.liftCycles_i_assoc _ _ _ _ _ _))
+
+end Kronecker
 
 variable {k : Type w} [CommRing k]
 
@@ -66,7 +93,7 @@ variable {X Y : TopCat.{w}}
 point. -/
 def singularCohomologyZeroEval (x : X) :
     X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 →ₗ[k] k where
-  toFun u := (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x ≫
+  toFun u := (singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x ≫
     X.singularKronecker k 0 u).hom (1 : k)
   map_add' u v := by simp
   map_smul' a u := by simp
@@ -74,16 +101,28 @@ def singularCohomologyZeroEval (x : X) :
 lemma singularCohomologyZeroEval_apply (x : X)
     (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     singularCohomologyZeroEval x u =
-      (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x ≫
+      (singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x ≫
         X.singularKronecker k 0 u).hom (1 : k) :=
   (rfl)
+
+/-- The value at `x` of the class of a `0`-cocycle `φ` is `φ` evaluated on the `0`-simplex `x`. -/
+@[simp]
+lemma singularCohomologyZeroEval_homologyπ (x : X)
+    (φ : (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).cycles 0) :
+    singularCohomologyZeroEval x
+        ((X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).homologyπ 0
+          φ) =
+      ((TopCat.toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x) ≫
+        (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).iCycles 0
+          φ).hom (1 : k) := by
+  rw [singularCohomologyZeroEval_apply, singularHomology₀Section_singularKronecker_homologyπ]
 
 /-- **A degree-zero class is determined by its values at the points.** -/
 theorem singularCohomologyZero_ext
     {u v : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0}
     (h : ∀ x : X, singularCohomologyZeroEval x u = singularCohomologyZeroEval x v) : u = v := by
   refine (X.singularKronecker_bijective_zero k).1
-    (TauCeti.singularHomology₀_hom_ext _ fun x ↦ ?_)
+    (singularHomology₀_hom_ext _ fun x ↦ ?_)
   ext
   exact h x
 
@@ -94,20 +133,15 @@ lemma singularCohomologyZeroEval_naturality (f : X ⟶ Y) (x : X)
     (u : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     singularCohomologyZeroEval x (TopCat.singularCohomologyMap f 0 u) =
       singularCohomologyZeroEval (f x) u := by
-  simp only [singularCohomologyZeroEval_apply, singularKronecker_naturality,
-    TauCeti.singularHomology₀Section_naturality_assoc]
+  simp only [singularCohomologyZeroEval_apply, TopCat.singularKronecker_naturality,
+    singularHomology₀Section_naturality_assoc]
 
 /-- **The values of a degree-zero class are constant on path components.** -/
 theorem singularCohomologyZeroEval_eq_of_joined {x y : X} (h : Joined x y)
     (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     singularCohomologyZeroEval x u = singularCohomologyZeroEval y u := by
-  have hxy : TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x =
-      TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) y := by
-    rw [← cancel_mono (X.singularHomology₀Iso _).hom,
-      TauCeti.singularHomology₀Section_singularHomology₀Iso_hom,
-      TauCeti.singularHomology₀Section_singularHomology₀Iso_hom]
-    exact congrArg (Sigma.ι _) (Quotient.sound h)
-  rw [singularCohomologyZeroEval_apply, singularCohomologyZeroEval_apply, hxy]
+  rw [singularCohomologyZeroEval_apply, singularCohomologyZeroEval_apply,
+    singularHomology₀Section_eq_of_joined _ h]
 
 /-- **Every function constant on path components is the function of values of a degree-zero
 class.** -/
@@ -121,14 +155,16 @@ theorem exists_singularCohomologyZeroEval_eq (f : X → k)
     ((X.singularHomology₀Iso _).hom ≫ Sigma.desc fun c ↦ f' c • 𝟙 _)
   refine ⟨u, fun x ↦ ?_⟩
   rw [singularCohomologyZeroEval_apply, hu,
-    TauCeti.singularHomology₀Section_singularHomology₀Iso_hom_assoc, Sigma.ι_comp_desc]
+    singularHomology₀Section_singularHomology₀Iso_hom_assoc, Sigma.ι_comp_desc]
   simp [f', ZerothHomotopy.mk]
 
 end Eval
 
-section Unit
+end TauCeti
 
-variable (X : TopCat.{w})
+namespace TopCat
+
+variable {k : Type w} [CommRing k] (X : TopCat.{w})
 
 /-- **The unit of the cup product** in `H⁰(X; k)`: the class of the constant cocycle `1`. -/
 def singularCohomologyZeroOne :
@@ -136,26 +172,11 @@ def singularCohomologyZeroOne :
   (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).homologyπ 0
     (X.constSingularCocycle k (𝟙 (𝟙_ (ModuleCat.{w} k))))
 
-variable {X}
-
-/-- The unit class pulls back to the unit class. -/
-@[simp]
-lemma singularCohomologyMap_singularCohomologyZeroOne {Y : TopCat.{w}} (f : X ⟶ Y) :
-    TopCat.singularCohomologyMap f 0 (singularCohomologyZeroOne (k := k) Y) =
-      singularCohomologyZeroOne X :=
-  singularCohomologyMap_homologyπ_constSingularCocycle f k _
-
-/-- The unit class has the value `1` at every point. -/
-@[simp]
-lemma singularCohomologyZeroEval_singularCohomologyZeroOne (x : X) :
-    singularCohomologyZeroEval x (singularCohomologyZeroOne (k := k) X) = 1 := by
-  have h : TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x ≫
-      X.singularKronecker k 0 (singularCohomologyZeroOne X) = 𝟙 _ := by
-    rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def, singularCohomologyZeroOne]
-    erw [Category.assoc, singularKronecker_homologyπ, HomologicalComplex.liftCycles_i_assoc]
-    rw [iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
-  rw [singularCohomologyZeroEval_apply, h]
-  rfl
+lemma singularCohomologyZeroOne_def :
+    singularCohomologyZeroOne (k := k) X =
+      (X.singularCochainComplex (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))).homologyπ 0
+        (X.constSingularCocycle k (𝟙 (𝟙_ (ModuleCat.{w} k)))) :=
+  (rfl)
 
 /-- **The left unit law** for the cup product with the unit class. -/
 @[simp]
@@ -172,25 +193,51 @@ lemma singularCup_singularCohomologyZeroOne_right {p : ℕ} (h : p + 0 = p)
   X.singularCup_constSingularCocycle_right k (η := 𝟙 _) (by simp [unitors_inv_equal])
     (by simp [unitors_equal]) h a
 
-/-- On a one-point space every degree-zero class is its value times the unit class. -/
-lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [Unique X]
-    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
-    u = singularCohomologyZeroEval default u • singularCohomologyZeroOne X :=
+end TopCat
+
+namespace TauCeti
+
+variable {k : Type w} [CommRing k]
+
+section Unit
+
+variable {X : TopCat.{w}}
+
+/-- The unit class pulls back to the unit class. -/
+@[simp]
+lemma singularCohomologyMap_singularCohomologyZeroOne {Y : TopCat.{w}} (f : X ⟶ Y) :
+    TopCat.singularCohomologyMap f 0 (Y.singularCohomologyZeroOne (k := k)) =
+      X.singularCohomologyZeroOne :=
+  TopCat.singularCohomologyMap_homologyπ_constSingularCocycle f k _
+
+/-- The unit class has the value `1` at every point. -/
+@[simp]
+lemma singularCohomologyZeroEval_singularCohomologyZeroOne (x : X) :
+    singularCohomologyZeroEval x (X.singularCohomologyZeroOne (k := k)) = 1 := by
+  rw [TopCat.singularCohomologyZeroOne_def, singularCohomologyZeroEval_homologyπ,
+    TopCat.iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
+  rfl
+
+/-- On a path-connected space every degree-zero class is its value at any point `x₀` times the
+unit class. -/
+lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [PathConnectedSpace X]
+    (x₀ : X) (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
+    u = singularCohomologyZeroEval x₀ u • X.singularCohomologyZeroOne :=
   singularCohomologyZero_ext fun x ↦ by
-    rw [Unique.eq_default x, map_smul, singularCohomologyZeroEval_singularCohomologyZeroOne,
-      smul_eq_mul, mul_one]
+    rw [singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined x x₀), map_smul,
+      singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
 
 /-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
 the unit class. -/
 @[simp]
-lemma singularCohomologyMap_const_zero {Y : TopCat.{w}} (x : X)
+lemma singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul {Y : TopCat.{w}} (x : X)
     (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
-    TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.const Y x)) 0 u =
-      singularCohomologyZeroEval x u • singularCohomologyZeroOne Y :=
+    TopCat.singularCohomologyMap (TopCat.const (X := Y) x) 0 u =
+      singularCohomologyZeroEval x u • Y.singularCohomologyZeroOne :=
   singularCohomologyZero_ext fun y ↦ by
     rw [singularCohomologyZeroEval_naturality, map_smul,
-      singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
-    rfl
+      singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one,
+      TopCat.const_apply]
 
 /-- **The values are multiplicative for the cup product.** -/
 @[simp]
@@ -198,17 +245,14 @@ theorem singularCohomologyZeroEval_singularCup (x : X)
     (u v : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     singularCohomologyZeroEval x (X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl u v) =
       singularCohomologyZeroEval x u * singularCohomologyZeroEval x v := by
-  let s : TopCat.of PUnit.{w + 1} ⟶ X := TopCat.ofHom (ContinuousMap.const _ x)
   have hs (w' : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
-      singularCohomologyZeroEval x w' =
-        singularCohomologyZeroEval PUnit.unit (TopCat.singularCohomologyMap s 0 w') :=
-    (singularCohomologyZeroEval_naturality s PUnit.unit w').symm
-  rw [hs, hs u, hs v, ← singularCup_naturality,
-    eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne
-      (TopCat.singularCohomologyMap s 0 u),
-    eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne
-      (TopCat.singularCohomologyMap s 0 v)]
-  simp only [map_smul, LinearMap.smul_apply, singularCup_singularCohomologyZeroOne_left,
+      singularCohomologyZeroEval x w' = singularCohomologyZeroEval PUnit.unit
+        (TopCat.singularCohomologyMap (TopCat.const (X := TopCat.of PUnit.{w + 1}) x) 0 w') :=
+    by rw [singularCohomologyZeroEval_naturality, TopCat.const_apply]
+  rw [hs, ← TopCat.singularCup_naturality,
+    singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul,
+    singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul]
+  simp only [map_smul, LinearMap.smul_apply, TopCat.singularCup_singularCohomologyZeroOne_left,
     singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
   exact mul_comm _ _
 
@@ -216,7 +260,7 @@ end Unit
 
 section Invertibility
 
-variable {X : TopCat.{w}} {ι : Type w} [Fintype ι] [DecidableEq ι]
+variable {X : TopCat.{w}} {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **Invertibility of a matrix of degree-zero classes is pointwise**: if `A` is a square matrix of
 classes in `H⁰(X; k)` whose matrix of values `(A i j)(x)` is invertible at every point `x`, then
@@ -226,9 +270,9 @@ theorem exists_singularCup_matrix_eq_one
     (hA : ∀ x : X, IsUnit (Matrix.of fun i j ↦ singularCohomologyZeroEval x (A i j))) :
     ∃ B : ι → ι → X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0,
       (∀ i l, ∑ j, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl (A i j) (B j l) =
-        if i = l then singularCohomologyZeroOne X else 0) ∧
+        if i = l then X.singularCohomologyZeroOne else 0) ∧
       (∀ i l, ∑ j, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl (B i j) (A j l) =
-        if i = l then singularCohomologyZeroOne X else 0) := by
+        if i = l then X.singularCohomologyZeroOne else 0) := by
   let Ax : X → Matrix ι ι k := fun x ↦ Matrix.of fun i j ↦ singularCohomologyZeroEval x (A i j)
   have hAx {x y : X} (h : Joined x y) : Ax x = Ax y := by
     ext i j
@@ -242,7 +286,7 @@ theorem exists_singularCup_matrix_eq_one
       (hPQ : ∀ x, (Matrix.of fun i j ↦ singularCohomologyZeroEval x (P i j)) *
         (Matrix.of fun i j ↦ singularCohomologyZeroEval x (Q i j)) = 1) (i l : ι) :
       ∑ j, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl (P i j) (Q j l) =
-        if i = l then singularCohomologyZeroOne X else 0 :=
+        if i = l then X.singularCohomologyZeroOne else 0 :=
     singularCohomologyZero_ext fun x ↦ by
       have := congrFun (congrFun (hPQ x) i) l
       simp only [Matrix.mul_apply, Matrix.of_apply, Matrix.one_apply] at this
@@ -264,13 +308,12 @@ theorem exists_singularCup_eq_one
     (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
     (hu : ∀ x : X, IsUnit (singularCohomologyZeroEval x u)) :
     ∃ v : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0,
-      X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl u v = singularCohomologyZeroOne X ∧
-      X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl v u = singularCohomologyZeroOne X := by
-  obtain ⟨B, h₁, h₂⟩ := exists_singularCup_matrix_eq_one (ι := PUnit.{w + 1}) (fun _ _ ↦ u)
+      X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl u v = X.singularCohomologyZeroOne ∧
+      X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl v u = X.singularCohomologyZeroOne := by
+  obtain ⟨B, h₁, h₂⟩ := exists_singularCup_matrix_eq_one (ι := Unit) (fun _ _ ↦ u)
     fun x ↦ (Matrix.isUnit_iff_isUnit_det _).2 (by simpa using hu x)
-  exact ⟨B PUnit.unit PUnit.unit, by simpa using h₁ PUnit.unit PUnit.unit,
-    by simpa using h₂ PUnit.unit PUnit.unit⟩
+  exact ⟨B () (), by simpa using h₁ () (), by simpa using h₂ () ()⟩
 
 end Invertibility
 
-end TopCat
+end TauCeti

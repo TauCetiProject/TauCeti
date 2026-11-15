@@ -121,13 +121,8 @@ omit [∀ a, Subsingleton (𝔸.vertexGroup a)]
 /-- The reduced path group is free on the positive non-tree darts. -/
 def pathGroupEquivFreeGroup {O : Set Γ.E} (hO : Γ.IsOrientation O) :
     PathGroup Γ v ≃* FreeGroup ↥(O \ T.darts) :=
-  let 𝔸 : GraphOfGroups.{u, w, 0, 0} Γ :=
-    { vertexGroup _ := PUnit
-      edgeGroup _ := PUnit
-      ω _ := 1
-      ω_injective _ := Function.injective_of_subsingleton _ }
-  (T.pathGroupEquivTreePresentation v 𝔸).trans
-    (GraphOfGroups.π₁Tree.equivFreeGroup 𝔸 hO T.rev_mem)
+  (T.pathGroupEquivTreePresentation v (GraphOfGroups.trivial Γ)).trans
+    (GraphOfGroups.π₁Tree.equivFreeGroup _ hO T.rev_mem)
 
 /-- A free generator corresponds to its based tree loop. -/
 @[simp] theorem pathGroupEquivFreeGroup_symm_of {O : Set Γ.E} (hO : Γ.IsOrientation O)

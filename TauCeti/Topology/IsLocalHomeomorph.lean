@@ -58,6 +58,8 @@ groupoid.
   map is a local homeomorphism.
 * `IsLocalHomeomorph.of_isEmbedding_of_range_eq`: a local homeomorphism restricts to one along a
   pullback square of embeddings, such as the restriction to the full preimage of any subspace.
+* `IsLocalHomeomorph.of_comp_of_surjective`: if `g ∘ f` and a surjective `f` are local
+  homeomorphisms, so is `g`.
 -/
 
 public section

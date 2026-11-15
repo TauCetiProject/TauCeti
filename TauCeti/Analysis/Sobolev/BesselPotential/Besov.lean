@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
-import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!

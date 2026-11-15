@@ -26,7 +26,7 @@ class ControlBatches(unittest.TestCase):
         self.assertNotIn("${{", job["concurrency"]["group"])
         self.assertEqual(job["environment"], dict(name="control-batch-debounce", deployment=False))
         self.assertNotIn("strategy", job)
-        self.assertIn("nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0", job["runs-on"])
+        self.assertEqual(job["runs-on"], "ubuntu-24.04")
         for step in job["steps"]:
             self.assertNotIn("sleep ", step.get("run", ""))
 
