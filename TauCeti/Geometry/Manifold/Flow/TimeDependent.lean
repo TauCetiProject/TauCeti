@@ -56,6 +56,8 @@ the initial position of the submanifold to the later ones.
   unit speed and moves the point along the time-dependent flow.
 * `TauCeti.isOpen_timeDependentFlowDomain` and `TauCeti.contMDiffOn_timeDependentFlowOf`: the
   domain is open and the flow is jointly `C^n` on it.
+* `TauCeti.mdifferentiableAt_timeDependentFlowOf`: the time maps are differentiable wherever they
+  are defined.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
@@ -410,6 +412,18 @@ theorem contMDiffOn_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
       (fun p : (ℝ × ℝ) × M ↦ (p.1.2 - p.1.1, (p.1.1, p.2))) :=
     (ht.sub hs).prodMk (hs.prodMk contMDiff_snd)
   exact contMDiff_snd.comp_contMDiffOn (hflow.comp hg.contMDiffOn fun _ hp ↦ hp)
+
+/-- In finite dimensions, a time map of the time-dependent flow of a `C¹` field is differentiable
+at every point from which the flow is defined up to that time. -/
+theorem mdifferentiableAt_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+  (((contMDiffOn_timeDependentFlowOf le_rfl hX).contMDiffAt
+    ((isOpen_timeDependentFlowDomain hX).mem_nhds h)).comp x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
 
 section Complete
 
