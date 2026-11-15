@@ -18,7 +18,8 @@ isomorphisms for module presheaves with isomorphic coefficient maps, and for mod
 when the coefficient map is an isomorphism and the site functor is also cocontinuous.
 The construction uses Mathlib's
 `ModuleCat.exteriorPower.desc` and supplies the sectionwise maps
-for exterior powers of pushforwards of module presheaves.
+for exterior powers of pushforwards of module presheaves. In degree zero it is the coefficient
+map itself, read through the identifications `⋀⁰ ≅` the coefficient ring.
 -/
 
 public section
@@ -148,5 +149,36 @@ theorem isIso_restrictScalarsExteriorPowerComparison_app_of_bijective
     ⟨hleft.injective, hright.surjective⟩
 
 end
+
+section DegreeZero
+
+variable {S R : Type u} [CommRing S] [CommRing R] (f : S →+* R)
+
+/-- In degree zero the restriction-of-scalars comparison is the ring map `f`, read through the
+identifications `⋀⁰ ≅ S` and `⋀⁰ ≅ R` of `ModuleCat.exteriorPower.iso₀`. -/
+theorem iso₀_hom_restrictScalarsExteriorPowerComparison_app_apply (M : ModuleCat.{u} R)
+    (x : ((ModuleCat.restrictScalars f).obj M).exteriorPower 0) :
+    (ModuleCat.exteriorPower.iso₀ M).hom
+        ((restrictScalarsExteriorPowerComparison.{u, u, u} f 0).app M x) =
+      f ((ModuleCat.exteriorPower.iso₀ ((ModuleCat.restrictScalars f).obj M)).hom x) := by
+  let N := (ModuleCat.restrictScalars f).obj M
+  -- `⋀⁰ N` is free on the empty wedge, which the comparison preserves.
+  have hx : x = (ModuleCat.exteriorPower.iso₀ N).hom x •
+      ModuleCat.exteriorPower.mk (M := N) Fin.elim0 := by
+    apply (ModuleCat.exteriorPower.iso₀ N).toLinearEquiv.injective
+    -- `toLinearEquiv` of an isomorphism in `ModuleCat` applies its underlying morphism.
+    change (ModuleCat.exteriorPower.iso₀ N).hom x = (ModuleCat.exteriorPower.iso₀ N).hom (_ • _)
+    rw [map_smul, ModuleCat.exteriorPower.iso₀_hom_apply, smul_eq_mul, mul_one]
+  set c := (ModuleCat.exteriorPower.iso₀ N).hom x
+  -- The action of `S` on the restricted exterior power is the action of `R` through `f`.
+  have h₁ : (restrictScalarsExteriorPowerComparison.{u, u, u} f 0).app M
+      (c • ModuleCat.exteriorPower.mk (M := N) Fin.elim0) =
+        f c • ModuleCat.exteriorPower.mk (M := M) Fin.elim0 :=
+    (map_smul ((restrictScalarsExteriorPowerComparison.{u, u, u} f 0).app M).hom c _).trans
+      (congrArg (c • ·) (restrictScalarsExteriorPowerComparison_app_mk f 0 M _))
+  refine (congrArg (ModuleCat.exteriorPower.iso₀ M).hom (hx ▸ h₁ :)).trans ?_
+  rw [map_smul, ModuleCat.exteriorPower.iso₀_hom_apply, smul_eq_mul, mul_one]
+
+end DegreeZero
 
 end TauCeti.ModuleCat

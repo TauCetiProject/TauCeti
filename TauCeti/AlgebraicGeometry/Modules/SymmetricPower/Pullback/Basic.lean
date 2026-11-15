@@ -7,13 +7,16 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
 # Pullback comparison for symmetric powers of modules on schemes
 
 For a morphism of schemes `f : X ⟶ Y`, this file specializes the sheaf-theoretic comparison to
 the canonical natural map `f^* (Symⁿ M) ⟶ Symⁿ (f^* M)`. Its transpose is characterized by the
-pullback--pushforward adjunction equation. In degree one the comparison is an isomorphism.
+pullback--pushforward adjunction equation. In degree one the comparison is an isomorphism. In
+degree zero it is the identification `f^* 𝒪_Y ≅ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`,
+so it is an isomorphism at every module, quasi-coherent or not.
 
 The comparison is the input for proving that symmetric powers commute with pullback on
 quasicoherent modules. That stronger invertibility statement in arbitrary degree requires the
@@ -90,6 +93,25 @@ theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso (M : Y.Mo
 instance isIso_pullbackSymmetricPowerComparison_one :
     IsIso (pullbackSymmetricPowerComparison f 1) :=
   SheafOfModules.isIso_pullbackSymmetricPowerComparison_one (pullbackPushforwardAdjunction f)
+
+/-- In degree zero, the pullback comparison for modules on schemes is the identification
+`f^* 𝒪_Y ⟶ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, read through the identifications
+`Sym⁰ M ≅ 𝒪`. -/
+theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso (M : Y.Modules) :
+    (pullbackSymmetricPowerComparison f 0).app M ≫
+        (SheafOfModules.symmetricPowerZeroIso X.sheaf).hom.app ((pullback f).obj M) =
+      (pullback f).map ((SheafOfModules.symmetricPowerZeroIso Y.sheaf).hom.app M) ≫
+        SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom :=
+  SheafOfModules.pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso
+    (pullbackPushforwardAdjunction f) M
+
+/-- The pullback comparison for modules on schemes is an isomorphism in degree zero, at every
+module and not only at quasi-coherent ones. -/
+instance isIso_pullbackSymmetricPowerComparison_zero :
+    IsIso (pullbackSymmetricPowerComparison f 0) :=
+  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`.
+  SheafOfModules.isIso_pullbackSymmetricPowerComparison_zero (pullbackPushforwardAdjunction f)
+    (SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _)
 
 end
 

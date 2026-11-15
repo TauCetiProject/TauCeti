@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Comparison
 
 /-!
@@ -20,7 +21,9 @@ by the unit of sheafification of `Symⁿ M`.
 Its mate under an adjunction `G ⊣ φ_*` is the canonical natural map
 `G (Symⁿ M) ⟶ Symⁿ (G M)`. The adjunction is an explicit argument, so the same construction
 applies both to pullback of sheaves of modules and to pullback of modules on schemes. In degree
-one the comparison is an isomorphism for every such adjunction. The pushforward comparison
+one the comparison is an isomorphism for every such adjunction. In degree zero it is the transpose
+`G R ⟶ R` of the unit map `S ⟶ φ_* R`, which for pullback of sheaves of modules is
+`SheafOfModules.pullbackObjUnitToUnit φ`. The pushforward comparison
 is invertible in every degree when the functor of sites is also cocontinuous and the
 coefficient-ring map is an isomorphism.
 
@@ -48,6 +51,7 @@ public section
 open CategoryTheory
 open TauCeti.SheafOfModules (commRingCatHom presheafPushforward ringCatSheaf
   sheafifyPushforwardComparison sheafifyPushforwardComparison_app_comp_pushforward_map
+  sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
   unit_comp_forget_map_sheafifyPushforwardComparison_app)
 
 namespace SheafOfModules
@@ -146,6 +150,29 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     (by rw [symmetricPowerOneIso_hom_app, Iso.inv_hom_id_assoc]) <|
   TauCeti.PresheafOfModules.pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     (commRingCatHom φ) M.val
+
+/-- In degree zero, the symmetric-power comparison of pushforward is the unit map `S ⟶ φ_* R`,
+read through the identifications `Sym⁰ M ≅ R`. -/
+-- Not `@[simp]`: `symmetricPowerZeroIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerZeroIso
+    (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (pushforwardSymmetricPowerComparison φ 0).app M ≫
+        (pushforward φ).map ((symmetricPowerZeroIso R).hom.app M) =
+      (symmetricPowerZeroIso S).hom.app ((pushforward φ).obj M) ≫ unitToPushforwardObjUnit φ :=
+  sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp φ _ _ _ _ _ M
+    (oS := (PresheafOfModulesOfCommRing.symmetricPowerZeroIso S.obj).hom.app
+      ((pushforward φ).obj M).val)
+    (oR := (PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).hom.app M.val)
+    -- The closing `rfl` is `Functor.const_obj_obj`, which `rw` cannot use under the dependent
+    -- type of the sheafification counit.
+    (by rw [symmetricPowerZeroIso_hom_app, Iso.inv_hom_id_assoc]; rfl)
+    (by rw [symmetricPowerZeroIso_hom_app, Iso.inv_hom_id_assoc]; rfl) <|
+  (TauCeti.PresheafOfModules.pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerZeroIso
+    (commRingCatHom φ) M.val).trans (congrArg (_ ≫ ·) (by
+      -- Both unit maps act on sections by `φ`.
+      ext U
+      exact TauCeti.PresheafOfModules.pushforward_ε_app_apply F (commRingCatHom φ) U 1))
 
 /-- Restriction along a continuous and cocontinuous functor with an isomorphism of coefficient
 sheaves preserves every symmetric power. -/
@@ -256,6 +283,38 @@ instance isIso_pullbackSymmetricPowerComparison_one :
   rw [(Iso.eq_comp_inv ((symmetricPowerOneIso R).app _)).mpr
     (pullbackSymmetricPowerComparison_app_comp_symmetricPowerOneIso adj M)]
   infer_instance
+
+/-- In degree zero, the pullback comparison is the transpose `G R ⟶ R` of the unit map
+`S ⟶ φ_* R`, read through the identifications `Sym⁰ M ≅ R`. For `G` the pullback of sheaves of
+modules this transpose is `SheafOfModules.pullbackObjUnitToUnit φ`. -/
+-- Not `@[simp]`: `symmetricPowerZeroIso_hom_app` unfolds the left-hand side.
+@[reassoc]
+theorem pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso
+    (M : SheafOfModules.{u} (ringCatSheaf S)) :
+    (pullbackSymmetricPowerComparison adj 0).app M ≫
+        (symmetricPowerZeroIso R).hom.app (G.obj M) =
+      G.map ((symmetricPowerZeroIso S).hom.app M) ≫
+        (adj.homEquiv _ _).symm (unitToPushforwardObjUnit φ) := by
+  apply (adj.homEquiv _ _).injective
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp,
+    unit_comp_pushforward_pullbackSymmetricPowerComparison_assoc,
+    pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerZeroIso,
+    Functor.map_comp, Adjunction.unit_naturality_assoc, ← Adjunction.homEquiv_unit]
+  -- The transpose of the transpose of the unit map is the unit map itself.
+  simp only [Functor.const_obj_obj, Equiv.apply_symm_apply]
+  exact ((symmetricPowerZeroIso S).hom.naturality_assoc _ _).trans
+    (congrArg (_ ≫ ·) (Category.id_comp _))
+
+/-- The pullback comparison is an isomorphism in degree zero whenever the transpose `G R ⟶ R` of
+the unit map `S ⟶ φ_* R` is. -/
+theorem isIso_pullbackSymmetricPowerComparison_zero
+    (h : IsIso ((adj.homEquiv _ _).symm (unitToPushforwardObjUnit φ))) :
+    IsIso (pullbackSymmetricPowerComparison adj 0) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro M
+  rw [(Iso.eq_comp_inv ((symmetricPowerZeroIso R).app _)).mpr
+    (pullbackSymmetricPowerComparison_app_comp_symmetricPowerZeroIso adj M)]
+  exact IsIso.comp_isIso' (IsIso.comp_isIso' inferInstance h) inferInstance
 
 end
 
