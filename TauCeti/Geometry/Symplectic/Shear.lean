@@ -20,15 +20,16 @@ standard symplectic form
 `dq ∧ dp`. It shows that the preserved metric cannot be dropped from the theorem that the fixed
 locus of a group of symplectomorphisms preserving a Riemannian metric is a symplectic submanifold:
 
-* its fixed locus is the plane `V × {0}` (`TauCeti.fixedPoints_symplecticShear`), which is a
-  Lagrangian subspace (`TauCeti.SymplecticForm.isLagrangian_prod_top_bot`), not a symplectic one;
+* its fixed locus is the subspace `V × {0}` (`TauCeti.fixedPoints_symplecticShear`), which is a
+  Lagrangian subspace (`TauCeti.SymplecticForm.isLagrangian_prod_top_bot`), not a symplectic one
+  (for `V ≠ 0`);
 * accordingly it preserves no Riemannian metric on `V × V` (for `V ≠ 0`): no Riemannian isometry
   of `V × V` is the shear (`TauCeti.RiemannianIsometry.coe_ne_symplecticShear`).
 
 The second statement is read off the differential at the fixed point `0`, which is `S` itself.
 Since `(S - 1)² = 0`, the shear is unipotent (`TauCeti.isNilpotent_symplecticShear_sub_one`), and a
 unipotent isometry of an inner product is the identity
-(`TauCeti.RiemannianIsometry.fixedPointDerivative_eq_one_of_isNilpotent`). In coordinates on
+(`TauCeti.RiemannianIsometry.fixedPointDerivative_eq_one_of_isNilpotent_sub_one`). In coordinates on
 `ℝ²`: an invariant inner product would satisfy `⟪e₁, e₂⟫ = ⟪S e₁, S e₂⟫ = ⟪e₁, e₁ + e₂⟫`, which
 forces `‖e₁‖ = 0`. The same pointwise argument rules out every anisotropic bilinear form
 (`TauCeti.not_isIsometry_symplecticShear`), so the obstruction does not use smoothness or
@@ -41,7 +42,7 @@ completeness of the metric.
 ## Main results
 
 * `TauCeti.isSymplectomorphism_symplecticShear`: the shear preserves `ω₀`.
-* `TauCeti.fixedPoints_symplecticShear`: its fixed points are the plane `V × {0}`, which is
+* `TauCeti.fixedPoints_symplecticShear`: its fixed points are the subspace `V × {0}`, which is
   Lagrangian for `ω₀` by `TauCeti.SymplecticForm.isLagrangian_prod_top_bot`.
 * `TauCeti.not_isIsometry_symplecticShear`: for `V ≠ 0`, the shear preserves no anisotropic
   bilinear form.
@@ -85,7 +86,7 @@ theorem symplecticShear_apply_eq_self_iff (x : V × V) : symplecticShear V x = x
   rw [symplecticShear_apply, Prod.ext_iff]
   simp
 
-/-- The fixed points of the shear form the plane `V × {0}`, that is `p = 0`. -/
+/-- The fixed points of the shear form the subspace `V × {0}`, that is `p = 0`. -/
 theorem fixedPoints_symplecticShear :
     Function.fixedPoints (symplecticShear V) =
       ((⊤ : Submodule ℝ V).prod (⊥ : Submodule ℝ V) : Set (V × V)) := by
@@ -93,7 +94,7 @@ theorem fixedPoints_symplecticShear :
   rw [Function.mem_fixedPoints, Function.IsFixedPt, symplecticShear_apply_eq_self_iff]
   simp
 
-/-- The shear is unipotent: `(S - 1)² = 0`. -/
+/-- The shear is unipotent: `symplecticShear V - 1` is nilpotent. -/
 theorem isNilpotent_symplecticShear_sub_one :
     IsNilpotent ((symplecticShear V).toLinearEquiv.toLinearMap - 1) :=
   ⟨2, LinearMap.ext fun x ↦ Prod.ext (by simp [pow_two]) (by simp [pow_two])⟩
@@ -113,8 +114,7 @@ theorem not_isIsometry_symplecticShear [Nontrivial V] {B : LinearMap.BilinForm �
   symplecticShear_toLinearMap_ne_one
     (h.eq_one_of_isNilpotent_sub_one hB isNilpotent_symplecticShear_sub_one)
 
-/-- For `V ≠ 0`, the shear of `V × V` is an isometry of no Riemannian metric on `V × V`: its
-differential at the fixed point `0` is the shear itself, a unipotent map other than the identity. -/
+/-- For `V ≠ 0`, the shear of `V × V` is an isometry of no Riemannian metric on `V × V`. -/
 theorem RiemannianIsometry.coe_ne_symplecticShear [Nontrivial V]
     [Bundle.RiemannianBundle (fun x : V × V ↦ TangentSpace 𝓘(ℝ, V × V) x)]
     (Φ : RiemannianIsometry 𝓘(ℝ, V × V) 𝓘(ℝ, V × V) (V × V) (V × V)) :
@@ -128,7 +128,7 @@ theorem RiemannianIsometry.coe_ne_symplecticShear [Nontrivial V]
   have hD₀ : fixedPointDerivative 𝓘(ℝ, V × V) Φ x₀ =
       (symplecticShear V).toLinearEquiv.toLinearMap :=
     hD.fixedPointDerivative_eq (x := x₀)
-  have h := Φ.fixedPointDerivative_eq_one_of_isNilpotent x₀
+  have h := Φ.fixedPointDerivative_eq_one_of_isNilpotent_sub_one x₀
     (hD₀ ▸ isNilpotent_symplecticShear_sub_one)
   exact symplecticShear_toLinearMap_ne_one (hD₀ ▸ h)
 

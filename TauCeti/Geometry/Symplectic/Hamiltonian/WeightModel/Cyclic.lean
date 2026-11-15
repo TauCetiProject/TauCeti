@@ -19,12 +19,14 @@ The rotation `TauCeti.weightRotation θ : z_j ↦ exp(i θ_j) z_j` of `ℂ^ι`, 
 coordinates `z_j = q_j + i p_j` as `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, preserves the standard
 symplectic form `Σ dq_j ∧ dp_j` (`TauCeti.stdSymplecticForm_weightRotation`) and the Euclidean
 norm of every coordinate. This file studies the cyclic group it generates, whose elements are the
-rotations by the angles `n • θ` (`TauCeti.weightRotation_nsmul`).
+rotations by the integer multiples `n • θ`, `n : ℤ`; the nonnegative powers are
+`weightRotation θ ^ n = weightRotation (n • θ)` for `n : ℕ` (`TauCeti.weightRotation_nsmul`).
 
 * The group is infinite exactly when one of the angles is an irrational multiple of `2π`
   (`TauCeti.orderOf_weightRotation_eq_zero_iff`).
-* Its common fixed set is the fixed set of the generator: the points `z` with `z_j = 0` for every
-  angle `θ_j ∉ 2πℤ` (`TauCeti.forall_weightRotation_zsmul_apply_eq_self_iff`).
+* Its common fixed set is the fixed set of the generator
+  (`TauCeti.forall_weightRotation_zsmul_apply_eq_self_iff_apply_eq_self`): the points `z` with
+  `z_j = 0` for every angle `θ_j ∉ 2πℤ` (`TauCeti.forall_weightRotation_zsmul_apply_eq_self_iff`).
 * The fixed subspace has real dimension twice the number of angles in `2πℤ`
   (`TauCeti.finrank_eqLocus_weightRotation`).
 * The fixed subspace is a symplectic subspace
@@ -33,15 +35,19 @@ rotations by the angles `n • θ` (`TauCeti.weightRotation_nsmul`).
   (`TauCeti.weightRotation_product_apply`), so `J` preserves the fixed subspace, and `ω` tames `J`
   (`TauCeti.stdSymplecticForm_tames_product`).
 
-For the rotation of a single coordinate `z_{j₀}` of `ℂ^ι` by an irrational multiple `2π a` of
-`2π` (`Irrational.orderOf_weightRotation_single`,
+For the rotation of a single coordinate `z_{j₀}` of `ℂ^ι` by an angle `θ₀ ∉ 2πℤ`, the fixed
+subspace and the common fixed set of the cyclic group are the coordinate subspace `z_{j₀} = 0`, of
+real dimension `2 (|ι| - 1)` (`TauCeti.mem_eqLocus_weightRotation_single_iff`,
+`TauCeti.forall_weightRotation_zsmul_single_apply_eq_self_iff`,
+`TauCeti.finrank_eqLocus_weightRotation_single`). When `θ₀ = 2π a` with `a` irrational, the
+group is moreover infinite cyclic (`Irrational.orderOf_weightRotation_single`, and the
+specializations `Irrational.mem_eqLocus_weightRotation_single_iff`,
 `Irrational.forall_weightRotation_zsmul_single_apply_eq_self_iff`,
-`Irrational.finrank_eqLocus_weightRotation_single`), the group is infinite cyclic and its
-fixed locus is the coordinate subspace `z_{j₀} = 0`, of real dimension `2 (|ι| - 1)`. For `ℂ²` and
-`j₀` the first coordinate, this is the plane `{0} × ℂ`, of dimension `2`. The group is not
-finite, and its fixed locus is a symplectic subspace because the group preserves both `ω` and the
-Euclidean metric. By contrast the shear `(q, p) ↦ (q + p, p)` of `ℝ²` preserves `ω` and no metric,
-and its fixed line is Lagrangian (`TauCeti.fixedPoints_symplecticShear`,
+`Irrational.finrank_eqLocus_weightRotation_single`). For `ℂ²` and `j₀` the first coordinate, the
+fixed locus is the plane `{0} × ℂ`, of dimension `2`. The group is not finite, and its fixed locus
+is a symplectic subspace because the group preserves both `ω` and the Euclidean metric. By
+contrast the shear `(q, p) ↦ (q + p, p)` of `ℝ²` preserves `ω` and no metric, and its fixed line
+is Lagrangian (`TauCeti.fixedPoints_symplecticShear`,
 `TauCeti.SymplecticForm.isLagrangian_prod_top_bot`).
 
 ## References
@@ -58,45 +64,22 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The `n`-th power of a rotation, for composition, is the rotation by `n` times the angles. -/
-theorem weightRotation_nsmul (n : ℕ) (θ : ι → ℝ) :
-    weightRotation (n • θ) = weightRotation θ ^ n := by
-  induction n with
-  | zero => simp [ContinuousLinearMap.one_def]
-  | succ n ih => rw [succ_nsmul, weightRotation_add, ih, pow_succ, ContinuousLinearMap.mul_def]
-
 /-- **Infinite cyclic groups of rotations.** The rotation by the angles `θ` has infinite order
 exactly when some `θ_j` is an irrational multiple of `2π`. -/
 theorem orderOf_weightRotation_eq_zero_iff (θ : ι → ℝ) :
     orderOf (weightRotation θ) = 0 ↔ ∃ j, Irrational (θ j / (2 * π)) := by
-  rw [orderOf_eq_zero_iff, isOfFinOrder_iff_pow_eq_one, not_iff_comm, not_exists]
-  simp only [← weightRotation_nsmul, ContinuousLinearMap.one_def, weightRotation_eq_id_iff,
-    nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Irrational, Set.mem_range, not_not]
-  constructor
-  · -- If every `θ_j / 2π` is rational, a common denominator `n` of these fractions has
-    -- `n θ_j ∈ 2πℤ` for every `j`.
-    intro h
-    choose q hq using h
-    refine ⟨∏ j, (q j).den, Finset.prod_pos fun j _ ↦ (q j).pos, fun j ↦ ?_⟩
-    obtain ⟨m, hm⟩ := Finset.dvd_prod_of_mem (fun i ↦ (q i).den) (Finset.mem_univ j)
-    refine ⟨(q j).num * m, ?_⟩
-    have hθ : θ j = q j * (2 * π) := by
-      rw [hq j, div_mul_cancel₀ _ (by positivity)]
-    have hnum : ((q j).num : ℝ) = q j * (q j).den := by
-      exact_mod_cast (Rat.mul_den_eq_num (q j)).symm
-    rw [hm, hθ]
-    push_cast
-    rw [hnum]
-    ring
-  · -- Conversely, `n θ_j = k · 2π` with `n > 0` makes `θ_j / 2π = k / n` rational.
-    rintro ⟨n, hn, h⟩ j
-    obtain ⟨k, hk⟩ := h j
-    refine ⟨k / n, ?_⟩
-    have hn' : (n : ℝ) ≠ 0 := by positivity
-    rw [eq_div_iff two_pi_pos.ne']
-    push_cast
-    field_simp
-    linarith
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  -- The rotation has finite order exactly when the angles have finite order in `(ℝ / 2πℤ)^ι`.
+  have hfin : IsOfFinOrder (weightRotation θ) ↔
+      IsOfFinAddOrder (fun j ↦ (θ j : AddCircle (2 * π))) := by
+    simp only [isOfFinOrder_iff_pow_eq_one, isOfFinAddOrder_iff_nsmul_eq_zero,
+      ← weightRotation_nsmul, ContinuousLinearMap.one_def, weightRotation_eq_id_iff, funext_iff,
+      Pi.smul_apply, Pi.zero_apply, ← AddCircle.coe_nsmul, AddCircle.coe_eq_zero_iff, zsmul_eq_mul]
+  have hpi : IsOfFinAddOrder (fun j ↦ (θ j : AddCircle (2 * π))) ↔
+      ∀ j, IsOfFinAddOrder (θ j : AddCircle (2 * π)) :=
+    ⟨IsOfFinAddOrder.apply, IsOfFinAddOrder.pi⟩
+  rw [orderOf_eq_zero_iff, hfin, hpi]
+  simp [AddCircle.isOfFinAddOrder_iff_exists_rat_eq_div, Irrational]
 
 /-- The fixed subspace of the rotation by the angles `θ` is the subspace of `z` with
 `z_j = q_j + i p_j = 0` for every angle `θ_j ∉ 2πℤ`. -/
@@ -109,34 +92,33 @@ theorem mem_eqLocus_weightRotation_iff (θ : ι → ℝ)
   exact forall_congr' fun j ↦ by tauto
 
 /-- The common fixed points of the cyclic group generated by a rotation are the fixed points of the
-rotation: the points `z` with `z_j = 0` for every angle `θ_j ∉ 2πℤ`. -/
+rotation. -/
+theorem forall_weightRotation_zsmul_apply_eq_self_iff_apply_eq_self (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    (∀ n : ℤ, weightRotation (n • θ) x = x) ↔ weightRotation θ x = x := by
+  refine ⟨fun h ↦ by simpa using h 1, fun h n ↦ ?_⟩
+  rw [weightRotation_apply_eq_self_iff] at h ⊢
+  intro j hj
+  obtain ⟨k, hk⟩ := h j hj
+  exact ⟨n * k, by rw [Pi.smul_apply, zsmul_eq_mul, ← hk]; push_cast; ring⟩
+
+/-- The common fixed points of the cyclic group generated by a rotation are the points `z` with
+`z_j = 0` for every angle `θ_j ∉ 2πℤ`. -/
 theorem forall_weightRotation_zsmul_apply_eq_self_iff (θ : ι → ℝ)
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     (∀ n : ℤ, weightRotation (n • θ) x = x) ↔
       ∀ j, (¬ ∃ k : ℤ, k * (2 * π) = θ j) → x.1 j = 0 ∧ x.2 j = 0 := by
-  have hfix : weightRotation θ x = x ↔
-      ∀ j, (¬ ∃ k : ℤ, k * (2 * π) = θ j) → x.1 j = 0 ∧ x.2 j = 0 :=
-    mem_eqLocus_weightRotation_iff θ x
-  refine ⟨fun h ↦ hfix.mp (by simpa using h 1), fun h n ↦ ?_⟩
-  rw [weightRotation_apply_eq_self_iff]
-  intro j hj
-  obtain ⟨k, hk⟩ := (weightRotation_apply_eq_self_iff θ x).mp (hfix.mpr h) j hj
-  exact ⟨n * k, by rw [Pi.smul_apply, zsmul_eq_mul, ← hk]; push_cast; ring⟩
+  rw [forall_weightRotation_zsmul_apply_eq_self_iff_apply_eq_self, ←
+    mem_eqLocus_weightRotation_iff, LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe,
+    LinearMap.id_apply]
 
 /-- **Fixed directions of a rotation.** The fixed subspace of the rotation by the angles `θ` has
 real dimension twice the number of angles `θ_j ∈ 2πℤ`. -/
 theorem finrank_eqLocus_weightRotation (θ : ι → ℝ) :
     finrank ℝ (LinearMap.eqLocus (weightRotation θ).toLinearMap LinearMap.id) =
       2 * {j | ∃ k : ℤ, k * (2 * π) = θ j}.ncard :=
-  finrank_eq_two_mul_ncard_of_mem_iff θ (fun a ↦ ∃ k : ℤ, k * (2 * π) = a)
-    (mem_eqLocus_weightRotation_iff θ)
-
-/-- Rotations commute with the complex structure `J(q, p) = (-p, q)` of `ℂ^ι`, multiplication by
-`i`. -/
-theorem weightRotation_product_apply (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    weightRotation θ (AlmostComplexStructure.product _ x) =
-      AlmostComplexStructure.product _ (weightRotation θ x) := by
-  ext i <;> simp <;> ring
+  finrank_eq_two_mul_ncard_of_mem_iff _ fun x ↦ by
+    simpa only [Set.mem_ofPred_eq] using mem_eqLocus_weightRotation_iff θ x
 
 /-- **The fixed subspace of a rotation is symplectic** for the standard symplectic form. -/
 theorem isSymplectic_eqLocus_weightRotation (θ : ι → ℝ) :
@@ -148,6 +130,43 @@ theorem isSymplectic_eqLocus_weightRotation (θ : ι → ℝ) :
       rw [Submodule.mem_comap, LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe,
         LinearMap.id_apply]
       exact (weightRotation_product_apply θ x).trans (congrArg _ hx)
+
+/-! ### Rotating one coordinate -/
+
+variable [DecidableEq ι] {θ₀ : ℝ}
+
+/-- The fixed subspace of the rotation of the coordinate `z_{j₀}` of `ℂ^ι` by an angle
+`θ₀ ∉ 2πℤ` is the coordinate subspace `z_{j₀} = 0`. -/
+theorem mem_eqLocus_weightRotation_single_iff (hθ₀ : ∀ k : ℤ, (k : ℝ) * (2 * π) ≠ θ₀) (j₀ : ι)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    x ∈ LinearMap.eqLocus (weightRotation (Pi.single j₀ θ₀)).toLinearMap LinearMap.id ↔
+      x.1 j₀ = 0 ∧ x.2 j₀ = 0 := by
+  rw [mem_eqLocus_weightRotation_iff]
+  refine ⟨fun h ↦ h j₀ ?_, fun h j hj ↦ ?_⟩
+  · rw [Pi.single_eq_same]
+    exact fun ⟨k, hk⟩ ↦ hθ₀ k hk
+  by_cases hj₀ : j = j₀
+  · exact hj₀ ▸ h
+  · exact absurd ⟨0, by rw [Pi.single_eq_of_ne hj₀]; simp⟩ hj
+
+/-- **The fixed locus of a single-coordinate rotation.** The points of `ℂ^ι` fixed by every power
+of the rotation of the coordinate `z_{j₀}` by an angle `θ₀ ∉ 2πℤ` are those with `z_{j₀} = 0`. -/
+theorem forall_weightRotation_zsmul_single_apply_eq_self_iff
+    (hθ₀ : ∀ k : ℤ, (k : ℝ) * (2 * π) ≠ θ₀) (j₀ : ι)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    (∀ n : ℤ, weightRotation (n • Pi.single j₀ θ₀) x = x) ↔ x.1 j₀ = 0 ∧ x.2 j₀ = 0 := by
+  rw [forall_weightRotation_zsmul_apply_eq_self_iff_apply_eq_self, ←
+    mem_eqLocus_weightRotation_single_iff hθ₀ j₀, LinearMap.mem_eqLocus,
+    ContinuousLinearMap.coe_coe, LinearMap.id_apply]
+
+/-- The fixed subspace of the rotation of the coordinate `z_{j₀}` of `ℂ^ι` by an angle
+`θ₀ ∉ 2πℤ` has real dimension `2 (|ι| - 1)`. -/
+theorem finrank_eqLocus_weightRotation_single (hθ₀ : ∀ k : ℤ, (k : ℝ) * (2 * π) ≠ θ₀) (j₀ : ι) :
+    finrank ℝ (LinearMap.eqLocus (weightRotation (Pi.single j₀ θ₀)).toLinearMap
+      LinearMap.id) = 2 * (Fintype.card ι - 1) := by
+  rw [finrank_eq_two_mul_ncard_of_mem_iff {j₀}ᶜ fun x ↦ by
+      rw [mem_eqLocus_weightRotation_single_iff hθ₀ j₀]; simp,
+    Set.ncard_compl, Set.ncard_singleton, Nat.card_eq_fintype_card]
 
 end TauCeti
 
@@ -169,37 +188,28 @@ theorem orderOf_weightRotation_single :
   (orderOf_weightRotation_eq_zero_iff _).mpr
     ⟨j₀, by rwa [Pi.single_eq_same, mul_div_cancel_left₀ _ (by positivity)]⟩
 
+/-- The fixed subspace of the rotation of the coordinate `z_{j₀}` of `ℂ^ι` by an irrational
+multiple of `2π` is the coordinate subspace `z_{j₀} = 0`. -/
+theorem mem_eqLocus_weightRotation_single_iff (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    x ∈ LinearMap.eqLocus (weightRotation (Pi.single j₀ (2 * π * a))).toLinearMap
+      LinearMap.id ↔ x.1 j₀ = 0 ∧ x.2 j₀ = 0 :=
+  TauCeti.mem_eqLocus_weightRotation_single_iff (ha.intCast_mul_ne_mul two_pi_pos.ne') j₀ x
+
 /-- **The fixed locus of an irrational rotation.** The points of `ℂ^ι` fixed by every power of the
 rotation of the coordinate `z_{j₀}` by an irrational multiple of `2π` are those with `z_{j₀} = 0`.
 -/
 theorem forall_weightRotation_zsmul_single_apply_eq_self_iff
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     (∀ n : ℤ, weightRotation (n • Pi.single j₀ (2 * π * a)) x = x) ↔
-      x.1 j₀ = 0 ∧ x.2 j₀ = 0 := by
-  rw [forall_weightRotation_zsmul_apply_eq_self_iff]
-  refine ⟨fun h ↦ h j₀ ?_, ?_⟩
-  · rw [Pi.single_eq_same]
-    exact fun ⟨k, hk⟩ ↦ ha.intCast_mul_ne_mul two_pi_pos.ne' k hk
-  intro h j hj
-  by_cases hj₀ : j = j₀
-  · exact hj₀ ▸ h
-  · exact absurd ⟨0, by rw [Pi.single_eq_of_ne hj₀]; simp⟩ hj
+      x.1 j₀ = 0 ∧ x.2 j₀ = 0 :=
+  TauCeti.forall_weightRotation_zsmul_single_apply_eq_self_iff
+    (ha.intCast_mul_ne_mul two_pi_pos.ne') j₀ x
 
 /-- The fixed subspace of the rotation of the coordinate `z_{j₀}` of `ℂ^ι` by an irrational
-multiple of `2π` has real dimension `2 (|ι| - 1)`; for `ℂ²` it is the plane `{0} × ℂ`. -/
+multiple of `2π` has real dimension `2 (|ι| - 1)`; for `ℂ²` this real dimension is `2`. -/
 theorem finrank_eqLocus_weightRotation_single :
     finrank ℝ (LinearMap.eqLocus (weightRotation (Pi.single j₀ (2 * π * a))).toLinearMap
-      LinearMap.id) = 2 * (Fintype.card ι - 1) := by
-  rw [finrank_eqLocus_weightRotation]
-  congr 1
-  have hset : {j | ∃ k : ℤ, k * (2 * π) = (Pi.single j₀ (2 * π * a) : ι → ℝ) j} = {j₀}ᶜ := by
-    ext j
-    by_cases hj : j = j₀
-    · subst hj
-      simpa using ha.intCast_mul_ne_mul two_pi_pos.ne'
-    · simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, Set.mem_singleton_iff, hj,
-        not_false_eq_true, iff_true, Pi.single_eq_of_ne hj]
-      exact ⟨0, by simp⟩
-  rw [hset, Set.ncard_compl, Set.ncard_singleton, Nat.card_eq_fintype_card]
+      LinearMap.id) = 2 * (Fintype.card ι - 1) :=
+  TauCeti.finrank_eqLocus_weightRotation_single (ha.intCast_mul_ne_mul two_pi_pos.ne') j₀
 
 end Irrational
