@@ -138,7 +138,7 @@ theorem affineIndependent_stellarSubdivision (hvσ : v ∉ σ)
 /-- Two geometric stellar simplices meet exactly in the simplex spanned by their common
 vertices. Thus the barycentric placement is a geometric triangulation, not merely a
 collection of nondegenerate simplices with the correct union. -/
-theorem convexHull_stellarSubdivision_inter (hvσ : v ∉ σ)
+theorem convexHull_stellarSubdivision_inter
     (hτ : τ ∈ stellarSubdivision K σ v) (hρ : ρ ∈ stellarSubdivision K σ v) :
     convexHull ℝ ((fun i : ι => stellarSubdivisionLinearMap σ v (Finsupp.single i 1)) ''
         (τ : Set ι)) ∩
@@ -166,7 +166,7 @@ theorem convexHull_stellarSubdivision_inter (hvσ : v ∉ σ)
     simpa only [Finset.coe_image,
       ← Set.image_inter hB] using h
   rw [← himage, ← himage,
-    ← (injOn_stellarSubdivisionLinearMap hvσ).image_inter hτsub hρsub, hinter, himage]
+    ← injOn_stellarSubdivisionLinearMap.image_inter hτsub hρsub, hinter, himage]
 
 /-- The geometric stellar subdivision, placing `v` at the barycenter of `σ` and retaining the
 standard positions of the other vertices. Its face collection is the image of the abstract
@@ -188,7 +188,7 @@ def geometricStellarSubdivision (K : PreAbstractSimplicialComplex ι)
   inter_subset_convexHull := by
     rintro s t ⟨τ, hτ, rfl⟩ ⟨ρ, hρ, rfl⟩
     simp only [Finset.coe_image]
-    rw [convexHull_stellarSubdivision_inter hvσ hτ hρ]
+    rw [convexHull_stellarSubdivision_inter hτ hρ]
     exact convexHull_mono (Set.image_inter_subset _ _ _)
 
 /-- The geometric stellar faces are exactly the barycentric images of the abstract stellar

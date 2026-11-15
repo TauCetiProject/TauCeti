@@ -19,7 +19,9 @@ be degree-zero idempotents with diagonal, nonzero action on this family. Put
 
 In particular `mᵢₚ` is nonnegative and the dimension on the right is divisible by `dᵢ`.
 Applied to a projective `A fⱼ`, this computes the coefficient of `qᵖ` in the graded Cartan
-matrix as the exact quotient `dim_k(eᵢ A fⱼ ∩ 𝒜 p) / dᵢ`. The divisor is not assumed to be
+matrix as the exact quotient `dim_k(eᵢ A fⱼ ∩ 𝒜 p) / dᵢ`; in particular, when `𝒜` is
+nonnegatively graded, all negative-degree Cartan coefficients vanish
+(`TauCeti.coeff_gradedCartanMatrix_eq_zero_of_neg`). The divisor is not assumed to be
 one. When `Sᵢ` is the simple head of `A eᵢ`, it is the division-endomorphism dimension; the
 statements here require only the diagonal idempotent data and do not construct an action of
 that division algebra on arbitrary Hom spaces.
@@ -135,6 +137,23 @@ theorem coeff_gradedCartanMatrix_eq_div (i : I)
   exact (Int.mul_ediv_cancel_left _ (ne_of_gt (Int.natCast_pos.mpr
     ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated
       (e i) hconc (hself i))))).symm
+
+include hj in
+/-- Over a nonnegatively graded finite-dimensional algebra, every negative-degree Laurent
+coefficient of a column `[A f]` of the graded Cartan matrix in the simple-class basis vanishes
+(without assuming unit idempotent multiplicity `dim_k(eᵢ • (Sᵢ)₀) = 1`). -/
+theorem coeff_gradedCartanMatrix_eq_zero_of_neg (hneg : ∀ p < 0, 𝒜 p = ⊥) (i : I)
+    (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) {p : ℤ} (hp : p < 0) :
+    (gradedCartanMatrix 𝒜 bP
+      (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS) i j).coeff p = 0 := by
+  have hmul := finrank_smul_simple_piece_zero_mul_coeff_gradedCartanMatrix
+    S he he₀ hne hself hS bP hf hF j hj i hconc p
+  have hbot : cornerSubmodule k (e i) f ⊓ 𝒜 p = ⊥ := by simp [hneg p hp]
+  rw [hbot, Module.finrank_zero_of_subsingleton (M := ↥(⊥ : Submodule k A)), Nat.cast_zero] at hmul
+  have hpos : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) ≠ 0 :=
+    ne_of_gt (Int.natCast_pos.mpr
+      ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) hconc (hself i)))
+  exact (mul_eq_zero.mp hmul).resolve_left hpos
 
 end Cartan
 

@@ -98,7 +98,6 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
   have hG (x : M) : EqOn (G ∘ (extChartAt I x).symm) (fun z ↦ (q x z 0).curry0)
       (extChartAt I x).target := by
     intro z hz
-    have hy := (extChartAt I x).map_target hz
     have h₁ := hval _ _ (mem_extChartAt_target ((extChartAt I x).symm z))
     rw [(extChartAt I _).left_inv (mem_extChartAt_source _)] at h₁
     exact tendsto_nhds_unique h₁ (hval x z hz)

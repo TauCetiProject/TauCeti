@@ -88,6 +88,21 @@ theorem hasProjectiveDimensionLT_cokernel_iff_kernel {P Q : C} (f : P ⟶ Q) [Pr
   exact (h₂.hasProjectiveDimensionLT_X₃_iff (n + 1) ‹_›).trans
     (h₁.hasProjectiveDimensionLT_X₃_iff n ‹_›)
 
+/-- In an abelian category of projective dimension at most one, if `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` is exact
+with `X₁` and `X₃` projective, then `X₂` is projective: the image of `X₂ ⟶ X₃` is a subobject of
+`X₃`, hence projective, so `X₂` is an extension of projective objects. -/
+theorem _root_.CategoryTheory.ShortComplex.Exact.projective_X₂_of_mono_f
+    [∀ X : C, HasProjectiveDimensionLE X 1] {S : ShortComplex C} (hS : S.Exact) [Mono S.f]
+    [Projective S.X₁] [Projective S.X₃] : Projective S.X₂ := by
+  have : Projective (image S.g) := projective_of_mono_of_hasProjectiveDimensionLE_one (image.ι S.g)
+  have hS' : (ShortComplex.mk S.f (factorThruImage S.g)
+      (comp_factorThruImage_eq_zero S.zero)).ShortExact :=
+    { exact := ShortComplex.exact_of_g_is_cokernel _ hS.isColimitImage }
+  exact projective_iff_hasProjectiveDimensionLT_one.mpr
+    (hS'.hasProjectiveDimensionLT_X₂ 1
+      (projective_iff_hasProjectiveDimensionLT_one.mp ‹_›)
+      (projective_iff_hasProjectiveDimensionLT_one.mp ‹_›))
+
 variable (C) [EnoughProjectives C]
 
 /-- Every object has projective dimension at most one precisely when every monomorphism into a

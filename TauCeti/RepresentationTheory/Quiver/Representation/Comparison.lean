@@ -81,9 +81,8 @@ that identification, exactly as in the files this one builds on.
 
 ## References
 
-This implements the comparison morphisms `Pᵢ ↠ Sᵢ` and `Sᵢ ↪ Iᵢ` of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. III.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III.
 -/
 
 public section

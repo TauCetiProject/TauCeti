@@ -113,11 +113,16 @@ theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
 
 omit [DecidableEq n] in
 /-- Over a field with continuous ring operations and closed points, surjectivity of `A.mulVec` is
-an open condition on matrices `A` with finitely many rows. When `m` is nonempty, full row rank is
-the complement of the closed condition `rank A ≤ card m - 1`; when `m` is empty, `A.mulVec` is
-always surjective. -/
-theorem isOpen_setOfPred_mulVec_surjective {m : Type*} [Finite m] :
+an open condition on matrices `A`. When `m` is infinite the condition never holds
+(`Matrix.finite_of_mulVec_surjective`); when `m` is finite and nonempty, full row rank is the
+complement of the closed condition `rank A ≤ card m - 1`; when `m` is empty, `A.mulVec` is always
+surjective. -/
+theorem isOpen_setOfPred_mulVec_surjective {m : Type*} :
     IsOpen {A : Matrix m n K | Function.Surjective A.mulVec} := by
+  by_cases hm : Finite m
+  swap
+  · convert isOpen_empty using 1
+    exact Set.eq_empty_of_forall_notMem fun A hA ↦ hm (finite_of_mulVec_surjective A hA)
   cases nonempty_fintype m
   rcases isEmpty_or_nonempty m with hm | hm
   · convert isOpen_univ using 1

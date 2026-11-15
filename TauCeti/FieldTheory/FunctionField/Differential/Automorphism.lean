@@ -214,7 +214,7 @@ nonzero Weil differential, whose divisor is the moved divisor. -/
 @[simp]
 theorem smul_canonicalClass (hF : IsFunctionField k F') (hex : IsIntegrallyClosedIn k F') :
     σ • canonicalClass hF hex = canonicalClass hF hex := by
-  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   conv_lhs => rw [← divisorClass_weilDifferentialDivisor hF hex hmem hω]
   rw [Divisor.smul_divisorClass,
     ← weilDifferentialDivisor_repartitionRepresentation_dual σ hF hex hmem hω,

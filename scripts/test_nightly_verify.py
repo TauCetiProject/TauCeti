@@ -30,7 +30,7 @@ def condition(source, **values):
     source = source.removeprefix('${{').removesuffix('}}').strip()
     source = re.sub(r'!(?!=)', 'not ', source).replace('&&', ' and ').replace('||', ' or ')
     return eval(source, {'__builtins__': {}, 'always': lambda: True,
-                         'cancelled': lambda: False, **values})
+                         'cancelled': lambda: False, 'contains': lambda values, value: value in values, **values})
 
 
 class NightlyVerification(unittest.TestCase):
@@ -61,12 +61,11 @@ class NightlyVerification(unittest.TestCase):
         return dict(line.split('=', 1) for line in output.read_text().splitlines())
 
     def test_jobs_have_separate_budgets_and_transfer_only_the_clean_manifest(self):
-        # Regressions must not send the full clean rebuild back to a GitHub-hosted
-        # runner: even its platform maximum of six hours is insufficient.
-        self.assertEqual(JOBS['verify']['runs-on'], [
-            'nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1',
-            'namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}',
-        ])
+        # Full source builds retain their budget on general CI capacity.
+        self.assertEqual(JOBS['verify']['runs-on'], {
+            'group': 'TauCetiFleet',
+            'labels': ['self-hosted', 'linux', 'x64', 'tauceti-fleet-pr'],
+        })
         self.assertGreater(JOBS['verify']['timeout-minutes'], 360)
         self.assertNotIn('needs', JOBS['verify'])
         self.assertFalse(WORKFLOW['concurrency']['cancel-in-progress'])
@@ -109,7 +108,8 @@ class NightlyVerification(unittest.TestCase):
         self.assertEqual(JOBS['pick-reference-runner']['needs'], 'verify')
         source = JOBS['reference']['runs-on'].replace('needs.pick-reference-runner', 'needs.picker')
         for current, selected, target, expected in (
-            (1, '1', '["namespace-build"]', ['namespace-build']),
+            (1, '1', '["self-hosted","tauceti-fleet-pr"]', ['self-hosted', 'tauceti-fleet-pr']),
+            (1, '1', '["nscloud-build"]', 'ubuntu-24.04'),
             (2, '1', '["namespace-build"]', 'ubuntu-24.04'),
             (2, '', '', 'ubuntu-24.04'),
         ):

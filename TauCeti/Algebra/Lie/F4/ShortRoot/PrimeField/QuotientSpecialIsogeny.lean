@@ -114,9 +114,9 @@ theorem commonKernelHopfIdeal_le_ker_quotientCoordinateMap :
     (J).toIdeal ≤ RingHom.ker quotientCoordinateMap.hom.toAlgHom.toRingHom := by
   apply CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker_of_comp_commonKernelLift generator
   intro j
-  let g := (CommHopfAlgCat.commonKernelLift generator j).hom.toAlgHom
   rcases j with k | ⟨⟩
-  · obtain ⟨u, hu⟩ := root_generator_point k
+  · let g := (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom.toAlgHom
+    obtain ⟨u, hu⟩ := root_generator_point k
     have hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
         F4ShortRoot.rootSubgroupPoints k (generatorCodomain (.inl k)) u := by
@@ -127,7 +127,8 @@ theorem commonKernelHopfIdeal_le_ker_quotientCoordinateMap :
       (Multiplicative.ofAdd (Multiplicative.toAdd u ^ isogenyExponent k))).symm
     simpa only [CommHopfAlgCat.hom_comp, hom_quotientCoordinateMap,
       BialgHom.comp_toAlgHom] using ideal_le_ker_of_point_eq _ _ hp
-  · obtain ⟨s, hs⟩ := torus_generator_point
+  · let g := (CommHopfAlgCat.commonKernelLift generator (.inr ())).hom.toAlgHom
+    obtain ⟨s, hs⟩ := torus_generator_point
     have hg : GeneralLinear.pointsMulEquiv 26
         (WithConv.toConv (g.comp (CommHopfAlgCat.mkQuotient H₂₆ J).hom.toAlgHom)) =
         f4ShortRootWeightTorusGL s := by

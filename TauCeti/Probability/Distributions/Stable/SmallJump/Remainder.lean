@@ -131,7 +131,7 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
           ∫ x, x ∂compoundPoissonMeasure (ν band).toNNReal (cond ν band) := by
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg] using hmean
-  rw [hmean_exact, integral_id_compoundPoissonMeasure hjump_one]
+  rw [hmean_exact, integral_id_compoundPoissonMeasure]
   have hid := ν.toNNReal_smul_integral_cond_eq_setIntegral band id htop
   simp only [id_eq, NNReal.smul_def, smul_eq_mul] at hid
   simp only [smul_eq_mul]
@@ -166,8 +166,6 @@ theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
   have htop : ν band ≠ ∞ := ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
     (measure_mono fun _ hx ↦ hx.1)
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
-  have hjump : MemLp id 2 (cond ν band) :=
-    memLp_two_id_cond_stableLevyMeasure_smallJumpBand
   have hvariance := variance_id_map_affine
     (μ := compoundPoissonMeasure (ν band).toNNReal (cond ν band))
     (a := -(∫ y in band, sin y ∂ν)) (b := 1)
@@ -177,7 +175,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
         Var[id; compoundPoissonMeasure (ν band).toNNReal (cond ν band)] := by
     rw [stableSmallJumpRemainderMeasure_def]
     simpa only [ν, band, sub_eq_add_neg, add_comm] using hvariance
-  rw [hvariance_exact, variance_id_compoundPoissonMeasure hjump]
+  rw [hvariance_exact, variance_id_compoundPoissonMeasure]
   have hsecond :=
     ν.toNNReal_smul_integral_cond_eq_setIntegral band (fun x : ℝ ↦ x ^ 2) htop
   simpa only [ν, band, NNReal.smul_def, smul_eq_mul] using hsecond
@@ -202,7 +200,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
     have heq : |x| = r := le_antisymm hx.1.2 (le_of_not_gt hnot)
     simpa only [Metric.mem_sphere, Real.dist_eq, sub_zero] using heq
   have hae : band ≤ᵐ[ν] Metric.ball (0 : ℝ) r := by
-    rw [ae_le_set]
+    rw [ae_subset]
     exact measure_mono_null hsubset hsphere
   rw [variance_id_stableSmallJumpRemainderMeasure hα hβ hε hεr]
   exact setIntegral_mono_set (integrableOn_sq_stableLevyMeasure α β r)
@@ -261,7 +259,7 @@ theorem tendsto_variance_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r ≤ r) :
     Tendsto (fun r ↦ Var[id; stableSmallJumpRemainderMeasure α β (ε r) r])
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
-  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
+  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
     (nhdsWithin_mono 0 Ioi_subset_Ici_self)
   apply squeeze_zero' (Eventually.of_forall fun r ↦ variance_nonneg id
     (stableSmallJumpRemainderMeasure α β (ε r) r))
@@ -277,7 +275,7 @@ theorem tendsto_integral_id_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     Tendsto (fun r ↦ ∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε r) r)
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
-  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
+  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
     (nhdsWithin_mono 0 Ioi_subset_Ici_self)
   have hr : Tendsto (fun r : ℝ ↦ r / 6) (𝓝[>] (0 : ℝ)) (𝓝 0) := by
     have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝 0 := inf_le_left

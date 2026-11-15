@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Convex.Polyhedron.Simplex
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 import TauCeti.Analysis.Convex.SimplicialComplex.Arrangement
+import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
+import TauCeti.Analysis.Convex.SimplicialComplex.Neighborhood
 import TauCeti.Topology.PL.Compact
 
 /-!
@@ -32,6 +34,11 @@ polyhedron its open simplex meets
 on a compact polyhedron is PL exactly when it is simplicial for some triangulation
 (`Geometry.SimplicialComplex.isPLOn_space_iff_exists_isSubdivision`). With an injective map this
 triangulates its image (`Geometry.SimplicialComplex.map`).
+
+Locally the same subdivision argument applies to a germ. Near a point, a map PL within a convex
+polyhedron `P` agrees with an affine map on each of finitely many simplices contained in `P`,
+which cover `P` near the point (`TauCeti.IsPLWithinAt.exists_simplex_cover`). These simplices
+come from subdividing a small simplex around the point along `P` and the cells of the map.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapters 1--2.
 -/
@@ -98,3 +105,52 @@ theorem isPLOn_space_iff_exists_isSubdivision (hK : K.faces.Finite) :
     (fun _ _ => ⟨univ, univ_mem, Set.toFinite _⟩) A fun s => (hA s).mono inter_subset_right
 
 end Geometry.SimplicialComplex
+
+namespace TauCeti
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] {P : Set E} {x : E}
+
+/-- **Simplexwise affine germs.** Let `f` be piecewise linear within a convex polyhedron `P` at
+`x`. Then near `x`, inside any prescribed neighbourhood `O`, the polyhedron `P` is covered by
+finitely many simplices contained in `P`, on each of which `f` agrees with a continuous affine
+map. -/
+theorem IsPLWithinAt.exists_simplex_cover {f : E → G} (hP : IsConvexPolyhedron P)
+    (hf : IsPLWithinAt f P x) {O : Set E} (hO : O ∈ 𝓝 x) :
+    ∃ T : Set (Finset E), T.Finite ∧ ⋃ s ∈ T, convexHull ℝ (s : Set E) ∈ 𝓝[P] x ∧
+      ∀ s ∈ T, AffineIndependent ℝ ((↑) : ↥(s : Set E) → E) ∧
+        convexHull ℝ (s : Set E) ⊆ P ∩ O ∧
+          ∃ A : E →ᴬ[ℝ] G, EqOn f A (convexHull ℝ (s : Set E)) := by
+  classical
+  obtain ⟨V, -, hV, hpa⟩ := isPLWithinAt_iff.1 hf
+  obtain ⟨n, C, A, hC, hcov, heq⟩ := isPiecewiseAffineOn_iff.1 hpa
+  -- A finite complex `K` around `x` whose part in `P` lies in `O` and in the domain `V` of the
+  -- decomposition of `f`.
+  obtain ⟨U, hU, hUsub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 (inter_mem hV
+    (mem_nhdsWithin_of_mem_nhds hO))
+  obtain ⟨K, hKfin, hKnhds, hKU⟩ :=
+    Geometry.SimplicialComplex.exists_finite_space_mem_nhds_subset hU
+  have hPK {z : E} (hz : z ∈ P) (hzK : z ∈ K.space) : z ∈ V ∧ z ∈ O := hUsub ⟨hKU hzK, hz⟩
+  -- Subdivide `K` along `P` and the cells of `f`, and keep the simplices lying in `P`.
+  obtain ⟨K', hK'K, hK'fin, hK'sub⟩ :=
+    Geometry.SimplicialComplex.exists_isSubdivision_convexHull_subset_of_inter_nonempty hKfin
+      (C := fun o : Option (Fin n) => o.elim P C) (Option.rec hP hC)
+  have hK'space {s : Finset E} (hs : s ∈ K'.faces) : convexHull ℝ (s : Set E) ⊆ K.space :=
+    hK'K.space_eq ▸ Geometry.SimplicialComplex.convexHull_subset_space hs
+  refine ⟨{s | s ∈ K'.faces ∧ convexHull ℝ (s : Set E) ⊆ P},
+    hK'fin.subset fun _ ⟨hs, _⟩ => hs, ?_, fun s ⟨hs, hsP⟩ => ?_⟩
+  · -- The kept simplices cover the part of `P` in `|K|`.
+    refine mem_of_superset (inter_mem_nhdsWithin P hKnhds) fun z ⟨hzP, hzK⟩ => ?_
+    obtain ⟨s, ⟨hs, hzs⟩, -⟩ :=
+      Geometry.SimplicialComplex.existsUnique_mem_intrinsicInterior (hK'K.space_eq ▸ hzK)
+    exact mem_biUnion (x := s) ⟨hs, hK'sub s hs none ⟨z, hzs, hzP⟩⟩ (intrinsicInterior_subset hzs)
+  · refine ⟨K'.indep hs, fun z hz => ⟨hsP hz, (hPK (hsP hz) (hK'space hs hz)).2⟩, ?_⟩
+    -- A point of the open simplex lies in some cell `C j`; then the whole simplex does.
+    obtain ⟨p, hp⟩ := ((Finset.coe_nonempty.2 (K'.nonempty_of_mem_faces hs)).convexHull
+      (𝕜 := ℝ)).intrinsicInterior (convex_convexHull ℝ _)
+    have hpK := hPK (hsP (intrinsicInterior_subset hp)) (hK'space hs (intrinsicInterior_subset hp))
+    obtain ⟨j, hj⟩ := mem_iUnion.1 (hcov hpK.1)
+    have hsC : convexHull ℝ (s : Set E) ⊆ C j := hK'sub s hs (some j) ⟨p, hp, hj⟩
+    exact ⟨A j, fun z hz => heq j ⟨(hPK (hsP hz) (hK'space hs hz)).1, hsC hz⟩⟩
+
+end TauCeti

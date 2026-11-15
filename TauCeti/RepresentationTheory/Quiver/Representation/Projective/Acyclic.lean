@@ -24,9 +24,8 @@ the projective `Pᵢ` is a brick, and `dim Pᵢ` is a root.
 
 ## References
 
-This implements the indecomposable projectives of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. III.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III.
 -/
 
 public section

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.CategoryTheory.Subobject.Basic
+public import Mathlib.CategoryTheory.Subobject.FactorThru
 public import Mathlib.SetTheory.Cardinal.HasCardinalLT
 
 /-!
@@ -18,6 +19,10 @@ of `K.X i` for every `i` are equal (`HomologicalComplex.subobjectMk_f_injective`
 subobjects of `K` are at most as numerous as the families of subobjects of its terms
 (`HomologicalComplex.hasCardinalLT_subobject`). This bounds the size of complexes, for instance in
 transfinite constructions with complexes over a Grothendieck abelian category.
+
+A morphism of complexes `g : K ⟶ L` factors through a subobject `S` of `L` exactly when it does
+degreewise, that is, when each component `g.f n` factors through `S.arrow.f n`
+(`CategoryTheory.Subobject.factors_iff_forall_exists_comp_arrow_f_eq`).
 -/
 
 public section
@@ -52,3 +57,27 @@ lemma hasCardinalLT_subobject {κ : Cardinal.{w}} (h : HasCardinalLT (∀ i, Sub
   h.of_injective _ K.subobjectMk_f_injective
 
 end HomologicalComplex
+
+namespace CategoryTheory.Subobject
+
+variable {C ι : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteLimits C] {c : ComplexShape ι}
+  {K L : HomologicalComplex C c}
+
+/-- A morphism of complexes factors through a subcomplex exactly when each of its components
+factors through the corresponding component of the inclusion. -/
+theorem factors_iff_forall_exists_comp_arrow_f_eq (S : Subobject L) (g : K ⟶ L) :
+    S.Factors g ↔
+      ∀ n, ∃ l : K.X n ⟶ (S : HomologicalComplex C c).X n, l ≫ S.arrow.f n = g.f n := by
+  refine ⟨fun hS n ↦ ⟨(S.factorThru g hS).f n, ?_⟩, fun h ↦ ?_⟩
+  · rw [← HomologicalComplex.comp_f, factorThru_arrow]
+  choose l hl using h
+  -- The degreewise lifts commute with the differentials since each `S.arrow.f j` is a mono.
+  let lift : K ⟶ (S : HomologicalComplex C c) :=
+    { f := l
+      comm' := fun i j _ ↦ by
+        rw [← cancel_mono (S.arrow.f j)]
+        simp [reassoc_of% hl, hl, ← HomologicalComplex.Hom.comm] }
+  have e : lift ≫ S.arrow = g := HomologicalComplex.hom_ext _ _ hl
+  exact e ▸ factors_comp_arrow lift
+
+end CategoryTheory.Subobject

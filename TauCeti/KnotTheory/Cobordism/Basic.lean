@@ -25,7 +25,11 @@ import TauCeti.Topology.Homotopy.HomotopyEquiv
 Two knots `K₀`, `K₁ ⊆ S³` are related by a **cobordism of genus `g`** when they cobound a compact,
 connected, orientable surface of genus `g` smoothly and properly embedded in `S³ × [0, 1]`, with
 `K₀` in `S³ × {0}` and `K₁` in `S³ × {1}`. The least such genus is the **cobordism distance**
-between the two knots. A concordance, an embedded annulus, is a cobordism of genus `0`. Classically,
+between the two knots. The orientations of the knots play no role: the surface is orientable, but no
+compatibility is asked between an orientation of it and the orientations that the parametrizations
+induce on the two boundary circles, so this is the cobordism distance between unoriented knots (the
+smaller of the oriented distances from `K₀` to `K₁` and to the reverse of `K₁`). A concordance, an
+embedded annulus, is a cobordism of genus `0`. Classically,
 capping off with a disc shows that the cobordism distance from `K` to the unknot is the slice genus
 of `K`; that comparison needs gluing surfaces and is not formalized here.
 
@@ -55,8 +59,11 @@ boundary circles, so `H₁(S; ℚ) ≅ ℚ²ᵍ⁺¹` and the genus is `⌊dim H
 (`TauCeti.KnotCobordism.genus_ofConcordance`). The cobordism distance
 (`TauCeti.cobordismDistance K₀ K₁`) is the infimum of the genera of the knot cobordisms from `K₀`
 to `K₁`, valued in `ℕ∞` so that it is `⊤` when there is none; it vanishes on concordant knots
-(`TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`). The converse, that a cobordism of
-genus `0` is an annulus, needs the classification of compact surfaces and is not proved here.
+(`TauCeti.SmoothEmbedding.Concordant.cobordismDistance_eq_zero`). Distance `0` does not give a
+concordance in return: a knot and its reverse are at distance `0` (their images agree), although
+they need not be concordant. That a cobordism of genus `0` is an annulus, which would give a
+concordance only up to reversing one end, needs the classification of compact surfaces and is not
+proved here.
 
 Two operations keep the surface and move only its embedding, so they keep the genus. Reflecting
 the heights by `t ↦ 1 - t` reverses a cobordism from `K₀` to `K₁` into one from `K₁` to `K₀`
@@ -127,7 +134,8 @@ inequality also needs the genus of the stacked surface, which is not computed.
 * C. Livingston, *A survey of classical knot concordance*, in *Handbook of Knot Theory* (2005),
   Section 2, for knot cobordisms in `S³ × [0, 1]` and the four-ball genus.
 * S. Baader, *Scissor equivalence for torus links*, Bull. Lond. Math. Soc. 44 (2012), 1068–1078,
-  for the cobordism distance of knots.
+  for the cobordism distance of oriented links, of which the distance here is the unoriented
+  variant.
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 8.
 -/
 
@@ -144,7 +152,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
 /-- A smooth **knot cobordism** from the knot `K₀` to the knot `K₁` in the unit sphere `Sⁿ` of `E`,
-in collared form: a connected, orientable smooth surface, modelled on `ℝ¹ × ℝ`, with a smooth
+between the images of the knots only, so without any compatibility with their orientations, in
+collared form: a connected, orientable smooth surface, modelled on `ℝ¹ × ℝ`, with a smooth
 embedding into `Sⁿ × ℝ` which is proper over the slab `Sⁿ × [0, 1]` and whose image is the
 cylinder over `K₀` at heights at most `ε` and the cylinder over `K₁` at heights at least `1 - ε`,
 for some `ε > 0`. -/
@@ -850,7 +859,8 @@ end SmoothEmbedding.Concordance
 open KnotCobordism
 
 /-- The **cobordism distance** between the knots `K₀` and `K₁`: the least genus of a knot cobordism
-from `K₀` to `K₁`, or `⊤` if there is none. -/
+from `K₀` to `K₁`, or `⊤` if there is none. Only the images of the knots enter, so this is the
+distance between unoriented knots: a knot and its reverse are at distance `0`. -/
 def cobordismDistance (K₀ K₁ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : ℕ∞ :=
   ⨅ S : KnotCobordism K₀ K₁, (S.genus : ℕ∞)
 

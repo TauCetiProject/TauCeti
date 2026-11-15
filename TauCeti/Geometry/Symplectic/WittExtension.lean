@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Tactic.FinCases
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # Witt's extension theorem for symplectic vector spaces
@@ -41,6 +43,8 @@ isometrically. Such a pair exists for a suitable `v`:
   subspace preserving the forms extends to a symplectomorphism.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_extend_linearEquiv`: the same for a linear
   isomorphism between two subspaces.
+* `TauCeti.SymplecticForm.exists_isSymplectomorphism_apply_eq`: a linear symplectomorphism matches
+  any two pairs `(q, p)` and `(q', p')` with `ω₁(q, p) = 1 = ω₂(q', p')`.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism`: two symplectic vector spaces of the same
   finite dimension are symplectomorphic.
 
@@ -218,6 +222,30 @@ theorem exists_isSymplectomorphism_extend_linearEquiv [FiniteDimensional ℝ V]
     (T.subtype ∘ₗ f.toLinearMap) (T.injective_subtype.comp f.injective)
     fun x y => by simpa using hω x y
   exact ⟨e, he, fun x => by simpa using hext x⟩
+
+/-- If `ω₁(q, p) = 1` and `ω₂(q', p') = 1` in two symplectic vector spaces of the same finite
+dimension, some linear symplectomorphism sends `q` to `q'` and `p` to `p'`. This is Witt's
+extension theorem for the map `span {q, p} ≃ span {q', p'}` matching the two pairs. -/
+theorem exists_isSymplectomorphism_apply_eq [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
+    (hdim : finrank ℝ V = finrank ℝ W) {q p : V} {q' p' : W} (h : ω₁ q p = 1)
+    (h' : ω₂ q' p' = 1) :
+    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω₁ ω₂ e ∧ e q = q' ∧ e p = p' := by
+  let b := Basis.span <| LinearIndependent.pair_symm_iff.1 <|
+    ω₁.isAlt.linearIndependent_pair_of_apply_eq_one h
+  let b' := Basis.span <| LinearIndependent.pair_symm_iff.1 <|
+    ω₂.isAlt.linearIndependent_pair_of_apply_eq_one h'
+  let f := b.equiv b' (Equiv.refl _)
+  have hb (i : Fin 2) : (b i : V) = ![q, p] i := by simp [b, Basis.span_apply]
+  have hf (i : Fin 2) : (f (b i) : W) = ![q', p'] i := by simp [f, b', Basis.span_apply]
+  -- The two forms on `span {q, p}` agree on the basis `(q, p)`.
+  have hω : ω₂.toBilinForm.compl₁₂ (Submodule.subtype _ ∘ₗ f.toLinearMap)
+      (Submodule.subtype _ ∘ₗ f.toLinearMap) =
+      ω₁.toBilinForm.compl₁₂ (Submodule.subtype _) (Submodule.subtype _) :=
+    LinearMap.ext_basis b b fun i j ↦ by
+      fin_cases i <;> fin_cases j <;> simp [hf, hb, h, h', ← ω₁.neg_eq q p, ← ω₂.neg_eq q' p']
+  obtain ⟨e, he, hext⟩ := exists_isSymplectomorphism_extend_linearEquiv ω₁ ω₂ hdim f
+    fun x y ↦ LinearMap.congr_fun₂ hω x y
+  exact ⟨e, he, by simpa [hb, hf] using hext (b 0), by simpa [hb, hf] using hext (b 1)⟩
 
 /-- **Linear Darboux theorem.** Two symplectic vector spaces of the same finite dimension are
 linearly symplectomorphic. -/

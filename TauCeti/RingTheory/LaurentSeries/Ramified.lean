@@ -244,9 +244,7 @@ noncomputable def contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : F
     by_contra hle
     have hklt : k < min 0 f.order := lt_of_not_ge hle
     have hkneg : k < 0 := hklt.trans_le (min_le_left _ _)
-    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
     have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
-    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
     have hindex : (d : ℤ) * k + r < f.order := by
       have : (d : ℤ) * k + r ≤ k := by nlinarith
       exact this.trans_lt (hklt.trans_le (min_le_right _ _))

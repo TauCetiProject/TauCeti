@@ -18,7 +18,7 @@ point at which the double coset finally acts on *forms* rather than on raw funct
 ## The level
 
 `G` is an arbitrary subgroup of `SL(2, ℤ)`; taking `G = Γ₁(N)` gives the level at which the
-roadmap's Hecke operators live, and `G = ⊤` recovers level one. The two flanks of the double
+classical Hecke operators live, and `G = ⊤` recovers level one. The two flanks of the double
 coset are the *same* group `G.map (mapGL ℚ)`, which is what makes the hypothesis and the
 conclusion of `heckeSlashSum_slash_invariant` the same condition; no transpose-stability is
 needed anywhere, which is why the level is not confined to `SL₂(ℤ)`.
@@ -35,9 +35,8 @@ the two directions, and they are the only bridging this file does.
 ## Main definitions
 
 * `HeckeRing.GL2.heckeSlashEnd`: the double coset bundled as a `ℂ`-linear endomorphism of
-  `SlashInvariantForm (G.map (mapGL ℝ)) k`. This is an intermediate step toward Layer 2(b), which
-  asks for endomorphisms of `ModularForm`; holomorphy and the cusp conditions are added in
-  `HeckeSlash/ModularForm.lean`.
+  `SlashInvariantForm (G.map (mapGL ℝ)) k`. This is an intermediate step toward endomorphisms of
+  `ModularForm`; holomorphy and the cusp conditions are added in `HeckeSlash/ModularForm.lean`.
 
 ## Main results
 
@@ -95,7 +94,7 @@ structure. Linearity is `heckeSlashSum_add`, which needs no hypothesis, together
 group consists of determinant-one matrices (`ModularForm.map_mapGL_le_glpos`), so `hD` is all
 that is left to ask.
 
-⚠ This is an intermediate step, not the roadmap's Layer 2(b) target: that asks for endomorphisms
+⚠ This is an intermediate step, not the Hecke operator on modular forms: that is an endomorphism
 of `ModularForm (G.map (mapGL ℝ)) k`, which additionally requires holomorphy and the cusp
 conditions to be preserved. The descent is `HeckeSlash/ModularForm.lean`. -/
 noncomputable def heckeSlashEnd :

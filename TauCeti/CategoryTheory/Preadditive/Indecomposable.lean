@@ -13,6 +13,8 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
 public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.RingTheory.LocalRing.Basic
+import Mathlib.CategoryTheory.Adjunction.Limits
+import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.HopkinsLevitzki
@@ -68,6 +70,8 @@ decomposition of the whole object.
 * `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
   and bijective on the endomorphisms of an indecomposable object carries it to an indecomposable
   object; in particular a fully faithful one does.
+* `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: indecomposability is invariant under
+  equivalence of categories, with no idempotent completeness.
 
 ## Implementation notes
 
@@ -331,3 +335,28 @@ theorem indecomposable_obj_of_map_bijective [HasBinaryBiproducts C] [IsIdempoten
     · exact Or.inr (by rw [h, F.map_id])
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Equivalence
+
+open Limits
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type*} [Category* D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
+
+/-- **An equivalence of categories carries indecomposable objects to indecomposable objects.** A
+decomposition of the image transports back along the inverse, which preserves binary products. -/
+theorem indecomposable_functor_obj (e : C ≌ D) {X : C} (hX : Indecomposable X) :
+    Indecomposable (e.functor.obj X) := by
+  refine ⟨fun h ↦ hX.1 (IsZero.of_full_of_faithful_of_isZero e.functor X h), fun Y Z f ↦ ?_⟩
+  exact (hX.2 _ _ (e.unitIso.app X ≪≫ e.inverse.mapIso (f ≪≫ biprod.isoProd Y Z) ≪≫
+      PreservesLimitPair.iso e.inverse Y Z ≪≫ (biprod.isoProd _ _).symm)).imp
+    (IsZero.of_full_of_faithful_of_isZero e.inverse Y)
+    (IsZero.of_full_of_faithful_of_isZero e.inverse Z)
+
+/-- **Indecomposability is invariant under equivalence of categories.** -/
+theorem indecomposable_functor_obj_iff (e : C ≌ D) (X : C) :
+    Indecomposable (e.functor.obj X) ↔ Indecomposable X :=
+  ⟨fun h ↦ (e.symm.indecomposable_functor_obj h).of_iso (e.unitIso.app X).symm,
+    e.indecomposable_functor_obj⟩
+
+end CategoryTheory.Equivalence

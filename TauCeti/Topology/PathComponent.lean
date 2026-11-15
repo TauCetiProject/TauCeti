@@ -29,11 +29,6 @@ gives local path connectedness of the subspace.
   reflects being joined by a path, so it induces a bijection of path components.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
   `TauCeti.PathComponentBasepoints.choose` giving one.
-
-## References
-
-This supplies point-set prerequisites for the "or one builds the cover of `pathComponent x₀`"
-clause in `TauCetiRoadmap/UniversalCovers/README.md`.
 -/
 
 public section

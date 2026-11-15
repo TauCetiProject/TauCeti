@@ -28,6 +28,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representatives.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
+* `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
+  on `G × U`, then distinct points of `U` lie in distinct orbits.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: if there are finitely many `H`-orbits,
@@ -211,6 +213,17 @@ lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
   MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
     MulAction.orbitRel.Quotient.mem_orbit.2 h
+
+/-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
+`G × U`, then distinct points of `U` lie in distinct orbits. -/
+theorem MulAction.injOn_quotientMk_slice {S : Type*} {σ : S → X} {U : Set S}
+    (hinj : Set.InjOn (fun p : G × S ↦ p.1 • σ p.2) (Set.univ ×ˢ U)) :
+    Set.InjOn (fun s ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) U := by
+  intro s hs s' hs' hss'
+  obtain ⟨g, hg⟩ := Quotient.exact hss'
+  have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨Set.mem_univ _, hs'⟩ ⟨Set.mem_univ _, hs⟩
+    (by simpa only [one_smul] using hg)
+  exact (Prod.ext_iff.1 h1).2.symm
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/

@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.ComplexProjectiveSpace.Basic
 import TauCeti.Topology.Algebra.GroupAction.Transitive
-import TauCeti.Topology.Grassmannian.FrameQuotient
 
 /-!
 # Complex projective space as the homogeneous space `U(n + 1) / (U(1) × U(n))`
@@ -20,9 +19,10 @@ import TauCeti.Topology.Grassmannian.FrameQuotient
 The unitary group `U(n + 1) = Matrix.unitaryGroup (Fin (n + 1)) ℂ` acts on complex projective
 space `CPⁿ` by `A • [x] = [A x]` (`TauCeti.ComplexProjectiveSpace.smul_mk`): a unitary matrix
 maps the unit sphere `S²ⁿ⁺¹` to itself and commutes with unit complex scalars, so it descends to
-the circle quotient. The action is continuous, and it is transitive: a unit vector extends to an
-orthonormal basis, whose vectors are the columns of a unitary matrix
-(`TauCeti.finiteOrthonormalFrame.unitaryMap_standard_surjective`, for frames of one vector).
+the circle quotient. The action is continuous, and it is transitive: linear isometries act
+transitively on the unit sphere (`LinearIsometryEquiv.isPretransitive_unitSphere`), and every
+linear isometry of `ℂⁿ⁺¹` is a unitary matrix
+(`Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`).
 
 The stabilizer of the base point `[e₀]` consists of the unitary matrices whose column `0` is a
 unit multiple of `e₀`; these are exactly the block-diagonal matrices `diag(c, B)` with `c ∈ U(1)`
@@ -122,29 +122,18 @@ theorem basePoint_def : basePoint n = mk n ⟨EuclideanSpace.single 0 1, by simp
   (rfl)
 
 /-- **The unitary group acts transitively on `CPⁿ`**: every point is `[A e₀]` for some unitary
-`A`, the matrix of an orthonormal basis extending a unit representative of the point. -/
+`A`, the matrix of a linear isometry carrying `e₀` to a unit representative of the point. -/
 instance instIsPretransitiveUnitaryGroup :
     MulAction.IsPretransitive (unitaryGroup (Fin (n + 1)) ℂ) (ComplexProjectiveSpace n) := by
   refine .of_orbit (x₀ := basePoint n) fun p ↦ ?_
   induction p using ComplexProjectiveSpace.inductionOn with
   | h x =>
-    -- The unit vector `x` is an orthonormal frame of one vector, the image of the standard frame
-    -- `e₀` under a unitary matrix.
-    let f : finiteOrthonormalFrame ℂ 1 (n + 1) :=
-      ⟨fun _ ↦ WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1))), by
-        rw [orthonormal_iff_ite]
-        intro i j
-        simp [Subsingleton.elim i j, inner_self_eq_norm_sq_to_K]⟩
-    obtain ⟨A, hA⟩ := finiteOrthonormalFrame.unitaryMap_standard_surjective
-      (𝕜 := ℂ) (Nat.le_add_left 1 n) f
-    refine ⟨A, ?_⟩
-    rw [basePoint_def, smul_mk]
-    refine congrArg (mk n) (Subtype.ext ?_)
-    have h := congrFun (congrArg Subtype.val hA) 0
-    simp only [finiteOrthonormalFrame.coe_unitaryMap, finiteOrthonormalFrame.coe_standard, f] at h
-    rw [LinearIsometryEquiv.coe_smul_unitSphere, UnitaryGroup.toLinearIsometryEquiv_single]
-    ext i
-    simpa using congrFun h i
+    -- Linear isometries act transitively on the unit sphere, and each is a unitary matrix.
+    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq
+      (EuclideanSpace ℂ (Fin (n + 1)) ≃ₗᵢ[ℂ] EuclideanSpace ℂ (Fin (n + 1)))
+      ⟨EuclideanSpace.single 0 1, by simp⟩ x
+    obtain ⟨A, rfl⟩ := UnitaryGroup.toLinearIsometryEquiv_surjective g
+    exact ⟨A, by rw [basePoint_def, smul_mk, hg]⟩
 
 /-- **The stabilizer of `[e₀]`**: a unitary matrix fixes the base point of `CPⁿ` exactly when its
 column `0` vanishes below the corner, that is, when it maps `e₀` to a multiple of `e₀`. -/

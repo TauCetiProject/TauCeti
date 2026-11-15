@@ -95,7 +95,7 @@ theorem ofReal_mul_measure_compl_closedBall_le_wassersteinEDist (x : X) (μ : Pr
       wassersteinEDist p (Measure.dirac x) μ := by
   have hsub : (Metric.closedBall x r)ᶜ ⊆ {y | ENNReal.ofReal r ≤ ‖edist x y‖ₑ} := fun y hy ↦ by
     rw [mem_compl_iff, Metric.mem_closedBall, not_le, dist_comm] at hy
-    rw [mem_ofPred_eq, enorm_eq_self, edist_dist]
+    rw [mem_ofPred_eq, eNorm_eq_self, edist_dist]
     exact ENNReal.ofReal_le_ofReal hy.le
   calc ENNReal.ofReal r * (μ : Measure X) (Metric.closedBall x r)ᶜ
       ≤ ENNReal.ofReal r ^ (1 : ℝ≥0∞).toReal *
@@ -137,12 +137,13 @@ theorem isTightMeasureSet_of_isCompact_closure [CompleteSpace X] {S : Set (Wasse
   rw [coe_measure_set_eq]
   exact MeasureTheory.isTightMeasureSet_of_isCompact_closure hS'
 
-/-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For a
-finite exponent `1 ≤ p < ∞`, the `p`-moments about any basepoint of the laws of a relatively
-compact set of `P_p (X)` have uniformly small tails: for every `ε > 0` there is a radius `R` such
-that, for every law of the set, the part of its `p`-moment coming from distance at least `R` is at
-most `ε`. -/
-theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure (hp : p ≠ ∞)
+/-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For
+`1 ≤ p`, the `p`-moments about any basepoint of the laws of a relatively compact set of `P_p (X)`
+have uniformly small tails: for every `ε > 0` there is a radius `R` such that, for every law of the
+set, the part of its `p`-moment coming from distance at least `R` is at most `ε`. For `p = ∞` the
+integrand is `1`, and the conclusion bounds the mass outside the ball of radius `R` rather than an
+infinite moment. -/
+theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure
     {S : Set (WassersteinSpace p X)} (hS : IsCompact (closure S)) (x : X) {ε : ℝ≥0∞}
     (hε : 0 < ε) :
     ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y}, edist x y ^ p.toReal
@@ -152,7 +153,7 @@ theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure (hp : p ≠ ∞)
   -- which the tails beyond some fixed radius are eventually at most `ε`.
   choose μ hμS hμ using fun n : ℕ ↦ h n
   obtain ⟨ν, -, φ, hφ, hlim⟩ := hS.tendsto_subseq fun n ↦ subset_closure (hμS n)
-  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le hp hlim x hε
+  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le hlim x hε
   obtain ⟨n, hn, hRn⟩ := (hR.and (hφ.tendsto_atTop.eventually_ge_atTop ⌈R⌉₊)).exists
   refine (hμ (φ n)).not_ge ((lintegral_mono_set fun y hy ↦ ?_).trans hn)
   exact (Nat.le_ceil R).trans ((Nat.cast_le.2 hRn).trans hy)
@@ -236,7 +237,7 @@ theorem isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rp
         ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y},
           edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε :=
   ⟨fun h ↦ ⟨isTightMeasureSet_of_isCompact_closure h,
-      fun _ hε ↦ exists_setLIntegral_edist_rpow_le_of_isCompact_closure hp h x hε⟩,
+      fun _ hε ↦ exists_setLIntegral_edist_rpow_le_of_isCompact_closure h x hε⟩,
     fun h ↦ isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le hp x h.1
       h.2⟩
 

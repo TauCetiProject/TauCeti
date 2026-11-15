@@ -49,7 +49,7 @@ and when `|discr K| < π²` for imaginary `K`; `9` is below both thresholds. -/
 theorem isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine
     (hfin : Module.finrank ℚ K = 2) (hdisc : (discr K).natAbs ≤ 9) :
     IsPrincipalIdealRing (𝓞 K) := by
-  refine RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
+  refine NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
   have h9 : ((|discr K| : ℤ) : ℝ) ≤ 9 := by rw [← Nat.cast_natAbs]; exact_mod_cast hdisc
   have := card_add_two_mul_card_eq_rank K
   obtain hr | hr : nrComplexPlaces K = 0 ∨ nrComplexPlaces K = 1 := by omega
@@ -63,7 +63,7 @@ bound `√|discr K| / 2` is below `2` when `|discr K| < 16`. -/
 theorem isPrincipalIdealRing_of_finrank_eq_two_of_nrComplexPlaces_eq_zero_of_natAbs_discr_le_fifteen
     (hfin : Module.finrank ℚ K = 2) (hr : nrComplexPlaces K = 0)
     (hdisc : (discr K).natAbs ≤ 15) : IsPrincipalIdealRing (𝓞 K) := by
-  refine RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
+  refine NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
   have h15 : ((|discr K| : ℤ) : ℝ) ≤ 15 := by rw [← Nat.cast_natAbs]; exact_mod_cast hdisc
   rw [hfin, hr]
   exact h15.trans_lt (by norm_num)
@@ -75,7 +75,7 @@ thresholds. -/
 theorem isPrincipalIdealRing_of_finrank_eq_three_of_natAbs_discr_le_forty_nine
     (hfin : Module.finrank ℚ K = 3) (hdisc : (discr K).natAbs ≤ 49) :
     IsPrincipalIdealRing (𝓞 K) := by
-  refine RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
+  refine NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
   have h49 : ((|discr K| : ℤ) : ℝ) ≤ 49 := by rw [← Nat.cast_natAbs]; exact_mod_cast hdisc
   have := card_add_two_mul_card_eq_rank K
   obtain hr | hr : nrComplexPlaces K = 0 ∨ nrComplexPlaces K = 1 := by omega

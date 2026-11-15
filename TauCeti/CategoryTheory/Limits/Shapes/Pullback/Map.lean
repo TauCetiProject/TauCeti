@@ -70,7 +70,6 @@ theorem pullback_map_pullback_map [HasPullback t x] [HasPullback t₁ x₁] [Has
     IsPullback (pullback.map t x t₁ x₁ p₁ q₁ (𝟙 S) (by simp [ht₁]) (by simp [hx₁]))
       (pullback.map t x t₂ x₂ p₂ q₂ (𝟙 S) (by simp [← hT.w, ht₁]) (by simp [← hX.w, hx₁]))
       (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂) := by
-  have ht₂ : p₂ ≫ t₂ = t := hT.w.symm.trans ht₁
   have hx₂ : q₂ ≫ x₂ = x := hX.w.symm.trans hx₁
   have hc₁ {W : C} (a : W ⟶ pullback t₁ x₁) :
       a ≫ pullback.fst t₁ x₁ ≫ t₁ = a ≫ pullback.snd t₁ x₁ ≫ x₁ := by

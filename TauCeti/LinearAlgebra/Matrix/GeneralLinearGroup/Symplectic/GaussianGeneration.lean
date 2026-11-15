@@ -71,8 +71,6 @@ theorem exists_gaussian_decomposition_of_isUnit_toBlocks₁₁
       (mulEquivGLSymplectic m R g).property
   have hMblocks : Matrix.fromBlocks A B C D = M := by
     simpa only [A, B, C, D] using M.fromBlocks_toBlocks
-  have hblocks : Aᵀ * C = Cᵀ * A ∧ Bᵀ * D = Dᵀ * B ∧ Aᵀ * D - Cᵀ * B = 1 := by
-    exact (SymplecticGroup.fromBlocks_mem_iff).mp (hMblocks ▸ hM)
   let P : GL (Fin m) R := Matrix.GeneralLinearGroup.mk'' A
     ((Matrix.isUnit_iff_isUnit_det A).mp hunit)
   set Ainv : Matrix (Fin m) (Fin m) R :=

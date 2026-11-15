@@ -248,7 +248,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
     linarith
   set q : ℝ := Real.sqrt G
   have hq0 : 0 < q := Real.sqrt_pos.2 hG
-  have hqne : q ≠ 0 := hq0.ne'
   have hqq : q * q = G := Real.mul_self_sqrt hG.le
   -- the energy is dominated by `G * exp (-lam * (t - T))`
   have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ q * q * Real.exp (-(lam * (t - T))) := by
@@ -264,7 +263,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
-  have hone : (0 : ℝ) < 1 - r := by linarith
   have hlimit : ∀ t ∈ Ici T,
       ‖γ t - p‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by
     intro t ht

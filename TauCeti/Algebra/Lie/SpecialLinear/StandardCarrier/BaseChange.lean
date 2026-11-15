@@ -41,10 +41,6 @@ its torus.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances the base-change and pinning targets in Layer 9 of the ReductiveGroups roadmap. The
-specialized type `A` carrier is consumed by milestone L0, "pinned ambient groups", of the
-CFSGStatement roadmap.
 -/
 
 public section

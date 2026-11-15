@@ -68,7 +68,7 @@ private theorem isElliptic_of_perfectField [PerfectField F] [W₂.IsElliptic]
   -- The slope at the singular point is a transcendental generator of `F(W₁)`.
   let e : RatFunc F ≃ₐ[F] W₁.FunctionField :=
     (RatFunc.algEquivOfTranscendental z
-      (hW.transcendental_div_of_isSingular W₁.isFunctionField Place.degree_infinity hs)).trans
+      (hW.transcendental_div_of_isSingular hs)).trans
       ((IntermediateField.equivOfEq (hW.adjoin_div_eq_top_of_isSingular W₁.isFunctionField
         Place.degree_infinity hs)).trans IntermediateField.topEquiv)
   -- So `φ^*` embeds `F(W₂)` into a rational function field, and by Lüroth's theorem `F(W₂)` has

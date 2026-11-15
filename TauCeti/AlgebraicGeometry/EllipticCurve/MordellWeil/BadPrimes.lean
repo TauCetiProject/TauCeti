@@ -79,8 +79,7 @@ consumer of the `RingOfIntegers` estimates above.
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeakMordellWeil.lean`, sections `BadPrimes`, `RingOfIntegers` and `Core` (the
 source's `Cubic` section is now in `TauCeti.RingTheory.Valuation.RootMonic`). The
 source carries its own `HeightOneSpectrum.below`; at our Mathlib pin that map is

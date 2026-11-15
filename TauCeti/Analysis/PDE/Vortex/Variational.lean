@@ -501,6 +501,21 @@ theorem continuous_backgroundSource (hf : Differentiable ℂ f) :
     ((continuous_const.mul (hf'.norm.pow 2)).div
       ((continuous_const.add (hf.continuous.norm.pow 2)).pow 2) fun z ↦ by positivity)
 
+/-- For an entire `f`, the source `k` of the reduced vortex equation is smooth. -/
+theorem contDiff_backgroundSource {n : WithTop ℕ∞} (hf : Differentiable ℂ f) :
+    ContDiff ℝ n (backgroundSource f) := by
+  have hf' : ContDiff ℝ n f := hf.contDiff.restrict_scalars ℝ
+  have hd : ContDiff ℝ n (deriv f) :=
+    ((contDiff_infty_iff_deriv.1 (hf.contDiff (n := ((⊤ : ℕ∞) : WithTop ℕ∞)))).2.differentiable
+      (by simp)).contDiff.restrict_scalars ℝ
+  have hk : backgroundSource f = fun z ↦
+      (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 :=
+    funext (backgroundSource_def f)
+  rw [hk]
+  exact (((contDiff_backgroundWeight hf').sub contDiff_const).div_const 8).add
+    ((contDiff_const.mul (hd.norm_sq ℝ)).div ((contDiff_const.add (hf'.norm_sq ℝ)).pow 2)
+      fun z ↦ by positivity)
+
 /-- **The Euler–Lagrange equation for the background coefficients is the vortex equation.** For a
 holomorphic `f`, the function `w` solves `Δw = h (exp (2w) - 1) / 8 + k` at `z`, with the
 background coefficients `h` and `k`, exactly when the field reconstructed from the amplitude

@@ -266,7 +266,7 @@ noncomputable def dual : NormalizationTranslation where
   arithmetic := T.arithmetic.dual
   analytic := T.analytic.dual
   weight := T.weight
-  coeff_eq n hn := by
+  coeff_eq n _ := by
     have hpow := TauCeti.ofReal_cpow_conj (n.cast_nonneg : (0 : ℝ) ≤ n) ((T.weight : ℂ) / 2)
     rw [ofReal_natCast, conj_weight_div_two] at hpow
     simp [map_div₀, ← hpow]

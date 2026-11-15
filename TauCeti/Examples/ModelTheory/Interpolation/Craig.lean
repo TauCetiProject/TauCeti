@@ -32,7 +32,11 @@ the projective-class separation interface:
   Their disjointness on countable nonempty carriers yields, via `pcSeparation`, a
   pure-equality sentence of `Language.empty` separating even from odd nonempty finite sets in every
   universe, and the countable disjunction `evenCardSentence` asserting "exactly `2n` elements for
-  some `n`" gives an explicit such sentence.
+  some `n`" gives an explicit such sentence. The theorems are
+  `TauCeti.ParityOfFiniteSetsExample.pcMem_evenFiniteSentence_iff` and
+  `TauCeti.ParityOfFiniteSetsExample.pcMem_oddFiniteSentence_iff`, which describe the two projective
+  classes, and `TauCeti.ParityOfFiniteSetsExample.realize_evenCardSentence_iff`, which describes the
+  models of `evenCardSentence`.
 -/
 
 public noncomputable section
@@ -86,9 +90,6 @@ section Nondegenerate
 
 private abbrev TwoGraph := Language.graph.sum Language.graph
 
-private def bvar {L : Language} {n : ℕ} (i : Fin n) : L.Term (Empty ⊕ Fin n) :=
-  .var (.inr i)
-
 private def leftRel : TwoGraph.Relations 2 := .inl Language.adj
 
 private def rightRel : TwoGraph.Relations 2 := .inr Language.adj
@@ -96,14 +97,14 @@ private def rightRel : TwoGraph.Relations 2 := .inr Language.adj
 -- `∃ x y, x ≠ y ∧ R₁(x, y)` in `Language.graph.sum Language.graph`.
 private def leftTwoElem : TwoGraph.Sentenceω :=
   BoundedFormulaInf.ex <| BoundedFormulaInf.ex <|
-    (BoundedFormulaInf.equal (bvar 0) (bvar 1)).not ⊓
-      BoundedFormulaInf.rel leftRel ![bvar 0, bvar 1]
+    (BoundedFormulaInf.equal &0 &1).not ⊓
+      BoundedFormulaInf.rel leftRel ![&0, &1]
 
 -- `(∃ x y, x ≠ y) ∨ ∃ x, R₂(x, x)` in `Language.graph.sum Language.graph`.
 private def rightTwoElem : TwoGraph.Sentenceω :=
   (BoundedFormulaInf.ex <| BoundedFormulaInf.ex <|
-      (BoundedFormulaInf.equal (bvar 0) (bvar 1)).not) ⊔
-    BoundedFormulaInf.ex (BoundedFormulaInf.rel rightRel ![bvar 0, bvar 0])
+      (BoundedFormulaInf.equal &0 &1).not) ⊔
+    BoundedFormulaInf.ex (BoundedFormulaInf.rel rightRel ![&0, &0])
 
 -- Relational Craig interpolation produces a sentence with empty relation support that holds on a
 -- two-element structure and fails on a one-element structure.
@@ -118,8 +119,7 @@ example :
     refine Sentenceω.entails_iff.2 fun M _ _ h => ?_
     simp only [leftTwoElem, rightTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
       BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf,
-      BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal, bvar, Term.realize_var,
-      Sum.elim_inr] at h ⊢
+      BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal] at h ⊢
     obtain ⟨x, y, hxy, -⟩ := h
     exact .inl ⟨x, y, hxy⟩
   obtain ⟨θ, hrel, h₁, h₂⟩ := craig_interpolation_relational leftTwoElem rightTwoElem hent
@@ -138,8 +138,7 @@ example :
     refine ⟨S₂, h₁.realize Bool ?_⟩
     simp only [leftTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
       BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_not,
-      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel, bvar, Term.realize_var,
-      Sum.elim_inr]
+      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
     exact ⟨false, true, Bool.false_ne_true, trivial⟩
   · let S₁ : TwoGraph.Structure Unit := ⟨fun f => isEmptyElim f, fun _ _ => False⟩
     let : TwoGraph.Structure Unit := S₁
@@ -147,8 +146,7 @@ example :
     have hr := h₂.realize Unit hθ
     simp only [rightTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
       BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_not,
-      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel, bvar, Term.realize_var,
-      Sum.elim_inr] at hr
+      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel] at hr
     rcases hr with ⟨_, _, hxy⟩ | ⟨_, hx⟩
     · exact hxy trivial
     · exact hx
@@ -163,13 +161,10 @@ namespace ParityOfFiniteSetsExample
 the empty language. -/
 abbrev InvLang := Language.empty.sum Language.graph
 
-private def bvar {L : Language} {n : ℕ} (i : Fin n) : L.Term (Empty ⊕ Fin n) :=
-  .var (.inr i)
-
 private abbrev invRel : InvLang.Relations 2 := .inr Language.adj
 
 private def invAtom {n : ℕ} (i j : Fin n) : InvLang.BoundedFormulaω Empty n :=
-  BoundedFormulaInf.rel invRel ![bvar i, bvar j]
+  BoundedFormulaInf.rel invRel ![&i, &j]
 
 @[simp]
 private theorem realize_invAtom {M : Type w} [InvLang.Structure M] {n : ℕ}
@@ -178,29 +173,28 @@ private theorem realize_invAtom {M : Type w} [InvLang.Structure M] {n : ℕ}
       Structure.RelMap (L := InvLang) invRel ![xs i, xs j] := by
   rw [invAtom, BoundedFormulaInf.realize_rel]
   refine of_eq (congrArg (Structure.RelMap (L := InvLang) invRel) ?_)
-  ext k; fin_cases k <;> simp [bvar]
+  ext k; fin_cases k <;> simp
 
 /-- Axioms saying that the binary relation of `Language.graph` is the graph of an involution:
 totality (`∀ x, ∃ y, R(x, y)`), functionality (`∀ x y z, R(x, y) → R(x, z) → y = z`), and
-symmetry (`∀ x y, R(x, y) → R(y, x)`). -/
+symmetry (`∀ x y, R(x, y) → R(y, x)`, Mathlib's `Relations.symmetric`). -/
 def involutionGraphSentence : InvLang.Sentenceω :=
   (BoundedFormulaInf.all (BoundedFormulaInf.ex (invAtom 0 1))) ⊓
     (BoundedFormulaInf.all <| BoundedFormulaInf.all <| BoundedFormulaInf.all <|
-      (invAtom 0 1).imp ((invAtom 0 2).imp (BoundedFormulaInf.equal (bvar 1) (bvar 2)))) ⊓
-    (BoundedFormulaInf.all <| BoundedFormulaInf.all <|
-      (invAtom 0 1).imp (invAtom 1 0))
+      (invAtom 0 1).imp ((invAtom 0 2).imp (BoundedFormulaInf.equal &1 &2))) ⊓
+    invRel.symmetric.toInf
 
-/-- Finiteness together with the graph of a fixed-point-free involution. -/
+/-- Finiteness together with the graph of a fixed-point-free involution (fixed-point-freeness is
+Mathlib's `Relations.irreflexive`). -/
 def evenFiniteSentence : InvLang.Sentenceω :=
-  InvLang.infiniteSentence.not ⊓ involutionGraphSentence ⊓
-    BoundedFormulaInf.all (invAtom 0 0).not
+  InvLang.infiniteSentence.not ⊓ involutionGraphSentence ⊓ invRel.irreflexive.toInf
 
 /-- Finiteness together with the graph of an involution having a unique fixed point. -/
 def oddFiniteSentence : InvLang.Sentenceω :=
   InvLang.infiniteSentence.not ⊓ involutionGraphSentence ⊓
     BoundedFormulaInf.ex (invAtom 0 0) ⊓
     (BoundedFormulaInf.all <| BoundedFormulaInf.all <|
-      (invAtom 0 0).imp ((invAtom 1 1).imp (BoundedFormulaInf.equal (bvar 0) (bvar 1))))
+      (invAtom 0 0).imp ((invAtom 1 1).imp (BoundedFormulaInf.equal &0 &1)))
 
 /-- Pure-equality sentence over `Language.empty` asserting that the carrier has size `2n` for some
 natural number `n`. -/
@@ -218,10 +212,12 @@ private theorem involutionGraphSentence_realize_iff {M : Type w} [InvLang.Struct
       (∀ x y : M,
         Structure.RelMap (L := InvLang) invRel ![x, y] →
         Structure.RelMap (L := InvLang) invRel ![y, x]) := by
-  simp only [involutionGraphSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+  rw [involutionGraphSentence, SentenceInf.realize_inf, Sentence.realize_toInf,
+    Relations.realize_symmetric, symm_def]
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_all, BoundedFormulaInf.realize_ex,
-    BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
-    Term.realize_var, Sum.elim_inr, Fin.snoc_apply_zero, Fin.snoc_zero,
+    BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom,
+    Function.comp_apply, Term.realize_var, Sum.elim_inr, Fin.snoc_apply_zero, Fin.snoc_zero,
     show (1 : Fin 2) = Fin.last 1 from rfl, show (1 : Fin 3) = (Fin.last 1).castSucc from rfl,
     show (2 : Fin 3) = Fin.last 2 from rfl, Fin.snoc_castSucc, Fin.snoc_last, and_assoc]
 
@@ -239,24 +235,25 @@ private theorem exists_perm_of_involutionGraphSentence {M : Type w} [InvLang.Str
     fun x y => ⟨fun hxy => by simpa using hfun x (f x) y (hf x) hxy,
       fun hxy => by rw [← hxy]; simpa using hf x⟩⟩
 
+/-- The `InvLang`-structure on `M` interpreting the relation symbol as the graph of `f`. -/
 @[instance_reducible]
-private def structureOfInvolutive {M : Type w} [Language.empty.Structure M] (f : M → M) :
+private def graphStructure {M : Type w} [Language.empty.Structure M] (f : M → M) :
     InvLang.Structure M :=
   @Language.sumStructure Language.empty Language.graph M _
     { RelMap | .adj, xs => f (xs 0) = xs 1 }
 
 @[simp]
-private theorem relMap_structureOfInvolutive {M : Type w} [Language.empty.Structure M]
+private theorem relMap_graphStructure {M : Type w} [Language.empty.Structure M]
     (f : M → M) (xs : Fin 2 → M) :
-    @Structure.RelMap InvLang M (structureOfInvolutive f) 2 invRel xs ↔ f (xs 0) = xs 1 :=
+    @Structure.RelMap InvLang M (graphStructure f) 2 invRel xs ↔ f (xs 0) = xs 1 :=
   Iff.rfl
 
-private theorem realize_structureOfInvolutive_involution {M : Type w}
+private theorem realize_involutionGraphSentence_graphStructure {M : Type w}
     [Language.empty.Structure M] {f : M → M} (hf : Function.Involutive f) :
-    @SentenceInf.Realize _ ℕ involutionGraphSentence M (structureOfInvolutive f) := by
-  let : InvLang.Structure M := structureOfInvolutive f
+    @SentenceInf.Realize _ ℕ involutionGraphSentence M (graphStructure f) := by
+  let : InvLang.Structure M := graphStructure f
   rw [involutionGraphSentence_realize_iff]
-  simp only [relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one]
+  simp only [relMap_graphStructure, Matrix.cons_val_zero, Matrix.cons_val_one]
   exact ⟨fun x => ⟨f x, rfl⟩, fun _ _ _ hxy hxz => hxy.symm.trans hxz,
     fun x _ hxy => by rw [← hxy, hf x]⟩
 
@@ -275,7 +272,7 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     let : Fintype M := Fintype.ofFinite M
     obtain ⟨σ, hσ, hgraph⟩ := exists_perm_of_involutionGraphSentence hinv
     have hnofix : ∀ x : M, σ x ≠ x := by
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hgraph] using hlast
+      simpa [irrefl_def, hgraph] using hlast
     refine ⟨hfin, ?_⟩
     rw [Nat.card_eq_fintype_card, even_iff_two_dvd]
     by_contra hndvd
@@ -289,14 +286,14 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     have hnofix : ∀ x, f x ≠ x := fun x hx => by
       have hx' : (e x).swap = e x := by simpa [f] using congrArg e hx
       rcases h : e x with i | i <;> simp [h] at hx'
-    let S : InvLang.Structure M := structureOfInvolutive f
+    let S : InvLang.Structure M := graphStructure f
     let : InvLang.Structure M := S
     refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
     rw [evenFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
       SentenceInf.realize_not, realize_infiniteSentence_iff]
     exact ⟨⟨not_infinite_iff_finite.2 hfin,
-      realize_structureOfInvolutive_involution fun x => by simp [f]⟩,
-      by simp [S, SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hnofix]⟩
+      realize_involutionGraphSentence_graphStructure fun x => by simp [f]⟩,
+      by simp [S, irrefl_def, hnofix]⟩
 
 /-- Over `Language.empty`, every finite structure of odd cardinality is in the projective
 class of `oddFiniteSentence`: expand it by an involution with a single fixed point. -/
@@ -319,22 +316,22 @@ private theorem pcMem_oddFiniteSentence_of_odd {M : Type w} [Language.empty.Stru
       · simp [swapOdd, h] at hx'
       · exact e.injective (by simpa using h),
      by rintro rfl; simp [f, swapOdd]⟩
-  let S : InvLang.Structure M := structureOfInvolutive f
+  let S : InvLang.Structure M := graphStructure f
   let : InvLang.Structure M := S
   refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
   rw [oddFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
     SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff]
   refine ⟨⟨⟨not_infinite_iff_finite.2 hfin,
-    realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
+    realize_involutionGraphSentence_graphStructure fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
   · -- the `rfl` rewrites `0 : Fin 1` as `Fin.last 0`, the index form `Fin.snoc_last` expects
     simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
-      realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
+      realize_invAtom, relMap_graphStructure, Matrix.cons_val_zero, Matrix.cons_val_one,
       show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]
     exact ⟨e.symm (.inr ()), (hfix_iff (e.symm (.inr ()))).2 rfl⟩
   · -- the `rfl` rewrites `1 : Fin 2` as `Fin.last 1`, the index form `Fin.snoc_last` expects
     simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
-      BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
-      Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
+      BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom,
+      relMap_graphStructure, Matrix.cons_val_zero,
       Fin.snoc_apply_zero, Fin.snoc_zero, show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last]
     exact fun x y hx hy => ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
 
@@ -357,8 +354,8 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
       simpa [SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hgraph] using hex0
     have huniqfix : ∀ x y : M, σ x = x → σ y = y → x = y := by
       simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
-        BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
-        Term.realize_var, Sum.elim_inr, Fin.snoc_apply_zero, Fin.snoc_zero,
+        BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom,
+        Fin.snoc_apply_zero, Fin.snoc_zero,
         show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last, hgraph] at huniq0
       exact huniq0
     refine ⟨hfin, Nat.card_eq_fintype_card (α := M) ▸ Nat.not_even_iff_odd.1

@@ -27,6 +27,10 @@ well defined only because a minimal projective presentation is unique up to isom
 diagram.  `TauCeti.IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranslate` is
 that statement, and it is what licenses the notation `τ M`.
 
+AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
+indecomposables with inverse `Tr D`, is **not proved here**: it needs finite-dimensional
+hypotheses and stable morphism spaces.
+
 ## Main definitions
 
 * `TauCeti.AuslanderReitenTranslate`: the `k`-dual `D (Tr)` of the Auslander--Reiten transpose of a
@@ -65,22 +69,10 @@ finite-dimensionality of a dual are inherited verbatim and are not restated here
 `A`-action is new, and it is described by the single lemma
 `TauCeti.AuslanderReitenTranslate.smul_apply`.
 
-The name `arTranslate` is deliberately left free: the roadmap pins it for the *object-level*
-translate `arTranslate k Q M` of a representation, which this presentation-level construction will
-supply once the stable category is available.
+The shorter name `arTranslate` is not used, so that it stays available for an *object-level*
+translate of a quiver representation, which needs the stable category and is not formalised here.
 
 ## References
-
-This is the `arTranslate M = D (Tr M)` construction of sublayer 6D, "the AR translate `τ = D Tr`
-and AR duality", of Layer 6 of
-[the quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-which names it as the composite of the transpose of sublayer 6C with the duality
-`D = Hom_k(-, k)`, "well-defined only up to projectives, through minimal presentations and duality
-on finite-dimensional modules".
-
-AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
-indecomposables with inverse `Tr D`, is **not proved here**: it needs the finite-dimensional
-hypotheses and the stable morphism spaces that sublayer 6C supplies.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section IV.1.

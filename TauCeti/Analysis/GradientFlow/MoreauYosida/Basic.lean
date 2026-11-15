@@ -310,7 +310,6 @@ theorem toENNReal_sub_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
     ⟨_, (EReal.coe_toReal htop (apply_ne_bot_of_mem_moreauYosidaResolvent hy hbot hxz')).symm⟩
   have h := add_toReal_sq_div_le_of_mem_moreauYosidaResolvent hτ hy hxz' ha hb
   have he := ENNReal.toReal_le_add hxz hd hyz
-  have hτ' := NNReal.coe_pos.2 hτ
   rw [ha, hb, ← EReal.coe_sub, EReal.real_coe_toENNReal]
   refine ENNReal.ofReal_le_of_le_toReal ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_div,

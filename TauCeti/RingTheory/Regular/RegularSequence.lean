@@ -148,6 +148,14 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow_swap {
   obtain rfl : b ^ n • d = m := ha <| by simp only [← hc, smul_comm (a ^ j)]
   exact Submodule.smul_mem_pointwise_smul _ _ ⊤ trivial
 
+/-- For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on `M ⧸ bⁿ M` for
+every `n`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotient_pow_smul_top {a b : R}
+    (h : IsWeaklyRegular M [a, b]) (n : ℕ) :
+    IsSMulRegular (M ⧸ (Ideal.span {b} ^ n • ⊤ : Submodule R M)) a := by
+  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
+  simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
+
 end Pow
 
 section FractionRing

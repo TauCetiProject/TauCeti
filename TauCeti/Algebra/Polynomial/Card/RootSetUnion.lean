@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Data.Set.Card.Arithmetic
-public import Mathlib.Data.Int.Interval
 public import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 
 /-!
@@ -100,18 +99,14 @@ theorem finite_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B
 
 /-- The integer specialisation: the roots in a domain `S` of all integer polynomials of degree at
 most `d` with every coefficient bounded by `B` in absolute value number at most
-`(2 · B + 1) ^ (d + 1) · d`. Each of the `2 · B + 1` integers in `[-B, B]` is an allowed
-coefficient, and a degree-`≤ d` polynomial has at most `d` roots. -/
+`(2 · B + 1) ^ (d + 1) · d`: there are exactly `(2 · B + 1) ^ (d + 1)` such polynomials
+(`TauCeti.Polynomial.ncard_natDegree_le_abs_intCoeff_le`), and a degree-`≤ d` polynomial has at
+most `d` roots. -/
 theorem ncard_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B : ℕ) :
     (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
-        ((f.map m).roots.toFinset : Set S)).ncard ≤ (2 * B + 1) ^ (d + 1) * d := by
-  have key := ncard_biUnion_roots_natDegree_le_coeff_mem_le m d (Finset.Icc (-(B : ℤ)) B)
-  have hU : (Finset.Icc (-(B : ℤ)) B).card = 2 * B + 1 := by rw [Int.card_Icc]; omega
-  rw [hU] at key
-  have hpred : ∀ (f : ℤ[X]) (i : ℕ),
-      |f.coeff i| ≤ (B : ℤ) ↔ f.coeff i ∈ Finset.Icc (-(B : ℤ)) B := by
-    intro f i; rw [Finset.mem_Icc, abs_le]
-  simpa only [hpred] using key
+        ((f.map m).roots.toFinset : Set S)).ncard ≤ (2 * B + 1) ^ (d + 1) * d :=
+  (ncard_biUnion_roots_map_le m (finite_setOf_natDegree_le_abs_intCoeff_le d B)
+    fun _ hf ↦ hf.1).trans (by gcongr; exact (ncard_natDegree_le_abs_intCoeff_le d B).le)
 
 /-- The roots in a domain `S` of all polynomials of degree at most `n` whose `i`-th coefficient
 lies in a finite set `s i` form a finite set. -/
@@ -131,6 +126,6 @@ theorem ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le (m : R →+* S) (n : �
     (⋃ (f : R[X]) (_ : f.natDegree ≤ n ∧ ∀ i : Fin (n + 1), f.coeff i ∈ s i),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ (∏ i, (s i).card) * n :=
   (ncard_biUnion_roots_map_le m (finite_setOf_natDegree_le_coeff_mem_pi n s) fun _ hf ↦ hf.1).trans
-    (by gcongr; exact ncard_natDegree_le_coeff_mem_pi_le n s)
+    (by gcongr; exact (ncard_natDegree_le_coeff_mem_pi n s).le)
 
 end TauCeti.Polynomial

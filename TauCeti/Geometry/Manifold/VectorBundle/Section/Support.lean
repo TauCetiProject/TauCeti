@@ -154,6 +154,22 @@ theorem supportedIn_le_compactlySupported {K : Set M} (hK : IsCompact K) :
     supportedIn I F n V K ≤ compactlySupported I F n V :=
   fun s hs => hK.of_isClosed_subset s.isClosed_tsupport hs
 
+/-- Inclusion of a fixed-compact support stage into compactly supported native sections. -/
+def ofSupportedIn (K : Compacts M) :
+    supportedIn I F n V K →ₗ[𝕜] compactlySupported I F n V :=
+  (supportedIn I F n V K).inclusion (supportedIn_le_compactlySupported K.isCompact)
+
+@[simp]
+theorem ofSupportedIn_apply (K : Compacts M)
+    (s : supportedIn I F n V K) :
+    (ofSupportedIn K s : Cₛ^n⟮I; F, V⟯) = s := (rfl)
+
+/-- Forgetting compact support after a stage inclusion is the stage's subtype map. -/
+@[simp]
+theorem val_comp_ofSupportedIn (K : Compacts M) :
+    (Subtype.val ∘ ofSupportedIn K : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯) =
+      Subtype.val := (rfl)
+
 /-- Every compactly supported section belongs to a fixed-compact stage. -/
 theorem mem_compactlySupported_iff {s : Cₛ^n⟮I; F, V⟯} :
     s ∈ compactlySupported I F n V ↔

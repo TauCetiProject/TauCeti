@@ -32,6 +32,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
+* `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
+  under multiplication, passes from the factors of a finite product to the product with any
+  cofactor, at the power `J ^ card ι`.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
   module over `R`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
@@ -71,6 +74,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   finitely many elements `fᵢ` produces exactly the sums `∑ fᵢ • mᵢ`.
 * `Submodule.span_smul_le_iff`, `Submodule.span_mul_span_mul_smul_le`: bounding the action of
   (products of) spanned ideals on a submodule by checking generators.
+* `Submodule.map_subtype_smul_top_inf_comap`: for submodules `N₀` and `L` and a left ideal `J`,
+  pushing `J • ⊤ ⊓ L.comap N₀.subtype` forward along the inclusion `N₀ → M` gives `J • N₀ ⊓ L`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
   ideal additively span the ambient algebra, and the subalgebra contains a generator of the
   ideal, then the same holds with the ideal replaced by any power.
@@ -103,13 +108,22 @@ variable {R : Type*} [Semiring R] {I J : Ideal R}
 /-- If a two-sided ideal times a left ideal is the unit ideal, then the first ideal is the
 unit ideal. -/
 theorem eq_one_of_mul_eq_one [I.IsTwoSided] (h : I * J = 1) : I = 1 := by
-  rw [Ideal.one_eq_top] at h ⊢
-  exact eq_top_mono Ideal.mul_le_left h
+  rw [one_eq_top] at h ⊢
+  exact eq_top_mono mul_le_left h
 
 /-- Any left multiple of the `n`-th power of an element of an ideal lies in the `n`-th power of
 the ideal. -/
 theorem mul_pow_mem_pow {ϖ : R} (hϖ : ϖ ∈ I) (n : ℕ) (c : R) : c * ϖ ^ n ∈ I ^ n :=
-  (I ^ n).mul_mem_left c (Ideal.pow_mem_pow hϖ n)
+  (I ^ n).mul_mem_left c (pow_mem_pow hϖ n)
+
+/-- A product of elements of a left ideal lies in the power indexed by the number of factors. -/
+theorem list_prod_mem_pow {l : List R} (h : ∀ a ∈ l, a ∈ I) : l.prod ∈ I ^ l.length := by
+  induction l using List.reverseRecOn with
+  | nil => simp [Submodule.pow_zero]
+  | append_singleton l a ih =>
+    rw [List.prod_append, List.prod_singleton, List.length_append, List.length_singleton,
+      Submodule.pow_succ]
+    exact Ideal.mul_mem_mul (ih fun b hb ↦ h b (by simp [hb])) (h a (by simp))
 
 end Mul
 
@@ -201,6 +215,30 @@ theorem image_fintypeLinearCombination_pi {R M ι : Type*} [Semiring R] [AddComm
     rw [Fintype.linearCombination_apply,
       Finsupp.sum_fintype c (fun i a ↦ a • v i) fun _ ↦ zero_smul _ _]
 
+section Prod
+
+variable {A S ι : Type*} [CommMonoid A] [CommSemiring S]
+
+/-- Let `P I x` be a property of an ideal `I` of `S` and an element `x` of `A`, which holds for
+`⊤` and every element, and passes to products in the form `P I x → P J y → P (I * J) (x * y)`.
+If `P J (f i)` for every factor of a finite product, then `P (J ^ card ι) (g * ∏ i, f i)` for
+every cofactor `g`. -/
+theorem pow_card_mul_prod_induction [Fintype ι] {J : Ideal S} (P : Ideal S → A → Prop)
+    (htop : ∀ x, P ⊤ x) (hmul : ∀ {I : Ideal S} {x y : A}, P I x → P J y → P (I * J) (x * y))
+    {f : ι → A} (hf : ∀ i, P J (f i)) (g : A) :
+    P (J ^ Fintype.card ι) (g * ∏ i, f i) := by
+  classical
+  suffices ∀ s : Finset ι, P (J ^ s.card) (g * ∏ i ∈ s, f i) from this Finset.univ
+  intro s
+  induction s using Finset.induction_on with
+  | empty => simpa using htop g
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.card_insert_of_notMem hi, pow_succ, mul_left_comm,
+      mul_comm (f i)]
+    exact hmul ih (hf i)
+
+end Prod
+
 end Ideal
 
 namespace Submodule
@@ -216,14 +254,14 @@ theorem mem_span_algebraMap_smul_iff (N : Submodule A V) (x : R) {v : V} :
     v ∈ Ideal.span {algebraMap R A x} • N ↔ ∃ w ∈ N, x • w = v := by
   constructor
   · intro hv
-    refine Submodule.smul_induction_on hv (fun r hr w hw ↦ ?_)
+    refine smul_induction_on hv (fun r hr w hw ↦ ?_)
       fun _ _ ⟨w, hw, h⟩ ⟨w', hw', h'⟩ ↦
         ⟨w + w', N.add_mem hw hw', by rw [smul_add, h, h']⟩
     obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hr
     exact ⟨a • w, N.smul_mem a hw, by rw [mul_smul, algebraMap_smul, smul_comm]⟩
   · rintro ⟨w, hw, rfl⟩
     rw [← algebraMap_smul A]
-    exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self _) hw
+    exact smul_mem_smul (Ideal.mem_span_singleton_self _) hw
 
 end Submodule
 
@@ -266,6 +304,22 @@ theorem span_mul_span_mul_smul_le {s t : Set R} {K : Ideal R} {p q : Submodule R
   exact smul_le.mpr fun k' hk' x hx ↦ by
     simpa only [mem_comap, LinearMap.smul_apply, LinearMap.id_apply, mul_smul] using
       h j hj k hk k' hk' x hx
+
+end Submodule
+
+namespace Submodule
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- For submodules `N₀` and `L` of `M` and a left ideal `J`, pushing the submodule
+`J • ⊤ ⊓ L.comap N₀.subtype` of `N₀` (the ideal multiple `J • ⊤` of `N₀`, met with the preimage
+of `L`) forward along the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
+@[simp]
+theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L : Submodule R M) :
+    (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
+  -- `map_inf_eq_map_inf_comap` pulls `⊓ L` out of the pushforward, and `map_smul''`,
+  -- `map_top`, `range_subtype` carry `J • ⊤` to `J • N₀`
+  simp [← Submodule.map_inf_eq_map_inf_comap]
 
 end Submodule
 
@@ -316,8 +370,8 @@ element of `S'`, then `S'` together with `a` generates the unit ideal as soon as
 only where the elements of `S` are found. Both spans contain `a`, so only the rest of `S` has to be
 accounted for. -/
 theorem span_insert_eq_top_of_subset (hsub : S ⊆ insert a S')
-    (hspan : Ideal.span (insert a S) = ⊤) : Ideal.span (insert a S') = ⊤ :=
-  eq_top_mono (Ideal.span_mono <| Set.insert_subset (Set.mem_insert _ _) hsub) hspan
+    (hspan : span (insert a S) = ⊤) : span (insert a S') = ⊤ :=
+  eq_top_mono (span_mono <| Set.insert_subset (Set.mem_insert _ _) hsub) hspan
 
 /-- The left ideals generated by two powers of the same element have as supremum the left ideal
 generated by the smaller power. -/
@@ -344,17 +398,17 @@ variable {A : Type*} [Semiring A] {s : Set A}
 
 /-- A left ideal spanned by central elements is two-sided. -/
 theorem isTwoSided_span_of_subset_center (hs : s ⊆ Set.center A) :
-    (Ideal.span s).IsTwoSided where
+    (span s).IsTwoSided where
   mul_mem_of_left b hz := by
-    refine Submodule.span_induction (p := fun z _ ↦ z * b ∈ Ideal.span s)
+    refine Submodule.span_induction (p := fun z _ ↦ z * b ∈ span s)
       (fun z hz ↦ ?_) (by simp) (fun x y _ _ hx hy ↦ ?_)
       (fun c x _ hx ↦ ?_) hz
     · rw [← (Semigroup.mem_center_iff.mp (hs hz) b)]
-      exact Ideal.mul_mem_left _ b (Ideal.subset_span hz)
+      exact mul_mem_left _ b (subset_span hz)
     · rw [add_mul]
       exact Ideal.add_mem _ hx hy
     · rw [smul_eq_mul, mul_assoc]
-      exact Ideal.mul_mem_left _ c hx
+      exact mul_mem_left _ c hx
 
 end Span
 
@@ -530,7 +584,7 @@ theorem toSubmodule_sup_pow_restrictScalars_eq_top {T : Subalgebra R S} {I : Ide
     obtain ⟨t', ht', m', hm', rfl⟩ := Submodule.mem_sup.mp (ih.ge Submodule.mem_top : u ∈ _)
     refine Submodule.mem_sup.mpr ⟨t + t' * π, ?_, m' * π, ?_, by
       simp only [add_mul, add_assoc]⟩
-    · rw [Subalgebra.mem_toSubmodule] at ht ht' ⊢
+    · rw [mem_toSubmodule] at ht ht' ⊢
       exact add_mem ht (mul_mem ht' hπT)
     · rw [Submodule.restrictScalars_mem, Submodule.pow_succ]
       exact Ideal.mul_mem_mul hm' (Ideal.mem_span_singleton_self _)

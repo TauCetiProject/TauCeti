@@ -92,7 +92,6 @@ private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E �
         ∂uniformMeasure 0 (π / 2) := by
   set g : ℝ → ℝ := fun θ ↦
     fderiv ℝ f (ContinuousLinearMap.rotation θ p).1 (ContinuousLinearMap.rotation θ p).2
-  have hcont : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
   have hg : Continuous g := by
     simp only [g, ContinuousLinearMap.rotation_apply]
     fun_prop
@@ -125,7 +124,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t : ℝ) :
     ∫⁻ p, .ofReal (exp (t * (f p.2 - f p.1))) ∂μ.prod μ ≤
       ∫⁻ x, .ofReal (exp (π ^ 2 * t ^ 2 / 8 * Var[fderiv ℝ f x; μ])) ∂μ := by
-  have hcont : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
   set G : E × E → ℝ≥0∞ := fun p ↦ .ofReal (exp (t * (π / 2) * fderiv ℝ f p.1 p.2))
   have hG : Measurable G := by
     refine ENNReal.measurable_ofReal.comp (Continuous.measurable ?_)

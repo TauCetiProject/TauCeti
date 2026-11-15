@@ -82,7 +82,7 @@ private theorem eval_eq_sum_range_add (z : weakCompletion π S) (a : ℕ → S)
   symm
   rw [Nat.add_comm n k, sum_range_add, map_add, add_eq_left, map_sum]
   apply sum_eq_zero
-  intro j hj
+  intro j _
   simp only [pow_add, map_mul, hπ, zero_mul]
 
 /-- Every weakly completed element has a finite head in the original algebra and a

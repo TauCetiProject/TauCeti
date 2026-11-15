@@ -201,7 +201,7 @@ private theorem map_fin_insert {n : ℕ} {a : Fin (n + 2) → ℝ} (ha : ∀ i, 
   let e := finSuccEquiv (n + 1)
   have ha' : ∀ i, 0 < a (e.symm i) := fun i ↦ ha _
   have h := map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure ha'
-  have hr := map_reindex_dirichletMeasure (e := e.symm) ha'
+  have hr := map_reindex_dirichletMeasure (e := e.symm) (a := fun i ↦ a (e.symm i))
   rw [← h, Measure.map_map (by fun_prop) measurable_dirichletStickInsert] at hr
   have hf : (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm ∘ dirichletStickInsert) =
       (fun z ↦ (EuclideanSpace.equiv _ ℝ).symm

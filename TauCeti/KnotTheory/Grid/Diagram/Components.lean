@@ -47,10 +47,9 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.1, "Grid diagrams and
-grid states", and supplies the knot-versus-link distinction needed by the later knot invariant
-`τ` in Lane G.6 and the links stage in Lane G.9. The component traversal follows
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The knot-versus-link distinction made here is needed by the knot invariant `τ` and by grid homology
+of links. The component traversal follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapter 3.
 -/
 
 public section

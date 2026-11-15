@@ -38,8 +38,9 @@ variable {ι : Type*}
 /-- **The number of quadratic subfields of `ℚ(√p₁, …, √pₙ)` is `2ⁿ - 1`.** For a finite family of
 distinct primes `p : ι → ℕ`, the multiquadratic field `ℚ(√p₁, …, √pₙ)`, of degree `2 ^ |ι|` over
 `ℚ`, has exactly `2 ^ |ι| - 1` intermediate fields of degree `2` over `ℚ`. This is the
-prime-radicand specialization of `card_quadratic_intermediateField_adjoin_range`. -/
-theorem card_quadratic_intermediateField_adjoin_sqrt_primes [Finite ι] (p : ι → ℕ)
+prime-radicand specialization of `card_quadratic_intermediateField_adjoin_range`. For an infinite
+index type both sides are `0`, by the convention for the cardinality of an infinite type. -/
+theorem card_quadratic_intermediateField_adjoin_sqrt_primes (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
     Nat.card {F : IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))) //
         Module.finrank ℚ F = 2} = 2 ^ Nat.card ι - 1 :=

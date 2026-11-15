@@ -240,7 +240,7 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
       exact mul_le_of_le_one_right (inv_nonneg.2 (norm_nonneg _)) (Valued.integer.norm_le_one (s i))
   obtain ⟨t, ht⟩ := SphericallyCompleteSpace.exists_forall_mem_of_dist_le
     (r := fun n ↦ ‖(a n : K)‖⁻¹) (fun m n hmn ↦ inv_anti₀ (norm_pos_iff.2 (ha0 m)) (hmono hmn))
-    (fun n ↦ inv_nonneg.2 (norm_nonneg _)) (hA_ne 0) hstep hball
+    (hA_ne 0) hstep hball
   -- `a 0` is a nonzero scalar, hence a nonzerodivisor on the `K`-vector space `E`.
   refine ⟨t, hM.mem_of_forall_smul_mem (ham 0) (fun x y hxy ↦ smul_right_injective E (ha0 0)
     (by simpa only [Valued.integer.smul_def] using hxy)) fun b hb ↦ ?_⟩

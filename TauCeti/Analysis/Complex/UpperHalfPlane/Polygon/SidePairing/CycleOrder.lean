@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Sector
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 
 /-!
@@ -82,8 +83,8 @@ theorem orderOf_cycleMap_of_cycleAngleSum {j : Fin n} {z : ℍ}
 
 /-- If the `M`-th tile around a finite vertex returns to the vertex after angles summing to `2π`,
 then the order of the cycle transformation times the cycle angle sum is `2π`. -/
-theorem orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi {j : Fin n} {z : ℍ}
-    (hz : P.vertex j = .inl z) {M : ℕ} (hjM : σ.next^[M] j = j)
+theorem orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi {j : Fin n} {M : ℕ}
+    (hjM : σ.next^[M] j = j)
     (hk' : ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) = 2 * π) :
     (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π := by
   -- tile `M` returns to vertex `j`, so `M` is a whole number `t` of circuits
@@ -94,6 +95,11 @@ theorem orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi {j : Fin n} {z : ℍ
   have ht : (t : ℝ) ≠ 0 := by
     rintro ht
     rw [ht, zero_mul] at hSt
+    linarith [Real.pi_pos]
+  -- the angle sum of an ideal vertex cycle is `0`, which is not `2π / t`
+  rcases hz : P.vertex j with z | d
+  swap
+  · rw [σ.cycleAngleSum_eq_zero_of_isRight_vertex (by simp [hz]), mul_zero] at hSt
     linarith [Real.pi_pos]
   rw [σ.orderOf_cycleMap_of_cycleAngleSum hz (t := t)
     (eq_div_of_mul_eq ht (by rw [mul_comm]; exact hSt))]

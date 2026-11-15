@@ -11,20 +11,24 @@ public import TauCeti.LinearAlgebra.LinearPMap.Restrict
 /-!
 # Closedness of restrictions of partial linear maps
 
-The restriction of a closed partial linear map to an invariant submodule is closed, because its
-graph is the preimage of the original graph under the continuous inclusion `U × U → E × E`. No
-closedness of the submodule itself is needed.
+The restriction of a closed partial linear map `A : E →ₗ.[R] F` to submodules `U` of `E` and `V`
+of `F` is closed, because its graph is the preimage of the original graph under the continuous
+inclusion `U × V → E × F`. No closedness of the submodules themselves is needed. In particular the
+restriction of a closed partial linear map to an invariant submodule is closed.
 -/
 
 public section
 
 namespace LinearPMap
 
-variable {R E : Type*} [CommRing R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
+variable {R E F : Type*} [CommRing R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
+  [AddCommGroup F] [Module R F] [TopologicalSpace F]
 
-/-- The restriction of a closed partial linear map to an invariant submodule is closed. -/
-theorem IsClosed.restrict {A : E →ₗ.[R] E} (hA : A.IsClosed) {U : Submodule R E}
-    (hU : A.IsInvariant U) : (A.restrict hU).IsClosed := by
+/-- The restriction of a closed partial linear map to submodules of its source and target is
+closed. -/
+theorem IsClosed.restrict {A : E →ₗ.[R] F} (hA : A.IsClosed) {U : Submodule R E}
+    {V : Submodule R F} (hUV : ∀ x : A.domain, (x : E) ∈ U → A x ∈ V) :
+    (A.restrict hUV).IsClosed := by
   rw [LinearPMap.IsClosed, graph_restrict, Submodule.comap_coe]
   exact hA.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
 

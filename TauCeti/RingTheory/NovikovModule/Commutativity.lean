@@ -50,6 +50,21 @@ products satisfy the Leibniz rule, the products they induce on degree-wise cohom
 kernel identity and the potential bounds of the kernels remain hypotheses here: they are the
 geometric input from the compactified moduli spaces.
 
+On finite unions of torsors with invariant kernels, the products, the homotopy and the
+differentials are given by matrices of Novikov series relative to reference generators
+(`NovikovModule.novikovProductOfMatrix`, `NovikovModule.novikovMapOfMatrix`). For matrices `Q`,
+`Q'`, `K`, `D₁`, `D₂`, `D₀` the kernel homotopy becomes the identity
+
+`Qᵢⱼₗ - (-1)^(d₁ (r₁ i) d₂ (r₂ j)) Q'ⱼᵢₗ =`
+`  ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₖ D₂ⱼₖ Kᵢₖₗ`
+
+between finite sums of Novikov series, and it gives the homotopy
+`a ⋆ b - (-1)^(i j) b ⋆' a = D₀ (K (a, b)) + K (D₁ a, b) + (-1)^i K (a, D₂ b)`, where `K` is now
+the product of the matrix `K`
+(`NovikovModule.novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix`),
+provided degrees change by even amounts within each orbit, so that the signs only depend on the
+orbits. This is the form in which counts indexed by classes of a period group enter.
+
 ## Main results
 
 * `NovikovModule.kernelMap_tensor_eq_negOnePow_smul_kernelProduct`: the exchanged product as a
@@ -64,6 +79,8 @@ geometric input from the compactified moduli spaces.
   coboundary, in the degree of the output.
 * `NovikovModule.cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct`: the
   induced products on cohomology are graded commutative.
+* `NovikovModule.novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix`: the
+  homotopy for matrices of Novikov series, from the homotopy identity between matrices.
 
 ## References
 
@@ -270,6 +287,92 @@ theorem cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct
     hδ₀ hδ₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hkd hcomm ha hb
 
 end Cohomology
+
+section Matrix
+
+variable {R H ι₁ ι₂ ι₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
+
+/-- **Graded commutativity up to homotopy for matrices of Novikov series.** Let `Q` and `Q'` be the
+matrices of a product and of the product with exchanged inputs, `K` the matrix of a two-input
+operation, and `D₁`, `D₂`, `D₀` the matrices of maps on the two inputs and the output, relative to
+reference generators. Grade the inputs by `d₁` and `d₂`, with even changes of degree within each
+orbit. If the matrices obey the homotopy identity
+
+`Qᵢⱼₗ - (-1)^(d₁ (r₁ i) d₂ (r₂ j)) Q'ⱼᵢₗ =`
+`  ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₖ D₂ⱼₖ Kᵢₖₗ`,
+
+which in Floer theory is the count of the ends of the one-dimensional moduli spaces of the
+input-exchange family between reference generators, class by class, then for completed
+combinations `a` of degree `e` and `b` of degree `f`,
+`a ⋆ b - (-1)^(e f) b ⋆' a = D₀ (K (a, b)) + K (D₁ a, b) + (-1)^e K (a, D₂ b)`. -/
+theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (Q' : ι₂ → ι₁ → ι₀ → NovikovSeries R H N)
+    (K : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N)) (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    {d₁ : (Σ i, P₁ i) → ℤ} {d₂ : (Σ j, P₂ j) → ℤ}
+    (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
+    (hd₂ : ∀ j (h : H) (p : P₂ j), Even (d₂ ⟨j, h +ᵥ p⟩ - d₂ ⟨j, p⟩))
+    (hcomm : ∀ i j l, Q i j l - negOnePowCast R (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) • Q' j i l =
+      ∑ k, K i j k * D₀ k l + ∑ k, D₁ i k * K k j l +
+        negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * K i k l)
+    {e f : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F₂} (ha : a ∈ gradeBy R F₁ d₁ e)
+    (hb : b ∈ gradeBy R F₂ d₂ f) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b -
+        negOnePowCast R (e * f) • novikovProductOfMatrix hF₂ hF₁ hF₀ r₂ r₁ r₀ Q' b a =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K a b) +
+        novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [map_sub, map_add, map_add, map_smul, map_smul, Pi.sub_apply, Pi.add_apply, Pi.add_apply,
+    Pi.smul_apply, Pi.smul_apply, coordinates_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix, coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right, Finset.sum_comm (γ := ι₂)]
+  set x := coordinates hF₁ r₁ a
+  set y := coordinates hF₂ r₂ b
+  have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
+  -- On a pair of nonzero coordinates, the sign of the reference degrees is the sign `(-1)^(e f)`.
+  have hxy (i : ι₁) (j : ι₂) : negOnePowCast R (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) • (x i * y j) =
+      negOnePowCast R (e * f) • (x i * y j) := by
+    by_cases hx : x i = 0
+    · simp [hx]
+    by_cases hy : y j = 0
+    · simp [hy]
+    have h₁ := even_sub_of_coordinates_ne_zero hF₁ r₁ hd₁ ha hx
+    have h₂ := even_sub_of_coordinates_ne_zero hF₂ r₂ hd₂ hb hy
+    have he : Even (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩ - e * f) := by
+      rw [show d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩ - e * f =
+        (d₁ ⟨i, r₁ i⟩ - e) * d₂ ⟨j, r₂ j⟩ + e * (d₂ ⟨j, r₂ j⟩ - f) by ring]
+      exact (h₁.mul_right _).add (h₂.mul_left _)
+    rw [← sub_add_cancel (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) (e * f), negOnePowCast_add,
+      negOnePowCast_even he, one_mul]
+  -- Termwise, this is the homotopy identity, with the signs of the orbits replaced by the signs
+  -- of the degrees on nonzero coordinates.
+  rw [Finset.smul_sum, ← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.smul_sum, ← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  have k₁ : x i * y j * (negOnePowCast R (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) • Q' j i l) =
+      negOnePowCast R (e * f) • (y j * x i * Q' j i l) := by
+    rw [mul_smul_comm, ← smul_mul_assoc, hxy, smul_mul_assoc, mul_comm (x i) (y j)]
+  have k₂ : x i * y j * (negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * K i k l) =
+      negOnePowCast R e • (x i * y j * ∑ k, D₂ j k * K i k l) := by
+    rw [mul_smul_comm, mul_assoc, ← smul_mul_assoc, hs, smul_mul_assoc, ← mul_assoc]
+  rw [eq_add_of_sub_eq (hcomm i j l), mul_add, mul_add, mul_add, k₁, k₂]
+  abel
+
+end Matrix
 
 end NovikovModule
 

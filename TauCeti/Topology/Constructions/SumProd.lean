@@ -12,42 +12,51 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 /-!
 # Interiors and fibres in product spaces
 
-A subset of a product has empty interior if all its vertical fibres have empty interior.
-This lets fibrewise empty-interior results apply to subsets of arbitrary topological products,
-without countability, separation, or finite-dimensionality assumptions on either factor.
+A subset of a product has empty interior if its vertical fibres over a dense set of base
+points have empty interior. This lets fibrewise empty-interior results apply to subsets of
+arbitrary topological products, without countability, separation, or finite-dimensionality
+assumptions on either factor.
 In particular, graphs with values in a space without isolated points have empty interior.
+
+The file also records the underlying function of the homeomorphism between functions on a
+sum type and pairs of functions.
 -/
 
 public section
 
 open Filter Set Topology
 
-namespace TauCeti
-
 /-- The sum-to-product homeomorphism has the same underlying function as the corresponding
 coordinate equivalence. -/
-theorem coe_sumArrowHomeomorphProdArrow {X ι ι' : Type*} [TopologicalSpace X] :
-    ⇑(Homeomorph.sumArrowHomeomorphProdArrow (X := X) (ι := ι) (ι' := ι')) =
+theorem Homeomorph.coe_sumArrowHomeomorphProdArrow {X ι ι' : Type*} [TopologicalSpace X] :
+    ⇑(sumArrowHomeomorphProdArrow (X := X) (ι := ι) (ι' := ι')) =
       ⇑(Equiv.sumArrowEquivProdArrow ι ι' X) := (rfl)
 
+namespace TauCeti
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A subset of a product has empty interior if its vertical fibres over a dense set of base
+points have empty interior. -/
+theorem interior_eq_empty_of_dense_setOf_interior_preimage_prodMk_eq_empty {s : Set (X × Y)}
+    (hs : Dense {x | interior (Prod.mk x ⁻¹' s) = ∅}) : interior s = ∅ := by
+  by_contra h
+  obtain ⟨_, hx, ⟨x, y⟩, hxy, rfl⟩ := hs.exists_mem_open (isOpenMap_fst _ isOpen_interior)
+    ((nonempty_iff_ne_empty.mpr h).image _)
+  exact hx.le (preimage_interior_subset_interior_preimage (Continuous.prodMk_right x) hxy)
+
 /-- A subset of a product has empty interior if every vertical fibre has empty interior. -/
-theorem interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] {s : Set (X × Y)}
-    (hs : ∀ x, interior (Prod.mk x ⁻¹' s) = ∅) : interior s = ∅ := by
-  rw [eq_empty_iff_forall_notMem]
-  rintro ⟨x, y⟩ hxy
-  have hy := preimage_interior_subset_interior_preimage (Continuous.prodMk_right x) hxy
-  simp only [hs x, mem_empty_iff_false] at hy
+theorem interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty {s : Set (X × Y)}
+    (hs : ∀ x, interior (Prod.mk x ⁻¹' s) = ∅) : interior s = ∅ :=
+  interior_eq_empty_of_dense_setOf_interior_preimage_prodMk_eq_empty <| by simp [hs]
 
 /-- A graph with values in a space without isolated points has empty interior, even when
 neither the function nor its domain is open or continuous. -/
 @[simp]
-theorem _root_.Set.interior_graphOn {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [∀ y : Y, NeBot (𝓝[≠] y)] (s : Set X) (f : X → Y) :
+theorem _root_.Set.interior_graphOn [∀ y : Y, NeBot (𝓝[≠] y)] (s : Set X) (f : X → Y) :
     interior (s.graphOn f) = ∅ := by
-  apply interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty
-  intro x
+  refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun x ↦ ?_
   have hsub : Prod.mk x ⁻¹' s.graphOn f ⊆ {f x} := fun y hy ↦ (mem_graphOn.mp hy).2.symm
-  exact Set.eq_empty_of_subset_empty (by simpa using interior_mono hsub)
+  simpa using interior_mono hsub
 
 end TauCeti

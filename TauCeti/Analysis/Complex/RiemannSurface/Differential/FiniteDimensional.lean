@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
-import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Finite-dimensionality of holomorphic differentials
@@ -144,25 +143,13 @@ instance finiteDimensional_differentialSheaf_globalSections [CompactSpace X]
   rcases subsingleton_or_nontrivial (differentialSections D ⊤) with h | h
   · exact Module.Finite.equiv (differentialSheafSectionsEquiv D ⊤).symm
   obtain ⟨s, hs⟩ := exists_ne (0 : differentialSections D ⊤)
-  let θ : OneForm X := fun y ↦ s.1 ⟨y, trivial⟩
-  have hθ (x : X) : θ.MeromorphicAt x := by
-    obtain ⟨η, hη, e⟩ := mem_differentialSections_iff.1 s.2 ⟨x, trivial⟩
-    refine (hη.congr ?_).meromorphicAt
-    rw [← (⊤ : TopologicalSpace.Opens X).isOpenEmbedding'.map_nhds_eq ⟨x, trivial⟩,
-      eventually_map]
-    exact e.mono fun y hy ↦ hy.symm
-  have hθ₀ (x : X) : θ.order x ≠ ⊤ := by
-    intro hx
-    have hu := (OneForm.isClopen_setOfPred_order_eq_top hθ).eq_univ ⟨x, hx⟩
-    refine hs (Subtype.ext (eq_of_eventually_codiscrete s.2 (zero_mem _)
-      (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun y ↦ ?_)))
-    have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
-    exact ht.eventually
-      (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
+  let θ := differentialSections.toOneForm D s
   let e : (differentialSheaf D).obj.obj (Opposite.op ⊤) ≅
       (divisorSheaf (D + θ.divisor)).obj.obj (Opposite.op ⊤) :=
     ((CategoryTheory.sheafToPresheaf _ _).mapIso
-      (differentialSheafIsoDivisorSheafAdd θ hθ hθ₀ D)).app (Opposite.op ⊤)
+      (differentialSheafIsoDivisorSheafAdd θ
+        (fun x ↦ (differentialSections.isDifferentialSectionAt_toOneForm s x).meromorphicAt)
+        (differentialSections.order_toOneForm_ne_top hs) D)).app (Opposite.op ⊤)
   exact Module.Finite.equiv e.toLinearEquiv.symm
 
 end TauCeti.RiemannSurface

@@ -123,7 +123,8 @@ theorem exists_isTotallyPositive_notMem_square (hmin : minpoly ℤ θ = X ^ 2 - 
     have hnr : InfinitePlace.nrRealPlaces K ≠ 0 := fun h =>
       hreal (nrRealPlaces_eq_zero_iff.mp h)
     obtain ⟨⟨w, hw⟩⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hnr)
-    exact rank_eq_one_of_finrank_eq_two_of_isReal (NumberField.finrank_rat_eq_two hmin hgen) hw
+    exact Units.rank_eq_one_of_finrank_eq_two_of_isReal
+      (NumberField.finrank_rat_eq_two hmin hgen) hw
   rw [NumberField.units_sq_index_eq, hrank] at hindex
   norm_num at hindex
 

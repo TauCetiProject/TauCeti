@@ -55,7 +55,7 @@ theorem exists_apply_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N 
   have horder : addOrderOf (Additive.ofMul u) = N := by
     rw [addOrderOf_ofMul_eq_orderOf, ZMod.orderOf_unitOfCoprime_pow_sub_one q N hq hN]
   obtain ⟨χ, hχ⟩ :=
-    exists_apply_eq_inv_addOrderOf (Additive.ofMul u) (horder.trans_ne hN)
+    exists_apply_eq_inv_addOrderOf (Additive.ofMul u)
   exact ⟨χ, by simpa only [horder] using hχ⟩
 
 end CharacterModule

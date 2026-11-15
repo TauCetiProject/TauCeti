@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.AlgebraTower
 /-!
 # Dimensions of Euclidean spaces
 
-The first lemma derives positive ambient dimension from a nonzero vector. In particular, a nonzero
-displacement supplies the dimension hypothesis needed for Newtonian-kernel monotonicity and
-Poisson-kernel positivity.
+The first lemma derives positive ambient dimension from two distinct points, in particular from
+a nonzero vector. Distinct points thus supply the dimension hypothesis needed for Newtonian-kernel
+monotonicity and Poisson-kernel positivity.
 
 The instance `TauCeti.factFinrankEuclideanSpaceComplex` records the real dimension of `ℂᵏ⁺¹` as
 `(2k + 1) + 1`. This is the form of the hypothesis `Fact (finrank ℝ E = n + 1)` under which
@@ -32,11 +32,10 @@ public section
 
 namespace TauCeti
 
-/-- A nonzero vector in `EuclideanSpace ℝ (Fin n)` forces the dimension to be positive. -/
-theorem pos_of_ne_zero_euclideanSpace {n : ℕ} {x : EuclideanSpace ℝ (Fin n)}
-    (hx : x ≠ 0) : 0 < n := by
-  have := nontrivial_of_ne x 0 hx
-  simpa using Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ (Fin n))
+/-- Two distinct points of `EuclideanSpace 𝕜 (Fin n)` force the dimension to be positive. -/
+theorem pos_of_ne_euclideanSpace {𝕜 : Type*} {n : ℕ} {x y : EuclideanSpace 𝕜 (Fin n)}
+    (hxy : x ≠ y) : 0 < n :=
+  Nat.pos_of_ne_zero (by rintro rfl; exact hxy (Subsingleton.elim x y))
 
 /-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1` so that its unit sphere,
 and quotients of the sphere, are found to be manifolds of dimension `2k + 1`. -/

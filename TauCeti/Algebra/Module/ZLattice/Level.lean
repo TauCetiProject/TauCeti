@@ -335,6 +335,7 @@ theorem level_ratModel (hL : IsIntegral L) : (ratModel hL).level = level L := by
     rw [← hnorm]
     exact_mod_cast hm
 
+omit [FiniteDimensional ℝ E] in
 /-- **The level in a basis.** For a full integral lattice `L` with a `ℤ`-basis `b` of real Gram
 matrix `G = (⟪b i, b j⟫)`, the level divides `N` exactly when `N • G⁻¹` is an integral matrix with
 even diagonal. -/
@@ -342,6 +343,8 @@ theorem level_dvd_iff_gram (hL : IsIntegral L) {ι : Type*} [Fintype ι] [Decida
     (b : Basis ι ℤ L) (N : ℕ) :
     level L ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℝ) = (N : ℝ) • (Matrix.gram ℝ fun i ↦ (b i : E))⁻¹ := by
+  have := Module.Finite.of_basis b
+  have := ZLattice.finiteDimensional_of_isZLattice (K := ℝ) L
   -- Transport `b` to a carrier basis of the rational model, whose integral Gram matrix, cast to
   -- `ℝ`, is the real Gram matrix of `b`; the inverse may then be taken over `ℚ`.
   have hgram : Matrix.gram ℝ (fun i ↦ (b i : E)) =
@@ -356,6 +359,7 @@ theorem level_dvd_iff_gram (hL : IsIntegral L) {ι : Type*} [Fintype ι] [Decida
   rw [← (Matrix.map_injective (Rat.castHom ℝ).injective).eq_iff, Matrix.map_map]
   simp [← Matrix.ext_iff]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The level as a least element.** For a full integral lattice `L` with a `ℤ`-basis `b` of real
 Gram matrix `G = (⟪b i, b j⟫)`, the level is the least `N > 0` for which `N • G⁻¹` is an integral
 matrix with even diagonal. -/
@@ -363,6 +367,8 @@ theorem isLeast_level (hL : IsIntegral L) {ι : Type*} [Fintype ι] [DecidableEq
     (b : Basis ι ℤ L) :
     IsLeast {N : ℕ | 0 < N ∧ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℝ) = (N : ℝ) • (Matrix.gram ℝ fun i ↦ (b i : E))⁻¹} (level L) :=
+  have := Module.Finite.of_basis b
+  have := ZLattice.finiteDimensional_of_isZLattice (K := ℝ) L
   ⟨⟨hL.level_pos, (level_dvd_iff_gram hL b _).mp dvd_rfl⟩,
     fun _ ⟨hN, hM⟩ ↦ Nat.le_of_dvd hN ((level_dvd_iff_gram hL b _).mpr hM)⟩
 
@@ -603,13 +609,31 @@ end FiniteDimensional
 
 /-! ### Scaled cubic lattices -/
 
-/-- For an orthonormal basis `b` of a nonzero space and a positive integer `m`, the scaled cubic
-lattice `√m • ℤ b` has level `2 m`: its dual `(√m)⁻¹ • ℤ b` has squared norms `‖y‖² / m` with
-`‖y‖² ∈ ℤ`, attaining `1 / m`. For `m = 2` and rank `2` this is the level `4` of `√2 ℤ²`, whose
-determinant is also `4` but whose discriminant group `(ℤ/2)²` has exponent `2`. -/
+/-- For an orthonormal basis `b` of a nonzero space and a natural number `m`, the scaled cubic
+lattice `√m • ℤ b` has level `2 m`: for `m > 0` its dual `(√m)⁻¹ • ℤ b` has squared norms
+`‖y‖² / m` with `‖y‖² ∈ ℤ`, attaining `1 / m`, and for `m = 0` the lattice is `0`, whose dual is
+the whole space, so that no positive `N` works and the level is `0`. For `m = 2` and rank `2` this
+is the level `4` of `√2 ℤ²`, whose determinant is also `4` but whose discriminant group `(ℤ/2)²`
+has exponent `2`. -/
 theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempty ι]
-    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     level (√(m : ℝ) • span ℤ (Set.range b)) = 2 * m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · -- The lattice is `0`, whose dual is the whole space, so no `N > 0` makes `N ‖x‖² / 2` an
+    -- integer.
+    obtain ⟨i⟩ := ‹Nonempty ι›
+    rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, mul_zero]
+    by_contra hne
+    have hpos : (0 : ℝ) < level (⊥ : Submodule ℤ E) := by exact_mod_cast Nat.pos_of_ne_zero hne
+    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) :=
+      mem_dual.2 fun y hy ↦ by
+        rw [Submodule.mem_bot] at hy
+        exact ⟨0, by simp [hy]⟩
+    obtain ⟨k, hk⟩ := exists_level_mul_norm_sq_eq hx
+    rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow,
+      Real.sq_sqrt hpos.le, b.orthonormal.1 i, one_pow, mul_one, mul_inv_cancel₀ hpos.ne'] at hk
+    have hk' : (1 : ℤ) = 2 * k := by exact_mod_cast hk
+    omega
   have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr (by positivity)
   have hsq : √(m : ℝ) ^ 2 = m := Real.sq_sqrt (Nat.cast_nonneg m)
   have hnorm (y : E) : ‖(√(m : ℝ))⁻¹ • y‖ ^ 2 = ‖y‖ ^ 2 / m := by
@@ -640,7 +664,7 @@ theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempt
 group `(1 / √2) ℤ ⧸ √2 ℤ` has exponent `2`. -/
 theorem level_span_sqrt_two : level (span ℤ {√2} : Submodule ℤ ℝ) = 4 := by
   simpa [smul_span] using
-    level_sqrt_smul_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ) two_ne_zero
+    level_sqrt_smul_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ) (m := 2)
 
 end ZLattice
 

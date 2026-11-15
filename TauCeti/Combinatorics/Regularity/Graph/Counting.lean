@@ -112,10 +112,8 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have hq₁ : q ≤ 1 := G.patternDensity_le_one _ _ _
   have hpq₀ : 0 ≤ p * q := mul_nonneg hp₀ hq₀
   have hpq₁ : p * q ≤ 1 := (mul_le_of_le_one_left hq₀ hp₁).trans hq₁
-  have ha₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₁
   have hb₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₂
   have hc₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₁₂
-  have ha₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₁
   have hb₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₂
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
   -- Replace the three indicators by their densities one at a time: each difference is a test of

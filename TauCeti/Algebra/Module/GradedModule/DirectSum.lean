@@ -39,7 +39,7 @@ universe u v w
 
 namespace InternalGrading
 
-variable {R : Type u} {ι : Type v} {M : ι → Type w} {κ : Type} [DecidableEq κ]
+variable {R : Type u} {ι : Type v} {M : ι → Type w} {κ : Type*} [DecidableEq κ]
 variable [Semiring R] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
 /-- The canonical inclusion of the direct sum of degree-`p` pieces into the direct sum of the

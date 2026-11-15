@@ -17,6 +17,10 @@ support. Consequently, an additive map on test functions which vanishes locally 
 continuity of the additive map is not required. Every compact subset of the domain also has a
 cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
+Near a point where a complex test function `φ` does not vanish, every complex test function
+supported close enough to the point is a smooth multiple of `φ`
+(`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
+arguments replace one cutoff by another.
 In a finite-dimensional space, a compact set `K` in the interior of a compact set `K'` has a
 complex smooth cutoff supported in `K'` and equal to one on `K`
 (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
@@ -181,6 +185,35 @@ theorem exists_norm_le_one_mul_eq_abs {s : Finset E} (a : E → ℝ) (hs : (s : 
     · have hxU : x ∉ U := by simp [U, q, hx, lt_of_not_ge hxpos]
       have hψx : ψ x = 0 := ψ.zero_on_compl hxU
       simp [φ, hχx, hψx, abs_of_neg (lt_of_not_ge hxpos)]
+
+/-- Near a point where a complex test function `φ` does not vanish, every complex test function
+supported close enough to the point is a `C^n` multiple of `φ`. -/
+theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
+    {φ : 𝓓^{n}(Ω, ℂ)} {x : E} (hφx : φ x ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓^{n}(Ω, ℂ), tsupport ψ ⊆ U →
+      ∃ g : E → ℂ, ContDiff ℝ n g ∧ ∀ y, ψ y = φ y * g y := by
+  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
+  obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := (isCompact_singleton (x := x)).exists_contDiff_cutoff
+    (isOpen_ne_fun φ.continuous continuous_const) (singleton_subset_iff.2 hφx)
+  refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), fun ψ hψ ↦ ?_⟩
+  -- Write `ψ = φ (θ ψ)` with the function `θ = χ / φ`, which vanishes near the zeros of `φ`.
+  let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
+  have hθ : ContDiff ℝ n θ := by
+    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+    by_cases hy : φ y = 0
+    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
+      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
+      simp [θ, hz]
+    · exact (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).contDiffAt.mul
+        (φ.contDiff.contDiffAt.fun_inv hy)
+  refine ⟨fun y ↦ θ y * ψ y, hθ.mul ψ.contDiff, fun y ↦ ?_⟩
+  by_cases hψy : ψ y = 0
+  · simp [hψy]
+  · have hχy : χ y = 1 := interior_subset (hψ (subset_tsupport _ hψy))
+    have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
+    simp only [θ, hχy, Complex.ofReal_one]
+    field_simp
 
 end TestFunction
 

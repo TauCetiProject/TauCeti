@@ -74,6 +74,8 @@ changes the sign of the attaching map in reduced homology
   disjoint sources are disjoint.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
+* `TauCeti.continuousOn_morseCellMap_family`: for a family of charts whose inverses are jointly
+  continuous, the cells depend continuously on the parameter.
 * `TauCeti.mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le`,
   `TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`: for `0 < ε`, a
   self-map `h` of the disc such that `χ ∘ h` sends the boundary sphere into the lower sublevel, for
@@ -392,6 +394,30 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+section Family
+
+variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {ε : ℝ} {P : Type*} [TopologicalSpace P]
+
+/-- The cells `(p, w) ↦ (ψ p)⁻¹(√ε • (w, 0))` of a family of charts whose inverses are jointly
+continuous on the closed ball of radius `√ε` depend continuously on the parameter and the point of
+the unit disc. -/
+theorem continuousOn_morseCellMap_family
+    {ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n)
+    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε)) :
+    ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin k) ↦ (ψ q.1).morseCellMap hk ε q.2)
+      (univ ×ˢ closedBall 0 1) :=
+  (hs.comp (s := univ ×ˢ closedBall 0 1) (Continuous.continuousOn
+      (f := fun q : P × EuclideanSpace ℝ (Fin k) ↦
+        (q.1, √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) q.2)) (by fun_prop))
+    fun q hq ↦ ⟨mem_univ _, by
+      rw [mem_closedBall_zero_iff, norm_smul, LinearIsometry.norm_map,
+        Real.norm_of_nonneg (Real.sqrt_nonneg ε)]
+      exact mul_le_of_le_one_right (Real.sqrt_nonneg ε) (mem_closedBall_zero_iff.1 hq.2)⟩).congr
+    fun q _ ↦ OpenPartialHomeomorph.morseCellMap_def hk q.2
+
+end Family
 
 section Boundary
 

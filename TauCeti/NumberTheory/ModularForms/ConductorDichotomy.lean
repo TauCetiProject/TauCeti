@@ -40,8 +40,8 @@ shift `T ^ i` — is read off the determinants rather than off a formula for tho
 * `TauCeti.eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one`: **the vanishing horn**.
 * `TauCeti.cuspFormOfSmulSlashScaleGL_mem_cuspFormCharSpace`: the descent horn carries any
   character `χ₀` that `χ` pulls back from; the dichotomy specializes it to `hfac.χ₀`.
-* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**, in
-  the roadmap's `DirichletCharacter` phrasing — either `χ` factors through `N / l` and `f` is a
+* `TauCeti.exists_cuspForm_mem_cuspFormCharSpace_or_eq_zero`: **the level-lowering dichotomy**,
+  phrased over a `DirichletCharacter` — either `χ` factors through `N / l` and `f` is a
   cusp form of level `N / l` for the lowered character, or `f = 0`.
 
 ## Implementation notes
@@ -180,6 +180,7 @@ private theorem exists_apply_ne_and_eq_T_zpow_mul_conjScale_mul_T_zpow {l : ℕ}
 
 /-! ### The vanishing horn -/
 
+omit [NeZero N] in
 /-- **The vanishing horn of the level-lowering dichotomy.** If the nebentypus `χ` of the
 level-raise of `f` is *not* trivial on the kernel of `(ZMod N)ˣ → (ZMod (N / l))ˣ`, and `f` is
 `T`-periodic, then `f = 0`.
@@ -195,6 +196,15 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
     (hnb : ∀ (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 N), (f ∣[k] scaleGL l) ∣[k] mapGL ℝ γ = (χ ((Gamma0Map
       N).toHomUnits ⟨γ, hγ⟩) : ℂ) • (f ∣[k] scaleGL l))
     (hT : f ∣[k] (mapGL ℝ ModularGroup.T : GL (Fin 2) ℝ) = f) : f = 0 := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · -- at level `0` the reduction `(ZMod 0)ˣ → (ZMod (0 / l))ˣ` is the identity, so `hχ` fails
+    refine absurd ?_ hχ
+    intro u hu
+    have h0 : ∀ (n : ℕ) (_ : n = 0) (h : n ∣ 0), ZMod.unitsMap h u = 1 → u = 1 := by
+      rintro n rfl h
+      simp [ZMod.unitsMap_self]
+    rw [h0 _ (Nat.zero_div l) _ hu, map_one]
+  have : NeZero N := ⟨hN⟩
   -- start from the identity unit; the separation supplies the partner that breaks the tie
   obtain ⟨i, j, u', hne, hfactor⟩ :=
     exists_apply_ne_and_eq_T_zpow_mul_conjScale_mul_T_zpow hlN hχ 1

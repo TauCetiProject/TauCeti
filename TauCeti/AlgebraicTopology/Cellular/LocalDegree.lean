@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # Cellular incidence numbers as local degrees of attaching maps
@@ -63,8 +61,11 @@ local homology is constant along convex sets in a chart
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
+* `TauCeti.cellularIncidence_eq_zero_of_not_mem_cellFrontier`: the incidence number of an
+  `(n + 1)`-cell `j` on an `n`-cell `i` vanishes when the attaching map of `j` misses a point of
+  the open cell of `i`.
 * `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass` and
-  `TauCeti.singularHomologyπ_singularHomology₀Section_apply_one`: for a `0`-cell, the local class
+  `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_ite`: for a `0`-cell, the local class
   is the class of its point, and the class of any other point of the `0`-skeleton is zero.
 
 ## References
@@ -229,7 +230,7 @@ private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
     C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
   toFun q := (diskHomeomorphClosedBall n).symm
     ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
-      (norm_radialPush_le_one hr q.1
+      (norm_radialPush_le_one q.1
         (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
   continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
     (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
@@ -333,14 +334,8 @@ private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set
     cellChart_apply, ULift.norm_up]
 
 private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
-  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) := by
-    have h : closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) =
-        Homeomorph.ulift ⁻¹' closedBall 0 (cellRadius C x i) := by
-      ext u
-      rw [mem_preimage, mem_closedBall_zero_iff, mem_closedBall_zero_iff]
-      rfl
-    rw [h, Homeomorph.isCompact_preimage]
-    exact isCompact_closedBall _ _
+  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) :=
+    isCompact_closedBall _ _
   exact (hK.image_of_continuousOn ((cellChart C i).continuousOn_symm.mono
     (closedBall_subset_target_cellChart C x hx))).isClosed
 
@@ -560,7 +555,7 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     singularHomology₀Section R x ≫
         (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
       cellLocalClass C R x hx := by
-  let pt : TopCat.disk.{w} 0 := ULift.up ⟨0, by simp⟩
+  let pt : TopCat.disk.{w} 0 := diskCenter 0
   -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
   have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
       singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
@@ -593,6 +588,26 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     (singularHomology₀Section_naturality R (TopPair.Hom.fst g) pt).trans (by rw [hpt]; rfl)
   exact ((h₂ =≫ _).symm.trans (Category.assoc _ _ _)).trans
     ((_ ≫= h₁).trans (Category.assoc _ _ _).symm)
+
+open scoped Classical in
+/-- In the local homology at the point `x` of a `0`-cell `i`, the class of a point `y` of the
+`0`-skeleton is the local class of `i` if `y` is the point of `i`, and zero otherwise. -/
+lemma singularHomology₀Section_comp_singularHomologyπ_eq_ite {i : cell C 0}
+    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) (y : skeletonObj C 1) :
+    singularHomology₀Section R y ≫
+      (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
+      if (y : X) ∈ openCell 0 i then cellLocalClass C R x hx else 0 := by
+  split_ifs with hy
+  · have hyx : y = x := by
+      apply Subtype.ext
+      rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hx hy
+      exact hy.trans hx.symm
+    subst y
+    exact singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass C R x hx
+  · have hyx : y ∈ ({x}ᶜ : Set (skeletonObj C 1)) :=
+      fun h ↦ hy (h ▸ hx)
+    exact (TopPair.ofSubset _).singularHomology₀Section_comp_singularHomologyπ
+      R ⟨y, hyx⟩
 
 end Coefficients
 
@@ -712,32 +727,6 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
   erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
   rfl
-
-open scoped Classical in
-/-- In the local homology at the point `x` of a `0`-cell `i`, the class of a point `y` of the
-`0`-skeleton is the local class of `i` if `y` is the point of `i`, and zero otherwise. -/
-lemma singularHomologyπ_singularHomology₀Section_apply_one {i : cell C 0}
-    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) (y : skeletonObj C 1) :
-    (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ (ModuleCat.of R R) 0
-        (singularHomology₀Section (ModuleCat.of R R) y (1 : R)) =
-      if (y : X) ∈ openCell 0 i then cellLocalClass C (ModuleCat.of R R) x hx 1 else 0 := by
-  have hx' := hx
-  rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hx'
-  split_ifs with hy
-  · have hyx : y = x := by
-      rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hy
-      exact Subtype.ext (hy.trans hx'.symm)
-    subst hyx
-    exact ConcreteCategory.congr_hom
-      (singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass C (ModuleCat.of R R) y
-        hx) 1
-  · have hyx : y ∈ ({x}ᶜ : Set (skeletonObj C 1)) := fun h ↦ hy (h ▸ hx)
-    -- The composite is evaluated at `1` across the two presentations of the homology of the
-    -- `0`-skeleton, which `simp` cannot split as a composite.
-    exact (ConcreteCategory.congr_hom
-      ((TopPair.ofSubset _).singularHomology₀Section_comp_singularHomologyπ
-        (ModuleCat.of R R) ⟨y, hyx⟩) 1).trans
-        (by simp)
 
 end Ring
 

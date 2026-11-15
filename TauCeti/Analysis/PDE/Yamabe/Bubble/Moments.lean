@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
+import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
 # Moments of the Euclidean Yamabe bubbles
@@ -146,12 +147,23 @@ theorem integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
       (hscale + htwo_pow)
 
 /-- Every positive critical-mass moment of order less than the dimension tends to zero as the
-bubble scale tends to zero from above, for any additive Haar measure. -/
+bubble scale tends to zero from above, for any additive Haar measure. In dimension `2` the
+critical exponent is `0` by the convention for division by zero, and the moment is the integral of
+the non-integrable function `‖x - b‖ ^ p`, hence `0`. -/
 theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
-    (μ : Measure E) [μ.IsAddHaarMeasure] (hn : finrank ℝ E ≠ 2) {p : ℝ} (hp : 0 < p)
+    (μ : Measure E) [μ.IsAddHaarMeasure] {p : ℝ} (hp : 0 < p)
     (hpn : p < finrank ℝ E) (b : E) :
     Tendsto (fun t : ℝ ↦ ∫ x, ‖x - b‖ ^ p *
       bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ) (𝓝[>] 0) (𝓝 0) := by
+  rcases eq_or_ne (finrank ℝ E) 2 with h2 | hn
+  · have hcrit : criticalExponent (finrank ℝ E) = 0 := by simp [h2, criticalExponent_def]
+    have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+    have hzero (t : ℝ) :
+        ∫ x, ‖x - b‖ ^ p * bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ = 0 := by
+      refine integral_undef fun hint ↦ ?_
+      simp only [hcrit, Real.rpow_zero, mul_one] at hint
+      exact μ.not_integrable_norm_sub_rpow p b hint
+    simpa only [hzero] using tendsto_const_nhds
   have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
     simpa only [Real.zero_rpow hp.ne'] using
       (Real.continuousAt_rpow_const 0 p (Or.inr hp.le)).continuousWithinAt.tendsto (s := Ioi 0)
@@ -163,12 +175,15 @@ theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn hp.le hpn ht b]
 
+omit [FiniteDimensional ℝ E] in
 /-- In dimension `n > 2`, the moment of order `0 ≤ p < n - 2` about the centre of the
 Dirichlet-energy density of a bubble is integrable for every additive Haar measure. -/
 theorem integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     (μ : Measure E) [μ.IsAddHaarMeasure] {p : ℝ} (hp : 0 ≤ p)
     (hpn : p < (finrank ℝ E : ℝ) - 2) {t : ℝ} (ht : 0 < t) (b : E) :
     Integrable (fun x ↦ ‖x - b‖ ^ p * ‖fderiv ℝ (bubble t b) x‖ ^ 2) μ := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E)
+    (Nat.cast_pos.mp (by linarith : (0 : ℝ) < finrank ℝ E))
   have hn : 2 < finrank ℝ E := by exact_mod_cast (show (2 : ℝ) < finrank ℝ E by linarith)
   have h := (integrable_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ hn.ne' (p := p + 2)
     (by linarith) (by linarith) ht b).const_mul ((((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2)
@@ -199,6 +214,7 @@ theorem integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     beta (((finrank ℝ E : ℝ) + p + 2) / 2) (((finrank ℝ E : ℝ) - p - 2) / 2)) *
       (2 ^ (finrank ℝ E - 3) * hC + (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * t ^ 2 * htwo_pow)
 
+omit [FiniteDimensional ℝ E] in
 /-- Every positive Dirichlet-energy moment of order less than `n - 2` tends to zero as the
 bubble scale tends to zero from above, for any additive Haar measure. -/
 theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
@@ -206,6 +222,8 @@ theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     (hpn : p < (finrank ℝ E : ℝ) - 2) (b : E) :
     Tendsto (fun t : ℝ ↦ ∫ x, ‖x - b‖ ^ p * ‖fderiv ℝ (bubble t b) x‖ ^ 2 ∂μ)
       (𝓝[>] 0) (𝓝 0) := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E)
+    (Nat.cast_pos.mp (by linarith : (0 : ℝ) < finrank ℝ E))
   have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
     simpa only [Real.zero_rpow hp.ne'] using
       (Real.continuousAt_rpow_const 0 p (Or.inr hp.le)).continuousWithinAt.tendsto (s := Ioi 0)
@@ -348,6 +366,7 @@ moments truncated to a ball are computed instead.  Each density is a power of th
 `2 t / (t² + ‖x - b‖²)`, so these are specializations of
 `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`. -/
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n` of the critical bubble density, in dimension `n ≠ 2`, over
 the ball `B(b, R)`. It grows like `n |B(0, 1)| 2 ^ (n - 1) t ^ n log (1 + (R / t)²)`, and the
 correction is the partial logarithmic series in `w = R² / (t² + R²)`. -/
@@ -359,9 +378,11 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent
       (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) * (2 ^ (finrank ℝ E - 1) * t ^ finrank ℝ E *
         (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range (finrank ℝ E - 1),
           (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
+  have := Module.finite_of_finrank_pos hn₀
   simp_rw [bubble_rpow_criticalExponent hn ht b]
-  exact setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hn₀.ne' (by ring) ht.ne' hR b
+  exact setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hn₀.ne' (by ring) hR b
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n` of the critical bubble density, in dimension `n ≠ 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 1) t ^ n log (1 + (R / t)²)` by at most
 `n |B(0, 1)| 2 ^ (n - 1) t ^ n H_{n - 1}`. -/
@@ -374,6 +395,7 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent_sub_
           t ^ finrank ℝ E * log (1 + (R / t) ^ 2))| ≤
       (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
         (2 ^ (finrank ℝ E - 1) * t ^ finrank ℝ E * harmonic (finrank ℝ E - 1)) := by
+  have := Module.finite_of_finrank_pos hn₀
   simp_rw [bubble_rpow_criticalExponent hn ht b]
   exact abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le μ hn₀.ne'
     (by ring) ht hR b
@@ -408,6 +430,7 @@ private lemma energyMoment_const (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t)
   field_simp
   ring
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 2` of the Dirichlet-energy density of a bubble, in
 dimension `n > 2`, over the ball `B(b, R)`. It grows like
 `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`; in dimension `6` this is the
@@ -424,6 +447,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_norm_fderiv_bubble_sq
     setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht hR b,
     energyMoment_const hn ht]
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 2` of the Dirichlet-energy density of a bubble, in
 dimension `n > 2`, differs from `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`
 by at most `(n - 2)² n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) H_{n - 1}`. -/
@@ -435,12 +459,14 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_norm_fderiv_bubble_sq_sub_mul_log
           (2 ^ (finrank ℝ E - 3) * t ^ (finrank ℝ E - 2) * log (1 + (R / t) ^ 2))| ≤
       ((finrank ℝ E : ℝ) - 2) ^ 2 * (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
         (2 ^ (finrank ℝ E - 3) * t ^ (finrank ℝ E - 2) * harmonic (finrank ℝ E - 1)) := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   have h := abs_setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent_sub_mul_log_le μ
     (by omega) hn.ne' ht hR b
   rw [setIntegral_ball_energyMoment_eq μ hn ht R b, ← energyMoment_const hn ht,
     ← energyMoment_const hn ht, ← mul_sub, abs_mul, abs_of_nonneg (by positivity)]
   exact mul_le_mul_of_nonneg_left h (by positivity)
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 4` of the square of a bubble, in dimension `n > 2`, over
 the ball `B(b, R)`. It grows like `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)`; in
 dimension `6` this is the second moment of `U²`. -/
@@ -452,10 +478,12 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_sq
         (2 ^ (finrank ℝ E - 3) * t ^ (finrank ℝ E - 2) *
           (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range (finrank ℝ E - 3),
             (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   simp_rw [bubble_sq hn.le ht.le b]
   rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ (by omega)
-    (by push_cast [Nat.cast_sub hn.le]; ring) ht.ne' hR b, Nat.sub_sub]
+    (by push_cast [Nat.cast_sub hn.le]; ring) hR b, Nat.sub_sub]
 
+omit [FiniteDimensional ℝ E] in
 /-- The truncated moment of order `n - 4` of the square of a bubble, in dimension `n > 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)` by at most
 `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) H_{n - 3}`. -/
@@ -467,12 +495,14 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le
           (2 ^ (finrank ℝ E - 3) * t ^ (finrank ℝ E - 2) * log (1 + (R / t) ^ 2))| ≤
       (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
         (2 ^ (finrank ℝ E - 3) * t ^ (finrank ℝ E - 2) * harmonic (finrank ℝ E - 3)) := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   simp_rw [bubble_sq hn.le ht.le b]
   have h := abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le μ
     (m := finrank ℝ E - 2) (p := (finrank ℝ E : ℝ) - 4) (by omega)
     (by push_cast [Nat.cast_sub hn.le]; ring) ht hR b
   simpa only [Nat.sub_sub, Nat.reduceAdd] using h
 
+omit [FiniteDimensional ℝ E] in
 /-- In dimension six, the truncated scalar second moment of a bubble square is an explicit
 logarithmic term minus a partial logarithmic series. -/
 theorem setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six
@@ -482,10 +512,12 @@ theorem setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six
       48 * μ.real (ball (0 : E) 1) * t ^ 4 *
         (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range 3,
           (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1)) := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   have h := setIntegral_ball_norm_sub_rpow_mul_bubble_sq μ (by omega) ht hR b
   norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h
   linear_combination h
 
+omit [FiniteDimensional ℝ E] in
 /-- In dimension six, the scalar second moment differs from its logarithmic leading term
 by at most `48 |B(0,1)| t⁴ H₃`. -/
 theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank_eq_six
@@ -494,6 +526,7 @@ theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank
     |∫ x in ball b R, ‖x - b‖ ^ 2 * bubble t b x ^ 2 ∂μ -
         48 * μ.real (ball (0 : E) 1) * t ^ 4 * log (1 + (R / t) ^ 2)| ≤
       48 * μ.real (ball (0 : E) 1) * t ^ 4 * harmonic 3 := by
+  have := Module.finite_of_finrank_pos (R := ℝ) (M := E) (by omega : 0 < finrank ℝ E)
   have h := abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le μ
     (by omega) ht hR b
   norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h

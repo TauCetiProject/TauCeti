@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
-
-public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
-public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 
 /-!
@@ -24,16 +20,17 @@ facts about these coproducts which are used to compare homology of tensor produc
 * The map of coproducts over the fibres of a map induced by a morphism of graded objects is a
   map of colimits of discrete diagrams (`CategoryTheory.GradedObject.mapMap_eq_colimMap`).
 * A family of monomorphisms induces a monomorphism on coproducts over the fibres of a map, when
-  these coproducts are exact (`CategoryTheory.GradedObject.mono_mapMap`), and likewise a family of
-  short exact sequences induces a short exact sequence
-  (`CategoryTheory.GradedObject.shortExact_mapMap`), a family of exact sequences induces an exact
-  sequence (`CategoryTheory.GradedObject.exact_mapMap`), and a family of epimorphisms induces an
-  epimorphism (`CategoryTheory.GradedObject.epi_mapMap`).  In particular the tensor
-  product of morphisms of graded objects is a monomorphism in a degree with finitely many
-  summands as soon as each summand is (`CategoryTheory.GradedObject.Monoidal.mono_tensorHom`), for
-  instance in every degree for graded objects indexed by `ℕ`.  Tensoring with an identity is the
-  map of coproducts induced by the whiskerings
-  (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts apply to it.
+  colimits of that shape preserve monomorphisms (`CategoryTheory.GradedObject.mono_mapMap`), and
+  a family of epimorphisms induces an epimorphism (`CategoryTheory.GradedObject.epi_mapMap`).
+  When these coproducts are exact, a family of exact sequences induces an exact sequence
+  (`CategoryTheory.GradedObject.exact_mapMap`), and likewise a family of short exact sequences
+  induces a short exact sequence (`CategoryTheory.GradedObject.shortExact_mapMap`).  In particular
+  the tensor product of morphisms of graded objects is a monomorphism in a degree with finitely
+  many summands as soon as each summand is
+  (`CategoryTheory.GradedObject.Monoidal.mono_tensorHom`), for instance in every degree for graded
+  objects indexed by `ℕ`.  Tensoring with an identity is the map of coproducts induced by the
+  whiskerings (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts
+  apply to it.
 * For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
@@ -90,9 +87,8 @@ lemma exact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → 
     [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C]
     [HasExactColimitsOfShape (Discrete (p ⁻¹' {j})) C]
     (hS : ∀ i, (ShortComplex.mk (S.f i) (S.g i) (congr_fun S.zero i)).Exact) :
-    (ShortComplex.mk (mapMap S.f p j) (mapMap S.g p j) (mapObj_ext _ _ _ _ fun i _ ↦ by
-      rw [ι_mapMap_assoc, ι_mapMap, ← Category.assoc, ← Pi.comp_apply, S.zero]
-      simp)).Exact := by
+    (ShortComplex.mk (mapMap S.f p j) (mapMap S.g p j) (by
+      rw [← Pi.comp_apply, ← mapMap_comp, S.zero]; ext; simp)).Exact := by
   -- the coproducts over the fibre are the colimits of the corresponding discrete diagrams, and
   -- `colim` is exact
   let T : ShortComplex (Discrete (p ⁻¹' {j}) ⥤ C) :=
@@ -117,9 +113,8 @@ lemma shortExact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I
     [HasColimitsOfShape (Discrete (p ⁻¹' {j})) C]
     [HasExactColimitsOfShape (Discrete (p ⁻¹' {j})) C]
     (hS : ∀ i, (ShortComplex.mk (S.f i) (S.g i) (congr_fun S.zero i)).ShortExact) :
-    (ShortComplex.mk (mapMap S.f p j) (mapMap S.g p j) (mapObj_ext _ _ _ _ fun i _ ↦ by
-      rw [ι_mapMap_assoc, ι_mapMap, ← Category.assoc, ← Pi.comp_apply, S.zero]
-      simp)).ShortExact :=
+    (ShortComplex.mk (mapMap S.f p j) (mapMap S.g p j) (by
+      rw [← Pi.comp_apply, ← mapMap_comp, S.zero]; ext; simp)).ShortExact :=
   have (i : I) : Mono (S.f i) := (hS i).mono_f
   have (i : I) : Epi (S.g i) := (hS i).epi_g
   { exact := exact_mapMap S p j fun i ↦ (hS i).exact
@@ -136,7 +131,7 @@ lemma mono_tensorHom [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
     (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂) [HasTensor X₁ Y₁] [HasTensor X₂ Y₂] (n : I)
     (hn : Set.Finite {x : I × I | x.1 + x.2 = n}) [∀ i j, Mono (f i ⊗ₘ g j)] :
     Mono (tensorHom f g n) := by
-  let : Finite ((fun (⟨i, j⟩ : I × I) ↦ i + j) ⁻¹' {n}) := hn.to_subtype
+  have : Finite ((fun (⟨i, j⟩ : I × I) ↦ i + j) ⁻¹' {n}) := hn.to_subtype
   unfold tensorHom mapBifunctorMapMap
   refine mono_mapMap _ _ n (hφ := fun ⟨i, j⟩ ↦ ?_)
   -- Compute the component of the bifunctor map to identify it with the tensor product.
