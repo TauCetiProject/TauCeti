@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Algebra
+public import TauCeti.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Basic
 
 /-!
@@ -28,6 +29,8 @@ polynomial ring. These specializations detect equality, and recover each homogen
 * `TauCeti.SymmetricFunction R`: the ring of symmetric functions, the direct sum over `n` of the
   symmetric functions of degree `n`. It is a commutative `R`-algebra, and a commutative ring when
   `R` is one.
+* `TauCeti.SymmetricFunction.schurBasis R`: over a commutative ring, the basis of `Λ_R` consisting
+  of the Schur functions of all degrees.
 * `TauCeti.SymmetricFunction.specialization R d`: the algebra homomorphism from `Λ_R` to polynomials
   in `Fin d`, which sets all but `d` of the variables to zero.
 
@@ -293,6 +296,34 @@ because `DirectSum.commRing` asks the `AddCommMonoid` on each degree to come fro
 which instance search cannot unify with the `AddCommMonoid` of a submodule. -/
 noncomputable instance : CommRing (SymmetricFunction R) :=
   DirectSum.commRing fun n => stableSymmetricSubmodule R n
+
+namespace SymmetricFunction
+
+/-- **The Schur basis of the ring of symmetric functions**: the Schur functions `s_μ`, over all
+partitions `μ` of all degrees `n`, indexed by `Σ n, n.Partition`. It collects the Schur bases
+`TauCeti.stableSchurBasis R n` of the homogeneous components; its vectors are read off by
+`TauCeti.SymmetricFunction.schurBasis_apply`. -/
+noncomputable def schurBasis : Module.Basis (Σ n : ℕ, n.Partition) R (SymmetricFunction R) :=
+  DFinsupp.basis fun n => stableSchurBasis R n
+
+variable {R}
+
+/-- **The vectors of the Schur basis of `Λ_R` are the Schur functions.** -/
+@[simp]
+theorem schurBasis_apply (μ : Σ n : ℕ, n.Partition) :
+    schurBasis R μ = of _ μ.1 (stableSchur R μ.2) := by
+  rw [schurBasis, DFinsupp.basis_apply, stableSchurBasis_apply]
+  -- `DirectSum.of` is `DFinsupp.single`, bundled as an additive monoid homomorphism.
+  rfl
+
+/-- **The Schur coordinates of a symmetric function are the Schur coordinates of its homogeneous
+components.** -/
+@[simp]
+theorem schurBasis_repr_apply (x : SymmetricFunction R) (μ : Σ n : ℕ, n.Partition) :
+    (schurBasis R).repr x μ = (stableSchurBasis R μ.1).repr (x μ.1) μ.2 :=
+  DFinsupp.basis_repr _ x μ
+
+end SymmetricFunction
 
 end CommRing
 

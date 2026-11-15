@@ -53,13 +53,13 @@ theorem color_comap (H : Colored3Graph κ V) (f : W ↪ V)
 @[simp]
 theorem comap_refl (H : Colored3Graph κ V) : H.comap (Function.Embedding.refl V) = H := by
   ext s
-  simp [Set.powersetCard.map]
+  simp
 
 @[simp]
 theorem comap_comap (H : Colored3Graph κ V) (f : W ↪ V) (g : U ↪ W) :
     (H.comap f).comap g = H.comap (g.trans f) := by
   ext s
-  simp [Set.powersetCard.map, Finset.map_map]
+  simp
 
 @[simp]
 theorem comap_const (c : κ) (f : W ↪ V) : (const c).comap f = const c := by

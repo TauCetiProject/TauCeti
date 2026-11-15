@@ -147,11 +147,14 @@ theorem natDegree_eq_of_map_eq_monicOfCoeff {S : Type*} [Semiring S] {φ : S →
     f.natDegree = n := by
   rw [← natDegree_map_eq_of_injective hφ f, hf, natDegree_monicOfCoeff]
 
+omit [Nontrivial R] in
 /-- Every monic polynomial of degree `n` is the monic polynomial attached to its own lower
 coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identifies the monic
 polynomials of degree `n` with the coefficient tuples. -/
 theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     monicOfCoeff (fun i : Fin n => p.coeff (i : ℕ)) = p := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
   ext k
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩
