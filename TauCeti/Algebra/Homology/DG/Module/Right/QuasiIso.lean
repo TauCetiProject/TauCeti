@@ -42,10 +42,9 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
-* `TauCeti.DGRightModuleCat.IsQuasiIso.of_homotopyRetract`: a homotopy retract of a
-  quasi-isomorphism, possibly over another DG algebra, is a quasi-isomorphism;
-  `TauCeti.DGRightModuleCat.IsQuasiIso.of_retract_op_smul` is the case of a retract up to right
-  multiplication by a cycle homologous to the unit.
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
+  when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
+  boundaries.
 
 ## References
 
@@ -58,7 +57,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe uR uA uM uN uP uA' uM'
+universe uR uA uM uN uP
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
@@ -206,6 +205,45 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
 
+/-- **Quasi-isomorphisms through homotopy retracts.** Let `f₀ : M₀ → N₀` be a map of complexes
+over the ground ring whose relative cycles are relative boundaries, as for a quasi-isomorphism
+(`isQuasiIso_iff_forall_exists`). If `M` and `N` are homotopy retracts of `M₀` and `N₀`, through
+chain maps `i : M → M₀` and `r : M₀ → M` with `r ∘ i = 1 + d K + K d`, and `f` commutes with `f₀`
+along both `i` and `r`, then `f` is a quasi-isomorphism. Only the composite `r ∘ i` needs to be
+homotopic to the identity, none of the maps `i`, `r`, `K` needs to be linear over the algebra,
+and the homotopies need not be compatible with `f`. -/
+theorem isQuasiIso_of_homotopyRetract (f : DGRightModuleHom hM hN)
+    {M₀ N₀ : Type*} [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
+    {dM₀ : M₀ →ₗ[R] M₀} {dN₀ : N₀ →ₗ[R] N₀} (f₀ : M₀ →ₗ[R] N₀)
+    (h₀ : ∀ x y, dM₀ x = 0 → f₀ x = dN₀ y → ∃ u v, dM₀ u = x ∧ f₀ u + dN₀ v = y)
+    (iM : M →ₗ[R] M₀) (rM : M₀ →ₗ[R] M) (KM : M →ₗ[R] M)
+    (iN : N →ₗ[R] N₀) (rN : N₀ →ₗ[R] N) (KN : N →ₗ[R] N)
+    (hiM : ∀ x, dM₀ (iM x) = iM (dM x)) (hrM : ∀ x, dM (rM x) = rM (dM₀ x))
+    (hiN : ∀ y, dN₀ (iN y) = iN (dN y)) (hrN : ∀ y, dN (rN y) = rN (dN₀ y))
+    (hKM : ∀ x, rM (iM x) = x + dM (KM x) + KM (dM x))
+    (hKN : ∀ y, rN (iN y) = y + dN (KN y) + KN (dN y))
+    (hi : ∀ x, iN (f x) = f₀ (iM x)) (hr : ∀ x, f (rM x) = rN (f₀ x)) : f.IsQuasiIso := by
+  rw [isQuasiIso_iff_forall_exists]
+  intro x y hx hfx
+  -- Bound `x` by solving the problem for `f₀` and pulling the primitive back along `r`,
+  -- corrected by the homotopy of `M`.
+  obtain ⟨u₀, -, hu₀, -⟩ := h₀ (iM x) (iN y) (by rw [hiM, hx, map_zero])
+    (by rw [← hi, hfx, hiN])
+  have hu₁ : dM (rM u₀ - KM x) = x := by
+    rw [map_sub, hrM, hu₀, hKM, hx, map_zero, add_zero, add_sub_cancel_right]
+  -- The defect `y - f (r u₀ - K x)` is a cycle of `N`; solve for it in `N₀` and pull the
+  -- solution back along `r`, corrected by the homotopy of `N`.
+  have hw : dN (y - f (rM u₀ - KM x)) = 0 := by rw [map_sub, map_d, hu₁, hfx, sub_self]
+  obtain ⟨c₀, v₀, hc₀, hcv₀⟩ := h₀ 0 (iN (y - f (rM u₀ - KM x))) (map_zero dM₀)
+    (by rw [map_zero, hiN, hw, map_zero])
+  have hv₀ : rN (f₀ c₀) + rN (dN₀ v₀) =
+      y - f (rM u₀ - KM x) + dN (KN (y - f (rM u₀ - KM x))) := by
+    rw [← map_add, hcv₀, hKN, hw, map_zero, add_zero]
+  refine ⟨rM u₀ - KM x + rM c₀, rN v₀ - KN (y - f (rM u₀ - KM x)), ?_, ?_⟩
+  · rw [map_add, hu₁, hrM, hc₀, map_zero, add_zero]
+  · rw [map_add f, hr, map_sub dN, hrN, ← add_sub_assoc, add_assoc (f _), hv₀]
+    abel
+
 end DGRightModuleHom
 
 namespace DGRightModuleCat
@@ -228,82 +266,6 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
   rw [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
-
-/-- The identity of a DG right module is a quasi-isomorphism. -/
-theorem isQuasiIso_id (M : DGRightModuleCat.{uR, uA, uM} h) : IsQuasiIso (𝟙 M) :=
-  DGRightModuleHom.isQuasiIso_id
-
-/-- A morphism between zero modules is a quasi-isomorphism. -/
-theorem isQuasiIso_of_subsingleton {M N : DGRightModuleCat.{uR, uA, uM} h} [Subsingleton M]
-    [Subsingleton N] (f : M ⟶ N) : IsQuasiIso f := by
-  rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-  exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
-
-section Retract
-
-open MulOpposite
-
-variable {A' : Type uA'} [Ring A'] [Algebra R A'] {𝒜' : ℤ → Submodule R A'} [GradedAlgebra 𝒜']
-  {d' : A' →ₗ[R] A'} {h' : IsDGAlgebra 𝒜' d'}
-
-/-- **A homotopy retract of a quasi-isomorphism is a quasi-isomorphism.** Let `f' : M' ⟶ N'` be
-a morphism of DG right modules, possibly over a different DG algebra than `f : M ⟶ N`, and let
-`φ : f → f'` and `ψ : f' → f` be maps of arrows made of ground-ring linear chain maps: the
-squares `f' ∘ φM = φN ∘ f` and `f ∘ ψM = ψN ∘ f'` commute. If `φ ∘ ψ` is homotopic to the
-identity of `f'`, through homotopies `KM` and `KN` with `f' ∘ KM = KN ∘ f'`, and `f` is a
-quasi-isomorphism, then so is `f'`. -/
-theorem IsQuasiIso.of_homotopyRetract {M N : DGRightModuleCat.{uR, uA, uM} h} {f : M ⟶ N}
-    (hf : IsQuasiIso f) {M' N' : DGRightModuleCat.{uR, uA', uM'} h'} (f' : M' ⟶ N')
-    (φM : M →ₗ[R] M') (φN : N →ₗ[R] N') (ψM : M' →ₗ[R] M) (ψN : N' →ₗ[R] N)
-    (KM : M' →ₗ[R] M') (KN : N' →ₗ[R] N')
-    (hφM : ∀ x, M'.differential (φM x) = φM (M.differential x))
-    (hφN : ∀ y, N'.differential (φN y) = φN (N.differential y))
-    (hψM : ∀ x, M.differential (ψM x) = ψM (M'.differential x))
-    (hψN : ∀ y, N.differential (ψN y) = ψN (N'.differential y))
-    (hφ : ∀ x, f' (φM x) = φN (f x)) (hψ : ∀ x, f (ψM x) = ψN (f' x))
-    (hKM : ∀ x, φM (ψM x) = x + M'.differential (KM x) + KM (M'.differential x))
-    (hKN : ∀ y, φN (ψN y) = y + N'.differential (KN y) + KN (N'.differential y))
-    (hK : ∀ x, f' (KM x) = KN (f' x)) : IsQuasiIso f' := by
-  rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists] at hf ⊢
-  intro x y hx hxy
-  obtain ⟨u, v, hu, huv⟩ := hf (ψM x) (ψN y) (by rw [hψM, hx, map_zero])
-    (by rw [hψ, hxy, hψN])
-  refine ⟨φM u - KM x, φN v - KN y, ?_, ?_⟩
-  · rw [map_sub, hφM, hu, hKM, hx, map_zero, add_zero, add_sub_cancel_right]
-  · rw [map_sub, map_sub, hφ, hφN, hK, hxy, sub_add_sub_comm, ← map_add, huv, hKN]
-    abel
-
-/-- **A retract up to a cycle homologous to the unit.** The case of
-`IsQuasiIso.of_homotopyRetract` in which `φ ∘ ψ` is the right action of an element `c` of the
-algebra of `f'` with `c - 1 = d' a`. The homotopies are the right action of `a` after the Koszul
-signs (`TauCeti.IsDGRightModule.differential_op_smul_koszulTwist_add`). -/
-theorem IsQuasiIso.of_retract_op_smul {M N : DGRightModuleCat.{uR, uA, uM} h} {f : M ⟶ N}
-    (hf : IsQuasiIso f) {M' N' : DGRightModuleCat.{uR, uA', uM'} h'} (f' : M' ⟶ N')
-    (φM : M →ₗ[R] M') (φN : N →ₗ[R] N') (ψM : M' →ₗ[R] M) (ψN : N' →ₗ[R] N) {c a : A'}
-    (ha : d' a = c - 1)
-    (hφM : ∀ x, M'.differential (φM x) = φM (M.differential x))
-    (hφN : ∀ y, N'.differential (φN y) = φN (N.differential y))
-    (hψM : ∀ x, M.differential (ψM x) = ψM (M'.differential x))
-    (hψN : ∀ y, N.differential (ψN y) = ψN (N'.differential y))
-    (hφ : ∀ x, f' (φM x) = φN (f x)) (hψ : ∀ x, f (ψM x) = ψN (f' x))
-    (hcM : ∀ x, φM (ψM x) = op c • x) (hcN : ∀ y, φN (ψN y) = op c • y) : IsQuasiIso f' := by
-  have hc : c = 1 + d' a := by rw [ha, add_sub_cancel]
-  refine hf.of_homotopyRetract f' φM φN ψM ψN
-    (DistribSMul.toLinearMap R M' (op a) ∘ₗ
-      (InternalGrading.ofDecomposition M'.grading).koszulTwist 1)
-    (DistribSMul.toLinearMap R N' (op a) ∘ₗ
-      (InternalGrading.ofDecomposition N'.grading).koszulTwist 1)
-    hφM hφN hψM hψN hφ hψ (fun x ↦ ?_) (fun y ↦ ?_) (fun x ↦ ?_)
-  · simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
-    rw [add_assoc, M'.isDGRightModule.differential_op_smul_koszulTwist_add, hcM, hc,
-      MulOpposite.op_add, MulOpposite.op_one, add_smul, one_smul]
-  · simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
-    rw [add_assoc, N'.isDGRightModule.differential_op_smul_koszulTwist_add, hcN, hc,
-      MulOpposite.op_add, MulOpposite.op_one, add_smul, one_smul]
-  · simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
-    rw [map_smul, koszulTwist_hom_apply]
-
-end Retract
 
 end DGRightModuleCat
 

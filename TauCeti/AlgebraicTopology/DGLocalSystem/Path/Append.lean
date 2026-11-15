@@ -12,37 +12,31 @@ public import TauCeti.Topology.PathSpace.Moore.Between.Append
 # Appending and closing up paths on chains
 
 Fix a Moore path `γ` from `b` to `c` in a space `B`. On normalized cubical chains of Moore paths
-it gives three maps, all linear over the chains on the loops acting in front and commuting with
+it gives two maps, both linear over the chains on the loops acting in front and commuting with
 the boundary:
 
 * appending `γ`, `C_*(P_{a→b} B) → C_*(P_{a→c} B)` (`TauCeti.pathChainAppend`);
 * closing up a path from `b` to `c` into a loop at `b` by appending the reversal of `γ`,
-  `C_*(P_{b→c} B) → C_*(Ω_b B)` (`TauCeti.pathChainToLoopChain`);
-* concatenating with the point chain `[γ]` (`TauCeti.pathChainPoint`), which is appending `γ`
-  (`TauCeti.pathChainConcat_tmul_pathChainPoint`).
+  `C_*(P_{b→c} B) → C_*(Ω_b B)` (`TauCeti.pathChainToLoopChain`).
 
-Neither appending `γ⁻¹` and then `γ`, nor closing up and then acting on `[γ]`, is the identity:
-both are the right action of the point chain of the loop `γ⁻¹ ⋆ γ` at `c`
-(`TauCeti.loopChainSymmTrans`), a loop of positive duration. That loop is joined to the unit by
-the retracing loops of `γ⁻¹`, whose `1`-chain `TauCeti.loopChainRetrace` has boundary
-`[γ⁻¹ ⋆ γ] - 1`. So the right action of `[γ⁻¹ ⋆ γ]` is homotopic to the identity on every DG right
-module over `C_*(Ω_c B)`, through right multiplication by this `1`-chain. These are the chain-level
-inputs for the change of basepoint of DG local systems.
+Neither appending `γ⁻¹` and then `γ`, nor closing up and then acting on the `0`-chain `[γ]` of `γ`
+(`TauCeti.pathChainPoint`), is the identity: both are the push-forward of appending `γ⁻¹` and then
+`γ`, which `TauCeti.pathChainAppendHomotopy` joins to the identity. Concatenating with `[γ]` is
+appending `γ` (`TauCeti.pathChainConcat_tmul_pathChainPoint`). These are the chain-level inputs
+for the change of basepoint of DG local systems.
 
 ## Main definitions
 
-* `TauCeti.pathChainPoint R γ`: the point chain of a Moore path.
+* `TauCeti.pathChainPoint R γ`: the `0`-chain of a Moore path.
 * `TauCeti.pathChainAppend R γ a`: appending `γ` on chains of paths starting at `a`.
 * `TauCeti.pathChainToLoopChain R γ`: closing up chains of paths by `γ⁻¹`.
-* `TauCeti.loopChainSymmTrans R γ`, `TauCeti.loopChainRetrace R γ`: the point chain of `γ⁻¹ ⋆ γ`
-  and a `1`-chain joining it to the unit.
 
 ## Main results
 
 * `TauCeti.pathChainAppend_pathChainAppend_symm`,
-  `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: both round trips are the right action of
-  `[γ⁻¹ ⋆ γ]`.
-* `TauCeti.cubicalChainDifferential_loopChainRetrace`: `d (loopChainRetrace R γ) = [γ⁻¹ ⋆ γ] - 1`.
+  `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: both round trips are the push-forward of
+  appending `γ⁻¹` and then `γ`.
+* `TauCeti.pathChainConcat_tmul_pathChainPoint`: concatenating with `[γ]` is appending `γ`.
 * `TauCeti.op_pathChainToLoopChain_smul`: acting by a closed-up chain is concatenating and then
   appending `γ⁻¹`.
 
@@ -69,21 +63,29 @@ variable {B : Type u} [TopologicalSpace B] {R : Type v} [CommRing R] {a b c : B}
 /-! ### Point chains and appending paths -/
 
 variable (R) in
-/-- The point chain of a Moore path. -/
-def pathChainPoint (γ : MoorePathBetween B b c) :
-    cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R :=
-  cubicalChainModuleLof _ _ R 0 (ofCube _ R (SingularCube.point γ))
+/-- The `0`-chain of a path. -/
+def pathChainPoint (δ : MoorePathBetween B a b) :
+    cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R :=
+  cubicalChainModuleLof _ _ R 0 (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ))
 
-/-- A point chain is a cycle. -/
-theorem cubicalChainModuleDifferential_pathChainPoint (γ : MoorePathBetween B b c) :
-    cubicalChainModuleDifferential _ _ R (pathChainPoint R γ) = 0 :=
+/-- The `0`-chain of a path is the class of the constant `0`-cube at the path. -/
+theorem pathChainPoint_def (δ : MoorePathBetween B a b) :
+    pathChainPoint R δ =
+      cubicalChainModuleLof (MoorePathBetween B a b) (MooreLoopSpace B b) R 0
+        (NormalizedCubicalChain.ofCube (MoorePathBetween B a b) R (SingularCube.point δ)) :=
+  (rfl)
+
+/-- The `0`-chain of a path has degree `0`. -/
+theorem pathChainPoint_mem (δ : MoorePathBetween B a b) :
+    pathChainPoint R δ ∈
+      cubicalChainModuleGrading (MoorePathBetween B a b) (MooreLoopSpace B b) R 0 :=
+  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨0, _, by simp, rfl⟩)
+
+/-- The `0`-chain of a path is a cycle. -/
+@[simp]
+theorem cubicalChainModuleDifferential_pathChainPoint (δ : MoorePathBetween B a b) :
+    cubicalChainModuleDifferential _ _ R (pathChainPoint R δ) = 0 :=
   cubicalChainModuleDifferential_lof_zero _
-
-/-- A point chain has degree zero. -/
-theorem pathChainPoint_mem (γ : MoorePathBetween B b c) :
-    pathChainPoint R γ ∈ cubicalChainModuleGrading _ (MooreLoopSpace B c) R 0 := by
-  simpa [pathChainPoint] using cubicalChainModuleLof_mem (G := MooreLoopSpace B c)
-    (ofCube (MoorePathBetween B b c) R (SingularCube.point γ))
 
 variable (R) in
 /-- Appending a path `γ` from `b` to `c` to paths from `a` to `b`, on chains. -/
@@ -127,129 +129,93 @@ theorem cubicalChainModuleDifferential_pathChainAppend (γ : MoorePathBetween B 
     LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
     cubicalChainDifferential_cubicalChainSumMap]
 
+/-- Appending `γ⁻¹` and then `γ` on chains is the push-forward along the composite of the two
+appending maps. -/
+theorem pathChainAppend_pathChainAppend_symm (γ : MoorePathBetween B b c) (a : B)
+    (σ : cubicalChainModule (MoorePathBetween B a c) (MooreLoopSpace B c) R) :
+    pathChainAppend R γ a (pathChainAppend R γ.symm a σ) =
+      cubicalChainModuleLinearMap R ((γ.append a).comp (γ.symm.append a)) σ := by
+  induction σ using cubicalChainModule.induction_on with
+  | add σ σ' hσ hσ' => rw [map_add, map_add, hσ, hσ', map_add]
+  | lof q s =>
+    rw [pathChainAppend_lof, pathChainAppend_lof, cubicalChainModuleLinearMap_lof,
+      NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
 /-! ### Closing up paths into loops -/
 
 variable (R) in
-/-- The closing-up map `σ ↦ σ ⋆ γ⁻¹` on chains. -/
-def pathChainToLoopChain (γ : MoorePathBetween B b c) :
-    cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R →ₗ[R]
-      loopChainAlgebra B b R :=
-  cubicalChainSumMap R (MoorePathBetween.loopAppendHomotopyEquiv γ).invFun ∘ₗ
+/-- The map `ρ : C_*(P_{a→b} B) → C_*(Ω_a B)` of chains induced by appending the reversal of a
+Moore path `δ` from `a` to `b`. -/
+def pathChainToLoopChain (δ : MoorePathBetween B a b) :
+    cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R →ₗ[R]
+      loopChainAlgebra B a R :=
+  cubicalChainSumMap R (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun ∘ₗ
     (cubicalChainModuleEquiv _ _ R).toLinearMap
 
-/-- On a homogeneous chain, closing up is the push-forward along concatenation with `γ⁻¹`. -/
+/-- On a homogeneous chain, `pathChainToLoopChain` is the push-forward of the chain. -/
 @[simp]
-theorem pathChainToLoopChain_lof (γ : MoorePathBetween B b c) {n : ℕ}
-    (s : NormalizedCubicalChain (MoorePathBetween B b c) R n) :
-    pathChainToLoopChain R γ (cubicalChainModuleLof _ _ R n s) =
-      cubicalChainLof _ R n (map R (MoorePathBetween.loopAppendHomotopyEquiv γ).invFun n s) := by
-  rw [pathChainToLoopChain, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    cubicalChainModuleEquiv_lof, cubicalChainSumMap_lof]
+theorem pathChainToLoopChain_lof (δ : MoorePathBetween B a b) {n : ℕ}
+    (c : NormalizedCubicalChain (MoorePathBetween B a b) R n) :
+    pathChainToLoopChain R δ (cubicalChainModuleLof _ (MooreLoopSpace B b) R n c) =
+      cubicalChainLof (MooreLoopSpace B a) R n
+        (NormalizedCubicalChain.map R
+          (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun n c) := by
+  simp [pathChainToLoopChain, cubicalChainSumMap_lof]
 
-/-- Closing up commutes with the loops acting in front. -/
-theorem pathChainToLoopChain_smul (γ : MoorePathBetween B b c) (x : loopChainAlgebra B b R)
-    (σ : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
-    pathChainToLoopChain R γ (x • σ) = x * pathChainToLoopChain R γ σ := by
-  induction σ using cubicalChainModule.induction_on with
-  | add σ σ' hσ hσ' => rw [smul_add, map_add, hσ, hσ', map_add, mul_add]
-  | lof q s =>
-    induction x using DirectSum.induction_on with
-    | zero => rw [zero_smul, map_zero, zero_mul]
-    | add x x' hx hx' => rw [add_smul, map_add, hx, hx', add_mul]
-    | of p z =>
+/-- `pathChainToLoopChain` is linear for the loops at `a` acting in front. -/
+theorem pathChainToLoopChain_smul (δ : MoorePathBetween B a b) (α : loopChainAlgebra B a R)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R δ (α • x) = α * pathChainToLoopChain R δ x := by
+  induction x using cubicalChainModule.induction_on with
+  | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, mul_add]
+  | lof q c =>
+    induction α using DirectSum.induction_on with
+    | zero => simp
+    | add α α' hα hα' => rw [add_smul, map_add, hα, hα', add_mul]
+    | of p y =>
       rw [← DirectSum.lof_eq_of R, lof_smul_cubicalChainModuleLof, pathChainToLoopChain_lof,
-        pathChainToLoopChain_lof, cubicalChainLof_mul, map_leftAct
-          (MoorePathBetween.loopAppendHomotopyEquiv γ).invFun
-          (fun ω δ ↦ MoorePathBetween.loopAppendHomotopyEquiv_symm_smul γ ω δ),
-        leftAct_self_eq_mul]
+        pathChainToLoopChain_lof, cubicalChainLof_mul, NormalizedCubicalChain.map_leftAct _
+          (fun ω γ ↦ MoorePathBetween.loopAppendHomotopyEquiv_symm_smul δ ω γ),
+        NormalizedCubicalChain.leftAct_eq_mul]
 
-/-- Closing up is a chain map. -/
-theorem pathChainToLoopChain_differential (γ : MoorePathBetween B b c)
-    (σ : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
-    cubicalChainDifferential _ R (pathChainToLoopChain R γ σ) =
-      pathChainToLoopChain R γ (cubicalChainModuleDifferential _ _ R σ) := by
-  rw [pathChainToLoopChain, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    cubicalChainModuleEquiv_differential,
-    cubicalChainDifferential_cubicalChainSumMap]
+/-- `pathChainToLoopChain` preserves cohomological degree. -/
+theorem pathChainToLoopChain_mem (δ : MoorePathBetween B a b) {i : ℤ}
+    {x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R}
+    (hx : x ∈ cubicalChainModuleGrading (MoorePathBetween B a b) (MooreLoopSpace B b) R i) :
+    pathChainToLoopChain R δ x ∈ cubicalChainGrading (MooreLoopSpace B a) R i := by
+  rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, c, hn, rfl⟩
+  · simp only [map_zero, Submodule.zero_mem]
+  · rw [pathChainToLoopChain_lof]
+    exact (mem_cubicalChainGrading_iff _ _).2 (Or.inr ⟨n, _, hn, rfl⟩)
 
-/-- Closing up preserves degrees. -/
-theorem pathChainToLoopChain_mem (γ : MoorePathBetween B b c) {i : ℤ}
-    {σ : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R}
-    (hσ : σ ∈ cubicalChainModuleGrading _ _ R i) :
-    pathChainToLoopChain R γ σ ∈ cubicalChainGrading _ R i :=
-  cubicalChainSumMap_mem _ (mem_cubicalChainModuleGrading.1 hσ)
+/-- `pathChainToLoopChain` commutes with the differentials. -/
+theorem pathChainToLoopChain_differential (δ : MoorePathBetween B a b)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R δ (cubicalChainModuleDifferential _ _ R x) =
+      cubicalChainDifferential (MooreLoopSpace B a) R (pathChainToLoopChain R δ x) := by
+  simp only [pathChainToLoopChain, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    cubicalChainModuleEquiv_differential, cubicalChainDifferential_cubicalChainSumMap]
 
-/-! ### The loop `γ⁻¹ ⋆ γ` and its retracing chain -/
-
-variable (R) in
-/-- The point chain of the Moore loop `γ⁻¹ ⋆ γ` at the end point of `γ`. -/
-def loopChainSymmTrans (γ : MoorePathBetween B b c) : loopChainAlgebra B c R :=
-  cubicalChainLof _ R 0
-    (ofCube _ R (SingularCube.point ((MoorePathBetween.loopHomeomorph c).symm (γ.symm.trans γ))))
-
-/-- The `1`-cube of the retracing loops of `γ⁻¹`, from the unit to `γ⁻¹ ⋆ γ`. -/
-private def retraceCube (γ : MoorePathBetween B b c) : SingularCube (MooreLoopSpace B c) 1 :=
-  ⟨fun x ↦ γ.symm.retrace (unitInterval.toNNReal (x 0) * γ.toMoorePath.length), by fun_prop⟩
-
-private theorem face_zero_retraceCube (γ : MoorePathBetween B b c) :
-    SingularCube.face 0 0 (retraceCube γ) = SingularCube.point 1 := by
-  ext x : 1
-  simp [retraceCube]
-
-private theorem face_one_retraceCube (γ : MoorePathBetween B b c) :
-    SingularCube.face 0 1 (retraceCube γ) =
-      SingularCube.point ((MoorePathBetween.loopHomeomorph c).symm (γ.symm.trans γ)) := by
-  have hfull : γ.toMoorePath.symm.truncate γ.toMoorePath.length = γ.toMoorePath.symm := by
-    simpa only [MoorePath.length_symm] using γ.toMoorePath.symm.truncate_length
-  ext x : 1
-  apply MooreLoopSpace.ext
-  simp [retraceCube, hfull]
-
-variable (R) in
-/-- The `1`-chain of the retracing loops of `γ⁻¹`, with the sign that makes its boundary
-`[γ⁻¹ ⋆ γ] - 1`. -/
-def loopChainRetrace (γ : MoorePathBetween B b c) : loopChainAlgebra B c R :=
-  -cubicalChainLof _ R 1 (ofCube _ R (retraceCube γ))
-
-/-- The retracing `1`-chain joins `[γ⁻¹ ⋆ γ]` to the unit. -/
-theorem cubicalChainDifferential_loopChainRetrace (γ : MoorePathBetween B b c) :
-    cubicalChainDifferential _ R (loopChainRetrace R γ) = loopChainSymmTrans R γ - 1 := by
-  rw [loopChainRetrace, map_neg, cubicalChainDifferential_lof_succ, boundary_ofCube,
-    Fin.sum_univ_one, Fin.val_zero, pow_zero, one_smul, face_zero_retraceCube,
-    face_one_retraceCube, loopChainSymmTrans, DirectSum.one_def, ← DirectSum.lof_eq_of R,
-    NormalizedCubicalChain.gOne_one, one_def, map_sub, neg_sub]
-
-/-- Appending `γ⁻¹` and then `γ` is the right action of the loop `γ⁻¹ ⋆ γ`. -/
-theorem pathChainAppend_pathChainAppend_symm (γ : MoorePathBetween B b c) (a : B)
-    (σ : cubicalChainModule (MoorePathBetween B a c) (MooreLoopSpace B c) R) :
-    pathChainAppend R γ a (pathChainAppend R γ.symm a σ) = op (loopChainSymmTrans R γ) • σ := by
-  induction σ using cubicalChainModule.induction_on with
-  | add σ σ' hσ hσ' => rw [map_add, map_add, hσ, hσ', smul_add]
-  | lof q s =>
-    rw [pathChainAppend_lof, pathChainAppend_lof, ← LinearMap.comp_apply (map R _ q),
-      ← NormalizedCubicalChain.map_comp, loopChainSymmTrans, op_lof_smul_cubicalChainModuleLof,
-      act_ofCube_point]
-    congr 3
-    ext δ : 1
-    apply MoorePathBetween.ext
-    simp [MoorePath.trans_assoc]
-
-/-- Closing up a chain of paths by `γ⁻¹` and then appending `γ` is the right action of the loop
-`γ⁻¹ ⋆ γ`. -/
-theorem pathChainToLoopChain_smul_pathChainPoint (γ : MoorePathBetween B b c)
-    (σ : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
-    pathChainToLoopChain R γ σ • pathChainPoint R γ = op (loopChainSymmTrans R γ) • σ := by
-  induction σ using cubicalChainModule.induction_on with
-  | add σ σ' hσ hσ' => rw [map_add, add_smul, hσ, hσ', smul_add]
-  | lof q s =>
+/-- Acting on the `0`-chain of `δ` after `pathChainToLoopChain` is the push-forward of appending
+`δ⁻¹` and then `δ`. -/
+theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R δ x • pathChainPoint R δ =
+      cubicalChainModuleLinearMap R
+        ((MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a)) x := by
+  induction x using cubicalChainModule.induction_on with
+  | add x x' hx hx' => rw [map_add, add_smul, hx, hx', map_add]
+  | lof q c =>
+    have h : ((leftActMap (MooreLoopSpace B a) (MoorePathBetween B a b)).comp
+        ((ContinuousMap.id _).prodMk (ContinuousMap.const _ δ))).comp
+          (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun =
+        (MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a) :=
+      ContinuousMap.ext fun x ↦ MoorePathBetween.ext (by simp [MoorePath.trans_assoc])
     rw [pathChainToLoopChain_lof, pathChainPoint, lof_smul_cubicalChainModuleLof,
-      leftAct_ofCube_point, ← LinearMap.comp_apply (NormalizedCubicalChain.map R _ q),
-      ← NormalizedCubicalChain.map_comp, loopChainSymmTrans, op_lof_smul_cubicalChainModuleLof,
-      act_ofCube_point]
-    congr 3
-    ext δ : 1
-    apply MoorePathBetween.ext
-    simp [MoorePath.trans_assoc]
+      cubicalChainModuleLinearMap_lof, ← cubicalChainModuleLof_cast (Nat.add_zero q),
+      NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
+      NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
+      NormalizedCubicalChain.map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
 
 /-- Concatenating with the point chain of `γ` is appending `γ`. -/
 theorem pathChainConcat_tmul_pathChainPoint (γ : MoorePathBetween B b c)
@@ -281,7 +247,7 @@ theorem op_pathChainToLoopChain_smul (γ : MoorePathBetween B b c)
     | add σ σ' hσ hσ' => rw [smul_add, hσ, hσ', add_tmul, map_add, map_add]
     | lof p s =>
       have hcross := NormalizedCubicalChain.map_crossProduct (R := R) (ContinuousMap.id _)
-        (MoorePathBetween.loopAppendHomotopyEquiv γ).invFun s t
+        (MoorePathBetween.loopAppendHomotopyEquiv γ).symm.toFun s t
       rw [NormalizedCubicalChain.map_id, LinearMap.id_apply] at hcross
       rw [pathChainToLoopChain_lof, op_lof_smul_cubicalChainModuleLof, act_def, ← hcross,
         pathChainConcat_tmul, cubicalChainPairing_lof_lof, pathChainAppend_lof,

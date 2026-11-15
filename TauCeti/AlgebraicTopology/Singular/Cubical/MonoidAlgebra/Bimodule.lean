@@ -165,13 +165,6 @@ theorem augment_leftAct (a : NormalizedCubicalChain G R 0) (c : NormalizedCubica
     augment Y R (leftAct G Y R 0 0 a c) = augment G R a * augment Y R c := by
   rw [leftAct_def, ← LinearMap.comp_apply (augment Y R), augment_map, augment_crossProduct]
 
-/-- The left action on the chain of a point `y` is the push-forward along the orbit map of `y`. -/
-theorem leftAct_ofCube_point {p : ℕ} (a : NormalizedCubicalChain G R p) (y : Y) :
-    leftAct G Y R p 0 a (ofCube Y R (SingularCube.point y)) =
-      map R ⟨fun g ↦ g • y, by fun_prop⟩ p a := by
-  rw [leftAct_def, map_crossProduct_ofCube_point]
-  congr 1
-
 end LeftAct
 
 section SemigroupAction
@@ -210,15 +203,6 @@ theorem one_leftAct {q : ℕ} (c : NormalizedCubicalChain Y R q) :
     ← map_comp, h, map_id, LinearMap.id_apply]
 
 end MulAction
-
-/-- The left action of a topological magma on itself is the Pontryagin product. -/
-theorem leftAct_self_eq_mul {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G]
-    {R : Type*} [CommRing R] {p q : ℕ} (a : NormalizedCubicalChain G R p)
-    (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
-  have h : leftActMap G G = mulMap G := by
-    ext x
-    simp
-  rw [leftAct_def, mul_def, h]
 
 end NormalizedCubicalChain
 
@@ -433,6 +417,20 @@ theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
         lof_smul_cubicalChainModuleLof, map_leftAct f hf]
 
 end LeftMap
+
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by left multiplication, the left action of chains is
+the Pontryagin product. -/
+theorem NormalizedCubicalChain.leftAct_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
+  have h : leftActMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [leftActMap_apply, mulMap_apply, smul_eq_mul]
+  rw [leftAct_def, mul_def, h]
+
+end Self
 
 section Bimodule
 

@@ -156,19 +156,6 @@ instance : GradedFunLike (M ⟶ N) M.grading N.grading :=
 theorem map_d (f : M ⟶ N) (x : M) : N.differential (f x) = f (M.differential x) :=
   DGRightModuleHom.map_d f x
 
-/-- A morphism of bundled DG modules commutes with the Koszul signs of the gradings. -/
-theorem koszulTwist_hom_apply (f : M ⟶ N) (q : ℤ) (x : M) :
-    (InternalGrading.ofDecomposition N.grading).koszulTwist q (f x) =
-      f ((InternalGrading.ofDecomposition M.grading).koszulTwist q x) := by
-  induction x using DirectSum.Decomposition.inductionOn M.grading with
-  | zero => simp
-  | @homogeneous p x =>
-    have hfx : f x ∈ N.grading p := f.map_mem' x.2
-    rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ x.2,
-      InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hfx]
-    exact (f.toLinearMap.map_smul_of_tower _ _).symm
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
-
 instance : Preadditive (DGRightModuleCat.{uR, uA, uM} h) where
   homGroup M N := inferInstanceAs
     (AddCommGroup (DGRightModuleHom M.isDGRightModule N.isDGRightModule))
