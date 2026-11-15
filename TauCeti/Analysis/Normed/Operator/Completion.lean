@@ -5,26 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import Mathlib.Analysis.Normed.Module.Completion
+public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Topology.Algebra.SeparationQuotient.Basic
+public import TauCeti.Topology.Algebra.UniformMulAction
 
 /-!
-# Operator norms of bounded maps extended to completions
+# Operator norms and linear isometries on completions and separated quotients
 
-A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
-map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
-bounded map `f.fromCompletion` from the completion of `E` to `F`. Since `E` has dense image in
-its completion and the canonical map preserves norms, neither extension changes the operator norm.
+A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to `f.completion`
+between the completions and, when `F` is complete and Hausdorff, to `f.fromCompletion` from
+`Completion E` to `F`. Because `E` has dense norm-preserving image in `Completion E`, neither
+extension changes the operator norm (the continuous semilinear analogues of
+`NormedAddGroupHom.norm_completion`). Likewise, a linear isometric equivalence extends to
+`e.completion` between the completions, and a linear isometry with dense range into a complete
+normed module extends surjectively (`LinearIsometry.surjective_fromCompletion_of_denseRange`).
 
-These are the continuous semilinear analogues of Mathlib's `NormedAddGroupHom.norm_completion`.
-They make extension to completions an isometric operation, as needed for the norm-preserving
-universal properties of completed normed constructions. Likewise, a linear isometric equivalence
-extends to the linear isometric equivalence `e.completion` between the completions, the analogue
-for equivalences of Mathlib's `LinearIsometry.completion`.
+Descending a bounded semilinear map to `SeparationQuotient E` via `SeparationQuotient.liftCLM`
+likewise preserves the operator norm (`SeparationQuotient.norm_liftCLM`). Lifting
+`Completion.toComplL` through `SeparationQuotient E` and extending from its completion yields the
+canonical `SMul`-equivariant linear isometric equivalence
+`UniformSpace.Completion.completionSeparationQuotientₗᵢ` between `Completion (SeparationQuotient E)`
+and `Completion E`, upgrading `UniformSpace.Completion.completionSeparationQuotientEquiv`.
 
 Extension to completions also preserves metric quotient maps. If `f` lifts every vector of norm
 less than `r` to a vector of norm less than `r`, so does `f.completion`; the lifts in the
@@ -42,6 +49,8 @@ extension to the completions has the same property.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
   `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
   completions is a metric quotient map.
+* `LinearIsometry.surjective_fromCompletion_of_denseRange`: extending a linear isometry with dense
+  range from a completion is surjective.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -49,13 +58,8 @@ extension to the completions has the same property.
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
-* `ContinuousLinearMap.completion_smul` and `ContinuousLinearMap.fromCompletion_smul`: extending a
-  bounded semilinear map to completions preserves equivariance for an auxiliary scalar action.
-* `LinearIsometry.surjective_fromCompletion_of_denseRange`: extending a linear isometry with dense
-  range from a completion is surjective.
-* `SeparationQuotient.norm_liftCLM`, `SeparationQuotient.liftCLM_smul`, and
-  `SeparationQuotient.eq_liftCLM_iff`: operator-norm preservation, equivariance, and uniqueness for
-  `SeparationQuotient.liftCLM`.
+* `SeparationQuotient.norm_liftCLM`: lifting a bounded semilinear map to `SeparationQuotient E`
+  preserves its operator norm.
 * `UniformSpace.Completion.completionSeparationQuotientₗᵢ`: the canonical linear isometric
   equivalence `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E` for a seminormed space `E`.
 -/
@@ -147,38 +151,6 @@ not change its operator `ℝ≥0∞`-norm. -/
 theorem eNorm_toComplL_comp (f : E →SL[σ₁₂] F) :
     ‖(Completion.toComplL : F →L[𝕜₂] Completion F) ∘SL f‖ₑ = ‖f‖ₑ := by
   rw [← ofReal_norm, ← ofReal_norm, norm_toComplL_comp]
-
-section SMulEquivariance
-
-variable {R S A α β : Type*} [UniformSpace α] [AddCommGroup α] [IsUniformAddGroup α]
-  [Semiring S] [Module S α] [UniformContinuousConstSMul S α]
-  [Semiring R] [UniformSpace β] [AddCommGroup β] [IsUniformAddGroup β]
-  [Module R β] [UniformContinuousConstSMul R β] {σ : S →+* R}
-
-/-- Extending a continuous semilinear map to completions preserves equivariance for an auxiliary
-uniformly continuous scalar action. -/
-theorem completion_smul [SMul A α] [UniformContinuousConstSMul A α]
-    [SMul A β] [UniformContinuousConstSMul A β]
-    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x) (a : A) (z : Completion α) :
-    f.completion (a • z) = a • f.completion z :=
-  Completion.induction_on z
-    (isClosed_eq (f.completion.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp f.completion.continuous))
-    fun x ↦ by rw [← Completion.coe_smul, completion_apply_coe, hf, Completion.coe_smul,
-      completion_apply_coe]
-
-/-- Extending a continuous semilinear map into a complete Hausdorff group from the completion of its
-domain preserves equivariance for an auxiliary scalar action. -/
-theorem fromCompletion_smul [T0Space β] [CompleteSpace β]
-    [SMul A α] [UniformContinuousConstSMul A α] [SMul A β] [ContinuousConstSMul A β]
-    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x) (a : A) (z : Completion α) :
-    f.fromCompletion (a • z) = a • f.fromCompletion z :=
-  Completion.induction_on z
-    (isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp f.fromCompletion.continuous))
-    fun x ↦ by rw [← Completion.coe_smul, fromCompletion_apply_coe, hf, fromCompletion_apply_coe]
-
-end SMulEquivariance
 
 end ContinuousLinearMap
 
@@ -286,32 +258,6 @@ end LinearIsometryEquiv
 
 namespace SeparationQuotient
 
-section Module
-
-variable {R S A M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
-  [Semiring S] [AddCommMonoid N] [Module S N] [TopologicalSpace N] {σ : R →+* S}
-
-/-- Lifting a continuous semilinear map to `SeparationQuotient M` preserves equivariance for an
-auxiliary continuous scalar action. -/
-theorem liftCLM_smul [SMul A M] [ContinuousConstSMul A M] [SMul A N]
-    (f : M →SL[σ] N) (hf_insep : ∀ x y, Inseparable x y → f x = f y)
-    (hf_smul : ∀ (a : A) (x : M), f (a • x) = a • f x) (a : A) (z : SeparationQuotient M) :
-    liftCLM f hf_insep (a • z) = a • liftCLM f hf_insep z := by
-  rcases surjective_mk z with ⟨x, rfl⟩; rw [← mk_smul, liftCLM_mk, liftCLM_mk, hf_smul]
-
-/-- Uniqueness in the universal property of `SeparationQuotient M` for continuous semilinear
-maps. -/
-theorem eq_liftCLM_iff (f : M →SL[σ] N) (hf_insep : ∀ x y, Inseparable x y → f x = f y)
-    (g : SeparationQuotient M →SL[σ] N) :
-    g = liftCLM f hf_insep ↔ ∀ x : M, g (mk x) = f x :=
-  ⟨fun h x ↦ by rw [h, liftCLM_mk],
-    fun h ↦ ContinuousLinearMap.ext <| surjective_mk.forall.2 fun x ↦ by rw [h, liftCLM_mk]⟩
-
-end Module
-
-section Norm
-
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
   {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
@@ -326,15 +272,6 @@ theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y �
   refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h ↦ surjective_mk.forall.2 fun x ↦ ?_⟩
   · simpa only [liftCLM_mk, norm_mk] using h (mk x)
   · simpa only [liftCLM_mk, norm_mk] using h x
-
-end Norm
-
-/-- Uniformly continuous scalar multiplication descends to the separation quotient. -/
-instance instUniformContinuousConstSMul {M X : Type*} [UniformSpace X] [SMul M X]
-    [UniformContinuousConstSMul M X] : UniformContinuousConstSMul M (SeparationQuotient X) :=
-  ⟨fun b ↦ uniformContinuous_dom.2 <| by
-    simpa only [Function.comp_def, ← mk_smul] using
-      uniformContinuous_mk.comp (uniformContinuous_const_smul b)⟩
 
 end SeparationQuotient
 
@@ -354,10 +291,8 @@ of a seminormed space and the completion of the space itself, upgrading
 noncomputable def completionSeparationQuotientₗᵢ :
     Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
   LinearIsometryEquiv.ofSurjective (liftToComplₗᵢ 𝕜 E).fromCompletion <|
-    (liftToComplₗᵢ 𝕜 E).surjective_fromCompletion_of_denseRange <|
-      (denseRange_coe).mono <| by
-        rintro _ ⟨x, rfl⟩
-        exact ⟨SeparationQuotient.mk x, SeparationQuotient.liftCLM_mk _ _ x⟩
+    (liftToComplₗᵢ 𝕜 E).surjective_fromCompletion_of_denseRange <| (denseRange_coe).mono <| by
+      rintro _ ⟨x, rfl⟩; exact ⟨SeparationQuotient.mk x, SeparationQuotient.liftCLM_mk _ _ x⟩
 
 variable {𝕜 E}
 
@@ -391,15 +326,12 @@ variable {𝕜 E}
 /-- `completionSeparationQuotientₗᵢ` intertwines any uniformly continuous scalar action. -/
 @[simp] theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
     [UniformContinuousConstSMul A E] (a : A) (u : Completion (SeparationQuotient E)) :
-    completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u := by
-  let e := completionSeparationQuotientₗᵢ 𝕜 E
-  exact Completion.induction_on u
-    (isClosed_eq (e.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp e.continuous)) <|
-    SeparationQuotient.surjective_mk.forall.2 fun x ↦ by
-      rw [← coe_smul, ← SeparationQuotient.mk_smul, completionSeparationQuotientₗᵢ_coe_mk,
-        completionSeparationQuotientₗᵢ_coe_mk, coe_smul]
+    completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u :=
+  (liftToComplₗᵢ 𝕜 E).toContinuousLinearMap.fromCompletion_smul
+    (SeparationQuotient.liftCLM_smul (toComplL : E →L[𝕜] Completion E) _ fun _ _ ↦ coe_smul _ _) a u
 
+/-- The inverse of `completionSeparationQuotientₗᵢ` intertwines any uniformly continuous scalar
+action. -/
 @[simp] theorem completionSeparationQuotientₗᵢ_symm_smul {A : Type*} [SMul A E]
     [UniformContinuousConstSMul A E] (a : A) (u : Completion E) :
     (completionSeparationQuotientₗᵢ 𝕜 E).symm (a • u) =

@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Topology.Algebra.GroupCompletion
 public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.Algebra.SeparationQuotient.Basic
 
 /-!
-# The scalar action on the completion of a topological module
+# Scalar actions on separated quotients and completions
+
+Uniformly continuous scalar multiplication descends to `SeparationQuotient X`
+(`SeparationQuotient.instUniformContinuousConstSMul`).
 
 Let `R` be a topological ring and `M` a topological `R`-module whose uniformity is that of its
 additive group, with each `m ↦ a • m` uniformly continuous. Mathlib extends the action to the
@@ -25,6 +29,8 @@ into the closure of the image, which gives continuity at `(0, 0)`. Continuity of
 
 ## Main results
 
+* `SeparationQuotient.instUniformContinuousConstSMul`: uniformly continuous scalar multiplication
+  descends to `SeparationQuotient X`.
 * `UniformSpace.Completion.continuousSMul`: the completion of a topological module is a
   topological module.
 -/
@@ -32,6 +38,14 @@ into the closure of the image, which gives continuity at `(0, 0)`. Continuity of
 public section
 
 open Filter Topology
+
+/-- Uniformly continuous scalar multiplication descends to the separation quotient. -/
+instance SeparationQuotient.instUniformContinuousConstSMul {M X : Type*} [UniformSpace X]
+    [SMul M X] [UniformContinuousConstSMul M X] :
+    UniformContinuousConstSMul M (SeparationQuotient X) :=
+  ⟨fun b ↦ SeparationQuotient.uniformContinuous_dom.2 <| by
+    simpa only [Function.comp_def, ← SeparationQuotient.mk_smul] using
+      SeparationQuotient.uniformContinuous_mk.comp (uniformContinuous_const_smul b)⟩
 
 namespace UniformSpace.Completion
 

@@ -10,19 +10,14 @@ public import Mathlib.Algebra.Star.Subalgebra
 /-!
 # Multiplicative opposites of `⋆`-algebra homomorphisms and `⋆`-subalgebras
 
-Applying `MulOpposite.op` on both domain and codomain reverses multiplication twice, so any
-(possibly nonunital) `⋆`-algebra homomorphism `f : A →⋆ₙₐ[R] B` induces a `⋆`-algebra homomorphism
-`f.op : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ`, and likewise for unital `⋆`-algebra homomorphisms `A →⋆ₐ[R] B` and
-nonunital `⋆`-subalgebras `NonUnitalStarSubalgebra R A`. These mirror Mathlib's `AlgHom.op` and
-`Subalgebra.op` and translate between left and right coefficient actions on C⋆-modules.
+Applying `MulOpposite.op` on both domain and codomain reverses multiplication twice, inducing
+opposite equivalences on nonunital and unital `⋆`-algebra homomorphisms and nonunital
+`⋆`-subalgebras, mirroring `AlgHom.op` and `Subalgebra.op`:
 
-## Main declarations
-
-* `NonUnitalStarAlgHom.op` and `NonUnitalStarAlgHom.unop`: the equivalence
-  `(A →⋆ₙₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ)`.
-* `StarAlgHom.op` and `StarAlgHom.unop`: the equivalence `(A →⋆ₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ)`.
-* `NonUnitalStarSubalgebra.op` and `NonUnitalStarSubalgebra.unop`: the order isomorphism
-  `NonUnitalStarSubalgebra R A ≃o NonUnitalStarSubalgebra R Aᵐᵒᵖ`, compatible with `subtype`.
+* `NonUnitalStarAlgHom.op`, `NonUnitalStarAlgHom.unop`: `(A →⋆ₙₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ)`.
+* `StarAlgHom.op`, `StarAlgHom.unop`: `(A →⋆ₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ)`.
+* `NonUnitalStarSubalgebra.op`, `NonUnitalStarSubalgebra.unop`:
+  `NonUnitalStarSubalgebra R A ≃o NonUnitalStarSubalgebra R Aᵐᵒᵖ`.
 -/
 
 public section
@@ -31,25 +26,24 @@ open MulOpposite
 
 namespace NonUnitalStarAlgHom
 
-variable {R A B : Type*} [CommSemiring R]
-  [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+variable {R A B : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
   [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
 
 /-- A nonunital `⋆`-algebra homomorphism `A →⋆ₙₐ[R] B` equivalently gives a nonunital `⋆`-algebra
 homomorphism `Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ`. -/
 protected def op : (A →⋆ₙₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) where
   toFun f :=
-    { toFun a := MulOpposite.op (f a.unop)
-      map_smul' _ _ := unop_injective <| by simp
-      map_zero' := unop_injective <| by simp
-      map_add' _ _ := unop_injective <| by simp
-      map_mul' _ _ := unop_injective <| by simp
-      map_star' _ := unop_injective <| by simp [map_star] }
+    { toFun a := op (f a.unop)
+      map_smul' _ _ := unop_injective (by simp)
+      map_zero' := unop_injective (by simp)
+      map_add' _ _ := unop_injective (by simp)
+      map_mul' _ _ := unop_injective (by simp)
+      map_star' _ := unop_injective (by simp [map_star]) }
   invFun f :=
-    { toFun a := (f (MulOpposite.op a)).unop
-      map_smul' _ _ := op_injective <| by simp
-      map_zero' := op_injective <| by simp
-      map_add' _ _ := op_injective <| by simp
+    { toFun a := (f (op a)).unop
+      map_smul' _ _ := op_injective (by simp)
+      map_zero' := op_injective (by simp)
+      map_add' _ _ := op_injective (by simp)
       map_mul' _ _ := by simp [op_mul]
       map_star' _ := by simp [op_star, map_star] }
   left_inv _ := by ext; rfl
@@ -58,17 +52,16 @@ protected def op : (A →⋆ₙₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒ
 /-- The unopposite of a nonunital `⋆`-algebra homomorphism `Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ`. -/
 abbrev unop : (Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) ≃ (A →⋆ₙₐ[R] B) := NonUnitalStarAlgHom.op.symm
 
-@[simp] theorem op_apply_apply (f : A →⋆ₙₐ[R] B) (a : Aᵐᵒᵖ) :
-    f.op a = MulOpposite.op (f a.unop) := (rfl)
+@[simp] theorem op_apply_apply (f : A →⋆ₙₐ[R] B) (a : Aᵐᵒᵖ) : f.op a = op (f a.unop) := (rfl)
 
 @[simp] theorem unop_apply_apply (f : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) (a : A) :
-    NonUnitalStarAlgHom.unop f a = (f (MulOpposite.op a)).unop := (rfl)
+    NonUnitalStarAlgHom.unop f a = (f (op a)).unop := (rfl)
 
-@[simp] theorem op_id : (NonUnitalStarAlgHom.id R A).op = NonUnitalStarAlgHom.id R Aᵐᵒᵖ := by
-  ext; rfl
+@[simp] theorem op_id : (NonUnitalStarAlgHom.id R A).op = NonUnitalStarAlgHom.id R Aᵐᵒᵖ :=
+  DFunLike.ext' rfl
 
 @[simp] theorem op_comp {C : Type*} [NonUnitalNonAssocSemiring C] [Module R C] [Star C]
-    (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) : (g.comp f).op = g.op.comp f.op := by ext; rfl
+    (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) : (g.comp f).op = g.op.comp f.op := DFunLike.ext' rfl
 
 end NonUnitalStarAlgHom
 
@@ -88,14 +81,13 @@ protected def op : (A →⋆ₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ) w
 /-- The unopposite of a unital `⋆`-algebra homomorphism `Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ`. -/
 abbrev unop : (Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ) ≃ (A →⋆ₐ[R] B) := StarAlgHom.op.symm
 
-@[simp] theorem op_apply_apply (f : A →⋆ₐ[R] B) (a : Aᵐᵒᵖ) :
-    f.op a = MulOpposite.op (f a.unop) := (rfl)
+@[simp] theorem op_apply_apply (f : A →⋆ₐ[R] B) (a : Aᵐᵒᵖ) : f.op a = op (f a.unop) := (rfl)
 
 @[simp] theorem unop_apply_apply (f : Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ) (a : A) :
-    StarAlgHom.unop f a = (f (MulOpposite.op a)).unop := (rfl)
+    StarAlgHom.unop f a = (f (op a)).unop := (rfl)
 
 @[simp] theorem toNonUnitalStarAlgHom_op (f : A →⋆ₐ[R] B) :
-    f.op.toNonUnitalStarAlgHom = f.toNonUnitalStarAlgHom.op := by ext; rfl
+    f.op.toNonUnitalStarAlgHom = f.toNonUnitalStarAlgHom.op := DFunLike.ext' rfl
 
 end StarAlgHom
 
@@ -127,11 +119,10 @@ protected def op : NonUnitalStarSubalgebra R A ≃o NonUnitalStarSubalgebra R A�
 abbrev unop : NonUnitalStarSubalgebra R Aᵐᵒᵖ ≃o NonUnitalStarSubalgebra R A :=
   NonUnitalStarSubalgebra.op.symm
 
-@[simp] theorem mem_op {S : NonUnitalStarSubalgebra R A} {x : Aᵐᵒᵖ} : x ∈ S.op ↔ x.unop ∈ S :=
-  Iff.rfl
+@[simp] theorem mem_op {S : NonUnitalStarSubalgebra R A} {x : Aᵐᵒᵖ} : x ∈ S.op ↔ x.unop ∈ S := .rfl
 
 theorem op_mem_op {S : NonUnitalStarSubalgebra R A} {x : A} : MulOpposite.op x ∈ S.op ↔ x ∈ S :=
-  Iff.rfl
+  .rfl
 
 @[simp] theorem coe_op (S : NonUnitalStarSubalgebra R A) :
     (S.op : Set Aᵐᵒᵖ) = MulOpposite.unop ⁻¹' (S : Set A) := (rfl)

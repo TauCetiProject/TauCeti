@@ -20,9 +20,7 @@ to use the ordinary module laws. For nonunital coefficients, use `distribSMul`,
 `smulWithZero`, and `semigroupAction`, together with `add_smul`, `neg_smul`, `sub_smul`,
 and `sum_smul`. Keeping these structures explicit avoids a typeclass-search cycle through
 the action required by `CStarModule` itself.
-Neither completeness nor the analytic C⋆-algebra axioms are needed for these algebraic laws;
-when `A` is a C⋆-algebra and `E` carries a compatible seminorm, `CStarModule.instIsBoundedSMul`
-further records that the action is jointly bounded and continuous.
+Neither completeness nor the analytic C⋆-algebra axioms are needed for these algebraic laws.
 
 ## References
 
@@ -131,22 +129,5 @@ abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A] [StarModule ℂ
   smul_add := (distribSMul A E).smul_add
   add_smul := CStarModule.add_smul
   zero_smul := (smulWithZero A E).zero_smul
-
-section Analytic
-
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
-
-/-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded in both variables, hence jointly
-continuous (`ContinuousSMul A E`) and uniformly continuous in each vector variable. -/
-instance instIsBoundedSMul : IsBoundedSMul A E where
-  dist_smul_pair' a x y := by
-    let _ := distribSMul A E
-    simpa only [dist_eq_norm, sub_zero, ← smul_sub] using CStarModule.norm_smul_le a (x - y)
-  dist_pair_smul' a b x := by
-    simpa only [dist_eq_norm, sub_zero, ← CStarModule.sub_smul] using
-      CStarModule.norm_smul_le (a - b) x
-
-end Analytic
 
 end CStarModule
