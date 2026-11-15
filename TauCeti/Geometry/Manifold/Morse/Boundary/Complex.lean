@@ -117,24 +117,13 @@ theorem coe_morseComplex_d_hom_apply (k : ℕ)
       (((h.morseComplex hf).d (k + 1) k).hom c) = h.morseBoundary hf c :=
   ChainComplex.coe_ofGradedFinsupp_d_hom_apply _ _ _ _ k c
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The critical points of index `k`, as a subset of the critical points, have as many elements as
-the critical count `criticalCount` in index `k`. -/
-private theorem natCard_preimage_manifoldMorseIndex_eq (k : ℕ) :
-    Nat.card ((fun p : criticalPoints 𝓘(ℝ, E) f ↦ manifoldMorseIndex 𝓘(ℝ, E) f p) ⁻¹' {k}) =
-      (criticalCount 𝓘(ℝ, E) f k).toNat := by
-  rw [Nat.card_coe_set_eq, ← ncard_image_of_injective _ Subtype.val_injective, criticalCount_def,
-    ← ncard_def]
-  congr 1
-  ext x
-  simp [and_comm]
-
 /-- **The chain groups of the Morse complex.** Its term in degree `k` has dimension the number of
 critical points of index `k`. -/
 theorem finrank_morseComplex_X (k : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).X k) = (criticalCount 𝓘(ℝ, E) f k).toNat := by
   have := hf.finite_criticalPoints.to_subtype
-  rw [morseComplex, ChainComplex.finrank_ofGradedFinsupp_X, natCard_preimage_manifoldMorseIndex_eq]
+  rw [morseComplex, ChainComplex.finrank_ofGradedFinsupp_X,
+    natCard_preimage_manifoldMorseIndex_eq_toNat_criticalCount]
 
 /-- The terms of the Morse complex are finite-dimensional. -/
 instance (k : ℕ) : Module.Finite (ZMod 2) ((h.morseComplex hf).X k) := by
@@ -196,16 +185,9 @@ mod-two Morse homology has dimension the number of critical points of index `k`.
 theorem finrank_homology_morseComplex_of_morseBoundary_eq_zero (h0 : h.morseBoundary hf = 0)
     (k : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology k) = (criticalCount 𝓘(ℝ, E) f k).toNat := by
-  have hd (i j : ℕ) : (h.morseComplex hf).d i j = 0 := by
-    obtain rfl | hij := eq_or_ne i (j + 1)
-    · ext c
-      -- The zero of the term of degree `j` is the zero chain.
-      exact Subtype.ext <| (h.coe_morseComplex_d_hom_apply hf j c).trans (by rw [h0]; rfl)
-    · exact (h.morseComplex hf).shape i j fun hji ↦ hij hji.symm
-  -- With both differentials at `k` zero, the homology at `k` is the term in degree `k`.
-  let e := ((h.morseComplex hf).isoHomologyπ _ k rfl (hd _ _)).symm ≪≫
-    (h.morseComplex hf).iCyclesIso k _ rfl (hd _ _)
-  rw [e.toLinearEquiv.finrank_eq, h.finrank_morseComplex_X hf k]
+  have := hf.finite_criticalPoints.to_subtype
+  rw [morseComplex, ChainComplex.finrank_homology_ofGradedFinsupp_of_eq_zero _ _ _ _ h0,
+    natCard_preimage_manifoldMorseIndex_eq_toNat_criticalCount]
 
 end IsMorseSmale
 

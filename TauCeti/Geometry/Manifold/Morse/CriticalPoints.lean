@@ -919,6 +919,17 @@ theorem criticalCount_def (j : ℕ) :
     criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard :=
   (rfl)
 
+/-- The critical points of index `j`, as a subset of the critical points, have as many elements as
+the critical count in index `j`. -/
+theorem natCard_preimage_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
+    Nat.card ((fun p : criticalPoints I f ↦ manifoldMorseIndex I f p) ⁻¹' {j}) =
+      (criticalCount I f j).toNat := by
+  rw [Nat.card_coe_set_eq, ← ncard_image_of_injective _ Subtype.val_injective, criticalCount_def,
+    ← ncard_def]
+  congr 1
+  ext x
+  simp [and_comm]
+
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :
     criticalCount I f j ≤ totalCriticalCount I f :=

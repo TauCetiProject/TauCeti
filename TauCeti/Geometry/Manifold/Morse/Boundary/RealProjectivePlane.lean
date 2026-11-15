@@ -129,7 +129,7 @@ theorem finrank_homology_morseComplex_projectiveMomentFunction_real (k : ℕ) :
   rw [h.finrank_homology_morseComplex_of_morseBoundary_eq_zero hf
       (h.morseBoundary_projectiveMomentFunction_real hf),
     criticalCount_projectiveMomentFunction_real (isMorse_projectiveMomentFunction_iff.1 hf)]
-  split_ifs <;> rfl
+  split_ifs <;> simp
 
 end IsMorseSmale
 

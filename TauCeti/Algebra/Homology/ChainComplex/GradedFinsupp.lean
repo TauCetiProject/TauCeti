@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 
 /-!
 # The chain complex of a graded free module with a degree-lowering differential
@@ -17,11 +19,13 @@ Let `ι` be a set of generators graded by `deg : ι → α`, with `α` for insta
 `d` be an endomorphism of the free module `ι →₀ R` which squares to zero and lowers the degree by
 one: the coefficient of `j` in `d i` vanishes unless `deg i = deg j + 1`. Then `d` maps the chains
 supported on generators of degree `n + 1` to the chains supported on generators of degree `n`
-(`ChainComplex.mapsTo_supported_preimage_singleton`), and these submodules, with the restrictions
-of `d`, form a chain complex `ChainComplex.ofGradedFinsupp` indexed by `α`. Its term in degree `n`
-is free on the generators of degree `n` (`ChainComplex.ofGradedFinsuppXEquiv`), so over a ring with
-the strong rank condition it has their number as its rank when they are finitely many
-(`ChainComplex.finrank_ofGradedFinsupp_X`).
+(`TauCeti.Finsupp.mapsTo_supported_preimage_singleton_add_one`), and these submodules, with the
+restrictions of `d`, form a chain complex `ChainComplex.ofGradedFinsupp` indexed by `α`. Its term
+in degree `n` is free on the generators of degree `n` (`ChainComplex.ofGradedFinsuppXEquiv`), so
+over a ring with the strong rank condition it has their number as its rank when they are finitely
+many (`ChainComplex.finrank_ofGradedFinsupp_X`). When `d` vanishes, so do all the differentials
+(`ChainComplex.ofGradedFinsupp_d_eq_zero`), and the homology in degree `n` then has the same rank
+(`ChainComplex.finrank_homology_ofGradedFinsupp_of_eq_zero`).
 
 This is how Morse and Floer complexes arise: the generators are the critical points, or the
 intersection points, the degree is the Morse or Maslov index, and the coefficients of `d` count
@@ -36,16 +40,15 @@ open CategoryTheory Finsupp Set
 
 universe u v w
 
-namespace ChainComplex
-
 variable {R : Type u} [Ring R] {ι : Type v} {α : Type w} [AddRightCancelSemigroup α] [One α]
-  [DecidableEq α] (deg : ι → α) (d : (ι →₀ R) →ₗ[R] ι →₀ R)
 
-omit [DecidableEq α] in
-variable {deg d} in
+namespace TauCeti.Finsupp
+
+variable {deg : ι → α} {d : (ι →₀ R) →ₗ[R] ι →₀ R}
+
 /-- If `d` lowers the degree of every generator by one, it maps the chains supported on
 generators of degree `n + 1` to the chains supported on generators of degree `n`. -/
-theorem mapsTo_supported_preimage_singleton
+theorem mapsTo_supported_preimage_singleton_add_one
     (hd : ∀ i j, d (single i 1) j ≠ 0 → deg i = deg j + 1) (n : α) :
     MapsTo d (supported R R (deg ⁻¹' {n + 1})) (supported R R (deg ⁻¹' {n})) := by
   intro x hx
@@ -57,6 +60,12 @@ theorem mapsTo_supported_preimage_singleton
   simp only [mem_preimage, mem_singleton_iff] at hi ⊢
   exact add_right_cancel ((hd i j (mem_support_iff.1 hj)).symm.trans hi)
 
+end TauCeti.Finsupp
+
+namespace ChainComplex
+
+variable [DecidableEq α] (deg : ι → α) (d : (ι →₀ R) →ₗ[R] ι →₀ R)
+
 /-- **The chain complex of a graded free module.** Let `d` be an endomorphism of `ι →₀ R` with
 `d ∘ d = 0` such that the coefficient of `j` in `d i` vanishes unless `deg i = deg j + 1`. The
 chain complex whose term in degree `n` is the submodule of chains supported on the generators of
@@ -64,7 +73,8 @@ degree `n`, with differentials the restrictions of `d`. -/
 @[expose] noncomputable def ofGradedFinsupp (hd : ∀ i j, d (single i 1) j ≠ 0 → deg i = deg j + 1)
     (hdd : d ∘ₗ d = 0) : ChainComplex (ModuleCat.{max u v} R) α :=
   of (fun n ↦ ModuleCat.of R (supported R R (deg ⁻¹' {n})))
-    (fun n ↦ ModuleCat.ofHom (d.restrict (mapsTo_supported_preimage_singleton hd n)))
+    (fun n ↦ ModuleCat.ofHom
+      (d.restrict (TauCeti.Finsupp.mapsTo_supported_preimage_singleton_add_one hd n)))
     fun _ ↦ ModuleCat.hom_ext <| LinearMap.ext fun x ↦ Subtype.ext <| LinearMap.congr_fun hdd x
 
 variable (hd : ∀ i j, d (single i 1) j ≠ 0 → deg i = deg j + 1) (hdd : d ∘ₗ d = 0)
@@ -82,8 +92,7 @@ theorem coe_ofGradedFinsupp_d_hom_apply (n : α) (x : supported R R (deg ⁻¹' 
     Subtype.val (p := (· ∈ supported R R (deg ⁻¹' {n})))
       (((ofGradedFinsupp deg d hd hdd).d (n + 1) n).hom x) = d x := by
   simp only [ofGradedFinsupp, of_d, ModuleCat.hom_ofHom]
-  -- The restriction of `d` to submodules acts as `d` on the underlying chains.
-  rfl
+  exact LinearMap.coe_restrict_apply _ x
 
 /-- The term of degree `n` of `ChainComplex.ofGradedFinsupp` is the free module on the generators
 of degree `n`. -/
@@ -97,6 +106,16 @@ module on the generators of degree `n` keeps the coefficients of a chain. -/
 theorem ofGradedFinsuppXEquiv_apply (n : α) (x : supported R R (deg ⁻¹' {n})) (i : deg ⁻¹' {n}) :
     ofGradedFinsuppXEquiv deg d hd hdd n x i = (x : ι →₀ R) i :=
   (rfl)
+
+/-- The identification of the term of degree `n` of `ChainComplex.ofGradedFinsupp` with the free
+module on the generators of degree `n` sends a chain on those generators to the same chain on all
+generators. -/
+@[simp]
+theorem coe_ofGradedFinsuppXEquiv_symm_apply (n : α) (y : deg ⁻¹' {n} →₀ R) :
+    Subtype.val (p := (· ∈ supported R R (deg ⁻¹' {n})))
+      ((ofGradedFinsuppXEquiv deg d hd hdd n).symm y) = y.embDomain (.subtype _) := by
+  classical
+  exact (supportedEquivFinsupp_symm_apply_coe _ y).trans (extendDomain_eq_embDomain_subtype y)
 
 instance (n : α) : Module.Free R ((ofGradedFinsupp deg d hd hdd).X n) :=
   .of_equiv (ofGradedFinsuppXEquiv deg d hd hdd n).symm
@@ -119,5 +138,26 @@ theorem isZero_ofGradedFinsupp_X {n : α} (hn : ∀ i, deg i ≠ n) :
   have : IsEmpty (deg ⁻¹' {n}) := ⟨fun i ↦ hn i i.2⟩
   have := (ofGradedFinsuppXEquiv deg d hd hdd n).toEquiv.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
+
+/-- If `d` vanishes, so does every differential of `ChainComplex.ofGradedFinsupp`. -/
+theorem ofGradedFinsupp_d_eq_zero (h0 : d = 0) (i j : α) :
+    (ofGradedFinsupp deg d hd hdd).d i j = 0 := by
+  obtain rfl | hij := eq_or_ne i (j + 1)
+  · ext x
+    exact Subtype.ext <| (coe_ofGradedFinsupp_d_hom_apply deg d hd hdd j x).trans <| by
+      simp only [h0, LinearMap.zero_apply, ModuleCat.hom_zero]
+      exact (supported R R (deg ⁻¹' {j})).coe_zero.symm
+  · exact (ofGradedFinsupp deg d hd hdd).shape i j fun hji ↦ hij hji.symm
+
+/-- If `d` vanishes, then over a ring with the strong rank condition the homology of
+`ChainComplex.ofGradedFinsupp` in degree `n` has rank the number of generators of degree `n`,
+when they are finitely many. -/
+theorem finrank_homology_ofGradedFinsupp_of_eq_zero [StrongRankCondition R] (h0 : d = 0) (n : α)
+    [Finite (deg ⁻¹' {n})] :
+    Module.finrank R ((ofGradedFinsupp deg d hd hdd).homology n) = Nat.card (deg ⁻¹' {n}) := by
+  rw [← ((ofGradedFinsupp deg d hd hdd).XIsoHomologyOfDEqZero n
+      (ofGradedFinsupp_d_eq_zero deg d hd hdd h0 _ _)
+      (ofGradedFinsupp_d_eq_zero deg d hd hdd h0 _ _)).toLinearEquiv.finrank_eq,
+    finrank_ofGradedFinsupp_X]
 
 end ChainComplex
