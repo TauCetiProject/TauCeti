@@ -169,17 +169,6 @@ theorem convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_in
   rw [ENNReal.toReal_one, inv_one, Real.rpow_one, smul_eq_mul] at hy
   rw [hy, smul_smul]
 
-/-- On real `L¹`, right convolution `h ⋆ k` is the Bochner integral `∫ z, k z • R_(z⁻¹) h ∂μ` of
-weighted right translates. -/
-theorem convolutionL_right_eq_integral_smul_rightTranslation_inv (h k : Lp ℝ 1 μ) :
-    convolutionL μ 1 ENNReal.one_ne_top h k = ∫ z, k z • rightTranslation μ 1 ℝ z⁻¹ h ∂μ := by
-  have hk : (RCLike.ofRealCLM : ℝ →L[ℝ] ℝ).compLp k = k := by
-    refine Lp.ext ?_
-    filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] ℝ).coeFn_compLp k] with x hx
-    simpa using hx
-  simpa only [hk] using
-    convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv (𝕜 := ℝ) h k
-
 /-- **Right approximate identity over an `RCLike` field.** Convolution on the right with nonnegative
 real kernels of integral one which concentrate at the identity converges strongly to the identity on
 `L¹(G, μ; 𝕜)`. -/
