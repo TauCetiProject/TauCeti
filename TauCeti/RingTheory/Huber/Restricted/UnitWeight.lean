@@ -28,10 +28,10 @@ bounded coefficient maps, and evaluations commute with the comparison before and
 For a bounded homomorphism `φ : R →+* S`, coordinate bounds `‖aᵢ‖ ≤ cᵢ` together with
 `‖uᵢ‖ * cᵢ ≤ 1` imply power-boundedness of `φ(uᵢ) * aᵢ`, hence `IsWeightBounded` for singleton
 weights. Conversely, when `φ` is contractive and the `uᵢ` are multiplicative units, the unit's
-inverse has norm `cᵢ`, so `‖φ(uᵢ) * aᵢ‖ ≤ 1` is equivalent to `‖aᵢ‖ ≤ cᵢ` (a merely bounded `φ`,
-such as the zero map, need not force a norm bound on `aᵢ`). In target rings whose power-bounded
-elements are the closed unit ball — normed fields, or seminormed rings with a pseudouniformiser and
-power-multiplicative norm — topological weight-boundedness is therefore equivalent to `‖aᵢ‖ ≤ cᵢ`.
+inverse has norm `cᵢ`, so `‖φ(uᵢ) * aᵢ‖ ≤ 1` is equivalent to `‖aᵢ‖ ≤ cᵢ`. In target rings whose
+power-bounded elements are the closed unit ball — normed fields, or seminormed rings with a
+pseudouniformiser and power-multiplicative norm — topological weight-boundedness is therefore
+equivalent to `‖aᵢ‖ ≤ cᵢ`.
 
 ## Main definitions
 
@@ -41,8 +41,6 @@ power-multiplicative norm — topological weight-boundedness is therefore equiva
 
 ## Main results
 
-* `TauCeti.Huber.norm_map_unit_mul_le_one_iff`: for a multiplicative unit `u` with `‖u‖ * c = 1`
-  and contractive `φ`, `‖φ u * b‖ ≤ 1 ↔ ‖b‖ ≤ c`.
 * `TauCeti.Huber.isWeightBounded_singleton_of_norm_le` and
   `TauCeti.Huber.isWeightBounded_units_of_norm_le`: coordinate norm bounds imply topological
   weight-boundedness along any bounded ring homomorphism.
@@ -76,56 +74,6 @@ open _root_.MvPowerSeries TauCeti.MvPowerSeries
 /-! ### Converting between weight bounds and norm bounds -/
 
 section WeightBounds
-
-/-- Along a contractive ring homomorphism `φ`, scaling `b` by the image of a multiplicative unit
-`u` with `‖u‖ * c = 1` puts `φ u * b` in the closed unit ball precisely when `‖b‖ ≤ c`. -/
-theorem norm_map_unit_mul_le_one_iff {R S : Type*} [SeminormedRing R] [SeminormedRing S]
-    (u : Rˣ) (hu : IsNormMulUnit (u : R)) {c : ℝ} (hc : ‖(u : R)‖ * c = 1)
-    {φ : R →+* S} (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (b : S) :
-    ‖φ (u : R) * b‖ ≤ 1 ↔ ‖b‖ ≤ c := by
-  have hc_eq : c = ‖(u : R)‖⁻¹ := eq_inv_of_mul_eq_one_right hc
-  constructor
-  · intro h
-    have hb : b = φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b) := by
-      rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
-    calc ‖b‖ = ‖φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b)‖ := congrArg norm hb
-      _ ≤ ‖φ (((u⁻¹ : Rˣ) : R))‖ * ‖φ (u : R) * b‖ := norm_mul_le _ _
-      _ ≤ ‖((u⁻¹ : Rˣ) : R)‖ * 1 :=
-          mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
-      _ = c := by rw [mul_one, (Units.isNormMulUnit_iff_norm_inv u).mp hu, hc_eq]
-  · intro h
-    calc ‖φ (u : R) * b‖ ≤ ‖φ (u : R)‖ * ‖b‖ := norm_mul_le _ _
-      _ ≤ ‖(u : R)‖ * c := mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
-      _ = 1 := hc
-
-/-- If `φ` is bounded by `C`, `‖u‖ * c ≤ 1`, and `‖b‖ ≤ c`, then `φ u * b` is power-bounded: its
-positive powers have norm at most `max C 0`. -/
-theorem isPowerBounded_map_mul_of_norm_le {R S : Type*} [SeminormedCommRing R]
-    [SeminormedCommRing S] {φ : R →+* S} {C c : ℝ} {u : R} {b : S}
-    (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (hu : ‖u‖ * c ≤ 1) (hb : ‖b‖ ≤ c) :
-    IsPowerBounded (φ u * b) := by
-  refine isPowerBounded_iff.mpr
-    ((isBounded_closedBall_zero (R := S) (max ‖(1 : S)‖ (max C 0))).subset ?_)
-  rintro _ ⟨n, rfl⟩
-  rw [mem_closedBall_zero_iff]
-  rcases n with _ | m
-  · simp only [pow_zero]
-    exact le_max_left _ _
-  · refine le_trans ?_ (le_max_right _ _)
-    have hc0 : 0 ≤ c := (norm_nonneg b).trans hb
-    have hφu : ‖φ (u ^ (m + 1))‖ ≤ max C 0 * ‖u‖ ^ (m + 1) :=
-      (hφ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)).trans <|
-        mul_le_mul_of_nonneg_left (norm_pow_le' u m.succ_pos) (le_max_right C 0)
-    have hbm : ‖b ^ (m + 1)‖ ≤ c ^ (m + 1) :=
-      (norm_pow_le' b m.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg b) hb _)
-    calc ‖(φ u * b) ^ (m + 1)‖ = ‖φ (u ^ (m + 1)) * b ^ (m + 1)‖ := by rw [mul_pow, map_pow]
-      _ ≤ ‖φ (u ^ (m + 1))‖ * ‖b ^ (m + 1)‖ := norm_mul_le _ _
-      _ ≤ (max C 0 * ‖u‖ ^ (m + 1)) * c ^ (m + 1) :=
-          mul_le_mul hφu hbm (norm_nonneg _) (mul_nonneg (le_max_right C 0) (by positivity))
-      _ = max C 0 * (‖u‖ * c) ^ (m + 1) := by rw [mul_assoc, ← mul_pow]
-      _ ≤ max C 0 * 1 := mul_le_mul_of_nonneg_left
-          (pow_le_one₀ (mul_nonneg (norm_nonneg u) hc0) hu) (le_max_right C 0)
-      _ = max C 0 := mul_one _
 
 /-- **Norm bounds imply singleton weight-boundedness.** Along any bounded ring homomorphism `φ`,
 if `‖uᵢ‖ * cᵢ ≤ 1` and `‖aᵢ‖ ≤ cᵢ` for every coordinate, then `a` is weight-bounded for the
@@ -286,16 +234,6 @@ theorem weightedRestrictedCompletionGaussEquiv_symm_comp_polynomialToRestricted 
         (weightedPolynomialHom _ (isWeightFamily_units u)) := by
   rw [← weightedRestrictedCompletionGaussEquiv_comp_weightedPolynomialHom u hu hc,
     ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
-
-/-- Over a complete ultrametric normed domain, the completion of any admissible singleton-weighted
-restricted-series ring is a domain. -/
-instance isDomain_completion_weightedRestrictedSubring_singleton [IsDomain R] {v : Fin n → R}
-    (hT : IsWeightFamily (fun i ↦ ({v i} : Set R))) :
-    IsDomain (UniformSpace.Completion
-      (weightedRestrictedSubring (fun i ↦ ({v i} : Set R)) hT)) :=
-  letI : IsDomain (weightedRestrictedSubring (fun i ↦ ({v i} : Set R)) hT) :=
-    NoZeroDivisors.to_isDomain _
-  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
 
 variable [∀ i, Fact (0 < c i)]
 

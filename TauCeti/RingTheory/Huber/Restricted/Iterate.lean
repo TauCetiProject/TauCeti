@@ -75,40 +75,6 @@ open UniformSpace _root_.MvPowerSeries TauCeti.MvPowerSeries
 
 /-! ### Iterated Gauss comparison for multiplicative-unit weights -/
 
-private theorem weightedMapCompletionEquiv_coe_weightedC {n : ℕ} {A B : Type*}
-    [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-    [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
-    (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
-    {T : Fin n → Set A} {S : Fin n → Set B}
-    (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i)
-    (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i) (a : A) :
-    weightedMapCompletionEquiv e he he' hT hS hTS hST
-        ((weightedC T hT a : weightedRestrictedSubring T hT) :
-          Completion (weightedRestrictedSubring T hT)) =
-      ((weightedC S hS (e a) : weightedRestrictedSubring S hS) :
-        Completion (weightedRestrictedSubring S hS)) :=
-  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans <|
-    (weightedMapCompletion_coe (φ := (e : A →+* B)) he hT hS hTS _).trans
-      (congrArg _ (weightedMap_weightedC (φ := (e : A →+* B)) he hTS a))
-
-private theorem weightedMapCompletionEquiv_coe_weightedX {n : ℕ} {A B : Type*}
-    [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-    [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B]
-    (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
-    {T : Fin n → Set A} {S : Fin n → Set B}
-    (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i)
-    (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i) (i : Fin n) :
-    weightedMapCompletionEquiv e he he' hT hS hTS hST
-        ((weightedX T hT i : weightedRestrictedSubring T hT) :
-          Completion (weightedRestrictedSubring T hT)) =
-      ((weightedX S hS i : weightedRestrictedSubring S hS) :
-        Completion (weightedRestrictedSubring S hS)) :=
-  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans <|
-    (weightedMapCompletion_coe (φ := (e : A →+* B)) he hT hS hTS _).trans
-      (congrArg _ (weightedMap_weightedX (φ := (e : A →+* B)) he hTS i))
-
 section UnitWeightOuter
 
 variable {k m : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
@@ -254,8 +220,23 @@ theorem weightedIteratedCompletionGaussEquiv_coe_weightedC
         (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
           (fun i ↦ u (Fin.castAdd m i))
           (fun i ↦ hu (Fin.castAdd m i)) (fun i ↦ hr (Fin.castAdd m i)) c) := by
-  rw [weightedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
-    weightedMapCompletionEquiv_coe_weightedC, weightedRestrictedCompletionGaussEquiv_coe_weightedC]
+  simp only [weightedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
+    weightedMapCompletionEquiv_apply,
+    weightedMapCompletion_coe (φ := RingHomClass.toRingHom
+      (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))))
+      (continuous_weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))),
+    weightedMap_weightedC (φ := RingHomClass.toRingHom
+      (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))))
+      (continuous_weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))),
+    RingHom.coe_coe, weightedRestrictedCompletionGaussEquiv_coe_weightedC]
 
 /-- On `algebraMap` from the inner completion, `weightedIteratedCompletionGaussEquiv` acts via the
 inner Gauss comparison. -/
@@ -279,8 +260,23 @@ theorem weightedIteratedCompletionGaussEquiv_coe_weightedX (j : Fin m) :
         ((weightedX W hW j : weightedRestrictedSubring W hW) :
           Completion (weightedRestrictedSubring W hW)) =
       ⟨X j, isRestricted_X (r ∘ Fin.natAdd k) j⟩ := by
-  rw [weightedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
-    weightedMapCompletionEquiv_coe_weightedX, weightedRestrictedCompletionGaussEquiv_coe_weightedX]
+  simp only [weightedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
+    weightedMapCompletionEquiv_apply,
+    weightedMapCompletion_coe (φ := RingHomClass.toRingHom
+      (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))))
+      (continuous_weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))),
+    weightedMap_weightedX (φ := RingHomClass.toRingHom
+      (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))))
+      (continuous_weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
+        (fun i ↦ u (Fin.castAdd m i)) (fun i ↦ hu (Fin.castAdd m i))
+        (fun i ↦ hr (Fin.castAdd m i))),
+    weightedRestrictedCompletionGaussEquiv_coe_weightedX]
 
 end UnitWeightOuter
 
@@ -348,18 +344,16 @@ theorem weightedIteratedCompletionGaussAlgEquiv_symm_apply (y : Iter) :
 /-- **Huber iteration splitting commutes with Gauss-normed variable splitting** at
 multiplicative-unit weights. -/
 theorem weightedIteratedCompletionGaussEquiv_iterateSplitHom
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R))
     (x : Completion (weightedRestrictedSubring
       (fun l ↦ ({(u l : R)} : Set R)) (isWeightFamily_units u))) :
     weightedIteratedCompletionGaussEquiv u hu hr hW hUW
         (iterateSplitHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-          (isWeightFamily_units u) hTU hUW x) =
+          (isWeightFamily_units u) (fun _ ↦ rfl) hUW x) =
       restrictedFinAddEquiv (weightedRestrictedCompletionGaussEquiv u hu hr x) := by
   have hhom :
       (weightedIteratedCompletionGaussEquiv u hu hr hW hUW).toRingHom.comp
           (iterateSplitHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-            (isWeightFamily_units u) hTU hUW) =
+            (isWeightFamily_units u) (fun _ ↦ rfl) hUW) =
         restrictedFinAddEquiv.toRingHom.comp
           (weightedRestrictedCompletionGaussEquiv u hu hr).toRingHom := by
     refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous (isWeightFamily_units u)
@@ -375,75 +369,64 @@ theorem weightedIteratedCompletionGaussEquiv_iterateSplitHom
 
 /-- **`iterateRingEquiv` commutes with the completed unit-weight Gauss comparisons.** -/
 theorem weightedIteratedCompletionGaussEquiv_iterateRingEquiv
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R))
     (x : Completion (weightedRestrictedSubring
       (fun l ↦ ({(u l : R)} : Set R)) (isWeightFamily_units u))) :
     weightedIteratedCompletionGaussEquiv u hu hr hW hUW
         (iterateRingEquiv (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-          (isWeightFamily_units u) hTU hUW x) =
+          (isWeightFamily_units u) (fun _ ↦ rfl) hUW x) =
       restrictedFinAddEquiv (weightedRestrictedCompletionGaussEquiv u hu hr x) := by
-  rw [iterateRingEquiv_apply,
-    weightedIteratedCompletionGaussEquiv_iterateSplitHom u hu hr hW hUW hTU]
+  rw [iterateRingEquiv_apply, weightedIteratedCompletionGaussEquiv_iterateSplitHom u hu hr hW hUW]
 
 /-- **Commutative square of `R`-algebra equivalences** between `iterateAlgEquiv` and
 `restrictedFinAddAlgEquiv` at multiplicative-unit weights. -/
-theorem weightedIteratedCompletionGaussAlgEquiv_iterateAlgEquiv
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R)) :
+theorem weightedIteratedCompletionGaussAlgEquiv_iterateAlgEquiv :
     letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
     (iterateAlgEquiv (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-        (isWeightFamily_units u) hTU hUW).trans
+        (isWeightFamily_units u) (fun _ ↦ rfl) hUW).trans
       (weightedIteratedCompletionGaussAlgEquiv u hu hr hW hUW) =
       (weightedRestrictedCompletionGaussAlgEquiv u hu hr).trans
         (restrictedFinAddAlgEquiv (S := R)) := by
   let _ := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
   refine AlgEquiv.ext fun x ↦ ?_
-  simpa using weightedIteratedCompletionGaussEquiv_iterateRingEquiv u hu hr hW hUW hTU x
+  simpa using weightedIteratedCompletionGaussEquiv_iterateRingEquiv u hu hr hW hUW x
 
 /-- **Huber iteration joining commutes with `restrictedFinAddEquiv.symm`** at multiplicative-unit
 weights. -/
 theorem weightedRestrictedCompletionGaussEquiv_iterateJoinHom
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R))
     (y : Completion (weightedRestrictedSubring W hW)) :
     weightedRestrictedCompletionGaussEquiv u hu hr
         (iterateJoinHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-          (isWeightFamily_units u) hTU hUW y) =
+          (isWeightFamily_units u) (fun _ ↦ rfl) hUW y) =
       restrictedFinAddEquiv.symm
         (weightedIteratedCompletionGaussEquiv u hu hr hW hUW y) := by
   apply restrictedFinAddEquiv.injective
   rw [RingEquiv.apply_symm_apply,
-    ← weightedIteratedCompletionGaussEquiv_iterateSplitHom u hu hr hW hUW hTU]
+    ← weightedIteratedCompletionGaussEquiv_iterateSplitHom u hu hr hW hUW]
   exact congrArg (weightedIteratedCompletionGaussEquiv u hu hr hW hUW)
     (DFunLike.congr_fun (iterateSplitHom_comp_iterateJoinHom ..) y)
 
 /-- **`(iterateRingEquiv ...).symm` commutes with `restrictedFinAddEquiv.symm`.** -/
 theorem weightedRestrictedCompletionGaussEquiv_iterateRingEquiv_symm
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R))
     (y : Completion (weightedRestrictedSubring W hW)) :
     weightedRestrictedCompletionGaussEquiv u hu hr
         ((iterateRingEquiv (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
-          (isWeightFamily_units u) hTU hUW).symm y) =
+          (isWeightFamily_units u) (fun _ ↦ rfl) hUW).symm y) =
       restrictedFinAddEquiv.symm
         (weightedIteratedCompletionGaussEquiv u hu hr hW hUW y) := by
   rw [iterateRingEquiv_symm_apply,
-    weightedRestrictedCompletionGaussEquiv_iterateJoinHom u hu hr hW hUW hTU]
+    weightedRestrictedCompletionGaussEquiv_iterateJoinHom u hu hr hW hUW]
 
 /-- **First-block inclusion compatibility.** Including the first `k` variables via
 `iterateFirstBlockHom` and splitting along `restrictedFinAddEquiv` embeds the inner Gauss-normed
 series as a constant series of the outer algebra. -/
 theorem restrictedFinAddEquiv_weightedRestrictedCompletionGaussEquiv_iterateFirstBlockHom
-    (hTU : ∀ i,
-      ({(u (Fin.castAdd m i) : R)} : Set R) = ({(u (Fin.castAdd m i) : R)} : Set R))
     (c : Completion (weightedRestrictedSubring
       (fun i ↦ ({(u (Fin.castAdd m i) : R)} : Set R))
       (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)))) :
     restrictedFinAddEquiv
         (weightedRestrictedCompletionGaussEquiv u hu hr
           (iterateFirstBlockHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i))
-            (isWeightFamily_units u) hTU c)) =
+            (isWeightFamily_units u) (fun _ ↦ rfl) c)) =
       algebraMap Inner Iter
         (weightedRestrictedCompletionGaussEquiv (c := r ∘ Fin.castAdd m)
           (fun i ↦ u (Fin.castAdd m i))
@@ -457,7 +440,7 @@ theorem restrictedFinAddEquiv_weightedRestrictedCompletionGaussEquiv_iterateFirs
       algebraMap R B '' ({(u (Fin.natAdd k j) : R)} : Set R) = {(w j : B)} := fun j ↦ by
     simp [w]
   rw [← weightedIteratedCompletionGaussEquiv_iterateSplitHom u hu hr
-      (isWeightFamily_units w) hUW₀ hTU,
+      (isWeightFamily_units w) hUW₀,
     ← RingHom.comp_apply, iterateSplitHom_comp_iterateFirstBlockHom,
     weightedIteratedCompletionGaussEquiv_algebraMap]
 
@@ -511,9 +494,15 @@ theorem restrictedIteratedCompletionGaussEquiv_coe_weightedC
             isWeightFamily_one_weight) :
           restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) =
       algebraMap Inner₁ Iter₁ (restrictedMvPowerSeriesCompletionGaussEquiv c) := by
-  rw [restrictedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
-    weightedMapCompletionEquiv_coe_weightedC,
-    restrictedMvPowerSeriesCompletionGaussEquiv_coe,
+  simp only [restrictedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
+    weightedMapCompletionEquiv_apply,
+    weightedMapCompletion_coe
+      (φ := RingHomClass.toRingHom (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)))
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv,
+    weightedMap_weightedC
+      (φ := RingHomClass.toRingHom (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)))
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv,
+    RingHom.coe_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
     restrictedMvPowerSeriesGaussEquiv_weightedC]
 
 /-- On `algebraMap` from the inner completion, `restrictedIteratedCompletionGaussEquiv` acts via
@@ -537,8 +526,14 @@ theorem restrictedIteratedCompletionGaussEquiv_coe_weightedX (j : Fin m) :
             isWeightFamily_one_weight) :
           restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) =
       ⟨X j, isRestricted_X (fun _ : Fin m ↦ 1) j⟩ := by
-  rw [restrictedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
-    weightedMapCompletionEquiv_coe_weightedX,
+  simp only [restrictedIteratedCompletionGaussEquiv, RingEquiv.trans_apply,
+    weightedMapCompletionEquiv_apply,
+    weightedMapCompletion_coe
+      (φ := RingHomClass.toRingHom (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)))
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv,
+    weightedMap_weightedX
+      (φ := RingHomClass.toRingHom (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)))
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv,
     restrictedMvPowerSeriesCompletionGaussEquiv_coe,
     restrictedMvPowerSeriesGaussEquiv_weightedX]
 
@@ -594,19 +589,17 @@ theorem restrictedIteratedCompletionGaussAlgEquiv_symm_apply (y : Iter₁) :
 /-- **Trivial-weight `iterateSplitHom` commutes with `restrictedFinAddEquiv`** across the completed
 unit-radius Gauss comparisons. -/
 theorem restrictedIteratedCompletionGaussEquiv_iterateSplitHom
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
-    (hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R)))
     (x : restrictedMvPowerSeriesCompletion (k + m) R) :
     restrictedIteratedCompletionGaussEquiv
         (iterateSplitHom isWeightFamily_one_weight isWeightFamily_one_weight
-          isWeightFamily_one_weight hTU hUW x) =
+          isWeightFamily_one_weight (fun _ ↦ rfl)
+          (fun _ ↦ by rw [Set.image_singleton, map_one]) x) =
       restrictedFinAddEquiv (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
   have hhom :
-      restrictedIteratedCompletionGaussEquiv.toRingHom.comp
+      (restrictedIteratedCompletionGaussEquiv (k := k) (m := m) (R := R)).toRingHom.comp
           (iterateSplitHom isWeightFamily_one_weight isWeightFamily_one_weight
-            isWeightFamily_one_weight hTU hUW) =
+            isWeightFamily_one_weight (fun _ ↦ rfl)
+            (fun _ ↦ by rw [Set.image_singleton, map_one])) =
         (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ))).toRingHom.comp
           restrictedMvPowerSeriesCompletionGaussEquiv.toRingHom := by
     refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
@@ -637,64 +630,52 @@ theorem restrictedIteratedCompletionGaussEquiv_iterateSplitHom
 /-- **Trivial-weight `iterateRingEquiv` commutes with `restrictedFinAddEquiv`** across the
 completed unit-radius Gauss comparisons. -/
 theorem restrictedIteratedCompletionGaussEquiv_iterateRingEquiv
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
-    (hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R)))
     (x : restrictedMvPowerSeriesCompletion (k + m) R) :
     restrictedIteratedCompletionGaussEquiv
         (iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
-          isWeightFamily_one_weight hTU hUW x) =
+          isWeightFamily_one_weight (fun _ ↦ rfl)
+          (fun _ ↦ by rw [Set.image_singleton, map_one]) x) =
       restrictedFinAddEquiv (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
-  rw [iterateRingEquiv_apply, restrictedIteratedCompletionGaussEquiv_iterateSplitHom hTU hUW]
+  rw [iterateRingEquiv_apply, restrictedIteratedCompletionGaussEquiv_iterateSplitHom]
 
 /-- **Commutative square of `R`-algebra equivalences** between trivial-weight `iterateAlgEquiv` and
 unit-radius `restrictedFinAddAlgEquiv`. -/
-theorem restrictedIteratedCompletionGaussAlgEquiv_iterateAlgEquiv
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
-    (hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R))) :
+theorem restrictedIteratedCompletionGaussAlgEquiv_iterateAlgEquiv :
     letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
       isWeightFamily_one_weight).toAlgebra
     (iterateAlgEquiv isWeightFamily_one_weight isWeightFamily_one_weight
-        isWeightFamily_one_weight hTU hUW).trans
+        isWeightFamily_one_weight (fun _ ↦ rfl)
+        (fun _ ↦ by rw [Set.image_singleton, map_one])).trans
       restrictedIteratedCompletionGaussAlgEquiv =
       restrictedMvPowerSeriesCompletionGaussAlgEquiv.trans
         (restrictedFinAddAlgEquiv (S := R) (r := fun _ : Fin (k + m) ↦ (1 : ℝ))) := by
   let _ := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
     isWeightFamily_one_weight).toAlgebra
   refine AlgEquiv.ext fun x ↦ ?_
-  simpa using restrictedIteratedCompletionGaussEquiv_iterateRingEquiv hTU hUW x
+  simpa using restrictedIteratedCompletionGaussEquiv_iterateRingEquiv x
 
 /-- **Trivial-weight `iterateJoinHom` commutes with `restrictedFinAddEquiv.symm`** across the
 completed unit-radius Gauss comparisons. -/
 theorem restrictedMvPowerSeriesCompletionGaussEquiv_iterateJoinHom
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
-    (hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R)))
     (y : restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) :
     restrictedMvPowerSeriesCompletionGaussEquiv
         (iterateJoinHom isWeightFamily_one_weight isWeightFamily_one_weight
-          isWeightFamily_one_weight hTU hUW y) =
+          isWeightFamily_one_weight (fun _ ↦ rfl)
+          (fun _ ↦ by rw [Set.image_singleton, map_one]) y) =
       (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ))).symm
         (restrictedIteratedCompletionGaussEquiv y) := by
   apply (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ))).injective
-  rw [RingEquiv.apply_symm_apply, ← restrictedIteratedCompletionGaussEquiv_iterateSplitHom hTU hUW]
+  rw [RingEquiv.apply_symm_apply, ← restrictedIteratedCompletionGaussEquiv_iterateSplitHom]
   exact congrArg restrictedIteratedCompletionGaussEquiv
     (DFunLike.congr_fun (iterateSplitHom_comp_iterateJoinHom ..) y)
 
 /-- **Trivial-weight `(iterateRingEquiv ...).symm` commutes with `restrictedFinAddEquiv.symm`.** -/
 theorem restrictedMvPowerSeriesCompletionGaussEquiv_iterateRingEquiv_symm
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
-    (hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R)))
     (y : restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) :
     restrictedMvPowerSeriesCompletionGaussEquiv
         ((iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
-          isWeightFamily_one_weight hTU hUW).symm y) =
+          isWeightFamily_one_weight (fun _ ↦ rfl)
+          (fun _ ↦ by rw [Set.image_singleton, map_one])).symm y) =
       (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ))).symm
         (restrictedIteratedCompletionGaussEquiv y) := by
   rw [iterateRingEquiv_symm_apply, restrictedMvPowerSeriesCompletionGaussEquiv_iterateJoinHom]
@@ -703,17 +684,13 @@ theorem restrictedMvPowerSeriesCompletionGaussEquiv_iterateRingEquiv_symm
 `iterateFirstBlockHom` and splitting along `restrictedFinAddEquiv` embeds the inner unit-radius
 restricted series as a constant series of the outer algebra. -/
 theorem restrictedFinAddEquiv_restrictedMvPowerSeriesCompletionGaussEquiv_iterateFirstBlockHom
-    (hTU : ∀ _ : Fin k, ({1} : Set R) = ({1} : Set R))
     (c : restrictedMvPowerSeriesCompletion k R) :
     (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ)))
         (restrictedMvPowerSeriesCompletionGaussEquiv
           (iterateFirstBlockHom (m := m) isWeightFamily_one_weight isWeightFamily_one_weight
-            hTU c)) =
+            (fun _ ↦ rfl) c)) =
       algebraMap Inner₁ Iter₁ (restrictedMvPowerSeriesCompletionGaussEquiv c) := by
-  have hUW : ∀ _ : Fin m,
-      algebraMap R (restrictedMvPowerSeriesCompletion k R) '' ({1} : Set R) =
-        ({1} : Set (restrictedMvPowerSeriesCompletion k R)) := fun _ ↦ by simp
-  rw [← restrictedIteratedCompletionGaussEquiv_iterateSplitHom hTU hUW,
+  rw [← restrictedIteratedCompletionGaussEquiv_iterateSplitHom,
     ← RingHom.comp_apply, iterateSplitHom_comp_iterateFirstBlockHom,
     restrictedIteratedCompletionGaussEquiv_algebraMap]
 

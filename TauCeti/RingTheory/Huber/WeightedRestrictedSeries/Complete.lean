@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.UniformRing
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 
 import Mathlib.Algebra.Regular.Pi
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
 
 /-!
@@ -77,10 +78,11 @@ singleton and trivial-weight specialisations are discharged with.
 * `TauCeti.Huber.isBounded_weightPow_singleton`,
   `TauCeti.Huber.continuous_coeff_singleton`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton`,
-  `TauCeti.Huber.uniformContinuous_coeff_singleton` and
-  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton` : boundedness of singleton
-  weights `Tᵢ = {uᵢ}`, and the resulting continuity, Hausdorffness and completeness statements,
-  with `TauCeti.Huber.continuous_coeff_one_weight`,
+  `TauCeti.Huber.uniformContinuous_coeff_singleton`,
+  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton` and
+  `TauCeti.Huber.isDomain_completion_weightedRestrictedSubring_singleton` : boundedness of
+  singleton weights `Tᵢ = {uᵢ}`, and the resulting continuity, Hausdorffness, completeness and
+  domain-preservation statements, with `TauCeti.Huber.continuous_coeff_one_weight`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_one_weight`,
   `TauCeti.Huber.uniformContinuous_coeff_one_weight` and
   `TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight` at the trivial weight family.
@@ -286,6 +288,17 @@ instance completeSpace_weightedRestrictedSubring_singleton [CompleteSpace A] {u 
     (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) :
     CompleteSpace (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
   completeSpace_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
+
+/-- **The completion of any admissible singleton-weighted restricted-series ring over a complete
+Hausdorff nonarchimedean domain is a domain**: the uncompleted subring has no zero divisors, and
+completeness and Hausdorffness identify the completion with it. -/
+instance isDomain_completion_weightedRestrictedSubring_singleton [T0Space A] [CompleteSpace A]
+    [IsDomain A] {u : Fin k → A} (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) :
+    IsDomain (UniformSpace.Completion
+      (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT)) :=
+  letI : IsDomain (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
+    NoZeroDivisors.to_isDomain _
+  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
 
 /-- At the trivial weight family the coefficient maps of `A⟨X⟩` are uniformly continuous:
 they are continuous additive group homomorphisms. -/
