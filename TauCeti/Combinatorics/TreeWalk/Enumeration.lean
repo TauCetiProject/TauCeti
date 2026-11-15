@@ -66,16 +66,13 @@ theorem canonicalWalk_closedTreeWalk {m : ℕ} (w : ClosedTreeWalk m) :
   · have hi' : i < 2 * m + 1 := Nat.lt_succ_of_le hi
     have hc_le : w.1 i ≤ i := w.2.1.le_self i hi
     have hc' : w.1 i < 2 * m + 1 := hc_le.trans_lt hi'
-    have hu_eq : u ⟨w.1 i, hc'⟩ = u ⟨i, hi'⟩ := w.2.1.idem hi
     have hcw_eq : canonicalWalk u i = canonicalWalk u (w.1 i) :=
-      ((canonicalWalk_eq_iff u ⟨w.1 i, hc'⟩ ⟨i, hi'⟩).mpr hu_eq).symm
+      ((canonicalWalk_eq_iff u ⟨w.1 i, hc'⟩ ⟨i, hi'⟩).mpr (w.2.1.idem hi)).symm
     have hle : canonicalWalk u i ≤ w.1 i := hcw_eq ▸ canonicalWalk_le u (w.1 i)
-    have hk' : canonicalWalk u i < 2 * m + 1 := hle.trans_lt hc'
     have hwk : w.1 (canonicalWalk u i) = w.1 i :=
-      (canonicalWalk_eq_iff u ⟨canonicalWalk u i, hk'⟩ ⟨i, hi'⟩).mp (canonicalWalk_idem u i)
-    have hge : w.1 i ≤ canonicalWalk u i :=
-      hwk ▸ w.2.1.le_self (canonicalWalk u i) (hle.trans (hc_le.trans hi))
-    exact le_antisymm hle hge
+      (canonicalWalk_eq_iff u ⟨canonicalWalk u i, hle.trans_lt hc'⟩ ⟨i, hi'⟩).mp
+        (canonicalWalk_idem u i)
+    exact le_antisymm hle (hwk ▸ w.2.1.le_self _ (hle.trans (hc_le.trans hi)))
 
 variable {α : Type*} [DecidableEq α]
 
@@ -86,26 +83,20 @@ theorem isTreeWalk_canonicalWalk_iff {m : ℕ} (v : Fin (2 * m + 1) → α) :
       v (Fin.last (2 * m)) = v 0 ∧ #(univ.image v) = m + 1 ∧
         ∀ i : Fin (2 * m),
           #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2 := by
-  refine ⟨fun hw ↦ ⟨?_, ?_, ?_⟩, fun ⟨hc, hv, he⟩ ↦ isTreeWalk_canonicalWalk v hc hv he⟩
-  · exact (canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp (hw.closed.trans hw.root.symm)
-  · exact (card_fixed_canonicalWalk v).symm.trans hw.card_vertices
-  · intro i
-    have hedge (a b : Fin (2 * m)) :
-        s(canonicalWalk v a.castSucc, canonicalWalk v a.succ) =
-          s(canonicalWalk v b.castSucc, canonicalWalk v b.succ) ↔
-        s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) := by
-      simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
-    refine Eq.trans ?_ (hw.card_edge i i.isLt)
-    apply card_bij (fun j _ ↦ j.val)
-    · intro j hj
-      refine mem_filter.mpr ⟨mem_range.mpr j.isLt, ?_⟩
-      simpa only [Fin.val_castSucc, Fin.val_succ] using (hedge j i).mpr (mem_filter.mp hj).2
-    · exact fun _ _ _ _ h ↦ Fin.ext h
-    · intro j hj
-      obtain ⟨hj_lt, hj_eq⟩ := mem_filter.mp hj
-      refine ⟨⟨j, mem_range.mp hj_lt⟩, mem_filter.mpr ⟨mem_univ _, ?_⟩, rfl⟩
-      exact (hedge ⟨j, mem_range.mp hj_lt⟩ i).mp
-        (by simpa only [Fin.val_castSucc, Fin.val_succ] using hj_eq)
+  refine ⟨fun hw ↦ ⟨(canonicalWalk_eq_iff v (Fin.last (2 * m)) 0).mp
+    (hw.closed.trans hw.root.symm), (card_fixed_canonicalWalk v).symm.trans hw.card_vertices,
+    fun i ↦ ?_⟩, fun ⟨hc, hv, he⟩ ↦ isTreeWalk_canonicalWalk v hc hv he⟩
+  have hedge (a b : Fin (2 * m)) :
+      s(canonicalWalk v a.castSucc, canonicalWalk v a.succ) =
+        s(canonicalWalk v b.castSucc, canonicalWalk v b.succ) ↔
+      s(v a.castSucc, v a.succ) = s(v b.castSucc, v b.succ) := by
+    simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
+  refine Eq.trans (card_bij (fun j _ ↦ j.val) (fun j hj ↦ mem_filter.mpr ⟨mem_range.mpr j.isLt,
+    by simpa using (hedge j i).mpr (mem_filter.mp hj).2⟩) (fun _ _ _ _ ↦ Fin.ext) ?_)
+    (hw.card_edge i i.isLt)
+  intro j hj; obtain ⟨hj_lt, hj_eq⟩ := mem_filter.mp hj
+  exact ⟨⟨j, mem_range.mp hj_lt⟩, mem_filter.mpr ⟨mem_univ _,
+    (hedge ⟨j, mem_range.mp hj_lt⟩ i).mp (by simpa using hj_eq)⟩, rfl⟩
 
 private theorem card_closedTreePath_eq_of_finite [Finite α] (m : ℕ) :
     Nat.card {v : Fin (2 * m + 1) → α //
@@ -134,12 +125,10 @@ private theorem card_closedTreePath_eq_of_finite [Finite α] (m : ℕ) :
         invFun := fun y ↦
           have hyw : canonicalWalk y.1 = w.1 := y.2.trans (canonicalWalk_closedTreeWalk w)
           ⟨⟨y.1, (isTreeWalk_canonicalWalk_iff y.1).mp (hyw.symm ▸ w.2.1)⟩, Subtype.ext hyw⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
+        left_inv := fun _ ↦ rfl, right_inv := fun _ ↦ rfl }
     rw [Nat.card_congr e, card_canonicalWalk_eq uw, huw_card]
   rw [← Nat.card_congr (Equiv.sigmaFiberEquiv proj), Nat.card_sigma]
-  simp only [hfib, sum_const, card_univ, ← Nat.card_eq_fintype_card, card_closedTreeWalk,
-    smul_eq_mul]
+  simp [hfib, ← Nat.card_eq_fintype_card, card_closedTreeWalk]
 
 /-- On any vertex type `α`, there are `catalan m * (Nat.card α).descFactorial (m + 1)` closed
 paths of length `2 * m` visiting `m + 1` vertices and traversing every unordered edge twice (both
@@ -154,10 +143,8 @@ theorem card_closedTreePath_eq (m : ℕ) :
   · exact card_closedTreePath_eq_of_finite m
   · have : Infinite α := not_finite_iff_infinite.mp hfin
     let _ : Fintype (ClosedTreeWalk m) := Fintype.ofEquiv _ (closedTreeWalkEquiv m).symm
-    have hc_pos : 0 < catalan m := by
-      have h := Nat.centralBinom_pos m
-      rw [← succ_mul_catalan_eq_centralBinom] at h
-      exact pos_of_mul_pos_right h (Nat.zero_le _)
+    have hc_pos : 0 < catalan m := pos_of_mul_pos_right
+      (succ_mul_catalan_eq_centralBinom m ▸ Nat.centralBinom_pos m) (Nat.zero_le _)
     obtain ⟨w₀⟩ : Nonempty (ClosedTreeWalk m) := Fintype.card_pos_iff.mp
       (by rw [← Nat.card_eq_fintype_card, card_closedTreeWalk]; exact hc_pos)
     let f (k : ℕ) : {v : Fin (2 * m + 1) → α //
@@ -172,8 +159,8 @@ theorem card_closedTreePath_eq (m : ℕ) :
           (canonicalWalk_closedTreeWalk w₀)
       ⟨v, (isTreeWalk_canonicalWalk_iff v).mp (hcw.symm ▸ w₀.2.1)⟩
     have hf_inj : Function.Injective f := fun a b hab ↦ by
-      have h0 := congrFun (congrArg Subtype.val hab) 0
-      simpa [f, w₀.2.1.root] using (Infinite.natEmbedding α).injective h0
+      simpa [f, w₀.2.1.root] using
+        (Infinite.natEmbedding α).injective (congrFun (congrArg Subtype.val hab) 0)
     have := Infinite.of_injective f hf_inj
     rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite,
       Nat.descFactorial_of_lt (Nat.zero_lt_succ m), mul_zero]
@@ -197,26 +184,18 @@ private theorem isLeadingCyclicWord_of_closedTreePath {m : ℕ} [NeZero m]
       ((∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1) := by
   intro w
-  have hcw : cyclicPath w = v := by
-    funext i
-    refine Fin.lastCases ?_ (fun j ↦ ?_) i
-    · simp [w, hc]
-    · simp [w]
-  refine ⟨hcw, ?_, by rw [← image_cyclicPath w, hcw, hv]⟩
-  intro t
+  have hcw : cyclicPath w = v := funext fun i ↦
+    Fin.lastCases (by simp [w, hc]) (fun _ ↦ by simp [w]) i
+  refine ⟨hcw, fun t ↦ ?_, by rw [← image_cyclicPath w, hcw, hv]⟩
   have hw_edge (s : Fin (2 * m)) :
       s(w s, w (finRotate (2 * m) s)) = s(v s.castSucc, v s.succ) := by
     rw [← cyclicPath_castSucc w s, ← cyclicPath_succ w s, hcw]
-  have hcard : #{s : Fin (2 * m) |
-      s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))} = 2 := by
-    simp_rw [hw_edge]
-    exact he t
-  obtain ⟨a, b, hab, hpair⟩ := card_eq_two.mp hcard
+  obtain ⟨a, b, hab, hpair⟩ := card_eq_two.mp (he t)
+  simp_rw [hw_edge]
   by_cases hat : a = t
-  · refine ⟨b, fun hbt ↦ hab (hat.trans hbt.symm), ?_⟩
-    simpa using (Finset.ext_iff.mp hpair b).mpr (by simp)
-  · refine ⟨a, hat, ?_⟩
-    simpa using (Finset.ext_iff.mp hpair a).mpr (by simp)
+  · exact ⟨b, fun h ↦ hab (hat.trans h.symm),
+      by simpa using (Finset.ext_iff.mp hpair b).mpr (by simp)⟩
+  · exact ⟨a, hat, by simpa using (Finset.ext_iff.mp hpair a).mpr (by simp)⟩
 
 private def leadingCyclicWordEquivClosedTreePath (m : ℕ) [NeZero m] :
     {w : Fin (2 * m) → α //
@@ -260,38 +239,26 @@ section CoupledWalks
 /-- If a closed tree walk returns to the root `0` at time `m`, then every vertex visited at time
 `j ∈ [m, 2 * k]` is either `0` or first discovered strictly after time `m`. -/
 theorem IsTreeWalk.eq_zero_or_lt_of_eq_zero {k m : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk k w)
-    (hm0 : w m = 0) :
-    ∀ {j : ℕ}, m ≤ j → j ≤ 2 * k → w j = 0 ∨ m < w j := by
-  intro j
-  induction j using Nat.strong_induction_on with
-  | _ j ih =>
-    intro hmj hjk
-    rcases eq_or_lt_of_le hmj with rfl | hlt
-    · exact .inl hm0
-    · cases j with
-      | zero => omega
-      | succ t =>
-        by_cases hup : w (t + 1) = t + 1
-        · exact .inr (by omega)
-        · obtain ⟨hpos, hpar, -⟩ := hw.step_down (by omega) hup
-          have hmt : m < w t := (ih t (by omega) (by omega) (by omega)).resolve_left (by omega)
-          have hle : w t ≤ t := hw.le_self t (by omega)
-          rw [hpar]
-          exact ih (w t - 1) (by omega) (by omega) (by omega)
+    (hm0 : w m = 0) : ∀ {j : ℕ}, m ≤ j → j ≤ 2 * k → w j = 0 ∨ m < w j := by
+  intro j; induction j using Nat.strong_induction_on with | _ j ih => ?_
+  intro hmj hjk
+  rcases eq_or_lt_of_le hmj with rfl | hlt
+  · exact .inl hm0
+  obtain ⟨t, rfl⟩ : ∃ t, j = t + 1 := ⟨j - 1, by omega⟩
+  by_cases hup : w (t + 1) = t + 1
+  · exact .inr (by omega)
+  obtain ⟨hpos, hpar, -⟩ := hw.step_down (by omega) hup
+  have hmt : m < w t := (ih t (by omega) (by omega) (by omega)).resolve_left (by omega)
+  have := hw.le_self t (by omega)
+  exact hpar ▸ ih (w t - 1) (by omega) (by omega) (by omega)
 
 private def spliceEquiv (n : ℕ) : Fin n ⊕ Fin n ≃ Fin (2 * n) where
-  toFun
-    | .inl i => ⟨i.val, by omega⟩
-    | .inr i => ⟨i.val + n, by omega⟩
+  toFun | .inl i => ⟨i.val, by omega⟩ | .inr i => ⟨i.val + n, by omega⟩
   invFun j := if h : j.val < n then .inl ⟨j.val, h⟩ else .inr ⟨j.val - n, by omega⟩
   left_inv
     | .inl i => by simp [i.isLt]
-    | .inr i => by
-      have hnot : ¬ i.val + n < n := by omega
-      simp [hnot]
-  right_inv j := by
-    by_cases h : j.val < n <;> simp [h, Fin.ext_iff]
-    omega
+    | .inr i => by simp [show ¬ i.val + n < n by omega]
+  right_inv j := by by_cases h : j.val < n <;> simp [h, Fin.ext_iff]; omega
 
 variable {α : Type*}
 
@@ -300,17 +267,14 @@ private def spliceWords {n : ℕ} (u₁ u₂ : Fin n → α) (j : Fin (2 * n)) :
 
 private theorem image_spliceWords [DecidableEq α] {n : ℕ} (u₁ u₂ : Fin n → α) :
     univ.image (spliceWords u₁ u₂) = univ.image u₁ ∪ univ.image u₂ := by
-  ext x
-  simp only [mem_image, mem_univ, true_and, mem_union]
-  constructor
+  ext x; simp only [mem_image, mem_univ, true_and, mem_union]; constructor
   · rintro ⟨j, rfl⟩
     by_cases h : j.val < n
     · exact .inl ⟨⟨j.val, h⟩, by simp [spliceWords, h]⟩
     · exact .inr ⟨⟨j.val - n, by omega⟩, by simp [spliceWords, h]⟩
   · rintro (⟨i, rfl⟩ | ⟨i, rfl⟩)
     · exact ⟨⟨i.val, by omega⟩, by simp [spliceWords, i.isLt]⟩
-    · have hnot : ¬ i.val + n < n := by omega
-      exact ⟨⟨i.val + n, by omega⟩, by simp [spliceWords, hnot]⟩
+    · exact ⟨⟨i.val + n, by omega⟩, by simp [spliceWords, show ¬ i.val + n < n by omega]⟩
 
 private theorem spliceWords_edge {m : ℕ} {u₁ u₂ : Fin (m + 1) → α} (h0 : u₁ 0 = u₂ 0)
     (x : Fin (m + 1) ⊕ Fin (m + 1)) :
@@ -318,57 +282,44 @@ private theorem spliceWords_edge {m : ℕ} {u₁ u₂ : Fin (m + 1) → α} (h0 
         spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) x))) =
       Sum.elim (fun t ↦ s(u₁ t, u₁ (finRotate (m + 1) t)))
         (fun t ↦ s(u₂ t, u₂ (finRotate (m + 1) t))) x := by
-  have hrot2 (j : Fin (2 * (m + 1))) :
-      (finRotate (2 * (m + 1)) j : ℕ) = (j.val + 1) % (2 * (m + 1)) := by
-    rw [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-  have hrot1 (i : Fin (m + 1)) : (finRotate (m + 1) i : ℕ) = (i.val + 1) % (m + 1) := by
+  have hrot {N : ℕ} (j : Fin N) : (finRotate N j : ℕ) = (j.val + 1) % N := by
     rw [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
   cases x with
   | inl i =>
-    have hfirst : spliceWords u₁ u₂ (spliceEquiv (m + 1) (.inl i)) = u₁ i := by
-      simp [spliceWords, spliceEquiv, i.isLt]
-    have hsecond : spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl i))) =
-        u₁ (finRotate (m + 1) i) := by
-      have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl i)) : ℕ) = i.val + 1 := by
-        rw [hrot2]; dsimp [spliceEquiv]; exact Nat.mod_eq_of_lt (by omega)
-      by_cases hi : i.val + 1 < m + 1
-      · simp only [spliceWords, hv, hi, dite_true]
-        congr 1; ext; rw [hrot1, Nat.mod_eq_of_lt hi]
-      · have hi_eq : i.val + 1 = m + 1 := by omega
-        simp only [spliceWords, hv, hi_eq, lt_irrefl, dite_false, Nat.sub_self]
-        have hr0 : finRotate (m + 1) i = 0 := by ext; rw [hrot1, hi_eq, Nat.mod_self]; rfl
-        rw [hr0]
-        exact h0.symm
-    rw [hfirst, hsecond]; rfl
+    have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl i)) : ℕ) = i.val + 1 := by
+      rw [hrot]; exact Nat.mod_eq_of_lt (by dsimp [spliceEquiv]; omega)
+    suffices spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inl i))) =
+        u₁ (finRotate (m + 1) i) by rw [this]; simp [spliceWords, spliceEquiv, i.isLt]
+    by_cases hi : i.val + 1 < m + 1
+    · simp only [spliceWords, hv, hi, dite_true]; congr 1; ext; rw [hrot i, Nat.mod_eq_of_lt hi]
+    · have hi_eq : i.val + 1 = m + 1 := by omega
+      simp only [spliceWords, hv, hi_eq, lt_irrefl, dite_false, Nat.sub_self]
+      rw [show finRotate (m + 1) i = 0 by ext; rw [hrot i, hi_eq, Nat.mod_self]; rfl]
+      exact h0.symm
   | inr i =>
-    have hnot0 : ¬ i.val + (m + 1) < m + 1 := by omega
-    have hfirst : spliceWords u₁ u₂ (spliceEquiv (m + 1) (.inr i)) = u₂ i := by
-      simp [spliceWords, spliceEquiv, hnot0]
-    have hsecond : spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i))) =
-        u₂ (finRotate (m + 1) i) := by
-      by_cases hi : i.val + 1 < m + 1
-      · have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i)) : ℕ) =
-            i.val + 1 + (m + 1) := by
-          rw [hrot2]; dsimp [spliceEquiv]
-          rw [show i.val + (m + 1) + 1 = i.val + 1 + (m + 1) by omega]
-          exact Nat.mod_eq_of_lt (by omega)
-        have hnot : ¬ i.val + 1 + (m + 1) < m + 1 := by omega
-        simp only [spliceWords, hv, hnot, dite_false, Nat.add_sub_cancel]
-        congr 1; ext; rw [hrot1, Nat.mod_eq_of_lt hi]
-      · have hi_eq : i.val + 1 = m + 1 := by omega
-        have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i)) : ℕ) = 0 := by
-          rw [hrot2]; dsimp [spliceEquiv]
-          rw [show i.val + (m + 1) + 1 = 2 * (m + 1) by omega, Nat.mod_self]
-        simp only [spliceWords, hv, Nat.zero_lt_succ, dite_true]
-        have hr0 : finRotate (m + 1) i = 0 := by ext; rw [hrot1, hi_eq, Nat.mod_self]; rfl
-        rw [hr0]
-        exact h0
-    rw [hfirst, hsecond]; rfl
+    suffices spliceWords u₁ u₂ (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i))) =
+        u₂ (finRotate (m + 1) i) by
+      rw [this]; simp [spliceWords, spliceEquiv, show ¬ i.val + (m + 1) < m + 1 by omega]
+    by_cases hi : i.val + 1 < m + 1
+    · have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i)) : ℕ) =
+          i.val + 1 + (m + 1) := by
+        rw [hrot]; dsimp [spliceEquiv]
+        rw [show i.val + (m + 1) + 1 = i.val + 1 + (m + 1) by omega]
+        exact Nat.mod_eq_of_lt (by omega)
+      simp only [spliceWords, hv, show ¬ i.val + 1 + (m + 1) < m + 1 by omega,
+        dite_false, Nat.add_sub_cancel]
+      congr 1; ext; rw [hrot i, Nat.mod_eq_of_lt hi]
+    · have hi_eq : i.val + 1 = m + 1 := by omega
+      have hv : (finRotate (2 * (m + 1)) (spliceEquiv (m + 1) (.inr i)) : ℕ) = 0 := by
+        rw [hrot]; dsimp [spliceEquiv]
+        rw [show i.val + (m + 1) + 1 = 2 * (m + 1) by omega, Nat.mod_self]
+      simp only [spliceWords, hv, Nat.zero_lt_succ, dite_true]
+      rw [show finRotate (m + 1) i = 0 by ext; rw [hrot i, hi_eq, Nat.mod_self]; rfl]
+      exact h0
 
 private theorem rotateWord_image [DecidableEq α] {m : ℕ} (w : Fin (m + 1) → α) (r : Fin (m + 1)) :
     univ.image (fun i ↦ w (i + r)) = univ.image w := by
-  ext x
-  simp only [mem_image, mem_univ, true_and]
+  ext x; simp only [mem_image, mem_univ, true_and]
   exact ⟨fun ⟨i, hi⟩ ↦ ⟨i + r, hi⟩, fun ⟨j, hj⟩ ↦ ⟨j - r, by simpa using hj⟩⟩
 
 private theorem rotateWord_edge {m : ℕ} (w : Fin (m + 1) → α) (r i : Fin (m + 1)) :
@@ -403,30 +354,26 @@ private theorem spliceWords_shifted_edge_and_no_singleton_nonloop {m : ℕ} {w�
           (fun t ↦ s(w₂ t, w₂ (finRotate (m + 1) t)))
           (shiftSum ((spliceEquiv (m + 1)).symm j)) := by
     set x := (spliceEquiv (m + 1)).symm j
-    have hj : j = spliceEquiv (m + 1) x := ((spliceEquiv (m + 1)).apply_symm_apply j).symm
-    rw [hj, spliceWords_edge hu0 x]
-    cases x with
-    | inl i => exact rotateWord_edge w₁ t₁ i
-    | inr i => exact rotateWord_edge w₂ r₂ i
+    rw [((spliceEquiv (m + 1)).apply_symm_apply j).symm, spliceWords_edge hu0 x]
+    cases x with | inl i => exact rotateWord_edge w₁ t₁ i | inr i => exact rotateWord_edge w₂ r₂ i
   refine ⟨hW_edge, fun j hj_ne ↦ ?_⟩
   set z := shiftSum ((spliceEquiv (m + 1)).symm j)
   have hz_ne : Sum.elim w₁ w₂ z ≠
-      Sum.elim (w₁ ∘ finRotate (m + 1)) (w₂ ∘ finRotate (m + 1)) z := by
-    intro hz_eq
-    have hdiag : s(W j, W (finRotate (2 * (m + 1)) j)) = s(Sum.elim w₁ w₂ z, Sum.elim w₁ w₂ z) := by
-      have hsum : ∀ x : Fin (m + 1) ⊕ Fin (m + 1),
-          Sum.elim w₁ w₂ x = Sum.elim (w₁ ∘ finRotate (m + 1)) (w₂ ∘ finRotate (m + 1)) x →
+      Sum.elim (w₁ ∘ finRotate (m + 1)) (w₂ ∘ finRotate (m + 1)) z := fun hz_eq ↦ by
+    have hdiag : s(W j, W (finRotate (2 * (m + 1)) j)) =
+        s(Sum.elim w₁ w₂ z, Sum.elim w₁ w₂ z) := by
+      have hsum : ∀ x, Sum.elim w₁ w₂ x =
+          Sum.elim (w₁ ∘ finRotate (m + 1)) (w₂ ∘ finRotate (m + 1)) x →
           Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate (m + 1) t)))
             (fun t ↦ s(w₂ t, w₂ (finRotate (m + 1) t))) x =
             s(Sum.elim w₁ w₂ x, Sum.elim w₁ w₂ x)
-        | .inl t, h => congrArg (fun b ↦ s(w₁ t, b)) h.symm
-        | .inr t, h => congrArg (fun b ↦ s(w₂ t, b)) h.symm
+        | .inl t, h => congrArg (s(w₁ t, ·)) h.symm
+        | .inr t, h => congrArg (s(w₂ t, ·)) h.symm
       exact (hW_edge j).trans (hsum z hz_eq)
     rcases Sym2.eq_iff.mp hdiag with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> exact hj_ne (h1.trans h2.symm)
   obtain ⟨y, hy_ne, hy_eq⟩ := hns z hz_ne
-  refine ⟨spliceEquiv (m + 1) (shiftSum.symm y), fun h ↦ hy_ne ?_, ?_⟩
-  · simp [z, ← h]
-  · rw [hW_edge, hW_edge]; simpa [z] using hy_eq
+  refine ⟨spliceEquiv (m + 1) (shiftSum.symm y), fun h ↦ hy_ne (by simp [z, ← h]), ?_⟩
+  rw [hW_edge, hW_edge]; simpa [z] using hy_eq
 
 private theorem not_card_image_eq_of_midpoint_root [DecidableEq α] {m : ℕ}
     {W : Fin (2 * (m + 1)) → α}
@@ -438,31 +385,24 @@ private theorem not_card_image_eq_of_midpoint_root [DecidableEq α] {m : ℕ}
     False := by
   have htree : IsTreeWalk (m + 1) (canonicalWalk (cyclicPath W)) :=
     isTreeWalk_canonicalWalk_cyclic W hW_ns hW_eq
-  have hmid0 : canonicalWalk (cyclicPath W) (m + 1) = 0 := by
-    refine Eq.trans ?_ (canonicalWalk_zero (cyclicPath W))
-    apply (canonicalWalk_eq_iff (cyclicPath W)
-      ((⟨m + 1, by omega⟩ : Fin (2 * (m + 1))).castSucc) 0).mpr
-    rw [cyclicPath_castSucc, cyclicPath_zero]
-    exact hW_mid
+  have hmid0 : canonicalWalk (cyclicPath W) (m + 1) = 0 :=
+    ((canonicalWalk_eq_iff (cyclicPath W) ((⟨m + 1, by omega⟩ : Fin (2 * (m + 1))).castSucc) 0).mpr
+      (by rw [cyclicPath_castSucc, cyclicPath_zero]; exact hW_mid)).trans (canonicalWalk_zero _)
   have hj_edge : s(canonicalWalk (cyclicPath W) j₁.val, canonicalWalk (cyclicPath W) (j₁.val + 1)) =
       s(canonicalWalk (cyclicPath W) j₂.val, canonicalWalk (cyclicPath W) (j₂.val + 1)) := by
     rw [← cyclicPath_castSucc W j₁, ← cyclicPath_succ W j₁,
       ← cyclicPath_castSucc W j₂, ← cyclicPath_succ W j₂] at hW12
     simpa only [Sym2.eq_iff, ← canonicalWalk_eq_iff (cyclicPath W),
       Fin.val_castSucc, Fin.val_succ] using hW12
-  have hj1_le1 : canonicalWalk (cyclicPath W) j₁.val ≤ m + 1 :=
-    (htree.le_self _ (by omega)).trans (by omega)
-  have hj1_le2 : canonicalWalk (cyclicPath W) (j₁.val + 1) ≤ m + 1 :=
-    (htree.le_self _ (by omega)).trans (by omega)
-  have hj2_or1 := htree.eq_zero_or_lt_of_eq_zero hmid0 (j := j₂.val) hj₂ (by omega)
-  have hj2_or2 := htree.eq_zero_or_lt_of_eq_zero hmid0 (j := j₂.val + 1) (by omega) (by omega)
+  have := (htree.le_self j₁.val (by omega)).trans (by omega : j₁.val ≤ m + 1)
+  have := (htree.le_self (j₁.val + 1) (by omega)).trans (by omega : j₁.val + 1 ≤ m + 1)
+  have := htree.eq_zero_or_lt_of_eq_zero hmid0 (j := j₂.val) hj₂ (by omega)
+  have := htree.eq_zero_or_lt_of_eq_zero hmid0 (j := j₂.val + 1) (by omega) (by omega)
   have hj2_eq : canonicalWalk (cyclicPath W) j₂.val =
       canonicalWalk (cyclicPath W) (j₂.val + 1) := by rw [Sym2.eq_iff] at hj_edge; omega
-  have hloop : W j₂ = W (finRotate (2 * (m + 1)) j₂) := by
-    rw [← cyclicPath_castSucc W j₂, ← cyclicPath_succ W j₂]
-    exact (canonicalWalk_eq_iff (cyclicPath W) j₂.castSucc j₂.succ).mp hj2_eq
-  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq W hW_ns hW_eq).1
-    j₂ hloop
+  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq W hW_ns hW_eq).1 j₂
+    (by rw [← cyclicPath_castSucc W j₂, ← cyclicPath_succ W j₂]
+        exact (canonicalWalk_eq_iff (cyclicPath W) j₂.castSucc j₂.succ).mp hj2_eq)
 
 /-- **Coupled two-walk vertex bound.** If two cyclic words `w₁, w₂ : Fin k → α` share at least one
 unordered edge and their combined `2 * k`-step edge multiset on `Fin k ⊕ Fin k` has no singleton

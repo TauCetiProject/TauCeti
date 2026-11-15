@@ -96,8 +96,7 @@ private theorem integrable_wordProd_mul [IsFiniteMeasure P] {k n : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
     (w₁ w₂ : Fin k → Fin n) :
     Integrable (fun ω ↦ wordProd ξ η w₁ ω * wordProd ξ η w₂ ω) P := by
-  have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by
-    rw [Fintype.card_sum, Fintype.card_fin, two_mul]
+  have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by simp [two_mul]
   simp_rw [wordProd_mul_eq_prod_sum]
   exact integrable_prod_wignerMatrix_apply (by simpa [hcard] using hξp)
     (by simpa [hcard] using hηp) _ _
@@ -108,8 +107,7 @@ theorem memLp_two_inv_mul_re_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P) (n : ℕ) :
     MemLp (fun ω ↦ (n : ℝ)⁻¹ * ((wignerMatrix ξ η n ω ^ k).trace).re) 2 P := by
   rcases eq_or_ne k 0 with rfl | hk
-  · simp only [pow_zero, trace_one, Fintype.card_fin]
-    exact memLp_const _
+  · simp [memLp_const]
   · have hξk : ∀ ij, MemLp (ξ ij) k P := fun ij ↦ (hξp ij).mono_exponent (by norm_cast; omega)
     have hηk : ∀ i, MemLp (η i) k P := fun i ↦ (hηp i).mono_exponent (by norm_cast; omega)
     have haesm : AEStronglyMeasurable
@@ -123,13 +121,9 @@ theorem memLp_two_inv_mul_re_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ
       have hc : (((wignerMatrix ξ η n ω ^ k).trace).re : ℂ) =
           ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
         rw [ofReal_re_trace_pow_wignerMatrix, trace_pow_eq_sum_prod _ hk]; rfl
-      have hre : (((wignerMatrix ξ η n ω ^ k).trace).re) ^ 2 =
-          (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-            wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re := by
-        calc (((wignerMatrix ξ η n ω ^ k).trace).re) ^ 2
-            = (((((wignerMatrix ξ η n ω ^ k).trace).re : ℂ) ^ 2)).re := by
-              rw [← Complex.ofReal_pow, Complex.ofReal_re]
-          _ = _ := by rw [hc, sq, sum_mul_sum, ← sum_product', univ_product_univ]
+      have hre := congrArg (fun z : ℂ ↦ (z ^ 2).re) hc
+      rw [← Complex.ofReal_pow, Complex.ofReal_re, sq (∑ w, _), sum_mul_sum,
+        ← sum_product', univ_product_univ] at hre
       rw [Real.norm_eq_abs, sq_abs, mul_pow, hre]
     simp_rw [hsq]
     simpa only [RCLike.re_to_complex] using
@@ -149,45 +143,34 @@ private theorem variance_re_trace_eq_re_sum_wordCov [IsProbabilityMeasure P] {k 
   have hsq_sum (f : (Fin k → Fin n) → ℂ) :
       ((n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, f w) ^ 2 =
         ((n : ℝ)⁻¹ ^ 2 : ℝ) * ∑ p : (Fin k → Fin n) × (Fin k → Fin n), f p.1 * f p.2 := by
-    rw [mul_pow, sq (∑ w, f w), sum_mul_sum, ← sum_product', univ_product_univ]
-    simp
+    rw [mul_pow, sq (∑ w, f w), sum_mul_sum, ← sum_product', univ_product_univ]; simp
   have hT_coe (ω : Ω) : (T ω : ℂ) = (n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
     dsimp only [T]
     rw [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast,
-      ofReal_re_trace_pow_wignerMatrix, trace_pow_eq_sum_prod _ hk]
-    rfl
+      ofReal_re_trace_pow_wignerMatrix, trace_pow_eq_sum_prod _ hk]; rfl
   have hT_sq (ω : Ω) : T ω ^ 2 = (n : ℝ)⁻¹ ^ 2 *
-      (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-        wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re := by
+      (∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re := by
     have h := congrArg (fun z : ℂ ↦ (z ^ 2).re) (hT_coe ω)
-    rw [← Complex.ofReal_pow, Complex.ofReal_re, hsq_sum, Complex.re_ofReal_mul] at h
-    exact h
+    rw [← Complex.ofReal_pow, Complex.ofReal_re, hsq_sum, Complex.re_ofReal_mul] at h; exact h
   have hmean_coe : ((∫ ω, T ω ∂P : ℝ) : ℂ) =
       (n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, ∫ ω, wordProd ξ η w ω ∂P := by
     rw [← integral_complex_ofReal, integral_congr_ae (.of_forall hT_coe), integral_const_mul,
       integral_finsetSum _ fun w _ ↦ hwp_int w]
-  have hmean_sq : (∫ ω, T ω ∂P) ^ 2 = (n : ℝ)⁻¹ ^ 2 *
-      (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-        (∫ ω, wordProd ξ η p.1 ω ∂P) * (∫ ω, wordProd ξ η p.2 ω ∂P)).re := by
+  have hmean_sq : (∫ ω, T ω ∂P) ^ 2 = (n : ℝ)⁻¹ ^ 2 * (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
+      (∫ ω, wordProd ξ η p.1 ω ∂P) * (∫ ω, wordProd ξ η p.2 ω ∂P)).re := by
     have h := congrArg (fun z : ℂ ↦ (z ^ 2).re) hmean_coe
-    rw [← Complex.ofReal_pow, Complex.ofReal_re, hsq_sum, Complex.re_ofReal_mul] at h
-    exact h
+    rw [← Complex.ofReal_pow, Complex.ofReal_re, hsq_sum, Complex.re_ofReal_mul] at h; exact h
   change Var[T; P] = _
   rw [ProbabilityTheory.variance_eq_sub (memLp_two_inv_mul_re_trace_pow_wignerMatrix hξp hηp n)]
-  have hint_sq : ∫ ω, (T ^ 2) ω ∂P = (n : ℝ)⁻¹ ^ 2 *
-      (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-        ∫ ω, wordProd ξ η p.1 ω * wordProd ξ η p.2 ω ∂P).re := by
-    simp_rw [Pi.pow_apply, hT_sq]
-    rw [integral_const_mul]
-    congr 1
-    simp_rw [← Complex.reCLM_apply]
-    rw [Complex.reCLM.integral_comp_comm
-      (integrable_finsetSum (univ : Finset ((Fin k → Fin n) × (Fin k → Fin n))) fun p _ ↦
-        integrable_wordProd_mul hξp hηp p.1 p.2),
-      integral_finsetSum (univ : Finset ((Fin k → Fin n) × (Fin k → Fin n))) fun p _ ↦
-        integrable_wordProd_mul hξp hηp p.1 p.2]
-  rw [hint_sq, hmean_sq, ← mul_sub, ← Complex.sub_re, ← sum_sub_distrib]
-  rfl
+  have hint_sum := integrable_finsetSum (univ : Finset ((Fin k → Fin n) × (Fin k → Fin n)))
+    fun p _ ↦ integrable_wordProd_mul hξp hηp p.1 p.2
+  have hint_sq : ∫ ω, (T ^ 2) ω ∂P = (n : ℝ)⁻¹ ^ 2 * (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
+      ∫ ω, wordProd ξ η p.1 ω * wordProd ξ η p.2 ω ∂P).re := by
+    simp_rw [Pi.pow_apply, hT_sq, integral_const_mul]
+    congr 1; simp_rw [← Complex.reCLM_apply]
+    rw [Complex.reCLM.integral_comp_comm hint_sum,
+      integral_finsetSum _ fun p _ ↦ integrable_wordProd_mul hξp hηp p.1 p.2]
+  rw [hint_sq, hmean_sq, ← mul_sub, ← Complex.sub_re, ← sum_sub_distrib]; rfl
 
 private def IsSurvivingWordPair {k n : ℕ} (p : (Fin k → Fin n) × (Fin k → Fin n)) : Prop :=
   (∃ t₁ t₂, s(p.1 t₁, p.1 (finRotate k t₁)) = s(p.2 t₂, p.2 (finRotate k t₂))) ∧
@@ -201,8 +184,7 @@ private def IsSurvivingWordPair {k n : ℕ} (p : (Fin k → Fin n) × (Fin k →
 
 private theorem wordCov_eq_zero_of_disjoint_edges {k n : ℕ}
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξk : ∀ ij, MemLp (ξ ij) k P) (hηk : ∀ i, MemLp (η i) k P)
-    {w₁ w₂ : Fin k → Fin n}
+    (hξk : ∀ ij, MemLp (ξ ij) k P) (hηk : ∀ i, MemLp (η i) k P) {w₁ w₂ : Fin k → Fin n}
     (hdisj : ∀ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) ≠ s(w₂ t₂, w₂ (finRotate k t₂))) :
     wordCov ξ η P w₁ w₂ = 0 := by
   have := hindep.isProbabilityMeasure
@@ -210,11 +192,11 @@ private theorem wordCov_eq_zero_of_disjoint_edges {k n : ℕ}
     (fun ij ↦ (hξk ij).aestronglyMeasurable.aemeasurable)
     (fun i ↦ (hηk i).aestronglyMeasurable.aemeasurable)
     hindep w₁ (w₁ ∘ finRotate k) w₂ (w₂ ∘ finRotate k) hdisj
-  have hae₁ := (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk)
-    w₁ (w₁ ∘ finRotate k)).aestronglyMeasurable
-  have hae₂ := (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk)
-    w₂ (w₂ ∘ finRotate k)).aestronglyMeasurable
-  exact sub_eq_zero.mpr (hind.integral_fun_mul_eq_mul_integral hae₁ hae₂)
+  exact sub_eq_zero.mpr <| hind.integral_fun_mul_eq_mul_integral
+    (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk) _
+      _).aestronglyMeasurable
+    (integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk) _
+      _).aestronglyMeasurable
 
 private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
@@ -229,8 +211,7 @@ private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
   have hηk : ∀ i, MemLp (η i) k P := fun i ↦ (hηp i).mono_exponent (by norm_cast; omega)
   by_cases hshare : ∃ t₁ t₂, s(w₁ t₁, w₁ (finRotate k t₁)) = s(w₂ t₂, w₂ (finRotate k t₂))
   · obtain ⟨x, hx⟩ := Classical.not_forall.mp fun h' ↦ hnot ⟨hshare, h'⟩
-    rw [not_imp] at hx
-    obtain ⟨hx_ne, hx_not⟩ := hx
+    obtain ⟨hx_ne, hx_not⟩ := not_imp.mp hx
     have hx_only (y : Fin k ⊕ Fin k) (hy :
         Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k t)))
           (fun t ↦ s(w₂ t, w₂ (finRotate k t))) y =
@@ -245,20 +226,14 @@ private theorem wordCov_eq_zero_of_not_surviving {k n : ℕ}
       simp_rw [wordProd_mul_eq_prod_sum]
       exact integral_prod_wignerMatrix_apply_eq_zero_of_ne hξm hηm hindep hξzero _ _ hx_ne
         fun y hy ↦ hx_only y (by simpa only [hedge] using hy)
-    have hfac0 : (∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P) = 0 := by
-      cases x with
-      | inl t₁ =>
-        have h0 : ∫ ω, wordProd ξ η w₁ ω ∂P = 0 :=
+    have hfac0 : (∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P) = 0 :=
+      match x with
+      | .inl _ => mul_eq_zero.mpr <| .inl <|
           integral_prod_wignerMatrix_apply_eq_zero_of_ne hξm hηm hindep hξzero w₁
-            (w₁ ∘ finRotate k) (by simpa using hx_ne)
-            (fun s hs ↦ Sum.inl.inj (hx_only (.inl s) hs))
-        rw [h0, zero_mul]
-      | inr t₂ =>
-        have h0 : ∫ ω, wordProd ξ η w₂ ω ∂P = 0 :=
+            (w₁ ∘ finRotate k) (by simpa using hx_ne) (fun s hs ↦ Sum.inl.inj (hx_only (.inl s) hs))
+      | .inr _ => mul_eq_zero.mpr <| .inr <|
           integral_prod_wignerMatrix_apply_eq_zero_of_ne hξm hηm hindep hξzero w₂
-            (w₂ ∘ finRotate k) (by simpa using hx_ne)
-            (fun s hs ↦ Sum.inr.inj (hx_only (.inr s) hs))
-        rw [h0, mul_zero]
+            (w₂ ∘ finRotate k) (by simpa using hx_ne) (fun s hs ↦ Sum.inr.inj (hx_only (.inr s) hs))
     simp [wordCov, hprod0, hfac0]
   · exact wordCov_eq_zero_of_disjoint_edges hindep hξk hηk fun t₁ t₂ h ↦ hshare ⟨t₁, t₂, h⟩
 
@@ -268,8 +243,7 @@ private theorem norm_wordCov_le [IsProbabilityMeasure P] {k n : ℕ} (hk : k ≠
     (w₁ w₂ : Fin k → Fin n) :
     ‖wordCov ξ η P w₁ w₂‖ ≤ 2 * (n : ℝ)⁻¹ ^ k * B := by
   have hB : 0 ≤ B := (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) (2 * k)).trans (hη 0)
-  have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by
-    rw [Fintype.card_sum, Fintype.card_fin, two_mul]
+  have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by simp [two_mul]
   have hsqrt_pow : (Real.sqrt n)⁻¹ ^ (2 * k) = (n : ℝ)⁻¹ ^ k := by
     rw [inv_pow, inv_pow, pow_mul, Real.sq_sqrt (Nat.cast_nonneg n)]
   have h1 : ‖∫ ω, wordProd ξ η w₁ ω * wordProd ξ η w₂ ω ∂P‖ ≤ (n : ℝ)⁻¹ ^ k * B := by
@@ -283,19 +257,14 @@ private theorem norm_wordCov_le [IsProbabilityMeasure P] {k n : ℕ} (hk : k ≠
   have hw_le (w : Fin k → Fin n) : ‖∫ ω, wordProd ξ η w ω ∂P‖ ≤ (Real.sqrt n)⁻¹ ^ k * √B := by
     simpa [wordProd] using norm_integral_prod_wignerMatrix_apply_le
       (by simpa using fun ij ↦ (hξk ij).1) (by simpa using fun i ↦ (hηk i).1)
-      (by simpa using fun ij ↦ (hξk ij).2) (by simpa using fun i ↦ (hηk i).2)
-      w (w ∘ finRotate k)
+      (by simpa using fun ij ↦ (hξk ij).2) (by simpa using fun i ↦ (hηk i).2) w (w ∘ finRotate k)
   have h2 : ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P)‖ ≤ (n : ℝ)⁻¹ ^ k * B := by
     rw [norm_mul]
-    calc _ ≤ ((Real.sqrt n)⁻¹ ^ k * √B) * ((Real.sqrt n)⁻¹ ^ k * √B) :=
-          mul_le_mul (hw_le w₁) (hw_le w₂) (norm_nonneg _) (by positivity)
-      _ = (Real.sqrt n)⁻¹ ^ (2 * k) * (√B * √B) := by rw [two_mul, pow_add]; ring
-      _ = (n : ℝ)⁻¹ ^ k * B := by rw [hsqrt_pow, Real.mul_self_sqrt hB]
-  calc ‖wordCov ξ η P w₁ w₂‖
-      ≤ ‖∫ ω, wordProd ξ η w₁ ω * wordProd ξ η w₂ ω ∂P‖ +
-          ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * (∫ ω, wordProd ξ η w₂ ω ∂P)‖ := norm_sub_le _ _
-    _ ≤ (n : ℝ)⁻¹ ^ k * B + (n : ℝ)⁻¹ ^ k * B := add_le_add h1 h2
-    _ = 2 * (n : ℝ)⁻¹ ^ k * B := by ring
+    exact (mul_le_mul (hw_le w₁) (hw_le w₂) (norm_nonneg _) (by positivity)).trans_eq <| by
+      rw [show ((Real.sqrt n)⁻¹ ^ k * √B) * ((Real.sqrt n)⁻¹ ^ k * √B) =
+        (Real.sqrt n)⁻¹ ^ (2 * k) * (√B * √B) by rw [two_mul, pow_add]; ring,
+        hsqrt_pow, Real.mul_self_sqrt hB]
+  exact (norm_sub_le _ _).trans ((add_le_add h1 h2).trans_eq (by ring))
 
 private theorem card_survivingWordPairs_le {k n : ℕ} (hn : n ≠ 0)
     (Surv : Finset ((Fin k → Fin n) × (Fin k → Fin n)))
@@ -306,22 +275,16 @@ private theorem card_survivingWordPairs_le {k n : ℕ} (hn : n ≠ 0)
     (Equiv.sumArrowEquivProdArrow (Fin k) (Fin k) (Fin n)).symm
   have himg (p : (Fin k → Fin n) × (Fin k → Fin n)) :
       (univ : Finset (Fin k ⊕ Fin k)).image (e p) = univ.image p.1 ∪ univ.image p.2 := by
-    ext v
-    simp only [mem_union, mem_image, mem_univ, true_and, Sum.exists]
-    rfl
+    ext v; simp only [mem_union, mem_image, mem_univ, true_and, Sum.exists]; rfl
   calc #Surv = #(Surv.map e.toEmbedding) := (card_map _).symm
-    _ ≤ #{f : Fin k ⊕ Fin k → Fin n | #(univ.image f) ≤ k} := by
-      refine card_le_card fun f hf ↦ ?_
+    _ ≤ #{f : Fin k ⊕ Fin k → Fin n | #(univ.image f) ≤ k} := card_le_card fun f hf ↦ by
       obtain ⟨p, hp, rfl⟩ := mem_map.mp hf
-      obtain ⟨hshare, hns⟩ := hSurv p hp
-      refine mem_filter.mpr ⟨mem_univ _, ?_⟩
-      change #(univ.image (e p)) ≤ k
-      rw [himg p]
-      exact card_union_image_le_of_shared_edge_of_no_singleton_nonloop_edge p.1 p.2 hshare hns
+      exact mem_filter.mpr ⟨mem_univ _, (himg p).symm ▸
+        card_union_image_le_of_shared_edge_of_no_singleton_nonloop_edge p.1 p.2
+          (hSurv p hp).1 (hSurv p hp).2⟩
     _ ≤ n ^ k * k ^ (2 * k) := by
-      have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by
-        rw [Fintype.card_sum, Fintype.card_fin, two_mul]
-      simpa [hcard] using card_filter_card_image_le (α := Fin k ⊕ Fin k) (β := Fin n) k
+      simpa [Fintype.card_sum, two_mul] using
+        card_filter_card_image_le (α := Fin k ⊕ Fin k) (β := Fin n) k
 
 /-- **Variance bound for normalized Wigner traces.** When the entry array has jointly independent
 coordinates, centered off-diagonal entries, and `2 * k`-th absolute moments bounded by `B`, the
@@ -329,9 +292,8 @@ variance of `n⁻¹ * Re tr(Hₙ ^ k)` is at most `2 * k ^ (2 * k) * B / n ^ 2` 
 Neither diagonal centering nor any second-moment normalization is required. -/
 theorem variance_inv_mul_re_trace_pow_wignerMatrix_le
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
-    {k : ℕ} {B : ℝ} (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P)
-    (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {k : ℕ} {B : ℝ}
+    (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * k) ∂P ≤ B)
     (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * k) ∂P ≤ B) (n : ℕ) :
     Var[fun ω ↦ (n : ℝ)⁻¹ * ((wignerMatrix ξ η n ω ^ k).trace).re; P] ≤
@@ -345,16 +307,13 @@ theorem variance_inv_mul_re_trace_pow_wignerMatrix_le
       not_false_eq_true, zero_pow, smul_zero]
     positivity
   rcases eq_or_ne n 0 with rfl | hn
-  · have h0 : (fun ω ↦ ((0 : ℕ) : ℝ)⁻¹ * ((wignerMatrix ξ η 0 ω ^ k).trace).re) = 0 := by
-      ext ω; simp [_root_.inv_zero]
-    rw [h0, ProbabilityTheory.variance_zero]
-    simp
+  · rw [show (fun ω ↦ ((0 : ℕ) : ℝ)⁻¹ * ((wignerMatrix ξ η 0 ω ^ k).trace).re) = 0 by
+      ext; simp [_root_.inv_zero], ProbabilityTheory.variance_zero]; simp
   rw [variance_re_trace_eq_re_sum_wordCov hk hξp hηp n]
   classical
   let Surv : Finset ((Fin k → Fin n) × (Fin k → Fin n)) := univ.filter IsSurvivingWordPair
-  have hsum_eq :
-      (∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordCov ξ η P p.1 p.2) =
-        ∑ p ∈ Surv, wordCov ξ η P p.1 p.2 :=
+  have hsum_eq : (∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordCov ξ η P p.1 p.2) =
+      ∑ p ∈ Surv, wordCov ξ η P p.1 p.2 :=
     (sum_subset (subset_univ Surv) fun p _ hp ↦ wordCov_eq_zero_of_not_surviving
       hindep hξzero hξp hηp fun h ↦ hp (mem_filter.mpr ⟨mem_univ _, h⟩)).symm
   have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
