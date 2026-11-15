@@ -66,53 +66,6 @@ section Galois
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
 
-/-- **A point of a locally quasi-finite `K`-scheme with values in `Ω` is fixed by an open
-subgroup of `Gal(Ω/K)`.** If `t : Spec Ω ⟶ X` lifts `Spec Ω ⟶ Spec K`, then `t` is a point `y` of
-`X` with an embedding `φ : κ(y) → Ω`. The image of `φ` is a finite extension `L` of `K` in `Ω`,
-because `κ(y)` is finite over the residue field of `Spec K`, and every `σ` fixing `L` fixes
-`t`. -/
-theorem exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [LocallyQuasiFinite f] (t : Spec (.of Ω) ⟶ X)
-    (ht : t ≫ f = Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :
-    ∃ L : IntermediateField K Ω, FiniteDimensional K L ∧
-      ∀ σ ∈ L.fixingSubgroup, Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) ≫ t = t := by
-  obtain ⟨⟨y, φ⟩, rfl⟩ := (X.SpecToEquivOfField Ω).symm.surjective t
-  simp only [SpecToEquivOfField_symm_apply] at ht ⊢
-  -- The embedding `φ` restricted to the residue field of `Spec K` at the image of `y` is the
-  -- algebra map of `K`, after identifying that residue field with `K`.
-  have := (f y).isPrime
-  have h : CommRingCat.ofHom (algebraMap K (f y).asIdeal.ResidueField) ≫
-      (Spec.residueFieldIso (.of K) (f y)).inv ≫ f.residueFieldMap y ≫ φ =
-        CommRingCat.ofHom (algebraMap K Ω) := by
-    apply Spec.map_injective
-    rw [← ht]
-    simp only [Spec.map_comp, Category.assoc]
-    rw [Spec.map_residueFieldIso_inv_eq_fromSpecResidueField,
-      Hom.SpecMap_residueFieldMap_fromSpecResidueField]
-  have hφ (k : K) : φ (f.residueFieldMap y ((Spec.residueFieldIso (.of K) (f y)).inv
-      (algebraMap K (f y).asIdeal.ResidueField k))) = algebraMap K Ω k := by
-    simpa only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom] using congr($h k)
-  -- Make `κ(y)` a `K`-algebra through the residue field of `Spec K` at the image of `y`, which is
-  -- finite over `K`. Then `κ(y)` is finite over `K`, because `f` is locally quasi-finite, and `φ`
-  -- is a `K`-algebra map.
-  let ψ : K →+* (Spec (.of K)).residueField (f y) :=
-    (Spec.residueFieldIso (.of K) (f y)).inv.hom.comp (algebraMap K (f y).asIdeal.ResidueField)
-  have hψ : Function.Surjective ψ :=
-    (Spec.residueFieldIso (.of K) (f y)).commRingCatIsoToRingEquiv.symm.surjective.comp
-      (Ideal.algEquivResidueFieldOfField (f y).asIdeal).surjective
-  algebraize [ψ, (f.residueFieldMap y).hom, (f.residueFieldMap y).hom.comp ψ]
-  have : Module.Finite K ((Spec (.of K)).residueField (f y)) :=
-    Module.Finite.of_surjective (Algebra.linearMap K _) hψ
-  have : Module.Finite K (X.residueField y) :=
-    Module.Finite.trans ((Spec (.of K)).residueField (f y)) _
-  let φ' : X.residueField y →ₐ[K] Ω := { φ.hom with commutes' := hφ }
-  -- Every `σ` fixing the image of `φ` fixes `t`.
-  refine ⟨φ'.fieldRange, φ'.toLinearMap.finiteDimensional_range, fun σ hσ ↦ ?_⟩
-  rw [← Category.assoc, ← Spec.map_comp]
-  congr 2
-  ext a
-  exact (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _ ⟨a, rfl⟩
-
 variable [IsSepClosed Ω] (A : Type v) [Category.{w} A] [HasColimitsOfSize.{u, u} A]
 
 /-- The endomorphism of the stalk at `Spec Ω ⟶ Spec K` of an étale sheaf on `Spec K` induced by
