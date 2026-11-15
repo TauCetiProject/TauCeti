@@ -60,6 +60,7 @@ powers of an endomorphism `T`. -/
 def iterateDirectSystem (T : End R M) (i j : ℕ) (_ : i ≤ j) : M →ₗ[R] M :=
   T ^ (j - i)
 
+/-- Evaluating `iterateDirectSystem` from stage `i` to stage `j` gives `T ^ (j - i)`. -/
 @[simp]
 theorem iterateDirectSystem_eq (T : End R M) (i j : ℕ) (hij : i ≤ j) :
     T.iterateDirectSystem i j hij = T ^ (j - i) :=
@@ -99,6 +100,7 @@ theorem toIterateDirectLimit_def (T : End R M) :
     T.toIterateDirectLimit = T.ofIterateDirectLimitStage 0 :=
   (rfl)
 
+/-- Compatibility of `ofIterateDirectLimitStage` with the transition map `T ^ (j - i)`. -/
 @[simp]
 theorem ofIterateDirectLimitStage_pow_sub (T : End R M) {i j : ℕ} (hij : i ≤ j) (x : M) :
     T.ofIterateDirectLimitStage j ((T ^ (j - i)) x) = T.ofIterateDirectLimitStage i x := by
@@ -106,16 +108,19 @@ theorem ofIterateDirectLimitStage_pow_sub (T : End R M) {i j : ℕ} (hij : i ≤
     Module.DirectLimit.of_f (R := R) (ι := ℕ) (G := fun _ ↦ M) (f := T.iterateDirectSystem)
       (hij := hij) (x := x)
 
+/-- Advancing the stage by `k` absorbs `T ^ k`. -/
 @[simp]
 theorem ofIterateDirectLimitStage_add_pow (T : End R M) (i k : ℕ) (x : M) :
     T.ofIterateDirectLimitStage (i + k) ((T ^ k) x) = T.ofIterateDirectLimitStage i x := by
   simpa using T.ofIterateDirectLimitStage_pow_sub (Nat.le_add_right i k) x
 
+/-- Advancing the stage by `1` absorbs `T`. -/
 @[simp]
 theorem ofIterateDirectLimitStage_succ_apply (T : End R M) (i : ℕ) (x : M) :
     T.ofIterateDirectLimitStage (i + 1) (T x) = T.ofIterateDirectLimitStage i x := by
   simpa using T.ofIterateDirectLimitStage_add_pow i 1 x
 
+/-- Sending `(T ^ n) x` at stage `n` equals `toIterateDirectLimit x`. -/
 @[simp]
 theorem ofIterateDirectLimitStage_pow (T : End R M) (n : ℕ) (x : M) :
     T.ofIterateDirectLimitStage n ((T ^ n) x) = T.toIterateDirectLimit x := by
@@ -164,6 +169,7 @@ noncomputable def iterateDirectLimitMap {N : Type*} [AddCommMonoid N] [Module R 
       rw [iterateDirectSystem_eq, iterateDirectSystem_eq]
       exact (Module.End.commute_pow_left_of_commute hf.symm (j - i)).symm
 
+/-- `iterateDirectLimitMap` commutes with each stage inclusion `ofIterateDirectLimitStage`. -/
 @[simp]
 theorem iterateDirectLimitMap_ofIterateDirectLimitStage {N : Type*} [AddCommMonoid N] [Module R N]
     {T_M : End R M} {T_N : End R N} (f : M →ₗ[R] N) (hf : f ∘ₗ T_M = T_N ∘ₗ f) (i : ℕ) (x : M) :
@@ -172,6 +178,7 @@ theorem iterateDirectLimitMap_ofIterateDirectLimitStage {N : Type*} [AddCommMono
   rw [iterateDirectLimitMap, ofIterateDirectLimitStage_def, ofIterateDirectLimitStage_def,
     Module.DirectLimit.map_apply_of]
 
+/-- `iterateDirectLimitMap` commutes with `toIterateDirectLimit`. -/
 @[simp]
 theorem iterateDirectLimitMap_toIterateDirectLimit {N : Type*} [AddCommMonoid N] [Module R N]
     {T_M : End R M} {T_N : End R N} (f : M →ₗ[R] N) (hf : f ∘ₗ T_M = T_N ∘ₗ f) (x : M) :
@@ -199,6 +206,7 @@ noncomputable def iterateDirectLimitEquiv (T : End R M) :
         ofIterateDirectLimitStage_def, Module.DirectLimit.lift_of,
         ofIterateDirectLimitStage_succ_apply, ofIterateDirectLimitStage_def])
 
+/-- `iterateDirectLimitEquiv` acts on stage `i` as `T`. -/
 @[simp]
 theorem iterateDirectLimitEquiv_ofIterateDirectLimitStage (T : End R M) (i : ℕ) (x : M) :
     T.iterateDirectLimitEquiv (T.ofIterateDirectLimitStage i x) =
@@ -206,11 +214,13 @@ theorem iterateDirectLimitEquiv_ofIterateDirectLimitStage (T : End R M) (i : ℕ
   rw [iterateDirectLimitEquiv, LinearEquiv.coe_ofLinearMap,
     iterateDirectLimitMap_ofIterateDirectLimitStage]
 
+/-- `iterateDirectLimitEquiv` intertwines `toIterateDirectLimit` with `T`. -/
 @[simp]
 theorem iterateDirectLimitEquiv_toIterateDirectLimit (T : End R M) (x : M) :
     T.iterateDirectLimitEquiv (T.toIterateDirectLimit x) = T.toIterateDirectLimit (T x) :=
   T.iterateDirectLimitEquiv_ofIterateDirectLimitStage 0 x
 
+/-- The inverse of `iterateDirectLimitEquiv` shifts stage `i` to stage `i + 1`. -/
 @[simp]
 theorem iterateDirectLimitEquiv_symm_ofIterateDirectLimitStage (T : End R M) (i : ℕ) (x : M) :
     T.iterateDirectLimitEquiv.symm (T.ofIterateDirectLimitStage i x) =
@@ -268,24 +278,17 @@ theorem bijective_toIterateDirectLimit_iff {T : End R M} :
     have h := congrArg T.iterateDirectLimitEquiv hx
     simpa [toIterateDirectLimit_def] using h
   · intro hbij
-    let e : M ≃ₗ[R] M := LinearEquiv.ofBijective T hbij
-    let g : End R M := e.symm.toLinearMap
-    have hpow : ∀ k y, (T ^ k) ((g ^ k) y) = y := fun k ↦ by
-      induction k with
-      | zero => simp
-      | succ k ih =>
-        intro y
-        rw [pow_succ', pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih]
-        exact e.apply_symm_apply y
     refine ⟨injective_toIterateDirectLimit_iff.mpr hbij.1, fun z ↦ ?_⟩
     obtain ⟨i, x, rfl⟩ := T.exists_ofIterateDirectLimitStage z
-    exact ⟨(g ^ i) x, by rw [← T.ofIterateDirectLimitStage_pow i, hpow]⟩
+    obtain ⟨y, hy⟩ := hbij.surjective.iterate i x
+    exact ⟨y, by rw [← T.ofIterateDirectLimitStage_pow i, pow_apply_eq_iterate, hy]⟩
 
 /-- When `T` is bijective, the canonical map identifies `M` with `T.IterateDirectLimit`. -/
 noncomputable def toIterateDirectLimitEquivOfBijective {T : End R M} (hT : Function.Bijective T) :
     M ≃ₗ[R] T.IterateDirectLimit :=
   LinearEquiv.ofBijective T.toIterateDirectLimit (bijective_toIterateDirectLimit_iff.mpr hT)
 
+/-- Evaluating `toIterateDirectLimitEquivOfBijective` applies `toIterateDirectLimit`. -/
 @[simp]
 theorem toIterateDirectLimitEquivOfBijective_apply {T : End R M} (hT : Function.Bijective T)
     (x : M) :

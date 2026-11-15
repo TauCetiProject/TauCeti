@@ -21,7 +21,9 @@ kernel and range of `f ^ n` are disjoint. Unlike Mathlib's
 chain conditions only serve to make the two chains stop, and unlike `Module.End.ker_pow_constant`
 the kernel stabilisation holds over an arbitrary semiring. When both chains have stopped, the
 endomorphism restricts to a bijection on the stable range, giving the invertible part of the
-Fitting splitting without finite-length assumptions.
+Fitting splitting without finite-length assumptions. Finally, linear maps intertwining two
+endomorphisms carry kernels and ranges of powers (and their unions and intersections) into those of
+the target and preserve kernels and ranges as invariant submodules.
 -/
 
 public section
@@ -124,6 +126,22 @@ theorem iInf_range_pow_eq_of_range_pow_succ_eq (h : range (f ^ (n + 1)) = range 
   · exact f.iterateRange.monotone hmn
   · rw [← Nat.add_sub_of_le hnm.le, range_pow_add_eq_of_range_pow_succ_eq h]
 
+/-- Bijectivity of the restriction of an endomorphism to an invariant submodule transfers across
+equality of submodules. -/
+theorem bijective_restrict_of_eq {p q : Submodule R M} (hEq : p = q)
+    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ x ∈ q, f x ∈ q}
+    (hbij : Function.Bijective (f.restrict hp)) :
+    Function.Bijective (f.restrict hq) := by
+  subst hEq
+  exact hbij
+
+/-- Restrictions of an endomorphism to equal invariant submodules have equivalent bijectivity. -/
+theorem bijective_restrict_iff_of_eq {p q : Submodule R M} (hEq : p = q)
+    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ x ∈ q, f x ∈ q} :
+    Function.Bijective (f.restrict hp) ↔ Function.Bijective (f.restrict hq) := by
+  subst hEq
+  exact Iff.rfl
+
 end AddCommMonoid
 
 section AddCommGroup
@@ -183,5 +201,55 @@ theorem bijective_restrict_range_pow_of_stable (f : Module.End R M) (n : ℕ)
 end Ring
 
 end LinearMap
+
+namespace Module.End
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
+
+/-- An intertwiner `f ∘ₗ T_M = T_N ∘ₗ f` maps `ker (T_M ^ k)` into `ker (T_N ^ k)`. -/
+theorem map_ker_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) (k : ℕ) :
+    (LinearMap.ker (T_M ^ k)).map f ≤ LinearMap.ker (T_N ^ k) := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [LinearMap.mem_ker, ← LinearMap.comp_apply,
+    Module.End.commute_pow_left_of_commute hf.symm k, LinearMap.comp_apply,
+    LinearMap.mem_ker.mp hx, map_zero]
+
+/-- An intertwiner `f ∘ₗ T_M = T_N ∘ₗ f` maps `range (T_M ^ k)` into `range (T_N ^ k)`. -/
+theorem map_range_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) (k : ℕ) :
+    (LinearMap.range (T_M ^ k)).map f ≤ LinearMap.range (T_N ^ k) := by
+  rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+  exact ⟨f x, LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf.symm k) x⟩
+
+/-- An intertwiner `f ∘ₗ T_M = T_N ∘ₗ f` maps `⨆ k, ker (T_M ^ k)` into `⨆ k, ker (T_N ^ k)`. -/
+theorem map_iSup_ker_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
+    (⨆ k, LinearMap.ker (T_M ^ k)).map f ≤ ⨆ k, LinearMap.ker (T_N ^ k) := by
+  rw [Submodule.map_iSup]
+  exact iSup_mono fun k ↦ map_ker_pow_le_of_comp_eq hf k
+
+/-- An intertwiner `f ∘ₗ T_M = T_N ∘ₗ f` maps `⨅ k, range (T_M ^ k)` into
+`⨅ k, range (T_N ^ k)`. -/
+theorem map_iInf_range_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
+    (⨅ k, LinearMap.range (T_M ^ k)).map f ≤ ⨅ k, LinearMap.range (T_N ^ k) :=
+  le_iInf fun k ↦ (Submodule.map_mono (iInf_le _ k)).trans (map_range_pow_le_of_comp_eq hf k)
+
+/-- If `f ∘ₗ T_M = T_N ∘ₗ f`, the kernel of `f` is `T_M`-invariant. -/
+theorem mapsTo_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
+    ∀ x ∈ LinearMap.ker f, T_M x ∈ LinearMap.ker f := fun x hx ↦ by
+  rw [LinearMap.mem_ker, ← LinearMap.comp_apply, hf, LinearMap.comp_apply,
+    LinearMap.mem_ker.mp hx, map_zero]
+
+/-- If `f ∘ₗ T_M = T_N ∘ₗ f`, the range of `f` is `T_N`-invariant. -/
+theorem range_le_comap_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
+    (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
+    LinearMap.range f ≤ (LinearMap.range f).comap T_N := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨T_M x, LinearMap.congr_fun hf x⟩
+
+end Module.End
 
 end

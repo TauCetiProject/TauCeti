@@ -47,6 +47,8 @@ remains injective.
   component supplied by the inverse direct-sum equivalence is the internal projection.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
+* `Submodule.comp_projection_of_map_le`: a linear map carrying complementary summands into
+  complementary summands commutes with the corresponding projections.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
 
@@ -192,5 +194,20 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
     simpa using LinearMap.congr_fun (subtype_comp_projectionOnto_add_eq_id hF) v
   conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
   simp only [coe_sum, coe_smul, map_sum, map_smul]
+
+/-- A linear map sending each summand of a complementary decomposition into the corresponding
+summand of another complementary decomposition commutes with the projections onto the first
+summands. -/
+theorem comp_projection_of_map_le {pV qV : Submodule R V} {pM qM : Submodule R M}
+    (hV : IsCompl pV qV) (hM : IsCompl pM qM) {f : V →ₗ[R] M}
+    (hp : pV.map f ≤ pM) (hq : qV.map f ≤ qM) :
+    f ∘ₗ pV.projection qV hV = pM.projection qM hM ∘ₗ f := by
+  ext x
+  simp only [LinearMap.comp_apply]
+  conv_rhs => rw [← projection_add_projection_eq_self hV x]
+  rw [map_add, map_add,
+    projection_apply_of_mem_left hM (hp ⟨_, projection_apply_mem hV x, rfl⟩),
+    projection_apply_of_mem_right hM (hq ⟨_, projection_apply_mem hV.symm x, rfl⟩),
+    add_zero]
 
 end Submodule

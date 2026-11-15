@@ -33,6 +33,8 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `Submodule.piUnivEquiv` and `Submodule.isCompl_pi_univ_iff`: coordinatewise equivalence and
+  complementarity for full dependent-product submodules `Submodule.pi Set.univ p`.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
@@ -47,6 +49,9 @@ weights.
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearMap.piMap_pow`, `LinearMap.ker_piMap`, `LinearMap.range_piMap`,
+  `LinearMap.bijective_piMap_iff`, `LinearMap.bijective_restrict_piMap_iff`: coordinatewise
+  powers, kernels, ranges, and bijectivity for `LinearMap.piMap`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -105,6 +110,55 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
   have := congrFun ha i
   simp [hij] at this
+
+/-- The linear equivalence between a full dependent-product submodule `Submodule.pi Set.univ p` and
+the dependent product `∀ i, p i` of its coordinate submodules. -/
+public def piUnivEquiv {R ι : Type*} {M : ι → Type*} [Semiring R] [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (p : ∀ i, Submodule R (M i)) :
+    ↥(pi Set.univ p) ≃ₗ[R] ∀ i, ↥(p i) where
+  toFun x i := ⟨x.1 i, x.2 i trivial⟩
+  invFun y := ⟨fun i ↦ (y i).1, fun i _ ↦ (y i).2⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Evaluating `Submodule.piUnivEquiv` at coordinate `i` gives the `i`-th coordinate of `x`. -/
+@[simp]
+public theorem coe_piUnivEquiv_apply {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (p : ∀ i, Submodule R (M i))
+    (x : ↥(pi Set.univ p)) (i : ι) :
+    (piUnivEquiv p x i : M i) = x.1 i :=
+  (rfl)
+
+/-- Evaluating `(Submodule.piUnivEquiv p).symm` at coordinate `i` gives the underlying value of
+`y i`. -/
+@[simp]
+public theorem coe_piUnivEquiv_symm_apply {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (p : ∀ i, Submodule R (M i))
+    (y : ∀ i, ↥(p i)) (i : ι) :
+    ((piUnivEquiv p).symm y : ∀ i, M i) i = (y i : M i) :=
+  (rfl)
+
+/-- Two full dependent-product submodules `Submodule.pi Set.univ p` and `Submodule.pi Set.univ q`
+are complementary if and only if `p i` and `q i` are complementary at every index `i`. -/
+@[simp]
+public theorem isCompl_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] {p q : ∀ i, Submodule R (M i)} :
+    IsCompl (pi Set.univ p) (pi Set.univ q) ↔ ∀ i, IsCompl (p i) (q i) := by
+  classical
+  simp only [isCompl_iff, disjoint_iff, codisjoint_iff, eq_bot_iff, eq_top_iff]
+  refine ⟨fun ⟨hdisj, hcod⟩ i ↦ ⟨fun v hv ↦ ?_, fun v _ ↦ ?_⟩,
+    fun h ↦ ⟨fun x hx ↦ funext fun i ↦
+      (h i).1 ⟨hx.1 i trivial, hx.2 i trivial⟩, fun x _ ↦ ?_⟩⟩
+  · have hsingle := hdisj ⟨le_comap_single_pi p hv.1, le_comap_single_pi q hv.2⟩
+    simpa [LinearMap.single_apply] using congrFun hsingle i
+  · obtain ⟨u, hu, w, hw, hEq⟩ :=
+      mem_sup.mp (hcod (x := Pi.single i v) mem_top)
+    exact mem_sup.mpr ⟨u i, hu i trivial, w i, hw i trivial,
+      by simpa using congrFun hEq i⟩
+  · choose u hu w hw huw using fun i ↦ mem_sup.mp ((h i).2 (x := x i) mem_top)
+    exact mem_sup.mpr ⟨u, fun i _ ↦ hu i, w, fun i _ ↦ hw i, funext huw⟩
 
 end Submodule
 
@@ -235,6 +289,64 @@ public theorem piEquivPiSubtypeProd_symm_apply
 end LinearEquiv
 
 namespace LinearMap
+
+/-- A power of a coordinatewise endomorphism of a dependent product is the coordinatewise map of
+the powers. -/
+@[simp]
+public theorem piMap_pow {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (f : ∀ i, Module.End R (M i)) (n : ℕ) :
+    (piMap f : Module.End R (∀ i, M i)) ^ n = piMap fun i ↦ (f i) ^ n := by
+  apply DFunLike.coe_injective
+  simp only [FunLike.coe_pow_eq_iterate, coe_piMap, Pi.map_iterate]
+
+/-- The kernel of `LinearMap.piMap f` is the full product of the coordinate kernels. -/
+@[simp]
+public theorem ker_piMap {R ι : Type*} {M N : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] (f : ∀ i, M i →ₗ[R] N i) :
+    ker (piMap f) = Submodule.pi Set.univ fun i ↦ ker (f i) := by
+  ext x
+  simp [Submodule.mem_pi, funext_iff]
+
+/-- The range of `LinearMap.piMap f` is the full product of the coordinate ranges. -/
+@[simp]
+public theorem range_piMap {R ι : Type*} {M N : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] (f : ∀ i, M i →ₗ[R] N i) :
+    range (piMap f) = Submodule.pi Set.univ fun i ↦ range (f i) := by
+  ext x
+  simp only [mem_range, Submodule.mem_pi, Set.mem_univ, true_implies, coe_piMap, Pi.map_apply,
+    funext_iff]
+  exact ⟨fun ⟨y, hy⟩ i ↦ ⟨y i, hy i⟩, fun h ↦ ⟨fun i ↦ (h i).choose, fun i ↦ (h i).choose_spec⟩⟩
+
+/-- A coordinatewise linear map `LinearMap.piMap f` is bijective if and only if every coordinate
+map `f i` is bijective. -/
+public theorem bijective_piMap_iff {R ι : Type*} {M N : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] {f : ∀ i, M i →ₗ[R] N i} :
+    Function.Bijective (piMap f) ↔ ∀ i, Function.Bijective (f i) := by
+  classical
+  refine ⟨fun ⟨hinj, hsurj⟩ i ↦ ⟨(Pi.map_injective.mp hinj) i, fun y ↦ ?_⟩, fun h ↦ .piMap h⟩
+  obtain ⟨x, hx⟩ := hsurj (Pi.single i y)
+  exact ⟨x i, by simpa using congrFun hx i⟩
+
+/-- Restricting `LinearMap.piMap f` to `Submodule.pi Set.univ p` is bijective if and only if every
+coordinate restriction `(f i).restrict` is bijective. -/
+public theorem bijective_restrict_piMap_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] {f : ∀ i, Module.End R (M i)}
+    {p : ∀ i, Submodule R (M i)}
+    {hp : ∀ x ∈ Submodule.pi Set.univ p, piMap f x ∈ Submodule.pi Set.univ p}
+    {hpi : ∀ i, ∀ x ∈ p i, f i x ∈ p i} :
+    Function.Bijective ((piMap f).restrict hp) ↔
+      ∀ i, Function.Bijective ((f i).restrict (hpi i)) := by
+  let e := Submodule.piUnivEquiv p
+  have hcomp : ⇑e ∘ ⇑((piMap f).restrict hp) =
+      ⇑(piMap fun i ↦ (f i).restrict (hpi i)) ∘ ⇑e := by
+    funext x
+    ext i
+    simp [e]
+  rw [← Function.Bijective.of_comp_iff' e.bijective, hcomp,
+    Function.Bijective.of_comp_iff _ e.bijective, bijective_piMap_iff]
 
 /-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
 `LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.

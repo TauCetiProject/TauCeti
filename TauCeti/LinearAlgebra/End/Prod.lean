@@ -52,7 +52,7 @@ theorem _root_.IsNilpotent.prodMap {f : Module.End K V} {g : Module.End K W}
   obtain ⟨m, hm⟩ := hf
   obtain ⟨n, hn⟩ := hg
   refine ⟨m + n, ?_⟩
-  rw [Module.End.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
+  rw [LinearMap.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
     LinearMap.prodMap_zero]
 
 end Semiring

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearMap
 public import TauCeti.LinearAlgebra.End.Stable.Constructions
+public import TauCeti.LinearAlgebra.LinearMap.Comp
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Stability of precomposition on Hom modules
@@ -17,9 +18,9 @@ endomorphism of `M →ₗ[R] D`. When `T` is stable at `c`, `LinearMap.lcomp S D
 `c`, with nilpotent summand `S`-linearly isomorphic to `(LinearMap.ker (T ^ c)) →ₗ[R] D` and
 invertible summand `S`-linearly isomorphic to `(LinearMap.range (T ^ c)) →ₗ[R] D` via restriction.
 
-In particular, on a product `M₁ × M₂` where `T₁` is nilpotent and `T₂` is bijective, the invertible
-summand of precomposition by `T₁.prodMap T₂` on `(M₁ × M₂) →ₗ[R] D` identifies `S`-linearly with
-`M₂ →ₗ[R] D`.
+In particular, on a product `M₁ × M₂` where `T₁` is nilpotent and `T₂` is bijective (even over a
+semiring `R`), the invertible summand of precomposition by `T₁.prodMap T₂` on `(M₁ × M₂) →ₗ[R] D`
+identifies `S`-linearly with `M₂ →ₗ[R] D`.
 
 ## References
 
@@ -32,17 +33,6 @@ summand of precomposition by `T₁.prodMap T₂` on `(M₁ × M₂) →ₗ[R] D`
 public section
 
 namespace Module.End
-
-@[simp]
-theorem lcomp_pow {R S M D : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [AddCommMonoid D]
-    [Module R M] [Module R D] [Module S D] [SMulCommClass R S D] (T : End R M) (n : ℕ) :
-    (LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ n = LinearMap.lcomp S D (T ^ n) := by
-  induction n with
-  | zero => ext φ x; simp
-  | succ n ih =>
-    rw [pow_succ, pow_succ', mul_eq_comp, ih]
-    ext φ x
-    rfl
 
 section Ring
 
@@ -60,7 +50,7 @@ noncomputable def IsStableAt.kerPowLcompEquiv {T : End R M} {c : ℕ} (h : T.IsS
     (LinearMap.lcomp S D (LinearMap.ker (T ^ c)).subtype ∘ₗ
       (LinearMap.ker ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c)).subtype)
     ((LinearMap.lcomp S D pK).codRestrict _ fun ψ ↦ by
-      rw [LinearMap.mem_ker, lcomp_pow]
+      rw [LinearMap.mem_ker, LinearMap.lcomp_pow]
       ext x
       simp [pK, Submodule.projectionOnto_apply_of_mem_right hKI
         (LinearMap.mem_range_self (T ^ c) x)])
@@ -70,7 +60,7 @@ noncomputable def IsStableAt.kerPowLcompEquiv {T : End R M} {c : ℕ} (h : T.IsS
       have hφ : φ ∘ₗ (T ^ c) = 0 := by
         have hmem : ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c) φ = 0 :=
           LinearMap.mem_ker.mp hφ_mem
-        rwa [lcomp_pow, LinearMap.lcomp_apply'] at hmem
+        rwa [LinearMap.lcomp_pow, LinearMap.lcomp_apply'] at hmem
       have hI : ∀ z : M, φ ((T ^ c) z) = 0 := fun z ↦ LinearMap.congr_fun hφ z
       obtain ⟨z, hz⟩ := Submodule.projection_apply_mem hKI.symm x
       simp only [LinearMap.id_apply, LinearMap.comp_apply, LinearMap.codRestrict_apply,
@@ -78,6 +68,7 @@ noncomputable def IsStableAt.kerPowLcompEquiv {T : End R M} {c : ℕ} (h : T.IsS
       conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
       rw [map_add, ← hz, hI z, add_zero, Submodule.coe_projectionOnto_apply])
 
+/-- Evaluating `IsStableAt.kerPowLcompEquiv` restricts the linear map to `ker (T ^ c)`. -/
 @[simp]
 theorem IsStableAt.kerPowLcompEquiv_apply {T : End R M} {c : ℕ} (h : T.IsStableAt c)
     (φ : ↥(LinearMap.ker ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c)))
@@ -91,39 +82,26 @@ private theorem range_lcomp_pow_eq_ker_lcomp_subtype {T : End R M} {c : ℕ} (h 
   let hKI := h.isCompl_ker_pow_range_pow
   let pI := (LinearMap.range (T ^ c)).projectionOnto (LinearMap.ker (T ^ c)) hKI.symm
   let eI := LinearEquiv.ofBijective _ h.bijective_restrict_range_pow
-  have heI_pow :
-      ∀ k (y : ↥(LinearMap.range (T ^ c))), ((eI.toLinearMap ^ k) y).1 = (T ^ k) y.1 := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      intro y
-      rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih]
-      rfl
-  have heI_inv : ∀ k (y : ↥(LinearMap.range (T ^ c))),
-      (eI.symm.toLinearMap ^ k) ((eI.toLinearMap ^ k) y) = y := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      intro y
-      rw [pow_succ', pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih]
-      exact eI.symm_apply_apply y
+  have heI_pow (y : ↥(LinearMap.range (T ^ c))) : ((eI ^ c) y).1 = (T ^ c) y.1 := by
+    have hcoe : (eI ^ c).toLinearMap =
+        T.restrict (fun _ hx ↦ T.mapsTo_range_pow c hx) ^ c :=
+      map_pow LinearEquiv.automorphismGroup.toLinearMapMonoidHom eI c
+    simpa [pow_restrict c] using congrArg Subtype.val (LinearMap.congr_fun hcoe y)
   refine le_antisymm ?_ fun φ hφ ↦ ?_
   · rintro _ ⟨θ, rfl⟩
-    rw [LinearMap.mem_ker, lcomp_pow]
+    rw [LinearMap.mem_ker, LinearMap.lcomp_pow]
     ext x
     simp [LinearMap.mem_ker.mp x.2]
-  · refine ⟨φ ∘ₗ (LinearMap.range (T ^ c)).subtype ∘ₗ (eI.symm.toLinearMap ^ c) ∘ₗ pI, ?_⟩
-    rw [lcomp_pow]
+  · refine ⟨φ ∘ₗ (LinearMap.range (T ^ c)).subtype ∘ₗ (eI ^ c).symm.toLinearMap ∘ₗ pI, ?_⟩
+    rw [LinearMap.lcomp_pow]
     ext x
-    simp only [LinearMap.lcomp_apply, LinearMap.comp_apply]
-    have hpI : pI ((T ^ c) x) = (eI.toLinearMap ^ c) (pI x) := by
+    simp only [LinearMap.lcomp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    have hpI : pI ((T ^ c) x) = (eI ^ c) (pI x) := by
       conv_lhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
       rw [map_add, LinearMap.mem_ker.mp (Submodule.projection_apply_mem hKI x), zero_add,
-        ← Submodule.coe_projectionOnto_apply, ← heI_pow c (pI x)]
+        ← Submodule.coe_projectionOnto_apply, ← heI_pow (pI x)]
       exact Submodule.projectionOnto_apply_left hKI.symm _
-    rw [hpI, heI_inv]
+    rw [hpI, LinearEquiv.symm_apply_apply]
     conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
     have hφK : φ ((LinearMap.ker (T ^ c)).projection _ hKI x) = 0 :=
       LinearMap.congr_fun (LinearMap.mem_ker.mp hφ) ⟨_, Submodule.projection_apply_mem hKI x⟩
@@ -155,6 +133,7 @@ noncomputable def IsStableAt.rangePowLcompEquiv {T : End R M} {c : ℕ} (h : T.I
       conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
       rw [map_add, hφK, zero_add, Submodule.coe_projectionOnto_apply])
 
+/-- Evaluating `IsStableAt.rangePowLcompEquiv` restricts the linear map to `range (T ^ c)`. -/
 @[simp]
 theorem IsStableAt.rangePowLcompEquiv_apply {T : End R M} {c : ℕ} (h : T.IsStableAt c)
     (φ : ↥(LinearMap.range ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c)))
@@ -162,6 +141,8 @@ theorem IsStableAt.rangePowLcompEquiv_apply {T : End R M} {c : ℕ} (h : T.IsSta
     h.rangePowLcompEquiv S D φ x = φ.1 x.1 :=
   (rfl)
 
+/-- If `T : End R M` is stable at `c`, the kernel and range of `(LinearMap.lcomp S D T) ^ c` are
+complementary `S`-submodules of `M →ₗ[R] D`. -/
 theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
     IsCompl (LinearMap.ker ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c))
       (LinearMap.range ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c)) := by
@@ -179,14 +160,14 @@ theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : 
       rw [← hz]
       have hmem : ((LinearMap.lcomp S D T : End S (M →ₗ[R] D)) ^ c) φ = 0 :=
         LinearMap.mem_ker.mp hφK
-      rw [lcomp_pow, LinearMap.lcomp_apply'] at hmem
+      rw [LinearMap.lcomp_pow, LinearMap.lcomp_apply'] at hmem
       exact LinearMap.congr_fun hmem z
     conv_lhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
     rw [map_add, hK0, hI0, add_zero, LinearMap.zero_apply]
   · refine Submodule.mem_sup.mpr
       ⟨(φ ∘ₗ (LinearMap.ker (T ^ c)).subtype) ∘ₗ pK, ?_,
         (φ ∘ₗ (LinearMap.range (T ^ c)).subtype) ∘ₗ pI, ?_, LinearMap.ext fun x ↦ ?_⟩
-    · rw [LinearMap.mem_ker, lcomp_pow]
+    · rw [LinearMap.mem_ker, LinearMap.lcomp_pow]
       ext x
       simp [pK, Submodule.projectionOnto_apply_of_mem_right hKI
         (LinearMap.mem_range_self (T ^ c) x)]
@@ -194,8 +175,7 @@ theorem IsStableAt.isCompl_ker_pow_range_pow_lcomp {T : End R M} {c : ℕ} (h : 
       ext x
       simp [pI, Submodule.projectionOnto_apply_right]
     · conv_rhs => rw [← Submodule.projection_add_projection_eq_self hKI x]
-      rw [map_add]
-      rfl
+      simp [pK, pI, map_add, Submodule.coe_projectionOnto_apply]
 
 /-- If `T : End R M` is stable at `c`, precomposition `LinearMap.lcomp S D T` on `M →ₗ[R] D` is
 stable at `c`. -/
@@ -218,43 +198,74 @@ theorem IsStableAt.lcomp {T : End R M} {c : ℕ} (h : T.IsStableAt c) :
       LinearMap.congr_fun ((h.rangePowLcompEquiv S D).apply_symm_apply ψ) (eI y)
     simpa [ψ] using hy
 
+/-- Precomposition on `M →ₗ[R] D` by a stable endomorphism `T : End R M` is stable. -/
 theorem IsStable.lcomp {T : End R M} (h : T.IsStable) :
     IsStable (LinearMap.lcomp S D T) := by
   rw [isStable_def] at h ⊢
   obtain ⟨c, hc⟩ := h
   exact ⟨c, hc.lcomp S D⟩
 
+end Ring
+
+section Semiring
+
+variable {R M₁ M₂ : Type*} (S D : Type*) [Semiring R] [Semiring S] [AddCommMonoid M₁]
+  [AddCommMonoid M₂] [AddCommMonoid D] [Module R M₁] [Module R M₂] [Module R D] [Module S D]
+  [SMulCommClass R S D]
+
 /-- For a nilpotent endomorphism `T₁` on `M₁` and a bijective endomorphism `T₂` on `M₂`, the
 invertible summand of precomposition by `T₁.prodMap T₂` on `(M₁ × M₂) →ₗ[R] D` identifies
-`S`-linearly with `M₂ →ₗ[R] D`. -/
-noncomputable def iInfRangePowLcompProdMapEquiv {M₁ M₂ : Type*} [AddCommGroup M₁]
-    [AddCommGroup M₂] [Module R M₁] [Module R M₂] {T₁ : End R M₁} {T₂ : End R M₂}
+`S`-linearly with `M₂ →ₗ[R] D` by restricting along `LinearMap.inr` (with inverse precomposing with
+`LinearMap.snd`). -/
+def iInfRangePowLcompProdMapEquiv {T₁ : End R M₁} {T₂ : End R M₂}
     (h₁ : IsNilpotent T₁) (h₂ : Function.Bijective T₂) :
     ↥(⨅ n, LinearMap.range ((LinearMap.lcomp S D (T₁.prodMap T₂) : End S ((M₁ × M₂) →ₗ[R] D)) ^ n))
-      ≃ₗ[S] (M₂ →ₗ[R] D) := by
-  let c := Classical.choose h₁ + 1
-  have hc0 : T₁ ^ c = 0 := by
-    rw [pow_succ, Classical.choose_spec h₁, zero_mul]
-  have hprod : IsStableAt (T₁.prodMap T₂) c :=
-    (IsStableAt.of_pow_eq_zero (Nat.succ_le_succ (Nat.zero_le _)) hc0).prodMap
-      (IsStableAt.of_bijective h₂ (Nat.succ_le_succ (Nat.zero_le _)))
-  have hInf :
+      ≃ₗ[S] (M₂ →ₗ[R] D) :=
+  LinearEquiv.ofLinearMap
+    (LinearMap.lcomp S D (LinearMap.inr R M₁ M₂) ∘ₗ
       (⨅ n, LinearMap.range
-        ((LinearMap.lcomp S D (T₁.prodMap T₂) : End S ((M₁ × M₂) →ₗ[R] D)) ^ n)) =
-      LinearMap.range ((LinearMap.lcomp S D (T₁.prodMap T₂) : End S ((M₁ × M₂) →ₗ[R] D)) ^ c) := by
-    refine LinearMap.iInf_range_pow_eq_of_range_pow_succ_eq ?_
-    rw [range_lcomp_pow_eq_ker_lcomp_subtype S D (hprod.mono (Nat.le_succ c)),
-      range_lcomp_pow_eq_ker_lcomp_subtype S D hprod, hprod.ker_pow_succ_eq]
-  have hRange : LinearMap.range ((T₁.prodMap T₂ : End R (M₁ × M₂)) ^ c) =
-      Submodule.snd R M₁ M₂ := by
-    rw [← hprod.iInf_range_pow_eq]
-    exact iInf_range_pow_prodMap_of_isNilpotent_of_bijective h₁ h₂
-  let eSnd : ↥(LinearMap.range ((T₁.prodMap T₂ : End R (M₁ × M₂)) ^ c)) ≃ₗ[R] M₂ :=
-    (LinearEquiv.ofEq _ _ hRange).trans (Submodule.sndEquiv R M₁ M₂)
-  exact (LinearEquiv.ofEq _ _ hInf).trans
-    ((hprod.rangePowLcompEquiv S D).trans (eSnd.congrLeft D S))
+        ((LinearMap.lcomp S D (T₁.prodMap T₂) : End S ((M₁ × M₂) →ₗ[R] D)) ^ n)).subtype)
+    ((LinearMap.lcomp S D (LinearMap.snd R M₁ M₂)).codRestrict _ fun ψ ↦
+      (Submodule.mem_iInf _).mpr fun n ↦ by
+        let e₂ := LinearEquiv.ofBijective T₂ h₂
+        have he₂ (y : M₂) : (e₂ ^ n) y = (T₂ ^ n) y := by
+          have hcoe : (e₂ ^ n).toLinearMap = T₂ ^ n :=
+            map_pow LinearEquiv.automorphismGroup.toLinearMapMonoidHom e₂ n
+          exact LinearMap.congr_fun hcoe y
+        refine ⟨ψ ∘ₗ (e₂ ^ n).symm.toLinearMap ∘ₗ LinearMap.snd R M₁ M₂, ?_⟩
+        rw [LinearMap.lcomp_pow, LinearMap.prodMap_pow]
+        exact LinearMap.ext fun ⟨x₁, x₂⟩ ↦ by simp [← he₂ x₂])
+    (LinearMap.ext fun ψ ↦ LinearMap.ext fun y ↦ by simp)
+    (LinearMap.ext fun ⟨φ, hφ⟩ ↦ Subtype.ext <| LinearMap.ext fun ⟨x₁, x₂⟩ ↦ by
+      obtain ⟨c, hc⟩ := h₁
+      obtain ⟨θ, hθ⟩ := (Submodule.mem_iInf _).mp hφ c
+      have hφ₁ : φ (x₁, 0) = 0 := by
+        rw [← hθ, LinearMap.lcomp_pow, LinearMap.prodMap_pow]
+        simp [hc, Prod.mk_zero_zero]
+      have hsplit : (x₁, x₂) = (x₁, 0) + (0, x₂) := by simp
+      simp only [LinearMap.id_apply, LinearMap.comp_apply, LinearMap.codRestrict_apply,
+        LinearMap.lcomp_apply, Submodule.coe_subtype, LinearMap.inr_apply, LinearMap.snd_apply]
+      conv_rhs => rw [hsplit]
+      rw [map_add, hφ₁, zero_add])
 
-end Ring
+/-- Evaluating `iInfRangePowLcompProdMapEquiv` restricts along `LinearMap.inr`. -/
+@[simp]
+theorem iInfRangePowLcompProdMapEquiv_apply {T₁ : End R M₁} {T₂ : End R M₂}
+    (h₁ : IsNilpotent T₁) (h₂ : Function.Bijective T₂)
+    (φ : ↥(⨅ n, LinearMap.range
+      ((LinearMap.lcomp S D (T₁.prodMap T₂) : End S ((M₁ × M₂) →ₗ[R] D)) ^ n))) :
+    iInfRangePowLcompProdMapEquiv S D h₁ h₂ φ = φ.1 ∘ₗ LinearMap.inr R M₁ M₂ :=
+  (rfl)
+
+/-- The inverse of `iInfRangePowLcompProdMapEquiv` precomposes with `LinearMap.snd`. -/
+@[simp]
+theorem coe_iInfRangePowLcompProdMapEquiv_symm_apply {T₁ : End R M₁} {T₂ : End R M₂}
+    (h₁ : IsNilpotent T₁) (h₂ : Function.Bijective T₂) (ψ : M₂ →ₗ[R] D) :
+    ((iInfRangePowLcompProdMapEquiv S D h₁ h₂).symm ψ : (M₁ × M₂) →ₗ[R] D) =
+      ψ ∘ₗ LinearMap.snd R M₁ M₂ :=
+  (rfl)
+
+end Semiring
 
 end Module.End
 

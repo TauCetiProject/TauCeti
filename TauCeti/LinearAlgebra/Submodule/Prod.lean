@@ -24,6 +24,8 @@ coordinate and are complementary.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
 * `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
+* `Submodule.isCompl_prod_iff`: two product submodules are complementary exactly when both pairs
+  of factor submodules are complementary.
 -/
 
 public section
@@ -44,6 +46,15 @@ coordinate vanishes. -/
 @[simp]
 theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
   mem_comap.trans (mem_bot R)
+
+/-- Two product submodules are complementary if and only if their factor submodules are
+complementary in each coordinate. -/
+@[simp]
+theorem isCompl_prod_iff {p₁ q₁ : Submodule R M} {p₂ q₂ : Submodule R N} :
+    IsCompl (p₁.prod p₂) (q₁.prod q₂) ↔ IsCompl p₁ q₁ ∧ IsCompl p₂ q₂ := by
+  simp only [isCompl_iff, disjoint_iff, codisjoint_iff, prod_inf_prod,
+    prod_sup_prod, prod_eq_bot_iff, prod_eq_top_iff]
+  tauto
 
 variable (R M N)
 
