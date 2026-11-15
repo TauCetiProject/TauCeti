@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Cochain
 public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
+public import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Functoriality of the Chevalley–Eilenberg complex
@@ -20,7 +21,8 @@ When `e` intertwines the actions along `φ`, in the sense that `e ⁅φ x, m⁆ 
 `x : L'` and `m : M` (for instance when both modules carry the trivial action, or when `φ` is the
 identity and `e` is a morphism of `L`-modules), `cochainMap` intertwines the Lie derivatives
 (`cochainMap_lie`) and therefore commutes with the Chevalley–Eilenberg differential in every degree
-(`cochainMap_d`) by induction through Cartan's formula. Within a common module universe, the
+(`cochainMap_d`) by induction through Cartan's formula. Within fixed Lie algebra and coefficient
+universes, the
 degreewise maps assemble into a chain map on `cochainComplex` (`cochainComplexMap`) and induce
 functorial maps on Lie algebra cohomology (`cohomologyMap`), contravariant in the Lie algebra and
 covariant in the coefficients.
@@ -60,7 +62,7 @@ open AlternatingMap CategoryTheory HomologicalComplex _root_.LieModule.Cohomolog
 
 namespace TauCeti.LieModule.Cohomology
 
-universe u v
+universe u v w
 
 section CochainMap
 
@@ -103,11 +105,7 @@ theorem cochainMap_zero_apply (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
 theorem curryLeft_cochainMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) {n : ℕ}
     (ω : L [⋀^Fin (n + 1)]→ₗ[R] M) (x : L') :
     (cochainMap e φ (n + 1) ω).curryLeft x = cochainMap e φ n (ω.curryLeft (φ x)) := by
-  ext v
-  simp only [curryLeft_apply_apply, cochainMap_apply]
-  congr 2
-  ext i
-  exact Fin.cases rfl (fun _ ↦ rfl) i
+  simp [cochainMap]
 
 /-- Identity maps on the Lie algebra and coefficients induce the identity on `n`-cochains. -/
 @[simp]
@@ -230,19 +228,12 @@ theorem cochainMap_comp_d (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
     (cochainMap e φ (n + 1)).comp (d R L M n) = (d R L' M' n).comp (cochainMap e φ n) :=
   LinearMap.ext (cochainMap_d e φ he n)
 
-omit [LieModule R L M] [LieModule R L' M'] in
-/-- If `(e, φ)` is an equivariant pair of equivalences, so is `(e.symm, φ.symm)`. -/
-theorem symm_lie_eq_of_lie_eq (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
-    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (y : L) (m' : M') :
-    e.symm ⁅φ.symm y, m'⁆ = ⁅y, e.symm m'⁆ :=
-  e.injective <| by simpa using (he (φ.symm y) (e.symm m')).symm
-
 end Differential
 
 section Complex
 
 variable {R : Type u} [CommRing R]
-variable {L L' L'' M M' M'' : Type v}
+variable {L L' L'' : Type v} {M M' M'' : Type w}
   [LieRing L] [LieAlgebra R L]
   [LieRing L'] [LieAlgebra R L']
   [LieRing L''] [LieAlgebra R L'']
@@ -296,7 +287,7 @@ noncomputable def cochainComplexIso (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ 
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) :
     cochainComplex R L M ≅ cochainComplex R L' M' where
   hom := cochainComplexMap e.toLinearMap φ.toLieHom he
-  inv := cochainComplexMap e.symm.toLinearMap φ.symm.toLieHom (symm_lie_eq_of_lie_eq e φ he)
+  inv := cochainComplexMap e.symm.toLinearMap φ.symm.toLieHom (e.symm_lie_eq_of_lie_eq φ he)
   hom_inv_id := by
     rw [cochainComplexMap_comp]
     have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
@@ -316,7 +307,7 @@ theorem cochainComplexIso_hom (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
 theorem cochainComplexIso_inv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) :
     (cochainComplexIso e φ he).inv =
-      cochainComplexMap e.symm.toLinearMap φ.symm.toLieHom (symm_lie_eq_of_lie_eq e φ he) :=
+      cochainComplexMap e.symm.toLinearMap φ.symm.toLieHom (e.symm_lie_eq_of_lie_eq φ he) :=
   (rfl)
 
 /-- The morphism on degree-`n` Lie algebra cohomology induced by `φ : L' →ₗ⁅R⁆ L` and an
@@ -325,6 +316,20 @@ noncomputable def cohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (n : ℕ) :
     cohomology R L M n ⟶ cohomology R L' M' n :=
   homologyMap (cochainComplexMap e φ he) n
+
+/-- `cohomologyMap` is the map induced on homology by `cochainComplexMap`. -/
+theorem cohomologyMap_def (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (n : ℕ) :
+    cohomologyMap e φ he n = homologyMap (cochainComplexMap e φ he) n :=
+  (rfl)
+
+/-- `cohomologyMap` commutes with `homologyπ` via `cyclesMap`. -/
+@[reassoc (attr := simp), elementwise]
+theorem homologyπ_cohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (n : ℕ) :
+    (cochainComplex R L M).homologyπ n ≫ cohomologyMap e φ he n =
+      cyclesMap (cochainComplexMap e φ he) n ≫ (cochainComplex R L' M').homologyπ n :=
+  HomologicalComplex.homologyπ_naturality _ _
 
 @[simp]
 theorem cohomologyMap_id
@@ -348,7 +353,7 @@ equivalences. -/
 noncomputable def cohomologyIso (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (n : ℕ) :
     cohomology R L M n ≅ cohomology R L' M' n :=
-  (homologyFunctor (ModuleCat R) (ComplexShape.up ℕ) n).mapIso (cochainComplexIso e φ he)
+  (homologyFunctor (ModuleCat.{max v w} R) (ComplexShape.up ℕ) n).mapIso (cochainComplexIso e φ he)
 
 @[simp]
 theorem cohomologyIso_hom (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
@@ -360,7 +365,7 @@ theorem cohomologyIso_hom (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
 theorem cohomologyIso_inv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆) (n : ℕ) :
     (cohomologyIso e φ he n).inv =
-      cohomologyMap e.symm.toLinearMap φ.symm.toLieHom (symm_lie_eq_of_lie_eq e φ he) n :=
+      cohomologyMap e.symm.toLinearMap φ.symm.toLieHom (e.symm_lie_eq_of_lie_eq φ he) n :=
   (rfl)
 
 end Complex

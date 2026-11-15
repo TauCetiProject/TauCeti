@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Lie.Cohomology.Continuous.Cochain
 public import TauCeti.Algebra.Lie.Cohomology.Continuous.Map
+public import TauCeti.Topology.Algebra.Lie.Discrete
 
 import Mathlib.Topology.LocallyConstant.Algebra
 
@@ -23,15 +24,15 @@ cohomology in every degree, and connects them both to the categorical homology o
 cochain complex and to the low-degree continuous cohomology theories.
 
 For a fixed element `x : L`, the Lie derivative `ω ↦ ⁅x, ω⁆` preserves continuous `n`-cochains as
-soon as the bracket of `L` is continuous (`lie_mem_continuousCochain`), with no continuity
-assumption on `M`: `⁅x, ω⁆ v` applies the fixed endomorphism `⁅x, ·⁆` to `ω v` and subtracts values
-of `ω` after updating one coordinate by `y ↦ ⁅x, y⁆`. By contrast, already in degree zero the
-differential `(d ω) ![x] = ⁅x, ω ![]⁆` preserves continuous cochains if and only if every orbit map
-`⁅·, m⁆ : L → M` is locally constant (`forall_d_zero_mem_continuousCochain_iff`). When `L` is a
-topological additive group this means that every `m : M` is annihilated by a neighbourhood of zero
-(`isLocallyConstant_lie_iff`), the smoothness condition satisfied by trivial modules and by smooth
-representations of formal current algebras. Together with continuity of the Lie bracket on `L`,
-this condition makes `d R L M n` map `continuousCochain R L M n` into
+soon as the adjoint map `⁅x, ·⁆ : L → L` is continuous (`lie_mem_continuousCochain`), with no
+continuity assumption on `M`: `⁅x, ω⁆ v` applies the fixed endomorphism `⁅x, ·⁆` to `ω v` and
+subtracts values of `ω` after updating one coordinate by `y ↦ ⁅x, y⁆`. By contrast, already in
+degree zero the differential `(d ω) ![x] = ⁅x, ω ![]⁆` preserves continuous cochains if and only if
+every orbit map `⁅·, m⁆ : L → M` is locally constant (`forall_d_zero_mem_continuousCochain_iff`).
+When addition on `L` is separately continuous this means that every `m : M` is annihilated by a
+neighbourhood of zero (`TauCeti.isLocallyConstant_lie_iff`), the smoothness condition satisfied by
+trivial modules and by smooth representations of formal current algebras. Together with continuity
+of the Lie bracket on `L`, this condition makes `d R L M n` map `continuousCochain R L M n` into
 `continuousCochain R L M (n + 1)` in every degree (`d_mem_continuousCochain`).
 
 As in `TauCeti.Algebra.Lie.Cohomology.Continuous.Basic`, the carrier modules
@@ -73,8 +74,8 @@ topological additive group degree two is identified with `continuousSecondCohomo
 
 ## Main results
 
-* `TauCeti.LieModule.Cohomology.lie_mem_continuousCochain`: Lie derivatives preserve continuous
-  cochains when the Lie bracket of `L` is continuous.
+* `TauCeti.LieModule.Cohomology.lie_mem_continuousCochain`: Lie derivatives along `x` preserve
+  continuous cochains when `⁅x, ·⁆ : L → L` is continuous.
 * `TauCeti.LieModule.Cohomology.forall_d_zero_mem_continuousCochain_iff`: `d` preserves continuous
   `0`-cochains if and only if every orbit map `⁅·, m⁆ : L → M` is locally constant.
 * `TauCeti.LieModule.Cohomology.d_mem_continuousCochain`: under continuous bracket on `L` and
@@ -99,32 +100,22 @@ open CategoryTheory Filter HomologicalComplex Topology _root_.LieModule.Cohomolo
 
 namespace TauCeti.LieModule.Cohomology
 
-universe u v
+universe u v w
 
 section Preservation
 
 variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [TopologicalSpace L]
   [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 
-/-- If the Lie bracket of `L` is continuous, the Lie derivative along any element `x : L` preserves
+/-- If the adjoint map `⁅x, ·⁆ : L → L` is continuous, the Lie derivative along `x` preserves
 continuous `n`-cochains, with no continuity hypothesis on the action on `M`. -/
-theorem lie_mem_continuousCochain (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆) (x : L) {n : ℕ}
+theorem lie_mem_continuousCochain {x : L} (hx : Continuous (⁅x, ·⁆ : L → L)) {n : ℕ}
     {ω : L [⋀^Fin n]→ₗ[R] M} (hω : ω ∈ continuousCochain R L M n) :
     ⁅x, ω⁆ ∈ continuousCochain R L M n := by
   rw [mem_continuousCochain_iff] at hω ⊢
   have hupd (i : Fin n) :
-      Continuous (fun v : Fin n → L ↦ Function.update v i ⁅x, v i⁆) := by
-    refine continuous_pi fun j ↦ ?_
-    rcases eq_or_ne j i with rfl | hji
-    · have hj : (fun v : Fin n → L ↦ Function.update v j ⁅x, v j⁆ j) =
-          (fun p : L × L ↦ ⁅p.1, p.2⁆) ∘ fun v ↦ (x, v j) :=
-        funext fun v ↦ Function.update_self j _ v
-      rw [hj]
-      exact hL.comp (continuous_const.prodMk (continuous_apply j))
-    · have hj : (fun v : Fin n → L ↦ Function.update v i ⁅x, v i⁆ j) = fun v ↦ v j :=
-        funext fun v ↦ Function.update_of_ne hji _ v
-      rw [hj]
-      exact continuous_apply j
+      Continuous (fun v : Fin n → L ↦ Function.update v i ⁅x, v i⁆) :=
+    continuous_id.update i (hx.comp (continuous_apply i))
   let g : LocallyConstant (Fin n → L) M :=
     ⟨fun v ↦ ⁅x, ω v⁆, hω.comp (⁅x, ·⁆)⟩ -
       ∑ i : Fin n, ⟨fun v ↦ ω (Function.update v i ⁅x, v i⁆), hω.comp_continuous (hupd i)⟩
@@ -137,33 +128,6 @@ theorem lie_mem_continuousCochain (hL : Continuous fun p : L × L ↦ ⁅p.1, p.
     rw [AlternatingMap.lie_apply, hv, map_sub, map_sum]
     rfl
   exact hg ▸ g.isLocallyConstant
-
-omit [CommRing R] [LieRing L] [LieAlgebra R L] [Module R M] [LieRingModule L M] [LieModule R L M] in
-/-- Every orbit map `⁅·, m⁆ : L → M` of a trivial module is locally constant. -/
-@[simp]
-theorem isLocallyConstant_lie_of_isTrivial [Bracket L M] [LieModule.IsTrivial L M] (m : M) :
-    IsLocallyConstant (⁅·, m⁆ : L → M) := by
-  have h : (⁅·, m⁆ : L → M) = Function.const L 0 := funext fun x ↦ trivial_lie_zero L M x m
-  rw [h]
-  exact IsLocallyConstant.const 0
-
-omit [CommRing R] [LieAlgebra R L] [Module R M] [LieModule R L M] in
-/-- Over a topological additive group `L`, the orbit map `⁅·, m⁆ : L → M` is locally constant if
-and only if `m` is annihilated by a neighbourhood of zero in `L`. -/
-theorem isLocallyConstant_lie_iff [IsTopologicalAddGroup L] {m : M} :
-    IsLocallyConstant (⁅·, m⁆ : L → M) ↔ ∀ᶠ x in 𝓝 (0 : L), ⁅x, m⁆ = 0 := by
-  let : TopologicalSpace M := ⊥
-  have : DiscreteTopology M := ⟨rfl⟩
-  have : ContinuousAdd M := ⟨continuous_of_discreteTopology⟩
-  let f : L →+ M :=
-    { toFun := (⁅·, m⁆)
-      map_zero' := zero_lie m
-      map_add' x y := add_lie x y m }
-  have hcoe : (f : L → M) = (⁅·, m⁆) := rfl
-  rw [← hcoe, IsLocallyConstant.iff_continuous]
-  refine ⟨fun hf ↦ by simpa [f, nhds_discrete M] using hf.tendsto 0,
-    fun h0 ↦ continuous_of_continuousAt_zero f ?_⟩
-  rwa [ContinuousAt, map_zero, nhds_discrete M, tendsto_pure]
 
 /-- The degree-zero Chevalley–Eilenberg differential maps continuous `0`-cochains into continuous
 `1`-cochains if and only if every orbit map `⁅·, m⁆ : L → M` is locally constant. -/
@@ -252,12 +216,10 @@ differential `d R L M n`. -/
 def continuousCocycle (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) :=
   continuousCochain R L M n ⊓ LinearMap.ker (d R L M n)
 
-/-- Inclusion of continuous `n`-cocycles into continuous `n`-cochains. -/
-def continuousCocycleToCochain (n : ℕ) :
-    continuousCocycle R L M n →ₗ[R] continuousCochain R L M n where
-  toFun z := ⟨z.1, z.2.1⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+/-- Every continuous `n`-cocycle is a continuous `n`-cochain. -/
+theorem continuousCocycle_le_continuousCochain (n : ℕ) :
+    continuousCocycle R L M n ≤ continuousCochain R L M n :=
+  inf_le_left
 
 /-- Continuous Chevalley–Eilenberg coboundaries as a submodule of continuous cocycles: `⊥` in
 degree zero, and in degree `n + 1` those continuous cocycles that are differentials of continuous
@@ -292,11 +254,6 @@ theorem continuousCoboundary_zero :
   (rfl)
 
 variable {R L M}
-
-@[simp]
-theorem coe_continuousCocycleToCochain {n : ℕ} (z : continuousCocycle R L M n) :
-    (continuousCocycleToCochain R L M n z : L [⋀^Fin n]→ₗ[R] M) = z.1 :=
-  (rfl)
 
 theorem mem_continuousCocycle_iff {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M} :
     ω ∈ continuousCocycle R L M n ↔ ω ∈ continuousCochain R L M n ∧ d R L M n ω = 0 :=
@@ -364,23 +321,29 @@ theorem continuousCohomology_hom_ext {n : ℕ}
   Submodule.linearMap_qext _ h
 
 @[simp]
+theorem continuousCohomologyMk_eq_zero_iff {n : ℕ} (z : continuousCocycle R L M n) :
+    continuousCohomologyMk R L M n z = 0 ↔ z ∈ continuousCoboundary R L M n := by
+  rw [continuousCohomologyMk_eq_mkQ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+
+theorem continuousCohomologyMk_eq_iff {n : ℕ} (z w : continuousCocycle R L M n) :
+    continuousCohomologyMk R L M n z = continuousCohomologyMk R L M n w ↔
+      z - w ∈ continuousCoboundary R L M n := by
+  rw [← sub_eq_zero, ← map_sub, continuousCohomologyMk_eq_zero_iff]
+
 theorem continuousCohomologyMk_zero_eq_zero_iff (z : continuousCocycle R L M 0) :
     continuousCohomologyMk R L M 0 z = 0 ↔ z = 0 := by
-  rw [continuousCohomologyMk_eq_mkQ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-    mem_continuousCoboundary_zero_iff]
+  rw [continuousCohomologyMk_eq_zero_iff, mem_continuousCoboundary_zero_iff]
 
-@[simp]
 theorem continuousCohomologyMk_succ_eq_zero_iff {n : ℕ} (z : continuousCocycle R L M (n + 1)) :
     continuousCohomologyMk R L M (n + 1) z = 0 ↔
       ∃ ω ∈ continuousCochain R L M n, d R L M n ω = z := by
-  rw [continuousCohomologyMk_eq_mkQ, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-    mem_continuousCoboundary_succ_iff]
+  rw [continuousCohomologyMk_eq_zero_iff, mem_continuousCoboundary_succ_iff]
 
 theorem continuousCohomologyMk_succ_eq_iff {n : ℕ} (z w : continuousCocycle R L M (n + 1)) :
     continuousCohomologyMk R L M (n + 1) z = continuousCohomologyMk R L M (n + 1) w ↔
       ∃ ω ∈ continuousCochain R L M n,
         d R L M n ω = (z - w : continuousCocycle R L M (n + 1)) := by
-  rw [← sub_eq_zero, ← map_sub, continuousCohomologyMk_succ_eq_zero_iff]
+  rw [continuousCohomologyMk_eq_iff, mem_continuousCoboundary_succ_iff]
 
 end Cohomology
 
@@ -505,17 +468,17 @@ def continuousCohomologyEquiv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     continuousCohomology R L M n ≃ₗ[R] continuousCohomology R L' M' n :=
   LinearEquiv.ofLinearMap (continuousCohomologyMap e.toLinearMap φ.toLieHom he hφ n)
     (continuousCohomologyMap e.symm.toLinearMap φ.symm.toLieHom
-      (symm_lie_eq_of_lie_eq e φ he) hφ' n)
+      (e.symm_lie_eq_of_lie_eq φ he) hφ' n)
     (by
       have hp : φ.symm.toLieHom.comp φ.toLieHom = LieHom.id := by ext; simp
       simpa [e.comp_symm, hp] using
         continuousCohomologyMap_comp e.symm.toLinearMap e.toLinearMap
-          φ.symm.toLieHom φ.toLieHom (symm_lie_eq_of_lie_eq e φ he) he hφ' hφ n)
+          φ.symm.toLieHom φ.toLieHom (e.symm_lie_eq_of_lie_eq φ he) he hφ' hφ n)
     (by
       have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
       simpa [e.symm_comp, hp] using
         continuousCohomologyMap_comp e.toLinearMap e.symm.toLinearMap
-          φ.toLieHom φ.symm.toLieHom he (symm_lie_eq_of_lie_eq e φ he) hφ hφ' n)
+          φ.toLieHom φ.symm.toLieHom he (e.symm_lie_eq_of_lie_eq φ he) hφ hφ' n)
 
 @[simp]
 theorem continuousCohomologyEquiv_toLinearMap (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
@@ -531,7 +494,7 @@ theorem continuousCohomologyEquiv_symm_toLinearMap (e : M ≃ₗ[R] M') (φ : L'
     (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
     (continuousCohomologyEquiv e φ he hφ hφ' n).symm.toLinearMap =
       continuousCohomologyMap e.symm.toLinearMap φ.symm.toLieHom
-        (symm_lie_eq_of_lie_eq e φ he) hφ' n :=
+        (e.symm_lie_eq_of_lie_eq φ he) hφ' n :=
   (rfl)
 
 @[simp]
@@ -550,7 +513,7 @@ theorem continuousCohomologyEquiv_symm_apply (e : M ≃ₗ[R] M') (φ : L' ≃�
     (x : continuousCohomology R L' M' n) :
     (continuousCohomologyEquiv e φ he hφ hφ' n).symm x =
       continuousCohomologyMap e.symm.toLinearMap φ.symm.toLieHom
-        (symm_lie_eq_of_lie_eq e φ he) hφ' n x :=
+        (e.symm_lie_eq_of_lie_eq φ he) hφ' n x :=
   (rfl)
 
 end Functoriality
@@ -591,11 +554,9 @@ theorem continuousD_comp_continuousD (hL : Continuous fun p : L × L ↦ ⁅p.1,
   LinearMap.ext (continuousD_continuousD hL hM n)
 
 @[simp]
-theorem continuousCohomologyMk_d (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
-    (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) {n : ℕ}
-    (ω : continuousCochain R L M n) :
-    continuousCohomologyMk R L M (n + 1) ⟨d R L M n ω.1, d_mem_continuousCocycle hL hM ω.2⟩ =
-      0 :=
+theorem continuousCohomologyMk_d {n : ℕ} (ω : continuousCochain R L M n)
+    {hz : d R L M n ω.1 ∈ continuousCocycle R L M (n + 1)} :
+    continuousCohomologyMk R L M (n + 1) ⟨d R L M n ω.1, hz⟩ = 0 :=
   (continuousCohomologyMk_succ_eq_zero_iff _).mpr ⟨ω.1, ω.2, rfl⟩
 
 /-- `continuousCochainMap` commutes with `continuousD` when `e` intertwines the module actions
@@ -621,14 +582,14 @@ end Differential
 section CategoricalComplex
 
 variable (R : Type u) [CommRing R]
-variable (L M : Type v) [LieRing L] [LieAlgebra R L] [TopologicalSpace L]
+variable (L : Type v) (M : Type w) [LieRing L] [LieAlgebra R L] [TopologicalSpace L]
   [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 
 /-- The continuous Chevalley–Eilenberg cochain complex of `L` with discrete coefficients in `M`,
 whose degree-`n` term is `continuousCochain R L M n` and whose differential is `continuousD`. -/
 noncomputable def continuousCochainComplex (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
     (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) :
-    CochainComplex (ModuleCat R) ℕ :=
+    CochainComplex (ModuleCat.{max v w} R) ℕ :=
   CochainComplex.of (fun n ↦ ModuleCat.of R (continuousCochain R L M n))
     (fun n ↦ ModuleCat.ofHom (continuousD R L M hL hM n))
     fun n ↦ ModuleCat.hom_ext (continuousD_comp_continuousD hL hM n)
@@ -677,7 +638,7 @@ theorem continuousCochainComplexι_f (hL : Continuous fun p : L × L ↦ ⁅p.1,
   (rfl)
 
 variable {R L M}
-variable {L' L'' M' M'' : Type v}
+variable {L' L'' : Type v} {M' M'' : Type w}
   [LieRing L'] [LieAlgebra R L'] [TopologicalSpace L']
   [LieRing L''] [LieAlgebra R L''] [TopologicalSpace L'']
   [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
@@ -786,11 +747,63 @@ noncomputable def continuousCohomologyClass (hL : Continuous fun p : L × L ↦ 
     continuousCocycle R L M n →ₗ[R] (continuousCochainComplex R L M hL hM).homology n :=
   (continuousCochainComplex R L M hL hM).moduleCatHomologyClass (CochainComplex.next ℕ n)
     ((continuousCochainComplexXIso R L M hL hM n).inv.hom ∘ₗ
-      continuousCocycleToCochain R L M n)
+      Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n))
     fun z ↦ ((continuousCochainComplex R L M hL hM).moduleCat_d_inv_eq_zero_iff
       (continuousD R L M hL hM) (continuousCochainComplex_d_succ R L M hL hM)
-      (continuousCocycleToCochain R L M n z)).mpr
+      (Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) z)).mpr
         (Subtype.ext (mem_continuousCocycle_iff.mp z.2).2)
+
+/-- The homology class of a continuous cocycle `z` is its `homologyπ` image via
+`moduleCatCyclesMk`. -/
+theorem continuousCohomologyClass_apply (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
+    (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) (n : ℕ)
+    (z : continuousCocycle R L M n) :
+    continuousCohomologyClass R L M hL hM n z =
+      (continuousCochainComplex R L M hL hM).homologyπ n
+        ((continuousCochainComplex R L M hL hM).moduleCatCyclesMk
+          ((continuousCochainComplexXIso R L M hL hM n).inv
+            (Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) z))
+          (n + 1) (CochainComplex.next ℕ n)
+          (((continuousCochainComplex R L M hL hM).moduleCat_d_inv_eq_zero_iff
+            (continuousD R L M hL hM) (continuousCochainComplex_d_succ R L M hL hM)
+            (Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) z)).mpr
+              (Subtype.ext ((coe_continuousD hL hM _).trans
+                (mem_continuousCocycle_iff.mp z.2).2)))) :=
+  HomologicalComplex.moduleCatHomologyClass_apply _ _ _ _ _
+
+/-- `continuousCohomologyClass` sends `z` to the `homologyπ` class of any cycle with underlying
+cochain `z.1`. -/
+theorem continuousCohomologyClass_eq_homologyπ (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
+    (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) {n : ℕ}
+    (z : continuousCocycle R L M n)
+    (y : (continuousCochainComplex R L M hL hM).cycles n)
+    (hy : ((continuousCochainComplexXIso R L M hL hM n).hom
+      ((continuousCochainComplex R L M hL hM).iCycles n y) : L [⋀^Fin n]→ₗ[R] M) = z.1) :
+    continuousCohomologyClass R L M hL hM n z =
+      (continuousCochainComplex R L M hL hM).homologyπ n y := by
+  rw [continuousCohomologyClass_apply]
+  congr 1
+  apply (continuousCochainComplex R L M hL hM).moduleCat_iCycles_injective n
+  apply (ModuleCat.mono_iff_injective
+    (continuousCochainComplexXIso R L M hL hM n).hom).mp inferInstance
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, Iso.inv_hom_id_apply]
+  exact Subtype.ext hy.symm
+
+/-- Pushing `continuousCohomologyClass` along `continuousCochainComplexι` gives the algebraic
+Chevalley–Eilenberg homology class of `z.1`. -/
+@[simp]
+theorem homologyMap_continuousCochainComplexι_continuousCohomologyClass
+    (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
+    (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) (n : ℕ)
+    (z : continuousCocycle R L M n) :
+    homologyMap (continuousCochainComplexι R L M hL hM) n
+        (continuousCohomologyClass R L M hL hM n z) =
+      (cochainComplex R L M).homologyπ n
+        ((cochainComplex R L M).moduleCatCyclesMk (z.1 : (cochainComplex R L M).X n)
+          (n + 1) (CochainComplex.next ℕ n)
+          (by rw [cochainComplex_d_succ]; exact (mem_continuousCocycle_iff.mp z.2).2)) := by
+  rw [continuousCohomologyClass_apply, HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 1
 
 /-- Every homology class of `continuousCochainComplex` is represented by a continuous cocycle. -/
 theorem continuousCohomologyClass_surjective (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
@@ -806,7 +819,8 @@ theorem continuousCohomologyClass_surjective (hL : Continuous fun p : L × L ↦
   have hz : ω.1 ∈ continuousCocycle R L M n :=
     mem_continuousCocycle_iff.mpr ⟨ω.2, by simpa using congrArg Subtype.val hdx⟩
   refine ⟨⟨ω.1, hz⟩, ?_⟩
-  have hco : continuousCocycleToCochain R L M n ⟨ω.1, hz⟩ = ω := Subtype.ext rfl
+  have hco : Submodule.inclusion (continuousCocycle_le_continuousCochain R L M n) ⟨ω.1, hz⟩ = ω :=
+    Subtype.ext rfl
   simp [hco, ω]
 
 /-- A continuous cocycle represents the zero homology class in `continuousCochainComplex` if and
@@ -856,21 +870,10 @@ noncomputable def continuousCohomologyHomologyEquiv
     (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) (n : ℕ) :
     continuousCohomology R L M n ≃ₗ[R]
       (continuousCochainComplex R L M hL hM).homology n :=
-  LinearEquiv.ofBijective
-    (continuousCohomologyLift (continuousCohomologyClass R L M hL hM n)
-      fun z hz ↦ (continuousCohomologyClass_eq_zero_iff R L M hL hM n z).mpr hz)
-    ⟨by
-      rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-      intro q hq
-      obtain ⟨z, rfl⟩ := continuousCohomologyMk_surjective R L M n q
-      rw [LinearMap.mem_ker, continuousCohomologyLift_mk,
-        continuousCohomologyClass_eq_zero_iff] at hq
-      rw [Submodule.mem_bot, continuousCohomologyMk_eq_mkQ, Submodule.mkQ_apply,
-        Submodule.Quotient.mk_eq_zero]
-      exact hq,
-     fun y ↦ by
-      obtain ⟨z, rfl⟩ := continuousCohomologyClass_surjective R L M hL hM n y
-      exact ⟨continuousCohomologyMk R L M n z, rfl⟩⟩
+  (Submodule.quotEquivOfEq _ _
+    (Submodule.ext fun z ↦ (continuousCohomologyClass_eq_zero_iff R L M hL hM n z).symm)).trans
+    ((continuousCohomologyClass R L M hL hM n).quotKerEquivOfSurjective
+      (continuousCohomologyClass_surjective R L M hL hM n))
 
 variable {R L M}
 
@@ -881,6 +884,17 @@ theorem continuousCohomologyHomologyEquiv_mk (hL : Continuous fun p : L × L ↦
     continuousCohomologyHomologyEquiv R L M hL hM n (continuousCohomologyMk R L M n z) =
       continuousCohomologyClass R L M hL hM n z :=
   (rfl)
+
+@[simp]
+theorem continuousCohomologyHomologyEquiv_symm_continuousCohomologyClass
+    (hL : Continuous fun p : L × L ↦ ⁅p.1, p.2⁆)
+    (hM : ∀ m : M, IsLocallyConstant (⁅·, m⁆ : L → M)) {n : ℕ}
+    (z : continuousCocycle R L M n) :
+    (continuousCohomologyHomologyEquiv R L M hL hM n).symm
+        (continuousCohomologyClass R L M hL hM n z) =
+      continuousCohomologyMk R L M n z := by
+  apply (continuousCohomologyHomologyEquiv R L M hL hM n).injective
+  simp
 
 /-- `continuousCohomologyHomologyEquiv` intertwines `continuousCohomologyMap` with `homologyMap` on
 `continuousCochainComplexMap`. -/
@@ -915,32 +929,31 @@ section LowDegree
 
 section DegreeZero
 
-variable (R L M : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] [TopologicalSpace L]
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [TopologicalSpace L]
   [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- A constant `0`-cochain with value `m` is a continuous `0`-cocycle if and only if `m` lies in
+`LieModule.maxTrivSubmodule R L M`. -/
+@[simp]
+theorem constOfIsEmpty_mem_continuousCocycle_iff {m : M} :
+    AlternatingMap.constOfIsEmpty R L (Fin 0) m ∈ continuousCocycle R L M 0 ↔
+      m ∈ LieModule.maxTrivSubmodule R L M := by
+  rw [mem_continuousCocycle_iff, LieModule.mem_maxTrivSubmodule]
+  simp only [mem_continuousCochain_zero, true_and]
+  refine ⟨fun h x ↦ ?_, fun hm ↦ ?_⟩
+  · simpa [d_zero_apply] using congrFun (congrArg DFunLike.coe h) ![x]
+  · ext v
+    simpa [d_zero_apply] using hm (v 0)
+
+variable (R L M)
 
 /-- Continuous `0`-cocycles are linearly equivalent to the submodule `LieModule.maxTrivSubmodule`
 of `L`-invariant elements of `M`. -/
 def continuousCocycleZeroEquiv :
     continuousCocycle R L M 0 ≃ₗ[R] LieModule.maxTrivSubmodule R L M :=
-  LinearEquiv.ofLinearMap
-    { toFun z := ⟨z.1 ![], by
-        rw [LieModule.mem_maxTrivSubmodule]
-        intro x
-        simpa [d_zero_apply] using
-          congrFun (congrArg DFunLike.coe (mem_continuousCocycle_iff.mp z.2).2) ![x]⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-    { toFun m := ⟨AlternatingMap.constOfIsEmpty R L (Fin 0) m.1,
-        mem_continuousCocycle_iff.mpr ⟨mem_continuousCochain_zero _, by
-          ext v
-          simpa [d_zero_apply] using m.2 (v 0)⟩⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-    (by ext m; rfl)
-    (by
-      ext z v
-      rw [Subsingleton.elim v ![]]
-      rfl)
+  (AlternatingMap.constLinearEquivOfIsEmpty (R' := R) (M'' := L) (N'' := M) (ι := Fin 0)).symm
+    |>.ofSubmodules (continuousCocycle R L M 0) (LieModule.maxTrivSubmodule R L M)
+    (by ext m; simp)
 
 /-- Degree-zero continuous cohomology is linearly equivalent to `LieModule.maxTrivSubmodule R L M`.
 -/
@@ -953,13 +966,27 @@ variable {R L M}
 @[simp]
 theorem coe_continuousCocycleZeroEquiv (z : continuousCocycle R L M 0) :
     (continuousCocycleZeroEquiv R L M z : M) = z.1 ![] :=
-  (rfl)
+  congrArg z.1 (Subsingleton.elim 0 ![])
+
+@[simp]
+theorem coe_continuousCocycleZeroEquiv_symm (m : LieModule.maxTrivSubmodule R L M) :
+    ((continuousCocycleZeroEquiv R L M).symm m : L [⋀^Fin 0]→ₗ[R] M) =
+      AlternatingMap.constOfIsEmpty R L (Fin 0) (m : M) := by
+  rw [continuousCocycleZeroEquiv, LinearEquiv.ofSubmodules_symm_apply]
+  simp
 
 @[simp]
 theorem continuousCohomologyZeroEquiv_mk (z : continuousCocycle R L M 0) :
     continuousCohomologyZeroEquiv R L M (continuousCohomologyMk R L M 0 z) =
       continuousCocycleZeroEquiv R L M z :=
   (rfl)
+
+@[simp]
+theorem continuousCohomologyZeroEquiv_symm_apply (m : LieModule.maxTrivSubmodule R L M) :
+    (continuousCohomologyZeroEquiv R L M).symm m =
+      continuousCohomologyMk R L M 0 ((continuousCocycleZeroEquiv R L M).symm m) := by
+  apply (continuousCohomologyZeroEquiv R L M).injective
+  simp
 
 end DegreeZero
 
@@ -988,19 +1015,21 @@ theorem twoCochainEquiv_mem_continuousTwoCocycle_iff {ω : L [⋀^Fin 2]→ₗ[R
     rw [d₂₃_twoCochainEquiv, h]
     rfl
 
+/-- Over a topological additive group `L`, `(twoCochainEquiv R L M).symm` maps
+`continuousTwoCocycle R L M` onto `continuousCocycle R L M 2`. -/
+@[simp]
+theorem twoCochainEquiv_symm_mem_continuousCocycle_iff {c : twoCochain R L M} :
+    (twoCochainEquiv R L M).symm c ∈ continuousCocycle R L M 2 ↔
+      c ∈ continuousTwoCocycle R L M := by
+  rw [← twoCochainEquiv_mem_continuousTwoCocycle_iff, LinearEquiv.apply_symm_apply]
+
 variable (R L M)
 
 /-- Continuous `2`-cocycles are linearly equivalent to `continuousTwoCocycle R L M`. -/
 def continuousCocycleTwoEquiv :
     continuousCocycle R L M 2 ≃ₗ[R] continuousTwoCocycle R L M :=
-  LinearEquiv.ofLinearMap
-    ((twoCochainEquiv R L M).toLinearMap.restrict fun _ hω ↦
-      twoCochainEquiv_mem_continuousTwoCocycle_iff.mpr hω)
-    ((twoCochainEquiv R L M).symm.toLinearMap.restrict fun c hc ↦ by
-      rw [← twoCochainEquiv_mem_continuousTwoCocycle_iff]
-      simpa using hc)
+  (twoCochainEquiv R L M).ofSubmodules (continuousCocycle R L M 2) (continuousTwoCocycle R L M)
     (by ext c; simp)
-    (by ext ω; simp)
 
 variable {R L M}
 
@@ -1029,12 +1058,11 @@ theorem map_continuousCocycleTwoEquiv_continuousCoboundary :
     simp [← twoCochainEquiv_d_one, hdω]
   · rintro ⟨f, hf, hdf⟩
     refine ⟨(continuousCocycleTwoEquiv R L M).symm c,
-      ⟨(oneCochainEquiv R L M).symm f, ?_, ?_⟩,
+      ⟨(oneCochainEquiv R L M).symm f,
+        oneCochainEquiv_symm_mem_continuousCochain_iff.mpr hf, ?_⟩,
       (continuousCocycleTwoEquiv R L M).apply_symm_apply c⟩
-    · rw [← oneCochainEquiv_mem_continuousOneCochain_iff]
-      simpa using hf
-    · apply (twoCochainEquiv R L M).injective
-      simpa [twoCochainEquiv_d_one] using hdf
+    apply (twoCochainEquiv R L M).injective
+    simpa [twoCochainEquiv_d_one] using hdf
 
 variable (R L M)
 

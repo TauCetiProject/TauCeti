@@ -195,46 +195,45 @@ equivalence of coefficients. -/
 def continuousCochainEquiv (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
     continuousCochain R L M n ≃ₗ[R] continuousCochain R L' M' n :=
-  LinearEquiv.ofLinearMap (continuousCochainMap e.toLinearMap φ.toLieHom hφ n)
-    (continuousCochainMap e.symm.toLinearMap φ.symm.toLieHom hφ' n)
+  (cochainEquiv e φ n).ofSubmodules (continuousCochain R L M n) (continuousCochain R L' M' n)
     (by
-      have hp : φ.symm.toLieHom.comp φ.toLieHom = LieHom.id := by ext; simp
-      simpa [e.comp_symm, hp] using
-        continuousCochainMap_comp e.symm.toLinearMap e.toLinearMap
-          φ.symm.toLieHom φ.toLieHom hφ' hφ n)
-    (by
-      have hp : φ.toLieHom.comp φ.symm.toLieHom = LieHom.id := by ext; simp
-      simpa [e.symm_comp, hp] using
-        continuousCochainMap_comp e.toLinearMap e.symm.toLinearMap
-          φ.toLieHom φ.symm.toLieHom hφ hφ' n)
-
-@[simp]
-theorem continuousCochainEquiv_toLinearMap (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
-    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
-    (continuousCochainEquiv e φ hφ hφ' n).toLinearMap =
-      continuousCochainMap e.toLinearMap φ.toLieHom hφ n :=
-  (rfl)
-
-@[simp]
-theorem continuousCochainEquiv_symm_toLinearMap (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
-    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
-    (continuousCochainEquiv e φ hφ hφ' n).symm.toLinearMap =
-      continuousCochainMap e.symm.toLinearMap φ.symm.toLieHom hφ' n :=
-  (rfl)
+      ext ω
+      rw [Submodule.mem_map_equiv]
+      refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+      · have h' := cochainMap_mem_continuousCochain e.toLinearMap hφ h
+        rwa [← cochainEquiv_apply, LinearEquiv.apply_symm_apply] at h'
+      · rw [cochainEquiv_symm_apply]
+        exact cochainMap_mem_continuousCochain e.symm.toLinearMap hφ' h)
 
 @[simp]
 theorem continuousCochainEquiv_apply (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (hφ : Continuous φ) (hφ' : Continuous φ.symm) {n : ℕ} (ω : continuousCochain R L M n) :
     continuousCochainEquiv e φ hφ hφ' n ω =
       continuousCochainMap e.toLinearMap φ.toLieHom hφ n ω :=
-  (rfl)
+  Subtype.ext (by simp [continuousCochainEquiv])
 
 @[simp]
 theorem continuousCochainEquiv_symm_apply (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
     (hφ : Continuous φ) (hφ' : Continuous φ.symm) {n : ℕ} (ω : continuousCochain R L' M' n) :
     (continuousCochainEquiv e φ hφ hφ' n).symm ω =
       continuousCochainMap e.symm.toLinearMap φ.symm.toLieHom hφ' n ω :=
-  (rfl)
+  Subtype.ext (by simp [continuousCochainEquiv])
+
+@[simp]
+theorem continuousCochainEquiv_toLinearMap (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
+    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
+    (continuousCochainEquiv e φ hφ hφ' n).toLinearMap =
+      continuousCochainMap e.toLinearMap φ.toLieHom hφ n := by
+  ext ω : 1
+  exact continuousCochainEquiv_apply e φ hφ hφ' ω
+
+@[simp]
+theorem continuousCochainEquiv_symm_toLinearMap (e : M ≃ₗ[R] M') (φ : L' ≃ₗ⁅R⁆ L)
+    (hφ : Continuous φ) (hφ' : Continuous φ.symm) (n : ℕ) :
+    (continuousCochainEquiv e φ hφ hφ' n).symm.toLinearMap =
+      continuousCochainMap e.symm.toLinearMap φ.symm.toLieHom hφ' n := by
+  ext ω : 1
+  exact continuousCochainEquiv_symm_apply e φ hφ hφ' ω
 
 end Map
 
@@ -330,29 +329,33 @@ theorem mem_continuousCochain_succ_iff_of_hasBasis {ι : Type*} {p : ι → Prop
     rw [nhds_pi]
     exact (eventually_pi fun _ ↦ h.mem_of_mem hi).mono hω
 
-/-- A `1`-cochain on a topological additive group `L` is continuous if and only if `x ↦ ω ![x]`
-vanishes on a neighbourhood of zero in `L`. -/
-theorem mem_continuousCochain_one_iff {ω : L [⋀^Fin 1]→ₗ[R] M} :
-    ω ∈ continuousCochain R L M 1 ↔ ∀ᶠ x in 𝓝 (0 : L), ω ![x] = 0 := by
-  rw [mem_continuousCochain_succ_iff]
-  simp only [mem_continuousCochain_zero, implies_true, true_and]
-  constructor
-  · intro h
-    have hc : Continuous (fun x : L ↦ (![x] : Fin 1 → L)) :=
-      continuous_pi <| Fin.cases continuous_id fun i ↦ i.elim0
-    have h0 : (![(0 : L)] : Fin 1 → L) = 0 := by ext i; exact Fin.cases rfl (fun j ↦ j.elim0) i
-    exact (by simpa [h0] using hc.tendsto 0 : Tendsto (fun x : L ↦ ![x]) (𝓝 0) (𝓝 0)).eventually h
-  · intro h
-    have heq : ∀ v : Fin 1 → L, ![v 0] = v := fun v ↦ by
-      ext i; exact Fin.cases rfl (fun j ↦ j.elim0) i
-    simpa [heq] using ((continuous_apply 0).tendsto (0 : Fin 1 → L)).eventually h
-
 /-- `oneCochainEquiv` maps `continuousCochain R L M 1` onto `continuousOneCochain R L M`. -/
 @[simp]
 theorem oneCochainEquiv_mem_continuousOneCochain_iff {ω : L [⋀^Fin 1]→ₗ[R] M} :
     oneCochainEquiv R L M ω ∈ continuousOneCochain R L M ↔
       ω ∈ continuousCochain R L M 1 := by
-  simp [mem_continuousOneCochain_iff, mem_continuousCochain_one_iff]
+  let : TopologicalSpace M := ⊥
+  have : DiscreteTopology M := ⟨rfl⟩
+  have heq : (oneCochainEquiv R L M ω : L → M) = ω ∘ (Homeomorph.funUnique (Fin 1) L).symm := by
+    ext x
+    simp only [oneCochainEquiv_apply, Function.comp_apply, Homeomorph.funUnique_symm_apply]
+    exact congrArg ω (funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl)
+  rw [mem_continuousOneCochain_iff_continuous, mem_continuousCochain_iff_continuous, heq]
+  exact (Homeomorph.funUnique (Fin 1) L).symm.comp_continuous_iff'
+
+/-- `(oneCochainEquiv R L M).symm` maps `continuousOneCochain R L M` onto
+`continuousCochain R L M 1`. -/
+@[simp]
+theorem oneCochainEquiv_symm_mem_continuousCochain_iff {f : oneCochain R L M} :
+    (oneCochainEquiv R L M).symm f ∈ continuousCochain R L M 1 ↔
+      f ∈ continuousOneCochain R L M := by
+  rw [← oneCochainEquiv_mem_continuousOneCochain_iff, LinearEquiv.apply_symm_apply]
+
+/-- A `1`-cochain on a topological additive group `L` is continuous if and only if `x ↦ ω ![x]`
+vanishes on a neighbourhood of zero in `L`. -/
+theorem mem_continuousCochain_one_iff {ω : L [⋀^Fin 1]→ₗ[R] M} :
+    ω ∈ continuousCochain R L M 1 ↔ ∀ᶠ x in 𝓝 (0 : L), ω ![x] = 0 := by
+  simp [← oneCochainEquiv_mem_continuousOneCochain_iff, mem_continuousOneCochain_iff]
 
 /-- `twoCochainEquiv` maps `continuousCochain R L M 2` onto `continuousTwoCochain R L M`. -/
 @[simp]
@@ -361,49 +364,34 @@ theorem twoCochainEquiv_mem_continuousTwoCochain_iff {ω : L [⋀^Fin 2]→ₗ[R
       ω ∈ continuousCochain R L M 2 := by
   let : TopologicalSpace M := ⊥
   have : DiscreteTopology M := ⟨rfl⟩
-  rw [mem_continuousTwoCochain_iff_continuous, mem_continuousCochain_iff_continuous]
-  let e : L × L ≃ₜ (Fin 2 → L) :=
-    (Homeomorph.finTwoArrow (X := L)).symm
-  refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
-  · have heq : (ω : (Fin 2 → L) → M) =
-        (fun p : L × L ↦ twoCochainEquiv R L M ω p.1 p.2) ∘ e.symm := by
-      ext v
-      simp only [Function.comp_apply, e, Homeomorph.symm_symm, Homeomorph.finTwoArrow_apply,
-        twoCochainEquiv_apply]
-      exact congrArg ω (funext <| Fin.cases rfl fun j ↦ Fin.cases rfl (fun k ↦ k.elim0) j)
-    rw [heq]
-    exact hc.comp e.symm.continuous
-  · have heq : (fun p : L × L ↦ twoCochainEquiv R L M ω p.1 p.2) = ω ∘ e := by
-      ext ⟨x, y⟩
-      simp [e]
-    rw [heq]
-    exact hc.comp e.continuous
+  have heq : (fun p : L × L ↦ twoCochainEquiv R L M ω p.1 p.2) =
+      ω ∘ (Homeomorph.finTwoArrow (X := L)).symm := by
+    ext ⟨x, y⟩
+    simp
+  rw [mem_continuousTwoCochain_iff_continuous, mem_continuousCochain_iff_continuous, heq]
+  exact (Homeomorph.finTwoArrow (X := L)).symm.comp_continuous_iff'
+
+/-- `(twoCochainEquiv R L M).symm` maps `continuousTwoCochain R L M` onto
+`continuousCochain R L M 2`. -/
+@[simp]
+theorem twoCochainEquiv_symm_mem_continuousCochain_iff {c : twoCochain R L M} :
+    (twoCochainEquiv R L M).symm c ∈ continuousCochain R L M 2 ↔
+      c ∈ continuousTwoCochain R L M := by
+  rw [← twoCochainEquiv_mem_continuousTwoCochain_iff, LinearEquiv.apply_symm_apply]
 
 variable (R L M)
 
 /-- Continuous `1`-cochains are linearly equivalent to `continuousOneCochain`. -/
 def continuousCochainOneEquiv :
     continuousCochain R L M 1 ≃ₗ[R] continuousOneCochain R L M :=
-  LinearEquiv.ofLinearMap
-    ((oneCochainEquiv R L M).toLinearMap.restrict fun _ hω ↦
-      oneCochainEquiv_mem_continuousOneCochain_iff.mpr hω)
-    ((oneCochainEquiv R L M).symm.toLinearMap.restrict fun f hf ↦ by
-      rw [← oneCochainEquiv_mem_continuousOneCochain_iff]
-      simpa using hf)
+  (oneCochainEquiv R L M).ofSubmodules (continuousCochain R L M 1) (continuousOneCochain R L M)
     (by ext f; simp)
-    (by ext ω; simp)
 
 /-- Continuous `2`-cochains are linearly equivalent to `continuousTwoCochain`. -/
 def continuousCochainTwoEquiv :
     continuousCochain R L M 2 ≃ₗ[R] continuousTwoCochain R L M :=
-  LinearEquiv.ofLinearMap
-    ((twoCochainEquiv R L M).toLinearMap.restrict fun _ hω ↦
-      twoCochainEquiv_mem_continuousTwoCochain_iff.mpr hω)
-    ((twoCochainEquiv R L M).symm.toLinearMap.restrict fun c hc ↦ by
-      rw [← twoCochainEquiv_mem_continuousTwoCochain_iff]
-      simpa using hc)
+  (twoCochainEquiv R L M).ofSubmodules (continuousCochain R L M 2) (continuousTwoCochain R L M)
     (by ext c; simp)
-    (by ext ω; simp)
 
 variable {R L M}
 
