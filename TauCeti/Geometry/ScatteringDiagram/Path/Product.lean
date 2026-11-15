@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -18,8 +18,9 @@ crossing time the signed labels therefore have an unordered product, including
 all coincident indexed walls. Multiplying these event products in reverse time
 order gives the segment transport; concatenating segments gives polygonal
 transport. The first crossing is rightmost and a positive normal velocity gives
-the inverse label. Reversal inverts transport, group homomorphisms preserve it, and it lies
-in every subgroup containing the labels.
+the inverse label. Reversal inverts transport, subdivision and affine coordinate
+transport preserve it, group homomorphisms preserve it, and it lies in every
+subgroup containing the labels.
 
 This evaluates `WallComplement.signedCrossingEvent` using Mathlib's
 `Finset.noncommProd`, rather than choosing an enumeration of simultaneous walls.
@@ -30,9 +31,10 @@ opposite group to reverse multiplication order.
 
 ## Attribution
 
-Adapted in full from `Mei/Geometry/Convex/Polyhedron/Path/Product.lean` in
+Adapted from `Mei/Geometry/Convex/Polyhedron/Path/Product.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
-`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0), with path subdivision
+and affine transport invariance added here.
 Original author credit is retained.
 -/
 
@@ -447,5 +449,42 @@ theorem wallPathProduct_mem {S : Subgroup G} (hS : ∀ i, label i ∈ S) (p : Ad
   refine S.list_prod_mem fun g hg => ?_
   obtain ⟨a, -, rfl⟩ := List.mem_map.mp hg
   exact zpow_mem (hS a.1) _
+
+/-- Subdividing an admissible polygonal path by allowed interior vertices preserves its
+wall-crossing product. -/
+theorem IsSubdivision.wallPathProduct_eq {p q : AdmissiblePLPath x y} (h : IsSubdivision p q) :
+    p.wallPathProduct ν label hcomm = q.wallPathProduct ν label hcomm :=
+  wallPathProduct_eq_of_signedCrossingEvents_eq ν label hcomm p q (h.signedCrossingEvents_eq ν)
+
+omit [Finite ι] in
+include hcomm in
+/-- Coplanar commutation transfers to the image wall family under a continuous affine
+equivalence. -/
+theorem commute_of_affineSpan_image_eq {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (e : V ≃ᴬ[ℝ] U) {i j : ι}
+    (hij : affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j)) :
+    Commute (label i) (label j) := by
+  refine hcomm i j ?_
+  have hcoe : (e.toAffineEquiv.toAffineMap : V → U) = e := rfl
+  have hmap (k : ι) : affineSpan ℝ (e '' W k) =
+      (affineSpan ℝ (W k)).map e.toAffineEquiv.toAffineMap := by
+    rw [← hcoe, AffineSubspace.map_span]
+  rw [hmap, hmap] at hij
+  have hid : e.toAffineEquiv.symm.toAffineMap.comp e.toAffineEquiv.toAffineMap =
+      AffineMap.id ℝ V := by ext x; simp
+  have hinv := congrArg (AffineSubspace.map e.toAffineEquiv.symm.toAffineMap) hij
+  simpa only [AffineSubspace.map_map, hid, AffineSubspace.map_id] using hinv
+
+/-- Transporting an admissible polygonal path along a continuous affine equivalence preserves
+its wall-crossing product under pushed-forward coorientations. -/
+@[simp]
+theorem wallPathProduct_affineMap {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) :
+    (p.affineMap e).wallPathProduct
+        (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) label
+        (fun _ _ => commute_of_affineSpan_image_eq label hcomm e) =
+      p.wallPathProduct ν label hcomm := by
+  rw [wallPathProduct_eq_prod_signedCrossingEvents,
+    wallPathProduct_eq_prod_signedCrossingEvents, signedCrossingEvents_affineMap]
 
 end Quiver.Path

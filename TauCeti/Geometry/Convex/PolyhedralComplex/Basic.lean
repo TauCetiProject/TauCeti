@@ -300,6 +300,13 @@ noncomputable abbrev walls (C : FinitePolyhedralComplex h) : Finset (Set V) :=
 noncomputable abbrev joints (C : FinitePolyhedralComplex h) : Finset (Set V) :=
   C.cellsOfCodimension 2
 
+/-- Every codimension-`k` cell of a subcomplex is a codimension-`k` cell of the ambient complex. -/
+theorem IsSubcomplex.cellsOfCodimension_subset {C D : FinitePolyhedralComplex h}
+    (hCD : C.IsSubcomplex D) (k : ℕ) :
+    C.cellsOfCodimension k ⊆ D.cellsOfCodimension k := fun _ hP =>
+  mem_cellsOfCodimension.mpr
+    ⟨isSubcomplex_iff.mp hCD (mem_cellsOfCodimension.mp hP).1, (mem_cellsOfCodimension.mp hP).2⟩
+
 end FinitePolyhedralComplex
 
 end TauCeti
