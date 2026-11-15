@@ -62,6 +62,9 @@ surfaces carries fundamental class to fundamental class
   pull canonical homological orientations back to canonical homological orientations.
 * `TauCeti.comap_subtypeVal_complexHomologicalOrientation`: the canonical homological orientation
   restricts to that of each open subset.
+* `TauCeti.comap_complexHomologicalOrientation_of_mem_maximalAtlas`: on an open subset of the
+  source of a holomorphic chart, the canonical homological orientation is pulled back from that of
+  `ℂ` along the chart.
 * `Diffeomorph.mapFundamentalClass_complexHomologicalOrientation`,
   `Diffeomorph.singularHomologyFunctor_map_complexFundamentalClass`: biholomorphisms carry
   fundamental classes to fundamental classes.
@@ -183,6 +186,17 @@ theorem comap_subtypeVal_complexHomologicalOrientation {U : TopologicalSpace.Ope
     (hj : IsOpenEmbedding (Subtype.val : U → M)) :
     (complexHomologicalOrientation M).comap hj = complexHomologicalOrientation U :=
   comap_complexHomologicalOrientation (k := 1) hj isLocalDiffeomorph_subtype_val
+
+/-- The canonical homological orientation of an open subset `U` of a Riemann surface `M`, lying in
+the source of a holomorphic chart `e`, is pulled back from the canonical homological orientation
+of `ℂ` along `e`. -/
+theorem comap_complexHomologicalOrientation_of_mem_maximalAtlas {e : OpenPartialHomeomorph M ℂ}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) 1 M) {U : TopologicalSpace.Opens M}
+    (hU : (U : Set M) ⊆ e.source) (hj : IsOpenEmbedding (e ∘ Subtype.val : U → ℂ)) :
+    (complexHomologicalOrientation ℂ).comap hj = complexHomologicalOrientation U :=
+  comap_complexHomologicalOrientation (k := 1) hj fun u ↦
+    IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ, ℂ)) (P := ℂ) (isLocalDiffeomorph_subtype_val u)
+      (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he (hU u.2))
 
 section CompactSpace
 
