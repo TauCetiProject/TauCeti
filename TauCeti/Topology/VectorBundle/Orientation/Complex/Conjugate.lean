@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.Complexification
 public import TauCeti.Topology.VectorBundle.Conjugate
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
@@ -25,8 +25,9 @@ to three bundles built from `E`, each with an explicit conjugate-linear identifi
 * The dual bundle `fun b ↦ StrongDual ℂ (E b)`, when the fibres carry a Hermitian inner product
   whose norm is continuous on the total space (`TauCeti.ContinuousFiberNorm`): the fibrewise Riesz
   map `v ↦ ⟪v, ·⟫` (`InnerProductSpace.toDual`) is conjugate linear, so
-  `e(E*) = (-1) ^ (r + 1) e(E)` (`TauCeti.complexEulerClass_dual_of_hermitian`). For a line bundle
-  this is `e(L*) = -e(L)` (`TauCeti.complexEulerClass_dual_eq_neg_of_finrank_eq_one`).
+  `e(E*) = (-1) ^ (r + 1) e(E)` (`TauCeti.complexEulerClass_dual_of_continuousFiberNorm`). For a
+  line bundle this is `e(L*) = -e(L)`
+  (`TauCeti.complexEulerClass_dual_eq_neg_of_finrank_eq_one_of_continuousFiberNorm`).
 * The complexification `fun b ↦ ℂ ⊗[ℝ] E b` of a real vector bundle `E` of real rank `r + 1`, whose
   fibrewise conjugation `z ⊗ v ↦ conj z ⊗ v` is conjugate linear:
   `e(E_ℂ) = (-1) ^ (r + 1) e(E_ℂ)`
@@ -69,19 +70,21 @@ variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace �
 
 /-- **The Euler class of the conjugate bundle.** For a complex vector bundle `E` of complex rank
 `r + 1`, `e(conj E) = (-1) ^ (r + 1) e(E)`. -/
-theorem complexEulerClass_conjugateBundle (hF : finrank ℂ F = r + 1) :
-    complexEulerClass (Conjugate F) (ConjugateBundle E) (Conjugate.finrank_complex.trans hF) =
-      (-1 : ℤ) ^ (r + 1) • complexEulerClass F E hF :=
-  complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise hF _
+@[simp]
+theorem complexEulerClass_conjugateBundle (hF : finrank ℂ (Conjugate F) = r + 1) :
+    complexEulerClass (Conjugate F) (ConjugateBundle E) hF =
+      (-1 : ℤ) ^ (r + 1) • complexEulerClass F E (Conjugate.finrank_complex.symm.trans hF) :=
+  complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise _ hF
     (φ := fun b ↦ (Conjugate.toConjL : E b ≃L⋆[ℂ] Conjugate (E b)).symm)
     ((ConjugateBundle.toConjHomeomorph F E).symm.continuous.congr fun v ↦ by
       rw [ConjugateBundle.toConjHomeomorph_symm_apply, Conjugate.coe_toConjL_symm])
 
 /-- **The Euler class of the conjugate of a complex line bundle is the negative**:
 `e(conj L) = -e(L)`. -/
-theorem complexEulerClass_conjugateBundle_eq_neg_of_finrank_eq_one (hF : finrank ℂ F = 0 + 1) :
-    complexEulerClass (Conjugate F) (ConjugateBundle E) (Conjugate.finrank_complex.trans hF) =
-      -complexEulerClass F E hF := by
+theorem complexEulerClass_conjugateBundle_eq_neg_of_finrank_eq_one
+    (hF : finrank ℂ (Conjugate F) = 0 + 1) :
+    complexEulerClass (Conjugate F) (ConjugateBundle E) hF =
+      -complexEulerClass F E (Conjugate.finrank_complex.symm.trans hF) := by
   rw [complexEulerClass_conjugateBundle hF, pow_one, neg_one_zsmul]
 
 end Conjugate
@@ -95,26 +98,27 @@ variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensio
   [∀ b, InnerProductSpace ℂ (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
 
 variable [ContinuousFiberNorm F E] [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F]
-  [∀ b, NormedSpace ℝ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
 
 /-- **The Euler class of the dual of a Hermitian bundle.** For a complex vector bundle `E` of
 complex rank `r + 1` whose fibres carry a Hermitian inner product with continuous norm, the dual
 bundle `E*` has `e(E*) = (-1) ^ (r + 1) e(E)`. -/
-theorem complexEulerClass_dual_of_hermitian (hF : finrank ℂ F = r + 1) :
-    complexEulerClass (StrongDual ℂ F) (fun b ↦ StrongDual ℂ (E b))
-        (finrank_strongDual.trans hF) =
-      (-1 : ℤ) ^ (r + 1) • complexEulerClass F E hF := by
-  have h := complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise
-    (finrank_strongDual.trans hF) hF (φ := bundleToDual F E ℂ) (continuous_bundleToDual ℂ)
+theorem complexEulerClass_dual_of_continuousFiberNorm (hF : finrank ℂ (StrongDual ℂ F) = r + 1) :
+    complexEulerClass (StrongDual ℂ F) (fun b ↦ StrongDual ℂ (E b)) hF =
+      (-1 : ℤ) ^ (r + 1) •
+        complexEulerClass F E (ContinuousLinearMap.dual_finrank_eq.symm.trans hF) := by
+  have h := complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise hF
+    (ContinuousLinearMap.dual_finrank_eq.symm.trans hF)
+    (φ := fun b ↦ (bundleToDual F E ℂ b).toContinuousLinearEquiv) (continuous_bundleToDual ℂ)
   rw [h, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
 
 /-- **The Euler class of the dual of a Hermitian line bundle is the negative**:
 `e(L*) = -e(L)`. -/
-theorem complexEulerClass_dual_eq_neg_of_finrank_eq_one (hF : finrank ℂ F = 0 + 1) :
-    complexEulerClass (StrongDual ℂ F) (fun b ↦ StrongDual ℂ (E b))
-        (finrank_strongDual.trans hF) =
-      -complexEulerClass F E hF := by
-  rw [complexEulerClass_dual_of_hermitian hF, pow_one, neg_one_zsmul]
+theorem complexEulerClass_dual_eq_neg_of_finrank_eq_one_of_continuousFiberNorm
+    (hF : finrank ℂ (StrongDual ℂ F) = 0 + 1) :
+    complexEulerClass (StrongDual ℂ F) (fun b ↦ StrongDual ℂ (E b)) hF =
+      -complexEulerClass F E (ContinuousLinearMap.dual_finrank_eq.symm.trans hF) := by
+  rw [complexEulerClass_dual_of_continuousFiberNorm hF, pow_one, neg_one_zsmul]
 
 end Dual
 
@@ -131,14 +135,12 @@ variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
 variable [FiniteDimensional ℝ F]
 
 /-- **The Euler class of a complexification is fixed up to sign by conjugation.** For a real vector
-bundle `E` of real rank `r + 1`, the complexification `E_ℂ` satisfies
-`e(E_ℂ) = (-1) ^ (r + 1) e(E_ℂ)`. -/
-theorem complexEulerClass_complexification_eq_neg_one_pow_smul (hF : finrank ℝ F = r + 1) :
-    complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b)
-        (Complexification.finrank_complex.trans hF) =
-      (-1 : ℤ) ^ (r + 1) •
-        complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b)
-          (Complexification.finrank_complex.trans hF) := by
+bundle `E` of real rank `r + 1`, so that the complexification `E_ℂ` has complex rank `r + 1`
+(`TauCeti.Complexification.finrank_complex`), `e(E_ℂ) = (-1) ^ (r + 1) e(E_ℂ)`. -/
+theorem complexEulerClass_complexification_eq_neg_one_pow_smul
+    (hF : finrank ℂ (Complexification F) = r + 1) :
+    complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b) hF =
+      (-1 : ℤ) ^ (r + 1) • complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b) hF := by
   -- Each fibre is linearly homeomorphic to `F`, so negation on it is continuous.
   have (b : B) : ContinuousNeg (E b) :=
     let e := VectorBundle.continuousLinearEquivAt ℝ F E b
@@ -149,10 +151,9 @@ theorem complexEulerClass_complexification_eq_neg_one_pow_smul (hF : finrank ℝ
 
 /-- **The Euler class of the complexification of a real bundle of odd rank is `2`-torsion**: for
 `r + 1` odd, `2 e(E_ℂ) = 0`. -/
-theorem two_smul_complexEulerClass_complexification_eq_zero (hF : finrank ℝ F = r + 1)
-    (hr : Odd (r + 1)) :
-    (2 : ℤ) • complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b)
-        (Complexification.finrank_complex.trans hF) = 0 := by
+theorem two_smul_complexEulerClass_complexification_eq_zero
+    (hF : finrank ℂ (Complexification F) = r + 1) (hr : Odd (r + 1)) :
+    (2 : ℤ) • complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b) hF = 0 := by
   have h := complexEulerClass_complexification_eq_neg_one_pow_smul (E := E) hF
   rw [hr.neg_one_pow, neg_one_zsmul, eq_neg_iff_add_eq_zero] at h
   rw [two_zsmul, h]
@@ -168,10 +169,8 @@ variable (B) {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpac
 
 /-- The conjugate of a trivial complex vector bundle has zero Euler class, as the trivial bundle
 does. -/
-@[simp]
-theorem complexEulerClass_conjugateBundle_trivial (hF : finrank ℂ F = r + 1) :
-    complexEulerClass (Conjugate F) (ConjugateBundle (Bundle.Trivial B F))
-      (Conjugate.finrank_complex.trans hF) = 0 := by
+theorem complexEulerClass_conjugateBundle_trivial (hF : finrank ℂ (Conjugate F) = r + 1) :
+    complexEulerClass (Conjugate F) (ConjugateBundle (Bundle.Trivial B F)) hF = 0 := by
   rw [complexEulerClass_conjugateBundle hF, complexEulerClass_trivial]
   exact zsmul_zero _
 

@@ -156,6 +156,17 @@ instance instFiniteComplex [AddCommGroup V] [Module ℂ V] [Module.Finite ℂ V]
     Module.Finite ℂ (Conjugate V) :=
   .of_surjective toConjₗ.toLinearMap toConjₗ.surjective
 
+/-- The conjugate of a real vector space has the same real rank: its real structure is that of
+`V`. -/
+@[simp] theorem rank_real [AddCommGroup V] [Module ℝ V] :
+    Module.rank ℝ (Conjugate V) = Module.rank ℝ V :=
+  (rfl)
+
+/-- The conjugate of a real vector space has the same real dimension. -/
+@[simp] theorem finrank_real [AddCommGroup V] [Module ℝ V] :
+    Module.finrank ℝ (Conjugate V) = Module.finrank ℝ V :=
+  (rfl)
+
 /-- The conjugate of a complex vector space has the same complex rank. -/
 @[simp] theorem rank_complex [AddCommGroup V] [Module ℂ V] :
     Module.rank ℂ (Conjugate V) = Module.rank ℂ V :=
