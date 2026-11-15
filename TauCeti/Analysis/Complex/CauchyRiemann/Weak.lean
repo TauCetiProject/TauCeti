@@ -45,7 +45,6 @@ them, so the linear equations with arbitrary coefficient fields are special case
 * `TauCeti.isWeakCauchyRiemannOn_id` and `TauCeti.not_isWeakCauchyRiemannOn_conj`: for `J = i`
   the identity solves the homogeneous equation and conjugation does not. Two examples at the end
   of the file show that the swapped expression `D(i) + J D(1)` would reverse these verdicts.
-* `TauCeti.isWeakCauchyRiemannOn_conj_two`: for `J = i`, conjugation solves `∂ₛu + i ∂ₜu = 2`.
 * `TauCeti.isWeakCauchyRiemannOn_const_iff`: a constant `u₀` solves the equation exactly when
   `η(z, u₀) = 0` for almost every `z` in the interior of `U`.
 
@@ -329,14 +328,6 @@ theorem not_isWeakCauchyRiemannOn_conj (hΩ : (Ω : Set ℂ).Nonempty) :
   have h2 := h z hz
   rw [fderiv_conj_apply, fderiv_conj_apply] at h2
   norm_num [Complex.ext_iff] at h2
-
-/-- Conjugation solves `∂ₛu + i ∂ₜu = 2` for `J = i` on every open set: `1 + i·(-i) = 2`. -/
-theorem isWeakCauchyRiemannOn_conj_two :
-    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 2)
-      conj :=
-  isWeakCauchyRiemannOn_of_contDiffOn conjCLE.contDiff.contDiffOn fun z _ => by
-    rw [fderiv_conj_apply, fderiv_conj_apply]
-    norm_num [Complex.ext_iff]
 
 -- With the swapped expression `D(i) + J D(1)` in place of `D(1) + J D(i)`, the identity would
 -- not be a solution, since `i + i·1 = 2i ≠ 0`.
