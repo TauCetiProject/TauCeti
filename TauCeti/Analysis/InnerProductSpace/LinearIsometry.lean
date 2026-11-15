@@ -61,6 +61,8 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
+* `LinearIsometryEquiv.norm_det`, `LinearIsometryEquiv.abs_det`: a linear isometric equivalence of
+  an inner product space has determinant of norm `1`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -218,6 +220,27 @@ theorem eq_extendOrthogonalComplement_iff
   apply LinearMap.eq_of_apply_eq_of_eqOn_orthogonal (x := x)
   · simpa using hfx
   · simpa using hf
+
+/-- The determinant of a linear isometric equivalence of an inner product space has norm `1`
+(in infinite dimension every determinant is `1`). -/
+@[simp]
+theorem norm_det (e : E ≃ₗᵢ[𝕜] E) : ‖LinearMap.det (e.toLinearEquiv : E →ₗ[𝕜] E)‖ = 1 := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  · let b := stdOrthonormalBasis 𝕜 E
+    rw [← LinearMap.det_toMatrix b.toBasis]
+    have h := (Matrix.det_of_mem_unitary (e.toMatrix_mem_unitaryGroup b b)).2
+    rw [RCLike.star_def, RCLike.mul_conj] at h
+    norm_cast at h
+    rwa [pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
+  · rw [LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hE),
+      norm_one]
+
+/-- Over `ℝ`, the determinant of a linear isometric equivalence of an inner product space has
+absolute value `1`. -/
+@[simp]
+theorem abs_det {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (e : E ≃ₗᵢ[ℝ] E) :
+    |LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E)| = 1 := by
+  simpa only [← Real.norm_eq_abs] using e.norm_det
 
 end LinearIsometryEquiv
 

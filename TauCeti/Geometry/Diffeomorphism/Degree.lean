@@ -57,6 +57,19 @@ open scoped ContDiff Manifold TauCeti.DiffeomorphWeakWhitney
 
 namespace TauCeti
 
+/-- A continuous linear equivalence `E ≃L[ℝ] F` witnessing that an `(n + 1)`-oriented manifold
+`(P, I)` and an `(n + 1)`-dimensional space `F` have equal finite dimension. -/
+private def modelEquiv {E H P F : Type}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace P] [ChartedSpace H P]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {n : ℕ} (oP : Manifold.Orientation I P (Fin (n + 1))) (hF : finrank ℝ F = n + 1) :
+    E ≃L[ℝ] F :=
+  (LinearEquiv.ofFinrankEq E F
+    ((by simpa using oP.card_eq.symm : finrank ℝ E = n + 1).trans hF.symm)
+    ).toContinuousLinearEquiv
+
 section RegularValue
 
 variable {E H P F M : Type}
@@ -81,10 +94,7 @@ theorem Manifold.Orientation.isCoveredByDiffeomorphisms_of_degreeAtRegularValue
     (hy : IsRegularValue I 𝓘(ℝ, F) (fun p ↦ φ p x₀) y) :
     (oM.toHomologicalOrientation hF).IsCoveredByDiffeomorphisms hF k x₀
       (degreeAtRegularValue oP oM (fun p ↦ φ p x₀) y) := by
-  have hEF : finrank ℝ E = finrank ℝ F := by
-    have hE : finrank ℝ E = n + 1 := by simpa using oP.card_eq.symm
-    exact hE.trans hF.symm
-  let L : E ≃L[ℝ] F := (LinearEquiv.ofFinrankEq E F hEF).toContinuousLinearEquiv
+  let L : E ≃L[ℝ] F := modelEquiv oP hF
   let ψ : C(BoundarylessModel (I.transContinuousLinearEquiv L) P, P) :=
     ⟨(BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) P).symm,
       (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) P).symm.continuous⟩
@@ -107,16 +117,9 @@ theorem HomologicalOrientation.isCoveredByDiffeomorphisms_of_degreeAtRegularValu
     (oM : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1)))
     (φ : C(P, M ≃ₘ^k⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ M)) {x₀ y : M}
     (hy : IsRegularValue I 𝓘(ℝ, F) (fun p ↦ φ p x₀) y) (x : M) :
-    o.IsCoveredByDiffeomorphisms hF k x (degreeAtRegularValue oP oM (fun p ↦ φ p x₀) y) := by
-  have := ChartedSpace.locallyPathConnectedSpace F M
-  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
-  have hcov : (oM.toHomologicalOrientation hF).IsCoveredByDiffeomorphisms hF k x
-      (degreeAtRegularValue oP oM (fun p ↦ φ p x₀) y) :=
-    (HomologicalOrientation.isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x).1
-      (oM.isCoveredByDiffeomorphisms_of_degreeAtRegularValue hF k oP φ hy)
-  rcases HomologicalOrientation.eq_or_eq_neg hF (oM.toHomologicalOrientation hF) o with rfl | rfl
-  · exact hcov
-  · exact HomologicalOrientation.isCoveredByDiffeomorphisms_neg.2 hcov
+    o.IsCoveredByDiffeomorphisms hF k x (degreeAtRegularValue oP oM (fun p ↦ φ p x₀) y) :=
+  ((oM.toHomologicalOrientation hF).isCoveredByDiffeomorphisms_iff_of_connectedSpace o x₀ x).1
+    (oM.isCoveredByDiffeomorphisms_of_degreeAtRegularValue hF k oP φ hy)
 
 end RegularValue
 
@@ -130,6 +133,27 @@ variable {E H P F M : Type}
   [TopologicalSpace M] [ChartedSpace F M] [T2Space M] [CompactSpace M]
   [IsManifold 𝓘(ℝ, F) ∞ M]
   {n : ℕ} (hF : finrank ℝ F = n + 1) (k : ℕ∞ω) [IsManifold 𝓘(ℝ, F) k M]
+
+private theorem exists_isRegularValue_and_degree_eq [ConnectedSpace M]
+    (hF : finrank ℝ F = n + 1)
+    (oP : Manifold.Orientation I P (Fin (n + 1)))
+    (oM : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) {f : P → M}
+    (hf : ContMDiff I 𝓘(ℝ, F) ∞ f) :
+    ∃ y : M, IsRegularValue I 𝓘(ℝ, F) f y ∧
+      TauCeti.degree oP oM f = degreeAtRegularValue oP oM f y := by
+  have : IsManifold I 1 P := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold 𝓘(ℝ, F) 1 M := IsManifold.of_le (n := ∞) (by simp)
+  let L : E ≃L[ℝ] F := modelEquiv oP hF
+  let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := P) L ∞
+  have hf' : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, F) ∞
+      (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) P).symm) := by
+    rw [← BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm I L ∞]
+    exact hf.comp Φ.symm.contMDiff
+  obtain ⟨y, hy'⟩ := (dense_isRegularValue rfl (hf'.mdifferentiable (by simp))).nonempty
+  refine ⟨y, (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff L f y).1 hy', ?_⟩
+  rw [← oP.degree_toBoundarylessModel oM L f,
+    degree_eq_degreeAtRegularValue (oP.toBoundarylessModel L) oM hf' hy',
+    oP.degreeAtRegularValue_toBoundarylessModel oM L f y]
 
 /-- **Covering by diffeomorphisms via the smooth mapping degree.** When `(P, I)` and `M` are smooth
 and the evaluation map `p ↦ φ p x₀` is `C^∞`, Sard's theorem supplies a regular value, so `M` is
@@ -145,23 +169,7 @@ theorem Manifold.Orientation.isCoveredByDiffeomorphisms_of_degree
   have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
   have : IsManifold I 1 P := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold 𝓘(ℝ, F) 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have hEF : finrank ℝ E = finrank ℝ F := by
-    have hE : finrank ℝ E = n + 1 := by simpa using oP.card_eq.symm
-    exact hE.trans hF.symm
-  let L : E ≃L[ℝ] F := (LinearEquiv.ofFinrankEq E F hEF).toContinuousLinearEquiv
-  let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := P) L ∞
-  have hf' : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, F) ∞ ((fun p ↦ φ p x₀) ∘
-      (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) P).symm) := by
-    rw [← BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm I L ∞]
-    exact hf.comp Φ.symm.contMDiff
-  obtain ⟨y, hy'⟩ := (dense_isRegularValue rfl (hf'.mdifferentiable (by simp))).nonempty
-  have hy : IsRegularValue I 𝓘(ℝ, F) (fun p ↦ φ p x₀) y :=
-    (Manifold.Orientation.isRegularValue_toBoundarylessModel L (fun p ↦ φ p x₀) y).1 hy'
-  have hdeg :
-      TauCeti.degree oP oM (fun p ↦ φ p x₀) = degreeAtRegularValue oP oM (fun p ↦ φ p x₀) y := by
-    rw [← oP.degree_toBoundarylessModel oM L (fun p ↦ φ p x₀),
-      degree_eq_degreeAtRegularValue (oP.toBoundarylessModel L) oM hf' hy',
-      oP.degreeAtRegularValue_toBoundarylessModel oM L (fun p ↦ φ p x₀) y]
+  obtain ⟨y, hy, hdeg⟩ := exists_isRegularValue_and_degree_eq hF oP oM hf
   rw [hdeg]
   exact oM.isCoveredByDiffeomorphisms_of_degreeAtRegularValue hF k oP φ hy
 
@@ -174,15 +182,11 @@ theorem HomologicalOrientation.isCoveredByDiffeomorphisms_of_degree
     (φ : C(P, M ≃ₘ^k⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ M)) {x₀ : M}
     (hf : ContMDiff I 𝓘(ℝ, F) ∞ fun p ↦ φ p x₀) (x : M) :
     o.IsCoveredByDiffeomorphisms hF k x (TauCeti.degree oP oM fun p ↦ φ p x₀) := by
-  have := ChartedSpace.locallyPathConnectedSpace F M
-  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
-  have hcov : (oM.toHomologicalOrientation hF).IsCoveredByDiffeomorphisms hF k x
-      (TauCeti.degree oP oM fun p ↦ φ p x₀) :=
-    (HomologicalOrientation.isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x).1
-      (oM.isCoveredByDiffeomorphisms_of_degree hF k oP φ hf)
-  rcases HomologicalOrientation.eq_or_eq_neg hF (oM.toHomologicalOrientation hF) o with rfl | rfl
-  · exact hcov
-  · exact HomologicalOrientation.isCoveredByDiffeomorphisms_neg.2 hcov
+  have : IsManifold I 1 P := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold 𝓘(ℝ, F) 1 M := IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨y, hy, hdeg⟩ := exists_isRegularValue_and_degree_eq hF oP oM hf
+  rw [hdeg]
+  exact o.isCoveredByDiffeomorphisms_of_degreeAtRegularValue hF k oP oM φ hy x
 
 end GlobalDegree
 

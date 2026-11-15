@@ -424,11 +424,11 @@ theorem isRegularPoint_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
     TauCeti.IsRegularPoint I' J (f ∘ Φ) x ↔ TauCeti.IsRegularPoint I J f (Φ x) := by
   refine ⟨fun h ↦ ?_,
     fun h ↦ h.comp (TauCeti.isRegularPoint_iff.2 (Φ.isInvertible_mfderiv hn).surjective)⟩
-  have hcomp : ((f ∘ Φ) ∘ Φ.symm) = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
-  rw [← hcomp]
   have hx : TauCeti.IsRegularPoint I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
     simpa only [Φ.symm_apply_apply] using h
-  exact hx.comp (TauCeti.isRegularPoint_iff.2 (Φ.symm.isInvertible_mfderiv hn).surjective)
+  simpa only [Function.comp_assoc, ← Φ.coe_toHomeomorph, ← Φ.coe_toHomeomorph_symm,
+    Φ.toHomeomorph.self_comp_symm, Function.comp_id] using
+    hx.comp (TauCeti.isRegularPoint_iff.2 (Φ.symm.isInvertible_mfderiv hn).surjective)
 
 /-- Precomposing a map with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular values. -/
 theorem isRegularValue_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0) {f : M → N} {y : N} :

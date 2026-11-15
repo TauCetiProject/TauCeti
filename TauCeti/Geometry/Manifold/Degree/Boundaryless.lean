@@ -37,7 +37,7 @@ by `degreeAtRegularValue o o' f y • [N]`.
 
 ## Main results
 
-* `TauCeti.Manifold.Orientation.isRegularValue_toBoundarylessModel`,
+* `TauCeti.BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff`,
   `TauCeti.Manifold.Orientation.degreeAtRegularValue_toBoundarylessModel`,
   `TauCeti.Manifold.Orientation.degree_toBoundarylessModel`: recharting the source to
   `BoundarylessModel` preserves regular values, `degreeAtRegularValue`, and `degree`.
@@ -53,6 +53,33 @@ noncomputable section
 
 open Function Module Set
 open scoped ContDiff Manifold
+
+namespace TauCeti.BoundarylessModel
+
+section RegularValue
+
+variable {𝕜 E F H M G N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  [TopologicalSpace N] [ChartedSpace G N]
+
+/-- Recharting a boundaryless manifold `(M, I)` to
+`BoundarylessModel (I.transContinuousLinearEquiv L) M` preserves regular values. -/
+@[simp]
+theorem isRegularValue_comp_homeomorph_symm_iff (L : E ≃L[𝕜] F) (f : M → N) (y : N) :
+    IsRegularValue 𝓘(𝕜, F) J
+        (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y ↔
+      IsRegularValue I J f y := by
+  simpa only [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm] using
+    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
+      ).symm.isRegularValue_comp_right one_ne_zero (f := f) (y := y)
+
+end RegularValue
+
+end TauCeti.BoundarylessModel
 
 namespace TauCeti.Manifold.Orientation
 
@@ -91,18 +118,6 @@ theorem isOrientationPreservingAt_symm_toBoundarylessModel (o : Manifold.Orienta
     IsOrientationPreservingAt (o.toBoundarylessModel L) o
       (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1).symm x :=
   isOrientationPreservingAt_pullback o _ _ _ x
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- Recharting a boundaryless manifold `(M, I)` to
-`BoundarylessModel (I.transContinuousLinearEquiv L) M` preserves regular values. -/
-@[simp]
-theorem isRegularValue_toBoundarylessModel (L : E ≃L[ℝ] F) (f : M → N) (y : N) :
-    IsRegularValue 𝓘(ℝ, F) J
-        (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y ↔
-      IsRegularValue I J f y := by
-  simpa only [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm] using
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) L 1
-      ).symm.isRegularValue_comp_right one_ne_zero (f := f) (y := y)
 
 /-- Recharting the source `(M, I)` to `BoundarylessModel (I.transContinuousLinearEquiv L) M`
 leaves `degreeAtRegularValue` unchanged. -/
@@ -162,7 +177,7 @@ theorem degree_toBoundarylessModel_toHomologicalOrientation [PreconnectedSpace N
   have hproper : IsProperMap (f.comp ψ) :=
     hf.comp (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm.isProperMap
   have hy' : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F) (f.comp ψ) y :=
-    (isRegularValue_toBoundarylessModel (J := 𝓘(ℝ, F)) L f y).2 hy
+    (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff (J := 𝓘(ℝ, F)) L f y).2 hy
   rw [degree_toHomologicalOrientation hF (o.toBoundarylessModel L) o' hproper hy']
   exact degreeAtRegularValue_toBoundarylessModel o o' L f y
 
@@ -181,7 +196,7 @@ theorem mapFundamentalClass_toBoundarylessModel_eq_degreeAtRegularValue_smul
       degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hF).fundamentalClass hF := by
   have hy' : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F)
       (f ∘ (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv L) M).symm) y :=
-    (isRegularValue_toBoundarylessModel (J := 𝓘(ℝ, F)) L f y).2 hy
+    (BoundarylessModel.isRegularValue_comp_homeomorph_symm_iff (J := 𝓘(ℝ, F)) L f y).2 hy
   rw [mapFundamentalClass_eq_degreeAtRegularValue_smul hF (o.toBoundarylessModel L) o' hy']
   congr 1
   exact degreeAtRegularValue_toBoundarylessModel o o' L f y

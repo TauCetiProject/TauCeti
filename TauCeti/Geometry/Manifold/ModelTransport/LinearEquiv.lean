@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
+import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 
 /-!
 # Linear model changes for `BoundarylessModel`
@@ -45,18 +46,15 @@ def diffeomorphTransContinuousLinearEquiv (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
 theorem coe_diffeomorphTransContinuousLinearEquiv (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
     ⇑(diffeomorphTransContinuousLinearEquiv I (M := M) L n) =
       homeomorph (I.transContinuousLinearEquiv L) M := by
-  ext x
-  simp only [diffeomorphTransContinuousLinearEquiv, Diffeomorph.coe_trans, Function.comp_apply,
-    coe_diffeomorph, ContinuousLinearEquiv.toTransContinuousLinearEquiv]
-  rfl
+  simp only [diffeomorphTransContinuousLinearEquiv, Diffeomorph.coe_trans, coe_diffeomorph,
+    ContinuousLinearEquiv.coe_toTransContinuousLinearEquiv, Function.comp_id]
 
 @[simp]
 theorem coe_diffeomorphTransContinuousLinearEquiv_symm (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
     ⇑(diffeomorphTransContinuousLinearEquiv I (M := M) L n).symm =
       (homeomorph (I.transContinuousLinearEquiv L) M).symm := by
-  ext x
   simp only [diffeomorphTransContinuousLinearEquiv, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
-    Function.comp_apply, coe_diffeomorph_symm, ContinuousLinearEquiv.toTransContinuousLinearEquiv]
-  rfl
+    coe_diffeomorph_symm, ContinuousLinearEquiv.coe_toTransContinuousLinearEquiv_symm,
+    Function.id_comp]
 
 end TauCeti.BoundarylessModel

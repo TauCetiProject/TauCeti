@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.LinearAlgebra.Orientation
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.Reflection
-import Mathlib.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # Rotations of an isometrically embedded complex plane
@@ -28,7 +28,8 @@ pair `ι 1`, `ι i` exhibits `(ι.planeRotation c).toContinuousLinearEquiv : E �
 function of `ι 1`, `ι i` and `c` in the operator-norm topology
 (`Continuous.planeRotation_toContinuousLinearMap`), without any finite-dimensionality assumption.
 Each plane rotation has determinant `1`
-(`LinearIsometry.det_toContinuousLinearMap_planeRotation`) and preserves every orientation of `E`
+(`LinearIsometry.det_toContinuousLinearMap_planeRotation`,
+`LinearIsometry.linearEquiv_det_planeRotation`) and preserves every orientation of `E`
 (`LinearIsometry.orientation_map_planeRotation`). The rotation by `-1` is the half-turn of the
 plane, the reflection across its orthogonal complement (`LinearIsometry.planeRotation_neg_one`),
 and the rotation depends smoothly on the angle and the point
@@ -50,6 +51,7 @@ great-circle families on a sphere lift to families of rotations.
 * `LinearIsometry.planeRotation_apply`: explicit expansion in terms of `ι 1` and `ι i`.
 * `Continuous.planeRotation_toContinuousLinearMap`: operator-norm continuity in the plane and angle.
 * `LinearIsometry.det_toContinuousLinearMap_planeRotation`,
+  `LinearIsometry.linearEquiv_det_planeRotation`,
   `LinearIsometry.orientation_map_planeRotation`: plane rotations have determinant `1` and preserve
   orientations.
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
@@ -275,40 +277,36 @@ theorem continuous_planeRotation_toContinuousLinearMap :
     Continuous fun c : Circle ↦ ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) :=
   continuous_const.planeRotation_toContinuousLinearMap continuous_const continuous_id
 
-/-- **Every plane rotation has determinant `1`** as a continuous linear map. In infinite dimension
-every determinant is `1`; in finite dimension the determinant varies continuously along `Circle.exp`
-in `{-1, 1}` and equals `1` at the identity. -/
+private theorem coe_toContinuousLinearEquiv_toLinearMap (e : E ≃ₗᵢ[ℝ] E) :
+    ((e.toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) = (e.toLinearEquiv : E →ₗ[ℝ] E) := by
+  ext
+  simp
+
+/-- **Every plane rotation has determinant `1`** as a continuous linear map: its determinant
+varies continuously on the preconnected circle inside `{1, -1}` and equals `1` at `1`. -/
 @[simp]
 theorem det_toContinuousLinearMap_planeRotation (c : Circle) :
     ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E).det = 1 := by
-  by_cases hE : FiniteDimensional ℝ E
-  · let d : ℝ → ℝ := fun t ↦
-      ((ι.planeRotation (Circle.exp t)).toContinuousLinearEquiv : E →L[ℝ] E).det
-    have hd_cont : Continuous d :=
-      ContinuousLinearMap.continuous_det.comp
-        (ι.continuous_planeRotation_toContinuousLinearMap.comp Circle.exp.continuous)
-    have hd_abs (t : ℝ) : |d t| = 1 := by
-      simp only [d, ContinuousLinearMap.det,
-        ← LinearIsometryEquiv.toContinuousLinearMap_toLinearIsometry,
-        LinearIsometry.toLinearMap_toContinuousLinearMap, ← LinearMap.normDet_eq_abs_det]
-      exact (ι.planeRotation (Circle.exp t)).toLinearIsometry.normDet_eq_one
-    have hd0 : d 0 = 1 := by
-      simp only [d, Circle.exp_zero, map_one]
-      exact LinearMap.det_id
-    have hd_one (t : ℝ) : d t = 1 := by
-      rcases (abs_eq (zero_le_one' ℝ)).1 (hd_abs t) with h | h
-      · exact h
-      · exfalso
-        have hmem : (0 : ℝ) ∈ Set.uIcc (d 0) (d t) := by
-          rw [hd0, h, Set.uIcc_of_ge (by norm_num)]
-          exact ⟨by norm_num, by norm_num⟩
-        obtain ⟨s, -, hs⟩ := intermediate_value_uIcc hd_cont.continuousOn hmem
-        have := hd_abs s
-        rw [hs, abs_zero] at this
-        exact zero_ne_one this
-    rw [← Circle.exp_arg c]
-    exact hd_one (Complex.arg c)
-  · exact LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hE) _
+  let d : Circle → ℝ := fun z ↦ ((ι.planeRotation z).toContinuousLinearEquiv : E →L[ℝ] E).det
+  have hd_cont : Continuous d :=
+    ContinuousLinearMap.continuous_det.comp ι.continuous_planeRotation_toContinuousLinearMap
+  have hd_mem (z : Circle) : d z ∈ ({1, -1} : Set ℝ) := by
+    refine (abs_eq zero_le_one).1 ?_
+    simpa only [d, ContinuousLinearMap.det, coe_toContinuousLinearEquiv_toLinearMap] using
+      (ι.planeRotation z).abs_det
+  have hd1 : d 1 = 1 := by
+    simp [d, toContinuousLinearMap_planeRotation, ContinuousLinearMap.det]
+  exact (isPreconnected_univ.constant_of_mapsTo
+    ((Set.finite_singleton (-1)).insert 1).isDiscrete hd_cont.continuousOn
+    (fun z _ ↦ hd_mem z) (Set.mem_univ c) (Set.mem_univ 1)).trans hd1
+
+/-- **Every plane rotation has unit determinant `1`** as a linear equivalence. -/
+@[simp]
+theorem linearEquiv_det_planeRotation (c : Circle) :
+    LinearEquiv.det (ι.planeRotation c).toLinearEquiv = 1 := by
+  ext
+  simpa only [LinearEquiv.coe_det, Units.val_one, ContinuousLinearMap.det,
+    coe_toContinuousLinearEquiv_toLinearMap] using ι.det_toContinuousLinearMap_planeRotation c
 
 /-- **Every plane rotation preserves every orientation** of a finite-dimensional real inner product
 space. -/
@@ -317,14 +315,7 @@ theorem orientation_map_planeRotation {ι' : Type*} [Fintype ι']
     [FiniteDimensional ℝ E] (hcard : Fintype.card ι' = Module.finrank ℝ E)
     (o : Orientation ℝ E ι') (c : Circle) :
     Orientation.map ι' (ι.planeRotation c).toLinearEquiv o = o := by
-  classical
-  have hcoe : ((ι.planeRotation c).toLinearEquiv : E →ₗ[ℝ] E) =
-      (((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
-    ext
-    simp
-  refine (o.map_eq_iff_det_pos (ι.planeRotation c).toLinearEquiv hcard).2 ?_
-  rw [hcoe, ← ContinuousLinearMap.det, ι.det_toContinuousLinearMap_planeRotation c]
-  exact zero_lt_one
+  rw [o.map_eq_det_inv_smul _ hcard, ι.linearEquiv_det_planeRotation c, inv_one, one_smul]
 
 /-! ### Plane embeddings from orthonormal pairs -/
 

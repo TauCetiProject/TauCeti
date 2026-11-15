@@ -53,8 +53,9 @@ that `π_{n-1}(SO(n))` is torsion.
 
 ## Main results
 
-* `TauCeti.evalAt_comp_sphereRotationDiffFamily`: composing `sphereRotationDiffFamily p k` with
-  `Diffeomorph.evalAt p` recovers `sphereRotationFamily p`.
+* `TauCeti.sphereRotationDiffFamily_apply_self`,
+  `TauCeti.evalAt_comp_sphereRotationDiffFamily`: evaluating `sphereRotationDiffFamily p k` at `p`
+  (pointwise or via `Diffeomorph.evalAt p`) recovers `sphereRotationFamily p`.
 * `TauCeti.joined_one_sphereRotationDiffFamily`: every diffeomorphism in the family is isotopic to
   the identity in `Diff^k(Sⁿ)`.
 * `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`: `Sᵐ⁺¹` is
@@ -153,18 +154,26 @@ theorem sphereRotationDiffFamily_apply (p : sphere (0 : E) 1) (k : ℕ∞ω)
         ((spherePlaneIsometry p x.1).planeRotation (Circle.homeomorphSphere.symm x.2)) k := by
   rw [sphereRotationDiffFamily, ContinuousMap.coe_mk, LinearIsometryEquiv.unitSphereDiffHom_apply]
 
+/-- Evaluating `sphereRotationDiffFamily p k x` at the base point `p` recovers
+`sphereRotationFamily p x`. -/
+-- Fires before `sphereRotationDiffFamily_apply` unfolds the diffeomorphism.
+@[simp↓]
+theorem sphereRotationDiffFamily_apply_self (p : sphere (0 : E) 1) (k : ℕ∞ω)
+    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    sphereRotationDiffFamily (m := m) p k x p = sphereRotationFamily p x := by
+  apply Subtype.ext
+  simpa [coe_sphereRotationFamily] using
+    (spherePlaneIsometry p x.1).planeRotation_apply_map (Circle.homeomorphSphere.symm x.2) 1
+
 /-- Composing `sphereRotationDiffFamily p k` with evaluation at `p` recovers the smooth rotation
 family `sphereRotationFamily p`. -/
 @[simp]
 theorem evalAt_comp_sphereRotationDiffFamily (p : sphere (0 : E) 1) (k : ℕ∞ω) :
     (Diffeomorph.evalAt p).comp (sphereRotationDiffFamily (m := m) p k) =
-      ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ := by
-  ext x : 2
-  simp only [ContinuousMap.comp_apply, Diffeomorph.evalAt_apply, sphereRotationDiffFamily_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, ContinuousMap.coe_mk,
-    coe_sphereRotationFamily]
-  simpa using
-    (spherePlaneIsometry p x.1).planeRotation_apply_map (Circle.homeomorphSphere.symm x.2) 1
+      ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ :=
+  ContinuousMap.ext fun x ↦ by
+    simp only [ContinuousMap.comp_apply, Diffeomorph.evalAt_apply,
+      sphereRotationDiffFamily_apply_self, ContinuousMap.coe_mk]
 
 /-- At the identity angle `1 ∈ S¹`, `sphereRotationDiffFamily p k` is the identity
 diffeomorphism. -/
@@ -214,20 +223,16 @@ theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
   let oE : Orientation ℝ E (Fin (m + 1 + 1)) :=
     (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = m + 1 + 1)).orientation
   obtain ⟨q, hqp, hqp'⟩ := exists_sphere_ne_and_ne_neg (m + 1) x₀
-  have heval :
-      (fun x ↦ sphereRotationDiffFamily (m := m) x₀ k x x₀) = sphereRotationFamily x₀ := by
-    funext x
-    simpa only [ContinuousMap.comp_apply, Diffeomorph.evalAt_apply, ContinuousMap.coe_mk] using
-      DFunLike.congr_fun (evalAt_comp_sphereRotationDiffFamily (m := m) x₀ k) x
   have hy : IsRegularValue ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1))
       (fun x ↦ sphereRotationDiffFamily (m := m) x₀ k x x₀) q := by
-    rw [heval]
-    exact isRegularValue_sphereRotationFamily x₀ hqp hqp'
+    simpa only [sphereRotationDiffFamily_apply_self] using
+      isRegularValue_sphereRotationFamily x₀ hqp hqp'
   have hcov := o.isCoveredByDiffeomorphisms_of_degreeAtRegularValue finrank_euclideanSpace_fin k
     ((oE.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere x₀)).sphereOrientation.prod
       Complex.orientation.sphereOrientation)
     oE.sphereOrientation (sphereRotationDiffFamily (m := m) x₀ k) hy x₀
-  rwa [heval, oE.degreeAtRegularValue_sphereRotationFamily x₀ hqp hqp'] at hcov
+  simpa only [sphereRotationDiffFamily_apply_self,
+    oE.degreeAtRegularValue_sphereRotationFamily x₀ hqp hqp'] using hcov
 
 /-- **Odd-dimensional spheres are `2`-covered by diffeomorphisms** (the second proof of
 Proposition 6.34 of Barraud–Damian–Humilière–Oancea). Whenever `m` is even, the odd-dimensional

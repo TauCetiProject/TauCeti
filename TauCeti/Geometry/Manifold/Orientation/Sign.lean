@@ -268,8 +268,8 @@ theorem orientationSign_comp_right (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0
         have hx : MDifferentiableAt I' J (f ∘ Φ) (Φ.symm (Φ x)) := by
           simpa only [Φ.symm_apply_apply] using mdifferentiableAt_of_isInvertible_mfderiv hinv
         exact hx.comp (Φ x) (Φ.symm.mdifferentiable hn (Φ x))
-      have heq : (f ∘ Φ) ∘ Φ.symm = f := funext fun z ↦ congrArg f (Φ.apply_symm_apply z)
-      rw [heq] at hd
+      rw [Function.comp_assoc, ← Φ.coe_toHomeomorph, ← Φ.coe_toHomeomorph_symm,
+        Φ.toHomeomorph.self_comp_symm, Function.comp_id] at hd
       exact hf hd
     rw [orientationSign_of_not_isInvertible hncomp, orientationSign_of_not_isInvertible hnf,
       zero_mul]
