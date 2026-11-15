@@ -166,28 +166,23 @@ theorem signature_trefoilSeifertMatrix :
     Fin.sum_univ_two]
   norm_num
 
-/-- **The signature of the figure-eight knot is `0`.** Its symmetrised Seifert matrix
-`!![2, 1; 1, -2]` is indefinite, being congruent to `diagonal ![2, -5/2]`. -/
+omit [IsStrictOrderedRing 𝕜] in
+/-- **The signature of the figure-eight knot is `0`.** Its Seifert matrix `!![1, 1; 0, -1]` is
+congruent to its own negative, by the unimodular change of basis `!![0, 1; 1, 1]`. -/
 theorem signature_figureEightSeifertMatrix :
     Matrix.signature (figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜)) = 0 := by
-  have hA :
-      figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜) + (figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜))ᵀ
-      = !![2, 1; 1, -2] := by
-    rw [map_figureEightSeifertMatrix]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp <;> ring
-  have hP : IsUnit (!![(1 : 𝕜), 0; -(1 / 2), 1]).det := by
+  have hP : IsUnit (!![(0 : 𝕜), 1; 1, 1]).det := by
     rw [Matrix.det_fin_two_of, isUnit_iff_ne_zero]
     norm_num
-  have hd : !![(1 : 𝕜), 0; -(1 / 2), 1] * !![(2 : 𝕜), 1; 1, -2] * (!![(1 : 𝕜), 0; -(1 / 2), 1])ᵀ
-      = Matrix.diagonal ![2, -5 / 2] := by
-    rw [Matrix.diagonal_fin_two]
+  have hcongr : !![(0 : 𝕜), 1; 1, 1] * figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜) *
+      (!![(0 : 𝕜), 1; 1, 1])ᵀ = -figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜) := by
+    rw [map_figureEightSeifertMatrix]
     ext i j
     fin_cases i <;> fin_cases j <;>
       norm_num [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
-  rw [← Matrix.signature_add_transpose, hA, Matrix.signature_eq_of_congr_diagonal hP hd,
-    Fin.sum_univ_two]
-  norm_num
+  have h := Matrix.signature_congr hP (figureEightSeifertMatrix.map ((↑) : ℤ → 𝕜))
+  rw [hcongr, Matrix.signature_neg] at h
+  omega
 
 /-- The trefoil and the figure-eight knot have different signatures, so their Seifert matrices
 are not S-equivalent. -/
