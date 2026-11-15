@@ -44,7 +44,8 @@ file equips `BraidedTensorProduct R 𝒜 ℬ χ` with:
   `TauCeti.BraidedTensorProduct.includeRightGraded`: the factor inclusions as `GradedAlgHom`s.
 * `TauCeti.BraidedTensorProduct.liftGraded` and `TauCeti.BraidedTensorProduct.liftGradedEquiv`:
   the graded universal property out of `grading 𝒜 ℬ χ`.
-* `TauCeti.BraidedTensorProduct.mapGraded`: functoriality of `grading` for `GradedAlgHom`s.
+* `TauCeti.BraidedTensorProduct.mapBigraded` and `TauCeti.BraidedTensorProduct.mapGraded`:
+  functoriality of `bigrading` and `grading` for `GradedAlgHom`s.
 * `TauCeti.BraidedTensorProduct.commGraded`: the braided factor-swap `GradedAlgHom` for paired
   bicharacters.
 * `TauCeti.BraidedTensorProduct.assocGraded`, `TauCeti.BraidedTensorProduct.assocSymmGraded`, and
@@ -114,9 +115,7 @@ theorem map_ofLinearEquiv_map₂ (p : G₁ × G₂) :
 theorem mem_bigrading_iff {p : G₁ × G₂} {x : BraidedTensorProduct R 𝒜 ℬ χ} :
     x ∈ bigrading 𝒜 ℬ χ p ↔
       x.toTensorProduct ∈ Submodule.map₂ (TensorProduct.mk R A B) (𝒜 p.1) (ℬ p.2) := by
-  rw [← map_ofLinearEquiv_map₂, Submodule.mem_map]
-  exact ⟨fun ⟨z, hz, hzx⟩ ↦ by simpa [← hzx] using hz,
-    fun hx ↦ ⟨x.toTensorProduct, hx, by simp⟩⟩
+  rw [← map_ofLinearEquiv_map₂, Submodule.mem_map_equiv, ofLinearEquiv_symm_apply]
 
 /-- A pure tensor of homogeneous elements lies in the corresponding bidegree piece. -/
 theorem tmul_mem_bigrading {i : G₁} {j : G₂} {a : A} (ha : a ∈ 𝒜 i) {b : B} (hb : b ∈ ℬ j) :
@@ -249,6 +248,89 @@ instance instGradedMonoidBigrading : SetLike.GradedMonoid (bigrading 𝒜 ℬ χ
 noncomputable instance instGradedAlgebraBigrading : GradedAlgebra (bigrading 𝒜 ℬ χ) :=
   { instGradedMonoidBigrading 𝒜 ℬ χ, instDecompositionBigrading 𝒜 ℬ χ with }
 
+section MapBigraded
+
+variable {𝒜 ℬ} {A' B' A'' B'' : Type*}
+  [Semiring A'] [Semiring B'] [Algebra R A'] [Algebra R B']
+  [Semiring A''] [Semiring B''] [Algebra R A''] [Algebra R B'']
+  {𝒜' : G₁ → Submodule R A'} {ℬ' : G₂ → Submodule R B'} [GradedAlgebra 𝒜'] [GradedAlgebra ℬ']
+  {𝒜'' : G₁ → Submodule R A''} {ℬ'' : G₂ → Submodule R B''} [GradedAlgebra 𝒜''] [GradedAlgebra ℬ'']
+
+/-- Functoriality of `bigrading` for `GradedAlgHom`s. -/
+noncomputable def mapBigraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
+    bigrading 𝒜 ℬ χ →ₐᵍ[R] bigrading 𝒜' ℬ' χ where
+  toAlgHom := map χ f g
+  map_mem {p x} hx := by
+    refine bigrading_le 𝒜 ℬ χ
+      (M := (bigrading 𝒜' ℬ' χ p).comap (map χ f g).toLinearMap)
+      (fun a ha b hb ↦ ?_) hx
+    rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, map_tmul]
+    exact tmul_mem_bigrading 𝒜' ℬ' χ (Graded.map_mem f ha) (Graded.map_mem g hb)
+
+@[simp] theorem mapBigraded_toAlgHom (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
+    (mapBigraded χ f g).toAlgHom = map χ f g := by rfl
+
+@[simp] theorem mapBigraded_tmul (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') (a : A) (b : B) :
+    mapBigraded χ f g (tmul 𝒜 ℬ χ a b) = tmul 𝒜' ℬ' χ (f a) (g b) := map_tmul χ f g a b
+
+/-- On underlying tensors, `mapBigraded` acts as `TensorProduct.map`. -/
+@[simp] theorem toTensorProduct_mapBigraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ')
+    (x : BraidedTensorProduct R 𝒜 ℬ χ) :
+    (mapBigraded χ f g x).toTensorProduct =
+      TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap x.toTensorProduct :=
+  toTensorProduct_map χ f g x
+
+@[simp] theorem mapBigraded_id : mapBigraded χ (.id R 𝒜) (.id R ℬ) = .id R (bigrading 𝒜 ℬ χ) :=
+  GradedAlgHom.coe_toAlgHom_injective (map_id χ)
+
+@[simp] theorem mapBigraded_comp (f' : 𝒜' →ₐᵍ[R] 𝒜'') (g' : ℬ' →ₐᵍ[R] ℬ'')
+    (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
+    mapBigraded χ (f'.comp f) (g'.comp g) = (mapBigraded χ f' g').comp (mapBigraded χ f g) :=
+  GradedAlgHom.coe_toAlgHom_injective (map_comp χ f' g' f g)
+
+/-- `BraidedTensorProduct.map` commutes with bidegree projections. -/
+@[simp] theorem decompose_bigrading_map (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ')
+    (x : BraidedTensorProduct R 𝒜 ℬ χ) (p : G₁ × G₂) :
+    (DirectSum.decompose (bigrading 𝒜' ℬ' χ) (map χ f g x) p :
+        BraidedTensorProduct R 𝒜' ℬ' χ) =
+      map χ f g (DirectSum.decompose (bigrading 𝒜 ℬ χ) x p) := by
+  simpa only [← GradedAlgHom.coe_toAlgHom, mapBigraded_toAlgHom] using
+    (map_directSumDecompose (𝒜 := bigrading 𝒜 ℬ χ) (ℬ := bigrading 𝒜' ℬ' χ)
+      (mapBigraded χ f g) (x := x) (i := p)).symm
+
+end MapBigraded
+
+section CommBigrading
+
+variable {χ : AddChar G₂ (AddChar G₁ R)} {ψ : AddChar G₁ (AddChar G₂ R)}
+
+/-- `BraidedTensorProduct.comm` sends the `(i, j)`-bidegree piece into the `(j, i)`-bidegree
+piece. -/
+theorem comm_mem_bigrading (hχψ : ∀ i j, χ j i * ψ i j = 1) {p : G₁ × G₂}
+    {x : BraidedTensorProduct R 𝒜 ℬ χ} (hx : x ∈ bigrading 𝒜 ℬ χ p) :
+    comm 𝒜 ℬ hχψ x ∈ bigrading ℬ 𝒜 ψ p.swap := by
+  obtain ⟨i, j⟩ := p
+  refine bigrading_le 𝒜 ℬ χ
+    (M := (bigrading ℬ 𝒜 ψ (j, i)).comap (comm 𝒜 ℬ hχψ).toLinearMap)
+    (fun a ha b hb ↦ ?_) hx
+  rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, comm_tmul_of_mem 𝒜 ℬ hχψ ha hb]
+  exact Submodule.smul_mem _ _ (tmul_mem_bigrading ℬ 𝒜 ψ hb ha)
+
+/-- `BraidedTensorProduct.comm` swaps bidegree projections. -/
+@[simp] theorem decompose_bigrading_comm (hχψ : ∀ i j, χ j i * ψ i j = 1)
+    (x : BraidedTensorProduct R 𝒜 ℬ χ) (p : G₂ × G₁) :
+    (DirectSum.decompose (bigrading ℬ 𝒜 ψ) (comm 𝒜 ℬ hχψ x) p :
+        BraidedTensorProduct R ℬ 𝒜 ψ) =
+      comm 𝒜 ℬ hχψ (DirectSum.decompose (bigrading 𝒜 ℬ χ) x p.swap) := by
+  conv_lhs => rw [← Prod.swap_swap p]
+  simpa only [AlgHom.toRingHom_eq_coe, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass,
+    AlgHom.coe_toRingHom] using
+    (DirectSum.map_decompose_shift (bigrading 𝒜 ℬ χ) (bigrading ℬ 𝒜 ψ)
+      (comm 𝒜 ℬ hχψ).toRingHom.toAddMonoidHom Prod.swap Prod.swap_injective
+      (fun _ _ hx ↦ comm_mem_bigrading 𝒜 ℬ hχψ hx) p.swap x).symm
+
+end CommBigrading
+
 end Algebra
 
 end Bigrading
@@ -359,9 +441,11 @@ variable {R : Type uR} {G : Type uG} {A : Type uA} {B : Type uB}
   (χ : AddChar G (AddChar G R))
 
 /-- When `G` is commutative, the `χ`-twisted multiplication adds total degrees in `G`. -/
-instance instGradedMonoidGrading : SetLike.GradedMonoid (grading 𝒜 ℬ χ) :=
-  inferInstanceAs (SetLike.GradedMonoid
-    (coarsenGrading (bigrading 𝒜 ℬ χ) (AddMonoidHom.fst G G + AddMonoidHom.snd G G)))
+instance instGradedMonoidGrading : SetLike.GradedMonoid (grading 𝒜 ℬ χ) := by
+  have h : (fun p : G × G ↦ p.1 + p.2) = ⇑(AddMonoidHom.fst G G + AddMonoidHom.snd G G) := by
+    ext p; simp
+  rw [grading_eq_coarsenGrading, h]
+  infer_instance
 
 /-- When `𝒜` and `ℬ` are graded by a common `AddCommMonoid G`, `BraidedTensorProduct R 𝒜 ℬ χ` is
 an internally `G`-graded `R`-algebra for `grading 𝒜 ℬ χ`. -/
@@ -494,49 +578,48 @@ variable {𝒜 ℬ} {A' B' A'' B'' : Type*}
 
 /-- Functoriality of `grading` for `GradedAlgHom`s. -/
 noncomputable def mapGraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
-    grading 𝒜 ℬ χ →ₐᵍ[R] grading 𝒜' ℬ' χ where
-  toAlgHom := map χ f g
-  map_mem {k x} hx := by
-    refine grading_le 𝒜 ℬ χ
-      (M := (grading 𝒜' ℬ' χ k).comap (map χ f g).toLinearMap)
-      (fun i j hij a ha b hb ↦ ?_) hx
-    rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, map_tmul, ← hij]
-    exact tmul_mem_grading 𝒜' ℬ' χ (Graded.map_mem f ha) (Graded.map_mem g hb)
+    grading 𝒜 ℬ χ →ₐᵍ[R] grading 𝒜' ℬ' χ :=
+  liftGraded 𝒜 ℬ χ ((includeLeftGraded 𝒜' ℬ' χ).comp f) ((includeRightGraded 𝒜' ℬ' χ).comp g)
+    fun _ _ _ ha _ hb ↦ by
+      simp only [GradedAlgHom.comp_apply]
+      exact includeRightGraded_mul_includeLeftGraded_of_mem 𝒜' ℬ' χ
+        (Graded.map_mem f ha) (Graded.map_mem g hb)
 
 @[simp] theorem mapGraded_toAlgHom (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
-    (mapGraded χ f g).toAlgHom = map χ f g := by rfl
+    (mapGraded χ f g).toAlgHom = map χ f g := by ext <;> simp [mapGraded]
 
 @[simp] theorem mapGraded_tmul (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') (a : A) (b : B) :
-    mapGraded χ f g (tmul 𝒜 ℬ χ a b) = tmul 𝒜' ℬ' χ (f a) (g b) := map_tmul χ f g a b
+    mapGraded χ f g (tmul 𝒜 ℬ χ a b) = tmul 𝒜' ℬ' χ (f a) (g b) := by
+  simp [← GradedAlgHom.coe_toAlgHom]
 
 @[simp] theorem mapGraded_comp_includeLeftGraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
     (mapGraded χ f g).comp (includeLeftGraded 𝒜 ℬ χ) = (includeLeftGraded 𝒜' ℬ' χ).comp f :=
-  GradedAlgHom.coe_toAlgHom_injective (map_comp_includeLeft χ f g)
+  liftGraded_comp_includeLeftGraded _ _ _ _ _ _
 
 @[simp] theorem mapGraded_comp_includeRightGraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
     (mapGraded χ f g).comp (includeRightGraded 𝒜 ℬ χ) = (includeRightGraded 𝒜' ℬ' χ).comp g :=
-  GradedAlgHom.coe_toAlgHom_injective (map_comp_includeRight χ f g)
+  liftGraded_comp_includeRightGraded _ _ _ _ _ _
 
 /-- On underlying tensors, `mapGraded` acts as `TensorProduct.map`. -/
 @[simp] theorem toTensorProduct_mapGraded (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ')
     (x : BraidedTensorProduct R 𝒜 ℬ χ) :
     (mapGraded χ f g x).toTensorProduct =
-      TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap x.toTensorProduct :=
-  toTensorProduct_map χ f g x
+      TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap x.toTensorProduct := by
+  simp [← GradedAlgHom.coe_toAlgHom]
 
 @[simp] theorem mapGraded_id : mapGraded χ (.id R 𝒜) (.id R ℬ) = .id R (grading 𝒜 ℬ χ) :=
-  GradedAlgHom.coe_toAlgHom_injective (map_id χ)
+  GradedAlgHom.coe_toAlgHom_injective (by simp)
 
 theorem mapGraded_comp (f' : 𝒜' →ₐᵍ[R] 𝒜'') (g' : ℬ' →ₐᵍ[R] ℬ'')
     (f : 𝒜 →ₐᵍ[R] 𝒜') (g : ℬ →ₐᵍ[R] ℬ') :
     mapGraded χ (f'.comp f) (g'.comp g) = (mapGraded χ f' g').comp (mapGraded χ f g) :=
-  GradedAlgHom.coe_toAlgHom_injective (map_comp χ f' g' f g)
+  GradedAlgHom.coe_toAlgHom_injective (by simp [GradedAlgHom.comp_toAlgHom, map_comp])
 
 /-- If `f` and `g` are surjective `GradedAlgHom`s, then so is `mapGraded χ f g`. -/
 theorem mapGraded_surjective {f : 𝒜 →ₐᵍ[R] 𝒜'} {g : ℬ →ₐᵍ[R] ℬ'}
     (hf : Function.Surjective f) (hg : Function.Surjective g) :
-    Function.Surjective (mapGraded χ f g) :=
-  map_surjective χ hf hg
+    Function.Surjective (mapGraded χ f g) := by
+  simpa only [← GradedAlgHom.coe_toAlgHom, mapGraded_toAlgHom] using map_surjective χ hf hg
 
 end MapGraded
 
@@ -547,42 +630,46 @@ variable {χ : AddChar G (AddChar G R)} {ψ : AddChar G (AddChar G R)}
 /-- Paired bicharacters `χ` and `ψ` satisfying `∀ i j, χ j i * ψ i j = 1` induce a total-degree
 preserving factor-swap `GradedAlgHom` from `grading 𝒜 ℬ χ` to `grading ℬ 𝒜 ψ`. -/
 noncomputable def commGraded (hχψ : ∀ i j, χ j i * ψ i j = 1) :
-    grading 𝒜 ℬ χ →ₐᵍ[R] grading ℬ 𝒜 ψ where
-  toAlgHom := comm 𝒜 ℬ hχψ
-  map_mem {k x} hx := by
-    refine grading_le 𝒜 ℬ χ
-      (M := (grading ℬ 𝒜 ψ k).comap (comm 𝒜 ℬ hχψ).toLinearMap)
-      (fun i j hij a ha b hb ↦ ?_) hx
-    rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, comm_tmul_of_mem 𝒜 ℬ hχψ ha hb,
-      ← hij, add_comm i j]
-    exact Submodule.smul_mem _ _ (tmul_mem_grading ℬ 𝒜 ψ hb ha)
+    grading 𝒜 ℬ χ →ₐᵍ[R] grading ℬ 𝒜 ψ :=
+  liftGraded 𝒜 ℬ χ (includeRightGraded ℬ 𝒜 ψ) (includeLeftGraded ℬ 𝒜 ψ) fun i j _ ha _ hb ↦ by
+    rw [includeRightGraded_mul_includeLeftGraded_of_mem ℬ 𝒜 ψ hb ha, smul_smul, hχψ i j, one_smul]
 
 @[simp] theorem commGraded_toAlgHom (hχψ : ∀ i j, χ j i * ψ i j = 1) :
-    (commGraded 𝒜 ℬ hχψ).toAlgHom = comm 𝒜 ℬ hχψ := by rfl
+    (commGraded 𝒜 ℬ hχψ).toAlgHom = comm 𝒜 ℬ hχψ := by ext <;> simp [commGraded]
 
 @[simp] theorem commGraded_tmul_one (hχψ : ∀ i j, χ j i * ψ i j = 1) (a : A) :
-    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ a 1) = tmul ℬ 𝒜 ψ 1 a := comm_tmul_one 𝒜 ℬ hχψ a
+    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ a 1) = tmul ℬ 𝒜 ψ 1 a := by
+  simp [← GradedAlgHom.coe_toAlgHom]
 
 @[simp] theorem commGraded_one_tmul (hχψ : ∀ i j, χ j i * ψ i j = 1) (b : B) :
-    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ 1 b) = tmul ℬ 𝒜 ψ b 1 := comm_one_tmul 𝒜 ℬ hχψ b
+    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ 1 b) = tmul ℬ 𝒜 ψ b 1 := by
+  simp [← GradedAlgHom.coe_toAlgHom]
 
 theorem commGraded_tmul_of_mem (hχψ : ∀ i j, χ j i * ψ i j = 1) {i j : G}
     {a : A} (ha : a ∈ 𝒜 i) {b : B} (hb : b ∈ ℬ j) :
-    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ a b) = ψ i j • tmul ℬ 𝒜 ψ b a :=
-  comm_tmul_of_mem 𝒜 ℬ hχψ ha hb
+    commGraded 𝒜 ℬ hχψ (tmul 𝒜 ℬ χ a b) = ψ i j • tmul ℬ 𝒜 ψ b a := by
+  simpa only [← GradedAlgHom.coe_toAlgHom, commGraded_toAlgHom] using
+    comm_tmul_of_mem 𝒜 ℬ hχψ ha hb
 
 @[simp] theorem commGraded_comp_includeLeftGraded (hχψ : ∀ i j, χ j i * ψ i j = 1) :
     (commGraded 𝒜 ℬ hχψ).comp (includeLeftGraded 𝒜 ℬ χ) = includeRightGraded ℬ 𝒜 ψ :=
-  GradedAlgHom.coe_toAlgHom_injective (comm_comp_includeLeft 𝒜 ℬ hχψ)
+  liftGraded_comp_includeLeftGraded _ _ _ _ _ _
 
 @[simp] theorem commGraded_comp_includeRightGraded (hχψ : ∀ i j, χ j i * ψ i j = 1) :
     (commGraded 𝒜 ℬ hχψ).comp (includeRightGraded 𝒜 ℬ χ) = includeLeftGraded ℬ 𝒜 ψ :=
-  GradedAlgHom.coe_toAlgHom_injective (comm_comp_includeRight 𝒜 ℬ hχψ)
+  liftGraded_comp_includeRightGraded _ _ _ _ _ _
 
 @[simp] theorem commGraded_comp_commGraded (hχψ : ∀ i j, χ j i * ψ i j = 1)
     (hψχ : ∀ j i, ψ i j * χ j i = 1 := fun j i ↦ mul_comm (ψ i j) (χ j i) ▸ hχψ i j) :
     (commGraded ℬ 𝒜 hψχ).comp (commGraded 𝒜 ℬ hχψ) = .id R (grading 𝒜 ℬ χ) :=
-  GradedAlgHom.coe_toAlgHom_injective (comm_comp_comm 𝒜 ℬ hχψ hψχ)
+  GradedAlgHom.coe_toAlgHom_injective (by simp [GradedAlgHom.comp_toAlgHom])
+
+@[simp] theorem commGraded_commGraded (hχψ : ∀ i j, χ j i * ψ i j = 1)
+    (hψχ : ∀ j i, ψ i j * χ j i = 1 := fun j i ↦ mul_comm (ψ i j) (χ j i) ▸ hχψ i j)
+    (x : BraidedTensorProduct R 𝒜 ℬ χ) :
+    commGraded ℬ 𝒜 hψχ (commGraded 𝒜 ℬ hχψ x) = x := by
+  simpa only [GradedAlgHom.comp_apply, GradedAlgHom.id_apply] using
+    DFunLike.congr_fun (commGraded_comp_commGraded 𝒜 ℬ hχψ hψχ) x
 
 end CommGraded
 
@@ -605,7 +692,10 @@ theorem restrictScalars_ker_mapGraded {f : 𝒜 →ₐᵍ[R] 𝒜'} {g : ℬ →
     (RingHom.ker (mapGraded χ f g)).restrictScalars R =
       Submodule.map₂ (tmulBilinear 𝒜 ℬ χ) (LinearMap.ker f.toAlgHom.toLinearMap) ⊤ ⊔
         Submodule.map₂ (tmulBilinear 𝒜 ℬ χ) ⊤ (LinearMap.ker g.toAlgHom.toLinearMap) := by
-  rw [← restrictScalars_ker_map χ hf hg]; ext; rfl
+  rw [← restrictScalars_ker_map χ hf hg]
+  ext x
+  simp only [Submodule.restrictScalars_mem, RingHom.mem_ker, ← GradedAlgHom.coe_toAlgHom,
+    mapGraded_toAlgHom]
 
 end KerMapGraded
 
@@ -623,20 +713,13 @@ private theorem assocLeftGraded_comm {m k : G}
         mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ) u =
       χ k m • (mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ) u *
         ((includeRightGraded 𝒜 (grading ℬ 𝒞 χ) χ).comp (includeRightGraded ℬ 𝒞 χ)) c) := by
+  refine grading_induction hu (fun i j hij a ha b hb ↦ ?_) (by simp) fun y z hy hz ↦ by
+    rw [map_add, mul_add, add_mul, smul_add, hy, hz]
   let ιA := includeLeftGraded 𝒜 (grading ℬ 𝒞 χ) χ
   let ιB := (includeRightGraded 𝒜 (grading ℬ 𝒞 χ) χ).comp (includeLeftGraded ℬ 𝒞 χ)
   let ιC := (includeRightGraded 𝒜 (grading ℬ 𝒞 χ) χ).comp (includeRightGraded ℬ 𝒞 χ)
-  let F := mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ)
-  let L : BraidedTensorProduct R 𝒜 ℬ χ →ₗ[R] BraidedTensorProduct R 𝒜 (grading ℬ 𝒞 χ) χ :=
-    LinearMap.mul R _ (ιC c) ∘ₗ F.toAlgHom.toLinearMap
-  let M : BraidedTensorProduct R 𝒜 ℬ χ →ₗ[R] BraidedTensorProduct R 𝒜 (grading ℬ 𝒞 χ) χ :=
-    χ k m • ((LinearMap.mul R _).flip (ιC c) ∘ₗ F.toAlgHom.toLinearMap)
-  have hL (x) : L x = ιC c * F x := by simp [L]
-  have hM (x) : M x = χ k m • (F x * ιC c) := by simp [M]
-  rw [← hL, ← hM]
-  refine grading_le 𝒜 ℬ χ (M := LinearMap.eqLocus L M) (fun i j hij a ha b hb ↦ ?_) hu
-  rw [LinearMap.mem_eqLocus, hL, hM]
-  have hF : F (tmul 𝒜 ℬ χ a b) = ιA a * ιB b := by simp [F, ιA, ιB]
+  have hF : mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ) (tmul 𝒜 ℬ χ a b) = ιA a * ιB b := by
+    simp [ιA, ιB]
   have hCA : ιC c * ιA a = χ k i • (ιA a * ιC c) :=
     includeRightGraded_mul_includeLeftGraded_of_mem 𝒜 (grading ℬ 𝒞 χ) χ ha
       (Graded.map_mem (includeRightGraded ℬ 𝒞 χ) hc)
@@ -665,7 +748,7 @@ noncomputable def assocGraded :
 
 theorem assocGraded_tmul_one (u : BraidedTensorProduct R 𝒜 ℬ χ) :
     assocGraded 𝒜 ℬ 𝒞 χ (tmul (grading 𝒜 ℬ χ) 𝒞 χ u 1) =
-      mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ) u := by simp [assocGraded, ← one_def]
+      mapGraded χ (.id R 𝒜) (includeLeftGraded ℬ 𝒞 χ) u := by simp [assocGraded]
 
 @[simp] theorem assocGraded_comp_includeLeftGraded :
     (assocGraded 𝒜 ℬ 𝒞 χ).comp (includeLeftGraded (grading 𝒜 ℬ χ) 𝒞 χ) =
@@ -711,20 +794,13 @@ private theorem assocRightGraded_comm {i n : G}
         ((includeLeftGraded (grading 𝒜 ℬ χ) 𝒞 χ).comp (includeLeftGraded 𝒜 ℬ χ)) a =
       χ n i • (((includeLeftGraded (grading 𝒜 ℬ χ) 𝒞 χ).comp (includeLeftGraded 𝒜 ℬ χ)) a *
         mapGraded χ (includeRightGraded 𝒜 ℬ χ) (.id R 𝒞) v) := by
+  refine grading_induction hv (fun j k hjk b hb c hc ↦ ?_) (by simp) fun y z hy hz ↦ by
+    rw [map_add, add_mul, mul_add, smul_add, hy, hz]
   let κA := (includeLeftGraded (grading 𝒜 ℬ χ) 𝒞 χ).comp (includeLeftGraded 𝒜 ℬ χ)
   let κB := (includeLeftGraded (grading 𝒜 ℬ χ) 𝒞 χ).comp (includeRightGraded 𝒜 ℬ χ)
   let κC := includeRightGraded (grading 𝒜 ℬ χ) 𝒞 χ
-  let GMap := mapGraded χ (includeRightGraded 𝒜 ℬ χ) (.id R 𝒞)
-  let L : BraidedTensorProduct R ℬ 𝒞 χ →ₗ[R] BraidedTensorProduct R (grading 𝒜 ℬ χ) 𝒞 χ :=
-    (LinearMap.mul R _).flip (κA a) ∘ₗ GMap.toAlgHom.toLinearMap
-  let M : BraidedTensorProduct R ℬ 𝒞 χ →ₗ[R] BraidedTensorProduct R (grading 𝒜 ℬ χ) 𝒞 χ :=
-    χ n i • (LinearMap.mul R _ (κA a) ∘ₗ GMap.toAlgHom.toLinearMap)
-  have hL (x) : L x = GMap x * κA a := by simp [L]
-  have hM (x) : M x = χ n i • (κA a * GMap x) := by simp [M]
-  rw [← hL, ← hM]
-  refine grading_le ℬ 𝒞 χ (M := LinearMap.eqLocus L M) (fun j k hjk b hb c hc ↦ ?_) hv
-  rw [LinearMap.mem_eqLocus, hL, hM]
-  have hG : GMap (tmul ℬ 𝒞 χ b c) = κB b * κC c := by simp [GMap, κB, κC]
+  have hG : mapGraded χ (includeRightGraded 𝒜 ℬ χ) (.id R 𝒞) (tmul ℬ 𝒞 χ b c) = κB b * κC c := by
+    simp [κB, κC]
   have hCA : κC c * κA a = χ k i • (κA a * κC c) :=
     includeRightGraded_mul_includeLeftGraded_of_mem (grading 𝒜 ℬ χ) 𝒞 χ
       (Graded.map_mem (includeLeftGraded 𝒜 ℬ χ) ha) hc
@@ -753,7 +829,7 @@ noncomputable def assocSymmGraded :
 
 theorem assocSymmGraded_one_tmul (v : BraidedTensorProduct R ℬ 𝒞 χ) :
     assocSymmGraded 𝒜 ℬ 𝒞 χ (tmul 𝒜 (grading ℬ 𝒞 χ) χ 1 v) =
-      mapGraded χ (includeRightGraded 𝒜 ℬ χ) (.id R 𝒞) v := by simp [assocSymmGraded, ← one_def]
+      mapGraded χ (includeRightGraded 𝒜 ℬ χ) (.id R 𝒞) v := by simp [assocSymmGraded]
 
 @[simp] theorem assocSymmGraded_comp_includeLeftGraded :
     (assocSymmGraded 𝒜 ℬ 𝒞 χ).comp (includeLeftGraded 𝒜 (grading ℬ 𝒞 χ) χ) =
@@ -799,14 +875,26 @@ conjugated by `ofLinearEquiv`. -/
       .id R (grading (grading 𝒜 ℬ χ) 𝒞 χ) := by
   apply gradedAlgHom_ext
   · apply gradedAlgHom_ext <;> (ext; simp)
-  · ext c; simp [← one_def]
+  · ext c; simp
 
 @[simp] theorem assocGraded_comp_assocSymmGraded :
     (assocGraded 𝒜 ℬ 𝒞 χ).comp (assocSymmGraded 𝒜 ℬ 𝒞 χ) =
       .id R (grading 𝒜 (grading ℬ 𝒞 χ) χ) := by
   apply gradedAlgHom_ext
-  · ext a; simp [← one_def]
+  · ext a; simp
   · apply gradedAlgHom_ext <;> (ext; simp)
+
+@[simp] theorem assocSymmGraded_assocGraded
+    (z : BraidedTensorProduct R (grading 𝒜 ℬ χ) 𝒞 χ) :
+    assocSymmGraded 𝒜 ℬ 𝒞 χ (assocGraded 𝒜 ℬ 𝒞 χ z) = z := by
+  simpa only [GradedAlgHom.comp_apply, GradedAlgHom.id_apply] using
+    DFunLike.congr_fun (assocSymmGraded_comp_assocGraded 𝒜 ℬ 𝒞 χ) z
+
+@[simp] theorem assocGraded_assocSymmGraded
+    (z : BraidedTensorProduct R 𝒜 (grading ℬ 𝒞 χ) χ) :
+    assocGraded 𝒜 ℬ 𝒞 χ (assocSymmGraded 𝒜 ℬ 𝒞 χ z) = z := by
+  simpa only [GradedAlgHom.comp_apply, GradedAlgHom.id_apply] using
+    DFunLike.congr_fun (assocGraded_comp_assocSymmGraded 𝒜 ℬ 𝒞 χ) z
 
 /-- The `R`-algebra associator equivalence
 `((A ⊗_χ B) ⊗_χ C) ≃ₐ[R] (A ⊗_χ (B ⊗_χ C))` for bicharacter-twisted tensor products over a common
@@ -836,24 +924,15 @@ noncomputable def assocAlgEquiv :
 @[simp] theorem assocAlgEquiv_symm_apply (z : BraidedTensorProduct R 𝒜 (grading ℬ 𝒞 χ) χ) :
     (assocAlgEquiv 𝒜 ℬ 𝒞 χ).symm z = assocSymmGraded 𝒜 ℬ 𝒞 χ z := by rfl
 
-theorem assocAlgEquiv_tmul_tmul (a : A) (b : B) (c : C) :
-    assocAlgEquiv 𝒜 ℬ 𝒞 χ (tmul (grading 𝒜 ℬ χ) 𝒞 χ (tmul 𝒜 ℬ χ a b) c) =
-      tmul 𝒜 (grading ℬ 𝒞 χ) χ a (tmul ℬ 𝒞 χ b c) :=
-  assocGraded_tmul_tmul 𝒜 ℬ 𝒞 χ a b c
-
-theorem assocAlgEquiv_symm_tmul_tmul (a : A) (b : B) (c : C) :
-    (assocAlgEquiv 𝒜 ℬ 𝒞 χ).symm (tmul 𝒜 (grading ℬ 𝒞 χ) χ a (tmul ℬ 𝒞 χ b c)) =
-      tmul (grading 𝒜 ℬ χ) 𝒞 χ (tmul 𝒜 ℬ χ a b) c :=
-  assocSymmGraded_tmul_tmul 𝒜 ℬ 𝒞 χ a b c
-
 end Assoc
 
 end TotalGrading
 
 section Examples
 
--- Cross-module instance-diamond checks: `Ring`, `Semiring`, `AddCommGroup`, `Algebra`, and
--- `GradedAlgebra` agree definitionally with `instAddCommMonoid`, `instModule`, and
+-- Cross-module instance-diamond checks: `Ring`, `Semiring`, `AddCommGroup`, `Algebra`,
+-- `Algebra ℕ`, `Algebra ℤ`, and `GradedAlgebra` agree definitionally with `instAddCommMonoid`,
+-- `instAddCommMonoidWithOne`, `instAddCommGroupWithOne`, `instModule`, `instAlgebra`, and
 -- `instDecompositionBigrading` / `instDecompositionGrading`.
 example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
     [DecidableEq G₁] [DecidableEq G₂] [Ring A] [Semiring B] [Algebra R A] [Algebra R B]
@@ -863,11 +942,58 @@ example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G
       instAddCommMonoid 𝒜 ℬ χ := rfl
 
 example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+    [DecidableEq G₁] [DecidableEq G₂] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+    (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+    (χ : AddChar G₂ (AddChar G₁ R)) :
+    (inferInstance : Semiring (BraidedTensorProduct R 𝒜 ℬ χ)).toAddCommMonoidWithOne =
+      instAddCommMonoidWithOne 𝒜 ℬ χ := rfl
+
+example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+    [DecidableEq G₁] [DecidableEq G₂] [Ring A] [Semiring B] [Algebra R A] [Algebra R B]
+    (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+    (χ : AddChar G₂ (AddChar G₁ R)) :
+    (inferInstance : Ring (BraidedTensorProduct R 𝒜 ℬ χ)).toNonAssocRing.toAddCommGroupWithOne =
+      instAddCommGroupWithOne 𝒜 ℬ χ := rfl
+
+example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
     [DecidableEq G₁] [DecidableEq G₂] [Ring A] [Semiring B] [Algebra R A] [Algebra R B]
     (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
     (χ : AddChar G₂ (AddChar G₁ R)) :
     (inferInstance : Ring (BraidedTensorProduct R 𝒜 ℬ χ)).toSemiring =
       instSemiring 𝒜 ℬ χ := rfl
+
+example {G₁ G₂ A B : Type*} [AddMonoid G₁] [AddMonoid G₂] [DecidableEq G₁] [DecidableEq G₂]
+    [Semiring A] [Semiring B]
+    (𝒜 : G₁ → Submodule ℕ A) (ℬ : G₂ → Submodule ℕ B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+    (χ : AddChar G₂ (AddChar G₁ ℕ)) :
+    (Semiring.toNatAlgebra : Algebra ℕ (BraidedTensorProduct ℕ 𝒜 ℬ χ)) =
+      instAlgebra 𝒜 ℬ χ := rfl
+
+example {G₁ G₂ A B : Type*} [AddMonoid G₁] [AddMonoid G₂] [DecidableEq G₁] [DecidableEq G₂]
+    [Ring A] [Ring B]
+    (𝒜 : G₁ → Submodule ℤ A) (ℬ : G₂ → Submodule ℤ B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+    (χ : AddChar G₂ (AddChar G₁ ℤ)) :
+    (Ring.toIntAlgebra (BraidedTensorProduct ℤ 𝒜 ℬ χ) :
+        Algebra ℤ (BraidedTensorProduct ℤ 𝒜 ℬ χ)) =
+      instAlgebra 𝒜 ℬ χ := rfl
+
+example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+    [DecidableEq G₁] [DecidableEq G₂] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+    (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+    (χ : AddChar G₂ (AddChar G₁ R)) (ψ : AddChar G₁ (AddChar G₂ R))
+    (hχψ : ∀ i j, χ j i * ψ i j = 1) (x : BraidedTensorProduct R 𝒜 ℬ χ)
+    (y : BraidedTensorProduct R ℬ 𝒜 ψ) :
+    (commAlgEquiv 𝒜 ℬ hχψ).symm (commAlgEquiv 𝒜 ℬ hχψ x) = x ∧
+      commAlgEquiv 𝒜 ℬ hχψ ((commAlgEquiv 𝒜 ℬ hχψ).symm y) = y := by simp
+
+example {R G A B C : Type*} [CommSemiring R] [AddCommMonoid G] [DecidableEq G]
+    [Semiring A] [Semiring B] [Semiring C] [Algebra R A] [Algebra R B] [Algebra R C]
+    (𝒜 : G → Submodule R A) (ℬ : G → Submodule R B) (𝒞 : G → Submodule R C)
+    [GradedAlgebra 𝒜] [GradedAlgebra ℬ] [GradedAlgebra 𝒞] (χ : AddChar G (AddChar G R))
+    (z : BraidedTensorProduct R (grading 𝒜 ℬ χ) 𝒞 χ)
+    (w : BraidedTensorProduct R 𝒜 (grading ℬ 𝒞 χ) χ) :
+    (assocAlgEquiv 𝒜 ℬ 𝒞 χ).symm (assocAlgEquiv 𝒜 ℬ 𝒞 χ z) = z ∧
+      assocAlgEquiv 𝒜 ℬ 𝒞 χ ((assocAlgEquiv 𝒜 ℬ 𝒞 χ).symm w) = w := by simp
 
 example {R G₁ G₂ A B : Type*} [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
     [DecidableEq G₁] [DecidableEq G₂] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]

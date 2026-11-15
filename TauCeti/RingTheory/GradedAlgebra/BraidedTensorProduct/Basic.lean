@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Rescale
 
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.Algebra.DirectSum.HomogeneousExtend
 
 /-!
 # Bicharacter-twisted tensor products of graded algebras
@@ -61,6 +62,9 @@ reduces associativity and unitality to those of `A`, `B`, and `χ`.
 
 ## Main results
 
+* `TauCeti.BraidedTensorProduct.tmul_mul_tmul_of_mem_left` and
+  `TauCeti.BraidedTensorProduct.tmul_mul_tmul_of_mem_right`: single-factor homogeneous product
+  formulas via `TauCeti.GradedAlgebra.rescale`.
 * `TauCeti.BraidedTensorProduct.tmul_mul_tmul_of_mem` and
   `TauCeti.BraidedTensorProduct.tmul_coe_mul_coe_tmul`: the twisted product formula on pure tensors
   with homogeneous inner factors.
@@ -308,10 +312,28 @@ instance instOne : One (BraidedTensorProduct R 𝒜 ℬ χ) where one := tmul �
 
 theorem one_def : (1 : BraidedTensorProduct R 𝒜 ℬ χ) = tmul 𝒜 ℬ χ 1 1 := by rfl
 
+@[simp] theorem tmul_one_one : tmul 𝒜 ℬ χ 1 1 = 1 := by rfl
+
 theorem toTensorProduct_one_eq_tmul :
     (1 : BraidedTensorProduct R 𝒜 ℬ χ).toTensorProduct = (1 : A) ⊗ₜ[R] (1 : B) := by rfl
 
 end Monoid
+
+section AddCommMonoidWithOneLeft
+
+variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B : Type uB}
+  [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+  [AddCommMonoidWithOne A] [AddCommMonoid B] [Module R A] [Module R B] [One B]
+  (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) (χ : AddChar G₂ (AddChar G₁ R))
+
+instance instAddCommMonoidWithOne : AddCommMonoidWithOne (BraidedTensorProduct R 𝒜 ℬ χ) where
+  natCast n := tmul 𝒜 ℬ χ n 1
+  natCast_zero := by simp
+  natCast_succ n := by simp
+
+theorem natCast_def (n : ℕ) : (n : BraidedTensorProduct R 𝒜 ℬ χ) = tmul 𝒜 ℬ χ n 1 := by rfl
+
+end AddCommMonoidWithOneLeft
 
 section AddCommMonoidWithOne
 
@@ -320,12 +342,72 @@ variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B 
   [AddCommMonoidWithOne A] [AddCommMonoidWithOne B] [Module R A] [Module R B]
   (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) (χ : AddChar G₂ (AddChar G₁ R))
 
+theorem natCast_def' (n : ℕ) : (n : BraidedTensorProduct R 𝒜 ℬ χ) = tmul 𝒜 ℬ χ 1 n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [tmul_add, ih]
+
 @[simp] theorem of_one : of 𝒜 ℬ χ 1 = 1 := by rfl
 
 @[simp] theorem toTensorProduct_one : (1 : BraidedTensorProduct R 𝒜 ℬ χ).toTensorProduct = 1 := by
   rfl
 
+@[simp] theorem of_natCast (n : ℕ) : of 𝒜 ℬ χ (n : A ⊗[R] B) = n := by
+  rw [Algebra.TensorProduct.natCast_def, of_tmul, natCast_def]
+
+@[simp] theorem toTensorProduct_natCast (n : ℕ) :
+    (n : BraidedTensorProduct R 𝒜 ℬ χ).toTensorProduct = n := by
+  rw [natCast_def, toTensorProduct_tmul, ← Algebra.TensorProduct.natCast_def]
+
 end AddCommMonoidWithOne
+
+section AddCommGroupWithOneLeft
+
+variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B : Type uB}
+  [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+  [AddCommGroupWithOne A] [AddCommMonoid B] [Module R A] [Module R B] [One B]
+  (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) (χ : AddChar G₂ (AddChar G₁ R))
+
+instance instAddCommGroupWithOne : AddCommGroupWithOne (BraidedTensorProduct R 𝒜 ℬ χ) where
+  toAddCommGroup := instAddCommGroup 𝒜 ℬ χ
+  __ := instAddCommMonoidWithOne 𝒜 ℬ χ
+  intCast z := tmul 𝒜 ℬ χ z 1
+  intCast_ofNat n := by simp [natCast_def]
+  intCast_negSucc n := by simp [natCast_def, add_tmul, neg_tmul]
+
+theorem intCast_def (z : ℤ) : (z : BraidedTensorProduct R 𝒜 ℬ χ) = tmul 𝒜 ℬ χ z 1 := by rfl
+
+end AddCommGroupWithOneLeft
+
+section AddCommGroupWithOneTensor
+
+variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B : Type uB}
+  [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+  [AddCommGroupWithOne A] [AddCommMonoidWithOne B] [Module R A] [Module R B]
+  (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) (χ : AddChar G₂ (AddChar G₁ R))
+
+@[simp] theorem of_intCast (z : ℤ) : of 𝒜 ℬ χ (z : A ⊗[R] B) = z := by
+  rw [Algebra.TensorProduct.intCast_def, of_tmul, intCast_def]
+
+@[simp] theorem toTensorProduct_intCast (z : ℤ) :
+    (z : BraidedTensorProduct R 𝒜 ℬ χ).toTensorProduct = z := by
+  rw [intCast_def, toTensorProduct_tmul, ← Algebra.TensorProduct.intCast_def]
+
+end AddCommGroupWithOneTensor
+
+section AddCommGroupWithOne
+
+variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B : Type uB}
+  [CommSemiring R] [AddMonoid G₁] [AddMonoid G₂]
+  [AddCommGroupWithOne A] [AddCommGroupWithOne B] [Module R A] [Module R B]
+  (𝒜 : G₁ → Submodule R A) (ℬ : G₂ → Submodule R B) (χ : AddChar G₂ (AddChar G₁ R))
+
+theorem intCast_def' (z : ℤ) : (z : BraidedTensorProduct R 𝒜 ℬ χ) = tmul 𝒜 ℬ χ 1 z := by
+  cases z with
+  | ofNat n => simp [natCast_def']
+  | negSucc n => simp [natCast_def', tmul_add, tmul_neg]
+
+end AddCommGroupWithOne
 
 end One
 
@@ -347,18 +429,14 @@ private noncomputable def rawMulPiece (j₁ : G₂) :
 
 /-- The `χ`-twisted multiplication on the underlying tensor product `A ⊗[R] B`. -/
 private noncomputable def rawMul : (A ⊗[R] B) →ₗ[R] (A ⊗[R] B) →ₗ[R] (A ⊗[R] B) :=
-  TensorProduct.lift <|
-    (DirectSum.toModule R G₂ (A →ₗ[R] A ⊗[R] B →ₗ[R] A ⊗[R] B)
-      (fun j₁ ↦ (rawMulPiece 𝒜 ℬ χ j₁).flip) ∘ₗ
-        (DirectSum.decomposeLinearEquiv ℬ).toLinearMap).flip
+  TensorProduct.lift <| (DirectSum.homogeneousExtend ℬ fun j₁ ↦ (rawMulPiece 𝒜 ℬ χ j₁).flip).flip
 
 private theorem rawMul_tmul_of_mem_tmul {j₁ : G₂} (a₁ : A) {b₁ : B} (hb₁ : b₁ ∈ ℬ j₁)
     (a₂ : A) (b₂ : B) :
     rawMul 𝒜 ℬ χ (a₁ ⊗ₜ[R] b₁) (a₂ ⊗ₜ[R] b₂) =
       (a₁ * GradedAlgebra.rescale 𝒜 (χ j₁) a₂) ⊗ₜ[R] (b₁ * b₂) := by
-  rw [rawMul, TensorProduct.lift.tmul, LinearMap.flip_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem ℬ hb₁,
-    ← DirectSum.lof_eq_of R, DirectSum.toModule_lof]
+  rw [rawMul, TensorProduct.lift.tmul, LinearMap.flip_apply,
+    DirectSum.homogeneousExtend_of_mem ℬ _ hb₁]
   simp [rawMulPiece]
 
 /-- The `χ`-twisted multiplication of `BraidedTensorProduct R 𝒜 ℬ χ` bundled as an `R`-bilinear
@@ -378,12 +456,6 @@ theorem mul_def (x y : BraidedTensorProduct R 𝒜 ℬ χ) : x * y = mulHom 𝒜
 @[simp] theorem mulHom_apply (x y : BraidedTensorProduct R 𝒜 ℬ χ) : mulHom 𝒜 ℬ χ x y = x * y := by
   rfl
 
-private theorem mul_tmul_of_mem_tmul {j₁ : G₂} (a₁ : A) {b₁ : B} (hb₁ : b₁ ∈ ℬ j₁)
-    (a₂ : A) (b₂ : B) :
-    tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ =
-      tmul 𝒜 ℬ χ (a₁ * GradedAlgebra.rescale 𝒜 (χ j₁) a₂) (b₁ * b₂) := by
-  ext; simpa [mul_def, mulHom] using rawMul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ hb₁ a₂ b₂
-
 noncomputable instance instNonUnitalNonAssocSemiring :
     NonUnitalNonAssocSemiring (BraidedTensorProduct R 𝒜 ℬ χ) where
   left_distrib x y z := (mulHom 𝒜 ℬ χ x).map_add y z
@@ -399,14 +471,38 @@ instance instIsScalarTower :
     IsScalarTower R (BraidedTensorProduct R 𝒜 ℬ χ) (BraidedTensorProduct R 𝒜 ℬ χ) where
   smul_assoc r x y := LinearMap.map_smul₂ (mulHom 𝒜 ℬ χ) r x y
 
+/-- Product of two pure tensors in `BraidedTensorProduct R 𝒜 ℬ χ` when the first right factor
+`b₁ ∈ ℬ j₁` is homogeneous: the second left factor `a₂` is rescaled by `χ j₁`. -/
+theorem tmul_mul_tmul_of_mem_left {j₁ : G₂} (a₁ : A) {b₁ : B} (hb₁ : b₁ ∈ ℬ j₁)
+    (a₂ : A) (b₂ : B) :
+    tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ =
+      tmul 𝒜 ℬ χ (a₁ * GradedAlgebra.rescale 𝒜 (χ j₁) a₂) (b₁ * b₂) := by
+  ext; simpa [mul_def, mulHom] using rawMul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ hb₁ a₂ b₂
+
 /-- Product of two pure tensors in `BraidedTensorProduct R 𝒜 ℬ χ` when the inner factors `b₁ ∈ ℬ j₁`
 and `a₂ ∈ 𝒜 i₂` are homogeneous. -/
 theorem tmul_mul_tmul_of_mem {j₁ : G₂} {i₂ : G₁} (a₁ : A) {b₁ : B} (hb₁ : b₁ ∈ ℬ j₁)
     {a₂ : A} (ha₂ : a₂ ∈ 𝒜 i₂) (b₂ : B) :
     tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ =
       χ j₁ i₂ • tmul 𝒜 ℬ χ (a₁ * a₂) (b₁ * b₂) := by
-  rw [mul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ hb₁ a₂ b₂, GradedAlgebra.rescale_of_mem 𝒜 (χ j₁) ha₂,
+  rw [tmul_mul_tmul_of_mem_left 𝒜 ℬ χ a₁ hb₁ a₂ b₂, GradedAlgebra.rescale_of_mem 𝒜 (χ j₁) ha₂,
     mul_smul_comm, smul_tmul]
+
+/-- Product of two pure tensors in `BraidedTensorProduct R 𝒜 ℬ χ` when the second left factor
+`a₂ ∈ 𝒜 i₂` is homogeneous: the first right factor `b₁` is rescaled by `j₁ ↦ χ j₁ i₂`. -/
+theorem tmul_mul_tmul_of_mem_right {i₂ : G₁} (a₁ : A) (b₁ : B) {a₂ : A} (ha₂ : a₂ ∈ 𝒜 i₂)
+    (b₂ : B) :
+    tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ =
+      tmul 𝒜 ℬ χ (a₁ * a₂)
+        (GradedAlgebra.rescale ℬ
+          (((MonoidHom.eval (.ofAdd i₂)).comp
+            AddChar.toMonoidHomMulEquiv.toMonoidHom).compAddChar χ) b₁ * b₂) := by
+  induction b₁ using DirectSum.Decomposition.inductionOn ℬ with
+  | zero => simp
+  | add x y hx hy => simp [tmul_add, add_mul, hx, hy]
+  | @homogeneous j₁ x =>
+    rw [tmul_mul_tmul_of_mem 𝒜 ℬ χ a₁ x.2 ha₂ b₂, GradedAlgebra.rescale_coe]
+    simp [AddChar.toMonoidHomMulEquiv]
 
 /-- Subtype-coercion form of `tmul_mul_tmul_of_mem`, matching
 `GradedTensorProduct.tmul_coe_mul_coe_tmul`. -/
@@ -419,17 +515,18 @@ theorem tmul_coe_mul_coe_tmul {j₁ : G₂} {i₂ : G₁} (a₁ : A) (b₁ : ℬ
 homogeneity assumption on the remaining factors. -/
 theorem tmul_mul_tmul_of_mem_zero_left (a₁ : A) {b₁ : B} (hb₁ : b₁ ∈ ℬ 0) (a₂ : A) (b₂ : B) :
     tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ = tmul 𝒜 ℬ χ (a₁ * a₂) (b₁ * b₂) := by
-  simp [mul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ hb₁ a₂ b₂]
+  simp [tmul_mul_tmul_of_mem_left 𝒜 ℬ χ a₁ hb₁ a₂ b₂]
 
 /-- When the second left factor lies in degree `0`, pure tensors multiply componentwise with no
 homogeneity assumption on the remaining factors. -/
 theorem tmul_mul_tmul_of_mem_zero_right (a₁ : A) (b₁ : B) {a₂ : A} (ha₂ : a₂ ∈ 𝒜 0) (b₂ : B) :
     tmul 𝒜 ℬ χ a₁ b₁ * tmul 𝒜 ℬ χ a₂ b₂ = tmul 𝒜 ℬ χ (a₁ * a₂) (b₁ * b₂) := by
-  induction b₁ using DirectSum.Decomposition.inductionOn ℬ with
-  | zero => simp
-  | add x y hx hy => simp [tmul_add, add_mul, hx, hy]
-  | homogeneous x =>
-    rw [tmul_mul_tmul_of_mem 𝒜 ℬ χ a₁ x.2 ha₂ b₂, AddChar.map_zero_eq_one, one_smul]
+  have hχ :
+      (((MonoidHom.eval (.ofAdd (0 : G₁))).comp
+        AddChar.toMonoidHomMulEquiv.toMonoidHom).compAddChar χ) = 1 := by
+    ext j; simp [AddChar.toMonoidHomMulEquiv]
+  rw [tmul_mul_tmul_of_mem_right 𝒜 ℬ χ a₁ b₁ ha₂ b₂, hχ]
+  simp
 
 @[simp] theorem tmul_one_mul_tmul (a₁ a₂ : A) (b₂ : B) :
     tmul 𝒜 ℬ χ a₁ 1 * tmul 𝒜 ℬ χ a₂ b₂ = tmul 𝒜 ℬ χ (a₁ * a₂) b₂ := by
@@ -468,15 +565,16 @@ private theorem mul_assoc_aux (x y z : BraidedTensorProduct R 𝒜 ℬ χ) :
           induction z using inductionOn with
           | add z₁ z₂ hz₁ hz₂ => simp [mul_add, hz₁, hz₂]
           | tmul a₃ b₃ =>
-            rw [mul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ b₁.2 a₂ b₂,
-              mul_tmul_of_mem_tmul 𝒜 ℬ χ _ (SetLike.mul_mem_graded b₁.2 b₂.2) a₃ b₃,
-              mul_tmul_of_mem_tmul 𝒜 ℬ χ a₂ b₂.2 a₃ b₃,
-              mul_tmul_of_mem_tmul 𝒜 ℬ χ a₁ b₁.2 _ _,
+            rw [tmul_mul_tmul_of_mem_left 𝒜 ℬ χ a₁ b₁.2 a₂ b₂,
+              tmul_mul_tmul_of_mem_left 𝒜 ℬ χ _ (SetLike.mul_mem_graded b₁.2 b₂.2) a₃ b₃,
+              tmul_mul_tmul_of_mem_left 𝒜 ℬ χ a₂ b₂.2 a₃ b₃,
+              tmul_mul_tmul_of_mem_left 𝒜 ℬ χ a₁ b₁.2 _ _,
               map_mul (GradedAlgebra.rescale 𝒜 (χ j₁)), ← GradedAlgebra.rescale_mul_apply,
               ← AddChar.map_add_eq_mul, mul_assoc, mul_assoc]
 
 noncomputable instance instSemiring : Semiring (BraidedTensorProduct R 𝒜 ℬ χ) where
   __ := instNonUnitalNonAssocSemiring 𝒜 ℬ χ
+  __ := instAddCommMonoidWithOne 𝒜 ℬ χ
   mul_assoc := by exact mul_assoc_aux 𝒜 ℬ χ
   one_mul x := by
     induction x using inductionOn with
@@ -490,21 +588,22 @@ noncomputable instance instSemiring : Semiring (BraidedTensorProduct R 𝒜 ℬ 
 /-- `mulHom 𝒜 ℬ χ` agrees with `LinearMap.mul` for the `Semiring` structure on
 `BraidedTensorProduct R 𝒜 ℬ χ`. -/
 theorem mulHom_eq_mul :
-    mulHom 𝒜 ℬ χ = LinearMap.mul R (BraidedTensorProduct R 𝒜 ℬ χ) := by rfl
+    mulHom 𝒜 ℬ χ = LinearMap.mul R (BraidedTensorProduct R 𝒜 ℬ χ) := by
+  ext x y; simp
 
 noncomputable instance instAlgebra : Algebra R (BraidedTensorProduct R 𝒜 ℬ χ) where
   algebraMap :=
     { toFun r := tmul 𝒜 ℬ χ (algebraMap R A r) 1
-      map_one' := by rw [map_one]; rfl
+      map_one' := by rw [map_one, tmul_one_one]
       map_mul' r s := by rw [map_mul, ← tmul_one_mul_tmul]
       map_zero' := by rw [map_zero, zero_tmul]
       map_add' r s := by rw [map_add, add_tmul] }
   commutes' r x := by
     simp only [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, Algebra.algebraMap_eq_smul_one,
-      smul_tmul, ← one_def, smul_mul_assoc, one_mul, mul_smul_comm, mul_one]
+      smul_tmul, tmul_one_one, smul_mul_assoc, one_mul, mul_smul_comm, mul_one]
   smul_def' r x := by
     simp only [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, Algebra.algebraMap_eq_smul_one,
-      smul_tmul, ← one_def, smul_mul_assoc, one_mul]
+      smul_tmul, tmul_one_one, smul_mul_assoc, one_mul]
 
 theorem algebraMap_def (r : R) :
     algebraMap R (BraidedTensorProduct R 𝒜 ℬ χ) r = tmul 𝒜 ℬ χ (algebraMap R A r) 1 := by rfl
@@ -512,7 +611,7 @@ theorem algebraMap_def (r : R) :
 /-- The canonical `R`-algebra inclusion `A →ₐ[R] BraidedTensorProduct R 𝒜 ℬ χ` sending `a` to
 `a ⊗ₜ 1`. -/
 noncomputable def includeLeft : A →ₐ[R] BraidedTensorProduct R 𝒜 ℬ χ :=
-  AlgHom.ofLinearMap ((tmulBilinear 𝒜 ℬ χ).flip 1) (by simp [one_def]) fun a₁ a₂ ↦ by simp
+  AlgHom.ofLinearMap ((tmulBilinear 𝒜 ℬ χ).flip 1) (by simp) fun a₁ a₂ ↦ by simp
 
 @[simp] theorem includeLeft_apply (a : A) : includeLeft 𝒜 ℬ χ a = tmul 𝒜 ℬ χ a 1 := by
   simp [includeLeft]
@@ -738,17 +837,8 @@ noncomputable def trivialAlgEquiv :
   | tmul a b => simp [trivialAlgEquiv]
   | add x y hx hy => simp [hx, hy]
 
-theorem trivialAlgEquiv_tmul (a : A) (b : B) :
-    trivialAlgEquiv 𝒜 ℬ (tmul 𝒜 ℬ 1 a b) = a ⊗ₜ[R] b := by simp
-
-theorem trivialAlgEquiv_symm_tmul (a : A) (b : B) :
-    (trivialAlgEquiv 𝒜 ℬ).symm (a ⊗ₜ[R] b) = tmul 𝒜 ℬ 1 a b := by simp
-
 @[simp] theorem trivialAlgEquiv_toLinearEquiv :
     (trivialAlgEquiv 𝒜 ℬ).toLinearEquiv = (ofLinearEquiv 𝒜 ℬ 1).symm := by ext x; simp
-
-theorem trivialAlgEquiv_symm_toLinearEquiv :
-    (trivialAlgEquiv 𝒜 ℬ).symm.toLinearEquiv = ofLinearEquiv 𝒜 ℬ 1 := by simp
 
 @[simp] theorem trivialAlgEquiv_comp_includeLeft :
     (trivialAlgEquiv 𝒜 ℬ : BraidedTensorProduct R 𝒜 ℬ 1 →ₐ[R] A ⊗[R] B).comp
@@ -804,6 +894,13 @@ theorem comm_tmul_of_mem (hχψ : ∀ i j, χ j i * ψ i j = 1) {i : G₁} {j : 
     (comm ℬ 𝒜 hψχ).comp (comm 𝒜 ℬ hχψ) = AlgHom.id R (BraidedTensorProduct R 𝒜 ℬ χ) := by
   ext <;> simp
 
+@[simp] theorem comm_comm (hχψ : ∀ i j, χ j i * ψ i j = 1)
+    (hψχ : ∀ j i, ψ i j * χ j i = 1 := fun j i ↦ mul_comm (ψ i j) (χ j i) ▸ hχψ i j)
+    (x : BraidedTensorProduct R 𝒜 ℬ χ) :
+    comm ℬ 𝒜 hψχ (comm 𝒜 ℬ hχψ x) = x := by
+  simpa only [AlgHom.comp_apply, AlgHom.id_apply] using
+    AlgHom.congr_fun (comm_comp_comm 𝒜 ℬ hχψ hψχ) x
+
 /-- Paired bicharacters `χ` and `ψ` satisfying `∀ i j, χ j i * ψ i j = 1` induce a braided
 factor-swap `R`-algebra equivalence
 `BraidedTensorProduct R 𝒜 ℬ χ ≃ₐ[R] BraidedTensorProduct R ℬ 𝒜 ψ`. -/
@@ -845,7 +942,7 @@ variable {R : Type uR} {G₁ : Type uG₁} {G₂ : Type uG₂} {A : Type uA} {B 
   (χ : AddChar G₂ (AddChar G₁ R))
 
 noncomputable instance instRing : Ring (BraidedTensorProduct R 𝒜 ℬ χ) :=
-  { instSemiring 𝒜 ℬ χ, instAddCommGroup 𝒜 ℬ χ with }
+  { instSemiring 𝒜 ℬ χ, instAddCommGroupWithOne 𝒜 ℬ χ with }
 
 end Ring
 
@@ -870,14 +967,11 @@ theorem restrictScalars_ker_map {f : 𝒜 →ₐᵍ[R] 𝒜'} {g : ℬ →ₐᵍ
         Submodule.map₂ (tmulBilinear 𝒜 ℬ χ) ⊤ (LinearMap.ker g.toAlgHom.toLinearMap) := by
   have hker : (RingHom.ker (map χ f g)).restrictScalars R =
       (LinearMap.ker (TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap)).map
-        (ofLinearEquiv 𝒜 ℬ χ).toLinearMap := by
+        (ofLinearEquiv 𝒜 ℬ χ : A ⊗[R] B →ₗ[R] BraidedTensorProduct R 𝒜 ℬ χ) := by
     ext x
-    simp only [RingHom.mem_ker, Submodule.restrictScalars_mem, Submodule.mem_map,
-      LinearMap.mem_ker, LinearEquiv.coe_coe, ofLinearEquiv_apply]
-    refine ⟨fun hx ↦ ⟨x.toTensorProduct, ?_, of_toTensorProduct x⟩, ?_⟩
-    · simpa using congrArg toTensorProduct hx
-    · rintro ⟨z, hz, rfl⟩
-      exact ext (by simpa using hz)
+    simp only [Submodule.restrictScalars_mem, RingHom.mem_ker,
+      ← (ofLinearEquiv 𝒜' ℬ' χ).symm.map_eq_zero_iff, Submodule.mem_map_equiv,
+      ofLinearEquiv_symm_apply, toTensorProduct_map, LinearMap.mem_ker]
   rw [hker, TensorProduct.map_ker f.toAlgHom.toLinearMap.exact_subtype_ker_map hf
     g.toAlgHom.toLinearMap.exact_subtype_ker_map hg, Submodule.map_sup, sup_comm]
   simp only [LinearMap.rTensor_def, LinearMap.lTensor_def, TensorProduct.range_map,
