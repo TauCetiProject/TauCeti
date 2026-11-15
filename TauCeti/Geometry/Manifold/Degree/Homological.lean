@@ -8,18 +8,18 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Degree.Basic
-public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
 /-!
 # The smooth degree is the homological degree
 
-Let `M` and `N` be boundaryless `C¹` manifolds modelled on real normed spaces `E` and `F` of the
-same dimension `n + 1`, with orientations `o` of `M` and `o'` of `N`
-(`TauCeti.Manifold.Orientation`). Through their local homology generators
-(`TauCeti.Manifold.Orientation.toHomologicalOrientation`) these are homological orientations,
-for which a continuous map `f : M → N` has a local index at every point
+Let `M` and `N` be `C¹` manifolds with boundaryless models `I : ModelWithCorners ℝ E H` and
+`J : ModelWithCorners ℝ F H'` over real normed spaces `E` and `F` of the same dimension `n + 1`,
+with orientations `o` of `M` and `o'` of `N` (`TauCeti.Manifold.Orientation`). Through their local
+homology generators (`TauCeti.Manifold.Orientation.toHomologicalOrientation`) these are homological
+orientations, for which a continuous map `f : M → N` has a local index at every point
 (`TauCeti.HomologicalOrientation.localIndex`) and, when it is proper and `N` is preconnected, a
 degree (`TauCeti.HomologicalOrientation.degree`) characterized by `f_*[M] = deg f • [N]` for
 compact `M` and `N`.
@@ -40,10 +40,10 @@ homological degree of a proper map onto a preconnected manifold is the signed co
 For a map between compact manifolds, with `N` preconnected, this reads
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
-computed by counting preimages with signs computes the image of the fundamental class. For a map out
-of a product `M₁ × M₂` carrying an orientation for the product model `𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)`,
-`TauCeti.Manifold.Orientation.mapFundamentalClass_prod_eq_degreeAtRegularValue_smul` records the
-same identity with respect to `TauCeti.chartedSpaceProd`.
+computed by counting preimages with signs computes the image of the fundamental class. Because all
+results hold for arbitrary boundaryless models `I.Boundaryless` and `J.Boundaryless`, they apply
+directly to product manifolds with models such as `𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)` and
+`TauCeti.chartedSpaceProd`.
 
 ## Main results
 
@@ -54,10 +54,6 @@ same identity with respect to `TauCeti.chartedSpaceProd`.
 * `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a map
   between compact manifolds, with preconnected target, `f_*[M]` is the signed count of preimages
   of a regular value times `[N]`.
-* `TauCeti.Manifold.Orientation.toHomologicalOrientationProd` and
-  `TauCeti.Manifold.Orientation.mapFundamentalClass_prod_eq_degreeAtRegularValue_smul`:
-  the homological orientation and fundamental-class pushforward for a product manifold
-  `M₁ × M₂` oriented over `𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)`.
 
 ## References
 
@@ -78,67 +74,45 @@ namespace TauCeti
 
 namespace Manifold.Orientation
 
-/-- `o.orientationAt x`, typed in the model space `E` (`TangentSpace 𝓘(ℝ, E) x = E`
-definitionally) so `rw` matches `_root_.Orientation.map` at `implicit` transparency. -/
-private def modelOrientationAt {X G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [FiniteDimensional ℝ G] [TopologicalSpace X] [ChartedSpace G X] [IsManifold 𝓘(ℝ, G) 1 X]
-    {k : ℕ} (ω : Manifold.Orientation 𝓘(ℝ, G) X (Fin (k + 1))) (p : X) :
+/-- `ω.orientationAt p`, typed in the model space `G` (`TangentSpace I p = G` definitionally) so
+`rw` matches `_root_.Orientation.map` at `implicit` transparency. -/
+private def modelOrientationAt {X G : Type} {H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] [TopologicalSpace H] {I : ModelWithCorners ℝ G H}
+    [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X] {k : ℕ}
+    (ω : Manifold.Orientation I X (Fin (k + 1))) (p : X) :
     _root_.Orientation ℝ G (Fin (k + 1)) :=
   ω.orientationAt p
 
-private theorem modelOrientationAt_neg {X G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [FiniteDimensional ℝ G] [TopologicalSpace X] [ChartedSpace G X] [IsManifold 𝓘(ℝ, G) 1 X]
-    {k : ℕ} (ω : Manifold.Orientation 𝓘(ℝ, G) X (Fin (k + 1))) (p : X) :
+private theorem modelOrientationAt_neg {X G : Type} {H : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [FiniteDimensional ℝ G] [TopologicalSpace H] {I : ModelWithCorners ℝ G H}
+    [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X] {k : ℕ}
+    (ω : Manifold.Orientation I X (Fin (k + 1))) (p : X) :
     modelOrientationAt (-ω) p = -modelOrientationAt ω p :=
   orientationAt_neg ω p
 
 section General
 
-variable {M N E F : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {M N E F : Type} {H H' : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace F N]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [ChartedSpace E M]
+  [TopologicalSpace N] [ChartedSpace H' N] [ChartedSpace F N]
   {n : ℕ} (hE : finrank ℝ E = n + 1) (hF : finrank ℝ F = n + 1)
 
-variable [T2Space M] [IsManifold 𝓘(ℝ, E) 1 M] [T2Space N] [IsManifold 𝓘(ℝ, F) 1 N]
-  (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-  (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1)))
+variable [T2Space M] [IsManifold I 1 M] [T2Space N] [IsManifold J 1 N]
+  (o : Manifold.Orientation I M (Fin (n + 1)))
+  (o' : Manifold.Orientation J N (Fin (n + 1)))
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  [T2Space M] [IsManifold 𝓘(ℝ, E) 1 M] [T2Space N] [IsManifold 𝓘(ℝ, F) 1 N] in
-/-- Reading `f` in the preferred charts at `x` and `f x` postcomposed with continuous linear
-equivalences `L_E` and `L_F` conjugates the chart derivative `f' : E →L[ℝ] F`. -/
-private theorem hasFDerivAt_transHomeomorph_chartAt {G₁ G₂ : Type}
-    [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂]
-    {f : C(M, N)} {x : M} {f' : E →L[ℝ] F}
-    (hfd : HasFDerivAt (chartAt F (f x) ∘ f ∘ (chartAt E x).symm) f' (chartAt E x x))
-    (L_E : E ≃L[ℝ] G₁) (L_F : F ≃L[ℝ] G₂) :
-    HasFDerivAt
-      (((chartAt F (f x)).transHomeomorph L_F.toHomeomorph) ∘ f ∘
-        ((chartAt E x).transHomeomorph L_E.toHomeomorph).symm)
-      (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap)
-      (((chartAt E x).transHomeomorph L_E.toHomeomorph) x) := by
-  have hLsymm : ⇑L_E.toHomeomorph.symm = ⇑L_E.symm := rfl
-  have hcomp : ((chartAt F (f x)).transHomeomorph L_F.toHomeomorph) ∘ f ∘
-        ((chartAt E x).transHomeomorph L_E.toHomeomorph).symm =
-      L_F ∘ (chartAt F (f x) ∘ f ∘ (chartAt E x).symm) ∘ L_E.symm := by
-    ext z
-    simp [hLsymm]
-  rw [hcomp]
-  have h₁ : HasFDerivAt ((chartAt F (f x) ∘ f ∘ (chartAt E x).symm) ∘ L_E.symm)
-      (f' ∘L L_E.symm.toContinuousLinearMap)
-      (((chartAt E x).transHomeomorph L_E.toHomeomorph) x) := by
-    refine HasFDerivAt.comp _ ?_ L_E.symm.hasFDerivAt
-    simpa using hfd
-  simpa [ContinuousLinearMap.comp_assoc] using L_F.hasFDerivAt.comp _ h₁
-
-omit [T2Space M] [T2Space N] in
+omit [I.Boundaryless] [J.Boundaryless] [ChartedSpace E M] [ChartedSpace F N]
+  [T2Space M] [T2Space N] in
 /-- When `L_E` and `L_F` transport the tangent orientations at `x` and `f x` to the same
 orientation of `ℝⁿ⁺¹`, the Jacobian sign of `L_F ∘ e ∘ L_E.symm` equals `orientationSign o o' f x`.
 -/
 private theorem coe_sign_det_conj_eq_orientationSign (f : C(M, N)) {x : M}
-    (e : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] TangentSpace 𝓘(ℝ, F) (f x))
-    (he : (e : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, F) (f x)) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x)
+    (e : TangentSpace I x ≃L[ℝ] TangentSpace J (f x))
+    (he : (e : TangentSpace I x →L[ℝ] TangentSpace J (f x)) = mfderiv I J f x)
     (L_E : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (L_F : F ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (ho : (modelOrientationAt o' (f x)).map (Fin (n + 1)) L_F.toLinearEquiv =
@@ -186,7 +160,7 @@ private theorem coe_sign_det_conj_eq_orientationSign (f : C(M, N)) {x : M}
 to `ℝⁿ⁺¹` match the tangent orientations at `x` and `f x`: both sides are the sign of the Jacobian
 in the induced Euclidean charts. -/
 private theorem localIndex_toHomologicalOrientation_of_map_orientationAt_eq (f : C(M, N)) {x : M}
-    (hf : (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x).IsInvertible)
+    (hf : (mfderiv I J f x).IsInvertible)
     (L_E : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (L_F : F ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (ho : (modelOrientationAt o' (f x)).map (Fin (n + 1)) L_F.toLinearEquiv =
@@ -195,24 +169,32 @@ private theorem localIndex_toHomologicalOrientation_of_map_orientationAt_eq (f :
       orientationSign o o' f x := by
   set M₀ := EuclideanSpace ℝ (Fin (n + 1))
   have hM₀ : finrank ℝ M₀ = n + 1 := finrank_euclideanSpace_fin
-  set f' : E →L[ℝ] F := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x
+  set f' : E →L[ℝ] F := mfderiv I J f x
   set ω₀ : _root_.Orientation ℝ M₀ (Fin (n + 1)) :=
     (modelOrientationAt o x).map (Fin (n + 1)) L_E.toLinearEquiv with hω₀
-  set φ' := (chartAt E x).transHomeomorph L_E.toHomeomorph
-  set χ' := (chartAt F (f x)).transHomeomorph L_F.toHomeomorph
-  have hfd : HasFDerivAt (chartAt F (f x) ∘ f ∘ (chartAt E x).symm) f' (chartAt E x x) := by
+  set φ := (chartAt H x).transHomeomorph I.toHomeomorph
+  set χ := (chartAt H' (f x)).transHomeomorph J.toHomeomorph
+  set φ' := (chartAt H x).transHomeomorph (I.toHomeomorph.trans L_E.toHomeomorph)
+  set χ' := (chartAt H' (f x)).transHomeomorph (J.toHomeomorph.trans L_F.toHomeomorph)
+  have hfd : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ x) := by
     have h := (mdifferentiableAt_of_isInvertible_mfderiv hf).hasMFDerivAt.2
-    simp only [writtenInExtChartAt, hasFDerivWithinAt_univ, ModelWithCorners.range_eq_univ] at h
-    exact h
-  have hgfd := hasFDerivAt_transHomeomorph_chartAt hfd L_E L_F
+    have hext : writtenInExtChartAt I J x f = χ ∘ f ∘ φ.symm := by
+      ext z
+      simp [writtenInExtChartAt, φ, χ]
+    have hx : extChartAt I x x = φ x := by simp [φ]
+    rwa [hext, I.range_eq_univ, hasFDerivWithinAt_univ, hx] at h
+  have hgfd : HasFDerivAt (χ' ∘ f ∘ φ'.symm)
+      (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap) (φ' x) := by
+    have h := (φ.hasFDerivAt_transHomeomorph_iff χ L_E L_F (f := f) (x := x) (f' := f')).2 hfd
+    simpa only [φ, χ, φ', χ', OpenPartialHomeomorph.transHomeomorph_transHomeomorph] using h
   -- An open neighbourhood `U` of `x`, in the domains of the preferred charts at `x` and `f x`,
   -- meets the fibre only in `x`.
   obtain ⟨t, htne, hto, hxt⟩ := eventually_nhds_iff.1
     (eventually_nhdsWithin_iff.1 (eventually_ne_of_mfderiv_injective hf.injective))
-  set U : Set M := ((chartAt E x).source ∩ t) ∩ f ⁻¹' (chartAt F (f x)).source
-  have hUo : IsOpen U := ((chartAt E x).open_source.inter hto).inter
-    ((chartAt F (f x)).open_source.preimage f.continuous)
-  have hxU : x ∈ U := ⟨⟨mem_chart_source E x, hxt⟩, mem_chart_source F (f x)⟩
+  set U : Set M := ((chartAt H x).source ∩ t) ∩ f ⁻¹' (chartAt H' (f x)).source
+  have hUo : IsOpen U := ((chartAt H x).open_source.inter hto).inter
+    ((chartAt H' (f x)).open_source.preimage f.continuous)
+  have hxU : x ∈ U := ⟨⟨mem_chart_source H x, hxt⟩, mem_chart_source H' (f x)⟩
   have hU (z : M) (hz : z ∈ U) (hfz : f z = f x) : z = x := by
     by_contra hzx
     exact htne z hz.1.2 hzx hfz
@@ -227,17 +209,15 @@ private theorem localIndex_toHomologicalOrientation_of_map_orientationAt_eq (f :
   have hdet : (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap).det ≠ 0 := by
     rw [← hg]
     exact (LinearEquiv.isUnit_det' g.toLinearEquiv).ne_zero
-  have hxφ' : x ∈ φ'.source :=
-    (chartAt E x).mem_transHomeomorph_source L_E.toHomeomorph (mem_chart_source E x)
-  have hfxχ' : f x ∈ χ'.source :=
-    (chartAt F (f x)).mem_transHomeomorph_source L_F.toHomeomorph (mem_chart_source F (f x))
+  have hxφ' : x ∈ φ'.source := by simp [φ']
+  have hfxχ' : f x ∈ χ'.source := by simp [χ']
   have key := φ'.localHomologyMap_restrict_localOrientationOfOrientedChart ω₀ hM₀ χ' f
     hxφ' hfxχ' hUo hxU hU hgfd hdet
   dsimp only [φ', χ', ω₀] at key
-  rw [← localOrientationOfManifoldOrientation_eq_transHomeomorph o hE x
-      (ω := modelOrientationAt o x) rfl L_E hM₀ hxφ', ← hω₀, ← ho,
-    ← localOrientationOfManifoldOrientation_eq_transHomeomorph o' hF (f x)
-      (ω := modelOrientationAt o' (f x)) rfl L_F hM₀ hfxχ',
+  rw [← localOrientationOfManifoldOrientation_eq_localOrientationOfOrientedChart_transHomeomorph
+      o hE x (ω := modelOrientationAt o x) rfl L_E hM₀ hxφ', ← hω₀, ← ho,
+    ← localOrientationOfManifoldOrientation_eq_localOrientationOfOrientedChart_transHomeomorph
+      o' hF (f x) (ω := modelOrientationAt o' (f x)) rfl L_F hM₀ hfxχ',
     ← toHomologicalOrientation_apply, ← toHomologicalOrientation_apply] at key
   rw [(HomologicalOrientation.localIndex_eq_iff _ _ hF f rfl hUo hxU hU).2 key, ← hg]
   exact coe_sign_det_conj_eq_orientationSign o o' f e he L_E L_F ho
@@ -247,7 +227,7 @@ continuous map `f : M → N` whose manifold derivative at `x` is invertible, the
 at `x` with respect to the homological orientations of `o` and `o'` is `1` if `f` preserves the
 orientations at `x` and `-1` if it reverses them. -/
 theorem localIndex_toHomologicalOrientation (f : C(M, N)) {x : M}
-    (hf : (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f x).IsInvertible) :
+    (hf : (mfderiv I J f x).IsInvertible) :
     (o.toHomologicalOrientation hE).localIndex (o'.toHomologicalOrientation hF) f x =
       orientationSign o o' f x := by
   have hM₀ : finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1 := finrank_euclideanSpace_fin
@@ -271,7 +251,7 @@ theorem localIndex_toHomologicalOrientation (f : C(M, N)) {x : M}
 onto a preconnected manifold and a regular value `y` of `f`, the degree of `f` with respect to the
 homological orientations of `o` and `o'` is `degreeAtRegularValue o o' f y`. -/
 theorem degree_toHomologicalOrientation [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f)
-    {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, F) f y) :
+    {y : N} (hy : IsRegularValue I J f y) :
     (o.toHomologicalOrientation hE).degree (o'.toHomologicalOrientation hF) hE f =
       degreeAtRegularValue o o' f y := by
   have hdim : finrank ℝ E = finrank ℝ F := hE.trans hF.symm
@@ -287,82 +267,13 @@ map `f : M → N` between compact manifolds, with `N` preconnected, and a regula
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`, for the fundamental classes of
 the homological orientations of `o` and `o'`. -/
 theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [CompactSpace M] [CompactSpace N]
-    [PreconnectedSpace N] {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, F) f y) :
+    [PreconnectedSpace N] {f : C(M, N)} {y : N} (hy : IsRegularValue I J f y) :
     (o.toHomologicalOrientation hE).mapFundamentalClass hE f =
       degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hF).fundamentalClass hF := by
   rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hF,
     degree_toHomologicalOrientation hE hF o o' f.continuous.isProperMap hy]
 
 end General
-
-section Prod
-
-attribute [local instance low] chartedSpaceProd
-
-variable {M₁ M₂ E₁ E₂ : Type}
-  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
-  [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂]
-  [TopologicalSpace M₁] [T2Space M₁] [ChartedSpace E₁ M₁] [IsManifold 𝓘(ℝ, E₁) 1 M₁]
-  [TopologicalSpace M₂] [T2Space M₂] [ChartedSpace E₂ M₂] [IsManifold 𝓘(ℝ, E₂) 1 M₂]
-
-/-- The homological orientation of a product manifold `M₁ × M₂` (charted by
-`TauCeti.chartedSpaceProd`) induced by a smooth orientation for the product model
-`𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)`. -/
-def toHomologicalOrientationProd {n : ℕ} (hE : finrank ℝ (E₁ × E₂) = n + 1)
-    (o : Manifold.Orientation (𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)) (M₁ × M₂) (Fin (n + 1))) :
-    @HomologicalOrientation (M₁ × M₂) (E₁ × E₂) _ _ _ _ _ (chartedSpaceProd E₁ E₂ M₁ M₂) (n + 1) :=
-  haveI : IsManifold 𝓘(ℝ, E₁ × E₂) 1 (M₁ × M₂) := isManifold_chartedSpaceProd
-  ((modelWithCornersSelf_prod (𝕜 := ℝ) (E := E₁) (F := E₂)).symm ▸ o).toHomologicalOrientation hE
-
-omit [T2Space M₁] [T2Space M₂] in
-private theorem degreeAtRegularValue_congr_prod_model {N F : Type}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [TopologicalSpace N] [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) 1 N] {n : ℕ}
-    {I : ModelWithCorners ℝ (E₁ × E₂) (E₁ × E₂)} (hI : I = 𝓘(ℝ, E₁ × E₂))
-    (hm : IsManifold I 1 (M₁ × M₂))
-    (o : haveI := hm; Manifold.Orientation I (M₁ × M₂) (Fin (n + 1)))
-    (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1))) (f : M₁ × M₂ → N) (y : N) :
-    haveI : IsManifold 𝓘(ℝ, E₁ × E₂) 1 (M₁ × M₂) := isManifold_chartedSpaceProd
-    degreeAtRegularValue (hI ▸ o) o' f y =
-      (haveI := hm; degreeAtRegularValue o o' f y) := by
-  subst hI
-  rfl
-
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂]
-  [T2Space M₁] [IsManifold 𝓘(ℝ, E₁) 1 M₁] [T2Space M₂] [IsManifold 𝓘(ℝ, E₂) 1 M₂] in
-private theorem isRegularValue_congr_prod_model {N F : Type}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace N] [ChartedSpace F N]
-    {I : ModelWithCorners ℝ (E₁ × E₂) (E₁ × E₂)}
-    (hI : I = 𝓘(ℝ, E₁ × E₂)) {f : M₁ × M₂ → N} {y : N}
-    (hy : IsRegularValue I 𝓘(ℝ, F) f y) :
-    IsRegularValue 𝓘(ℝ, E₁ × E₂) 𝓘(ℝ, F) f y := by
-  subst hI
-  exact hy
-
-/-- For a continuous map `f : M₁ × M₂ → N` from a compact oriented product manifold to a compact
-preconnected oriented manifold `N`, the image of the fundamental class of `M₁ × M₂` is the signed
-count of preimages of any regular value times `[N]`. -/
-theorem mapFundamentalClass_prod_eq_degreeAtRegularValue_smul
-    {N F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    [TopologicalSpace N] [T2Space N] [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) 1 N]
-    [CompactSpace M₁] [CompactSpace M₂] [CompactSpace N] [PreconnectedSpace N]
-    {n : ℕ} (hE : finrank ℝ (E₁ × E₂) = n + 1) (hF : finrank ℝ F = n + 1)
-    (o : Manifold.Orientation (𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)) (M₁ × M₂) (Fin (n + 1)))
-    (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1)))
-    {f : C(M₁ × M₂, N)} {y : N} (hy : IsRegularValue (𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)) 𝓘(ℝ, F) f y) :
-    (o.toHomologicalOrientationProd hE).mapFundamentalClass hE f =
-      degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hF).fundamentalClass hF := by
-  have : IsManifold 𝓘(ℝ, E₁ × E₂) 1 (M₁ × M₂) := isManifold_chartedSpaceProd
-  have hI : 𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂) = 𝓘(ℝ, E₁ × E₂) :=
-    (modelWithCornersSelf_prod (𝕜 := ℝ) (E := E₁) (F := E₂)).symm
-  rw [toHomologicalOrientationProd,
-    mapFundamentalClass_eq_degreeAtRegularValue_smul hE hF (hI ▸ o) o'
-      (isRegularValue_congr_prod_model hI hy)]
-  congr 1
-  exact degreeAtRegularValue_congr_prod_model hI
-    (inferInstance : IsManifold (𝓘(ℝ, E₁).prod 𝓘(ℝ, E₂)) 1 (M₁ × M₂)) o o' f y
-
-end Prod
 
 end Manifold.Orientation
 

@@ -305,48 +305,6 @@ end Translation
 
 section LinearIsometryEquiv
 
-/-- A point in the source of `φ` belongs to the source of `φ.transHomeomorph g`. -/
-theorem _root_.OpenPartialHomeomorph.mem_transHomeomorph_source
-    {α β γ : Type*} [TopologicalSpace α] [TopologicalSpace β] [TopologicalSpace γ]
-    (φ : OpenPartialHomeomorph α β) (g : β ≃ₜ γ) {x : α} (hx : x ∈ φ.source) :
-    x ∈ (φ.transHomeomorph g).source :=
-  hx
-
-/-- Composing a chart with a homeomorphism of the model composes its local homology isomorphism
-with the map induced by the homeomorphism on the pair `(E, E ∖ {φ x})`. -/
-private theorem singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom
-    {M E F : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace E] [T1Space E]
-    [TopologicalSpace F] [T1Space F]
-    (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) (g : E ≃ₜ F)
-    (hx' : x ∈ (φ.transHomeomorph g).source) (k : ℕ) :
-    (singularHomologyComplSingletonIsoOfChart R (φ.transHomeomorph g) hx' k).hom =
-      (singularHomologyComplSingletonIsoOfChart R φ hx k).hom ≫
-        TopPair.singularHomologyMap
-          (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
-            (TopCat.ofHom ⟨g, g.continuous⟩) (B := {φ x}ᶜ) (B' := {(φ.transHomeomorph g) x}ᶜ)
-            (fun _ hy h ↦ hy (g.injective h))) R k := by
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
-    (X := TopCat.of M) φ.open_source isClosed_singleton (Set.singleton_subset_iff.2 hx) k
-  apply (cancel_epi (TopPair.singularHomologyMap
-    (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k)).1
-  -- `(φ.transHomeomorph g).source` is `φ.source` only after unfolding `transHomeomorph`.
-  erw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom
-    R (φ.transHomeomorph g) hx' k]
-  rw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom_assoc
-      R φ hx k,
-    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
-    ← TopPair.singularHomologyMap_comp]
-  congr 1
-  apply TopPair.hom_ext_of_fst
-  ext z
-  rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp]
-  -- Unfold the ambient carrier of `TopPair.ofSubset` to evaluate `TopCat` composites on `z`.
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
-    TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply,
-    TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-  rfl
-
 variable {M E F : Type w} [TopologicalSpace M] [T1Space M]
   [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -374,15 +332,16 @@ private theorem snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyE
 
 /-- Composing a chart with a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` and transporting the
 orientation of `E` along `e` preserves the oriented local homology isomorphism. -/
-theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv_hom
+theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv
     (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) {n : ℕ}
     (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
     (e : E ≃ₗᵢ[ℝ] F) (hF : finrank ℝ F = n + 1)
     (hx' : x ∈ (φ.transHomeomorph e.toHomeomorph).source :=
-      φ.mem_transHomeomorph_source e.toHomeomorph hx) :
-    (singularHomologyComplSingletonIsoOfOrientation R (φ.transHomeomorph e.toHomeomorph) hx'
-        (o.map (Fin (n + 1)) e.toLinearEquiv) hF).hom =
-      (singularHomologyComplSingletonIsoOfOrientation R φ hx o hE).hom := by
+      (φ.transHomeomorph_source e.toHomeomorph).symm ▸ hx) :
+    singularHomologyComplSingletonIsoOfOrientation R (φ.transHomeomorph e.toHomeomorph) hx'
+        (o.map (Fin (n + 1)) e.toLinearEquiv) hF =
+      singularHomologyComplSingletonIsoOfOrientation R φ hx o hE := by
+  ext : 1
   have hF' : (LinearEquiv.finrank_eq e.toLinearEquiv).symm.trans hE = hF := Subsingleton.elim _ _
   subst hF'
   rw [singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
@@ -408,22 +367,14 @@ theorem
     (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
     (e : E ≃ₗᵢ[ℝ] F) (hF : finrank ℝ F = n + 1)
     (hx' : x ∈ (φ.transHomeomorph e.toHomeomorph).source :=
-      φ.mem_transHomeomorph_source e.toHomeomorph hx) :
+      (φ.transHomeomorph_source e.toHomeomorph).symm ▸ hx) :
     (φ.transHomeomorph e.toHomeomorph).localOrientationOfOrientedChart hx'
         (o.map (Fin (n + 1)) e.toLinearEquiv) hF =
       φ.localOrientationOfOrientedChart hx o hE := by
-  let Z := ModuleCat.of ℤ (ULift.{w} ℤ)
-  let e₁ := singularHomologyComplSingletonIsoOfOrientation Z (φ.transHomeomorph e.toHomeomorph) hx'
-    (o.map (Fin (n + 1)) e.toLinearEquiv) hF
-  let e₂ := singularHomologyComplSingletonIsoOfOrientation Z φ hx o hE
-  have he : e₁.hom = e₂.hom :=
-    singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv_hom Z φ hx o
-      hE e hF hx'
   apply Subtype.ext
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
-    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]
-  apply (ConcreteCategory.bijective_of_isIso e₂.hom).1
-  rw [← he, e₁.inv_hom_id_apply 1, he, e₂.inv_hom_id_apply 1]
+    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv]
 
 end LinearIsometryEquiv
 
