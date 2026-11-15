@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Additional API for homological complexes
@@ -59,7 +60,9 @@ is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`; it carries the class map of the mapped
+complex to the image of the class map
+(`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -497,5 +500,45 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
     (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
       ((K.sc i).mapHomologyIso F).hom :=
   (rfl)
+
+/-- Under `mapHomologicalComplexCompHomologyFunctorIso`, the class map of `F` applied to `K` is
+`F` applied to the class map of `K`, up to the identification `ShortComplex.mapCyclesIso` of the
+cycles. -/
+@[reassoc]
+lemma homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app
+    (K : HomologicalComplex C c) :
+    ((F.mapHomologicalComplex c).obj K).homologyπ i ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
+      ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.homologyπ i) :=
+  (K.sc i).homologyπ_comp_mapHomologyIso_hom F
+
+/-- Elementwise form of `homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`, for
+a concrete target category: the comparison sends the class of a cycle `w` of `F` applied to `K`
+to `F` applied to the class map, evaluated at the corresponding cycle of `K`. -/
+lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app_homologyπ_apply {FD : D → D → Type*}
+    {CD : D → Type*} [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
+    (K : HomologicalComplex C c) (w : CD (((F.mapHomologicalComplex c).obj K).cycles i)) :
+    (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K
+        (((F.mapHomologicalComplex c).obj K).homologyπ i w) =
+      F.map (K.homologyπ i) (((K.sc i).mapCyclesIso F).hom w) :=
+  (ConcreteCategory.comp_apply _ _ w).symm.trans ((ConcreteCategory.congr_hom
+    (homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app F c i K) w).trans
+      (ConcreteCategory.comp_apply _ _ w))
+
+/-- The inverse of `mapHomologicalComplexCompHomologyFunctorIso` sends `F` applied to the class
+map of `K` to the class map of `F` applied to `K`, up to the identification
+`ShortComplex.mapCyclesIso` of the cycles. -/
+@[reassoc]
+lemma map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
+    (K : HomologicalComplex C c) :
+    F.map (K.homologyπ i) ≫ (F.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K =
+      ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).homologyπ i := by
+  -- by definition the comparison is `ShortComplex.mapHomologyIso` and the homology of `F`
+  -- applied to `K` in degree `i` is that of the mapped short complex; stated there, the objects
+  -- of the composites agree syntactically and the cancellations can be rewritten
+  change F.map (K.sc i).homologyπ ≫ ((K.sc i).mapHomologyIso F).inv =
+    ((K.sc i).mapCyclesIso F).inv ≫ ((K.sc i).map F).homologyπ
+  rw [Iso.comp_inv_eq, Category.assoc, ShortComplex.homologyπ_comp_mapHomologyIso_hom,
+    Iso.inv_hom_id_assoc]
 
 end CategoryTheory.Functor

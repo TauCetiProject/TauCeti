@@ -10,6 +10,10 @@ public import TauCeti.Algebra.Homology.Single.Kernel
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import TauCeti.Topology.Sheaves.Cohomology.Godement
 public import TauCeti.Topology.Sheaves.Flasque.Basic
+import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
+import TauCeti.CategoryTheory.Abelian.RightDerived
+import TauCeti.CategoryTheory.Sites.GlobalSections
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 
 /-!
 # Derived global sections of module sheaves and cohomology of the underlying abelian sheaves
@@ -40,10 +44,23 @@ Godement resolution `F ⟶ G⁰(F) ⟶ G¹(F) ⟶ ⋯`:
 
 No separation, compactness or nonemptiness hypothesis is made on `X`.
 
+The comparison is not an arbitrary isomorphism of groups. It respects the module structure: the
+action of `r ∈ R` on `RⁿΓ(F)`, which is the map induced by the scalar endomorphism `r : F ⟶ F`
+since right derived functors of linear functors are linear, corresponds to the map that this
+endomorphism induces on `Hⁿ(X, U F)`. In degree `0` it is the identity of the global sections of
+`F`, once `R⁰Γ(F)` and `H⁰(X, U F)` are both identified with them.
+
 ## Main definitions
 
 * `TauCeti.Topology.moduleCohomologyForgetComparison`: the natural isomorphism between the
   underlying abelian groups of `RⁿΓ(F)` and `Hⁿ(X, U F)`.
+
+## Main results
+
+* `TauCeti.Topology.moduleCohomologyForgetComparison_hom_app_smul`: the comparison intertwines
+  multiplication by `r` with the map induced by the scalar endomorphism `r` of `F`.
+* `TauCeti.Topology.equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero`: in degree
+  `0` the comparison is the identity on global sections.
 
 ## References
 
@@ -131,6 +148,46 @@ private def godementHomologyIso (n : ℕ) :
 
 end Resolution
 
+/-- On global sections, the identification of the sections of the underlying abelian sheaf over
+`⊤` with the global sections of the module sheaf, used in `moduleCohomologyForgetComparison`, is
+the identification of global sections with sections over `⊤`. -/
+private lemma sectionsIso_hom_app_apply (G : X.Sheaf (ModuleCat.{u} R))
+    (x : (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj G) :
+    (Sheaf.ΓCompIsoSheafComposeCompΓ _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})
+        isTerminalTop ≪≫ Functor.isoWhiskerLeft _
+          (Sheaf.ΓNatIsoSheafSections _ AddCommGrpCat.{u} isTerminalTop ≪≫
+            sheafSectionsNatIsoEvaluation _ _)).hom.app G x =
+      (Sheaf.ΓNatIsoSheafSections _ (ModuleCat.{u} R) isTerminalTop).hom.app G x := by
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Sheaf.ΓCompIsoSheafComposeCompΓ_hom_app,
+    sheafSectionsNatIsoEvaluation, Iso.refl_hom, Category.comp_id]
+  -- the identifications of `Γ` with sections over `⊤` for abelian sheaves cancel; their objects
+  -- agree with those of the module-sheaf identification only up to unfolding, hence `erw`
+  erw [Category.assoc, Iso.inv_hom_id_app, Category.comp_id]
+  rfl
+
+/-- A cycle of a complex `L` of modules, carried along a map `Φ` of complexes of abelian groups
+into the sections over `U` of a complex `M` of presheaves, is a cycle of `M` over `U` lying over
+the image under `Φ` of the underlying cochain. -/
+private lemma iCycles_app_mapCyclesIso_hom_cyclesMap {L : CochainComplex (ModuleCat.{u} R) ℕ}
+    {M : CochainComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) ℕ} (U : (Opens X)ᵒᵖ)
+    (Φ : ((forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}).mapHomologicalComplex _).obj L ⟶
+      (((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U).mapHomologicalComplex _).obj M)
+    (z : L.cycles 0) :
+    (M.iCycles 0).app U (((M.sc 0).mapCyclesIso ((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj
+      U)).hom (HomologicalComplex.cyclesMap Φ 0
+        (((L.sc 0).mapCyclesIso (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).inv z))) =
+      Φ.f 0 (L.iCycles 0 z) := by
+  refine (ConcreteCategory.congr_hom (ShortComplex.mapCyclesIso_hom_iCycles (M.sc 0)
+    ((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U)) _).trans ?_
+  -- the cycles of the mapped short complex are those of the mapped complex in degree `0`
+  change ((((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj U).mapHomologicalComplex
+    _).obj M).iCycles 0 _ = _
+  refine (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i Φ 0) _).trans ?_
+  exact congrArg (Φ.f 0) (ConcreteCategory.congr_hom
+    (ShortComplex.mapCyclesIso_inv_comp_iCycles (L.sc 0)
+      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})) z)
+
 variable (X R) in
 /-- **Derived global sections of module sheaves compute the cohomology of the underlying abelian
 sheaves.** For sheaves of modules over a commutative ring on any topological space, the abelian
@@ -170,5 +227,90 @@ def moduleCohomologyForgetComparison
     -- the cohomology presheaf at `⊤` is the cohomology of the space
     Functor.isoWhiskerLeft (forgetSheaf X R)
       (Sheaf.cohomologyPresheafEvaluationIsoFunctorH _ n isTerminalTop)
+
+variable [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
+
+/-- **The comparison is compatible with the scalar action.** Multiplication by `r` on `RⁿΓ(F)`
+corresponds to the map induced on `Hⁿ(X, U F)` by the scalar endomorphism `r : F ⟶ F`. -/
+theorem moduleCohomologyForgetComparison_hom_app_smul (n : ℕ)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (r : R)
+    (x : ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerived n).obj F) :
+    (moduleCohomologyForgetComparison X R n).hom.app F (r • x) =
+      (Sheaf.functorH (Opens.grothendieckTopology X) n).map ((sheafCompose _
+          (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).map (r • 𝟙 F))
+        ((moduleCohomologyForgetComparison X R n).hom.app F x) := by
+  have h := ConcreteCategory.congr_hom
+    ((moduleCohomologyForgetComparison X R n).hom.naturality (r • 𝟙 F)) x
+  -- `RⁿΓ` is linear, so it sends the scalar endomorphism `r` of `F` to multiplication by `r`
+  simp only [Functor.comp_map, Functor.map_smul, ConcreteCategory.comp_apply] at h
+  rw [CategoryTheory.Functor.map_id] at h
+  simpa using h
+
+/-- **Degree-zero normalization of the comparison.** In degree `0`, the comparison sends the
+image in `R⁰Γ(F)` of a global section `s` of `F` to the class in `H⁰(X, U F)` that corresponds to
+`s` itself under the identification of `H⁰(X, U F)` with the sections of `F` over `X`. -/
+theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (s : (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj F) :
+    Sheaf.H.equiv₀ _ isTerminalTop ((moduleCohomologyForgetComparison X R 0).hom.app F
+      (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero).app F s)) =
+      (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F s := by
+  -- The comparison is a composite of identifications of degree-zero homology, each of which acts
+  -- on the class of a cycle through a map of cycles. Follow the class of the cycle `c` of the
+  -- global sections of the Godement resolution given by `s` through each of them, and then the
+  -- cycle itself, which ends up as the image of `s` under the augmentation.
+  let K := (godementResolution (ModuleCat.{u} R) X).obj F
+  let ΓK := ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex
+    (ComplexShape.up ℕ)).obj K
+  let c : ΓK.cycles 0 := ΓK.liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X)
+    (ModuleCat.{u} R)).map (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app
+      F)).1) 1 (by simp) (by
+        rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp,
+          (K.fromSingle₀Equiv F _).2, Functor.map_zero]) s
+  have hA := ConcreteCategory.congr_hom
+    (toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app F) s
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hA
+  simp only [moduleCohomologyForgetComparison, godementHomologyIso, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom, Functor.comp_obj,
+    ConcreteCategory.comp_apply, ModuleCat.forget₂_map]
+  -- the objects of the composite agree only up to unfolding, so its factors are matched with `erw`
+  erw [hA]
+  -- forgetting the module structure commutes with the class map
+  have hB := ConcreteCategory.congr_hom
+    (Functor.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
+      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) _ 0 ΓK) c
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hB
+  erw [hB]
+  -- the maps of complexes act on classes through their maps on cycles
+  erw [← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0),
+    HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
+    ConcreteCategory.comp_apply]
+  -- evaluation at `⊤` commutes with the class map
+  let P := ((sheafToPresheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).mapHomologicalComplex
+    (ComplexShape.up ℕ)).obj (godementForget F)
+  erw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app_homologyπ_apply]
+  simp only [evaluation_obj_map]
+  erw [Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply,
+    Sheaf.H.equiv₀_cohomologyPresheafObjIsoH_hom_apply]
+  -- the class of the image of a section under the augmentation is that section
+  refine Sheaf.H'.cohomologyZeroSectionsEquiv_resolutionClass _ _ _ _ ⊤ _ _ ?_
+  -- it remains to follow the cycle through the identifications of the complexes
+  refine Eq.trans ?_ (iCycles_app_mapCyclesIso_hom_cyclesMap (M := P) (op ⊤) _ c).symm
+  have hJ : ΓK.iCycles 0 c = (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
+      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).1 s :=
+    ConcreteCategory.congr_hom (ΓK.liftCycles_i _ _ _ _) s
+  erw [hJ]
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplexCompIso_hom_app_f,
+    Functor.mapHomologicalComplexCompIso_inv_app_f, Iso.refl_inv, NatTrans.id_app,
+    ConcreteCategory.comp_apply]
+  erw [sectionsIso_hom_app_apply]
+  refine Eq.trans ?_ (ConcreteCategory.congr_hom ((Sheaf.ΓNatIsoSheafSections
+    (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop).hom.naturality
+      (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).1) s).symm
+  -- the augmentation `F ⟶ G⁰(F)` of the Godement resolution is `toGodement`
+  exact (congrArg (fun f ↦ f.hom.app (op ⊤) ((Sheaf.ΓNatIsoSheafSections
+    (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop).hom.app F s))
+    (NatTrans.toResolution_app_f_zero (toGodement (ModuleCat.{u} R) X) F)).symm
 
 end TauCeti.Topology

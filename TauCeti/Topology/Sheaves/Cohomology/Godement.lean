@@ -80,4 +80,24 @@ lemma rightDerivedΓIsoGodement_hom_comp_homologyMap
       ((toGodementResolution (ModuleCat.{u} R) X).app F)
       (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F) n I φ hφ
 
+/-- In degree `0`, the Godement comparison sends the image of a global section of `F` in `R⁰Γ(F)`
+to the homology class of its image in the global sections of the first Godement sheaf. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F ≫
+        (rightDerivedΓIsoGodement (X := X) (R := R) 0).hom.app F =
+      (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+          ((godementResolution (ModuleCat.{u} R) X).obj F)).liftCycles
+        ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
+          (((godementResolution (ModuleCat.{u} R) X).obj F).fromSingle₀Equiv F
+            ((toGodementResolution (ModuleCat.{u} R) X).app F)).1) 1 (by simp) (by
+          rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp,
+            (((godementResolution (ModuleCat.{u} R) X).obj F).fromSingle₀Equiv F _).2,
+            Functor.map_zero]) ≫
+        (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+          ((godementResolution (ModuleCat.{u} R) X).obj F)).homologyπ 0 := by
+  rw [← Iso.app_hom, rightDerivedΓIsoGodement_app]
+  exact Sheaf.toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom _ _
+
 end TauCeti.Topology
