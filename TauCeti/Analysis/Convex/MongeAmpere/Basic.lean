@@ -370,39 +370,54 @@ theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) 
   simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
   exact exists_congr fun x => and_congr_right fun hx => mem_subdifferential_ite_iff _ hx.2
 
-/-- **The Aleksandrov Monge–Ampère measure is local.** Let `u` be convex on an open set `Ω`, and
+/-- **The Aleksandrov Monge–Ampère measure is local.** Let `u` be convex on a set `Ω`, and
 let `U ⊆ Ω` be open and convex. The Monge–Ampère measure of `u` restricted to `U` (extended by `⊤`
 off `U`) is the restriction to `U` of the Monge–Ampère measure of `u` on `Ω`: a subgradient of `u`
 relative to the neighbourhood `U` of a point is a subgradient relative to `Ω`. -/
-theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)] (hΩ : IsOpen Ω)
-    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) :
+theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)]
+    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) :
     mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) =
       (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)).restrict U := by
+  by_cases h : ∃ ν : Measure E, ν.IsAddHaarMeasure ∧ μ ≪ ν
+  swap
+  · -- without an additive Haar measure dominating `μ` both sides are `0`
+    have h0 (g : E → EReal) : mongeAmpereMeasure μ g = 0 :=
+      mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous (ν := volume) μ
+        fun hμ => h ⟨volume, inferInstance, hμ⟩
+    rw [h0, h0, Measure.restrict_zero]
+  obtain ⟨ν, _, hμ⟩ := h
   ext s hs
+  have hsU : s ∩ U ∩ interior Ω = s ∩ U :=
+    inter_eq_left.2 (inter_subset_right.trans (hU.subset_interior_iff.2 hUΩ))
   rw [Measure.restrict_apply hs, mongeAmpereMeasure_ite_apply μ hU (hu.subset hUΩ hUc) hμ hs,
-    mongeAmpereMeasure_ite_apply μ hΩ hu hμ (hs.inter hU.measurableSet),
-    inter_assoc, inter_eq_left.2 hUΩ]
+    mongeAmpereMeasure_apply μ (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot hμ
+      (hs.inter hU.measurableSet),
+    setOf_ite_ne_top, hsU]
   congr 1
-  refine iUnion₂_congr fun x hx => ?_
   ext y
-  refine ⟨fun h => hu.add_le_of_eventually_add_le (hUΩ hx.2) ((innerₗ E).flip y) ?_, fun h x' hx' =>
-    h x' (hUΩ hx')⟩
-  filter_upwards [mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hx.2)] with x' hx'
-  simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using h x' hx'
+  simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
+  refine exists_congr fun x => and_congr_right fun hx => ?_
+  rw [mem_subdifferential_ite_iff _ (hUΩ hx.2)]
+  constructor
+  · intro h
+    exact hu.add_le_of_eventually_add_le (hUΩ hx.2) ((innerₗ E).flip y) (by
+      filter_upwards [mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hx.2)] with x' hx'
+      simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using h x' hx')
+  · exact fun h x' hx' => h x' (hUΩ hx')
 
-/-- **Density below an Aleksandrov subsolution on an open convex set.** Let `u` be convex on an open
-set `Ω` and `U ⊆ Ω` open and convex. If `f dμ ≤ MA_u^Ω` on `Ω`, where `MA_u^Ω` is the
+/-- **Density below an Aleksandrov subsolution on an open convex set.** Let `u` be convex on a set
+`Ω` and `U ⊆ Ω` open and convex. If `f dμ ≤ MA_u^Ω` on `Ω`, where `MA_u^Ω` is the
 Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≤ f` on `U` satisfies
 `g dμ ≤ MA_u^U` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
 `U`. -/
 theorem withDensity_restrict_le_mongeAmpereMeasure {U : Set E} [DecidablePred (· ∈ U)]
-    {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
-    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, g x ≤ f x)
+    {f g : E → ℝ} (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, g x ≤ f x)
     (hMA : (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x)) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)) :
     (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) := by
-  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hU hUc hUΩ hu]
   calc (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x))
       ≤ (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) :=
         withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
@@ -411,19 +426,19 @@ theorem withDensity_restrict_le_mongeAmpereMeasure {U : Set E} [DecidablePred (�
         rw [restrict_withDensity hU.measurableSet, restrict_restrict_of_subset hUΩ]
     _ ≤ _ := Measure.restrict_mono subset_rfl hMA
 
-/-- **Density above an Aleksandrov supersolution on an open convex set.** Let `u` be convex on an
-open set `Ω` and `U ⊆ Ω` open and convex. If `MA_u^Ω ≤ f dμ` on `Ω`, where `MA_u^Ω` is the
+/-- **Density above an Aleksandrov supersolution on an open convex set.** Let `u` be convex on a set
+`Ω` and `U ⊆ Ω` open and convex. If `MA_u^Ω ≤ f dμ` on `Ω`, where `MA_u^Ω` is the
 Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≥ f` on `U` satisfies
 `MA_u^U ≤ g dμ` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
 `U`. -/
 theorem mongeAmpereMeasure_le_withDensity_restrict {U : Set E} [DecidablePred (· ∈ U)]
-    {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
-    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, f x ≤ g x)
+    {f g : E → ℝ} (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, f x ≤ g x)
     (hMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
       (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x))) :
     mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) ≤
       (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) := by
-  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hU hUc hUΩ hu]
   calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict U
       ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U :=
         Measure.restrict_mono subset_rfl hMA

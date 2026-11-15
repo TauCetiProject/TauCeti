@@ -289,6 +289,34 @@ section Comp
 variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
 variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {hs' : HodgeStructure h'ℂ n}
 
+/-- The pullback of a polarization along an injective morphism is left separating: a vector whose
+image is orthogonal to the image of `f` has Hodge norm zero, so it vanishes. -/
+private theorem IsPolarization.separatingLeft_comp {Q : LinearMap.BilinForm ℤ V}
+    (hQ : IsPolarization hℂ hs Q) (f : HodgeStructure.Hom hs' hs)
+    (hf : Function.Injective f.toIntLinearMap) :
+    (Q.comp f.toIntLinearMap f.toIntLinearMap).SeparatingLeft := by
+  intro v hv
+  -- The image of `v` pairs to zero with the image of `f`, which contains its Weil transform, so
+  -- it has Hodge norm zero.
+  let P : Polarization hℂ hs := ⟨Q, hQ⟩
+  have hzero : ∀ z, P.Q (ιℂ (f.toIntLinearMap v)) (f z) = 0 := by
+    intro z
+    induction z using h'ℂ.inductionOn with
+    | tmul w =>
+      rw [f.apply_ι, P.Q_ι]
+      exact_mod_cast hv w
+    | smul c z hz => rw [map_smul, map_smul, hz, smul_zero]
+    | add z z' hz hz' => rw [map_add, map_add, hz, hz', add_zero]
+  have hnorm : P.hodgeForm (ιℂ (f.toIntLinearMap v)) (ιℂ (f.toIntLinearMap v)) =
+      (n.negOnePow : ℤ) * P.Q (ιℂ (f.toIntLinearMap v)) (f (hs'.weilOperator (ι'ℂ v))) := by
+    rw [P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight, f.commutes_weilOperator, f.apply_ι]
+  have hu : ιℂ (f.toIntLinearMap v) = 0 :=
+    P.hodgeForm_self_eq_zero_iff.mp (by rw [hnorm, hzero, mul_zero])
+  refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
+  have hw := bilinForm_apply hℂ Q (f.toIntLinearMap v) w
+  rw [hu, map_zero, LinearMap.zero_apply] at hw
+  exact (FaithfulSMul.algebraMap_eq_zero_iff ℤ ℂ).mp hw.symm
+
 /-- **Polarizations pull back along injective morphisms.** If `Q` polarizes `hs` and `f` is an
 injective morphism into `hs` from a Hodge structure of the same weight, then the form
 `Q (f x) (f y)` polarizes the source. Nondegeneracy of the pulled-back form is a consequence of
@@ -304,28 +332,8 @@ theorem IsPolarization.comp {Q : LinearMap.BilinForm ℤ V} (hQ : IsPolarization
     rw [LinearMap.BilinForm.comp_apply, LinearMap.BilinForm.comp_apply]
     exact hQ.symm_weight _ _
   refine ⟨hsymm, ?_, fun p x hx y hy ↦ ?_, fun p x hx hx0 ↦ ?_⟩
-  · refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft fun x y hxy ↦ by
-      rw [hsymm, hxy, mul_zero]).mpr fun v hv ↦ ?_
-    -- The image of `v` pairs to zero with the image of `f`, which contains its Weil transform, so
-    -- it has Hodge norm zero.
-    let P : Polarization hℂ hs := ⟨Q, hQ⟩
-    have hzero : ∀ z, P.Q (ιℂ (f.toIntLinearMap v)) (f z) = 0 := by
-      intro z
-      induction z using h'ℂ.inductionOn with
-      | tmul w =>
-        rw [f.apply_ι, P.Q_ι]
-        exact_mod_cast hv w
-      | smul c z hz => rw [map_smul, map_smul, hz, smul_zero]
-      | add z z' hz hz' => rw [map_add, map_add, hz, hz', add_zero]
-    have hnorm : P.hodgeForm (ιℂ (f.toIntLinearMap v)) (ιℂ (f.toIntLinearMap v)) =
-        (n.negOnePow : ℤ) * P.Q (ιℂ (f.toIntLinearMap v)) (f (hs'.weilOperator (ι'ℂ v))) := by
-      rw [P.hodgeForm_apply, latticeConj_ι, P.Q_symm_weight, f.commutes_weilOperator, f.apply_ι]
-    have hu : ιℂ (f.toIntLinearMap v) = 0 :=
-      P.hodgeForm_self_eq_zero_iff.mp (by rw [hnorm, hzero, mul_zero])
-    refine hf ((hQ.nondegenerate.1 _ fun w ↦ ?_).trans (map_zero _).symm)
-    have hw := bilinForm_apply hℂ Q (f.toIntLinearMap v) w
-    rw [hu, map_zero, LinearMap.zero_apply] at hw
-    exact (FaithfulSMul.algebraMap_eq_zero_iff ℤ ℂ).mp hw.symm
+  · exact (LinearMap.IsRefl.nondegenerate_iff_separatingLeft fun x y hxy ↦ by
+      rw [hsymm, hxy, mul_zero]).mpr (hQ.separatingLeft_comp f hf)
   · rw [hform, LinearMap.BilinForm.comp_apply]
     exact hQ.orthogonal p _ (f.map_F_le p (Submodule.mem_map_of_mem hx)) _
       (f.map_F_le _ (Submodule.mem_map_of_mem hy))
