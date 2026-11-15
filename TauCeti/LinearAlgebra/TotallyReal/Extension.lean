@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
 import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.Order.Zorn
 
 /-!
 # Extending totally real subspaces to maximal ones
 
-Let `J` be an endomorphism of a finite-dimensional vector space `E` over a linearly ordered field
-with `J² = -1`. Every totally real subspace `L` of `E` (one meeting `J(L)` only in `0`) is contained
-in a maximal totally real subspace, one complementary to its `J`-image
+Let `J` be an endomorphism of a vector space `E` over a linearly ordered field with `J² = -1`.
+Every totally real subspace `L` of `E` (one meeting `J(L)` only in `0`) is contained in a maximal
+totally real subspace, one complementary to its `J`-image
 (`TauCeti.IsTotallyReal.exists_le_isMaximalTotallyReal`). In particular maximal totally real
 subspaces exist, and any vector `v ≠ 0` lies in one, since the line through `v` is totally real.
 
@@ -23,7 +23,8 @@ The proof enlarges a totally real subspace `L` by a vector `e` outside `L ⊔ J(
 `L ⊔ J(L)` is `J`-invariant, and on it `t - s J` is invertible for `(t, s) ≠ 0`, with inverse
 `(t + s J) / (t² + s²)`; so `t e - s J e ∈ L ⊔ J(L)` forces `t = s = 0`, which is what keeps
 `L ⊔ K e` totally real. In the real case this is the statement that a complex vector space has a
-basis over `ℂ` extending any `ℂ`-independent family, read through its real points.
+basis over `ℂ` extending any `ℂ`-independent family, read through its real points. Zorn's lemma
+then gives a maximal totally real subspace containing `L`, in any dimension.
 
 ## Main results
 
@@ -90,40 +91,40 @@ theorem IsTotallyReal.sup_span_singleton (hJ : J.comp J = -LinearMap.id) (hL : I
   simp only [zero_smul, add_zero] at hwz ⊢
   exact Submodule.disjoint_def.1 hL.disjoint l hl (hwz ▸ Submodule.mem_map_of_mem hl')
 
-variable [FiniteDimensional K E]
-
-/-- **Totally real subspaces extend to maximal ones.** If `J² = -1` on a finite-dimensional
-space, every totally real subspace is contained in a maximal totally real subspace. -/
+/-- **Totally real subspaces extend to maximal ones.** If `J² = -1`, every totally real subspace is
+contained in a maximal totally real subspace. -/
 theorem IsTotallyReal.exists_le_isMaximalTotallyReal (hJ : J.comp J = -LinearMap.id)
     (hL : IsTotallyReal J L) : ∃ L', L ≤ L' ∧ IsMaximalTotallyReal J L' := by
-  obtain ⟨L', ⟨hLL', hL'⟩, hmax⟩ := (wellFounded_gt (α := Submodule K E)).has_min
-    {L' | L ≤ L' ∧ IsTotallyReal J L'} ⟨L, le_rfl, hL⟩
+  -- A chain of totally real subspaces has a totally real union: two vectors `z` and `J w` of the
+  -- union lie in a common member of the chain.
+  obtain ⟨L', hLL', hmax⟩ := zorn_le_nonempty₀ {L' | IsTotallyReal J L'} (fun c hc hchain y hy ↦ by
+    have hmem {z : E} : z ∈ sSup c ↔ ∃ M ∈ c, z ∈ M :=
+      Submodule.mem_sSup_of_directed ⟨y, hy⟩ hchain.directedOn
+    refine ⟨sSup c, (isTotallyReal_iff J _).2 (Submodule.disjoint_def.2 ?_),
+      fun z hz ↦ le_sSup hz⟩
+    rintro z hz ⟨w, hw, rfl⟩
+    obtain ⟨M₁, hM₁, hz₁⟩ := hmem.1 hz
+    obtain ⟨M₂, hM₂, hw₂⟩ := hmem.1 hw
+    obtain ⟨M, hM, h₁, h₂⟩ := hchain.directedOn M₁ hM₁ M₂ hM₂
+    exact Submodule.disjoint_def.1 (hc hM).disjoint _ (h₁ hz₁)
+      (Submodule.mem_map_of_mem (h₂ hw₂))) L hL
   refine ⟨L', hLL', (isMaximalTotallyReal_iff J L').2
-    (isCompl_iff.2 ⟨hL'.disjoint, codisjoint_iff.2 ?_⟩)⟩
+    (isCompl_iff.2 ⟨hmax.1.disjoint, codisjoint_iff.2 ?_⟩)⟩
   by_contra hne
   obtain ⟨e, -, he⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.2 hne)
-  refine hmax (L' ⊔ K ∙ e) ⟨hLL'.trans le_sup_left, hL'.sup_span_singleton hJ he⟩ ?_
-  exact lt_of_le_of_ne le_sup_left fun h ↦
-    he (Submodule.mem_sup_left (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self e)))
+  have hle := hmax.2 (hmax.1.sup_span_singleton hJ he) le_sup_left
+  exact he (Submodule.mem_sup_left (hle (Submodule.mem_sup_right
+    (Submodule.mem_span_singleton_self e))))
 
-/-- If `J² = -1` on a finite-dimensional space, every vector lies in a maximal totally real
-subspace. -/
+/-- If `J² = -1`, every vector lies in a maximal totally real subspace. -/
 theorem exists_mem_isMaximalTotallyReal (hJ : J.comp J = -LinearMap.id) (v : E) :
     ∃ L, v ∈ L ∧ IsMaximalTotallyReal J L := by
+  by_cases hv : v = 0
+  · obtain ⟨L, -, hL⟩ := (IsTotallyReal.bot J).exists_le_isMaximalTotallyReal hJ
+    exact ⟨L, hv ▸ L.zero_mem, hL⟩
+  -- The line through `v` is totally real, by adding `v` to the zero subspace.
   have hline : IsTotallyReal J (K ∙ v) := by
-    rw [isTotallyReal_iff, Submodule.disjoint_def]
-    intro z hz hzJ
-    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hz
-    obtain ⟨w, hw, hwz⟩ := Submodule.mem_map.1 hzJ
-    obtain ⟨s, rfl⟩ := Submodule.mem_span_singleton.1 hw
-    have hmem : t • v - s • J v ∈ (⊥ : Submodule K E) := by
-      rw [map_smul] at hwz
-      rw [hwz, sub_self]
-      exact Submodule.zero_mem _
-    by_cases hv : v = 0
-    · simp [hv]
-    · have := eq_zero_of_sub_smul_mem hJ (M := ⊥) (by simp) (by simpa using hv) hmem
-      simp [this.1]
+    simpa using (IsTotallyReal.bot J).sup_span_singleton hJ (e := v) (by simpa using hv)
   obtain ⟨L, hle, hL⟩ := hline.exists_le_isMaximalTotallyReal hJ
   exact ⟨L, hle (Submodule.mem_span_singleton_self v), hL⟩
 
