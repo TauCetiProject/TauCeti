@@ -162,21 +162,14 @@ private theorem card_hermitian_offDiag (p : ℕ) :
     ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card : ℝ) =
       (p : ℝ) * ((p : ℝ) - 1) := by
   have hdiag : (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2).card = p := by
-    have heq : (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2) =
-        Finset.univ.image fun i : Fin p ↦ (i, i) := by
-      ext ⟨a, b⟩
-      simp [eq_comm]
-    rw [heq, Finset.card_image_of_injective _ fun i j h ↦ (Prod.mk.inj h).1, Finset.card_fin]
-  have hsum : (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2).card +
-      (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card = p * p := by
-    simpa [Fintype.card_prod, Fintype.card_fin] using
-      Finset.card_filter_add_card_filter_not
-        (s := (Finset.univ : Finset (Fin p × Fin p))) (fun ab : Fin p × Fin p ↦ ab.1 = ab.2)
-  rw [hdiag] at hsum
-  have hcast : (p : ℝ) + ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card : ℝ) =
-      (p : ℝ) * (p : ℝ) := by
-    exact_mod_cast hsum
-  linarith
+    rw [show (Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 = ab.2) =
+      Finset.univ.image (fun i : Fin p ↦ (i, i)) by ext ⟨a, b⟩; simp [eq_comm],
+      Finset.card_image_of_injective _ fun _ _ h ↦ (Prod.mk.inj h).1, Finset.card_fin]
+  have hsum := Finset.card_filter_add_card_filter_not
+    (s := (Finset.univ : Finset (Fin p × Fin p))) (fun ab ↦ ab.1 = ab.2)
+  simp only [hdiag, Finset.card_univ, Fintype.card_prod, Fintype.card_fin] at hsum
+  linarith [show (p : ℝ) + ((Finset.univ.filter fun ab : Fin p × Fin p ↦ ab.1 ≠ ab.2).card : ℝ) =
+    (p : ℝ) * p from mod_cast hsum]
 
 private theorem prod_hermScale_inv (p : ℕ) :
     (((∏ ab, hermScale p ab)⁻¹ : ℝˣ) : ℝ) =
@@ -188,9 +181,7 @@ private theorem prod_hermScale_inv (p : ℕ) :
     rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const]
   rw [Units.val_inv_eq_inv_val, hprod, inv_pow, inv_inv, Real.sqrt_eq_rpow,
     ← Real.rpow_natCast ((2 : ℝ) ^ (1 / 2 : ℝ)) N, ← Real.rpow_mul (by norm_num)]
-  congr 1
-  rw [hN, card_hermitian_offDiag]
-  ring
+  congr 1; rw [hN, card_hermitian_offDiag]; ring
 
 private theorem volume_parallelepiped_hermitianBasis (p : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)))
@@ -198,8 +189,7 @@ private theorem volume_parallelepiped_hermitianBasis (p : ℕ) :
       ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2)) := by
   rw [Basis.coe_parallelepiped, ← addHaar_hermScaled p, Measure.addHaar_parallelepiped,
     Basis.det_unitsSMul]
-  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
-  rw [prod_hermScale_inv]
+  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one, prod_hermScale_inv]
   exact congrArg ENNReal.ofReal (abs_of_nonneg (Real.rpow_nonneg (by norm_num) _))
 
 end comparison
@@ -226,8 +216,7 @@ theorem measurePreserving_hermitianFinOneEquiv :
   have h : (hermitianFinOneEquiv : _ → ℝ) =
       MeasurableEquiv.funUnique (Fin 1 × Fin 1) ℝ ∘ hermitianCoordinates 1 := by
     funext A
-    have hdefault : (default : Fin 1 × Fin 1) = (0, 0) := Subsingleton.elim _ _
-    simp [MeasurableEquiv.funUnique, hdefault]
+    simp [MeasurableEquiv.funUnique, Subsingleton.elim (default : Fin 1 × Fin 1) (0, 0)]
   rw [h]
   exact (volume_preserving_funUnique _ ℝ).comp (measurePreserving_hermitianCoordinates 1)
 
@@ -243,21 +232,13 @@ variable {p : ℕ}
 @[simp]
 theorem map_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGroup (Fin p) ℂ) :
     (hermitianLebesgue p).map (hermitianConj U) = hermitianLebesgue p := by
-  set c : ENNReal := ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2))
-  have hc0 : c ≠ 0 := by
-    simp only [c, ne_eq, ENNReal.ofReal_eq_zero, not_le]
-    exact Real.rpow_pos_of_pos two_pos _
-  have hctop : c ≠ ⊤ := ENNReal.ofReal_ne_top
   have hvol := (hermitianConj U).measurePreserving.map_eq
   rw [volume_hermitianMatrix_eq_smul_hermitianLebesgue p,
     Measure.map_smul _ (hermitianConj U).continuous.aemeasurable] at hvol
-  calc
-    (hermitianLebesgue p).map (hermitianConj U) =
-        c⁻¹ • c • (hermitianLebesgue p).map (hermitianConj U) := by
-      rw [smul_smul, ENNReal.inv_mul_cancel hc0 hctop, one_smul]
-    _ = c⁻¹ • c • hermitianLebesgue p := by rw [hvol]
-    _ = hermitianLebesgue p := by
-      rw [smul_smul, ENNReal.inv_mul_cancel hc0 hctop, one_smul]
+  set c : ENNReal := ENNReal.ofReal (Real.rpow 2 (((p : ℝ) * ((p : ℝ) - 1)) / 2))
+  have hc : c⁻¹ * c = 1 := ENNReal.inv_mul_cancel
+    (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos two_pos _)).ne' ENNReal.ofReal_ne_top
+  simpa [smul_smul, hc] using congrArg (c⁻¹ • ·) hvol
 
 /-- Unitary conjugation preserves `TauCeti.hermitianLebesgue`. -/
 theorem measurePreserving_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGroup (Fin p) ℂ) :

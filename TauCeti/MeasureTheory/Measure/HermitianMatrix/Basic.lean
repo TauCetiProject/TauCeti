@@ -296,24 +296,31 @@ theorem hermitianCoordinates_apply_of_gt (A : selfAdjoint.submodule ℝ (Matrix 
     hermitianCoordinates p A (i, j) = ((A : Matrix (Fin p) (Fin p) ℂ) j i).im :=
   ite_eq_right (not_le.2 h)
 
+private theorem coe_hermitianCoordinates_symm_apply (x : Fin p × Fin p → ℝ) (k l : Fin p) :
+    ((hermitianCoordinates p).symm x : Matrix (Fin p) (Fin p) ℂ) k l =
+      if k = l then (x (k, k) : ℂ)
+      else if k < l then (x (k, l) : ℂ) + Complex.I * (x (l, k) : ℂ)
+      else (x (l, k) : ℂ) - Complex.I * (x (k, l) : ℂ) :=
+  rfl
+
 @[simp]
 theorem coe_hermitianCoordinates_symm_apply_self (x : Fin p × Fin p → ℝ) (i : Fin p) :
     ((hermitianCoordinates p).symm x : Matrix (Fin p) (Fin p) ℂ) i i = (x (i, i) : ℂ) := by
-  simp [hermitianCoordinates]
+  simp [coe_hermitianCoordinates_symm_apply]
 
 @[simp]
 theorem coe_hermitianCoordinates_symm_apply_of_lt (x : Fin p × Fin p → ℝ) {i j : Fin p}
     (h : i < j) :
     ((hermitianCoordinates p).symm x : Matrix (Fin p) (Fin p) ℂ) i j =
       (x (i, j) : ℂ) + Complex.I * (x (j, i) : ℂ) := by
-  simp [hermitianCoordinates, h, h.ne]
+  simp [coe_hermitianCoordinates_symm_apply, h, h.ne]
 
 @[simp]
 theorem coe_hermitianCoordinates_symm_apply_of_gt (x : Fin p × Fin p → ℝ) {i j : Fin p}
     (h : j < i) :
     ((hermitianCoordinates p).symm x : Matrix (Fin p) (Fin p) ℂ) i j =
       (x (j, i) : ℂ) - Complex.I * (x (i, j) : ℂ) := by
-  simp [hermitianCoordinates, h.ne', h.not_gt]
+  simp [coe_hermitianCoordinates_symm_apply, h.ne', h.not_gt]
 
 /-- The measurable equivalence induced by `TauCeti.hermitianCoordinates`. -/
 def hermitianCoordinatesMeasurableEquiv :
@@ -353,70 +360,32 @@ theorem hermitianBasis_repr (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin 
     (hermitianBasis p).repr A ab = hermitianCoordinates p A ab := by
   simp [hermitianBasis]
 
-private theorem ofReal_single_apply (ab cd : Fin p × Fin p) :
-    ((Pi.single (M := fun _ ↦ ℝ) ab 1 cd : ℝ) : ℂ) = if cd = ab then 1 else 0 := by
-  rw [Pi.single_apply]
-  split_ifs <;> simp
+private theorem ofReal_single_one (a b c d : Fin p) :
+    ((Pi.single (M := fun _ ↦ ℝ) (a, b) 1 (c, d) : ℝ) : ℂ) =
+      if c = a ∧ d = b then 1 else 0 := by
+  simp only [Pi.single_apply, Prod.mk.injEq]; split_ifs <;> simp
 
 /-- On the diagonal `(i, i)`, the coordinate basis vector is `Eᵢᵢ`. -/
 theorem coe_hermitianBasis_diag (i : Fin p) :
     ((hermitianBasis p (i, i) : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
       Matrix (Fin p) (Fin p) ℂ) = Matrix.single i i 1 := by
-  ext k l
-  rw [hermitianBasis_apply, Matrix.single_apply]
-  rcases lt_trichotomy k l with h | rfl | h
-  · rw [coe_hermitianCoordinates_symm_apply_of_lt p _ h, ofReal_single_apply, ofReal_single_apply]
-    have h1 : (k, l) ≠ (i, i) := fun heq ↦
-      h.ne ((Prod.mk.inj heq).1.trans (Prod.mk.inj heq).2.symm)
-    have h2 : (l, k) ≠ (i, i) := fun heq ↦
-      h.ne' ((Prod.mk.inj heq).1.trans (Prod.mk.inj heq).2.symm)
-    have h3 : ¬(i = k ∧ i = l) := fun ⟨hk, hl⟩ ↦ h.ne (hk.symm.trans hl)
-    simp [h1, h2, h3]
-  · rw [coe_hermitianCoordinates_symm_apply_self, ofReal_single_apply]
-    by_cases hik : i = k
-    · subst hik; simp
-    · have hki : (k, k) ≠ (i, i) := fun heq ↦ hik (Prod.mk.inj heq).1.symm
-      simp [hik, hki]
-  · rw [coe_hermitianCoordinates_symm_apply_of_gt p _ h, ofReal_single_apply, ofReal_single_apply]
-    have h1 : (l, k) ≠ (i, i) := fun heq ↦
-      h.ne ((Prod.mk.inj heq).1.trans (Prod.mk.inj heq).2.symm)
-    have h2 : (k, l) ≠ (i, i) := fun heq ↦
-      h.ne' ((Prod.mk.inj heq).1.trans (Prod.mk.inj heq).2.symm)
-    have h3 : ¬(i = k ∧ i = l) := fun ⟨hk, hl⟩ ↦ h.ne' (hk.symm.trans hl)
-    simp [h1, h2, h3]
+  obtain ⟨i, hi⟩ := i
+  ext ⟨k, hk⟩ ⟨l, hl⟩
+  rw [hermitianBasis_apply, coe_hermitianCoordinates_symm_apply, Matrix.single_apply]
+  simp only [ofReal_single_one, Fin.mk.injEq, Fin.mk_lt_mk]
+  split_ifs <;> first | (simp; done) | omega
 
 /-- Strictly above the diagonal (`i < j`), the coordinate basis vector at `(i, j)` is
 `Eᵢⱼ + Eⱼᵢ`. -/
 theorem coe_hermitianBasis_of_lt {i j : Fin p} (h : i < j) :
     ((hermitianBasis p (i, j) : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
       Matrix (Fin p) (Fin p) ℂ) = Matrix.single i j 1 + Matrix.single j i 1 := by
-  ext k l
-  rw [hermitianBasis_apply, Matrix.add_apply, Matrix.single_apply, Matrix.single_apply]
-  rcases lt_trichotomy k l with hkl | rfl | hkl
-  · rw [coe_hermitianCoordinates_symm_apply_of_lt p _ hkl, ofReal_single_apply, ofReal_single_apply]
-    have hlk : (l, k) ≠ (i, j) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    have hji : ¬(j = k ∧ i = l) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    rw [ite_eq_right hlk, ite_eq_right hji]
-    by_cases hij : i = k ∧ j = l
-    · rcases hij with ⟨rfl, rfl⟩; simp
-    · have hkl' : (k, l) ≠ (i, j) := fun heq ↦
-        hij ⟨(Prod.mk.inj heq).1.symm, (Prod.mk.inj heq).2.symm⟩
-      simp [hij, hkl']
-  · rw [coe_hermitianCoordinates_symm_apply_self, ofReal_single_apply]
-    have h1 : (k, k) ≠ (i, j) := fun heq ↦
-      h.ne ((Prod.mk.inj heq).1.symm.trans (Prod.mk.inj heq).2)
-    have h2 : ¬(i = k ∧ j = k) := fun ⟨hi, hj⟩ ↦ h.ne (hi.trans hj.symm)
-    have h3 : ¬(j = k ∧ i = k) := fun ⟨hj, hi⟩ ↦ h.ne (hi.trans hj.symm)
-    simp [h1, h2, h3]
-  · rw [coe_hermitianCoordinates_symm_apply_of_gt p _ hkl, ofReal_single_apply, ofReal_single_apply]
-    have hkl' : (k, l) ≠ (i, j) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    have hij : ¬(i = k ∧ j = l) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    rw [ite_eq_right hkl', ite_eq_right hij]
-    by_cases hji : j = k ∧ i = l
-    · rcases hji with ⟨rfl, rfl⟩; simp
-    · have hlk : (l, k) ≠ (i, j) := fun heq ↦
-        hji ⟨(Prod.mk.inj heq).2.symm, (Prod.mk.inj heq).1.symm⟩
-      simp [hji, hlk]
+  obtain ⟨i, hi⟩ := i; obtain ⟨j, hj⟩ := j; rw [Fin.mk_lt_mk] at h
+  ext ⟨k, hk⟩ ⟨l, hl⟩
+  rw [hermitianBasis_apply, coe_hermitianCoordinates_symm_apply, Matrix.add_apply,
+    Matrix.single_apply, Matrix.single_apply]
+  simp only [ofReal_single_one, Fin.mk.injEq, Fin.mk_lt_mk]
+  split_ifs <;> first | (simp; done) | omega
 
 /-- Strictly below the diagonal (`j < i`), the coordinate basis vector at `(i, j)` is
 `I • Eⱼᵢ - I • Eᵢⱼ`. -/
@@ -424,33 +393,12 @@ theorem coe_hermitianBasis_of_gt {i j : Fin p} (h : j < i) :
     ((hermitianBasis p (i, j) : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
       Matrix (Fin p) (Fin p) ℂ) =
       Matrix.single j i Complex.I - Matrix.single i j Complex.I := by
-  ext k l
-  rw [hermitianBasis_apply, Matrix.sub_apply, Matrix.single_apply, Matrix.single_apply]
-  rcases lt_trichotomy k l with hkl | rfl | hkl
-  · rw [coe_hermitianCoordinates_symm_apply_of_lt p _ hkl, ofReal_single_apply, ofReal_single_apply]
-    have hkl' : (k, l) ≠ (i, j) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    have hij : ¬(i = k ∧ j = l) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    rw [ite_eq_right hkl', ite_eq_right hij]
-    by_cases hji : j = k ∧ i = l
-    · rcases hji with ⟨rfl, rfl⟩; simp
-    · have hlk : (l, k) ≠ (i, j) := fun heq ↦
-        hji ⟨(Prod.mk.inj heq).2.symm, (Prod.mk.inj heq).1.symm⟩
-      simp [hji, hlk]
-  · rw [coe_hermitianCoordinates_symm_apply_self, ofReal_single_apply]
-    have h1 : (k, k) ≠ (i, j) := fun heq ↦
-      h.ne' ((Prod.mk.inj heq).1.symm.trans (Prod.mk.inj heq).2)
-    have h2 : ¬(j = k ∧ i = k) := fun ⟨hj, hi⟩ ↦ h.ne (hj.trans hi.symm)
-    have h3 : ¬(i = k ∧ j = k) := fun ⟨hi, hj⟩ ↦ h.ne (hj.trans hi.symm)
-    simp [h1, h2, h3]
-  · rw [coe_hermitianCoordinates_symm_apply_of_gt p _ hkl, ofReal_single_apply, ofReal_single_apply]
-    have hlk : (l, k) ≠ (i, j) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    have hji : ¬(j = k ∧ i = l) := by rintro ⟨rfl, rfl⟩; exact lt_asymm h hkl
-    rw [ite_eq_right hlk, ite_eq_right hji]
-    by_cases hij : i = k ∧ j = l
-    · rcases hij with ⟨rfl, rfl⟩; simp
-    · have hkl' : (k, l) ≠ (i, j) := fun heq ↦
-        hij ⟨(Prod.mk.inj heq).1.symm, (Prod.mk.inj heq).2.symm⟩
-      simp [hij, hkl']
+  obtain ⟨i, hi⟩ := i; obtain ⟨j, hj⟩ := j; rw [Fin.mk_lt_mk] at h
+  ext ⟨k, hk⟩ ⟨l, hl⟩
+  rw [hermitianBasis_apply, coe_hermitianCoordinates_symm_apply, Matrix.sub_apply,
+    Matrix.single_apply, Matrix.single_apply]
+  simp only [ofReal_single_one, Fin.mk.injEq, Fin.mk_lt_mk]
+  split_ifs <;> first | (simp; done) | omega
 
 end coordinates
 
@@ -465,9 +413,9 @@ def hermitianFinOneEquiv : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℂ
 theorem hermitianFinOneEquiv_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin 1) (Fin 1) ℂ)) :
     hermitianFinOneEquiv A = ((A : Matrix (Fin 1) (Fin 1) ℂ) 0 0).re := by
   let _ : Unique (Fin 1 × Fin 1) := ⟨⟨(0, 0)⟩, fun _ ↦ Subsingleton.elim _ _⟩
-  have hdefault : (default : Fin 1 × Fin 1) = (0, 0) := Subsingleton.elim _ _
   rw [hermitianFinOneEquiv, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.coe_funUnique, Function.eval, hdefault, hermitianCoordinates_apply_self]
+    ContinuousLinearEquiv.coe_funUnique, Function.eval,
+    Subsingleton.elim (default : Fin 1 × Fin 1) (0, 0), hermitianCoordinates_apply_self]
 
 @[simp]
 theorem coe_hermitianFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
@@ -476,9 +424,7 @@ theorem coe_hermitianFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
   let _ : Unique (Fin 1 × Fin 1) := ⟨⟨(0, 0)⟩, fun _ ↦ Subsingleton.elim _ _⟩
   obtain rfl : i = 0 := Subsingleton.elim _ _
   obtain rfl : j = 0 := Subsingleton.elim _ _
-  rw [hermitianFinOneEquiv, ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.coe_funUnique_symm, coe_hermitianCoordinates_symm_apply_self,
-    Function.const_apply]
+  simp [hermitianFinOneEquiv, ContinuousLinearEquiv.coe_funUnique_symm]
 
 end TauCeti
 
@@ -488,57 +434,48 @@ namespace Matrix.UnitaryGroup
 
 variable {p : ℕ}
 
-/-- Unitary conjugation `A ↦ U * A * Uᴴ` as an `ℝ`-linear map on the complex Hermitian
-subspace. -/
 private def hermitianConjLinearMap (M : Matrix (Fin p) (Fin p) ℂ) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) →ₗ[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) where
   toFun A := ⟨M * (A : Matrix (Fin p) (Fin p) ℂ) * Mᴴ,
     (Matrix.isHermitian_mul_mul_conjTranspose M A.2.isHermitian).isSelfAdjoint⟩
-  map_add' A B := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
-  map_smul' r A := Subtype.ext (by simp [Algebra.mul_smul_comm, Algebra.smul_mul_assoc])
+  map_add' _ _ := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
+  map_smul' _ _ := Subtype.ext (by simp [Algebra.mul_smul_comm, Algebra.smul_mul_assoc])
 
 private theorem hermitianConjLinearMap_mul (M N : Matrix (Fin p) (Fin p) ℂ) :
     hermitianConjLinearMap (M * N) =
-      (hermitianConjLinearMap M).comp (hermitianConjLinearMap N) := by
-  refine LinearMap.ext fun A ↦ Subtype.ext ?_
-  simp [hermitianConjLinearMap, Matrix.conjTranspose_mul, Matrix.mul_assoc]
+      (hermitianConjLinearMap M).comp (hermitianConjLinearMap N) :=
+  LinearMap.ext fun _ ↦ Subtype.ext (by simp [hermitianConjLinearMap, Matrix.mul_assoc])
 
 private theorem hermitianConjLinearMap_one :
-    hermitianConjLinearMap (1 : Matrix (Fin p) (Fin p) ℂ) = LinearMap.id := by
-  refine LinearMap.ext fun A ↦ Subtype.ext ?_
-  simp [hermitianConjLinearMap]
+    hermitianConjLinearMap (1 : Matrix (Fin p) (Fin p) ℂ) = LinearMap.id :=
+  LinearMap.ext fun _ ↦ Subtype.ext (by simp [hermitianConjLinearMap])
 
 private def hermitianConjLinearEquiv (U : Matrix.unitaryGroup (Fin p) ℂ) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ≃ₗ[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) :=
   LinearEquiv.ofLinearMap
-    (hermitianConjLinearMap (U : Matrix (Fin p) (Fin p) ℂ))
-    (hermitianConjLinearMap
-      ((U⁻¹ : Matrix.unitaryGroup (Fin p) ℂ) : Matrix (Fin p) (Fin p) ℂ))
-    (by
-      rw [← hermitianConjLinearMap_mul, ← mul_val, mul_inv_cancel, one_val,
-        hermitianConjLinearMap_one])
-    (by
-      rw [← hermitianConjLinearMap_mul, ← mul_val, inv_mul_cancel, one_val,
-        hermitianConjLinearMap_one])
+    (hermitianConjLinearMap U.1)
+    (hermitianConjLinearMap (U⁻¹ : Matrix.unitaryGroup (Fin p) ℂ).1)
+    (by rw [← hermitianConjLinearMap_mul, ← mul_val, mul_inv_cancel, one_val,
+          hermitianConjLinearMap_one])
+    (by rw [← hermitianConjLinearMap_mul, ← mul_val, inv_mul_cancel, one_val,
+          hermitianConjLinearMap_one])
 
 /-- Unitary conjugation `A ↦ U * A * Uᴴ` on the complex Hermitian subspace, as a real linear
 isometry equivalence for the Frobenius norm. -/
 def hermitianConj (U : Matrix.unitaryGroup (Fin p) ℂ) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ≃ₗᵢ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) :=
-  { toLinearEquiv := hermitianConjLinearEquiv U
-    norm_map' A := by
-      have hsq : ‖hermitianConjLinearEquiv U A‖ ^ 2 = ‖A‖ ^ 2 := by
-        let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℂ) :=
-          Matrix.frobeniusNormedAddCommGroup
-        change ‖(U : Matrix (Fin p) (Fin p) ℂ) * (A : Matrix (Fin p) (Fin p) ℂ) *
-            (U : Matrix (Fin p) (Fin p) ℂ)ᴴ‖ ^ 2 = ‖(A : Matrix (Fin p) (Fin p) ℂ)‖ ^ 2
-        simpa [star_eq_conjTranspose] using
-          Matrix.frobenius_norm_sq_conj_unitary ((U⁻¹ : Matrix.unitaryGroup (Fin p) ℂ) :
-            Matrix (Fin p) (Fin p) ℂ) (A : Matrix (Fin p) (Fin p) ℂ) (U⁻¹).2
-      exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq }
+      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) where
+  toLinearEquiv := hermitianConjLinearEquiv U
+  norm_map' A := by
+    let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℂ) := Matrix.frobeniusNormedAddCommGroup
+    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+    change ‖(U : Matrix (Fin p) (Fin p) ℂ) * A.1 * (U : Matrix (Fin p) (Fin p) ℂ)ᴴ‖ ^ 2 =
+      ‖(A : Matrix (Fin p) (Fin p) ℂ)‖ ^ 2
+    simpa [star_eq_conjTranspose] using
+      Matrix.frobenius_norm_sq_conj_unitary
+        ((U⁻¹ : Matrix.unitaryGroup (Fin p) ℂ) : Matrix (Fin p) (Fin p) ℂ) A.1 (U⁻¹).2
 
 @[simp]
 theorem coe_hermitianConj_apply (U : Matrix.unitaryGroup (Fin p) ℂ)
@@ -552,17 +489,15 @@ theorem coe_hermitianConj_apply (U : Matrix.unitaryGroup (Fin p) ℂ)
 @[simp]
 theorem hermitianConj_one :
     hermitianConj (1 : Matrix.unitaryGroup (Fin p) ℂ) =
-      LinearIsometryEquiv.refl ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) := by
-  refine LinearIsometryEquiv.ext fun A ↦ Subtype.ext ?_
-  simp
+      LinearIsometryEquiv.refl ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
+  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext (by simp)
 
 /-- Conjugation by a product of unitary matrices composes the two conjugations in reverse
 order. -/
 @[simp]
 theorem hermitianConj_mul (U₁ U₂ : Matrix.unitaryGroup (Fin p) ℂ) :
-    hermitianConj (U₁ * U₂) = (hermitianConj U₂).trans (hermitianConj U₁) := by
-  refine LinearIsometryEquiv.ext fun A ↦ Subtype.ext ?_
-  simp [Matrix.conjTranspose_mul, Matrix.mul_assoc]
+    hermitianConj (U₁ * U₂) = (hermitianConj U₂).trans (hermitianConj U₁) :=
+  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext (by simp [Matrix.conjTranspose_mul, Matrix.mul_assoc])
 
 /-- The inverse of unitary conjugation by `U` is unitary conjugation by `U⁻¹ = Uᴴ`. -/
 @[simp]
