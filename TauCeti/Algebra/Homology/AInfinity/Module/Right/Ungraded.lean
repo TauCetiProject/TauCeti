@@ -209,6 +209,22 @@ theorem ungradedStasheffMul_add
   | zero => simp
   | succ n => simp [ungradedStasheffMul_succ, sum_add_distrib]
 
+/-- The differential terms commute with postcomposition by a linear map `L`. -/
+theorem map_ungradedStasheffDiff {P : Type*} [AddCommGroup P] [Module R P] (L : N →ₗ[R] P)
+    {act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] P)}
+    (h : ∀ n a m, L (act n a m) = act' n a m) (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    L (ungradedStasheffDiff act d n a m) = ungradedStasheffDiff act' d n a m := by
+  simp [ungradedStasheffDiff_def, h]
+
+/-- The product terms commute with postcomposition by a linear map `L`. -/
+theorem map_ungradedStasheffMul {P : Type*} [AddCommGroup P] [Module R P] (L : N →ₗ[R] P)
+    {act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] P)}
+    (h : ∀ n a m, L (act n a m) = act' n a m) (n : ℕ) (a : Fin n → A) (m : M) :
+    L (ungradedStasheffMul act n a m) = ungradedStasheffMul act' n a m := by
+  cases n with
+  | zero => simp
+  | succ n => simp [ungradedStasheffMul_succ, h]
+
 /-- The differential terms of the zero family vanish. -/
 @[simp]
 theorem ungradedStasheffDiff_zero_left (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :

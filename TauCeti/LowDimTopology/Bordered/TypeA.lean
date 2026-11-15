@@ -104,9 +104,9 @@ products.
 (`TauCeti.TypeDStructure.typeABoxMapOfHom`). It is the off-diagonal component of the box tensor
 differential of the mapping cone of `f` (`TauCeti.UngradedAInfinityRightModuleHom.cone`), which is
 block triangular with diagonal blocks the box tensor differentials of `M` and `M'`; since that
-differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis. For a
-bounded type `D` structure, the identity morphism induces the identity. For any type `D` structure,
-an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
+differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis, as is
+`T_{f+g} = T_f + T_g`. For a bounded type `D` structure, the identity morphism induces the identity.
+For any type `D` structure, an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 ## Main definitions
 
@@ -1393,15 +1393,18 @@ theorem typeABoxDifferential_typeABoxMapOfHom_of_act_eq_zero [CharP R 2]
     (fun n hn => by rw [f.cone.matrixAct_eq_zero_of_act_eq_zero X (hcone n hn), zero_apply])
     (N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero f.cone hcone) φ
 
-/-- **A morphism without higher components acts componentwise.** If `f_{n+1} = 0` for `n ≥ 1`, the
-induced map is `φ ↦ f₁ ∘ φ`, when the operations `m_{n+1}(·, δ, …, δ)` of the matrix module of the
-mapping cone vanish for `n ≥ K`. -/
-theorem typeABoxMapOfHom_apply_eq_map_zero (N : TypeDStructure d ι X)
-    (f : UngradedAInfinityRightModuleHom Mm Mm') (hf : ∀ n, f.map (n + 1) = 0) {K : ℕ}
+/-- **A morphism without higher components acts componentwise.** If a linear map `L` kills the
+components `f_{n+1}`, `n ≥ 1`, then `L (T_f φ z) = L (f₁ (φ z))`, when the operations
+`m_{n+1}(·, δ, …, δ)` of the matrix module of the mapping cone vanish for `n ≥ K`. For `L` the
+identity: if `f_{n+1} = 0` for `n ≥ 1`, the induced map is `φ ↦ f₁ ∘ φ`. -/
+theorem map_typeABoxMapOfHom_apply_eq_map_zero {P : Type*} [AddCommGroup P] [Module R P]
+    (N : TypeDStructure d ι X) (f : UngradedAInfinityRightModuleHom Mm Mm') (L : M' →ₗ[R] P)
+    (hf : ∀ n a m, L (f.map (n + 1) a m) = 0) {K : ℕ}
     (hK : ∀ n, K ≤ n → (f.cone.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M) (z : X) :
-    N.typeABoxMapOfHom f φ z = f.map 0 ![] (φ z) := by
+    L (N.typeABoxMapOfHom f φ z) = L (f.map 0 ![] (φ z)) := by
   rw [typeABoxMapOfHom_apply_eq_sum (K := K + 1) _ _ fun n hn => hK n (by omega), sum_range_succ',
-    sum_eq_zero fun n _ => by simp [hf], zero_add, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
+    map_add, map_sum, sum_eq_zero fun n _ => by simp [apply_ite L, hf], zero_add,
+    ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
   simp [Subsingleton.elim (fun _ : Fin 0 => _) ![]]
 
 /-- **The identity morphism induces the identity**, for a bounded type `D` structure. -/
@@ -1410,9 +1413,59 @@ theorem typeABoxMapOfHom_id_of_isBounded [CharP R 2] (N : TypeDStructure d ι X)
       LinearMap.id := by
   obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
   refine LinearMap.ext fun φ => funext fun z => ?_
-  rw [N.typeABoxMapOfHom_apply_eq_map_zero _ UngradedAInfinityRightModuleHom.id_map_add_one
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)]
-  simp
+  simpa using N.map_typeABoxMapOfHom_apply_eq_map_zero (.id Mm) LinearMap.id (by simp)
+    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl) φ z
+
+/-- The induced map of a sum of morphisms is the sum of the induced maps, when the operations
+`m_{n+1}(·, δ, …, δ)` of the matrix modules of the three mapping cones vanish for `n ≥ K`. -/
+private theorem typeABoxMapOfHom_add_apply_of_bound (N : TypeDStructure d ι X)
+    (f g : UngradedAInfinityRightModuleHom Mm Mm') {K : ℕ}
+    (hf : ∀ n, K ≤ n → (f.cone.matrixAct X n fun _ => N.coeff) = 0)
+    (hg : ∀ n, K ≤ n → (g.cone.matrixAct X n fun _ => N.coeff) = 0)
+    (hfg : ∀ n, K ≤ n → ((f + g).cone.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M) (z : X) :
+    N.typeABoxMapOfHom (f + g) φ z = N.typeABoxMapOfHom f φ z + N.typeABoxMapOfHom g φ z := by
+  rw [typeABoxMapOfHom_apply_eq_sum _ _ hfg, typeABoxMapOfHom_apply_eq_sum _ _ hf,
+    typeABoxMapOfHom_apply_eq_sum _ _ hg, ← sum_add_distrib]
+  refine sum_congr rfl fun n _ => ?_
+  rw [← sum_add_distrib]
+  exact sum_congr rfl fun x _ => by split_ifs <;> simp
+
+/-- **The induced map is additive in the morphism**, for a bounded type `D` structure:
+`T_{f+g} = T_f + T_g`. -/
+theorem typeABoxMapOfHom_add_of_isBounded (N : TypeDStructure d ι X)
+    (f g : UngradedAInfinityRightModuleHom Mm Mm') (hN : N.IsBounded) :
+    N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g := by
+  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
+  have hc (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) (hn : K ≤ n) :
+      (f.cone.matrixAct X n fun _ => N.coeff) = 0 :=
+    N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl
+  exact LinearMap.ext fun φ => funext <| N.typeABoxMapOfHom_add_apply_of_bound f g (hc f) (hc g)
+    (hc _) φ
+
+/-- **The induced map is additive in the morphism, for a type `D` structure with a height**: if a
+height on the generators strictly increases along every nonzero coefficient of `N`, then
+`T_{f+g} = T_f + T_g`. -/
+theorem typeABoxMapOfHom_add_of_lt (N : TypeDStructure d ι X)
+    (f g : UngradedAInfinityRightModuleHom Mm Mm') (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) :
+    N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g :=
+  N.typeABoxMapOfHom_add_of_isBounded f g (N.isBounded_of_lt h hh)
+
+/-- **The induced map of morphisms of bounded modules is additive**: if the operations of `M` and
+`M'` and the components of `f` and `g` vanish from arity `K` on, then `T_{f+g} = T_f + T_g`,
+whatever the type `D` structure. -/
+theorem typeABoxMapOfHom_add_of_act_eq_zero (N : TypeDStructure d ι X)
+    (f g : UngradedAInfinityRightModuleHom Mm Mm') {K : ℕ} (hM : ∀ n, K ≤ n → Mm.act n = 0)
+    (hM' : ∀ n, K ≤ n → Mm'.act n = 0) (hf : ∀ n, K ≤ n → f.map n = 0)
+    (hg : ∀ n, K ≤ n → g.map n = 0) :
+    N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g := by
+  have hc (f : UngradedAInfinityRightModuleHom Mm Mm') (hf : ∀ n, K ≤ n → f.map n = 0) (n : ℕ)
+      (hn : K ≤ n) : (f.cone.matrixAct X n fun _ => N.coeff) = 0 := by
+    rw [f.cone.matrixAct_eq_zero_of_act_eq_zero X
+      (f.cone_act_eq_zero (hM n hn) (hM' n hn) (hf n hn)), zero_apply]
+  refine LinearMap.ext fun φ => funext <| N.typeABoxMapOfHom_add_apply_of_bound f g (hc f hf)
+    (hc g hg) (hc _ fun n hn => ?_) φ
+  rw [UngradedAInfinityRightModuleHom.add_map, Pi.add_apply, hf n hn, hg n hn, add_zero]
 
 /-- **The map induced by a chain map of differential modules.** For an `A`-linear map `g` of
 differential right modules commuting with the differentials, viewed as a morphism of `A∞` modules,
@@ -1424,17 +1477,15 @@ theorem typeABoxMapOfHom_toUngradedAInfinityRightModuleHom [CharP R 2] [Module A
     (φ : X → M) :
     N.typeABoxMapOfHom (hM.toUngradedAInfinityRightModuleHom hM' g hg) φ = fun x => g (φ x) := by
   funext z
-  rw [N.typeABoxMapOfHom_apply_eq_map_zero _
-    (IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg) (K := 2)
-    fun n hn => ?_]
-  · simp
-  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    rw [UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero _ X
-      (UngradedAInfinityRightModuleHom.cone_act_eq_zero _
-        (hM.toUngradedAInfinityRightModule_act_add_two n)
-        (hM'.toUngradedAInfinityRightModule_act_add_two n)
-        (IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
-          (n + 1))), zero_apply]
+  refine (N.map_typeABoxMapOfHom_apply_eq_map_zero _ LinearMap.id (by simp) (K := 2)
+    (fun n hn => ?_) φ z).trans (by simp)
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rw [UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero _ X
+    (UngradedAInfinityRightModuleHom.cone_act_eq_zero _
+      (hM.toUngradedAInfinityRightModule_act_add_two n)
+      (hM'.toUngradedAInfinityRightModule_act_add_two n)
+      (IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
+        (n + 1))), zero_apply]
 
 end ModuleHom
 

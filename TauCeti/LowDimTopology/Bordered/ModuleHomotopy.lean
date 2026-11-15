@@ -20,9 +20,11 @@ the same formula, a chain homotopy between `T_f` and `T_g`: over a ring of chara
 
 where the `z`-component of `T_h φ` is the sum, over the paths `x₀ → ⋯ → xₙ = z` of generators,
 of `h_{n+1}(φ x₀, δ x₀ x₁, …, δ xₙ₋₁ xₙ)`
-(`TauCeti.TypeDStructure.typeABoxMapOfHomotopy_apply_eq_sum`). This is the half of the homotopy
-invariance of the box tensor product that concerns the type `A` side; invariance under homotopies
-of type `D` structures is in `TauCeti.LowDimTopology.Bordered.TypeA`.
+(`TauCeti.TypeDStructure.typeABoxMapOfHomotopy_apply_eq_sum`). This is the homotopy part of the
+invariance of the box tensor product on the type `A` side: homotopic morphisms induce chain
+homotopic maps. Invariance under homotopy equivalences of type `A` modules also needs composites of
+morphisms, which are not treated here; invariance under homotopies of type `D` structures is in
+`TauCeti.LowDimTopology.Bordered.TypeA`.
 
 The proof reuses the chain map property of induced maps. The homotopy `h` is a morphism `Φ` from
 `M` to the mapping cone of `f + g`, with components `m ↦ (id_{n+1}(m, a…), h_{n+1}(m, a…))`
@@ -30,7 +32,7 @@ The proof reuses the chain map property of induced maps. The homotopy `h` is a m
 of `T_Φ`. Its first component is the identity, and the box tensor differential of the cone is
 block triangular, `(ψ₁, ψ₂) ↦ (∂ ψ₁, ∂' ψ₂ + T_{f+g} ψ₁)`. So the second component of the chain map
 identity `∂_cone ∘ T_Φ = T_Φ ∘ ∂` reads `∂' (T_h φ) + T_{f+g} φ = T_h (∂ φ)`, and
-`T_{f+g} = T_f + T_g`.
+`T_{f+g} = T_f + T_g` (`TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_isBounded`).
 
 As for the induced maps, the sums are finite under a boundedness hypothesis: the type `D` structure
 is bounded (`TauCeti.TypeDStructure.IsBounded`), for instance by a height on its generators, or
@@ -45,7 +47,6 @@ the modules, the morphisms and the homotopy have no components from some arity o
 
 * `TauCeti.TypeDStructure.typeABoxMapOfHomotopy_apply_eq_sum`: the induced map as a finite sum over
   paths of generators, for a bounded type `D` structure.
-* `TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_isBounded`: `T_{f+g} = T_f + T_g`.
 * `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded`,
   `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_lt` and
   `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_act_eq_zero`: homotopic
@@ -71,32 +72,6 @@ variable {R A M M' : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M]
   [AddCommGroup M'] [Module R M'] {d : A →ₗ[R] A} {S : Type*} {ι : S → A} {X : Type*} [Fintype X]
   [DecidableEq X] {Mm : UngradedAInfinityRightModule d M} {Mm' : UngradedAInfinityRightModule d M'}
   {f g : UngradedAInfinityRightModuleHom Mm Mm'}
-
-/-! ### Sums of morphisms -/
-
-/-- The induced map of a sum of morphisms is the sum of the induced maps, when the operations
-`m_{n+1}(·, δ, …, δ)` of the matrix modules of the three mapping cones vanish for `n ≥ K`. -/
-private theorem typeABoxMapOfHom_add_apply_of_bound (N : TypeDStructure d ι X) {K : ℕ}
-    (hf : ∀ n, K ≤ n → (f.cone.matrixAct X n fun _ => N.coeff) = 0)
-    (hg : ∀ n, K ≤ n → (g.cone.matrixAct X n fun _ => N.coeff) = 0)
-    (hfg : ∀ n, K ≤ n → ((f + g).cone.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M) (z : X) :
-    N.typeABoxMapOfHom (f + g) φ z = N.typeABoxMapOfHom f φ z + N.typeABoxMapOfHom g φ z := by
-  rw [typeABoxMapOfHom_apply_eq_sum _ _ hfg, typeABoxMapOfHom_apply_eq_sum _ _ hf,
-    typeABoxMapOfHom_apply_eq_sum _ _ hg, ← sum_add_distrib]
-  refine sum_congr rfl fun n _ => ?_
-  rw [← sum_add_distrib]
-  exact sum_congr rfl fun x _ => by split_ifs <;> simp
-
-/-- **The induced map is additive in the morphism**, for a bounded type `D` structure:
-`T_{f+g} = T_f + T_g`. -/
-theorem typeABoxMapOfHom_add_of_isBounded (N : TypeDStructure d ι X) (hN : N.IsBounded) :
-    N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-  refine LinearMap.ext fun φ => funext fun z => ?_
-  exact N.typeABoxMapOfHom_add_apply_of_bound (K := K)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl) φ z
 
 /-! ### The map induced by a homotopy -/
 
@@ -145,11 +120,8 @@ private theorem fst_typeABoxMapOfHom_toConeHom [CharP R 2] (N : TypeDStructure d
     (h : f.Homotopy g) {K : ℕ}
     (hK : ∀ n, K ≤ n → (h.toConeHom.cone.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M)
     (z : X) : (N.typeABoxMapOfHom h.toConeHom φ z).1 = φ z := by
-  rw [typeABoxMapOfHom_apply_eq_sum (K := K + 1) _ _ fun n hn => hK n (by omega), sum_range_succ',
-    Prod.fst_add, Prod.fst_sum,
-    sum_eq_zero fun n _ => by simp [Prod.fst_sum, apply_ite Prod.fst], zero_add, Prod.fst_sum,
-    ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
-  simp [apply_ite Prod.fst]
+  simpa using N.map_typeABoxMapOfHom_apply_eq_map_zero h.toConeHom (LinearMap.fst R M M')
+    (by simp) hK φ z
 
 /-- **Homotopic morphisms induce homotopic maps**, from the bounds needed to read the chain map
 identity of `h.toConeHom` and the additivity of the induced maps. -/
@@ -192,7 +164,7 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded [CharP R 2] (N : Type
     (N.matrixAct_cone_toConeHom_eq_zero h hK)
     (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
     (N.typeABoxDifferential_typeABoxMapOfHom_of_isBounded h.toConeHom hN)
-    (fun φ => by rw [N.typeABoxMapOfHom_add_of_isBounded hN, LinearMap.add_apply]) φ
+    (fun φ => by rw [N.typeABoxMapOfHom_add_of_isBounded f g hN, LinearMap.add_apply]) φ
 
 /-- **Homotopic morphisms induce homotopic maps, for a type `D` structure with a height.** Over a
 ring of characteristic two, if a height on the generators strictly increases along every nonzero
@@ -227,10 +199,6 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_act_eq_zero [CharP R 2]
     simp [hh (n + 1) (by omega)]
   have hΦcone (n : ℕ) (hn : K + 1 ≤ n) : h.toConeHom.cone.act n = 0 :=
     h.toConeHom.cone_act_eq_zero (hM n (by omega)) (hcone n (by omega)) (hΦ n hn)
-  have hfcone (n : ℕ) (hn : K ≤ n) : f.cone.act n = 0 :=
-    f.cone_act_eq_zero (hM n hn) (hM' n hn) (hf n hn)
-  have hgcone (n : ℕ) (hn : K ≤ n) : g.cone.act n = 0 :=
-    g.cone_act_eq_zero (hM n hn) (hM' n hn) (hg n hn)
   exact N.typeABoxMapOfHom_add_typeABoxMapOfHom_of_bound h (K := K + 1)
     (fun n hn => by
       rw [h.toConeHom.cone.matrixAct_eq_zero_of_act_eq_zero X (hΦcone n hn), zero_apply])
@@ -238,11 +206,8 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_act_eq_zero [CharP R 2]
       rw [(f + g).cone.matrixAct_eq_zero_of_act_eq_zero X (hcone n (by omega)), zero_apply])
     (N.typeABoxDifferential_typeABoxMapOfHom_of_act_eq_zero h.toConeHom
       (fun n hn => hM n (by omega)) (fun n hn => hcone n (by omega)) hΦ)
-    (fun φ => funext fun z => N.typeABoxMapOfHom_add_apply_of_bound (K := K)
-      (fun n hn => by rw [f.cone.matrixAct_eq_zero_of_act_eq_zero X (hfcone n hn), zero_apply])
-      (fun n hn => by rw [g.cone.matrixAct_eq_zero_of_act_eq_zero X (hgcone n hn), zero_apply])
-      (fun n hn => by
-        rw [(f + g).cone.matrixAct_eq_zero_of_act_eq_zero X (hcone n hn), zero_apply]) φ z) φ
+    (fun φ => by rw [N.typeABoxMapOfHom_add_of_act_eq_zero f g hM hM' hf hg, LinearMap.add_apply])
+    φ
 
 end TypeDStructure
 
