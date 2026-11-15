@@ -582,7 +582,8 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
   obtain ⟨δ₁, hδ₁, Lx, hLx⟩ :=
     (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul
       (F := fun t y ↦ ω.hamiltonianVectorField (H t) y)
-      ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH2)) hxc.continuousOn
+      (fun _ _ ↦ (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH2).contDiffAt)
+      hxc.continuousOn
   -- Assemble the `C¹` estimate at the common rate `κ' = min (κ / 2) κ₀`.
   set κ' := min (κ / 2) κ₀
   have hκ'₀ : κ' ≤ κ₀ := min_le_right _ _
@@ -619,8 +620,9 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
       rw [← dist_eq_norm, dist_comm]
       exact (hδs t).le
   refine ⟨hux0.trans (mul_le_mul_of_nonneg_right (by nlinarith) he'.le), ?_⟩
-  refine ((fderiv ℝ u (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
-    (ω.hamiltonianVectorField (H t) (x t))).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans ?_)
+  refine (ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one
+    (fderiv ℝ u (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
+      (ω.hamiltonianVectorField (H t) (x t)))).trans ?_
   simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.coe_snd', zero_smul, sub_zero, one_smul]
   nlinarith [mul_le_mul_of_nonneg_left hvs' ha', mul_le_mul_of_nonneg_left hux0 hLx']
