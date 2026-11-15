@@ -201,6 +201,59 @@ section InvertibleTwo
 
 variable [Invertible (2 : A)]
 
+/-- On pure tensors, `ExteriorAlgebra.baseChangeEquiv` intertwines the generator action of
+`baseChangeExteriorAction` with that of `exteriorAction`. -/
+private theorem baseChangeEquiv_baseChangeExteriorAction_ι_tmul (w : A) (m : M) (z : A)
+    (y : ExteriorAlgebra R M) :
+    ExteriorAlgebra.baseChangeEquiv R M A
+        (baseChangeExteriorAction A Q (ι (Q.baseChange A) (w ⊗ₜ[R] m)) (z ⊗ₜ[R] y)) =
+      exteriorAction (Q.baseChange A) (ι (Q.baseChange A) (w ⊗ₜ[R] m))
+        (ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y)) := by
+  let d : Module.Dual R M := QuadraticMap.associated (-Q) m
+  have hd : QuadraticMap.associated (-(Q.baseChange A)) (w ⊗ₜ[R] m) =
+      w • Module.Dual.baseChange A d := by
+    ext v
+    simp [d, ← QuadraticForm.baseChange_neg, QuadraticForm.associated_baseChange]
+  have hmul := calc
+    ExteriorAlgebra.baseChangeEquiv R M A ((w * z) ⊗ₜ[R] (ExteriorAlgebra.ι R m * y))
+        = ExteriorAlgebra.baseChangeEquiv R M A
+            ((w ⊗ₜ[R] ExteriorAlgebra.ι R m) * (z ⊗ₜ[R] y)) := by
+          rw [Algebra.TensorProduct.tmul_mul_tmul]
+    _ = ExteriorAlgebra.baseChangeEquiv R M A (w ⊗ₜ[R] ExteriorAlgebra.ι R m) *
+          ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y) := map_mul _ _ _
+    _ = ExteriorAlgebra.ι A (w ⊗ₜ[R] m) *
+          ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y) := by
+          rw [ExteriorAlgebra.baseChangeEquiv_apply]
+  have hcontract := calc
+    ExteriorAlgebra.baseChangeEquiv R M A ((w * z) ⊗ₜ[R] contractLeft d y)
+        = ExteriorAlgebra.baseChangeEquiv R M A
+            (w • ((contractLeft d).baseChange A (z ⊗ₜ[R] y))) :=
+          congrArg _ (by simp [TensorProduct.smul_tmul'])
+    _ = w • ExteriorAlgebra.baseChangeEquiv R M A
+          ((contractLeft d).baseChange A (z ⊗ₜ[R] y)) :=
+          map_smul _ _ _
+    _ = w • contractLeft (Module.Dual.baseChange A d)
+          (ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y)) := by
+          rw [ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft]
+    _ = contractLeft (QuadraticMap.associated (-(Q.baseChange A)) (w ⊗ₜ[R] m))
+          (ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y)) := by
+          rw [hd, map_smul, LinearMap.smul_apply]
+  calc
+    ExteriorAlgebra.baseChangeEquiv R M A
+        (baseChangeExteriorAction A Q (ι (Q.baseChange A) (w ⊗ₜ[R] m)) (z ⊗ₜ[R] y))
+        = ExteriorAlgebra.baseChangeEquiv R M A
+            ((w * z) ⊗ₜ[R] (ExteriorAlgebra.ι R m * y)) -
+          ExteriorAlgebra.baseChangeEquiv R M A ((w * z) ⊗ₜ[R] contractLeft d y) := by
+          rw [baseChangeExteriorAction_ι_tmul, exteriorAction_ι, TensorProduct.tmul_sub, map_sub]
+    _ = ExteriorAlgebra.ι A (w ⊗ₜ[R] m) *
+          ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y) -
+        contractLeft (QuadraticMap.associated (-(Q.baseChange A)) (w ⊗ₜ[R] m))
+          (ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y)) := by
+          rw [hmul, hcontract]
+    _ = exteriorAction (Q.baseChange A) (ι (Q.baseChange A) (w ⊗ₜ[R] m))
+          (ExteriorAlgebra.baseChangeEquiv R M A (z ⊗ₜ[R] y)) := by
+          rw [exteriorAction_ι]
+
 /-- **`ExteriorAlgebra.baseChangeEquiv` intertwines `baseChangeExteriorAction` with
 `exteriorAction`** on the base-changed quadratic form. -/
 @[simp]
@@ -218,27 +271,7 @@ theorem baseChangeEquiv_baseChangeExteriorAction (a : CliffordAlgebra (Q.baseCha
     | tmul w m =>
       induction x using TensorProduct.inductionOn with
       | add x y hx hy => simp only [map_add, hx, hy]
-      | tmul z y =>
-        have h1mul (u v : ExteriorAlgebra R M) :
-            ExteriorAlgebra.baseChangeEquiv R M A ((1 : A) ⊗ₜ[R] (u * v)) =
-              ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ u) *
-                ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ v) := by
-          rw [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-        have hwm : w ⊗ₜ[R] m = w • ((1 : A) ⊗ₜ[R] m) := by
-          rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        have hzy : z ⊗ₜ[R] y = z • ((1 : A) ⊗ₜ[R] y) := by
-          rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        have hd : QuadraticMap.associated (-(Q.baseChange A)) ((1 : A) ⊗ₜ[R] m) =
-            Module.Dual.baseChange A (QuadraticMap.associated (-Q) m) := by
-          ext v
-          simp [← QuadraticForm.baseChange_neg, QuadraticForm.associated_baseChange]
-        rw [baseChangeExteriorAction_ι_tmul, ← mul_one (w * z), ← smul_eq_mul,
-          ← TensorProduct.smul_tmul', map_smul, hzy, map_smul, map_smul, hwm, map_smul, map_smul,
-          LinearMap.smul_apply, smul_smul, mul_comm z w]
-        congr 1
-        rw [exteriorAction_ι, exteriorAction_ι, TensorProduct.tmul_sub, map_sub, h1mul,
-          ExteriorAlgebra.baseChangeEquiv_apply, ← LinearMap.baseChange_tmul,
-          ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft, hd]
+      | tmul z y => exact baseChangeEquiv_baseChangeExteriorAction_ι_tmul A Q w m z y
 
 /-- **The Chevalley map commutes with scalar extension**: `CliffordAlgebra.equivExterior` on
 `Q.baseChange A` agrees with the scalar extension of `equivExterior Q` along
