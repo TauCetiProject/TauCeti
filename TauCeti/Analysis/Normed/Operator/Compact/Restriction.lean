@@ -13,11 +13,11 @@ import Mathlib.LinearAlgebra.Eigenspace.Basic
 /-!
 # Nilpotent and invertible parts of a compact operator
 
-At every nonzero scalar `μ`, a compact operator `K` on a real or complex Banach space
-splits into a finite-dimensional generalized eigenspace and a closed complementary range.
-On the first summand `K - μ • 1` is nilpotent, and on the second it has a bounded inverse.
-The restrictions use the inherited subspace norms. In particular, invertibility here is in
-the algebra of continuous linear maps, not merely algebraic bijectivity.
+At every nonzero scalar `μ`, a compact operator `K` on a Banach space over a complete
+nontrivially normed field splits into a finite-dimensional generalized eigenspace and a closed
+complementary range. On the first summand `K - μ • 1` is nilpotent, and on the second it has a
+bounded inverse. The restrictions use the inherited subspace norms. In particular, invertibility
+here is in the algebra of continuous linear maps, not merely algebraic bijectivity.
 
 The stable subspaces and bounded coordinate projections are constructed in
 `Compact.Decomposition`. This file supplies the restrictions needed to use that splitting
@@ -36,8 +36,7 @@ public section
 namespace IsCompactOperator
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [IsRCLikeNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-  [CompleteSpace X] {K : X →L[𝕜] X}
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X] {K : X →L[𝕜] X}
 
 /-- **The nilpotent/invertible Riesz decomposition.** For a compact operator and a nonzero
 scalar, the stable kernel and range of the shifted operator are topological complements.

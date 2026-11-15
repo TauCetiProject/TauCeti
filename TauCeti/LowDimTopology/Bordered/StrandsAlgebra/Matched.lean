@@ -588,6 +588,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
 
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+@[simp]
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
+
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
 `ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
@@ -930,6 +943,12 @@ theorem isMatchedGenerator_idOn_empty (s : Finset β) :
   injOn_target := by simp
   disjoint_source := by simp
   disjoint_target := by simp
+
+/-- The single strand of a chord `i < j`, with no horizontal strands added, indexes a generator. -/
+theorem isMatchedGenerator_single_empty {i j : α} (h : i < j) :
+    IsMatchedGenerator M (single i j h.le) ∅ :=
+  ⟨fun _ hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+    disjoint_empty_right _, disjoint_empty_right _⟩
 
 /-- The idempotent `I(s)` is the generator `a(∅, s)`: the empty diagram with a horizontal strand
 added at one point of each pair in `s`. -/

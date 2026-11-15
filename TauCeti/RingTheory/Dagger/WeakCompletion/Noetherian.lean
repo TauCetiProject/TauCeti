@@ -40,6 +40,22 @@ noncomputable def evalIntWashnitzerAlgebra {π : O} (hπ : π ≠ 0) (hπ1 : ‖
     (x : σ → S) : intWashnitzerAlgebra σ K →ₐ[O] weakCompletion π S :=
   (map π (MvPolynomial.aeval x)).comp (polynomialEquiv hπ hπ1).symm.toAlgHom
 
+/-- Integral overconvergent evaluation is the weak-completion evaluation map transported along
+`polynomialEquiv`. -/
+theorem evalIntWashnitzerAlgebra_def {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) :
+    evalIntWashnitzerAlgebra hπ hπ1 x =
+      (map π (MvPolynomial.aeval x)).comp (polynomialEquiv hπ hπ1).symm.toAlgHom :=
+  (rfl)
+
+/-- Evaluating at the image of a weakly completed polynomial under `polynomialEquiv` agrees with
+the functorial map induced by `MvPolynomial.aeval`. -/
+@[simp]
+theorem evalIntWashnitzerAlgebra_polynomialEquiv {π : O} (hπ : π ≠ 0)
+    (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (z : weakCompletion π (MvPolynomial σ O)) :
+    evalIntWashnitzerAlgebra hπ hπ1 x (polynomialEquiv hπ hπ1 z) =
+      map π (MvPolynomial.aeval x) z := by
+  simp [evalIntWashnitzerAlgebra_def]
+
 /-- Integral overconvergent evaluation fixes the original polynomial evaluation in the
 weak completion. -/
 @[simp]
@@ -47,7 +63,7 @@ theorem evalIntWashnitzerAlgebra_ofMvPolynomial {π : O} (hπ : π ≠ 0)
     (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (p : MvPolynomial σ O) :
     evalIntWashnitzerAlgebra hπ hπ1 x (intWashnitzerAlgebra.ofMvPolynomial σ K p) =
       of π S (MvPolynomial.aeval x p) := by
-  simp [evalIntWashnitzerAlgebra]
+  simp [evalIntWashnitzerAlgebra_def]
 
 /-- A finite polynomial generating family presents the weak completion as a quotient of the
 integral Monsky–Washnitzer algebra. -/
