@@ -141,8 +141,7 @@ theorem resonantTerm_add_right (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
 theorem resonantTerm_smul_right (N : ℕ) (c : ℂ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N u (c • v) j = c • resonantTerm r N u v j := by
-  rw [resonantTerm_eq, resonantTerm_eq]
-  simp_rw [block_smul, ← Finset.smul_sum, ← Lp.smul_comm]
+  simp_rw [resonantTerm_eq, block_smul, ← Finset.smul_sum, ← Lp.smul_comm]
 
 /-- **Spectral localisation of a resonant piece.** The Fourier transform of `resonantTerm r N u v j`
 vanishes outside the closed ball of radius `2 ^ j (1 + 2 ^ N) φ.rOut`. -/
@@ -162,9 +161,7 @@ private theorem two_rpow_mul_norm_block_smul_sum_le (N j : ℕ) {t : Finset ℕ}
       2 ^ (|β| * (N + 1 : ℕ)) * ‖u.weightedBlocks j‖ *
         ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v.weightedBlocks k‖ := by
   have hsub : t ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) := fun k hk ↦ by
-    have hk' := Finset.mem_Icc.1 (ht hk)
-    rw [Finset.mem_Ico]
-    omega
+    have := Finset.mem_Icc.1 (ht hk); rw [Finset.mem_Ico]; omega
   have hsum : 2 ^ (β * j) * ‖∑ k ∈ t, v.block k‖ ≤
       2 ^ (|β| * (N + 1 : ℕ)) *
         ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v.weightedBlocks k‖ := by
@@ -295,22 +292,14 @@ private theorem norm_block_smul_sum_le_pow (N j : ℕ) {t : Finset ℕ}
     ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
       2 ^ (|β| * (N + 1 : ℕ)) * (2 * (N + 1 : ℕ)) * ‖u‖ * ‖v‖ * ((2 : ℝ) ^ (-(α + β))) ^ j := by
   have hρj : ((2 : ℝ) ^ (-(α + β))) ^ j * 2 ^ ((α + β) * j) = 1 := by
-    have h0 := Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos (α + β) j 0
-    rwa [Nat.cast_zero, add_zero, mul_zero, Real.rpow_zero] at h0
+    simpa using Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos (α + β) j 0
   have hu : ‖u.weightedBlocks j‖ ≤ ‖u‖ := by
     simpa [u.norm_weightedBlocks_apply] using u.rpow_mul_norm_block_le j
   have hvsum : ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v.weightedBlocks k‖ ≤
       2 * (N + 1 : ℕ) * ‖v‖ := by
-    calc ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v.weightedBlocks k‖
-        ≤ ∑ _k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v‖ :=
-          Finset.sum_le_sum fun k _ ↦ by
-            simpa [v.norm_weightedBlocks_apply] using v.rpow_mul_norm_block_le k
-      _ = ((Finset.Ico (j - (N + 1)) (j + (N + 1))).card : ℝ) * ‖v‖ := by simp
-      _ ≤ 2 * (N + 1 : ℕ) * ‖v‖ := by
-          gcongr
-          rw [Nat.card_Ico]
-          norm_cast
-          omega
+    refine (Finset.sum_le_card_nsmul _ _ ‖v‖ fun k _ ↦ ?_).trans ?_
+    · simpa [v.norm_weightedBlocks_apply] using v.rpow_mul_norm_block_le k
+    · rw [nsmul_eq_mul]; gcongr; rw [Nat.card_Ico]; norm_cast; omega
   have hmain := two_rpow_mul_norm_block_smul_sum_le (r := r) N j ht u v
   calc ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
       = ((2 : ℝ) ^ (-(α + β))) ^ j *
@@ -351,33 +340,18 @@ private theorem norm_sum_truncated_resonant_sub_le (N M : ℕ) (hαβ : 0 < α +
       ext k; simp only [tM, Finset.mem_filter, Finset.mem_range, Finset.mem_Icc]; omega
     simp [resonantTerm_eq, ht]
   rw [heq]
-  refine (norm_sum_le _ _).trans ?_
-  calc ∑ j ∈ Finset.Ico (M - N) M,
-        ‖(u.block j • ∑ k ∈ tM j, v.block k : Lp F r (volume : Measure E)) -
-          resonantTerm r N u v j‖
-      ≤ ∑ _j ∈ Finset.Ico (M - N) M, 2 * K * ρ ^ (M - N) := by
-        refine Finset.sum_le_sum fun j hj ↦ ?_
-        have hρj : ρ ^ j ≤ ρ ^ (M - N) :=
-          pow_le_pow_of_le_one hρ0 hρ1.le (Finset.mem_Ico.1 hj).1
-        have ht_sub : tM j ⊆ Finset.Icc (j - N) (j + N) := fun k hk ↦ by
-          simp only [tM, Finset.mem_filter, Finset.mem_Icc] at hk ⊢; omega
-        have h₁ := norm_block_smul_sum_le_pow (r := r) N j ht_sub u v
-        have h₂ := norm_block_smul_sum_le_pow (r := r) N j Finset.Subset.rfl u v
-        have : 0 ≤ K := by positivity
-        calc ‖(u.block j • ∑ k ∈ tM j, v.block k : Lp F r (volume : Measure E)) -
-              resonantTerm r N u v j‖
-            ≤ ‖(u.block j • ∑ k ∈ tM j, v.block k : Lp F r (volume : Measure E))‖ +
-                ‖resonantTerm r N u v j‖ := norm_sub_le _ _
-          _ ≤ K * ρ ^ j + K * ρ ^ j := add_le_add h₁ h₂
-          _ = 2 * K * ρ ^ j := by ring
-          _ ≤ 2 * K * ρ ^ (M - N) := by gcongr
-    _ = ((Finset.Ico (M - N) M).card : ℝ) * (2 * K * ρ ^ (M - N)) := by simp
-    _ ≤ (N : ℝ) * (2 * K) * ρ ^ (M - N) := by
-        have : 0 ≤ 2 * K * ρ ^ (M - N) := by positivity
-        rw [mul_assoc ((N : ℝ))]
-        gcongr
-        rw [Nat.card_Ico]
-        omega
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_card_nsmul _ _ (2 * K * ρ ^ (M - N))
+    fun j hj ↦ ?_).trans ?_)
+  · have hρj : ρ ^ j ≤ ρ ^ (M - N) := pow_le_pow_of_le_one hρ0 hρ1.le (Finset.mem_Ico.1 hj).1
+    have ht_sub : tM j ⊆ Finset.Icc (j - N) (j + N) := fun k hk ↦ by
+      simp only [tM, Finset.mem_filter, Finset.mem_Icc] at hk ⊢; omega
+    have h₁ := norm_block_smul_sum_le_pow (r := r) N j ht_sub u v
+    have h₂ := norm_block_smul_sum_le_pow (r := r) N j Finset.Subset.rfl u v
+    have : 0 ≤ K := by positivity
+    exact (norm_sub_le _ _).trans ((add_le_add h₁ h₂).trans (by
+      rw [← two_mul, mul_assoc (2 : ℝ)]; gcongr))
+  · have : 0 ≤ 2 * K * ρ ^ (M - N) := by positivity
+    rw [nsmul_eq_mul, mul_assoc (N : ℝ)]; gcongr; rw [Nat.card_Ico]; omega
 
 /-- **Convergence of the truncated resonant sums.** For `0 < α + β`, the truncated resonant sums
 `∑_{j < M} Δⱼ u · ∑_{k < M, |k - j| ≤ N} Δₖ v` appearing in Bony's decomposition of `S_M u · S_M v`
@@ -429,11 +403,7 @@ theorem toDistr_resonantCLM_comm (N : ℕ) (hαβ : 0 < α + β)
   simp_rw [Lp.smul_sum, Finset.sum_filter]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  split_ifs with h₁ h₂
-  · exact Lp.lpSMul_comm (v.block k) (u.block j)
-  · exfalso; omega
-  · exfalso; omega
-  · rfl
+  split_ifs <;> first | exact Lp.lpSMul_comm (v.block k) (u.block j) | rfl | omega
 
 end Resonant
 
@@ -550,14 +520,9 @@ theorem exists_norm_bonyProductCLM_le (hα : α < 0) (hβ : 0 < β) (hαβ : 0 <
       ((paraproductNegCLM r' q₁' hN hα).le_opNorm₂ u v').trans (by gcongr; exact h₁)
   have hn₂ : ‖paraproductRightLpCLM r' hN u (toLpCLM F φ p₂' q₂' hβ v)‖ ≤
       C₂ * (1 - 2 ^ (-β))⁻¹ * ‖u‖ * ‖v‖ := by
-    calc ‖paraproductRightLpCLM r' hN u (toLpCLM F φ p₂' q₂' hβ v)‖
-        ≤ ‖paraproductRightLpCLM (F := F) (α := α) (p₁ := _) (p₂ := p₂') (q := q₁') r' hN‖ *
-            ‖u‖ * ‖toLpCLM F φ p₂' q₂' hβ v‖ :=
-          (paraproductRightLpCLM r' hN).le_opNorm₂ u (toLpCLM F φ p₂' q₂' hβ v)
-      _ ≤ C₂ * ‖u‖ * ((1 - 2 ^ (-β))⁻¹ * ‖v‖) := by
-          gcongr
-          · exact h₂
-          · exact norm_toLpCLM_apply_le hβ v
+    refine ((paraproductRightLpCLM r' hN).le_opNorm₂ u (toLpCLM F φ p₂' q₂' hβ v)).trans ?_
+    calc _ ≤ C₂ * ‖u‖ * ((1 - 2 ^ (-β))⁻¹ * ‖v‖) := by
+          gcongr; exacts [h₂, norm_toLpCLM_apply_le hβ v]
       _ = C₂ * (1 - 2 ^ (-β))⁻¹ * ‖u‖ * ‖v‖ := by ring
   have hn₃ : ‖inclusion F φ r' (by linarith : α ≤ α + β) le_rfl
       (resonantCLM r' q₁' _ hαβ u v')‖ ≤ C₃ * ‖u‖ * ‖v‖ :=
@@ -679,25 +644,15 @@ theorem exists_norm_bonyProductPosCLM_le (hs : 0 < s) :
   have hv' : ‖v'‖ ≤ ‖v‖ := norm_inclusion_le _ _ v
   have hn₁ : ‖paraproductLpCLM r' hN (toLpCLM ℂ φ p₁' q' hs u) v‖ ≤
       C₁ * (1 - 2 ^ (-s))⁻¹ * ‖u‖ * ‖v‖ := by
-    calc ‖paraproductLpCLM r' hN (toLpCLM ℂ φ p₁' q' hs u) v‖
-        ≤ ‖paraproductLpCLM (F := F) (β := s) (p₁ := p₁') (p₂ := p₂') (q := q') r' hN‖ *
-            ‖toLpCLM ℂ φ p₁' q' hs u‖ * ‖v‖ :=
-          (paraproductLpCLM r' hN).le_opNorm₂ (toLpCLM ℂ φ p₁' q' hs u) v
-      _ ≤ C₁ * ((1 - 2 ^ (-s))⁻¹ * ‖u‖) * ‖v‖ := by
-          gcongr
-          · exact h₁
-          · exact norm_toLpCLM_apply_le hs u
+    refine ((paraproductLpCLM r' hN).le_opNorm₂ (toLpCLM ℂ φ p₁' q' hs u) v).trans ?_
+    calc _ ≤ C₁ * ((1 - 2 ^ (-s))⁻¹ * ‖u‖) * ‖v‖ := by
+          gcongr; exacts [h₁, norm_toLpCLM_apply_le hs u]
       _ = C₁ * (1 - 2 ^ (-s))⁻¹ * ‖u‖ * ‖v‖ := by ring
   have hn₂ : ‖paraproductRightLpCLM r' hN u (toLpCLM F φ p₂' q' hs v)‖ ≤
       C₂ * (1 - 2 ^ (-s))⁻¹ * ‖u‖ * ‖v‖ := by
-    calc ‖paraproductRightLpCLM r' hN u (toLpCLM F φ p₂' q' hs v)‖
-        ≤ ‖paraproductRightLpCLM (F := F) (α := s) (p₁ := p₁') (p₂ := p₂') (q := q') r' hN‖ *
-            ‖u‖ * ‖toLpCLM F φ p₂' q' hs v‖ :=
-          (paraproductRightLpCLM r' hN).le_opNorm₂ u (toLpCLM F φ p₂' q' hs v)
-      _ ≤ C₂ * ‖u‖ * ((1 - 2 ^ (-s))⁻¹ * ‖v‖) := by
-          gcongr
-          · exact h₂
-          · exact norm_toLpCLM_apply_le hs v
+    refine ((paraproductRightLpCLM r' hN).le_opNorm₂ u (toLpCLM F φ p₂' q' hs v)).trans ?_
+    calc _ ≤ C₂ * ‖u‖ * ((1 - 2 ^ (-s))⁻¹ * ‖v‖) := by
+          gcongr; exacts [h₂, norm_toLpCLM_apply_le hs v]
       _ = C₂ * (1 - 2 ^ (-s))⁻¹ * ‖u‖ * ‖v‖ := by ring
   have hn₃ : ‖inclusion F φ r' (by linarith : s ≤ s + s) le_rfl
       (resonantCLM r' q' _ (add_pos hs hs) u v')‖ ≤ C₃ * ‖u‖ * ‖v‖ :=
@@ -729,9 +684,7 @@ private theorem lowPass_sub_smul_block_eq_zero_of_block_eq_zero (hN : 1 ≤ N) {
   · subst hj
     have hlow : u.lowPass (j - N) = 0 := by
       rw [lowPass_eq_sum]
-      refine Finset.sum_eq_zero fun k hk ↦ hu k ?_
-      rw [Finset.mem_range] at hk
-      omega
+      exact Finset.sum_eq_zero fun k hk ↦ hu k (by rw [Finset.mem_range] at hk; omega)
     simp [hlow]
   · simp [hv j hj]
 
@@ -744,9 +697,7 @@ private theorem block_smul_lowPass_sub_eq_zero_of_block_eq_zero (hN : 1 ≤ N) {
   · subst hj
     have hlow : v.lowPass (j - N) = 0 := by
       rw [lowPass_eq_sum]
-      refine Finset.sum_eq_zero fun k hk ↦ hv k ?_
-      rw [Finset.mem_range] at hk
-      omega
+      exact Finset.sum_eq_zero fun k hk ↦ hv k (by rw [Finset.mem_range] at hk; omega)
     simp [hlow]
   · simp [hu j hj]
 
@@ -857,10 +808,8 @@ theorem toDistr_paraproductLpCLM_one (hN : φ.rOut < 2 ^ N * φ.rIn)
   rw [Finset.sum_range_add]
   have hhead : ∑ j ∈ Finset.range (N + 1),
       (((1 : BesovSpace ℂ φ 0 ∞ ∞).lowPass (j - N) • v.block j :
-        Lp F p₂ (volume : Measure E)) : 𝓢'(E, F)) = 0 := by
-    refine Finset.sum_eq_zero fun j hj ↦ ?_
-    have hjN : j - N = 0 := by rw [Finset.mem_range] at hj; omega
-    simp [hjN]
+        Lp F p₂ (volume : Measure E)) : 𝓢'(E, F)) = 0 :=
+    Finset.sum_eq_zero fun j hj ↦ by simp [show j - N = 0 by rw [Finset.mem_range] at hj; omega]
   have hrest : ∑ k ∈ Finset.range m,
       (((1 : BesovSpace ℂ φ 0 ∞ ∞).lowPass (N + 1 + k - N) • v.block (N + 1 + k) :
         Lp F p₂ (volume : Measure E)) : 𝓢'(E, F)) =
@@ -923,19 +872,14 @@ theorem toDistr_resonantCLM_one_left [q₁.HolderTriple q₂ q] (N : ℕ) (hαβ
     (resonantCLM p₂ q N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).toDistr =
       (v.lowPass (N + 1) : 𝓢'(E, F)) := by
   refine (hasSum_resonantCLM (r := p₂) (q := q) N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).unique ?_
-  have hsingle : HasSum
-      (fun j ↦ ((resonantTerm p₂ N (1 : BesovSpace ℂ φ α ∞ q₁) v j :
-        Lp F p₂ (volume : Measure E)) : 𝓢'(E, F)))
-      ((resonantTerm p₂ N (1 : BesovSpace ℂ φ α ∞ q₁) v 0 :
-        Lp F p₂ (volume : Measure E)) : 𝓢'(E, F)) :=
-    hasSum_single 0 fun j hj ↦ by
-      rcases j with _ | j
-      · exact absurd rfl hj
-      · simp [resonantTerm_eq]
   have h0 : resonantTerm p₂ N (1 : BesovSpace ℂ φ α ∞ q₁) v 0 = v.lowPass (N + 1) := by
     rw [resonantTerm_eq, block_one_zero, Lp.one_smul, Nat.zero_sub, Nat.zero_add,
       ← Nat.range_succ_eq_Icc_zero, lowPass_eq_sum]
-  rwa [h0] at hsingle
+  rw [← h0]
+  refine hasSum_single 0 fun j hj ↦ ?_
+  rcases j with _ | j
+  · exact absurd rfl hj
+  · simp [resonantTerm_eq]
 
 /-- **Resonant remainder with `1` on the right (`F = ℂ`).** -/
 @[simp]
