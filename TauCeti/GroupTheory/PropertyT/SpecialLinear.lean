@@ -23,6 +23,7 @@ import TauCeti.GroupTheory.Amenable.Extension
 import TauCeti.GroupTheory.Amenable.FreeGroup
 import TauCeti.GroupTheory.HaagerupProperty.Amenable
 import TauCeti.GroupTheory.HaagerupProperty.PropertyT
+import TauCeti.GroupTheory.SemidirectProduct
 import TauCeti.RepresentationTheory.Continuous.Unitary.SpectralMeasure
 
 /-!
@@ -422,34 +423,6 @@ theorem exists_small_box_symplecticProj_equiv (g : SL(2, ℤ)) :
     (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g)
     (mt (torusCoords_eq_zero_iff χ).mp hχ1)
 
-section SpectralEstimates
-
-variable {X H : Type*} [MeasurableSpace X]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Perturbation bound for integrals of bounded measurable real functions against diagonal
-measures of unit vectors. -/
-theorem abs_integral_diag_sub_le (P : ProjValMeasure X H) {f : X → ℝ} (hf : Measurable f)
-    {C : ℝ} (hC : 0 ≤ C) (hfC : ∀ x, |f x| ≤ C) {ξ η : H} (hξ : ‖ξ‖ = 1) (hη : ‖η‖ = 1) :
-    |(∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ)| ≤ 2 * C * ‖η - ξ‖ := by
-  let fB : BoundedBorelFunction X :=
-    BoundedBorelFunction.ofFunction (fun x ↦ (f x : ℂ))
-      (Complex.continuous_ofReal.measurable.comp hf)
-      ⟨C, hC, fun x ↦ by simpa [Complex.norm_real] using hfC x⟩
-  have hfB_norm : ‖fB‖ ≤ C :=
-    (BoundedBorelFunction.norm_le hC).mpr fun x ↦ by simpa [fB, Complex.norm_real] using hfC x
-  have heq : ‖(((∫ x, f x ∂(P.diag η)) - ∫ x, f x ∂(P.diag ξ) : ℝ) : ℂ)‖ =
-      ‖(∫ x, fB x ∂(P.diag η)) - ∫ x, fB x ∂(P.diag ξ)‖ := by
-    push_cast
-    rw [← integral_complex_ofReal, ← integral_complex_ofReal]
-    simp only [fB, BoundedBorelFunction.ofFunction_apply]
-  rw [← Real.norm_eq_abs, ← Complex.norm_real, heq]
-  refine (P.norm_integral_diag_sub_le fB ξ η).trans ?_
-  rw [hξ, hη]
-  nlinarith [norm_nonneg (η - ξ)]
-
-end SpectralEstimates
-
 /-- Concentration bound near the trivial character for the spectral measure of a unitary `ℤ²`
 representation: the `P.diag ξ`-mass outside `(-δ, δ)²` is controlled by the displacements of the
 two standard generators of `ℤ²`. -/
@@ -572,9 +545,11 @@ theorem abs_integral_map_symplecticProj_sub_le
   let Imid : ℝ := ∫ χ, F (Φ (dualTorusMap A χ)) ∂(P.diag ξ)
   have hdiff2 : |Imid - ∫ χ, F (Φ (dualTorusMap A χ)) ∂(P.diag η)| ≤ 2 * ‖F‖ * ‖η - ξ‖ := by
     rw [abs_sub_comm]
-    exact abs_integral_diag_sub_le P
+    refine (P.abs_integral_diag_sub_le
       (F.continuous.measurable.comp (hΦ_meas.comp (map_continuous (dualTorusMap A)).measurable))
-      (norm_nonneg F) (fun _ ↦ F.norm_coe_le_norm _) hξ_norm hη_norm
+      (norm_nonneg F) (fun _ ↦ F.norm_coe_le_norm _) ξ η).trans_eq ?_
+    rw [hξ_norm, hη_norm]
+    ring
   have hdiff1 : |(∫ χ, F (sl2zToPSL2R (ι g) • Φ χ) ∂(P.diag ξ)) - Imid| ≤
       2 * ‖F‖ * ((‖π (Multiplicative.ofAdd (Pi.single 0 1)) ξ - ξ‖ ^ 2 +
         ‖π (Multiplicative.ofAdd (Pi.single 1 1)) ξ - ξ‖ ^ 2) / c) := by
@@ -623,41 +598,9 @@ theorem abs_integral_map_symplecticProj_sub_le
   rw [hI1, hI2]
   exact (abs_sub_le _ Imid _).trans (add_le_add hdiff1 hdiff2)
 
-/-- Extract a directed net of unit vectors whose displacements tend to `0` at every group element
-from `ContRepresentation.HasAlmostInvariantVectors`. -/
-theorem exists_unit_net_tendsto_sub_zero {Γ H : Type*} [Group Γ]
-    [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    {ρ : ContRepresentation ℂ Γ H} (halm : ρ.HasAlmostInvariantVectors) :
-    ∃ ξ : Finset Γ × ℕ → H, (∀ p, ‖ξ p‖ = 1) ∧
-      ∀ γ : Γ, Tendsto (fun p ↦ ‖ρ γ (ξ p) - ξ p‖) atTop (𝓝 0) := by
-  classical
-  have hex (p : Finset Γ × ℕ) :
-      ∃ ξ : H, ‖ξ‖ = 1 ∧ ∀ γ ∈ p.1, ‖ρ γ ξ - ξ‖ < 1 / (p.2 + 1 : ℝ) :=
-    (ContRepresentation.hasAlmostInvariantVectors_def ρ).mp halm p.1 (1 / (p.2 + 1 : ℝ))
-      (by positivity)
-  choose ξ hξ_norm hξ_alm using hex
-  refine ⟨ξ, hξ_norm, fun γ ↦ Metric.tendsto_nhds.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := exists_nat_gt (1 / ε)
-  have hεN : 1 / (N + 1 : ℝ) < ε := by
-    rw [div_lt_iff₀ (by positivity)]
-    have : 1 / ε < (N + 1 : ℝ) := hN.trans (by linarith)
-    rwa [div_lt_iff₀ hε, mul_comm] at this
-  refine eventually_atTop.mpr ⟨({γ}, N), fun p hp ↦ ?_⟩
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
-  have h1 : ‖ρ γ (ξ p) - ξ p‖ < 1 / (p.2 + 1 : ℝ) :=
-    hξ_alm p γ (hp.1 (Finset.mem_singleton_self γ))
-  have h2 : 1 / (p.2 + 1 : ℝ) ≤ 1 / (N + 1 : ℝ) :=
-    one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hp.2 1)
-  linarith
-
 theorem infinite_multiplicative_fin_two_int : Infinite (Multiplicative (Fin 2 → ℤ)) :=
   Infinite.of_injective (fun n : ℤ ↦ Multiplicative.ofAdd ![n, 0]) fun a b h ↦ by
     simpa using congrFun (Multiplicative.toAdd.injective h) 0
-
-theorem infinite_range_inl {N G : Type*} [Group N] [Infinite N] [Group G] (φ : G →* MulAut N) :
-    Infinite (SemidirectProduct.inl (G := G) (φ := φ)).range :=
-  Infinite.of_injective (SemidirectProduct.inl (G := G) (φ := φ)).rangeRestrict fun _ _ h ↦
-    SemidirectProduct.inl_injective (congrArg Subtype.val h)
 
 end BurgerProof
 
@@ -705,7 +648,7 @@ theorem relativePropertyT_inl_of_injective_of_not_hasFoelnerSets.{u, v}
     exact (ENNReal.toReal_eq_zero_iff _).mp htoReal |>.resolve_right (measure_ne_top _ _)
   -- Push forward the spectral diagonal measures along `symplecticProj ∘ torusCoords` and pass to a
   -- weak-* cluster point in the compact space `ProbabilityMeasure (OnePoint ℝ)`.
-  obtain ⟨ξ, hξ_norm, hξ_tendsto⟩ := exists_unit_net_tendsto_sub_zero halm
+  obtain ⟨ξ, hξ_norm, hξ_tendsto⟩ := halm.exists_unit_net_tendsto_sub_zero
   have hΦ_meas : Measurable (symplecticProj ∘ torusCoords) :=
     measurable_symplecticProj.comp measurable_torusCoords
   let μNet (p : Finset (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G) × ℕ) :
@@ -787,7 +730,7 @@ theorem relativePropertyT_inl_iff_not_amenable.{u} (G : Subgroup SL(2, ℤ)) :
   have : DiscreteTopology (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G) := ⟨rfl⟩
   have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
   have : Infinite (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp G.subtype)).range :=
-    infinite_range_inl _
+    SemidirectProduct.infinite_range_inl
   exact not_hasHaagerupProperty_of_relativePropertyT.{u, 0} hT hasHaagerupProperty_of_amenable
 
 /-- The modular group `SL(2, ℤ)` is not amenable. -/
@@ -808,7 +751,7 @@ theorem not_hasHaagerupProperty_semidirectProduct_of_not_amenable
     ¬ HasHaagerupProperty (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G) := by
   have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
   have : Infinite (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp G.subtype)).range :=
-    infinite_range_inl _
+    SemidirectProduct.infinite_range_inl
   exact not_hasHaagerupProperty_of_relativePropertyT.{0, 0}
     (relativePropertyT_inl_of_not_amenable.{0} G hG)
 
@@ -817,7 +760,7 @@ theorem not_hasHaagerupProperty_semidirectProduct_slTwo :
     ¬ HasHaagerupProperty (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction] SL(2, ℤ)) := by
   have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
   have : Infinite (SemidirectProduct.inl (G := SL(2, ℤ)) (φ := slTwoAction)).range :=
-    infinite_range_inl _
+    SemidirectProduct.infinite_range_inl
   exact not_hasHaagerupProperty_of_relativePropertyT.{0, 0} relativePropertyT_inl_slTwo.{0}
 
 /-- For any injective linear action `ι : FreeGroup α →* SL(2, ℤ)` of a free group on at least two

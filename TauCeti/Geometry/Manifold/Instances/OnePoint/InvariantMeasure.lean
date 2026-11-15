@@ -54,7 +54,7 @@ kernel of `sl2zToPSL2R ∘ ι` embeds into the center of `SL(2, ℤ)`.
   `OnePoint 𝕜` preserved by an escaping sequence in `PSL(2, 𝕜)` is supported on at most two points.
 * `OnePoint.exists_measure_singleton_ne_zero_of_tendsto_psl_cocompact`: if the measure is nonzero,
   it has an atom.
-* `OnePoint.amenable_of_discreteTopology_psl`: a discrete subgroup of `PSL(2, 𝕜)` preserving a
+* `Subgroup.amenable_of_discreteTopology_psl`: a discrete subgroup of `PSL(2, 𝕜)` preserving a
   nonzero finite Borel measure on `OnePoint 𝕜` is amenable.
 * `TauCeti.amenable_of_injective_sl2z_of_map_smul_eq` and
   `TauCeti.hasFoelnerSets_of_injective_sl2z_of_map_smul_eq`: a group embedding into `SL(2, ℤ)` and
@@ -73,12 +73,12 @@ public section
 open Filter Topology MeasureTheory Set Matrix
 open scoped ENNReal MatrixGroups Pointwise
 
-namespace OnePoint
-
 section NormedField
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
   {_ : MeasurableSpace (OnePoint 𝕜)} [BorelSpace (OnePoint 𝕜)]
+
+namespace OnePoint
 
 /-- **Furstenberg's concentration lemma on the projective line.** If a sequence `g : ℕ → PSL(2, 𝕜)`
 escapes every compact subset of `PSL(2, 𝕜)` and preserves a finite Borel measure `μ` on
@@ -146,6 +146,10 @@ theorem exists_measure_singleton_ne_zero_of_tendsto_psl_cocompact
     rw [← measure_add_measure_compl hm, hpair, hbc, add_zero]
   exact hμ (Measure.measure_univ_eq_zero.mp huniv)
 
+end OnePoint
+
+namespace Subgroup
+
 /-- A discrete subgroup of `PSL(2, 𝕜)` that preserves a nonzero finite Borel measure on
 `OnePoint 𝕜` is amenable. -/
 theorem amenable_of_discreteTopology_psl (Γ : Subgroup PSL(2, 𝕜)) [DiscreteTopology Γ]
@@ -162,7 +166,7 @@ theorem amenable_of_discreteTopology_psl (Γ : Subgroup PSL(2, 𝕜)) [DiscreteT
     have he_inv (n : ℕ) : Measure.map ((e n : PSL(2, 𝕜)) • ·) μ = μ :=
       MeasureTheory.map_smul (e n) μ
     obtain ⟨x₀, hx₀⟩ :=
-      exists_measure_singleton_ne_zero_of_tendsto_psl_cocompact hμ he_cocompact he_inv
+      OnePoint.exists_measure_singleton_ne_zero_of_tendsto_psl_cocompact hμ he_cocompact he_inv
     have : Finite (MulAction.orbit Γ x₀) := finite_orbit_of_measure_singleton_ne_zero hx₀
     have hcomap : (MulAction.stabilizer PSL(2, 𝕜) x₀).comap Γ.subtype =
         MulAction.stabilizer Γ x₀ := by
@@ -172,9 +176,9 @@ theorem amenable_of_discreteTopology_psl (Γ : Subgroup PSL(2, 𝕜)) [DiscreteT
       hcomap ▸ Γ.subtype.amenable_comap_onePoint_psl_stabilizer Γ.subtype_injective x₀
     exact TauCeti.Amenable.of_finite_orbit x₀
 
-end NormedField
+end Subgroup
 
-end OnePoint
+end NormedField
 
 namespace TauCeti
 
@@ -196,7 +200,7 @@ theorem amenable_of_injective_sl2z_of_map_smul_eq {G : Type*} [Group G] [Topolog
     obtain ⟨_, ⟨g, rfl⟩, hγ⟩ := γ.2
     simp only [Subgroup.smul_def, ← hγ]
     rw [← Measure.map_apply (continuous_const_smul _).measurable hs, hinv g]⟩
-  have : Amenable Γ := OnePoint.amenable_of_discreteTopology_psl Γ hμ
+  have : Amenable Γ := Γ.amenable_of_discreteTopology_psl hμ
   let φ : G →* Γ := (sl2zToPSL2R.comp ι).codRestrict Γ fun g ↦ ⟨ι g, ⟨g, rfl⟩, rfl⟩
   let : TopologicalSpace SL(2, ℤ) := ⊥
   let : DiscreteTopology SL(2, ℤ) := ⟨rfl⟩
