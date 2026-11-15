@@ -18,7 +18,8 @@ be applied directly to concrete algebras, including those acting on the zero Hil
 
 The instances use Mathlib's generic subobject constructions, in particular
 `StarSubalgebra.cstarAlgebra`. The underlying star subalgebra has the same instances;
-no new norm, completion, or algebra carrier is introduced.
+no new norm, completion, or algebra carrier is introduced. We also provide the canonical
+star algebra isomorphism `VonNeumannAlgebra.equivOfEq` between equal von Neumann algebras.
 -/
 
 public section
@@ -40,5 +41,26 @@ instance isClosed (M : VonNeumannAlgebra H) : IsClosed (M : Set (H →L[ℂ] H))
 instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
     IsClosed (M.toStarSubalgebra : Set (H →L[ℂ] H)) := by
   simpa only [coe_toStarSubalgebra] using M.isClosed
+
+/-- Equal concrete von Neumann algebras on `H` are canonically star-isomorphic. -/
+def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N where
+  toFun x := ⟨x.1, h ▸ x.2⟩
+  invFun y := ⟨y.1, h.symm ▸ y.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_star' _ := rfl
+
+@[simp]
+theorem coe_equivOfEq_apply {M N : VonNeumannAlgebra H} (h : M = N) (x : M) :
+    ((equivOfEq h x : N) : H →L[ℂ] H) = x := by
+  rfl
+
+@[simp]
+theorem equivOfEq_symm {M N : VonNeumannAlgebra H} (h : M = N) :
+    (equivOfEq h).symm = equivOfEq h.symm := by
+  rfl
 
 end VonNeumannAlgebra

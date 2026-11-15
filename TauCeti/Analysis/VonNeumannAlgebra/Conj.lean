@@ -49,24 +49,32 @@ variable {H K L : Type*}
 noncomputable def conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) : VonNeumannAlgebra K where
   toStarSubalgebra := M.toStarSubalgebra.map U.conjStarAlgEquiv.toStarAlgHom
   centralizer_centralizer' := by
-    change (U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H))).centralizer.centralizer =
-      U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H))
-    rw [MulEquivClass.centralizer_image, MulEquivClass.centralizer_image,
-      M.centralizer_centralizer]
-
-@[simp, norm_cast]
-theorem coe_conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
-    (M.conj U : Set (K →L[ℂ] K)) = U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
-  rfl
+    have h : (M.toStarSubalgebra.map U.conjStarAlgEquiv.toStarAlgHom : Set (K →L[ℂ] K)) =
+        U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
+      rw [StarSubalgebra.coe_map, coe_toStarSubalgebra]
+      exact Set.image_congr' U.conjStarAlgEquiv.toStarAlgHom_apply
+    have hcc : (U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H))).centralizer.centralizer =
+        U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
+      rw [MulEquivClass.centralizer_image, MulEquivClass.centralizer_image,
+        M.centralizer_centralizer]
+    -- The carrier is the coercion of the mapped star subalgebra to a set, up to unfolding
+    -- `SetLike.coe`.
+    exact (congrArg (fun S => S.centralizer.centralizer) h).trans (hcc.trans h.symm)
 
 @[simp]
 theorem toStarSubalgebra_conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
     (M.conj U).toStarSubalgebra = M.toStarSubalgebra.map U.conjStarAlgEquiv.toStarAlgHom := by
   rfl
 
+@[simp, norm_cast]
+theorem coe_conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
+    (M.conj U : Set (K →L[ℂ] K)) = U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
+  rw [← coe_toStarSubalgebra, toStarSubalgebra_conj, StarSubalgebra.coe_map, coe_toStarSubalgebra]
+  exact Set.image_congr' U.conjStarAlgEquiv.toStarAlgHom_apply
+
 theorem mem_conj_iff {M : VonNeumannAlgebra H} {U : H ≃ₗᵢ[ℂ] K} {y : K →L[ℂ] K} :
     y ∈ M.conj U ↔ ∃ x ∈ M, U.conjStarAlgEquiv x = y := by
-  rfl
+  simp [← SetLike.mem_coe, coe_conj]
 
 @[simp]
 theorem conjStarAlgEquiv_mem_conj_iff {M : VonNeumannAlgebra H} {U : H ≃ₗᵢ[ℂ] K}
@@ -189,27 +197,6 @@ theorem conj_iSup {ι : Sort*} (M : ι → VonNeumannAlgebra H) (U : H ≃ₗᵢ
 theorem conj_iInf {ι : Sort*} (M : ι → VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
     (⨅ i, M i).conj U = ⨅ i, (M i).conj U :=
   (conjOrderIso U).map_iInf M
-
-/-- Equal concrete von Neumann algebras on `H` are canonically star-isomorphic. -/
-def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N where
-  toFun x := ⟨x.1, h ▸ x.2⟩
-  invFun y := ⟨y.1, h.symm ▸ y.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_star' _ := rfl
-
-@[simp]
-theorem coe_equivOfEq_apply {M N : VonNeumannAlgebra H} (h : M = N) (x : M) :
-    ((equivOfEq h x : N) : H →L[ℂ] H) = x := by
-  rfl
-
-@[simp]
-theorem equivOfEq_symm {M N : VonNeumannAlgebra H} (h : M = N) :
-    (equivOfEq h).symm = equivOfEq h.symm := by
-  rfl
 
 /-- The star algebra equivalence `M ≃⋆ₐ[ℂ] M.conj U` induced by spatial conjugation along a
 unitary equivalence `U : H ≃ₗᵢ[ℂ] K`. -/
