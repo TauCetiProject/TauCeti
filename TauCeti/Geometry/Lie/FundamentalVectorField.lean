@@ -42,6 +42,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `TauCeti.tangentRepresentation_fundamentalVectorField`: at a fixed point `x` of `g`, the
+  tangent representation carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`.
 * `MonoidHom.fundamentalVectorField_groupLieAlgebraMap`: for an action through a homomorphism
   `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
@@ -353,6 +355,19 @@ theorem mfderiv_smul_fundamentalVectorField [LieGroup I 1 G] (g : G) (ξ : Group
       (mfderiv_comp_apply_of_eq (1 : G) (horbit (g • x) 1) hconj
         (by simp : Lie.conjDiffeomorph (I := I) (n := 1) g 1 = 1) ξ))
 
+/-- **The stabilizer acts on fundamental vector fields by the adjoint representation.** For `g` in
+the stabilizer of `x`, the tangent representation `dg_x` carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`. -/
+theorem tangentRepresentation_fundamentalVectorField [LieGroup I 1 G] {x : M}
+    (hd : ∀ g ∈ MulAction.stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
+    (g : MulAction.stabilizer G x) (ξ : GroupLieAlgebra I G) :
+    tangentRepresentation hd g (fundamentalVectorField I' ξ x) =
+      fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) x := by
+  rw [tangentRepresentation_apply]
+  -- `mfderiv_smul_fundamentalVectorField` lands in `T_{g • x} M`; both tangent spaces are the
+  -- model space `E'`, so the value at `g • x` is transported to `x` along `g • x = x`.
+  exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
+    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
+
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/
 theorem isMIntegralCurve_mulInvariantExp_smul_smul [CompleteSpace E]
@@ -592,14 +607,8 @@ theorem tangentRepresentation_mem_orbitTangent_fundamental {x : M}
   obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hv
   have h := (InfinitesimalAction.fundamental I G I' M).mem_orbitTangent x
     (Lie.adjointContinuousLinearMap (g : G) ξ)
-  -- `dg_x ξ_M(x) = (Ad_g ξ)_M(g • x)`, read in `T_x M` through `g • x = x`.
-  have key : tangentRepresentation hd g (fundamentalVectorField I' ξ x) =
-      fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) x := by
-    rw [tangentRepresentation_apply]
-    exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
-      (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
   rw [InfinitesimalAction.fundamental_apply] at h ⊢
-  rwa [key]
+  rwa [tangentRepresentation_fundamentalVectorField]
 
 section Kernel
 

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.LinearReduction
 public import TauCeti.Geometry.Symplectic.Manifold.Invariants
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The symplectic slice at a point of a Hamiltonian action
@@ -16,16 +17,18 @@ public import TauCeti.Geometry.Symplectic.Manifold.Invariants
 Let `Z ↦ Z_M` be an infinitesimal action of a Lie algebra `𝔤` on a manifold `M` with a
 nondegenerate two-form `σ`, and let `x ∈ M`. Write `W = 𝔤 · x` for the orbit tangent space
 (`TauCeti.InfinitesimalAction.orbitTangent`), `𝔤_x` for the isotropy algebra and `W^σ` for the
-`σ_x`-orthogonal of `W`. The restriction of `σ_x` to `W^σ` has kernel `W ∩ W^σ`, so it descends to
-a symplectic form on the **symplectic slice**
+`σ_x`-orthogonal of `W`. The restriction of `σ_x` to `W^σ` has kernel `W^σ ∩ (W^σ)^σ`, so it
+descends to a symplectic form on the **symplectic slice**
+(`TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice`), the linear symplectic reduction of
+`T_x M` along `W^σ` (`TauCeti.SymplecticForm.ReducedSpace`). When `M` is finite-dimensional,
+`(W^σ)^σ = W`, so this kernel is `W ∩ W^σ` and the slice is
 
 `V = W^σ ⧸ (W ∩ W^σ)`
 
-(`TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice`), the linear symplectic reduction of
-`T_x M` along `W^σ` (`TauCeti.SymplecticForm.ReducedSpace`). It is the symplectic normal space of
-the orbit through `x`, the linear part of the local normal form of Hamiltonian actions of Marle and
-of Guillemin and Sternberg, in which a neighbourhood of the orbit is modelled on
-`G ×_H (𝔪* × V)` for the stabilizer `H = G_x`.
+(`TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice.mk_eq_mk_iff`). It is the symplectic
+normal space of the orbit through `x`, the linear part of the local normal form of Hamiltonian
+actions of Marle and of Guillemin and Sternberg, in which a neighbourhood of the orbit is modelled
+on `G ×_H (𝔪* × V)` for the stabilizer `H = G_x`.
 
 The orbit map `Z ↦ Z_M(x)` identifies `𝔤 ⧸ 𝔤_x` with `W`
 (`TauCeti.InfinitesimalAction.quotIsotropyEquivOrbitTangent`). If `μ` is a moment map whose cocycle
@@ -37,7 +40,7 @@ coadjoint stabilizer `𝔨 = 𝔤_{μ(x)}`:
 
 (`TauCeti.SmoothTwoForm.IsMomentMap.orbitTangent_inf_orthogonal` and
 `TauCeti.SmoothTwoForm.IsMomentMap.quotEquivOrbitTangentInfOrthogonal`). Here `𝔤_x ≤ 𝔨`. Counting
-dimensions, `dim V = dim M - dim 𝔤 - dim 𝔨 + 2 dim 𝔤_x`
+dimensions on a finite-dimensional `M`, `dim V = dim M - dim 𝔤 - dim 𝔨 + 2 dim 𝔤_x`
 (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_symplecticSlice_add_finrank_add_finrank`). At a point
 where the action is locally free this is the dimension of the reduced space `μ⁻¹(μ x) / G_{μ x}`.
 
@@ -53,7 +56,8 @@ action, compactness of `H`, closedness of `σ` nor a moment map is needed for th
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice hσ a x`: the symplectic slice
-  `W^σ ⧸ (W ∩ W^σ)`, with its symplectic form
+  `W^σ ⧸ (W^σ ∩ (W^σ)^σ)`, which is `W^σ ⧸ (W ∩ W^σ)` when `M` is finite-dimensional, with its
+  symplectic form
   `(hσ.symplecticFormAt x).reduction ((hσ.symplecticFormAt x).orthogonal (a.orbitTangent x))`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.quotEquivOrbitTangentInfOrthogonal`: the identification
   `𝔨 ⧸ 𝔤_x ≃ W ∩ W^σ`.
@@ -62,8 +66,9 @@ action, compactness of `H`, closedness of `σ` nor a moment map is needed for th
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice.mk_eq_mk_iff`: two vectors of `W^σ` have
-  the same image in the slice exactly when they differ by an orbit direction.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice.mk_eq_mk_iff`: when `M` is
+  finite-dimensional, two vectors of `W^σ` have the same image in the slice exactly when they differ
+  by an orbit direction.
 * `TauCeti.SmoothTwoForm.IsMomentMap.orbitTangent_inf_orthogonal`: `W ∩ W^σ = 𝔨 · x`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.finrank_orbitTangent_inf_orthogonal_add_finrank_isotropy`:
   `dim (W ∩ W^σ) + dim 𝔤_x = dim 𝔨`.
@@ -71,8 +76,9 @@ action, compactness of `H`, closedness of `σ` nor a moment map is needed for th
   `dim V + dim 𝔤 + dim 𝔨 = dim M + 2 dim 𝔤_x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tangentRepresentation_mem_orthogonal_orbitTangent`: the
   stabilizer of `x` preserves the symplectic complement `W^σ` of the orbit tangent space.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceRepresentation_mk`: the stabilizer acts on
-  the slice by `[u] ↦ [dh_x u]`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceRepresentation_mk`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceRepresentation_symm_mk`: the stabilizer
+  acts on the slice by `[u] ↦ [dh_x u]`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_symplecticSliceRepresentation`: the
   stabilizer acts on the slice by linear symplectomorphisms.
 
@@ -107,8 +113,10 @@ namespace IsNondegenerate
 variable (hσ : σ.IsNondegenerate) (a x)
 
 /-- The **symplectic slice** of an infinitesimal action at `x`: the linear symplectic reduction
-`W^σ ⧸ (W ∩ W^σ)` of `(T_x M, σ_x)` along the symplectic complement `W^σ` of the orbit tangent
-space `W = 𝔤 · x`. Its symplectic form is
+`W^σ ⧸ (W^σ ∩ (W^σ)^σ)` of `(T_x M, σ_x)` along the symplectic complement `W^σ` of the orbit
+tangent space `W = 𝔤 · x`. When `M` is finite-dimensional, `(W^σ)^σ = W` and the slice is
+`W^σ ⧸ (W ∩ W^σ)` (`TauCeti.SmoothTwoForm.IsNondegenerate.SymplecticSlice.mk_eq_mk_iff`). Its
+symplectic form is
 `(hσ.symplecticFormAt x).reduction ((hσ.symplecticFormAt x).orthogonal (a.orbitTangent x))`,
 `[u], [v] ↦ σ_x(u, v)`. -/
 abbrev SymplecticSlice : Type _ :=
@@ -116,13 +124,13 @@ abbrev SymplecticSlice : Type _ :=
 
 variable {hσ a x}
 
-/-- Two vectors of `W^σ` have the same image in the symplectic slice exactly when they differ by
-an orbit direction: the radical of `σ_x` on `W^σ` is `W ∩ W^σ`. -/
+/-- On a finite-dimensional manifold, two vectors of `W^σ` have the same image in the symplectic
+slice exactly when they differ by an orbit direction: since `(W^σ)^σ = W`, the radical of `σ_x` on
+`W^σ` is `W ∩ W^σ`. -/
 theorem SymplecticSlice.mk_eq_mk_iff [FiniteDimensional ℝ E]
     {u v : (hσ.symplecticFormAt x).orthogonal (a.orbitTangent x)} :
     (Submodule.Quotient.mk u : hσ.SymplecticSlice a x) = Submodule.Quotient.mk v ↔
       (u : TangentSpace I x) - v ∈ a.orbitTangent x := by
-  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
   rw [SymplecticForm.ReducedSpace.mk_eq_mk_iff, SymplecticForm.orthogonal_orthogonal]
 
 end IsNondegenerate
@@ -179,11 +187,11 @@ theorem finrank_symplecticSlice_add_finrank_add_finrank [FiniteDimensional ℝ E
     [FiniteDimensional ℝ 𝔤] (hσ : σ.IsNondegenerate) (hc : σ.momentCocycle a μ x = 0) :
     finrank ℝ (hσ.SymplecticSlice a x) + finrank ℝ 𝔤 + finrank ℝ (lieAnnihilator ℝ 𝔤 (μ x)) =
       finrank ℝ E + 2 * finrank ℝ (a.isotropy x) := by
-  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
   have h₁ : finrank ℝ (hσ.SymplecticSlice a x) + finrank ℝ (a.orbitTangent x) +
       finrank ℝ ↥(a.orbitTangent x ⊓ (hσ.symplecticFormAt x).orthogonal (a.orbitTangent x)) =
-        finrank ℝ E :=
-    (hσ.symplecticFormAt x).finrank_reducedSpace_orthogonal_add (a.orbitTangent x)
+        finrank ℝ E := by
+    rw [← finrank_tangentSpace (I := I) x]
+    exact (hσ.symplecticFormAt x).finrank_reducedSpace_orthogonal_add (a.orbitTangent x)
   have h₂ := h.finrank_orbitTangent_inf_orthogonal_add_finrank_isotropy hc
   rw [← hσ.toBilinForm_symplecticFormAt, ← SymplecticForm.orthogonal_def] at h₂
   have h₃ := a.finrank_orbitTangent_add_finrank_isotropy x
@@ -234,8 +242,8 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
 
 /-- **The stabilizer representation on the symplectic slice.** If the stabilizer `H = G_x` of a
 smooth Lie group action preserves a nondegenerate two-form `σ`, its tangent representation
-`h ↦ dh_x` preserves `W^σ` and induces a representation of `H` on the symplectic slice
-`W^σ ⧸ (W ∩ W^σ)`, `[u] ↦ [dh_x u]`, by linear symplectomorphisms
+`h ↦ dh_x` preserves `W^σ` and induces a representation of `H` on the symplectic slice,
+`[u] ↦ [dh_x u]`, by linear symplectomorphisms
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_symplecticSliceRepresentation`). -/
 def symplecticSliceRepresentation :
     stabilizer G x →*
@@ -243,9 +251,10 @@ def symplecticSliceRepresentation :
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
   haveI : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
-    (tangentAut (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x))
+    (tangentAut fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
     (hσ.isSymplectomorphism_tangentAut hσG
-      (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x)) _ fun g u hu ↦ by
+      fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x) _
+      fun g u hu ↦ by
       rw [tangentAut_apply]
       exact hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g hu
 
@@ -256,10 +265,25 @@ theorem symplecticSliceRepresentation_mk (g : stabilizer G x)
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     hσ.symplecticSliceRepresentation hσG g (Submodule.Quotient.mk u) =
       Submodule.Quotient.mk
-        ⟨tangentRepresentation (mdifferentiableAt_smul_of_mem_stabilizer I (n := ∞) (by simp) x)
-          g u, hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g u.2⟩ := by
+        ⟨tangentRepresentation
+          (fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x) g u,
+          hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g u.2⟩ := by
   rw [symplecticSliceRepresentation, SymplecticForm.reducedSpaceRepresentation_apply_mk]
   simp only [tangentAut_apply]
+
+/-- The inverse of the action of `g` on the symplectic slice is `[u] ↦ [d(g⁻¹)_x u]`. -/
+@[simp]
+theorem symplecticSliceRepresentation_symm_mk (g : stabilizer G x)
+    (u : (hσ.symplecticFormAt x).orthogonal
+      ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
+    (hσ.symplecticSliceRepresentation hσG g).symm (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk
+        ⟨tangentRepresentation
+          (fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
+          g⁻¹ u, hσ.tangentRepresentation_mem_orthogonal_orbitTangent hσG _ g⁻¹ u.2⟩ := by
+  rw [LinearEquiv.symm_apply_eq, symplecticSliceRepresentation_mk]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext
+    ((tangentRepresentation _).toRepresentation.self_inv_apply g (u : TangentSpace I' x)).symm)
 
 /-- The stabilizer of `x` acts on the symplectic slice by linear symplectomorphisms of its reduced
 symplectic form. -/

@@ -53,8 +53,6 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
   whole group, they are the tangent vectors fixed by the differential of every group element.
 * `TauCeti.mfderiv_smul_comp_tangentRepresentation`: the tangent representations at `x` and
   `h • x` are intertwined by the derivative of `h • ·`.
-* `TauCeti.mdifferentiableAt_smul_of_mem_stabilizer`: a `C^n` action of a manifold group, with
-  `n ≠ 0`, satisfies the differentiability hypothesis of the tangent representation.
 * `TauCeti.continuous_tangentRepresentation`: for a jointly `C¹` action of a manifold group, the
   tangent representation is continuous.
 * `TauCeti.tangentRepresentation_eq_one_iff`, `TauCeti.ker_tangentRepresentation`: the kernel of
@@ -127,6 +125,13 @@ theorem tangentAut_apply
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
     (g : stabilizer G x) (v : TangentSpace I x) :
     tangentAut hd g v = tangentRepresentation hd g v :=
+  (rfl)
+
+@[simp]
+theorem tangentAut_symm_apply
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
+    (g : stabilizer G x) (v : TangentSpace I x) :
+    (tangentAut hd g).symm v = tangentRepresentation hd g⁻¹ v :=
   (rfl)
 
 /-- The invariant vectors of the tangent representation at `x` are the tangent vectors fixed by
@@ -204,14 +209,6 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
       rfl (g.2.trans g₀.2.symm)).trans (tangentRepresentation_apply hd g).symm
   rw [← hcomp]
   exact h.comp continuous_subtype_val.continuousAt
-
-omit [IsManifold I 1 M] in
-/-- For a `C^n` action of a manifold group `G` with `n ≠ 0`, each element of the stabilizer of `x`
-acts by a map differentiable at `x`. This is the hypothesis of `TauCeti.tangentRepresentation`. -/
-theorem mdifferentiableAt_smul_of_mem_stabilizer (IG : ModelWithCorners 𝕜 F HG)
-    {n : WithTop ℕ∞} [ContMDiffSMul IG I n G M] (hn : n ≠ 0) (x : M) :
-    ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x := fun g _ ↦
-  (ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) (n := n) g).mdifferentiableAt hn
 
 end Continuity
 
