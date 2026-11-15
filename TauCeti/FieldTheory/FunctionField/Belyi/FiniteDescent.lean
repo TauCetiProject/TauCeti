@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
+import TauCeti.FieldTheory.Galois.ClosedSubgroup
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -31,10 +32,11 @@ polynomial or coefficient bookkeeping is needed.
 
 For a field `k` algebraic over `ℚ`, a class of pairs defined over a number field `K` is fixed by
 the open subgroup `Aut(k/K)` of `Aut(k/ℚ)`, and its translates depend only on the finitely many
-embeddings of `K` into `k`. Consequently the stabilizer of every class is open and every Galois
-orbit of isomorphism classes of Belyi pairs is finite; when `k` is Galois over `ℚ`, such as
-`AlgebraicClosure ℚ`, the field of moduli is moreover a number field whose degree over `ℚ` is the
-true orbit size. The finiteness of orbits needs no count of Belyi pairs of bounded degree.
+embeddings of `K` into `k`. Consequently the stabilizer of every class is open and closed in
+`Aut(k/ℚ)` and every Galois orbit of isomorphism classes of Belyi pairs is finite; when `k` is
+Galois over `ℚ`, such as `AlgebraicClosure ℚ`, the field of moduli is moreover a number field
+whose degree over `ℚ` is the true orbit size. The finiteness of orbits needs no count of Belyi
+pairs of bounded degree.
 
 ## Main results
 
@@ -42,8 +44,10 @@ true orbit size. The finiteness of orbits needs no count of Belyi pairs of bound
   `k` has a model over a finite extension of `K₀` inside `k`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finiteDimensional_isDefinedOver`: every
   isomorphism class is defined over such a field.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.isOpen_stabilizer`: for `k` algebraic over `ℚ`, the
-  stabilizer of a class in `Gal(k/ℚ)` is open.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.isOpen_stabilizer` and
+  `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli_of_isAlgebraic`: for `k`
+  algebraic over `ℚ`, the stabilizer of a class in `Aut(k/ℚ)` is open and equals the fixing
+  subgroup of its field of moduli.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finiteDimensional_fieldOfModuli`: for `k` Galois over `ℚ`,
   the field of moduli of a class is a number field.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finrank_fieldOfModuli_eq_trueOrbitSize`: its degree over
@@ -218,13 +222,23 @@ theorem isOpen_stabilizer [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
   have : Algebra.IsAlgebraic K k := .tower_top (K := ℚ) K
   exact Subgroup.isOpen_mono hc.fixingSubgroup_le_stabilizer K.fixingSubgroup_isOpen
 
+/-- **Stabilizers equal the fixing subgroup of the field of moduli**: for a field `k` algebraic
+over `ℚ`, the automorphisms of `k` fixing the field of moduli of `c` pointwise are precisely the
+stabilizer of `c` in `Aut(k/ℚ)`. -/
+theorem fixingSubgroup_fieldOfModuli_of_isAlgebraic [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
+    c.fieldOfModuli.fixingSubgroup = MulAction.stabilizer (k ≃ₐ[ℚ] k) c := by
+  obtain ⟨K, hK, hc⟩ := c.exists_finiteDimensional_isDefinedOver ℚ
+  have : Algebra.IsAlgebraic K k := .tower_top (K := ℚ) K
+  rw [fieldOfModuli_def]
+  exact fixingSubgroup_fixedField_of_fixingSubgroup_le_of_finiteDimensional K
+    hc.fixingSubgroup_le_stabilizer
+
 /-- **The field of moduli is a number field**: over a Galois extension `k` of `ℚ`, such as
 `AlgebraicClosure ℚ`, the field of moduli of an isomorphism class of algebraic Belyi pairs is
 finite over `ℚ`, being contained in a number field of definition. -/
 theorem finiteDimensional_fieldOfModuli [IsGalois ℚ k] (c : IsoClass k) :
     FiniteDimensional ℚ c.fieldOfModuli := by
   obtain ⟨K, hK, hc⟩ := c.exists_finiteDimensional_isDefinedOver ℚ
-  have := IsGalois.tower_top_of_isGalois ℚ K k
   have hle : c.fieldOfModuli ≤ K := hc.fieldOfModuli_le
   exact FiniteDimensional.of_injective (inclusion hle).toLinearMap (inclusion_injective hle)
 
@@ -232,9 +246,8 @@ theorem finiteDimensional_fieldOfModuli [IsGalois ℚ k] (c : IsoClass k) :
 moduli of a class over `ℚ` is its true orbit size. -/
 theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] (c : IsoClass k) :
     Module.finrank ℚ c.fieldOfModuli = c.trueOrbitSize := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index, fieldOfModuli_def,
-    InfiniteGalois.fixingSubgroup_fixedField ⟨_, Subgroup.isClosed_of_isOpen _ c.isOpen_stabilizer⟩,
-    trueOrbitSize_eq_index]
+  rw [IntermediateField.finrank_eq_fixingSubgroup_index,
+    c.fixingSubgroup_fieldOfModuli_of_isAlgebraic, trueOrbitSize_eq_index]
 
 /-- **Galois orbits are finite**: over a field `k` algebraic over `ℚ`, such as
 `AlgebraicClosure ℚ`, the orbit of an isomorphism class of algebraic Belyi pairs under
