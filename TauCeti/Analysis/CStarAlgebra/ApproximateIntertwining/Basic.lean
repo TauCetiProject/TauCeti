@@ -39,7 +39,8 @@ backward tail estimates.
   `lift_unique`), extensionality (`hom_ext`, `hom_ext_of_approx`), and constructors `.const`,
   `.of_isometry`, `.of_subalgebra`, and `.of_norm_eq_ciInf`.
 * `TauCeti.IsApproxCocone` and `TauCeti.IsApproxCocone.hom`: one-sided limit `⋆`-homomorphism from
-  an approximate cocone, with uniqueness and tail estimate `IsApproxCocone.norm_hom_sub_le`.
+  an approximate cocone, with uniqueness (`hom_unique`, `comp_hom_eq_of_norm_sub_le`) and tail
+  estimate `IsApproxCocone.norm_hom_sub_le`.
 * `TauCeti.IsApproximateIntertwining` and `TauCeti.IsApproximateIntertwining.equiv`: two-sided
   approximate intertwining inducing `C ≃⋆ₐ[ℂ] D`, with uniqueness and forward/backward tail
   estimates `norm_equiv_sub_le` and `norm_equiv_symm_sub_le`.
@@ -542,6 +543,30 @@ theorem norm_hom_sub_le (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone
   rw [dist_eq_norm, norm_sub_rev, seqTransHom_succ α (Nat.le_add_right n k)]
   exact hc.norm_sub_le (n + k) hak
 
+/-- Postcomposing `hc.hom hι` with `Ψ` equals `Θ` whenever `Ψ (ξ n a)` approximates `Θ (ι n a)` on
+`F n` within a vanishing error `r n → 0`. -/
+theorem comp_hom_eq_of_norm_sub_le {E : Type*} [NonUnitalCStarAlgebra E]
+    (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι)
+    {Ψ : D →⋆ₙₐ[ℂ] E} {Θ : C →⋆ₙₐ[ℂ] E} {r : ℕ → ℝ}
+    (hr : Tendsto r atTop (𝓝 0))
+    (hbound : ∀ n ⦃a⦄, a ∈ F n → ‖Ψ (ξ n a) - Θ (ι n a)‖ ≤ r n) :
+    Ψ.comp (hc.hom hι) = Θ := by
+  refine hι.hom_ext_of_approx hc.approx fun m x hx ↦ ?_
+  have hlim₁ : Tendsto
+      (fun k ↦ Ψ (ξ (m + k) (seqTransHom α (Nat.le_add_right m k) x)))
+      atTop (𝓝 (Ψ (hc.hom hι (ι m x)))) :=
+    (map_continuous Ψ).continuousAt.tendsto.comp (hc.tendsto_hom hι m x)
+  have hlim₂ : Tendsto
+      (fun k ↦ Ψ (ξ (m + k) (seqTransHom α (Nat.le_add_right m k) x)))
+      atTop (𝓝 (Θ (ι m x))) := by
+    rw [← tendsto_sub_nhds_zero_iff]
+    have hshift : Tendsto (fun k ↦ m + k) atTop atTop :=
+      (tendsto_add_atTop_nat m).congr fun k ↦ Nat.add_comm k m
+    refine squeeze_zero_norm (a := fun k ↦ r (m + k)) (fun k ↦ ?_) (hr.comp hshift)
+    rw [← hι.comp_seqTransHom_apply (Nat.le_add_right m k) x]
+    exact hbound (m + k) (seqTransHom_mem hc.mapsTo (Nat.le_add_right m k) hx)
+  exact tendsto_nhds_unique hlim₁ hlim₂
+
 end IsApproxCocone
 
 end ApproxCocone
@@ -639,105 +664,49 @@ theorem backwardApproxCocone (h : IsApproximateIntertwining α β φ ψ F G δ �
       _ ≤ ε n + δ n :=
           add_le_add (h.norm_φ_ψ_sub_le n hb) (h.norm_ψ_φ_sub_le n (h.mapsTo_ψ n hb))
 
+private theorem comp_hom_eq_of_approxCocone {E : Type*} [NonUnitalCStarAlgebra E]
+    {σ : ℕ → ℕ} {η : ∀ n, A n →⋆ₙₐ[ℂ] B (σ n)} {ξ : ∀ m, B m →⋆ₙₐ[ℂ] E}
+    {τ₁ τ₂ ν : ℕ → ℝ} {Θ : C →⋆ₙₐ[ℂ] E}
+    (hc₁ : IsApproxCocone α (fun n ↦ (ιB (σ n)).comp (η n)) F τ₁)
+    (hιA : IsSeqColimitCone α ιA)
+    (hc₂ : IsApproxCocone β ξ G τ₂)
+    (hιB : IsSeqColimitCone β ιB)
+    (hσ : Tendsto σ atTop atTop)
+    (hmaps : ∀ n ⦃a⦄, a ∈ F n → η n a ∈ G (σ n))
+    (hν : Tendsto ν atTop (𝓝 0))
+    (htri : ∀ n ⦃a⦄, a ∈ F n → ‖ξ (σ n) (η n a) - Θ (ιA n a)‖ ≤ ν n) :
+    (hc₂.hom hιB).comp (hc₁.hom hιA) = Θ := by
+  have htail : Tendsto (fun m ↦ ∑' j, τ₂ (m + j)) atTop (𝓝 0) :=
+    (_root_.tendsto_sum_nat_add τ₂).congr fun m ↦ tsum_congr fun j ↦ congrArg τ₂ (Nat.add_comm j m)
+  refine hc₁.comp_hom_eq_of_norm_sub_le hιA
+    (r := fun n ↦ (∑' j, τ₂ (σ n + j)) + ν n)
+    (by simpa only [Function.comp_def, add_zero] using (htail.comp hσ).add hν) fun n a ha ↦ ?_
+  simpa only [NonUnitalStarAlgHom.comp_apply] using
+    (norm_sub_le_norm_sub_add_norm_sub
+      (hc₂.hom hιB (ιB (σ n) (η n a))) (ξ (σ n) (η n a)) (Θ (ιA n a))).trans
+      (add_le_add (hc₂.norm_hom_sub_le hιB (hmaps n ha)) (htri n ha))
+
 private theorem backward_comp_forward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCone α ιA) (hιB : IsSeqColimitCone β ιB) :
     ((h.backwardApproxCocone hιA).hom hιB).comp ((h.forwardApproxCocone hιB).hom hιA) =
       .id ℂ C := by
-  set Φ := (h.forwardApproxCocone hιB).hom hιA
-  set Ψ := (h.backwardApproxCocone hιA).hom hιB
-  have hmem_eq {m : ℕ} {x : A m} (hx : x ∈ F m) : Ψ (Φ (ιA m x)) = ιA m x := by
-    have hlim₁ : Tendsto
-        (fun k ↦ Ψ (ιB (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))))
-        atTop (𝓝 (Ψ (Φ (ιA m x)))) :=
-      (map_continuous Ψ).continuousAt.tendsto.comp
-        ((h.forwardApproxCocone hιB).tendsto_hom hιA m x)
-    have hlim₂ : Tendsto
-        (fun k ↦ Ψ (ιB (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))))
-        atTop (𝓝 (ιA m x)) := by
-      rw [← tendsto_sub_nhds_zero_iff]
-      refine squeeze_zero_norm (a := fun k ↦
-        (∑' j, (ε (j + (m + k + 1)) + δ (j + (m + k + 1)))) + δ (m + k)) (fun k ↦ ?_) ?_
-      · have hxk : seqTransHom α (Nat.le_add_right m k) x ∈ F (m + k) :=
-          seqTransHom_mem h.mapsTo_α (Nat.le_add_right m k) hx
-        have hφk : φ (m + k) (seqTransHom α (Nat.le_add_right m k) x) ∈ G (m + k + 1) :=
-          h.mapsTo_φ (m + k) hxk
-        have htail := (h.backwardApproxCocone hιA).norm_hom_sub_le hιB hφk
-        have htri : ‖ιA (m + k + 1)
-            (ψ (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))) - ιA m x‖ ≤
-            δ (m + k) := by
-          rw [← hιA.comp_seqTransHom_apply (Nat.le_add_right m k) x,
-            ← hιA.comp_apply (m + k), ← map_sub]
-          exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans (h.norm_ψ_φ_sub_le (m + k) hxk)
-        have htsum_eq : (∑' j, (ε (m + k + 1 + j) + δ (m + k + 1 + j))) =
-            ∑' j, (ε (j + (m + k + 1)) + δ (j + (m + k + 1))) :=
-          tsum_congr fun j ↦ by rw [Nat.add_comm]
-        calc
-          ‖Ψ (ιB (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))) - ιA m x‖
-            ≤ ‖Ψ (ιB (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))) -
-                ιA (m + k + 1)
-                  (ψ (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x)))‖ +
-              ‖ιA (m + k + 1)
-                (ψ (m + k + 1) (φ (m + k) (seqTransHom α (Nat.le_add_right m k) x))) -
-                ιA m x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-          _ ≤ _ := add_le_add (htsum_eq ▸ htail) htri
-      · have hshift₁ : Tendsto (fun k ↦ m + k + 1) atTop atTop :=
-          (tendsto_add_atTop_nat (m + 1)).congr fun k ↦ by omega
-        have hshift₂ : Tendsto (fun k ↦ m + k) atTop atTop :=
-          (tendsto_add_atTop_nat m).congr fun k ↦ Nat.add_comm k m
-        simpa only [Function.comp_def, add_zero] using
-          ((_root_.tendsto_sum_nat_add fun i ↦ ε i + δ i).comp hshift₁).add
-          (h.summable_δ.tendsto_atTop_zero.comp hshift₂)
-    exact tendsto_nhds_unique hlim₁ hlim₂
-  exact hιA.hom_ext_of_approx h.approx_A fun _ _ hx ↦ hmem_eq hx
+  refine comp_hom_eq_of_approxCocone (σ := fun n ↦ n + 1)
+    (h.forwardApproxCocone hιB) hιA (h.backwardApproxCocone hιA) hιB
+    (tendsto_add_atTop_nat 1) h.mapsTo_φ h.summable_δ.tendsto_atTop_zero fun n a ha ↦ ?_
+  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
+  rw [← hιA.comp_apply n a, ← map_sub]
+  exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans (h.norm_ψ_φ_sub_le n ha)
 
 private theorem forward_comp_backward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCone α ιA) (hιB : IsSeqColimitCone β ιB) :
     ((h.forwardApproxCocone hιB).hom hιA).comp ((h.backwardApproxCocone hιA).hom hιB) =
       .id ℂ D := by
-  set Φ := (h.forwardApproxCocone hιB).hom hιA
-  set Ψ := (h.backwardApproxCocone hιA).hom hιB
-  have hmem_eq {m : ℕ} {y : B m} (hy : y ∈ G m) : Φ (Ψ (ιB m y)) = ιB m y := by
-    have hlim₁ : Tendsto
-        (fun k ↦ Φ (ιA (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))))
-        atTop (𝓝 (Φ (Ψ (ιB m y)))) :=
-      (map_continuous Φ).continuousAt.tendsto.comp
-        ((h.backwardApproxCocone hιA).tendsto_hom hιB m y)
-    have hlim₂ : Tendsto
-        (fun k ↦ Φ (ιA (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))))
-        atTop (𝓝 (ιB m y)) := by
-      rw [← tendsto_sub_nhds_zero_iff]
-      refine squeeze_zero_norm (a := fun k ↦
-        (∑' j, (δ (j + (m + k)) + ε (j + (m + k) + 1))) + ε (m + k)) (fun k ↦ ?_) ?_
-      · have hyk : seqTransHom β (Nat.le_add_right m k) y ∈ G (m + k) :=
-          seqTransHom_mem h.mapsTo_β (Nat.le_add_right m k) hy
-        have hψk : ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y) ∈ F (m + k) :=
-          h.mapsTo_ψ (m + k) hyk
-        have htail := (h.forwardApproxCocone hιB).norm_hom_sub_le hιA hψk
-        have htri : ‖ιB (m + k + 1)
-            (φ (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))) - ιB m y‖ ≤
-            ε (m + k) := by
-          rw [← hιB.comp_seqTransHom_apply (Nat.le_add_right m k) y,
-            ← hιB.comp_apply (m + k), ← map_sub]
-          exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans (h.norm_φ_ψ_sub_le (m + k) hyk)
-        have htsum_eq : (∑' j, (δ (m + k + j) + ε (m + k + j + 1))) =
-            ∑' j, (δ (j + (m + k)) + ε (j + (m + k) + 1)) :=
-          tsum_congr fun j ↦ by rw [Nat.add_comm (m + k) j]
-        calc
-          ‖Φ (ιA (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))) - ιB m y‖
-            ≤ ‖Φ (ιA (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))) -
-                ιB (m + k + 1)
-                  (φ (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y)))‖ +
-              ‖ιB (m + k + 1)
-                (φ (m + k) (ψ (m + k) (seqTransHom β (Nat.le_add_right m k) y))) -
-                ιB m y‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-          _ ≤ _ := add_le_add (htsum_eq ▸ htail) htri
-      · have hshift : Tendsto (fun k ↦ m + k) atTop atTop :=
-          (tendsto_add_atTop_nat m).congr fun k ↦ Nat.add_comm k m
-        simpa only [Function.comp_def, add_zero] using
-          ((_root_.tendsto_sum_nat_add fun i ↦ δ i + ε (i + 1)).comp hshift).add
-          (h.summable_ε.tendsto_atTop_zero.comp hshift)
-    exact tendsto_nhds_unique hlim₁ hlim₂
-  exact hιB.hom_ext_of_approx h.approx_B fun _ _ hy ↦ hmem_eq hy
+  refine comp_hom_eq_of_approxCocone (σ := fun n ↦ n)
+    (h.backwardApproxCocone hιA) hιB (h.forwardApproxCocone hιB) hιA
+    tendsto_id h.mapsTo_ψ h.summable_ε.tendsto_atTop_zero fun n b hb ↦ ?_
+  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
+  rw [← hιB.comp_apply n b, ← map_sub]
+  exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans (h.norm_φ_ψ_sub_le n hb)
 
 /-- Elliott's approximate-intertwining `⋆`-isomorphism `C ≃⋆ₐ[ℂ] D` constructed from mutually
 inverse forward and backward approximate cocones (Rørdam, Proposition 2.3.2). -/
