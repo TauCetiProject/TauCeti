@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Analysis.Complex.InterpolatedExponent
-import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -123,7 +122,7 @@ private theorem norm_powSign_le_exp (w c : ℂ) :
 
 /-- On the closed strip `0 ≤ Re z ≤ 1` the members of the analytic family are bounded uniformly
 in `z`. -/
-private theorem norm_powSign_expo_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) {z : ℂ}
+private theorem norm_powSign_expo_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {z : ℂ}
     (hz : z.re ∈ Set.Icc (0 : ℝ) 1) (c : ℂ) :
     ‖powSign (interpExponent a₀ a₁ θ z) c‖ ≤
       Real.exp ((1 + |interpSlope a₀ a₁ θ|) * |Real.log ‖c‖|) :=
@@ -223,7 +222,7 @@ private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_zero (u : SimpleFunc γ
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 0) :
     eLpNorm (u.map (powSign (interpExponent (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₀ ρ ≤ 1 := by
   exact eLpNorm_map_powSign_le_one u (re_interpExponent_nonneg ENNReal.toReal_nonneg
-    ENNReal.toReal_nonneg hθ (by simp [hz]))
+    ENNReal.toReal_nonneg (Set.Ioo_subset_Icc_self hθ) (by simp [hz]))
     (ofReal_re_interpExponent_mul_inv_of_re_eq_zero hs₀ hs₁ hθ hs hz).symm hu
 
 /-- On the line `Re z = 1` the analytic family through `u` lies in the unit ball of `L^{s₁}`. -/
@@ -233,7 +232,7 @@ private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_one (u : SimpleFunc γ 
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 1) :
     eLpNorm (u.map (powSign (interpExponent (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₁ ρ ≤ 1 := by
   exact eLpNorm_map_powSign_le_one u (re_interpExponent_nonneg ENNReal.toReal_nonneg
-    ENNReal.toReal_nonneg hθ (by simp [hz]))
+    ENNReal.toReal_nonneg (Set.Ioo_subset_Icc_self hθ) (by simp [hz]))
     (ofReal_re_interpExponent_mul_inv_of_re_eq_one hs₀ hs₁ hθ hs hz).symm hu
 
 private theorem map_powSign_one (u : SimpleFunc γ ℂ) : u.map (powSign 1) = u :=
@@ -318,8 +317,8 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
       (Finset.sum_le_sum fun d _ => ?_))
     rw [norm_mul, norm_mul]
     gcongr
-    · exact norm_powSign_expo_le hθ hz c
-    · exact norm_powSign_expo_le hθ hz d
+    · exact norm_powSign_expo_le (Set.Ioo_subset_Icc_self hθ) hz c
+    · exact norm_powSign_expo_le (Set.Ioo_subset_Icc_self hθ) hz d
   -- On the two boundary lines, the endpoint bounds control `Φ`.
   have hb₀ : ∀ z ∈ re ⁻¹' {(0 : ℝ)}, ‖Φ z‖ ≤ (M₀ : ℝ) := by
     intro z hz

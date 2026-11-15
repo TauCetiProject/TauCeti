@@ -20,15 +20,20 @@ reciprocal exponents `a₀ = 1 / p₀`, `a₁ = 1 / p₁` and `a = (1 - θ) a₀
 
 `P(z) = 1 + (z - θ) (a₁ - a₀) / a`,
 
-`TauCeti.interpExponent a₀ a₁ θ z`, whose real part `Re P(z) = ((1 - Re z) a₀ + Re z a₁) / a`
-interpolates the reciprocal exponents (`TauCeti.re_interpExponent_mul`). If `a = 0`, that is
-`a₀ = a₁ = 0`, the slope `(a₁ - a₀) / a` is `0` and `P` is constantly `1`.
+`TauCeti.interpExponent a₀ a₁ θ z`. Its real part interpolates the reciprocal exponents: if
+`a ≠ 0` then `Re P(z) · a = (1 - Re z) a₀ + Re z a₁`, that is
+`Re P(z) = ((1 - Re z) a₀ + Re z a₁) / a` (`TauCeti.re_interpExponent_mul_of_ne_zero`). If `a = 0`
+the slope `(a₁ - a₀) / a` is `0` by the convention `x / 0 = 0`, and `P` is constantly `1`
+(`TauCeti.interpExponent_of_eq_zero`); for `a₀, a₁ ≥ 0` and `0 < θ < 1` this happens only when
+`a₀ = a₁ = 0`, so the identity `Re P(z) · a = (1 - Re z) a₀ + Re z a₁` still holds
+(`TauCeti.re_interpExponent_mul`).
 
 ## Main declarations
 
 * `TauCeti.interpSlope` and `TauCeti.interpExponent`: the slope `(a₁ - a₀) / a` and the exponent
   `1 + (z - θ) (a₁ - a₀) / a`, an entire function of `z` equal to `1` at `θ`.
-* `TauCeti.re_interpExponent_mul`: `Re P(z) · a = (1 - Re z) a₀ + Re z a₁`.
+* `TauCeti.re_interpExponent_mul_of_ne_zero`, `TauCeti.re_interpExponent_mul`:
+  `Re P(z) · a = (1 - Re z) a₀ + Re z a₁`, for `a ≠ 0` or for `a₀, a₁ ≥ 0` and `0 < θ < 1`.
 * `TauCeti.re_interpExponent_nonneg`, `TauCeti.abs_re_interpExponent_le`: on the closed strip
   `0 ≤ Re z ≤ 1` the real part of `P` is nonnegative and bounded.
 * `TauCeti.ofReal_re_interpExponent_mul_inv`: for an interpolated exponent
@@ -56,11 +61,25 @@ namespace TauCeti
 where `a = (1 - θ) a₀ + θ a₁`. -/
 noncomputable def interpSlope (a₀ a₁ θ : ℝ) : ℝ := (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁)
 
+theorem interpSlope_def (a₀ a₁ θ : ℝ) :
+    interpSlope a₀ a₁ θ = (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁) :=
+  (rfl)
+
+/-- Equal reciprocal exponents give the slope `0`. -/
+@[simp]
+theorem interpSlope_same (a θ : ℝ) : interpSlope a a θ = 0 := by
+  simp [interpSlope_def]
+
+theorem interpSlope_of_eq_zero {a₀ a₁ θ : ℝ} (ha : (1 - θ) * a₀ + θ * a₁ = 0) :
+    interpSlope a₀ a₁ θ = 0 := by
+  rw [interpSlope_def, ha, div_zero]
+
 /-- The exponent `1 + (z - θ) (a₁ - a₀) / a` of the analytic families of complex interpolation,
-where `a = (1 - θ) a₀ + θ a₁`. It equals `1` at `z = θ` (`TauCeti.interpExponent_self`), and its
-real part is `a₀ / a` on the line `Re z = 0` and `a₁ / a` on the line `Re z = 1`
-(`TauCeti.re_interpExponent_mul`). If `a = 0` then `a₀ = a₁ = 0` for `0 < θ < 1`, and the exponent
-is constantly `1`. -/
+where `a = (1 - θ) a₀ + θ a₁`. It equals `1` at `z = θ` (`TauCeti.interpExponent_self`). If
+`a ≠ 0`, its real part is `a₀ / a` on the line `Re z = 0` and `a₁ / a` on the line `Re z = 1`
+(`TauCeti.re_interpExponent_mul_of_ne_zero`). If `a = 0` the exponent is constantly `1`
+(`TauCeti.interpExponent_of_eq_zero`); for `a₀, a₁ ≥ 0` and `0 < θ < 1` this happens only when
+`a₀ = a₁ = 0`. -/
 noncomputable def interpExponent (a₀ a₁ θ : ℝ) (z : ℂ) : ℂ :=
   1 + (z - θ) * (interpSlope a₀ a₁ θ : ℂ)
 
@@ -76,6 +95,10 @@ theorem differentiable_interpExponent (a₀ a₁ θ : ℝ) :
   rw [h]
   fun_prop
 
+@[fun_prop]
+theorem continuous_interpExponent (a₀ a₁ θ : ℝ) : Continuous (interpExponent a₀ a₁ θ) :=
+  (differentiable_interpExponent a₀ a₁ θ).continuous
+
 theorem re_interpExponent (a₀ a₁ θ : ℝ) (z : ℂ) :
     (interpExponent a₀ a₁ θ z).re = 1 + (z.re - θ) * interpSlope a₀ a₁ θ := by
   simp [interpExponent_def]
@@ -84,42 +107,52 @@ theorem re_interpExponent (a₀ a₁ θ : ℝ) (z : ℂ) :
 theorem interpExponent_self (a₀ a₁ θ : ℝ) : interpExponent a₀ a₁ θ θ = 1 := by
   simp [interpExponent_def]
 
-/-- The real part of the exponent interpolates the reciprocal exponents:
+/-- For equal reciprocal exponents the exponent is constantly `1`. -/
+@[simp]
+theorem interpExponent_same (a θ : ℝ) (z : ℂ) : interpExponent a a θ z = 1 := by
+  simp [interpExponent_def]
+
+/-- If `(1 - θ) a₀ + θ a₁ = 0` the exponent is constantly `1`. -/
+theorem interpExponent_of_eq_zero {a₀ a₁ θ : ℝ} (ha : (1 - θ) * a₀ + θ * a₁ = 0) (z : ℂ) :
+    interpExponent a₀ a₁ θ z = 1 := by
+  simp [interpExponent_def, interpSlope_of_eq_zero ha]
+
+/-- If `a = (1 - θ) a₀ + θ a₁ ≠ 0`, the real part of the exponent interpolates the reciprocal
+exponents: `Re P(z) · a = (1 - Re z) a₀ + Re z a₁`. -/
+theorem re_interpExponent_mul_of_ne_zero {a₀ a₁ θ : ℝ} (ha : (1 - θ) * a₀ + θ * a₁ ≠ 0)
+    (z : ℂ) :
+    (interpExponent a₀ a₁ θ z).re * ((1 - θ) * a₀ + θ * a₁) = (1 - z.re) * a₀ + z.re * a₁ := by
+  rw [re_interpExponent, interpSlope_def, add_mul, one_mul, mul_assoc, div_mul_cancel₀ _ ha]
+  ring
+
+/-- The real part of the exponent interpolates nonnegative reciprocal exponents:
 `Re P(z) · ((1 - θ) a₀ + θ a₁) = (1 - Re z) a₀ + Re z a₁`. -/
 theorem re_interpExponent_mul {a₀ a₁ θ : ℝ} (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
     (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) (z : ℂ) :
     (interpExponent a₀ a₁ θ z).re * ((1 - θ) * a₀ + θ * a₁) = (1 - z.re) * a₀ + z.re * a₁ := by
   obtain ⟨hθ0, hθ1⟩ := hθ
-  rw [re_interpExponent, interpSlope]
   rcases eq_or_ne ((1 - θ) * a₀ + θ * a₁) 0 with ha | ha
   · obtain ⟨rfl, rfl⟩ : a₀ = 0 ∧ a₁ = 0 := by
       constructor <;> nlinarith [mul_nonneg (sub_pos.2 hθ1).le ha₀, mul_nonneg hθ0.le ha₁]
     simp
-  · rw [add_mul, one_mul, mul_assoc, div_mul_cancel₀ _ ha]
-    ring
+  · exact re_interpExponent_mul_of_ne_zero ha z
 
 /-- On the closed strip `0 ≤ Re z ≤ 1` the real part of the exponent is nonnegative. -/
 theorem re_interpExponent_nonneg {a₀ a₁ θ : ℝ} (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     {z : ℂ} (hz : z.re ∈ Set.Icc (0 : ℝ) 1) : 0 ≤ (interpExponent a₀ a₁ θ z).re := by
-  have h := re_interpExponent_mul ha₀ ha₁ hθ z
-  obtain ⟨hθ0, hθ1⟩ := hθ
-  have ha : 0 ≤ (1 - θ) * a₀ + θ * a₁ := by
-    have := sub_pos.2 hθ1
-    positivity
-  rcases ha.eq_or_lt with ha | ha
-  · obtain ⟨rfl, rfl⟩ : a₀ = 0 ∧ a₁ = 0 := by
-      constructor <;> nlinarith [mul_nonneg (sub_pos.2 hθ1).le ha₀, mul_nonneg hθ0.le ha₁]
-    simp [re_interpExponent, interpSlope]
-  · have : 0 ≤ (1 - z.re) * a₀ + z.re * a₁ := by
-      have := hz.1
-      have := sub_nonneg.2 hz.2
-      positivity
-    nlinarith
+  rcases eq_or_ne ((1 - θ) * a₀ + θ * a₁) 0 with ha | ha
+  · simp [interpExponent_of_eq_zero ha]
+  · have hpos : 0 < (1 - θ) * a₀ + θ * a₁ := lt_of_le_of_ne
+      (add_nonneg (mul_nonneg (sub_nonneg.2 hθ.2) ha₀) (mul_nonneg hθ.1 ha₁)) ha.symm
+    have h : 0 ≤ (1 - z.re) * a₀ + z.re * a₁ :=
+      add_nonneg (mul_nonneg (sub_nonneg.2 hz.2) ha₀) (mul_nonneg hz.1 ha₁)
+    rw [← re_interpExponent_mul_of_ne_zero ha z] at h
+    exact nonneg_of_mul_nonneg_left h hpos
 
 /-- On the closed strip `0 ≤ Re z ≤ 1` the real part of the exponent is bounded independently
 of `z`. -/
-theorem abs_re_interpExponent_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) {z : ℂ}
+theorem abs_re_interpExponent_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {z : ℂ}
     (hz : z.re ∈ Set.Icc (0 : ℝ) 1) :
     |(interpExponent a₀ a₁ θ z).re| ≤ 1 + |interpSlope a₀ a₁ θ| := by
   rw [re_interpExponent]
@@ -146,7 +179,7 @@ theorem ofReal_re_interpExponent_mul_inv (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 
   have hre := re_interpExponent_mul (ENNReal.toReal_nonneg (a := s₀⁻¹))
     (ENNReal.toReal_nonneg (a := s₁⁻¹)) hθ z
   have hnn := re_interpExponent_nonneg (ENNReal.toReal_nonneg (a := s₀⁻¹))
-    (ENNReal.toReal_nonneg (a := s₁⁻¹)) hθ hz
+    (ENNReal.toReal_nonneg (a := s₁⁻¹)) (Set.Ioo_subset_Icc_self hθ) hz
   have h0 : (0 : ℝ) ≤ (s₀⁻¹).toReal := ENNReal.toReal_nonneg
   have h1 : (0 : ℝ) ≤ (s₁⁻¹).toReal := ENNReal.toReal_nonneg
   rw [inv_eq_ofReal_of_inv_eq hs₀ hs₁ (Set.Ioo_subset_Icc_self hθ) hs, ← ENNReal.ofReal_mul hnn,

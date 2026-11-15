@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DiffContOnCl
+public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Maps to a finite product that are differentiable on a domain and continuous on its closure
 
 A map `Φ : E → Π i, F' i` is differentiable on `s` and continuous on `closure s` exactly when each
-coordinate is (`TauCeti.diffContOnCl_pi`). The assembly lemma
+coordinate is (`TauCeti.diffContOnCl_pi`), and a finite sum of maps differentiable on `s` and
+continuous on `closure s` is again such a map (`DiffContOnCl.fun_sum`). The assembly lemma
 `TauCeti.forall_exists_diffContOnCl_iff` uses this to combine coordinatewise solutions of a
 boundary problem, given as restrictions of such maps to a set `t` and subject to a pointwise
 condition on a set `b`, into one solution with values in `ι → F`.
@@ -26,6 +28,13 @@ open Set
 
 variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A finite sum of maps differentiable on `s` and continuous on `closure s` is differentiable on
+`s` and continuous on `closure s`. -/
+theorem _root_.DiffContOnCl.fun_sum {ι : Type*} {f : ι → E → F} {s : Set E} {u : Finset ι}
+    (h : ∀ i ∈ u, DiffContOnCl 𝕜 (f i) s) : DiffContOnCl 𝕜 (fun x => ∑ i ∈ u, f i x) s :=
+  ⟨DifferentiableOn.fun_sum fun i hi => (h i hi).differentiableOn,
+    continuousOn_finsetSum u fun i hi => (h i hi).continuousOn⟩
 
 /-- A map to a finite product is differentiable on `s` and continuous on `closure s` exactly when
 each coordinate is. -/

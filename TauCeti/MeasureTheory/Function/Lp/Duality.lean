@@ -67,6 +67,8 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_norm_integral_inner_le`: the same bound
+  tested only against strongly measurable such functions of `L^{q'}` norm at most one.
 
 ## References
 
@@ -360,6 +362,60 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     (fun N => (hh'.indicator (measurableSet_spanningSets_inter_norm_le hh' N)).aestronglyMeasurable)
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
+
+/-- **Norming by normalized test functions.** On a σ-finite measure space, let `q < ∞` and `q'` be
+Hölder conjugate. If an almost everywhere strongly measurable `h` with values in an inner product
+space satisfies `‖∫ ⟪g, h⟫‖ ≤ C` for every strongly measurable bounded `g` vanishing off a set of
+finite measure with `‖g‖_{q'} ≤ 1`, then `‖h‖_q ≤ C`. -/
+theorem AEStronglyMeasurable.eLpNorm_le_of_forall_norm_integral_inner_le {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [SigmaFinite μ] {q q' : ℝ≥0∞}
+    [q.HolderConjugate q'] (hq : q ≠ ∞) {h : α → H} (hh : AEStronglyMeasurable h μ) {C : ℝ}
+    (hC : ∀ (g : α → H) (s : Set α), StronglyMeasurable g → μ s ≠ ∞ →
+      (∀ x, x ∉ s → g x = 0) → MemLp g ∞ μ → eLpNorm g q' μ ≤ 1 →
+        ‖∫ x, ⟪g x, h x⟫_𝕜 ∂μ‖ ≤ C) :
+    eLpNorm h q μ ≤ ENNReal.ofReal C := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans
+    (hC 0 ∅ stronglyMeasurable_zero (by simp) (fun _ _ => rfl) MemLp.zero (by simp))
+  refine hh.eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜) (q' := q') hq
+    fun g s hs hgs hgtop => ?_
+  -- a strongly measurable version `g'` of `g`, vanishing off a measurable set of finite measure
+  set s' := toMeasurable μ s
+  set g' : α → H := s'.indicator (hgtop.aestronglyMeasurable.mk g) with hg'_def
+  have hg' : StronglyMeasurable g' :=
+    hgtop.aestronglyMeasurable.stronglyMeasurable_mk.indicator (measurableSet_toMeasurable μ s)
+  have hgg' : g =ᵐ[μ] g' := by
+    filter_upwards [hgtop.aestronglyMeasurable.ae_eq_mk] with x hx
+    by_cases hxs : x ∈ s'
+    · rw [hg'_def, Set.indicator_of_mem hxs, hx]
+    · rw [hg'_def, Set.indicator_of_notMem hxs, hgs x fun h => hxs (subset_toMeasurable μ s h)]
+  have hs' : μ s' ≠ ∞ := by rwa [measure_toMeasurable]
+  have hg's : ∀ x ∉ s', g' x = 0 := fun x hx => Set.indicator_of_notMem hx _
+  have hg'top : MemLp g' ∞ μ := hgtop.ae_eq hgg'
+  have hconj : ∫ x, ⟪h x, g x⟫_𝕜 ∂μ = conj (∫ x, ⟪g' x, h x⟫_𝕜 ∂μ) := by
+    rw [← integral_conj]
+    exact integral_congr_ae (hgg'.mono fun x hx => by simp only [hx, inner_conj_symm])
+  rw [hconj, ← ofReal_norm, RCLike.norm_conj, eLpNorm_congr_ae hgg']
+  have hc : eLpNorm g' q' μ ≠ ∞ :=
+    (hg'top.mono_exponent_of_measure_support_ne_top hg's hs' le_top).eLpNorm_ne_top
+  rcases eq_or_ne (eLpNorm g' q' μ) 0 with hc0 | hc0
+  · have hg'0 : g' =ᵐ[μ] 0 := (eLpNorm_eq_zero_iff (ENNReal.HolderConjugate.ne_zero q' q)).1 hc0
+    rw [integral_eq_zero_of_ae (hg'0.mono fun x hx => by simp [hx])]
+    simp
+  -- test against the normalized function `g' / ‖g'‖_{q'}`
+  set k : ℝ := (eLpNorm g' q' μ).toReal with hk_def
+  have hk : 0 < k := ENNReal.toReal_pos hc0 hc
+  have hn : eLpNorm (((k⁻¹ : ℝ) : 𝕜) • g') q' μ ≤ 1 := by
+    rw [eLpNorm_const_smul, ← ofReal_norm, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hk),
+      ENNReal.ofReal_inv_of_pos hk, hk_def, ENNReal.ofReal_toReal hc]
+    exact ENNReal.inv_mul_le_one _
+  have hb := hC _ s' (hg'.const_smul _) hs' (fun x hx => by simp [hg's x hx])
+    (hg'top.const_smul _) hn
+  simp_rw [Pi.smul_apply, inner_smul_left, integral_const_mul, RCLike.conj_ofReal, norm_mul,
+    RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hk)] at hb
+  rw [← ENNReal.ofReal_toReal hc, ← hk_def, ← ENNReal.ofReal_mul hC0]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [inv_mul_le_iff₀ hk] at hb
+  linarith
 
 end MeasureTheory
 

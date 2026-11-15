@@ -8,7 +8,10 @@ module
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
+import TauCeti.Analysis.Calculus.DiffContOnCl
 import TauCeti.Analysis.Complex.InterpolatedExponent
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
@@ -19,13 +22,18 @@ For `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and the interpolated exponent
 `1 / p = (1 - θ) / p₀ + θ / p₁`, the complex interpolation space of the Lebesgue couple
 `(L^{p₀}, L^{p₁})` (`TauCeti.CompatibleCouple.lebesgue`) is `Lᵖ`, with equal norms:
 
-`[L^{p₀}, L^{p₁}]_θ = Lᵖ`.
+`[L^{p₀}, L^{p₁}]_θ = Lᵖ`,
 
-Both spaces sit in `L¹ + L^∞`, and the identification matches the elements with the same class
-there (`TauCeti.CompatibleCouple.ComplexMethodSpace.lebesgueEquiv`). Transported along the Bessel
-potential isomorphisms `H^{s,q} ≃ L^q` by the retract theorems of the complex method, it gives the
-interpolation identity `[H^{s,p₀}, H^{s,p₁}]_θ = H^{s,p}` for Bessel-potential spaces of a common
-order `s`.
+for functions on a σ-finite measure space with values in a complex Hilbert space. Both spaces sit
+in `L¹ + L^∞`, and the identification matches the elements with the same class there
+(`TauCeti.CompatibleCouple.ComplexMethodSpace.lebesgueEquiv`); it sends a decomposition
+`f₀ + f₁ ∈ L^{p₀} + L^{p₁}` to the function `f₀ + f₁`
+(`TauCeti.CompatibleCouple.ComplexMethodSpace.coeFn_lebesgueEquiv_ae_eq_add_iff`) and an element
+of the intersection to its function
+(`TauCeti.CompatibleCouple.ComplexMethodSpace.coeFn_lebesgueEquiv_ofInter`). Transported along
+the Bessel potential isomorphisms `H^{s,q} ≃ L^q` by the retract theorems of the complex method,
+it gives the interpolation identity `[H^{s,p₀}, H^{s,p₁}]_θ = H^{s,p}` for Bessel-potential spaces
+of a common order `s`.
 
 ## The two inclusions
 
@@ -46,7 +54,7 @@ order `s`.
   bounds `|∫ ⟪g, f⟫|` by the norm of the traces of `F` times `‖g‖_{p'}`. This pairing is a finite
   sum of holomorphic functions when `‖g‖` is simple. Approximating `‖g‖` from below by simple
   functions extends the bound to bounded `g` of finite-measure support, and duality
-  (`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`) bounds
+  (`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_norm_integral_inner_le`) bounds
   `‖f‖_p`.
 
 ## References
@@ -167,14 +175,7 @@ private theorem eLpNorm_famLp_le {r p s : ℝ≥0∞} {f : SimpleFunc α E}
   exact eLpNorm_le_eLpNorm_rpow hw ((Lp.aestronglyMeasurable _).congr (coeFn_famLp hf w)) hs
     (ae_of_all _ fun x => norm_powSmul_le w (f x))
 
-/-! ### Elements of the Lebesgue couple -/
-
 variable {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] {θ : ℝ}
-
-private theorem lebesgue_fstToSum_eq_sndToSum_iff {f₀ : Lp E p₀ μ} {f₁ : Lp E p₁ μ} :
-    (lebesgue ℂ E μ p₀ p₁).fstToSum f₀ = (lebesgue ℂ E μ p₀ p₁).sndToSum f₁ ↔ ⇑f₀ =ᵐ[μ] ⇑f₁ := by
-  rw [← (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, sumSpaceEmbed_fstToSum,
-    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.ofLp_eq_ofLp_iff]
 
 /-! ### `Lᵖ` embeds in the complex interpolation space -/
 
@@ -188,11 +189,12 @@ private theorem exists_toSum_eq_fstToSum_of_eLpNorm_le_one (hθ : θ ∈ Ioo 0 1
       ComplexMethodSpace.toSum u = (lebesgue ℂ E μ p₀ p₁).fstToSum (hf₀.toLp f) ∧ ‖u‖ ≤ 1 := by
   have hp₀ : p₀ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne'
   have hp₁ : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
+  have hθ' := Ioo_subset_Icc_self hθ
   set P := interpExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ with hP
   have hPd : Differentiable ℂ P := differentiable_interpExponent _ _ _
   -- on the closed strip the real part of `P` is nonnegative and bounded
   have hPnn {z : ℂ} (hz : z.re ∈ Icc (0 : ℝ) 1) : 0 ≤ (P z).re :=
-    re_interpExponent_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg hθ hz
+    re_interpExponent_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg hθ' hz
   obtain ⟨K, hK⟩ := exists_norm_famLp_le hf₀ (2 + |interpSlope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|)
   -- on the line `Re z = j` the family lies in the unit ball of `L^{p_j}`
   have hbd {r : ℝ≥0∞} [Fact (1 ≤ r)] (hfr : MemLp f r μ) {z : ℂ} (hz : z.re ∈ Icc (0 : ℝ) 1)
@@ -201,7 +203,7 @@ private theorem exists_toSum_eq_fstToSum_of_eLpNorm_le_one (hθ : θ ∈ Ioo 0 1
     exact ENNReal.toReal_le_of_le_ofReal zero_le_one <| by
       simpa using (eLpNorm_famLp_le hfr (hPnn hz) hr).trans (ENNReal.rpow_le_one hf (hPnn hz))
   obtain ⟨u, hu, hnorm⟩ := ComplexMethodSpace.exists_toSum_eq_and_norm_le
-    (C := lebesgue ℂ E μ p₀ p₁) (Ioo_subset_Icc_self hθ)
+    (C := lebesgue ℂ E μ p₀ p₁) hθ'
     (F := fun z => (lebesgue ℂ E μ p₀ p₁).fstToSum (famLp p₀ hf₀ (P z)))
     (G₀ := fun t : ℝ => famLp p₀ hf₀ (P (t * I)))
     (G₁ := fun t : ℝ => famLp p₁ hf₁ (P (1 + t * I)))
@@ -209,7 +211,8 @@ private theorem exists_toSum_eq_fstToSum_of_eLpNorm_le_one (hθ : θ ∈ Ioo 0 1
     (isBounded_iff_forall_norm_le.2 ⟨K, by
       rintro _ ⟨z, hz, rfl⟩
       refine ((lebesgue ℂ E μ p₀ p₁).norm_fstToSum_le _).trans (hK _ ?_)
-      have := abs_re_interpExponent_le (a₀ := (p₀⁻¹).toReal) (a₁ := (p₁⁻¹).toReal) hθ hz
+      have := abs_re_interpExponent_le (a₀ := (p₀⁻¹).toReal) (a₁ := (p₁⁻¹).toReal) hθ'
+        (Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.1 hz)
       exact (abs_sub _ _).trans (by simp only [abs_one]; linarith)⟩)
     ((differentiable_famLp hf₀).continuous.comp (hPd.continuous.comp (by fun_prop)))
     ((differentiable_famLp hf₁).continuous.comp (hPd.continuous.comp (by fun_prop)))
@@ -220,7 +223,7 @@ private theorem exists_toSum_eq_fstToSum_of_eLpNorm_le_one (hθ : θ ∈ Ioo 0 1
       (by simp)).symm)
     (fun t => hbd hf₁ (by simp) (ofReal_re_interpExponent_mul_inv_of_re_eq_one hp₀ hp₁ hθ hp
       (by simp)).symm)
-  refine ⟨u, ?_, hnorm⟩
+  refine ⟨u, ?_, by simpa using hnorm⟩
   rw [hu, hP, interpExponent_self, famLp_one]
 
 /-- Every simple function `f` of `Lᵖ`, `p < ∞`, lies in `[L^{p₀}, L^{p₁}]_θ`, with norm at most
@@ -232,7 +235,7 @@ private theorem exists_toSum_simpleFunc [Fact (1 ≤ p)] (hθ : θ ∈ Ioo 0 1)
       (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) =
         L1AddLinfty.ofLp (hf.toLp f) ∧ ‖u‖ ≤ ‖hf.toLp f‖ := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  -- the fibres of nonzero values have finite measure, so every multiple of `f` is in every `Lʳ`
+  -- the fibres of nonzero values have finite measure, so `f` is in every `Lʳ`
   have hfin := SimpleFunc.measure_preimage_lt_top_of_memLp hp0 hp_top f hf
   rcases (norm_nonneg (hf.toLp f)).eq_or_lt with hN0 | hNpos
   · refine ⟨0, ?_, by rw [norm_zero, ← hN0]⟩
@@ -241,21 +244,19 @@ private theorem exists_toSum_simpleFunc [Fact (1 ≤ p)] (hθ : θ ∈ Ioo 0 1)
   set N := ‖hf.toLp f‖ with hN
   have hNc : (N : ℂ) ≠ 0 := ofReal_ne_zero.2 hNpos.ne'
   set g : SimpleFunc α E := (N⁻¹ : ℂ) • f with hg
-  have hgfin : ∀ y, y ≠ 0 → μ (g ⁻¹' {y}) < ∞ := fun y hy => by
-    refine (measure_mono fun x hx => ?_).trans_lt (hfin ((N : ℂ) • y) (smul_ne_zero
-      (ofReal_ne_zero.2 hNpos.ne') hy))
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, hg, FunLike.coe_smul,
-      Pi.smul_apply] at hx ⊢
-    rw [← hx, smul_smul, mul_inv_cancel₀ hNc, one_smul]
-  have hg₀ := SimpleFunc.memLp_of_finite_measure_preimage p₀ hgfin
+  have hg₀ : MemLp g p₀ μ := by
+    rw [hg, FunLike.coe_smul]
+    exact (SimpleFunc.memLp_of_finite_measure_preimage p₀ hfin).const_smul _
+  have hg₁ : MemLp g p₁ μ := by
+    rw [hg, FunLike.coe_smul]
+    exact (SimpleFunc.memLp_of_finite_measure_preimage p₁ hfin).const_smul _
   have hgnorm : eLpNorm g p μ ≤ 1 := by
     rw [hg, FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_inv,
       norm_real, Real.norm_of_nonneg hNpos.le, hN, Lp.norm_toLp,
       ENNReal.ofReal_inv_of_pos (by simpa [hN, Lp.norm_toLp] using hNpos),
       ENNReal.ofReal_toReal (hf.eLpNorm_lt_top.ne)]
     exact ENNReal.inv_mul_le_one _
-  obtain ⟨u, hu, hun⟩ := exists_toSum_eq_fstToSum_of_eLpNorm_le_one hθ hp hg₀
-    (SimpleFunc.memLp_of_finite_measure_preimage p₁ hgfin) hgnorm
+  obtain ⟨u, hu, hun⟩ := exists_toSum_eq_fstToSum_of_eLpNorm_le_one hθ hp hg₀ hg₁ hgnorm
   refine ⟨(N : ℂ) • u, ?_, ?_⟩
   · rw [map_smul, map_smul, hu, sumSpaceEmbed_fstToSum, lebesgue_embed₀, ← map_smul,
       L1AddLinfty.ofLp_eq_ofLp_iff]
@@ -371,45 +372,23 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
 /-! ### Pairing with bounded functions of finite-measure support -/
 
-/-- Hölder's inequality makes `⟪ψ, f⟫` integrable for `ψ ∈ L^{r'}` and `f ∈ Lʳ`. -/
-private theorem integrable_inner_of_memLp {r r' : ℝ≥0∞} [r'.HolderConjugate r] {ψ f : α → E}
-    (hψ : MemLp ψ r' μ) (hf : MemLp f r μ) : Integrable (fun x => ⟪ψ x, f x⟫_ℂ) μ :=
-  (hψ.norm.integrable_mul hf.norm).mono (hψ.aestronglyMeasurable.inner hf.aestronglyMeasurable)
-    (ae_of_all _ fun x => by simpa using norm_inner_le_norm (ψ x) (f x))
-
-omit [InnerProductSpace ℂ E] in
-/-- A function in `L¹ ∩ L^∞` is in the dual space of every `Lʳ`. -/
-private theorem memLp_conjExponent {r : ℝ≥0∞} [Fact (1 ≤ r)] {ψ : α → E} (h₁ : MemLp ψ 1 μ)
-    (htop : MemLp ψ ∞ μ) : MemLp ψ r.conjExponent μ :=
-  h₁.of_le_of_le htop one_ne_zero (ENNReal.HolderConjugate.one_le r.conjExponent r) le_top
-
-/-- The pairing `f ↦ ∫ ⟪ψ, f⟫` of `Lʳ` with a function `ψ ∈ L¹ ∩ L^∞`. -/
+/-- The pairing `f ↦ ∫ ⟪ψ, f⟫` of `Lʳ` with a function `ψ ∈ L¹ ∩ L^∞`: the Hölder pairing with
+`x ↦ ⟪ψ x, ·⟫`, which lies in the dual exponent space `L^{r'}`. -/
 private def innerCLM (r : ℝ≥0∞) [Fact (1 ≤ r)] {ψ : α → E} (h₁ : MemLp ψ 1 μ)
     (htop : MemLp ψ ∞ μ) : Lp E r μ →L[ℂ] ℂ :=
-  LinearMap.mkContinuous
-    { toFun f := ∫ x, ⟪ψ x, f x⟫_ℂ ∂μ
-      map_add' f g := by
-        rw [← integral_add
-          (integrable_inner_of_memLp (memLp_conjExponent (r := r) h₁ htop) (Lp.memLp f))
-          (integrable_inner_of_memLp (memLp_conjExponent (r := r) h₁ htop) (Lp.memLp g))]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_add f g] with x hx
-        rw [hx, Pi.add_apply, inner_add_right]
-      map_smul' c f := by
-        rw [RingHom.id_apply, smul_eq_mul, ← integral_const_mul]
-        refine integral_congr_ae ?_
-        filter_upwards [Lp.coeFn_smul c f] with x hx
-        rw [hx, Pi.smul_apply, inner_smul_right] }
-    (eLpNorm ψ r.conjExponent μ).toReal fun f => by
-      simp only [LinearMap.coe_mk, AddHom.coe_mk]
-      rw [Lp.norm_def, ← ENNReal.toReal_mul, ← toReal_eNorm]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top
-        (memLp_conjExponent (r := r) h₁ htop).eLpNorm_ne_top (Lp.eLpNorm_ne_top f))
-        enorm_integral_inner_le
+  haveI : Fact (1 ≤ r.conjExponent) := ⟨ENNReal.HolderConjugate.one_le r.conjExponent r⟩
+  (ContinuousLinearMap.id ℂ (E →L[ℂ] ℂ)).lpPairing μ r.conjExponent r
+    (((innerSL ℂ).comp_memLp' (h₁.of_le_of_le htop one_ne_zero
+      (ENNReal.HolderConjugate.one_le r.conjExponent r) le_top)).toLp _)
 
 private theorem innerCLM_apply (r : ℝ≥0∞) [Fact (1 ≤ r)] {ψ : α → E} (h₁ : MemLp ψ 1 μ)
-    (htop : MemLp ψ ∞ μ) (f : Lp E r μ) : innerCLM r h₁ htop f = ∫ x, ⟪ψ x, f x⟫_ℂ ∂μ :=
-  rfl
+    (htop : MemLp ψ ∞ μ) (f : Lp E r μ) : innerCLM r h₁ htop f = ∫ x, ⟪ψ x, f x⟫_ℂ ∂μ := by
+  have hψ : MemLp (innerSL ℂ ∘ ψ) r.conjExponent μ := (innerSL ℂ).comp_memLp'
+    (h₁.of_le_of_le htop one_ne_zero (ENNReal.HolderConjugate.one_le r.conjExponent r) le_top)
+  rw [innerCLM, ContinuousLinearMap.lpPairing_eq_integral]
+  refine integral_congr_ae ?_
+  filter_upwards [hψ.coeFn_toLp] with x hx
+  simp [hx]
 
 /-- The pairing `f₀ + f₁ ↦ ∫ ⟪ψ, f₀ + f₁⟫` of `L^{p₀} + L^{p₁}` with `ψ ∈ L¹ ∩ L^∞`. -/
 private def sumInnerCLM {ψ : α → E} (h₁ : MemLp ψ 1 μ) (htop : MemLp ψ ∞ μ) :
@@ -423,20 +402,23 @@ private def sumInnerCLM {ψ : α → E} (h₁ : MemLp ψ 1 μ) (htop : MemLp ψ 
 private theorem sumInnerCLM_fstToSum {ψ : α → E} (h₁ : MemLp ψ 1 μ) (htop : MemLp ψ ∞ μ)
     (f : Lp E p₀ μ) :
     sumInnerCLM (p₁ := p₁) h₁ htop ((lebesgue ℂ E μ p₀ p₁).fstToSum f) = ∫ x, ⟪ψ x, f x⟫_ℂ ∂μ :=
-  sumLift_fstToSum _ _ _ _ f
+  (sumLift_fstToSum _ _ _ _ f).trans (innerCLM_apply p₀ h₁ htop f)
 
 private theorem sumInnerCLM_sndToSum {ψ : α → E} (h₁ : MemLp ψ 1 μ) (htop : MemLp ψ ∞ μ)
     (f : Lp E p₁ μ) :
     sumInnerCLM (p₀ := p₀) h₁ htop ((lebesgue ℂ E μ p₀ p₁).sndToSum f) = ∫ x, ⟪ψ x, f x⟫_ℂ ∂μ :=
-  sumLift_sndToSum _ _ _ _ f
+  (sumLift_sndToSum _ _ _ _ f).trans (innerCLM_apply p₁ h₁ htop f)
 
 private theorem sumInnerCLM_fstToSum_add_sndToSum {ψ : α → E} (h₁ : MemLp ψ 1 μ)
     (htop : MemLp ψ ∞ μ) (f₀ : Lp E p₀ μ) (f₁ : Lp E p₁ μ) :
     sumInnerCLM h₁ htop ((lebesgue ℂ E μ p₀ p₁).fstToSum f₀ + (lebesgue ℂ E μ p₀ p₁).sndToSum f₁) =
       ∫ x, ⟪ψ x, f₀ x + f₁ x⟫_ℂ ∂μ := by
+  -- `ψ ∈ L¹ ∩ L^∞` lies in the dual exponent spaces, so Hölder's inequality applies
+  have hint (t : ℝ≥0∞) [Fact (1 ≤ t)] (f : Lp E t μ) : Integrable (fun x => ⟪ψ x, f x⟫_ℂ) μ :=
+    ((innerSL ℂ).comp_memLp' (h₁.of_le_of_le htop one_ne_zero
+      (ENNReal.HolderConjugate.one_le t.conjExponent t) le_top)).integrable_apply (Lp.memLp f)
   rw [map_add, sumInnerCLM_fstToSum, sumInnerCLM_sndToSum,
-    ← integral_add (integrable_inner_of_memLp (memLp_conjExponent (r := p₀) h₁ htop) (Lp.memLp f₀))
-      (integrable_inner_of_memLp (memLp_conjExponent (r := p₁) h₁ htop) (Lp.memLp f₁))]
+    ← integral_add (hint p₀ f₀) (hint p₁ f₁)]
   simp_rw [inner_add_right]
 
 /-- Finite combinations of pairings are pairings with the conjugate combination. -/
@@ -456,18 +438,12 @@ function `r`. -/
 private def levelPiece (g : α → E) (r : SimpleFunc α ℝ) (ρ : ℝ) : α → E :=
   (r ⁻¹' {ρ}).indicator fun x => ((‖g x‖⁻¹ : ℝ) : ℂ) • g x
 
-private theorem norm_inv_norm_smul_le (v : E) : ‖((‖v‖⁻¹ : ℝ) : ℂ) • v‖ ≤ 1 := by
-  rw [norm_smul, norm_real, Real.norm_eq_abs, abs_inv, abs_norm]
-  rcases eq_or_ne ‖v‖ 0 with h | h
-  · simp [h]
-  · rw [inv_mul_cancel₀ h]
-
 private theorem norm_levelPiece_le (g : α → E) (r : SimpleFunc α ℝ) (ρ : ℝ) (x : α) :
     ‖levelPiece g r ρ x‖ ≤ 1 := by
   unfold levelPiece
   by_cases hx : x ∈ r ⁻¹' {ρ}
-  · rw [Set.indicator_of_mem hx]
-    exact norm_inv_norm_smul_le (g x)
+  · rw [Set.indicator_of_mem hx, Complex.coe_smul, ← one_div]
+    exact norm_div_norm_smul_le (g x) zero_le_one
   · rw [Set.indicator_of_notMem hx, norm_zero]
     exact zero_le_one
 
@@ -512,6 +488,21 @@ private theorem norm_levelCoeff_le (P : ℂ → ℂ) (z : ℂ) (ρ : ℝ) {B : �
       _ ≤ |(P z).re| * |Real.log ρ| := (le_abs_self _).trans (abs_mul _ _).le
       _ ≤ B * |Real.log ρ| := by gcongr
 
+/-- A finite combination `z ↦ ∑ ρ, ρ ^ P(z) L_ρ (F z)` of continuous linear images of a function
+`F` bounded on the closed strip is bounded there, as long as `Re P` is. -/
+private theorem bddAbove_norm_sum_levelCoeff_mul {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] {P : ℂ → ℂ} {B : ℝ} (hP : ∀ z ∈ verticalClosedStrip 0 1, |(P z).re| ≤ B)
+    (S : Finset ℝ) (L : ℝ → V →L[ℂ] ℂ) {F : ℂ → V} {M : ℝ}
+    (hF : ∀ z ∈ verticalClosedStrip 0 1, ‖F z‖ ≤ M) :
+    BddAbove ((norm ∘ fun z => ∑ ρ ∈ S, levelCoeff P z ρ * L ρ (F z)) ''
+      verticalClosedStrip 0 1) := by
+  refine ⟨∑ ρ ∈ S, Real.exp (B * |Real.log ρ|) * (‖L ρ‖ * M), ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ρ _ => ?_)
+  rw [norm_mul]
+  exact mul_le_mul (norm_levelCoeff_le P z ρ (hP z hz)) ((ContinuousLinearMap.le_opNorm _ _).trans
+    (mul_le_mul_of_nonneg_left (hF z hz) (norm_nonneg _))) (norm_nonneg _) (Real.exp_pos _).le
+
 /-- The analytic family of test functions `‖r‖ ^ P(z) ‖g‖⁻¹ g`, conjugated so that pairing with
 it is complex-linear in `z`. -/
 private def testFamily (P : ℂ → ℂ) (g : α → E) (r : SimpleFunc α ℝ) (z : ℂ) (x : α) : E :=
@@ -531,8 +522,9 @@ private theorem norm_testFamily_le (P : ℂ → ℂ) (g : α → E) {r : SimpleF
   rcases (hr x).eq_or_lt with h | h
   · rw [testFamily_apply, ← h]
     simpa [levelCoeff] using Real.rpow_nonneg le_rfl _
-  · rw [testFamily_apply, norm_smul, Complex.norm_conj, norm_levelCoeff P z h]
-    exact mul_le_of_le_one_right (Real.rpow_nonneg h.le _) (norm_inv_norm_smul_le (g x))
+  · rw [testFamily_apply, norm_smul, Complex.norm_conj, norm_levelCoeff P z h, Complex.coe_smul,
+      ← one_div]
+    exact mul_le_of_le_one_right (Real.rpow_nonneg h.le _) (norm_div_norm_smul_le (g x) zero_le_one)
 
 private theorem testFamily_of_eq_one {P : ℂ → ℂ} {z : ℂ} (hPz : P z = 1) (g : α → E)
     {r : SimpleFunc α ℝ} (hr : ∀ x, 0 ≤ r x) (x : α) :
@@ -550,8 +542,8 @@ private theorem norm_sum_levelCoeff_mul_integral_le {P : ℂ → ℂ} {z : ℂ} 
     {g : α → E} (hg : StronglyMeasurable g) {s : Set α} (hs : μ s ≠ ∞) (hgs : ∀ x ∉ s, g x = 0)
     {r : SimpleFunc α ℝ} (hr : ∀ x, 0 ≤ r x) (hrn : eLpNorm r q μ ≤ 1) (f : Lp E t μ) :
     ‖∑ ρ ∈ r.range, levelCoeff P z ρ * ∫ x, ⟪levelPiece g r ρ x, f x⟫_ℂ ∂μ‖ ≤ ‖f‖ := by
-  rw [sum_mul_integral_inner _ _ _ fun ρ _ => integrable_inner_of_memLp
-    (memLp_levelPiece hg hs hgs r ρ t.conjExponent) (Lp.memLp f)]
+  rw [sum_mul_integral_inner _ _ _ fun ρ _ => ((innerSL ℂ).comp_memLp'
+    (memLp_levelPiece hg hs hgs r ρ t.conjExponent)).integrable_apply (Lp.memLp f)]
   have hmeas : AEStronglyMeasurable (testFamily P g r z) μ :=
     (Finset.aestronglyMeasurable_fun_sum _ fun ρ _ =>
       (memLp_levelPiece hg hs hgs r ρ ⊤).aestronglyMeasurable.const_smul _)
@@ -577,87 +569,56 @@ private theorem norm_integral_inner_le_of_isStripFunction (hθ : θ ∈ Ioo 0 1)
     {g : α → E} (hg : StronglyMeasurable g) {s : Set α} (hs : μ s ≠ ∞) (hgs : ∀ x ∉ s, g x = 0)
     {r : SimpleFunc α ℝ} (hr : ∀ x, 0 ≤ r x) (hrn : eLpNorm r p.conjExponent μ ≤ 1) :
     ‖∫ x, ⟪((r x * ‖g x‖⁻¹ : ℝ) : ℂ) • g x, f₀ x + f₁ x⟫_ℂ ∂μ‖ ≤ ‖tr‖ := by
+  have hθ' := Ioo_subset_Icc_self hθ
   have hq₀ : p₀.conjExponent ≠ 0 := ENNReal.HolderConjugate.ne_zero _ p₀
   have hq₁ : p₁.conjExponent ≠ 0 := ENNReal.HolderConjugate.ne_zero _ p₁
-  have hq := inv_conjExponent_eq_of_inv_eq (Fact.out : 1 ≤ p₀) (Fact.out : 1 ≤ p₁)
-    (Ioo_subset_Icc_self hθ) hp
+  have hq := inv_conjExponent_eq_of_inv_eq (Fact.out : 1 ≤ p₀) (Fact.out : 1 ≤ p₁) hθ' hp
   set P := interpExponent (p₀.conjExponent⁻¹).toReal (p₁.conjExponent⁻¹).toReal θ
   have hPnn {z : ℂ} (hz : z.re ∈ Icc (0 : ℝ) 1) : 0 ≤ (P z).re :=
-    re_interpExponent_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg hθ hz
+    re_interpExponent_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg hθ' hz
   have h₁ (ρ : ℝ) := memLp_levelPiece hg hs hgs r ρ 1
   have htop (ρ : ℝ) := memLp_levelPiece hg hs hgs r ρ ⊤
   -- the pairing of `F` with the analytic family of test functions
   set Ψ : ℂ → ℂ := fun z => ∑ ρ ∈ r.range, levelCoeff P z ρ *
     sumInnerCLM (p₀ := p₀) (p₁ := p₁) (h₁ ρ) (htop ρ) (F z) with hΨ
-  have hd : DiffContOnCl ℂ Ψ (verticalStrip 0 1) := by
-    have key : ∀ S : Finset ℝ, DiffContOnCl ℂ (fun z => ∑ ρ ∈ S, levelCoeff P z ρ *
-        sumInnerCLM (p₀ := p₀) (p₁ := p₁) (h₁ ρ) (htop ρ) (F z)) (verticalStrip 0 1) := by
-      intro S
-      induction S using Finset.cons_induction with
-      | empty => simpa using diffContOnCl_const (c := (0 : ℂ))
-      | cons a S ha ih =>
-        simp only [Finset.sum_cons]
-        exact (((differentiable_levelCoeff (differentiable_interpExponent _ _ _)
-          a).diffContOnCl).smul ((ContinuousLinearMap.differentiable _).comp_diffContOnCl
-            hF.diffContOnCl)).add ih
-    exact key r.range
-  have hB : BddAbove ((norm ∘ Ψ) '' verticalClosedStrip 0 1) := by
-    refine ⟨∑ ρ ∈ r.range, Real.exp ((1 + |interpSlope (p₀.conjExponent⁻¹).toReal
-      (p₁.conjExponent⁻¹).toReal θ|) * |Real.log ρ|) *
-        (‖sumInnerCLM (p₀ := p₀) (p₁ := p₁) (h₁ ρ) (htop ρ)‖ * ‖tr‖), ?_⟩
-    rintro _ ⟨z, hz, rfl⟩
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ρ _ => ?_)
-    rw [norm_mul]
-    exact mul_le_mul (norm_levelCoeff_le P z ρ (abs_re_interpExponent_le hθ hz))
-      (((ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_left (hF.norm_le hz)
-        (norm_nonneg _)))) (norm_nonneg _) (Real.exp_pos _).le
+  have hd : DiffContOnCl ℂ Ψ (verticalStrip 0 1) := DiffContOnCl.fun_sum fun ρ _ =>
+    ((differentiable_levelCoeff (differentiable_interpExponent _ _ _) ρ).diffContOnCl).smul
+      ((ContinuousLinearMap.differentiable _).comp_diffContOnCl hF.diffContOnCl)
+  have hB : BddAbove ((norm ∘ Ψ) '' verticalClosedStrip 0 1) :=
+    bddAbove_norm_sum_levelCoeff_mul (F := F) (P := P) (fun z hz => abs_re_interpExponent_le hθ'
+      (Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.1 hz)) r.range
+      (fun ρ => sumInnerCLM (μ := μ) (E := E) (p₀ := p₀) (p₁ := p₁) (h₁ ρ) (htop ρ))
+      fun z hz => hF.norm_le hz
   -- on the two boundary lines the pairing is bounded by the norm of the traces
   have ha : ∀ z ∈ re ⁻¹' {(0 : ℝ)}, ‖Ψ z‖ ≤ ‖tr‖ := by
     intro z hz
-    have hz' : z = (z.im : ℂ) * I := by
-      rw [← re_add_im z, show z.re = 0 from hz]
-      simp
-    simp only [hΨ]
-    rw [hz', hF.apply_mul_I]
-    simp only [sumInnerCLM_fstToSum]
-    rw [← hz']
-    refine (norm_sum_levelCoeff_mul_integral_le (hPnn (by simp [show z.re = 0 from hz]))
-      (ofReal_re_interpExponent_mul_inv_of_re_eq_zero hq₀ hq₁ hθ hq hz).symm hg hs hgs hr hrn
-      _).trans ?_
-    exact (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_fst_le tr)
+    rw [mem_preimage, mem_singleton_iff] at hz
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = t * I := ⟨z.im, by simp [Complex.ext_iff, hz]⟩
+    simp only [hΨ, hF.apply_mul_I, sumInnerCLM_fstToSum]
+    exact (norm_sum_levelCoeff_mul_integral_le (hPnn (by simp))
+      (ofReal_re_interpExponent_mul_inv_of_re_eq_zero hq₀ hq₁ hθ hq (by simp)).symm hg hs hgs hr
+      hrn _).trans ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_fst_le tr))
   have hb : ∀ z ∈ re ⁻¹' {(1 : ℝ)}, ‖Ψ z‖ ≤ ‖tr‖ := by
     intro z hz
-    have hz' : z = 1 + (z.im : ℂ) * I := by
-      rw [← re_add_im z, show z.re = 1 from hz]
-      simp
-    simp only [hΨ]
-    rw [hz', hF.apply_one_add_mul_I]
-    simp only [sumInnerCLM_sndToSum]
-    rw [← hz']
-    refine (norm_sum_levelCoeff_mul_integral_le (hPnn (by simp [show z.re = 1 from hz]))
-      (ofReal_re_interpExponent_mul_inv_of_re_eq_one hq₀ hq₁ hθ hq hz).symm hg hs hgs hr hrn
-      _).trans ?_
-    exact (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le tr)
+    rw [mem_preimage, mem_singleton_iff] at hz
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I := ⟨z.im, by simp [Complex.ext_iff, hz]⟩
+    simp only [hΨ, hF.apply_one_add_mul_I, sumInnerCLM_sndToSum]
+    exact (norm_sum_levelCoeff_mul_integral_le (hPnn (by simp))
+      (ofReal_re_interpExponent_mul_inv_of_re_eq_one hq₀ hq₁ hθ hq (by simp)).symm hg hs hgs hr
+      hrn _).trans ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le tr))
   have key := norm_le_interp_of_mem_verticalClosedStrip₀₁' Ψ (z := (θ : ℂ))
     (by simp [hθ.1.le, hθ.2.le]) hd hB ha hb
   rw [← Real.rpow_add' (norm_nonneg _) (by simp), ofReal_re, sub_add_cancel, Real.rpow_one] at key
   -- at `θ` the exponent is one and the test function is `r ‖g‖⁻¹ g`
   refine le_of_eq_of_le ?_ key
   simp only [hΨ, hFθ, sumInnerCLM_fstToSum_add_sndToSum]
-  rw [sum_mul_integral_inner _ _ _ fun ρ _ => ((integrable_inner_of_memLp
-    (memLp_levelPiece hg hs hgs r ρ p₀.conjExponent) (Lp.memLp f₀)).add
-    (integrable_inner_of_memLp (memLp_levelPiece hg hs hgs r ρ p₁.conjExponent)
-      (Lp.memLp f₁))).congr (ae_of_all _ fun x => (inner_add_right _ _ _).symm)]
+  rw [sum_mul_integral_inner _ _ _ fun ρ _ => (((innerSL ℂ).comp_memLp'
+    (memLp_levelPiece hg hs hgs r ρ p₀.conjExponent)).integrable_apply (Lp.memLp f₀)).add
+    (((innerSL ℂ).comp_memLp' (memLp_levelPiece hg hs hgs r ρ p₁.conjExponent)).integrable_apply
+      (Lp.memLp f₁)) |>.congr (ae_of_all _ fun x => (inner_add_right _ _ _).symm)]
   congr 2
   funext x
   rw [← testFamily, testFamily_of_eq_one (interpExponent_self _ _ _) g hr x]
-
-private theorem norm_ofReal_mul_inv_norm_smul_le {ρ : ℝ} (hρ : 0 ≤ ρ) (v : E) (hρv : ρ ≤ ‖v‖) :
-    ‖((ρ * ‖v‖⁻¹ : ℝ) : ℂ) • v‖ ≤ ‖v‖ := by
-  rw [norm_smul, norm_real, Real.norm_of_nonneg (by positivity)]
-  rcases eq_or_ne ‖v‖ 0 with h | h
-  · simp [h]
-  · rwa [mul_assoc, inv_mul_cancel₀ h, mul_one]
 
 /-- `norm_integral_inner_le_of_isStripFunction` for every test function `g` of `L^{p'}` norm at
 most one, by approximating `‖g‖` from below by nonnegative simple functions. -/
@@ -701,8 +662,8 @@ private theorem norm_integral_inner_le_of_isStripFunction_of_eLpNorm_le_one
         hg.norm.measurable.inv)).aestronglyMeasurable.smul hg.aestronglyMeasurable).inner
         ((Lp.aestronglyMeasurable f₀).add (Lp.aestronglyMeasurable f₁))
     · refine ae_of_all _ fun x => (norm_inner_le_norm _ _).trans ?_
-      rw [← mul_add]
-      exact mul_le_mul (norm_ofReal_mul_inv_norm_smul_le (hr0 n x) (g x) (hle n x))
+      rw [← mul_add, Complex.coe_smul, ← div_eq_mul_inv]
+      exact mul_le_mul ((norm_div_norm_smul_le (g x) (hr0 n x)).trans (hle n x))
         (norm_add_le _ _) (norm_nonneg _) (norm_nonneg _)
     · refine Tendsto.inner ?_ tendsto_const_nhds
       rcases eq_or_ne (g x) 0 with h | h
@@ -722,61 +683,16 @@ private theorem exists_ofLp_eq_sumSpaceEmbed_toSum_of_ne_top [SigmaFinite μ] [F
       (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) ∧ ‖f‖ ≤ ‖u‖ := by
   obtain ⟨f₀, f₁, hdec⟩ := (lebesgue ℂ E μ p₀ p₁).exists_fstToSum_add_sndToSum_eq
     (ComplexMethodSpace.toSum u)
-  -- every representative of `u` bounds the pairings with normalized test functions
-  have hpair₁ {g : α → E} (hg : StronglyMeasurable g) {s : Set α} (hs : μ s ≠ ∞)
-      (hgs : ∀ x ∉ s, g x = 0) (hgtop : MemLp g ∞ μ) (hgn : eLpNorm g p.conjExponent μ ≤ 1) :
-      ‖∫ x, ⟪g x, f₀ x + f₁ x⟫_ℂ ∂μ‖ ≤ ‖u‖ := by
-    refine le_of_forall_pos_lt_add fun ε hε => ?_
-    obtain ⟨tr, rfl, htr⟩ := ComplexMethodSpace.norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ hε)
-    refine lt_of_le_of_lt ?_ htr
-    exact norm_integral_inner_le_of_isStripFunction_of_eLpNorm_le_one hθ hp
-      ((lebesgue ℂ E μ p₀ p₁).isStripFunction_stripFunction tr)
-      (by rw [← stripEval_apply, ← ComplexMethodSpace.toSum_mk, hdec]) hg hs hgs hgtop hgn
-  -- hence all bounded test functions of finite-measure support, after normalization
-  have hpair (g : α → E) (s : Set α) (hs : μ s ≠ ∞) (hgs : ∀ x, x ∉ s → g x = 0)
-      (hgtop : MemLp g ∞ μ) :
-      ‖∫ x, ⟪f₀ x + f₁ x, g x⟫_ℂ ∂μ‖ₑ ≤ ENNReal.ofReal ‖u‖ * eLpNorm g p.conjExponent μ := by
-    -- a strongly measurable version `g'` of `g`, vanishing off a measurable set of finite measure
-    set s' := toMeasurable μ s
-    set g' : α → E := s'.indicator (hgtop.aestronglyMeasurable.mk g) with hg'_def
-    have hg' : StronglyMeasurable g' :=
-      hgtop.aestronglyMeasurable.stronglyMeasurable_mk.indicator (measurableSet_toMeasurable μ s)
-    have hgg' : g =ᵐ[μ] g' := by
-      filter_upwards [hgtop.aestronglyMeasurable.ae_eq_mk] with x hx
-      by_cases hxs : x ∈ s'
-      · rw [hg'_def, Set.indicator_of_mem hxs, hx]
-      · rw [hg'_def, Set.indicator_of_notMem hxs, hgs x fun h => hxs (subset_toMeasurable μ s h)]
-    have hs' : μ s' ≠ ∞ := by rwa [measure_toMeasurable]
-    have hg's : ∀ x ∉ s', g' x = 0 := fun x hx => Set.indicator_of_notMem hx _
-    have hg'top : MemLp g' ∞ μ := hgtop.ae_eq hgg'
-    have hconj : ∫ x, ⟪f₀ x + f₁ x, g x⟫_ℂ ∂μ = conj (∫ x, ⟪g' x, f₀ x + f₁ x⟫_ℂ ∂μ) := by
-      rw [← integral_conj]
-      exact integral_congr_ae (hgg'.mono fun x hx => by simp only [hx, inner_conj_symm])
-    rw [hconj, ← ofReal_norm, RCLike.norm_conj, eLpNorm_congr_ae hgg']
-    have hc : eLpNorm g' p.conjExponent μ ≠ ∞ :=
-      (hg'top.mono_exponent_of_measure_support_ne_top hg's hs' le_top).eLpNorm_ne_top
-    rcases eq_or_ne (eLpNorm g' p.conjExponent μ) 0 with hc0 | hc0
-    · have hg'0 : g' =ᵐ[μ] 0 :=
-        (eLpNorm_eq_zero_iff (ENNReal.HolderConjugate.ne_zero _ p)).1 hc0
-      rw [integral_eq_zero_of_ae (hg'0.mono fun x hx => by simp [hx])]
-      simp
-    · set k : ℝ := (eLpNorm g' p.conjExponent μ).toReal with hk_def
-      have hk : 0 < k := ENNReal.toReal_pos hc0 hc
-      have hn : eLpNorm (((k⁻¹ : ℝ) : ℂ) • g') p.conjExponent μ ≤ 1 := by
-        rw [eLpNorm_const_smul, ← ofReal_norm, norm_real, Real.norm_of_nonneg (inv_pos.2 hk).le,
-          ENNReal.ofReal_inv_of_pos hk, hk_def, ENNReal.ofReal_toReal hc]
-        exact ENNReal.inv_mul_le_one _
-      have hb := hpair₁ (hg'.const_smul _) hs' (fun x hx => by simp [hg's x hx])
-        (hg'top.const_smul _) hn
-      simp_rw [Pi.smul_apply, inner_smul_left, integral_const_mul, conj_ofReal, norm_mul, norm_real,
-        Real.norm_of_nonneg (inv_pos.2 hk).le] at hb
-      rw [← ENNReal.ofReal_toReal hc, ← hk_def, ← ENNReal.ofReal_mul (norm_nonneg _)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      rw [inv_mul_le_iff₀ hk] at hb
-      linarith
   have hh : AEStronglyMeasurable (fun x => f₀ x + f₁ x) μ :=
     (Lp.aestronglyMeasurable f₀).add (Lp.aestronglyMeasurable f₁)
-  have hle := hh.eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) hp_top hpair
+  -- every representative of `u` bounds the pairings with normalized test functions
+  have hle := hh.eLpNorm_le_of_forall_norm_integral_inner_le (𝕜 := ℂ) (C := ‖u‖) hp_top
+    fun g s hg hs hgs hgtop hgn => le_of_forall_pos_lt_add fun ε hε => by
+      obtain ⟨tr, rfl, htr⟩ := ComplexMethodSpace.norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ hε)
+      exact (norm_integral_inner_le_of_isStripFunction_of_eLpNorm_le_one hθ hp
+        ((lebesgue ℂ E μ p₀ p₁).isStripFunction_stripFunction tr)
+        (by rw [← stripEval_apply, ← ComplexMethodSpace.toSum_mk, hdec]) hg hs hgs hgtop
+        hgn).trans_lt htr
   have hmem : MemLp (fun x => f₀ x + f₁ x) p μ := memLp_iff.2 (hle.trans_lt ENNReal.ofReal_lt_top)
   refine ⟨hmem.toLp _, ?_, ?_⟩
   · rw [← hdec, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
@@ -879,6 +795,40 @@ theorem sumSpaceEmbed_toSum_lebesgueEquiv_symm (f : Lp E p μ) :
     (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed (toSum ((lebesgueEquiv hθ hp).symm f)) =
       L1AddLinfty.ofLp f := by
   rw [← ofLp_lebesgueEquiv hθ hp, LinearIsometryEquiv.apply_symm_apply]
+
+/-- `lebesgueEquiv` sends `u` with `toSum u = f₀ + f₁` in `L^{p₀} + L^{p₁}` to the function
+`f₀ + f₁`. -/
+theorem coeFn_lebesgueEquiv_ae_eq_add_iff (u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ)
+    {f₀ : Lp E p₀ μ} {f₁ : Lp E p₁ μ} :
+    ⇑(lebesgueEquiv hθ hp u) =ᵐ[μ] ⇑f₀ + ⇑f₁ ↔
+      toSum u = (lebesgue ℂ E μ p₀ p₁).fstToSum f₀ + (lebesgue ℂ E μ p₀ p₁).sndToSum f₁ := by
+  rw [← (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, ← ofLp_lebesgueEquiv hθ hp,
+    map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
+    ← (l1Linfty ℂ E μ).sumSpaceEmbed_injective.eq_iff, map_add, L1AddLinfty.sumSpaceEmbed_ofLp,
+    L1AddLinfty.sumSpaceEmbed_ofLp, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact ⟨fun h => ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).2 h.symm).symm,
+    fun h => ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).1 h.symm).symm⟩
+
+/-- `lebesgueEquiv` sends the class of an element of the intersection `L^{p₀} ∩ L^{p₁}` to its
+function. -/
+theorem coeFn_lebesgueEquiv_ofInter (x : (lebesgue ℂ E μ p₀ p₁).inter) :
+    ⇑(lebesgueEquiv hθ hp (ofInter θ x)) =ᵐ[μ] ⇑(x : Lp E p₀ μ × Lp E p₁ μ).1 := by
+  rw [← L1AddLinfty.ofLp_eq_ofLp_iff (𝕜 := ℂ), ofLp_lebesgueEquiv,
+    toSum_ofInter (Ioo_subset_Icc_self hθ), sumSpaceEmbed_fstToSum, lebesgue_embed₀,
+    interFst_apply]
+
+/-- For `p₀ ≤ p ≤ p₁`, `lebesgueEquiv` restricts on the intersection to the inclusion
+`L^{p₀} ∩ L^{p₁} → Lᵖ`. -/
+theorem lebesgueEquiv_ofInter (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue ℂ E μ p₀ p₁).inter) :
+    lebesgueEquiv hθ hp (ofInter θ x) = lebesgueInterToLp h₀ h₁ x :=
+  Lp.ext ((coeFn_lebesgueEquiv_ofInter hθ hp x).trans (coeFn_lebesgueInterToLp h₀ h₁ x).symm)
+
+/-- For `p₀ ≤ p ≤ p₁`, the inverse of `lebesgueEquiv` lies over the inclusion
+`Lᵖ → L^{p₀} + L^{p₁}`. -/
+theorem toSum_lebesgueEquiv_symm (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
+    toSum ((lebesgueEquiv hθ hp).symm f) = lpToLebesgueSum h₀ h₁ f :=
+  (lebesgue ℂ E μ p₀ p₁).sumSpaceEmbed_injective <| by
+    rw [sumSpaceEmbed_toSum_lebesgueEquiv_symm, sumSpaceEmbed_lpToLebesgueSum]
 
 end ComplexMethodSpace
 
