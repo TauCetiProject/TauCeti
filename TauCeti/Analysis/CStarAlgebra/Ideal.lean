@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
@@ -223,6 +224,19 @@ noncomputable instance nonUnitalCommCStarAlgebra {A : Type*}
     [NonUnitalCommCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     NonUnitalCommCStarAlgebra I where
   mul_comm x y := Subtype.ext (mul_comm (x : A) (y : A))
+
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
+  .of_nonneg_iff' add_le_add_right fun x => by
+    refine ⟨fun (hx : 0 ≤ (x : A)) => ?_, ?_⟩
+    · refine ⟨⟨cfcₙ Real.sqrt (x : A), ?_⟩, Subtype.ext ?_⟩
+      · exact I.mem_toNonUnitalStarSubalgebra.mp <|
+          cfcₙ_mem _ (I.mem_toNonUnitalStarSubalgebra.mpr x.2)
+      · change (x : A) = star (cfcₙ Real.sqrt (x : A)) * cfcₙ Real.sqrt (x : A)
+        rw [IsSelfAdjoint.star_eq (by cfc_tac), ← cfcₙ_mul ..]
+        refine ((cfcₙ_congr fun r hr => ?_).trans (cfcₙ_id' ℝ (x : A))).symm
+        grind [Real.mul_self_sqrt]
+    · rintro ⟨s, hs⟩
+      simpa [← Subtype.coe_le_coe] using congrArg ((↑) : I → A) hs ▸ star_mul_self_nonneg (s : A)
 
 /-- The canonical isometric ⋆-algebra monomorphism from a closed two-sided ideal `I` into `A`. -/
 def starAlgHom : I →⋆ₙₐ[ℂ] A where
