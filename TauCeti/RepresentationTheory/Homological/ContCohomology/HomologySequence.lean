@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Zero
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology

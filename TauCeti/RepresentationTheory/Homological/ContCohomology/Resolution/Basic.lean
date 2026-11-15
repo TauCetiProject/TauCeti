@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology.Basic
 
 /-!
 # Pointwise formulas for the coinduced resolution, and classes of homogeneous cocycles

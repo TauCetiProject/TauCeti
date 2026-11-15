@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology.Basic
 
 /-!
 # Transport along equalities of degrees in the homogeneous cochain complex

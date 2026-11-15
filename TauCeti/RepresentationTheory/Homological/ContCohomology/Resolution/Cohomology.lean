@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology.Basic
 public import TauCeti.RepresentationTheory.Continuous.TopRep.HomologicalComplex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality

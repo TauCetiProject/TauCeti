@@ -17,6 +17,10 @@ along monoid homomorphisms.
 
 * `ContRepresentation.restrict_trivial`: restriction of a trivial representation is trivial on
   the nose.
+* `ContRepresentation.restrictOfEqId`: restricting along a monoid homomorphism that acts as the
+  identity on elements is equivalent to the original representation via the identity map.
+* `ContRepresentation.Equiv.symmRestrict`: inverting an equivalence `(π.restrict φ).Equiv σ` along a
+  right inverse `ψ` of `φ`.
 * `TopRep.full_res`: restriction along a surjective monoid homomorphism is full; it is always
   faithful and additive.
 -/
@@ -26,6 +30,8 @@ public section
 universe u v w t
 
 namespace ContRepresentation
+
+section Restrict
 
 variable (R : Type u) [Ring R] (G : Type v) [Monoid G] (V : Type w) [AddCommGroup V] [Module R V]
   [TopologicalSpace V] [IsTopologicalAddGroup V]
@@ -38,6 +44,56 @@ to this equality gives the corresponding equality of objects of `TopRep`. -/
 @[simp]
 lemma restrict_trivial {H : Type*} [Monoid H] (f : H →* G) :
     (trivial R G V).restrict f = trivial R H V := (rfl)
+
+end Restrict
+
+section Equiv
+
+variable {R G H V W : Type*} [Ring R] [Monoid G] [Monoid H]
+  [AddCommGroup V] [Module R V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+
+/-- Restricting a continuous representation `π` along an endomorphism `φ : G →* G` that acts as the
+identity on elements yields a representation canonically equivalent to `π` via the identity
+continuous linear equivalence. -/
+def restrictOfEqId (π : ContRepresentation R G V) {φ : G →* G} (hφ : ∀ g, φ g = g) :
+    (π.restrict φ).Equiv π :=
+  Equiv.mk (ContinuousLinearEquiv.refl R V) fun g ↦ by
+    ext v
+    simp [hφ g]
+
+/-- Evaluating `restrictOfEqId` acts as the identity on `V`. -/
+@[simp]
+theorem restrictOfEqId_apply (π : ContRepresentation R G V) {φ : G →* G} (hφ : ∀ g, φ g = g)
+    (v : V) : π.restrictOfEqId hφ v = v :=
+  (rfl)
+
+/-- Given monoid homomorphisms `φ : H →* G` and `ψ : G →* H` with `φ (ψ g) = g` for all `g` (for
+instance, a multiplicative equivalence and its inverse) and an equivalence of continuous
+`H`-representations `e : (π.restrict φ).Equiv σ`, `e.symmRestrict ψ hφψ` is the inverse equivalence
+`(σ.restrict ψ).Equiv π` of continuous `G`-representations. -/
+def Equiv.symmRestrict {π : ContRepresentation R G V} {σ : ContRepresentation R H W}
+    {φ : H →* G} (e : (π.restrict φ).Equiv σ) (ψ : G →* H) (hφψ : ∀ g, φ (ψ g) = g) :
+    (σ.restrict ψ).Equiv π :=
+  Equiv.mk e.symm.toContinuousLinearEquiv fun g ↦ by
+    simpa [restrict_apply, hφψ g] using e.symm.isIntertwining (ψ g)
+
+/-- Evaluating `Equiv.symmRestrict` applies `e.symm`. -/
+@[simp]
+theorem Equiv.symmRestrict_apply {π : ContRepresentation R G V} {σ : ContRepresentation R H W}
+    {φ : H →* G} (e : (π.restrict φ).Equiv σ) (ψ : G →* H) (hφψ : ∀ g, φ (ψ g) = g) (w : W) :
+    e.symmRestrict ψ hφψ w = e.symm w :=
+  (rfl)
+
+/-- The continuous linear equivalence underlying `Equiv.symmRestrict` is `e`'s inverse. -/
+@[simp]
+theorem Equiv.toContinuousLinearEquiv_symmRestrict {π : ContRepresentation R G V}
+    {σ : ContRepresentation R H W} {φ : H →* G} (e : (π.restrict φ).Equiv σ) (ψ : G →* H)
+    (hφψ : ∀ g, φ (ψ g) = g) :
+    (e.symmRestrict ψ hφψ).toContinuousLinearEquiv = e.symm.toContinuousLinearEquiv :=
+  (rfl)
+
+end Equiv
 
 end ContRepresentation
 
