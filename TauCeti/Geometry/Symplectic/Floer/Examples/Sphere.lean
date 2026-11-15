@@ -170,6 +170,19 @@ theorem zsmul_sphereGenerator_injective
     Function.Injective fun k : ℤ => k • sphereGenerator ω c :=
   IsAddTorsionFree.zsmul_left_injective fun h0 => by simp [h0] at h
 
+/-- **On the two-sphere the class map `H₂(S²; ℤ) → Γ` is injective** unless both periods of the
+sphere class vanish, so `SphericalPeriodGroup.ofSingularHomology` is an isomorphism
+`H₂(S²; ℤ) ≅ Γ`. -/
+theorem ofSingularHomology_sphere_injective
+    (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
+      PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
+    Function.Injective (ofSingularHomology ω c (sphericalClasses_sphere_eq_top 1)) := by
+  intro A B hAB
+  obtain ⟨k, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 A
+  obtain ⟨l, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 B
+  rw [map_zsmul, map_zsmul, ofSingularHomology_hurewicz_sphereGenLoop] at hAB
+  rw [zsmul_sphereGenerator_injective h hAB]
+
 /-- **On the two-sphere with nonzero area, area is injective on the period group**, so a cap class
 is determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_area_injective`). -/
 theorem area_injective_of_area_sphereGenerator_ne_zero
@@ -267,30 +280,23 @@ theorem periodGroupComparison_sphere_bijective {R : Type*} [Semiring R]
       PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
     Function.Bijective (periodGroupComparison (R := R) (ω.comp (sphericalClasses _ 1).subtype)
       (c.comp (sphericalClasses _ 1).subtype)) := by
-  refine periodGroupComparison_bijective _ _ (disjoint_iff_inf_le.2 fun s hs => ?_)
-  obtain ⟨k, hk⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 (s : _)
-  have hs0 : (s : SphericalPeriodGroup ω c) = 0 :=
-    PeriodGroup.ext (by simpa using hs.1) (by simpa using hs.2)
-  obtain rfl : k = 0 := zsmul_sphereGenerator_injective h <| by
-    simpa [← mk_eq_zsmul_sphereGenerator hk] using hs0
-  exact AddSubgroup.mem_bot.2 (Subtype.ext (by simpa using hk.symm))
+  refine periodGroupComparison_bijective _ _ (disjoint_iff_inf_le.2 fun s hs =>
+    AddSubgroup.mem_bot.2 (Subtype.ext (ofSingularHomology_sphere_injective h ?_)))
+  exact PeriodGroup.ext (by simpa using hs.1) (by simpa using hs.2)
 
 /-- **The coefficient comparison on the two-sphere is bijective.** Unless both periods of the sphere
 class vanish, the comparison `q^A ↦ e^(-[A])` from the Novikov ring indexed by the class group
 `H₂(S²; ℤ)` of genus-zero Gromov–Witten theory to the Floer Novikov ring is bijective, since the
-class map `SphericalPeriodGroup.ofSingularHomology` is an isomorphism `H₂(S²; ℤ) ≅ Γ`. -/
+class map `SphericalPeriodGroup.ofSingularHomology` is an isomorphism `H₂(S²; ℤ) ≅ Γ`
+(`SphericalPeriodGroup.ofSingularHomology_sphere_injective`). -/
 theorem coefficientComparison_ofSingularHomology_sphere_bijective {R : Type*} [Semiring R]
     (h : PeriodGroup.area _ _ (sphereGenerator ω c) ≠ 0 ∨
       PeriodGroup.chern _ _ (sphereGenerator ω c) ≠ 0) :
     Function.Bijective (coefficientComparison (R := R)
       (ofSingularHomology ω c (sphericalClasses_sphere_eq_top 1))
-      (area_ofSingularHomology (sphericalClasses_sphere_eq_top 1))) := by
-  refine ⟨coefficientComparison_injective _ _ fun A B hAB => ?_,
+      (area_ofSingularHomology (sphericalClasses_sphere_eq_top 1))) :=
+  ⟨coefficientComparison_injective _ _ (ofSingularHomology_sphere_injective h),
     coefficientComparison_surjective _ _ (ofSingularHomology_surjective _)⟩
-  obtain ⟨k, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 A
-  obtain ⟨l, rfl⟩ := exists_zsmul_hurewicz_sphereGenLoop 1 B
-  rw [map_zsmul, map_zsmul, ofSingularHomology_hurewicz_sphereGenLoop] at hAB
-  rw [zsmul_sphereGenerator_injective h hAB]
 
 /-- **The comparison `q^A ↦ e^(-A)` in Laurent coordinates on the two-sphere.** With positive
 area and Chern number of the sphere class, the comparison out of the Novikov ring indexed by
