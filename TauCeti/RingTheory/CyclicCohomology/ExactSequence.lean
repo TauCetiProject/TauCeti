@@ -80,7 +80,7 @@ cohomology.
 ## References
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
-* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2.
+* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2 and §2.4.
 -/
 
 public section
@@ -287,6 +287,8 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
   · simp [coe_cyclicTotalCochains_apply_of_lt _ hq]
 
 end NonUnital
+
+/-! ### Vanishing of total classes and surjectivity of the periodicity map -/
 
 section Unital
 
