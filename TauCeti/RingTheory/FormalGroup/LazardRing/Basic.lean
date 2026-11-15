@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.FormalGroup.Basic
-import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # The Lazard ring, its universal formal group law and its grading
