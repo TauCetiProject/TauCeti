@@ -11,8 +11,10 @@ public import TauCeti.Geometry.Manifold.Morse.Deformation
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Logic.Equiv.PartialEquiv
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
+import TauCeti.Topology.ContinuousMap.GlueDisjointOpen
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -513,69 +515,6 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation (hfs : ContMDiff I 
 
 end Attachment
 
-/-! ### Tubes glued from disjoint pieces -/
-
-section Glue
-
-variable {M ι : Type*} {T : ι → Set M}
-
-variable (T) in
-/-- The function equal to `u j` on `T j` for each `j`, and to `0` off the union of the `T j`. For
-pairwise disjoint `T j` it glues the functions `u j`. -/
-private def tubeGlue (u : ι → M → ℝ) (x : M) : ℝ :=
-  ∑ᶠ j, (T j).indicator (u j) x
-
-private theorem tubeGlue_of_mem (hT : Pairwise (Disjoint on T)) (u : ι → M → ℝ) {j : ι} {x : M}
-    (hx : x ∈ T j) : tubeGlue T u x = u j x := by
-  rw [tubeGlue, finsum_eq_single _ j fun k hk ↦
-    indicator_of_notMem (fun hxk ↦ (hT hk).ne_of_mem hxk hx rfl) _, indicator_of_mem hx]
-
-/-- A condition on the glued functions holds on the union of the `T j` exactly where it holds for
-the functions on the pieces. -/
-private theorem setOf_mem_iUnion_and_tubeGlue (hT : Pairwise (Disjoint on T))
-    (s t : ι → M → ℝ) (p : ℝ → ℝ → Prop) :
-    {x | x ∈ ⋃ j, T j ∧ p (tubeGlue T s x) (tubeGlue T t x)} =
-      ⋃ j, {x | x ∈ T j ∧ p (s j x) (t j x)} := by
-  ext x
-  simp only [mem_ofPred_eq, mem_iUnion]
-  constructor
-  · rintro ⟨⟨j, hj⟩, hp⟩
-    exact ⟨j, hj, by rwa [tubeGlue_of_mem hT s hj, tubeGlue_of_mem hT t hj] at hp⟩
-  · rintro ⟨j, hj, hp⟩
-    exact ⟨⟨j, hj⟩, by rwa [tubeGlue_of_mem hT s hj, tubeGlue_of_mem hT t hj]⟩
-
-variable [TopologicalSpace M]
-
-private theorem tubeGlue_eventuallyEq (hT : Pairwise (Disjoint on T)) (hTo : ∀ j, IsOpen (T j))
-    (u : ι → M → ℝ) {j : ι} {x : M} (hx : x ∈ T j) : tubeGlue T u =ᶠ[𝓝 x] u j :=
-  eventually_of_mem ((hTo j).mem_nhds hx) fun _ hy ↦ tubeGlue_of_mem hT u hy
-
-/-- Continuous maps `φ j : [0, 1] × T j → T j` on pairwise disjoint open sets glue to a continuous
-map of `[0, 1] × ⋃ j, T j` to itself. -/
-private theorem exists_continuousMap_iUnion (hTo : ∀ j, IsOpen (T j))
-    (hT : Pairwise (Disjoint on T)) (φ : ∀ j, C(unitInterval × T j, T j)) :
-    ∃ ψ : C(unitInterval × ↥(⋃ j, T j), ↥(⋃ j, T j)),
-      ∀ j τ (x : ↥(⋃ j, T j)) (hx : (x : M) ∈ T j), (ψ (τ, x) : M) = φ j (τ, ⟨x, hx⟩) := by
-  let S (j : ι) : Set (unitInterval × ↥(⋃ j, T j)) := {p | (p.2 : M) ∈ T j}
-  let φ' (j : ι) : C(S j, ↥(⋃ j, T j)) :=
-    ⟨fun p ↦ inclusion (subset_iUnion T j) (φ j (p.1.1, ⟨p.1.2, p.2⟩)),
-      (continuous_inclusion (subset_iUnion T j)).comp ((φ j).continuous.comp
-        ((continuous_fst.comp continuous_subtype_val).prodMk
-          ((continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val)).subtype_mk
-            _)))⟩
-  have hφ' (j k : ι) (p : unitInterval × ↥(⋃ j, T j)) (hj : p ∈ S j) (hk : p ∈ S k) :
-      φ' j ⟨p, hj⟩ = φ' k ⟨p, hk⟩ := by
-    obtain rfl : j = k := by_contra fun hjk ↦ (hT hjk).ne_of_mem hj hk rfl
-    rfl
-  have hS (p : unitInterval × ↥(⋃ j, T j)) : ∃ j, S j ∈ 𝓝 p := by
-    obtain ⟨j, hj⟩ := mem_iUnion.1 p.2.2
-    exact ⟨j, ((hTo j).preimage (continuous_subtype_val.comp continuous_snd)).mem_nhds hj⟩
-  exact ⟨ContinuousMap.liftCover S φ' hφ' hS, fun j τ x hx ↦
-    congrArg Subtype.val (ContinuousMap.liftCover_coe (S := S) (φ := φ') (hφ := hφ') (hS := hS)
-      (i := j) ⟨(τ, x), hx⟩)⟩
-
-end Glue
-
 section Tube
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -619,45 +558,54 @@ private theorem IsAttachingTube.exists_deformation [FiniteDimensional ℝ E] [I.
 union. -/
 private theorem IsAttachingTube.iUnion [Finite ι] {s t : ι → M → ℝ}
     (h : ∀ j, IsAttachingTube I f (s j) (t j) c ε (T j)) (hT : Pairwise (Disjoint on T)) :
-    IsAttachingTube I f (tubeGlue T s) (tubeGlue T t) c ε (⋃ j, T j) := by
+    IsAttachingTube I f (fun x ↦ ∑ᶠ j, (T j).indicator (s j) x)
+      (fun x ↦ ∑ᶠ j, (T j).indicator (t j) x) c ε (⋃ j, T j) := by
   have hTo (j : ι) : IsOpen (T j) := (h j).isOpen
   have hcont (u : ι → M → ℝ) (hu : ∀ j, ContMDiffOn I 𝓘(ℝ) ∞ (u j) (T j)) :
-      ContMDiffOn I 𝓘(ℝ) ∞ (tubeGlue T u) (⋃ j, T j) := fun x hx ↦ by
+      ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ ∑ᶠ j, (T j).indicator (u j) x) (⋃ j, T j) := fun x hx ↦ by
     obtain ⟨j, hj⟩ := mem_iUnion.1 hx
     exact (((hu j x hj).contMDiffAt ((hTo j).mem_nhds hj)).congr_of_eventuallyEq
-      (tubeGlue_eventuallyEq hT hTo u hj)).contMDiffWithinAt
+      (finsum_indicator_eventuallyEq hT u (hTo j) hj)).contMDiffWithinAt
   choose φ hφs hφt hφ₁ hφ₀ using fun j ↦ (h j).exists_scaling
-  obtain ⟨ψ, hψ⟩ := exists_continuousMap_iUnion hTo hT φ
+  obtain ⟨ψ, hψ'⟩ := exists_continuousMap_prod_iUnion hTo hT fun j ↦
+    (ContinuousMap.inclusion (subset_iUnion T j)).comp (φ j)
+  have hψ (j : ι) (τ : unitInterval) (x : ↥(⋃ j, T j)) (hx : (x : M) ∈ T j) :
+      (ψ (τ, x) : M) = φ j (τ, ⟨x, hx⟩) :=
+    congrArg Subtype.val (hψ' j τ x hx)
   refine ⟨isOpen_iUnion hTo, hcont s fun j ↦ (h j).contMDiffOn_left,
     hcont t fun j ↦ (h j).contMDiffOn_right, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_,
     fun x hx htx ↦ ?_, ⟨ψ, fun τ x ↦ ?_, fun τ x ↦ ?_, fun x ↦ ?_, fun τ x htx ↦ ?_⟩, ?_⟩
   · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
-    rw [tubeGlue_of_mem hT s hj]
+    rw [finsum_indicator_of_mem hT s hj]
     exact (h j).left_nonneg x hj
   · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
-    rw [tubeGlue_of_mem hT t hj]
+    rw [finsum_indicator_of_mem hT t hj]
     exact (h j).right_nonneg x hj
   · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
-    rw [tubeGlue_of_mem hT s hj, tubeGlue_of_mem hT t hj]
+    rw [finsum_indicator_of_mem hT s hj, finsum_indicator_of_mem hT t hj]
     exact (h j).eq_sub_add x hj
   · obtain ⟨j, hj⟩ := mem_iUnion.1 hx
-    rw [tubeGlue_of_mem hT t hj] at htx
-    rw [(tubeGlue_eventuallyEq hT hTo s hj).mfderiv_eq,
-      (tubeGlue_eventuallyEq hT hTo t hj).mfderiv_eq]
+    rw [finsum_indicator_of_mem hT t hj] at htx
+    rw [(finsum_indicator_eventuallyEq hT s (hTo j) hj).mfderiv_eq,
+      (finsum_indicator_eventuallyEq hT t (hTo j) hj).mfderiv_eq]
     exact (h j).exists_tangent x hj htx
   · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
-    rw [hψ j τ x hj, tubeGlue_of_mem hT s (φ j (τ, ⟨x, hj⟩)).2, tubeGlue_of_mem hT s hj]
+    rw [hψ j τ x hj, finsum_indicator_of_mem hT s (φ j (τ, ⟨x, hj⟩)).2,
+      finsum_indicator_of_mem hT s hj]
     exact hφs j τ ⟨x, hj⟩
   · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
-    rw [hψ j τ x hj, tubeGlue_of_mem hT t (φ j (τ, ⟨x, hj⟩)).2, tubeGlue_of_mem hT t hj]
+    rw [hψ j τ x hj, finsum_indicator_of_mem hT t (φ j (τ, ⟨x, hj⟩)).2,
+      finsum_indicator_of_mem hT t hj]
     exact hφt j τ ⟨x, hj⟩
   · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
     exact Subtype.ext ((hψ j 1 x hj).trans (congrArg Subtype.val (hφ₁ j ⟨x, hj⟩)))
   · obtain ⟨j, hj⟩ := mem_iUnion.1 x.2
-    rw [tubeGlue_of_mem hT t hj] at htx
+    rw [finsum_indicator_of_mem hT t hj] at htx
     exact Subtype.ext ((hψ j τ x hj).trans (congrArg Subtype.val (hφ₀ j τ ⟨x, hj⟩ htx)))
-  · rw [setOf_mem_iUnion_and_tubeGlue hT s t fun a b ↦ a + 2 * b ≤ 2 * ε]
-    exact isCompact_iUnion fun j ↦ (h j).isCompact
+  · convert isCompact_iUnion fun j ↦ (h j).isCompact using 1
+    refine (iUnion_inter {x | _} T).trans (iUnion_congr fun j ↦ sep_ext_iff.2 fun x hx ↦ ?_)
+    rw [mem_ofPred_eq, finsum_indicator_of_mem hT s hx, finsum_indicator_of_mem hT t hx]
+    rfl
 
 end Tube
 
@@ -755,18 +703,6 @@ private theorem exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero
   · simp only [comp_apply, Θ.left_inv hb, hρs]
   · simp only [comp_apply, Θ.left_inv hb, hρt]
 
-/-- A condition read on `Θ '' W` through `Θ⁻¹` holds on the image of the points of `W` where it
-holds. -/
-private theorem setOf_mem_image_and_symm (Θ : PartialDiffeomorph K I X M ∞) {W : Set X}
-    (hWΘ : W ⊆ Θ.source) (p : X → Prop) :
-    {y | y ∈ Θ '' W ∧ p (Θ.toPartialEquiv.symm y)} = Θ '' {x | x ∈ W ∧ p x} := by
-  obtain ⟨hWt, hWsymm⟩ := image_subset_target_and_symm_mem Θ hWΘ
-  ext y
-  refine ⟨fun ⟨hy, hpy⟩ ↦ ⟨_, ⟨hWsymm y hy, hpy⟩, Θ.right_inv (hWt hy)⟩, ?_⟩
-  rintro ⟨x, ⟨hx, hpx⟩, rfl⟩
-  rw [mem_ofPred_eq, Θ.left_inv (hWΘ hx)]
-  exact ⟨mem_image_of_mem _ hx, hpx⟩
-
 /-- A normal form `f ∘ Θ = c - s + t` on `X`, read through a partial diffeomorphism `Θ : X → M`,
 gives an attaching tube. On `X`, the functions `s, t ≥ 0` are smooth, and `ρ b` scales the positive
 directions: it preserves `s`, multiplies `t` by `b²`, is the identity for `b = 1` and fixes the
@@ -798,7 +734,7 @@ private theorem isAttachingTube_image {f : M → ℝ} {c : ℝ} (Θ : PartialDif
     exact exists_mfderiv_comp_symm_apply_eq_zero_and_ne_zero Θ hs ht ρ hρ hρd hρs hρt hρ₁
       (hWΘ hx) (by rwa [hΘx t x (hWΘ hx)] at hty)
   · simp only [comp_apply]
-    rw [setOf_mem_image_and_symm Θ hWΘ fun x ↦ s x + 2 * t x ≤ 2 * ε]
+    rw [← Θ.toPartialEquiv.image_sep_of_subset_source hWΘ fun x ↦ s x + 2 * t x ≤ 2 * ε]
     exact hK.image_of_continuousOn (Θ.contMDiffOn.continuousOn.mono fun x hx ↦ hWΘ hx.1)
 
 /-- Rescaling the two parts of a normal form by factors of absolute value at most `1` does not
@@ -920,13 +856,15 @@ theorem exists_sublevel_union_iUnion_image_deformation {ι : Type*} [Finite ι] 
   · refine ⟨fun j x hx ↦ hmΘ j (hD j x hx), ?_⟩
     -- The disc bundle of the glued tube is the union of the images of the disc bundles.
     have hset : {y | y ∈ ⋃ j, Θ j '' W j ∧
-        tubeGlue (fun j ↦ Θ j '' W j) (fun j ↦ t j ∘ (Θ j).toPartialEquiv.symm) y = 0 ∧
-          tubeGlue (fun j ↦ Θ j '' W j) (fun j ↦ s j ∘ (Θ j).toPartialEquiv.symm) y ≤ ε} =
+        ∑ᶠ j, (Θ j '' W j).indicator (t j ∘ (Θ j).toPartialEquiv.symm) y = 0 ∧
+          ∑ᶠ j, (Θ j '' W j).indicator (s j ∘ (Θ j).toPartialEquiv.symm) y ≤ ε} =
         ⋃ j, Θ j '' {x | t j x = 0 ∧ s j x ≤ ε} := by
-      rw [setOf_mem_iUnion_and_tubeGlue hdisj _ _ fun a b ↦ b = 0 ∧ a ≤ ε]
-      refine iUnion_congr fun j ↦ ?_
-      refine (setOf_mem_image_and_symm (Θ j) (hmΘ j) fun x ↦ t j x = 0 ∧ s j x ≤ ε).trans ?_
-      exact congrArg _ (Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨hD j x hx, hx⟩⟩)
+      refine (iUnion_inter {y | _} _).trans (iUnion_congr fun j ↦
+        (sep_ext_iff.2 fun y hy ↦ ?_).trans (((Θ j).toPartialEquiv.image_sep_of_subset_source
+          (hmΘ j) fun x ↦ t j x = 0 ∧ s j x ≤ ε).symm.trans ?_))
+      · rw [mem_ofPred_eq, finsum_indicator_of_mem hdisj _ hy, finsum_indicator_of_mem hdisj _ hy]
+        rfl
+      · exact congrArg _ (Set.ext fun x ↦ ⟨fun hx ↦ hx.2, fun hx ↦ ⟨hD j x hx, hx⟩⟩)
     rwa [hset] at key
   · simp only [W, mem_ofPred_eq, hq_def, (hZst j x hx).1, (hZst j x hx).2, mul_zero, add_zero, hm]
 

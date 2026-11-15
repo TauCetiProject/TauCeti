@@ -14,7 +14,8 @@ public import Mathlib.Logic.Equiv.PartialEquiv
 This file supplements `PartialEquiv.image_source_inter_eq'` and `PartialEquiv.image_trans_source` in
 `Mathlib.Logic.Equiv.PartialEquiv` with equational formulas for source-restricted images under
 compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate transitions
-`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space).
+`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space). It
+also reads a condition on the image of a subset of the source through `e.symm`.
 
 ## Main declarations
 
@@ -25,6 +26,8 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.image_symm_trans_source_inter` and
   `PartialEquiv.image_restr_symm_trans_source_inter`: transport of `e '' (e.source ∩ s)` onto
   `e' '' (e'.source ∩ s)` intersected with the transition target.
+* `PartialEquiv.image_sep_of_subset_source`: for `s ⊆ e.source`, the image of `{x ∈ s | p x}` is
+  `{y ∈ e '' s | p (e.symm y)}`.
 * `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
   one of a family of partial equivalences `e x`, the preimage is the union of the images under
   `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
@@ -107,5 +110,15 @@ theorem preimage_singleton_inter_symm_image_eq_singleton {δ : Type*} {f : α �
   refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨rfl, e x, hxs, e.left_inv hx⟩, ?_⟩
   rintro _ ⟨hz, z, hzs, rfl⟩
   rw [not_imp_not.1 (hisol z hzs) hz, e.left_inv hx]
+
+/-- The image under `e` of the points of a subset `s` of the source where `p` holds is the set of
+points of `e '' s` where `p ∘ e.symm` holds. -/
+theorem image_sep_of_subset_source (e : PartialEquiv α β) {s : Set α} (hs : s ⊆ e.source)
+    (p : α → Prop) : e '' {x ∈ s | p x} = {y ∈ e '' s | p (e.symm y)} := by
+  ext y
+  refine ⟨?_, fun ⟨⟨x, hx, hxy⟩, hpy⟩ ↦ ⟨x, ⟨hx, ?_⟩, hxy⟩⟩
+  · rintro ⟨x, ⟨hx, hpx⟩, rfl⟩
+    exact ⟨Set.mem_image_of_mem _ hx, by rwa [e.left_inv (hs hx)]⟩
+  · rwa [← hxy, e.left_inv (hs hx)] at hpy
 
 end PartialEquiv
