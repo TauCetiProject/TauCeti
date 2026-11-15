@@ -20,10 +20,11 @@ import TauCeti.RingTheory.PowerSeries.Trunc
 
 Let `K` be a complete ultrametric normed field, except where noted below. A series in `K⟨X, Y⟩†`,
 with `Y = X none`, which is distinguished of degree `s` in `Y` at unit radius and has a unit
-coefficient in degree `s`, divides every overconvergent series. The quotient is overconvergent in
-all variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
-in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coefficients of the
-remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
+coefficient in degree `s`, can be divided into every overconvergent series with remainder. The
+quotient is overconvergent in all variables and the remainder is a polynomial in `Y` of
+degree less than `s`, with coefficients in `K⟨X⟩†`. The decomposition is unique, and the quotient
+`q` and the coefficients of the remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖`
+and `‖r.coeff i‖ ≤ ‖f‖`.
 Uniqueness, and the statements deduced from it alone (the comparison of divisibility, descent of
 irreducibility, and the implication from primality in `K⟨X, Y⟩†` to primality in `K⟨X⟩†[Y]`), need
 only that `K` is an ultrametric normed commutative ring with multiplicative norm. All other results,
@@ -51,6 +52,26 @@ finitely many variables which is integral over `K` is spanned by the images of p
 (`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`). Consequently two
 algebra homomorphisms from `K⟨X⟩†` into an algebra integral over `K` that agree on the variables
 are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
+
+## Main results
+
+* `TauCeti.Dagger.existsUnique_mul_add_eq_of_isDistinguished`: unique division with remainder, with
+  the quotient and remainder bundled as a unique pair.
+* `TauCeti.Dagger.exists_mul_add_eq_of_isDistinguished`: existence of the division.
+* `TauCeti.Dagger.exists_mul_add_eq_and_norm_le_of_isDistinguished`: existence with the norm bounds
+  on the quotient and the remainder.
+* `TauCeti.Dagger.eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished`: uniqueness, which needs
+  neither completeness nor a unit distinguished coefficient.
+* `TauCeti.Dagger.washnitzerAlgebra.exists_mul_add_polynomialToOption_eq`: division by an
+  evaluated monic distinguished polynomial.
+* `TauCeti.Dagger.washnitzerAlgebra.polynomialQuotientEquiv`: the identification of
+  `K⟨X⟩†[Y] ⧸ (ω)` with `K⟨X, Y⟩† ⧸ (ω)`.
+* `TauCeti.Dagger.washnitzerAlgebra.polynomialToOption_dvd_iff`,
+  `TauCeti.Dagger.washnitzerAlgebra.irreducible_of_irreducible_polynomialToOption` and
+  `TauCeti.Dagger.washnitzerAlgebra.prime_polynomialToOption_iff`: comparison of divisibility,
+  irreducibility and primality.
+* `TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial` and
+  `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`: the integral-quotient results.
 
 ## References
 

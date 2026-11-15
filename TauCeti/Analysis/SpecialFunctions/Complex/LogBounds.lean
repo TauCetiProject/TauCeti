@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Robby Sneiderman. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Robby Sneiderman
 -/
 module
 
@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
-# Taylor series bounds for `-log (1 - ·)` and `log (1 + ·)`
+# Complex logarithm bounds and Taylor series
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
@@ -32,12 +32,20 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
+The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm uniformly
+in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
+Its proof adapts Robby Sneiderman’s strip argument from
+[PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+
 Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
 re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
 term takes.  Away from the disc, factoring `1 - t z = -z (t - z⁻¹)` isolates the logarithmic
 singularity of `log (1 - t z)` along a real ray into `|log |t - Re(z⁻¹)||`.
 
 ## Main results
+
+* `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
+  positive vertical strip, including empty and singleton strips.
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
@@ -186,6 +194,37 @@ theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w�
   have h1 : ‖w / p‖ = 1 := by rw [← h, norm_one]
   have h2 : (1 : ℝ) < p := mod_cast hp
   rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
+  linarith
+
+/-- A principal-log estimate uniform in the real part on a positive vertical strip. -/
+theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖Complex.log s‖ ≤ |Real.log a| + Real.log (|b| + 1) +
+      Real.log (|s.im| + 2) + Real.pi / 2 := by
+  have hre : 0 < s.re := ha.trans_le hs.1
+  have hnorm : a ≤ ‖s‖ := hs.1.trans (re_le_norm s)
+  have hnorm0 : 0 < ‖s‖ := ha.trans_le hnorm
+  have harg : |s.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hre.le
+  have hnormhi : ‖s‖ ≤ (|b| + 1) * (|s.im| + 2) := by
+    have h := norm_le_abs_re_add_abs_im s
+    rw [abs_of_pos hre] at h
+    have hb : 0 ≤ |b| := abs_nonneg b
+    have hi : 0 ≤ |s.im| := abs_nonneg s.im
+    have hsb : s.re ≤ |b| := hs.2.trans (le_abs_self b)
+    nlinarith [mul_nonneg hb hi]
+  have hlo : Real.log a ≤ Real.log ‖s‖ := Real.log_le_log ha hnorm
+  have hhi : Real.log ‖s‖ ≤ Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    simpa only [Real.log_mul (by positivity : |b| + 1 ≠ 0)
+      (by positivity : |s.im| + 2 ≠ 0)] using Real.log_le_log hnorm0 hnormhi
+  have hlogabs : |Real.log ‖s‖| ≤
+      |Real.log a| + Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    refine abs_le.mpr ⟨?_, ?_⟩
+    · have hba := Real.log_nonneg (by linarith [abs_nonneg b] : 1 ≤ |b| + 1)
+      have hi := Real.log_nonneg (by linarith [abs_nonneg s.im] : 1 ≤ |s.im| + 2)
+      linarith [neg_abs_le (Real.log a)]
+    · linarith [abs_nonneg (Real.log a)]
+  have h := norm_le_abs_re_add_abs_im (Complex.log s)
+  rw [Complex.log_re, Complex.log_im] at h
   linarith
 
 /-- Away from `t = Re(z⁻¹)`, the principal logarithm `log (1 - t * z)` has norm at most
