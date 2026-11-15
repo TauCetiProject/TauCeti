@@ -1,13 +1,15 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2023 Arend Mellendijk and 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Arend Mellendijk, OpenAI Codex
 -/
 module
 
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.NumberTheory.Divisors
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
@@ -37,6 +39,9 @@ integers.
 strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
+
+For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
+divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
@@ -329,3 +334,26 @@ theorem nontrivialDivisorEquiv_symm_apply_val
     (nontrivialDivisorEquiv.symm d).val = d.val.val := by rfl
 
 end TauCeti
+
+namespace Nat
+
+open Finset
+
+/-- For radical `P`, the divisors of `d ^ M` divisible by `d` are disjoint as `d` ranges
+through the divisors of `P`. This is the prime-support partition used by the Selberg sieve. -/
+theorem pairwiseDisjoint_divisors_pow_filter_dvd {P : ℕ} (hP : IsRadical P) (M : ℕ) :
+    (P.divisors : Set ℕ).PairwiseDisjoint
+      (fun d ↦ (d ^ M).divisors.filter (d ∣ ·)) := by
+  intro i hi j hj hij
+  have hPsq := IsRadical.squarefree (Nat.ne_zero_of_mem_divisors hi) hP
+  apply Finset.disjoint_left.mpr
+  intro m hmi hmj
+  obtain ⟨hmi, him⟩ := mem_filter.mp hmi
+  obtain ⟨hmj, hjm⟩ := mem_filter.mp hmj
+  have hij' : i ∣ j := (hPsq.squarefree_of_dvd (Nat.dvd_of_mem_divisors hi)).isRadical
+    M j (him.trans (Nat.dvd_of_mem_divisors hmj))
+  have hji' : j ∣ i := (hPsq.squarefree_of_dvd (Nat.dvd_of_mem_divisors hj)).isRadical
+    M i (hjm.trans (Nat.dvd_of_mem_divisors hmi))
+  exact hij (Nat.dvd_antisymm hij' hji')
+
+end Nat
