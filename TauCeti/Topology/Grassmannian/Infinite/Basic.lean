@@ -10,6 +10,11 @@ public import TauCeti.LinearAlgebra.Finsupp.CoordinateInclusion
 public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import Mathlib.Topology.Compactness.Lindelof
+public import Mathlib.Topology.Compactness.Paracompact
+import TauCeti.Topology.Category.TopCat.Paracompact
+import TauCeti.Topology.Grassmannian.Map
+import Mathlib.Topology.CompactOpen
 
 /-!
 # The infinite Grassmannian of a fixed rank
@@ -28,7 +33,9 @@ We show that this union is the colimit, in `TopCat`, of the sequence of finite G
 with `n < k` are empty, so this is the same as the colimit of the stages `Gr_k(𝕜^(N + k))`.
 Points are closed whenever they are closed in each finite stage. Over the real or complex
 numbers, where the finite Grassmannians are compact Hausdorff, each stage inclusion is a closed
-embedding.
+embedding, equipping `infiniteGrassmannian 𝕜 k` with `LindelofSpace`, `T4Space`, and
+`ParacompactSpace` instances; we also record `isQuotientMap_sigmaToInfinite`,
+`continuous_prod_left_iff`, and functoriality under ambient injections (`map`, `mapContinuousMap`).
 
 Over `ℝ` and `ℂ` these are the standard models `BO(k)` and `BU(k)` for classifying rank-`k` real
 and complex vector bundles, and the rank-one case is the infinite projective space `ℝP∞` or
@@ -42,7 +49,7 @@ limit topology follows J. Milnor and J. Stasheff, *Characteristic Classes*, §5.
 
 public section
 
-open Set Topology CategoryTheory Limits
+open Set Function Topology CategoryTheory Limits
 open _root_.Finsupp
 
 namespace TauCeti
@@ -170,6 +177,18 @@ noncomputable instance : Unique (infiniteGrassmannian 𝕜 0) where
     have hW : W.1 = ⊥ := Submodule.rank_eq_zero.1 (by simpa using W.2)
     simp [hW]
 
+/-- The canonical map from `Σ n, finiteGrassmannian 𝕜 k n` to `infiniteGrassmannian 𝕜 k`. -/
+noncomputable def sigmaToInfinite (p : Σ n, finiteGrassmannian 𝕜 k n) : infiniteGrassmannian 𝕜 k :=
+  toInfinite p.2
+
+@[simp] theorem sigmaToInfinite_mk (n : ℕ) (V : finiteGrassmannian 𝕜 k n) :
+    sigmaToInfinite ⟨n, V⟩ = toInfinite V := (rfl)
+
+/-- Every point of the infinite Grassmannian lies in the image of `sigmaToInfinite`. -/
+theorem sigmaToInfinite_surjective :
+    Surjective (sigmaToInfinite : (Σ n, finiteGrassmannian 𝕜 k n) → infiniteGrassmannian 𝕜 k) :=
+  fun W ↦ let ⟨n, V, hV⟩ := exists_toInfinite_eq W; ⟨⟨n, V⟩, hV⟩
+
 section Topology
 
 variable [TopologicalSpace 𝕜]
@@ -183,6 +202,13 @@ theorem _root_.TauCeti.finiteGrassmannian.continuous_toInfinite {n : ℕ} :
     Continuous (toInfinite : finiteGrassmannian 𝕜 k n → infiniteGrassmannian 𝕜 k) :=
   continuous_iff_coinduced_le.2 <| le_iSup
     (fun n ↦ TopologicalSpace.coinduced (toInfinite : finiteGrassmannian 𝕜 k n → _) inferInstance) n
+
+/-- `finiteGrassmannian.toInfinite` as a `ContinuousMap` (exposed for pullback fibre reduction). -/
+@[expose] noncomputable def _root_.TauCeti.finiteGrassmannian.toInfiniteContinuousMap {n : ℕ} :
+    C(finiteGrassmannian 𝕜 k n, infiniteGrassmannian 𝕜 k) := ⟨toInfinite, continuous_toInfinite⟩
+
+@[simp] theorem _root_.TauCeti.finiteGrassmannian.toInfiniteContinuousMap_apply {n : ℕ}
+    (V : finiteGrassmannian 𝕜 k n) : toInfiniteContinuousMap V = toInfinite V := (rfl)
 
 /-- A subset of the infinite Grassmannian is open exactly when its preimage in every finite
 coordinate stage is open. -/
@@ -210,6 +236,37 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : infiniteGrassmannia
     Continuous f ↔ ∀ n, Continuous (f ∘ (toInfinite : finiteGrassmannian 𝕜 k n → _)) := by
   simp only [continuous_def, isOpen_iff, preimage_comp]
   exact ⟨fun h n U hU ↦ h U hU n, fun h U hU n ↦ h n U hU⟩
+
+/-- `infiniteGrassmannian 𝕜 k` carries the quotient topology of `Σ n, finiteGrassmannian 𝕜 k n`. -/
+theorem isQuotientMap_sigmaToInfinite :
+    IsQuotientMap (sigmaToInfinite : (Σ n, finiteGrassmannian 𝕜 k n) → infiniteGrassmannian 𝕜 k) :=
+  ⟨.of_isOpen_preimage_iff_isOpen fun _ ↦ by rw [isOpen_iff, isOpen_sigma_iff]; rfl,
+    sigmaToInfinite_surjective⟩
+
+/-- On an open set, continuity on `infiniteGrassmannian 𝕜 k` reduces to every finite stage. -/
+theorem continuousOn_iff_of_isOpen {X : Type*} [TopologicalSpace X]
+    {U : Set (infiniteGrassmannian 𝕜 k)} (hU : IsOpen U) {f : infiniteGrassmannian 𝕜 k → X} :
+    ContinuousOn f U ↔
+      ∀ n, ContinuousOn (f ∘ (toInfinite : finiteGrassmannian 𝕜 k n → _)) (toInfinite ⁻¹' U) := by
+  refine ⟨fun h n ↦ (continuousOn_open_iff (hU.preimage continuous_toInfinite)).2 fun t ht ↦ ?_,
+    fun h ↦ (continuousOn_open_iff hU).2 fun t ht ↦ isOpen_iff.2 fun n ↦ ?_⟩
+  · rw [preimage_comp, ← preimage_inter]
+    exact (isOpen_iff.1 ((continuousOn_open_iff hU).1 h t ht)) n
+  · rw [preimage_inter, ← preimage_comp]
+    exact (continuousOn_open_iff (hU.preimage continuous_toInfinite)).1 (h n) t ht
+
+/-- For locally compact `Y`, continuity on `Y × infiniteGrassmannian 𝕜 k` is stagewise. -/
+theorem continuous_prod_left_iff {Y Z : Type*} [TopologicalSpace Y] [LocallyCompactSpace Y]
+    [TopologicalSpace Z] {g : Y × infiniteGrassmannian 𝕜 k → Z} :
+    Continuous g ↔
+      ∀ n, Continuous fun q : Y × finiteGrassmannian 𝕜 k n ↦ g (q.1, toInfinite q.2) :=
+  ⟨fun hg _ ↦ hg.comp (continuous_id.prodMap continuous_toInfinite),
+    fun hg ↦ isQuotientMap_sigmaToInfinite.continuous_lift_prod_right <|
+      ((continuous_sigma (f := fun s : Σ n, finiteGrassmannian 𝕜 k n × Y ↦
+        g (s.2.2, toInfinite s.2.1)) fun n ↦ (hg n).comp continuous_swap).comp
+          (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)).congr fun ⟨y, ⟨n, V⟩⟩ ↦
+            congrArg (fun s : Σ n, finiteGrassmannian 𝕜 k n × Y ↦ g (s.2.2, toInfinite s.2.1))
+              (Homeomorph.sigmaProdDistrib_apply (⟨n, V⟩, y))⟩
 
 end Topology
 
@@ -264,6 +321,13 @@ noncomputable def isColimit : IsColimit (cocone 𝕜 k) :=
       -- the cocone legs are these same maps, bundled as morphisms of `TopCat`.
       rfl)
 
+/-- The infinite Grassmannian is Lindelöf whenever every finite stage is Lindelöf. -/
+instance {k : ℕ} [∀ n, LindelofSpace (finiteGrassmannian 𝕜 k n)] :
+    LindelofSpace (infiniteGrassmannian 𝕜 k) :=
+  let _ (n : ℕ) : LindelofSpace ((diagram 𝕜 k).obj n) :=
+    inferInstanceAs (LindelofSpace (finiteGrassmannian 𝕜 k n))
+  TopCat.lindelofSpace_of_isColimit (F := diagram 𝕜 k) (isColimit 𝕜 k)
+
 end Colimit
 
 section RCLike
@@ -293,8 +357,78 @@ theorem _root_.TauCeti.finiteGrassmannian.isClosedEmbedding_toInfinite {n : ℕ}
   .of_continuous_injective_isClosedMap continuous_toInfinite toInfinite_injective
     fun _ ↦ isClosed_image_toInfinite
 
+/-- Over `RCLike 𝕜`, the infinite Grassmannian is `T4` (normal and Hausdorff). -/
+instance : T4Space (infiniteGrassmannian 𝕜 k) :=
+  let _ (n : ℕ) : T4Space ((diagram 𝕜 k).obj n) :=
+    inferInstanceAs (T4Space (finiteGrassmannian 𝕜 k n))
+  TopCat.t4Space_of_isColimit (F := diagram 𝕜 k)
+    (fun n ↦ isClosedEmbedding_ambientInclusion (Nat.le_succ n)) (isColimit 𝕜 k)
+
+/-- Over `RCLike 𝕜`, the infinite Grassmannian is paracompact for its direct-limit topology. -/
+instance : ParacompactSpace (infiniteGrassmannian 𝕜 k) :=
+  let _ (n : ℕ) : NormalSpace ((diagram 𝕜 k).obj n) :=
+    inferInstanceAs (NormalSpace (finiteGrassmannian 𝕜 k n))
+  let _ (n : ℕ) : T1Space ((diagram 𝕜 k).obj n) :=
+    inferInstanceAs (T1Space (finiteGrassmannian 𝕜 k n))
+  let _ (n : ℕ) : LindelofSpace ((diagram 𝕜 k).obj n) :=
+    inferInstanceAs (LindelofSpace (finiteGrassmannian 𝕜 k n))
+  TopCat.paracompactSpace_of_isColimit (F := diagram 𝕜 k)
+    (fun n ↦ isClosedEmbedding_ambientInclusion (Nat.le_succ n)) (isColimit 𝕜 k)
 end RCLike
 
-end infiniteGrassmannian
+section Map
+variable {𝕜 : Type*} [Field 𝕜] {k : ℕ}
+/-- An injective linear endomorphism of `ℕ →₀ 𝕜` acts on `infiniteGrassmannian 𝕜 k` by image. -/
+noncomputable def map (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (W : infiniteGrassmannian 𝕜 k) : infiniteGrassmannian 𝕜 k :=
+  ⟨W.1.map φ, by rw [rank_map_eq hφ, W.2]⟩
+@[simp] theorem coe_map (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (W : infiniteGrassmannian 𝕜 k) : (map φ hφ W).1 = W.1.map φ := (rfl)
+@[simp] theorem map_id (W : infiniteGrassmannian 𝕜 k) : map LinearMap.id injective_id W = W :=
+  Subtype.ext (Submodule.map_id W.1)
+@[simp] theorem map_comp (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ) (W : infiniteGrassmannian 𝕜 k) :
+    map (ψ.comp φ) (hψ.comp hφ) W = map ψ hψ (map φ hφ W) :=
+  Subtype.ext (Submodule.map_comp φ ψ W.1)
+/-- An injective ambient linear map induces an injective map on the infinite Grassmannian. -/
+theorem map_injective (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Function.Injective φ) :
+    Function.Injective (map (k := k) φ hφ) := fun _ _ h ↦
+  Subtype.ext (Submodule.map_injective_of_injective hφ (congrArg Subtype.val h))
 
+/-- Any injective `𝕜`-linear endomorphism of `ℕ →₀ 𝕜` induces a continuous self-map. -/
+@[fun_prop] theorem continuous_map [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) : Continuous (map (k := k) φ hφ) := by
+  refine continuous_iff.2 fun n ↦ ?_
+  have hfg : ((⊤ : Submodule 𝕜 (Fin n → 𝕜)).map (φ.comp (coordinateInclusion n))).FG :=
+    (Module.Finite.iff_fg.1 inferInstance).map _
+  obtain ⟨m, hm⟩ := hfg.exists_le_supported_Iio
+  let g := (LinearMap.pi fun j : Fin m ↦ Finsupp.lapply j.1).comp (φ.comp (coordinateInclusion n))
+  have hcomp : (coordinateInclusion m).comp g = φ.comp (coordinateInclusion n) :=
+    LinearMap.ext fun v ↦ coordinateInclusion_of_support_subset_range fun r hr ↦
+      Finset.mem_range.2 (hm ⟨v, trivial, rfl⟩ hr)
+  have hinj : Injective g := .of_comp (f := coordinateInclusion m) <| by
+    rw [← LinearMap.coe_comp, hcomp]; exact hφ.comp (coordinateInclusion_injective n)
+  refine (continuous_toInfinite.comp
+    (finiteGrassmannian.continuous_map _ hinj g.continuous_on_pi)).congr fun V ↦ Subtype.ext ?_
+  rw [Function.comp_apply, Function.comp_apply, coe_toInfinite, finiteGrassmannian.coe_map,
+    coe_map, coe_toInfinite, ← Submodule.map_comp, ← Submodule.map_comp, hcomp]
+
+/-- `infiniteGrassmannian.map` as a `ContinuousMap` (exposed for pullback fibre reduction). -/
+@[expose] noncomputable def mapContinuousMap [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) :
+    C(infiniteGrassmannian 𝕜 k, infiniteGrassmannian 𝕜 k) := ⟨map φ hφ, continuous_map φ hφ⟩
+@[simp] theorem mapContinuousMap_apply [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) (W : infiniteGrassmannian 𝕜 k) :
+    mapContinuousMap φ hφ W = map φ hφ W := (rfl)
+@[simp] theorem mapContinuousMap_id [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜] :
+    mapContinuousMap (k := k) (LinearMap.id : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) injective_id =
+      ContinuousMap.id (infiniteGrassmannian 𝕜 k) := ContinuousMap.ext map_id
+@[simp] theorem mapContinuousMap_comp [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
+    (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ) :
+    mapContinuousMap (k := k) (ψ.comp φ) (hψ.comp hφ) =
+      (mapContinuousMap ψ hψ).comp (mapContinuousMap φ hφ) :=
+  ContinuousMap.ext (map_comp φ hφ ψ hψ)
+end Map
+end infiniteGrassmannian
 end TauCeti

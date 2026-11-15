@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.VectorBundle.Core.Hom
 
 /-!
 # The category of finite-rank point-indexed vector-bundle cores
@@ -32,7 +33,11 @@ For real or complex scalars and `B : Type u`, both the objects and the morphisms
 `fiberFunctor x` evaluates at a base point as a Mathlib module. The family of these functors
 jointly detects equality of morphisms. Over a complete scalar field, `isIso_iff_bijective`
 characterizes categorical isomorphisms exactly by fibrewise bijectivity: continuous inversion
-in finite-dimensional charts supplies the inverse bundle morphism.
+in finite-dimensional charts supplies the inverse bundle morphism. Consequently a continuous
+family of fibrewise linear equivalences between two cores yields an isomorphism
+(`isoOfContinuousEquiv`), and isomorphisms between `ofBundle 𝕜 n E₀` and `ofBundle 𝕜 n E₁`
+correspond to continuous families of fibrewise continuous linear equivalences (`ofBundleIso`,
+`exists_continuousLinearEquiv_of_ofBundle_iso`).
 
 Between two cores with the same chart domains, a fixed coordinate operator intertwining their
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
@@ -455,6 +460,100 @@ theorem isIso_iff_bijective (f : A ⟶ D) :
       intro x
       simp only [fiberMap_comp, hg, fiberMap_id, (he x).self_comp_inverse]⟩
 
+/-- Fibrewise continuous linear equivalences continuous on total spaces induce a core iso. -/
+def isoOfContinuousEquiv {A D : FiniteRankBundleCore 𝕜 B}
+    (ψ : B → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (hψ : Continuous fun p : A.core.TotalSpace ↦
+      TotalSpace.mk' (Fin D.rank → 𝕜) (E := D.core.Fiber) p.proj (ψ p.proj p.2)) : A ≅ D where
+  hom := CoordinateHom.ofContinuous (fun x ↦ (ψ x).toContinuousLinearMap)
+    ((continuous_hom_bundle_iff (E₁ := A.core.Fiber) (E₂ := D.core.Fiber) _).2 hψ)
+  inv := CoordinateHom.ofContinuous (fun x ↦ (ψ x).symm.toContinuousLinearMap)
+    ((continuous_hom_bundle_iff (E₁ := D.core.Fiber) (E₂ := A.core.Fiber) _).2
+      (continuous_bundle_symm (E₁ := A.core.Fiber) (E₂ := D.core.Fiber) ψ hψ))
+  hom_inv_id := hom_ext fun x ↦ by
+    simpa only [fiberMap_comp, fiberMap_id, congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x]
+      using (ψ x).coe_symm_comp_coe
+  inv_hom_id := hom_ext fun x ↦ by
+    simpa only [fiberMap_comp, fiberMap_id, congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x]
+      using (ψ x).coe_comp_coe_symm
+
+@[simp] theorem fiberMap_isoOfContinuousEquiv_hom {A D : FiniteRankBundleCore 𝕜 B}
+    (ψ : B → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (hψ : Continuous fun p : A.core.TotalSpace ↦
+      TotalSpace.mk' (Fin D.rank → 𝕜) (E := D.core.Fiber) p.proj (ψ p.proj p.2)) (x : B) :
+    (isoOfContinuousEquiv ψ hψ).hom.fiberMap x = ψ x :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+@[simp] theorem fiberMap_isoOfContinuousEquiv_inv {A D : FiniteRankBundleCore 𝕜 B}
+    (ψ : B → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (hψ : Continuous fun p : A.core.TotalSpace ↦
+      TotalSpace.mk' (Fin D.rank → 𝕜) (E := D.core.Fiber) p.proj (ψ p.proj p.2)) (x : B) :
+    (isoOfContinuousEquiv ψ hψ).inv.fiberMap x = (ψ x).symm :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+
+section OfBundle
+variable {n : ℕ} {E₀ E₁ : B → Type*} [∀ x, AddCommMonoid (E₀ x)] [∀ x, Module 𝕜 (E₀ x)]
+  [∀ x, TopologicalSpace (E₀ x)] [TopologicalSpace (TotalSpace (Fin n → 𝕜) E₀)]
+  [FiberBundle (Fin n → 𝕜) E₀] [VectorBundle 𝕜 (Fin n → 𝕜) E₀]
+  [∀ x, AddCommMonoid (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [∀ x, TopologicalSpace (E₁ x)]
+  [TopologicalSpace (TotalSpace (Fin n → 𝕜) E₁)] [FiberBundle (Fin n → 𝕜) E₁]
+  [VectorBundle 𝕜 (Fin n → 𝕜) E₁]
+/-- Continuous fibrewise continuous linear equivalences induce an iso of `ofBundle` cores. -/
+noncomputable def ofBundleIso (Φ : ∀ x, E₀ x ≃L[𝕜] E₁ x)
+    (hΦ : Continuous fun p : TotalSpace (Fin n → 𝕜) E₀ ↦
+      TotalSpace.mk' (Fin n → 𝕜) (E := E₁) p.proj (Φ p.proj p.2)) :
+    ofBundle 𝕜 n E₀ ≅ ofBundle 𝕜 n E₁ :=
+  let h₀ := pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E₀
+  let h₁ := pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) E₁
+  isoOfContinuousEquiv (fun x ↦ (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₀ x).trans
+      ((Φ x).trans (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₁ x).symm)) <|
+    (h₁.symm.continuous.comp (hΦ.comp h₀.continuous)).congr fun ⟨_, _⟩ ↦ by
+      dsimp only [Function.comp_def, h₀, h₁]
+      rw [pointIndexedCoreHomeomorph_apply, pointIndexedCoreHomeomorph_symm_apply]; rfl
+@[simp] theorem fiberMap_ofBundleIso_hom (Φ : ∀ x, E₀ x ≃L[𝕜] E₁ x)
+    (hΦ : Continuous fun p : TotalSpace (Fin n → 𝕜) E₀ ↦
+      TotalSpace.mk' (Fin n → 𝕜) (E := E₁) p.proj (Φ p.proj p.2)) (x : B) :
+    (ofBundleIso Φ hΦ).hom.fiberMap x = ContinuousLinearEquiv.toContinuousLinearMap
+      ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₀ x).trans
+        ((Φ x).trans (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₁ x).symm)) :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+@[simp] theorem fiberMap_ofBundleIso_inv (Φ : ∀ x, E₀ x ≃L[𝕜] E₁ x)
+    (hΦ : Continuous fun p : TotalSpace (Fin n → 𝕜) E₀ ↦
+      TotalSpace.mk' (Fin n → 𝕜) (E := E₁) p.proj (Φ p.proj p.2)) (x : B) :
+    (ofBundleIso Φ hΦ).inv.fiberMap x = ContinuousLinearEquiv.toContinuousLinearMap
+      ((pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₀ x).trans
+        ((Φ x).trans (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₁ x).symm)).symm :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+private theorem pointIndexedCoreHomEquiv_inv_apply_hom
+    (β : ofBundle 𝕜 n E₀ ≅ ofBundle 𝕜 n E₁) (x : B) (v : E₀ x) :
+    (pointIndexedCoreHomEquiv (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜) (E := E₁) (E' := E₀)
+      β.inv).1 x ((pointIndexedCoreHomEquiv (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+        (E := E₀) (E' := E₁) β.hom).1 x v) = v := by
+  let e₀ := pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₀ x
+  let e₁ := pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) E₁ x
+  have hhom := (pointIndexedCoreHomEquiv_apply (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+    (E := E₀) (E' := E₁)) β.hom x v
+  have hinv := (pointIndexedCoreHomEquiv_apply (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+    (E := E₁) (E' := E₀)) β.inv x (e₁ (β.hom.fiberMap x (e₀.symm v)))
+  have hop : (β.inv.fiberMap x).comp (β.hom.fiberMap x) = ContinuousLinearMap.id 𝕜 _ := by
+    simpa only [fiberMap_comp, fiberMap_id] using
+      congrArg (fun f : ofBundle 𝕜 n E₀ ⟶ ofBundle 𝕜 n E₀ ↦ f.fiberMap x) β.hom_inv_id
+  exact (congrArg _ hhom).trans <| hinv.trans <|
+    (congrArg (fun w ↦ e₀ (β.inv.fiberMap x w)) (e₁.symm_apply_apply _)).trans <|
+      (congrArg e₀ (DFunLike.congr_fun hop (e₀.symm v))).trans (e₀.apply_symm_apply v)
+/-- An iso between `ofBundle` cores yields a continuous family of fibrewise equivalences. -/
+theorem exists_continuousLinearEquiv_of_ofBundle_iso (β : ofBundle 𝕜 n E₀ ≅ ofBundle 𝕜 n E₁) :
+    ∃ Φ : ∀ x, E₀ x ≃L[𝕜] E₁ x, Continuous fun p : TotalSpace (Fin n → 𝕜) E₀ ↦
+      TotalSpace.mk' (Fin n → 𝕜) (E := E₁) p.proj (Φ p.proj p.2) :=
+  ⟨fun x ↦ ContinuousLinearEquiv.equivOfInverse
+    ((pointIndexedCoreHomEquiv (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+      (E := E₀) (E' := E₁) β.hom).1 x)
+    ((pointIndexedCoreHomEquiv (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+      (E := E₁) (E' := E₀) β.inv).1 x)
+    (pointIndexedCoreHomEquiv_inv_apply_hom β x)
+    (pointIndexedCoreHomEquiv_inv_apply_hom β.symm x),
+   (pointIndexedCoreHomEquiv (𝕜 := 𝕜) (F := Fin n → 𝕜) (G := Fin n → 𝕜)
+     (E := E₀) (E' := E₁) β.hom).2⟩
+end OfBundle
 end Isomorphisms
 end FiniteRankBundleCore
 end TauCeti
