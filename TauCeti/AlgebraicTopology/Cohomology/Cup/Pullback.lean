@@ -124,6 +124,9 @@ theorem pullbackCup_pullbackCup (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst �
       (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
       (μ₂₃ := (ρ_ (ModuleCat.of K K)).hom) (μ' := (ρ_ M).hom) (by monoidal) (by monoidal)
       hpq h' hqr h]
+  -- The middle class `g^*c ⌣ v` is typed with coefficients `𝟙_ (ModuleCat K)` by
+  -- `singularCup_assoc` and with `ModuleCat.of K K` by `pullbackCup`; the two coefficient objects,
+  -- and the instance paths reaching them, agree only after unfolding `𝟙_`.
   rfl
 
 /-- Bijectivity of `a ↦ g^*a ⌣ u` is invariant under isomorphisms `φ : P ⟶ P'` of pairs and

@@ -155,12 +155,8 @@ theorem singularHomology_thomPairOver_hom_ext {T : C}
   -- Transport `g` and `g'` to the product bundle and compare them there, fibre by fibre.
   rw [← cancel_epi (TopPair.singularHomologyMap φ.inv R (finrank ℝ F))]
   refine singularHomology_prodThomPair_hom_ext fun b ↦ ?_
-  have hφ : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
-  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc, hφ,
+  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
     TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.2]
 
 end Bundle.Trivialization

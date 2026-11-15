@@ -81,6 +81,11 @@ variable {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
 
 section Sphere
 
+/-- Acting twice by the sign `(-1)ⁿ` is the identity. -/
+private theorem neg_one_pow_smul_neg_one_pow_smul {A : Type*} [AddCommGroup A] (n : ℕ) (x : A) :
+    (-1 : ℤ) ^ n • (-1 : ℤ) ^ n • x = x := by
+  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
+
 variable {d : ℕ}
 
 /-- **The Thom map of `δ σ`.** For a continuous linear equivalence `e : F ≃L[ℝ] ℝᵈ⁺²` and the class
@@ -112,8 +117,10 @@ theorem pullbackCup_prodThomPair_singularCohomologyδ (e : F ≃L[ℝ] Euclidean
     at hcomm
   rw [prodThomPairSingularCohomologySphereEquiv_apply, ← map_comp_prodThomPairProj,
     TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, hcomm, map_zsmul, hδ,
-    smul_smul, TopPair.pullbackCup_apply, smul_smul, ← pow_add, ← pow_add,
-    Even.neg_one_pow ⟨p * (d + 2), by ring⟩, one_smul]
+    smul_smul, TopPair.pullbackCup_apply]
+  -- The signs combine to `(-1)^(p (d + 2))` twice, which cancel.
+  rw [smul_smul, mul_assoc, ← pow_add, show p * (d + 1) + p = p * (d + 2) by ring, mul_smul,
+    neg_one_pow_smul_neg_one_pow_smul]
 
 /-- The Thom map of `δ σ` is bijective in every degree, since it is the equivalence
 `TauCeti.prodThomPairSingularCohomologySphereEquiv` up to a sign. -/
@@ -129,8 +136,8 @@ private theorem bijective_pullbackCup_prodThomPair_singularCohomologyδ
         (by lia) :=
     funext (pullbackCup_prodThomPair_singularCohomologyδ M e h)
   rw [hcomp]
-  refine Function.Involutive.bijective (fun x ↦ ?_) |>.comp (LinearEquiv.bijective _)
-  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul]
+  exact Function.Involutive.bijective (neg_one_pow_smul_neg_one_pow_smul _) |>.comp
+    (LinearEquiv.bijective _)
 
 end Sphere
 
