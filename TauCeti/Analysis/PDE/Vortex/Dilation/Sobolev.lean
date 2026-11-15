@@ -14,12 +14,12 @@ import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
 
 Pullback by the dilation `z ↦ t z` (`TauCeti.Vortex.dilateField`) multiplies the connection
 components of a plane vortex field by `t` and composes all components with the dilation. It
-carries the equation `*iF_a = c (1 - |α|²) / 8` to the same equation with coupling `t² c`
-(`TauCeti.Vortex.coupledEquation_dilateField_eq_zero_iff'`); for `t = (2r)^(-1/2)` this turns the
-large-parameter equation `*iF_a = (r / 4) (1 - |α|²)` into the normalized plane vortex equation
-(`TauCeti.Vortex.equation_dilateField_inv_sqrt_eq_zero_iff`). This file shows that the dilation
-is compatible with the concrete Sobolev scale on which plane vortices are studied, for every
-natural order `k`:
+carries, for `t ≠ 0`, the equation `*iF_a = c (1 - |α|²) / 8` to the same equation with coupling
+`t² c` (`TauCeti.Vortex.coupledEquation_dilateField_eq_zero_iff'`); for `t = (2r)^(-1/2)` this
+turns the large-parameter equation `*iF_a = (r / 4) (1 - |α|²)` into the normalized plane vortex
+equation (`TauCeti.Vortex.equation_dilateField_inv_sqrt_eq_zero_iff`). This file shows that the
+dilation is compatible with the concrete Sobolev scale on which plane vortices are studied, at
+natural orders `k`:
 
 * **Sobolev fields.** For `t ≠ 0`, the dilation preserves the Sobolev fields `H^k(ℂ; ℝ⁴)`
   (`dilateField_mem_sobolevFields_natCast_iff`): it is a linear change of variables followed by
@@ -30,10 +30,13 @@ natural order `k`:
   space `A_m^k = x_m + H^k` of framed degree-`m` fields
   (`dilateField_mem_framedFieldSpace_natCast_iff`). For `t < 0` and odd `m` it does not, since
   the end framing changes sign.
-* **Sobolev gauge groups.** Pullback of a gauge, `u ↦ u (t ·)`, preserves the Sobolev gauge groups
-  `G_k` (`comp_smul_mem_sobolevGaugeGroup_natCast`). Since pulling back a gauge transform is the
-  gauge transform by the pulled-back gauge (`TauCeti.Vortex.dilateField_gaugeTransform`), the
-  dilation intertwines the actions of `G_(k+1)` on `A_m^k`.
+* **Sobolev gauge groups.** For `t ≠ 0`, pullback of a gauge, `u ↦ u (t ·)`, preserves the Sobolev
+  gauge groups `G_s` of integer order `s > 1` (`comp_smul_mem_sobolevGaugeGroup_iff`). Since
+  pulling back a gauge transform is the gauge transform by the pulled-back gauge
+  (`TauCeti.Vortex.dilateField_gaugeTransform`), a nonzero dilation maps `G_s` gauge orbits onto
+  `G_s` gauge orbits (`exists_sobolevGaugeGroup_gaugeTransform_dilateField_eq_iff`). For `k > 1`
+  and `t > 0` it therefore intertwines the actions of `G_(k+1)` on `A_m^k`
+  (`exists_sobolevGaugeGroup_smul_dilateField_eq_iff`).
 
 With the scaling of the zero divisor and of the end framing
 (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_dilateField`,
@@ -90,14 +93,10 @@ theorem dilateField_mem_sobolevFields_natCast_iff (ht : t ≠ 0) {k : ℕ}
 
 /-- Off the discs where the cutoffs act, a positive dilation fixes the reference field: its
 connection `-i m dθ` and its section `(z / |z|)^m` are invariant under `z ↦ t z`. -/
-private theorem dilateField_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) (m : ℕ)
+theorem dilateField_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) (m : ℕ)
     (ht : 0 < t) {z : ℂ} (hz : f.rOut ≤ ‖z‖ ^ 2) (htz : f.rOut ≤ ‖t • z‖ ^ 2) :
     dilateField t (referenceField f m) z = referenceField f m z := by
-  have hz₀ : z ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hz
-    linarith [f.rOut_pos]
-  have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz₀
+  have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 (ne_zero_of_rOut_le_norm_sq f hz)
   have hnorm : ‖t • z‖ = t * ‖z‖ := by rw [norm_smul, Real.norm_of_nonneg ht.le]
   have hphase : t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
     rw [hnorm, Complex.real_smul, ofReal_mul, mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
@@ -115,14 +114,11 @@ theorem hasCompactSupport_dilateField_referenceField_sub (f : ContDiffBump (0 : 
   have h₂ : ∀ᶠ z : ℂ in cocompact ℂ, √f.rOut / t ≤ ‖z‖ :=
     tendsto_norm_cocompact_atTop.eventually_ge_atTop _
   filter_upwards [h₁, h₂] with z hz₁ hz₂
-  have hr := f.rOut_pos.le
-  have hsq (a : ℝ) (ha : √f.rOut ≤ a) : f.rOut ≤ a ^ 2 := by
-    simpa [Real.sq_sqrt hr] using pow_le_pow_left₀ (Real.sqrt_nonneg _) ha 2
   have htz : √f.rOut ≤ ‖t • z‖ := by
     rw [norm_smul, Real.norm_of_nonneg ht.le]
     rwa [div_le_iff₀ ht, mul_comm] at hz₂
-  rw [Pi.sub_apply, dilateField_referenceField_apply_eq f m ht (hsq _ hz₁) (hsq _ htz), sub_self,
-    Pi.zero_apply]
+  rw [Pi.sub_apply, dilateField_referenceField_apply_eq f m ht (Real.sqrt_le_iff.1 hz₁).2
+    (Real.sqrt_le_iff.1 htz).2, sub_self, Pi.zero_apply]
 
 /-- A positive dilation changes the reference field by a field in every Sobolev space. -/
 theorem dilateField_referenceField_sub_mem_sobolevFields (f : ContDiffBump (0 : ℝ)) (m : ℕ)
@@ -155,14 +151,55 @@ theorem dilateField_mem_framedFieldSpace_natCast_iff {f : ContDiffBump (0 : ℝ)
 
 /-! ### The Sobolev gauge groups -/
 
-/-- Pullback by a nonzero dilation preserves the Sobolev gauge group `G_k` of each natural
-order `k > 1`. -/
-theorem comp_smul_mem_sobolevGaugeGroup_natCast (ht : t ≠ 0) {k : ℕ} {hk : 1 < (k : ℝ)}
-    {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hk) :
-    (fun z ↦ u (t • z)) ∈ sobolevGaugeGroup hk := by
-  obtain ⟨hc, h₁, h₂⟩ := (mem_sobolevGaugeGroup hk u).1 hu
-  exact (mem_sobolevGaugeGroup hk _).2 ⟨hc.comp (continuous_const_smul t),
+/-- Pullback by a nonzero dilation preserves the Sobolev gauge group `G_s` of each integer
+order `s > 1`. The order is any real `s` equal to a natural number, so that this applies both to
+`G_k` and to the group `G_(k+1)` indexed by `(k : ℝ) + 1` that acts on `A_m^k`. -/
+theorem comp_smul_mem_sobolevGaugeGroup (ht : t ≠ 0) {s : ℝ} {hs : 1 < s} {k : ℕ}
+    (hsk : s = k) {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) :
+    (fun z ↦ u (t • z)) ∈ sobolevGaugeGroup hs := by
+  subst hsk
+  obtain ⟨hc, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  exact (mem_sobolevGaugeGroup hs _).2 ⟨hc.comp (continuous_const_smul t),
     comp_smul_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num) ht h₁,
     comp_smul_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num) ht h₂⟩
+
+/-- A gauge lies in the Sobolev gauge group `G_s` of integer order `s > 1` exactly when its
+pullback by a nonzero dilation does. -/
+theorem comp_smul_mem_sobolevGaugeGroup_iff (ht : t ≠ 0) {s : ℝ} {hs : 1 < s} {k : ℕ}
+    (hsk : s = k) {u : ℂ → Circle} :
+    (fun z ↦ u (t • z)) ∈ sobolevGaugeGroup hs ↔ u ∈ sobolevGaugeGroup hs := by
+  refine ⟨fun h ↦ ?_, comp_smul_mem_sobolevGaugeGroup ht hsk⟩
+  simpa only [smul_smul, mul_inv_cancel₀ ht, one_smul] using
+    comp_smul_mem_sobolevGaugeGroup (inv_ne_zero ht) hsk h
+
+/-- **Dilation preserves Sobolev gauge orbits.** For `t ≠ 0` and an integer order `s > 1`, the
+fields `x` and `y` are related by a gauge transformation in `G_s` exactly when their pullbacks by
+`z ↦ t z` are. -/
+theorem exists_sobolevGaugeGroup_gaugeTransform_dilateField_eq_iff (ht : t ≠ 0) {s : ℝ}
+    {hs : 1 < s} {k : ℕ} (hsk : s = k) {x y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    (∃ u ∈ sobolevGaugeGroup hs, gaugeTransform u (dilateField t y) = dilateField t x) ↔
+      ∃ u ∈ sobolevGaugeGroup hs, gaugeTransform u y = x := by
+  -- Pulling back a relating gauge by `t` relates the pulled-back fields; pulling back by `t⁻¹`
+  -- undoes the dilation.
+  have key {r : ℝ} (hr : r ≠ 0) {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+      (h : ∃ u ∈ sobolevGaugeGroup hs, gaugeTransform u y = x) :
+      ∃ u ∈ sobolevGaugeGroup hs, gaugeTransform u (dilateField r y) = dilateField r x := by
+    obtain ⟨u, hu, rfl⟩ := h
+    exact ⟨_, comp_smul_mem_sobolevGaugeGroup hr hsk hu, (dilateField_gaugeTransform r u y).symm⟩
+  refine ⟨fun h ↦ ?_, key ht⟩
+  simpa [inv_mul_cancel₀ ht] using key (inv_ne_zero ht) h
+
+/-- **Dilation intertwines the actions of `G_(k+1)` on `A_m^k`.** For `k > 1` and `t > 0`, two
+framed fields of `A_m^k` lie in the same `G_(k+1)` orbit exactly when their pullbacks by
+`z ↦ t z` do. -/
+theorem exists_sobolevGaugeGroup_smul_dilateField_eq_iff {k : ℕ} [Fact (1 < k)]
+    {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} (ht : 0 < t)
+    {x y : framedFieldSpace f m k} :
+    (∃ u : sobolevGaugeGroup hs, u • (⟨dilateField t y,
+        dilateField_mem_framedFieldSpace_natCast ht y.2⟩ : framedFieldSpace f m k) =
+      ⟨dilateField t x, dilateField_mem_framedFieldSpace_natCast ht x.2⟩) ↔
+      ∃ u : sobolevGaugeGroup hs, u • y = x := by
+  simp only [Subtype.ext_iff, coe_sobolevGaugeGroup_smul, Subtype.exists, exists_prop]
+  exact exists_sobolevGaugeGroup_gaugeTransform_dilateField_eq_iff ht.ne' (Nat.cast_succ k).symm
 
 end TauCeti.Vortex

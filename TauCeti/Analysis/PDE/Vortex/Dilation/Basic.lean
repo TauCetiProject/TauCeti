@@ -26,8 +26,8 @@ In particular, the physical coefficient `r/4` becomes `1/8` in the coordinate
 The same laws hold for the linearization and the infinitesimal and finite gauge
 actions. For positive coupling the gauge row uses the coefficient metric `|b|² + c |δα|²/4`; its
 transformation accounts for the change of that metric. Pulling back a gauge transform is the
-gauge transform by the pulled-back gauge (`dilateField_gaugeTransform`), the smooth framed gauge
-group is preserved, and so framed gauge orbits go to framed gauge orbits
+gauge transform by the pulled-back gauge (`dilateField_gaugeTransform`). For `t ≠ 0` the smooth
+framed gauge group is preserved, and so framed gauge orbits go to framed gauge orbits
 (`exists_framedGaugeGroup_smul_dilateField_eq_iff`).
 
 The densities scale as well: the curvature by `t²`, the covariant derivative of the section by
@@ -35,8 +35,8 @@ The densities scale as well: the curvature by `t²`, the covariant derivative of
 `1` on its curvature, kinetic and potential terms (`energyDensity_dilateField`). Every-order
 derivative and squared `L²` scaling formulas include the change of volume and give the integer
 Sobolev factors on smooth fields. A positive dilation preserves the end framing
-`α(z) (z / |z|)^(-m) → c` (`tendsto_sectionValue_dilateField`), and pullback by `z ↦ t z` moves
-the zero divisor `D` to `t⁻¹ D` (`isZeroMultiplicity_sectionValue_dilateField`).
+`α(z) (z / |z|)^(-m) → c` (`tendsto_sectionValue_dilateField`), and pullback by `z ↦ t z`,
+`t ≠ 0`, moves the zero divisor `D` to `t⁻¹ D` (`isZeroMultiplicity_sectionValue_dilateField`).
 
 These are identities of flat differential expressions; the action on the Sobolev field spaces
 and the Sobolev gauge groups is in `TauCeti.Analysis.PDE.Vortex.Dilation.Sobolev`, and insertion
@@ -82,6 +82,17 @@ theorem dilateField_dilateField (s t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin
     dilateField s (dilateField t x) = dilateField (s * t) x := by
   ext z i
   fin_cases i <;> simp [dilateField, mul_comm s t, mul_assoc] <;> ring
+
+@[simp]
+theorem dilateField_zero (t : ℝ) : dilateField t 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [dilateField]
+
+@[simp]
+theorem dilateField_neg (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    dilateField t (-x) = -dilateField t x := by
+  ext z i
+  fin_cases i <;> simp [dilateField]
 
 @[simp]
 theorem dilateField_add (t : ℝ) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
@@ -261,7 +272,8 @@ theorem equation_dilateField_inv_sqrt (r : ℝ) (hr : 0 < r)
     inv_mul_cancel₀ (ne_of_gt (by positivity : 0 < 2 * r))] using
     coupledEquation_dilateField (2 * r) (√(2 * r))⁻¹ x w
 
-/-- The curvature `*iF_a` of a pulled-back field scales by `t²`. -/
+/-- The curvature coefficient `curvature`, with `F_a = i curvature ds ∧ dt`, of a pulled-back
+field scales by `t²`. -/
 @[simp]
 theorem curvature_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     curvature (dilateField t x) z = t ^ 2 * curvature x (t • z) := by
@@ -438,7 +450,7 @@ theorem dilateField_phaseGauge (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)
 /-! ### Gauge transformations -/
 
 /-- The logarithmic derivative of a pulled-back gauge is the pulled-back form, scaled by `t`. -/
-private theorem gaugeForm_comp_smul (u : ℂ → Circle) (t : ℝ) (z : ℂ) :
+theorem gaugeForm_comp_smul (u : ℂ → Circle) (t : ℝ) (z : ℂ) :
     gaugeForm (fun w ↦ u (t • w)) z = t • gaugeForm u (t • z) := by
   ext v
   rw [gaugeForm_apply, fderiv_comp_smul (f := fun w ↦ (u w : ℂ)), smul_apply, smul_apply,
@@ -455,6 +467,14 @@ theorem dilateField_gaugeTransform (t : ℝ) (u : ℂ → Circle) (x : ℂ → E
   fin_cases i <;>
     simp only [dilateField_apply, gaugeTransform_apply, hg, PiLp.toLp_apply] <;> simp <;> ring
 
+/-- Pullback commutes with the linear gauge action on field variations. -/
+theorem dilateField_gaugeLinearAction (t : ℝ) (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    dilateField t (gaugeLinearAction u y) =
+      gaugeLinearAction (fun z ↦ u (t • z)) (dilateField t y) := by
+  ext z i
+  fin_cases i <;> simp [dilateField, gaugeLinearAction_apply]
+
 /-- Pullback by a nonzero dilation preserves the smooth framed gauge group. -/
 theorem comp_smul_mem_framedGaugeGroup {t : ℝ} (ht : t ≠ 0) {u : ℂ → Circle}
     (hu : u ∈ framedGaugeGroup) : (fun z ↦ u (t • z)) ∈ framedGaugeGroup := by
@@ -463,6 +483,14 @@ theorem comp_smul_mem_framedGaugeGroup {t : ℝ} (ht : t ≠ 0) {u : ℂ → Cir
     simpa only [Complex.real_smul] using
       Filter.tendsto_cocompact_mul_left₀ (ofReal_ne_zero.2 ht)
   exact ⟨hu.1.comp (contDiff_id.const_smul t), hu.2.comp hdil⟩
+
+/-- A gauge lies in the smooth framed gauge group exactly when its pullback by a nonzero
+dilation does. -/
+theorem comp_smul_mem_framedGaugeGroup_iff {t : ℝ} (ht : t ≠ 0) {u : ℂ → Circle} :
+    (fun z ↦ u (t • z)) ∈ framedGaugeGroup ↔ u ∈ framedGaugeGroup := by
+  refine ⟨fun h ↦ ?_, comp_smul_mem_framedGaugeGroup ht⟩
+  simpa only [smul_smul, mul_inv_cancel₀ ht, one_smul] using
+    comp_smul_mem_framedGaugeGroup (inv_ne_zero ht) h
 
 /-- **Dilation preserves framed gauge orbits.** For `t ≠ 0`, the fields `x` and `y` are related
 by a smooth framed gauge transformation exactly when their pullbacks by `z ↦ t z` are. -/
