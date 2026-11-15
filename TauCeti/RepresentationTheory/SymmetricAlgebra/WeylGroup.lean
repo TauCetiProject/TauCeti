@@ -82,10 +82,7 @@ private theorem natCard_inertia_span_coroot' (i : ι) :
       2 := by
   let := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
   set ρ := P.weylGroupRootRep
-  have hH : LinearMap.ker (P.coroot' i) ∈ ρ.reflectingHyperplanes := by
-    rw [← fixedSubmodule_weylGroupRootRep_ofIdx]
-    exact ρ.fixedSubmodule_mem_reflectingHyperplanes
-      (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx i)
+  have hH := P.ker_coroot'_mem_reflectingHyperplanes i
   have hset : ((Ideal.span {SymmetricAlgebra.ι K (Dual K M) (P.coroot' i)}).inertia P.weylGroup :
       Set P.weylGroup) = {1, weylGroup.ofIdx P i} := by
     ext w
@@ -138,10 +135,7 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset {n : Type*} [Finty
     (fun H _ H' _ h ↦ Subtype.ext <| by rw [← hαker, ← hαker, h]) (fun β hβ ↦ ?_)
     (fun _ _ ↦ rfl)
   rw [TauCeti.mem_posRootsFinset] at hβ
-  have hmem : LinearMap.ker (P.coroot' β) ∈ ρ.reflectingHyperplanes := by
-    rw [← fixedSubmodule_weylGroupRootRep_ofIdx]
-    exact ρ.fixedSubmodule_mem_reflectingHyperplanes
-      (P.finrank_quotient_fixedSubmodule_weylGroupRootRep_ofIdx β)
+  have hmem := P.ker_coroot'_mem_reflectingHyperplanes β
   exact ⟨⟨_, hmem⟩, Finset.mem_univ _,
     P.eq_of_ker_coroot'_le_of_mem_posRoots b (hαpos _) hβ (hαker ⟨_, hmem⟩).le⟩
 

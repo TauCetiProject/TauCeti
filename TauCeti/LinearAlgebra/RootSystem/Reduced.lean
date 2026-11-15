@@ -30,7 +30,7 @@ symmetric form of a simply-laced Cartan matrix.
   root `j ≠ -s` in the direction `s` never reaches `-s`.
 * `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
   root that is a sum of two roots is neither that root nor its negative.
-* `RootPairing.reflection_eq_of_ker_coroot'_le`: in a finite reduced root pairing over a field of
+* `RootPairing.reflection_eq_of_ker_coroot'_le`: in a finite reduced root pairing over a domain of
   characteristic zero, a root reflection is determined by its fixed hyperplane.
 -/
 
@@ -107,30 +107,24 @@ theorem flip_isReduced [Finite ι] [CharZero R] [P.IsReduced] : P.flip.IsReduced
   have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
   inferInstance
 
-end Domain
-
-section Field
-
-variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
-  [Module K N] (P : RootPairing ι K M N)
-
+omit [NeZero (2 : R)] in
 /-- **A root reflection is determined by its fixed hyperplane.** In a finite reduced root pairing
-over a field of characteristic zero, if the kernel of the coroot of `i` lies in the kernel of the
+over a domain of characteristic zero, if the kernel of the coroot of `i` lies in the kernel of the
 coroot of `j`, then the reflections in `i` and `j` coincide. -/
-theorem reflection_eq_of_ker_coroot'_le [Finite ι] [P.IsReduced] {i j : ι}
+theorem reflection_eq_of_ker_coroot'_le [Finite ι] [CharZero R] [P.IsReduced] {i j : ι}
     (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) :
     P.reflection i = P.reflection j := by
-  -- The coroot of `j` kills `αⱼ - (⟨αⱼ, αᵢ^∨⟩ / 2) αᵢ`, since the coroot of `i` does. Evaluating
+  -- The coroot of `j` kills `2 αⱼ - ⟨αⱼ, αᵢ^∨⟩ αᵢ`, since the coroot of `i` does. Evaluating
   -- gives `⟨αᵢ, αⱼ^∨⟩ ⟨αⱼ, αᵢ^∨⟩ = 4`, so the two roots are proportional.
-  have hz := @h (P.root j - (P.pairing j i / 2) • P.root i) (by
+  have hz := @h ((2 : R) • P.root j - P.pairing j i • P.root i) (by
     simp only [LinearMap.mem_ker, map_sub, map_smul, root_coroot'_eq_pairing, pairing_same,
       smul_eq_mul]
     ring)
   simp only [LinearMap.mem_ker, map_sub, map_smul, root_coroot'_eq_pairing, pairing_same,
     smul_eq_mul] at hz
-  have hdep : ¬LinearIndependent K ![P.root i, P.root j] := by
+  have hdep : ¬LinearIndependent R ![P.root i, P.root j] := by
     rw [← coxeterWeight_eq_four_iff_not_linearIndependent, coxeterWeight]
-    linear_combination -2 * hz
+    linear_combination -hz
   rcases IsReduced.eq_or_eq_neg i j hdep with he | he
   · rw [P.root.injective he]
   · -- Here `αᵢ = -αⱼ = sⱼ αⱼ`, and conjugating `sⱼ` by itself gives `sⱼ`.
@@ -139,6 +133,6 @@ theorem reflection_eq_of_ker_coroot'_le [Finite ι] [P.IsReduced] {i j : ι}
     ext x
     rw [hi, reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp, reflection_same]
 
-end Field
+end Domain
 
 end RootPairing

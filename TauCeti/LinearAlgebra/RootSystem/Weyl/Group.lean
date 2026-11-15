@@ -52,7 +52,7 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.weylGroupRootRep_injective` says the weight-space representation of the Weyl group
   is faithful.
 * `RootPairing.weylGroup.ofIdx_eq_of_ker_coroot'_le` says that in a finite reduced root pairing
-  over a field of characteristic zero, a root reflection in the Weyl group is determined by its
+  over a domain of characteristic zero, a root reflection in the Weyl group is determined by its
   fixed hyperplane.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
@@ -546,21 +546,15 @@ theorem card_weylGroup_le_factorial [P.IsRootSystem] :
 
 end
 
-end RootSystem
-
-section Field
-
-variable {K : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
-  [Module K N] (P : RootPairing ι K M N)
-
 /-- **A Weyl-group root reflection is determined by its fixed hyperplane.** In a finite reduced
-root pairing over a field of characteristic zero, if the kernel of the coroot of `i` lies in the
+root pairing over a domain of characteristic zero, if the kernel of the coroot of `i` lies in the
 kernel of the coroot of `j`, then `sᵢ = sⱼ` in the Weyl group. -/
-theorem weylGroup.ofIdx_eq_of_ker_coroot'_le [Finite ι] [P.IsReduced] {i j : ι}
+theorem weylGroup.ofIdx_eq_of_ker_coroot'_le [IsDomain R] [CharZero R] [Module.IsTorsionFree R M]
+    [Finite ι] [P.IsReduced] {i j : ι}
     (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) :
     weylGroup.ofIdx P i = weylGroup.ofIdx P j :=
   weylGroup.ext fun x ↦ by simp [P.reflection_eq_of_ker_coroot'_le h]
 
-end Field
+end RootSystem
 
 end RootPairing

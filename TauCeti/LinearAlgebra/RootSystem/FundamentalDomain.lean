@@ -267,17 +267,14 @@ theorem stabilizer_eq_closure_ofIdx [Finite P.weylGroup] (b : P.Base) (x : M) :
           (MulAut.conj u⁻¹).toMonoidHom := by
       refine (Subgroup.closure_le _).2 fun s hs ↦ ?_
       obtain ⟨i, -, hi, rfl⟩ := mem_wallReflections.mp hs
-      have hperm : P.weylGroupToPerm u (P.weylGroupToPerm u⁻¹ i) = i := by
-        rw [← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one, Equiv.Perm.one_apply]
       refine Subgroup.subset_closure ⟨P.weylGroupToPerm u⁻¹ i, ?_, ?_⟩
       · have h := coroot'_weylGroupToPerm_smul P u (P.weylGroupToPerm u⁻¹ i) x
-        rw [hperm] at h
+        simp only [map_inv, Equiv.Perm.coe_inv, Equiv.apply_symm_apply] at h
         exact h.symm.trans hi
       · rw [weylGroup.ofIdx_weylGroupToPerm_eq_conj, MulEquiv.coe_toMonoidHom,
           MulAut.conj_apply, inv_inv]
     simpa [mul_assoc] using hle hmem
   · rintro _ ⟨j, hj, rfl⟩
-    rw [SetLike.mem_coe, MulAction.mem_stabilizer_iff, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-      reflection_apply, hj, zero_smul, sub_zero]
+    simp [reflection_apply, hj.out]
 
 end RootPairing

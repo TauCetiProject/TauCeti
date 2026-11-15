@@ -93,7 +93,7 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `RootPairing.exists_mem_posRoots_ofIdx_eq` says every root reflection is the reflection in a
   positive root, and `RootPairing.injOn_ofIdx_posRoots` says distinct positive roots of a reduced
   pairing have distinct reflections. Hence `RootPairing.eq_of_ker_coroot'_le_of_mem_posRoots`
-  says that, in a finite reduced root pairing over a field of characteristic zero, a positive root
+  says that, in a finite reduced root pairing over a domain of characteristic zero, a positive root
   is determined by its fixed hyperplane.
 
 ## Implementation notes
@@ -325,8 +325,7 @@ theorem _root_.RootPairing.exists_mem_posRoots_ofIdx_eq (j : ι) :
     · rw [RootPairing.indexNeg_neg, reflectionPerm_self_mem_posRoots_iff_mem_negRoots,
         ← not_mem_posRoots_iff_mem_negRoots]
       exact hj
-    · rw [RootPairing.weylGroup.ofIdx_smul, RootPairing.weylGroup.ofIdx_smul,
-        RootPairing.Equiv.reflection_smul, RootPairing.Equiv.reflection_smul,
+    · simp only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
         RootPairing.reflection_indexNeg_neg]
 
 /-- **Distinct positive roots have distinct reflections.** -/
@@ -343,6 +342,15 @@ theorem _root_.RootPairing.injOn_ofIdx_posRoots [P.IsReduced] :
   simp only [map_neg, RootPairing.root_coroot'_eq_pairing, RootPairing.pairing_same] at h2
   have h4 : ((4 : ℕ) : R) = 0 := by push_cast; linear_combination -h2
   exact absurd (Nat.cast_eq_zero.1 h4) (by norm_num)
+
+/-- **A positive root is determined by its hyperplane.** In a finite reduced root pairing over a
+domain of characteristic zero, if the kernel of the coroot of a positive root `i` lies in the kernel
+of the coroot of a positive root `j`, then `i = j`. -/
+theorem _root_.RootPairing.eq_of_ker_coroot'_le_of_mem_posRoots [IsDomain R]
+    [Module.IsTorsionFree R M] [Finite ι] [P.IsReduced] {i j : ι} (hi : i ∈ posRoots P b)
+    (hj : j ∈ posRoots P b) (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) :
+    i = j :=
+  P.injOn_ofIdx_posRoots b hi hj (RootPairing.weylGroup.ofIdx_eq_of_ker_coroot'_le P h)
 
 /-- The positive roots are closed under addition: a root that is the sum of two positive roots is
 positive, because heights add. -/
@@ -922,22 +930,3 @@ theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots 
     exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
 
 end TauCeti
-
-namespace RootPairing
-
-section Field
-
-variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
-  [Module K N] (P : RootPairing ι K M N)
-
-/-- **A positive root is determined by its hyperplane.** In a finite reduced root pairing, if the
-kernel of the coroot of a positive root `i` lies in the kernel of the coroot of a positive root
-`j`, then `i = j`. -/
-theorem eq_of_ker_coroot'_le_of_mem_posRoots [Finite ι] [P.IsReduced] (b : P.Base) {i j : ι}
-    (hi : i ∈ TauCeti.posRoots P b) (hj : j ∈ TauCeti.posRoots P b)
-    (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) : i = j :=
-  P.injOn_ofIdx_posRoots b hi hj (weylGroup.ofIdx_eq_of_ker_coroot'_le P h)
-
-end Field
-
-end RootPairing
