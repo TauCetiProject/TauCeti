@@ -23,18 +23,12 @@ public section
 
 namespace RingHom
 
-@[simp]
-theorem op_id (R : Type*) [NonAssocSemiring R] :
-    RingHom.op (RingHom.id R) = RingHom.id Rᵐᵒᵖ := by
-  ext x
-  rfl
+@[simp] theorem op_id (R : Type*) [NonAssocSemiring R] :
+    RingHom.op (RingHom.id R) = RingHom.id Rᵐᵒᵖ := by ext; rfl
 
-@[simp]
-theorem op_comp {R S T : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [NonAssocSemiring T]
-    (f : R →+* S) (g : S →+* T) :
-    RingHom.op (g.comp f) = (RingHom.op g).comp (RingHom.op f) := by
-  ext x
-  rfl
+@[simp] theorem op_comp {R S T : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [NonAssocSemiring T] (f : R →+* S) (g : S →+* T) :
+    RingHom.op (g.comp f) = (RingHom.op g).comp (RingHom.op f) := by ext; rfl
 
 end RingHom
 
@@ -51,28 +45,21 @@ def prodMulOpposite (R S : Type*) [Mul R] [Add R] [Mul S] [Add S] :
   map_mul' _ _ := rfl
   map_add' _ _ := rfl
 
-@[simp]
-theorem prodMulOpposite_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S] (x : (R × S)ᵐᵒᵖ) :
+@[simp] theorem prodMulOpposite_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
+    (x : (R × S)ᵐᵒᵖ) :
     prodMulOpposite R S x = (MulOpposite.op x.unop.1, MulOpposite.op x.unop.2) := (rfl)
 
-@[simp]
-theorem prodMulOpposite_symm_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
+@[simp] theorem prodMulOpposite_symm_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
     (x : Rᵐᵒᵖ × Sᵐᵒᵖ) :
     (prodMulOpposite R S).symm x = MulOpposite.op (x.1.unop, x.2.unop) := (rfl)
 
-@[simp]
-theorem fst_comp_prodMulOpposite (R S : Type*) [NonAssocSemiring R] [NonAssocSemiring S] :
+@[simp] theorem fst_comp_prodMulOpposite (R S : Type*) [NonAssocSemiring R] [NonAssocSemiring S] :
     (RingHom.fst Rᵐᵒᵖ Sᵐᵒᵖ).comp (prodMulOpposite R S : (R × S)ᵐᵒᵖ →+* Rᵐᵒᵖ × Sᵐᵒᵖ) =
-      RingHom.op (RingHom.fst R S) := by
-  ext x
-  rfl
+      RingHom.op (RingHom.fst R S) := by ext; rfl
 
-@[simp]
-theorem snd_comp_prodMulOpposite (R S : Type*) [NonAssocSemiring R] [NonAssocSemiring S] :
+@[simp] theorem snd_comp_prodMulOpposite (R S : Type*) [NonAssocSemiring R] [NonAssocSemiring S] :
     (RingHom.snd Rᵐᵒᵖ Sᵐᵒᵖ).comp (prodMulOpposite R S : (R × S)ᵐᵒᵖ →+* Rᵐᵒᵖ × Sᵐᵒᵖ) =
-      RingHom.op (RingHom.snd R S) := by
-  ext x
-  rfl
+      RingHom.op (RingHom.snd R S) := by ext; rfl
 
 end RingEquiv
 
