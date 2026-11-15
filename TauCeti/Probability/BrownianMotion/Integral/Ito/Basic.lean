@@ -10,7 +10,7 @@ public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
-import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Predictable.Basic
@@ -105,19 +105,8 @@ private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ
   have hmeas : Measurable fun s ↦ ‖K k s ω - H s ω‖ₑ ^ 2 :=
     ((((hK k).sub hH).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).comp
       (measurable_id.prodMk measurable_const)
-  -- The squared triangle inequality through `H`, integrated in time.
-  have hle : ∫⁻ s, ‖K k s ω - L k s ω‖ₑ ^ 2 ∂timeMeasure t ≤
-      2 * ((∫⁻ s, ‖K k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t) +
-        ∫⁻ s, ‖L k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t) := by
-    rw [← lintegral_add_left hmeas, ← lintegral_const_mul' _ _ (by norm_num)]
-    refine lintegral_mono fun s ↦ ?_
-    have h := ENNReal.ofReal_le_ofReal
-      (norm_sub_sq_le_two_mul (K k s ω) (L k s ω) (H s ω))
-    simpa only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
-      ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _), ENNReal.ofReal_pow (norm_nonneg _),
-      ofReal_norm, ENNReal.ofReal_ofNat] using h
   have hlt := ENNReal.add_lt_add hcon.1 hcon.2
-  refine (hω.trans hle).not_gt ?_
+  refine (hω.trans (lintegral_enorm_sub_sq_le_two_mul hmeas.aemeasurable)).not_gt ?_
   calc
     _ < 2 * (η + η) := by
       rw [two_mul, two_mul]

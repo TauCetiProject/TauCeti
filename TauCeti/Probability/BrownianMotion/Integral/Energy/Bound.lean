@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
@@ -271,41 +272,6 @@ theorem IsFilteredPreBrownianReal.measure_abs_sum_mul_sub_ge_le
     _ ≤ _ := add_le_add
       (measure_abs_sum_mul_sub_energyCutoff_ge_le hW hτ ha hε hδ) le_rfl
 
-private theorem tendsto_measure_of_tail_bound {ι : Type*} {l : Filter ι}
-    {A : ι → Set Ω} {B : ℝ → ι → ℝ≥0∞} {ε : ℝ} (hε : 0 < ε)
-    (htail : ∀ δ > 0, Filter.Tendsto (B δ) l (nhds 0))
-    (hbound : ∀ δ > 0, ∀ k, P (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k) :
-    Filter.Tendsto (fun k ↦ P (A k)) l (nhds 0) := by
-  refine ENNReal.tendsto_nhds_zero.2 fun c hc ↦ ?_
-  by_cases hctop : c = ∞
-  · simp [hctop]
-  have hcpos : 0 < c.toReal := ENNReal.toReal_pos hc.ne' hctop
-  let δ := c.toReal * ε ^ 2 / 2
-  have hδ : 0 < δ := by positivity
-  have hhalf : 0 < ENNReal.ofReal (c.toReal / 2) := by positivity
-  filter_upwards [ENNReal.tendsto_nhds_zero.1 (htail δ hδ) _ hhalf] with k hk
-  have hquot : δ / ε ^ 2 = c.toReal / 2 := by
-    dsimp [δ]
-    field_simp
-  calc
-    P (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k := hbound δ hδ k
-    _ ≤ ENNReal.ofReal (c.toReal / 2) + ENNReal.ofReal (c.toReal / 2) := by
-      rw [hquot]
-      exact add_le_add le_rfl hk
-    _ = c := by
-      rw [← ENNReal.ofReal_add (by positivity) (by positivity), add_halves,
-        ENNReal.ofReal_toReal hctop]
-
-private theorem tendsto_measure_lt_of_tendstoInMeasure {ι : Type*} {l : Filter ι}
-    {E : ι → Ω → ℝ} (henergy : TendstoInMeasure P E l (fun _ ↦ 0)) {δ : ℝ} (hδ : 0 < δ) :
-    Filter.Tendsto (fun k ↦ P {ω | δ < E k ω}) l (nhds 0) := by
-  have htail := (tendstoInMeasure_iff_norm.1 henergy) δ hδ
-  simp only [sub_zero, Real.norm_eq_abs] at htail
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds htail
-    (fun _ ↦ bot_le) fun k ↦ measure_mono fun ω hω ↦ by
-      simp only [mem_ofPred_eq] at hω ⊢
-      exact hω.le.trans (le_abs_self _)
-
 /-- Convergence to zero in pathwise square energy in probability implies convergence to
 zero in probability of elementary Brownian integrals. Grids and their sizes may vary;
 no uniform expected-energy bound is needed. -/
@@ -320,7 +286,7 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
       height k i ω * (W (grid k (i + 1)) ω - W (grid k i) ω)) l (fun _ ↦ 0) := by
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
   simp only [sub_zero, Real.norm_eq_abs]
-  exact tendsto_measure_of_tail_bound hε
+  exact tendsto_measure_of_le_ofReal_div_sq_add
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_abs_sum_mul_sub_ge_le (hgrid k) (hheight k) hε hδ.le
 
@@ -420,7 +386,7 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_of_energy
       (fun _ ↦ 0) := by
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
   simp only [sub_zero, Real.norm_eq_abs]
-  refine tendsto_measure_of_tail_bound hε (fun δ hδ ↦ ?_) fun δ _ k ↦
+  refine tendsto_measure_of_le_ofReal_div_sq_add (fun δ hδ ↦ ?_) fun δ _ k ↦
     hW.measure_abs_simpleGains_ge_le (hgrid k) (hheight k) t hε
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (henergy _ (ENNReal.ofReal_pos.2 hδ)) (fun _ ↦ bot_le)
@@ -544,7 +510,7 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
       l (fun _ ↦ 0)) {ε : ℝ} (hε : 0 < ε) :
     Filter.Tendsto (fun k ↦ P {ω | ∃ t,
       ε < |Finance.simpleGains (grid k) (N k) (height k) W t ω|}) l (nhds 0) := by
-  exact tendsto_measure_of_tail_bound hε
+  exact tendsto_measure_of_le_ofReal_div_sq_add
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
 
