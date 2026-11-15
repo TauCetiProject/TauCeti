@@ -57,8 +57,10 @@ morphism.
   `CategoryTheory.ExactPairing.rightMate_tensorHom`: mates with respect to tensor product
   pairings;
 * `CategoryTheory.ExactPairing.rightMate_associator_hom`,
-  `CategoryTheory.ExactPairing.rightMate_leftUnitor_hom` and
-  `CategoryTheory.ExactPairing.rightMate_rightUnitor_hom`: mates of the structure morphisms;
+  `CategoryTheory.ExactPairing.rightMate_leftUnitor_hom`,
+  `CategoryTheory.ExactPairing.rightMate_rightUnitor_hom` and
+  `CategoryTheory.ExactPairing.rightMate_exactPairingUnit`: mates of the structure morphisms and of
+  scalars;
 * `CategoryTheory.ExactPairing.rightMate_evaluation` and
   `CategoryTheory.ExactPairing.rightMate_coevaluation`: the mate of an evaluation is a
   coevaluation, and conversely;
@@ -72,8 +74,8 @@ morphism.
   pairings, characterized by `CategoryTheory.ExactPairing.leftMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_leftMate`, with `leftMate_id`, `comp_leftMate`,
   the tensor product formulas `leftMate_whiskerLeft`, `leftMate_whiskerRight` and
-  `leftMate_tensorHom`, and the structure-morphism formulas `leftMate_associator_hom`,
-  `leftMate_leftUnitor_hom` and `leftMate_rightUnitor_hom`;
+  `leftMate_tensorHom`, and the structure-morphism and scalar formulas `leftMate_associator_hom`,
+  `leftMate_leftUnitor_hom`, `leftMate_rightUnitor_hom` and `leftMate_exactPairingUnit`;
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
   as left mates;
@@ -306,6 +308,15 @@ theorem rightMate_coevaluation {X X' X'' : C} (pX : ExactPairing X X')
     _ = _ := by
       rw [coevaluation_evaluation'']; monoidal
 
+/-- With respect to the self-pairing `exactPairingUnit` of `𝟙_ C`, every scalar `s : 𝟙_ C ⟶ 𝟙_ C`
+is its own right mate. -/
+@[simp]
+theorem rightMate_exactPairingUnit (s : 𝟙_ C ⟶ 𝟙_ C) :
+    rightMate exactPairingUnit exactPairingUnit s = s := by
+  refine rightHom_ext (X := 𝟙_ C) ?_
+  rw [rightMate_comp_evaluation, TauCeti.ExactPairing.unit_evaluation, ← unitors_equal,
+    leftUnitor_naturality, unitors_equal, rightUnitor_naturality]
+
 /-! ### Left adjoint mates -/
 
 /-- Two morphisms into the left member `X` of an exact pairing `(X, Y)`, that is into a left dual
@@ -436,6 +447,15 @@ theorem leftMate_rightUnitor_hom {X X' : C} (pX : ExactPairing X' X) :
   rw [leftMate_comp_evaluation]
   simp only [tensor_evaluation, TauCeti.ExactPairing.unit_evaluation]
   monoidal
+
+/-- With respect to the self-pairing `exactPairingUnit` of `𝟙_ C`, every scalar `s : 𝟙_ C ⟶ 𝟙_ C`
+is its own left mate. -/
+@[simp]
+theorem leftMate_exactPairingUnit (s : 𝟙_ C ⟶ 𝟙_ C) :
+    leftMate exactPairingUnit exactPairingUnit s = s := by
+  refine leftDualHom_ext (Y := 𝟙_ C) ?_
+  rw [leftMate_comp_evaluation, TauCeti.ExactPairing.unit_evaluation, ← unitors_equal,
+    leftUnitor_naturality, unitors_equal, rightUnitor_naturality]
 
 /-- The comparison `leftDualIso p₁ p₂ : X₁ ≅ X₂` between two left duals of `Y` is the left mate
 of the identity of `Y`. -/

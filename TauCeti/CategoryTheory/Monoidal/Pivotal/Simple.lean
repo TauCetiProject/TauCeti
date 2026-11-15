@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Spherical
-public import TauCeti.CategoryTheory.Preadditive.Schur
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Scalar
 
 /-!
 # Traces of endomorphisms of simple objects
 
 Let `C` be a pivotal category which is `k`-linear, for an algebraically closed field `k`, with
-kernels. By Schur's lemma every endomorphism `f` of a simple object `X` with finite-dimensional
-endomorphisms is the scalar `TauCeti.endAlgEquivOfSimple k X (End.of f)` times `𝟙 X`. Since the
-traces are `k`-linear, the trace of `f` is that scalar times the dimension of `X`:
+kernels. By Schur's lemma every simple object `X` with finite-dimensional endomorphisms has
+bijective structure map `algebraMap k (End X)` (`TauCeti.bijective_algebraMap_end_of_simple`), so
+every endomorphism `f` of `X` is the scalar `TauCeti.endAlgEquivOfSimple k X (End.of f)` times
+`𝟙 X`. Specializing `TauCeti.CategoryTheory.Monoidal.Pivotal.Scalar` gives the trace formulas:
 
 * `leftTrace f = endAlgEquivOfSimple k X (End.of f) • leftDim X`;
 * `rightTrace f = endAlgEquivOfSimple k X (End.of f) • rightDim X`;
@@ -25,14 +25,12 @@ When the unit `𝟙_ C` is itself simple with finite-dimensional endomorphisms, 
 `simp` lemmas for `End.of` of `TauCeti.CategoryTheory.Linear.Endomorphism`.
 
 For an automorphism `a` of a simple object the scalars of `a⁻¹` and `a` cancel, so
-`leftTrace a⁻¹ ≫ rightTrace a = leftDim X ≫ rightDim X`. Since changing the pivotal structure
-changes the left dimension of `X` into the left trace of an automorphism `a⁻¹` and the right
-dimension into the right trace of `a`, the product `leftDim X ≫ rightDim X` of the two dimensions
-of a simple object does not depend on the pivotal structure, although each factor may.
+`leftTrace a⁻¹ ≫ rightTrace a = leftDim X ≫ rightDim X`, and the product
+`leftDim X ≫ rightDim X` of the two dimensions of a simple object does not depend on the pivotal
+structure (`TauCeti.leftDim_comp_rightDim_eq`).
 
-When the unit is simple, every scalar `𝟙_ C ⟶ 𝟙_ C` is a multiple of the identity, so it acts on
-every object in the same way from the left and from the right. Hence the left and right traces
-and dimensions are multiplicative on tensor products, as in a braided category
+When the unit is simple, `algebraMap k (End (𝟙_ C))` is bijective, so the left and right traces
+and dimensions are multiplicative on tensor products
 (`TauCeti.leftTrace_tensorHom_eq_comp_of_simple` and its companions).
 
 ## References
@@ -56,35 +54,30 @@ variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 /-- The left trace of an endomorphism of a simple object is its scalar times the left dimension. -/
 theorem leftTrace_eq_smul_leftDim (f : X ⟶ X) :
     leftTrace f = endAlgEquivOfSimple k X (End.of f) • leftDim X := by
-  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k f
-  simp
+  rw [endAlgEquivOfSimple_eq_endAlgEquivOfBijective]
+  exact leftTrace_eq_smul_leftDim_of_bijective k (bijective_algebraMap_end_of_simple k X) f
 
 /-- The right trace of an endomorphism of a simple object is its scalar times the right
 dimension. -/
 theorem rightTrace_eq_smul_rightDim (f : X ⟶ X) :
     rightTrace f = endAlgEquivOfSimple k X (End.of f) • rightDim X := by
-  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k f
-  simp
+  rw [endAlgEquivOfSimple_eq_endAlgEquivOfBijective]
+  exact rightTrace_eq_smul_rightDim_of_bijective k (bijective_algebraMap_end_of_simple k X) f
 
 /-- In a spherical category, the trace of an endomorphism of a simple object is its scalar times
 the quantum dimension. -/
 theorem trace_eq_smul_quantumDim [SphericalCategory C] (f : X ⟶ X) :
     trace f = endAlgEquivOfSimple k X (End.of f) • quantumDim X := by
-  rw [trace_eq_leftTrace, leftTrace_eq_smul_leftDim k, quantumDim_eq_leftDim]
+  rw [endAlgEquivOfSimple_eq_endAlgEquivOfBijective]
+  exact trace_eq_smul_quantumDim_of_bijective k (bijective_algebraMap_end_of_simple k X) f
 
 include k in
 /-- For an automorphism `a` of a simple object, the left trace of `a⁻¹` followed by the right trace
 of `a` is the left dimension followed by the right dimension: the scalars of `a⁻¹` and `a`
 cancel. -/
 theorem leftTrace_inv_comp_rightTrace_hom (a : X ≅ X) :
-    leftTrace a.inv ≫ rightTrace a.hom = leftDim X ≫ rightDim X := by
-  -- The scalars of `a` and `a⁻¹` are inverse to each other.
-  have h :
-      endAlgEquivOfSimple k X (End.of a.hom) * endAlgEquivOfSimple k X (End.of a.inv) = 1 := by
-    rw [← map_mul, ← End.of_comp]
-    simp
-  rw [leftTrace_eq_smul_leftDim k, rightTrace_eq_smul_rightDim k]
-  simp [smul_smul, h]
+    leftTrace a.inv ≫ rightTrace a.hom = leftDim X ≫ rightDim X :=
+  leftTrace_inv_comp_rightTrace_hom_of_bijective k (bijective_algebraMap_end_of_simple k X) a
 
 section ChangeOfPivotal
 
@@ -98,13 +91,8 @@ for any two pivotal structures `P` and `Q` on `C`, although each dimension separ
 change. -/
 theorem leftDim_comp_rightDim_eq :
     @leftDim C _ _ _ P X ≫ @rightDim C _ _ _ P X =
-      @leftDim C _ _ _ Q X ≫ @rightDim C _ _ _ Q X := by
-  rw [leftDim_eq_leftTrace P Q, rightDim_eq_rightTrace P Q]
-  -- Both dimensions for `P` are traces for `Q` of the automorphism `φ_X ≫ ψ_X⁻¹` of `X` and of
-  -- its inverse, where `φ` and `ψ` are the pivotal isomorphisms of `P` and `Q`.
-  let _ := Q
-  simpa only [Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv] using
-    leftTrace_inv_comp_rightTrace_hom k (@pivotalIsoApp C _ _ _ P X ≪≫ (pivotalIsoApp X).symm)
+      @leftDim C _ _ _ Q X ≫ @rightDim C _ _ _ Q X :=
+  leftDim_comp_rightDim_eq_of_bijective k P Q (bijective_algebraMap_end_of_simple k X)
 
 end ChangeOfPivotal
 
@@ -117,32 +105,32 @@ include k in
 closed field, the left trace is multiplicative. -/
 theorem leftTrace_tensorHom_eq_comp_of_simple {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     leftTrace (f ⊗ₘ g) = leftTrace f ≫ leftTrace g :=
-  leftTrace_tensorHom_eq_comp f g
-    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ Y)
+  leftTrace_tensorHom_eq_comp_of_surjective k
+    (bijective_algebraMap_end_of_simple k (𝟙_ C)).surjective f g
 
 include k in
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
 closed field, the right trace is multiplicative. -/
 theorem rightTrace_tensorHom_eq_comp_of_simple {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
     rightTrace (f ⊗ₘ g) = rightTrace f ≫ rightTrace g :=
-  rightTrace_tensorHom_eq_comp f g
-    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ X)
+  rightTrace_tensorHom_eq_comp_of_surjective k
+    (bijective_algebraMap_end_of_simple k (𝟙_ C)).surjective f g
 
 include k in
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
 closed field, the left dimension is multiplicative. -/
 theorem leftDim_tensor_eq_comp_of_simple (X Y : C) :
     leftDim (X ⊗ Y) = leftDim X ≫ leftDim Y :=
-  leftDim_tensor_eq_comp X Y
-    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ Y)
+  leftDim_tensor_eq_comp_of_surjective k
+    (bijective_algebraMap_end_of_simple k (𝟙_ C)).surjective X Y
 
 include k in
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
 closed field, the right dimension is multiplicative. -/
 theorem rightDim_tensor_eq_comp_of_simple (X Y : C) :
     rightDim (X ⊗ Y) = rightDim X ≫ rightDim Y :=
-  rightDim_tensor_eq_comp X Y
-    (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple k _ X)
+  rightDim_tensor_eq_comp_of_surjective k
+    (bijective_algebraMap_end_of_simple k (𝟙_ C)).surjective X Y
 
 end SimpleUnit
 

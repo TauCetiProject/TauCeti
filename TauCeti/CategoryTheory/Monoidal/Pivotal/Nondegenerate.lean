@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
-public import TauCeti.CategoryTheory.Semisimple.Basic
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
 
 /-!
 # Nondegeneracy of categorical traces
 
 In a finite semisimple pivotal category with simple unit, the left and right dimensions of
-a split simple object are nonzero. Indeed, its coevaluation splits, and Frobenius reciprocity
-and Schur's lemma make every retraction a scalar multiple of its pivotal evaluation.
+a split simple object are invertible scalars, hence nonzero (`TauCeti.isIso_rightDim_of_simple`,
+`TauCeti.isIso_leftDim_of_simple`, `TauCeti.rightDim_ne_zero_of_simple`,
+`TauCeti.leftDim_ne_zero_of_simple`), as specializations of the pivot-free invertibility of
+`TauCeti.doubleDualTrace` (`TauCeti.isIso_doubleDualTrace_of_simple`).
 
 Consequently the trace pairings on morphism spaces are nondegenerate: every nonzero morphism
 `f : X ⟶ Y` has a partner `g : Y ⟶ X` with nonzero trace of `f ≫ g`. This is the cancellation
@@ -43,39 +43,35 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
 
 include k in
 /-- The right dimension of a split simple object in a finite semisimple pivotal category with
+simple tensor unit is an invertible scalar. -/
+theorem isIso_rightDim_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    IsIso (rightDim X) := by
+  rw [← doubleDualTrace_pivotalIsoApp_hom]
+  exact isIso_doubleDualTrace_of_simple k (pivotalIsoApp X)
+
+include k in
+/-- The left dimension of a split simple object in a finite semisimple pivotal category with
+simple tensor unit is an invertible scalar. -/
+theorem isIso_leftDim_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    IsIso (leftDim X) := by
+  rw [← doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv]
+  exact isIso_doubleDualTrace_rightAdjointMate_of_simple k (pivotalIsoApp X)
+
+include k in
+/-- The right dimension of a split simple object in a finite semisimple pivotal category with
 simple tensor unit is nonzero. -/
 theorem rightDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     rightDim X ≠ 0 := by
-  have : IsSplitMono (η_ X Xᘁ) :=
-    isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero X))
-  let := pivotalExactPairing X
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k
-    (retraction (η_ X Xᘁ))
-  have h : c • rightDim X = 𝟙 (𝟙_ C) := by
-    rw [← rightTrace_id, rightTrace_def, id_whiskerRight, Category.id_comp,
-      ← Linear.comp_smul, ← hc]
-    exact IsSplitMono.id _
-  intro hz
-  rw [hz, smul_zero] at h
-  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
+  rw [← doubleDualTrace_pivotalIsoApp_hom]
+  exact doubleDualTrace_ne_zero_of_simple k (pivotalIsoApp X)
 
 include k in
 /-- The left dimension of a split simple object in a finite semisimple pivotal category with
 simple tensor unit is nonzero. -/
 theorem leftDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     leftDim X ≠ 0 := by
-  let := pivotalExactPairing X
-  have : IsSplitMono (η_ Xᘁ X) :=
-    isSplitMono_of_nonzero_from_simple (coevaluation_ne_zero (Simple.not_isZero Xᘁ))
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k
-    (retraction (η_ Xᘁ X))
-  have h : c • leftDim X = 𝟙 (𝟙_ C) := by
-    rw [← leftTrace_id, leftTrace_def, whiskerLeft_id, Category.id_comp,
-      ← Linear.comp_smul, ← hc]
-    exact IsSplitMono.id _
-  intro hz
-  rw [hz, smul_zero] at h
-  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
+  rw [← doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv]
+  exact doubleDualTrace_rightAdjointMate_ne_zero_of_simple k (pivotalIsoApp X)
 
 section Pairing
 

@@ -51,8 +51,10 @@ structure, so its global dimension is `p = 0`.
   one, so the two categorical dimensions of an object have the same absolute value;
 * `TauCeti.endAlgEquivOfSimple_globalDim`: over `ℂ`, the global dimension of a fusion category is
   `∑ S, |dim_L S|²`;
-* `TauCeti.globalDim_ne_zero`: the global dimension of a pivotal fusion category over a field of
-  characteristic zero is nonzero.
+* `TauCeti.globalDim_ne_zero`, `TauCeti.normGlobalDim_ne_zero_of_pivotalCategory` and
+  `TauCeti.normGlobalDim_ne_zero_of_nonempty_pivotalCategory`: the global dimension (and hence
+  `TauCeti.normGlobalDim`) of a fusion category admitting a pivotal structure over an algebraically
+  closed field of characteristic zero is nonzero.
 
 ## References
 
@@ -266,6 +268,26 @@ theorem globalDim_ne_zero : globalDim C ≠ 0 := by
     (SimpleClasses.classOf (𝟙_ C)) (Finset.mem_univ _)
   rw [← SplitK0.simpleBasis_apply, ← SplitK0.one_eq_simpleBasis, map_one, map_one] at h₃
   exact one_ne_zero h₃
+
+include k in
+/-- In a pivotal fusion category over an algebraically closed field of characteristic zero,
+`normGlobalDim C a` is nonzero for every family `a` of bidual isomorphisms. -/
+theorem normGlobalDim_ne_zero_of_pivotalCategory
+    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
+    normGlobalDim C a ≠ 0 := by
+  rw [normGlobalDim_eq_globalDim k C a]
+  exact globalDim_ne_zero k C
+
+omit [PivotalCategory C] in
+include k in
+/-- If a fusion category `C` over an algebraically closed field of characteristic zero admits a
+pivotal structure, then `normGlobalDim C a` is nonzero for every family `a` of bidual
+isomorphisms. -/
+theorem normGlobalDim_ne_zero_of_nonempty_pivotalCategory (hP : Nonempty (PivotalCategory C))
+    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
+    normGlobalDim C a ≠ 0 := by
+  obtain ⟨_⟩ := hP
+  exact normGlobalDim_ne_zero_of_pivotalCategory k C a
 
 end NeZero
 

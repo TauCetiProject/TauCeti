@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Duals in a monoidal preadditive category
 
-In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition.
+In a monoidal preadditive category the right and left adjoint mates `f ↦ fᘁ` and `f ↦ ᘁf` are
+additive, and `k`-linear in a monoidal `k`-linear category, because they are built from whiskering
+and composition. Taking right or left adjoint mates therefore defines `k`-linear equivalences
+`(X ⟶ Y) ≃ₗ[k] (Yᘁ ⟶ Xᘁ)` and `(X ⟶ Y) ≃ₗ[k] (ᘁY ⟶ ᘁX)` mutually inverse to each other
+(`TauCeti.rightAdjointMateLinearEquiv`, `TauCeti.leftAdjointMateLinearEquiv`).
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
 `tensorRightHomEquiv` are `k`-linear, so they compare dimensions of morphism spaces, for instance
@@ -22,8 +25,12 @@ of the multiplicity spaces of a fusion category. Specializing to `tensorPow V 2`
 
 ## Main declarations
 
-* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, and
-  `TauCeti.rightAdjointMate_sum`: the right adjoint mate is additive;
+* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, `TauCeti.rightAdjointMate_sum`,
+  `TauCeti.rightAdjointMate_neg`, `TauCeti.rightAdjointMate_sub` and
+  `TauCeti.rightAdjointMate_smul`, together with their left-mate counterparts: the right and left
+  adjoint mates are additive and `k`-linear;
+* `TauCeti.rightAdjointMateLinearEquiv` and `TauCeti.leftAdjointMateLinearEquiv`: taking right and
+  left adjoint mates as `k`-linear equivalences;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences, and `TauCeti.homTensorPowTwoLinearEquiv` (with
   `TauCeti.homTensorPowTwoLinearEquiv_apply` and `TauCeti.homTensorPowTwoLinearEquiv_symm_apply`):
@@ -41,7 +48,7 @@ namespace TauCeti
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Preadditive C]
   [MonoidalPreadditive C]
 
-section Mate
+section RightMate
 
 variable {X Y : C} [HasRightDual X] [HasRightDual Y]
 
@@ -62,11 +69,116 @@ theorem rightAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y))
   simp [rightAdjointMate, sum_whiskerRight, whiskerLeft_sum, Preadditive.comp_sum,
     Preadditive.sum_comp]
 
-end Mate
+/-- Taking right adjoint mates commutes with negation. -/
+@[simp]
+theorem rightAdjointMate_neg (f : X ⟶ Y) : (-f)ᘁ = -fᘁ :=
+  eq_neg_of_add_eq_zero_left (by rw [← rightAdjointMate_add, neg_add_cancel, rightAdjointMate_zero])
+
+/-- Taking right adjoint mates commutes with subtraction. -/
+@[simp]
+theorem rightAdjointMate_sub (f g : X ⟶ Y) : (f - g)ᘁ = fᘁ - gᘁ := by
+  rw [sub_eq_add_neg, rightAdjointMate_add, rightAdjointMate_neg, sub_eq_add_neg]
+
+/-- Taking right adjoint mates commutes with scalar multiplication in a monoidal linear category. -/
+@[simp]
+theorem rightAdjointMate_smul {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C]
+    (r : R) (f : X ⟶ Y) : (r • f)ᘁ = r • fᘁ := by
+  simp [rightAdjointMate]
+
+end RightMate
+
+section LeftMate
+
+variable {X Y : C} [HasLeftDual X] [HasLeftDual Y]
+
+/-- The left adjoint mate of the zero morphism is zero. -/
+@[simp]
+theorem leftAdjointMate_zero : leftAdjointMate (0 : X ⟶ Y) = 0 := by
+  simp [leftAdjointMate]
+
+/-- The left adjoint mate is additive. -/
+@[simp]
+theorem leftAdjointMate_add (f g : X ⟶ Y) :
+    leftAdjointMate (f + g) = leftAdjointMate f + leftAdjointMate g := by
+  simp [leftAdjointMate]
+
+/-- Taking left adjoint mates commutes with finite sums. -/
+@[simp]
+theorem leftAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
+    leftAdjointMate (∑ i ∈ s, f i) = ∑ i ∈ s, leftAdjointMate (f i) := by
+  simp [leftAdjointMate, sum_whiskerRight, whiskerLeft_sum, Preadditive.comp_sum,
+    Preadditive.sum_comp]
+
+/-- Taking left adjoint mates commutes with negation. -/
+@[simp]
+theorem leftAdjointMate_neg (f : X ⟶ Y) : leftAdjointMate (-f) = -leftAdjointMate f :=
+  eq_neg_of_add_eq_zero_left (by rw [← leftAdjointMate_add, neg_add_cancel, leftAdjointMate_zero])
+
+/-- Taking left adjoint mates commutes with subtraction. -/
+@[simp]
+theorem leftAdjointMate_sub (f g : X ⟶ Y) :
+    leftAdjointMate (f - g) = leftAdjointMate f - leftAdjointMate g := by
+  rw [sub_eq_add_neg, leftAdjointMate_add, leftAdjointMate_neg, sub_eq_add_neg]
+
+/-- Taking left adjoint mates commutes with scalar multiplication in a monoidal linear category. -/
+@[simp]
+theorem leftAdjointMate_smul {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C]
+    (r : R) (f : X ⟶ Y) : leftAdjointMate (r • f) = r • leftAdjointMate f := by
+  simp [leftAdjointMate]
+
+end LeftMate
 
 section Linear
 
 variable (k : Type w) [Semiring k] [Linear k C] [MonoidalLinear k C]
+
+/-- Taking right adjoint mates identifies `X ⟶ Y` `k`-linearly with `Yᘁ ⟶ Xᘁ`, with inverse
+`CategoryTheory.leftAdjointMate`. -/
+noncomputable def rightAdjointMateLinearEquiv (X Y : C) [HasRightDual X] [HasRightDual Y] :
+    (X ⟶ Y) ≃ₗ[k] (Yᘁ ⟶ Xᘁ) where
+  toFun := rightAdjointMate
+  invFun := leftAdjointMate
+  left_inv := leftAdjointMate_rightAdjointMate
+  right_inv := rightAdjointMate_leftAdjointMate
+  map_add' := rightAdjointMate_add
+  map_smul' := rightAdjointMate_smul
+
+/-- `TauCeti.rightAdjointMateLinearEquiv` acts as `CategoryTheory.rightAdjointMate`. -/
+@[simp]
+theorem rightAdjointMateLinearEquiv_apply (X Y : C) [HasRightDual X] [HasRightDual Y]
+    (f : X ⟶ Y) : rightAdjointMateLinearEquiv k X Y f = fᘁ :=
+  (rfl)
+
+/-- The inverse of `TauCeti.rightAdjointMateLinearEquiv` acts as
+`CategoryTheory.leftAdjointMate`. -/
+@[simp]
+theorem rightAdjointMateLinearEquiv_symm_apply (X Y : C) [HasRightDual X] [HasRightDual Y]
+    (f : Yᘁ ⟶ Xᘁ) : (rightAdjointMateLinearEquiv k X Y).symm f = leftAdjointMate f :=
+  (rfl)
+
+/-- Taking left adjoint mates identifies `X ⟶ Y` `k`-linearly with `(ᘁY) ⟶ (ᘁX)`, with inverse
+`CategoryTheory.rightAdjointMate`. -/
+noncomputable def leftAdjointMateLinearEquiv (X Y : C) [HasLeftDual X] [HasLeftDual Y] :
+    (X ⟶ Y) ≃ₗ[k] ((ᘁY) ⟶ (ᘁX)) where
+  toFun := leftAdjointMate
+  invFun := rightAdjointMate
+  left_inv := rightAdjointMate_leftAdjointMate
+  right_inv := leftAdjointMate_rightAdjointMate
+  map_add' := leftAdjointMate_add
+  map_smul' := leftAdjointMate_smul
+
+/-- `TauCeti.leftAdjointMateLinearEquiv` acts as `CategoryTheory.leftAdjointMate`. -/
+@[simp]
+theorem leftAdjointMateLinearEquiv_apply (X Y : C) [HasLeftDual X] [HasLeftDual Y]
+    (f : X ⟶ Y) : leftAdjointMateLinearEquiv k X Y f = leftAdjointMate f :=
+  (rfl)
+
+/-- The inverse of `TauCeti.leftAdjointMateLinearEquiv` acts as
+`CategoryTheory.rightAdjointMate`. -/
+@[simp]
+theorem leftAdjointMateLinearEquiv_symm_apply (X Y : C) [HasLeftDual X] [HasLeftDual Y]
+    (f : (ᘁY) ⟶ (ᘁX)) : (leftAdjointMateLinearEquiv k X Y).symm f = fᘁ :=
+  (rfl)
 
 /-- Frobenius reciprocity `(Y' ⊗ X ⟶ Z) ≃ (X ⟶ Y ⊗ Z)` for an exact pairing of `Y` and `Y'`
 (`CategoryTheory.tensorLeftHomEquiv`) is `k`-linear. -/

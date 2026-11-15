@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Hom
+public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 /-!
@@ -30,6 +30,9 @@ these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-li
 An additive linear functor induces an algebra homomorphism on endomorphisms,
 `Functor.mapEndAlgHom`, which is injective when the functor is faithful and bijective
 when the functor is bijective on the object's endomorphisms.
+
+When the structure map `algebraMap R (End X)` is bijective, its inverse
+`TauCeti.endAlgEquivOfBijective` identifies `End X` with the ground commutative semiring `R`.
 -/
 
 public section
@@ -162,3 +165,46 @@ theorem mapEndAlgHom_bijective (X : C)
     simpa only [mapEndAlgHom_asHom] using hf
 
 end CategoryTheory.Functor
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe w v u
+
+variable (R : Type w) [CommSemiring R] {C : Type u} [Category.{v} C] [Preadditive C]
+  [CategoryTheory.Linear R C] {X : C}
+
+/-- When the structure map `R → End X` of an `R`-linear category is bijective, its inverse
+identifies the endomorphism algebra `End X` with the ground commutative semiring `R`. -/
+noncomputable def endAlgEquivOfBijective (hX : Function.Bijective (algebraMap R (End X))) :
+    End X ≃ₐ[R] R :=
+  (AlgEquiv.ofBijective (Algebra.ofId R (End X)) (by
+    convert hX using 1
+    exact funext (Algebra.ofId_apply (End X)))).symm
+
+section Scalar
+
+variable {R}
+
+/-- The inverse of `endAlgEquivOfBijective` is the structure map `algebraMap R (End X)`. -/
+@[simp]
+theorem endAlgEquivOfBijective_symm_apply (hX : Function.Bijective (algebraMap R (End X)))
+    (r : R) : (endAlgEquivOfBijective R hX).symm r = algebraMap R (End X) r := by
+  rw [endAlgEquivOfBijective, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
+
+/-- Every endomorphism of an object with scalar endomorphisms is its scalar times the identity. -/
+@[simp]
+theorem endAlgEquivOfBijective_smul_id (hX : Function.Bijective (algebraMap R (End X)))
+    (f : End X) : endAlgEquivOfBijective R hX f • 𝟙 X = f.asHom := by
+  rw [← End.algebraMap_asHom, ← endAlgEquivOfBijective_symm_apply hX, AlgEquiv.symm_apply_apply]
+
+/-- The scalar of an endomorphism `f` is the unique `r` with `f = r • 𝟙 X`. -/
+theorem endAlgEquivOfBijective_apply_eq_iff (hX : Function.Bijective (algebraMap R (End X)))
+    (f : End X) (r : R) : endAlgEquivOfBijective R hX f = r ↔ f.asHom = r • 𝟙 X := by
+  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfBijective_symm_apply,
+    End.algebraMap_asHom]
+
+end Scalar
+
+end TauCeti

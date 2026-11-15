@@ -49,9 +49,10 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.rightDualTensorIso_inv_whiskerRight_evaluation` and
   `TauCeti.coevaluation_comp_whiskerLeft_rightDualTensorIso_hom`: it carries the evaluation and
   coevaluation of `(X ⊗ Y, (X ⊗ Y)ᘁ)` to those of the tensor product pairing;
-* `TauCeti.rightDualUnitIso` and `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom`: the
-  canonical identification `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the
-  unit and its interaction with coevaluation;
+* `TauCeti.rightDualUnitIso`, `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom` and
+  `TauCeti.rightDualUnitIso_inv_comp_rightAdjointMate_comp_hom`: the canonical identification
+  `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the unit and its interaction
+  with coevaluation and scalars;
 * `TauCeti.rightDualFunctorCoreMonoidal` and the instance `TauCeti.rightDualFunctorMonoidal`: the
   strong monoidal structure on `rightDualFunctor C`, with structure morphisms given by
   `TauCeti.rightDualFunctor_ε`, `TauCeti.rightDualFunctor_η`, `TauCeti.rightDualFunctor_μ` and
@@ -66,9 +67,10 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ` (the unit
   comparison is also given in terms of a right adjoint mate by
   `TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate`);
-* `TauCeti.doubleRightDualFunctor_map_evaluation` and
-  `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
-  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
+* `TauCeti.doubleRightDualFunctor_map_evaluation`,
+  `TauCeti.doubleRightDualFunctor_map_coevaluation` and
+  `TauCeti.doubleRightDualFunctor_ε_comp_map_scalar_comp_η`: the double right dual functor carries
+  the evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)` and fixes scalars;
 * `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
   `X ≅ Xᘁᘁ` is rigid, with left duals described by
   `TauCeti.rigidCategoryOfIsoDoubleRightDual_evaluation` and
@@ -201,6 +203,19 @@ theorem coevaluation_comp_whiskerLeft_rightDualUnitIso_hom :
       𝟙_ C ◁ (rightDualUnitIso C).hom = (ρ_ (𝟙_ C)).inv := by
   rw [rightDualUnitIso_hom, rightDualIso_hom, coevaluation_comp_rightMate, id_whiskerRight,
     Category.comp_id, TauCeti.ExactPairing.unit_coevaluation]
+
+/-- Conjugating the right mate of a scalar `s : 𝟙_ C ⟶ 𝟙_ C` by `TauCeti.rightDualUnitIso` recovers
+`s`. -/
+theorem rightDualUnitIso_inv_comp_rightAdjointMate_comp_hom (s : 𝟙_ C ⟶ 𝟙_ C) :
+    (rightDualUnitIso C).inv ≫
+      @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (RightRigidCategory.rightDual (𝟙_ C)) s ≫
+      (rightDualUnitIso C).hom = s := by
+  rw [rightDualUnitIso_inv, rightDualUnitIso_hom, rightDualIso_inv, rightDualIso_hom,
+    @rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+      (RightRigidCategory.rightDual (𝟙_ C)),
+    ← Category.assoc, ← comp_rightMate, ← comp_rightMate, Category.id_comp, Category.comp_id,
+    rightMate_exactPairingUnit]
 
 /-! In `(Cᵒᵖ)ᴹᵒᵖ`, composition and tensor products are those of `C` in the reverse order, by
 definition. So after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj`, each coherence condition
@@ -498,6 +513,39 @@ theorem doubleRightDualFunctor_map_coevaluation (X : C) :
       rw [h]
       -- The two sides differ only in how the intermediate objects are written.
       rfl
+
+/-- The double right dual functor fixes every scalar `s : 𝟙_ C ⟶ 𝟙_ C`, up to its unit
+comparisons. -/
+theorem doubleRightDualFunctor_ε_comp_map_scalar_comp_η (s : 𝟙_ C ⟶ 𝟙_ C) :
+    ε (doubleRightDualFunctor C) ≫ (doubleRightDualFunctor C).map s ≫
+      η (doubleRightDualFunctor C) = s := by
+  have hmid :
+      rightMate HasRightDual.exact (RightRigidCategory.rightDual (𝟙_ C)).exact
+          (rightDualUnitIso C).hom ≫
+        (@rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+          (RightRigidCategory.rightDual (𝟙_ C)) s)ᘁ ≫
+        rightMate (RightRigidCategory.rightDual (𝟙_ C)).exact HasRightDual.exact
+          (rightDualUnitIso C).inv =
+      @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (RightRigidCategory.rightDual (𝟙_ C)) s := by
+    rw [rightAdjointMate_eq_rightMate, ← Category.assoc, ← comp_rightMate, ← comp_rightMate,
+      rightDualUnitIso_inv_comp_rightAdjointMate_comp_hom,
+      @rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (RightRigidCategory.rightDual (𝟙_ C))]
+  have key :
+      ((rightDualUnitIso C).inv ≫
+          rightMate HasRightDual.exact (RightRigidCategory.rightDual (𝟙_ C)).exact
+            (rightDualUnitIso C).hom) ≫
+        (@rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+          (RightRigidCategory.rightDual (𝟙_ C)) s)ᘁ ≫
+        rightMate (RightRigidCategory.rightDual (𝟙_ C)).exact HasRightDual.exact
+          (rightDualUnitIso C).inv ≫
+        (rightDualUnitIso C).hom = s := by
+    simp only [Category.assoc]
+    rw [reassoc_of% hmid, rightDualUnitIso_inv_comp_rightAdjointMate_comp_hom]
+  rw [doubleRightDualFunctor_ε, doubleRightDualFunctor_η, doubleRightDualFunctor_map,
+    ← rightDualUnitIso_hom, ← rightDualUnitIso_inv]
+  exact key
 
 /-- A right rigid category in which every object `X` is isomorphic to its double right dual
 `(doubleRightDualFunctor C).obj X = Xᘁᘁ` is rigid: transporting the pairing of `Xᘁ` with `Xᘁᘁ`

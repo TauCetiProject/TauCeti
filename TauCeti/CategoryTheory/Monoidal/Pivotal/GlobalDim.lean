@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Simple
-public import TauCeti.CategoryTheory.Simple.Classes
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Rigid.GlobalDim
 
 /-!
 # The global dimension of a pivotal category
@@ -19,13 +20,17 @@ the left dimension of `Sᘁ` is the right dimension of `S`, it is also `∑ S, l
 and in a spherical category it is the sum of the squares of the quantum dimensions of the simple
 objects.
 
-The global dimension is defined from a pivotal structure, but it does not depend on it, at least
-when the endomorphisms of each simple object are the scalars of an algebraically closed field `k`
-over which `C` is linear: for a simple object `S`, the product `leftDim S ≫ rightDim S` is the same
-for all pivotal structures (`TauCeti.leftDim_comp_rightDim_eq`), even though the two factors are
-not. So the global dimension is an invariant of the rigid category `C` alone, as soon as `C`
-admits a pivotal structure. This is what lets a property such as pseudo-unitarity, which compares
-the global dimension with the Frobenius–Perron dimension, be a property of `C`.
+The global dimension is defined from a pivotal structure, but it does not depend on it when the
+endomorphisms of each simple representative are scalars over a commutative semiring `R` (and in
+particular over an algebraically closed field `k` when endomorphism spaces of simples are
+finite-dimensional): for such an object `S`, the product `leftDim S ≫ rightDim S` is the same for
+all pivotal structures (`TauCeti.leftDim_comp_rightDim_eq_of_bijective`,
+`TauCeti.leftDim_comp_rightDim_eq`), even though the two factors are not. Moreover, comparing each
+summand with `TauCeti.squaredNorm` identifies `globalDim C` with the pivot-free global dimension
+`TauCeti.normGlobalDim C a` for any family `a` of bidual isomorphisms on the simple representatives
+(`TauCeti.normGlobalDim_eq_globalDim_of_bijective`, `TauCeti.normGlobalDim_eq_globalDim`). This is
+what lets a property such as pseudo-unitarity, which compares the global dimension with the
+Frobenius–Perron dimension, be a property of `C`.
 
 ## Main declarations
 
@@ -33,7 +38,10 @@ the global dimension with the Frobenius–Perron dimension, be a property of `C`
   `TauCeti.globalDim_def` and `TauCeti.globalDim_eq_sum_leftDim_comp_rightDim` computing it;
 * `TauCeti.globalDim_eq_sum_quantumDim_comp_quantumDim`: in a spherical category it is the sum of
   the squared quantum dimensions of the simple objects;
-* `TauCeti.globalDim_pivotalCategory_eq`: it does not depend on the pivotal structure.
+* `TauCeti.globalDim_pivotalCategory_eq_of_bijective` and `TauCeti.globalDim_pivotalCategory_eq`:
+  it does not depend on the pivotal structure;
+* `TauCeti.normGlobalDim_pivotalIsoApp`, `TauCeti.normGlobalDim_eq_globalDim_of_bijective` and
+  `TauCeti.normGlobalDim_eq_globalDim`: comparison with `TauCeti.normGlobalDim`.
 
 ## References
 
@@ -48,6 +56,8 @@ open CategoryTheory CategoryTheory.Limits MonoidalCategory
 universe w v u
 
 namespace TauCeti
+
+section Basic
 
 variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
   [Fintype (SimpleClasses C)]
@@ -76,6 +86,23 @@ theorem globalDim_eq_sum_quantumDim_comp_quantumDim [PivotalCategory C] [Spheric
   simp only [globalDim_eq_sum_leftDim_comp_rightDim, quantumDim_eq_leftDim,
     ← quantumDim_eq_rightDim]
 
+/-- Evaluating `normGlobalDim` on the pivotal isomorphism components recovers `globalDim`. -/
+@[simp]
+theorem normGlobalDim_pivotalIsoApp [PivotalCategory C] :
+    normGlobalDim C (fun S ↦ pivotalIsoApp S.repr) = globalDim C := by
+  simp only [normGlobalDim_def, squaredNorm_pivotalIsoApp, globalDim_eq_sum_leftDim_comp_rightDim]
+
+/-- When each simple representative has scalar endomorphisms over a commutative semiring `R`, any
+two pivotal structures on `C` give the same global dimension. -/
+theorem globalDim_pivotalCategory_eq_of_bijective (R : Type w) [CommSemiring R]
+    [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+    (hS : ∀ S : SimpleClasses C, Function.Bijective (algebraMap R (End S.repr)))
+    (P Q : PivotalCategory C) :
+    @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q := by
+  rw [@globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ P,
+    @globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ Q]
+  exact Finset.sum_congr rfl fun S _ ↦ leftDim_comp_rightDim_eq_of_bijective R P Q (hS S)
+
 variable (k : Type w) [Field k] [IsAlgClosed k] [MonoidalPreadditive C] [Linear k C]
   [MonoidalLinear k C] [HasKernels C]
   [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
@@ -85,9 +112,34 @@ include k in
 closed field `k`, if the endomorphisms of each simple object are finite-dimensional, then any two
 pivotal structures `P` and `Q` on `C` give the same global dimension. -/
 theorem globalDim_pivotalCategory_eq (P Q : PivotalCategory C) :
-    @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q := by
-  rw [@globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ P,
-    @globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ Q]
-  exact Finset.sum_congr rfl fun S _ => leftDim_comp_rightDim_eq k P Q
+    @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q :=
+  globalDim_pivotalCategory_eq_of_bijective C k
+    (fun S ↦ bijective_algebraMap_end_of_simple k S.repr) P Q
+
+end Basic
+
+/-- When each simple representative has scalar endomorphisms over a commutative semiring `R`, the
+pivot-free global dimension `normGlobalDim C a` agrees with `globalDim C` for every family `a` of
+bidual isomorphisms. -/
+theorem normGlobalDim_eq_globalDim_of_bijective (R : Type w) [CommSemiring R] (C : Type u)
+    [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
+    [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C] [Fintype (SimpleClasses C)]
+    [PivotalCategory C]
+    (hS : ∀ S : SimpleClasses C, Function.Bijective (algebraMap R (End S.repr)))
+    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
+    normGlobalDim C a = globalDim C := by
+  rw [normGlobalDim_congr R hS a (fun S ↦ pivotalIsoApp S.repr), normGlobalDim_pivotalIsoApp]
+
+/-- **Comparison with the pivotal global dimension**: over an algebraically closed field `k`, when
+each simple representative has finite-dimensional endomorphisms, `normGlobalDim C a` equals
+`globalDim C` for every family `a` of bidual isomorphisms. -/
+theorem normGlobalDim_eq_globalDim (k : Type w) [Field k] [IsAlgClosed k] (C : Type u)
+    [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
+    [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [HasKernels C]
+    [Fintype (SimpleClasses C)] [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
+    [PivotalCategory C] (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
+    normGlobalDim C a = globalDim C :=
+  normGlobalDim_eq_globalDim_of_bijective k C
+    (fun S ↦ bijective_algebraMap_end_of_simple k S.repr) a
 
 end TauCeti
