@@ -617,6 +617,16 @@ theorem linearizedEquation_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   ext i
   fin_cases i <;> simp [hd] <;> ring
 
+/-- The linearized equation preserves subtraction of variations differentiable at the point. -/
+theorem linearizedEquation_sub (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y v : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hy : ∀ i, DifferentiableAt ℝ (fun w ↦ y w i) z)
+    (hv : ∀ i, DifferentiableAt ℝ (fun w ↦ v w i) z) :
+    linearizedEquation x (y - v) z = linearizedEquation x y z - linearizedEquation x v z := by
+  ext i
+  fin_cases i <;>
+    simp [fderiv_fun_sub, hy, hv] <;> ring
+
 /-- The zero variation has zero linearized equation. -/
 @[simp]
 theorem linearizedEquation_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
@@ -642,6 +652,33 @@ theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ �
 theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDirection x 0 = 0 := by
   ext z i
   fin_cases i <;> simp [fderiv_zero]
+
+/-- The infinitesimal gauge action is `Cⁿ` when the field is `Cⁿ` and the phase is `Cⁿ⁺¹`. -/
+theorem contDiff_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (gaugeDirection x f) := by
+  have hxi (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hd (v : ℂ) : ContDiff ℝ n (fun z ↦ fderiv ℝ f z v) :=
+    (hf.fderiv_right le_rfl).clm_apply contDiff_const
+  have hf' : ContDiff ℝ n f := hf.of_le le_self_add
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using (hd 1).neg
+  · simpa using (hd I).neg
+  · simpa using (hf'.mul (hxi 3)).neg
+  · simpa using hf'.mul (hxi 2)
+
+/-- The infinitesimal gauge action of a compactly supported phase is compactly supported, with no
+regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f : ℂ → ℝ}
+    (hf : HasCompactSupport f) : HasCompactSupport (gaugeDirection x f) := by
+  apply hf.mono'
+  intro z hz
+  by_contra hn
+  have hd : fderiv ℝ f z = 0 := fderiv_of_notMem_tsupport ℝ hn
+  apply hz
+  ext i
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
 
 /-- The coordinates of the vacuum field. -/
 @[simp]
