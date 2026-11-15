@@ -263,13 +263,13 @@ private theorem gain_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) (hR : 
       ‖iteratedFDeriv ℝ i (cauchyCk f) x‖ ≤ 2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖ := by
   let u : CkHolderSpace k α ℂ F := f
   have hM : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i u x‖ ≤ (‖f‖₊ : ℝ) := fun i hi x ↦ by
-    rw [coe_nnnorm, ← Submodule.norm_coe]
+    rw [coe_nnNorm, ← Submodule.norm_coe]
     exact u.norm_iteratedFDeriv_apply_le hi x
   obtain ⟨-, hH, hN⟩ := Classical.choose_spec
     (exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform (F := F) k hα hα1 c hr hR)
     u.contDiff (support_source f) u.memHolder_iteratedFDeriv.holderWith hM
   have hHle : nnHolderNorm α (iteratedFDeriv ℝ k u) ≤ ‖f‖₊ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, ← Submodule.norm_coe]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, ← Submodule.norm_coe]
     exact u.nnHolderNorm_iteratedFDeriv_le
   have hle : gainConst (F := F) k hα hα1 c hr hR * (nnHolderNorm α (iteratedFDeriv ℝ k u) + ‖f‖₊)
       ≤ 2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖₊ := by
@@ -279,7 +279,7 @@ private theorem gain_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) (hR : 
   have hleR : (gainConst (F := F) k hα hα1 c hr hR : ℝ) *
       ((nnHolderNorm α (iteratedFDeriv ℝ k u) : ℝ) + (‖f‖₊ : ℝ)) ≤
         2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖ := by
-    simpa only [NNReal.coe_mul, NNReal.coe_add, NNReal.coe_ofNat, coe_nnnorm] using
+    simpa only [NNReal.coe_mul, NNReal.coe_add, NNReal.coe_ofNat, coe_nnNorm] using
       NNReal.coe_le_coe.mpr hle
   exact ⟨hH.mono_const hle, fun i hi x hx ↦ (hN i hi x hx).trans hleR⟩
 
@@ -399,7 +399,7 @@ private theorem norm_cauchyTop_le (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) 
   have hHN : (nnHolderNorm α ((cauchyTop hα hα1 hr hR f).toBoundedContinuousFunction :
       closedBall c R → (ℂ [×k + 1]→L[ℝ] F)) : ℝ) ≤ B * ‖f‖ := by
     have h := ENNReal.coe_le_coe.mp (coe_nnHolderNorm_le_eHolderNorm.trans hH.eHolderNorm_le)
-    simpa only [NNReal.coe_mul, coe_nnnorm] using NNReal.coe_le_coe.mpr h
+    simpa only [NNReal.coe_mul, coe_nnNorm] using NNReal.coe_le_coe.mpr h
   have hN : ‖(cauchyTop hα hα1 hr hR f).toBoundedContinuousFunction‖ ≤ B * ‖f‖ :=
     (BoundedContinuousFunction.norm_le (by positivity)).mpr fun x ↦ by
       rw [hval]

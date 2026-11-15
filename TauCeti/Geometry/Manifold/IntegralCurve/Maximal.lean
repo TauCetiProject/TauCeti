@@ -533,7 +533,7 @@ theorem isMIntegralCurve_maximalIntegralCurve [CompactSpace M]
     IsMIntegralCurve (maximalIntegralCurve v x) v := by
   have : Nonempty M := ⟨x⟩
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
     (maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv isCompact_univ
       (fun _ _ ↦ mem_univ _))

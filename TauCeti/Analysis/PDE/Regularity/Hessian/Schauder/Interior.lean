@@ -174,14 +174,14 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
   have hcda (x : E) (hx : x ∈ ball x₀ R) : ContDiffAt ℝ 2 u x :=
     hu.contDiffAt (isOpen_ball.mem_nhds hx)
   have hLu : LipschitzOnWith N u (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnnorm_fderiv_le
+    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => (hcda x hx).differentiableAt (by norm_num))
-      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hN1 x hx
+      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN1 x hx
   have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnnorm_fderiv_le
+    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => ((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
       fun x hx => by
-        rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+        rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
         exact hN2 x hx
   have hholder {g : E → ℝ} (hg : LipschitzOnWith N g (ball x₀ R)) :
       HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by

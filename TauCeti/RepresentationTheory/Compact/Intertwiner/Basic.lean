@@ -321,10 +321,11 @@ variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [FiniteDimensional 𝕜 V]
 
 /-- Completeness of `V` is not an extra hypothesis on the trace results below: a finite-dimensional
-normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
+normed space over an `RCLike` field is already complete. Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance instead. -/
 local instance completeSpace_of_finiteDimensional : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **Averaging preserves the trace.** In finite dimensions each conjugate `π g⁻¹ ∘ T ∘ π g` has the
 trace of `T`, and averaging a constant returns that constant. This is what fixes the normalizing
@@ -343,11 +344,11 @@ theorem trace_averageOperator (T : V →L[𝕜] V) :
 
 end Trace
 
-section Orthogonality
+section InnerAverage
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
   [CompleteSpace W]
 
@@ -376,6 +377,21 @@ theorem inner_averageOperator_of_isUnitary (hunitary : IsUnitary ρ) (T : V →L
   -- `integral_congr_ae` leaves the two integrands applied but unreduced.
   beta_reduce
   rw [hunitary.inner_map_right g⁻¹ w (T (π g v)), inv_inv]
+
+end InnerAverage
+
+section Orthogonality
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
+  [CompleteSpace W]
+
+variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+  (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)
+
+include hπ hρ
 
 /-- **The `L²` inner product of two matrix coefficients is a matrix entry of an averaged rank-one
 operator.** For the rank-one operator `InnerProductSpace.rankOne 𝕜 w' w = ⟪w, ·⟫ • w'` the

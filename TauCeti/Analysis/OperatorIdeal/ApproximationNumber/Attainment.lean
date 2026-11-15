@@ -60,7 +60,7 @@ theorem nnnorm_comp_orthogonal_spanIndices_of_adjoint_comp_self_eigenbasis
   refine le_antisymm ?_
     (T.singularValue_le_nnnorm_comp_orthogonal (e.rank_spanIndices_val_lt_le n))
   apply NNReal.coe_le_coe.mp
-  rw [coe_nnnorm, T.singularValue_eq_linearMap_singularValues]
+  rw [coe_nnNorm, T.singularValue_eq_linearMap_singularValues]
   exact T.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis e hμ he n
 
 /-- The span of the first `n` right singular vectors attains the orthogonal-tail min–max
@@ -121,7 +121,7 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
     (T.singularValue_le_nnnorm_sub hR)⟩
   have hnorm : ‖T - T ∘L V.starProjection‖₊ = ‖T' - T' ∘L V.starProjection‖₊ := by
     apply NNReal.coe_injective
-    simp only [coe_nnnorm]
+    simp only [coe_nnNorm]
     rw [← hT, ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_sub,
       ← Submodule.subtypeₗᵢ_toContinuousLinearMap]
     exact W.subtypeₗᵢ.norm_toContinuousLinearMap_comp

@@ -32,5 +32,5 @@ theorem TendstoUniformlyOn.tendsto_iSup_enorm_sub (h : TendstoUniformlyOn f f₀
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
   filter_upwards [EMetric.tendstoUniformlyOn_iff.1 h ε hε] with i hi
   refine iSup₂_le fun x hx => ?_
-  rw [← edist_eq_enorm_sub, edist_comm]
+  rw [← eDist_eq_eNorm_sub, edist_comm]
   exact (hi x hx).le

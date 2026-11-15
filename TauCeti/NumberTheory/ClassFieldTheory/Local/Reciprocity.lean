@@ -83,7 +83,7 @@ Artin reciprocity isomorphism `ClassFormation.artinEquiv` of the local class for
 layer of `L`, read through `layerNormQuotientEquiv K L` and `layerGalEquiv ι`. It does not depend
 on `ι` (`localArtinEquiv_eq_of_iota`). -/
 def localArtinEquiv (ι : L →ₐ[K] SeparableClosure K) :
-    Additive (Kˣ ⧸ normGroup K L) ≃+ Additive (Abelianization Gal(L/K)) :=
+    Additive (Kˣ ⧸ normGroup K L) ≃+ Additive (Group.Abelianization Gal(L/K)) :=
   (layerNormQuotientEquiv K L).trans <|
     ((localClassFormation K).artinEquiv
         (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))).trans
@@ -118,7 +118,7 @@ theorem localArtinEquiv_eq_of_iota (ι ι' : L →ₐ[K] SeparableClosure K) :
 nonarchimedean local field: the class modulo `N_{L/K}(Lˣ)` followed by finite local reciprocity
 `localArtinEquiv K L ι`. -/
 def localArtinMap (ι : L →ₐ[K] SeparableClosure K) :
-    Additive Kˣ →+ Additive (Abelianization Gal(L/K)) :=
+    Additive Kˣ →+ Additive (Group.Abelianization Gal(L/K)) :=
   (localArtinEquiv K L ι).toAddMonoidHom.comp
     (MonoidHom.toAdditive (QuotientGroup.mk' (normGroup K L)))
 
@@ -159,7 +159,7 @@ finite local reciprocity `localArtinEquiv`, for the embedding of `L` into the se
 supplied by `IsSepClosed.lift`. Since finite local reciprocity does not depend on the embedding,
 it is the multiplicative form of `localArtinEquiv K L ι` for every `ι` (`toAdditive_normResidue`).
 -/
-def normResidue : (Kˣ ⧸ normGroup K L) ≃* Abelianization Gal(L/K) :=
+def normResidue : (Kˣ ⧸ normGroup K L) ≃* Group.Abelianization Gal(L/K) :=
   MulEquiv.toAdditive.symm (localArtinEquiv K L (IsSepClosed.lift : L →ₐ[K] SeparableClosure K))
 
 /-- **The norm residue isomorphism is finite local reciprocity** for every embedding `ι` of `L`
@@ -185,7 +185,7 @@ theorem normResidue_mk_eq_one_iff (a : Kˣ) :
 /-- **Powers to the order of `Gal(L/K)^ab` are norms**: the norm residue isomorphism identifies
 `Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, so `a ^ #Gal(L/K)^ab ∈ N_{L/K}(Lˣ)` for every `a ∈ Kˣ`. -/
 theorem pow_natCard_abelianization_mem_normGroup (a : Kˣ) :
-    a ^ Nat.card (Abelianization Gal(L/K)) ∈ normGroup K L := by
+    a ^ Nat.card (Group.Abelianization Gal(L/K)) ∈ normGroup K L := by
   rw [← normResidue_mk_eq_one_iff, QuotientGroup.mk_pow, map_pow]
   exact pow_card_eq_one'
 
@@ -196,7 +196,7 @@ with `Gal(L/K)^ab`, which is `Gal(L/K)` itself. -/
 theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
     (normGroup K L).index = Module.finrank K L := by
   rw [Subgroup.index, Nat.card_congr (normResidue K L).toEquiv,
-    ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
+    ← Nat.card_congr (Group.Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
 
 /-- **`n`-th powers are norms when `n` kills the Galois group.** If `σ ^ n = 1` for every
@@ -207,7 +207,7 @@ theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
   intro x hx
   obtain ⟨y, rfl⟩ := (mem_powerSubgroup_iff n).1 hx
   have hsurj : Function.Surjective
-      ((normResidue K L).symm.toMonoidHom.comp (Abelianization.of (G := Gal(L/K)))) :=
+      ((normResidue K L).symm.toMonoidHom.comp (Group.Abelianization.of (G := Gal(L/K)))) :=
     (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
