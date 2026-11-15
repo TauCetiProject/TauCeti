@@ -64,7 +64,7 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 back to `ω` at `u z`, the coordinate map `φ ∘ u` has the energy density of `u`, and solves the
 coordinate Floer equation for the structure `J'` read in the chart if `u` solves the Floer equation
 for `J`. -/
-private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate)
+theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate)
     (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
     (hφ : ∀ v w : TangentSpace I (u z),
       ω.eval₂ (u z) v w = ω₀ (mvfderiv I φ (u z) v) (mvfderiv I φ (u z) w))

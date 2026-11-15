@@ -93,6 +93,27 @@ theorem hofer_of_continuousOn_closedBall (x : X) {ε : ℝ} (hε : 0 < ε) {ϕ :
     linarith
   exact hball ⟨y, hyS⟩ (by rwa [Subtype.dist_eq])
 
+/-- **Hofer's lemma for a quadratic density.** Let `e` be continuous and nonnegative on the
+closed ball of radius `3 ε` about `x`. Then there are `0 < ε' ≤ ε` and a point `x'` within `2 ε`
+of `x` with `ε² e(x) ≤ ε'² e(x')` and `e ≤ 4 e(x')` on the closed ball of radius `ε'` about `x'`.
+This is `TauCeti.hofer_of_continuousOn_closedBall` for `√e`; it applies to densities that scale
+by `ε²` under rescaling, such as the energy density of a map from the plane. -/
+theorem hofer_sq_of_continuousOn_closedBall (x : X) {ε : ℝ} (hε : 0 < ε) {e : X → ℝ}
+    (he : ContinuousOn e (closedBall x (3 * ε))) (he₀ : ∀ y ∈ closedBall x (3 * ε), 0 ≤ e y) :
+    ∃ ε' > 0, ∃ x' : X, ε' ≤ ε ∧ dist x' x ≤ 2 * ε ∧ ε ^ 2 * e x ≤ ε' ^ 2 * e x' ∧
+      ∀ y, dist x' y ≤ ε' → e y ≤ 4 * e x' := by
+  obtain ⟨ε', hε', x', hε'ε, hx'x, hx, hball⟩ := hofer_of_continuousOn_closedBall x hε he.sqrt
+    fun _ _ ↦ Real.sqrt_nonneg _
+  have hx' : 0 ≤ e x' := he₀ x' (mem_closedBall.2 (by linarith))
+  refine ⟨ε', hε', x', hε'ε, hx'x, ?_, fun y hy ↦ ?_⟩
+  · have h := pow_le_pow_left₀ (by positivity) hx 2
+    rwa [mul_pow, mul_pow, Real.sq_sqrt (he₀ x (mem_closedBall_self (by positivity))),
+      Real.sq_sqrt hx'] at h
+  · have h := hball y hy
+    rw [Real.sqrt_le_left] at h
+    · nlinarith [Real.sq_sqrt hx', Real.sqrt_nonneg (e x')]
+    · positivity
+
 variable {ι : Type*} {l : Filter ι}
 
 /-- **Hofer's lemma along a sequence blowing up at a point.** Let the functions `ϕ i` be continuous
