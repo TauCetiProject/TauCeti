@@ -53,8 +53,11 @@ Then `f` is `exp L` times the product of the linear factors of its divisor, for 
 When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` points
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
-Divisibility of a holomorphic function `H` by `f` near `z` is measured by the analytic order of
-`H`: if `H = f u` near `z` with `u` continuous at `z`, then `H` vanishes to order at least `n z`
+When `f` itself is holomorphic at `z`, its analytic order at `z` equals `n z` and its local cofactor
+may be chosen holomorphic (`TauCeti.IsZeroMultiplicity.analyticOrderAt_eq`,
+`TauCeti.IsZeroMultiplicity.exists_analyticAt_eq_pow_mul`). Divisibility of a holomorphic function
+`H` by `f` near `z` is measured by the analytic order of `H`: if `H = f u` near `z` with `u`
+continuous at `z`, then `H` vanishes to order at least `n z`
 (`TauCeti.IsZeroMultiplicity.natCast_le_analyticOrderAt_of_eventually_eq_mul`); conversely, if `H`
 vanishes to order at least `n` and `f = (w - z) ^ n v` with `v` of class `Cᵏ` at `z` and nonzero
 there, then `H = f K` near `z` with `K` of class `Cᵏ` at `z`
@@ -186,6 +189,32 @@ theorem card_eq_of_tendsto_mul_inv_pow {D : Multiset ℂ}
     finsum_eq_sum_of_support_subset _ (s := D.toFinset) fun z hz ↦ ?_,
     Multiset.toFinset_sum_count_eq]
   simpa [Multiset.count_eq_zero] using hz
+
+/-- If `f` has zero multiplicity function `n` and is holomorphic at `z`, then its analytic order at
+`z` is `n z`. -/
+theorem analyticOrderAt_eq (h : IsZeroMultiplicity f n) {z : ℂ} (hf : AnalyticAt ℂ f z) :
+    analyticOrderAt f z = n z := by
+  obtain ⟨v, hv, hv₀, hfv⟩ := h z
+  have htop : analyticOrderAt f z ≠ ⊤ := by
+    rw [Ne, analyticOrderAt_eq_top]
+    intro h0
+    obtain ⟨w, ⟨⟨hwf, hwv⟩, hw0⟩, hwz⟩ :=
+      (((hfv.and (hv.eventually_ne hv₀)).and h0).filter_mono nhdsWithin_le_nhds
+        |>.and (self_mem_nhdsWithin (s := {z}ᶜ))).exists
+    rw [hwf] at hw0
+    exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hwz)) hwv hw0
+  have hm : analyticOrderAt f z = (analyticOrderNatAt f z : ℕ∞) :=
+    (Nat.cast_analyticOrderNatAt htop).symm
+  rw [hm, Nat.cast_inj]
+  exact (eq_of_eventually_mul_eq_sub_pow_mul (Φ := fun _ ↦ 1) continuousAt_const one_ne_zero
+    hf hm hv hv₀ (hfv.mono fun w hw ↦ by simpa using hw)).symm
+
+/-- If `f` has zero multiplicity function `n` and is holomorphic at `z`, then near `z` it factors
+as `(w - z) ^ n z * g w` with `g` holomorphic at `z` and `g z ≠ 0`. -/
+theorem exists_analyticAt_eq_pow_mul (h : IsZeroMultiplicity f n) {z : ℂ}
+    (hf : AnalyticAt ℂ f z) :
+    ∃ g : ℂ → ℂ, AnalyticAt ℂ g z ∧ g z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * g w := by
+  simpa only [smul_eq_mul] using hf.analyticOrderAt_eq_natCast.1 (h.analyticOrderAt_eq hf)
 
 /-- A holomorphic function divisible near `z` by `f`, with a quotient continuous at `z`, vanishes
 at `z` to order at least the zero multiplicity of `f` there. -/

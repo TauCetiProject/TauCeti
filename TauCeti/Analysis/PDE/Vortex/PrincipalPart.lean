@@ -63,9 +63,9 @@ dimensional, of real dimension at most `2 m`
 (`TauCeti.Vortex.finiteDimensional_gaugeFixedKernel`, `TauCeti.Vortex.finrank_gaugeFixedKernel_le`).
 At a framed vortex, `2 m` is the real dimension of the tangent space of the divisor space
 `Sym^m ℂ`; this is the upper bound in the identification of the kernel with that tangent space.
-Surjectivity of the principal-part map, which needs the existence theory of vortices, and the
-comparison of this classical kernel with the kernel of the Sobolev realization of `L_x`, which
-needs elliptic regularity, are not treated here.
+Surjectivity of the principal-part map and the resulting dimension `2 m` are proved in
+`TauCeti.Analysis.PDE.Vortex.KernelDimension`, and the comparison with the weak `L²` and Sobolev
+`H^s` kernels is proved in `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`.
 
 ## References
 
@@ -173,19 +173,36 @@ def principalPart (x : ℂ → EuclideanSpace ℝ (Fin 4)) (ν : ℂ → ℂ)
   iteratedDeriv j (Classical.epsilon fun H : ℂ → ℂ ↦ Differentiable ℂ H ∧
     ∃ G : ℂ → ℂ, Continuous G ∧ ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) z
 
+/-- **Local characterization of the principal-part data.** If `y` admits a global decomposition
+`δα = α G₀ + e^ν H₀` (`G₀` continuous, `H₀` entire) and locally near `z` satisfies
+`δα = α G + e^ν H` with `G` continuous at `z` and `H` analytic at `z`, then below the zero
+multiplicity `n z` of `α` at `z` the principal-part data of `y` at `z` are the derivatives of
+`H`. -/
+theorem principalPart_eq_iteratedDeriv_of_eventuallyEq {n : ℂ → ℕ}
+    (hα : IsZeroMultiplicity (sectionValue x) n) {ν : ℂ → ℂ} (hν : Continuous ν)
+    (hdec : ∃ G₀ : ℂ → ℂ, Continuous G₀ ∧ ∃ H₀ : ℂ → ℂ, Differentiable ℂ H₀ ∧
+      ∀ w, sectionValue y w = sectionValue x w * G₀ w + exp (ν w) * H₀ w)
+    {z : ℂ} {G H : ℂ → ℂ} (hG : ContinuousAt G z) (hH : AnalyticAt ℂ H z)
+    (hy : ∀ᶠ w in 𝓝 z, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
+    {j : ℕ} (hj : j < n z) :
+    principalPart x ν y z j = iteratedDeriv j H z := by
+  obtain ⟨G₀, hG₀, H₀, hH₀, hy₀⟩ := hdec
+  obtain ⟨hH', G', hG', hy'⟩ := Classical.epsilon_spec (p := fun H : ℂ → ℂ ↦
+    Differentiable ℂ H ∧ ∃ G : ℂ → ℂ, Continuous G ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) ⟨H₀, hH₀, G₀, hG₀, hy₀⟩
+  exact hα.iteratedDeriv_eq_of_eventually_mul_add_mul_eq hν.cexp.continuousAt (exp_ne_zero _)
+    hG'.continuousAt hG (hH'.analyticAt z) hH
+    (hy.mono fun w hw ↦ by rw [← hy' w, hw]) hj
+
 /-- **The principal-part data do not depend on the decomposition.** If `δα = α G + e^ν H` with
 `G`, `ν` continuous and `H` entire, then below the zero multiplicity `n z` of `α` at `z` the
 principal-part data of `y` at `z` are the derivatives of `H`. -/
 theorem principalPart_eq_iteratedDeriv {n : ℂ → ℕ} (hα : IsZeroMultiplicity (sectionValue x) n)
     {ν G H : ℂ → ℂ} (hν : Continuous ν) (hG : Continuous G) (hH : Differentiable ℂ H)
     (hy : ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) {z : ℂ} {j : ℕ}
-    (hj : j < n z) : principalPart x ν y z j = iteratedDeriv j H z := by
-  obtain ⟨hH', G', hG', hy'⟩ := Classical.epsilon_spec (p := fun H : ℂ → ℂ ↦
-    Differentiable ℂ H ∧ ∃ G : ℂ → ℂ, Continuous G ∧
-      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) ⟨H, hH, G, hG, hy⟩
-  exact hα.iteratedDeriv_eq_of_eventually_mul_add_mul_eq hν.cexp.continuousAt (exp_ne_zero _)
-    hG'.continuousAt hG.continuousAt (hH'.analyticAt z) (hH.analyticAt z)
-    (Eventually.of_forall fun w ↦ by rw [← hy' w, hy w]) hj
+    (hj : j < n z) : principalPart x ν y z j = iteratedDeriv j H z :=
+  principalPart_eq_iteratedDeriv_of_eventuallyEq hα hν ⟨G, hG, H, hH, hy⟩ hG.continuousAt
+    (hH.analyticAt z) (.of_forall hy) hj
 
 /-- **Divisibility of a holomorphic deformation by the section.** Let `x` have `Cᵏ` connection
 coefficients (`k ≥ 1`) and differentiable section, satisfy the holomorphicity rows, and have
@@ -402,9 +419,6 @@ theorem finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero {k : ℕ∞} (h
 
 section Kernel
 
-variable (hx : ContDiff ℝ 2 x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {m : ℕ}
-  (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-
 /-- A kernel element of `L_x` has `C²` connection variation and differentiable section variation,
 and satisfies the holomorphicity rows of the linearized equation, which are rows `2` and `3` of
 `L_x y = 0`. -/
@@ -421,6 +435,24 @@ private theorem gaugeFixedKernel_linearizedEquation (y) (hy : y ∈ gaugeFixedKe
   simp only [gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
     PiLp.zero_apply] at h₂ h₃
   exact ⟨h₂, h₃⟩
+
+/-- **Decomposition of a kernel element's section variation.** For any `y ∈ gaugeFixedKernel x` at
+a field `x` with differentiable section and vanishing holomorphicity rows, and any integrating
+factor `ν`, the section variation decomposes as `δα = α G + e^ν H` with `G` of class `C²` and `H`
+entire. -/
+theorem exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel {ν : ℂ → ℂ}
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hν : Differentiable ℝ ν)
+    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
+    (hy : y ∈ gaugeFixedKernel x) :
+    ∃ G : ℂ → ℂ, ContDiff ℝ 2 G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ z, sectionValue y z = sectionValue x z * G z + exp (ν z) * H z := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := gaugeFixedKernel_linearizedEquation y hy
+  exact exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num) hp hq hhol hν hνeq h₁ h₂ h₃
+    h₄ h₅
+
+variable (hx : ContDiff ℝ 2 x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {m : ℕ}
+  (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
 
 include hx hhol hframe in
 /-- A kernel element of `L_x` at a framed field whose section variation is `δα = α η`, with `η`
