@@ -57,45 +57,44 @@ open Bornology Metric Set
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {x y : E}
 
+/-- **A ray leaving a bounded set crosses its frontier.** For `x` in a bounded set `V` and any
+nonzero direction `v`, the ray `s ↦ x + s • v`, `s ≥ 0`, meets `frontier V`.
+
+The ray leaves `V` because `V` is bounded, the segment traced is connected, and
+`IsPreconnected.inter_frontier_nonempty` therefore hands back a frontier point on it. -/
+theorem exists_add_smul_mem_frontier (hV : IsBounded V) (hx : x ∈ V) {v : E} (hv : v ≠ 0) :
+    ∃ s : ℝ, 0 ≤ s ∧ x + s • v ∈ frontier V := by
+  obtain ⟨R, hR⟩ := hV.subset_closedBall x
+  have hR0 : 0 ≤ R := dist_nonneg.trans (mem_closedBall.1 (hR hx))
+  set γ : ℝ → E := fun s => x + s • v
+  set T : ℝ := (R + 1) / ‖v‖
+  have hT : 0 ≤ T := by positivity
+  have hTV : γ T ∉ V := fun hmem => by
+    have := mem_closedBall.1 (hR hmem)
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hT,
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)] at this
+    linarith
+  obtain ⟨_, ⟨s, hs, rfl⟩, hpf⟩ :=
+    (isPreconnected_Icc.image γ (by fun_prop : Continuous γ).continuousOn).inter_frontier_nonempty
+      ⟨x, ⟨0, ⟨le_rfl, hT⟩, by simp [γ]⟩, hx⟩ ⟨γ T, ⟨T, ⟨hT, le_rfl⟩, rfl⟩, hTV⟩
+  exact ⟨s, hs.1, hpf⟩
+
 /-- **A ray leaving a bounded set crosses its frontier, and does so no sooner than it passes
 through a given point of the set.** For `x` in a bounded set `V` and any base point `y ≠ x`, the
 ray from `y` through `x` meets `frontier V` at a point `p` with `dist y x ≤ dist y p`.
 
-The ray is followed from `x` outwards. It leaves `V` because `V` is bounded, the segment traced is
-connected, and `IsPreconnected.inter_frontier_nonempty` therefore hands back a frontier
-point on it; being beyond `x` on the ray, that point is at least as far from `y` as `x` is. -/
+The ray is followed from `x` outwards, so the frontier point given by
+`TauCeti.exists_add_smul_mem_frontier` is at least as far from `y` as `x` is. -/
 theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y ≠ x) :
     ∃ p ∈ frontier V, dist y x ≤ dist y p := by
-  obtain ⟨R, hR⟩ := hV.subset_closedBall y
-  set d : E := x - y with hd
-  have hdpos : 0 < ‖d‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne.symm)
-  set γ : ℝ → E := fun t => y + t • d with hγ
-  have hγdist : ∀ t : ℝ, 0 ≤ t → dist y (γ t) = t * ‖d‖ := by
-    intro t ht
-    rw [hγ, dist_eq_norm]
-    simp [norm_smul, abs_of_nonneg ht]
-  have hγ1 : γ 1 = x := by simp [hγ, hd]
-  set T : ℝ := max 1 ((R + 1) / ‖d‖)
-  have hT1 : (1 : ℝ) ≤ T := le_max_left _ _
-  have hTd : R + 1 ≤ T * ‖d‖ := by
-    have := le_max_right 1 ((R + 1) / ‖d‖)
-    calc R + 1 = (R + 1) / ‖d‖ * ‖d‖ := by field_simp
-      _ ≤ T * ‖d‖ := by gcongr
-  have hTV : γ T ∉ V := by
-    intro hmem
-    have := mem_closedBall.mp (hR hmem)
-    rw [dist_comm] at this
-    rw [hγdist T (by linarith)] at this
-    linarith
-  have hcont : Continuous γ := by fun_prop
-  have hSconn : IsPreconnected (γ '' Icc 1 T) :=
-    isPreconnected_Icc.image γ hcont.continuousOn
-  obtain ⟨p, hpS, hpf⟩ := hSconn.inter_frontier_nonempty
-    ⟨x, ⟨1, ⟨le_rfl, hT1⟩, hγ1⟩, hx⟩ ⟨γ T, ⟨T, ⟨hT1, le_rfl⟩, rfl⟩, hTV⟩
-  obtain ⟨t, ht, rfl⟩ := hpS
-  refine ⟨γ t, hpf, ?_⟩
-  rw [← hγ1, hγdist 1 zero_le_one, hγdist t (by linarith [ht.1])]
-  nlinarith [ht.1]
+  obtain ⟨s, hs, hp⟩ := exists_add_smul_mem_frontier hV hx (sub_ne_zero.2 hne.symm)
+  refine ⟨_, hp, ?_⟩
+  have hsub : x + s • (x - y) - y = (1 + s) • (x - y) := by
+    rw [add_smul, one_smul]
+    abel
+  rw [dist_comm, dist_comm y, dist_eq_norm, dist_eq_norm, hsub, norm_smul,
+    Real.norm_of_nonneg (by linarith)]
+  nlinarith [norm_nonneg (x - y)]
 
 /-- **A bounded set is no wider than its frontier.** Every distance realised between two points of
 a bounded set `V` is already realised between two points of `frontier V`: push the first point away
