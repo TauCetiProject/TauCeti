@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -26,7 +27,8 @@ to strict operator-norm bounds.
 
 Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
 finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
-real-linear operators into a complex space.
+real-linear operators into a complex space. The continuous dual of a finite-dimensional space has
+the same dimension as the space.
 
 ## Main results
 
@@ -42,6 +44,8 @@ real-linear operators into a complex space.
   over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
+* `TauCeti.finrank_strongDual`: the continuous dual of a finite-dimensional normed space has the
+  same dimension.
 -/
 
 public section
@@ -186,3 +190,14 @@ theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s :
   exact hwi ▸ hw ▸ hT (hav i)
 
 end MapsTo
+
+namespace TauCeti
+
+/-- The continuous dual of a finite-dimensional normed space has the same dimension. -/
+theorem finrank_strongDual {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] :
+    Module.finrank 𝕜 (StrongDual 𝕜 V) = Module.finrank 𝕜 V :=
+  (LinearMap.toContinuousLinearMap : (V →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] StrongDual 𝕜 V).finrank_eq.symm.trans
+    Subspace.dual_finrank_eq
+
+end TauCeti

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Dual
-public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Complexification
 public import TauCeti.Topology.VectorBundle.Conjugate
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
@@ -56,13 +55,6 @@ universe w
 
 namespace TauCeti
 
-/-- The continuous dual of a finite-dimensional normed space has the same dimension. -/
-theorem finrank_strongDual {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] :
-    finrank 𝕜 (StrongDual 𝕜 V) = finrank 𝕜 V :=
-  (LinearMap.toContinuousLinearMap : (V →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] StrongDual 𝕜 V).finrank_eq.symm.trans
-    Subspace.dual_finrank_eq
-
 variable {B : Type w} [TopologicalSpace B] {r : ℕ}
 
 /-! ### The conjugate bundle -/
@@ -102,58 +94,8 @@ variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensio
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
   [∀ b, InnerProductSpace ℂ (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
 
-variable (F E) in
-include F in
-/-- The fibres of a complex vector bundle with finite-dimensional model fibre are complete. -/
-private theorem completeSpace_fiber (b : B) : CompleteSpace (E b) :=
-  have : FiniteDimensional ℂ (E b) :=
-    ((trivializationAt F E b).continuousLinearEquivAt ℂ b
-      (mem_baseSet_trivializationAt F E b)).symm.toLinearEquiv.finiteDimensional
-  FiniteDimensional.completeSpace ℂ (E b)
-
-variable (F E) in
-include F in
-/-- The fibrewise Riesz isomorphism `v ↦ ⟪v, ·⟫` of a bundle `E` of complex inner product spaces
-with model fibre `F`, a conjugate-linear isomorphism `E_b ≃ E_b*`. -/
-def bundleToDual (b : B) : E b ≃L⋆[ℂ] StrongDual ℂ (E b) :=
-  haveI := completeSpace_fiber F E b
-  (InnerProductSpace.toDual ℂ (E b)).toContinuousLinearEquiv
-
-@[simp] theorem bundleToDual_apply (b : B) (v w : E b) :
-    bundleToDual F E b v w = ⟪v, w⟫_ℂ :=
-  haveI := completeSpace_fiber F E b
-  InnerProductSpace.toDual_apply_apply
-
-variable [ContinuousFiberNorm F E]
-
-/-- **The Riesz isomorphism of a Hermitian bundle is continuous.** If the fibre norm is continuous
-on the total space, `v ↦ ⟪v, ·⟫` is continuous from the total space of `E` to that of its dual. -/
-theorem continuous_bundleToDual :
-    Continuous fun v : TotalSpace F E ↦
-      TotalSpace.mk' (StrongDual ℂ F) (E := fun b ↦ StrongDual ℂ (E b)) v.proj
-        (bundleToDual F E v.proj v.2) := by
-  refine continuous_iff_continuousAt.mpr fun p ↦ ?_
-  rw [continuousAt_hom_bundle]
-  refine ⟨(continuous_proj F E).continuousAt, continuousAt_clm_apply.mpr fun w ↦ ?_⟩
-  let e := trivializationAt F E p.proj
-  have hp : p.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p.proj
-  have hs : ContinuousAt (fun q : TotalSpace F E ↦ TotalSpace.mk' F q.proj (e.symm q.proj w)) p :=
-    (e.continuousOn_symm.continuousAt
-      ((e.open_baseSet.prod isOpen_univ).mem_nhds ⟨hp, mem_univ w⟩)).comp
-        ((continuous_proj F E).continuousAt.prodMk continuousAt_const)
-  have hi : ContinuousAt (fun q : TotalSpace F E ↦ ⟪q.2, e.symm q.proj w⟫_ℂ) p :=
-    ContinuousAt.inner_bundle_of_continuousFiberNorm (b := TotalSpace.proj)
-      (v := fun q ↦ q.2) continuousAt_id hs
-  refine hi.congr_of_eventuallyEq ?_
-  filter_upwards [(continuous_proj F E).continuousAt.preimage_mem_nhds
-    (e.open_baseSet.mem_nhds hp)] with q hq
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.eq_trivialization,
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    ContinuousLinearMap.comp_apply, bundleToDual_apply]
-  exact congrArg (⟪q.2, ·⟫_ℂ) (e.symmL_apply hq w)
-
-variable [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [∀ b, NormedSpace ℝ (E b)]
-  [∀ b, IsScalarTower ℝ ℂ (E b)]
+variable [ContinuousFiberNorm F E] [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F]
+  [∀ b, NormedSpace ℝ (E b)] [∀ b, IsScalarTower ℝ ℂ (E b)]
 
 /-- **The Euler class of the dual of a Hermitian bundle.** For a complex vector bundle `E` of
 complex rank `r + 1` whose fibres carry a Hermitian inner product with continuous norm, the dual
@@ -163,7 +105,7 @@ theorem complexEulerClass_dual_of_hermitian (hF : finrank ℂ F = r + 1) :
         (finrank_strongDual.trans hF) =
       (-1 : ℤ) ^ (r + 1) • complexEulerClass F E hF := by
   have h := complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise
-    (finrank_strongDual.trans hF) hF (φ := bundleToDual F E) continuous_bundleToDual
+    (finrank_strongDual.trans hF) hF (φ := bundleToDual F E ℂ) (continuous_bundleToDual ℂ)
   rw [h, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
 
 /-- **The Euler class of the dual of a Hermitian line bundle is the negative**:
@@ -186,22 +128,6 @@ variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [VectorBundle ℝ F E] [∀ b, TopologicalSpace (ℂ ⊗[ℝ] E b)]
   [∀ b, IsComplexificationTopology (E b)]
 
-variable (F E) in
-include F in
-/-- Fibrewise conjugation `z ⊗ v ↦ conj z ⊗ v` of the complexification, as a continuous
-conjugate-linear involution of each fibre. -/
-private def tmulConjFiber (b : B) : ℂ ⊗[ℝ] E b ≃L⋆[ℂ] ℂ ⊗[ℝ] E b :=
-  have hb := totalSpaceMk_isInducing (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b) b
-  have hcont : Continuous (tmulConj (E b)) :=
-    hb.continuous_iff.mpr (((tmulConjHomeomorph F E).continuous.comp hb.continuous).congr
-      fun _ ↦ tmulConjHomeomorph_apply _)
-  { toLinearEquiv := LinearEquiv.ofInvolutive (tmulConj (E b)) (tmulConj_involutive (E b))
-    continuous_toFun := hcont
-    continuous_invFun := hcont }
-
-private theorem coe_tmulConjFiber (b : B) : ⇑(tmulConjFiber F E b) = tmulConj (E b) :=
-  LinearEquiv.coe_ofInvolutive _ _
-
 variable [FiniteDimensional ℝ F]
 
 /-- **The Euler class of a complexification is fixed up to sign by conjugation.** For a real vector
@@ -212,10 +138,14 @@ theorem complexEulerClass_complexification_eq_neg_one_pow_smul (hF : finrank ℝ
         (Complexification.finrank_complex.trans hF) =
       (-1 : ℤ) ^ (r + 1) •
         complexEulerClass (Complexification F) (fun b ↦ ℂ ⊗[ℝ] E b)
-          (Complexification.finrank_complex.trans hF) :=
-  complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise _ _
-    (φ := tmulConjFiber F E) ((tmulConjHomeomorph F E).continuous.congr fun v ↦ by
-      rw [tmulConjHomeomorph_apply, coe_tmulConjFiber])
+          (Complexification.finrank_complex.trans hF) := by
+  -- Each fibre is linearly homeomorphic to `F`, so negation on it is continuous.
+  have (b : B) : ContinuousNeg (E b) :=
+    let e := VectorBundle.continuousLinearEquivAt ℝ F E b
+    e.toHomeomorph.isInducing.continuousNeg (map_neg e)
+  exact complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise _ _
+    (φ := fun b ↦ tmulConjCLE (E b)) ((tmulConjHomeomorph F E).continuous.congr fun v ↦ by
+      rw [tmulConjHomeomorph_apply, coe_tmulConjCLE])
 
 /-- **The Euler class of the complexification of a real bundle of odd rank is `2`-torsion**: for
 `r + 1` odd, `2 e(E_ℂ) = 0`. -/

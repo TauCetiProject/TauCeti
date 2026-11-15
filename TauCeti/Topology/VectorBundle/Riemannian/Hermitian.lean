@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Dual
+public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
@@ -30,6 +32,7 @@ vector bundle.
 ## Main definitions
 
 * `TauCeti.ContinuousFiberNorm F E`: the fibre norm is continuous on the total space.
+* `TauCeti.bundleToDual F E 𝕜 b`: the Riesz isomorphism `E_b ≃ E_b*`, `v ↦ ⟪v, ·⟫`.
 
 ## Main results
 
@@ -37,11 +40,13 @@ vector bundle.
   into the fibres is continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
 * `ContinuousWithinAt.inner_bundle_of_continuousFiberNorm`: inner products of continuous maps into
   the fibres are continuous, with `ContinuousAt`, `ContinuousOn` and `Continuous` versions.
+* `TauCeti.continuous_bundleToDual`: the fibrewise Riesz isomorphism is continuous from the total
+  space of `E` to that of its dual bundle.
 -/
 
 public section
 
-open Bundle Filter
+open Bundle Filter Set
 open scoped Topology InnerProductSpace
 
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F]
@@ -175,3 +180,56 @@ theorem Continuous.inner_bundle_of_continuousFiberNorm
     Continuous fun y ↦ ⟪v y, w y⟫_𝕜 :=
   continuous_iff_continuousAt.2 fun _ ↦
     hv.continuousAt.inner_bundle_of_continuousFiberNorm hw.continuousAt
+
+/-! ### The fibrewise Riesz isomorphism -/
+
+namespace TauCeti
+
+variable [FiniteDimensional 𝕜 F]
+
+variable (F E 𝕜) in
+include F in
+omit [ContinuousFiberNorm F E] in
+/-- The fibrewise Riesz isomorphism `v ↦ ⟪v, ·⟫` of a bundle `E` of inner product spaces over `𝕜`
+with finite-dimensional model fibre `F`, a conjugate-linear isomorphism `E_b ≃ E_b*`. -/
+noncomputable def bundleToDual (b : B) : E b ≃L⋆[𝕜] StrongDual 𝕜 (E b) :=
+  haveI := FiniteDimensional.completeSpace 𝕜 F
+  haveI := VectorBundle.completeSpace (R := 𝕜) F E b
+  (InnerProductSpace.toDual 𝕜 (E b)).toContinuousLinearEquiv
+
+omit [ContinuousFiberNorm F E] in
+@[simp] theorem bundleToDual_apply (b : B) (v w : E b) :
+    bundleToDual F E 𝕜 b v w = ⟪v, w⟫_𝕜 :=
+  haveI := FiniteDimensional.completeSpace 𝕜 F
+  haveI := VectorBundle.completeSpace (R := 𝕜) F E b
+  InnerProductSpace.toDual_apply_apply
+
+variable (𝕜) in
+/-- **The Riesz isomorphism of a bundle with continuous fibre norm is continuous.** If the fibre
+norm is continuous on the total space, `v ↦ ⟪v, ·⟫` is continuous from the total space of `E` to
+that of its dual. -/
+theorem continuous_bundleToDual :
+    Continuous fun v : TotalSpace F E ↦
+      TotalSpace.mk' (StrongDual 𝕜 F) (E := fun b ↦ StrongDual 𝕜 (E b)) v.proj
+        (bundleToDual F E 𝕜 v.proj v.2) := by
+  refine continuous_iff_continuousAt.mpr fun p ↦ ?_
+  rw [continuousAt_hom_bundle]
+  refine ⟨(FiberBundle.continuous_proj F E).continuousAt, continuousAt_clm_apply.mpr fun w ↦ ?_⟩
+  let e := trivializationAt F E p.proj
+  have hp : p.proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F E p.proj
+  have hs : ContinuousAt (fun q : TotalSpace F E ↦ TotalSpace.mk' F q.proj (e.symm q.proj w)) p :=
+    (e.continuousOn_symm.continuousAt
+      ((e.open_baseSet.prod isOpen_univ).mem_nhds ⟨hp, mem_univ w⟩)).comp
+        ((FiberBundle.continuous_proj F E).continuousAt.prodMk continuousAt_const)
+  have hi : ContinuousAt (fun q : TotalSpace F E ↦ ⟪q.2, e.symm q.proj w⟫_𝕜) p :=
+    ContinuousAt.inner_bundle_of_continuousFiberNorm (b := TotalSpace.proj)
+      (v := fun q ↦ q.2) continuousAt_id hs
+  refine hi.congr_of_eventuallyEq ?_
+  filter_upwards [(FiberBundle.continuous_proj F E).continuousAt.preimage_mem_nhds
+    (e.open_baseSet.mem_nhds hp)] with q hq
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.eq_trivialization,
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    ContinuousLinearMap.comp_apply, bundleToDual_apply]
+  exact congrArg (⟪q.2, ·⟫_𝕜) (e.symmL_apply hq w)
+
+end TauCeti
