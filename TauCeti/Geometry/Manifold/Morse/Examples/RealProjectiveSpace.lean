@@ -87,8 +87,9 @@ private theorem injective_weights : Function.Injective fun i : Fin (N + 1) ↦ (
   Nat.cast_injective.comp Fin.val_injective
 
 private theorem mem_Icc_projectiveMomentFunction (x : ℙ ℝ (Fin (N + 1) → ℝ)) :
-    𝔣[N] x ∈ Icc 0 (N : ℝ) :=
-  projectiveMomentFunction_mem_Icc (fun i ↦ ⟨by positivity, by exact_mod_cast i.is_le⟩) x
+    𝔣[N] x ∈ Icc 0 (N : ℝ) := by
+  simpa using projectiveMomentFunction_mem_Icc (w := fun i : Fin (N + 1) ↦ ((i : ℕ) : ℝ))
+    (fun _ _ h ↦ by dsimp only; exact_mod_cast h) x
 
 variable {N} in
 /-- The critical points of the moment function are the coordinate points `[eₖ]`, at the level `k`
