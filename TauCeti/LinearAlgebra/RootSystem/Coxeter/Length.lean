@@ -76,7 +76,7 @@ exactly the Weyl Coxeter system, including its indexed simple reflections. -/
 theorem toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm :
     (coxeterMatrixOfBase P b).toCoxeterSystem.map
       (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
-  apply CoxeterSystem.simple_determines_coxeterSystem
+  apply CoxeterSystem.injective_simple
   funext i
   simp only [CoxeterSystem.map_simple, weylCoxeterSystem_mulEquiv_symm_apply,
     CoxeterMatrix.toCoxeterSystem_simple, weylCoxeterHom_apply_simple,

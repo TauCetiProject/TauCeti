@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.CylinderHomotopy
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
+import TauCeti.Analysis.Convex.Topology
 
 /-!
 # The cone over a current
@@ -22,19 +23,24 @@ with vertex `p` is the pushforward of the product `[[0, 1]] × T` along the cont
 `(δ_p × T) ω = T (x ↦ ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt)`,
 
 where the integral is cut off away from the support of `T` (`Distribution.cone`). The cone is
-supported in the union of the segments from `p` to the support of `T`, so it lies in `Ω` when `Ω`
-is star-shaped with respect to `p`; in general it is the restriction to `Ω` of the cone taken in
-`E`, and no hypothesis on `Ω` or on `p` is needed.
+compactly supported in the union of the segments from `p` to the support of `T`, so it lies in `Ω`
+when `Ω` is star-shaped with respect to `p`; in general it is the restriction to `Ω` of the cone
+taken in `E`, and no hypothesis on `Ω` or on `p` is needed.
 
 The cone satisfies the **cone formula**
 
 `∂ (δ_p × T) = T - δ_p × ∂ T` in positive degree, and `∂ (δ_p × T) = T - aug(T) δ_p` in degree zero,
 
 where `∂ T = T ∘ d` and `aug(T)` is the augmentation (`Distribution.augmentation`). Thus the cone
-over a cycle of positive degree, and over a `0`-cycle of augmentation zero, fills it. If the
-support of `T` lies in the closed ball of radius `r` about `p` and `T` has finite mass, then
+over a cycle of positive degree, and over a `0`-cycle of augmentation zero, fills it. On a
+star-convex open set `Ω`, this characterizes compactly supported fillability across all degrees:
+closedness in positive degree (`StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_eq_iff`) and
+zero augmentation in degree zero
+(`StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_finZero_eq_iff`). If the support of `T`
+lies in the closed ball of radius `r` about `p` and `T` has finite mass, then
 `M(δ_p × T) ≤ r M(T) / (k + 1)`. These are the basic inputs of local filling arguments for
-currents.
+currents; open-ball and locally-finite-mass refinements and normality preservation are proved in
+`TauCeti.Analysis.Distribution.Mass.Cone`.
 
 On test forms, the operator `TestFunction.coneCLM p χ` sends `ω` to `χ • K ω`, where `χ` is a test
 function and `K ω = x ↦ ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt` is the Poincaré homotopy
@@ -53,13 +59,25 @@ cylinder homotopy operator `TestFunction.cylinderHomotopyCLM` of the pullback wi
 * `ContinuousLinearMap.comp_coneCLM_congr`, `ContinuousLinearMap.comp_coneCLM_comp_extDerivCLM`,
   `ContinuousLinearMap.comp_coneCLM_extDerivCLM_finZero`: independence of the cutoff and the cone
   formula for `T ∘ coneCLM p χ`.
-* `Distribution.cone`: the cone `δ_p × T` over a current, and `Distribution.cone_eq`.
+* `Distribution.cone`: the cone `δ_p × T` over a current, `Distribution.cone_eq`, and
+  `Distribution.cone_comp_monoCLM` (compatibility with open restriction).
 * `Distribution.cone_zero`, `Distribution.cone_smul`, `Distribution.cone_neg`,
   `Distribution.cone_add`, `Distribution.cone_sub`: the cone is linear on currents whose supports
   are compact subsets of `Ω`.
-* `Distribution.cone_comp_extDerivCLM`, `Distribution.cone_extDerivCLM_finZero`: the cone
-  formula.
-* `Distribution.dsupport_cone_subset`: the support of the cone.
+* `Distribution.cone_comp_extDerivCLM`,
+  `Distribution.cone_comp_extDerivCLM_of_comp_extDerivCLM_eq_zero`,
+  `Distribution.cone_extDerivCLM_finZero`,
+  `Distribution.cone_comp_extDerivCLM_finZero_eq_iff`: the cone formula and cone-filling
+  characterizations.
+* `Distribution.dsupport_cone_subset`, `Distribution.isCompact_dsupport_cone`,
+  `Distribution.dsupport_cone_subset_of_segment_subset`, `Distribution.dsupport_cone_subset_ball`:
+  compactness and geometric cone control of `dsupport (cone p T)`.
+* `Distribution.cone_comp_evalCLM_apply`, `Distribution.cone_comp_evalCLM_finZero_comp_extDerivCLM`,
+  `Distribution.cone_sub_comp_evalCLM_finZero_comp_extDerivCLM`: evaluation and filling on point
+  currents and two-point differences.
+* `StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_eq_iff`,
+  `StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_finZero_eq_iff`: compactly supported
+  Poincaré lemma on star-convex open sets.
 * `Distribution.mass_comp_coneCLM_le`, `Distribution.mass_cone_le`: `M(δ_p × T) ≤ r M(T) / (k + 1)`.
 
 ## References
@@ -272,6 +290,46 @@ theorem coneCLM_extDerivCLM_apply_finZero (ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] 
   ext v
   simp [Subsingleton.elim v 0]
 
+/-- The cone operator with zero cutoff is zero. -/
+@[simp]
+theorem coneCLM_zero :
+    (coneCLM p (0 : 𝓓(Ω, ℝ)) : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) =
+      0 := by
+  ext ω x : 2
+  simp
+
+/-- The cone operator is additive in the cutoff. -/
+theorem coneCLM_add (χ₁ χ₂ : 𝓓(Ω, ℝ)) :
+    (coneCLM p (χ₁ + χ₂) : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) =
+      coneCLM p χ₁ + coneCLM p χ₂ := by
+  ext ω x : 2
+  simp [add_smul]
+
+/-- The cone operator is homogeneous in the cutoff. -/
+theorem coneCLM_smul (c : ℝ) (χ : 𝓓(Ω, ℝ)) :
+    (coneCLM p (c • χ) : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) =
+      c • coneCLM p χ := by
+  ext ω x : 2
+  simp [smul_smul]
+
+/-- The topological support of `coneCLM p χ ω` lies in `tsupport χ`. -/
+theorem tsupport_coneCLM_subset_left (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    tsupport (coneCLM p χ ω : E → E [⋀^Fin k]→L[ℝ] F) ⊆ tsupport χ := by
+  have heq : (coneCLM p χ ω : E → E [⋀^Fin k]→L[ℝ] F) = ⇑χ • poincareHomotopy p ⇑ω := by
+    funext x
+    exact coneCLM_apply ω x
+  rw [heq]
+  exact tsupport_smul_subset_left (χ : E → ℝ) (poincareHomotopy p (ω : E → _))
+
+/-- If the topological support of `ω` is disjoint from every segment `[p, x]` for `x ∈ s`, then
+`coneCLM p χ ω` vanishes on a neighbourhood of `s`. -/
+theorem coneCLM_eventuallyEq_zero_of_disjoint {s : Set E}
+    {ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)}
+    (h : Disjoint (tsupport ω) (⋃ x ∈ s, segment ℝ p x)) :
+    (coneCLM p χ ω : E → E [⋀^Fin k]→L[ℝ] F) =ᶠ[𝓝ˢ s] 0 := by
+  filter_upwards [poincareHomotopy_eventuallyEq_zero_of_disjoint h] with x hx
+  simp [hx]
+
 end TestFunction
 
 namespace ContinuousLinearMap
@@ -343,6 +401,21 @@ theorem cone_of_not_exists {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
     (h : ¬∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) : cone p T = 0 := by
   rw [cone, dite_eq_right h]
 
+/-- The cone is zero unless `dsupport T` is a compact subset of `Ω`. -/
+theorem cone_of_not_isCompact_and_subset {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (h : ¬(IsCompact (dsupport T) ∧ dsupport T ⊆ Ω)) : cone p T = 0 :=
+  cone_of_not_exists fun ⟨_, hχ⟩ ↦ h (isCompact_dsupport_and_subset_of_eventually_eq_one hχ)
+
+/-- The cone is zero when `dsupport T` is not compact. -/
+theorem cone_of_not_isCompact {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (h : ¬IsCompact (dsupport T)) : cone p T = 0 :=
+  cone_of_not_isCompact_and_subset fun hT ↦ h hT.1
+
+/-- The cone is zero when `dsupport T` is not contained in `Ω`. -/
+theorem cone_of_not_subset {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (h : ¬dsupport T ⊆ Ω) : cone p T = 0 :=
+  cone_of_not_isCompact_and_subset fun hT ↦ h hT.2
+
 /-- The cone over the zero current is zero. -/
 @[simp]
 theorem cone_zero : cone p (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) = 0 := by
@@ -358,6 +431,57 @@ theorem cone_eq {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
   have h : ∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 := ⟨χ, hχ⟩
   rw [cone, dite_eq_left h]
   exact T.comp_coneCLM_congr ((h.choose_spec.and hχ).mono fun x hx ↦ hx.1.trans hx.2.symm)
+
+/-- Evaluating the cone over `T` on a test form `ω` gives `T (coneCLM p χ ω)` for any test function
+`χ` equal to one near `dsupport T`. -/
+theorem cone_apply {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    cone p T ω = T (coneCLM p χ ω) := by
+  rw [cone_eq hχ, ContinuousLinearMap.comp_apply]
+
+/-- **Locality under open restriction**: if `dsupport T ⊆ U`, then restricting `cone p T` from `Ω`
+to `U` agrees with the cone on `U` of the restriction of `T` to `U`. (When `¬ U ≤ Ω`, the
+restriction map `monoCLM` is zero, so both sides vanish.) -/
+theorem cone_comp_monoCLM {U : Opens E} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (hTU : dsupport T ⊆ U) :
+    cone p T ∘L monoCLM ℝ =
+      cone p (T ∘L (monoCLM ℝ : 𝓓(U, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
+  by_cases hUΩ : U ≤ Ω
+  · have hdsup : dsupport (T ∘L (monoCLM ℝ : 𝓓(U, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) = dsupport T := by
+      refine (dsupport_comp_monoCLM_subset ⇑T).antisymm fun x hx ↦ ?_
+      by_contra hx'
+      obtain ⟨s, hs, hso, hxs⟩ := (notMem_dsupport_iff x).1 hx'
+      have hvan : IsVanishingOn T (s ∩ U) := fun φ hφ ↦ by
+        let ψ : 𝓓(U, E [⋀^Fin k]→L[ℝ] F) :=
+          ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ.trans inter_subset_right⟩
+        have hψ : (monoCLM ℝ ψ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) = φ :=
+          TestFunction.ext fun y ↦ by simp [monoCLM_apply, hUΩ, ψ]
+        simpa [hψ] using hs ψ (hφ.trans inter_subset_left)
+      exact (hvan.disjoint_dsupport (hso.inter U.isOpen)).le_bot ⟨⟨hxs, hTU hx⟩, hx⟩
+    by_cases hT : IsCompact (dsupport T)
+    · obtain ⟨ψ, hψ, -⟩ := exists_eventually_eq_one (n := ⊤) hT hTU
+      let χ : 𝓓(Ω, ℝ) := monoCLM ℝ ψ
+      have hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 :=
+        hψ.mono fun x hx ↦ by simp [χ, monoCLM_apply, hUΩ, hx]
+      rw [cone_eq hχ, cone_eq (hdsup ▸ hψ)]
+      ext ω
+      simp only [ContinuousLinearMap.comp_apply]
+      congr 1
+      refine TestFunction.ext fun y ↦ ?_
+      have hω : ((monoCLM ℝ ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+          E → E [⋀^Fin (k + 1)]→L[ℝ] F) = ω := by
+        funext z
+        simp [monoCLM_apply, hUΩ]
+      simp [χ, monoCLM_apply, hUΩ, hω]
+    · rw [cone_of_not_isCompact hT, cone_of_not_isCompact (hdsup ▸ hT),
+        ContinuousLinearMap.zero_comp]
+  · have hzero₁ : (monoCLM ℝ : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, _)) = 0 := by
+      ext φ x
+      simp [monoCLM_apply, hUΩ]
+    have hzero₂ : (monoCLM ℝ : 𝓓(U, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓(Ω, _)) = 0 := by
+      ext φ x
+      simp [monoCLM_apply, hUΩ]
+    rw [hzero₁, hzero₂, ContinuousLinearMap.comp_zero, ContinuousLinearMap.comp_zero, cone_zero]
 
 /-- The cone is homogeneous: `δ_p × (c • T) = c • (δ_p × T)`. -/
 @[simp]
@@ -431,6 +555,22 @@ theorem cone_comp_extDerivCLM [IsTopologicalAddGroup G] (T : 𝓓(Ω, E [⋀^Fin
     hχ.filter_mono (nhdsSet_mono (dsupport_comp_extDerivCLM_subset T))
   rw [cone_eq hχ, cone_eq hχd, T.comp_coneCLM_comp_extDerivCLM hχ]
 
+/-- Additive form of the cone formula: `∂ (δ_p × T) + δ_p × ∂ T = T` for a `(k + 1)`-current `T`
+whose support is a compact subset of `Ω`. -/
+theorem cone_comp_extDerivCLM_add_cone_comp_extDerivCLM [IsTopologicalAddGroup G]
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    cone p T ∘L extDerivCLM + cone p (T ∘L extDerivCLM) = T := by
+  rw [cone_comp_extDerivCLM T hT hTΩ, sub_add_cancel]
+
+/-- **Cycle filling in positive degree**: if `T` is a closed `(k + 1)`-current (`∂ T = 0`) whose
+support is a compact subset of `Ω`, then `∂ (δ_p × T) = T`. -/
+theorem cone_comp_extDerivCLM_of_comp_extDerivCLM_eq_zero [IsTopologicalAddGroup G]
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) (hcycle : T ∘L extDerivCLM = 0) :
+    cone p T ∘L extDerivCLM = T := by
+  rw [cone_comp_extDerivCLM T hT hTΩ, hcycle, cone_zero, sub_zero]
+
 /-- **The cone formula in degree zero**: `∂ (δ_p × T) = T - aug(T) δ_p` for a current `T` on test
 `0`-forms whose support is a compact subset of `Ω`, where `aug` is the augmentation. In particular
 the cone over a `0`-current of augmentation zero fills it. -/
@@ -439,6 +579,61 @@ theorem cone_extDerivCLM_finZero (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[�
     cone p T (extDerivCLM ω) = T ω - augmentation T (ω p) := by
   obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := ⊤) hT hTΩ
   rw [cone_eq hχ, ContinuousLinearMap.comp_apply, T.comp_coneCLM_extDerivCLM_finZero hχ]
+
+/-- Scalar `0`-current specialization of `Distribution.cone_extDerivCLM_finZero`: the augmentation
+defect is `(ω p ![]) • augmentation T 1`, where `1` is the unit constant `0`-form. -/
+theorem cone_extDerivCLM_finZero_real (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) (ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ)) :
+    cone p T (extDerivCLM ω) =
+      T ω - (ω p ![]) • augmentation T (constOfIsEmpty ℝ E (Fin 0) 1) := by
+  let c₁ := constOfIsEmpty ℝ E (Fin 0) (1 : ℝ)
+  have hω : ω p = (ω p ![]) • c₁ := by
+    ext v
+    simp [c₁, (Subsingleton.elim v ![])]
+  have haug : augmentation T (ω p) = (ω p ![]) • augmentation T c₁ := by
+    rw [← augmentation_smul_right, ← hω]
+  rw [cone_extDerivCLM_finZero T hT hTΩ ω, haug]
+
+/-- If a `0`-current `T` whose support is a compact subset of `Ω` has augmentation zero at every
+constant `0`-form, then `cone p T` fills `T`: `∂ (δ_p × T) = T`. -/
+theorem cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero
+    (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) (haug : ∀ c, augmentation T c = 0) :
+    cone p T ∘L extDerivCLM = T := by
+  ext ω
+  rw [ContinuousLinearMap.comp_apply, cone_extDerivCLM_finZero T hT hTΩ ω, haug (ω p), sub_zero]
+
+/-- **Characterization of degree-zero cone filling**: when `p ∈ Ω` and `T` is a `0`-current whose
+support is a compact subset of `Ω`, `∂ (δ_p × T) = T` if and only if `T` has augmentation zero at
+every constant `0`-form. -/
+theorem cone_comp_extDerivCLM_finZero_eq_iff (hp : p ∈ Ω)
+    (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    cone p T ∘L extDerivCLM = T ↔ ∀ c, augmentation T c = 0 := by
+  refine ⟨fun h c ↦ ?_, cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero T hT hTΩ⟩
+  obtain ⟨ψ, hψ, -⟩ := exists_eventually_eq_one (n := ⊤) isCompact_singleton
+    (singleton_subset_iff.2 hp)
+  have hψp : ψ p = 1 := hψ.self_of_nhdsSet p rfl
+  let ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ c) ψ
+  have hωp : ω p = c := by simp [ω, hψp]
+  have heval := congrArg (· ω) h
+  rw [ContinuousLinearMap.comp_apply, cone_extDerivCLM_finZero T hT hTΩ ω, hωp,
+    sub_eq_self] at heval
+  exact heval
+
+/-- Scalar `0`-current characterization of cone filling: when `p ∈ Ω`, `∂ (δ_p × T) = T` if and
+only if the augmentation of `T` on the unit constant `0`-form vanishes. -/
+theorem cone_comp_extDerivCLM_finZero_real_eq_iff (hp : p ∈ Ω)
+    (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] G)
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    cone p T ∘L extDerivCLM = T ↔
+      augmentation T (constOfIsEmpty ℝ E (Fin 0) 1) = 0 := by
+  rw [cone_comp_extDerivCLM_finZero_eq_iff hp T hT hTΩ]
+  refine ⟨fun h ↦ h _, fun h c ↦ ?_⟩
+  have hc : c = (c ![]) • constOfIsEmpty ℝ E (Fin 0) (1 : ℝ) := by
+    ext v
+    simp [(Subsingleton.elim v ![])]
+  rw [hc, augmentation_smul_right, h, smul_zero]
 
 /-- **The support of the cone** over `T` lies in the union of the segments from `p` to the points
 of the support of `T`. -/
@@ -480,6 +675,97 @@ theorem dsupport_cone_subset (p : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →
     simp [h0]
   have hsub := (hvan.disjoint_dsupport hCc.isClosed.isOpen_compl).subset_compl_left
   rwa [compl_compl] at hsub
+
+/-- The distributional support of `cone p T` is always compact. -/
+theorem isCompact_dsupport_cone (p : E) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) :
+    IsCompact (dsupport (cone p T)) := by
+  by_cases hT : IsCompact (dsupport T)
+  · exact (hT.biUnion_segment p).of_isClosed_subset isClosed_dsupport (dsupport_cone_subset p T)
+  · simp [cone_of_not_isCompact hT]
+
+/-- If every segment `[p, x]` from the vertex to a point of `dsupport T` lies in `s`, then
+`cone p T` is supported in `s`. -/
+theorem dsupport_cone_subset_of_segment_subset {s : Set E}
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (hseg : ∀ x ∈ dsupport T, segment ℝ p x ⊆ s) :
+    dsupport (cone p T) ⊆ s :=
+  (dsupport_cone_subset p T).trans (iUnion₂_subset hseg)
+
+/-- If `dsupport T` lies in `Metric.ball p r`, then so does `dsupport (cone p T)`. -/
+theorem dsupport_cone_subset_ball {r : ℝ} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (hT : dsupport T ⊆ Metric.ball p r) :
+    dsupport (cone p T) ⊆ Metric.ball p r :=
+  dsupport_cone_subset_of_segment_subset fun _ hx ↦
+    (convex_ball p r).segment_subset
+      (Metric.mem_ball_self (Metric.pos_of_mem_ball (hT hx))) (hT hx)
+
+/-- Evaluating `cone p` on a point current `ω ↦ ℓ (ω x)` (`x ∈ Ω`) gives the radial integral
+`ℓ (poincareHomotopy p ω x)` along `[p, x]`. -/
+theorem cone_comp_evalCLM_apply (p : E) {x : E} (hx : x ∈ Ω)
+    (ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    cone p (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ω =
+      ℓ (poincareHomotopy p ω x) := by
+  set δx := ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+    (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)
+  have hsub : dsupport δx ⊆ {x} :=
+    dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset x ℓ
+  obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := ⊤) isCompact_singleton
+    (singleton_subset_iff.2 hx)
+  have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl
+  rw [cone_apply (hχ.filter_mono (nhdsSet_mono hsub)) ω]
+  simp [δx, hχx]
+
+/-- The cone with vertex `p ∈ Ω` over a point current at `p` itself vanishes. -/
+theorem cone_comp_evalCLM_self (hp : p ∈ Ω) (ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) :
+    cone p (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ p ∘L
+      (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) = 0 := by
+  ext ω
+  rw [cone_comp_evalCLM_apply p hp ℓ ω, poincareHomotopy_self, ContinuousLinearMap.map_zero,
+    zero_apply]
+
+/-- **Boundary of the cone over a degree-zero point current**: for `x ∈ Ω`, the cone with vertex
+`p` over the point `0`-current `δ_x : ω ↦ ℓ (ω x)` has boundary `δ_x - δ_p`. -/
+theorem cone_comp_evalCLM_finZero_comp_extDerivCLM [IsTopologicalAddGroup G] (p : E) {x : E}
+    (hx : x ∈ Ω) (ℓ : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G) :
+    cone p (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+        (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _)) ∘L
+      extDerivCLM =
+      (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L toBoundedContinuousFunctionCLM ℝ) -
+      (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ p ∘L toBoundedContinuousFunctionCLM ℝ) := by
+  set δx := ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+    (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _)
+  have hsub : dsupport δx ⊆ {x} :=
+    dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset x ℓ
+  have hc : IsCompact (dsupport δx) :=
+    isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM x ℓ
+  have hΩ : dsupport δx ⊆ Ω := hsub.trans (singleton_subset_iff.2 hx)
+  ext ω
+  rw [ContinuousLinearMap.comp_apply, cone_extDerivCLM_finZero δx hc hΩ ω,
+    augmentation_comp_evalCLM_comp_toBoundedContinuousFunctionCLM hx ℓ (ω p)]
+  simp [δx]
+
+/-- **Cone filling of an augmented-zero two-point difference**: for `x, y ∈ Ω` and any continuous
+linear map `ℓ` on `0`-forms, `∂ (δ_p × (δ_y - δ_x)) = δ_y - δ_x`. -/
+theorem cone_sub_comp_evalCLM_finZero_comp_extDerivCLM [IsTopologicalAddGroup G] (p : E) {x y : E}
+    (hx : x ∈ Ω) (hy : y ∈ Ω) (ℓ : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G) :
+    cone p
+        ((ℓ ∘L BoundedContinuousFunction.evalCLM ℝ y ∘L
+            (toBoundedContinuousFunctionCLM ℝ : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _)) -
+          (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L toBoundedContinuousFunctionCLM ℝ)) ∘L
+      extDerivCLM =
+      (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ y ∘L toBoundedContinuousFunctionCLM ℝ) -
+      (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L toBoundedContinuousFunctionCLM ℝ) := by
+  set δ : E → 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G := fun z ↦
+    ℓ ∘L BoundedContinuousFunction.evalCLM ℝ z ∘L toBoundedContinuousFunctionCLM ℝ
+  have hsub (z : E) : dsupport (δ z) ⊆ {z} :=
+    dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset z ℓ
+  have hc (z : E) : IsCompact (dsupport (δ z)) :=
+    isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM z ℓ
+  rw [cone_sub (δ y) (δ x) (hc y) ((hsub y).trans (singleton_subset_iff.2 hy))
+    (hc x) ((hsub x).trans (singleton_subset_iff.2 hx)),
+    ContinuousLinearMap.sub_comp, cone_comp_evalCLM_finZero_comp_extDerivCLM p hy ℓ,
+    cone_comp_evalCLM_finZero_comp_extDerivCLM p hx ℓ, sub_sub_sub_cancel_right]
 
 section Mass
 
@@ -557,3 +843,66 @@ theorem mass_cone_le (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) {r : �
 end Mass
 
 end Distribution
+
+namespace StarConvex
+
+open Distribution TestFunction
+
+/-- If `s` is star-convex with respect to `p` and contains `dsupport T`, then `cone p T` is
+supported inside `s`. -/
+theorem dsupport_cone_subset_of_subset {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] {Ω : Opens E} {k : ℕ} {p : E}
+    {s : Set E} (hs : StarConvex ℝ p s) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
+    (hTs : dsupport T ⊆ s) : dsupport (cone p T) ⊆ s :=
+  dsupport_cone_subset_of_segment_subset fun _ hx ↦ hs.segment_subset (hTs hx)
+
+/-- If the open set `Ω` is star-convex with respect to `p`, then `cone p T` is supported inside
+`Ω` for every current `T` on `Ω`. -/
+theorem dsupport_cone_subset {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] {Ω : Opens E} {k : ℕ} {p : E}
+    (hΩ : StarConvex ℝ p (Ω : Set E)) (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) :
+    dsupport (cone p T) ⊆ Ω := by
+  by_cases hTΩ : dsupport T ⊆ Ω
+  · exact hΩ.dsupport_cone_subset_of_subset hTΩ
+  · simp [cone_of_not_subset hTΩ]
+
+/-- **Compactly supported Poincaré lemma in positive degree**: on an open set `Ω` star-convex with
+respect to `p`, a `(k + 1)`-current `T` with compact support in `Ω` admits a `(k + 2)`-current
+filling with compact support in `Ω` if and only if `∂ T = 0`. -/
+theorem exists_isCompact_dsupport_comp_extDerivCLM_eq_iff {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [Module ℝ G]
+    {Ω : Opens E} {k : ℕ} {p : E} (hΩ : StarConvex ℝ p (Ω : Set E))
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G}
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    (∃ Q : 𝓓(Ω, E [⋀^Fin (k + 2)]→L[ℝ] F) →L[ℝ] G,
+      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧ Q ∘L extDerivCLM = T) ↔
+      T ∘L extDerivCLM = 0 := by
+  refine ⟨?_, fun hcycle ↦ ⟨cone p T, isCompact_dsupport_cone p T, hΩ.dsupport_cone_subset T,
+    cone_comp_extDerivCLM_of_comp_extDerivCLM_eq_zero T hT hTΩ hcycle⟩⟩
+  rintro ⟨Q, -, -, rfl⟩
+  rw [ContinuousLinearMap.comp_assoc, extDerivCLM_comp_extDerivCLM, ContinuousLinearMap.comp_zero]
+
+/-- **Compactly supported Poincaré lemma in degree zero**: on an open set `Ω` star-convex with
+respect to `p`, a `0`-current `T` with compact support in `Ω` admits a `1`-current filling with
+compact support in `Ω` if and only if its augmentation vanishes on every constant `0`-form. -/
+theorem exists_isCompact_dsupport_comp_extDerivCLM_finZero_eq_iff {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+    {Ω : Opens E} {p : E} (hΩ : StarConvex ℝ p (Ω : Set E))
+    {T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G}
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    (∃ Q : 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] F) →L[ℝ] G,
+      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧ Q ∘L extDerivCLM = T) ↔
+      ∀ c, augmentation T c = 0 := by
+  refine ⟨fun ⟨Q, hQc, hQΩ, hQT⟩ c ↦ ?_, fun haug ↦
+    ⟨cone p T, isCompact_dsupport_cone p T, hΩ.dsupport_cone_subset T,
+      cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero T hT hTΩ haug⟩⟩
+  rw [← hQT]
+  exact augmentation_comp_extDerivCLM Q hQc hQΩ c
+
+end StarConvex

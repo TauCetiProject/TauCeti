@@ -30,6 +30,10 @@ This gives the three Frobenius identities:
   nilpotent, so the `Q`-th power map is not the identity.
 * `QuadraticAlgebra.pow_card_eq_algebraMap_re`: if `r = 0`, then `z ^ Q = z.re`, for every `Q`.
 
+Conversely, if `r` is a square then `ω ^ Q ≠ star ω` (`QuadraticAlgebra.omega_pow_card_ne_star`),
+so `z ^ Q = star z` holds for every `z` exactly when `r` is not a square
+(`QuadraticAlgebra.forall_pow_card_eq_star_iff`).
+
 In the inert case the identity `z ^ Q = star z` turns Mathlib's `algebraMap_trace_eq_add_star`
 and `algebraMap_norm_eq_mul_star` into `trace z = z + z ^ Q` and `norm z = z * z ^ Q`; the fixed
 points of the `Q`-th power map are exactly the elements of `F`, and the map is an involution.
@@ -112,6 +116,33 @@ every element satisfies `z ^ Q = z.re`, for every finite field `F`. -/
     rw [← Nat.sub_add_cancel Finite.one_lt_card, pow_add, sq, omega_mul_omega_eq_algebraMap]
     simp
   rw [pow_card_eq_re_smul_add_im_smul, hω, smul_zero, add_zero, Algebra.algebraMap_eq_smul_one]
+
+/-- **Frobenius is not conjugation outside the inert case.** If `r` is a square in `F`, then
+`ω ^ Q ≠ star ω`: the power `ω ^ Q` is the scalar `0` when `r = 0`, the scalar `r ^ (Q / 2)` when
+`Q` is even, and `ω` when `Q` is odd and `r ≠ 0`, while `star ω = -ω` has second coordinate
+`-1 ≠ 1`. -/
+theorem omega_pow_card_ne_star (hr : IsSquare r) :
+    (ω : QuadraticAlgebra F r 0) ^ Nat.card F ≠ star ω := by
+  intro h
+  have him := congrArg im h
+  rw [im_star, im_omega] at him
+  by_cases hr0 : r = 0
+  · subst hr0
+    rw [pow_card_eq_algebraMap_re] at him
+    simp at him
+  rcases Nat.even_or_odd (Nat.card F) with heven | hodd
+  · -- `ω ^ Q = (ω ^ 2) ^ (Q / 2)` is the scalar `r ^ (Q / 2)`, whose second coordinate is `0`.
+    rw [← Nat.two_mul_div_two_of_even heven, pow_mul] at him
+    simp [sq, omega_mul_omega_eq_algebraMap, ← map_pow] at him
+  · rw [pow_card_eq_self_of_square hodd hr hr0, im_omega] at him
+    exact Ring.two_ne_zero (ringChar_ne_two_of_odd_card hodd) (by linear_combination him)
+
+/-- **Frobenius is conjugation exactly in the inert case.** Over a finite field `F` with `Q`
+elements, every `z ∈ QuadraticAlgebra F r 0` satisfies `z ^ Q = star z` exactly when `r` is not a
+square. -/
+theorem forall_pow_card_eq_star_iff :
+    (∀ z : QuadraticAlgebra F r 0, z ^ Nat.card F = star z) ↔ ¬IsSquare r :=
+  ⟨fun h hr ↦ omega_pow_card_ne_star hr (h ω), pow_card_eq_star⟩
 
 /-- In the inert case the Frobenius algebra endomorphism is conjugation. -/
 theorem frobeniusAlgHom_eq_starAlgEquiv [Fintype F] (hr : ¬IsSquare r) :

@@ -119,7 +119,7 @@ theorem surjective_sectionLinearization_affineFamily
     simpa only [zero_add, Pi.add_def] using (hasFDerivAt_const
       (e.continuousLinearMapAt ℝ z.1 (s₀ z.1)) z.2).add L.hasFDerivAt
   have hc : MDifferentiableAt (I.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, F) c z :=
-    ((contMDiffAt_totalSpace.mp (contMDiff_affineFamily s₀ s z)).2).mdifferentiableAt
+    ((contMDiffAt_totalSpace_iff.mp (contMDiff_affineFamily s₀ s z)).2).mdifferentiableAt
       (by simp)
   have hg : MDifferentiableAt 𝓘(ℝ, ι → ℝ) (I.prod 𝓘(ℝ, ι → ℝ))
       (fun a ↦ (z.1, a)) z.2 := mdifferentiableAt_const.prodMk mdifferentiableAt_id
@@ -162,7 +162,7 @@ theorem mem_residual_setOf_isRegular_affineFamily
     (n := ∞) (I := 𝓘(ℝ, X))
   · exact fun z _ ↦ contMDiff_affineFamily s₀ s z
   · intro z hz
-    have hc := (contMDiffAt_totalSpace.mp ((affineFamily s₀ s z.2).contMDiff z.1)).2
+    have hc := (contMDiffAt_totalSpace_iff.mp ((affineFamily s₀ s z.2).contMDiff z.1)).2
     exact (TauCeti.isFredholm_sectionLinearization_iff continuousAt_id
       (mem_baseSet_trivializationAt F V z.1) (hc.mdifferentiableAt (by simp)) hz).mpr
         (ContinuousLinearMap.isFredholm_of_finiteDimensional _)
@@ -219,7 +219,7 @@ theorem mem_residual_setOf_regular_and_finite_zero_affineFamily
     (affineFamily s₀ s a).contMDiff ?_
     (TauCeti.isRegularSectionParameter_iff.mp ha) ?_⟩
   · intro x hx
-    have hc := (contMDiffAt_totalSpace.mp ((affineFamily s₀ s a).contMDiff x)).2
+    have hc := (contMDiffAt_totalSpace_iff.mp ((affineFamily s₀ s a).contMDiff x)).2
     exact (TauCeti.isFredholm_sectionLinearization_iff continuousAt_id
       (mem_baseSet_trivializationAt F V x) (hc.mdifferentiableAt (by simp)) hx).mpr
         (ContinuousLinearMap.isFredholm_of_finiteDimensional _)

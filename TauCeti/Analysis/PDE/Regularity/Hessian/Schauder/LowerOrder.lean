@@ -103,7 +103,7 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
   simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul] at h₁ h₂
   refine (h₁.add h₂).mono_const (add_le_add ?_ ?_)
   · exact mul_le_of_le_one_left zero_le (by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
+      rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
 
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let

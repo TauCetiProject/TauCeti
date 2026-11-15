@@ -191,7 +191,8 @@ noncomputable def fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
   rw [coe_orderIdeal]
   ext z
   simp only [SetLike.mem_coe]
-  rw [← FractionalIdeal.mem_coe, fractionalIdeal, FractionalIdeal.spanFinset_coe]
+  rw [← FractionalIdeal.mem_coeToSubmodule, fractionalIdeal,
+    FractionalIdeal.coeToSubmodule_spanFinset]
   have hs : ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] ''
       (Finset.univ : Finset (Fin 2)) =
         {(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D} := by
@@ -223,7 +224,8 @@ theorem fractionalIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
       (QuadraticAlgebra ℚ (D : ℚ) 0)).restrictScalars ℤ =
       (f.orderIdeal D hf).restrictScalars ℤ := by
   ext z
-  rw [Submodule.restrictScalars_mem, Submodule.restrictScalars_mem, FractionalIdeal.mem_coe]
+  rw [Submodule.restrictScalars_mem, Submodule.restrictScalars_mem,
+    FractionalIdeal.mem_coeToSubmodule]
   exact Set.ext_iff.mp (coe_fractionalIdeal f D hf) z
 
 /-- The first ideal generator is a member of the ideal. -/
@@ -358,7 +360,7 @@ theorem fractionalIdeal_le_iff (f : BinaryQuadraticForm ℤ) (D : ℤ)
   refine ⟨fun h ↦ ⟨h (a_mem_fractionalIdeal f D hf),
     h (idealGenerator_mem_fractionalIdeal f D hf)⟩, fun ⟨ha, hβ⟩ z hz ↦ ?_⟩
   obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf z).mp hz
-  rw [← FractionalIdeal.mem_coe] at ha hβ ⊢
+  rw [← FractionalIdeal.mem_coeToSubmodule] at ha hβ ⊢
   exact add_mem (zsmul_mem ha m) (zsmul_mem hβ n)
 
 /-- A fractional ideal contains the product of two form ideals of the same discriminant exactly
@@ -391,7 +393,7 @@ theorem fractionalIdeal_mul_fractionalIdeal_le_iff (f g : BinaryQuadraticForm �
     simp only [zsmul_eq_mul, Int.cast_mul]
     ring
   rw [key]
-  rw [← FractionalIdeal.mem_coe] at h₁ h₂ h₃ h₄ ⊢
+  rw [← FractionalIdeal.mem_coeToSubmodule] at h₁ h₂ h₃ h₄ ⊢
   exact add_mem (add_mem (add_mem (zsmul_mem h₁ _) (zsmul_mem h₂ _)) (zsmul_mem h₃ _))
     (zsmul_mem h₄ _)
 
@@ -411,8 +413,8 @@ theorem fractionalIdeal_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
     rw [Submodule.mem_bot]
     have hmem := Set.ext_iff.mp (coe_fractionalIdeal f D hf) z
     simp only [SetLike.mem_coe] at hmem
-    rw [← FractionalIdeal.mem_coe, fractionalIdeal, FractionalIdeal.spanFinset_coe,
-      h, Submodule.mem_bot] at hmem
+    rw [← FractionalIdeal.mem_coeToSubmodule, fractionalIdeal,
+      FractionalIdeal.coeToSubmodule_spanFinset, h, Submodule.mem_bot] at hmem
     exact hmem.symm
   simpa only [ne_eq, Submodule.span_eq_bot, Set.mem_image, Finset.mem_coe,
     forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, not_forall, exists_prop] using hspan

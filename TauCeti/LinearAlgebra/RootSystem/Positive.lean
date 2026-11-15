@@ -84,6 +84,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   at a point of the coweight space where every simple root is nonnegative.
   `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
   simple roots are nonnegative.
+* `RootPairing.coroot'_sum_nsmul_root_nonpos` says a natural combination of the simple roots
+  other than `αₖ` pairs nonpositively with `αₖ^∨`.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -510,6 +512,21 @@ theorem toWeightBasis_repr_nonneg_of_mem_posRootCone [PartialOrder R] [IsOrdered
   simp only [← RootPairing.Base.toWeightBasis_apply, map_sum, map_nsmul, Module.Basis.repr_self,
     Finsupp.finsetSum_apply, Finsupp.smul_apply]
   exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
+
+omit [CharZero R] in
+/-- A natural combination of simple roots in which `αₖ` does not occur pairs nonpositively with
+the simple coroot `αₖ^∨`, since distinct simple roots have nonpositive Cartan integers. -/
+theorem _root_.RootPairing.coroot'_sum_nsmul_root_nonpos [LinearOrder R] [IsStrictOrderedRing R]
+    [Finite ι] [P.IsCrystallographic] {k : ι} (hk : k ∈ b.support) {c : ι → ℕ} (hck : c k = 0) :
+    P.coroot' k (∑ j ∈ b.support, c j • P.root j) ≤ 0 := by
+  rw [map_sum]
+  refine Finset.sum_nonpos fun j hj => ?_
+  rw [map_nsmul, RootPairing.root_coroot'_eq_pairing]
+  rcases eq_or_ne j k with rfl | hjk
+  · simp [hck]
+  · refine nsmul_nonpos ?_ _
+    rw [← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast, Int.cast_nonpos]
+    exact b.pairingIn_le_zero_of_ne hjk hj hk
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is

@@ -35,8 +35,9 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
   homotopy inverse induces an isomorphism on singular cohomology.
 * `TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy`: enlarging the subspace of a
   pair to a neighbourhood which deforms back into it does not change relative cohomology.
-* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap`: the same for a bundled homotopy
-  equivalence of spaces.
+* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
+  `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
+  cohomology for a bundled homotopy equivalence of spaces.
 
 ## References
 
@@ -105,13 +106,41 @@ namespace ContinuousMap.HomotopyEquiv
 
 variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
   (e : ContinuousMap.HomotopyEquiv X Y)
-  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- A homotopy equivalence induces isomorphisms on singular cohomology in every degree. -/
-lemma isIso_singularCohomologyMap (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+lemma isIso_singularCohomologyMap (n : ℕ) :
     IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (TopCat.ofHom e.toFun) n) :=
   TopCat.isIso_singularCohomologyMap _ (TopCat.ofHom e.invFun) e.left_inv.some e.right_inv.some
     R k M n
+
+/-- A homotopy equivalence induces an isomorphism on singular cohomology in every degree, with
+forward map induced by pullback along `e` and inverse induced by pullback along `e.symm`. -/
+@[no_expose]
+def singularCohomologyIso (n : ℕ) :
+    (TopCat.of Y).singularCohomology R k M n ≅ (TopCat.of X).singularCohomology R k M n where
+  hom := TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n
+  inv := TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n
+  hom_inv_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.right_inv.some R k M n
+  inv_hom_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.left_inv.some R k M n
+
+/-- The forward map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along `e`. -/
+@[simp]
+lemma singularCohomologyIso_hom (n : ℕ) :
+    (e.singularCohomologyIso R k M n).hom =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n := (rfl)
+
+/-- The inverse map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along
+`e.symm`. -/
+@[simp]
+lemma singularCohomologyIso_inv (n : ℕ) :
+    (e.singularCohomologyIso R k M n).inv =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n := (rfl)
 
 end ContinuousMap.HomotopyEquiv
 

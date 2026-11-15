@@ -19,7 +19,10 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   vanishing on `A` vanishes on `A`.  This gives `TopPair.singularCup :
   Hᵖ(X; R, M) × H^q(X, A; S, N) ⟶ Hⁿ(X, A; T, L)`, which needs no hypothesis on `A`.  It is
   associative and unital, so it makes `H*(X, A)` a module over `H*(X)`; it is natural in maps of
-  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.
+  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.  It is graded commutative:
+  the cup product `b ⌣ a` of a relative class `b` of degree `q` and an absolute class `a` of
+  degree `p`, along the relative Alexander–Whitney diagonal with the relative factor first, is
+  `(-1)^(p q) a ⌣ b`.
 * **Relative cup product.**  For subsets `U` and `V` of `X`, a cochain vanishing on `U` cupped with
   a cochain vanishing on `V` vanishes on the chains `C(U) + C(V)` of the singular simplices lying
   in `U` or in `V`, but not in general on the chains of `U ∪ V`.  When `U` and `V` are open in
@@ -50,8 +53,9 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
   `TopPair.singularCohomologyπ_singularCup` its compatibility with the absolute cup product,
-  `TopPair.singularCup_naturality`, and the module laws `TopPair.singularCup_assoc` and
-  `TopPair.singularCup_constSingularCocycle_left`.
+  `TopPair.singularCup_naturality`, the module laws `TopPair.singularCup_assoc` and
+  `TopPair.singularCup_constSingularCocycle_left`, and graded commutativity
+  `TopPair.singularCup_gradedComm`.
 * `TopCat.singularRelativeCup`, characterized by
   `TopCat.homologyMap_cochainComplexMap_singularRelativeCup`, with
   `TopCat.singularCohomologyπ_singularRelativeCup` and `TopCat.singularRelativeCup_naturality`.
@@ -303,6 +307,32 @@ lemma singularCup_constSingularCocycle_left (P : TopPair.{w}) {u : S ⟶ R ⊗ S
   exact cupCochain_rightAlexanderWhitneyDiagonal_constCochain_left P hu hμ h _
 
 end Laws
+
+section GradedComm
+
+variable [BraidedCategory C]
+  [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft X)]
+  [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
+
+/-- **Graded commutativity of the cup product of absolute and relative cohomology**: for a pair
+`(X, A)`, an absolute class `a ∈ Hᵖ(X; R, M)` and a relative class `b ∈ H^q(X, A; S, N)`, the cup
+product `b ⌣ a ∈ Hⁿ(X, A; T, L)` with the relative class first, taken along the relative
+Alexander–Whitney diagonal `P.alexanderWhitneyDiagonal u'` and the pairing `μ'`, is
+`(-1)^(p * q)` times `a ⌣ b` (`TopPair.singularCup`) along `u` and `μ`, whenever `u` and `μ`
+agree with `u'` and `μ'` up to the braidings (`hu` and `hμ`). This is the relative form of
+`TopCat.singularCup_gradedComm`. -/
+theorem singularCup_gradedComm (P : TopPair.{w})
+    {u : T ⟶ R ⊗ S} {u' : T ⟶ S ⊗ R} (hu : u ≫ (β_ R S).hom = u') {μ : M ⊗ N ⟶ L}
+    {μ' : N ⊗ M ⟶ L} (hμ : (β_ M N).hom ≫ μ' = μ) {p q n : ℕ} (h : p + q = n)
+    (a : P.fst.singularCohomology R k M p) (b : P.singularCohomology S k N q) :
+    TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u') μ' q p n (by omega) b a =
+      ((-1 : ℤ) ^ (p * q)) • P.singularCup k u μ p q n h a b := by
+  subst hu hμ
+  rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
+      (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
+    TauCeti.NatChainComplex.cup_koszulBraidingHom]
+
+end GradedComm
 
 end TopPair
 

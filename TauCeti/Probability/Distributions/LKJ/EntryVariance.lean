@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
 import TauCeti.Probability.Distributions.Beta.Symmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -66,55 +67,9 @@ private theorem coordinate_ae_abs_le_one (ij : strictLowerTriangle p) :
     (lkjPartialCorrelationShape p η ij) (lkjPartialCorrelationShape p η ij)] with x hx
   exact abs_le.mpr ⟨by linarith [hx.1], by linarith [hx.2]⟩
 
--- Each factor isolates one partial-correlation coordinate in a triangular entry.
-private def entryFactor (i k : Fin p) (ij : strictLowerTriangle p) (x : ℝ) : ℝ :=
-  (if ij.1.1 = i ∧ ij.1.2 = k then x else 1) *
-    (if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - x ^ 2) else 1)
-
-private theorem abs_entryFactor_le_one (i k : Fin p) (ij : strictLowerTriangle p)
-    {x : ℝ} (hx : |x| ≤ 1) : |entryFactor i k ij x| ≤ 1 := by
-  have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
-    rw [Real.sqrt_le_one]
-    nlinarith [sq_nonneg x]
-  unfold entryFactor
-  split_ifs <;> simp_all [abs_of_nonneg (Real.sqrt_nonneg _)]
-
-private theorem prod_entryFactor (z : strictLowerTriangle p → ℝ) (i k : Fin p)
-    (hk : k ≤ i) :
-    (∏ ij, entryFactor i k ij (z ij)) = partialCorrelationCholesky z i k := by
-  simp only [entryFactor, Finset.prod_mul_distrib]
-  have hr : (∏ ij : strictLowerTriangle p,
-      if ij.1.1 = i ∧ ij.1.2 < k then Real.sqrt (1 - z ij ^ 2) else 1) =
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < k,
-        Real.sqrt (1 - z ij ^ 2) := by rw [Finset.prod_filter]
-  rw [hr]
-  rcases hk.eq_or_lt with he | hk
-  · subst k
-    rw [partialCorrelationCholesky_apply_self]
-    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.1.1 = i ∧ ij.1.2 = i) := by
-      intro ij h
-      have := ij.2
-      simp_all
-    simp only [hnone, ↓reduceIte, Finset.prod_const_one, one_mul]
-    congr 1
-    ext ij
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_left_iff_imp]
-    exact fun h ↦ h ▸ ij.2
-  · rw [partialCorrelationCholesky_apply_of_gt z hk]
-    congr 1
-    have heq (ij : strictLowerTriangle p) :
-        (ij.1.1 = i ∧ ij.1.2 = k) ↔ ij = ⟨(i, k), hk⟩ := by
-      simp only [Subtype.ext_iff, Prod.ext_iff]
-    simp_rw [heq]
-    simp
-
-private theorem entryFactor_of_other_row (i k : Fin p) (ij : strictLowerTriangle p)
-    (hi : ij.1.1 ≠ i) (x : ℝ) : entryFactor i k ij x = 1 := by
-  simp [entryFactor, hi]
-
 private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
     (ij : strictLowerTriangle p) :
-    ∫ x, entryFactor i k ij x ^ 2 ∂coordinateLaw η ij =
+    ∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 ∂coordinateLaw η ij =
       (if ij.1.1 = i ∧ ij.1.2 = k then
         1 / (2 * lkjPartialCorrelationShape p η ij + 1) else 1) *
       (if ij.1.1 = i ∧ ij.1.2 < k then
@@ -136,9 +91,10 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
       (by simpa using ha)).congr (by simp)
   by_cases hr : ij.1.1 = i
   · by_cases he : ij.1.2 = k
-    · simpa [entryFactor, hr, he, a] using hsq
+    · simpa [hr, he, a] using hsq
     · by_cases hl : ij.1.2 < k
-      · simp only [entryFactor, hr, true_and, he, ↓reduceIte, hl, one_mul]
+      · simp_rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij _ hr hl]
+        simp only [hr, true_and, he, ↓reduceIte, hl, one_mul]
         rw [integral_congr_ae ((coordinate_ae_abs_le_one (η := η) ij).mono
           fun x hx ↦ Real.sq_sqrt (sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx))),
           integral_sub (integrable_const 1) hint, integral_const, hsq]
@@ -146,8 +102,8 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
         dsimp only [a] at ha ⊢
         field_simp [(by positivity : 2 * lkjPartialCorrelationShape p η ij + 1 ≠ 0)]
         ring
-      · simp [entryFactor, hr, he, hl]
-  · simp [entryFactor, hr]
+      · simp [hr, he, hl]
+  · simp [hr]
 
 private theorem twice_shape_add_one (ij : strictLowerTriangle p) :
     2 * lkjPartialCorrelationShape p η ij + 1 =
@@ -216,12 +172,13 @@ private theorem integral_cholesky_sq (hη : 0 < η) (i k : Fin p) (hk : k ≤ i)
   let (ij : strictLowerTriangle p) : IsProbabilityMeasure (coordinateLaw η ij) :=
     coordinate_probability hη ij
   have hp : (∫ z, partialCorrelationCholesky z i k ^ 2 ∂coordinateProduct p η) =
-      ∏ ij, ∫ x, entryFactor i k ij x ^ 2 ∂coordinateLaw η ij := by
-    rw [← integral_fintype_prod_eq_prod (fun ij x ↦ entryFactor i k ij x ^ 2)]
+      ∏ ij, ∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 ∂coordinateLaw η ij := by
+    rw [← integral_fintype_prod_eq_prod
+      (fun ij x ↦ partialCorrelationCholeskyEntryFactor i k ij x ^ 2)]
     apply integral_congr_ae
     exact Filter.Eventually.of_forall fun z ↦ by
       simp only
-      rw [Finset.prod_pow, prod_entryFactor z i k hk]
+      rw [Finset.prod_pow, prod_partialCorrelationCholeskyEntryFactor z i k hk]
   rw [hp]
   simp_rw [integral_entryFactor_sq hη]
   rw [Finset.prod_mul_distrib]
@@ -263,26 +220,32 @@ private theorem integral_cholesky_sq_mul_sq (hη : 0 < η) {i j : Fin p} (hij : 
     coordinate_probability hη ij
   have he (z : strictLowerTriangle p → ℝ) :
       partialCorrelationCholesky z i k ^ 2 * partialCorrelationCholesky z j k ^ 2 =
-        ∏ ij, entryFactor i k ij (z ij) ^ 2 * entryFactor j k ij (z ij) ^ 2 := by
+        ∏ ij, partialCorrelationCholeskyEntryFactor i k ij (z ij) ^ 2 *
+          partialCorrelationCholeskyEntryFactor j k ij (z ij) ^ 2 := by
     rw [Finset.prod_mul_distrib, Finset.prod_pow, Finset.prod_pow,
-      prod_entryFactor z i k hki, prod_entryFactor z j k hkj]
+      prod_partialCorrelationCholeskyEntryFactor z i k hki,
+      prod_partialCorrelationCholeskyEntryFactor z j k hkj]
   simp_rw [he]
   rw [integral_fintype_prod_eq_prod
-    (fun ij x ↦ entryFactor i k ij x ^ 2 * entryFactor j k ij x ^ 2)]
+    (fun ij x ↦ partialCorrelationCholeskyEntryFactor i k ij x ^ 2 *
+      partialCorrelationCholeskyEntryFactor j k ij x ^ 2)]
   have hf (ij : strictLowerTriangle p) :
-      (∫ x, entryFactor i k ij x ^ 2 * entryFactor j k ij x ^ 2 ∂coordinateLaw η ij) =
-        (∫ x, entryFactor i k ij x ^ 2 ∂coordinateLaw η ij) *
-          (∫ x, entryFactor j k ij x ^ 2 ∂coordinateLaw η ij) := by
+      (∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 *
+          partialCorrelationCholeskyEntryFactor j k ij x ^ 2 ∂coordinateLaw η ij) =
+        (∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 ∂coordinateLaw η ij) *
+          (∫ x, partialCorrelationCholeskyEntryFactor j k ij x ^ 2
+            ∂coordinateLaw η ij) := by
     by_cases hi : ij.1.1 = i
     · have hj : ij.1.1 ≠ j := hi ▸ hij
-      simp [entryFactor_of_other_row j k ij hj]
-    · simp [entryFactor_of_other_row i k ij hi]
+      simp [partialCorrelationCholeskyEntryFactor_of_row_ne j k ij hj]
+    · simp [partialCorrelationCholeskyEntryFactor_of_row_ne i k ij hi]
   simp_rw [hf]
   rw [Finset.prod_mul_distrib, ← integral_fintype_prod_eq_prod,
     ← integral_fintype_prod_eq_prod]
   congr 1 <;> apply integral_congr_ae <;>
     exact Filter.Eventually.of_forall fun z ↦ by
-      simp only [Finset.prod_pow, prod_entryFactor z i k hki, prod_entryFactor z j k hkj]
+      simp only [Finset.prod_pow, prod_partialCorrelationCholeskyEntryFactor z i k hki,
+        prod_partialCorrelationCholeskyEntryFactor z j k hkj]
 
 private theorem integral_cholesky_mul_zero (hη : 0 < η) {i j : Fin p} (hji : j < i)
     (k : Fin p) (hkj : k ≤ j) :
@@ -293,14 +256,22 @@ private theorem integral_cholesky_mul_zero (hη : 0 < η) {i j : Fin p} (hji : j
   have hki : k < i := hkj.trans_lt hji
   have he (z : strictLowerTriangle p → ℝ) :
       partialCorrelationCholesky z i k * partialCorrelationCholesky z j k =
-        ∏ ij, entryFactor i k ij (z ij) * entryFactor j k ij (z ij) := by
-    rw [Finset.prod_mul_distrib, prod_entryFactor z i k hki.le, prod_entryFactor z j k hkj]
+        ∏ ij, partialCorrelationCholeskyEntryFactor i k ij (z ij) *
+          partialCorrelationCholeskyEntryFactor j k ij (z ij) := by
+    rw [Finset.prod_mul_distrib, prod_partialCorrelationCholeskyEntryFactor z i k hki.le,
+      prod_partialCorrelationCholeskyEntryFactor z j k hkj]
   simp_rw [he]
   rw [integral_fintype_prod_eq_prod
-    (fun ij x ↦ entryFactor i k ij x * entryFactor j k ij x)]
+    (fun ij x ↦ partialCorrelationCholeskyEntryFactor i k ij x *
+      partialCorrelationCholeskyEntryFactor j k ij x)]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [entryFactor, hji.ne', true_and, and_self, lt_self_iff_false, ↓reduceIte,
-    mul_one, false_and]
+  have hik (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i k ⟨(i, k), hki⟩ x = x := by
+    simp
+  have hjk (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j k ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j k ⟨(i, k), hki⟩ hji.ne' x
+  simp_rw [hik, hjk, mul_one]
   simpa using integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
     (r := 0) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
     (by simpa using lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩) 1
@@ -316,18 +287,36 @@ private theorem integral_cholesky_cross_zero (hη : 0 < η) {i j k l : Fin p}
   have he (z : strictLowerTriangle p → ℝ) :
       (partialCorrelationCholesky z i k * partialCorrelationCholesky z j k) *
         (partialCorrelationCholesky z i l * partialCorrelationCholesky z j l) =
-        ∏ ij, (entryFactor i k ij (z ij) * entryFactor j k ij (z ij)) *
-          (entryFactor i l ij (z ij) * entryFactor j l ij (z ij)) := by
+        ∏ ij, (partialCorrelationCholeskyEntryFactor i k ij (z ij) *
+            partialCorrelationCholeskyEntryFactor j k ij (z ij)) *
+          (partialCorrelationCholeskyEntryFactor i l ij (z ij) *
+            partialCorrelationCholeskyEntryFactor j l ij (z ij)) := by
     simp only [Finset.prod_mul_distrib]
-    rw [prod_entryFactor z i k hki.le, prod_entryFactor z j k (hkl.le.trans hlj),
-      prod_entryFactor z i l (hlj.trans hji.le), prod_entryFactor z j l hlj]
+    rw [prod_partialCorrelationCholeskyEntryFactor z i k hki.le,
+      prod_partialCorrelationCholeskyEntryFactor z j k (hkl.le.trans hlj),
+      prod_partialCorrelationCholeskyEntryFactor z i l (hlj.trans hji.le),
+      prod_partialCorrelationCholeskyEntryFactor z j l hlj]
   simp_rw [he]
   rw [integral_fintype_prod_eq_prod (fun ij x ↦
-    (entryFactor i k ij x * entryFactor j k ij x) *
-      (entryFactor i l ij x * entryFactor j l ij x))]
+    (partialCorrelationCholeskyEntryFactor i k ij x *
+        partialCorrelationCholeskyEntryFactor j k ij x) *
+      (partialCorrelationCholeskyEntryFactor i l ij x *
+        partialCorrelationCholeskyEntryFactor j l ij x))]
   apply Finset.prod_eq_zero (Finset.mem_univ (⟨(i, k), hki⟩ : strictLowerTriangle p))
-  simp only [entryFactor, hji.ne', hkl.ne, hkl, true_and, and_self, lt_self_iff_false,
-    ↓reduceIte, mul_one, false_and, one_mul]
+  have hik (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i k ⟨(i, k), hki⟩ x = x := by
+    simp
+  have hjk (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j k ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j k ⟨(i, k), hki⟩ hji.ne' x
+  have hil (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor i l ⟨(i, k), hki⟩ x =
+        Real.sqrt (1 - x ^ 2) :=
+    partialCorrelationCholeskyEntryFactor_of_eq_of_lt i l ⟨(i, k), hki⟩ x rfl hkl
+  have hjl (x : ℝ) :
+      partialCorrelationCholeskyEntryFactor j l ⟨(i, k), hki⟩ x = 1 :=
+    partialCorrelationCholeskyEntryFactor_of_row_ne j l ⟨(i, k), hki⟩ hji.ne' x
+  simp_rw [hik, hjk, hil, hjl, mul_one]
   simpa only [pow_one, Real.sqrt_eq_rpow, Nat.not_even_one, ↓reduceIte] using
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
       (r := 1 / 2) (lkjPartialCorrelationShape_pos hη ⟨(i, k), hki⟩)
@@ -349,9 +338,10 @@ private theorem memLp_cholesky_entry (hη : 0 < η) (i k : Fin p) (q : ENNReal) 
       (coordinate_ae_abs_le_one ij)
   filter_upwards [hz] with z hz
   by_cases hk : k ≤ i
-  · rw [← prod_entryFactor z i k hk, Real.norm_eq_abs, Finset.abs_prod]
+  · rw [← prod_partialCorrelationCholeskyEntryFactor z i k hk, Real.norm_eq_abs,
+      Finset.abs_prod]
     exact Finset.prod_le_one₀ (fun _ _ ↦ abs_nonneg _)
-      (fun ij _ ↦ abs_entryFactor_le_one i k ij (hz ij))
+      (fun ij _ ↦ abs_partialCorrelationCholeskyEntryFactor_le_one i k ij (hz ij))
   · simp [partialCorrelationCholesky_apply_of_lt z (lt_of_not_ge hk)]
 
 /-- The square of every entry in the independent centered-Beta partial-correlation

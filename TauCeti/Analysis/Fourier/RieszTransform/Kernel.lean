@@ -716,13 +716,13 @@ theorem ae_rieszTransform_eq_integral (v : E) (f : Lp F 2 (volume : Measure E)) 
     integral_congr_ae (hff'.mono fun y hy ↦ by simp only [hy])]
   exact hx k ⟨mem_closedBall_zero_iff.2 hk₁, fun h ↦ hxδ (thickening_mono hk₂ s h)⟩
 
-/-- **The Riesz transforms are of weak type `(1, 1)`.** In dimension `n ≥ 1` there is a constant
-`A` with `t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
+/-- **The Riesz transforms are of weak type `(1, 1)`.** There is a constant `A` with
+`t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
 nonzero `F`, the Riesz transform is not bounded on `L¹`; this is the endpoint substitute. It
 follows from the Calderón–Zygmund theorem, since `R_v` is bounded on `L²` and its kernel
 `K_v(x - y)` satisfies the size and smoothness estimates `abs_rieszKernel_le` and
 `abs_rieszKernel_sub_le`. -/
-theorem exists_mul_volume_lt_enorm_rieszTransform_le [Nontrivial E] (v : E) :
+theorem exists_mul_volume_lt_enorm_rieszTransform_le (v : E) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure E)) (t : ℝ≥0∞),
       t * volume {x | t < ‖rieszTransform F v f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set n := finrank ℝ E
