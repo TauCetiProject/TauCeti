@@ -30,9 +30,7 @@ vortices.
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
-* `Real.monotoneOn_exp_two_mul_sub_one_sub_two_mul`,
-  `Real.antitoneOn_exp_two_mul_sub_one_sub_two_mul`: the potential increases on `[0, ∞)` and
-  decreases on `(-∞, 0]`.
+* `Real.monotoneOn_exp_two_mul_sub_one_sub_two_mul`: the potential increases on `[0, ∞)`.
 * `Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq`: below a level `S`, the potential is at most
   `4 (exp (2S) + 2) t²`.
 -/
@@ -77,18 +75,6 @@ theorem monotoneOn_exp_two_mul_sub_one_sub_two_mul :
   have h2 : 1 ≤ exp (2 * a) := one_le_exp (by linarith [Set.mem_Ici.mp ha])
   have h3 : exp (2 * b) = exp (2 * a) * exp (2 * (b - a)) := by
     rw [← exp_add]; ring_nf
-  simp only
-  nlinarith
-
-/-- The potential `exp (2t) - 1 - 2t` is decreasing on `(-∞, 0]`. -/
-theorem antitoneOn_exp_two_mul_sub_one_sub_two_mul :
-    AntitoneOn (fun t ↦ exp (2 * t) - 1 - 2 * t) (Set.Iic 0) := by
-  intro b _ a ha hba
-  have h1 := add_one_le_exp (-(2 * (a - b)))
-  have h2 : exp (2 * a) ≤ 1 := exp_le_one_iff.mpr (by linarith [Set.mem_Iic.mp ha])
-  have h3 : exp (2 * b) = exp (2 * a) * exp (-(2 * (a - b))) := by
-    rw [← exp_add]; ring_nf
-  have h4 : 0 ≤ exp (2 * a) := exp_nonneg _
   simp only
   nlinarith
 

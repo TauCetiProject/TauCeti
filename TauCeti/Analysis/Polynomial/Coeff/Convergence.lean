@@ -9,12 +9,13 @@ public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
 # Polynomials with converging coefficients
 
-Let `P i` be polynomials over a normed ring, indexed along a filter `l`, whose coefficients
+Let `P i` be polynomials over a seminormed ring, indexed along a filter `l`, whose coefficients
 converge to those of a polynomial `P₀`, and whose degrees are eventually at most a fixed `N`.
 This file records the estimates which make such a family behave uniformly:
 
@@ -24,7 +25,8 @@ This file records the estimates which make such a family behave uniformly:
   (`Polynomial.tendsto_coeff_derivative`);
 * the values grow at most like `(1 + ‖z‖) ^ N`, with a constant independent of `i`
   (`Polynomial.exists_eventually_forall_norm_eval_le`);
-* if the degrees are eventually at most `deg P₀` and `P₀ ≠ 0`, the values also grow at least like
+* over a normed ring with multiplicative norm (`NormMulClass`), if the degrees are eventually at
+  most `deg P₀` and `P₀ ≠ 0`, the values also grow at least like
   `‖z‖ ^ deg P₀` outside a fixed ball, again with constants independent of `i`
   (`Polynomial.exists_eventually_forall_mul_pow_le_norm_eval`). In particular, if `deg P₀ ≥ 1`,
   then eventually `‖P i‖ ≥ 1` outside a fixed ball
@@ -32,10 +34,15 @@ This file records the estimates which make such a family behave uniformly:
 * in any case the degree can only drop in the limit: eventually `deg P₀ ≤ deg P i`
   (`Polynomial.eventually_natDegree_le_natDegree_of_tendsto_coeff`).
 
+Over a first countable coefficient ring, a limit along such a family may be computed along
+countably generated filters only (`Polynomial.tendsto_of_isCountablyGenerated`): eventually `P i`
+is determined by its coefficient vector, whose neighbourhood filters are countably generated.
+
 The degree bound cannot be dropped: `z + z ^ 2 / i` has coefficients converging to those of `z`,
 but a root at `-i`, which escapes to infinity.
 
-When `P₀` has degree at least one, these bounds give the uniform decay
+When `P₀` has degree at least one, and the norm is multiplicative, these bounds give the uniform
+decay
 `(1 + ‖P i‖²)⁻¹ ≤ A / (1 + ‖z‖) ^ 2`
 (`Polynomial.exists_eventually_forall_inv_one_add_norm_eval_sq_le`) and the uniform comparison
 `‖(P i)'‖² ≤ B (1 + ‖P i‖²)` (`Polynomial.exists_eventually_forall_norm_derivative_eval_sq_le`).
@@ -75,6 +82,39 @@ theorem eventually_natDegree_le_natDegree_of_tendsto_coeff [T1Space R]
     exact leadingCoeff_ne_zero.mpr hP₀
   filter_upwards [hP.eventually_ne hlead] with i hi
   exact le_natDegree_of_ne_zero hi
+
+/-- **Reduction to countably generated filters.** Over a first countable coefficient ring, if a
+function `G` of the polynomial converges to `x` along every family with converging coefficients
+and degree eventually at most `deg P₀`, indexed along a countably generated filter on the
+coefficient vectors `Fin (deg P₀ + 1) → R`, then it converges to `x` along every such family over
+any filter: eventually `P i` is the polynomial with coefficient vector `k ↦ (P i).coeff k`, and
+these vectors converge in `Fin (deg P₀ + 1) → R`. -/
+theorem tendsto_of_isCountablyGenerated [FirstCountableTopology R] {X : Type*}
+    [TopologicalSpace X] {G : Polynomial R → X} {x : X}
+    (hG : ∀ {l' : Filter (Fin (P₀.natDegree + 1) → R)} [l'.IsCountablyGenerated]
+      {Q : (Fin (P₀.natDegree + 1) → R) → Polynomial R},
+      (∀ᶠ c in l', (Q c).natDegree ≤ P₀.natDegree) →
+      (∀ k, Tendsto (fun c ↦ (Q c).coeff k) l' (𝓝 (P₀.coeff k))) →
+      Tendsto (fun c ↦ G (Q c)) l' (𝓝 x))
+    (hN : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
+    Tendsto (fun i ↦ G (P i)) l (𝓝 x) := by
+  classical
+  set N := P₀.natDegree
+  have hψ {Q : Polynomial R} (hQ : Q.natDegree ≤ N) : ofFn (N + 1) (toFn (N + 1) Q) = Q :=
+    ofFn_comp_toFn_eq_id_of_natDegree_lt (Nat.lt_succ_of_le hQ)
+  have hcont (k : ℕ) : Continuous fun c : Fin (N + 1) → R ↦ (ofFn (N + 1) c).coeff k := by
+    by_cases hk : k < N + 1
+    · simpa only [ofFn_coeff_eq_val_of_lt _ hk] using continuous_apply (⟨k, hk⟩ : Fin (N + 1))
+    · simpa only [ofFn_coeff_eq_zero_of_ge _ (not_lt.mp hk)] using continuous_const
+  have hlim := hG (l' := 𝓝 (toFn (N + 1) P₀)) (Q := ofFn (N + 1))
+    (Eventually.of_forall fun c ↦ Nat.lt_succ_iff.mp (ofFn_natDegree_lt N.succ_pos c))
+    fun k ↦ by simpa only [hψ le_rfl] using (hcont k).tendsto (toFn (N + 1) P₀)
+  have hc : Tendsto (fun i ↦ toFn (N + 1) (P i)) l (𝓝 (toFn (N + 1) P₀)) :=
+    tendsto_pi_nhds.mpr fun k ↦ hP k
+  refine (hlim.comp hc).congr' ?_
+  filter_upwards [hN] with i hi
+  simp only [Function.comp_apply, hψ hi]
 
 end Topological
 
@@ -142,7 +182,8 @@ section NormMulClass
 
 variable [NormedRing R] [NormMulClass R] {P : ι → Polynomial R} {P₀ : Polynomial R}
 
-/-- **A uniform lower growth bound outside a ball.** If `P₀ ≠ 0`, the degrees of `P i` are
+/-- **A uniform lower growth bound outside a ball.** Over a normed ring with multiplicative norm,
+if `P₀ ≠ 0`, the degrees of `P i` are
 eventually at most that of `P₀`, and the coefficients converge, then there are `c > 0` and `r ≥ 1`
 such that `c ‖z‖ ^ deg P₀ ≤ ‖P i z‖` whenever `r ≤ ‖z‖`, eventually in `i`. -/
 theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
@@ -188,7 +229,8 @@ theorem exists_eventually_forall_mul_pow_le_norm_eval (hP₀ : P₀ ≠ 0)
   rw [norm_neg, sub_neg_eq_add, add_comm] at this
   linarith
 
-/-- **Uniform modulus at least one outside a ball.** If `P₀` has degree at least one, the degrees
+/-- **Uniform modulus at least one outside a ball.** Over a normed ring with multiplicative norm,
+if `P₀` has degree at least one, the degrees
 of `P i` are eventually at most that of `P₀`, and the coefficients converge, then there is a radius
 `r` such that eventually `1 ≤ ‖P i z‖` for every `z` outside the closed ball of radius `r`. -/
 theorem exists_eventually_forall_one_le_norm_eval (hm : 0 < P₀.natDegree)
@@ -208,7 +250,8 @@ theorem exists_eventually_forall_one_le_norm_eval (hm : 0 < P₀.natDegree)
         exact ((le_max_right _ _).trans hz.le).trans (le_self_pow₀ hz1 hm.ne')
     _ ≤ ‖(P i).eval z‖ := hi z hzR
 
-/-- **Uniform decay of `(1 + ‖P‖²)⁻¹`.** If `P₀` has degree at least one, the degrees of `P i` are
+/-- **Uniform decay of `(1 + ‖P‖²)⁻¹`.** Over a normed ring with multiplicative norm, if `P₀` has
+degree at least one, the degrees of `P i` are
 eventually at most that of `P₀`, and the coefficients converge, then
 `(1 + ‖P i z‖²)⁻¹ ≤ A / (1 + ‖z‖) ^ 2` for all `z`, eventually in `i`, with `A` independent of
 `i`. -/
@@ -247,7 +290,8 @@ theorem exists_eventually_forall_inv_one_add_norm_eval_sq_le (hm : 0 < P₀.natD
           · exact le_max_right _ _
           · exact le_add_of_nonneg_right (by positivity)
 
-/-- **The derivative is uniformly dominated.** If `P₀` has degree at least one, the degrees of
+/-- **The derivative is uniformly dominated.** Over a normed ring with multiplicative norm, if `P₀`
+has degree at least one, the degrees of
 `P i` are eventually at most that of `P₀`, and the coefficients converge, then
 `‖(P i)' z‖² ≤ B (1 + ‖P i z‖²)` for all `z`, eventually in `i`, with `B` independent of `i`. -/
 theorem exists_eventually_forall_norm_derivative_eval_sq_le (hm : 0 < P₀.natDegree)

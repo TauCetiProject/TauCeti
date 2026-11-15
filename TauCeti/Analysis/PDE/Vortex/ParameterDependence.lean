@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 public import TauCeti.Analysis.PDE.Vortex.Variational
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.InnerProductSpace.Convex
@@ -16,14 +15,13 @@ import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Polynomial.Coeff.Convergence
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
-import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
-# Continuous dependence of Taubes's minimizers on the polynomial
+# Stability of Taubes's variational problem under perturbation of the polynomial
 
 For a complex polynomial `P` of degree `m ≥ 1`, Taubes's functional `I_P` on `H¹(ℂ)`
 (`TauCeti.Vortex.sobolevReducedFunctional P`) attains its minimum
@@ -31,7 +29,8 @@ For a complex polynomial `P` of degree `m ≥ 1`, Taubes's functional `I_P` on `
 equation of the vortex with zero divisor `P`. Through the elementary symmetric chart
 `Sym.coeffHomeomorph`, the effective divisors of degree `m` correspond to the monic polynomials
 of degree `m`, with the topology of `Sym ℂ m` given by the coefficients. This file shows that the
-variational problem depends continuously on these coefficients.
+variational problem is stable under perturbation of these coefficients: the minimum values
+converge, and weak cluster points of minimizers are minimizers.
 
 Let `P i` be polynomials, indexed along a filter `l`, whose coefficients
 converge to those of `P₀`, with `deg P₀ ≥ 1` and `deg P i ≤ deg P₀` eventually. Let `u i` be a
@@ -42,7 +41,7 @@ minimizer of `I_(P i)`. Then:
 * the minimum values converge, `I_(P i)(u i) → min I_(P₀)`
   (`TauCeti.Vortex.tendsto_sobolevReducedFunctional_of_tendsto_coeff`);
 * every weak cluster point of `u i` minimizes `I_(P₀)`
-  (`TauCeti.Vortex.forall_sobolevReducedFunctional_le_of_mapClusterPt`), and when `l` is
+  (`TauCeti.Vortex.sobolevReducedFunctional_le_of_mapClusterPt`), and when `l` is
   nontrivial such a cluster point exists
   (`TauCeti.Vortex.exists_mapClusterPt_forall_sobolevReducedFunctional_le`).
 
@@ -61,7 +60,7 @@ The proof is a Γ-convergence argument with three ingredients.
   coercivity of `TauCeti.Vortex.exists_forall_norm_le_of_sobolevReducedFunctional_le` uniform.
   Dominated convergence needs a countably generated filter; since eventually `P i` is determined
   by its coefficient vector in `Fin (deg P₀ + 1) → ℂ`, whose neighbourhood filters are countably
-  generated, it suffices to argue along those.
+  generated, it suffices to argue along those (`Polynomial.tendsto_of_isCountablyGenerated`).
 * **The lower bound.** Fix `ε > 0`. The potential integrand is `ENNReal.ofReal (h φ)`, so a weight
   is cut off at zero where it is negative. Since eventually `h_i ≥ h₀ - ε`, replacing `h_i` by
   `h₀ - ε` can only lower the potential, so the functional with weight `h₀ - ε` and linear
@@ -72,10 +71,11 @@ The proof is a Γ-convergence argument with three ingredients.
   (`TauCeti.Vortex.lowerSemicontinuous_add_lintegral_ofReal_mul_exp_sub_one_sub`). Finally, as
   `ε → 0`, `I_(P₀),ε` increases to `I_(P₀)` pointwise by monotone convergence. Together these
   bound `I_(P i)` below near any weak limit point by `I_(P₀)` there.
-* **The upper bound.** For `v ∈ H¹(ℂ)` of finite energy, the smooth caps
-  `v_k = v - log (1 + exp (v - k)) + log (1 + exp (-k))` are bounded above, so their potential is
-  integrable without the weight, and `I_(P i)(v_k) → I_(P₀)(v_k)` by dominated convergence; as
-  `k → ∞`, `I_(P₀)(v_k) → I_(P₀)(v)`. No exponential integrability of `H¹` functions is needed.
+* **The upper bound.** For `v ∈ H¹(ℂ)` of finite energy, the truncations
+  `v_k = v - (v - k)⁺ = min v k` (`TauCeti.W1p.posPartAbove`) are bounded above, so their
+  potential is integrable without the weight, and `I_(P i)(v_k) → I_(P₀)(v_k)` by dominated
+  convergence; as `k → ∞`, `I_(P₀)(v_k) → I_(P₀)(v)`. No exponential integrability of `H¹`
+  functions is needed.
 
 ## References
 
@@ -97,45 +97,6 @@ open scoped ENNReal
 namespace TauCeti.Vortex
 
 variable {ι : Type*} {l : Filter ι} {P : ι → Polynomial ℂ} {P₀ : Polynomial ℂ}
-
-/-! ### Reduction to coefficient vectors -/
-
-/-- **Reduction to countably generated filters.** If a function `G` of the polynomial converges to
-`x` along every family over the coefficient vectors `Fin (deg P₀ + 1) → ℂ` with converging
-coefficients and degree eventually at most `deg P₀`, along a countably generated filter, then it
-converges to `x` along every such family over any filter: eventually `P i` is the polynomial with
-coefficient vector `k ↦ (P i).coeff k`, and these vectors converge in `Fin (deg P₀ + 1) → ℂ`. -/
-private theorem tendsto_of_isCountablyGenerated {X : Type*} [TopologicalSpace X]
-    {G : Polynomial ℂ → X} {x : X}
-    (hG : ∀ {l' : Filter (Fin (P₀.natDegree + 1) → ℂ)} [l'.IsCountablyGenerated]
-      {Q : (Fin (P₀.natDegree + 1) → ℂ) → Polynomial ℂ},
-      (∀ᶠ c in l', (Q c).natDegree ≤ P₀.natDegree) →
-      (∀ k, Tendsto (fun c ↦ (Q c).coeff k) l' (𝓝 (P₀.coeff k))) →
-      Tendsto (fun c ↦ G (Q c)) l' (𝓝 x))
-    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
-    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) :
-    Tendsto (fun i ↦ G (P i)) l (𝓝 x) := by
-  set N := P₀.natDegree
-  -- The polynomial with coefficient vector `c`.
-  let ψ : (Fin (N + 1) → ℂ) → Polynomial ℂ := fun c ↦
-    ∑ k : Fin (N + 1), Polynomial.C (c k) * Polynomial.X ^ (k : ℕ)
-  have hψ (Q : Polynomial ℂ) (hQ : Q.natDegree ≤ N) : ψ (fun k ↦ Q.coeff k) = Q :=
-    (Fin.sum_univ_eq_sum_range (fun k ↦ Polynomial.C (Q.coeff k) * Polynomial.X ^ k) _).trans
-      (Q.as_sum_range_C_mul_X_pow' (Nat.lt_succ_of_le hQ)).symm
-  have hcont (k : ℕ) : Continuous fun c ↦ (ψ c).coeff k := by
-    simp only [ψ, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow]
-    refine continuous_finsetSum _ fun j _ ↦ ?_
-    split_ifs
-    exacts [continuous_apply j, continuous_const]
-  have hlim := hG (l' := 𝓝 fun k ↦ P₀.coeff k) (Q := ψ)
-    (Eventually.of_forall fun c ↦ Polynomial.natDegree_sum_le_of_forall_le _ _ fun k _ ↦
-      (Polynomial.natDegree_C_mul_X_pow_le _ _).trans (Nat.lt_succ_iff.mp k.isLt))
-    fun k ↦ by simpa only [hψ P₀ le_rfl] using (hcont k).tendsto (fun k ↦ P₀.coeff k)
-  have hc : Tendsto (fun i ↦ fun k : Fin (N + 1) ↦ (P i).coeff k) l (𝓝 fun k ↦ P₀.coeff k) :=
-    tendsto_pi_nhds.mpr fun k ↦ hP k
-  refine (hlim.comp hc).congr' ?_
-  filter_upwards [hdeg] with i hi
-  simp only [Function.comp_apply, hψ (P i) hi]
 
 /-! ### The coefficients of Taubes's functional along a converging family -/
 
@@ -290,7 +251,7 @@ those of `P₀`, with `deg P₀ ≥ 1` and `deg P i ≤ deg P₀` eventually, th
 theorem tendsto_integral_backgroundSource_sub_sq :
     Tendsto (fun i ↦ ∫ z, (backgroundSource (P i).eval z - backgroundSource P₀.eval z) ^ 2) l
       (𝓝 0) :=
-  tendsto_of_isCountablyGenerated
+  Polynomial.tendsto_of_isCountablyGenerated
     (G := fun Q ↦ ∫ z, (backgroundSource Q.eval z - backgroundSource P₀.eval z) ^ 2)
     (fun hdeg hP ↦ tendsto_integral_backgroundSource_sub_sq_of_isCountablyGenerated hm hdeg hP)
     hdeg hP
@@ -330,121 +291,36 @@ theorem exists_eventually_norm_le_of_sobolevReducedFunctional_le (hm : 0 < P₀.
     with i hle hRi hKi
   exact hC (P i) (hm.trans_le hle) hRi (by simpa only [backgroundSource_eval] using hKi)
 
-/-! ### Smooth caps
+/-! ### Truncation from above
 
-The cap `t ↦ t - log (1 + exp (t - k)) + log (1 + exp (-k))` is smooth, increasing with slope in
-`(0, 1]`, vanishes at `0`, lies between `0` and `t`, and is at most `k + 1`. It tends to the
-identity as `k → ∞`. Composing with it truncates an element of `H¹(ℂ)` from above without
-increasing the potential of Taubes's functional. -/
+For a level `k ≥ 0`, the truncation `v_k = v - (v - k)⁺ = min v k` of `v ∈ H¹(ℂ)` from above
+(`TauCeti.W1p.posPartAbove`) has gradient `1_{v ≤ k} ∇v`. Since `t ↦ exp (2t) - 1 - 2t` is
+increasing on `[0, ∞)`, truncating does not increase the potential of Taubes's functional, and
+`v_k` tends to `v` as `k → ∞`. -/
 
-/-- The smooth cap at level `k`. -/
-private def cap (k t : ℝ) : ℝ :=
-  t - Real.log (1 + Real.exp (t - k)) + Real.log (1 + Real.exp (-k))
+/-- Truncating at a level `k ≥ 0` does not increase the integrand of the potential. -/
+private theorem exp_two_mul_min_sub_le {k : ℝ} (hk : 0 ≤ k) (t : ℝ) :
+    Real.exp (2 * min t k) - 1 - 2 * min t k ≤ Real.exp (2 * t) - 1 - 2 * t := by
+  rcases le_total t k with htk | hkt
+  · rw [min_eq_left htk]
+  · rw [min_eq_right hkt]
+    exact Real.monotoneOn_exp_two_mul_sub_one_sub_two_mul hk (hk.trans hkt) hkt
 
-private theorem hasDerivAt_cap (k t : ℝ) :
-    HasDerivAt (cap k) (1 + Real.exp (t - k))⁻¹ t := by
-  have h1 : HasDerivAt (fun s ↦ 1 + Real.exp (s - k)) (Real.exp (t - k)) t := by
-    simpa using ((hasDerivAt_id t).sub_const k).exp.const_add 1
-  have h3 : HasDerivAt (fun s ↦ s - Real.log (1 + Real.exp (s - k)))
-      (1 - Real.exp (t - k) / (1 + Real.exp (t - k))) t :=
-    (hasDerivAt_id t).sub (h1.log (by positivity))
-  exact (h3.add_const _).congr_deriv (by field_simp; ring)
-
-private theorem deriv_cap (k t : ℝ) : deriv (cap k) t = (1 + Real.exp (t - k))⁻¹ :=
-  (hasDerivAt_cap k t).deriv
-
-private theorem contDiff_cap (k : ℝ) : ContDiff ℝ 1 (cap k) := by
-  unfold cap
-  fun_prop (disch := intro x; positivity)
-
-private theorem cap_zero (k : ℝ) : cap k 0 = 0 := by
-  simp [cap]
-
-private theorem nnnorm_deriv_cap_le (k t : ℝ) : ‖deriv (cap k) t‖₊ ≤ 1 := by
-  rw [← NNReal.coe_le_coe, coe_nnNorm, deriv_cap, Real.norm_of_nonneg (by positivity),
-    NNReal.coe_one]
-  exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (Real.exp_nonneg _))
-
-private theorem cap_nonneg_and_le {k t : ℝ} (ht : 0 ≤ t) : 0 ≤ cap k t ∧ cap k t ≤ t := by
-  unfold cap
-  constructor
-  · -- `log (1 + exp (t - k)) ≤ log (exp t (1 + exp (-k))) = t + log (1 + exp (-k))`.
-    have h : 1 + Real.exp (t - k) ≤ Real.exp t * (1 + Real.exp (-k)) := by
-      rw [mul_add, mul_one, ← Real.exp_add, ← sub_eq_add_neg]
-      linarith [Real.one_le_exp ht]
-    have := Real.log_le_log (by positivity) h
-    rw [Real.log_mul (by positivity) (by positivity), Real.log_exp] at this
-    linarith
-  · have h : 1 + Real.exp (-k) ≤ 1 + Real.exp (t - k) := by gcongr; linarith
-    linarith [Real.log_le_log (by positivity) h]
-
-private theorem le_cap_and_nonpos {k t : ℝ} (ht : t ≤ 0) : t ≤ cap k t ∧ cap k t ≤ 0 := by
-  unfold cap
-  constructor
-  · have h : 1 + Real.exp (t - k) ≤ 1 + Real.exp (-k) := by gcongr; linarith
-    linarith [Real.log_le_log (by positivity) h]
-  · have h : Real.exp t * (1 + Real.exp (-k)) ≤ 1 + Real.exp (t - k) := by
-      rw [mul_add, mul_one, ← Real.exp_add, ← sub_eq_add_neg]
-      linarith [Real.exp_le_one_iff.mpr ht]
-    have := Real.log_le_log (by positivity) h
-    rw [Real.log_mul (by positivity) (by positivity), Real.log_exp] at this
-    linarith
-
-private theorem cap_le {k : ℝ} (hk : 0 ≤ k) (t : ℝ) : cap k t ≤ k + 1 := by
-  unfold cap
-  have h1 : t - k ≤ Real.log (1 + Real.exp (t - k)) := by
-    have := Real.log_le_log (Real.exp_pos (t - k))
-      (by linarith : Real.exp (t - k) ≤ 1 + Real.exp (t - k))
-    rwa [Real.log_exp] at this
-  have h2 : Real.log (1 + Real.exp (-k)) ≤ 1 := by
-    have := Real.log_le_sub_one_of_pos (by positivity : 0 < 1 + Real.exp (-k))
-    have := Real.exp_le_one_iff.mpr (neg_nonpos.mpr hk)
-    linarith
-  linarith
-
-private theorem sq_cap_le (k t : ℝ) : cap k t ^ 2 ≤ t ^ 2 := by
-  rcases le_total 0 t with ht | ht
-  · obtain ⟨h1, h2⟩ := cap_nonneg_and_le (k := k) ht
-    nlinarith
-  · obtain ⟨h1, h2⟩ := le_cap_and_nonpos (k := k) ht
-    nlinarith
-
-private theorem tendsto_cap (t : ℝ) : Tendsto (fun k : ℕ ↦ cap k t) atTop (𝓝 t) := by
-  have h1 := (((Real.tendsto_exp_sub_atTop_nhds_zero t).comp tendsto_natCast_atTop_atTop).const_add
-    1).log (by norm_num)
-  have h2 := (((Real.tendsto_exp_sub_atTop_nhds_zero 0).comp tendsto_natCast_atTop_atTop).const_add
-    1).log (by norm_num)
-  simp only [zero_sub] at h2
-  simpa [cap] using (h1.const_sub t).add h2
-
-private theorem tendsto_deriv_cap (t : ℝ) :
-    Tendsto (fun k : ℕ ↦ deriv (cap k) t) atTop (𝓝 1) := by
-  simpa [deriv_cap] using
-    (((Real.tendsto_exp_sub_atTop_nhds_zero t).comp tendsto_natCast_atTop_atTop).const_add
-      1).inv₀ (by norm_num)
-
-/-! ### The potential of Taubes's functional -/
-
-/-- Capping does not increase the integrand of the potential. -/
-private theorem exp_two_mul_cap_sub_le (k t : ℝ) :
-    Real.exp (2 * cap k t) - 1 - 2 * cap k t ≤ Real.exp (2 * t) - 1 - 2 * t := by
-  rcases le_total 0 t with ht | ht
-  · obtain ⟨h1, h2⟩ := cap_nonneg_and_le (k := k) ht
-    exact Real.monotoneOn_exp_two_mul_sub_one_sub_two_mul h1 ht h2
-  · obtain ⟨h1, h2⟩ := le_cap_and_nonpos (k := k) ht
-    exact Real.antitoneOn_exp_two_mul_sub_one_sub_two_mul ht h2 h1
-
-/-- The capped integrand of the potential is at most a multiple of `t²`. -/
-private theorem exp_two_mul_cap_sub_le_mul_sq {k : ℝ} (hk : 0 ≤ k) (t : ℝ) :
-    Real.exp (2 * cap k t) - 1 - 2 * cap k t ≤ 4 * (Real.exp (2 * (k + 1)) + 2) * t ^ 2 :=
-  (Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq (cap_le hk t)).trans
-    (mul_le_mul_of_nonneg_left (sq_cap_le k t) (by positivity))
+/-- The integrand of the potential, truncated at a level `k ≥ 0`, is at most a multiple of `t²`. -/
+private theorem exp_two_mul_min_sub_le_mul_sq {k : ℝ} (hk : 0 ≤ k) (t : ℝ) :
+    Real.exp (2 * min t k) - 1 - 2 * min t k ≤ 4 * (Real.exp (2 * k) + 2) * t ^ 2 := by
+  refine (Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq (min_le_right t k)).trans
+    (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  rcases le_total t k with htk | hkt
+  · rw [min_eq_left htk]
+  · rw [min_eq_right hkt]
+    exact pow_le_pow_left₀ hk hkt 2
 
 /-! ### Recovery sequences -/
 
 /-- Taubes's functional, written with the weight `TauCeti.Vortex.backgroundWeight` and the
 linear coefficient `TauCeti.Vortex.backgroundSource`. -/
-theorem sobolevReducedFunctional_eq_background (Q : Polynomial ℂ)
+theorem sobolevReducedFunctional_eq_add_lintegral_ofReal_backgroundWeight_mul (Q : Polynomial ℂ)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional Q u =
       ((‖W1p.gradient u‖ ^ 2 / 2 + ∫ z, backgroundSource Q.eval z * W1p.value u z : ℝ) : EReal) +
@@ -454,7 +330,7 @@ theorem sobolevReducedFunctional_eq_background (Q : Polynomial ℂ)
 
 /-- Taubes's functional, written with the weight and the linear coefficient, when the potential
 is integrable. -/
-theorem sobolevReducedFunctional_eq_coe_background {Q : Polynomial ℂ}
+theorem sobolevReducedFunctional_eq_coe_of_integrable_backgroundWeight_mul {Q : Polynomial ℂ}
     {u : W1p (volume : Measure ℂ) ⊤ 2}
     (hu : Integrable fun z ↦ backgroundWeight Q.eval z *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) :
@@ -465,101 +341,135 @@ theorem sobolevReducedFunctional_eq_coe_background {Q : Polynomial ℂ}
   simp only [backgroundWeight_def, backgroundSource_eval] at hu ⊢
   exact sobolevReducedFunctional_eq_coe hu
 
+/-- Taubes's functional is infinite when its potential, written with the weight
+`TauCeti.Vortex.backgroundWeight`, is not integrable. -/
+theorem sobolevReducedFunctional_eq_top_of_not_integrable_backgroundWeight_mul
+    {Q : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : ¬Integrable fun z ↦ backgroundWeight Q.eval z *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) :
+    sobolevReducedFunctional Q u = ⊤ := by
+  simp only [backgroundWeight_def] at hu
+  exact sobolevReducedFunctional_eq_top hu
+
 /-- Taubes's functional is finite exactly when its potential, written with the weight
 `TauCeti.Vortex.backgroundWeight`, is integrable. -/
-theorem sobolevReducedFunctional_ne_top_iff_background {Q : Polynomial ℂ}
+theorem sobolevReducedFunctional_ne_top_iff_integrable_backgroundWeight_mul {Q : Polynomial ℂ}
     {u : W1p (volume : Measure ℂ) ⊤ 2} :
     sobolevReducedFunctional Q u ≠ ⊤ ↔ Integrable fun z ↦ backgroundWeight Q.eval z *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
   simp only [backgroundWeight_def]
   exact sobolevReducedFunctional_ne_top_iff
 
-/-- The cap of an element of `H¹(ℂ)` at level `k`. -/
-private def capH (k : ℝ) (v : W1p (volume : Measure ℂ) ⊤ 2) : W1p (volume : Measure ℂ) ⊤ 2 :=
-  W1p.contDiffComp (M := 1) ENNReal.ofNat_ne_top (contDiff_cap k) (nnnorm_deriv_cap_le k)
-    (cap_zero k) v
+/-- For a polynomial `Q` of degree at least one, the linear coefficient
+`TauCeti.Vortex.backgroundSource` of Taubes's functional is square integrable. -/
+private theorem memLp_backgroundSource_eval {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree) :
+    MemLp (backgroundSource Q.eval) 2 := by
+  simpa only [← backgroundSource_eval] using
+    memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hQ
 
-private theorem value_capH (k : ℝ) (v : W1p (volume : Measure ℂ) ⊤ 2) :
-    (W1p.value (capH k v) : ℂ → ℝ) =ᵐ[volume] fun z ↦ cap k (W1p.value v z) := by
-  unfold capH
-  simpa using W1p.value_contDiffComp_ae (M := 1) ENNReal.ofNat_ne_top (contDiff_cap k)
-    (nnnorm_deriv_cap_le k) (cap_zero k) v
+/-- The truncation `min v k` of an element of `H¹(ℂ)` from above at the level `k`. -/
+private def capH (k : ℕ) (v : W1p (volume : Measure ℂ) ⊤ 2) : W1p (volume : Measure ℂ) ⊤ 2 :=
+  v - W1p.posPartAbove ENNReal.ofNat_ne_top (Nat.cast_nonneg k) v
 
-private theorem norm_gradient_capH_sq (k : ℝ) (v : W1p (volume : Measure ℂ) ⊤ 2) :
-    ‖W1p.gradient (capH k v)‖ ^ 2 =
-      ∫ z, deriv (cap k) (W1p.value v z) ^ 2 * ‖W1p.gradient v z‖ ^ 2 := by
-  unfold capH
-  have h := W1p.gradient_contDiffComp_ae (M := 1) ENNReal.ofNat_ne_top (contDiff_cap k)
-    (nnnorm_deriv_cap_le k) (cap_zero k) v
-  simp only [Opens.coe_top, Measure.restrict_univ] at h
-  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-  simp only [Opens.coe_top, Measure.restrict_univ]
-  refine integral_congr_ae (h.mono fun z hz ↦ ?_)
-  simp only [hz, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+private theorem value_capH (k : ℕ) (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    (W1p.value (capH k v) : ℂ → ℝ) =ᵐ[volume] fun z ↦ min (W1p.value v z) k := by
+  have h1 := W1p.value_sub_ae v (W1p.posPartAbove ENNReal.ofNat_ne_top (Nat.cast_nonneg k) v)
+  have h2 := W1p.value_posPartAbove_ae ENNReal.ofNat_ne_top (Nat.cast_nonneg (α := ℝ) k) v
+  simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2
+  filter_upwards [h1, h2] with z h1 h2
+  rw [capH, h1, Pi.sub_apply, h2]
+  rcases le_total (W1p.value v z) k with h | h
+  · rw [max_eq_right (sub_nonpos.mpr h), min_eq_left h, sub_zero]
+  · rw [max_eq_left (sub_nonneg.mpr h), min_eq_right h, sub_sub_cancel]
 
-private theorem continuous_deriv_cap (k : ℝ) : Continuous (deriv (cap k)) := by
-  simp only [funext (deriv_cap k)]
-  fun_prop (disch := intro x; positivity)
+private theorem gradient_capH (k : ℕ) (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    (W1p.gradient (capH k v) : ℂ → ℂ) =ᵐ[volume]
+      {z | W1p.value v z ≤ k}.indicator (W1p.gradient v) := by
+  have h1 := Lp.coeFn_sub (W1p.gradient v)
+    (W1p.gradient (W1p.posPartAbove ENNReal.ofNat_ne_top (Nat.cast_nonneg k) v))
+  have h2 := W1p.gradient_posPartAbove_ae ENNReal.ofNat_ne_top (Nat.cast_nonneg (α := ℝ) k) v
+  simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2
+  filter_upwards [h1, h2] with z h1 h2
+  rw [capH, W1p.gradient_sub, h1, Pi.sub_apply, h2]
+  by_cases h : W1p.value v z ≤ k
+  · rw [Set.indicator_of_notMem (not_lt.mpr h), Set.indicator_of_mem h, sub_zero]
+  · rw [Set.indicator_of_mem (not_le.mp h), Set.indicator_of_notMem h, sub_self]
 
-/-- The potential of a capped element is dominated by the potential of the element. -/
-private theorem integrable_backgroundWeight_mul_capH {Q : Polynomial ℂ}
-    {v : W1p (volume : Measure ℂ) ⊤ 2}
-    (hv : Integrable fun z ↦ backgroundWeight Q.eval z *
-      (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) (k : ℝ) :
-    Integrable fun z ↦ backgroundWeight Q.eval z *
-      (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z) := by
-  refine hv.mono' ((continuous_backgroundWeight Q.continuous).aestronglyMeasurable.mul
+private theorem aestronglyMeasurable_backgroundWeight_mul (Q : Polynomial ℂ)
+    (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    AEStronglyMeasurable fun z ↦ backgroundWeight Q.eval z *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
+  (continuous_backgroundWeight Q.continuous).aestronglyMeasurable.mul
     (Real.continuous_exp_two_mul_sub_one_sub_two_mul.comp_aestronglyMeasurable
-      (W1p.memLp_value (capH k v)).aestronglyMeasurable)) ?_
+      (W1p.memLp_value u).aestronglyMeasurable)
+
+/-- Truncating does not increase the potential. -/
+private theorem ae_norm_backgroundWeight_mul_capH_le (Q : Polynomial ℂ) (k : ℕ)
+    (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    ∀ᵐ z, ‖backgroundWeight Q.eval z *
+        (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z)‖ ≤
+      backgroundWeight Q.eval z * (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z) := by
   filter_upwards [value_capH k v] with z hz
   rw [hz, Real.norm_of_nonneg (mul_nonneg (backgroundWeight_nonneg _ z)
     (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _))]
-  exact mul_le_mul_of_nonneg_left (exp_two_mul_cap_sub_le k _) (backgroundWeight_nonneg _ z)
+  exact mul_le_mul_of_nonneg_left (exp_two_mul_min_sub_le (Nat.cast_nonneg k) _)
+    (backgroundWeight_nonneg _ z)
 
-/-- The potential of an element capped at a level `k ≥ 0` is integrable for every weight between
-`0` and `1`. -/
-private theorem integrable_backgroundWeight_mul_capH_of_nonneg (Q : Polynomial ℂ) {k : ℝ}
-    (hk : 0 ≤ k) (v : W1p (volume : Measure ℂ) ⊤ 2) :
-    Integrable fun z ↦ backgroundWeight Q.eval z *
-      (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z) := by
-  refine (((W1p.memLp_value v).integrable_sq).const_mul
-    (4 * (Real.exp (2 * (k + 1)) + 2))).mono'
-    ((continuous_backgroundWeight Q.continuous).aestronglyMeasurable.mul
-    (Real.continuous_exp_two_mul_sub_one_sub_two_mul.comp_aestronglyMeasurable
-      (W1p.memLp_value (capH k v)).aestronglyMeasurable)) ?_
+/-- The potential of a truncation at the level `k` is dominated by `C_k v²`, for every weight
+between `0` and `1`. -/
+private theorem ae_norm_backgroundWeight_mul_capH_le_mul_sq (Q : Polynomial ℂ) (k : ℕ)
+    (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    ∀ᵐ z, ‖backgroundWeight Q.eval z *
+        (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z)‖ ≤
+      4 * (Real.exp (2 * k) + 2) * W1p.value v z ^ 2 := by
   filter_upwards [value_capH k v] with z hz
-  have hφ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (cap k (W1p.value v z))
+  have hφ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (min (W1p.value v z) k)
   rw [hz, Real.norm_of_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) hφ)]
-  calc backgroundWeight Q.eval z *
-        (Real.exp (2 * cap k (W1p.value v z)) - 1 - 2 * cap k (W1p.value v z))
-      ≤ 1 * (Real.exp (2 * cap k (W1p.value v z)) - 1 - 2 * cap k (W1p.value v z)) :=
-        mul_le_mul_of_nonneg_right ((backgroundWeight_lt_one _ z).le) hφ
-    _ ≤ 4 * (Real.exp (2 * (k + 1)) + 2) * W1p.value v z ^ 2 := by
-        rw [one_mul]
-        exact exp_two_mul_cap_sub_le_mul_sq hk _
+  exact (mul_le_of_le_one_left hφ (backgroundWeight_lt_one _ z).le).trans
+    (exp_two_mul_min_sub_le_mul_sq (Nat.cast_nonneg k) _)
 
-/-- The Dirichlet energies of the caps of `v` converge to that of `v`. -/
+/-- The potential of a truncated element is dominated by the potential of the element. -/
+private theorem integrable_backgroundWeight_mul_capH_of_integrable {Q : Polynomial ℂ}
+    {v : W1p (volume : Measure ℂ) ⊤ 2}
+    (hv : Integrable fun z ↦ backgroundWeight Q.eval z *
+      (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z)) (k : ℕ) :
+    Integrable fun z ↦ backgroundWeight Q.eval z *
+      (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z) :=
+  hv.mono' (aestronglyMeasurable_backgroundWeight_mul Q _)
+    (ae_norm_backgroundWeight_mul_capH_le Q k v)
+
+/-- The potential of a truncated element is integrable for every weight between `0` and `1`. -/
+private theorem integrable_backgroundWeight_mul_capH (Q : Polynomial ℂ) (k : ℕ)
+    (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    Integrable fun z ↦ backgroundWeight Q.eval z *
+      (Real.exp (2 * W1p.value (capH k v) z) - 1 - 2 * W1p.value (capH k v) z) :=
+  (((W1p.memLp_value v).integrable_sq).const_mul _).mono'
+    (aestronglyMeasurable_backgroundWeight_mul Q _)
+    (ae_norm_backgroundWeight_mul_capH_le_mul_sq Q k v)
+
+/-- The Dirichlet energies of the truncations of `v` converge to that of `v`. -/
 private theorem tendsto_norm_gradient_capH_sq (v : W1p (volume : Measure ℂ) ⊤ 2) :
     Tendsto (fun k : ℕ ↦ ‖W1p.gradient (capH k v)‖ ^ 2) atTop (𝓝 (‖W1p.gradient v‖ ^ 2)) := by
-  simp only [norm_gradient_capH_sq]
-  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-  simp only [Opens.coe_top, Measure.restrict_univ]
+  have h (u : W1p (volume : Measure ℂ) ⊤ 2) :
+      ‖W1p.gradient u‖ ^ 2 = ∫ z, ‖W1p.gradient u z‖ ^ 2 := by
+    rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+    simp only [Opens.coe_top, Measure.restrict_univ]
+  simp only [h]
   have hg := W1p.integrable_norm_gradient_sq v
   simp only [Opens.coe_top, Measure.restrict_univ] at hg
-  refine tendsto_integral_of_dominated_convergence _ (fun k ↦
-    (((continuous_deriv_cap _).comp_aestronglyMeasurable
-      (W1p.memLp_value v).aestronglyMeasurable).pow 2).mul hg.aestronglyMeasurable) hg
-    (fun k ↦ ae_of_all _ fun z ↦ ?_)
-    (ae_of_all _ fun z ↦ by simpa using ((tendsto_deriv_cap _).pow 2).mul_const _)
-  rw [Real.norm_of_nonneg (by positivity)]
-  have h1 : deriv (cap k) (W1p.value v z) ^ 2 ≤ 1 := by
-    have := nnnorm_deriv_cap_le k (W1p.value v z)
-    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one, Real.norm_eq_abs] at this
-    nlinarith [abs_nonneg (deriv (cap k) (W1p.value v z)),
-      sq_abs (deriv (cap k) (W1p.value v z))]
-  nlinarith [sq_nonneg ‖W1p.gradient v z‖]
+  refine tendsto_integral_of_dominated_convergence _ (fun k ↦ by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      (W1p.integrable_norm_gradient_sq (capH k v)).aestronglyMeasurable) hg (fun k ↦ ?_) ?_
+  · filter_upwards [gradient_capH k v] with z hz
+    rw [hz, Real.norm_of_nonneg (sq_nonneg _)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (norm_indicator_le_norm_self _ _) 2
+  · filter_upwards [ae_all_iff.mpr fun k : ℕ ↦ gradient_capH k v] with z hz
+    simp only [hz]
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (W1p.value v z)] with k hk
+    rw [Set.indicator_of_mem (s := {z | W1p.value v z ≤ k}) hk]
 
-/-- If the potential of `v` is integrable, the potentials of its caps converge to it. -/
+/-- If the potential of `v` is integrable, the potentials of its truncations converge to it. -/
 private theorem tendsto_integral_backgroundWeight_mul_capH {Q : Polynomial ℂ}
     {v : W1p (volume : Measure ℂ) ⊤ 2}
     (hv : Integrable fun z ↦ backgroundWeight Q.eval z *
@@ -569,17 +479,15 @@ private theorem tendsto_integral_backgroundWeight_mul_capH {Q : Polynomial ℂ}
       (𝓝 (∫ z, backgroundWeight Q.eval z *
         (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z))) := by
   refine tendsto_integral_of_dominated_convergence _
-    (fun k ↦ (integrable_backgroundWeight_mul_capH hv k).aestronglyMeasurable) hv (fun k ↦ ?_) ?_
-  · filter_upwards [value_capH k v] with z hz
-    rw [hz, Real.norm_of_nonneg (mul_nonneg (backgroundWeight_nonneg _ z)
-      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _))]
-    exact mul_le_mul_of_nonneg_left (exp_two_mul_cap_sub_le k _) (backgroundWeight_nonneg _ z)
-  · filter_upwards [ae_all_iff.mpr fun k : ℕ ↦ value_capH k v] with z hz
-    simp only [hz]
-    exact tendsto_const_nhds.mul
-      ((Real.continuous_exp_two_mul_sub_one_sub_two_mul.tendsto _).comp (tendsto_cap _))
+    (fun k ↦ aestronglyMeasurable_backgroundWeight_mul Q _) hv
+    (fun k ↦ ae_norm_backgroundWeight_mul_capH_le Q k v) ?_
+  filter_upwards [ae_all_iff.mpr fun k : ℕ ↦ value_capH k v] with z hz
+  simp only [hz]
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (W1p.value v z)] with k hk
+  rw [min_eq_left hk]
 
-/-- The linear terms of the caps of `v` converge to that of `v`. -/
+/-- The linear terms of the truncations of `v` converge to that of `v`. -/
 private theorem tendsto_integral_backgroundSource_mul_capH {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree)
     (v : W1p (volume : Measure ℂ) ⊤ 2) :
     Tendsto (fun k : ℕ ↦ ∫ z, backgroundSource Q.eval z * W1p.value (capH k v) z) atTop
@@ -594,58 +502,51 @@ private theorem tendsto_integral_backgroundSource_mul_capH {Q : Polynomial ℂ} 
     gcongr
     rw [Real.norm_eq_abs, Real.norm_eq_abs, ← sq_le_sq₀ (abs_nonneg _) (abs_nonneg _),
       sq_abs, sq_abs]
-    exact sq_cap_le k _
+    rcases le_total (W1p.value v z) k with h | h
+    · rw [min_eq_left h]
+    · rw [min_eq_right h]
+      exact pow_le_pow_left₀ (Nat.cast_nonneg k) h 2
   · filter_upwards [ae_all_iff.mpr fun k : ℕ ↦ value_capH k v] with z hz
     simp only [hz]
-    exact tendsto_const_nhds.mul (tendsto_cap _)
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (W1p.value v z)] with k hk
+    rw [min_eq_left hk]
 
-/-- **Recovery in the level.** If `I_Q(v) < ∞`, then `I_Q(v_k) → I_Q(v)` for the caps `v_k` of `v`
-at the levels `k → ∞`. -/
+/-- **Recovery in the level.** If `I_Q(v) < ∞`, then `I_Q(v_k) → I_Q(v)` for the truncations
+`v_k = min v k` of `v` at the levels `k → ∞`. -/
 private theorem tendsto_sobolevReducedFunctional_capH {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree)
     {v : W1p (volume : Measure ℂ) ⊤ 2} (hv : sobolevReducedFunctional Q v ≠ ⊤) :
     Tendsto (fun k : ℕ ↦ sobolevReducedFunctional Q (capH k v)) atTop
       (𝓝 (sobolevReducedFunctional Q v)) := by
   have hpot : Integrable fun z ↦ backgroundWeight Q.eval z *
       (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z) :=
-    sobolevReducedFunctional_ne_top_iff_background.mp hv
-  simp only [sobolevReducedFunctional_eq_coe_background
-      (integrable_backgroundWeight_mul_capH hpot _),
-    sobolevReducedFunctional_eq_coe_background hpot, EReal.tendsto_coe]
+    sobolevReducedFunctional_ne_top_iff_integrable_backgroundWeight_mul.mp hv
+  simp only [sobolevReducedFunctional_eq_coe_of_integrable_backgroundWeight_mul
+      (integrable_backgroundWeight_mul_capH_of_integrable hpot _),
+    sobolevReducedFunctional_eq_coe_of_integrable_backgroundWeight_mul hpot, EReal.tendsto_coe]
   exact (((tendsto_norm_gradient_capH_sq v).div_const 2).add
     ((tendsto_integral_backgroundWeight_mul_capH hpot).div_const 16)).add
     (tendsto_integral_backgroundSource_mul_capH hQ v)
 
-/-- For a fixed level `k ≥ 0`, the values of Taubes's functionals `I_(P i)` at the cap `v_k`
+/-- For a fixed level `k`, the values of Taubes's functionals `I_(P i)` at the truncation `v_k`
 converge to `I_(P₀)(v_k)`, along a countably generated filter. -/
 private theorem tendsto_sobolevReducedFunctional_capH_of_isCountablyGenerated
     [l.IsCountablyGenerated]
     (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
-    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) {k : ℝ} (hk : 0 ≤ k)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) (k : ℕ)
     (v : W1p (volume : Measure ℂ) ⊤ 2) :
     Tendsto (fun i ↦ sobolevReducedFunctional (P i) (capH k v)) l
       (𝓝 (sobolevReducedFunctional P₀ (capH k v))) := by
-  simp only [sobolevReducedFunctional_eq_coe_background
-      (integrable_backgroundWeight_mul_capH_of_nonneg _ hk v), EReal.tendsto_coe]
+  simp only [sobolevReducedFunctional_eq_coe_of_integrable_backgroundWeight_mul
+      (integrable_backgroundWeight_mul_capH _ k v), EReal.tendsto_coe]
   refine (tendsto_const_nhds.add ?_).add ?_
-  · -- The potentials converge by dominated convergence, with the unweighted bound `C v²`.
-    refine (tendsto_integral_filter_of_dominated_convergence
-      (fun z ↦ 4 * (Real.exp (2 * (k + 1)) + 2) * W1p.value v z ^ 2)
-      (Eventually.of_forall fun i ↦
-        (integrable_backgroundWeight_mul_capH_of_nonneg (P i) hk v).aestronglyMeasurable)
-      (Eventually.of_forall fun i ↦ ?_)
+  · -- The potentials converge by dominated convergence, with the unweighted bound `C_k v²`.
+    exact (tendsto_integral_filter_of_dominated_convergence _
+      (Eventually.of_forall fun i ↦ aestronglyMeasurable_backgroundWeight_mul (P i) _)
+      (Eventually.of_forall fun i ↦ ae_norm_backgroundWeight_mul_capH_le_mul_sq (P i) k v)
       (((W1p.memLp_value v).integrable_sq).const_mul _)
       (ae_of_all _ fun z ↦
         ((tendstoUniformly_backgroundWeight hm hdeg hP).tendsto_at z).mul_const _)).div_const 16
-    filter_upwards [value_capH k v] with z hz
-    have hφ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (cap k (W1p.value v z))
-    rw [hz, Real.norm_of_nonneg (mul_nonneg (backgroundWeight_nonneg _ z) hφ)]
-    calc backgroundWeight (P i).eval z * (Real.exp (2 * cap k (W1p.value v z)) - 1 -
-          2 * cap k (W1p.value v z))
-        ≤ 1 * (Real.exp (2 * cap k (W1p.value v z)) - 1 - 2 * cap k (W1p.value v z)) :=
-          mul_le_mul_of_nonneg_right ((backgroundWeight_lt_one _ z).le) hφ
-      _ ≤ 4 * (Real.exp (2 * (k + 1)) + 2) * W1p.value v z ^ 2 := by
-          rw [one_mul]
-          exact exp_two_mul_cap_sub_le_mul_sq hk _
   · -- The linear terms converge since the coefficients converge in `L²`.
     rw [← tendsto_sub_nhds_zero_iff]
     have hlim := (tendsto_integral_backgroundSource_sub_sq hm hdeg hP).mul_const
@@ -656,16 +557,16 @@ private theorem tendsto_sobolevReducedFunctional_capH_of_isCountablyGenerated
     exact sq_integral_mul_sub_integral_mul_le (memLp_backgroundSource_eval (hm.trans_le hi))
       (memLp_backgroundSource_eval hm) (W1p.memLp_value _)
 
-/-- **Recovery along the family.** For a fixed level `k ≥ 0`, the values of Taubes's functionals
-`I_(P i)` at the cap `v_k` converge to `I_(P₀)(v_k)`. -/
+/-- **Recovery along the family.** For a fixed level `k`, the values of Taubes's functionals
+`I_(P i)` at the truncation `v_k` converge to `I_(P₀)(v_k)`. -/
 private theorem tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff
     (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
-    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) {k : ℝ} (hk : 0 ≤ k)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k))) (k : ℕ)
     (v : W1p (volume : Measure ℂ) ⊤ 2) :
     Tendsto (fun i ↦ sobolevReducedFunctional (P i) (capH k v)) l
       (𝓝 (sobolevReducedFunctional P₀ (capH k v))) :=
-  tendsto_of_isCountablyGenerated (G := fun Q ↦ sobolevReducedFunctional Q (capH k v))
-    (fun hdeg hP ↦ tendsto_sobolevReducedFunctional_capH_of_isCountablyGenerated hm hdeg hP hk v)
+  Polynomial.tendsto_of_isCountablyGenerated (G := fun Q ↦ sobolevReducedFunctional Q (capH k v))
+    (fun hdeg hP ↦ tendsto_sobolevReducedFunctional_capH_of_isCountablyGenerated hm hdeg hP k v)
     hdeg hP
 
 /-! ### The lower bound -/
@@ -722,7 +623,7 @@ private theorem tendsto_lowerFunctional (Q : Polynomial ℂ) (u : W1p (volume : 
       (Or.inl (EReal.coe_ne_bot x))).tendsto.comp
       (tendsto_const_nhds.prodMk_nhds ((continuous_coe_ennreal_ereal.tendsto _).comp
         ((ENNReal.continuous_div_const 16 (by norm_num)).tendsto _)))
-  rw [sobolevReducedFunctional_eq_background]
+  rw [sobolevReducedFunctional_eq_add_lintegral_ofReal_backgroundWeight_mul]
   exact hcont.comp hpot
 
 /-- If the weight of `Q'` is at least that of `Q` minus `ε`, and the linear terms at `u` differ by
@@ -733,7 +634,8 @@ private theorem lowerFunctional_le_add {Q Q' : Polynomial ℂ} {ε δ : ℝ}
     (hl : (∫ z, backgroundSource Q.eval z * W1p.value u z) ≤
       (∫ z, backgroundSource Q'.eval z * W1p.value u z) + δ) :
     lowerFunctional Q ε u ≤ sobolevReducedFunctional Q' u + δ := by
-  rw [lowerFunctional, sobolevReducedFunctional_eq_background, add_right_comm, ← EReal.coe_add]
+  rw [lowerFunctional, sobolevReducedFunctional_eq_add_lintegral_ofReal_backgroundWeight_mul,
+    add_right_comm, ← EReal.coe_add]
   refine add_le_add (EReal.coe_le_coe_iff.mpr (by linarith)) ?_
   refine EReal.coe_ennreal_le_coe_ennreal_iff.mpr (ENNReal.div_le_div_right ?_ _)
   refine lintegral_mono fun z ↦ ENNReal.ofReal_le_ofReal ?_
@@ -810,7 +712,49 @@ private theorem exists_mem_nhds_eventually_lt (hm : 0 < P₀.natDegree)
   have h2 : (b' : EReal) < lowerFunctional P₀ ε (e w) := hwU
   exact (h2.trans_le hcomp).not_ge h1
 
-/-! ### Convergence of the minimum values and of the minimizers -/
+/-- Under the hypotheses of the lower bound, if `u i` is eventually bounded by `C` in `H¹(ℂ)` and
+`a` is a weak cluster point of `u i`, then `I_(P i)(u i)` is frequently above every real number
+below `I_(P₀)(a)`. -/
+private theorem frequently_lt_sobolevReducedFunctional_of_mapClusterPt (hm : 0 < P₀.natDegree)
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
+    {u : ι → W1p (volume : Measure ℂ) ⊤ 2} {C : ℝ} (hC : ∀ᶠ i in l, ‖u i‖ ≤ C)
+    {a : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)}
+    (ha : MapClusterPt a l fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i)) {b : ℝ}
+    (hb : (b : EReal) <
+      sobolevReducedFunctional P₀ ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm a)) :
+    ∃ᶠ i in l, (b : EReal) < sobolevReducedFunctional (P i) (u i) := by
+  obtain ⟨U, hU, hUl⟩ := exists_mem_nhds_eventually_lt hm hdeg hP C a hb
+  refine ((ha.frequently hU).and_eventually (hUl.and hC)).mono fun i ⟨hiU, hiU', hiC⟩ ↦ ?_
+  simpa using hiU' _ hiU (by simpa using hiC)
+
+/-! ### Convergence of the minimum values and weak cluster points of the minimizers -/
+
+/-- Minimizers of Taubes's functionals along a converging family are eventually bounded in
+`H¹(ℂ)`. -/
+private theorem exists_eventually_norm_le_of_forall_sobolevReducedFunctional_le
+    (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
+    (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
+    {u : ι → W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : ∀ᶠ i in l, ∀ v, sobolevReducedFunctional (P i) (u i) ≤
+      sobolevReducedFunctional (P i) v) :
+    ∃ C : ℝ, ∀ᶠ i in l, ‖u i‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_sobolevReducedFunctional_le hm hdeg hP 0
+  refine ⟨C, ?_⟩
+  filter_upwards [hC, hu] with i hCi hui
+  exact hCi _ ((hui 0).trans_eq sobolevReducedFunctional_zero)
+
+/-- An eventually bounded family in `H¹(ℂ)` along a nontrivial filter has a weak cluster point. -/
+private theorem exists_mapClusterPt_of_eventually_norm_le [l.NeBot]
+    {u : ι → W1p (volume : Measure ℂ) ⊤ 2} {C : ℝ} (hC : ∀ᶠ i in l, ‖u i‖ ≤ C) :
+    ∃ a : WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2),
+      MapClusterPt a l fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i) := by
+  obtain ⟨a, -, ha⟩ := (isCompact_toWeakSpace_closedBall
+    surjective_inclusionInDoubleDual_of_uniformConvexSpace 0 C).exists_mapClusterPt
+    (u := fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i))
+    (tendsto_principal.mpr (hC.mono fun i hi ↦
+      mem_image_of_mem _ (mem_closedBall_zero_iff.mpr hi)))
+  exact ⟨a, ha⟩
 
 /-- **Convergence of the minimum values.** Let `P i` be polynomials whose coefficients converge,
 along a filter, to those of a polynomial `P₀` of degree at least one, with `deg P i ≤ deg P₀`
@@ -825,7 +769,6 @@ theorem tendsto_sobolevReducedFunctional_of_tendsto_coeff (hm : 0 < P₀.natDegr
       sobolevReducedFunctional P₀ v) :
     Tendsto (fun i ↦ sobolevReducedFunctional (P i) (u i)) l
       (𝓝 (sobolevReducedFunctional P₀ u₀)) := by
-  set e := (toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm
   have hu₀0 : sobolevReducedFunctional P₀ u₀ ≤ 0 := (hu₀ 0).trans_eq sobolevReducedFunctional_zero
   have hu₀top : sobolevReducedFunctional P₀ u₀ ≠ ⊤ := (hu₀0.trans_lt EReal.zero_lt_top).ne
   refine tendsto_order.mpr ⟨fun b hb ↦ ?_, fun b hb ↦ ?_⟩
@@ -839,33 +782,25 @@ theorem tendsto_sobolevReducedFunctional_of_tendsto_coeff (hm : 0 < P₀.natDegr
     set l' := l ⊓ 𝓟 {i | sobolevReducedFunctional (P i) (u i) ≤ x}
     have : l'.NeBot := frequently_iff_neBot.mp hne
     have hl' : l' ≤ l := inf_le_left
-    obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_sobolevReducedFunctional_le hm hdeg hP 0
-    have hbound : ∀ᶠ i in l', ‖u i‖ ≤ C := by
-      filter_upwards [hl' hC, hl' hu] with i hCi hui
-      exact hCi _ ((hui 0).trans_eq sobolevReducedFunctional_zero)
-    obtain ⟨a, -, ha⟩ := (isCompact_toWeakSpace_closedBall
-      surjective_inclusionInDoubleDual_of_uniformConvexSpace 0 C).exists_mapClusterPt
-      (u := fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i))
-      (tendsto_principal.mpr (hbound.mono fun i hi ↦
-        mem_image_of_mem _ (mem_closedBall_zero_iff.mpr hi)))
-    obtain ⟨U, hU, hUl⟩ := exists_mem_nhds_eventually_lt hm (hdeg.filter_mono hl')
-      (fun k ↦ (hP k).mono_left hl') C a (b := x) (hx.trans_le (hu₀ (e a)))
-    obtain ⟨i, hiU, ⟨hiU', hix⟩, hiC⟩ := ((ha.frequently hU).and_eventually
-      ((hUl.and (inf_le_right (a := l) (b := 𝓟 _) (mem_principal_self _))).and hbound)).exists
-    exact absurd ((hiU' _ hiU (by simpa [e] using hiC)).trans_le (by simpa [e] using hix))
-      (lt_irrefl _)
-  · -- The upper bound: compare with the caps of `u₀`.
+    obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_forall_sobolevReducedFunctional_le hm hdeg hP hu
+    obtain ⟨a, ha⟩ := exists_mapClusterPt_of_eventually_norm_le (hl' hC)
+    obtain ⟨i, hi, hix⟩ := ((frequently_lt_sobolevReducedFunctional_of_mapClusterPt hm
+      (hdeg.filter_mono hl') (fun k ↦ (hP k).mono_left hl') (hl' hC) ha
+      (hx.trans_le (hu₀ _))).and_eventually
+      (inf_le_right (a := l) (b := 𝓟 _) (mem_principal_self _))).exists
+    exact (hi.trans_le (by simpa using hix)).false
+  · -- The upper bound: compare with the truncations of `u₀`.
     obtain ⟨k, hk⟩ := ((tendsto_sobolevReducedFunctional_capH hm hu₀top).eventually
       (gt_mem_nhds hb)).exists
     filter_upwards [hu, (tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff hm hdeg hP
-      (Nat.cast_nonneg k) u₀).eventually (gt_mem_nhds hk)] with i hui hi
+      k u₀).eventually (gt_mem_nhds hk)] with i hui hi
     exact (hui _).trans_lt hi
 
 /-- **Weak cluster points of minimizers are minimizers.** Let `P i` be polynomials whose
 coefficients converge, along a filter, to those of a polynomial `P₀` of degree at least one, with
 `deg P i ≤ deg P₀` eventually, and let `u i` minimize Taubes's functional `I_(P i)` eventually.
 Then every weak cluster point of `u i` in `H¹(ℂ)` minimizes `I_(P₀)`. -/
-theorem forall_sobolevReducedFunctional_le_of_mapClusterPt (hm : 0 < P₀.natDegree)
+theorem sobolevReducedFunctional_le_of_mapClusterPt (hm : 0 < P₀.natDegree)
     (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
     (hP : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (P₀.coeff k)))
     {u : ι → W1p (volume : Measure ℂ) ⊤ 2}
@@ -875,28 +810,21 @@ theorem forall_sobolevReducedFunctional_le_of_mapClusterPt (hm : 0 < P₀.natDeg
     (v : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional P₀ ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm a) ≤
       sobolevReducedFunctional P₀ v := by
-  set e := (toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm
   rcases eq_or_ne (sobolevReducedFunctional P₀ v) ⊤ with hv | hv
   · exact hv ▸ le_top
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_sobolevReducedFunctional_le hm hdeg hP 0
-  have hbound : ∀ᶠ i in l, ‖u i‖ ≤ C := by
-    filter_upwards [hC, hu] with i hCi hui
-    exact hCi _ ((hui 0).trans_eq sobolevReducedFunctional_zero)
-  -- It suffices to compare with every cap of `v`.
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_forall_sobolevReducedFunctional_le hm hdeg hP hu
+  -- It suffices to compare with every truncation of `v`.
   refine ge_of_tendsto' (tendsto_sobolevReducedFunctional_capH hm hv) fun k ↦ ?_
   by_contra hlt
   rw [not_le] at hlt
   obtain ⟨b, hb₁, hb₂⟩ := EReal.lt_iff_exists_real_btwn.mp hlt
-  obtain ⟨U, hU, hUl⟩ := exists_mem_nhds_eventually_lt hm hdeg hP C a hb₂
-  obtain ⟨i, hiU, ⟨hiU', hui⟩, hik, hiC⟩ := ((ha.frequently hU).and_eventually
-    ((hUl.and hu).and (((tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff hm hdeg hP
-      (Nat.cast_nonneg k) v).eventually (gt_mem_nhds hb₁)).and hbound))).exists
-  have h1 := hiU' _ hiU (by simpa [e] using hiC)
-  simp only [LinearEquiv.symm_apply_apply] at h1
-  exact absurd ((h1.trans_le (hui _)).trans hik) (lt_irrefl _)
+  obtain ⟨i, hi, hui, hik⟩ := ((frequently_lt_sobolevReducedFunctional_of_mapClusterPt hm hdeg hP
+    hC ha hb₂).and_eventually (hu.and ((tendsto_sobolevReducedFunctional_capH_of_tendsto_coeff
+      hm hdeg hP k v).eventually (gt_mem_nhds hb₁)))).exists
+  exact ((hi.trans_le (hui _)).trans hik).false
 
 /-- **Existence of a minimizing weak cluster point.** Under the hypotheses of
-`TauCeti.Vortex.forall_sobolevReducedFunctional_le_of_mapClusterPt`, for a nontrivial filter the
+`TauCeti.Vortex.sobolevReducedFunctional_le_of_mapClusterPt`, for a nontrivial filter the
 minimizers `u i` have a weak cluster point in `H¹(ℂ)` that minimizes `I_(P₀)`. -/
 theorem exists_mapClusterPt_forall_sobolevReducedFunctional_le [l.NeBot]
     (hm : 0 < P₀.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ P₀.natDegree)
@@ -908,15 +836,8 @@ theorem exists_mapClusterPt_forall_sobolevReducedFunctional_le [l.NeBot]
       MapClusterPt a l (fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i)) ∧
       ∀ v, sobolevReducedFunctional P₀ ((toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)).symm a) ≤
         sobolevReducedFunctional P₀ v := by
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_sobolevReducedFunctional_le hm hdeg hP 0
-  have hbound : ∀ᶠ i in l, ‖u i‖ ≤ C := by
-    filter_upwards [hC, hu] with i hCi hui
-    exact hCi _ ((hui 0).trans_eq sobolevReducedFunctional_zero)
-  obtain ⟨a, -, ha⟩ := (isCompact_toWeakSpace_closedBall
-    surjective_inclusionInDoubleDual_of_uniformConvexSpace 0 C).exists_mapClusterPt
-    (u := fun i ↦ toWeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2) (u i))
-    (tendsto_principal.mpr (hbound.mono fun i hi ↦
-      mem_image_of_mem _ (mem_closedBall_zero_iff.mpr hi)))
-  exact ⟨a, ha, forall_sobolevReducedFunctional_le_of_mapClusterPt hm hdeg hP hu ha⟩
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_of_forall_sobolevReducedFunctional_le hm hdeg hP hu
+  obtain ⟨a, ha⟩ := exists_mapClusterPt_of_eventually_norm_le hC
+  exact ⟨a, ha, sobolevReducedFunctional_le_of_mapClusterPt hm hdeg hP hu ha⟩
 
 end TauCeti.Vortex
