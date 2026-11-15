@@ -23,6 +23,7 @@ separately is not stated there.
   in absolute-value form, as used to dominate integrals of `arctan`.
 * `Real.abs_arctan_sub_self_le`: `|arctan x - x| ≤ |x| ^ 3`, the cubic remainder of the first-order
   Taylor approximation `arctan x ≈ x`, with constant `1`.
+* `Real.sin_two_mul_arctan`: `sin (2 arctan x) = 2 x / (1 + x²)`.
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
 * `Real.tendsto_arctan_div_nhdsGT_zero`: `arctan (c / η) → (π / 2) * sign c` as `η → 0⁺`.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
@@ -60,6 +61,12 @@ theorem abs_arctan_sub_self_le (x : ℝ) : |arctan x - x| ≤ |x| ^ 3 := by
   have h := (convex_closedBall (0 : ℝ) |x|).norm_image_sub_le_of_norm_hasDerivWithin_le
     (x := 0) (y := x) hderiv hbound (Metric.mem_closedBall_self (abs_nonneg x)) (by simp)
   simpa [pow_succ] using h
+
+/-- **The double angle of an arctangent.** `sin (2 arctan x) = 2 x / (1 + x²)`, the half-angle
+formula `Real.sin_eq_two_mul_tan_half_div_one_add_tan_half_sq` at `2 arctan x`. -/
+theorem sin_two_mul_arctan (x : ℝ) : sin (2 * arctan x) = 2 * x / (1 + x ^ 2) := by
+  rw [sin_eq_two_mul_tan_half_div_one_add_tan_half_sq, mul_div_cancel_left₀ _ two_ne_zero,
+    tan_arctan]
 
 /-- **Complementary angles, in quotient form.**  When `u / v` is positive (for instance when `u`
 and `v` are both positive) the angles `arctan (u / v)` and `arctan (v / u)` are complementary. -/

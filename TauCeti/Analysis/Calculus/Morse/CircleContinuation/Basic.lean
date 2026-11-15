@@ -11,6 +11,10 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+public import TauCeti.Analysis.Calculus.Morse.IntervalBase
+import TauCeti.Analysis.Calculus.Morse.ContinuationPotential
+import TauCeti.Analysis.ODE.ExistUnique
+import TauCeti.Dynamics.Flow.TimeDependent
 
 /-!
 # The parameter field of a continuation of `δ cos (2 (θ - r))` on the circle
@@ -57,6 +61,16 @@ counterexamples.
   `TauCeti.hasFDerivAt_circleContinuationField_pi_one`). A connection between two zeros of the
   same index has expected dimension `-1`, so `W` is not transverse, although every slice
   `f_{r(t)}` is a Morse function whose gradient flow on the circle is Morse–Smale.
+
+The last section introduces the set `TauCeti.circleContinuationTrajectories δ r x y` of
+trajectories of `W` from `x` to `y`, for an arbitrary path `r`. The parameter component of a
+trajectory from the level `t = 0` to the level `t = 1` is a time translate of the base orbit
+`TauCeti.intervalBaseOrbit 1` (`TauCeti.exists_snd_eq_of_mem_circleContinuationTrajectories`), two
+trajectories through the same point are time translates of each other
+(`TauCeti.eq_comp_add_of_hasDerivAt_circleContinuationField`), and the angle moves at speed at most
+`2 |δ|` (`TauCeti.abs_fst_sub_fst_le_of_hasDerivAt_circleContinuationField`). For a Lipschitz path
+there is a trajectory through every point of the open slab
+(`TauCeti.exists_circleContinuationField_fst_eq`).
 
 ## References
 
@@ -642,5 +656,157 @@ theorem exists_circleContinuationField_connection_smoothTransition :
     (smoothTransition.monotone.comp fun _ _ h ↦ by linarith)
     (fun t ht ↦ smoothTransition.zero_of_nonpos (by linarith))
     (fun t ht ↦ smoothTransition.one_of_one_le (by linarith))
+
+
+/-! ### Trajectories of the parameter field -/
+
+/-- The trajectories of the parameter field `TauCeti.circleContinuationField δ r` from `x` at `-∞`
+to `y` at `+∞`, in the coordinates `(θ, t)` with lifted angle `θ`. A trajectory on the cylinder
+lifts to the plane; once the lift of its source is fixed, its target lifts to one of the points
+`y + (2 π m, 0)`. -/
+def circleContinuationTrajectories (δ : ℝ) (r : ℝ → ℝ) (x y : ℝ × ℝ) : Set (ℝ → ℝ × ℝ) :=
+  {γ | (∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) ∧ Tendsto γ atBot (𝓝 x) ∧
+    Tendsto γ atTop (𝓝 y)}
+
+section Trajectory
+
+variable {δ : ℝ} {r : ℝ → ℝ} {x y : ℝ × ℝ} {γ γ' : ℝ → ℝ × ℝ}
+
+@[simp]
+theorem mem_circleContinuationTrajectories :
+    γ ∈ circleContinuationTrajectories δ r x y ↔
+      (∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) ∧ Tendsto γ atBot (𝓝 x) ∧
+        Tendsto γ atTop (𝓝 y) := Iff.rfl
+
+/-- The time translates of a trajectory are trajectories between the same points. -/
+theorem comp_add_mem_circleContinuationTrajectories
+    (hγ : γ ∈ circleContinuationTrajectories δ r x y) (c : ℝ) :
+    (fun s ↦ γ (s + c)) ∈ circleContinuationTrajectories δ r x y :=
+  ⟨fun s ↦ (hγ.1 (s + c)).comp_add_const s c,
+    hγ.2.1.comp (tendsto_atBot_add_const_right _ c tendsto_id),
+    hγ.2.2.comp (tendsto_atTop_add_const_right _ c tendsto_id)⟩
+
+/-- A time translate of a curve is a trajectory between two points if and only if the curve is. -/
+theorem comp_add_mem_circleContinuationTrajectories_iff (c : ℝ) :
+    (fun s ↦ γ (s + c)) ∈ circleContinuationTrajectories δ r x y ↔
+      γ ∈ circleContinuationTrajectories δ r x y :=
+  ⟨fun h ↦ by simpa using comp_add_mem_circleContinuationTrajectories h (-c),
+    fun h ↦ comp_add_mem_circleContinuationTrajectories h c⟩
+
+/-- Along a trajectory of the parameter field the angle solves `θ' = 2 δ sin (2 (θ - r t))`. -/
+theorem hasDerivAt_fst_of_hasDerivAt_circleContinuationField
+    (hγ : ∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) (s : ℝ) :
+    HasDerivAt (fun s ↦ (γ s).1) (2 * δ * sin (2 * ((γ s).1 - r (γ s).2))) s := by
+  convert ((hγ s).hasFDerivAt.fst).hasDerivAt using 1
+  simp
+
+/-- Along a trajectory of the parameter field the parameter solves `t' = t (1 - t²)`. -/
+theorem hasDerivAt_snd_of_hasDerivAt_circleContinuationField
+    (hγ : ∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) (s : ℝ) :
+    HasDerivAt (fun s ↦ (γ s).2) ((γ s).2 * (1 - (γ s).2 ^ 2)) s := by
+  convert ((hγ s).hasFDerivAt.snd).hasDerivAt using 1
+  simp
+
+/-- **Trajectories in the open slab follow the base orbit.** If a trajectory of the parameter field
+meets the open slab `0 < t < 1`, its parameter component is a time translate of the trajectory
+`TauCeti.intervalBaseOrbit 1` of `t' = t (1 - t²)` from `t = 0` to `t = 1`. -/
+theorem exists_snd_eq_intervalBaseOrbit_of_hasDerivAt_circleContinuationField
+    (hγ : ∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) {s₀ : ℝ}
+    (hs₀ : (γ s₀).2 ∈ Ioo 0 1) : ∃ c, ∀ s, (γ s).2 = intervalBaseOrbit 1 (s + c) := by
+  have hτ : ∀ s, HasDerivAt (fun s ↦ (γ s).2) (1 * (γ s).2 * (1 - (γ s).2 ^ 2) - 0) s :=
+    fun s ↦ by simpa using hasDerivAt_snd_of_hasDerivAt_circleContinuationField hγ s
+  have hI : ∀ s, (γ s).2 ∈ Ioo 0 1 := fun s ↦
+    mapsTo_Ioo_of_hasDerivAt_intervalBase (C := 1) (b := fun _ ↦ 0) one_pos isOpen_univ
+      isPreconnected_univ (fun s _ ↦ hτ s) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (mem_univ s₀) hs₀
+      (mem_univ s)
+  have hflow := eq_intervalBaseFlow_of_isIntegralCurve (C := 1) (γ := fun s ↦ (γ s).2)
+    (fun s ↦ (hτ s).congr_deriv (by simp; ring))
+    (fun s ↦ ⟨by linarith [(hI s).1], (hI s).2.le⟩)
+  refine ⟨intervalBaseTimeCoordinate (γ 0).2, fun s ↦ ?_⟩
+  rw [congrFun hflow s, intervalBaseFlow_eq_intervalBaseOrbit 1 s (hI 0), one_mul, add_comm]
+
+/-- **Uniqueness of trajectories.** Two trajectories of the parameter field which pass through the
+same point, at the times `s₀` and `s₁`, differ by the time translation `s₁ - s₀`. The path `r` is
+arbitrary. -/
+theorem eq_comp_add_of_hasDerivAt_circleContinuationField
+    (hγ : ∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s)
+    (hγ' : ∀ s, HasDerivAt γ' (circleContinuationField δ r (γ' s)) s) {s₀ s₁ : ℝ}
+    (h : γ' s₀ = γ s₁) : γ' = fun s ↦ γ (s + (s₁ - s₀)) := by
+  set γ₁ : ℝ → ℝ × ℝ := fun s ↦ γ (s + (s₁ - s₀))
+  have hγ₁ : ∀ s, HasDerivAt γ₁ (circleContinuationField δ r (γ₁ s)) s := fun s ↦
+    (hγ _).comp_add_const s _
+  have h₀ : γ' s₀ = γ₁ s₀ := by simp [γ₁, h]
+  -- The parameter components solve the same autonomous equation `t' = t (1 - t²)`.
+  have hsnd : ∀ s, (γ' s).2 = (γ₁ s).2 := fun s ↦
+    isPreconnected_univ.ode_eqOn_of_contDiffAt (V := fun p : ℝ × ℝ ↦ p.2 * (1 - p.2 ^ 2))
+      (fun _ _ ↦ by fun_prop) (mem_univ s₀) (by rw [h₀])
+      (fun s _ ↦ (hasDerivAt_snd_of_hasDerivAt_circleContinuationField hγ' s).hasDerivWithinAt)
+      (fun s _ ↦ (hasDerivAt_snd_of_hasDerivAt_circleContinuationField hγ₁ s).hasDerivWithinAt)
+      (mem_univ s)
+  -- Along a fixed parameter component the angle solves an equation Lipschitz in the angle.
+  have hfst : (fun s ↦ (γ' s).1) = fun s ↦ (γ₁ s).1 :=
+    ODE_solution_unique_univ (v := fun s x ↦ 2 * δ * sin (2 * (x - r (γ₁ s).2)))
+      (s := fun _ ↦ univ) (fun _ ↦ ((lipschitzWith_smul (2 * δ)).comp (lipschitzWith_sin.comp
+        ((lipschitzWith_smul (2 : ℝ)).comp
+          (LipschitzWith.id.sub (LipschitzWith.const _))))).lipschitzOnWith)
+      (fun s ↦ ⟨by simpa only [hsnd s] using
+        hasDerivAt_fst_of_hasDerivAt_circleContinuationField hγ' s, mem_univ _⟩)
+      (fun s ↦ ⟨hasDerivAt_fst_of_hasDerivAt_circleContinuationField hγ₁ s, mem_univ _⟩)
+      (t₀ := s₀) (by rw [h₀])
+  funext s
+  exact Prod.ext (congrFun hfst s) (hsnd s)
+
+/-- A trajectory from the level `t = 0` to the level `t = 1` follows a translate of the base
+orbit `TauCeti.intervalBaseOrbit 1`. -/
+theorem exists_snd_eq_of_mem_circleContinuationTrajectories {x₀ y₀ : ℝ}
+    (hγ : γ ∈ circleContinuationTrajectories δ r (x₀, 0) (y₀, 1)) :
+    ∃ c, ∀ s, (γ s).2 = intervalBaseOrbit 1 (s + c) := by
+  obtain ⟨s₁, hs₁⟩ := (hγ.2.1.snd_nhds.eventually_lt_const (by norm_num : (0 : ℝ) < 1 / 2)).exists
+  obtain ⟨s₂, hs₂⟩ := (hγ.2.2.snd_nhds.eventually_const_lt (by norm_num : (1 / 2 : ℝ) < 1)).exists
+  have hcont : Continuous fun s ↦ (γ s).2 := continuous_iff_continuousAt.2 fun s ↦
+    (hasDerivAt_snd_of_hasDerivAt_circleContinuationField hγ.1 s).continuousAt
+  obtain ⟨s₀, hs₀⟩ := intermediate_value_univ s₁ s₂ hcont ⟨hs₁.le, hs₂.le⟩
+  refine exists_snd_eq_intervalBaseOrbit_of_hasDerivAt_circleContinuationField hγ.1 (s₀ := s₀) ?_
+  simp only at hs₀
+  rw [hs₀]
+  norm_num
+
+/-- **Drift bound.** Along a trajectory of the parameter field the angle moves at speed at most
+`2 |δ|`. -/
+theorem abs_fst_sub_fst_le_of_hasDerivAt_circleContinuationField
+    (hγ : ∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) (s s' : ℝ) :
+    |(γ s).1 - (γ s').1| ≤ 2 * |δ| * |s - s'| := by
+  have hbound : ∀ u ∈ univ, ‖2 * δ * sin (2 * ((γ u).1 - r (γ u).2))‖ ≤ 2 * |δ| := fun u _ ↦ by
+    rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_two]
+    exact mul_le_of_le_one_right (by positivity) (abs_sin_le_one _)
+  simpa [Real.norm_eq_abs] using convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun s ↦ (γ s).1)
+    (fun u _ ↦ (hasDerivAt_fst_of_hasDerivAt_circleContinuationField hγ u).hasDerivWithinAt) hbound
+    (mem_univ s') (mem_univ s)
+
+/-- **Existence of trajectories for a Lipschitz path.** For a Lipschitz path `r`, through every
+angle `θ₀` at every time `s₀` there is a trajectory of the parameter field whose parameter
+component is the base orbit `TauCeti.intervalBaseOrbit 1`: the time-dependent flow of the angle
+equation along the base orbit. -/
+theorem exists_circleContinuationField_fst_eq {L : ℝ≥0} (hr : LipschitzWith L r)
+    (s₀ θ₀ : ℝ) : ∃ γ : ℝ → ℝ × ℝ, (∀ s, HasDerivAt γ (circleContinuationField δ r (γ s)) s) ∧
+      (∀ s, (γ s).2 = intervalBaseOrbit 1 s) ∧ (γ s₀).1 = θ₀ := by
+  set q := intervalBaseOrbit 1
+  set v : ℝ → ℝ → ℝ := fun s x ↦ 2 * δ * sin (2 * (x - r (q s)))
+  -- The suspension `(s, x) ↦ (1, v s x)` is Lipschitz.
+  have hS := (LipschitzWith.const (1 : ℝ)).prodMk ((lipschitzWith_smul (2 * δ)).comp
+    (lipschitzWith_sin.comp ((lipschitzWith_smul (2 : ℝ)).comp (LipschitzWith.prod_snd.sub
+      ((hr.comp (lipschitzWith_intervalBaseOrbit 1)).comp LipschitzWith.prod_fst)))))
+  obtain ⟨K, hv⟩ : ∃ K, LipschitzWith K (timeDependentSuspension v) := ⟨_, by
+    convert hS using 1
+    funext ⟨t, x⟩
+    simp [v, q]⟩
+  refine ⟨fun s ↦ (timeDependentFlow v hv s₀ s θ₀, q s), fun s ↦ ?_, fun _ ↦ rfl,
+    timeDependentFlow_self v hv s₀ θ₀⟩
+  convert (hasDerivAt_timeDependentFlow v hv s₀ s θ₀).prodMk (hasDerivAt_intervalBaseOrbit 1 s)
+    using 1
+  simp [v, q]
+
+end Trajectory
 
 end TauCeti
