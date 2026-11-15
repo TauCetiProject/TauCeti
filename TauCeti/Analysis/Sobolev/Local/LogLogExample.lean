@@ -118,7 +118,7 @@ theorem hasFDerivAt_logLogInterior {z : ℂ} (hz : z ∈ ball (0 : ℂ) 4) (hz0 
   rw [mem_ball_zero_iff] at hz
   have hn : HasFDerivAt (fun w : ℂ => ‖w‖) (fderiv ℝ (fun w : ℂ => ‖w‖) z) z :=
     ((contDiffAt_norm ℝ hz0 (n := 1)).differentiableAt one_ne_zero).hasFDerivAt
-  exact (Real.hasDerivAt_log_log_div four_ne_zero (norm_ne_zero_iff.2 hz0) hz.ne
+  exact (Real.hasDerivAt_log_log_div (norm_ne_zero_iff.2 hz0) hz.ne
     (by linarith [norm_nonneg z])).comp_hasFDerivAt z hn
 
 /-- On the punctured disc `ball 0 4` the classical derivative of `u(z) = log log (4 / ‖z‖)` has

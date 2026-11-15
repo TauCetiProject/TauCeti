@@ -122,7 +122,7 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
   obtain ⟨h0, h2⟩ := norm_sub_one_mem hz
   have hg : HasFDerivAt (fun w : ℂ => ‖w - 1‖) (fderiv ℝ (fun w : ℂ => ‖w - 1‖) z) z :=
     ((differentiableAt_id.sub_const 1).norm ℝ (norm_pos_iff.1 h0)).hasFDerivAt
-  have hcomp := (Real.hasDerivAt_log_log_div four_ne_zero h0.ne' (by linarith)
+  have hcomp := (Real.hasDerivAt_log_log_div (c := 4) h0.ne' (by linarith)
     (by linarith)).comp_hasFDerivAt z hg
   have hf : logLogTraceExample =
       (fun s : ℝ => Real.log (Real.log (4 / s))) ∘ fun w : ℂ => ‖w - 1‖ :=
