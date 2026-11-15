@@ -29,10 +29,10 @@ induces isomorphisms on relative singular homology, with coefficients in any pre
 with coproducts and homology (`exists_isIso_singularHomologyMap_negativeDiscBundle`).
 
 The width `ε` can be replaced by arbitrary regular levels: if `a < c < b`, the band `f⁻¹[a, b]` is
-compact and its critical points lie on the submanifold, then the collars `f⁻¹[a, c - ε]` and
-`f⁻¹[c + ε, b]` hold no critical point, so `Hₙ(M_b, M_a)` is isomorphic to `Hₙ(M_{c+ε}, M_{c-ε})`
-(`TauCeti.singularHomologySublevelPairIsoOfCollars`), hence to the relative homology of the lower
-sublevel with the negative disc bundle attached
+compact and its critical points lie on the submanifold, then `c` is its only critical value, so
+`Hₙ(M_b, M_a)` is isomorphic to `Hₙ(M_{c+ε}, M_{c-ε})`
+(`TauCeti.singularHomologySublevelPairIsoOfCriticalValue`), hence to the relative homology of the
+lower sublevel with the negative disc bundle attached
 (`nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle`). Groups `Hₙ(M_b, M_a)` of this
 kind, between consecutive regular levels, are the first-page terms of the spectral sequence of the
 filtration of a manifold by the sublevels of `f`; this identifies the contribution of a compact
@@ -77,21 +77,6 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
   [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
   (hn : (∞ : ℕ∞ω) ≠ 0)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ E'] [IsManifold J ∞ S] in
-/-- A critical submanifold on the level `c` which carries every critical point of a compact band
-`f⁻¹[a, b]` around `c` is compact: its image is the closed set of critical points of the band. -/
-private theorem compactSpace_of_isCompact_preimage_Icc (h : i.IsCriticalSubmanifold f)
-    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ} (hc : ∀ s, f (i s) = c) (hac : a ≤ c) (hcb : c ≤ b)
-    (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) : CompactSpace S := by
-  have hrange : range i = criticalPoints I f ∩ f ⁻¹' Icc a b :=
-    (hcrit.antisymm (range_subset_iff.2 fun s ↦
-      ⟨h.mem_criticalPoints s, by rw [mem_preimage, hc s]; exact ⟨hac, hcb⟩⟩)).symm
-  have hK : IsCompact (range i) := hrange ▸ hcompact.of_isClosed_subset
-    ((isClosed_criticalPoints (hfs.of_le (by simp))).inter
-      (isClosed_Icc.preimage hfs.continuous)) inter_subset_right
-  exact isCompact_univ_iff.1 (i.isEmbedding.isInducing.isCompact_iff.2 (by rwa [image_univ]))
 
 namespace IsNondegenerateCriticalSubmanifold
 
@@ -145,8 +130,8 @@ theorem exists_isIso_singularHomologyMap_negativeDiscBundle [T2Space M]
       (k := ⊤) (by simp) hdim isOpen_univ (subset_univ _) (hfs.contMDiffOn.of_le (by simp))
     refine ⟨Θ, hΘz, hΘi, fun x hx ↦ by rw [hΘf x hx, hc], 1, one_pos,
       fun ε hε _ hcompact hcrit ↦ ?_⟩
-    exact (hS (compactSpace_of_isCompact_preimage_Icc h.toIsCriticalSubmanifold hfs hc
-      (by linarith) (by linarith) hcompact hcrit)).elim
+    exact (hS (h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc
+      (hfs.of_le (by simp)) hc (by linarith) (by linarith) hcompact hcrit)).elim
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     h.exists_sublevel_union_negativeDiscBundle_deformation hn hfs hc hdim g
   refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
@@ -215,24 +200,17 @@ theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle [T2Space M
   have hε₁ : ε < ε₀ := hεm.trans_le (min_le_left _ _)
   have hεa : ε < c - a := hεm.trans_le ((min_le_right _ _).trans (min_le_left _ _))
   have hεb : ε < b - c := hεm.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-  have hsub {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) : IsCompact (f ⁻¹' Icc a₁ b₁) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous)
-      (preimage_mono (Icc_subset_Icc ha₁ hb₁))
-  -- Every critical point of the band lies on the submanifold, hence on the level `c`, so the
-  -- collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` hold no critical point.
-  have hreg {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) (hc₁ : c ∉ Icc a₁ b₁) (x : M)
-      (h₁ : a₁ ≤ f x) (h₂ : f x ≤ b₁) : mfderiv I 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
-    obtain ⟨s, rfl⟩ := hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, ha₁.trans h₁,
-      h₂.trans hb₁⟩
-    exact hc₁ (hc s ▸ ⟨h₁, h₂⟩)
-  obtain ⟨hD, _, hiso⟩ := hmain ε hε0 hε₁ (hsub (by linarith) (by linarith))
-    fun x hx ↦ hcrit ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩
-  refine ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoOfCollars hfs
-    (by linarith : a ≤ c - ε) (by linarith : c - ε ≤ c + ε) (by linarith : c + ε ≤ b)
-    (hsub le_rfl (by linarith)) (hsub (by linarith) le_rfl)
-    (hreg le_rfl (by linarith) fun h ↦ by linarith [h.2])
-    (hreg (by linarith) le_rfl fun h ↦ by linarith [h.1]) R n ≪≫
-      (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
+  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b := Icc_subset_Icc (by linarith) (by linarith)
+  have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous) (preimage_mono hε')
+  -- Every critical point of the band lies on the submanifold, hence on the level `c`.
+  have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
+    obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
+    exact hc s
+  obtain ⟨hD, _, hiso⟩ := hmain ε hε0 hε₁ hcompact' fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
+  refine ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoOfCriticalValue hfs hac hcb
+    (by linarith : c - ε < c) (by linarith : c < c + ε) hcompact hcompact' hlev
+    (fun x hx hfx ↦ hlev x hx (hε' hfx)) R n ≪≫ (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
 
 end IsNondegenerateCriticalSubmanifold
 
