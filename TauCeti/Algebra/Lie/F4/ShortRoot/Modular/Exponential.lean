@@ -289,7 +289,7 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
     _ = (1 : A) ⊗ₜ[ℤ] y +
         t • ((1 : A) ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), y⁆) +
         t ^ 2 • ((1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :=
-      f4RootExponential_tmul k t y
+      f4RootExponential_one_tmul k t y
     _ = _ := (congrArg ι hpoly).trans
       (hmap.trans
         (congrArg₂ (· + ·)
