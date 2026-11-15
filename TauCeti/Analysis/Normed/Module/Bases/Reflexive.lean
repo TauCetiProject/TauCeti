@@ -148,7 +148,7 @@ theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
   intro Φ
   have hbound : BddAbove (range (fun n ↦
       ‖∑ i ∈ Finset.range n, Φ (b.coord i) • b i‖)) := by
-    refine ⟨‖Φ‖ * b.nnnormProjBound, ?_⟩
+    refine ⟨‖Φ‖ * b.nnNormProjBound, ?_⟩
     rintro _ ⟨n, rfl⟩
     apply norm_le_dual_bound 𝕜 _ (by positivity)
     intro f
@@ -159,12 +159,12 @@ theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
     calc
       ‖Φ (f.comp (SchauderBasis.proj b n))‖ ≤ ‖Φ‖ * ‖f.comp (SchauderBasis.proj b n)‖ :=
         Φ.le_opNorm _
-      _ ≤ ‖Φ‖ * (‖f‖ * b.nnnormProjBound) :=
+      _ ≤ ‖Φ‖ * (‖f‖ * b.nnNormProjBound) :=
         mul_le_mul_of_nonneg_left
           ((ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnnormProjBound n) (norm_nonneg f)))
+            (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnNormProjBound n) (norm_nonneg f)))
           (norm_nonneg Φ)
-      _ = (‖Φ‖ * b.nnnormProjBound) * ‖f‖ := by ring
+      _ = (‖Φ‖ * b.nnNormProjBound) * ‖f‖ := by ring
   obtain ⟨x, hx⟩ := b.isBoundedlyComplete_iff.1 hc _ hbound
   exact ⟨x, hs.ext fun i ↦ by simpa only [dual_def] using hx i⟩
 

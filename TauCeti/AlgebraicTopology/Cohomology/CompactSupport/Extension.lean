@@ -40,6 +40,11 @@ compared in the proof of Poincaré duality.
   `TopCat.compactSupportCohomologyι_eq_zero_of_restrict_eq_zero`: a class of `Hⁿ(X, X ∖ K)` with
   `K` inside the image of `f` is extended from `Hⁿ_c(U)`, and a class of `Hⁿ(U, U ∖ K)` vanishes in
   `Hⁿ_c(U)` once its extension dies in `Hⁿ(X, X ∖ L)` for a compact `L` inside the image of `f`.
+* `TopCat.singularCohomologyComplCompactsMap`: the restriction `Hⁿ(X, X ∖ f(K)) ⟶ Hⁿ(U, U ∖ K)`
+  along an injective `f`. It is compatible with enlarging `K`
+  (`compactSupportCohomologyι_singularCohomologyComplCompactsMap_singularCohomologyComplRestrict`)
+  and with extension
+  (`compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap`).
 
 ## References
 
@@ -108,6 +113,26 @@ private lemma ofSubsetMap_id_comp_ofSubsetMap_compl_compacts_map {f : U ⟶ X}
         TopPair.ofSubsetMap (𝟙 X)
           (mapsTo_id_compl_compacts (Compacts.map_mono f f.hom.continuous h)) :=
   TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by simp)
+
+/-- The restriction `Hⁿ(X, X ∖ f(K)) ⟶ Hⁿ(U, U ∖ K)` along an injective map `f : U ⟶ X`. For an
+open embedding into a Hausdorff space it is the excision isomorphism
+`TopCat.singularCohomologyComplCompactsMapIso`. -/
+abbrev singularCohomologyComplCompactsMap {f : U ⟶ X} (hf : Function.Injective f)
+    (K : Compacts U) (n : ℕ) :
+    (TopPair.ofSubset (K.map f f.hom.continuous : Set X)ᶜ).singularCohomology R k M n ⟶
+      (TopPair.ofSubset (K : Set U)ᶜ).singularCohomology R k M n :=
+  TopPair.singularCohomologyMap (TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf K)) n
+
+/-- Restricting along an injective `f` commutes with enlarging the compact set. -/
+lemma compactSupportCohomologyι_singularCohomologyComplCompactsMap_singularCohomologyComplRestrict
+    {f : U ⟶ X} (hf : Function.Injective f) {K L : Compacts U} (hKL : K ≤ L) {n : ℕ}
+    (a : (TopPair.ofSubset (K.map f f.hom.continuous : Set X)ᶜ).singularCohomology R k M n) :
+    compactSupportCohomologyι n L (singularCohomologyComplCompactsMap hf L n
+        (singularCohomologyComplRestrict R k M (Compacts.map_mono f f.hom.continuous hKL) n a)) =
+      compactSupportCohomologyι n K (singularCohomologyComplCompactsMap hf K n a) := by
+  rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n hKL]
+  simp only [← TopPair.singularCohomologyMap_comp_apply,
+    ofSubsetMap_id_comp_ofSubsetMap_compl_compacts_map hf hKL]
 
 variable [T2Space X]
 
@@ -307,5 +332,48 @@ theorem compactSupportCohomologyι_eq_zero_of_restrict_eq_zero {f : U ⟶ X}
     map_zero] at h
   have h' := congr((singularCohomologyComplCompactsMapIso R k M hf L' n).hom $h)
   rwa [Iso.inv_hom_id_apply, map_zero] at h'
+
+/-- A class of `Hⁿ(Z, Z ∖ i(K'))`, restricted to `Hⁿ(U, U ∖ K')` along an open embedding
+`i = g ≫ f` and extended to `X` along `g`, is the class restricted along `f` from the larger
+compact set `f(K) ⊇ i(K')`. -/
+lemma compactSupportCohomologyExtend_compactSupportCohomologyι_singularCohomologyComplCompactsMap
+    {Z : TopCat.{v}} {f : X ⟶ Z} {g : U ⟶ X} {i : U ⟶ Z} (hf : IsOpenEmbedding f)
+    (hg : IsOpenEmbedding g) (hi : IsOpenEmbedding i) (hgf : g ≫ f = i) {K' : Compacts U}
+    {K : Compacts X} (hK'K : (K'.map i i.hom.continuous : Set Z) ⊆ K.map f f.hom.continuous)
+    {n : ℕ}
+    (z : (TopPair.ofSubset (K'.map i i.hom.continuous : Set Z)ᶜ).singularCohomology R k M n) :
+    compactSupportCohomologyExtend hg n
+        (compactSupportCohomologyι n K' (singularCohomologyComplCompactsMap hi.injective K' n z)) =
+      compactSupportCohomologyι n K (singularCohomologyComplCompactsMap hf.injective K n
+        (singularCohomologyComplRestrict R k M hK'K n z)) := by
+  have hset : ((K'.map g g.hom.continuous).map f f.hom.continuous : Set Z) =
+      K'.map i i.hom.continuous := by
+    simp only [Compacts.coe_map, ← hgf, TopCat.hom_comp, ContinuousMap.coe_comp, Set.image_comp]
+  have hle : K'.map g g.hom.continuous ≤ K := fun x hx ↦ by
+    have hx' : f x ∈ ((K'.map g g.hom.continuous).map f f.hom.continuous : Set Z) :=
+      Set.mem_image_of_mem f hx
+    rw [hset] at hx'
+    simpa [hf.injective.mem_set_image] using hK'K hx'
+  have hz : singularCohomologyComplCompactsMap hi.injective K' n z =
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap g
+        (mapsTo_compl_compacts_map hg.injective K')) n
+        (singularCohomologyComplCompactsMap hf.injective _ n
+          (singularCohomologyComplRestrict R k M hset.ge n z)) := by
+    have hpair : (TopPair.ofSubsetMap g (mapsTo_compl_compacts_map hg.injective K') ≫
+          TopPair.ofSubsetMap f (mapsTo_compl_compacts_map hf.injective _)) ≫
+          TopPair.ofSubsetMap (𝟙 Z) (mapsTo_id_compl hset.ge) =
+        TopPair.ofSubsetMap i (mapsTo_compl_compacts_map hi.injective K') := by
+      rw [TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq (g'' := g ≫ f) _ _
+          (fun _ hx ↦ mapsTo_compl_compacts_map hf.injective _
+            (mapsTo_compl_compacts_map hg.injective K' hx)) rfl]
+      exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by rw [Category.comp_id, hgf])
+    rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
+      hpair]
+  rw [hz, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+    singularCohomologyMap_comp_compactSupportCohomologyι_comp_extend,
+    ← compactSupportCohomologyι_singularCohomologyComplCompactsMap_singularCohomologyComplRestrict
+      hf.injective hle,
+    singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict hset.ge
+      (Compacts.map_mono f f.hom.continuous hle)]
 
 end TopCat

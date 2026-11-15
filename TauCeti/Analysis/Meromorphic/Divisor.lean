@@ -33,6 +33,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
   is bounded by the containing closed-ball count.
 * `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
   meromorphic orders.
+* `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
+  the divisor is positive exactly at a zero.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -134,6 +136,18 @@ theorem MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq
   rw [hf.divisor_apply hz, hg.divisor_apply hz] at heq
   have hcoe := congrArg (fun n : ℤ ↦ (n : WithTop ℤ)) heq
   simpa only [WithTop.coe_untop₀_of_ne_top hfz, WithTop.coe_untop₀_of_ne_top hgz] using hcoe
+
+/-- At a point `z ∈ U` where a function meromorphic on `U` is analytic and does not vanish
+identically nearby, its divisor on `U` is positive exactly when `f z = 0`. -/
+theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hm : MeromorphicOn f U) (hf : AnalyticAt 𝕜 f z) (hz : z ∈ U)
+    (htop : meromorphicOrderAt f z ≠ ⊤) :
+    0 < divisor f U z ↔ f z = 0 := by
+  rw [hf.meromorphicOrderAt_eq] at htop
+  have h : analyticOrderAt f z ≠ ⊤ := fun h ↦ htop (by simp [h])
+  rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
+    ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
 
 open Set
 

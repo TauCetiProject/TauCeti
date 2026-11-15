@@ -14,7 +14,9 @@ The addition and the scalar actions on `WeakDual 𝕜 E` are those of `E →L[�
 computed pointwise. Registering `IsAddApply` and `IsSMulApply` makes the generic simp lemmas
 `add_apply` and `smul_apply` available on `WeakDual 𝕜 E`, so that pointwise computations, such
 as convex combinations of functionals, need not pass through `WeakDual.toStrongDual` or unfold
-the type synonym.
+the type synonym. Likewise, `WeakDual.instIsScalarTower` transfers a scalar tower `R`, `S` of
+actions on `𝕜` to `WeakDual 𝕜 E`; over `RCLike 𝕜` it makes the real action on the weak dual
+compatible with the `𝕜`-action.
 
 It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
 nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`.
@@ -31,6 +33,14 @@ instance instIsAddApply : IsAddApply (WeakDual 𝕜 E) where
 
 instance instIsSMulApply (M : Type*) [Monoid M] [DistribMulAction M 𝕜] [SMulCommClass 𝕜 M 𝕜]
     [ContinuousConstSMul M 𝕜] : IsSMulApply M (WeakDual 𝕜 E) where
+
+/-- Scalar actions on `𝕜` that form a scalar tower induce a scalar tower on `WeakDual 𝕜 E`. For
+`RCLike 𝕜` this makes the real action on `WeakDual 𝕜 E` compatible with the `𝕜`-action. -/
+instance instIsScalarTower {R S : Type*} [Monoid R] [Monoid S] [SMul R S]
+    [DistribMulAction R 𝕜] [SMulCommClass 𝕜 R 𝕜] [ContinuousConstSMul R 𝕜]
+    [DistribMulAction S 𝕜] [SMulCommClass 𝕜 S 𝕜] [ContinuousConstSMul S 𝕜]
+    [IsScalarTower R S 𝕜] : IsScalarTower R S (WeakDual 𝕜 E) :=
+  inferInstanceAs (IsScalarTower R S (StrongDual 𝕜 E))
 
 /-- The functionals that are nonnegative on nonnegative elements form a weak-* closed set. -/
 theorem isClosed_setOf_map_nonneg [Preorder 𝕜] [ClosedIciTopology 𝕜] [LE E] :

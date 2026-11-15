@@ -212,7 +212,7 @@ through the identity from which the connected Lie subgroup with Lie algebra `S` 
 theorem isInvolutiveDistribution_mulInvariantDistribution [CompleteSpace 𝕜]
     [FiniteDimensional 𝕜 E] (hS : ∀ v ∈ S, ∀ w ∈ S, ⁅v, w⁆ ∈ S) :
     IsInvolutiveDistribution I (mulInvariantDistribution S) := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have h23 : (2 : ℕ∞ω) ≤ 3 := by norm_num
   have : LieGroup I 2 G := LieGroup.of_le (n := minSmoothness 𝕜 3) (h23.trans le_minSmoothness)
   refine isInvolutiveDistribution_iff.mpr fun U hU V W hV hW hVD hWD x hx ↦ ?_

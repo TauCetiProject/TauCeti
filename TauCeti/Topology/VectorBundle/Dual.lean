@@ -27,14 +27,21 @@ variable {𝕜 M F : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
+/-- The preferred dual-bundle chart at `a` has the same base set as the preferred chart of `V`
+at `a`. -/
+theorem mem_dual_trivializationAt_baseSet (a : M) {x : M} :
+    x ∈ (trivializationAt (StrongDual 𝕜 F) (fun y ↦ StrongDual 𝕜 (V y)) a).baseSet ↔
+      x ∈ (trivializationAt F V a).baseSet := by
+  simp [hom_trivializationAt_baseSet, Trivial.eq_trivialization]
+
 /-- The inverse dual chart preserves evaluation when paired with the inverse original chart. -/
 theorem dual_trivializationAt_symm_apply (a : M) {x : M}
     (hx : x ∈ (trivializationAt F V a).baseSet) (φ : StrongDual 𝕜 F) (v : F) :
     ((trivializationAt (StrongDual 𝕜 F) (fun y ↦ StrongDual 𝕜 (V y)) a).symm x φ)
       ((trivializationAt F V a).symm x v) = φ v := by
   have hdual : x ∈ (trivializationAt (StrongDual 𝕜 F)
-      (fun y ↦ StrongDual 𝕜 (V y)) a).baseSet := by
-    simpa [hom_trivializationAt_baseSet, Trivial.eq_trivialization] using hx
+      (fun y ↦ StrongDual 𝕜 (V y)) a).baseSet :=
+    (mem_dual_trivializationAt_baseSet V a).2 hx
   -- The dual chart precomposes with the inverse frame map. Apply it to its own inverse
   -- image of φ: the inverse law identifies the resulting model covector with φ.
   have hφ := (trivializationAt (StrongDual 𝕜 F) (fun y ↦ StrongDual 𝕜 (V y)) a

@@ -304,7 +304,7 @@ theorem wassersteinEDist_quantileBarycenter_pair (hp : 1 ≤ p) (μ₀ μ₁ : M
       quantile_quantileBarycenter_pair_ae hr μ₀ μ₁] with u hus hur
     simp only [hus, hur, Pi.smul_apply, smul_eq_mul]
     ring
-  rw [eLpNorm_congr_ae hdiff, eLpNorm_const_smul, Real.enorm_eq_ofReal_abs, abs_sub_comm]
+  rw [eLpNorm_congr_ae hdiff, eLpNorm_const_smul, Real.eNorm_eq_ofReal_abs, abs_sub_comm]
 
 variable [Fact (1 ≤ p)]
 

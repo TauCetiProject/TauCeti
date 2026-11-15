@@ -349,7 +349,7 @@ theorem HasLyapunovForm.isCompl_stableSubspace_unstableSubspace (h : A.HasLyapun
     simpa using this
   set N := Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)
   have hNc : Nᗮ = Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Ioi 0) := by
-    rw [hS.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
+    rw [hS.orthogonal_pointSpectralSubspace, compl_Iio, ← Set.insert_Ioi,
       Module.End.pointSpectralSubspace_insert_zero hker]
   have hdim : finrank ℝ E ≤ finrank ℝ A.stableSubspace + finrank ℝ A.unstableSubspace := by
     rw [finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hS hc hcS,

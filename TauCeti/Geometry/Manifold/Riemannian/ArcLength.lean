@@ -195,9 +195,9 @@ theorem _root_.ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
     simpa only [ofReal_norm] using hc.measurable.ennreal_ofReal.aemeasurable
   subst hν
   rw [integral_map hγ.continuous.aemeasurable hf,
-    integral_withDensity_eq_integral_toReal_smul₀ hρ (ae_of_all _ fun _ ↦ enorm_lt_top),
+    integral_withDensity_eq_integral_toReal_smul₀ hρ (ae_of_all _ fun _ ↦ eNorm_lt_top),
     intervalIntegral.integral_of_le hab]
-  simp only [toReal_enorm]
+  simp only [toReal_eNorm]
 
 omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- A curve whose Riemannian speed is `C` on the open interval `(a, b)` has length `C * (b - a)`

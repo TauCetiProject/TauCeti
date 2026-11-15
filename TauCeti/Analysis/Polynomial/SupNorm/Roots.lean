@@ -42,7 +42,7 @@ theorem norm_lt_supNorm_add_one_of_aeval_eq_zero (p : ℤ[X])
     simpa only [q, IsRoot.def, eval_map, ← algebraMap_int_eq, ← aeval_def] using hz
   have hlc : (1 : ℝ≥0) ≤ ‖q.leadingCoeff‖₊ := by
     rw [leadingCoeff_map_of_injective (RingHom.injective_int _)]
-    simpa only [eq_intCast, ← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one,
+    simpa only [eq_intCast, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one,
       ← RCLike.ofReal_intCast (K := K), RCLike.norm_ofReal] using
       (by exact_mod_cast Int.one_le_abs (Polynomial.leadingCoeff_ne_zero.mpr hp) :
         (1 : ℝ) ≤ |(p.leadingCoeff : ℝ)|)
@@ -50,13 +50,13 @@ theorem norm_lt_supNorm_add_one_of_aeval_eq_zero (p : ℤ[X])
       p.supNorm.toNNReal := by
     refine Finset.sup_le fun i _ ↦ ?_
     rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ p.supNorm_nonneg]
-    simpa only [q, coeff_map, eq_intCast, coe_nnnorm,
+    simpa only [q, coeff_map, eq_intCast, coe_nnNorm,
       ← RCLike.ofReal_intCast (K := K), RCLike.norm_ofReal, Int.norm_eq_abs] using p.le_supNorm i
   have hcb : q.cauchyBound ≤ p.supNorm.toNNReal + 1 := by
     simpa only [cauchyBound, add_comm] using
       add_le_add_right ((div_le_self (by positivity) hlc).trans hsup) (1 : ℝ≥0)
   have h := NNReal.coe_lt_coe.mpr ((hroot.norm_lt_cauchyBound hq).trans_le hcb)
-  simpa only [coe_nnnorm, NNReal.coe_add, NNReal.coe_one,
+  simpa only [coe_nnNorm, NNReal.coe_add, NNReal.coe_one,
     Real.coe_toNNReal _ p.supNorm_nonneg] using h
 
 /-- A nonzero real or complex root of a nonzero integer polynomial has modulus

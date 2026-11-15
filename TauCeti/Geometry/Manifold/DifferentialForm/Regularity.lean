@@ -141,7 +141,7 @@ theorem contDiffWithinAt_inChartAt [IsManifold I 1 M] {n : WithTop ℕ∞}
     ContDiffWithinAt ℝ n (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x) := by
   have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
-  rw [contMDiffWithinAt_section, contMDiffWithinAt_iff_source,
+  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt] at hφ
   exact hφ.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
     (heq.self_of_nhdsWithin (extChartAt_target_subset_range x (mem_extChartAt_target x))).symm
@@ -203,10 +203,10 @@ theorem contMDiffOn_mextDerivWithin [IsManifold I 2 M] (φ : RoughForm I M F k) 
   have ht : ContDiffWithinAt ℝ n (extDerivWithin (φ.inChartAt x) t) t (extChartAt I x x) := by
     rw [contDiffWithinAt_congr_set hta]
     refine ha.congr_of_eventuallyEq_of_mem ?_ ⟨hxs, mem_extChartAt_target x⟩
-    filter_upwards [nhdsWithin_le_nhds hta.eventuallyEq_nhds] with z hz
+    filter_upwards [nhdsWithin_le_nhds (Filter.Eventually.eventually_nhds hta)] with z hz
     exact extDerivWithin_congr_set hz
   -- Read the section in the bundle chart at `x`; there it is the coordinate expression above.
-  rw [contMDiffWithinAt_section, contMDiffWithinAt_iff_source,
+  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   refine ht.congr_of_eventuallyEq_of_mem ?_ ⟨hxs, mem_range_self _⟩
   filter_upwards [φ.inChartAt_mextDerivWithin_eventuallyEq (hφ.of_le le_add_self) hs hsc x,
@@ -377,7 +377,7 @@ theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
     (hφ : ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) r
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
-  rw [contMDiffAt_section x, contMDiffAt_iff_source,
+  rw [contMDiffAt_section_iff x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
@@ -520,7 +520,7 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     IsSmoothForm 𝓘(ℝ, E) n φ := by
   rw [isSmoothForm_def]
   intro x
-  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
+  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have hflat (f : E →
       E [⋀^Fin k]→L[ℝ] F)

@@ -294,7 +294,7 @@ private theorem monotoneOn_setIntegral_norm_gradient_sq
     MonotoneOn (fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (Ioc 0 R) :=
   fun _ _ t ht hst => setIntegral_mono_set
     (integrableOn_norm_gradient_sq u ((ball_subset_ball ht.2).trans hball))
-    (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallyLE
+    (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallySubset
 
 /-- **Morrey decay of the gradient.** For `α > 0` and `γ > 0` there are `θ ∈ (0, 1]` and `C`,
 depending only on `n`, `α`, `γ`, `λ`, `Λ` and `M`, such that the following holds. Let `u ∈ H¹(Ω)`
@@ -400,7 +400,7 @@ private theorem monotoneOn_setIntegral_norm_gradient_sub_setAverage_sq
       measure_ball_lt_top.ne _)).trans
     (setIntegral_mono_set ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset ht'
       measure_ball_lt_top.ne _) (ae_of_all _ fun _ => by positivity)
-      (ball_subset_ball hst).eventuallyLE)
+      (ball_subset_ball hst).eventuallySubset)
 
 /-- **Campanato decay of the gradient from a Morrey bound.** Let `α > 0`, `θ ∈ (0, 1]` and
 `L ≥ 0`, and let `τ < n + 3` with `τ ≤ 2α + β` and `τ ≤ n + 1 + 2γ`. There is `C`, depending only

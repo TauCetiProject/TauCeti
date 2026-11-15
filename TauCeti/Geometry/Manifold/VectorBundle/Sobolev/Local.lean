@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Wkp
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Localizations of Sobolev sections over surfaces
@@ -36,12 +37,17 @@ form an element of `W^{k,p}(V)` with section `s`
 (`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`, through
 `TauCeti.SectionChartData.chartValueL_ae_eq_coord`). That element is unique
 (`TauCeti.SobolevSection.eq_of_ae_eq_coord`). The chart expressions of a `Cᵏ` section satisfy this
-hypothesis for every exponent (`TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff`); the
-corresponding element of `W^{k,p}(V)` is `TauCeti.SobolevSection.ofContMDiffSection`.
+hypothesis for every exponent, as do their expressions in every chart of the maximal atlas and
+every trivialization of the trivialization atlas
+(`TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_contMDiff`); the corresponding element of
+`W^{k,p}(V)` is `TauCeti.SobolevSection.ofContMDiffSection`.
 
-The localizations are taken in the charts and trivializations of the atlas `A`. Localizing in
-other charts, such as isothermal charts of a Riemann surface, needs the invariance of the local
-classes under changes of variables and is not treated here.
+The localizations of elements of `W^{k,p}(V)` are taken here in the charts and trivializations of
+the atlas `A`. For orders `k ≤ 1`, localization in every chart of the maximal `C¹` atlas, such as
+an isothermal chart of a Riemann surface, and every trivialization of the trivialization atlas is
+`TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`, with converse
+`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`, in
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
 
 ## Main results
 
@@ -50,8 +56,9 @@ classes under changes of variables and is not treated here.
 * `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`: a section whose chart expressions are
   in `MemWkpLoc` on neighbourhoods of the closures of the chart images defines an element of
   `W^{k,p}(V)`.
-* `TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff`: the chart expressions of a `Cᵏ` section
-  are in `MemWkpLoc` up to the boundary of the chart images.
+* `TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_contMDiff`: the expressions of a `Cᵏ`
+  section in every chart and trivialization are in `MemWkpLoc`, up to the boundary of the chart
+  images for the charts of `A`.
 
 ## References
 
@@ -77,23 +84,20 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A : FiniteBundleAtlas ℂ M F V)
 
-namespace FiniteBundleAtlas
-
-/-- **`Cᵏ` sections are locally Sobolev up to the boundary of the chart images.** The chart
-expression in chart `i` of a `Cᵏ` section of a `Cᵏ` vector bundle lies in `MemWkpLoc p O k` for
-every exponent `p`, on the open set `O` of points of the chart target whose preimage lies in the
-base set of the bundle chart. This open set contains the closure of `A.image i`
-(`TauCeti.FiniteBundleAtlas.closure_image_subset_chart_image_closure_dom`). -/
-theorem memWkpLoc_coord_of_contMDiff {k : ℕ} [IsManifold 𝓘(ℝ, ℂ) k M]
+/-- **`Cᵏ` sections are locally Sobolev in every chart and trivialization.** The expression in a
+chart `φ` of the maximal `Cᵏ` atlas of `M` and a trivialization `e` of the bundle's trivialization
+atlas of a `Cᵏ` section of a `Cᵏ` vector bundle lies in `MemWkpLoc p U k` for every exponent `p`,
+on the open set `U` of points of `φ.target` lying over `e.baseSet`. For the charts and
+trivializations of `A`, the expression is `A.coord i s` and `U` contains the closure of
+`A.image i` (`TauCeti.FiniteBundleAtlas.closure_image_subset_chart_image_closure_dom`). -/
+theorem memWkpLoc_trivialization_comp_chart_symm_of_contMDiff {k : ℕ}
     [ContMDiffVectorBundle k F V 𝓘(ℝ, ℂ)] {s : ∀ x, V x}
     (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
-    (p : ℝ≥0∞) (i : Fin A.n) :
-    MemWkpLoc p ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) k
-      (A.coord i s) :=
-  (A.contDiffOn_coord hs i).memWkpLoc (Ω := ⟨_, (A.chart i).isOpen_inter_preimage_symm
-    (A.triv i).open_baseSet⟩) subset_rfl
-
-end FiniteBundleAtlas
+    {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) k M)
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (p : ℝ≥0∞) :
+    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 :=
+  (contDiffOn_trivialization_comp_chart_symm_of_contMDiff hs hφ e).memWkpLoc
+    (Ω := ⟨_, φ.isOpen_inter_preimage_symm e.open_baseSet⟩) subset_rfl
 
 namespace SobolevSection
 

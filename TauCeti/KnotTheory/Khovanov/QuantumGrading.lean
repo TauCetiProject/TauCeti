@@ -89,7 +89,7 @@ theorem quantumDegree_one : quantumDegree 1 = -1 := (rfl)
 degree `1`, the basis vector `ε` spans degree `-1`, and every other degree is zero. It is the
 grading of the free module on the basis `1, ε` by `TauCeti.Khovanov.quantumDegree`, transported
 to `R[ε]`. -/
-noncomputable def quantumGrading : InternalGrading R R[ε] :=
+noncomputable def quantumGrading : InternalGrading R R[ε] ℤ :=
   (InternalGrading.finsupp R quantumDegree).map (dualNumberBasis R).repr.symm
 
 /-- The homogeneous pieces of the quantum grading as a graded object of `R`-modules: the
