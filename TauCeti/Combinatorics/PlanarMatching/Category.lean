@@ -237,18 +237,15 @@ it fixes every object `of n` and turns each diagram `X ⟶ Y` upside down into `
   map_id X := hom_ext (TLDiagram.verticalReflect_id X.unop.as)
   map_comp f g := hom_ext (TLDiagram.verticalReflect_comp g.unop.diagram f.unop.diagram)
 
-@[simp]
-theorem verticalReflectFunctor_obj (X : TLDiagCatᵒᵖ) :
+@[simp] theorem verticalReflectFunctor_obj (X : TLDiagCatᵒᵖ) :
     verticalReflectFunctor.obj X = X.unop := (rfl)
 
-@[simp]
-theorem diagram_verticalReflectFunctor_map {X Y : TLDiagCatᵒᵖ} (f : X ⟶ Y) :
+@[simp] theorem diagram_verticalReflectFunctor_map {X Y : TLDiagCatᵒᵖ} (f : X ⟶ Y) :
     (verticalReflectFunctor.map f).diagram =
       TLDiagram.verticalReflect Y.unop.as X.unop.as f.unop.diagram := (rfl)
 
 /-- Applying `verticalReflectFunctor` twice recovers the identity functor on `TLDiagCat`. -/
-@[simp]
-theorem verticalReflectFunctor_rightOp_comp :
+@[simp] theorem verticalReflectFunctor_rightOp_comp :
     verticalReflectFunctor.rightOp ⋙ verticalReflectFunctor = 𝟭 TLDiagCat :=
   CategoryTheory.Functor.hext (fun _ => rfl) fun _ _ f =>
     heq_of_eq (hom_ext (TLDiagram.verticalReflect_verticalReflect f.diagram))
@@ -272,12 +269,9 @@ theorem epi_iff_stringSurjective (f : X ⟶ Y) : Epi f ↔ f.diagram.StringSurje
     fun hf => ⟨fun _ _ h => hom_ext (hf.eq_of_comp_eq (congrArg Hom.diagram h))⟩⟩
 
 instance : Mono cup := (mono_iff_stringInjective cup).mpr TLDiagram.stringInjective_cup
-
 instance : Epi cap := (epi_iff_stringSurjective cap).mpr TLDiagram.stringSurjective_cap
-
 instance : Mono circle :=
   (mono_iff_stringInjective circle).mpr (by simp [TLDiagram.stringInjective_iff])
-
 instance : Epi circle :=
   (epi_iff_stringSurjective circle).mpr (by simp [TLDiagram.stringSurjective_iff])
 
@@ -285,21 +279,13 @@ instance : Epi circle :=
 if and only if `X = Y` and `f` is the identity (`eqToHom`). In particular, `TLDiagCat` is skeletal
 and every object has trivial automorphism group. -/
 theorem isIso_iff_eqToHom (f : X ⟶ Y) : IsIso f ↔ ∃ h : X = Y, f = eqToHom h := by
-  refine ⟨fun ⟨g, hfg, hgf⟩ => ?_, ?_⟩
-  · have hXY : X = Y := TLDiagCat.ext <|
-      TLDiagram.eq_of_comp_eq_id (congrArg Hom.diagram hfg) (congrArg Hom.diagram hgf)
-    subst hXY
-    refine ⟨rfl, ?_⟩
-    rw [eqToHom_refl]
-    exact hom_ext (TLDiagram.eq_id_of_comp_eq_id (congrArg Hom.diagram hfg))
-  · rintro ⟨rfl, rfl⟩
-    rw [eqToHom_refl]
-    infer_instance
+  refine ⟨fun ⟨g, hfg, hgf⟩ => ?_, fun ⟨_, hf⟩ => hf ▸ inferInstance⟩
+  cases TLDiagCat.ext (TLDiagram.eq_of_comp_eq_id (congrArg Hom.diagram hfg)
+    (congrArg Hom.diagram hgf))
+  exact ⟨rfl, hom_ext (TLDiagram.eq_id_of_comp_eq_id (congrArg Hom.diagram hfg))⟩
 
 /-- An endomorphism of `TLDiagCat` is an isomorphism if and only if it is the identity. -/
-@[simp]
-theorem isIso_end_iff (f : X ⟶ X) : IsIso f ↔ f = 𝟙 X := by
-  simp [isIso_iff_eqToHom]
+@[simp] theorem isIso_end_iff (f : X ⟶ X) : IsIso f ↔ f = 𝟙 X := by simp [isIso_iff_eqToHom]
 
 instance (X : TLDiagCat) : Unique (Aut X) where
   default := 1
@@ -308,30 +294,24 @@ instance (X : TLDiagCat) : Unique (Aut X) where
 /-- The closed circle `of 0 ⟶ of 0` is not an isomorphism, even though it is both monic and epic:
 `TLDiagCat` is not a balanced category. -/
 theorem not_isIso_circle : ¬ IsIso circle := by
-  rw [isIso_end_iff]
-  intro h
-  have hc := congrArg (fun f : of 0 ⟶ of 0 => f.diagram.circles) h
-  simp at hc
+  rw [isIso_end_iff]; intro h
+  simpa using congrArg (fun f : of 0 ⟶ of 0 => f.diagram.circles) h
 
 /-! ### Categorical through-strand factorization -/
 
 /-- The canonical **epimorphic factor** `X ⟶ of f.diagram.through` of a morphism `f : X ⟶ Y`,
 retaining the bottom caps and closed circles of `f`. -/
-def Hom.surjection (f : X ⟶ Y) : X ⟶ of f.diagram.through :=
-  Hom.mk f.diagram.surjection
+def Hom.surjection (f : X ⟶ Y) : X ⟶ of f.diagram.through := Hom.mk f.diagram.surjection
 
 /-- The canonical **circle-free monomorphic factor** `of f.diagram.through ⟶ Y` of a morphism
 `f : X ⟶ Y`, retaining the top cups of `f`. -/
-def Hom.injection (f : X ⟶ Y) : of f.diagram.through ⟶ Y :=
-  Hom.mk f.diagram.injection
+def Hom.injection (f : X ⟶ Y) : of f.diagram.through ⟶ Y := Hom.mk f.diagram.injection
 
 @[simp]
-theorem diagram_surjection (f : X ⟶ Y) :
-    f.surjection.diagram = f.diagram.surjection := (rfl)
+theorem diagram_surjection (f : X ⟶ Y) : f.surjection.diagram = f.diagram.surjection := (rfl)
 
 @[simp]
-theorem diagram_injection (f : X ⟶ Y) :
-    f.injection.diagram = f.diagram.injection := (rfl)
+theorem diagram_injection (f : X ⟶ Y) : f.injection.diagram = f.diagram.injection := (rfl)
 
 instance (f : X ⟶ Y) : Epi f.surjection :=
   (epi_iff_stringSurjective _).mpr f.diagram.stringSurjective_surjection
@@ -354,11 +334,8 @@ theorem existsUnique_epi_mono_factorization (f : X ⟶ Y) :
   refine ⟨⟨of f.diagram.through, f.surjection, f.injection⟩,
     ⟨inferInstance, inferInstance, f.diagram.circles_injection, surjection_comp_injection f⟩, ?_⟩
   rintro ⟨⟨k⟩, s, i⟩ ⟨hs, hi, hc, hcomp⟩
-  have hsd := (epi_iff_stringSurjective s).mp hs
-  have hid := (mono_iff_stringInjective i).mp hi
-  have hk : k = f.diagram.through :=
-    TLDiagram.through_eq_of_comp_eq hsd hid (congrArg Hom.diagram hcomp)
-  subst hk
+  cases TLDiagram.through_eq_of_comp_eq ((epi_iff_stringSurjective s).mp hs)
+    ((mono_iff_stringInjective i).mp hi) (congrArg Hom.diagram hcomp)
   obtain ⟨h₁, h₂⟩ := TLDiagram.eq_surjection_and_eq_injection_of_comp_eq hc
     (congrArg Hom.diagram hcomp)
   exact Sigma.ext rfl (heq_of_eq (Prod.ext (hom_ext h₁) (hom_ext h₂)))

@@ -64,25 +64,19 @@ namespace PlanarMatching
 theorem cast_append {k k' l l' : ℕ} (hk : k = k') (hl : l = l')
     (x : PlanarMatching k) (y : PlanarMatching l) :
     (cast hk x).append (cast hl y) = cast (congrArg₂ (· + ·) hk hl) (x.append y) := by
-  subst hk hl
-  simp
+  subst hk hl; simp
 
 /-- Transport commutes with contracting consecutive boundary points. -/
 theorem cast_contract {k k' : ℕ} (h : k = k') (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
     (cast (congrArg (· + 2) h) x).contract (Fin.cast (congrArg (· + 1) h) a) =
       cast h (x.contract a) := by
-  subst h
-  simp
+  subst h; simp
 
 private theorem pv_reflect {K : ℕ} (x : PlanarMatching K) {q : ℕ} (hq : q < K) :
     pv (reflect K x) q = K - 1 - pv x (K - 1 - q) := by
-  rw [pv_of_lt _ hq, pv_of_lt x (by omega)]
   have hrev : (⟨q, hq⟩ : Fin K) = Fin.rev ⟨K - 1 - q, by omega⟩ := by
-    ext
-    simp only [Fin.val_rev]
-    omega
-  rw [hrev, reflect_apply_val_apply, Fin.val_rev]
-  omega
+    ext; simp only [Fin.val_rev]; omega
+  rw [pv_of_lt _ hq, pv_of_lt x (by omega), hrev, reflect_apply_val_apply, Fin.val_rev]; omega
 
 /-- Reflecting a juxtaposition reverses the order of the two factors and reflects each. -/
 theorem reflect_append {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l) :
@@ -90,134 +84,68 @@ theorem reflect_append {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l)
   ext_pv fun q hq => by
     rw [pv_reflect _ hq, pv_cast]
     by_cases hql : q < l
-    · have hpv := pv_lt y (q := l - 1 - q) (by omega)
+    · have _ := pv_lt y (q := l - 1 - q) (by omega)
       rw [pv_append_right _ _ (by omega) (by omega), pv_append_left _ _ hql,
-        pv_reflect _ hql, show k + l - 1 - q - k = l - 1 - q by omega]
-      omega
-    · have hpv := pv_lt x (q := k + l - 1 - q) (by omega)
+        pv_reflect _ hql, show k + l - 1 - q - k = l - 1 - q by omega]; omega
+    · have _ := pv_lt x (q := k + l - 1 - q) (by omega)
       rw [pv_append_left _ _ (by omega), pv_append_right _ _ (by omega) (by omega),
-        pv_reflect _ (by omega), show k - 1 - (q - l) = k + l - 1 - q by omega]
-      omega
+        pv_reflect _ (by omega), show k - 1 - (q - l) = k + l - 1 - q by omega]; omega
 
 /-- Contracting a reflected matching at `Fin.rev a` is reflecting the contraction at `a`. -/
 theorem reflect_contract {k : ℕ} (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
     (reflect (k + 2) x).contract (Fin.rev a) = reflect k (x.contract a) :=
   ext_pv fun q hq => by
-    have ha := a.isLt
+    have _ := a.isLt
     have hskip : k + 2 - 1 - skipN (Fin.rev a) q = skipN a (k - 1 - q) := by
-      simp only [skipN, Fin.val_rev]
-      split_ifs <;> omega
-    set s := skipN a (k - 1 - q)
-    have hlt : s < k + 2 := by
+      simp only [skipN, Fin.val_rev]; split_ifs <;> omega
+    let s := skipN a (k - 1 - q)
+    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := by
       simp only [s, skipN]
-      split_ifs <;> omega
-    have hns : s ≠ a ∧ s ≠ a + 1 := by
-      simp only [s, skipN]
-      split_ifs <;> omega
-    have hpv := pv_lt x hlt
-    have hpva := pv_lt x (q := a) (by omega)
-    have hpva' := pv_lt x (q := a + 1) (by omega)
-    have hpva_ne : pv x a ≠ a := pv_ne x (by omega)
-    have hpva'_ne : pv x (a + 1) ≠ a + 1 := pv_ne x (by omega)
-    have hiff : pv x a = a + 1 ↔ pv x (a + 1) = a :=
-      ⟨fun h => by have := pv_pv x (q := a) (by omega); rwa [h] at this,
-       fun h => by have := pv_pv x (q := a + 1) (by omega); rwa [h] at this⟩
-    have hna : pv x s = a → pv x (a + 1) ≠ a := fun h h' =>
-      hns.2 (by rw [← pv_pv x hlt, h, hiff.mpr h'])
-    have hna' : pv x s = a + 1 → pv x a ≠ a + 1 := fun h h' =>
-      hns.1 (by rw [← pv_pv x hlt, h, hiff.mp h'])
+      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
+    have _ := pv_lt x hs.1; have _ := pv_lt x (q := a) (by omega)
+    have _ := pv_lt x (q := (a : ℕ) + 1) (by omega)
+    have _ := pv_ne x (q := a) (by omega); have _ := pv_ne x (q := (a : ℕ) + 1) (by omega)
+    have _ : pv x s = a → pv x ((a : ℕ) + 1) ≠ a := fun h h' =>
+      hs.2.2 ((pv_pv x hs.1).symm.trans ((congrArg (pv x) (h.trans h'.symm)).trans
+        (pv_pv x (by omega))))
+    have _ : pv x s = (a : ℕ) + 1 → pv x a ≠ (a : ℕ) + 1 := fun h h' =>
+      hs.2.1 ((pv_pv x hs.1).symm.trans ((congrArg (pv x) (h.trans h'.symm)).trans
+        (pv_pv x (by omega))))
     have hjoin : joinN (reflect (k + 2) x) (Fin.rev a) (k + 2 - 1 - pv x s) =
         k + 2 - 1 - joinN x a (pv x s) := by
       simp only [joinN, Fin.val_rev]
       rw [pv_reflect _ (by omega), pv_reflect _ (by omega),
         show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1) + 1) = a by omega,
-        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1)) = a + 1 by omega]
+        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1)) = (a : ℕ) + 1 by omega]
       split_ifs <;> omega
-    let w := joinN x a (pv x s)
-    have hw : w < k + 2 ∧ w ≠ a ∧ w ≠ (a : ℕ) + 1 := by
-      simp only [w, joinN]
-      split_ifs <;> omega
+    have hne : joinN x a (pv x s) < k + 2 ∧ joinN x a (pv x s) ≠ a ∧
+        joinN x a (pv x s) ≠ (a : ℕ) + 1 := by
+      simp only [joinN]
+      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
     rw [pv_contract _ _ hq, pv_reflect _ hq, pv_contract _ _ (by omega),
       pv_reflect _ (by simp only [skipN, Fin.val_rev]; split_ifs <;> omega), hskip, hjoin]
-    suffices ∀ z : ℕ, z < k + 2 → z ≠ a → z ≠ (a : ℕ) + 1 →
-        unskipN (Fin.rev a) (k + 2 - 1 - z) = k - 1 - unskipN a z from
-      this _ hw.1 hw.2.1 hw.2.2
-    intro z _ _ _
-    simp only [unskipN, Fin.val_rev]
-    split_ifs <;> omega
+    suffices ∀ w < k + 2, w ≠ a → w ≠ (a : ℕ) + 1 →
+        unskipN (Fin.rev a) (k + 2 - 1 - w) = k - 1 - unskipN a w from
+      this _ hne.1 hne.2.1 hne.2.2
+    intro w _ _ _; simp only [unskipN, Fin.val_rev]; split_ifs <;> omega
 
-private theorem reflect_val_rev_castSucc_eq_rev_succ_iff {k : ℕ} (x : PlanarMatching (k + 2))
-    (a : Fin (k + 1)) :
-    (reflect (k + 2) x).1.val (Fin.rev a).castSucc = (Fin.rev a).succ ↔
-      x.1.val a.castSucc = a.succ := by
-  have ha := a.isLt
-  have h₁ : ((reflect (k + 2) x).1.val (Fin.rev a).castSucc = (Fin.rev a).succ) ↔
-      pv (reflect (k + 2) x) (k - a) = k - a + 1 := by
-    rw [pv_of_lt _ (by omega), Fin.ext_iff, Fin.val_succ, Fin.val_rev]
-    have hc : (⟨k - a, by omega⟩ : Fin (k + 2)) = (Fin.rev a).castSucc := by
-      ext
-      simp only [Fin.val_castSucc, Fin.val_rev]
-      omega
-    rw [hc]
-    omega
-  have h₂ : (x.1.val a.castSucc = a.succ) ↔ pv x a = a + 1 := by
-    rw [← Fin.val_castSucc a, pv_coe, Fin.ext_iff, Fin.val_succ, Fin.val_castSucc]
-  rw [h₁, h₂, pv_reflect _ (by omega), show k + 2 - 1 - (k - (a : ℕ)) = a + 1 by omega]
-  have hpv := pv_lt x (q := a + 1) (by omega)
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · have ha' : pv x (a + 1) = a := by omega
-    have := pv_pv x (q := a + 1) (by omega)
-    rwa [ha'] at this
-  · have ha' : pv x (a + 1) = a := by
-      have := pv_pv x (q := a) (by omega)
-      rwa [h] at this
-    omega
-
-/-- Gluing across the middle commutes with reflection, swapping the two outer boundary sizes. -/
-theorem reflect_glueMiddle {n p : ℕ} :
+private theorem reflect_glueMiddle_aux {n p : ℕ} :
     ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
       glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
-        cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x))
-  | 0, x => by simp [← cast_reflect]
-  | m + 1, x => by
-    rw [glueMiddle_succ, glueMiddle_succ, cast_cast]
-    set y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
-    set a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
-    have hy : cast (by omega) (reflect (n + (m + 1) + (m + 1 + p)) x) =
-        cast (k' := p + m + (m + n) + 2) (by omega) (reflect (n + m + (m + p) + 2) y) := by
-      simp [y, ← cast_reflect]
-    have hrev : (⟨p + m, by omega⟩ : Fin (p + m + (m + n) + 1)) =
-        Fin.cast (by omega) (Fin.rev a) := by
-      ext
-      simp only [a, Fin.val_cast, Fin.val_rev]
-      omega
-    have hc : (cast (k' := p + m + (m + n) + 2) (by omega)
-        (reflect (n + m + (m + p) + 2) y)).contract ⟨p + m, by omega⟩ =
-        cast (k' := p + m + (m + n)) (by omega) (reflect (n + m + (m + p)) (y.contract a)) := by
-      rw [hrev, cast_contract (by omega), reflect_contract]
-    rw [hy, hc, reflect_glueMiddle m (y.contract a)]
-
-/-- Reflecting a planar matching before gluing across the middle closes the same number of
-circles. -/
-theorem glueMiddleCircles_reflect {n p : ℕ} :
-    ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
+        cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) ∧
       glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
         glueMiddleCircles (n := n) (p := p) m x
-  | 0, _ => rfl
+  | 0, x => ⟨by simp [← cast_reflect], rfl⟩
   | m + 1, x => by
-    rw [glueMiddleCircles_succ (n := p) (p := n), glueMiddleCircles_succ (n := n) (p := p)]
-    set y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
-    set a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
+    let y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
+    let a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
     have hy : cast (k' := p + m + (m + n) + 2) (by omega)
         (cast (k' := p + (m + 1) + (m + 1 + n)) (by omega)
           (reflect (n + (m + 1) + (m + 1 + p)) x)) =
         cast (k' := p + m + (m + n) + 2) (by omega) (reflect (n + m + (m + p) + 2) y) := by
       simp [y, ← cast_reflect]
     have hrev : (⟨p + m, by omega⟩ : Fin (p + m + (m + n) + 1)) =
-        Fin.cast (by omega) (Fin.rev a) := by
-      ext
-      simp only [a, Fin.val_cast, Fin.val_rev]
-      omega
+        Fin.cast (by omega) (Fin.rev a) := by ext; simp only [a, Fin.val_cast, Fin.val_rev]; omega
     have hc : (cast (k' := p + m + (m + n) + 2) (by omega)
         (reflect (n + m + (m + p) + 2) y)).contract ⟨p + m, by omega⟩ =
         cast (k' := p + m + (m + n)) (by omega) (reflect (n + m + (m + p)) (y.contract a)) := by
@@ -225,22 +153,38 @@ theorem glueMiddleCircles_reflect {n p : ℕ} :
     have hind : ((cast (k' := p + m + (m + n) + 2) (by omega)
         (reflect (n + m + (m + p) + 2) y)).1.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
         y.1.val a.castSucc = a.succ := by
-      have heq := cast_apply_val_apply (k' := p + m + (m + n) + 2) (by omega)
-        (reflect (n + m + (m + p) + 2) y) (Fin.rev a).castSucc
-      have h₁ : Fin.cast (by omega) (Fin.rev a).castSucc =
-          (⟨p + m, by omega⟩ : Fin (p + m + (m + n) + 2)) := by
-        ext
-        simp only [a, Fin.val_cast, Fin.val_castSucc, Fin.val_rev]
-        omega
-      have h₂ : ∀ z : Fin (n + m + (m + p) + 2),
-          (Fin.cast (by omega) z = (⟨p + m + 1, by omega⟩ : Fin (p + m + (m + n) + 2))) ↔
-            z = (Fin.rev a).succ := fun z => by
-        simp only [a, Fin.ext_iff, Fin.val_cast, Fin.val_succ, Fin.val_rev]
-        omega
-      rw [← h₁, heq, h₂, reflect_val_rev_castSucc_eq_rev_succ_iff]
-    rw [hy, hc, glueMiddleCircles_reflect (n := n) (p := p) m (y.contract a)]
-    simp only [hind]
-    rfl
+      have h₁ : ((cast (k' := p + m + (m + n) + 2) (by omega)
+          (reflect (n + m + (m + p) + 2) y)).1.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
+          pv (reflect (n + m + (m + p) + 2) y) (p + m) = p + m + 1 := by
+        rw [Fin.ext_iff, ← pv_of_lt _ (by omega), pv_cast]
+      have h₂ : (y.1.val a.castSucc = a.succ) ↔ pv y a = (a : ℕ) + 1 := by
+        rw [← Fin.val_castSucc a, pv_coe, Fin.ext_iff, Fin.val_succ, Fin.val_castSucc]
+      rw [h₁, h₂, pv_reflect _ (by omega)]
+      dsimp only [a]
+      rw [show n + m + (m + p) + 2 - 1 - (p + m) = n + m + 1 by omega]
+      have _ := pv_lt y (q := n + m + 1) (by omega)
+      refine ⟨fun h => ?_, fun h => ?_⟩
+      · have hp := pv_pv y (q := n + m + 1) (by omega)
+        rwa [show pv y (n + m + 1) = n + m by omega] at hp
+      · have hp := pv_pv y (q := n + m) (by omega)
+        rw [h] at hp; omega
+    obtain ⟨ih₁, ih₂⟩ := reflect_glueMiddle_aux m (y.contract a)
+    exact ⟨by rw [glueMiddle_succ, glueMiddle_succ, hy, hc, ih₁],
+      by rw [glueMiddleCircles_succ (n := p) (p := n), glueMiddleCircles_succ (n := n) (p := p),
+           hy, hc, ih₂]; simp only [hind]; rfl⟩
+
+/-- Gluing across the middle commutes with reflection, swapping the two outer boundary sizes. -/
+theorem reflect_glueMiddle {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
+    glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+      cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) :=
+  (reflect_glueMiddle_aux m x).1
+
+/-- Reflecting a planar matching before gluing across the middle closes the same number of
+circles. -/
+theorem glueMiddleCircles_reflect {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
+    glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
+      glueMiddleCircles (n := n) (p := p) m x :=
+  (reflect_glueMiddle_aux m x).2
 
 end PlanarMatching
 

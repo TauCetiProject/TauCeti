@@ -521,8 +521,7 @@ def id (k : ℕ) : HalfDiagram k k :=
   ⟨1, Perm.isHalfDiagram_iff.mpr ⟨fun _ => rfl, Perm.isNoncrossingMatching_one,
     fun _ _ hax hxa => absurd (hax.trans hxa) (lt_irrefl _)⟩, by simp⟩
 
-@[simp]
-theorem id_val (k : ℕ) : (id k).val = 1 := (rfl)
+@[simp] theorem id_val (k : ℕ) : (id k).val = 1 := (rfl)
 
 theorem id_apply (k : ℕ) (i : Fin k) : (id k).val i = i := (rfl)
 
@@ -530,47 +529,33 @@ theorem id_apply (k : ℕ) (i : Fin k) : (id k).val i = i := (rfl)
 instance (k : ℕ) : Unique (HalfDiagram k k) where
   default := id k
   uniq D := ext fun i => by
-    have hcard : #{x : Fin k | D.val x = x} = #(univ : Finset (Fin k)) := by
-      rw [D.2.2, card_univ, Fintype.card_fin]
-    have hmem : i ∈ ({x : Fin k | D.val x = x} : Finset (Fin k)) := by
-      rw [eq_univ_of_card _ hcard]
-      exact mem_univ i
-    exact (mem_filter.mp hmem).2
+    have hi : i ∈ ({x : Fin k | D.val x = x} : Finset (Fin k)) := by
+      rw [eq_univ_of_card _ (D.2.2.trans (Fintype.card_fin k).symm)]; exact mem_univ i
+    exact (mem_filter.mp hi).2
 
 /-- A half-diagram has underlying permutation `1` precisely when every point is a defect. -/
-theorem val_eq_one_iff {D : HalfDiagram n k} : D.val = 1 ↔ k = n := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← D.2.2, h]
-    simp
-  · subst h
-    rw [Subsingleton.elim D (id k), id_val]
+theorem val_eq_one_iff {D : HalfDiagram n k} : D.val = 1 ↔ k = n :=
+  ⟨fun h => by simp [← D.2.2, h], fun h => by subst h; simp [Subsingleton.elim D (id k)]⟩
 
 /-- **Innermost arc of a half-diagram.** A half-diagram with strictly fewer defects than boundary
 points has an arc joining two consecutive boundary points `a` and `a + 1`: an innermost arc can
 enclose neither another arc nor a defect. -/
 theorem exists_val_apply_eq_val_add_one (D : HalfDiagram n k) (hkn : k < n) :
     ∃ a : Fin n, (D.val a : ℕ) = a + 1 := by
-  have h1 : D.val ≠ 1 := mt val_eq_one_iff.mp hkn.ne
   obtain ⟨hinv, hnc, hdef⟩ := Perm.isHalfDiagram_iff.mp D.2.1
-  obtain ⟨a, ha, hin⟩ := hnc.exists_forall_apply_eq_self hinv h1
+  obtain ⟨a, ha, hin⟩ := hnc.exists_forall_apply_eq_self hinv (mt val_eq_one_iff.mp hkn.ne)
   refine ⟨a, le_antisymm ?_ (Fin.lt_def.mp ha)⟩
   by_contra! h
-  have hlt : (a : ℕ) + 1 < n := h.trans (D.val a).isLt
-  exact hdef (x := ⟨a + 1, hlt⟩) (Fin.lt_def.mpr (Nat.lt_succ_self _)) (Fin.lt_def.mpr h)
-    (hin _ (Fin.lt_def.mpr (Nat.lt_succ_self _)) (Fin.lt_def.mpr h))
+  exact hdef (x := ⟨a + 1, h.trans (D.val a).isLt⟩) (Fin.lt_def.mpr (Nat.lt_succ_self _))
+    (Fin.lt_def.mpr h) (hin _ (Fin.lt_def.mpr (Nat.lt_succ_self _)) (Fin.lt_def.mpr h))
 
 /-- In a half-diagram on `q + 2` points with fewer than `q + 2` defects, some consecutive pair
 `c.castSucc`, `c.succ` forms an arc. -/
 theorem exists_apply_castSucc_eq_succ {q : ℕ} (D : HalfDiagram (q + 2) k) (hk : k < q + 2) :
     ∃ c : Fin (q + 1), D.val c.castSucc = c.succ := by
   obtain ⟨a, ha⟩ := D.exists_val_apply_eq_val_add_one hk
-  have hlt : (a : ℕ) < q + 1 := by
-    have := (D.val a).isLt
-    omega
-  have hc : (⟨a, hlt⟩ : Fin (q + 1)).castSucc = a := Fin.ext rfl
-  refine ⟨⟨a, hlt⟩, Fin.ext ?_⟩
-  rw [hc, Fin.val_succ]
-  exact ha
+  refine ⟨⟨a, by have := (D.val a).isLt; omega⟩, Fin.ext ?_⟩
+  exact (congrArg Fin.val (D.val.congr_arg (Fin.ext rfl))).trans ha
 
 end HalfDiagram
 
