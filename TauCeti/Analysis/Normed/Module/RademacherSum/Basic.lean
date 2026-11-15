@@ -61,7 +61,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 distinct Rademacher signs are orthogonal. -/
 theorem expect_units_apply_mul_apply (i j : ι) :
     𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
-  simpa [← finiteMean_eq_expect (R := ℝ)] using finiteMean_units_mul_units_smul (E := ℝ) i j 1
+  simpa [← finiteMean_eq_expect (R := ℝ)] using
+    finiteMean_units_mul_units_smul (K := ℝ) (E := ℝ) i j 1
 
 end Signs
 
@@ -113,7 +114,7 @@ theorem rademacherSecondMoment_map_le {F 𝓕 : Type*} [SeminormedAddCommGroup F
     [AddMonoidHomClass 𝓕 E F] (f : 𝓕) {M : ℝ} (hM₀ : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖)
     (y : ι → E) : rademacherSecondMoment (fun i ↦ f (y i)) ≤ M * rademacherSecondMoment y :=
   rademacherSecondMoment_le_mul hM₀ fun ε ↦ by
-    simpa [rademacherSum_def, map_sum, map_zsmul] using hM (rademacherSum y ε)
+    simpa [map_rademacherSum] using hM (rademacherSum y ε)
 
 /-- An additive map with `‖x‖ ≤ K ‖f x‖` divides Rademacher second moments by at most `K`. -/
 theorem rademacherSecondMoment_le_mul_map {F 𝓕 : Type*} [SeminormedAddCommGroup F]
@@ -121,7 +122,7 @@ theorem rademacherSecondMoment_le_mul_map {F 𝓕 : Type*} [SeminormedAddCommGro
     (hK : ∀ x, ‖x‖ ≤ K * ‖f x‖) (y : ι → E) :
     rademacherSecondMoment y ≤ K * rademacherSecondMoment (fun i ↦ f (y i)) :=
   rademacherSecondMoment_le_mul hK₀ fun ε ↦ by
-    simpa [rademacherSum_def, map_sum, map_zsmul] using hK (rademacherSum y ε)
+    simpa [map_rademacherSum] using hK (rademacherSum y ε)
 
 /-- The zero family has Rademacher second moment zero. -/
 @[simp]
@@ -132,16 +133,18 @@ theorem rademacherSecondMoment_zero : rademacherSecondMoment (0 : ι → E) = 0 
 @[simp]
 theorem rademacherSecondMoment_of_isEmpty [IsEmpty ι] (y : ι → E) :
     rademacherSecondMoment y = 0 := by
-  simp [rademacherSecondMoment, rademacherSum_def]
+  simp [rademacherSecondMoment]
 
 /-- Reindexing a family along an equivalence does not change its Rademacher second moment. -/
 theorem rademacherSecondMoment_comp_equiv (e : κ ≃ ι) (y : ι → E) :
     rademacherSecondMoment (y ∘ e) = rademacherSecondMoment y := by
   rw [rademacherSecondMoment, rademacherSecondMoment]
   congr 1
-  refine Fintype.expect_equiv (e.arrowCongr (Equiv.refl ℤˣ)) _ _ fun δ ↦ ?_
-  rw [rademacherSum_def, rademacherSum_def, ← e.sum_comp]
-  simp
+  exact Fintype.expect_equiv (e.arrowCongr (Equiv.refl ℤˣ)) _ _ fun δ ↦ by
+    rw [← rademacherSum_comp_equiv e y]
+    congr 3
+    ext k
+    simp
 
 /-- Padding a family with zeros does not change its Rademacher second moment. -/
 theorem rademacherSecondMoment_sumElim_zero (y : ι → E) :

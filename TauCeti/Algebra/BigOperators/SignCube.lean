@@ -15,22 +15,24 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Averages over the sign cube and moments of Rademacher sums
 
-The *sign cube* of a finite type `ι` is the finite group `ι → ℤˣ` of sign vectors. Averaging over
-it with the mean `TauCeti.finiteMean ℝ f = 2⁻ⁿ ∑_ε f ε`, for `f` with values in a real vector
-space, is the expectation with respect to independent symmetric random signs `εᵢ`, the
-Rademacher variables. C⋆-algebras and real normed spaces carry real scalars but not the
-`ℚ≥0`-module structure needed by Mathlib's `𝔼`; the two averages agree by
-`TauCeti.finiteMean_eq_expect` whenever both are defined. For a family `x : ι → E` in an additive
-group, the Rademacher sum `∑ᵢ εᵢ xᵢ` is the random sum whose moments control Khintchine-type
-inequalities; the coefficients may lie in a noncommutative ring, such as a C⋆-algebra, so
-products are kept in order throughout.
+The *sign cube* of a finite type `ι` is the finite group `ι → ℤˣ` of sign vectors. Averaging
+over it with the mean `TauCeti.finiteMean K f = 2⁻ⁿ ∑_ε f ε`, for `f` with values in a vector
+space over a field `K` of characteristic zero, is the expectation with respect to independent
+symmetric random signs `εᵢ`, the Rademacher variables. C⋆-algebras and real normed spaces carry
+real scalars but not the `ℚ≥0`-module structure needed by Mathlib's `𝔼`; the two averages agree
+by `TauCeti.finiteMean_eq_expect` whenever both are defined. For a family `x : ι → E` in an
+additive group, the Rademacher sum `∑ᵢ εᵢ xᵢ` is the random sum whose moments control
+Khintchine-type inequalities; the coefficients may lie in a noncommutative ring, such as a
+C⋆-algebra, so products are kept in order throughout.
 
 ## Main declarations
 
-* `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It is additive and equivariant
-  in the coefficient family `x`.
+* `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It commutes with additive maps
+  (`TauCeti.map_rademacherSum`) and with reindexing (`TauCeti.rademacherSum_comp_equiv`).
 * `TauCeti.finiteMean_units_smul`, `TauCeti.finiteMean_units_mul_units_smul`: the first and
   second sign moments, `𝔼 εᵢ = 0` and `𝔼 εᵢ εⱼ = δᵢⱼ`.
+* `TauCeti.sum_units_apply_mul_four`, `TauCeti.finiteMean_units_mul_four_smul`: the fourth sign
+  moment `𝔼 εᵢ εⱼ εₖ εₗ`, which is one when the indices match in pairs and zero otherwise.
 * `TauCeti.finiteMean_rademacherSum`, `TauCeti.finiteMean_rademacherSum_mul_self`: a
   Rademacher sum `S` has `𝔼 S = 0` and `𝔼 S² = ∑ᵢ xᵢ²`.
 * `TauCeti.finiteMean_units_smul_rademacherSum`: the coefficients of a Rademacher sum are
@@ -113,6 +115,24 @@ theorem isSelfAdjoint_rademacherSum [AddCommGroup E] [StarAddMonoid E] {x : ι �
     (hx : ∀ i, IsSelfAdjoint (x i)) (ε : ι → ℤˣ) : IsSelfAdjoint (rademacherSum x ε) := by
   simp only [isSelfAdjoint_iff, star_rademacherSum, fun i => (hx i).star_eq]
 
+/-- An additive map sends a Rademacher sum to the Rademacher sum of the images. -/
+theorem map_rademacherSum {F 𝓕 : Type*} [AddCommGroup E] [AddCommGroup F] [FunLike 𝓕 E F]
+    [AddMonoidHomClass 𝓕 E F] (f : 𝓕) (x : ι → E) (ε : ι → ℤˣ) :
+    f (rademacherSum x ε) = rademacherSum (fun i => f (x i)) ε := by
+  simp only [rademacherSum_def, map_sum, map_zsmul]
+
+/-- Reindexing the coefficients and the signs along the same equivalence does not change the
+Rademacher sum. -/
+theorem rademacherSum_comp_equiv {κ : Type*} [Fintype κ] [AddCommGroup E] (e : κ ≃ ι)
+    (x : ι → E) (ε : ι → ℤˣ) : rademacherSum (x ∘ e) (ε ∘ e) = rademacherSum x ε :=
+  e.sum_comp fun i => (ε i : ℤ) • x i
+
+/-- A Rademacher sum over an empty index type vanishes. -/
+@[simp]
+theorem rademacherSum_of_isEmpty [IsEmpty ι] [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) :
+    rademacherSum x ε = 0 :=
+  Fintype.sum_empty _
+
 variable [DecidableEq ι]
 
 /-! ### Sums of sign monomials -/
@@ -151,7 +171,7 @@ theorem sum_units_apply_mul_units_apply (i j : ι) :
 
 /-- The fourth sign moment `𝔼 εᵢ εⱼ εₖ εₗ`: it is one when the indices match in pairs and zero
 otherwise, written as the sum over the three pairings corrected on the diagonal. -/
-private theorem sum_units_apply_mul_four (i j k l : ι) :
+theorem sum_units_apply_mul_four (i j k l : ι) :
     ∑ ε : ι → ℤˣ, (ε i : ℤ) * ε j * ε k * ε l =
       ((if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
         (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0)) *
@@ -186,18 +206,18 @@ end SignSums
 
 section Average
 
-variable [AddCommGroup E] [Module ℝ E]
+variable {K : Type*} [Field K] [CharZero K] [AddCommGroup E] [Module K E]
 
-private theorem card_signCube_ne_zero : (Fintype.card (ι → ℤˣ) : ℝ) ≠ 0 :=
+private theorem card_signCube_ne_zero : (Fintype.card (ι → ℤˣ) : K) ≠ 0 :=
   Nat.cast_ne_zero.2 Fintype.card_ne_zero
 
 /-- Averaging integer multiples `n ε • a` of a fixed vector, when the integers `n ε` sum to
 `c` times the number of sign vectors. -/
 private theorem finiteMean_zsmul_const {n : (ι → ℤˣ) → ℤ} {c : ℤ}
     (hn : ∑ ε, n ε = c * Fintype.card (ι → ℤˣ)) (a : E) :
-    finiteMean ℝ (fun ε => n ε • a) = c • a := by
-  rw [finiteMean_eq_inv_smul_sum, ← Finset.sum_smul, hn, ← Int.cast_smul_eq_zsmul ℝ (c * _),
-    ← Int.cast_smul_eq_zsmul ℝ c, smul_smul]
+    finiteMean K (fun ε => n ε • a) = c • a := by
+  rw [finiteMean_eq_inv_smul_sum, ← Finset.sum_smul, hn, ← Int.cast_smul_eq_zsmul K (c * _),
+    ← Int.cast_smul_eq_zsmul K c, smul_smul]
   congr 1
   push_cast
   rw [mul_left_comm, inv_mul_cancel₀ card_signCube_ne_zero, mul_one]
@@ -205,20 +225,22 @@ private theorem finiteMean_zsmul_const {n : (ι → ℤˣ) → ℤ} {c : ℤ}
 /-- The first sign moment: `𝔼 εᵢ a = 0`. -/
 @[simp]
 theorem finiteMean_units_smul (i : ι) (a : E) :
-    finiteMean ℝ (fun ε : ι → ℤˣ => (ε i : ℤ) • a) = 0 := by
+    finiteMean K (fun ε : ι → ℤˣ => (ε i : ℤ) • a) = 0 := by
   rw [finiteMean_zsmul_const (c := 0) (by rw [sum_units_apply_eq_zero, zero_mul]), zero_smul]
 
 /-- The second sign moment: `𝔼 εᵢ εⱼ a = δᵢⱼ a`. -/
 @[simp]
 theorem finiteMean_units_mul_units_smul (i j : ι) (a : E) :
-    finiteMean ℝ (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j) • a) = if i = j then a else 0 := by
+    finiteMean K (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j) • a) = if i = j then a else 0 := by
   rw [finiteMean_zsmul_const (c := if i = j then 1 else 0)
     (by rw [sum_units_apply_mul_units_apply]; split_ifs <;> simp)]
   split_ifs <;> simp
 
-/-- The fourth sign moment, in the form used to expand fourth powers of Rademacher sums. -/
-private theorem finiteMean_units_mul_four_smul (i j k l : ι) (a : E) :
-    finiteMean ℝ (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j * ε k * ε l) • a) =
+/-- The fourth sign moment: `𝔼 εᵢ εⱼ εₖ εₗ a` is `a` when the indices match in pairs and zero
+otherwise, written as the sum over the three pairings corrected on the diagonal. This is the form
+used to expand fourth powers of Rademacher sums. -/
+theorem finiteMean_units_mul_four_smul (i j k l : ι) (a : E) :
+    finiteMean K (fun ε : ι → ℤˣ => ((ε i : ℤ) * ε j * ε k * ε l) • a) =
       ((if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
         (if i = l ∧ j = k then 1 else 0) - 2 * (if i = j ∧ j = k ∧ k = l then 1 else 0) : ℤ) •
         a :=
@@ -230,10 +252,12 @@ end Average
 
 section Rademacher
 
+variable {K : Type*} [Field K] [CharZero K]
+
 /-- A Rademacher sum has mean zero. -/
 @[simp]
-theorem finiteMean_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) :
-    finiteMean ℝ (rademacherSum x) = 0 := by
+theorem finiteMean_rademacherSum [AddCommGroup E] [Module K E] (x : ι → E) :
+    finiteMean K (rademacherSum x) = 0 := by
   have h : rademacherSum x = fun ε => ∑ i, (ε i : ℤ) • x i := funext (rademacherSum_def x)
   rw [h, finiteMean_sum]
   simp
@@ -241,14 +265,14 @@ theorem finiteMean_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) 
 /-- The coefficients of a Rademacher sum are recovered by averaging against the signs:
 `𝔼 εₖ (∑ᵢ εᵢ xᵢ) = xₖ`. -/
 @[simp]
-theorem finiteMean_units_smul_rademacherSum [AddCommGroup E] [Module ℝ E] (x : ι → E) (k : ι) :
-    finiteMean ℝ (fun ε => (ε k : ℤ) • rademacherSum x ε) = x k := by
+theorem finiteMean_units_smul_rademacherSum [AddCommGroup E] [Module K E] (x : ι → E) (k : ι) :
+    finiteMean K (fun ε => (ε k : ℤ) • rademacherSum x ε) = x k := by
   simp only [rademacherSum_def, Finset.smul_sum, smul_smul, finiteMean_sum,
     finiteMean_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
-variable {R : Type*} [NonUnitalRing R] [Module ℝ R]
+variable {R : Type*} [NonUnitalRing R] [Module K R]
 
-omit [DecidableEq ι] [Module ℝ R] in
+omit [DecidableEq ι] [Module K R] in
 /-- Rademacher sums of two families are products of signs times products of coefficients. -/
 private theorem rademacherSum_mul_rademacherSum (x y : ι → R) (ε : ι → ℤˣ) :
     rademacherSum x ε * rademacherSum y ε = ∑ i, ∑ j, ((ε i : ℤ) * ε j) • (x i * y j) := by
@@ -257,13 +281,13 @@ private theorem rademacherSum_mul_rademacherSum (x y : ι → R) (ε : ι → �
 
 /-- The second moment of a Rademacher sum: `𝔼 (∑ᵢ εᵢ xᵢ) (∑ⱼ εⱼ yⱼ) = ∑ᵢ xᵢ yᵢ`. -/
 theorem finiteMean_rademacherSum_mul_rademacherSum (x y : ι → R) :
-    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum y ε) = ∑ i, x i * y i := by
+    finiteMean K (fun ε => rademacherSum x ε * rademacherSum y ε) = ∑ i, x i * y i := by
   simp only [rademacherSum_mul_rademacherSum, finiteMean_sum,
     finiteMean_units_mul_units_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
 /-- The second moment of a Rademacher sum: `𝔼 S² = ∑ᵢ xᵢ²`. -/
 theorem finiteMean_rademacherSum_mul_self (x : ι → R) :
-    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum x ε) = ∑ i, x i * x i :=
+    finiteMean K (fun ε => rademacherSum x ε * rademacherSum x ε) = ∑ i, x i * x i :=
   finiteMean_rademacherSum_mul_rademacherSum x x
 
 /-- **The fourth moment of a Rademacher sum.** In a possibly noncommutative ring, averaging
@@ -272,7 +296,7 @@ theorem finiteMean_rademacherSum_mul_self (x : ι → R) :
 and `∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ`, and the diagonal `i = j = k = l`, counted by all three pairings, is
 corrected by `- 2 ∑ᵢ xᵢ⁴`. -/
 theorem finiteMean_rademacherSum_mul_four (x : ι → R) :
-    finiteMean ℝ (fun ε => rademacherSum x ε * rademacherSum x ε * rademacherSum x ε *
+    finiteMean K (fun ε => rademacherSum x ε * rademacherSum x ε * rademacherSum x ε *
         rademacherSum x ε) =
       (∑ i, x i * x i) * (∑ i, x i * x i) + ∑ i, x i * (∑ j, x j * x j) * x i +
         ∑ i, ∑ j, x i * x j * x i * x j - 2 • ∑ i, x i * x i * x i * x i := by
