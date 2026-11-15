@@ -10,9 +10,9 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Moments of powers against logarithmic powers on `(0, 1]`
@@ -22,7 +22,7 @@ For `r > -1` and `k : ℕ`, the logarithmic moment integral on `(0, 1]` evaluate
 this is the rescaled Euler Gamma integral `∫_{u > 0} u ^ k * exp (-(r + 1) u) du`, and directly on
 `(0, 1)` it follows by `k`-fold integration by parts from the primitive
 `t ↦ t ^ (r + 1) / (r + 1) * (-log t) ^ (k + 1)`, whose boundary limits vanish at both endpoints
-`0` and `1`.
+`0` and `1` (`TauCeti.tendsto_rpow_mul_neg_log_pow_nhdsGT_zero`).
 
 These moments arise whenever a Taylor series in `t` is integrated against a logarithmic radial
 kernel `(-log t) ^ k / t`, such as in the passage between the radial-integral and power-series
@@ -30,9 +30,6 @@ representations of the classical polylogarithms.
 
 ## Main declarations
 
-* `TauCeti.tendsto_rpow_mul_log_pow_nhdsGT_zero` and
-  `TauCeti.tendsto_rpow_mul_neg_log_pow_nhdsGT_zero`: for `r > 0` and `k : ℕ`, `t ^ r * (log t) ^ k`
-  and `t ^ r * (-log t) ^ k` tend to `0` as `t → 0⁺`.
 * `TauCeti.locallyIntegrable_rpow_mul_log_pow`, `TauCeti.intervalIntegrable_rpow_mul_log_pow`, and
   `TauCeti.intervalIntegrable_rpow_mul_neg_log_pow`: local and interval integrability for `r > -1`.
 * `TauCeti.integral_rpow_mul_neg_log_pow` and `TauCeti.integral_rpow_mul_log_pow`:
@@ -49,31 +46,6 @@ open Filter MeasureTheory Set
 open scoped Topology
 
 namespace TauCeti
-
-/-- Any positive real power dominates every natural power of `log` as `t → 0⁺`. -/
-theorem tendsto_rpow_mul_log_pow_nhdsGT_zero {r : ℝ} (hr : 0 < r) (k : ℕ) :
-    Tendsto (fun t : ℝ ↦ t ^ r * Real.log t ^ k) (𝓝[>] 0) (𝓝 0) := by
-  rcases k with _ | k
-  · simpa [Real.zero_rpow hr.ne'] using
-      (Real.continuousAt_rpow_const 0 r (Or.inr hr.le)).continuousWithinAt.tendsto
-  · have hstep : Tendsto (fun t : ℝ ↦ (Real.log t * t ^ (r / (k + 1 : ℝ))) ^ (k + 1))
-        (𝓝[>] 0) (𝓝 0) := by
-      simpa using (tendsto_log_mul_rpow_nhdsGT_zero (div_pos hr (by positivity))).pow (k + 1)
-    refine hstep.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    rw [mul_pow, ← Real.rpow_natCast (t ^ _), ← Real.rpow_mul ht.le]
-    push_cast
-    rw [div_mul_cancel₀ r (by positivity), mul_comm]
-
-/-- For `r > 0` and `k : ℕ`, `t ^ r * (-log t) ^ k → 0` as `t → 0⁺`. -/
-theorem tendsto_rpow_mul_neg_log_pow_nhdsGT_zero {r : ℝ} (hr : 0 < r) (k : ℕ) :
-    Tendsto (fun t : ℝ ↦ t ^ r * (-Real.log t) ^ k) (𝓝[>] 0) (𝓝 0) := by
-  have h := (tendsto_rpow_mul_log_pow_nhdsGT_zero hr k).const_mul ((-1 : ℝ) ^ k)
-  rw [mul_zero] at h
-  refine h.congr' (.of_forall fun t ↦ ?_)
-  dsimp only
-  rw [neg_eq_neg_one_mul (Real.log t), mul_pow]
-  ring
 
 /-- On `ℝ` with Lebesgue measure, `t ↦ t ^ r * (log t) ^ k` is locally integrable for every
 `r > -1` and `k : ℕ`. -/

@@ -45,6 +45,8 @@ without dividing by `z`.
   `HasDerivAt (polylog n) 1 0` and `deriv (polylog n) 0 = 1` for every `n : ℤ`.
 * `TauCeti.Polylog.mul_deriv_polylog_add_one_of_norm_lt_one`:
   `z * deriv (polylog (n + 1)) z = polylog n z` on `‖z‖ < 1`.
+* `TauCeti.Polylog.norm_polylog_sub_partialSum_le`:
+  uniform geometric tail bound on closed subdiscs `‖z‖ ≤ r < 1` for nonnegative integer weights.
 
 ## References
 
@@ -261,7 +263,7 @@ theorem hasSum_polylog_nat (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
 
 /-- For any nonzero integer weight `n ≠ 0` and `‖z‖ < 1`, starting the series at `k = 0` gives the
 same sum `polylog n z`, since `(0 : ℂ) ^ n = 0` kills the `k = 0` term. -/
-theorem hasSum_polylog_zero_index {n : ℤ} (hn : n ≠ 0) {z : ℂ} (hz : ‖z‖ < 1) :
+theorem hasSum_polylog'_of_ne_zero {n : ℤ} (hn : n ≠ 0) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ z ^ k / (k : ℂ) ^ n) (polylog n z) := by
   rw [← hasSum_nat_add_iff' 1]
   simp only [Finset.sum_range_one, pow_zero, Nat.cast_zero, zero_zpow n hn, div_zero, sub_zero]
@@ -300,7 +302,7 @@ theorem hasSumLocallyUniformlyOn_polylog (n : ℤ) :
 
 /-- On the open unit disc `‖z‖ < 1`, `polylog (n + 1)` has complex derivative
 `∑' k : ℕ, z ^ k / (k + 1) ^ n`. -/
-theorem hasDerivAt_polylog_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+theorem hasDerivAt_polylog_add_one_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasDerivAt (polylog (n + 1)) (∑' k : ℕ, z ^ k / (k + 1 : ℂ) ^ n) z := by
   refine (hasDerivAt_tsum_pow_div_zpow n hz).congr_of_eventuallyEq ?_
   filter_upwards [Metric.isOpen_ball.mem_nhds (by simpa using hz : z ∈ Metric.ball 0 1)]
@@ -309,7 +311,7 @@ theorem hasDerivAt_polylog_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1)
 
 /-- Every integer-weight polylogarithm has complex derivative `1` at the origin. -/
 theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by
-  have h := hasDerivAt_polylog_of_norm_lt_one (n - 1) (z := 0) (by simp)
+  have h := hasDerivAt_polylog_add_one_of_norm_lt_one (n - 1) (z := 0) (by simp)
   rw [sub_add_cancel] at h
   convert h using 1
   rw [tsum_eq_single 0]
@@ -325,60 +327,71 @@ theorem hasDerivAt_polylog_zero (n : ℤ) : HasDerivAt (polylog n) 1 0 := by
 recursion `z * deriv (polylog (n + 1)) z = polylog n z`. -/
 theorem mul_deriv_polylog_add_one_of_norm_lt_one (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     z * deriv (polylog (n + 1)) z = polylog n z := by
-  rw [(hasDerivAt_polylog_of_norm_lt_one n hz).deriv, ← tsum_mul_left, polylog_eq_tsum n hz]
+  rw [(hasDerivAt_polylog_add_one_of_norm_lt_one n hz).deriv, ← tsum_mul_left,
+    polylog_eq_tsum n hz]
   congr 1 with k
   rw [← mul_div_assoc, pow_succ']
 
 /-- At `z = 1 / 2` in weight `0`, the disc series reduces to `∑_{k ≥ 0} 2 ^ (-(k + 1)) = 1`,
 agreeing with `polylog 0 (1 / 2) = 1`. -/
-theorem hasSum_polylog_zero_weight_half :
-    HasSum (fun k : ℕ ↦ ((2 : ℂ)⁻¹) ^ (k + 1)) 1 := by
+example : HasSum (fun k : ℕ ↦ ((2 : ℂ)⁻¹) ^ (k + 1)) 1 := by
   have h := hasSum_polylog 0 (z := (1 / 2 : ℂ)) (by norm_num)
   rw [polylog_zero_weight_half] at h
   simpa [one_div] using h
 
 /-- At `z = 1 / 2` in weight `-1`, the disc series reduces to
 `∑_{k ≥ 0} (k + 1) * 2 ^ (-(k + 1)) = 2`, agreeing with `polylog (-1) (1 / 2) = 2`. -/
-theorem hasSum_polylog_neg_one_half :
-    HasSum (fun k : ℕ ↦ (k + 1 : ℂ) * ((2 : ℂ)⁻¹) ^ (k + 1)) 2 := by
+example : HasSum (fun k : ℕ ↦ (k + 1 : ℂ) * ((2 : ℂ)⁻¹) ^ (k + 1)) 2 := by
   have h := hasSum_polylog (-1) (z := (1 / 2 : ℂ)) (by norm_num)
   rw [polylog_neg_one_half] at h
   refine h.congr_fun fun k ↦ ?_
   rw [zpow_neg_one, div_inv_eq_mul, mul_comm, one_div]
 
+/-- On any closed subdisc `‖z‖ ≤ r < 1` (`0 ≤ r`), truncating the disc series of a nonnegative
+integer weight `n : ℕ` after `N` terms leaves a remainder bounded by
+`r ^ (N + 1) / ((N + 1) ^ n * (1 - r))`. -/
+theorem norm_polylog_sub_partialSum_le (n N : ℕ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1)
+    {z : ℂ} (hz : ‖z‖ ≤ r) :
+    ‖polylog n z - ∑ k ∈ Finset.Icc 1 N, z ^ k / (k : ℂ) ^ n‖ ≤
+      r ^ (N + 1) / ((N + 1 : ℝ) ^ n * (1 - r)) := by
+  have hz1 : ‖z‖ < 1 := hz.trans_lt hr1
+  have hsum : ∑ k ∈ Finset.range N, z ^ (k + 1) / (k + 1 : ℂ) ^ n =
+      ∑ k ∈ Finset.Icc 1 N, z ^ k / (k : ℂ) ^ n := by
+    rw [Finset.range_eq_Ico, ← Finset.Ico_add_one_right_eq_Icc]
+    simpa only [zero_add, Nat.cast_add, Nat.cast_one] using
+      Finset.sum_Ico_add' (fun k : ℕ ↦ z ^ k / (k : ℂ) ^ n) 0 N 1
+  have htail : HasSum (fun k : ℕ ↦ z ^ (k + N + 1) / ((k + N : ℕ) + 1 : ℂ) ^ n)
+      (polylog n z - ∑ k ∈ Finset.Icc 1 N, z ^ k / (k : ℂ) ^ n) := by
+    rw [← hsum]
+    exact (hasSum_nat_add_iff' N).2 (hasSum_polylog_nat n hz1)
+  have hNpos : (0 : ℝ) < (N : ℝ) + 1 := by positivity
+  have h1r : 0 < 1 - r := sub_pos.2 hr1
+  have hgeom : HasSum (fun k : ℕ ↦ r ^ (k + N + 1) / ((N : ℝ) + 1) ^ n)
+      (r ^ (N + 1) / ((N + 1 : ℝ) ^ n * (1 - r))) := by
+    have hg := ((hasSum_geometric_of_lt_one hr0 hr1).mul_left (r ^ (N + 1))).div_const
+      (((N : ℝ) + 1) ^ n)
+    convert hg using 1
+    · ext k
+      rw [← pow_add, add_comm (N + 1) k, add_assoc]
+    · field_simp [h1r.ne', hNpos.ne']
+  refine htail.norm_le_of_bounded hgeom fun k ↦ ?_
+  have hkN : (N : ℝ) + 1 ≤ (k : ℝ) + (N : ℝ) + 1 := by linarith [Nat.cast_nonneg (α := ℝ) k]
+  have hden : ((N : ℝ) + 1) ^ n ≤ ‖((k + N : ℕ) + 1 : ℂ) ^ n‖ := by
+    have hc : ((k + N : ℕ) + 1 : ℂ) = ((k + N + 1 : ℕ) : ℂ) := by push_cast; ring
+    rw [norm_pow, hc, Complex.norm_natCast]
+    push_cast
+    exact pow_le_pow_left₀ hNpos.le hkN n
+  rw [norm_div, norm_pow]
+  exact div_le_div₀ (pow_nonneg hr0 _) (pow_le_pow_left₀ (norm_nonneg z) hz _)
+    (pow_pos hNpos n) hden
+
 /-- At `z = 1 / 2` in weight `2`, the first partial sum `1 / 2` approximates `Li₂(1 / 2)` within
 `1 / 8`. -/
 theorem norm_polylog_two_half_sub_half_le :
     ‖polylog 2 (1 / 2) - 1 / 2‖ ≤ 1 / 8 := by
-  have hz : ‖(1 / 2 : ℂ)‖ < 1 := by norm_num
-  have hnhalf : ‖(1 / 2 : ℂ)‖ = (1 / 2 : ℝ) := by norm_num
-  have htail := (hasSum_nat_add_iff' 1).2 (hasSum_polylog_nat 2 hz)
-  simp only [Finset.sum_range_one, zero_add, pow_one, Nat.cast_zero, one_pow, div_one] at htail
-  have htail' : HasSum (fun k : ℕ ↦ (1 / 2 : ℂ) ^ (k + 1 + 1) / ((k + 1 : ℕ) + 1 : ℂ) ^ 2)
-      (polylog 2 (1 / 2) - 1 / 2) := htail
-  rw [← htail'.tsum_eq]
-  have hgeom : HasSum (fun k : ℕ ↦ (1 / 4 : ℝ) * (1 / 2 : ℝ) ^ (k + 2)) (1 / 8 : ℝ) := by
-    have hg := ((hasSum_geometric_of_lt_one (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num : (1 / 2 : ℝ) < 1)).mul_left ((1 / 2 : ℝ) ^ 2)).mul_left (1 / 4 : ℝ)
-    convert hg using 1
-    · ext k; ring
-    · norm_num
-  refine (norm_tsum_le_tsum_norm ?_).trans ?_
-  · exact ((summable_norm_pow_div_zpow 2 hz).comp_injective (add_left_injective 1)).congr
-      fun k ↦ by simp [Nat.add_assoc]
-  · rw [← hgeom.tsum_eq]
-    refine Summable.tsum_le_tsum (fun k ↦ ?_) ?_ hgeom.summable
-    · have hsq : (4 : ℝ) ≤ ((k : ℝ) + 2) ^ 2 := by nlinarith [Nat.cast_nonneg (α := ℝ) k]
-      have hnormk : ‖((k + 1 : ℕ) + 1 : ℂ) ^ 2‖ = ((k : ℝ) + 2) ^ 2 := by
-        rw [norm_pow]
-        have hc : ((k + 1 : ℕ) + 1 : ℂ) = ((k + 2 : ℕ) : ℂ) := by push_cast; ring
-        rw [hc, Complex.norm_natCast]
-        push_cast
-        ring
-      rw [norm_div, norm_pow, hnormk, hnhalf, Nat.add_assoc, div_eq_mul_inv, mul_comm]
-      exact mul_le_mul_of_nonneg_right
-        (by rw [one_div]; exact inv_anti₀ (by positivity) hsq) (by positivity)
-    · exact ((summable_norm_pow_div_zpow 2 hz).comp_injective (add_left_injective 1)).congr
-        fun k ↦ by simp [Nat.add_assoc]
+  have h := norm_polylog_sub_partialSum_le 2 1 (r := 1 / 2) (by norm_num) (by norm_num)
+    (z := (1 / 2 : ℂ)) (by norm_num)
+  norm_num [Finset.Icc_self] at h ⊢
+  exact h
 
 end TauCeti.Polylog

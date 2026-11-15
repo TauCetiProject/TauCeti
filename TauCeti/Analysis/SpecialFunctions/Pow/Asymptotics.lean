@@ -32,8 +32,10 @@ These are the comparisons behind the order of growth of an entire function.
 
 ## Positive powers near zero
 
-As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
-This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant, and
+`t ^ r * (log t) ^ k` and `t ^ r * (-log t) ^ k` tend to `0` for every `r > 0` and `k : ℕ`.
+This is how polynomial rates in a small scale `h` become inequalities for all small `h` and
+dominate logarithmic singularities at `0⁺`.
 
 ## Families bounded by integer powers
 
@@ -102,6 +104,31 @@ theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {
   have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
   rw [Real.zero_rpow hθ.ne', mul_zero] at ht
   exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
+
+/-- Any positive real power dominates every natural power of `log` as `t → 0⁺`. -/
+theorem tendsto_rpow_mul_log_pow_nhdsGT_zero {r : ℝ} (hr : 0 < r) (k : ℕ) :
+    Tendsto (fun t : ℝ ↦ t ^ r * Real.log t ^ k) (𝓝[>] 0) (𝓝 0) := by
+  rcases k with _ | k
+  · simpa [Real.zero_rpow hr.ne'] using
+      (Real.continuousAt_rpow_const 0 r (Or.inr hr.le)).continuousWithinAt.tendsto
+  · have hstep : Tendsto (fun t : ℝ ↦ (Real.log t * t ^ (r / (k + 1 : ℝ))) ^ (k + 1))
+        (𝓝[>] 0) (𝓝 0) := by
+      simpa using (tendsto_log_mul_rpow_nhdsGT_zero (div_pos hr (by positivity))).pow (k + 1)
+    refine hstep.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+    rw [mul_pow, ← Real.rpow_natCast (t ^ _), ← Real.rpow_mul ht.le]
+    push_cast
+    rw [div_mul_cancel₀ r (by positivity), mul_comm]
+
+/-- For `r > 0` and `k : ℕ`, `t ^ r * (-log t) ^ k → 0` as `t → 0⁺`. -/
+theorem tendsto_rpow_mul_neg_log_pow_nhdsGT_zero {r : ℝ} (hr : 0 < r) (k : ℕ) :
+    Tendsto (fun t : ℝ ↦ t ^ r * (-Real.log t) ^ k) (𝓝[>] 0) (𝓝 0) := by
+  have h := (tendsto_rpow_mul_log_pow_nhdsGT_zero hr k).const_mul ((-1 : ℝ) ^ k)
+  rw [mul_zero] at h
+  refine h.congr' (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [neg_eq_neg_one_mul (Real.log t), mul_pow]
+  ring
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 

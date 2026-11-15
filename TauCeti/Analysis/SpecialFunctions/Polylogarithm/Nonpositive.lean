@@ -17,7 +17,8 @@ The Eulerian polynomial `Aᵣ = TauCeti.eulerianPolynomial r` is the reduced pol
 factor after factoring out `z` in `Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)`.
 This identity holds even at the totalised value at 1. Its differential recurrence
 comes from the Euler operator `z d/dz`. The identity `Aᵣ(1) = r!` gives the exact
-leading coefficient at the pole and shows that no nonpositive weight is continuous at 1.
+leading coefficient at the pole and shows that a nonpositive weight is continuous or analytic at
+`z` if and only if `z ≠ 1`.
 These formulas describe the functions on the whole punctured plane, not just on a slit domain.
 
 ## References
@@ -91,6 +92,18 @@ theorem not_continuousAt_polylog_neg_nat_one (r : ℕ) :
   have heq := tendsto_nhds_unique hzero
     (tendsto_one_sub_pow_mul_polylog_neg_nat_nhdsNE_one r)
   exact (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero r) : (r.factorial : ℂ) ≠ 0) heq.symm
+
+/-- A nonpositive-weight polylogarithm is continuous at `z` if and only if `z ≠ 1`. -/
+theorem continuousAt_polylog_neg_nat_iff (r : ℕ) {z : ℂ} :
+    ContinuousAt (polylog (-(r : ℤ))) z ↔ z ≠ 1 :=
+  ⟨by rintro hc rfl; exact not_continuousAt_polylog_neg_nat_one r hc,
+    fun hz ↦ (analyticAt_polylog_neg_nat r hz).continuousAt⟩
+
+/-- A nonpositive-weight polylogarithm is complex analytic at `z` if and only if `z ≠ 1`. -/
+theorem analyticAt_polylog_neg_nat_iff (r : ℕ) {z : ℂ} :
+    AnalyticAt ℂ (polylog (-(r : ℤ))) z ↔ z ≠ 1 :=
+  ⟨fun ha ↦ (continuousAt_polylog_neg_nat_iff r).1 ha.continuousAt,
+    analyticAt_polylog_neg_nat r⟩
 
 /-- Every nonpositive weight is the indicated rational function, including at the
 totalised pole, where both sides vanish. -/

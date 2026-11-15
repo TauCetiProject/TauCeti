@@ -22,7 +22,8 @@ points in the right half-plane lies in the slit plane as well, and positive real
 it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
-and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
+and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane; conversely,
+the complementary cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex at every point `z < 1`.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
@@ -50,6 +51,7 @@ is a principal logarithm.
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
+* `TauCeti.starConvex_one_sub_slitPlane`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
@@ -215,6 +217,21 @@ theorem mem_slitPlane_union_zero_iff {z : ℂ} :
   rw [← Complex.not_lt_zero_iff, Set.mem_union, Complex.mem_slitPlane_iff_not_le_zero,
     Set.mem_singleton_iff, lt_iff_le_and_ne]
   tauto
+
+open scoped ComplexOrder in
+/-- The cut plane `ℂ ∖ [1, ∞) = {w : ℂ | 1 - w ∈ slitPlane}` is star-convex at every point
+`z < 1` (that is, every real point strictly to the left of `1`). -/
+theorem starConvex_one_sub_slitPlane {z : ℂ} (hz : z < 1) :
+    StarConvex ℝ z {w : ℂ | 1 - w ∈ slitPlane} := by
+  intro w hw a b ha hb hab
+  have hmem := starConvex_slitPlane (sub_pos.2 hz) hw ha hb hab
+  have hab' : (a : ℂ) + b = 1 := by exact_mod_cast hab
+  have heq : (1 : ℂ) - (a • z + b • w) = a • (1 - z) + b • (1 - w) := by
+    calc (1 : ℂ) - (a • z + b • w)
+        = ((a : ℂ) + b) - ((a : ℂ) * z + (b : ℂ) * w) := by simp [real_smul, hab']
+      _ = a • (1 - z) + b • (1 - w) := by simp only [real_smul]; ring
+  change 1 - (a • z + b • w) ∈ slitPlane
+  rwa [heq]
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/

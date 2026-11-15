@@ -12,8 +12,8 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
-import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Nonpositive
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 /-!
@@ -21,39 +21,46 @@ import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 Every integer-weight principal polylogarithm `Liₙ` is complex analytic on the principal domain
 `ℂ ∖ [1, ∞) = {z : ℂ | 1 - z ∈ Complex.slitPlane}`, satisfies the Euler differential recursion
-`z * deriv (Li_{n+1}) z = Liₙ z` there (including at `z = 0`, where both sides vanish), and
-satisfies the recursive radial-integral identity `Li_{n+1}(z) = ∫ t in 0..1, Liₙ(t z) / t dt`.
+`z * deriv (Li_{n+1}) z = Liₙ z` (equivalently `z * deriv (Liₙ) z = Li_{n-1} z`) there, including
+at `z = 0` where both sides vanish, and satisfies the recursive radial-integral identity
+`Li_{n+1}(z) = ∫ t in 0..1, Liₙ(t z) / t dt`.
 
 For weights `k + 2 ≥ 2`, differentiating the logarithmic radial integral under the integral sign on
 compact subdiscs of `{z | 1 - z ∈ Complex.slitPlane}` uses the uniform lower bound
 `exists_le_norm_one_sub_ofReal_mul` on `‖1 - t z‖` to dominate the `z`-derivative
 `(-log t) ^ k / (1 - t z)` by a multiple of `|log t| ^ k`. Complex differentiability on the open
 principal domain then yields analyticity by Goursat's theorem. Since the principal domain is
-star-convex at `0` (hence preconnected), the identity principle glues the Euler differential
-recursion from the open unit disc (`mul_deriv_polylog_add_one_of_norm_lt_one`) to the whole
-principal domain, and the fundamental theorem of calculus along `t ↦ Li_{n+1}(t z)` recovers the
-recursive radial integral in every integer weight.
+star-convex at `0` (`TauCeti.starConvex_one_sub_slitPlane`, hence preconnected), the identity
+principle glues the Euler differential recursion from the open unit disc
+(`mul_deriv_polylog_add_one_of_norm_lt_one`) to the whole principal domain, and the fundamental
+theorem of calculus along `t ↦ Li_{n+1}(t z)` recovers the recursive radial integral in every
+integer weight.
 
-Sharpness checks at the end confirm that analyticity does not extend across `[1, ∞)`: `Li₁` has a
-jump discontinuity at every real `x > 1` (in particular at `3`), while every nonpositive weight
-`Li_{-r}` fails to be analytic at its pole `1`.
+Sharpness characterizations at the end confirm that regularity in weight `1` holds on and only on
+`ℂ ∖ [1, ∞)`: `Li₁` has a logarithmic singularity at `1` and a `2πi` jump across `(1, ∞)` (in
+particular at `3`), so both `ContinuousAt (polylog 1) z` and `AnalyticAt ℂ (polylog 1) z` are
+equivalent to `1 - z ∈ Complex.slitPlane`.
 
 ## Main declarations
 
-* `TauCeti.Polylog.analyticOnNhd_polylog` and `TauCeti.Polylog.analyticAt_polylog`:
-  `AnalyticOnNhd ℂ (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane}` for every `n : ℤ`.
+* `TauCeti.Polylog.analyticOnNhd_polylog`, `TauCeti.Polylog.analyticAt_polylog`,
+  `TauCeti.Polylog.continuousAt_polylog`, and `TauCeti.Polylog.continuousOn_polylog`:
+  holomorphy and continuity of `polylog n` on `{z : ℂ | 1 - z ∈ Complex.slitPlane}` for all `n : ℤ`.
 * `TauCeti.Polylog.hasDerivAt_polylog_one` and `TauCeti.Polylog.hasDerivAt_polylog_nat_add_two`:
   explicit complex derivatives of `Li₁` and `Li_{k+2}` on `{z | 1 - z ∈ Complex.slitPlane}`.
-* `TauCeti.Polylog.mul_deriv_polylog_add_one` and `TauCeti.Polylog.hasDerivAt_polylog_add_one`:
-  the Euler differential recursion `z * deriv (polylog (n + 1)) z = polylog n z` on
-  `{z | 1 - z ∈ Complex.slitPlane}`, and its quotient form away from `0`.
-* `TauCeti.Polylog.intervalIntegrable_polylog_div` and
+* `TauCeti.Polylog.mul_deriv_polylog`, `TauCeti.Polylog.mul_deriv_polylog_add_one`,
+  `TauCeti.Polylog.hasDerivAt_polylog`, `TauCeti.Polylog.hasDerivAt_polylog_add_one`,
+  `TauCeti.Polylog.deriv_polylog`, and `TauCeti.Polylog.deriv_polylog_add_one`:
+  the Euler differential recursion on `{z | 1 - z ∈ Complex.slitPlane}` in both `n` and `n + 1`
+  indexings, and its quotient form away from `0`.
+* `TauCeti.Polylog.intervalIntegrable_polylog_div`, `TauCeti.Polylog.polylog_eq_integral`, and
   `TauCeti.Polylog.polylog_add_one_eq_integral`:
-  `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t` for every `n : ℤ` on
+  recursive radial-integral representations for every `n : ℤ` on
   `{z | 1 - z ∈ Complex.slitPlane}`.
-* `TauCeti.Polylog.not_continuousAt_polylog_one_of_one_lt`,
-  `TauCeti.Polylog.not_continuousAt_polylog_one_three`, and
-  `TauCeti.Polylog.not_analyticAt_polylog_neg_nat_one`: boundary-cut and pole sharpness checks.
+* `TauCeti.Polylog.not_continuousAt_polylog_one_of_one_le`,
+  `TauCeti.Polylog.continuousAt_polylog_one_iff`, `TauCeti.Polylog.analyticAt_polylog_one_iff`, and
+  `TauCeti.Polylog.not_continuousAt_polylog_one_three`: exact regularity characterizations for
+  `polylog 1` along and off `[1, ∞)`.
 
 ## References
 
@@ -69,21 +76,6 @@ open Filter MeasureTheory Set
 open scoped Topology
 
 namespace TauCeti.Polylog
-
-/-- For `z` in the principal domain `{z | 1 - z ∈ slitPlane}` and `t ∈ [0, 1]`, `1 - t * z` lies
-in `Complex.slitPlane`. -/
-theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : 1 - (t : ℂ) * z ∈ Complex.slitPlane := by
-  have hz' : 1 + -z ∈ Complex.slitPlane := by simpa [sub_eq_add_neg] using hz
-  have hmem := Complex.starConvex_one_slitPlane.add_smul_mem hz' ht.1 ht.2
-  rwa [Complex.real_smul, mul_neg, ← sub_eq_add_neg] at hmem
-
-/-- The principal domain `{z : ℂ | 1 - z ∈ Complex.slitPlane}` is star-convex at `0`. -/
-theorem starConvex_zero_one_sub_slitPlane :
-    StarConvex ℝ (0 : ℂ) {z : ℂ | 1 - z ∈ Complex.slitPlane} := by
-  intro z hz a b ha hb hab
-  simp only [mem_ofPred_eq, smul_zero, zero_add]
-  exact one_sub_ofReal_mul_mem_slitPlane hz ⟨hb, by linarith⟩
 
 /-- On the principal domain `{z | 1 - z ∈ slitPlane}`, `polylog 1` has complex derivative
 `(1 - z)⁻¹`. -/
@@ -158,7 +150,8 @@ private lemma intervalIntegrable_and_hasDerivAt_polylog_nat_add_two (k : ℕ) {z
     (ae_of_all _ fun t ht z hzK ↦ by
       rw [uIoc_of_le zero_le_one] at ht
       exact hasDerivAt_radialIntegrand k ht.1
-        (one_sub_ofReal_mul_mem_slitPlane (hKΩ hzK) (Ioc_subset_Icc_self ht)))
+        (mul_comm z (t : ℂ) ▸
+          Complex.one_sub_mul_ofReal_mem_slitPlane (hKΩ hzK) (Ioc_subset_Icc_self ht)))
   refine ⟨hdom.1, ?_⟩
   have hdef : polylog (k + 2 : ℕ) = fun z ↦ (Nat.factorial k : ℂ)⁻¹ * ∫ t : ℝ in 0..1, F z t :=
     funext (polylog_nat_add_two k)
@@ -214,12 +207,19 @@ theorem analyticAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane
     AnalyticAt ℂ (polylog n) z :=
   analyticOnNhd_polylog n z hz
 
+/-- Every integer-weight polylogarithm is continuous at each point of the principal domain
+`{z | 1 - z ∈ slitPlane}`. -/
+theorem continuousAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    ContinuousAt (polylog n) z :=
+  (analyticAt_polylog n hz).continuousAt
+
 /-- Every integer-weight polylogarithm is continuous on the principal domain
 `{z | 1 - z ∈ slitPlane}`. -/
 theorem continuousOn_polylog (n : ℤ) :
     ContinuousOn (polylog n) {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
   (analyticOnNhd_polylog n).continuousOn
 
+open scoped ComplexOrder in
 /-- Euler differential recursion on the principal domain: for every `n : ℤ` and `z : ℂ` with
 `1 - z ∈ Complex.slitPlane` (including `z = 0`), `z * deriv (polylog (n + 1)) z = polylog n z`. -/
 theorem mul_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
@@ -231,43 +231,74 @@ theorem mul_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.sl
   have hloc : (fun w : ℂ ↦ w * deriv (polylog (n + 1)) w) =ᶠ[𝓝 (0 : ℂ)] polylog n := by
     filter_upwards [Metric.ball_mem_nhds (0 : ℂ) zero_lt_one] with w hw
     exact mul_deriv_polylog_add_one_of_norm_lt_one n (by simpa using hw)
-  exact hf.eqOn_of_preconnected_of_eventuallyEq (analyticOnNhd_polylog n)
-    (starConvex_zero_one_sub_slitPlane.isPathConnected h0).isConnected.isPreconnected h0 hloc hz
+  have hconn : IsPreconnected Ω :=
+    ((TauCeti.starConvex_one_sub_slitPlane zero_lt_one).isPathConnected
+      h0).isConnected.isPreconnected
+  exact hf.eqOn_of_preconnected_of_eventuallyEq (analyticOnNhd_polylog n) hconn h0 hloc hz
+
+/-- Unshifted Euler differential recursion on the principal domain: for every `n : ℤ` and `z : ℂ`
+with `1 - z ∈ Complex.slitPlane` (including `z = 0`),
+`z * deriv (polylog n) z = polylog (n - 1) z`. -/
+theorem mul_deriv_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    z * deriv (polylog n) z = polylog (n - 1) z := by
+  simpa using mul_deriv_polylog_add_one (n - 1) hz
 
 /-- Quotient form of the Euler differential recursion away from `0`: for `1 - z ∈ slitPlane` and
-`z ≠ 0`, `polylog (n + 1)` has complex derivative `polylog n z / z`. -/
+`z ≠ 0`, `polylog n` has complex derivative `polylog (n - 1) z / z`. -/
+theorem hasDerivAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
+    HasDerivAt (polylog n) (polylog (n - 1) z / z) z := by
+  have hd := (differentiableAt_polylog n hz).hasDerivAt
+  have heq : deriv (polylog n) z = polylog (n - 1) z / z := by
+    rw [← mul_deriv_polylog n hz, mul_div_cancel_left₀ _ hz0]
+  rwa [heq] at hd
+
+/-- Shifted quotient form of the Euler differential recursion away from `0`: for
+`1 - z ∈ slitPlane` and `z ≠ 0`, `polylog (n + 1)` has complex derivative `polylog n z / z`. -/
 theorem hasDerivAt_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane)
     (hz0 : z ≠ 0) :
     HasDerivAt (polylog (n + 1)) (polylog n z / z) z := by
-  have hd := (differentiableAt_polylog (n + 1) hz).hasDerivAt
-  have heq : deriv (polylog (n + 1)) z = polylog n z / z := by
-    rw [← mul_deriv_polylog_add_one n hz, mul_div_cancel_left₀ _ hz0]
-  rwa [heq] at hd
+  simpa using hasDerivAt_polylog (n + 1) hz hz0
+
+/-- Away from `0` in the principal domain, `deriv (polylog n) z = polylog (n - 1) z / z`. -/
+theorem deriv_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
+    deriv (polylog n) z = polylog (n - 1) z / z :=
+  (hasDerivAt_polylog n hz hz0).deriv
 
 /-- Away from `0` in the principal domain, `deriv (polylog (n + 1)) z = polylog n z / z`. -/
 theorem deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) (hz0 : z ≠ 0) :
     deriv (polylog (n + 1)) z = polylog n z / z :=
   (hasDerivAt_polylog_add_one n hz hz0).deriv
 
+/-- Continuity on `uIcc 0 1` of the radial derivative `t ↦ deriv (polylog n) (t * z) * z` for
+`1 - z ∈ Complex.slitPlane`. -/
+private lemma continuousOn_deriv_polylog_mul (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    ContinuousOn (fun t : ℝ ↦ deriv (polylog n) ((t : ℂ) * z) * z) (uIcc 0 1) := by
+  refine ((analyticOnNhd_polylog n).deriv.continuousOn.comp
+    (Complex.continuous_ofReal.mul continuous_const).continuousOn ?_).mul continuousOn_const
+  intro t ht
+  rw [uIcc_of_le zero_le_one] at ht
+  change 1 - (t : ℂ) * z ∈ Complex.slitPlane
+  exact mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- On `uIoc 0 1`, the radial derivative `deriv (polylog (n + 1)) (t * z) * z` equals
+`polylog n (t * z) / t`. -/
+private lemma deriv_polylog_add_one_ofReal_mul_eq_div (n : ℤ) {z : ℂ}
+    (hz : 1 - z ∈ Complex.slitPlane) {t : ℝ} (ht : t ∈ uIoc (0 : ℝ) 1) :
+    deriv (polylog (n + 1)) ((t : ℂ) * z) * z = polylog n ((t : ℂ) * z) / (t : ℂ) := by
+  rw [uIoc_of_le zero_le_one] at ht
+  have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.1.ne'
+  have hslit : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+    mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz (Ioc_subset_Icc_self ht)
+  rw [← mul_deriv_polylog_add_one n hslit]
+  field_simp [htc]
+
 /-- For every `n : ℤ` and `z` in the principal domain `{z | 1 - z ∈ slitPlane}`, the radial
 quotient `t ↦ polylog n (t * z) / t` is interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_polylog_div (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     IntervalIntegrable (fun t : ℝ ↦ polylog n ((t : ℂ) * z) / (t : ℂ)) volume 0 1 := by
-  have hcont : ContinuousOn (fun t : ℝ ↦ deriv (polylog (n + 1)) ((t : ℂ) * z) * z)
-      (uIcc 0 1) := by
-    refine (((analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
-      (Complex.continuous_ofReal.mul continuous_const).continuousOn ?_).mul continuousOn_const)
-    intro t ht
-    rw [uIcc_of_le zero_le_one] at ht
-    exact one_sub_ofReal_mul_mem_slitPlane hz ht
-  refine hcont.intervalIntegrable.congr_ae ?_
+  refine (continuousOn_deriv_polylog_mul (n + 1) hz).intervalIntegrable.congr_ae ?_
   filter_upwards [ae_restrict_mem measurableSet_uIoc] with t ht
-  rw [uIoc_of_le zero_le_one] at ht
-  have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.1.ne'
-  have hslit : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
-    one_sub_ofReal_mul_mem_slitPlane hz (Ioc_subset_Icc_self ht)
-  rw [← mul_deriv_polylog_add_one n hslit]
-  field_simp [htc]
+  exact deriv_polylog_add_one_ofReal_mul_eq_div n hz ht
 
 /-- Recursive radial-integral identity: for every `n : ℤ` and `z` in the principal domain
 `{z | 1 - z ∈ slitPlane}`, `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t`. -/
@@ -278,36 +309,45 @@ theorem polylog_add_one_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.
         (deriv (polylog (n + 1)) ((t : ℂ) * z) * z) t := by
     intro t ht
     rw [uIcc_of_le zero_le_one] at ht
-    have hslit : 1 - (t : ℂ) * z ∈ Complex.slitPlane := one_sub_ofReal_mul_mem_slitPlane hz ht
+    have hslit : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+      mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
     have hlin : HasDerivAt (fun s : ℝ ↦ (s : ℂ) * z) (1 * z) t :=
       (Complex.ofRealCLM.hasDerivAt).mul_const z
     rw [one_mul] at hlin
     exact (differentiableAt_polylog (n + 1) hslit).hasDerivAt.comp t hlin
-  have hint : IntervalIntegrable
-      (fun t : ℝ ↦ deriv (polylog (n + 1)) ((t : ℂ) * z) * z) volume 0 1 := by
-    refine (((analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
-      (Complex.continuous_ofReal.mul continuous_const).continuousOn ?_).mul
-      continuousOn_const).intervalIntegrable
-    intro t ht
-    rw [uIcc_of_le zero_le_one] at ht
-    exact one_sub_ofReal_mul_mem_slitPlane hz ht
-  have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint
+  have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
+    (continuousOn_deriv_polylog_mul (n + 1) hz).intervalIntegrable
   simp only [Complex.ofReal_one, one_mul, Complex.ofReal_zero, zero_mul, polylog_zero,
     sub_zero] at hftc
   rw [← hftc]
-  refine intervalIntegral.integral_congr_ae ?_
-  refine ae_of_all _ fun t ht ↦ ?_
-  rw [uIoc_of_le zero_le_one] at ht
-  have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.1.ne'
-  have hslit : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
-    one_sub_ofReal_mul_mem_slitPlane hz (Ioc_subset_Icc_self ht)
-  rw [← mul_deriv_polylog_add_one n hslit]
-  field_simp [htc]
+  exact intervalIntegral.integral_congr_ae
+    (ae_of_all _ fun t ht ↦ deriv_polylog_add_one_ofReal_mul_eq_div n hz ht)
 
-/-- On the open branch cut `(1, ∞)`, `polylog 1` is discontinuous: approaching `x > 1` from the
-upper half-plane gives imaginary part `+π`, whereas the totalised principal value has imaginary
-part `-π`. -/
-theorem not_continuousAt_polylog_one_of_one_lt {x : ℝ} (hx : 1 < x) :
+/-- Unshifted recursive radial-integral identity: for every `n : ℤ` and `z` in the principal domain
+`{z | 1 - z ∈ slitPlane}`, `polylog n z = ∫ t in 0..1, polylog (n - 1) (t * z) / t`. -/
+theorem polylog_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
+    polylog n z = ∫ t : ℝ in 0..1, polylog (n - 1) ((t : ℂ) * z) / (t : ℂ) := by
+  simpa using polylog_add_one_eq_integral (n - 1) hz
+
+/-- `polylog 1` is discontinuous at its logarithmic branch point `1`. -/
+private lemma not_continuousAt_polylog_one_one : ¬ ContinuousAt (polylog 1) 1 := by
+  intro hc
+  have hlim1 : Tendsto (fun w : ℂ ↦ Complex.exp (-polylog 1 w)) (𝓝[≠] 1) (𝓝 1) := by
+    have hcont : ContinuousAt (fun w : ℂ ↦ Complex.exp (-polylog 1 w)) 1 :=
+      Complex.continuous_exp.continuousAt.comp hc.neg
+    simpa [polylog_one] using hcont.tendsto.mono_left nhdsWithin_le_nhds
+  have hlim0 : Tendsto (fun w : ℂ ↦ Complex.exp (-polylog 1 w)) (𝓝[≠] 1) (𝓝 0) := by
+    have hsub : Tendsto (fun w : ℂ ↦ 1 - w) (𝓝[≠] (1 : ℂ)) (𝓝 (1 - 1)) :=
+      (tendsto_const_nhds.sub tendsto_id).mono_left nhdsWithin_le_nhds
+    rw [sub_self] at hsub
+    refine hsub.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with w hw
+    have hw' : 1 - w ≠ 0 := sub_ne_zero.2 (Ne.symm hw)
+    simp [polylog_one, Complex.exp_log hw']
+  exact one_ne_zero (tendsto_nhds_unique hlim1 hlim0)
+
+/-- On the open branch cut `(1, ∞)`, `polylog 1` has a `2πi` jump discontinuity. -/
+private lemma not_continuousAt_polylog_one_of_one_lt {x : ℝ} (hx : 1 < x) :
     ¬ ContinuousAt (polylog 1) (x : ℂ) := by
   intro hc
   set w : ℂ := 1 - (x : ℂ) with hw_def
@@ -341,14 +381,34 @@ theorem not_continuousAt_polylog_one_of_one_lt {x : ℝ} (hx : 1 < x) :
     neg_neg] at him
   linarith [Real.pi_pos]
 
+/-- Along the closed branch cut `[1, ∞)`, `polylog 1` is everywhere discontinuous: it has a
+logarithmic singularity at `1` and a `2πi` jump across `(1, ∞)`. -/
+theorem not_continuousAt_polylog_one_of_one_le {x : ℝ} (hx : 1 ≤ x) :
+    ¬ ContinuousAt (polylog 1) (x : ℂ) := by
+  rcases hx.eq_or_lt with rfl | hx'
+  · simpa using not_continuousAt_polylog_one_one
+  · exact not_continuousAt_polylog_one_of_one_lt hx'
+
+/-- `polylog 1` is continuous at `z` if and only if `z` lies in the principal domain
+`{z : ℂ | 1 - z ∈ Complex.slitPlane}`. -/
+theorem continuousAt_polylog_one_iff {z : ℂ} :
+    ContinuousAt (polylog 1) z ↔ 1 - z ∈ Complex.slitPlane := by
+  refine ⟨fun hc ↦ by_contra fun hz ↦ ?_, continuousAt_polylog 1⟩
+  rw [Complex.mem_slitPlane_iff, not_or, not_lt, not_ne_iff] at hz
+  have hzim : z.im = 0 := by simpa using hz.2
+  have hzre : 1 ≤ z.re := by simpa using hz.1
+  have hzeq : (z.re : ℂ) = z := Complex.ext rfl hzim.symm
+  exact not_continuousAt_polylog_one_of_one_le hzre (hzeq ▸ hc)
+
+/-- `polylog 1` is complex analytic at `z` if and only if `z` lies in the principal domain
+`{z : ℂ | 1 - z ∈ Complex.slitPlane}`. -/
+theorem analyticAt_polylog_one_iff {z : ℂ} :
+    AnalyticAt ℂ (polylog 1) z ↔ 1 - z ∈ Complex.slitPlane :=
+  ⟨fun ha ↦ continuousAt_polylog_one_iff.1 ha.continuousAt, analyticAt_polylog 1⟩
+
 /-- In particular, `polylog 1` is not continuous at `3`, showing that `analyticOnNhd_polylog`
 cannot extend across the branch cut `[1, ∞)`. -/
 theorem not_continuousAt_polylog_one_three : ¬ ContinuousAt (polylog 1) 3 := by
-  simpa using not_continuousAt_polylog_one_of_one_lt (x := 3) (by norm_num)
-
-/-- No nonpositive-weight polylogarithm is complex analytic at its pole `1`. -/
-theorem not_analyticAt_polylog_neg_nat_one (r : ℕ) :
-    ¬ AnalyticAt ℂ (polylog (-(r : ℤ))) 1 :=
-  fun ha ↦ not_continuousAt_polylog_neg_nat_one r ha.continuousAt
+  simpa using not_continuousAt_polylog_one_of_one_le (x := 3) (by norm_num)
 
 end TauCeti.Polylog
