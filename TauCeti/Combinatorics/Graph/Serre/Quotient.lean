@@ -123,7 +123,7 @@ theorem quotientMap_mapE_eq_iff {e f : Γ.E} :
 /-- The projection onto the quotient graph is invariant under the action. -/
 @[simp] theorem quotientMap_comp_toHom (g : G) :
     Hom.comp (Γ.quotientMap φ hφ) (φ g).toHom = Γ.quotientMap φ hφ := by
-  ext <;> simp
+  ext <;> simp [← Aut.smul_vertex_def, ← Aut.smul_dart_def]
 
 variable (Γ φ hφ) in
 /-- Every vertex of the quotient graph is the orbit of a vertex. -/
@@ -270,9 +270,9 @@ morphism out of the quotient graph. -/
 def quotientLift (f : Γ.Hom Δ) (hf : ∀ g : G, Hom.comp f (φ g).toHom = f) :
     (Γ.quotient φ hφ).Hom Δ where
   mapV := quotientLiftV hφ f.mapV fun g a => by
-    simpa using congrArg (fun k : Γ.Hom Δ => k.mapV a) (hf g)
+    simpa [Aut.smul_vertex_def] using congrArg (fun k : Γ.Hom Δ => k.mapV a) (hf g)
   mapE := quotientLiftE hφ f.mapE fun g e => by
-    simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) (hf g)
+    simpa [Aut.smul_dart_def] using congrArg (fun k : Γ.Hom Δ => k.mapE e) (hf g)
   map_src y := by
     obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective Γ φ hφ y
     simp

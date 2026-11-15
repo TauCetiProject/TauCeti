@@ -72,6 +72,8 @@ universe u
 
 namespace TauCeti
 
+attribute [local instance] sigmaDiskRelCWComplex
+
 section Comparison
 
 variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
@@ -88,13 +90,11 @@ private theorem exists_homotopyEquiv_sigmaDiskAdjunctionSpace_of_leftInverse
     {g : C({x | f x ≤ c + ε}, morseCellAttachment φ k hk hε hball hf)}
     (hg : LeftInverse g (morseCellComparison φ k hk hε hball hf))
     (hΦ : ((morseCellComparison φ k hk hε hball hf).hom.comp g).Homotopic (ContinuousMap.id _)) :
-    letI := sigmaDiskRelCWComplex k
     ∃ e : relCWAdjunctionSpace (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (k i))))
         (sigmaDiskAttachingMap fun i ↦ ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i)).hom) ≃ₕ
         {x | f x ≤ c + ε},
       ∀ z, (e (pushout.inr (relCWBaseInclusion _) (TopCat.ofHom (sigmaDiskAttachingMap
         fun i ↦ ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i)).hom)) z) : M) = z := by
-  let := sigmaDiskRelCWComplex k
   set Φ := morseCellComparison φ k hk hε hball hf
   -- The adjunction space is the pushout defining the cell attachment, compatibly with the
   -- inclusions of `M_{c-ε}`.
@@ -144,8 +144,6 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
             f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2),
           ∃ r : C({x | f x ≤ c - ε}, {x | f x ≤ a}),
             (∀ x : {x | f x ≤ c - ε}, f x ≤ a → (r x : M) = x) ∧
-            letI := sigmaDiskRelCWComplex fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
-              manifoldMorseIndex I f p
             ∃ e : relCWAdjunctionSpace (univ.sigma fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
                   (univ : Set (TopCat.disk.{u} (manifoldMorseIndex I f p))))
                 (sigmaDiskAttachingMap fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦ r.comp
@@ -180,7 +178,6 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
     rw [show sublevelInclusion f a (c - ε) hεa ⟨x, hx⟩ = x from
       Subtype.ext (coe_sublevelInclusion_apply f hεa _)] at h
     rw [h]
-  let := sigmaDiskRelCWComplex k
   set α := fun p ↦ ((ψ p).toOpenPartialHomeomorph.morseAttachingMap manifoldMorseIndex_le_finrank
     hε.le (hball p) (hψ p)).hom
   -- Attaching the cells to `M_{c-ε}` gives a space homotopy equivalent to `M_{c+ε}`.

@@ -555,12 +555,12 @@ instance superellipticCurve.instPathConnectedSpace : PathConnectedSpace superell
 /-- **The deck group of the superelliptic curve is the group of fourth roots of unity**, acting by
 `y ↦ ζ y` (`superellipticDeckMulEquiv_apply`). -/
 def superellipticDeckMulEquiv : rootsOfUnity 4 ℂ ≃* deck superellipticProj :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv isQuotientCoveringMap_superellipticProj
+  isQuotientCoveringMap_superellipticProj.deckMulEquiv
 
 @[simp]
 theorem superellipticDeckMulEquiv_apply (ζ : rootsOfUnity 4 ℂ) (q : superellipticCurve) :
     (superellipticDeckMulEquiv ζ).1 q = ζ • q :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_apply _ ζ q
+  isQuotientCoveringMap_superellipticProj.deckMulEquiv_apply ζ q
 
 /-- The deck group of the superelliptic curve is cyclic. -/
 instance isCyclic_deck_superellipticProj : IsCyclic (deck superellipticProj) :=

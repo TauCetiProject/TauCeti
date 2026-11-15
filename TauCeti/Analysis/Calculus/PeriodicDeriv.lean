@@ -42,6 +42,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   the Fréchet derivative.
 * `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
   translations along a vector `v` has derivative vanishing on `v`.
+* `TauCeti.fderiv_add_snd_of_periodic_snd`: a map on a product of period `c` in the second
+  coordinate has a Fréchet derivative of period `c` in it.
 -/
 
 public section
@@ -104,6 +106,16 @@ theorem fderiv_apply_eq_zero_of_forall_periodic_smul {E F : Type*} [NormedAddCom
     [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {v : E}
     (h : ∀ τ : ℝ, Function.Periodic f (τ • v)) (x : E) : fderiv ℝ f x v = 0 :=
   fderiv_apply_eq_zero_of_apply_add_smul_neg v fun τ ↦ (h τ x).trans (h (-τ) x).symm
+
+/-- A map on a product of period `c` in the second coordinate has a Fréchet derivative of period
+`c` in it. This is `Function.Periodic.fderiv` for the period `(0, c)`. -/
+theorem fderiv_add_snd_of_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F}
+    (hf : ∀ x y, f (x, y + c) = f (x, y)) (x : E) (y : F) :
+    fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
+  have hp : Function.Periodic f (0, c) := fun ⟨p, q⟩ ↦ by simpa using hf p q
+  simpa using hp.fderiv (x, y)
 
 end TauCeti
 

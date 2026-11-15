@@ -51,7 +51,7 @@ noncomputable section
 
 open Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   NumberField.Units TauCeti.NumberField.mixedEmbedding Set
-open scoped Topology
+open scoped Pointwise Topology
 
 namespace TauCeti.LFunctions
 

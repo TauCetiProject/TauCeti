@@ -154,6 +154,14 @@ theorem ofDart_def {a b : Γ.V} (e : a ⟶ b) :
     ofDart (𝔸 := 𝔸) e = Quiver.Hom.toPath (Letter.dart e) :=
   (rfl)
 
+theorem ofVertex_eq_nil_cons {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    ofVertex g = Quiver.Path.nil.cons (Letter.vertex g) :=
+  (rfl)
+
+theorem ofDart_eq_nil_cons {a b : Γ.V} (e : a ⟶ b) :
+    ofDart (𝔸 := 𝔸) e = Quiver.Path.nil.cons (Letter.dart e) :=
+  (rfl)
+
 @[simp] theorem comp_ofVertex {x : 𝔸.LetterVertex} {a : Γ.V} (p : 𝔸.Path x ⟨a⟩)
     (g : 𝔸.vertexGroup a) : p.comp (ofVertex g) = p.cons (Letter.vertex g) :=
   Quiver.Path.comp_toPath_eq_cons ..
@@ -240,6 +248,19 @@ theorem cons_cons_reverse (p : 𝔸.Path x y) (l : 𝔸.Letter y z) :
     rw [mul_inv_cancel]
     exact .one p
   | dart e => exact .dart_reverse p e
+
+/-- Moving an edge group element across a dart `e : b ⟶ c` of the quiver of `Γ`:
+`e, ω_e(c) ~ α_e(c), e`. -/
+theorem dart_ωArrow {b c : Γ.V} (p : 𝔸.Path x ⟨b⟩) (e : b ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    Homotopic ((p.cons (Letter.dart e)).cons (Letter.vertex (𝔸.ωArrow e c₀)))
+      ((p.cons (Letter.vertex (𝔸.αArrow e c₀))).cons (Letter.dart e)) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  simpa [Γ.dart_def] using Homotopic.dart_ω e c₀ p
+
+/-- The vertex group letter `1` is homotopic to the empty path. -/
+theorem ofVertex_one {a : Γ.V} : Homotopic (ofVertex (1 : 𝔸.vertexGroup a)) Quiver.Path.nil :=
+  .one .nil
 
 /-- A path followed by its reverse is homotopic to the empty path. -/
 theorem comp_reverse (p : 𝔸.Path x y) : Homotopic (p.comp p.reverse) Quiver.Path.nil := by
@@ -333,6 +354,9 @@ instance : Inv (π₁ 𝔸 a) where
 
 @[simp] theorem mk_nil : mk (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩) = 1 :=
   (rfl)
+
+@[simp] theorem mk_ofVertex_one : mk (Path.ofVertex (1 : 𝔸.vertexGroup a)) = 1 :=
+  mk_eq_mk_iff.2 Path.Homotopic.ofVertex_one
 
 @[simp] theorem mk_reverse (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk p.reverse = (mk p)⁻¹ :=
   (rfl)

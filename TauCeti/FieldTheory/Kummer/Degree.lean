@@ -330,7 +330,7 @@ private theorem algEquiv_ext_of_apply_div_self_eq {r : Δ → kummerField E n Δ
   have hpow := hy.trans (hr ⟨a, ha⟩).symm
   have hσ := σ.apply_div_self_eq_of_pow_eq hpow
   have hτ := τ.apply_div_self_eq_of_pow_eq hpow
-  rw [h, ← hτ, div_left_inj' (ne_zero_of_pow_eq_algebraMap hy)] at hσ
+  rw [h, ← hτ, div_left_inj₀ (ne_zero_of_pow_eq_algebraMap hy)] at hσ
   exact hσ
 
 /-- **The Galois group of `K(Δ^{1/n})/K` embeds in the characters of `Δ` modulo `n`-th powers**,
