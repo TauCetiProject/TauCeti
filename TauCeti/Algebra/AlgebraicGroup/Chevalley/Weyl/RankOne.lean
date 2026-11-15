@@ -48,50 +48,29 @@ theorem weylElement_conj_rootSubgroupPoints_self (α : Fin t.numRoots)
         (D.weylElement α A s)⁻¹ =
       D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A
         (Multiplicative.ofAdd (-(((s⁻¹ : Aˣ) : A) ^ 2 * u))) := by
-  -- Use the chosen root and its coroot as rank-one Kostant data on the same lattice.
-  let H : Unit → t.lieAlgebra ht := fun _ =>
-    ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
-      (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)
-  let W : Fin D.dim → Unit → ℤ := fun j _ =>
-    ∑ i, (t.simplyConnectedRootDatum ht).coroot α i * D.weight j i
-  let hM := fun z hz v hv => kostantForm_chevalleySystem_coroot_apply_mem
-    D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator α (u := z) hz (v := v) hv
-  have hwt j : IsCartanWeightVector H D.representation (W j) (D.basis j : D.carrier) := by
-    rw [isCartanWeightVector_iff]
-    exact fun _ => apply_ι_coroot_rootEquiv_of_isCartanWeightVector D.representation
-      (D.isCartanWeightVector_basis j) α
   have hT := (t.isSl2Triple_chevalleySystem ht α).map
     (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (by
       intro hz
       apply (t.isSl2Triple_chevalleySystem ht α).h_ne_zero
       apply D.injective_representation_ι
       simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hz)
-  have hα : ∀ q, ⁅H q, t.chevalleySystem ht α⁆ = ((fun _ : Unit => 2) q : ℚ) •
-      t.chevalleySystem ht α := fun _ =>
-    (t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ
-  have hneg : ∀ q, ⁅H q, t.chevalleySystem ht
-      ((t.simplyConnectedRootDatum ht).reflectionPerm α α)⁆ =
-      -(((fun _ : Unit => 2) q : ℚ) • t.chevalleySystem ht
-        ((t.simplyConnectedRootDatum ht).reflectionPerm α α)) := fun _ =>
-    (t.isSl2Triple_chevalleySystem ht α).lie_lie_smul_f ℚ
-  -- Changing the Cartan family does not change the divided-power root exponentials.
-  have hx (γ : Fin t.numRoots) (r : Multiplicative A) :
-      kostantRootSubgroupParam (t.chevalleySystem ht) H D.representation D.lattice hM
-        γ (isNilpotent_apply_ι_chevalleySystem D.representation
-          D.isNilpotent_representation_rootGenerator γ) (CommAlgCat.of ℤ A) r =
-      chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-        D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) r := by
-    refine Units.ext (LinearMap.ext fun z => ?_)
-    rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
+  -- The shared coroot adapters supply admissibility and the restricted basis weights.
   have h := kostantWeylParam_conj_kostantRootSubgroupParam_e
-    (t.chevalleySystem ht) H D.representation D.lattice hM
+    (t.chevalleySystem ht) _ D.representation D.lattice
+    (fun _ hz _ hv => kostantForm_chevalleySystem_coroot_apply_mem
+      D.representation D.lattice D.representation_mem_lattice
+      D.isNilpotent_representation_rootGenerator α hz hv)
     (isNilpotent_apply_ι_chevalleySystem D.representation
       D.isNilpotent_representation_rootGenerator α)
     (isNilpotent_apply_ι_chevalleySystem D.representation
-      D.isNilpotent_representation_rootGenerator _) D.basis W hwt (c := ()) hT hα hneg
+      D.isNilpotent_representation_rootGenerator _) D.basis _
+    (fun j => isCartanWeightVector_coroot_rootEquiv D.representation
+      (D.isCartanWeightVector_basis j) α) (c := ()) hT
+    (fun _ => (t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ)
+    (fun _ => (t.isSl2Triple_chevalleySystem ht α).lie_lie_smul_f ℚ)
     (CommAlgCat.of ℤ A) s u
-  simp only [kostantWeylParam_def, hx] at h
+  simp only [kostantWeylParam_def, kostantRootSubgroupParam_coroot_eq D.representation
+    D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator α] at h
   -- Transport the lattice identity through the weight-basis matrix map into datum points.
   apply Subtype.ext
   simp only [weylElement_def, Subgroup.coe_mul, Subgroup.coe_inv, coe_rootSubgroupPoints,
