@@ -27,8 +27,8 @@ three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among th
 Nested subsets `B ⊆ A` of a topological space `X` give the triple `TopTriple.ofSubset`, whose outer
 and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`. A continuous map
 carrying `A` into `A'` and `B` into `B'` induces a map of such triples,
-`TopTriple.ofSubsetMap`, whose outer and inner maps of pairs are `TopPair.ofSubsetMap` and
-`TopPair.ofInclusionMap`.
+`TopTriple.ofSubsetMap`, whose outer and total maps of pairs are `TopPair.ofSubsetMap` and whose
+inner map of pairs is `TopPair.ofInclusionMap`.
 -/
 
 @[expose] public section
@@ -186,6 +186,10 @@ variable {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u)
 
 end
 
+/-- The total pair of the triple `(X, A, B)` of nested subsets `B ⊆ A` of `X` is `(X, B)`. -/
+@[simp] lemma totalPair_obj_ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
+    totalPair.obj (ofSubset h) = TopPair.ofSubset B := rfl
+
 @[simp] lemma innerPair_map_fst (φ : T ⟶ T') :
     TopPair.Hom.fst (innerPair.map φ) = homSnd φ := rfl
 
@@ -245,7 +249,6 @@ lemma totalToOuter_app_ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
   · exact Subtype.ext (TopPair.ofSubsetMap_snd_apply (𝟙 X) _ x).symm
   · exact (TopPair.ofSubsetMap_fst_apply _ _ x).symm
 
-
 section ofSubsetMap
 
 variable {X Y : TopCat.{u}} (g : X ⟶ Y) {A B : Set X} {A' B' : Set Y} (h : B ⊆ A) (h' : B' ⊆ A')
@@ -261,6 +264,12 @@ def ofSubsetMap : ofSubset h ⟶ ofSubset h' :=
 @[simp]
 lemma outerPair_map_ofSubsetMap :
     outerPair.map (ofSubsetMap g h h' hA hB) = TopPair.ofSubsetMap g hA :=
+  TopPair.hom_ext_of_fst _ (TopPair.ofSubsetMap_fst _ _).symm
+
+/-- The map of total pairs `(X, B) ⟶ (Y, B')` of `TopTriple.ofSubsetMap` is induced by `g`. -/
+@[simp]
+lemma totalPair_map_ofSubsetMap :
+    totalPair.map (ofSubsetMap g h h' hA hB) = TopPair.ofSubsetMap g hB :=
   TopPair.hom_ext_of_fst _ (TopPair.ofSubsetMap_fst _ _).symm
 
 /-- The map of inner pairs `(A, B) ⟶ (A', B')` of `TopTriple.ofSubsetMap` is the restriction of

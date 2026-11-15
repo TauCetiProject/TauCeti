@@ -37,6 +37,8 @@ one, are fundamental classes in this sense.
 * `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with the
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
+* `TauCeti.span_singularHomologyToLocalHomology_eq_top_iff`: for a subspace `A ⊆ X`, the local
+  homology of `A` at a point may be read in the pair `A ∖ {a} ⊆ A` of subsets of `X`.
 * `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
 * `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
   the zero class of `Hₙ(M; N)` is not fundamental.
@@ -121,6 +123,46 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
     (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)) :
     IsFundamentalClass μ ↔ ∀ x : M, IsUnit (e x (singularHomologyToLocalHomology N x n μ)) :=
   forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
+
+/-- **Local homology of a subspace.** At a point `a` of a subspace `A ⊆ X`, a class of `Hₙ(A; N)`
+generates the local homology `Hₙ(A, A ∖ {a}; N)` of `A` exactly when its image in the relative
+homology of the pair `A ∖ {a} ⊆ A` of subsets of `X` generates that module: the identity of `A`
+is an isomorphism between the two pairs. -/
+theorem span_singularHomologyToLocalHomology_eq_top_iff {X : Type w} [TopologicalSpace X]
+    {A : Set X} (a : A)
+    (μ : ((TopCat.toSSet.obj (TopCat.of A)).homology N n : ModuleCat.{w} R)) :
+    Submodule.span R {singularHomologyToLocalHomology N a n μ} = ⊤ ↔
+      Submodule.span R {(TopPair.ofInclusion (X := TopCat.of X)
+        (sdiff_subset : A \ {(a : X)} ⊆ A)).singularHomologyπ N n μ} = ⊤ := by
+  -- The identity of `A`, as a map of pairs from `(A, A ∖ {a})` read in `A` to the same pair of
+  -- subsets of `X`, is an isomorphism.
+  let ψ : TopPair.ofSubset ({a}ᶜ : Set (TopCat.of A)) ⟶
+      TopPair.ofInclusion (X := TopCat.of X) (sdiff_subset : A \ {(a : X)} ⊆ A) :=
+    TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun z ↦ ⟨z.1.1, z.1.2, fun h ↦ z.2 (Subtype.ext h)⟩,
+      by fun_prop⟩) (by ext; rfl)
+  have : IsIso ψ := by
+    have : IsIso (TopPair.Hom.fst ψ) := inferInstanceAs (IsIso (𝟙 _))
+    exact TopPair.isIso_of_isIso_fst_of_surjective_snd ψ fun w ↦
+      ⟨⟨⟨w.1, w.2.1⟩, fun h ↦ w.2.2 (congrArg Subtype.val h)⟩, rfl⟩
+  have : IsIso (TopPair.singularHomologyMap ψ N n) :=
+    ⟨⟨TopPair.singularHomologyMap (inv ψ) N n,
+      by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
+      by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩⟩
+  -- On the ambient space `A`, the map `ψ` is the identity.
+  have hid : SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst ψ)) N n = 𝟙 _ :=
+    (congrArg (SSet.homologyMap · _ n) (TopCat.toSSet.map_id _)).trans (SSet.homologyMap_id _ _ n)
+  have hnat := TopPair.singularHomologyπ_naturality ψ N n
+  rw [hid] at hnat
+  have hres : (TopPair.ofSubset ((univ : Set (TopCat.of A)))ᶜ).singularHomologyπ N n ≫
+      localHomologyRestriction N (subset_univ {a}) n =
+      (TopPair.ofSubset ({a}ᶜ : Set (TopCat.of A))).singularHomologyπ N n := by
+    rw [localHomologyRestriction_def]
+    exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _ _ n
+  rw [← (asIso (TopPair.singularHomologyMap ψ N n)).toLinearEquiv
+    |>.span_singleton_apply_eq_top_iff]
+  refine Eq.congr_left (congrArg (fun v ↦ Submodule.span R {v}) ?_)
+  exact (congrArg _ ((singularHomologyToLocalHomology_apply _ _ _).trans
+    (ConcreteCategory.congr_hom hres _))).trans (ConcreteCategory.congr_hom hnat μ).symm
 
 end Definition
 

@@ -91,15 +91,6 @@ private def tube (c : N × Ico (0 : ℝ) 1 → X) (y : N) : Set X :=
 private def slit (c : N × Ico (0 : ℝ) 1 → X) (y : N) : Set X :=
   c '' {q | q.1 ≠ y}
 
-/-- Scaling the collar parameter by `τ ∈ [0, 1]`. -/
-private def scale (τ : unitInterval) (t : Ico (0 : ℝ) 1) : Ico (0 : ℝ) 1 :=
-  ⟨τ * t, mul_nonneg τ.2.1 t.2.1, (mul_le_of_le_one_left t.2.1 τ.2.2).trans_lt t.2.2⟩
-
-private lemma continuous_scale :
-    Continuous fun q : unitInterval × Ico (0 : ℝ) 1 ↦ scale q.1 q.2 :=
-  ((continuous_subtype_val.comp continuous_fst).mul
-    (continuous_subtype_val.comp continuous_snd)).subtype_mk _
-
 /-- Raising the collar parameter to at least `3τ/4`, for `τ ∈ [0, 1]`. -/
 private def raise (τ : unitInterval) (t : Ico (0 : ℝ) 1) : Ico (0 : ℝ) 1 :=
   ⟨max t (τ * (3 / 4)), le_max_of_le_left t.2.1,
@@ -194,15 +185,16 @@ private lemma mem_slit_of_mem_tube {x : X} (hx : x ∈ tube c y) (hx' : x ∉ se
 
 /-! ### Collar coordinates on the tube -/
 
-omit [TopologicalSpace X] [TopologicalSpace N] hc in
-private lemma tube_subset_collarPart : tube c y ⊆ collarPart c 1 := by
+omit [TopologicalSpace X] [TopologicalSpace N] hc y in
+/-- Every image under the collar, such as the tube or the segment, lies in the collar of depth
+less than `1`. -/
+private lemma image_subset_collarPart (s : Set (N × Ico (0 : ℝ) 1)) : c '' s ⊆ collarPart c 1 := by
   rintro _ ⟨q, -, rfl⟩
   exact mem_collarPart_iff.2 ⟨q, q.2.2.2, rfl⟩
 
 omit [TopologicalSpace X] [TopologicalSpace N] hc in
-private lemma segment_subset_collarPart : segment c y ⊆ collarPart c 1 := by
-  rintro _ ⟨q, -, rfl⟩
-  exact mem_collarPart_iff.2 ⟨q, q.2.2.2, rfl⟩
+private lemma tube_subset_collarPart : tube c y ⊆ collarPart c 1 :=
+  image_subset_collarPart _
 
 /-- The collar coordinates of a point of the tube. -/
 private def tubeCoord : C(tube c y, N × Ico (0 : ℝ) 1) :=
@@ -220,46 +212,54 @@ private lemma tubeCoord_mem (b : tube c y) :
 private def tubeRetraction : C(tube c y, range f) :=
   (hc.collarRetraction 1).comp (ContinuousMap.inclusion (tube_subset_collarPart y))
 
-private lemma scale_mem_tube (τ : unitInterval) (b : tube c y) :
-    c ((tubeCoord hc y b).1, scale τ (tubeCoord hc y b).2) ∈ tube c y := by
-  rw [mem_tube_iff hc]
+/-- The deformation of the collar onto the boundary keeps the tube inside the tube. -/
+private lemma collarDeformation_mem_tube (τ : unitInterval) (b : tube c y) :
+    (hc.collarDeformation one_pos (τ, ContinuousMap.inclusion (tube_subset_collarPart y) b) : X) ∈
+      tube c y := by
+  rw [← hc.apply_collarCoord (hc.collarDeformation one_pos _), mem_tube_iff hc,
+    hc.collarCoord_collarDeformation_fst, hc.coe_collarCoord_collarDeformation_snd]
   refine (tubeCoord_mem hc y b).imp id fun h ↦ ?_
   exact (mul_le_of_le_one_left (tubeCoord hc y b).2.2.1 τ.2.2).trans_lt h
 
-private lemma continuous_scale_tube :
-    Continuous fun q : unitInterval × tube c y ↦
-      c ((tubeCoord hc y q.2).1, scale q.1 (tubeCoord hc y q.2).2) :=
-  hc.isOpenEmbedding.continuous.comp
-    ((continuous_fst.comp ((tubeCoord hc y).continuous.comp continuous_snd)).prodMk
-      (continuous_scale.comp (continuous_fst.prodMk
-        (continuous_snd.comp ((tubeCoord hc y).continuous.comp continuous_snd)))))
-
-/-- Scaling the collar parameter to `0` deforms the tube onto the boundary `f(N)`. -/
+/-- Scaling the collar parameter to `0` deforms the tube onto the boundary `f(N)`: the restriction
+of the deformation `IsCollar.collarDeformation` of the collar. -/
 private def tubeHomotopy :
     ((ContinuousMap.inclusion (range_subset_tube hc y)).comp (tubeRetraction hc y)).Homotopy
       (ContinuousMap.id (tube c y)) where
-  toFun q := ⟨c ((tubeCoord hc y q.2).1, scale q.1 (tubeCoord hc y q.2).2),
-    scale_mem_tube hc y q.1 q.2⟩
-  continuous_toFun := (continuous_scale_tube hc y).subtype_mk _
-  map_zero_left b := Subtype.ext <|
-    (congrArg (fun t ↦ c ((tubeCoord hc y b).1, t)) (Subtype.ext (zero_mul _))).trans
-      ((hc.apply_zero _).trans (hc.coe_collarRetraction _).symm)
-  map_one_left b := Subtype.ext <|
-    (congrArg (fun t ↦ c ((tubeCoord hc y b).1, t)) (Subtype.ext (one_mul _))).trans
-      (apply_tubeCoord hc y b)
+  toFun q := ⟨hc.collarDeformation one_pos (q.1, ContinuousMap.inclusion (tube_subset_collarPart y)
+    q.2), collarDeformation_mem_tube hc y q.1 q.2⟩
+  continuous_toFun := (continuous_subtype_val.comp ((hc.collarDeformation one_pos).continuous.comp
+    (continuous_fst.prodMk ((ContinuousMap.inclusion _).continuous.comp
+      continuous_snd)))).subtype_mk _
+  map_zero_left b := Subtype.ext (congrArg Subtype.val
+    ((hc.collarDeformation one_pos).apply_zero (ContinuousMap.inclusion _ b)) :)
+  map_one_left b := Subtype.ext (congrArg Subtype.val
+    ((hc.collarDeformation one_pos).apply_one (ContinuousMap.inclusion _ b)) :)
+
+private lemma coe_tubeHomotopy_apply (q : unitInterval × tube c y) :
+    (tubeHomotopy hc y q : X) =
+      hc.collarDeformation one_pos (q.1, ContinuousMap.inclusion (tube_subset_collarPart y) q.2) :=
+  rfl
 
 omit [TopologicalSpace X] [TopologicalSpace N] hc y in
 private lemma raise_zero (t : Ico (0 : ℝ) 1) : raise 0 t = t :=
   Subtype.ext (max_eq_left (by simpa using t.2.1))
 
+omit y in
+/-- Raising the collar parameter to at least `3τ/4` at time `τ ∈ [0, 1]`, on the collar. -/
+private def raiseFamily : C(unitInterval × collarPart c 1, collarPart c 1) :=
+  ⟨fun q ↦ ⟨c ((hc.collarCoord 1 q.2).1, raise q.1 (hc.collarCoord 1 q.2).2),
+    mem_collarPart_iff.2 ⟨_, (raise _ _).2.2, rfl⟩⟩,
+    by
+      have h : Continuous fun q : unitInterval × collarPart c 1 ↦ hc.collarCoord 1 q.2 :=
+        (map_continuous _).comp continuous_snd
+      exact (hc.isOpenEmbedding.continuous.comp (h.fst.prodMk
+        (continuous_raise.comp (continuous_fst.prodMk h.snd)))).subtype_mk _⟩
+
+omit y in
 /-- Raising the collar parameter to at least `3/4`, on the collar. -/
 private def raiseMap : C(collarPart c 1, collarPart c 1) :=
-  ⟨fun u ↦ ⟨c ((hc.collarCoord 1 u).1, raise 1 (hc.collarCoord 1 u).2),
-    mem_collarPart_iff.2 ⟨_, (raise _ _).2.2, rfl⟩⟩,
-    (hc.isOpenEmbedding.continuous.comp
-      ((continuous_fst.comp (hc.collarCoord 1).continuous).prodMk
-        (continuous_raise.comp (continuous_const.prodMk
-          (continuous_snd.comp (hc.collarCoord 1).continuous))))).subtype_mk _⟩
+  (raiseFamily hc).curry 1
 
 omit y in
 private lemma coe_raiseMap (u : collarPart c 1) :
@@ -268,12 +268,8 @@ private lemma coe_raiseMap (u : collarPart c 1) :
 
 /-- Raising the collar parameter past `1/2` moves the collar off the segment. -/
 private def raiseHomotopy : (ContinuousMap.id (collarPart c 1)).Homotopy (raiseMap hc) where
-  toFun q := ⟨c ((hc.collarCoord 1 q.2).1, raise q.1 (hc.collarCoord 1 q.2).2),
-    mem_collarPart_iff.2 ⟨_, (raise _ _).2.2, rfl⟩⟩
-  continuous_toFun := (hc.isOpenEmbedding.continuous.comp
-    ((continuous_fst.comp ((hc.collarCoord 1).continuous.comp continuous_snd)).prodMk
-      (continuous_raise.comp (continuous_fst.prodMk
-        (continuous_snd.comp ((hc.collarCoord 1).continuous.comp continuous_snd)))))).subtype_mk _
+  toFun := raiseFamily hc
+  continuous_toFun := (raiseFamily hc).continuous
   map_zero_left u := by
     refine Subtype.ext ?_
     rw [ContinuousMap.id_apply, ← hc.apply_collarCoord u]
@@ -328,7 +324,9 @@ private lemma isIso_singularHomologyMap_tube {A : Set X} (hA : A = range f) {b :
   · erw [← TopPair.ofInclusionMap_comp, ← TopPair.ofInclusionMap_id]
     refine TopPair.ofInclusionHomotopy (tubeHomotopy hc y) fun τ b hb ↦ ?_
     rw [← apply_tubeCoord hc y b, mem_slit_iff hc] at hb
-    exact (mem_slit_iff hc y _).2 hb
+    rw [coe_tubeHomotopy_apply, ← hc.apply_collarCoord (hc.collarDeformation one_pos _),
+      mem_slit_iff hc, hc.collarCoord_collarDeformation_fst]
+    exact hb
 
 /-- **The complement of the segment carries the homology of `X`.** Raising the collar parameter
 past `1/2` deforms the collar off the segment `L`, so `H_*(X, X ∖ L) = 0`; by excision this is
@@ -336,7 +334,7 @@ computed in the image of the collar. -/
 private lemma isZero_singularHomology_compl_segment [T2Space X] (k : ℕ) :
     IsZero ((TopPair.ofSubset ((segment c y)ᶜ : Set (TopCat.of X))).singularHomology R k) := by
   have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R (X := TopCat.of X)
-    (hc.isOpen_collarPart 1) (isClosed_segment hc y) (segment_subset_collarPart y) k
+    (hc.isOpen_collarPart 1) (isClosed_segment hc y) (image_subset_collarPart _) k
   refine IsZero.of_iso ?_ (asIso (TopPair.singularHomologyMap
     (TopPair.excisionMap (X := TopCat.of X) (collarPart c 1) (segment c y)ᶜ) R k)).symm
   have hmem (τ : unitInterval) (u : collarPart c 1) (hu : (u : X) ∉ segment c y) :
@@ -433,61 +431,13 @@ private lemma isIso_singularHomologyδ_compl_segment [T2Space X] {p : X} (hp : c
     {n m : ℕ} (hm : m + 1 = n) :
     IsIso ((TopTriple.ofSubset (X := TopCat.of X)
       (compl_segment_subset_compl_singleton hc y hp)).singularHomologyδ R n m hm) := by
-  have hpair : TopTriple.totalPair.obj (TopTriple.ofSubset (X := TopCat.of X)
-      (compl_segment_subset_compl_singleton hc y hp)) =
-      TopPair.ofSubset ((segment c y)ᶜ : Set (TopCat.of X)) := rfl
   refine TopTriple.isIso_singularHomologyδ_of_isZero _ R n m ?_ ?_ hm
-  · rw [hpair]
+  · rw [TopTriple.totalPair_obj_ofSubset]
     exact isZero_singularHomology_compl_segment hc y R n
-  · rw [hpair]
+  · rw [TopTriple.totalPair_obj_ofSubset]
     exact isZero_singularHomology_compl_segment hc y R m
 
 end Homology
-
-/-! ### The local homology of the boundary -/
-
-/-- At a point `a` of a subspace `A ⊆ X`, a class of `Hₘ(A; ℤ)` generates the local homology of `A`
-at `a` exactly when its image in `Hₘ(A, A ∖ {a}; ℤ)`, for the subsets `A ∖ {a} ⊆ A` of `X`,
-generates it: the two pairs are the same subspaces of `A`. -/
-private lemma span_singularHomologyToLocalHomology_iff {X : Type} [TopologicalSpace X] {A : Set X}
-    (a : A) (m : ℕ)
-    (μ : ((TopCat.toSSet.obj (TopCat.of A)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) m :
-      ModuleCat.{0} ℤ)) :
-    Submodule.span ℤ {singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) a m μ} = ⊤ ↔
-      Submodule.span ℤ (singleton ((TopPair.ofInclusion (X := TopCat.of X)
-        (sdiff_subset : A \ {(a : X)} ⊆ A)).singularHomologyπ (ModuleCat.of ℤ (ULift.{0} ℤ)) m
-          μ)) = ⊤ := by
-  -- The identity of `A`, as a map of pairs from `(A, A ∖ {a})` read in `A` to the same pair of
-  -- subsets of `X`, is an isomorphism.
-  let ψ : TopPair.ofSubset ({a}ᶜ : Set (TopCat.of A)) ⟶
-      TopPair.ofInclusion (X := TopCat.of X) (sdiff_subset : A \ {(a : X)} ⊆ A) :=
-    TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun z ↦ ⟨z.1.1, z.1.2, fun h ↦ z.2 (Subtype.ext h)⟩,
-      by fun_prop⟩) (by ext; rfl)
-  have : IsIso ψ := by
-    have : IsIso (TopPair.Hom.fst ψ) := inferInstanceAs (IsIso (𝟙 _))
-    exact TopPair.isIso_of_isIso_fst_of_surjective_snd ψ fun w ↦
-      ⟨⟨⟨w.1, w.2.1⟩, fun h ↦ w.2.2 (congrArg Subtype.val h)⟩, rfl⟩
-  have : IsIso (TopPair.singularHomologyMap ψ (ModuleCat.of ℤ (ULift.{0} ℤ)) m) :=
-    ⟨⟨TopPair.singularHomologyMap (inv ψ) (ModuleCat.of ℤ (ULift.{0} ℤ)) m,
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩⟩
-  have hnat := TopPair.singularHomologyπ_naturality ψ (ModuleCat.of ℤ (ULift.{0} ℤ)) m
-  rw [show SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst ψ))
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) m = 𝟙 _ from
-    (congrArg (SSet.homologyMap · _ m) (TopCat.toSSet.map_id _)).trans
-      (SSet.homologyMap_id _ _ m)] at hnat
-  have hres : (TopPair.ofSubset ((univ : Set (TopCat.of A)))ᶜ).singularHomologyπ
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) m ≫ localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (subset_univ {a}) m =
-      (TopPair.ofSubset ({a}ᶜ : Set (TopCat.of A))).singularHomologyπ
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) m := by
-    rw [localHomologyRestriction_def]
-    exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _ _ m
-  rw [← (asIso (TopPair.singularHomologyMap ψ (ModuleCat.of ℤ (ULift.{0} ℤ)) m)).toLinearEquiv
-    |>.span_singleton_apply_eq_top_iff]
-  refine Eq.congr_left (congrArg (fun v ↦ Submodule.span ℤ {v}) ?_)
-  exact (congrArg _ ((singularHomologyToLocalHomology_apply _ _ _).trans
-    (ConcreteCategory.congr_hom hres _))).trans (ConcreteCategory.congr_hom hnat μ).symm
 
 /-! ### The boundary of the relative fundamental class -/
 
@@ -548,14 +498,13 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {m : ℕ} (hm 
     hA ▸ range_subset_compl_singleton hc y hp
   have hBp : ((range ι)ᶜ \ {(a : X)} : Set (TopCat.of X)) ⊆ (segment c y)ᶜ :=
     fun z hz ↦ diff_subset_compl_segment hc y ⟨hA ▸ hz.1, fun h ↦ hz.2 (h.trans hy)⟩
-  let φ := TopTriple.ofSubsetMap (𝟙 (TopCat.of X)) hAB hT hAp hBp
+  set φ := TopTriple.ofSubsetMap (𝟙 (TopCat.of X)) hAB hT hAp hBp with hφ
   have key := TopTriple.singularHomologyδ_naturality φ (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm
-  rw [show TopTriple.outerPair.map φ = TopPair.ofSubsetMap (𝟙 _) hAp from
-    TopTriple.outerPair_map_ofSubsetMap _ _ _ _ _] at key
+  rw [hφ, TopTriple.outerPair_map_ofSubsetMap (𝟙 (TopCat.of X)) hAB hT hAp hBp] at key
   replace key := ConcreteCategory.congr_hom key (o.fundamentalClassRel hn hι hιf hf)
   have : IsIso (TopPair.singularHomologyMap (TopTriple.innerPair.map φ)
       (ModuleCat.of ℤ (ULift.{0} ℤ)) m) := by
-    rw [show TopTriple.innerPair.map φ = _ from TopTriple.innerPair_map_ofSubsetMap _ _ _ _ _]
+    rw [hφ, TopTriple.innerPair_map_ofSubsetMap (𝟙 (TopCat.of X)) hAB hT hAp hBp]
     exact isIso_singularHomologyMap_compl_singleton hc y _ hA hy hp hAp hBp m
   have := isIso_singularHomologyδ_compl_segment hc y (ModuleCat.of ℤ (ULift.{0} ℤ)) hp hm
   -- By naturality of the connecting morphisms, the connecting morphism of `(X, ∂X, ∂X ∖ {a})`
@@ -579,7 +528,7 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {m : ℕ} (hm 
     ConcreteCategory.congr_hom (TopTriple.singularHomologyδ_eq_comp_singularHomologyπ
       (TopTriple.ofSubset hAB) (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm) _
   rw [hδπ] at h₁
-  exact (span_singularHomologyToLocalHomology_iff a m _).2 h₁
+  exact (span_singularHomologyToLocalHomology_eq_top_iff a _).2 h₁
 
 end HomologicalOrientation
 
