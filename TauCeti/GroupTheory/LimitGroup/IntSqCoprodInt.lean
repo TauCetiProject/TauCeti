@@ -117,17 +117,12 @@ private theorem ofCentralizerExt_t (i : Fin 1) :
     ofCentralizerExt (CentralizerExt.t i) = inl (.ofAdd (0, 1)) :=
   CentralizerExt.lift_t _ _ _ _ i
 
-/-- Every `v ∈ ℤ²` is `(1, 0) ^ v₁ * (0, 1) ^ v₂`. -/
-private theorem ofAdd_zpow_mul_ofAdd_zpow (v : Multiplicative (ℤ × ℤ)) :
-    (.ofAdd (1, 0) : Multiplicative (ℤ × ℤ)) ^ v.toAdd.1 * .ofAdd (0, 1) ^ v.toAdd.2 = v := by
-  refine Multiplicative.toAdd.injective (Prod.ext ?_ ?_) <;> simp
-
 private theorem ofCentralizerExt_comp_toCentralizerExt :
     ofCentralizerExt.comp toCentralizerExt = .id _ := by
   refine hom_ext (MonoidHom.ext fun v => ?_) (MonoidHom.ext_mint ?_)
   · simp only [MonoidHom.coe_comp, Function.comp_apply, toCentralizerExt_inl, map_mul, map_zpow,
       ofCentralizerExt_of, ofCentralizerExt_t, FreeGroup.lift_apply_of, Matrix.cons_val_zero]
-    simp [← map_zpow, ← map_mul, ofAdd_zpow_mul_ofAdd_zpow]
+    simp [← map_zpow, ← map_mul, ← ofAdd_zsmul, ← ofAdd_add]
   · simp [toCentralizerExt_inr, ofCentralizerExt_of]
 
 private theorem toCentralizerExt_comp_ofCentralizerExt :
@@ -198,15 +193,6 @@ private theorem retraction_equivCentralizerExt_inl (k : ℤ) (v : Multiplicative
       FreeGroup.of 0 ^ (v.toAdd.1 + k * v.toAdd.2) := by
   simp [zpow_add, zpow_mul]
 
-/-- For `v ≠ 1` and every `N`, some `k ≥ N` makes `v₁ + k v₂` nonzero. -/
-private theorem exists_le_add_mul_ne_zero {v : Multiplicative (ℤ × ℤ)} (hv : v ≠ 1) (N : ℕ) :
-    ∃ k : ℕ, N ≤ k ∧ v.toAdd.1 + k * v.toAdd.2 ≠ 0 := by
-  by_contra! h
-  have h₀ := h N le_rfl
-  have h₁ := h (N + 1) (Nat.le_succ N)
-  refine hv (Multiplicative.toAdd.injective (Prod.ext ?_ ?_)) <;> push_cast at h₁ <;>
-    simp <;> nlinarith
-
 /-- An element of `ℤ² ∗ ℤ` commuting with a nontrivial `v ∈ ℤ²` and killed by the projection onto
 `ℤ²` is trivial. -/
 private theorem eq_one_of_commute_of_fst_eq_one {v : Multiplicative (ℤ × ℤ)} (hv : v ≠ 1)
@@ -216,13 +202,15 @@ private theorem eq_one_of_commute_of_fst_eq_one {v : Multiplicative (ℤ × ℤ)
   obtain ⟨N, hN⟩ := CentralizerExt.exists_forall_retraction_ne_one hF.isBP hF.isCSA
     (FreeGroup.of_ne_one 0)
     ((map_ne_one_iff equivCentralizerExt equivCentralizerExt.injective).2 hne)
-  obtain ⟨k, hk, hvk⟩ := exists_le_add_mul_ne_zero hv N
+  obtain ⟨k, hk, hvk⟩ := ((Filter.eventually_ge_atTop N).and
+    (TauCeti.eventually_add_mul_eq_zero_iff v.toAdd.1 v.toAdd.2)).exists
   let ρ := (CentralizerExt.retraction fun _ => (k : ℤ)).comp equivCentralizerExt.toMonoidHom
   have hρv : ρ (inl v) = FreeGroup.of 0 ^ (v.toAdd.1 + k * v.toAdd.2) :=
     retraction_equivCentralizerExt_inl _ v
   -- `ρ n` commutes with a nontrivial power of `a`, hence with `a`, so it is a power of `a`.
   have hpow : FreeGroup.of (0 : Fin 2) ^ (v.toAdd.1 + k * v.toAdd.2) ≠ 1 := fun h =>
-    hvk (by simpa only [expA_of_zero_zpow, map_one, ofAdd_eq_one] using congrArg expA h)
+    hv <| Multiplicative.toAdd.injective <| Prod.ext_iff.2 <| hvk.1 <| by
+      simpa only [expA_of_zero_zpow, map_one, ofAdd_eq_one] using congrArg expA h
   have ha : Commute (ρ n) (FreeGroup.of 0) :=
     IsFreeGroup.commute_of_commute hpow (hρv ▸ hn.map ρ) ((Commute.refl _).zpow_left _)
   obtain ⟨j, hj⟩ := FreeGroup.mem_zpowers_of_of_commute ha
