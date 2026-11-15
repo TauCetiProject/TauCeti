@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Associated
+public import TauCeti.Topology.VectorBundle.Associated.Basic
 public import TauCeti.Topology.FiberBundle.Associated.Map
 public import TauCeti.Topology.FiberBundle.Associated.Prod
 public import Mathlib.Analysis.Normed.Operator.Bilinear
