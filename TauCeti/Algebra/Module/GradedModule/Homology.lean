@@ -37,6 +37,8 @@ moves every homogeneous piece of the homology by the same degree
   `TauCeti.InternalGrading.homologyπ_mem_homology_piece`: the class of a homogeneous cycle is
   homogeneous of the same degree, so the quotient map from the cycles has degree zero
   (`TauCeti.InternalGrading.isHomogeneous_homologyπ`).
+* `TauCeti.InternalGrading.isHomogeneous_homologyMap`: a degree-`q` chain map induces a degree-`q`
+  map on homology.
 * `TauCeti.InternalGrading.smul_mem_homology_piece`: a scalar moving the degree of `M` by `q`
   moves the degree of the homology by `q`.
 -/
@@ -108,6 +110,20 @@ theorem smul_mem_homology_piece {s : S} {q : ι}
   obtain ⟨z, hz, rfl⟩ := (G.mem_homology_piece_iff hhom hd).mp hy
   rw [← map_smul]
   exact G.homologyπ_mem_homology_piece hhom hd (z := s • z) (hs hz)
+
+/-- A chain map that is homogeneous of degree `q` induces a degree-`q` map on homology. -/
+theorem isHomogeneous_homologyMap {N : Type*}
+    [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+    (GN : InternalGrading R N ι) {rN q : ι} {dN : N →ₗ[S] N}
+    (hdN_hom : LinearMap.IsHomogeneous dN GN.piece GN.piece rN) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[S] N} (hf_hom : LinearMap.IsHomogeneous f G.piece GN.piece q)
+    (hf : f ∘ₗ d = dN ∘ₗ f) :
+    LinearMap.IsHomogeneous (_root_.LinearMap.homologyMap f hd hdN hf)
+      (G.homology hhom hd).piece (GN.homology hdN_hom hdN).piece q :=
+  LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
+    obtain ⟨z, hz, rfl⟩ := (G.mem_homology_piece_iff hhom hd).mp hy
+    rw [LinearMap.homologyπ_apply, _root_.LinearMap.homologyMap_mk, ← LinearMap.homologyπ_apply]
+    exact GN.homologyπ_mem_homology_piece hdN_hom hdN (hf_hom.map_mem hz)
 
 end Ring
 

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.BarDifferential
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Basic
+public import TauCeti.Algebra.Homology.Contraction.Linear.HomotopyEquiv
 
 /-!
 # The complex of reduced transformations between A-infinity morphisms
@@ -24,8 +26,13 @@ reduced bar constructions: linear maps `D : Tᶜ(sA) ⟶ Tᶜ(sB)` raising the s
 `Δ ∘ D = (D ⊗ G) ∘ Δ + (F ⊗ D) ∘ (τ ⊗ 1) ∘ Δ`,
 
 with `τ` the letterwise Koszul twist of parameter `p` of `Tᶜ(sA)`.  Such a map is determined by its
-suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`.  The differential of a
-reduced transformation is its graded commutator with the bar differentials,
+suspended Taylor components `π ∘ D`, the components `Dₙ` for `n ≥ 1`, and conversely every
+homogeneous Taylor map `Tᶜ(sA) ⟶ sB` of degree `p` reconstructs a unique reduced transformation
+(`reducedTransformationCochains.ofTaylor`).  A sequence of reduced transformations whose Taylor
+components stabilise along the conilpotence filtration converges to a reduced transformation
+(`reducedTransformationCochains.limit`).
+
+The differential of a reduced transformation is its graded commutator with the bar differentials,
 
 `δD = b_B ∘ D - (-1)^p D ∘ b_A`,
 
@@ -46,14 +53,17 @@ which has no nullary component, is exactly a reduced transformation of degree `-
 differential is `F - G`; so `f` and `g` are homotopic exactly when `F - G` is a coboundary in this
 complex.  Composing with an `A∞` morphism on either side maps reduced transformations to reduced
 transformations and commutes with the differential, extending the composition of homotopies with
-morphisms.
+morphisms.  When the linear part of `f : A ⟶ B` underlies a homogeneous `LinearHomotopyEquiv`,
+cocycles in `reducedTransformationCochains k₁ k₂ (p + 1)` that become coboundaries after
+postcomposition with `f` lift to coboundaries before `f`
+(`AInfinityHom.exists_reducedTransformationDifferential_eq_of_compRight`).
 
 ## Main definitions
 
 * `TauCeti.AInfinityHom.reducedTransformationCochains`: the reduced transformations of degree `p`
   from `f` to `g`, the `(F, G)`-coderivations of degree `p` between reduced bar constructions.
-* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor`: the suspended Taylor components of
-  a reduced transformation.
+* `TauCeti.AInfinityHom.reducedTransformationCochains.taylor`, `ofTaylor`, and `limit`: suspended
+  Taylor components, reconstruction from Taylor components, and filtration limits.
 * `TauCeti.AInfinityHom.reducedTransformationDifferential`: the graded commutator with the bar
   differentials.
 * `TauCeti.AInfinityHom.reducedTransformationComplex`: the complex of reduced transformations from
@@ -80,6 +90,8 @@ morphisms.
 * `TauCeti.AInfinityHom.Homotopy.equivCochains_compRight` and
   `TauCeti.AInfinityHom.Homotopy.equivCochains_compLeft`: the identification of homotopies with
   transformations is compatible with composition with a morphism.
+* `TauCeti.AInfinityHom.exists_reducedTransformationDifferential_eq_of_compRight`: lifting closed
+  reduced transformations along postcomposition with a linear homotopy equivalence.
 
 ## References
 
@@ -87,6 +99,8 @@ morphisms.
   (2003), Sections 1--2, for `A∞` transformations as coderivations along a pair of `A∞` functors
   and their differential.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.7, for homotopies.
+* K. Lefèvre-Hasegawa, *Sur les `A∞`-catégories*, Chapitre 1, Lemme 1.3.1.3, for acyclicity of
+  postcomposition on reduced transformations.
 -/
 
 public section
@@ -171,6 +185,12 @@ theorem taylor_def (D : reducedTransformationCochains f g p) :
       ReducedTensorWords.letter R B ∘ₗ (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) :=
   (rfl)
 
+theorem taylor_apply (D : reducedTransformationCochains f g p) (z : ReducedTensorWords R A) :
+    taylor D z =
+      ReducedTensorWords.letter R B
+        ((D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z) :=
+  (rfl)
+
 /-- The zero transformation has zero Taylor components. -/
 @[simp]
 theorem taylor_zero : taylor (0 : reducedTransformationCochains f g p) = 0 :=
@@ -182,6 +202,32 @@ components. -/
 theorem taylor_add (D D' : reducedTransformationCochains f g p) :
     taylor (D + D') = taylor D + taylor D' :=
   LinearMap.comp_add _ _ _
+
+@[simp]
+theorem coe_neg (D : reducedTransformationCochains f g p) :
+    ((-D : reducedTransformationCochains f g p) :
+      ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) = -D :=
+  (rfl)
+
+@[simp]
+theorem coe_sub (D D' : reducedTransformationCochains f g p) :
+    ((D - D' : reducedTransformationCochains f g p) :
+      ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) = D - D' :=
+  (rfl)
+
+/-- The Taylor components of the negation of a transformation are the negations of its Taylor
+components. -/
+@[simp]
+theorem taylor_neg (D : reducedTransformationCochains f g p) :
+    taylor (-D) = -taylor D :=
+  LinearMap.comp_neg _ _
+
+/-- The Taylor components of a difference of transformations are the differences of their Taylor
+components. -/
+@[simp]
+theorem taylor_sub (D D' : reducedTransformationCochains f g p) :
+    taylor (D - D') = taylor D - taylor D' :=
+  LinearMap.comp_sub _ _ _
 
 /-- The Taylor components of a scalar multiple of a transformation are the scalar multiples of
 its Taylor components. -/
@@ -209,6 +255,73 @@ theorem taylor_injective :
 @[ext]
 theorem ext {D D' : reducedTransformationCochains f g p} (e : taylor D = taylor D') : D = D' :=
   taylor_injective e
+
+variable (f g) in
+/-- Reconstruct a reduced transformation of degree `p` from `f` to `g` from its suspended Taylor
+components. -/
+noncomputable def ofTaylor (t : ReducedTensorWords R A →ₗ[R] B)
+    (ht : LinearMap.IsHomogeneous t (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    reducedTransformationCochains f g p :=
+  ⟨ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap t,
+    ReducedTensorWords.isGradedCoderivationAlong_gradedCoderivAlong f.isCoalgHom_barMap
+      g.isCoalgHom_barMap t,
+    ReducedTensorWords.isHomogeneous_gradedCoderivAlong f.isHomogeneous_barMap
+      g.isHomogeneous_barMap ht⟩
+
+@[simp]
+theorem coe_ofTaylor (t : ReducedTensorWords R A →ₗ[R] B)
+    (ht : LinearMap.IsHomogeneous t (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    (ofTaylor f g t ht : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) =
+      ReducedTensorWords.gradedCoderivAlong (AA.grading.shift 1) p f.barMap g.barMap t :=
+  (rfl)
+
+@[simp]
+theorem taylor_ofTaylor (t : ReducedTensorWords R A →ₗ[R] B)
+    (ht : LinearMap.IsHomogeneous t (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece p) :
+    taylor (ofTaylor f g t ht) = t :=
+  ReducedTensorWords.letter_comp_gradedCoderivAlong _ _ _ _ _
+
+@[simp]
+theorem ofTaylor_taylor (D : reducedTransformationCochains f g p) :
+    ofTaylor f g (taylor D) (isHomogeneous_taylor D) = D :=
+  ext (taylor_ofTaylor _ _)
+
+/-- A reduced transformation preserves the conilpotence filtration. -/
+theorem mem_filtration (D : reducedTransformationCochains f g p) {n : ℕ}
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z ∈
+      ReducedTensorWords.filtration R B n := by
+  rw [← ofTaylor_taylor D, coe_ofTaylor]
+  exact ReducedTensorWords.gradedCoderivAlong_mem_filtration g.isCoalgHom_barMap (taylor D) hz
+
+/-- The limit of a sequence of reduced transformations whose Taylor components stabilise along the
+conilpotence filtration. -/
+noncomputable def limit (D : ℕ → reducedTransformationCochains f g p)
+    (hD : ∀ n, ∀ z ∈ ReducedTensorWords.filtration R A n, taylor (D (n + 1)) z = taylor (D n) z) :
+    reducedTransformationCochains f g p :=
+  ofTaylor f g (ReducedTensorWords.stabilisingLimit fun n ↦ taylor (D n))
+    (ReducedTensorWords.isHomogeneous_stabilisingLimit hD fun n ↦ isHomogeneous_taylor (D n))
+
+/-- On the words of length at most `n`, the Taylor components of `limit D hD` agree with those of
+`D n`. -/
+theorem taylor_limit_apply_of_mem_filtration {D : ℕ → reducedTransformationCochains f g p}
+    (hD : ∀ n, ∀ z ∈ ReducedTensorWords.filtration R A n, taylor (D (n + 1)) z = taylor (D n) z)
+    {n : ℕ} {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    taylor (limit D hD) z = taylor (D n) z := by
+  rw [limit, taylor_ofTaylor, ReducedTensorWords.stabilisingLimit_apply_of_mem_filtration hD hz]
+
+/-- On the words of length at most `n`, `limit D hD` agrees with `D n`. -/
+theorem coe_limit_apply_of_mem_filtration {D : ℕ → reducedTransformationCochains f g p}
+    (hD : ∀ n, ∀ z ∈ ReducedTensorWords.filtration R A n, taylor (D (n + 1)) z = taylor (D n) z)
+    {n : ℕ} {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (limit D hD : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z =
+      (D n : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) z :=
+  (isGradedCoderivationAlong (limit D hD)).apply_eq_of_mem_filtration
+    (isGradedCoderivationAlong (D n))
+    (fun _ hw ↦ taylor_limit_apply_of_mem_filtration hD hw) hz
 
 end reducedTransformationCochains
 
@@ -516,6 +629,418 @@ theorem equivCochains_compLeft (h : Homotopy f g) (k : AInfinityHom CC AA) :
   Subtype.ext (barHomotopy_compLeft h k)
 
 end Homotopy
+
+/-! ### Lifting cocycles along postcomposition -/
+
+section LiftCompRight
+
+/-- Reindex the differential of a reduced transformation of degree `p - 1` into degree `p`,
+avoiding the non-definitional arithmetic rewrite `(p - 1) + 1 = p`. -/
+private noncomputable def predDifferential {f' g' : AInfinityHom CC BB} (p : ℤ)
+    (Z : reducedTransformationCochains f' g' (p - 1)) :
+    reducedTransformationCochains f' g' p :=
+  ⟨reducedTransformationDifferential f' g' (p - 1) Z, by
+    simpa only [sub_add_cancel] using (reducedTransformationDifferential f' g' (p - 1) Z).2⟩
+
+@[simp]
+private theorem coe_predDifferential {f' g' : AInfinityHom CC BB} (p : ℤ)
+    (Z : reducedTransformationCochains f' g' (p - 1)) :
+    (predDifferential p Z : ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) =
+      reducedTransformationDifferential f' g' (p - 1) Z :=
+  (rfl)
+
+private theorem predDifferential_add {f' g' : AInfinityHom CC BB} (p : ℤ)
+    (Z Z' : reducedTransformationCochains f' g' (p - 1)) :
+    predDifferential p (Z + Z') = predDifferential p Z + predDifferential p Z' := by
+  apply Subtype.ext
+  rw [coe_predDifferential, map_add]
+  rfl
+
+private theorem reducedTransformationDifferential_predDifferential {f' g' : AInfinityHom CC BB}
+    (p : ℤ) (Z : reducedTransformationCochains f' g' (p - 1)) :
+    reducedTransformationDifferential f' g' p (predDifferential p Z) = 0 := by
+  have h := congrArg Subtype.val
+    (reducedTransformationDifferential_reducedTransformationDifferential (f := f') (g := g')
+      (p - 1) Z)
+  apply Subtype.ext
+  simpa only [coe_reducedTransformationDifferential, coe_predDifferential, sub_add_cancel,
+    ZeroMemClass.coe_zero] using h
+
+private theorem taylor_predDifferential {f' g' : AInfinityHom CC BB} (p : ℤ)
+    (Z : reducedTransformationCochains f' g' (p - 1)) :
+    reducedTransformationCochains.taylor (predDifferential p Z) =
+      BB.taylor ∘ₗ (Z : ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) -
+        (p - 1).negOnePow • (reducedTransformationCochains.taylor Z ∘ₗ CC.barDifferential) :=
+  reducedTransformationCochains.taylor_reducedTransformationDifferential Z
+
+/-- Stage `n` of the recursive lift of a closed transformation `U` along `compRight f`. -/
+private structure CoupledLiftStage {k₁ k₂ : AInfinityHom CC AA} {f : AInfinityHom AA BB}
+    {p : ℤ} (U : reducedTransformationCochains k₁ k₂ (p + 1))
+    (V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p) (n : ℕ) where
+  X : reducedTransformationCochains k₁ k₂ p
+  Z : reducedTransformationCochains (f.comp k₁) (f.comp k₂) (p - 1)
+  hX : ∀ w ∈ ReducedTensorWords.filtration R C n,
+    ((U - reducedTransformationDifferential k₁ k₂ p X :
+        reducedTransformationCochains k₁ k₂ (p + 1)) :
+      ReducedTensorWords R C →ₗ[R] ReducedTensorWords R A) w = 0
+  hZ : ∀ w ∈ ReducedTensorWords.filtration R C n,
+    ((V - reducedTransformationCochains.compRight f p X - predDifferential p Z :
+        reducedTransformationCochains (f.comp k₁) (f.comp k₂) p) :
+      ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) w = 0
+
+private noncomputable def coupledLiftStageZero {k₁ k₂ : AInfinityHom CC AA}
+    {f : AInfinityHom AA BB} {p : ℤ} (U : reducedTransformationCochains k₁ k₂ (p + 1))
+    (V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p) :
+    CoupledLiftStage U V 0 where
+  X := 0
+  Z := 0
+  hX w hw := by
+    rw [ReducedTensorWords.filtration_zero, Submodule.mem_bot] at hw
+    rw [hw, map_zero]
+  hZ w hw := by
+    rw [ReducedTensorWords.filtration_zero, Submodule.mem_bot] at hw
+    rw [hw, map_zero]
+
+private noncomputable def coupledLiftStageSucc {k₁ k₂ : AInfinityHom CC AA}
+    {f : AInfinityHom AA BB}
+    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
+    (hinv : LinearMap.IsHomogeneous e.inv BB.grading.piece AA.grading.piece 0)
+    (hhA : LinearMap.IsHomogeneous e.homotopyHom AA.grading.piece AA.grading.piece (-1))
+    (hhB : LinearMap.IsHomogeneous e.homotopyInv BB.grading.piece BB.grading.piece (-1))
+    {p : ℤ} {U : reducedTransformationCochains k₁ k₂ (p + 1)}
+    (hU : reducedTransformationDifferential k₁ k₂ (p + 1) U = 0)
+    {V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p}
+    (hV : reducedTransformationDifferential (f.comp k₁) (f.comp k₂) p V =
+      reducedTransformationCochains.compRight f (p + 1) U)
+    (n : ℕ) (S : CoupledLiftStage U V n) :
+    CoupledLiftStage U V (n + 1) := by
+  let U' : reducedTransformationCochains k₁ k₂ (p + 1) :=
+    U - reducedTransformationDifferential k₁ k₂ p S.X
+  let V' : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p :=
+    V - reducedTransformationCochains.compRight f p S.X - predDifferential p S.Z
+  let L := ReducedTensorWords.lengthProj R C ⟨n + 1, n.succ_pos⟩
+  let u : ReducedTensorWords R C →ₗ[R] A := reducedTransformationCochains.taylor U' ∘ₗ L
+  let v : ReducedTensorWords R C →ₗ[R] B := reducedTransformationCochains.taylor V' ∘ₗ L
+  have hf_sh : LinearMap.IsHomogeneous e.hom
+      (AA.grading.shift 1).piece (BB.grading.shift 1).piece 0 :=
+    LinearMap.isHomogeneous_shift_piece_iff.2 (he ▸ f.isHomogeneous_linearPart)
+  have hg_sh : LinearMap.IsHomogeneous e.inv
+      (BB.grading.shift 1).piece (AA.grading.shift 1).piece 0 :=
+    LinearMap.isHomogeneous_shift_piece_iff.2 hinv
+  have hhA_sh : LinearMap.IsHomogeneous e.homotopyHom
+      (AA.grading.shift 1).piece (AA.grading.shift 1).piece (-1) :=
+    LinearMap.isHomogeneous_shift_piece_iff.2 hhA
+  have hhB_sh : LinearMap.IsHomogeneous e.homotopyInv
+      (BB.grading.shift 1).piece (BB.grading.shift 1).piece (-1) :=
+    LinearMap.isHomogeneous_shift_piece_iff.2 hhB
+  have hu_hom : LinearMap.IsHomogeneous u
+      (ReducedTensorWords.gradedPiece (CC.grading.shift 1)) (AA.grading.shift 1).piece (p + 1) := by
+    simpa only [zero_add] using
+      (reducedTransformationCochains.isHomogeneous_taylor U').comp
+        (ReducedTensorWords.isHomogeneous_lengthProj _ _)
+  have hv_hom : LinearMap.IsHomogeneous v
+      (ReducedTensorWords.gradedPiece (CC.grading.shift 1)) (BB.grading.shift 1).piece p := by
+    simpa only [zero_add] using
+      (reducedTransformationCochains.isHomogeneous_taylor V').comp
+        (ReducedTensorWords.isHomogeneous_lengthProj _ _)
+  let x : ReducedTensorWords R C →ₗ[R] A := e.coupledLift u v
+  let z : ReducedTensorWords R C →ₗ[R] B := e.coupledHomotopy u v
+  have hx_hom : LinearMap.IsHomogeneous x
+      (ReducedTensorWords.gradedPiece (CC.grading.shift 1)) (AA.grading.shift 1).piece p :=
+    e.isHomogeneous_coupledLift hg_sh hhA_sh hu_hom hv_hom
+  have hz_hom : LinearMap.IsHomogeneous z
+      (ReducedTensorWords.gradedPiece (CC.grading.shift 1)) (BB.grading.shift 1).piece (p - 1) :=
+    e.isHomogeneous_coupledHomotopy hf_sh hg_sh hhA_sh hhB_sh hu_hom hv_hom
+  let ΔX := reducedTransformationCochains.ofTaylor k₁ k₂ x hx_hom
+  let ΔZ := reducedTransformationCochains.ofTaylor (f.comp k₁) (f.comp k₂) z hz_hom
+  -- Deduce the coupled unary cocycle/coboundary equations for `(u, v)` once for both branches.
+  have hs_succ : (p + 1).negOnePow = -p.negOnePow := Int.negOnePow_succ p
+  have htU'_zero : ∀ w ∈ ReducedTensorWords.filtration R C n,
+      reducedTransformationCochains.taylor U' w = 0 := fun w hw ↦ by
+    rw [reducedTransformationCochains.taylor_def, LinearMap.comp_apply, S.hX w hw, map_zero]
+  have htV'_zero : ∀ w ∈ ReducedTensorWords.filtration R C n,
+      reducedTransformationCochains.taylor V' w = 0 := fun w hw ↦ by
+    rw [reducedTransformationCochains.taylor_def, LinearMap.comp_apply, S.hZ w hw, map_zero]
+  have hδU' : reducedTransformationDifferential k₁ k₂ (p + 1) U' = 0 := by
+    rw [map_sub, hU, reducedTransformationDifferential_reducedTransformationDifferential,
+      sub_zero]
+  have hδV' : reducedTransformationDifferential (f.comp k₁) (f.comp k₂) p V' =
+      reducedTransformationCochains.compRight f (p + 1) U' := by
+    rw [map_sub, map_sub, hV, reducedTransformationDifferential_compRight,
+      reducedTransformationDifferential_predDifferential, sub_zero, map_sub]
+  have hu_eq : AA.differential ∘ₗ u -
+      (p + 1).negOnePow • (u ∘ₗ CC.unaryBarDifferential) = 0 := by
+    refine LinearMap.ext fun y ↦ ?_
+    have hLy := ReducedTensorWords.lengthProj_mem_filtration R C ⟨n + 1, n.succ_pos⟩ y
+    have hprim := (reducedTransformationCochains.isGradedCoderivationAlong U')
+      |>.apply_eq_ofLetter_of_mem_filtration_succ S.hX hLy
+    have hhigh : CC.higherBarDifferential (L y) ∈ ReducedTensorWords.filtration R C n :=
+      CC.higherBarDifferential_filtration n ⟨L y, hLy, rfl⟩
+    have hcomm : L (CC.unaryBarDifferential y) = CC.unaryBarDifferential (L y) :=
+      LinearMap.congr_fun (CC.lengthProj_comp_unaryBarDifferential ⟨n + 1, n.succ_pos⟩) y
+    have hval := LinearMap.congr_fun
+      (congrArg reducedTransformationCochains.taylor hδU') (L y)
+    rw [reducedTransformationCochains.taylor_reducedTransformationDifferential,
+      reducedTransformationCochains.taylor_zero, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.zero_apply, hprim,
+      ← reducedTransformationCochains.taylor_apply, AInfinityAlgebra.taylor_ofLetter,
+      ← AInfinityAlgebra.differential_apply, CC.barDifferential_eq_unary_add_higher,
+      LinearMap.add_apply, map_add, htU'_zero _ hhigh, add_zero] at hval
+    dsimp only [u]
+    rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+      LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.zero_apply, hcomm]
+    exact hval
+  have hv_eq : BB.differential ∘ₗ v +
+      (p + 1).negOnePow • (v ∘ₗ CC.unaryBarDifferential) = e.hom ∘ₗ u := by
+    refine LinearMap.ext fun y ↦ ?_
+    have hLy := ReducedTensorWords.lengthProj_mem_filtration R C ⟨n + 1, n.succ_pos⟩ y
+    have hprimU := (reducedTransformationCochains.isGradedCoderivationAlong U')
+      |>.apply_eq_ofLetter_of_mem_filtration_succ S.hX hLy
+    have hprimV := (reducedTransformationCochains.isGradedCoderivationAlong V')
+      |>.apply_eq_ofLetter_of_mem_filtration_succ S.hZ hLy
+    have hhigh : CC.higherBarDifferential (L y) ∈ ReducedTensorWords.filtration R C n :=
+      CC.higherBarDifferential_filtration n ⟨L y, hLy, rfl⟩
+    have hcomm : L (CC.unaryBarDifferential y) = CC.unaryBarDifferential (L y) :=
+      LinearMap.congr_fun (CC.lengthProj_comp_unaryBarDifferential ⟨n + 1, n.succ_pos⟩) y
+    have hval := LinearMap.congr_fun
+      (congrArg reducedTransformationCochains.taylor hδV') (L y)
+    rw [reducedTransformationCochains.taylor_reducedTransformationDifferential,
+      reducedTransformationCochains.taylor_compRight, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.comp_apply, hprimV, hprimU,
+      ← reducedTransformationCochains.taylor_apply, ← reducedTransformationCochains.taylor_apply,
+      AInfinityAlgebra.taylor_ofLetter, ← AInfinityAlgebra.differential_apply,
+      ← linearPart_apply, ← he, CC.barDifferential_eq_unary_add_higher, LinearMap.add_apply,
+      map_add, htV'_zero _ hhigh, add_zero] at hval
+    rw [hs_succ, Units.neg_smul, ← sub_eq_add_neg]
+    dsimp only [u, v]
+    rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+      LinearMap.comp_apply, LinearMap.comp_apply, hcomm]
+    exact hval
+  have hx_zero : ∀ w ∈ ReducedTensorWords.filtration R C n, x w = 0 := fun w hw ↦ by
+    have hLw : L w = 0 :=
+      ReducedTensorWords.lengthProj_apply_eq_zero_of_mem_filtration R C n.lt_succ_self hw
+    simp only [x, LinearHomotopyEquiv.coupledLift_def, u, v, LinearMap.add_apply,
+      LinearMap.comp_apply, hLw, map_zero, add_zero]
+  have hΔX_zero : ∀ w ∈ ReducedTensorWords.filtration R C n,
+      (ΔX : ReducedTensorWords R C →ₗ[R] ReducedTensorWords R A) w = 0 := fun w hw ↦
+    (reducedTransformationCochains.isGradedCoderivationAlong ΔX)
+      |>.apply_eq_zero_of_mem_filtration
+      (fun y hy ↦ by
+        rw [← reducedTransformationCochains.taylor_apply,
+          reducedTransformationCochains.taylor_ofTaylor]
+        exact hx_zero y hy) hw
+  refine ⟨S.X + ΔX, S.Z + ΔZ, ?_, ?_⟩
+  · have hx_sol := e.dM_comp_coupledLift_add_smul hu_eq hv_eq
+    intro w hw
+    have heq : U - reducedTransformationDifferential k₁ k₂ p (S.X + ΔX) =
+        U' - reducedTransformationDifferential k₁ k₂ p ΔX := by
+      dsimp only [U']
+      rw [map_add, sub_add_eq_sub_sub]
+    rw [heq]
+    refine (reducedTransformationCochains.isGradedCoderivationAlong
+      (U' - reducedTransformationDifferential k₁ k₂ p ΔX)).apply_eq_zero_of_mem_filtration
+      (fun y hy ↦ ?_) hw
+    rw [← reducedTransformationCochains.taylor_apply,
+      reducedTransformationCochains.taylor_sub,
+      reducedTransformationCochains.taylor_reducedTransformationDifferential,
+      LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply,
+      LinearMap.comp_apply]
+    have hprimΔX := (reducedTransformationCochains.isGradedCoderivationAlong ΔX)
+      |>.apply_eq_ofLetter_of_mem_filtration_succ hΔX_zero hy
+    have hhigh : CC.higherBarDifferential y ∈ ReducedTensorWords.filtration R C n :=
+      CC.higherBarDifferential_filtration n ⟨y, hy, rfl⟩
+    rw [hprimΔX, ← reducedTransformationCochains.taylor_apply,
+      reducedTransformationCochains.taylor_ofTaylor, AInfinityAlgebra.taylor_ofLetter,
+      ← AInfinityAlgebra.differential_apply, CC.barDifferential_eq_unary_add_higher,
+      LinearMap.add_apply, map_add, hx_zero _ hhigh, add_zero]
+    have hx_sol_y := LinearMap.congr_fun hx_sol y
+    rw [hs_succ, Units.neg_smul, ← sub_eq_add_neg, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.smul_apply, LinearMap.comp_apply] at hx_sol_y
+    -- Fold `e.coupledLift u v` back to `x` and `LinearMap.zero_apply` to `0` so `hx_sol_y`
+    -- rewrites the differential term directly.
+    change reducedTransformationCochains.taylor U' y -
+        (AA.differential (x y) - (p.negOnePow • x (CC.unaryBarDifferential y))) = 0
+    rw [hx_sol_y]
+    have hproj := ReducedTensorWords.apply_lengthProj_of_mem_filtration R C htU'_zero hy
+    simpa only [u, L, LinearMap.comp_apply, sub_eq_zero] using hproj.symm
+  · have hs_pred : (p - 1).negOnePow = (p + 1).negOnePow := by
+      have h₁ := Int.negOnePow_succ (p - 1)
+      rw [sub_add_cancel] at h₁
+      rw [hs_succ, h₁, neg_neg]
+    have hz_sol := e.sub_hom_comp_coupledLift hu_eq hv_eq
+    have hz_zero : ∀ w ∈ ReducedTensorWords.filtration R C n, z w = 0 := fun w hw ↦ by
+      have hLw : L w = 0 :=
+        ReducedTensorWords.lengthProj_apply_eq_zero_of_mem_filtration R C n.lt_succ_self hw
+      simp only [z, LinearHomotopyEquiv.coupledHomotopy_def, u, v, LinearMap.sub_apply,
+        LinearMap.comp_apply, hLw, map_zero, sub_zero]
+    have hΔZ_zero : ∀ w ∈ ReducedTensorWords.filtration R C n,
+        (ΔZ : ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) w = 0 := fun w hw ↦
+      (reducedTransformationCochains.isGradedCoderivationAlong ΔZ)
+        |>.apply_eq_zero_of_mem_filtration
+        (fun y hy ↦ by
+          rw [← reducedTransformationCochains.taylor_apply,
+            reducedTransformationCochains.taylor_ofTaylor]
+          exact hz_zero y hy) hw
+    intro w hw
+    have heq : V - reducedTransformationCochains.compRight f p (S.X + ΔX) -
+          predDifferential p (S.Z + ΔZ) =
+        V' - reducedTransformationCochains.compRight f p ΔX - predDifferential p ΔZ := by
+      dsimp only [V']
+      rw [map_add, predDifferential_add]
+      abel
+    rw [heq]
+    refine (reducedTransformationCochains.isGradedCoderivationAlong
+      (V' - reducedTransformationCochains.compRight f p ΔX - predDifferential p ΔZ))
+      |>.apply_eq_zero_of_mem_filtration (fun y hy ↦ ?_) hw
+    rw [← reducedTransformationCochains.taylor_apply,
+      reducedTransformationCochains.taylor_sub, reducedTransformationCochains.taylor_sub,
+      reducedTransformationCochains.taylor_compRight, taylor_predDifferential,
+      LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.comp_apply]
+    have hprimΔX := (reducedTransformationCochains.isGradedCoderivationAlong ΔX)
+      |>.apply_eq_ofLetter_of_mem_filtration_succ hΔX_zero hy
+    have hprimΔZ := (reducedTransformationCochains.isGradedCoderivationAlong ΔZ)
+      |>.apply_eq_ofLetter_of_mem_filtration_succ hΔZ_zero hy
+    have hhigh : CC.higherBarDifferential y ∈ ReducedTensorWords.filtration R C n :=
+      CC.higherBarDifferential_filtration n ⟨y, hy, rfl⟩
+    rw [hprimΔX, hprimΔZ, ← reducedTransformationCochains.taylor_apply,
+      ← reducedTransformationCochains.taylor_apply, reducedTransformationCochains.taylor_ofTaylor,
+      reducedTransformationCochains.taylor_ofTaylor, ← linearPart_apply, ← he,
+      AInfinityAlgebra.taylor_ofLetter, ← AInfinityAlgebra.differential_apply,
+      CC.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, hz_zero _ hhigh,
+      add_zero, hs_pred]
+    have hz_sol_y : v y - e.hom (x y) =
+        BB.differential (z y) - (p + 1).negOnePow • z (CC.unaryBarDifferential y) := by
+      simpa only [x, z, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply] using
+        LinearMap.congr_fun hz_sol y
+    have hproj := ReducedTensorWords.apply_lengthProj_of_mem_filtration R C htV'_zero hy
+    rw [← hz_sol_y]
+    dsimp only [v]
+    rw [LinearMap.comp_apply, hproj, sub_self]
+
+private theorem taylor_coupledLiftStageSucc_X_eq {k₁ k₂ : AInfinityHom CC AA}
+    {f : AInfinityHom AA BB}
+    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
+    (hinv : LinearMap.IsHomogeneous e.inv BB.grading.piece AA.grading.piece 0)
+    (hhA : LinearMap.IsHomogeneous e.homotopyHom AA.grading.piece AA.grading.piece (-1))
+    (hhB : LinearMap.IsHomogeneous e.homotopyInv BB.grading.piece BB.grading.piece (-1))
+    {p : ℤ} {U : reducedTransformationCochains k₁ k₂ (p + 1)}
+    (hU : reducedTransformationDifferential k₁ k₂ (p + 1) U = 0)
+    {V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p}
+    (hV : reducedTransformationDifferential (f.comp k₁) (f.comp k₂) p V =
+      reducedTransformationCochains.compRight f (p + 1) U)
+    (n : ℕ) (S : CoupledLiftStage U V n) {w : ReducedTensorWords R C}
+    (hw : w ∈ ReducedTensorWords.filtration R C n) :
+    reducedTransformationCochains.taylor
+        (coupledLiftStageSucc e he hinv hhA hhB hU hV n S).X w =
+      reducedTransformationCochains.taylor S.X w := by
+  have hLw : ReducedTensorWords.lengthProj R C ⟨n + 1, n.succ_pos⟩ w = 0 :=
+    ReducedTensorWords.lengthProj_apply_eq_zero_of_mem_filtration R C n.lt_succ_self hw
+  simp only [coupledLiftStageSucc, reducedTransformationCochains.taylor_add,
+    reducedTransformationCochains.taylor_ofTaylor, LinearHomotopyEquiv.coupledLift_def,
+    LinearMap.add_apply, LinearMap.comp_apply, hLw, map_zero, add_zero]
+
+private theorem taylor_coupledLiftStageSucc_Z_eq {k₁ k₂ : AInfinityHom CC AA}
+    {f : AInfinityHom AA BB}
+    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
+    (hinv : LinearMap.IsHomogeneous e.inv BB.grading.piece AA.grading.piece 0)
+    (hhA : LinearMap.IsHomogeneous e.homotopyHom AA.grading.piece AA.grading.piece (-1))
+    (hhB : LinearMap.IsHomogeneous e.homotopyInv BB.grading.piece BB.grading.piece (-1))
+    {p : ℤ} {U : reducedTransformationCochains k₁ k₂ (p + 1)}
+    (hU : reducedTransformationDifferential k₁ k₂ (p + 1) U = 0)
+    {V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p}
+    (hV : reducedTransformationDifferential (f.comp k₁) (f.comp k₂) p V =
+      reducedTransformationCochains.compRight f (p + 1) U)
+    (n : ℕ) (S : CoupledLiftStage U V n) {w : ReducedTensorWords R C}
+    (hw : w ∈ ReducedTensorWords.filtration R C n) :
+    reducedTransformationCochains.taylor
+        (coupledLiftStageSucc e he hinv hhA hhB hU hV n S).Z w =
+      reducedTransformationCochains.taylor S.Z w := by
+  have hLw : ReducedTensorWords.lengthProj R C ⟨n + 1, n.succ_pos⟩ w = 0 :=
+    ReducedTensorWords.lengthProj_apply_eq_zero_of_mem_filtration R C n.lt_succ_self hw
+  simp only [coupledLiftStageSucc, reducedTransformationCochains.taylor_add,
+    reducedTransformationCochains.taylor_ofTaylor, LinearHomotopyEquiv.coupledHomotopy_def,
+    LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply, hLw, map_zero, sub_zero,
+    add_zero]
+
+/-- **Lifting cocycles along postcomposition by a homotopy equivalence.**  Let `k₁, k₂ : C ⟶ A` and
+`f : A ⟶ B` be `A∞` morphisms, and suppose the linear part `f₁` of `f` underlies a homogeneous
+linear homotopy equivalence `e` between `(A, m₁)` and `(B, m₁)`.  Whenever `U` is a closed reduced
+transformation of degree `p + 1` from `k₁` to `k₂` whose postcomposition `compRight f (p + 1) U` is
+bounded by `V` of degree `p`, there exist a reduced transformation `X` of degree `p` bounding `U`
+and a reduced transformation `Z` of degree `p - 1` bounding the defect
+`V - compRight f p X`. -/
+theorem exists_reducedTransformationDifferential_eq_of_compRight
+    {k₁ k₂ : AInfinityHom CC AA} {f : AInfinityHom AA BB}
+    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
+    (hinv : LinearMap.IsHomogeneous e.inv BB.grading.piece AA.grading.piece 0)
+    (hhA : LinearMap.IsHomogeneous e.homotopyHom AA.grading.piece AA.grading.piece (-1))
+    (hhB : LinearMap.IsHomogeneous e.homotopyInv BB.grading.piece BB.grading.piece (-1))
+    {p : ℤ} {U : reducedTransformationCochains k₁ k₂ (p + 1)}
+    (hU : reducedTransformationDifferential k₁ k₂ (p + 1) U = 0)
+    {V : reducedTransformationCochains (f.comp k₁) (f.comp k₂) p}
+    (hV : reducedTransformationDifferential (f.comp k₁) (f.comp k₂) p V =
+      reducedTransformationCochains.compRight f (p + 1) U) :
+    ∃ (X : reducedTransformationCochains k₁ k₂ p)
+      (Z : reducedTransformationCochains (f.comp k₁) (f.comp k₂) (p - 1)),
+        reducedTransformationDifferential k₁ k₂ p X = U ∧
+          (reducedTransformationDifferential (f.comp k₁) (f.comp k₂) (p - 1) Z :
+              ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) =
+            (V - reducedTransformationCochains.compRight f p X :
+              ReducedTensorWords R C →ₗ[R] ReducedTensorWords R B) := by
+  let stage : ∀ n, CoupledLiftStage U V n :=
+    Nat.rec (coupledLiftStageZero U V) fun n S ↦
+      coupledLiftStageSucc e he hinv hhA hhB hU hV n S
+  let seqX : ℕ → reducedTransformationCochains k₁ k₂ p := fun n ↦ (stage n).X
+  let seqZ : ℕ → reducedTransformationCochains (f.comp k₁) (f.comp k₂) (p - 1) :=
+    fun n ↦ (stage n).Z
+  have hstabX : ∀ n, ∀ w ∈ ReducedTensorWords.filtration R C n,
+      reducedTransformationCochains.taylor (seqX (n + 1)) w =
+        reducedTransformationCochains.taylor (seqX n) w :=
+    fun n _ hw ↦ taylor_coupledLiftStageSucc_X_eq e he hinv hhA hhB hU hV n (stage n) hw
+  have hstabZ : ∀ n, ∀ w ∈ ReducedTensorWords.filtration R C n,
+      reducedTransformationCochains.taylor (seqZ (n + 1)) w =
+        reducedTransformationCochains.taylor (seqZ n) w :=
+    fun n _ hw ↦ taylor_coupledLiftStageSucc_Z_eq e he hinv hhA hhB hU hV n (stage n) hw
+  let X := reducedTransformationCochains.limit seqX hstabX
+  let Z := reducedTransformationCochains.limit seqZ hstabZ
+  refine ⟨X, Z, ?_, ?_⟩
+  · apply Subtype.ext
+    refine LinearMap.ext fun w ↦ ?_
+    obtain ⟨n, hn⟩ := ReducedTensorWords.exists_mem_filtration R C w
+    have hbw := CC.barDifferential_mem_filtration hn
+    have hXn :=
+      reducedTransformationCochains.coe_limit_apply_of_mem_filtration (D := seqX) hstabX hn
+    have hXnb :=
+      reducedTransformationCochains.coe_limit_apply_of_mem_filtration (D := seqX) hstabX hbw
+    have hzero := (stage n).hX w hn
+    rw [reducedTransformationCochains.coe_sub, coe_reducedTransformationDifferential,
+      LinearMap.sub_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply,
+      LinearMap.comp_apply] at hzero
+    rw [coe_reducedTransformationDifferential, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.smul_apply, LinearMap.comp_apply, hXn, hXnb]
+    exact (sub_eq_zero.1 hzero).symm
+  · refine LinearMap.ext fun w ↦ ?_
+    obtain ⟨n, hn⟩ := ReducedTensorWords.exists_mem_filtration R C w
+    have hbw := CC.barDifferential_mem_filtration hn
+    have hXn :=
+      reducedTransformationCochains.coe_limit_apply_of_mem_filtration (D := seqX) hstabX hn
+    have hZn :=
+      reducedTransformationCochains.coe_limit_apply_of_mem_filtration (D := seqZ) hstabZ hn
+    have hZnb :=
+      reducedTransformationCochains.coe_limit_apply_of_mem_filtration (D := seqZ) hstabZ hbw
+    have hzero := (stage n).hZ w hn
+    rw [reducedTransformationCochains.coe_sub, reducedTransformationCochains.coe_sub,
+      reducedTransformationCochains.coe_compRight, coe_predDifferential,
+      coe_reducedTransformationDifferential, LinearMap.sub_apply, LinearMap.sub_apply,
+      LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply,
+      LinearMap.comp_apply] at hzero
+    rw [reducedTransformationCochains.coe_compRight, coe_reducedTransformationDifferential,
+      LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+      LinearMap.sub_apply, LinearMap.comp_apply, hXn, hZn, hZnb]
+    exact (sub_eq_zero.1 hzero).symm
+
+end LiftCompRight
 
 end AInfinityHom
 

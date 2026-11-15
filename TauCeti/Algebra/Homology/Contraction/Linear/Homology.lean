@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
+public import TauCeti.Algebra.Homology.Contraction.Linear.HomotopyEquiv
 public import TauCeti.Algebra.Module.GradedModule.Homology
 public import TauCeti.LinearAlgebra.Graded.Splitting
 
@@ -31,12 +31,18 @@ makes sense because the cycle `q x - i (p x)` has zero class and is therefore a 
 
 This is the input of homological transfer over a field: an `A∞` structure, or an `A∞` module
 structure, whose unary operation is `d` transfers along this contraction to a minimal one on the
-homology, which is Kadeishvili's theorem.
+homology, which is Kadeishvili's theorem.  Combined on both sides of a chain map `f : M →ₗ[K] N`
+inducing a bijection on homology, the two homology contractions also promote `f` directly to a
+homogeneous `TauCeti.LinearHomotopyEquiv` with forward map `f`
+(`TauCeti.LinearHomotopyEquiv.ofHomologyMapBijective`).
 
 ## Main definitions
 
 * `TauCeti.InternalGrading.homologyContraction`: the special contraction of `(M, d)` onto its
   homology with zero differential.
+* `TauCeti.LinearHomotopyEquiv.ofHomologyMapBijective`: promote a chain quasi-isomorphism between
+  graded differential vector spaces over a division ring to a `LinearHomotopyEquiv` with forward
+  map `f`, degree-zero inverse, and degree-`-1` homotopies.
 
 ## Main results
 
@@ -49,6 +55,13 @@ homology, which is Kadeishvili's theorem.
   `TauCeti.InternalGrading.isHomogeneous_homologyContraction_proj` and
   `TauCeti.InternalGrading.isHomogeneous_homologyContraction_homotopy`: the inclusion and
   projection have degree zero and the homotopy has degree `-1`.
+* `TauCeti.InternalGrading.homologyContraction_proj_comp_comp_incl`: compressing a chain map
+  between homology contractions recovers `LinearMap.homologyMap`.
+* `TauCeti.LinearHomotopyEquiv.isHomogeneous_ofHomologyMapBijective_inv`,
+  `TauCeti.LinearHomotopyEquiv.isHomogeneous_ofHomologyMapBijective_homotopyHom` and
+  `TauCeti.LinearHomotopyEquiv.isHomogeneous_ofHomologyMapBijective_homotopyInv`: over a division
+  ring, the inverse and homotopies produced from a degree-zero quasi-isomorphism have degrees `0`
+  and `-1`.
 
 ## References
 
@@ -342,4 +355,230 @@ theorem isHomogeneous_homologyContraction_homotopy :
     · simpa only [add_zero] using
         (G.isHomogeneous_incl hhom hd).map_mem ((G.isHomogeneous_proj hhom hd).map_mem hx)
 
+/-- Compressing a chain map `f` between homology contractions yields `LinearMap.homologyMap f`. -/
+theorem homologyContraction_proj_comp_comp_incl {N : Type*}
+    [AddCommGroup N] [Module K N] (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf : f ∘ₗ d = dN ∘ₗ f) :
+    (GN.homologyContraction hdN_hom hdN).proj ∘ₗ f ∘ₗ
+        (G.homologyContraction hhom hd).incl =
+      _root_.LinearMap.homologyMap f hd hdN hf := by
+  refine LinearMap.ext fun y ↦ ?_
+  set z : _root_.LinearMap.ker d :=
+    ⟨(G.homologyContraction hhom hd).incl y,
+      G.homologyContraction_incl_mem_ker hhom hd y⟩
+  have hfz : f z ∈ _root_.LinearMap.ker dN :=
+    _root_.LinearMap.map_mem_ker_of_comp_eq f hf z.2
+  have hz : Submodule.Quotient.mk z = y := by
+    rw [← d.homologyπ_apply hd]
+    exact G.homologyπ_homologyContraction_incl hhom hd y
+  rw [LinearMap.comp_apply, LinearMap.comp_apply,
+    GN.homologyContraction_proj_of_mem_ker hdN_hom hdN hfz, dN.homologyπ_apply, ← hz,
+    _root_.LinearMap.homologyMap_mk]
+
 end TauCeti.InternalGrading
+
+/-! ### Promoting a quasi-isomorphism to a homogeneous homotopy equivalence -/
+
+namespace TauCeti.LinearHomotopyEquiv
+
+universe uK uM uN
+
+section DivisionRing
+
+variable {K : Type uK} {M : Type uM} {N : Type uN} [DivisionRing K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+
+/-- Over a division ring, any chain map `f : M →ₗ[K] N` between graded differential modules of
+degree `1` that induces a bijection on homology extends to a `LinearHomotopyEquiv` with forward map
+`f`.  When `f` has degree `0`, the constructed inverse has degree `0` and both homotopies have
+degree `-1` (`isHomogeneous_ofHomologyMapBijective_inv`,
+`isHomogeneous_ofHomologyMapBijective_homotopyHom`,
+`isHomogeneous_ofHomologyMapBijective_homotopyInv`). -/
+noncomputable def ofHomologyMapBijective
+    (GM : InternalGrading K M ℤ) {dM : Module.End K M}
+    (hdM_hom : TauCeti.LinearMap.IsHomogeneous dM GM.piece GM.piece 1) (hdM : dM ∘ₗ dM = 0)
+    (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf : f ∘ₗ dM = dN ∘ₗ f)
+    (hbij : Function.Bijective (_root_.LinearMap.homologyMap f hdM hdN hf)) :
+    LinearHomotopyEquiv dM dN := by
+  let cM := GM.homologyContraction hdM_hom hdM
+  let cN := GN.homologyContraction hdN_hom hdN
+  let eH := LinearEquiv.ofBijective (_root_.LinearMap.homologyMap f hdM hdN hf) hbij
+  have heH_to : eH.toLinearMap = _root_.LinearMap.homologyMap f hdM hdN hf := rfl
+  have heH_comp : cN.proj ∘ₗ f ∘ₗ cM.incl = eH.toLinearMap :=
+    (GM.homologyContraction_proj_comp_comp_incl hdM_hom hdM GN hdN_hom hdN hf).trans heH_to.symm
+  have hdM_incl : dM ∘ₗ cM.incl = 0 := by rw [cM.dM_comp_incl, LinearMap.comp_zero]
+  have hdN_incl : dN ∘ₗ cN.incl = 0 := by rw [cN.dM_comp_incl, LinearMap.comp_zero]
+  have hproj_dN : cN.proj ∘ₗ dN = 0 := by rw [cN.proj_comp_dM, LinearMap.zero_comp]
+  let g : N →ₗ[K] M := cM.incl ∘ₗ eH.symm.toLinearMap ∘ₗ cN.proj
+  have hdM_g : dM ∘ₗ g = 0 := by
+    simp only [g, ← LinearMap.comp_assoc, hdM_incl, LinearMap.zero_comp]
+  have hg_dN : g ∘ₗ dN = 0 := by
+    simp only [g, LinearMap.comp_assoc, hproj_dN, LinearMap.comp_zero]
+  let ψ : Module.End K M := LinearMap.id - g ∘ₗ f
+  have hdM_ψ : dM ∘ₗ ψ = ψ ∘ₗ dM := by
+    rw [LinearMap.comp_sub, LinearMap.sub_comp, LinearMap.comp_id, LinearMap.id_comp,
+      ← LinearMap.comp_assoc, hdM_g, LinearMap.zero_comp, LinearMap.comp_assoc, hf,
+      ← LinearMap.comp_assoc, hg_dN, LinearMap.zero_comp]
+  have hψ_incl : ψ ∘ₗ cM.incl = 0 := by
+    calc
+      (LinearMap.id - g ∘ₗ f) ∘ₗ cM.incl
+        = cM.incl - cM.incl ∘ₗ eH.symm.toLinearMap ∘ₗ (cN.proj ∘ₗ f ∘ₗ cM.incl) := by
+          simp only [g, LinearMap.sub_comp, LinearMap.id_comp, LinearMap.comp_assoc]
+      _ = cM.incl - cM.incl ∘ₗ (eH.symm.toLinearMap ∘ₗ eH.toLinearMap) := by
+          rw [heH_comp]
+      _ = 0 := by rw [eH.symm_comp, LinearMap.comp_id, sub_self]
+  let δ : dM.homology hdM →ₗ[K] N := f ∘ₗ cM.incl - cN.incl ∘ₗ eH.toLinearMap
+  have hdN_δ : dN ∘ₗ δ = 0 := by
+    rw [LinearMap.comp_sub, ← LinearMap.comp_assoc, ← hf, LinearMap.comp_assoc, hdM_incl,
+      LinearMap.comp_zero, ← LinearMap.comp_assoc, hdN_incl, LinearMap.zero_comp, sub_self]
+  have hproj_δ : cN.proj ∘ₗ δ = 0 := by
+    rw [LinearMap.comp_sub, heH_comp, ← LinearMap.comp_assoc, cN.proj_comp_incl, LinearMap.id_comp,
+      sub_self]
+  have hdN_hN_δ : dN ∘ₗ cN.homotopy ∘ₗ δ = δ := by
+    have h := congrArg (· ∘ₗ δ) cN.dM_comp_homotopy_add_homotopy_comp_dM
+    simpa only [LinearMap.add_comp, LinearMap.sub_comp, LinearMap.id_comp, LinearMap.comp_assoc,
+      hdN_δ, hproj_δ, LinearMap.comp_zero, add_zero, sub_zero] using h
+  let k : Module.End K N := cN.homotopy ∘ₗ δ ∘ₗ eH.symm.toLinearMap ∘ₗ cN.proj
+  have hdN_k : dN ∘ₗ k = f ∘ₗ g - cN.incl ∘ₗ cN.proj := by
+    calc
+      dN ∘ₗ k = (dN ∘ₗ cN.homotopy ∘ₗ δ) ∘ₗ eH.symm.toLinearMap ∘ₗ cN.proj := by
+        simp only [k, LinearMap.comp_assoc]
+      _ = (f ∘ₗ cM.incl - cN.incl ∘ₗ eH.toLinearMap) ∘ₗ eH.symm.toLinearMap ∘ₗ cN.proj := by
+        rw [hdN_hN_δ]
+      _ = f ∘ₗ g - cN.incl ∘ₗ (eH.toLinearMap ∘ₗ eH.symm.toLinearMap) ∘ₗ cN.proj := by
+        simp only [g, LinearMap.sub_comp, LinearMap.comp_assoc]
+      _ = f ∘ₗ g - cN.incl ∘ₗ cN.proj := by
+        rw [eH.comp_symm, LinearMap.id_comp]
+  have hk_dN : k ∘ₗ dN = 0 := by
+    simp only [k, LinearMap.comp_assoc, hproj_dN, LinearMap.comp_zero]
+  refine
+    { hom := f
+      inv := g
+      homotopyHom := ψ ∘ₗ cM.homotopy
+      homotopyInv := cN.homotopy - k
+      dN_comp_hom := hf.symm
+      dM_comp_inv := hdM_g.trans hg_dN.symm
+      dM_comp_homotopyHom_add_homotopyHom_comp_dM := ?_
+      dN_comp_homotopyInv_add_homotopyInv_comp_dN := ?_ }
+  · calc
+      dM ∘ₗ (ψ ∘ₗ cM.homotopy) + (ψ ∘ₗ cM.homotopy) ∘ₗ dM
+        = ψ ∘ₗ (dM ∘ₗ cM.homotopy + cM.homotopy ∘ₗ dM) := by
+          rw [← LinearMap.comp_assoc, hdM_ψ, LinearMap.comp_assoc, LinearMap.comp_assoc,
+            ← LinearMap.comp_add]
+      _ = ψ ∘ₗ (LinearMap.id - cM.incl ∘ₗ cM.proj) := by
+          rw [cM.dM_comp_homotopy_add_homotopy_comp_dM]
+      _ = LinearMap.id - g ∘ₗ f := by
+          rw [LinearMap.comp_sub, LinearMap.comp_id, ← LinearMap.comp_assoc, hψ_incl,
+            LinearMap.zero_comp, sub_zero]
+  · calc
+      dN ∘ₗ (cN.homotopy - k) + (cN.homotopy - k) ∘ₗ dN
+        = (dN ∘ₗ cN.homotopy + cN.homotopy ∘ₗ dN) - dN ∘ₗ k - k ∘ₗ dN := by
+          simp only [LinearMap.comp_sub, LinearMap.sub_comp]
+          abel
+      _ = (LinearMap.id - cN.incl ∘ₗ cN.proj) - (f ∘ₗ g - cN.incl ∘ₗ cN.proj) - 0 := by
+          rw [cN.dM_comp_homotopy_add_homotopy_comp_dM, hdN_k, hk_dN]
+      _ = LinearMap.id - f ∘ₗ g := by abel
+
+/-- The forward map of `ofHomologyMapBijective` is the given chain map `f`. -/
+@[simp]
+theorem ofHomologyMapBijective_hom
+    (GM : InternalGrading K M ℤ) {dM : Module.End K M}
+    (hdM_hom : TauCeti.LinearMap.IsHomogeneous dM GM.piece GM.piece 1) (hdM : dM ∘ₗ dM = 0)
+    (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf : f ∘ₗ dM = dN ∘ₗ f)
+    (hbij : Function.Bijective (_root_.LinearMap.homologyMap f hdM hdN hf)) :
+    (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).hom = f :=
+  (rfl)
+
+/-- When `f` is homogeneous of degree zero, the inverse constructed by `ofHomologyMapBijective` is
+homogeneous of degree zero. -/
+theorem isHomogeneous_ofHomologyMapBijective_inv
+    (GM : InternalGrading K M ℤ) {dM : Module.End K M}
+    (hdM_hom : TauCeti.LinearMap.IsHomogeneous dM GM.piece GM.piece 1) (hdM : dM ∘ₗ dM = 0)
+    (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf_hom : TauCeti.LinearMap.IsHomogeneous f GM.piece GN.piece 0)
+    (hf : f ∘ₗ dM = dN ∘ₗ f)
+    (hbij : Function.Bijective (_root_.LinearMap.homologyMap f hdM hdN hf)) :
+    TauCeti.LinearMap.IsHomogeneous
+      (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).inv
+      GN.piece GM.piece 0 := by
+  have heH : TauCeti.LinearMap.IsHomogeneous
+      (LinearEquiv.ofBijective (_root_.LinearMap.homologyMap f hdM hdN hf) hbij).toLinearMap
+      (GM.homology hdM_hom hdM).piece (GN.homology hdN_hom hdN).piece 0 :=
+    GM.isHomogeneous_homologyMap hdM_hom hdM GN hdN_hom hdN hf_hom hf
+  simpa only [ofHomologyMapBijective, add_zero] using
+    (GM.isHomogeneous_homologyContraction_incl hdM_hom hdM).comp
+      (heH.linearEquiv_symm.comp (GN.isHomogeneous_homologyContraction_proj hdN_hom hdN))
+
+/-- When `f` is homogeneous of degree zero, the source homotopy constructed by
+`ofHomologyMapBijective` has degree `-1`. -/
+theorem isHomogeneous_ofHomologyMapBijective_homotopyHom
+    (GM : InternalGrading K M ℤ) {dM : Module.End K M}
+    (hdM_hom : TauCeti.LinearMap.IsHomogeneous dM GM.piece GM.piece 1) (hdM : dM ∘ₗ dM = 0)
+    (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf_hom : TauCeti.LinearMap.IsHomogeneous f GM.piece GN.piece 0)
+    (hf : f ∘ₗ dM = dN ∘ₗ f)
+    (hbij : Function.Bijective (_root_.LinearMap.homologyMap f hdM hdN hf)) :
+    TauCeti.LinearMap.IsHomogeneous
+      (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).homotopyHom
+      GM.piece GM.piece (-1) := by
+  have hg := isHomogeneous_ofHomologyMapBijective_inv GM hdM_hom hdM GN hdN_hom hdN hf_hom hf hbij
+  have hψ : TauCeti.LinearMap.IsHomogeneous
+      (LinearMap.id - (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).inv ∘ₗ f)
+      GM.piece GM.piece 0 :=
+    (TauCeti.LinearMap.isHomogeneous_id GM.piece).sub
+      (by simpa only [add_zero] using hg.comp hf_hom)
+  -- Unfold `homotopyHom` to `(1 - inv ∘ f) ∘ cM.homotopy` without expanding `inv`.
+  change TauCeti.LinearMap.IsHomogeneous
+    ((LinearMap.id - (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).inv ∘ₗ f) ∘ₗ
+      (GM.homologyContraction hdM_hom hdM).homotopy) GM.piece GM.piece (-1)
+  simpa only [add_zero] using
+    hψ.comp (GM.isHomogeneous_homologyContraction_homotopy hdM_hom hdM)
+
+/-- When `f` is homogeneous of degree zero, the target homotopy constructed by
+`ofHomologyMapBijective` has degree `-1`. -/
+theorem isHomogeneous_ofHomologyMapBijective_homotopyInv
+    (GM : InternalGrading K M ℤ) {dM : Module.End K M}
+    (hdM_hom : TauCeti.LinearMap.IsHomogeneous dM GM.piece GM.piece 1) (hdM : dM ∘ₗ dM = 0)
+    (GN : InternalGrading K N ℤ) {dN : Module.End K N}
+    (hdN_hom : TauCeti.LinearMap.IsHomogeneous dN GN.piece GN.piece 1) (hdN : dN ∘ₗ dN = 0)
+    {f : M →ₗ[K] N} (hf_hom : TauCeti.LinearMap.IsHomogeneous f GM.piece GN.piece 0)
+    (hf : f ∘ₗ dM = dN ∘ₗ f)
+    (hbij : Function.Bijective (_root_.LinearMap.homologyMap f hdM hdN hf)) :
+    TauCeti.LinearMap.IsHomogeneous
+      (ofHomologyMapBijective GM hdM_hom hdM GN hdN_hom hdN hf hbij).homotopyInv
+      GN.piece GN.piece (-1) := by
+  let eH := LinearEquiv.ofBijective (_root_.LinearMap.homologyMap f hdM hdN hf) hbij
+  have heH : TauCeti.LinearMap.IsHomogeneous eH.toLinearMap
+      (GM.homology hdM_hom hdM).piece (GN.homology hdN_hom hdN).piece 0 :=
+    GM.isHomogeneous_homologyMap hdM_hom hdM GN hdN_hom hdN hf_hom hf
+  have hδ : TauCeti.LinearMap.IsHomogeneous
+      (f ∘ₗ (GM.homologyContraction hdM_hom hdM).incl -
+        (GN.homologyContraction hdN_hom hdN).incl ∘ₗ eH.toLinearMap)
+      (GM.homology hdM_hom hdM).piece GN.piece 0 :=
+    TauCeti.LinearMap.IsHomogeneous.sub
+      (by simpa only [add_zero] using
+        hf_hom.comp (GM.isHomogeneous_homologyContraction_incl hdM_hom hdM))
+      (by simpa only [add_zero] using
+        (GN.isHomogeneous_homologyContraction_incl hdN_hom hdN).comp heH)
+  have hk : TauCeti.LinearMap.IsHomogeneous
+      ((GN.homologyContraction hdN_hom hdN).homotopy ∘ₗ
+        (f ∘ₗ (GM.homologyContraction hdM_hom hdM).incl -
+          (GN.homologyContraction hdN_hom hdN).incl ∘ₗ eH.toLinearMap) ∘ₗ
+        eH.symm.toLinearMap ∘ₗ (GN.homologyContraction hdN_hom hdN).proj)
+      GN.piece GN.piece (-1) := by
+    simpa only [zero_add, add_zero] using
+      (GN.isHomogeneous_homologyContraction_homotopy hdN_hom hdN).comp
+        (hδ.comp (heH.linearEquiv_symm.comp
+          (GN.isHomogeneous_homologyContraction_proj hdN_hom hdN)))
+  exact (GN.isHomogeneous_homologyContraction_homotopy hdN_hom hdN).sub hk
+
+end DivisionRing
+
+end TauCeti.LinearHomotopyEquiv

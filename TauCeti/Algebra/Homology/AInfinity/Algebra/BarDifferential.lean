@@ -320,4 +320,19 @@ theorem unaryBarDifferential_comp_self (𝒜 : AInfinityAlgebra R A) :
     ← LinearMap.comp_assoc, differential_comp_self_eq_zero, LinearMap.zero_comp,
     LinearMap.comp_zero]
 
+/-- The unary bar differential acts within each tensor-length summand, so it commutes with the
+projection onto words of length `n`. -/
+theorem lengthProj_comp_unaryBarDifferential (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) :
+    ReducedTensorWords.lengthProj R A n ∘ₗ 𝒜.unaryBarDifferential =
+      𝒜.unaryBarDifferential ∘ₗ ReducedTensorWords.lengthProj R A n := by
+  rw [unaryBarDifferential_eq_gradedCoderiv]
+  refine ReducedTensorWords.lengthProj_comp_gradedCoderiv (𝒜.grading.shift 1) 1 (a := 1) ?_ rfl
+  refine ReducedTensorWords.linearMap_ext R A fun m x ↦ ?_
+  simp only [LinearMap.comp_apply]
+  by_cases hm : m = 1
+  · subst hm
+    rw [ReducedTensorWords.lengthProj_of_self]
+  · rw [ReducedTensorWords.lengthProj_of_of_ne R A hm, map_zero, map_zero,
+      ReducedTensorWords.letter_of_of_ne_one R A hm, map_zero]
+
 end TauCeti.AInfinityAlgebra
