@@ -61,6 +61,8 @@ at `y`.
   subspace `L`, the tangent cone of the set is `L`.
 * `TauCeti.map_mtangentConeAt_eq_zero`: a linear map that vanishes on a set read in a chart kills
   its tangent cone carried into that chart.
+* `TauCeti.IsSliceChart.span_mtangentConeAt_eq_comap`: the tangent space of a flattened set is the
+  preimage of the model subspace under the differential of the slice chart.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
@@ -284,6 +286,24 @@ theorem IsSliceChart.finrank_span_mtangentConeAt (hn : n ≠ 0)
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
   exact he.finrank_span_tangentConeAt hL hy' (chartAt_self_mem_preimage hys) hA
+
+/-- **The tangent space of a flattened set, read in the slice chart.** If a chart `q` of the
+maximal atlas flattens `s` onto a closed subspace `L` near a point `y` of `s`, then the span of the
+tangent cone of `s` at `y` is the preimage of `L` under the differential of `q` at `y`; the tangent
+cone is already this subspace. -/
+theorem IsSliceChart.span_mtangentConeAt_eq_comap (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
+    (hL : IsClosed (L : Set E)) (hy : y ∈ q.source) (hys : y ∈ s) :
+    Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) =
+      L.comap (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) q y).toLinearMap := by
+  obtain ⟨hy', -, -, -⟩ := isSliceChart_chartAt_symm_trans hq hs hy
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
+  have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
+  rw [tangentConeAt_preimage_symm_eq hs hL hy hys] at himg
+  rw [OpenPartialHomeomorph.coe_trans] at hA
+  rw [mfderiv_eq_of_hasFDerivAt_chartAt_symm hA, ← A.injective.preimage_image
+    (mtangentConeAt 𝓘(𝕜, E) s y), himg]
+  exact Submodule.span_eq (L.comap ((A : E →L[𝕜] E) : E →ₗ[𝕜] E))
 
 /-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`
 of the maximal atlas flattens `s₁` onto a closed subspace `L₁` and `s₂` onto a closed subspace
