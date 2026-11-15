@@ -180,10 +180,9 @@ private theorem exists_norm_le_lineMap (hα₀ : 0 < α) (hα₁ : α < 1) {lam 
     (lt_min one_pos hlam) (Lam := max 1 Lam) (1 + K) T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck s hs u ↦ ?_⟩
   have ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
-      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 := fun p ξ ↦
-    (Matrix.toQuadraticForm'_le_sum_abs_mul_sq _ ξ).trans (mul_le_mul_of_nonneg_right
-      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦
-        (HolderSpace.norm_apply_le (a i j) p).trans (hak i j)) (sq_nonneg _))
+      (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 := fun p ↦
+    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
+      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
   -- The closed ball of radius `1 + K` is convex, so it contains the segments of coefficients.
   have hball {x y : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
       (hx : ‖x‖ ≤ 1 + K) (hy : ‖y‖ ≤ 1 + K) : ‖AffineMap.lineMap x y s‖ ≤ 1 + K :=

@@ -73,6 +73,10 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
   `‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`.
 * `TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_le`: the powers of `u ∈ H^s` lie in
   `H^s`, with `‖u ^ (n + 1)‖_{H^s} ≤ C ^ n ‖u‖_{H^s} ^ (n + 1)`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_sub_pow_le`: the powers depend
+  Lipschitz continuously on `u`, with
+  `‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}` when both norms are at most
+  `R`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
@@ -230,6 +234,63 @@ theorem exists_norm_toBesselPotentialSpace_pow_le {s : ℝ} (hs : finrank ℝ E 
           ≤ C * (C ^ n * ‖hu.toBesselPotentialSpace‖ ^ (n + 1)) *
               ‖hu.toBesselPotentialSpace‖ := by gcongr
         _ = C ^ (n + 1) * ‖hu.toBesselPotentialSpace‖ ^ (n + 1 + 1) := by ring
+
+/-- **Differences of powers in `H^s(E)`, `s > dim E / 2`.** There is a constant `C`, depending
+only on `s` and `E`, such that for `L²` functions `u, w ∈ H^s` with `‖u‖_{H^s}, ‖w‖_{H^s} ≤ R` and
+every `n`, the difference `u ^ (n + 1) - w ^ (n + 1)` is an `L²` function in `H^s` with
+`‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}`. This is the Lipschitz form of
+`exists_norm_toBesselPotentialSpace_pow_le`. -/
+theorem exists_norm_toBesselPotentialSpace_pow_sub_pow_le {s : ℝ} (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u w : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+      (hw : MemSobolev s 2 (w : 𝓢'(E, ℂ))) {R : ℝ}, ‖hu.toBesselPotentialSpace‖ ≤ R →
+      ‖hw.toBesselPotentialSpace‖ ≤ R → ∀ n : ℕ, ∃ d : Lp ℂ 2 (volume : Measure E),
+        d =ᵐ[volume] (fun x ↦ u x ^ (n + 1) - w x ^ (n + 1)) ∧
+        ∃ hd : MemSobolev s 2 (d : 𝓢'(E, ℂ)), ‖hd.toBesselPotentialSpace‖ ≤
+          (n + 1) * (C * R) ^ n * ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖ := by
+  obtain ⟨C₁, hC₁, hmul⟩ := exists_norm_toBesselPotentialSpace_mul_le (E := E) hs
+  obtain ⟨C₂, hC₂, hpow⟩ := exists_norm_toBesselPotentialSpace_pow_le (E := E) hs
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {u w} hu hw {R} huR hwR n ↦ ?_⟩
+  set C := max C₁ C₂
+  set δ := ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖
+  have hR : 0 ≤ R := (norm_nonneg _).trans huR
+  have he := hu.toTemperedDistribution_sub hw
+  have heδ : ‖he.toBesselPotentialSpace‖ = δ := by
+    rw [hu.toBesselPotentialSpace_toTemperedDistribution_sub hw he]
+  -- Induction on `n`, through `u ^ (n + 2) - w ^ (n + 2) = u (u ^ (n + 1) - w ^ (n + 1)) +
+  -- (u - w) w ^ (n + 1)`.
+  induction n with
+  | zero =>
+    refine ⟨u - w, ?_, he, by simpa using heδ.le⟩
+    filter_upwards [Lp.coeFn_sub u w] with x hx
+    rw [hx, Pi.sub_apply, zero_add, pow_one, pow_one]
+  | succ n ih =>
+    obtain ⟨d, hdu, hd, hdn⟩ := ih
+    obtain ⟨p, hpw, hp, hpn⟩ := hpow hw n
+    have h₁ := hu.mul hs hd
+    have h₂ := he.mul hs hp
+    set x₁ := (hu.memLp_mul hs d).toLp _
+    set x₂ := (he.memLp_mul hs p).toLp _
+    have h₁₂ := h₁.toTemperedDistribution_add h₂
+    refine ⟨x₁ + x₂, ?_, h₁₂, ?_⟩
+    · filter_upwards [Lp.coeFn_add x₁ x₂, (hu.memLp_mul hs d).coeFn_toLp,
+        (he.memLp_mul hs p).coeFn_toLp, hdu, hpw, Lp.coeFn_sub u w] with x h h₁ h₂ hd hp hsub
+      rw [h, Pi.add_apply, h₁, h₂, hd, hp, hsub, Pi.sub_apply]
+      ring
+    · have hC₁C : C₁ ≤ C := le_max_left _ _
+      have hpn' : ‖hp.toBesselPotentialSpace‖ ≤ C ^ n * R ^ (n + 1) :=
+        hpn.trans (by gcongr; exact le_max_right _ _)
+      rw [h₁.toBesselPotentialSpace_toTemperedDistribution_add h₂ h₁₂]
+      calc ‖h₁.toBesselPotentialSpace + h₂.toBesselPotentialSpace‖
+          ≤ ‖h₁.toBesselPotentialSpace‖ + ‖h₂.toBesselPotentialSpace‖ := norm_add_le _ _
+        _ ≤ C₁ * ‖hu.toBesselPotentialSpace‖ * ‖hd.toBesselPotentialSpace‖ +
+            C₁ * ‖he.toBesselPotentialSpace‖ * ‖hp.toBesselPotentialSpace‖ :=
+          add_le_add (hmul hu hd) (hmul he hp)
+        _ ≤ C * R * ((n + 1) * (C * R) ^ n * δ) + C * δ * (C ^ n * R ^ (n + 1)) := by
+          rw [heδ]
+          gcongr
+        _ = (↑(n + 1) + 1) * (C * R) ^ (n + 1) * δ := by
+          push_cast
+          ring
 
 /-- **Products of real `H^s` functions, `s > n / 2`.** The real `L²` functions whose
 complexification lies in `H^s`, `s > dim E / 2`, are closed under pointwise multiplication. -/
