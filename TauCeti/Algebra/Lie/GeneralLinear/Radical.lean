@@ -46,7 +46,8 @@ bracket again, all the remaining units.
 
 * `TauCeti.slIdeal_le_of_notMem_center`: **a Lie ideal of `gl n K` containing a non-central matrix
   contains `sl n K`**; equivalently `TauCeti.slIdeal_le_or_le_center`, every Lie ideal of `gl n K`
-  either contains `sl n K` or consists of scalar matrices.
+  either contains `sl n K` or consists of scalar matrices, giving the four-case classification
+  `TauCeti.eq_bot_or_eq_center_or_eq_slIdeal_or_eq_top` (`⊥`, the centre, `sl n K`, or `⊤`).
 * `TauCeti.lie_slIdeal_slIdeal`: **`sl n R` is perfect**, `⁅sl n R, sl n R⁆ = sl n R`, whenever `2`
   is invertible in `R`, whence `TauCeti.not_isSolvable_slIdeal`: it is not solvable when `R` is
   nontrivial and there are at least two indices.
@@ -224,6 +225,33 @@ theorem slIdeal_le_or_le_center (htwo : (2 : K) ≠ 0) :
   · exact Or.inr hle
   · obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hle
     exact Or.inl (slIdeal_le_of_notMem_center I htwo hxI hx)
+
+/-- **Classification of the Lie ideals of `gl n K`** over a field in which `2 ≠ 0`: every Lie ideal
+is `⊥`, the centre `K · 1`, the derived ideal `sl n K`, or `⊤`. -/
+theorem eq_bot_or_eq_center_or_eq_slIdeal_or_eq_top (htwo : (2 : K) ≠ 0) :
+    I = ⊥ ∨ I = LieAlgebra.center K (Matrix n n K) ∨ I = slIdeal K n ∨ I = ⊤ := by
+  rcases slIdeal_le_or_le_center I htwo with hsl | hc
+  · by_cases hle : I ≤ slIdeal K n
+    · exact Or.inr (Or.inr (Or.inl (le_antisymm hle hsl)))
+    · obtain ⟨x, hxI, hx⟩ := IsConcreteLE.not_le_iff_exists.mp hle
+      have htr : x.trace ≠ 0 := by rwa [mem_slIdeal_iff] at hx
+      refine Or.inr (Or.inr (Or.inr (eq_top_iff.mpr fun A _ => ?_)))
+      have hsub : A - (A.trace / x.trace) • x ∈ slIdeal K n := by
+        rw [mem_slIdeal_iff, Matrix.trace_sub, Matrix.trace_smul, smul_eq_mul,
+          div_mul_cancel₀ _ htr, sub_self]
+      simpa only [sub_add_cancel] using
+        add_mem (hsl hsub) (SMulMemClass.smul_mem (A.trace / x.trace) hxI)
+  · by_cases hbot : I ≤ ⊥
+    · exact Or.inl (le_bot_iff.mp hbot)
+    · obtain ⟨x, hxI, hx0⟩ := IsConcreteLE.not_le_iff_exists.mp hbot
+      rw [LieSubmodule.mem_bot] at hx0
+      obtain ⟨r, rfl⟩ := mem_center_matrix_iff.mp (hc hxI)
+      have hr : r ≠ 0 := fun hr0 => hx0 (by rw [hr0, zero_smul])
+      refine Or.inr (Or.inl (le_antisymm hc fun A hA => ?_))
+      obtain ⟨s, rfl⟩ := mem_center_matrix_iff.mp hA
+      have h1 : (1 : Matrix n n K) ∈ I := by
+        simpa [inv_smul_smul₀ hr] using SMulMemClass.smul_mem r⁻¹ hxI
+      exact SMulMemClass.smul_mem s h1
 
 end Ideals
 
