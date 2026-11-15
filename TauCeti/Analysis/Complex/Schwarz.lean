@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import Mathlib.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Analytic.Order
 
 /-!
 # Schwarz's lemma with prescribed zeros
@@ -28,12 +30,19 @@ At a zero `a ∈ s` itself the same quotient controls the derivative of order `k
 `f⁽ᵏ⁽ᵃ⁾⁾(a) = (k a)! • h a`. This bounds the first nonvanishing derivative of an auxiliary function
 at one of its zeros, as in Gelfond's proof of the Gelfond–Schneider theorem.
 
+For a single zero of order `T` at the centre `c` itself, no regularity or bound on the boundary
+circle is needed: if `g` is complex differentiable and bounded by `M` on the open disc `ball c ρ`
+and `(T : ℕ∞) ≤ analyticOrderAt g c`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` on `ball c ρ`
+(`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`).
+
 ## Main results
 
 * `TauCeti.norm_le_mul_prod_div_pow`: the bound by the product over the zeros.
 * `TauCeti.norm_le_mul_three_mul_div_pow`: the bound `M * (3 * R / T) ^ ∑ x ∈ s, k x`.
 * `TauCeti.norm_iteratedDeriv_le_mul_prod_div_pow`: the bound for the derivative of order `k a`
   at a zero `a ∈ s`.
+* `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`: the bound `M * (‖w - c‖ / ρ) ^ T` on an
+  open disc for a zero of order at least `T` at the centre.
 
 ## References
 
@@ -203,3 +212,23 @@ theorem norm_le_mul_three_mul_div_pow {R : ℝ} (hf : AnalyticOnNhd ℂ f (close
   nlinarith [norm_nonneg (x - c)]
 
 end TauCeti
+
+/-- **Schwarz's lemma for a zero of order `T` on an open disc.** If `g : ℂ → V` is complex
+differentiable on the open disc `ball c ρ`, bounded by `M` there, and vanishes at `c` to order at
+least `T`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` for every `w ∈ ball c ρ`.
+
+Unlike `TauCeti.norm_le_mul_prod_div_pow`, no regularity or bound on the boundary circle
+`sphere c ρ` is needed: only complex differentiability and boundedness on the open disc. -/
+theorem Complex.norm_le_mul_div_pow_of_le_analyticOrderAt {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] {g : ℂ → V} {c : ℂ} {ρ M : ℝ} (hd : DifferentiableOn ℂ g (ball c ρ))
+    (hM : ∀ w ∈ ball c ρ, ‖g w‖ ≤ M) {T : ℕ} (hT : (T : ℕ∞) ≤ analyticOrderAt g c) {w : ℂ}
+    (hw : w ∈ ball c ρ) : ‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T := by
+  rcases T.eq_zero_or_pos with rfl | hT0
+  · simpa using hM w hw
+  · have hgc : g c = 0 := apply_eq_zero_of_analyticOrderAt_ne_zero
+      (ne_of_gt (lt_of_lt_of_le (by positivity) hT))
+    have hmaps : Set.MapsTo g (ball c ρ) (closedBall (g c) M) := fun z hz ↦ by
+      simpa [hgc] using hM z hz
+    have ho := TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt hT0 hT
+    have hdist := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO hd hmaps ho hw
+    rwa [hgc, dist_zero_right, dist_eq_norm, Nat.sub_add_cancel hT0] at hdist
