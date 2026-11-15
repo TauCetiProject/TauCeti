@@ -48,8 +48,9 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `gradient_norm_rpow_of_ne`, `norm_gradient_norm_rpow_of_ne`: the gradient `p ‖x‖ ^ (p - 2) x`
-  of an arbitrary real power away from zero, and its norm `|p| ‖x‖ ^ (p - 1)`.
+* `hasGradientAt_norm_rpow_of_ne`, `gradient_norm_rpow_of_ne`, `norm_gradient_norm_rpow_of_ne`:
+  the gradient `p ‖x‖ ^ (p - 2) x` of an arbitrary real power away from zero, and its norm
+  `|p| ‖x‖ ^ (p - 1)`.
 * `iteratedGradientChain_one_norm_rpow_apply`, `inner_iteratedGradientChain_one_norm_rpow_apply`:
   the Hessian of an arbitrary real power away from zero as the derivative of its gradient, and its
   bilinear form; `inner_iteratedGradientChain_one_norm_rpow_apply_self`: its radial value
@@ -58,8 +59,9 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`, `norm_iteratedGradientChain_one_norm_rpow_le`: the
   Hessian is `O(‖x‖ ^ (p - 2))`;
+  `abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow`,
   `abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow`: for `p ≠ 0` and
-  `dim E + p ≠ 2` it is at least a positive multiple of `‖x‖ ^ (p - 2)`.
+  `p ≠ 1`, respectively `dim E + p ≠ 2`, it is at least a positive multiple of `‖x‖ ^ (p - 2)`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
   in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
@@ -151,13 +153,18 @@ theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
 
-/-- Away from the origin, the gradient of `‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
-theorem gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
-    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
-  refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
+/-- Away from the origin, `x ↦ ‖x‖ ^ p` has gradient `p ‖x‖ ^ (p - 2) x`. -/
+theorem hasGradientAt_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :
+    HasGradientAt (fun y : E ↦ ‖y‖ ^ p) ((p * ‖x‖ ^ (p - 2)) • x) x := by
+  refine hasGradientAt_iff_hasFDerivAt.2 ?_
   convert hasFDerivAt_norm_rpow_of_ne p hx using 1
   ext v
   simp [InnerProductSpace.toDual_apply_apply]
+
+/-- Away from the origin, the gradient of `‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x :=
+  (hasGradientAt_norm_rpow_of_ne p hx).gradient
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
@@ -378,6 +385,23 @@ theorem norm_iteratedGradientChain_one_norm_rpow_le [CompleteSpace E] (p : ℝ) 
     ‖iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x‖ ≤ |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) := by
   rw [norm_iteratedGradientChain]
   exact norm_iteratedFDeriv_two_norm_rpow_le p hx
+
+/-- Away from the origin, the Hessian of `‖x‖ ^ p` has operator norm at least
+`|p (p - 1)| ‖x‖ ^ (p - 2)`, the size of its radial value
+(`inner_iteratedGradientChain_one_norm_rpow_apply_self`). -/
+theorem abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow [CompleteSpace E]
+    (p : ℝ) {x : E} (hx : x ≠ 0) :
+    |p * (p - 1)| * ‖x‖ ^ (p - 2) ≤ ‖iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x‖ := by
+  have hN := norm_pos_iff.2 hx
+  have hp : ‖x‖ ^ p = ‖x‖ ^ (p - 2) * ‖x‖ ^ 2 := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add hN]
+    norm_num
+  -- `|⟪D²u(x) x, x⟫| ≤ ‖D²u(x)‖ ‖x‖²`.
+  have h := (abs_real_inner_le_norm (iteratedGradientChain (fun y : E ↦ ‖y‖ ^ p) 1 x x) x).trans
+    (mul_le_mul_of_nonneg_right (ContinuousLinearMap.le_opNorm _ x) hN.le)
+  rw [inner_iteratedGradientChain_one_norm_rpow_apply_self hx, abs_mul,
+    abs_of_pos (Real.rpow_pos_of_pos hN _), hp, ← mul_assoc, mul_assoc _ ‖x‖ ‖x‖, ← sq] at h
+  exact le_of_mul_le_mul_right h (by positivity)
 
 /-- Away from the origin, the second derivative of the norm has operator norm at least `‖x‖⁻¹`
 when some nonzero direction `v` is orthogonal to `x`: by the Hessian formula for `‖·‖ ^ p` with

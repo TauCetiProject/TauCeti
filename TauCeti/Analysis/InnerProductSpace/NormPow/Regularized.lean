@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
@@ -19,7 +21,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 # Regularized norm powers and their first two derivatives
 
 Let `E` be a real inner product space. For `t > 0` the regularized norm power
-`(‖x‖ ^ 2 + t) ^ (s / 2)` is smooth on all of `E`, and as `t → 0` it tends to `‖x‖ ^ s`. This file
+`(‖x‖ ^ 2 + t) ^ (s / 2)` is smooth on all of `E`, and as `t → 0` it tends to `‖x‖ ^ s` away
+from the origin. This file
 records its gradient
 
 `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x`
@@ -30,9 +33,10 @@ Hessian
 `v ↦ s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) v + s (s - 2) (‖x‖ ^ 2 + t) ^ (s / 2 - 2) ⟪x, v⟫ x`
 
 (`TauCeti.regularizedNormRpowHessian`). At `t = 0` and away from the origin they are the gradient
-and the Hessian of `‖x‖ ^ s`. For `s ≤ 2` and `t ≥ 0` both are dominated by their values at `t = 0`:
-the gradient by `|s| ‖x‖ ^ (s - 1)` and the Hessian by `|s| (3 - s) ‖x‖ ^ (s - 2)`. These bounds
-are uniform in `t`, which is what dominated convergence arguments for singular norm powers need.
+and the Hessian of `‖x‖ ^ s`. For `s ≤ 2` and `t ≥ 0` the gradient is dominated by its value at
+`t = 0`, of norm at most `|s| ‖x‖ ^ (s - 1)`, and away from the origin the Hessian has norm at most
+`|s| (3 - s) ‖x‖ ^ (s - 2)`. These bounds are uniform in `t`, which is what dominated convergence
+arguments for singular norm powers need.
 
 ## Main declarations
 
@@ -177,14 +181,45 @@ theorem gradient_norm_rpow_eq_regularizedNormRpowGradient [CompleteSpace E] {x :
 
 /-! ### The regularized Hessian -/
 
-/-- The derivative `v ↦ s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) v + s (s - 2) (‖x‖ ^ 2 + t) ^ (s / 2 - 2)
-⟪x, v⟫ x` of the regularized gradient `TauCeti.regularizedNormRpowGradient s t` at `x`
+/-- The map `v ↦ s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) v + s (s - 2) (‖x‖ ^ 2 + t) ^ (s / 2 - 2)
+⟪x, v⟫ x`. Where `‖x‖ ^ 2 + t ≠ 0`, in particular everywhere for `t > 0`, it is the derivative of
+the regularized gradient `TauCeti.regularizedNormRpowGradient s t` at `x`
 (`TauCeti.hasFDerivAt_regularizedNormRpowGradient`). At `t = 0` and away from the origin it is the
 Hessian of `‖x‖ ^ s`
 (`TauCeti.iteratedGradientChain_one_norm_rpow_eq_regularizedNormRpowHessian`). -/
 def regularizedNormRpowHessian (s t : ℝ) (x : E) : E →L[ℝ] E :=
   (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • ContinuousLinearMap.id ℝ E +
     (s * (s - 2) * (‖x‖ ^ 2 + t) ^ (s / 2 - 2)) • (innerSL ℝ x).smulRight x
+
+/-- Unfolding `TauCeti.regularizedNormRpowHessian`. -/
+theorem regularizedNormRpowHessian_def (s t : ℝ) (x : E) :
+    regularizedNormRpowHessian s t x =
+      (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • ContinuousLinearMap.id ℝ E +
+        (s * (s - 2) * (‖x‖ ^ 2 + t) ^ (s / 2 - 2)) • (innerSL ℝ x).smulRight x :=
+  (rfl)
+
+/-- At the origin the regularized Hessian is the multiple `s t ^ (s / 2 - 1)` of the identity. -/
+@[simp]
+theorem regularizedNormRpowHessian_zero (s t : ℝ) :
+    regularizedNormRpowHessian s t (0 : E) =
+      (s * t ^ (s / 2 - 1)) • ContinuousLinearMap.id ℝ E := by
+  rw [regularizedNormRpowHessian_def, norm_zero, map_zero, ContinuousLinearMap.smulRight_zero,
+    smul_zero, add_zero, zero_pow two_ne_zero, zero_add]
+
+/-- The regularized Hessian of the power `0` vanishes. -/
+@[simp]
+theorem regularizedNormRpowHessian_zero_left (t : ℝ) (x : E) :
+    regularizedNormRpowHessian 0 t x = 0 := by
+  rw [regularizedNormRpowHessian_def, zero_mul, zero_mul, zero_mul, zero_smul, zero_smul, add_zero]
+
+/-- Without regularization, the regularized Hessian is
+`s ‖x‖ ^ (s - 2) I + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, ·⟫ x`. -/
+theorem regularizedNormRpowHessian_zero_right (s : ℝ) (x : E) :
+    regularizedNormRpowHessian s 0 x = (s * ‖x‖ ^ (s - 2)) • ContinuousLinearMap.id ℝ E +
+      (s * (s - 2) * ‖x‖ ^ (s - 4)) • (innerSL ℝ x).smulRight x := by
+  rw [regularizedNormRpowHessian_def, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
+    show s / 2 - 2 = (s - 4) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x),
+    Real.sq_rpow_div_two (norm_nonneg x)]
 
 /-- Evaluating `TauCeti.regularizedNormRpowHessian s t x` at a vector. -/
 theorem regularizedNormRpowHessian_apply (s t : ℝ) (x v : E) :
@@ -195,7 +230,7 @@ theorem regularizedNormRpowHessian_apply (s t : ℝ) (x v : E) :
 
 /-- Without regularization, the regularized Hessian is
 `v ↦ s ‖x‖ ^ (s - 2) v + s (s - 2) ‖x‖ ^ (s - 4) ⟪x, v⟫ x`. -/
-theorem regularizedNormRpowHessian_zero_apply (s : ℝ) (x v : E) :
+theorem regularizedNormRpowHessian_zero_right_apply (s : ℝ) (x v : E) :
     regularizedNormRpowHessian s 0 x v = (s * ‖x‖ ^ (s - 2)) • v +
       (s * (s - 2) * ‖x‖ ^ (s - 4) * ⟪x, v⟫) • x := by
   rw [regularizedNormRpowHessian_apply, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
@@ -269,6 +304,21 @@ theorem continuous_regularizedNormRpowHessian {t : ℝ} (ht : 0 < t) :
   exact ((continuous_const.mul (h _)).smul continuous_const).add
     ((continuous_const.mul (h _)).smul hK)
 
+/-- In a second-countable space, the field `TauCeti.regularizedNormRpowHessian s t` is
+measurable. -/
+@[fun_prop]
+theorem measurable_regularizedNormRpowHessian [MeasurableSpace E] [BorelSpace E]
+    [SecondCountableTopology E] (s t : ℝ) :
+    Measurable (regularizedNormRpowHessian (E := E) s t) := by
+  have hK : Continuous fun x : E => (innerSL ℝ x).smulRight x :=
+    (ContinuousLinearMap.smulRightL ℝ E E).continuous₂.comp
+      ((innerSL ℝ).continuous.prodMk continuous_id)
+  have hc (c e : ℝ) : MeasureTheory.StronglyMeasurable fun x : E => c * (‖x‖ ^ 2 + t) ^ e :=
+    Measurable.stronglyMeasurable (by fun_prop)
+  simp only [funext (regularizedNormRpowHessian_def (E := E) s t)]
+  exact (((hc _ _).smul MeasureTheory.stronglyMeasurable_const).add
+    ((hc _ _).smul hK.stronglyMeasurable)).measurable
+
 /-- Away from the origin, the regularized Hessian `TauCeti.regularizedNormRpowHessian s t x`
 depends continuously on the regularization parameter `t` at `t = 0`. -/
 theorem continuousAt_regularizedNormRpowHessian_apply_zero {x : E} (hx : x ≠ 0) :
@@ -283,6 +333,6 @@ theorem iteratedGradientChain_one_norm_rpow_eq_regularizedNormRpowHessian [Compl
     {x : E} (hx : x ≠ 0) :
     iteratedGradientChain (fun y : E => ‖y‖ ^ s) 1 x = regularizedNormRpowHessian s 0 x := by
   ext v
-  rw [iteratedGradientChain_one_norm_rpow_apply hx, regularizedNormRpowHessian_zero_apply]
+  rw [iteratedGradientChain_one_norm_rpow_apply hx, regularizedNormRpowHessian_zero_right_apply]
 
 end TauCeti

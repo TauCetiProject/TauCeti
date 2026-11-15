@@ -23,8 +23,9 @@ whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
 (`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`).
 
 The weak-to-classical identification uses `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`; the norm
-comparison uses Mathlib's `norm_iteratedFDeriv_fderiv` and the Riesz isometry. These are the
-identifications used in smooth approximation in Evans, *Partial Differential Equations*, §5.3.1.
+comparison uses `TauCeti.norm_iteratedGradientChain` from
+`TauCeti/Analysis/Calculus/IteratedGradient/Basic.lean`. These are the identifications used in
+smooth approximation in Evans, *Partial Differential Equations*, §5.3.1.
 
 The classical derivative norm comparisons are adapted from Tau Ceti contribution
 [#12418](https://github.com/TauCetiProject/TauCeti/pull/12418),

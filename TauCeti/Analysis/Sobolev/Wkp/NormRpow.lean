@@ -22,10 +22,12 @@ measure, and let `u(x) = ‖x‖ ^ γ`. Away from the origin its classical Hessi
 `D²u(x) v = γ ‖x‖ ^ (γ - 2) v + γ (γ - 2) ‖x‖ ^ (γ - 4) ⟪x, v⟫ x`
 (`TauCeti.iteratedGradientChain_one_norm_rpow_apply`). Its operator norm is at most
 `|γ| (|γ - 2| + 1) ‖x‖ ^ (γ - 2)` (`TauCeti.norm_iteratedGradientChain_one_norm_rpow_le`). Its
-trace, the Laplacian `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`, bounds it from below: its operator norm is at
-least `|γ (n + γ - 2)| / n · ‖x‖ ^ (γ - 2)`
+radial value and its trace, the Laplacian `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`, bound it from below: its
+operator norm is at least `|γ (γ - 1)| ‖x‖ ^ (γ - 2)`
+(`TauCeti.abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow`) and at least
+`|γ (n + γ - 2)| / n · ‖x‖ ^ (γ - 2)`
 (`TauCeti.abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow`). Thus for
-`γ ≠ 0` and `n + γ > 2` the Hessian has size comparable to `‖x‖ ^ (γ - 2)`.
+`γ ≠ 0`, unless `n = γ = 1`, the Hessian has size comparable to `‖x‖ ^ (γ - 2)`.
 
 For `n + γ > 2` the Hessian is the weak derivative of the gradient across the origin
 (`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`). The weak Hessian of every `W^{2,p}` function equal
@@ -33,11 +35,12 @@ to `u` is therefore its classical Hessian
 (`TauCeti.Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow`). By the lower bound, that
 Hessian is `p`-integrable near the origin only for `p < n / (2 - γ)`
 (`TauCeti.lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow`). Consequently, for
-`γ ≠ 0`, `γ < 2` and `n + γ > 2`, on a bounded open set containing the origin,
+`γ ≠ 0` and `γ < 2`, unless `n = γ = 1`, on a bounded open set containing the origin,
 
 `u ∈ W^{2,p}` exactly when `p < n / (2 - γ)`
 
 (`TauCeti.exists_wkp_two_value_ae_eq_norm_rpow_iff`), including `p = ∞`, which never qualifies.
+For `n + γ ≤ 2` the threshold is at most `1`, so no `p ≥ 1` qualifies.
 For `n ≥ 2` and `0 < γ < 1` the threshold `n / (2 - γ)` lies strictly between `n / 2` and `n`:
 `u` is then a `W^{2,p}` function for some `p > n / 2`, hence continuous, but it is not in
 `W^{2,n}`. Such power singularities are the standard witnesses for the sharpness of `W^{2,p}`
@@ -105,17 +108,28 @@ theorem Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow (k : ℕ)
 
 /-! ### Membership in `W^{2,p}` -/
 
-/-- **The Hessian of a norm power is not `Lᵖ` near the origin for large `p`.** Let `γ ≠ 0`,
-`γ < 2` and `n + γ > 2`, where `n` is the dimension. If the Hessian of `‖x‖ ^ γ` is `p`-integrable
-on a neighbourhood of the origin, then `p < n / (2 - γ)`: its norm is at least a positive multiple
-of `‖x‖ ^ (γ - 2)`. -/
-theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : γ ≠ 0)
-    (hγ : γ < 2) (hn : 2 < finrank ℝ E + γ) {Ω : Set E} (hΩ : Ω ∈ 𝓝 0) {p : ℝ≥0∞}
+/-- **The Hessian of a norm power is not `Lᵖ` near the origin for large `p`.** Let `γ ≠ 0` and
+`γ < 2` on a nonzero space of dimension `n`, excluding the case `n = γ = 1`, in which the Hessian
+vanishes away from the origin. If the Hessian of `‖x‖ ^ γ` is `p`-integrable on a neighbourhood of
+the origin, then `p < n / (2 - γ)`: its norm is at least a positive multiple of `‖x‖ ^ (γ - 2)`. -/
+theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow [Nontrivial E] (hγ0 : γ ≠ 0)
+    (hγ : γ < 2) (h : 1 < finrank ℝ E ∨ γ ≠ 1) {Ω : Set E} (hΩ : Ω ∈ 𝓝 0) {p : ℝ≥0∞}
     (hH : MemLp (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) p (μ.restrict Ω)) :
     p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) := by
   have h2γ : 0 < 2 - γ := by linarith
-  have hnpos : (0 : ℝ) < finrank ℝ E := by linarith
-  have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by exact_mod_cast hnpos)
+  have hnpos : (0 : ℝ) < finrank ℝ E := by exact_mod_cast Module.finrank_pos
+  -- The Hessian has norm at least `c ‖x‖ ^ (γ - 2)` away from the origin, by its radial value
+  -- for `γ ≠ 1` and by its trace for `γ = 1`.
+  obtain ⟨c, hc, hle⟩ : ∃ c > 0, ∀ x : E, x ≠ 0 →
+      c * ‖x‖ ^ (γ - 2) ≤ ‖iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x‖ := by
+    rcases ne_or_eq γ 1 with hγ1 | rfl
+    · exact ⟨_, abs_pos.2 (mul_ne_zero hγ0 (sub_ne_zero.2 hγ1)),
+        fun x hx => abs_mul_sub_one_mul_rpow_le_norm_iteratedGradientChain_one_norm_rpow _ hx⟩
+    have h1 : (1 : ℝ) < finrank ℝ E := by exact_mod_cast h.resolve_right (not_not.2 rfl)
+    refine ⟨|(1 : ℝ) * (finrank ℝ E + 1 - 2)| / finrank ℝ E,
+      div_pos (abs_pos.2 (ne_of_gt (by linarith))) hnpos, fun x hx => ?_⟩
+    rw [div_mul_eq_mul_div, div_le_iff₀ hnpos, mul_comm _ (finrank ℝ E : ℝ)]
+    exact abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow 1 hx
   by_contra hq
   rw [not_lt] at hq
   set q := ENNReal.ofReal (finrank ℝ E / (2 - γ)) with hq_def
@@ -127,29 +141,24 @@ theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : γ ≠ 0)
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   -- The Hessian, of norm at least `c ‖x‖ ^ (γ - 2)`, would be `q`-integrable on a ball about the
   -- origin.
-  have hc : 0 < |γ * (finrank ℝ E + γ - 2)| / finrank ℝ E :=
-    div_pos (abs_pos.2 (mul_ne_zero hγ0 (by linarith))) hnpos
   have h := neg_finrank_lt_mul_toReal_of_memLp_restrict (s := γ - 2) hq0 ENNReal.ofReal_ne_top
     (ball_mem_nhds 0 hr) hc
     (ae_of_all _ fun x => by
       rcases eq_or_ne x 0 with rfl | hx
       · rw [norm_zero, Real.zero_rpow (by linarith), mul_zero]
         exact norm_nonneg _
-      rw [div_mul_eq_mul_div, div_le_iff₀ hnpos, mul_comm _ (finrank ℝ E : ℝ)]
-      exact abs_mul_rpow_le_finrank_mul_norm_iteratedGradientChain_one_norm_rpow γ hx)
+      exact hle x hx)
     ((hH.mono_measure (Measure.restrict_mono hball le_rfl)).mono_exponent hq)
   rw [hqr, show (γ - 2) * (finrank ℝ E / (2 - γ)) = -finrank ℝ E by field_simp; ring] at h
   exact lt_irrefl _ h
 
-/-- For `γ < 2`, `n + γ > 2` and `p < n / (2 - γ)`, where `n` is the dimension, `‖x‖ ^ γ` lies in
-`W^{2,p}` of every bounded open set. -/
+/-- For `γ < 2` and `p < n / (2 - γ)`, where `n` is the dimension, `‖x‖ ^ γ` lies in `W^{2,p}` of
+every bounded open set. Since `p ≥ 1`, this forces `n + γ > 2`. -/
 theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ : γ < 2)
-    (hn : 2 < finrank ℝ E + γ) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
+    {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p < ENNReal.ofReal (finrank ℝ E / (2 - γ))) :
     ∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ := by
   have h2γ : 0 < 2 - γ := by linarith
-  have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E)
-    (by exact_mod_cast (by linarith : (0 : ℝ) < finrank ℝ E))
   have hp1 : 1 ≤ p := Fact.out
   have hpt : p ≠ ∞ := ne_top_of_lt hp
   have hpr : p.toReal * (2 - γ) < finrank ℝ E := by
@@ -157,6 +166,9 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ : γ < 2)
     rwa [ENNReal.toReal_ofReal (by positivity), lt_div_iff₀ h2γ] at this
   have hp1r : 1 ≤ p.toReal := by
     simpa using ENNReal.toReal_mono hpt hp1
+  have hn : 2 < finrank ℝ E + γ := by nlinarith
+  have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E)
+    (by exact_mod_cast (by linarith : (0 : ℝ) < finrank ℝ E))
   have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
   -- The function, its gradient and its Hessian are dominated by multiples of powers of the norm.
   have hu : MemLp (fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
@@ -187,17 +199,18 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ : γ < 2)
       · exact hH)
   exact ⟨w, hw⟩
 
-/-- **`W^{2,p}` regularity of a norm power.** Let `γ ≠ 0` and `γ < 2` with `n + γ > 2`, where `n`
-is the dimension, and let `Ω` be a bounded open set containing the origin. Then `‖x‖ ^ γ` lies in
-`W^{2,p}(Ω)` exactly when `p < n / (2 - γ)`; the case `p = ∞` is included and never occurs. -/
-theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hγ0 : γ ≠ 0) (hγ : γ < 2)
-    (hn : 2 < finrank ℝ E + γ) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
+/-- **`W^{2,p}` regularity of a norm power.** Let `γ ≠ 0` and `γ < 2` on a nonzero space of
+dimension `n`, excluding the case `n = γ = 1`, and let `Ω` be a bounded open set containing the
+origin. Then `‖x‖ ^ γ` lies in `W^{2,p}(Ω)` exactly when `p < n / (2 - γ)`; the case `p = ∞` is
+included and never occurs. -/
+theorem exists_wkp_two_value_ae_eq_norm_rpow_iff [Nontrivial E] (hγ0 : γ ≠ 0) (hγ : γ < 2)
+    (h : 1 < finrank ℝ E ∨ γ ≠ 1) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
     (h0 : (0 : E) ∈ Ω) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     (∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ) ↔
       p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) :=
-  ⟨fun ⟨w, hw⟩ => lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow hγ0 hγ hn
+  ⟨fun ⟨w, hw⟩ => lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow hγ0 hγ h
       (Ω.isOpen.mem_nhds h0) ((Lp.memLp (Wkp.iteratedGradient 1 w)).ae_eq
         (Wkp.iteratedGradient_ae_eq_iteratedGradientChain_norm_rpow 1 w hw)),
-    exists_wkp_two_value_ae_eq_norm_rpow hγ hn hb⟩
+    exists_wkp_two_value_ae_eq_norm_rpow hγ hb⟩
 
 end TauCeti

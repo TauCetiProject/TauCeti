@@ -109,8 +109,8 @@ def meyersCoefficient (μ : ℝ) (x : EuclideanSpace ℝ (Fin 2)) : Matrix (Fin 
 
 /-- Meyers' coefficient is the radial coefficient
 `TauCeti.PDE.radialCoefficient (μ ^ 2) (1 - μ ^ 2)`, through which its API is derived. -/
-theorem meyersCoefficient_eq_radialCoefficient (x : EuclideanSpace ℝ (Fin 2)) :
-    meyersCoefficient μ x = radialCoefficient (μ ^ 2) (1 - μ ^ 2) x :=
+theorem meyersCoefficient_eq_radialCoefficient :
+    meyersCoefficient μ = radialCoefficient (μ ^ 2) (1 - μ ^ 2) :=
   (rfl)
 
 /-- For `0 < μ ≤ 1`, Meyers' coefficient is uniformly elliptic with constants `μ²` and `1`, so
@@ -131,7 +131,13 @@ theorem uniformlyEllipticOn_meyersCoefficient_of_one_le (hμ : 1 ≤ μ)
     (by linarith : 0 < μ ^ 2 + (1 - μ ^ 2)) Ω
   rwa [add_sub_cancel] at h
 
+/-- Meyers' coefficient is measurable. -/
+@[fun_prop]
+theorem measurable_meyersCoefficient : Measurable (meyersCoefficient μ) :=
+  measurable_radialCoefficient
+
 /-- Meyers' coefficient is strongly measurable. -/
+@[fun_prop]
 theorem stronglyMeasurable_meyersCoefficient : StronglyMeasurable (meyersCoefficient μ) :=
   stronglyMeasurable_radialCoefficient
 

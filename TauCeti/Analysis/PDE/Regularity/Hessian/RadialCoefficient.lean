@@ -26,7 +26,7 @@ For `b ≥ 0` let `a = TauCeti.PDE.radialCoefficient 1 b` be the coefficient fie
 with eigenvalue `1 + b` in the radial direction and `1` in the tangential directions. It is
 symmetric, measurable and uniformly elliptic with constants `1` and `1 + b`
 (`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient_of_nonneg`), homogeneous of degree `0`
-(`TauCeti.PDE.radialCoefficient_smul`) and discontinuous at the origin
+(`TauCeti.PDE.radialCoefficient_smul`) and, for `b ≠ 0`, discontinuous at the origin
 (`TauCeti.PDE.not_continuousAt_radialCoefficient`). For `b ≠ 0` the diagonal entries of every
 radial coefficient `α I + b x̂ x̂ᵀ` do not have vanishing mean oscillation
 (`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`). The proof finds in every ball `B(0, r)` a
@@ -217,12 +217,8 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
           ⟪Wkp.iteratedGradient 1 w y (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
             0) ↔
       p < ENNReal.ofReal (Fintype.card ι / (2 - γ)) := by
-  have hcard : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.one_lt_card
-  have hn : 2 < finrank ℝ (EuclideanSpace ℝ ι) + γ := by
-    rw [finrank_euclideanSpace]
-    linarith
   have key := exists_wkp_two_value_ae_eq_norm_rpow_iff (μ := volume) (p := p) hγ0.ne'
-    (by linarith) hn hb h0
+    (by linarith) (Or.inr hγ1.ne) hb h0
   rw [finrank_euclideanSpace] at key
   rw [← key]
   refine exists_congr fun w => and_iff_left_of_imp fun hw => ?_

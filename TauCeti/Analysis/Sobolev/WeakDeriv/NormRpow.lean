@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.NormPow.Regularized
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -38,9 +37,9 @@ dominated convergence passes the integration by parts identity to the limit `t �
 The same regularization gives the second derivatives. For `s > 2 - d` the classical Hessian of
 `‖x‖ ^ s` is the weak derivative of its gradient across the origin. For `s ≤ 2` the regularized
 gradients `TauCeti.regularizedNormRpowGradient` and their derivatives
-`TauCeti.regularizedNormRpowHessian` are dominated, uniformly in `t ≥ 0`, by multiples of
-`‖x‖ ^ (s - 1)` and `‖x‖ ^ (s - 2)`, which are locally integrable. So they converge in `L¹` on
-balls, and the weak derivative identity passes to the limit
+`TauCeti.regularizedNormRpowHessian` are dominated away from the origin, uniformly in `t ≥ 0`, by
+multiples of `‖x‖ ^ (s - 1)` and `‖x‖ ^ (s - 2)`, which are locally integrable. So they converge
+in `L¹` on balls, and the weak derivative identity passes to the limit
 (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`). For `s > 2` the power is `C²`.
 
 This adapts the regularization proof first given for the Newtonian kernel in Tau Ceti's
@@ -366,7 +365,7 @@ private lemma innerSL_comp_regularizedNormRpowHessian_one_zero (v x : E) :
     (innerSL ℝ v).comp (regularizedNormRpowHessian 1 0 x) =
       ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x := by
   ext w
-  simp only [ContinuousLinearMap.comp_apply, regularizedNormRpowHessian_zero_apply,
+  simp only [ContinuousLinearMap.comp_apply, regularizedNormRpowHessian_zero_right_apply,
     innerSL_apply_apply, sub_apply, smul_apply, inner_add_right, real_inner_smul_right,
     smul_eq_mul]
   rw [real_inner_comm v x]
