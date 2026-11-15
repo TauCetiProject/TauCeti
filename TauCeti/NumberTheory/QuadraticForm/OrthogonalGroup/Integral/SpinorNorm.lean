@@ -194,10 +194,10 @@ private theorem reflectionOrthogonal_mem_closure {v : V} [Invertible (Q v)]
   Subgroup.subset_closure ⟨v, inferInstance, hv, hQv, rfl⟩
 
 omit [Fintype ι] [DecidableEq ι] hb hunit in
-/-- The second case of the reflection step. Let `g` map `e` to `f`, with `‖Q e‖ = 1` and
-`‖Q (f + e)‖ = 1`, and let `g` fix the basis vectors `b i` for `i ∈ s`, each orthogonal to `e`.
-Then some `r` in the closure of the integral reflections makes `r * g` fix `e` and every `b i`
-with `i ∈ s`. -/
+/-- The second case of the reflection step. Let an isometry `g` map an integral vector `e` to an
+integral vector `f`, with `‖Q e‖ = 1` and `‖Q (f + e)‖ = 1`, and let `g` fix the basis vectors
+`b i` for `i ∈ s`, each orthogonal to `e`. Then some `r` in the closure of the integral
+reflections makes `r * g` fix `e` and every `b i` with `i ∈ s`. -/
 private theorem exists_mem_closure_mul_apply_basis_eq_of_norm_add_eq_one {g : orthogonalGroup Q}
     {e f : V} {s : Set ι} (he : e ∈ Submodule.span (PadicInt.subring p) (Set.range b))
     (hf : f ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQe : ‖Q e‖ = 1)
