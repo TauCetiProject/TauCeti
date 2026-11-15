@@ -68,12 +68,6 @@ theorem unitQuadraticNormSquareClasses_mul_sq (a : K) (c : Kˣ) :
     unitQuadraticNormSquareClasses (a * (c : K) ^ 2) = unitQuadraticNormSquareClasses a := by
   simp [unitQuadraticNormSquareClasses]
 
-/-- Radicands in the same square class have the same unit-norm square-class subgroup. -/
-theorem unitQuadraticNormSquareClasses_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ)) :
-    unitQuadraticNormSquareClasses (a : K) = unitQuadraticNormSquareClasses (Δ : K) := by
-  rw [unitQuadraticNormSquareClasses, unitQuadraticNormSquareClasses,
-    quadraticNormSubgroup_eq_of_isSquare_mul h]
-
 /-- Every unit square class of `K` is represented by a valuation-one norm from `K[√a]` if and only
 if every unit of valuation one in `Kˣ` lies in `quadraticNormSubgroup a`. -/
 theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K) :
@@ -100,14 +94,6 @@ theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K) :
       (Valuation.integer.integers (valuation K)).valuation_unit u
     exact (mem_unitQuadraticNormSquareClasses_iff a _).mpr
       ⟨b, hall b hbv, hbv, squareClassHom_apply b⟩
-
-/-- When `2` is invertible in `K` and `a : Kˣ` is a square, `unitQuadraticNormSquareClasses (a : K)`
-is all of `unitSquareClasses K`. -/
-theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_isSquare [Invertible (2 : K)]
-    {a : Kˣ} (ha : IsSquare a) :
-    unitQuadraticNormSquareClasses (a : K) = unitSquareClasses K :=
-  (unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K)).mpr fun b _ ↦
-    quadraticNormSubgroup_eq_top_of_isSquare ha ▸ Subgroup.mem_top b
 
 end ValuedField
 

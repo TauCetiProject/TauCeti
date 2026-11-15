@@ -9,10 +9,8 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 public import TauCeti.NumberTheory.LocalField.Squares
-public import TauCeti.NumberTheory.LocalField.UnitSquareClasses
 
 import TauCeti.NumberTheory.LocalField.SquareClass
-import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Square
 import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
@@ -30,10 +28,6 @@ The square criterion for units of the form `1 + 4m` uses the Artin–Schreier cl
 of `m`. It identifies the nonsquare unit class of even defect exponent and connects that class to
 the norm criterion for unramified quadratic extensions.
 
-The nonsquares of `U(K, 2e)` all have the maximal defect exponent `2e`, so `U(K, 2e)` meets exactly
-two square classes. Since `U(K, 0)` meets `2 q^e` square classes, where `q` is the cardinality of
-the residue field, the subgroup `U(K, 2e) · (𝒪[K]ˣ)²` has index `q^e` in `𝒪[K]ˣ`.
-
 ## Main results
 
 * `TauCeti.exists_defectExponent_mul_sq_eq_two_mul_natCastValuation`: a nonsquare of even defect
@@ -42,10 +36,6 @@ the residue field, the subgroup `U(K, 2e) · (𝒪[K]ˣ)²` has index `q^e` in `
   single square class.
 * `TauCeti.isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel`: two nonsquares of `U(K, 2e)`
   differ by a square.
-* `TauCeti.relIndex_square_unitFiltration_two_mul_dyadicLevel`: `U(K, 2e)` meets exactly two
-  square classes.
-* `TauCeti.relIndex_unitFiltration_two_mul_dyadicLevel_sup_square`: `U(K, 2e) · (𝒪[K]ˣ)²` has
-  index `q^e` in `𝒪[K]ˣ`.
 * `TauCeti.unramified_class_iff_even_defectExponent`: the ramification dictionary, `a` is an
   unramified class exactly when `δ(a)` is even.
 * `TauCeti.unramified_class_unique`: the unramified class is unique up to squares.
@@ -163,29 +153,13 @@ theorem isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel (h2 : (2 : K) ≠
     (defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration h2 hu hu')
     (defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration h2 hw hw')
 
-/-- **`U(K, 2 v_K(2))` meets exactly two square classes**: the squares have index two in
-`U(K, 2 v_K(2))`. -/
-theorem relIndex_square_unitFiltration_two_mul_dyadicLevel (h2 : (2 : K) ≠ 0) :
-    (Subgroup.square Kˣ).relIndex (unitFiltration K (2 * dyadicLevel K h2)) = 2 := by
-  simpa [dyadicLevel_def] using relIndex_square_unitFiltration_two_mul h2 le_rfl
-
-/-- **`U(K, 2 v_K(2)) · (𝒪[K]ˣ)²` has index `q ^ v_K(2)` in `𝒪[K]ˣ`**, where `q` is the
-cardinality of the residue field. The subgroup is written as `U(K, 2 v_K(2)) · (Kˣ)²` intersected
-with `U(K, 0) = 𝒪[K]ˣ`, as `Subgroup.relIndex` does. -/
-theorem relIndex_unitFiltration_two_mul_dyadicLevel_sup_square (h2 : (2 : K) ≠ 0) :
-    (unitFiltration K (2 * dyadicLevel K h2) ⊔ Subgroup.square Kˣ).relIndex
-        (unitFiltration K 0) = Nat.card 𝓀[K] ^ dyadicLevel K h2 := by
-  simpa [dyadicLevel_def] using relIndex_unitFiltration_two_mul_sup_square h2 le_rfl
-
 /-- **Normalization of an even defect exponent.** A nonsquare `a` of even defect exponent is, up
 to squares, a unit of `𝒪[K]` of defect exponent `2 v_K(2)`, that is of defect `4 𝒪[K]`. -/
 theorem exists_defectExponent_mul_sq_eq_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) {a : Kˣ}
     {d : ℤ} (hd : defectExponent a = d) (hev : Even d) :
     ∃ c : Kˣ, valuation K ((a * c ^ 2 : Kˣ) : K) = 1 ∧
       defectExponent (a * c ^ 2) = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
-  have hsq : ¬IsSquare a := by
-    rw [← defectExponent_eq_top_iff, hd]
-    exact WithTop.coe_ne_top
+  have hsq : ¬IsSquare a := not_isSquare_of_defectExponent_eq hd
   -- `a` has even valuation: an element of odd valuation is its own defect exponent.
   have ha : Even (normalizedValuation K a).toAdd := by
     by_contra h
@@ -239,9 +213,9 @@ theorem unramified_class_iff_even_defectExponent (h2 : (2 : K) ≠ 0) {a : Kˣ} 
       Even (normalizedValuation K b).toAdd) ↔ Even d := by
   refine ⟨fun h => even_of_defectExponent_eq hd fun b hb => (h b).mp hb, fun hev => ?_⟩
   obtain ⟨Δ, hΔsq, -, -, hΔ⟩ := exists_unramified_class h2
-  obtain ⟨dΔ, hdΔ⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp hΔsq)
-  exact unramified_class_of_isSquare_mul (isSquare_mul_of_even_defectExponent h2 hd hdΔ.symm hev
-    (even_of_defectExponent_eq hdΔ.symm fun b hb => (hΔ b).mp hb)) hΔ
+  obtain ⟨dΔ, hdΔ⟩ := exists_defectExponent_eq_of_not_isSquare hΔsq
+  exact unramified_class_of_isSquare_mul (isSquare_mul_of_even_defectExponent h2 hd hdΔ hev
+    (even_of_defectExponent_eq hdΔ fun b hb => (hΔ b).mp hb)) hΔ
 
 /-- **The unramified class is unique.** If both `u` and `u'` have the elements of even valuation
 as their norms, then `u` and `u'` differ by a square. -/
@@ -251,13 +225,12 @@ theorem unramified_class_unique (h2 : (2 : K) ≠ 0) (u u' : Kˣ)
     (hu' : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - u' * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) :
     IsSquare (u * u') := by
-  obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu))
-  obtain ⟨d', hd'⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu'))
-  exact isSquare_mul_of_even_defectExponent h2 hd.symm hd'.symm
-    ((unramified_class_iff_even_defectExponent h2 hd.symm).mp hu)
-    ((unramified_class_iff_even_defectExponent h2 hd'.symm).mp hu')
+  obtain ⟨d, hd⟩ := exists_defectExponent_eq_of_not_isSquare (not_isSquare_of_unramified_class hu)
+  obtain ⟨d', hd'⟩ :=
+    exists_defectExponent_eq_of_not_isSquare (not_isSquare_of_unramified_class hu')
+  exact isSquare_mul_of_even_defectExponent h2 hd hd'
+    ((unramified_class_iff_even_defectExponent h2 hd).mp hu)
+    ((unramified_class_iff_even_defectExponent h2 hd').mp hu')
 
 /-- **The unit class of defect `4 𝒪[K]`.** Among the units of `𝒪[K]`, the ones of defect
 exponent `2 v_K(2)`, that is of defect `4 𝒪[K]`, are exactly the ones in the square class of the
@@ -267,18 +240,17 @@ theorem defectExponent_eq_two_mul_natCastValuation_iff_isSquare_mul (h2 : (2 : K
       Even (normalizedValuation K b).toAdd)
     (hu : valuation K (u : K) = 1) :
     defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) ↔ IsSquare (u * Δ) := by
-  obtain ⟨dΔ, hdΔ⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hΔ))
-  refine ⟨fun h => isSquare_mul_of_even_defectExponent h2 h hdΔ.symm
+  obtain ⟨dΔ, hdΔ⟩ := exists_defectExponent_eq_of_not_isSquare (not_isSquare_of_unramified_class hΔ)
+  refine ⟨fun h => isSquare_mul_of_even_defectExponent h2 h hdΔ
     ⟨natCastValuation K 2 h2, by push_cast; ring⟩
-    ((unramified_class_iff_even_defectExponent h2 hdΔ.symm).mp hΔ), fun h => ?_⟩
+    ((unramified_class_iff_even_defectExponent h2 hdΔ).mp hΔ), fun h => ?_⟩
   have hu' := unramified_class_of_isSquare_mul h hΔ
   have hsq := not_isSquare_of_unramified_class hu'
-  obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp hsq)
-  obtain ⟨r, hr⟩ := (unramified_class_iff_even_defectExponent h2 hd.symm).mp hu'
+  obtain ⟨d, hd⟩ := exists_defectExponent_eq_of_not_isSquare hsq
+  obtain ⟨r, hr⟩ := (unramified_class_iff_even_defectExponent h2 hd).mp hu'
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hu hsq with h' | ⟨k, -, hk⟩
   · exact h'
-  · rw [← hd, WithTop.coe_inj] at hk
+  · rw [hd, WithTop.coe_inj] at hk
     omega
 
 end TauCeti

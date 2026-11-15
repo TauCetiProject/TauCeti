@@ -23,9 +23,7 @@ count the unit norm classes, including in residue characteristic two.
 `ncard_range_uniformizerNormSquareClass` computes their number as `q ^ v_K(2)`, and
 `mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms, so for any
 uniformizer `a` the subgroup `unitQuadraticNormSquareClasses (a : K)` has cardinality `q ^ v_K(2)`
-and index two in `unitSquareClasses K`
-(`natCard_unitQuadraticNormSquareClasses_of_isUniformizer`,
-`relIndex_unitQuadraticNormSquareClasses_of_isUniformizer`).
+(`natCard_unitQuadraticNormSquareClasses_of_isUniformizer`).
 
 The proof uses the sharp local square theorem and the obstruction to a square differing
 from one to odd order below `2 v_K(2)`.
@@ -283,16 +281,5 @@ theorem natCard_unitQuadraticNormSquareClasses_of_isUniformizer (h2 : (2 : K) �
     _ = Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
         rw [coe_unitQuadraticNormSquareClasses_irreducible hπ,
           ncard_range_uniformizerNormSquareClass h2 hπ]
-
-/-- For a uniformizer `a` of `K` with `2 ≠ 0`, `unitQuadraticNormSquareClasses (a : K)` has index
-two inside `unitSquareClasses K`. -/
-theorem relIndex_unitQuadraticNormSquareClasses_of_isUniformizer (h2 : (2 : K) ≠ 0)
-    {a : Kˣ} (ha : IsUniformizer K a) :
-    (unitQuadraticNormSquareClasses (a : K)).relIndex (unitSquareClasses K) = 2 := by
-  have hmul := (unitQuadraticNormSquareClasses (a : K)).relIndex_mul_card (unitSquareClasses K)
-  rw [inf_of_le_left (unitQuadraticNormSquareClasses_le_unitSquareClasses _),
-    natCard_unitQuadraticNormSquareClasses_of_isUniformizer h2 ha,
-    card_unitSquareClasses K h2] at hmul
-  exact Nat.eq_of_mul_eq_mul_right (pow_pos Nat.card_pos _) hmul
 
 end TauCeti

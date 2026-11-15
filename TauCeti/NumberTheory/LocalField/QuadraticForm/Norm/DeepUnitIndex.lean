@@ -23,32 +23,34 @@ square in `K` is the square of a unit.
 For a unit radicand `a` of odd defect exponent `d = 2k + 1` (`k = d / 2 < e`), the deep units
 `U(K, 2e - d + 1) = U(K, 2(e - k))` are norms from `K(√a)`, and so is every square. Because the
 unit norms `N(K(√a)ˣ) ∩ 𝒪[K]ˣ` have index `2` in `𝒪[K]ˣ`
-(`TauCeti.relIndex_unitFiltration_quadraticNormSubgroup_of_odd_defectExponent`), twice the index of
-`U(K, 2e - d + 1) · (𝒪[K]ˣ)²` inside the unit norms equals `q ^ (e - d / 2)`
-(`TauCeti.two_mul_relIndex_quadraticNormSubgroup_inf_of_odd_defectExponent`).
+(`TauCeti.relIndex_quadraticNormSubgroup_unitFiltration_zero_of_odd_defectExponent`), twice the
+index of `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` inside the unit norms equals `q ^ (e - d / 2)` (see
+`two_mul_relIndex_unitFiltration_sup_square_quadraticNormSubgroup_inf_of_odd_defectExponent`).
 
 Consequently, the containment `U(K, 2e - d + 1) · (𝒪[K]ˣ)² ⊆ N(K(√a)ˣ) ∩ 𝒪[K]ˣ` is an equality
 if and only if `q ^ (e - d / 2) = 2` — equivalently, `q = 2` and `d = 2e - 1` is the maximal odd
 defect — and is strict whenever `q ^ (e - d / 2) > 2`. Specializing to `d = 1` recovers the
-defect-one comparison (`q ^ e = 2` vs `q ^ e > 2`), which for `K = ℚ₂(√2)` (`q = 2`, `e = 2`)
-shows that `U(K, 4) · (𝒪[K]ˣ)²` has index `4` in `𝒪[K]ˣ` and index `2` inside the unit norms
-(`TauCeti.DyadicSqrtTwo.relIndex_unitFiltration_four_sup_square`).
+defect-one comparison (`q ^ e = 2` vs `q ^ e > 2`); for `K = ℚ₂(√2)` (`q = 2`, `e = 2`),
+`U(K, 4) · (𝒪[K]ˣ)²` has index `4` in `𝒪[K]ˣ`
+(`TauCeti.DyadicSqrtTwo.relIndex_unitFiltration_four_sup_square`) and, by
+`two_mul_relIndex_unitFiltration_sup_square_quadraticNormSubgroup_inf_of_odd_defectExponent`
+at `d = 1`, index `2` inside the unit norms.
 
 ## Main results
 
-* `TauCeti.unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq`: for a unit
-  radicand of finite defect exponent `d`, `U(K, 2e - d + 1) · (Kˣ)²` consists of norms.
-* `TauCeti.two_mul_relIndex_quadraticNormSubgroup_inf_of_odd_defectExponent`:
+* `unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq`: for a unit radicand
+  of finite defect exponent `d`, `U(K, 2e - d + 1) · (Kˣ)²` consists of norms.
+* `two_mul_relIndex_unitFiltration_sup_square_quadraticNormSubgroup_inf_of_odd_defectExponent`:
   for a unit of odd defect `d`, twice the index of `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` inside the unit
   norms is `q ^ (e - d / 2)`.
-* `TauCeti.unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_of_odd_defectExponent`
-  and `TauCeti.unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_natCard_eq_two`:
+* `unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_of_odd_defectExponent` and
+  `unitFiltration_sup_square_inf_eq_iff_natCard_eq_two_and_eq_of_odd_defectExponent`:
   equality holds iff `q ^ (e - d / 2) = 2`, equivalently `q = 2 ∧ d = 2e - 1`.
-* `TauCeti.unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff_of_odd_defectExponent`:
+* `unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff_of_odd_defectExponent`:
   strict containment holds iff `2 < q ^ (e - d / 2)`.
-* `TauCeti.unitFiltration_sup_square_le_quadraticNormSubgroup`,
-  `TauCeti.unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff`, and
-  `TauCeti.unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff`: the `d = 1`
+* `unitFiltration_sup_square_le_quadraticNormSubgroup`,
+  `unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff`, and
+  `unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff`: the `d = 1`
   specializations.
 
 ## References
@@ -78,43 +80,29 @@ theorem unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq 
 /-- **Index of `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` inside the unit norms of an odd-defect radicand.**
 For a unit `a` of odd defect exponent `d`, twice the index of `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` inside
 `quadraticNormSubgroup (a : K) ⊓ U(K, 0)` equals `#𝓀[K] ^ (e - d / 2)`. -/
-theorem two_mul_relIndex_quadraticNormSubgroup_inf_of_odd_defectExponent
+theorem two_mul_relIndex_unitFiltration_sup_square_quadraticNormSubgroup_inf_of_odd_defectExponent
     (h2 : (2 : K) ≠ 0) {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℕ}
     (hd : defectExponent a = (d : ℤ)) (hodd : Odd d) :
     2 * (unitFiltration K (2 * dyadicLevel K h2 - d + 1) ⊔ Subgroup.square Kˣ).relIndex
         (quadraticNormSubgroup (a : K) ⊓ unitFiltration K 0) =
       Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) := by
   have hdle : d ≤ 2 * dyadicLevel K h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
-    exact_mod_cast h
+    exact_mod_cast le_two_mul_dyadicLevel_of_defectExponent_eq h2 ha hd
   obtain ⟨k, hk⟩ := hodd
   have hstep : 2 * dyadicLevel K h2 - d + 1 = 2 * (dyadicLevel K h2 - d / 2) := by omega
   have hm : dyadicLevel K h2 - d / 2 ≤ natCastValuation K 2 h2 := by
     rw [← dyadicLevel_def]; omega
-  let H := unitFiltration K (2 * dyadicLevel K h2 - d + 1) ⊔ Subgroup.square Kˣ
-  let U := unitFiltration K 0
-  have hsub : H ⊓ U ≤ quadraticNormSubgroup (a : K) ⊓ U :=
-    inf_le_inf_right U
-      (unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq h2 ha hd)
-  have hmul := Subgroup.relIndex_mul_relIndex (H ⊓ U) (quadraticNormSubgroup (a : K) ⊓ U) U
-    hsub inf_le_right
-  have hleft : (H ⊓ U).relIndex (quadraticNormSubgroup (a : K) ⊓ U) =
-      H.relIndex (quadraticNormSubgroup (a : K) ⊓ U) := by
-    rw [Subgroup.relIndex, Subgroup.relIndex]
-    congr 1
-    ext x
-    exact ⟨fun hx ↦ hx.1, fun hx ↦ ⟨hx, x.2.2⟩⟩
   have hoddZ : Odd (d : ℤ) := ⟨k, by push_cast [hk]; ring⟩
-  have hN : (quadraticNormSubgroup (a : K) ⊓ U).relIndex U = 2 := by
-    rw [Subgroup.inf_relIndex_right]
-    exact relIndex_unitFiltration_quadraticNormSubgroup_of_odd_defectExponent h2 hd hoddZ
-  have hT : (H ⊓ U).relIndex U = Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) := by
-    rw [Subgroup.inf_relIndex_right]
-    dsimp only [H, U]
+  have hT : (unitFiltration K (2 * dyadicLevel K h2 - d + 1) ⊔ Subgroup.square Kˣ).relIndex
+      (unitFiltration K 0) = Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) := by
     rw [hstep, relIndex_unitFiltration_two_mul_sup_square h2 hm]
-  rw [hleft, hN, hT, mul_comm] at hmul
+  have hmul := Subgroup.relIndex_inf_mul_relIndex
+    (unitFiltration K (2 * dyadicLevel K h2 - d + 1) ⊔ Subgroup.square Kˣ)
+    (quadraticNormSubgroup (a : K)) (unitFiltration K 0)
+  rw [inf_of_le_left
+      (unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq h2 ha hd),
+    relIndex_quadraticNormSubgroup_unitFiltration_zero_of_odd_defectExponent h2 hd hoddZ,
+    hT, mul_comm] at hmul
   exact hmul
 
 /-- **The unit norms of an odd-defect radicand equal `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` iff
@@ -126,7 +114,7 @@ theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_of_odd_de
         quadraticNormSubgroup (a : K) ⊓ unitFiltration K 0 ↔
       Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) = 2 := by
   have hmul :=
-    two_mul_relIndex_quadraticNormSubgroup_inf_of_odd_defectExponent
+    two_mul_relIndex_unitFiltration_sup_square_quadraticNormSubgroup_inf_of_odd_defectExponent
       h2 ha hd hodd
   have hsub := inf_le_inf_right (unitFiltration K 0)
     (unitFiltration_sup_square_le_quadraticNormSubgroup_of_defectExponent_eq h2 ha hd)
@@ -145,7 +133,7 @@ theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_of_odd_de
 /-- **Residue-cardinality and maximal-odd-defect form of equality.** For a unit `a` of odd defect
 exponent `d`, the unit norms equal `U(K, 2e - d + 1) · (𝒪[K]ˣ)²` if and only if `#𝓀[K] = 2` and
 `d = 2 v_K(2) - 1` is the maximal odd defect exponent. -/
-theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_natCard_eq_two
+theorem unitFiltration_sup_square_inf_eq_iff_natCard_eq_two_and_eq_of_odd_defectExponent
     (h2 : (2 : K) ≠ 0) {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℕ}
     (hd : defectExponent a = (d : ℤ)) (hodd : Odd d) :
     (unitFiltration K (2 * dyadicLevel K h2 - d + 1) ⊔ Subgroup.square Kˣ) ⊓ unitFiltration K 0 =
@@ -154,10 +142,7 @@ theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_natCard_e
   rw [unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff_of_odd_defectExponent
     h2 ha hd hodd]
   have hdle : d ≤ 2 * dyadicLevel K h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
-    exact_mod_cast h
+    exact_mod_cast le_two_mul_dyadicLevel_of_defectExponent_eq h2 ha hd
   obtain ⟨k, hk⟩ := hodd
   have h1 : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
   have hm_pos : 0 < dyadicLevel K h2 - d / 2 := by omega
@@ -182,10 +167,7 @@ theorem unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff_of_odd_de
         quadraticNormSubgroup (a : K) ⊓ unitFiltration K 0 ↔
       2 < Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) := by
   have hdle : d ≤ 2 * dyadicLevel K h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
-    exact_mod_cast h
+    exact_mod_cast le_two_mul_dyadicLevel_of_defectExponent_eq h2 ha hd
   have ⟨k, hk⟩ := hodd
   have h1 : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
   have hq : Nat.card 𝓀[K] ≤ Nat.card 𝓀[K] ^ (dyadicLevel K h2 - d / 2) :=

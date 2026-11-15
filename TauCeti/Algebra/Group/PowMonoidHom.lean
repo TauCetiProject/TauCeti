@@ -49,8 +49,6 @@ finite image in `G ⧸ Gⁿ` has finite image in `H ⧸ Hⁿ`.
 * `TauCeti.square_eq_range_powMonoidHom`: `G²` is the range of the squaring homomorphism.
 * `MonoidHom.square_le_comap`: `G² ≤ (H²).comap f` for a homomorphism `f : G →* H`.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
-* `TauCeti.index_even_int` and `TauCeti.index_square_multiplicative_int`: `[ℤ : 2ℤ] = 2`, written
-  additively and multiplicatively.
 
 ## Provenance
 
@@ -191,28 +189,5 @@ theorem index_square_le_of_closure_eq_top {G : Type*} [CommGroup G]
     (Subgroup.square G).index ≤ 2 ^ S.card := by
   rw [square_eq_range_powMonoidHom]
   exact index_powMonoidHom_range_le_of_closure_eq_top (by norm_num) hS
-
-/-- The even integers have index two in `ℤ`. -/
-@[simp]
-theorem index_even_int : (AddSubgroup.even ℤ).index = 2 := by
-  refine AddSubgroup.index_eq_two_iff_exists_notMem_and.mpr ⟨1, Int.not_even_one, fun n ↦ ?_⟩
-  rw [AddSubgroup.mem_even, AddSubgroup.mem_even]
-  by_cases hn : Even n
-  · exact Or.inr hn
-  · exact Or.inl (Int.even_add_one.mpr hn)
-
-/-- In `Multiplicative ℤ`, the subgroup of squares (corresponding to `2ℤ`) has index two. -/
-@[simp]
-theorem index_square_multiplicative_int :
-    (Subgroup.square (Multiplicative ℤ)).index = 2 := by
-  refine Subgroup.index_eq_two_iff_exists_notMem_and.mpr
-    ⟨Multiplicative.ofAdd 1, ?_, fun g ↦ ?_⟩
-  · rw [Subgroup.mem_square, isSquare_ofAdd_iff]
-    exact Int.not_even_one
-  · rw [Subgroup.mem_square, Subgroup.mem_square, ← even_toAdd_iff, ← even_toAdd_iff,
-      toAdd_mul, toAdd_ofAdd]
-    by_cases hg : Even g.toAdd
-    · exact Or.inr hg
-    · exact Or.inl (Int.even_add_one.mpr hg)
 
 end TauCeti

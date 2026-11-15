@@ -20,12 +20,13 @@ from `K(√a)`, that is the subgroup `N` of `Kˣ` consisting of the `b` of the f
 
 The index is computed directly in the base field across all regimes of the quadratic defect by
 `TauCeti.quadraticNormSubgroup_index_eq_two_iff` (in
-`TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex`): factoring `[Kˣ : N]` along
-`normalizedValuation K` into its valuation-image index and its unit-norm index inside `U(K, 0)`
-gives `2 · 1 = 2` for even defect exponent (unramified extensions, where `v_K(N) = 2ℤ` and all
-units are norms) and `1 · 2 = 2` for odd defect exponent (both odd-valuation uniformizer norm
-families and even-valuation Eisenstein unit-defect norm families, where `v_K(N) = ℤ` and the unit
-norms span `#𝓀[K] ^ v_K(2)` of the `2 · #𝓀[K] ^ v_K(2)` unit square classes).
+`TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex`): for even defect exponent
+(unramified extensions), `N` consists of the elements of even normalized valuation, giving index
+`2` (with valuation index `2` and unit index `1`), while for odd defect exponent (both
+odd-valuation radicands, rescaled to uniformizers, and even-valuation radicands, rescaled to units
+of odd defect), factoring `[Kˣ : N]` along `normalizedValuation K` gives valuation index `1` and
+unit-norm index `2` (`#𝓀[K] ^ v_K(2)` of the `2 · #𝓀[K] ^ v_K(2)` unit square classes), hence
+`1 · 2 = 2`.
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
 bimultiplicative in both arguments. The same index theorem gives nondegeneracy, and there that step

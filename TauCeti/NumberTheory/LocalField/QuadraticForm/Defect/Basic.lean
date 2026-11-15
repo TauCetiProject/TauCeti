@@ -203,6 +203,12 @@ theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
   rw [hd] at htop
   exact WithTop.coe_ne_top htop
 
+/-- Every nonsquare unit has a finite integer defect exponent. -/
+theorem exists_defectExponent_eq_of_not_isSquare {a : Kˣ} (ha : ¬IsSquare a) :
+    ∃ d : ℤ, defectExponent a = d := by
+  obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)
+  exact ⟨d, hd.symm⟩
+
 /-- A square root `x` of a unit `a` with finite defect exponent does not lie in the base field,
 since `a` is not a square. -/
 theorem notMem_range_algebraMap_of_defectExponent_eq {L : Type*} [Field L] [Algebra K L]
@@ -541,13 +547,20 @@ theorem defectExponent_le_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) {u : Kˣ
   rw [← sq, mul_pow, hz, hw]
   group
 
+/-- The finite defect exponent of a unit of `𝒪[K]` is at most `2 v_K(2)`. -/
+theorem le_two_mul_dyadicLevel_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) :
+    d ≤ 2 * (dyadicLevel K h2 : ℤ) := by
+  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
+  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  exact_mod_cast h
+
 /-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
 `2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
 theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
     dyadicLevel K h2 ≠ 0 := by
-  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
-  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  have := le_two_mul_dyadicLevel_of_defectExponent_eq h2 ha hd
   omega
 
 /-- **The possible defects of a unit** (O'Meara 63:2). For a unit of `𝒪[K]` which is not a square,
@@ -569,9 +582,8 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
     rw [← hxd, (normalizedValuation_eq_one_iff u).mpr hu, toAdd_one, WithTop.coe_le_coe] at h
     exact h
   have hdle : d ≤ 2 * e := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 hu hsq
-    rw [← hxd, WithTop.coe_le_coe] at h
-    exact_mod_cast h
+    simpa only [e, dyadicLevel_def] using
+      le_two_mul_dyadicLevel_of_defectExponent_eq h2 hu hxd.symm
   -- Below `2 v_K(2)` an even order can always be improved, so `δ(u)` is odd there.
   have hodd : d < 2 * e → Odd d := by
     intro hlt
