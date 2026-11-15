@@ -82,41 +82,30 @@ namespace InertPrimeSum
 private noncomputable def csqrt (d : ℤ) : ℂ :=
   if 0 ≤ d then (Real.sqrt d : ℂ) else Complex.I * (Real.sqrt (-d : ℝ) : ℂ)
 
-private theorem cast_natAbs_of_nonneg {d : ℤ} (hd : 0 ≤ d) : (d.natAbs : ℝ) = (d : ℝ) := by
-  rw [← Int.cast_natCast, Int.natAbs_of_nonneg hd]
-
-private theorem cast_natAbs_of_nonpos {d : ℤ} (hd : d ≤ 0) : (d.natAbs : ℝ) = -(d : ℝ) := by
-  rw [← Int.cast_natCast, Int.ofNat_natAbs_of_nonpos hd, Int.cast_neg]
-
 private theorem cast_natAbs_eq_abs (d : ℤ) : (d.natAbs : ℝ) = |(d : ℝ)| := by
-  rcases le_or_gt 0 d with hd | hd
-  · rw [cast_natAbs_of_nonneg hd, abs_of_nonneg (by exact_mod_cast hd)]
-  · rw [cast_natAbs_of_nonpos hd.le, abs_of_neg (by exact_mod_cast hd)]
+  rw [← Int.cast_natCast, Int.natCast_natAbs, Int.cast_abs]
 
 private theorem csqrt_mul_self (d : ℤ) : csqrt d * csqrt d = d := by
   dsimp [csqrt]
   split_ifs with hd
-  · have hdR : (0 : ℝ) ≤ d := by exact_mod_cast hd
-    rw [← Complex.ofReal_mul, Real.mul_self_sqrt hdR, Complex.ofReal_intCast]
+  · rw [← Complex.ofReal_mul, Real.mul_self_sqrt (by exact_mod_cast hd), Complex.ofReal_intCast]
   · have hdR : (0 : ℝ) ≤ -d := by exact_mod_cast (by omega : (0 : ℤ) ≤ -d)
     calc (Complex.I * Real.sqrt (-d : ℝ)) * (Complex.I * Real.sqrt (-d : ℝ))
         = (Complex.I * Complex.I) * ((Real.sqrt (-d : ℝ) * Real.sqrt (-d : ℝ) : ℝ) : ℂ) := by
           push_cast; ring
-      _ = -((-d : ℝ) : ℂ) := by rw [Complex.I_mul_I, Real.mul_self_sqrt hdR]; ring
-      _ = d := by push_cast; ring
+      _ = d := by rw [Complex.I_mul_I, Real.mul_self_sqrt hdR]; push_cast; ring
 
 private theorem norm_csqrt (d : ℤ) : ‖csqrt d‖ = Real.sqrt d.natAbs := by
   dsimp [csqrt]
   split_ifs with hd
-  · rw [Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _), cast_natAbs_of_nonneg hd]
+  · rw [Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _), cast_natAbs_eq_abs,
+      abs_of_nonneg (by exact_mod_cast hd)]
   · rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real,
-      Real.norm_of_nonneg (Real.sqrt_nonneg _), cast_natAbs_of_nonpos (not_le.mp hd).le]
+      Real.norm_of_nonneg (Real.sqrt_nonneg _), cast_natAbs_eq_abs,
+      abs_of_neg (by exact_mod_cast not_le.mp hd)]
 
-private theorem csqrt_ne_zero {d : ℤ} (hd : d ≠ 0) : csqrt d ≠ 0 := by
-  intro h0
-  have hmul := csqrt_mul_self d
-  rw [h0, zero_mul] at hmul
-  exact hd (by exact_mod_cast hmul.symm)
+private theorem csqrt_ne_zero {d : ℤ} (hd : d ≠ 0) : csqrt d ≠ 0 := fun h0 ↦
+  hd (by simpa [h0] using (csqrt_mul_self d).symm)
 
 /-- The two complex embeddings `a + b√d ↦ a ± b csqrt(d)` of `ℤ√d`. -/
 private noncomputable def embPos (d : ℤ) : ℤ√d →+* ℂ :=
@@ -126,55 +115,29 @@ private noncomputable def embNeg (d : ℤ) : ℤ√d →+* ℂ :=
   Zsqrtd.lift ⟨-csqrt d, by simp [csqrt_mul_self]⟩
 
 private theorem embPos_apply (d : ℤ) (u : ℤ√d) :
-    embPos d u = (u.re : ℂ) + (u.im : ℂ) * csqrt d :=
-  rfl
+    embPos d u = (u.re : ℂ) + (u.im : ℂ) * csqrt d := rfl
 
 private theorem embNeg_apply (d : ℤ) (u : ℤ√d) :
-    embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-csqrt d) :=
-  rfl
+    embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-csqrt d) := rfl
 
 private theorem embPos_injective {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1) :
     Function.Injective (embPos d) := by
   refine Zsqrtd.lift_injective _ fun n hn ↦ ?_
-  have hu : IsUnit n := hd n (hn ▸ dvd_rfl)
-  rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
+  rcases Int.isUnit_iff.mp (hd n (hn ▸ dvd_rfl)) with rfl | rfl <;> simp_all
 
 /-- Parallelogram identity relating the weighted coordinate norm on `ℤ√d` to the two complex
 embeddings, uniformly in the sign of `d`. -/
 private theorem two_mul_re_sq_add_im_sq_eq (d : ℤ) (u : ℤ√d) :
     2 * ((u.re : ℝ) ^ 2 + (d.natAbs : ℝ) * (u.im : ℝ) ^ 2) =
       ‖embPos d u‖ ^ 2 + ‖embNeg d u‖ ^ 2 := by
-  rw [embPos_apply, embNeg_apply]
-  dsimp [csqrt]
-  split_ifs with hd
-  · have hdR : (0 : ℝ) ≤ d := by exact_mod_cast hd
-    have hpos : ((u.re : ℂ) + (u.im : ℂ) * (Real.sqrt d : ℂ)) =
-        (((u.re : ℝ) + (u.im : ℝ) * Real.sqrt d : ℝ) : ℂ) := by push_cast; ring
-    have hneg : ((u.re : ℂ) + (u.im : ℂ) * -(Real.sqrt d : ℂ)) =
-        (((u.re : ℝ) - (u.im : ℝ) * Real.sqrt d : ℝ) : ℂ) := by push_cast; ring
-    rw [hpos, hneg, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
-      sq_abs, sq_abs, cast_natAbs_of_nonneg hd]
-    calc 2 * ((u.re : ℝ) ^ 2 + (d : ℝ) * (u.im : ℝ) ^ 2)
-        = 2 * (u.re : ℝ) ^ 2 + 2 * (Real.sqrt d * Real.sqrt d) * (u.im : ℝ) ^ 2 := by
-          rw [Real.mul_self_sqrt hdR]; ring
-      _ = ((u.re : ℝ) + (u.im : ℝ) * Real.sqrt d) ^ 2 +
-            ((u.re : ℝ) - (u.im : ℝ) * Real.sqrt d) ^ 2 := by ring
-  · have hd_lt : d < 0 := not_le.mp hd
-    have hdR : (0 : ℝ) ≤ -d := neg_nonneg.mpr (by exact_mod_cast hd_lt.le)
-    rw [← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq]
-    have hpos : (u.re : ℂ) + (u.im : ℂ) * (Complex.I * Real.sqrt (-d : ℝ)) =
-        ((u.re : ℝ) : ℂ) + (((u.im : ℝ) * Real.sqrt (-d : ℝ) : ℝ) : ℂ) * Complex.I := by
-      simp only [Complex.ofReal_intCast, Complex.ofReal_mul]; ring
-    have hneg : (u.re : ℂ) + (u.im : ℂ) * -(Complex.I * Real.sqrt (-d : ℝ)) =
-        ((u.re : ℝ) : ℂ) + ((-(u.im : ℝ) * Real.sqrt (-d : ℝ) : ℝ) : ℂ) * Complex.I := by
-      simp only [Complex.ofReal_intCast, Complex.ofReal_mul, Complex.ofReal_neg]; ring
-    rw [hpos, hneg, Complex.normSq_add_mul_I, Complex.normSq_add_mul_I,
-      cast_natAbs_of_nonpos hd_lt.le]
-    calc 2 * ((u.re : ℝ) ^ 2 + -(d : ℝ) * (u.im : ℝ) ^ 2)
-        = 2 * (u.re : ℝ) ^ 2 + 2 * (Real.sqrt (-d : ℝ) * Real.sqrt (-d : ℝ)) * (u.im : ℝ) ^ 2 := by
-          rw [Real.mul_self_sqrt hdR]; ring
-      _ = (u.re : ℝ) ^ 2 + ((u.im : ℝ) * Real.sqrt (-d : ℝ)) ^ 2 +
-            ((u.re : ℝ) ^ 2 + (-(u.im : ℝ) * Real.sqrt (-d : ℝ)) ^ 2) := by ring
+  have hpar (z w : ℂ) : ‖z + w‖ ^ 2 + ‖z - w‖ ^ 2 = 2 * (‖z‖ ^ 2 + ‖w‖ ^ 2) := by
+    simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re, Complex.add_im,
+      Complex.sub_re, Complex.sub_im]
+    ring
+  rw [embPos_apply, embNeg_apply, mul_neg, ← sub_eq_add_neg, hpar, Complex.norm_intCast,
+    norm_mul, Complex.norm_intCast, norm_csqrt, mul_pow, sq_abs, sq_abs,
+    Real.sq_sqrt (Nat.cast_nonneg _)]
+  ring
 
 /-- Euclidean realization of a finite tuple in `(ℤ√d) ^ κ` whose real inner products match the
 trace pairing `∑_k 2 (re_1 re_2 + |d| im_1 im_2)`. -/
@@ -187,28 +150,15 @@ private theorem zsqrtdFamToLp_sum (d : ℤ) {κ ι : Type*} (s : Finset ι) (c :
     (v : ι → κ → ℤ√d) :
     zsqrtdFamToLp d (fun k ↦ ∑ i ∈ s, c i • v i k) =
       ∑ i ∈ s, (c i : ℝ) • zsqrtdFamToLp d (v i) := by
-  ext p
-  simp only [zsqrtdFamToLp, WithLp.ofLp_sum, WithLp.ofLp_smul, Finset.sum_apply, Pi.smul_apply,
-    WithLp.ofLp_toLp, smul_eq_mul]
-  rcases Fin.eq_zero_or_eq_succ p.2 with hp | ⟨j, hj⟩
-  · rw [hp]
-    have hre : ((∑ i ∈ s, c i • v i p.1).re : ℝ) = ∑ i ∈ s, (c i : ℝ) * ((v i p.1).re : ℝ) := by
-      induction s using Finset.cons_induction with
-      | empty => simp
-      | cons a t ha ih =>
-        rw [Finset.sum_cons, Finset.sum_cons, Zsqrtd.re_add, Int.cast_add, ih, zsmul_eq_mul,
-          Zsqrtd.re_smul, Int.cast_mul]
-    simp only [↓reduceIte, hre, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  · rw [hj]
-    have him : ((∑ i ∈ s, c i • v i p.1).im : ℝ) = ∑ i ∈ s, (c i : ℝ) * ((v i p.1).im : ℝ) := by
-      induction s using Finset.cons_induction with
-      | empty => simp
-      | cons a t ha ih =>
-        rw [Finset.sum_cons, Finset.sum_cons, Zsqrtd.im_add, Int.cast_add, ih, zsmul_eq_mul,
-          Zsqrtd.im_smul, Int.cast_mul]
-    simp only [Fin.succ_ne_zero, ↓reduceIte, him, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  induction s using Finset.cons_induction with
+  | empty => ext p; simp [zsqrtdFamToLp]
+  | cons a t ha ih =>
+    simp_rw [Finset.sum_cons]
+    rw [← ih]
+    ext p
+    rcases Fin.eq_zero_or_eq_succ p.2 with hp | ⟨j, hj⟩
+    · simp [zsqrtdFamToLp, hp, zsmul_eq_mul]; ring
+    · simp [zsqrtdFamToLp, hj, zsmul_eq_mul]; ring
 
 private theorem inner_zsqrtdFamToLp (d : ℤ) {κ : Type*} [Fintype κ] (v w : κ → ℤ√d) :
     ⟪zsqrtdFamToLp d v, zsqrtdFamToLp d w⟫_ℝ =
@@ -220,16 +170,9 @@ private theorem inner_zsqrtdFamToLp (d : ℤ) {κ : Type*} [Fintype κ] (v w : �
   simp only [zsqrtdFamToLp, WithLp.ofLp_toLp, ↓reduceIte, Fin.isValue, one_ne_zero,
     RCLike.inner_apply, conj_trivial]
   have h2 : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by positivity)
-  have hd : Real.sqrt (2 * (d.natAbs : ℝ)) * Real.sqrt (2 * (d.natAbs : ℝ)) =
-      2 * |(d : ℝ)| := by
+  have hd : Real.sqrt (2 * (d.natAbs : ℝ)) * Real.sqrt (2 * (d.natAbs : ℝ)) = 2 * |(d : ℝ)| := by
     rw [Real.mul_self_sqrt (by positivity), cast_natAbs_eq_abs]
-  calc Real.sqrt 2 * (w k).re * (Real.sqrt 2 * (v k).re) +
-        Real.sqrt (2 * d.natAbs) * (w k).im * (Real.sqrt (2 * d.natAbs) * (v k).im)
-      = (Real.sqrt 2 * Real.sqrt 2) * ((v k).re * (w k).re) +
-          (Real.sqrt (2 * d.natAbs) * Real.sqrt (2 * d.natAbs)) * ((v k).im * (w k).im) := by ring
-    _ = 2 * ((v k).re * (w k).re + |(d : ℝ)| * (v k).im * (v k).im +
-          |(d : ℝ)| * (v k).im * ((w k).im - (v k).im)) := by rw [h2, hd]; ring
-    _ = 2 * ((v k).re * (w k).re + |(d : ℝ)| * (v k).im * (w k).im) := by ring
+  linear_combination (v k).re * (w k).re * h2 + (v k).im * (w k).im * hd
 
 private theorem norm_sq_zsqrtdFamToLp (d : ℤ) {κ : Type*} [Fintype κ] (v : κ → ℤ√d) :
     ‖zsqrtdFamToLp d v‖ ^ 2 = ∑ k : κ, (‖embPos d (v k)‖ ^ 2 + ‖embNeg d (v k)‖ ^ 2) := by
@@ -238,7 +181,7 @@ private theorem norm_sq_zsqrtdFamToLp (d : ℤ) {κ : Type*} [Fintype κ] (v : �
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   have h := two_mul_re_sq_add_im_sq_eq d (v k)
   rw [cast_natAbs_eq_abs] at h
-  linarith [h]
+  linear_combination h
 
 /-- Integer Gram matrix of a family of `(ℤ√d)^κ`-tuples. -/
 private noncomputable def intGram (d : ℤ) {κ ι : Type*} [Fintype κ] (v : ι → κ → ℤ√d) :
@@ -648,42 +591,32 @@ private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime) (hod
   have : Fact p.Prime := ⟨hp⟩
   have hdec : (⟨x, y⟩ : ℤ√d) = (x : ℤ√d) + (y : ℤ√d) * Zsqrtd.sqrtd := by ext <;> simp
   rw [hdec, add_pow_prime_split _ _ hp.pos]
-  have hmid : (p : ℤ√d) ∣ ∑ i ∈ Finset.range (p - 1),
-      (x : ℤ√d) ^ (i + 1) * ((y : ℤ√d) * Zsqrtd.sqrtd) ^ (p - (i + 1)) *
-        (p.choose (i + 1) : ℤ√d) := by
+  set S := ∑ i ∈ Finset.range (p - 1),
+      (x : ℤ√d) ^ (i + 1) * ((y : ℤ√d) * Zsqrtd.sqrtd) ^ (p - (i + 1)) * (p.choose (i + 1) : ℤ√d)
+  have hmid : (p : ℤ√d) ∣ S := by
     refine Finset.dvd_sum fun i hi ↦ dvd_mul_of_dvd_right ?_ _
     obtain ⟨c, hc⟩ := Nat.Prime.dvd_choose_self hp (Nat.succ_ne_zero i)
       (by have := Finset.mem_range.mp hi; omega)
     exact ⟨c, by exact_mod_cast hc⟩
   have hsqrtd_pow : (Zsqrtd.sqrtd : ℤ√d) ^ p = ((d ^ (p / 2) : ℤ) : ℤ√d) * Zsqrtd.sqrtd := by
     obtain ⟨k, hk⟩ := hodd
-    have hpk : p / 2 = k := by omega
-    rw [hpk, hk, pow_add, pow_one, pow_mul, sq, Zsqrtd.dmuld, ← Int.cast_pow]
+    rw [show p / 2 = k by omega, hk, pow_add, pow_one, pow_mul, sq, Zsqrtd.dmuld, ← Int.cast_pow]
   have hx_dvd : (p : ℤ) ∣ x ^ p - x := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-    simp [ZMod.pow_card]
+    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]; simp [ZMod.pow_card]
   have hy_dvd : (p : ℤ) ∣ y ^ p * d ^ (p / 2) + y := by
     rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
     push_cast
     rw [ZMod.pow_card, ← legendreSym.eq_pow, jacobiSym.legendreSym.to_jacobiSym, hjac]
     ring
-  have hrem_eq : ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩ =
-      ⟨x ^ p - x, y ^ p * d ^ (p / 2) + y⟩ := by
-    rw [mul_pow, hsqrtd_pow, ← mul_assoc, ← Int.cast_pow, ← Int.cast_mul, ← Int.cast_pow]
-    ext <;> simp [-Int.cast_pow, -Int.cast_mul]
-  have hrem : (p : ℤ√d) ∣
-      ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩ := by
+  have hrem : (p : ℤ√d) ∣ ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩ := by
+    have hrem_eq : ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩ =
+        ⟨x ^ p - x, y ^ p * d ^ (p / 2) + y⟩ := by
+      rw [mul_pow, hsqrtd_pow, ← mul_assoc, ← Int.cast_pow, ← Int.cast_mul, ← Int.cast_pow]
+      ext <;> simp [-Int.cast_pow, -Int.cast_mul]
     rw [hrem_eq, ← Int.cast_natCast, Zsqrtd.intCast_dvd]
     exact ⟨hx_dvd, hy_dvd⟩
-  have hsplit : (((y : ℤ√d) * Zsqrtd.sqrtd) ^ p +
-        (∑ i ∈ Finset.range (p - 1),
-          (x : ℤ√d) ^ (i + 1) * ((y : ℤ√d) * Zsqrtd.sqrtd) ^ (p - (i + 1)) *
-            (p.choose (i + 1) : ℤ√d)) + (x : ℤ√d) ^ p - ⟨x, -y⟩) =
-      (∑ i ∈ Finset.range (p - 1),
-        (x : ℤ√d) ^ (i + 1) * ((y : ℤ√d) * Zsqrtd.sqrtd) ^ (p - (i + 1)) *
-          (p.choose (i + 1) : ℤ√d)) +
-        (((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩) := by ring
-  rw [hsplit]
+  rw [show ((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + S + (x : ℤ√d) ^ p - ⟨x, -y⟩ =
+    S + (((y : ℤ√d) * Zsqrtd.sqrtd) ^ p + (x : ℤ√d) ^ p - ⟨x, -y⟩) by ring]
   exact dvd_add hmid hrem
 
 /-- Exponent `h = min (r / p) (S - 1 - s)` and the modified polynomial
@@ -835,21 +768,9 @@ private theorem exists_taylor_X_pow_sub_C_conj {d : ℤ} {p : ℕ} (hp : p.Prime
     have hdvd : p ∣ p.choose (m + 1) :=
       Nat.Prime.dvd_choose_self hp (Nat.succ_ne_zero m) (by have := Finset.mem_range.mp hm; omega)
     have hc : (p.choose (m + 1) : (ℤ√d)[X]) = C (p : ℤ√d) * C (c m) := by
-      dsimp [c]
-      rw [← C_mul, ← Nat.cast_mul, Nat.mul_div_cancel' hdvd, C_eq_natCast]
-    rw [hc]
-    ring
-  calc (C α : (ℤ√d)[X]) ^ p +
-          (∑ m ∈ Finset.range (p - 1),
-            X ^ (m + 1) * (C α : (ℤ√d)[X]) ^ (p - (m + 1)) * (p.choose (m + 1) : (ℤ√d)[X])) +
-          X ^ p - C α_bar
-      = ((C α) ^ p - C α_bar) +
-          (∑ m ∈ Finset.range (p - 1),
-            X ^ (m + 1) * (C α) ^ (p - (m + 1)) * (p.choose (m + 1) : (ℤ√d)[X])) +
-          X ^ p := by ring
-    _ = C (p : ℤ√d) * (C γ + ∑ m ∈ Finset.range (p - 1),
-          C (c m) * X ^ (m + 1) * (C α) ^ (p - (m + 1))) + X ^ p := by
-        rw [hconst, hsum_eq]; ring
+      dsimp [c]; rw [← C_mul, ← Nat.cast_mul, Nat.mul_div_cancel' hdvd, C_eq_natCast]
+    rw [hc]; ring
+  linear_combination hconst + hsum_eq
 
 /-- Every jet evaluation of `shiftPoly d p i` at an inert odd prime `p` is divisible by `p ^ h`. -/
 private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : _root_.Odd p)
@@ -929,16 +850,9 @@ private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : _
 
 private theorem sum_range_cast_eq (n : ℕ) :
     ∑ i ∈ Finset.range n, (i : ℝ) = (n : ℝ) * (n - 1) / 2 := by
-  have : ∑ i ∈ Finset.range n, (i : ℝ) = ((∑ i ∈ Finset.range n, i : ℕ) : ℝ) := by push_cast; rfl
-  rw [this, Finset.sum_range_id]
-  rcases n with _ | n
-  · simp
-  · have heven : 2 ∣ (n + 1) * n := by
-      rcases Nat.even_or_odd n with ⟨m, rfl⟩ | ⟨m, rfl⟩
-      · exact ⟨(2 * m + 1) * m, by ring⟩
-      · exact ⟨(m + 1) * (2 * m + 1), by ring⟩
-    simp only [Nat.add_sub_cancel, Nat.cast_div heven (by norm_num : (2 : ℝ) ≠ 0)]
-    push_cast; ring
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
 
 private theorem sum_range_min_ge (S k : ℕ) :
     2 * (S : ℝ) * k - (k : ℝ) ^ 2 - k ≤ 2 * ∑ s ∈ Finset.range S, (min k s : ℝ) := by
