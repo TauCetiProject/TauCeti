@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Data.Fin.Tuple.Reflection
+import Mathlib.LinearAlgebra.Dimension.Free
+import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
 
 /-!
 # Algebraic curvature tensors
@@ -20,9 +24,13 @@ interchanging the two pairs, and satisfies the first Bianchi identity
 `r(u, v, z, w) + r(v, z, u, w) + r(z, u, v, w) = 0`. A four-tensor with these four symmetries is
 an *algebraic curvature tensor*, `TauCeti.FourTensor.IsAlgebraicCurvature`, and these tensors form
 the closed submodule `TauCeti.FourTensor.algebraicCurvatureSubmodule`. It is stable under pullback
-by every continuous linear map, in particular under the orthogonal group of `V`, and pullback along
-a continuous linear equivalence also reflects the curvature symmetries. With this sign
-convention `r(u, v, u, v)` is positive on the round sphere.
+by every continuous linear map (`TauCeti.FourTensor.pullbackAlgebraicCurvature`), in particular
+under the orthogonal group of `V`, and a continuous linear equivalence induces a continuous linear
+equivalence `TauCeti.FourTensor.algebraicCurvatureSubmoduleCongr`. Currying via
+`TauCeti.FourTensor.toLinearMap₄` transfers sectional polarization from algebraic four-linear maps,
+showing that an algebraic curvature tensor is uniquely determined by its sectional-numerator values
+`r ![u, v, u, v]` on linearly independent pairs `(u, v)` and vanishes when `Module.finrank ℝ V ≤ 1`.
+With this sign convention `r(u, v, u, v)` is positive on the round sphere.
 
 On a finite-dimensional real inner product space the *Ricci contraction*
 `Ric(u, v) = ∑ᵢ r(eᵢ, u, eᵢ, v)` and the *scalar contraction* `Scal = ∑ᵢ Ric(eᵢ, eᵢ)` do not depend
@@ -49,8 +57,11 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.ofLinearMap₄`: on a finite-dimensional space, the four-tensor of a curried
-  four-linear form.
+* `TauCeti.FourTensor.pullbackAlgebraicCurvature` and
+  `TauCeti.FourTensor.algebraicCurvatureSubmoduleCongr`: continuous linear pullback and congruence
+  on `algebraicCurvatureSubmodule`.
+* `TauCeti.FourTensor.toLinearMap₄`, `TauCeti.FourTensor.ofLinearMap₄`, and
+  `TauCeti.FourTensor.linearMap₄Equiv`: currying between `FourTensor V` and four-linear forms.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
@@ -59,11 +70,18 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 ## Main statements
 
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
-* `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
-  curvature tensors.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap` and
+  `TauCeti.FourTensor.pullbackAlgebraicCurvature_injective`: pullback preserves algebraic curvature
+  tensors and is injective along a continuous linear map admitting a right inverse.
 * `TauCeti.FourTensor.isAlgebraicCurvature_compContinuousLinearMap_iff` and
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`: a continuous
   linear equivalence identifies the algebraic curvature tensors of the two spaces.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent` and
+  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`: sectional polarization of
+  algebraic curvature tensors.
+* `TauCeti.FourTensor.eq_zero_of_antisymm_first_of_finrank_le_one` and
+  `TauCeti.FourTensor.IsAlgebraicCurvature.eq_zero_of_finrank_le_one`: four-tensors antisymmetric in
+  their first two arguments vanish when `Module.finrank ℝ V ≤ 1`.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -272,6 +290,110 @@ theorem comap_compContinuousLinearMapL_algebraicCurvatureSubmodule (e : W ≃L[�
   ext r
   exact isAlgebraicCurvature_compContinuousLinearMap_iff e
 
+/-- Continuous linear pullback of algebraic curvature tensors along `f : W →L[ℝ] V`. -/
+def pullbackAlgebraicCurvature (f : W →L[ℝ] V) :
+    algebraicCurvatureSubmodule V →L[ℝ] algebraicCurvatureSubmodule W :=
+  (ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ f).restrict
+    fun _ hr ↦ compContinuousLinearMap_mem_algebraicCurvatureSubmodule hr f
+
+@[simp] theorem coe_pullbackAlgebraicCurvature_apply (f : W →L[ℝ] V)
+    (r : algebraicCurvatureSubmodule V) :
+    (pullbackAlgebraicCurvature f r : FourTensor W) =
+      r.1.compContinuousLinearMap fun _ ↦ f := (rfl)
+@[simp] theorem pullbackAlgebraicCurvature_id :
+    pullbackAlgebraicCurvature (ContinuousLinearMap.id ℝ V) =
+      ContinuousLinearMap.id ℝ (algebraicCurvatureSubmodule V) := by ext; simp
+theorem pullbackAlgebraicCurvature_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
+    pullbackAlgebraicCurvature (f.comp g) =
+      (pullbackAlgebraicCurvature g).comp (pullbackAlgebraicCurvature f) := by
+  ext; simp [ContinuousMultilinearMap.compContinuousLinearMap_apply]
+
+/-- If `f : W →L[ℝ] V` has a right inverse `g : V → W`, `pullbackAlgebraicCurvature f` is
+injective. -/
+theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) {g : V → W}
+    (hfg : Function.LeftInverse f g) : Function.Injective (pullbackAlgebraicCurvature f) :=
+  fun _ _ hrq ↦ Subtype.ext <| ContinuousMultilinearMap.ext fun m ↦ by
+    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, hfg _]
+      using congr($(congrArg Subtype.val hrq) (fun i ↦ g (m i)))
+
+/-- A continuous linear equivalence `e : V ≃L[ℝ] W` induces a continuous linear equivalence on
+submodules of algebraic curvature tensors by pulling back along `e.symm`. -/
+def algebraicCurvatureSubmoduleCongr (e : V ≃L[ℝ] W) :
+    algebraicCurvatureSubmodule V ≃L[ℝ] algebraicCurvatureSubmodule W :=
+  ContinuousLinearEquiv.equivOfInverse
+    (pullbackAlgebraicCurvature (e.symm : W →L[ℝ] V)) (pullbackAlgebraicCurvature (e : V →L[ℝ] W))
+    (fun _ ↦ Subtype.ext <| by ext; simp) (fun _ ↦ Subtype.ext <| by ext; simp)
+
+@[simp] theorem coe_algebraicCurvatureSubmoduleCongr_apply (e : V ≃L[ℝ] W)
+    (r : algebraicCurvatureSubmodule V) :
+    (algebraicCurvatureSubmoduleCongr e r : FourTensor W) =
+      r.1.compContinuousLinearMap fun _ ↦ (e.symm : W →L[ℝ] V) := (rfl)
+@[simp] theorem algebraicCurvatureSubmoduleCongr_symm (e : V ≃L[ℝ] W) :
+    (algebraicCurvatureSubmoduleCongr e).symm = algebraicCurvatureSubmoduleCongr e.symm := by
+  ext; simp [algebraicCurvatureSubmoduleCongr]
+
+/-- Curry a continuous four-tensor into an algebraic four-linear form:
+`r.toLinearMap₄ u v z w = r ![u, v, z, w]`. -/
+def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
+  toFun r := LinearMap.mk₂ ℝ
+    (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
+      (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+      (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..))
+    (fun _ _ _ ↦ by ext; exact apply_add_first ..) (fun _ _ _ ↦ by ext; exact apply_smul_first ..)
+    (fun _ _ _ ↦ by ext; exact apply_add_second ..) (fun _ _ _ ↦ by ext; exact apply_smul_second ..)
+  map_add' _ _ := by ext; rfl
+  map_smul' _ _ := by ext; rfl
+
+@[simp] theorem toLinearMap₄_apply (r : FourTensor V) (u v z w : V) :
+    r.toLinearMap₄ u v z w = r ![u, v, z, w] := (rfl)
+/-- Currying a four-tensor into a four-linear form is injective. -/
+theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
+  ext m; rw [← FinVec.etaExpand_eq m]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+@[simp] theorem toLinearMap₄_eq_zero_iff {r : FourTensor V} : r.toLinearMap₄ = 0 ↔ r = 0 :=
+  map_eq_zero_iff _ toLinearMap₄_injective
+
+theorem apply_self_first_of_antisymm {r : FourTensor V}
+    (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (u z w : V) : r ![u, u, z, w] = 0 := by
+  linarith [hr₁ u u z w]
+theorem apply_self_last_of_antisymm {r : FourTensor V}
+    (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (u v z : V) : r ![u, v, z, z] = 0 := by
+  linarith [hr₂ u v z z]
+theorem IsAlgebraicCurvature.self_first {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u z w : V) : r ![u, u, z, w] = 0 := apply_self_first_of_antisymm hr.antisymm_first u z w
+theorem IsAlgebraicCurvature.self_last {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z : V) : r ![u, v, z, z] = 0 := apply_self_last_of_antisymm hr.antisymm_last u v z
+
+/-- **Plane polarization of algebraic curvature tensors.** Two algebraic curvature tensors agreeing
+on `r ![u, v, u, v]` for every linearly independent pair `(u, v)` are equal. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
+    (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
+    (h : ∀ u v : V, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) :
+    r₁ = r₂ := by
+  refine toLinearMap₄_injective (LinearMap.eq_of_cyclic_eq_zero_of_linearIndependent
+    (by norm_num : (6 : ℝ) ≠ 0) hr₁.antisymm_first hr₁.antisymm_last hr₁.cyclic_eq_zero
+    hr₂.antisymm_first hr₂.antisymm_last hr₂.cyclic_eq_zero fun u v huv ↦ ?_)
+  simp only [toLinearMap₄_apply, hr₁.antisymm_last u v v u, hr₂.antisymm_last u v v u, h u v huv]
+/-- **Polarization of algebraic curvature tensors.** Two algebraic curvature tensors with the same
+sectional-numerator values `r ![u, v, u, v]` for all `u, v` are equal. -/
+theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
+    (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
+    (h : ∀ u v : V, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
+  hr₁.eq_of_apply_self_eq_of_linearIndependent hr₂ fun u v _ ↦ h u v
+
+/-- On a real normed space of dimension at most `1`, every four-tensor antisymmetric in its first
+two arguments vanishes. -/
+theorem eq_zero_of_antisymm_first_of_finrank_le_one [FiniteDimensional ℝ V]
+    (hn : Module.finrank ℝ V ≤ 1) {r : FourTensor V}
+    (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) : r = 0 := by
+  apply toLinearMap₄_injective; rw [map_zero]
+  let b := Module.finBasis ℝ V
+  refine b.ext fun i ↦ b.ext fun j ↦ b.ext fun k ↦ b.ext fun l ↦ ?_
+  rw [show i = j from Fin.ext (by omega)]; simp [apply_self_first_of_antisymm hr₁]
+theorem IsAlgebraicCurvature.eq_zero_of_finrank_le_one [FiniteDimensional ℝ V]
+    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≤ 1) : r = 0 :=
+  eq_zero_of_antisymm_first_of_finrank_le_one hn hr.antisymm_first
+
 /-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
 private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
   LinearMap.mk₂ ℝ (fun x y ↦ r ![x, u, y, v])
@@ -306,6 +428,22 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
     ofLinearMap₄ T m = T (m 0) (m 1) (m 2) (m 3) :=
   (rfl)
 
+@[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) : ofLinearMap₄ r.toLinearMap₄ = r := by
+  ext m; conv_rhs => rw [← FinVec.etaExpand_eq m]
+  simp [FinVec.etaExpand, FinVec.map, FinVec.seq, Matrix.vecTail]
+@[simp] theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    (ofLinearMap₄ T).toLinearMap₄ = T := by ext; simp
+
+/-- On a finite-dimensional real normed space, continuous four-tensors are linearly equivalent to
+curried four-linear forms. -/
+def linearMap₄Equiv : FourTensor V ≃ₗ[ℝ] (V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :=
+  LinearEquiv.ofLinearMap toLinearMap₄ ofLinearMap₄
+    (LinearMap.ext toLinearMap₄_ofLinearMap₄) (LinearMap.ext ofLinearMap₄_toLinearMap₄)
+@[simp] theorem linearMap₄Equiv_apply (r : FourTensor V) : linearMap₄Equiv r = r.toLinearMap₄ :=
+  (rfl)
+@[simp] theorem linearMap₄Equiv_symm_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    linearMap₄Equiv.symm T = ofLinearMap₄ T := (rfl)
+
 /-- The Kulkarni–Nomizu product of two bilinear forms as a four-tensor, in the curvature
 convention `r(u, v, z, w) = g(R(u, v)w, z)`:
 `(h ⊙ k)(u, v, z, w) = h(u, z) k(v, w) + h(v, w) k(u, z) - h(u, w) k(v, z) - h(v, z) k(u, w)`.
@@ -328,6 +466,20 @@ theorem kulkarniNomizu_apply (h k : BilinForm ℝ V) (u v z w : V) :
 theorem kulkarniNomizu_apply_eq (h k : BilinForm ℝ V) (u v z w : V) :
     kulkarniNomizu h k ![u, v, z, w] = LinearMap.BilinForm.kulkarniNomizu h k u v w z := by
   rw [kulkarniNomizu_apply, LinearMap.BilinForm.kulkarniNomizu_apply]
+
+/-- The Kulkarni–Nomizu four-tensor is commutative in its two bilinear-form arguments. -/
+theorem kulkarniNomizu_comm (h k : BilinForm ℝ V) : kulkarniNomizu h k = kulkarniNomizu k h := by
+  simp only [kulkarniNomizu, LinearMap.compr₂_apply, LinearMap.BilinForm.kulkarniNomizu_comm h k]
+/-- Every Kulkarni–Nomizu four-tensor is antisymmetric in its first two arguments. -/
+theorem kulkarniNomizu_antisymm_first (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![v, u, z, w] := by
+  simpa only [kulkarniNomizu_apply_eq] using
+    LinearMap.BilinForm.kulkarniNomizu_antisymm_first h k u v w z
+/-- Every Kulkarni–Nomizu four-tensor is antisymmetric in its last two arguments. -/
+theorem kulkarniNomizu_antisymm_last (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![u, v, w, z] := by
+  simpa only [kulkarniNomizu_apply_eq] using
+    LinearMap.BilinForm.kulkarniNomizu_antisymm_last h k u v w z
 
 /-- The Kulkarni–Nomizu product of two symmetric bilinear forms is an algebraic curvature
 tensor. -/
@@ -447,6 +599,11 @@ product with itself. It is the curvature four-tensor of the unit sphere, and `κ
 curvature four-tensor of a space of constant sectional curvature `κ`. -/
 def constantCurvature : FourTensor V :=
   (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V)
+
+/-- `constantCurvature V` is half the Kulkarni–Nomizu product of `innerₗ V` with itself. -/
+theorem constantCurvature_eq_smul_kulkarniNomizu :
+    constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
+  (rfl)
 
 /-- Evaluation of the constant-curvature tensor. -/
 @[simp]
