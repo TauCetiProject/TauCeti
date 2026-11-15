@@ -104,13 +104,7 @@ theorem coord_ae_eq_of_coord_ae_eq {s t : ∀ x, V x}
     A'.coord i' s =ᵐ[μ.restrict (A'.image i')] A'.coord i' t := by
   have hst := A.ae_restrict_image_symm_of_ae A' (P := fun x ↦ s x = t x) (fun i ↦ by
     filter_upwards [h i, ae_restrict_mem (A.image i).isOpen.measurableSet] with z hz hzU
-    have hb := A.dom_subset_baseSet i (A.symm_mem_dom hzU)
-    rw [A.coord_def, A.coord_def] at hz
-    -- The trivialization is injective on its source, and both points lie over the same base point.
-    refine TotalSpace.mk_inj.1 <| (A.triv i).injOn ((A.triv i).mem_source.2 hb)
-      ((A.triv i).mem_source.2 hb) (Prod.ext ?_ hz)
-    exact ((A.triv i).coe_fst' (x := ⟨_, s _⟩) hb).trans
-      ((A.triv i).coe_fst' (x := ⟨_, t _⟩) hb).symm) i'
+    exact (A.coord_eq_coord_iff hzU).1 hz) i'
   filter_upwards [hst] with y hy
   simp only [coord_def, hy]
 

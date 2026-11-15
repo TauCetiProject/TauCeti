@@ -54,6 +54,8 @@ gives the corresponding transfer property and hence the atlas independence at th
 
 * `TauCeti.SobolevSection.chartValueL_changeAtlas_ae`: the chart data of `changeAtlas h w` are the
   readings in `A'` of any section of `w`.
+* `TauCeti.SobolevSection.exists_norm_le`: when sections transfer in both directions the norms of
+  the two atlases are equivalent.
 * `TauCeti.SobolevSection.transfersTo_of_le_one`: the transfer property for surfaces at orders
   `k ≤ 1`.
 * `TauCeti.SobolevSection.exists_norm_le_of_le_one`: for surfaces and orders `k ≤ 1` the norms of
@@ -288,6 +290,21 @@ theorem atlasEquiv_trans {A'' : FiniteBundleAtlas E M F V} (h₁ : TransfersTo A
     (atlasEquiv h₁ h₁').trans (atlasEquiv h₂ h₂') = atlasEquiv (h₁.trans h₂) (h₂'.trans h₁') :=
   ContinuousLinearEquiv.ext (funext (changeAtlas_changeAtlas h₁ h₂))
 
+/-- **Equivalence of norms.** If sections transfer between `A` and `A'` in both directions, the
+norms of the Sobolev spaces of sections for the two atlases are equivalent: there is a constant `C`
+bounding the norm of each element by `C` times the norm of the element of the other atlas with the
+same section. -/
+theorem exists_norm_le (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
+    ∃ C : ℝ, ∀ w : SobolevSection A μ p k,
+      ‖changeAtlas h w‖ ≤ C * ‖w‖ ∧ ‖w‖ ≤ C * ‖changeAtlas h w‖ := by
+  set T := changeAtlas h
+  set S := changeAtlas h'
+  refine ⟨max ‖T‖ ‖S‖, fun w ↦ ⟨(T.le_opNorm w).trans
+    (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg w)), ?_⟩⟩
+  calc ‖w‖ = ‖S (T w)‖ := by rw [(changeAtlas_changeAtlas _ _ w).trans (changeAtlas_refl w)]
+    _ ≤ ‖S‖ * ‖T w‖ := S.le_opNorm _
+    _ ≤ max ‖T‖ ‖S‖ * ‖T w‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
+
 end SobolevSection
 
 end Sobolev
@@ -319,14 +336,8 @@ of each element by `C` times the norm of the element of the other atlas with the
 theorem exists_norm_le_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
     ∃ C : ℝ, ∀ w : SobolevSection A volume p k,
       ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ ≤ C * ‖w‖ ∧
-        ‖w‖ ≤ C * ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ := by
-  set T := changeAtlas (transfersTo_of_le_one (p := p) hk A A')
-  set S := changeAtlas (transfersTo_of_le_one (p := p) hk A' A)
-  refine ⟨max ‖T‖ ‖S‖, fun w ↦ ⟨(T.le_opNorm w).trans
-    (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg w)), ?_⟩⟩
-  calc ‖w‖ = ‖S (T w)‖ := by rw [(changeAtlas_changeAtlas _ _ w).trans (changeAtlas_refl w)]
-    _ ≤ ‖S‖ * ‖T w‖ := S.le_opNorm _
-    _ ≤ max ‖T‖ ‖S‖ * ‖T w‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
+        ‖w‖ ≤ C * ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ :=
+  exists_norm_le (transfersTo_of_le_one hk A A') (transfersTo_of_le_one hk A' A)
 
 end SobolevSection
 

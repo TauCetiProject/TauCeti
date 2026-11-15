@@ -234,6 +234,18 @@ theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
 
+/-- On the chart image `A.image i`, two sections have the same reading in chart `i` exactly when
+they agree at the corresponding point of `M`: the trivialization is injective on its source. -/
+theorem coord_eq_coord_iff {i : Fin A.n} {s t : ∀ x, V x} {y : E} (hy : y ∈ A.image i) :
+    A.coord i s y = A.coord i t y ↔ s ((A.chart i).symm y) = t ((A.chart i).symm y) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [coord_def, coord_def, h]⟩
+  have hb := A.dom_subset_baseSet i (A.symm_mem_dom hy)
+  rw [A.coord_def, A.coord_def] at h
+  refine TotalSpace.mk_inj.1 <| (A.triv i).injOn ((A.triv i).mem_source.2 hb)
+    ((A.triv i).mem_source.2 hb) (Prod.ext ?_ h)
+  exact ((A.triv i).coe_fst' (x := ⟨_, s _⟩) hb).trans
+    ((A.triv i).coe_fst' (x := ⟨_, t _⟩) hb).symm
+
 /-- The inverse of chart `i` is continuous on the chart image `A.image i`. -/
 theorem continuousOn_chart_symm (i : Fin A.n) : ContinuousOn (A.chart i).symm (A.image i) :=
   (A.chart i).continuousOn_symm.mono fun y hy ↦ by
