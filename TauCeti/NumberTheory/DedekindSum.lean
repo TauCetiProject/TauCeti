@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Int.GCD
 import TauCeti.NumberTheory.FloorSum
 import TauCeti.Data.Nat.Cast.Basic
 import Mathlib.Data.Nat.ModEq
@@ -416,18 +417,6 @@ theorem dedekindSum_eq_of_mul_modEq_one {a d c : ℤ} (h : a * d ≡ 1 [ZMOD c])
       _ = r := by rw [one_mul]; exact Nat.mod_eq_of_lt (mem_range.1 hr)
   rw [hinv, mul_comm]
 
-private theorem emod_pos_and_isCoprime_of_gt_one {d c : ℤ} (hc : 1 < c) (hdc : IsCoprime d c) :
-    0 < d % c ∧ IsCoprime (d % c) c := by
-  have hc0 : c ≠ 0 := by omega
-  have hcop : IsCoprime (d % c) c := by
-    obtain ⟨x, y, hxy⟩ := hdc
-    refine ⟨x, y + x * (d / c), ?_⟩
-    linear_combination hxy + x * Int.emod_add_ediv_mul d c
-  refine ⟨lt_of_le_of_ne (Int.emod_nonneg d hc0) fun hr0 ↦ ?_, hcop⟩
-  obtain ⟨x, y, hxy⟩ := hcop
-  have h1 : c ∣ 1 := ⟨y, by rw [← hr0] at hxy; linear_combination -hxy⟩
-  exact (Int.le_of_dvd one_pos h1).not_gt hc
-
 /-- **Rademacher's integrality and congruence theorem for Dedekind sums**
 (Rademacher–Grosswald, Chapter 2, Theorem 2): for coprime integers `d` and `c > 0`,
 `12 c s(d, c)` is an integer, and for every `a` with `a d ≡ 1 (mod c)` that integer is congruent
@@ -442,7 +431,8 @@ theorem exists_int_twelve_mul_intCast_mul_dedekindSum {d c : ℤ} (hc : 0 < c)
     by_cases hc1 : c = 1
     · subst hc1
       exact ⟨0, by simp, fun _ _ ↦ Int.modEq_one⟩
-    obtain ⟨hr_pos', hcop'⟩ := emod_pos_and_isCoprime_of_gt_one (c := c) (by omega) hdc
+    have hr_pos' : 0 < d % c := hdc.emod_pos_of_one_lt (by omega)
+    have hcop' : IsCoprime (d % c) c := (Int.isCoprime_emod_left d c).mpr hdc
     obtain ⟨r, hr⟩ := Int.eq_ofNat_of_zero_le hr_pos'.le
     have hr_pos : 0 < (r : ℤ) := hr ▸ hr_pos'
     have hcop_rc : IsCoprime (r : ℤ) c := hr ▸ hcop'

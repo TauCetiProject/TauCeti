@@ -8,6 +8,9 @@ module
 public import Mathlib.NumberTheory.ModularForms.Discriminant
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
+import TauCeti.Data.Int.GCD
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
 # The transformation of the Dedekind eta function under `SL(2, ℤ)`
@@ -30,8 +33,10 @@ quotient is continuous on the connected upper half-plane, because `c τ + d` is 
 For `γ = (a b; c d)` with `d > 0`, right multiplication by `S` multiplies the
 eta multiplier by `exp(-π i / 4)`. At `τ = i`, the new automorphy factor `-c + d i`
 lies in the upper half-plane, controlling the principal square root. Together with the
-translation laws, this is the inversion step in the Euclidean calculation of the multiplier.
-The initial case `c = 1` has the explicit value `exp(π i ((a + d) / 12 - 1/4))`.
+translation laws and the initial value `exp(π i ((a + d) / 12 - 1/4))` at `c = 1`, strong
+induction on `|c|` yields the Euclidean uniqueness principle `eq_etaMultiplier_of_c_pos` on
+`{c > 0}`. The file also evaluates `ε(γ)` on upper-triangular matrices (`c = 0`) and records
+its transformation under `γ ↦ -γ` across all signs of `c`.
 
 ## Main definitions
 
@@ -54,6 +59,13 @@ The initial case `c = 1` has the explicit value `exp(π i ((a + d) / 12 - 1/4))`
   `ε(γ Tⁿ) = ε(Tⁿ γ) = e^{π i n / 12} ε(γ)`.
 * `TauCeti.ModularForm.etaMultiplier_mul_S`: `ε(γ S) = e^{-π i / 4} ε(γ)` when `d > 0`.
 * `TauCeti.ModularForm.etaMultiplier_of_c_eq_one`: the explicit multiplier when `c = 1`.
+* `TauCeti.ModularForm.eq_etaMultiplier_of_c_pos`: Euclidean uniqueness of `ε` on `{c > 0}`.
+* `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero`,
+  `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero_of_d_pos`,
+  `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero_of_d_neg`: explicit multiplier when `c = 0`.
+* `TauCeti.ModularForm.etaMultiplier_neg`, `TauCeti.ModularForm.etaMultiplier_neg_of_c_pos`,
+  `TauCeti.ModularForm.etaMultiplier_neg_of_c_neg`,
+  `TauCeti.ModularForm.etaMultiplier_neg_of_c_eq_zero`: behavior of `ε` under `γ ↦ -γ`.
 
 ## References
 
@@ -310,5 +322,185 @@ theorem etaMultiplier_of_c_eq_one (γ : SL(2, ℤ)) (hc : γ 1 0 = 1) :
     ← Complex.exp_add, ← Complex.exp_add]
   congr 1
   ring
+
+/-! ### Euclidean uniqueness on `{c > 0}` -/
+
+/-- Iterating a single `T`-step `f (γ * T) = e^{π i / 12} f γ` on `{c > 0}` gives the `Tⁿ`-step for
+all integers `n`, since right multiplication by `Tⁿ` preserves the lower-left entry. -/
+private theorem mul_T_zpow_of_mul_T {f : SL(2, ℤ) → ℂ}
+    (hT : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → f (γ * T) = cexp (π * I / 12) * f γ)
+    {γ : SL(2, ℤ)} (hc : 0 < γ 1 0) (n : ℤ) :
+    f (γ * T ^ n) = cexp (π * I * n / 12) * f γ := by
+  have hnat : ∀ (δ : SL(2, ℤ)), 0 < δ 1 0 → ∀ k : ℕ,
+      f (δ * T ^ (k : ℤ)) = cexp (π * I * (k : ℤ) / 12) * f δ := by
+    intro δ hδ k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      have hc' : 0 < (δ * T ^ (k : ℤ)) 1 0 := by
+        rwa [Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero]
+      rw [Nat.cast_succ, zpow_add_one, ← mul_assoc, hT _ hc', ih, ← mul_assoc, ← Complex.exp_add]
+      congr 2
+      push_cast
+      ring
+  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
+  · exact hnat γ hc k
+  · have hc' : 0 < (γ * T ^ (-(k : ℤ))) 1 0 := by
+      rwa [Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero]
+    have hk := hnat (γ * T ^ (-(k : ℤ))) hc' k
+    have hcancel : γ * T ^ (-(k : ℤ)) * T ^ (k : ℤ) = γ := by
+      rw [mul_assoc, ← zpow_add, neg_add_cancel, zpow_zero, mul_one]
+    rw [hcancel] at hk
+    apply mul_left_cancel₀ (Complex.exp_ne_zero (π * I * (k : ℤ) / 12))
+    rw [← hk, ← mul_assoc, ← Complex.exp_add]
+    have hexp : π * I * (k : ℤ) / 12 + π * I * (-(k : ℤ) : ℤ) / 12 = 0 := by
+      push_cast
+      ring
+    rw [hexp, Complex.exp_zero, one_mul]
+
+/-- **Euclidean uniqueness of the eta multiplier on `c > 0`.** Any function `f : SL(2, ℤ) → ℂ`
+that agrees with `etaMultiplier` when `γ 1 0 = 1` and transforms by `e^{π i / 12}` under right
+multiplication by `T` (for `γ 1 0 > 0`) and by `e^{-π i / 4}` under right multiplication by `S`
+(for `γ 1 0 > 0` and `γ 1 1 > 0`) equals `etaMultiplier` on every matrix with `γ 1 0 > 0`. -/
+theorem eq_etaMultiplier_of_c_pos {f : SL(2, ℤ) → ℂ}
+    (hc1 : ∀ γ : SL(2, ℤ), γ 1 0 = 1 → f γ = etaMultiplier γ)
+    (hT : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → f (γ * T) = cexp (π * I / 12) * f γ)
+    (hS : ∀ γ : SL(2, ℤ), 0 < γ 1 0 → 0 < γ 1 1 → f (γ * S) = cexp (-(π * I / 4)) * f γ) :
+    ∀ γ : SL(2, ℤ), 0 < γ 1 0 → f γ = etaMultiplier γ := by
+  intro γ hc
+  induction hn : (γ 1 0).natAbs using Nat.strong_induction_on generalizing γ with
+  | _ n ih =>
+    by_cases h1 : γ 1 0 = 1
+    · exact hc1 γ h1
+    have hc_gt : 1 < γ 1 0 := by omega
+    set c := γ 1 0
+    set d := γ 1 1
+    -- Since `(c, d)` is coprime and `c > 1`, `r = d % c` lies strictly between `0` and `c`.
+    have hr_pos : 0 < d % c := (γ.isCoprime_row 1).symm.emod_pos_of_one_lt hc_gt
+    have hr_lt : d % c < c := Int.emod_lt_of_pos d hc
+    let γ₁ : SL(2, ℤ) := γ * T ^ (-(d / c))
+    let γ₂ : SL(2, ℤ) := γ₁ * S
+    have hγ₁0 : γ₁ 1 0 = c := by
+      simp only [γ₁, Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero, c]
+    have hγ₁1 : γ₁ 1 1 = d % c := by
+      simp only [γ₁, Matrix.SpecialLinearGroup.mul_T_zpow_apply, Matrix.cons_val_zero,
+        Matrix.cons_val_one, c, d, Int.emod_def]
+      ring
+    have hγ₂0 : γ₂ 1 0 = d % c := by
+      simp [γ₂, Matrix.SpecialLinearGroup.mul_S_apply, hγ₁1]
+    have hlt : (γ₂ 1 0).natAbs < n := by
+      rw [← hn, hγ₂0]
+      omega
+    have h₂ : f γ₂ = etaMultiplier γ₂ := ih _ hlt γ₂ (hγ₂0 ▸ hr_pos) rfl
+    have h₁ : f γ₁ = etaMultiplier γ₁ := by
+      apply mul_left_cancel₀ (Complex.exp_ne_zero (-(π * I / 4)))
+      rw [← hS γ₁ (hγ₁0 ▸ hc) (hγ₁1 ▸ hr_pos), ← etaMultiplier_mul_S γ₁ (hγ₁1 ▸ hr_pos), h₂]
+    apply mul_left_cancel₀ (Complex.exp_ne_zero (π * I * (-(d / c) : ℤ) / 12))
+    rw [← mul_T_zpow_of_mul_T hT hc (-(d / c)), ← etaMultiplier_mul_T_zpow γ (-(d / c)), h₁]
+
+/-! ### Negation and upper-triangular matrices -/
+
+/-- When `c = γ 1 0 > 0`, negating `γ` multiplies the eta multiplier by `i`. -/
+theorem etaMultiplier_neg_of_c_pos {γ : SL(2, ℤ)} (hc : 0 < γ 1 0) :
+    etaMultiplier (-γ) = I * etaMultiplier γ := by
+  refine etaMultiplier_eq_of_eta_smul_eq (τ := UpperHalfPlane.I) ?_
+  have him : 0 < ((γ 1 0 : ℂ) * I + γ 1 1).im := by
+    simpa using (Int.cast_pos.mpr hc : (0 : ℝ) < γ 1 0)
+  have hdenom : ((-γ : SL(2, ℤ)) 1 0 : ℂ) * (UpperHalfPlane.I : ℂ) + (-γ : SL(2, ℤ)) 1 1 =
+      -((γ 1 0 : ℂ) * I + γ 1 1) := by
+    simp
+    ring
+  rw [ModularGroup.SL_neg_smul, eta_smul, hdenom, Complex.sqrt_neg_of_im_pos him]
+  simp only [UpperHalfPlane.coe_I]
+  ring_nf
+  rw [I_sq]
+  ring
+
+/-- When `c = γ 1 0 < 0`, negating `γ` multiplies the eta multiplier by `-i`. -/
+theorem etaMultiplier_neg_of_c_neg {γ : SL(2, ℤ)} (hc : γ 1 0 < 0) :
+    etaMultiplier (-γ) = -I * etaMultiplier γ := by
+  have h := etaMultiplier_neg_of_c_pos (γ := -γ) (by simpa using hc)
+  rw [neg_neg] at h
+  rw [h, ← mul_assoc]
+  simp
+
+/-- For an upper-triangular matrix `γ ∈ SL(2, ℤ)` with `γ 1 0 = 0` and `γ 1 1 > 0` (so `γ = Tᵇ`),
+`ε(γ) = e^{π i b / 12}`. -/
+theorem etaMultiplier_of_c_eq_zero_of_d_pos {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) (hd : 0 < γ 1 1) :
+    etaMultiplier γ = cexp (π * I * γ 0 1 / 12) := by
+  obtain ⟨b, hb⟩ : ∃ b, b = γ 0 1 := ⟨_, rfl⟩
+  rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
+    rw [← hb] at hγ <;> subst hγ
+  · simp [etaMultiplier_T_zpow, coe_T_zpow]
+  · simp [coe_T_zpow] at hd
+
+/-- For an upper-triangular matrix `γ ∈ SL(2, ℤ)` with `γ 1 0 = 0` and `γ 1 1 < 0`
+(so `γ = -T⁻ᵇ`), `ε(γ) = -i e^{-π i b / 12}`. -/
+theorem etaMultiplier_of_c_eq_zero_of_d_neg {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) (hd : γ 1 1 < 0) :
+    etaMultiplier γ = -I * cexp (-(π * I * γ 0 1 / 12)) := by
+  obtain ⟨b, hb⟩ : ∃ b, b = γ 0 1 := ⟨_, rfl⟩
+  rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
+    rw [← hb] at hγ <;> subst hγ
+  · simp [coe_T_zpow] at hd
+  · rw [← hb, neg_eq_neg_one_mul (T ^ (-b) : SL(2, ℤ)), etaMultiplier_mul_T_zpow,
+      etaMultiplier_neg_one, Int.cast_neg, mul_comm]
+    congr 2
+    ring
+
+/-- Explicit formula for the eta multiplier of any upper-triangular matrix (`γ 1 0 = 0`) in
+`SL(2, ℤ)`. -/
+theorem etaMultiplier_of_c_eq_zero {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) :
+    etaMultiplier γ =
+      if 0 < γ 1 1 then cexp (π * I * γ 0 1 / 12) else -I * cexp (-(π * I * γ 0 1 / 12)) := by
+  split_ifs with hd
+  · exact etaMultiplier_of_c_eq_zero_of_d_pos hc hd
+  · obtain ⟨b, hb⟩ : ∃ b, b = γ 0 1 := ⟨_, rfl⟩
+    rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
+      rw [← hb] at hγ <;> subst hγ
+    · simp [coe_T_zpow] at hd
+    · exact etaMultiplier_of_c_eq_zero_of_d_neg hc (by simp [coe_T_zpow])
+
+/-- For an upper-triangular matrix `γ ∈ SL(2, ℤ)` (`γ 1 0 = 0`), negating `γ` multiplies the eta
+multiplier by `i` when `γ 1 1 < 0` and by `-i` when `γ 1 1 > 0`. -/
+theorem etaMultiplier_neg_of_c_eq_zero {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) :
+    etaMultiplier (-γ) =
+      if γ 1 1 < 0 then I * etaMultiplier γ else -I * etaMultiplier γ := by
+  have hdet := γ.det_coe
+  rw [Matrix.det_fin_two, hc, mul_zero, sub_zero] at hdet
+  have hd_ne : γ 1 1 ≠ 0 := right_ne_zero_of_mul_eq_one hdet
+  have hI : (I : ℂ) * -I = 1 := by simp
+  have hneg_c : (-γ) 1 0 = 0 := by simp [hc]
+  have hneg_d : ((-γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) 1 1 = -(γ 1 1) := by
+    rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
+  have hneg_b : ((-γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) 0 1 = -(γ 0 1) := by
+    rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
+  by_cases hd : γ 1 1 < 0
+  · rw [ite_eq_left hd, etaMultiplier_of_c_eq_zero_of_d_pos hneg_c (by omega),
+      etaMultiplier_of_c_eq_zero_of_d_neg hc hd, hneg_b, Int.cast_neg, ← mul_assoc, hI, one_mul]
+    congr 1
+    ring
+  · have hd_pos : 0 < γ 1 1 := by omega
+    rw [ite_eq_right hd, etaMultiplier_of_c_eq_zero_of_d_neg hneg_c (by omega),
+      etaMultiplier_of_c_eq_zero_of_d_pos hc hd_pos, hneg_b, Int.cast_neg]
+    congr 2
+    ring
+
+/-- Explicit negation law for `etaMultiplier` across all of `SL(2, ℤ)`: `ε(-γ) = i ε(γ)` when
+`γ 1 0 > 0` or (`γ 1 0 = 0` and `γ 1 1 < 0`), and `ε(-γ) = -i ε(γ)` otherwise. -/
+theorem etaMultiplier_neg (γ : SL(2, ℤ)) :
+    etaMultiplier (-γ) =
+      if 0 < γ 1 0 ∨ (γ 1 0 = 0 ∧ γ 1 1 < 0) then I * etaMultiplier γ
+      else -I * etaMultiplier γ := by
+  rcases lt_trichotomy (γ 1 0) 0 with hc | hc | hc
+  · rw [ite_eq_right (by omega), etaMultiplier_neg_of_c_neg hc]
+  · rw [etaMultiplier_neg_of_c_eq_zero hc]
+    split_ifs with h1 h2 h2
+    · rfl
+    · exfalso
+      exact h2 (Or.inr ⟨hc, h1⟩)
+    · exfalso
+      omega
+    · rfl
+  · rw [ite_eq_left (Or.inl hc), etaMultiplier_neg_of_c_pos hc]
 
 end TauCeti.ModularForm
