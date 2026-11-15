@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.Supported
 public import TauCeti.Algebra.MvPolynomial.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
-import Mathlib.RingTheory.Derivation.Lie
 
 /-!
 # Polynomial jets and total derivatives
@@ -27,9 +26,9 @@ coefficients by `∂_μ` and on jet variables by `D_μ u^a_I = u^a_{I + e_μ}`:
 `D_μ = ∂_μ + ∑_{a, I} u^a_{I + e_μ} ∂/∂u^a_I`.
 
 The jet variables of order at most `r` generate the stage-`r` subalgebra
-`TauCeti.jetStage ι α A r`. Total derivatives raise the stage by one, and no fixed stage is
-closed under them, which is why the algebra uses all jet variables at once. Total derivatives
-pairwise commute when the `∂_μ` do. Finally, evaluating jet variables on the derivatives
+`TauCeti.jetStage ι α A r`. Total derivatives raise the stage by at most one, and no fixed
+stage is closed under them, which is why the algebra uses all jet variables at once. Total
+derivatives pairwise commute when the `∂_μ` do. Finally, evaluating jet variables on the derivatives
 `∂^I f^a` of a field `f` in a differential algebra `B` intertwines total derivatives with the
 derivations of `B` (`TauCeti.apply_jetEval`); this is the sense in which `D_μ` is the
 derivative of a polynomial expression along a field.
@@ -74,12 +73,23 @@ theorem jetStage_def (r : ℕ) : jetStage ι α A r = supported A {v | ∑ μ, v
 
 /-- A polynomial lies in stage `r` if and only if all its jet variables have order at most
 `r`. -/
+@[grind =]
 theorem mem_jetStage_iff {r : ℕ} {p : JetPolynomial ι α A} :
     p ∈ jetStage ι α A r ↔ ∀ v ∈ p.vars, ∑ μ, v.2 μ ≤ r := by
   simp [jetStage_def, mem_supported, Set.subset_def]
 
-/-- The jet variable `u^a_I` lies in stage `r` if and only if its order is at most `r`. -/
+/-- Constants lie in every stage. -/
 @[simp]
+theorem C_mem_jetStage {r : ℕ} (a : A) : (C a : JetPolynomial ι α A) ∈ jetStage ι α A r :=
+  (jetStage ι α A r).algebraMap_mem a
+
+/-- The jet variable `u^a_I` lies in every stage `r ≥ |I|`. -/
+theorem X_mem_jetStage {r : ℕ} {a : α} {I : ι → ℕ} (h : ∑ μ, I μ ≤ r) :
+    (X (a, I) : JetPolynomial ι α A) ∈ jetStage ι α A r :=
+  Algebra.subset_adjoin ⟨(a, I), h, rfl⟩
+
+/-- The jet variable `u^a_I` lies in stage `r` if and only if its order is at most `r`. -/
+@[simp, grind =]
 theorem X_mem_jetStage_iff [Nontrivial A] {r : ℕ} {a : α} {I : ι → ℕ} :
     (X (a, I) : JetPolynomial ι α A) ∈ jetStage ι α A r ↔ ∑ μ, I μ ≤ r := by
   simp [jetStage_def, X_mem_supported]
@@ -89,6 +99,7 @@ theorem jetStage_mono {r s : ℕ} (h : r ≤ s) : jetStage ι α A r ≤ jetStag
   supported_mono fun _ hv => le_trans hv h
 
 /-- Every polynomial jet lies in some stage: the stages exhaust the polynomial jet algebra. -/
+@[simp]
 theorem iSup_jetStage : ⨆ r, jetStage ι α A r = ⊤ := by
   refine eq_top_iff.2 fun p _ => Algebra.mem_iSup_of_mem (p.vars.sup fun v => ∑ μ, v.2 μ) ?_
   exact mem_jetStage_iff.2 fun v hv => Finset.le_sup (f := fun v => ∑ μ, v.2 μ) hv
@@ -110,14 +121,21 @@ def totalDeriv (μ : ι) : Derivation R (JetPolynomial ι α A) (JetPolynomial �
     (mkDerivation A fun v : α × (ι → ℕ) => (X (v.1, v.2 + Pi.single μ 1) :
       JetPolynomial ι α A)).restrictScalars R
 
+/-- The defining formula of the total derivative: the coefficientwise derivation plus the
+`A`-linear derivation raising the multi-index of each jet variable. -/
+theorem totalDeriv_def (μ : ι) :
+    totalDeriv (α := α) d μ = (d μ).mvMapCoeffs +
+      (mkDerivation A fun v : α × (ι → ℕ) => (X (v.1, v.2 + Pi.single μ 1) :
+        JetPolynomial ι α A)).restrictScalars R := (rfl)
+
 /-- Total derivatives act on coefficients by the coefficient derivations. -/
-@[simp]
+@[simp, grind =]
 theorem totalDeriv_C (μ : ι) (a : A) :
     totalDeriv d μ (C a : JetPolynomial ι α A) = C (d μ a) := by
   simp [totalDeriv, derivation_C]
 
 /-- Total derivatives raise the multi-index of a jet variable: `D_μ u^a_I = u^a_{I + e_μ}`. -/
-@[simp]
+@[simp, grind =]
 theorem totalDeriv_X (μ : ι) (a : α) (I : ι → ℕ) :
     totalDeriv d μ (X (a, I) : JetPolynomial ι α A) = X (a, I + Pi.single μ 1) := by
   simp [totalDeriv]
@@ -129,6 +147,27 @@ theorem eq_totalDeriv {μ : ι} {D : Derivation R (JetPolynomial ι α A) (JetPo
     (hX : ∀ (a : α) (I : ι → ℕ), D (X (a, I)) = X (a, I + Pi.single μ 1)) :
     D = totalDeriv d μ :=
   derivation_ext' (fun a => by rw [hC, totalDeriv_C]) fun v => by rw [hX, totalDeriv_X]
+
+/-- Total derivatives in two directions commute when the coefficient derivations do. -/
+theorem totalDeriv_comm {μ ν : ι} (hd : Commute (d μ : Module.End R A) (d ν))
+    (p : JetPolynomial ι α A) :
+    totalDeriv d μ (totalDeriv d ν p) = totalDeriv d ν (totalDeriv d μ p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a =>
+    have := LinearMap.congr_fun hd.eq a
+    simp only [mul_apply_eq_comp, Derivation.coeFn_coe] at this
+    simp [this]
+  | add p q hp hq => rw [map_add, map_add, hp, hq, map_add, map_add]
+  | mul_X p v hp =>
+    obtain ⟨a, I⟩ := v
+    simp only [Derivation.leibniz, smul_eq_mul, map_add, totalDeriv_X, hp, add_right_comm I]
+    ring
+
+/-- Total derivatives commute when the coefficient derivations do. -/
+theorem commute_totalDeriv {μ ν : ι} (hd : Commute (d μ : Module.End R A) (d ν)) :
+    Commute (totalDeriv (α := α) d μ : Module.End R (JetPolynomial ι α A))
+      (totalDeriv (α := α) d ν) :=
+  LinearMap.ext fun p => totalDeriv_comm (α := α) d hd p
 
 variable [Fintype ι]
 
@@ -159,28 +198,6 @@ theorem totalDeriv_X_notMem_jetStage [Nontrivial A] (μ : ι) (a : α) (I : ι �
 
 end TotalDeriv
 
-section Commute
-
-variable {R : Type*} [CommRing R] [CommRing A] [Algebra R A] [DecidableEq ι]
-  (d : ι → Derivation R A A)
-
-/-- Total derivatives commute when the coefficient derivations do. -/
-theorem commute_totalDeriv (hd : ∀ i j, Commute (d i : Module.End R A) (d j)) (μ ν : ι) :
-    Commute (totalDeriv (α := α) d μ : Module.End R (JetPolynomial ι α A))
-      (totalDeriv (α := α) d ν) := by
-  have h : ⁅totalDeriv (α := α) d μ, totalDeriv (α := α) d ν⁆ = 0 := by
-    refine derivation_ext' (fun a => ?_) fun ⟨a, I⟩ => ?_
-    · have := LinearMap.congr_fun (hd μ ν).eq a
-      simp only [mul_apply_eq_comp, Derivation.coeFn_coe] at this
-      simp [Derivation.commutator_apply, this]
-    · simp [Derivation.commutator_apply, add_right_comm I]
-  refine LinearMap.ext fun p => ?_
-  have hp := congr($h p)
-  rw [Derivation.commutator_apply, zero_apply, sub_eq_zero] at hp
-  simpa using hp
-
-end Commute
-
 /-! ### Evaluation along a field -/
 
 section Eval
@@ -194,8 +211,12 @@ derivations `δ_μ`: the jet variable `u^a_I` is sent to the derivative `∂^I f
 def jetEval : JetPolynomial ι α A →ₐ[A] B :=
   aeval fun v => multiIndexDeriv δ hδ v.2 (f v.1)
 
+/-- The defining formula of evaluation along a field. -/
+theorem jetEval_def :
+    jetEval (A := A) δ hδ f = aeval fun v => multiIndexDeriv δ hδ v.2 (f v.1) := (rfl)
+
 /-- Evaluation along a field sends `u^a_I` to `∂^I f^a`. -/
-@[simp]
+@[simp, grind =]
 theorem jetEval_X (a : α) (I : ι → ℕ) :
     jetEval δ hδ f (X (a, I) : JetPolynomial ι α A) = multiIndexDeriv δ hδ I (f a) :=
   aeval_X _ _
@@ -204,7 +225,7 @@ theorem jetEval_X (a : α) (I : ι → ℕ) :
 to the coefficient derivations `∂_μ` on `A`, then differentiating the evaluation of a polynomial
 jet `p` along a field is evaluating its total derivative: `δ_μ (p(j f)) = (D_μ p)(j f)`. -/
 theorem apply_jetEval [Algebra R A] [DecidableEq ι] (d : ι → Derivation R A A)
-    (hdδ : ∀ μ a, δ μ (algebraMap A B a) = algebraMap A B (d μ a)) (μ : ι)
+    (μ : ι) (hdδ : ∀ a, δ μ (algebraMap A B a) = algebraMap A B (d μ a))
     (p : JetPolynomial ι α A) :
     δ μ (jetEval δ hδ f p) = jetEval δ hδ f (totalDeriv d μ p) := by
   induction p using MvPolynomial.induction_on with
@@ -214,8 +235,7 @@ theorem apply_jetEval [Algebra R A] [DecidableEq ι] (d : ι → Derivation R A 
     obtain ⟨a, I⟩ := v
     have hI : δ μ (multiIndexDeriv δ hδ I (f a)) =
         multiIndexDeriv δ hδ (I + Pi.single μ 1) (f a) := by
-      rw [add_comm I, multiIndexDeriv_add, multiIndexDeriv_single, pow_one, mul_apply_eq_comp,
-        Derivation.coeFn_coe]
+      rw [add_comm I, multiIndexDeriv_single_add, mul_apply_eq_comp, Derivation.coeFn_coe]
     simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, jetEval_X, totalDeriv_X, hI, hp]
 
 end Eval

@@ -120,6 +120,11 @@ theorem multiIndexDeriv_add_single [DecidableEq ι] (α : ι → ℕ) (i : ι) :
     multiIndexDeriv d hd (α + Pi.single i 1) = multiIndexDeriv d hd α * d i := by
   rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
 
+/-- Applying `∂_i` after `∂^α` gives `∂^(e_i + α)`. -/
+theorem multiIndexDeriv_single_add [DecidableEq ι] (α : ι → ℕ) (i : ι) :
+    multiIndexDeriv d hd (Pi.single i 1 + α) = d i * multiIndexDeriv d hd α := by
+  rw [multiIndexDeriv_add, multiIndexDeriv_single, pow_one]
+
 /-- A monomial `∂^α` in derivations is a differential operator of order at most `|α|`. -/
 theorem multiIndexDeriv_mem_differentialOperators (α : ι → ℕ) :
     multiIndexDeriv d hd α ∈ differentialOperators R A A A (∑ i, α i) := by
