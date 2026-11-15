@@ -90,32 +90,6 @@ section FiniteDimensional
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure]
 
-/-- Probability measures carried by bounded sets `X` and `Y` have finite quadratic transport
-cost. -/
-private lemma transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded
-    (ρ : Measure E) {X Y : Set E} (f g : E → ℝ≥0∞)
-    (hXb : Bornology.IsBounded X) (hYb : Bornology.IsBounded Y)
-    [IsProbabilityMeasure ((ρ.restrict X).withDensity f)]
-    [IsProbabilityMeasure ((ρ.restrict Y).withDensity g)] :
-    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      ((ρ.restrict X).withDensity f) ((ρ.restrict Y).withDensity g) ≠ ∞ := by
-  have hae (S : Set E) (h : E → ℝ≥0∞) : ∀ᵐ z ∂(ρ.restrict S).withDensity h, z ∈ closure S := by
-    refine (withDensity_absolutelyContinuous (ρ.restrict S) h).ae_le ?_
-    refine (mem_ae_iff (s := closure S)).2 ?_
-    rw [Measure.restrict_apply isClosed_closure.measurableSet.compl,
-      Set.disjoint_iff_inter_eq_empty.1 (disjoint_compl_left.mono_right subset_closure),
-      measure_empty]
-  let μP : ProbabilityMeasure E := ⟨(ρ.restrict X).withDensity f, inferInstance⟩
-  let νP : ProbabilityMeasure E := ⟨(ρ.restrict Y).withDensity g, inferInstance⟩
-  have hμ2 : HasFiniteMoment 2 (μP : Measure E) :=
-    hasFiniteMoment_of_ae_mem_of_isBounded 0 hXb.closure (hae X f)
-  have hν2 : HasFiniteMoment 2 (νP : Measure E) :=
-    hasFiniteMoment_of_ae_mem_of_isBounded 0 hYb.closure (hae Y g)
-  have hfin := transportCost_norm_sub_sq_div_two_ne_top
-    (WassersteinSpace.mk μP hμ2) (WassersteinSpace.mk νP hν2)
-  simp only [WassersteinSpace.coe_mk] at hfin
-  exact hfin
-
 /-- **Every optimal quadratic transport map is represented by an Aleksandrov subsolution.** Let `X`
 and `Y` be arbitrary subsets of `E` (neither need be open, convex, bounded, or measurable), let
 `μ = (ρ.restrict X).withDensity f` be a probability measure, and let
@@ -276,7 +250,8 @@ theorem exists_mongeAmpereMeasure_eq_withDensity_div_of_isBounded
       X ⊆ interior {x | u x ≠ ⊤} ∧ (∀ x, subdifferential (innerₗ E) u x ⊆ closure Y) ∧
       mongeAmpereMeasure ρ u =
         (ρ.restrict X).withDensity fun x => f x / g ((∇ fun x' => (u x').toReal) x) := by
-  have hfin := transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded ρ f g hXb hYb
+  have hfin := transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded
+    (ρ₁ := ρ) (ρ₂ := ρ) (f := f) (g := g) hXb hYb
   have hμρ : (ρ.restrict X).withDensity f ≪ ρ :=
     (withDensity_absolutelyContinuous _ _).trans (absolutelyContinuous_of_le restrict_le_self)
   obtain ⟨_, -, -, -, -, hopt₀, -, -⟩ := exists_isKantorovichOptimalTransportMap_gradient hμρ hfin
@@ -335,14 +310,14 @@ theorem exists_mongeAmpereMeasure_ite_bounds_of_isKantorovichOptimalTransportMap
     have hν0 : ((ρ.restrict Y).withDensity g) univ = 0 := by
       simp [withDensity_congr_ae hg0]
     exact one_ne_zero (measure_univ.symm.trans hν0)
-  have hfin := transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded ρ f g hXb hYb
   have hfpos : ∀ᵐ x ∂ρ.restrict X, f x ≠ 0 :=
     hflo.mono fun _ hx => ne_of_gt ((ENNReal.coe_pos.2 hlam).trans_le hx)
   have hgpos : ∀ᵐ y ∂ρ.restrict Y, g y ≠ 0 :=
     hglo.mono fun _ hy => ne_of_gt ((ENNReal.coe_pos.2 hm).trans_le hy)
   obtain ⟨u, hconv, hlsc, hbot, hTu, hopt, hXD, hsubcl, -⟩ :=
     exists_mongeAmpereMeasure_eq_withDensity_div_of_isKantorovichOptimalTransportMap
-      hX hY hf hg hfpos hgpos hfin hT
+      hX hY hf hg hfpos hgpos
+      (transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded hXb hYb) hT
   have hdom : ∀ᵐ x ∂(ρ.restrict X).withDensity f, u x ≠ ⊤ :=
     (withDensity_absolutelyContinuous (ρ.restrict X) f).ae_le <|
       ae_restrict_of_forall_mem hX.measurableSet fun _ hx => interior_subset (hXD hx)
@@ -375,14 +350,8 @@ private lemma convex_epigraph_sq_div_two_add_abs :
 private lemma mem_subdifferential_sq_div_two_add_abs_iff {x y : ℝ} :
     y ∈ subdifferential (innerₗ ℝ) (fun x' : ℝ => ((x' ^ 2 / 2 + |x'| : ℝ) : EReal)) x ↔
       ∀ x' : ℝ, (x ^ 2 / 2 + |x|) + y * (x' - x) ≤ x' ^ 2 / 2 + |x'| := by
-  rw [mem_subdifferential_iff]
-  refine ⟨fun ⟨_, _, h⟩ x' => ?_, fun h => ⟨EReal.coe_ne_bot _, EReal.coe_ne_top _, fun x' => ?_⟩⟩
-  · have hx' := h x'
-    rwa [innerₗ_apply_apply, RCLike.inner_apply, conj_trivial, ← EReal.coe_add,
-      EReal.coe_le_coe_iff] at hx'
-  · rw [innerₗ_apply_apply, RCLike.inner_apply, conj_trivial, ← EReal.coe_add,
-      EReal.coe_le_coe_iff]
-    exact h x'
+  simpa only [innerₗ_apply_apply, RCLike.inner_apply, conj_trivial] using
+    mem_subdifferential_coe_iff (innerₗ ℝ) (fun t : ℝ => t ^ 2 / 2 + |t|) (x := x) (y := y)
 
 /-- At `0`, the subdifferential of `u(x) = x ^ 2 / 2 + |x|` on `ℝ` is the interval `[-1, 1]`. -/
 theorem subdifferential_sq_div_two_add_abs_zero :
@@ -429,8 +398,7 @@ private lemma differentiableAt_and_gradient_sq_div_two_add_abs {x : ℝ} (hx : x
   rcases lt_trichotomy 0 x with hpos | rfl | hneg
   · have hev : (fun x' : ℝ => (u x').toReal) =ᶠ[𝓝 x] fun x' => x' ^ 2 / 2 + x' :=
       eventually_of_mem (Ioi_mem_nhds hpos) fun x' hx' => by
-        change (((x' ^ 2 / 2 + |x'| : ℝ) : EReal)).toReal = x' ^ 2 / 2 + x'
-        rw [EReal.toReal_coe, abs_of_pos hx']
+        simp only [u, EReal.toReal_coe, abs_of_pos hx']
     have hdiff : DifferentiableAt ℝ (fun x' : ℝ => (u x').toReal) x :=
       hev.differentiableAt_iff.2 (by fun_prop)
     have hsub : x + 1 ∈ subdifferential (innerₗ ℝ) u x :=
@@ -444,8 +412,7 @@ private lemma differentiableAt_and_gradient_sq_div_two_add_abs {x : ℝ} (hx : x
   · exact (hx rfl).elim
   · have hev : (fun x' : ℝ => (u x').toReal) =ᶠ[𝓝 x] fun x' => x' ^ 2 / 2 - x' :=
       eventually_of_mem (Iio_mem_nhds hneg) fun x' hx' => by
-        change (((x' ^ 2 / 2 + |x'| : ℝ) : EReal)).toReal = x' ^ 2 / 2 - x'
-        rw [EReal.toReal_coe, abs_of_neg hx', sub_eq_add_neg]
+        simp only [u, EReal.toReal_coe, abs_of_neg hx', ← sub_eq_add_neg]
     have hdiff : DifferentiableAt ℝ (fun x' : ℝ => (u x').toReal) x :=
       hev.differentiableAt_iff.2 (by fun_prop)
     have hsub : x - 1 ∈ subdifferential (innerₗ ℝ) u x :=
