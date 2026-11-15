@@ -118,6 +118,10 @@ private def presentationToCoordinate :
     presentationRing R →ₐ[R] coordinateHopfAlgebra R :=
   Polynomial.aevalTower (presentationCoefficientToCoordinate R) (upperRightCoordinate R)
 
+private theorem presentationToCoordinate_X :
+    presentationToCoordinate R Polynomial.X = upperRightCoordinate R := by
+  rw [presentationToCoordinate, Polynomial.aevalTower_X]
+
 private theorem map_tautologicalPoint :
     SL2Borel.map (coordinateToPresentation R).toRingHom (tautologicalPoint R) =
       presentationPoint R := by
@@ -134,7 +138,7 @@ private theorem map_presentationPoint :
   congr 1
   · apply Units.ext
     simp [presentationToCoordinate, presentationCoefficientToCoordinate, diagonalUnit]
-  · exact Polynomial.aevalTower_X _ _
+  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, presentationToCoordinate_X, upperRightCoordinate]
 
 private theorem map_tautologicalUnit :
     Units.map (coordinateToPresentation R : coordinateHopfAlgebra R →* presentationRing R)
@@ -184,10 +188,8 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       (fun g : SL2Borel (presentationRing R) ↦
         (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
       (map_tautologicalPoint R)
-    have hX : presentationToCoordinate R Polynomial.X =
-        (tautologicalPoint R : Matrix (Fin 2) (Fin 2) (coordinateHopfAlgebra R)) 0 1 := by
-      rw [presentationToCoordinate, Polynomial.aevalTower_X, upperRightCoordinate_def]
-    rw [AlgHom.comp_apply, hX, AlgHom.id_apply]
+    rw [AlgHom.comp_apply, presentationToCoordinate_X, upperRightCoordinate_def,
+      AlgHom.id_apply]
     rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
     exact h
 
@@ -214,7 +216,7 @@ theorem coordinateAlgEquiv_upperRightCoordinate :
     coordinateAlgEquiv R (upperRightCoordinate R) = Polynomial.X := by
   apply (coordinateAlgEquiv R).symm.injective
   rw [AlgEquiv.symm_apply_apply]
-  exact (Polynomial.aevalTower_X _ _).symm
+  rw [coordinateAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, presentationToCoordinate_X]
 
 /-- The inverse coordinate equivalence sends the Laurent generator to the diagonal unit. -/
 @[simp]
