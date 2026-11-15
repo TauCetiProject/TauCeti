@@ -105,6 +105,10 @@ theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓
   simp [complexPairing_apply, hre, him]
 
 @[simp]
+theorem complexPairing_zero (φ : 𝓓^{n}(Ω, ℂ)) : (0 : 𝓓'^{n}(Ω, ℂ)).complexPairing φ = 0 := by
+  simp [complexPairing_apply]
+
+@[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
     (T + S).complexPairing φ = T.complexPairing φ + S.complexPairing φ := by
   simp only [complexPairing_apply]

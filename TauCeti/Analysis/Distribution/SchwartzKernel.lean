@@ -534,7 +534,7 @@ theorem schwartzKernel_smul (c : ℂ) : (c • T).schwartzKernel hV = c • T.sc
 /-- The Schwartz kernel of the zero map is zero. -/
 @[simp]
 theorem schwartzKernel_zero : (0 : 𝓓(O, ℂ) →L[ℂ] 𝓓'(Ω, ℂ)).schwartzKernel hV = 0 :=
-  ((eq_schwartzKernel_iff _ hV).2 fun φ ψ ↦ by simp [Distribution.complexPairing_apply]).symm
+  ((eq_schwartzKernel_iff _ hV).2 fun φ ψ ↦ by simp).symm
 
 /-- A continuous linear map from test functions to distributions is determined by its Schwartz
 kernel. -/
