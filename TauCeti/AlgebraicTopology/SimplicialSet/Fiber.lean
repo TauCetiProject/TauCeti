@@ -23,6 +23,9 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 ## Main definitions
 
 * `SSet.fiber q y`: the fiber of `q : X ⟶ Y` over the vertex `y`, as a subcomplex of `X`.
+* `SSet.fiber.lift`: a morphism to `X` whose composite with `q` is constant at `y`, as a morphism
+  to the fiber.
+* `SSet.fiber.basePoint`: a vertex of `X` over `y`, as a vertex of the fiber.
 
 ## Main results
 
@@ -123,6 +126,35 @@ lemma range_le_fiber_iff {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0
     Subcomplex.range g ≤ fiber q y ↔ g ≫ q = const y := by
   rw [fiber, ← Subcomplex.image_top, ← Subcomplex.image_le_iff, ← Subcomplex.image_comp,
     Subcomplex.image_top, Subcomplex.range_le_ofSimplex_iff]
+
+/-- The inclusion of the fiber of `q` over `y`, followed by `q`, is constant at `y`. -/
+@[reassoc (attr := simp)]
+lemma fiber_ι_comp (q : X ⟶ Y) (y : Y _⦋0⦌) : (fiber q y).ι ≫ q = const y :=
+  (range_le_fiber_iff _ q y).1 (by simp)
+
+/-- A morphism `g` with `g ≫ q` constant at `y`, as a morphism to the fiber of `q` over `y`. -/
+def fiber.lift {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    Z ⟶ (fiber q y : SSet) :=
+  Subcomplex.lift g ((range_le_fiber_iff g q y).2 hg)
+
+@[reassoc (attr := simp)]
+lemma fiber.lift_ι {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) (hg : g ≫ q = const y) :
+    fiber.lift g q y hg ≫ (fiber q y).ι = g :=
+  Subcomplex.lift_ι _ _
+
+/-- A vertex `x` of `X` over `y`, as a vertex of the fiber of `q` over `y`. -/
+def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y : SSet) _⦋0⦌ :=
+  ⟨x, by simp [hx, SimplexCategory.const_eq_id]⟩
+
+@[simp]
+lemma fiber.coe_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber.basePoint q hx).1 = x :=
+  (rfl)
+
+lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
+    (fiber q y).ι.app _ (fiber.basePoint q hx) = x :=
+  (rfl)
 
 /-- A terminal simplicial set is a quasicategory. -/
 lemma quasicategory_of_isTerminal (h : IsTerminal X) : Quasicategory X :=
