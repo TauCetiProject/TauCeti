@@ -66,9 +66,11 @@ yields Cartier's relations over every commutative ring:
 
 ## Main results
 
-* `FormalGroup.Curve.coe_symmSum_add` and `FormalGroup.toPowerSeries_frobeniusCurve`: formal-group
-  addition formula for `FormalGroup.Curve.symmSum` and explicit power-series formula for
-  `(f_n γ)(T)` via `MvPowerSeries.symmetricSubalgebra.evalTopEsymm`.
+* `FormalGroup.Curve.coe_symmSum_add`, `FormalGroup.toPowerSeries_frobeniusCurve`, and
+  `FormalGroup.coeff_frobeniusCurve_congr`: formal-group addition formula for
+  `FormalGroup.Curve.symmSum`, explicit power-series formula for `(f_n γ)(T)` via
+  `MvPowerSeries.symmetricSubalgebra.evalTopEsymm`, and finite-degree dependence of its
+  coefficients.
 * `FormalGroup.subst_verschiebungCurve_log` and `FormalGroup.subst_frobeniusCurve_log`: action of
   `V_n` and `f_n` on the formal logarithm over a `ℚ`-algebra.
 * `FormalGroup.frobeniusCurve_one`, `FormalGroup.frobeniusCurve_frobeniusCurve`,
@@ -642,6 +644,78 @@ theorem frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] {m n : ℕ} (h : m =
     (hn : n ≠ 0) (γ : F.Curve) :
     F.frobeniusCurve m hm γ = F.frobeniusCurve n hn γ :=
   h ▸ rfl
+
+private theorem truncTotal_val_symmSum_congr (F : FormalGroup R) [F.IsComm] {n N : ℕ}
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i < N,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    truncTotal N (Curve.symmSum F (Fin n) γ₁).1 =
+      truncTotal N (Curve.symmSum F (Fin n) γ₂).1 := by
+  have hconst_coord : ∀ (i : Fin n) (γ : F.Curve),
+      constantCoeff (Curve.coordPointHom F i γ).val = 0 := fun i γ ↦ by
+    rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
+    exact γ.constantCoeff_toPowerSeries
+  have hconst_sum : ∀ (s : Finset (Fin n)) (γ : F.Curve),
+      constantCoeff (∑ i ∈ s, Curve.coordPointHom F i γ).val = 0 := fun s γ ↦ by
+    induction s using Finset.induction_on with
+    | empty => simp [zero_apply]
+    | @insert a s ha ih =>
+      rw [Finset.sum_insert ha, add_apply]
+      exact constantCoeff_subst_eq_zero
+        (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hconst_coord a γ, ih⟩))
+        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ, ih⟩) F.zero_constantCoeff
+  have hcoord : ∀ i : Fin n,
+      truncTotal N (Curve.coordPointHom F i γ₁).val =
+        truncTotal N (Curve.coordPointHom F i γ₂).val := fun i ↦ by
+    ext d
+    by_cases hd : d.degree < N
+    · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, Curve.val_coordPointHom,
+        Curve.val_coordPointHom, PowerSeries.coeff_toMvPowerSeries,
+        PowerSeries.coeff_toMvPowerSeries]
+      split_ifs
+      · exact h (d i) ((Finsupp.le_degree i d).trans_lt hd)
+      · rfl
+    · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
+  have htrunc : ∀ s : Finset (Fin n),
+      truncTotal N (∑ i ∈ s, Curve.coordPointHom F i γ₁).val =
+        truncTotal N (∑ i ∈ s, Curve.coordPointHom F i γ₂).val := fun s ↦ by
+    induction s using Finset.induction_on with
+    | empty => simp [zero_apply]
+    | @insert a s ha ih =>
+      have h₁ := truncTotal_subst (f := F.toPowerSeries) (k := N)
+        (a := ![(Curve.coordPointHom F a γ₁).val, (∑ i ∈ s, Curve.coordPointHom F i γ₁).val])
+        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ₁, hconst_sum s γ₁⟩)
+      have h₂ := truncTotal_subst (f := F.toPowerSeries) (k := N)
+        (a := ![(Curve.coordPointHom F a γ₂).val, (∑ i ∈ s, Curve.coordPointHom F i γ₂).val])
+        (Fin.forall_fin_two.mpr ⟨hconst_coord a γ₂, hconst_sum s γ₂⟩)
+      rw [Finset.sum_insert ha, Finset.sum_insert ha, add_apply, add_apply, h₁, h₂]
+      refine congrArg (truncTotal N ∘ (truncTotal N F.toPowerSeries).toMvPowerSeries.subst) ?_
+      exact funext <| Fin.forall_fin_two.mpr
+        ⟨by simp only [Matrix.cons_val_zero, hcoord a],
+         by simp only [Matrix.cons_val_one, Matrix.cons_val_zero, ih]⟩
+  exact htrunc Finset.univ
+
+/-- The degree-`k` coefficient of `(f_n γ)(T)` depends only on the coefficients of `γ(T)` in
+degrees `≤ k * n`. -/
+theorem coeff_frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] {n k : ℕ} (hn : n ≠ 0)
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k * n,
+      PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.frobeniusCurve n hn γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.frobeniusCurve n hn γ₂).toPowerSeries := by
+  have htrunc := truncTotal_val_symmSum_congr F (n := n) (N := k * n + 1) (γ₁ := γ₁) (γ₂ := γ₂)
+    fun i hi ↦ h i (Nat.lt_succ_iff.mp hi)
+  rw [toPowerSeries_frobeniusCurve, toPowerSeries_frobeniusCurve,
+    symmetricSubalgebra.coeff_evalTopEsymm, symmetricSubalgebra.coeff_evalTopEsymm]
+  refine congrArg (fun q ↦ (MvPolynomial.symmetricSubalgebra.evalTopEsymm (Fin n) R q).coeff k)
+    (Subtype.ext <| MvPolynomial.ext _ _ fun d ↦ ?_)
+  rw [← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
+    ← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
+    coeff_homogeneousComponent, coeff_homogeneousComponent]
+  split_ifs with hd
+  · have hdN : d.degree < k * n + 1 := by simp [Fintype.card_fin] at hd; omega
+    rw [← coeff_truncTotal _ hdN, htrunc, coeff_truncTotal _ hdN]
+  · rfl
 
 theorem map_frobeniusCurve (F : FormalGroup R) [F.IsComm] (φ : R →+* S) (n : ℕ) (hn : n ≠ 0)
     (γ : F.Curve) :

@@ -30,6 +30,8 @@ natural number `n`.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `TauCeti.isUnit_natCast_of_ne_zero`: every nonzero natural number casts to a unit in a
+  `ℚ`-algebra.
 -/
 
 public section
@@ -46,5 +48,11 @@ number `n`. -/
 theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n : ℕ} (hn : n ≠ 0)
     (x : A) : (n : ℚ)⁻¹ • ((n : A) * x) = x := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
+
+/-- In any `ℚ`-algebra, every nonzero natural number casts to a unit. -/
+theorem isUnit_natCast_of_ne_zero {A : Type*} [Semiring A] [Algebra ℚ A] {n : ℕ} (hn : n ≠ 0) :
+    IsUnit (n : A) := by
+  rw [← map_natCast (algebraMap ℚ A)]
+  exact (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hn)).map (algebraMap ℚ A)
 
 end TauCeti
