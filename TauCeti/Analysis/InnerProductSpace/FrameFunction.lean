@@ -5,7 +5,9 @@ Authors: Bryan Ehrlich
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import Mathlib.LinearAlgebra.Basis.SMul
 public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
@@ -16,8 +18,9 @@ orthonormal bases. Hermitian quadratic forms supply examples, with weight their 
 and are determined by their values on the sphere. The zero- and one-dimensional cases
 and nonnegative functions of weight zero need no Gleason theorem.
 
-The quadratic construction uses `LinearMap.trace_eq_sum_inner`; its diagonal example
-uses `Matrix.re_inner_toEuclideanLin_diagonal_apply_self`.
+Multiplying a unit vector by a complex scalar of norm one leaves every frame function
+unchanged. Positive operators give nonnegative quadratic frame functions; the diagonal
+operator with entries two, one, and zero gives an example of weight three.
 
 ## References
 
@@ -68,6 +71,48 @@ theorem sum_eq (hf : IsFrameFunction f w) {ι : Type*} [Fintype ι]
         ∑ j, f ⟨(b.reindex e) j, (b.reindex e).norm_eq_one j⟩ :=
       Fintype.sum_equiv e _ _ (fun i => by simp [OrthonormalBasis.reindex_apply])
     _ = w := hf.2 (b.reindex e)
+
+/-- A frame function depends only on the ray of a unit vector. -/
+theorem apply_smul_of_norm_eq_one (hf : IsFrameFunction f w) (c : ℂ) (hc : ‖c‖ = 1)
+    (v : {v : E // ‖v‖ = 1}) :
+    f ⟨c • v.val, by simp [norm_smul, hc, v.property]⟩ = f v := by
+  classical
+  let := hf.finiteDimensional
+  have ho : Orthonormal ℂ ((↑) : ({v.val} : Set E) → E) := by
+    rw [orthonormal_subsingleton_iff]
+    rintro ⟨x, hx⟩
+    simpa [Set.mem_singleton_iff.mp hx] using v.property
+  obtain ⟨s, b, hs, hb⟩ := ho.exists_orthonormalBasis_extension
+  let i : s := ⟨v.val, hs (by simp)⟩
+  have hi : b i = v.val := congrFun hb i
+  let a : s → ℂ := Function.update (fun _ => 1) i c
+  have ha (j : s) : ‖a j‖ = 1 := by
+    by_cases hj : j = i <;> simp [a, hj, hc]
+  let d := b.toBasis.isUnitSMul (fun j => isUnit_iff_ne_zero.mpr
+    (norm_ne_zero_iff.mp (by rw [ha j]; exact one_ne_zero)))
+  have hd (j : s) : d j = a j • b j := Module.Basis.isUnitSMul_apply _ j
+  have hon : Orthonormal ℂ d := by
+    constructor
+    · intro j
+      simp [hd, norm_smul, ha, b.norm_eq_one]
+    · intro j k hjk
+      simp [hd, inner_smul_left, inner_smul_right, b.orthonormal.inner_eq_zero hjk]
+  let b' := d.toOrthonormalBasis hon
+  have hb' (j : s) : b' j = a j • b j := by
+    simpa only [b', Module.Basis.coe_toOrthonormalBasis] using hd j
+  have he : ∑ j ∈ Finset.univ.erase i, f ⟨b' j, b'.norm_eq_one j⟩ =
+      ∑ j ∈ Finset.univ.erase i, f ⟨b j, b.norm_eq_one j⟩ := by
+    apply Finset.sum_congr rfl
+    intro j hj
+    have hji := (Finset.mem_erase.mp hj).1
+    congr 1
+    apply Subtype.ext
+    simp [hb', a, hji]
+  have hsum := (hf.sum_eq b').trans (hf.sum_eq b).symm
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
+    ← Finset.sum_erase_add _ _ (Finset.mem_univ i), he] at hsum
+  have h := add_left_cancel hsum
+  simpa [hb', a, hi] using h
 
 /-- Adding frame functions adds their weights. -/
 theorem add (hf : IsFrameFunction f w) {g : {v : E // ‖v‖ = 1} → ℝ} {w' : ℝ}
@@ -151,6 +196,12 @@ theorem _root_.LinearMap.isFrameFunction_quadratic [FiniteDimensional ℂ E] (T 
   refine ⟨inferInstance, fun b => ?_⟩
   simpa [quadraticFrameFunction, map_sum] using
     congrArg Complex.re (T.trace_eq_sum_inner b).symm
+
+/-- A positive operator has a nonnegative quadratic function on the unit sphere. -/
+theorem _root_.LinearMap.IsPositive.quadraticFrameFunction_nonneg {T : E →ₗ[ℂ] E}
+    (hT : T.IsPositive) (v : {v : E // ‖v‖ = 1}) :
+    0 ≤ T.quadraticFrameFunction v :=
+  hT.re_inner_nonneg_right v.val
 
 open _root_.LinearMap (isFrameFunction_quadratic)
 
