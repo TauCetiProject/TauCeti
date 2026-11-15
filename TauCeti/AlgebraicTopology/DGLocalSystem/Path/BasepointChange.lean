@@ -80,6 +80,15 @@ def pathChainToLoopChain (δ : MoorePathBetween B a b) :
 
 variable {R}
 
+/-- `pathChainToLoopChain` is the push-forward along appending the reversal of `δ`, read in the
+chain algebra of the loops at `a`. -/
+theorem pathChainToLoopChain_apply (δ : MoorePathBetween B a b)
+    (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    pathChainToLoopChain R δ x =
+      cubicalChainSumMap R (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun
+        (cubicalChainModuleEquiv _ _ R x) :=
+  (rfl)
+
 /-- On a homogeneous chain, `pathChainToLoopChain` is the push-forward of the chain. -/
 @[simp]
 theorem pathChainToLoopChain_lof (δ : MoorePathBetween B a b) {n : ℕ}
@@ -331,23 +340,8 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
   rcases isEmpty_or_nonempty (MoorePathBetween B a b) with hB | hB
   · -- Without Moore paths from `a` to `b`, there are no path chains, so both tensor products
     -- vanish.
-    have hc (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) : c = 0 := by
-      induction c using cubicalChainModule.induction_on with
-      | add c c' ih ih' => rw [ih, ih', add_zero]
-      | lof q c =>
-        induction c using NormalizedCubicalChain.induction_on with
-        | zero => exact map_zero _
-        | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
-        | smul r c ih => rw [map_smul, ih, smul_zero]
-        | ofCube c => exact isEmptyElim (c 0)
-    have hz (L : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
-        (z : tensorBimoduleObj L (pathChainBimodule B a b R)) : z = 0 := by
-      induction z using BalancedTensorProduct.induction_on with
-      | ht m c => rw [hc c, tmul_zero]
-      | ha z z' ih ih' => rw [ih, ih', add_zero]
     rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
-    exact fun x y _ _ ↦ ⟨0, 0, by rw [map_zero, hz M x],
-      by rw [map_zero, map_zero, add_zero, hz N y]⟩
+    exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   · obtain ⟨δ⟩ := hB
     exact DGRightModuleHom.isQuasiIso_of_homotopyRetract
       (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) (f.toLinearMap.restrictScalars R)
