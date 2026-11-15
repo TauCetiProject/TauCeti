@@ -21,7 +21,8 @@ The degree is characterized by the number of darts issuing from the vertex: it v
 when there is none, is one exactly when there is a unique one, and is at least two (or three)
 exactly when there are two (or three) distinct ones. A morphism injective on darts does not
 decrease degrees, and one bijective on darts and injective on vertices preserves them, as does
-an isomorphism. In a restriction or a subgraph, the degree counts the retained darts.
+an isomorphism. In a restriction or a subgraph, the degree counts the retained darts, and in the
+Serre graph of a simple graph it is the number of neighbours.
 
 ## References
 
@@ -46,7 +47,7 @@ theorem degree_def (a : Γ.V) : Γ.degree a = {e | Γ.src e = a}.encard := (rfl)
 variable {Γ} {a : Γ.V}
 
 /-- A vertex has degree zero exactly when no dart issues from it. -/
-@[simp] theorem degree_eq_zero_iff : Γ.degree a = 0 ↔ ∀ e, Γ.src e ≠ a := by
+theorem degree_eq_zero_iff : Γ.degree a = 0 ↔ ∀ e, Γ.src e ≠ a := by
   simp [degree, Set.eq_empty_iff_forall_notMem]
 
 /-- A vertex has degree one exactly when a unique dart issues from it. -/
@@ -61,8 +62,7 @@ theorem degree_le_one_iff :
 /-- A vertex has degree at least two exactly when two distinct darts issue from it. -/
 theorem two_le_degree_iff :
     2 ≤ Γ.degree a ↔ ∃ e f, Γ.src e = a ∧ Γ.src f = a ∧ e ≠ f := by
-  rw [degree, ← one_add_one_eq_two, ENat.add_one_le_iff ENat.one_ne_top, Set.one_lt_encard_iff]
-  rfl
+  simp [degree, ← one_add_one_eq_two, ENat.add_one_le_iff, Set.one_lt_encard_iff]
 
 /-- A vertex has degree at least three exactly when three distinct darts issue from it. -/
 theorem three_le_degree_iff :
@@ -108,18 +108,28 @@ theorem Hom.degree_mapV {Δ : SerreGraph} (f : Γ.Hom Δ) (hV : Function.Injecti
 /-- The degree of a vertex in the restriction to a reversal-closed set `S` of darts counts the
 darts of `S` issuing from it. -/
 theorem degree_restrict (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S) (a : Γ.V) :
-    (Γ.restrict S hS).degree a = {e ∈ S | Γ.src e = a}.encard :=
-  (Subtype.val_injective.encard_image _).symm.trans
-    (congrArg Set.encard (Subtype.image_preimage_coe S {e | Γ.src e = a}))
+    (Γ.restrict S hS).degree a = {e ∈ S | Γ.src e = a}.encard := by
+  have h : Subtype.val '' {e | (Γ.restrict S hS).src e = a} = {e ∈ S | Γ.src e = a} := by
+    ext e
+    simp [and_comm]
+  rw [degree_def, ← h, Subtype.val_injective.encard_image]
 
 /-- The degree of a vertex in the subgraph on a set `A` of vertices and a reversal-closed set `D`
 of darts counts the darts of `D` issuing from it. -/
 theorem degree_subgraph (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.src e ∈ A)
     (hrev : ∀ e ∈ D, Γ.rev e ∈ D) {a : Γ.V} (ha : a ∈ A) :
-    (Γ.subgraph A D hsrc hrev).degree ⟨a, ha⟩ = {e ∈ D | Γ.src e = a}.encard :=
-  (congrArg Set.encard (Set.ext fun _ => Subtype.ext_iff)).trans
-    ((Subtype.val_injective.encard_image _).symm.trans
-      (congrArg Set.encard (Subtype.image_preimage_coe D {e | Γ.src e = a})))
+    (Γ.subgraph A D hsrc hrev).degree ⟨a, ha⟩ = {e ∈ D | Γ.src e = a}.encard := by
+  have h : Subtype.val '' {e | (Γ.subgraph A D hsrc hrev).src e = ⟨a, ha⟩} =
+      {e ∈ D | Γ.src e = a} := by
+    ext e
+    constructor
+    · rintro ⟨e, he, rfl⟩
+      exact ⟨e.2, (subgraph_src_val Γ A D hsrc hrev e).symm.trans (congrArg Subtype.val he)⟩
+    · rintro ⟨he, rfl⟩
+      exact ⟨⟨e, he⟩, Subtype.ext (subgraph_src_val Γ A D hsrc hrev ⟨e, he⟩), rfl⟩
+  rw [← h, Subtype.val_injective.encard_image]
+  -- The darts of the subgraph are the elements of the subtype `D`.
+  exact degree_def _ _
 
 /-- The vertex of the rose has degree twice the number of petals: each petal is a loop. -/
 @[simp] theorem degree_rose (α : Type*) (a : (rose α).V) : (rose α).degree a = 2 * ENat.card α := by
@@ -133,3 +143,20 @@ theorem degree_subgraph (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.sr
   degree_eq_one_iff.mpr ⟨b, rfl, fun _ hf => hf⟩
 
 end TauCeti.SerreGraph
+
+namespace SimpleGraph
+
+/-- The degree of a vertex in the Serre graph of a simple graph is the number of its neighbours:
+the darts issuing from it are determined by their second vertex. -/
+@[simp] theorem degree_toSerreGraph {V : Type*} (G : SimpleGraph V) (v : V) :
+    G.toSerreGraph.degree v = (G.neighborSet v).encard := by
+  have h : (·.snd) '' {d : G.Dart | d.fst = v} = G.neighborSet v := by
+    ext w
+    exact ⟨fun ⟨d, hd, hw⟩ => hd ▸ hw ▸ d.adj, fun h => ⟨⟨(v, w), h⟩, rfl, rfl⟩⟩
+  have hinj : Set.InjOn (·.snd) {d : G.Dart | d.fst = v} := fun d hd d' hd' h =>
+    Dart.ext _ _ (Prod.ext (hd.trans hd'.symm) h)
+  rw [← h, hinj.encard_image]
+  -- The darts of `G.toSerreGraph` are the darts of `G`, issuing from their first vertex.
+  exact TauCeti.SerreGraph.degree_def _ _
+
+end SimpleGraph

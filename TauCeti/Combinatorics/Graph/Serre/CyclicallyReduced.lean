@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Core
-public import TauCeti.Combinatorics.Graph.Serre.Degree
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 
 import TauCeti.Data.List.Chain
@@ -50,6 +49,9 @@ Kapovich and Myasnikov describe the hanging path by the degrees of its vertices
 first vertex of degree at least three, and its internal vertices have degree two. The two
 descriptions agree:
 
+* `SerreGraph.exists_cyclicDarts_ne` and `SerreGraph.two_le_degree_of_mem_cyclicVertices`: two
+  distinct darts on cyclically reduced closed paths leave each vertex on such a path, which thus
+  has degree at least two;
 * `SerreGraph.IsCore.degree_le_two`, `SerreGraph.IsCore.two_le_degree` and
   `SerreGraph.IsCore.degree_eq_two`: in a core, a vertex on no cyclically reduced closed path has
   degree at most two, and every vertex other than the base vertex has degree at least two;
@@ -64,9 +66,10 @@ descriptions agree:
   at most one, the vertices on no cyclically reduced closed path are the vertices of any path from
   the base vertex to the first vertex of degree at least three, other than its end, and the darts
   on no such path are the darts of this path and their reverses;
-* `SerreGraph.IsCore.existsUnique_three_le_degree`: when the base vertex has degree one, the end
-  of the hanging path is the unique vertex of degree at least three joined to the base vertex by a
-  unique shortest path whose internal vertices have degree two.
+* `SerreGraph.IsCore.existsUnique_length_eq_dist_and_degree_eq_two_and_three_le_degree`: when the
+  base vertex has degree one, the end of the hanging path is the unique vertex of degree at least
+  three joined to the base vertex by a unique shortest path whose internal vertices have degree
+  two.
 
 ## References
 
@@ -606,7 +609,7 @@ theorem IsCore.notMem_cyclicVertices_iff {v w : Γ.V} (hΓ : Γ.IsCore v) {p : �
 
 /-- A vertex on a nonempty cyclically reduced closed path has two distinct outgoing darts on
 cyclically reduced closed paths: the first dart of such a path and the reverse of its last. -/
-private theorem exists_cyclicDarts_ne {a : Γ.V} (ha : a ∈ Γ.cyclicVertices) :
+theorem exists_cyclicDarts_ne {a : Γ.V} (ha : a ∈ Γ.cyclicVertices) :
     ∃ x y, x ∈ Γ.cyclicDarts ∧ y ∈ Γ.cyclicDarts ∧ Γ.src x = a ∧ Γ.src y = a ∧ x ≠ y := by
   obtain ⟨p, h0, hp⟩ := ha
   have hne := Path.darts_ne_nil Γ h0
@@ -679,16 +682,6 @@ theorem IsCore.mem_cyclicVertices_of_three_le_degree {v a : Γ.V} (hΓ : Γ.IsCo
   by_contra h
   exact absurd (ha.trans (hΓ.degree_le_two h)) (by decide)
 
-/-- In a core, every vertex other than the base vertex has degree at least two. -/
-theorem IsCore.two_le_degree {v a : Γ.V} (hΓ : Γ.IsCore v) (ha : a ≠ v) : 2 ≤ Γ.degree a := by
-  obtain ⟨p⟩ := ((Γ.isCore_iff v).mp hΓ).1 a
-  cases p with
-  | nil => exact absurd rfl ha
-  | cons p g =>
-    obtain ⟨g, -, rfl⟩ := g
-    obtain ⟨f, hf, hfg⟩ := IsCore.exists_outgoing_ne Γ v hΓ (Γ.rev g) (by simpa using ha)
-    exact two_le_degree_iff.mpr ⟨f, Γ.rev g, by simpa using hf, by simp, hfg⟩
-
 /-- In a core, a vertex other than the base vertex on no cyclically reduced closed path has
 degree two. -/
 theorem IsCore.degree_eq_two {v a : Γ.V} (hΓ : Γ.IsCore v) (ha : a ∉ Γ.cyclicVertices)
@@ -726,6 +719,24 @@ theorem IsCore.degree_eq_zero_iff_isAcyclic {v : Γ.V} (hΓ : Γ.IsCore v) :
   | nil => rfl
   | cons _ e => exact isEmptyElim e.1
 
+/-- A dart of a path leaving only from vertices on no cyclically reduced closed path is on no such
+path. -/
+private theorem notMem_cyclicDarts_of_forall_src_notMem {v w : Γ.V} {p : Γ.Path v w}
+    (hp : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices) {e : Γ.E} (he : e ∈ Path.darts Γ p) :
+    e ∉ Γ.cyclicDarts :=
+  fun h => hp e he (Γ.src_mem_cyclicVertices h)
+
+/-- A path from a vertex on no cyclically reduced closed path to a vertex on one, leaving only
+from vertices on no such path, ends at a vertex of degree at least three. -/
+private theorem three_le_degree_of_forall_src_notMem {v w : Γ.V} (p : Γ.Path v w)
+    (hv : v ∉ Γ.cyclicVertices) (hw : w ∈ Γ.cyclicVertices)
+    (hp : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices) : 3 ≤ Γ.degree w := by
+  cases p with
+  | nil => exact absurd hw hv
+  | cons p g =>
+    simpa [g.2.2] using three_le_degree_tgt_of_notMem_cyclicDarts
+      (notMem_cyclicDarts_of_forall_src_notMem (e := g.1) hp (by simp)) (by rwa [g.2.2])
+
 /-- A path starting at a vertex on no cyclically reduced closed path, which leaves only from
 vertices of degree at most two after its start, never leaves from a vertex on a cyclically
 reduced closed path: it could only enter such a vertex through a dart on no such path, and the
@@ -740,14 +751,11 @@ theorem src_notMem_cyclicVertices_of_degree_le_two {v w : Γ.V} {q : Γ.Path v w
       ih (fun e' he' => hq e' (by simp [he'])) he
     rcases (by simpa using he : e ∈ Path.darts Γ q ∨ e = f.1) with he | rfl
     · exact ih' e he
-    cases q with
-    | nil => simpa [f.2.1] using hv
-    | cons q g =>
-      intro hf
-      have hg : g.1 ∉ Γ.cyclicDarts := fun h => ih' g.1 (by simp) (Γ.src_mem_cyclicVertices h)
-      have h3 := three_le_degree_tgt_of_notMem_cyclicDarts hg (by rwa [g.2.2, ← f.2.1])
-      rw [g.2.2, ← f.2.1] at h3
-      exact absurd (h3.trans (hq f.1 (by simp) fun h => hv (h ▸ hf))) (by decide)
+    -- Otherwise `q` would end at a vertex of degree at least three, which `f` leaves.
+    intro hf
+    have h3 := three_le_degree_of_forall_src_notMem q hv (f.2.1 ▸ hf) ih'
+    rw [← f.2.1] at h3
+    exact absurd (h3.trans (hq f.1 (by simp) fun h => hv (h ▸ hf))) (by decide)
 
 /-- **The hanging path in terms of degrees.** Let the base vertex of a core have degree at most
 one, and let `q` be a path from it to the first vertex of degree at least three: every vertex
@@ -782,17 +790,6 @@ private theorem IsCore.exists_hanging_geodesic {v : Γ.V} (hΓ : Γ.IsCore v) (h
     (Set.nonempty_iff_ne_empty.mpr (mt Γ.cyclicVertices_eq_empty_iff.mp h)) v
   obtain ⟨p, hp⟩ := exists_length_eq_dist (((Γ.isCore_iff v).mp hΓ).1 w)
   exact ⟨w, hw, p, hp, fun e he => Path.src_notMem_of_forall_dist_le hmin hp.le he⟩
-
-/-- A path from a vertex on no cyclically reduced closed path to a vertex on one, leaving only
-from vertices on no such path, ends at a vertex of degree at least three. -/
-private theorem three_le_degree_of_forall_src_notMem {v w : Γ.V} (p : Γ.Path v w)
-    (hv : v ∉ Γ.cyclicVertices) (hw : w ∈ Γ.cyclicVertices)
-    (hp : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ Γ.cyclicVertices) : 3 ≤ Γ.degree w := by
-  cases p with
-  | nil => exact absurd hw hv
-  | cons p g =>
-    have hg : g.1 ∉ Γ.cyclicDarts := fun h => hp g.1 (by simp) (Γ.src_mem_cyclicVertices h)
-    simpa [g.2.2] using three_le_degree_tgt_of_notMem_cyclicDarts hg (by rwa [g.2.2])
 
 /-- In a core, two darts leaving a vertex `b` on no cyclically reduced closed path coincide if
 neither reverses the last dart of a path from the base vertex to `b`. -/
@@ -848,16 +845,18 @@ private theorem IsCore.eq_of_forall_src_notMem {v w w' : Γ.V} (hΓ : Γ.IsCore 
   cases q with
   | nil => exact absurd hw' hv
   | cons q g =>
-    have hg : g.1 ∉ Γ.cyclicDarts := fun h => hq g.1 (by simp) (Γ.src_mem_cyclicVertices h)
-    rcases (hΓ.notMem_cyclicDarts_iff hw hp g.1).mp hg with h | h
+    rcases (hΓ.notMem_cyclicDarts_iff hw hp g.1).mp
+        (notMem_cyclicDarts_of_forall_src_notMem hq (by simp)) with h | h
     · rw [← g.2.2]
-      exact Path.tgt_eq_of_forall_src_ne Γ h fun e he hse => hp e he (by rwa [hse, g.2.2])
+      exact Path.tgt_eq_of_mem_getLast?_darts Γ p
+        (Path.mem_getLast?_darts_of_forall_src_ne Γ h fun e he hse => hp e he (by rwa [hse, g.2.2]))
     · exact (hp _ h (by rwa [src_rev, g.2.2])).elim
 
 /-- **The end of the hanging path.** If the base vertex `v` of a core has degree one, there is a
 unique vertex `w` such that there is a unique shortest path from `v` to `w`, every vertex of this
 path other than `v` and `w` has degree two, and `w` has degree at least three. -/
-theorem IsCore.existsUnique_three_le_degree {v : Γ.V} (hΓ : Γ.IsCore v) (hv : Γ.degree v = 1) :
+theorem IsCore.existsUnique_length_eq_dist_and_degree_eq_two_and_three_le_degree {v : Γ.V}
+    (hΓ : Γ.IsCore v) (hv : Γ.degree v = 1) :
     ∃! w : Γ.V, (∃! p : Γ.Path v w, p.length = Γ.dist v w) ∧
       (∀ p : Γ.Path v w, p.length = Γ.dist v w →
         ∀ e ∈ Path.darts Γ p, Γ.src e ≠ v → Γ.degree (Γ.src e) = 2) ∧ 3 ≤ Γ.degree w := by
