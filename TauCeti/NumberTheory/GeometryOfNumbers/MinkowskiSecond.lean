@@ -86,9 +86,9 @@ gives a subset of the unit cube, of volume at most `1`. Folding no coordinate do
 * *unfolding* (`volume_fold_le_fold_succ`): `Vₘ(t) ≤ Vₘ₊₁(t)` when `t ≤ g m`, because the
   translates of the `m`-fold of `t • C` by integer multiples of the `m`-th coordinate vector are
   then pairwise disjoint;
-* *dilation* (`volume_fold_smul`): `ρ ^ (n - m) · Vₘ(t) ≤ Vₘ(ρ t)` for `ρ ≥ 1`. On each fibre over
-  the last `n - m` coordinates, `ρ` times a nonempty convex set contains a translate of it, and
-  the folded volume of a set is translation invariant.
+* *dilation* (`ofReal_pow_mul_volume_fold_le_volume_fold_smul`): `ρ ^ (n - m) · Vₘ(t) ≤ Vₘ(ρ t)` for
+  `ρ ≥ 1`. On each fibre over the last `n - m` coordinates, `ρ` times a nonempty convex set
+  contains a translate of it, and the folded volume of a set is translation invariant.
 
 Chaining them from `V₀(g 0) = g 0 ^ n · vol C` up to `Vₙ(g (n - 1)) ≤ 1` gives
 `g 0 ⋯ g (n - 1) · vol C ≤ 1`.
@@ -387,8 +387,8 @@ private theorem convex_fiber {S : Set (Fin n → ℝ)} (hS : Convex ℝ S) (m : 
 least `ρ ^ (n - m)`. Dividing the last `n - m` coordinates by `ρ` multiplies volumes by
 `ρ ^ -(n - m)` and commutes with folding, and fibrewise it turns the dilate into `ρ` times a convex
 set, whose fold is at least as large. -/
-private theorem volume_fold_smul {X : Set (Fin n → ℝ)} (hX : MeasurableSet X)
-    (hXc : Convex ℝ X) (m : ℕ) {ρ : ℝ} (hρ : 1 ≤ ρ) :
+private theorem ofReal_pow_mul_volume_fold_le_volume_fold_smul {X : Set (Fin n → ℝ)}
+    (hX : MeasurableSet X) (hXc : Convex ℝ X) (m : ℕ) {ρ : ℝ} (hρ : 1 ≤ ρ) :
     ENNReal.ofReal (ρ ^ (n - m)) * volume (fold m X) ≤ volume (fold m (ρ • X)) := by
   have hρ0 : 0 < ρ := by linarith
   set X' := shrinkLast m ρ ⁻¹' X
@@ -429,7 +429,8 @@ private theorem prod_mul_pow_mul_volume_le_volume_fold {n : ℕ} {C : Set (Fin n
   | succ m ih =>
     have hm' : m < n := hm
     have hs : 0 < g m := hg0 m hm'
-    have h1 := volume_fold_smul (hC.const_smul₀ (g m)) (hCc.smul (g m)) (m + 1)
+    have h1 := ofReal_pow_mul_volume_fold_le_volume_fold_smul (hC.const_smul₀ (g m))
+      (hCc.smul (g m)) (m + 1)
       ((one_le_div hs).2 (hgt m (Nat.lt_succ_self m)))
     rw [smul_smul, div_mul_cancel₀ t hs.ne'] at h1
     have h2 := volume_fold_le_fold_succ (hC.const_smul₀ (g m)) hm' (hsep m hm')
