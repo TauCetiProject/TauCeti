@@ -83,7 +83,7 @@ theorem prod_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- A bounded right-closed interval paired with a finite-mass selection has finite product
 mass when the first measure is locally finite. The second measure need not be s-finite. -/
-theorem measure_Ioc_prod_lt_top {α β : Type*} [Preorder α] [TopologicalSpace α]
+theorem prod_Ioc_prod_lt_top {α β : Type*} [Preorder α] [TopologicalSpace α]
     [CompactIccSpace α] [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) [IsLocallyFiniteMeasure μ] (ν : Measure β)
     {A : Set β} (hνA : ν A ≠ ∞) (a b : α) : (μ.prod ν) (Set.Ioc a b ×ˢ A) < ∞ :=

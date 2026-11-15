@@ -67,12 +67,9 @@ theorem indepFun_nat_count_prod {E : Type*} [MeasurableSpace E]
     (hA : MeasurableSet A) (hB : MeasurableSet B) (hd : Disjoint A B) :
     IndepFun (fun ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊)
       (fun ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊) P := by
-  let f (μ : Measure ℝ≥0) (t : ℝ≥0) := ⌊(μ (Ioc 0 t)).toNNReal⌋₊
-  have hf : Measurable f := Measurable.of_eval fun t ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
-  simpa only [f, Function.comp_def, Measure.map_fst_restrict_prod_apply _ _ _
-    measurableSet_Ioc, inter_univ] using
-    (h.indepFun_map_fst_restrict_univ_prod hA hB hd).comp hf hf
+  exact (h.iIndepFun_nat_count_prod (A := fun b : Bool ↦ cond b A B)
+    (by rintro (_ | _) <;> assumption) (pairwise_disjoint_on_bool.mpr hd)).indepFun
+    (i := true) (j := false) (by decide)
 
 /-- A null mark region has identically zero count path on one full-measure event, including
 all observation times simultaneously. No local finiteness is required. -/
@@ -147,18 +144,12 @@ theorem hasLaw_nat_count_prod_sub_of_measure_Ioc_prod_lt_top
     HasLaw (fun ω ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ -
       ⌊(M ω (Ioc 0 s ×ˢ A)).toNNReal⌋₊)
       (poissonMeasure (Λ (Ioc s t ×ˢ A)).toNNReal) P := by
-  have hsfin := (measure_mono (prod_mono (Ioc_subset_Ioc_right hst) Subset.rfl)).trans_lt hfin
-  have hstfin : Λ (Ioc s t ×ˢ A) < ∞ :=
-    (measure_mono (prod_mono (Ioc_subset_Ioc_left bot_le) Subset.rfl)).trans_lt hfin
-  apply (h.hasLaw_nat_count_prod_Ioc_of_lt_top hA s t hstfin).congr
-  filter_upwards [h.ae_natCast_natFloor_eq (measurableSet_Ioc.prod hA) hsfin,
-    h.ae_natCast_natFloor_eq (measurableSet_Ioc.prod hA) hstfin] with ω hs ht
-  have hadd := measure_union (μ := M ω) (s₁ := Ioc 0 s ×ˢ A) (s₂ := Ioc s t ×ˢ A)
-    ((Ioc_disjoint_Ioc_of_le (le_refl s)).set_prod_left _ _) (measurableSet_Ioc.prod hA)
-  rw [← union_prod, Ioc_union_Ioc_eq_Ioc (a := 0) bot_le hst,
-    ← hs, ← ht, ← Nat.cast_add] at hadd
-  rw [hadd]
-  simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast, Nat.add_sub_cancel_left]
+  have : Fact (Λ (Ioc 0 t ×ˢ A) < ∞) := ⟨hfin⟩
+  simpa only [Measure.map_fst_restrict_prod_apply _ _ _ measurableSet_Ioc, inter_self,
+    inter_eq_left.mpr (Ioc_subset_Ioc_right hst),
+    inter_eq_left.mpr (Ioc_subset_Ioc_left (b := t) (zero_le : 0 ≤ s))] using
+    ((h.restrict (s := Ioc 0 t ×ˢ A) (measurableSet_Ioc.prod hA)).map
+      measurable_fst).hasLaw_nat_count_sub hst
 
 private theorem ae_nat_count_prod_cast (h : IsPoissonRandomMeasure P M Λ)
     {A : Set E} (hA : MeasurableSet A) (hfin : ∀ t : ℝ≥0, Λ (Ioc 0 t ×ˢ A) < ∞) :
@@ -204,16 +195,12 @@ theorem ae_nat_count_prod_union_eq_add_of_measure_Ioc_prod_lt_top
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊(M ω (Ioc 0 t ×ˢ (A ∪ B))).toNNReal⌋₊ =
         ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ + ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ := by
-  have hd' : (univ : Set Bool).PairwiseDisjoint (fun b ↦ if b then A else B) := by
-    intro i _ j _ hij
-    cases i <;> cases j <;> simp_all [Disjoint.symm]
-  have hunion : (⋃ b : Bool, if b then A else B) = A ∪ B := by
-    ext x
-    simp [Bool.exists_bool, or_comm]
-  simpa [hunion, Fintype.sum_bool] using
+  simpa only [Finset.mem_univ, iUnion_true, ← Set.union_eq_iUnion, Fintype.sum_bool,
+    Bool.cond_true, Bool.cond_false] using
     h.ae_nat_count_prod_biUnion_finset_eq_sum_of_measure_Ioc_prod_lt_top
-      (s := Finset.univ) (A := fun b : Bool ↦ if b then A else B)
-      (by intro b _; cases b <;> assumption) (by simpa only [Finset.coe_univ] using hd')
+      (s := Finset.univ) (A := fun b : Bool ↦ cond b A B)
+      (by intro b _; cases b <;> assumption)
+      ((pairwise_disjoint_on_bool.mpr hd).pairwiseDisjoint _)
       (by intro b _; cases b <;> assumption)
 
 end MarkSelection
@@ -324,7 +311,7 @@ theorem hasIndepIncrements_nat_count_prod {E : Type*} [MeasurableSpace E]
     {A : Set E} (hA : MeasurableSet A) (hQA : Q A ≠ ∞ := by finiteness) :
     HasIndepIncrements (fun t ω ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊) P := by
   exact h.hasIndepIncrements_nat_count_prod_of_measure_Ioc_prod_lt_top hA
-    (ν.measure_Ioc_prod_lt_top Q hQA 0)
+    (ν.prod_Ioc_prod_lt_top Q hQA 0)
 
 /-- For locally finite ground intensity, a finite-mass mark-count increment has Poisson law
 with parameter equal to the ground interval intensity times the mark mass. -/
@@ -338,7 +325,7 @@ theorem hasLaw_nat_count_prod_sub {E : Type*} [MeasurableSpace E]
       (poissonMeasure ((ν (Ioc s t)).toNNReal * (Q A).toNNReal)) P := by
   simpa only [Measure.prod_prod, ENNReal.toNNReal_mul] using
     h.hasLaw_nat_count_prod_sub_of_measure_Ioc_prod_lt_top hA hst
-      (ν.measure_Ioc_prod_lt_top Q hQA 0 t)
+      (ν.prod_Ioc_prod_lt_top Q hQA 0 t)
 
 /-- A finite-mass mark-selection path is simultaneously monotone in time for locally finite
 ground intensity and any mark measure. -/
@@ -348,7 +335,7 @@ theorem ae_monotone_nat_count_prod {E : Type*} [MeasurableSpace E]
     {A : Set E} (hA : MeasurableSet A) (hQA : Q A ≠ ∞ := by finiteness) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊) := by
   exact h.ae_monotone_nat_count_prod_of_measure_Ioc_prod_lt_top hA
-    (ν.measure_Ioc_prod_lt_top Q hQA 0)
+    (ν.prod_Ioc_prod_lt_top Q hQA 0)
 
 /-- A finite-mass selected interval count has Poisson parameter equal to the ground interval
 intensity times the mark mass, including empty intervals. -/
@@ -359,7 +346,7 @@ theorem hasLaw_nat_count_prod_Ioc {E : Type*} [MeasurableSpace E]
     HasLaw (fun ω ↦ ⌊(M ω (Ioc s t ×ˢ A)).toNNReal⌋₊)
       (poissonMeasure ((ν (Ioc s t)).toNNReal * (Q A).toNNReal)) P := by
   simpa only [Measure.prod_prod, ENNReal.toNNReal_mul] using
-    h.hasLaw_nat_count_prod_Ioc_of_lt_top hA s t (ν.measure_Ioc_prod_lt_top Q hQA s t)
+    h.hasLaw_nat_count_prod_Ioc_of_lt_top hA s t (ν.prod_Ioc_prod_lt_top Q hQA s t)
 
 /-- Counts on a finite disjoint family of finite-mass mark sets add simultaneously in time
 for locally finite ground intensity and any mark measure. -/
@@ -372,7 +359,7 @@ theorem ae_nat_count_prod_biUnion_finset_eq_sum {E ι : Type*} [MeasurableSpace 
       ⌊(M ω (Ioc 0 t ×ˢ (⋃ i ∈ s, A i))).toNNReal⌋₊ =
         ∑ i ∈ s, ⌊(M ω (Ioc 0 t ×ˢ A i)).toNNReal⌋₊ :=
   h.ae_nat_count_prod_biUnion_finset_eq_sum_of_measure_Ioc_prod_lt_top hA hd
-    (fun i hi ↦ ν.measure_Ioc_prod_lt_top Q (hQA i hi) 0)
+    (fun i hi ↦ ν.prod_Ioc_prod_lt_top Q (hQA i hi) 0)
 
 /-- Counts on two disjoint finite-mass mark sets add simultaneously at every time for
 locally finite ground intensity and any mark measure. -/
@@ -385,7 +372,7 @@ theorem ae_nat_count_prod_union_eq_add {E : Type*} [MeasurableSpace E]
       ⌊(M ω (Ioc 0 t ×ˢ (A ∪ B))).toNNReal⌋₊ =
         ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ + ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ := by
   exact h.ae_nat_count_prod_union_eq_add_of_measure_Ioc_prod_lt_top hA hB hd
-    (ν.measure_Ioc_prod_lt_top Q hQA 0) (ν.measure_Ioc_prod_lt_top Q hQB 0)
+    (ν.prod_Ioc_prod_lt_top Q hQA 0) (ν.prod_Ioc_prod_lt_top Q hQB 0)
 
 /-- Under homogeneous product intensity, a selected interval count has parameter
 `r * Q A` times elapsed time, including zero rates and empty intervals. -/
