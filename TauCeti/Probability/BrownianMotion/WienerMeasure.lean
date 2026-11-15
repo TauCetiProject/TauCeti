@@ -17,6 +17,7 @@ import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
 import TauCeti.Probability.Distributions.Gaussian.Continuity
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
+import TauCeti.Probability.HasLaw
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -48,9 +49,10 @@ The construction proceeds in three stages:
    forward along the measurable path map into `C(ℝ≥0, ℝ)` defines `TauCeti.wienerMeasure`,
    establishes `TauCeti.exists_wienerMeasure`, characterizes `wienerMeasure` uniquely via
    evaluation-generated Borel uniqueness (`TauCeti.eq_wienerMeasure_iff_isBrownianReal`), proves
-   invariance under negation and diffusive Brownian rescaling `ω ↦ (t ↦ (√c)⁻¹ * ω (c * t))`, and
-   records marginal/increment variances distinguishing Wiener measure from degenerate and
-   unnormalized laws.
+   invariance under negation and diffusive Brownian rescaling `ω ↦ (t ↦ (√c)⁻¹ * ω (c * t))`, proves
+   single-path non-atomicity (`NullSingletonClass wienerMeasure`, so `wienerMeasure {f} = 0` for
+   every `f`), and records marginal/increment variances distinguishing Wiener measure from
+   degenerate and unnormalized laws.
 
 ## Main definitions and results
 
@@ -60,7 +62,10 @@ The construction proceeds in three stages:
   admits an all-paths continuous, coordinatewise measurable Brownian modification.
 * `ProbabilityTheory.IsBrownianReal.ae_holderOnWith`: almost every path of a Brownian motion is
   `γ`-Hölder continuous on `[0, T]` for every `γ < 1 / 2`.
-* `TauCeti.wienerMeasure`: Wiener measure on `C(ℝ≥0, ℝ)`.
+* `ProbabilityTheory.IsPreBrownianReal.nullSingletonClass`: any measure supporting a pre-Brownian
+  motion assigns zero mass to singletons.
+* `TauCeti.wienerMeasure`: Wiener measure on `C(ℝ≥0, ℝ)`, with `NullSingletonClass` instance giving
+  `∀ f, wienerMeasure {f} = 0`.
 * `TauCeti.exists_wienerMeasure`: existence of a Borel probability measure on `C(ℝ≥0, ℝ)` whose
   coordinate process satisfies `IsBrownianReal`.
 * `TauCeti.eq_wienerMeasure_iff_isBrownianReal` and
@@ -201,6 +206,13 @@ theorem IsPreBrownianReal.isBrownianReal_eval_map {X : ℝ≥0 → Ω → ℝ}
   refine ⟨hres_meas.aemeasurable, ?_⟩
   rw [Measure.map_map hres_meas hpath_meas]
   exact (hX.hasLaw I).map_eq
+
+/-- Any measure supporting a pre-Brownian motion assigns zero mass to every single sample point. -/
+theorem IsPreBrownianReal.nullSingletonClass (hB : IsPreBrownianReal B P) :
+    NullSingletonClass P where
+  measure_singleton ω := by
+    have := nullSingletonClass_gaussianReal (μ := 0) one_ne_zero
+    exact (hB.hasLaw_eval 1).measure_singleton_eq_zero ω
 
 end Regularity
 
@@ -657,13 +669,17 @@ theorem variance_eval_sub_wienerMeasure (s t : ℝ≥0) :
   rw [(hasLaw_eval_sub_wienerMeasure s t).variance_eq, variance_id_gaussianReal, coe_nndist]
   rfl
 
-/-- Wiener measure is non-atomic on single paths: it never equals a Dirac mass `Measure.dirac f`. -/
+/-- Wiener measure has no singleton atoms: every single path has measure zero
+(`∀ f, wienerMeasure {f} = 0`). -/
+instance : NullSingletonClass wienerMeasure :=
+  isPreBrownianReal_eval_wienerMeasure.nullSingletonClass
+
+/-- Wiener measure is never equal to a Dirac mass `Measure.dirac f`. -/
 @[simp]
 theorem wienerMeasure_ne_dirac (f : C(ℝ≥0, ℝ)) : wienerMeasure ≠ Measure.dirac f := by
   intro h
-  have h1 : Var[fun ω : C(ℝ≥0, ℝ) ↦ ω 1; wienerMeasure] = 1 := by simp
-  rw [h, variance_dirac f] at h1
-  norm_num at h1
+  simpa [h, Measure.dirac_apply_of_mem (mem_singleton f)] using
+    measure_singleton (μ := wienerMeasure) f
 
 /-- Scalar path rescaling `ω ↦ c • ω` (without time rescaling) preserves `wienerMeasure` if and only
 if `c = 1` or `c = -1`. -/
