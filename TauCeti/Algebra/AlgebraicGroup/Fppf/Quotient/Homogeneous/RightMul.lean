@@ -239,13 +239,6 @@ theorem fppfHomogeneousQuotientRightMul_eq_id_iff
     fppfHomogeneousQuotientRightMul_eq_fppfHomogeneousQuotientRightMul_iff, mul_one,
     inv_mem_iff]
 
-/-- Right multiplication by a ground-ring point of `P` induces the identity of `G/P`. -/
-theorem fppfHomogeneousQuotientRightMul_eq_id_of_mem
-    {q : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)} (h : I.conjugate q ≤ I)
-    (hq : q ∈ quotientPointsSubgroup H I (CommAlgCat.of R R)) :
-    fppfHomogeneousQuotientRightMul H q h = 𝟙 _ :=
-  (fppfHomogeneousQuotientRightMul_eq_id_iff H h).mpr hq
-
 /-- The morphism `xP ↦ xgQ` is locally surjective, as the projection `G ⟶ G/Q` is. -/
 instance fppfHomogeneousQuotientRightMul_isLocallySurjective
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) (h : J.conjugate g ≤ I) :
