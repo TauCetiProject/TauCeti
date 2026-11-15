@@ -26,11 +26,11 @@ Hensel's lemma extracts `ℓ ^ k`-th roots for any prime `ℓ` away from the res
 * `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq`: in `ValueGroupWithZero R`
   with `[IsDiscrete R] [IsRankLeOne R]`, a nonzero element that is an `m ^ k`-th power for some
   `m ≥ 2` and all `k : ℕ` equals `1`.
-* `ValuativeRel.ValueGroupWithZero.eq_one_of_pow_forall_exists_pow_pow_eq`: the same conclusion
+* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq_pow`: the same conclusion
   when a positive power `γ ^ n` is `m ^ k`-divisible.
 * `ValuativeRel.valuation_eq_one_of_forall_exists_pow_pow_eq` and
-  `ValuativeRel.valuation_eq_one_of_pow_forall_exists_pow_pow_eq`: the corresponding statements for
-  ring elements of nonzero valuation.
+  `ValuativeRel.valuation_eq_one_of_forall_exists_pow_pow_eq_pow`: the corresponding statements
+  for ring elements of nonzero valuation.
 -/
 
 public section
@@ -42,8 +42,7 @@ namespace ValueGroupWithZero
 variable {R : Type*} [Semiring R] [ValuativeRel R] [IsDiscrete R] [IsRankLeOne R]
 
 /-- A nonzero element of a discrete archimedean value group that admits `m ^ k`-th roots for some
-`m ≥ 2` and all `k` cannot lie strictly below `1`: each root would be at most `uniformizer R`,
-forcing the element below every `(uniformizer R) ^ (m ^ k)`. -/
+`m ≥ 2` and all `k` is at least `1`. -/
 private theorem one_le_of_forall_exists_pow_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0)
     {m : ℕ} (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ δ : ValueGroupWithZero R, δ ^ m ^ k = γ) :
     1 ≤ γ := by
@@ -74,7 +73,7 @@ theorem eq_one_of_forall_exists_pow_pow_eq {γ : ValueGroupWithZero R} (hγ : γ
 
 /-- If a positive power `γ ^ n` of a nonzero `γ : ValueGroupWithZero R` is an `m ^ k`-th power for
 some `m ≥ 2` and every `k : ℕ`, then `γ = 1`. -/
-theorem eq_one_of_pow_forall_exists_pow_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {n m : ℕ}
+theorem eq_one_of_forall_exists_pow_pow_eq_pow {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {n m : ℕ}
     (hn : n ≠ 0) (hm : 2 ≤ m)
     (h : ∀ k : ℕ, ∃ δ : ValueGroupWithZero R, δ ^ m ^ k = γ ^ n) :
     γ = 1 :=
@@ -98,10 +97,10 @@ theorem valuation_eq_one_of_forall_exists_pow_pow_eq {x : R} (hx : valuation R x
 
 /-- If `x : R` has nonzero valuation and a positive power `x ^ n` is an `m ^ k`-th power in `R` for
 some `m ≥ 2` and every `k : ℕ`, then `valuation R x = 1`. -/
-theorem valuation_eq_one_of_pow_forall_exists_pow_pow_eq {x : R} (hx : valuation R x ≠ 0)
+theorem valuation_eq_one_of_forall_exists_pow_pow_eq_pow {x : R} (hx : valuation R x ≠ 0)
     {n m : ℕ} (hn : n ≠ 0) (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ y : R, y ^ m ^ k = x ^ n) :
     valuation R x = 1 :=
-  ValueGroupWithZero.eq_one_of_pow_forall_exists_pow_pow_eq hx hn hm fun k ↦ by
+  ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq_pow hx hn hm fun k ↦ by
     obtain ⟨y, hy⟩ := h k
     exact ⟨valuation R y, by rw [← map_pow, hy, map_pow]⟩
 

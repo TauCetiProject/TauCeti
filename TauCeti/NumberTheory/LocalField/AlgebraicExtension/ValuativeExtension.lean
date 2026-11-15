@@ -23,7 +23,7 @@ the cardinality of the residue field `𝓀[K]` and `ℓ` is a prime exceeding `r
 `(q - 1)`-st powers of units lie in `U(K, 1)`, where `ℓ ^ k`-th roots exist for every `k : ℕ`
 (`TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`), and a discrete archimedean value group
 contains no nontrivial `ℓ ^ ∞`-divisible values
-(`ValuativeRel.valuation_eq_one_of_pow_forall_exists_pow_pow_eq`).
+(`ValuativeRel.valuation_eq_one_of_forall_exists_pow_pow_eq_pow`).
 
 Writing every `x ∈ Kˣ` as a unit times a power of a uniformizer `ϖ` expresses `valuation R (f x)` as
 `valuation R (f ϖ) ^ v_K(x)`. Since `1 + ϖ` is a unit of `𝒪[K]`, ultrametricity rules out
@@ -99,8 +99,8 @@ variable {K R : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 namespace RingHom
 
 /-- **Units of `𝒪[K]` have valuation `1` under any homomorphism into a discrete rank-at-most-one
-valued ring.** Raising `u ∈ U(K, 0)` to `#𝓀[K] - 1` lands in `U(K, 1)`, where `ℓ ^ k`-th roots exist
-for any prime `ℓ > ringChar 𝓀[K]`. -/
+valued ring.** Every `f : K →+* R` sends elements of valuation `1` in `K` to elements of valuation
+`1` in `R`. -/
 theorem valuation_map_eq_one_of_valuation_eq_one (f : K →+* R) {x : K} (hx : valuation K x = 1) :
     valuation R (f x) = 1 := by
   have hx0 : x ≠ 0 := by rintro rfl; simp at hx
@@ -116,7 +116,7 @@ theorem valuation_map_eq_one_of_valuation_eq_one (f : K →+* R) {x : K} (hx : v
       have := (hℓ.dvd_iff_eq (CharP.prime_ringChar 𝓀[K]).ne_one).1 hdvd
       omega
   have hfv0 : valuation R (f x) ≠ 0 := (((Units.isUnit u).map f).map (valuation R)).ne_zero
-  refine valuation_eq_one_of_pow_forall_exists_pow_pow_eq hfv0 hq hℓ.two_le fun k ↦ ?_
+  refine valuation_eq_one_of_forall_exists_pow_pow_eq_pow hfv0 hq hℓ.two_le fun k ↦ ?_
   have hpow_unit : IsUnit ((ℓ ^ k : ℕ) : 𝒪[K]) := by
     rw [Nat.cast_pow]
     exact hℓunit.pow k
@@ -146,8 +146,7 @@ theorem valuation_map_eq_zpow_toAdd_normalizedValuation (f : K →+* R) {ϖ : K�
   rw [hval, f.valuation_map_eq_one_of_valuation_eq_one ((mem_unitFiltration_zero u).1 hu), one_mul]
 
 /-- **Integers of `K` map into the valuation subring of `R`** under any homomorphism into a discrete
-rank-at-most-one valued ring: for a uniformizer `ϖ`, `1 + ϖ` is a unit of `𝒪[K]`, which prevents
-`1 < valuation R (f ϖ)`. -/
+rank-at-most-one valued ring. -/
 theorem valuation_map_le_one_of_valuation_le_one (f : K →+* R) {x : K} (hx : valuation K x ≤ 1) :
     valuation R (f x) ≤ 1 := by
   rcases eq_or_ne x 0 with rfl | hx0
@@ -246,9 +245,10 @@ theorem TauCeti.valuativeRel_eq_of_isDiscrete_of_isRankLeOne (K : Type*) [Field 
 
 /-- **Automatic valuation compatibility along integral extensions of a nonarchimedean local field.**
 Every integral `K`-algebra carrying a nontrivial discrete rank-at-most-one valuative relation is a
-`ValuativeExtension` of `K`. Since `K` is a field, this applies by typeclass inference to every
-algebraic extension (`Algebra.IsAlgebraic K R`) and every finite extension (`Module.Finite K R`), in
-particular whenever `R` is itself a nonarchimedean local field. -/
+`ValuativeExtension` of `K`. Since `K` is a field, `Algebra.IsAlgebraic K R` and
+`Module.Finite K R` synthesize `Algebra.IsIntegral K R`, and `IsNonarchimedeanLocalField R`
+synthesizes `IsDiscrete R`, `IsRankLeOne R`, and `IsNontrivial R`, so any algebraic or finite
+extension between nonarchimedean local fields is covered automatically. -/
 theorem ValuativeExtension.of_isIntegral (K R : Type*) [Field K] [ValuativeRel K]
     [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Ring R] [ValuativeRel R]
     [IsDiscrete R] [IsRankLeOne R] [IsNontrivial R] [Algebra K R] [Algebra.IsIntegral K R] :
