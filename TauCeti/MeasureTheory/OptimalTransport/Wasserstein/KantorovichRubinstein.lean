@@ -80,6 +80,8 @@ namespace TauCeti
 
 universe u
 
+section Unbounded
+
 variable {X : Type u} [MeasurableSpace X] {μ ν : Measure X}
 
 section WeakDuality
@@ -182,9 +184,7 @@ end Compact
 section StandardBorel
 
 variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [SecondCountableTopology X]
-  [StandardBorelSpace X]
 
-omit [StandardBorelSpace X] in
 /-- Kantorovich–Rubinstein duality for laws pushed onto a finite set, in the direction not given by
 weak duality: the `1`-Wasserstein distance of two laws supported on a common finite set is at most
 the supremum of the differences of expectations of the `1`-Lipschitz real functions on `X`. -/
@@ -225,19 +225,34 @@ private theorem wassersteinEDist_one_map_le_iSup [IsProbabilityMeasure μ]
   refine le_iSup₂_of_le G hG (le_of_eq ?_)
   rw [hint, hint, hμU, hνU]
 
-omit [StandardBorelSpace X] in
 /-- Weak duality for quantized laws: if `μ.map T` and `ν.map T'` are quantizations of `μ` and `ν`
 within `W₁` distance `δ`, then their `1`-Wasserstein distance is at most the supremum of the
 differences of expectations of the `1`-Lipschitz real functions under `μ` and `ν`, plus `δ + δ`. -/
 private theorem wassersteinEDist_one_map_le_iSup_add [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] {T T' : X → X} {s s' : Finset X} {δ : ℝ≥0∞}
-    (hμ : HasFiniteMoment 1 μ) (hν : HasFiniteMoment 1 ν) (hT : Measurable T)
-    (hT' : Measurable T') (hTs : ∀ x, T x ∈ s) (hT's : ∀ x, T' x ∈ s')
-    (hμT' : HasFiniteMoment 1 (μ.map T)) (hνT' : HasFiniteMoment 1 (ν.map T'))
+    (hT : Measurable T) (hT' : Measurable T') (hTs : ∀ x, T x ∈ s) (hT's : ∀ x, T' x ∈ s')
     (hμT : wassersteinEDist 1 μ (μ.map T) ≤ δ) (hνT : wassersteinEDist 1 ν (ν.map T') ≤ δ) :
     wassersteinEDist 1 (μ.map T) (ν.map T') ≤
       (⨆ (f : X → ℝ) (_ : LipschitzWith 1 f), ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)) +
         (δ + δ) := by
+  rcases eq_or_ne δ ∞ with rfl | hδtop
+  · simp
+  have : Nonempty X := μ.nonempty_of_neZero
+  have hmom (ρ : Measure X) [IsProbabilityMeasure ρ] {S : X → X} {u : Finset X}
+      (hS : Measurable S) (hSu : ∀ x, S x ∈ u) : HasFiniteMoment 1 (ρ.map S) := by
+    obtain ⟨r, hr⟩ := u.finite_toSet.isBounded.subset_closedBall (Classical.arbitrary X)
+    exact hasFiniteMoment_of_ae_mem_of_isBounded (Classical.arbitrary X) Metric.isBounded_closedBall
+      ((ae_map_iff hS.aemeasurable measurableSet_closedBall).2 (.of_forall fun x ↦ hr (hSu x)))
+  have hμT' := hmom μ hT hTs
+  have hνT' := hmom ν hT' hT's
+  have hμ : HasFiniteMoment 1 μ := by
+    rw [wassersteinEDist_comm measurable_edist] at hμT
+    exact (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist hμT').2
+      (ne_top_of_le_ne_top hδtop hμT)
+  have hν : HasFiniteMoment 1 ν := by
+    rw [wassersteinEDist_comm measurable_edist] at hνT
+    exact (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist hνT').2
+      (ne_top_of_le_ne_top hδtop hνT)
   set R := ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f), ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)
   classical
   refine (wassersteinEDist_one_map_le_iSup hT hT' (t := s ∪ s')
@@ -264,6 +279,8 @@ private theorem wassersteinEDist_one_map_le_iSup_add [IsProbabilityMeasure μ]
         gcongr
         exacts [h₁.trans hμT, h₂.trans hνT]
 
+variable [StandardBorelSpace X]
+
 /-- **Kantorovich–Rubinstein duality.** For probability measures with finite first moments on a
 second-countable pseudometric space whose measurable structure is standard Borel and contains the
 open sets — in particular on a Polish metric space with its Borel σ-algebra — the
@@ -285,21 +302,14 @@ theorem wassersteinEDist_one_eq_iSup [IsProbabilityMeasure μ] [IsProbabilityMea
   set δ : ℝ≥0∞ := (ε : ℝ≥0∞) / 2 / 2 with hδ
   have hδ0 : δ ≠ 0 :=
     (ENNReal.half_pos (ENNReal.half_pos (by exact_mod_cast hε.ne')).ne').ne'
-  have hδtop : δ ≠ ∞ := by simp [hδ, ENNReal.div_eq_top]
   have hδε : δ + δ + (δ + δ) = ε := by rw [hδ, ENNReal.add_halves, ENNReal.add_halves]
   -- quantize both laws onto a common finite set, within `W₁` distance `δ`
   obtain ⟨s, T, hT, hTs, hμT⟩ := exists_map_wassersteinEDist_le le_rfl ENNReal.one_ne_top hμ hδ0
   obtain ⟨s', T', hT', hT's, hνT⟩ :=
     exists_map_wassersteinEDist_le le_rfl ENNReal.one_ne_top hν hδ0
-  have hμT' : HasFiniteMoment 1 (μ.map T) :=
-    (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist hμ).2
-      (ne_top_of_le_ne_top hδtop hμT)
-  have hνT' : HasFiniteMoment 1 (ν.map T') :=
-    (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist hν).2
-      (ne_top_of_le_ne_top hδtop hνT)
   -- the quantized laws satisfy the formula, and quantizing moves each expectation by at most `δ`
   have hquant : wassersteinEDist 1 (μ.map T) (ν.map T') ≤ R + (δ + δ) :=
-    wassersteinEDist_one_map_le_iSup_add hμ hν hT hT' hTs hT's hμT' hνT' hμT hνT
+    wassersteinEDist_one_map_le_iSup_add hT hT' hTs hT's hμT hνT
   -- pass from the quantized laws back to `μ` and `ν` by the triangle inequality
   calc wassersteinEDist 1 μ ν
       ≤ wassersteinEDist 1 μ (μ.map T) + (wassersteinEDist 1 (μ.map T) (ν.map T') +
@@ -334,34 +344,13 @@ theorem wassersteinEDist_one_eq_iSup_apply_eq_zero [IsProbabilityMeasure μ]
 
 end StandardBorel
 
+end Unbounded
+
 section BoundedLipschitz
 
-variable [PseudoMetricSpace X] {R : ℝ}
-
-/-- Bounded-Lipschitz weak duality for the truncated distance cost. The bound `R` on each
-potential produces the cap `2 * R` on the cost. -/
-theorem ofReal_integral_sub_integral_le_transportCost_truncated_dist
-    [OpensMeasurableSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {f : X → ℝ} (hf : LipschitzWith 1 f) (hfb : ∀ x, ‖f x‖ ≤ R) :
-    ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) ≤
-      transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ ν := by
-  have hi (ρ : Measure X) [IsFiniteMeasure ρ] : Integrable f ρ :=
-    .of_bound hf.continuous.aestronglyMeasurable R (ae_of_all _ hfb)
-  have hfeas : DualFeasible
-      (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) f (fun y ↦ -f y) := by
-    refine dualFeasible_iff_ofReal_add_le.2 fun x y ↦ ENNReal.ofReal_le_ofReal ?_
-    have hdist := hf.le_add_mul x y
-    have hx := (abs_le.1 (hfb x)).2
-    have hy := (abs_le.1 (hfb y)).1
-    simp only [NNReal.coe_one, one_mul] at hdist
-    exact le_min (by linarith) (by linarith)
-  simpa only [kantorovichDualValue_def, integral_neg, sub_eq_add_neg] using
-    hfeas.ofReal_kantorovichDualValue_le_transportCost (hi μ) (hi ν).neg
-
-omit [MeasurableSpace X] in
 /-- Center the range of a conjugate potential of the truncated distance cost. -/
-private theorem exists_boundedLipschitz_shift [Nonempty X] (hR : 0 ≤ R)
-    {φ ψ : X → ℝ}
+private theorem exists_boundedLipschitz_shift {X : Type u} [PseudoMetricSpace X] {R : ℝ}
+    [Nonempty X] (hR : 0 ≤ R) {φ ψ : X → ℝ}
     (hfeas : ∀ x y, φ x + ψ y ≤ min (dist x y) (2 * R))
     (hφ : ∀ x, φ x = ⨅ y, (min (dist x y) (2 * R) - ψ y)) :
     ∃ (f : X → ℝ) (a : ℝ), LipschitzWith 1 f ∧ (∀ x, ‖f x‖ ≤ R) ∧
@@ -401,6 +390,28 @@ private theorem exists_boundedLipschitz_shift [Nonempty X] (hR : 0 ≤ R)
   rw [Real.norm_eq_abs, abs_le]
   dsimp only [f]
   constructor <;> linarith [hm x, hupper x]
+
+variable {X : Type u} [MeasurableSpace X] {μ ν : Measure X} [PseudoMetricSpace X] {R : ℝ}
+
+/-- Bounded-Lipschitz weak duality for the truncated distance cost. The bound `R` on each
+potential produces the cap `2 * R` on the cost. -/
+theorem ofReal_integral_sub_integral_le_transportCost_truncated_dist
+    [OpensMeasurableSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    {f : X → ℝ} (hf : LipschitzWith 1 f) (hfb : ∀ x, ‖f x‖ ≤ R) :
+    ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) ≤
+      transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ ν := by
+  have hi (ρ : Measure X) [IsFiniteMeasure ρ] : Integrable f ρ :=
+    .of_bound hf.continuous.aestronglyMeasurable R (ae_of_all _ hfb)
+  have hfeas : DualFeasible
+      (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) f (fun y ↦ -f y) := by
+    refine dualFeasible_iff_ofReal_add_le.2 fun x y ↦ ENNReal.ofReal_le_ofReal ?_
+    have hdist := hf.le_add_mul x y
+    have hx := (abs_le.1 (hfb x)).2
+    have hy := (abs_le.1 (hfb y)).1
+    simp only [NNReal.coe_one, one_mul] at hdist
+    exact le_min (by linarith) (by linarith)
+  simpa only [kantorovichDualValue_def, integral_neg, sub_eq_add_neg] using
+    hfeas.ofReal_kantorovichDualValue_le_transportCost (hi μ) (hi ν).neg
 
 section Polish
 
@@ -453,9 +464,8 @@ end Polish
 
 section PolishFinite
 
-variable [PolishSpace X] [BorelSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+variable [PolishSpace X] [BorelSpace X] [IsFiniteMeasure μ]
 
-omit [IsFiniteMeasure ν] in
 /-- Transport with truncated distance admits a maximizing `1`-Lipschitz test function bounded
 by half the cap, for finite measures of equal mass. No first-moment assumption is needed, and
 zero mass and the zero-cap case are included. Finiteness of `ν` follows from that of `μ` and the
@@ -505,7 +515,6 @@ theorem exists_lipschitzWith_norm_le_integral_sub_integral_eq_transportCost_trun
         (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R))) μ' ν' := by rw [heq]
     _ = _ := by rw [← transportCost_smul hμtop, hscale μ, hscale ν]
 
-omit [IsFiniteMeasure ν] in
 /-- **Bounded-Lipschitz Kantorovich–Rubinstein duality with attainment.** The cost capped at
 `2 * R` is the greatest difference of integrals of a `1`-Lipschitz function bounded by `R`,
 for finite measures of equal mass. Both constraints are separate; this is the maximum-norm
@@ -521,7 +530,6 @@ theorem isGreatest_ofReal_integral_sub_integral_boundedLipschitz (hR : 0 ≤ R)
   rintro r ⟨f, hf, hfb, rfl⟩
   exact ofReal_integral_sub_integral_le_transportCost_truncated_dist hf hfb
 
-omit [IsFiniteMeasure ν] in
 /-- **Bounded-Lipschitz duality in supremum form.** A uniform bound `R` on the test functions
 corresponds to truncation of the ground distance at `2 * R`, for finite measures of equal mass. -/
 theorem transportCost_truncated_dist_eq_iSup (hmass : μ univ = ν univ) :
@@ -547,7 +555,6 @@ theorem transportCost_truncated_dist_eq_iSup (hmass : μ univ = ν univ) :
   rw [← heq]
   exact le_iSup_of_le f (le_iSup_of_le hf (le_iSup_of_le hfb le_rfl))
 
-omit [IsFiniteMeasure ν] in
 /-- The absolute-difference form of bounded-Lipschitz duality for finite measures of equal mass.
 The test class is closed under negation, so its signed and absolute suprema coincide. -/
 theorem transportCost_truncated_dist_eq_iSup_abs (hmass : μ univ = ν univ) :
