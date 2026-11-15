@@ -9,12 +9,14 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Data.Pi.Interval
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
+import Mathlib.Algebra.Order.Pi
+import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.GroupTheory.Perm.DomMulAct
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 
 /-!
 # Multi-index Taylor coefficients at a point
@@ -215,7 +217,7 @@ namespace ContinuousLinearMap
 
 /-- Postcomposing an analytic function with a continuous linear map applies that linear map to each
 Taylor coefficient. -/
-theorem mvTaylorCoeff_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+theorem mvTaylorCoeff_comp_left {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
     (L : F →L[𝕜] G) {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (α : ι → ℕ) :
     TauCeti.mvTaylorCoeff (L ∘ f) x α = L (TauCeti.mvTaylorCoeff f x α) := by
   obtain ⟨p, r, hp⟩ := hf
@@ -324,87 +326,6 @@ theorem mvTaylorCoeff_prod_pow_zero (τ α : ι → ℕ) :
 
 end TauCeti
 
-/-- Pairs `(β, γ)` of multi-indices summing to `μ` correspond to `β ∈ Finset.Iic μ` via
-`β ↦ (β, μ - β)`. -/
-private def addFiberEquivIic [DecidableEq ι] (μ : ι → ℕ) :
-    {p : (ι → ℕ) × (ι → ℕ) // p.1 + p.2 = μ} ≃ {β : ι → ℕ // β ∈ Finset.Iic μ} where
-  toFun p := ⟨p.1.1, mem_Iic.2 fun i ↦ Nat.le.intro (congrFun p.2 i)⟩
-  invFun β := ⟨(β.1, μ - β.1), funext fun i ↦ Nat.add_sub_of_le (mem_Iic.1 β.2 i)⟩
-  left_inv := fun ⟨⟨_, _⟩, h⟩ ↦
-    Subtype.ext <| Prod.ext rfl <| funext fun i ↦ (Nat.eq_sub_of_add_eq' (congrFun h i)).symm
-  right_inv := fun ⟨_, _⟩ ↦ rfl
-
-/-- Reindexing the Cauchy-product cone `(μ, β ≤ μ)` by the summands `(β, μ - β)`. -/
-private def sigmaIicEquivProd [DecidableEq ι] :
-    (Σ μ : ι → ℕ, {β : ι → ℕ // β ∈ Finset.Iic μ}) ≃ ((ι → ℕ) × (ι → ℕ)) :=
-  (Equiv.sigmaCongrRight fun μ ↦ (addFiberEquivIic μ).symm).trans
-    (Equiv.sigmaFiberEquiv fun p : (ι → ℕ) × (ι → ℕ) ↦ p.1 + p.2)
-
-/-- Normal convergence of two multi-index families on the closed polydisc of radius `ρ ≥ 0`
-implies normal convergence of their Cauchy convolution over `Finset.Iic μ`. -/
-private theorem summable_norm_sum_Iic_smul_mul_pow {A : Type*} [SeminormedRing A]
-    [Module A F] [IsBoundedSMul A F] [DecidableEq ι] (a : (ι → ℕ) → A) (b : (ι → ℕ) → F)
-    {ρ : ℝ} (hρ : 0 ≤ ρ)
-    (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
-    (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) :
-    Summable fun μ : ι → ℕ ↦ ‖∑ β ∈ Finset.Iic μ, a β • b (μ - β)‖ * ρ ^ (∑ i, μ i) := by
-  have hmajor : Summable fun μ : ι → ℕ ↦
-      ∑ β ∈ Finset.Iic μ, (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (μ - β)‖ * ρ ^ (∑ i, (μ - β) i)) := by
-    have hsigma := (sigmaIicEquivProd (ι := ι)).summable_iff.mpr
-      (ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity))
-    convert hsigma.sigma' (fun _ ↦ (hasSum_fintype _).summable) with μ
-    rw [tsum_fintype, ← sum_coe_sort (Finset.Iic μ)]
-    rfl
-  refine hmajor.of_nonneg_of_le (fun _ ↦ by positivity) fun μ ↦ ?_
-  calc ‖∑ β ∈ Finset.Iic μ, a β • b (μ - β)‖ * ρ ^ (∑ i, μ i)
-      ≤ (∑ β ∈ Finset.Iic μ, ‖a β‖ * ‖b (μ - β)‖) * ρ ^ (∑ i, μ i) := by
-        gcongr
-        exact (norm_sum_le _ _).trans (sum_le_sum fun β _ ↦ norm_smul_le _ _)
-    _ = ∑ β ∈ Finset.Iic μ,
-          (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (μ - β)‖ * ρ ^ (∑ i, (μ - β) i)) := by
-        rw [sum_mul]
-        refine sum_congr rfl fun β hβ ↦ ?_
-        have hadd : ∑ i, β i + ∑ i, (μ - β) i = ∑ i, μ i := by
-          rw [← sum_add_distrib]
-          exact sum_congr rfl fun i _ ↦ Nat.add_sub_of_le (mem_Iic.1 hβ i)
-        rw [← hadd, pow_add]
-        ring
-
-/-- Product of two unconditionally and absolutely convergent series for a bounded module action,
-without requiring completeness of the codomain. -/
-private theorem hasSum_smul_of_summable_norm {κ₁ κ₂ A : Type*} [SeminormedRing A]
-    [Module A F] [IsBoundedSMul A F] {u : κ₁ → A} {v : κ₂ → F} {s : A} {t : F}
-    (hu : HasSum u s) (hv : HasSum v t)
-    (hu_norm : Summable fun i ↦ ‖u i‖) (hv_norm : Summable fun j ↦ ‖v j‖) :
-    HasSum (fun p : κ₁ × κ₂ ↦ u p.1 • v p.2) (s • t) := by
-  classical
-  have huv_norm : Summable fun p : κ₁ × κ₂ ↦ ‖u p.1 • v p.2‖ :=
-    (hu_norm.mul_of_nonneg hv_norm (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)).of_nonneg_of_le
-      (fun _ ↦ norm_nonneg _) fun _ ↦ norm_smul_le _ _
-  refine hasSum_of_subseq_of_summable huv_norm tendsto_finsetProd_atTop ?_
-  rw [← prod_atTop_atTop_eq]
-  have hu_lim : Tendsto (fun S ↦ ∑ i ∈ S, u i) atTop (𝓝 s) := by
-    simpa only [HasSum, SummationFilter.unconditional_filter] using hu
-  have hv_lim : Tendsto (fun T ↦ ∑ j ∈ T, v j) atTop (𝓝 t) := by
-    simpa only [HasSum, SummationFilter.unconditional_filter] using hv
-  simpa only [Function.comp_def, sum_product, ← smul_sum, ← sum_smul] using
-    (hu_lim.comp tendsto_fst).smul (hv_lim.comp tendsto_snd)
-
-/-- Cauchy-product `HasSum` over `Finset.Iic μ` for two norm-summable multi-index series under a
-bounded module action, without requiring completeness of `F`. -/
-private theorem hasSum_sum_Iic_smul {A : Type*} [SeminormedRing A]
-    [Module A F] [IsBoundedSMul A F] [DecidableEq ι] {u : (ι → ℕ) → A} {v : (ι → ℕ) → F}
-    {s : A} {t : F} (hu : HasSum u s) (hv : HasSum v t)
-    (hu_norm : Summable fun β ↦ ‖u β‖) (hv_norm : Summable fun γ ↦ ‖v γ‖) :
-    HasSum (fun μ : ι → ℕ ↦ ∑ β ∈ Finset.Iic μ, u β • v (μ - β)) (s • t) := by
-  have huv := hasSum_smul_of_summable_norm hu hv hu_norm hv_norm
-  refine (((Equiv.sigmaFiberEquiv fun p : (ι → ℕ) × (ι → ℕ) ↦ p.1 + p.2).hasSum_iff).mpr
-    huv).sigma fun μ ↦ ?_
-  rw [← (addFiberEquivIic μ).symm.hasSum_iff]
-  convert hasSum_fintype (_ ∘ (addFiberEquivIic μ).symm) using 1
-  rw [← sum_coe_sort (Finset.Iic μ)]
-  rfl
-
 namespace AnalyticAt
 
 /-- **Product rule for Taylor coefficients**: for an algebra-valued function `f` and a
@@ -430,8 +351,8 @@ theorem mvTaylorCoeff_smul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
   let c : (ι → ℕ) → F :=
     fun μ ↦ ∑ β ∈ Finset.Iic μ, TauCeti.mvTaylorCoeff f x β • TauCeti.mvTaylorCoeff g x (μ - β)
   have hc_sum : Summable fun μ : ι → ℕ ↦ ‖c μ‖ * (ρ : ℝ) ^ (∑ i, μ i) :=
-    summable_norm_sum_Iic_smul_mul_pow (TauCeti.mvTaylorCoeff f x) (TauCeti.mvTaylorCoeff g x)
-      ρ.coe_nonneg hsum₁' hsum₂'
+    TauCeti.summable_norm_sum_smul_Iic_mul hsum₁' hsum₂' (fun _ ↦ by positivity)
+      (fun β γ ↦ by simp_rw [Pi.add_apply, sum_add_distrib, pow_add]; exact le_rfl)
   refine TauCeti.mvTaylorCoeff_eq_of_hasSum (c := c) hρ hc_sum (fun y hy ↦ ?_) α
   have hy₁ : ‖y‖ < (ρ₁ : ℝ) := hy.trans_le (min_le_left ρ₁ ρ₂)
   have hy₂ : ‖y‖ < (ρ₂ : ℝ) := hy.trans_le (min_le_right ρ₁ ρ₂)
@@ -449,9 +370,9 @@ theorem mvTaylorCoeff_smul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
     rw [← algebraMap_smul A (∏ i, y i ^ (μ - β) i), Algebra.smul_def, smul_smul, mul_assoc,
       ← Algebra.commutes, ← mul_assoc, ← map_mul, hpow, ← Algebra.smul_def, smul_assoc]
   rw [hterm]
-  exact hasSum_sum_Iic_smul
-    (u := fun β ↦ (∏ i, y i ^ β i) • TauCeti.mvTaylorCoeff f x β)
-    (v := fun γ ↦ (∏ i, y i ^ γ i) • TauCeti.mvTaylorCoeff g x γ)
+  exact HasSum.sum_smul_Iic_of_summable_norm
+    (f := fun β ↦ (∏ i, y i ^ β i) • TauCeti.mvTaylorCoeff f x β)
+    (g := fun γ ↦ (∏ i, y i ^ γ i) • TauCeti.mvTaylorCoeff g x γ)
     (hf_sum y hy₁) (hg_sum y hy₂)
     (TauCeti.summable_norm_prod_pow_smul hy.le hsum₁')
     (TauCeti.summable_norm_prod_pow_smul hy.le hsum₂')

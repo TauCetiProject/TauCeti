@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
+import Mathlib.Algebra.Module.BigOperators
+import Mathlib.Algebra.Order.Sub.Unbundled.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
@@ -16,11 +18,12 @@ public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
+public import TauCeti.Order.Interval.Finset.Basic
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 import TauCeti.Data.Int.MulPred
 
 /-!
-# Bounded bilinear maps and infinite sums in ultrametric normed modules
+# Bounded bilinear maps and infinite sums in normed and ultrametric modules
 
 A map bounded by a product of norms takes two cofinite-null families to a cofinite-null family
 on the product index. In a complete ultrametric target this gives summability; when the map is
@@ -32,6 +35,13 @@ complete or ultrametric. The double-sum argument follows `HasSum.mul_eq` in
 Over an additive group index, such as the exponents of bilateral Laurent series, the fibres of
 addition are infinite; in a complete target they can still be summed, which gives the Cauchy
 product `∑' m, B (f m) (g (n - m))`.
+
+In any seminormed module with a bounded scalar action (archimedean or nonarchimedean, and without
+completeness), two unconditionally and norm-summable families have product sum `a • b`
+(`HasSum.smul_of_summable_norm`). Over a canonically ordered index type with ordered subtraction and
+finite initial intervals `Finset.Iic`, grouping by addition fibers gives weighted norm summability
+(`TauCeti.summable_norm_sum_smul_Iic_mul`) and the `Finset.Iic` Cauchy-product `HasSum` identity
+(`HasSum.sum_smul_Iic_of_summable_norm`).
 
 Under a bounded scalar action, the pointwise scalar multiples `f i • g j` of two cofinite-null
 families form a cofinite-null family on the product index. Consequently, over a complete ultrametric
@@ -236,6 +246,94 @@ theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [Se
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
   tendsto_bilinear_cofinite_nhds_zero (· • ·) (C := 1)
     norm_smul_le_one_mul hf hg
+
+section SummableNorm
+
+/-- Product of two unconditionally and norm-summable series under a bounded module action, without
+assuming completeness of the module. -/
+theorem _root_.HasSum.smul_of_summable_norm [SeminormedRing R] [SeminormedAddCommGroup M]
+    [Module R M] [IsBoundedSMul R M] {α β : Type*} {f : α → R} {g : β → M} {a : R} {b : M}
+    (hf : HasSum f a) (hg : HasSum g b)
+    (hf_norm : Summable fun i ↦ ‖f i‖) (hg_norm : Summable fun j ↦ ‖g j‖) :
+    HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
+  classical
+  have hfg_norm : Summable fun ij : α × β ↦ ‖f ij.1 • g ij.2‖ :=
+    (hf_norm.mul_of_nonneg hg_norm (fun _ ↦ norm_nonneg _)
+      (fun _ ↦ norm_nonneg _)).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun _ ↦ norm_smul_le _ _
+  refine hasSum_of_subseq_of_summable hfg_norm tendsto_finsetProd_atTop ?_
+  rw [← prod_atTop_atTop_eq]
+  have hf_lim : Tendsto (fun S ↦ ∑ i ∈ S, f i) atTop (𝓝 a) := by
+    simpa only [HasSum, SummationFilter.unconditional_filter] using hf
+  have hg_lim : Tendsto (fun T ↦ ∑ j ∈ T, g j) atTop (𝓝 b) := by
+    simpa only [HasSum, SummationFilter.unconditional_filter] using hg
+  simpa only [Function.comp_def, Finset.sum_product, Finset.sum_smul_sum] using
+    (hf_lim.comp tendsto_fst).smul (hg_lim.comp tendsto_snd)
+
+section Iic
+
+variable {Γ : Type*} [AddCommSemigroup Γ] [PartialOrder Γ] [CanonicallyOrderedAdd Γ]
+  [Sub Γ] [OrderedSub Γ] [AddLeftReflectLE Γ] [LocallyFiniteOrderBot Γ]
+
+/-- Under a bounded scalar action and a nonnegative submultiplicative weight `w`, weighted norm
+summability of two families implies weighted norm summability of their Cauchy convolution over
+`Finset.Iic`. -/
+theorem summable_norm_sum_smul_Iic_mul [SeminormedAddGroup R] [SeminormedAddCommGroup M]
+    [SMulZeroClass R M] [IsBoundedSMul R M] {f : Γ → R} {g : Γ → M} {w : Γ → ℝ}
+    (hf : Summable fun k ↦ ‖f k‖ * w k) (hg : Summable fun l ↦ ‖g l‖ * w l)
+    (hw₀ : ∀ n, 0 ≤ w n) (hw : ∀ k l, w (k + l) ≤ w k * w l) :
+    Summable fun n ↦ ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ * w n := by
+  have hmajor : Summable fun n : Γ ↦
+      ∑ k ∈ Finset.Iic n, (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by
+    have hsigma := (sigmaIicEquivProd (α := Γ)).summable_iff.mpr
+      (hf.mul_of_nonneg hg (fun k ↦ mul_nonneg (norm_nonneg _) (hw₀ k))
+        (fun l ↦ mul_nonneg (norm_nonneg _) (hw₀ l)))
+    convert hsigma.sigma' (fun _ ↦ (hasSum_fintype _).summable) with n
+    simp [tsum_fintype, ← Finset.sum_coe_sort (Finset.Iic n)]
+  refine hmajor.of_nonneg_of_le (fun n ↦ mul_nonneg (norm_nonneg _) (hw₀ n)) fun n ↦ ?_
+  have hsum_le : ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ ≤
+      ∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖ :=
+    (norm_sum_le (Finset.Iic n) fun k ↦ f k • g (n - k)).trans
+      (Finset.sum_le_sum fun k _ ↦ norm_smul_le (f k) (g (n - k)))
+  calc ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ * w n
+      ≤ (∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖) * w n :=
+        mul_le_mul_of_nonneg_right hsum_le (hw₀ n)
+    _ = ∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖ * w n := Finset.sum_mul _ _ _
+    _ ≤ ∑ k ∈ Finset.Iic n, (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by
+        refine Finset.sum_le_sum fun k hk ↦ ?_
+        have hwk : w n ≤ w k * w (n - k) :=
+          (congrArg w (add_tsub_cancel_of_le (Finset.mem_Iic.1 hk)).symm).trans_le (hw k (n - k))
+        calc ‖f k‖ * ‖g (n - k)‖ * w n
+            ≤ ‖f k‖ * ‖g (n - k)‖ * (w k * w (n - k)) :=
+              mul_le_mul_of_nonneg_left hwk (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+          _ = (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by ring
+
+/-- Under a bounded scalar action, the `Finset.Iic` Cauchy convolution of two norm-summable
+families is norm-summable. -/
+theorem summable_norm_sum_smul_Iic_of_summable_norm [SeminormedAddGroup R]
+    [SeminormedAddCommGroup M] [SMulZeroClass R M] [IsBoundedSMul R M]
+    {f : Γ → R} {g : Γ → M} (hf : Summable fun k ↦ ‖f k‖) (hg : Summable fun l ↦ ‖g l‖) :
+    Summable fun n ↦ ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ := by
+  simpa only [mul_one] using summable_norm_sum_smul_Iic_mul (w := fun _ ↦ 1)
+    (by simpa only [mul_one] using hf) (by simpa only [mul_one] using hg)
+    (fun _ ↦ zero_le_one) (fun _ _ ↦ by simp)
+
+/-- Cauchy-product `HasSum` over `Finset.Iic` for two unconditionally and norm-summable families
+under a bounded module action, without assuming completeness of the module. -/
+theorem _root_.HasSum.sum_smul_Iic_of_summable_norm [SeminormedRing R] [SeminormedAddCommGroup M]
+    [Module R M] [IsBoundedSMul R M] {f : Γ → R} {g : Γ → M} {a : R} {b : M}
+    (hf : HasSum f a) (hg : HasSum g b)
+    (hf_norm : Summable fun k ↦ ‖f k‖) (hg_norm : Summable fun l ↦ ‖g l‖) :
+    HasSum (fun n ↦ ∑ k ∈ Finset.Iic n, f k • g (n - k)) (a • b) := by
+  have hfg := hf.smul_of_summable_norm hg hf_norm hg_norm
+  refine (((Equiv.sigmaFiberEquiv fun p : Γ × Γ ↦ p.1 + p.2).hasSum_iff).mpr hfg).sigma fun n ↦ ?_
+  rw [← (addFiberEquivIic n).symm.hasSum_iff]
+  simpa [Function.comp_def, ← Finset.sum_coe_sort (Finset.Iic n)] using
+    hasSum_fintype ((fun p : {p : Γ × Γ // p.1 + p.2 = n} ↦ f p.1.1 • g p.1.2) ∘
+      (addFiberEquivIic n).symm)
+
+end Iic
+
+end SummableNorm
 
 variable [SeminormedAddCommGroup M] [IsUltrametricDist M]
 
