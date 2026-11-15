@@ -410,9 +410,9 @@ theorem IsSobolevCRCoefficients.forall_integral_inner_eq_iff_isWeakCRSolution_cr
 
 /-- **The annihilator of the range.** Under the hypotheses of
 `TauCeti.IsSobolevCRCoefficients.forall_integral_inner_eq_iff_isWeakCRSolution_crReflectedAdjoint`,
-a locally `L^q` field `η` is `L²`-orthogonal to `∂_s φ + J ∂_t φ + S φ` for every test function
-`φ` on `Ω` exactly when `η ∘ ρ` is a weak solution of the homogeneous equation
-`∂_s ξ + J' ∂_t ξ + S' ξ = 0` on `Ω' = ρ⁻¹ Ω`. -/
+a locally `L^q` field `η` annihilates `∂_s φ + J ∂_t φ + S φ` under the integral pairing
+`∫ ⟪·, η⟫` for every test function `φ` on `Ω` exactly when `η ∘ ρ` is a weak solution of the
+homogeneous equation `∂_s ξ + J' ∂_t ξ + S' ξ = 0` on `Ω' = ρ⁻¹ Ω`. -/
 theorem IsSobolevCRCoefficients.forall_integral_inner_eq_zero_iff
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hΩ : ∀ z, z ∈ Ω' ↔ -conj z ∈ Ω) {η : ℂ → V} (hη : MemLpLoc q Ω η) :
