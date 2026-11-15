@@ -478,23 +478,16 @@ theorem map_chevalleyToralRootSubgroupPoints
       (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ B
         (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
           Matrix.GeneralLinearGroup (Fin n) B) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  rw [Matrix.GeneralLinearGroup.map_apply]
-  simp only [coe_chevalleyToralRootSubgroupPoints, Units.coe_map]
-  -- The units-to-matrix coercion leaves `AlgEquiv.toMulEquiv` applications; there is no
-  -- conversion lemma to the linear-map form needed by `chevalleyRootSubgroup_val`.
-  change φ ((LinearMap.toMatrixAlgEquiv (b.baseChange A))
-      (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A) u).val i j) =
-    (LinearMap.toMatrixAlgEquiv (b.baseChange B))
-      (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ B)
-        (Multiplicative.ofAdd (φ (Multiplicative.toAdd u)))).val i j
-  rw [chevalleyRootSubgroup_val, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  have hmatrix := Module.Basis.map_toMatrixAlgEquiv_baseChange b φ.toIntAlgHom _ _
-    (map_baseChangeExp_algHom φ.toIntAlgHom
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) (Multiplicative.toAdd u))
-  exact congrFun (congrFun hmatrix i) j
+  rw [coe_chevalleyToralRootSubgroupPoints, coe_chevalleyToralRootSubgroupPoints,
+    ← kostantRootSubgroupParam_chevalleySystem, ← kostantRootSubgroupParam_chevalleySystem,
+    basisMatrix_kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil) b A γ u,
+    basisMatrix_kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil) b B γ _,
+    map_kostantRootSubgroupMatrix, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply,
+    RingHom.toIntAlgHom_apply]
 
 /-- Entrywise Frobenius raises every root parameter to its `p ^ k`-th power on any
 Kostant-stable lattice with nilpotent simple root generators. -/

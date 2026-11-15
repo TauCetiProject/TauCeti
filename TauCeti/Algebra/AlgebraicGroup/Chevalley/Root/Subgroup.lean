@@ -140,18 +140,9 @@ theorem map_rootSubgroupPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing
       D.rootSubgroupPoints γ B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) := by
   apply Subtype.ext
   rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-  have hmatrix := Module.Basis.map_toMatrixAlgEquiv_baseChange D.basis φ.toIntAlgHom
-    (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u).val
-    (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ B)
-      (Multiplicative.ofAdd (φ (Multiplicative.toAdd u)))).val
-    (fun z => by
-      rw [chevalleyRootSubgroup_val, chevalleyRootSubgroup_val, toAdd_ofAdd]
-      exact map_baseChangeExp_algHom φ.toIntAlgHom _ _ _ _ z)
-  refine Matrix.GeneralLinearGroup.ext fun r c => ?_
-  rw [Matrix.GeneralLinearGroup.map_apply, coe_rootSubgroupPoints, coe_rootSubgroupPoints]
-  simpa [LinearMap.toMatrixAlgEquiv_apply] using congrFun (congrFun hmatrix r) c
+  exact map_chevalleyToralRootSubgroupPoints D.representation D.lattice
+    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+    D.basis D.coordinateWeight φ γ u
 
 /-! ## Weyl elements -/
 
@@ -200,8 +191,9 @@ theorem map_weylElement {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
           (D.rootSubgroupPoints γ' A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
         (D.rootSubgroupPoints γ' B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
           Matrix.GeneralLinearGroup (Fin D.dim) B) :=
-    (GeneralLinear.IntegralPointsPresentation.coe_map _ _ φ _).symm.trans
-      (congrArg Subtype.val (D.map_rootSubgroupPoints φ γ' u))
+    map_chevalleyToralRootSubgroupPoints D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+      D.basis D.coordinateWeight φ γ' u
   simp only [weylElement_def, Subgroup.coe_mul, map_mul, h, Units.coe_map, MonoidHom.coe_ofClass,
     map_neg, ← map_inv, toAdd_ofAdd]
 
