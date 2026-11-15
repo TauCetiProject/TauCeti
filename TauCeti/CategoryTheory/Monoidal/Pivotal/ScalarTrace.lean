@@ -91,8 +91,10 @@ theorem leftTrace_inv_comp_rightTrace_hom_of_surjective
   have h : (s * r) • 𝟙 X = 𝟙 X := by
     have h := a.inv_hom_id
     rwa [← hr, ← hs, Linear.smul_comp, Linear.comp_smul, Category.id_comp, smul_smul] at h
-  rw [← hr, ← hs, leftTrace_smul, rightTrace_smul, leftTrace_id, rightTrace_id, Linear.smul_comp,
-    Linear.comp_smul, smul_smul, ← Linear.smul_comp, ← leftTrace_id, ← leftTrace_smul, h]
+  -- Taking left traces, `s * r` also acts as the identity on `leftDim X ≫ rightDim X`.
+  have hd : (r * s) • (leftDim X ≫ rightDim X) = leftDim X ≫ rightDim X := by
+    rw [mul_comm, ← Linear.smul_comp, ← leftTrace_id, ← leftTrace_smul, h]
+  simp [← hr, ← hs, leftTrace_smul, rightTrace_smul, smul_smul, hd]
 
 end Scalar
 
