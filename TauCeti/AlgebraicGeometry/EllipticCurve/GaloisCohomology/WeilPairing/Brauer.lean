@@ -57,6 +57,23 @@ theorem torsionWeilBrauerPairing_apply
       h2MuToBr m K (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
 
+/-- Passage to the Brauer group preserves and reflects vanishing of the Weil cup product. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem torsionWeilBrauerPairing_eq_zero_iff
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    W.torsionWeilBrauerPairing m hm a b = 0 ↔ W.torsionH1WeilPairing m hm a b = 0 := by
+  rw [torsionWeilBrauerPairing_apply, map_eq_zero_iff _ (h2MuToBr_injective _ _ hm),
+    AddEquiv.map_eq_zero_iff]
+
+/-- Multiplication by `m` kills every value of the Brauer-valued Weil pairing on `m`-torsion. -/
+-- Apply before the simplifier expands the Brauer-valued pairing.
+@[simp↓]
+theorem nsmul_torsionWeilBrauerPairing
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    m • W.torsionWeilBrauerPairing m hm a b = 0 := by
+  rw [torsionWeilBrauerPairing_apply, nsmul_h2MuToBr]
+
 end WeierstrassCurve
 
 namespace TauCeti.Isogeny
