@@ -37,9 +37,29 @@ on the target group of the homomorphism.
 * `OpenSubgroup.instLocallyCompactSpace`, `OpenSubgroup.instWeaklyLocallyCompactSpace`,
   `OpenSubgroup.instCompactSpace`: local compactness and compactness inherited from the ambient
   group, with additive versions on `OpenAddSubgroup`.
+* `Subgroup.isCompact_of_isOpen_of_subset`, `OpenSubgroup.isCompact_of_subset`,
+  `OpenSubgroup.isCompact_of_le`, `OpenSubgroup.isCompact_inf_left`,
+  `OpenSubgroup.isCompact_inf_right`, `OpenSubgroup.compactSpace_of_isCompact`, and
+  `OpenSubgroup.directedOn_isCompact_le`: compactness of open subgroups contained in compact sets,
+  preservation under intersection, and downward-directedness below a fixed open subgroup.
+* `OpenSubgroup.instUniqueOfSubsingleton`, `OpenSubgroup.isCompact_top_of_subsingleton`, and
+  `OpenSubgroup.nhds_one_hasBasis_eq_top`: a subsingleton topological group has `{⊤}` as its
+  singleton compact open subgroup basis.
 -/
 
 public section
+
+open Filter
+open scoped Topology
+
+/-- An open subgroup contained in a compact subset of a group with separately continuous
+multiplication is compact. -/
+@[to_additive /-- An open additive subgroup contained in a compact subset of an additive group with
+separately continuous addition is compact. -/]
+theorem Subgroup.isCompact_of_isOpen_of_subset {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {H : Subgroup G} {K : Set G} (hHo : IsOpen (H : Set G))
+    (hK : IsCompact K) (hHK : (H : Set G) ⊆ K) : IsCompact (H : Set G) :=
+  hK.of_isClosed_subset (H.isClosed_of_isOpen hHo) hHK
 
 namespace OpenSubgroup
 
@@ -93,6 +113,78 @@ addition is compact, since it is closed. -/]
 instance instCompactSpace [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+/-- An open subgroup contained in a compact set (in particular, in a compact neighbourhood of `1`)
+is compact. -/
+@[to_additive /-- An open additive subgroup contained in a compact set (in particular, in a compact
+neighbourhood of `0`) is compact. -/]
+theorem isCompact_of_subset [SeparatelyContinuousMul G] (U : OpenSubgroup G) {K : Set G}
+    (hK : IsCompact K) (hUK : (U : Set G) ⊆ K) : IsCompact (U : Set G) :=
+  U.toSubgroup.isCompact_of_isOpen_of_subset U.isOpen hK hUK
+
+/-- An open subgroup contained in a compact open subgroup is compact. -/
+@[to_additive /-- An open additive subgroup contained in a compact open additive subgroup is
+compact. -/]
+theorem isCompact_of_le [SeparatelyContinuousMul G] {U V : OpenSubgroup G} (hUV : U ≤ V)
+    (hV : IsCompact (V : Set G)) : IsCompact (U : Set G) :=
+  U.isCompact_of_subset hV hUV
+
+/-- The intersection of two open subgroups is compact when the left factor is compact. -/
+@[to_additive /-- The intersection of two open additive subgroups is compact when the left factor
+is compact. -/]
+theorem isCompact_inf_left [SeparatelyContinuousMul G] {U V : OpenSubgroup G}
+    (hU : IsCompact (U : Set G)) : IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
+  isCompact_of_le inf_le_left hU
+
+/-- The intersection of two open subgroups is compact when the right factor is compact. -/
+@[to_additive /-- The intersection of two open additive subgroups is compact when the right factor
+is compact. -/]
+theorem isCompact_inf_right [SeparatelyContinuousMul G] {U V : OpenSubgroup G}
+    (hV : IsCompact (V : Set G)) : IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
+  isCompact_of_le inf_le_right hV
+
+/-- A compact open subgroup is a `CompactSpace` in the subspace topology. -/
+@[to_additive /-- A compact open additive subgroup is a `CompactSpace` in the subspace
+topology. -/]
+theorem compactSpace_of_isCompact (U : OpenSubgroup G) (hU : IsCompact (U : Set G)) :
+    CompactSpace U :=
+  isCompact_iff_compactSpace.mp hU
+
+/-- The compact open subgroups contained in a fixed open subgroup `U₀` form a downward-directed
+family (that is, a directed family under reverse inclusion `≥`). -/
+@[to_additive /-- The compact open additive subgroups contained in a fixed open additive subgroup
+`U₀` form a downward-directed family (that is, a directed family under reverse inclusion `≥`). -/]
+theorem directedOn_isCompact_le [SeparatelyContinuousMul G] (U₀ : OpenSubgroup G) :
+    DirectedOn (· ≥ ·) {K : OpenSubgroup G | IsCompact (K : Set G) ∧ K ≤ U₀} :=
+  fun _ hK₁ _ _ ↦
+    ⟨_, ⟨isCompact_inf_left hK₁.1, inf_le_of_left_le hK₁.2⟩, inf_le_left, inf_le_right⟩
+
+/-- In a subsingleton topological group, `⊤` is the unique open subgroup. -/
+@[to_additive /-- In a subsingleton topological additive group, `⊤` is the unique open additive
+subgroup. -/]
+instance instUniqueOfSubsingleton [Subsingleton G] : Unique (OpenSubgroup G) where
+  default := ⊤
+  uniq U := SetLike.ext fun x ↦ by
+    simp [Subsingleton.elim x 1]
+
+/-- The unique open subgroup `⊤` of a subsingleton topological group is compact. -/
+@[to_additive /-- The unique open additive subgroup `⊤` of a subsingleton topological additive
+group is compact. -/]
+theorem isCompact_top_of_subsingleton [Subsingleton G] :
+    IsCompact ((⊤ : OpenSubgroup G) : Set G) :=
+  Set.Subsingleton.isCompact Set.subsingleton_of_subsingleton
+
+variable (G) in
+/-- A subsingleton topological group has the singleton `{⊤}` as an open-subgroup basis of `𝓝 1`
+(compact by `OpenSubgroup.isCompact_top_of_subsingleton`). -/
+@[to_additive /-- A subsingleton topological additive group has the singleton `{⊤}` as an
+open-additive-subgroup basis of `𝓝 0` (compact by
+`OpenAddSubgroup.isCompact_top_of_subsingleton`). -/]
+theorem nhds_one_hasBasis_eq_top [Subsingleton G] :
+    (𝓝 (1 : G)).HasBasis (fun K : OpenSubgroup G ↦ K = ⊤) fun K ↦ (K : Set G) :=
+  ⟨fun U ↦ ⟨fun hU ↦
+      ⟨⊤, rfl, fun x _ ↦ by simpa [Subsingleton.elim x 1] using mem_of_mem_nhds hU⟩,
+    fun ⟨K, _, hKU⟩ ↦ mem_of_superset K.mem_nhds_one hKU⟩⟩
 
 variable {H X : Type*} [Group H] [TopologicalSpace H] [TopologicalSpace X]
 
