@@ -159,30 +159,24 @@ variable {R S A α β : Type*} [UniformSpace α] [AddCommGroup α] [IsUniformAdd
 uniformly continuous scalar action. -/
 theorem completion_smul [SMul A α] [UniformContinuousConstSMul A α]
     [SMul A β] [UniformContinuousConstSMul A β]
-    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x)
-    (a : A) (z : Completion α) :
-    f.completion (a • z) = a • f.completion z := by
-  induction z using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq (f.completion.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp f.completion.continuous)
-  | ih x =>
-    rw [← Completion.coe_smul, completion_apply_coe, hf, Completion.coe_smul,
+    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x) (a : A) (z : Completion α) :
+    f.completion (a • z) = a • f.completion z :=
+  Completion.induction_on z
+    (isClosed_eq (f.completion.continuous.comp (continuous_const_smul a))
+      ((continuous_const_smul a).comp f.completion.continuous))
+    fun x ↦ by rw [← Completion.coe_smul, completion_apply_coe, hf, Completion.coe_smul,
       completion_apply_coe]
 
 /-- Extending a continuous semilinear map into a complete Hausdorff group from the completion of its
 domain preserves equivariance for an auxiliary scalar action. -/
 theorem fromCompletion_smul [T0Space β] [CompleteSpace β]
     [SMul A α] [UniformContinuousConstSMul A α] [SMul A β] [ContinuousConstSMul A β]
-    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x)
-    (a : A) (z : Completion α) :
-    f.fromCompletion (a • z) = a • f.fromCompletion z := by
-  induction z using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp f.fromCompletion.continuous)
-  | ih x =>
-    rw [← Completion.coe_smul, fromCompletion_apply_coe, hf, fromCompletion_apply_coe]
+    (f : α →SL[σ] β) (hf : ∀ (a : A) (x : α), f (a • x) = a • f x) (a : A) (z : Completion α) :
+    f.fromCompletion (a • z) = a • f.fromCompletion z :=
+  Completion.induction_on z
+    (isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
+      ((continuous_const_smul a).comp f.fromCompletion.continuous))
+    fun x ↦ by rw [← Completion.coe_smul, fromCompletion_apply_coe, hf, fromCompletion_apply_coe]
 
 end SMulEquivariance
 
@@ -196,15 +190,10 @@ theorem surjective_fromCompletion_of_denseRange {R R₂ E F : Type*}
     [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
     [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
     [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F] {σ₁₂ : R →+* R₂}
-    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
-    Function.Surjective f.fromCompletion := by
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) : Function.Surjective f.fromCompletion := by
   rw [← Set.range_eq_univ, ← Set.univ_subset_iff, ← hf.closure_eq]
-  have hsub : Set.range f ⊆ Set.range f.fromCompletion := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨x, f.fromCompletion_apply_coe x⟩
-  have hclosed : IsClosed (Set.range f.fromCompletion) :=
+  exact closure_minimal (by rintro _ ⟨x, rfl⟩; exact ⟨x, f.fromCompletion_apply_coe x⟩)
     f.fromCompletion.isometry.isUniformInducing.isComplete_range.isClosed
-  exact (closure_minimal hsub hclosed).trans_eq rfl
 
 end LinearIsometry
 
@@ -307,21 +296,17 @@ variable {R S A M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 auxiliary continuous scalar action. -/
 theorem liftCLM_smul [SMul A M] [ContinuousConstSMul A M] [SMul A N]
     (f : M →SL[σ] N) (hf_insep : ∀ x y, Inseparable x y → f x = f y)
-    (hf_smul : ∀ (a : A) (x : M), f (a • x) = a • f x)
-    (a : A) (z : SeparationQuotient M) :
+    (hf_smul : ∀ (a : A) (x : M), f (a • x) = a • f x) (a : A) (z : SeparationQuotient M) :
     liftCLM f hf_insep (a • z) = a • liftCLM f hf_insep z := by
-  obtain ⟨x, rfl⟩ := surjective_mk z
-  rw [← mk_smul, liftCLM_mk, liftCLM_mk, hf_smul]
+  rcases surjective_mk z with ⟨x, rfl⟩; rw [← mk_smul, liftCLM_mk, liftCLM_mk, hf_smul]
 
 /-- Uniqueness in the universal property of `SeparationQuotient M` for continuous semilinear
 maps. -/
 theorem eq_liftCLM_iff (f : M →SL[σ] N) (hf_insep : ∀ x y, Inseparable x y → f x = f y)
     (g : SeparationQuotient M →SL[σ] N) :
-    g = liftCLM f hf_insep ↔ ∀ x : M, g (mk x) = f x := by
-  refine ⟨fun h x ↦ by rw [h, liftCLM_mk], fun h ↦ ?_⟩
-  ext z
-  obtain ⟨x, rfl⟩ := surjective_mk z
-  rw [h, liftCLM_mk]
+    g = liftCLM f hf_insep ↔ ∀ x : M, g (mk x) = f x :=
+  ⟨fun h x ↦ by rw [h, liftCLM_mk],
+    fun h ↦ ContinuousLinearMap.ext <| surjective_mk.forall.2 fun x ↦ by rw [h, liftCLM_mk]⟩
 
 end Module
 
@@ -337,8 +322,7 @@ operator norm. -/
 theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
     ‖liftCLM f hf‖ = ‖f‖ := by
   rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
-  congr 1
-  ext c
+  congr 1; ext c
   refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h ↦ surjective_mk.forall.2 fun x ↦ ?_⟩
   · simpa only [liftCLM_mk, norm_mk] using h (mk x)
   · simpa only [liftCLM_mk, norm_mk] using h x
@@ -347,13 +331,10 @@ end Norm
 
 /-- Uniformly continuous scalar multiplication descends to the separation quotient. -/
 instance instUniformContinuousConstSMul {M X : Type*} [UniformSpace X] [SMul M X]
-    [UniformContinuousConstSMul M X] : UniformContinuousConstSMul M (SeparationQuotient X) where
-  uniformContinuous_const_smul b := by
-    rw [uniformContinuous_dom]
-    have hcomp : (fun x : SeparationQuotient X ↦ b • x) ∘ mk = mk ∘ (b • ·) :=
-      funext fun x ↦ (mk_smul b x).symm
-    rw [hcomp]
-    exact uniformContinuous_mk.comp (uniformContinuous_const_smul b)
+    [UniformContinuousConstSMul M X] : UniformContinuousConstSMul M (SeparationQuotient X) :=
+  ⟨fun b ↦ uniformContinuous_dom.2 <| by
+    simpa only [Function.comp_def, ← mk_smul] using
+      uniformContinuous_mk.comp (uniformContinuous_const_smul b)⟩
 
 end SeparationQuotient
 
@@ -361,123 +342,68 @@ namespace UniformSpace.Completion
 
 variable (𝕜 E : Type*) [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+private noncomputable def liftToComplₗᵢ : SeparationQuotient E →ₗᵢ[𝕜] Completion E :=
+  { SeparationQuotient.liftCLM (toComplL : E →L[𝕜] Completion E)
+      fun _ _ h ↦ (h.map (toComplL : E →L[𝕜] Completion E).continuous).eq with
+    norm_map' := SeparationQuotient.surjective_mk.forall.2 fun _ ↦ by
+      simp [SeparationQuotient.norm_mk] }
+
 /-- The canonical linear isometric equivalence between the completion of the separation quotient
 of a seminormed space and the completion of the space itself, upgrading
 `UniformSpace.Completion.completionSeparationQuotientEquiv`. -/
 noncomputable def completionSeparationQuotientₗᵢ :
-    Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E := by
-  let q : E →ₗᵢ[𝕜] SeparationQuotient E :=
-    { SeparationQuotient.mkCLM 𝕜 E with norm_map' := SeparationQuotient.norm_mk }
-  let hcompat : ∀ x y : E, Inseparable x y →
-      (toComplL : E →L[𝕜] Completion E) x = (toComplL : E →L[𝕜] Completion E) y :=
-    fun _ _ h ↦ (h.map (continuous_coe E)).eq
-  let i : SeparationQuotient E →ₗᵢ[𝕜] Completion E :=
-    { SeparationQuotient.liftCLM (toComplL : E →L[𝕜] Completion E) hcompat with
-      norm_map' := SeparationQuotient.surjective_mk.forall.2 fun x ↦ by
-        simp only [ContinuousLinearMap.coe_coe, SeparationQuotient.liftCLM_mk, coe_toComplL,
-          norm_coe, SeparationQuotient.norm_mk] }
-  refine
-    { toLinearEquiv := LinearEquiv.ofLinearMap
-        i.fromCompletion.toLinearMap q.completion.toLinearMap
-        (by
-          ext x
-          simp only [LinearMap.comp_apply, LinearIsometry.coe_toLinearMap, LinearMap.id_apply]
-          induction x using Completion.induction_on with
-          | hp =>
-            exact isClosed_eq (i.fromCompletion.continuous.comp q.completion.continuous)
-              continuous_id
-          | ih x =>
-            rw [LinearIsometry.completion_apply_coe, LinearIsometry.fromCompletion_apply_coe]
-            exact SeparationQuotient.liftCLM_mk (toComplL : E →L[𝕜] Completion E) hcompat x)
-        (by
-          ext z
-          simp only [LinearMap.comp_apply, LinearIsometry.coe_toLinearMap, LinearMap.id_apply]
-          induction z using Completion.induction_on with
-          | hp =>
-            exact isClosed_eq (q.completion.continuous.comp i.fromCompletion.continuous)
-              continuous_id
-          | ih z =>
-            obtain ⟨x, rfl⟩ := SeparationQuotient.surjective_mk z
-            rw [LinearIsometry.fromCompletion_apply_coe]
-            have hi : i (SeparationQuotient.mk x) = (x : Completion E) :=
-              SeparationQuotient.liftCLM_mk (toComplL : E →L[𝕜] Completion E) hcompat x
-            rw [hi, LinearIsometry.completion_apply_coe]
-            rfl)
-      norm_map' := i.fromCompletion.norm_map }
+    Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
+  LinearIsometryEquiv.ofSurjective (liftToComplₗᵢ 𝕜 E).fromCompletion <|
+    (liftToComplₗᵢ 𝕜 E).surjective_fromCompletion_of_denseRange <|
+      (denseRange_coe).mono <| by
+        rintro _ ⟨x, rfl⟩
+        exact ⟨SeparationQuotient.mk x, SeparationQuotient.liftCLM_mk _ _ x⟩
 
 variable {𝕜 E}
 
 /-- On classes in `SeparationQuotient E`, `completionSeparationQuotientₗᵢ` sends
 `SeparationQuotient.mk x` to `x`. -/
-@[simp]
-theorem completionSeparationQuotientₗᵢ_coe_mk (x : E) :
+@[simp] theorem completionSeparationQuotientₗᵢ_coe_mk (x : E) :
     completionSeparationQuotientₗᵢ 𝕜 E
       ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
-      (x : Completion E) := by
-  let hcompat : ∀ x y : E, Inseparable x y →
-      (toComplL : E →L[𝕜] Completion E) x = (toComplL : E →L[𝕜] Completion E) y :=
-    fun _ _ h ↦ (h.map (continuous_coe E)).eq
-  -- Unfold to `LinearIsometry.fromCompletion` evaluated on `SeparationQuotient.mk x`.
-  change (LinearIsometry.fromCompletion
-      { SeparationQuotient.liftCLM (toComplL : E →L[𝕜] Completion E) hcompat with
-        norm_map' := _ })
-      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
-      (x : Completion E)
-  rw [LinearIsometry.fromCompletion_apply_coe]
-  exact SeparationQuotient.liftCLM_mk (toComplL : E →L[𝕜] Completion E) hcompat x
+      (x : Completion E) :=
+  ((liftToComplₗᵢ 𝕜 E).fromCompletion_apply_coe _).trans (SeparationQuotient.liftCLM_mk _ _ x)
 
 /-- On `E`, the inverse of `completionSeparationQuotientₗᵢ` sends `x` to
 `SeparationQuotient.mk x`. -/
-@[simp]
-theorem completionSeparationQuotientₗᵢ_symm_coe (x : E) :
+@[simp] theorem completionSeparationQuotientₗᵢ_symm_coe (x : E) :
     (completionSeparationQuotientₗᵢ 𝕜 E).symm (x : Completion E) =
-      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) := by
-  apply (completionSeparationQuotientₗᵢ 𝕜 E).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, completionSeparationQuotientₗᵢ_coe_mk]
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) :=
+  (completionSeparationQuotientₗᵢ 𝕜 E).injective <| by simp
 
 /-- Underlying equivalence of `completionSeparationQuotientₗᵢ` is
 `completionSeparationQuotientEquiv`. -/
-@[simp]
-theorem toEquiv_completionSeparationQuotientₗᵢ :
-    (completionSeparationQuotientₗᵢ 𝕜 E).toEquiv = completionSeparationQuotientEquiv E := by
-  ext z
-  induction z using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq (completionSeparationQuotientₗᵢ 𝕜 E).continuous
-      uniformContinuous_completionSeparationQuotientEquiv.continuous
-  | ih z =>
-    obtain ⟨x, rfl⟩ := SeparationQuotient.surjective_mk z
-    -- Both sides act as maps on `Completion (SeparationQuotient E)`.
-    change completionSeparationQuotientₗᵢ 𝕜 E
-      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
-      completionSeparationQuotientEquiv E
-        ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E))
-    rw [completionSeparationQuotientₗᵢ_coe_mk]
-    simp [completionSeparationQuotientEquiv,
-      extension_coe (SeparationQuotient.uniformContinuous_lift' _),
-      SeparationQuotient.lift'_mk (uniformContinuous_coe E)]
+@[simp] theorem toEquiv_completionSeparationQuotientₗᵢ :
+    (completionSeparationQuotientₗᵢ 𝕜 E).toEquiv = completionSeparationQuotientEquiv E :=
+  Equiv.ext fun z ↦ Completion.induction_on z
+    (isClosed_eq (completionSeparationQuotientₗᵢ 𝕜 E).continuous
+      uniformContinuous_completionSeparationQuotientEquiv.continuous) <|
+    SeparationQuotient.surjective_mk.forall.2 fun _ ↦ by
+      simp [completionSeparationQuotientEquiv,
+        extension_coe (SeparationQuotient.uniformContinuous_lift' _),
+        SeparationQuotient.lift'_mk (uniformContinuous_coe E)]
 
 /-- `completionSeparationQuotientₗᵢ` intertwines any uniformly continuous scalar action. -/
-@[simp]
-theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
+@[simp] theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
     [UniformContinuousConstSMul A E] (a : A) (u : Completion (SeparationQuotient E)) :
     completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u := by
   let e := completionSeparationQuotientₗᵢ 𝕜 E
-  refine Completion.induction_on u
+  exact Completion.induction_on u
     (isClosed_eq (e.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp e.continuous))
-    fun x ↦ ?_
-  obtain ⟨x, rfl⟩ := SeparationQuotient.surjective_mk x
-  rw [← coe_smul, ← SeparationQuotient.mk_smul, completionSeparationQuotientₗᵢ_coe_mk,
-    completionSeparationQuotientₗᵢ_coe_mk, coe_smul]
+      ((continuous_const_smul a).comp e.continuous)) <|
+    SeparationQuotient.surjective_mk.forall.2 fun x ↦ by
+      rw [← coe_smul, ← SeparationQuotient.mk_smul, completionSeparationQuotientₗᵢ_coe_mk,
+        completionSeparationQuotientₗᵢ_coe_mk, coe_smul]
 
-@[simp]
-theorem completionSeparationQuotientₗᵢ_symm_smul {A : Type*} [SMul A E]
+@[simp] theorem completionSeparationQuotientₗᵢ_symm_smul {A : Type*} [SMul A E]
     [UniformContinuousConstSMul A E] (a : A) (u : Completion E) :
     (completionSeparationQuotientₗᵢ 𝕜 E).symm (a • u) =
-      a • (completionSeparationQuotientₗᵢ 𝕜 E).symm u := by
-  apply (completionSeparationQuotientₗᵢ 𝕜 E).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, completionSeparationQuotientₗᵢ_smul,
-    LinearIsometryEquiv.apply_symm_apply]
+      a • (completionSeparationQuotientₗᵢ 𝕜 E).symm u :=
+  (completionSeparationQuotientₗᵢ 𝕜 E).injective <| by simp
 
 end UniformSpace.Completion
