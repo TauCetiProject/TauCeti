@@ -7,9 +7,11 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
+public import Mathlib.NumberTheory.FundamentalDiscriminant
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
+import TauCeti.NumberTheory.FundamentalDiscriminant
 
 /-!
 # The ring of integers of the model `ℚ(√d)`
@@ -43,8 +45,8 @@ the lattice `ℤ + ℤ √(-d) i`, respectively `ℤ + ℤ (1 + √(-d) i)/2`.
   matching `trace_*`: the norm and trace of an algebraic integer in its integral coordinates.
 * `QuadraticAlgebra.complexEmbedding_ringOfIntegersEquiv_symm`,
   `complexEmbedding_ringOfIntegersEquivHalf_symm`: the complex image of an algebraic integer.
-* `QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one`, `discr_eq_of_mod_four_eq_one`: the
-  discriminant of the model.
+* `QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one`, `discr_eq_of_mod_four_eq_one`,
+  `discr_eq_of_isFundamentalDiscr`: the discriminant of the model.
 * `QuadraticAlgebra.minpoly_integralSqrt_omega`, `adjoin_integralSqrt_omega`: the generator `ω`
   of the model satisfies the hypotheses of the intrinsic quadratic API, and
   `ringOfIntegersEquiv_symm_omega`, `ringOfIntegersEquivHalf_symm_omega` identify the generators
@@ -355,5 +357,35 @@ theorem discr_eq_of_mod_four_eq_one : NumberField.discr (QuadraticAlgebra ℚ (d
     adjoin_integralSqrt_omega hsf hd4
 
 end ModFourEqOne
+
+/-- **The discriminant of `ℚ(√d)` for a fundamental discriminant `d`.** When `d` is a nonsquare
+fundamental discriminant, the model `QuadraticAlgebra ℚ d 0` has field discriminant `d`: for
+`d ≡ 1 (mod 4)` it is already squarefree, while for `d = 4 m` with `m` squarefree and
+`m ≡ 2, 3 (mod 4)` the element `ω / 2` is an integral square root of `m`. -/
+theorem discr_eq_of_isFundamentalDiscr (hd : Int.IsFundamentalDiscr d) :
+    NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) = d := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hd with ⟨hd4, hsf⟩ | ⟨hd4, hmsf, hm4⟩
+  · exact discr_eq_of_mod_four_eq_one hsf hd4
+  · obtain ⟨m, rfl⟩ : (4 : ℤ) ∣ d := Int.dvd_of_emod_eq_zero hd4
+    rw [Int.mul_ediv_cancel_left m (by decide : (4 : ℤ) ≠ 0)] at hmsf hm4
+    set x : QuadraticAlgebra ℚ (((4 * m : ℤ) : ℚ)) 0 := ⟨0, 1 / 2⟩
+    have hx : x ^ 2 = algebraMap ℤ _ m := by
+      rw [sq, mk_mul_mk]
+      ext <;> simp; ring
+    have hnsq : ¬ IsSquare (m : ℚ) := by
+      rintro ⟨r, hr⟩
+      have hsq : IsSquare (((4 * m : ℤ) : ℚ)) := ⟨2 * r, by push_cast; rw [hr]; ring⟩
+      exact (Fact.out : ¬ IsSquare (4 * m)) (Rat.isSquare_intCast_iff.mp hsq)
+    have hmin : minpoly ℤ (integralSqrt hx) = X ^ 2 - C m := minpoly_integralSqrt hx hnsq
+    have hgen : Algebra.adjoin ℚ {((integralSqrt hx :
+        𝓞 (QuadraticAlgebra ℚ (((4 * m : ℤ) : ℚ)) 0)) :
+        QuadraticAlgebra ℚ (((4 * m : ℤ) : ℚ)) 0)} = ⊤ := by
+      rw [RingOfIntegers.coe_eq_algebraMap, algebraMap_integralSqrt, eq_top_iff,
+        ← adjoin_omega_eq_top, Algebra.adjoin_le_iff, Set.singleton_subset_iff]
+      have hω : (ω : QuadraticAlgebra ℚ (((4 * m : ℤ) : ℚ)) 0) = (2 : ℚ) • x := by
+        ext <;> simp [x]
+      rw [hω]
+      exact Subalgebra.smul_mem _ (Algebra.subset_adjoin (Set.mem_singleton x)) 2
+    exact NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hmsf (by omega)
 
 end QuadraticAlgebra

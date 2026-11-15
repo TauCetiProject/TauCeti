@@ -27,6 +27,9 @@ levels.
 
 The function being bounded is the native analytic continuation, not the Dirichlet series
 (which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
+For the principal character at positive level `N`, bounding each deleted Euler factor `1 - p ^ (-s)`
+on `Re(s) ≥ 0` by `2 ≤ p` gives `‖LFunctionTrivChar₁ N s‖ ≤ N ‖LFunctionTrivChar₁ 1 s‖` for all
+`Re(s) ≥ 0` (including at `s = 1`).
 
 ## References
 
@@ -136,5 +139,40 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN)),
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
+
+private theorem LFunctionTrivChar₁_eq_mul (s : ℂ) :
+    LFunctionTrivChar₁ N s =
+      (∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))) * LFunctionTrivChar₁ 1 s := by
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp [LFunctionTrivChar₁, cpow_neg_one]
+  · simp only [LFunctionTrivChar₁, Function.update_of_ne hs₁]
+    rw [LFunctionTrivChar_eq_mul_riemannZeta hs₁, LFunctionTrivChar, LFunction_modOne_eq]
+    ring
+
+/-- On `Re(s) ≥ 0`, the entire regularization `LFunctionTrivChar₁ N` of the principal character
+modulo `N` satisfies `‖LFunctionTrivChar₁ N s‖ ≤ N ‖LFunctionTrivChar₁ 1 s‖`. -/
+theorem norm_LFunctionTrivChar₁_le {s : ℂ} (hs : 0 ≤ s.re) :
+    ‖LFunctionTrivChar₁ N s‖ ≤ (N : ℝ) * ‖LFunctionTrivChar₁ 1 s‖ := by
+  rw [LFunctionTrivChar₁_eq_mul, norm_mul]
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+  calc
+    ‖∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))‖
+      = ∏ p ∈ N.primeFactors, ‖1 - (p : ℂ) ^ (-s)‖ := norm_prod _ _
+    _ ≤ ∏ p ∈ N.primeFactors, (p : ℝ) := by
+      gcongr with p hp
+      have hp' : p.Prime := Nat.prime_of_mem_primeFactors hp
+      have hp0 : (0 : ℝ) < p := by exact_mod_cast hp'.pos
+      have hp1 : (1 : ℝ) ≤ p := by exact_mod_cast hp'.one_le
+      have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp'.two_le
+      have hcpow : ‖(p : ℂ) ^ (-s)‖ ≤ 1 := by
+        rw [← ofReal_natCast, norm_cpow_eq_rpow_re_of_pos hp0, neg_re]
+        exact (Real.rpow_le_rpow_of_exponent_le hp1 (neg_nonpos.mpr hs)).trans (by simp)
+      calc
+        ‖1 - (p : ℂ) ^ (-s)‖ ≤ ‖(1 : ℂ)‖ + ‖(p : ℂ) ^ (-s)‖ := norm_sub_le _ _
+        _ ≤ 2 := by rw [norm_one]; linarith
+        _ ≤ (p : ℝ) := hp2
+    _ ≤ (N : ℝ) := by
+      rw [← Nat.cast_prod]
+      exact Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N))
 
 end DirichletCharacter
