@@ -59,6 +59,8 @@ bijective.
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+* `IsIntegralCurve.inv_mul_eq_inv_mul_of_intervalBasePotential`: along a trajectory in `(0, 1)`,
+  every solution of the linearized equation is a constant multiple of the field.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
@@ -579,6 +581,30 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- **Linearized solutions are multiples of the field.** Along a negative gradient trajectory `x`
+of the base potential with values in `(0, 1)`, every solution `ξ` of the linearized equation
+`ξ' + Hess(x) ξ = 0` is a constant multiple of the field `t (1 - t²)` along `x`: the quotient
+`ξ / (x (1 - x²))` is constant. Since `U'(t) = 1 / (t (1 - t²))`, this quotient is the derivative
+`U'(x) ξ` of the time coordinate in the direction `ξ`, which is therefore conserved. -/
+theorem _root_.IsIntegralCurve.inv_mul_eq_inv_mul_of_intervalBasePotential {x ξ : ℝ → ℝ}
+    (hx : IsIntegralCurve x (fun _ t ↦ -∇ (intervalBasePotential C) t))
+    (hx₀₁ : ∀ s, x s ∈ Ioo 0 1)
+    (hξ : ∀ s, HasDerivAt ξ (-hessianOperator (intervalBasePotential C) (x s) (ξ s)) s)
+    (s t : ℝ) : (x s * (1 - x s ^ 2))⁻¹ * ξ s = (x t * (1 - x t ^ 2))⁻¹ * ξ t := by
+  have hderiv : ∀ s, HasDerivAt (fun s ↦ (x s * (1 - x s ^ 2))⁻¹ * ξ s) 0 s := fun s ↦ by
+    have hw : x s * (1 - x s ^ 2) ≠ 0 := by
+      have h1 : 0 < 1 - x s ^ 2 := by nlinarith [(hx₀₁ s).1, (hx₀₁ s).2]
+      exact (mul_pos (hx₀₁ s).1 h1).ne'
+    have hxs : HasDerivAt x (C * x s * (1 - x s ^ 2)) s :=
+      (hx s).congr_deriv (by simp only [gradient_intervalBasePotential]; ring)
+    have hξs : HasDerivAt ξ (-(C * (3 * x s ^ 2 - 1) * ξ s)) s :=
+      (hξ s).congr_deriv (by simp)
+    refine (((hxs.fun_mul ((hxs.fun_pow 2).const_sub 1)).fun_inv hw).fun_mul hξs).congr_deriv ?_
+    field_simp
+    ring
+  exact is_const_of_deriv_eq_zero (fun s ↦ (hderiv s).differentiableAt)
+    (fun s ↦ (hderiv s).deriv) s t
 
 /-! ### The flow and the time coordinate -/
 
