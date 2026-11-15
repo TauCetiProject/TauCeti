@@ -220,31 +220,23 @@ theorem functorCongr_inv_app_tmul {R : Type u₁} {S : Type u₂} [Ring R] [Ring
 
 @[simp]
 theorem functorCongr_refl {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
-    functorCongr (rfl : f = f) = Iso.refl (functor.{u₁, u₂, v} f) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  exact functor_hom_ext f fun m ↦ functorCongr_hom_app_tmul rfl M 1 m
+    functorCongr (rfl : f = f) = Iso.refl (functor.{u₁, u₂, v} f) :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦
+    functor_hom_ext f fun m ↦ functorCongr_hom_app_tmul rfl M 1 m
 
 @[simp]
 theorem functorCongr_symm {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
     {f₁ f₂ : R →+* S} (h : f₁ = f₂) :
-    (functorCongr.{u₁, u₂, v} h).symm = functorCongr h.symm := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  exact functor_hom_ext f₂ fun m ↦
+    (functorCongr.{u₁, u₂, v} h).symm = functorCongr h.symm :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦ functor_hom_ext f₂ fun m ↦
     (functorCongr_inv_app_tmul h M 1 m).trans (functorCongr_hom_app_tmul h.symm M 1 m).symm
 
 theorem functorCongr_trans {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
     {f₁ f₂ f₃ : R →+* S} (h₁₂ : f₁ = f₂) (h₂₃ : f₂ = f₃) :
-    functorCongr.{u₁, u₂, v} h₁₂ ≪≫ functorCongr h₂₃ = functorCongr (h₁₂.trans h₂₃) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  exact functor_hom_ext f₁ fun m ↦
+    functorCongr.{u₁, u₂, v} h₁₂ ≪≫ functorCongr h₂₃ = functorCongr (h₁₂.trans h₂₃) :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦ functor_hom_ext f₁ fun m ↦
     (congrArg ((functorCongr h₂₃).hom.app M) (functorCongr_hom_app_tmul h₁₂ M 1 m)).trans <|
-      (functorCongr_hom_app_tmul h₂₃ M 1 m).trans <|
+      (functorCongr_hom_app_tmul h₂₃ M 1 m).trans
         (functorCongr_hom_app_tmul (h₁₂.trans h₂₃) M 1 m).symm
 
 /-- **Extension of scalars along the identity ring homomorphism** is naturally isomorphic to the
@@ -252,13 +244,11 @@ identity functor, sending `r ⊗ m` to `r • m` (`TauCeti.BalancedExtension.lid
 noncomputable def functorId (R : Type u₁) [Ring R] :
     functor.{u₁, u₁, max v u₁} (RingHom.id R) ≅ 𝟭 (ModuleCat.{max v u₁} R) :=
   NatIso.ofComponents (fun M ↦ ((lid R M).toModuleIso :
-      (functor (RingHom.id R)).obj M ≅ (𝟭 (ModuleCat R)).obj M)) (by
-    intro X Y φ
-    refine functor_hom_ext (RingHom.id R) fun m ↦ ?_
-    exact (congrArg (lid R Y) (map_tmul φ.hom 1 m)).trans <|
-      (lid_tmul 1 (φ m)).trans <|
-        (one_smul R (φ m)).trans <|
-          congrArg φ ((lid_tmul 1 m).trans (one_smul R m)).symm)
+      (functor (RingHom.id R)).obj M ≅ (𝟭 (ModuleCat R)).obj M)) fun {_ Y} φ ↦
+    functor_hom_ext (RingHom.id R) fun m ↦
+      (congrArg (lid R Y) (map_tmul φ.hom 1 m)).trans <|
+        (lid_tmul 1 (φ m)).trans <| (one_smul R (φ m)).trans <|
+          congrArg φ ((lid_tmul 1 m).trans (one_smul R m)).symm
 
 theorem functorId_hom_app_tmul (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R)
     (r : R) (m : M) :
@@ -287,14 +277,13 @@ noncomputable def functorComp {R : Type u₁} {S : Type u₂} {T : Type u₃}
     functor.{u₁, u₃, max v u₂} (g.comp f) ≅
       functor.{u₁, u₂, max v u₂} f ⋙ functor.{u₂, u₃, max v u₂} g :=
   NatIso.ofComponents (fun M ↦ ((cancelBaseChange f g (P := M)).symm.toModuleIso :
-      (functor (g.comp f)).obj M ≅ (functor f ⋙ functor g).obj M)) (by
-    intro X Y φ
-    refine functor_hom_ext (g.comp f) fun m ↦ ?_
-    exact (congrArg (cancelBaseChange f g).symm (map_tmul φ.hom 1 m)).trans <|
-      (cancelBaseChange_symm_tmul f g 1 (φ m)).trans <|
-        (congrArg (tmul g 1) (map_tmul φ.hom 1 m).symm).trans <|
-          (map_tmul (map f φ.hom) 1 (tmul f 1 m)).symm.trans <|
-            congrArg (map g (map f φ.hom)) (cancelBaseChange_symm_tmul f g 1 m).symm)
+      (functor (g.comp f)).obj M ≅ (functor f ⋙ functor g).obj M)) fun {_ _} φ ↦
+    functor_hom_ext (g.comp f) fun m ↦
+      (congrArg (cancelBaseChange f g).symm (map_tmul φ.hom 1 m)).trans <|
+        (cancelBaseChange_symm_tmul f g 1 (φ m)).trans <|
+          (congrArg (tmul g 1) (map_tmul φ.hom 1 m).symm).trans <|
+            (map_tmul (map f φ.hom) 1 (tmul f 1 m)).symm.trans <|
+              congrArg (map g (map f φ.hom)) (cancelBaseChange_symm_tmul f g 1 m).symm
 
 theorem functorComp_hom_app_tmul {R : Type u₁} {S : Type u₂} {T : Type u₃}
     [Ring R] [Ring S] [Ring T] (f : R →+* S) (g : S →+* T)
@@ -334,19 +323,19 @@ theorem functorComp_assoc {R₁ : Type u₁} {R₂ : Type u₂} {R₃ : Type u�
     (functorComp.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂ u₃} f₁₂)
         (functorComp.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄).hom ≫
-      (Functor.associator _ _ _).inv := by
-  apply NatTrans.ext
-  funext M
-  refine functor_hom_ext (f₃₄.comp (f₂₃.comp f₁₂)) fun m ↦ ?_
-  exact (congrArg ((functor f₃₄).map ((functorComp.{u₁, u₂, u₃, max v u₂ u₃} f₁₂ f₂₃).hom.app M))
-      (functorComp_hom_app_tmul.{u₁, u₃, u₄, max v u₂ u₃} (f₂₃.comp f₁₂) f₃₄ M 1 m)).trans <|
-    (functor_map_tmul f₃₄ ((functorComp.{u₁, u₂, u₃, max v u₂ u₃} f₁₂ f₂₃).hom.app M) 1 _).trans <|
-      (congrArg (tmul f₃₄ 1)
-        (functorComp_hom_app_tmul.{u₁, u₂, u₃, max v u₂ u₃} f₁₂ f₂₃ M 1 m)).trans <|
-        (functorComp_hom_app_tmul.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄
-          ((functor f₁₂).obj M) 1 (tmul f₁₂ 1 m)).symm.trans <|
-          congrArg ((functorComp.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄).hom.app ((functor f₁₂).obj M))
-            (functorComp_hom_app_tmul.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃) M 1 m).symm
+      (Functor.associator _ _ _).inv :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext (f₃₄.comp (f₂₃.comp f₁₂)) fun m ↦
+    let α := (functorComp.{u₁, u₂, u₃, max v u₂ u₃} f₁₂ f₂₃).hom.app M
+    (congrArg ((functor f₃₄).map α)
+        (functorComp_hom_app_tmul.{u₁, u₃, u₄, max v u₂ u₃} (f₂₃.comp f₁₂) f₃₄ M 1 m)).trans <|
+      (functor_map_tmul f₃₄ α 1 _).trans <|
+        (congrArg (tmul f₃₄ 1)
+          (functorComp_hom_app_tmul.{u₁, u₂, u₃, max v u₂ u₃} f₁₂ f₂₃ M 1 m)).trans <|
+          (functorComp_hom_app_tmul.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄
+            ((functor f₁₂).obj M) 1 (tmul f₁₂ 1 m)).symm.trans <|
+            congrArg ((functorComp.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄).hom.app
+              ((functor f₁₂).obj M))
+              (functorComp_hom_app_tmul.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃) M 1 m).symm
 
 /-- **Left-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
@@ -354,14 +343,12 @@ theorem functorComp_assoc {R₁ : Type u₁} {R₂ : Type u₂} {R₃ : Type u�
 theorem functorComp_id_comp {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₁, u₂, max v u₁} (RingHom.id R) f).hom ≫
       Functor.whiskerRight (functorId.{u₁, max v u₁} R).hom (functor.{u₁, u₂, max v u₁} f) ≫
-      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ := by
-  apply NatTrans.ext
-  funext M
-  refine functor_hom_ext (f.comp (RingHom.id R)) fun m ↦ ?_
-  exact (congrArg ((functor f).map ((functorId R).hom.app M))
-      (functorComp_hom_app_tmul.{u₁, u₁, u₂, max v u₁} (RingHom.id R) f M 1 m)).trans <|
-    (functor_map_tmul f ((functorId R).hom.app M) 1 _).trans <|
-      congrArg (tmul f 1) ((functorId_hom_app_tmul R M 1 m).trans (one_smul R m))
+      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext (f.comp (RingHom.id R)) fun m ↦
+    (congrArg ((functor f).map ((functorId R).hom.app M))
+        (functorComp_hom_app_tmul.{u₁, u₁, u₂, max v u₁} (RingHom.id R) f M 1 m)).trans <|
+      (functor_map_tmul f ((functorId R).hom.app M) 1 _).trans <|
+        congrArg (tmul f 1) ((functorId_hom_app_tmul R M 1 m).trans (one_smul R m))
 
 /-- **Right-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
@@ -369,14 +356,12 @@ theorem functorComp_id_comp {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f
 theorem functorComp_comp_id {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₂, u₂, max v u₂} f (RingHom.id S)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂} f) (functorId.{u₂, max v u₂} S).hom ≫
-      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ := by
-  apply NatTrans.ext
-  funext M
-  refine functor_hom_ext ((RingHom.id S).comp f) fun m ↦ ?_
-  exact (congrArg ((functorId S).hom.app ((functor f).obj M))
-      (functorComp_hom_app_tmul.{u₁, u₂, u₂, max v u₂} f (RingHom.id S) M 1 m)).trans <|
-    (functorId_hom_app_tmul S ((functor f).obj M) 1 (tmul f 1 m)).trans <|
-      one_smul S (tmul f 1 m)
+      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext ((RingHom.id S).comp f) fun m ↦
+    (congrArg ((functorId S).hom.app ((functor f).obj M))
+        (functorComp_hom_app_tmul.{u₁, u₂, u₂, max v u₂} f (RingHom.id S) M 1 m)).trans <|
+      (functorId_hom_app_tmul S ((functor f).obj M) 1 (tmul f 1 m)).trans
+        (one_smul S (tmul f 1 m))
 
 /-- **Coherence of balanced extension of scalars across a commutative square.** Given ring
 homomorphisms `f₁ : A →+* B`, `g₁ : B →+* D`, `f₂ : A →+* C`, and `g₂ : C →+* D` with
@@ -432,13 +417,10 @@ theorem functorCompIso_inv_app_tmul_tmul {A : Type u₁} {B : Type u₂} {C : Ty
 theorem functorCompIso_self {A : Type u₁} {B : Type u₂} {D : Type u₄}
     [Ring A] [Ring B] [Ring D] (f : A →+* B) (g : B →+* D) :
     functorCompIso.{u₁, u₂, u₂, u₄, v} f g f g rfl =
-      Iso.refl (functor.{u₁, u₂, max v u₂} f ⋙ functor.{u₂, u₄, max v u₂} g) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  refine functor_comp_hom_ext f g fun m ↦ ?_
-  exact (functorCompIso_hom_app_tmul_tmul f g f g rfl M 1 1 m).trans <|
-    congrArg (fun d ↦ tmul g d (tmul f 1 m)) ((congrArg (1 * ·) (map_one g)).trans (mul_one 1))
+      Iso.refl (functor.{u₁, u₂, max v u₂} f ⋙ functor.{u₂, u₄, max v u₂} g) :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦ functor_comp_hom_ext f g fun m ↦
+    (functorCompIso_hom_app_tmul_tmul f g f g rfl M 1 1 m).trans <|
+      congrArg (fun d ↦ tmul g d (tmul f 1 m)) ((congrArg (1 * ·) (map_one g)).trans (mul_one 1))
 
 @[simp]
 theorem functorCompIso_symm {A : Type u₁} {B : Type u₂} {C : Type u₃} {D : Type u₄}
@@ -446,13 +428,10 @@ theorem functorCompIso_symm {A : Type u₁} {B : Type u₂} {C : Type u₃} {D :
     (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C) (g₂ : C →+* D)
     (h : g₁.comp f₁ = g₂.comp f₂) :
     (functorCompIso.{u₁, u₂, u₃, u₄, v} f₁ g₁ f₂ g₂ h).symm =
-      functorCompIso f₂ g₂ f₁ g₁ h.symm := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  refine functor_comp_hom_ext f₂ g₂ fun m ↦ ?_
-  exact (functorCompIso_inv_app_tmul_tmul f₁ g₁ f₂ g₂ h M 1 1 m).trans
-    (functorCompIso_hom_app_tmul_tmul f₂ g₂ f₁ g₁ h.symm M 1 1 m).symm
+      functorCompIso f₂ g₂ f₁ g₁ h.symm :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦ functor_comp_hom_ext f₂ g₂ fun m ↦
+    (functorCompIso_inv_app_tmul_tmul f₁ g₁ f₂ g₂ h M 1 1 m).trans
+      (functorCompIso_hom_app_tmul_tmul f₂ g₂ f₁ g₁ h.symm M 1 1 m).symm
 
 /-- Pasting two commutative squares with a shared diagonal composes their coherence isomorphisms. -/
 theorem functorCompIso_trans {A B₁ B₂ B₃ D : Type u₁} [Ring A] [Ring B₁] [Ring B₂] [Ring B₃]
@@ -461,16 +440,13 @@ theorem functorCompIso_trans {A B₁ B₂ B₃ D : Type u₁} [Ring A] [Ring B�
     (h₁₂ : g₁.comp f₁ = g₂.comp f₂) (h₂₃ : g₂.comp f₂ = g₃.comp f₃) :
     functorCompIso.{u₁, u₁, u₁, u₁, v} f₁ g₁ f₂ g₂ h₁₂ ≪≫
         functorCompIso.{u₁, u₁, u₁, u₁, v} f₂ g₂ f₃ g₃ h₂₃ =
-      functorCompIso.{u₁, u₁, u₁, u₁, v} f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext M
-  refine functor_comp_hom_ext f₁ g₁ fun m ↦ ?_
-  exact (congrArg ((functorCompIso f₂ g₂ f₃ g₃ h₂₃).hom.app M)
-      (functorCompIso_hom_app_tmul_tmul f₁ g₁ f₂ g₂ h₁₂ M 1 1 m)).trans <|
-    (functorCompIso_hom_app_tmul_tmul f₂ g₂ f₃ g₃ h₂₃ M (1 * g₁ 1) 1 m).trans <|
-      (congrArg (fun d ↦ tmul g₃ d (tmul f₃ 1 m)) (by simp only [map_one, mul_one])).trans <|
-        (functorCompIso_hom_app_tmul_tmul f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) M 1 1 m).symm
+      functorCompIso.{u₁, u₁, u₁, u₁, v} f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) :=
+  Iso.ext <| NatTrans.ext <| funext fun M ↦ functor_comp_hom_ext f₁ g₁ fun m ↦
+    (congrArg ((functorCompIso f₂ g₂ f₃ g₃ h₂₃).hom.app M)
+        (functorCompIso_hom_app_tmul_tmul f₁ g₁ f₂ g₂ h₁₂ M 1 1 m)).trans <|
+      (functorCompIso_hom_app_tmul_tmul f₂ g₂ f₃ g₃ h₂₃ M (1 * g₁ 1) 1 m).trans <|
+        (congrArg (fun d ↦ tmul g₃ d (tmul f₃ 1 m)) (by simp only [map_one, mul_one])).trans <|
+          (functorCompIso_hom_app_tmul_tmul f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) M 1 1 m).symm
 
 /-- Along a ring isomorphism `e : R ≃+* S`, balanced extension of scalars along `e.toRingHom` is
 naturally isomorphic to restriction of scalars along `e.symm`, since both functors are left adjoint

@@ -173,33 +173,24 @@ theorem finiteProjectiveModulesExtendScalarsCongr_inv_app_hom {f₁ f₂ : R →
 @[simp]
 theorem finiteProjectiveModulesExtendScalarsCongr_refl :
     finiteProjectiveModulesExtendScalarsCongr (rfl : f = f) =
-      Iso.refl f.finiteProjectiveModulesExtendScalars := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCongr_refl.{u, u, u} f))
+      Iso.refl f.finiteProjectiveModulesExtendScalars :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj) (BalancedExtension.functorCongr_refl.{u, u, u} f))
 
 @[simp]
 theorem finiteProjectiveModulesExtendScalarsCongr_symm {f₁ f₂ : R →+* S} (h : f₁ = f₂) :
     (finiteProjectiveModulesExtendScalarsCongr h).symm =
-      finiteProjectiveModulesExtendScalarsCongr h.symm := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCongr_symm.{u, u, u} h))
+      finiteProjectiveModulesExtendScalarsCongr h.symm :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj) (BalancedExtension.functorCongr_symm.{u, u, u} h))
 
 theorem finiteProjectiveModulesExtendScalarsCongr_trans {f₁ f₂ f₃ : R →+* S}
     (h₁₂ : f₁ = f₂) (h₂₃ : f₂ = f₃) :
     finiteProjectiveModulesExtendScalarsCongr h₁₂ ≪≫
         finiteProjectiveModulesExtendScalarsCongr h₂₃ =
-      finiteProjectiveModulesExtendScalarsCongr (h₁₂.trans h₂₃) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCongr_trans.{u, u, u} h₁₂ h₂₃))
+      finiteProjectiveModulesExtendScalarsCongr (h₁₂.trans h₂₃) :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj) (BalancedExtension.functorCongr_trans.{u, u, u} h₁₂ h₂₃))
 
 /-- **Extension of scalars along the identity ring homomorphism** on finitely generated projective
 modules is naturally isomorphic to the identity functor. -/
@@ -268,10 +259,8 @@ theorem finiteProjectiveModulesExtendScalarsComp_assoc {R₁ R₂ R₃ R₄ : Ty
     (f₁₂.finiteProjectiveModulesExtendScalarsComp (f₃₄.comp f₂₃)).hom ≫
       Functor.whiskerLeft f₁₂.finiteProjectiveModulesExtendScalars
         (f₂₃.finiteProjectiveModulesExtendScalarsComp f₃₄).hom ≫
-      (Functor.associator _ _ _).inv := by
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun α ↦ α.app P.obj)
+      (Functor.associator _ _ _).inv :=
+  NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _ (congrArg (fun α ↦ α.app P.obj)
     (BalancedExtension.functorComp_assoc.{u, u, u, u, u} f₁₂ f₂₃ f₃₄))
 
 /-- **Left-unit coherence** for `RingHom.finiteProjectiveModulesExtendScalarsId` and
@@ -281,11 +270,9 @@ theorem finiteProjectiveModulesExtendScalarsComp_id_comp :
     ((RingHom.id R).finiteProjectiveModulesExtendScalarsComp f).hom ≫
       Functor.whiskerRight (finiteProjectiveModulesExtendScalarsId R).hom
         f.finiteProjectiveModulesExtendScalars ≫
-      (Functor.leftUnitor f.finiteProjectiveModulesExtendScalars).hom = 𝟙 _ := by
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun α ↦ α.app P.obj)
-    (BalancedExtension.functorComp_id_comp.{u, u, u} f))
+      (Functor.leftUnitor f.finiteProjectiveModulesExtendScalars).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun α ↦ α.app P.obj) (BalancedExtension.functorComp_id_comp.{u, u, u} f))
 
 /-- **Right-unit coherence** for `RingHom.finiteProjectiveModulesExtendScalarsId` and
 `RingHom.finiteProjectiveModulesExtendScalarsComp`. -/
@@ -294,11 +281,9 @@ theorem finiteProjectiveModulesExtendScalarsComp_comp_id :
     (f.finiteProjectiveModulesExtendScalarsComp (RingHom.id S)).hom ≫
       Functor.whiskerLeft f.finiteProjectiveModulesExtendScalars
         (finiteProjectiveModulesExtendScalarsId S).hom ≫
-      (Functor.rightUnitor f.finiteProjectiveModulesExtendScalars).hom = 𝟙 _ := by
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun α ↦ α.app P.obj)
-    (BalancedExtension.functorComp_comp_id.{u, u, u} f))
+      (Functor.rightUnitor f.finiteProjectiveModulesExtendScalars).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun α ↦ α.app P.obj) (BalancedExtension.functorComp_comp_id.{u, u, u} f))
 
 /-- **Coherence of extension of scalars on finitely generated projective modules across a
 commutative square.** Given `f₁ : A →+* B`, `g₁ : B →+* D`, `f₂ : A →+* C`, and `g₂ : C →+* D` with
@@ -321,12 +306,10 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_eq {A B C D : Type u}
     finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h =
       (f₁.finiteProjectiveModulesExtendScalarsComp g₁).symm ≪≫
         finiteProjectiveModulesExtendScalarsCongr h ≪≫
-        f₂.finiteProjectiveModulesExtendScalarsComp g₂ := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCompIso_def.{u, u, u, u, u} f₁ g₁ f₂ g₂ h))
+        f₂.finiteProjectiveModulesExtendScalarsComp g₂ :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _ <|
+    congrArg (fun e ↦ e.hom.app P.obj)
+      (BalancedExtension.functorCompIso_def.{u, u, u, u, u} f₁ g₁ f₂ g₂ h)
 
 @[simp]
 theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom {A B C D : Type u}
@@ -355,12 +338,9 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_self {A B D : Type u}
     [Ring A] [Ring B] [Ring D] (f₁ : A →+* B) (g₁ : B →+* D) :
     finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₁ g₁ rfl =
       Iso.refl (f₁.finiteProjectiveModulesExtendScalars ⋙
-        g₁.finiteProjectiveModulesExtendScalars) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCompIso_self.{u, u, u, u} f₁ g₁))
+        g₁.finiteProjectiveModulesExtendScalars) :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj) (BalancedExtension.functorCompIso_self.{u, u, u, u} f₁ g₁))
 
 @[simp]
 theorem finiteProjectiveModulesExtendScalarsCompIso_symm {A B C D : Type u}
@@ -368,12 +348,10 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_symm {A B C D : Type u}
     (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C) (g₂ : C →+* D)
     (h : g₁.comp f₁ = g₂.comp f₂) :
     (finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).symm =
-      finiteProjectiveModulesExtendScalarsCompIso f₂ g₂ f₁ g₁ h.symm := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCompIso_symm.{u, u, u, u, u} f₁ g₁ f₂ g₂ h))
+      finiteProjectiveModulesExtendScalarsCompIso f₂ g₂ f₁ g₁ h.symm :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj)
+      (BalancedExtension.functorCompIso_symm.{u, u, u, u, u} f₁ g₁ f₂ g₂ h))
 
 theorem finiteProjectiveModulesExtendScalarsCompIso_trans {A B₁ B₂ B₃ D : Type u}
     [Ring A] [Ring B₁] [Ring B₂] [Ring B₃] [Ring D]
@@ -382,12 +360,10 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_trans {A B₁ B₂ B₃ D : 
     (h₁₂ : g₁.comp f₁ = g₂.comp f₂) (h₂₃ : g₂.comp f₂ = g₃.comp f₃) :
     finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h₁₂ ≪≫
         finiteProjectiveModulesExtendScalarsCompIso f₂ g₂ f₃ g₃ h₂₃ =
-      finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) := by
-  apply Iso.ext
-  apply NatTrans.ext
-  funext P
-  exact ObjectProperty.hom_ext _ (congrArg (fun e ↦ e.hom.app P.obj)
-    (BalancedExtension.functorCompIso_trans.{u, u} f₁ g₁ f₂ g₂ f₃ g₃ h₁₂ h₂₃))
+      finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₃ g₃ (h₁₂.trans h₂₃) :=
+  Iso.ext <| NatTrans.ext <| funext fun P ↦ ObjectProperty.hom_ext _
+    (congrArg (fun e ↦ e.hom.app P.obj)
+      (BalancedExtension.functorCompIso_trans.{u, u} f₁ g₁ f₂ g₂ f₃ g₃ h₁₂ h₂₃))
 
 end Coherence
 
