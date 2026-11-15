@@ -35,9 +35,10 @@ subsequence, the `vₙ` converge locally uniformly on the whole plane to a `C¹`
   `δ > 0`, at most the lower limit of the Floer energies of the `uₙ` over the disc of radius `δ`
   about `z₀`.
 
-This is the bubble of Gromov–Floer compactness at an interior bubbling point, as a plane: the
-pseudoholomorphic sphere of the stable limit that is attached at `z₀` and carries the energy lost
-there. The locally uniform convergence of the maps is Arzelà–Ascoli on exhausting squares
+This is a nonconstant `J(z₀, ·)`-holomorphic plane at the interior bubbling point, whose area is
+bounded by the energy concentrating there; its identification with a sphere of the stable limit
+needs the removal of singularities below. The locally uniform convergence of the maps is
+Arzelà–Ascoli on exhausting squares
 (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`), and the convergence of the
 derivatives is the interior estimate for the Floer equation, applied to the rescaled equations as
 one family over the parameters `(cₙ, εₙ)`

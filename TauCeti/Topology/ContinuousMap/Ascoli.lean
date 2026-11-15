@@ -80,6 +80,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   loops with a common modulus of continuity.
 * `TauCeti.isCompact_setOf_periodic_lipschitzWith`: the `1`-periodic `L`-Lipschitz loops in a
   compact set are compact for uniform convergence on `ℝ`.
+* `TauCeti.closedBall_zero_eq_Icc_prod_Icc`: the closed ball of radius `r` about `0` in `ℝ × ℝ`
+  is the square `[-r, r]²`.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
   are uniformly Lipschitz with values in a compact set on exhausting squares of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
@@ -289,6 +291,12 @@ theorem isCompact_setOf_periodic_lipschitzWith {M : Type*} [MetricSpace M] {K : 
         (Eventually.of_forall fun n ↦ (hf (ψ n)).2.2.dist_le_mul t t')⟩, ψ, hψ,
     UniformFun.tendsto_iff_tendstoUniformly.2 hux⟩
 
+/-- The closed ball of radius `r` about `0` in `ℝ × ℝ`, with its sup norm, is the square
+`[-r, r]²`. -/
+theorem closedBall_zero_eq_Icc_prod_Icc (r : ℝ) :
+    Metric.closedBall (0 : ℝ × ℝ) r = Icc (-r) r ×ˢ Icc (-r) r := by
+  rw [← Prod.mk_zero_zero, ← closedBall_prod_same, Real.closedBall_zero_eq_Icc]
+
 /-- **Arzelà–Ascoli along exhausting squares.** Let `w n` be `L`-Lipschitz on the closed ball
 `[-R n, R n]²` of radius `R n` about `0` in `ℝ × ℝ`, with values there in a compact subset `K` of a
 pseudometric space, where `0 ≤ R n → ∞`. A subsequence of the `w n` converges locally uniformly on
@@ -310,8 +318,7 @@ theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith {M : Type*}
     simpa using ((LipschitzWith.prod_fst.min_const (R n)).const_max (-R n)).prodMk
       ((LipschitzWith.prod_snd.min_const (R n)).const_max (-R n))
   have hpR (n : ℕ) (z : ℝ × ℝ) : p n z ∈ Metric.closedBall 0 (R n) := by
-    rw [mem_closedBall_zero_iff, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, max_le_iff,
-      abs_le, abs_le]
+    rw [closedBall_zero_eq_Icc_prod_Icc]
     exact ⟨⟨le_max_left _ _, max_le (by linarith [hR₀ n]) (min_le_right _ _)⟩,
       le_max_left _ _, max_le (by linarith [hR₀ n]) (min_le_right _ _)⟩
   set w' : ℕ → ℝ × ℝ → M := fun n ↦ w n ∘ p n
@@ -334,8 +341,9 @@ theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith {M : Type*}
   filter_upwards [(hR.comp hφ.tendsto_atTop).eventually_ge_atTop m] with n hn z hz
   have hmz : ‖z‖ ≤ m := hm (mem_image_of_mem _ hz)
   simp only [Function.comp_apply] at hn
-  have h₁ := abs_le.1 ((Real.norm_eq_abs z.1 ▸ norm_fst_le z).trans hmz)
-  have h₂ := abs_le.1 ((Real.norm_eq_abs z.2 ▸ norm_snd_le z).trans hmz)
+  obtain ⟨⟨h₁, h₁'⟩, h₂, h₂'⟩ : z ∈ Icc (-m) m ×ˢ Icc (-m) m := by
+    rw [← closedBall_zero_eq_Icc_prod_Icc]
+    exact mem_closedBall_zero_iff.2 hmz
   simp only [G, ContinuousMap.coe_mk, w', p, Function.comp_apply,
     min_eq_left (by linarith : z.1 ≤ R (φ n)), max_eq_right (by linarith : -R (φ n) ≤ z.1),
     min_eq_left (by linarith : z.2 ≤ R (φ n)), max_eq_right (by linarith : -R (φ n) ≤ z.2)]
@@ -356,9 +364,8 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetric
     tendsto_atTop_add_const_right _ _ (hσ.comp (tendsto_add_atTop_nat N))
   have hmaps (n : ℕ) : MapsTo (fun z : ℝ × ℝ ↦ z + (σ (n + N), 0))
       (Metric.closedBall 0 (σ (n + N) - b)) (Ici b ×ˢ univ) := fun z hz ↦ by
-    have h := (abs_le.1 ((Real.norm_eq_abs z.1 ▸ norm_fst_le z).trans
-      (mem_closedBall_zero_iff.1 hz))).1
-    exact ⟨mem_Ici.2 (by simp only [Prod.fst_add]; linarith), mem_univ _⟩
+    rw [closedBall_zero_eq_Icc_prod_Icc] at hz
+    exact ⟨mem_Ici.2 (by simp only [Prod.fst_add]; linarith [hz.1.1]), mem_univ _⟩
   have hadd (n : ℕ) : LipschitzWith 1 fun z : ℝ × ℝ ↦ z + (σ (n + N), 0) :=
     (IsometryEquiv.addRight ((σ (n + N), 0) : ℝ × ℝ)).isometry.lipschitzWith
   obtain ⟨φ, hφ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK

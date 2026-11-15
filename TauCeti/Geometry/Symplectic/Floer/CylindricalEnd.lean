@@ -730,9 +730,8 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
   -- A subsequence `φ` has the bound on `[-n, n] × ℝ` at its `n`-th term, and Arzelà–Ascoli gives a
   -- further subsequence `ψ` converging locally uniformly.
   obtain ⟨φ, hφ, hφP⟩ := Filter.extraction_forall_of_eventually hband
-  have hsq (r : ℝ) : closedBall (0 : ℝ × ℝ) r ⊆ Icc (-r) r ×ˢ univ := fun z hz ↦
-    ⟨abs_le.1 ((Real.norm_eq_abs z.1 ▸ norm_fst_le z).trans (mem_closedBall_zero_iff.1 hz)),
-      mem_univ _⟩
+  have hsq (r : ℝ) : closedBall (0 : ℝ × ℝ) r ⊆ Icc (-r) r ×ˢ univ :=
+    closedBall_zero_eq_Icc_prod_Icc r ▸ prod_mono subset_rfl (subset_univ _)
   obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
     (R := fun n ↦ (n : ℝ)) (fun n ↦ Nat.cast_nonneg n) tendsto_natCast_atTop_atTop
     (fun n ↦ (hφP n).1.mono (hsq n)) fun n ↦ (hφP n).2.mono_left (hsq n)
