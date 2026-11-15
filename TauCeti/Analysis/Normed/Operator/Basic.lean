@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 
@@ -85,6 +86,8 @@ obtained by replacing one coordinate. The coordinate arguments are adapted from
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
+Bounded linear endomorphisms of a seminormed space act continuously on it
+(`ContinuousLinearMap.instContinuousSMul`).
 -/
 
 public section
@@ -612,6 +615,11 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
     simp only [map_sub, map_neg, hAA, neg_neg] at h'
     rw [← h']
     abel
+
+/-- Bounded linear endomorphisms of a seminormed space act continuously on it. -/
+instance instContinuousSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E where
+  continuous_smul := continuous_fst.clm_apply continuous_snd
 
 end ContinuousLinearMap
 

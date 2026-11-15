@@ -82,6 +82,7 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
 (`LinearMap.toContinuousLinearMap_star`) and its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
 
 -/
 
@@ -521,6 +522,14 @@ theorem mem_range_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜
 end LinearIsometry
 
 end OperatorCorners
+
+namespace Unitary
+
+/-- Unitary operators on a Hilbert space act by isometries. -/
+instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →L[𝕜] E)) E where
+  isometry_smul u := (Unitary.linearIsometryEquiv u).isometry
+
+end Unitary
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
