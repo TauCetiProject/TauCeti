@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import Mathlib.Data.Set.List
@@ -53,6 +54,8 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
 * `CoxeterSystem.length_parabolicHom`: **it preserves lengths.**
 * `CoxeterSystem.parabolicHom_injective`: **it is injective.**
 * `CoxeterSystem.isReduced_map_iff`: a word is reduced exactly when its image is.
+* `CoxeterSystem.bruhatLE_parabolicHom_iff`: **it embeds the Bruhat order as an induced
+  suborder.**
 
 ## References
 
@@ -211,5 +214,22 @@ include hf in
 /-- A word in `B` is reduced exactly when its image under `f` is reduced in `W'`. -/
 theorem isReduced_map_iff {ω : List B} : cs'.IsReduced (ω.map f) ↔ cs.IsReduced ω := by
   rw [IsReduced, IsReduced, ← parabolicHom_wordProd cs hf, length_parabolicHom, List.length_map]
+
+/-- **The homomorphism `CoxeterSystem.parabolicHom` preserves and reflects the Bruhat order.** By
+the subword property, Bruhat comparisons are read off subwords of a reduced word, which `f`
+carries bijectively onto subwords of the mapped reduced word. -/
+@[simp]
+theorem bruhatLE_parabolicHom_iff {u w : W} :
+    cs'.BruhatLE (cs.parabolicHom cs' hf u) (cs.parabolicHom cs' hf w) ↔ cs.BruhatLE u w := by
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
+  rw [parabolicHom_wordProd, cs'.bruhatLE_iff_exists_sublist_wordProd_eq
+    ((isReduced_map_iff cs hf).mpr hω), cs.bruhatLE_iff_exists_sublist_wordProd_eq hω]
+  constructor
+  · rintro ⟨τ, hτ, hprod⟩
+    obtain ⟨σ, hσ, rfl⟩ := List.sublist_map_iff.mp hτ
+    rw [← parabolicHom_wordProd cs hf] at hprod
+    exact ⟨σ, hσ, parabolicHom_injective cs hf hprod⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    exact ⟨σ.map f, hσ.map f, (parabolicHom_wordProd cs hf σ).symm⟩
 
 end CoxeterSystem
