@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.LinearAlgebra.Dual.DoubleDual
 
 /-!
 # Functoriality of symmetric algebras
@@ -119,13 +120,12 @@ theorem lift_map {A : Type*} [CommSemiring A] [Algebra R A] (f : M →ₗ[R] N) 
 evaluating at `z` is evaluating at `f z`. -/
 theorem lift_eval_comp_map_dualMap (f : M →ₗ[R] N) (z : M) :
     (lift (Module.Dual.eval R M z)).comp (map R f.dualMap) = lift (Module.Dual.eval R N (f z)) := by
-  rw [lift_comp_map]
-  rfl
+  simp
 
 /-- Applied form of `SymmetricAlgebra.lift_eval_comp_map_dualMap`. -/
 theorem lift_eval_map_dualMap (f : M →ₗ[R] N) (z : M) (p : SymmetricAlgebra R (Module.Dual R N)) :
-    lift (Module.Dual.eval R M z) (map R f.dualMap p) = lift (Module.Dual.eval R N (f z)) p :=
-  AlgHom.congr_fun (lift_eval_comp_map_dualMap R f z) p
+    lift (Module.Dual.eval R M z) (map R f.dualMap p) = lift (Module.Dual.eval R N (f z)) p := by
+  simp
 
 /-- A left inverse of linear maps induces a left inverse of the corresponding symmetric-algebra
 maps. -/

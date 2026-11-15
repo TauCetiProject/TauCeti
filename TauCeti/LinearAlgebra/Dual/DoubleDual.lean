@@ -18,6 +18,8 @@ injective; torsion may be killed by it.
 
 ## Main declarations
 
+* `Module.Dual.eval_comp_dualMap`: evaluation at `z` composed with the transpose of `f` is
+evaluation at `f z`; the pointwise form of Mathlib's `Module.Dual.eval_naturality`.
 * `TauCeti.Module.Dual.evalHomEquiv`: precomposition with evaluation is a linear equivalence on maps
 to a reflexive target, provided the dual of the source is reflexive.
 -/
@@ -25,6 +27,18 @@ to a reflexive target, provided the dual of the source is reflexive.
 public section
 
 open Module Module.Dual
+
+namespace Module.Dual
+
+/-- Evaluation at `z` composed with the transpose of `f` is evaluation at `f z`. This is the
+pointwise form of `Module.Dual.eval_naturality`. -/
+@[simp]
+theorem eval_comp_dualMap {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (z : M) :
+    eval R M z ∘ₗ f.dualMap = eval R N (f z) :=
+  rfl
+
+end Module.Dual
 
 namespace TauCeti.Module.Dual
 
