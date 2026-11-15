@@ -106,11 +106,29 @@ noncomputable def algebraMap : K⸨X⸩ →+* Level K d :=
 /-- Level `d` is a `K⸨X⸩`-algebra through the expansion `X ↦ X ^ d`. -/
 noncomputable instance : Algebra K⸨X⸩ (Level K d) := (algebraMap K d).toAlgebra
 
+/-- Level `d` is a `K`-algebra through its `K⸨X⸩`-algebra structure. -/
+noncomputable instance : Algebra K (Level K d) :=
+  ((algebraMap K d).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
+
+instance : IsScalarTower K K⸨X⸩ (Level K d) where
+  smul_assoc r f x := by
+    -- Switch from the coefficientwise `K`-action on `K⸨X⸩` to `algebraMap`-multiplication.
+    rw [← C_mul_eq_smul, ← _root_.LaurentSeries.algebraMap_apply, Algebra.smul_def,
+      Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
+    rfl
+
 /-- The algebra map into a ramified level is expansion on underlying Laurent series. -/
 @[simp]
 theorem algebraMap_apply (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (Algebra.algebraMap K⸨X⸩ (Level K d) f) =
       expand K d f := (rfl)
+
+/-- Constants from `K` embed into a ramified level as constant Laurent series. -/
+@[simp]
+theorem ringEquivLaurentSeries_algebraMap (c : K) :
+    ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) c) =
+      Algebra.algebraMap K K⸨X⸩ c :=
+  (expand K d).commutes c
 
 /-- Wrapping and then taking the underlying Laurent series is the identity. -/
 @[simp]
@@ -266,6 +284,11 @@ noncomputable instance moduleFinite (K : Type*) [Field K] (d : ℕ+) :
     Module.Finite K⸨X⸩ (Level K d) :=
   (powerBasis K d).finite
 
+/-- The ramified Laurent-series level `d` has degree `d` over `K⸨X⸩`. -/
+theorem finrank_eq (K : Type*) [Field K] (d : ℕ+) :
+    Module.finrank K⸨X⸩ (Level K d) = d := by
+  rw [(powerBasis K d).finrank, powerBasis_dim]
+
 /-- The `K⸨X⸩`-algebra embedding of level `d` into the Puiseux field. -/
 noncomputable def toPuiseux (K : Type*) [Field K] (d : ℕ+) :
     Level K d →ₐ[K⸨X⸩] TauCeti.puiseuxField K where
@@ -361,6 +384,11 @@ theorem levelPowerBasis_basis (K : Type*) [Field K] (d : ℕ+) :
   ext i : 1
   rw [Module.Basis.reindex_apply]
   congr
+
+/-- The actual level-`d` Puiseux subfield is finite-dimensional over `K⸨X⸩`. -/
+noncomputable instance level_moduleFinite (K : Type*) [Field K] (d : ℕ+) :
+    Module.Finite K⸨X⸩ (level K d) :=
+  (levelPowerBasis K d).finite
 
 /-- The level-`d` Puiseux subfield has degree `d` over `K⸨X⸩`. -/
 theorem level_finrank (K : Type*) [Field K] (d : ℕ+) :
