@@ -27,9 +27,12 @@ when `Q` and `det (1 - T u)` are coprime
 (`Polynomial.isUnit_evalAt_one_colemanDSeries_one_sub_C_mul_reverse_iff`).
 
 For `Q = X - a` this recovers the invertibility of `1 - a u` exactly when `det (1 - T u)` takes a
-unit value at `a`. The criterion concerns coprimality with the whole Fredholm series, and hence
-invertibility on all of `M`: if `Q` divides `det (1 - T u)` and is not a unit of the ring of entire
-series, then `Q*(u)` is not invertible.
+unit value at `a`. Dually, for an operator polynomial `P` whose constant coefficient is a unit,
+its reversal `P*` has unit leading coefficient `P(0)` and `(P*)* = P`, so `P(u)` is invertible
+exactly when `P*` and `det (1 - T u)` are coprime entire series
+(`ContinuousLinearMap.IsPrCompact.isUnit_aeval_iff`). The criterion concerns coprimality with the
+whole Fredholm series, and hence invertibility on all of `M`: if `Q` divides `det (1 - T u)` and is
+not a unit of the ring of entire series, then `Q*(u)` is not invertible.
 
 ## Main results
 
@@ -37,6 +40,10 @@ series, then `Q*(u)` is not invertible.
   `Q` and `det (1 - T u)` are coprime entire series.
 * `ContinuousLinearMap.IsRowCompact.isUnit_aeval_reverse_iff`: the same criterion on a model space
   `C₀(I, R)`, for the principal-minor series of the matrix of `u`.
+* `ContinuousLinearMap.IsPrCompact.isUnit_aeval_iff`,
+  `ContinuousLinearMap.IsRowCompact.isUnit_aeval_iff`: for a polynomial `P` with unit constant
+  coefficient, `P(u)` is invertible exactly when `P.reverse` and `det (1 - T u)` are coprime entire
+  series.
 
 ## References
 
@@ -98,6 +105,42 @@ theorem IsRowCompact.isUnit_aeval_reverse_iff {I : Type*} [TopologicalSpace I] [
         ⟨u.matrixCoeff.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have hu' := isPrCompact_iff_isRowCompact.2 hu
   convert hu'.isUnit_aeval_reverse_iff hQ using 3
+  exact hu.charPowerSeries_eq_charPowerSeries_matrixCoeff.symm
+
+/-- **Invertibility of a polynomial in a row-compact operator.** Let `u` be a row-compact
+endomorphism of a module with property (Pr) and `P` a polynomial whose constant coefficient is a
+unit (for instance a monic polynomial with unit constant term). Then `P(u)` is invertible exactly
+when the reversal `P.reverse` and the Fredholm series `det (1 - T u)` are coprime in the ring of
+entire series. -/
+theorem IsPrCompact.isUnit_aeval_iff {u : M →L[R] M} (hu : u.IsPrCompact) {P : R[X]}
+    (hP : IsUnit (P.coeff 0)) :
+    IsUnit (Polynomial.aeval u P) ↔
+      IsCoprime
+        (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
+          IsEntire.subring R)
+        ⟨u.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  have hQ : IsUnit P.reverse.leadingCoeff := by
+    rwa [reverse_leadingCoeff, trailingCoeff_eq_coeff_zero hP.ne_zero]
+  have hdeg : P.reverse.natDegree = P.natDegree := by
+    rw [reverse_natDegree, natTrailingDegree_eq_zero.mpr (.inr hP.ne_zero), Nat.sub_zero]
+  have hrev : P.reverse.reverse = P := by
+    rw [reverse, hdeg, reverse, reflect_reflect]
+  simpa only [hrev] using hu.isUnit_aeval_reverse_iff hQ
+
+/-- **Invertibility of a polynomial in a row-compact operator on model spaces.** For a row-compact
+endomorphism `u` of `C₀(I, R)` and a polynomial `P` with invertible constant coefficient, `P(u)` is
+invertible exactly when `P.reverse` and `det (1 - T u)` are coprime in the ring of entire series. -/
+theorem IsRowCompact.isUnit_aeval_iff {I : Type*} [TopologicalSpace I] [DiscreteTopology I]
+    [DecidableEq I] {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {P : R[X]}
+    (hP : IsUnit (P.coeff 0)) :
+    IsUnit (Polynomial.aeval u P) ↔
+      IsCoprime
+        (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
+          IsEntire.subring R)
+        ⟨u.matrixCoeff.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
+  have hu' := isPrCompact_iff_isRowCompact.2 hu
+  convert hu'.isUnit_aeval_iff hP using 3
   exact hu.charPowerSeries_eq_charPowerSeries_matrixCoeff.symm
 
 end ContinuousLinearMap

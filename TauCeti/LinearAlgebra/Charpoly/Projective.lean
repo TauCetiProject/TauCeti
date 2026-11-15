@@ -38,16 +38,20 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
   (`LinearMap.coeff_projectiveCharpolyRev_one`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
 * its degree is at most any bound for the ranks of `M` at the points of `Spec R`
-  (`LinearMap.natDegree_projectiveCharpolyRev_le`); on a free module its coefficient in degree
-  `finrank R M` is `(-1) ^ finrank R M * det f`, so the degree is the rank exactly when
-  `det f ≠ 0`, in particular when `f` is invertible
+  (`LinearMap.natDegree_projectiveCharpolyRev_le`); when `M` has constant rank `n` on `Spec R`
+  its coefficient in degree `n` is `(-1) ^ n * projectiveDet f`
+  (`LinearMap.coeff_projectiveCharpolyRev_of_rankAtStalk_eq`), and on a free module the degree is
+  the rank exactly when `det f ≠ 0`, in particular when `f` is invertible
   (`LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_iff`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
 * **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
   `Q = projectiveCharpolyRev f` is a monic polynomial killing `f`
   (`LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero`,
-  `LinearMap.monic_reflect_projectiveCharpolyRev`).
+  `LinearMap.monic_reflect_projectiveCharpolyRev`), and when `f` is invertible every such
+  reflection — in particular the reversal `Q.reverse` — kills `f`
+  (`LinearMap.aeval_reflect_projectiveCharpolyRev_of_isUnit`,
+  `LinearMap.aeval_reverse_projectiveCharpolyRev_of_isUnit`).
 
 The last statement turns a norm into an integral equation: an element of a finite projective
 `R`-algebra is a root of a monic polynomial whose coefficients are those of the reversed
@@ -308,5 +312,44 @@ theorem monic_reflect_projectiveCharpolyRev (f : Module.End R M) {n : ℕ}
     ((projectiveCharpolyRev f).reflect n).Monic := by
   refine monic_of_natDegree_le_of_coeff_eq_one n (natDegree_reflect_le.trans (max_le le_rfl hn)) ?_
   rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self, coeff_projectiveCharpolyRev_zero]
+
+open scoped TensorProduct in
+/-- On a finite projective module of constant rank `n` on `Spec R`, the coefficient of
+`det (1 - X f)` in degree `n` is `(-1) ^ n` times the determinant `projectiveDet f`. -/
+theorem coeff_projectiveCharpolyRev_of_rankAtStalk_eq {n : ℕ}
+    (hn : ∀ p, rankAtStalk (R := R) M p = n) (f : Module.End R M) :
+    (projectiveCharpolyRev f).coeff n = (-1) ^ n * projectiveDet f := by
+  apply sub_eq_zero.mp
+  refine eq_zero_of_localization _ fun J hJ ↦ ?_
+  let p : PrimeSpectrum R := ⟨J, hJ.isPrime⟩
+  let A := Localization.AtPrime p.asIdeal
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hr : finrank A (A ⊗[R] M) = n :=
+    (rankAtStalk_eq_finrank_tensorProduct (M := M) p).symm.trans (hn p)
+  rw [map_sub, ← coeff_map, ← projectiveCharpolyRev_baseChange (A := A), ← hr,
+    coeff_projectiveCharpolyRev_finrank, hr, map_mul, map_pow, map_neg, map_one,
+    ← projectiveDet_baseChange (A := A), projectiveDet_eq_det, sub_self]
+
+/-- **Cayley–Hamilton for an invertible endomorphism.** When `f` is invertible, the reflection
+`X ^ d · Q(1/X)` of `Q = projectiveCharpolyRev f` at any bound `d` for the degree of `Q` kills `f`:
+the extra power of `X` in `exists_aeval_reflect_projectiveCharpolyRev_eq_zero` cancels by
+invertibility of `f`. -/
+theorem aeval_reflect_projectiveCharpolyRev_of_isUnit {f : Module.End R M} (hf : IsUnit f) {d : ℕ}
+    (hd : (projectiveCharpolyRev f).natDegree ≤ d) :
+    aeval f ((projectiveCharpolyRev f).reflect d) = 0 := by
+  obtain ⟨n, hn, h0⟩ := exists_aeval_reflect_projectiveCharpolyRev_eq_zero f
+  have hrefl {p : R[X]} {a b : ℕ} (ha : p.natDegree ≤ a) :
+      p.reflect (a + b) = p.reflect a * X ^ b := by
+    simpa [reflect_C] using reflect_mul p (C 1) ha (by simp)
+  rcases le_total d n with hdn | hnd
+  · rw [← Nat.add_sub_of_le hdn, hrefl hd, map_mul, map_pow, aeval_X] at h0
+    exact (hf.pow (n - d)).mul_left_eq_zero.mp h0
+  · rw [← Nat.add_sub_of_le hnd, hrefl hn, map_mul, h0, zero_mul]
+
+/-- When an endomorphism `f` of a finite projective module is invertible, the reversal of its
+reversed characteristic polynomial `det (1 - X f)` kills `f`. -/
+theorem aeval_reverse_projectiveCharpolyRev_of_isUnit {f : Module.End R M} (hf : IsUnit f) :
+    aeval f (projectiveCharpolyRev f).reverse = 0 :=
+  aeval_reflect_projectiveCharpolyRev_of_isUnit hf le_rfl
 
 end LinearMap
