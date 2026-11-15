@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Morse.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The Morse index on a smooth manifold
 
@@ -126,7 +128,8 @@ theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
   rw [morseIndex_def]
   exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
     rw [hessianQuadraticForm_apply]
-    exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
+    exact fderiv_fderiv_self_nonneg_of_isLocalMin
+      (hf.contDiffAt_comp_extChartAt_symm.eventually_differentiableAt (by norm_num)) hmin' v
 
 /-- The manifold Morse index is unchanged when the manifold model is transported through a
 continuous linear equivalence. -/

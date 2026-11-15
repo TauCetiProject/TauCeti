@@ -148,7 +148,7 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
   have hcw (φ : E → E [⋀^Fin 1]→L[ℝ] ℝ) : HasCompactSupport fun x ↦ wedge (φ x) (η x) e₁ :=
     hcη.wedge_left.comp_left (g := fun ω : E [⋀^Fin (1 + (n + 1))]→L[ℝ] ℝ ↦ ω e₁) rfl
   have hA : Integrable A e₁.addHaar :=
-    (((J.contDiff_twistedDifferential (n := 0) (by simpa using hg)).wedge
+    (((J.contDiff_twistedDifferential (n := 0) hg (by simp)).wedge
       (hη.of_le zero_le_one)).continuous.eval_const _).integrable_of_hasCompactSupport
       (hcw _)
   have hT : Integrable (fun x ↦ wedge (cutoffPhaseForm χ b α x) (η x) e₁) e₁.addHaar :=
