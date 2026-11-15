@@ -79,8 +79,7 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
 * `TauCeti.QuiverRep.asModuleIso`: **the representation carried by `asModule M` is `M`**, whence
   `TauCeti.QuiverRep.asModuleShrinkIso` says the same of the small model, so
   `TauCeti.quiverRepFunctor` is essentially surjective, and being fully faithful already it is an
-  equivalence.  `TauCeti.QuiverRep.dimVector_asModule` records that the dimension vector is
-  unchanged.
+  equivalence.
 
 ## Implementation notes
 
@@ -444,12 +443,6 @@ noncomputable def asModuleIso : quiverRepOfModule k Q (asModule k Q M) ≅ M :=
       -- the elementwise `TauCeti.QuiverRep.vertexComponentEquiv_symm_pathMap`
       exact ModuleCat.hom_ext
         (LinearMap.ext fun x => vertexComponentEquiv_symm_pathMap k Q M p x))
-
-/-- **The dimension vector is unchanged** by passing to the module a representation carries and
-back. -/
-theorem dimVector_asModule :
-    dimVector (quiverRepOfModule k Q (asModule k Q M)) = dimVector M :=
-  dimVector_eq_of_iso (asModuleIso k Q M)
 
 end EssSurj
 
