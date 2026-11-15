@@ -365,6 +365,7 @@ private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
   (rfl)
 
 /-- Position derivatives commute with the kernel cutoff. -/
+@[simp]
 theorem spatialDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
     spatialDeriv j (kernelCutoff χ b) = kernelCutoff χ (spatialDeriv j b) := by
   ext1
@@ -374,6 +375,7 @@ theorem spatialDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
   exact coordinateDeriv_fst_cutoffCoeff χ b (2 * π) j x ξ
 
 /-- Frequency derivatives commute with the kernel cutoff. -/
+@[simp]
 theorem frequencyDeriv_kernelCutoff (j : Fin n) (b : Symbol n V W m) :
     frequencyDeriv j (kernelCutoff χ b) = kernelCutoff χ (frequencyDeriv j b) := by
   ext1
