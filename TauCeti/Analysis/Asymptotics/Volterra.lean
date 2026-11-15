@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -28,13 +29,16 @@ converge. Then the Volterra integral equation
   `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)`
 
 has a solution `h`, continuous on `(a, ∞)`, with `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every
-`x > a`.
+`x > a`. It is the only solution that is `O(P)` on `[x, ∞)` for every `x > a`. When
+`‖K x v‖ ≤ Q v` and `‖J v‖ ≤ ‖ψ v‖`, it satisfies the sharper bound `‖h x‖ ≤ exp (Φ₁ x) - 1`,
+where `Φ₁ x = ∫ v in Ioi x, Q v * ‖ψ v‖`.
 
-This is the existence part of Olver's theorem on Volterra integral equations (Chapter 6,
-Theorem 10.1), on the half-line `(a, ∞)`; the uniqueness, differentiability and finite-endpoint
-parts of that theorem are not treated here. The existence and error-bound theorems for the
-Liouville–Green approximation and for the solutions of linear differential equations at an
-irregular singularity of rank one (DLMF §§2.7, 2.8) reduce to equations of this form.
+These are the existence, uniqueness and error-bound parts of Olver's theorem on Volterra
+integral equations (Chapter 6, Theorem 10.1), on the half-line `(a, ∞)`; the differentiability
+and finite-endpoint parts of that theorem are not treated here. The existence and error-bound
+theorems for the Liouville–Green approximation and for the solutions of linear differential
+equations at an irregular singularity of rank one (DLMF §§2.7, 2.8) reduce to equations of this
+form.
 
 The kernel `K` and the coefficient `ψ` take values in any normed field `𝕜`, and the forcing `J`
 and the unknown `h` in any real Banach space which is also a normed `𝕜`-space; for `𝕜 = E = ℂ`
@@ -44,6 +48,16 @@ the scalar multiplications are products of complex numbers.
 
 * `TauCeti.exists_volterra_solution`: existence of a continuous solution with the bound
   `‖h x‖ ≤ P x * Φ x * exp (Ψ x)`.
+* `TauCeti.volterra_solution_unique`: two solutions that are `O(P)` on `[x, ∞)` for every
+  `x > a` agree on `(a, ∞)`.
+* `TauCeti.norm_volterra_solution_le`: every such solution satisfies the bound
+  `‖h x‖ ≤ P x * Φ x * exp (Ψ x)`.
+* `TauCeti.isBigO_of_norm_le_volterra_bound`: conversely, every function satisfying this bound
+  is `O(P)` on `[x, ∞)` for every `x > a`.
+* `TauCeti.integrableOn_volterra_of_isBigO`: for a measurable function that is `O(P)` on
+  `[x, ∞)`, the integrand of the equation at `x` is integrable on `(x, ∞)`.
+* `TauCeti.norm_volterra_solution_le_exp_sub_one`: the sharper bound
+  `‖h x‖ ≤ exp (Φ₁ x) - 1` when `‖K x v‖ ≤ Q v` and `‖J v‖ ≤ ‖ψ v‖`.
 
 A solution is constructed as the sum of the Picard increments (the Liouville–Neumann series).
 The `k`-th increment is bounded by
@@ -60,7 +74,7 @@ The discrete analogue is `TauCeti.exists_discrete_volterra_solution`.
 
 public section
 
-open Filter Set MeasureTheory Function
+open Asymptotics Filter Set MeasureTheory Function
 open scoped Nat Topology
 
 namespace TauCeti
@@ -388,7 +402,8 @@ end Iteration
 every `x > a`. Then the Volterra integral equation
 `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` has a solution, continuous on `(a, ∞)`, such
 that `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a` (the existence part of Olver, Chapter 6,
-Theorem 10.1). -/
+Theorem 10.1). By `volterra_solution_unique`, it is the only solution that is `O(P)` on
+`[x, ∞)` for every `x > a`. -/
 theorem exists_volterra_solution [CompleteSpace E]
     (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
     (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
@@ -405,5 +420,249 @@ theorem exists_volterra_solution [CompleteSpace E]
     continuousOn_tsum_picardTerm hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ,
     fun _ hx ↦ tsum_picardTerm_eq hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ hx,
     fun _ hx ↦ norm_tsum_picardTerm_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ hx⟩
+
+/-! ### Uniqueness and the bounds satisfied by every solution -/
+
+omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
+/-- A function that is `O(P)` on `[x, ∞)`, with `P ≥ 0` there, is bounded on `[x, ∞)` by a
+multiple of `P`. -/
+private lemma exists_bound_of_isBigO (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) {h : ℝ → E} {x : ℝ}
+    (hx : a < x) (hh : h =O[𝓟 (Ici x)] P) : ∃ C, ∀ v ∈ Ici x, ‖h v‖ ≤ C * P v := by
+  obtain ⟨C, hC⟩ := isBigO_principal.1 hh
+  refine ⟨C, fun v hv ↦ ?_⟩
+  rw [← Real.norm_of_nonneg (hP0 v (hx.trans_le hv))]
+  exact hC v hv
+
+omit [NormedSpace ℝ E] in
+/-- If `h` is almost everywhere strongly measurable on `(a, ∞)` and `O(P)` on `[x, ∞)` for some
+`x > a`, then the integrand `v ↦ K x v • (J v + ψ v • h v)` of the Volterra equation is
+integrable on `(x, ∞)`. -/
+theorem integrableOn_volterra_of_isBigO
+    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
+    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
+    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) {h : ℝ → E}
+    (hm : AEStronglyMeasurable h (volume.restrict (Ioi a))) {x : ℝ} (hx : a < x)
+    (hh : h =O[𝓟 (Ici x)] P) :
+    IntegrableOn (fun v ↦ K x v • (J v + ψ v • h v)) (Ioi x) := by
+  obtain ⟨C, hC⟩ := exists_bound_of_isBigO hP0 hx hh
+  have hsub : Ioi x ⊆ Ioi a := Ioi_subset_Ioi hx.le
+  have hKx : ContinuousOn (fun v ↦ K x v) (Ioi x) :=
+    hK.comp (continuous_const.prodMk continuous_id).continuousOn fun v hv ↦ ⟨hx, le_of_lt hv⟩
+  refine Integrable.mono' (((hΦ x hx).add ((hΨ x hx).const_mul C)).const_mul (P x))
+    ((hKx.aestronglyMeasurable measurableSet_Ioi).smul
+      (((hJ.mono hsub).aestronglyMeasurable measurableSet_Ioi).add
+        (((hψ.mono hsub).aestronglyMeasurable measurableSet_Ioi).smul
+          (hm.mono_measure (Measure.restrict_mono hsub le_rfl))))) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
+  have hF : ‖J v + ψ v • h v‖ ≤ ‖J v‖ + ‖ψ v‖ * (C * P v) :=
+    (norm_add_le _ _).trans (by rw [norm_smul]; gcongr; exact hC v hv.le)
+  rw [norm_smul]
+  calc ‖K x v‖ * ‖J v + ψ v • h v‖ ≤ P x * Q v * (‖J v‖ + ‖ψ v‖ * (C * P v)) :=
+        mul_le_mul (hKle x v hx hv.le) hF (norm_nonneg _)
+          ((norm_nonneg _).trans (hKle x v hx hv.le))
+    _ = P x * (Q v * ‖J v‖ + C * (P v * Q v * ‖ψ v‖)) := by ring
+
+/-- **Volterra integral equations, uniqueness.** Let `K` be continuous on
+`{(x, v) | a < x ≤ v}` with `‖K x v‖ ≤ P x * Q v` there, where `P ≥ 0` on `(a, ∞)`, and let `J`,
+`ψ` be continuous on `(a, ∞)` such that `Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and
+`Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖` converge for every `x > a`. Then two solutions of the
+Volterra equation `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that are almost everywhere
+strongly measurable on `(a, ∞)` and `O(P)` on `[x, ∞)` for every `x > a` agree on `(a, ∞)` (the
+uniqueness part of Olver, Chapter 6, Theorem 10.1). -/
+theorem volterra_solution_unique
+    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
+    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
+    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) {h₁ h₂ : ℝ → E}
+    (h₁_meas : AEStronglyMeasurable h₁ (volume.restrict (Ioi a)))
+    (h₂_meas : AEStronglyMeasurable h₂ (volume.restrict (Ioi a)))
+    (h₁_eq : ∀ x ∈ Ioi a, h₁ x = ∫ v in Ioi x, K x v • (J v + ψ v • h₁ v))
+    (h₂_eq : ∀ x ∈ Ioi a, h₂ x = ∫ v in Ioi x, K x v • (J v + ψ v • h₂ v))
+    (h₁_isBigO : ∀ x ∈ Ioi a, h₁ =O[𝓟 (Ici x)] P)
+    (h₂_isBigO : ∀ x ∈ Ioi a, h₂ =O[𝓟 (Ici x)] P) :
+    EqOn h₁ h₂ (Ioi a) := by
+  intro x₀ (hx₀ : a < x₀)
+  set d : ℝ → E := h₁ - h₂ with hd_def
+  -- the difference solves the homogeneous equation
+  have hd : ∀ x ∈ Ioi a, d x = ∫ v in Ioi x, K x v • ψ v • d v := fun x hx ↦ by
+    rw [hd_def, Pi.sub_apply, h₁_eq x hx, h₂_eq x hx,
+      ← integral_sub (integrableOn_volterra_of_isBigO hK hJ hψ hP0 hKle hΦ hΨ h₁_meas hx
+        (h₁_isBigO x hx)) (integrableOn_volterra_of_isBigO hK hJ hψ hP0 hKle hΦ hΨ h₂_meas hx
+        (h₂_isBigO x hx))]
+    refine integral_congr_ae (ae_of_all _ fun v ↦ ?_)
+    simp only [Pi.sub_apply, smul_sub, smul_add]
+    abel
+  obtain ⟨C, hC⟩ := exists_bound_of_isBigO hP0 hx₀
+    ((h₁_isBigO x₀ hx₀).sub (h₂_isBigO x₀ hx₀))
+  set Ψ : ℝ → ℝ := fun x ↦ ∫ v in Ioi x, P v * Q v * ‖ψ v‖ with hΨ_def
+  -- on `[x₀, ∞)`, the iterated estimates give `‖d x‖ ≤ C * P x * (Ψ x ^ k / k!)` for every `k`
+  have hiter : ∀ k : ℕ, ∀ x ∈ Ici x₀, ‖d x‖ ≤ C * P x * (Ψ x ^ k / k !) := by
+    intro k
+    induction k with
+    | zero => intro x hx; simpa [hd_def] using hC x hx
+    | succ k ih =>
+      intro x (hx : x₀ ≤ x)
+      have hxa : a < x := hx₀.trans_le hx
+      rw [hd x hxa]
+      calc ‖∫ v in Ioi x, K x v • ψ v • d v‖
+          ≤ ∫ v in Ioi x, C * P x / k ! * (P v * Q v * ‖ψ v‖ * Ψ v ^ k) := by
+            refine norm_integral_le_of_norm_le
+              (((hΨ x hxa).mul_pow_integral_Ioi k).const_mul _) ?_
+            filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
+            have hKv := hKle x v hxa hv.le
+            rw [norm_smul, norm_smul]
+            calc ‖K x v‖ * (‖ψ v‖ * ‖d v‖)
+                ≤ P x * Q v * (‖ψ v‖ * (C * P v * (Ψ v ^ k / k !))) :=
+                  mul_le_mul hKv (mul_le_mul_of_nonneg_left (ih v (hx.trans hv.le))
+                    (norm_nonneg _)) (by positivity) ((norm_nonneg _).trans hKv)
+              _ = _ := by ring
+        _ = C * P x * (Ψ x ^ (k + 1) / (k + 1)!) := by
+            simp only [hΨ_def]
+            rw [integral_const_mul, (hΨ x hxa).integral_Ioi_mul_pow_integral_Ioi k,
+              Nat.factorial_succ]
+            push_cast
+            field_simp
+  have hlim : Tendsto (fun k : ℕ ↦ C * P x₀ * (Ψ x₀ ^ k / k !)) atTop (𝓝 0) := by
+    simpa using (FloorSemiring.tendsto_pow_div_factorial_atTop (Ψ x₀)).const_mul (C * P x₀)
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 (ge_of_tendsto' hlim fun k ↦ hiter k x₀ self_mem_Ici))
+
+omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
+/-- A function satisfying the bound `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` of
+`exists_volterra_solution` on `(a, ∞)`, where `Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and
+`Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖`, is `O(P)` on `[x, ∞)` for every `x > a`. -/
+theorem isBigO_of_norm_le_volterra_bound (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x)
+    (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
+    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) {h : ℝ → E}
+    (hh : ∀ x ∈ Ioi a, ‖h x‖ ≤ P x * (∫ v in Ioi x, Q v * ‖J v‖) *
+      Real.exp (∫ v in Ioi x, P v * Q v * ‖ψ v‖)) :
+    ∀ x ∈ Ioi a, h =O[𝓟 (Ici x)] P := fun x (hx : a < x) ↦
+  isBigO_principal.2 ⟨_, fun v (hv : x ≤ v) ↦ by
+    rw [Real.norm_of_nonneg (hP0 v (hx.trans_le hv))]
+    exact (hh v (hx.trans_le hv)).trans (mul_tail_le_of_le hP0 hQ0 hΦ hΨ
+      (Real.exp_monotone.monotoneOn _) (fun _ _ ↦ (Real.exp_pos _).le) hx hv)⟩
+
+/-- **Volterra integral equations, bound.** Under the hypotheses of `exists_volterra_solution`,
+every solution of the Volterra equation `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that is
+almost everywhere strongly measurable on `(a, ∞)` and `O(P)` on `[x, ∞)` for every `x > a`
+satisfies `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a`, where
+`Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖`. -/
+theorem norm_volterra_solution_le [CompleteSpace E]
+    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
+    (hP : ContinuousOn P (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+    (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
+    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) {h : ℝ → E}
+    (h_meas : AEStronglyMeasurable h (volume.restrict (Ioi a)))
+    (h_eq : ∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v))
+    (h_isBigO : ∀ x ∈ Ioi a, h =O[𝓟 (Ici x)] P) {x : ℝ} (hx : a < x) :
+    ‖h x‖ ≤ P x * (∫ v in Ioi x, Q v * ‖J v‖) *
+      Real.exp (∫ v in Ioi x, P v * Q v * ‖ψ v‖) := by
+  obtain ⟨h₀, h₀_cont, h₀_eq, h₀_le⟩ :=
+    exists_volterra_solution hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ (E := E)
+  rw [volterra_solution_unique hK hJ hψ hP0 hKle hΦ hΨ h_meas
+    (h₀_cont.aestronglyMeasurable measurableSet_Ioi) h_eq h₀_eq h_isBigO
+    (isBigO_of_norm_le_volterra_bound hP0 hQ0 hΦ hΨ h₀_le) hx]
+  exact h₀_le x hx
+
+/-! ### The sharper bound when the forcing is dominated by the coefficient -/
+
+/-- The exponential series without its constant term: `∑ t ^ (k + 1) / (k + 1)! = exp t - 1`. -/
+private lemma hasSum_pow_succ_div_factorial_succ (t : ℝ) :
+    HasSum (fun k : ℕ ↦ t ^ (k + 1) / (k + 1)!) (Real.exp t - 1) := by
+  have h := NormedSpace.expSeries_div_hasSum_exp t
+  rw [← Real.exp_eq_exp_ℝ] at h
+  simpa using (hasSum_nat_add_iff' 1).2 h
+
+/-- When `‖K x v‖ ≤ Q v` and `‖J v‖ ≤ ‖ψ v‖`, the `k`-th Picard increment is bounded by
+`Φ x ^ (k + 1) / (k + 1)!`, where `Φ x = ∫ v in Ioi x, Q v * ‖ψ v‖`. -/
+private lemma norm_picardTerm_le_pow_succ (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
+    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ Q v) (hJψ : ∀ v ∈ Ioi a, ‖J v‖ ≤ ‖ψ v‖)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖ψ v‖) (Ioi x)) (k : ℕ) {x : ℝ}
+    (hx : a < x) :
+    ‖picardTerm K J ψ k x‖ ≤ (∫ v in Ioi x, Q v * ‖ψ v‖) ^ (k + 1) / (k + 1)! := by
+  induction k generalizing x with
+  | zero =>
+    simp only [picardTerm, zero_add, pow_one, Nat.factorial_one, Nat.cast_one, div_one]
+    refine norm_integral_le_of_norm_le (hΦ x hx) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
+    rw [norm_smul]
+    exact mul_le_mul (hKle x v hx hv.le) (hJψ v (hx.trans hv)) (norm_nonneg _)
+      (hQ0 v (hx.trans hv))
+  | succ k ih =>
+    set g : ℝ → ℝ := fun v ↦ Q v * ‖ψ v‖ with hg
+    simp only [picardTerm]
+    calc ‖∫ v in Ioi x, K x v • ψ v • picardTerm K J ψ k v‖
+        ≤ ∫ v in Ioi x, ((k + 1)! : ℝ)⁻¹ * (g v * (∫ u in Ioi v, g u) ^ (k + 1)) := by
+          refine norm_integral_le_of_norm_le
+            (((hΦ x hx).mul_pow_integral_Ioi (k + 1)).const_mul _) ?_
+          filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
+          have hva : a < v := hx.trans hv
+          rw [norm_smul, norm_smul]
+          calc ‖K x v‖ * (‖ψ v‖ * ‖picardTerm K J ψ k v‖)
+              ≤ Q v * (‖ψ v‖ * ((∫ u in Ioi v, g u) ^ (k + 1) / (k + 1)!)) :=
+                mul_le_mul (hKle x v hx hv.le)
+                  (mul_le_mul_of_nonneg_left (ih hva) (norm_nonneg _)) (by positivity)
+                  (hQ0 v hva)
+            _ = _ := by simp only [hg]; ring
+      _ = (∫ u in Ioi x, g u) ^ (k + 1 + 1) / (k + 1 + 1)! := by
+          rw [integral_const_mul, (hΦ x hx).integral_Ioi_mul_pow_integral_Ioi,
+            Nat.factorial_succ (k + 1)]
+          push_cast
+          field_simp
+
+/-- **Volterra integral equations, sharper bound.** Let `K` be continuous on
+`{(x, v) | a < x ≤ v}` with `‖K x v‖ ≤ Q v` there, where `Q ≥ 0` is continuous on `(a, ∞)`, and
+let `J`, `ψ` be continuous on `(a, ∞)` with `‖J v‖ ≤ ‖ψ v‖` there and
+`Φ x = ∫ v in Ioi x, Q v * ‖ψ v‖` convergent for every `x > a`. Then every solution of the
+Volterra equation `h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` that is almost everywhere
+strongly measurable on `(a, ∞)` and bounded on `[x, ∞)` for every `x > a` satisfies
+`‖h x‖ ≤ exp (Φ x) - 1` for every `x > a`.
+
+This is Olver's sharper bound `|h(x)| ≤ e^{P₀ Φ(x)} - 1` for a constant `P = P₀` and `J = ψ`
+(Chapter 6, Theorem 10.1), with the constant `P₀` absorbed into `Q`. It improves on the bound
+`P₀ Φ e^{P₀ Φ}` of `norm_volterra_solution_le` when `Φ` is small. -/
+theorem norm_volterra_solution_le_exp_sub_one [CompleteSpace E]
+    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
+    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
+    (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x) (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ Q v)
+    (hJψ : ∀ v ∈ Ioi a, ‖J v‖ ≤ ‖ψ v‖)
+    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖ψ v‖) (Ioi x)) {h : ℝ → E}
+    (h_meas : AEStronglyMeasurable h (volume.restrict (Ioi a)))
+    (h_eq : ∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v))
+    (h_isBigO : ∀ x ∈ Ioi a, h =O[𝓟 (Ici x)] fun _ ↦ (1 : ℝ)) {x : ℝ} (hx : a < x) :
+    ‖h x‖ ≤ Real.exp (∫ v in Ioi x, Q v * ‖ψ v‖) - 1 := by
+  -- the general theory applies with `P = 1`
+  have hP : ContinuousOn (fun _ : ℝ ↦ (1 : ℝ)) (Ioi a) := continuousOn_const
+  have hP0 : ∀ x ∈ Ioi a, (0 : ℝ) ≤ (fun _ : ℝ ↦ (1 : ℝ)) x := fun _ _ ↦ zero_le_one
+  have hKle' : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ (fun _ : ℝ ↦ (1 : ℝ)) x * Q v :=
+    fun x v hx hv ↦ (hKle x v hx hv).trans_eq (one_mul _).symm
+  have hΦJ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x) := fun x (hx : a < x) ↦ by
+    refine (hΦ x hx).mono' (((hQ.mul hJ.norm).mono (Ioi_subset_Ioi hx.le)).aestronglyMeasurable
+      measurableSet_Ioi) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
+    have hQv := hQ0 v (hx.trans hv)
+    rw [Real.norm_of_nonneg (mul_nonneg hQv (norm_nonneg _))]
+    exact mul_le_mul_of_nonneg_left (hJψ v (hx.trans hv)) hQv
+  have hΨ : ∀ x ∈ Ioi a,
+      IntegrableOn (fun v ↦ (fun _ : ℝ ↦ (1 : ℝ)) v * Q v * ‖ψ v‖) (Ioi x) := fun x hx ↦ by
+    simpa only [one_mul] using hΦ x hx
+  -- the sum of the Picard increments is a solution obeying the sharper bound
+  set H : ℝ → E := fun x ↦ ∑' k, picardTerm K J ψ k x
+  have hH_le : ∀ x ∈ Ioi a, ‖H x‖ ≤ Real.exp (∫ v in Ioi x, Q v * ‖ψ v‖) - 1 := fun x hx ↦
+    tsum_of_norm_bounded (hasSum_pow_succ_div_factorial_succ _)
+      fun k ↦ norm_picardTerm_le_pow_succ hQ0 hKle hJψ hΦ k hx
+  rw [volterra_solution_unique hK hJ hψ hP0 hKle' hΦJ hΨ h_meas
+    ((continuousOn_tsum_picardTerm hK hJ hψ hP hQ hP0 hQ0 hKle' hΦJ hΨ).aestronglyMeasurable
+      measurableSet_Ioi) h_eq
+    (fun x hx ↦ tsum_picardTerm_eq hK hJ hψ hP hQ hP0 hQ0 hKle' hΦJ hΨ hx) h_isBigO
+    (isBigO_of_norm_le_volterra_bound hP0 hQ0 hΦJ hΨ
+      fun x hx ↦ norm_tsum_picardTerm_le hK hJ hψ hP hQ hP0 hQ0 hKle' hΦJ hΨ hx) hx]
+  exact hH_le x hx
 
 end TauCeti
