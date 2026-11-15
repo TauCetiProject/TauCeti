@@ -12,6 +12,9 @@ public import Mathlib.LinearAlgebra.Prod
 /-!
 # Exact sequences of linear maps
 
+An injective exact pair identifies the source with the kernel of the second map via
+`Function.Exact.linearEquivOfInjective`, with simp formulas for both directions.
+
 This file records elementary constructions and consequences for exact pairs of linear maps,
 including the exactness of `U' → V → B × A` built from two exact stages `U' → U → B` and
 `U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
@@ -136,6 +139,30 @@ theorem rangeRestrict (h : Exact f g) : Exact f g.rangeRestrict := fun x ↦ by
 inclusion of the range of `f`. -/
 theorem range_subtype (h : Exact f g) : Exact (LinearMap.range f).subtype g :=
   LinearMap.exact_iff.2 (by rw [Submodule.range_subtype, h.linearMap_ker_eq])
+
+/-- An injective first map in an exact pair identifies its source with the kernel of the
+second map. -/
+noncomputable def linearEquivOfInjective (h : Exact f g) (hf : Function.Injective f) :
+    M ≃ₗ[R] g.ker :=
+  (LinearEquiv.ofInjective _ hf).trans (LinearEquiv.ofEq _ _ h.linearMap_ker_eq.symm)
+
+/-- The kernel equivalence followed by inclusion is the first map of the exact pair. -/
+@[simp]
+theorem coe_linearEquivOfInjective_apply (h : Exact f g) (hf : Function.Injective f) (x : M) :
+    (h.linearEquivOfInjective hf x : N) = f x :=
+  (rfl)
+
+/-- The inverse kernel equivalence lifts an element through the first map. -/
+@[simp]
+theorem apply_linearEquivOfInjective_symm (h : Exact f g) (hf : Function.Injective f)
+    (x : g.ker) : f ((h.linearEquivOfInjective hf).symm x) = x := by
+  rw [← coe_linearEquivOfInjective_apply h hf, LinearEquiv.apply_symm_apply]
+
+/-- The inverse kernel equivalence sends the image of an element back to that element. -/
+@[simp]
+theorem linearEquivOfInjective_symm_mk (h : Exact f g) (hf : Function.Injective f)
+    (x : M) (hx : f x ∈ g.ker) : (h.linearEquivOfInjective hf).symm ⟨f x, hx⟩ = x :=
+  hf (by simp)
 
 end Semiring
 
@@ -312,15 +339,20 @@ theorem ker_coprod_eq_map_prod_top {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (hT x' z ▸ hxy)
     rw [map_sub, map_sub, mem_ker.1 hx', hX', map_zero, zero_sub, neg_add_cancel]
 
-/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ → M → M₂ → 0`, a surjection
-`π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a surjection
-`π : P₁ × P₂ → M` whose kernel is an extension of `ker π₂` by `ker π₁`. -/
+/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ --f--> M --g--> M₂ → 0`, a
+surjection `π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a
+surjection `π : P₁ × P₂ → M` with `π ∘ inl = f ∘ π₁` and `g ∘ π = π₂ ∘ snd`, so that `π₁`, `π`
+and `π₂` form a map to the given sequence from the split sequence
+`0 → P₁ --inl--> P₁ × P₂ --snd--> P₂ → 0`. Restricting `inl` and `snd` to the kernels makes
+`ker π` an extension of `ker π₂` by `ker π₁`. -/
 theorem exists_surjective_ker_exact [Module.Projective R P₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂}
     (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
     {π₁ : P₁ →ₗ[R] M₁} (hπ₁ : Function.Surjective π₁)
     {π₂ : P₂ →ₗ[R] M₂} (hπ₂ : Function.Surjective π₂) :
     ∃ π : (P₁ × P₂) →ₗ[R] M, Function.Surjective π ∧
+      π ∘ₗ inl R P₁ P₂ = f ∘ₗ π₁ ∧ g ∘ₗ π = π₂ ∘ₗ snd R P₁ P₂ ∧
       ∃ (i : ker π₁ →ₗ[R] ker π) (p : ker π →ₗ[R] ker π₂),
+        (∀ x, (i x : P₁ × P₂) = ((x : P₁), 0)) ∧ (∀ z, (p z : P₂) = (z : P₁ × P₂).2) ∧
         Function.Injective i ∧ Function.Exact i p ∧ Function.Surjective p := by
   -- Lift `π₂` along `g` to `σ : P₂ → M`, and send `(x, y)` to `f (π₁ x) + σ y`.
   obtain ⟨σ, hσ⟩ := Module.projective_lifting_property g π₂ hg
@@ -332,8 +364,10 @@ theorem exists_surjective_ker_exact [Module.Projective R P₂] {f : M₁ →ₗ[
     exact ⟨x, rfl⟩
   let π := (f ∘ₗ π₁).coprod σ
   have hπ (z : P₁ × P₂) : π z = f (π₁ z.1) + σ z.2 := rfl
-  refine ⟨π, hfg.surjective_coprod hπ₁ hπ₂ hσ, (inl R _ _).restrict fun x hx ↦ ?_,
-    (snd R _ _).restrict fun z hz ↦ ?_, fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
+  refine ⟨π, hfg.surjective_coprod hπ₁ hπ₂ hσ, coprod_inl _ _, LinearMap.ext fun z ↦ ?_,
+    (inl R _ _).restrict fun x hx ↦ ?_, (snd R _ _).restrict fun z hz ↦ ?_, fun _ ↦ rfl,
+    fun _ ↦ rfl, fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
+  · simp [hπ, hgσ, hfg.apply_apply_eq_zero]
   · simp_all
   · rw [mem_ker] at hz ⊢
     simpa [hπ, hgσ, hfg.apply_apply_eq_zero] using congrArg g hz
