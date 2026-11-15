@@ -241,13 +241,14 @@ private theorem seedMap_apply (s : X → Fin 4 × Fin 3 → ℝ)
 
 /-- A family of displacements `s` that sums to zero lies in the range of `c ↦ ∑ₓ cₓ s x` on
 the sum-zero vectors: `s y` is the image of `δ_y - (1/|X|) ∑ₓ δₓ`. -/
-private theorem range_seedMap [Nonempty X] {s : X → Fin 4 × Fin 3 → ℝ} (hs : ∑ x, s x = 0) :
+private theorem range_seedMap {s : X → Fin 4 × Fin 3 → ℝ} (hs : ∑ x, s x = 0) :
     LinearMap.range (seedMap (G := G) s) = Submodule.span ℝ (Set.range s) := by
   classical
   refine le_antisymm ?_ (Submodule.span_le.2 ?_)
   · rintro _ ⟨v, rfl⟩
     exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
   rintro _ ⟨y, rfl⟩
+  have : Nonempty X := ⟨y⟩
   have hX : (Fintype.card X : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   let v := MonoidAlgebra.single y 1 - (Fintype.card X : ℝ)⁻¹ • permutationSum ℝ X
   have hv : v ∈ augmentationSubrepresentation ℝ G X := by
