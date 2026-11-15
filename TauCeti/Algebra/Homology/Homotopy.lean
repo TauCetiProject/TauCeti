@@ -31,6 +31,12 @@ This is the mechanism behind homotopy invariance of relative homology, where `M`
 chain complex of a pair, that is, the degreewise cokernel of the chains of the subspace, and the
 vanishing holds because the homotopy restricts to the subspace.
 
+`Homotopy.liftMono` restricts a homotopy to subcomplexes. Let `ιS : S ⟶ K` and `ιT : T ⟶ L` be
+morphisms, with `ιT` a monomorphism in each degree. A chain homotopy between morphisms `K ⟶ L`
+whose components factor, on `S`, through `T` restricts to a chain homotopy between morphisms
+`S ⟶ T` lifting the two morphisms. For instance, a filtered homotopy restricts to the pieces of
+the filtrations.
+
 `Homotopy.idPow` iterates a chain homotopy from the identity of `K` to an endomorphism `s`: it
 exhibits every power `sᵐ` as homotopic to the identity, through the explicit operator
 `∑_{k < m} sᵏ ≫ h`.  Its components are needed, and not just the existence of some homotopy, when
@@ -177,6 +183,47 @@ lemma descCokernel_hom (hf : p ≫ fM = fL ≫ p') (hg : p ≫ gM = gL ≫ p') :
 lemma π_descCokernel_hom (hf : p ≫ fM = fL ≫ p') (hg : p ≫ gM = gL ≫ p') (i j : ι) :
     p.f i ≫ (descCokernel HL u p p' hw hp hcomm hf hg).hom i j = HL.hom i j ≫ p'.f j :=
   π_descCokernelHom HL u p p' hw hp hcomm i j
+
+end Homotopy
+
+namespace Homotopy
+
+section LiftMono
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {S K T L : HomologicalComplex C c} {fS gS : S ⟶ T} {f g : K ⟶ L}
+  (H : Homotopy f g) (ιS : S ⟶ K) (ιT : T ⟶ L) [∀ i, Mono (ιT.f i)]
+  (k : ∀ i j, S.X i ⟶ T.X j) (hk : ∀ i j, k i j ≫ ιT.f j = ιS.f i ≫ H.hom i j)
+
+include hk
+
+/-- A chain homotopy between morphisms `K ⟶ L` whose components send `S` into `T`, through given
+components `k`, restricts to a chain homotopy between the restrictions `S ⟶ T` of the two
+morphisms. Here `ιS : S ⟶ K` is arbitrary and `ιT : T ⟶ L` is a monomorphism in each degree, as
+for the inclusions of subcomplexes. -/
+@[no_expose]
+def liftMono (hf : fS ≫ ιT = ιS ≫ f) (hg : gS ≫ ιT = ιS ≫ g) : Homotopy fS gS where
+  hom := k
+  zero i j hij := by rw [← cancel_mono (ιT.f j), hk, H.zero i j hij, comp_zero, zero_comp]
+  comm i := by
+    have hd : dNext i k ≫ ιT.f i = ιS.f i ≫ dNext i H.hom := by
+      rw [← dNext_comp_right, ← dNext_comp_left]
+      exact congrArg (fun F ↦ dNext i F) (by funext a b; exact hk a b)
+    have hp : prevD i k ≫ ιT.f i = ιS.f i ≫ prevD i H.hom := by
+      rw [← prevD_comp_right, ← prevD_comp_left]
+      exact congrArg (fun F ↦ prevD i F) (by funext a b; exact hk a b)
+    have hf' : fS.f i ≫ ιT.f i = ιS.f i ≫ f.f i := by
+      rw [← HomologicalComplex.comp_f, hf, HomologicalComplex.comp_f]
+    have hg' : gS.f i ≫ ιT.f i = ιS.f i ≫ g.f i := by
+      rw [← HomologicalComplex.comp_f, hg, HomologicalComplex.comp_f]
+    rw [← cancel_mono (ιT.f i), Preadditive.add_comp, Preadditive.add_comp, hd, hp, hf', hg',
+      ← Preadditive.comp_add, ← Preadditive.comp_add, ← H.comm i]
+
+@[simp]
+lemma liftMono_hom (hf : fS ≫ ιT = ιS ≫ f) (hg : gS ≫ ιT = ιS ≫ g) :
+    (liftMono H ιS ιT k hk hf hg).hom = k := (rfl)
+
+end LiftMono
 
 end Homotopy
 

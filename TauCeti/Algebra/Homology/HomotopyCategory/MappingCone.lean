@@ -44,6 +44,9 @@ whose cones are acyclic.
   quasi-isomorphism exactly when its mapping cone is acyclic.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
+* `CochainComplex.mappingCone.mapHomotopy`: homotopies between the sides of two commutative
+  squares, compatible with the horizontal maps, give a homotopy between the induced maps of
+  mapping cones.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -284,6 +287,38 @@ lemma map_f_snd_v (p : ℤ) :
     (map φ₁ φ₂ a b comm).f p ≫ (snd φ₂).v p p (add_zero p) =
       (snd φ₁).v p p (add_zero p) ≫ b.f p := by
   apply ext_from φ₁ (p + 1) p rfl <;> simp
+
+/-- **Homotopic squares give homotopic maps of mapping cones.** Let `a ∼ a'` and `b ∼ b'` be
+homotopies between the sides of two commutative squares from `φ₁` to `φ₂`, compatible in the
+sense that `φ₁ ≫ hb = ha ≫ φ₂` in each degree. Then the induced maps of mapping cones are
+homotopic, by the homotopy `(x, y) ↦ (-ha x, hb y)`. -/
+noncomputable def mapHomotopy {a a' : K₁ ⟶ K₂} {b b' : L₁ ⟶ L₂} (comm : φ₁ ≫ b = a ≫ φ₂)
+    (comm' : φ₁ ≫ b' = a' ≫ φ₂) (ha : Homotopy a a') (hb : Homotopy b b')
+    (h : ∀ p q, φ₁.f p ≫ hb.hom p q = ha.hom p q ≫ φ₂.f q) :
+    Homotopy (map φ₁ φ₂ a b comm) (map φ₁ φ₂ a' b' comm') :=
+  descHomotopy φ₁ _ _ (-(Cochain.ofHomotopy ha).comp (inl φ₂) (by omega))
+    ((Cochain.ofHomotopy hb).comp (Cochain.ofHom (inr φ₂)) (add_zero _))
+    (by
+      rw [δ_neg, δ_comp _ _ _ 0 0 (-1) (by omega) (by omega) (by omega), δ_inl, δ_ofHomotopy]
+      ext p q hpq
+      simp [Cochain.ofHomotopy, reassoc_of% (h p q)])
+    (by
+      rw [δ_comp_ofHom, δ_ofHomotopy]
+      ext p
+      simp)
+
+/-- The homotopy `mapHomotopy` is `-ha` on the shifted source and `hb` on the target. -/
+lemma mapHomotopy_hom {a a' : K₁ ⟶ K₂} {b b' : L₁ ⟶ L₂} (comm : φ₁ ≫ b = a ≫ φ₂)
+    (comm' : φ₁ ≫ b' = a' ≫ φ₂) (ha : Homotopy a a') (hb : Homotopy b b')
+    (h : ∀ p q, φ₁.f p ≫ hb.hom p q = ha.hom p q ≫ φ₂.f q) (p q : ℤ) (hpq : p + -1 = q) :
+    (mapHomotopy φ₁ φ₂ comm comm' ha hb h).hom p q =
+      -((fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫ ha.hom (p + 1) p ≫ (inl φ₂).v p q hpq) +
+        (snd φ₁).v p p (add_zero p) ≫ hb.hom p q ≫ (inr φ₂).f q := by
+  simp only [mapHomotopy, descHomotopy, Cochain.equivHomotopy, Equiv.coe_fn_symm_mk, hpq,
+    ↓reduceDIte, descCochain]
+  rw [Cochain.add_v, Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega), Cochain.neg_v,
+    Cochain.comp_v _ _ _ (p + 1) p q (by omega) hpq]
+  simp [Cochain.ofHomotopy]
 
 /-- The isomorphism of mapping cones induced by an isomorphism of arrows. -/
 @[expose, simps]
