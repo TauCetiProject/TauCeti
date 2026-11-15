@@ -55,13 +55,6 @@ open scoped Real Topology
 
 namespace TauCeti
 
-/-- On `[0, ∞)`, the fractional part `t - ⌊t⌋₊` lies in `[0, 1]`, so its complex cast has norm at
-most `1`. -/
-private lemma norm_sub_natFloor_le_one {t : ℝ} (ht : 0 ≤ t) :
-    ‖((t - ⌊t⌋₊ : ℝ) : ℂ)‖ ≤ 1 := by
-  rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.mpr (Nat.floor_le ht))]
-  linarith [Nat.lt_floor_add_one t]
-
 /-- The fractional-part integral `s ↦ s ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt` is holomorphic on the
 open right half-plane `Re s > 0`. -/
 private lemma differentiableOn_mul_integral_sub_natFloor :
@@ -76,7 +69,7 @@ private lemma differentiableOn_mul_integral_sub_natFloor :
     dsimp only [u]
     by_cases ht : 1 < t
     · rw [Set.indicator_of_mem (Set.mem_Ioi.mpr ht)]
-      exact norm_sub_natFloor_le_one (zero_lt_one.trans ht).le
+      simpa only [norm_real, Real.norm_eq_abs] using Nat.abs_sub_floor_le (zero_lt_one.trans ht).le
     · rw [Set.indicator_of_notMem (by simpa using ht)]
       simp
   have hloc : LocallyIntegrableOn u (Set.Ioi 0) :=
@@ -170,7 +163,8 @@ theorem norm_riemannZeta₀_le_one_add_norm_div_re {s : ℂ} (hs : 0 < s.re) :
           have ht0 : 0 < t := zero_lt_one.trans ht
           rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0]
           simp only [neg_re, add_re, one_re]
-          exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _) (norm_sub_natFloor_le_one ht0.le)
+          exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _)
+            (by simpa only [norm_real, Real.norm_eq_abs] using Nat.abs_sub_floor_le ht0.le)
       _ = 1 / s.re := by
           rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow]
           ring

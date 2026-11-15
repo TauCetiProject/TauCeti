@@ -45,7 +45,7 @@ combining `‖F(1 / 2 + i t)‖ ≤ 625 (M N)² (1 + t²)²` with
 `‖mellinInv (1 / 2 - β) (fun w ↦ Γ(w) F(w + β)) x‖ ≤
   37500 (M N)² / ((β - 1 / 2) (3 / 2 - β)) · x^{β - 1 / 2}`.
 For quadratic characters, `a(n) ≥ 0` and `a(1) = 1` bound the smoothed sum below by `e^{-x}`,
-producing Goldfeld's real-part inequalities in both the simple-pole and double-pole regimes.
+producing Goldfeld's real-part inequality in general and in the simple- and double-pole regimes.
 
 ## Main results
 
@@ -58,6 +58,7 @@ producing Goldfeld's real-part inequalities in both the simple-pole and double-p
 * `DirichletCharacter.norm_mellinInv_Gamma_mul_pair_le`: explicit `O((M N)² x^{β - 1 / 2})` bound
   on the shifted vertical integral across `1 / 2 < β < 3 / 2`.
 * `DirichletCharacter.exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp`,
+  `DirichletCharacter.exp_neg_le_re_pair_add`,
   `DirichletCharacter.exp_neg_le_re_pair_add_of_mul_ne_one`,
   `DirichletCharacter.exp_neg_le_re_pair_add_of_mul_eq_one`: quadratic positivity lower bound
   `e^{-x}` and Goldfeld's resulting real-part inequalities.
@@ -359,6 +360,28 @@ theorem exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp {χ : DirichletCharac
       (zero_le_real.mpr (Real.exp_pos _).le)
   simpa using hsum.le_tsum 1 fun n _ ↦ hu_nonneg n
 
+/-- **Goldfeld's real-part lower bound (general residue form).** For quadratic characters `χ` and
+`ψ`, `1 / 2 < β < 3 / 2` with `β ≠ 1`, and `x > 0`,
+`e^{-x} ≤ Re F(β) + Re(Res_{s = 1} (F(s) Γ(s - β) x^{β - s})) +
+  37500 (M N)² / ((β - 1 / 2) (3 / 2 - β)) · x^{β - 1 / 2}`. -/
+theorem exp_neg_le_re_pair_add
+    {χ : DirichletCharacter ℂ M} {ψ : DirichletCharacter ℂ N}
+    (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic)
+    {β x : ℝ} (hβ₀ : 1 / 2 < β) (hβ₁ : β < 3 / 2) (hβ : β ≠ 1) (hx : 0 < x) :
+    Real.exp (-x) ≤
+      (riemannZeta β * χ.LFunction β * ψ.LFunction β * (χ.mul ψ).LFunction β).re +
+        (TauCeti.Contour.residue
+          (fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s *
+            (Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s))) 1).re +
+        37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
+  have hsum := (hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (β := β) (by linarith)
+    (by linarith) hx).summable
+  have hlo := (Complex.le_def.mp (exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp hχ hψ hsum)).1
+  rw [ofReal_re, tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq χ ψ hβ₀ hβ₁ hβ hx, add_re, add_re]
+    at hlo
+  have herr := (re_le_norm _).trans (norm_mellinInv_Gamma_mul_pair_le χ ψ hβ₀ hβ₁ hx.le)
+  linarith
+
 /-- **Goldfeld's real-part lower bound (simple-pole case).** For nonprincipal quadratic characters
 `χ` and `ψ` with `χ.mul ψ ≠ 1`, `1 / 2 < β < 3 / 2` with `β ≠ 1`, and `x > 0`,
 `e^{-x} ≤ Re F(β) + Re(L(1, χ) L(1, ψ) L(1, χ.mul ψ)) Γ(1 - β) x^{β - 1} +
@@ -373,24 +396,15 @@ theorem exp_neg_le_re_pair_add_of_mul_ne_one
         (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1).re *
           Real.Gamma (1 - β) * x ^ (β - 1) +
         37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
-  have hsum := (hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (β := β) (by linarith)
-    (by linarith) hx).summable
-  have hlo := (Complex.le_def.mp (exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp hχ hψ hsum)).1
-  rw [ofReal_re, tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_ne_one χ ψ hχ1 hψ1 hχψ
-    hβ₀ hβ₁ hβ hx] at hlo
+  have hlo := exp_neg_le_re_pair_add hχ hψ hβ₀ hβ₁ hβ hx
+  rw [residue_pair_mul_of_mul_ne_one χ ψ hχ1 hψ1 hχψ
+    (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)] at hlo
   have hΓx : Gamma ((1 : ℂ) - β) * (x : ℂ) ^ ((β : ℂ) - 1) =
       ((Real.Gamma (1 - β) * x ^ (β - 1) : ℝ) : ℂ) := by
     rw [show (1 : ℂ) - β = ((1 - β : ℝ) : ℂ) by push_cast; ring,
       show (β : ℂ) - 1 = ((β - 1 : ℝ) : ℂ) by push_cast; ring,
       Gamma_ofReal, ← ofReal_cpow hx.le, ofReal_mul]
-  have hmid : (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1 *
-      (Gamma (1 - β) * (x : ℂ) ^ ((β : ℂ) - 1))).re =
-      (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1).re *
-        Real.Gamma (1 - β) * x ^ (β - 1) := by
-    simp [hΓx]; ring
-  have herr := (re_le_norm _).trans (norm_mellinInv_Gamma_mul_pair_le χ ψ hβ₀ hβ₁ hx.le)
-  rw [add_re, add_re, hmid] at hlo
-  linarith
+  rwa [hΓx, re_mul_ofReal, ← mul_assoc] at hlo
 
 /-- **Goldfeld's real-part lower bound (double-pole case).** For a nonprincipal quadratic character
 `χ` and a character `ψ` with `χ.mul ψ = 1` (which implies `ψ` is quadratic and nonprincipal),
@@ -406,15 +420,9 @@ theorem exp_neg_le_re_pair_add_of_mul_eq_one
           LFunctionTrivChar₁ (Nat.lcm M N) s *
           (Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s))) 1).re +
         37500 * ((M : ℝ) * N) ^ 2 / ((β - 1 / 2) * (3 / 2 - β)) * x ^ (β - 1 / 2) := by
-  have hsum := (hasSum_zetaMulPairCoeffs_div_cpow_mul_exp χ ψ (σ := 2 - β) (β := β) (by linarith)
-    (by linarith) hx).summable
-  have hlo := (Complex.le_def.mp
-    (exp_neg_le_tsum_zetaMulPairCoeffs_div_cpow_mul_exp hχ
-      (isQuadratic_of_mul_eq_one_right hχ hχψ) hsum)).1
-  rw [ofReal_re, tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq_of_mul_eq_one χ ψ hχ1 hχψ
-    hβ₀ hβ₁ hβ hx] at hlo
-  have herr := (re_le_norm _).trans (norm_mellinInv_Gamma_mul_pair_le χ ψ hβ₀ hβ₁ hx.le)
-  simp only [add_re] at hlo
-  linarith
+  have hψ : ψ.IsQuadratic := (isQuadratic_mul_iff_right hχ).mp (hχψ ▸ MulChar.isQuadratic_one)
+  have hlo := exp_neg_le_re_pair_add hχ hψ hβ₀ hβ₁ hβ hx
+  rwa [residue_pair_mul_of_mul_eq_one χ ψ hχ1 (ne_one_of_mul_eq_one_right hχ1 hχψ) hχψ
+    (analyticAt_Gamma_sub_mul_cpow x (by linarith) hβ)] at hlo
 
 end DirichletCharacter
