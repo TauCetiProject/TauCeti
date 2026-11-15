@@ -34,6 +34,8 @@ Fourier multipliers are additive in their symbol and commute with the Laplacian.
 bilinear pairing `∫ M (f x) (h x)` of Schwartz functions, the transpose of the multiplier with
 symbol `g` is the multiplier with the reflected symbol `g (-ξ)`; in particular a multiplier with an
 even symbol, such as the Bessel potential `⟨ξ⟩ ^ s`, is symmetric.
+The Fourier-side bilinear pairing `∫ M (𝓕 f) (𝓕 g)` is the spatial pairing of `f` with the
+reflection `g (-·)` of `g`, since `𝓕 (𝓕 g) = g (-·)`.
 
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the inverse Fourier transform commutes with
@@ -58,6 +60,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
+* `SchwartzMap.integral_bilin_fourier_fourier`: the bilinear Plancherel identity
+  `∫ M (𝓕 f) (𝓕 g) = ∫ M f (g (-·))`.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
@@ -247,6 +251,22 @@ theorem integral_bilin_fourierMultiplierCLM_eq {G K : Type*} [NormedAddCommGroup
     fourierInv_apply_eq_fourier_neg]
   rw [← integral_neg_eq_self]
   simp
+
+/-- **Bilinear Plancherel identity.** For a bilinear pairing `M`, the Fourier-side pairing of two
+Schwartz functions is the spatial pairing of the first with the reflection of the second:
+`∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`. Unlike the sesquilinear Plancherel identity
+`SchwartzMap.integral_sesq_fourier_fourier`, no complex conjugation is involved, and the reflection
+`g ↦ g (-·)` appears instead. -/
+theorem integral_bilin_fourier_fourier {G K : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace G] [NormedAddCommGroup K] [NormedSpace ℂ K] (f : 𝓢(E, F)) (g : 𝓢(E, G))
+    (M : F →L[ℂ] G →L[ℂ] K) :
+    ∫ ξ, M (𝓕 f ξ) (𝓕 g ξ) = ∫ x, M (f x) (g (-x)) := by
+  rw [integral_bilin_fourier_eq f (𝓕 g) M]
+  congr 1 with x
+  -- Fourier inversion `𝓕⁻ (𝓕 g) = g` with `𝓕⁻ h (-x) = 𝓕 h x` gives `𝓕 (𝓕 g) x = g (-x)`.
+  have h := fourierInv_apply_eq_fourier_neg (𝓕 g) (-x)
+  rw [neg_neg, FourierTransform.fourierInv_fourier_eq] at h
+  rw [← h]
 
 end FourierMultiplier
 
