@@ -18,7 +18,7 @@ public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
-public import TauCeti.Order.Interval.Finset.Basic
+public import TauCeti.Algebra.Order.Interval.Finset.Basic
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 import TauCeti.Data.Int.MulPred
 
@@ -38,10 +38,12 @@ product `∑' m, B (f m) (g (n - m))`.
 
 In any seminormed module with a bounded scalar action (archimedean or nonarchimedean, and without
 completeness), two unconditionally and norm-summable families have product sum `a • b`
-(`HasSum.smul_of_summable_norm`). Over a canonically ordered index type with ordered subtraction and
-finite initial intervals `Finset.Iic`, grouping by addition fibers gives weighted norm summability
-(`TauCeti.summable_norm_sum_smul_Iic_mul`) and the `Finset.Iic` Cauchy-product `HasSum` identity
-(`HasSum.sum_smul_Iic_of_summable_norm`).
+(`HasSum.smul_of_summable_norm`). The proof of `HasSum.smul_of_summable_norm` follows
+`summable_mul_of_summable_norm'` in `Mathlib.Analysis.Normed.Ring.InfiniteSum`, with scalar
+multiplication in place of ring multiplication. Over a canonically ordered index type with ordered
+subtraction and finite initial intervals `Finset.Iic`, grouping by addition fibers gives weighted
+norm summability (`TauCeti.summable_norm_sum_smul_Iic_mul`) and the `Finset.Iic` Cauchy-product
+`HasSum` identity (`HasSum.sum_smul_Iic_of_summable_norm`).
 
 Under a bounded scalar action, the pointwise scalar multiples `f i • g j` of two cofinite-null
 families form a cofinite-null family on the product index. Consequently, over a complete ultrametric
@@ -324,12 +326,10 @@ theorem _root_.HasSum.sum_smul_Iic_of_summable_norm [SeminormedRing R] [Seminorm
     (hf : HasSum f a) (hg : HasSum g b)
     (hf_norm : Summable fun k ↦ ‖f k‖) (hg_norm : Summable fun l ↦ ‖g l‖) :
     HasSum (fun n ↦ ∑ k ∈ Finset.Iic n, f k • g (n - k)) (a • b) := by
-  have hfg := hf.smul_of_summable_norm hg hf_norm hg_norm
-  refine (((Equiv.sigmaFiberEquiv fun p : Γ × Γ ↦ p.1 + p.2).hasSum_iff).mpr hfg).sigma fun n ↦ ?_
-  rw [← (addFiberEquivIic n).symm.hasSum_iff]
-  simpa [Function.comp_def, ← Finset.sum_coe_sort (Finset.Iic n)] using
-    hasSum_fintype ((fun p : {p : Γ × Γ // p.1 + p.2 = n} ↦ f p.1.1 • g p.1.2) ∘
-      (addFiberEquivIic n).symm)
+  have hsigma := (sigmaIicEquivProd (α := Γ)).hasSum_iff.mpr
+    (hf.smul_of_summable_norm hg hf_norm hg_norm)
+  exact hsigma.sigma fun n ↦ by
+    simpa [Function.comp_def] using Finset.hasSum (Finset.Iic n) fun k ↦ f k • g (n - k)
 
 end Iic
 

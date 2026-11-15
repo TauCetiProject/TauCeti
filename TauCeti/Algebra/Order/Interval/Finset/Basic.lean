@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 public import Mathlib.Algebra.Order.Sub.Defs
 public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Sub.Unbundled.Basic
-import Mathlib.Logic.Equiv.Basic
 
 /-!
 # Addition-fiber equivalences for `Finset.Iic`
@@ -63,11 +62,12 @@ def sigmaIicEquivProd :
 @[simp]
 theorem sigmaIicEquivProd_apply (x : Σ a : α, {b : α // b ∈ Finset.Iic a}) :
     sigmaIicEquivProd x = (x.2.1, x.1 - x.2.1) := by
-  rfl
+  simp [sigmaIicEquivProd]
 
 @[simp]
 theorem sigmaIicEquivProd_symm_apply (p : α × α) :
     sigmaIicEquivProd.symm p = ⟨p.1 + p.2, p.1, Finset.mem_Iic.2 le_self_add⟩ := by
-  rfl
+  rw [Equiv.symm_apply_eq]
+  simp [tsub_eq_of_eq_add_rev (rfl : p.1 + p.2 = p.1 + p.2)]
 
 end TauCeti

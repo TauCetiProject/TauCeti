@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Data.Fintype.Perm
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.GroupTheory.Perm.DomMulAct
 import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Algebra.Order.Antidiag.Tendsto
@@ -34,6 +36,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 * `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series.
 * `FormalMultilinearSeries.apply_eq_sum_mvCoeff`: the degree-`k` term is
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
+* `FormalMultilinearSeries.prod_factorial_smul_mvCoeff`: factorial permutation-counting formula
+  relating `(∏ i, (α i)!) • p.mvCoeff α` to the sum over `Equiv.Perm (Fin k)`.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le` and
   `FormalMultilinearSeries.exists_mvCoeff_eq_and_norm_le`: the coefficients of total degree `k` have
   norms summing to at most `(card ι) ^ k * ‖p k‖`, and conversely any coefficient family `c` is
@@ -53,15 +57,17 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 
 ## References
 
-Multi-index coefficients of formal multilinear series, under the name `coeff`, are also part of
-Michail Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
-commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/MultiIndex.lean`, Apache 2.0).
+The multi-index coefficient API (`mvCoeff`), converse construction for normally convergent
+multi-index series, and polydisc identity theorem follow the design of Michail Karatarakis's
+formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`, commit `1d51891b5b`,
+`Mathlib/NumberTheory/Transcendental/Baker/MultiIndex.lean`, Apache 2.0), generalized here to
+arbitrary finite index types `ι`, arbitrary centers, and normed vector-space codomains.
 -/
 
 public section
 
 open Filter Finset Topology
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal Nat
 
 namespace FormalMultilinearSeries
 
@@ -119,6 +125,7 @@ theorem mvCoeff_sub (p q : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (α : �
   classical
   simp [mvCoeff_eq_sum _ rfl, sum_sub_distrib]
 
+/-- Multi-index coefficients distribute over finite sums of formal multilinear series. -/
 @[simp]
 theorem mvCoeff_sum {κ : Type*} (s : Finset κ)
     (p : κ → FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (α : ι → ℕ) :
@@ -128,6 +135,8 @@ theorem mvCoeff_sum {κ : Type*} (s : Finset κ)
   | empty => simp
   | insert _ _ h ih => simp [sum_insert h, ih]
 
+/-- Postcomposing a formal multilinear series with a continuous linear map applies that map to
+each multi-index coefficient. -/
 @[simp]
 theorem _root_.ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries
     {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -170,6 +179,50 @@ theorem apply_eq_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 
   congr 1
   simpa using (Fintype.prod_fiberwise' a z).symm
 
+/-- **Factorial counting formula for multi-index coefficients**: for any tuple of coordinate
+indices `v : Fin k → ι` whose coordinate counts are `α`, `(∏ i, (α i)!) • p.mvCoeff α` equals
+the sum of `p k` over all permutations of the basis tuple `fun j ↦ Pi.single (v j) 1`. -/
+theorem prod_factorial_smul_mvCoeff [DecidableEq ι]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) {k : ℕ} {α : ι → ℕ}
+    (v : Fin k → ι) (hv : ∀ i, Fintype.card {j // v j = i} = α i) :
+    (∏ i, (α i)!) • p.mvCoeff α =
+      ∑ σ : Equiv.Perm (Fin k), p k (fun j ↦ Pi.single (v (σ j)) 1) := by
+  have hk : ∑ i, α i = k := by
+    simpa [hv] using Fintype.sum_fiberwise' v (fun _ ↦ (1 : ℕ))
+  rw [p.mvCoeff_eq_sum hk]
+  let S : Finset (Fin k → ι) :=
+    univ.filter fun a : Fin k → ι ↦ ∀ i, Fintype.card {j // a j = i} = α i
+  have hmaps (σ : Equiv.Perm (Fin k)) : v ∘ σ ∈ S := by
+    simp only [S, mem_filter, mem_univ, true_and]
+    intro i
+    rw [← hv i]
+    exact Fintype.card_congr (Equiv.subtypeEquiv σ fun _ ↦ Iff.rfl)
+  rw [← sum_fiberwise_of_maps_to (fun σ _ ↦ hmaps σ), smul_sum]
+  refine sum_congr rfl fun a ha ↦ ?_
+  have ha' : ∀ i, Fintype.card {j // a j = i} = α i := (mem_filter.1 ha).2
+  have hterm : ∑ σ ∈ univ.filter (fun σ : Equiv.Perm (Fin k) ↦ v ∘ σ = a),
+        p k (fun j ↦ Pi.single (v (σ j)) 1) =
+      (#(univ.filter fun σ : Equiv.Perm (Fin k) ↦ v ∘ σ = a)) •
+        p k (fun j ↦ Pi.single (a j) 1) := by
+    rw [← sum_const]
+    refine sum_congr rfl fun σ hσ ↦ ?_
+    have hσ' : v ∘ σ = a := (mem_filter.1 hσ).2
+    simp_rw [← Function.comp_apply (f := v) (g := σ), hσ']
+  rw [hterm]
+  congr 1
+  -- Right-multiplying by a permutation sending `a` to `v` bijects the fiber with the stabilizer.
+  let σ₀ : Equiv.Perm (Fin k) :=
+    Equiv.ofFiberEquiv fun i ↦ Fintype.equivOfCardEq ((ha' i).trans (hv i).symm)
+  have hσ₀ : v ∘ σ₀ = a := funext fun j ↦ Equiv.ofFiberEquiv_map _ j
+  have hbij : {σ : Equiv.Perm (Fin k) // v ∘ σ = a} ≃ {τ : Equiv.Perm (Fin k) // v ∘ τ = v} :=
+    Equiv.subtypeEquiv (Equiv.mulRight σ₀⁻¹) fun σ ↦ by
+      constructor <;> intro h <;> ext j
+      · simpa [Equiv.Perm.coe_mul, ← hσ₀] using congrFun h (σ₀⁻¹ j)
+      · have hj := congrFun h (σ₀ j)
+        simpa [Equiv.Perm.coe_mul, ← congrFun hσ₀ j] using hj
+  rw [← Fintype.card_subtype, Fintype.card_congr hbij, DomMulAct.stabilizer_card v]
+  exact prod_congr rfl fun i _ ↦ by rw [hv i]
+
 end NormedField
 
 end FormalMultilinearSeries
@@ -208,6 +261,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
 namespace FormalMultilinearSeries
 
 open scoped Classical in
+/-- The multi-index coefficients of the constant formal multilinear series equal the constant at
+index `0` and vanish at every nonzero multi-index. -/
 @[simp]
 theorem mvCoeff_constFormalMultilinearSeries (c : F) (α : ι → ℕ) :
     (constFormalMultilinearSeries 𝕜 (ι → 𝕜) c).mvCoeff α = if α = 0 then c else 0 := by
@@ -235,15 +290,6 @@ theorem sum_norm_mvCoeff_le [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (
     _ = Fintype.card ι ^ k * ‖p k‖ := by
         rw [sum_fiberwise_of_maps_to (fun a _ ↦ hcount a)]
         simp
-
-/-- Every multi-index `α : ι → ℕ` of total degree `k` is the coordinate-count function of some
-tuple `Fin k → ι`. -/
-private theorem exists_fin_card_eq [DecidableEq ι] {k : ℕ} {α : ι → ℕ}
-    (hα : α ∈ univ.piAntidiag k) :
-    ∃ g : Fin k → ι, ∀ i, Fintype.card {j // g j = i} = α i := by
-  simpa only [Fintype.card_subtype] using
-    TauCeti.exists_forall_card_filter_eq (α := Fin k)
-      ((mem_piAntidiag.1 hα).1.trans (Fintype.card_fin k).symm)
 
 omit [Fintype ι] in
 /-- The continuous `k`-multilinear map `(u₁, …, uₖ) ↦ (∏ j, uⱼ (g j)) • v` realizing a single
@@ -280,9 +326,14 @@ series `p` with `p.mvCoeff = c` and degree-`k` operator norm bounded by
 theorem exists_mvCoeff_eq_and_norm_le [DecidableEq ι] (c : (ι → ℕ) → F) :
     ∃ p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F,
       (∀ α, p.mvCoeff α = c α) ∧ ∀ k, ‖p k‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖c α‖ := by
+  have hexists {k : ℕ} {α : ι → ℕ} (hα : α ∈ univ.piAntidiag k) :
+      ∃ g : Fin k → ι, ∀ i, Fintype.card {j // g j = i} = α i := by
+    simpa only [Fintype.card_subtype] using
+      TauCeti.exists_forall_card_filter_eq (α := Fin k)
+        ((mem_piAntidiag.1 hα).1.trans (Fintype.card_fin k).symm)
   let p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F := fun k ↦
     ∑ α ∈ (univ.piAntidiag k).attach,
-      monoMultilinearMap k (exists_fin_card_eq α.2).choose (c α.1)
+      monoMultilinearMap k (hexists α.2).choose (c α.1)
   refine ⟨p, fun β ↦ ?_, fun k ↦ ?_⟩
   · -- Each basis tuple `a` matches at most the chosen representative of its count vector `β`.
     let k := ∑ i, β i
@@ -292,9 +343,9 @@ theorem exists_mvCoeff_eq_and_norm_le [DecidableEq ι] (c : (ι → ℕ) → F) 
     rw [sum_comm]
     have hinner (α : {α // α ∈ univ.piAntidiag k}) :
         (∑ a ∈ univ.filter (fun a : Fin k → ι ↦ ∀ i, Fintype.card {j // a j = i} = β i),
-          if a = (exists_fin_card_eq α.2).choose then c α.1 else 0) =
+          if a = (hexists α.2).choose then c α.1 else 0) =
         if α.1 = β then c α.1 else 0 := by
-      have hg := (exists_fin_card_eq α.2).choose_spec
+      have hg := (hexists α.2).choose_spec
       rw [sum_ite_eq']
       simp [hg, funext_iff]
     simp_rw [hinner]
@@ -433,16 +484,9 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
   refine ⟨p, ⟨p.le_radius_of_summable hpnorm, ENNReal.coe_pos.mpr hr, fun {y} hy ↦ ?_⟩, hpc⟩
   -- On `Metric.eball 0 r`, group the multi-index series for `f (x + y)` into homogeneous degrees.
   have hynorm : ‖y‖ < (r : ℝ) := by
-    have h : ‖y‖₊ < r := by
-      simpa only [Metric.mem_eball, edist_zero_right, eNorm_eq_nnNorm, ENNReal.coe_lt_coe] using hy
-    exact_mod_cast h
-  have hpy_norm : Summable fun k ↦ ‖p k (fun _ ↦ y)‖ := by
-    refine hpnorm.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun k ↦ ?_
-    calc ‖p k (fun _ ↦ y)‖
-        ≤ ‖p k‖ * ∏ _ : Fin k, ‖y‖ := ContinuousMultilinearMap.le_opNorm _ _
-      _ = ‖p k‖ * ‖y‖ ^ k := by simp
-      _ ≤ ‖p k‖ * (r : ℝ) ^ k := by gcongr
-  rw [hasSum_iff_tendsto_nat_of_summable_norm hpy_norm]
+    simpa [Metric.eball_coe] using hy
+  rw [hasSum_iff_tendsto_nat_of_summable_norm
+    (p.summable_norm_apply (Metric.eball_subset_eball (p.le_radius_of_summable hpnorm) hy))]
   have hdeg (k : ℕ) : p k (fun _ ↦ y) = ∑ α ∈ univ.piAntidiag k, (∏ i, y i ^ α i) • c α := by
     simp_rw [p.apply_eq_sum_mvCoeff, hpc]
   simp_rw [hdeg, ← sum_biUnion (univ.pairwiseDisjoint_piAntidiag _)]

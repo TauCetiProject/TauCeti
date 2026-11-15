@@ -138,8 +138,7 @@ example : mvTaylorCoeff (fun z : Fin 1 → 𝕜 ↦ z 0 ^ 2) ![3] ![1] = 6 := by
         ((6 : 𝕜) • fun z ↦ ∏ i : Fin 1, z i ^ (![1] : Fin 1 → ℕ) i) +
         fun _ ↦ (9 : 𝕜) := by
     ext z
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Fin.prod_univ_one, Matrix.cons_val_zero,
-      pow_one]
+    simp
     ring
   have hmon (τ : Fin 1 → ℕ) : AnalyticAt 𝕜 (fun z : Fin 1 → 𝕜 ↦ ∏ i, z i ^ τ i) 0 :=
     univ.analyticAt_fun_prod fun i _ ↦
@@ -161,7 +160,7 @@ example :
   have hnot (x : Fin 1 → ℂ) : ¬AnalyticAt ℂ f x := by
     intro han
     let ι₁ : ℂ →L[ℂ] (Fin 1 → ℂ) := ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id ℂ ℂ
-    have hx : ι₁ (x 0) = x := by ext i; rw [Subsingleton.elim i 0]; rfl
+    have hx : ι₁ (x 0) = x := by ext i; simp [ι₁, Subsingleton.elim i 0]
     have hcomp : AnalyticAt ℂ (f ∘ ι₁) (x 0) :=
       (hx ▸ han).comp (ι₁.analyticAt (x 0))
     have hconj : DifferentiableAt ℂ (conj : ℂ → ℂ) (x 0) := by
@@ -199,10 +198,7 @@ example :
           ((2 : 𝕜) • fun z : Fin 2 → 𝕜 ↦ ∏ i, z i ^ (![1, 1] : Fin 2 → ℕ) i) +
           fun z : Fin 2 → 𝕜 ↦ ∏ i, z i ^ (![0, 2] : Fin 2 → ℕ) i := by
       ext z
-      simp only [Function.comp_apply, G, A, p₀, p₁, ContinuousLinearMap.pi_apply,
-        Matrix.cons_val_zero, add_apply, ContinuousLinearMap.proj_apply,
-        Pi.add_apply, Pi.smul_apply, smul_eq_mul, Fin.prod_univ_two, Matrix.cons_val_one,
-        pow_zero, pow_one, mul_one, one_mul]
+      simp [G, A, p₀, p₁, Fin.prod_univ_two]
       ring
     have hmon (τ : Fin 2 → ℕ) : AnalyticAt 𝕜 (fun z : Fin 2 → 𝕜 ↦ ∏ i, z i ^ τ i) 0 :=
       univ.analyticAt_fun_prod fun i _ ↦
