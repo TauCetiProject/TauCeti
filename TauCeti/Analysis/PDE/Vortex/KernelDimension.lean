@@ -54,7 +54,8 @@ degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`
   elements (`TauCeti.Vortex.principalPartMap_surjective`). Together with injectivity on
   `gaugeFixedKernel x`, this forces every `y ∈ gaugeFixedKernel x` to be smooth
   (`TauCeti.Vortex.contDiff_of_mem_gaugeFixedKernel`) and yields the linear isomorphism
-  `TauCeti.Vortex.gaugeFixedKernelPrincipalPartEquiv` onto `Multiset.ToType D → ℂ`.
+  `TauCeti.Vortex.gaugeFixedKernelPrincipalPartEquiv` onto `Multiset.ToType D → ℂ`. This holds in
+  every degree, collisions of zeros included.
 
 The comparison with the weak `L²` kernel, and membership of kernel elements in every `H^s`, are
 proved in `TauCeti.Analysis.PDE.Vortex.SobolevScale`.
@@ -357,6 +358,55 @@ end Translations
 
 /-! ### Surjectivity of the principal-part map and exact dimension -/
 
+/-- For a variation `y` whose section satisfies `δα = α (c / (w - z)^(j + 1) + ξ)` off `z` with
+`m' + (j + 1) = D.count z` and `α = e^ν (w - z)^(D.count z) g` near `z`, its principal-part jets
+at `z` are the derivatives of `c (w - z)^m' g` and its principal parts at all `z' ≠ z` vanish. -/
+private theorem principalPart_eq_of_sectionValue_eq_mul_div_pow_add
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hx_cont : Continuous (sectionValue x)) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy_cont : Continuous (sectionValue y)) {ν : ℂ → ℂ} (hν : Continuous ν)
+    (hdec : ∃ G₀ : ℂ → ℂ, Continuous G₀ ∧ ∃ H₀ : ℂ → ℂ, Differentiable ℂ H₀ ∧
+      ∀ w, sectionValue y w = sectionValue x w * G₀ w + exp (ν w) * H₀ w)
+    {z : ℂ} {m' j : ℕ} (hmj : m' + (j + 1) = D.count z) {g ξ : ℂ → ℂ}
+    (hg : AnalyticAt ℂ g z) (hξ : Continuous ξ)
+    (hαg : ∀ᶠ w in 𝓝 z, sectionValue x w = exp (ν w) * ((w - z) ^ D.count z * g w))
+    {c : ℂ}
+    (hyξ : ∀ w, w ≠ z →
+      sectionValue y w = sectionValue x w * (c / (w - z) ^ (j + 1) + ξ w)) :
+    (∀ k < D.count z,
+      principalPart x ν y z k = c * iteratedDeriv k (((· - z) ^ m') * g) z) ∧
+      ∀ z' ≠ z, ∀ k < D.count z', principalPart x ν y z' k = 0 := by
+  set R : ℂ → ℂ := ((· - z) ^ m') * g
+  have hR : AnalyticAt ℂ R z := ((analyticAt_id.sub analyticAt_const).pow m').mul hg
+  -- Near `z`, `δα = α ξ + e^ν (c R)` on `{z}ᶜ`, hence on `𝓝 z` by continuity.
+  have hrhs : ContinuousAt (fun w ↦ sectionValue x w * ξ w + exp (ν w) * (c * R w)) z :=
+    (hx_cont.continuousAt.mul hξ.continuousAt).add
+      (hν.cexp.continuousAt.mul (continuousAt_const.mul hR.continuousAt))
+  have hloc_z : ∀ᶠ w in 𝓝 z,
+      sectionValue y w = sectionValue x w * ξ w + exp (ν w) * (c * R w) := by
+    refine (hy_cont.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hrhs).1 ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hαg, self_mem_nhdsWithin]
+      with w hw hwz
+    have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
+    have hsplit : (w - z) ^ D.count z = (w - z) ^ m' * (w - z) ^ (j + 1) := by
+      rw [← hmj, pow_add]
+    rw [hyξ w hwz, mul_add, add_comm (sectionValue x w * _), hw, hsplit]
+    simp only [R, Pi.mul_apply, Pi.pow_apply]
+    field_simp
+  refine ⟨fun k hk ↦ ?_, fun z' hz' k hk ↦ ?_⟩
+  · rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun w ↦ c * R w) hD hν hdec
+      hξ.continuousAt (analyticAt_const.mul hR) hloc_z hk, iteratedDeriv_const_mul_field]
+  · have hGz' : ContinuousAt (fun w ↦ c / (w - z) ^ (j + 1) + ξ w) z' :=
+      (continuousAt_const.div ((continuousAt_id.sub continuousAt_const).pow _)
+        (pow_ne_zero _ (sub_ne_zero.2 hz'))).add hξ.continuousAt
+    have hloc_z' : ∀ᶠ w in 𝓝 z', sectionValue y w =
+        sectionValue x w * (c / (w - z) ^ (j + 1) + ξ w) + exp (ν w) * 0 := by
+      filter_upwards [isOpen_ne.mem_nhds hz'] with w hw
+      rw [hyξ w hw, mul_zero, add_zero]
+    rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun _ ↦ 0) hD hν hdec hGz'
+      analyticAt_const hloc_z' hk]
+    simp
+
 /-- A smooth kernel element with a single pole `c / (w - z)^(D(z) - m')` has leading principal-part
 jet `a` of order `m'` at `z`, vanishing lower-order jets at `z`, and vanishing principal parts at
 every other point. -/
@@ -386,17 +436,10 @@ private theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_triangu
     calc sectionValue x w = exp (ν w) * (exp (-ν w) * sectionValue x w) := by
           rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul]
       _ = exp (ν w) * ((w - z) ^ D.count z * g w) := congrArg (exp (ν w) * ·) hw
-  -- Smooth local factorization of `α` at `z` for constructing the pole kernel element.
-  choose n' v hvc hv₀ hvf using
-    exists_contDiffAt_sectionValue_eq_pow_mul (k := ⊤) le_top (hxi 0) (hxi 1) hp hq hhol
-      hD.exists_ne_zero
-  have hn' : n' = fun w ↦ D.count w :=
-    (isZeroMultiplicity_iff.2 fun w ↦ ⟨v w, (hvc w).continuousAt, hv₀ w, hvf w⟩).unique hD
-  subst hn'
-  -- The local analytic numerator `R(w) = (w - z)^m' g(w)` has analytic order `m'` at `z`.
+  -- Smooth local factorization of `α` at `z` and the local analytic numerator `R`.
+  obtain ⟨v, hvc, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
+    (hxi 0) (hxi 1) hp hq hhol (isZeroMultiplicity_iff.1 hD z)
   set j : ℕ := D.count z - 1 - m'
-  have hj : j < D.count z := by omega
-  have hmj : m' + (j + 1) = D.count z := by omega
   set R : ℂ → ℂ := ((· - z) ^ m') * g
   have hpow_an : AnalyticAt ℂ ((· - z) ^ m') z := (analyticAt_id.sub analyticAt_const).pow m'
   have hR : AnalyticAt ℂ R z := hpow_an.mul hg
@@ -405,54 +448,19 @@ private theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_triangu
       hg.analyticOrderAt_eq_zero.2 hg₀, add_zero]
   obtain ⟨hRk, hRm'⟩ := (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hR).1 hRord
   -- Scale the pole coefficient so that the `m'`-th derivative of `c R` at `z` equals `a`.
-  set c : ℂ := a / iteratedDeriv m' R z
   obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
-    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim (hvc z)
-      (hvf z) hj c
+    exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hvc hvf
+      (by omega : j < D.count z) (a / iteratedDeriv m' R z)
   obtain ⟨G₀, hG₀, H₀, hH₀, hy₀⟩ :=
     exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel hp hq hhol hν hνeq
       (mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩)
-  -- Near `z`, `δα = α ξ + e^ν (c R)` on `{z}ᶜ`, hence on all of `𝓝 z` by continuity.
-  have hpt {w : ℂ} (hw : sectionValue x w = exp (ν w) * ((w - z) ^ D.count z * g w))
-      (hwz : w ≠ z) :
-      sectionValue y w = sectionValue x w * ξ w + exp (ν w) * (c * R w) := by
-    have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
-    have hsplit : (w - z) ^ D.count z = (w - z) ^ m' * (w - z) ^ (j + 1) := by
-      rw [← hmj, pow_add]
-    rw [hyξ w hwz, mul_add, add_comm (sectionValue x w * _), hw, hsplit]
-    simp only [R, Pi.mul_apply, Pi.pow_apply]
-    field_simp
-  have hlhs : ContinuousAt (sectionValue y) z :=
-    (contDiff_sectionValue (contDiff_euclidean.1 hy 2)
-      (contDiff_euclidean.1 hy 3)).continuous.continuousAt
-  have hrhs : ContinuousAt (fun w ↦ sectionValue x w * ξ w + exp (ν w) * (c * R w)) z :=
-    ((contDiff_sectionValue (hxi 2) (hxi 3)).continuous.continuousAt.mul
-      hξ.continuous.continuousAt).add
-      (hν.continuous.cexp.continuousAt.mul (continuousAt_const.mul hR.continuousAt))
-  have hloc_z : ∀ᶠ w in 𝓝 z,
-      sectionValue y w = sectionValue x w * ξ w + exp (ν w) * (c * R w) := by
-    refine (hlhs.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hrhs).1 ?_
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hαg, self_mem_nhdsWithin]
-      with w hw hwz
-    exact hpt hw hwz
-  have hpz {k : ℕ} (hk : k < D.count z) :
-      principalPart x ν y z k = c * iteratedDeriv k R z := by
-    rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun w ↦ c * R w) hD hν.continuous
-      ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩ hξ.continuous.continuousAt (analyticAt_const.mul hR)
-      hloc_z hk, iteratedDeriv_const_mul_field]
-  refine ⟨y, hy, hy₂, hker, ?_, fun k hk ↦ ?_, fun z' hz' k hk ↦ ?_⟩
-  · rw [hpz hm', div_mul_cancel₀ a hRm']
-  · rw [hpz (hk.trans hm'), hRk k hk, mul_zero]
-  · have hGz' : ContinuousAt (fun w ↦ c / (w - z) ^ (j + 1) + ξ w) z' :=
-      (continuousAt_const.div ((continuousAt_id.sub continuousAt_const).pow _)
-        (pow_ne_zero _ (sub_ne_zero.2 hz'))).add hξ.continuous.continuousAt
-    have hloc_z' : ∀ᶠ w in 𝓝 z', sectionValue y w =
-        sectionValue x w * (c / (w - z) ^ (j + 1) + ξ w) + exp (ν w) * 0 := by
-      filter_upwards [isOpen_ne.mem_nhds hz'] with w hw
-      rw [hyξ w hw, mul_zero, add_zero]
-    rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun _ ↦ 0) hD hν.continuous
-      ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩ hGz' analyticAt_const hloc_z' hk]
-    simp
+  obtain ⟨hpz, hp_ne⟩ := principalPart_eq_of_sectionValue_eq_mul_div_pow_add hD
+    (contDiff_sectionValue (hxi 2) (hxi 3)).continuous
+    (contDiff_sectionValue (contDiff_euclidean.1 hy 2) (contDiff_euclidean.1 hy 3)).continuous
+    hν.continuous ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩ (by omega : m' + (j + 1) = D.count z) hg
+    hξ.continuous hαg hyξ
+  exact ⟨y, hy, hy₂, hker, by rw [hpz m' hm', div_mul_cancel₀ a hRm'],
+    fun k hk ↦ by rw [hpz k (hk.trans hm'), hRk k hk, mul_zero], hp_ne⟩
 
 /-- If `y` has principal-part jet `a` at `i = ⟨z, m'⟩`, vanishing lower-order jets at `z`, and
 vanishing principal parts away from `z`, then every nonzero entry of
@@ -594,6 +602,22 @@ theorem gaugeFixedKernelPrincipalPartEquiv_apply (hx : ContDiff ℝ ∞ x)
       principalPart x ν y i.1 i.2 := by
   simp [gaugeFixedKernelPrincipalPartEquiv]
 
+/-- The principal-part jet of `(gaugeFixedKernelPrincipalPartEquiv ...).symm g` at `(z, k)` below
+`D.count z` is `g ⟨z, k, hk⟩`. -/
+@[simp]
+theorem principalPart_gaugeFixedKernelPrincipalPartEquiv_symm (hx : ContDiff ℝ ∞ x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {ν : ℂ → ℂ}
+    (hν : ContDiff ℝ 2 ν)
+    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
+    (g : Multiset.ToType D → ℂ) {z : ℂ} {k : ℕ} (hk : k < D.count z) :
+    principalPart x ν ((gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hD hν hνeq).symm g) z k =
+      g ⟨z, k, hk⟩ :=
+  (gaugeFixedKernelPrincipalPartEquiv_apply hx hhol hlim hD hν hνeq _ ⟨z, k, hk⟩).symm.trans
+    (congrFun ((gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hD hν hνeq).apply_symm_apply g)
+      ⟨z, k, hk⟩)
+
 /-- **Smoothness of classical kernel elements.** At a smooth field `x` satisfying the
 holomorphicity rows `∂bar_a α = 0` and `|α|² → 1` at infinity, every `C²` square-integrable
 kernel element `y ∈ gaugeFixedKernel x` is smooth (`C^∞`). -/
@@ -617,9 +641,9 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
   -- injects into `D → ℂ`, forcing `y ∈ W`.
   let S : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
     { carrier := {u | ContDiff ℝ ∞ u}
-      add_mem' := fun (hu₁ : ContDiff ℝ ∞ _) hu₂ ↦ hu₁.add hu₂
-      zero_mem' := show ContDiff ℝ ∞ 0 from contDiff_zero_fun
-      smul_mem' := fun t _ (hu : ContDiff ℝ ∞ _) ↦ hu.const_smul t }
+      add_mem' := fun hu₁ hu₂ ↦ (hu₁.add hu₂ : ContDiff ℝ ∞ _)
+      zero_mem' := (contDiff_zero_fun : ContDiff ℝ ∞ _)
+      smul_mem' := fun t _ hu ↦ (hu.const_smul t : ContDiff ℝ ∞ _) }
   let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) := gaugeFixedKernel x ⊓ S
   have hdecW (u) (hu : u ∈ W) :=
     (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel hp hq hhol
@@ -635,14 +659,16 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
   have hy_eq : u.1 = y := congrArg Subtype.val h_inj
   exact hy_eq ▸ u.2.2
 
-/-- **The kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field satisfying the
-holomorphicity rows `∂bar_a α = 0` with `|α|² → 1` at infinity, whose section has zero divisor
-`D`. Then the `C²` square-integrable kernel `gaugeFixedKernel x` has real dimension `2 |D|`. -/
+/-- **The kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field with vanishing
+holomorphicity rows `∂bar_a α = 0` and `|α|² → 1` at infinity, whose section has zero divisor
+`D`. Then the `C²` square-integrable kernel of the gauge-fixed operator `L_x` has real dimension
+twice the degree of `D`, the real dimension of the space of principal parts of `δα / α` at the
+zeros of `α`. -/
 theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) :
-    Module.finrank ℝ (gaugeFixedKernel x) = 2 * Multiset.card D := by
+    finrank ℝ (gaugeFixedKernel x) = 2 * Multiset.card D := by
   have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
     (contDiff_euclidean.1 hx i).of_le (by simp)
   obtain ⟨ν, hν, hνeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (n := 2) (by norm_num)
@@ -651,18 +677,18 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
     Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
     Finset.card_univ, Multiset.card_coe, mul_comm]
 
-/-- **The kernel of `L_x` at a framed degree-`m` vortex has real dimension `2 m`.** Let `x` be a
-smooth field satisfying the holomorphicity rows `∂bar_a α = 0` and the degree-`m` end framing
-`α(z) (z / |z|)⁻ᵐ → 1`. Then `gaugeFixedKernel x` has real dimension `2 m`, the real dimension of
-the divisor space `Sym^m ℂ`. -/
+/-- **The kernel of `L_x` at a framed vortex has real dimension `2m`.** At a smooth field with
+vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, in
+particular at a smooth framed degree-`m` vortex, the `C²` square-integrable kernel of the
+gauge-fixed operator `L_x` has real dimension `2m`, the real dimension of the divisor space
+`Sym^m ℂ`. -/
 theorem finrank_gaugeFixedKernel_eq_two_mul {m : ℕ} (hx : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    Module.finrank ℝ (gaugeFixedKernel x) = 2 * m := by
-  have hi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i :=
-    (contDiff_euclidean.1 hx i).of_le (by simp)
-  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity_sectionValue (k := 2) (by norm_num) (hi 0)
-    (hi 1) ((hi 2).differentiable (by norm_num)) ((hi 3).differentiable (by norm_num)) hhol hframe
+    finrank ℝ (gaugeFixedKernel x) = 2 * m := by
+  have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity_sectionValue (k := ⊤) le_top (hxi 0) (hxi 1)
+    ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hframe
   rw [finrank_gaugeFixedKernel_eq_two_mul_card hx hhol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD, Sym.card_coe]
 
