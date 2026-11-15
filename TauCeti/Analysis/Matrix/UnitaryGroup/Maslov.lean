@@ -176,9 +176,9 @@ theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
     (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
   have hOu := map_ofReal_mem_unitaryGroup hO
   have hOT : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
-    have h := Unitary.mul_star_self_of_mem hOu
-    rwa [star_eq_conjTranspose, ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
-      conjTranspose_eq_transpose_of_trivial, transpose_map] at h
+    rw [← transpose_map]
+    exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
+      ((congrArg _ ((mem_orthogonalGroup_iff _ _).1 hO)).trans (map_one _))
   rw [show V = U * ⟨_, hOu⟩ from Subtype.ext hVO,
     souriau_mul_of_mul_transpose_eq_one U _ hOT]
 

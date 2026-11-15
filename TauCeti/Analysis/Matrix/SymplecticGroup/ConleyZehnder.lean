@@ -52,11 +52,14 @@ unitary matrix `W` is framed in these coordinates by
 `(1/2) [[1 + W, -i (1 - W)], [i (1 - W), 1 + W]]`, whose Souriau map is `fromBlocks W 0 0 W` when
 `W` is symmetric
 (`TauCeti.GLSymplectic.coe_souriau_graphUnitaryFrame_ofUnitary_of_transpose_eq`). In particular the
-rotation path `t ↦ diag (e^{i α_j t})` with `|α_j| < 2π`, the flow `exp (t J S)` of the quadratic
-Hamiltonian with `S = diag (α, α)`, has index `-∑ j, sign α_j = -signature(S) / 2`
-(`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`). For `n = 1`
-this says that a counterclockwise rotation path `t ↦ e^{i α t}`, `0 < α < 2π`, has index `-1`,
-and a clockwise one, such as the flow of `H = ε (x² + y²) / 2` for `ι_{X_H} ω = dH`, has index `1`.
+rotation path `t ↦ diag (e^{i α_j t})` with `|α_j| < 2π`, which is `exp (t J S)` with
+`S = diag (α, α)`, has index `-∑ j, sign α_j = -signature(S) / 2`
+(`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`). For the
+form `ω(x, y) = xᵀ J y` of `TauCeti.Analysis.Matrix.SymplecticGroup.Graph`, `exp (t J S)` is the
+flow of `H(x) = xᵀ S x / 2` with `ι_{X_H} ω = dH`. For `n = 1` this says that a counterclockwise
+rotation path `t ↦ e^{i α t}`, `0 < α < 2π`, has index `-1`, and a clockwise one has index `1`.
+The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x² + y²) / 2` with
+`ι_{X_H} (dx ∧ dy) = dH` is clockwise, with index `1`.
 
 ## Main definitions
 
@@ -117,6 +120,17 @@ private theorem sqrt_two_ne_zero : ((√2 : ℝ) : ℂ) ≠ 0 := by
 private theorem sqrt_two_mul_sqrt_two : ((√2 : ℝ) : ℂ) * ((√2 : ℝ) : ℂ) = 2 := by
   exact_mod_cast Real.mul_self_sqrt zero_le_two
 
+private theorem inv_sqrt_two : ((√2 : ℝ) : ℂ)⁻¹ = ((√2 : ℝ) : ℂ) * (2 : ℂ)⁻¹ := by
+  field_simp
+  rw [sq, sqrt_two_mul_sqrt_two]
+
+omit [Fintype n] in
+/-- The real scalar matrix `√2 • 1`, viewed as a complex matrix. -/
+private theorem map_ofReal_sqrt_two_smul_one :
+    ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) = ((√2 : ℝ) : ℂ) • 1 := by
+  ext i j
+  by_cases hij : i = j <;> simp [hij]
+
 /-- The real matrix `√2 • 1` is invertible. -/
 private theorem isUnit_sqrt_two_smul_one :
     IsUnit ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
@@ -151,12 +165,8 @@ private theorem diagonalStraightening_mul_graphFrame_one :
       (fromBlocks (1 : Matrix n n ℂ) 1 (Complex.I • 1) (-(Complex.I • 1)))ᴴ := by
     rw [← realify_one (𝕜 := ℂ) (ι := n), graphFrame_realify, fromBlocks_conjTranspose]
     simp
-  have h2 : ((√2 : ℝ) : ℂ)⁻¹ * 2 = ((√2 : ℝ) : ℂ) := by
-    rw [← sqrt_two_mul_sqrt_two, ← mul_assoc, inv_mul_cancel₀ sqrt_two_ne_zero, one_mul]
   rw [h, diagonalStraightening_def, Matrix.smul_mul, straightening_mul_conjTranspose, smul_smul,
-    h2]
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
+    inv_sqrt_two, mul_assoc, inv_mul_cancel₀ two_ne_zero, mul_one, map_ofReal_sqrt_two_smul_one]
 
 /-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
 of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
@@ -178,21 +188,12 @@ private theorem coe_graphFrameUnit (A : GLSymplectic n ℝ) :
       graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
   IsUnit.unit_spec _
 
+open scoped Matrix.Norms.L2Operator in
 private theorem continuous_graphFrameUnit : Continuous (graphFrameUnit (n := n)) := by
   have hF : Continuous fun A : GLSymplectic n ℝ ↦
       graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
     continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
-  refine Units.continuous_iff.2 ⟨hF.congr fun A ↦ (coe_graphFrameUnit A).symm, ?_⟩
-  refine continuous_iff_continuousAt.2 fun A ↦ ?_
-  have hinv : ContinuousAt Inv.inv
-      (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) := by
-    refine continuousAt_matrix_inv _ ?_
-    rw [Ring.inverse_eq_inv']
-    exact continuousAt_inv₀ (det_graphFrame_ne_zero A)
-  refine (ContinuousAt.comp (x := A)
-    (f := fun B : GLSymplectic n ℝ ↦ graphFrame ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))
-    hinv hF.continuousAt).congr (Filter.Eventually.of_forall fun B ↦ ?_)
-  simp [Matrix.coe_units_inv, coe_graphFrameUnit]
+  exact Units.isOpenEmbedding_val.continuous_iff.2 (hF.congr fun A ↦ (coe_graphFrameUnit A).symm)
 
 /-- The **unitary graph frame** of a symplectic matrix `A`: the diagonal straightening `T` times
 the real orthonormalization of the graph frame. It is a unitary frame of the image `T Γ(A)` of the
@@ -304,11 +305,10 @@ Lagrangian, and its columns have norm `√2` since `|x|² + |W x|² = 2 |x|²`. 
 private theorem conjTranspose_graphFrame_realify_mul_self (W : unitaryGroup n ℂ) :
     (graphFrame (W : Matrix n n ℂ).realify)ᴴ * graphFrame (W : Matrix n n ℂ).realify =
       (2 : ℂ) • 1 := by
-  have hsymp : (W : Matrix n n ℂ).realify ∈ symplecticGroup n ℝ := by
-    simpa only [coe_ofUnitary] using mem_iff_mem_symplecticGroup.1 (ofUnitary W).2
-  have horth : ((W : Matrix n n ℂ).realify)ᵀ * (W : Matrix n n ℂ).realify = 1 := by
-    rw [← realify_conjTranspose, ← realify_mul, ← star_eq_conjTranspose,
-      Unitary.star_mul_self_of_mem W.2, realify_one]
+  have hsymp : (W : Matrix n n ℂ).realify ∈ symplecticGroup n ℝ :=
+    realify_mem_symplecticGroup_iff.2 W.2
+  have horth : ((W : Matrix n n ℂ).realify)ᵀ * (W : Matrix n n ℂ).realify = 1 :=
+    (mem_orthogonalGroup_iff' _ _).1 (realify_mem_orthogonalGroup_iff.2 W.2)
   rw [conjTranspose_graphFrame_mul_graphFrame, horth, SymplecticGroup.mem_iff'.1 hsymp, sub_self]
   ext i j
   by_cases hij : i = j
@@ -324,15 +324,8 @@ private noncomputable def realifyGraphFrame (W : Matrix n n ℂ) : Matrix (n ⊕
 private theorem diagonalStraightening_mul_graphFrame_realify_eq (W : Matrix n n ℂ) :
     diagonalStraightening n * graphFrame W.realify =
       realifyGraphFrame W * ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
-  have h : ((√2 : ℝ) : ℂ)⁻¹ = ((√2 : ℝ) : ℂ) * (2 : ℂ)⁻¹ := by
-    field_simp
-    exact_mod_cast (Real.sq_sqrt zero_le_two).symm
-  have hmap : ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) =
-      ((√2 : ℝ) : ℂ) • 1 := by
-    ext i j
-    by_cases hij : i = j <;> simp [hij]
-  rw [diagonalStraightening_mul_graphFrame_realify, hmap, Matrix.mul_smul, Matrix.mul_one,
-    realifyGraphFrame, smul_smul, h]
+  rw [diagonalStraightening_mul_graphFrame_realify, map_ofReal_sqrt_two_smul_one, Matrix.mul_smul,
+    Matrix.mul_one, realifyGraphFrame, smul_smul, inv_sqrt_two]
 
 private theorem realifyGraphFrame_mem_unitaryGroup (W : unitaryGroup n ℂ) :
     realifyGraphFrame (W : Matrix n n ℂ) ∈ unitaryGroup (n ⊕ n) ℂ := by
@@ -345,9 +338,8 @@ private theorem realifyGraphFrame_mem_unitaryGroup (W : unitaryGroup n ℂ) :
     rw [diagonalStraightening_mul_graphFrame_realify, smul_smul, realifyGraphFrame, mul_assoc,
       mul_inv_cancel₀ sqrt_two_ne_zero, mul_one]
   have hc : star c * c * 2 = 1 := by
-    have h2 : ((√2 : ℝ) : ℂ) * ((√2 : ℝ) : ℂ) = 2 := sqrt_two_mul_sqrt_two
     simp only [c, star_mul', star_inv₀, star_def, conj_ofReal, map_ofNat]
-    linear_combination (1 / 2 : ℂ) * h2
+    linear_combination (1 / 2 : ℂ) * sqrt_two_mul_sqrt_two
   rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hV, conjTranspose_smul, smul_mul_smul,
     conjTranspose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc (diagonalStraightening n)ᴴ, hTT,
     Matrix.one_mul, conjTranspose_graphFrame_realify_mul_self, smul_smul, hc, one_smul]
@@ -415,8 +407,26 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal {U V : unitaryGr
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   ring
 
+/-- For `|x| < c`, the count `⌊x / c⌋ + ⌈x / c⌉` is the sign of `x`. -/
+private theorem floor_add_ceil_div_eq_sign_of_abs_lt {x c : ℝ} (hc : 0 < c) (h : |x| < c) :
+    ((⌊x / c⌋ + ⌈x / c⌉ : ℤ) : ℝ) = Real.sign x := by
+  have hlo : -1 < x / c := by rw [lt_div_iff₀ hc]; linarith [neg_abs_le x]
+  have hhi : x / c < 1 := by rw [div_lt_iff₀ hc]; linarith [le_abs_self x]
+  rcases lt_trichotomy x 0 with hneg | rfl | hpos
+  · have hneg' : x / c < 0 := div_neg_of_neg_of_pos hneg hc
+    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      Real.sign_of_neg hneg]
+    norm_num
+  · simp
+  · have hpos' : 0 < x / c := div_pos hpos hc
+    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      Real.sign_of_pos hpos]
+    norm_num
+
 /-- **Normalization on rotations.** The path `t ↦ diag (e^{i α_j t})` of realified unitary
-matrices, the flow `exp (t J S)` of the quadratic form with `S = diag (α, α)`, has Conley–Zehnder
+matrices, which is `exp (t J S)` with `S = diag (α, α)`, has Conley–Zehnder
 index `-∑ j, sign α_j = -signature(S) / 2` when every `|α_j| < 2π`. In particular a small
 counterclockwise rotation of `ℝ²` has index `-1` and a small clockwise one has index `1`. -/
 theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unitaryGroup n ℂ}
@@ -428,25 +438,9 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   -- Since `|α_j / 2π| < 1`, the count `⌊α_j / 2π⌋ + ⌈α_j / 2π⌉` is `sign α_j`.
-  have hπ : 0 < 2 * Real.pi := by positivity
-  have hlo : -1 < α j / (2 * Real.pi) := by
-    rw [lt_div_iff₀ hπ]; linarith [neg_abs_le (α j), hα j]
-  have hhi : α j / (2 * Real.pi) < 1 := by
-    rw [div_lt_iff₀ hπ]; linarith [le_abs_self (α j), hα j]
   simp only [Set.Icc.coe_one, mul_one, Set.Icc.coe_zero, mul_zero, zero_div, Int.floor_zero,
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
-  rcases lt_trichotomy (α j) 0 with hneg | hzero | hpos
-  · have h : α j / (2 * Real.pi) < 0 := div_neg_of_neg_of_pos hneg hπ
-    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_neg hneg]
-    norm_num
-  · simp [hzero]
-  · have h : 0 < α j / (2 * Real.pi) := div_pos hpos hπ
-    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_pos hpos]
-    norm_num
+  exact floor_add_ceil_div_eq_sign_of_abs_lt (by positivity) (hα j)
 
 end GLSymplectic
 
