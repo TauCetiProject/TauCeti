@@ -141,8 +141,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R]
   ext h
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply, quotientKerPointsMulEquiv_symm_apply,
     BialgHom.mapDomain_apply_apply, kerLiftBialgEquiv_toBialgHom, Ideal.Quotient.mkₐ_eq_mk,
-    kerLiftBialgHom_mk]
-  rw [BialgHom.mapDomain_apply_apply]
+    kerLiftBialgHom_mk, BialgHom.mapDomain_apply_apply]
 
 /-- Pointwise form of `quotientPointsHom_quotientKerPointsMulEquiv_symm_apply`. -/
 theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply_apply
