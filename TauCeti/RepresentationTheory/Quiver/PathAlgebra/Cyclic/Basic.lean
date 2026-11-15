@@ -168,6 +168,7 @@ theorem ofPath_notMem_commutatorSubmodule {a : Q} (p : Path a a) :
 
 /-- Over a nontrivial commutative ring, no vertex idempotent lies in the commutator submodule of
 the path algebra. -/
+@[simp]
 theorem vertexIdempotent_notMem_commutatorSubmodule (v : Q) :
     vertexIdempotent k v ∉ commutatorSubmodule k (pathAlgebra k Q) := by
   rw [vertexIdempotent_eq_ofPath]

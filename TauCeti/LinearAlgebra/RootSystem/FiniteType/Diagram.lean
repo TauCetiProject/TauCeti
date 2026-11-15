@@ -36,8 +36,10 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
-* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the type `Aₙ` diagram is the path graph on
-  `n` nodes.
+* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A` and
+  `TauCeti.DynkinType.diagramGraph_cartanMatrix_of_not_isSimplyLaced`: the type `Aₙ` diagram and
+  the unweighted diagram of every multiply-laced `DynkinType` (`Bₙ`, `Cₙ`, `F₄`, `G₂`) equal the
+  path graph of their rank.
 * `TauCeti.IsFiniteType.isAcyclic_diagramGraph`: **the diagram of a finite-type matrix is a
   forest**. The affine diagrams `Ãₙ` for `n ≥ 2`, the ones whose diagrams are cycles, are excluded
   here in one theorem.
@@ -110,6 +112,62 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
   rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
   simp [CartanMatrix.A, Fin.ext_iff]
   omega
+
+/-- **The diagram of type `Bₙ` is the path graph**: forgetting bond multiplicities joins
+consecutive nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_B (n : ℕ) :
+    (diagramGraph (CartanMatrix.B n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.B, Fin.ext_iff]
+  omega
+
+/-- **The diagram of type `Cₙ` is the path graph**: forgetting bond multiplicities joins
+consecutive nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_C (n : ℕ) :
+    (diagramGraph (CartanMatrix.C n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.C, Fin.ext_iff]
+  omega
+
+/-- **The diagram of type `F₄` is the path graph on `4` nodes.** -/
+@[simp]
+theorem diagramGraph_cartanMatrix_F4 :
+    (diagramGraph CartanMatrix.F₄ : _root_.SimpleGraph (Fin 4)) =
+      _root_.SimpleGraph.pathGraph 4 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> decide
+
+/-- **The diagram of `G₂ᵀ` (the standard `G₂` Cartan matrix) is the path graph on `2` nodes.** -/
+@[simp]
+theorem diagramGraph_cartanMatrix_G2 :
+    (diagramGraph CartanMatrix.G₂.transpose : _root_.SimpleGraph (Fin 2)) =
+      _root_.SimpleGraph.pathGraph 2 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> decide
+
+/-- The unweighted diagram of `DynkinType.A n` is the path graph on `n` nodes. -/
+theorem diagramGraph_A_eq_pathGraph (n : ℕ) :
+    (diagramGraph (DynkinType.A n).cartanMatrix : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  rw [cartanMatrix_A]
+  exact diagramGraph_cartanMatrix_A n
+
+/-- The unweighted diagram of every multiply-laced `DynkinType` is the path graph of its rank. -/
+theorem diagramGraph_cartanMatrix_of_not_isSimplyLaced {t : DynkinType} (ht : ¬ t.IsSimplyLaced) :
+    (diagramGraph t.cartanMatrix : _root_.SimpleGraph (Fin t.rank)) =
+      _root_.SimpleGraph.pathGraph t.rank := by
+  cases t with
+  | A _ | D _ | E6 | E7 | E8 => simp at ht
+  | B n => rw [cartanMatrix_B]; exact diagramGraph_cartanMatrix_B n
+  | C n => rw [cartanMatrix_C]; exact diagramGraph_cartanMatrix_C n
+  | F4 => rw [cartanMatrix_F4]; exact diagramGraph_cartanMatrix_F4
+  | G2 => rw [cartanMatrix_G2]; exact diagramGraph_cartanMatrix_G2
 
 end DynkinType
 

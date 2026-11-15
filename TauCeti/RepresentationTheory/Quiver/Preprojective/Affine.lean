@@ -7,13 +7,11 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedOrientation
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.Tree
 
-import Mathlib.Algebra.Group.Fin.Basic
+import TauCeti.Combinatorics.Quiver.LoopPower
 
 /-!
 # Positive-degree cyclic classes of non-Dynkin preprojective algebras
@@ -42,10 +40,6 @@ through the signless algebra.
 
 ## Main results
 
-* `TauCeti.pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule` and
-  `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient`: any closed path in
-  a quiver or in one of its reorientations yields a homogeneous element of the same degree in the
-  preprojective algebra outside the commutator submodule.
 * `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_copy` and
   `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic`: a cycle of
   length `m ≥ 3` in `G` produces a nonzero cyclic class of degree `m` in every orientation of `G`.
@@ -57,8 +51,8 @@ through the signless algebra.
 
 ## References
 
-* T. Schedler, *Hochschild homology of preprojective algebras over the integers*, Adv. Math. 214
-  (2007), https://arxiv.org/abs/math/0703475.
+* T. Schedler, *Zeroth Hochschild homology of preprojective algebras over the integers*,
+  https://arxiv.org/abs/0704.3278.
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   https://arxiv.org/abs/2301.06757.
 -/
@@ -71,73 +65,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 universe u v w
 
-section Quiver
-
-variable (k : Type w) [CommRing k] {Q : Type u} [Quiver.{v} Q] [Fintype Q]
-  [∀ i j : Q, Fintype (i ⟶ j)]
-
-/-- The image of a basis path of `Q` in `Π_k(Q)` is homogeneous of degree equal to its path
-length. -/
-theorem pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade (x : Quiver.TotalPath Q) :
-    pathAlgebraToPreprojective k Q (ofPath x) ∈ preprojectiveGrade k Q x.2.2.length := by
-  rw [pathAlgebraToPreprojective_ofPath]
-  exact preprojectiveMk_mem_preprojectiveGrade k Q
-    (ofPath_mem_grade_of_length (Symmetrify.of.length_mapTotalPath x))
-
-/-- Over a nontrivial commutative ring, the image in `Π_k(Q)` of any closed basis path of `Q`
-does not lie in the commutator submodule `[Π_k(Q), Π_k(Q)]`. -/
-theorem pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule [Nontrivial k]
-    {a : Q} (p : Path a a) :
-    pathAlgebraToPreprojective k Q (ofPath ⟨a, a, p⟩) ∉
-      commutatorSubmodule k (preprojectiveAlgebra k Q) := by
-  intro hp
-  have hret := map_mem_commutatorSubmodule (preprojectiveToPathAlgebra k Q) hp
-  rw [preprojectiveToPathAlgebra_pathAlgebraToPreprojective] at hret
-  exact ofPath_notMem_commutatorSubmodule p hret
-
-/-- Any closed path in a reorientation of `Q` produces a homogeneous element of the same path
-degree in `Π_k(Q)` outside the commutator submodule over a nontrivial commutative ring. -/
-theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient [Nontrivial k]
-    (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) {a : Reorient Q σ} (p : Path a a) :
-    ∃ x ∈ preprojectiveGrade k Q p.length,
-      x ∉ commutatorSubmodule k (preprojectiveAlgebra k Q) := by
-  let y := pathAlgebraToPreprojective k (Reorient Q σ) (ofPath ⟨a, a, p⟩)
-  refine ⟨reorientPreprojectiveAlgebraEquiv k σ y,
-    (reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k σ).2
-      (pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade k ⟨a, a, p⟩), fun hx => ?_⟩
-  apply pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule k p
-  simpa only [AlgEquiv.symm_apply_apply] using
-    map_mem_commutatorSubmodule (reorientPreprojectiveAlgebraEquiv k σ).symm hx
-
-end Quiver
-
 section Cycle
-
-open Fin.NatCast in
-/-- Iterating a family of arrows `u r ⟶ u (r + 1)` around `Fin m` yields a closed path of length
-`m` at `u 0`. -/
-private theorem exists_path_length_eq_of_step {Q : Type*} [Quiver Q] {m : ℕ} [NeZero m]
-    (u : Fin m → Q) (step : ∀ r : Fin m, u r ⟶ u (r + 1)) :
-    ∃ p : Path (u 0) (u 0), p.length = m := by
-  have walk : ∀ n : ℕ, ∃ p : Path (u 0) (u (n : Fin m)), p.length = n := by
-    intro n
-    induction n with
-    | zero =>
-      rw [Nat.cast_zero]
-      exact ⟨Path.nil, rfl⟩
-    | succ n ih =>
-      obtain ⟨p, hp⟩ := ih
-      have key_step : ∀ r : Fin m, r = (n : Fin m) + 1 → (u (n : Fin m) ⟶ u r) := by
-        rintro _ rfl
-        exact step (n : Fin m)
-      exact ⟨p.cons (key_step ((n + 1 : ℕ) : Fin m) (Nat.cast_succ n)),
-        by rw [Path.length_cons, hp]⟩
-  obtain ⟨p, hp⟩ := walk m
-  have key_end : ∀ r : Fin m, r = 0 → ∀ p : Path (u 0) (u r), p.length = m →
-      ∃ q : Path (u 0) (u 0), q.length = m := by
-    rintro _ rfl p hp
-    exact ⟨p, hp⟩
-  exact key_end (m : Fin m) (Fin.natCast_self m) p hp
 
 variable (k : Type w) [CommRing k] [Nontrivial k] {V : Type u} [Finite V] {G : SimpleGraph V}
 

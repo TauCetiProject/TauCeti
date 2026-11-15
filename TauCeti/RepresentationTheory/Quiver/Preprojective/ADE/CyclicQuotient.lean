@@ -13,7 +13,6 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Charac
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CharacteristicThree
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Affine
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # Positive-degree cyclic quotients of preprojective algebras
@@ -45,7 +44,8 @@ here, so `TauCeti.IsBadPrime` is defined in this preprojective module rather tha
 ## Main definitions and results
 
 * `TauCeti.IsBadPrime`: the bad primes of `t : DynkinType` for the unweighted preprojective cyclic
-  quotient.
+  quotient, and `TauCeti.forall_isBadPrime_isUnit_iff` relating invertibility of bad primes over a
+  field `k` to `¬ IsBadPrime t (ringChar k)`.
 * `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_of_iso`,
   `TauCeti.preprojectiveGrade_le_commutatorSubmodule_of_iso`, and
   `TauCeti.finrank_cyclicQuotient_preprojectiveAlgebra_of_iso`: when every bad prime of `t` is a
@@ -57,6 +57,10 @@ here, so `TauCeti.IsBadPrime` is defined in this preprojective module rather tha
   `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime`: when `t` is
   valid, `p` is a bad prime of `t`, and `(p : k) = 0` in a nontrivial commutative ring `k`, a
   nonzero cyclic class appears in path degree `4`, `6`, or `10`.
+* `TauCeti.forall_pos_signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso` and
+  `TauCeti.forall_pos_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso` (together with their
+  `3 ≤ d` counterparts): over a field `k`, for a fixed valid Dynkin type `t`, the positive-degree
+  cyclic quotient vanishes if and only if `ringChar k` is not a bad prime of `t`.
 * `TauCeti.forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff` and
   `TauCeti.forall_pos_preprojectiveGrade_le_commutatorSubmodule_iff`: **over a field `k`, for any
   connected finite simple graph `G` and any orientation `o` of `G`, the cyclic quotient of
@@ -68,8 +72,8 @@ here, so `TauCeti.IsBadPrime` is defined in this preprojective module rather tha
 
 * P. Etingof and C.-H. Eu, *Hochschild and cyclic homology of preprojective algebras of ADE
   quivers*, Mosc. Math. J. 7 (2007), https://arxiv.org/abs/math/0609006.
-* T. Schedler, *Hochschild homology of preprojective algebras over the integers*, Adv. Math. 214
-  (2007), Theorem 13.1.1, https://arxiv.org/abs/math/0703475.
+* T. Schedler, *Zeroth Hochschild homology of preprojective algebras over the integers*, Theorem
+  13.1.1, https://arxiv.org/abs/0704.3278.
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   Theorem 1.1 and Section 3, https://arxiv.org/abs/2301.06757.
 -/
@@ -140,46 +144,6 @@ theorem not_isBadPrime_one (t : DynkinType) : ¬ IsBadPrime t 1 :=
 theorem not_isBadPrime_of_six_le {t : DynkinType} {p : ℕ} (hp : 6 ≤ p) : ¬ IsBadPrime t p := by
   cases t <;> simp <;> omega
 
-private theorem exists_isSimplyLaced_diagramGraph_iso_isBadPrime (t : DynkinType) :
-    ∃ s : DynkinType, s.IsSimplyLaced ∧ (∀ p, IsBadPrime s p ↔ IsBadPrime t p) ∧
-      Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph s.cartanMatrix) := by
-  have hpath {n : ℕ} {G : SimpleGraph (Fin n)} (hG : G = SimpleGraph.pathGraph n) :
-      Nonempty (G ≃g diagramGraph (CartanMatrix.A n)) := by
-    rw [hG, DynkinType.diagramGraph_cartanMatrix_A]
-    exact ⟨SimpleGraph.Iso.refl⟩
-  cases t with
-  | A n | D n | E6 | E7 | E8 => exact ⟨_, by simp, fun _ => Iff.rfl, ⟨SimpleGraph.Iso.refl⟩⟩
-  | B n =>
-    refine ⟨.A n, by simp, by simp, ?_⟩
-    simpa only [DynkinType.rank_B, DynkinType.cartanMatrix_B, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.B n)) <| by
-      ext i j
-      rw [diagramGraph_adj, SimpleGraph.pathGraph_adj]
-      simp [CartanMatrix.B, Fin.ext_iff]
-      omega
-  | C n =>
-    refine ⟨.A n, by simp, by simp, ?_⟩
-    simpa only [DynkinType.rank_C, DynkinType.cartanMatrix_C, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.C n)) <| by
-      ext i j
-      rw [diagramGraph_adj, SimpleGraph.pathGraph_adj]
-      simp [CartanMatrix.C, Fin.ext_iff]
-      omega
-  | F4 =>
-    refine ⟨.A 4, by simp, by simp, ?_⟩
-    simpa only [DynkinType.rank_F4, DynkinType.cartanMatrix_F4, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.F₄) <| by
-      ext i j
-      rw [diagramGraph_adj, SimpleGraph.pathGraph_adj]
-      fin_cases i <;> fin_cases j <;> decide
-  | G2 =>
-    refine ⟨.A 2, by simp, by simp, ?_⟩
-    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.G₂.transpose) <| by
-      ext i j
-      rw [diagramGraph_adj, SimpleGraph.pathGraph_adj]
-      fin_cases i <;> fin_cases j <;> decide
-
 /-! ### Vanishing in good characteristic -/
 
 section GoodCharacteristic
@@ -213,31 +177,34 @@ theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_iso
     (x : Quiver.TotalPath (DoubledQuiver G)) (hx : 0 < x.2.2.length) :
     signlessPreprojectiveMk k (DoubledQuiver G) (ofPath x) ∈
       commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  obtain ⟨s, hs, hbs, ⟨f⟩⟩ := exists_isSimplyLaced_diagramGraph_iso_isBadPrime t
-  have hbads : ∀ p, IsBadPrime s p → IsUnit (p : k) := fun p hp => hbad p ((hbs p).mp hp)
-  have ef : G ≃g diagramGraph s.cartanMatrix := e.trans f
-  cases s with
-  | A n =>
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k ef
+  by_cases hsl : t.IsSimplyLaced
+  · cases t with
+    | A n =>
+      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
+        (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
+    | D n =>
+      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
+        (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k (hbad 2 rfl)) x hx
+    | E6 =>
+      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
+        (signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule k
+          (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr rfl))) x hx
+    | E7 =>
+      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e
+        (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k
+          (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr rfl))) x hx
+    | E8 =>
+      have e' : G ≃g zigzagE8Graph := by rwa [zigzagE8Graph_eq_diagramGraph]
+      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e'
+        (signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule k
+          (hbad 2 (Or.inl rfl)) (hbad 3 (Or.inr (Or.inl rfl)))
+          (hbad 5 (Or.inr (Or.inr rfl)))) x hx
+    | B _ | C _ | F4 | G2 => simp at hsl
+  · have e' : G ≃g diagramGraph (DynkinType.A t.rank).cartanMatrix := by
+      rwa [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced hsl,
+        ← DynkinType.diagramGraph_A_eq_pathGraph] at e
+    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k e'
       (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k) x hx
-  | D n =>
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k ef
-      (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k (hbads 2 rfl)) x hx
-  | E6 =>
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k ef
-      (signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule k
-        (hbads 2 (Or.inl rfl)) (hbads 3 (Or.inr rfl))) x hx
-  | E7 =>
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k ef
-      (signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule k
-        (hbads 2 (Or.inl rfl)) (hbads 3 (Or.inr rfl))) x hx
-  | E8 =>
-    have ef' : G ≃g zigzagE8Graph := by rwa [zigzagE8Graph_eq_diagramGraph]
-    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_transport k ef'
-      (signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule k
-        (hbads 2 (Or.inl rfl)) (hbads 3 (Or.inr (Or.inl rfl)))
-        (hbads 5 (Or.inr (Or.inr rfl)))) x hx
-  | B _ | C _ | F4 | G2 => simp at hs
 
 /-- **When every bad prime of `t` is invertible in `k`, the cyclic quotient of the signless
 preprojective algebra of a graph isomorphic to `diagramGraph t.cartanMatrix` vanishes in positive
@@ -373,24 +340,24 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBa
     have e' : G ≃g diagramGraph (CartanMatrix.E 6) := by rwa [DynkinType.cartanMatrix_E6] at e
     rcases hp with rfl | rfl
     · exact ⟨4, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
-          (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
-            (by decide) hp0)⟩
+      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
+          (by decide) hp0)⟩
     · exact ⟨6, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
-          (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
-            (by decide) hp0)⟩
+      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
+          (by decide) hp0)⟩
   | E7 =>
     have e' : G ≃g diagramGraph (CartanMatrix.E 7) := by rwa [DynkinType.cartanMatrix_E7] at e
     rcases hp with rfl | rfl
     · exact ⟨4, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
-          (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
-            (by decide) hp0)⟩
+      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k
+          (by decide) hp0)⟩
     · exact ⟨6, by simp,
-        exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
-          (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
-            (by decide) hp0)⟩
+      exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_transport k e'
+        (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k
+          (by decide) hp0)⟩
   | E8 =>
     rcases hp with rfl | rfl | rfl
     · have e' : G ≃g diagramGraph (CartanMatrix.E 8) := by rwa [DynkinType.cartanMatrix_E8] at e
@@ -437,11 +404,34 @@ section Field
 
 variable (k : Type*) [Field k]
 
-private theorem isUnit_of_not_isBadPrime_ringChar {t : DynkinType}
-    (hnotbad : ¬ IsBadPrime t (ringChar k)) (p : ℕ) (hp : IsBadPrime t p) :
-    IsUnit (p : k) := by
-  refine isUnit_iff_ne_zero.mpr fun hp0 => hnotbad ?_
-  rwa [CharP.ringChar_of_prime_eq_zero hp.prime hp0]
+/-- Over a field `k`, every bad prime of `t` is invertible in `k` if and only if `ringChar k` is
+not a bad prime of `t`. -/
+theorem forall_isBadPrime_isUnit_iff {t : DynkinType} :
+    (∀ p : ℕ, IsBadPrime t p → IsUnit (p : k)) ↔ ¬ IsBadPrime t (ringChar k) := by
+  refine ⟨fun h hbad => ?_, fun hnotbad p hp => ?_⟩
+  · exact not_isUnit_zero (CharP.cast_eq_zero k (ringChar k) ▸ h (ringChar k) hbad)
+  · refine isUnit_iff_ne_zero.mpr fun hp0 => hnotbad ?_
+    rwa [CharP.ringChar_of_prime_eq_zero hp.prime hp0]
+
+/-- Over a field `k`, for a graph `G` isomorphic to the standard diagram of a valid Dynkin type `t`,
+every graded piece of path degree `d ≥ 3` of the signless preprojective algebra of `G` lies in the
+commutator submodule if and only if `ringChar k` is not a bad prime of `t`. -/
+theorem forall_three_le_signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso
+    {V : Type*} [Finite V] {G : SimpleGraph V} [∀ i, Fintype (G.neighborSet i)]
+    {t : DynkinType} (ht : t.Valid) (e : G ≃g diagramGraph t.cartanMatrix) :
+    (∀ d : ℕ, 3 ≤ d → signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) ↔
+      ¬ IsBadPrime t (ringChar k) := by
+  refine ⟨fun h hbad => ?_, fun hnotbad d hd3 =>
+    signlessPreprojectiveGrade_le_commutatorSubmodule_of_iso k e
+      ((forall_isBadPrime_isUnit_iff k).mpr hnotbad) (by omega)⟩
+  obtain ⟨d, hd, z, hz, hz0⟩ :=
+    exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k ht e hbad
+      (CharP.cast_eq_zero k (ringChar k))
+  have hd3 : 3 ≤ d := by
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hd
+    omega
+  exact hz0 (h d hd3 hz)
 
 /-- Over a field `k`, for a graph `G` isomorphic to the standard diagram of a valid Dynkin type `t`,
 the positive-degree pieces of the signless preprojective algebra of `G` lie in the commutator
@@ -451,17 +441,49 @@ theorem forall_pos_signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso
     {t : DynkinType} (ht : t.Valid) (e : G ≃g diagramGraph t.cartanMatrix) :
     (∀ d : ℕ, 0 < d → signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
         commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G))) ↔
-      ¬ IsBadPrime t (ringChar k) := by
-  refine ⟨fun h hbad => ?_, fun hnotbad d hd =>
+      ¬ IsBadPrime t (ringChar k) :=
+  ⟨fun h =>
+    (forall_three_le_signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso k ht e).mp
+      fun d hd3 => h d (by omega),
+   fun hnotbad d hd =>
     signlessPreprojectiveGrade_le_commutatorSubmodule_of_iso k e
-      (isUnit_of_not_isBadPrime_ringChar k hnotbad) hd⟩
+      ((forall_isBadPrime_isUnit_iff k).mpr hnotbad) hd⟩
+
+/-- Over a field `k`, for any orientation `o` of a graph `G` isomorphic to the standard diagram of
+a valid Dynkin type `t`, every graded piece of path degree `d ≥ 3` of `Π_k(OrientedQuiver G o)` lies
+in the commutator submodule if and only if `ringChar k` is not a bad prime of `t`. -/
+theorem forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso
+    {V : Type*} [Finite V] {G : SimpleGraph V}
+    {t : DynkinType} (ht : t.Valid) (e : G ≃g diagramGraph t.cartanMatrix) (o : Orientation G) :
+    (∀ d : ℕ, 3 ≤ d → preprojectiveGrade k (OrientedQuiver G o) d ≤
+        commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o))) ↔
+      ¬ IsBadPrime t (ringChar k) := by
+  refine ⟨fun h hbad => ?_, fun hnotbad d hd3 =>
+    preprojectiveGrade_le_commutatorSubmodule_of_iso k e o
+      ((forall_isBadPrime_isUnit_iff k).mpr hnotbad) (by omega)⟩
   obtain ⟨d, hd, z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k ht e hbad
+    exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k ht e o hbad
       (CharP.cast_eq_zero k (ringChar k))
-  have hdpos : 0 < d := by
+  have hd3 : 3 ≤ d := by
     simp only [Finset.mem_insert, Finset.mem_singleton] at hd
     omega
-  exact hz0 (h d hdpos hz)
+  exact hz0 (h d hd3 hz)
+
+/-- Over a field `k`, for any orientation `o` of a graph `G` isomorphic to the standard diagram of
+a valid Dynkin type `t`, the positive-degree pieces of `Π_k(OrientedQuiver G o)` lie in the
+commutator submodule if and only if `ringChar k` is not a bad prime of `t`. -/
+theorem forall_pos_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso
+    {V : Type*} [Finite V] {G : SimpleGraph V}
+    {t : DynkinType} (ht : t.Valid) (e : G ≃g diagramGraph t.cartanMatrix) (o : Orientation G) :
+    (∀ d : ℕ, 0 < d → preprojectiveGrade k (OrientedQuiver G o) d ≤
+        commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o))) ↔
+      ¬ IsBadPrime t (ringChar k) :=
+  ⟨fun h =>
+    (forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso k ht e o).mp
+      fun d hd3 => h d (by omega),
+   fun hnotbad d hd =>
+    preprojectiveGrade_le_commutatorSubmodule_of_iso k e o
+      ((forall_isBadPrime_isUnit_iff k).mpr hnotbad) hd⟩
 
 /-- **Characterization of vanishing in path degrees `d ≥ 3` of the cyclic quotient of a
 preprojective algebra.** Over a field `k`, for any connected finite simple graph `G` and any
@@ -483,17 +505,11 @@ theorem forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff
           k hG hnot o
       exact hx0 (h d hd3 hx)
     obtain ⟨t, ht, hsl, ⟨e⟩⟩ := (SimpleGraph.exists_valid_isSimplyLaced_dynkinType_iso_iff G).mpr hD
-    refine ⟨t, ht, hsl, ⟨e⟩, fun hbad => ?_⟩
-    obtain ⟨d, hd, z, hz, hz0⟩ :=
-      exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_isBadPrime k ht e o hbad
-        (CharP.cast_eq_zero k (ringChar k))
-    have hd3 : 3 ≤ d := by
-      simp only [Finset.mem_insert, Finset.mem_singleton] at hd
-      omega
-    exact hz0 (h d hd3 hz)
-  · rintro ⟨t, -, -, ⟨e⟩, hnotbad⟩ d hd3
-    exact preprojectiveGrade_le_commutatorSubmodule_of_iso k e o
-      (isUnit_of_not_isBadPrime_ringChar k hnotbad) (by omega)
+    exact ⟨t, ht, hsl, ⟨e⟩,
+      (forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso k ht e o).mp h⟩
+  · rintro ⟨t, ht, -, ⟨e⟩, hnotbad⟩
+    exact (forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso k ht e o).mpr
+      hnotbad
 
 /-- **Characterization of positive-degree vanishing of the cyclic quotient of a preprojective
 algebra.** Over a field `k`, for any connected finite simple graph `G` and any orientation `o` of
@@ -507,10 +523,9 @@ theorem forall_pos_preprojectiveGrade_le_commutatorSubmodule_iff
       ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
         Nonempty (G ≃g diagramGraph t.cartanMatrix) ∧ ¬ IsBadPrime t (ringChar k) := by
   refine ⟨fun h => (forall_three_le_preprojectiveGrade_le_commutatorSubmodule_iff k hG o).mp
-      fun d hd3 => h d (by omega),
-    fun ⟨t, _, _, ⟨e⟩, hnotbad⟩ d hd =>
-      preprojectiveGrade_le_commutatorSubmodule_of_iso k e o
-        (isUnit_of_not_isBadPrime_ringChar k hnotbad) hd⟩
+      fun d hd3 => h d (by omega), ?_⟩
+  rintro ⟨t, ht, -, ⟨e⟩, hnotbad⟩
+  exact (forall_pos_preprojectiveGrade_le_commutatorSubmodule_iff_of_iso k ht e o).mpr hnotbad
 
 end Field
 

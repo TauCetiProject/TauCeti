@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Symmetrify
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Orientation
 
 /-!
@@ -90,6 +91,15 @@ theorem pathAlgebraToPreprojective_ofArrow {a b : Q} (f : a ⟶ b) :
     pathAlgebraToPreprojective k Q (ofArrow f) =
       preprojectiveMk k Q (ofArrow (Symmetrify.of.map f)) := by
   rw [pathAlgebraToPreprojective, AlgHom.comp_apply, mapAlgHom_ofArrow]
+
+variable {Q} in
+/-- The image of a basis path of `Q` in `Π_k(Q)` is homogeneous of degree equal to its path
+length. -/
+theorem pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade (x : Quiver.TotalPath Q) :
+    pathAlgebraToPreprojective k Q (ofPath x) ∈ preprojectiveGrade k Q x.2.2.length := by
+  rw [pathAlgebraToPreprojective_ofPath]
+  exact preprojectiveMk_mem_preprojectiveGrade k Q
+    (ofPath_mem_grade_of_length (Symmetrify.of.length_mapTotalPath x))
 
 /-- Killing the formal reverses kills the preprojective relator: each summand is a difference of
 two backtracks, and every backtrack traverses a formal reverse. -/

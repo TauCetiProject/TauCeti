@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.Basic
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 import Mathlib.Algebra.CharP.Basic
 import Mathlib.Data.List.Rotate
 import Mathlib.Data.ZMod.Basic
@@ -25,9 +24,11 @@ A linear functional supported on ten necklaces of length six detects it.
 The necklace weights annihilate the local preprojective relations and are invariant under
 rotation, so the functional descends to the cyclic quotient.
 
-Passing to an induced `E₆` subdiagram lifts this obstruction to any finite simple graph containing
-an induced copy of `E₆`, and in particular to `CartanMatrix.E n` for every `n ≥ 6` (covering
-`E₆`, `E₇`, and `E₈`) and to the additive preprojective algebra of every orientation thereof.
+Passing to an induced `E₆` subdiagram via `TauCeti.signlessPreprojectiveEmbeddingHom` lifts this
+obstruction to any finite simple graph containing an induced copy of `E₆` (paralleling the induced
+`D₄` lift in `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.InducedSubgraph`), and in
+particular to `CartanMatrix.E n` for every `n ≥ 6` (covering `E₆`, `E₇`, and `E₈`) and to the
+additive preprojective algebra of every orientation thereof.
 
 The quotient-functional construction follows the kernel descent used for the `D₄` Frobenius
 functional in `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective`.
@@ -452,30 +453,6 @@ private def e6PrefixEmbedding {n : ℕ} (hn : 6 ≤ n) :
 
 variable (k : Type*) [CommRing k]
 
-private noncomputable def e6EmbeddingQuotient {V : Type*} [Finite V] {H : SimpleGraph V}
-    (f : G ↪g H) :
-    signlessPreprojectiveAlgebra k (DoubledQuiver H) →ₐ[k]
-      signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
-  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).toAlgHom.comp
-    (signlessPreprojectiveInducedSubgraphHom k H (Set.range f))
-
-private theorem e6EmbeddingQuotient_arrow {V : Type*} [Finite V] {H : SimpleGraph V}
-    (f : G ↪g H) {i j : Fin 6} (h : (G).Adj i j) :
-    e6EmbeddingQuotient k f
-        (signlessPreprojectiveMk k _ (ofArrow (arrow H (f.map_adj_iff.mpr h)))) =
-      signlessArrow k G i.val j.val := by
-  classical
-  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
-  have hj : f j ∈ Set.range f := ⟨j, rfl⟩
-  rw [signlessArrow_of_adj k h]
-  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
-  simp only [e6EmbeddingQuotient, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
-    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
-    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
-  -- Both constructions identify `i` with the range vertex `⟨f i, ⟨i, rfl⟩⟩`.
-  rfl
-
 /-- An induced `E₆` subdiagram detects a nonzero degree-six cyclic class over every nontrivial
 commutative ring of characteristic three. -/
 theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding
@@ -484,30 +461,13 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) 6 ∧
         z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
   have : CharP k 3 := (CharP.charP_iff_prime_eq_zero Nat.prime_three).mpr h3
-  let a := fun {i j : Fin 6} (h : (G).Adj i j) =>
-    signlessPreprojectiveMk k _ (ofArrow (arrow H (f.map_adj_iff.mpr h)))
-  let h23 : (G).Adj 2 3 := by decide
-  let h32 : (G).Adj 3 2 := by decide
-  let h13 : (G).Adj 1 3 := by decide
-  let h31 : (G).Adj 3 1 := by decide
-  let z := a h23 * (a h32 * (a h23 * (a h32 * (a h13 * a h31))))
-  have ha {i j : Fin 6} (h : (G).Adj i j) :
-      a h ∈ signlessPreprojectiveGrade k (DoubledQuiver H) 1 :=
-    signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
-  refine ⟨z, mul_mem_signlessPreprojectiveGrade k _ (ha h23)
-    (mul_mem_signlessPreprojectiveGrade k _ (ha h32)
-      (mul_mem_signlessPreprojectiveGrade k _ (ha h23)
-        (mul_mem_signlessPreprojectiveGrade k _ (ha h32)
-          (mul_mem_signlessPreprojectiveGrade k _ (ha h13) (ha h31))))), fun hz => ?_⟩
-  have hmap : e6EmbeddingQuotient k f z = signlessWord k G [3, 2, 3, 2, 3, 1, 3] := by
-    simp only [z, a, map_mul, e6EmbeddingQuotient_arrow k f h23,
-      e6EmbeddingQuotient_arrow k f h32, e6EmbeddingQuotient_arrow k f h13,
-      e6EmbeddingQuotient_arrow k f h31,
-      signlessWord_cons_cons, signlessWord_singleton,
-      signlessArrow_mul_vertexIdempotent, ↓reduceIte]
+  obtain ⟨z, hz, hfz⟩ :=
+    exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq k f
+      (signlessWord_E6_cyclicWord_mem_grade_six k (G).neighborSetFintypeOfFinite)
+  refine ⟨z, hz, fun hcomm => ?_⟩
   apply signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k (G).neighborSetFintypeOfFinite
-  rw [← hmap]
-  exact map_mem_commutatorSubmodule (e6EmbeddingQuotient k f) hz
+  rw [← hfz]
+  exact map_mem_commutatorSubmodule (signlessPreprojectiveEmbeddingHom k f) hcomm
 
 /-- In characteristic three, the signless preprojective algebra of the Bourbaki-labelled `Eₙ`
 graph, `n ≥ 6`, has a homogeneous degree-six element which is not a sum of commutators. In
