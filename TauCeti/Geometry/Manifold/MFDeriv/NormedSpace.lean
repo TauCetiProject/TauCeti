@@ -58,6 +58,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.isCompl_ker_mvfderiv_span_singleton`: when `dg_x(v) ≠ 0`, `ker dg_x` is complementary to
+  `𝕜 ∙ v`.
 -/
 
 public section
@@ -370,5 +372,12 @@ theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
     rfl
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
     rfl
+
+/-- If `dg_x(v) ≠ 0`, the hyperplane `ker dg_x` is complementary to the line `𝕜 ∙ v`. -/
+theorem isCompl_ker_mvfderiv_span_singleton {g : M → 𝕜} {x : M} {v : TangentSpace I x}
+    (hgv : mvfderiv I g x v ≠ 0) :
+    IsCompl (LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[𝕜] 𝕜)) (𝕜 ∙ v) :=
+  ⟨Submodule.disjoint_span_singleton_of_notMem hgv,
+    codisjoint_iff.2 (by rw [sup_comm]; exact LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Dynamics.Flow.ClosedOrbit
 public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Contact.Flow
 import TauCeti.Dynamics.Flow.PeriodBound
@@ -17,9 +18,9 @@ common positive lower bound. The bound applies to multiply covered trajectories 
 ones, and does not require nondegeneracy. It follows from the compact-flow period bound because
 the Reeb field is smooth, complete and nowhere zero.
 
-Trajectories are expressed using the existing `IsMIntegralCurve` predicate; no new orbit carrier is
-needed. The result supplies the lower-period input to finiteness arguments for Reeb orbits of
-bounded action.
+Both integral-curve (`IsContactForm.exists_pos_period_le`) and bundled closed-orbit
+(`IsContactForm.exists_pos_period_le_closedOrbit`) formulations are provided, supplying the
+lower-period input to finiteness arguments for Reeb orbits of bounded action.
 
 ## References
 
@@ -48,8 +49,16 @@ theorem IsContactForm.exists_pos_period_le (hα : α.IsContactForm) :
   obtain ⟨ε, hε, hbound⟩ := (hα.reebFlow hc).exists_pos_period_le_of_isCompact isCompact_univ
     fun x _ ↦ hα.exists_reebFlow_ne_self hc x
   refine ⟨ε, hε, fun γ hγ T hT hperiod ↦ hbound (γ 0) (mem_univ _) T hT ?_⟩
-  rw [hα.reebFlow_def hc,
-    globalFlow_eq_of_isMIntegralCurve (hα.contMDiff_reebVectorField.of_le (by simp)) hc hγ T]
+  rw [hα.reebFlow_eq_of_isMIntegralCurve hc hγ T]
   simpa only [zero_add] using hperiod 0
+
+/-- On a compact boundaryless contact manifold, the periods of all closed Reeb orbits (including
+all covered orbits) have a uniform positive lower bound. -/
+theorem IsContactForm.exists_pos_period_le_closedOrbit (hα : α.IsContactForm) :
+    ∃ ε > 0,
+      ∀ γ : Flow.ClosedOrbit (hα.reebFlow hα.isCompleteVectorField_reebVectorField),
+        ε ≤ γ.period :=
+  (hα.reebFlow hα.isCompleteVectorField_reebVectorField).exists_pos_period_le_closedOrbit
+    (hα.exists_reebFlow_ne_self hα.isCompleteVectorField_reebVectorField)
 
 end TauCeti.SmoothForm

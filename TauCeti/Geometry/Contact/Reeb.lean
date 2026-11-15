@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
-public import TauCeti.Geometry.Manifold.VectorField.Transverse
-public import TauCeti.LinearAlgebra.Projection
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.LinearAlgebra.Projection.SplittingEquiv
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -54,7 +55,7 @@ existence of local transverse functions (`exists_contMDiffAt_and_mvfderiv_reebVe
 * `TauCeti.SmoothForm.IsContactForm.kerSectionEquivKerDistribution`: projection along `R_α(x)` from
   the tangent hyperplane `ker dg_x` of a transverse function to `ξ_x`.
 * `TauCeti.SmoothForm.IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`:
-  existence of a function `g` smooth at `x` with `dg_x(R_α x) = 1`.
+  existence of a function `g`, `C^n` at `x` (`1 ≤ n`), with `dg_x(R_α x) = 1`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
 
 ## References
@@ -198,13 +199,13 @@ theorem IsContactForm.kerSectionEquivKerDistribution_symm_apply (hα : α.IsCont
         (ℝ ∙ α.reebVectorField x) (isCompl_ker_mvfderiv_span_singleton hgv) v :=
   Submodule.equivOfIsCompl_symm_apply _ _ _ _ _ v
 
-/-- At any point `x` of a smooth contact manifold, there exists a function `g : M → ℝ`, smooth at
-`x`, with `dg_x(R_α x) = 1`, whose level `{g = g x}` is a local section transverse to the Reeb
-vector field. -/
+/-- At any point `x` of a `C^n` contact manifold (`1 ≤ n`), there exists a function `g : M → ℝ`,
+`C^n` at `x`, with `dg_x(R_α x) = 1`, whose level `{g = g x}` is a local section transverse to
+the Reeb vector field. -/
 theorem IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one
-    (hα : α.IsContactForm) [IsManifold I ∞ M] (x : M) :
-    ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) ∞ g x ∧ mvfderiv I g x (α.reebVectorField x) = 1 :=
-  exists_contMDiffAt_and_mvfderiv_eq_one (by simp) (hα.reebVectorField_ne_zero x)
+    (hα : α.IsContactForm) {n : ℕ∞ω} (hn : 1 ≤ n) [IsManifold I n M] (x : M) :
+    ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) n g x ∧ mvfderiv I g x (α.reebVectorField x) = 1 :=
+  exists_contMDiffAt_and_mvfderiv_eq_one hn (hα.reebVectorField_ne_zero x)
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in

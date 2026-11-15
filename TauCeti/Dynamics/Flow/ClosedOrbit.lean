@@ -694,25 +694,25 @@ theorem coe_zmodAddEquivReparamGroup_intCast (γ : ClosedOrbit ϕ) (i : ℤ) :
     AddSubgroupClass.coe_zsmul, ← AddCircle.coe_zsmul, zsmul_eq_mul]
 
 /-- `zmodAddEquivReparamGroup` sends an integer cast `i` to the subgroup element
-`[(i * γ.minimalPeriod : ℝ)]`. -/
+`i • [γ.minimalPeriod]`. -/
 @[simp]
 theorem zmodAddEquivReparamGroup_intCast (γ : ClosedOrbit ϕ) (i : ℤ) :
     γ.zmodAddEquivReparamGroup i =
-      ⟨((i * γ.minimalPeriod : ℝ) : AddCircle γ.period), by
-        rw [← zsmul_eq_mul, AddCircle.coe_zsmul]
-        exact zsmul_mem γ.coe_minimalPeriod_mem_reparamGroup i⟩ :=
-  Subtype.ext (γ.coe_zmodAddEquivReparamGroup_intCast i)
+      ⟨i • (γ.minimalPeriod : AddCircle γ.period),
+        zsmul_mem γ.coe_minimalPeriod_mem_reparamGroup i⟩ := by
+  ext
+  rw [coe_zmodAddEquivReparamGroup_intCast, Subtype.coe_mk, ← AddCircle.coe_zsmul, zsmul_eq_mul]
 
 /-- `zmodAddEquivReparamGroup` sends a natural cast `n` to the subgroup element
-`[(n * γ.minimalPeriod : ℝ)]`. -/
+`n • [γ.minimalPeriod]`. -/
 @[simp]
 theorem zmodAddEquivReparamGroup_natCast (γ : ClosedOrbit ϕ) (n : ℕ) :
     γ.zmodAddEquivReparamGroup n =
-      ⟨((n * γ.minimalPeriod : ℝ) : AddCircle γ.period), by
-        rw [← nsmul_eq_mul, AddCircle.coe_nsmul]
-        exact nsmul_mem γ.coe_minimalPeriod_mem_reparamGroup n⟩ := by
+      ⟨n • (γ.minimalPeriod : AddCircle γ.period),
+        nsmul_mem γ.coe_minimalPeriod_mem_reparamGroup n⟩ := by
   ext
-  simpa only [Subtype.coe_mk, Int.cast_natCast] using γ.coe_zmodAddEquivReparamGroup_intCast n
+  simpa only [Subtype.coe_mk, Int.cast_natCast, ← AddCircle.coe_nsmul, nsmul_eq_mul] using
+    γ.coe_zmodAddEquivReparamGroup_intCast n
 
 /-- `zmodAddEquivReparamGroup` sends `1` to the generator `[γ.minimalPeriod]`. -/
 @[simp]
@@ -740,8 +740,16 @@ theorem zmodAddEquivReparamGroup_symm_apply_nsmul (γ : ClosedOrbit ϕ) (n : ℕ
     γ.zmodAddEquivReparamGroup.symm ⟨n • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = n := by
   rw [AddEquiv.symm_apply_eq]
   ext
-  rw [Subtype.coe_mk, zmodAddEquivReparamGroup_natCast, Subtype.coe_mk, ← AddCircle.coe_nsmul,
-    nsmul_eq_mul]
+  rw [Subtype.coe_mk, zmodAddEquivReparamGroup_natCast]
+
+/-- The inverse of `zmodAddEquivReparamGroup` sends the generator `[γ.minimalPeriod]` to `1`. -/
+@[simp]
+theorem zmodAddEquivReparamGroup_symm_apply_coe_minimalPeriod (γ : ClosedOrbit ϕ)
+    (hmem : (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamGroup) :
+    γ.zmodAddEquivReparamGroup.symm ⟨(γ.minimalPeriod : AddCircle γ.period), hmem⟩ = 1 := by
+  rw [AddEquiv.symm_apply_eq]
+  ext
+  rw [Subtype.coe_mk, zmodAddEquivReparamGroup_one]
 
 /-- The canonical injection `ZMod γ.multiplicity →+ AddCircle γ.period` onto `γ.reparamGroup`. -/
 def reparam (γ : ClosedOrbit ϕ) : ZMod γ.multiplicity →+ AddCircle γ.period :=
@@ -776,17 +784,26 @@ theorem zmodAddEquivReparamGroup_symm_apply_reparam (γ : ClosedOrbit ϕ) (j : Z
 theorem reparam_injective (γ : ClosedOrbit ϕ) : Function.Injective γ.reparam :=
   Subtype.coe_injective.comp γ.zmodAddEquivReparamGroup.injective
 
+/-- `γ.reparam` is injective as an equality equivalence. -/
 @[simp]
+theorem reparam_inj (γ : ClosedOrbit ϕ) {j k : ZMod γ.multiplicity} :
+    γ.reparam j = γ.reparam k ↔ j = k :=
+  γ.reparam_injective.eq_iff
+
+/-- `γ.reparam j = 0` if and only if `j = 0`. -/
+@[simp]
+theorem reparam_eq_zero (γ : ClosedOrbit ϕ) {j : ZMod γ.multiplicity} :
+    γ.reparam j = 0 ↔ j = 0 := by
+  rw [← γ.reparam.map_zero, γ.reparam_inj]
+
 theorem reparam_intCast (γ : ClosedOrbit ϕ) (i : ℤ) :
     γ.reparam i = ((i * γ.minimalPeriod : ℝ) : AddCircle γ.period) :=
   γ.coe_zmodAddEquivReparamGroup_intCast i
 
-@[simp]
 theorem reparam_natCast (γ : ClosedOrbit ϕ) (n : ℕ) :
     γ.reparam n = ((n * γ.minimalPeriod : ℝ) : AddCircle γ.period) := by
   rw [← Int.cast_natCast, γ.reparam_intCast, Int.cast_natCast]
 
-@[simp]
 theorem reparam_one (γ : ClosedOrbit ϕ) :
     γ.reparam 1 = (γ.minimalPeriod : AddCircle γ.period) := by
   rw [← Int.cast_one, γ.reparam_intCast, Int.cast_one, one_mul]
@@ -866,7 +883,7 @@ theorem period_mem_zmultiples_period_primitive (γ : PeriodicTrajectory ϕ) :
 
 /-- Every circle parametrization `γ.circleMap` factors through the circle parametrization of its
 underlying primitive periodic trajectory `γ.primitive` via `AddCircle.coverMap`. -/
-theorem circleMap_eq_primitive_circleMap_coverMap (γ : PeriodicTrajectory ϕ)
+theorem circleMap_eq_circleMap_primitive_coverMap (γ : PeriodicTrajectory ϕ)
     (θ : AddCircle γ.period) :
     γ.circleMap θ =
       γ.primitive.circleMap (AddCircle.coverMap γ.period_mem_zmultiples_period_primitive θ) := by
@@ -882,17 +899,28 @@ def reparam (γ : PeriodicTrajectory ϕ) :
 theorem reparam_injective (γ : PeriodicTrajectory ϕ) : Function.Injective γ.reparam :=
   (ClosedOrbit.mk γ).reparam_injective
 
+/-- `γ.reparam` is injective as an equality equivalence. -/
 @[simp]
+theorem reparam_inj (γ : PeriodicTrajectory ϕ)
+    {j k : ZMod (ClosedOrbit.mk γ).multiplicity} :
+    γ.reparam j = γ.reparam k ↔ j = k :=
+  γ.reparam_injective.eq_iff
+
+/-- `γ.reparam j = 0` if and only if `j = 0`. -/
+@[simp]
+theorem reparam_eq_zero (γ : PeriodicTrajectory ϕ)
+    {j : ZMod (ClosedOrbit.mk γ).multiplicity} :
+    γ.reparam j = 0 ↔ j = 0 :=
+  (ClosedOrbit.mk γ).reparam_eq_zero
+
 theorem reparam_intCast (γ : PeriodicTrajectory ϕ) (i : ℤ) :
     γ.reparam i = ((i * ϕ.minimalPeriod γ.point : ℝ) : AddCircle γ.period) :=
   (ClosedOrbit.mk γ).reparam_intCast i
 
-@[simp]
 theorem reparam_natCast (γ : PeriodicTrajectory ϕ) (n : ℕ) :
     γ.reparam n = ((n * ϕ.minimalPeriod γ.point : ℝ) : AddCircle γ.period) :=
   (ClosedOrbit.mk γ).reparam_natCast n
 
-@[simp]
 theorem reparam_one (γ : PeriodicTrajectory ϕ) :
     γ.reparam 1 = (ϕ.minimalPeriod γ.point : AddCircle γ.period) :=
   (ClosedOrbit.mk γ).reparam_one
@@ -1000,6 +1028,14 @@ theorem coe_zmodEquivPreimageCircleMap_apply (γ : PeriodicTrajectory ϕ) {x : �
     (γ.zmodEquivPreimageCircleMap hθ₀ j : AddCircle γ.period) = θ₀ + γ.reparam j :=
   (rfl)
 
+/-- `zmodEquivPreimageCircleMap` sends `0` to the base marker `⟨θ₀, hθ₀⟩`. -/
+@[simp]
+theorem zmodEquivPreimageCircleMap_zero (γ : PeriodicTrajectory ϕ) {x : α}
+    {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x) :
+    γ.zmodEquivPreimageCircleMap hθ₀ 0 = ⟨θ₀, hθ₀⟩ := by
+  ext
+  simp
+
 /-- Applying `γ.reparam` to `(γ.zmodEquivPreimageCircleMap hθ₀).symm u` recovers the phase shift
 `(u : AddCircle γ.period) - θ₀`. -/
 @[simp]
@@ -1016,9 +1052,7 @@ theorem reparam_zmodEquivPreimageCircleMap_symm_apply (γ : PeriodicTrajectory �
 theorem zmodEquivPreimageCircleMap_symm_self (γ : PeriodicTrajectory ϕ) {x : α}
     {θ₀ : AddCircle γ.period} (hθ₀ : γ.circleMap θ₀ = x) :
     (γ.zmodEquivPreimageCircleMap hθ₀).symm ⟨θ₀, hθ₀⟩ = 0 := by
-  rw [Equiv.symm_apply_eq]
-  ext
-  simp
+  rw [Equiv.symm_apply_eq, zmodEquivPreimageCircleMap_zero]
 
 /-- The inverse of `zmodEquivPreimageCircleMap` sends `θ₀ + γ.reparam j` to `j`. -/
 @[simp]
@@ -1038,11 +1072,7 @@ theorem finite_preimage_circleMap_singleton (γ : PeriodicTrajectory ϕ) (x : α
     obtain ⟨θ₀, hθ₀⟩ := hx
     exact Finite.of_equiv _ (γ.zmodEquivPreimageCircleMap hθ₀)
   · rw [← γ.range_circleMap] at hx
-    have hempty : γ.circleMap ⁻¹' {x} = ∅ := by
-      ext θ
-      simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_empty_iff_false, iff_false]
-      exact fun h ↦ hx ⟨θ, h⟩
-    rw [hempty]
+    rw [Set.preimage_singleton_eq_empty.2 hx]
     exact Set.finite_empty
 
 /-- Each point on the closed orbit has exact cardinality `(ClosedOrbit.mk γ).multiplicity` of

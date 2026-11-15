@@ -47,6 +47,8 @@ compact set.
   itself.
 * `TauCeti.flowOf_add`: the domain-aware group law.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
+* `TauCeti.mfderiv_flowOf_zero_apply_eq_self`, `TauCeti.mfderiv_flowOf_add_apply_of_eq`: the space
+  differential of `flowOf` at time zero and along a composite of flow times.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
 ## References
@@ -451,7 +453,8 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
 
 omit [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] in
 /-- The space differential of `flowOf v 0` at `x` is the identity on `TangentSpace I x`. -/
-theorem mfderiv_flowOf_zero_id {v : (x : M) → TangentSpace I x} (x : M) (w : TangentSpace I x) :
+theorem mfderiv_flowOf_zero_apply_eq_self {v : (x : M) → TangentSpace I x} (x : M)
+    (w : TangentSpace I x) :
     -- `TangentSpace I (flowOf v 0 x)` and `TangentSpace I x` are both definitionally `E`.
     @Eq E (mfderiv I I (flowOf v 0) x w) w := by
   have h0 : flowOf v 0 = id := funext (flowOf_zero v)

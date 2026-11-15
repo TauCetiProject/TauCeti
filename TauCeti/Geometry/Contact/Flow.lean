@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Geometry.Contact.Contactomorphism
 public import TauCeti.Geometry.Contact.Hamiltonian
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
@@ -244,12 +243,12 @@ def flowOfKerEquiv (hα : α.IsContactForm) {t : ℝ} {x : M}
       have h := mfderiv_flowOf_add_apply_of_eq hv1 hnt ht (flowOf_neg_flowOf hv1 ht) w
       rw [neg_add_cancel] at h
       exact h.symm.trans
-        (mfderiv_flowOf_zero_id (flowOf α.reebVectorField t x)
+        (mfderiv_flowOf_zero_apply_eq_self (flowOf α.reebVectorField t x)
           (w : TangentSpace I (flowOf α.reebVectorField t x))))
     (LinearMap.ext fun w ↦ Subtype.ext <| by
       have h := mfderiv_flowOf_add_apply_of_eq hv1 ht hnt rfl w
       rw [add_neg_cancel] at h
-      exact h.symm.trans (mfderiv_flowOf_zero_id x (w : TangentSpace I x)))
+      exact h.symm.trans (mfderiv_flowOf_zero_apply_eq_self x (w : TangentSpace I x)))
 
 /-- `flowOfKerEquiv` acts as `mfderiv I I (flowOf α.reebVectorField t) x` on `ξ_x`. -/
 @[simp]
@@ -322,7 +321,7 @@ theorem reebFlow_eq_globalFlowDiffeomorph (t : ℝ) (x : M) :
   (globalFlowDiffeomorph_apply hc le_top hα.contMDiff_reebVectorField t x).symm
 
 /-- As a function, the time-`t` map of `reebFlow` agrees with `globalFlowDiffeomorph`. -/
-theorem coe_reebFlow_eq_globalFlowDiffeomorph (t : ℝ) :
+theorem reebFlow_eq_coe_globalFlowDiffeomorph (t : ℝ) :
     hα.reebFlow hc t = ⇑(globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t) :=
   funext (hα.reebFlow_eq_globalFlowDiffeomorph hc t)
 
@@ -330,6 +329,12 @@ theorem coe_reebFlow_eq_globalFlowDiffeomorph (t : ℝ) :
 theorem isMIntegralCurve_reebFlow (x : M) :
     IsMIntegralCurve (fun t ↦ hα.reebFlow hc t x) α.reebVectorField :=
   isMIntegralCurve_globalFlow _ hc x
+
+/-- Every integral curve of the Reeb vector field is an orbit of the Reeb flow. -/
+theorem reebFlow_eq_of_isMIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ α.reebVectorField) (t : ℝ) :
+    hα.reebFlow hc t (γ 0) = γ t :=
+  globalFlow_eq_of_isMIntegralCurve _ hc hγ t
 
 /-- The Reeb flow is jointly smooth in time and space. -/
 theorem contMDiff_reebFlow_uncurry :
@@ -356,11 +361,8 @@ theorem mfderiv_reebFlow_apply_self (t : ℝ) (x : M) :
   mfderiv_globalFlow_apply_self _ hc t x
 
 /-- No point is stationary under the Reeb flow, since the Reeb vector field vanishes nowhere. -/
-theorem exists_reebFlow_ne_self (x : M) : ∃ t : ℝ, hα.reebFlow hc t x ≠ x := by
-  by_contra h
-  have hfix : ∀ t, hα.reebFlow hc t x = x := by
-    simpa only [not_exists, not_not] using h
-  exact hα.reebVectorField_ne_zero x ((forall_globalFlow_eq_self_iff _ hc x).1 hfix)
+theorem exists_reebFlow_ne_self (x : M) : ∃ t : ℝ, hα.reebFlow hc t x ≠ x :=
+  exists_globalFlow_ne_self _ hc (hα.reebVectorField_ne_zero x)
 
 /-- The differential of the Reeb flow maps the contact distribution `ξ = ker α` to itself. -/
 theorem mfderiv_reebFlow_mem_kerDistribution (t : ℝ) {x : M} {v : TangentSpace I x}
@@ -369,7 +371,7 @@ theorem mfderiv_reebFlow_mem_kerDistribution (t : ℝ) {x : M} {v : TangentSpace
   have hmem := (Diffeomorph.isContactomorphism_iff.1
     (hα.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField hc t).isContactomorphism
     x v).2 hv
-  rwa [← hα.coe_reebFlow_eq_globalFlowDiffeomorph hc t] at hmem
+  rwa [← hα.reebFlow_eq_coe_globalFlowDiffeomorph hc t] at hmem
 
 /-- The Reeb flow preserves the exterior derivative `dα` on tangent vectors. -/
 theorem mextDeriv_mfderiv_reebFlow (t : ℝ) (x : M) (v w : TangentSpace I x) :
@@ -380,13 +382,28 @@ theorem mextDeriv_mfderiv_reebFlow (t : ℝ) (x : M) (v w : TangentSpace I x) :
   have hstrict : SmoothForm.mpullback Φ Φ.contMDiff α = α :=
     Diffeomorph.isStrictContactomorphism_def.1
       (hα.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField hc t)
-  rw [hα.coe_reebFlow_eq_globalFlowDiffeomorph hc t,
+  rw [hα.reebFlow_eq_coe_globalFlowDiffeomorph hc t,
     ← SmoothForm.mextDeriv_mpullback_apply_two Φ Φ.contMDiff α x v w, hstrict]
 
 private def reebFlowDiffeomorph (t : ℝ) : M ≃ₘ⟮I, I⟯ M where
   toEquiv := ((hα.reebFlow hc).toHomeomorph t).toEquiv
   contMDiff_toFun := hα.contMDiff_reebFlow_apply hc t
   contMDiff_invFun := hα.contMDiff_reebFlow_apply hc (-t)
+
+private theorem reebFlowDiffeomorph_apply (t : ℝ) (x : M) :
+    hα.reebFlowDiffeomorph hc t x = hα.reebFlow hc t x := by
+  rw [← Diffeomorph.coe_toEquiv, reebFlowDiffeomorph, Homeomorph.coe_toEquiv,
+    Flow.toHomeomorph_apply]
+
+private theorem coe_reebFlowDiffeomorph (t : ℝ) :
+    ⇑(hα.reebFlowDiffeomorph hc t) = hα.reebFlow hc t :=
+  funext (hα.reebFlowDiffeomorph_apply hc t)
+
+private theorem coe_reebFlowDiffeomorph_symm (t : ℝ) :
+    ⇑(hα.reebFlowDiffeomorph hc t).symm = hα.reebFlow hc (-t) :=
+  funext fun x ↦ by
+    rw [← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv, reebFlowDiffeomorph,
+      Homeomorph.coe_symm_toEquiv, Flow.toHomeomorph_symm_apply]
 
 /-- The differential of the time-`t` Reeb flow restricted to `ξ = ker α` as a linear equivalence
 `ξ_x ≃ₗ[ℝ] ξ_(φ_t x)`. -/
@@ -397,14 +414,18 @@ def reebFlowKerEquiv (t : ℝ) (x : M) :
     (α.kerDistribution x) (α.kerDistribution (hα.reebFlow hc t x)) (by
       have hΦ : hα.reebFlowDiffeomorph hc t =
           globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t :=
-        Diffeomorph.ext fun y ↦ hα.reebFlow_eq_globalFlowDiffeomorph hc t y
+        Diffeomorph.ext fun y ↦
+          (hα.reebFlowDiffeomorph_apply hc t y).trans (hα.reebFlow_eq_globalFlowDiffeomorph hc t y)
       have hstrict : (hα.reebFlowDiffeomorph hc t).IsStrictContactomorphism α α :=
         hΦ ▸ hα.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField hc t
       have hder : ((hα.reebFlowDiffeomorph hc t).mfderivToContinuousLinearEquiv
           (by simp) x).toLinearEquiv.toLinearMap =
-          (mfderiv I I (hα.reebFlow hc t) x).toLinearMap :=
+          (mfderiv I I (hα.reebFlowDiffeomorph hc t) x).toLinearMap :=
         congrArg ContinuousLinearMap.toLinearMap
           ((hα.reebFlowDiffeomorph hc t).mfderivToContinuousLinearEquiv_coe (by simp))
+      -- `reebFlowDiffeomorph` has `toFun := reebFlow hc t` via `Flow.toHomeomorph`, so the target
+      -- fibre `α.kerDistribution (reebFlowDiffeomorph hc t x)` is
+      -- `α.kerDistribution (reebFlow hc t x)`.
       exact hder.symm ▸ hstrict.isContactomorphism.map_kerDistribution x)
 
 /-- `reebFlowKerEquiv` acts as `mfderiv I I (hα.reebFlow hc t) x` on `ξ_x`. -/
@@ -412,9 +433,12 @@ def reebFlowKerEquiv (t : ℝ) (x : M) :
 theorem coe_reebFlowKerEquiv_apply (t : ℝ) (x : M) (v : α.kerDistribution x) :
     (hα.reebFlowKerEquiv hc t x v : TangentSpace I (hα.reebFlow hc t x)) =
       mfderiv I I (hα.reebFlow hc t) x v :=
-  DFunLike.congr_fun
-    ((hα.reebFlowDiffeomorph hc t).mfderivToContinuousLinearEquiv_coe (by simp) (x := x))
-    (v : TangentSpace I x)
+  (LinearEquiv.ofSubmodules_apply _ _ v).trans <|
+    (DFunLike.congr_fun
+      ((hα.reebFlowDiffeomorph hc t).mfderivToContinuousLinearEquiv_coe (by simp) (x := x))
+      (v : TangentSpace I x)).trans
+      (congrArg (fun f : M → M ↦ (mfderiv I I f x v : TangentSpace I x))
+        (hα.coe_reebFlowDiffeomorph hc t))
 
 /-- `(reebFlowKerEquiv ...).symm` acts as `mfderiv I I (hα.reebFlow hc (-t))` at
 `hα.reebFlow hc t x`. -/
@@ -423,12 +447,20 @@ theorem coe_reebFlowKerEquiv_symm_apply (t : ℝ) (x : M)
     (w : α.kerDistribution (hα.reebFlow hc t x)) :
     ((hα.reebFlowKerEquiv hc t x).symm w : TangentSpace I x) =
       mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x) w := by
-  have h1 := hα.coe_reebFlowKerEquiv_apply hc t x ((hα.reebFlowKerEquiv hc t x).symm w)
-  rw [LinearEquiv.apply_symm_apply] at h1
-  have h2 := congrArg (mfderiv I I (hα.reebFlowDiffeomorph hc t).symm (hα.reebFlow hc t x)) h1
-  have hinv := (hα.reebFlowDiffeomorph hc t).mfderiv_symm_apply_mfderiv_apply (by simp) x
-    ((hα.reebFlowKerEquiv hc t x).symm w : TangentSpace I x)
-  exact hinv.symm.trans h2.symm
+  let v : TangentSpace I x := (hα.reebFlowKerEquiv hc t x).symm w
+  let w₀ : TangentSpace I x := (w : TangentSpace I (hα.reebFlow hc t x))
+  -- All `TangentSpace I y` are definitionally the same type as `TangentSpace I x`.
+  have hv : (mfderiv I I (hα.reebFlowDiffeomorph hc t) x v : TangentSpace I x) = w₀ :=
+    (congrArg (fun f : M → M ↦ (mfderiv I I f x v : TangentSpace I x))
+      (hα.coe_reebFlowDiffeomorph hc t)).trans <|
+      (hα.coe_reebFlowKerEquiv_apply hc t x ((hα.reebFlowKerEquiv hc t x).symm w)).symm.trans
+        (congrArg Subtype.val ((hα.reebFlowKerEquiv hc t x).apply_symm_apply w))
+  have hinv := (hα.reebFlowDiffeomorph hc t).mfderiv_symm_apply_mfderiv_apply (by simp) x v
+  exact hinv.symm.trans <|
+    (congrArg (mfderiv I I (hα.reebFlowDiffeomorph hc t).symm (hα.reebFlowDiffeomorph hc t x))
+      hv).trans
+      (congrArg₂ (fun (f : M → M) (y : M) ↦ (mfderiv I I f y w₀ : TangentSpace I x))
+        (hα.coe_reebFlowDiffeomorph_symm hc t) (hα.reebFlowDiffeomorph_apply hc t x))
 
 /-- `reebFlowKerEquiv` preserves `dα` on `ξ`. -/
 theorem mextDeriv_reebFlowKerEquiv (t : ℝ) (x : M) (v w : α.kerDistribution x) :
