@@ -314,11 +314,10 @@ theorem epi_d_of_acyclic_mappingCone {Y T : CochainComplex C ℤ} (n : ℤ) [Y.I
     Epi (T.d n (n + 1)) := by
   -- In degrees `n` and `n + 1`, the mapping cone of `r` is `T`, and its differential into the
   -- last nonzero degree is an epimorphism.
-  obtain ⟨hC⟩ := (E.acyclic_iff _).1 hr
   have := isIso_inr_f r n (Y.isZero_of_isStrictlyLE n _ (by lia))
   have := isIso_inr_f r (n + 1) (Y.isZero_of_isStrictlyLE n _ (by lia))
   have : Epi ((CochainComplex.mappingCone r).d n (n + 1)) :=
-    hC.epi_d n ((isZero_X_iff r _).2
+    E.epi_d_of_acyclic hr n ((isZero_X_iff r _).2
       ⟨Y.isZero_of_isStrictlyLE n _ (by lia), T.isZero_of_isStrictlyLE (n + 1) _ (by lia)⟩)
   have h : T.d n (n + 1) = (inr r).f n ≫ (CochainComplex.mappingCone r).d n (n + 1) ≫
       inv ((inr r).f (n + 1)) := by

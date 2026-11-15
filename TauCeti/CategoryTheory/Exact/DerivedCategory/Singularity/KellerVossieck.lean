@@ -43,8 +43,12 @@ Morphisms of `D_sg(E)` are computed through the bounded below derived category
 
 * `TauCeti.ExactStructure.IsFrobenius.mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero`:
   a morphism vanishing in the singularity category factors through a projective object.
+* `TauCeti.ExactStructure.IsFrobenius.kerIdeal_singleToSingularity`: the kernel of `C ⥤ D_sg(E)`
+  is the ideal of morphisms factoring through a projective object.
 * `TauCeti.ExactStructure.IsFrobenius.singleToSingularity_map_surjective`: every morphism of the
   singularity category between objects in degree zero comes from the category.
+* `TauCeti.ExactStructure.IsFrobenius.essSurj_singleToSingularity`: every object of the
+  singularity category is isomorphic to an object placed in degree zero.
 * `TauCeti.ExactStructure.IsFrobenius.fullyFaithfulStableToSingularity`: `stable(E) ⥤ D_sg(E)` is
   fully faithful.
 * `TauCeti.ExactStructure.IsFrobenius.essSurj_stableToSingularity`: it is essentially surjective.
@@ -116,29 +120,6 @@ private theorem injectivePlus_resPlus (M : C) : E.injectivePlus (resPlus hF M) :
   (E.injectivePlus_iff _).2 ((E.plusInjective_iff _).2
     ⟨_, ⟨0, inferInstance⟩, hF.enoughInjectives.isInjective_stalkResolution_X M, ⟨Iso.refl _⟩⟩)
 
-/-- A morphism of `C` vanishing in the singularity category factors in `Dᵇ(E)` through the class of
-a bounded complex of projectives. -/
-private theorem exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero {M N : C} (f : M ⟶ N)
-    (hf : E.singleToSingularity.map f = 0) :
-    ∃ (K : CochainComplex.Bounded C) (_ : ∀ n, E.isProjective (K.obj.X n))
-      (a : (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj M) ⟶
-        (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.quotient C).obj K))
-      (g : (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.quotient C).obj K) ⟶
-        (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj N)),
-      a ≫ g =
-        (BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f) := by
-  rw [singleToSingularity_eq] at hf
-  obtain ⟨Z, s, ⟨W, a, b, hT, hW⟩, hs⟩ := (MorphismProperty.map_eq_iff_precomp
-    (SingularityCategory.Q E) E.boundedProjective.trW
-      ((BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f))
-        0).1 (by
-      rw [Functor.map_zero]
-      exact hf)
-  rw [comp_zero] at hs
-  obtain ⟨g, hg⟩ := Triangle.yoneda_exact₂ _ hT _ hs
-  obtain ⟨K, hK, ⟨e⟩⟩ := (E.boundedProjective_iff W).1 hW
-  exact ⟨K, hK, a ≫ e.hom, e.inv ≫ g, by simpa using hg.symm⟩
-
 include hF in
 /-- If the image of `f : M ⟶ N` in `Dᵇ(E)` factors through the class of a bounded complex of
 projectives, then `f` lifts to an eventually null-homotopic map of injective resolutions. -/
@@ -188,6 +169,31 @@ private theorem exists_isEventuallyNullHomotopic {M N : C} (f : M ⟶ N)
   congr 1
   exact ObjectProperty.hom_ext _ hφ
 
+/-- The square of resolutions of `f : M ⟶ N` along `φ : I_M ⟶ I_N` commutes in `K⁺(C)` exactly
+when the corresponding square of complexes commutes in the homotopy category. -/
+private theorem toPlus_map_comp_resHom_eq_iff {M N : C} (f : M ⟶ N)
+    (φ : hF.enoughInjectives.stalkResolution M ⟶ hF.enoughInjectives.stalkResolution N) :
+    (HomotopyCategory.Bounded.toPlus C).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫
+        resHom hF N =
+      resHom hF M ≫ ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map φ) ↔
+    (_root_.HomotopyCategory.quotient C (.up ℤ)).map
+        ((HomologicalComplex.single C (.up ℤ) 0).map f ≫ hF.enoughInjectives.stalkResolutionι N) =
+      (_root_.HomotopyCategory.quotient C (.up ℤ)).map
+        (hF.enoughInjectives.stalkResolutionι M ≫ φ) := by
+  -- Move `f` past the identification of `M` in degree zero, and cancel it.
+  simp only [resHom, Category.assoc]
+  rw [← Functor.map_comp_assoc,
+    HomotopyCategory.Bounded.singleFunctor_map_comp_singleFunctorObjIsoMk_hom, Functor.map_comp,
+    Category.assoc, cancel_epi]
+  constructor
+  · intro h
+    simpa only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      ObjectProperty.ιOfLE_map, ← Functor.map_comp] using congrArg (fun x ↦ x.hom) h
+  · intro h
+    apply ObjectProperty.hom_ext
+    simpa only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      ObjectProperty.ιOfLE_map, ← Functor.map_comp] using h
+
 include hF in
 /-- A map of injective resolutions lifting the image of `f : M ⟶ N` in `K⁺(C)` restricts to `f`
 on the cycles in degree zero. -/
@@ -197,17 +203,10 @@ private theorem cyclesMap_zero_eq {M N : C} (f : M ⟶ N)
       (HomotopyCategory.Bounded.toPlus C).map
         ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫ resHom hF N) :
     (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) φ 0 =
-      f := by
-  let hE := hF.enoughInjectives
-  -- Move `f` past the identification of `M` in degree zero, and cancel it.
-  rw [Category.assoc, ← Functor.map_comp_assoc,
-    HomotopyCategory.Bounded.singleFunctor_map_comp_singleFunctorObjIsoMk_hom, Functor.map_comp,
-    Category.assoc, cancel_epi] at h
-  have h' := congrArg (fun x ↦ x.hom) h
-  simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-    ObjectProperty.ιOfLE_map, ← Functor.map_comp] at h'
-  exact (hE.stalkTailData M).cyclesMap_zero_eq_of_homotopy (hE.stalkTailData N) φ f
-    (_root_.HomotopyCategory.homotopyOfEq _ _ h')
+      f :=
+  (hF.enoughInjectives.stalkTailData M).cyclesMap_zero_eq_of_homotopy
+    (hF.enoughInjectives.stalkTailData N) φ f (_root_.HomotopyCategory.homotopyOfEq _ _
+      ((toPlus_map_comp_resHom_eq_iff hF f φ).1 h.symm).symm)
 
 include hF in
 /-- **Faithfulness in the Keller–Vossieck theorem**: a morphism of a Frobenius exact category which
@@ -215,7 +214,7 @@ vanishes in the singularity category factors through a projective object. -/
 theorem mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero {M N : C} (f : M ⟶ N)
     (hf : E.singleToSingularity.map f = 0) : f ∈ E.projectiveStableIdeal.hom M N := by
   let hE := hF.enoughInjectives
-  obtain ⟨K, hK, a, g, hag⟩ := exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero f hf
+  obtain ⟨K, hK, a, g, hag⟩ := E.exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero f hf
   obtain ⟨φ, hnull, hφ⟩ := exists_isEventuallyNullHomotopic hF f K hK a g hag
   rw [mem_projectiveStableIdeal_iff, ← cyclesMap_zero_eq hF f φ hφ]
   exact (hE.stalkTailData M).factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
@@ -311,9 +310,9 @@ private theorem exists_ιTop_comp_eq {M N : C} (k : ℕ) {T : CochainComplex C �
       (((HomologicalComplex.single C (.up ℤ) ((k + 1 : ℕ) : ℤ)).obj
         (T.X ((k + 1 : ℕ) : ℤ))).d _ _) 0, zero_comp, comp_zero]
   -- The map of cycles `Zᵏ⁺¹ ⟶ Z'ᵏ⁺¹` lifts to a map of resolutions.
-  obtain ⟨Φ, hΦ⟩ := tM.exists_hom_cyclesMap_eq tN
-    (fun l ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M l))
-    (fun l ↦ hE.isInjective_stalkResolution_X N l) (k + 1) (θ.inv ≫ tN.liftZ (k + 1) y hy)
+  obtain ⟨Φ, hΦ⟩ := tM.exists_hom_cyclesMap_eq tN (k + 1)
+    (fun l _ ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M l))
+    (fun l _ ↦ hE.isInjective_stalkResolution_X N l) (θ.inv ≫ tN.liftZ (k + 1) y hy)
   refine ⟨Φ, ?_⟩
   apply HomologicalComplex.from_single_hom_ext
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, T.ιTop_f]
@@ -343,14 +342,20 @@ private theorem toPlus_map_comp_resHom {M N : C} {T : CochainComplex C ℤ}
   have h := (hF.enoughInjectives.stalkTailData M).single_map_comp_ι
     (hF.enoughInjectives.stalkTailData N) Φ
   rw [hf] at h
-  rw [← Functor.map_comp_assoc,
-    HomotopyCategory.Bounded.singleFunctor_map_comp_singleFunctorObjIsoMk_hom, Functor.map_comp,
-    Functor.map_comp, Category.assoc, Category.assoc]
-  congr 1
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-    ObjectProperty.ιOfLE_map, ← Functor.map_comp]
-  rw [h, reassoc_of% hr'j]
+  -- The right-hand side is `resHom ≫ Φ`, since `r' ≫ j` is the resolution map.
+  have hR : (HomotopyCategory.Bounded.toPlus C).map ((singleFunctorObjIsoMk 0 M).hom ≫
+        (mkMap r' : _ ⟶ HomotopyCategory.Bounded.mk T hT)) ≫
+      (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ)) :
+        (HomotopyCategory.Bounded.toPlus C).obj (HomotopyCategory.Bounded.mk T hT) ⟶
+          resPlus hF N) =
+      resHom hF M ≫ ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map Φ) := by
+    simp only [resHom, Functor.map_comp, Category.assoc]
+    congr 1
+    apply ObjectProperty.hom_ext
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      ObjectProperty.ιOfLE_map, ← Functor.map_comp]
+    rw [reassoc_of% hr'j]
+  rw [hR, toPlus_map_comp_resHom_eq_iff, h]
 
 /-- Let `s : X ⟶ Z` be inverted in `Dᵇ(E)` and `ρ : X' ⟶ R` in `D⁺(E)`. If `J : Z ⟶ R`
 satisfies `f ≫ ρ = s ≫ J` in `K⁺(C)`, and `t ≫ J` is the image of `γ` followed by `ρ` in
@@ -448,16 +453,27 @@ theorem singleToSingularity_map_surjective (M N : C) :
   simp only [δ, Functor.comp_map, Functor.map_comp, Category.assoc]
 
 include hF in
+/-- **The kernel of `C ⥤ D_sg(E)`** for a Frobenius exact structure: a morphism vanishes in the
+singularity category exactly when it factors through a projective object. -/
+theorem kerIdeal_singleToSingularity :
+    E.singleToSingularity.kerIdeal = E.projectiveStableIdeal :=
+  le_antisymm (fun _ _ f hf ↦ hF.mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero f
+    ((Functor.mem_kerIdeal_hom _).1 hf)) E.projectiveStableIdeal_le_kerIdeal_singleToSingularity
+
+include hF in
+/-- The functor `C ⥤ D_sg(E)` is full for a Frobenius exact structure. -/
+theorem full_singleToSingularity : E.singleToSingularity.Full :=
+  ⟨hF.singleToSingularity_map_surjective _ _⟩
+
+include hF in
 /-- **The functor `stable(E) ⥤ D_sg(E)` is faithful** for a Frobenius exact structure. -/
 theorem faithful_stableToSingularity : E.stableToSingularity.Faithful := by
-  rw [stableToSingularity_eq, MorphismIdeal.faithful_lift_iff]
-  exact fun _ _ f hf ↦ hF.mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero f
-    ((Functor.mem_kerIdeal_hom _).1 hf)
+  rw [stableToSingularity_eq, MorphismIdeal.faithful_lift_iff, hF.kerIdeal_singleToSingularity]
 
 include hF in
 /-- **The functor `stable(E) ⥤ D_sg(E)` is full** for a Frobenius exact structure. -/
 theorem full_stableToSingularity : E.stableToSingularity.Full := by
-  have : E.singleToSingularity.Full := ⟨hF.singleToSingularity_map_surjective _ _⟩
+  have := hF.full_singleToSingularity
   rw [stableToSingularity_eq]
   infer_instance
 
@@ -540,12 +556,13 @@ private theorem exists_stalkZ_iso (t : ℕ) (Z : C) : ∃ M : C,
   induction t generalizing Z with
   | zero => exact ⟨Z, ⟨Iso.refl _⟩⟩
   | succ t ih =>
-    obtain ⟨M, ⟨e⟩⟩ := ih (hF.enoughProjectives.stableLoop.obj
-      (E.projectiveStableFunctor.obj Z)).as
+    obtain ⟨M, ⟨e⟩⟩ := ih (hF.enoughProjectives.loopObj Z)
     exact ⟨M, ⟨hF.projectiveStableIsoSuspensionObj
       (hF.enoughInjectives.injectivePresentation _) ≪≫
         eqToIso (hF.stableSuspension_obj_projectiveStableFunctor_obj _).symm ≪≫
-          hF.stableSuspension.mapIso e ≪≫ hF.stableLoopCompStableSuspensionIso.app _⟩⟩
+          hF.stableSuspension.mapIso (e ≪≫ eqToIso
+            (hF.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj Z).symm) ≪≫
+            hF.stableLoopCompStableSuspensionIso.app _⟩⟩
 
 include hF in
 /-- In the singularity category, a bounded complex is isomorphic to an object placed in a positive
@@ -571,29 +588,38 @@ include hF in
 /-- **Essential surjectivity in the Keller–Vossieck theorem**: every object of the singularity
 category of a Frobenius exact category is isomorphic to an object of the category placed in degree
 zero. -/
-theorem essSurj_stableToSingularity : E.stableToSingularity.EssSurj where
+theorem essSurj_singleToSingularity : E.singleToSingularity.EssSurj where
   mem_essImage Y := by
     have := Localization.essSurj (SingularityCategory.Q E) E.boundedProjective.trW
     have := Localization.essSurj (BoundedDerivedCategory.Q E) E.acyclicBounded.trW
-    let X := (SingularityCategory.Q E).objPreimage Y
-    let X' := (BoundedDerivedCategory.Q E).objPreimage X
-    have hL : CochainComplex.bounded C X'.obj.as :=
-      (HomotopyCategory.bounded_quotient_obj_iff _).1 X'.property
-    obtain ⟨k, Z, ⟨e⟩⟩ := exists_sg_iso_of_bounded hF X'.obj.as hL
+    obtain ⟨⟨X₀, hX₀⟩, ⟨e₀⟩⟩ : ∃ X, Nonempty
+        ((SingularityCategory.Q E).obj ((BoundedDerivedCategory.Q E).obj X) ≅ Y) :=
+      ⟨_, ⟨(SingularityCategory.Q E).mapIso ((BoundedDerivedCategory.Q E).objObjPreimageIso _) ≪≫
+        (SingularityCategory.Q E).objObjPreimageIso Y⟩⟩
+    obtain ⟨L, rfl⟩ := _root_.HomotopyCategory.quotient_obj_surjective X₀
+    have hL : CochainComplex.bounded C L := (HomotopyCategory.bounded_quotient_obj_iff _).1 hX₀
+    obtain ⟨k, Z, ⟨e⟩⟩ := exists_sg_iso_of_bounded hF L hL
     obtain ⟨M, ⟨e'⟩⟩ := exists_stalkZ_iso hF (k + 1) Z
     obtain ⟨e''⟩ := nonempty_sg_stalkZ_iso hF M k
-    exact ⟨E.projectiveStableFunctor.obj M, ⟨E.stableToSingularityObjIso M ≪≫ e''.symm ≪≫
-      sgIsoOfStableIso _ e' ≪≫ e.symm ≪≫
-      (SingularityCategory.Q E).mapIso ((BoundedDerivedCategory.Q E).objObjPreimageIso X) ≪≫
-        (SingularityCategory.Q E).objObjPreimageIso Y⟩⟩
+    exact ⟨M, ⟨eqToIso (E.singleToSingularity_obj M) ≪≫ e''.symm ≪≫ sgIsoOfStableIso _ e' ≪≫
+      e.symm ≪≫ e₀⟩⟩
+
+include hF in
+/-- The functor `stable(E) ⥤ D_sg(E)` is essentially surjective for a Frobenius exact
+structure. -/
+theorem essSurj_stableToSingularity : E.stableToSingularity.EssSurj := by
+  have := hF.essSurj_singleToSingularity
+  rw [stableToSingularity_eq]
+  infer_instance
 
 include hF in
 /-- **The Keller–Vossieck theorem**: for a Frobenius exact category, the functor
 `stable(E) ⥤ D_sg(E)` placing an object in degree zero is an equivalence. -/
-theorem isEquivalence_stableToSingularity : E.stableToSingularity.IsEquivalence where
-  faithful := hF.faithful_stableToSingularity
-  full := hF.full_stableToSingularity
-  essSurj := hF.essSurj_stableToSingularity
+theorem isEquivalence_stableToSingularity : E.stableToSingularity.IsEquivalence := by
+  have := hF.full_singleToSingularity
+  have := hF.essSurj_singleToSingularity
+  rw [stableToSingularity_eq]
+  exact MorphismIdeal.isEquivalence_lift _ _ _ hF.kerIdeal_singleToSingularity.le
 
 end IsFrobenius
 

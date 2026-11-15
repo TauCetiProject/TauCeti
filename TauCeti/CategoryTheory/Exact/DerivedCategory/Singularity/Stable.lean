@@ -26,6 +26,8 @@ For a Frobenius exact structure this is the Keller–Vossieck comparison functor
 
 * `TauCeti.ExactStructure.singleToSingularity`: the functor `C ⥤ D_sg(E)` placing an object in
   degree zero, with its defining equation `singleToSingularity_eq`.
+  `TauCeti.ExactStructure.exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero` describes its
+  kernel: such morphisms factor in `Dᵇ(E)` through a bounded complex of projectives.
 * `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`, with
   its defining equation `stableToSingularity_eq` and the factorization
   `projectiveStableFunctor_comp_stableToSingularity`.
@@ -43,7 +45,7 @@ public section
 
 namespace TauCeti.ExactStructure
 
-open CategoryTheory CategoryTheory.Limits ZeroObject
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
 universe v u
 
@@ -62,6 +64,18 @@ theorem singleToSingularity_eq : E.singleToSingularity =
       SingularityCategory.Q E :=
   (rfl)
 
+theorem singleToSingularity_obj (X : C) :
+    E.singleToSingularity.obj X = (SingularityCategory.Q E).obj
+      ((BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj X)) :=
+  (rfl)
+
+theorem singleToSingularity_map {X Y : C} (f : X ⟶ Y) :
+    E.singleToSingularity.map f = eqToHom (E.singleToSingularity_obj X) ≫
+      (SingularityCategory.Q E).map
+        ((BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f)) ≫
+          eqToHom (E.singleToSingularity_obj Y).symm := by
+  simp [Functor.congr_hom E.singleToSingularity_eq f]
+
 instance : E.singleToSingularity.Additive := by
   dsimp only [singleToSingularity]
   infer_instance
@@ -79,6 +93,29 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
     (ObjectProperty.factorsThrough_iff _ _).1 ((E.mem_projectiveStableIdeal_iff).1 hf)
   rw [Functor.map_comp,
     (E.isZero_singleToSingularity_obj hP).eq_of_src (E.singleToSingularity.map q) 0, comp_zero]
+
+/-- **The kernel of `C ⥤ D_sg(E)`**: a morphism of `C` vanishing in the singularity category
+factors in `Dᵇ(E)` through the class of a bounded complex of projectives. -/
+theorem exists_Q_map_eq_comp_of_singleToSingularity_map_eq_zero {M N : C} (f : M ⟶ N)
+    (hf : E.singleToSingularity.map f = 0) :
+    ∃ (K : CochainComplex.Bounded C) (_ : ∀ n, E.isProjective (K.obj.X n))
+      (a : (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj M) ⟶
+        (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.quotient C).obj K))
+      (g : (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.quotient C).obj K) ⟶
+        (BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj N)),
+      a ≫ g =
+        (BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f) := by
+  rw [singleToSingularity_eq] at hf
+  obtain ⟨Z, s, ⟨W, a, b, hT, hW⟩, hs⟩ := (MorphismProperty.map_eq_iff_precomp
+    (SingularityCategory.Q E) E.boundedProjective.trW
+      ((BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f))
+        0).1 (by
+      rw [Functor.map_zero]
+      exact hf)
+  rw [comp_zero] at hs
+  obtain ⟨g, hg⟩ := Triangle.yoneda_exact₂ _ hT _ hs
+  obtain ⟨K, hK, ⟨e⟩⟩ := (E.boundedProjective_iff W).1 hW
+  exact ⟨K, hK, a ≫ e.hom, e.inv ≫ g, by simpa using hg.symm⟩
 
 /-- Morphisms factoring through a projective object lie in the kernel of `C ⥤ D_sg(E)`. -/
 theorem projectiveStableIdeal_le_kerIdeal_singleToSingularity :

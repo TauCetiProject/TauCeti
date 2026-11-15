@@ -33,6 +33,8 @@ its mapping cone is acyclic by `TauCeti.ExactStructure.TailData.acyclic_mappingC
 * `TauCeti.ExactStructure.EnoughInjectives.isInjective_stalkResolution_X`: the terms of the
   resolution are injective.
 * `TauCeti.ExactStructure.EnoughInjectives.stalkResolution_d`: its differentials.
+* `TauCeti.ExactStructure.EnoughInjectives.stalkTailData_Z_zero`: its cycles in degree `0` are
+  `M`.
 
 ## Implementation notes
 
@@ -46,6 +48,8 @@ and `stalkD`, is exposed so that its terms are the chosen injective objects in t
 
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>, Section 12, for resolutions spliced from presentations.
+* Bernhard Keller, *Chain complexes and stable categories*, Manuscripta Math. **67** (1990),
+  379--417, Section 4.1, for injective resolutions in exact categories.
 * The splicing dualizes `TauCeti.ExactStructure.EnoughProjectives.projectiveResolution`
   (`TauCeti/CategoryTheory/Exact/Resolution/Unbounded/Basic.lean`).
 -/
@@ -146,6 +150,18 @@ noncomputable def stalkTailData : E.TailData (hE.stalkResolution M) where
   zero k := hE.i_stalkP M k
   conflation k := (hE.stalkPresentation M k).conflation
   fac k := (stalkResolution_d hE M k).symm
+
+/-- The cycles of the resolution in degree `0` are `M`. -/
+@[simp]
+theorem stalkTailData_Z_zero : (hE.stalkTailData M).Z 0 = M :=
+  rfl
+
+/-- The cycles of the resolution in degree `k + 1` are the cokernel term of the chosen
+presentation in degree `k`. -/
+@[simp]
+theorem stalkTailData_Z_succ (k : ℕ) :
+    (hE.stalkTailData M).Z (k + 1) = (hE.stalkPresentation M k).K :=
+  rfl
 
 /-- The resolution map from `M` in degree `0`: the inflation `M ↣ I⁰`, as the map
 `TauCeti.ExactStructure.TailData.ι` of the tail. -/

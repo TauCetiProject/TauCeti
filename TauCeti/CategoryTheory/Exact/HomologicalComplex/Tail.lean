@@ -55,11 +55,11 @@ Frobenius exact category, applied to injective resolutions, whose terms are then
   an eventually null-homotopic map out of a complex of projectives restricts in degree `0` to a map
   factoring through a projective object.
 * `TauCeti.ExactStructure.TailData.exists_hom_eq_of_eventually`: if `I` vanishes in negative
-  degrees and has projective terms, maps commuting with the differentials in high degrees extend
-  downwards to a map of complexes.
+  degrees and its terms below degree `m` are projective, maps commuting with the differentials in
+  degrees `≥ m` extend downwards to a map of complexes.
 * `TauCeti.ExactStructure.TailData.exists_hom_cyclesMap_eq`: if `I` vanishes in negative degrees,
-  every map of cycles is the map of cycles of a map of complexes, for projective source terms and
-  injective target terms.
+  every map of cycles in degree `n` is the map of cycles of a map of complexes, for source terms
+  projective below `n` and target terms injective from `n` on.
 * `TauCeti.ExactStructure.TailData.acyclic_mappingCone_ι`: `I` resolves `Z⁰`.
 * `TauCeti.ExactStructure.TailData.exists_iso_Z`: a map to `I` from a complex vanishing above
   degree `k + 1`, invertible in degree `k` and monic in degree `k + 1`, identifies its top term
@@ -67,8 +67,9 @@ Frobenius exact category, applied to injective resolutions, whose terms are then
 
 ## Implementation notes
 
-`TailData` is `TauCeti.ExactStructure.AcyclicData` restricted to nonnegative degrees, and the
-lifting steps parallel those for `TauCeti.ExactStructure.CompleteResolution`. The acyclicity of the
+`TailData` is `TauCeti.ExactStructure.AcyclicData` restricted to nonnegative degrees, and
+`TailData.cyclesMap` and the lifting steps parallel
+`TauCeti.ExactStructure.CompleteResolution.cyclesMap` and its lifting lemmas. The acyclicity of the
 mapping cone of `TailData.ι` follows the pushout construction of
 `TauCeti/CategoryTheory/Exact/HomologicalComplex/Injective/Resolution.lean`, through
 `TauCeti.ExactStructure.acyclic_mappingCone_of_isPushout`.
@@ -111,6 +112,8 @@ namespace TailData
 variable {E} {I J : CochainComplex C ℤ} (tI : E.TailData I) (tJ : E.TailData J)
 
 attribute [reassoc (attr := simp)] zero
+
+attribute [reassoc] fac
 
 instance (k : ℕ) : Mono (tI.i k) := (E.isInflation_f (tI.conflation k)).mono
 
@@ -246,14 +249,17 @@ theorem factorsThrough_cyclesMap_of_succ (k : ℕ) (hI : E.isProjective (I.X k))
     (u ≫ hP.factorThru (E.isDeflation_g (tJ.conflation k)) v)
     (by rw [Category.assoc, hP.factorThru_comp, huv])
 
-/-- If the terms of `I` are projective and the map of cycles in some degree `n` factors through a
-projective object, so does the map of cycles in degree `0`. -/
-theorem factorsThrough_cyclesMap_zero_of_factorsThrough (hI : ∀ k : ℕ, E.isProjective (I.X k))
-    (n : ℕ) (h : E.isProjective.FactorsThrough (tI.cyclesMap tJ φ n)) :
+/-- If the terms of `I` below degree `n` are projective and the map of cycles in degree `n` factors
+through a projective object, so does the map of cycles in degree `0`. -/
+theorem factorsThrough_cyclesMap_zero_of_factorsThrough (n : ℕ)
+    (hI : ∀ k < n, E.isProjective (I.X k))
+    (h : E.isProjective.FactorsThrough (tI.cyclesMap tJ φ n)) :
     E.isProjective.FactorsThrough (tI.cyclesMap tJ φ 0) := by
   induction n with
   | zero => exact h
-  | succ n ih => exact ih (tI.factorsThrough_cyclesMap_of_succ tJ φ n (hI n) h)
+  | succ n ih =>
+    exact ih (fun k hk ↦ hI k (by lia))
+      (tI.factorsThrough_cyclesMap_of_succ tJ φ n (hI n (by lia)) h)
 
 /-- **Eventually null-homotopic maps vanish stably on cycles**: if `φ` is eventually
 null-homotopic and the terms of `I` are projective, the map of cycles in degree `0` factors
@@ -265,7 +271,7 @@ theorem factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
   obtain ⟨j, hj⟩ : ∃ j : ℕ, n ≤ j := ⟨n.toNat, Int.self_le_toNat n⟩
   -- In degree `j + 1`, the homotopy equation restricted to the cycles lifts the map of cycles
   -- along `Jʲ ↠ Z'ʲ⁺¹`; then apply the downward steps.
-  refine tI.factorsThrough_cyclesMap_zero_of_factorsThrough tJ φ hI j
+  refine tI.factorsThrough_cyclesMap_zero_of_factorsThrough tJ φ j (fun k _ ↦ hI k)
     (tI.factorsThrough_cyclesMap_of_comp_p tJ φ j (hI j)
       (tI.i (j + 1) ≫ z.v ((j + 1 : ℕ) : ℤ) j (by push_cast; lia)) ?_)
   symm
@@ -295,11 +301,11 @@ theorem exists_comp_d_eq (m : ℕ) (hI : E.isProjective (I.X m))
 variable (tJ)
 
 include tJ in
-/-- **Eventual maps extend downwards**: if the terms of `I` are projective and `I` vanishes in
-negative degrees, a family of maps `eᵏ : Iᵏ ⟶ Jᵏ` commuting with the differentials in degrees
-`≥ m` agrees in degrees `≥ m` with a map of complexes. -/
-theorem exists_hom_eq_of_eventually [I.IsStrictlyGE 0]
-    (hI : ∀ k : ℕ, E.isProjective (I.X k)) (m : ℕ) (e : ∀ k : ℤ, I.X k ⟶ J.X k)
+/-- **Eventual maps extend downwards**: if `I` vanishes in negative degrees and its terms below
+degree `m` are projective, a family of maps `eᵏ : Iᵏ ⟶ Jᵏ` commuting with the differentials in
+degrees `≥ m` agrees in degrees `≥ m` with a map of complexes. -/
+theorem exists_hom_eq_of_eventually [I.IsStrictlyGE 0] (m : ℕ)
+    (hI : ∀ k < m, E.isProjective (I.X k)) (e : ∀ k : ℤ, I.X k ⟶ J.X k)
     (he : ∀ k : ℤ, (m : ℤ) ≤ k → e k ≫ J.d k (k + 1) = I.d k (k + 1) ≫ e (k + 1)) :
     ∃ Φ : I ⟶ J, ∀ k : ℤ, (m : ℤ) ≤ k → Φ.f k = e k := by
   induction m generalizing e with
@@ -316,8 +322,8 @@ theorem exists_hom_eq_of_eventually [I.IsStrictlyGE 0]
     have hc : I.d m ((m + 1 : ℕ) : ℤ) ≫ e (m + 1 : ℕ) ≫ tJ.p (m + 1) = 0 := by
       rw [← cancel_mono (tJ.i (m + 1 + 1)), Category.assoc, Category.assoc, tJ.fac, zero_comp,
         he ((m + 1 : ℕ) : ℤ) le_rfl, I.d_comp_d_assoc, zero_comp]
-    obtain ⟨e', h₁⟩ := exists_comp_d_eq m (hI m) (e (m + 1 : ℕ)) hc
-    obtain ⟨Φ, hΦ⟩ := ih (Function.update e (m : ℤ) e') (fun k hk ↦ by
+    obtain ⟨e', h₁⟩ := exists_comp_d_eq m (hI m (by lia)) (e (m + 1 : ℕ)) hc
+    obtain ⟨Φ, hΦ⟩ := ih (fun k hk ↦ hI k (by lia)) (Function.update e (m : ℤ) e') (fun k hk ↦ by
       rcases (show k = m ∨ (m + 1 : ℕ) ≤ k by lia) with rfl | hk'
       · rw [Function.update_self, Function.update_of_ne (by lia)]
         exact h₁
@@ -343,53 +349,55 @@ theorem exists_d_comp_eq (m : ℕ) (hJ : E.isInjective (J.X (m + 1 : ℕ))) (e :
   rw [← tI.fac, Category.assoc, he', tI.p_descZ_assoc, Category.assoc, tJ.fac]
 
 /-- The upward extensions `Iⁿ⁺ᵏ ⟶ Jⁿ⁺ᵏ` of a map of cycles `x : Zⁿ ⟶ Z'ⁿ`. -/
-private noncomputable def upSeq (hJ : ∀ k : ℕ, E.isInjective (J.X k)) (n : ℕ)
+private noncomputable def upSeq (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
     (x : tI.Z n ⟶ tJ.Z n) : ∀ k : ℕ,
     { e : I.X (n + k : ℕ) ⟶ J.X (n + k : ℕ) // tI.i (n + k) ≫ e ≫ tJ.p (n + k) = 0 }
-  | 0 => ⟨(hJ n).factorThru (E.isInflation_f (tI.conflation n)) (x ≫ tJ.i n), by
+  | 0 => ⟨(hJ n le_rfl).factorThru (E.isInflation_f (tI.conflation n)) (x ≫ tJ.i n), by
       dsimp only [Nat.add_zero]
-      rw [(hJ n).comp_factorThru_assoc, Category.assoc, tJ.zero, comp_zero]⟩
-  | k + 1 => ⟨(exists_d_comp_eq (n + k) (hJ _) (upSeq hJ n x k).1 (upSeq hJ n x k).2).choose,
-      (exists_d_comp_eq (n + k) (hJ _) (upSeq hJ n x k).1 (upSeq hJ n x k).2).choose_spec.2⟩
+      rw [(hJ n le_rfl).comp_factorThru_assoc, Category.assoc, tJ.zero, comp_zero]⟩
+  | k + 1 => ⟨(exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).1
+        (upSeq n hJ x k).2).choose,
+      (exists_d_comp_eq (n + k) (hJ _ (by lia)) (upSeq n hJ x k).1
+        (upSeq n hJ x k).2).choose_spec.2⟩
 
 /-- The upward extensions as a family indexed by `ℤ`, zero below `n`. -/
-private noncomputable def upFamily (hJ : ∀ k : ℕ, E.isInjective (J.X k)) (n : ℕ)
+private noncomputable def upFamily (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
     (x : tI.Z n ⟶ tJ.Z n) (j : ℤ) : I.X j ⟶ J.X j :=
   if h : (n : ℤ) ≤ j then
     (I.XIsoOfEq (show ((n + (j - n).toNat : ℕ) : ℤ) = j by lia)).inv ≫
-      (upSeq hJ n x (j - n).toNat).1 ≫ (J.XIsoOfEq (by lia)).hom
+      (upSeq n hJ x (j - n).toNat).1 ≫ (J.XIsoOfEq (by lia)).hom
   else 0
 
-private theorem upFamily_natCast (hJ : ∀ k : ℕ, E.isInjective (J.X k)) (n : ℕ)
-    (x : tI.Z n ⟶ tJ.Z n) (k : ℕ) : upFamily hJ n x (n + k : ℕ) = (upSeq hJ n x k).1 := by
+private theorem upFamily_natCast (n : ℕ) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
+    (x : tI.Z n ⟶ tJ.Z n) (k : ℕ) : upFamily n hJ x (n + k : ℕ) = (upSeq n hJ x k).1 := by
   have key : ∀ (a : ℕ) (ha : a = k),
       (I.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by subst ha; rfl)).inv ≫
-        (upSeq hJ n x a).1 ≫ (J.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by
-          subst ha; rfl)).hom = (upSeq hJ n x k).1 := by
+        (upSeq n hJ x a).1 ≫ (J.XIsoOfEq (show ((n + a : ℕ) : ℤ) = (n + k : ℕ) by
+          subst ha; rfl)).hom = (upSeq n hJ x k).1 := by
     rintro a rfl
     simp
   rw [upFamily, dite_eq_left (by lia)]
   exact key _ (by lia)
 
 variable (tI tJ) in
-/-- **Maps of cycles lift to maps of complexes**: if the terms of `I` are projective, those of `J`
-are injective, and `I` vanishes in negative degrees, every map of cycles `x : Zⁿ ⟶ Z'ⁿ` is the
-map of cycles of a map of complexes. -/
+/-- **Maps of cycles lift to maps of complexes**: if `I` vanishes in negative degrees, the terms of
+`I` below degree `n` are projective and those of `J` from degree `n` on are injective, every map of
+cycles `x : Zⁿ ⟶ Z'ⁿ` is the map of cycles of a map of complexes. -/
 theorem exists_hom_cyclesMap_eq [I.IsStrictlyGE 0]
-    (hI : ∀ k : ℕ, E.isProjective (I.X k)) (hJ : ∀ k : ℕ, E.isInjective (J.X k)) (n : ℕ)
+    (n : ℕ) (hI : ∀ k < n, E.isProjective (I.X k)) (hJ : ∀ k : ℕ, n ≤ k → E.isInjective (J.X k))
     (x : tI.Z n ⟶ tJ.Z n) : ∃ Φ : I ⟶ J, tI.cyclesMap tJ Φ n = x := by
   -- Extend `x` upwards by injectivity of the terms of `J`, then downwards by projectivity of the
   -- terms of `I`.
-  obtain ⟨Φ, hΦ⟩ := exists_hom_eq_of_eventually tJ hI n (upFamily hJ n x) (fun j hj ↦ by
+  obtain ⟨Φ, hΦ⟩ := exists_hom_eq_of_eventually tJ n hI (upFamily n hJ x) (fun j hj ↦ by
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, j = ((n + k : ℕ) : ℤ) := ⟨(j - n).toNat, by lia⟩
     rw [show (((n + k : ℕ) : ℤ) + 1) = ((n + (k + 1) : ℕ) : ℤ) by lia, upFamily_natCast,
       upFamily_natCast]
-    exact ((exists_d_comp_eq (n + k) (hJ _) _ (upSeq hJ n x k).2).choose_spec.1).symm)
+    exact ((exists_d_comp_eq (n + k) (hJ _ (by lia)) _ (upSeq n hJ x k).2).choose_spec.1).symm)
   refine ⟨Φ, (cancel_mono (tJ.i n)).1 ?_⟩
   -- `n + 0` reduces to `n`, so this is the case `k = 0` of `upFamily_natCast`.
-  have h0 : upFamily hJ n x n = (upSeq hJ n x 0).1 := upFamily_natCast hJ n x 0
+  have h0 : upFamily n hJ x n = (upSeq n hJ x 0).1 := upFamily_natCast n hJ x 0
   rw [cyclesMap_i, hΦ n le_rfl, h0]
-  exact (hJ n).comp_factorThru _ _
+  exact (hJ n le_rfl).comp_factorThru _ _
 
 end Extension
 

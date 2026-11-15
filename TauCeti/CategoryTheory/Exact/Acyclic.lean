@@ -46,8 +46,10 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
   complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
   above, is acyclic.
-* `TauCeti.ExactStructure.AcyclicData.epi_d`: the differential of an acyclic complex into the
-  last nonzero degree is an epimorphism.
+* `TauCeti.ExactStructure.AcyclicData.epi_d`, `TauCeti.ExactStructure.AcyclicData.mono_d`: the
+  differential of an acyclic complex into the last nonzero degree is an epimorphism, and the one out
+  of the first nonzero degree a monomorphism; `TauCeti.ExactStructure.epi_d_of_acyclic` and
+  `TauCeti.ExactStructure.mono_d_of_acyclic` state them for `E.acyclic`.
 
 ## References
 
@@ -203,18 +205,41 @@ theorem liftZ_i {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) :
     h.liftZ n k hk ≫ h.i n = k :=
   (E.isKernelCokernelPair _ (h.conflation n)).lift_f k hk
 
-include h in
-/-- **The last differential of an acyclic complex is an epimorphism**: if `Kⁿ⁺²` vanishes, then
-`Kⁿ ⟶ Kⁿ⁺¹` is an epimorphism. -/
-theorem epi_d (n : ℤ) (hK : IsZero (K.X (n + 1 + 1))) : Epi (K.d n (n + 1)) := by
+/-- **The last differential of an acyclic complex is an epimorphism**: if the cycles `Zⁿ⁺²`
+vanish, then `Kⁿ ⟶ Kⁿ⁺¹` is an epimorphism. -/
+theorem epi_d (n : ℤ) (hZ : IsZero (h.Z (n + 1 + 1))) : Epi (K.d n (n + 1)) := by
   -- `Zⁿ⁺¹ ↣ Kⁿ⁺¹` has zero cokernel `Zⁿ⁺²`, so `d : Kⁿ ↠ Zⁿ⁺¹ ↣ Kⁿ⁺¹` is an epimorphism.
-  have hZ : IsZero (h.Z (n + 1 + 1)) := IsZero.of_mono (h.i (n + 1 + 1)) hK
   have : Epi (h.i (n + 1)) := Preadditive.epi_of_isZero_cokernel' _
     (E.isKernelCokernelPair _ (h.conflation (n + 1))).gIsCokernel hZ
   rw [← h.fac]
   infer_instance
 
+/-- **The first differential of an acyclic complex is a monomorphism**: if the cycles `Zⁿ⁺¹`
+vanish, then `Kⁿ⁺¹ ⟶ Kⁿ⁺²` is a monomorphism. -/
+theorem mono_d (n : ℤ) (hZ : IsZero (h.Z (n + 1))) : Mono (K.d (n + 1) (n + 1 + 1)) := by
+  -- `Kⁿ⁺¹ ↠ Zⁿ⁺²` has zero kernel `Zⁿ⁺¹`, so `d : Kⁿ⁺¹ ↠ Zⁿ⁺² ↣ Kⁿ⁺²` is a monomorphism.
+  have : Mono (h.p (n + 1)) := Preadditive.mono_of_isZero_kernel' _
+    (E.isKernelCokernelPair _ (h.conflation (n + 1))).fIsKernel hZ
+  rw [← h.fac]
+  infer_instance
+
 end descZ
+
+variable {K : CochainComplex C ℤ}
+
+/-- **The last differential of an acyclic complex is an epimorphism**: if `Kⁿ⁺²` vanishes, then
+`Kⁿ ⟶ Kⁿ⁺¹` is an epimorphism. -/
+theorem _root_.TauCeti.ExactStructure.epi_d_of_acyclic (hK : E.acyclic K) (n : ℤ)
+    (hK₀ : IsZero (K.X (n + 1 + 1))) : Epi (K.d n (n + 1)) := by
+  obtain ⟨h⟩ := (E.acyclic_iff K).1 hK
+  exact h.epi_d n (IsZero.of_mono (h.i (n + 1 + 1)) hK₀)
+
+/-- **The first differential of an acyclic complex is a monomorphism**: if `Kⁿ` vanishes, then
+`Kⁿ⁺¹ ⟶ Kⁿ⁺²` is a monomorphism. -/
+theorem _root_.TauCeti.ExactStructure.mono_d_of_acyclic (hK : E.acyclic K) (n : ℤ)
+    (hK₀ : IsZero (K.X n)) : Mono (K.d (n + 1) (n + 1 + 1)) := by
+  obtain ⟨h⟩ := (E.acyclic_iff K).1 hK
+  exact h.mono_d n (IsZero.of_epi (h.p n) hK₀)
 
 section ofTruncation
 

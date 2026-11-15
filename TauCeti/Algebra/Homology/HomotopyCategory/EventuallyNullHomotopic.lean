@@ -27,7 +27,8 @@ map.
 
 ## Main results
 
-* `CochainComplex.IsEventuallyNullHomotopic.of_homotopy`: invariance under homotopy.
+* `CochainComplex.IsEventuallyNullHomotopic.of_homotopy`, `iff_of_homotopy`: invariance under
+  homotopy; `of_homotopy_zero`: null-homotopic maps are eventually null-homotopic.
 * `CochainComplex.IsEventuallyNullHomotopic.add`, `neg`, `sub`, `comp_left`, `comp_right`:
   eventually null-homotopic maps form an ideal of the category of cochain complexes.
 * `CochainComplex.isEventuallyNullHomotopic_of_quotient_map_eq_comp`: a map whose homotopy class
@@ -76,7 +77,7 @@ theorem of_homotopy {f g : A ⟶ B} (h : Homotopy f g) (hg : IsEventuallyNullHom
   rw [this, hz p hp, δ_add, Cochain.add_v]
 
 /-- Homotopic maps are eventually null-homotopic together. -/
-theorem homotopy_iff {f g : A ⟶ B} (h : Homotopy f g) :
+theorem iff_of_homotopy {f g : A ⟶ B} (h : Homotopy f g) :
     IsEventuallyNullHomotopic f ↔ IsEventuallyNullHomotopic g :=
   ⟨of_homotopy h.symm, of_homotopy h⟩
 
@@ -84,6 +85,10 @@ theorem homotopy_iff {f g : A ⟶ B} (h : Homotopy f g) :
 @[simp]
 theorem zero : IsEventuallyNullHomotopic (0 : A ⟶ B) :=
   of_eventually_eq_zero 0 fun _ _ ↦ rfl
+
+/-- A null-homotopic map is eventually null-homotopic. -/
+theorem of_homotopy_zero {f : A ⟶ B} (h : Homotopy f 0) : IsEventuallyNullHomotopic f :=
+  of_homotopy h zero
 
 /-- A sum of eventually null-homotopic maps is eventually null-homotopic. -/
 theorem add {f g : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (hg : IsEventuallyNullHomotopic g) :
@@ -99,6 +104,10 @@ theorem neg {f : A ⟶ B} (hf : IsEventuallyNullHomotopic f) : IsEventuallyNullH
   obtain ⟨n, z, hz⟩ := hf
   refine ⟨n, -z, fun p hp ↦ ?_⟩
   rw [HomologicalComplex.neg_f_apply, hz p hp, δ_neg, Cochain.neg_v]
+
+@[simp]
+theorem neg_iff {f : A ⟶ B} : IsEventuallyNullHomotopic (-f) ↔ IsEventuallyNullHomotopic f :=
+  ⟨fun h ↦ by simpa using h.neg, neg⟩
 
 /-- A difference of eventually null-homotopic maps is eventually null-homotopic. -/
 theorem sub {f g : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (hg : IsEventuallyNullHomotopic g) :
