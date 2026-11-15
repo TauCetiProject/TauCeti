@@ -50,6 +50,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_congr`: `Proj.map f` depends only on `f`.
 * `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_eq`: the point of `Proj A` defined by `φ` on the
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
+* `AlgebraicGeometry.Proj.pullback_fst_awayι_comp_eq_snd_comp`: morphisms out of two standard
+  charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
@@ -106,6 +108,20 @@ theorem SpecMap_awayLift_awayι_eq {R : Type u} [CommRing R] (φ : A →+* R) {f
   -- the two charts `D₊(fg)` differ only in the order of the degree `m + m'` of `fg`
   congr 2
   exact add_comm m m'
+
+/-- Two morphisms out of the standard charts `D₊(f)` and `D₊(g)` of `Proj A` agree on the overlap
+`D₊(f) ×_{Proj A} D₊(g)` as soon as they agree on the chart `D₊(fg)`, embedded in both through the
+localization maps `A_{(f)} → A_{(fg)}` and `A_{(g)} → A_{(fg)}`. This is the compatibility
+condition for gluing morphisms along standard charts. -/
+theorem pullback_fst_awayι_comp_eq_snd_comp {Y : Scheme.{u}} {f g : A} {m m' : ℕ}
+    (f_deg : f ∈ 𝒜 m) (hm : 0 < m) (g_deg : g ∈ 𝒜 m') (hm' : 0 < m')
+    {u : Spec (.of (Away 𝒜 f)) ⟶ Y} {v : Spec (.of (Away 𝒜 g)) ⟶ Y}
+    (h : Spec.map (CommRingCat.ofHom (awayMap 𝒜 g_deg rfl)) ≫ u =
+      Spec.map (CommRingCat.ofHom (awayMap 𝒜 f_deg (mul_comm f g))) ≫ v) :
+    Limits.pullback.fst (awayι 𝒜 f f_deg hm) (awayι 𝒜 g g_deg hm') ≫ u =
+      Limits.pullback.snd _ _ ≫ v := by
+  rwa [← cancel_epi (pullbackAwayιIso 𝒜 f_deg hm g_deg hm' rfl).inv,
+    pullbackAwayιIso_inv_fst_assoc, pullbackAwayιIso_inv_snd_assoc]
 
 /-- `Proj.map f` lies over `Spec` of the ring homomorphism `𝒜 0 →+* ℬ 0` induced by `f` on the
 degree-zero parts. -/
