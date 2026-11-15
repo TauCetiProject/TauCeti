@@ -176,10 +176,9 @@ theorem eval_restrict (h : t ⊆ s) (x : ℂ) (hx : x ∈ t) (g : holomorphicGer
 /-- A representative with no zero on `s` times its pointwise inverse is the unit germ. -/
 theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
     ofFun f hf * ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = 1 := by
-  apply Subtype.ext
-  apply Germ.coe_eq.mpr
-  apply eventually_nhdsSet_iff_forall.mpr
-  intro x hx
+  rw [← ofFun_mul, ← map_one (algebraMap ℂ (holomorphicGerms s)), ← ofFun_const,
+    ofFun_eq_iff]
+  refine eventually_nhdsSet_iff_forall.mpr fun x hx ↦ ?_
   filter_upwards [(hf x hx).continuousAt.eventually_ne (hne x hx)] with z hz
   exact mul_inv_cancel₀ hz
 
@@ -195,6 +194,7 @@ theorem isUnit_iff (g : holomorphicGerms s) :
     exact isUnit_iff_exists_inv.mpr ⟨_, ofFun_mul_ofFun_inv hf hne⟩
 
 /-- The inverse of a germ with no zero on `s` is represented by the pointwise inverse. -/
+@[simp]
 theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
     ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = (ofFun f hf)⁻¹ʳ := by
   have hu : IsUnit (ofFun f hf) := IsUnit.of_mul_eq_one _ (ofFun_mul_ofFun_inv hf hne)

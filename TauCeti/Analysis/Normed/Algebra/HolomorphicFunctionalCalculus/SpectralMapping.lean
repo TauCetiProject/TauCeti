@@ -18,10 +18,9 @@ preserves spectra:
 
 `σ(f(a)) = f(σ(a))`.
 
-The nontrivial inclusion comes from the factorization `f(z) - f(x) = (z - x) g(z)` with
-`g = dslope f x` holomorphic: if `x ∈ σ(a)` and `f(a) - f(x)` were invertible, then the
-commuting factor `a - x` would be invertible too. The same statement is given for the
-calculus on an open neighbourhood of the spectrum.
+The same statement is given for the calculus on an open neighbourhood of the spectrum. Spectral
+mapping supplies the spectral-domain condition needed to compose the calculus: if `g` is
+holomorphic near `f(σ(a))`, then `g` is holomorphic near the spectrum of `f(a)`.
 
 Since the calculus reflects units, it commutes with `Ring.inverse`. Consequently a quotient
 of germs is sent to the quotient of values, and in particular a rational function with no
@@ -30,6 +29,7 @@ pole on the spectrum is evaluated by the usual rational expression in `a`.
 ## Main results
 
 * `TauCeti.isLocalHom_holomorphicCalculus`: the germ calculus reflects units.
+* `TauCeti.spectrum_holomorphicCalculus`: the calculus preserves the spectrum of a germ.
 * `TauCeti.spectrum_holomorphicCalculus_ofFun`: the spectral mapping theorem.
 * `TauCeti.spectrum_holomorphicCalculusOn`: the spectral mapping theorem on an open domain.
 * `TauCeti.holomorphicCalculus_ofFun_div`: quotients are sent to quotients.
@@ -77,11 +77,17 @@ instance isLocalHom_holomorphicCalculus (a : A) : IsLocalHom (holomorphicCalculu
     rw [hlin] at hx'
     exact IsUnit.sub_iff.mp hx'
 
+/-- The holomorphic calculus preserves spectra: the spectrum of `g(a)` is the spectrum of the
+germ `g` in the algebra of holomorphic germs near the spectrum of `a`. -/
+theorem spectrum_holomorphicCalculus (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
+    spectrum ℂ (holomorphicCalculus a g) = spectrum ℂ g :=
+  AlgHom.spectrum_apply_eq _ g
+
 /-- **Spectral mapping theorem** for the holomorphic germ calculus: `σ(f(a)) = f(σ(a))`. -/
 theorem spectrum_holomorphicCalculus_ofFun (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
     spectrum ℂ (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) = f '' spectrum ℂ a := by
-  rw [AlgHom.spectrum_apply_eq, holomorphicGerms.spectrum_ofFun]
+  rw [spectrum_holomorphicCalculus, holomorphicGerms.spectrum_ofFun]
 
 /-- The spectral mapping theorem for the calculus on an open neighbourhood `U` of the
 spectrum: the spectrum of `f(a)` is the image of the spectrum of `a` under `f`. -/
