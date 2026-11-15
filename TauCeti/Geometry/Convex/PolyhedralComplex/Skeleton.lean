@@ -80,6 +80,7 @@ theorem codimensionGE_codimensionGE (C : FinitePolyhedralComplex h) (k l : ℕ) 
   simp only [mem_cells_codimensionGE, ← Nat.add_max_add_left, max_le_iff, and_assoc]
 
 /-- The skeleton retains every exact-codimension stratum at or above its threshold. -/
+@[simp]
 theorem cellsOfCodimension_codimensionGE_of_le (C : FinitePolyhedralComplex h) {k l : ℕ}
     (hkl : k ≤ l) : (C.codimensionGE k).cellsOfCodimension l = C.cellsOfCodimension l := by
   ext P
@@ -87,12 +88,12 @@ theorem cellsOfCodimension_codimensionGE_of_le (C : FinitePolyhedralComplex h) {
   exact ⟨fun hP => ⟨hP.1.1, hP.2⟩, fun ⟨hP, hd⟩ => ⟨⟨hP, by omega⟩, hd⟩⟩
 
 /-- At the threshold the exact-codimension cells of the skeleton are those of the complex. -/
-@[simp]
 theorem cellsOfCodimension_codimensionGE_self (C : FinitePolyhedralComplex h) (k : ℕ) :
     (C.codimensionGE k).cellsOfCodimension k = C.cellsOfCodimension k :=
   C.cellsOfCodimension_codimensionGE_of_le le_rfl
 
 /-- A skeleton has no cells of exact codimension below its threshold. -/
+@[simp]
 theorem cellsOfCodimension_codimensionGE_of_lt (C : FinitePolyhedralComplex h) {k l : ℕ}
     (hlk : l < k) : (C.codimensionGE k).cellsOfCodimension l = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
@@ -155,6 +156,7 @@ theorem support_codimensionGE_antitone (C : FinitePolyhedralComplex h) :
   fun _ _ hkl => (C.codimensionGE_isSubcomplex_codimensionGE hkl).isWeakRefinement.support_subset
 
 /-- No cells can have codimension greater than the ambient dimension. -/
+@[simp]
 theorem cells_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionGE k).cells = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
@@ -163,6 +165,7 @@ theorem cells_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
   omega
 
 /-- Above the ambient dimension the support of the skeleton is empty. -/
+@[simp]
 theorem support_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionGE k).support = ∅ := by
   ext x
