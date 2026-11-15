@@ -30,7 +30,11 @@ satisfies `δ ∘ δ ≃ id` relative to the north pole: the induced map on `ℤ
 `±1`, so its square is the identity. Since the sphere is homogeneous
 (`TauCeti.Sphere.exists_homeomorph_apply_eq`), conjugating by a homeomorphism extends this to
 self-maps fixing any point `y`, with `δ ∘ δ ≃ id` relative to `y`
-(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`). Barraud, Damian,
+(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`). Consequently a map
+`s : Sⁿ⁺² → Q` admitting some `c : Q → Sⁿ⁺²` with `c ∘ s` of degree `±1` is a pointed homotopy
+retract at every point `x` of the sphere: with `a` a homeomorphism moving `c (s x)` to `x` and
+`δ = a ∘ c ∘ s`, the map `δ ∘ a ∘ c` is a left inverse of `s` up to homotopy relative to `x`
+(`ContinuousMap.exists_homotopicRel_comp_id_of_surjective_singularHomologyMap`). Barraud, Damian,
 Humilière and Oancea use this to retract the double loop space of a sphere off that of a manifold
 in the proof of their Lemma 7.6.
 
@@ -41,6 +45,9 @@ in the proof of their Lemma 7.6.
   `Hₙ₊₂(-; ℤ)`.
 * `ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`: a pointed self-map
   of `Sⁿ⁺²` of degree `±1`, at any base point, squares to the identity up to pointed homotopy.
+* `ContinuousMap.exists_homotopicRel_comp_id_of_surjective_singularHomologyMap`: a map
+  `s : Sⁿ⁺² → Q` with some `c : Q → Sⁿ⁺²` making `c ∘ s` of degree `±1` has a pointed left
+  homotopy inverse at every point of the sphere.
 
 ## References
 
@@ -147,5 +154,33 @@ theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap
     ext1 z
     simp [A, A']
   simpa only [hr, hpre, hid] using (hεε.precomp A').comp_continuousMap A
+
+/-- **A sphere mapping with degree `±1` onto a sphere is a pointed homotopy retract.** Let
+`s : Sⁿ⁺² → Q` and `c : Q → Sⁿ⁺²` be maps such that `c ∘ s` induces a surjection on
+`Hₙ₊₂(Sⁿ⁺²; ℤ)`; neither need preserve a base point. Then, at every point `x` of the sphere, `s` has
+a pointed left inverse `r` up to homotopy relative to `x`: `r (s x) = x` and `r ∘ s ≃ id`
+relative to `x`. -/
+theorem exists_homotopicRel_comp_id_of_surjective_singularHomologyMap {Q : Type}
+    [TopologicalSpace Q] {s : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, Q)}
+    {c : C(Q, sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)}
+    (h : Function.Surjective (singularHomologyMap ℤ (n + 2) (c.comp s)))
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :
+    ∃ r : C(Q, sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1),
+      r (s x) = x ∧ (r.comp s).HomotopicRel (ContinuousMap.id _) {x} := by
+  -- A homeomorphism `a` of the sphere with `a (c (s x)) = x` makes `δ = a ∘ c ∘ s` a self-map of
+  -- degree `±1` fixing `x`, so `δ ∘ δ ≃ id` relative to `x`.
+  obtain ⟨a, ha⟩ := Sphere.exists_homeomorph_apply_eq (c (s x)) x
+  let A : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
+    sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a
+  have hδ : (A.comp c).comp s x = x := by simp [A, ha]
+  have hδδ := homotopicRel_comp_self_id_of_surjective_singularHomologyMap hδ (by
+    have hcomp : ⇑(singularHomologyMap ℤ (n + 2) ((A.comp c).comp s)) =
+        singularHomologyMap ℤ (n + 2) A ∘ singularHomologyMap ℤ (n + 2) (c.comp s) := by
+      funext z
+      simp only [ContinuousMap.comp_assoc, Function.comp_apply, singularHomologyMap_comp]
+    rw [hcomp]
+    exact (a.toHomotopyEquiv.bijective_singularHomologyMap ℤ (n + 2)).2.comp h)
+  -- Then `r = δ ∘ a ∘ c` is a pointed left homotopy inverse of `s`: `r ∘ s = δ ∘ δ`.
+  exact ⟨((A.comp c).comp s).comp (A.comp c), by simp [A, ha], hδδ⟩
 
 end ContinuousMap

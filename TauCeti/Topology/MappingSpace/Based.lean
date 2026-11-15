@@ -24,6 +24,8 @@ with the quotient map.
 * `TauCeti.BasedMap`: the based mapping space `Map_*(B, X)`.
 * `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
   continuous by `TauCeti.BasedMap.continuous_map`.
+* `TauCeti.BasedMap.homotopic_map_of_homotopicRel`: maps homotopic relative to the basepoint
+  induce homotopic maps of based mapping spaces.
 * `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
   fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
 * `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
@@ -83,6 +85,26 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g 
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
   continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
+
+/-- **Homotopy invariance of based mapping spaces.** Maps `g, g' : X → Y` that are homotopic
+relative to `x` induce homotopic maps `Map_*(B, X) → Map_*(B, Y)`: postcompose with the homotopy,
+which fixes `x` throughout. This needs evaluation `Map(B, X) × B → X` to be continuous, through
+`LocallyCompactPair B X`, which holds for instance when `B` is locally compact. -/
+theorem homotopic_map_of_homotopicRel [LocallyCompactPair B X] {g g' : C(X, Y)} (hg : g x = y)
+    (hg' : g' x = y) (H : g.HomotopicRel g' {x}) :
+    ContinuousMap.Homotopic
+      (⟨map (B := B) (b₀ := b₀) g hg, continuous_map g hg⟩ : C(BasedMap B X b₀ x, _))
+      ⟨map g' hg', continuous_map g' hg'⟩ := by
+  obtain ⟨F⟩ := H
+  refine ⟨{
+    toFun := fun p ↦ ⟨⟨fun b ↦ F (p.1, p.2.1 b), by fun_prop⟩, by
+      simp [p.2.2, F.eq_fst p.1 (Set.mem_singleton x), hg]⟩
+    continuous_toFun := continuous_induced_rng.2
+      (ContinuousMap.continuous_of_continuous_uncurry _
+        (show Continuous fun z : (I × BasedMap B X b₀ x) × B ↦ F (z.1.1, z.1.2.1 z.2) by
+          fun_prop))
+    map_zero_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp)
+    map_one_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp) }⟩
 
 end Map
 
