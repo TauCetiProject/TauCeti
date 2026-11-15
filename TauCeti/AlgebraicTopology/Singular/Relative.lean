@@ -558,6 +558,19 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
 
+/-- **The connecting morphism of a pair is an isomorphism when the ambient space is acyclic in the
+adjacent degrees**: if `Hₙ(X)` and `Hₘ(X)` vanish, with `m + 1 = n`, then the connecting morphism
+`Hₙ(X, A) ⟶ Hₘ(A)` is an isomorphism. -/
+lemma isIso_singularHomologyδ_of_isZero (n m : ℕ)
+    (hn : IsZero ((toSSetPair.obj P).right.homology R n))
+    (hm : IsZero ((toSSetPair.obj P).right.homology R m)) (h : m + 1 = n := by lia) :
+    IsIso (P.singularHomologyδ R n m h) :=
+  have : Mono (P.singularHomologyδ R n m h) :=
+    (P.singularHomology_exact_relative R n m h).mono_g (hn.eq_of_src _ _)
+  have : Epi (P.singularHomologyδ R n m h) :=
+    (P.singularHomology_exact_subspace R n m h).epi_f (hm.eq_of_tgt _ _)
+  isIso_of_mono_of_epi _
+
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
 map of pairs `f : (X, A) ⟶ (X', A')`, following `Hₙ(X, A) ⟶ Hₘ(A)` by the map induced by `f` on
 `Hₘ(A)` agrees with following the map induced by `f` on `Hₙ(X, A)` by `Hₙ(X', A') ⟶ Hₘ(A')`. -/
