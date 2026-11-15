@@ -113,6 +113,11 @@ def sphereRotationIsometry (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) : E ≃ₗᵢ[ℝ] E :=
   (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.2⟩
 
+theorem sphereRotationIsometry_def (p : sphere (0 : E) 1)
+    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    sphereRotationIsometry p x = (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.2⟩ :=
+  (rfl)
+
 /-- **The rotation moves `p` along the great circle in the direction `v`**: it sends `p` to
 `Re z • p + Im z • v`, the value of the rotation family of the sphere at `(v, z)`. -/
 @[simp]
@@ -148,31 +153,44 @@ theorem continuous_sphereRotationIsometry (p : sphere (0 : E) 1) :
   ((continuous_sphereRotationPlane p).comp continuous_fst).planeRotation
     ((continuous_subtype_val.comp continuous_snd).subtype_mk _)
 
-variable [FiniteDimensional ℝ E] {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
+variable [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
 /-- **The rotation family of the sphere as a family of diffeomorphisms**: the restrictions to the
-unit sphere `Sᵐ⁺¹` of the rotations `TauCeti.sphereRotationIsometry p (v, z)`, as a continuous map
-from `Sᵐ × S¹` to the group of `C^k` diffeomorphisms of `Sᵐ⁺¹` with the weak Whitney topology. Its
+unit sphere `Sⁿ` of the rotations `TauCeti.sphereRotationIsometry p (v, z)`, as a continuous map
+from `Sⁿ⁻¹ × S¹` to the group of `C^k` diffeomorphisms of `Sⁿ` with the weak Whitney topology. Its
 evaluation at `p` is the rotation family `TauCeti.sphereRotationFamily p`
 (`TauCeti.evalAt_comp_sphereRotationDiff`). -/
 def sphereRotationDiff (p : sphere (0 : E) 1) (k : ℕ∞ω) :
-    C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1, Diff (𝓡 (m + 1)) (sphere (0 : E) 1) k) where
+    C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1, Diff (𝓡 n) (sphere (0 : E) 1) k) where
   toFun x := LinearIsometryEquiv.unitSphereDiffHom k (sphereRotationIsometry p x)
   continuous_toFun := by
     refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
     simpa only [LinearIsometryEquiv.unitSphereDiffHom_apply] using
       (continuous_sphereRotationIsometry p).toContMDiffMap_unitSphereDiffeomorph
 
+theorem sphereRotationDiff_apply (p : sphere (0 : E) 1) (k : ℕ∞ω)
+    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    sphereRotationDiff (n := n) p k x =
+      LinearIsometryEquiv.unitSphereDiffHom k (sphereRotationIsometry p x) :=
+  (rfl)
+
 @[simp]
 theorem coe_sphereRotationDiff_apply (p : sphere (0 : E) 1) (k : ℕ∞ω)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) (y : sphere (0 : E) 1) :
-    (sphereRotationDiff (m := m) p k x y : E) = sphereRotationIsometry p x y := by
+    (sphereRotationDiff (n := n) p k x y : E) = sphereRotationIsometry p x y := by
   simp [sphereRotationDiff]
+
+/-- The rotations send `p` to the value of the rotation family of the sphere. -/
+@[simp]
+theorem sphereRotationDiff_apply_self (p : sphere (0 : E) 1) (k : ℕ∞ω)
+    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    sphereRotationDiff (n := n) p k x p = sphereRotationFamily p x :=
+  Subtype.ext (by simp)
 
 /-- **Evaluating the rotations at `p` gives the rotation family of the sphere.** -/
 theorem evalAt_comp_sphereRotationDiff (p : sphere (0 : E) 1) (k : ℕ∞ω) :
-    (Diffeomorph.evalAt p).comp (sphereRotationDiff (m := m) p k) =
-      ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ := by
+    (Diffeomorph.evalAt p).comp (sphereRotationDiff (n := n) p k) =
+      ⟨sphereRotationFamily p, continuous_sphereRotationFamily p⟩ := by
   ext x : 2
   simp
 
