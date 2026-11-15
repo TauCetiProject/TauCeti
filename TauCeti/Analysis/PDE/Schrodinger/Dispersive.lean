@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Integral.RieszThorin
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -65,6 +66,11 @@ dominated convergence.
   oscillatory integral `∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ` of a Schwartz function `ψ`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
+* `TauCeti.eLpNorm_schrodingerPropagator_toLp_gaussian`: its `Lʳ` norms,
+  `‖S(t) g‖_r = (1 + 16π² t²)^((n/r - n/2) / 2) ‖g‖_r`, and
+  `TauCeti.eLpNorm_schrodingerPropagator_toLp_gaussian_top`, the case
+  `‖S(t) g‖_∞ = (1 + 16π² t²)^(-n/4)`, which is asymptotic to the dispersive bound
+  `(4π|t|)^(-n/2) ‖g‖₁` as `|t| → ∞`, since `‖g‖₁ = 1`.
 
 ## References
 
@@ -425,5 +431,102 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
   · congr 1
     simp only [b]
     field_simp
+
+/-! ### The `Lʳ` norms of the evolved Gaussian -/
+
+section GaussianNorm
+
+open Module
+
+/-- Pointwise modulus of the evolved Gaussian: `|S(t) g (x)| = s ^ (-n/2) exp(-π ‖s⁻¹ x‖²)` with
+`s = √(1 + 16π² t²)`. -/
+private theorem norm_schrodingerPropagator_toLp_gaussian_ae (t : ℝ) :
+    ∀ᵐ x ∂(volume : Measure E), ‖schrodingerPropagator ℂ t
+        ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2) x‖ =
+      ‖√(1 + 16 * π ^ 2 * t ^ 2) ^ (-((finrank ℝ E : ℝ) / 2)) •
+        rexp (-π * ‖(√(1 + 16 * π ^ 2 * t ^ 2))⁻¹ • x‖ ^ 2)‖ := by
+  set s := √(1 + 16 * π ^ 2 * t ^ 2)
+  have hs2 : s ^ 2 = 1 + 16 * π ^ 2 * t ^ 2 := sq_sqrt (by positivity)
+  have hs : 0 < s := sqrt_pos.2 (by positivity)
+  have hnorm : ‖(1 + 4 * π * t * I : ℂ)‖ = s := by
+    rw [show (1 + 4 * π * t * I : ℂ) = ((1 : ℝ) : ℂ) + ((4 * π * t : ℝ) : ℂ) * I by push_cast; ring,
+      norm_add_mul_I]
+    congr 1
+    ring
+  have hn : -(finrank ℝ E : ℂ) / 2 = ((-((finrank ℝ E : ℝ) / 2) : ℝ) : ℂ) := by
+    push_cast
+    ring
+  filter_upwards [coeFn_schrodingerPropagator_toLp_gaussian (E := E) t] with x hx
+  -- The real part of the exponent is `-π ‖x‖² / s²`.
+  have hre : (-π * ‖x‖ ^ 2 / (1 + 4 * π * t * I) : ℂ).re = -π * ‖s⁻¹ • x‖ ^ 2 := by
+    rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg hs.le, inv_pow, hs2, div_re,
+      normSq_apply]
+    simp only [neg_mul, neg_re, neg_im, mul_re, mul_im, ofReal_re, ofReal_im, add_re, add_im,
+      one_re, one_im, re_ofNat, im_ofNat, I_re, I_im, zero_mul, mul_zero, mul_one, sub_zero,
+      add_zero, zero_add, sub_self]
+    simp only [← ofReal_pow, ofReal_re, ofReal_im]
+    field_simp
+    ring
+  rw [hx, norm_mul, hn, norm_cpow_real, hnorm, norm_exp, hre, norm_smul,
+    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), smul_eq_mul]
+
+/-- **The `Lʳ` norms of the evolved Gaussian.** The Gaussian `g(x) = exp(-π ‖x‖²)` evolves into a
+complex Gaussian of width `s = √(1 + 16π² t²)` and height `s ^ (-n/2)`
+(`TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`), so for every exponent `r`
+
+`‖S(t) g‖_r = s ^ (n/r - n/2) ‖g‖_r`,
+
+where `n / r` is `n / r.toReal`, which is `0` for `r = ∞`. At `r = 2` this is conservation of the
+`L²` norm. -/
+theorem eLpNorm_schrodingerPropagator_toLp_gaussian (t : ℝ) (r : ℝ≥0∞) :
+    eLpNorm (schrodingerPropagator ℂ t
+        ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2)) r volume =
+      ENNReal.ofReal
+          (√(1 + 16 * π ^ 2 * t ^ 2) ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (fun x : E ↦ rexp (-π * ‖x‖ ^ 2)) r volume := by
+  set s := √(1 + 16 * π ^ 2 * t ^ 2)
+  have hs : 0 < s := sqrt_pos.2 (by positivity)
+  set c : ℝ := s ^ (-((finrank ℝ E : ℝ) / 2))
+  have hm : AEStronglyMeasurable (fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)) volume :=
+    (by fun_prop : Continuous fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)).aestronglyMeasurable
+  have h : (fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)) =
+      c • fun x ↦ rexp (-π * ‖s⁻¹ • x‖ ^ 2) := rfl
+  rw [eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm
+      (norm_schrodingerPropagator_toLp_gaussian_ae t), h, eLpNorm_const_smul,
+    Measure.eLpNorm_comp_inv_smul volume (fun y : E ↦ rexp (-π * ‖y‖ ^ 2)) hs.ne', ← mul_assoc,
+    Real.eNorm_eq_ofReal (by positivity), abs_of_pos hs, ← ENNReal.ofReal_mul (by positivity),
+    ← rpow_add hs]
+  congr 3
+  ring
+
+/-- The Gaussian `exp(-π ‖x‖²)` has essential supremum `1`. -/
+private theorem eLpNorm_exp_neg_pi_mul_norm_sq_top :
+    eLpNorm (fun x : E ↦ rexp (-π * ‖x‖ ^ 2)) ∞ volume = 1 := by
+  have hc : Continuous fun x : E ↦ rexp (-π * ‖x‖ ^ 2) := by fun_prop
+  rw [eLpNorm_exponent_top hc.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
+  refine le_antisymm (essSup_le_of_ae_le _ (Eventually.of_forall fun x ↦ ?_)) ?_
+  · dsimp only
+    rw [Real.eNorm_eq_ofReal (exp_nonneg _), ENNReal.ofReal_le_one, Real.exp_le_one_iff]
+    nlinarith [pi_pos, sq_nonneg ‖x‖]
+  · -- A continuous function has its supremum as essential supremum.
+    rw [← iSup_eq_essSup fun x a ha ↦ ((isOpen_lt continuous_const hc.eNorm).measure_ne_zero
+      volume ⟨x, ha⟩)]
+    exact le_iSup_of_le 0 (by simp)
+
+/-- **The dispersive decay of the Gaussian.** For the Gaussian `g(x) = exp(-π ‖x‖²)`,
+`‖S(t) g‖_∞ = (1 + 16π² t²) ^ (-n/4)`. Since `‖g‖₁ = 1`, the ratio of this to the bound
+`(4π |t|) ^ (-n/2) ‖g‖₁` of the dispersive estimate (`TauCeti.eLpNorm_schrodingerPropagator_le`)
+tends to `1` as `|t| → ∞`: neither the decay rate `|t| ^ (-n/2)` nor the constant `(4π) ^ (-n/2)`
+of that estimate can be improved. -/
+theorem eLpNorm_schrodingerPropagator_toLp_gaussian_top (t : ℝ) :
+    eLpNorm (schrodingerPropagator ℂ t
+        ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2)) ∞ volume =
+      ENNReal.ofReal ((1 + 16 * π ^ 2 * t ^ 2) ^ (-(finrank ℝ E : ℝ) / 4)) := by
+  rw [eLpNorm_schrodingerPropagator_toLp_gaussian, eLpNorm_exp_neg_pi_mul_norm_sq_top, mul_one,
+    ENNReal.toReal_top, div_zero, zero_sub, sqrt_eq_rpow, ← rpow_mul (by positivity)]
+  congr 2
+  ring
+
+end GaussianNorm
 
 end TauCeti

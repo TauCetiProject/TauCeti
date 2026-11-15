@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Fourier.LpSpace
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+public import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
@@ -61,6 +63,9 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
   then `T_{m i} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.fourier_dilateLp`: the Fourier transform turns the normalized dilation `D_r`
+  of `L²` into `D_{r⁻¹}`, and `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`, its consequence
+  `T_m D_r = D_r T_{m (r⁻¹ • ·)}`: conjugating a multiplier by a dilation dilates its symbol.
 
 ## Kernels of multipliers
 
@@ -358,6 +363,92 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
+
+/-! ### Dilations -/
+
+section Dilation
+
+open Measure Module
+
+/-- `MeasureTheory.Lp.fourier_dilateLp` for the class of a Schwartz function. -/
+private theorem fourier_dilateLp_toLp {r : ℝ} (hr : 0 < r) (φ : 𝓢(E, F)) :
+    𝓕 (dilateLp volume 2 r hr (φ.toLp 2)) =
+      dilateLp volume 2 r⁻¹ (inv_pos.2 hr) (𝓕 (φ.toLp 2)) := by
+  set g : E → F := fun x ↦ r ^ (-((finrank ℝ E : ℝ) / 2)) • φ (r⁻¹ • x)
+  -- The dilated class is represented by the dilated Schwartz function `g`.
+  have hg : ⇑(dilateLp volume 2 r hr (φ.toLp 2)) =ᵐ[volume] g := by
+    filter_upwards [coeFn_dilateLp (μ := volume) (p := 2) hr (φ.toLp 2),
+      (quasiMeasurePreserving_smul volume (inv_ne_zero hr.ne')).ae_eq_comp (φ.coeFn_toLp 2)]
+      with x hx hy
+    simp only [Function.comp_apply] at hy
+    rw [hx, hy, ENNReal.toReal_ofNat]
+  have hg₂ : MemLp g 2 volume := (Lp.memLp _).ae_eq hg
+  have hg₁ : Integrable g volume := (φ.integrable.comp_smul (inv_ne_zero hr.ne')).smul _
+  have hD : dilateLp volume 2 r hr (φ.toLp 2) = hg₂.toLp g :=
+    Lp.ext (hg.trans hg₂.coeFn_toLp.symm)
+  rw [hD]
+  refine Lp.ext ?_
+  rw [SchwartzMap.toLp_fourier_eq]
+  filter_upwards [hg₁.coeFn_fourier_toLp hg₂,
+    coeFn_dilateLp (μ := volume) (p := 2) (inv_pos.2 hr) ((𝓕 φ).toLp 2),
+    (quasiMeasurePreserving_smul volume (inv_ne_zero (inv_pos.2 hr).ne')).ae_eq_comp
+      ((𝓕 φ).coeFn_toLp 2)] with ξ h₁ h₂ h₃
+  simp only [Function.comp_apply] at h₃
+  rw [h₁, h₂, h₃, ENNReal.toReal_ofNat]
+  have hc : 𝓕 g ξ = r ^ (-((finrank ℝ E : ℝ) / 2)) • 𝓕 (fun x ↦ φ (r⁻¹ • x)) ξ := by
+    simp only [g, Real.fourier_eq, smul_comm _ (r ^ (-((finrank ℝ E : ℝ) / 2))), integral_smul]
+  rw [hc, TauCeti.fourier_comp_smul, inv_inv, smul_smul]
+  congr 1
+  rw [abs_of_pos (pow_pos (inv_pos.2 hr) _), inv_pow, inv_inv, Real.inv_rpow hr.le,
+    Real.rpow_neg hr.le, inv_inv, ← Real.rpow_natCast, ← Real.rpow_neg_one, ← Real.rpow_mul hr.le,
+    ← Real.rpow_add hr]
+  ring_nf
+
+/-- **The `L²` Fourier transform of a dilation.** The Fourier transform on `L²` turns the normalized
+dilation by `r > 0` into the normalized dilation by `r⁻¹`: replacing `f` by
+`r ^ (-n/2) • f (r⁻¹ • ·)` replaces `𝓕 f` by `r ^ (n/2) • 𝓕 f (r • ·)`. -/
+theorem fourier_dilateLp {r : ℝ} (hr : 0 < r) (f : Lp F 2 (volume : Measure E)) :
+    𝓕 (dilateLp volume 2 r hr f) = dilateLp volume 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) := by
+  have hc₁ : Continuous fun f : Lp F 2 (volume : Measure E) ↦ 𝓕 (dilateLp volume 2 r hr f) :=
+    FourierTransform.continuous_fourier.comp (dilateLp volume 2 r hr).continuous
+  have hc₂ : Continuous fun f : Lp F 2 (volume : Measure E) ↦
+      dilateLp volume 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) :=
+    (dilateLp volume 2 r⁻¹ (inv_pos.2 hr)).continuous.comp FourierTransform.continuous_fourier
+  exact congrFun ((SchwartzMap.denseRange_toLpCLM (F := F) (E := E) (p := 2) (μ := volume)
+    ENNReal.ofNat_ne_top).equalizer hc₁ hc₂ (funext fun φ ↦ fourier_dilateLp_toLp hr φ)) f
+
+/-- The Fourier-side identity behind `MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`. -/
+private theorem coeFn_fourier_dilateLp_aux {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    ⇑(m • dilateLp volume 2 r⁻¹ (inv_pos.2 hr) (𝓕 f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      dilateLp volume 2 r⁻¹ (inv_pos.2 hr)
+        (dilateLp volume ∞ r hr m • 𝓕 f : Lp F 2 (volume : Measure E)) := by
+  have hq := quasiMeasurePreserving_smul (volume : Measure E) (inv_ne_zero (inv_pos.2 hr).ne')
+  filter_upwards [coeFn_lpSMul (r := 2) m (dilateLp volume 2 r⁻¹ (inv_pos.2 hr) (𝓕 f)),
+    coeFn_dilateLp (μ := volume) (p := 2) (inv_pos.2 hr) (𝓕 f),
+    coeFn_dilateLp (μ := volume) (p := 2) (inv_pos.2 hr)
+      ((dilateLp volume ∞ r hr m • 𝓕 f : Lp F 2 (volume : Measure E))),
+    hq.ae_eq_comp (coeFn_lpSMul (r := 2) (dilateLp volume ∞ r hr m) (𝓕 f)),
+    hq.ae_eq_comp (coeFn_dilateLp (μ := volume) (p := ∞) hr m)] with ξ h₁ h₂ h₃ h₄ h₅
+  simp only [Function.comp_apply] at h₄ h₅
+  rw [h₁, Pi.smul_apply', h₂, h₃, h₄, Pi.smul_apply', h₅, inv_inv, ENNReal.toReal_top, div_zero,
+    neg_zero, Real.rpow_zero, one_smul, inv_smul_smul₀ hr.ne', smul_comm]
+
+/-- **Conjugating a Fourier multiplier by a dilation dilates its symbol.** For `r > 0`, the
+multiplier with symbol `m` applied after the normalized dilation `D_r` of `L²` is `D_r` applied
+after the multiplier with the dilated symbol `m (r⁻¹ • ·)`, the dilation by `r` on `L^∞`. -/
+theorem fourierMultiplierCLM_dilateLp {r : ℝ} (hr : 0 < r) (m : Lp ℂ ∞ (volume : Measure E))
+    (f : Lp F 2 (volume : Measure E)) :
+    fourierMultiplierCLM F m (dilateLp volume 2 r hr f) =
+      dilateLp volume 2 r hr (fourierMultiplierCLM F (dilateLp volume ∞ r hr m) f) := by
+  have key : 𝓕 (fourierMultiplierCLM F m (dilateLp volume 2 r hr f)) =
+      𝓕 (dilateLp volume 2 r hr (fourierMultiplierCLM F (dilateLp volume ∞ r hr m) f)) := by
+    rw [fourier_fourierMultiplierCLM, fourier_dilateLp, fourier_dilateLp,
+      fourier_fourierMultiplierCLM]
+    exact Lp.ext (coeFn_fourier_dilateLp_aux hr m f)
+  exact (fourierTransformₗᵢ E F).injective key
+
+end Dilation
 
 end MeasureTheory.Lp
 
