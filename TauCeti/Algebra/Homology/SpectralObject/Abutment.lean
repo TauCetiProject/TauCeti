@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.Interval
+public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
 
 /-!
@@ -24,9 +25,11 @@ of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact
 
 The filtration is bounded below and exhaustive in degree `n` as soon as `H^n(⊥ ≤ q)` vanishes for
 small `q` (`isZero_abutmentFiltration`) and `H^n(q ≤ ⊤)` vanishes for large `q`
-(`isIso_abutmentFiltrationι`). When `F_a H^n` vanishes and every graded piece on `Ico a b`
-vanishes, `F_b H^n` and (once exhaustive at `b`) `X.abutment n` vanish
-(`isZero_abutmentFiltration_of_forall_isZero_cokernel`,
+(`isIso_abutmentFiltrationι`). If `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the
+abutment itself vanishes (`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
+`isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable morphisms in any index
+category. When `F_a H^n` vanishes and every graded piece on `Ico a b` vanishes, `F_b H^n` and (once
+exhaustive at `b`) `X.abutment n` vanish (`isZero_abutmentFiltration_of_forall_isZero_cokernel`,
 `isZero_abutment_of_forall_isZero_cokernel`).
 
 ## Main definitions
@@ -171,5 +174,15 @@ lemma isIso_abutmentFiltrationι {q n : ℤ}
   have : Epi (X.abutmentFiltrationι q n) :=
     @epi_of_epi_fac _ _ _ _ _ _ _ _ hepi (X.p_fromOpcycles _ _ _ (Subsingleton.elim _ _) n)
   exact isIso_of_mono_of_epi _
+
+/-- The abutment in degree `n` vanishes when `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some
+`b ≤ a`: the filtration then starts above where it ends. -/
+lemma isZero_abutment_of_le {a b n : ℤ} (hba : b ≤ a)
+    (ha : IsZero ((X.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
+    (hb : IsZero ((X.H n).obj (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤))))) :
+    IsZero (X.abutment n) :=
+  X.isZero_H_obj_mk₁_of_isZero_of_isZero (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+    (homOfLE (WithBotTop.coe_le_coe.mpr hba)) (homOfLE (le_top : (a : EInt) ≤ ⊤)) _ _ _
+    (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) n ha hb
 
 end CategoryTheory.Abelian.SpectralObject

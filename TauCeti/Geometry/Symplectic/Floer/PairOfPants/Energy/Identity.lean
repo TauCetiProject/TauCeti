@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
@@ -1158,10 +1159,8 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
   have hper : Periodic (fun t ↦ H q t (u (endChart q (s, t)))) 1 := fun t ↦ by
     simp only [endChart_add_one, hH q t]
-  have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-  rw [zero_add, show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num,
-    intervalIntegral.integral_of_le (by norm_num)] at h
-  rw [integral_Ico_eq_integral_Ioc, h]
+  rw [integral_Ico_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
+    hper.intervalIntegral_neg_div_two_eq]
 
 omit [IsManifold I ⊤ M] in
 /-- **The boundary term on one end, for a manifold target.** For `T ≥ 2` with `K = H_q dt` beyond
