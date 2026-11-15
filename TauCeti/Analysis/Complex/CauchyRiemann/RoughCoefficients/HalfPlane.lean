@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Complex.ReImTopology
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Variable
@@ -160,16 +159,16 @@ theorem mono (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η)
   refine ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ hφ => ?_⟩
   have hH : MeasurableSet {z : ℂ | 0 < z.im} := measurableSet_lt measurable_const measurable_im
   obtain ⟨ψ, hψ, -, hψ1, hψc, hψΩ⟩ := (φ.hasCompactSupport.isCompact.inter_right
-    (isClosed_le continuous_const continuous_im)).exists_contDiff_cutoff Ω.isOpen
+    (isClosed_le continuous_const continuous_im)).exists_contDiff_cutoff_eventuallyEq_one Ω.isOpen
     fun z hz => (hΩ ⟨φ.tsupport_subset hz.1, hz.2⟩).1
   let φ' : 𝓓(Ω, V) := ⟨fun z => ψ z • (φ : ℂ → V) z, hψ.smul φ.contDiff,
     hψc.smul_right, (tsupport_smul_subset_left _ _).trans hψΩ⟩
   have hφ' {z : ℂ} (hz : 0 < z.im) : (φ' : ℂ → V) =ᶠ[𝓝 z] φ := by
     by_cases hzφ : z ∈ tsupport (φ : ℂ → V)
-    · filter_upwards [mem_interior_iff_mem_nhds.1 (hψ1 ⟨hzφ, hz.le⟩)] with w hw
-      simp [φ', show ψ w = 1 from hw]
+    · filter_upwards [hψ1 z ⟨hzφ, hz.le⟩] with w hw
+      simp [φ', hw]
     · filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hzφ] with w hw
-      simp [φ', show (φ : ℂ → V) w = 0 from hw]
+      simp [φ', hw]
   have hadj {z : ℂ} (hz : z ∈ {z : ℂ | 0 < z.im}) :
       ⟪crFormalAdjoint J DJ S φ' z, ξ z⟫_ℝ = ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ := by
     simp only [crFormalAdjoint_def, (hφ' hz).fderiv_eq, (hφ' hz).eq_of_nhds]
@@ -415,6 +414,45 @@ theorem isWeakCRSolutionHalf_of_contDiffOn_of_mem (hJ : ContDiffOn ℝ 1 J Ω)
     IsWeakCRSolutionHalf q Ω Λ J (fderiv ℝ J) S ξ η :=
   isWeakCRSolutionHalf_of_contDiffOn hJ hS hξ hη fun s hs v hv => hJΛ s hs v hv _ (hξΛ s hs)
 
+omit [CompleteSpace V] in
+/-- The fundamental lemma along `ℝ ∩ Ω` for the admissible test functions: if `w` is continuous
+on `ℝ ∩ Ω` and `∫_ℝ ⟪φ(s), w(s)⟫ ds = 0` for every `φ ∈ 𝓓(Ω, V)` with values in `Λ` on `ℝ`, then
+`⟪Λ, w(s)⟫ = 0` on `ℝ ∩ Ω`. If `⟪v, w(s₀)⟫ ≠ 0`, test against a bump `ψ ⟪v, w(s₀)⟫ v` around
+`s₀`. -/
+private theorem inner_eq_zero_of_integral_inner_eq_zero {w : ℝ → V}
+    (hw : ContinuousOn w (((↑) : ℝ → ℂ) ⁻¹' Ω))
+    (h : ∀ φ : 𝓓(Ω, V), (∀ s : ℝ, (φ : ℂ → V) s ∈ Λ) → ∫ s : ℝ, ⟪(φ : ℂ → V) s, w s⟫_ℝ = 0) :
+    ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v ∈ Λ, ⟪v, w s⟫_ℝ = 0 := by
+  intro s₀ hs₀ v hv
+  set g : ℝ → ℝ := fun s => ⟪v, w s⟫_ℝ
+  have hO : IsOpen (((↑) : ℝ → ℂ) ⁻¹' Ω) := Ω.isOpen.preimage continuous_ofReal
+  have hg : ContinuousOn g (((↑) : ℝ → ℂ) ⁻¹' Ω) := continuousOn_const.inner hw
+  by_contra hc
+  have hpos : ∀ᶠ z in 𝓝 (s₀ : ℂ), 0 < g s₀ * g z.re :=
+    (continuousAt_const.mul ((hg.continuousAt (hO.mem_nhds hs₀)).comp_of_eq
+      continuous_re.continuousAt (ofReal_re s₀))).eventually (lt_mem_nhds (mul_self_pos.2 hc))
+  obtain ⟨ψ, hψΩ, hψc, hψ, hψr, hψ1⟩ :=
+    exists_contDiff_tsupport_subset (n := ⊤) (inter_mem (Ω.isOpen.mem_nhds hs₀) hpos)
+  let φ : 𝓓(Ω, V) := ⟨fun z => ψ z • g s₀ • v, hψ.smul contDiff_const, hψc.smul_right,
+    (tsupport_smul_subset_left _ _).trans (hψΩ.trans inter_subset_left)⟩
+  have hF (s : ℝ) : ⟪(φ : ℂ → V) s, w s⟫_ℝ = ψ s * (g s₀ * g s) := by
+    simp only [φ, TestFunction.coe_mk, real_inner_smul_left, g]
+  have hB := h φ fun s => Λ.smul_mem _ (Λ.smul_mem _ hv)
+  simp_rw [hF] at hB
+  refine (Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    (continuous_of_tsupport fun s hs => ?_)
+    (hψc.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding).mul_right
+    (fun s => ?_) (x := s₀) ?_).ne' hB
+  · have hsΩ : s ∈ ((↑) : ℝ → ℂ) ⁻¹' Ω := (hψΩ (tsupport_comp_subset_preimage ψ
+      continuous_ofReal (tsupport_mul_subset_left hs))).1
+    exact (hψ.continuous.comp continuous_ofReal).continuousAt.mul
+      (continuousAt_const.mul (hg.continuousAt (hO.mem_nhds hsΩ)))
+  · rw [Pi.zero_apply]
+    by_cases hs : ψ s = 0
+    · simp [hs]
+    · exact mul_nonneg (hψr (mem_range_self _)).1 (le_of_lt (hψΩ (subset_tsupport _ hs)).2)
+  · simpa [hψ1] using hc
+
 /-- **Classical solutions up to the boundary.** For `C¹` coefficients `J` on `Ω`, with
 `DJ = fderiv ℝ J`, continuous `S`, a `C¹` field `ξ` and a right-hand side `η` continuous on
 `Ω ∩ {0 < t}`, the weak equation up to the boundary is the classical equation
@@ -431,101 +469,24 @@ theorem isWeakCRSolutionHalf_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : C
   have hU : (Ω.upperHalf : Set ℂ) ⊆ Ω := fun z hz => (Opens.mem_upperHalf.1 hz).1
   have hint := (isWeakCRSolution_iff_of_contDiffOn (hJ.mono hU) (hS.mono hU) (hξ.mono hU)
     hη).1 h.isWeakCRSolution
-  refine ⟨hint, fun s₀ hs₀ v hv => ?_⟩
-  -- `g = ⟪v, J ξ⟫` along `ℝ`; if `g(s₀) ≠ 0`, test against a bump on which `g(s₀) g > 0`.
-  set g : ℝ → ℝ := fun s => ⟪v, J s (ξ s)⟫_ℝ
-  have hO : IsOpen (((↑) : ℝ → ℂ) ⁻¹' Ω) := Ω.isOpen.preimage continuous_ofReal
-  have hg : ContinuousOn g (((↑) : ℝ → ℂ) ⁻¹' Ω) :=
-    continuousOn_const.inner ((hJ.continuousOn.comp continuous_ofReal.continuousOn
-      (mapsTo_preimage _ _)).clm_apply
+  refine ⟨hint, inner_eq_zero_of_integral_inner_eq_zero
+    ((hJ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)).clm_apply
       (hξ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)))
-  by_contra hc
-  obtain ⟨ε, hε, hpos⟩ := Metric.eventually_nhds_iff.1
-    ((continuousAt_const.mul (hg.continuousAt (hO.mem_nhds hs₀))).eventually
-      (lt_mem_nhds (mul_self_pos.2 hc)))
-  obtain ⟨ε', hε', hball⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hs₀
-  have hδ : 0 < min ε ε' := lt_min hε hε'
-  let ψ : ContDiffBump (s₀ : ℂ) := ⟨min ε ε' / 4, min ε ε' / 2, by positivity, by linarith⟩
-  have hψΩ : tsupport ψ ⊆ Ω := by
-    rw [ψ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (by simp [ψ]; linarith [min_le_right ε ε'])).trans hball
-  let φ : 𝓓(Ω, V) := ⟨fun z => ψ z • g s₀ • v, ψ.contDiff.smul contDiff_const,
-    ψ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans hψΩ⟩
-  have hφΛ (s : ℝ) : (φ : ℂ → V) s ∈ Λ := Λ.smul_mem _ (Λ.smul_mem _ hv)
-  have hB : ∫ s : ℝ, ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = 0 := by
-    have h1 := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn
-      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
-    have h2 : ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z,
-        fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ =
-        ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ := by
-      refine setIntegral_congr_fun hH fun z hz => ?_
-      by_cases hzΩ : z ∈ (Ω : Set ℂ)
-      · rw [hint z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
-      · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
-    rw [h.setIntegral_inner_crFormalAdjoint φ hφΛ, h2] at h1
-    linarith
-  have hF (s : ℝ) : ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = ψ s * (g s₀ * g s) := by
-    simp only [φ, TestFunction.coe_mk, real_inner_smul_left, g]
-  simp_rw [hF] at hB
-  refine (Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
-    (continuous_of_tsupport fun s hs => ?_)
-    (ψ.hasCompactSupport.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding).mul_right
-    (fun s => ?_) (x := s₀) ?_).ne' hB
-  · have hsΩ : s ∈ ((↑) : ℝ → ℂ) ⁻¹' Ω :=
-      hψΩ (tsupport_comp_subset_preimage (ψ : ℂ → ℝ) continuous_ofReal
-        (tsupport_mul_subset_left hs))
-    exact (ψ.continuous.comp continuous_ofReal).continuousAt.mul
-      (continuousAt_const.mul (hg.continuousAt (hO.mem_nhds hsΩ)))
-  · change 0 ≤ ψ s * (g s₀ * g s)
-    by_cases hs : dist s s₀ < ε
-    · exact mul_nonneg ψ.nonneg (hpos hs).le
-    · rw [ψ.zero_of_le_dist (by
-        simp only [ψ, isometry_ofReal.dist_eq]; linarith [min_le_left ε ε']), zero_mul]
-  · simpa [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le)] using hc
+    fun φ hφΛ => ?_⟩
+  -- The boundary term of Green's formula is all that remains of the weak identity.
+  have h1 := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn
+    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
+  have h2 : ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z,
+      fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ =
+      ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ := by
+    refine setIntegral_congr_fun hH fun z hz => ?_
+    by_cases hzΩ : z ∈ (Ω : Set ℂ)
+    · rw [hint z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
+    · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
+  rw [h.setIntegral_inner_crFormalAdjoint φ hφΛ, h2] at h1
+  linarith
 
 /-! ### Checks: `J = i`, `S = 0` and the real boundary condition -/
-
-/-- An open set meeting `ℝ` contains the closed support of a smooth bump around a real point. -/
-private theorem exists_contDiffBump (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
-    ∃ (x : ℝ) (ψ : ContDiffBump (x : ℂ)), Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω := by
-  obtain ⟨x, hx⟩ := hΩ
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hx
-  exact ⟨x, ⟨ε / 4, ε / 2, by positivity, by linarith⟩,
-    (Metric.closedBall_subset_ball (by linarith)).trans hball⟩
-
-/-- The multiple `c ψ` of a smooth real bump `ψ` supported in `Ω`, as a test function. -/
-private def bumpTest {x : ℝ} (ψ : ContDiffBump (x : ℂ))
-    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) (c : ℂ) : 𝓓(Ω, ℂ) :=
-  ⟨fun z => c * (ψ z : ℂ), contDiff_const.mul (ofRealCLM.contDiff.comp ψ.contDiff),
-    (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero).mul_left,
-    (closure_minimal (fun z hz => Metric.ball_subset_closedBall (ψ.support_eq ▸
-      show ψ z ≠ 0 from fun h0 => hz (by simp [h0]))) Metric.isClosed_closedBall).trans hψ⟩
-
-private theorem bumpTest_apply {x : ℝ} (ψ : ContDiffBump (x : ℂ))
-    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) (c z : ℂ) :
-    (bumpTest ψ hψ c : ℂ → ℂ) z = c * ψ z := rfl
-
-/-- The boundary integral of a bump around a real point is positive. -/
-private theorem integral_bumpTest_pos {x : ℝ} (ψ : ContDiffBump (x : ℂ))
-    (hψ : Metric.closedBall (x : ℂ) ψ.rOut ⊆ Ω) :
-    0 < ∫ s : ℝ, ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
-  have h (s : ℝ) : ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re = ψ s := by simp [bumpTest_apply]
-  simp_rw [h]
-  refine (ψ.continuous.comp continuous_ofReal).integral_pos_of_hasCompactSupport_nonneg_ne_zero
-    (ψ.hasCompactSupport.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding)
-    (fun s => ψ.nonneg) (x := x) ?_
-  simp [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le)]
-
-/-- Green's formula of `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn` for
-`J = i`, `S = 0` and a constant field `c`: only the boundary term survives. -/
-private theorem setIntegral_inner_crFormalAdjoint_I_const (φ : 𝓓(Ω, ℂ)) (c : ℂ) :
-    ∫ z in {z : ℂ | 0 < z.im},
-        ⟪crFormalAdjoint (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 φ z, c⟫_ℝ =
-      ∫ s : ℝ, ⟪(φ : ℂ → ℂ) s, I * c⟫_ℝ := by
-  have h := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn (J := fun _ =>
-    I • ContinuousLinearMap.id ℝ ℂ) (S := 0) (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-    Ω.isOpen (contDiffOn_const (c := c)) contDiffOn_const continuousOn_const φ.tsupport_subset
-  simpa [fderiv_const] using h
 
 /-- **Check: `ξ = z` is a weak solution.** For `J = i`, `S = 0` and the real boundary condition,
 the identity `ξ(z) = z` is holomorphic and real on `ℝ`, so it solves the homogeneous weak equation
@@ -545,37 +506,38 @@ theorem isWeakCRSolutionHalf_id :
 /-- **Check: the boundary condition is encoded by the test functions.** For `J = i`, `S = 0` and
 the real boundary condition on an open set meeting `ℝ`, the constant `ξ = i` solves
 `∂_s ξ + i ∂_t ξ = 0` in the interior but is not real on `ℝ`, and it is not a weak solution up to
-the boundary: for a real bump `φ = χ` the boundary term is `⟪χ, i · i⟫ = -χ`, with nonzero
-integral. -/
+the boundary: the boundary condition of `TauCeti.isWeakCRSolutionHalf_iff_of_contDiffOn` fails,
+since `⟪1, i · i⟫ = -1`. -/
 theorem not_isWeakCRSolutionHalf_const_I (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
     ¬ IsWeakCRSolutionHalf q Ω (Submodule.span ℝ {(1 : ℂ)})
       (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 (fun _ => I) 0 := by
   intro h
-  obtain ⟨x, ψ, hψ⟩ := exists_contDiffBump hΩ
-  have hφ (s : ℝ) : (bumpTest ψ hψ 1 : ℂ → ℂ) s ∈ Submodule.span ℝ {(1 : ℂ)} :=
-    Submodule.mem_span_singleton.2 ⟨((bumpTest ψ hψ 1 : ℂ → ℂ) s).re, by simp [bumpTest_apply]⟩
-  have h1 := h.setIntegral_inner_crFormalAdjoint _ hφ
-  rw [setIntegral_inner_crFormalAdjoint_I_const] at h1
-  have h2 (s : ℝ) : ⟪(bumpTest ψ hψ 1 : ℂ → ℂ) s, I * I⟫_ℝ =
-      -((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
-    simp [Complex.inner]
-  simp only [h2, integral_neg, Pi.zero_apply, inner_zero_right, integral_zero, neg_eq_zero] at h1
-  exact (integral_bumpTest_pos ψ hψ).ne' h1
+  obtain ⟨s, hs⟩ := hΩ
+  have h' := ((isWeakCRSolutionHalf_iff_of_contDiffOn (Λ := Submodule.span ℝ {(1 : ℂ)})
+    (J := fun _ => I • ContinuousLinearMap.id ℝ ℂ) (S := 0) (ξ := fun _ => I) (η := 0)
+    contDiffOn_const continuousOn_const contDiffOn_const continuousOn_const).1
+    (by simpa [fderiv_const] using h)).2 s hs 1 (Submodule.mem_span_singleton_self 1)
+  simp at h'
 
 /-- **Check: the test functions must be restricted on `ℝ`.** For `J = i` and `S = 0` on an open
 set meeting `ℝ`, the constant `ξ = 1` is holomorphic and real on `ℝ`, but the weak identity
-`∫ ⟪D* φ, 1⟫ = 0` fails for a test function `φ = i χ`, which is not real on `ℝ`: the boundary
-term is `∫_ℝ ⟪i χ, i⟫ = ∫_ℝ χ ≠ 0`. -/
+`∫ ⟪D* φ, 1⟫ = 0` fails for some test function: otherwise `ξ = 1` would be a weak solution for
+the boundary subspace `⊤`, and the boundary condition of
+`TauCeti.isWeakCRSolutionHalf_iff_of_contDiffOn` would give `⟪i, i · 1⟫ = 0`. -/
 theorem exists_setIntegral_inner_crFormalAdjoint_one_ne_zero (hΩ : ∃ s : ℝ, (s : ℂ) ∈ Ω) :
     ∃ φ : 𝓓(Ω, ℂ), ∫ z in {z : ℂ | 0 < z.im},
       ⟪crFormalAdjoint (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 φ z, 1⟫_ℝ ≠ 0 := by
-  obtain ⟨x, ψ, hψ⟩ := exists_contDiffBump hΩ
-  refine ⟨bumpTest ψ hψ I, ?_⟩
-  rw [setIntegral_inner_crFormalAdjoint_I_const]
-  have h (s : ℝ) : ⟪(bumpTest ψ hψ I : ℂ → ℂ) s, I * 1⟫_ℝ =
-      ((bumpTest ψ hψ 1 : ℂ → ℂ) s).re := by
-    simp [Complex.inner, bumpTest_apply]
-  simp only [h]
-  exact (integral_bumpTest_pos ψ hψ).ne'
+  by_contra! h0
+  obtain ⟨s, hs⟩ := hΩ
+  have hweak : IsWeakCRSolutionHalf 1 Ω ⊤ (fun _ => I • ContinuousLinearMap.id ℝ ℂ)
+      (fderiv ℝ fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 (fun _ => 1) 0 := by
+    refine ⟨memLpLoc_const 1, locallyIntegrableOn_zero, fun φ _ =>
+      ⟨integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn (φ.contDiff.of_le (by simp))
+        φ.hasCompactSupport Ω.isOpen contDiffOn_const contDiffOn_const continuousOn_const
+        φ.tsupport_subset, ?_⟩⟩
+    simpa [fderiv_const] using h0 φ
+  have h' := ((isWeakCRSolutionHalf_iff_of_contDiffOn contDiffOn_const continuousOn_const
+    contDiffOn_const continuousOn_const).1 hweak).2 s hs I Submodule.mem_top
+  simp at h'
 
 end TauCeti
