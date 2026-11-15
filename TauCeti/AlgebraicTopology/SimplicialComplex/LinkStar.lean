@@ -61,6 +61,10 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
+* `PreAbstractSimplicialComplex.closedStar_singleton_inf_deletion_singleton`: away from a vertex
+  itself, its closed star is its link.
+* `PreAbstractSimplicialComplex.map_closedStar` and `PreAbstractSimplicialComplex.map_link`:
+  injective vertex maps commute with closed stars and links.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -395,6 +399,59 @@ theorem isCone_deletion (h : IsCone K v) (hσ : σ.Nonempty) (hv : v ∉ σ) :
       hω.2 ((Finset.subset_insert_iff_of_notMem hv).mp hsub)⟩
 
 end IsCone
+
+/-- Away from a vertex itself, its closed star is its link. -/
+@[simp]
+theorem closedStar_singleton_inf_deletion_singleton {v : ι} :
+    closedStar K {v} ⊓ deletion K {v} = link K {v} := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_inf, mem_closedStar, mem_deletion, mem_link, singleton_subset_iff,
+    disjoint_singleton_right]
+  tauto
+
+/-- An injective vertex map commutes with taking the closed star of a finset. -/
+@[simp]
+theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (closedStar K σ).map f = closedStar (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hρσ⟩ := mem_closedStar_nonempty.mp hρ
+    refine mem_closedStar_nonempty.mpr ⟨hne.image f, ?_⟩
+    rw [← image_union]
+    exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · intro hω
+    obtain ⟨hωK, hωσ⟩ := mem_closedStar.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    obtain ⟨τ, hτK, hτ⟩ := mem_map_iff.mp hωσ
+    rw [← image_union] at hτ
+    obtain rfl := (image_inj hf).mp hτ
+    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, hτK⟩, rfl⟩
+
+/-- An injective vertex map commutes with taking the link of a finset. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hdis, hρσ⟩ := mem_link_nonempty.mp hρ
+    refine mem_link_nonempty.mpr ⟨hne.image f, ?_, ?_⟩
+    · refine disjoint_left.mpr fun y hyρ hyσ => ?_
+      obtain ⟨x₁, hx₁, rfl⟩ := mem_image.mp hyρ
+      obtain ⟨x₂, hx₂, hfeq⟩ := mem_image.mp hyσ
+      exact disjoint_left.mp hdis hx₁ (hf hfeq ▸ hx₂)
+    · rw [← image_union]
+      exact mem_map_iff.mpr ⟨ρ ∪ σ, hρσ, rfl⟩
+  · intro hω
+    obtain ⟨hωK, hdis, hωσ⟩ := mem_link.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    obtain ⟨τ, hτK, hτ⟩ := mem_map_iff.mp hωσ
+    rw [← image_union] at hτ
+    obtain rfl := (image_inj hf).mp hτ
+    refine mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, ?_, hτK⟩, rfl⟩
+    exact disjoint_left.mpr fun x hxρ hxσ =>
+      disjoint_left.mp hdis (mem_image_of_mem f hxρ) (mem_image_of_mem f hxσ)
 
 end PreAbstractSimplicialComplex
 

@@ -34,6 +34,8 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 * `mem_join_iff`: membership is characterized by the two projected faces.
 * `disjSum_mem_join_iff`: a disjoint union is a face exactly when each nonempty component is.
 * `join_mono`: join is monotone in both arguments.
+* `bot_join` and `join_bot`: joining with the void complex embeds the remaining factor into the
+  other summand.
 -/
 
 public section
@@ -158,6 +160,39 @@ theorem map_join_swap [DecidableEq α] [DecidableEq β] :
     · simpa only [mem_join_iff, Finset.image_nonempty, Finset.toLeft_image_swap,
         Finset.toRight_image_swap, and_comm, and_left_comm] using hτ
     · simp [Finset.image_image]
+
+/-- Joining the void complex on the left embeds the right factor into the right summand. -/
+@[simp]
+theorem bot_join [DecidableEq α] [DecidableEq β] :
+    join (⊥ : PreAbstractSimplicialComplex α) L = L.map Sum.inr := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · intro hτ
+    obtain ⟨hne, hl, hr⟩ := mem_join_iff.mp hτ
+    have hl' : τ.toLeft = ∅ := hl.resolve_right False.elim
+    have hr' : τ.toRight ∈ L := hr.resolve_left fun h =>
+      hne.ne_empty (by
+        rw [← toLeft_disjSum_toRight (u := τ), hl', h, empty_disjSum, map_empty])
+    refine mem_map_iff.mpr ⟨τ.toRight, hr', ?_⟩
+    ext (a | b)
+    · simp only [mem_image, reduceCtorEq, and_false, exists_false, false_iff, ← mem_toLeft, hl']
+      exact notMem_empty a
+    · simp
+  · rintro ⟨t, ht, rfl⟩
+    refine mem_join_iff.mpr ⟨(L.isRelLowerSet_faces ht).1.image _, Or.inl ?_, Or.inr ?_⟩
+    · ext a
+      simp
+    · have heq : (t.image inr : Finset (α ⊕ β)).toRight = t := by
+        ext b
+        simp
+      rwa [heq]
+
+/-- Joining the void complex on the right embeds the left factor into the left summand. -/
+@[simp]
+theorem join_bot [DecidableEq α] [DecidableEq β] :
+    join K (⊥ : PreAbstractSimplicialComplex β) = K.map Sum.inl := by
+  rw [← map_join_swap (K := ⊥) (L := K), bot_join, map_map]
+  rfl
 
 end PreAbstractSimplicialComplex
 
