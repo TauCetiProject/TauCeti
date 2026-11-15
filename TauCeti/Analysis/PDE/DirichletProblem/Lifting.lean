@@ -11,16 +11,20 @@ import TauCeti.Analysis.InnerProductSpace.Variational.Lifting
 /-!
 # The Dirichlet solution operator with boundary liftings
 
-For a bounded energy form coercive on `H¹₀(Ω)`, `dirichletLiftingL` sends a pair `(g, ℓ)`
-to the weak solution with boundary lifting `g ∈ H¹(Ω)` and forcing `ℓ ∈ H⁻¹(Ω)`.
+For a bounded energy form coercive on `H¹₀(Ω)`, `dirichletSolutionWithLiftingL` sends a pair
+`(g, ℓ)` to the weak solution with boundary lifting `g ∈ H¹(Ω)` and forcing `ℓ ∈ H⁻¹(Ω)`.
 It is a continuous linear map, with bounds in terms of the coercivity constant and the norm
 of the energy form. No boundedness or boundary regularity of the open domain is needed.
 
 The boundary condition is `u - g ∈ H¹₀(Ω)`. In particular, the solution depends only on the
 class of the lifting modulo `H¹₀(Ω)`, not on its values in the interior. The characterization
-`dirichletLiftingL_eq_iff` allows the operator to be used without unfolding its construction.
+`dirichletSolutionWithLiftingL_eq_iff` allows the operator to be used without unfolding it.
 For zero forcing its action on liftings is an idempotent projection onto weakly homogeneous
-solutions.
+solutions. More generally, a solved lifting can replace the original lifting for any forcing.
+
+For operator-norm expressions, activate the local instance `liftingOperatorNorm`, as well as
+the usual Sobolev normed-space instances. This shortcut prevents instance synthesis from
+expanding the nested Sobolev subtypes.
 
 The construction uses `IsCoercive.solutionWithLifting`, the Lax–Milgram solution for the
 correction `u - g` with forcing `ℓ - B(g, ·)`.
@@ -46,102 +50,144 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 
-private theorem exists_lifting_operator
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
-    ∃ T : (W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2,
-      ∀ g ℓ, T (g, ℓ) - g ∈ w1p0Submodule mu Omega 2 ∧
-        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (T (g, ℓ)) v = ℓ v := by
-  let S : W1p0 mu Omega 2 →L[ℝ] W1p mu Omega 2 :=
-    (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
-  -- Identify the two bundled restrictions explicitly, rather than unfolding their instances
-  -- while elaborating the abstract lifting theorem on the nested Sobolev subtypes.
-  have hB : (energyFormH1L hcoeff).bilinearComp S S = energyFormH1L0 hcoeff := by
-    ext u v
-    simp [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply, energyFormH1L0_apply, S]
-  have h : IsCoercive ((energyFormH1L hcoeff).bilinearComp S S) := hB.symm ▸ hcoercive
-  refine ⟨h.solutionWithLifting, fun g ℓ ↦ ?_⟩
-  obtain ⟨w, hw⟩ := h.solutionWithLifting_sub_mem_range g ℓ
-  constructor
-  · rw [← hw]
-    exact w.2
-  · intro v
-    rw [← energyFormH1L_apply hcoeff]
-    exact h.apply_solutionWithLifting g ℓ v
+/-- Shortcut for norm synthesis on operators with Sobolev-dual input, avoiding expansion
+of the nested Sobolev subtypes. -/
+noncomputable local instance forcingNormedAddCommGroup :
+    NormedAddCommGroup (StrongDual ℝ (W1p0 mu Omega 2)) := inferInstance
+
+/-- Shortcut for the real normed space structure on the forcing space. -/
+noncomputable local instance forcingNormedSpace :
+    NormedSpace ℝ (StrongDual ℝ (W1p0 mu Omega 2)) := inferInstance
+
+/-- The Sobolev topology from its seminormed structure, kept syntactically aligned for
+operator-norm instance synthesis. -/
+noncomputable local instance liftingTopology : TopologicalSpace (W1p mu Omega 2) :=
+  (inferInstance : SeminormedAddCommGroup (W1p mu Omega 2)).toUniformSpace.toTopologicalSpace
+
+/-- Shortcut for the canonical operator norm on joint lifting and forcing maps. -/
+noncomputable local instance liftingOperatorNorm :
+    Norm ((W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2) := by
+  infer_instance
 
 variable (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
   (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
 
+private theorem liftingForm_eq :
+    (energyFormH1L hcoeff).bilinearComp
+      (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
+      (w1p0Submodule mu Omega 2).toSubmodule.subtypeL = energyFormH1L0 hcoeff := by
+  ext u v
+  simp [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply, energyFormH1L0_apply]
+
+include hcoercive in
+private theorem liftingCoercive :
+    IsCoercive ((energyFormH1L hcoeff).bilinearComp
+      (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
+      (w1p0Submodule mu Omega 2).toSubmodule.subtypeL) := by
+  exact (liftingForm_eq hcoeff).symm ▸ hcoercive
+
+-- Choosing an explicitly characterized witness keeps the generated equation lemma small:
+-- a direct specialization makes its type-checking expand the nested Sobolev instances.
+private theorem exists_lifting_operator :
+    ∃ T : (W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2,
+      T = (liftingCoercive hcoeff hcoercive).solutionWithLifting :=
+  ⟨_, rfl⟩
+
 /-- The bounded linear Dirichlet solution map for an `H¹` boundary lifting and `H⁻¹` forcing.
-It is characterized by `dirichletLiftingL_eq_iff`. -/
-def dirichletLiftingL :
+It is characterized by `dirichletSolutionWithLiftingL_eq_iff`. -/
+def dirichletSolutionWithLiftingL :
     (W1p mu Omega 2 × StrongDual ℝ (W1p0 mu Omega 2)) →L[ℝ] W1p mu Omega 2 :=
   (exists_lifting_operator hcoeff hcoercive).choose
 
+private theorem liftingOperator_eq :
+    dirichletSolutionWithLiftingL hcoeff hcoercive =
+      (liftingCoercive hcoeff hcoercive).solutionWithLifting :=
+  (exists_lifting_operator hcoeff hcoercive).choose_spec
+
+/-- The solution is the lifting plus its zero-boundary Lax–Milgram correction. -/
+theorem dirichletSolutionWithLiftingL_apply (g : W1p mu Omega 2)
+    (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) =
+      g + (hcoercive.solutionOfFunctional
+        (ℓ - (energyFormH1L hcoeff g).comp
+          (w1p0Submodule mu Omega 2).toSubmodule.subtypeL) : W1p mu Omega 2) := by
+  simpa only [liftingOperator_eq, liftingForm_eq, Submodule.subtypeL_apply] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_apply g ℓ
+
 /-- The solution has the prescribed boundary class modulo the zero-boundary Sobolev space. -/
 @[simp]
-theorem dirichletLiftingL_sub_mem (g : W1p mu Omega 2)
+theorem dirichletSolutionWithLiftingL_sub_mem (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
-    dirichletLiftingL hcoeff hcoercive (g, ℓ) - g ∈ w1p0Submodule mu Omega 2 :=
-  ((exists_lifting_operator hcoeff hcoercive).choose_spec g ℓ).1
+    dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) - g ∈ w1p0Submodule mu Omega 2 := by
+  obtain ⟨w, hw⟩ := (liftingCoercive hcoeff hcoercive).solutionWithLifting_sub_mem_range g ℓ
+  rw [liftingOperator_eq, ← hw]
+  exact w.2
 
 /-- The Dirichlet solution operator satisfies the weak equation against every `H¹₀` test. -/
 @[simp]
-theorem energyFormH1_dirichletLiftingL (g : W1p mu Omega 2)
+theorem energyFormH1_dirichletSolutionWithLiftingL (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) (v : W1p0 mu Omega 2) :
-    energyFormH1 a b c (dirichletLiftingL hcoeff hcoercive (g, ℓ)) v = ℓ v :=
-  ((exists_lifting_operator hcoeff hcoercive).choose_spec g ℓ).2 v
+    energyFormH1 a b c (dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ)) v = ℓ v := by
+  rw [← energyFormH1L_apply hcoeff, liftingOperator_eq]
+  exact (liftingCoercive hcoeff hcoercive).apply_solutionWithLifting g ℓ v
 
 /-- Characterization of the solution operator by its boundary class and weak equation. -/
-theorem dirichletLiftingL_eq_iff {g u : W1p mu Omega 2}
+theorem dirichletSolutionWithLiftingL_eq_iff {g u : W1p mu Omega 2}
     {ℓ : StrongDual ℝ (W1p0 mu Omega 2)} :
-    dirichletLiftingL hcoeff hcoercive (g, ℓ) = u ↔
+    dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) = u ↔
       u - g ∈ w1p0Submodule mu Omega 2 ∧
         ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v = ℓ v := by
-  constructor
-  · rintro rfl
-    exact ⟨dirichletLiftingL_sub_mem hcoeff hcoercive g ℓ,
-      energyFormH1_dirichletLiftingL hcoeff hcoercive g ℓ⟩
-  · intro hu
-    exact (existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff hcoercive g ℓ).unique
-      ⟨dirichletLiftingL_sub_mem hcoeff hcoercive g ℓ,
-        energyFormH1_dirichletLiftingL hcoeff hcoercive g ℓ⟩ hu
+  simpa [liftingOperator_eq, Set.mem_range, energyFormH1L_apply] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_eq_iff (g := g) (u := u) (ℓ := ℓ)
 
 /-- Two liftings give the same solution for a fixed forcing exactly when they represent the
 same boundary class. -/
-theorem dirichletLiftingL_eq_iff_sub_mem (g g' : W1p mu Omega 2)
+theorem dirichletSolutionWithLiftingL_eq_iff_sub_mem (g g' : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
-    dirichletLiftingL hcoeff hcoercive (g, ℓ) =
-        dirichletLiftingL hcoeff hcoercive (g', ℓ) ↔
+    dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) =
+        dirichletSolutionWithLiftingL hcoeff hcoercive (g', ℓ) ↔
       g - g' ∈ w1p0Submodule mu Omega 2 := by
-  constructor
-  · intro h
-    have h₁ := dirichletLiftingL_sub_mem hcoeff hcoercive g ℓ
-    have h₂ := dirichletLiftingL_sub_mem hcoeff hcoercive g' ℓ
-    rw [h] at h₁
-    have heq : g - g' =
-        (dirichletLiftingL hcoeff hcoercive (g', ℓ) - g') -
-          (dirichletLiftingL hcoeff hcoercive (g', ℓ) - g) := by abel
-    rw [heq]
-    exact (w1p0Submodule mu Omega 2).sub_mem h₂ h₁
-  · intro h
-    apply (dirichletLiftingL_eq_iff hcoeff hcoercive).2
-    refine ⟨?_, energyFormH1_dirichletLiftingL hcoeff hcoercive g' ℓ⟩
-    have heq : dirichletLiftingL hcoeff hcoercive (g', ℓ) - g =
-        (dirichletLiftingL hcoeff hcoercive (g', ℓ) - g') - (g - g') := by abel
-    rw [heq]
-    exact (w1p0Submodule mu Omega 2).sub_mem
-      (dirichletLiftingL_sub_mem hcoeff hcoercive g' ℓ) h
+  simpa [liftingOperator_eq, Set.mem_range] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_eq_iff_sub_mem_range g g' ℓ
 
-/-- Solving the homogeneous equation twice does not change its solution: the zero-forcing
-boundary solution map is a projection. -/
+/-- A solved lifting can replace the original lifting, independently of either forcing. -/
 @[simp]
-theorem dirichletLiftingL_idempotent (g : W1p mu Omega 2) :
-    dirichletLiftingL hcoeff hcoercive
-      (dirichletLiftingL hcoeff hcoercive (g, 0), 0) =
-        dirichletLiftingL hcoeff hcoercive (g, 0) := by
-  apply (dirichletLiftingL_eq_iff hcoeff hcoercive).2
-  exact ⟨by simp, energyFormH1_dirichletLiftingL hcoeff hcoercive g 0⟩
+theorem dirichletSolutionWithLiftingL_dirichletSolutionWithLiftingL (g : W1p mu Omega 2)
+    (ℓ' ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive
+      (dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ'), ℓ) =
+        dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) := by
+  simpa only [liftingOperator_eq] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_solutionWithLifting g ℓ' ℓ
+
+/-- Zero boundary lifting recovers the Lax–Milgram solution on `H¹₀`. -/
+@[simp]
+theorem dirichletSolutionWithLiftingL_zero (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive (0, ℓ) =
+      (hcoercive.solutionOfFunctional ℓ : W1p mu Omega 2) := by
+  simpa only [liftingOperator_eq, liftingForm_eq, Submodule.subtypeL_apply] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_zero ℓ
+
+/-- Every zero-boundary lifting gives the homogeneous-boundary solution. -/
+@[simp]
+theorem dirichletSolutionWithLiftingL_coe (w : W1p0 mu Omega 2)
+    (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive ((w : W1p mu Omega 2), ℓ) =
+      (hcoercive.solutionOfFunctional ℓ : W1p mu Omega 2) := by
+  simpa only [liftingOperator_eq, liftingForm_eq, Submodule.subtypeL_apply] using
+    (liftingCoercive hcoeff hcoercive).solutionWithLifting_map w ℓ
+
+/-- With zero lifting and `L²` forcing, the solution is `weakSolutionDirichlet`. -/
+theorem dirichletSolutionWithLiftingL_zero_dirichletForcing (f : Lp ℝ 2 (mu.restrict Omega)) :
+    dirichletSolutionWithLiftingL hcoeff hcoercive (0, dirichletForcing f) =
+      (weakSolutionDirichlet hcoeff hcoercive f : W1p mu Omega 2) := by
+  rw [dirichletSolutionWithLiftingL_zero]
+  congr 1
+  apply eq_weakSolutionDirichlet hcoeff hcoercive
+  rw [isWeakSolutionDirichlet_iff_inner]
+  intro v
+  rw [← dirichletForcing_apply, ← energyFormH1L0_apply hcoeff]
+  exact hcoercive.apply_solutionOfFunctional_eq (dirichletForcing f) v
 
 variable {C : ℝ} (hC : 0 < C)
   (hlower : ∀ w : W1p0 mu Omega 2,
@@ -150,21 +196,39 @@ variable {C : ℝ} (hC : 0 < C)
 include hC hlower
 
 /-- Quantitative bound for the correction to the boundary lifting. -/
-theorem norm_dirichletLiftingL_sub_le (g : W1p mu Omega 2)
+theorem norm_dirichletSolutionWithLiftingL_sub_le (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
-    ‖dirichletLiftingL hcoeff hcoercive (g, ℓ) - g‖ ≤
+    ‖dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) - g‖ ≤
       (‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖) / C :=
   norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff hC hlower
-    (dirichletLiftingL_sub_mem hcoeff hcoercive g ℓ)
-    (energyFormH1_dirichletLiftingL hcoeff hcoercive g ℓ)
+    (dirichletSolutionWithLiftingL_sub_mem hcoeff hcoercive g ℓ)
+    (energyFormH1_dirichletSolutionWithLiftingL hcoeff hcoercive g ℓ)
 
 /-- The solution norm is bounded in terms of the lifting, forcing, form norm, and coercivity. -/
-theorem norm_dirichletLiftingL_le (g : W1p mu Omega 2)
+theorem norm_dirichletSolutionWithLiftingL_apply_le (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
-    ‖dirichletLiftingL hcoeff hcoercive (g, ℓ)‖ ≤
+    ‖dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ)‖ ≤
       ‖g‖ + (‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖) / C := by
   calc
-    _ ≤ ‖dirichletLiftingL hcoeff hcoercive (g, ℓ) - g‖ + ‖g‖ := norm_le_norm_sub_add _ _
-    _ ≤ _ := by linarith [norm_dirichletLiftingL_sub_le hcoeff hcoercive hC hlower g ℓ]
+    _ ≤ ‖dirichletSolutionWithLiftingL hcoeff hcoercive (g, ℓ) - g‖ + ‖g‖ :=
+      norm_le_norm_sub_add _ _
+    _ ≤ _ := by
+      linarith [norm_dirichletSolutionWithLiftingL_sub_le hcoeff hcoercive hC hlower g ℓ]
+
+/-- Operator-norm bound for the joint boundary-lifting and forcing solution map. -/
+theorem norm_dirichletSolutionWithLiftingL_le :
+    ‖dirichletSolutionWithLiftingL hcoeff hcoercive‖ ≤
+      1 + (1 + ‖energyFormH1L hcoeff‖) / C := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro p
+  calc
+    _ ≤ ‖p.1‖ + (‖p.2‖ + ‖energyFormH1L hcoeff‖ * ‖p.1‖) / C :=
+      norm_dirichletSolutionWithLiftingL_apply_le hcoeff hcoercive hC hlower p.1 p.2
+    _ ≤ ‖p‖ + (‖p‖ + ‖energyFormH1L hcoeff‖ * ‖p‖) / C := by
+      gcongr
+      · exact norm_fst_le p
+      · exact norm_snd_le p
+      · exact norm_fst_le p
+    _ = _ := by ring
 
 end TauCeti.PDE
