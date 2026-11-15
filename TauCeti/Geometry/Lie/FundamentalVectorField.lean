@@ -48,6 +48,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
+* `TauCeti.mvfderiv_fundamentalVectorField_eq_zero`: a `G`-invariant function is stationary along
+  every fundamental vector field.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mulInvariantExp_smul_smul_eq_iff`: `exp (t ξ) • x = x` for every `t` exactly when
@@ -179,6 +181,19 @@ theorem mfderiv_fundamentalVectorField_of_map_smul {E'' : Type*} [NormedAddCommG
   have hcomp : (f ∘ fun g : G => g • x) = fun g : G => g • f x := funext hfx
   rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp]
   exact (mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ).symm
+
+/-- **Invariant functions are stationary along fundamental vector fields.** If a vector-valued
+function `f` satisfies `f (g • x) = f x` for every `g`, and `f` and the orbit map of `x` are
+differentiable, then the derivative of `f` at `x` vanishes on `ξ_M(x)`. -/
+theorem mvfderiv_fundamentalVectorField_eq_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : M → F} {x : M} (hf : MDifferentiableAt I' 𝓘(𝕜, F) f x)
+    (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1) (hfx : ∀ g : G, f (g • x) = f x)
+    (ξ : GroupLieAlgebra I G) : mvfderiv I' f x (fundamentalVectorField I' ξ x) = 0 := by
+  have hcomp : (f ∘ fun g : G => g • x) = fun _ => f x := funext hfx
+  rw [fundamentalVectorField_apply,
+    ← mvfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ, hcomp, mvfderiv_const]
+  -- The zero continuous linear map evaluates to zero by definition.
+  rfl
 
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/
