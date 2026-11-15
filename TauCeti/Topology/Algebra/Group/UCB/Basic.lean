@@ -100,6 +100,9 @@ variable {β : Type*} [PseudoMetricSpace β]
 
 /-- A function on a topological group is uniformly continuous for the right uniformity exactly
 when `f (u * x)` is uniformly close to `f x` for all `u` near `1`. -/
+@[to_additive uniformContinuous_rightUniformSpace_add_iff
+  /-- A function on a topological additive group is uniformly continuous for the right uniformity
+  exactly when `f (u + x)` is uniformly close to `f x` for all `u` near `0`. -/]
 theorem uniformContinuous_rightUniformSpace_iff (f : G → β) :
     (letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
      UniformContinuous f) ↔
@@ -116,6 +119,8 @@ theorem uniformContinuous_rightUniformSpace_iff (f : G → β) :
 
 /-- A function on a topological group whose values `f (u * x)` are uniformly close to `f x` for
 all `u` near `1` is continuous. -/
+@[to_additive /-- A function on a topological additive group whose values `f (u + x)` are uniformly
+close to `f x` for all `u` near `0` is continuous. -/]
 theorem continuous_of_forall_eventually_dist_mul_lt {f : G → β}
     (h : ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, dist (f (u * x)) (f x) < ε) : Continuous f :=
   letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
