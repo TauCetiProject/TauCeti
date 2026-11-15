@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # The star operation on `Lp`
@@ -27,40 +27,6 @@ public section
 noncomputable section
 
 open scoped ENNReal
-
-namespace LinearIsometry
-
-variable {α 𝕜₁ 𝕜₂ E F : Type*} {m : MeasurableSpace α}
-  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
-  [NormedAddCommGroup E] [NormedSpace 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- Postcomposition of `Lᵖ` classes by a semilinear isometry is a semilinear isometry. -/
-def compLpL (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α) (L : E →ₛₗᵢ[σ] F) :
-    MeasureTheory.Lp E p μ →ₛₗᵢ[σ] MeasureTheory.Lp F p μ where
-  toLinearMap := (L.toContinuousLinearMap.compLpL p μ).toLinearMap
-  norm_map' f := by
-    rw [MeasureTheory.Lp.norm_def, MeasureTheory.Lp.norm_def]
-    congr 1
-    refine MeasureTheory.eLpNorm_congr_norm_ae
-      (MeasureTheory.Lp.aestronglyMeasurable _) (MeasureTheory.Lp.aestronglyMeasurable f) ?_
-    filter_upwards [L.toContinuousLinearMap.coeFn_compLpL f] with x hx
-    rw [ContinuousLinearMap.coe_coe, hx, coe_toContinuousLinearMap, L.norm_map]
-
-/-- The continuous linear map underlying `LinearIsometry.compLpL` is
-`ContinuousLinearMap.compLpL`. -/
-@[simp]
-theorem toContinuousLinearMap_compLpL (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
-    (L : E →ₛₗᵢ[σ] F) :
-    (L.compLpL p μ).toContinuousLinearMap = L.toContinuousLinearMap.compLpL p μ :=
-  (rfl)
-
-/-- `LinearIsometry.compLpL` acts almost everywhere pointwise. -/
-theorem coeFn_compLpL (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
-    (L : E →ₛₗᵢ[σ] F) (f : MeasureTheory.Lp E p μ) :
-    L.compLpL p μ f =ᵐ[μ] fun x ↦ L (f x) :=
-  L.toContinuousLinearMap.coeFn_compLpL f
-
-end LinearIsometry
 
 namespace MeasureTheory.Lp
 
@@ -98,68 +64,33 @@ end StarGroup
 
 section SelfAdjoint
 
-variable {α : Type*} {m : MeasurableSpace α} (𝕜 : Type*) [RCLike 𝕜]
-  (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure α)
+variable {α 𝕜 : Type*} {m : MeasurableSpace α} [RCLike 𝕜]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure α}
 
-/-- Isometric scalar inclusion `Lp ℝ p μ →ₗᵢ[ℝ] Lp 𝕜 p μ` for an `RCLike` scalar field `𝕜`. -/
-def ofRealLI : Lp ℝ p μ →ₗᵢ[ℝ] Lp 𝕜 p μ :=
-  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).compLpL p μ
-
-/-- Pointwise real-part operator `Lp 𝕜 p μ →L[ℝ] Lp ℝ p μ`. -/
-def reCLM : Lp 𝕜 p μ →L[ℝ] Lp ℝ p μ :=
-  (RCLike.reCLM : 𝕜 →L[ℝ] ℝ).compLpL p μ
-
-/-- Pointwise imaginary-part operator `Lp 𝕜 p μ →L[ℝ] Lp ℝ p μ`. -/
-def imCLM : Lp 𝕜 p μ →L[ℝ] Lp ℝ p μ :=
-  (RCLike.imCLM : 𝕜 →L[ℝ] ℝ).compLpL p μ
-
-variable {𝕜 p μ}
-
-/-- `Lp.ofRealLI` casts representatives from `ℝ` to `𝕜` almost everywhere. -/
-theorem coeFn_ofRealLI (f : Lp ℝ p μ) :
-    ofRealLI 𝕜 p μ f =ᵐ[μ] fun x ↦ (f x : 𝕜) :=
-  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).coeFn_compLpL p μ f
-
-/-- `Lp.reCLM` takes the real part almost everywhere. -/
-theorem coeFn_reCLM (f : Lp 𝕜 p μ) :
-    reCLM 𝕜 p μ f =ᵐ[μ] fun x ↦ RCLike.re (f x) :=
-  (RCLike.reCLM : 𝕜 →L[ℝ] ℝ).coeFn_compLpL f
-
-/-- `Lp.imCLM` takes the imaginary part almost everywhere. -/
-theorem coeFn_imCLM (f : Lp 𝕜 p μ) :
-    imCLM 𝕜 p μ f =ᵐ[μ] fun x ↦ RCLike.im (f x) :=
-  (RCLike.imCLM : 𝕜 →L[ℝ] ℝ).coeFn_compLpL f
-
-/-- Real part is a left inverse to `Lp.ofRealLI`. -/
+/-- `Lp.ofRealLI` is fixed by the pointwise `star` involution. -/
 @[simp]
-theorem reCLM_ofRealLI (f : Lp ℝ p μ) : reCLM 𝕜 p μ (ofRealLI 𝕜 p μ f) = f := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_reCLM (ofRealLI 𝕜 p μ f), coeFn_ofRealLI (𝕜 := 𝕜) f] with x h₁ h₂
-  rw [h₁, h₂, RCLike.ofReal_re]
-
-/-- Imaginary part vanishes on `Lp.ofRealLI`. -/
-@[simp]
-theorem imCLM_ofRealLI (f : Lp ℝ p μ) : imCLM 𝕜 p μ (ofRealLI 𝕜 p μ f) = 0 := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_imCLM (ofRealLI 𝕜 p μ f), coeFn_ofRealLI (𝕜 := 𝕜) f,
-    coeFn_zero ℝ p μ] with x h₁ h₂ h₀
-  rw [h₁, h₂, h₀, Pi.zero_apply, RCLike.ofReal_im]
-
-/-- Every `f : Lp 𝕜 p μ` decomposes into real and imaginary parts in `Lp ℝ p μ`. -/
-theorem ofRealLI_reCLM_add_I_smul_imCLM (f : Lp 𝕜 p μ) :
-    ofRealLI 𝕜 p μ (reCLM 𝕜 p μ f) + (RCLike.I : 𝕜) • ofRealLI 𝕜 p μ (imCLM 𝕜 p μ f) = f := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_add (ofRealLI 𝕜 p μ (reCLM 𝕜 p μ f))
-      ((RCLike.I : 𝕜) • ofRealLI 𝕜 p μ (imCLM 𝕜 p μ f)),
-    coeFn_ofRealLI (𝕜 := 𝕜) (reCLM 𝕜 p μ f), coeFn_reCLM f,
-    coeFn_smul (RCLike.I : 𝕜) (ofRealLI 𝕜 p μ (imCLM 𝕜 p μ f)),
-    coeFn_ofRealLI (𝕜 := 𝕜) (imCLM 𝕜 p μ f), coeFn_imCLM f] with x hadd hre₁ hre₂ hsmul him₁ him₂
-  rw [hadd, Pi.add_apply, hre₁, hre₂, hsmul, Pi.smul_apply, him₁, him₂, smul_eq_mul, mul_comm,
-    RCLike.re_add_im]
+theorem star_ofRealLI (f : Lp ℝ p μ) : star (ofRealLI 𝕜 p μ f) = ofRealLI 𝕜 p μ f :=
+  star_eq_self_of_ae_eq_ofReal (coeFn_ofRealLI f)
 
 /-- Every real `Lᵖ` class is self-adjoint when embedded in `Lp 𝕜 p μ`. -/
 theorem isSelfAdjoint_ofRealLI (f : Lp ℝ p μ) : IsSelfAdjoint (ofRealLI 𝕜 p μ f) :=
-  star_eq_self_of_ae_eq_ofReal (coeFn_ofRealLI f)
+  star_ofRealLI f
+
+/-- Taking the real part of `star f` recovers the real part of `f`. -/
+@[simp]
+theorem reCLM_star (f : Lp 𝕜 p μ) : reCLM 𝕜 p μ (star f) = reCLM 𝕜 p μ f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_reCLM (star f), coeFn_star f, coeFn_reCLM f] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+/-- Taking the imaginary part of `star f` negates the imaginary part of `f`. -/
+@[simp]
+theorem imCLM_star (f : Lp 𝕜 p μ) : imCLM 𝕜 p μ (star f) = -imCLM 𝕜 p μ f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_imCLM (star f), coeFn_star f, coeFn_neg (imCLM 𝕜 p μ f),
+    coeFn_imCLM f] with x h₁ h₂ h₃ h₄
+  rw [h₃, Pi.neg_apply, h₄]
+  simp [h₁, h₂]
 
 /-- Every self-adjoint class in `Lp 𝕜 p μ` is the image of its real part under `Lp.ofRealLI`. -/
 theorem ofRealLI_reCLM_of_mem_selfAdjoint (f : selfAdjoint (Lp 𝕜 p μ)) :

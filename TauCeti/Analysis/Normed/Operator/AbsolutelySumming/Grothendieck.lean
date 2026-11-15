@@ -258,11 +258,8 @@ variable {K α 𝕜 : Type*} [TopologicalSpace K] [RCLike 𝕜]
 and the inverse Gelfand isomorphism `Φ⁻¹ : C(characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) ≃ₗᵢ[𝕜] Lp 𝕜 ∞ μ`. -/
 private noncomputable def integralGelfandBilin (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ) :
     C(K, 𝕜) →ₗ[𝕜] C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) →ₗ[𝕜] 𝕜 :=
-  LinearMap.mk₂ 𝕜
-    (fun f h ↦ (mul 𝕜 𝕜).lpPairing μ 1 ∞ (T f) ((Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h))
-    (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp [(Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm.map_add])
-    (fun _ _ _ ↦ by simp [(Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm.map_smul])
+  ((mul 𝕜 𝕜).lpPairing μ 1 ∞).toLinearMap₁₂.compl₁₂
+    T.toLinearMap (Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm.toLinearEquiv.toLinearMap
 
 /-- Evaluating `integralGelfandBilin T` integrates `T f` against
 `(gelfandLinearIsometryEquiv 𝕜 μ).symm h`. -/
@@ -270,7 +267,8 @@ private theorem integralGelfandBilin_apply (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 
     (h : C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜)) :
     integralGelfandBilin T f h =
       ∫ x, T f x * ((Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h) x ∂μ := by
-  rw [integralGelfandBilin, LinearMap.mk₂_apply, lpPairing_mul_eq_integral]
+  rw [integralGelfandBilin, LinearMap.compl₁₂_apply, toLinearMap₁₂_apply_apply_apply]
+  exact lpPairing_mul_eq_integral (𝕜 := 𝕜) (T f) ((Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h)
 
 variable [CompactSpace K]
 

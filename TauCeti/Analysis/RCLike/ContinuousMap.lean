@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.RCLike.ContinuousMap
-public import Mathlib.Topology.ContinuousMap.Star
 
 /-!
 # Self-adjoint continuous maps into `ℝ` or `ℂ`
@@ -54,6 +53,11 @@ def selfAdjointEquiv : selfAdjoint C(X, 𝕜) ≃ₗ[ℝ] C(X, ℝ) where
 
 variable {X 𝕜}
 
+/-- `selfAdjointEquiv` sends a self-adjoint map `f` to `f.1.rclikeToReal`. -/
+theorem selfAdjointEquiv_eq_rclikeToReal (f : selfAdjoint C(X, 𝕜)) :
+    selfAdjointEquiv X 𝕜 f = f.1.rclikeToReal :=
+  (rfl)
+
 /-- Evaluating `selfAdjointEquiv` takes the real part pointwise. -/
 @[simp]
 theorem selfAdjointEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
@@ -66,10 +70,18 @@ theorem coe_selfAdjointEquiv_symm_apply (f : C(X, ℝ)) :
     ((selfAdjointEquiv X 𝕜).symm f : C(X, 𝕜)) = f.realToRCLike 𝕜 :=
   (rfl)
 
+/-- Embedding `selfAdjointEquiv X 𝕜 f` via `ContinuousMap.realToRCLike` recovers `f.1`. -/
+@[simp]
+theorem realToRCLike_selfAdjointEquiv (f : selfAdjoint C(X, 𝕜)) :
+    (selfAdjointEquiv X 𝕜 f).realToRCLike 𝕜 = f.1 := by
+  rw [selfAdjointEquiv_eq_rclikeToReal]
+  exact IsSelfAdjoint.realToRCLike_rclikeToReal f.2
+
 /-- Casting `selfAdjointEquiv X 𝕜 f x` back to `𝕜` recovers `f.1 x`. -/
 theorem ofReal_selfAdjointEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
-    (selfAdjointEquiv X 𝕜 f x : 𝕜) = f.1 x :=
-  congr($(IsSelfAdjoint.realToRCLike_rclikeToReal f.2) x)
+    (selfAdjointEquiv X 𝕜 f x : 𝕜) = f.1 x := by
+  simpa only [realToRCLike_apply, rclikeToReal_apply, selfAdjointEquiv_apply] using
+    congr($(IsSelfAdjoint.realToRCLike_rclikeToReal f.2) x)
 
 /-- `selfAdjointEquiv` preserves the multiplicative identity. -/
 @[simp]
@@ -127,6 +139,11 @@ theorem toLinearEquiv_selfAdjointLinearIsometryEquiv :
     (selfAdjointLinearIsometryEquiv X 𝕜).toLinearEquiv = selfAdjointEquiv X 𝕜 :=
   (rfl)
 
+/-- `selfAdjointLinearIsometryEquiv` sends a self-adjoint map `f` to `f.1.rclikeToReal`. -/
+theorem selfAdjointLinearIsometryEquiv_eq_rclikeToReal (f : selfAdjoint C(X, 𝕜)) :
+    selfAdjointLinearIsometryEquiv X 𝕜 f = f.1.rclikeToReal :=
+  (rfl)
+
 /-- Evaluating `selfAdjointLinearIsometryEquiv` takes the real part pointwise. -/
 @[simp]
 theorem selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
@@ -139,6 +156,13 @@ theorem selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X
 theorem coe_selfAdjointLinearIsometryEquiv_symm_apply (f : C(X, ℝ)) :
     ((selfAdjointLinearIsometryEquiv X 𝕜).symm f : C(X, 𝕜)) = f.realToRCLike 𝕜 :=
   (rfl)
+
+/-- Embedding `selfAdjointLinearIsometryEquiv X 𝕜 f` via `ContinuousMap.realToRCLike` recovers
+`f.1`. -/
+@[simp]
+theorem realToRCLike_selfAdjointLinearIsometryEquiv (f : selfAdjoint C(X, 𝕜)) :
+    (selfAdjointLinearIsometryEquiv X 𝕜 f).realToRCLike 𝕜 = f.1 :=
+  realToRCLike_selfAdjointEquiv f
 
 /-- Casting `selfAdjointLinearIsometryEquiv X 𝕜 f x` back to `𝕜` recovers `f.1 x`. -/
 theorem ofReal_selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint C(X, 𝕜)) (x : X) :
