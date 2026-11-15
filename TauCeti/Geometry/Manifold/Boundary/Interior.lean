@@ -219,11 +219,38 @@ instance [LocallyCompactSpace M] : LocallyCompactSpace (ManifoldInterior I M) :=
 
 attribute [local instance] BoundarylessModel.interiorChartedSpace
 
+/-! The next three lemmas are the `BoundarylessModel` chart lemmas, restated for the interior
+carrier. Each `BoundarylessModel` lemma applies as it stands, because `ManifoldInterior I M` is
+`BoundarylessModel I (I.interiorOpens M)` and `homeomorph` is
+`(BoundarylessModel.homeomorph I (I.interiorOpens M)).symm`, both by definition. They are private
+because their statements identify the carrier with `I.interiorOpens M`, which only typechecks
+where the definition of `ManifoldInterior` is visible. -/
+
+/-- The chart of the interior at `x` is the interior chart built from the chart of the open
+subset `I.interior M` at `homeomorph x`. -/
+private theorem chartAt_eq (x : ManifoldInterior I M) :
+    chartAt E x =
+      BoundarylessModel.interiorChart I (chartAt H (homeomorph x)) (chart_mem_atlas H _) :=
+  BoundarylessModel.interiorChartAt_eq I x
+
+/-- The extended chart of the interior at `x` is the extended chart of the open subset
+`I.interior M` at `homeomorph x`. -/
+private theorem extChartAt_eq (x : ManifoldInterior I M) :
+    extChartAt 𝓘(𝕜, E) x = extChartAt I (homeomorph x) :=
+  BoundarylessModel.interiorExtChartAt_eq I x
+
+/-- The inverse of the chart of the interior at `x` is the inverse of the extended chart of the
+open subset `I.interior M` at `homeomorph x`. -/
+private theorem homeomorph_chartAt_symm (x : ManifoldInterior I M) (v : E) :
+    homeomorph ((chartAt E x).symm v) = (extChartAt I (homeomorph x)).symm v :=
+  BoundarylessModel.interiorChartAt_symm_apply I x v
+
 /-- The chart of the interior at `x` is the extended chart of `M` at `x`. -/
 @[simp]
 theorem chartAt_apply (x y : ManifoldInterior I M) :
     chartAt E x y = extChartAt I x.val y.val := by
   rw [← coe_homeomorph, ← coe_homeomorph, ← (I.interiorOpens M).extChartAt_apply, homeomorph]
+  -- The interior carrier is `BoundarylessModel I (I.interiorOpens M)` by definition.
   exact BoundarylessModel.interiorChartAt_apply I x y
 
 /-- The extended chart of the interior at `x` is the extended chart of `M` at `x`. -/
@@ -236,10 +263,7 @@ of the extended chart of `M` at `x`. -/
 @[simp]
 theorem chartAt_source (x : ManifoldInterior I M) :
     (chartAt E x).source = val ⁻¹' (extChartAt I x.val).source := by
-  have h : chartAt E x =
-      BoundarylessModel.interiorChart I (chartAt H (homeomorph x)) (chart_mem_atlas H _) :=
-    BoundarylessModel.interiorChartAt_eq I x
-  rw [h, BoundarylessModel.interiorChart_source, Opens.chartAt_eq,
+  rw [chartAt_eq, BoundarylessModel.interiorChart_source, Opens.chartAt_eq,
     OpenPartialHomeomorph.subtypeRestr_source, _root_.extChartAt_source, coe_homeomorph,
     ← preimage_comp]
   -- This is the definition of `val`, through the definition of `homeomorph`.
@@ -255,9 +279,7 @@ theorem extChartAt_source (x : ManifoldInterior I M) :
 of the extended chart of `M` at `x` lying in the interior of the range of `I`. -/
 theorem extChartAt_target (x : ManifoldInterior I M) :
     (extChartAt 𝓘(𝕜, E) x).target = (extChartAt I x.val).target ∩ interior (range I) := by
-  have h : extChartAt 𝓘(𝕜, E) x = extChartAt I (homeomorph x) :=
-    BoundarylessModel.interiorExtChartAt_eq I x
-  rw [h, (I.interiorOpens M).extChartAt_target_eq, coe_homeomorph]
+  rw [extChartAt_eq, (I.interiorOpens M).extChartAt_target_eq, coe_homeomorph]
   ext v
   simp only [mem_inter_iff, mem_preimage, SetLike.mem_coe, ModelWithCorners.mem_interiorOpens]
   -- At a point of the chart target, interiority is read off from the model coordinates.
@@ -273,14 +295,10 @@ of `M` at `x`, on the target of the former. -/
 theorem val_extChartAt_symm (x : ManifoldInterior I M) {v : E}
     (hv : v ∈ (extChartAt 𝓘(𝕜, E) x).target) :
     ((extChartAt 𝓘(𝕜, E) x).symm v).val = (extChartAt I x.val).symm v := by
-  have h : extChartAt 𝓘(𝕜, E) x = extChartAt I (homeomorph x) :=
-    BoundarylessModel.interiorExtChartAt_eq I x
-  have hc : v ∈ (extChartAt I (homeomorph x)).target := by rwa [h] at hv
-  have hs : homeomorph ((chartAt E x).symm v) = (extChartAt I (homeomorph x)).symm v :=
-    BoundarylessModel.interiorChartAt_symm_apply I x v
+  have hc : v ∈ (extChartAt I (homeomorph x)).target := by rwa [extChartAt_eq] at hv
   calc ((extChartAt 𝓘(𝕜, E) x).symm v).val = (homeomorph ((chartAt E x).symm v) : M) := by
         rw [coe_homeomorph, extChartAt_coe_symm, comp_apply, modelWithCornersSelf_coe_symm, id]
-    _ = (extChartAt I (homeomorph x)).symm v := congrArg Subtype.val hs
+    _ = (extChartAt I (homeomorph x)).symm v := congrArg Subtype.val (homeomorph_chartAt_symm x v)
     _ = (extChartAt I x.val).symm v := by
         rw [(I.interiorOpens M).coe_extChartAt_symm_apply (homeomorph x) hc, coe_homeomorph]
 
