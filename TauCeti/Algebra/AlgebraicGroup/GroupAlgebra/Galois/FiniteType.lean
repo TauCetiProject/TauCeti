@@ -7,11 +7,9 @@ module
 
 public import Mathlib.RingTheory.Adjoin.Tower
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
-import Mathlib.FieldTheory.Fixed
 import Mathlib.RingTheory.Jacobson.Ring
-import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.BaseChange
+import TauCeti.RingTheory.Invariant.Free
 
 /-!
 # Finiteness of descended group algebras
@@ -19,15 +17,15 @@ import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.BaseChange
 Let `L/k` be a field extension with finite automorphism group and let an abelian group `M` carry
 an integral representation of `Aut(L/k)`. The simultaneous semilinear action on
 `L[Multiplicative M]` has an invariant `k`-subalgebra. This file proves that the split group
-algebra is finite as a module over that invariant algebra: by Galois descent the invariant
-elements span it over `L`, and `L` is finite over the fixed field of its automorphism group.
-When `L/k` is finite type and `M` is finitely generated, the Artin--Tate lemma then shows that the
-invariant algebra is finite type over `k`.
+algebra is finite as a module over that invariant algebra: the automorphism group acts freely on
+it, since every nontrivial automorphism already moves a scalar of `L`, so the free-action
+finiteness theorem `TauCeti.MulSemiringAction.moduleFinite` applies. When `L/k` is finite type and
+`M` is finitely generated, the Artin--Tate lemma then shows that the invariant algebra is finite
+type over `k`.
 
 Finite type is necessary before the invariant algebra can serve as the coordinate algebra of the
 torus descended from the split torus `D(M)`. Its scalar extension to `L` is identified with
-`L[Multiplicative M]` in `TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.BaseChange`, whose
-surjectivity half is the descent step used here.
+`L[Multiplicative M]` in `TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.BaseChange`.
 
 ## Main declarations
 
@@ -58,44 +56,34 @@ variable {k : Type u_k} {L : Type u_L} {M : Type u_M}
 variable [Field k] [Field L] [Algebra k L] [AddCommGroup M]
 
 /-- The split group algebra is finite as a module over its invariant algebra when the
-automorphism group of `L/k` is finite. By Galois descent the invariant elements span the group
-algebra over `L`, and `L` is finite over the fixed field of its automorphism group, which lies in
-the invariant algebra. Neither `L/k` nor the exponent group needs to be finitely generated. -/
+automorphism group of `L/k` is finite. Neither `L/k` nor the exponent group needs to be finitely
+generated. -/
 instance instModuleFiniteGroupAlgebraGroupAlgebraInvariants
     [Finite (L ≃ₐ[k] L)] (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Module.Finite (groupAlgebraInvariants rho)
       (MonoidAlgebra L (Multiplicative M)) := by
-  obtain ⟨n, s, hs⟩ :=
-    Module.Finite.exists_fin (R := FixedPoints.subfield (L ≃ₐ[k] L) L) (M := L)
-  let N : Submodule (groupAlgebraInvariants rho) (MonoidAlgebra L (Multiplicative M)) :=
-    Submodule.span _ (Set.range fun i ↦ algebraMap L (MonoidAlgebra L (Multiplicative M)) (s i))
-  -- Every `L`-multiple of an invariant element lies in `N`, spanned by a generating family of `L`
-  -- over the fixed field.
-  have hmem (a : L) (x : groupAlgebraInvariants rho) :
-      a • (x : MonoidAlgebra L (Multiplicative M)) ∈ N := by
-    have ha : a ∈ Submodule.span (FixedPoints.subfield (L ≃ₐ[k] L) L) (Set.range s) :=
-      hs ▸ Submodule.mem_top
-    induction ha using Submodule.span_induction generalizing x with
-    | mem a ha =>
-      obtain ⟨i, rfl⟩ := ha
-      rw [Algebra.smul_def, mul_comm]
-      exact N.smul_mem x (Submodule.subset_span ⟨i, rfl⟩)
-    | zero => simp
-    | add a b _ _ ha hb =>
-      rw [add_smul]
-      exact N.add_mem (ha x) (hb x)
-    | smul c a _ ha =>
-      have hc : algebraMap L (MonoidAlgebra L (Multiplicative M)) c ∈ groupAlgebraInvariants rho :=
-        algebraMap_mem_groupAlgebraInvariants rho c fun σ ↦ c.2 σ
-      have := ha (⟨_, hc⟩ * x)
-      rwa [Subalgebra.coe_mul, ← Algebra.smul_def, smul_smul, mul_comm] at this
-  suffices hN : N = ⊤ from ⟨Submodule.fg_def.mpr ⟨_, Set.finite_range _, hN⟩⟩
-  rw [eq_top_iff]
-  rintro y -
-  obtain ⟨t, rfl⟩ := liftEquiv_groupAlgebraInvariants_surjective rho y
-  induction t using TensorProduct.inductionOn with
-  | tmul a x => simpa using hmem a x
-  | add t u ht hu => simpa only [map_add] using N.add_mem ht hu
+  let _ : SMul (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+    ⟨fun σ x ↦ groupAlgebraAction rho σ x⟩
+  let _ : MulSemiringAction (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+    MulSemiringAction.compHom _ (groupAlgebraAction rho)
+  have action_apply (σ : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
+      σ • x = groupAlgebraAction rho σ x := rfl
+  have : Algebra.IsInvariant (groupAlgebraInvariants rho)
+      (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L) :=
+    ⟨fun x hx ↦ ⟨⟨x, (mem_groupAlgebraInvariants_iff rho x).mpr fun σ ↦ by
+      simpa only [action_apply] using hx σ⟩, rfl⟩⟩
+  -- The action is free: a nontrivial automorphism moves some scalar `a`, and the displacement
+  -- `σ a - a` of that scalar is a unit of the group algebra.
+  refine TauCeti.MulSemiringAction.moduleFinite (G := L ≃ₐ[k] L) fun σ hσ ↦ ?_
+  obtain ⟨a, ha⟩ : ∃ a : L, σ a ≠ a := by
+    by_contra! h
+    exact hσ (AlgEquiv.ext h)
+  have hsub : σ • algebraMap L (MonoidAlgebra L (Multiplicative M)) a - algebraMap L _ a =
+      algebraMap L _ (σ a - a) := by
+    rw [action_apply, Algebra.algebraMap_eq_smul_one, groupAlgebraAction_smul, map_one,
+      ← sub_smul, ← Algebra.algebraMap_eq_smul_one]
+  exact Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span ⟨_, hsub⟩)
+    ((sub_ne_zero.mpr ha).isUnit.map _)
 
 /-- For a finite-type field extension, the invariant algebra of the automorphism action on the
 group algebra of a finitely generated abelian group is finite type over the ground field. -/
