@@ -48,6 +48,8 @@ of the wave front set of a complex distribution onto the base is exactly its sin
 
 * `Distribution.exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt` and
   `Distribution.exists_contDiff_apply_eq_integral_of_forall_decay`: the two steps above.
+* `Distribution.hasSum_fourier_mul_localFourier`: the pairing of `T` with a test function `φ` as
+  the lattice series `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) F (-m)`.
 * `Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt`: `T` is smooth near a
   point of `Ω` exactly when it is microlocally smooth there in every nonzero direction.
 * `Distribution.fst_image_waveFrontSet`: the projection of the wave front set is the singular
@@ -112,7 +114,7 @@ none of whose nonzero vectors translates `tsupport χ` into a set meeting it. If
 support of a real test function `φ`, then
 `T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T (χ e_(-m))`: expand `φ` in its Fourier series along
 `L` in the modulated cutoffs `χ e_(-m)` and pair with `T`. -/
-private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ))
+theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ))
     (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
     (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℝ)}
     (hφ : EqOn (χ : E → ℂ) 1 (support φ)) :
