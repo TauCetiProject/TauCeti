@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # The cochain complex of a balanced tensor product of DG modules
@@ -179,7 +180,7 @@ noncomputable def cochainComplexMap (f : M →ₗ[R] M') (g : N →ₗ[R] N')
     (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
     cochainComplex hM hN ⟶ cochainComplex hM' hN' :=
   gradedCochainComplexHom (map f g hf hg) (isHomogeneous_map_grading f g hf hg hf₀ hg₀)
-    (differential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd)
+    fun _ x ↦ LinearMap.congr_fun (differential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd) x
 
 variable (f : M →ₗ[R] M') (g : N →ₗ[R] N')
   (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)

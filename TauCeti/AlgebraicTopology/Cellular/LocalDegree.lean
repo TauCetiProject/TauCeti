@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # Cellular incidence numbers as local degrees of attaching maps
@@ -63,6 +61,9 @@ local homology is constant along convex sets in a chart
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
+* `TauCeti.cellularIncidence_eq_zero_of_not_mem_cellFrontier`: the incidence number of an
+  `(n + 1)`-cell `j` on an `n`-cell `i` vanishes when the attaching map of `j` misses a point of
+  the open cell of `i`.
 * `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass` and
   `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_ite`: for a `0`-cell, the local class
   is the class of its point, and the class of any other point of the `0`-skeleton is zero.
@@ -162,7 +163,7 @@ lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplS
 /-- **Other cells vanish in the local homology at a point of an open cell.** On the summand of a
 cell `k ≠ i`, the map from the cellular chain group to the local homology at a point `x` of the
 open cell `i` is zero: the closed cell of `k` misses `x`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne
     {i k : cell C n} (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i) (hk : k ≠ i) :
     Sigma.ι (fun _ : cell C n ↦ R) k ≫ (cellularChainGroupIso C R n).inv ≫
@@ -333,14 +334,8 @@ private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set
     cellChart_apply, ULift.norm_up]
 
 private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
-  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) := by
-    have h : closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) =
-        Homeomorph.ulift ⁻¹' closedBall 0 (cellRadius C x i) := by
-      ext u
-      rw [mem_preimage, mem_closedBall_zero_iff, mem_closedBall_zero_iff]
-      rfl
-    rw [h, Homeomorph.isCompact_preimage]
-    exact isCompact_closedBall _ _
+  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) :=
+    isCompact_closedBall _ _
   exact (hK.image_of_continuousOn ((cellChart C i).continuousOn_symm.mono
     (closedBall_subset_target_cellChart C x hx))).isClosed
 
@@ -530,9 +525,7 @@ theorem isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToC
     rfl
   have := isIso_diskBoundaryPairToDiskSphere.{w} n
   have : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToDiskSphere.{w} n) R k) :=
-    ⟨TopPair.singularHomologyMap (inv (diskBoundaryPairToDiskSphere.{w} n)) R k,
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩
+    inferInstance
   have := isIso_singularHomologyMap_diskSphere C R x hx k
   have := isIso_singularHomologyMap_cellDiskHom C R x hx k
   have := isIso_singularHomologyMap_compl_cellBall C R x hx k
@@ -560,7 +553,7 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     singularHomology₀Section R x ≫
         (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
       cellLocalClass C R x hx := by
-  let pt : TopCat.disk.{w} 0 := ULift.up ⟨0, by simp⟩
+  let pt : TopCat.disk.{w} 0 := diskCenter 0
   -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
   have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
       singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
@@ -718,17 +711,12 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   have hzero :
       SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n ≫
         P.singularHomologyπ (ModuleCat.of R R) n = 0 := by
-    let Q := TopPair.ofSubset (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-    have hmaps : Set.MapsTo (cellAttachingMap j) (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-        ({x}ᶜ : Set (skeletonObj C (n + 1))) := fun _ hz ↦ hz.elim
-    have hf : Q.singularHomologyMap (TopPair.ofSubsetMap (cellAttachingMap j) hmaps)
-        (ModuleCat.of R R) n = 0 :=
-      TopPair.singularHomologyMap_eq_zero_of_fac _ (ModuleCat.of R R) g
-        (hfac.trans (TopPair.ofSubsetMap_fst _ _).symm) n
-    have hπ := TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
-      (f := TopPair.ofSubsetMap (cellAttachingMap j) hmaps) n
-    rw [TopPair.ofSubsetMap_fst, hf, comp_zero] at hπ
-    exact hπ
+    have h := SSet.homologyMap (TopCat.toSSet.map g) (ModuleCat.of R R) n ≫=
+      P.homologyMap_comp_singularHomologyπ (ModuleCat.of R R) n
+    rw [comp_zero] at h
+    refine Eq.trans ?_ ((Category.assoc _ _ _).trans h)
+    rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
+    rfl
   rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
   erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
   rfl
