@@ -70,9 +70,11 @@ to `f` locally uniformly on an open set `U ⊆ ℂ`, then so do their iterated d
 field `𝕜` below `ℂ`; for `𝕜 = ℝ`, the convergence is `C^∞` on compact subsets of `U`. -/
 theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNormedField 𝕜]
     [NormedAlgebra 𝕜 ℂ] [NormedSpace 𝕜 E] [IsScalarTower 𝕜 ℂ E] {ι : Type*} {l : Filter ι}
-    [l.NeBot] {F : ι → ℂ → E} {f : ℂ → E} {U : Set ℂ} (hf : TendstoLocallyUniformlyOn F f l U)
+    {F : ι → ℂ → E} {f : ℂ → E} {U : Set ℂ} (hf : TendstoLocallyUniformlyOn F f l U)
     (hF : ∀ᶠ n in l, DifferentiableOn ℂ (F n) U) (hU : IsOpen U) (k : ℕ) :
     TendstoLocallyUniformlyOn (fun n => iteratedFDeriv 𝕜 k (F n)) (iteratedFDeriv 𝕜 k f) l U := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact fun _ _ _ _ => ⟨Set.univ, Filter.univ_mem, Filter.eventually_bot⟩
   have hT : UniformContinuous fun x : E =>
       (ContinuousMultilinearMap.piFieldEquiv ℂ (Fin k) E x).restrictScalars 𝕜 :=
     ((ContinuousMultilinearMap.restrictScalarsₗᵢ 𝕜).isometry.comp

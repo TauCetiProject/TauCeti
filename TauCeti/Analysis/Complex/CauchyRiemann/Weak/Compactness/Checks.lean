@@ -24,7 +24,8 @@ theorem is `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiema
 which needs only the image bound, since for `J = i` Cauchy's estimates give the gradient bound.
 This file restates the examples of
 `TauCeti.Analysis.Complex.HolomorphicFunctions.CompactnessExamples` in the language of that
-theorem: each sequence solves the weak equation, its derivatives are the real Fréchet derivatives
+theorem: each sequence solves the weak equation (the constant ones by
+`TauCeti.isWeakCauchyRiemannOn_const`), its derivatives are the real Fréchet derivatives
 `fderiv ℝ`, and the failing hypothesis is stated in the form the theorem uses.
 
 * Closedness of `L`. On every `U ⊆ ℂ`, in particular on the half-disc, the constant maps
@@ -69,7 +70,7 @@ open Complex Filter Metric MeasureTheory Set Topology TopologicalSpace
 
 namespace TauCeti
 
-variable {p : ENNReal} {Ω : Opens ℂ} {U : Set ℂ}
+variable {p : ENNReal} {Ω : Opens ℂ}
 
 namespace HolomorphicCompactness
 
@@ -77,14 +78,9 @@ local notation "Jᵢ" => fun (_ : ℂ) (_ : ℂ) => I • ContinuousLinearMap.id
 
 /-! ### Closedness of the boundary condition -/
 
-/-- The constant maps `1 / (m + 2)` solve the homogeneous weak equation for `J = i` on every
-set, in particular on the half-disc. -/
-theorem isWeakCauchyRiemannOn_ofReal_inv_add_two (m : ℕ) :
-    IsWeakCauchyRiemannOn p U Jᵢ (fun _ _ => 0) (fun _ => (((m + 2 : ℝ)⁻¹ : ℝ) : ℂ)) :=
-  isWeakCauchyRiemannOn_const _
-
 /-- The constant maps `1 / (m + 2)` satisfy the boundary condition for `L = (0, 1) ⊆ ℝ ⊆ ℂ` on
-every set of boundary points. -/
+every set of boundary points. Like every constant map, they solve the homogeneous weak equation
+on every set, in particular on the half-disc, by `TauCeti.isWeakCauchyRiemannOn_const`. -/
 theorem mapsTo_ofReal_inv_add_two (m : ℕ) (S : Set ℂ) :
     MapsTo (fun _ => (((m + 2 : ℝ)⁻¹ : ℝ) : ℂ)) S (ofReal '' Ioo 0 1) :=
   fun _ _ => ofReal_inv_add_two_mem_image_Ioo m
@@ -168,14 +164,10 @@ theorem tendstoLocallyUniformly_iteratedFDeriv_div_natCast (k : ℕ) :
 
 /-! ### The image bound -/
 
-/-- The constant maps `m` solve the homogeneous weak equation for `J = i` on every set. Their
-derivatives vanish, so they satisfy the gradient bound with constant `0`. -/
-theorem isWeakCauchyRiemannOn_natCast (m : ℕ) :
-    IsWeakCauchyRiemannOn p U Jᵢ (fun _ _ => 0) (fun _ => (m : ℂ)) :=
-  isWeakCauchyRiemannOn_const _
-
 /-- The images of a nonempty set under the constant maps `m` lie in no fixed compact set, so
-this sequence of weak solutions violates the image bound. -/
+this sequence of weak solutions violates the image bound. These maps solve the homogeneous weak
+equation on every set by `TauCeti.isWeakCauchyRiemannOn_const`, and their derivatives vanish, so
+they satisfy the gradient bound with constant `0`. -/
 theorem not_exists_isCompact_forall_mapsTo_natCast {S : Set ℂ} (hS : S.Nonempty) :
     ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun _ => (m : ℂ)) S K :=
   not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (u := fun (m : ℕ) (_ : ℂ) => (m : ℂ))
