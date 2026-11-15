@@ -85,6 +85,7 @@ instance : SetLike (Orientation G) G.Dart where
     rintro ⟨s, hs⟩ ⟨t, ht⟩ h
     congr
 
+variable {G} in
 @[ext]
 theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) : o₁ = o₂ := by
   apply SetLike.ext
@@ -92,6 +93,7 @@ theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) :
 
 attribute [simp] Orientation.symm_mem_iff_not_mem
 
+variable {G} in
 /-- A reversed dart is not chosen exactly when the original dart is chosen. -/
 @[simp]
 theorem symm_notMem_iff_mem (o : Orientation G) (d : G.Dart) : d.symm ∉ o ↔ d ∈ o := by
@@ -271,7 +273,7 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
   rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
   split_ifs with h
   · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # The quotient `(1 - exp (-a)) / a`
@@ -147,8 +148,7 @@ theorem norm_oneSubExpNegDivSelf_sub_one_le (a : A) :
     add_sub_cancel_left]
   -- The real exponential series without its constant term sums to `exp ‖a‖ - 1`.
   have hexp : HasSum (fun n : ℕ ↦ ‖a‖ ^ (n + 1) / (n + 1).factorial) (Real.exp ‖a‖ - 1) := by
-    have h := (hasSum_nat_add_iff' 1).2 (expSeries_div_hasSum_exp (𝔸 := ℝ) ‖a‖)
-    simpa [Real.exp_eq_exp_ℝ] using h
+    simpa [div_eq_inv_mul, Real.exp_eq_exp_ℝ] using hasSum_exp_sub_one ℝ ‖a‖
   refine tsum_of_norm_bounded hexp fun n ↦ ?_
   rw [norm_smul, norm_inv, RCLike.norm_natCast, div_eq_inv_mul]
   refine mul_le_mul ?_ ((norm_pow_le' _ n.succ_pos).trans_eq (by rw [norm_neg]))
