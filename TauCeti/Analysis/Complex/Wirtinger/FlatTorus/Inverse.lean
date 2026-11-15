@@ -184,11 +184,9 @@ private theorem eq_zero_of_torusOp_eq_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2))
     (h : torusOp ω₁ ω₂ θ₁ θ₂ g = 0) : g = 0 := by
   refine eq_of_mFourierCoeff_eq hg (Submodule.zero_mem _) fun n ↦ ?_
-  have h0 : mFourierCoeff (0 : UnitAddTorus (Fin 2) → ℂ) n = 0 := by
-    simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus (Fin 2) → ℂ) n
   have hm := mFourierCoeff_torusOp (θ₁ := θ₁) (θ₂ := θ₂) hω hg n
-  rw [h, h0, eq_comm, mul_eq_zero] at hm
-  rw [h0]
+  rw [h, mFourierCoeff_zero, eq_comm, mul_eq_zero] at hm
+  rw [mFourierCoeff_zero]
   exact hm.resolve_left (torusMultiplier_ne_zero hω hθ n)
 
 /-- For nontrivial holonomy every smooth function on the torus is the image of a smooth function
@@ -204,17 +202,10 @@ private theorem exists_torusOp_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     rw [norm_div, div_eq_inv_mul]
     gcongr
     exact hle n
-  have hc (k : ℕ) : Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k := by
-    refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-      ((summable_norm_mFourierCoeff_mul_pow hg zero_le_one k).mul_left c₀⁻¹)
-    rw [one_mul, ← mul_assoc]
-    exact mul_le_mul (hcle n) (pow_le_pow_left₀ (norm_nonneg _) (by linarith) k)
-      (by positivity) (by positivity)
-  have hc1 : Summable fun n ↦ ‖c n‖ := by simpa using hc 0
-  have hmem := tsum_smul_mFourier_mem_smoothFunctions hc
+  have hmem := tsum_smul_mFourier_mem_smoothFunctions_of_norm_le hg hcle
   refine ⟨fun z ↦ ∑' n, c n • mFourier n z, hmem, ?_⟩
   refine eq_of_mFourierCoeff_eq (torusOp_mem hmem) hg fun n ↦ ?_
-  rw [mFourierCoeff_torusOp hω hmem, mFourierCoeff_tsum_smul_mFourier hc1]
+  rw [mFourierCoeff_torusOp hω hmem, mFourierCoeff_tsum_smul_mFourier_of_norm_le hg hcle]
   exact mul_div_cancel₀ _ (torusMultiplier_ne_zero hω hθ n)
 
 end Torus

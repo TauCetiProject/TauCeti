@@ -61,8 +61,8 @@ functions are dense, the uniqueness part of the Schwartz kernel theorem.
 ## Main results
 
 * `UnitAddTorus.mFourierCoeff_comp_add`: the coefficients of a translate.
-* `UnitAddTorus.mFourierCoeff_add` and `UnitAddTorus.mFourierCoeff_smul`: the coefficients are
-  linear in the function.
+* `UnitAddTorus.mFourierCoeff_add`, `UnitAddTorus.mFourierCoeff_smul` and
+  `UnitAddTorus.mFourierCoeff_zero`: the coefficients are linear in the function.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_smul_of_hasDerivAt`: the coefficients of a directional
   derivative.
 * `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq_iteratedFDeriv` and
@@ -164,6 +164,11 @@ theorem mFourierCoeff_smul (c : ℂ) (f : UnitAddTorus d → E) (n : d → ℤ) 
     mFourierCoeff (c • f) n = c • mFourierCoeff f n := by
   simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.smul_apply, smul_comm _ c,
     integral_smul]
+
+/-- The Fourier coefficients of the zero function vanish. -/
+@[simp]
+theorem mFourierCoeff_zero (n : d → ℤ) : mFourierCoeff (0 : UnitAddTorus d → E) n = 0 := by
+  simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus d → E) n
 
 end UnitAddTorus
 
