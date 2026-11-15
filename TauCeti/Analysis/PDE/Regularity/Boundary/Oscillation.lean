@@ -8,10 +8,8 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
-import TauCeti.Analysis.PDE.DirichletProblem
-import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
+import TauCeti.MeasureTheory.Function.AEDecayIteration
 
 /-!
 # De Giorgi's oscillation decay at the boundary
@@ -22,8 +20,8 @@ Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, let
 estimate at boundary points: if the complement of `Ω` fills a fixed proportion `θ > 0` of the
 ball `B(x₀, R)` and `f ∈ Lʳ(Ω ∩ B(x₀, 2R))` with `r > 1` and `r > n/2`, then the supremum of
 `u⁺` drops by a fixed factor from `Ω ∩ B(x₀, 2R)` to `Ω ∩ B(x₀, R/2)`, up to an error
-`K R^(2 - n/r) ‖f⁺‖_{Lʳ} / λ`. If the complement fills that proportion of every ball `B(x₀, r)`,
-`r ≤ R`, the supremum decays geometrically along the balls `B(x₀, R / 4ʲ)`, up to the same kind of
+`K R^(2 - n/r) ‖f⁺‖_{Lʳ} / λ`. If the complement fills that proportion of every ball `B(x₀, ρ)`,
+`ρ ≤ R`, the supremum decays geometrically along the balls `B(x₀, R / 4ʲ)`, up to the same kind of
 error. For `f = 0` the error vanishes.
 
 The proof reduces the boundary estimate to the interior one.
@@ -42,21 +40,23 @@ The proof reduces the boundary estimate to the interior one.
   (`TauCeti.PDE.energyFormH1_extendByZeroL_posPart_le_setIntegral`).
 * **Reduction of the supremum.** Extending `a` by `λ I` off `Ω`, the zero extension is a weak
   subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ g = 1_Ω f⁺` on the whole space, and it vanishes on
-  `B(x₀, R) \ Ω`. Let `z ∈ H¹₀(B)` solve `-∂ᵢ(a'ⁱʲ ∂ⱼz) = g` in `B = B(x₀, 2R)`. Stampacchia's
-  bound (`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow`) gives `|z| ≤ S` with `S` a multiple
-  of `R^(2 - n/r) ‖g‖_{Lʳ(B)} / λ`. So `ū - z` is a weak subsolution of the homogeneous equation on
-  `B`, at most `M + S` there and at most `S` on `B(x₀, R) \ Ω`. De Giorgi's interior reduction of
-  the supremum (`TauCeti.PDE.exists_ae_value_le_sub_mul_sub`) at the level `S` gives
+  `B(x₀, R) \ Ω`. The solution `z ∈ H¹₀(B)` of `-∂ᵢ(a'ⁱʲ ∂ⱼz) = g` in `B = B(x₀, 2R)`
+  satisfies Stampacchia's bound `|z| ≤ S` with `S` a multiple of `R^(2 - n/r) ‖g‖_{Lʳ(B)} / λ`
+  (`TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_ae_abs_le`). So `ū - z` is a weak
+  subsolution of the homogeneous equation on `B`, at most `M + S` there and at most `S` on
+  `B(x₀, R) \ Ω`. De Giorgi's interior reduction of the supremum
+  (`TauCeti.PDE.exists_ae_value_le_sub_mul_sub`) at the level `S` gives
   `ū - z ≤ (1 - δ) M + S` on `B(x₀, R/2)`, hence `u ≤ (1 - δ) M + 2 S` on `Ω ∩ B(x₀, R/2)`
   (`TauCeti.PDE.exists_ae_value_le_mul_add_of_mul_measureReal_le_measureReal_ball_diff`).
 
-The exterior density hypothesis `θ |B(x₀, r)| ≤ |B(x₀, r) \ Ω|` for all small `r` is an
+The exterior density hypothesis `θ |B(x₀, ρ)| ≤ |B(x₀, ρ) \ Ω|` for all small `ρ` is an
 exterior measure density condition at `x₀`. An exterior cone with vertex `x₀` gives it, with `θ`
-depending only on the aperture of the cone, for every `r` up to the height of the cone. Iterating
+depending only on the aperture of the cone, for every `ρ` up to the height of the cone. Iterating
 the reduction along the balls `B(x₀, R / 4ʲ)` contracts the bound by `1 - δ` at each step, while
 the error shrinks by `4^(-(2 - n/r))`, which gives the geometric decay
 `u ≤ τʲ (M + K R^(2 - n/r) ‖f⁺‖_{Lʳ} / λ)` with a rate `τ < 1`
-(`TauCeti.PDE.exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`). For
+(`TauCeti.PDE.exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`, by
+the iteration `TauCeti.ae_le_pow_mul_add_of_forall_ae_le_mul_add`). For
 a weak solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` both `u` and `-u` are such subsolutions, with
 data `f` and `-f`, so `|u|` decays geometrically towards boundary points
 (`TauCeti.PDE.exists_ae_abs_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`).
@@ -73,7 +73,7 @@ This is the boundary step of the global Hölder estimate for the Dirichlet probl
   reduction of the supremum at the boundary, and its case `f = 0`,
   `TauCeti.PDE.exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff`.
 * `TauCeti.PDE.exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`: its
-  iteration, geometric decay of the supremum; for `f = 0` with the rate `1 - δ`,
+  iteration, geometric decay of the supremum, and its case `f = 0`,
   `TauCeti.PDE.exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff`.
 * `TauCeti.PDE.exists_ae_abs_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`:
   geometric decay of `|u|` for weak solutions in `H¹₀(Ω)`, and its case `f = 0`,
@@ -181,6 +181,28 @@ private theorem value_posPart_sub_posPart_sub_smul_ae (u v : W1p mu Omega 2) (ε
   · rw [min_eq_left hle, max_eq_right (sub_nonpos.2 hle), sub_zero]
   · rw [min_eq_right hle, max_eq_left (sub_nonneg.2 hle), sub_sub_cancel]
 
+omit [DecidableEq ι] in
+/-- The cut-off set `{u⁺ > ε v}` of the test-function argument is measurable. -/
+private theorem measurableSet_mul_value_lt_max_value (u v : W1p mu Omega 2) (ε : ℝ) :
+    MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0} :=
+  measurableSet_lt ((Lp.stronglyMeasurable (W1p.value v)).measurable.const_mul ε)
+    ((Lp.stronglyMeasurable (W1p.value u)).measurable.max measurable_const)
+
+/-- The pointwise limit of the cut-off `{t⁺ > ε s}` as `ε = 1 / (n + 1) → 0`, for `t > 0`. -/
+private theorem eventually_one_div_mul_lt_max {t : ℝ} (s : ℝ) (ht : 0 < t) :
+    ∀ᶠ n : ℕ in atTop, 1 / ((n : ℝ) + 1) * s < max t 0 := by
+  have hsmall : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1) * s) atTop (𝓝 (0 * s)) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat.mul_const _
+  rw [zero_mul] at hsmall
+  exact hsmall.eventually (gt_mem_nhds (lt_max_of_lt_left ht))
+
+/-- The pointwise limit of the cut-off `{t⁺ > ε s}` as `ε = 1 / (n + 1) → 0`, for `t ≤ 0` and
+`s ≥ 0`: the cut-off is empty. -/
+private theorem max_le_one_div_mul {t s : ℝ} (ht : ¬ 0 < t) (hs : 0 ≤ s) (n : ℕ) :
+    max t 0 ≤ 1 / ((n : ℝ) + 1) * s := by
+  rw [max_eq_right (le_of_not_gt ht)]
+  positivity
+
 /-- The cut-off step of the test-function argument: for `ε > 0`, the density `⟨a ∇u, ∇v⟩` of
 a subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f` with `u⁺ ∈ H¹₀(Ω)` against a nonnegative `v ∈ H¹(Ω)`, cut off
 to `{u⁺ > ε v}` and multiplied by `ε`, has integral at most `∫_Ω f min(u⁺, ε v)`. The left side
@@ -195,7 +217,7 @@ private theorem mul_setIntegral_indicator_matrixBilinearForm_le
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
           ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {v : W1p mu Omega 2} (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) {ε : ℝ}
-    (hε : 0 < ε) (hFm : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0}) :
+    (hε : 0 < ε) :
     ε * ∫ x in Omega, {x | ε * W1p.value v x < max (W1p.value u x) 0}.indicator
       (fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)) x ∂mu ≤
       ∫ x in Omega, f x * min (max (W1p.value u x) 0) (ε * W1p.value v x) ∂mu := by
@@ -218,7 +240,8 @@ private theorem mul_setIntegral_indicator_matrixBilinearForm_le
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
   rw [← integral_const_mul]
   refine (integral_mono_ae
-    (((integrable_matrixBilinearForm_gradient h ha u v).indicator hFm).const_mul ε)
+    (((integrable_matrixBilinearForm_gradient h ha u v).indicator
+      (measurableSet_mul_value_lt_max_value u v ε)).const_mul ε)
     (integrable_matrixBilinearForm_gradient h ha u _)
     (mul_indicator_le_matrixBilinearForm_gradient h u v)).trans
     (htest.trans_eq (integral_congr_ae ?_))
@@ -239,29 +262,21 @@ private theorem tendsto_setIntegral_indicator_matrixBilinearForm
   set g : EuclideanSpace ℝ ι → ℝ :=
     fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)
   have hg : Integrable g (mu.restrict Omega) := integrable_matrixBilinearForm_gradient h ha u v
-  have hFm (ε : ℝ) : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0} :=
-    measurableSet_lt ((Lp.stronglyMeasurable (W1p.value v)).measurable.const_mul ε)
-      ((Lp.stronglyMeasurable (W1p.value u)).measurable.max measurable_const)
   refine tendsto_integral_of_dominated_convergence (fun x => ‖g x‖)
-    (fun n => (hg.indicator (hFm _)).aestronglyMeasurable) hg.norm
+    (fun n => (hg.indicator (measurableSet_mul_value_lt_max_value u v _)).aestronglyMeasurable)
+    hg.norm
     (fun n => Eventually.of_forall fun x => norm_indicator_le_norm_self _ _) ?_
   filter_upwards [hv] with x hvx
   by_cases hux : 0 < W1p.value u x
   · rw [indicator_of_mem (s := {x | 0 < W1p.value u x}) hux]
-    have hsmall : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1) * W1p.value v x) atTop
-        (𝓝 (0 * W1p.value v x)) :=
-      tendsto_one_div_add_atTop_nhds_zero_nat.mul_const _
-    rw [zero_mul] at hsmall
     refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hsmall.eventually (gt_mem_nhds (lt_max_of_lt_left hux))] with n hn
+    filter_upwards [eventually_one_div_mul_lt_max (W1p.value v x) hux] with n hn
     exact (indicator_of_mem (s := {x | 1 / ((n : ℝ) + 1) * W1p.value v x <
       max (W1p.value u x) 0}) hn g).symm
   · rw [indicator_of_notMem (s := {x | 0 < W1p.value u x}) hux]
     refine tendsto_const_nhds.congr' (Eventually.of_forall fun n => ?_)
-    refine (indicator_of_notMem (s := {x | 1 / ((n : ℝ) + 1) * W1p.value v x <
-      max (W1p.value u x) 0}) ?_ g).symm
-    rw [mem_ofPred_eq, max_eq_right (le_of_not_gt hux), not_lt]
-    positivity
+    exact (indicator_of_notMem (s := {x | 1 / ((n : ℝ) + 1) * W1p.value v x <
+      max (W1p.value u x) 0}) (not_lt.2 (max_le_one_div_mul hux hvx n)) g).symm
 
 omit [DecidableEq ι] in
 /-- The right side of the test-function argument in the limit `ε = 1 / (n + 1) → 0`: for
@@ -292,18 +307,15 @@ private theorem tendsto_setIntegral_mul_mul_min {f : EuclideanSpace ℝ ι → �
   · filter_upwards [hv] with x hvx
     by_cases hux : 0 < W1p.value u x
     · rw [indicator_of_mem (s := {x | 0 < W1p.value u x}) hux]
-      have hsmall : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1) * W1p.value v x) atTop
-          (𝓝 (0 * W1p.value v x)) :=
-        tendsto_one_div_add_atTop_nhds_zero_nat.mul_const _
-      rw [zero_mul] at hsmall
       refine tendsto_const_nhds.congr' ?_
-      filter_upwards [hsmall.eventually (gt_mem_nhds (lt_max_of_lt_left hux))] with n hn
+      filter_upwards [eventually_one_div_mul_lt_max (W1p.value v x) hux] with n hn
       rw [min_eq_right hn.le]
       field_simp
     · rw [indicator_of_notMem (s := {x | 0 < W1p.value u x}) hux, zero_mul]
       refine tendsto_const_nhds.congr' (Eventually.of_forall fun n => ?_)
       dsimp only
-      rw [max_eq_right (le_of_not_gt hux), min_eq_left (by positivity), mul_zero, mul_zero]
+      rw [min_eq_left (max_le_one_div_mul hux hvx n), max_eq_right (le_of_not_gt hux), mul_zero,
+        mul_zero]
 
 /-- **Subsolutions vanishing on the boundary may be tested against any nonnegative function.**
 Let `a` be measurable and uniformly elliptic on `Ω`, let `f ∈ L²(Ω)`, and let `u ∈ H¹(Ω)` be a
@@ -325,9 +337,6 @@ theorem energyFormH1_posPart_left_le_setIntegral
       ∫ x in Omega, {x | 0 < W1p.value u x}.indicator f x * W1p.value v x ∂mu := by
   set g : EuclideanSpace ℝ ι → ℝ :=
     fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)
-  have hFm (ε : ℝ) : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0} :=
-    measurableSet_lt ((Lp.stronglyMeasurable (W1p.value v)).measurable.const_mul ε)
-      ((Lp.stronglyMeasurable (W1p.value u)).measurable.max measurable_const)
   -- Pass to the limit `ε = 1 / (n + 1) → 0` on both sides of the cut-off inequality.
   have hlim := tendsto_setIntegral_indicator_matrixBilinearForm h ha u hv
   have hrhs := tendsto_setIntegral_mul_mul_min hf u hv
@@ -338,7 +347,7 @@ theorem energyFormH1_posPart_left_le_setIntegral
         (((n : ℝ) + 1) * min (max (W1p.value u x) 0) (1 / ((n : ℝ) + 1) * W1p.value v x)) ∂mu := by
     have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
     have hle := mul_setIntegral_indicator_matrixBilinearForm_le h ha hboundary hu hv
-      (by positivity : (0 : ℝ) < 1 / ((n : ℝ) + 1)) (hFm _)
+      (by positivity : (0 : ℝ) < 1 / ((n : ℝ) + 1))
     calc _ = ((n : ℝ) + 1) * (1 / ((n : ℝ) + 1) * ∫ x in Omega,
           {x | 1 / ((n : ℝ) + 1) * W1p.value v x < max (W1p.value u x) 0}.indicator g x ∂mu) := by
           field_simp
@@ -584,79 +593,12 @@ private theorem energyFormH1_restrictL_sub_nonpos {a' : EuclideanSpace ℝ ι �
   by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) <;>
     by_cases hxB : x ∈ (B : Set (EuclideanSpace ℝ ι)) <;> simp [hx, hxO, hxB]
 
-/-- Stampacchia's bound for the datum `1_Ω f⁺` on a ball. Let `n ≥ 1` be the dimension and let
-`r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of
-`mu`, such that the following holds. Let `a'` be measurable and uniformly elliptic on
-`B = B(x₀, 2R)` with constants `λ, Λ`, and let `f ∈ Lʳ(Ω ∩ B(x₀, 2R))`. Then the weak solution
-`z ∈ H¹₀(B)` of `-∂ᵢ(a'ⁱʲ ∂ⱼz) = 1_Ω f⁺` in `B` satisfies
-
-`|z| ≤ C R^(2 - n/r) ‖f⁺‖_{Lʳ(Ω ∩ B(x₀, 2R))} / λ` almost everywhere on `B`. -/
-private theorem exists_forall_energyFormH1_eq_ae_abs_le [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
-      {B : Opens (EuclideanSpace ℝ ι)} {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
-      UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a' lam Lam →
-      AEStronglyMeasurable a' (mu.restrict B) →
-      MemLp f r (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (2 * R))) →
-      0 < R → (B : Set (EuclideanSpace ℝ ι)) = ball x₀ (2 * R) →
-      ∃ z : W1p0 mu B 2, (∀ v : W1p0 mu B 2,
-        energyFormH1 a' 0 0 (z : W1p mu B 2) (v : W1p mu B 2) =
-          ∫ x in B, (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (f y) 0) x *
-            W1p.value (v : W1p mu B 2) x ∂mu) ∧
-        ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), |W1p.value (z : W1p mu B 2) x| ≤
-          C * R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm (fun x => max (f x) 0) r
-            (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (2 * R)))).toReal / lam := by
-  have hn : (0 : ℝ) < (Fintype.card ι : ℝ) := Nat.cast_pos.2 Fintype.card_pos
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  have hrn' : (Fintype.card ι : ℝ) * (2 - r) < 2 * r := by
-    nlinarith [mul_pos hn (sub_pos.2 hr1)]
-  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
-  obtain ⟨e, he⟩ : ∃ e : ℝ, e = 2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹ := ⟨_, rfl⟩
-  obtain ⟨γ, hγ⟩ : ∃ γ : ℝ, γ = 2 - (Fintype.card ι : ℝ) / r := ⟨_, rfl⟩
-  have hγe : (Fintype.card ι : ℝ) * e = γ := by rw [he, hγ]; field_simp
-  obtain ⟨ω, hω⟩ : ∃ ω : ℝ, ω = mu.real (ball (0 : EuclideanSpace ℝ ι) 1) := ⟨_, rfl⟩
-  have hω0 : 0 < ω := hω ▸ Metric.measureReal_ball_pos mu 0 one_pos
-  refine ⟨C * 2 ^ γ * ω ^ e, by positivity, ?_⟩
-  intro Omega a' f B x₀ R hBell hBmeas hfr hR hB
-  rw [← hγ]
-  have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have hBfin : mu B ≠ ∞ := by
-    rw [hB]
-    exact measure_ball_lt_top.ne
-  have hgB : MemLp ((Omega : Set (EuclideanSpace ℝ ι)).indicator fun y => max (f y) 0) r
-      (mu.restrict B) := by
-    refine (memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 ?_
-    rw [Measure.restrict_restrict hOm, hB]
-    exact hfr.pos_part
-  obtain ⟨z, hz, -⟩ :=
-    hBell.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0) (gamma := 0) hBmeas
-      aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hgB
-  refine ⟨z, hz, ?_⟩
-  have hzb := hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hgB hz
-  -- `‖1_Ω f⁺‖_{Lʳ(B)} = ‖f⁺‖_{Lʳ(Ω ∩ B)}` and `μ(B)^e = (2R)^γ ω^e`.
-  have hconst : C * (eLpNorm ((Omega : Set (EuclideanSpace ℝ ι)).indicator fun y => max (f y) 0)
-      r (mu.restrict B)).toReal / lam *
-        mu.real (B : Set (EuclideanSpace ℝ ι)) ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) =
-      C * 2 ^ γ * ω ^ e * R ^ γ * (eLpNorm (fun x => max (f x) 0) r
-        (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (2 * R)))).toReal / lam := by
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hOm.nullMeasurableSet,
-      Measure.restrict_restrict hOm, ← he, hB,
-      Measure.addHaar_real_ball_rpow mu x₀ (by positivity) e, finrank_euclideanSpace, hγe,
-      Real.mul_rpow (by norm_num) hR.le, ← hω]
-    ring
-  have hBball : ∀ {P : EuclideanSpace ℝ ι → Prop}, (∀ᵐ x ∂mu.restrict B, P x) →
-      ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), P x := fun hP => hB ▸ hP
-  filter_upwards [hBball hzb] with x hx
-  exact hx.trans_eq hconst
-
 /-- The comparison step of the boundary estimate. Let `n ≥ 1` be the dimension and let `r > 1`
-with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of `mu`, such
-that the following holds. Let `a'` be measurable and uniformly elliptic on the whole space with
-constants `λ, Λ`, let `f ∈ Lʳ(Ω ∩ B(x₀, 2R))`, and let `ū ∈ H¹(ℝⁿ)` be a weak subsolution of
-`-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ 1_Ω f⁺`. Then on `B = B(x₀, 2R)` there is a weak subsolution `w ∈ H¹(B)` of the
-homogeneous equation with
+with `r > n/2`. There is `C > 0`, depending only on `λ`, `Λ`, `n`, `r` and the normalization of
+`mu`, such that the following holds. Let `a'` be measurable and uniformly elliptic on the whole
+space with constants `λ, Λ`, let `f ∈ Lʳ(Ω ∩ B(x₀, 2R))`, and let `ū ∈ H¹(ℝⁿ)` be a weak
+subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼū) ≤ 1_Ω f⁺`. Then on `B = B(x₀, 2R)` there is a weak subsolution
+`w ∈ H¹(B)` of the homogeneous equation with
 
 `|ū - w| ≤ C R^(2 - n/r) ‖f⁺‖_{Lʳ(Ω ∩ B(x₀, 2R))} / λ` almost everywhere on `B`,
 
@@ -683,29 +625,44 @@ private theorem exists_forall_energyFormH1_nonpos_ae_abs_sub_le [Nonempty ι] {r
         ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), |W1p.value ub x - W1p.value w x| ≤
           C * R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm (fun x => max (f x) 0) r
             (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (2 * R)))).toReal / lam := by
-  obtain ⟨C, hC, hsplit⟩ := exists_forall_energyFormH1_eq_ae_abs_le (mu := mu) (lam := lam)
-    (Lam := Lam) hr hrn
-  refine ⟨C, hC, fun {Omega a' f ub B x₀ R} h' ha' hfr hsubsol hR hB => ?_⟩
-  have hBtop : B ≤ ⊤ := le_top
-  have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a' lam Lam :=
+  obtain ⟨K, hK, hsolve⟩ := exists_forall_energyFormH1_eq_setIntegral_ae_abs_le (mu := mu) hr hrn
+  refine ⟨K * 2 ^ (2 - (Fintype.card ι : ℝ) / r), by positivity,
+    fun {Omega a' f ub B x₀ R} h' ha' hfr hsubsol hR hB => ?_⟩
+  obtain rfl : B = ⟨ball x₀ (2 * R), isOpen_ball⟩ := Opens.ext hB
+  have hBtop : (⟨ball x₀ (2 * R), isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ ⊤ := le_top
+  have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
+  have hBell : UniformlyEllipticOn ((⟨ball x₀ (2 * R), isOpen_ball⟩ :
+      Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) a' lam Lam :=
     h'.mono_set (subset_univ _)
-  have hBmeas : AEStronglyMeasurable a' (mu.restrict B) :=
+  have hBmeas : AEStronglyMeasurable a' (mu.restrict ((⟨ball x₀ (2 * R), isOpen_ball⟩ :
+      Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
     ha'.mono_measure (Measure.restrict_mono (subset_univ _) le_rfl)
-  obtain ⟨z, hz, hzb⟩ := hsplit hBell hBmeas hfr hR hB
+  have hgB : MemLp ((Omega : Set (EuclideanSpace ℝ ι)).indicator fun y => max (f y) 0) r
+      (mu.restrict (ball x₀ (2 * R))) := by
+    refine (memLp_indicator_iff_restrict hOm.nullMeasurableSet).2 ?_
+    rw [Measure.restrict_restrict hOm]
+    exact hfr.pos_part
+  -- The solution `z ∈ H¹₀(B)` of `-∂ᵢ(a'ⁱʲ ∂ⱼz) = 1_Ω f⁺`, and its bound.
+  obtain ⟨z, hz, hzb⟩ := hsolve hBell hBmeas hgB (by positivity)
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
     hBell.upper_nonneg hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => hBell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  refine ⟨W1p.restrictL hBtop ub - (z : W1p mu B 2),
-    energyFormH1_restrictL_sub_nonpos Omega.isOpen.measurableSet hBtop hcoeff hsubsol hz, ?_⟩
-  have hval : ∀ᵐ x ∂mu.restrict B, W1p.value (W1p.restrictL hBtop ub - (z : W1p mu B 2)) x =
-      W1p.value ub x - W1p.value (z : W1p mu B 2) x := by
-    filter_upwards [W1p.value_sub_ae (W1p.restrictL hBtop ub) (z : W1p mu B 2),
-      W1p.value_restrictL_ae hBtop ub] with x h1 h2
-    rw [h1, Pi.sub_apply, h2]
-  have hBball : ∀ {P : EuclideanSpace ℝ ι → Prop}, (∀ᵐ x ∂mu.restrict B, P x) →
-      ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), P x := fun hP => hB ▸ hP
-  filter_upwards [hBball hval, hzb] with x h1 h2
-  rwa [h1, sub_sub_cancel]
+  refine ⟨W1p.restrictL hBtop ub - (z : W1p mu _ 2),
+    energyFormH1_restrictL_sub_nonpos hOm hBtop hcoeff hsubsol hz, ?_⟩
+  -- `‖1_Ω f⁺‖_{Lʳ(B)} = ‖f⁺‖_{Lʳ(Ω ∩ B)}` and `(2R)^γ = 2^γ R^γ`.
+  have hconst : K * (2 * R) ^ (2 - (Fintype.card ι : ℝ) / r) *
+      (eLpNorm ((Omega : Set (EuclideanSpace ℝ ι)).indicator fun y => max (f y) 0) r
+        (mu.restrict (ball x₀ (2 * R)))).toReal / lam =
+      K * 2 ^ (2 - (Fintype.card ι : ℝ) / r) * R ^ (2 - (Fintype.card ι : ℝ) / r) *
+        (eLpNorm (fun x => max (f x) 0) r
+          (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (2 * R)))).toReal / lam := by
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict hOm.nullMeasurableSet,
+      Measure.restrict_restrict hOm, Real.mul_rpow (by norm_num) hR.le]
+    ring
+  filter_upwards [W1p.value_sub_ae (W1p.restrictL hBtop ub) (z : W1p mu _ 2),
+    W1p.value_restrictL_ae hBtop ub, hzb] with x h1 h2 h3
+  rw [h1, Pi.sub_apply, h2, sub_sub_cancel]
+  exact h3.trans_eq hconst
 
 /-- The reduction step of the boundary estimate. Let `n ≥ 1` be the dimension and fix a
 proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the
@@ -780,8 +737,8 @@ private theorem exists_ae_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {θ : 
 
 /-- **Reduction of the supremum at the boundary, with a right-hand side (De Giorgi).** Let
 `n ≥ 1` be the dimension, fix a proportion `θ > 0` and let `r > 1` with `r > n/2`. There are
-`δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the normalization of the additive
-Haar measure `mu`, and `K > 0`, depending only on `n`, `r` and `mu`, such that the following holds.
+`δ ∈ (0, 1)` and `K > 0`, depending only on `λ`, `Λ`, `θ`, `n`, `r` and the normalization of the
+additive Haar measure `mu`, such that the following holds.
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `f ∈ L²(Ω)` with
 `f ∈ Lʳ(Ω ∩ B(x₀, 2R))`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f`, that is
 `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on `∂Ω` in the sense that
@@ -886,175 +843,13 @@ theorem exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff [None
   simpa using hred (f := 0) h ha MemLp.zero MemLp.zero hboundary
     (fun v hv => by simpa using hu v hv) hR hle hθR
 
-/-- **Geometric decay of the supremum at the boundary (De Giorgi).** Let `n ≥ 1` be the dimension
-and fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the
-dimension and the normalization of the additive Haar measure `mu`, such that the following holds.
-Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be
-a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` with `u⁺ ∈ H¹₀(Ω)`. If `u ≤ M` almost everywhere on
-`Ω ∩ B(x₀, R)` and the complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`,
-`0 < r ≤ R`, then for every `j`
-
-`u ≤ (1 - δ)ʲ M` almost everywhere on `Ω ∩ B(x₀, R / 4ʲ)`. -/
-theorem exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff [Nonempty ι]
-    {θ : ℝ} (hθ : 0 < θ) :
-    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R M : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2 →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
-      0 < R →
-      (∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R), W1p.value u x ≤ M) →
-      (∀ r, 0 < r → r ≤ R →
-        θ * mu.real (ball x₀ r) ≤ mu.real (ball x₀ r \ (Omega : Set (EuclideanSpace ℝ ι)))) →
-      ∀ j : ℕ, ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
-        W1p.value u x ≤ (1 - δ) ^ j * M := by
-  obtain ⟨δ, hδ0, hδ1, hred⟩ :=
-    exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff (mu := mu) (lam := lam)
-      (Lam := Lam) hθ
-  refine ⟨δ, hδ0, hδ1, ?_⟩
-  intro Omega a u x₀ R M h ha hboundary hu hR hle hext j
-  induction j with
-  | zero => simpa using hle
-  | succ j ih =>
-    -- One reduction step from `B(x₀, 2r)` to `B(x₀, r / 2)`, with `2r = R / 4ʲ`.
-    set r := R / 4 ^ j / 2 with hr_def
-    have h2r : R / 4 ^ j = 2 * r := by rw [hr_def]; ring
-    have hr2 : R / 4 ^ (j + 1) = r / 2 := by rw [hr_def, pow_succ]; ring
-    have hr : 0 < r := by positivity
-    have hrR : r ≤ R := by
-      have : R / 4 ^ j ≤ R := div_le_self hR.le (one_le_pow₀ (by norm_num))
-      linarith
-    rw [h2r] at ih
-    rw [hr2, pow_succ, mul_comm ((1 - δ) ^ j) (1 - δ), mul_assoc]
-    exact hred h ha hboundary hu hr ih (hext r hr hrR)
-
-/-- **Geometric decay of weak solutions at the boundary (De Giorgi).** Let `n ≥ 1` be the
-dimension and fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`,
-the dimension and the normalization of the additive Haar measure `mu`, such that the following
-holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let
-`u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If `|u| ≤ M` almost everywhere on
-`Ω ∩ B(x₀, R)` and the complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`,
-`0 < r ≤ R`, then for every `j`
-
-`|u| ≤ (1 - δ)ʲ M` almost everywhere on `Ω ∩ B(x₀, R / 4ʲ)`. -/
-theorem exists_ae_abs_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff
-    [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) :
-    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R M : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      u ∈ w1p0Submodule mu Omega 2 →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
-      0 < R →
-      (∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R),
-        |W1p.value u x| ≤ M) →
-      (∀ r, 0 < r → r ≤ R →
-        θ * mu.real (ball x₀ r) ≤ mu.real (ball x₀ r \ (Omega : Set (EuclideanSpace ℝ ι)))) →
-      ∀ j : ℕ, ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
-        |W1p.value u x| ≤ (1 - δ) ^ j * M := by
-  obtain ⟨δ, hδ0, hδ1, hdecay⟩ :=
-    exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff (mu := mu)
-      (lam := lam) (Lam := Lam) hθ
-  refine ⟨δ, hδ0, hδ1, ?_⟩
-  intro Omega a u x₀ R M h ha hu0 hu hR hle hext j
-  have hneg : ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
-      W1p.value (-u) x = -W1p.value u x :=
-    ae_restrict_of_ae_restrict_of_subset inter_subset_left (W1p.value_neg_ae u)
-  -- Both `u` and `-u` are subsolutions vanishing on the boundary.
-  have hpos := hdecay h ha (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
-    (fun v _ => (hu v).le) hR (by filter_upwards [hle] with x hx using (abs_le.1 hx).2) hext j
-  have hneg' := hdecay h ha
-    (W1p.posPart_mem_w1p0Submodule (by norm_num)
-      ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem hu0))
-    (fun v _ => by rw [energyFormH1_neg_left, hu v, neg_zero]) hR
-    (by
-      filter_upwards [hle, ae_restrict_of_ae_restrict_of_subset inter_subset_left
-        (W1p.value_neg_ae u)] with x hx hx'
-      rw [hx', Pi.neg_apply]
-      exact neg_le.1 (abs_le.1 hx).1) hext j
-  filter_upwards [hpos, hneg', hneg] with x h1 h2 h3
-  rw [h3] at h2
-  exact abs_le.2 ⟨neg_le.1 h2, h1⟩
-
-/-- The rate of the iterated boundary estimate: for `δ > 0` and `γ > 0` there are `m` and
-`τ ∈ (m, 1)` with `τ > 0`, `1 - δ ≤ m` and `4^(-γ) ≤ m`. -/
-private theorem exists_le_and_le_and_lt_and_lt {δ γ : ℝ} (hδ : 0 < δ) (hγ : 0 < γ) :
-    ∃ m τ : ℝ, 1 - δ ≤ m ∧ (4 : ℝ) ^ (-γ) ≤ m ∧ m < τ ∧ 0 < τ ∧ τ < 1 := by
-  have hq0 : 0 < (4 : ℝ) ^ (-γ) := by positivity
-  have hq1 : (4 : ℝ) ^ (-γ) < 1 := Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by linarith)
-  have hm0 : (4 : ℝ) ^ (-γ) ≤ max (1 - δ) ((4 : ℝ) ^ (-γ)) := le_max_right _ _
-  have hm1 : max (1 - δ) ((4 : ℝ) ^ (-γ)) < 1 := max_lt (by linarith) hq1
-  exact ⟨max (1 - δ) ((4 : ℝ) ^ (-γ)), (1 + max (1 - δ) ((4 : ℝ) ^ (-γ))) / 2, le_max_left _ _,
-    hm0, by linarith, by linarith, by linarith⟩
-
-/-- The radius factor of the iterated boundary estimate: for `R > 0`, `γ ≥ 0` and a rate `τ`
-with `4^(-γ) ≤ τ`, the radii `R / 4ʲ / 2` satisfy `(R / 4ʲ / 2)^γ ≤ R^γ τʲ`. -/
-private theorem rpow_div_pow_div_two_le_mul_pow {R γ τ : ℝ} (hR : 0 < R) (hγ : 0 ≤ γ)
-    (hτ : (4 : ℝ) ^ (-γ) ≤ τ) (j : ℕ) : (R / 4 ^ j / 2) ^ γ ≤ R ^ γ * τ ^ j := by
-  have hpow : (R / 4 ^ j) ^ γ = R ^ γ * ((4 : ℝ) ^ (-γ)) ^ j := by
-    rw [Real.div_rpow hR.le (by positivity), ← Real.rpow_natCast_mul (by norm_num),
-      mul_comm (j : ℝ), Real.rpow_mul_natCast (by norm_num), Real.rpow_neg (by norm_num),
-      inv_pow, div_eq_mul_inv]
-  calc (R / 4 ^ j / 2) ^ γ ≤ (R / 4 ^ j) ^ γ :=
-        Real.rpow_le_rpow (by positivity) (half_le_self (by positivity)) hγ
-    _ = R ^ γ * ((4 : ℝ) ^ (-γ)) ^ j := hpow
-    _ ≤ R ^ γ * τ ^ j := by gcongr
-
-/-- The arithmetic of one step of the iterated boundary estimate: if the reduction contracts by
-`1 - δ ≤ m` and the error is at most `τʲ (τ - m) D`, with `m ≤ τ`, then the bound `τʲ (M + D)`
-improves to `τʲ⁺¹ (M + D)`. -/
-private theorem mul_add_le_pow_succ_mul {δ m τ M D E : ℝ} (j : ℕ) (hδm : 1 - δ ≤ m) (hτ : 0 ≤ τ)
-    (hmτ : m ≤ τ) (hM : 0 ≤ M) (hD : 0 ≤ D) (hE : E ≤ τ ^ j * ((τ - m) * D)) :
-    (1 - δ) * (τ ^ j * (M + D)) + E ≤ τ ^ (j + 1) * (M + D) := by
-  have hMD : 0 ≤ τ ^ j * (M + D) := by positivity
-  have hcontr : (1 - δ) * (τ ^ j * (M + D)) ≤ m * (τ ^ j * (M + D)) :=
-    mul_le_mul_of_nonneg_right hδm hMD
-  have hgap : τ ^ j * ((τ - m) * D) ≤ τ ^ j * ((τ - m) * (M + D)) := by
-    have : 0 ≤ τ - m := by linarith
-    gcongr
-    linarith
-  have hid : m * (τ ^ j * (M + D)) + τ ^ j * ((τ - m) * (M + D)) = τ ^ (j + 1) * (M + D) := by
-    ring
-  linarith
-
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- The iteration behind the geometric decay at the boundary. If a bound `g ≤ M'` on
-`s ∩ B(x₀, 2ρ)` always improves to `g ≤ (1 - δ) M' + A ρ^γ` on `s ∩ B(x₀, ρ/2)`, and `g ≤ M` on
-`s ∩ B(x₀, R)` with `M ≥ 0`, then `g ≤ τʲ (M + A R^γ / (τ - m))` on `s ∩ B(x₀, R / 4ʲ)` for every
-rate `τ > m` with `1 - δ ≤ m` and `4^(-γ) ≤ m`. -/
-private theorem ae_le_pow_mul_add_of_forall_ae_le_mul_add {s : Set (EuclideanSpace ℝ ι)}
-    {g : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R M A γ δ m τ : ℝ} (hR : 0 < R)
-    (hM : 0 ≤ M) (hA : 0 ≤ A) (hγ : 0 ≤ γ) (hδm : 1 - δ ≤ m) (hqm : (4 : ℝ) ^ (-γ) ≤ m)
-    (hτ0 : 0 ≤ τ) (hmτ : m < τ) (hle : ∀ᵐ x ∂mu.restrict (s ∩ ball x₀ R), g x ≤ M)
-    (hstep : ∀ ρ M', 0 < ρ → 2 * ρ ≤ R → (∀ᵐ x ∂mu.restrict (s ∩ ball x₀ (2 * ρ)), g x ≤ M') →
-      ∀ᵐ x ∂mu.restrict (s ∩ ball x₀ (ρ / 2)), g x ≤ (1 - δ) * M' + A * ρ ^ γ) (j : ℕ) :
-    ∀ᵐ x ∂mu.restrict (s ∩ ball x₀ (R / 4 ^ j)), g x ≤ τ ^ j * (M + A * R ^ γ / (τ - m)) := by
-  have hτm : 0 < τ - m := by linarith
-  have hD0 : 0 ≤ A * R ^ γ / (τ - m) := by positivity
-  induction j with
-  | zero => simpa using hle.mono fun x hx => hx.trans (le_add_of_nonneg_right hD0)
-  | succ j ih =>
-    -- One step from `B(x₀, 2ρ)` to `B(x₀, ρ / 2)`, with `2ρ = R / 4ʲ`.
-    obtain ⟨ρ, hρdef⟩ : ∃ ρ : ℝ, ρ = R / 4 ^ j / 2 := ⟨_, rfl⟩
-    have h2ρ : R / 4 ^ j = 2 * ρ := by rw [hρdef]; ring
-    have hρR : 2 * ρ ≤ R := h2ρ ▸ div_le_self hR.le (one_le_pow₀ (by norm_num))
-    have hρ2 : R / 4 ^ (j + 1) = ρ / 2 := by rw [hρdef, pow_succ]; ring
-    have hρ : 0 < ρ := by rw [hρdef]; positivity
-    have hργ : ρ ^ γ ≤ R ^ γ * τ ^ j :=
-      hρdef ▸ rpow_div_pow_div_two_le_mul_pow hR hγ (hqm.trans hmτ.le) j
-    have herr : A * ρ ^ γ ≤ τ ^ j * ((τ - m) * (A * R ^ γ / (τ - m))) := by
-      rw [mul_div_cancel₀ _ hτm.ne']
-      calc _ ≤ A * (R ^ γ * τ ^ j) := by gcongr
-        _ = _ := by ring
-    have hnext := mul_add_le_pow_succ_mul j hδm hτ0 hmτ.le hM hD0 herr
-    rw [hρ2]
-    filter_upwards [hstep ρ _ hρ hρR (by rw [← h2ρ]; exact ih)] with x hx
-    linarith
+/-- The rate of the iterated boundary estimate: for `δ > 0` and `γ > 0` there is a rate `τ < 1`
+above both the contraction factor `1 - δ` and the error factor `4^(-γ)`. -/
+private theorem exists_sub_lt_and_rpow_lt_and_lt_one {δ γ : ℝ} (hδ : 0 < δ) (hγ : 0 < γ) :
+    ∃ τ : ℝ, 1 - δ < τ ∧ (4 : ℝ) ^ (-γ) < τ ∧ τ < 1 := by
+  obtain ⟨τ, hτ, hτ1⟩ := exists_between (max_lt (by linarith : 1 - δ < 1)
+    (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by linarith) : (4 : ℝ) ^ (-γ) < 1))
+  exact ⟨τ, (max_lt_iff.1 hτ).1, (max_lt_iff.1 hτ).2, hτ1⟩
 
 /-- **Geometric decay of the supremum at the boundary, with a right-hand side (De Giorgi).** Let
 `n ≥ 1` be the dimension, fix a proportion `θ > 0` and let `r > 1` with `r > n/2`. There are
@@ -1095,10 +890,11 @@ theorem exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_di
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
   obtain ⟨γ, hγ⟩ : ∃ γ : ℝ, γ = 2 - (Fintype.card ι : ℝ) / r := ⟨_, rfl⟩
   have hγ0 : 0 < γ := hγ ▸ sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn]))
-  -- One step contracts by `m < 1` up to an error shrinking by `4^(-γ) ≤ m`; the rate is `τ`.
-  obtain ⟨m, τ, hδm, hqm, hτm', hτpos, hτ1⟩ := exists_le_and_le_and_lt_and_lt hδ0 hγ0
-  have hτm : 0 < τ - m := by linarith
-  refine ⟨τ, K₀ / (τ - m), hτpos, hτ1, div_pos hK₀ hτm, ?_⟩
+  -- One step contracts by `1 - δ` up to an error shrinking by `4^(-γ)`; the rate `τ` exceeds both.
+  obtain ⟨τ, hδτ, hqτ, hτ1⟩ := exists_sub_lt_and_rpow_lt_and_lt_one hδ0 hγ0
+  have hτpos : 0 < τ := (Real.rpow_pos_of_pos (by norm_num) _).trans hqτ
+  have hτm : 0 < τ - (1 - δ) := by linarith
+  refine ⟨τ, K₀ / (τ - (1 - δ)), hτpos, hτ1, div_pos hK₀ hτm, ?_⟩
   intro Omega a f u x₀ R M h ha hf2 hfr hboundary hu hR hle hext j
   rw [← hγ]
   have hlam := h.pos
@@ -1108,7 +904,7 @@ theorem exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_di
   have hF0 : 0 ≤ F := hF ▸ ENNReal.toReal_nonneg
   rcases lt_or_ge M 0 with hM | hM
   · -- For `M < 0` the claim is weaker than the hypothesis.
-    have hK : 0 ≤ τ ^ j * (K₀ / (τ - m) * R ^ γ * F / lam) := by positivity
+    have hK : 0 ≤ τ ^ j * (K₀ / (τ - (1 - δ)) * R ^ γ * F / lam) := by positivity
     filter_upwards [ae_restrict_of_ae_restrict_of_subset (inter_subset_inter_right _
       (ball_subset_ball (div_le_self hR.le (one_le_pow₀ (by norm_num))))) hle] with x hx
     nlinarith [pow_le_one₀ (n := j) hτpos.le hτ1.le]
@@ -1134,11 +930,8 @@ theorem exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_di
     refine hx.trans (add_le_add_right ?_ _)
     calc _ ≤ K₀ * ρ ^ γ * F / lam := by gcongr
       _ = _ := by ring
-  have hDeq : K₀ / (τ - m) * R ^ γ * F / lam = K₀ * F / lam * R ^ γ / (τ - m) := by
-    field_simp
-  rw [hDeq]
-  exact ae_le_pow_mul_add_of_forall_ae_le_mul_add hR hM (by positivity) hγ0.le hδm hqm hτpos.le hτm'
-    hle hstep j
+  exact ae_le_pow_mul_add_of_forall_ae_le_mul_add hR hM (by positivity) (by positivity) hγ0.le
+    hδτ.le hqτ.le (le_of_eq (by field_simp)) hle hstep j
 
 /-- **Geometric decay of weak solutions at the boundary, with a right-hand side (De Giorgi).** Let
 `n ≥ 1` be the dimension, fix a proportion `θ > 0` and let `r > 1` with `r > n/2`. There are
@@ -1214,6 +1007,73 @@ theorem exists_ae_abs_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_bal
     (W1p.value_neg_ae u)] with x h1 h2 h3
   rw [h3, Pi.neg_apply] at h2
   exact abs_le.2 ⟨by linarith, by linarith⟩
+
+/-- **Geometric decay of the supremum at the boundary (De Giorgi).** Let `n ≥ 1` be the dimension
+and fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the
+dimension and the normalization of the additive Haar measure `mu`, such that the following holds.
+Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be
+a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` with `u⁺ ∈ H¹₀(Ω)`. If `u ≤ M` almost everywhere on
+`Ω ∩ B(x₀, R)` and the complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`,
+`0 < r ≤ R`, then for every `j`
+
+`u ≤ (1 - δ)ʲ M` almost everywhere on `Ω ∩ B(x₀, R / 4ʲ)`. -/
+theorem exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff [Nonempty ι]
+    {θ : ℝ} (hθ : 0 < θ) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2 →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
+      0 < R →
+      (∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R), W1p.value u x ≤ M) →
+      (∀ r, 0 < r → r ≤ R →
+        θ * mu.real (ball x₀ r) ≤ mu.real (ball x₀ r \ (Omega : Set (EuclideanSpace ℝ ι)))) →
+      ∀ j : ℕ, ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
+        W1p.value u x ≤ (1 - δ) ^ j * M := by
+  obtain ⟨τ, K, hτ0, hτ1, -, hdecay⟩ :=
+    exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff (mu := mu)
+      (lam := lam) (Lam := Lam) hθ (r := Fintype.card ι + 1)
+      (by simpa using Fintype.card_pos (α := ι)) (by push_cast; linarith)
+  refine ⟨1 - τ, by linarith, by linarith, fun h ha hboundary hu hR hle hext j => ?_⟩
+  simpa using hdecay (f := 0) h ha MemLp.zero MemLp.zero hboundary
+    (fun v hv => by simpa using hu v hv) hR hle hext j
+
+/-- **Geometric decay of weak solutions at the boundary (De Giorgi).** Let `n ≥ 1` be the
+dimension and fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`,
+the dimension and the normalization of the additive Haar measure `mu`, such that the following
+holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let
+`u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If `|u| ≤ M` almost everywhere on
+`Ω ∩ B(x₀, R)` and the complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`,
+`0 < r ≤ R`, then for every `j`
+
+`|u| ≤ (1 - δ)ʲ M` almost everywhere on `Ω ∩ B(x₀, R / 4ʲ)`. -/
+theorem exists_ae_abs_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff
+    [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) :
+    ∃ δ : ℝ, 0 < δ ∧ δ < 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R M : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      u ∈ w1p0Submodule mu Omega 2 →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
+      0 < R →
+      (∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R),
+        |W1p.value u x| ≤ M) →
+      (∀ r, 0 < r → r ≤ R →
+        θ * mu.real (ball x₀ r) ≤ mu.real (ball x₀ r \ (Omega : Set (EuclideanSpace ℝ ι)))) →
+      ∀ j : ℕ, ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ (R / 4 ^ j)),
+        |W1p.value u x| ≤ (1 - δ) ^ j * M := by
+  obtain ⟨τ, K, hτ0, hτ1, -, hdecay⟩ :=
+    exists_ae_abs_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_diff (mu := mu)
+      (lam := lam) (Lam := Lam) hθ (r := Fintype.card ι + 1)
+      (by simpa using Fintype.card_pos (α := ι)) (by push_cast; linarith)
+  refine ⟨1 - τ, by linarith, by linarith, fun h ha hu0 hu hR hle hext j => ?_⟩
+  simpa using hdecay (f := 0) h ha MemLp.zero MemLp.zero hu0 (fun v => by simpa using hu v) hR
+    hle hext j
 
 end PDE
 
