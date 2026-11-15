@@ -41,7 +41,7 @@ theorem exists_aeval_eq_exp {𝕜 : Type*} [RCLike 𝕜] [NormedAlgebra 𝕜 �
     (x : 𝔸) : ∃ P : 𝕜[X], aeval x P = exp x := by
   let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 _
   have hclosed : IsClosed ((Algebra.adjoin 𝕜 {x} : Subalgebra 𝕜 𝔸) : Set 𝔸) :=
-    (Subalgebra.toSubmodule (Algebra.adjoin 𝕜 {x})).closed_of_finiteDimensional
+    (Subalgebra.toSubmodule (Algebra.adjoin 𝕜 {x})).isClosed_of_finiteDimensional
   have hmem : exp x ∈ Algebra.adjoin 𝕜 {x} :=
     exp_mem (R := 𝕜) hclosed (Algebra.self_mem_adjoin_singleton 𝕜 x)
   rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hmem

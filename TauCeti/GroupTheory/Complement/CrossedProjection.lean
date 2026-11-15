@@ -20,7 +20,10 @@ such a map equals `1` is a complement. This file proves both constructions and t
 existence criterion, without any finiteness assumption. The same dictionary holds for an
 intermediate subgroup `H ≥ N`: the left projection along a local complement of `N` in `H` is a
 normalized crossed map `H → N`, the zero locus of such a map is a local complement, and the two
-constructions are mutually inverse (`Subgroup.localCrossedProjectionEquiv`).
+constructions are mutually inverse (`Subgroup.localCrossedProjectionEquiv`). Conjugating a
+normalized crossed map `c` on `H` by `g` gives the normalized crossed map
+`x ↦ g • c (g⁻¹ * x * g)` on `g H g⁻¹` (`Subgroup.smul_apply_equivSMul_symm_inclusion`), whose
+zero locus is the conjugate of that of `c`.
 
 Conjugating a complement `D` by `g` conjugates its crossed projection `c` to
 `x ↦ g • c (g⁻¹ * x * g)`. For `a ∈ N` this is `c` times the principal crossed map
@@ -340,6 +343,21 @@ theorem exists_isLocalComplement_iff_crossedProjection :
     have ha : IsCocycle₁ (fun x => Additive.ofMul (c x)) :=
       fun x y => congrArg Additive.ofMul (hc x y)
     exact ⟨_, isLocalComplement_map_zeroLocus hNH ha (fun n => congrArg Additive.ofMul (hn n))⟩
+
+omit [IsMulCommutative N] in
+/-- Conjugating a normalized map `c` on `H` by `g` gives the map `x ↦ g • c (g⁻¹ * x * g)` on
+`g H g⁻¹`, which is again the identity on `N`. By `groupCohomology.IsCocycle₁.conj` and
+`groupCohomology.map_subtype_zeroLocus_conj`, a normalized crossed map conjugates to a normalized
+crossed map whose zero locus is conjugated by `g`. -/
+theorem smul_apply_equivSMul_symm_inclusion {c : H → Additive N}
+    (hn : ∀ n : N, c (inclusion hNH n) = Additive.ofMul n) (g : G)
+    (hN : N ≤ MulAut.conj g • H) (n : N) :
+    g • c ((equivSMul (MulAut.conj g) H).symm (inclusion hN n)) = Additive.ofMul n := by
+  have hx : (equivSMul (MulAut.conj g) H).symm (inclusion hN n) = inclusion hNH (g⁻¹ • n) := by
+    apply Subtype.ext
+    rw [equivSMul_symm_apply_coe (MulAut.conj g) H (inclusion hN n)]
+    simp [coe_conjugationAction_smul]
+  rw [hx, hn, ← Additive.ofMul_smul, smul_inv_smul]
 
 end Local
 

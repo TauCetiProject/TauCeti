@@ -26,7 +26,9 @@ the chart `(y, b)` is the preferred trivialization of `E` at `y`, restricted to 
 of `x` if `b = false` and to the source of `φ` if `b = true`. The coordinate changes are those of
 the preferred trivializations of `E`, multiplied by the scalar `TauCeti.pointTwistFactor`, which
 is `φ z - φ x` from the outer piece to the chart disc and its inverse in the other direction. No
-second line-bundle carrier is introduced, and the model fibre may have any rank.
+second line-bundle carrier is introduced, and the model fibre may have any rank. The same gluing
+with the reversed scalar, `TauCeti.signedPointTwistFactor x false`, gives the negative point twist
+`E(-x)`, so both twists are the two cases of the signed core `TauCeti.signedPointTwistCore`.
 
 Multiplication by the canonical section of `𝒪(x)` is the fibre map `TauCeti.pointTwistMul` from
 the fibre of `E` at `z` to the fibre of `E(x)` at `z`. It is an isomorphism off `x`, with inverse
@@ -55,6 +57,9 @@ this file are the bundle-level input to that comparison.
 
 * `TauCeti.pointTwistCoord`: the chart coordinate at `x`, centred at `x`.
 * `TauCeti.pointTwistFactor`: the scalar transition function of the two-set cover.
+* `TauCeti.signedPointTwistFactor`: the scalar transition function or its reverse, by sign.
+* `TauCeti.signedPointTwistCore`: the coordinate core of the point twist `E(x)` or, for the
+  negative sign, of `E(-x)`.
 * `TauCeti.pointTwistCore`: the coordinate core of the point twist `E(x)`.
 * `TauCeti.pointTwistMul`, `TauCeti.pointTwistDiv` and `TauCeti.pointTwistPoleMul`: fibrewise
   multiplication by the canonical section, its inverse off `x`, and the leading coefficient.
@@ -64,8 +69,8 @@ this file are the bundle-level input to that comparison.
 
 ## Main results
 
-* `TauCeti.pointTwistCore.isContMDiff`: the point twist of a `C^n` bundle is a `C^n` bundle; for
-  `n = ∞` over `𝓘(ℂ)` this is its holomorphic structure.
+* `TauCeti.signedPointTwistCore.isContMDiff`: the point twist of a `C^n` bundle, of either sign, is
+  a `C^n` bundle; for `n = ∞` over `𝓘(ℂ)` this is its holomorphic structure.
 * `TauCeti.contMDiff_pointTwistMul_section`: multiplication by the canonical section preserves
   `C^n` sections.
 * `TauCeti.contMDiff_pointTwist_section_iff` and `TauCeti.contMDiff_pointTwistOfPole`: the `C^n`
@@ -122,6 +127,15 @@ def pointTwistBaseSet (x : X) : Bool → Set X
 
 @[simp] theorem pointTwistBaseSet_true (x : X) :
     pointTwistBaseSet x true = (chartAt ℂ x).source := (rfl)
+
+open Classical in
+/-- Every point lies in the piece of the cover that it selects: the chart disc for `x` itself, and
+the complement of `x` for every other point. -/
+theorem mem_pointTwistBaseSet_decide (x z : X) : z ∈ pointTwistBaseSet x (decide (z = x)) := by
+  by_cases hzx : z = x
+  · subst hzx
+    simp
+  · simp [hzx]
 
 theorem isOpen_pointTwistBaseSet (x : X) (b : Bool) : IsOpen (pointTwistBaseSet x b) := by
   have : T1Space X := ChartedSpace.t1Space ℂ X
@@ -203,6 +217,45 @@ theorem continuousOn_pointTwistFactor (x : X) (b b' : Bool) :
     ContinuousOn (pointTwistFactor x b b') (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') :=
   (contMDiffOn_pointTwistFactor (n := 0) x b b').continuousOn
 
+/-- The scalar transition function of the point twist at `x` with sign `s`: `pointTwistFactor` for
+`s = true`, which glues `E(x)`, and the reversed function for `s = false`, which glues `E(-x)`. -/
+def signedPointTwistFactor (x : X) : Bool → Bool → Bool → X → ℂ
+  | true, b, b' => pointTwistFactor x b b'
+  | false, b, b' => pointTwistFactor x b' b
+
+@[simp] theorem signedPointTwistFactor_true (x : X) (b b' : Bool) :
+    signedPointTwistFactor x true b b' = pointTwistFactor x b b' := (rfl)
+
+@[simp] theorem signedPointTwistFactor_false (x : X) (b b' : Bool) :
+    signedPointTwistFactor x false b b' = pointTwistFactor x b' b := (rfl)
+
+@[simp] theorem signedPointTwistFactor_self (x : X) (s b : Bool) (z : X) :
+    signedPointTwistFactor x s b b z = 1 := by
+  cases s <;> exact pointTwistFactor_self x b z
+
+/-- The scalar cocycle identity of the signed transition functions on a triple overlap. -/
+theorem signedPointTwistFactor_mul {x z : X} {s b b' b'' : Bool} (hb : z ∈ pointTwistBaseSet x b)
+    (hb' : z ∈ pointTwistBaseSet x b') (hb'' : z ∈ pointTwistBaseSet x b'') :
+    signedPointTwistFactor x s b' b'' z * signedPointTwistFactor x s b b' z =
+      signedPointTwistFactor x s b b'' z := by
+  cases s
+  · rw [mul_comm]
+    exact pointTwistFactor_mul hb'' hb' hb
+  · exact pointTwistFactor_mul hb hb' hb''
+
+theorem contMDiffOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
+    ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n (signedPointTwistFactor x s b b')
+      (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') := by
+  cases s
+  · exact (contMDiffOn_pointTwistFactor x b' b).mono fun _ hz ↦ ⟨hz.2, hz.1⟩
+  · exact contMDiffOn_pointTwistFactor x b b'
+
+omit [IsManifold 𝓘(ℂ) n X] in
+theorem continuousOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
+    ContinuousOn (signedPointTwistFactor x s b b')
+      (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') :=
+  (contMDiffOn_signedPointTwistFactor (n := 0) x s b b').continuousOn
+
 /-! ### The point-twist core -/
 
 variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -211,27 +264,23 @@ variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
   [FiberBundle F E] [VectorBundle ℂ F E]
 
 open Classical in
-/-- The coordinate core of the point twist `E(x)`. The chart `(y, b)` is the preferred
+/-- The coordinate core of the signed point twist at `x`: the point twist `E(x)` for `s = true`
+and the negative point twist `E(-x)` for `s = false`. The chart `(y, b)` is the preferred
 trivialization of `E` at `y` over `pointTwistBaseSet x b`, and the coordinate changes are those of
-`E` multiplied by `pointTwistFactor`. -/
-def pointTwistCore (x : X) : VectorBundleCore ℂ X F (X × Bool) where
+`E` multiplied by `signedPointTwistFactor x s`. -/
+def signedPointTwistCore (x : X) (s : Bool) : VectorBundleCore ℂ X F (X × Bool) where
   baseSet i := (trivializationAt F E i.1).baseSet ∩ pointTwistBaseSet x i.2
   isOpen_baseSet i := (trivializationAt F E i.1).open_baseSet.inter (isOpen_pointTwistBaseSet x _)
   indexAt z := (z, decide (z = x))
-  mem_baseSet_at z := by
-    refine ⟨mem_baseSet_trivializationAt F E z, ?_⟩
-    by_cases hzx : z = x
-    · subst hzx
-      simp
-    · simp [hzx]
-  coordChange i j z := pointTwistFactor x i.2 j.2 z •
+  mem_baseSet_at z := ⟨mem_baseSet_trivializationAt F E z, mem_pointTwistBaseSet_decide x z⟩
+  coordChange i j z := signedPointTwistFactor x s i.2 j.2 z •
     ((trivializationAt F E i.1).coordChangeL ℂ (trivializationAt F E j.1) z : F →L[ℂ] F)
   coordChange_self i z hz v := by
-    rw [pointTwistFactor_self, one_smul, ContinuousLinearEquiv.coe_coe,
+    rw [signedPointTwistFactor_self, one_smul, ContinuousLinearEquiv.coe_coe,
       Trivialization.coe_coordChangeL (R := ℂ) _ _ ⟨hz.1, hz.1⟩]
     exact ((trivializationAt F E i.1).linearEquivAt ℂ z hz.1).apply_symm_apply v
   continuousOn_coordChange i j := by
-    refine ((continuousOn_pointTwistFactor x i.2 j.2).mono ?_).smul
+    refine ((continuousOn_signedPointTwistFactor x s i.2 j.2).mono ?_).smul
       ((continuousOn_coordChange ℂ (trivializationAt F E i.1) (trivializationAt F E j.1)).mono ?_)
     · exact fun _ hz ↦ ⟨hz.1.2, hz.2.2⟩
     · exact fun _ hz ↦ ⟨hz.1.1, hz.2.1⟩
@@ -241,51 +290,60 @@ def pointTwistCore (x : X) : VectorBundleCore ℂ X F (X × Bool) where
     rw [Trivialization.coe_coordChangeL _ _ ⟨hz.1.1.1, hz.1.2.1⟩,
       Trivialization.coe_coordChangeL _ _ ⟨hz.1.2.1, hz.2.1⟩,
       Trivialization.coe_coordChangeL _ _ ⟨hz.1.1.1, hz.2.1⟩,
-      mul_comm, pointTwistFactor_mul hz.1.1.2 hz.1.2.2 hz.2.2]
+      mul_comm, signedPointTwistFactor_mul hz.1.1.2 hz.1.2.2 hz.2.2]
     simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
+
+/-- The coordinate core of the point twist `E(x)`, the signed point twist with sign `true`. -/
+abbrev pointTwistCore (x : X) : VectorBundleCore ℂ X F (X × Bool) :=
+  signedPointTwistCore F E x true
 
 variable {F E}
 
-theorem pointTwistCore_baseSet (x : X) (i : X × Bool) :
-    (pointTwistCore F E x).baseSet i =
+theorem signedPointTwistCore_baseSet (x : X) (s : Bool) (i : X × Bool) :
+    (signedPointTwistCore F E x s).baseSet i =
       (trivializationAt F E i.1).baseSet ∩ pointTwistBaseSet x i.2 := (rfl)
 
-@[simp] theorem pointTwistCore_localTriv_baseSet (x : X) (i : X × Bool) :
-    ((pointTwistCore F E x).localTriv i).baseSet =
+theorem mem_signedPointTwistCore_baseSet {x : X} {s : Bool} {i : X × Bool} {z : X} :
+    z ∈ (signedPointTwistCore F E x s).baseSet i ↔
+      z ∈ (trivializationAt F E i.1).baseSet ∧ z ∈ pointTwistBaseSet x i.2 :=
+  Iff.rfl
+
+@[simp] theorem signedPointTwistCore_localTriv_baseSet (x : X) (s : Bool) (i : X × Bool) :
+    ((signedPointTwistCore F E x s).localTriv i).baseSet =
       (trivializationAt F E i.1).baseSet ∩ pointTwistBaseSet x i.2 := (rfl)
 
 open Classical in
-@[simp] theorem pointTwistCore_indexAt (x z : X) :
-    (pointTwistCore F E x).indexAt z = (z, decide (z = x)) := (rfl)
+@[simp] theorem signedPointTwistCore_indexAt (x : X) (s : Bool) (z : X) :
+    (signedPointTwistCore F E x s).indexAt z = (z, decide (z = x)) := (rfl)
 
-theorem pointTwistCore_coordChange (x : X) (i j : X × Bool) (z : X) :
-    (pointTwistCore F E x).coordChange i j z =
-      pointTwistFactor x i.2 j.2 z •
+theorem signedPointTwistCore_coordChange (x : X) (s : Bool) (i j : X × Bool) (z : X) :
+    (signedPointTwistCore F E x s).coordChange i j z =
+      signedPointTwistFactor x s i.2 j.2 z •
         ((trivializationAt F E i.1).coordChangeL ℂ (trivializationAt F E j.1) z : F →L[ℂ] F) :=
   (rfl)
 
-/-- The point twist of a `C^n` vector bundle is a `C^n` vector bundle. Over `𝓘(ℂ)` with `n = ∞`
-this is the holomorphic structure of `E(x)`. -/
-instance pointTwistCore.isContMDiff [ContMDiffVectorBundle n F E 𝓘(ℂ)] (x : X) :
-    (pointTwistCore F E x).IsContMDiff 𝓘(ℂ) n where
+/-- The signed point twist of a `C^n` vector bundle is a `C^n` vector bundle. Over `𝓘(ℂ)` with
+`n = ∞` this is the holomorphic structure of `E(x)` and of `E(-x)`. -/
+instance signedPointTwistCore.isContMDiff [ContMDiffVectorBundle n F E 𝓘(ℂ)] (x : X) (s : Bool) :
+    (signedPointTwistCore F E x s).IsContMDiff 𝓘(ℂ) n where
   contMDiffOn_coordChange i j := by
-    refine ((contMDiffOn_pointTwistFactor x i.2 j.2).mono ?_).smul
+    refine ((contMDiffOn_signedPointTwistFactor x s i.2 j.2).mono ?_).smul
       ((contMDiffOn_coordChangeL (IB := 𝓘(ℂ)) (n := n) (trivializationAt F E i.1)
         (trivializationAt F E j.1)).mono ?_)
     · exact fun _ hz ↦ ⟨hz.1.2, hz.2.2⟩
     · exact fun _ hz ↦ ⟨hz.1.1, hz.2.1⟩
 
-/-- The coordinates of the preferred chart of the point twist at `z₀`. -/
-theorem pointTwistCore_trivializationAt_apply (x z₀ : X)
-    (p : TotalSpace F (pointTwistCore F E x).Fiber) :
-    (trivializationAt F (pointTwistCore F E x).Fiber z₀ p).2 =
-      (pointTwistCore F E x).coordChange ((pointTwistCore F E x).indexAt p.proj)
-        ((pointTwistCore F E x).indexAt z₀) p.proj p.2 :=
+/-- The coordinates of the preferred chart of the signed point twist at `z₀`. -/
+theorem signedPointTwistCore_trivializationAt_apply (x : X) (s : Bool) (z₀ : X)
+    (p : TotalSpace F (signedPointTwistCore F E x s).Fiber) :
+    (trivializationAt F (signedPointTwistCore F E x s).Fiber z₀ p).2 =
+      (signedPointTwistCore F E x s).coordChange ((signedPointTwistCore F E x s).indexAt p.proj)
+        ((signedPointTwistCore F E x s).indexAt z₀) p.proj p.2 :=
   (rfl)
 
-theorem mem_pointTwistCore_trivializationAt_baseSet {x z₀ z : X} :
-    z ∈ (trivializationAt F (pointTwistCore F E x).Fiber z₀).baseSet ↔
-      z ∈ (pointTwistCore F E x).baseSet ((pointTwistCore F E x).indexAt z₀) :=
+theorem mem_signedPointTwistCore_trivializationAt_baseSet {x : X} {s : Bool} {z₀ z : X} :
+    z ∈ (trivializationAt F (signedPointTwistCore F E x s).Fiber z₀).baseSet ↔
+      z ∈ (signedPointTwistCore F E x s).baseSet ((signedPointTwistCore F E x s).indexAt z₀) :=
   Iff.rfl
 
 /-! ### Multiplication by the canonical section -/
@@ -301,7 +359,9 @@ def pointTwistMul (x z : X) : E z →L[ℂ] F :=
 variable (F E) in
 open Classical in
 /-- The inverse of `pointTwistMul` away from `x`, extended by `0` at `x`: it reads a vector of the
-point twist as a vector of `E`, normalized to zero at the allowed pole. -/
+point twist as a vector of `E`, normalized to zero at the allowed pole. Its scalar is `0` at `x`
+and `1` elsewhere, hence its own inverse, so the same map is also the inclusion of the negative
+point twist `E(-x)` into `E`, which is multiplication by the canonical section of `𝒪(x)`. -/
 def pointTwistDiv (x z : X) : F →L[ℂ] E z :=
   (trivializationAt F E z).symmL ℂ z ∘L
     ((pointTwistFactor x false (decide (z = x)) z)⁻¹ • ContinuousLinearMap.id ℂ F)
@@ -355,6 +415,17 @@ theorem pointTwistDiv_apply_of_ne {x z : X} (h : z ≠ x) (w : F) :
   classical
   rw [pointTwistDiv_apply, decide_eq_false h, pointTwistFactor_self, inv_one, one_smul]
 
+open Classical in
+/-- The scalar of `pointTwistMul` and `pointTwistDiv` is `0` at `x` and `1` elsewhere, so it is its
+own inverse. -/
+theorem inv_pointTwistFactor_false_decide (x z : X) :
+    (pointTwistFactor x false (decide (z = x)) z)⁻¹ =
+      pointTwistFactor x false (decide (z = x)) z := by
+  by_cases h : z = x
+  · subst h
+    rw [decide_eq_true rfl, pointTwistFactor_false_true, pointTwistCoord_self, inv_zero]
+  · rw [decide_eq_false h, pointTwistFactor_self, inv_one]
+
 @[simp] theorem pointTwistDiv_pointTwistMul {x z : X} (h : z ≠ x) (v : E z) :
     pointTwistDiv F E x z (pointTwistMul F E x z v) = v := by
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
@@ -365,6 +436,12 @@ theorem pointTwistDiv_apply_of_ne {x z : X} (h : z ≠ x) (w : F) :
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
   exact congrArg Prod.snd
     ((trivializationAt F E z).apply_mk_symm (mem_baseSet_trivializationAt F E z) w)
+
+/-- Away from `x`, `pointTwistDiv` is an isomorphism, with inverse `pointTwistMul`. -/
+theorem pointTwistDiv_bijective_of_ne {x z : X} (h : z ≠ x) :
+    Function.Bijective (pointTwistDiv F E x z) :=
+  Function.bijective_iff_has_inverse.2
+    ⟨pointTwistMul F E x z, pointTwistMul_pointTwistDiv h, pointTwistDiv_pointTwistMul h⟩
 
 /-- Away from `x`, the leading coefficient is `pointTwistDiv` multiplied by the centred chart
 coordinate. -/
@@ -379,15 +456,15 @@ theorem pointTwistPoleMul_eq_smul_pointTwistDiv {x z : X} (h : z ≠ x)
     ← (trivializationAt F E z).symmL_apply (R := ℂ) h₀, map_smul]
 
 open Classical in
-/-- The coordinates of a vector of the point twist at `z` in the chart `i`: its coordinates in
-the preferred chart of `E` at `z`, changed to the chart of `E` at `i.1` and multiplied by the
-scalar transition function. -/
-theorem pointTwistCore_localTriv_apply (x : X) (i : X × Bool) (z : X) (w : F) :
-    ((pointTwistCore F E x).localTriv i ⟨z, w⟩).2 =
-      pointTwistFactor x (decide (z = x)) i.2 z •
+/-- The coordinates of a vector of the signed point twist at `z` in the chart `i`: its coordinates
+in the preferred chart of `E` at `z`, changed to the chart of `E` at `i.1` and multiplied by the
+signed scalar transition function. -/
+theorem signedPointTwistCore_localTriv_apply (x : X) (s : Bool) (i : X × Bool) (z : X) (w : F) :
+    ((signedPointTwistCore F E x s).localTriv i ⟨z, w⟩).2 =
+      signedPointTwistFactor x s (decide (z = x)) i.2 z •
         (trivializationAt F E z).coordChangeL ℂ (trivializationAt F E i.1) z w := by
-  rw [VectorBundleCore.localTriv_apply, pointTwistCore_indexAt, pointTwistCore_coordChange,
-    smul_apply, ContinuousLinearEquiv.coe_coe]
+  rw [VectorBundleCore.localTriv_apply, signedPointTwistCore_indexAt,
+    signedPointTwistCore_coordChange, smul_apply, ContinuousLinearEquiv.coe_coe]
 
 open Classical in
 /-- In every chart of the point twist, multiplication by the canonical section is the scalar
@@ -398,8 +475,8 @@ theorem pointTwistCore_localTriv_pointTwistMul {x z : X} {i : X × Bool}
       pointTwistFactor x false i.2 z • (trivializationAt F E i.1 ⟨z, v⟩).2 := by
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
   have hb₀ : z ∈ pointTwistBaseSet x (decide (z = x)) := ((pointTwistCore F E x).mem_baseSet_at z).2
-  rw [pointTwistCore_localTriv_apply, pointTwistMul_apply, map_smul,
-    smul_smul, pointTwistFactor_mul_false hb₀ hz.2,
+  rw [signedPointTwistCore_localTriv_apply, signedPointTwistFactor_true, pointTwistMul_apply,
+    map_smul, smul_smul, pointTwistFactor_mul_false hb₀ hz.2,
     Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
   congr 2
   rw [(trivializationAt F E z).symm_apply_apply_mk h₀ v]
@@ -412,8 +489,8 @@ theorem trivializationAt_pointTwistPoleMul {x z : X} {y : X}
     (trivializationAt F E y ⟨z, pointTwistPoleMul F E x z w⟩).2 =
       ((pointTwistCore F E x).localTriv (y, true) ⟨z, w⟩).2 := by
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
-  rw [pointTwistCore_localTriv_apply, pointTwistPoleMul_apply, ← map_smul,
-    Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
+  rw [signedPointTwistCore_localTriv_apply, signedPointTwistFactor_true, pointTwistPoleMul_apply,
+    ← map_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
 theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
     (hz : z ∈ (pointTwistCore F E x).baseSet (y, false)) (w : F) :
@@ -422,27 +499,28 @@ theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
   classical
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
   have hzx : z ≠ x := hz.2
-  rw [pointTwistCore_localTriv_apply, pointTwistDiv_apply_of_ne hzx, decide_eq_false hzx,
-    pointTwistFactor_self, one_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
+  rw [signedPointTwistCore_localTriv_apply, signedPointTwistFactor_true,
+    pointTwistDiv_apply_of_ne hzx, decide_eq_false hzx, pointTwistFactor_self, one_smul,
+    Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
 open Classical in
-theorem pointTwistCore_trivializationAt (x z : X) :
-    trivializationAt F (pointTwistCore F E x).Fiber z =
-      (pointTwistCore F E x).localTriv (z, decide (z = x)) :=
+theorem signedPointTwistCore_trivializationAt (x : X) (s : Bool) (z : X) :
+    trivializationAt F (signedPointTwistCore F E x s).Fiber z =
+      (signedPointTwistCore F E x s).localTriv (z, decide (z = x)) :=
   (rfl)
 
 variable (F E) in
-theorem pointTwistCore_trivializationAt_self (x : X) :
-    trivializationAt F (pointTwistCore F E x).Fiber x =
-      (pointTwistCore F E x).localTriv (x, true) := by
+theorem signedPointTwistCore_trivializationAt_self (x : X) (s : Bool) :
+    trivializationAt F (signedPointTwistCore F E x s).Fiber x =
+      (signedPointTwistCore F E x s).localTriv (x, true) := by
   classical
-  rw [pointTwistCore_trivializationAt, decide_eq_true rfl]
+  rw [signedPointTwistCore_trivializationAt, decide_eq_true rfl]
 
-theorem pointTwistCore_trivializationAt_of_ne {x z : X} (h : z ≠ x) :
-    trivializationAt F (pointTwistCore F E x).Fiber z =
-      (pointTwistCore F E x).localTriv (z, false) := by
+theorem signedPointTwistCore_trivializationAt_of_ne {x z : X} {s : Bool} (h : z ≠ x) :
+    trivializationAt F (signedPointTwistCore F E x s).Fiber z =
+      (signedPointTwistCore F E x s).localTriv (z, false) := by
   classical
-  rw [pointTwistCore_trivializationAt, decide_eq_false h]
+  rw [signedPointTwistCore_trivializationAt, decide_eq_false h]
 
 /-! ### Sections of the point twist -/
 
@@ -490,7 +568,7 @@ theorem contMDiffAt_pointTwist_section_iff_of_ne {x z₀ : X} (h : z₀ ≠ x)
   rw [(trivializationAt F (pointTwistCore F E x).Fiber z₀).contMDiffAt_section_iff
       (mem_baseSet_trivializationAt F _ z₀),
     (trivializationAt F E z₀).contMDiffAt_section_iff (mem_baseSet_trivializationAt F E z₀),
-    pointTwistCore_trivializationAt_of_ne h]
+    signedPointTwistCore_trivializationAt_of_ne h]
   refine Filter.EventuallyEq.contMDiffAt_iff ?_
   filter_upwards [((pointTwistCore F E x).isOpen_baseSet _).mem_nhds hz₀] with z hz
   exact (trivializationAt_pointTwistDiv hz (τ z)).symm
@@ -507,7 +585,7 @@ theorem contMDiffAt_pointTwist_section_iff_self {x : X}
   rw [(trivializationAt F (pointTwistCore F E x).Fiber x).contMDiffAt_section_iff
       (mem_baseSet_trivializationAt F _ x),
     (trivializationAt F E x).contMDiffAt_section_iff (mem_baseSet_trivializationAt F E x),
-    pointTwistCore_trivializationAt_self]
+    signedPointTwistCore_trivializationAt_self]
   refine Filter.EventuallyEq.contMDiffAt_iff ?_
   filter_upwards [((pointTwistCore F E x).isOpen_baseSet _).mem_nhds hx] with z hz
   exact (trivializationAt_pointTwistPoleMul hz (τ z)).symm

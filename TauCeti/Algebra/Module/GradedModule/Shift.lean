@@ -43,7 +43,7 @@ universe u v
 namespace InternalGrading
 
 variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
-variable {ι : Type} [DecidableEq ι] [AddGroup ι]
+variable {ι : Type*} [DecidableEq ι] [AddGroup ι]
 
 /-- The shift of an internal grading by `c`: its degree-`p` piece is the degree-`(p + c)` piece of
 the original grading. The underlying module is unchanged. -/
@@ -82,7 +82,7 @@ theorem shift_shift (G : InternalGrading R M ι) (c d : ι) :
 
 /-- A Koszul twist preserves the original degree, expressed in any shifted grading. -/
 theorem koszulTwist_mem_shift_piece {R : Type u} {M : Type v}
-    [CommRing R] [AddCommMonoid M] [Module R M] (G : InternalGrading R M)
+    [CommRing R] [AddCommMonoid M] [Module R M] (G : InternalGrading R M ℤ)
     {x : M} {e : ℤ} (hx : x ∈ G.piece e) (q c : ℤ) :
     G.koszulTwist q x ∈ (G.shift c).piece (e - c) := by
   rw [shift_piece, sub_add_cancel]
@@ -92,7 +92,7 @@ theorem koszulTwist_mem_shift_piece {R : Type u} {M : Type v}
 twist by the constant sign `(-1)^(q * c)`: a homogeneous element of degree `p` has degree `p - c`
 after the shift. -/
 theorem koszulTwist_shift {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
-    (G : InternalGrading R M) (c q : ℤ) :
+    (G : InternalGrading R M ℤ) (c q : ℤ) :
     (G.shift c).koszulTwist q = (((q * c).negOnePow : ℤ) : R) • G.koszulTwist q := by
   refine G.linearMap_ext fun p x hx ↦ ?_
   have hshift : x ∈ (G.shift c).piece (p - c) := by rwa [shift_piece, sub_add_cancel]
@@ -103,7 +103,7 @@ theorem koszulTwist_shift {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid 
 
 /-- The degree-one Koszul twist of the suspended grading is the negative of the unsuspended one. -/
 theorem koszulTwist_one_shift_one {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M]
-    [Module R M] (G : InternalGrading R M) :
+    [Module R M] (G : InternalGrading R M ℤ) :
     (G.shift 1).koszulTwist 1 = -G.koszulTwist 1 := by
   rw [koszulTwist_shift]
   simp
@@ -113,7 +113,7 @@ end InternalGrading
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a
 homogeneous linear map unchanged. -/
 theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
-    {ι : Type} [DecidableEq ι] [AddCommGroup ι]
+    {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M ι}
     {H : InternalGrading R N ι} {f : M →ₗ[R] N} {c q : ι} :
     LinearMap.IsHomogeneous f (G.shift c).piece (H.shift c).piece q ↔

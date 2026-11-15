@@ -545,22 +545,15 @@ private theorem modelOrientationAt_neg (o : Manifold.Orientation 𝓘(ℝ, E) E 
     modelOrientationAt (-o) x = -modelOrientationAt o x := by
   rw [modelOrientationAt, modelOrientationAt, orientationAt_neg, _root_.Orientation.map_neg]
 
-/-- Read in `E`, the constant model orientation is the orientation it is built from. -/
-private theorem modelOrientationAt_model (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
-    modelOrientationAt (model (I := 𝓘(ℝ, E)) o hι) x = o := by
-  rw [modelOrientationAt, orientationAt_model]
-  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
-  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
-
 /-- An orientation of the connected model space `E`, read in `E`, has the same tangent
 orientation at any two points. -/
 private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
     modelOrientationAt o x = modelOrientationAt o y := by
   obtain h | h := o.eq_or_eq_neg (model (I := 𝓘(ℝ, E)) (modelOrientationAt o x) o.card_eq)
-  · rw [h, modelOrientationAt_model, modelOrientationAt_model]
-  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
-      modelOrientationAt_model]
+  · rw [h]
+    simp only [modelOrientationAt, map_orientationAt_model]
+  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg]
+    simp only [modelOrientationAt, map_orientationAt_model]
 
 /-- **An orientation of the model space is constant.** An orientation of the connected model space
 `E` has the same tangent orientation at any two points, the tangent spaces of `E` all being `E`. -/
@@ -718,7 +711,7 @@ theorem signAt_mul_signAt_mul_det_pos
     (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k)) (C : E ≃L[ℝ] E')
     (hl : l'.modelOrientation =
       _root_.Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
-    {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
+    {f : M → N} {x : M}
     (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
@@ -746,12 +739,24 @@ theorem signAt_mul_signAt_mul_det_pos
   -- The tangent spaces at `x` and `f x` are the model spaces, so the manifold derivative of `f`
   -- is a map `D : E → E'`, which composes with the tangent coordinate changes.
   obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E', D = mfderiv I J f x := ⟨_, rfl⟩
+  -- If `f` is not differentiable at `x`, then `D = 0` is an equivalence, so `E` is trivial and
+  -- every map out of `E` is zero; otherwise `f` is continuous at `x`.
   have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
-    subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
-      (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    by_cases hd : MDifferentiableAt I J f x
+    · subst hD₀
+      exact hd.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm
+        (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    · have hsub : Subsingleton E := by
+        refine ⟨fun v w ↦ ?_⟩
+        have h0 : (e : TangentSpace I x →L[ℝ] TangentSpace J (f x)) = 0 :=
+          he.trans (mfderiv_zero_of_not_mdifferentiableAt hd)
+        exact sub_eq_zero.1 (e.injective
+          ((DFunLike.congr_fun h0 (v - w)).trans (map_zero e).symm))
+      ext v
+      rw [Subsingleton.elim v 0]
+      simp
   -- `e` is the derivative `D`, read as a linear equivalence of the model spaces; this is `rfl`
   -- because `TangentSpace I x` and `TangentSpace J (f x)` are by definition `E` and `E'`.
   have hDA : (D : E →ₗ[ℝ] E') = A := by

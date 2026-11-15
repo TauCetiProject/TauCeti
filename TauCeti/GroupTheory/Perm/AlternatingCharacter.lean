@@ -45,7 +45,8 @@ The roots-of-unity hypothesis on the last three statements is not merely a devic
 *few* characters: the character group can also be too *large*. Over `M = ℂ × ℂ` the characters of
 `A₄` are the pairs of cube roots of unity, nine of them, and a nontrivial one such as `(ω, 1)` has
 neither `(1, ω)` nor its inverse among its powers, so the classification genuinely fails there.
-`HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (alternatingGroup α)))` rules that out by
+`HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization (alternatingGroup α)))` rules that
+out by
 asking for a primitive cube root of unity in `M` and for the cube roots of unity in `M` to form a
 cyclic group. It is a sufficient condition, not one shown here to be necessary.
 
@@ -221,12 +222,12 @@ section CharacterGroup
 
 /-- **The abelianization of `A₄` has order three.** -/
 theorem card_abelianization_alternatingGroup (hα : Nat.card α = 4) :
-    Nat.card (Abelianization (alternatingGroup α)) = 3 := by
+    Nat.card (Group.Abelianization (alternatingGroup α)) = 3 := by
   have hcomm : Nat.card (commutator (alternatingGroup α)) = 4 := by
     rw [← alternatingGroup.kleinFour_eq_commutator hα,
       alternatingGroup.kleinFour_card_of_card_eq_four hα]
   have hsplit : Nat.card (alternatingGroup α) =
-      Nat.card (Abelianization (alternatingGroup α)) *
+      Nat.card (Group.Abelianization (alternatingGroup α)) *
         Nat.card (commutator (alternatingGroup α)) :=
     Subgroup.card_eq_card_quotient_mul_card_subgroup _
   rw [alternatingGroup.card_of_card_eq_four hα, hcomm] at hsplit
@@ -244,10 +245,11 @@ coefficients. -/
 @[simp]
 theorem monoidHom_alternatingGroup_apply_pow_three (hα : Fintype.card α = 4)
     (χ : alternatingGroup α →* M) (x : alternatingGroup α) : χ x ^ 3 = 1 := by
-  have hx : Abelianization.of x ^ 3 = 1 := by
+  have hx : Group.Abelianization.of x ^ 3 = 1 := by
     rw [← card_abelianization_alternatingGroup (α := α) (by rwa [Nat.card_eq_fintype_card])]
     exact pow_card_eq_one'
-  rw [← χ.coe_toHomUnits, ← Units.val_pow_eq_pow_val, ← Abelianization.lift_apply_of, ← map_pow,
+  rw [← χ.coe_toHomUnits, ← Units.val_pow_eq_pow_val, ← Group.Abelianization.lift_apply_of, ←
+      map_pow,
     hx, map_one, Units.val_one]
 
 /-- **A linear character of `A₄` is a cube root of unity in the character group**, the form of
@@ -264,7 +266,7 @@ end CubeRoots
 section EnoughRoots
 
 variable (M : Type*) [CommMonoid M]
-  [HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (alternatingGroup α)))]
+  [HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization (alternatingGroup α)))]
 
 /-- **The linear characters of `A₄` form a group of order three**, when `M` has enough roots of
 unity for the exponent of the abelianization `A₄ / V₄`. -/

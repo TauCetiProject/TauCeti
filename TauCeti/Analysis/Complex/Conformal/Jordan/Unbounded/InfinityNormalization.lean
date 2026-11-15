@@ -233,6 +233,6 @@ theorem tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side {g : ℂ → �
     ((((differentiableOn_const q).add (hGd.inv hGne)).mono inter_subset_right).sub_const p
       |>.div_const n)
     hreal (fun z hz => hupper z hz.1 hz.2) fun z hz z' hz' h => hi hz hz' ?_
-  simpa [div_left_inj' hn] using h
+  simpa [div_left_inj₀ hn] using h
 
 end TauCeti

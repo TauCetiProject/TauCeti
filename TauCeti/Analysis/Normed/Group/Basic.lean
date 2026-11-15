@@ -134,7 +134,7 @@ theorem exists_enorm_sub_le_mul_of_reflTransGen {κ F ι : Type*} [SeminormedAdd
     obtain ⟨D₂, hD₂⟩ := hadj j l hjl
     refine ⟨D₂ + D₁, fun k ↦ ?_⟩
     calc ‖a k l - a k i₀‖ₑ = ‖(a k l - a k j) + (a k j - a k i₀)‖ₑ := by rw [sub_add_sub_cancel]
-      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := enorm_add_le _ _
+      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := eNorm_add_le _ _
       _ ≤ D₂ * G k + D₁ * G k := add_le_add (hD₂ k) (hD₁ k)
       _ = ↑(D₂ + D₁) * G k := by push_cast; ring
 

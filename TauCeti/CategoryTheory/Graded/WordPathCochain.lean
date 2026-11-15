@@ -78,7 +78,8 @@ variable {φ : C → D}
 /-- The multilinear component of a path cochain, valued in the Hom module of its endpoints.
 The positive arity excludes empty words from the reduced tensor coalgebra. -/
 def component (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n) (X : Fin (n + 1) → C) :
-    MultilinearMap R (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
+    MultilinearMap (RingHom.id R) (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X
+        i.rev.succ))
       (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
   ((F.val ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap
     (PiTensorProduct.tprod R)).restrictToPath φ X

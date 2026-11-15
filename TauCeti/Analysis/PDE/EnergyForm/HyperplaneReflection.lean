@@ -62,9 +62,14 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
   coefficients are invariant under the change of variables `ρ`.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL`: the odd reflection
   of a weak solution vanishing on the flat boundary is a weak solution of the reflected equation.
+* `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`: the
+  same for a right-hand side `f ∈ L²(U ∩ H)`, which is reflected oddly.
 * `TauCeti.PDE.UniformlyEllipticOn.reflectPrincipal`: the reflected principal coefficient is
   uniformly elliptic and bounded with the constants of `a`, and
-  `TauCeti.PDE.norm_reflectDrift_le`: the reflected drift keeps the bound of `b`.
+  `TauCeti.PDE.norm_reflectDrift_le` and `TauCeti.PDE.norm_reflectDensity_le`: the reflected
+  lower-order coefficients keep the bounds of `b` and `c`.
+* `TauCeti.PDE.memLp_energyIntegrand_reflectPrincipal`: the reflected coefficients are essentially
+  bounded, as the reflected weak formulation requires.
 
 ## References
 
@@ -258,6 +263,21 @@ theorem norm_reflectDrift_le (hν : ν ≠ 0) {s : Set (EuclideanSpace ℝ ι)} 
   rw [one_pow, one_mul, one_mul]
   exact hb _ ⟨hs hx, by rw [inner_hyperplaneReflection hν]; linarith⟩
 
+omit [DecidableEq ι] in
+/-- **The reflected zeroth-order coefficient keeps the bound of `c`**: if `‖c‖ ≤ γ` on the part
+of a set `s` in the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, and the reflection maps `s` into
+itself, then the reflected coefficient satisfies `‖c'‖ ≤ γ` on all of `s`. -/
+theorem norm_reflectDensity_le (hν : ν ≠ 0) {s : Set (EuclideanSpace ℝ ι)} {gamma : ℝ}
+    (hc : ∀ x ∈ {x | x ∈ s ∧ c₀ ≤ ⟪x, ν⟫_ℝ}, ‖c x‖ ≤ gamma)
+    (hs : MapsTo (hyperplaneReflection ν c₀) s s) {x : EuclideanSpace ℝ ι} (hx : x ∈ s) :
+    ‖reflectDensity ν c₀ c x‖ ≤ gamma := by
+  by_cases hle : c₀ ≤ ⟪x, ν⟫_ℝ
+  · rw [reflectDensity_of_le hle]
+    exact hc x ⟨hx, hle⟩
+  -- Below the hyperplane, the coefficient is `c` at `ρ x`, which lies above it.
+  rw [reflectDensity_eq_comp_of_lt (not_le.1 hle)]
+  exact hc _ ⟨hs hx, by rw [inner_hyperplaneReflection hν]; linarith⟩
+
 end Coefficients
 
 /-! ### The reflected weak formulation -/
@@ -356,6 +376,27 @@ theorem aestronglyMeasurable_reflectDensity (hν : ν ≠ 0) (hH : ∀ x, x ∈ 
   exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH U.isOpen.measurableSet hU
     continuous_id hc
 
+/-- **The reflected coefficients are bounded.** If `a`, `b`, `c` are measurable on `U ∩ H`, with
+`a` uniformly elliptic with constants `λ, Λ`, `‖b‖ ≤ β` and `‖c‖ ≤ γ` on the part of `U` in the
+closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, then the reflected coefficients are essentially bounded on
+`U`. This is the boundedness hypothesis of the reflected weak formulation. -/
+theorem memLp_energyIntegrand_reflectPrincipal [Nonempty ι] (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
+    {lam Lam beta gamma : ℝ} (ha : UniformlyEllipticOn {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ} a lam Lam)
+    (ham : AEStronglyMeasurable a (mu.restrict (U ⊓ H)))
+    (hbm : AEStronglyMeasurable b (mu.restrict (U ⊓ H)))
+    (hcm : AEStronglyMeasurable c (mu.restrict (U ⊓ H)))
+    (hb : ∀ x ∈ {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ}, ‖b x‖ ≤ beta)
+    (hc : ∀ x ∈ {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ}, ‖c x‖ ≤ gamma) :
+    MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
+      (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U) := by
+  have ha' := uniformlyEllipticOn_iff.1 (ha.reflectPrincipal hν hU)
+  exact memLp_energyIntegrand_of_bounds (ha'.1.le.trans ha'.2.1)
+    (aestronglyMeasurable_reflectPrincipal hν hH hU ham)
+    (aestronglyMeasurable_reflectDrift hν hH hU hbm)
+    (aestronglyMeasurable_reflectDensity hν hH hU hcm) (fun x hx => (ha'.2.2 hx).2)
+    (fun x hx => norm_reflectDrift_le hν hb hU hx) (fun x hx => norm_reflectDensity_le hν hc hU hx)
+
 omit [DecidableEq ι] in
 /-- A Sobolev function on `U` vanishing on `U ∖ H` has, almost everywhere on `U ∖ H`, vanishing
 value and weak gradient: the gradient vanishes off the closed half-space `closure H` and the
@@ -426,6 +467,33 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL (hν : ν �
     ← hu (W1p0.restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ)]
   exact (energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0 _).trans (congrArg _
     (W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ).symm)
+
+/-- **Odd reflection of a weak solution with a right-hand side.** Let `H = {x | c₀ < ⟪x, ν⟫}`
+with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, and let `U` be open with
+`ρ U ⊆ U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` with `f ∈ L²(U ∩ H)`, tested against
+`H¹₀(U ∩ H)`. If the reflected coefficients are bounded on `U`, then the odd reflection
+`u - u ∘ ρ` is a weak solution on `U` of the equation with the reflected coefficients and the
+odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of `f` as right-hand side, tested against `H¹₀(U)`. -/
+theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
+    (hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
+      (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U))
+    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict (U ⊓ H)))
+    (hu : ∀ v : W1p0 mu (U ⊓ H) 2,
+      energyFormH1 a b c (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u) (v : W1p mu (U ⊓ H) 2) =
+        ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu)
+    (φ : W1p0 mu U 2) :
+    energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
+        (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (φ : W1p mu U 2) =
+      ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
+        (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
+          W1p.value (φ : W1p mu U 2) x ∂mu := by
+  rw [energyFormH1_sub_left hcoeff, energyFormH1_reflectPrincipal_compHyperplaneReflectionL hν hU,
+    ← energyFormH1_sub_right hcoeff, energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0,
+    ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
+    W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf]
 
 end WeakSolution
 

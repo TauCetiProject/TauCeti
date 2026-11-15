@@ -131,6 +131,6 @@ theorem isRowCompact_iff_isCompletelyContinuous {K : Type*} [NontriviallyNormedF
     u.IsRowCompact ↔ u.IsCompletelyContinuous :=
   isRowCompact_iff_isCompletelyContinuous_of_forall_fg_isClosed fun L hL ↦
     have : FiniteDimensional K L := Module.Finite.iff_fg.2 hL
-    L.closed_of_finiteDimensional
+    L.isClosed_of_finiteDimensional
 
 end ContinuousLinearMap
