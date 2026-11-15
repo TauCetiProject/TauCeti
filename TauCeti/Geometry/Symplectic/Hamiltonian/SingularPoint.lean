@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -59,8 +60,10 @@ the Hessians of the critical functions back along `dφ_y`, and `dφ_y` induces a
 transversal spaces carrying one family of transversal Hessians to the other
 (`TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_reduction_comp_iff`). So `y` is a
 nondegenerate point of `F ∘ φ` exactly when `φ y` is one of `F`
-(`TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`). The rank-zero
-version is `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`.
+(`TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`). Since `dφ_y` is
+invertible, `y` is a critical point of `F ∘ φ` exactly when `φ y` is one of `F`, so the rank-zero
+version follows
+(`TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`).
 
 ## Main definitions
 
@@ -85,6 +88,8 @@ version is `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSy
   the values.
 * `TauCeti.SymplecticForm.isNondegeneratePoint_comp_iff_of_isSymplectomorphism`: invariance under
   maps whose differential is a linear symplectomorphism, such as canonical transformations.
+* `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism`: the
+  same invariance for nondegenerate rank-zero points.
 
 ## References
 
@@ -404,6 +409,29 @@ theorem isNondegeneratePoint_comp_iff_of_isSymplectomorphism {E' : Type*}
   rw [← isNondegenerateQuadraticFamily_reduction_comp_iff he hU]
   exact Iff.of_eq (congrArg _ (funext fun ℓ ↦
     reducedQuadraticForm_congr _ _ _ _ fun u _ ↦ by rw [hH ℓ.1 ℓ.2]))
+
+/-- **Invariance of rank-zero points under canonical transformations.** If `φ : E' → E` is `C²` at
+`y`, with differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`, then `y`
+is a nondegenerate rank-zero point of `F ∘ φ` for `ω'` exactly when `φ y` is a nondegenerate
+rank-zero point of `F` for `ω`. Only the differential of `φ` at `y` enters, so this applies in
+particular to a `C²` canonical transformation `φ`. -/
+theorem isNondegenerateRankZeroPoint_comp_iff_of_isSymplectomorphism {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'}
+    {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
+    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
+    ω'.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ ω.IsNondegenerateRankZeroPoint F (φ y) := by
+  have key := isNondegeneratePoint_comp_iff_of_isSymplectomorphism (F := F) he hφ hφe
+  -- Since `dφ_y` is invertible, `y` is critical for `F ∘ φ` exactly when `φ y` is critical for `F`.
+  have h0 (hF : ContDiffAt ℝ 2 F (φ y)) : fderiv ℝ (F ∘ φ) y = 0 ↔ fderiv ℝ F (φ y) = 0 := by
+    rw [fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero)]
+    simp [ContinuousLinearMap.ext_iff, hφe, e.surjective.forall]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hx := key.1 ((isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h.fderiv_eq_zero).2 h)
+    exact (isNondegeneratePoint_iff_isNondegenerateRankZeroPoint
+      ((h0 hx.contDiffAt).1 h.fderiv_eq_zero)).1 hx
+  · exact (isNondegeneratePoint_iff_isNondegenerateRankZeroPoint
+      ((h0 h.contDiffAt).2 h.fderiv_eq_zero)).1
+        (key.2 ((isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h.fderiv_eq_zero).2 h))
 
 end Nondegenerate
 
