@@ -365,9 +365,8 @@ theorem assignmentEquiv_mem_Icc_map_iff {R : Type w'} [Preorder R] (e : N ≃ₙ
   and_congr (e.assignmentEquiv_le_assignmentEquiv_iff lo f)
     (e.assignmentEquiv_le_assignmentEquiv_iff f hi)
 
-/-- Assignment transport preserves and reflects membership of all arrow values in a set-like
-structure. -/
-theorem forall_assignmentEquiv_mem_iff {R : Type w'} {M : Type*} [SetLike M R] (e : N ≃ₙ N')
+/-- Assignment transport preserves and reflects membership of all arrow values. -/
+theorem forall_assignmentEquiv_mem_iff {R : Type w'} {M : Type*} [Membership R M] (e : N ≃ₙ N')
     (A : M) (f : N.Assignment R) :
     (∀ ⦃x y : W⦄ (a : N'.Hom x y), e.assignmentEquiv R f a ∈ A) ↔
       ∀ ⦃x y : V⦄ (a : N.Hom x y), f a ∈ A := by
@@ -620,22 +619,12 @@ theorem boundedFlowEquiv_apply (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t :
     e.boundedFlowEquiv lo hi s t f = e.mapBoundedFlow f :=
   (rfl)
 
-theorem boundedFlowEquiv_toFun (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
-    (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).toFun = e.assignmentEquiv R f.toFun :=
-  (rfl)
-
 @[simp]
-theorem boundedFlowEquiv_symm_toFun (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
+theorem boundedFlowEquiv_symm_apply_toFun (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
     (f : TauCeti.BoundedFlow (e.assignmentEquiv R lo) (e.assignmentEquiv R hi)
       (e.vertexEquiv s) (e.vertexEquiv t)) :
     ((e.boundedFlowEquiv lo hi s t).symm f).toFun = (e.assignmentEquiv R).symm f.toFun :=
   (rfl)
-
-theorem val_boundedFlowEquiv (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
-    (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).val = f.val :=
-  e.val_mapBoundedFlow f
 
 @[simp]
 theorem val_boundedFlowEquiv_symm (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
@@ -653,11 +642,6 @@ theorem isMaximum_mapBoundedFlow_iff (e : N ≃ₙ N') {lo hi : N.Assignment R} 
   rw [TauCeti.BoundedFlow.isMaximum_iff, TauCeti.BoundedFlow.isMaximum_iff,
     ← (e.boundedFlowEquiv lo hi s t).forall_congr_right]
   simp
-
-theorem isMaximum_boundedFlowEquiv_iff (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
-    (f : TauCeti.BoundedFlow lo hi s t) :
-    (e.boundedFlowEquiv lo hi s t f).IsMaximum ↔ f.IsMaximum :=
-  e.isMaximum_mapBoundedFlow_iff f
 
 @[simp]
 theorem isMaximum_boundedFlowEquiv_symm_iff (e : N ≃ₙ N') {lo hi : N.Assignment R} {s t : V}
@@ -702,9 +686,9 @@ def flowEquiv (e : N ≃ₙ N') (cap : N.Assignment R) (s t : V) :
     { toBoundedFlow := (e.boundedFlowEquiv 0 cap s t).symm
         (f.toBoundedFlow.congr e.assignmentEquiv_zero.symm rfl rfl rfl)
       excessAt_sink_nonneg := by
-        simpa only [boundedFlowEquiv_symm_toFun, TauCeti.BoundedFlow.congr_toFun, mapFlow_toFun,
-          ← e.assignmentEquiv_symm R, symm_vertexEquiv_apply, Equiv.symm_apply_apply]
-          using (e.symm.mapFlow f).excessAt_sink_nonneg }
+        simpa only [boundedFlowEquiv_symm_apply_toFun, TauCeti.BoundedFlow.congr_apply_toFun,
+          mapFlow_toFun, ← e.assignmentEquiv_symm R, symm_vertexEquiv_apply,
+          Equiv.symm_apply_apply] using (e.symm.mapFlow f).excessAt_sink_nonneg }
   left_inv f := TauCeti.Flow.ext (by simp)
   right_inv f := TauCeti.Flow.ext (by simp)
 
@@ -714,21 +698,11 @@ theorem flowEquiv_apply (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
     e.flowEquiv cap s t f = e.mapFlow f :=
   (rfl)
 
-theorem flowEquiv_toFun (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
-    (f : TauCeti.Flow cap s t) :
-    (e.flowEquiv cap s t f).toFun = e.assignmentEquiv R f.toFun :=
-  (rfl)
-
 @[simp]
-theorem flowEquiv_symm_toFun (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
+theorem flowEquiv_symm_apply_toFun (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
     (f : TauCeti.Flow (e.assignmentEquiv R cap) (e.vertexEquiv s) (e.vertexEquiv t)) :
     ((e.flowEquiv cap s t).symm f).toFun = (e.assignmentEquiv R).symm f.toFun := by
   simp [flowEquiv]
-
-theorem val_flowEquiv (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
-    (f : TauCeti.Flow cap s t) :
-    (e.flowEquiv cap s t f).val = f.val :=
-  e.val_mapFlow f
 
 @[simp]
 theorem val_flowEquiv_symm (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
@@ -745,11 +719,6 @@ theorem isMaximum_mapFlow_iff (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
   rw [TauCeti.Flow.isMaximum_iff, TauCeti.Flow.isMaximum_iff,
     ← (e.flowEquiv cap s t).forall_congr_right]
   simp
-
-theorem isMaximum_flowEquiv_iff (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}
-    (f : TauCeti.Flow cap s t) :
-    (e.flowEquiv cap s t f).IsMaximum ↔ f.IsMaximum :=
-  e.isMaximum_mapFlow_iff f
 
 @[simp]
 theorem isMaximum_flowEquiv_symm_iff (e : N ≃ₙ N') {cap : N.Assignment R} {s t : V}

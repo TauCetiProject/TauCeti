@@ -237,7 +237,7 @@ def congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi
   right_inv _ := BoundedFlow.ext rfl
 
 @[simp]
-theorem congr_toFun {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+theorem congr_apply_toFun {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
     (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
     (BoundedFlow.congr hlo hhi hs ht f).toFun = f.toFun :=
   (rfl)
@@ -260,7 +260,7 @@ theorem val_congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi :
     (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
     (BoundedFlow.congr hlo hhi hs ht f).val = f.val := by
   subst ht
-  rw [val_def, val_def, congr_toFun]
+  rw [val_def, val_def, congr_apply_toFun]
 
 end Preorder
 
@@ -433,11 +433,6 @@ theorem toBoundedFlow_congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = ca
     (Flow.congr hcap hs ht f).toBoundedFlow = f.toBoundedFlow.congr rfl hcap hs ht :=
   (rfl)
 
-theorem congr_toFun {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
-    (ht : t = t') (f : Flow cap s t) :
-    (Flow.congr hcap hs ht f).toFun = f.toFun :=
-  (rfl)
-
 @[simp]
 theorem congr_symm {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
     (ht : t = t') :
@@ -448,11 +443,6 @@ theorem congr_symm {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs :
 theorem congr_refl :
     Flow.congr (rfl : cap = cap) (rfl : s = s) (rfl : t = t) = Equiv.refl _ :=
   (rfl)
-
-theorem val_congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
-    (ht : t = t') (f : Flow cap s t) :
-    (Flow.congr hcap hs ht f).val = f.val :=
-  f.toBoundedFlow.val_congr rfl hcap hs ht
 
 end Flow
 
