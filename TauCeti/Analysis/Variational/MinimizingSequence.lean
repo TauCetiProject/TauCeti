@@ -95,7 +95,7 @@ theorem exists_subseq_tendsto_toWeakSpace_isMinOn {β : Type*}
       Tendsto (fun n ↦ toWeakSpace 𝕜 V (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 V v)) ∧
       IsMinOn E S v ∧ E v = sInf (E '' S) := by
   have hcomp : IsCompact (closure (toWeakSpace 𝕜 V '' range u)) :=
-    isCompact_closure_toWeakSpace hV hb
+    isCompact_closure_toWeakSpace_of_isBounded hV hb
   obtain ⟨v, φ, hφ, hlim⟩ :=
     tendsto_subseq_toWeakSpace_of_isCompact_closure hcomp fun n ↦ mem_range_self n
   have hv : v ∈ S := hS (fun n ↦ hu (φ n)) hlim
@@ -249,7 +249,7 @@ theorem isCompact_toWeakSpace_sublevel_of_isSeqClosed
     rw [heq]
     exact hE.isSeqClosed_sublevel hS b
   have hcomp_cl : IsCompact (closure (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :=
-    isCompact_closure_toWeakSpace hV hb
+    isCompact_closure_toWeakSpace_of_isBounded hV hb
   have hclosed : IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) :=
     (isClosed_weakSpace_iff_isSeqClosed hcomp_cl).2 hseq
   simpa only [hclosed.closure_eq] using hcomp_cl
