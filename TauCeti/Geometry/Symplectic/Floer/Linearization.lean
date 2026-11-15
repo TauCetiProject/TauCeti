@@ -79,6 +79,22 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
 
+/-- The Floer operator of a `C¹` map is continuous, for a jointly continuous family of
+endomorphisms `J(z, y)` and jointly `C¹` Hamiltonians `Ks`, `Kt`. -/
+theorem continuous_floerOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} (hJ : Continuous (Function.uncurry J))
+    (hKs : ContDiff ℝ 1 (Function.uncurry Ks)) (hKt : ContDiff ℝ 1 (Function.uncurry Kt))
+    (hu : ContDiff ℝ 1 u) : Continuous (ω.floerOperator J Ks Kt u) := by
+  have hdu : Continuous fun z ↦ fderiv ℝ u z := hu.continuous_fderiv one_ne_zero
+  have hX {K : ℝ × ℝ → V → ℝ} (hK : ContDiff ℝ 1 (Function.uncurry K)) :
+      Continuous fun z ↦ ω.hamiltonianVectorField (K z) (u z) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hK)).continuous.comp
+      (continuous_id.prodMk hu.continuous)
+  have hJu : Continuous fun z ↦ J z (u z) := hJ.comp (continuous_id.prodMk hu.continuous)
+  refine (continuous_congr fun z ↦ (ω.floerOperator_def J Ks Kt u z).symm).1 ?_
+  exact ((hdu.clm_apply continuous_const).sub (hX hKs)).add
+    (hJu.clm_apply ((hdu.clm_apply continuous_const).sub (hX hKt)))
+
 /-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
 endomorphism fields, the coordinate Floer operator has derivative `Y(u)(∂t u - X_Kt)` at every
 parameter `q`. The fields may depend on the domain point. -/

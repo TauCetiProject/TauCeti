@@ -40,7 +40,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck.
+  error is supported in the neck (`TauCeti.SymplecticForm.floerOperator_preglue_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
@@ -53,8 +53,9 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
 
 Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so no periodicity is
 assumed. The construction is local in the cylindrical coordinates, so it applies equally at a
-cylindrical end of a pair of pants, where the perturbation is `H_t dt`. The Sobolev setting, the
-right inverse of the linearized operator and the Newton iteration are not treated here.
+cylindrical end of a pair of pants, where the perturbation is `H_t dt`. The `Lᵖ` form of the
+error bound is in `TauCeti.Geometry.Symplectic.Floer.Pregluing.Lp`; the right inverse of the
+linearized operator and the Newton iteration are not treated here.
 
 ## References
 
@@ -461,6 +462,23 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
         mul_le_mul_of_nonneg_left (by linarith) hK
     _ = _ := by ring
 
+/-- **The pre-gluing error of two Floer cylinders is supported in the neck.** If `u` and `v` solve
+the Floer equation on `ℝ × [0, 1]`, then the Floer operator of the pre-glued map `w_R` vanishes at
+every point `(s, t)` of `ℝ × [0, 1]` with `s ∉ [-1, 1]`. -/
+theorem floerOperator_preglue_eq_zero (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ) {z : ℝ × ℝ}
+    (hz₁ : z.1 ∉ Icc (-1 : ℝ) 1) (hz₂ : z.2 ∈ Icc (0 : ℝ) 1)
+    (huF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
+    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0) :
+    ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z = 0 := by
+  rcases lt_or_ge z.1 (-1) with h₁ | h₁
+  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁]
+    exact huF _ ⟨mem_univ _, by simpa using hz₂⟩
+  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R (lt_of_not_ge fun h₂ ↦ hz₁ ⟨h₁, h₂⟩)]
+    exact hvF _ ⟨mem_univ _, by simpa using hz₂⟩
+
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
 and `v` solve the Floer equation on `ℝ × [0, 1]`. Then for every large gluing parameter `R`, the
@@ -490,17 +508,10 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
   obtain ⟨C', hC'⟩ :=
     ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
   refine ⟨C', hC'.mono fun R hR z hz ↦ ?_⟩
-  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
-    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
-  rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁,
-      huF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂,
-      hvF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  exact hR z ⟨⟨h₁, h₂⟩, hz.2⟩
+  by_cases h₁ : z.1 ∈ Icc (-1 : ℝ) 1
+  · exact hR z ⟨h₁, hz.2⟩
+  · rw [ω.floerOperator_preglue_eq_zero J H x R h₁ hz.2 huF hvF, norm_zero]
+    exact (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
 
 end SymplecticForm
 
