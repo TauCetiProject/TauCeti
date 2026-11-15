@@ -51,6 +51,11 @@ divisible by `8`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.re_thetaCoset_pos`,
   `ZLattice.one_le_re_thetaSeries`: on the imaginary axis `θ_{γ+L}` is real and positive, and
   `Θ_L ≥ 1`.
+* `ZLattice.re_thetaCoset_le_of_le`, `ZLattice.re_thetaSeries_le_of_le`,
+  `ZLattice.re_thetaCoset_lt_of_lt`, `ZLattice.re_thetaSeries_lt_of_lt`,
+  `ZLattice.thetaCoset_ne_of_lt`, `ZLattice.thetaSeries_ne_of_lt`: on the imaginary axis
+  `θ_{γ+L}` and `Θ_L` are monotone in `L`, and strictly monotone under strict subgroup inclusion, so
+  `M < L` implies `Θ_M ≠ Θ_L`.
 
 ## References
 
@@ -264,5 +269,71 @@ theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSe
   fun h => (one_le_re_thetaSeries L hτ).not_gt (by rw [h, zero_re]; exact one_pos)
 
 end ImaginaryAxis
+
+section ImaginaryAxisMono
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M L : Submodule ℤ E} [DiscreteTopology L]
+
+/-- On the imaginary axis, `(thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re` whenever `M ≤ L`:
+splitting `γ + L` into cosets of `M` expresses `(thetaCoset L γ τ).re` as `(thetaCoset M γ τ).re`
+plus a sum of positive coset contributions. -/
+theorem re_thetaCoset_le_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
+  have : DiscreteTopology M := ‹DiscreteTopology L›.of_subset hML
+  have hout0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M :=
+    (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp (Submodule.Quotient.mk_out 0)
+  simpa only [Complex.reCLM_apply, thetaCoset_add_mem M γ hout0] using
+    le_hasSum (Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML γ τ)) 0
+      fun _ _ => (re_thetaCoset_pos M _ hτ).le
+
+/-- On the imaginary axis, `(thetaSeries M τ).re ≤ (thetaSeries L τ).re` whenever `M ≤ L`. -/
+theorem re_thetaSeries_le_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_le_of_le hML 0 hτ
+
+/-- On the imaginary axis, `(thetaCoset M γ τ).re < (thetaCoset L γ τ).re` whenever `M < L`: any
+vector in `L \ M` contributes a nonzero coset of `M`, whose theta series on the imaginary axis has
+strictly positive real part. -/
+theorem re_thetaCoset_lt_of_lt (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re < (thetaCoset L γ τ).re := by
+  have : DiscreteTopology M := ‹DiscreteTopology L›.of_subset hML.le
+  obtain ⟨v, hvL, hvM⟩ := IsConcreteLE.not_le_iff_exists.mp hML.not_ge
+  have hout0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M :=
+    (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp (Submodule.Quotient.mk_out 0)
+  have hy : (Submodule.Quotient.mk (⟨v, hvL⟩ : L) : L ⧸ M.submoduleOf L) ≠ 0 :=
+    mt (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp hvM
+  simpa only [Complex.reCLM_apply, thetaCoset_add_mem M γ hout0] using
+    lt_hasSum (Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML.le γ τ)) 0
+      (fun _ _ => (re_thetaCoset_pos M _ hτ).le) _ hy (re_thetaCoset_pos M _ hτ)
+
+/-- On the imaginary axis, `(thetaSeries M τ).re < (thetaSeries L τ).re` whenever `M < L`. -/
+theorem re_thetaSeries_lt_of_lt (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re < (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_lt_of_lt hML 0 hτ
+
+/-- For `M < L`, the coset theta series `θ_{γ+M}` and `θ_{γ+L}` take distinct values at every point
+of the imaginary axis. -/
+theorem thetaCoset_ne_of_lt_of_re_eq_zero (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaCoset M γ τ ≠ thetaCoset L γ τ := fun h =>
+  (re_thetaCoset_lt_of_lt hML γ hτ).ne (congrArg Complex.re h)
+
+/-- For `M < L`, the theta series `Θ_M` and `Θ_L` take distinct values at every point of the
+imaginary axis. -/
+theorem thetaSeries_ne_of_lt_of_re_eq_zero (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
+    thetaSeries M τ ≠ thetaSeries L τ := fun h =>
+  (re_thetaSeries_lt_of_lt hML hτ).ne (congrArg Complex.re h)
+
+/-- For a strict inclusion `M < L` of discrete subgroups in a finite-dimensional real normed space,
+the coset theta series `θ_{γ+M}` and `θ_{γ+L}` are distinct functions on `ℍ`. -/
+theorem thetaCoset_ne_of_lt (hML : M < L) (γ : E) : thetaCoset M γ ≠ thetaCoset L γ := fun h =>
+  thetaCoset_ne_of_lt_of_re_eq_zero hML γ UpperHalfPlane.I_re (congrFun h UpperHalfPlane.I)
+
+/-- For a strict inclusion `M < L` of discrete subgroups in a finite-dimensional real normed space,
+the theta series `Θ_M` and `Θ_L` are distinct functions on `ℍ`. -/
+theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L := fun h =>
+  thetaSeries_ne_of_lt_of_re_eq_zero hML UpperHalfPlane.I_re (congrFun h UpperHalfPlane.I)
+
+end ImaginaryAxisMono
 
 end ZLattice

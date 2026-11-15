@@ -51,14 +51,20 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
-  `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
-  even or when `L` is integral and `m` is even.
+  `ZLattice.IsIntegral.isEven_sqrt_smul`, `ZLattice.IsIntegral.intCast_smul`,
+  `ZLattice.IsIntegral.natCast_smul`, `ZLattice.IsEven.intCast_smul`,
+  `ZLattice.IsEven.natCast_smul`, `ZLattice.IsIntegral.isEven_intCast_smul`,
+  `ZLattice.IsIntegral.isEven_natCast_smul`: `√m • L` and `n • L` are integral when `L` is, and
+  even when `L` is even or when `L` is integral and `m` or `n` is even.
 * `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
   `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L` and `m ≠ 0`), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
-  `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
-  by `|c| > 1`, or a unimodular lattice by `|c| ≠ 1`, does not give a unimodular lattice.
+  `ZLattice.IsUnimodular.not_isUnimodular_smul`, `ZLattice.IsUnimodular.not_isIntegral_smul`: in
+  positive dimension, scaling an integral lattice by `|c| > 1`, or a unimodular lattice by
+  `|c| ≠ 1`, does not give a unimodular lattice, and scaling a unimodular lattice by `0 < |c| < 1`
+  does not give an integral lattice; in particular `ZLattice.isUnimodular_span_singleton_iff`
+  characterizes the unimodular rank-one lattices `c ℤ ⊆ ℝ` by `|c| = 1`.
 
 ## References
 
@@ -99,6 +105,16 @@ theorem IsEven.sqrt_smul (h : IsEven L) (m : ℕ) : IsEven (√(m : ℝ) • L) 
   refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
   obtain ⟨a, ha⟩ := isEven_iff.mp h x hx
   exact ⟨m * a, by rw [Real.sq_sqrt m.cast_nonneg, ha]; push_cast; ring⟩
+
+/-- Scaling an even lattice by an integer gives an even lattice. -/
+theorem IsEven.intCast_smul (h : IsEven L) (n : ℤ) : IsEven ((n : ℝ) • L) := by
+  refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
+  obtain ⟨a, ha⟩ := isEven_iff.mp h x hx
+  exact ⟨n ^ 2 * a, by rw [ha]; push_cast; ring⟩
+
+/-- Scaling an even lattice by a natural number gives an even lattice. -/
+theorem IsEven.natCast_smul (h : IsEven L) (n : ℕ) : IsEven ((n : ℝ) • L) := by
+  simpa using h.intCast_smul n
 
 end Seminormed
 
@@ -274,6 +290,30 @@ theorem IsIntegral.isEven_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : Even m) :
   rw [real_inner_self_eq_norm_sq] at ha
   exact ⟨k * a, by rw [Real.sq_sqrt (k + k).cast_nonneg, ha]; push_cast; ring⟩
 
+/-- Scaling an integral lattice by an integer gives an integral lattice. -/
+theorem IsIntegral.intCast_smul (h : IsIntegral L) (n : ℤ) : IsIntegral ((n : ℝ) • L) := by
+  refine (isIntegral_smul_iff L _).mpr fun x hx y hy ↦ ?_
+  obtain ⟨a, ha⟩ := isIntegral_iff.mp h x hx y hy
+  exact ⟨n ^ 2 * a, by rw [ha]; push_cast; ring⟩
+
+/-- Scaling an integral lattice by a natural number gives an integral lattice. -/
+theorem IsIntegral.natCast_smul (h : IsIntegral L) (n : ℕ) : IsIntegral ((n : ℝ) • L) := by
+  simpa using h.intCast_smul n
+
+/-- Scaling an integral lattice by an even integer gives an even lattice. -/
+theorem IsIntegral.isEven_intCast_smul (h : IsIntegral L) {n : ℤ} (hn : Even n) :
+    IsEven ((n : ℝ) • L) := by
+  refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
+  obtain ⟨k, rfl⟩ := hn
+  obtain ⟨a, ha⟩ := isIntegral_iff.mp h x hx x hx
+  rw [real_inner_self_eq_norm_sq] at ha
+  exact ⟨2 * k ^ 2 * a, by rw [ha]; push_cast; ring⟩
+
+/-- Scaling an integral lattice by an even natural number gives an even lattice. -/
+theorem IsIntegral.isEven_natCast_smul (h : IsIntegral L) {n : ℕ} (hn : Even n) :
+    IsEven ((n : ℝ) • L) := by
+  simpa using h.isEven_intCast_smul ((Int.even_natCast n).mpr hn)
+
 variable (L) [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
 
@@ -407,6 +447,35 @@ theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {
       pow_eq_one_iff_of_nonneg (abs_nonneg c) (mul_ne_zero two_ne_zero finrank_pos.ne')] at hdet
     exact hc hdet
 
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling a unimodular lattice down by `0 < |c| < 1` never gives an
+integral lattice (`0 • L = ⊥` is integral). For instance `½ ℤ ⊆ ℝ` is not integral. -/
+theorem IsUnimodular.not_isIntegral_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
+    (hc0 : c ≠ 0) (hc1 : |c| < 1) : ¬ IsIntegral (c • L) := by
+  borelize E
+  have := h.isIntegral.discreteTopology
+  have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
+  have : NeZero c := ⟨hc0⟩
+  intro hi
+  have hle := hi.one_le_det
+  rw [det_smul L, h.det_eq_one, mul_one, pow_mul, ← sq_abs, ← pow_mul] at hle
+  have hlt : |c| ^ (2 * finrank ℝ E) < 1 :=
+    pow_lt_one₀ (abs_nonneg c) hc1 (mul_ne_zero two_ne_zero finrank_pos.ne')
+  linarith
+
 end InnerProductSpace
+
+/-- For `c : ℝ`, the rank-one lattice `c ℤ ⊆ ℝ` is unimodular if and only if `|c| = 1`. -/
+theorem isUnimodular_span_singleton_iff {c : ℝ} :
+    IsUnimodular (span ℤ {c} : Submodule ℤ ℝ) ↔ |c| = 1 := by
+  have hsmul : c • (span ℤ {(1 : ℝ)} : Submodule ℤ ℝ) = span ℤ {c} := by
+    rw [Submodule.smul_span, Set.smul_set_singleton, smul_eq_mul, mul_one]
+  rw [← hsmul]
+  refine ⟨fun h ↦ by_contra fun hc ↦ isUnimodular_span_one.not_isUnimodular_smul hc h, fun hc ↦ ?_⟩
+  rcases (abs_eq (zero_le_one' ℝ)).mp hc with rfl | rfl
+  · rw [one_smul]
+    exact isUnimodular_span_one
+  · rw [Submodule.neg_smul_eq_smul, one_smul]
+    exact isUnimodular_span_one
 
 end ZLattice

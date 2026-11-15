@@ -93,9 +93,18 @@ by tauceti-ai-for-science in
   `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level, and
   `ZLattice.coprime_card_discriminantGroup_of_coprime_level`: every natural number coprime to
   `level L` is coprime to `|A_L|`.
+* `ZLattice.level_eq_one_iff_isEven_dual`: a lattice has level one if and only if its dual lattice
+  is even, and `ZLattice.IsUnimodular.level_inv_sqrt_smul`,
+  `ZLattice.IsUnimodular.level_inv_intCast_smul`,
+  `ZLattice.IsUnimodular.level_inv_natCast_smul`: scaling a unimodular lattice by `(√m)⁻¹` or
+  `n⁻¹` for a nonzero even `m : ℕ` or `n : ℤ` gives level one.
+* `ZLattice.dual_le_of_level_eq_one`, `ZLattice.subsingleton_discriminantGroup_of_level_eq_one`:
+  in a finite-dimensional space, a discrete lattice of level one contains its dual and has trivial
+  discriminant group.
 * `ZLattice.IsEven.level_eq_one_of_isUnimodular`: an even unimodular lattice has level one.
-* `ZLattice.IsEven.level_eq_one_iff`: in a finite-dimensional space, an even lattice has level one
-  exactly when it is unimodular.
+* `ZLattice.IsEven.level_eq_one_iff`, `ZLattice.IsIntegral.level_eq_one_iff`: in a
+  finite-dimensional space, an even lattice has level one if and only if it is unimodular, and an
+  integral lattice has level one if and only if it is both even and unimodular.
 * `ZLattice.level_comap`: the level is invariant under linear isometry equivalences.
 * `ZLattice.level_orthSum`: the level of an orthogonal direct sum `L ⊕ M` is
   `lcm (level L) (level M)`.
@@ -111,6 +120,8 @@ by tauceti-ai-for-science in
   `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne`: coset shells and
   coset representation numbers vanish outside the residue class of `q_L(γ)`.
 * `ZLattice.level_sqrt_smul_span_orthonormalBasis`: the lattice `√m • ℤⁿ`, `n > 0`, has level `2 m`.
+* `ZLattice.level_span_singleton_eq_one_iff`, `ZLattice.level_span_inv_two`: `c ℤ ⊆ ℝ` has level
+  one if and only if `c ≠ 0` and `(c⁻¹)² ∈ 2ℤ`; in particular `½ ℤ ⊆ ℝ` has level one.
 
 ## References
 
@@ -269,11 +280,40 @@ theorem IsEven.cosetRepresentationNumber_eq_zero_of_not_exists_div_of_level_dvd 
   rw [cosetRepresentationNumber_def,
     hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd hγ hN hdvd ht, Set.ncard_empty]
 
+/-- **A lattice has level `1` if and only if its dual lattice is even**: `level L = 1` is
+equivalent to `level L ∣ 1`, which by `level_dvd_iff` says that `‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`.
+No integrality, discreteness, fullness, or finite-dimensionality is needed; for instance
+`½ ℤ ⊆ ℝ` has dual `2ℤ`, which is even, so `level (½ ℤ) = 1` although `½ ℤ` is not integral. -/
+theorem level_eq_one_iff_isEven_dual : level L = 1 ↔ IsEven (dual L) := by
+  rw [← Nat.dvd_one, level_dvd_iff, isEven_iff]
+  simp
+
 /-- An even unimodular lattice has level one: its dual is `L` itself, so `‖x‖²` is an even integer
 for every `x ∈ L^∨`. -/
-theorem IsEven.level_eq_one_of_isUnimodular (h : IsEven L) (hu : IsUnimodular L) : level L = 1 :=
-  Nat.dvd_one.mp <| level_dvd_iff.mpr fun x hx ↦ by
-    simpa using isEven_iff.mp h x (hu.dual_eq ▸ hx)
+theorem IsEven.level_eq_one_of_isUnimodular (h : IsEven L) (hu : IsUnimodular L) : level L = 1 := by
+  rwa [level_eq_one_iff_isEven_dual, hu.dual_eq]
+
+/-- Scaling a unimodular lattice by `(√m)⁻¹` for a positive even natural number `m` gives a lattice
+of level `1`: its dual `√m • L` is even. -/
+theorem IsUnimodular.level_inv_sqrt_smul (h : IsUnimodular L) {m : ℕ} (hm0 : m ≠ 0)
+    (hm : Even m) : level ((√(m : ℝ))⁻¹ • L) = 1 := by
+  have hs : (√(m : ℝ))⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_ne_zero'.mpr (by positivity))
+  rw [level_eq_one_iff_isEven_dual, dual_smul _ hs, inv_inv, h.dual_eq]
+  exact h.isIntegral.isEven_sqrt_smul hm
+
+/-- Scaling a unimodular lattice by `n⁻¹` for a nonzero even integer `n` gives a lattice of
+level `1`: its dual `n • L` is even. -/
+theorem IsUnimodular.level_inv_intCast_smul (h : IsUnimodular L) {n : ℤ} (hn0 : n ≠ 0)
+    (hn : Even n) : level ((n : ℝ)⁻¹ • L) = 1 := by
+  have hs : ((n : ℝ)⁻¹ : ℝ) ≠ 0 := inv_ne_zero (Int.cast_ne_zero.mpr hn0)
+  rw [level_eq_one_iff_isEven_dual, dual_smul _ hs, inv_inv, h.dual_eq]
+  exact h.isIntegral.isEven_intCast_smul hn
+
+/-- Scaling a unimodular lattice by `n⁻¹` for a positive even natural number `n` gives a lattice of
+level `1`: its dual `n • L` is even. -/
+theorem IsUnimodular.level_inv_natCast_smul (h : IsUnimodular L) {n : ℕ} (hn0 : n ≠ 0)
+    (hn : Even n) : level ((n : ℝ)⁻¹ • L) = 1 := by
+  simpa using h.level_inv_intCast_smul (Nat.cast_ne_zero.mpr hn0) ((Int.even_natCast n).mpr hn)
 
 /-! ### Lattices in a finite-dimensional space -/
 
@@ -339,15 +379,36 @@ theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprim
     a.Coprime (Nat.card (DiscriminantGroup L)) :=
   (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
+omit [IsZLattice ℝ L] in
+/-- If a discrete lattice `L` in a finite-dimensional space has level `1`, its dual lattice is
+contained in `L`: `L^∨` is even, hence integral, so `L^∨ ≤ (L^∨)^∨ = L`. -/
+theorem dual_le_of_level_eq_one (h : level L = 1) : dual L ≤ L :=
+  dual_le_iff_isIntegral_dual.mpr (level_eq_one_iff_isEven_dual.mp h).isIntegral
+
+omit [IsZLattice ℝ L] in
+/-- If a discrete lattice `L` in a finite-dimensional space has level `1`, its discriminant group
+`L^∨ ⧸ (L ∩ L^∨)` is trivial. -/
+theorem subsingleton_discriminantGroup_of_level_eq_one (h : level L = 1) :
+    Subsingleton (DiscriminantGroup L) :=
+  subsingleton_discriminantGroup_iff.mpr (dual_le_of_level_eq_one h)
+
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In a finite-dimensional space, an even lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
   have := h.discreteTopology
-  refine ⟨fun h1 ↦ h.isIntegral.isUnimodular_iff.mpr ?_, h.level_eq_one_of_isUnimodular⟩
-  · -- At level one the dual lattice is even, hence integral, so it lies in its own dual `L`.
-    have hdual : IsEven (dual L) := isEven_iff.mpr fun x hx ↦ by
-      simpa [h1] using exists_level_mul_norm_sq_eq hx
-    simpa using isIntegral_iff_le_dual.mp hdual.isIntegral
+  exact ⟨fun h1 ↦ h.isIntegral.isUnimodular_iff.mpr (dual_le_of_level_eq_one h1),
+    h.level_eq_one_of_isUnimodular⟩
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In a finite-dimensional space, an integral lattice has level `1` if and only if it is both even
+and unimodular. This is the real-lattice counterpart of
+`TauCeti.IntegralLattice.level_eq_one_iff`. -/
+theorem IsIntegral.level_eq_one_iff (h : IsIntegral L) :
+    level L = 1 ↔ IsEven L ∧ IsUnimodular L := by
+  have := h.discreteTopology
+  refine ⟨fun h1 ↦ ?_, fun ⟨he, hu⟩ ↦ he.level_eq_one_of_isUnimodular hu⟩
+  have hu : IsUnimodular L := h.isUnimodular_iff.mpr (dual_le_of_level_eq_one h1)
+  exact ⟨hu.dual_eq ▸ level_eq_one_iff_isEven_dual.mp h1, hu⟩
 
 /-! ### The rational model -/
 
@@ -701,6 +762,24 @@ group `(1 / √2) ℤ ⧸ √2 ℤ` has exponent `2`. -/
 theorem level_span_sqrt_two : level (span ℤ {√2} : Submodule ℤ ℝ) = 4 := by
   simpa [smul_span] using
     level_sqrt_smul_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ) (m := 2)
+
+/-- A rank-one lattice `c ℤ ⊆ ℝ` has level `1` if and only if `c ≠ 0` and `(c⁻¹)²` is an even
+integer. -/
+theorem level_span_singleton_eq_one_iff {c : ℝ} :
+    level (span ℤ {c} : Submodule ℤ ℝ) = 1 ↔ c ≠ 0 ∧ ∃ m : ℤ, c⁻¹ ^ 2 = 2 * m := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · refine iff_of_false ?_ (by simp)
+    rw [span_zero_singleton, level_eq_zero_of_span_ne_top]
+    · exact zero_ne_one
+    · simp
+  · rw [level_eq_one_iff_isEven_dual, dual_span_singleton hc, isEven_span_singleton_iff,
+      Real.norm_eq_abs, sq_abs, and_iff_right hc]
+
+/-- The lattice `½ ℤ ⊆ ℝ` has level `1`, because its dual `2ℤ` is even, even though `½ ℤ` is
+neither integral, even, nor unimodular. This shows that `IsEven L` cannot be dropped from
+`IsEven.level_eq_one_iff`. -/
+theorem level_span_inv_two : level (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ) = 1 :=
+  level_span_singleton_eq_one_iff.mpr ⟨by norm_num, 2, by norm_num⟩
 
 end ZLattice
 
