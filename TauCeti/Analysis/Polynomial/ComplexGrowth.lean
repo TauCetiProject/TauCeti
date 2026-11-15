@@ -28,19 +28,14 @@ is at least half the modulus of its leading monomial at some point of that circl
 theorem exists_norm_eq_re_eval_ge (P : Polynomial ℂ) (hn : 0 < P.natDegree) :
     ∃ R0 : ℝ, 0 < R0 ∧ ∀ R : ℝ, R0 ≤ R → ∃ z : ℂ, ‖z‖ = R ∧
       (‖P.leadingCoeff‖ / 2) * R ^ P.natDegree ≤ (P.eval z).re := by
-  have ha : P.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr fun h ↦ by simp [h] at hn
-  let wtarget : ℂ := (starRingEnd ℂ) P.leadingCoeff / (‖P.leadingCoeff‖ : ℂ)
+  obtain ⟨wtarget, ht_norm, ht_mul⟩ := Complex.exists_norm_eq_mul_self P.leadingCoeff
   let w : ℂ := wtarget ^ (P.natDegree⁻¹ : ℂ)
   have hw : w ^ P.natDegree = wtarget := Complex.cpow_nat_inv_pow wtarget hn.ne'
   have hw_norm : ‖w‖ = 1 := by
     apply (pow_eq_one_iff_of_nonneg (norm_nonneg w) hn.ne').mp
-    simpa [wtarget, ha] using congrArg norm hw
+    simpa [ht_norm] using congrArg norm hw
   have hleadw : P.leadingCoeff * w ^ P.natDegree = (‖P.leadingCoeff‖ : ℂ) := by
-    rw [hw]
-    dsimp only [wtarget]
-    rw [← mul_div_assoc, Complex.mul_conj, Complex.normSq_eq_norm_sq]
-    push_cast
-    field_simp [Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr ha)]
+    rw [hw, mul_comm, ← ht_mul]
   obtain ⟨B, _, hB⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp
     ((isEquivalent_cobounded_leading_monomial (P := P)).isLittleO.bound
       (by norm_num : (0 : ℝ) < 1 / 2))
