@@ -21,6 +21,8 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   quaternion conjugation, so for example `ℍ` is a real star module.
 * `Quaternion.isLeftRegular_two`: if `ℍ[R]` has no zero divisors then `2` is left regular in `R`,
   because the quaternion `r + r i` squares to `2 r² i`.
+* `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
+  `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
 -/
 
 public section
@@ -51,5 +53,11 @@ theorem isLeftRegular_two [NoZeroDivisors ℍ[R]] : IsLeftRegular (2 : R) := by
     · linear_combination (a - b) * h
     all_goals ring
   exact sub_eq_zero.mp (congrArg QuaternionAlgebra.re (mul_self_eq_zero.mp hsq))
+
+/-- The norm of the quaternion `(a + b i + c j + d k) / 2` is `(a² + b² + c² + d²) / 4`. -/
+theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
+    normSq (⟨a / 2, b / 2, c / 2, d / 2⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / 4 := by
+  simp only [normSq_def', div_pow, add_div]
+  norm_num
 
 end Quaternion
