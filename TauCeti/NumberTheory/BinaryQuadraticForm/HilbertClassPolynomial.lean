@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Reflection
+import TauCeti.NumberTheory.ModularForms.LevelOne.ModularPolynomial
 
 /-!
 # Singular moduli and the Hilbert class polynomial
@@ -25,19 +26,24 @@ indexed by invertible ideal classes; classically `j(τ)` is the `j`-invariant of
 `ℤ + τℤ`.
 
 Since `j` separates the `SL(2, ℤ)`-orbits of the upper half-plane
-(`TauCeti.ModularGroup.j_eq_j_iff`) and a form is determined by its root, distinct classes have
-distinct singular moduli. Since the `q`-expansion of `j` has integer coefficients, complex
-conjugation sends the singular modulus of a class to that of the reflected form
-`a x² - b x y + c y²`, which represents the inverse Picard class.
+(`TauCeti.ModularGroup.j_eq_j_iff`) and a primitive positive definite form is determined by its
+root across all discriminants (`eq_of_root_eq_of_isPrimitive`), a singular modulus determines both
+its discriminant (`eq_of_singularModulus_eq`) and its proper class (`singularModulus_injective`).
+Every singular modulus is an algebraic integer (`isIntegral_singularModulus`), by the integrality
+of `j` at imaginary quadratic points (`TauCeti.ModularForm.isIntegral_j_of_quadratic`). Since the
+`q`-expansion of `j` has integer coefficients, complex conjugation sends the singular modulus of a
+class to that of the reflected form `a x² - b x y + c y²`, which represents the inverse Picard
+class.
 
 The *Hilbert class polynomial* `hilbertClassPolynomial n` is the monic polynomial whose roots are
 the singular moduli of discriminant `-n`, each with multiplicity one. It is the product of
 `X - j(τ)` over the roots `τ` of the primitive reduced forms of discriminant `-n`, one for each
 proper class. Its degree is the order of the Picard group, which for a fundamental discriminant is
-the class number of the field, and its coefficients are real. The theory of complex
-multiplication shows that its coefficients are in fact integers and that adjoining any singular
-modulus of discriminant `-n` to the quadratic field `K = ℚ(√(-n))` generates the ring class field
-of the order of discriminant `-n` over `K`; neither statement is proved here.
+the class number of the field, and its coefficients are real algebraic integers
+(`im_coeff_hilbertClassPolynomial`, `isIntegral_coeff_hilbertClassPolynomial`). Classically, the
+theory of complex multiplication shows that its coefficients are rational integers and that
+adjoining any singular modulus of discriminant `-n` to `K = ℚ(√(-n))` generates the ring class
+field of the order of discriminant `-n` over `K`.
 
 ## Main definitions
 
@@ -48,8 +54,10 @@ of the order of discriminant `-n` over `K`; neither statement is proved here.
 
 ## Main results
 
-* `TauCeti.BinaryQuadraticForm.singularModulus_injective`: distinct proper classes have distinct
-  singular moduli.
+* `TauCeti.BinaryQuadraticForm.eq_of_singularModulus_eq` and `singularModulus_injective`: a
+  singular modulus uniquely determines its discriminant `-n` and its proper class.
+* `TauCeti.BinaryQuadraticForm.isIntegral_singularModulus`: every singular modulus is an algebraic
+  integer.
 * `TauCeti.BinaryQuadraticForm.star_singularModulus`: the complex conjugate of the singular
   modulus of a class is the singular modulus of the inverse Picard class, and
   `im_singularModulus_eq_zero_iff`: a singular modulus is real exactly when its Picard class has
@@ -63,7 +71,8 @@ of the order of discriminant `-n` over `K`; neither statement is proved here.
   `-n`.
 * `TauCeti.BinaryQuadraticForm.map_star_hilbertClassPolynomial`: it is invariant under complex
   conjugation of the coefficients, so its coefficients are real
-  (`im_coeff_hilbertClassPolynomial`).
+  (`im_coeff_hilbertClassPolynomial`) as well as algebraic integers
+  (`isIntegral_coeff_hilbertClassPolynomial`).
 
 ## References
 
@@ -122,6 +131,71 @@ theorem singularModulus_injective : Function.Injective (singularModulus n) := by
   refine mem_orbit_iff.2 ⟨γ⁻¹, Subtype.ext ?_⟩
   rw [SubMulAction.val_smul, inv_smul_eq_iff]
   exact (congrArg Subtype.val hγ).symm
+
+variable {n} in
+/-- **A point of `ℍ` is the root of at most one primitive positive definite form** (across all
+discriminants). If `f ∈ posDef n` and `g ∈ posDef n'` are primitive with `root f = root g`, then
+their underlying forms coincide. -/
+theorem eq_of_root_eq_of_isPrimitive {n' : ℕ} [NeZero n'] {f : posDef n} {g : posDef n'}
+    (hf : f.1.IsPrimitive) (hg : g.1.IsPrimitive) (h : root f = root g) :
+    f.1 = g.1 := by
+  obtain ⟨-, hfa⟩ := mem_posDef.1 f.2
+  obtain ⟨-, hga⟩ := mem_posDef.1 g.2
+  have hfaR : (f.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.2 hfa.ne'
+  have hgaR : (g.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.2 hga.ne'
+  have hre : (g.1.a : ℝ) * f.1.b = (f.1.a : ℝ) * g.1.b := by
+    have h₁ := congrArg UpperHalfPlane.re h
+    rw [re_root, re_root] at h₁
+    field_simp at h₁
+    linarith
+  have hnorm : (g.1.a : ℝ) * f.1.c = (f.1.a : ℝ) * g.1.c := by
+    have h₂ := congrArg (fun z : ℍ ↦ Complex.normSq (z : ℂ)) h
+    rw [normSq_root, normSq_root] at h₂
+    field_simp at h₂
+    linarith
+  have hsmul : g.1.a • f.1 = f.1.a • g.1 := by
+    ext <;> simp only [smul_a', smul_b', smul_c', smul_eq_mul]
+    · exact mul_comm _ _
+    · exact_mod_cast hre
+    · exact_mod_cast hnorm
+  have hprim := congrArg primPart hsmul
+  rwa [primPart_smul_of_isPrimitive _ _ hf, primPart_smul_of_isPrimitive _ _ hg,
+    Int.sign_eq_one_of_pos hga, Int.sign_eq_one_of_pos hfa, one_smul, one_smul] at hprim
+
+variable {n} in
+/-- **A singular modulus determines its discriminant**: if a proper class of discriminant `-n` and
+a proper class of discriminant `-n'` have the same singular modulus, then `n = n'`. -/
+theorem eq_of_singularModulus_eq {n' : ℕ} [NeZero n'] {q : PosDefProperClass n}
+    {q' : PosDefProperClass n'} (h : singularModulus n q = singularModulus n' q') :
+    n = n' := by
+  induction q using Quotient.inductionOn with | h f
+  induction q' using Quotient.inductionOn with | h g
+  rw [singularModulus_mk, singularModulus_mk] at h
+  obtain ⟨γ, hγ⟩ := ModularGroup.j_eq_j_iff.1 h
+  let f₀ : posDef n := ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
+  let g₀ : posDef n' := ⟨g, inf_le_left (b := primitiveForms (-n')) g.2⟩
+  have hf_prim : (γ • f₀).1.IsPrimitive := by
+    rw [SubMulAction.val_smul]
+    exact (isPrimitive_smul_iff f.1 γ).2 ((mem_primitiveForms (-n) f.1).1 f.2.2).2
+  have hg_prim : g₀.1.IsPrimitive := ((mem_primitiveForms (-n') g.1).1 g.2.2).2
+  have heq : (γ • f₀).1 = g₀.1 :=
+    eq_of_root_eq_of_isPrimitive hf_prim hg_prim ((root_smul γ f₀).trans hγ)
+  have hdisc : -(n : ℤ) = -(n' : ℤ) :=
+    (mem_posDef.1 (γ • f₀).2).1.symm.trans
+      ((congrArg BinaryQuadraticForm.discrim heq).trans (mem_posDef.1 g₀.2).1)
+  omega
+
+variable {n} in
+/-- The value of `j` at the root of any positive definite integral binary quadratic form is an
+algebraic integer. -/
+theorem isIntegral_j_root (f : posDef n) : IsIntegral ℤ (j (root f)) :=
+  isIntegral_j_of_quadratic (mem_posDef.1 f.2).2.ne' ((eq_root_iff f (root f)).1 rfl)
+
+/-- **Every singular modulus is an algebraic integer.** -/
+theorem isIntegral_singularModulus (q : PosDefProperClass n) :
+    IsIntegral ℤ (singularModulus n q) := by
+  induction q using Quotient.inductionOn with | h f
+  exact isIntegral_j_root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
 
 variable {n} in
 /-- Complex conjugation sends the singular modulus of the class of `a x² + b x y + c y²` to the
@@ -266,5 +340,17 @@ theorem map_star_hilbertClassPolynomial :
 @[simp]
 theorem im_coeff_hilbertClassPolynomial (k : ℕ) : ((hilbertClassPolynomial n).coeff k).im = 0 := by
   rw [← Complex.conj_eq_iff_im, ← coeff_map, map_star_hilbertClassPolynomial]
+
+/-- **Every coefficient of the Hilbert class polynomial is an algebraic integer.** -/
+theorem isIntegral_coeff_hilbertClassPolynomial (k : ℕ) :
+    IsIntegral ℤ ((hilbertClassPolynomial n).coeff k) := by
+  let P₀ : (integralClosure ℤ ℂ)[X] :=
+    ∏ f : primitiveReducedForms n,
+      (X - C ⟨singularModulus n (reducedClass n f),
+        isIntegral_singularModulus n (reducedClass n f)⟩)
+  have hmap : P₀.map (algebraMap (integralClosure ℤ ℂ) ℂ) = hilbertClassPolynomial n := by
+    simp [P₀, hilbertClassPolynomial, reducedClass, Polynomial.map_prod]
+  rw [← hmap, coeff_map]
+  exact (mem_integralClosure_iff ℤ ℂ).1 (P₀.coeff k).2
 
 end TauCeti.BinaryQuadraticForm
