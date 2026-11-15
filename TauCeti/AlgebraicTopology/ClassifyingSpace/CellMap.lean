@@ -232,6 +232,25 @@ theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
   exact congrArg (fun f : C(universalGSpace G, universalGSpace H) ↦ f x.1)
     φ.universalGSpaceSimplicialMap_realizationMap
 
+/-- The identity homomorphism induces the identity cellular map on Milnor joins. -/
+@[simp]
+theorem universalGSpaceCellularMap_id :
+    (MonoidHom.id G).universalGSpaceCellularMap = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact DFunLike.congr_fun universalGSpaceMap_id x.1
+
+/-- Cellular maps of Milnor joins respect composition of homomorphisms. -/
+@[simp]
+theorem universalGSpaceCellularMap_comp {K : Type u} [MulOne K] (ψ : H →* K) (φ : G →* H) :
+    (ψ.comp φ).universalGSpaceCellularMap =
+      φ.universalGSpaceCellularMap ≫ ψ.universalGSpaceCellularMap := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact DFunLike.congr_fun (universalGSpaceMap_comp ψ φ) x.1
+
 /-- The continuous map on Milnor joins preserves the simplicial CW filtrations.
 The map is restricted to the universal subsets used by cellular chains. -/
 theorem isCellular_universalGSpaceCellularMap (φ : G →* H) :

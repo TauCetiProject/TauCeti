@@ -24,6 +24,9 @@ This is the homological counterpart of `TauCeti.Rep.groupCohomologyIso_inv_eq_ho
 
 * `Rep.groupHomologyIso_hom_eq_homologyMap`: `groupHomologyIso A n P` is the map on
   homology induced by a comparison map from the bar resolution to `P`.
+* `Rep.groupHomologyIso_hom_comp_homologyMap`, `Rep.homologyMap_comp_groupHomologyIso_inv`:
+  computing group homology from two projective resolutions related by an augmentation-preserving
+  chain map agrees with the induced map on tensor-coinvariant homology.
 
 ## References
 
@@ -44,6 +47,41 @@ namespace Rep
 universe u
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
+
+/-- **Group homology from two resolutions related by a chain map.** If `φ : P.complex ⟶ Q.complex`
+is a chain map between projective resolutions of the trivial representation `k` lying over the
+identity of `k`, then `groupHomologyIso` carries `Hₙ(G, A)` from `(A ⊗ P)_G` to `(A ⊗ Q)_G` via the
+map induced on homology by `A ⊗ φ`. -/
+@[reassoc]
+theorem groupHomologyIso_hom_comp_homologyMap
+    (P Q : ProjectiveResolution (Rep.trivial k G k))
+    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
+    (groupHomologyIso A n P).hom ≫
+        HomologicalComplex.homologyMap
+          ((((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n =
+      (groupHomologyIso A n Q).hom := by
+  have h := ProjectiveResolution.isoLeftDerivedObj_hom_naturality (𝟙 _)
+    P Q φ (comm.trans (Category.comp_id _).symm)
+    ((Rep.coinvariantsTensor k G).obj A) n
+  rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
+  -- `groupHomologyIso` is `groupHomologyIsoTor` followed by `torIso`, which is `isoLeftDerivedObj`
+  -- of `coinvariantsTensor` by definition.
+  have hP : (groupHomologyIso A n P).hom = _ := Iso.trans_hom _ _
+  have hQ : (groupHomologyIso A n Q).hom = _ := Iso.trans_hom _ _
+  rw [hP, hQ]
+  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) h.symm)
+
+/-- Inverse form of `groupHomologyIso_hom_comp_homologyMap`. -/
+@[reassoc]
+theorem homologyMap_comp_groupHomologyIso_inv
+    (P Q : ProjectiveResolution (Rep.trivial k G k))
+    (φ : P.complex ⟶ Q.complex) (comm : φ.f 0 ≫ Q.π.f 0 = P.π.f 0) (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map φ) n ≫
+      (groupHomologyIso A n Q).inv =
+      (groupHomologyIso A n P).inv := by
+  rw [Iso.comp_inv_eq, ← groupHomologyIso_hom_comp_homologyMap A P Q φ comm n,
+    Iso.inv_hom_id_assoc]
 
 /-- **Group homology from a projective resolution, through a comparison map.** For a projective
 resolution `P` of the trivial representation `k` and a chain map `φ` from the bar resolution to `P`

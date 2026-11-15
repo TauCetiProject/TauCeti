@@ -114,6 +114,29 @@ theorem universalGSpaceToStandard_smul [Group G] (n : ℕ) (g : G)
     simp [Representation.ofMulAction_single]
   exact DFunLike.congr_fun h x
 
+/-- For any nonempty `G` and nontrivial coefficient semiring `k`, the degree-zero comparison
+`universalGSpaceToStandard k 0` is not injective: the vertices `(0, g)` and `(1, g)` of the
+countable join are distinct `0`-simplices with the same label tuple. -/
+theorem not_injective_universalGSpaceToStandard_zero [Nontrivial k] [Nonempty G] :
+    ¬ Function.Injective (universalGSpaceToStandard (G := G) k 0) := by
+  obtain ⟨g⟩ := ‹Nonempty G›
+  intro hinj
+  let c₀ := RealizationCell.vertex (indexedJoin fun _ : ℕ => G) ⟨0, g⟩
+  let c₁ := RealizationCell.vertex (indexedJoin fun _ : ℕ => G) ⟨1, g⟩
+  have hlabels : universalGSpaceCellLabels c₀ = universalGSpaceCellLabels c₁ := by
+    funext j
+    simp [c₀, c₁]
+  have heq : single c₀ (1 : k) = single c₁ (1 : k) := hinj <| by
+    rw [universalGSpaceToStandard_single, universalGSpaceToStandard_single, hlabels]
+  have hc : c₀ ≠ c₁ := fun h ↦ by
+    have hm : (⟨0, g⟩ : Σ _ : ℕ, G) ∈ c₁.1.1 := by
+      rw [← h]
+      simp [c₀]
+    simp [c₁] at hm
+  have h10 : (1 : k) = 0 := by
+    simpa [Finsupp.single_eq_same, hc] using DFunLike.congr_fun heq c₀
+  exact one_ne_zero h10
+
 end Semiring
 
 variable (k : Type u) [CommRing k]
@@ -160,6 +183,39 @@ theorem universalGSpaceToStandardComplex_f [Monoid G] (n : ℕ) :
       ModuleCat.ofHom (universalGSpaceToStandard k n) ≫
         (forget₂ (Rep k G) (ModuleCat k)).map (Rep.standardComplex.xIso k G n).inv :=
   (rfl)
+
+/-- For any monoid `G` and nontrivial coefficient ring `k`, the join-to-standard chain map
+`universalGSpaceToStandardComplex` is not an isomorphism: its degree-zero map collapses distinct
+index copies of `1 : G`. -/
+theorem not_isIso_universalGSpaceToStandardComplex [Nontrivial k] [Monoid G] :
+    ¬ IsIso (universalGSpaceToStandardComplex (G := G) k) := by
+  intro hIso
+  let hX := orderedSimplicialChainComplex_X (K := indexedJoin fun _ : ℕ => G) k 0
+  let hY : (Rep.standardComplex.forget₂ToModuleCat k G).X 0 =
+      (forget₂ (Rep k G) (ModuleCat k)).obj ((Rep.standardComplex k G).X 0) := rfl
+  let e := eqToIso hX.symm ≪≫
+    HomologicalComplex.Hom.isoApp (asIso (universalGSpaceToStandardComplex (G := G) k)) 0 ≪≫
+    eqToIso hY ≪≫ (forget₂ (Rep k G) (ModuleCat k)).mapIso (Rep.standardComplex.xIso k G 0)
+  have hf0 :
+      (HomologicalComplex.Hom.isoApp (asIso (universalGSpaceToStandardComplex (G := G) k)) 0).hom ≫
+          eqToHom hY =
+        eqToHom hX ≫ ModuleCat.ofHom (universalGSpaceToStandard (G := G) k 0) ≫
+          (forget₂ (Rep k G) (ModuleCat k)).map (Rep.standardComplex.xIso k G 0).inv :=
+    (Category.comp_id _).trans (universalGSpaceToStandardComplex_f (G := G) k 0)
+  have he : e.hom = ModuleCat.ofHom (universalGSpaceToStandard (G := G) k 0) := by
+    simp only [e, Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom]
+    rw [← Category.assoc _ (eqToHom hY), hf0]
+    simp only [Category.assoc, ← CategoryTheory.Functor.map_comp, Iso.inv_hom_id,
+      CategoryTheory.Functor.map_id, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    exact Category.comp_id _
+  have hid : ModuleCat.ofHom (universalGSpaceToStandard (G := G) k 0) ≫ e.inv = 𝟙 _ := by
+    rw [← he, e.hom_inv_id]
+  refine not_injective_universalGSpaceToStandard_zero (G := G) k fun x y hxy ↦ ?_
+  have hx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hid) x
+  have hy := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hid) y
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, ModuleCat.hom_id,
+    LinearMap.id_apply] at hx hy
+  exact hx.symm.trans ((congrArg e.inv.hom hxy).trans hy)
 
 /-- The comparison preserves the augmentations, each of which sums the coefficients of the
 vertices. The target augmentation is `Rep.standardComplex.ε`. -/

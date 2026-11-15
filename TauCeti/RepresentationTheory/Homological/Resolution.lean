@@ -48,7 +48,9 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
   degree `0` is `Rep.standardComplex.ε`.
 * `TauCeti.Rep.standardResolution_π_f_zero_single` and
   `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
-* `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
+* `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π` and
+  `MonoidHom.standardComplexMap_f_zero_comp_standardResolution_π`: the bar and standard
+  change-of-group chain maps lie over the identity of `k`.
 
 ## References
 
@@ -282,5 +284,22 @@ theorem standardComplexHom_comp_ε (φ : G →* H) :
   rw [TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation,
     TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation]
   exact MulActionHom.toRepRes_comp_permutationAugmentation _
+
+/-- **The standard resolution along a group homomorphism lies over the identity of `k`.** -/
+@[reassoc]
+theorem standardComplexMap_f_zero_comp_standardResolution_π
+    {G H : Type u} [Group G] [Group H] (φ : G →* H) :
+    (φ.standardComplexMap (k := k)).f 0 ≫
+        (Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0) =
+      (Rep.standardResolution k G).π.f 0 := by
+  refine Rep.ofMulAction_hom_ext (X := Fin 1 → G) fun x => ?_
+  have h₁ : ((φ.standardComplexMap (k := k)).f 0).hom (MonoidAlgebra.single x 1) =
+      MonoidAlgebra.single (φ ∘ x) 1 :=
+    MulActionHom.toRepRes_hom_single (φ.standardComplexMulActionHom 0) x 1
+  have h₂ : ((Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0)).hom
+      (MonoidAlgebra.single (φ ∘ x) 1) = (1 : k) :=
+    TauCeti.Rep.standardResolution_π_f_zero_single (φ ∘ x) 1
+  exact (congrArg ((Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0)).hom h₁).trans
+    (h₂.trans (TauCeti.Rep.standardResolution_π_f_zero_single x 1).symm)
 
 end MonoidHom

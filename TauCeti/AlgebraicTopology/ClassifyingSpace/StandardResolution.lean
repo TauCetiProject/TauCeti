@@ -46,6 +46,8 @@ single basis element in degree `0`.
 
 * `TauCeti.universalGSpaceChainComplexToStandardComplex_comp_εToSingle₀`: the chain map commutes
   with the augmentations.
+* `TauCeti.not_isIso_universalGSpaceChainComplexToStandardComplex`: for a nontrivial coefficient
+  ring, the join-to-standard comparison is not an isomorphism of chain complexes in `Rep k G`.
 
 ## References
 
@@ -205,5 +207,38 @@ def universalGSpaceChainComplexToStandardComplexHomotopy :
   ProjectiveResolution.homotopyOfComm (universalGSpaceResolution k G)
     (Rep.standardResolution k G) (universalGSpaceChainComplexToStandardComplex k G)
     (universalGSpaceChainComplexToStandardComplex_comp_standardResolution_π k G)
+
+/-- For a nontrivial coefficient ring `k`, the degree-zero component of
+`universalGSpaceChainComplexToStandardComplex` is not injective on underlying elements: distinct
+index copies `(0, g)` and `(1, g)` of a group element `g` have the same standard generator. -/
+theorem not_injective_universalGSpaceChainComplexToStandardComplex_f_zero [Nontrivial k] :
+    ¬ Function.Injective ((universalGSpaceChainComplexToStandardComplex k G).f 0).hom := by
+  intro hinj
+  refine not_injective_universalGSpaceToStandard_zero (G := G) k fun x y hxy ↦ ?_
+  apply (MonoidAlgebra.coeffLinearEquiv k).symm.injective
+  refine hinj ?_
+  -- In this defining module, the degree-zero chain map evaluates `universalGSpaceToStandard k 0`
+  -- after `MonoidAlgebra.coeffLinearEquiv k`, and `Rep.standardComplex.xIso` is `Iso.refl`.
+  change (universalGSpaceToStandard k 0)
+      (MonoidAlgebra.coeffLinearEquiv k ((MonoidAlgebra.coeffLinearEquiv k).symm x)) =
+    (universalGSpaceToStandard k 0)
+      (MonoidAlgebra.coeffLinearEquiv k ((MonoidAlgebra.coeffLinearEquiv k).symm y))
+  simpa only [LinearEquiv.apply_symm_apply] using hxy
+
+/-- For any group `G` and nontrivial coefficient ring `k`, the join-to-standard chain map
+`universalGSpaceChainComplexToStandardComplex` is **not** an isomorphism of chain complexes in
+`Rep k G`. -/
+theorem not_isIso_universalGSpaceChainComplexToStandardComplex [Nontrivial k] :
+    ¬ IsIso (universalGSpaceChainComplexToStandardComplex k G) := by
+  intro hIso
+  let e := asIso (universalGSpaceChainComplexToStandardComplex k G)
+  have hcomp : e.hom.f 0 ≫ e.inv.f 0 = 𝟙 _ := by
+    rw [← HomologicalComplex.comp_f, e.hom_inv_id, HomologicalComplex.id_f]
+  refine not_injective_universalGSpaceChainComplexToStandardComplex_f_zero k G fun x y hxy ↦ ?_
+  have hx := congrArg (fun f ↦ f.hom x) hcomp
+  have hy := congrArg (fun f ↦ f.hom y) hcomp
+  dsimp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.hom_id,
+    Representation.IntertwiningMap.id_apply] at hx hy
+  exact hx.symm.trans ((congrArg (e.inv.f 0).hom hxy).trans hy)
 
 end TauCeti
