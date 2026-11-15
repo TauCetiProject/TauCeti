@@ -171,4 +171,19 @@ theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] 
   · rw [hU, TopologicalSpace.Opens.coe_top]
     exact Set.subset_univ _
 
+/-- Every nonempty open contains each point whose prime ideal is zero. -/
+theorem mem_of_isOpen_of_asIdeal_eq_bot {R : Type*} [CommRing R]
+    {U : Set (PrimeSpectrum R)} (hU : IsOpen U) (hne : U.Nonempty)
+    {p : PrimeSpectrum R} (hp : p.asIdeal = ⊥) : p ∈ U := by
+  obtain ⟨q, hq⟩ := hne
+  refine ((PrimeSpectrum.le_iff_specializes p q).mp ?_).mem_open hU hq
+  rw [← PrimeSpectrum.asIdeal_le_asIdeal, hp]
+  exact bot_le
+
+/-- The vanishing ideal of the closed complement of an open cuts out that complement. -/
+theorem zeroLocus_vanishingIdeal_compl_of_isOpen {S : Type*} [CommRing S]
+    {U : Set (PrimeSpectrum S)} (hU : IsOpen U) :
+    zeroLocus (vanishingIdeal Uᶜ) = Uᶜ :=
+  (zeroLocus_vanishingIdeal_eq_closure Uᶜ).trans hU.isClosed_compl.closure_eq
+
 end PrimeSpectrum
