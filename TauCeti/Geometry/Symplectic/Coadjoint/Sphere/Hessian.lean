@@ -31,7 +31,7 @@ sphere (`TauCeti.soThreeDualEquiv_smul_apply_soThreeEquiv_smul`). Hence, for `r 
 * at the critical point `x`, the critical Hessian of `f_X` is `-r a ⟪x, Z⟫` times the inner
   product of tangent vectors read in `ℝ³`
   (`TauCeti.criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul`);
-* in particular, at `p = r Z` with `r ≠ 0`, `Hess = -(a / r) B` on the tangent plane of the orbit,
+* in particular, at `p = r Z`, `Hess = -(a / r) B` on the tangent plane of the orbit,
   whose tangent vectors are the images `r v` of the tangent vectors `v` of `S²` read in `ℝ³`
   (`TauCeti.criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self`);
 * `f_X` is a Morse function, and its Morse index is `2` at the maximum and `0` at the minimum:
@@ -109,11 +109,11 @@ theorem criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul (r a : ℝ
   exact criticalHessian_mul_sphereHeight (r * a) hx v w
 
 /-- **The Hessian `-aB/r` at the top of a coadjoint sphere of `SO(3)`.** On the coadjoint sphere of
-radius `r ≠ 0`, at `p = r Z`, the critical Hessian of the height of `X = a Ẑ` is `-(a / r) B` on
+radius `r`, at `p = r Z`, the critical Hessian of the height of `X = a Ẑ` is `-(a / r) B` on
 the tangent plane of the orbit: a tangent vector `v` of `S²` at `Z` is the tangent vector `r v` of
-the orbit, read in `ℝ³ ≅ so(3)`, and `B` is the dot product. -/
-theorem criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self {r : ℝ} (hr : r ≠ 0)
-    (a : ℝ) (Z : S²) (v w : TangentSpace (𝓡 2) Z) :
+the orbit, read in `ℝ³ ≅ so(3)`, and `B` is the dot product. For `r = 0` both sides vanish. -/
+theorem criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self (r a : ℝ) (Z : S²)
+    (v w : TangentSpace (𝓡 2) Z) :
     criticalHessian (𝓡 2)
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         Z v w =
@@ -121,7 +121,9 @@ theorem criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self {r : 
   rw [criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul r a
     (by simp : Z ∈ criticalPoints (𝓡 2) (sphereHeight Z)), sphereHeight_self, real_inner_smul_left,
     real_inner_smul_right]
-  field_simp
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  · field_simp
 
 /-- For `r a ≠ 0`, the height of `X = a Ẑ` on the coadjoint sphere of radius `r` is a Morse
 function. -/
