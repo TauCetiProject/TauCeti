@@ -111,7 +111,7 @@ theorem IsMorse.finsum_sign_det_vectorFieldChartDerivative_mgradient [T2Space M]
     (fun x ↦ (SignType.sign (LinearMap.det
       (vectorFieldChartDerivative I (Manifold.mgradient I f) x)) : ℤ)),
     hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq (ModuleCat.of k k) le_rfl,
-    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum s hs le_rfl]
+    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hf.finite_criticalPoints le_rfl]
   -- At each zero, the index is `(-1)` to the Morse index.
   have hk : finrank k (ModuleCat.of k k) = 1 := finrank_self k
   rw [hk, Nat.cast_one, one_mul]

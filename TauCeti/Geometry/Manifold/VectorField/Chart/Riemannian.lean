@@ -93,8 +93,8 @@ private theorem exists_eventuallyEq_clm_apply_inner_of_eq_zero
     rw [I.range_eq_univ, mpullbackWithin_univ, preimage_univ, inter_univ] at h
     exact h.differentiableAt univ_mem
   have hU₀ : U (φ x) = 0 := by
-    simp only [U, φ, mpullback_extChartAt_symm_apply_eq_mfderiv σ (mem_extChartAt_source x), hσ₀,
-      map_zero]
+    simp only [U, φ, mpullback_extChartAt_symm_apply_eq_mfderiv σ (mem_extChartAt_source x)
+      (by simp [I.range_eq_univ]), hσ₀, map_zero]
     -- The zero of the tangent space at the chart point is the zero of `E`.
     rfl
   let c : M → E →L[ℝ] ℝ := fun y ↦ (innerSL ℝ (τ y)) ∘L e.symmL ℝ y
@@ -107,9 +107,9 @@ private theorem exists_eventuallyEq_clm_apply_inner_of_eq_zero
     -- In the chart, `σ` is recovered from its coordinate field by the inverse trivialization.
     have hσy : e.symmL ℝ y (U (φ y)) = σ y := by
       have h₁ : U (φ y) = e.continuousLinearMapAt ℝ y (σ y) :=
-        (mpullback_extChartAt_symm_apply_eq_mfderiv σ hy).trans (DFunLike.congr_fun
-          (TangentBundle.continuousLinearMapAt_trivializationAt (by simpa [φ] using hy))
-            (σ y)).symm
+        (mpullback_extChartAt_symm_apply_eq_mfderiv σ hy (by simp [I.range_eq_univ])).trans
+          (DFunLike.congr_fun (TangentBundle.continuousLinearMapAt_trivializationAt
+            (by simpa [φ] using hy)) (σ y)).symm
       rw [h₁, Trivialization.symmL_continuousLinearMapAt _ hb]
     rw [Function.comp_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hσy,
       real_inner_comm]
