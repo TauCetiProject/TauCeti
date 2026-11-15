@@ -47,6 +47,10 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.setLIntegral_enorm_sub_rpow_le_of_mem_closure`,
+  `TauCeti.setIntegral_norm_sub_rpow_le_of_mem_closure`: diameter bounds on any bounded set for
+  poles in its closure and exponents `s > -d`, together with divergence `= ∞` at interior poles for
+  `s ≤ -d` (`TauCeti.setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior`).
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
@@ -205,6 +209,13 @@ theorem locallyIntegrable_norm_sub_rpow {s : ℝ} (hs : -(Module.finrank ℝ E :
   obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x
   exact (integrableOn_norm_sub_rpow_ball (mu := mu) hs x).mono_set hKR
 
+/-- The kernel with pole `x` and exponent `s > -dim E` is integrable on every bounded set. -/
+theorem integrableOn_norm_sub_rpow_of_isBounded {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s)
+    {Ω : Set E} (hb : Bornology.IsBounded Ω) (x : E) :
+    IntegrableOn (fun y : E => ‖x - y‖ ^ s) Ω mu := by
+  obtain ⟨R, hΩR⟩ := hb.subset_ball x
+  exact (integrableOn_norm_sub_rpow_ball (mu := mu) hs x).mono_set hΩR
+
 /-- The integral of the kernel with pole `x` and exponent `s > -dim E` over a ball centred at `x`
 does not depend on the centre and has the same exact value as the radial integral at the
 origin. -/
@@ -293,6 +304,77 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
   have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
   rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
 
+/-- On a bounded set `Ω` with `x ∈ closure Ω`, the lower integral over `Ω` of `y ↦ ‖x - y‖ₑ ^ s`
+with `s > -dim E` is at most its exact integral over `closedBall x (diam Ω)`, namely
+`n μ(B(0, 1)) (diam Ω) ^ (n + s) / (n + s)`. -/
+theorem setLIntegral_enorm_sub_rpow_le_of_mem_closure {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) {Ω : Set E} {x : E}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ closure Ω) :
+    ∫⁻ y in Ω, ‖x - y‖ₑ ^ s ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (diam Ω ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) := by
+  calc
+    _ ≤ ∫⁻ y in closedBall x (diam Ω), ‖x - y‖ₑ ^ s ∂mu :=
+      lintegral_mono_set fun _ hy => mem_closedBall.2
+        ((dist_le_diam_of_mem hb.closure (subset_closure hy) hx).trans_eq (diam_closure Ω))
+    _ = _ := setLIntegral_closedBall_enorm_sub_rpow hs diam_nonneg x
+
+/-- Specialization of `TauCeti.setLIntegral_enorm_sub_rpow_le_of_mem_closure` to a pole `x ∈ Ω`. -/
+theorem setLIntegral_enorm_sub_rpow_le_of_mem {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) {Ω : Set E} {x : E}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ Ω) :
+    ∫⁻ y in Ω, ‖x - y‖ₑ ^ s ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (diam Ω ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) :=
+  setLIntegral_enorm_sub_rpow_le_of_mem_closure hs hb (subset_closure hx)
+
+/-- Bochner integral form of `TauCeti.setLIntegral_enorm_sub_rpow_le_of_mem_closure`. -/
+theorem setIntegral_norm_sub_rpow_le_of_mem_closure {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) {Ω : Set E} {x : E}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ closure Ω) :
+    ∫ y in Ω, ‖x - y‖ ^ s ∂mu ≤
+      (Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (diam Ω ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s)) := by
+  have hpos : 0 < (Module.finrank ℝ E : ℝ) + s := by linarith
+  have hrhs : 0 ≤ (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
+      (diam Ω ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s)) :=
+    mul_nonneg (mul_nonneg (Nat.cast_nonneg _) measureReal_nonneg)
+      (div_nonneg (Real.rpow_nonneg diam_nonneg _) hpos.le)
+  rw [← ENNReal.ofReal_le_ofReal_iff hrhs,
+    ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_sub_rpow_of_isBounded hs hb x)
+      (ae_of_all _ fun _ => Real.rpow_nonneg (norm_nonneg _) _)]
+  refine (lintegral_mono fun y => ?_).trans
+    (setLIntegral_enorm_sub_rpow_le_of_mem_closure hs hb hx)
+  rcases eq_or_ne y x with rfl | hyx
+  · rcases eq_or_ne s 0 with rfl | hs0 <;> simp [Real.zero_rpow, *]
+  · rw [← ofReal_norm, ENNReal.ofReal_rpow_of_pos (norm_pos_iff.2 (sub_ne_zero.2 hyx.symm))]
+
+/-- On a nontrivial space, if `s ≤ -dim E` and `x ∈ interior Ω`, the lower integral of
+`y ↦ ‖x - y‖ₑ ^ s` over `Ω` is infinite. -/
+theorem setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior [Nontrivial E] {s : ℝ}
+    (hs : s ≤ -(Module.finrank ℝ E : ℝ)) {Ω : Set E} {x : E} (hx : x ∈ interior Ω) :
+    ∫⁻ y in Ω, ‖x - y‖ₑ ^ s ∂mu = ⊤ := by
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hx)
+  by_contra hne
+  have hball_ne : ∫⁻ y in ball x r, ENNReal.ofReal (‖x - y‖ ^ s) ∂mu ≠ ⊤ := by
+    refine ne_top_of_le_ne_top hne ((lintegral_mono fun y => ?_).trans (lintegral_mono_set hball))
+    have hs0 : s < 0 := hs.trans_lt (neg_neg_of_pos (Nat.cast_pos.2 Module.finrank_pos))
+    rcases eq_or_ne y x with rfl | hyx
+    · simp [Real.zero_rpow hs0.ne]
+    · rw [← ofReal_norm, ENNReal.ofReal_rpow_of_pos (norm_pos_iff.2 (sub_ne_zero.2 hyx.symm))]
+  have hint : IntegrableOn (fun y : E => ‖x - y‖ ^ s) (ball x r) mu :=
+    (lintegral_ofReal_ne_top_iff_integrable
+      (by fun_prop : Measurable fun y : E => ‖x - y‖ ^ s).aestronglyMeasurable
+      (ae_of_all _ fun _ => Real.rpow_nonneg (norm_nonneg _) _)).1 hball_ne
+  have hpres := measurePreserving_add_right mu x
+  have hemb := (MeasurableEquiv.addRight x : E ≃ᵐ E).measurableEmbedding
+  have hpre : (fun z : E => z + x) ⁻¹' ball x r = ball (0 : E) r := by
+    ext z; simp [mem_ball]
+  rw [← hpres.integrableOn_comp_preimage hemb, hpre] at hint
+  have hint0 : IntegrableOn (fun z : E => ‖z‖ ^ s) (ball (0 : E) r) mu :=
+    hint.congr (ae_of_all _ fun z => by simp [norm_neg])
+  exact ((integrableOn_norm_rpow_ball_iff hr).1 hint0).not_ge hs
+
 /-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
 `Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
 `x`. -/
@@ -300,12 +382,8 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
     (hb : Bornology.IsBounded Ω) (hx : x ∈ Ω) :
     ∫⁻ y in Ω, ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
       ENNReal.ofReal (Module.finrank ℝ E * mu.real (ball 0 1) * diam Ω) := by
-  calc
-    _ ≤ ∫⁻ y in closedBall x (diam Ω), ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu :=
-      lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
-    _ = _ := by
-      rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) diam_nonneg, add_sub_cancel,
-        Real.rpow_one, div_one]
+  simpa only [add_sub_cancel, Real.rpow_one, div_one] using
+    setLIntegral_enorm_sub_rpow_le_of_mem (s := 1 - (Module.finrank ℝ E : ℝ)) (by linarith) hb hx
 
 section Inverse
 
