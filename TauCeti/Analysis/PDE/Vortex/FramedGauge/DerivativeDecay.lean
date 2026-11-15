@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.WindingPhase.Basic
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
-# Derivative decay of plane vortices in the winding end trivialization
+# Derivative decay of plane vortices in an end trivialization
 
 Let `x` be a plane vortex with smooth section whose section satisfies `|α| → 1` at infinity and is
 `|α|` times the winding phase `(z / |z|)^m` outside a compact set. Its winding-`m` end

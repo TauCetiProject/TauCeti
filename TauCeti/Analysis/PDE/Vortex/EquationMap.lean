@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import TauCeti.Analysis.PDE.Vortex.Multiplier
-public import TauCeti.Analysis.PDE.Vortex.WindingPhase.Basic
+public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
