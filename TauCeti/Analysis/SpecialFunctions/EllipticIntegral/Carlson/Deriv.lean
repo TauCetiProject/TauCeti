@@ -10,7 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RJ
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!

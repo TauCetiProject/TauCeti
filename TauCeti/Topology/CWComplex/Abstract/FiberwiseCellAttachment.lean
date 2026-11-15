@@ -1141,33 +1141,37 @@ variable (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
   (hχ₀ : ∀ i p s, χ₀ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₀ i (p, s))
   (hχ₁ : ∀ i p s, χ₁ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₁ i (p, s))
   (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
-  (hg : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ g i q.1 q.2)
+  (hg : ∀ i, Continuous fun p ↦
+    (g i p : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))))
   (K : ∀ i, (χ₁ i).Homotopy
-    ((χ₀ i).comp (ContinuousMap.fst.prodMk (TopCat.diskMapFamily (g i) (hg i)))))
+    ((χ₀ i).comp (ContinuousMap.fst.prodMk (diskMapFamily (g i) (hg i)))))
   (hK : ∀ i t p s, K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ A)
 
-/-- The disk maps of the inverses `(g i p)⁻¹`, given their joint continuity. -/
+/-- The disk maps of the inverses `(g i p)⁻¹`, given their continuity in the operator norm. -/
 private abbrev diskMapFamilyInv
-    (hg' : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2) (i : ι) :
+    (hg' : ∀ i, Continuous fun p ↦
+      ((g i p).symm : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i)))) (i : ι) :
     C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)) :=
-  TopCat.diskMapFamily (fun p ↦ (g i p).symm) (hg' i)
+  diskMapFamily (fun p ↦ (g i p).symm) (hg' i)
 
 private theorem comp_diskMapFamily_comp_diskMapFamilyInv
-    (hg' : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2) (i : ι) :
-    ((χ₀ i).comp (ContinuousMap.fst.prodMk (TopCat.diskMapFamily (g i) (hg i)))).comp
+    (hg' : ∀ i, Continuous fun p ↦
+      ((g i p).symm : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i)))) (i : ι) :
+    ((χ₀ i).comp (ContinuousMap.fst.prodMk (diskMapFamily (g i) (hg i)))).comp
       (ContinuousMap.fst.prodMk (diskMapFamilyInv g hg' i)) = χ₀ i := by
   ext q
-  have hw : TopCat.diskMapFamily (g i) (hg i) (q.1, diskMapFamilyInv g hg' i q) = q.2 := by
+  have hw : diskMapFamily (g i) (hg i) (q.1, diskMapFamilyInv g hg' i q) = q.2 := by
     refine ULift.ext (Subtype.ext ?_)
-    rw [TopCat.diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down,
-      TopCat.diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
+    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down,
+      diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
     exact (g i q.1).apply_symm_apply _
   simp only [ContinuousMap.comp_apply, ContinuousMap.prod_eval, ContinuousMap.fst_apply, hw]
 
 /-- The reverse `(t, (p, w)) ↦ K i (1 - t, (p, (g i p)⁻¹ w))` of the homotopy `K i`: a homotopy
 `χ₀ i ≃ χ₁ i ∘ (g i)⁻¹`. -/
 private def reverseHomotopy
-    (hg' : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2) (i : ι) :
+    (hg' : ∀ i, Continuous fun p ↦
+      ((g i p).symm : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i)))) (i : ι) :
     (χ₀ i).Homotopy ((χ₁ i).comp (ContinuousMap.fst.prodMk (diskMapFamilyInv g hg' i))) :=
   ((K i).symm.compContinuousMap (ContinuousMap.fst.prodMk (diskMapFamilyInv g hg' i))).cast
     (comp_diskMapFamily_comp_diskMapFamilyInv χ₀ g hg hg' i) rfl
@@ -1175,19 +1179,20 @@ private def reverseHomotopy
 include hK in
 /-- The reverse homotopies keep the boundary spheres in `A`. -/
 private theorem reverseHomotopy_mem
-    (hg' : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2) (i : ι)
+    (hg' : ∀ i, Continuous fun p ↦
+      ((g i p).symm : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i)))) (i : ι)
     (t : I) (p : P) (s : TopCat.diskBoundary.{u} (k i)) :
     reverseHomotopy χ₀ χ₁ g hg K hg' i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈ A := by
   have e : reverseHomotopy χ₀ χ₁ g hg K hg' i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) =
       K i (σ t, (p, (g i p).symm.diskMap (TopCat.diskBoundaryInclusion (k i) s))) :=
-    congrArg (fun w ↦ K i (σ t, (p, w))) (TopCat.diskMapFamily_apply _ _ _)
+    congrArg (fun w ↦ K i (σ t, (p, w))) (diskMapFamily_apply _ _ _)
   rw [e, LinearIsometryEquiv.diskMap_diskBoundaryInclusion]
   exact hK i (σ t) p _
 
 include hK in
 /-- **Cell attachments with characteristic maps homotopic up to isometries are fibre homotopy
-equivalent.** Let `g i p` be linear isometries of `ℝ^{k i}`, jointly continuous in `p` and the
-point, and let `K i : χ₁ i ≃ χ₀ i ∘ (p, g i p)` be homotopies of
+equivalent.** Let `g i p` be linear isometries of `ℝ^{k i}`, continuous in `p` in the operator
+norm, and let `K i : χ₁ i ≃ χ₀ i ∘ (p, g i p)` be homotopies of
 families of characteristic maps keeping the boundary spheres in `A`. Then there is a fibre homotopy
 equivalence over `P` from the attachment along `α₁` to the attachment along `α₀` which is the
 identity on `P × A` in both directions, whose composite with the comparison map `Φ₀` is homotopic
@@ -1208,25 +1213,22 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellAttachment_of_homotopy :
       ∃ G : (Ψ.toFun.comp Ψ.invFun).HomotopyRel (ContinuousMap.id _)
           (range (fiberwiseCellAttachmentIncl α₀)),
         ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₀ y := by
-  have hg' (i : ι) : Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2 :=
-    LinearIsometryEquiv.continuous_symm_apply_of_continuous_apply (hg i)
+  -- The inverse isometries are continuous in the operator norm, as the isometry group is a
+  -- topological group.
+  have hg' (i : ι) : Continuous fun p ↦
+      ((g i p).symm : EuclideanSpace ℝ (Fin (k i)) →L[ℝ] EuclideanSpace ℝ (Fin (k i))) := by
+    open scoped TauCeti.LinearIsometryEquivOperatorNorm in
+    exact LinearIsometryEquiv.continuous_operatorNorm_iff.1
+      (LinearIsometryEquiv.continuous_operatorNorm_iff.2 (hg i)).inv
   let h' := diskMapFamilyInv g hg'
-  have hh (i : ι) (p : P) : MapsTo (fun w ↦ TopCat.diskMapFamily (g i) (hg i) (p, w))
-      (range (TopCat.diskBoundaryInclusion.{u} (k i)))
-      (range (TopCat.diskBoundaryInclusion (k i))) := fun w hw ↦ by
-    simpa only [TopCat.diskMapFamily_apply] using
-      (g i p).mapsTo_diskMap_range_diskBoundaryInclusion hw
-  have hh' (i : ι) (p : P) : MapsTo (fun w ↦ h' i (p, w))
-      (range (TopCat.diskBoundaryInclusion.{u} (k i)))
-      (range (TopCat.diskBoundaryInclusion (k i))) := fun w hw ↦ by
-    simpa only [h', TopCat.diskMapFamily_apply] using
-      (g i p).symm.mapsTo_diskMap_range_diskBoundaryInclusion hw
+  have hh (i : ι) := mapsTo_diskMapFamily_range_diskBoundaryInclusion (g i) (hg i)
+  have hh' (i : ι) := mapsTo_diskMapFamily_range_diskBoundaryInclusion _ (hg' i)
   have hgh (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
-      (TopCat.diskMapFamily (g i) (hg i) (p, w)).down.1 = g i p w.down.1 := by
-    rw [TopCat.diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
+      (diskMapFamily (g i) (hg i) (p, w)).down.1 = g i p w.down.1 := by
+    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
   have hgh' (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
       (h' i (p, w)).down.1 = (g i p).symm w.down.1 := by
-    rw [TopCat.diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
+    rw [diskMapFamily_apply, LinearIsometryEquiv.coe_diskMap_apply_down]
   have hK' := reverseHomotopy_mem χ₀ χ₁ g hg K hK hg'
   refine ⟨fiberwiseCellReattachmentFiberHomotopyEquiv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ g _ h' hgh hgh' hh hh' K
     hK _ hK' fun _ _ _ _ ↦ rfl, ?_⟩
