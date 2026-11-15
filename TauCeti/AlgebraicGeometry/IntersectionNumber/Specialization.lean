@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Excision
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Reduced
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
 import Mathlib.Algebra.Order.Field.Rat
@@ -350,8 +350,9 @@ def specialFiberMultidegreeOnFiber :
       (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
         ((Set.Finite.mem_toFinset _).mp i.2))
 
-/-- Componentwise formula for `specialFiberMultidegreeOnFiber`. -/
-@[simp]
+/-- Componentwise formula for `specialFiberMultidegreeOnFiber` (not `@[simp]` because `specialFiber`
+is an `Over.pullback` abbreviation, so `simp` rewrites its underlying scheme inside the domain of
+`DFunLike.coe`). -/
 theorem specialFiberMultidegreeOnFiber_apply
     (b : Additive (LineBundleClass (specialFiber R toBase).left)) (i) :
     toBase.specialFiberMultidegreeOnFiber hX hη h₀ h₁ b i =
@@ -536,7 +537,6 @@ theorem specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight (i j) :
 
 /-- **Multidegree of a component line bundle.** The multidegree of `[𝒪_X(C_i)]` is the `i`-th row
 of `specialFiberWeightedIntersectionMatrix`. -/
-@[simp]
 theorem specialFiberMultidegree_inv_mk_toInvertibleSheaf (i) :
     toBase.specialFiberMultidegree hX hη h₀ h₁
         (Additive.ofMul (LineBundleClass.mk
@@ -550,6 +550,17 @@ theorem specialFiberMultidegree_inv_mk_toInvertibleSheaf (i) :
   rw [specialFiberMultidegree_apply, toMul_ofMul,
     ← toBase.specialFiberIntersectionMatrix_apply hX hη j i, hsym,
     specialFiberWeightedIntersectionMatrix_apply]
+
+/-- Simp normal form of `specialFiberMultidegree_inv_mk_toInvertibleSheaf` after
+`LineBundleClass.inv_mk`. -/
+@[simp]
+theorem specialFiberMultidegree_mk_toInvertibleSheaf_dual (i) :
+    toBase.specialFiberMultidegree hX hη h₀ h₁
+        (Additive.ofMul (LineBundleClass.mk
+          (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+            i.1.2).toInvertibleSheaf.dual)) =
+      toBase.specialFiberWeightedIntersectionMatrix hX hη i := by
+  rw [← LineBundleClass.inv_mk, specialFiberMultidegree_inv_mk_toInvertibleSheaf]
 
 /-- **Multidegree of a vertical divisor class.** For any integer vector `v` on the special-fibre
 components, the multidegree of `∏_i [𝒪_X(C_i)]^{v_i}` is `v ᵥ* A'`. -/
@@ -650,8 +661,9 @@ def specialFiberPicardSpecialization :
       (toBase.toAdditive_pullbackHom_genericFiberι_surjective K hX hη) rfl).symm.toAddMonoidHom
 
 /-- `specialFiberPicardSpecialization` sends the restriction of `a : LineBundleClass X` to the
-quotient class of `specialFiberMultidegree a`. -/
-@[simp]
+quotient class of `specialFiberMultidegree a` (not `@[simp]` because `genericFiber` is an
+`Over.pullback` abbreviation, so `simp` rewrites its underlying scheme inside the domain of
+`DFunLike.coe`). -/
 theorem specialFiberPicardSpecialization_pullback (a : LineBundleClass X) :
     toBase.specialFiberPicardSpecialization K hX hη h₀ h₁
         (Additive.ofMul (LineBundleClass.pullback (genericFiberι R K toBase) a)) =
