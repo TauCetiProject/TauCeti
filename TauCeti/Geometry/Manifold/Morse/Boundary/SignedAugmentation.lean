@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Augmentation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
-import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 
 /-!
 # The augmentation of the integral Morse complex
@@ -139,12 +137,12 @@ theorem augmentationSign_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f)) [Deci
     (𝔬.reverse S).augmentationSign q = (if q ∈ S then -1 else 1) * 𝔬.augmentationSign q := by
   by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0
   · -- The reversed data has the same charts, so the two signs are taken in the same basis.
-    simp only [augmentationSign, hq, ↓reduceIte, reverse]
+    -- `simp` cannot rewrite `(𝔬.reverse S).chart` to `𝔬.chart` (`reverse_chart`) inside the
+    -- dependent type of the basis, so each branch closes up to that definitional equality.
     by_cases hS : q ∈ S
-    · simp only [hS, ↓reduceIte, neg_one_mul]
-      rw [← Units.val_neg, ← Orientation.signBasis_neg]
-      rfl
-    · simp only [hS, ↓reduceIte, one_mul]
+    · simp only [augmentationSign, hq, hS, ↓reduceIte, reverse_orientation, neg_one_mul]
+      exact congrArg Units.val (Orientation.signBasis_neg _ _)
+    · simp only [augmentationSign, hq, hS, ↓reduceIte, reverse_orientation, one_mul]
       rfl
   · simp [hq]
 
@@ -180,7 +178,7 @@ theorem map_signedMorseAugmentation {R' F : Type*} [Ring R'] [FunLike F R R']
 
 /-- **With coefficients in `ZMod 2`, the augmentation is the mod-two augmentation**, whatever the
 orientations. -/
-theorem signedMorseAugmentation_zmod_two :
+theorem signedMorseAugmentation_eq_morseAugmentation :
     𝔬.signedMorseAugmentation (ZMod 2) = morseAugmentation f :=
   Finsupp.lhom_ext fun q a ↦ by
     rw [signedMorseAugmentation_single, morseAugmentation_single, intCast_augmentationSign]
@@ -364,68 +362,6 @@ namespace IsMorseSmale
 variable (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) (𝔬 : MorseOrientation f X)
 include h hf
 
-/-- **The trajectories leaving a critical point of index `1`.** There are two points `w 0` and
-`w 1` on different orbits, on trajectories from `p` to critical points `bc 0` and `bc 1` of index
-`0`, such that for every critical point `q ≠ p` the trajectories from `p` to `q` are the points
-`w i` with `bc i = q`. -/
-private theorem exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one
-    {p : criticalPoints 𝓘(ℝ, E) f} (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1) :
-    ∃ (w : Fin 2 → M) (bc : Fin 2 → criticalPoints 𝓘(ℝ, E) f),
-      (∀ i, manifoldMorseIndex 𝓘(ℝ, E) f (bc i) = 0) ∧
-      (∀ i, w i ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet (bc i)) ∧
-      w 1 ∉ hX.flow.orbit (w 0) ∧ Injective w ∧
-      ∀ q : criticalPoints 𝓘(ℝ, E) f, (p : M) ≠ q →
-        hX.morseTrajectorySlice p q = w '' {i | bc i = q} := by
-  have hp0 := mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2
-  -- `W^u(p)` is `p` together with two orbits, each running from `p` to a critical point `b i`.
-  obtain ⟨y₁, y₂, hy₁, hy₂, hdisj, hW⟩ := hX.exists_unstableSet_eq_insert_union_orbit hf hp0 hp
-  set y : Fin 2 → M := ![y₁, y₂] with hy
-  have hW' : hX.flow.unstableSet p ⊆ insert (p : M) (⋃ i, hX.flow.orbit (y i)) := by
-    rw [hW]
-    intro z hz
-    simpa [hy, Fin.exists_fin_two] using hz
-  have hyp (i : Fin 2) : y i ≠ p := by fin_cases i <;> simp [hy, hy₁, hy₂]
-  have hyu (i : Fin 2) : y i ∈ hX.flow.unstableSet p := by
-    rw [hW]
-    fin_cases i <;> simp [hy, Flow.mem_orbit_self]
-  choose b hb hlim using fun i ↦ hX.exists_tendsto_atTop hf (y i)
-  have hmem (i : Fin 2) : y i ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet (b i) :=
-    ⟨hyu i, Flow.mem_stableSet.2 (hlim i)⟩
-  have hpb (i : Fin 2) : (p : M) ≠ b i := fun he ↦
-    hyp i (hX.eq_of_mem_unstableSet_inter_stableSet (he ▸ hmem i))
-  -- Each `b i` has index `0`, since the Morse–Smale condition makes the index drop.
-  have hbind (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f (b i) = 0 := by
-    have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (hpb i) (hmem i)
-      (h.span_mtangentConeAt_sup_eq_top (hmem i))
-    omega
-  set bc : Fin 2 → criticalPoints 𝓘(ℝ, E) f :=
-    fun i ↦ ⟨b i, mem_criticalPoints_iff_mfderiv_eq_zero.2 (hb i)⟩
-  -- The `i`-th orbit crosses the middle level between `p` and `b i` at the point `w i`.
-  choose τ hτ using fun i ↦
-    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (hpb i) (hmem i)).exists
-  set w : Fin 2 → M := fun i ↦ hX.flow (τ i) (y i)
-  have hwmem (i : Fin 2) : w i ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet (bc i) :=
-    ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hmem i).1,
-      (Flow.apply_mem_stableSet_iff _ _).2 (hmem i).2⟩
-  have hw1 : w 1 ∉ hX.flow.orbit (w 0) := fun hw ↦ by
-    obtain ⟨t, ht⟩ := hX.flow.mem_orbit_iff.1 hw
-    refine hdisj.ne_of_mem (hX.flow.mem_orbit y₁ (t + τ 0)) (hX.flow.mem_orbit y₂ (τ 1)) ?_
-    rw [Flow.map_add]
-    exact ht
-  have hwinj : Injective w := by
-    intro i j hij
-    by_contra hij'
-    refine hw1 (hX.flow.mem_orbit_iff.2 ⟨0, ?_⟩)
-    rw [Flow.map_zero_apply]
-    fin_cases i <;> fin_cases j
-    exacts [absurd rfl hij', hij, hij.symm, absurd rfl hij']
-  refine ⟨w, bc, hbind, hwmem, hw1, hwinj, fun q hpq ↦ ?_⟩
-  rw [hX.morseTrajectorySlice_eq_image_of_unstableSet_subset hpq hW' hmem hτ]
-  congr 1
-  ext i
-  simp only [mem_ofPred_eq]
-  exact ⟨fun h ↦ Subtype.ext h, fun h ↦ congrArg Subtype.val h⟩
-
 /-- **The augmentation of the boundary of a critical point vanishes.** For every critical point
 `p`, the coefficients of the integral boundary of `p`, weighted by the augmentation signs, add up
 to zero. Only a critical point `p` of index `1` has nonzero coefficients at critical points of
@@ -442,14 +378,17 @@ theorem finsum_augmentationSign_mul_signedMorseBoundaryCoeff (p : criticalPoints
     by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0
     · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one (by omega), mul_zero]
     · rw [𝔬.augmentationSign_of_morseIndex_ne_zero hq, zero_mul]
-  obtain ⟨w, bc, hbind, hwmem, hw1, hwinj, hslice⟩ :=
-    exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one h hf hp
+  -- The two trajectories leaving `p` cross the middle levels at `w i` and end at `bc i`.
+  obtain ⟨w, b, hb, hwmem, hw1, hwinj, hslice⟩ :=
+    h.exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one hf
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
+  set bc : Fin 2 → criticalPoints 𝓘(ℝ, E) f :=
+    fun i ↦ ⟨b i, mem_criticalPoints_iff_mfderiv_eq_zero.2 (hb i).1⟩
   have hpbc (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f p =
-      manifoldMorseIndex 𝓘(ℝ, E) f (bc i) + 1 := by
-    rw [hp, hbind i]
+      manifoldMorseIndex 𝓘(ℝ, E) f (bc i) + 1 := hp.trans (congrArg (· + 1) (hb i).2).symm
   have hcrit (i : Fin 2) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (w i) ≠ 0 :=
     hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
-      (fun he ↦ by have := hpbc i; rw [he] at this; omega) (hwmem i)
+      (fun he ↦ by have := (hb i).2; rw [← he] at this; omega) (hwmem i)
   -- The signs of the two trajectories, measured against the positive orientations at their ends.
   set s : Fin 2 → ℤ := fun i ↦ hX.trajectorySign (𝔬.chart p) (𝔬.chart (bc i)) (𝔬.orientation p)
     (Module.finBasisOfFinrankEq ℝ _ (𝔬.chart (bc i)).finrank_negativeWeight_fun).orientation
@@ -464,16 +403,14 @@ theorem finsum_augmentationSign_mul_signedMorseBoundaryCoeff (p : criticalPoints
     by_cases hq0 : manifoldMorseIndex 𝓘(ℝ, E) f q = 0
     swap
     · rw [𝔬.augmentationSign_of_morseIndex_ne_zero hq0, zero_mul, eq_comm]
-      refine Finset.sum_eq_zero fun i hi ↦ absurd ?_ hq0
-      rw [← (Finset.mem_filter.1 hi).2]
-      exact hbind i
+      exact Finset.sum_eq_zero fun i hi ↦ absurd ((Finset.mem_filter.1 hi).2 ▸ (hb i).2) hq0
     have hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 := by omega
     rw [𝔬.augmentationSign_of_morseIndex_eq_zero hq0,
       signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def,
       hslice q fun he ↦ by rw [he] at hpq; omega,
       finsum_mem_image hwinj.injOn, finsum_mem_eq_finite_toFinset_sum _ (toFinite _),
       Finset.mul_sum]
-    refine Finset.sum_congr (by ext; simp) fun i hi ↦ ?_
+    refine Finset.sum_congr (by ext; simp [bc, Subtype.ext_iff]) fun i hi ↦ ?_
     obtain rfl : bc i = q := by simpa using hi
     exact signBasis_mul_trajectorySign _ _
   rw [Finset.sum_congr rfl fun q _ ↦ hq q, Finset.sum_fiberwise, Fin.sum_univ_two, hs,
