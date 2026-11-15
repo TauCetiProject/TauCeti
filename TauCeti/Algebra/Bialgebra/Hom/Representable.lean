@@ -59,6 +59,8 @@ in `T`; the isomorphism is the one that the Yoneda lemma produces.
 ## Main results
 
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_one_tmul`: `homEquiv` is natural in `T`.
+* `TauCeti.Bialgebra.HomAlgebra.instFiniteType`: `HomAlgebra R H G` is of finite type over
+  `R` whenever `H` is.
 * `TauCeti.Bialgebra.HomAlgebra.instFinitePresentation`: `HomAlgebra R H G` is of finite
   presentation over `R` whenever `H` is.
 * `TauCeti.Bialgebra.HomAlgebra.instModuleFinite`: `HomAlgebra R H G` is module-finite over
@@ -305,6 +307,11 @@ theorem homEquiv_comp_one_tmul {T' : Type*} [CommRing T'] [Algebra R T']
     homEquiv R H G T' (k.comp g) (1 ⊗ₜ h) =
       map k (AlgHom.id R G) (homEquiv R H G T g (1 ⊗ₜ h)) :=
   quotEquiv_comp_one_tmul g k h
+
+/-- `HomAlgebra R H G` is of finite type over `R` whenever `H` is. -/
+instance instFiniteType [Algebra.FiniteType R H] :
+    Algebra.FiniteType R (HomAlgebra R H G) :=
+  inferInstanceAs (Algebra.FiniteType R (Ambient R H G ⧸ ideal R H G))
 
 /-- `HomAlgebra R H G` is of finite presentation over `R` whenever `H` is. -/
 instance instFinitePresentation [Algebra.FinitePresentation R H] :

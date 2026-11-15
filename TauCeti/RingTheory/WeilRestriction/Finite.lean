@@ -39,39 +39,47 @@ variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
 /-- A coefficient of the universal point is integral when the source algebra is integral
 over the base and the coefficient algebra is split. -/
 theorem isIntegral_universalCoefficient_of_split [Algebra A C] [IsScalarTower A B C]
-    [Algebra.IsIntegral A C] {ι : Type*} [Finite ι] (e : B ≃ₐ[A] (ι → A))
+    [Algebra.IsIntegral A C] {ι : Type*} (e : B ≃ₐ[A] (ι → A))
     (φ : Module.Dual A B) (c : C) :
     IsIntegral A (universalCoefficient φ c) := by
   classical
-  let := Fintype.ofFinite ι
-  let W := WeilRestriction A B C
-  let ev (i : ι) : B →ₐ[A] A := (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom
-  let p (i : ι) : C →ₐ[A] W :=
-    (Algebra.TensorProduct.lift ((Algebra.ofId A W).comp (ev i)) (AlgHom.id A W)
-      (fun _ _ ↦ Commute.all _ _)).comp ((universalPoint A B C).restrictScalars A)
-  have hφ (b : B) : ∑ i, φ (e.symm (Pi.single i 1)) * ev i b = φ b := by
-    have hb : ∑ i, ev i b • e.symm (Pi.single i 1) = b := by
-      apply e.injective
-      ext i
-      simp [ev, Pi.single_apply]
-    simpa [map_sum, map_smul, mul_comm] using congrArg φ hb
-  have hcoeff : universalCoefficient φ c = ∑ i, φ (e.symm (Pi.single i 1)) • p i c := by
-    simp only [universalCoefficient_def, p, AlgHom.comp_apply, AlgHom.restrictScalars_apply]
-    induction universalPoint A B C c using TensorProduct.inductionOn with
-    | tmul b w =>
-      simp only [TensorProduct.comm_tmul, LinearMap.tensorComponent_tmul]
-      simpa [Algebra.smul_def, Finset.sum_mul, map_sum, map_mul, mul_assoc] using
-        congrArg (fun a : A ↦ a • w) (hφ b).symm
-    | add z w hz hw =>
-      simp only [map_add, hz, hw, smul_add, Finset.sum_add_distrib]
-  rw [hcoeff]
-  exact IsIntegral.sum _ fun i _ ↦ ((Algebra.IsIntegral.isIntegral c).map (p i)).smul _
+  by_cases hA : Nontrivial A
+  · -- Finite generation of a split algebra forces its index set to be finite.
+    have : Finite ι := by
+      have : Module.Finite A (ι → A) := Module.Finite.equiv e.toLinearEquiv
+      exact (Pi.linearIndependent_single_one ι A).finite
+    let := Fintype.ofFinite ι
+    let W := WeilRestriction A B C
+    let ev (i : ι) : B →ₐ[A] A := (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom
+    let p (i : ι) : C →ₐ[A] W :=
+      (Algebra.TensorProduct.lift ((Algebra.ofId A W).comp (ev i)) (AlgHom.id A W)
+        (fun _ _ ↦ Commute.all _ _)).comp ((universalPoint A B C).restrictScalars A)
+    have hφ (b : B) : ∑ i, φ (e.symm (Pi.single i 1)) * ev i b = φ b := by
+      have hb : ∑ i, ev i b • e.symm (Pi.single i 1) = b := by
+        apply e.injective
+        ext i
+        simp [ev, Pi.single_apply]
+      simpa [map_sum, map_smul, mul_comm] using congrArg φ hb
+    have hcoeff : universalCoefficient φ c = ∑ i, φ (e.symm (Pi.single i 1)) • p i c := by
+      simp only [universalCoefficient_def, p, AlgHom.comp_apply, AlgHom.restrictScalars_apply]
+      induction universalPoint A B C c using TensorProduct.inductionOn with
+      | tmul b w =>
+        simp only [TensorProduct.comm_tmul, LinearMap.tensorComponent_tmul]
+        simpa [Algebra.smul_def, Finset.sum_mul, map_sum, map_mul, mul_assoc] using
+          congrArg (fun a : A ↦ a • w) (hφ b).symm
+      | add z w hz hw =>
+        simp only [map_add, hz, hw, smul_add, Finset.sum_add_distrib]
+    rw [hcoeff]
+    exact IsIntegral.sum _ fun i _ ↦ ((Algebra.IsIntegral.isIntegral c).map (p i)).smul _
+  · have := not_nontrivial_iff_subsingleton.mp hA
+    have := Module.subsingleton A (WeilRestriction A B C)
+    simpa only [Subsingleton.elim (universalCoefficient φ c) 0] using
+      (isIntegral_zero : IsIntegral A (0 : WeilRestriction A B C))
 
 /-- Weil restriction along a split finite algebra preserves finite
 algebras. No noetherianity assumption on the base is required. -/
 theorem moduleFinite_of_split [Module.Finite B C]
-    {ι : Type*} [Finite ι]
-    (e : B ≃ₐ[A] (ι → A)) : Module.Finite A (WeilRestriction A B C) := by
+    {ι : Type*} (e : B ≃ₐ[A] (ι → A)) : Module.Finite A (WeilRestriction A B C) := by
   let : Algebra A C := ((algebraMap B C).comp (algebraMap A B)).toAlgebra
   have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   have : Module.Finite A C := Module.Finite.trans B C
