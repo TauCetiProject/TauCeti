@@ -418,9 +418,8 @@ theorem discriminantGroupEquiv_typeD4Triality_glueLabelEquiv (i : Fin 4) :
   rw [typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv hF hω (![0, 2, 3, 1] i),
     typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv hF hω i]
   have hω3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
-  fin_cases i <;> simp
-  · linear_combination hω3
-  · linear_combination ω * hω3
+  have hω4 : ω ^ 4 = ω := by linear_combination ω * hω3
+  fin_cases i <;> simp [← pow_succ, ← pow_add, hω3, hω4]
 
 /-- **Triality realizes every nonzero scalar of `F₄` on the `D₄` glue alphabet.** For a unit `a`
 of a field `F` of four elements, this is the power of `typeD4Triality` acting on the glue
