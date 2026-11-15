@@ -37,6 +37,11 @@ multipliers `U_s` are obtained from nondegenerate representations of crossed pro
   `mul_multiplierExtension_eq_snd`, the uniqueness statement
   `eq_multiplierExtension_of_apply_coe`, and the strong-limit formula
   `tendsto_multiplierExtension_apply`.
+* `NonUnitalStarAlgHom.isNondegenerate_iff_map_one` and
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: on a unital C⋆-algebra, nondegeneracy is
+  equivalent to `ρ 1 = 1` and promotes `ρ` to a unital `⋆`-homomorphism.
+* `NonUnitalStarAlgHom.isNondegenerate_comp_conjStarAlgEquiv_iff`: unitary conjugation along a
+  linear isometric equivalence preserves nondegeneracy.
 
 ## References
 
@@ -332,4 +337,60 @@ theorem isNondegenerate_iff_forall_apply_eq_zero :
     exact (Submodule.mem_orthogonal _ _).1 hξ _ <|
       Submodule.subset_span <| Set.mem_iUnion.2 ⟨star a, v, rfl⟩
 
+/-- A nondegenerate representation of a unital C⋆-algebra sends `1` to `1`. -/
+theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
+  hρ.ext fun _ ↦ by simp [← map_mul]
+
+/-- A representation of a unital C⋆-algebra is nondegenerate if and only if it maps `1` to `1`. -/
+theorem isNondegenerate_iff_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
+    ρ.IsNondegenerate ↔ ρ 1 = 1 :=
+  ⟨IsNondegenerate.map_one, isNondegenerate_of_map_one⟩
+
+/-- Promote a nondegenerate representation of a unital C⋆-algebra to a unital `⋆`-algebra
+homomorphism. -/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  toFun := ρ
+  map_one' := hρ.map_one
+  map_mul' := map_mul ρ
+  map_zero' := map_zero ρ
+  map_add' := map_add ρ
+  commutes' r := by
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hρ.map_one, Algebra.algebraMap_eq_smul_one]
+  map_star' := map_star ρ
+
+@[simp]
+theorem IsNondegenerate.coe_toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : ⇑hρ.toStarAlgHom = ρ :=
+  (rfl)
+
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
+  (rfl)
+
+/-- Unitary conjugation along a linear isometric equivalence `e : H ≃ₗᵢ[ℂ] K` preserves
+nondegeneracy of Hilbert-space representations. -/
+@[simp]
+theorem isNondegenerate_comp_conjStarAlgEquiv_iff {K : Type*} [NormedAddCommGroup K]
+    [InnerProductSpace ℂ K] [CompleteSpace K] (e : H ≃ₗᵢ[ℂ] K)
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    (e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
+  simp only [isNondegenerate_iff_forall_apply_eq_zero]
+  refine ⟨fun h ξ hξ ↦ e.injective ?_, fun h η hη ↦ ?_⟩
+  · simpa using h (e ξ) fun a ↦ by simp [hξ a]
+  · simpa using congrArg e (h (e.symm η) fun a ↦ e.injective (by simpa using hη a))
+
 end NonUnitalStarAlgHom
+
+namespace StarAlgHom
+
+/-- Every unital Hilbert-space representation is nondegenerate as a nonunital representation. -/
+theorem isNondegenerate_toNonUnitalStarAlgHom {B H : Type*} [CStarAlgebra B]
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) : π.toNonUnitalStarAlgHom.IsNondegenerate :=
+  NonUnitalStarAlgHom.isNondegenerate_of_map_one (map_one π)
+
+end StarAlgHom

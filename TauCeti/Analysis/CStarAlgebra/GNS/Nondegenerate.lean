@@ -19,7 +19,9 @@ vector.
 
 The zero functional is included: its GNS Hilbert space is zero and the representation is
 still nondegenerate. Faithfulness is sufficient, not necessary, for injectivity of the GNS
-representation.
+representation; pointwise, however, `f.gnsNonUnitalStarAlgHom a = 0` forces `f.toGNS a = 0` and
+hence `f (star a * a) = 0` (`PositiveLinearMap.toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero`,
+`PositiveLinearMap.apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero`).
 
 ## References
 
@@ -60,5 +62,23 @@ theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
     simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS (star a))
   have hmul : a * star a = 0 := hclass (by simpa using hzero)
   exact mul_star_self_eq_zero.mp hmul
+
+/-- If `a : A` acts as zero in the GNS representation of a positive linear functional `f`, then its
+GNS class `f.toGNS a` vanishes: `f.toGNS (a * e) = 0` along an increasing approximate unit `e`, and
+`a * e → a` in norm. -/
+theorem toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
+    (ha : f.gnsNonUnitalStarAlgHom a = 0) : f.toGNS a = 0 := by
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  have hlim : Tendsto (fun e ↦ f.toGNS (a * e)) (CStarAlgebra.approximateUnit A) (𝓝 (f.toGNS a)) :=
+    (f.toGNS.continuous.tendsto a).comp (hl.tendsto_mul_left a)
+  refine tendsto_nhds_unique hlim (tendsto_const_nhds.congr fun e ↦ ?_)
+  symm
+  simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS e)
+
+/-- If `a : A` acts as zero in the GNS representation of `f`, then `f (star a * a) = 0`. -/
+theorem apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
+    (ha : f.gnsNonUnitalStarAlgHom a = 0) : f (star a * a) = 0 :=
+  (f.toGNS_eq_zero_iff a).1 (f.toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero ha)
 
 end PositiveLinearMap
