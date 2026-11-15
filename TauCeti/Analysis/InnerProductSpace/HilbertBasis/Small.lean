@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 
 /-!
 # Hilbert bases of small Hilbert spaces
@@ -31,9 +32,6 @@ theorem exists_hilbertBasis_of_small (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCo
     [InnerProductSpace 𝕜 E] [CompleteSpace E] [Small.{w} E] :
     ∃ ι : Type w, Nonempty (HilbertBasis ι 𝕜 E) := by
   obtain ⟨s, b, -⟩ := exists_hilbertBasis 𝕜 E
-  let e := equivShrink.{w} s
-  refine ⟨Shrink.{w} s, ⟨.mk (b.orthonormal.comp _ e.symm.injective) ?_⟩⟩
-  rw [Set.range_comp, e.symm.surjective.range_eq, Set.image_univ]
-  exact b.dense_span.ge
+  exact ⟨Shrink.{w} s, ⟨b.reindex (equivShrink.{w} s)⟩⟩
 
 end TauCeti

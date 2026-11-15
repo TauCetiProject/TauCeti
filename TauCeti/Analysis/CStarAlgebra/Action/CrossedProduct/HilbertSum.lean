@@ -58,11 +58,10 @@ theorem integratedFull_hilbertSum_apply (a : FullCrossedProduct α μ) (x : lp H
 
 /-- Full integration turns a Hilbert direct sum of covariant pairs into the Hilbert direct sum
 of their full integrated representations. -/
-theorem integratedFull_hilbertSum (a : FullCrossedProduct α μ) :
-    (hilbertSum P).integratedFull μ a =
-      lp.mapCLM 2 (fun i => (P i).integratedFull μ a) (norm_nonneg a)
-        (fun i => NonUnitalStarAlgHom.norm_apply_le ((P i).integratedFull μ) a) := by
+theorem integratedFull_hilbertSum :
+    (hilbertSum P).integratedFull μ = .hilbertSum fun i => (P i).integratedFull μ := by
+  refine NonUnitalStarAlgHom.ext fun a => ?_
   ext x i
-  simpa only [lp.mapCLM_apply_coe] using integratedFull_hilbertSum_apply P μ a x i
+  simp
 
 end TauCeti.CStarAction.CovariantRepresentation

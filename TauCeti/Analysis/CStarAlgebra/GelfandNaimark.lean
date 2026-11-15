@@ -33,11 +33,13 @@ gives `φ (star a * a) = 0` for every state `φ`, forcing `a = 0` by state separ
 is empty and `universalHilbertSpace A` is `0`, on which the zero representation is both injective
 and nondegenerate.
 
-When `A` is separable, the faithful state `ω` constructed in
-`TauCeti.exists_positiveLinearMap_norm_eq_one_faithful` already has a separable GNS space `ω.GNS`
-on which `ω.gnsNonUnitalStarAlgHom` is faithful and nondegenerate
-(`TauCeti.exists_faithful_nondegenerate_representation_separable`), with a unit cyclic vector when
-`A` is unital and nontrivial (`TauCeti.exists_faithful_cyclic_representation_separable`). For any
+When `A` is separable and nontrivial (`[Nontrivial A]`), the faithful state from
+`TauCeti.exists_mem_stateSpace_faithful` (bundled as `ω : A →ₚ[ℂ] ℂ` via
+`TauCeti.statePositiveLinearMap`) already has a separable GNS space `ω.GNS` on which
+`ω.gnsNonUnitalStarAlgHom` is faithful and nondegenerate; combining with `ω = 0` on the trivial
+algebra gives `TauCeti.exists_faithful_nondegenerate_representation_separable` (and
+`TauCeti.exists_faithful_unital_representation_separable`), with a unit cyclic vector when `A` is
+unital and nontrivial (`TauCeti.exists_faithful_cyclic_representation_separable`). For any
 nontrivial separable `A`, countably amplifying `ω.gnsNonUnitalStarAlgHom` to
 `lp (fun _ : ℕ ↦ ω.GNS) 2` produces a complete separable infinite-dimensional carrier, and
 conjugating along a `ℕ`-indexed Hilbert basis
@@ -47,17 +49,17 @@ representation on `lp (fun _ : ℕ ↦ ℂ) 2`
 
 ## Main definitions and results
 
-* `TauCeti.statePositiveLinearMap`, `TauCeti.universalHilbertSpace`,
-  `TauCeti.universalRepresentation`, and `TauCeti.universalUnitalRepresentation`: the universal
-  Hilbert space and representation of a C⋆-algebra over its state space, with
-  `universalRepresentation_injective`, `isNondegenerate_universalRepresentation`, and
-  `norm_universalRepresentation_apply`.
+* `TauCeti.universalHilbertSpace`, `TauCeti.universalRepresentation`, and
+  `TauCeti.universalUnitalRepresentation`: the universal Hilbert space and representation of a
+  C⋆-algebra over its state space, with `universalRepresentation_injective`,
+  `isNondegenerate_universalRepresentation`, and `norm_universalRepresentation_apply`.
 * `TauCeti.exists_faithful_nondegenerate_representation`,
   `TauCeti.exists_faithful_unital_representation`,
   `TauCeti.exists_starAlgEquiv_nonUnitalStarSubalgebra`, and
   `TauCeti.exists_starAlgEquiv_starSubalgebra`: the Gelfand–Naimark theorem (without assuming a
   pre-existing partial order on `A`).
-* `TauCeti.exists_faithful_nondegenerate_representation_separable` and
+* `TauCeti.exists_faithful_nondegenerate_representation_separable`,
+  `TauCeti.exists_faithful_unital_representation_separable`, and
   `TauCeti.exists_faithful_cyclic_representation_separable`: faithful representations of separable
   C⋆-algebras on separable Hilbert spaces.
 * `TauCeti.exists_injective_nondegenerate_representation_lp` and
@@ -87,15 +89,6 @@ section UniversalWithOrder
 
 variable {A : Type u} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- A state `φ : stateSpace A` bundled as a positive linear map `A →ₚ[ℂ] ℂ`. -/
-def statePositiveLinearMap (φ : stateSpace A) : A →ₚ[ℂ] ℂ :=
-  .mk₀ (WeakDual.toStrongDual φ.1 : A →ₗ[ℂ] ℂ) fun _ ↦ map_nonneg_of_mem_stateSpace φ.2
-
-@[simp]
-theorem statePositiveLinearMap_apply (φ : stateSpace A) (a : A) :
-    statePositiveLinearMap φ a = φ.1 a :=
-  (rfl)
-
 variable (A) in
 /-- The **universal Hilbert space** of a complex C⋆-algebra `A`, realized in the same universe as
 `A` as the Hilbert direct sum of the GNS spaces over all states of `A`. When `A` is trivial, the
@@ -111,11 +104,25 @@ def universalRepresentation :
   NonUnitalStarAlgHom.hilbertSum fun φ : stateSpace A ↦
     (statePositiveLinearMap φ).gnsNonUnitalStarAlgHom
 
+variable (A) in
+theorem universalRepresentation_def :
+    universalRepresentation A =
+      NonUnitalStarAlgHom.hilbertSum fun φ : stateSpace A ↦
+        (statePositiveLinearMap φ).gnsNonUnitalStarAlgHom :=
+  (rfl)
+
 @[simp]
 theorem universalRepresentation_apply_apply (a : A) (x : universalHilbertSpace A)
     (φ : stateSpace A) :
     universalRepresentation A a x φ = (statePositiveLinearMap φ).gnsNonUnitalStarAlgHom a (x φ) :=
   NonUnitalStarAlgHom.hilbertSum_apply_apply _ a x φ
+
+@[simp]
+theorem universalRepresentation_apply_single [DecidableEq (stateSpace A)] (a : A)
+    (φ : stateSpace A) (ξ : (statePositiveLinearMap φ).GNS) :
+    universalRepresentation A a (lp.single 2 φ ξ) =
+      lp.single 2 φ ((statePositiveLinearMap φ).gnsNonUnitalStarAlgHom a ξ) := by
+  simp [universalRepresentation_def]
 
 variable (A) in
 /-- The universal representation of any complex C⋆-algebra is nondegenerate. -/
@@ -128,10 +135,11 @@ variable (A) in
 /-- The universal representation of any complex C⋆-algebra is faithful (injective). -/
 theorem universalRepresentation_injective :
     Function.Injective (universalRepresentation A) := by
-  refine (NonUnitalStarAlgHom.injective_hilbertSum_iff _).2 fun a ha ↦ ?_
+  refine (NonUnitalStarAlgHom.hilbertSum_injective_iff _).2 fun a ha ↦ ?_
   refine (eq_zero_iff_forall_mem_stateSpace_star_mul_self (a := a)).2 fun φ hφ ↦ ?_
-  let ω := statePositiveLinearMap ⟨φ, hφ⟩
-  exact ω.apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (ha ⟨φ, hφ⟩)
+  simpa using
+    (statePositiveLinearMap ⟨φ, hφ⟩).apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero
+      (ha ⟨φ, hφ⟩)
 
 /-- The universal representation is isometric. -/
 @[simp]
@@ -167,6 +175,7 @@ theorem toNonUnitalStarAlgHom_universalUnitalRepresentation :
     (universalUnitalRepresentation B).toNonUnitalStarAlgHom = universalRepresentation B :=
   (isNondegenerate_universalRepresentation B).toNonUnitalStarAlgHom_toStarAlgHom
 
+/-- The unital universal representation of any unital complex C⋆-algebra is faithful (injective). -/
 theorem universalUnitalRepresentation_injective :
     Function.Injective (universalUnitalRepresentation B) := by
   rw [coe_universalUnitalRepresentation]
@@ -208,9 +217,8 @@ theorem exists_starAlgEquiv_nonUnitalStarSubalgebra (A : Type u) [NonUnitalCStar
       (S : NonUnitalStarSubalgebra ℂ (K →L[ℂ] K)),
       IsClosed (S : Set (K →L[ℂ] K)) ∧ Nonempty (A ≃⋆ₐ[ℂ] S) := by
   obtain ⟨K, _, _, _, π, hπ, -⟩ := exists_faithful_nondegenerate_representation A
-  refine ⟨K, inferInstance, inferInstance, inferInstance, π.range, π.isClosed_range,
-    ⟨StarAlgEquiv.ofBijective π.rangeRestrict
-      ⟨fun _ _ h ↦ hπ (congrArg Subtype.val h), π.rangeRestrict_surjective⟩⟩⟩
+  exact ⟨K, inferInstance, inferInstance, inferInstance, π.range, π.isClosed_range,
+    ⟨StarAlgEquiv.ofInjective' π hπ⟩⟩
 
 /-- **Unital concrete Gelfand–Naimark realization.** Every unital complex C⋆-algebra `B` is
 isometrically `⋆`-isomorphic to a norm-closed unital `⋆`-subalgebra of `K →L[ℂ] K` for some complete
@@ -220,9 +228,8 @@ theorem exists_starAlgEquiv_starSubalgebra (B : Type u) [CStarAlgebra B] :
       (S : StarSubalgebra ℂ (K →L[ℂ] K)),
       IsClosed (S : Set (K →L[ℂ] K)) ∧ Nonempty (B ≃⋆ₐ[ℂ] S) := by
   obtain ⟨K, _, _, _, π, hπ⟩ := exists_faithful_unital_representation B
-  refine ⟨K, inferInstance, inferInstance, inferInstance, π.range, π.isClosed_range,
-    ⟨StarAlgEquiv.ofBijective π.rangeRestrict
-      ⟨fun _ _ h ↦ hπ (congrArg Subtype.val h), π.rangeRestrict_surjective⟩⟩⟩
+  exact ⟨K, inferInstance, inferInstance, inferInstance, π.range, π.isClosed_range,
+    ⟨StarAlgEquiv.ofInjective π hπ⟩⟩
 
 /-- Every separable complex C⋆-algebra `A` (including `0`) admits a faithful nondegenerate
 representation on a separable complete complex Hilbert space in the universe of `A`. -/
@@ -235,13 +242,25 @@ theorem exists_faithful_nondegenerate_representation_separable (A : Type u)
   have := CStarAlgebra.spectralOrderedRing A
   have ⟨ω, hω⟩ : ∃ ω : A →ₚ[ℂ] ℂ, ∀ a, ω (star a * a) = 0 → a = 0 := by
     by_cases hA : Nontrivial A
-    · obtain ⟨ω, -, hω⟩ := exists_positiveLinearMap_norm_eq_one_faithful (A := A)
-      exact ⟨ω, fun a ha ↦ (hω a).1 ha⟩
+    · obtain ⟨φ, hφ, hfaith⟩ := exists_mem_stateSpace_faithful (A := A)
+      exact ⟨statePositiveLinearMap ⟨φ, hφ⟩, fun a ha ↦ (hfaith a).1 (by simpa using ha)⟩
     · have : Subsingleton A := not_nontrivial_iff_subsingleton.1 hA
       exact ⟨0, fun a _ ↦ Subsingleton.elim a 0⟩
   exact ⟨ω.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
     ω.gnsNonUnitalStarAlgHom, ω.gnsNonUnitalStarAlgHom_injective hω,
     ω.isNondegenerate_gnsNonUnitalStarAlgHom⟩
+
+/-- Every separable unital complex C⋆-algebra `B` (including `0`) admits a faithful unital
+representation on a separable complete complex Hilbert space in the universe of `B`. -/
+theorem exists_faithful_unital_representation_separable (B : Type u)
+    [CStarAlgebra B] [SeparableSpace B] :
+    ∃ (K : Type u) (_ : NormedAddCommGroup K) (_ : InnerProductSpace ℂ K) (_ : CompleteSpace K)
+      (_ : SeparableSpace K) (π : B →⋆ₐ[ℂ] (K →L[ℂ] K)),
+      Function.Injective π := by
+  obtain ⟨K, _, _, _, _, π, hπ_inj, hπ_nd⟩ :=
+    exists_faithful_nondegenerate_representation_separable B
+  refine ⟨K, inferInstance, inferInstance, inferInstance, inferInstance, hπ_nd.toStarAlgHom, ?_⟩
+  rwa [hπ_nd.coe_toStarAlgHom]
 
 /-- Every nontrivial separable unital complex C⋆-algebra `B` admits a faithful unital representation
 on a separable complete complex Hilbert space in the universe of `B` with a unit cyclic vector. -/
@@ -252,31 +271,28 @@ theorem exists_faithful_cyclic_representation_separable (B : Type u)
       Function.Injective π ∧ ‖ξ‖ = 1 ∧ DenseRange (fun b ↦ π b ξ) := by
   let := CStarAlgebra.spectralOrder B
   have := CStarAlgebra.spectralOrderedRing B
-  obtain ⟨ω, hω_norm, hω⟩ := exists_positiveLinearMap_norm_eq_one_faithful (A := B)
-  have hmem : StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : B →L[ℂ] ℂ) ∈
-      stateSpace B :=
-    (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω_norm
-  have hω1 : ω 1 = 1 := map_one_of_mem_stateSpace hmem
+  obtain ⟨φ, hφ, hfaith⟩ := exists_mem_stateSpace_faithful (A := B)
+  let ω : B →ₚ[ℂ] ℂ := statePositiveLinearMap ⟨φ, hφ⟩
+  have hω1 : ω 1 = 1 := by simpa [ω] using map_one_of_mem_stateSpace hφ
   exact ⟨ω.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
     ω.gnsStarAlgHom, ω.gnsVector,
-    ω.gnsNonUnitalStarAlgHom_injective fun a ha ↦ (hω a).1 ha,
+    ω.gnsStarAlgHom_injective fun b hb ↦ (hfaith b).1 (by simpa [ω] using hb),
     ω.norm_gnsVector hω1, ω.denseRange_gnsStarAlgHom_gnsVector⟩
 
 /-- **Separable faithful representation on `ℓ²(ℕ)`.** Every nontrivial separable complex
 C⋆-algebra, possibly nonunital, admits a faithful nondegenerate representation on
-`lp (fun _ : ℕ ↦ ℂ) 2`: take the GNS representation of a faithful state, amplify it countably many
-times to obtain an infinite-dimensional separable carrier, and conjugate along a `ℕ`-indexed
-Hilbert basis. -/
+`lp (fun _ : ℕ ↦ ℂ) 2`. -/
 theorem exists_injective_nondegenerate_representation_lp
     {A : Type*} [NonUnitalCStarAlgebra A] [SeparableSpace A] [Nontrivial A] :
     ∃ π : A →⋆ₙₐ[ℂ] (lp (fun _ : ℕ ↦ ℂ) 2 →L[ℂ] lp (fun _ : ℕ ↦ ℂ) 2),
       Function.Injective π ∧ π.IsNondegenerate := by
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
-  obtain ⟨ω, -, hω⟩ := exists_positiveLinearMap_norm_eq_one_faithful (A := A)
+  obtain ⟨φ, hφ, hfaith⟩ := exists_mem_stateSpace_faithful (A := A)
+  let ω : A →ₚ[ℂ] ℂ := statePositiveLinearMap ⟨φ, hφ⟩
   set π₀ := ω.gnsNonUnitalStarAlgHom
   have hπ₀_inj : Function.Injective π₀ :=
-    ω.gnsNonUnitalStarAlgHom_injective fun a ha ↦ (hω a).1 ha
+    ω.gnsNonUnitalStarAlgHom_injective fun a ha ↦ (hfaith a).1 (by simpa [ω] using ha)
   have hπ₀_nd : π₀.IsNondegenerate := ω.isNondegenerate_gnsNonUnitalStarAlgHom
   have : Nontrivial ω.GNS := by
     obtain ⟨a, ha⟩ := exists_ne (0 : A)
@@ -288,8 +304,8 @@ theorem exists_injective_nondegenerate_representation_lp
     exact ⟨⟨π₀ a ξ, 0, hξ⟩⟩
   obtain ⟨e⟩ := nonempty_linearIsometryEquiv_lp_of_infinite ℂ (fun _ : ℕ ↦ ω.GNS)
   refine ⟨e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp (π₀.ampliation ℕ), ?_, ?_⟩
-  · exact e.conjStarAlgEquiv.injective.comp ((π₀.injective_ampliation_iff ℕ).2 hπ₀_inj)
-  · exact (NonUnitalStarAlgHom.isNondegenerate_comp_conjStarAlgEquiv_iff e _).2
+  · exact e.conjStarAlgEquiv.injective.comp ((π₀.ampliation_injective_iff ℕ).2 hπ₀_inj)
+  · exact (NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff e _).2
       (hπ₀_nd.ampliation ℕ)
 
 /-- Every nontrivial separable unital complex C⋆-algebra admits a faithful unital representation on

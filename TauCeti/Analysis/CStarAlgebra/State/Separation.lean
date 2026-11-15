@@ -13,34 +13,37 @@ import TauCeti.Analysis.CStarAlgebra.State.Extension
 /-!
 # Separation of elements by states and faithful states on separable C⋆-algebras
 
-States on a possibly nonunital C⋆-algebra `A` separate elements, detect self-adjointness and the
-order, and attain the norm of every normal element. When `A` is separable and nonzero, a countable
-convex combination of states produces a single faithful state.
+For a possibly nonunital C⋆-algebra `A` equipped with its C⋆-order (`[PartialOrder A]`
+`[StarOrderedRing A]`), states separate elements, detect self-adjointness and the order, and attain
+the norm of every nonzero normal element (and of every normal or nonnegative element when `A` is
+nontrivial; for `A = 0` the state space is empty). When `A` is separable and nontrivial, a
+countable convex combination of states produces a single faithful state. Together, state separation
+and faithful separable states supply faithfulness of the universal and separable GNS
+representations in the Gelfand–Naimark construction
+(`TauCeti.Analysis.CStarAlgebra.GelfandNaimark`).
 
 ## Main results
 
-* `TauCeti.unitizeFunctional`, `TauCeti.unitizeFunctional_mem_stateSpace_iff`: extending a
-  functional `φ : WeakDual ℂ A` to `Unitization ℂ A` by `x ↦ x.fst + φ x.snd` yields a state of the
-  unitization if and only if `φ` is positive and contractive.
-* `TauCeti.characterSpace_subset_stateSpace`: characters of a commutative unital C⋆-algebra are
-  states.
+* `TauCeti.characterSpace_subset_stateSpace`: every character of a possibly nonunital C⋆-algebra is
+  a state.
 * `TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum` and
   `TauCeti.exists_mem_stateSpace_apply_mem_spectrum_and_norm_eq`: on a unital C⋆-algebra, every
-  spectral value of a normal element is attained by a state; when `A` is nontrivial, some state
-  attains a spectral value of maximum modulus `‖x‖`.
+  spectral value of any element is attained by a state; when `A` is nontrivial and `x` is normal,
+  some state attains a spectral value of maximum modulus `‖x‖`.
 * `TauCeti.exists_mem_stateSpace_norm_apply_eq_of_ne_zero`,
-  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero`, and
-  `TauCeti.exists_mem_stateSpace_star_mul_self_eq_norm_sq`: for possibly nonunital `A`, states
-  attain `‖x‖` on nonzero normal elements, `‖a‖` on nonzero positive elements, and `‖a‖ ^ 2` on
-  `star a * a` for every nonzero `a : A`. In particular, `TauCeti.stateSpace_nonempty_of_nontrivial`
-  gives existence of states without assuming a unit.
+  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero`,
+  `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq`, and
+  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg`: for possibly nonunital `A`, states
+  attain `‖x‖` on nonzero normal elements, `‖a‖` on nonzero nonnegative elements (and on all
+  nonnegative elements when `A` is nontrivial), and `‖a‖ ^ 2` on `star a * a` for every nonzero
+  `a : A`. In particular, `TauCeti.stateSpace_nonempty` gives existence of states for every
+  nontrivial C⋆-algebra without assuming a unit.
 * `TauCeti.eq_zero_iff_forall_mem_stateSpace`, `TauCeti.eq_iff_forall_mem_stateSpace`,
   `TauCeti.isSelfAdjoint_iff_forall_mem_stateSpace`, `TauCeti.nonneg_iff_forall_mem_stateSpace`, and
   `TauCeti.le_iff_forall_mem_stateSpace`: states separate points and detect self-adjointness and the
   C⋆-order.
-* `TauCeti.toWeakDual_tsum_mem_stateSpace`, `TauCeti.exists_mem_stateSpace_faithful`,
-  `TauCeti.exists_positiveLinearMap_norm_eq_one_faithful`: countable convex combinations of states
-  are states, and every nonzero separable C⋆-algebra admits a faithful state.
+* `TauCeti.exists_mem_stateSpace_faithful`: every nontrivial separable C⋆-algebra admits a faithful
+  state.
 
 ## References
 
@@ -55,144 +58,55 @@ open scoped ComplexOrder ComplexStarModule Topology
 
 namespace TauCeti
 
-section Unitization
+section CharacterSpace
 
-variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-/-- Extend a continuous linear functional `φ : WeakDual ℂ A` to the minimal unitization
-`Unitization ℂ A` by sending `(w, a)` to `w + φ a`. -/
-noncomputable def unitizeFunctional (φ : WeakDual ℂ A) : WeakDual ℂ (Unitization ℂ A) :=
-  StrongDual.toWeakDual
-    { toFun x := x.fst + φ x.snd
-      map_add' x y := by
-        simp only [Unitization.fst_add, Unitization.snd_add, map_add]
-        ring
-      map_smul' c x := by
-        simp only [Unitization.fst_smul, Unitization.snd_smul, map_smul, smul_eq_mul,
-          RingHom.id_apply]
-        ring
-      cont := by fun_prop }
-
-@[simp]
-theorem unitizeFunctional_apply (φ : WeakDual ℂ A) (x : Unitization ℂ A) :
-    unitizeFunctional φ x = x.fst + φ x.snd :=
-  (rfl)
-
-theorem unitizeFunctional_inr (φ : WeakDual ℂ A) (a : A) :
-    unitizeFunctional φ (a : Unitization ℂ A) = φ a := by
-  simp
-
-theorem unitizeFunctional_one (φ : WeakDual ℂ A) :
-    unitizeFunctional φ 1 = 1 := by
-  simp
-
-variable [PartialOrder A] [StarOrderedRing A]
-
-@[simp]
-theorem pullbackFunctional_inr_unitizeFunctional (φ : WeakDual ℂ A) :
-    pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) (unitizeFunctional φ) = φ :=
-  DFunLike.ext _ _ fun a ↦ by simp
-
-private theorem unitizeFunctional_star_mul_self_nonneg {φ : WeakDual ℂ A}
-    (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) (hnorm : ‖toStrongDual φ‖ ≤ 1) (y : Unitization ℂ A) :
-    0 ≤ unitizeFunctional φ (star y * y) := by
-  set w : ℂ := y.fst
-  set b : A := y.snd
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  have h1 : Tendsto (fun e : A ↦ φ (e * b)) (CStarAlgebra.approximateUnit A) (𝓝 (φ b)) := by
-    simpa [Function.comp_def] using
-      ((toStrongDual φ).continuous.tendsto b).comp (hl.tendsto_mul_right b)
-  have h2 : Tendsto (fun e : A ↦ φ (star b * e)) (CStarAlgebra.approximateUnit A)
-      (𝓝 (φ (star b))) := by
-    simpa [Function.comp_def] using
-      ((toStrongDual φ).continuous.tendsto (star b)).comp (hl.tendsto_mul_left (star b))
-  have hlim : Tendsto
-      (fun e : A ↦ star w * w + star w * φ (e * b) + w * φ (star b * e) + φ (star b * b))
-      (CStarAlgebra.approximateUnit A) (𝓝 (unitizeFunctional φ (star y * y))) := by
-    have htarget : star w * w + star w * φ b + w * φ (star b) + φ (star b * b) =
-        unitizeFunctional φ (star y * y) := by
-      simp only [unitizeFunctional_apply, Unitization.fst_mul, Unitization.fst_star,
-        Unitization.snd_mul, Unitization.snd_star, map_add, map_smul, smul_eq_mul, w, b]
-      ring
-    exact htarget ▸
-      (((tendsto_const_nhds.add (h1.const_mul _)).add (h2.const_mul _)).add tendsto_const_nhds)
-  refine ge_of_tendsto hlim ?_
-  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he0 he1
-  have he_sa : star e = e := he0.isSelfAdjoint.star_eq
-  have he2_pos : 0 ≤ φ (e * e) := hpos (e * e) (by nth_rw 1 [← he_sa]; exact star_mul_self_nonneg e)
-  have he2_le_one : φ (e * e) ≤ 1 := by
-    have hle : ‖φ (e * e)‖ ≤ 1 :=
-      ((toStrongDual φ).le_opNorm _).trans <|
-        (mul_le_mul hnorm (norm_mul_le e e) (norm_nonneg _) zero_le_one).trans
-          (by nlinarith [norm_nonneg e])
-    exact Complex.le_def.2 ⟨(Complex.re_le_norm _).trans (by simpa using hle),
-      by simpa using (Complex.nonneg_iff.1 he2_pos).2.symm⟩
-  have hze : 0 ≤ φ (star (w • e + b) * (w • e + b)) := hpos _ (star_mul_self_nonneg _)
-  have hmul : star (w • e + b) * (w • e + b) =
-      (star w * w) • (e * e) + star w • (e * b) + w • (star b * e) + star b * b := by
-    simp only [star_add, star_smul, he_sa, add_mul, mul_add, smul_add, smul_mul_assoc,
-      mul_smul_comm, smul_smul, mul_comm w (star w)]
-    abel
-  rw [hmul, map_add, map_add, map_add, map_smul, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
-    smul_eq_mul] at hze
-  exact hze.trans (add_le_add (add_le_add (add_le_add
-    (mul_le_of_le_one_right (star_mul_self_nonneg w) he2_le_one) le_rfl) le_rfl) le_rfl)
-
-/-- The unitization extension `unitizeFunctional φ` is a state of `Unitization ℂ A` if and only if
-`φ` is nonnegative on nonnegative elements and has norm at most one. -/
-theorem unitizeFunctional_mem_stateSpace_iff {φ : WeakDual ℂ A} :
-    unitizeFunctional φ ∈ stateSpace (Unitization ℂ A) ↔
-      (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ ≤ 1 := by
-  rw [mem_stateSpace_iff_map_one]
-  refine ⟨fun ⟨hpos, _⟩ ↦ ⟨fun a ha ↦ ?_, ?_⟩, fun ⟨hpos, hnorm⟩ ↦ ⟨fun x hx ↦ ?_, by simp⟩⟩
-  · simpa using hpos (a : Unitization ℂ A) (Unitization.inr_nonneg_iff.2 ha)
-  · refine (toStrongDual φ).opNorm_le_bound zero_le_one fun a ↦ ?_
-    have hstate : unitizeFunctional φ ∈ stateSpace (Unitization ℂ A) :=
-      mem_stateSpace_iff_map_one.2 ⟨hpos, by simp⟩
-    simpa [Unitization.norm_inr] using
-      norm_apply_le_of_mem_stateSpace hstate (a : Unitization ℂ A)
-  · rw [StarOrderedRing.nonneg_iff] at hx
-    induction hx using AddSubmonoid.closure_induction with
-    | mem z hz =>
-      obtain ⟨y, rfl⟩ := hz
-      exact unitizeFunctional_star_mul_self_nonneg hpos hnorm y
-    | zero => simp
-    | add _ _ _ _ hu hv => simpa only [map_add] using add_nonneg hu hv
-
-/-- Every state of `A` extends via `unitizeFunctional` to a state of `Unitization ℂ A`. -/
-theorem unitizeFunctional_mem_stateSpace {φ : WeakDual ℂ A} (hφ : φ ∈ stateSpace A) :
-    unitizeFunctional φ ∈ stateSpace (Unitization ℂ A) :=
-  unitizeFunctional_mem_stateSpace_iff.2
-    ⟨fun _ ↦ map_nonneg_of_mem_stateSpace hφ, (norm_toStrongDual_of_mem_stateSpace hφ).le⟩
-
-end Unitization
-
-section Unital
-
-/-- Every character of a commutative unital C⋆-algebra is a state. -/
-theorem characterSpace_subset_stateSpace {B : Type*} [CommCStarAlgebra B] [PartialOrder B]
-    [StarOrderedRing B] :
+private theorem unital_characterSpace_subset_stateSpace {B : Type*} [CStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] :
     (WeakDual.characterSpace ℂ B : Set (WeakDual ℂ B)) ⊆ stateSpace B := by
   intro φ hφ
   let χ : WeakDual.characterSpace ℂ B := ⟨φ, hφ⟩
-  refine mem_stateSpace_iff_map_one.2 ⟨fun a ha ↦ ?_, map_one χ⟩
-  rw [StarOrderedRing.nonneg_iff] at ha
-  induction ha using AddSubmonoid.closure_induction with
-  | mem x hx =>
-    obtain ⟨y, rfl⟩ := hx
-    change 0 ≤ χ (star y * y)
-    rw [map_mul, map_star]
-    exact star_mul_self_nonneg (χ y)
-  | zero => simp
-  | add _ _ _ _ hx hy => simpa only [map_add] using add_nonneg hx hy
+  have hχ : ⇑φ = ⇑χ := WeakDual.CharacterSpace.coe_coe χ
+  exact mem_stateSpace_iff_map_one.2 ⟨fun a ha ↦ hχ ▸ map_nonneg χ ha, hχ ▸ map_one χ⟩
+
+/-- Every character of a possibly nonunital C⋆-algebra is a state. -/
+theorem characterSpace_subset_stateSpace {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] :
+    (WeakDual.characterSpace ℂ B : Set (WeakDual ℂ B)) ⊆ stateSpace B := by
+  intro φ hφ
+  have hunit : unitizeFunctional φ ∈ WeakDual.characterSpace ℂ (Unitization ℂ B) := by
+    refine ⟨fun h0 ↦ ?_, fun x y ↦ ?_⟩
+    · have h1 := DFunLike.congr_fun h0 1
+      rw [← toStrongDual_apply 0] at h1
+      simp at h1
+    · simp only [unitizeFunctional_apply, Unitization.fst_mul, Unitization.snd_mul, map_add,
+        map_smul, smul_eq_mul, hφ.2]
+      ring
+  have hpos : ∀ b, 0 ≤ b → 0 ≤ φ b :=
+    (unitizeFunctional_mem_stateSpace_iff.1 (unital_characterSpace_subset_stateSpace hunit)).1
+  obtain ⟨b, hb⟩ : ∃ b, φ b ≠ 0 := by
+    contrapose! hφ
+    exact fun h ↦ h.1 (DFunLike.ext _ _ fun b ↦ by simp [hφ b, ← toStrongDual_apply])
+  have hl := CStarAlgebra.increasingApproximateUnit B
+  have := hl.neBot
+  have h1 : Tendsto (fun e : B ↦ φ (e * b)) (CStarAlgebra.approximateUnit B) (𝓝 (φ b)) := by
+    simpa [Function.comp_def] using
+      ((toStrongDual φ).continuous.tendsto b).comp (hl.tendsto_mul_right b)
+  have h2 : Tendsto (fun e : B ↦ φ (e * b)) (CStarAlgebra.approximateUnit B)
+      (𝓝 ((‖toStrongDual φ‖ : ℂ) * φ b)) := by
+    simpa only [hφ.2] using (tendsto_approximateUnit_norm_of_map_nonneg hpos).mul_const (φ b)
+  have hmul : (‖toStrongDual φ‖ : ℂ) * φ b = 1 * φ b := by
+    simpa using tendsto_nhds_unique h2 h1
+  exact mem_stateSpace_iff.2
+    ⟨hpos, Complex.ofReal_injective (by simpa using mul_right_cancel₀ hb hmul)⟩
+
+end CharacterSpace
+
+section Unital
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- **Spectral values of normal elements are attained by states.** For a normal element `x` of a
-unital C⋆-algebra `A` and `z ∈ spectrum ℂ x`, some state `φ` of `A` satisfies `φ x = z`. -/
-theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (x : A) [IsStarNormal x] {z : ℂ}
-    (hz : z ∈ spectrum ℂ x) : ∃ φ ∈ stateSpace A, φ x = z := by
+private theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum_of_isStarNormal (x : A)
+    [IsStarNormal x] {z : ℂ} (hz : z ∈ spectrum ℂ x) : ∃ φ ∈ stateSpace A, φ x = z := by
   let S : StarSubalgebra ℂ A := StarAlgebra.elemental ℂ x
   have : IsClosed (S : Set A) := StarAlgebra.elemental.isClosed ℂ x
   let χ : WeakDual.characterSpace ℂ S :=
@@ -203,6 +117,44 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (x : A) [IsStarNormal x] 
     (characterSpace_subset_stateSpace χ.prop)
   exact ⟨φ, hφ, (hφ_ext ⟨x, StarAlgebra.elemental.self_mem ℂ x⟩).trans hχx⟩
 
+private theorem exists_mem_stateSpace_apply_eq_zero_of_not_exists_left_inv {y : A}
+    (hy : ¬ ∃ b, b * y = 1) : ∃ φ ∈ stateSpace A, φ y = 0 := by
+  have h0_spec : (0 : ℂ) ∈ spectrum ℂ (star y * y) := by
+    rw [spectrum.mem_iff, map_zero, zero_sub]
+    intro hu
+    obtain ⟨d, hd⟩ := hu.exists_left_inv
+    exact hy ⟨-d * star y, by simpa [mul_assoc] using hd⟩
+  have := (star_mul_self_nonneg y).isSelfAdjoint.isStarNormal
+  obtain ⟨φ, hφ, hφ0⟩ :=
+    exists_mem_stateSpace_apply_eq_of_mem_spectrum_of_isStarNormal (star y * y) h0_spec
+  let ω : A →P[ℂ] ℂ := PositiveContinuousLinearMap.ofClass (statePositiveLinearMap ⟨φ, hφ⟩)
+  have hcs : ‖φ y‖ ^ 2 ≤ 0 := by
+    simpa [ω, hφ0] using ω.norm_map_sq_le_opNorm_mul y
+  have hnorm0 : ‖φ y‖ = 0 := by nlinarith [sq_nonneg ‖φ y‖, norm_nonneg (φ y)]
+  exact ⟨φ, hφ, norm_eq_zero.1 hnorm0⟩
+
+/-- **Spectral values are attained by states.** For any element `x` of a unital C⋆-algebra `A` and
+`z ∈ spectrum ℂ x`, some state `φ` of `A` satisfies `φ x = z`. -/
+theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (x : A) {z : ℂ}
+    (hz : z ∈ spectrum ℂ x) : ∃ φ ∈ stateSpace A, φ x = z := by
+  set y : A := algebraMap ℂ A z - x
+  have hy_not_unit : ¬ IsUnit y := spectrum.mem_iff.1 hz
+  have ⟨φ, hφ, hφy⟩ : ∃ φ ∈ stateSpace A, φ y = 0 := by
+    rw [isUnit_iff_exists_and_exists, not_and_or] at hy_not_unit
+    rcases hy_not_unit with hright | hleft
+    · have hleft_star : ¬ ∃ b, b * star y = 1 := by
+        rintro ⟨b, hb⟩
+        exact hright ⟨star b, by simpa using congrArg star hb⟩
+      obtain ⟨φ, hφ, hφ_star⟩ := exists_mem_stateSpace_apply_eq_zero_of_not_exists_left_inv
+        hleft_star
+      rw [map_star_of_mem_stateSpace hφ, star_eq_zero] at hφ_star
+      exact ⟨φ, hφ, hφ_star⟩
+    · exact exists_mem_stateSpace_apply_eq_zero_of_not_exists_left_inv hleft
+  refine ⟨φ, hφ, ?_⟩
+  have hsub : z - φ x = 0 := by
+    simpa [y, Algebra.algebraMap_eq_smul_one, map_one_of_mem_stateSpace hφ] using hφy
+  exact (sub_eq_zero.1 hsub).symm
+
 /-- On a nontrivial unital C⋆-algebra, every normal element `x` admits a state `φ` such that
 `φ x ∈ spectrum ℂ x` and `‖φ x‖ = ‖x‖`. -/
 theorem exists_mem_stateSpace_apply_mem_spectrum_and_norm_eq [Nontrivial A] (x : A)
@@ -212,51 +164,28 @@ theorem exists_mem_stateSpace_apply_mem_spectrum_and_norm_eq [Nontrivial A] (x :
   obtain ⟨φ, hφ, hφx⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum x hz
   exact ⟨φ, hφ, hφx ▸ hz, by simpa [hφx] using congrArg NNReal.toReal hnorm⟩
 
-/-- On a nontrivial unital C⋆-algebra, every nonnegative element `a` admits a state `φ` with
-`φ a = ‖a‖`. -/
-theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
-    ∃ φ ∈ stateSpace A, φ a = (‖a‖ : ℂ) := by
-  have := ha.isSelfAdjoint.isStarNormal
-  obtain ⟨φ, hφ, -, hnorm⟩ := exists_mem_stateSpace_apply_mem_spectrum_and_norm_eq a
-  have hpos := map_nonneg_of_mem_stateSpace hφ ha
-  refine ⟨φ, hφ, ?_⟩
-  rw [← hnorm, ← Complex.re_eq_norm.2 hpos]
-  exact Complex.eq_re_of_ofReal_le (r := 0) (by simpa using hpos)
-
 end Unital
 
 section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- Every state preserves the involution: `φ (star a) = star (φ a)`. -/
-theorem map_star_of_mem_stateSpace {φ : WeakDual ℂ A} (hφ : φ ∈ stateSpace A) (a : A) :
-    φ (star a) = star (φ a) := by
-  obtain ⟨ω, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  exact map_star ω a
-
 /-- For a nonzero normal element `x` of a possibly nonunital C⋆-algebra `A`, some state `φ` of `A`
 satisfies `‖φ x‖ = ‖x‖`. -/
 theorem exists_mem_stateSpace_norm_apply_eq_of_ne_zero {x : A} [IsStarNormal x] (hx : x ≠ 0) :
     ∃ φ ∈ stateSpace A, ‖φ x‖ = ‖x‖ := by
-  have : IsStarNormal (x : Unitization ℂ A) :=
-    ⟨by rw [Commute, SemiconjBy, ← Unitization.inr_star, ← Unitization.inr_mul,
-      ← Unitization.inr_mul, star_comm_self]⟩
   obtain ⟨ψ, hψ, -, hψx⟩ :=
     exists_mem_stateSpace_apply_mem_spectrum_and_norm_eq (x : Unitization ℂ A)
   rw [Unitization.norm_inr] at hψx
   let φ : WeakDual ℂ A := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
-  have hpos : ∀ b, 0 ≤ b → 0 ≤ φ b := fun b hb ↦ by
-    simpa [φ] using map_nonneg_of_mem_stateSpace hψ (Unitization.inr_nonneg_iff.2 hb)
-  have hle : ‖toStrongDual φ‖ ≤ 1 :=
-    (toStrongDual φ).opNorm_le_bound zero_le_one fun b ↦ by
-      simpa [φ, Unitization.norm_inr] using
-        norm_apply_le_of_mem_stateSpace hψ (b : Unitization ℂ A)
   have hge : 1 ≤ ‖toStrongDual φ‖ := by
     have hbound : ‖x‖ ≤ ‖toStrongDual φ‖ * ‖x‖ := by
       simpa [φ, hψx] using (toStrongDual φ).le_opNorm x
     exact (le_mul_iff_one_le_left (norm_pos_iff.2 hx)).1 hbound
-  exact ⟨φ, mem_stateSpace_iff.2 ⟨hpos, le_antisymm hle hge⟩, by simpa [φ] using hψx⟩
+  exact ⟨φ, mem_stateSpace_iff.2
+    ⟨fun _ ↦ map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ,
+      le_antisymm (norm_toStrongDual_pullbackFunctional_inr_le_one_of_mem_stateSpace hψ) hge⟩,
+    by simpa [φ] using hψx⟩
 
 /-- For a nonzero nonnegative element `a` of a possibly nonunital C⋆-algebra `A`, some state `φ` of
 `A` satisfies `φ a = ‖a‖`. -/
@@ -265,30 +194,37 @@ theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero {a : A} (ha : 0
   have := ha.isSelfAdjoint.isStarNormal
   obtain ⟨φ, hφ, hnorm⟩ := exists_mem_stateSpace_norm_apply_eq_of_ne_zero ha0
   have hpos := map_nonneg_of_mem_stateSpace hφ ha
-  refine ⟨φ, hφ, ?_⟩
-  rw [← hnorm, ← Complex.re_eq_norm.2 hpos]
-  exact Complex.eq_re_of_ofReal_le (r := 0) (by simpa using hpos)
+  exact ⟨φ, hφ, (Complex.eq_coe_norm_of_nonneg hpos).trans (by rw [hnorm])⟩
 
 /-- For every nonzero element `a` of a possibly nonunital C⋆-algebra `A`, some state `φ` of `A`
 satisfies `φ (star a * a) = ‖a‖ ^ 2`. -/
-theorem exists_mem_stateSpace_star_mul_self_eq_norm_sq {a : A} (ha : a ≠ 0) :
+theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq {a : A} (ha : a ≠ 0) :
     ∃ φ ∈ stateSpace A, φ (star a * a) = (‖a‖ ^ 2 : ℂ) := by
   obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero
     (star_mul_self_nonneg a) (star_mul_self_eq_zero.not.2 ha)
   exact ⟨φ, hφ, by simpa [CStarRing.norm_star_mul_self, sq] using hφa⟩
 
-/-- **Existence of states.** Every nonzero C⋆-algebra, possibly nonunital, has a state. -/
-theorem stateSpace_nonempty_of_nontrivial [Nontrivial A] : (stateSpace A).Nonempty := by
+/-- **Existence of states.** Every nontrivial C⋆-algebra, possibly nonunital, has a state. -/
+theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
   obtain ⟨a, ha⟩ := exists_ne (0 : A)
-  obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_star_mul_self_eq_norm_sq ha
+  obtain ⟨φ, hφ, -⟩ := exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq ha
   exact ⟨φ, hφ⟩
+
+/-- On a nontrivial C⋆-algebra, possibly nonunital, every nonnegative element `a` admits a state
+`φ` with `φ a = ‖a‖`. -/
+theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha : 0 ≤ a) :
+    ∃ φ ∈ stateSpace A, φ a = (‖a‖ : ℂ) := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · obtain ⟨φ, hφ⟩ := stateSpace_nonempty (A := A)
+    exact ⟨φ, hφ, by simp⟩
+  · exact exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero ha ha0
 
 /-- An element of a C⋆-algebra is zero if and only if `φ (star a * a) = 0` for every state `φ`. -/
 theorem eq_zero_iff_forall_mem_stateSpace_star_mul_self {a : A} :
     a = 0 ↔ ∀ φ ∈ stateSpace A, φ (star a * a) = 0 := by
   refine ⟨fun ha φ _ ↦ by simp [ha], fun h ↦ ?_⟩
   by_contra ha
-  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_star_mul_self_eq_norm_sq ha
+  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq ha
   have hzero : (‖a‖ ^ 2 : ℂ) = 0 := hφa.symm.trans (h φ hφ)
   exact ha (norm_eq_zero.1 (sq_eq_zero_iff.1 (by exact_mod_cast hzero)))
 
@@ -339,18 +275,16 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
   have hsa : IsSelfAdjoint a := isSelfAdjoint_iff_forall_mem_stateSpace.2 fun φ hφ ↦
     (Complex.nonneg_iff.1 (h φ hφ)).2.symm
   have hsa_inr : IsSelfAdjoint (a : Unitization ℂ A) := hsa.inr ℂ
-  have := hsa_inr.isStarNormal
   rw [← Unitization.inr_nonneg_iff,
     StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) (a : Unitization ℂ A) hsa_inr]
   intro r hr
   obtain ⟨ψ, hψ, hψa⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum (a : Unitization ℂ A)
     (spectrum.algebraMap_mem ℂ hr)
   let ψ₀ : WeakDual ℂ A := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
-  have hψ₀_pos : ∀ b, 0 ≤ b → 0 ≤ ψ₀ b := fun b hb ↦ by
-    simpa [ψ₀] using map_nonneg_of_mem_stateSpace hψ (Unitization.inr_nonneg_iff.2 hb)
   by_cases h0 : toStrongDual ψ₀ = 0
   · have h0a : (toStrongDual ψ₀) a = 0 := by simp [h0]
-    exact (show r = 0 by simpa [ψ₀, hψa] using h0a).ge
+    have hr0 : r = 0 := by simpa [ψ₀, hψa] using h0a
+    exact hr0.ge
   · set c : ℝ := ‖toStrongDual ψ₀‖
     have hc : 0 < c := norm_pos_iff.2 h0
     let φ : WeakDual ℂ A := StrongDual.toWeakDual (((c⁻¹ : ℝ) : ℂ) • toStrongDual ψ₀)
@@ -360,7 +294,8 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
     have hstate : φ ∈ stateSpace A := by
       refine mem_stateSpace_iff.2 ⟨fun b hb ↦ ?_, ?_⟩
       · rw [hφ_eval]
-        exact mul_nonneg (Complex.zero_le_real.2 (inv_nonneg.2 hc.le)) (hψ₀_pos b hb)
+        exact mul_nonneg (Complex.zero_le_real.2 (inv_nonneg.2 hc.le))
+          (map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ hb)
       · simp only [φ, StrongDual.toStrongDual_toWeakDual, norm_smul, Complex.norm_real,
           Real.norm_of_nonneg (inv_nonneg.2 hc.le)]
         exact inv_mul_cancel₀ hc.ne'
@@ -381,50 +316,6 @@ end NonUnital
 section Separable
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- **Countable convex combinations of states are states.** If `φ n` are states of `A` and `w n ≥ 0`
-satisfy `∑' n, w n = 1`, then the norm-convergent series `∑' n, w n • toStrongDual (φ n)` defines a
-state of `A`. -/
-theorem toWeakDual_tsum_mem_stateSpace {φ : ℕ → WeakDual ℂ A} (hφ : ∀ n, φ n ∈ stateSpace A)
-    {w : ℕ → ℝ} (hw0 : ∀ n, 0 ≤ w n) (hw1 : HasSum w 1) :
-    StrongDual.toWeakDual (∑' n, w n • toStrongDual (φ n)) ∈ stateSpace A := by
-  have hbound (n : ℕ) : ‖w n • toStrongDual (φ n)‖ ≤ w n := by
-    rw [norm_smul, Real.norm_of_nonneg (hw0 n), norm_toStrongDual_of_mem_stateSpace (hφ n), mul_one]
-  have hsum : Summable fun n ↦ w n • toStrongDual (φ n) :=
-    Summable.of_norm_bounded hw1.summable hbound
-  set g : StrongDual ℂ A := ∑' n, w n • toStrongDual (φ n)
-  have hpos (a : A) (ha : 0 ≤ a) : 0 ≤ g a := by
-    have heval : HasSum (fun n ↦ (w n : ℂ) * φ n a) (g a) := by
-      simpa [g, Complex.real_smul] using (ContinuousLinearMap.apply ℂ ℂ a).hasSum hsum.hasSum
-    refine ge_of_tendsto heval.tendsto_sum_nat <| .of_forall fun s ↦ Finset.sum_nonneg fun n _ ↦ ?_
-    exact mul_nonneg (Complex.zero_le_real.2 (hw0 n)) (map_nonneg_of_mem_stateSpace (hφ n) ha)
-  refine mem_stateSpace_iff.2 ⟨fun a ha ↦ by simpa using hpos a ha, le_antisymm ?_ ?_⟩
-  · simpa using tsum_of_norm_bounded hw1 hbound
-  · have hl := CStarAlgebra.increasingApproximateUnit A
-    have := hl.neBot
-    have hg_lim : Tendsto (fun e ↦ g e) (CStarAlgebra.approximateUnit A) (𝓝 (‖g‖ : ℂ)) := by
-      simpa using tendsto_approximateUnit_norm_of_map_nonneg (φ := StrongDual.toWeakDual g)
-        fun a ha ↦ by simpa using hpos a ha
-    refine le_of_tendsto hw1 <| .of_forall fun s ↦ ?_
-    have hterm_lim (n : ℕ) : Tendsto (fun e : A ↦ w n * (φ n e).re)
-        (CStarAlgebra.approximateUnit A) (𝓝 (w n)) := by
-      have hφn : Tendsto (fun e : A ↦ φ n e) (CStarAlgebra.approximateUnit A) (𝓝 (1 : ℂ)) := by
-        simpa [norm_toStrongDual_of_mem_stateSpace (hφ n)] using
-          tendsto_approximateUnit_norm_of_map_nonneg
-            (fun a ha ↦ map_nonneg_of_mem_stateSpace (hφ n) ha)
-      have hre : Tendsto (fun e : A ↦ (φ n e).re) (CStarAlgebra.approximateUnit A) (𝓝 1) :=
-        ((Complex.continuous_re.tendsto (1 : ℂ)).comp hφn).congr fun _ ↦ rfl
-      simpa only [mul_one] using tendsto_const_nhds.mul hre
-    have hg_re : Tendsto (fun e : A ↦ (g e).re) (CStarAlgebra.approximateUnit A) (𝓝 ‖g‖) :=
-      ((Complex.continuous_re.tendsto (‖g‖ : ℂ)).comp hg_lim).congr fun _ ↦ rfl
-    refine le_of_tendsto_of_tendsto (tendsto_finsetSum s fun n _ ↦ hterm_lim n) hg_re ?_
-    filter_upwards [hl.eventually_nonneg] with e he
-    have he_re : HasSum (fun n ↦ w n * (φ n e).re) (g e).re := by
-      have hc : HasSum (fun n ↦ (w n : ℂ) * φ n e) (g e) := by
-        simpa [g, Complex.real_smul] using (ContinuousLinearMap.apply ℂ ℂ e).hasSum hsum.hasSum
-      simpa using Complex.reCLM.hasSum hc
-    exact he_re.summable.sum_le_tsum s (fun k _ ↦ mul_nonneg (hw0 k)
-      (Complex.nonneg_iff.1 (map_nonneg_of_mem_stateSpace (hφ k) he)).1) |>.trans_eq he_re.tsum_eq
 
 omit [StarOrderedRing A] in
 private theorem eq_zero_of_denseRange {x : ℕ → A} (hx : DenseRange x) {ψ : ℕ → WeakDual ℂ A}
@@ -457,34 +348,29 @@ private theorem eq_zero_of_denseRange {x : ℕ → A} (hx : DenseRange x) {ψ : 
     linarith
   nlinarith [norm_nonneg (x n - a), hxn_lower, hxn_upper]
 
-/-- **Existence of a faithful state on a separable C⋆-algebra.** Every nonzero separable C⋆-algebra,
-possibly nonunital, admits a state `φ` such that `φ (star a * a) = 0 ↔ a = 0` for all `a`. -/
+/-- **Existence of a faithful state on a separable C⋆-algebra.** Every nontrivial separable
+C⋆-algebra, possibly nonunital, admits a state `φ` such that `φ (star a * a) = 0 ↔ a = 0` for all
+`a`. -/
 theorem exists_mem_stateSpace_faithful [TopologicalSpace.SeparableSpace A] [Nontrivial A] :
     ∃ φ ∈ stateSpace A, ∀ a, φ (star a * a) = 0 ↔ a = 0 := by
   obtain ⟨x, hx⟩ := TopologicalSpace.exists_dense_seq A
-  obtain ⟨φ₀, hφ₀⟩ := stateSpace_nonempty_of_nontrivial (A := A)
   have hex (n : ℕ) : ∃ ψ ∈ stateSpace A, ψ (star (x n) * x n) = (‖x n‖ ^ 2 : ℂ) := by
-    rcases eq_or_ne (x n) 0 with h0 | hne
-    · exact ⟨φ₀, hφ₀, by simp [h0]⟩
-    · exact exists_mem_stateSpace_star_mul_self_eq_norm_sq hne
+    obtain ⟨ψ, hψ, hψ_eq⟩ :=
+      exists_mem_stateSpace_apply_eq_norm_of_nonneg (star_mul_self_nonneg (x n))
+    exact ⟨ψ, hψ, by simpa [CStarRing.norm_star_mul_self, sq] using hψ_eq⟩
   choose ψ hψ hψ_norm using hex
   set w : ℕ → ℝ := fun n ↦ (1 / 2 : ℝ) ^ (n + 1)
   have hw0 (n : ℕ) : 0 ≤ w n := by positivity
   have hw_pos (n : ℕ) : 0 < w n := by positivity
   have hw1 : HasSum w 1 := by
     simpa [w, pow_succ, mul_comm, div_eq_mul_inv] using hasSum_geometric_two' (1 : ℝ)
-  have hsum : Summable fun n ↦ w n • toStrongDual (ψ n) := by
-    refine Summable.of_norm_bounded hw1.summable fun n ↦ ?_
-    rw [norm_smul, Real.norm_of_nonneg (hw0 n), norm_toStrongDual_of_mem_stateSpace (hψ n), mul_one]
-  let g : StrongDual ℂ A := ∑' n, w n • toStrongDual (ψ n)
-  refine ⟨StrongDual.toWeakDual g, toWeakDual_tsum_mem_stateSpace hψ hw0 hw1,
+  set φ : WeakDual ℂ A := StrongDual.toWeakDual (∑' n, w n • toStrongDual (ψ n))
+  refine ⟨φ, toWeakDual_tsum_mem_stateSpace hψ hw0 hw1,
     fun a ↦ ⟨fun ha0 ↦ eq_zero_of_denseRange hx hψ hψ_norm fun n ↦ ?_, fun ha ↦ by simp [ha]⟩⟩
-  have heval : HasSum (fun k ↦ w k * (ψ k (star a * a)).re) (g (star a * a)).re := by
-    have hc : HasSum (fun k ↦ (w k : ℂ) * ψ k (star a * a)) (g (star a * a)) := by
-      simpa [Complex.real_smul, g] using
-        (ContinuousLinearMap.apply ℂ ℂ (star a * a)).hasSum hsum.hasSum
-    simpa using Complex.reCLM.hasSum hc
-  have hre0 : (g (star a * a)).re = 0 := by simp [show g (star a * a) = 0 from ha0]
+  have heval : HasSum (fun k ↦ w k * (ψ k (star a * a)).re) (φ (star a * a)).re := by
+    simpa [φ] using Complex.reCLM.hasSum
+      (hasSum_toWeakDual_tsum_apply_of_mem_stateSpace hψ hw0 hw1.summable (star a * a))
+  have hre0 : (φ (star a * a)).re = 0 := by simp [ha0]
   have hnonneg (k : ℕ) : 0 ≤ w k * (ψ k (star a * a)).re :=
     mul_nonneg (hw0 k) (Complex.nonneg_iff.1
       (map_nonneg_of_mem_stateSpace (hψ k) (star_mul_self_nonneg a))).1
@@ -493,18 +379,6 @@ theorem exists_mem_stateSpace_faithful [TopologicalSpace.SeparableSpace A] [Nont
       (heval.tsum_eq.trans hre0)) (hnonneg n)
   exact Complex.ext ((mul_eq_zero.1 hterm0).resolve_left (hw_pos n).ne')
     (Complex.nonneg_iff.1 (map_nonneg_of_mem_stateSpace (hψ n) (star_mul_self_nonneg a))).2.symm
-
-/-- Bundled `PositiveLinearMap` form of `TauCeti.exists_mem_stateSpace_faithful`: every nonzero
-separable C⋆-algebra admits a norm-one positive linear functional `ω : A →ₚ[ℂ] ℂ` with
-`ω (star a * a) = 0 ↔ a = 0`. -/
-theorem exists_positiveLinearMap_norm_eq_one_faithful [TopologicalSpace.SeparableSpace A]
-    [Nontrivial A] :
-    ∃ ω : A →ₚ[ℂ] ℂ,
-      ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
-        ∀ a, ω (star a * a) = 0 ↔ a = 0 := by
-  obtain ⟨φ, hφ, hfaith⟩ := exists_mem_stateSpace_faithful (A := A)
-  obtain ⟨ω, hnorm, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  exact ⟨ω, hnorm, hfaith⟩
 
 end Separable
 

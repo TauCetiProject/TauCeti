@@ -40,7 +40,7 @@ multipliers `U_s` are obtained from nondegenerate representations of crossed pro
 * `NonUnitalStarAlgHom.isNondegenerate_iff_map_one` and
   `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: on a unital C⋆-algebra, nondegeneracy is
   equivalent to `ρ 1 = 1` and promotes `ρ` to a unital `⋆`-homomorphism.
-* `NonUnitalStarAlgHom.isNondegenerate_comp_conjStarAlgEquiv_iff`: unitary conjugation along a
+* `NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff`: unitary conjugation along a
   linear isometric equivalence preserves nondegeneracy.
 
 ## References
@@ -374,7 +374,7 @@ theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlg
 /-- Unitary conjugation along a linear isometric equivalence `e : H ≃ₗᵢ[ℂ] K` preserves
 nondegeneracy of Hilbert-space representations. -/
 @[simp]
-theorem isNondegenerate_comp_conjStarAlgEquiv_iff {K : Type*} [NormedAddCommGroup K]
+theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*} [NormedAddCommGroup K]
     [InnerProductSpace ℂ K] [CompleteSpace K] (e : H ≃ₗᵢ[ℂ] K)
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     (e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
@@ -388,9 +388,19 @@ end NonUnitalStarAlgHom
 namespace StarAlgHom
 
 /-- Every unital Hilbert-space representation is nondegenerate as a nonunital representation. -/
+@[simp]
 theorem isNondegenerate_toNonUnitalStarAlgHom {B H : Type*} [CStarAlgebra B]
     [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) : π.toNonUnitalStarAlgHom.IsNondegenerate :=
   NonUnitalStarAlgHom.isNondegenerate_of_map_one (map_one π)
+
+/-- Promoting `π.toNonUnitalStarAlgHom` back to a unital `⋆`-homomorphism recovers `π`. -/
+@[simp]
+theorem toStarAlgHom_toNonUnitalStarAlgHom {B H : Type*} [CStarAlgebra B]
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)) (h : π.toNonUnitalStarAlgHom.IsNondegenerate) :
+    h.toStarAlgHom = π := by
+  ext b x
+  simp
 
 end StarAlgHom

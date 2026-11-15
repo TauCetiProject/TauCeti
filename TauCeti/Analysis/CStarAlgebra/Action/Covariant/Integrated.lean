@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
+import TauCeti.Analysis.CStarAlgebra.Hom
 
 /-!
 # Vector-valued integrated forms of covariant pairs
@@ -146,9 +147,8 @@ omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 theorem integral_coefficient_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
     (hF : Integrable F ν) (w : H) :
     ∫ x, P.coefficient (F x) w ∂ν = P.coefficient (∫ x, F x ∂ν) w := by
-  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp
-    { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-  have hL (a : A) : L a = P.coefficient a w := rfl
+  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp P.coefficient.toContinuousLinearMap
+  have hL (a : A) : L a = P.coefficient a w := by simp [L]
   simpa only [hL] using L.integral_comp_comm hF
 
 section Convolution

@@ -111,9 +111,9 @@ theorem integratedFull_toCovariantRepresentation :
     (L.toCovariantRepresentation hL).integratedFull μ = L := by
   refine starAlgHom_ext <| NonUnitalStarAlgHom.ext fun f => ?_
   refine hL.ext fun y => ContinuousLinearMap.ext fun ξ => ?_
-  let Φ : FullCrossedProduct α μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H ξ).comp
-    { toLinearMap := (L : _ →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-  have hΦ (x) : Φ x = L x ξ := rfl
+  let Φ : FullCrossedProduct α μ →L[ℂ] H :=
+    (ContinuousLinearMap.apply ℂ H ξ).comp L.toContinuousLinearMap
+  have hΦ (x) : Φ x = L x ξ := by simp [Φ]
   rw [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.comp_apply, ← map_mul, ← hΦ,
     ← integral_coefficientMultiplier_mul_groupMultiplier_fst,
     ← Φ.integral_comp_comm (integrable_coefficientMultiplier_mul_groupMultiplier_fst f y),

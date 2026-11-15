@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -25,9 +27,10 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
+linearly independent, vectors in their span vanish outside the corresponding indices, and over a
+normed division ring an infinite `ℓᵖ` direct sum of nontrivial spaces is infinite-dimensional
+(`lp.not_finiteDimensional`). These algebraic facts hold at every exponent. In `ℓ²`, the squared
+norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
 `lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
@@ -161,6 +164,27 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- An `ℓᵖ` direct sum of an infinite family of nontrivial spaces over a normed division ring is
+infinite-dimensional. -/
+theorem not_finiteDimensional {ι 𝕜 : Type*} {E : ι → Type*} [NormedDivisionRing 𝕜]
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, IsBoundedSMul 𝕜 (E i)]
+    {p : ℝ≥0∞} [Infinite ι] [∀ i, Nontrivial (E i)] : ¬ FiniteDimensional 𝕜 (lp E p) := by
+  classical
+  intro _
+  choose v hv using fun i ↦ exists_ne (0 : E i)
+  have hpi : LinearIndependent 𝕜 fun i ↦ Pi.single i (v i) := by
+    rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+    refine Pi.linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
+      Fintype.linearIndependent_iff.2 fun g hg _ ↦ ?_
+    exact (smul_eq_zero.1 (by simpa using hg)).resolve_right (hv i)
+  have hli : LinearIndependent 𝕜 fun i ↦ lp.single p i (v i) := by
+    apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
+    have hcoe : (lpSubmodule 𝕜 E p).subtype ∘ (fun i ↦ lp.single p i (v i)) =
+        fun i ↦ Pi.single i (v i) := funext fun i ↦ lp.coeFn_single p i (v i)
+    rw [hcoe]
+    exact hpi
+  exact Module.Finite.not_linearIndependent_of_infinite _ hli
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/

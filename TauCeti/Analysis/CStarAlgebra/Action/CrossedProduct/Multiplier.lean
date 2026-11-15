@@ -393,9 +393,9 @@ theorem integral_coefficientMultiplier_mul_groupMultiplier_fst (f : ConvolutionA
       P.integratedFull μ (of α μ f * y) by
     rw [map_sub, h, sub_self, norm_zero]
   ext ξ
-  let Φ : FullCrossedProduct α μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H ξ).comp
-    { toLinearMap := (P.integratedFull μ : _ →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-  have hΦ (x) : Φ x = P.integratedFull μ x ξ := rfl
+  let Φ : FullCrossedProduct α μ →L[ℂ] H :=
+    (ContinuousLinearMap.apply ℂ H ξ).comp (P.integratedFull μ).toContinuousLinearMap
+  have hΦ (x) : Φ x = P.integratedFull μ x ξ := by simp [Φ]
   rw [← hΦ, ← Φ.integral_comp_comm (integrable_coefficientMultiplier_mul_groupMultiplier_fst f y),
     map_mul, mul_apply_eq_comp, CovariantRepresentation.integratedFull_of_apply]
   simp [hΦ, DoubleCentralizer.mul_fst]

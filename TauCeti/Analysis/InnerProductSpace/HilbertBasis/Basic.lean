@@ -15,7 +15,9 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and is finite-dimensional
+iff the index type of the basis is finite (`HilbertBasis.finite_iff`, `HilbertBasis.infinite_iff`).
+A Hilbert basis can be reindexed along any equivalence of index types (`HilbertBasis.reindex`).
 
 It also expands the value of a continuous linear map in a Hilbert basis,
 `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
@@ -35,6 +37,60 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- A space with a Hilbert basis is complete, being isometric to `ℓ²`. -/
 theorem completeSpace {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
+
+/-- A space with a finite Hilbert basis is finite-dimensional. -/
+theorem finiteDimensional {ι : Type*} [Finite ι] (b : _root_.HilbertBasis ι 𝕜 E) :
+    FiniteDimensional 𝕜 E := by
+  let _ := Fintype.ofFinite ι
+  exact b.toOrthonormalBasis.toBasis.finiteDimensional_of_finite
+
+/-- For a Hilbert basis `b : HilbertBasis ι 𝕜 E`, the index type `ι` is finite iff `E` is
+finite-dimensional. -/
+theorem finite_iff {ι : Type*} (b : _root_.HilbertBasis ι 𝕜 E) :
+    Finite ι ↔ FiniteDimensional 𝕜 E :=
+  ⟨fun _ ↦ b.finiteDimensional, fun _ ↦ b.orthonormal.linearIndependent.finite⟩
+
+/-- For a Hilbert basis `b : HilbertBasis ι 𝕜 E`, the index type `ι` is infinite iff `E` is
+infinite-dimensional. -/
+theorem infinite_iff {ι : Type*} (b : _root_.HilbertBasis ι 𝕜 E) :
+    Infinite ι ↔ ¬ FiniteDimensional 𝕜 E := by
+  rw [← not_finite_iff_infinite, b.finite_iff]
+
+/-- Reindex a Hilbert basis along an equivalence of index types. -/
+protected noncomputable def reindex {ι ι' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι') :
+    _root_.HilbertBasis ι' 𝕜 E :=
+  letI := b.completeSpace
+  _root_.HilbertBasis.mk (b.orthonormal.comp _ e.symm.injective) (by simp [b.dense_span])
+
+@[simp]
+theorem coe_reindex {ι ι' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι') :
+    ⇑(b.reindex e) = b ∘ e.symm := by
+  let := b.completeSpace
+  exact _root_.HilbertBasis.coe_mk _ _
+
+@[simp]
+theorem reindex_apply {ι ι' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι') (i' : ι') :
+    b.reindex e i' = b (e.symm i') :=
+  congr_fun (b.coe_reindex e) i'
+
+@[simp]
+theorem repr_reindex_apply {ι ι' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι') (x : E)
+    (i' : ι') : (b.reindex e).repr x i' = b.repr x (e.symm i') := by
+  rw [_root_.HilbertBasis.repr_apply_apply, _root_.HilbertBasis.repr_apply_apply, reindex_apply]
+
+@[simp]
+theorem reindex_refl {ι : Type*} (b : _root_.HilbertBasis ι 𝕜 E) :
+    b.reindex (Equiv.refl ι) = b :=
+  DFunLike.ext _ _ fun _ ↦ by simp
+
+@[simp]
+theorem reindex_reindex {ι ι' ι'' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι')
+    (f : ι' ≃ ι'') : (b.reindex e).reindex f = b.reindex (e.trans f) :=
+  DFunLike.ext _ _ fun _ ↦ by simp
+
+theorem reindex_reindex_symm {ι ι' : Type*} (b : _root_.HilbertBasis ι 𝕜 E) (e : ι ≃ ι') :
+    (b.reindex e).reindex e.symm = b := by
+  simp
 
 /-- A vector orthogonal to every member of a Hilbert basis of a subspace is orthogonal to every
 vector of the represented subspace. -/

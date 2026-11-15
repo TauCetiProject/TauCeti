@@ -50,22 +50,8 @@ theorem isNondegenerate_gnsNonUnitalStarAlgHom (f : A →ₚ[ℂ] ℂ) :
   exact .of_forall fun e => Submodule.subset_span <|
     Set.mem_iUnion.mpr ⟨e, f.toGNS a, by simp⟩
 
-/-- A faithful positive functional has an injective GNS representation. No unit or
-normalization is needed. -/
-theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
-    (hf : ∀ a, f (star a * a) = 0 → a = 0) :
-    Function.Injective f.gnsNonUnitalStarAlgHom := by
-  have hclass : Function.Injective f.toGNS :=
-    (injective_iff_map_eq_zero f.toGNS).mpr fun a ha => hf a ((f.toGNS_eq_zero_iff a).mp ha)
-  refine (injective_iff_map_eq_zero f.gnsNonUnitalStarAlgHom).mpr fun a ha => ?_
-  have hzero : f.toGNS (a * star a) = 0 := by
-    simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS (star a))
-  have hmul : a * star a = 0 := hclass (by simpa using hzero)
-  exact mul_star_self_eq_zero.mp hmul
-
 /-- If `a : A` acts as zero in the GNS representation of a positive linear functional `f`, then its
-GNS class `f.toGNS a` vanishes: `f.toGNS (a * e) = 0` along an increasing approximate unit `e`, and
-`a * e → a` in norm. -/
+GNS class `f.toGNS a` vanishes. -/
 theorem toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
     (ha : f.gnsNonUnitalStarAlgHom a = 0) : f.toGNS a = 0 := by
   have hl := CStarAlgebra.increasingApproximateUnit A
@@ -80,5 +66,21 @@ theorem toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) 
 theorem apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →ₚ[ℂ] ℂ) {a : A}
     (ha : f.gnsNonUnitalStarAlgHom a = 0) : f (star a * a) = 0 :=
   (f.toGNS_eq_zero_iff a).1 (f.toGNS_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero ha)
+
+/-- A faithful positive functional has an injective GNS representation. No unit or
+normalization is needed. -/
+theorem gnsNonUnitalStarAlgHom_injective (f : A →ₚ[ℂ] ℂ)
+    (hf : ∀ a, f (star a * a) = 0 → a = 0) :
+    Function.Injective f.gnsNonUnitalStarAlgHom :=
+  (injective_iff_map_eq_zero _).mpr fun a ha ↦
+    hf a (f.apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero ha)
+
+/-- A faithful positive functional on a unital C⋆-algebra has an injective unital GNS
+representation. -/
+theorem gnsStarAlgHom_injective {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (f : B →ₚ[ℂ] ℂ) (hf : ∀ b, f (star b * b) = 0 → b = 0) :
+    Function.Injective f.gnsStarAlgHom := by
+  have hcoe : ⇑f.gnsStarAlgHom = ⇑f.gnsNonUnitalStarAlgHom := funext f.gnsStarAlgHom_apply
+  exact hcoe ▸ f.gnsNonUnitalStarAlgHom_injective hf
 
 end PositiveLinearMap

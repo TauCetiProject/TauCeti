@@ -57,10 +57,36 @@ noncomputable def toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →L[�
 theorem coe_toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : ⇑φ.toContinuousLinearMap = φ :=
   (rfl)
 
+theorem toContinuousLinearMap_injective :
+    Function.Injective (toContinuousLinearMap (A := A) (B := B)) :=
+  fun _ _ h ↦ DFunLike.ext _ _ fun x ↦ congr($(h) x)
+
+@[simp]
+theorem toContinuousLinearMap_inj {φ ψ : A →⋆ₙₐ[ℂ] B} :
+    φ.toContinuousLinearMap = ψ.toContinuousLinearMap ↔ φ = ψ :=
+  toContinuousLinearMap_injective.eq_iff
+
+@[simp]
+theorem toContinuousLinearMap_zero : (0 : A →⋆ₙₐ[ℂ] B).toContinuousLinearMap = 0 := by
+  ext
+  simp
+
 @[simp]
 theorem toContinuousLinearMap_eq_zero_iff {φ : A →⋆ₙₐ[ℂ] B} :
     φ.toContinuousLinearMap = 0 ↔ φ = 0 := by
-  simp [DFunLike.ext_iff]
+  rw [← toContinuousLinearMap_zero, toContinuousLinearMap_inj]
+
+@[simp]
+theorem toContinuousLinearMap_id :
+    (NonUnitalStarAlgHom.id ℂ A).toContinuousLinearMap = ContinuousLinearMap.id ℂ A := by
+  ext
+  simp
+
+theorem toContinuousLinearMap_comp {C : Type*} [NonUnitalCStarAlgebra C]
+    (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
+    (ψ.comp φ).toContinuousLinearMap = ψ.toContinuousLinearMap.comp φ.toContinuousLinearMap := by
+  ext
+  simp
 
 /-- Every `⋆`-algebra homomorphism between complex C⋆-algebras has operator norm at most `1`. -/
 theorem norm_toContinuousLinearMap_le_one (φ : A →⋆ₙₐ[ℂ] B) :
@@ -69,8 +95,7 @@ theorem norm_toContinuousLinearMap_le_one (φ : A →⋆ₙₐ[ℂ] B) :
     simpa using norm_apply_le φ a
 
 /-- A `⋆`-algebra homomorphism between complex C⋆-algebras that does not vanish at `x` has operator
-norm `1`: multiplying `x` on the left by an increasing approximate unit of `A` saturates the
-operator norm in the limit. -/
+norm `1`. -/
 theorem norm_toContinuousLinearMap_of_apply_ne_zero {φ : A →⋆ₙₐ[ℂ] B} {x : A} (hx : φ x ≠ 0) :
     ‖φ.toContinuousLinearMap‖ = 1 := by
   refine le_antisymm φ.norm_toContinuousLinearMap_le_one ?_
@@ -86,7 +111,7 @@ theorem norm_toContinuousLinearMap_of_apply_ne_zero {φ : A →⋆ₙₐ[ℂ] B}
       _ ≤ ‖φ e‖ * ‖φ x‖ := norm_mul_le _ _
       _ ≤ (‖φ.toContinuousLinearMap‖ * ‖e‖) * ‖φ x‖ := by
         gcongr
-        exact φ.toContinuousLinearMap.le_opNorm e
+        simpa using φ.toContinuousLinearMap.le_opNorm e
       _ ≤ ‖φ.toContinuousLinearMap‖ * ‖φ x‖ := by
         gcongr
         exact mul_le_of_le_one_right (norm_nonneg _) he
@@ -126,11 +151,48 @@ noncomputable def toContinuousLinearMap (φ : A →⋆ₐ[ℂ] B) : A →L[ℂ] 
 theorem coe_toContinuousLinearMap (φ : A →⋆ₐ[ℂ] B) : ⇑φ.toContinuousLinearMap = φ :=
   (rfl)
 
+@[simp]
+theorem toContinuousLinearMap_toNonUnitalStarAlgHom (φ : A →⋆ₐ[ℂ] B) :
+    φ.toNonUnitalStarAlgHom.toContinuousLinearMap = φ.toContinuousLinearMap :=
+  (rfl)
+
+theorem toContinuousLinearMap_injective :
+    Function.Injective (toContinuousLinearMap (A := A) (B := B)) :=
+  fun _ _ h ↦ DFunLike.ext _ _ fun x ↦ congr($(h) x)
+
+@[simp]
+theorem toContinuousLinearMap_inj {φ ψ : A →⋆ₐ[ℂ] B} :
+    φ.toContinuousLinearMap = ψ.toContinuousLinearMap ↔ φ = ψ :=
+  toContinuousLinearMap_injective.eq_iff
+
+@[simp]
+theorem toContinuousLinearMap_id :
+    (StarAlgHom.id ℂ A).toContinuousLinearMap = ContinuousLinearMap.id ℂ A := by
+  ext
+  simp
+
+theorem toContinuousLinearMap_comp {C : Type*} [CStarAlgebra C]
+    (ψ : B →⋆ₐ[ℂ] C) (φ : A →⋆ₐ[ℂ] B) :
+    (ψ.comp φ).toContinuousLinearMap = ψ.toContinuousLinearMap.comp φ.toContinuousLinearMap := by
+  ext
+  simp
+
+/-- Every unital `⋆`-algebra homomorphism between complex C⋆-algebras has operator norm at most
+`1`. -/
+theorem norm_toContinuousLinearMap_le_one (φ : A →⋆ₐ[ℂ] B) :
+    ‖φ.toContinuousLinearMap‖ ≤ 1 :=
+  φ.toNonUnitalStarAlgHom.norm_toContinuousLinearMap_le_one
+
 /-- Every unital `⋆`-algebra homomorphism into a nontrivial complex C⋆-algebra has operator norm
 `1`. -/
 theorem norm_toContinuousLinearMap [Nontrivial B] (φ : A →⋆ₐ[ℂ] B) :
     ‖φ.toContinuousLinearMap‖ = 1 :=
   NonUnitalStarAlgHom.norm_toContinuousLinearMap_of_apply_ne_zero (x := 1) (by simp)
+
+/-- Operator-norm dichotomy for unital `⋆`-algebra homomorphisms between complex C⋆-algebras. -/
+theorem norm_toContinuousLinearMap_eq_one_or_zero (φ : A →⋆ₐ[ℂ] B) :
+    ‖φ.toContinuousLinearMap‖ = 1 ∨ ‖φ.toContinuousLinearMap‖ = 0 :=
+  φ.toNonUnitalStarAlgHom.norm_toContinuousLinearMap_eq_one_or_zero
 
 end StarAlgHom
 
@@ -158,5 +220,32 @@ theorem coe_toContinuousLinearEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑e.toContinuous
 theorem toContinuousLinearEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
     e.toContinuousLinearEquiv.symm = e.symm.toContinuousLinearEquiv :=
   (rfl)
+
+@[simp]
+theorem toContinuousLinearEquiv_refl :
+    (StarAlgEquiv.refl ℂ A).toContinuousLinearEquiv = ContinuousLinearEquiv.refl ℂ A := by
+  ext
+  simp
+
+@[simp]
+theorem toContinuousLinearEquiv_trans {C : Type*} [NonUnitalCStarAlgebra C]
+    (e₁ : A ≃⋆ₐ[ℂ] B) (e₂ : B ≃⋆ₐ[ℂ] C) :
+    (e₁.trans e₂).toContinuousLinearEquiv =
+      e₁.toContinuousLinearEquiv.trans e₂.toContinuousLinearEquiv := by
+  ext
+  simp
+
+@[simp]
+theorem toContinuousLinearMap_toNonUnitalStarAlgHom (e : A ≃⋆ₐ[ℂ] B) :
+    e.toNonUnitalStarAlgHom.toContinuousLinearMap = (e.toContinuousLinearEquiv : A →L[ℂ] B) := by
+  ext
+  simp
+
+@[simp]
+theorem toContinuousLinearMap_toStarAlgHom {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
+    (e : A ≃⋆ₐ[ℂ] B) :
+    e.toStarAlgHom.toContinuousLinearMap = (e.toContinuousLinearEquiv : A →L[ℂ] B) := by
+  ext
+  simp
 
 end StarAlgEquiv

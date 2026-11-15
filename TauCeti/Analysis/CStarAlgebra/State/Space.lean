@@ -21,10 +21,14 @@ A *state* of a possibly nonunital C⋆-algebra `A` is a positive linear function
 This file defines the state space `TauCeti.stateSpace A` as a subset of the weak-* dual
 `WeakDual ℂ A`, so that convexity, closedness and compactness refer to the weak-* topology.
 
-* `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the states are exactly the positive
-  linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
-* `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
-  a positive functional is its limit along an approximate unit.
+* `TauCeti.stateSpace_eq_empty`: the state space of a subsingleton C⋆-algebra is empty.
+* `TauCeti.statePositiveLinearMap` and `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the
+  states are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic
+  continuity of positive maps; in particular every state preserves the involution,
+  `TauCeti.map_star_of_mem_stateSpace`.
+* `TauCeti.convex_stateSpace` and `TauCeti.toWeakDual_tsum_mem_stateSpace`: the state space is
+  closed under finite and infinite convex combinations. No unit is needed, because the norm of a
+  positive functional is its limit along an approximate unit.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
   complex-linear map of weak-* duals. By
   `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
@@ -36,9 +40,10 @@ For unital `A`:
 * `TauCeti.mem_stateSpace_iff_map_one`: a positive functional is a state exactly when `φ 1 = 1`,
   and `TauCeti.mem_stateSpace_iff_norm_eq_one_and_map_one`: a functional is a state exactly when
   `‖φ‖ = φ 1 = 1`, with positivity then automatic.
-* `TauCeti.isCompact_stateSpace`: the state space is weak-* compact, by Banach–Alaoglu.
-* `TauCeti.stateSpace_nonempty`: if `A` is nonzero it has a state, by Hahn–Banach. The state
-  space of `ℂ` is the single functional `z ↦ z`, `TauCeti.stateSpace_complex`.
+* `TauCeti.isCompact_stateSpace`: the state space is weak-* compact, by Banach–Alaoglu. The state
+  space of `ℂ` is the single functional `z ↦ z`, `TauCeti.stateSpace_complex` (general existence of
+  states for nonzero possibly nonunital C⋆-algebras is proved in
+  `TauCeti.Analysis.CStarAlgebra.State.Separation`).
 * `TauCeti.closure_convexHull_extremePoints_stateSpace`: the state space is the weak-* closed
   convex hull of its extreme points, the pure states, by the Krein–Milman theorem; in particular
   a nonzero unital C⋆-algebra has a pure state, `TauCeti.extremePoints_stateSpace_nonempty`.
@@ -75,6 +80,13 @@ theorem mem_stateSpace_iff :
     φ ∈ stateSpace A ↔ (∀ a, 0 ≤ a → 0 ≤ φ a) ∧ ‖toStrongDual φ‖ = 1 :=
   Iff.rfl
 
+/-- The state space of a subsingleton C⋆-algebra is empty. -/
+@[simp]
+theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
+  ext φ
+  have h0 : toStrongDual φ = 0 := by ext a; simp [Subsingleton.elim a 0]
+  simp [mem_stateSpace_iff, h0]
+
 /-- A state is nonnegative on nonnegative elements. -/
 theorem map_nonneg_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A} (ha : 0 ≤ a) : 0 ≤ φ a :=
   (mem_stateSpace_iff.1 hφ).1 a ha
@@ -101,21 +113,74 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
     StrongDual.toStrongDual_toWeakDual, and_iff_right_iff_imp]
   exact fun _ a ha => ω.map_nonneg ha
 
+/-- A weighted family `w i • toStrongDual (φ i)` of states with nonnegative summable weights `w`
+is norm-summable in `StrongDual ℂ A`. -/
+theorem summable_smul_toStrongDual_of_mem_stateSpace {ι : Type*} {φ : ι → WeakDual ℂ A}
+    (hφ : ∀ i, φ i ∈ stateSpace A) {w : ι → ℝ} (hw0 : ∀ i, 0 ≤ w i) (hw : Summable w) :
+    Summable fun i ↦ w i • toStrongDual (φ i) :=
+  Summable.of_norm_bounded hw fun i ↦ by
+    rw [norm_smul, Real.norm_of_nonneg (hw0 i), norm_toStrongDual_of_mem_stateSpace (hφ i), mul_one]
+
+/-- Pointwise evaluation of `StrongDual.toWeakDual (∑' i, w i • toStrongDual (φ i))` is the
+corresponding weighted sum of `φ i a`. -/
+theorem hasSum_toWeakDual_tsum_apply_of_mem_stateSpace {ι : Type*} {φ : ι → WeakDual ℂ A}
+    (hφ : ∀ i, φ i ∈ stateSpace A) {w : ι → ℝ} (hw0 : ∀ i, 0 ≤ w i) (hw : Summable w) (a : A) :
+    HasSum (fun i ↦ (w i : ℂ) * φ i a)
+      (StrongDual.toWeakDual (∑' i, w i • toStrongDual (φ i)) a) := by
+  simpa [Complex.real_smul] using
+    (ContinuousLinearMap.apply ℂ ℂ a).hasSum
+      (summable_smul_toStrongDual_of_mem_stateSpace hφ hw0 hw).hasSum
+
 variable [StarOrderedRing A]
+
+/-- A state `φ : stateSpace A` bundled as a positive linear map `A →ₚ[ℂ] ℂ`. -/
+noncomputable def statePositiveLinearMap (φ : stateSpace A) : A →ₚ[ℂ] ℂ :=
+  .mk₀ (toStrongDual φ.1 : A →ₗ[ℂ] ℂ) fun _ ↦ map_nonneg_of_mem_stateSpace φ.2
+
+@[simp]
+theorem statePositiveLinearMap_apply (φ : stateSpace A) (a : A) :
+    statePositiveLinearMap φ a = φ.1 a :=
+  (rfl)
+
+/-- Bundling a state as `A →ₚ[ℂ] ℂ` is injective. -/
+theorem statePositiveLinearMap_injective :
+    Function.Injective (statePositiveLinearMap (A := A)) :=
+  fun _ _ h ↦ Subtype.ext <| DFunLike.ext _ _ fun a ↦ DFunLike.congr_fun h a
+
+@[simp]
+theorem statePositiveLinearMap_inj {φ ψ : stateSpace A} :
+    statePositiveLinearMap φ = statePositiveLinearMap ψ ↔ φ = ψ :=
+  statePositiveLinearMap_injective.eq_iff
+
+@[simp]
+theorem toWeakDual_ofClass_statePositiveLinearMap (φ : stateSpace A) :
+    StrongDual.toWeakDual
+      (PositiveContinuousLinearMap.ofClass (statePositiveLinearMap φ) : A →L[ℂ] ℂ) = φ.1 :=
+  DFunLike.ext _ _ fun a ↦ by simp
+
+@[simp]
+theorem norm_ofClass_statePositiveLinearMap (φ : stateSpace A) :
+    ‖(PositiveContinuousLinearMap.ofClass (statePositiveLinearMap φ) : A →L[ℂ] ℂ)‖ = 1 := by
+  have h : (PositiveContinuousLinearMap.ofClass (statePositiveLinearMap φ) : A →L[ℂ] ℂ) =
+      toStrongDual φ.1 := by
+    ext a
+    simp
+  rw [h, norm_toStrongDual_of_mem_stateSpace φ.2]
 
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
     φ ∈ stateSpace A ↔ ∃ ω : A →ₚ[ℂ] ℂ, ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
-      StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
-  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
-    h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
-  have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
-    ext
-    rfl
-  exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
+      StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ :=
+  ⟨fun hφ => ⟨statePositiveLinearMap ⟨φ, hφ⟩, norm_ofClass_statePositiveLinearMap ⟨φ, hφ⟩,
+    toWeakDual_ofClass_statePositiveLinearMap ⟨φ, hφ⟩⟩,
+    fun ⟨ω, hω, h⟩ =>
+      h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
+
+/-- Every state preserves the involution: `φ (star a) = star (φ a)`. -/
+theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
+    φ (star a) = star (φ a) := by
+  simpa using map_star (statePositiveLinearMap ⟨φ, hφ⟩) a
 
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
@@ -130,6 +195,47 @@ theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
   simp only [hφ.2, hψ.2, Complex.ofReal_one, ← add_smul, hst, one_smul] at h
   exact_mod_cast tendsto_nhds_unique (tendsto_approximateUnit_norm_of_map_nonneg hpos)
     (h.congr fun e => by simp)
+
+/-- **Infinite convex combinations of states are states.** If `φ i` are states of `A` and
+`w i ≥ 0` satisfy `HasSum w 1`, then the norm-convergent series `∑' i, w i • toStrongDual (φ i)`
+defines a state of `A`. -/
+theorem toWeakDual_tsum_mem_stateSpace {ι : Type*} {φ : ι → WeakDual ℂ A}
+    (hφ : ∀ i, φ i ∈ stateSpace A) {w : ι → ℝ} (hw0 : ∀ i, 0 ≤ w i) (hw1 : HasSum w 1) :
+    StrongDual.toWeakDual (∑' i, w i • toStrongDual (φ i)) ∈ stateSpace A := by
+  set ψ : WeakDual ℂ A := StrongDual.toWeakDual (∑' i, w i • toStrongDual (φ i))
+  have hpos (a : A) (ha : 0 ≤ a) : 0 ≤ ψ a := by
+    refine ge_of_tendsto (hasSum_toWeakDual_tsum_apply_of_mem_stateSpace hφ hw0 hw1.summable a)
+      <| .of_forall fun s ↦ Finset.sum_nonneg fun i _ ↦ ?_
+    exact mul_nonneg (Complex.zero_le_real.2 (hw0 i)) (map_nonneg_of_mem_stateSpace (hφ i) ha)
+  refine mem_stateSpace_iff.2 ⟨hpos, le_antisymm ?_ ?_⟩
+  · simpa [ψ] using tsum_of_norm_bounded hw1 fun i ↦ by
+      rw [norm_smul, Real.norm_of_nonneg (hw0 i), norm_toStrongDual_of_mem_stateSpace (hφ i),
+        mul_one]
+  · have hl := CStarAlgebra.increasingApproximateUnit A
+    have := hl.neBot
+    have hψ_lim : Tendsto (fun e ↦ ψ e) (CStarAlgebra.approximateUnit A)
+        (𝓝 (‖toStrongDual ψ‖ : ℂ)) :=
+      tendsto_approximateUnit_norm_of_map_nonneg hpos
+    refine le_of_tendsto hw1 <| .of_forall fun s ↦ ?_
+    have hterm_lim (i : ι) : Tendsto (fun e : A ↦ w i * (φ i e).re)
+        (CStarAlgebra.approximateUnit A) (𝓝 (w i)) := by
+      have hφi : Tendsto (fun e : A ↦ φ i e) (CStarAlgebra.approximateUnit A) (𝓝 (1 : ℂ)) := by
+        simpa [norm_toStrongDual_of_mem_stateSpace (hφ i)] using
+          tendsto_approximateUnit_norm_of_map_nonneg
+            (fun a ha ↦ map_nonneg_of_mem_stateSpace (hφ i) ha)
+      have hre : Tendsto (fun e : A ↦ (φ i e).re) (CStarAlgebra.approximateUnit A) (𝓝 1) :=
+        ((Complex.continuous_re.tendsto (1 : ℂ)).comp hφi).congr fun _ ↦ rfl
+      simpa only [mul_one] using tendsto_const_nhds.mul hre
+    have hψ_re : Tendsto (fun e : A ↦ (ψ e).re) (CStarAlgebra.approximateUnit A)
+        (𝓝 ‖toStrongDual ψ‖) :=
+      ((Complex.continuous_re.tendsto (‖toStrongDual ψ‖ : ℂ)).comp hψ_lim).congr fun _ ↦ rfl
+    refine le_of_tendsto_of_tendsto (tendsto_finsetSum s fun i _ ↦ hterm_lim i) hψ_re ?_
+    filter_upwards [hl.eventually_nonneg] with e he
+    have he_re : HasSum (fun i ↦ w i * (φ i e).re) (ψ e).re := by
+      simpa [ψ] using Complex.reCLM.hasSum
+        (hasSum_toWeakDual_tsum_apply_of_mem_stateSpace hφ hw0 hw1.summable e)
+    exact he_re.summable.sum_le_tsum s (fun k _ ↦ mul_nonneg (hw0 k)
+      (Complex.nonneg_iff.1 (map_nonneg_of_mem_stateSpace (hφ k) he)).1) |>.trans_eq he_re.tsum_eq
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
@@ -213,8 +319,7 @@ theorem isCompact_stateSpace : IsCompact (stateSpace A) := by
     fun φ hφ => ?_
   simp [norm_toStrongDual_of_mem_stateSpace hφ]
 
-/-- **Existence of states.** A nonzero unital C⋆-algebra has a state. -/
-theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
+private theorem unital_stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
   -- by Hahn–Banach there is a functional of norm one attaining the norm `‖1‖ = 1` at `1`
   obtain ⟨g, hg, hg1⟩ := exists_dual_vector ℂ (1 : A) (by simp)
   refine ⟨StrongDual.toWeakDual g, mem_stateSpace_iff_norm_eq_one_and_map_one.2 ⟨hg, ?_⟩⟩
@@ -229,7 +334,7 @@ theorem closure_convexHull_extremePoints_stateSpace :
 /-- **Existence of pure states.** A nonzero unital C⋆-algebra has an extreme state. -/
 theorem extremePoints_stateSpace_nonempty [Nontrivial A] :
     (extremePoints ℝ (stateSpace A)).Nonempty :=
-  isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
+  isCompact_stateSpace.extremePoints_nonempty unital_stateSpace_nonempty
 
 /-- The only state of `ℂ` is the identity functional. -/
 theorem stateSpace_complex :

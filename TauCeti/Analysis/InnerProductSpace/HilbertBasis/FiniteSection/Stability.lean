@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 public import TauCeti.Analysis.Normed.Operator.StableSequence
 import Mathlib.Data.Nat.Bitwise
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 
 /-!
 # Stability of the finite-section method
@@ -178,8 +179,7 @@ theorem exists_mem_unitary_forall_even_not_isUnit_finiteSection (b : HilbertBasi
     ∃ U ∈ unitary (H →L[𝕜] H), (∀ k, U (b k) = b (k ^^^ 1)) ∧
       ∀ n, Even n → ¬IsUnit (U.finiteSection b n) := by
   have hσ : Function.Involutive (· ^^^ 1 : ℕ → ℕ) := fun k ↦ by simp [Nat.xor_assoc]
-  let b' : HilbertBasis ℕ 𝕜 H := HilbertBasis.mk (b.orthonormal.comp _ hσ.injective)
-    (by rw [hσ.surjective.range_comp, b.dense_span])
+  let b' : HilbertBasis ℕ 𝕜 H := b.reindex (hσ.toPerm _)
   let U : H ≃ₗᵢ[𝕜] H := b.repr.trans b'.repr.symm
   have hU : ∀ k, U (b k) = b (k ^^^ 1) := fun k ↦ by
     classical
