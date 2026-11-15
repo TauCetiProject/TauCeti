@@ -177,6 +177,11 @@ def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
       ContinuousMap.pullbackFst f g := by
   ext : 1; rfl
 
+@[simp] theorem ContinuousMap.pullbackComm_comp_pullbackComm :
+    (Homeomorph.pullbackComm g f : C(g.Pullback f, f.Pullback g)).comp
+      (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) = .id (f.Pullback g) := by
+  ext : 1; rfl
+
 section MapPullback
 
 variable {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : Type*}
@@ -211,26 +216,25 @@ end MapPullback
 section MapPullbackSnd
 
 variable {X Y Z₁ Z₂ : Type*}
-  [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z₁] [TopologicalSpace Z₂]
-  (f : C(X, Y)) {p : C(Z₁, Y)} {q : C(Z₂, Y)} (g : C(Z₁, Z₂)) (hg : q.comp g = p)
+  [TopologicalSpace X] [TopologicalSpace Z₁] [TopologicalSpace Z₂]
+  (f : X → Y) {p : Z₁ → Y} {q : Z₂ → Y} (g : C(Z₁, Z₂)) (hg : q ∘ ⇑g = p)
 
-/-- Bundled continuous map `(⇑f).Pullback ⇑p → (⇑f).Pullback ⇑q` over `X` induced by a map
-`g : C(Z₁, Z₂)` over `Y` (`q.comp g = p`). -/
-def ContinuousMap.mapPullbackSnd : C((⇑f).Pullback ⇑p, (⇑f).Pullback ⇑q) :=
-  ContinuousMap.mapPullback (f₁ := ⇑f) (f₂ := ⇑f) (.id X) id g (funext fun _ ↦ rfl)
-    (funext fun z ↦ ContinuousMap.congr_fun hg z)
+/-- Bundled continuous map `f.Pullback p → f.Pullback q` over `X` induced by a map
+`g : C(Z₁, Z₂)` over `Y` (`q ∘ g = p`). -/
+def ContinuousMap.mapPullbackSnd : C(f.Pullback p, f.Pullback q) :=
+  ContinuousMap.mapPullback (f₁ := f) (f₂ := f) (.id X) id g rfl hg
 
-@[simp] theorem ContinuousMap.coe_mapPullbackSnd_apply (x : (⇑f).Pullback ⇑p) :
-    (f.mapPullbackSnd g hg x).1 = (x.1.1, g x.1.2) := (rfl)
+@[simp] theorem ContinuousMap.coe_mapPullbackSnd_apply (x : f.Pullback p) :
+    (ContinuousMap.mapPullbackSnd f g hg x).1 = (x.1.1, g x.1.2) := (rfl)
 
 @[simp] theorem ContinuousMap.pullbackFst_comp_mapPullbackSnd :
-    (ContinuousMap.pullbackFst (⇑f) (⇑q)).comp (f.mapPullbackSnd g hg) =
-      ContinuousMap.pullbackFst (⇑f) (⇑p) := by
+    (ContinuousMap.pullbackFst f q).comp (ContinuousMap.mapPullbackSnd f g hg) =
+      ContinuousMap.pullbackFst f p := by
   ext : 1; rfl
 
 @[simp] theorem ContinuousMap.pullbackSnd_comp_mapPullbackSnd :
-    (ContinuousMap.pullbackSnd (⇑f) (⇑q)).comp (f.mapPullbackSnd g hg) =
-      g.comp (ContinuousMap.pullbackSnd (⇑f) (⇑p)) := by
+    (ContinuousMap.pullbackSnd f q).comp (ContinuousMap.mapPullbackSnd f g hg) =
+      g.comp (ContinuousMap.pullbackSnd f p) := by
   ext : 1; rfl
 
 end MapPullbackSnd

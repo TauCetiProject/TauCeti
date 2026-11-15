@@ -93,15 +93,19 @@ theorem reparamHomotopy_apply (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0
     reparamHomotopy f hf hf₀ hf₁ (s, γ) = (Homotopy.reparam γ f hf hf₀ hf₁).eval s := (rfl)
 
 /-- Reparametrizing a continuously varying family of paths with varying endpoints by a fixed
-endpoint-preserving map `f : I → I` varies continuously with the homotopy parameter in `I`. -/
+endpoint-preserving map `f : I → I` varies continuously with a continuous homotopy parameter
+`s : A → I`. -/
 theorem reparamHomotopy_continuous_family {A : Type*} [TopologicalSpace A]
     {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
+    {s : A → I} (hs : Continuous s)
     {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
-    Continuous ↿fun q : I × A ↦
-      (Homotopy.reparam (γ q.2) f hf hf₀ hf₁).eval q.1 :=
-  -- `Path.Homotopy.reparam` evaluates `γ q.2` at the `I`-valued convex combination of the
-  -- identity and `f`; this applies even when the endpoints vary with `q.2`.
-  hγ.comp ((continuous_snd.comp continuous_fst).prodMk (by fun_prop))
+    Continuous ↿fun q : A ↦
+      (Homotopy.reparam (γ q) f hf hf₀ hf₁).eval (s q) :=
+  -- `Path.Homotopy.reparam (γ q)` factors through `γ q` applied to the reparametrization homotopy
+  -- of the identity path on `I`; this applies even when the endpoints vary with `q`.
+  hγ.comp (continuous_fst.prodMk <|
+    (Homotopy.reparam ⟨ContinuousMap.id I, rfl, rfl⟩ f hf hf₀ hf₁).continuous.comp
+      ((hs.comp continuous_fst).prodMk continuous_snd))
 
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`
 does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops at once and fixes

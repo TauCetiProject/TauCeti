@@ -413,11 +413,7 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
   refine isWeakHomotopyEquivalence_of_commSq (mem_serreFibrations_pullbackFst hp g) hp sq hg
     fun b' ↦ ?_
   -- The base change has the same fibres as `p`, by the homeomorphism `fiberPullbackFstIso`.
-  have h₁ : sq.fiberMap b' = (p.fiberPullbackFstIso g b').hom := by
-    ext x
-    exact (sq.fiberMap_apply_coe b' x).trans
-      ((TopCat.pullbackSnd_apply g p x.1).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
-  rw [h₁]
+  rw [sq.fiberMap_pullbackSnd b']
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
 
 /-- **Restriction of a Serre fibration over a weakly equivalent subspace.** If `p : E ⟶ B` is a

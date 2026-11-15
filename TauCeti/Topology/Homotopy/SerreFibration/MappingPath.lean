@@ -62,9 +62,11 @@ theorem isWeakHomotopyEquivalence_ofFiber {E B : _root_.TopCat.{u}} {p : E ⟶ B
       (eEnd : C(MappingPathFiber p.hom b,
         (_root_.TopCat.ofHom (MappingPathSpace.endpoint p.hom)).fiber ((𝟙 B) b))).comp
         (MappingPathFiber.ofFiber p.hom b) = (sq.fiberMap b).hom := by
-    ext x : 1
-    exact Subtype.ext ((MappingPathFiber.endpointHomeomorph_ofFiber_val p.hom b x).trans
-      ((_root_.TopCat.ofHom_apply _ _).symm.trans (sq.fiberMap_apply_coe b x).symm))
+    ext x : 1; apply Subtype.ext
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_apply, eEnd, Homeomorph.trans_apply,
+      Homeomorph.subtype_apply_coe, Homeomorph.refl_apply,
+      MappingPathFiber.endpointHomeomorph_ofFiber_val]
+    exact (sq.fiberMap_apply_coe b x).symm
   exact eEnd.isWeakHomotopyEquivalence.of_postcomp
     (hcomp ▸ isWeakHomotopyEquivalence_fiberMap hp hp' sq
       (MappingPathSpace.isWeakHomotopyEquivalence_incl p.hom) .id b)
