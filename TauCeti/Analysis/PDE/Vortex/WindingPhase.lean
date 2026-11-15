@@ -143,6 +143,13 @@ theorem differentiableAt_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
     DifferentiableAt ℝ (fun w ↦ (windingPhase m w : ℂ)) z :=
   (contDiffAt_windingPhase m hz (n := 1)).differentiableAt one_ne_zero
 
+/-- The inverse winding phase, the gauge of the winding end trivialization, is smooth off the
+origin. -/
+theorem contDiffAt_inv_windingPhase (m : ℕ) {z : ℂ} (hz : z ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (fun w ↦ ((windingPhase m)⁻¹ w : ℂ)) z := by
+  simp only [Pi.inv_apply, Circle.coe_inv]
+  exact (contDiffAt_windingPhase m hz).inv (Circle.coe_ne_zero _)
+
 /-- Off the origin, the winding phase is its value at `z` times the exponential of the real
 phase `m Im (log (w / z))`, which is smooth near `w = z`. -/
 private theorem windingPhase_eq_mul_exp (m : ℕ) {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
