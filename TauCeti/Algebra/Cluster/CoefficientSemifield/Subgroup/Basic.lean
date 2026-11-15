@@ -164,18 +164,12 @@ theorem val_zpow_toWithZeroSubsemiringUnits (a : G) (n : ℤ) :
   rw [← map_zpow]
   exact G.val_toWithZeroSubsemiringUnits (a ^ n)
 
-/-- Realized inversion agrees with the inverse of the corresponding unit. -/
-private theorem inv_val_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
-    (G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring)⁻¹ =
-      ((G.toWithZeroSubsemiringUnits a)⁻¹ : G.withZeroSubsemiringˣ) :=
-  inv_eq_of_mul_eq_one_left (G.toWithZeroSubsemiringUnits a).inv_mul
-
 /-- Ambient inclusion preserves inversion of subgroup members, viewed as ambient units. -/
 @[simp]
 theorem coe_inv_toWithZeroSubsemiringUnits [Nontrivial R] (a : G) :
     (((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring)⁻¹ : G.withZeroSubsemiring) : R) =
       (((a : Rˣ)⁻¹ : Rˣ) : R) := by
-  rw [inv_val_toWithZeroSubsemiringUnits, val_inv_toWithZeroSubsemiringUnits]
+  rw [← Units.val_inv_eq_inv_val, val_inv_toWithZeroSubsemiringUnits]
 
 /-- Ambient inclusion preserves division of subgroup members, viewed as ambient units. -/
 @[simp]
@@ -183,7 +177,7 @@ theorem coe_div_toWithZeroSubsemiringUnits [Nontrivial R] (a b : G) :
     (((G.toWithZeroSubsemiringUnits a : G.withZeroSubsemiring) /
       (G.toWithZeroSubsemiringUnits b : G.withZeroSubsemiring) : G.withZeroSubsemiring) : R) =
       (((a : Rˣ) / (b : Rˣ) : Rˣ) : R) := by
-  rw [div_eq_mul_inv, inv_val_toWithZeroSubsemiringUnits, ← Units.val_mul]
+  rw [div_eq_mul_inv, ← Units.val_inv_eq_inv_val, ← Units.val_mul]
   have h : G.toWithZeroSubsemiringUnits a * (G.toWithZeroSubsemiringUnits b)⁻¹ =
       G.toWithZeroSubsemiringUnits a / G.toWithZeroSubsemiringUnits b :=
     div_eq_mul_inv _ _
