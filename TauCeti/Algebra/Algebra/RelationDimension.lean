@@ -38,50 +38,67 @@ variable {A : Type*} [Ring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- The dimension count behind the Golod–Shafarevich inequality. Let `W`, `U`, `T`, and `S` be
 subspaces of `A` such that right multiplication by the entries of the vectors `y`
-maps `W` into `U`, right multiplication by the generators `x` maps `U` into `T`, every `∑ aᵢ xᵢ`
-lies in `S`, and every element of `T` is a `U`-combination of the `x`. If every relation among the
-`x` is an `A`-combination of the `y`, then the induced linear maps `(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T`
-have the kernel of the right-hand map contained in the range of the left-hand map, and the image
-of the right-hand map is killed by `A ⧸ T → A ⧸ S` (where `T ≤ S` follows from the assumptions).
-So if `A ⧸ W` and `A ⧸ T` are finite-dimensional, then
+maps `W` into `U`, every `∑ aᵢ xᵢ` lies in `S`, and every element of `T` is a `U`-combination of
+the `x`. If every relation among the `x` is an `A`-combination of the `y`, and `A ⧸ W` and
+`A ⧸ T` are finite-dimensional, then
 `#ι · dim (A ⧸ U) + dim (A ⧸ S) ≤ dim (A ⧸ T) + #κ · dim (A ⧸ W)`. -/
 theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
     (x : ι → A) (y : κ → ι → A)
     (hker : ∀ a : ι → A, ∑ i, a i * x i = 0 → a ∈ span A (Set.range y))
     {W U T S : Submodule k A} [FiniteDimensional k (A ⧸ W)] [FiniteDimensional k (A ⧸ T)]
     (hWU : ∀ w ∈ W, ∀ j i, w * y j i ∈ U)
-    (hUT : ∀ u ∈ U, ∀ i, u * x i ∈ T) (hxS : ∀ a : ι → A, ∑ i, a i * x i ∈ S)
+    (hxS : ∀ a : ι → A, ∑ i, a i * x i ∈ S)
     (hT : ∀ t ∈ T, ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t) :
     Fintype.card ι * finrank k (A ⧸ U) + finrank k (A ⧸ S) ≤
       finrank k (A ⧸ T) + Fintype.card κ * finrank k (A ⧸ W) := by
   classical
-  have hTS : T ≤ S := fun t ht ↦ by
-    obtain ⟨a, -, rfl⟩ := hT t ht
+  -- Replace `T` by the space `T'` of `U`-combinations of the `x`, which is no larger a quotient.
+  let f : (ι → A) →ₗ[k] A := LinearMap.lsum k (fun _ : ι ↦ A) k fun i ↦ LinearMap.mulRight k (x i)
+  have hf (a : ι → A) : f a = ∑ i, a i * x i := by simp [f]
+  let T' : Submodule k A := (Submodule.pi Set.univ fun _ ↦ U).map f
+  have hT' : ∀ t ∈ T', ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t := fun t ht ↦ by
+    obtain ⟨a, ha, rfl⟩ := mem_map.1 ht
+    exact ⟨a, fun i ↦ mem_pi.1 ha i trivial, (hf a).symm⟩
+  have hTT' : T ≤ T' := fun t ht ↦ by
+    obtain ⟨a, ha, rfl⟩ := hT t ht
+    exact mem_map.2 ⟨a, mem_pi.2 fun i _ ↦ ha i, hf a⟩
+  have hUT' (i : ι) : U ≤ T'.comap (LinearMap.mulRight k (x i)) := fun u hu ↦
+    mem_comap.2 <| mem_map.2 ⟨Pi.single i u,
+      by simpa only [mem_comap, LinearMap.coe_single] using
+        le_comap_single_pi (fun _ : ι ↦ U) (I := Set.univ) (i := i) hu,
+      LinearMap.lsum_piSingle k (fun _ ↦ A) k _ i u⟩
+  have : FiniteDimensional k (A ⧸ T') := .of_surjective (factor hTT') (factor_surjective hTT')
+  suffices Fintype.card ι * finrank k (A ⧸ U) + finrank k (A ⧸ S) ≤
+      finrank k (A ⧸ T') + Fintype.card κ * finrank k (A ⧸ W) by
+    have := LinearMap.finrank_le_finrank_of_surjective (factor_surjective hTT')
+    omega
+  have hTS : T' ≤ S := fun t ht ↦ by
+    obtain ⟨a, -, rfl⟩ := hT' t ht
     exact hxS a
   -- The maps induced on the quotients by the generators and by the relations.
-  let d₁ : (ι → A ⧸ U) →ₗ[k] A ⧸ T := piQuotientLift (fun _ ↦ U) T
-    (fun i ↦ LinearMap.mulRight k (x i)) fun i u hu ↦ mem_comap.2 (hUT u hu i)
+  let d₁ : (ι → A ⧸ U) →ₗ[k] A ⧸ T' := piQuotientLift (fun _ ↦ U) T'
+    (fun i ↦ LinearMap.mulRight k (x i)) hUT'
   let d₂ : (κ → A ⧸ W) →ₗ[k] ι → A ⧸ U := LinearMap.pi fun i ↦ piQuotientLift (fun _ ↦ W) U
     (fun j ↦ LinearMap.mulRight k (y j i)) fun j w hw ↦ mem_comap.2 (hWU w hw j i)
-  have hd₁ (a : ι → A) : d₁ (U.mkQ ∘ a) = T.mkQ (∑ i, a i * x i) := by
+  have hd₁ (a : ι → A) : d₁ (U.mkQ ∘ a) = T'.mkQ (∑ i, a i * x i) := by
     simp only [d₁, Function.comp_def, mkQ_apply, piQuotientLift_mk]
     simp
   have hd₂ (b : κ → A) : d₂ (W.mkQ ∘ b) = fun i ↦ U.mkQ (∑ j, b j * y j i) := by
     ext i
     simp only [d₂, LinearMap.pi_apply, Function.comp_def, mkQ_apply, piQuotientLift_mk]
     simp
-  -- The image of `d₁` lies in `S ⧸ T`, the kernel of `A ⧸ T → A ⧸ S`.
+  -- The image of `d₁` lies in `S ⧸ T'`, the kernel of `A ⧸ T' → A ⧸ S`.
   have hrange : LinearMap.range d₁ ≤ LinearMap.ker (factor hTS) := by
     rintro _ ⟨a, rfl⟩
     obtain ⟨a, rfl⟩ := U.mkQ_surjective.comp_left a
     rw [LinearMap.mem_ker, hd₁, factor_mk, mkQ_apply, Quotient.mk_eq_zero]
     exact hxS a
-  -- A relation modulo `T` comes from the vectors `y`.
+  -- A relation modulo `T'` comes from the vectors `y`.
   have hexact : LinearMap.ker d₁ ≤ LinearMap.range d₂ := by
     intro a ha
     obtain ⟨a, rfl⟩ := U.mkQ_surjective.comp_left a
     rw [LinearMap.mem_ker, hd₁, mkQ_apply, Quotient.mk_eq_zero] at ha
-    obtain ⟨a', ha'U, ha'⟩ := hT _ ha
+    obtain ⟨a', ha'U, ha'⟩ := hT' _ ha
     obtain ⟨b, hb⟩ := (mem_span_range_iff_exists_fun A).1
       (hker (a - a') (by simp [sub_mul, Finset.sum_sub_distrib, ha']))
     refine ⟨W.mkQ ∘ b, ?_⟩
