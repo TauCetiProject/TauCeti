@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import Mathlib.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.ODE.ExistUnique
 import Mathlib.Topology.Connected.Clopen
 
 /-!
@@ -27,8 +27,8 @@ particular it applies to velocity lifts of geodesic segments.
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 9.
 * Mathlib's `isMIntegralCurveOn_Ioo_eqOn_of_contMDiff` supplies the local-coordinate and
-  connectedness proof architecture; `ODE_solution_unique_of_mem_Icc_right` and its left
-  counterpart supply the one-sided comparison.
+  connectedness proof architecture. `TauCeti.ODE_solution_unique_of_eventually_nhdsWithin` supplies
+  relative local uniqueness; Mathlib's closed-interval comparisons supply the fixed-chart result.
 -/
 
 public noncomputable section
@@ -110,26 +110,22 @@ theorem eventuallyEq_of_isPreconnected
   have hsrcδ : ∀ᶠ r in 𝓝[s] t₀, δ r ∈ φ.source :=
     (hδ.continuousWithinAt ht).preimage_mem_nhdsWithin
       ((isOpen_extChartAt_source (γ t₀)).mem_nhds hδt)
-  have hzγ : ∀ᶠ r in 𝓝[s] t₀, φ (γ r) ∈ z :=
-    ((continuousAt_extChartAt _).comp_continuousWithinAt (hγ.continuousWithinAt ht)).eventually hz
-  have hzδ₀ : z ∈ 𝓝 (φ (δ t₀)) := by rw [← heq]; exact hz
-  have hzδ : ∀ᶠ r in 𝓝[s] t₀, φ (δ r) ∈ z :=
-    ((continuousAt_extChartAt' hδt).comp_continuousWithinAt
-      (hδ.continuousWithinAt ht)).eventually hzδ₀
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.mp (hsrcγ.and (hsrcδ.and (hzγ.and hzδ)))
-  filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds t₀ hε),
-    self_mem_nhdsWithin] with r hr hrs
-  have hsub : uIcc t₀ r ⊆ Metric.ball t₀ ε ∩ s :=
-    ((convex_ball t₀ ε).ordConnected.inter hs.ordConnected).uIcc_subset
-      ⟨Metric.mem_ball_self hε, ht⟩ ⟨hr, hrs⟩
-  have hlocal : ∀ u ∈ uIcc t₀ r,
-      γ u ∈ φ.source ∧ δ u ∈ φ.source ∧ φ (γ u) ∈ z ∧ φ (δ u) ∈ z :=
-    fun u hu ↦ hball (hsub hu)
-  exact (hγ.mono (fun u hu ↦ (hsub hu).2)).eqOn_Icc_of_lipschitzOnWith_extChartAt
-    (hδ.mono (fun u hu ↦ (hsub hu).2)) (fun u hu ↦ (hlocal u hu).1)
-    (fun u hu ↦ (hlocal u hu).2.1) (fun u hu ↦ (hlocal u hu).2.2.1)
-    (fun u hu ↦ (hlocal u hu).2.2.2) hlip
-    ⟨min_le_left _ _, le_max_left _ _⟩ heq right_mem_uIcc
+  have hcoord : (φ ∘ γ) =ᶠ[𝓝[s] t₀] (φ ∘ δ) := by
+    apply TauCeti.ODE_solution_unique_of_eventually_nhdsWithin
+      (V := fun p : ℝ × E ↦ w p.2) (s := Set.univ ×ˢ z)
+      (prod_mem_nhds (by simp) hz)
+      (fun _ ↦ by simpa only [Set.mem_prod, Set.mem_univ, true_and, Set.ofPred_mem_eq] using hlip)
+      hs.ordConnected ht (congrArg φ heq)
+    · filter_upwards [hsrcγ, self_mem_nhdsWithin] with r hr hrs
+      dsimp only [w, Function.comp_apply]
+      rw [φ.left_inv hr]
+      exact (hγ r hrs).hasDerivWithinAt_extChartAt_comp hr
+    · filter_upwards [hsrcδ, self_mem_nhdsWithin] with r hr hrs
+      dsimp only [w, Function.comp_apply]
+      rw [φ.left_inv hr]
+      exact (hδ r hrs).hasDerivWithinAt_extChartAt_comp hr
+  filter_upwards [hcoord, hsrcγ, hsrcδ] with r he hrγ hrδ
+  exact φ.injOn hrγ hrδ he
 
 /-- Integral curves of a vector field on a preconnected real parameter set are determined
 by their value at any one parameter, including an endpoint, provided the first curve
