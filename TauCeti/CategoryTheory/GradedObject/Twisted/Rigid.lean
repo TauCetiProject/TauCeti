@@ -124,14 +124,70 @@ variable {R : Type*} [CommSemiring R] (c : GradedObject.TwistingCocycle I R) [Li
   [MonoidalPreadditive C] [MonoidalLinear R C]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  (p : ∀ i j : I, i + j = 0 → ExactPairing (X i) (Y j))
+
+/-- Summand `i` of the coevaluation, in degree `n` of `(X ⊗ Y) ⊗ X`, through the twisted
+associator and the evaluation: it vanishes unless `i = n`, and then the scalar `c.ω n (-n) n` of
+the twisted associator cancels that of the evaluation, leaving the zigzag of the pairing of `X n`
+with `Y (-n)`. -/
+private lemma evaluation_coevaluation_summand (i n : I) :
+    letI := p i (-i) (add_neg_cancel i)
+    η_ (X i) (Y (-i)) ▷ X n ≫ ιTensorObj X Y i (-i) 0 (add_neg_cancel i) ▷ X n ≫
+      ιTensorObj (tensorObj X Y) X 0 n n (zero_add n) ≫ (twistedAssociator c.ω X Y X).hom n ≫
+        tensorHom (𝟙 X) (dualEvaluation c p) n =
+      if i = n then (λ_ (X n)).hom ≫ (ρ_ (X n)).inv ≫ X n ◁ tensorUnit₀.inv ≫
+        ιTensorObj X tensorUnit n 0 n (add_zero n) else 0 := by
+  rw [← ιTensorObj₃'_eq_assoc X Y X i (-i) n n (by rw [add_neg_cancel, zero_add]) 0
+      (add_neg_cancel i), ιTensorObj₃'_twistedAssociator_hom_assoc,
+    Linear.smul_comp, assoc, ιTensorObj₃_eq X Y X i (-i) n n _ (-i + n) rfl, assoc, ι_tensorHom]
+  dsimp only [categoryOfGradedObjects_id]
+  simp only [id_tensorHom, ← MonoidalCategory.whiskerLeft_comp_assoc, ιTensorObj_dualEvaluation]
+  by_cases h : i = n
+  · subst h
+    rw [dite_eq_left (add_neg_cancel i), ite_eq_left rfl]
+    let := p i (-i) (add_neg_cancel i)
+    simp only [MonoidalLinear.whiskerLeft_smul, Linear.smul_comp, Linear.comp_smul, smul_smul,
+      ← Units.val_mul, mul_inv_cancel, Units.val_one, one_smul, MonoidalCategory.whiskerLeft_comp,
+      assoc]
+    rw [whiskerLeft_tensorUnitIsoOfEq_inv_ιTensorObj, ExactPairing.evaluation_coevaluation_assoc]
+  · rw [dite_eq_right (by rwa [add_neg_eq_zero, eq_comm]), ite_eq_right h]
+    simp
+
+/-- Summand `j` of the coevaluation, in degree `-i` of `Y ⊗ (X ⊗ Y)`, through the inverse twisted
+associator and the evaluation: it vanishes unless `j = i`, and then the two scalars cancel by
+`TwistingCocycle.ω_neg_mul_ω`, leaving the zigzag of the pairing of `X i` with `Y (-i)`. -/
+private lemma coevaluation_evaluation_summand (j i : I) :
+    letI := p j (-j) (add_neg_cancel j)
+    Y (-i) ◁ η_ (X j) (Y (-j)) ≫ Y (-i) ◁ ιTensorObj X Y j (-j) 0 (add_neg_cancel j) ≫
+      ιTensorObj Y (tensorObj X Y) (-i) 0 (-i) (add_zero (-i)) ≫
+        (twistedAssociator c.ω Y X Y).inv (-i) ≫ tensorHom (dualEvaluation c p) (𝟙 Y) (-i) =
+      if j = i then (ρ_ (Y (-i))).hom ≫ (λ_ (Y (-i))).inv ≫ tensorUnit₀.inv ▷ Y (-i) ≫
+        ιTensorObj tensorUnit Y 0 (-i) (-i) (zero_add (-i)) else 0 := by
+  rw [← ιTensorObj₃_eq_assoc Y X Y (-i) j (-j) (-i)
+      (by rw [add_assoc, add_neg_cancel, add_zero]) 0 (add_neg_cancel j),
+    ιTensorObj₃_twistedAssociator_inv_assoc,
+    Linear.smul_comp, assoc, ιTensorObj₃'_eq Y X Y (-i) j (-j) (-i) _ (-i + j) rfl, assoc,
+    ι_tensorHom]
+  dsimp only [categoryOfGradedObjects_id]
+  simp only [tensorHom_id, ← comp_whiskerRight_assoc, ιTensorObj_dualEvaluation]
+  by_cases h : j = i
+  · subst h
+    rw [dite_eq_left (add_neg_cancel j), ite_eq_left rfl]
+    let := p j (-j) (add_neg_cancel j)
+    simp only [MonoidalLinear.smul_whiskerRight, Linear.smul_comp, Linear.comp_smul, smul_smul,
+      ← Units.val_mul, ← mul_inv, c.ω_neg_mul_ω, inv_one, Units.val_one, one_smul,
+      MonoidalCategory.comp_whiskerRight, assoc]
+    rw [tensorUnitIsoOfEq_inv_whiskerRight_ιTensorObj, ExactPairing.coevaluation_evaluation_assoc]
+  · rw [dite_eq_right (by rwa [add_neg_eq_zero]), ite_eq_right h]
+    simp
+
+variable [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
   [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
-  (hX : X.HasFiniteSupport) (p : ∀ i j : I, i + j = 0 → ExactPairing (X i) (Y j))
+  (hX : X.HasFiniteSupport)
 
 /-- The zigzag identity `(η ▷ X) ≫ α ≫ (X ◁ ε) = λ ≫ ρ⁻¹` of the graded dual pairing, composed
-with `λ⁻¹`. In degree `n` only the summand of the coevaluation indexed by `n` survives the
-evaluation, and there the scalar `c.ω n (-n) n` of the twisted associator cancels that of the
-evaluation. -/
+with `λ⁻¹`: in degree `n` only the summand of the coevaluation indexed by `n` survives
+(`evaluation_coevaluation_summand`). -/
 private lemma leftUnitor_inv_comp_evaluation_coevaluation :
     (leftUnitor X).inv ≫ tensorHom (dualCoevaluation hX p) (𝟙 X) ≫
       (twistedAssociator c.ω X Y X).hom ≫ tensorHom (𝟙 X) (dualEvaluation c p) =
@@ -144,30 +200,15 @@ private lemma leftUnitor_inv_comp_evaluation_coevaluation :
   dsimp only [categoryOfGradedObjects_id]
   rw [tensorHom_id, ← comp_whiskerRight_assoc,
     tensorUnit₀_inv_dualCoevaluation, sum_whiskerRight, Preadditive.sum_comp]
-  simp only [comp_whiskerRight, assoc, Preadditive.comp_sum]
-  rw [Finset.sum_congr rfl (fun i _ ↦ by
-    rw [← ιTensorObj₃'_eq_assoc X Y X i (-i) n n (by rw [add_neg_cancel, zero_add]) 0
-      (add_neg_cancel i), ιTensorObj₃'_twistedAssociator_hom_assoc,
-      Linear.smul_comp, assoc, ιTensorObj₃_eq X Y X i (-i) n n _ (-i + n) rfl, assoc,
-      ι_tensorHom])]
-  dsimp only [categoryOfGradedObjects_id]
-  simp only [id_tensorHom, ← MonoidalCategory.whiskerLeft_comp_assoc, ιTensorObj_dualEvaluation]
-  by_cases hn : n ∈ hX.toFinset
-  · rw [Finset.sum_eq_single_of_mem n hn (fun i _ hi ↦ by
-      rw [dite_eq_right (by rwa [add_neg_eq_zero, eq_comm])]
-      simp)]
-    rw [dite_eq_left (add_neg_cancel n)]
-    let := p n (-n) (add_neg_cancel n)
-    simp only [MonoidalLinear.whiskerLeft_smul, Linear.smul_comp, Linear.comp_smul, smul_smul,
-      ← Units.val_mul, mul_inv_cancel, Units.val_one, one_smul, MonoidalCategory.whiskerLeft_comp,
-      assoc]
-    rw [whiskerLeft_tensorUnitIsoOfEq_inv_ιTensorObj,
-      ExactPairing.evaluation_coevaluation_assoc, Iso.inv_hom_id_assoc]
+  simp only [comp_whiskerRight, assoc, evaluation_coevaluation_summand, comp_ite, comp_zero,
+    Finset.sum_ite_eq']
+  split_ifs with hn
+  · exact Iso.inv_hom_id_assoc _ _
   · exact (by simpa using hn : IsZero (X n)).eq_of_src _ _
 
 /-- The zigzag identity `(Y ◁ η) ≫ α⁻¹ ≫ (ε ▷ Y) = ρ ≫ λ⁻¹` of the graded dual pairing,
-composed with `ρ⁻¹`. In degree `-i` only the summand of the coevaluation indexed by `i` survives
-the evaluation, and there the two scalars cancel by `TwistingCocycle.ω_neg_mul_ω`. -/
+composed with `ρ⁻¹`: in degree `-i` only the summand of the coevaluation indexed by `i` survives
+(`coevaluation_evaluation_summand`). -/
 private lemma rightUnitor_inv_comp_coevaluation_evaluation :
     (rightUnitor Y).inv ≫ tensorHom (𝟙 Y) (dualCoevaluation hX p) ≫
       (twistedAssociator c.ω Y X Y).inv ≫ tensorHom (dualEvaluation c p) (𝟙 Y) =
@@ -181,26 +222,10 @@ private lemma rightUnitor_inv_comp_coevaluation_evaluation :
   dsimp only [categoryOfGradedObjects_id]
   rw [id_tensorHom, ← MonoidalCategory.whiskerLeft_comp_assoc,
     tensorUnit₀_inv_dualCoevaluation, whiskerLeft_sum, Preadditive.sum_comp]
-  simp only [MonoidalCategory.whiskerLeft_comp, assoc, Preadditive.comp_sum]
-  rw [Finset.sum_congr rfl (fun k _ ↦ by
-    rw [← ιTensorObj₃_eq_assoc Y X Y (-i) k (-k) (-i)
-      (by rw [add_assoc, add_neg_cancel, add_zero]) 0 (add_neg_cancel k),
-      ιTensorObj₃_twistedAssociator_inv_assoc,
-      Linear.smul_comp, assoc, ιTensorObj₃'_eq Y X Y (-i) k (-k) (-i) _ (-i + k) rfl, assoc,
-      ι_tensorHom])]
-  dsimp only [categoryOfGradedObjects_id]
-  simp only [tensorHom_id, ← comp_whiskerRight_assoc, ιTensorObj_dualEvaluation]
-  by_cases hi : i ∈ hX.toFinset
-  · rw [Finset.sum_eq_single_of_mem i hi (fun k _ hk ↦ by
-      rw [dite_eq_right (by rwa [add_neg_eq_zero])]
-      simp)]
-    rw [dite_eq_left (add_neg_cancel i)]
-    let := p i (-i) (add_neg_cancel i)
-    simp only [MonoidalLinear.smul_whiskerRight, Linear.smul_comp, Linear.comp_smul, smul_smul,
-      ← Units.val_mul, ← mul_inv, c.ω_neg_mul_ω, inv_one, Units.val_one, one_smul,
-      MonoidalCategory.comp_whiskerRight, assoc]
-    rw [tensorUnitIsoOfEq_inv_whiskerRight_ιTensorObj,
-      ExactPairing.coevaluation_evaluation_assoc, Iso.inv_hom_id_assoc]
+  simp only [MonoidalCategory.whiskerLeft_comp, assoc, coevaluation_evaluation_summand, comp_ite,
+    comp_zero, Finset.sum_ite_eq']
+  split_ifs with hi
+  · exact Iso.inv_hom_id_assoc _ _
   · let := p i (-i) (add_neg_cancel i)
     exact ((by simpa using hi : IsZero (X i)).of_exactPairing (Y (-i))).eq_of_src _ _
 
@@ -218,10 +243,10 @@ def exactPairing (X Y : TwistedGradedObject c C) (hX : HasFiniteSupport X)
   evaluation' := dualEvaluation c p
   coevaluation_evaluation' := by
     rw [← cancel_epi (ρ_ Y).inv, Iso.inv_hom_id_assoc]
-    exact rightUnitor_inv_comp_coevaluation_evaluation c hX p
+    exact rightUnitor_inv_comp_coevaluation_evaluation c p hX
   evaluation_coevaluation' := by
     rw [← cancel_epi (λ_ X).inv, Iso.inv_hom_id_assoc]
-    exact leftUnitor_inv_comp_evaluation_coevaluation c hX p
+    exact leftUnitor_inv_comp_evaluation_coevaluation c p hX
 
 /-- The coevaluation of `TwistedGradedObject.exactPairing` is
 `TwistedGradedObject.dualCoevaluation`. -/

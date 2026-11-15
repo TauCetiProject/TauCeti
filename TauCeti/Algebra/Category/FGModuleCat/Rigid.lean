@@ -141,8 +141,7 @@ the image of the pairing `FGModuleCat.exactPairing` under the inclusion of `FGMo
 @[instance_reducible]
 def exactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
     ExactPairing V (ModuleCat.of K (Module.Dual K V)) :=
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  (ModuleCat.isFG K).ι.mapExactPairing V' V'ᘁ
+  (ModuleCat.isFG K).ι.mapExactPairing (FGModuleCat.of K V) (FGModuleCat.of K V)ᘁ
 
 /-- The dual space of a finite-dimensional vector space is exactly paired with the space in
 `ModuleCat K`: the image of `FGModuleCat.leftExactPairing` under the inclusion of
@@ -150,8 +149,7 @@ def exactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
 @[instance_reducible]
 def leftExactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
     ExactPairing (ModuleCat.of K (Module.Dual K V)) V :=
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  (ModuleCat.isFG K).ι.mapExactPairing (ᘁV') V'
+  (ModuleCat.isFG K).ι.mapExactPairing (ᘁ(FGModuleCat.of K V)) (FGModuleCat.of K V)
 
 /-- The evaluation of `ModuleCat.exactPairingDual` is the contraction of a linear functional with
 a vector. -/
@@ -160,10 +158,11 @@ theorem exactPairingDual_evaluation_apply (V : ModuleCat.{u} K) [Module.Finite K
     (f : Module.Dual K V) (v : V) :
     (@ExactPairing.evaluation _ _ _ V (ModuleCat.of K (Module.Dual K V))
       (exactPairingDual V)).hom (A := ModuleCat.of K (Module.Dual K V) ⊗ V) (f ⊗ₜ v) = f v := by
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  -- `exactPairingDual V` is by definition the image of the pairing of `V'` with `V'ᘁ`.
+  -- `exactPairingDual V` is by definition the image of the pairing of `FGModuleCat.of K V` with
+  -- its dual.
   refine (congrArg (fun φ ↦ φ.hom (f ⊗ₜ v))
-    (ObjectProperty.ι_mapExactPairing_evaluation V' V'ᘁ)).trans ?_
+    (ObjectProperty.ι_mapExactPairing_evaluation (FGModuleCat.of K V)
+      (FGModuleCat.of K V)ᘁ)).trans ?_
   rw [FGModuleCat.evaluation_hom_hom]
   exact contractLeft_apply f v
 
@@ -171,10 +170,10 @@ theorem exactPairingDual_evaluation_apply (V : ModuleCat.{u} K) [Module.Finite K
 @[simp]
 theorem exactPairingDual_coevaluation_hom (V : ModuleCat.{u} K) [Module.Finite K V] :
     (@ExactPairing.coevaluation _ _ _ V (ModuleCat.of K (Module.Dual K V))
-      (exactPairingDual V)).hom = coevaluation K V := by
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  exact (congrArg (fun φ ↦ φ.hom) (ObjectProperty.ι_mapExactPairing_coevaluation V' V'ᘁ)).trans
-    (FGModuleCat.coevaluation_hom_hom V')
+      (exactPairingDual V)).hom = coevaluation K V :=
+  (congrArg (fun φ ↦ φ.hom) (ObjectProperty.ι_mapExactPairing_coevaluation
+    (FGModuleCat.of K V) (FGModuleCat.of K V)ᘁ)).trans
+    (FGModuleCat.coevaluation_hom_hom (FGModuleCat.of K V))
 
 /-- The evaluation of `ModuleCat.leftExactPairingDual` is ordinary evaluation of a linear
 functional. -/
@@ -184,11 +183,12 @@ theorem leftExactPairingDual_evaluation_apply (V : ModuleCat.{u} K) [Module.Fini
     (@ExactPairing.evaluation _ _ _ (ModuleCat.of K (Module.Dual K V)) V
       (leftExactPairingDual V)).hom (A := V ⊗ ModuleCat.of K (Module.Dual K V)) (v ⊗ₜ f) =
       f v := by
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  -- `leftExactPairingDual V` is by definition the image of the pairing of `ᘁV'` with `V'`.
+  -- `leftExactPairingDual V` is by definition the image of the pairing of the dual of
+  -- `FGModuleCat.of K V` with `FGModuleCat.of K V`.
   exact (congrArg (fun φ ↦ φ.hom (v ⊗ₜ f))
-    (ObjectProperty.ι_mapExactPairing_evaluation (ᘁV') V')).trans
-    (FGModuleCat.leftEvaluation_apply V' v f)
+    (ObjectProperty.ι_mapExactPairing_evaluation (ᘁ(FGModuleCat.of K V))
+      (FGModuleCat.of K V))).trans
+    (FGModuleCat.leftEvaluation_apply (FGModuleCat.of K V) v f)
 
 /-- The coevaluation of `ModuleCat.leftExactPairingDual` is coevaluation of the dual, with its
 double-dual factor identified with the original space by inverse evaluation. -/
@@ -197,9 +197,9 @@ theorem leftExactPairingDual_coevaluation_hom (V : ModuleCat.{u} K) [Module.Fini
     (@ExactPairing.coevaluation _ _ _ (ModuleCat.of K (Module.Dual K V)) V
       (leftExactPairingDual V)).hom =
       (Module.evalEquiv K V).symm.toLinearMap.lTensor (Module.Dual K V) ∘ₗ
-        coevaluation K (Module.Dual K V) := by
-  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
-  exact (congrArg (fun φ ↦ φ.hom) (ObjectProperty.ι_mapExactPairing_coevaluation (ᘁV') V')).trans
-    (FGModuleCat.leftCoevaluation_hom V')
+        coevaluation K (Module.Dual K V) :=
+  (congrArg (fun φ ↦ φ.hom) (ObjectProperty.ι_mapExactPairing_coevaluation
+    (ᘁ(FGModuleCat.of K V)) (FGModuleCat.of K V))).trans
+    (FGModuleCat.leftCoevaluation_hom (FGModuleCat.of K V))
 
 end ModuleCat
