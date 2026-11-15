@@ -8,15 +8,22 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.Projection
 public import TauCeti.Probability.Process.Filtration.Progressive
 public import Mathlib.Probability.Process.Stopping
+import Mathlib.Topology.Order.Compact
 
 /-!
-# Debuts of progressive sets
+# Debuts of progressive sets and compact-fiber approximations
 
 The debut of a set in time × sample space is the infimum of its time fiber,
 with infinity for an empty fiber. Time may be any conditionally complete linear order
 with a bottom element, including nonnegative real time. The infimum need not belong to
 the fiber. Its strict sublevel events are projections of the set restricted to an initial
-time interval.
+time interval, while its finite-debut event is the full sample-space projection.
+
+When time fibers are compact, the debut is attained on every nonempty fiber, closed debut
+sublevels have fiber witnesses, and decreasing countable intersections commute both with
+sample-space projection and with debut formation (`debut (⋂ n, e n) = ⨆ n, debut (e n)`).
+These topological fiber identities supply the predictable and measurable section theorems
+without completing the sample space.
 
 For standard Borel time with measurable open sets and a closed order, a progressive set's
 strict debut sublevels at time `t` are null-measurable with respect to `P.trim (ℱ.le t)`
@@ -121,6 +128,120 @@ theorem debut_Ici_prod_univ (a : ι) :
 @[simp]
 theorem debut_univ : debut (univ : Set (ι × Ω)) = fun _ ↦ (⊥ : WithTop ι) := by
   simpa using (debut_Ici_prod_univ (Ω := Ω) (⊥ : ι))
+
+/-- The sample-space projection of a set is the event on which its debut is finite. -/
+theorem image_snd_eq_setOf_debut_ne_top (s : Set (ι × Ω)) :
+    Prod.snd '' s = {ω | debut s ω ≠ ⊤} := by
+  ext ω
+  simp [debut_eq_top_iff]
+
+/-- The debut of a closed stochastic interval `[[σ, τ]]` equals `σ` where `σ ≤ τ` and `⊤`
+otherwise, including infinite endpoints. -/
+-- Simplify before coercions to `WithTop ℝ≥0` are rewritten to coercions to `ENNReal`.
+@[simp↓]
+theorem debut_Icc (σ τ : Ω → WithTop ι) :
+    debut {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) ≤ τ p.2} =
+      fun ω ↦ if σ ω ≤ τ ω then σ ω else ⊤ := by
+  classical
+  funext ω
+  split_ifs with hle
+  · cases hσ : σ ω with
+    | top =>
+      exact debut_eq_top_iff.mpr fun t ht ↦ WithTop.coe_ne_top (top_le_iff.mp (hσ ▸ ht.1))
+    | coe a =>
+      refine le_antisymm ?_ (le_debut_iff.mpr fun t ht ↦ hσ ▸ ht.1)
+      exact debut_le_of_mem ⟨by simp [hσ], hσ ▸ hle⟩
+  · exact debut_eq_top_iff.mpr fun t ht ↦ hle (ht.1.trans ht.2)
+
+/-- The debut of a closed upper stochastic ray `[τ, ∞)` is `τ`. -/
+@[simp↓]
+theorem debut_le (τ : Ω → WithTop ι) :
+    debut {p : ι × Ω | τ p.2 ≤ p.1} = τ := by
+  simpa using debut_Icc τ (fun _ ↦ ⊤)
+
+/-- The debut of the finite graph `[[τ]]` of a random time `τ` is `τ`. -/
+@[simp↓]
+theorem debut_eq (τ : Ω → WithTop ι) :
+    debut {p : ι × Ω | τ p.2 = p.1} = τ := by
+  have heq : {p : ι × Ω | τ p.2 = p.1} =
+      {p : ι × Ω | τ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) ≤ τ p.2} := by
+    ext p; simp [le_antisymm_iff]
+  simp [heq]
+
+section CompactFiber
+
+/-- For an antitone sequence of sets in `X × Ω` whose fibers over `Ω` are compact in a Hausdorff
+space `X`, projection onto `Ω` commutes with the countable intersection. -/
+theorem image_snd_iInter_eq_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} (hanti : Antitone e)
+    (hK : ∀ n ω, IsCompact {x : X | (x, ω) ∈ e n}) :
+    Prod.snd '' (⋂ n, e n) = ⋂ n, Prod.snd '' (e n) := by
+  refine subset_antisymm (image_iInter_subset _ _) fun ω hω ↦ ?_
+  let C : ℕ → Set X := fun n ↦ {x | (x, ω) ∈ e n}
+  have hne (n : ℕ) : (C n).Nonempty := by
+    obtain ⟨⟨x, _⟩, hx, rfl⟩ := mem_iInter.mp hω n
+    exact ⟨x, hx⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
+    (fun n _ h ↦ hanti (Nat.le_succ n) h) hne (hK 0 ω) fun n ↦ (hK n ω).isClosed
+  exact ⟨(x, ω), mem_iInter.mpr fun n ↦ mem_iInter.mp hx n, rfl⟩
+
+/-- A countable intersection of sets in `X × Ω` with compact fibers in a Hausdorff space `X` again
+has compact fibers. -/
+theorem isCompact_fiber_iInter {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} {ω : Ω} (hK : ∀ n, IsCompact {x : X | (x, ω) ∈ e n}) :
+    IsCompact {x : X | (x, ω) ∈ ⋂ n, e n} := by
+  have heq : {x : X | (x, ω) ∈ ⋂ n, e n} = ⋂ n, {x : X | (x, ω) ∈ e n} := by ext; simp
+  rw [heq]
+  exact (hK 0).of_isClosed_subset (isClosed_iInter fun n ↦ (hK n).isClosed) (iInter_subset _ 0)
+
+variable [TopologicalSpace ι] [ClosedIicTopology ι]
+
+/-- On a compact time fiber, any finite debut value belongs to the fiber. -/
+theorem debut_mem_of_isCompact {s : Set (ι × Ω)} {ω : Ω} {t : ι}
+    (hK : IsCompact {u : ι | (u, ω) ∈ s}) (h : debut s ω = t) :
+    (t, ω) ∈ s := by
+  have hne : {u : ι | (u, ω) ∈ s}.Nonempty := by
+    by_contra hemp
+    rw [not_nonempty_iff_eq_empty] at hemp
+    have htop : debut s ω = ⊤ := debut_eq_top_iff.mpr fun u hu ↦
+      notMem_empty u (hemp ▸ (hu : u ∈ {u : ι | (u, ω) ∈ s}))
+    exact WithTop.coe_ne_top (h.symm.trans htop)
+  obtain ⟨hmem, hlb⟩ := hK.isLeast_sInf hne
+  have heq : ((sInf {u : ι | (u, ω) ∈ s} : ι) : WithTop ι) = debut s ω :=
+    le_antisymm (le_debut_iff.mpr fun u hu ↦ WithTop.coe_le_coe.mpr (hlb hu))
+      (debut_le_of_mem hmem)
+  exact (WithTop.coe_inj.mp (heq.trans h)) ▸ hmem
+
+/-- On a compact time fiber, closed debut sublevels at finite thresholds have fiber witnesses. -/
+theorem debut_le_coe_iff_of_isCompact {s : Set (ι × Ω)} {ω : Ω} {t : ι}
+    (hK : IsCompact {u : ι | (u, ω) ∈ s}) :
+    debut s ω ≤ t ↔ ∃ u ≤ t, (u, ω) ∈ s := by
+  refine ⟨fun h ↦ ?_, fun ⟨u, hut, hu⟩ ↦ (debut_le_of_mem hu).trans (WithTop.coe_le_coe.mpr hut)⟩
+  obtain ⟨u, hu⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_le_ne_top WithTop.coe_ne_top h)
+  exact ⟨u, WithTop.coe_le_coe.mp (hu ▸ h), debut_mem_of_isCompact hK hu.symm⟩
+
+/-- For an antitone sequence of sets with compact time fibers in a Hausdorff space, the debut of
+the intersection is the supremum of the debuts, including empty fibers and infinity. -/
+theorem debut_iInter_eq_iSup_of_isCompact [T2Space ι] {e : ℕ → Set (ι × Ω)} {ω : Ω}
+    (hanti : Antitone e) (hK : ∀ n, IsCompact {u : ι | (u, ω) ∈ e n}) :
+    debut (⋂ n, e n) ω = ⨆ n, debut (e n) ω := by
+  refine le_antisymm ?_ (iSup_le fun n ↦ debut_anti (iInter_subset e n) ω)
+  cases ha : ⨆ n, debut (e n) ω with
+  | top => exact le_top
+  | coe t =>
+    let C : ℕ → Set ι := fun n ↦ Iic t ∩ {u | (u, ω) ∈ e n}
+    have hC_closed (n : ℕ) : IsClosed (C n) := isClosed_Iic.inter (hK n).isClosed
+    have hC_ne (n : ℕ) : (C n).Nonempty := by
+      have hle : debut (e n) ω ≤ t := ha ▸ le_iSup (fun k ↦ debut (e k) ω) n
+      obtain ⟨u, hut, hu⟩ := (debut_le_coe_iff_of_isCompact (hK n)).mp hle
+      exact ⟨u, hut, hu⟩
+    obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
+      (fun n _ h ↦ ⟨h.1, hanti (Nat.le_succ n) h.2⟩) hC_ne
+      ((hK 0).of_isClosed_subset (hC_closed 0) inter_subset_right) hC_closed
+    exact (debut_le_of_mem (mem_iInter.mpr fun n ↦ (mem_iInter.mp hu n).2)).trans
+      (WithTop.coe_le_coe.mpr (mem_iInter.mp hu 0).1)
+
+end CompactFiber
 
 -- At a maximal time or just before a successor, a closed sublevel has a fiber witness.
 private theorem debut_le_iff_of_isTop_or_covBy {s : Set (ι × Ω)} {ω : Ω} {t : ι}

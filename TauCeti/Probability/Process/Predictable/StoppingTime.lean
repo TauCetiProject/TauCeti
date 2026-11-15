@@ -18,10 +18,11 @@ convergence to infinity; these are not almost-sure announcing sequences. No prob
 completion, or right continuity of the filtration is assumed.
 
 Announced times are stopping times. Deterministic times, including zero and infinity, are
-predictable. Finite minima, finite maxima, countable suprema and pasting along `ℱ 0`-measurable
-events preserve predictability. Announcing sequences also make the closed stochastic ray
-`{(t, ω) | τ ω ≤ t}` predictable; this ray contains `(0, ω)` whenever `τ ω = 0`.
-These operations are elementary input to predictable-section constructions.
+predictable. Positive deterministic delays of stopping times, finite minima, finite maxima,
+countable suprema, pasting along `ℱ 0`-measurable events, and restricting a predictable time to
+`{τ ≤ η}` for a stopping time `η` all preserve pointwise predictability. Announcing sequences
+make the closed stochastic ray `{(t, ω) | τ ω ≤ t}` predictable, and these closed rays generate
+the full predictable sigma-algebra without completeness or right continuity of the filtration.
 
 ## References
 
@@ -358,6 +359,149 @@ theorem measurableSet_predictable_Ico (hτ : IsPredictableTime ℱ τ)
 
 end TauCeti.IsPredictableTime
 
+/-- Shifting a stopping time in nonnegative real time forward by a deterministic constant yields
+a stopping time. -/
+theorem MeasureTheory.IsStoppingTime.add_const_nnreal
+    {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
+    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) (c : ℝ≥0) :
+    IsStoppingTime ℱ (fun ω ↦ τ ω + (c : WithTop ℝ≥0)) := by
+  intro t
+  by_cases hct : c ≤ t
+  · have heq : {ω | τ ω + (c : WithTop ℝ≥0) ≤ t} = {ω | τ ω ≤ (t - c : ℝ≥0)} := by
+      ext ω
+      simp only [mem_ofPred_eq]
+      cases τ ω with
+      | top => simp only [WithTop.top_add, top_le_iff, WithTop.coe_ne_top]
+      | coe a => exact_mod_cast (le_tsub_iff_right hct).symm
+    rw [heq]
+    exact ℱ.mono tsub_le_self _ (hτ (t - c))
+  · have heq : {ω | τ ω + (c : WithTop ℝ≥0) ≤ t} = ∅ := by
+      ext ω
+      simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false]
+      cases τ ω with
+      | top => simp only [WithTop.top_add, top_le_iff, WithTop.coe_ne_top, not_false_eq_true]
+      | coe a => exact_mod_cast not_le_of_gt ((lt_of_not_ge hct).trans_le le_add_self)
+    rw [heq]
+    exact @MeasurableSet.empty _ (ℱ t)
+
+namespace TauCeti
+
+variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
+  {τ η : Ω → WithTop ℝ≥0} {σ : ℕ → Ω → WithTop ℝ≥0}
+
+/-- A strictly positive deterministic shift of a stopping time is announced by finite clipped
+strictly smaller shifts. -/
+theorem _root_.MeasureTheory.IsStoppingTime.isAnnouncingSequence_add_const
+    (hτ : IsStoppingTime ℱ τ) {c : ℝ≥0} (hc : 0 < c) :
+    IsAnnouncingSequence ℱ
+      (fun n ω ↦ min ((n : ℝ≥0) : WithTop ℝ≥0)
+        (τ ω + ((c - 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0)))
+      (fun ω ↦ τ ω + (c : WithTop ℝ≥0)) := by
+  refine ⟨fun n ↦ (isStoppingTime_const ℱ n).min (hτ.add_const_nnreal _), ?_, ?_, ?_⟩
+  · intro ω n k hnk
+    refine min_le_min (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk)) ?_
+    cases τ ω with
+    | top => simp
+    | coe a =>
+      exact_mod_cast add_le_add_right (tsub_le_tsub_left
+        (one_div_le_one_div_of_le (by positivity)
+          (by exact_mod_cast Nat.add_le_add_right hnk 1)) c) a
+  · intro ω
+    have hg : Tendsto (fun n : ℕ ↦ τ ω + ((c - 1 / (n + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0))
+        atTop (𝓝 (τ ω + (c : WithTop ℝ≥0))) := by
+      cases τ ω with
+      | top =>
+        simp only [WithTop.top_add]
+        exact tendsto_const_nhds
+      | coe a =>
+        have hi : Tendsto (fun n : ℕ ↦ (1 : ℝ≥0) / (n + 1)) atTop (𝓝 0) :=
+          tendsto_one_div_add_atTop_nhds_zero_nat
+        have hl : Tendsto (fun n : ℕ ↦ a + (c - 1 / (n + 1 : ℝ≥0))) atTop (𝓝 (a + c)) := by
+          simpa using tendsto_const_nhds.add (tendsto_const_nhds.sub hi)
+        exact_mod_cast WithTop.continuous_coe.continuousAt.tendsto.comp hl
+    simpa [min_top_left] using (IsAnnouncingSequence.top (ℱ := ℱ).tendsto ω).min hg
+  · intro n ω _
+    cases τ ω with
+    | top => exact (min_le_left _ _).trans_lt (WithTop.coe_lt_top _)
+    | coe a =>
+      refine (min_le_right _ _).trans_lt ?_
+      exact_mod_cast add_lt_add_right (tsub_lt_self hc (by positivity)) a
+
+/-- Shifting any stopping time forward by a strictly positive deterministic delay produces a
+pointwise predictable time. -/
+theorem _root_.MeasureTheory.IsStoppingTime.isPredictableTime_add_const
+    (hτ : IsStoppingTime ℱ τ) {c : ℝ≥0} (hc : 0 < c) :
+    IsPredictableTime ℱ (fun ω ↦ τ ω + (c : WithTop ℝ≥0)) :=
+  (hτ.isAnnouncingSequence_add_const hc).isPredictableTime
+
+/-- Restricting an announcing sequence to `{σ n ≤ η}` and pushing it to infinity after `σ n`
+passes the stopping time `η` announces the restriction of `τ` to `{τ ≤ η}`. -/
+theorem IsAnnouncingSequence.ite_le (hσ : IsAnnouncingSequence ℱ σ τ)
+    (hη : IsStoppingTime ℱ η) :
+    IsAnnouncingSequence ℱ
+      (fun n ω ↦ if σ n ω ≤ η ω then σ n ω else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0))
+      (fun ω ↦ if τ ω ≤ η ω then τ ω else ⊤) := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · intro n t
+    by_cases hnt : (n : ℝ≥0) ≤ t
+    · have heq : {ω | (if σ n ω ≤ η ω then σ n ω
+          else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) ≤ t} = {ω | σ n ω ≤ t} := by
+        ext ω
+        simp only [mem_ofPred_eq]
+        split_ifs with hle
+        · rfl
+        · exact sup_le_iff.trans (and_iff_left (WithTop.coe_le_coe.mpr hnt))
+      rw [heq]
+      exact hσ.isStoppingTime n t
+    · have heq : {ω | (if σ n ω ≤ η ω then σ n ω
+          else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) ≤ t} =
+          {ω | σ n ω ≤ η ω} ∩ {ω | σ n ω ≤ t} := by
+        ext ω
+        simp only [mem_ofPred_eq, mem_inter_iff]
+        split_ifs with hle
+        · simp [hle]
+        · have hgt : (t : WithTop ℝ≥0) < (n : ℝ≥0) := WithTop.coe_lt_coe.mpr (lt_of_not_ge hnt)
+          exact ⟨fun h ↦ absurd (le_sup_right.trans h) (not_le_of_gt hgt), fun h ↦ absurd h.1 hle⟩
+      rw [heq]
+      exact ((hσ.isStoppingTime n).measurableSet_le_stopping_time hη).2 t
+  · intro ω n k hnk
+    have hsnk := hσ.monotone ω hnk
+    dsimp only
+    split_ifs with hn hk hk
+    · exact hsnk
+    · exact hsnk.trans le_sup_left
+    · exact (hn (hsnk.trans hk)).elim
+    · exact sup_le_sup hsnk (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hnk))
+  · intro ω
+    split_ifs with hle
+    · have heq : (fun n ↦ if σ n ω ≤ η ω then σ n ω
+          else σ n ω ⊔ ((n : ℝ≥0) : WithTop ℝ≥0)) = fun n ↦ σ n ω :=
+        funext fun n ↦ ite_eq_left ((hσ.le n ω).trans hle)
+      exact heq ▸ hσ.tendsto ω
+    · have hev : ∀ᶠ n in atTop, η ω < σ n ω :=
+        (hσ.tendsto ω).eventually (isOpen_Ioi.mem_nhds (lt_of_not_ge hle))
+      refine tendsto_nhds_top_mono (IsAnnouncingSequence.top (ℱ := ℱ).tendsto ω) ?_
+      filter_upwards [hev] with n hn
+      rw [ite_eq_right (not_le_of_gt hn)]
+      exact le_sup_right
+  · intro n ω hpos
+    split_ifs with h1 h2 h2
+    · rw [ite_eq_left h2] at hpos
+      exact hσ.lt n ω hpos
+    · exact (hσ.ne_top n ω).lt_top
+    · exact (h1 ((hσ.le n ω).trans h2)).elim
+    · exact sup_lt_iff.mpr ⟨(hσ.ne_top n ω).lt_top, WithTop.coe_lt_top _⟩
+
+/-- Restricting a pointwise predictable time `τ` to `{τ ≤ η}` for a stopping time `η` (with `⊤`
+outside that event) yields a pointwise predictable time, without completeness or right
+continuity. -/
+theorem IsPredictableTime.ite_le (hτ : IsPredictableTime ℱ τ) (hη : IsStoppingTime ℱ η) :
+    IsPredictableTime ℱ (fun ω ↦ if τ ω ≤ η ω then τ ω else ⊤) := by
+  obtain ⟨σ, hσ⟩ := hτ
+  exact (hσ.ite_le hη).isPredictableTime
+
+end TauCeti
+
 /-- A stochastic open interval with stopping lower and predictable upper endpoint is
 predictable. -/
 theorem MeasureTheory.IsStoppingTime.measurableSet_predictable_Ioo
@@ -366,3 +510,95 @@ theorem MeasureTheory.IsStoppingTime.measurableSet_predictable_Ioo
     MeasurableSet[ℱ.predictable]
       {p : ℝ≥0 × Ω | τ p.2 < p.1 ∧ (p.1 : WithTop ℝ≥0) < η p.2} :=
   hτ.measurableSet_predictable_lt.inter hη.measurableSet_predictable_gt
+
+/-- For a stopping time, predictability of its finite graph `[[τ]]` is equivalent to
+predictability of its closed upper ray `[τ, ∞)`. -/
+theorem MeasureTheory.IsStoppingTime.measurableSet_predictable_eq_iff_le
+    {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
+    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) :
+    MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | τ p.2 = p.1} ↔
+      MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | τ p.2 ≤ p.1} := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa only [← ofPred_or, ← le_iff_eq_or_lt] using h.union hτ.measurableSet_predictable_lt
+  · simpa only [← ofPred_and, ← le_antisymm_iff] using h.inter hτ.measurableSet_predictable_ge
+
+section GenerateFromPredictableRays
+
+private lemma singleton_zero_prod_mem_generateFrom {Ω : Type*} {m : MeasurableSpace Ω}
+    (ℱ : Filtration ℝ≥0 m) {A : Set Ω} (hA : MeasurableSet[ℱ 0] A) :
+    MeasurableSet[MeasurableSpace.generateFrom
+      {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}}]
+      ({(0 : ℝ≥0)} ×ˢ A) := by
+  classical
+  let G := MeasurableSpace.generateFrom
+    {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}}
+  have hray {τ : Ω → WithTop ℝ≥0} (hτ : TauCeti.IsPredictableTime ℱ τ) :
+      MeasurableSet[G] {p : ℝ≥0 × Ω | τ p.2 ≤ p.1} :=
+    MeasurableSpace.measurableSet_generateFrom ⟨τ, hτ, rfl⟩
+  have hA_ray : MeasurableSet[G] (univ ×ˢ A) := by
+    have heq : (univ : Set ℝ≥0) ×ˢ A =
+        {p : ℝ≥0 × Ω | A.piecewise (fun _ ↦ (0 : WithTop ℝ≥0)) (fun _ ↦ ⊤) p.2 ≤ p.1} := by
+      ext ⟨t, ω⟩
+      simp only [mem_prod, mem_univ, true_and, mem_ofPred_eq]
+      by_cases hω : ω ∈ A
+      · simp only [hω, piecewise_eq_of_mem, true_iff]
+        exact bot_le
+      · simp only [hω, not_false_eq_true, piecewise_eq_of_notMem, top_le_iff, WithTop.coe_ne_top]
+    rw [heq]
+    exact hray (TauCeti.IsPredictableTime.zero.piecewise TauCeti.IsPredictableTime.top hA)
+  have h0 : MeasurableSet[G] ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) := by
+    have heq : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) =
+        (⋃ k : ℕ, {p : ℝ≥0 × Ω | ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1})ᶜ := by
+      ext ⟨t, _⟩
+      simp only [mem_prod, mem_singleton_iff, mem_univ, and_true, compl_iUnion, mem_iInter,
+        mem_compl_iff, mem_ofPred_eq, WithTop.coe_le_coe, not_le]
+      refine ⟨fun ht k ↦ ht ▸ by positivity, fun h ↦ by_contra fun ht ↦ ?_⟩
+      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr ht))
+      exact asymm (h k) (by exact_mod_cast hk)
+    rw [heq]
+    exact (MeasurableSet.iUnion fun _ ↦ hray TauCeti.IsPredictableTime.const).compl
+  have hinter : ({(0 : ℝ≥0)} ×ˢ (univ : Set Ω)) ∩ (univ ×ˢ A) = {(0 : ℝ≥0)} ×ˢ A := by
+    ext ⟨t, ω⟩; simp
+  exact hinter ▸ h0.inter hA_ray
+
+private lemma Ioi_prod_mem_generateFrom {Ω : Type*} {m : MeasurableSpace Ω}
+    (ℱ : Filtration ℝ≥0 m) {s : ℝ≥0} {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    MeasurableSet[MeasurableSpace.generateFrom
+      {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}}]
+      (Ioi s ×ˢ A) := by
+  classical
+  let η : Ω → WithTop ℝ≥0 := A.piecewise (fun _ ↦ (s : WithTop ℝ≥0)) (fun _ ↦ ⊤)
+  have hη : IsStoppingTime ℱ η :=
+    (isStoppingTime_const ℱ s).piecewise_of_le
+      TauCeti.IsAnnouncingSequence.top.isStoppingTime_limit
+      (fun _ ↦ le_rfl) (fun _ ↦ le_top) hA
+  have heq : Ioi s ×ˢ A =
+      ⋃ k : ℕ, {p : ℝ≥0 × Ω | η p.2 + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) ≤ p.1} := by
+    ext ⟨t, ω⟩
+    by_cases hω : ω ∈ A
+    · simp only [η, hω, piecewise_eq_of_mem, mem_prod, mem_Ioi, and_true, mem_iUnion,
+        mem_ofPred_eq, ← WithTop.coe_add, WithTop.coe_le_coe]
+      refine ⟨fun hst ↦ ?_, fun ⟨k, hk⟩ ↦ (lt_add_of_pos_right s (by positivity)).trans_le hk⟩
+      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr (NNReal.coe_lt_coe.mpr hst))
+      exact ⟨k, by exact_mod_cast (lt_sub_iff_add_lt'.mp hk).le⟩
+    · simp only [η, hω, not_false_eq_true, piecewise_eq_of_notMem, mem_prod, mem_Ioi, and_false,
+        mem_iUnion, mem_ofPred_eq, WithTop.top_add, top_le_iff, WithTop.coe_ne_top, exists_false]
+  rw [heq]
+  exact MeasurableSet.iUnion fun k ↦ MeasurableSpace.measurableSet_generateFrom
+    ⟨_, hη.isPredictableTime_add_const (by positivity), rfl⟩
+
+/-- Closed upper stochastic rays `[τ, ∞)` of pointwise predictable times generate the predictable
+sigma-algebra, without completeness or right continuity of the filtration. -/
+theorem MeasureTheory.Filtration.predictable_eq_generateFrom_isPredictableTime_le
+    {Ω : Type*} {m : MeasurableSpace Ω} (ℱ : Filtration ℝ≥0 m) :
+    ℱ.predictable = MeasurableSpace.generateFrom
+      {u : Set (ℝ≥0 × Ω) | ∃ τ, TauCeti.IsPredictableTime ℱ τ ∧ u = {p | τ p.2 ≤ p.1}} := by
+  refine le_antisymm (MeasurableSpace.generateFrom_le ?_) (MeasurableSpace.generateFrom_le ?_)
+  · rintro _ (⟨A, hA, rfl⟩ | ⟨s, A, hA, rfl⟩)
+    · simpa only [NNReal.bot_eq_zero] using
+        singleton_zero_prod_mem_generateFrom ℱ (by simpa only [NNReal.bot_eq_zero] using hA)
+    · exact Ioi_prod_mem_generateFrom ℱ hA
+  · rintro _ ⟨_, hτ, rfl⟩
+    exact hτ.measurableSet_predictable_le
+
+end GenerateFromPredictableRays
