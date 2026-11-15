@@ -151,10 +151,9 @@ theorem Subgroup.coe_congrOfMapEq_symm_apply (e : G ≃* H) {A : Subgroup G} {B 
 true, so it is supplied by `Subgroup.map_id` rather than taken as an argument. -/
 @[simp]
 theorem Subgroup.congrOfMapEq_refl {A : Subgroup G} :
-    Subgroup.congrOfMapEq (MulEquiv.refl G) (_root_.Subgroup.map_id A) = MulEquiv.refl ↥A := by
-  suffices ∀ h : A.map (MulEquiv.refl G : G →* G) = A,
-      Subgroup.congrOfMapEq (MulEquiv.refl G) h = MulEquiv.refl ↥A from this _
-  exact fun _ => MulEquiv.ext fun _ => Subtype.ext (by simp)
+    Subgroup.congrOfMapEq (MulEquiv.refl G) (_root_.Subgroup.map_id A) = MulEquiv.refl ↥A :=
+  MulEquiv.ext fun x =>
+    Subtype.ext (Subgroup.coe_congrOfMapEq_apply (MulEquiv.refl G) _ x)
 
 @[simp]
 theorem Subgroup.congrOfMapEq_trans (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
