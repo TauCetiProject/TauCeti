@@ -23,9 +23,7 @@ DG local systems at `c`, natural in `M`,
 a Moore path (`TauCeti.isQuasiIso_tensorPathChainConcat`): the composite of two changes of
 basepoint is the change along the composite. For `c = a` the target is `M ⊗ C_*(P_{a→a} B)`,
 which is a homotopy retract of `M` over the ground ring
-(`TauCeti.tensorPathChainPoint_tensorPathChainAct`). Showing that the paths from `b` back to `a`
-undo the change of basepoint along the paths from `a` to `b` still needs a quasi-isomorphism
-`M ⊗ C_*(P_{a→a} B) ⟶ M` of DG local systems at `a`, which this file does not construct.
+(`TauCeti.tensorPathChainPoint_tensorPathChainAct`).
 
 Fix Moore paths `δ` from `a` to `b` and `δ'` from `b` to `c`. Both sides are homotopy retracts of
 `M` through the maps `m ⊗ x ↦ m · ρ(x)` appending the reversal of a path: the source through `δ'`
@@ -45,8 +43,9 @@ composition commutes with these retractions, and so it is a quasi-isomorphism
 * `TauCeti.tensorPathChainConcat_naturality`: the composition is natural in `M`.
 * `TauCeti.pathChainToLoopChain_trans_pathChainConcat`: appending the reversal of `δ ⋆ δ'` to a
   concatenation `x ⋆ y` is appending the reversal of `δ` to `x` acted on by `y ⋆ δ'⁻¹`.
-* `TauCeti.isQuasiIso_tensorPathChainConcat`: the composite of two changes of basepoint is
-  quasi-isomorphic to the change along the composite paths.
+* `TauCeti.isQuasiIso_tensorPathChainConcat`: when `a` and `b` are joined by a Moore path, the
+  composite of two changes of basepoint is quasi-isomorphic to the change along the composite
+  paths.
 
 ## References
 
@@ -104,9 +103,8 @@ theorem pathChainConcat_tmul_pathChainPoint (δ : MoorePathBetween B a b)
     pathChainConcat B a b c R
         (tmul R (loopChainAlgebra B b R) (pathChainPoint R δ) (pathChainPoint R δ')) =
       pathChainPoint R (δ.trans δ') := by
-  rw [pathChainPoint_def, pathChainPoint_def, pathChainConcat_tmul,
-    cubicalChainPairing_lof_point_left, cubicalChainModuleLinearMap_lof,
-    NormalizedCubicalChain.map_ofCube, pathChainPoint_def]
+  rw [pathChainConcat_tmul_pathChainPoint_left, pathChainPrepend_apply, pathChainPoint_def,
+    cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube, pathChainPoint_def]
   exact congrArg (fun σ ↦ cubicalChainModuleLof _ (MooreLoopSpace B c) R 0
     (NormalizedCubicalChain.ofCube _ R σ)) (ContinuousMap.ext fun _ ↦ by simp)
 

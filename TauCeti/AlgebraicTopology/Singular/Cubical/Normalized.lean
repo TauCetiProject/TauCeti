@@ -333,6 +333,7 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
     (degenerate_le_comap_map R g n)
 
 /-- Pushing forward along `f` and then along `g` is pushing forward along `g ∘ f`. -/
+@[simp]
 theorem map_map (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (x : NormalizedCubicalChain X R n) :
     map R g n (map R f n x) = map R (g.comp f) n x := by
   rw [map_comp, LinearMap.comp_apply]
