@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
-import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic.G2
 
 /-!
@@ -97,40 +96,10 @@ theorem mem_positivePoints_iff_exists_mul_rootSubgroupPoints_G2
         posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i},
         (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)),
         ∃ u : Multiplicative A, g = v * D.rootSubgroupPoints (G2.simpleIndex ht i) A u := by
-  classical
-  let U : Subgroup (D.points A) := ⨆ γ ∈
-    posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i},
-    (D.rootSubgroupPoints γ A).range
-  have hnorm : (D.rootSubgroupPoints (G2.simpleIndex ht i) A).range ≤
-      Subgroup.normalizer U := by
-    refine le_trans ?_
-      (D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton_G2 A i)
-    rintro _ hu
-    exact Subgroup.subset_closure (Or.inl hu)
-  have hpos : G2.simpleIndex ht i ∈
-      posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) :=
-    simpleIndex_mem_posRoots i
-  have hwhole : D.positivePoints A =
-      U ⊔ (D.rootSubgroupPoints (G2.simpleIndex ht i) A).range := by
-    apply le_antisymm
-    · apply D.positivePoints_le_iff.mpr
-      intro γ hγ u
-      by_cases heq : γ = G2.simpleIndex ht i
-      · subst γ
-        exact (le_sup_right : (D.rootSubgroupPoints (G2.simpleIndex ht i) A).range ≤ _) ⟨u, rfl⟩
-      · exact (le_sup_left : U ≤ _) ((le_iSup₂
-          (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ ⟨hγ, heq⟩) ⟨u, rfl⟩)
-    · apply sup_le
-      · refine iSup₂_le fun γ hγ => ?_
-        rintro _ ⟨u, rfl⟩
-        exact D.rootSubgroupPoints_mem_positivePoints A hγ.1 u
-      · rintro _ ⟨u, rfl⟩
-        exact D.rootSubgroupPoints_mem_positivePoints A hpos u
-  rw [hwhole, Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
-  constructor
-  · rintro ⟨v, hv, _, ⟨u, rfl⟩, h⟩
-    exact ⟨v, hv, u, h.symm⟩
-  · rintro ⟨v, hv, u, h⟩
-    exact ⟨v, hv, _, ⟨u, rfl⟩, h.symm⟩
+  refine D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i ?_ g
+  refine le_trans ?_
+    (D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton_G2 A i)
+  rintro _ hu
+  exact Subgroup.subset_closure (Or.inl hu)
 
 end TauCeti.DynkinType.ChevalleyDatum
