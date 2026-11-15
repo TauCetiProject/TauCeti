@@ -14,12 +14,16 @@ import Mathlib.Topology.KrullDimension
 
 A point of a scheme has codimension one when its coheight for the specialization order is one,
 equivalently when it is the generic point of an irreducible closed subset of codimension one.
-This file introduces the subtype of such points and records the one order-theoretic fact about
-them that does not mention any further structure: a codimension-one point has no codimension-one
-generization other than itself.
+This file introduces the subtype of such points and records two facts about them that do not
+mention any further structure: a codimension-one point has no codimension-one generization other
+than itself, and, for an irreducible scheme with Noetherian underlying space, a nonempty open
+subset contains all but finitely many codimension-one points. The second fact is deduced from
+Mathlib's `NoetherianSpace.finite_coheight_one_of_closure_ne_univ` applied to the closed
+complement.
 
 Codimension-one points index prime divisors, and they arise as centres of places of the function
-field; this file holds only the common definition, independent of either theory.
+field; this file holds only the common definition and these two facts, independent of either
+theory.
 
 ## Main declarations
 
@@ -27,7 +31,8 @@ field; this file holds only the common definition, independent of either theory.
 * `TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes`: a codimension-one
   generization of a codimension-one point is equal to it.
 * `TauCeti.AlgebraicGeometry.CodimensionOnePoint.finite_setOfPred_notMem`: a nonempty open of an
-  irreducible Noetherian scheme misses only finitely many codimension-one points.
+  irreducible scheme with Noetherian underlying space misses only finitely many codimension-one
+  points.
 -/
 
 public section

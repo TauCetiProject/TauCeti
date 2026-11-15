@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 For a Noetherian integral scheme `X`, this file combines Mathlib's local orders of vanishing into
 the global order system on the codimension-one points of `X`. The only global issue is finite
 support. A nonzero rational function is a unit on some nonempty affine open `U`; its order
-therefore vanishes on `U`. The codimension-one points outside `U` are finite, by Mathlib's
-`NoetherianSpace.finite_coheight_one_of_closure_ne_univ` applied to the closed complement.
+therefore vanishes on `U`. The codimension-one points outside `U` are finite, by
+`CodimensionOnePoint.finite_setOfPred_notMem`.
 
 The main results are:
 
@@ -27,9 +27,7 @@ The main results are:
   divisor plus a principal divisor to be effective.
 
 This file completes the global step left open by
-`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
-`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and
-`NoetherianSpace.finite_coheight_one_of_closure_ne_univ`. No formalization is vendored.
+`TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`.
 -/
 
 public section
