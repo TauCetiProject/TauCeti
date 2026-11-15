@@ -32,8 +32,12 @@ Together with the Whitney biproducts of `TauCeti.Topology.VectorBundle.FiniteRan
 this is the structure of a symmetric monoidal preadditive category with binary biproducts, which
 is what the commutative ring structure on split Grothendieck groups
 (`TauCeti.SplitK0.instCommRing`) consumes: the tensor product of cores descends to the product
-of classes, `[A] * [D] = [A ⊗ D]`, with the class of the trivial line bundle as unit. The base is
-arbitrary, and the scalar field need not be complete.
+of classes, `[A] * [D] = [A ⊗ D]`, with the class of the trivial line bundle as unit. Pullback
+along a continuous map `f` commutes strictly with tensor products, the monoidal unit, the
+associator, the unitors, and the braiding, making `pullbackFunctor f` a braided strong monoidal
+functor with identity unit and tensorator isomorphisms (`pullbackCoreMonoidal`,
+`instMonoidalPullbackFunctor`, `instBraidedPullbackFunctor`). The base is arbitrary, and the
+scalar field need not be complete.
 
 For the tensor product of vector bundles and its transition functions see Milnor–Stasheff,
 *Characteristic Classes*, §3, and Atiyah, *K-Theory*, §1.2.
@@ -204,5 +208,151 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp] theorem fiberMap_braiding_inv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (β_ A D).inv.fiberMap x = (kroneckerComm 𝕜 D.rank A.rank).toContinuousLinearMap :=
   fiberMap_tensorComm_inv A D x
+
+section Pullback
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- Pulling back commutes strictly with the monoidal tensor product of cores. -/
+@[simp] theorem pullback_tensorObj (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    (A ⊗ D).pullback f = A.pullback f ⊗ D.pullback f := (rfl)
+
+/-- Pulling back the monoidal unit gives the monoidal unit over the new base. -/
+@[simp] theorem pullback_tensorUnit (f : C(X, Y)) :
+    (𝟙_ (FiniteRankBundleCore 𝕜 Y)).pullback f = 𝟙_ (FiniteRankBundleCore 𝕜 X) := (rfl)
+
+@[simp] theorem pullbackMap_tensorHom_monoidal {A₁ A₂ D₁ D₂ : FiniteRankBundleCore 𝕜 Y}
+    (a : A₁ ⟶ A₂) (b : D₁ ⟶ D₂) (f : C(X, Y)) :
+    pullbackMap (a ⊗ₘ b) f = pullbackMap a f ⊗ₘ pullbackMap b f :=
+  pullbackMap_tensorHom a b f
+
+@[simp] theorem pullbackMap_whiskerLeft (A : FiniteRankBundleCore 𝕜 Y)
+    {D₁ D₂ : FiniteRankBundleCore 𝕜 Y} (b : D₁ ⟶ D₂) (f : C(X, Y)) :
+    pullbackMap (A ◁ b) f = A.pullback f ◁ pullbackMap b f := by
+  change pullbackMap (tensorHom (𝟙 A) b) f = tensorHom (𝟙 (A.pullback f)) (pullbackMap b f)
+  rw [pullbackMap_tensorHom, pullbackMap_id]
+
+@[simp] theorem pullbackMap_whiskerRight {A₁ A₂ : FiniteRankBundleCore 𝕜 Y}
+    (a : A₁ ⟶ A₂) (D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (a ▷ D) f = pullbackMap a f ▷ D.pullback f := by
+  change pullbackMap (tensorHom a (𝟙 D)) f = tensorHom (pullbackMap a f) (𝟙 (D.pullback f))
+  rw [pullbackMap_tensorHom, pullbackMap_id]
+
+@[simp] theorem pullbackMap_associator_hom (A D C : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (α_ A D C).hom f = (α_ (A.pullback f) (D.pullback f) (C.pullback f)).hom :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_associator_hom A D C (f x)).trans
+      (fiberMap_associator_hom (A.pullback f) (D.pullback f) (C.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_associator_inv (A D C : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (α_ A D C).inv f = (α_ (A.pullback f) (D.pullback f) (C.pullback f)).inv :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_associator_inv A D C (f x)).trans
+      (fiberMap_associator_inv (A.pullback f) (D.pullback f) (C.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_leftUnitor_hom (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (λ_ A).hom f = (λ_ (A.pullback f)).hom :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_leftUnitor_hom A (f x)).trans
+      (fiberMap_leftUnitor_hom (A.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_leftUnitor_inv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (λ_ A).inv f = (λ_ (A.pullback f)).inv :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_leftUnitor_inv A (f x)).trans
+      (fiberMap_leftUnitor_inv (A.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_rightUnitor_hom (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (ρ_ A).hom f = (ρ_ (A.pullback f)).hom :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_rightUnitor_hom A (f x)).trans
+      (fiberMap_rightUnitor_hom (A.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_rightUnitor_inv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (ρ_ A).inv f = (ρ_ (A.pullback f)).inv :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_rightUnitor_inv A (f x)).trans
+      (fiberMap_rightUnitor_inv (A.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_braiding_hom (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (β_ A D).hom f = (β_ (A.pullback f) (D.pullback f)).hom :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_braiding_hom A D (f x)).trans
+      (fiberMap_braiding_hom (A.pullback f) (D.pullback f) x).symm)
+
+@[simp] theorem pullbackMap_braiding_inv (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (β_ A D).inv f = (β_ (A.pullback f) (D.pullback f)).inv :=
+  hom_ext fun x => (fiberMap_pullbackMap _ f x).trans
+    ((fiberMap_braiding_inv A D (f x)).trans
+      (fiberMap_braiding_inv (A.pullback f) (D.pullback f) x).symm)
+
+/-- Strict monoidal data for `pullbackFunctor f`, with identity unit and tensorator isomorphisms. -/
+@[expose] def pullbackCoreMonoidal (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).CoreMonoidal where
+  εIso :=
+    { hom := 𝟙 _
+      inv := 𝟙 _
+      hom_inv_id := Category.id_comp _
+      inv_hom_id := Category.id_comp _ }
+  μIso _ _ :=
+    { hom := 𝟙 _
+      inv := 𝟙 _
+      hom_inv_id := Category.id_comp _
+      inv_hom_id := Category.id_comp _ }
+  μIso_hom_natural_left a A' :=
+    (Category.comp_id _).trans
+      ((pullbackMap_whiskerRight a A' f).symm.trans (Category.id_comp _).symm)
+  μIso_hom_natural_right A' a :=
+    (Category.comp_id _).trans
+      ((pullbackMap_whiskerLeft A' a f).symm.trans (Category.id_comp _).symm)
+  associativity A D C :=
+    ((congrArg (· ≫ (𝟙 _ ≫ pullbackMap (α_ A D C).hom f))
+        (MonoidalCategory.id_whiskerRight (A.pullback f ⊗ D.pullback f) (C.pullback f))).trans
+      ((Category.id_comp _).trans
+        ((Category.id_comp _).trans (pullbackMap_associator_hom A D C f)))).trans
+      ((congrArg ((α_ (A.pullback f) (D.pullback f) (C.pullback f)).hom ≫ ·)
+        ((congrArg (· ≫ 𝟙 _)
+          (MonoidalCategory.whiskerLeft_id (A.pullback f) (D.pullback f ⊗ C.pullback f))).trans
+          (Category.id_comp _))).trans (Category.comp_id _)).symm
+  left_unitality A :=
+    ((pullbackMap_leftUnitor_hom A f).symm.trans (Category.id_comp _).symm).trans
+      ((Category.id_comp _).symm.trans
+        (congrArg (· ≫ _)
+          (MonoidalCategory.id_whiskerRight (𝟙_ (FiniteRankBundleCore 𝕜 X)) (A.pullback f)).symm))
+  right_unitality A :=
+    ((pullbackMap_rightUnitor_hom A f).symm.trans (Category.id_comp _).symm).trans
+      ((Category.id_comp _).symm.trans
+        (congrArg (· ≫ _)
+          (MonoidalCategory.whiskerLeft_id (A.pullback f) (𝟙_ (FiniteRankBundleCore 𝕜 X))).symm))
+
+/-- `pullbackFunctor f` is a strong monoidal functor with strict unit and tensorator equalities. -/
+instance instMonoidalPullbackFunctor (f : C(X, Y)) :
+    (pullbackFunctor (𝕜 := 𝕜) f).Monoidal :=
+  (pullbackCoreMonoidal f).toMonoidal
+
+@[simp] theorem pullbackFunctor_ε (f : C(X, Y)) :
+    Functor.LaxMonoidal.ε (pullbackFunctor (𝕜 := 𝕜) f) = 𝟙 _ :=
+  (pullbackCoreMonoidal f).toLaxMonoidal_ε
+
+@[simp] theorem pullbackFunctor_μ (f : C(X, Y)) (A D : FiniteRankBundleCore 𝕜 Y) :
+    Functor.LaxMonoidal.μ (pullbackFunctor (𝕜 := 𝕜) f) A D = 𝟙 _ :=
+  (pullbackCoreMonoidal f).toLaxMonoidal_μ A D
+
+@[simp] theorem pullbackFunctor_η (f : C(X, Y)) :
+    Functor.OplaxMonoidal.η (pullbackFunctor (𝕜 := 𝕜) f) = 𝟙 _ :=
+  (pullbackCoreMonoidal f).toOplaxMonoidal_η
+
+@[simp] theorem pullbackFunctor_δ (f : C(X, Y)) (A D : FiniteRankBundleCore 𝕜 Y) :
+    Functor.OplaxMonoidal.δ (pullbackFunctor (𝕜 := 𝕜) f) A D = 𝟙 _ :=
+  (pullbackCoreMonoidal f).toOplaxMonoidal_δ A D
+
+/-- `pullbackFunctor f` is a braided (hence symmetric) strong monoidal functor. -/
+instance instBraidedPullbackFunctor (f : C(X, Y)) :
+    (pullbackFunctor (𝕜 := 𝕜) f).Braided where
+  braided A D :=
+    ((congrArg (· ≫ _) (pullbackFunctor_μ f A D)).trans (Category.id_comp _)).trans
+      ((pullbackMap_braiding_hom A D f).trans
+        ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (pullbackFunctor_μ f D A).symm)))
+
+end Pullback
 
 end TauCeti.FiniteRankBundleCore
