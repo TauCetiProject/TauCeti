@@ -95,6 +95,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the derivative of its
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
+* `TauCeti.contDiffAt_extChartAt_comp_extend_symm_comp_and_eventually_rightInverse`: on a
+  boundaryless manifold, the transition from any chart of the `C¹` maximal atlas, read through a
+  linear isomorphism, to the extended chart at a point is `C¹` there, with a continuous local right
+  inverse.
 * `TauCeti.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
@@ -408,6 +412,38 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
   ext u
   rw [← L.apply_symm_apply u]
   exact DFunLike.congr_fun h (L.symm u)
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, let `e` be a chart of the `C¹` maximal atlas at `x`, read through
+a linear isomorphism `L : E₁ ≃ E` with `e.extend I x = L z₀`. The transition `τ = κ ∘ e⁻¹ ∘ L` to
+the extended chart `κ` at `x` is `C¹` at `z₀` and sends `z₀` to `κ x`, and `σ = L⁻¹ ∘ e ∘ κ⁻¹` is a
+right inverse of it near `κ x`, continuous at `κ x` and sending `κ x` to `z₀`. -/
+theorem contDiffAt_extChartAt_comp_extend_symm_comp_and_eventually_rightInverse {E₁ : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source) (L : E₁ ≃L[𝕜] E) {z₀ : E₁}
+    (hz₀ : e.extend I x = L z₀) :
+    ContDiffAt 𝕜 1 (extChartAt I x ∘ (e.extend I).symm ∘ L) z₀ ∧
+      (extChartAt I x ∘ (e.extend I).symm ∘ L) z₀ = extChartAt I x x ∧
+      ContinuousAt (L.symm ∘ e.extend I ∘ (extChartAt I x).symm) (extChartAt I x x) ∧
+      (L.symm ∘ e.extend I ∘ (extChartAt I x).symm) (extChartAt I x x) = z₀ ∧
+      ∀ᶠ y in 𝓝 (extChartAt I x x), (extChartAt I x ∘ (e.extend I).symm ∘ L)
+        ((L.symm ∘ e.extend I ∘ (extChartAt I x).symm) y) = y := by
+  have hez₀ : (e.extend I).symm (L z₀) = x := by rw [← hz₀]; exact e.extend_left_inv hx
+  have hκs := continuousAt_extChartAt_symm (I := I) x
+  have hκs' : Filter.Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    simpa only [ContinuousAt, extChartAt_to_inv] using hκs
+  refine ⟨?_, by simp only [Function.comp_apply, hez₀], L.symm.continuous.continuousAt.comp
+    ((e.continuousAt_extend hx).comp_of_eq hκs (extChartAt_to_inv x)), by
+      simp only [Function.comp_apply, extChartAt_to_inv, hz₀, L.symm_apply_apply], ?_⟩
+  · have hκ := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hx).1
+      (contMDiffAt_extChartAt (n := 1) (I := I) (x := x))
+    rw [hz₀] at hκ
+    exact hκ.comp z₀ L.contDiff.contDiffAt
+  · filter_upwards [hκs'.eventually (e.open_source.mem_nhds hx),
+      extChartAt_target_mem_nhds (I := I) x] with y hy hyκ
+    simp only [Function.comp_apply, L.apply_symm_apply]
+    rw [e.extend_left_inv hy]
+    exact (extChartAt I x).right_inv hyκ
 
 end TauCeti
 

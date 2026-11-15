@@ -152,12 +152,13 @@ theorem exists_abs_sub_le_mul_norm_snd_sq (hf : ContDiffAt ℝ 2 f (a, 0))
       ).exists_lipschitzOnWith
   have hπ : Tendsto (fun z : P × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
     (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
+  -- A point differs from its projection to the zero section by its fibre coordinate.
+  have hsub (z : P × F) : z - (z.1, 0) = (0, z.2) := by ext <;> simp
   have hup : ∀ᶠ z in 𝓝 (a, (0 : F)), ‖fderiv ℝ f z‖ ≤ K * ‖z.2‖ := by
     filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hcrit]
       with z hzs hzs' hz0
     have h := hK.norm_sub_le hzs hzs'
-    rwa [hz0, sub_zero, show z - (z.1, 0) = (0, z.2) by ext <;> simp, Prod.norm_mk, norm_zero,
-      max_eq_right (norm_nonneg _)] at h
+    rwa [hz0, sub_zero, hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _)] at h
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 ((hf.eventually (by simp)).and hup)
   refine ⟨K + 1, by positivity, eventually_of_mem (ball_mem_nhds _ hr) fun z hz ↦ ?_⟩
   -- Along a segment in the ball on which `‖w.2‖ ≤ ρ`, the differential is at most `K * ρ`.
@@ -182,8 +183,8 @@ theorem exists_abs_sub_le_mul_norm_snd_sq (hf : ContDiffAt ℝ 2 f (a, 0))
     rw [← hw, Prod.snd_add, Prod.smul_snd, Prod.smul_snd, smul_zero, zero_add, norm_smul,
       Real.norm_of_nonneg hβ]
     exact mul_le_of_le_one_left (norm_nonneg _) (by linarith)
-  rw [show z - (z.1, 0) = (0, z.2) by ext <;> simp, Prod.norm_mk, norm_zero,
-    max_eq_right (norm_nonneg _), mul_assoc, ← sq, hconst, Real.norm_eq_abs] at h
+  rw [hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _), mul_assoc, ← sq, hconst,
+    Real.norm_eq_abs] at h
   exact h.trans (by gcongr; linarith)
 
 /-- **Łojasiewicz's gradient inequality at a Morse–Bott point.** If `f` is `C²` at `(a, 0)`,

@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.Morse.Bott
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
-import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
+import TauCeti.Geometry.Manifold.Morse.Lojasiewicz
 
 /-!
 # Łojasiewicz's gradient inequality near a Morse–Bott critical submanifold
@@ -104,7 +104,7 @@ theorem exists_mul_abs_sub_le_norm_mgradient_sq (hi : i.IsNondegenerateCriticalS
   have hfz₀ : f ((h.codChart.extend I).symm (h.equiv (h.domChart.extend J s, 0))) = f (i s) := by
     rw [← hxL, h.codChart.extend_left_inv hxe]
   exact exists_mul_abs_sub_le_norm_mgradient_sq_of_mem_maximalAtlas he1 hxe h.equiv hxL
-    (hi.contMDiffAt s) hlam (by simpa only [comp_apply, hfz₀] using hloj)
+    ((hi.contMDiffAt s).of_le one_le_two) hlam (by simpa only [comp_apply, hfz₀] using hloj)
 
 /-- **Łojasiewicz's gradient inequality near a compact connected Morse–Bott critical
 submanifold.** If `i : S → M` is a Morse–Bott critical submanifold of `f`, with `S` compact and
