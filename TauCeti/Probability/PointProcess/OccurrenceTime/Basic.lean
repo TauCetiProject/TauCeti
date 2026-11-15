@@ -80,6 +80,11 @@ theorem occurrenceTime_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
   rw [← not_lt_top_iff, occurrenceTime_lt_iff]
   simp
 
+/-- If occurrence `m` never happens, then no later occurrence `n ≥ m` happens either. -/
+theorem occurrenceTime_eq_top_of_le (μ : Measure ℝ≥0) {m n : ℕ} (hmn : m ≤ n)
+    (hm : μ.occurrenceTime m = ∞) : μ.occurrenceTime n = ∞ :=
+  eq_top_mono (μ.monotone_occurrenceTime hmn) hm
+
 @[simp]
 theorem occurrenceTime_zero_measure (n : ℕ) : (0 : Measure ℝ≥0).occurrenceTime n = ∞ := by
   simp [occurrenceTime_eq_top_iff]

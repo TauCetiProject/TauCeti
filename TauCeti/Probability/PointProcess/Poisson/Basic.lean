@@ -118,6 +118,13 @@ theorem IsPoissonRandomMeasure.ae_eq_zero (h : IsPoissonRandomMeasure P N Λ)
   filter_upwards [hz'.ae_eq_of_dirac] with ω hω
   exact measure_mono_null hAB hω
 
+/-- A Poisson random measure with zero intensity vanishes almost surely. No topological or
+countability hypothesis on the state space is needed. -/
+theorem IsPoissonRandomMeasure.ae_eq_zero_of_zero (h : IsPoissonRandomMeasure P N 0) :
+    ∀ᵐ ω ∂P, N ω = 0 := by
+  filter_upwards [h.ae_eq_zero (A := Set.univ) rfl] with ω hω
+  exact Measure.measure_univ_eq_zero.mp hω
+
 /-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
 theorem IsPoissonRandomMeasure.ae_natCast_natFloor_eq (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :

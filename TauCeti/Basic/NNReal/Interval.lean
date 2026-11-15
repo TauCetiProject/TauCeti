@@ -8,16 +8,27 @@ module
 public import Mathlib.Basic.NNReal.Basic
 
 /-!
-# Reflection of nonnegative real intervals
+# Nonnegative real intervals
 
 Reflection about an upper bound turns left-closed, right-open intervals into
 left-open, right-closed intervals. The explicit upper bound prevents truncated
-subtraction from introducing extra points at zero.
+subtraction from introducing extra points at zero. Pulling a half-open `ℝ≥0`
+interval back along `Real.toNNReal` yields the corresponding real half-open
+interval.
 -/
 
 public section
 
 open Set
+open scoped NNReal
+
+/-- Preimage of a half-open `ℝ≥0` interval under `Real.toNNReal` is the corresponding real
+half-open interval; nonpositive reals are excluded on both sides because `0 ≤ u`. -/
+@[simp]
+theorem Real.toNNReal_preimage_Ioc (u v : ℝ≥0) :
+    Real.toNNReal ⁻¹' Ioc u v = Ioc (u : ℝ) (v : ℝ) := by
+  ext x
+  simp only [mem_preimage, mem_Ioc, Real.lt_toNNReal_iff_coe_lt, Real.toNNReal_le_iff_le_coe]
 
 namespace NNReal
 

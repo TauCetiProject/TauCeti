@@ -32,6 +32,7 @@ minors of a diagonal matrix with chained entries the smallest ones in divisibili
 A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a canonically ordered
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
+At `i.succ`, `Fin.partialProd` and `Fin.partialSum` agree with the `Finset.Iic i` product and sum.
 
 A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
@@ -58,6 +59,17 @@ says for blocks of equal length.
 public section
 
 namespace Fin
+
+/-- The partial product up to `i.succ` is the product over the closed initial interval `Iic i`. -/
+@[to_additive /-- The partial sum up to `i.succ` is the sum over the closed initial interval
+`Iic i`. -/]
+theorem partialProd_succ_eq_prod_Iic {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin n → M) (i : Fin n) :
+    partialProd f i.succ = ∏ j ∈ Finset.Iic i, f j := by
+  have hs : ({j : Fin n | j.val < i.succ.val} : Finset (Fin n)) = Finset.Iic i := by
+    ext j
+    simp
+  simp only [partialProd, List.prod_take_ofFn, hs]
 
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}

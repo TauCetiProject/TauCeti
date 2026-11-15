@@ -105,9 +105,7 @@ theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
   | succ n =>
     rw [occurrenceGap_succ]
     by_cases hn : μ.occurrenceTime n = ∞
-    · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-        top_unique (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
-      simp [hn, hnext]
+    · simp [hn, μ.occurrenceTime_eq_top_of_le (Nat.le_succ n) hn]
     · simp [hn, ENNReal.sub_eq_top_iff]
 
 /-- An extended gap is finite if and only if the corresponding occurrence time is finite. -/
@@ -131,9 +129,7 @@ theorem sum_occurrenceGap_range (μ : Measure ℝ≥0) (n : ℕ) :
   | succ n ih =>
     rw [Finset.sum_range_succ, ih, occurrenceGap_succ]
     by_cases hn : μ.occurrenceTime n = ∞
-    · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-        top_unique (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
-      simp [hn, hnext]
+    · simp [hn, μ.occurrenceTime_eq_top_of_le (Nat.le_succ n) hn]
     · simp only [hn, ↓reduceIte]
       exact add_tsub_cancel_of_le (μ.monotone_occurrenceTime (Nat.le_succ n))
 
