@@ -262,19 +262,6 @@ theorem cappedExchangeAlmostComplex_eq_of_norm_le (h₀ : ω.Compatible J₀) (h
       (by linarith [le_re_endCoord_of_norm_sub_endCenter_le (by decide) hc hw'])]
     exact plumbedAlmostComplex_update_inf_eq h₀ (by decide) hL hw' x
 
-/-- The capped input part inserts the negative plane with end structure `J_0`, which is also the
-structure at `0` of the receiving family `update J ∞ J₀`. -/
-private theorem plumbedAlmostComplex_update_inf_update_zero (h₀ : ω.Compatible J₀)
-    (hA : ∀ r t x, ω.Tames
-      (update (fun _ _ _ => J₀) inf ((update J inf fun _ _ => J₀) zero) r t x))
-    (w : ℂ) (x : M) :
-    plumbedAlmostComplex h₀ h₀ (update (fun _ _ _ => J₀) inf ((update J inf fun _ _ => J₀) zero))
-        (update J inf fun _ _ => J₀) hA (tames_update_inf_base h₀.tames hJ) zero L w x =
-      plumbedAlmostComplex h₀ h₀ (update (fun _ _ _ => J₀) inf (J zero))
-        (update J inf fun _ _ => J₀) (tames_update_inf h₀.tames (hJ zero))
-        (tames_update_inf_base h₀.tames hJ) zero L w x := by
-  simp only [update_of_ne (show zero ≠ inf by decide)]
-
 end Algebraic
 
 section Smooth
@@ -329,7 +316,7 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
       have : |p.2.1| ≤ 2 := abs_le.2 ⟨by linarith [hpc.1], hpc.2.le⟩
       linarith [three_lt_two_mul_exp_two_pi]
     simp only [Function.comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ hn]
-    rw [plumbedAlmostComplex_update_inf_update_zero (hJ := hJ)]
+    simp only [update_of_ne (show zero ≠ inf by decide)]
   · -- Off the disc `‖w‖ ≤ exp (-2π) / 2` the family is the input-exchange family.
     have hw₀ : w ≠ 0 := by
       rintro rfl
