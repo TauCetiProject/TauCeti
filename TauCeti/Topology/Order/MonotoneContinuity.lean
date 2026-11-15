@@ -18,7 +18,7 @@ the image of `f` is a neighbourhood of `f x`.
 
 ## Main results
 
-* `TauCeti.eventually_lt_of_strictMonoOn_comp`: under these hypotheses, `f` stays above every
+* `TauCeti.eventually_gt_of_strictMonoOn_comp`: under these hypotheses, `f` stays above every
   `b < f x` near `x`.
 * `TauCeti.continuousAt_of_strictMonoOn_comp`: under these hypotheses, `f` is continuous at `x`.
 -/
@@ -37,7 +37,7 @@ variable {X α β : Type*} [TopologicalSpace X]
 
 /-- If `g` is strictly increasing on a neighbourhood `S` of `f x`, `f` maps a neighbourhood of `x`
 into `S` and `g ∘ f` is continuous at `x`, then `f` stays above every `b < f x` near `x`. -/
-theorem eventually_lt_of_strictMonoOn_comp (hg : StrictMonoOn g S) (hS : S ∈ 𝓝 (f x))
+theorem eventually_gt_of_strictMonoOn_comp (hg : StrictMonoOn g S) (hS : S ∈ 𝓝 (f x))
     (hf : ∀ᶠ y in 𝓝 x, f y ∈ S) (hgf : ContinuousAt (g ∘ f) x) {b : α} (hb : b < f x) :
     ∀ᶠ y in 𝓝 x, b < f y := by
   obtain ⟨l, hl, hlS⟩ := exists_Ioc_subset_of_mem_nhds hS ⟨b, hb⟩
@@ -51,7 +51,7 @@ theorem eventually_lt_of_strictMonoOn_comp (hg : StrictMonoOn g S) (hS : S ∈ �
 into `S` and `g ∘ f` is continuous at `x`, then `f` is continuous at `x`. -/
 theorem continuousAt_of_strictMonoOn_comp (hg : StrictMonoOn g S) (hS : S ∈ 𝓝 (f x))
     (hf : ∀ᶠ y in 𝓝 x, f y ∈ S) (hgf : ContinuousAt (g ∘ f) x) : ContinuousAt f x :=
-  tendsto_order.2 ⟨fun _ hb ↦ eventually_lt_of_strictMonoOn_comp hg hS hf hgf hb,
-    fun _ hb ↦ eventually_lt_of_strictMonoOn_comp (α := αᵒᵈ) (β := βᵒᵈ) hg.dual hS hf hgf hb⟩
+  tendsto_order.2 ⟨fun _ hb ↦ eventually_gt_of_strictMonoOn_comp hg hS hf hgf hb,
+    fun _ hb ↦ eventually_gt_of_strictMonoOn_comp (α := αᵒᵈ) (β := βᵒᵈ) hg.dual hS hf hgf hb⟩
 
 end TauCeti
