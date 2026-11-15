@@ -104,6 +104,12 @@ open scoped ContDiff RealInnerProductSpace
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- The coordinates of a `Cⁿ` variation, `n ≠ 0`, are differentiable. -/
+private theorem differentiableAt_apply_of_contDiff {n : WithTop ℕ∞}
+    {w : ℂ → EuclideanSpace ℝ (Fin 4)} (hw : ContDiff ℝ n w) (hn : n ≠ 0) (z : ℂ) (i : Fin 4) :
+    DifferentiableAt ℝ (fun w' ↦ w w' i) z :=
+  ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z (hw.differentiable hn z) :)
+
 /-- **Uniqueness of the Coulomb phase.** At a continuous field `x` of `A_m^s`, `s > 2`, a
 square-integrable `C²` phase `u` with `d₀* d₀ u = 0` vanishes. -/
 theorem eq_zero_of_gaugeAdjoint_gaugeDirection_eq_zero {s : ℝ} (hs : 2 < s)
@@ -178,11 +184,8 @@ def deformationCocycles (k : ℕ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (F
   add_mem' := by
     rintro y v ⟨hy, hyc, hyl⟩ ⟨hv, hvc, hvl⟩
     refine ⟨add_mem hy hv, hyc.add hvc, fun z ↦ ?_⟩
-    have hd {w : ℂ → EuclideanSpace ℝ (Fin 4)} (hw : ContDiff ℝ 2 w) (i : Fin 4) :
-        DifferentiableAt ℝ (fun w' ↦ w w' i) z :=
-      ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z
-        (hw.differentiable (by norm_num) z) :)
-    rw [linearizedEquation_add x (hd hyc) (hd hvc), hyl, hvl, add_zero]
+    rw [linearizedEquation_add x (differentiableAt_apply_of_contDiff hyc (by norm_num) z)
+      (differentiableAt_apply_of_contDiff hvc (by norm_num) z), hyl, hvl, add_zero]
   zero_mem' := ⟨zero_mem _, contDiff_zero_fun, fun z ↦ by simp⟩
   smul_mem' := by
     rintro t y ⟨hy, hyc, hyl⟩
@@ -224,12 +227,10 @@ theorem deformationCoboundaries_le_deformationCocycles {k : ℕ} (hk : 1 ≤ k)
     (hsol : ∀ z, equation x z = 0) :
     deformationCoboundaries x k ≤ deformationCocycles x k := by
   rintro _ ⟨u, hu, huc, rfl⟩
-  have hxi (i : Fin 4) (z : ℂ) : DifferentiableAt ℝ (fun w ↦ x w i) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z
-      (hxc.differentiable (by norm_num) z) :)
+  have hxi := differentiableAt_apply_of_contDiff hxc (by norm_num)
   exact ⟨gaugeDirection_mem_sobolevFields hk hx hu (huc.of_le (by norm_num)),
     contDiff_gaugeDirection (n := 2) hxc huc, fun z ↦
-      linearizedEquation_gaugeDirection_eq_zero (hxi 2 z) (hxi 3 z)
+      linearizedEquation_gaugeDirection_eq_zero (hxi z 2) (hxi z 3)
         (huc.contDiffAt.of_le (by norm_num)) (hsol z)⟩
 
 /-- The `C²` kernel of `L_x` in `H^(k+1)` consists of cocycles of the deformation complex. -/
@@ -275,14 +276,11 @@ theorem exists_sub_gaugeDirection_mem_gaugeFixedKernel {k : ℕ} (hk : 3 ≤ k)
   have hu3 : ContDiff ℝ 3 u := huc.of_le (by exact_mod_cast hk)
   obtain ⟨hdu, hduc, hdul⟩ :=
     deformationCoboundaries_le_deformationCocycles (by omega) hx hxc hsol ⟨u, hu, hu3, rfl⟩
-  have hd {w : ℂ → EuclideanSpace ℝ (Fin 4)} (hw : ContDiff ℝ 2 w) (z : ℂ) (i : Fin 4) :
-      DifferentiableAt ℝ (fun w' ↦ w w' i) z :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z
-      (hw.differentiable (by norm_num) z) :)
   refine ⟨u, hu, hu3, Submodule.mem_inf.2 ⟨mem_gaugeFixedKernel.2
     ⟨hyc.sub hduc, memLp_of_mem_sobolevFields (sub_mem hy hdu), fun z ↦ ?_⟩, sub_mem hy hdu⟩⟩
   have hl : linearizedEquation x (y - gaugeDirection x u) z = 0 := by
-    rw [linearizedEquation_sub x (hd hyc z) (hd hduc z), hyl z, hdul z, sub_zero]
+    rw [linearizedEquation_sub x (differentiableAt_apply_of_contDiff hyc (by norm_num) z)
+      (differentiableAt_apply_of_contDiff hduc (by norm_num) z), hyl z, hdul z, sub_zero]
   ext i
   fin_cases i
   · simpa using hcoul z

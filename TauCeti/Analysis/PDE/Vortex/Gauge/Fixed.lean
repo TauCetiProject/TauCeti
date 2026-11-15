@@ -56,10 +56,11 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
 * `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
   subspace.
-* `integral_mul_gaugeAdjoint`, `integral_mul_gaugeAdjoint_of_hasCompactSupport` and
-  `integral_inner_gaugeFixedOperator`: the integration-by-parts
-  identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
-  factor compactly supported and any additive Haar measure.
+* `integral_mul_gaugeAdjoint_of_hasCompactSupport_smul`, `integral_mul_gaugeAdjoint`,
+  `integral_mul_gaugeAdjoint_of_hasCompactSupport_right` and `integral_inner_gaugeFixedOperator`:
+  the integration-by-parts identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and
+  `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with compactly supported `f • y` (in particular
+  `f` or `y`), respectively `y`, and any additive Haar measure.
 * `gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`: `L_x` is `L_x'` plus multiplication by
   `gaugeFixedZerothOrder (x z - x' z)`; with `x' = vacuumField`, `L_x` is the vacuum operator
   plus this zeroth-order term.
@@ -790,17 +791,33 @@ private theorem inner_gaugeFixedOperator_eq {x y η : ℂ → EuclideanSpace ℝ
   ring
 
 /-- **`d₀*` is the formal adjoint of the infinitesimal gauge action**: `∫ f d₀* y = ∫ ⟪d₀ f, y⟫`
-for a continuous field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. -/
-theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
+for a continuous field `x`, a `C¹` variation `y` and a `C¹` phase `f` such that `f • y` is
+compactly supported. -/
+theorem integral_mul_gaugeAdjoint_of_hasCompactSupport_smul {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {f : ℂ → ℝ} (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f)
+    (hc : HasCompactSupport fun z ↦ f z • y z) :
     ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
   have hg (i : Fin 4) : ContDiff ℝ 1 fun w ↦ f w * y w i := hf.mul (hyi i)
-  have hgc (i : Fin 4) : HasCompactSupport fun w ↦ f w * y w i := hfc.mul_right
+  have hgc (i : Fin 4) : HasCompactSupport fun w ↦ f w * y w i :=
+    hc.mono fun w hw h ↦ hw (by simpa using congrArg (· i) h)
   have hint (i : Fin 4) (v : ℂ) : Integrable (fun z ↦ fderiv ℝ (fun w ↦ f w * y w i) z v) μ :=
     (((hg i).continuous_fderiv one_ne_zero).clm_apply
       continuous_const).integrable_of_hasCompactSupport ((hgc i).fderiv_apply (𝕜 := ℝ) v)
+  -- `f d₀* y` vanishes wherever `f • y` vanishes near the point.
+  have hmain : Integrable (fun z ↦ f z * gaugeAdjoint x y z) μ := by
+    refine (hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
+      (hc.mono' fun z hz ↦ ?_)
+    by_contra hn
+    have hy0 : y =ᶠ[nhds z] 0 :=
+      ((notMem_tsupport_iff_eventuallyEq.1 hn).and
+        (hf.continuous.continuousAt.eventually_ne (left_ne_zero_of_mul hz))).mono
+        fun w ⟨h₁, h₂⟩ ↦ (smul_eq_zero.1 h₁).resolve_left h₂
+    have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 := by
+      have hyi0 : (fun w ↦ y w i) =ᶠ[nhds z] fun _ ↦ 0 := hy0.mono fun w hw ↦ by simp [hw]
+      rw [hyi0.fderiv_eq, fderiv_const_apply]
+    exact hz (by simp [gaugeAdjoint, hd, hy0.eq_of_nhds])
   have h (z : ℂ) : ⟪gaugeDirection x f z, y z⟫ = f z * gaugeAdjoint x y z -
       fderiv ℝ (fun w ↦ f w * y w 0) z 1 - fderiv ℝ (fun w ↦ f w * y w 1) z I := by
     rw [mul_gaugeAdjoint_eq (hy.differentiable one_ne_zero z) (hf.differentiable one_ne_zero z)]
@@ -809,40 +826,26 @@ theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f 
   rw [integral_sub _ (hint 1 I), integral_sub _ (hint 0 1),
     integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
     integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), sub_zero, sub_zero]
-  · exact (hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right
-  · exact ((hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right).sub (hint 0 1)
+  · exact hmain
+  · exact hmain.sub (hint 0 1)
+
+/-- **`d₀*` is the formal adjoint of the infinitesimal gauge action**: `∫ f d₀* y = ∫ ⟪d₀ f, y⟫`
+for a continuous field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. -/
+theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
+    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
+    ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ :=
+  integral_mul_gaugeAdjoint_of_hasCompactSupport_smul hx hy hf
+    (hfc.mono fun z hz hfz ↦ hz (by simp [hfz]))
 
 /-- **`d₀*` is the formal adjoint of the infinitesimal gauge action**, with the compact support
 on the variation: `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` for a continuous field `x`, a compactly supported
 `C¹` variation `y` and a `C¹` phase `f`. -/
-theorem integral_mul_gaugeAdjoint_of_hasCompactSupport {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {f : ℂ → ℝ} (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
-    (hf : ContDiff ℝ 1 f) :
-    ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ := by
-  have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
-  have hyic (i : Fin 4) : HasCompactSupport fun w ↦ y w i :=
-    hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
-  have hg (i : Fin 4) : ContDiff ℝ 1 fun w ↦ f w * y w i := hf.mul (hyi i)
-  have hgc (i : Fin 4) : HasCompactSupport fun w ↦ f w * y w i := (hyic i).mul_left
-  have hint (i : Fin 4) (v : ℂ) : Integrable (fun z ↦ fderiv ℝ (fun w ↦ f w * y w i) z v) μ :=
-    (((hg i).continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).integrable_of_hasCompactSupport ((hgc i).fderiv_apply (𝕜 := ℝ) v)
-  have hmain : Integrable (fun z ↦ ⟪gaugeDirection x f z, y z⟫) μ := by
-    have hd : Continuous (gaugeDirection x f) :=
-      (contDiff_gaugeDirection (n := 0) (contDiff_zero.mpr hx) (by simpa using hf)).continuous
-    exact (hd.inner hy.continuous).integrable_of_hasCompactSupport
-      (hyc.mono fun z hz ↦ fun hyz ↦ hz (by simp [hyz]))
-  have h (z : ℂ) : f z * gaugeAdjoint x y z = ⟪gaugeDirection x f z, y z⟫ +
-      fderiv ℝ (fun w ↦ f w * y w 0) z 1 + fderiv ℝ (fun w ↦ f w * y w 1) z I :=
-    mul_gaugeAdjoint_eq (hy.differentiable one_ne_zero z) (hf.differentiable one_ne_zero z)
-  simp_rw [h]
-  rw [integral_add _ (hint 1 I), integral_add hmain (hint 0 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), add_zero, add_zero]
-  exact hmain.add (hint 0 1)
+theorem integral_mul_gaugeAdjoint_of_hasCompactSupport_right
+    {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ} (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hyc : HasCompactSupport y) (hf : ContDiff ℝ 1 f) :
+    ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ :=
+  integral_mul_gaugeAdjoint_of_hasCompactSupport_smul hx hy hf
+    (hyc.mono fun z hz hyz ↦ hz (by simp [hyz]))
 
 /-- **`L_x*` is the formal adjoint of the gauge-fixed operator**: `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`
 for a continuous field `x`, a compactly supported `C¹` variation `y` and a `C¹` field `η`. -/

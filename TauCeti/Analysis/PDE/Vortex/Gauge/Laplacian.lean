@@ -136,7 +136,7 @@ theorem integral_mul_gaugeAdjoint_gaugeDirection_comm (hx : ContDiff ℝ 1 x) {u
     (hu : ContDiff ℝ 2 u) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z =
       ∫ z, φ z * gaugeAdjoint x (gaugeDirection x u) z := by
-  rw [integral_mul_gaugeAdjoint_of_hasCompactSupport hx.continuous
+  rw [integral_mul_gaugeAdjoint_of_hasCompactSupport_right hx.continuous
       (contDiff_gaugeDirection (n := 1) hx hφ) (hasCompactSupport_gaugeDirection x hφc)
       (hu.of_le (by norm_num)),
     integral_mul_gaugeAdjoint hx.continuous (contDiff_gaugeDirection (n := 1) hx hu)
