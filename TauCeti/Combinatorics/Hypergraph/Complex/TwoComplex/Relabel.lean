@@ -68,6 +68,19 @@ theorem map_mem_triangles_relabel (X : TwoComplex V) (e : V ≃ W) (s : Finset V
     s.map e.toEmbedding ∈ (X.relabel e).triangles ↔ s ∈ X.triangles := by
   exact Finset.mem_map' e.finsetCongr.toEmbedding
 
+/-- Adjacency in a relabelled complex pulls back along the inverse bijection. -/
+@[simp]
+theorem adj_relabel_iff (X : TwoComplex V) (e : V ≃ W) (u v : W) :
+    (X.relabel e).Adj u v ↔ X.Adj (e.symm u) (e.symm v) := by
+  classical
+  rw [← pair_mem_edges_iff, ← pair_mem_edges_iff, mem_edges_relabel]
+  simp
+
+/-- Relabelling preserves adjacency of mapped vertices. -/
+theorem adj_relabel (X : TwoComplex V) (e : V ≃ W) (u v : V) :
+    (X.relabel e).Adj (e u) (e v) ↔ X.Adj u v := by
+  simp
+
 @[simp]
 theorem relabel_refl (X : TwoComplex V) : X.relabel (Equiv.refl V) = X := by
   ext <;> simp [edges_relabel, triangles_relabel]

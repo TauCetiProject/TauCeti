@@ -58,6 +58,58 @@ theorem ext {X Y : TwoComplex V} (he : X.edges = Y.edges)
   cases Y
   simp_all
 
+/-- Two vertices are adjacent in a two-complex when they span one of its edges.
+Using set equality avoids a `DecidableEq` assumption on the vertex type. -/
+def Adj (X : TwoComplex V) (u v : V) : Prop :=
+  ∃ e ∈ X.edges, (e : Set V) = {u, v}
+
+/-- Adjacency means some edge has underlying vertex set `{u, v}`. -/
+theorem adj_def (X : TwoComplex V) (u v : V) :
+    X.Adj u v ↔ ∃ e ∈ X.edges, (e : Set V) = {u, v} := by
+  rfl
+
+/-- Adjacency in a two-complex is symmetric. -/
+theorem Adj.symm {X : TwoComplex V} {u v : V} (h : X.Adj u v) : X.Adj v u := by
+  obtain ⟨e, he, hset⟩ := h
+  exact ⟨e, he, by rwa [Set.pair_comm]⟩
+
+/-- Adjacency in a two-complex commutes in its two vertices. -/
+theorem adj_comm (X : TwoComplex V) (u v : V) : X.Adj u v ↔ X.Adj v u :=
+  ⟨Adj.symm, Adj.symm⟩
+
+/-- Adjacent vertices in a two-complex are distinct. -/
+theorem Adj.ne {X : TwoComplex V} {u v : V} (h : X.Adj u v) : u ≠ v := by
+  rintro rfl
+  obtain ⟨e, he, hset⟩ := h
+  have heq : e = {u} := Finset.coe_injective (by simpa using hset)
+  have hcard := X.edge_card e he
+  simp [heq] at hcard
+
+/-- No vertex is adjacent to itself in a two-complex. -/
+@[simp]
+theorem not_adj_self (X : TwoComplex V) (u : V) : ¬ X.Adj u u :=
+  fun h => h.ne rfl
+
+/-- With decidable vertex equality, `{u, v}` is an edge exactly when `u` and `v` are adjacent. -/
+@[simp]
+theorem pair_mem_edges_iff [DecidableEq V] (X : TwoComplex V) (u v : V) :
+    ({u, v} : Finset V) ∈ X.edges ↔ X.Adj u v := by
+  rw [adj_def]
+  constructor
+  · intro h
+    exact ⟨{u, v}, h, Finset.coe_pair⟩
+  · rintro ⟨e, he, hset⟩
+    rwa [← Finset.coe_injective (hset.trans Finset.coe_pair.symm)]
+
+/-- Any two distinct vertices of a filled triangle are adjacent. -/
+theorem adj_of_mem_triangles {X : TwoComplex V} {t : Finset V} (ht : t ∈ X.triangles)
+    {u v : V} (hu : u ∈ t) (hv : v ∈ t) (huv : u ≠ v) : X.Adj u v := by
+  classical
+  rw [← X.pair_mem_edges_iff]
+  exact X.edge_mem_of_subset t ht {u, v}
+    (Finset.insert_subset_iff.mpr ⟨hu, Finset.singleton_subset_iff.mpr hv⟩)
+    (Finset.card_pair huv)
+
 /-- Retain the edge and triangle levels of a rank-three graded complex. -/
 def ofHypergraphComplex (C : HypergraphComplex 3 V) : TwoComplex V where
   edges := C.faces 2 (by decide)
@@ -174,6 +226,16 @@ theorem mem_edges_complete (e : Finset V) : e ∈ (complete V).edges ↔ e.card 
   classical
   simp [complete, mem_powersetCard]
 
+/-- In the complete complex, two vertices are adjacent precisely when they are distinct. -/
+@[simp]
+theorem adj_complete_iff (u v : V) : (complete V).Adj u v ↔ u ≠ v := by
+  classical
+  rw [← pair_mem_edges_iff, mem_edges_complete]
+  by_cases h : u = v
+  · subst h
+    simp
+  · simp [Finset.card_pair h, h]
+
 @[simp]
 theorem mem_triangles_complete (t : Finset V) :
     t ∈ (complete V).triangles ↔ t.card = 3 := by
@@ -203,6 +265,12 @@ theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K
       Fintype.card V * (Fintype.card V - 1) * (Fintype.card V - 2) / 6 := by
   rw [card_triangles_complete, Nat.cast_choose_eq_descPochhammer_div]
   norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
+
+/-- The complete two-complex has at least one triangle as soon as `3 ≤ Fintype.card V`. -/
+theorem triangles_complete_nonempty (hV : 3 ≤ Fintype.card V) :
+    (complete V).triangles.Nonempty := by
+  rw [← Finset.card_pos, card_triangles_complete]
+  exact Nat.choose_pos hV
 
 end FiniteVertices
 
