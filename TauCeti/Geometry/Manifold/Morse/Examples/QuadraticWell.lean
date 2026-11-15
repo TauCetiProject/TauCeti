@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+public import TauCeti.Geometry.Manifold.Riemannian.Scaling.Distance
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
+import TauCeti.Geometry.Manifold.Riemannian.Scaling
 
 /-!
 # Gradient trajectories of the quadratic well
 
-This file computes the negative gradient flow of `f(x) = x²` on `ℝ`, for the standard metric, and
-uses it to test the convergence and decay theorems for gradient trajectories of Morse functions
+This file computes the negative gradient flow of `f(x) = x²` on `ℝ`, for the standard metric and
+its constant multiples, and uses it to test the convergence and decay theorems for gradient
+trajectories of Morse functions
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient` and
 `TauCeti.IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient`).
 
@@ -37,6 +40,18 @@ uses it to test the convergence and decay theorems for gradient trajectories of 
   (`TauCeti.not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq`). For
   `x₀ = 0` the trajectory is the equilibrium at the critical point: its energy and tail length
   vanish, and the decay bound holds with the constant `0`.
+* **The rate depends on the metric.** For the metric `c dx²`, the standard metric multiplied by a
+  constant `c > 0`, the gradient of `x²` is `2 x / c` (`TauCeti.mgradient_sq_rescale_const`), so
+  the trajectory through `x₀` is `t ↦ x₀ exp (-(2 / c) t)`
+  (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_rescale_const`). Distances are `√c` times the
+  standard ones (`Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const`), so the
+  distance to `0` is `√c |x₀| exp (-(2 / c) t)`
+  (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_rescale_const`), and for
+  `x₀ ≠ 0` no rate faster than `2 / c` works
+  (`not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_rescale_const`).
+  The optimal rate `2 / c` is the eigenvalue at `0` of the Hessian `2 dx²` relative to the metric
+  `c dx²`. For `4 dx²` the trajectory is `x₀ exp (-t / 2)`, at distance `2 |x₀| exp (-t / 2)` from
+  `0`: the rate `2` of the standard metric is not preserved by rescaling the metric.
 * **A forward curve with an endpoint.** The convergence and decay theorems are stated for curves
   that solve the curve equation on `[0, ∞)`, with a one-sided derivative at the endpoint `0`, and
   a prescribed continuation of such a curve to negative times need not be an integral curve. The
@@ -62,12 +77,19 @@ open scoped Bundle ContDiff ENNReal Manifold
 
 namespace TauCeti
 
+/-- For the standard metric on `ℝ`, the gradient of `x ↦ x²` at `x` is `2 x`. -/
+private theorem mgradient_sq_real_apply (x : ℝ) :
+    mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = (2 * x : ℝ) := by
+  rw [mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
+  simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
+    Nat.add_one_sub_one, pow_one]
+  -- Both sides are the real number `2 x`, read in `ℝ` and in its tangent space.
+  rfl
+
 /-- For the standard metric on `ℝ`, the negative gradient of `x ↦ x²` at `x` is `-2 x`. -/
 private theorem neg_mgradient_sq_real_apply (x : ℝ) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 * x) : ℝ) := by
-  rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
-  simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
-    Nat.add_one_sub_one, pow_one]
+  rw [Pi.neg_apply, mgradient_sq_real_apply]
   -- Both sides are the real number `-2 x`, read in `ℝ` and in its tangent space.
   rfl
 
@@ -299,5 +321,120 @@ theorem maximalIntegralCurve_neg_mgradient_sq_eq_iff {x₀ : ℝ} (hx₀ : x₀ 
   · intro hs
     rw [max_eq_left (by linarith : 0 ≤ 1 + s)]
     ring_nf
+
+/-! ### A rescaled metric -/
+
+section Rescaled
+
+open Bundle
+
+variable {c : ℝ} (hc : 0 < c)
+include hc
+
+/-- For the metric `c dx²` on `ℝ`, the gradient of `x ↦ x²` at `x` is `2 x / c`. -/
+theorem mgradient_sq_rescale_const (x : ℝ) :
+    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+      ⟨((riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ c) contMDiff_const
+        fun _ ↦ hc).toRiemannianMetric⟩
+    mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x = (2 * x / c : ℝ) := by
+  -- For the standard metric the gradient is `2 x`, and rescaling the metric divides it by `c`.
+  intro _
+  refine (ContMDiffRiemannianMetric.mgradient_rescale_const
+    (riemannianMetricVectorSpace ℝ) hc _ x).trans ?_
+  rw [mgradient_sq_real_apply]
+  -- The scalar multiple is a product of real numbers, read in the tangent space of `ℝ`.
+  exact (smul_eq_mul c⁻¹ (2 * x)).trans (by ring)
+
+/-- For the metric `c dx²`, the curve `t ↦ x₀ exp (-(2 / c) t)` is a trajectory of `-grad x²`,
+defined for all time. -/
+private theorem isMIntegralCurve_neg_mgradient_sq_rescale_const (x₀ : ℝ) :
+    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+      ⟨((riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ c) contMDiff_const
+        fun _ ↦ hc).toRiemannianMetric⟩
+    IsMIntegralCurve (fun t ↦ x₀ * Real.exp (-(2 / c * t)))
+      (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) := by
+  intro _
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn, isMIntegralCurveOn_iff_isIntegralCurveOn]
+  intro t _
+  have h : HasDerivAt (fun s : ℝ ↦ -(2 / c * s)) (-(2 / c)) t := by
+    simpa using ((hasDerivAt_id t).const_mul (2 / c)).fun_neg
+  have hgrad : mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) (x₀ * Real.exp (-(2 / c * t))) =
+      (2 * (x₀ * Real.exp (-(2 / c * t))) / c : ℝ) :=
+    mgradient_sq_rescale_const hc _
+  refine (h.exp.const_mul x₀).hasDerivWithinAt.congr_deriv ?_
+  beta_reduce
+  rw [Pi.neg_apply, hgrad]
+  -- Both sides are the same real number, read in `ℝ` and in its tangent space.
+  exact (by ring : x₀ * (Real.exp (-(2 / c * t)) * -(2 / c)) =
+    -(2 * (x₀ * Real.exp (-(2 / c * t))) / c))
+
+/-- **The trajectories of the quadratic well for a rescaled metric.** For the metric `c dx²`, the
+trajectory of `-grad x²` through `x₀` is `t ↦ x₀ exp (-(2 / c) t)`, defined for all time. For
+`c = 4` it is `x₀ exp (-t / 2)`. -/
+theorem maximalIntegralCurve_neg_mgradient_sq_rescale_const (x₀ t : ℝ) :
+    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+      ⟨((riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ c) contMDiff_const
+        fun _ ↦ hc).toRiemannianMetric⟩
+    maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t =
+      x₀ * Real.exp (-(2 / c * t)) := by
+  intro _
+  have : IsContMDiffRiemannianBundle 𝓘(ℝ, ℝ) ω ℝ (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+    Bundle.instIsContMDiffRiemannianBundle _
+  simpa using (isMIntegralCurve_neg_mgradient_sq_rescale_const hc x₀).maximalIntegralCurve_eq
+    (contMDiff_neg_mgradient_one (contDiff_id.pow 2).contMDiff) t
+
+/-- **Distance to the minimum for a rescaled metric.** For the metric `c dx²`, the trajectory of
+`-grad x²` through `x₀` is at Riemannian distance `√c |x₀| exp (-(2 / c) t)` from the critical
+point `0` at time `t`. For `c = 4` this is `2 |x₀| exp (-t / 2)`: rescaling the metric changes
+the rate `2` of the standard metric. -/
+theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_rescale_const (x₀ t : ℝ) :
+    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+      ⟨((riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ c) contMDiff_const
+        fun _ ↦ hc).toRiemannianMetric⟩
+    Manifold.riemannianEDist 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t) 0 =
+      ENNReal.ofReal (√c * (|x₀| * Real.exp (-(2 / c * t)))) := by
+  intro _
+  have h : maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t =
+      x₀ * Real.exp (-(2 / c * t)) :=
+    maximalIntegralCurve_neg_mgradient_sq_rescale_const hc x₀ t
+  rw [h]
+  refine (ContMDiffRiemannianMetric.riemannianEDist_rescale_const
+    (riemannianMetricVectorSpace ℝ) hc _ _).trans ?_
+  rw [← IsRiemannianManifold.out, edist_dist, dist_zero_right, Real.norm_eq_abs, abs_mul,
+    Real.abs_exp, ENNReal.ofReal_mul (Real.sqrt_nonneg c)]
+
+/-- **The rate `2 / c` is sharp.** For the metric `c dx²`, `x₀ ≠ 0` and `μ > 2 / c`, the distance
+from the trajectory of `-grad x²` through `x₀` to the critical point `0` is not bounded by
+`C exp (-μ t)` for large `t`, for any `C > 0`. For `c = 4` the rate `2` of the standard metric
+fails. -/
+theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_rescale_const
+    {x₀ μ : ℝ} (hx₀ : x₀ ≠ 0) (hμ : 2 / c < μ) :
+    let _ : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+      ⟨((riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ c) contMDiff_const
+        fun _ ↦ hc).toRiemannianMetric⟩
+    ¬ ∃ C > 0, ∀ᶠ t in atTop,
+      Manifold.riemannianEDist 𝓘(ℝ, ℝ)
+          (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t) 0 ≤
+        ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  intro _
+  rintro ⟨C, hC, h⟩
+  have ha : 0 < √c * |x₀| := mul_pos (Real.sqrt_pos.2 hc) (abs_pos.2 hx₀)
+  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - 2 / c) * t)) atTop atTop :=
+    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
+  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / (√c * |x₀|)))).exists
+  have hd := riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_rescale_const hc x₀ t
+  rw [hd, ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
+  -- Multiplying the bound by `exp (μ t)` gives `√c |x₀| exp ((μ - 2 / c) t) ≤ C`.
+  have hle : √c * |x₀| * Real.exp ((μ - 2 / c) * t) ≤ C :=
+    calc √c * |x₀| * Real.exp ((μ - 2 / c) * t) =
+          √c * (|x₀| * Real.exp (-(2 / c * t))) * Real.exp (μ * t) := by
+          rw [mul_assoc, mul_assoc, mul_assoc, ← Real.exp_add]
+          ring_nf
+      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
+      _ = C := by simp [Real.exp_neg]
+  linarith [(div_lt_iff₀ ha).1 hbig]
+
+end Rescaled
 
 end TauCeti
