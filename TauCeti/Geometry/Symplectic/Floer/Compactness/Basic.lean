@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
@@ -93,9 +94,18 @@ The taming constants of `J_p` and the sizes of `X_{K_{s,p}}` are uniform over `C
 comparison of the two energies holds with constants independent of `p`. The statement for a single
 datum is the case of a constant family over a one-point window.
 
-The limit is only shown to be continuous; its regularity, the rescaled bubbles at the points of
-`Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point), and breaking along
-cylindrical ends are not treated here.
+Over such a window the derivatives converge as well
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`): if smooth solutions for
+parameters `pₙ → p₀` have derivatives bounded on compact sets and converge pointwise, then the
+limit is `C¹` and solves the equation for `p₀`, and the derivatives converge locally uniformly.
+This is `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer` applied to the solutions with
+the parameter adjoined. It applies to the rescaled solutions at a bubbling point, whose equations
+form a family over the centres and scales of the rescaling
+(`TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`).
+
+The limit off the bubbling points is only shown to be continuous here; its regularity, the
+rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling
+point), and breaking along cylindrical ends are not treated in this file.
 
 ## References
 
@@ -278,6 +288,7 @@ density is unchanged. The parameter block is doubled only so that it carries a l
 structure. -/
 
 open Function
+open scoped ContDiff
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
@@ -338,16 +349,18 @@ private theorem parameterX_apply (X : P → ℂ × V → ℂ →L[ℝ] V)
   simp [parameterX]
 
 private theorem contDiffOn_parameterJ {J : P → ℂ × V → V →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hJ : ContDiffOn ℝ 2 (uncurry J) W) : ContDiffOn ℝ 2 (parameterJ J) (parameterPoint ⁻¹' W) := by
-  have hJ' : ContDiffOn ℝ 2 (fun q ↦ uncurry J (parameterPoint q)) (parameterPoint ⁻¹' W) :=
+    {n : WithTop ℕ∞} (hJ : ContDiffOn ℝ n (uncurry J) W) :
+    ContDiffOn ℝ n (parameterJ J) (parameterPoint ⁻¹' W) := by
+  have hJ' : ContDiffOn ℝ n (fun q ↦ uncurry J (parameterPoint q)) (parameterPoint ⁻¹' W) :=
     hJ.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn (mapsTo_preimage _ _)
   unfold parameterJ
   exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
     (hJ'.clm_comp contDiffOn_const))).clm_comp contDiffOn_const)
 
 private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
-    (hX : ContDiffOn ℝ 2 (uncurry X) W) : ContDiffOn ℝ 2 (parameterX X) (parameterPoint ⁻¹' W) := by
-  have hX' : ContDiffOn ℝ 2 (fun q ↦ uncurry X (parameterPoint q)) (parameterPoint ⁻¹' W) :=
+    {n : WithTop ℕ∞} (hX : ContDiffOn ℝ n (uncurry X) W) :
+    ContDiffOn ℝ n (parameterX X) (parameterPoint ⁻¹' W) := by
+  have hX' : ContDiffOn ℝ n (fun q ↦ uncurry X (parameterPoint q)) (parameterPoint ⁻¹' W) :=
     hX.comp (parameterPoint (P := P) (V := V)).contDiff.contDiffOn (mapsTo_preimage _ _)
   unfold parameterX
   exact contDiffOn_const.clm_comp (contDiffOn_const.clm_comp hX')
@@ -487,6 +500,72 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     simpa [← hax, parameterLift] using hx
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ _ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hwlim
+
+/-- **The derivatives of Floer solutions converge over a parameter window.** Let `J_p` and `X_p`
+depend on a parameter `p` in a finite-dimensional real inner product space `P`, jointly `C¹` on an
+open set `W ⊆ P × (ℂ × V)`, and let `Ω ⊆ ℂ` be open. Let `uₙ` be smooth solutions of
+`∂ₜu - X_{pₙ}(z, u) i = J_{pₙ}(z, u)(∂ₛu - X_{pₙ}(z, u) 1)` on `Ω`, along which `J_{pₙ}² = -1`,
+whose derivatives are bounded on each compact subset of `Ω` uniformly in `n`. If `pₙ → p₀` and
+`uₙ → v` pointwise on `Ω`, with `(p₀, z, v z) ∈ W` for `z ∈ Ω`, then `v` is `C¹` on `Ω`,
+`Duₙ → Dv` locally uniformly on `Ω`, and `v` solves the equation for `p₀` on `Ω`. -/
+theorem tendstoLocallyUniformlyOn_fderiv_of_floer_parametric [FiniteDimensional ℝ P]
+    [FiniteDimensional ℝ V] {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
+    {W : Set (P × (ℂ × V))} {Ω : Set ℂ} (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 (uncurry J) W)
+    (hX : ContDiffOn ℝ 1 (uncurry X) W) (hΩ : IsOpen Ω) {p : ℕ → P} {p₀ : P} {u : ℕ → ℂ → V}
+    {v : ℂ → V} (hp : Tendsto p atTop (𝓝 p₀)) (hvW : ∀ y ∈ Ω, (p₀, (y, v y)) ∈ W)
+    (hu : ∀ n, ContDiffOn ℝ ∞ (u n) Ω)
+    (hJsq : ∀ n, ∀ y ∈ Ω, ∀ w, J (p n) (y, u n y) (J (p n) (y, u n y) w) = -w)
+    (hCR : ∀ n, ∀ y ∈ Ω, fderiv ℝ (u n) y I - X (p n) (y, u n y) I =
+      J (p n) (y, u n y) (fderiv ℝ (u n) y 1 - X (p n) (y, u n y) 1))
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M)
+    (hlim : ∀ y ∈ Ω, Tendsto (fun n ↦ u n y) atTop (𝓝 (v y))) :
+    ContDiffOn ℝ 1 v Ω ∧ TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
+      ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
+        J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
+  -- Apply `tendstoLocallyUniformlyOn_fderiv_of_floer` to the solutions `z ↦ ((pₙ, 0), uₙ z)`, whose
+  -- derivatives are those of `uₙ` followed by the inclusion `L` of the second factor.
+  set L : V →L[ℝ] WithLp 2 (WithLp 2 (P × P) × V) :=
+    (WithLp.prodContinuousLinearEquiv 2 ℝ (WithLp 2 (P × P)) V).symm.toContinuousLinearMap ∘L
+      inr ℝ (WithLp 2 (P × P)) V with hL
+  set S : WithLp 2 (WithLp 2 (P × P) × V) →L[ℝ] V := WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V
+  have hSL : S ∘L L = ContinuousLinearMap.id ℝ V := by
+    ext x
+    simp [S, L]
+  have hdL (a : WithLp 2 (P × P)) (f : ℂ → V) (y : ℂ) :
+      fderiv ℝ (fun w ↦ WithLp.toLp 2 (a, f w)) y = L ∘L fderiv ℝ f y :=
+    ContinuousLinearMap.ext fun w ↦ by
+      simp [L, fderiv_toLp_const_prodMk_apply, WithLp.prodContinuousLinearEquiv_symm_apply]
+  set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
+    fun n w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p n, 0), u n w) with hg
+  set G : ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
+    fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p₀, 0), v w) with hG
+  have hgL (n : ℕ) (y : ℂ) : fderiv ℝ (g n) y = L ∘L fderiv ℝ (u n) y := hdL _ _ y
+  have hGL (y : ℂ) : fderiv ℝ G y = L ∘L fderiv ℝ v y := hdL _ _ y
+  obtain ⟨hGc, hconv, hsol⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer (J := parameterJ J)
+    (X := parameterX X) (hW.preimage (parameterPoint (P := P) (V := V)).continuous)
+    (contDiffOn_parameterJ hJ) (contDiffOn_parameterX hX) hΩ (u := g) (v := G)
+    (fun y hy ↦ by simpa [hG] using hvW y hy)
+    (fun n ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
+    (fun n y hy ζ ↦ by
+      simp [hg, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure, hJsq n y hy])
+    (fun n y hy ↦ by simp [hg, WithLp.ext_iff, hCR n y hy])
+    (fun C hC hCΩ ↦ by
+      obtain ⟨M, hM⟩ := hbd C hC hCΩ
+      exact ⟨‖L‖ * M, fun n y hy ↦ by
+        rw [hgL]
+        exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (hM n y hy) (norm_nonneg _))⟩)
+    (fun y hy ↦ ((WithLp.prod_continuous_toLp 2 _ V).tendsto _).comp
+      (((WithLp.prod_continuous_toLp 2 P P).comp (continuous_id.prodMk continuous_const)).tendsto
+        p₀ |>.comp hp |>.prodMk_nhds (hlim y hy)))
+  refine ⟨?_, ?_, fun y hy ↦ ?_⟩
+  · exact (S.contDiff.comp_contDiffOn hGc).congr fun y _ ↦ by simp [S, hG]
+  · -- `Duₙ = S ∘ Dgₙ` and `Dv = S ∘ DG`.
+    have h := (compL ℝ ℂ _ V S).uniformContinuous.comp_tendstoLocallyUniformlyOn hconv
+    simp only [Function.comp_def, hgL, hGL, compL_apply, ← ContinuousLinearMap.comp_assoc, hSL,
+      ContinuousLinearMap.id_comp] at h
+    exact h
+  · have h := congrArg S (hsol y hy)
+    simpa [S, hG, hGL, hL] using h
 
 end Parameter
 

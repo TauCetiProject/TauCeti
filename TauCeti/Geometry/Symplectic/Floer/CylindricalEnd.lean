@@ -77,7 +77,7 @@ interval `[a + σ_k, b + σ_k]` eventually lies in `S` and the energy of `u_k` o
 subsequence `φ` and a `1`-periodic orbit `x` of `X_{H_t}` such that the translates
 `(s, t) ↦ u_(φ n)(s + σ_(φ n), t)` converge to the stationary cylinder `(s, t) ↦ x(t)`, locally
 uniformly on `ℝ × ℝ`. On each band `[-m, m] × ℝ` the translates are eventually uniformly
-Lipschitz with values in `K`, so the Arzelà–Ascoli theorem along exhausting bands
+Lipschitz with values in `K`, so the Arzelà–Ascoli theorem along exhausting squares
 (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`) gives a convergent
 subsequence, and `TauCeti.Geometry.Symplectic.Floer.Breaking` identifies every such limit as a
 stationary cylinder over a Hamiltonian orbit. This is the behaviour of a sequence of Floer
@@ -730,9 +730,12 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
   -- A subsequence `φ` has the bound on `[-n, n] × ℝ` at its `n`-th term, and Arzelà–Ascoli gives a
   -- further subsequence `ψ` converging locally uniformly.
   obtain ⟨φ, hφ, hφP⟩ := Filter.extraction_forall_of_eventually hband
+  have hsq (r : ℝ) : closedBall (0 : ℝ × ℝ) r ⊆ Icc (-r) r ×ˢ univ := fun z hz ↦
+    ⟨abs_le.1 ((Real.norm_eq_abs z.1 ▸ norm_fst_le z).trans (mem_closedBall_zero_iff.1 hz)),
+      mem_univ _⟩
   obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
     (R := fun n ↦ (n : ℝ)) (fun n ↦ Nat.cast_nonneg n) tendsto_natCast_atTop_atTop
-    (fun n ↦ (hφP n).1) fun n ↦ (hφP n).2
+    (fun n ↦ (hφP n).1.mono (hsq n)) fun n ↦ (hφP n).2.mono_left (hsq n)
   have hχ : Tendsto (fun n ↦ φ (ψ n)) atTop atTop := (hφ.comp hψ).tendsto_atTop
   -- The limit is periodic in `t`, since the translates eventually are at each point.
   have hgper (z : ℝ × ℝ) : g (z.1, z.2 + 1) = g z := by
