@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.LocalPotentials
+public import TauCeti.Analysis.Calculus.LocalPotentials.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 
 /-!
