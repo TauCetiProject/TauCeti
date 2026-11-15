@@ -13,7 +13,7 @@ import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 /-!
 # Translations of the identity component
 
-Right translation by a `k`-rational point induces a homeomorphism of the prime spectrum. This file
+Right translation by a `k`-point induces a homeomorphism of the prime spectrum. This file
 proves that a point in the connected component of the counit translates that component onto itself
 and preserves its defining idempotent and ideal.
 
@@ -43,7 +43,7 @@ namespace TauCeti.HopfAlgebra
 
 universe u v
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Right translation sends the kernel point of `g` to the kernel point of the convolution
@@ -62,6 +62,7 @@ theorem rightTranslationHomeomorph_kernelPoint
   congr 1
   exact congrArg WithConv.ofConv (toConv_comp_rightTranslationAlgHom g h)
 
+omit [IsDomain k] in
 /-- Right translation transports the connected component of a point to the connected component
 of its translate. -/
 theorem rightTranslationHomeomorph_image_connectedComponent
@@ -107,7 +108,7 @@ theorem connectedComponentIdempotent_kernelPoint_eq_augmentationPoint
   rw [PrimeSpectrum.basicOpen_connectedComponentIdempotent]
   exact (connectedComponent_eq hg).symm
 
-/-- A rational point in the identity component evaluates the idempotent selecting that component
+/-- A `k`-point in the identity component evaluates the idempotent selecting that component
 to one. -/
 theorem map_connectedComponentIdempotent_augmentationPoint_eq_one_of_mem
     (g : WithConv (H →ₐ[k] k))
