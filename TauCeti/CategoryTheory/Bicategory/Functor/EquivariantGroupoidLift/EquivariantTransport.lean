@@ -43,8 +43,14 @@ Thus the transport of a lift is equivariant as a whole: the coherence data of tr
 `equivariantTransport` is a pseudofunctor out of `LocallyDiscrete Γ`, reindexing it along
 naturally isomorphic functors `ψ₁ ≅ ψ₂ : Λ ⥤ Γ` gives equivalent families by
 `CategoryTheory.Pseudofunctor.mapNatIso`, whose components are the equivariant transports along
-the components of the natural isomorphism; `pullback_transportStrongTrans` identifies the
-equivariant transport of `L.pullback ψ` with that of `L` along `ψ`.
+the components of the natural isomorphism. For `ψ : Λ ⥤ Γ`, `pullback_transportStrongTrans`
+identifies the equivariant transport of `L.pullback ψ` along each arrow `g` of `Λ` with the
+equivariant transport of `L` along `ψ.map g`.
+
+The pseudofunctor is assembled with Mathlib's `CategoryTheory.LocallyDiscrete.mkPseudofunctor`
+(in `Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete`), following the assembly of
+`EquivariantGroupoidLift.transportPseudofunctor` from the transport functors with
+`LocallyDiscrete.mkCatPseudofunctor`.
 
 ## References
 
@@ -73,7 +79,9 @@ variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
 `T_a ⋙ E_g ≅ E_g ⋙ T_a` commuting it with the prescribed actions, as a strong transformation
 `actions p ⟶ actions q`: an equivariant functor between the prescribed categorical actions. -/
 -- The body is exposed so that the components and naturality cells are definitionally the
--- transport functors and `transportCommIso`, as stated in the component lemmas below.
+-- transport functors and `transportCommIso`, as stated in the component lemmas below. The unit
+-- and composition modifications that follow are characterized by their component lemmas and
+-- keep their bodies private.
 @[expose] noncomputable def transportStrongTrans {p q : Γ} (g : p ⟶ q) :
     actions p ⟶ actions q where
   app _ := (L.transport g).toCatHom
@@ -131,7 +139,7 @@ lemma transportStrongTrans_naturality_inv_app {p q : Γ} (g : p ⟶ q)
 
 /-- The unit isomorphism `E_(𝟙 p) ≅ 𝟭` of transport, as an invertible modification from the
 equivariant transport along `𝟙 p` to the identity strong transformation of `actions p`. -/
-@[expose] noncomputable def transportStrongTransId (p : Γ) :
+noncomputable def transportStrongTransId (p : Γ) :
     L.transportStrongTrans (𝟙 p) ≅ 𝟙 (actions p) :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (L.transportId p)) (fun f ↦ by
     have key (X : fiber actions p) :
@@ -142,24 +150,26 @@ equivariant transport along `𝟙 p` to the identity strong transformation of `a
     ext X
     exact key X)
 
+-- These are proved by `by rfl` rather than as exported definitional lemmas, since the body of
+-- `transportStrongTransId` is not exposed; likewise for `transportStrongTransComp`.
 @[simp]
 lemma transportStrongTransId_hom_as_app (p : Γ) (a : LocallyDiscrete (SingleObj H))
     (X : fiber actions p) :
     ((L.transportStrongTransId p).hom.as.app a).toNatTrans.app X =
       (L.transportId p).hom.app X :=
-  rfl
+  by rfl
 
 @[simp]
 lemma transportStrongTransId_inv_as_app (p : Γ) (a : LocallyDiscrete (SingleObj H))
     (X : fiber actions p) :
     ((L.transportStrongTransId p).inv.as.app a).toNatTrans.app X =
       (L.transportId p).inv.app X :=
-  rfl
+  by rfl
 
 /-- The composition isomorphism `E_(gh) ≅ E_g ⋙ E_h` of transport, for `g ≫ h = gh`, as an
 invertible modification from the equivariant transport along `gh` to the composite of the
 equivariant transports along `g` and `h`. -/
-@[expose] noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (gh : p ⟶ r) (hgh : g ≫ h = gh := by cat_disch) :
     L.transportStrongTrans gh ≅ L.transportStrongTrans g ≫ L.transportStrongTrans h :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (L.transportComp g h gh hgh).symm) (fun f ↦ by
@@ -187,14 +197,14 @@ lemma transportStrongTransComp_hom_as_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ 
     (hgh : g ≫ h = gh) (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     ((L.transportStrongTransComp g h gh hgh).hom.as.app a).toNatTrans.app X =
       (L.transportComp g h gh hgh).inv.app X :=
-  rfl
+  by rfl
 
 @[simp]
 lemma transportStrongTransComp_inv_as_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶ r)
     (hgh : g ≫ h = gh) (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     ((L.transportStrongTransComp g h gh hgh).inv.as.app a).toNatTrans.app X =
       (L.transportComp g h gh hgh).hom.app X :=
-  rfl
+  by rfl
 
 /-! ### The equivariant transport pseudofunctor
 
@@ -253,6 +263,8 @@ private lemma transportStrongTransComp_right_unitality_eqToHom {p q : Γ} (f k :
 categorical actions of `H` (pseudofunctors `LocallyDiscrete (SingleObj H) ⥤ᵖ Cat`, strong
 transformations and modifications) sending `p` to the prescribed action `actions p` and
 `g` to the equivariant transport `transportStrongTrans g`. -/
+-- The body is exposed so that the value at `p` is definitionally `actions p` and the unit and
+-- compositor are the transport modifications, as stated in the lemmas below.
 @[expose] noncomputable def equivariantTransport :
     LocallyDiscrete Γ ⥤ᵖ (LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) :=
   LocallyDiscrete.mkPseudofunctor actions L.transportStrongTrans L.transportStrongTransId
@@ -285,11 +297,9 @@ lemma equivariantTransport_mapComp {b₀ b₁ b₂ : LocallyDiscrete Γ} (g : b�
 
 /-- For an isomorphism `g : p ≅ q` of `Γ`, the equivariant transport along `g` is an equivalence
 `actions p ≌ actions q` in the bicategory of categorical actions of `H`, with inverse the
-equivariant transport along `g⁻¹`. Its unit `𝟙 ≅ E_g ≫ E_(g⁻¹)` is built from the unit and
-composition isomorphisms of transport; its counit is obtained from the corresponding isomorphism
-`E_(g⁻¹) ≫ E_g ≅ 𝟙` by `Bicategory.Equivalence.mkOfAdjointifyCounit`. -/
--- The body is exposed so that the unit can be stated against `transportStrongTrans`, as in
--- `transportActionEquivalence_unit`.
+equivariant transport along `g⁻¹`. -/
+-- The body is exposed so that the unit and counit can be stated against `transportStrongTrans`,
+-- as in `transportActionEquivalence_unit` and `transportActionEquivalence_counit`.
 @[expose] noncomputable def transportActionEquivalence {p q : Γ} (g : p ≅ q) :
     Bicategory.Equivalence (actions p) (actions q) :=
   Equivalence.mkOfAdjointifyCounit
@@ -311,11 +321,23 @@ lemma transportActionEquivalence_unit {p q : Γ} (g : p ≅ q) :
       (L.transportStrongTransId p).symm ≪≫ L.transportStrongTransComp g.hom g.inv (𝟙 p) :=
   rfl
 
+/-- The counit of `transportActionEquivalence g` is the adjointified counit determined by the
+unit and the isomorphism `E_(g⁻¹) ≫ E_g ≅ 𝟙` built from the unit and composition isomorphisms
+of transport. -/
+lemma transportActionEquivalence_counit {p q : Γ} (g : p ≅ q) :
+    (L.transportActionEquivalence g).counit =
+      Bicategory.adjointifyCounit
+        ((L.transportStrongTransId p).symm ≪≫ L.transportStrongTransComp g.hom g.inv (𝟙 p))
+        ((L.transportStrongTransComp g.inv g.hom (𝟙 q)).symm ≪≫ L.transportStrongTransId q) :=
+  rfl
+
 /-- The action of the endomorphism monoid `End p` on the prescribed categorical action
 `actions p` by equivariant transport: the restriction of `equivariantTransport` along the
 inclusion `SingleObj (End p) ⥤ Γ`. It sends `g` to the strong transformation
 `transportStrongTrans g`, so `End p` acts on `C p` by functors commuting coherently with the
 action of `H`. Its component functors are the transport functors `E_g` of `endAction p`. -/
+-- The body is exposed so that its values are definitionally `actions p` and its maps are
+-- `transportStrongTrans`, as stated in the lemmas below.
 @[expose] noncomputable def equivariantEndAction (p : Γ) :
     LocallyDiscrete (SingleObj (End p)) ⥤ᵖ (LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) :=
   (SingleObj.functor (MonoidHom.id (End p))).toPseudofunctor.comp L.equivariantTransport
@@ -329,6 +351,36 @@ lemma equivariantEndAction_obj (p : Γ) (b : LocallyDiscrete (SingleObj (End p))
 lemma equivariantEndAction_map (p : Γ) {b b' : LocallyDiscrete (SingleObj (End p))}
     (g : b ⟶ b') : (L.equivariantEndAction p).map g = L.transportStrongTrans g.as.asHom :=
   rfl
+
+@[simp]
+lemma equivariantEndAction_mapId_hom_as_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((L.equivariantEndAction p).mapId b).hom.as.app a).toNatTrans.app X =
+      (L.transportId p).hom.app X :=
+  Category.id_comp _
+
+@[simp]
+lemma equivariantEndAction_mapId_inv_as_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((L.equivariantEndAction p).mapId b).inv.as.app a).toNatTrans.app X =
+      (L.transportId p).inv.app X :=
+  Category.comp_id _
+
+@[simp]
+lemma equivariantEndAction_mapComp_hom_as_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((L.equivariantEndAction p).mapComp g h).hom.as.app a).toNatTrans.app X =
+      (L.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).inv.app X :=
+  Category.id_comp _
+
+@[simp]
+lemma equivariantEndAction_mapComp_inv_as_app (p : Γ)
+    {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    (((L.equivariantEndAction p).mapComp g h).inv.as.app a).toNatTrans.app X =
+      (L.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).hom.app X :=
+  Category.comp_id _
 
 /-- The equivariant transport of the pullback of `L` along `ψ : Λ ⥤ Γ` is the equivariant
 transport of `L` along the image of `ψ`. -/
