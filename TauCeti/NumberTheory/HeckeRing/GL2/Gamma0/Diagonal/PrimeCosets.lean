@@ -115,7 +115,7 @@ lemma exists_mem_Gamma0_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = 
       rw [Gamma0_mem.mp hγ, mul_zero]
     obtain ⟨δ, hδ, -, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul_of_isUnit hA hpc
     refine ⟨some (upperTriShift p γ ⟨0, hp.pos⟩), δ, hδ, ?_⟩
-    rw [primeRep_some, ← hmul, ← natDiagGL_mul_mapGL_T_zpow hp.pos ⟨0, hp.pos⟩]
+    rw [primeRep_some, ← hmul, ← natDiagGL_mul_mapGL_T_zpow (⟨0, hp.pos⟩ : Fin _)]
     simp
 
 /-- **The `Γ₀(N)` double coset of `diag(1, p)` at a prime `p ∤ N` is the union of `p + 1` right
@@ -141,7 +141,7 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_prime (hp : p.Prim
     | some b =>
       exact ⟨mapGL ℚ (ModularGroup.T ^ (b : ℤ)),
         Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)), by
-        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow hp.pos b]⟩
+        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow b]⟩
 
 /-- **At a prime dividing the level, the `Γ₀(N)` double coset of `diag(1, p)` is the union of the
 `p` upper-triangular right cosets**: the factorisation
@@ -158,12 +158,12 @@ theorem doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_dvd (hp : p.Prime)
     obtain ⟨γ, hγ, rfl⟩ := Subgroup.mem_map.mp hg
     obtain ⟨δ, hδ, -, hmul⟩ := exists_mem_Gamma0_upperTriRep_mul_of_mem_Gamma0 hpN hγ ⟨0, hp.pos⟩
     refine ⟨upperTriShift p γ ⟨0, hp.pos⟩, mapGL ℚ δ, Subgroup.mem_map_of_mem _ hδ, ?_⟩
-    rw [← hmul, ← natDiagGL_mul_mapGL_T_zpow hp.pos ⟨0, hp.pos⟩]
+    rw [← hmul, ← natDiagGL_mul_mapGL_T_zpow (⟨0, hp.pos⟩ : Fin _)]
     simp
   · intro j
     exact ⟨mapGL ℚ (ModularGroup.T ^ (j : ℤ)),
       Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N (T_zpow_mem_Gamma1 N _)),
-      natDiagGL_mul_mapGL_T_zpow hp.pos j⟩
+      natDiagGL_mul_mapGL_T_zpow j⟩
 
 /-! ### The upper-left units of the representatives -/
 

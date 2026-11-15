@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+import TauCeti.Data.Int.MulEqTwo
 
 /-!
 # A chain of a finite-type diagram carries at most one multiple edge
@@ -16,7 +17,7 @@ carrying one is joined to every other index by at most a single edge
 (`TauCeti.IsFiniteType.apply_mul_apply_le_one_of_two_le`), and a triple edge is isolated outright
 (`TauCeti.IsFiniteType.apply_eq_zero_of_apply_mul_apply_eq_three`). Neither statement forbids two
 double edges lying at a distance from one another, and that is what this file rules out along a
-chain: if the first edge of a chain of `m + 3` vertices is double, the last one is single.
+chain: if the first edge of a chain of `m + 3` vertices is double, the last one is not multiple.
 
 The diagram to exclude is a chain whose two extreme edges are double, and there are two of them,
 because a Cartan matrix orients its multiple edges: writing the entry `-2` of a double edge as an
@@ -37,11 +38,11 @@ so end in an arithmetic inequality, no member of this family is of finite type, 
 of the chain. That is what makes the conclusion available in the form the classification wants,
 `TauCeti.IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le`: a statement about an arbitrary
 finite-type matrix rather than about the model diagram. Its hypotheses are the data of a chain of
-indices carrying a multiple edge at one end - distinct indices, non-consecutive ones not joined,
-the interior edges, those joining the vertices `s` and `s + 1` for `0 < s < m + 1`, single, and the
-first edge multiple - and its conclusion is that the last edge is then single. That is exactly what
-a path in the diagram of the matrix supplies, and the extraction of such a path from a diagram
-carrying two double edges is the step left outside this file.
+indices carrying a multiple edge at one end - distinct indices, non-consecutive ones not joined, the
+interior edges, those joining the vertices `s` and `s + 1` for `0 < s < m + 1`, single, and the
+first edge multiple - and its conclusion is that the last edge is then not multiple (single or
+absent). That is exactly what a path in the diagram of the matrix supplies, and the extraction of
+such a path from a diagram carrying two double edges is the step left outside this file.
 
 Note that the ends of the chain need not be the ends of the diagram: the hypotheses say nothing
 about indices outside the chain, since finite type passes to principal submatrices
@@ -66,11 +67,10 @@ about indices outside the chain, since finite type passes to principal submatric
 ## References
 
 This file supplies the "at most one multiple edge" step of the classification of finite-type Cartan
-matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step (5), and
-Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams and their
-labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990), whose
-convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
+matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, step
+(5), and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4. The two affine diagrams
+and their labels are Table Aff 2 of V. G. Kac, *Infinite Dimensional Lie Algebras*, CUP (1990),
+whose convention `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩` is the transpose of the one used here.
 -/
 
 public section
@@ -309,15 +309,6 @@ section Chain
 
 variable {B : Type*} {A : Matrix B B ℤ}
 
-/-- **Two nonpositive integers whose product is `2` are `-1` and `-2`**, in one order or the other:
-the two entries of a double edge, whose orientation this splits into its two cases. -/
-lemma eq_neg_one_and_eq_neg_two_or_of_mul_eq_two {x y : ℤ} (hx : x ≤ 0)
-    (hxy : x * y = 2) : (x = -1 ∧ y = -2) ∨ (x = -2 ∧ y = -1) := by
-  have hdvd : (-x) ∣ 2 := ⟨-y, by rw [neg_mul_neg, hxy]⟩
-  have hle : -x ≤ 2 := Int.le_of_dvd (by norm_num) hdvd
-  have hlb : -2 ≤ x := by omega
-  interval_cases x <;> omega
-
 /-- **A chain of a finite-type diagram whose first edge points backwards and whose last edge is
 double is the doubly ended chain**, as a principal submatrix. The orientation of the last edge is
 recorded by the boolean `b`, which the two hypotheses `hlast` and `hlast'` read in the two entries
@@ -383,7 +374,7 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
     (hlast : A (v (m + 1)) (v (m + 2)) * A (v (m + 2)) (v (m + 1)) = 2) : False := by
   have hne : v (m + 1) ≠ v (m + 2) := fun hc ↦ by
     simpa using hv (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 (by omega)) hc
-  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
     (h.apply_le_zero_of_ne hne) hlast
   · -- The two double edges point the same way along the chain.
     refine not_isFiniteType_twoDoubleEdgeCartanMatrix m false ?_
@@ -402,7 +393,8 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
 be distinct indices of a finite-type matrix, non-consecutive ones not joined at all and the
 interior edges of the chain - those joining `v s` to `v (s + 1)` for `0 < s < m + 1` - single. If
 the first edge, the one joining `v 0` to `v 1`, is multiple, then the last one, joining `v (m + 1)`
-to `v (m + 2)`, is single; nothing is assumed about that last edge beforehand.
+to `v (m + 2)`, is not multiple (its product of entries is at most `1`); nothing is assumed about
+that last edge beforehand.
 
 Nothing is assumed about the indices outside the chain: finite type passes to principal
 submatrices, so the chain may sit anywhere inside a larger diagram. The hypotheses are what a path
@@ -444,12 +436,12 @@ theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType
   have hsimple' : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1 := by
     intro s hpos hlt
     have h1 := h.apply_le_zero_of_ne (hvne s (s + 1) (by omega) (by omega) (by omega))
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, e2⟩ | ⟨e1, e2⟩
+    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, _⟩ | ⟨e1, e2⟩
     · omega
     · exact ⟨e1, e2⟩
   -- Both orientations of the first edge are excluded, the second by transposition.
   have hne01 := hvne 0 1 (by omega) (by omega) (by omega)
-  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
     (h.apply_le_zero_of_ne hne01) hfirst2
   · exact not_two_le_of_chain_of_apply_eq_neg_two h hv hzero hsimple' h2 h1 hlast2
   · refine not_two_le_of_chain_of_apply_eq_neg_two h.transpose hv

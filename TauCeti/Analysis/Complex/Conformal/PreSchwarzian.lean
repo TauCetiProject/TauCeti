@@ -71,9 +71,11 @@ open Filter Set Topology
 /-- The pre-Schwarzian chain rule for locally conformal holomorphic functions. -/
 theorem logDeriv_deriv_comp {f g : ℂ → ℂ} {z : ℂ}
     (hf : AnalyticAt ℂ f (g z)) (hg : AnalyticAt ℂ g z)
-    (hfn : deriv f (g z) ≠ 0) (hgn : deriv g z ≠ 0) :
+    (hfn : deriv f (g z) ≠ 0) :
     logDeriv (deriv (f ∘ g)) z =
       logDeriv (deriv f) (g z) * deriv g z + logDeriv (deriv g) z := by
+  by_cases hgn : deriv g z = 0
+  · simp [logDeriv_apply, hgn, deriv_comp z hf.differentiableAt hg.differentiableAt]
   have heq : deriv (f ∘ g) =ᶠ[𝓝 z] fun w => deriv f (g w) * deriv g w := by
     filter_upwards [hg.continuousAt.preimage_mem_nhds hf.eventually_analyticAt,
       hg.eventually_analyticAt] with w hfw hgw
@@ -93,7 +95,7 @@ theorem logDeriv_deriv_comp_neg_inv {g : ℂ → ℂ} {z : ℂ}
     ext w
     simp [deriv_inv]
   have h := logDeriv_deriv_comp (g := fun w : ℂ => -w⁻¹) hg
-    ((analyticAt_id.inv hz).neg) hgn (by simp [hd, hz])
+    ((analyticAt_id.inv hz).neg) hgn
   rw [hd] at h
   have hlog : logDeriv (fun w : ℂ => (w ^ 2)⁻¹) z = -(2 : ℂ) / z := by
     simpa using logDeriv_zpow z (-2)
@@ -136,7 +138,6 @@ pre-Schwarzian of the result has the residue asymptotic `w * F''(w) / F'(w) → 
 `0` in the upper half of a ball, then `z * f''(z) / f'(z) → -L - 2` at infinity. -/
 theorem tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv
     {f : ℂ → ℂ} {c b L : ℂ} {r : ℝ} (hr : 0 < r) (hb : b ≠ 0)
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
     (hL : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w)
       (𝓝[Metric.ball 0 r ∩ upperHalfPlaneSet] 0) (𝓝 L)) :
@@ -154,6 +155,8 @@ theorem tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv
       simp only [deriv_div_const, deriv_sub_const]
     rw [hderiv]
     simp only [div_eq_mul_inv (deriv _ _), logDeriv_mul_const w b⁻¹ (inv_ne_zero hb)]
+    have hf : DifferentiableOn ℂ f upperHalfPlaneSet := fun z hz =>
+      (differentiableAt_of_deriv_ne_zero (hfn z hz)).differentiableWithinAt
     exact logDeriv_deriv_comp_neg_inv (hf.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds hz))
       (hfn _ hz) hw0
   have h0 : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0) := by
@@ -176,10 +179,13 @@ derivatives on a domain have equal pre-Schwarzian derivatives exactly when one i
 the other by postcomposition with `w ↦ a * w + b` for a nonzero constant `a`. -/
 theorem exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn {Ω : Set ℂ} (hΩopen : IsOpen Ω)
     (hΩconn : IsPreconnected Ω) {f g : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f Ω) (hg : DifferentiableOn ℂ g Ω)
     (hfn : ∀ z ∈ Ω, deriv f z ≠ 0) (hgn : ∀ z ∈ Ω, deriv g z ≠ 0) :
     (∃ a : ℂ, a ≠ 0 ∧ ∃ b : ℂ, EqOn f (fun z => a * g z + b) Ω) ↔
       EqOn (logDeriv (deriv f)) (logDeriv (deriv g)) Ω := by
+  have hf : DifferentiableOn ℂ f Ω := fun z hz =>
+    (differentiableAt_of_deriv_ne_zero (hfn z hz)).differentiableWithinAt
+  have hg : DifferentiableOn ℂ g Ω := fun z hz =>
+    (differentiableAt_of_deriv_ne_zero (hgn z hz)).differentiableWithinAt
   rw [logDeriv_eqOn_iff (hf.deriv hΩopen) (hg.deriv hΩopen) hΩopen hΩconn hgn hfn]
   constructor
   · rintro ⟨a, ha, b, hfg⟩
@@ -206,7 +212,7 @@ open set on which the holomorphic base `h` avoids the branch cut, the pre-Schwar
 trace. -/
 theorem logDeriv_deriv_of_eqOn_add_cpow (hs : IsOpen s) (hh : DifferentiableOn ℂ h s)
     (hslit : ∀ z ∈ s, h z ∈ slitPlane) (hβ : β ≠ 0) (hf : EqOn f (fun z => w + h z ^ β) s)
-    {z : ℂ} (hz : z ∈ s) (hdh : deriv h z ≠ 0) :
+    {z : ℂ} (hz : z ∈ s) :
     logDeriv (deriv f) z = (β - 1) * logDeriv h z + logDeriv (deriv h) z := by
   have hderiv : EqOn (deriv f) (fun y => β * (h y ^ (β - 1) * deriv h y)) s := by
     intro y hy
@@ -214,6 +220,9 @@ theorem logDeriv_deriv_of_eqOn_add_cpow (hs : IsOpen s) (hh : DifferentiableOn �
     rw [(hf.eventuallyEq_of_mem hy').deriv_eq, deriv_const_add,
       deriv_cpow_const (hh.differentiableAt hy') (hslit y hy), mul_assoc]
   have hzs : s ∈ 𝓝 z := hs.mem_nhds hz
+  by_cases hdh : deriv h z = 0
+  · have h0 : deriv f z = 0 := by rw [hderiv hz]; simp [hdh]
+    simp [logDeriv_apply, h0, hdh]
   have hhz : DifferentiableAt ℂ h z := hh.differentiableAt hzs
   have hpow : h z ^ (β - 1) ≠ 0 :=
     Complex.cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hslit z hz)))
@@ -229,7 +238,7 @@ avoiding the branch cut, and `s` nontrivially approaches `p`, then
 `β` is thus the residue of the pre-Schwarzian derivative at the corner, shifted by one. -/
 theorem tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow {U : Set ℂ} (hU : IsOpen U) (hpU : p ∈ U)
     (hh : DifferentiableOn ℂ h U) (hhp : h p = 0) (hdh : deriv h p ≠ 0) (hs : IsOpen s)
-    (_hne : (𝓝[s] p).NeBot) (hsU : s ⊆ U) (hslit : ∀ z ∈ s, h z ∈ slitPlane) (hβ : β ≠ 0)
+    (hsU : s ⊆ U) (hslit : ∀ z ∈ s, h z ∈ slitPlane) (hβ : β ≠ 0)
     (hf : EqOn f (fun z => w + h z ^ β) s) :
     Tendsto (fun z => (z - p) * logDeriv (deriv f) z) (𝓝[s] p) (𝓝 (β - 1)) := by
   have hAn : AnalyticAt ℂ h p := hh.analyticAt (hU.mem_nhds hpU)
@@ -249,11 +258,9 @@ theorem tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow {U : Set ℂ} (hU : IsOp
     simpa using hp.mono_left nhdsWithin_le_nhds
   have hrest : Tendsto (fun z => (z - p) * logDeriv (deriv h) z) (𝓝[s] p) (𝓝 0) := by
     simpa using hsub.mul (hcont.tendsto.mono_left nhdsWithin_le_nhds)
-  have hmem : {z : ℂ | deriv h z ≠ 0} ∈ 𝓝[s] p :=
-    mem_nhdsWithin_of_mem_nhds (hAn.deriv.continuousAt.eventually_ne hdh)
   refine Tendsto.congr' ?_ (by simpa using (hbase.const_mul (β - 1)).add hrest)
-  filter_upwards [self_mem_nhdsWithin, hmem] with z hz hdhz
-  rw [logDeriv_deriv_of_eqOn_add_cpow hs (hh.mono hsU) hslit hβ hf hz hdhz]
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  rw [logDeriv_deriv_of_eqOn_add_cpow hs (hh.mono hsU) hslit hβ hf hz]
   ring
 
 /-- **The pre-Schwarzian derivative of a logarithm.**  Where the holomorphic function `f` is a
@@ -261,7 +268,7 @@ logarithm of `h` on an open set, `exp ∘ f = h`, the pre-Schwarzian derivative 
 `logDeriv (deriv h) - logDeriv h`.  This is the exponent `β = 0` counterpart of
 `TauCeti.logDeriv_deriv_of_eqOn_add_cpow`. -/
 theorem logDeriv_deriv_of_eqOn_exp (hs : IsOpen s) (hf : DifferentiableOn ℂ f s)
-    (hexp : EqOn (fun z => exp (f z)) h s) {z : ℂ} (hz : z ∈ s) (hdh : deriv h z ≠ 0) :
+    (hexp : EqOn (fun z => exp (f z)) h s) {z : ℂ} (hz : z ∈ s) :
     logDeriv (deriv f) z = logDeriv (deriv h) z - logDeriv h z := by
   have hh : DifferentiableOn ℂ h s := hf.cexp.congr fun y hy => (hexp hy).symm
   -- `h' = exp f * f' = h * f'`, so `f'` is the logarithmic derivative of `h`
@@ -274,6 +281,9 @@ theorem logDeriv_deriv_of_eqOn_exp (hs : IsOpen s) (hf : DifferentiableOn ℂ f 
   have hzs : s ∈ 𝓝 z := hs.mem_nhds hz
   have hAn : AnalyticAt ℂ h z := hh.analyticAt hzs
   have hhz : h z ≠ 0 := hexp hz ▸ exp_ne_zero _
+  by_cases hdh : deriv h z = 0
+  · have h0 : deriv f z = 0 := by rw [hderiv hz]; simp [hdh]
+    simp [logDeriv_apply, h0, hdh]
   rw [(logDeriv_congr_nhds (hderiv.eventuallyEq_of_mem hzs)).eq_of_nhds,
     logDeriv_fun_div z hdh hhz hAn.deriv.differentiableAt hAn.differentiableAt]
 
@@ -302,11 +312,9 @@ theorem tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp (hh : AnalyticAt ℂ h p) (hh
     simpa using hp.mono_left nhdsWithin_le_nhds
   have hrest : Tendsto (fun z => (z - p) * logDeriv (deriv h) z) (𝓝[s] p) (𝓝 0) := by
     simpa using hsub.mul (hcont.tendsto.mono_left nhdsWithin_le_nhds)
-  have hmem : {z : ℂ | deriv h z ≠ 0} ∈ 𝓝[s] p :=
-    mem_nhdsWithin_of_mem_nhds (hh.deriv.continuousAt.eventually_ne hdh)
   refine Tendsto.congr' ?_ (by simpa using hrest.sub hbase)
-  filter_upwards [self_mem_nhdsWithin, hmem] with z hz hdhz
-  rw [logDeriv_deriv_of_eqOn_exp hs hf hexp hz hdhz]
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  rw [logDeriv_deriv_of_eqOn_exp hs hf hexp hz]
   ring
 
 end Corner

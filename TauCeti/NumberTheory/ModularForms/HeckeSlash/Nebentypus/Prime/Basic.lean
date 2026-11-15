@@ -103,7 +103,7 @@ theorem twistedHeckeSlashSum_diagCosetGamma0_of_prime [NeZero N] (hp : p.Prime)
       ((doubleCoset_out_diagCosetGamma0 p).trans
         (doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_prime hp
           (gamma0Twist_apply_one_zero h) (gamma0Twist_apply_one_one h)))
-      (op_primeRep_smul_injective (G := Gamma0 N) hp.one_lt (gamma0Twist_apply_one_one h)) F hF,
+      (op_primeRep_smul_injective (G := Gamma0 N) hp.one_lt) F hF,
     Fintype.sum_option, heckeSlashUpperTri_def]
   simp only [primeRep_some, primeRep_none, delta0NebentypusChar_apply,
     Delta0UpperUnit_upperTriRep, Delta0UpperUnit_mapGL_mul_scaleRep hp.pos

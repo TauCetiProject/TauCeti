@@ -265,7 +265,6 @@ theorem liftDerivation_mem_gradeBy
   | add u v _ _ ihu ihv => rw [map_add]; exact add_mem ihu ihv
   | smul r u _ ih => rw [map_smul]; exact Submodule.smul_mem _ r ih
 
-include hfl hfr in
 /-- **A graded derivation is determined by vanishing on the vertex idempotents together with its
 values on the arrows.** -/
 theorem liftDerivation_unique (D : pathAlgebra k Q →ₗ[k] pathAlgebra k Q)
@@ -274,6 +273,16 @@ theorem liftDerivation_unique (D : pathAlgebra k Q →ₗ[k] pathAlgebra k Q)
       D (x * y) = D x * y + m.negOnePow • (x * D y))
     (harrow : ∀ {a b : Q} (e : a ⟶ b), D (ofArrow e) = f e) :
     D = liftDerivation k wt f := by
+  -- the corner conditions on `f` are forced by the Leibniz rule against the vertex idempotents
+  have hfl : ∀ {a b : Q} (e : a ⟶ b), vertexIdempotent k b * f e = f e := fun {a b} e => by
+    have h := hleibniz (vertexIdempotent_mem_gradeBy_zero wt b) (ofArrow e)
+    rw [vertexIdempotent_mul_ofArrow_self, hvertex, zero_mul, zero_add, Int.negOnePow_zero,
+      one_smul, harrow] at h
+    exact h.symm
+  have hfr : ∀ {a b : Q} (e : a ⟶ b), f e * vertexIdempotent k a = f e := fun {a b} e => by
+    have h := hleibniz (ofArrow_mem_gradeBy wt e) (vertexIdempotent k a)
+    rw [ofArrow_mul_vertexIdempotent_self, hvertex, mul_zero, smul_zero, add_zero, harrow] at h
+    exact h.symm
   refine LinearMap.ext fun z => ?_
   induction z using induction_linear with
   | zero => simp

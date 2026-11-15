@@ -37,8 +37,7 @@ decomposition follows from the regular one.
 
 ## Main results
 
-* `TauCeti.RegularFormClass.anisotropic_of_rank_le_one`,
-  `QuadraticForm.anisotropic_of_finrank_le_one`: a regular form of rank at most one is
+* `TauCeti.RegularFormClass.anisotropic_of_rank_le_one`: a regular class of rank at most one is
   anisotropic.
 * `TauCeti.exists_nsmul_hyperbolicClass_add`: **Witt decomposition** (Lam I.4.1), existence.
 * `TauCeti.eq_of_nsmul_hyperbolicClass_add_eq`: **Witt decomposition**, uniqueness of both the
@@ -383,12 +382,6 @@ theorem _root_.QuadraticForm.anisotropic_formClass (Q : QuadraticForm K V)
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p hp, RegularFormClass.anisotropic_mk]
   exact hp.anisotropic_iff.symm
-
-/-- A regular quadratic form on a space of dimension at most one is anisotropic. -/
-theorem _root_.QuadraticForm.anisotropic_of_finrank_le_one (Q : QuadraticForm K V)
-    (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
-  rw [← QuadraticForm.anisotropic_formClass Q hQ]
-  exact RegularFormClass.anisotropic_of_rank_le_one (by rwa [rank_formClass])
 
 /-- A regular form represents a unit `c` exactly when adjoining the line `⟨-c⟩` to its isometry
 class gives an isotropic class. This reduces questions about represented values to the isotropy

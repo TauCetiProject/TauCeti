@@ -22,7 +22,7 @@ strand shift of a cycle word (`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_eq_smu
 A Markov trace with parameter `z` takes the value `(q * z) ^ (m - 1)` on `ζₘ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleWord`). The cycle words determine
 every tracial, block-multiplicative functional, and so in particular the Markov traces; this is
-proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter`.
+proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic`.
 
 The same word in the Hecke algebra presented on `m` strands is
 `TauCeti.TypeAHeckeAlgebra.cycleWord`, built from the descending last-strand words
@@ -98,10 +98,14 @@ theorem cycleWord_mem_stage (m : ℕ) : cycleWord q m ∈ stage R q m := by
 
 /-- The descending product `T (n - 1) * ⋯ * T a` is the rescaled shift by `a` of the cycle word
 on `n + 1 - a` strands. -/
-theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} (han : a ≤ n) :
+theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} :
     cosetRep q n a = (↑q⁻¹ : R) ^ (n - a) • shift R q a (cycleWord q (n + 1 - a)) := by
-  simp [cycleWord_def, show n + 1 - a - 1 = n - a by omega, Nat.sub_add_cancel han, smul_smul,
-    ← mul_pow]
+  by_cases han : a ≤ n
+  · simp [cycleWord_def, show n + 1 - a - 1 = n - a by omega, Nat.sub_add_cancel han, smul_smul,
+      ← mul_pow]
+  · have h1 : n - a = 0 := by omega
+    have h2 : n + 1 - a = 0 := by omega
+    simp [cosetRep_of_le (by omega : n ≤ a), h1, h2]
 
 end CycleWord
 

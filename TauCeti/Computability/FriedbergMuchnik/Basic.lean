@@ -190,13 +190,13 @@ theorem finite_injuryStages_and_ncard_le (e : ℕ) :
       (injuryStages (stage (monitoredSide e)) restraint e).ncard ≤ 2 ^ e - 1 := by
   obtain ⟨hfin, hle⟩ := finite_injurySet_and_ncard_le e
   exact ⟨(finite_injurySet_iff_finite_injuryStages (monotone_stage _)).mp hfin,
-    (ncard_injuryStages_le (monotone_stage _) hfin).trans hle⟩
+    (ncard_injuryStages_le (monotone_stage _)).trans hle⟩
 
 /-- **Quantitative bound on labelled `monitoredInjuryEvents`.** -/
 theorem finite_monitoredInjuryEvents_and_ncard_le (e : ℕ) :
     (monitoredInjuryEvents stage monitoredSide restraint e).Finite ∧
       (monitoredInjuryEvents stage monitoredSide restraint e).ncard ≤ 2 ^ e - 1 := by
-  obtain ⟨hfin_set, hle_set⟩ := finite_injurySet_and_ncard_le e
+  obtain ⟨-, hle_set⟩ := finite_injurySet_and_ncard_le e
   have hinj : Set.InjOn (fun p : Bool × ℕ × ℕ => p.2.2)
       (monitoredInjuryEvents stage monitoredSide restraint e) := fun _ h₁ _ h₂ hx => by
     rw [mem_monitoredInjuryEvents] at h₁ h₂

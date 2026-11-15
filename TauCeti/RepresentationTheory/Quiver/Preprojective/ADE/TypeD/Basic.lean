@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Algebra.SquareZeroPair
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
@@ -71,12 +72,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs with a long arm and two leaves at its end -/
 
@@ -432,26 +430,6 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_fork
 end ForkGraph
 
 /-! ### The `Dₙ` diagram -/
-
-/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
-on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
-private theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
-    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
-        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
-  have := i.2
-  have := j.2
-  split_ifs <;> simp <;> omega
-
-/-- Below rank three the `Dₙ` diagram has no edges. -/
-private theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
-    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  rintro ⟨hij, h, -⟩
-  have hn' : n ≤ 2 := by omega
-  simp [CartanMatrix.D, hn', hij] at h
 
 /-- The two-colouring of `Dₙ`: the parity along the long arm, with both leaves coloured like the
 node `n - 2`. -/

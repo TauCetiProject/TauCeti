@@ -35,7 +35,7 @@ symmetric.
 Conversely, when the curvature has the pointwise constant-curvature form above in dimension at
 least two, it is parallel at a point exactly when `dκ` vanishes there. Every metric on a surface
 has curvature of this form, with `κ` the Gaussian curvature `Scal / 2`. So a metric-compatible
-torsion-free connection on a surface has parallel curvature exactly when its Gaussian curvature is
+connection on a surface has parallel curvature exactly when its Gaussian curvature is
 locally constant, and on a connected surface exactly when it has constant sectional curvature. In
 dimension at least three Schur's theorem already makes `κ` locally constant, without assuming
 parallel curvature.
@@ -212,12 +212,12 @@ theorem IsMetricCompatible.derivCurvatureTensor_eq_zero_iff_mfderiv_eq_zero
 section Surface
 
 variable (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-  (ht : cov.torsion = 0) (hE : Module.finrank ℝ E = 2)
-include hcov ht hE
+  (hE : Module.finrank ℝ E = 2)
+include hcov hE
 
-/-- **Locally symmetric surfaces.** A metric-compatible torsion-free connection on the tangent
-bundle of a surface has parallel curvature exactly when its scalar curvature, twice the Gaussian
-curvature, is locally constant. -/
+/-- **Locally symmetric surfaces.** A metric-compatible connection on the tangent bundle of a
+surface has parallel curvature exactly when its scalar curvature, twice the Gaussian curvature, is
+locally constant. -/
 theorem hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq_two :
     cov.HasParallelCurvature ↔ IsLocallyConstant cov.scalarCurvature := by
   have hx (x : M) : Module.finrank ℝ (TangentSpace I x) = 2 := by
@@ -226,7 +226,7 @@ theorem hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq
   have hform (x : M) : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
       cov.curvatureTensor y w u v =
         (cov.scalarCurvature y / 2) • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) :=
-    .of_forall fun y ↦ cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov ht (hx y)
+    .of_forall fun y ↦ cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov (hx y)
   have hK : MDifferentiable I 𝓘(ℝ) fun y ↦ cov.scalarCurvature y / 2 :=
     (cov.contMDiff_scalarCurvature.div_const 2).mdifferentiable (by simp)
   have hiff : IsLocallyConstant cov.scalarCurvature ↔
@@ -242,28 +242,37 @@ theorem hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq
   rw [Filter.EventuallyEq.mfderiv_eq ((IsLocallyConstant.iff_eventually_eq _).1 h x)]
   exact mfderiv_const
 
-/-- **Locally symmetric surfaces have constant curvature.** A metric-compatible torsion-free
+/-- **Locally symmetric surfaces have constant curvature.** A metric-compatible
 connection with parallel curvature on the tangent bundle of a preconnected surface has constant
 sectional curvature, namely the Gaussian curvature `Scal(x₀) / 2` at any point `x₀`. -/
 theorem HasParallelCurvature.hasConstantSectionalCurvature_of_finrank_eq_two
     [PreconnectedSpace M] (h : cov.HasParallelCurvature) (x₀ : M) :
     cov.HasConstantSectionalCurvature hcov (cov.scalarCurvature x₀ / 2) := by
   have hc :=
-    (hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq_two hcov ht hE).1 h
+    (hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq_two hcov hE).1 h
   refine (cov.hasConstantSectionalCurvature_iff hcov _).2 fun x ↦ ?_
   rw [← hc.apply_eq_of_preconnectedSpace x x₀]
   exact cov.hasSectionalCurvatureAt_scalarCurvature_div_two hcov
     (by rw [TauCeti.finrank_tangentSpace, hE])
 
-/-- On a preconnected surface, a metric-compatible torsion-free connection on the tangent bundle
-has parallel curvature exactly when it has constant sectional curvature. -/
+/-- On a preconnected surface, a metric-compatible connection on the tangent bundle has parallel
+curvature exactly when it has constant sectional curvature. -/
 theorem hasParallelCurvature_iff_exists_hasConstantSectionalCurvature_of_finrank_eq_two
     [PreconnectedSpace M] :
     cov.HasParallelCurvature ↔ ∃ κ : ℝ, cov.HasConstantSectionalCurvature hcov κ := by
-  refine ⟨fun h ↦ ?_, fun ⟨κ, hκ⟩ ↦ hκ.hasParallelCurvature ht⟩
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨0, (cov.hasConstantSectionalCurvature_iff hcov 0).2 hM.elim⟩
-  · exact ⟨_, h.hasConstantSectionalCurvature_of_finrank_eq_two hcov ht hE x₀⟩
+  refine ⟨fun h ↦ ?_, fun ⟨κ, hκ⟩ ↦ ?_⟩
+  · rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+    · exact ⟨0, (cov.hasConstantSectionalCurvature_iff hcov 0).2 hM.elim⟩
+    · exact ⟨_, h.hasConstantSectionalCurvature_of_finrank_eq_two hcov hE x₀⟩
+  · refine (hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq_two hcov
+      hE).2 ?_
+    have hscal : cov.scalarCurvature = fun _ ↦ 2 * κ := by
+      ext x
+      rw [((cov.hasConstantSectionalCurvature_iff hcov κ).1 hκ x).scalarCurvature_eq,
+        TauCeti.finrank_tangentSpace, hE]
+      norm_num
+    rw [hscal]
+    exact IsLocallyConstant.const _
 
 end Surface
 

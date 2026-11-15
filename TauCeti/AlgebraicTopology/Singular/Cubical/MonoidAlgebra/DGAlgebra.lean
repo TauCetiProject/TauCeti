@@ -213,6 +213,12 @@ theorem cubicalChainDifferential_mem {i : ℤ} {x : normalizedCubicalChainAlgebr
   · rw [cubicalChainDifferential_lof_succ]
     exact (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨k, _, by push_cast at hn; omega, rfl⟩)
 
+/-- The differential of a chain of nonnegative cohomological degree vanishes. -/
+theorem cubicalChainDifferential_eq_zero_of_nonneg {i : ℤ} (hi : 0 ≤ i)
+    {x : normalizedCubicalChainAlgebra G R} (hx : x ∈ cubicalChainGrading G R i) :
+    cubicalChainDifferential G R x = 0 :=
+  eq_zero_of_mem_cubicalChainGrading_of_pos G R (by omega) (cubicalChainDifferential_mem G R hx)
+
 /-- The differential squares to zero. -/
 @[simp]
 theorem cubicalChainDifferential_cubicalChainDifferential
@@ -248,6 +254,11 @@ variable {R}
 theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
     cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
   DirectSum.lmap_lof _ n c
+
+/-- The dimension `n` component of a push-forward is the push-forward of the component. -/
+theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebra X R) (n : ℕ) :
+    cubicalChainSumMap R f x n = map R f n (x n) :=
+  DirectSum.lmap_apply _ x n
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]

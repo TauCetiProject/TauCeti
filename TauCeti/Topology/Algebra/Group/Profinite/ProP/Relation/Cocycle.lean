@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Cocycle
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # Relations from cocycles on a free pro-`p` group
@@ -69,7 +70,6 @@ theorem exists_locallyConstant_cocycle_forall_apply_of_eq [Finite X] [DecidableE
   have : ContinuousSMul (freeProP p X) (MonoidAlgebra (ZMod p) G) :=
     ⟨(continuous_of_discreteTopology (f := fun y : G × MonoidAlgebra (ZMod p) G ↦
       single y.1 (1 : ZMod p) * y.2)).comp (π.continuous.prodMap continuous_id)⟩
-  have : Finite (MonoidAlgebra (ZMod p) G) := Module.finite_of_finite (ZMod p)
   have hM : IsProP p (Multiplicative (X → MonoidAlgebra (ZMod p) G)) :=
     IsPGroup.isProP (ZModModule.isPGroup_multiplicative p (X → MonoidAlgebra (ZMod p) G))
   obtain ⟨D, hD, hDof⟩ := freeProP.exists_mem_Z1_forall_apply_of_eq hM fun i ↦ Pi.single i 1

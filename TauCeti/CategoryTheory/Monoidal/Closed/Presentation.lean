@@ -31,9 +31,9 @@ namespace CategoryTheory.Functor
 noncomputable section
 
 variable {C D : Type*} [Category* C] [Category* D]
-  [HasZeroMorphisms C] [HasZeroObject C] [MonoidalCategory C] [BraidedCategory C]
+  [HasZeroMorphisms C] [MonoidalCategory C] [BraidedCategory C]
   [MonoidalClosed C]
-  [HasZeroMorphisms D] [HasZeroObject D] [MonoidalCategory D] [BraidedCategory D]
+  [HasZeroMorphisms D] [MonoidalCategory D] [BraidedCategory D]
   [MonoidalClosed D]
   (F : C ⥤ D) [F.LaxMonoidal] [F.PreservesZeroMorphisms]
   {A B M : C} (f : A ⟶ B) (g : B ⟶ M) (w : f ≫ g = 0)

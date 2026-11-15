@@ -91,8 +91,8 @@ theorem mem_span_teichmuller_pow_iff (hv : v.Integers R) {c : R} {x : 𝕎 R} {n
       ∀ i ≤ n, v (algebraMap R K (x.teichmullerCoeff i)) ≤ v (algebraMap R K c) := by
   refine ⟨fun hx i hi ↦ ?_, fun hx ↦ ?_⟩
   · obtain ⟨a, b, rfl⟩ := Ideal.mem_span_pair.mp hx
-    rw [teichmullerCoeff_eq_of_dvd_sub (y := teichmuller p c * a) ⟨b, by ring⟩ hi,
-      teichmullerCoeff_teichmuller_mul, map_mul, map_mul]
+    rw [(pow_dvd_sub_iff_forall_teichmullerCoeff_eq (y := teichmuller p c * a)).mp ⟨b, by ring⟩
+      i hi, teichmullerCoeff_teichmuller_mul, map_mul, map_mul]
     exact mul_le_of_le_one_right' (hv.map_le_one _)
   · choose u hu using fun i : Finset.Iic n ↦
       hv.dvd_of_le (hx i (Finset.mem_Iic.mp i.2))
@@ -139,12 +139,13 @@ private theorem gaussTrunc_mono (x : 𝕎 O) {m n : ℕ} (h : m ≤ n) :
 private theorem gaussTrunc_congr {x y : 𝕎 O} {n : ℕ} (h : (p : 𝕎 O) ^ (n + 1) ∣ x - y) :
     gaussTrunc p v ρ n x = gaussTrunc p v ρ n y :=
   Finset.sup_congr rfl fun i hi ↦ by
-    rw [gaussTerm, gaussTerm, teichmullerCoeff_eq_of_dvd_sub h (Finset.mem_Iic.mp hi)]
+    rw [gaussTerm, gaussTerm,
+      pow_dvd_sub_iff_forall_teichmullerCoeff_eq.mp h i (Finset.mem_Iic.mp hi)]
 
 private theorem gaussTerm_teichmuller_mul_pow (a : O) (m i : ℕ) :
     gaussTerm p v ρ (teichmuller p a * (p : 𝕎 O) ^ m) i =
       if i = m then v (algebraMap O K a) * ρ ^ m else 0 := by
-  rw [gaussTerm, teichmullerCoeff_teichmuller_mul_pow]
+  rw [gaussTerm, teichmullerCoeff_teichmuller_mul, teichmullerCoeff_natCast_pow]
   split_ifs with h <;> simp [h]
 
 private theorem gaussTrunc_teichmuller_mul_pow (a : O) (m n : ℕ) :
@@ -595,6 +596,25 @@ theorem gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (hρ : ρ < 1)
   · exact (Nat.sSup_mem (nonempty_setOf_eq_gaussValuation hv hρ x)
       (bddAbove_setOf_eq_gaussValuation hv hρ hx)).symm
 
+/-- At radius zero the degree is `0` (as `sSup` of an unbounded set of naturals, when the Gauss
+valuation vanishes). -/
+@[simp]
+theorem gaussDegree_zero_radius (hv : v.Integers O) (hρ : (0 : ℝ≥0) < 1) (x : 𝕎 O) :
+    gaussDegree p hv 0 hρ x = 0 := by
+  by_cases hb : BddAbove {n | v (algebraMap O K (x.teichmullerCoeff n)) * (0 : ℝ≥0) ^ n =
+      gaussValuation p hv 0 hρ x}
+  · have hmem := Nat.sSup_mem (nonempty_setOf_eq_gaussValuation hv hρ x) hb
+    by_contra hne
+    have hd : (0 : ℝ≥0) ^ gaussDegree p hv 0 hρ x = 0 := zero_pow hne
+    replace hmem : v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv 0 hρ x))) *
+        (0 : ℝ≥0) ^ gaussDegree p hv 0 hρ x = gaussValuation p hv 0 hρ x := hmem
+    rw [hd, mul_zero] at hmem
+    refine not_bddAbove_univ (α := ℕ) (hb.mono fun n _ ↦ ?_)
+    have h1 := le_gaussValuation hv hρ x n
+    rw [← hmem] at h1
+    exact (le_antisymm h1 zero_le).trans hmem
+  · exact Nat.sSup_of_not_bddAbove hb
+
 /-- Every index at which a nonzero Witt vector attains its Gauss valuation is at most its
 degree. -/
 theorem le_gaussDegree (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O} (hx : x ≠ 0)
@@ -690,9 +710,12 @@ theorem gaussDegree_eq_of_eventually_eq_mul_pow (hv : v.Integers O) (hρ₀ : 0 
 
 /-- **The degree only depends on the leading part** (Kedlaya, Remark 2.7): if
 `λ_ρ(x - y) < λ_ρ(x)`, then `x` and `y` have the same degree. -/
-theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1)
+theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ : ρ < 1)
     {x y : 𝕎 O} (h : gaussValuation p hv ρ hρ (x - y) < gaussValuation p hv ρ hρ x) :
     gaussDegree p hv ρ hρ y = gaussDegree p hv ρ hρ x := by
+  rcases eq_or_ne ρ 0 with rfl | hρ₀
+  · rw [gaussDegree_zero_radius hv hρ, gaussDegree_zero_radius hv hρ]
+  replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   have hy : y ≠ 0 := by
     rintro rfl
     simp at h
@@ -713,9 +736,12 @@ theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ₀ : 0 
   rw [← hx' hρ', ← Valuation.map_sub_eq_of_lt_left _ hlt', sub_sub_cancel]
 
 /-- **The degree is additive on products** (Kedlaya, Lemma 2.6). -/
-theorem gaussDegree_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x y : 𝕎 O} (hx : x ≠ 0)
+theorem gaussDegree_mul (hv : v.Integers O) (hρ : ρ < 1) {x y : 𝕎 O} (hx : x ≠ 0)
     (hy : y ≠ 0) :
     gaussDegree p hv ρ hρ (x * y) = gaussDegree p hv ρ hρ x + gaussDegree p hv ρ hρ y := by
+  rcases eq_or_ne ρ 0 with rfl | hρ₀
+  · simp only [gaussDegree_zero_radius hv hρ]
+  replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   have := hv.isDomain
   refine gaussDegree_eq_of_eventually_eq_mul_pow
     (c := v (algebraMap O K (x.teichmullerCoeff (gaussDegree p hv ρ hρ x))) *
@@ -747,15 +773,19 @@ theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ : ρ < 1) {c : O}
     gaussValuation_teichmuller, mul_assoc, mul_right_inj' hvc]
 
 /-- A nonzero finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` has degree less than `n`. -/
-theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
+theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O)
     (hρ : ρ < 1) {a : ℕ → O} {n : ℕ}
     (h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j ≠ 0) :
     gaussDegree p hv ρ hρ (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j) < n := by
+  rcases eq_or_ne ρ 0 with rfl | hρ₀
+  · rw [gaussDegree_zero_radius hv hρ]
+    exact Nat.pos_of_ne_zero (by rintro rfl; simp at h)
+  replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   by_contra! hn
   have := gaussValuation_eq_mul_pow_gaussDegree hv hρ
     (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j)
-  simp only [teichmullerCoeff_sum_range_teichmuller_mul_pow, hn.not_gt, ↓reduceIte, map_zero,
-    zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
+  simp only [teichmullerCoeff_sum_teichmuller_mul_pow, Finset.mem_range, hn.not_gt, ↓reduceIte,
+    map_zero, zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
   exact h this
 
 end Degree

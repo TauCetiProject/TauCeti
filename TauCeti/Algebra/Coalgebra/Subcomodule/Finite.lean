@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Order.SupClosed
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Finite subcomodules
 
-This file proves that, when the coalgebra is free as a module over a commutative
+This file proves that, when the coalgebra is projective as a module over a commutative
 semiring, every element of a right comodule is contained in a finitely generated
 subcomodule. It also packages the order-theoretic consequences: finite subcomodules
 form a nonempty directed family, finite subsets and finitely generated submodules
@@ -23,7 +24,9 @@ finite subcomodules are the whole comodule. Over a field these become statements
 about finite-dimensional subcomodules through the same generic API.
 
 For the elementwise result, the carrier is the span of the finitely many coefficients
-occurring when the element's coaction is expanded in a basis of the coalgebra. The
+occurring when the element's coaction is expanded in coordinates of the coalgebra. These
+coordinates come from a splitting of `Finsupp.linearCombination R id : (C →₀ R) → C`, which
+exists exactly when `C` is projective; a basis of a free coalgebra is a special case. The
 counit shows that the original element lies in this span, and coordinate slices of
 coassociativity show that the span is stable under the coaction.
 
@@ -35,12 +38,12 @@ No flatness or noetherian hypothesis is needed.
   subcomodule whose underlying module is finite.
 * `TauCeti.Subcomodule.directedOn_finiteSubcomodules`: finite subcomodules form a
   directed family.
-* `TauCeti.Subcomodule.sSup_finiteSubcomodules_eq_top`: for a free coefficient coalgebra,
+* `TauCeti.Subcomodule.sSup_finiteSubcomodules_eq_top`: for a projective coefficient coalgebra,
   the finite subcomodules have supremum `⊤`.
 * `TauCeti.Subcomodule.exists_finite_le_of_mem`: every element of a subcomodule belongs to a
   finite subcomodule contained in it.
-* `TauCeti.Subcomodule.finite_of_isAtom`: for a free coefficient coalgebra, simple subcomodules
-  are finite.
+* `TauCeti.Subcomodule.finite_of_isAtom`: for a projective coefficient coalgebra, simple
+  subcomodules are finite.
 * `TauCeti.Subcomodule.instIsAtomic`: over a field every nonzero subcomodule contains a simple
   subcomodule.
 
@@ -70,94 +73,60 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
-private theorem coeff_rTensor_coact
-    {ι : Type*} [DecidableEq ι] (b : Module.Basis ι R C) (x : M ⊗[R] C) (i : ι) :
-    TensorProduct.equivFinsuppOfBasisRight b
-        ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C x) i =
-      Comodule.coact (R := R) (C := C) (M := M)
-        (TensorProduct.equivFinsuppOfBasisRight b x i) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul m c => simp
-  | add x y hx hy => simp [hx, hy]
+/-- **Coassociativity, read off in coordinates.** If `coact m` is a finite sum of tensors whose
+left factors lie in `N`, then the component of `coact m` selected by any functional on `C` has
+coaction landing again in `N ⊗[R] C`.
 
-omit [Coalgebra R C] [Comodule R C M] in
-private theorem coeff_assoc_symm_tmul {ι : Type*} [DecidableEq ι] (b : Module.Basis ι R C)
-    (m : M) (x : C ⊗[R] C) (i : ι) :
-    TensorProduct.equivFinsuppOfBasisRight b
-        ((TensorProduct.assoc R M C C).symm (m ⊗ₜ[R] x)) i =
-      m ⊗ₜ[R]
-        TensorProduct.rid R C ((b.coord i).lTensor C x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul c d => simp
-  | add x y hx hy =>
-      simp only [TensorProduct.tmul_add, map_add, Finsupp.add_apply, hx, hy]
-
-/-- **Coassociativity, read off in a basis.** The coaction of a single coefficient of `coact m`
-again lands in `N ⊗[R] C`, provided `N` contains every coefficient.
-
-The submodule is otherwise arbitrary: containing the coefficients is the only property used, so
-nothing here is special to their span. -/
-private theorem coact_coeff_mem_range_map_subtype
-    {ι : Type*} [DecidableEq ι] (b : Module.Basis ι R C) (m : M) {N : Submodule R M}
-    (hN : ∀ j, TensorProduct.equivFinsuppOfBasisRight b
-      (Comodule.coact (R := R) (C := C) (M := M) m) j ∈ N) (i : ι) :
-    Comodule.coact (R := R) (C := C) (M := M)
-        (TensorProduct.equivFinsuppOfBasisRight b
-          (Comodule.coact (R := R) (C := C) (M := M) m) i) ∈
+The submodule is otherwise arbitrary: containing the left factors is the only property used. -/
+private theorem coact_coactComponent_mem_range {m : M} {N : Submodule R M} {s : Finset C}
+    {a : C → M} (hm : Comodule.coact (R := R) (C := C) (M := M) m = ∑ c ∈ s, a c ⊗ₜ[R] c)
+    (ha : ∀ c ∈ s, a c ∈ N) (f : C →ₗ[R] R) :
+    Comodule.coact (R := R) (C := C) (M := M) (Comodule.coactComponent f m) ∈
       LinearMap.range (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C)) := by
-  have hcoassoc :
-      (Comodule.coact (R := R) (C := C) (M := M)).rTensor C
-          (Comodule.coact (R := R) (C := C) (M := M) m) =
-        (TensorProduct.assoc R M C C).symm
-          (Coalgebra.comul.lTensor M
-            (Comodule.coact (R := R) (C := C) (M := M) m)) := by
-    apply (TensorProduct.assoc R M C C).injective
-    simp
-  have hcoeff := congrArg
-    (fun x : (M ⊗[R] C) ⊗[R] C =>
-      TensorProduct.equivFinsuppOfBasisRight b x i) hcoassoc
-  rw [coeff_rTensor_coact] at hcoeff
-  rw [hcoeff]
-  rw [← (TensorProduct.equivFinsuppOfBasisRight b).symm_apply_apply
-    (Comodule.coact (R := R) (C := C) (M := M) m)]
-  rw [TensorProduct.equivFinsuppOfBasisRight_symm_apply]
-  simp only [Finsupp.sum, map_sum]
-  rw [Finsupp.finsetSum_apply]
-  apply Submodule.sum_mem
-  intro j _
-  refine ⟨(⟨_, hN j⟩ : N) ⊗ₜ[R]
-    TensorProduct.rid R C
-      ((b.coord i).lTensor C (Coalgebra.comul (b j))), ?_⟩
-  simp [coeff_assoc_symm_tmul]
+  rw [Comodule.coact_coactComponent, hm]
+  simp only [map_sum, LinearMap.lTensor_tmul]
+  exact Submodule.sum_mem _ fun c hc ↦
+    ⟨(⟨a c, ha c hc⟩ : N) ⊗ₜ[R] (LinearMap.tensorComponent f ∘ₗ Coalgebra.comul) c, rfl⟩
 
-/-- **The counit identity, read off in a basis.** Applying the counit to `coact m` recovers `m` as
-a combination of its coefficients, so `m` lies in any submodule containing them all. -/
-private theorem mem_of_forall_coeff_mem
-    {ι : Type*} [DecidableEq ι] (b : Module.Basis ι R C) (m : M) {N : Submodule R M}
-    (hN : ∀ j, TensorProduct.equivFinsuppOfBasisRight b
-      (Comodule.coact (R := R) (C := C) (M := M) m) j ∈ N) : m ∈ N := by
+/-- **The counit identity, read off in coordinates.** If `coact m` is a finite sum of tensors whose
+left factors lie in `N`, then applying the counit shows that `m` lies in `N`. -/
+private theorem mem_of_coact_eq_sum {m : M} {N : Submodule R M} {s : Finset C} {a : C → M}
+    (hm : Comodule.coact (R := R) (C := C) (M := M) m = ∑ c ∈ s, a c ⊗ₜ[R] c)
+    (ha : ∀ c ∈ s, a c ∈ N) : m ∈ N := by
   have hcounit := Comodule.lTensor_counit_coact (R := R) (C := C) (M := M) m
-  rw [← (TensorProduct.equivFinsuppOfBasisRight b).symm_apply_apply
-    (Comodule.coact (R := R) (C := C) (M := M) m)] at hcounit
-  rw [TensorProduct.equivFinsuppOfBasisRight_symm_apply] at hcounit
+  rw [hm] at hcounit
   apply_fun TensorProduct.rid R M at hcounit
-  simp only [Finsupp.sum, map_sum, LinearMap.lTensor_tmul, TensorProduct.rid_tmul,
-    one_smul] at hcounit
+  simp only [map_sum, LinearMap.lTensor_tmul, TensorProduct.rid_tmul, one_smul] at hcounit
   rw [← hcounit]
-  exact Submodule.sum_mem N fun i _ => N.smul_mem _ (hN i)
+  exact Submodule.sum_mem N fun c hc ↦ N.smul_mem _ (ha c hc)
 
-/-- If a coalgebra is free as a module over a commutative semiring, every element
+/-- If a coalgebra is projective as a module over a commutative semiring, every element
 of a right comodule belongs to a subcomodule that is finitely generated as a
 module. -/
-theorem exists_finite_subcomodule_mem [Module.Free R C] (m : M) :
+theorem exists_finite_subcomodule_mem [Module.Projective R C] (m : M) :
     ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N := by
   classical
-  let b := Module.Free.chooseBasis R C
-  let a := TensorProduct.equivFinsuppOfBasisRight b
-    (Comodule.coact (R := R) (C := C) (M := M) m)
+  -- Coordinates of `coact m` along a splitting `σ` of `Finsupp.linearCombination R id`.
+  obtain ⟨σ, hσ⟩ := Module.projective_def'.mp ‹Module.Projective R C›
+  let a : C →₀ M := TensorProduct.finsuppScalarRight R R M C
+    (σ.lTensor M (Comodule.coact (R := R) (C := C) (M := M) m))
+  have ha (c : C) : a c = Comodule.coactComponent ((Finsupp.lapply c).comp σ) m := by
+    simp only [a, Comodule.coactComponent_apply, LinearMap.tensorComponent_def]
+    generalize Comodule.coact (R := R) (C := C) (M := M) m = t
+    induction t using TensorProduct.inductionOn with
+    | tmul n d => simp
+    | add x y hx hy => simp [hx, hy]
+  have hrepr : Comodule.coact (R := R) (C := C) (M := M) m = ∑ c ∈ a.support, a c ⊗ₜ[R] c := by
+    calc Comodule.coact (R := R) (C := C) (M := M) m =
+          (Finsupp.linearCombination R id).lTensor M
+            ((TensorProduct.finsuppScalarRight R R M C).symm a) := by
+          simp [a, ← LinearMap.lTensor_comp_apply, hσ]
+      _ = _ := by
+          conv_lhs => rw [← a.sum_single]
+          simp [Finsupp.sum, map_sum]
   let N := Submodule.span R (Set.range a)
-  have ha_mem (i : Module.Free.ChooseBasisIndex R C) : a i ∈ N :=
-    Submodule.subset_span (Set.mem_range_self i)
+  have ha_mem (c : C) : a c ∈ N :=
+    Submodule.subset_span (Set.mem_range_self c)
   have hstable :
       ∀ n ∈ N,
         Comodule.coact (R := R) (C := C) (M := M) n ∈
@@ -165,8 +134,9 @@ theorem exists_finite_subcomodule_mem [Module.Free R C] (m : M) :
             (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C)) := by
     intro n hn
     refine Submodule.span_induction ?_ (by simp) ?_ ?_ hn
-    · rintro _ ⟨i, rfl⟩
-      exact coact_coeff_mem_range_map_subtype b m ha_mem i
+    · rintro _ ⟨c, rfl⟩
+      rw [ha c]
+      exact coact_coactComponent_mem_range hrepr (fun c _ ↦ ha_mem c) _
     · intro x y _ _ hx hy
       simpa only [map_add] using (LinearMap.range
         (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C))).add_mem hx hy
@@ -179,7 +149,7 @@ theorem exists_finite_subcomodule_mem [Module.Free R C] (m : M) :
       exact ofSubmodule_carrier N hstable
     rw [hSN]
     exact Module.Finite.span_of_finite R a.finite_range
-  · exact mem_ofSubmodule.mpr (mem_of_forall_coeff_mem b m ha_mem)
+  · exact mem_ofSubmodule.mpr (mem_of_coact_eq_sum hrepr fun c _ ↦ ha_mem c)
 
 /-- The set of subcomodules that are finitely generated as `R`-modules. -/
 def finiteSubcomodules : Set (Subcomodule R C M) :=
@@ -277,35 +247,35 @@ theorem iUnion_finiteSubcomodules_eq_univ_of_exists_mem
   rw [← coe_sSup_finiteSubcomodules, sSup_finiteSubcomodules_eq_top_of_exists_mem hM]
   rfl
 
-/-- If the coefficient coalgebra is free, every finite set lies in a finite subcomodule. -/
-theorem exists_finite_subcomodule_of_setFinite [Module.Free R C] {s : Set M} (hs : s.Finite) :
+/-- If the coefficient coalgebra is projective, every finite set lies in a finite subcomodule. -/
+theorem exists_finite_subcomodule_of_setFinite [Module.Projective R C] {s : Set M} (hs : s.Finite) :
     ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ s ⊆ N :=
   exists_finite_subcomodule_of_setFinite_of_exists_mem exists_finite_subcomodule_mem hs
 
-/-- If the coefficient coalgebra is free, every finitely generated submodule lies in a finite
+/-- If the coefficient coalgebra is projective, every finitely generated submodule lies in a finite
 subcomodule. -/
-theorem exists_finite_subcomodule_of_fg [Module.Free R C] (P : Submodule R M) (hP : P.FG) :
+theorem exists_finite_subcomodule_of_fg [Module.Projective R C] (P : Submodule R M) (hP : P.FG) :
     ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ P ≤ N.toSubmodule :=
   exists_finite_subcomodule_of_fg_of_exists_mem exists_finite_subcomodule_mem P hP
 
-/-- If the coefficient coalgebra is free, the finite subcomodules have supremum `⊤`. -/
+/-- If the coefficient coalgebra is projective, the finite subcomodules have supremum `⊤`. -/
 @[simp]
-theorem sSup_finiteSubcomodules_eq_top [Module.Free R C] :
+theorem sSup_finiteSubcomodules_eq_top [Module.Projective R C] :
     sSup (finiteSubcomodules (R := R) (C := C) (M := M)) = ⊤ :=
   sSup_finiteSubcomodules_eq_top_of_exists_mem exists_finite_subcomodule_mem
 
-/-- If the coefficient coalgebra is free, the union of the finite subcomodules is the whole
+/-- If the coefficient coalgebra is projective, the union of the finite subcomodules is the whole
 carrier. -/
 @[simp]
-theorem iUnion_finiteSubcomodules_eq_univ [Module.Free R C] :
+theorem iUnion_finiteSubcomodules_eq_univ [Module.Projective R C] :
     (⋃ (N : Subcomodule R C M) (_ : Module.Finite R N.toSubmodule), (N : Set M)) =
       Set.univ := by
   simpa only [Set.iUnion_coe_set, mem_finiteSubcomodules] using
     iUnion_finiteSubcomodules_eq_univ_of_exists_mem exists_finite_subcomodule_mem
 
-/-- If the coefficient coalgebra is free, every element of a subcomodule `Q` belongs to a finite
-subcomodule contained in `Q`. -/
-theorem exists_finite_le_of_mem [Module.Free R C] {Q : Subcomodule R C M} {m : M}
+/-- If the coefficient coalgebra is projective, every element of a subcomodule `Q` belongs to a
+finite subcomodule contained in `Q`. -/
+theorem exists_finite_le_of_mem [Module.Projective R C] {Q : Subcomodule R C M} {m : M}
     (hm : m ∈ Q) : ∃ N : Subcomodule R C M, N ≤ Q ∧ Module.Finite R N.toSubmodule ∧ m ∈ N := by
   -- Find a finite subcomodule of the comodule `Q` containing `m` and include it back into `M`.
   obtain ⟨N, hN, hmN⟩ := exists_finite_subcomodule_mem (R := R) (C := C) (⟨m, hm⟩ : Q)
@@ -313,8 +283,8 @@ theorem exists_finite_le_of_mem [Module.Free R C] {Q : Subcomodule R C M} {m : M
   exact ⟨N.map (subtype Q), map_le_iff.mpr fun n _ ↦ by simp, map_finite (subtype Q) N,
     by simpa using mem_map_of_mem (subtype Q) hmN⟩
 
-/-- If the coefficient coalgebra is free, a simple subcomodule is finite. -/
-theorem finite_of_isAtom [Module.Free R C] {S : Subcomodule R C M} (hS : IsAtom S) :
+/-- If the coefficient coalgebra is projective, a simple subcomodule is finite. -/
+theorem finite_of_isAtom [Module.Projective R C] {S : Subcomodule R C M} (hS : IsAtom S) :
     Module.Finite R S := by
   obtain ⟨v, hvS, hv0⟩ := ne_bot_iff.mp hS.1
   obtain ⟨F, hFS, hF, hvF⟩ := exists_finite_le_of_mem hvS

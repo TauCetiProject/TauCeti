@@ -43,11 +43,10 @@ theorem Coordinate.exists_graph_reparam_primitive (d : Coordinate) {a b c e : �
       (∀ x ∈ Icc c e, ∀ y ∈ Icc c e, A y - A x = ∫ z in x..y, P (d.graph g z)) ∧
       ∃ T : Set ℝ, T.Countable ∧ ∀ t ∈ uIoo a b \ T,
         HasDerivAt (A ∘ θ) (P (d.graph g (θ t)) * d.proj (deriv (d.graph g ∘ θ) t)) t := by
-  have hce : c ≤ e := (hmap (left_mem_uIcc)).1.trans (hmap left_mem_uIcc).2
   have hf : ContinuousOn (fun x ↦ P (d.graph g x)) (Icc c e) :=
     hP.comp (d.continuousOn_graph hg) (mapsTo_image _ _)
   obtain ⟨A, hA, hdA, hvalue⟩ :=
-    TauCeti.intervalIntegral.exists_continuous_primitive_Icc hce hf
+    TauCeti.intervalIntegral.exists_continuous_primitive_Icc hf
   let T := S ∪ {c, e}
   refine ⟨A, hA, hvalue, s ∪ {t | θ t ∈ T ∧ deriv θ t ≠ 0},
     hs.union (TauCeti.countable_setOf_mem_and_deriv_ne_zero θ

@@ -36,6 +36,7 @@ product in elementary symmetric polynomials.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
+* `TauCeti.mk_multiset_esymm_eq_prod_one_add_X`: the same for the `eₙ` of a family of elements.
 * `TauCeti.mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X`: its signed version
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
@@ -167,9 +168,8 @@ end esymmInt
 
 section GeneratingFunction
 
-variable {σ : Type*} [Fintype σ] [DecidableEq σ] (R : Type*) [CommSemiring R]
+variable {σ : Type*} [Fintype σ] (R : Type*) [CommSemiring R]
 
-omit [DecidableEq σ] in
 /-- **The coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`**: the sum, over the `n`-element subsets `s` of
 the variables, of the product of the variables in `s`. -/
 theorem coeff_prod_one_add_C_mul_X (n : ℕ) :
@@ -190,7 +190,6 @@ theorem coeff_prod_one_add_C_mul_X (n : ℕ) :
   · have hnt : n ≠ s.card := fun h => hs h.symm
     simp [hs, hnt]
 
-omit [DecidableEq σ] in
 /-- **The generating function of the elementary symmetric polynomials**:
 `∑ₙ eₙ tⁿ = ∏ᵢ (1 + xᵢ t)`. -/
 theorem mk_esymm_eq_prod_one_add_X :
@@ -199,13 +198,29 @@ theorem mk_esymm_eq_prod_one_add_X :
   refine PowerSeries.ext fun n => ?_
   rw [PowerSeries.coeff_mk, coeff_prod_one_add_C_mul_X, MvPolynomial.esymm]
 
+variable {R}
+
+/-- **The generating function of the elementary symmetric functions of a family**:
+`∑ₙ eₙ(w) tⁿ = ∏ᵢ (1 + wᵢ t)` for a finite family `w` of elements of a commutative semiring. -/
+theorem mk_multiset_esymm_eq_prod_one_add_X (w : σ → R) :
+    PowerSeries.mk (fun n => (Finset.univ.val.map w).esymm n) =
+      ∏ i, (1 + PowerSeries.C (w i) * PowerSeries.X) := by
+  have h := congrArg (PowerSeries.map (MvPolynomial.aeval w).toRingHom)
+    (mk_esymm_eq_prod_one_add_X (σ := σ) R)
+  rw [map_prod] at h
+  simp only [map_add, map_one, map_mul, PowerSeries.map_C, PowerSeries.map_X,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X] at h
+  rw [← h]
+  ext n
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk, RingHom.coe_coe,
+    MvPolynomial.aeval_esymm_eq_multiset_esymm]
+
 end GeneratingFunction
 
 section SignedGeneratingFunction
 
-variable {σ : Type*} [Fintype σ] [DecidableEq σ] (R : Type*) [CommRing R]
+variable {σ : Type*} [Fintype σ] (R : Type*) [CommRing R]
 
-omit [DecidableEq σ] in
 /-- **The signed generating function of the elementary symmetric polynomials**:
 `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`. -/
 theorem mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X :

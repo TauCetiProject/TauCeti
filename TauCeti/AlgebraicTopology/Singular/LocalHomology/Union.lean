@@ -94,7 +94,7 @@ private lemma detected_symm_image_of_convex (hn : finrank ℝ E = n) {K : Set E}
   have hxK : φ (φ.symm y) ∈ K := (φ.right_inv (hKφ hy)).symm ▸ hy
   have := isIso_localHomologyRestriction_symm_image R φ (hK.starConvex hxK) hKk hKφ hx hxK n
   refine ⟨fun k hk ↦ isZero_singularHomology_compl_symm_image_of_ne R φ hx (hK.starConvex hxK)
-    hxK hKk.isBounded hKk.isClosed (φ.isClosed_image_symm_of_isCompact hKk hKφ) hKφ hn
+    hKk.isBounded hKk.isClosed (φ.isClosed_image_symm_of_isCompact hKk hKφ) hKφ hn
     (by lia),
     fun T g₁ g₂ h ↦ ?_⟩
   exact (cancel_mono (localHomologyRestriction R

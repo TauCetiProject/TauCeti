@@ -76,7 +76,7 @@ theorem wrappedCauchyAngleMeasure_eq_withDensity (hγ : 0 < γ) :
     wrappedCauchyAngleMeasure m γ = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedCauchyPDFReal m γ t / (2 * π))) := by
   rw [wrappedCauchyAngleMeasure_def, wrappedCauchyMeasure_eq_withDensity m hγ,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_wrappedCauchyPDF m γ)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1
@@ -141,7 +141,7 @@ theorem cdf_wrappedCauchyAngleMeasure_eq_integral (hγ : 0 < γ) (hx : x ∈ Icc
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedCauchyPDFReal_pos _ hγ _) two_pi_pos).le)
-      measurableSet_Iic ((hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self).integrableOn),
+      measurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

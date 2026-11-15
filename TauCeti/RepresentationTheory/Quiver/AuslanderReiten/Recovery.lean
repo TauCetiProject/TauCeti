@@ -67,7 +67,7 @@ theorem nonempty_iso_arInverseTranslate_arTranslate
   have : Module.Finite k N :=
     module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q _
       (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
-  let D := ModuleCat.rightScalarDual k N
+  let D := ModuleCat.matlisDualObj k k N
   have : Module.Finite kQᵐᵒᵖ D := Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ D
   let R : FiniteProjectivePresentation D := .minimal
   have hR : IsMinimalProjectivePresentation R.p R.π :=
@@ -79,11 +79,11 @@ theorem nonempty_iso_arInverseTranslate_arTranslate
       (E).counitIso.app T
   let g : T ≅ N := c.symm ≪≫ (E).functor.mapIso a.symm
   let e : AuslanderReitenTranslate k P.p ≃ₗ[k] Module.Dual k D :=
-    (g.toLinearEquiv.restrictScalars k).trans (ModuleCat.rightScalarDualEvalEquiv k N)
+    (g.toLinearEquiv.restrictScalars k).trans (ModuleCat.scalarDualEvalEquiv k N)
   have he (b : kQ) (y : AuslanderReitenTranslate k P.p) (x : D) :
       e (b • y) x = e y (MulOpposite.op b • x) := by
     simp only [e, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply, map_smul]
-    exact ModuleCat.rightScalarDualEvalEquiv_smul k N b _ x
+    exact ModuleCat.scalarDualEvalEquiv_smul k N b _ x
   have hi := (E).functor.indecomposable_obj_of_map_bijective hiM
     ((E).fullyFaithfulFunctor.map_bijective _ _)
   have hp : ¬ Module.Projective kQ ((E).functor.obj M) := fun h ↦

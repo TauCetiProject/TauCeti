@@ -57,9 +57,9 @@ generate its relation subgroup `R` as a closed normal subgroup, with `r = r(G)`.
 
 public section
 
-namespace TauCeti
+namespace IsPGroup
 
-open Subgroup ContCohomology Module _root_.MonoidAlgebra
+open TauCeti Subgroup ContCohomology Module _root_.MonoidAlgebra
 
 universe u
 
@@ -76,7 +76,7 @@ variable {p : ℕ} [Fact p.Prime] {X : Type u} [Fintype X] {G : Type u} [Group G
 topology, satisfies `d(G)² < 4 r(G)`, where `d(G)` is its generator rank and
 `r(G) = dim_{𝔽_p} H²(G, 𝔽_p)` is its relation rank. Finite generation follows from
 `TauCeti.isTopologicallyFinitelyGenerated_of_fg`. -/
-theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohomFp_two
+theorem sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohomFp_two
     {G : Type u} [Group G] [Finite G] [Nontrivial G] [TopologicalSpace G] [DiscreteTopology G]
     (hG : IsPGroup p G) :
     topologicalGeneratorRankNat G isTopologicallyFinitelyGenerated_of_fg ^ 2 <
@@ -93,8 +93,8 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
   let X := ULift.{u} (Fin (topologicalGeneratorRankNat G hfg))
   obtain ⟨rels, hrels, ⟨e⟩⟩ :=
     hG.isProP.exists_subset_proPFrattini_continuousMulEquiv_presentedProP hfg X (by simp [X])
-  obtain ⟨t, htcard, ht⟩ := (presentedProP.finrank_H2_le_iff rels hrels e (fun _ _ ↦ rfl)
-    ((presentedProP.finite_H2_iff rels hrels e fun _ _ ↦ rfl).1 hH2) _).1 le_rfl
+  obtain ⟨t, htcard, ht⟩ := (presentedProP.finrank_H2_le_iff rels hrels e
+    ((presentedProP.finite_H2_iff rels hrels e).1 hH2) _).1 le_rfl
   let s : Finset (freeProP p X) := t.image Subtype.val
   let π : freeProP p X →ₜ* G := (e : presentedProP p X rels →ₜ* G).comp (presentedProP.mk p rels)
   have hπ : Function.Surjective π := e.surjective.comp (presentedProP.mk_surjective p rels)
@@ -136,4 +136,4 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
   rw [hcardX] at key
   omega
 
-end TauCeti
+end IsPGroup

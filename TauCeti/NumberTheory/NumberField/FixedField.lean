@@ -143,6 +143,7 @@ namespace Ideal
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
+omit [NumberField K] in
 /-- **A prime is the only one above its contraction to the fixed field.**  If `σ` fixes the prime
 `Q` of `𝓞 L`, then `Q` is the only prime of `𝓞 L` lying over `Q ∩ 𝓞 (L ^ ⟨σ⟩)`.
 
@@ -153,6 +154,8 @@ theorem eq_of_smul_eq_of_liesOver_under_fixedField {σ : L ≃ₐ[K] L} {Q : Ide
     (hQ : σ • Q = Q) (Q' : Ideal (𝓞 L)) [Q'.IsPrime]
     [Q'.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))))] :
     Q' = Q := by
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := NumberField.of_tower ℚ L K
   have : IsScalarTower K ↥(fixedField (Subgroup.zpowers σ)) L :=
     (fixedField (Subgroup.zpowers σ)).isScalarTower_mid'
   have : IsGalois ↥(fixedField (Subgroup.zpowers σ)) L :=

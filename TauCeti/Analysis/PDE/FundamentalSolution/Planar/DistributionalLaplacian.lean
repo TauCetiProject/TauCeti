@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
@@ -46,9 +47,13 @@ The argument has the same two steps as in higher dimensions.
 * `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable.
 * `TauCeti.locallyIntegrable_fderiv_planarNewtonianKernel`: so is its derivative.
 * `TauCeti.integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts
-  against `G`.
+  against `G`, and `TauCeti.integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul` with
+  the pole at `a`.
 * `TauCeti.hasWeakFDerivOn_planarNewtonianKernel`: the classical derivative of `G` is its weak
   derivative.
+* `TauCeti.hasWeakFDerivOn_log_norm`: the weak gradient of `log ‖z‖` is `z / ‖z‖²`.
+* `TauCeti.integral_log_norm_mul_laplacian`: `Δ log ‖z‖ = ∂ₛ(s / ‖z‖²) + ∂ₜ(t / ‖z‖²)`
+  weakly.
 * `TauCeti.integral_laplacian_mul_planarNewtonianKernel`: `-Δ G = δ₀`.
 * `TauCeti.integral_laplacian_mul_planarNewtonianKernel_sub`: the same identity with the pole
   at `a`.
@@ -83,8 +88,8 @@ theorem locallyIntegrable_fderiv_planarNewtonianKernel :
     LocallyIntegrable (fderiv ℝ planarNewtonianKernel) := by
   refine locallyIntegrable_of_norm_le_rpow (μ := volume) (by simp) (C := (2 * Real.pi)⁻¹)
     (α := 1) (by simp) ?_ (measurable_fderiv ℝ _).aestronglyMeasurable
-  filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-  rw [norm_fderiv_planarNewtonianKernel hz, Real.rpow_neg_one, mul_inv]
+  filter_upwards with z
+  rw [norm_fderiv_planarNewtonianKernel, Real.rpow_neg_one, mul_inv]
 
 /-- The planar Newtonian kernel regularized at scale `t`:
 `-(4π)⁻¹ (log (‖z‖² + t) - log (1 + t))`. Subtracting the constant `log (1 + t)` makes the
@@ -102,9 +107,9 @@ private lemma regKernel_zero : regKernel 0 = planarNewtonianKernel := by
     Real.log_pow]
   ring
 
-private lemma regKernelDeriv_zero (v : ℂ) {z : ℂ} (hz : z ≠ 0) :
+private lemma regKernelDeriv_zero (v : ℂ) (z : ℂ) :
     regKernelDeriv v 0 z = fderiv ℝ planarNewtonianKernel z v := by
-  rw [regKernelDeriv, fderiv_planarNewtonianKernel_apply hz, add_zero]
+  rw [regKernelDeriv, fderiv_planarNewtonianKernel_apply, add_zero]
 
 private lemma hasLineDerivAt_regKernel (v : ℂ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
     HasLineDerivAt ℝ (regKernel t) (regKernelDeriv v t z) z v := by
@@ -212,22 +217,19 @@ theorem integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul {g : ℂ →
       (((continuous_regKernel ht).mul hg.continuous).integrable_of_hasCompactSupport hc.mul_left)
       (fun z _ ↦ hasLineDerivAt_regKernel v ht z)
       (fun z _ ↦ ((hg.differentiable one_ne_zero) z).hasFDerivAt.hasLineDerivAt v)
-  -- At `t = 0` the regularizations are the kernel and, away from the pole, its derivative.
+  -- At `t = 0` the regularizations are the kernel and its derivative.
   have hderiv : (fun z ↦ fderiv ℝ planarNewtonianKernel z v * g z) =ᵐ[volume]
-      fun z ↦ regKernelDeriv v 0 z * g z := by
-    filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-    rw [regKernelDeriv_zero v hz]
+      fun z ↦ regKernelDeriv v 0 z * g z :=
+    ae_of_all _ fun z ↦ by simp only [regKernelDeriv_zero v z]
   -- Both sides converge as `t → 0⁺`.
   have hL := tendsto_integral_mul_of_dominated_away (measure_singleton (0 : ℂ))
     (μ := volume) (l := 𝓝[>] (0 : ℝ)) (K := regKernel) (K₀ := regKernel 0)
-    hg'.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regKernel ht).aestronglyMeasurable)
     (by simpa [regKernel_zero] using integrable_planarNewtonianKernel_mul hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht z hz ↦ abs_regKernel_le (le_of_lt ht) hz)
     (fun z hz ↦ tendsto_regKernel hz)
   have hR := tendsto_integral_mul_of_dominated_away (measure_singleton (0 : ℂ))
     (μ := volume) (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv v) (K₀ := regKernelDeriv v 0)
-    hg.continuous.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦
       (continuous_regKernelDeriv v ht).aestronglyMeasurable)
     ((integrable_fderiv_planarNewtonianKernel_mul v hg.continuous hc).congr hderiv)
@@ -236,6 +238,19 @@ theorem integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul {g : ℂ →
   rw [regKernel_zero] at hL
   rw [integral_congr_ae hderiv]
   exact tendsto_nhds_unique (hL.congr' hibp) hR.neg
+
+/-- Integration by parts against the logarithmic kernel with its pole moved to `a`: for a `C¹`
+function `g` with compact support, `∫ G(z - a) ∂ᵥg = -∫ (∂ᵥG)(z - a) g`. -/
+theorem integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul {g : ℂ → ℝ}
+    (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g) (v a : ℂ) :
+    ∫ z, planarNewtonianKernel (z - a) * fderiv ℝ g z v =
+      -∫ z, fderiv ℝ planarNewtonianKernel (z - a) v * g z := by
+  have h := integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (g := fun y ↦ g (y + a))
+    (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight a)) v
+  simp only [fderiv_comp_add_right] at h
+  rw [← integral_add_right_eq_self (fun z ↦ planarNewtonianKernel (z - a) * fderiv ℝ g z v) a,
+    ← integral_add_right_eq_self (fun z ↦ fderiv ℝ planarNewtonianKernel (z - a) v * g z) a]
+  simpa only [add_sub_cancel_right] using h
 
 /-- **The planar Newtonian kernel is weakly differentiable.** On every open subset of `ℂ`, the
 classical derivative of `G`, which exists away from the origin, is a weak derivative of `G`. -/
@@ -248,13 +263,13 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)
-    (f : ℂ → ℝ) {z : ℂ} (hz : z ≠ 0) :
+    (f : ℂ → ℝ) (z : ℂ) :
     ∑ i, fderiv ℝ planarNewtonianKernel z (b i) * fderiv ℝ f z (b i) =
       -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) := by
   have hz' : fderiv ℝ f z z = ∑ i, ⟪b i, z⟫ * fderiv ℝ f z (b i) := by
     have h := congrArg (fderiv ℝ f z) (b.sum_repr' z).symm
     simpa only [map_sum, map_smul, smul_eq_mul] using h
-  simp_rw [fderiv_planarNewtonianKernel_apply hz, hz', Finset.mul_sum, real_inner_comm z,
+  simp_rw [fderiv_planarNewtonianKernel_apply, hz', Finset.mul_sum, real_inner_comm z,
     Real.rpow_neg (norm_nonneg z), Real.rpow_two]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
@@ -272,9 +287,8 @@ theorem integral_laplacian_mul_planarNewtonianKernel {f : ℂ → ℝ} (hf : Con
   rw [hvol] at hrad
   set b := Complex.orthonormalBasisOneI
   have hsum : (fun z ↦ ∑ i, fderiv ℝ planarNewtonianKernel z (b i) * fderiv ℝ f z (b i))
-      =ᵐ[volume] fun z ↦ -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) := by
-    filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-    exact sum_fderiv_planarNewtonianKernel_mul_fderiv b f hz
+      =ᵐ[volume] fun z ↦ -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) :=
+    ae_of_all _ (sum_fderiv_planarNewtonianKernel_mul_fderiv b f)
   rw [locallyIntegrable_planarNewtonianKernel.integral_laplacian_mul_eq_neg_integral_sum
       locallyIntegrable_fderiv_planarNewtonianKernel
       (fun _ ↦ integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul) hf hc b,
@@ -293,5 +307,62 @@ theorem integral_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf :
   rw [laplacian_comp_add_right, zero_add] at h
   rw [← h, ← integral_add_right_eq_self _ a]
   simp
+
+/-- For a `C²` function `f` with compact support on `ℂ`, the integrand `Δ f · G(· - a)` of the
+distributional identity `-Δ G(· - a) = δₐ` is integrable. -/
+theorem integrable_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f)
+    (hc : HasCompactSupport f) (a : ℂ) :
+    Integrable fun z ↦ Δ f z * planarNewtonianKernel (z - a) := by
+  have hg : Integrable fun z ↦ planarNewtonianKernel z • (Δ f ∘ Homeomorph.addRight a) z :=
+    locallyIntegrable_planarNewtonianKernel.integrable_smul_right_of_hasCompactSupport
+      (hf.continuous_laplacian.comp (Homeomorph.addRight a).continuous)
+      (hc.laplacian.comp_homeomorph (Homeomorph.addRight a))
+  simpa only [Function.comp_apply, Homeomorph.coe_addRight, sub_add_cancel, smul_eq_mul,
+    mul_comm] using hg.comp_sub_right a
+
+section LogNorm
+
+open scoped Distributions Gradient
+
+/-- **The weak gradient of `log ‖z‖`.** On every open subset of the plane, `log ‖z‖` has weak
+derivative `‖z‖⁻² ⟪z, ·⟫`, that is, weak gradient `z / ‖z‖²`, matching its classical derivative
+away from the origin (`hasFDerivAt_log_norm_of_ne`); the derivative is `0` at the origin. -/
+theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
+    HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
+      fun z ↦ (‖z‖ ^ 2)⁻¹ • innerSL ℝ z := by
+  have h := (hasWeakFDerivOn_planarNewtonianKernel Ω).const_smul (-(2 * Real.pi))
+  have hu : (-(2 * Real.pi)) • planarNewtonianKernel = fun z : ℂ ↦ Real.log ‖z‖ := by
+    funext z
+    simp only [Pi.smul_apply, planarNewtonianKernel_def, smul_eq_mul]
+    field_simp
+  rw [hu] at h
+  refine h.congr_ae_deriv ?_
+  filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℂ))] with z hz
+  ext v
+  simp only [Pi.smul_apply, smul_apply, fderiv_planarNewtonianKernel_apply,
+    innerSL_apply_apply, smul_eq_mul]
+  field_simp
+
+/-- **The weak divergence-form identity for `log ‖z‖`.** For every test function `φ` on an open
+set `Ω`, `∫ log ‖z‖ Δφ = -∫ (f ∂ₛφ + g ∂ₜφ)` with `f = s / ‖z‖²` and `g = t / ‖z‖²`; that is,
+`Δ log ‖z‖ = ∂ₛf + ∂ₜg` weakly, with `(f, g)` the weak gradient of `log ‖z‖`. -/
+theorem integral_log_norm_mul_laplacian (Ω : Opens ℂ) (φ : 𝓓(Ω, ℝ)) :
+    ∫ z, Real.log ‖z‖ * Δ (φ : ℂ → ℝ) z =
+      -∫ z, (z.re / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z 1 +
+        z.im / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z Complex.I) := by
+  have hD : HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
+      fun z ↦ innerSL ℝ ((‖z‖ ^ 2)⁻¹ • z) := by
+    simpa only [map_smul] using hasWeakFDerivOn_log_norm Ω
+  have h := hD.integral_laplacian_smul_eq_neg_integral_inner φ
+  simp only [smul_eq_mul] at h
+  simp_rw [mul_comm (Real.log _)]
+  rw [h]
+  congr 2
+  funext z
+  rw [inner_gradient_left, map_smul, ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I]
+  simp only [smul_eq_mul]
+  ring
+
+end LogNorm
 
 end TauCeti

@@ -107,8 +107,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
   simp only [coe_candidateGenusFieldConj_apply, candidateGenusFieldGen_val]
   split_ifs with hneg
   · have hrad : primeDiscriminantRadicand P.val < 0 :=
-      (primeDiscriminantRadicand_neg_iff
-        ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).2 hneg
+      (primeDiscriminantRadicand_neg_iff P.val).2 hneg
     have hsquare : genusFieldRoot hd P ^ 2 ≤ 0 := by
       rw [genusFieldRoot_sq]
       exact_mod_cast hrad.le
@@ -118,8 +117,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
     · simp
   · have hrad : 0 ≤ primeDiscriminantRadicand P.val := by
       have : ¬ primeDiscriminantRadicand P.val < 0 := fun hr => hneg <|
-        (primeDiscriminantRadicand_neg_iff
-          ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).1 hr
+        (primeDiscriminantRadicand_neg_iff P.val).1 hr
       omega
     have hsquare : 0 ≤ genusFieldRoot hd P ^ 2 := by
       rw [genusFieldRoot_sq]

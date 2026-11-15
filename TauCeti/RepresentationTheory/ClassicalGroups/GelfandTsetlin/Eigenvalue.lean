@@ -55,7 +55,7 @@ theorem eq_of_forall_gelfandEigenvalue_eq {K : Type*} [CommRing K] [CharZero K]
   by_cases hij : i < j ∧ j ≤ n
   · have hrow := TauCeti.eq_of_forall_gelfandEigenvalue_eq (K := K)
       (μ := fun i : Fin j => P i j) (μ' := fun i : Fin j => Q i j)
-      (fun a b hab => P.entry_anti hij.2 hab b.2) (fun a b hab => Q.entry_anti hij.2 hab b.2)
+      (fun a b hab => P.entry_anti hab b.2) (fun a b hab => Q.entry_anti hab b.2)
       (by simpa using h j hij.2)
     exact congrFun hrow ⟨i, hij.1⟩
   · rw [P.entry_eq_zero (by omega), Q.entry_eq_zero (by omega)]

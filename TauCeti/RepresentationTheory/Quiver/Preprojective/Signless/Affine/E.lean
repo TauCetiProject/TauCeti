@@ -180,7 +180,7 @@ theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule [No
     sum_affineE6Matrix_mul_affineE6Matrix (c := 0)
     [⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
       ⟨1, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-      ⟨3, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩] (by simp)
+      ⟨3, (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩]
     (by simpa [mul_assoc] using trace_affineE6Matrix_backtracks)
 
 /-! ### Affine `E₇` -/
@@ -247,7 +247,7 @@ theorem exists_mem_signlessPreprojectiveGrade_eight_notMem_commutatorSubmodule [
     [⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
       ⟨2, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-      ⟨5, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩] (by simp)
+      ⟨5, (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩]
     (by simpa [mul_assoc] using trace_affineE7Matrix_backtracks)
 
 /-! ### Affine `E₈` -/
@@ -349,7 +349,7 @@ theorem exists_mem_signlessPreprojectiveGrade_twelve_notMem_commutatorSubmodule 
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
       ⟨4, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-      ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩] (by simp)
+      ⟨2, (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩]
     (by simpa [mul_assoc] using trace_affineE8Matrix_backtracks)
 
 end TauCeti

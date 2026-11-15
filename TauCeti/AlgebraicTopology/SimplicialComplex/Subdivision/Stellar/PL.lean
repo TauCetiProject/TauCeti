@@ -16,7 +16,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # Piecewise-linear transport across a stellar subdivision
 
-The barycentric identification of a finite stellar subdivision is a piecewise-linear map on the
+The barycentric identification of a stellar subdivision is a piecewise-linear map on the
 coordinate polyhedra. Its inverse is piecewise affine on the subdivided simplices, using the
 finite-simplex inverse criterion. These are the local transition maps needed to transport PL
 charts across stellar equivalences.
@@ -24,10 +24,11 @@ charts across stellar equivalences.
 The inverse also has an explicit extension to arbitrary coordinate spaces: it removes the least
 coordinate on the starred face from each of its vertices and transfers the total removed mass
 to the new vertex. This extension is piecewise affine on minimum-coordinate cells and agrees
-with the inverse of the stellar homeomorphism of finite weak polyhedra. The resulting maps are
+with the inverse of the stellar homeomorphism of weak polyhedra. The resulting maps are
 packaged by the realization-level `PLHomeomorphic` relation, which is closed under symmetry and
-composition; this file derives such a package for every finite stellar equivalence and descends it
-through injective vertex relabelings for intrinsic stellar equivalence.
+composition; this file derives such a package for every stellar equivalence, with no finiteness
+hypothesis on the complexes, and descends it through injective vertex relabelings for intrinsic
+stellar equivalence.
 
 Reference: Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
 -/
@@ -273,7 +274,7 @@ private theorem stellarSubdivision_face_relabel
 
 /-- The stellar coordinate map is injective on any union of the geometric simplices spanned by
 faces of the stellar subdivision. -/
-private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*} (hvσ : v ∉ σ)
+private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*}
     (f : T → Finset ι) (hf : ∀ t, f t ∈ (K.stellarSubdivision σ v).faces) :
     InjOn (stellarSubdivisionCoordinateMap σ v)
       (⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))) := by
@@ -291,7 +292,7 @@ private theorem injOn_stellarSubdivisionCoordinateMap [Finite ι] {T : Type*} (h
       stellarSubdivisionLinearMap σ v (Finsupp.equivFunOnFinite.symm y) := by
     rw [key, key, hxy]
   exact congrArg Finsupp.equivFunOnFinite
-    (injOn_stellarSubdivisionLinearMap (K := K) (σ := σ) (v := v) hvσ hxf hyf hxy_map)
+    (injOn_stellarSubdivisionLinearMap (K := K) (σ := σ) (v := v) hxf hyf hxy_map)
 
 /-- The images of the vertices of a face of the stellar subdivision under the stellar coordinate
 map are affinely independent. -/
@@ -325,7 +326,7 @@ private theorem exists_isPLOn_leftInverse_stellarSubdivisionCoordinateMap [Finit
   have := Fintype.ofFinite ι
   let S := stellarSubdivisionCoordinateMap σ v
   let U : Set (ι → ℝ) := ⋃ t, convexHull ℝ ((Pi.single · (1 : ℝ)) '' (f t : Set ι))
-  have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap hvσ f hf
+  have hSinj : InjOn S U := injOn_stellarSubdivisionCoordinateMap f hf
   let g := Function.invFunOn S U
   have hgf : ∀ x ∈ U, g (S x) = x := hSinj.leftInvOn_invFunOn
   exact ⟨g, (TauCeti.isPiecewiseAffineOn_inverse_of_finite_simplex_cover (f := S) (g := g)
@@ -414,11 +415,11 @@ open AbstractSimplicialComplex
 
 variable [DecidableEq ι] {A : AbstractSimplicialComplex ι}
 
-/-- The finite stellar homeomorphism has the barycentric continuous linear coordinate map
-as its forward extension and the piecewise-affine minimum-transfer map as its inverse extension.
-Thus stellar moves identify finite weak polyhedra by PL maps in both directions. -/
+/-- The stellar homeomorphism has the barycentric continuous linear coordinate map as its
+forward extension and the piecewise-affine minimum-transfer map as its inverse extension.
+Thus stellar moves identify weak polyhedra by PL maps in both directions. -/
 theorem exists_homeomorph_stellarSubdivision_with_inverse
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hfin : K.faces.Finite)
+    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (hS : stellarSubdivision K σ v ≤ A.toPreAbstractSimplicialComplex) :
     ∃ e : {x : Realization A // x.1.support ∈ stellarSubdivision K σ v} ≃ₜ
@@ -426,7 +427,7 @@ theorem exists_homeomorph_stellarSubdivision_with_inverse
       (∀ x, ((e x).1.1 : ι → ℝ) = Finset.stellarSubdivisionCoordinateMap σ v x.1.1) ∧
       ∀ y, ((e.symm y).1.1 : ι → ℝ) =
         Finset.stellarSubdivisionInverseExtension σ (K.isRelLowerSet_faces hσ).1 v y.1.1 := by
-  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hfin hK hS
+  obtain ⟨e, he⟩ := exists_homeomorph_stellarSubdivision hσ hv hK hS
   refine ⟨e, fun x => ?_, fun y => ?_⟩
   · simp [he x]
   · obtain ⟨x, rfl⟩ := e.surjective y
@@ -450,13 +451,12 @@ variable {ι : Type*} [DecidableEq ι]
 
 /-! ### PL formulas along a stellar equivalence -/
 
-/-- A single stellar move from a finite complex gives a `PLHomeomorphic` package. -/
+/-- A single stellar move gives a `PLHomeomorphic` package. -/
 theorem IsStellarMove.plHomeomorphic
-    {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B)
-    (hfin : A.faces.Finite) : PLHomeomorphic A B := by
+    {A B : PreAbstractSimplicialComplex ι} (h : IsStellarMove A B) : PLHomeomorphic A B := by
   obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
   obtain ⟨e, he, heinv⟩ := exists_homeomorph_stellarSubdivision_with_inverse
-    hσ hv hfin (le_top _) (le_top _)
+    hσ hv (le_top _) (le_top _)
   let f : (ι → ℝ) → (ι → ℝ) :=
     Finset.stellarSubdivisionInverseExtension σ (A.isRelLowerSet_faces hσ).1 v
   let g : (ι → ℝ) → (ι → ℝ) := Finset.stellarSubdivisionCoordinateMap σ v
@@ -474,53 +474,22 @@ theorem IsStellarMove.plHomeomorphic
 
 namespace StellarEquivalent
 
-/-- A finite stellar equivalence identifies its weak polyhedra by ambient maps that are piecewise
+/-- A stellar equivalence identifies its weak polyhedra by ambient maps that are piecewise
 linear in their barycentric coordinates. -/
 theorem plHomeomorphic
-    (h : _root_.PreAbstractSimplicialComplex.StellarEquivalent K L)
-    (hfin : K.faces.Finite) : PLHomeomorphic K L := by
-  have hP : ∃ hKL : StellarEquivalent K L,
-      ∀ hfin : K.faces.Finite, PLHomeomorphic K L := by
-    refine StellarEquivalent.induction_on h
-      (P := fun A B => ∃ hAB : StellarEquivalent A B,
-        ∀ hfin : A.faces.Finite, PLHomeomorphic A B) ?_ ?_ ?_ ?_
-    · intro A B hmove
-      exact ⟨hmove.stellarEquivalent, fun hA => hmove.plHomeomorphic hA⟩
-    · intro A
-      exact ⟨StellarEquivalent.refl A, fun _ => PLHomeomorphic.refl A⟩
-    · rintro A B ⟨hAB, ih⟩
-      refine ⟨hAB.symm, ?_⟩
-      intro hB
-      exact (ih ((StellarEquivalent.finite_faces_iff hAB).mpr hB)).symm
-    · rintro A B C ⟨hAB, ihAB⟩ ⟨hBC, ihBC⟩
-      refine ⟨hAB.trans hBC, ?_⟩
-      intro hA
-      exact (ihAB hA).trans (ihBC ((StellarEquivalent.finite_faces_iff hAB).mp hA))
-  exact hP.choose_spec hfin
+    (h : _root_.PreAbstractSimplicialComplex.StellarEquivalent K L) : PLHomeomorphic K L :=
+  h.induction_on (fun _ _ hmove => hmove.plHomeomorphic) PLHomeomorphic.refl
+    (fun _ _ => PLHomeomorphic.symm) (fun _ _ _ => PLHomeomorphic.trans)
 
 end StellarEquivalent
 
 namespace StellarEquivalentUpToRelabeling
 
-/-- Intrinsically stellar-equivalent finite complexes have PL-homeomorphic weak polyhedra.
-
-Finiteness is required only for one complex; intrinsic stellar equivalence transports it to every
-intermediate complex in the stellar chain. -/
-theorem plHomeomorphic (h : StellarEquivalentUpToRelabeling K L)
-    (hfin : K.faces.Finite) : PLHomeomorphic K L := by
-  exact (h.induction_on
-    (P := fun A B => StellarEquivalentUpToRelabeling A B ∧
-      (A.faces.Finite → PLHomeomorphic A B))
-    (fun A B e d he =>
-      ⟨of_common_relabeling e d he, fun hA =>
-        PLHomeomorphic.of_common_relabeling (e := e) (d := d)
-          (he.plHomeomorphic ((finite_faces_map_iff_of_injective e e.injective).mpr hA))⟩)
-    (fun A => ⟨.refl A, fun _ => PLHomeomorphic.refl A⟩)
-    (fun _ _ ih =>
-      ⟨ih.1.symm, fun hB => (ih.2 ((finite_faces_iff ih.1).mpr hB)).symm⟩)
-    (fun _ _ _ ihAB ihBC =>
-      ⟨ihAB.1.trans ihBC.1, fun hA =>
-        (ihAB.2 hA).trans (ihBC.2 ((finite_faces_iff ihAB.1).mp hA))⟩)).2 hfin
+/-- Intrinsically stellar-equivalent complexes have PL-homeomorphic weak polyhedra. -/
+theorem plHomeomorphic (h : StellarEquivalentUpToRelabeling K L) : PLHomeomorphic K L :=
+  h.induction_on
+    (fun _ _ e d he => PLHomeomorphic.of_common_relabeling (e := e) (d := d) he.plHomeomorphic)
+    PLHomeomorphic.refl (fun _ _ => PLHomeomorphic.symm) (fun _ _ _ => PLHomeomorphic.trans)
 
 end StellarEquivalentUpToRelabeling
 

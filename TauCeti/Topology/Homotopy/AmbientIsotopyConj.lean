@@ -10,11 +10,7 @@ public import TauCeti.Topology.Homotopy.Isotopy.Basic
 /-!
 # Transporting ambient isotopies across changes of ambient coordinates
 
-The geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, "Encoding
-conventions") mandates that isotopy and ambient isotopy be *"defined generally, then
-specialised ... in full generality"*, with the single general construction underlying locally
-flat isotopy (layer 2), diffeotopies (layer 3), and concordance (layer 6) -- *"none of those
-should re-define it"*. This file records one such general closure property: an ambient isotopy
+This file records a general point-set closure property of ambient isotopies: an ambient isotopy
 can be transported through a change of coordinates on its ambient space.
 
 Given an ambient isotopy `Φ` of `Y` and a homeomorphism `h : Y ≃ₜ Z`, `Φ.transport h` runs `Φ`

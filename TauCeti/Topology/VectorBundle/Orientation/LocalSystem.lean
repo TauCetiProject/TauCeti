@@ -66,7 +66,7 @@ namespace TauCeti
 
 namespace VectorBundleOrientationCover
 
-variable [FiniteDimensional ℝ F] [Fintype ι] (R : Type u) [Ring R]
+variable [Fintype ι] (R : Type u) [Ring R]
 
 variable (F E) in
 /-- The orientation local system `o(E)` of a real vector bundle of rank `card ι`: the sign local
@@ -129,6 +129,8 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
   exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
 
+variable [FiniteDimensional ℝ F]
+
 section Tensor
 
 open MonoidalCategory
@@ -187,7 +189,7 @@ end VectorBundleOrientationCover
 
 namespace VectorBundleOrientation
 
-variable [FiniteDimensional ℝ F] [Fintype ι] {R : Type u} [Ring R]
+variable [Fintype ι] {R : Type u} [Ring R]
   (hι : Fintype.card ι = finrank ℝ F)
 
 /-- An orientation `o` of the bundle trivializes the orientation local system: over `b`, the

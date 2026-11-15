@@ -47,12 +47,11 @@ the `Set.Finite` hypotheses are converted to `Finite` instances with `Set.Finite
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this
-follows. The names differ: that source abbreviates the quotient `Kˣ ⧸ (Kˣ)ⁿ` as `Units.modPow` and
-states the per-factor finiteness as an explicit `finite_selmerGroup`, whereas here the quotient is
-spelled out as Mathlib does and the finiteness is the instance
-`IsDedekindDomain.selmerGroup.finite`.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this follows. The names
+differ: that source abbreviates the quotient `Kˣ ⧸ (Kˣ)ⁿ` as `Units.modPow` and states the
+per-factor finiteness as an explicit `finite_selmerGroup`, whereas here the quotient is spelled out
+as Mathlib does and the finiteness is the instance `IsDedekindDomain.selmerGroup.finite`.
 -/
 
 public section

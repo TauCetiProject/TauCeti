@@ -257,12 +257,8 @@ theorem mem_range_map_iff_weilDifferentialOrder_nonneg_of_span_D_eq_top {z : F}
   have hωa : a • weilDifferentialOfSeparating hF hz = ω := by
     simpa [a, Module.Basis.coord_apply] using
       (weilDifferentialBasisOfSeparating hF hex hz).sum_repr ω
-  have ha : a ≠ 0 := by
-    rintro ha
-    rw [ha, zero_smul] at hωa
-    exact hω (by simp [← hωa])
   rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex ω.2 hω
-      (weilDifferentialOfSeparating hF hz).2 (coe_weilDifferentialOfSeparating_ne_zero hF hz) ha
+      (weilDifferentialOfSeparating hF hz).2 (coe_weilDifferentialOfSeparating_ne_zero hF hz)
       (by rw [← hωa, coe_weilDifferentialSpaceModule_smul]) P,
     weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero_of_span_D_eq_top hF hex hz hzP hΩ,
     add_zero, P.mem_integers_iff_ord_nonneg]

@@ -25,13 +25,16 @@ linear maps. This is needed when
 extending prescribed almost complex structures across collars: convex interpolation must be
 smooth as well as pointwise compatible.
 
+`SymplecticForm.Compatible.cayleyInterp` interpolates compatible structures with any weight
+in `[0, 1]`, by scaling the endpoint's Cayley coordinate.
 `SymplecticForm.Compatible.cayleyPath` joins a compatible structure to any other compatible
 structure, is constant for parameters at most zero and at least one, and is smooth on the
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
 proved jointly with external parameters for families expressed in Cayley coordinates. In
 operator-norm coordinates the path is the rational expression `TauCeti.cayleyPathFormula` in
-its two endpoints, which commutes with algebra isomorphisms and is smooth jointly in the
-parameter and both endpoints wherever its denominators are invertible.
+its two endpoints, which commutes with algebra isomorphisms, and hence with conjugation by linear
+isomorphisms intertwining the endpoints, and is smooth jointly in the parameter and both endpoints
+wherever its denominators are invertible.
 Over a manifold of parameters, `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm` shows
 that the inverse chart preserves smoothness, and conversely
 `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a smooth family of
@@ -93,6 +96,20 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
 end Formula
 
 end TauCeti
+
+/-- A continuous linear equivalence `e` which intertwines `A` with `A'` and `B` with `B'`
+intertwines their Cayley path expressions. -/
+theorem ContinuousLinearEquiv.apply_cayleyPathFormula_apply {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] (e : V ≃L[ℝ] W) (b : ℝ)
+    {A B : V →L[ℝ] V} {A' B' : W →L[ℝ] W} (hA : ∀ v, e (A v) = A' (e v))
+    (hB : ∀ v, e (B v) = B' (e v)) (v : V) :
+    e (TauCeti.cayleyPathFormula b A B v) = TauCeti.cayleyPathFormula b A' B' (e v) := by
+  have hconj {C : V →L[ℝ] V} {C' : W →L[ℝ] W} (h : ∀ v, e (C v) = C' (e v)) :
+      e.conjContinuousAlgEquiv C = C' := by
+    ext w
+    rw [conjContinuousAlgEquiv_apply_apply, h, apply_symm_apply]
+  rw [← hconj hA, ← hconj hB, ← TauCeti.map_cayleyPathFormula, conjContinuousAlgEquiv_apply_apply,
+    symm_apply_apply]
 
 namespace TauCeti.SymplecticForm
 
@@ -252,6 +269,31 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
   exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
     ((contDiffAt_const.sub contDiffAt_id).inverse hu)).comp_contMDiffAt hCs
 
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` at a point `p` is itself `C^n` at `p`: it is the inverse Cayley chart
+applied to its Cayley coordinates. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiffAt_cayley`. -/
+theorem Compatible.contMDiffAt_of_contMDiffAt_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞} {p : N}
+    (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) p) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) p := by
+  have hC (y : N) : (LinearMap.toContinuousLinearMap (J₀.cayley (J y))).toLinearMap ∈
+      ω.cayleyBall J₀ := by
+    simpa only [LinearMap.coe_toContinuousLinearMap] using h₀.cayley_mem_cayleyBall (hJ y)
+  -- Each structure is the inverse Cayley chart applied to its own Cayley coordinate.
+  have hJC (y : N) : J y = (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val :=
+    congrArg Subtype.val (h₀.cayleyEquiv.eq_symm_apply.2 (Subtype.ext (by
+      simp only [Compatible.cayleyEquiv_apply_coe, LinearMap.coe_toContinuousLinearMap])) :
+        (⟨J y, hJ y⟩ : {J : AlmostComplexStructure V // ω.Tames J}) = _)
+  have hfun : (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) =
+      fun y => LinearMap.toContinuousLinearMap (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val.toLinearMap :=
+    funext fun y => congrArg (fun J : AlmostComplexStructure V =>
+      LinearMap.toContinuousLinearMap J.toLinearMap) (hJC y)
+  rw [hfun]
+  exact h₀.contMDiffAt_cayleyEquiv_symm hC hCs
+
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/
 theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
@@ -262,16 +304,66 @@ theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexSt
       (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
   fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
 
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` is itself `C^n`. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiff_cayley`. -/
+theorem Compatible.contMDiff_of_contMDiff_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞}
+    (hCs : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y)))) :
+    ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) :=
+  fun p => h₀.contMDiffAt_of_contMDiffAt_cayley hJ (hCs p)
+
 end Manifold
+
+/-- Interpolate from `J₀` to `J₁` by multiplying the Cayley coordinate of `J₁` by a
+weight `b ∈ [0, 1]`. -/
+def Compatible.cayleyInterp (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
+    {b : ℝ} (hb : b ∈ Icc 0 1) : AlmostComplexStructure V :=
+  (h₀.compatibleCayleyEquiv.symm
+    ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_compatibleCayleyBall h₁
+      (by simpa only [abs_of_nonneg hb.1] using hb.2)⟩).val
+
+/-- Cayley interpolation preserves compatibility. -/
+theorem Compatible.compatible_cayleyInterp (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
+    {b : ℝ} (hb : b ∈ Icc 0 1) : ω.Compatible (h₀.cayleyInterp h₁ hb) :=
+  (h₀.compatibleCayleyEquiv.symm _).property
+
+/-- The Cayley coordinate of an interpolation is the weighted endpoint coordinate. -/
+@[simp]
+theorem Compatible.cayley_cayleyInterp (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
+    {b : ℝ} (hb : b ∈ Icc 0 1) :
+    J₀.cayley (h₀.cayleyInterp h₁ hb) = b • J₀.cayley J₁ := by
+  rw [Compatible.cayleyInterp]
+  simpa only [Compatible.compatibleCayleyEquiv_apply_coe] using
+    congrArg Subtype.val (h₀.compatibleCayleyEquiv.apply_symm_apply
+      ⟨b • J₀.cayley J₁, h₀.smul_cayley_mem_compatibleCayleyBall h₁
+        (by simpa only [abs_of_nonneg hb.1] using hb.2)⟩)
+
+/-- At weight zero Cayley interpolation returns the initial structure. -/
+@[simp]
+theorem Compatible.cayleyInterp_zero (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) :
+    h₀.cayleyInterp h₁ (b := 0) (by simp) = J₀ := by
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₀.tames (by simp)
+
+/-- At weight one Cayley interpolation returns the final structure. -/
+@[simp]
+theorem Compatible.cayleyInterp_one (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) :
+    h₀.cayleyInterp h₁ (b := 1) (by simp) = J₁ := by
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₁.tames (by simp)
+
+/-- Interpolating a structure with itself leaves it fixed at every weight. -/
+@[simp]
+theorem Compatible.cayleyInterp_self (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₀)
+    {b : ℝ} (hb : b ∈ Icc 0 1) : h₀.cayleyInterp h₁ hb = J₀ := by
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₀.tames (by simp)
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
 def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
     AlmostComplexStructure V :=
-  (h₀.compatibleCayleyEquiv.symm
-    ⟨smoothTransition t • J₀.cayley J₁,
-      h₀.smul_cayley_mem_compatibleCayleyBall h₁
-        (smoothTransition.abs_le_one t)⟩).val
+  h₀.cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
 
 /-- The path is the inverse compatible Cayley chart at the cutoff-scaled endpoint coordinate. -/
 theorem Compatible.cayleyPath_eq_compatibleCayleyEquiv_symm
@@ -296,15 +388,13 @@ theorem Compatible.smoothTransition_smul_cayley_mem_compatibleCayleyBall
 /-- The interpolated structure is compatible at every parameter, not only at its endpoints. -/
 theorem Compatible.compatible_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
     ω.Compatible (h₀.cayleyPath h₁ t) :=
-  (h₀.compatibleCayleyEquiv.symm _).property
+  h₀.compatible_cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
 
 /-- The Cayley coordinate of the path is the cutoff-scaled coordinate of its endpoint. -/
 @[simp]
 theorem Compatible.cayley_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
     J₀.cayley (h₀.cayleyPath h₁ t) = smoothTransition t • J₀.cayley J₁ := by
-  rw [h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
-  simpa only [Compatible.compatibleCayleyEquiv_apply_coe] using
-    congrArg Subtype.val (h₀.compatibleCayleyEquiv.apply_symm_apply _)
+  exact h₀.cayley_cayleyInterp h₁ ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
 
 /-- Interpolating a structure with itself leaves it fixed at every parameter. -/
 @[simp]
@@ -316,15 +406,15 @@ theorem Compatible.cayleyPath_self (h₀ : ω.Compatible J₀) (t : ℝ) :
 @[simp]
 theorem Compatible.cayleyPath_of_nonpos (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
     {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ := by
-  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₁ t).tames h₀.tames
-    (by simp [smoothTransition.zero_of_nonpos ht])
+  simp only [Compatible.cayleyPath, smoothTransition.zero_of_nonpos ht,
+    Compatible.cayleyInterp_zero]
 
 /-- The path agrees with its final structure on the entire outgoing collar. -/
 @[simp]
 theorem Compatible.cayleyPath_of_one_le (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
     {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ := by
-  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₁ t).tames h₁.tames
-    (by simp [smoothTransition.one_of_one_le ht])
+  simp only [Compatible.cayleyPath, smoothTransition.one_of_one_le ht,
+    Compatible.cayleyInterp_one]
 
 /-- The path is smooth on the whole real line, including both transition endpoints. -/
 theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
@@ -353,20 +443,6 @@ theorem Tames.isUnit_one_sub_mul_of_toLinearMap (h₀ : ω.Tames J₀) (h₁ : �
   rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
   simpa [hA, hB] using h₀.isUnit_one_sub_mul h₁
 
-/-- In operator-norm coordinates, the Cayley transform is the rational expression
-`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`. -/
-theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁)
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
-  apply ContinuousLinearMap.coe_injective
-  have hinv := (h₀.isUnit_one_sub_mul_of_toLinearMap h₁ hA hB).map_ringInverse
-    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [AlmostComplexStructure.cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
-    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
-    ContinuousLinearMap.toLinearMap_mul, hinv]
-  simp [hA, hB]
-
 /-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
 that of a tame `J₁`, for `|b| ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
 coordinate of `J₁`. -/
@@ -387,7 +463,19 @@ theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω
   have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
     ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
   rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
-    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+    J₀.toContinuousLinearMap_cayley J₁ hA hB, hA']
+
+/-- In operator-norm coordinates, compatible Cayley interpolation is the rational
+expression `cayleyPathFormula` with the same weight and endpoints. -/
+theorem Compatible.toContinuousLinearMap_cayleyInterp (h₀ : ω.Compatible J₀)
+    (h₁ : ω.Compatible J₁) {b : ℝ} (hb : b ∈ Icc 0 1)
+    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
+    LinearMap.toContinuousLinearMap (h₀.cayleyInterp h₁ hb).toLinearMap =
+      cayleyPathFormula b A B := by
+  rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁.tames
+    (by simpa only [abs_of_nonneg hb.1] using hb.2) hA hB,
+    Compatible.cayleyInterp, Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
+    Compatible.cayleyEquiv_symm_apply_toLinearMap]
 
 /-- In operator-norm coordinates, the compatible Cayley path from `J₀` to `J₁` at time `t` is
 `J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
@@ -396,12 +484,9 @@ theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
     (h₁ : ω.Compatible J₁) (t : ℝ) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
-      cayleyPathFormula (smoothTransition t) A B := by
-  rw [← h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁.tames
-    (smoothTransition.abs_le_one t) hA hB,
-    h₀.cayleyPath_eq_compatibleCayleyEquiv_symm,
-    Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap,
-    Compatible.cayleyEquiv_symm_apply_toLinearMap]
+      cayleyPathFormula (smoothTransition t) A B :=
+  h₀.toContinuousLinearMap_cayleyInterp h₁
+    ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩ hA hB
 
 /-- For `|b| ≤ 1` and a tame `J₁`, the denominator `1 - b C` of the Cayley path expression is
 invertible, where `C` is the Cayley coordinate of `J₁`. -/
@@ -409,7 +494,7 @@ theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
     (h₁ : ω.Tames J₁) {b : ℝ} (hb : |b| ≤ 1) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     IsUnit (1 - b • cayleyFormula A B) := by
-  rw [← h₀.tames.toContinuousLinearMap_cayley h₁ hA hB]
+  rw [← J₀.toContinuousLinearMap_cayley J₁ hA hB]
   refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
   simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
     using h₀.smul_cayley_mem_cayleyBall h₁ hb

@@ -167,10 +167,10 @@ theorem notMem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
 
 /-- A minimum cut contains every vertex of a residual component above that of one of its members.
 -/
-private theorem mem_of_le (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V}
+private theorem mem_of_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v w : V}
     (hvw : f.residualComponent v ≤ f.residualComponent w) (hv : v ∈ S) : w ∈ S :=
-  hf.mem_of_positiveReachable hst hS (residualComponent_le_residualComponent.1 hvw) hv
+  hf.mem_of_positiveReachable hS (residualComponent_le_residualComponent.1 hvw) hv
 
 /-- The source side determined by a set of free components: the vertices whose residual
 component is reachable from the component of the source or is one of the given free components. -/
@@ -192,7 +192,7 @@ private theorem isMinimum_sourceSide (hst : s ≠ t) (hf : f.IsMaximum)
     {U : Set f.FreeComponent} (hU : IsUpperSet U) :
     TerminalCut.IsMinimum (cutBound lo hi) {s} {t} (sourceSide f U) := by
   have hdisj := Set.disjoint_left.1 (hf.disjoint_Ici_Iic hst)
-  refine (hf.isMinimum_cutBound_iff_forall_positiveReachable hst).2
+  refine hf.isMinimum_cutBound_iff_forall_positiveReachable.2
     ⟨mem_sourceSide.2 (.inl le_rfl), fun ht ↦ ?_, fun v hv w hvw ↦ ?_⟩
   · rcases mem_sourceSide.1 ht with h | ⟨h, -⟩
     exacts [hdisj (Set.mem_Ici.2 h) (Set.mem_Iic.2 le_rfl), h.2 le_rfl]
@@ -205,12 +205,12 @@ private theorem isMinimum_sourceSide (hst : s ≠ t) (hf : f.IsMaximum)
     exact .inr ⟨⟨hsw, fun hwt ↦ h.2 (hvw.trans hwt)⟩, hU (Subtype.mk_le_mk.2 hvw) hvU⟩
 
 /-- The free components all of whose vertices lie in a minimum cut form an upper set. -/
-private theorem isUpperSet_freeSet (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V}
+private theorem isUpperSet_freeSet (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) :
     IsUpperSet {C : f.FreeComponent | ∀ v, f.residualComponent v = C.1 → v ∈ S} := by
   intro C D hCD hC w hw
   obtain ⟨v, hv⟩ := residualComponent_surjective C.1
-  exact mem_of_le hst hf hS (hv.trans_le ((Subtype.coe_le_coe.2 hCD).trans_eq hw.symm)) (hC v hv)
+  exact mem_of_le hf hS (hv.trans_le ((Subtype.coe_le_coe.2 hCD).trans_eq hw.symm)) (hC v hv)
 
 /-- **The poset of minimum cuts.** For a maximum bounded `s`–`t` assignment `f` between distinct
 terminals, the minimum cuts, ordered by inclusion, are order isomorphic to the upper sets of the
@@ -222,7 +222,7 @@ noncomputable def minimizersOrderIso (hst : s ≠ t) (hf : f.IsMaximum) :
       (UpperSet f.FreeComponent)ᵒᵈ :=
   Equiv.toOrderIso
     { toFun S := toDual ⟨{C | ∀ v, f.residualComponent v = C.1 → v ∈ (S : Finset V)},
-        isUpperSet_freeSet hst hf ((mem_minimizers _ _ _).1 S.2)⟩
+        isUpperSet_freeSet hf ((mem_minimizers _ _ _).1 S.2)⟩
       invFun U := ⟨sourceSide f ↑(ofDual U),
         (mem_minimizers _ _ _).2 (isMinimum_sourceSide hst hf (ofDual U).upper)⟩
       left_inv S := by
@@ -234,7 +234,7 @@ noncomputable def minimizersOrderIso (hst : s ≠ t) (hf : f.IsMaximum) :
         by_cases hsv : f.residualComponent s ≤ f.residualComponent v
         · exact .inl hsv
         exact .inr ⟨⟨hsv, fun hvt ↦ hf.notMem_of_residualComponent_le hS hvt hv⟩,
-          fun w hw ↦ mem_of_le hst hf hS hw.ge hv⟩
+          fun w hw ↦ mem_of_le hf hS hw.ge hv⟩
       right_inv U := by
         refine ofDual.injective (UpperSet.ext (Set.ext fun ⟨C, hC⟩ ↦ ?_))
         simp only [ofDual_toDual, UpperSet.coe_mk, Set.mem_ofPred_eq, SetLike.mem_coe]
@@ -266,7 +266,7 @@ theorem residualComponent_mem_minimizersOrderIso_iff (hst : s ≠ t) (hf : f.IsM
     {v : V} (h : ¬f.residualComponent s ≤ f.residualComponent v ∧
       ¬f.residualComponent v ≤ f.residualComponent t) :
     ⟨f.residualComponent v, h⟩ ∈ ofDual (hf.minimizersOrderIso hst S) ↔ v ∈ (S : Finset V) :=
-  ⟨fun hv ↦ hv v rfl, fun hv _ hw ↦ mem_of_le hst hf ((mem_minimizers _ _ _).1 S.2) hw.ge hv⟩
+  ⟨fun hv ↦ hv v rfl, fun hv _ hw ↦ mem_of_le hf ((mem_minimizers _ _ _).1 S.2) hw.ge hv⟩
 
 /-- **Vertex-membership formula.** A vertex lies in the minimum cut of an upper set of free
 components exactly when its residual component is reachable from the component of the source or
@@ -501,7 +501,7 @@ example : (⟨_, exFlow_free (.inl rfl)⟩ : exFlow.FreeComponent) < ⟨_, exFlo
 -- The minimum cuts are exactly `{s}`, `{s, b}` and `{s, a, b}`.
 example (S : Finset (Fin 4)) :
     IsMinimum (fun S ↦ arrowSum exCap S Sᶜ) {0} {3} S ↔ S = {0} ∨ S = {0, 2} ∨ S = {0, 1, 2} := by
-  rw [exFlow_isMaximum.isMinimum_iff (by decide), exClosed_iff]
+  rw [exFlow_isMaximum.isMinimum_iff, exClosed_iff]
   revert S
   decide
 

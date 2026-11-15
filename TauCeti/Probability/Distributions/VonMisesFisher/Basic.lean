@@ -23,8 +23,8 @@ negative concentration gives zero. Zero natural parameter or concentration gives
 law. The natural-parameter law on the empty sphere in dimension zero is zero.
 
 This construction uses Mathlib's `Measure.tilted` and its density and integration APIs, and
-`TauCeti.measurable_tilted` for joint parameter measurability. The explicit two-point laws in
-one dimension are developed in `VonMisesFisher.OneDimensional`.
+`MeasureTheory.Measure.measurable_tilted` for joint parameter measurability. The explicit
+two-point laws in one dimension are developed in `VonMisesFisher.OneDimensional`.
 
 ## References
 
@@ -131,7 +131,7 @@ theorem vonMisesFisherNaturalMeasure_of_subsingleton [Subsingleton E] (η : E) :
 @[fun_prop]
 theorem measurable_vonMisesFisherNaturalMeasure :
     Measurable (vonMisesFisherNaturalMeasure (E := E)) :=
-  measurable_tilted (Kernel.const E (uniformSphereMeasure E)) (by fun_prop)
+  Measure.measurable_tilted (uniformSphereMeasure E) (by fun_prop)
 
 /-- The direction/concentration family is jointly measurable, including negative concentrations. -/
 @[fun_prop]

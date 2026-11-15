@@ -43,8 +43,8 @@ theorem mass_sum_mul_apply (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
     mass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) = ∑ x ∈ s, ‖a x‖ₑ := by
   classical
   refine le_antisymm (mass_le_iff.2 fun φ hφ => ?_) ?_
-  · exact (enorm_sum_le _ _).trans <| Finset.sum_le_sum fun x hx => by
-      rw [enorm_mul]
+  · exact (eNorm_sum_le _ _).trans <| Finset.sum_le_sum fun x _ => by
+      rw [eNorm_mul]
       have hb : ‖φ x‖ₑ ≤ 1 := by
         simpa only [← ofReal_norm, ← ENNReal.ofReal_one] using ENNReal.ofReal_le_ofReal (hφ x)
       simpa using mul_le_mul' (le_refl ‖a x‖ₑ) hb
@@ -52,9 +52,9 @@ theorem mass_sum_mul_apply (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
     have heval : (∑ x ∈ s, a x * φ x) = ∑ x ∈ s, |a x| :=
       Finset.sum_congr rfl hsign
     have habs : ‖∑ x ∈ s, |a x|‖ₑ = ∑ x ∈ s, ‖a x‖ₑ := by
-      rw [Real.enorm_of_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _),
+      rw [Real.eNorm_of_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _),
         ENNReal.ofReal_sum_of_nonneg (fun _ _ => abs_nonneg _)]
-      simp [Real.enorm_eq_ofReal_abs]
+      simp [Real.eNorm_eq_ofReal_abs]
     simpa only [heval, habs] using (enorm_le_mass (f := fun φ : 𝓓^{n}(Ω, ℝ) =>
       ∑ x ∈ s, a x * φ x) hφ)
 
@@ -77,7 +77,7 @@ theorem localMass_sum_mul_apply (a : E → ℝ) (hs : (s : Set E) ⊆ Ω)
     simp only [TestFunction.monoCLM_apply, hΩ', le_refl, and_self, ↓reduceIte]
     symm
     apply Finset.sum_filter_of_ne
-    intro x hx hax
+    intro x _ hax
     exact (φ.tsupport_subset (subset_tsupport _ (by aesop))).2
   have hlocal : localMass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) Ω' =
       localMass (fun φ : 𝓓^{n}(Ω, ℝ) => ∑ x ∈ s, a x * φ x) U := by
@@ -140,10 +140,10 @@ theorem massMeasure_sum_smul_delta (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
   let T := ∑ x ∈ s, a x • (delta x : 𝓓'^{n}(Ω, ℝ))
   have hfinite : HasLocallyFiniteMass T := hasLocallyFiniteMass_of_mass_ne_top T (by
     rw [mass_sum_smul_delta a hs]
-    exact ENNReal.sum_ne_top.mpr fun _ _ => enorm_ne_top)
+    exact ENNReal.sum_ne_top.mpr fun _ _ => eNorm_ne_top)
   refine (eq_massMeasure_of_preimage_coe hfinite _ fun U hU => ?_).symm
   rw [localMass_sum_smul_delta a hs hU]
   conv_rhs => rw [Finset.sum_filter, ← Finset.sum_attach]
-  simp [Set.indicator_apply, smul_ite, enorm_eq_nnnorm]
+  simp [Set.indicator_apply, smul_ite, eNorm_eq_nnNorm]
 
 end Distribution

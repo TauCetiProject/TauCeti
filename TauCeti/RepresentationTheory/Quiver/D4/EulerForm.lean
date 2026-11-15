@@ -46,11 +46,7 @@ the positive-root count of a quiver is correct beyond type `A`, where
 
 ## References
 
-This file supplies the “`D₄` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the twelve
-positive roots of `D₄` -- the four simple roots, those with a `1` at the centre and a `1` on a
-subset of the outer vertices, and the highest root with coefficient `2` at the centre. See
-Derksen--Weyman, *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński,
+See Derksen--Weyman, *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński,
 *Elements of the Representation Theory of Associative Algebras I*, Ch. VII.
 -/
 

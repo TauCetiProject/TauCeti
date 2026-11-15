@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 public import TauCeti.Algebra.Lie.Pi
 public import TauCeti.Algebra.Lie.BaseChange.Perfect
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Invariant forms on finite products of perfect Lie algebras
@@ -66,12 +67,9 @@ def invariantFormsPiRestrict [DecidableEq ι] (i : ι) :
     invariantForms R (∀ i, L i) (∀ i, L i) →ₗ[R] invariantForms R (L i) (L i) where
   toFun Φ := by
     let s := LieHom.single R L i
-    refine ⟨(Φ : LinearMap.BilinForm R _).compl₁₂ s.toLinearMap s.toLinearMap,
-      mem_invariantForms_iff.mpr ⟨?_, ?_⟩⟩
-    · intro x y z
-      simpa only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LieHom.map_lie] using
-        (mem_invariantForms_iff.mp Φ.2).1 (s x) (s y) (s z)
-    · exact ⟨fun x y ↦ (mem_invariantForms_iff.mp Φ.2).2.eq _ _⟩
+    exact ⟨(Φ : LinearMap.BilinForm R _).compl₁₂ s.toLinearMap s.toLinearMap,
+      mem_invariantForms_iff.mpr ⟨(mem_invariantForms_iff.mp Φ.2).1.compl₁₂ s,
+        (mem_invariantForms_iff.mp Φ.2).2.compl₁₂ s.toLinearMap⟩⟩
   map_add' Φ Ψ := by ext x y; rfl
   map_smul' r Φ := by ext x y; rfl
 

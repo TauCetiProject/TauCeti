@@ -118,7 +118,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
     rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
       lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
   have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
-  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil hM',
+  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
     kostantRootSubgroupParam_apply]
   -- Normalize the stored integer algebra without destructuring the bundled value ring.
   have halg := Subsingleton.elim

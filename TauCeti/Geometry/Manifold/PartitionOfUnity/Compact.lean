@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.BumpFunction
+public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 
@@ -21,7 +21,10 @@ Mathlib's smooth Urysohn lemma `exists_contMDiffMap_one_nhds_of_subset_interior`
 function for a closed set, but assumes the manifold σ-compact and does not make the support
 compact. Here neither is needed, since finitely many bump functions cover `K`. Cutoffs of this
 form extend a vector field given near a compact set to a compactly supported one, and so a
-complete one.
+complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
+and subordinate to any given neighbourhoods of its points
+(`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
+`SmoothBumpCovering.embeddingPiTangent`.
 
 The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
 bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -32,9 +35,11 @@ public section
 open Function Set Topology
 open scoped ContDiff Manifold
 
+universe u
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
 variable (I) in
 /-- **A smooth cutoff around a compact set.** If `K` is a compact subset of an open set `W` of a
@@ -71,3 +76,25 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   refine Real.smoothTransition.one_of_one_le ?_
   have := Finset.single_le_sum (fun j _ ↦ (ρ j).nonneg) hi (f := fun j ↦ ρ j y)
   rwa [(interior_subset hyi : ρ i y = 1)] at this
+
+omit [IsManifold I ∞ M] in
+variable (I) in
+/-- **A finite smooth bump covering of a compact set.** If `K` is a compact subset of a Hausdorff
+manifold modelled on a finite-dimensional space and `U x` is a neighbourhood of `x` for every
+`x ∈ K`, there is a smooth bump covering of `K` indexed by a finite type and subordinate to `U`.
+
+Mathlib's `SmoothBumpCovering.exists_isSubordinate` covers a closed set of a σ-compact manifold,
+with an index type which need not be finite. -/
+theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCompact K)
+    {U : M → Set M} (hU : ∀ x ∈ K, U x ∈ 𝓝 x) :
+    ∃ (ι : Type u) (_ : Fintype ι) (f : SmoothBumpCovering ι I M K), f.IsSubordinate U := by
+  -- Bump functions at the points of `K` supported in `U`; finitely many of the open sets where
+  -- one of them is `1` cover `K`.
+  choose ρ hρ using fun x : K ↦
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.2)
+  obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
+    fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
+  refine ⟨t, inferInstance, ⟨fun i ↦ i.1, fun i ↦ ρ i.1, fun i ↦ i.1.2,
+    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
+  obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
+  exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩

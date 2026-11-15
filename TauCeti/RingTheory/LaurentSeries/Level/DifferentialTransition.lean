@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.Level.Topology
 public import TauCeti.RingTheory.LaurentSeries.Level.Transition
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.KaehlerDifferential
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.KaehlerDifferential.Basic
 
 /-!
 # Pullback of continuous one-forms between ramified levels

@@ -16,6 +16,7 @@ import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
+import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
@@ -35,6 +36,9 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
+* `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
+  the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
   the spectrum of `N` under the exponential.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
@@ -47,7 +51,7 @@ public section
 
 open NormedSpace
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 section Operator
 
@@ -55,19 +59,19 @@ variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [Normed
   [CompleteSpace X]
 
 /-- Exponentials of scalar multiples of the same bounded operator split over addition. -/
-theorem _root_.ContinuousLinearMap.exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
+theorem exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
     exp ((s + t) • A) = (exp (s • A)).comp (exp (t • A)) := by
   exact (NormedSpace.exp_add_smul A s t).trans (ContinuousLinearMap.mul_def _ _)
 
 /-- Pointwise form of `ContinuousLinearMap.exp_add_smul`:
 `exp ((s + t) • A) x = exp (s • A) (exp (t • A) x)`. -/
-theorem _root_.ContinuousLinearMap.exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
+theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
     exp ((s + t) • A) x = exp (s • A) (exp (t • A) x) := by
   rw [ContinuousLinearMap.exp_add_smul, ContinuousLinearMap.comp_apply]
 
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
-noncomputable def _root_.ContinuousLinearMap.expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
+noncomputable def expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
   .equivOfInverse' (exp B) (exp (-B))
     (by
       let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
@@ -79,29 +83,29 @@ noncomputable def _root_.ContinuousLinearMap.expEquiv (B : X →L[𝕜] X) : X �
         neg_add_cancel, exp_zero, ContinuousLinearMap.one_def])
 
 @[simp]
-theorem _root_.ContinuousLinearMap.expEquiv_apply (B : X →L[𝕜] X) (x : X) :
+theorem expEquiv_apply (B : X →L[𝕜] X) (x : X) :
     B.expEquiv x = exp B x :=
   (rfl)
 
 @[simp]
-theorem _root_.ContinuousLinearMap.expEquiv_symm_apply (B : X →L[𝕜] X) (x : X) :
+theorem expEquiv_symm_apply (B : X →L[𝕜] X) (x : X) :
     B.expEquiv.symm x = exp (-B) x :=
   (rfl)
 
 @[simp]
-theorem _root_.ContinuousLinearMap.coe_expEquiv (B : X →L[𝕜] X) :
+theorem coe_expEquiv (B : X →L[𝕜] X) :
     (B.expEquiv : X →L[𝕜] X) = exp B :=
   ContinuousLinearMap.ext B.expEquiv_apply
 
 @[simp]
-theorem _root_.ContinuousLinearMap.coe_expEquiv_symm (B : X →L[𝕜] X) :
+theorem coe_expEquiv_symm (B : X →L[𝕜] X) :
     (B.expEquiv.symm : X →L[𝕜] X) = exp (-B) :=
   ContinuousLinearMap.ext B.expEquiv_symm_apply
 
 /-- **The exponential of an operator acts exponentially on an eigenvector.** If `B x = μ • x`,
 then `exp B x = exp μ • x`. The statement also covers `x = 0`, without requiring a bundled
 `Module.End.HasEigenvector` witness. -/
-theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] X) {x : X} {μ : 𝕜}
+theorem exp_apply_of_apply_eq_smul (B : X →L[𝕜] X) {x : X} {μ : 𝕜}
     (hx : B x = μ • x) : exp B x = exp μ • x := by
   have hpow (n : ℕ) : (B ^ n) x = μ ^ n • x := by
     induction n with
@@ -113,6 +117,30 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   simp only [smul_eq_mul] at hscalar
   exact hop.unique hscalar
 
+/-- The exponential of an operator fixes every vector in its kernel: if `B x = 0`, then
+`exp B x = x`. -/
+theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_zero {B : X →L[𝕜] X} {x : X}
+    (hx : B x = 0) : exp B x = x := by
+  simpa using B.exp_apply_of_apply_eq_smul (μ := 0) (by rw [hx, zero_smul])
+
+/-- **The fixed vectors of a small exponential are the kernel.** If `‖B‖ < log 2`, then `exp B`
+fixes `x` exactly when `B x = 0`. The bound is needed: for `B = 2π J`, the generator of the
+rotations of the plane, `exp B = 1` fixes every vector while `B` has trivial kernel. -/
+theorem _root_.ContinuousLinearMap.exp_apply_eq_self_iff {B : X →L[𝕜] X} (hB : ‖B‖ < Real.log 2)
+    {x : X} : exp B x = x ↔ B x = 0 := by
+  refine ⟨fun h ↦ ?_, ContinuousLinearMap.exp_apply_of_apply_eq_zero⟩
+  -- Factor `exp B - 1` as `φ(-B) * B`, where `φ(a) = (1 - exp (-a)) / a` is the series
+  -- `oneSubExpNegDivSelf`, which is invertible in this range.
+  obtain ⟨u, hu⟩ := isUnit_oneSubExpNegDivSelf (𝕂 := 𝕜) (a := -B) (by rwa [norm_neg])
+  have hfac : (u : X →L[𝕜] X) * B = exp B - 1 := by
+    have h := oneSubExpNegDivSelf_mul (𝕂 := 𝕜) (-B)
+    rw [neg_neg, mul_neg] at h
+    rw [hu, ← neg_sub, ← h, neg_neg]
+  have hux : (u : X →L[𝕜] X) (B x) = 0 := by
+    rw [← mul_apply_eq_comp, hfac, sub_apply, h, one_apply_eq_self, sub_self]
+  have h' := congrArg (↑u⁻¹ : X →L[𝕜] X) hux
+  rwa [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self, map_zero] at h'
+
 end Operator
 
 section FiniteDimensional
@@ -123,9 +151,9 @@ open Polynomial in
 /-- **Spectral mapping for the exponential in finite dimension.** For an operator `N` on a
 finite-dimensional complex normed space, the spectrum of `exp N` is the image of the spectrum of
 `N` under the exponential. -/
-theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
+theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
-  have := FiniteDimensional.complete ℂ V
+  have := FiniteDimensional.completeSpace ℂ V
   -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
   -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
   -- `μ` shows `P (μ) = exp μ`.
@@ -133,7 +161,7 @@ theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
     (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
   rcases subsingleton_or_nontrivial V with hV | hV
   · simp [spectrum.of_subsingleton] at hz
-  obtain ⟨P, hP⟩ := exists_aeval_eq_exp (𝕜 := ℂ) N
+  obtain ⟨P, hP⟩ := TauCeti.exists_aeval_eq_exp (𝕜 := ℂ) N
   rw [← hP, spectrum.map_polynomial_aeval_of_nonempty _ _ (spectrum.nonempty N)] at hz
   obtain ⟨μ, hμ, rfl⟩ := hz
   refine ⟨μ, hμ, ?_⟩
@@ -156,7 +184,7 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 This is the fundamental theorem of calculus applied to the differentiable orbit
 `u ↦ exp (u B) x`, whose derivative is the continuous function `u ↦ exp (u B) (B x)`. -/
-theorem _root_.ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral
+theorem exp_smul_apply_sub_eq_intervalIntegral
     (B : X →L[ℝ] X) (t : ℝ) (x : X) :
     exp (t • B) x - x = ∫ u in (0 : ℝ)..t, exp (u • B) (B x) := by
   have hderiv : ∀ u : ℝ, HasDerivAt (fun v : ℝ => exp (v • B) x) (exp (u • B) (B x)) u := by
@@ -171,7 +199,7 @@ theorem _root_.ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral
 
 /-- A continuous function on `[0, ∞)` with right derivative `A (z t)` at every `t ≥ 0` is the linear
 flow `t ↦ exp (t • A) (z 0)` of its initial value, by uniqueness for the linear equation. -/
-theorem _root_.ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
+theorem eq_exp_smul_apply_of_hasDerivWithinAt {A : X →L[ℝ] X}
     {z : ℝ → X} (hz_cont : ContinuousOn z (Set.Ici 0))
     (hz : ∀ t ∈ Set.Ici (0 : ℝ), HasDerivWithinAt z (A (z t)) (Set.Ici t) t)
     {t : ℝ} (ht : 0 ≤ t) :
@@ -186,6 +214,6 @@ theorem _root_.ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt {A : X 
 
 end Real
 
-end TauCeti
+end ContinuousLinearMap
 
 end

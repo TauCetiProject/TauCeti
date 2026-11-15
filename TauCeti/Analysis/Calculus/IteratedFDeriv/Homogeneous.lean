@@ -74,29 +74,24 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCo
   {n : WithTop ℕ∞}
 
 /-- The norm of the `j`-th derivative of a positively homogeneous map of degree `p` scales
-by `t^(p-j)`. The map need only be `Cʲ` away from zero; the normed source and target need
-neither finite dimensionality nor completeness. -/
+by `t^(p-j)`. No smoothness is needed, and the normed source and target need neither finite
+dimensionality nor completeness. -/
 theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ}
-    (hf : ContDiffOn ℝ j f {0}ᶜ)
     (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x)
-    {t : ℝ} (ht : 0 < t) {x : E} (hx : x ≠ 0) :
+    {t : ℝ} (ht : 0 < t) {x : E} :
     ‖iteratedFDeriv ℝ j f (t • x)‖ = t ^ (p - j) * ‖iteratedFDeriv ℝ j f x‖ := by
-  let S : E →L[ℝ] E := t • ContinuousLinearMap.id ℝ E
-  have hS : S ⁻¹' ({0}ᶜ : Set E) = {0}ᶜ := by
-    ext y
-    simp [S, ht.ne']
-  have htx : S x ∈ ({0}ᶜ : Set E) := smul_ne_zero ht.ne' hx
-  have hcomp : f ∘ S = t ^ p • f := funext (hhom t ht)
-  have hkey := S.iteratedFDerivWithin_comp_right hf isOpen_compl_singleton.uniqueDiffOn
-    (by rw [hS]; exact isOpen_compl_singleton.uniqueDiffOn) htx le_rfl
-  rw [hS, iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton hx,
-    iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton htx, hcomp,
-    iteratedFDeriv_const_smul_apply (hf.contDiffAt (isOpen_compl_singleton.mem_nhds hx))] at hkey
+  let S : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 t ht.ne')
+  let T : G ≃L[ℝ] G :=
+    ContinuousLinearEquiv.smulLeft (Units.mk0 (t ^ p) (Real.rpow_pos_of_pos ht p).ne')
+  have hcomp : f ∘ S = T ∘ f := funext (hhom t ht)
+  have hkey := congrArg (fun g ↦ iteratedFDeriv ℝ j g x) hcomp
+  simp only [ContinuousLinearEquiv.iteratedFDeriv_comp_right,
+    ContinuousLinearEquiv.iteratedFDeriv_comp_left] at hkey
   have heq : (t ^ j) • iteratedFDeriv ℝ j f (t • x) = t ^ p • iteratedFDeriv ℝ j f x := by
     ext v
     have h := congrArg (fun A ↦ A v) hkey
-    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S,
-      ContinuousMultilinearMap.map_smul_univ] using h.symm
+    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S, T,
+      ContinuousMultilinearMap.map_smul_univ] using h
   have hn := congrArg norm heq
   simp only [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.le _),
     Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at hn
@@ -107,14 +102,18 @@ theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ
 /-- The derivatives of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ` are
 homogeneous: rescaling `ξ` by `t > 0`, together with the `ξ`-components of the directions,
 multiplies the derivative by `t ^ m`. -/
-theorem iteratedFDeriv_smul_snd_of_smul_snd_eq (hf : ContDiffOn ℝ n f {p | p.2 ≠ 0})
+theorem iteratedFDeriv_smul_snd_of_smul_snd_eq
     (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) {k : ℕ}
-    (hk : k ≤ n) {x : E} {ξ : F} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) (v : Fin k → E × F) :
+    {x : E} {ξ : F} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) (v : Fin k → E × F) :
     iteratedFDeriv ℝ k f (x, t • ξ) (fun i => ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k f (x, ξ) v := by
   set U : Set (E × F) := {p | p.2 ≠ 0}
   have hU : IsOpen U := isOpen_ne_fun continuous_snd continuous_const
-  let S : E × F →L[ℝ] E × F := (ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ F)
+  let S : (E × F) ≃L[ℝ] (E × F) :=
+    (ContinuousLinearEquiv.refl ℝ E).prodCongr
+      (ContinuousLinearEquiv.smulLeft (M₁ := F) (Units.mk0 t ht.ne'))
+  let T : G ≃L[ℝ] G :=
+    ContinuousLinearEquiv.smulLeft (Units.mk0 (t ^ m) (Real.rpow_pos_of_pos ht m).ne')
   have hSapply : ∀ p, S p = (p.1, t • p.2) := fun _ => rfl
   have hS : S ⁻¹' U = U := by
     ext p
@@ -124,21 +123,20 @@ theorem iteratedFDeriv_smul_snd_of_smul_snd_eq (hf : ContDiffOn ℝ n f {p | p.2
     rw [hSapply]
     exact smul_ne_zero ht.ne' hξ
   have hcomp : iteratedFDerivWithin ℝ k (f ∘ S) U (x, ξ) =
-      iteratedFDerivWithin ℝ k (t ^ m • f) U (x, ξ) :=
+      iteratedFDerivWithin ℝ k (T ∘ f) U (x, ξ) :=
     iteratedFDerivWithin_congr (fun p hp => hhom p.1 p.2 hp t ht) hξ' k
-  have key := S.iteratedFDerivWithin_comp_right hf hU.uniqueDiffOn
-    (by rw [hS]; exact hU.uniqueDiffOn) hSξ hk
-  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k hU hξ', iteratedFDerivWithin_of_isOpen k hU hSξ,
-    iteratedFDeriv_const_smul_apply ((hf.contDiffAt (hU.mem_nhds hξ')).of_le hk)] at key
+  have key := S.iteratedFDerivWithin_comp_right f hU.uniqueDiffOn hSξ k
+  rw [hS, hcomp, T.iteratedFDerivWithin_comp_left f hU.uniqueDiffOn hξ' k,
+    iteratedFDerivWithin_of_isOpen k hU hξ', iteratedFDerivWithin_of_isOpen k hU hSξ] at key
   have := congr($key v)
   simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply, hSapply] at this
   exact this.symm
 
 /-- The derivative of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ`, in
 `j` directions in `x` and `l` directions in `ξ`, is homogeneous of degree `m - l` in `ξ`. -/
-theorem iteratedFDeriv_append_smul_snd_of_smul_snd_eq (hf : ContDiffOn ℝ n f {p | p.2 ≠ 0})
+theorem iteratedFDeriv_append_smul_snd_of_smul_snd_eq
     (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) {j l : ℕ}
-    (hk : j + l ≤ n) {x : E} {ξ : F} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) (u : Fin j → E)
+    {x : E} {ξ : F} (hξ : ξ ≠ 0) {t : ℝ} (ht : 0 < t) (u : Fin j → E)
     (w : Fin l → F) :
     iteratedFDeriv ℝ (j + l) f (x, t • ξ) (Fin.append (fun i => (u i, 0)) (fun i => (0, w i))) =
       t ^ (m - l) •
@@ -149,7 +147,7 @@ theorem iteratedFDeriv_append_smul_snd_of_smul_snd_eq (hf : ContDiffOn ℝ n f {
       fun i => (Fin.append (fun _ => (1 : ℝ)) (fun _ => t) i) • v i := by
     ext1 i
     refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [v]
-  have h := iteratedFDeriv_smul_snd_of_smul_snd_eq hf hhom (mod_cast hk) (x := x) hξ ht v
+  have h := iteratedFDeriv_smul_snd_of_smul_snd_eq hhom (x := x) hξ ht v
   rw [hscale, D.map_smul_univ, Fin.prod_univ_add] at h
   simp only [Fin.append_left, Fin.append_right, Finset.prod_const_one, Finset.prod_const,
     Finset.card_univ, Fintype.card_fin, one_mul] at h
@@ -188,7 +186,7 @@ theorem exists_norm_iteratedFDeriv_le_of_smul_snd_eq [ProperSpace F] {K : Set E}
   calc ‖iteratedFDeriv ℝ k f (x, ξ) v‖
       = ‖ξ‖ ^ m * ‖iteratedFDeriv ℝ k f (x, θ) fun i => ((v i).1, ‖ξ‖⁻¹ • (v i).2)‖ := by
         conv_lhs => rw [hξθ, hv]
-        rw [iteratedFDeriv_smul_snd_of_smul_snd_eq hf hhom hk hθ hnξ, norm_smul,
+        rw [iteratedFDeriv_smul_snd_of_smul_snd_eq hhom hθ hnξ, norm_smul,
           Real.norm_of_nonneg (Real.rpow_nonneg hnξ.le _)]
     _ ≤ ‖ξ‖ ^ m * (max C 0 * ∏ i, ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖) := by
         gcongr

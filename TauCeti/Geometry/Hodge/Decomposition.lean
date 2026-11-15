@@ -192,15 +192,15 @@ theorem decomposition_apply_of_mem (hs : HodgeStructureOn W ω n) {p : ℤ} {x :
     hs.decomposition x = DirectSum.lof ℂ ℤ (fun q ↦ hs.piece q) p ⟨x, hx⟩ :=
   hs.decomposition.symm.injective (by simp)
 
-/-- Induction along the Hodge decomposition: a property that holds at zero, is stable under
-addition, and holds on every Hodge component holds everywhere. -/
+/-- Induction along the Hodge decomposition: a property that is stable under addition and holds on
+every Hodge component holds everywhere. -/
 theorem piece_induction_on (hs : HodgeStructureOn W ω n) {motive : W → Prop} (x : W)
-    (mem : ∀ p, ∀ y ∈ hs.piece p, motive y) (zero : motive 0)
+    (mem : ∀ p, ∀ y ∈ hs.piece p, motive y)
     (add : ∀ y z, motive y → motive z → motive (y + z)) : motive x := by
   have hx : x ∈ ⨆ p, hs.piece p := by
     rw [hs.iSup_piece_eq_top]
     exact Submodule.mem_top
-  exact Submodule.iSup_induction (motive := motive) hs.piece hx mem zero add
+  exact Submodule.iSup_induction (motive := motive) hs.piece hx mem (mem 0 0 (zero_mem _)) add
 
 /-- Two additive maps out of the ambient space that agree on every Hodge component are equal.
 This applies to any additive homomorphism class, including linear and semilinear maps. -/
@@ -209,7 +209,7 @@ theorem addHom_ext_of_piece {F N : Type*} [AddZero N] [FunLike F W N]
     (h : ∀ p, ∀ x ∈ hs.piece p, f x = g x) : f = g := by
   apply DFunLike.ext f g
   intro x
-  refine hs.piece_induction_on x h (by simp) fun y z hy hz ↦ ?_
+  refine hs.piece_induction_on x h fun y z hy hz ↦ ?_
   rw [map_add, map_add, hy, hz]
 
 /-! ### The Hodge projections -/

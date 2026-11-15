@@ -30,6 +30,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   map as a semilinear map of alternating maps.
 * `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
   vanishes exactly when it vanishes on every vector.
+* `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
+  `A` and then along `B` is pulling back along `A.comp B`.
 -/
 
 public section
@@ -77,6 +79,24 @@ theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
   ext w
   obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
   exact h v
+
+section CompComp
+
+variable {R M M' M'' F ι : Type*} [Semiring R]
+  [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+  [AddCommMonoid M'] [Module R M'] [TopologicalSpace M']
+  [AddCommMonoid M''] [Module R M''] [TopologicalSpace M'']
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+
+/-- Pulling a form back along `A` and then along `B` is pulling it back along `A.comp B`. -/
+@[simp]
+theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R] F)
+    (A : M →L[R] M'') (B : M' →L[R] M) :
+    (a.compContinuousLinearMap A).compContinuousLinearMap B =
+      a.compContinuousLinearMap (A.comp B) :=
+  rfl
+
+end CompComp
 
 end ContinuousAlternatingMap
 

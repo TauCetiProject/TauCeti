@@ -40,7 +40,8 @@ divides the identity diagram exactly when it is a permutation diagram
   (`TauCeti.BrauerDiagram.even_sub_propagatingNumber`).
 * `TauCeti.BrauerDiagram.propagatingNumber_eq_iff_exists_eq_permToBrauer`: the propagating number
   is `k` exactly for the permutation diagrams, and
-  `TauCeti.BrauerDiagram.propagatingNumber_eq_zero_iff`: it is `0` exactly for the diagrams built
+  `TauCeti.BrauerDiagram.propagatingNumber_add_two_le_iff`: otherwise it is at most `k - 2`.
+* `TauCeti.BrauerDiagram.propagatingNumber_eq_zero_iff`: it is `0` exactly for the diagrams built
   out of caps and cups alone.
 * `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_left` and
   `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_right`: **stacking cannot raise the
@@ -142,6 +143,15 @@ theorem propagatingNumber_lt_of_isCap {x : Fin k ⊕ Fin k} (h : D.IsCap x) :
     D.propagatingNumber < k :=
   lt_of_le_of_ne D.propagatingNumber_le fun hk =>
     D.not_isThrough_of_isCap x h ((D.propagatingNumber_eq_iff_forall_isThrough).mp hk x)
+
+/-- **A diagram that is not a permutation diagram loses at least two through strands**: by parity,
+a propagating number below `k` is at most `k - 2`. -/
+theorem propagatingNumber_add_two_le_iff :
+    D.propagatingNumber + 2 ≤ k ↔ ∀ σ : Equiv.Perm (Fin k), D ≠ permToBrauer σ := by
+  rw [← not_exists, ← propagatingNumber_eq_iff_exists_eq_permToBrauer]
+  have hle := D.propagatingNumber_le
+  obtain ⟨m, hm⟩ := D.even_sub_propagatingNumber
+  omega
 
 /-- **A diagram propagates nothing exactly when none of its arcs goes through**, that is, when it
 is built out of caps and cups alone. -/

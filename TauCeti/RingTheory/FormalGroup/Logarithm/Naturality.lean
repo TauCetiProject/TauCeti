@@ -97,7 +97,7 @@ noncomputable def ofCoeffOne (c : R) : FormalGroupHom F G :=
   G.expHom.comp
     { toPowerSeries := c • F.log
       zero_constantCoeff := by simp
-      hom := (hom_additive_iff (by simp)).mpr (F.subst_toPowerSeries_eq_add_iff.mpr ⟨c, rfl⟩) }
+      hom := hom_additive_iff.mpr (F.subst_toPowerSeries_eq_add_iff.mpr ⟨c, rfl⟩) }
 
 /-- The series of `ofCoeffOne F G c` is `exp_G(c · log_F(X))`. -/
 theorem ofCoeffOne_toPowerSeries (c : R) :

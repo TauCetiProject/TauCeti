@@ -25,15 +25,15 @@ by `TauCeti.Polynomial.analyticAt_linearMap_monicOfCoeff`.
 
 ## Main declarations
 
-* `TauCeti.Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm`: insertion is analytic in coefficients.
-* `TauCeti.Sym.fderiv_coeffEquiv_cons_coeffEquiv_symm_injective`: its differential is injective.
+* `Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm`: insertion is analytic in coefficients.
+* `Sym.fderiv_coeffEquiv_cons_coeffEquiv_symm_injective`: its differential is injective.
 -/
 
 public section
 
 open Polynomial
 
-namespace TauCeti.Sym
+namespace Sym
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsAlgClosed 𝕜] {n : ℕ}
 
@@ -45,7 +45,7 @@ theorem analyticAt_coeffEquiv_cons_coeffEquiv_symm (a : 𝕜) (c₀ : Fin n → 
   refine AnalyticAt.pi fun i => ?_
   simpa only [coeffEquiv_apply_eq_coeff, toMonic_cons, toMonic_coeffEquiv_symm,
     LinearMap.comp_apply, Polynomial.lcoeff_apply, LinearMap.mulLeft_apply] using
-    Polynomial.analyticAt_linearMap_monicOfCoeff
+    TauCeti.Polynomial.analyticAt_linearMap_monicOfCoeff
       ((Polynomial.lcoeff 𝕜 i).comp (LinearMap.mulLeft 𝕜 (X - C a))) c₀
 
 /-- The derivative of fixed-root insertion in coefficient coordinates is injective everywhere,
@@ -57,19 +57,19 @@ theorem fderiv_coeffEquiv_cons_coeffEquiv_symm_injective (a : 𝕜) (c₀ : Fin 
   let F : (Fin n → 𝕜) → (Fin (n + 1) → 𝕜) :=
     fun c => coeffEquiv 𝕜 (n + 1) (Sym.cons a ((coeffEquiv 𝕜 n).symm c))
   let R : (Fin (n + 1) → 𝕜) → (Fin n → 𝕜) :=
-    fun d i => ((Polynomial.monicOfCoeff d) /ₘ (X - C a)).coeff i
+    fun d i => ((TauCeti.Polynomial.monicOfCoeff d) /ₘ (X - C a)).coeff i
   have hR (d : Fin (n + 1) → 𝕜) : AnalyticAt 𝕜 R d := by
     refine AnalyticAt.pi fun i => ?_
     simpa only [R, LinearMap.comp_apply, Polynomial.lcoeff_apply,
       Polynomial.divByMonicHom_apply] using
-      Polynomial.analyticAt_linearMap_monicOfCoeff
+      TauCeti.Polynomial.analyticAt_linearMap_monicOfCoeff
         ((Polynomial.lcoeff 𝕜 i).comp (Polynomial.divByMonicHom (X - C a))) d
   have hRF : R ∘ F = id := by
     funext c i
     simp only [Function.comp_apply, R, F]
     rw [← toMonic_coeffEquiv_symm, Equiv.symm_apply_apply, toMonic_cons,
       Polynomial.mul_divByMonic_cancel_left _ (monic_X_sub_C a),
-      toMonic_coeffEquiv_symm, Polynomial.coeff_monicOfCoeff]
+      toMonic_coeffEquiv_symm, TauCeti.Polynomial.coeff_monicOfCoeff]
     rfl
   have hderiv := ((hR (F c₀)).differentiableAt.hasFDerivAt.comp c₀
     (analyticAt_coeffEquiv_cons_coeffEquiv_symm a c₀).differentiableAt.hasFDerivAt).fderiv
@@ -77,4 +77,4 @@ theorem fderiv_coeffEquiv_cons_coeffEquiv_symm_injective (a : 𝕜) (c₀ : Fin 
   exact Function.LeftInverse.injective fun v =>
     (congrArg (fun L => L v) hderiv).symm
 
-end TauCeti.Sym
+end Sym

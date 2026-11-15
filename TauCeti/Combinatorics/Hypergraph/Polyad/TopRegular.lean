@@ -38,6 +38,8 @@ parameter worsened by a factor depending only on the relative size of `P'`.
 
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.abs_relDensityOn_sub_le`: the test applies to
   every family of at most `r` subpolyads, indexed by any finite type.
+* `Colored3Graph.IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le`:
+  the count-scaled form of the test, valid also below the size threshold.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.of_rank_le`: regularity at a higher rank implies
   regularity at every lower rank.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_one_iff`: at rank one the condition tests single
@@ -149,11 +151,7 @@ variable (H P r) in
 /-- Every coloring is top-regular once `1 ≤ δ`, since relative densities lie in `[0, 1]`. -/
 theorem isTopRegularOverPolyad_of_one_le (hδ : 1 ≤ δ) : H.IsTopRegularOverPolyad P δ r := by
   intro c Q _
-  have h₀ : (0 : ℝ) ≤ H.relDensityOn c (unionSupport Q) := mod_cast H.relDensityOn_nonneg c _
-  have h₁ : (H.relDensityOn c (unionSupport Q) : ℝ) ≤ 1 := mod_cast H.relDensityOn_le_one c _
-  have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
-  have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := mod_cast H.relativeDensity_le_one c P
-  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  exact (H.abs_relDensityOn_sub_relativeDensity_le_one c _ P).trans hδ
 
 /-- Top regularity over a polyad forces a nonnegative parameter when the top palette is
 nonempty: for a negative parameter, every family passes the size threshold. -/
@@ -163,6 +161,25 @@ theorem IsTopRegularOverPolyad.nonneg [Nonempty κ] (h : H.IsTopRegularOverPolya
   have hQ : δ * #P.support ≤ #(unionSupport fun _ : Fin r ↦ ofSubcells P ∅ ∅ ∅) :=
     (mul_nonpos_of_nonpos_of_nonneg hδ.le (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)
   exact (abs_nonneg _).not_gt ((h (Classical.arbitrary κ) _ hQ).trans_lt hδ)
+
+/-- **Count-scaled rank-`r` test.** A `(δ, r)`-top-regular coloring bounds the count-scaled
+discrepancy of each top color on the union of any family of at most `r` subpolyads by `δ |P|`.
+Unlike the test itself, this also covers unions below the size threshold. -/
+theorem IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le
+    (h : H.IsTopRegularOverPolyad P δ r) (c : κ) {ι : Type*} [Fintype ι]
+    (hι : Fintype.card ι ≤ r) (Q : ι → Subpolyad3 P) :
+    |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| * #(unionSupport Q) ≤
+      δ * #P.support := by
+  have : Nonempty κ := ⟨c⟩
+  have hδ := h.nonneg
+  by_cases hQ : δ * #P.support ≤ (#(unionSupport Q) : ℝ)
+  · calc _ ≤ δ * #(unionSupport Q) := by
+          gcongr
+          exact h.abs_relDensityOn_sub_le c hι Q hQ
+      _ ≤ _ := by gcongr; exact unionSupport_subset Q
+  · calc _ ≤ 1 * (#(unionSupport Q) : ℝ) := by
+          gcongr; exact H.abs_relDensityOn_sub_relativeDensity_le_one c _ P
+      _ ≤ _ := by simpa using (lt_of_not_ge hQ).le
 
 section inclusion
 

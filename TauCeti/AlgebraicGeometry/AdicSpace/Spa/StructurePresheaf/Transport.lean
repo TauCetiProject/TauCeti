@@ -716,6 +716,7 @@ noncomputable def presentationLimitPresheafCompletionIso
         eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
       rw [presentationLimitMap_comp_presentationLimitDescendHom_assoc]
 
+omit [IsHuberRing A] in
 variable (P P') in
 /-- **Sheafhood of the presentation limit is invariant under completion.** If `A⁺` consists of
 power-bounded elements and `Â⁺` is the closure of its image in the completion `Â`, the
@@ -727,6 +728,7 @@ theorem isSheaf_presentationLimitPresheaf_completionPlus_iff
         (presentationLimitPresheaf P' (completionPlus Aplus)) ↔
       Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
         (presentationLimitPresheaf P Aplus) :=
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (completionPlus Aplus)))
     (F := presentationLimitPresheaf P Aplus)

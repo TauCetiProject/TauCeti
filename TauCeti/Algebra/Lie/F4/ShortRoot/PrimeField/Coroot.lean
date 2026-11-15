@@ -124,9 +124,6 @@ theorem tangentMatrixLieHom_comp_tangentSerreLift :
     (tangentMatrixLieHom B).comp (tangentSerreLift B) = serreRepresentationBaseChange B := by
   apply serre_hom_ext
   · intro i
-    rw [LieHom.comp_apply, tangentSerreLift_serreH, tangentMatrixLieHom_cartanDerivation,
-      serreRepresentationBaseChange_serreH]
-  · intro i
     rw [LieHom.comp_apply, tangentSerreLift_serreE, tangentMatrixLieHom_rootDerivation,
       serreRepresentationBaseChange_serreE, rootMatrix_inl, raisingMatrixBaseChange_eq_map]
   · intro i

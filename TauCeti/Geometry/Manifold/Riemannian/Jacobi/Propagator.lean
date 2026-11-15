@@ -142,6 +142,7 @@ theorem isJacobiFieldOn_geodesicJacobiPropagator (z : TangentBundle I M)
   rw [variationField_maximalGeodesic_eq_geodesicJacobiPropagator
     (hσ.mdifferentiableAt (by simp)) ht, hξ]
 
+omit [I.Boundaryless] [T2Space M] in
 /-- At time zero the Jacobi field is the base component of its infinitesimal initial state.
 The heterogeneous equality transports the target fibre along `maximalGeodesic_zero`. -/
 @[simp]

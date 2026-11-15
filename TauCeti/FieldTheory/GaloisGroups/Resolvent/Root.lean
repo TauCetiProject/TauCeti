@@ -508,7 +508,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
   have := Fintype.ofFinite (spec.specialize F f).Factors
-  rw [Factors.normalizedFactors_eq_map_univ_val hg0 hres.specializationSeparated.squarefree,
+  rw [Factors.normalizedFactors_eq_map_univ_val hres.specializationSeparated.squarefree,
     ← Finset.map_univ_equiv (spec.orbitQuotientEquivFactors hf hdeg e hres),
     Finset.map_val, Multiset.map_map, Multiset.map_map]
   exact Multiset.map_congr rfl fun ω _ =>

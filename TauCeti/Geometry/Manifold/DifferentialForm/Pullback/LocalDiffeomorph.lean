@@ -109,11 +109,13 @@ section Descent
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
-/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, and let `σ` be a family of differentiable
-self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. Then a form
-invariant under every `σ i` is basic for `f`. -/
+/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, and let `σ` be a family of self-maps of `M`
+over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. Then a form invariant under every
+`σ i` is basic for `f`. No differentiability of `σ` is assumed: where `σ i` is not differentiable
+its derivative is the junk value `0`, and invariance then forces the form to vanish there (in
+positive degree). -/
 theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
-    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+    (hn : n ≠ 0) {σ : ι → M → M}
     (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
     {α : RoughForm I M V k} (hα : ∀ i, mpullback I I (σ i) α = α) : RoughForm.IsBasic I' f α := by
   refine RoughForm.isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
@@ -121,12 +123,32 @@ theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDif
   -- `x` is `y` or `σ i y` for some `i`; `tangentSpaceCast` is the identity of the model space.
   rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
   · exact congrArg _ (funext fun j ↦ hinj _ (hvw j))
+  by_cases hd : MDifferentiableAt I I (σ i) y
   · rw [← congrFun (hα i) y, mpullback_apply]
     refine congrArg _ (funext fun j ↦ hinj _ ?_)
     -- By the chain rule, `df_y` factors through the derivative of `σ i`.
-    have hcomp := mfderiv_comp y (hf.mdifferentiable hn (σ i y)) (hσ i y)
+    have hcomp := mfderiv_comp y (hf.mdifferentiable hn (σ i y)) hd
     rw [hfσ i] at hcomp
     exact (hvw j).trans (congrArg (· (w j)) hcomp)
+  · rcases Nat.eq_zero_or_pos k with rfl | hk
+    · rw [← congrFun (hα i) y, mpullback_apply]
+      exact congrArg _ (funext fun j ↦ j.elim0)
+    · -- In positive degree `α` vanishes at every point where some `σ j` is not differentiable,
+      -- since its pullback there is evaluated on the zero derivative.
+      have hzero : ∀ (j : ι) (z : M), ¬ MDifferentiableAt I I (σ j) z →
+          ∀ u : Fin k → TangentSpace I z, α z u = 0 := by
+        intro j z hz u
+        rw [← congrFun (hα j) z, mpullback_apply]
+        exact (α (σ j z)).map_coord_zero ⟨0, hk⟩
+          (by simp [mfderiv_zero_of_not_mdifferentiableAt hz])
+      have hy : ∀ z, z = y → ∀ u : Fin k → TangentSpace I z, α z u = 0 := by
+        rintro z rfl u
+        exact hzero i z hd u
+      rw [hzero i y hd w]
+      rcases hσf (σ i y) y hxy with h | ⟨j, hj⟩
+      · exact hy _ h v
+      · rw [← congrFun (hα j) (σ i y), mpullback_apply]
+        exact hy _ hj _
 
 /-- **Descent of forms along a local diffeomorphism.** Let `f` be a `C^n` local diffeomorphism,
 `n ≠ 0`, and let `σ` be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that
@@ -141,7 +163,7 @@ theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDif
     (∃ ω : RoughForm I' M' V k, mpullback I I' f ω = α) ↔ ∀ i, mpullback I I (σ i) α = α := by
   refine ⟨?_, fun hα ↦ (RoughForm.exists_mpullback_eq_iff_isBasic fun x ↦
     .of_isInvertible (hf.isInvertible_mfderiv hn x)).mpr
-      (hf.isBasic_of_mpullback_eq hn hσ hfσ hσf hα)⟩
+      (hf.isBasic_of_mpullback_eq hn hfσ hσf hα)⟩
   rintro ⟨ω, rfl⟩ i
   rw [← mpullback_comp (hσ i) (hf.mdifferentiable hn), hfσ i]
 

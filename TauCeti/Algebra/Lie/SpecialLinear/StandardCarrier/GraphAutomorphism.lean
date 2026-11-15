@@ -43,9 +43,7 @@ invariant. The automorphism therefore descends to the quotient.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * R. Steinberg, *Lectures on Chevalley Groups*, §10.
 
-This advances the Pinnings and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. It supplies the graph part of the Steinberg map needed
-by milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md` for the twisted family `²A_r(q)`.
+This supplies the graph part of the Steinberg map of the twisted family `²A_r(q)`.
 -/
 
 public section
@@ -102,7 +100,7 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
       (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
       (rootTarget r k) (rootTarget_ne_rootSource r k)
-      (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
+      (rep_rootGenerator_latticeBasis_apply r k) q
   have hgraph :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
@@ -110,7 +108,6 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (rootSource r (graphRootPerm r k)) (rootTarget r (graphRootPerm r k))
       (rootTarget_ne_rootSource r (graphRootPerm r k))
-      (nilpotencyClass_rep_rootGenerator r (graphRootPerm r k))
       (rep_rootGenerator_latticeBasis_apply r (graphRootPerm r k)) q
   rw [hk, hgraph]
   cases k with

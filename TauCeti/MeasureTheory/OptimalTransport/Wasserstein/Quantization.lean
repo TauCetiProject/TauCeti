@@ -84,7 +84,7 @@ theorem eLpNorm_infEDist_le_wassersteinEDist {s : Set X} (hν : ∀ᵐ y ∂ν, 
   have hm : AEStronglyMeasurable (fun x ↦ infEDist x s) μ :=
     continuous_infEDist.measurable.aestronglyMeasurable
   rw [← eLpNorm_comp_measurePreserving hm hπ.measurePreserving_fst]
-  exact eLpNorm_mono_enorm_ae (hm.comp_measurePreserving hπ.measurePreserving_fst)
+  exact eLpNorm_mono_eNorm_ae (hm.comp_measurePreserving hπ.measurePreserving_fst)
     (hs.mono fun z hz ↦ by simpa using infEDist_le_edist_of_mem hz)
 
 variable [MeasurableSingletonClass X]

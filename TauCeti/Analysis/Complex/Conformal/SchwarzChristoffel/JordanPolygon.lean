@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PolygonalDom
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 
 /-!
 # The Schwarz--Christoffel theorem for polygonal Jordan domains
@@ -94,7 +95,6 @@ private theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn {
     hfH.congr hform, fun i => ?_⟩
   · exact deriv_ne_zero_of_injOn hfd isOpen_upperHalfPlaneSet hfH.injOn z₀.im_pos
   -- both sides are limits at the prevertex `a i` from the upper half-plane
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot (a i)
   have hsum : -1 < ∑ l with a l = a i, e l := by
     rw [Finset.sum_eq_single_of_mem i (by simp) fun l hl hli =>
       absurd (ha (Finset.mem_filter.mp hl).2) hli]
@@ -106,7 +106,7 @@ private theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_eqOn {
     (eventually_nhdsWithin_of_forall hform)
 
 /-- **The Schwarz--Christoffel theorem for a bounded polygonal Jordan domain.**  Let `U` be a
-bounded, connected open set whose frontier is a Jordan curve.  Suppose that `U` coincides
+bounded open set whose frontier is a Jordan curve.  Suppose that `U` coincides
 near each frontier point other than the distinct vertices `v i` with an open half-plane, and near
 the vertex `v i` with the open sector of opening `(e i + 1) * π` at `v i`, where `e i ∈ (-1, 1)`.
 Then there are distinct real prevertices `a i` and constants `A ≠ 0` and `B` such that
@@ -115,7 +115,7 @@ Schwarz--Christoffel primitive for the prevertices `a` and the turning exponents
 the Schwarz--Christoffel vertex at `a i`, the limit of `F` at `a i`, is sent to `v i`. -/
 theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
     {ι : Type*} [Fintype ι] (e : ι → ℝ) (he : ∀ i, e i ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Injective v)
     (hside : ∀ w ∈ frontier U, (∀ i, w ≠ v i) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))
@@ -124,6 +124,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
     ∃ a : ι → ℝ, Injective a ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
+  have hUc : IsConnected U := hUJ.isConnected_of_isOpen_of_isBounded hUo hUb
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
     exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
       (vertex_mem_frontier_of_corner e he hcorner)

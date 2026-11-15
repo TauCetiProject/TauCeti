@@ -309,7 +309,7 @@ theorem formalCharacter_eq_finsum_isotypicMultiplicity_smul [FiniteDimensional K
     intro i
     have := finiteDimensional_irreducibleQuotient_of_isDominantIntegral (hcdom i)
     rw [irreducibleFormalCharacter_def]
-    exact formalCharacter_congr (LieModuleEquiv.restrictLie (hcequiv i).some H)
+    exact formalCharacter_congr ((hcequiv i).some.restrictLie H)
   -- the summands with a label outside the image of the labelling are absent, so the sum is finite
   have hsupp : (Function.support fun lam : {l : Dual K H // IsDominantIntegral b l} ↦
       (LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam.1) : ℤ) •

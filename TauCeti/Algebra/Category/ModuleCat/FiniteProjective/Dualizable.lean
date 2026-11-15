@@ -26,9 +26,9 @@ The dual-basis criterion used here is from Mathlib's `LinearAlgebra.Contraction`
 
 public section
 
-open CategoryTheory MonoidalCategory MonoidalClosed
+open CategoryTheory MonoidalCategory MonoidalClosed TauCeti
 
-namespace TauCeti
+namespace ModuleCat
 
 universe u
 
@@ -36,7 +36,7 @@ variable {R : Type u} [CommRing R] (M : ModuleCat.{u} R)
 
 /-- A finite projective module is dualizable, with internal Hom into the tensor unit as a
 canonical left dual. -/
-noncomputable instance _root_.ModuleCat.hasLeftDualOfFiniteProjective
+noncomputable instance hasLeftDualOfFiniteProjective
     [Module.Finite R M] [Module.Projective R M] : HasLeftDual M := by
   have h : IsIso ((dualTensorIhom M).app M) :=
     (ModuleCat.isIso_dualTensorIhom_app_iff M M).2 dualTensorHom_bijective
@@ -46,26 +46,26 @@ noncomputable instance _root_.ModuleCat.hasLeftDualOfFiniteProjective
 
 /-- A finite projective module also has a right dual in the symmetric monoidal category
 `ModuleCat R`. -/
-noncomputable instance _root_.ModuleCat.hasRightDualOfFiniteProjective
+noncomputable instance hasRightDualOfFiniteProjective
     [Module.Finite R M] [Module.Projective R M] : HasRightDual M :=
   BraidedCategory.hasRightDualOfHasLeftDual
 
 /-- The chosen left dual of a finite projective module is its internal Hom into the unit. -/
 @[simp]
-theorem _root_.ModuleCat.leftDual_of_finite_projective
+theorem leftDual_of_finite_projective
     [Module.Finite R M] [Module.Projective R M] :
     HasLeftDual.leftDual (Y := M) = (ihom M).obj (𝟙_ (ModuleCat.{u} R)) :=
   rfl
 
 /-- The chosen right dual of a finite projective module is its internal Hom into the unit. -/
 @[simp]
-theorem _root_.ModuleCat.rightDual_of_finite_projective
+theorem rightDual_of_finite_projective
     [Module.Finite R M] [Module.Projective R M] :
     HasRightDual.rightDual (X := M) = (ihom M).obj (𝟙_ (ModuleCat.{u} R)) :=
   rfl
 
 /-- A dualizable module is finite projective: its coevaluation gives a finite dual basis. -/
-theorem _root_.ModuleCat.finite_projective_of_hasLeftDual [HasLeftDual M] :
+theorem finite_projective_of_hasLeftDual [HasLeftDual M] :
     Module.Finite R M ∧ Module.Projective R M := by
   have h : IsIso ((dualTensorIhom M).app M) := inferInstance
   have hb : Function.Bijective (dualTensorHom R M M) :=
@@ -75,13 +75,13 @@ theorem _root_.ModuleCat.finite_projective_of_hasLeftDual [HasLeftDual M] :
     Module.Projective.of_one_mem_range_dualTensorHom hmem⟩
 
 /-- A module with a right dual is finite projective. -/
-theorem _root_.ModuleCat.finite_projective_of_hasRightDual [HasRightDual M] :
+theorem finite_projective_of_hasRightDual [HasRightDual M] :
     Module.Finite R M ∧ Module.Projective R M := by
   let _ : HasLeftDual M := BraidedCategory.hasLeftDualOfHasRightDual
   exact ModuleCat.finite_projective_of_hasLeftDual M
 
 /-- An `R`-module is dualizable if and only if it is finite projective. -/
-theorem _root_.ModuleCat.nonempty_hasLeftDual_iff_finite_projective :
+theorem nonempty_hasLeftDual_iff_finite_projective :
     Nonempty (HasLeftDual M) ↔ Module.Finite R M ∧ Module.Projective R M := by
   constructor
   · rintro ⟨h⟩
@@ -93,7 +93,7 @@ theorem _root_.ModuleCat.nonempty_hasLeftDual_iff_finite_projective :
     exact ⟨inferInstance⟩
 
 /-- An `R`-module has a right dual if and only if it is finite projective. -/
-theorem _root_.ModuleCat.nonempty_hasRightDual_iff_finite_projective :
+theorem nonempty_hasRightDual_iff_finite_projective :
     Nonempty (HasRightDual M) ↔ Module.Finite R M ∧ Module.Projective R M := by
   constructor
   · rintro ⟨h⟩
@@ -104,4 +104,4 @@ theorem _root_.ModuleCat.nonempty_hasRightDual_iff_finite_projective :
     let _ : Module.Projective R M := hproj
     exact ⟨inferInstance⟩
 
-end TauCeti
+end ModuleCat

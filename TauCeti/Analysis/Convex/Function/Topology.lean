@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Convex.FunctionTopology
 public import Mathlib.Analysis.Convex.Topology
-public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Instances.Real.Lemmas
+public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Algebra.Order.Field
@@ -25,6 +27,10 @@ A function convex on `s` and continuous on `closure s` remains convex on that cl
 
 A convex function on `(0, ∞)` bounded above by `L` stays convex when extended by the value `L` at
 `0` (`ConvexOn.apply_mul_le_of_forall_le`), as the limit of convex combinations approaching `0`.
+
+On a set with compact closure, a convex function `v` continuous on the closure can be rescaled and
+shifted to `(1 + ε) v + b` so that it passes from above to below an arbitrary function `u`
+(`TauCeti.exists_convexOn_lt_frontier_of_lt`).
 -/
 
 public section
@@ -52,6 +58,49 @@ theorem convexOn_of_tendsto {l : Filter ι} [l.NeBot] {F : ι → α → β} {f 
     · simpa only [s.piecewise_eq_of_notMem _ _ hx] using tendsto_const_nhds
   exact isClosed_setOfPred_convexOn.mem_of_tendsto hlim
     (hF.mono fun i hi => hi.congr fun x hx => (s.piecewise_eq_of_mem _ _ hx).symm)
+
+section FrontierShift
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {Ω : Set E}
+  {u v : E → ℝ}
+
+/-- If `v ≤ u` on the frontier of a set `Ω` with compact closure and `u x₀ < v x₀` at some
+`x₀ ∈ Ω`, with `v` convex on `Ω` and continuous on its closure (nothing is assumed of `u`), then
+for a small `ε > 0` and a constant `b` the function `(1 + ε) v + b` is convex on `Ω` and continuous
+on its closure, lies below `u` on the frontier, and lies above `u` at `x₀`. -/
+theorem exists_convexOn_lt_frontier_of_lt (hΩ : IsCompact (closure Ω))
+    (hv : ConvexOn ℝ Ω v) (hvc : ContinuousOn v (closure Ω))
+    (hfr : ∀ x ∈ frontier Ω, v x ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω)
+    (hlt : u x₀ < v x₀) :
+    ∃ ε > 0, ∃ b : ℝ, ContinuousOn (fun y => (1 + ε) * v y + b) (closure Ω) ∧
+      ConvexOn ℝ Ω (fun y => (1 + ε) * v y + b) ∧
+      (∀ y ∈ frontier Ω, (1 + ε) * v y + b < u y) ∧ u x₀ < (1 + ε) * v x₀ + b := by
+  -- Choose `ε > 0` with `ε |v| ≤ a / 4` on the closure of `Ω`, where `a = v x₀ - u x₀ > 0`, and
+  -- take `b = -a / 2`.
+  set a := v x₀ - u x₀
+  have ha : 0 < a := sub_pos.2 hlt
+  obtain ⟨M, hM⟩ := hΩ.exists_bound_of_continuousOn hvc
+  set ε := a / (4 * (|M| + 1))
+  have hε : 0 < ε := by positivity
+  have hεv : ∀ y ∈ closure Ω, |ε * v y| ≤ a / 4 := fun y hy => by
+    rw [abs_mul, abs_of_pos hε]
+    calc ε * |v y| ≤ ε * (|M| + 1) := by
+          gcongr
+          exact (hM y hy).trans ((le_abs_self M).trans (le_add_of_nonneg_right zero_le_one))
+      _ = a / 4 := by
+          simp only [ε]
+          field_simp
+  refine ⟨ε, hε, -(a / 2), (continuousOn_const.mul hvc).add continuousOn_const,
+    ?_, fun y hy => ?_, ?_⟩
+  · have hscaled : ConvexOn ℝ Ω (fun y => (1 + ε) * v y) := by
+      simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul (by positivity : 0 ≤ 1 + ε)
+    exact hscaled.add_const (-(a / 2))
+  · have := (abs_le.1 (hεv y (frontier_subset_closure hy))).2
+    linarith [hfr y hy]
+  · have := (abs_le.1 (hεv x₀ (subset_closure hx₀))).1
+    linarith
+
+end FrontierShift
 
 end TauCeti
 

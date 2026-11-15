@@ -7,10 +7,10 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.RamifiedPrime.Product
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
-public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
-import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient
 import Mathlib.NumberTheory.NumberField.ClassNumber
+import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
 
 /-!
 # The ramified primes of an imaginary quadratic field span exactly `2 ^ (t - 1)` classes
@@ -226,41 +226,17 @@ theorem prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod
   refine hconv ?_
   by_cases hd4 : d % 4 = 1
   · -- `disc K = d`: every ramified prime divides the odd number `d`.
-    have hdisc : NumberField.discr K = d :=
-      NumberField.discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
-    have hsub : s ⊆ d.natAbs.primeFactors := fun p hp => by
-      have h := hdvddiscr p hp
-      rw [hdisc] at h
-      exact Nat.mem_primeFactors.mpr
-        ⟨hpprime p hp, by simpa using Int.natAbs_dvd_natAbs.mpr h, by omega⟩
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ -d := by
       rw [← hnabs]
-      exact_mod_cast (Finset.prod_dvd_prod_of_subset _ _ (fun p => p) hsub).trans
-        (Nat.prod_primeFactors_dvd _)
+      exact_mod_cast TauCeti.NumberField.prod_dvd_natAbs_of_mod_four_eq_one hmin hgen hsf hd4
+        hpprime hdvddiscr
     exact eq_one_or_eq_of_four_mul_eq_sq_add (A := A₀) (B := B₀) hn1 (by omega) hmpos hmsf hmdvd
       (by linear_combination hAB₀ + 4 * hnormeq)
   · -- `disc K = 4d`: a ramified prime divides `2|d|`, and the norm form has no denominator.
-    have hdisc : NumberField.discr K = 4 * d :=
-      NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
-    have hsub : s ⊆ (2 * d.natAbs).primeFactors := fun p hp => by
-      have h := hdvddiscr p hp
-      rw [hdisc] at h
-      have h4 : p ∣ 4 * d.natAbs := by
-        simpa [Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr h
-      refine Nat.mem_primeFactors.mpr ⟨hpprime p hp, ?_, by omega⟩
-      rcases ((hpprime p hp).dvd_mul).mp h4 with h' | h'
-      · have hfour : (4 : ℕ) = 2 ^ 2 := by norm_num
-        rw [hfour] at h'
-        have hp2 : p = 2 := (Nat.prime_dvd_prime_iff_eq (hpprime p hp) Nat.prime_two).mp
-          ((hpprime p hp).dvd_of_dvd_pow h')
-        rw [hp2]
-        exact ⟨d.natAbs, rfl⟩
-      · exact h'.mul_left 2
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ 2 * -d := by
-      have hcast : ((2 * d.natAbs : ℕ) : ℤ) = 2 * -d := by push_cast [hnabs]; ring
-      rw [← hcast]
-      exact_mod_cast (Finset.prod_dvd_prod_of_subset _ _ (fun p => p) hsub).trans
-        (Nat.prod_primeFactors_dvd _)
+      rw [← hnabs]
+      exact_mod_cast TauCeti.NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one hmin hgen hsf
+        hd4 hpprime hdvddiscr
     obtain ⟨A, B, hAB⟩ :=
       NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one hmin hgen hsf hd4 z
     exact eq_one_or_eq_of_eq_sq_add (A := A) (B := B) hn1 hnsf hmpos hmsf hmdvd
@@ -388,14 +364,14 @@ theorem card_sub_one_le_twoRank
     (hprime : ∀ p ∈ s, (Q p : Ideal (𝓞 K)).IsPrime)
     (hover : ∀ p ∈ s, (Q p : Ideal (𝓞 K)).LiesOver (Ideal.span {(p : ℤ)}))
     (hs : d.natAbs.primeFactors ⊆ s) :
-    s.card - 1 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+    s.card - 1 ≤ ClassGroup.twoRank (𝓞 K) := by
   have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
   have hsq : ∀ p ∈ s, ClassGroup.mk0 (Q p) ^ 2 = 1 := fun p hp => by
     have := hprime p hp
     have := hover p hp
     exact NumberField.classGroupMk0_sq_eq_one_of_mem_ramifiedPrimes hfin (hram p hp)
       (Q p : Ideal (𝓞 K))
-  rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+  rw [ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
   refine TauCeti.le_twoRank_of_card_eq_two_pow (ClassGroup (𝓞 K)) (fun x hx => ?_)
     (natCard_closure_image_classGroupMk0_eq Q hmin hgen hsf hd hram hprime hover hs)
   induction hx using Subgroup.closure_induction with
@@ -414,7 +390,7 @@ is `finrank_candidateGenusField_over_candidateGenusFieldBase_eq_two_pow_ncard_ra
 theorem ncard_ramifiedPrimes_sub_one_le_twoRank
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : d < -1) :
-    (ramifiedPrimes K).ncard - 1 ≤ TauCeti.ClassGroup.twoRank (𝓞 K) := by
+    (ramifiedPrimes K).ncard - 1 ≤ ClassGroup.twoRank (𝓞 K) := by
   classical
   have hfinite := NumberField.finite_ramifiedPrimes (K := K)
   have hram : ∀ p ∈ hfinite.toFinset, p ∈ ramifiedPrimes K := fun p hp =>

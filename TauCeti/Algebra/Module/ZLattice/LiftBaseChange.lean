@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Lift
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Data.DFinsupp.FiniteInfinite
 import Mathlib.GroupTheory.FiniteAbelian.Basic
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.TorsionFree
 
@@ -34,12 +35,25 @@ then leaves only finitely many integral classes, including their torsion parts. 
 finiteness step of Gromov compactness: integrals of a fixed form over a curve are bounded by the
 comass of the form times the area of the curve.
 
+A family `θ i : H →+ ℝ` that spans the real vector space `H →+ ℝ` gives such an `l`: evaluation
+at the `θ i` has injective real extension `ℝ ⊗[ℤ] H → (ι → ℝ)`, and only finitely many `A : H`
+satisfy `∀ i, |θ i A| ≤ C i`. Torsion elements are not lost: each such window contains whole
+cosets of the finite torsion subgroup. The spanning hypothesis cannot be weakened to joint
+injectivity modulo torsion, by the same `ℤ²` example. Concluding that below an area cutoff only
+finitely many homology classes carry pseudoholomorphic curves also requires identifying the
+integral `∫_C u^* θ` (bounded in `TauCeti.abs_integralTopForm_mpullback_le`) with the pairing of
+`[θ]` with the class of the curve. That de Rham comparison is not provided here.
+
 ## Main results
 
 * `LinearIndependent.finite_setOf_sum_intCast_smul_mem`: only finitely many integer
   combinations of linearly independent vectors lie in a bounded set.
 * `LinearMap.finite_preimage_of_injective_liftBaseChange`: the preimage of a bounded set is
   finite.
+* `TauCeti.liftBaseChange_pi_injective_of_span_eq_top`: evaluation at a family spanning
+  `H →+ ℝ` has injective real extension.
+* `TauCeti.finite_setOf_forall_abs_apply_le`: only finitely many elements have all pairings
+  with such a family in a bounded window.
 
 ## References
 
@@ -131,3 +145,57 @@ theorem finite_preimage_of_injective_liftBaseChange (l : H →ₗ[ℤ] E)
   · simp
 
 end LinearMap
+
+namespace TauCeti
+
+open Set
+
+variable {H ι : Type*} [AddCommGroup H]
+
+/-- If the real-valued homomorphisms `θ i` span `H →+ ℝ`, then evaluation at them has injective
+real extension `ℝ ⊗[ℤ] H → (ι → ℝ)`. For finite `ι` this is the injectivity hypothesis of
+`TauCeti.IsComassBounded.finite_setOf_area_le`. -/
+theorem liftBaseChange_pi_injective_of_span_eq_top (θ : ι → H →+ ℝ)
+    (hθ : Submodule.span ℝ (range θ) = ⊤) :
+    Function.Injective
+      ((LinearMap.pi fun i ↦ (θ i).toIntLinearMap : H →ₗ[ℤ] ι → ℝ).liftBaseChange ℝ) := by
+  -- Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`.
+  let Ψ : (H →+ ℝ) ≃ₗ[ℝ] Module.Dual ℝ (TensorProduct ℤ ℝ H) :=
+    (addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)
+  set l : H →ₗ[ℤ] ι → ℝ := LinearMap.pi fun i ↦ (θ i).toIntLinearMap
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦
+    (Module.forall_dual_apply_eq_zero_iff ℝ x).1 fun φ ↦ ?_
+  have hΨ (i : ι) (y : TensorProduct ℤ ℝ H) : Ψ (θ i) y = l.liftBaseChange ℝ y i := by
+    induction y using TensorProduct.inductionOn <;> simp_all [Ψ, l]
+  have hx' (g : H →+ ℝ) (hg : g ∈ Submodule.span ℝ (range θ)) : Ψ g x = 0 := by
+    induction hg using Submodule.span_induction with
+    | mem f hf =>
+      obtain ⟨i, rfl⟩ := hf
+      simpa [hx] using hΨ i x
+    | zero => simp
+    | add => simp_all
+    | smul => simp_all
+  simpa using hx' (Ψ.symm φ) (by simp [hθ])
+
+/-- **Bounded real pairings cut out a finite set.** In a finitely generated abelian group `H`, if
+the real-valued homomorphisms `θ i` span `H →+ ℝ`, then only finitely many elements have all
+pairings `|θ i A| ≤ C i`. -/
+theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ)
+    (hθ : Submodule.span ℝ (range θ) = ⊤) (C : ι → ℝ) :
+    {A : H | ∀ i, |θ i A| ≤ C i}.Finite := by
+  have : FiniteDimensional ℝ (H →+ ℝ) :=
+    ((addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)).symm.finiteDimensional
+  -- A finite linearly independent subfamily `b` of the `θ i` still spans.
+  obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
+  have : Fintype b := hb.setFinite.fintype
+  choose c hc using fun f : b ↦ hbθ f.2
+  refine (LinearMap.finite_preimage_of_injective_liftBaseChange _
+    (liftBaseChange_pi_injective_of_span_eq_top (fun f : b ↦ (f : H →+ ℝ))
+      (by rw [Subtype.range_coe, hbspan, hθ]))
+    (Bornology.IsBounded.pi fun f ↦ Metric.isBounded_Icc (-C (c f)) (C (c f)))).subset
+    fun A hA ↦ ?_
+  simp only [mem_preimage, mem_pi, mem_univ, forall_const, mem_Icc]
+  intro f
+  simpa [hc] using abs_le.1 (hA (c f))
+
+end TauCeti

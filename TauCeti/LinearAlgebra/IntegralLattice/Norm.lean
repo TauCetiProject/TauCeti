@@ -57,8 +57,6 @@ the integral norm on the carrier.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section

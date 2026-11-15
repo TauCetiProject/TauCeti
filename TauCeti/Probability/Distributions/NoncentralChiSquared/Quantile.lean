@@ -122,7 +122,7 @@ theorem tendsto_quantile_noncentralChiSquaredMeasure_nhdsGT_zero (hk : 0 ≤ k) 
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
   exact Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos _
     (ae_nonneg_noncentralChiSquaredMeasure k l)
-    (fun _ hx ↦ cdf_noncentralChiSquaredMeasure_pos hk l hx)
+    (fun _ hx ↦ cdf_noncentralChiSquaredMeasure_pos l hx)
 
 /-- The upper endpoint is infinite except for the double-zero Dirac law. -/
 theorem tendsto_quantile_noncentralChiSquaredMeasure_nhdsLT_one (hk : 0 ≤ k) (l : ℝ≥0) :

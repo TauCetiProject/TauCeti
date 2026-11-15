@@ -78,6 +78,38 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory Limits
 
+/-- Restricting along `e.inv` and then along `e.hom` is naturally isomorphic to the identity
+of `X.Modules`. -/
+noncomputable def restrictFunctorInvCompHomIso {X Y : Scheme.{u}} (e : X ≅ Y) :
+    restrictFunctor e.inv ⋙ restrictFunctor e.hom ≅ 𝟭 X.Modules :=
+  (restrictFunctorComp e.hom e.inv).symm ≪≫
+    restrictFunctorCongr e.hom_inv_id ≪≫ restrictFunctorId
+
+-- Explicit open equalities fix the section types before unfolding restriction. In both proofs,
+-- `erw` identifies restricted-section wrappers with the corresponding sections of `M`.
+@[simp]
+lemma restrictFunctorInvCompHomIso_hom_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).hom.app M).app U =
+      M.presheaf.map (eqToHom (show U = e.inv ''ᵁ (e.hom ''ᵁ U) by simp)).op := by
+  simp only [Functor.comp_obj, Functor.id_obj, restrictFunctorInvCompHomIso, Iso.trans_hom,
+    Iso.symm_hom, NatTrans.comp_app, Hom.comp_app, restrictFunctorComp_inv_app_app,
+    Functor.op_obj, eqToHom_op, restrictFunctorCongr_hom_app_app, restrictFunctorId_hom_app_app]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
+@[simp]
+lemma restrictFunctorInvCompHomIso_inv_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
+    (M : X.Modules) (U : X.Opens) :
+    ((restrictFunctorInvCompHomIso e).inv.app M).app U =
+      M.presheaf.map (eqToHom (show e.inv ''ᵁ (e.hom ''ᵁ U) = U by simp)).op := by
+  simp only [Functor.id_obj, Functor.comp_obj, restrictFunctorInvCompHomIso, Iso.trans_inv,
+    Iso.symm_inv, Category.assoc, NatTrans.comp_app, Hom.comp_app,
+    restrictFunctorId_inv_app_app, eqToHom_op, restrictFunctorCongr_inv_app_app,
+    restrictFunctorComp_hom_app_app, Functor.op_obj]
+  erw [← Functor.map_comp, ← Functor.map_comp]
+  rfl
+
 /-- Restriction to an open subscheme preserves injective module sheaves. In particular,
 restricting the terms of an injective resolution gives injective terms. -/
 private instance restrictFunctorPreservesInjectiveObjectsInclusion {X : Scheme.{u}} (U : X.Opens) :
@@ -97,10 +129,8 @@ instance (priority := low) restrictFunctorPreservesInjectiveObjects {X Y : Schem
     let e := f.isoOpensRange
     let E : f.opensRange.toScheme.Modules ≌ X.Modules :=
       CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
-        ((restrictFunctorId).symm ≪≫ restrictFunctorCongr e.inv_hom_id.symm ≪≫
-          restrictFunctorComp e.inv e.hom)
-        ((restrictFunctorComp e.hom e.inv).symm ≪≫
-          restrictFunctorCongr e.hom_inv_id ≪≫ restrictFunctorId)
+        (restrictFunctorInvCompHomIso e.symm).symm
+        (restrictFunctorInvCompHomIso e)
     have : (restrictFunctor e.hom).PreservesInjectiveObjects :=
       inferInstanceAs E.functor.PreservesInjectiveObjects
     let i : restrictFunctor f ≅ restrictFunctor f.opensRange.ι ⋙ restrictFunctor e.hom :=
@@ -180,8 +210,7 @@ theorem isIso_restrictAdjunction_unit_app_app {X : Scheme.{u}} (U : X.Opens) (M 
 theorem isIso_of_isIso_restrictFunctor_map {X Y : Scheme.{u}} (j : Y ⟶ X) [IsIso j]
     {M N : X.Modules} (φ : M ⟶ N) [IsIso ((restrictFunctor j).map φ)] : IsIso φ := by
   let e : restrictFunctor j ⋙ restrictFunctor (inv j) ≅ 𝟭 X.Modules :=
-    (restrictFunctorComp (inv j) j).symm ≪≫ restrictFunctorCongr (IsIso.inv_hom_id j) ≪≫
-      restrictFunctorId
+    restrictFunctorInvCompHomIso (asIso j).symm
   exact (NatIso.isIso_map_iff e φ).mp
     (inferInstanceAs (IsIso ((restrictFunctor (inv j)).map ((restrictFunctor j).map φ))))
 

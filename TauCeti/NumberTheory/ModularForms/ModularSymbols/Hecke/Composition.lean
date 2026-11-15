@@ -363,8 +363,6 @@ representatives meet each of its right cosets once (`HeckeRing.GL2.op_smul_eq_of
 so the single-coset composition law applies. -/
 theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
     heckeTSymbol R w N (m * n) = heckeTSymbol R w N m * heckeTSymbol R w N n := by
-  have hm := Nat.pos_of_neZero m
-  have hn := Nat.pos_of_neZero n
   have hmem {p : ℕ} (v) : rightCosetRep (diagCosetGamma1 N p) v ∈
       doubleCoset (natDiagGL 2 ![1, p]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
     doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL ▸ rightCosetRep_mem_doubleCoset _ v
@@ -375,11 +373,11 @@ theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.C
     (op_rightCosetRep_smul_injective _) (doubleCoset_eq_iUnion_rightCosetRep _)
     (op_rightCosetRep_smul_injective _) (diagCosetGamma1 N (m * n)) ?_ ?_).symm
   · simp only [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
-    exact doubleCoset_natDiagGL_mul_of_coprime hm hn hmn
+    exact doubleCoset_natDiagGL_mul_of_coprime hmn
   · rintro ⟨i, j⟩ ⟨k, l⟩ h
     -- the right coset of a product determines that of the second factor, then of the first
     obtain rfl : j = l := op_rightCosetRep_smul_injective _
-      (op_smul_eq_of_op_mul_smul_eq hm hn hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
+      (op_smul_eq_of_op_mul_smul_eq hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
     refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
     rw [rightCoset_eq_iff] at h ⊢
     simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h

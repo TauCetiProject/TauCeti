@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Basic
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Jacobson's lemma in a preadditive category
@@ -28,33 +29,22 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
+open Preadditive in
 private theorem isIso_id_sub_comp_swap {X Y : C} (a : X ⟶ Y) (b : Y ⟶ X)
-    (h : IsIso (𝟙 X - a ≫ b)) : IsIso (𝟙 Y - b ≫ a) := by
-  obtain ⟨w, hw₁, hw₂⟩ := h.out
-  rw [Preadditive.sub_comp, Category.id_comp, Category.assoc] at hw₁
-  rw [Preadditive.comp_sub, Category.comp_id] at hw₂
-  -- `hw₁ : w - a ≫ b ≫ w = 𝟙 X` and `hw₂ : w - w ≫ a ≫ b = 𝟙 X`
-  have key₁ : a ≫ b ≫ w ≫ a = w ≫ a - a := by
-    have h₁ : a ≫ b ≫ w = w - 𝟙 X := by
-      rw [eq_sub_iff_add_eq, ← hw₁]; abel
-    have := congrArg (fun t : X ⟶ X => t ≫ a) h₁
-    simpa [Preadditive.sub_comp] using this
-  have key₂ : w ≫ a ≫ b ≫ a = w ≫ a - a := by
-    have h₂ : w ≫ a ≫ b = w - 𝟙 X := by
-      rw [eq_sub_iff_add_eq, ← hw₂]; abel
-    have := congrArg (fun t : X ⟶ X => t ≫ a) h₂
-    simpa [Preadditive.sub_comp] using this
-  refine ⟨⟨𝟙 Y + b ≫ w ≫ a, ?_, ?_⟩⟩
-  · simp only [Preadditive.sub_comp, Preadditive.comp_add, Category.id_comp, Category.comp_id,
-      Category.assoc, key₁, Preadditive.comp_sub]
-    abel
-  · simp only [Preadditive.add_comp, Preadditive.comp_sub, Category.id_comp, Category.comp_id,
-      Category.assoc, key₂, Preadditive.comp_sub]
-    abel
+    [IsIso (𝟙 X - a ≫ b)] : IsIso (𝟙 Y - b ≫ a) := by
+  refine ⟨𝟙 Y + b ≫ inv (𝟙 X - a ≫ b) ≫ a, ?_, ?_⟩
+  · have := congr(b ≫ $(IsIso.hom_inv_id (𝟙 X - a ≫ b)) ≫ a)
+    simp only [sub_comp, comp_sub, comp_add, Category.assoc, Category.id_comp,
+      Category.comp_id] at this ⊢
+    linear_combination (norm := abel) this
+  · have := congr(b ≫ $(IsIso.inv_hom_id (𝟙 X - a ≫ b)) ≫ a)
+    simp only [comp_sub, sub_comp, add_comp, Category.assoc, Category.id_comp,
+      Category.comp_id] at this ⊢
+    linear_combination (norm := abel) this
 
 /-- **Jacobson's lemma**: `𝟙 X - a ≫ b` is invertible exactly when `𝟙 Y - b ≫ a` is. -/
 theorem isIso_id_sub_comp_comm {X Y : C} (a : X ⟶ Y) (b : Y ⟶ X) :
     IsIso (𝟙 X - a ≫ b) ↔ IsIso (𝟙 Y - b ≫ a) :=
-  ⟨isIso_id_sub_comp_swap a b, isIso_id_sub_comp_swap b a⟩
+  ⟨fun _ => isIso_id_sub_comp_swap a b, fun _ => isIso_id_sub_comp_swap b a⟩
 
 end CategoryTheory

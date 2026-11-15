@@ -52,15 +52,13 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 
 public section
 
-open _root_.AlgebraicGeometry CategoryTheory
-
-namespace TauCeti
-
-namespace AlgebraicGeometry
+open AlgebraicGeometry CategoryTheory TauCeti.AlgebraicGeometry
 
 universe u
 
 noncomputable section
+
+namespace AlgebraicGeometry.Scheme
 
 section CommRing
 
@@ -68,7 +66,7 @@ variable (k : Type u) [CommRing k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
 
 /-- The canonical map from the base ring of a scheme to its function field. It is the pullback
 to global sections followed by the inclusion of global functions into rational functions. -/
-def _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField [IsIntegral X] :
+def baseRingToFunctionField [IsIntegral X] :
     k →+* X.functionField :=
   letI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
   (X.germToFunctionField ⊤).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
@@ -76,7 +74,7 @@ def _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField [IsIntegral X] :
 /-- The base-ring map to the function field sends a scalar to the rational function induced by
 the corresponding global function. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_apply [IsIntegral X] (c : k) :
+lemma baseRingToFunctionField_apply [IsIntegral X] (c : k) :
     haveI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
     Scheme.baseRingToFunctionField k X c =
       X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) := by
@@ -85,7 +83,7 @@ lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_apply [IsIntegral 
 /-- The base-ring map to the function field factors through the sections over any nonempty open
 `U`: pull functions on `Spec k` back to `Γ(X, U)` along the structure morphism, then pass to
 rational functions. -/
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_eq_comp_appLE [IsIntegral X]
+lemma baseRingToFunctionField_eq_comp_appLE [IsIntegral X]
     (U : X.Opens) [Nonempty U] :
     Scheme.baseRingToFunctionField k X = (X.germToFunctionField U).hom.comp
       ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top).hom := by
@@ -101,35 +99,35 @@ lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_eq_comp_appLE [IsI
   exact congr($h ((Scheme.ΓSpecIso (.of k)).inv c)).symm
 
 /-- The function field of an integral scheme over `Spec k` is canonically a `k`-algebra. -/
-instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlgebra
+instance (priority := 900) functionFieldBaseAlgebra
     [IsIntegral X] : Algebra k X.functionField :=
   (Scheme.baseRingToFunctionField k X).toAlgebra
 
 /-- The canonical map from the base ring of a scheme to its stalk at `x`. -/
-def _root_.AlgebraicGeometry.Scheme.baseRingToStalk (x : X) : k →+* X.presheaf.stalk x :=
+def baseRingToStalk (x : X) : k →+* X.presheaf.stalk x :=
   (X.presheaf.germ ⊤ x trivial).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
 
 /-- The image of a base-ring element in a stalk is the germ of the corresponding global
 function. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply (x : X) (c : k) :
+lemma baseRingToStalk_apply (x : X) (c : k) :
     Scheme.baseRingToStalk k X x c =
       X.presheaf.germ ⊤ x trivial (Scheme.Modules.baseRingToGlobalSections k X c) :=
   by simp only [Scheme.baseRingToStalk, RingHom.comp_apply]
 
 /-- Every stalk of a scheme over `Spec k` is canonically a `k`-algebra. -/
-instance (priority := 900) _root_.AlgebraicGeometry.Scheme.stalkBaseAlgebra (x : X) :
+instance (priority := 900) stalkBaseAlgebra (x : X) :
     Algebra k (X.presheaf.stalk x) :=
   (Scheme.baseRingToStalk k X x).toAlgebra
 
 /-- The residue field at a point of a scheme over `Spec k` is canonically a `k`-algebra. -/
-instance (priority := 900) _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgebra (x : X) :
+instance (priority := 900) residueFieldBaseAlgebra (x : X) :
     Algebra k (X.residueField x) :=
   ((X.residue x).hom.comp (Scheme.baseRingToStalk k X x)).toAlgebra
 
 /-- The base-ring action on a local ring factors through the sections on any
 neighbourhood of the point. -/
-lemma _root_.AlgebraicGeometry.Scheme.isScalarTower_base_section_stalk {U : X.Opens}
+lemma isScalarTower_base_section_stalk {U : X.Opens}
     (x : U) :
     letI : Algebra k Γ(X, U) :=
       ((X.baseRingToStructurePresheaf k).app (.op U)).hom.toAlgebra
@@ -145,39 +143,39 @@ lemma _root_.AlgebraicGeometry.Scheme.isScalarTower_base_section_stalk {U : X.Op
   exact (X.presheaf.germ_res_apply U.leTop x x.2 _).symm
 
 /-- The residue field at a point is canonically an algebra over its stalk. -/
-instance _root_.AlgebraicGeometry.Scheme.residueFieldStalkAlgebra (x : X) :
+instance residueFieldStalkAlgebra (x : X) :
     Algebra (X.presheaf.stalk x) (X.residueField x) :=
   (X.residue x).hom.toAlgebra
 
 /-- The algebra map to the function field is the canonical composite from the base ring. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.algebraMap_functionField_eq_baseRingToFunctionField
+lemma algebraMap_functionField_eq_baseRingToFunctionField
     [IsIntegral X] : algebraMap k X.functionField = Scheme.baseRingToFunctionField k X :=
   rfl
 
 /-- The algebra map to a stalk is the canonical composite from the base ring. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_eq_baseRingToStalk (x : X) :
+lemma algebraMap_stalk_eq_baseRingToStalk (x : X) :
     algebraMap k (X.presheaf.stalk x) = Scheme.baseRingToStalk k X x :=
   rfl
 
 /-- The algebra map to a residue field is the residue of the canonical composite from the base
 ring. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk
+lemma algebraMap_residueField_eq_residue_comp_baseRingToStalk
     (x : X) :
     algebraMap k (X.residueField x) = (X.residue x).hom.comp (Scheme.baseRingToStalk k X x) :=
   rfl
 
 /-- The algebra map from a stalk to its residue field is the residue map. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_residueField_eq_residue (x : X) :
+lemma algebraMap_stalk_residueField_eq_residue (x : X) :
     algebraMap (X.presheaf.stalk x) (X.residueField x) = (X.residue x).hom :=
   rfl
 
 /-- The canonical maps from the base ring through a stalk to its residue field form a scalar
 tower. -/
-instance _root_.AlgebraicGeometry.Scheme.baseStalkResidueFieldIsScalarTower (x : X) :
+instance baseStalkResidueFieldIsScalarTower (x : X) :
     IsScalarTower k (X.presheaf.stalk x) (X.residueField x) := by
   apply IsScalarTower.of_algebraMap_eq'
   rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
@@ -186,7 +184,7 @@ instance _root_.AlgebraicGeometry.Scheme.baseStalkResidueFieldIsScalarTower (x :
 
 /-- The residue at `x` of the image of a base ring element in the stalk is the evaluation at `x`
 of the corresponding global function: both are the germ at `x` followed by the residue map. -/
-lemma _root_.AlgebraicGeometry.Scheme.residue_baseRingToStalk (x : X) (c : k) :
+lemma residue_baseRingToStalk (x : X) (c : k) :
     X.residue x (Scheme.baseRingToStalk k X x c) =
       X.Γevaluation x (Scheme.Modules.baseRingToGlobalSections k X c) := by
   have h : X.presheaf.germ ⊤ x trivial ≫ X.residue x = X.Γevaluation x :=
@@ -197,7 +195,7 @@ lemma _root_.AlgebraicGeometry.Scheme.residue_baseRingToStalk (x : X) (c : k) :
 function on `Spec k` along the structure morphism. This is the algebra structure in Mathlib's
 `Scheme.Hom.residueDegree_eq_finrank`, so over a field `finrank k κ(x)` is the residue degree of
 the structure morphism at `x`. -/
-lemma _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgebra_eq_compHom (x : X) :
+lemma residueFieldBaseAlgebra_eq_compHom (x : X) :
     Scheme.residueFieldBaseAlgebra k X x = Algebra.compHom (X.residueField x)
       ((X.Γevaluation x).hom.comp
         ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom) := by
@@ -210,7 +208,7 @@ lemma _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgebra_eq_compHom (x : X)
 
 /-- The canonical maps from the base ring through a stalk to the function field form a scalar
 tower. -/
-instance _root_.AlgebraicGeometry.Scheme.baseStalkFunctionFieldIsScalarTower [IsIntegral X]
+instance baseStalkFunctionFieldIsScalarTower [IsIntegral X]
     (x : X) : IsScalarTower k (X.presheaf.stalk x) X.functionField := by
   let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
   apply IsScalarTower.of_algebraMap_eq'
@@ -223,7 +221,7 @@ instance _root_.AlgebraicGeometry.Scheme.baseStalkFunctionFieldIsScalarTower [Is
 /-- The canonical morphism from the spectrum of a stalk to a scheme over `Spec k` is a morphism
 over `Spec k`; on rings, its composite with the structure morphism is the algebra map from `k`
 to the stalk. -/
-theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_comp_over (x : X) :
+theorem fromSpecStalk_comp_over (x : X) :
     X.fromSpecStalk x ≫ (X ↘ Spec (.of k)) =
       Spec.map (CommRingCat.ofHom (algebraMap k (X.presheaf.stalk x))) := by
   have hbase : X ↘ Spec (.of k) = X.toSpecΓ ≫
@@ -242,7 +240,7 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_comp_over (x : X) :
 /-- The canonical morphism from the spectrum of a residue field to a scheme over `Spec k` is a
 morphism over `Spec k`; on rings, its composite with the structure morphism is the algebra map
 from `k` to the residue field. -/
-theorem _root_.AlgebraicGeometry.Scheme.fromSpecResidueField_comp_over (x : X) :
+theorem fromSpecResidueField_comp_over (x : X) :
     X.fromSpecResidueField x ≫ (X ↘ Spec (.of k)) =
       Spec.map (CommRingCat.ofHom (algebraMap k (X.residueField x))) := by
   rw [Scheme.fromSpecResidueField, Category.assoc, X.fromSpecStalk_comp_over (k := k),
@@ -252,7 +250,7 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecResidueField_comp_over (x : X) :
 
 /-- At the generic point of an integral scheme, `fromSpecStalk` is a morphism from the spectrum
 of the function field over the affine base. -/
-theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
+theorem fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
     X.fromSpecStalk (genericPoint X) ≫ (X ↘ Spec (.of k)) =
       Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
   let _ : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
@@ -266,7 +264,7 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [Is
 /-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
 fields compatible with the `k`-algebra structures is compatible with the structure morphisms to
 `Spec k`. -/
-theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over
+theorem specMap_comp_fromSpecStalk_genericPoint_comp_over
     {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y]
     [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
     (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
@@ -280,6 +278,10 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
 
 end CommRing
 
+end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Hom
+
 section OpenImmersion
 
 variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
@@ -287,7 +289,7 @@ variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 /-- An open immersion `g : Spec R ⟶ X` over `Spec k`, where `Spec.map φ = g ≫ X ↘ Spec k`,
 identifies the residue field of `X` at `g y` with the residue field of the prime `y` of `R`, as
 `k`-algebras for the `k`-algebra structure of `R` given by `φ`. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
+def residueFieldAlgEquivOfIsOpenImmersion
     {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
     (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) :
     letI := φ.hom.toAlgebra
@@ -327,7 +329,7 @@ def _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
 `g`, followed by Mathlib's identification of the residue field of `Spec R` at `y` with
 `y.asIdeal.ResidueField`. -/
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion_apply
+lemma residueFieldAlgEquivOfIsOpenImmersion_apply
     {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
     (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) (a : X.residueField (g y)) :
     letI := φ.hom.toAlgebra
@@ -339,12 +341,16 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion_
 
 end OpenImmersion
 
+end AlgebraicGeometry.Scheme.Hom
+
 section FunctionFieldChart
+
+namespace AlgebraicGeometry.Scheme.Hom
 
 /-- **The function field of an integral scheme is the fraction field of an affine chart.** If
 `ι : Spec R ⟶ Y` is an open immersion over `Spec k` into an integral scheme `Y`, then the function
 field of `Y` is, as a `k`-algebra, every fraction field `L` of `R`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion
+theorem nonempty_functionField_algEquiv_of_isOpenImmersion
     {k R : Type u} [CommRing k] [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
     [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
     (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
@@ -382,6 +388,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_i
   rw [CommRingCat.hom_comp, RingHom.comp_apply, hθ, Iso.inv_hom_id_apply,
     ← IsScalarTower.algebraMap_apply]
 
+end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry
+
 /-- **An affine chart presenting the function field.** An integral scheme `X` over `Spec k` has a
 nonempty affine open `U` such that, with the `k`-algebra structure on `Γ(X, U)` coming from the
 structure morphism, the function field of `X` is the fraction field of `Γ(X, U)` compatibly with
@@ -404,7 +414,11 @@ theorem exists_affineOpen_isFractionRing {k : Type u} [CommRing k] {X : Scheme.{
     functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
   rw [hU.fromSpec_comp_eq_SpecMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
 
+end TauCeti.AlgebraicGeometry
+
 end FunctionFieldChart
+
+namespace AlgebraicGeometry.Scheme.Hom
 
 section FunctionFieldMap
 
@@ -413,7 +427,7 @@ variable (k : Type u) [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-- The pullback of rational functions along a dominant morphism of integral schemes over
 `Spec k` is compatible with the `k`-algebra structures of the function fields. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap (f : X ⟶ Y)
+theorem functionFieldMap_algebraMap (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
     f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
   have h : Spec.map (CommRingCat.ofHom (algebraMap k Y.functionField) ≫ f.functionFieldMap) =
@@ -425,25 +439,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap (f : X �
 
 /-- The pullback of rational functions `f^* : k(Y) → k(X)` along a dominant morphism `f : X ⟶ Y`
 of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/
-def _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom (f : X ⟶ Y)
+def functionFieldAlgHom (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] : Y.functionField →ₐ[k] X.functionField where
   __ := f.functionFieldMap.hom
   commutes' := f.functionFieldMap_algebraMap k
 
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_apply (f : X ⟶ Y)
+theorem functionFieldAlgHom_apply (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] (a : Y.functionField) :
     f.functionFieldAlgHom k a = f.functionFieldMap a :=
   (rfl)
 
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_id :
+theorem functionFieldAlgHom_id :
     Scheme.Hom.functionFieldAlgHom k (𝟙 X) = AlgHom.id k X.functionField := by
   ext
   simp
 
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
+theorem functionFieldAlgHom_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     [f.IsOver (Spec (.of k))] [g.IsOver (Spec (.of k))] [IsDominant f] [IsDominant g] :
     (f ≫ g).functionFieldAlgHom k = (f.functionFieldAlgHom k).comp (g.functionFieldAlgHom k) := by
   ext
@@ -458,7 +472,7 @@ variable (k : Type u) [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-- The residue field maps of a morphism over `Spec k` are compatible with the `k`-algebra
 structures of the residue fields. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.residueFieldMap_algebraMap (f : X ⟶ Y)
+theorem residueFieldMap_algebraMap (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] (x : X) (c : k) :
     f.residueFieldMap x (algebraMap k (Y.residueField (f x)) c) =
       algebraMap k (X.residueField x) c := by
@@ -471,13 +485,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.residueFieldMap_algebraMap (f : X �
 
 end ResidueFieldMap
 
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme
+
 section RationalFunctions
 
 variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [IsIntegral X]
 
 /-- Global rational functions are the function field, also as modules over the base ring. -/
-def _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionField :
+def globalRationalFunctionsEquivFunctionField :
     Γ(Scheme.rationalFunctions X, ⊤) ≃ₗ[k] X.functionField := by
   letI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
   exact {
@@ -499,7 +517,7 @@ def _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionField :
 
 /-- The linear equivalence sends a global rational function to its value in the function field. -/
 @[simp]
-theorem _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionField_apply
+theorem globalRationalFunctionsEquivFunctionField_apply
     (f : Γ(Scheme.rationalFunctions X, ⊤)) :
     haveI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
     Scheme.globalRationalFunctionsEquivFunctionField (k := k) (X := X) f =
@@ -508,8 +526,6 @@ theorem _root_.AlgebraicGeometry.Scheme.globalRationalFunctionsEquivFunctionFiel
 
 end RationalFunctions
 
+end AlgebraicGeometry.Scheme
+
 end
-
-end AlgebraicGeometry
-
-end TauCeti

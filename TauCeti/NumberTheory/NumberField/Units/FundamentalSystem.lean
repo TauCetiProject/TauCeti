@@ -157,8 +157,7 @@ theorem exists_fundSystem_prod_logHeight₁_le_of_isMaxRank {u : Fin (rank K) �
   rw [← Equiv.prod_comp (Tuple.sort n) n, ← prod_max_one_add_one_div_two,
     ← Finset.prod_mul_distrib]
   refine Finset.prod_le_prod₀ (fun i _ ↦ zero_le_logHeight₁ _) fun i _ ↦ ?_
-  exact (le_of_mul_le_mul_left (two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (ε i))
-    two_pos).trans (hle i)
+  exact (logHeight₁_le_sum_abs_logEmbedding (ε i)).trans (hle i)
 
 open Classical in
 /-- **A fundamental system of controlled absolute height.** If the logarithmic embeddings of

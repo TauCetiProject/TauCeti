@@ -87,6 +87,12 @@ namespace TLDiagram
 
 variable {n m n' m' : ℕ}
 
+/-- There is a diagram `n → m` exactly when the total number `n + m` of boundary points is
+even. -/
+theorem nonempty_iff : Nonempty (TLDiagram n m) ↔ Even (n + m) :=
+  ⟨fun ⟨x⟩ => PlanarMatching.nonempty_iff.mp ⟨x.matching⟩,
+    fun h => ⟨⟨(PlanarMatching.nonempty_iff.mpr h).some, 0⟩⟩⟩
+
 /-- Relabelling the matching of a diagram along an equivalence of planar matchings, keeping the
 circles. Every operation of this file is of this form. -/
 private def congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
@@ -345,7 +351,10 @@ top point `2n - 1 - i`, so the matching is the fully nested `TauCeti.PlanarMatch
 def id (n : ℕ) : TLDiagram n n :=
   ⟨PlanarMatching.nested n, 0⟩
 
+/-- The matching of the identity diagram is the fully nested one. -/
 @[simp]
+theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
+
 theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 

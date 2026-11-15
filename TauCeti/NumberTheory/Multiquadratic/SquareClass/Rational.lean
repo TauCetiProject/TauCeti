@@ -8,14 +8,14 @@ module
 public import TauCeti.Algebra.Squarefree
 public import TauCeti.FieldTheory.IntermediateField.Rescale
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
+public import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.CoprimeSquarefree
-import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Rational radicands reduce to squarefree integer radicands
 
 The multiquadratic degree theorem `TauCeti.Multiquadratic.finrank_adjoin_range` is field-generic:
-its radicands are arbitrary elements `d i` of the base field. Over `ℚ` the roadmap works instead
+its radicands are arbitrary elements `d i` of the base field. Over `ℚ` one works instead
 with *squarefree integers*, because those are the radicands the genus theory names (the prime
 discriminants `-4, ±8, p*` and their products). The passage between the two is a square-class
 computation: a rational radicand may be replaced by the squarefree integer representing its square

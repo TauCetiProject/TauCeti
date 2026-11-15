@@ -84,8 +84,6 @@ private theorem eqOn_brokenGeodesic_Icc_zero_one :
 private theorem brokenGeodesic_one : brokenGeodesic p u z 1 = riemannianExp I M p u := by
   simp [brokenGeodesic, ← riemannianExp_def]
 
-variable [I.Boundaryless]
-
 private theorem eqOn_brokenGeodesic_Icc_one_two :
     EqOn (brokenGeodesic p u z)
       (maximalGeodesic I M (riemannianExp I M p u) z ∘ fun t ↦ t - 1) (Icc 1 2) := by
@@ -102,7 +100,7 @@ private theorem brokenGeodesic_two :
   rw [eqOn_brokenGeodesic_Icc_one_two ⟨one_le_two, le_rfl⟩, Function.comp_apply,
     ← one_add_one_eq_two, add_sub_cancel_right, ← riemannianExp_def]
 
-variable [IsRiemannianManifold I M]
+variable [I.Boundaryless] [IsRiemannianManifold I M]
 
 /-- The broken geodesic stays within the sum of the speeds of its pieces from its start. -/
 private theorem dist_brokenGeodesic_le {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 2) :

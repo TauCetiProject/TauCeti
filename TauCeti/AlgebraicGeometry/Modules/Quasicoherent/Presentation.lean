@@ -26,14 +26,14 @@ public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Modules
 
 universe u
 
 noncomputable section
 
 /-- A finite presentation on an open subscheme gives a finite presentation on its slice site. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_isFinite_presentation_over_of_restrict
+theorem exists_isFinite_presentation_over_of_restrict
     {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
     (P : (M.restrict U.ι).Presentation) [P.IsFinite] :
     ∃ Q : (M.over U).Presentation, Q.IsFinite := by
@@ -52,7 +52,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_isFinite_presentation_ove
 
 /-- A presentation on the canonical spectrum of an affine scheme transports back to a
 presentation on the affine scheme. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
+def presentationOfIsoSpec
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
     (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) : M.Presentation := by
   let F : SheafOfModules (Spec Γ(X, ⊤)).ringCatSheaf ⥤
@@ -68,7 +68,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
 
 /-- Transporting a presentation from the canonical spectrum preserves finite generators and
 finite relations. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinite_presentationOfIsoSpec
+instance isFinite_presentationOfIsoSpec
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
     (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) [P.IsFinite] :
     (M.presentationOfIsoSpec P).IsFinite := by
@@ -82,7 +82,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinite_presentationOfIsoSpec
 
 /-- A quasicoherent module on an affine scheme admits a global presentation by free sheaves.
 The generating and relation families need not be finite. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffine
+theorem nonempty_presentation_of_isAffine
     {X : Scheme.{u}} [IsAffine X] (M : X.Modules) [M.IsQuasicoherent] :
     Nonempty M.Presentation := by
   let e := X.isoSpec
@@ -99,4 +99,4 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffin
 
 end
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Modules

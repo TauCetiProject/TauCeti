@@ -56,7 +56,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 The endomorphism family and the field need only be differentiable within the parameter set. -/
 theorem alongCurveWithin_clm_apply_of_eq_zero
     (A : ∀ r, TangentSpace I (γ r) →L[𝕜] TangentSpace I (γ r))
-    {s : Set 𝕜} {t : 𝕜} (hs : UniqueDiffWithinAt 𝕜 s t)
+    {s : Set 𝕜} {t : 𝕜}
     (hA : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] E))
       (fun r ↦ TotalSpace.mk' (E →L[𝕜] E)
         (E := fun x ↦ TangentSpace I x →L[𝕜] TangentSpace I x) (γ r) (A r)) s t)
@@ -82,7 +82,12 @@ theorem alongCurveWithin_clm_apply_of_eq_zero
   have hd := (ha.hasDerivWithinAt.clm_apply hv.hasDerivWithinAt).congr_of_eventuallyEq
     (hnear.mono fun r hr ↦ hread r hr) (hread t hbase)
   rw [alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero cov γ _ (by simp [hzero]),
-    alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero cov γ V hzero, hd.derivWithin hs]
+    alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero cov γ V hzero]
+  by_cases hs : UniqueDiffWithinAt 𝕜 s t
+  swap
+  · simp only [derivWithin_zero_of_not_uniqueDiffWithinAt hs]
+    exact (map_zero (A t)).symm
+  rw [hd.derivWithin hs]
   simp only [sectionCoord_apply, hzero, map_zero, a,
     ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     continuousLinearMapAt_trivializationAt_self, symmL_trivializationAt_self]
@@ -94,7 +99,6 @@ Neither the connection nor the endomorphism needs to preserve a metric. -/
 theorem alongCurveWithin_clm_apply
     (A : ∀ x : M, TangentSpace I x →L[𝕜] TangentSpace I x) {s : Set 𝕜} {t : 𝕜}
     (hs : UniqueDiffWithinAt 𝕜 s t)
-    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
     (hA : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[𝕜] E)
       (E := fun x ↦ TangentSpace I x →L[𝕜] TangentSpace I x) x (A x)) (γ t))
     (hV : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I.tangent
@@ -102,6 +106,9 @@ theorem alongCurveWithin_clm_apply
     alongCurveWithin cov γ (fun r ↦ A (γ r) (V r)) s t =
       cov.hom cov A (γ t) (curveVelocityWithin I γ s t) (V t) +
         A (γ t) (alongCurveWithin cov γ V s t) := by
+  have hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t :=
+    (Bundle.mdifferentiableAt_proj (fun x : M ↦ TangentSpace I x)).comp_mdifferentiableWithinAt t
+      hV
   -- Split off an ambient extension of the value of V. The remainder vanishes at t,
   -- where the product rule is already independent of any Hom connection.
   let W := extend E (V t)
@@ -117,7 +124,7 @@ theorem alongCurveWithin_clm_apply
       (fun r ↦ A (γ r) (V r)) := by funext r; simp
   have hzero : V t - W (γ t) = 0 := by simp [W]
   have hprod := alongCurveWithin_clm_apply_of_eq_zero cov γ
-    (fun r ↦ V r - W (γ r)) (fun r ↦ A (γ r)) hs hAγ hU hzero
+    (fun r ↦ V r - W (γ r)) (fun r ↦ A (γ r)) hAγ hU hzero
   have hsum := alongCurveWithin_add cov γ (fun r ↦ A (γ r) (W (γ r)))
     (fun r ↦ A (γ r) (V r - W (γ r))) s
     (differentiableWithinAt_sectionCoord _ _ hAW hbase)
@@ -139,7 +146,6 @@ field along the curve; its derivative uses the induced endomorphism connection. 
 connection nor the endomorphism needs to preserve a metric. -/
 theorem alongCurve_clm_apply
     (A : ∀ x : M, TangentSpace I x →L[𝕜] TangentSpace I x) {t : 𝕜}
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
     (hA : MDiffAt (fun x ↦ TotalSpace.mk' (E →L[𝕜] E)
       (E := fun x ↦ TangentSpace I x →L[𝕜] TangentSpace I x) x (A x)) (γ t))
     (hV : MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent
@@ -149,6 +155,6 @@ theorem alongCurve_clm_apply
         A (γ t) (alongCurve cov γ V t) := by
   simpa only [alongCurveWithin_univ, curveVelocityWithin_univ] using
     alongCurveWithin_clm_apply cov γ V A uniqueDiffWithinAt_univ
-      hγ.mdifferentiableWithinAt hA hV.mdifferentiableWithinAt
+      hA hV.mdifferentiableWithinAt
 
 end CovariantDerivative

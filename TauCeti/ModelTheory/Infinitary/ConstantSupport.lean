@@ -34,6 +34,8 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
   agreeing on the support of a formula give it the same truth value.
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_inst_subset`: instantiating at a term adds
   at most the constants of the term.
+* `FirstOrder.Language.BoundedFormulaInf.IsAtomic.inst_eq_or_constantSupport_subset`: an atomic
+  instance either does not depend on the instantiated term or contains all of its constants.
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
   empty support precisely when it comes from `L`.
@@ -303,6 +305,40 @@ theorem constantSupport_subset_inst (φ : L[[γ]].BoundedFormulaInf ι α 1)
     (t : L[[γ]].Term (α ⊕ Fin 0)) : φ.constantSupport ⊆ (φ.inst t).constantSupport := by
   rw [inst_def]
   exact fun _ hc => functionsIn_subset_functionsIn_substBounds (fun _ => t) φ hc
+
+/-- An atomic formula either ignores its bound position, so that all its instances agree, or its
+instance at `t` contains every constant of `t`. -/
+theorem IsAtomic.inst_eq_or_constantSupport_subset {φ : L[[γ]].BoundedFormulaInf ι α 1}
+    (hφ : φ.IsAtomic) (t t' : L[[γ]].Term (α ⊕ Fin 0)) :
+    φ.inst t = φ.inst t' ∨ t.constantSupport ⊆ (φ.inst t).constantSupport := by
+  have key (u : L[[γ]].Term (α ⊕ Fin 1)) :
+      u.subst (Sum.elim (Term.var ∘ Sum.inl) fun _ => t) =
+          u.subst (Sum.elim (Term.var ∘ Sum.inl) fun _ => t') ∨
+        t.functionsIn ⊆ (u.subst (Sum.elim (Term.var ∘ Sum.inl) fun _ => t)).functionsIn := by
+    refine (u.subst_eq_or_exists_functionsIn_subset _ _).imp_right fun ⟨a, hne, ha⟩ => ?_
+    rcases a with a | i
+    · exact (hne rfl).elim
+    · exact ha
+  simp only [inst_def]
+  cases hφ with
+  | equal u₁ u₂ =>
+    rcases key u₁ with h₁ | h₁
+    · rcases key u₂ with h₂ | h₂
+      · exact .inl (by rw [substBounds_equal, substBounds_equal, h₁, h₂])
+      · exact .inr fun c hc => by
+          rw [substBounds_equal, mem_constantSupport, functionsIn_equal]
+          exact Set.subset_union_right (h₂ hc)
+    · exact .inr fun c hc => by
+        rw [substBounds_equal, mem_constantSupport, functionsIn_equal]
+        exact Set.subset_union_left (h₁ hc)
+  | rel R us =>
+    by_cases h : ∀ i, (us i).subst (Sum.elim (Term.var ∘ Sum.inl) fun _ => t) =
+        (us i).subst (Sum.elim (Term.var ∘ Sum.inl) fun _ => t')
+    · exact .inl (by rw [substBounds_rel, substBounds_rel]; simp only [h])
+    · obtain ⟨i, hi⟩ := not_forall.1 h
+      exact .inr fun c hc => by
+        rw [substBounds_rel, mem_constantSupport, functionsIn_rel]
+        exact Set.mem_iUnion.2 ⟨i, (key (us i)).resolve_left hi hc⟩
 
 /-- **Constant locality.** Expansions of one `L`-structure which interpret the constants in the
 support of a formula alike give it the same truth value. -/

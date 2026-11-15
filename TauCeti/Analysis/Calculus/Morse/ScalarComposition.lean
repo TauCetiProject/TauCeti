@@ -62,7 +62,7 @@ theorem morseIndex_scalar_comp_of_pos (hφ : ContDiffAt ℝ 2 φ (f x))
 /-- A decreasing scalar reparametrization complements the Morse index at a nondegenerate
 critical point. The additive statement avoids truncated natural subtraction. -/
 theorem IsNondegenerateCriticalPoint.morseIndex_scalar_comp_add_morseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x)
+    (h : IsNondegenerateCriticalPoint f x)
     (hφ : ContDiffAt ℝ 2 φ (f x)) (hφ' : deriv φ (f x) < 0) :
     morseIndex (φ ∘ f) x + morseIndex f x = Module.finrank ℝ E := by
   rw [morseIndex_def, hessianQuadraticForm_scalar_comp hφ h.contDiffAt h.fderiv_eq_zero,

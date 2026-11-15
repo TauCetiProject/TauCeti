@@ -90,7 +90,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
       ContMDiffAt 𝓘(𝕜, X) 𝓘(𝕜, F) m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 :=
     (((e z).contMDiffAt_iff ((e z).mem_source.2 hw)).1 (hs w.1 w.2)).2
   have hb (z : ↥{y | s y = 0}) : ContinuousAt b z.1 :=
-    (contMDiffAt_totalSpace.1 (hs z.1 z.2)).1.continuousAt
+    (contMDiffAt_totalSpace_iff.1 (hs z.1 z.2)).1.continuousAt
   have hchart (z w : ↥{y | s y = 0}) (hc : w.1 ∈ (chartAt X z.1).source)
       (hw : b w.1 ∈ (e z).baseSet) :
       ContDiffAt 𝕜 m
@@ -115,7 +115,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   -- self model its domain is all of the model space, exactly as in `D`.
   have hD (z : ↥{y | s y = 0}) :
       mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 = D z := by
-    rw [(hmd z).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     simp only [extChartAt, OpenPartialHomeomorph.extend_coe,
       OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
       modelWithCornersSelf_coe_symm, Function.comp_def]
@@ -186,7 +186,7 @@ theorem finite_sectionZero_of_contMDiff [CompactSpace M]
     intro x hx
     let e := trivializationAt F E (b x)
     have he : b x ∈ e.baseSet := mem_baseSet_trivializationAt F E (b x)
-    have hc := contMDiffAt_totalSpace.mp (hs x)
+    have hc := contMDiffAt_totalSpace_iff.mp (hs x)
     have hne : (e ⟨b x, s x⟩).2 ≠ 0 := by
       intro hzero
       apply hx

@@ -9,14 +9,17 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Zero
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 
 /-!
 # The compact real Spin double cover
 
-The projection from the compact real Spin group to the special orthogonal group is a covering map
-whenever its domain is compact. Indeed, the projection is a continuous surjection from a compact
-space to a Hausdorff space, hence a quotient map. Its kernel is the finite image of the included
-group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction applies.
+The projection from the compact real Spin group to the special orthogonal group is a covering map.
+Indeed, the real Spin group is compact
+(`CliffordAlgebra.instCompactSpaceRealCliffordSpinGroupZero`), so the projection is a continuous
+surjection from a compact space to a Hausdorff space, hence a quotient map. Its kernel is the
+finite image of the included group `Multiplicative (ZMod 2)`, so the standard quotient-covering
+construction applies.
 
 The two lowest ranks are degenerate. In rank one, `Spin(1) = {1, -1}` is finite
 (`CliffordAlgebra.finite_realCliffordSpinGroupZero_one`), hence discrete, and `SO(1)` is trivial,
@@ -92,7 +95,7 @@ theorem realCliffordSpinProjectionZero_negOne (n : ℕ) [NeZero n] :
 
 /-- The compact real Spin projection is a quotient covering map by its kernel. -/
 theorem isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
-    (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
+    (n : ℕ) [NeZero n] :
     IsQuotientCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom
       (realCliffordSpinDoubleCoverZero n).rightHom.ker := by
   let S := realCliffordSpinDoubleCoverZero n
@@ -106,13 +109,13 @@ theorem isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
 /-- The projection from the compact real Spin group to the special orthogonal group is a covering
 map. -/
 theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
-    (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
+    (n : ℕ) [NeZero n] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
 
 /-- The bundled compact real Spin projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinProjectionZero
-    (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
+    (n : ℕ) [NeZero n] :
     IsCoveringMap (realCliffordSpinProjectionZero n) := by
   rw [coe_realCliffordSpinProjectionZero]
   exact isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
@@ -120,7 +123,6 @@ theorem isCoveringMap_realCliffordSpinProjectionZero
 /-- Continuous homomorphisms out of `SO(n)` are equivalent to continuous homomorphisms out of
 compact `Spin(n)` that kill the kernel of the double-cover projection. -/
 noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
-    [CompactSpace (realCliffordSpinGroupZero n)]
     {H : Type*} [Monoid H] [TopologicalSpace H] :
     (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) ≃
       {f : realCliffordSpinGroupZero n →ₜ* H //
@@ -136,7 +138,6 @@ noncomputable def realCliffordSpinHomEquivKer (n : ℕ) [NeZero n]
 Spin projection. -/
 @[simp]
 theorem realCliffordSpinHomEquivKer_apply_coe (n : ℕ) [NeZero n]
-    [CompactSpace (realCliffordSpinGroupZero n)]
     {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) →ₜ* H) :
     ((realCliffordSpinHomEquivKer n f :
@@ -152,7 +153,6 @@ theorem realCliffordSpinHomEquivKer_apply_coe (n : ℕ) [NeZero n]
 recovers the original homomorphism. -/
 @[simp]
 theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
-    [CompactSpace (realCliffordSpinGroupZero n)]
     {H : Type*} [Monoid H] [TopologicalSpace H]
     (f : {g : realCliffordSpinGroupZero n →ₜ* H //
       (realCliffordSpinDoubleCoverZero n).rightHom.ker ≤

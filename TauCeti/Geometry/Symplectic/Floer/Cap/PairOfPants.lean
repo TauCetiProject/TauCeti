@@ -49,8 +49,9 @@ does not depend on the caps. These are `TauCeti.Floer.productClass_eq_add_sub` a
 
 The three loops share the base point `x`, which is where the two seams of the pair of pants
 start and end. Orbits with different base points are brought to this form by conjugating the input
-loops along paths to the base point of the output; the corresponding transport of caps is not
-treated here.
+loops along paths to the base point of the output (`Path.conjLoop`); the corresponding transport of
+caps is `TauCeti.Floer.SphericalCapClass.transport`, in
+`TauCeti.Geometry.Symplectic.Floer.Cap.Transport`.
 
 ## References
 

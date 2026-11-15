@@ -21,7 +21,10 @@ space `A_m^k` (`TauCeti.Vortex.framedFieldSpace`). If a `C²` gauge `u` carries 
 `A_m^k`, `k ≥ 2`, to another field of `A_m^k`, then `u ∈ G_(k+1)`
 (`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`). So two representatives in
 `A_m^k` of the same smooth framed gauge orbit differ by an element of `G_(k+1)`: every smooth gauge
-equivalence between points of `A_m^k` is already an equivalence under `G_(k+1)`.
+equivalence between points of `A_m^k` is already an equivalence under `G_(k+1)`. Together with
+`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`, a `C²` gauge carries a field of `A_m^k` into
+`A_m^k` exactly when it lies in `G_(k+1)`
+(`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`).
 
 The argument reads off `u` from the two fields, with `ω = Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
 and `h = u - 1`:
@@ -264,5 +267,14 @@ theorem mem_sobolevGaugeGroup_of_mem_framedFieldSpace {k : ℕ} (hk : 1 < k)
   obtain ⟨hre, him⟩ := hind (k + 1) (by omega) le_rfl
   push_cast at hre him
   exact (mem_sobolevGaugeGroup _ u).2 ⟨continuous_induced_rng.2 hu.continuous, hre, him⟩
+
+/-- **`G_(k+1)` is the stabilizer of `A_m^k` among `C²` gauges.** For an integer `k ≥ 2` and a
+field `x` of `A_m^k`, a `C²` gauge `u` carries `x` into `A_m^k` exactly when `u ∈ G_(k+1)`. -/
+theorem gaugeTransform_mem_framedFieldSpace_iff {k : ℕ} (hk : 1 < k)
+    (hx : x ∈ framedFieldSpace f m k) (hu : ContDiff ℝ 2 fun z ↦ (u z : ℂ)) :
+    gaugeTransform u x ∈ framedFieldSpace f m k ↔
+      u ∈ sobolevGaugeGroup (s := k + 1) (by norm_cast; omega) :=
+  ⟨mem_sobolevGaugeGroup_of_mem_framedFieldSpace hk hx hu,
+    fun h ↦ gaugeTransform_mem_framedFieldSpace hk h hx⟩
 
 end TauCeti.Vortex

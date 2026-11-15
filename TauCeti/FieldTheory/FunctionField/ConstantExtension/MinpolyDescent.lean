@@ -32,9 +32,9 @@ through `k(t)`.
 
 ## Main results
 
-* `TauCeti.finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq`: if `z` is integral
-  over `k(t)` and generates `E`, and its minimal polynomial is fixed by coefficient maps whose
-  common fixed points are `K`, then `[K(t)(z) : K(t)] = [E : k(t)]`.
+* `TauCeti.finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq`: if `z` generates `E`
+  over `k(t)`, and its minimal polynomial is fixed by coefficient maps whose common fixed points
+  are `K`, then `[K(t)(z) : K(t)] = [E : k(t)]`.
 
 ## References
 
@@ -53,17 +53,17 @@ variable {K k E : Type*} [Field K] [Field k] [Field E]
   [IsScalarTower (RatFunc K) (RatFunc k) E] [Algebra K k] [IsScalarTower K (RatFunc K) (RatFunc k)]
 
 /-- **Degree of the descended field.** Let `S` be a set of automorphisms of `k` whose common
-fixed points are the image of `K`. If `z` is integral over `k(t)` and generates `E`, and its
-minimal polynomial over `k(t)` is fixed by the coefficient map of every `σ ∈ S`, then `K(t)(z)`
-has the same degree over `K(t)` as `E` over `k(t)`. -/
+fixed points are the image of `K`. If `z` generates `E` over `k(t)` and its minimal polynomial over
+`k(t)` is fixed by the coefficient map of every `σ ∈ S`, then `K(t)(z)` has the same degree over
+`K(t)` as `E` over `k(t)`. -/
 theorem finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq
     (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X) {S : Set (k ≃+* k)}
     (hS : ∀ c : k, (∀ σ ∈ S, σ c = c) → c ∈ Set.range (algebraMap K k)) {z : E}
-    (hz : IsIntegral (RatFunc k) z) (hgen : (RatFunc k)⟮z⟯ = ⊤)
+    (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfix : ∀ σ ∈ S, (minpoly (RatFunc k) z).map
       (RatFunc.mapRingEquiv σ : RatFunc k →+* RatFunc k) = minpoly (RatFunc k) z) :
     Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) E := by
-  rw [finrank_adjoin_simple_eq_of_minpoly_mem_lifts hz
+  rw [finrank_adjoin_simple_eq_of_minpoly_mem_lifts
     (RatFunc.mem_lifts_of_forall_map_mapRingEquiv_eq hX hS hfix), hgen, finrank_top']
 
 end TauCeti

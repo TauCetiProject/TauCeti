@@ -21,11 +21,6 @@ commutator quotient, followed by left multiplication by `exp x`.
 * `TauCeti.Lie.expFDeriv_eq_exp_mul_banachDexpFactor`: the bundled operator formula.
 * `TauCeti.Lie.fderiv_exp_eq_exp_mul_banachDexpFactor`: the corresponding `fderiv` formula.
 * `TauCeti.Lie.fderiv_exp_apply_eq_exp_mul_integral`: the pointwise integral formula.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section
@@ -43,8 +38,7 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 /-- The exponential derivative in direction `y` is left multiplication by `exp x` applied to
 the regularized commutator factor. -/
 theorem expFDeriv_apply_eq_exp_mul_banachDexpFactor {𝕂 : Type*}
-    [NontriviallyNormedField 𝕂] [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 R]
-    [IsScalarTower ℝ 𝕂 R] (x y : R) :
+    [NontriviallyNormedField 𝕂] [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 R] (x y : R) :
     expFDeriv 𝕂 x y = exp x * banachDexpFactor x y := by
   rw [TauCeti.expFDeriv_apply_eq_integral,
     banachDexpFactor_apply_eq_integral]
@@ -79,8 +73,7 @@ theorem fderiv_exp_eq_exp_mul_banachDexpFactor (x : R) :
 /-- The Fréchet derivative of the Banach-algebra exponential, applied to `y`, is left
 multiplication by `exp x` applied to the integral of conjugations along the exponential line. -/
 theorem fderiv_exp_apply_eq_exp_mul_integral {𝕂 : Type*}
-    [NontriviallyNormedField 𝕂] [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 R]
-    [IsScalarTower ℝ 𝕂 R] (x y : R) :
+    [NontriviallyNormedField 𝕂] [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 R] (x y : R) :
     fderiv 𝕂 exp x y =
       exp x * (∫ t in (0 : ℝ)..1, exp (-(t • x)) * y * exp (t • x)) := by
   let _ : CharZero 𝕂 := Algebra.charZero_of_charZero ℝ 𝕂

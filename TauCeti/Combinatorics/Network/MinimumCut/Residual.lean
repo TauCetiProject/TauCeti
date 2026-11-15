@@ -80,53 +80,56 @@ namespace BoundedFlow.IsMaximum
 
 variable {lo hi : Assignment Q K} {s t : V} {f : BoundedFlow lo hi s t}
 
-/-- For a maximum bounded `s`–`t` assignment `f` between distinct terminals, the minimum cuts for
-the cut bound are the vertex sets containing `s` but not `t` whose cut bound is the value of `f`.
--/
-theorem isMinimum_cutBound_iff_val_eq (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V} :
+/-- For a maximum bounded `s`–`t` assignment `f`, the minimum cuts for the cut bound are the vertex
+sets containing `s` but not `t` whose cut bound is the value of `f`. -/
+theorem isMinimum_cutBound_iff_val_eq (hf : f.IsMaximum) {S : Finset V} :
     TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S ↔
       s ∈ S ∧ t ∉ S ∧ f.val = cutBound lo hi S := by
   rw [isMinimum_singleton_iff]
+  rcases eq_or_ne s t with rfl | hst
+  · exact ⟨fun h ↦ absurd h.1 h.2.1, fun h ↦ absurd h.1 h.2.1⟩
   refine ⟨fun ⟨hs, ht, hS⟩ ↦ ⟨hs, ht, ?_⟩, fun ⟨hs, ht, hS⟩ ↦
     ⟨hs, ht, fun T hsT htT ↦ hS.symm.le.trans (f.val_le_cutBound hsT htT)⟩⟩
   obtain ⟨T, hsT, htT, hT⟩ := hf.exists_val_eq_cutBound hst
   exact le_antisymm (f.val_le_cutBound hs ht) ((hS T hsT htT).trans hT.ge)
 
 /-- The value of a maximum bounded terminal assignment is the directed minimum-cut value. -/
-theorem val_eq_pairMinimumValue (hst : s ≠ t) (hf : f.IsMaximum) :
+theorem val_eq_pairMinimumValue (hf : f.IsMaximum) :
     f.val = pairMinimumValue (cutBound lo hi) s t := by
+  rcases eq_or_ne s t with rfl | hst
+  · rw [val_eq_zero_of_eq rfl, pairMinimumValue_self]
   obtain ⟨S, hs, ht, hS⟩ := hf.exists_val_eq_cutBound hst
-  exact hS.trans ((hf.isMinimum_cutBound_iff_val_eq hst).2 ⟨hs, ht, hS⟩).pairMinimumValue_eq.symm
+  exact hS.trans ((hf.isMinimum_cutBound_iff_val_eq).2 ⟨hs, ht, hS⟩).pairMinimumValue_eq.symm
 
-/-- **Residual characterization of minimum cuts.** For a maximum bounded `s`–`t` assignment `f`
-between distinct terminals, the minimum cuts for the cut bound are exactly the vertex sets
-containing `s` but not `t` that no residual arrow of positive capacity leaves. -/
-theorem isMinimum_cutBound_iff (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V} :
+/-- **Residual characterization of minimum cuts.** For a maximum bounded `s`–`t` assignment `f`,
+the minimum cuts for the cut bound are exactly the vertex sets containing `s` but not `t` that no
+residual arrow of positive capacity leaves. -/
+theorem isMinimum_cutBound_iff (hf : f.IsMaximum) {S : Finset V} :
     TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S ↔ s ∈ S ∧ t ∉ S ∧
       ∀ v ∈ S, ∀ w ∉ S, ∀ e : ResidualHom Q v w, residualCapacity lo hi f.toFun e = 0 := by
-  rw [hf.isMinimum_cutBound_iff_val_eq hst]
+  rw [hf.isMinimum_cutBound_iff_val_eq]
   exact and_congr_right fun hs ↦ and_congr_right fun ht ↦ f.val_eq_cutBound_iff hs ht
 
 /-- A minimum cut is closed under positive reachability for the residual capacities of a maximum
 bounded `s`–`t` assignment. -/
-theorem mem_of_positiveReachable (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V}
+theorem mem_of_positiveReachable (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v w : V}
     (h : PositiveReachable (residualCapacity lo hi f.toFun) v w) (hv : v ∈ S) : w ∈ S := by
-  have hS' := ((hf.isMinimum_cutBound_iff hst).1 hS).2.2
+  have hS' := (hf.isMinimum_cutBound_iff.1 hS).2.2
   refine h.mem_of_mem (C := (S : Set V)) hv fun x y e hx he ↦ ?_
   by_contra hy
   exact he.ne' (hS' x hx y hy e)
 
-/-- For a maximum bounded `s`–`t` assignment `f` between distinct terminals, the minimum cuts for
-the cut bound are exactly the vertex sets containing `s` but not `t` that are closed under positive
-reachability for the residual capacities of `f`. -/
-theorem isMinimum_cutBound_iff_forall_positiveReachable (hst : s ≠ t) (hf : f.IsMaximum)
+/-- For a maximum bounded `s`–`t` assignment `f`, the minimum cuts for the cut bound are exactly the
+vertex sets containing `s` but not `t` that are closed under positive reachability for the
+residual capacities of `f`. -/
+theorem isMinimum_cutBound_iff_forall_positiveReachable (hf : f.IsMaximum)
     {S : Finset V} :
     TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S ↔ s ∈ S ∧ t ∉ S ∧
       ∀ v ∈ S, ∀ w, PositiveReachable (residualCapacity lo hi f.toFun) v w → w ∈ S := by
   refine ⟨fun hS ↦ ⟨(isMinimum_singleton_iff.1 hS).1, (isMinimum_singleton_iff.1 hS).2.1,
-    fun v hv w h ↦ hf.mem_of_positiveReachable hst hS h hv⟩, fun ⟨hs, ht, hS⟩ ↦
-    (hf.isMinimum_cutBound_iff hst).2 ⟨hs, ht, fun v hv w hw e ↦ ?_⟩⟩
+    fun v hv w h ↦ hf.mem_of_positiveReachable hS h hv⟩, fun ⟨hs, ht, hS⟩ ↦
+    hf.isMinimum_cutBound_iff.2 ⟨hs, ht, fun v hv w hw e ↦ ?_⟩⟩
   refine ((residualCapacity_nonneg f.mem_Icc v w e).eq_or_lt.resolve_right fun he ↦ hw ?_).symm
   exact hS v hv w (.single e he)
 
@@ -136,9 +139,9 @@ theorem isLeast_filter_positiveReachable (hst : s ≠ t) (hf : f.IsMaximum)
     [DecidablePred (PositiveReachable (residualCapacity lo hi f.toFun) s)] :
     IsLeast {S | TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S}
       (univ.filter (PositiveReachable (residualCapacity lo hi f.toFun) s)) := by
-  refine ⟨(hf.isMinimum_cutBound_iff_val_eq hst).2 ⟨by simp,
+  refine ⟨hf.isMinimum_cutBound_iff_val_eq.2 ⟨by simp,
     by simpa using hf.not_positiveReachable hst, ?_⟩, fun S hS v hv ↦
-    hf.mem_of_positiveReachable hst hS (by simpa using hv) (isMinimum_singleton_iff.1 hS).1⟩
+    hf.mem_of_positiveReachable hS (by simpa using hv) (isMinimum_singleton_iff.1 hS).1⟩
   convert f.val_eq_cutBound_of_not_positiveReachable (hf.not_positiveReachable hst)
 
 /-- The vertices from which the sink is not positively reachable for the residual capacities of a
@@ -147,13 +150,13 @@ theorem isGreatest_compl_filter_positiveReachable (hst : s ≠ t) (hf : f.IsMaxi
     [DecidablePred (PositiveReachable (residualCapacity lo hi f.toFun) · t)] :
     IsGreatest {S | TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S}
       (univ.filter (PositiveReachable (residualCapacity lo hi f.toFun) · t))ᶜ := by
-  refine ⟨(hf.isMinimum_cutBound_iff hst).2 ⟨by simpa using hf.not_positiveReachable hst, by simp,
+  refine ⟨hf.isMinimum_cutBound_iff.2 ⟨by simpa using hf.not_positiveReachable hst, by simp,
     fun v hv w hw e ↦ ?_⟩, fun S hS v hv ↦ ?_⟩
   · simp only [mem_compl, mem_filter, mem_univ, true_and, not_not] at hv hw
     refine ((residualCapacity_nonneg f.mem_Icc v w e).eq_or_lt.resolve_right fun he ↦ hv ?_).symm
     exact (PositiveReachable.single e he).trans hw
   · simp only [mem_compl, mem_filter, mem_univ, true_and]
-    exact fun h ↦ (isMinimum_singleton_iff.1 hS).2.1 (hf.mem_of_positiveReachable hst hS h hv)
+    exact fun h ↦ (isMinimum_singleton_iff.1 hS).2.1 (hf.mem_of_positiveReachable hS h hv)
 
 /-- A vertex lies on the source side of every minimum cut exactly when it is positively reachable
 from the source for the residual capacities of a maximum bounded `s`–`t` assignment. -/
@@ -162,7 +165,7 @@ theorem forall_isMinimum_mem_iff (hst : s ≠ t) (hf : f.IsMaximum) {v : V} :
       PositiveReachable (residualCapacity lo hi f.toFun) s v := by
   classical
   refine ⟨fun h ↦ by simpa using h _ (hf.isLeast_filter_positiveReachable hst).1, fun h S hS ↦
-    hf.mem_of_positiveReachable hst hS h (isMinimum_singleton_iff.1 hS).1⟩
+    hf.mem_of_positiveReachable hS h (isMinimum_singleton_iff.1 hS).1⟩
 
 /-- A vertex lies on the source side of no minimum cut exactly when the sink is positively
 reachable from it for the residual capacities of a maximum bounded `s`–`t` assignment. -/
@@ -171,7 +174,7 @@ theorem forall_isMinimum_notMem_iff (hst : s ≠ t) (hf : f.IsMaximum) {v : V} :
       PositiveReachable (residualCapacity lo hi f.toFun) v t := by
   classical
   refine ⟨fun h ↦ by simpa using h _ (hf.isGreatest_compl_filter_positiveReachable hst).1,
-    fun h S hS hv ↦ (isMinimum_singleton_iff.1 hS).2.1 (hf.mem_of_positiveReachable hst hS h hv)⟩
+    fun h S hS hv ↦ (isMinimum_singleton_iff.1 hS).2.1 (hf.mem_of_positiveReachable hS h hv)⟩
 
 /-- A vertex belongs to the smallest minimum cut exactly when it is positively reachable from the
 source for the residual capacities of a maximum bounded `s`–`t` assignment. -/
@@ -243,14 +246,13 @@ namespace Flow.IsMaximum
 variable {cap : Assignment Q K} {s t : V} {f : Flow cap s t}
 
 /-- **Residual characterization of minimum cuts for ordinary flows.** For a maximum ordinary
-`s`–`t` flow `f` between distinct terminals, the minimum cuts for the capacity of the arrows
-leaving a set are exactly the vertex sets containing `s` but not `t` that no residual arrow of
-positive capacity leaves. -/
-theorem isMinimum_iff (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset V} :
+`s`–`t` flow `f`, the minimum cuts for the capacity of the arrows leaving a set are exactly the
+vertex sets containing `s` but not `t` that no residual arrow of positive capacity leaves. -/
+theorem isMinimum_iff (hf : f.IsMaximum) {S : Finset V} :
     IsMinimum (fun S ↦ arrowSum cap S Sᶜ) {s} {t} S ↔ s ∈ S ∧ t ∉ S ∧
       ∀ v ∈ S, ∀ w ∉ S, ∀ e : ResidualHom Q v w, residualCapacity 0 cap f.toFun e = 0 := by
   rw [← funext (cutBound_zero_left cap)]
-  exact ((isMaximum_toBoundedFlow f).2 hf).isMinimum_cutBound_iff hst
+  exact ((isMaximum_toBoundedFlow f).2 hf).isMinimum_cutBound_iff
 
 /-- A vertex lies on the source side of every minimum cut exactly when it is positively reachable
 from the source for the residual capacities of a maximum ordinary `s`–`t` flow. -/
@@ -332,7 +334,7 @@ private theorem exFlow_isMaximum : exFlow.IsMaximum :=
 
 private theorem isMinimum_ex {S : Finset (Fin 4)} (h0 : 0 ∈ S) (h3 : 3 ∉ S)
     (hS : cutBound exLower exUpper S = 3) : IsMinimum (cutBound exLower exUpper) {0} {3} S :=
-  (exFlow_isMaximum.isMinimum_cutBound_iff_val_eq (by decide)).2 ⟨h0, h3, exFlow_val.trans hS.symm⟩
+  (exFlow_isMaximum.isMinimum_cutBound_iff_val_eq).2 ⟨h0, h3, exFlow_val.trans hS.symm⟩
 
 private theorem isMinimum_ex_02 : IsMinimum (cutBound exLower exUpper) {0} {3} {0, 2} :=
   isMinimum_ex (by decide) (by decide) (by

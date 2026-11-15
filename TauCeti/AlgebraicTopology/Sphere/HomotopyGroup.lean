@@ -13,16 +13,21 @@ public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
+import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # Homotopy groups of spheres up to their dimension
 
 The unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space is `(n - 1)`-connected:
 `πₖ(Sⁿ, x)` is trivial for every `k < n`, in every degree including `π₀`
-(`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`). Consequently, by the Hurewicz theorem and
+(`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`), so its Moore loop space is
+`(n - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`) and has vanishing
+homology in the degrees `1, …, n - 2`
+(`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`). Consequently, by the Hurewicz theorem and
 the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homotopyGroupSphereAddEquiv`),
 the double Moore loop space of `S³` has first integral homology `ℤ`
 (`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
@@ -43,6 +48,10 @@ The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12.
 `0`-cell, and hence at every base point since `Sⁿ` is path connected. Spheres of normed spaces are
 reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`.
 
+In particular the unit sphere `S^{4k-1}` of the quaternionic coordinate space `ℍᵏ` is
+`(4k - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`), and the unit
+quaternions `S³` are `2`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_quaternion`).
+
 The isomorphism `πₙ(Sⁿ, x) ≅ ℤ` is the cubical Hurewicz isomorphism
 `HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv` followed by the identification
 `TauCeti.reducedSingularHomologySphereIso` of `Hₙ(Sⁿ; ℤ)` with `ℤ` determined by an orthonormal
@@ -51,6 +60,12 @@ basis, so its sign depends on the orientation of that basis.
 ## Main declarations
 
 * `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`: `πₖ(Sⁿ, x)` is trivial for `k < n`.
+* `TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`: `πₖ(ΩSⁿ)` is trivial for
+  `k + 1 < n`.
+* `TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`: `Hₘ(ΩSⁿ; R) = 0` for `0 < m < n - 1`.
+* `TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`: `πₖ(S^{4m-1}, x)` is trivial for
+  `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
+* `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
@@ -71,24 +86,32 @@ public section
 noncomputable section
 
 open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
-open scoped unitInterval Topology Topology.Homotopy
+open scoped Topology
+
+universe u
 
 namespace TauCeti
 
 /-- **Spheres are `(n - 1)`-connected** (Hatcher, Corollary 4.9). For the unit sphere `Sⁿ` of an
 `(n + 1)`-dimensional real normed space, the homotopy set `πₖ(Sⁿ, x)` is trivial for every
-`k = Nat.card N < n`. In degree zero this says that `Sⁿ` is path connected for `n ≥ 1`. -/
+`k = Nat.card N < n`. In degree zero this says that `Sⁿ` is path connected for `n ≥ 1`. For an
+infinite index set `N` the cardinality `Nat.card N` is `0` and the homotopy set is trivial, as it
+is for every space (`HomotopyGroup.subsingleton_of_infinite`). -/
 theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1)
-    {N : Type*} [Finite N] (hN : Nat.card N < n) (x : sphere (0 : E) 1) :
+    {N : Type*} (hN : Nat.card N < n) (x : sphere (0 : E) 1) :
     Subsingleton (HomotopyGroup N (sphere (0 : E) 1) x) := by
+  by_cases hfin : Finite N
+  swap
+  · -- for an infinite index set every homotopy set is trivial
+    have := not_finite_iff_infinite.1 hfin
+    infer_instance
   have := Fintype.ofFinite N
   have := Module.finite_of_finrank_eq_succ hE
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (n := n) (by omega)
   let F := EuclideanSpace ℝ (Fin (m + 2))
   have hF : Fintype.card (Fin (m + 2)) = m + 1 + 1 := Fintype.card_fin _
   let _ := sphereCWComplex hF
-  have := finite_sphereCWComplex hF
   -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is its pole, the unique `0`-cell.
   have hA := skeletonLT_sphereCWComplex hF (k := m + 1) (by simp) le_rfl
   have hp : spherePole hF ∈ (skeletonLT (sphere (0 : F) 1) (m + 1) : Set F) :=
@@ -107,6 +130,26 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
   exact (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr
     ((homotopyGroupEquivOfPath (PathConnectedSpace.somePath _ _)).subsingleton_congr.mp hpole)
 
+/-- **The loop space of `Sⁿ` is `(n - 2)`-connected.** For the unit sphere `Sⁿ` of an
+`(n + 1)`-dimensional real normed space, `πₖ(ΩSⁿ)` is trivial for every `k + 1 < n`. -/
+theorem subsingleton_homotopyGroup_mooreLoopSpace_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (x : sphere (0 : E) 1) {k : ℕ}
+    (hk : k + 1 < n) : Subsingleton (π_ k (MooreLoopSpace (sphere (0 : E) 1) x) 1) :=
+  (MooreLoopSpace.subsingleton_homotopyGroup_iff x k).2
+    (subsingleton_homotopyGroup_sphere_of_lt hE (by simpa using hk) x)
+
+/-- **The homology of the loop space of `Sⁿ` vanishes in the degrees `1, …, n - 2`**, with
+coefficients in any ring, for the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space. -/
+theorem isZero_singularHomology_mooreLoopSpace_sphere {E : Type u} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (x : sphere (0 : E) 1) (R : Type u)
+    [Ring R] {m : ℕ} (hm0 : m ≠ 0) (hm : m + 1 < n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+      (ModuleCat.of R R)).obj (TopCat.of (MooreLoopSpace (sphere (0 : E) 1) x))) :=
+  isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (n := n - 1)
+    (X := TopCat.of (MooreLoopSpace (sphere (0 : E) 1) x)) (x := (1 : MooreLoopSpace _ x))
+    (fun _ hk ↦ subsingleton_homotopyGroup_mooreLoopSpace_sphere hE x (by omega)) R hm0
+    (by omega)
+
 section Hurewicz
 
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
@@ -114,7 +157,7 @@ variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 /-- `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`, with the dimension read off an orthonormal
 basis. -/
 private theorem subsingleton_homotopyGroup_sphere_of_basis {m : ℕ}
-    (b : OrthonormalBasis (Fin (m + 1)) ℝ E) {N : Type} [Finite N] (hN : Nat.card N < m)
+    (b : OrthonormalBasis (Fin (m + 1)) ℝ E) {N : Type} (hN : Nat.card N < m)
     (x : sphere (0 : E) 1) : Subsingleton (HomotopyGroup N (sphere (0 : E) 1) x) :=
   subsingleton_homotopyGroup_sphere_of_lt (by simp [finrank_eq_card_basis b.toBasis]) hN x
 
@@ -267,5 +310,27 @@ theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere {E : Typ
   exists_injective_doubleReducedHomology₀ x
 
 end Hurewicz
+
+section Quaternion
+
+open scoped ENNReal Quaternion
+
+/-- **The quaternionic sphere `S^{4m-1}` is `(4m - 2)`-connected.** For the unit sphere of the
+quaternionic coordinate space `ℍᵐ = PiLp p (fun _ : ι ↦ ℍ)` with `m = Fintype.card ι`, the
+homotopy set `πₖ(S^{4m-1}, x)` is trivial for every `k = Nat.card N` with `k + 1 < 4m`. -/
+theorem subsingleton_homotopyGroup_sphere_piLp_quaternion {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {ι : Type*} [Fintype ι] {N : Type*} (hN : Nat.card N + 1 < 4 * Fintype.card ι)
+    (x : sphere (0 : PiLp p fun _ : ι ↦ ℍ) 1) :
+    Subsingleton (HomotopyGroup N (sphere (0 : PiLp p fun _ : ι ↦ ℍ) 1) x) :=
+  subsingleton_homotopyGroup_sphere_of_lt (n := 4 * Fintype.card ι - 1)
+    (by rw [finrank_piLp_quaternion]; omega) (by omega) x
+
+/-- **The unit quaternions `S³` are `2`-connected**: `πₖ(S³, x)` is trivial for every
+`k = Nat.card N < 3`. -/
+theorem subsingleton_homotopyGroup_sphere_quaternion {N : Type*} (hN : Nat.card N < 3)
+    (x : sphere (0 : ℍ) 1) : Subsingleton (HomotopyGroup N (sphere (0 : ℍ) 1) x) :=
+  subsingleton_homotopyGroup_sphere_of_lt Quaternion.finrank_eq_four hN x
+
+end Quaternion
 
 end TauCeti

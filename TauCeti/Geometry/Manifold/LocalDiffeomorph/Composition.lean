@@ -38,6 +38,7 @@ apply to `e ∘ R`.
 * `ContMDiffOn.of_comp_isLocalDiffeomorph`: on-set cancellation.
 * `ContMDiff.of_comp_isLocalDiffeomorph`: global cancellation.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_iff`: pointwise cancellation on the source side.
+* `IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff`: the same for differentiability.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
@@ -99,6 +100,18 @@ theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_iff {m : ℕ∞ω} {x : M} 
   -- near `p x`, the map `g` agrees with `(g ∘ p) ∘ q` for the local inverse `q` of `p`
   have hcomp : ContMDiffAt J I' m ((g ∘ p) ∘ hp.localInverse) (p x) :=
     hg.comp_of_eq (hp.contMDiffAt_localInverse.of_le hm)
+      (hp.localInverse_left_inv hp.localInverse_mem_target)
+  exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
+
+/-- If `p` is a `C^n` local diffeomorphism at `x` with `n ≠ 0`, a map `g` is differentiable at
+`p x` exactly when `g ∘ p` is differentiable at `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff {x : M} {g : B → N}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hn : n ≠ 0) :
+    MDifferentiableAt I I' (g ∘ p) x ↔ MDifferentiableAt J I' g (p x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (hp.mdifferentiableAt hn)⟩
+  -- near `p x`, the map `g` agrees with `(g ∘ p) ∘ q` for the local inverse `q` of `p`
+  have hcomp : MDifferentiableAt J I' ((g ∘ p) ∘ hp.localInverse) (p x) :=
+    hg.comp_of_eq (p x) (hp.mdifferentiableAt_localInverse hn)
       (hp.localInverse_left_inv hp.localInverse_mem_target)
   exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
 

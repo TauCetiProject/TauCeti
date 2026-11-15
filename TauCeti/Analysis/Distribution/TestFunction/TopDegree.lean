@@ -27,7 +27,7 @@ scalar-test description of top-dimensional currents.
 
 public section
 
-namespace TauCeti
+namespace Module.Basis
 
 open scoped Distributions
 
@@ -35,42 +35,42 @@ variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [Fintype ι] [DecidableEq ι] {Ω Ω' : TopologicalSpace.Opens E} {n : ℕ∞}
 
 /-- A basis identifies top-degree test forms with scalar tests by evaluation on that basis. -/
-noncomputable def _root_.Module.Basis.testTopFormEquiv (b : Module.Basis ι ℝ E) :
+noncomputable def testTopFormEquiv (b : Module.Basis ι ℝ E) :
     𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ) ≃L[ℝ] 𝓓^{n}(Ω, ℝ) :=
   TestFunction.postcompCLE b.topFormEquiv
 
 @[simp]
-theorem _root_.Module.Basis.testTopFormEquiv_apply (b : Module.Basis ι ℝ E)
+theorem testTopFormEquiv_apply (b : Module.Basis ι ℝ E)
     (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) (x : E) : b.testTopFormEquiv φ x = φ x b := by
   simp [Module.Basis.testTopFormEquiv]
 
 @[simp]
-theorem _root_.Module.Basis.testTopFormEquiv_symm_apply (b : Module.Basis ι ℝ E)
+theorem testTopFormEquiv_symm_apply (b : Module.Basis ι ℝ E)
     (f : 𝓓^{n}(Ω, ℝ)) (x : E) (v : ι → E) :
     b.testTopFormEquiv.symm f x v = f x * b.det v := by
   simp [Module.Basis.testTopFormEquiv]
 
 /-- Passing from a top-degree test form to its coefficient preserves its support exactly. -/
 @[simp]
-theorem _root_.Module.Basis.tsupport_testTopFormEquiv (b : Module.Basis ι ℝ E)
+theorem tsupport_testTopFormEquiv (b : Module.Basis ι ℝ E)
     (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) : tsupport (b.testTopFormEquiv φ) = tsupport φ := by
   simp [Module.Basis.testTopFormEquiv]
 
 /-- Multiplication by the basis determinant form preserves the support of a scalar test. -/
 @[simp]
-theorem _root_.Module.Basis.tsupport_testTopFormEquiv_symm (b : Module.Basis ι ℝ E)
+theorem tsupport_testTopFormEquiv_symm (b : Module.Basis ι ℝ E)
     (f : 𝓓^{n}(Ω, ℝ)) : tsupport (b.testTopFormEquiv.symm f) = tsupport f := by
   simp [Module.Basis.testTopFormEquiv]
 
 /-- The scalar coefficient changes by the signed change-of-basis determinant. -/
-theorem _root_.Module.Basis.testTopFormEquiv_eq_det_smul (b b' : Module.Basis ι ℝ E)
+theorem testTopFormEquiv_eq_det_smul (b b' : Module.Basis ι ℝ E)
     (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) :
     b'.testTopFormEquiv φ = b.det b' • b.testTopFormEquiv φ := by
   ext x
   simpa using (φ x).apply_eq_det_mul b b'
 
 /-- The identification of top-degree tests commutes with extension and lowering regularity. -/
-theorem _root_.Module.Basis.testTopFormEquiv_monoCLM (b : Module.Basis ι ℝ E) {m : ℕ∞}
+theorem testTopFormEquiv_monoCLM (b : Module.Basis ι ℝ E) {m : ℕ∞}
     (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) :
     b.testTopFormEquiv (TestFunction.monoCLM ℝ (Ω₂ := Ω') (n₂ := m) φ) =
       TestFunction.monoCLM ℝ (Ω₂ := Ω') (n₂ := m) (b.testTopFormEquiv φ) :=
@@ -78,7 +78,7 @@ theorem _root_.Module.Basis.testTopFormEquiv_monoCLM (b : Module.Basis ι ℝ E)
 
 /-- Fibrewise pullback by a linear endomorphism multiplies the top-degree coefficient by its
 signed determinant. No change of the spatial argument of the test function is made here. -/
-theorem _root_.Module.Basis.testTopFormEquiv_postcomp_compContinuousLinearMap
+theorem testTopFormEquiv_postcomp_compContinuousLinearMap
     (b : Module.Basis ι ℝ E) (A : E →L[ℝ] E) (φ : 𝓓^{n}(Ω, E [⋀^ι]→L[ℝ] ℝ)) :
     b.testTopFormEquiv
         (TestFunction.postcompCLM (ContinuousAlternatingMap.compContinuousLinearMapCLM A) φ) =
@@ -86,4 +86,4 @@ theorem _root_.Module.Basis.testTopFormEquiv_postcomp_compContinuousLinearMap
   ext x
   simpa using (φ x).compContinuousLinearMap_apply_basis b A
 
-end TauCeti
+end Module.Basis

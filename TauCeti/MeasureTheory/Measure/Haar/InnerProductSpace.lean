@@ -33,6 +33,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 ## Main results
 
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
+* `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
+  volume one.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
@@ -60,6 +62,13 @@ variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [In
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 namespace TauCeti
+
+/-- In a zero-dimensional real inner product space every nonempty set has volume one. -/
+theorem volume_eq_one_of_subsingleton [Subsingleton E] {s : Set E} (hs : s.Nonempty) :
+    volume s = 1 := by
+  have hpar := (stdOrthonormalBasis ℝ E).volume_parallelepiped
+  rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
+    ← Subsingleton.eq_univ_of_nonempty hs] at hpar
 
 /-- In a finite-dimensional real inner product space, the parallelepiped spanned by a family of
 as many vectors as the dimension has volume the square root of the Gram determinant of the

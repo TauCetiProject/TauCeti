@@ -81,6 +81,20 @@ theorem card_strictLowerTriangle_column (j : Fin p) :
     Fintype.card {ij : strictLowerTriangle p // ij.1.2 = j} = p - 1 - j.val := by
   rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
 
+/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
+`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
+theorem strictLowerTriangle.exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p}
+    (hne : ij ≠ kl) : ∃ v : Fin p, (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
+  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
+  have := ij.2
+  have := kl.2
+  by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
+  · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
+    all_goals rcases h with h | h
+    all_goals intro h'
+    all_goals first | exact hp (Prod.ext h h') | omega
+  · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0
 
@@ -193,6 +207,16 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
   intro k _ hk
   simp only [Finset.mem_Iic, not_le] at hk
   rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+
+/-- The first column of the Gram matrix consists of the first-column partial correlations. -/
+theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
+    {i : Fin (p + 1)} (h : 0 < i) : partialCorrelationGram z i 0 = z ⟨(i, 0), h⟩ := by
+  have hrow : ∀ ij : strictLowerTriangle (p + 1), ij.1.1 ≠ 0 := fun ij h0 ↦
+    Fin.not_lt_zero _ (h0 ▸ ij.2)
+  rw [partialCorrelationGram_apply_eq_sum_Iic, Finset.sum_eq_single_of_mem 0
+      (Finset.mem_Iic.2 le_rfl) fun k hk hk0 ↦ absurd (nonpos_iff_eq_zero.1 (Finset.mem_Iic.1 hk))
+        hk0, partialCorrelationCholesky_apply_of_gt z h, partialCorrelationCholesky_apply_self]
+  simp [Finset.filter_false_of_mem, hrow]
 
 private theorem row_sq_lt_one {z : strictLowerTriangle p → ℝ}
     (hz : ∀ ij, |z ij| < 1) (i j : Fin p) : partialCorrelationRow z i j ^ 2 < 1 := by
@@ -334,7 +358,7 @@ theorem partialCorrelationGram_signChange (z : strictLowerTriangle p → ℝ)
 /-- The triangular construction is injective on the open partial-correlation cube. -/
 theorem injOn_partialCorrelationCholesky :
     Set.InjOn (partialCorrelationCholesky (p := p)) {z | ∀ ij, |z ij| < 1} := by
-  intro z hz w hw heq
+  intro z _ w hw heq
   have hrows : ∀ n, ∀ j : Fin p, j.val = n → ∀ i,
       partialCorrelationRow z i j = partialCorrelationRow w i j := by
     intro n

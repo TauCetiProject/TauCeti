@@ -53,6 +53,9 @@ distance.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
   controlled by the temporal seminorm.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_lipschitzWith`: reparametrizing time by a
+  `1`-Lipschitz map, such as a restriction or a time reversal, does not increase the temporal
+  seminorm.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -180,6 +183,23 @@ theorem eHolderNorm_le_timeEHolderNorm (γ : ℝ≥0) (v : slab (E := E) a b →
 theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top {γ : ℝ≥0} {v : slab (E := E) a b → F}
     (h : timeEHolderNorm γ v < ∞) (x : E) : MemHolder γ fun t : Icc a b => v (slabMk x t) :=
   eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm γ v x).trans_lt h)
+
+/-- Reparametrizing time by a `1`-Lipschitz map does not increase the temporal seminorm: if
+`w (x, t) = v (x, φ t)` on the slab `E × [a', b']` for a `1`-Lipschitz `φ : [a', b'] → [a, b]`,
+such as the inclusion of a subinterval or the reversal `t ↦ T - t`, then
+`[w]_{t,γ} ≤ [v]_{t,γ}`. -/
+theorem timeEHolderNorm_le_of_lipschitzWith {a' b' : ℝ} {γ : ℝ≥0} {v : slab (E := E) a b → F}
+    {w : slab (E := E) a' b' → F} {φ : Icc a' b' → Icc a b} (hφ : LipschitzWith 1 φ)
+    (hw : ∀ x t, w (slabMk x t) = v (slabMk x (φ t))) :
+    timeEHolderNorm γ w ≤ timeEHolderNorm γ v := by
+  refine timeEHolderNorm_le_iff.2 fun x t s ↦ ?_
+  rw [hw, hw]
+  calc edist (v (slabMk x (φ t))) (v (slabMk x (φ s)))
+      ≤ timeEHolderNorm γ v * edist (φ t) (φ s) ^ (γ : ℝ) :=
+        timeEHolderNorm_le_iff.1 le_rfl x (φ t) (φ s)
+    _ ≤ timeEHolderNorm γ v * edist t s ^ (γ : ℝ) := by
+        gcongr
+        simpa using hφ t s
 
 variable [MetricSpace E]
 

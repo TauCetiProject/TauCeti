@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 
@@ -23,6 +25,11 @@ simplicial singular chain complex.
 
 * `TauCeti.normalizedCubicalChainComplex R`: the functor sending a space to its normalized cubical
   chain complex with coefficients in `R`.
+
+## Main results
+
+* `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
+  cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
 -/
 
 @[expose] public section
@@ -129,5 +136,18 @@ theorem normalizedCubicalChainComplexXEquiv_map_f_apply {X Y : TopCat.{u}} (f : 
 instance (X : TopCat.{u}) (n : ℕ) :
     Module.Projective R (((normalizedCubicalChainComplex R).obj X).X n) :=
   inferInstanceAs (Module.Projective R (NormalizedCubicalChain X R n))
+
+/-- If the normalized cubical homology of `X` vanishes in dimension `n + 1`, every normalized
+cubical `(n + 1)`-cycle of `X` is a boundary. -/
+theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat.{u}} {n : ℕ}
+    (h : Limits.IsZero (((normalizedCubicalChainComplex R).obj X).homology (n + 1)))
+    {c : NormalizedCubicalChain X R (n + 1)} (hc : NormalizedCubicalChain.boundary X R n c = 0) :
+    ∃ c' : NormalizedCubicalChain X R (n + 2),
+      NormalizedCubicalChain.boundary X R (n + 1) c' = c := by
+  have hex := (((normalizedCubicalChainComplex R).obj X).exactAt_iff_isZero_homology (n + 1)).2 h
+  rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff] at hex
+  obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
+  exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
 
 end TauCeti

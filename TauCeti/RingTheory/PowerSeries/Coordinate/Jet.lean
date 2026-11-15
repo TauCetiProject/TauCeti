@@ -64,7 +64,7 @@ variable {R : Type*} [CommRing R] {n : ℕ}
 theorem X_pow_dvd_mul_sub_mul_left (χ : FormalCoordinate R) {φ ψ : FormalCoordinate R}
     (h : X ^ n ∣ φ.toPowerSeries - ψ.toPowerSeries) :
     X ^ n ∣ (χ * φ).toPowerSeries - (χ * ψ).toPowerSeries :=
-  X_pow_dvd_subst_sub_subst φ.constantCoeff_toPowerSeries ψ.constantCoeff_toPowerSeries h _
+  X_pow_dvd_subst_sub_subst φ.constantCoeff_toPowerSeries h _
 
 /-- Composing on the right with a fixed coordinate preserves congruence modulo `X ^ n`. -/
 theorem X_pow_dvd_mul_sub_mul_right (χ : FormalCoordinate R) {φ ψ : FormalCoordinate R}

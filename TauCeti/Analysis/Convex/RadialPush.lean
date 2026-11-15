@@ -54,7 +54,6 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
     (by simpa using mem_interior_iff_mem_nhds.1 hp)
   have hKb : Bornology.IsVonNBounded ℝ K := by
     simpa [← image_vadd, image_add_left] using hsb.vadd (-p)
-  have hγ : Continuous (gauge K) := continuous_gauge hK hK₀
   have hmem (y : E) : y ∈ s ↔ gauge K (y - p) ≤ 1 := by
     rw [gauge_le_one_iff_mem_closure hK hK₀, (hsc.preimage (continuous_const_add p)).closure_eq]
     simp

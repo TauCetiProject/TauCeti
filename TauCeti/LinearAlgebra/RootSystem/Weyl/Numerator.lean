@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import Mathlib.Data.Int.Order.Units
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 
@@ -72,12 +73,10 @@ place the ordered hypotheses appear. Those hypotheses already supply `IsDomain R
 
 ## References
 
-This builds the `weylNumerator` target of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, Layer 6 ("the character,
-dimension, and Kostant formulas"), whose `Suggested.lean` pins it on `Module.Dual K H` for the root
-system of a Cartan subalgebra. As with `TauCeti.weylVector` and `TauCeti.dotAction`, the
-combinatorics lives at the level of an abstract root pairing, so the Lie-algebra target is a
-specialization rather than a rebuild.
+For a semisimple Lie algebra the Weyl numerator lives on `Module.Dual K H`, for the root system of
+a Cartan subalgebra `H`. As with `TauCeti.weylVector` and `TauCeti.dotAction`, the combinatorics
+lives at the level of an abstract root pairing, so the Lie-algebra version is a specialization
+rather than a rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII.
@@ -93,11 +92,11 @@ universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : _root_.RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base)
+  (P : _root_.RootPairing ι R M N) [Finite ι] (b : P.Base)
 
 section Numerator
 
-variable [IsDomain R] [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced]
+variable [CharZero R] [IsDomain R] [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced]
   [Fintype P.weylGroup]
 
 /-- **The Weyl numerator** `N(λ) = ∑_{w ∈ W} sgn(w) e^{w ⬝ λ}` of a weight, the alternating sum
@@ -245,12 +244,13 @@ section apply verbatim. The linearly ordered hypotheses of this section already 
 section Dominant
 
 variable [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced] [Fintype P.weylGroup]
-  [LinearOrder R] [IsStrictOrderedRing R] [P.flip.IsReduced]
+  [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- **The numerator of a weight of the open dot chamber has coefficient `1` there.** -/
 @[simp]
 theorem coeff_weylNumerator_self_of_mem_openDotDominantChamber {lam : M}
     (hlam : lam ∈ openDotDominantChamber P b) : (weylNumerator P b lam).coeff lam = 1 := by
+  have := P.flip_isReduced
   have h := coeff_weylNumerator_dotAction_of_injective P b
     (dotAction_injective_of_mem_openDotDominantChamber P b hlam) 1
   rwa [dotAction_one, map_one, Units.val_one] at h
@@ -261,6 +261,7 @@ by a unique Weyl-group element. -/
 private lemma injective_dotAction_of_mem_dominantChamber {lam : M}
     (hlam : lam ∈ dominantChamber P b) :
     Function.Injective fun w : P.weylGroup ↦ dotAction P b w lam :=
+  have := P.flip_isReduced
   fun _ _ h ↦ ((dotAction_eq_dotAction_iff_of_mem_dominantChamber P b hlam hlam).mp h).2
 
 /-- **The numerator of a dominant weight is supported exactly on its dot orbit.** -/

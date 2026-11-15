@@ -628,7 +628,7 @@ end HighestWeight
 
 section Adjoint
 
-variable {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [DecidableEq n] [Fintype n]
+variable {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
   [LinearOrder n] [OrderBot n] [OrderTop n]
 
 /-- **The highest root vector is a highest weight vector**, for the adjoint action of `gl n R` on

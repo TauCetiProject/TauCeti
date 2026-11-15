@@ -19,10 +19,14 @@ least `m > 0` there, then `x ↦ (f x)⁻¹` is `K / m²`-Lipschitz on `s`, beca
 such as the normal component of a uniformly elliptic coefficient field, is divided out while
 keeping Lipschitz control.
 
+The map `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}` in any normed division ring
+(`TauCeti.norm_sq_div_sub_sq_div_le`).
+
 ## Main results
 
 * `LipschitzOnWith.inv_of_le_norm`: the reciprocal of a function Lipschitz on `s` and bounded away
   from zero there is Lipschitz on `s`.
+* `TauCeti.norm_sq_div_sub_sq_div_le`: `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}`.
 -/
 
 public section
@@ -52,3 +56,25 @@ theorem inv_of_le_norm {f : α → 𝕜} {s : Set α} {K m : ℝ≥0} (hf : Lips
           exacts [hfm x hx, hfm y hy]
 
 end LipschitzOnWith
+
+namespace TauCeti
+
+/-- In a normed division ring, `y ↦ c ^ 2 / y` is `1`-Lipschitz on the points whose norm is at
+least `‖c‖`. -/
+theorem norm_sq_div_sub_sq_div_le {𝕜 : Type*} [NormedDivisionRing 𝕜] {c x y : 𝕜}
+    (hx : ‖c‖ ≤ ‖x‖) (hy : ‖c‖ ≤ ‖y‖) :
+    ‖c ^ 2 / x - c ^ 2 / y‖ ≤ ‖x - y‖ := by
+  rcases eq_or_ne x 0 with rfl | hxn
+  · simp [norm_le_zero_iff.mp (by simpa using hx : ‖c‖ ≤ 0)]
+  rcases eq_or_ne y 0 with rfl | hyn
+  · simp [norm_le_zero_iff.mp (by simpa using hy : ‖c‖ ≤ 0)]
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.mpr hxn
+  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyn
+  simp_rw [div_eq_mul_inv]
+  rw [← mul_sub, norm_mul, ← dist_eq_norm, dist_inv_inv₀ hxn hyn, dist_eq_norm, norm_pow]
+  have hb : ‖c‖ ^ 2 ≤ ‖x‖ * ‖y‖ := by nlinarith [norm_nonneg c]
+  calc ‖c‖ ^ 2 * (‖x - y‖ / (‖x‖ * ‖y‖)) ≤ (‖x‖ * ‖y‖) * (‖x - y‖ / (‖x‖ * ‖y‖)) :=
+        mul_le_mul_of_nonneg_right hb (by positivity)
+    _ = ‖x - y‖ := mul_div_cancel₀ _ (mul_pos hx0 hy0).ne'
+
+end TauCeti

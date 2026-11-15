@@ -69,8 +69,6 @@ polynomials extracted from it are not computed.
 
 public section
 
-open TauCeti.SymmetricAlgebra
-
 namespace Representation
 
 section Domain
@@ -97,7 +95,7 @@ theorem trace_symmetricAlgebraOverInvariants_eq_zero {g : G} (hg : ρ g ≠ 1) :
   -- invariant `a`, since `Sym M` is a domain integral over the invariants.
   have hd : σ (SymmetricAlgebra.ι R M m) - SymmetricAlgebra.ι R M m ≠ 0 := by
     rw [sub_ne_zero]
-    exact fun h ↦ hm (ι_injective R M (by simpa [σ] using h))
+    exact fun h ↦ hm (SymmetricAlgebra.ι_injective R M (by simpa [σ] using h))
   obtain ⟨a, ha, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot <|
     Ideal.under_ne_bot_of_integral_mem hd (Ideal.mem_span_singleton_self _)
       (Algebra.IsIntegral.isIntegral (R := ρ.symmetricAlgebraInvariants) _)

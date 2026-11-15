@@ -77,6 +77,8 @@ normality of it is equivalent to freeness of the action of the image.
   conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
   inverse map the set into itself.
+* `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
+  point exactly when they differ on the right by an element of the stabilizer of `x₀`.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
@@ -224,6 +226,12 @@ theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
 theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
     (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
+
+/-- Two group elements carry `x₀` to the same point exactly when they differ on the right by an
+element of the stabilizer of `x₀`. -/
+theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
+    a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
 
 open scoped Pointwise in
 /-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only

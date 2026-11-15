@@ -16,11 +16,14 @@ vertices of a diagram by `Fin n` so that every nonzero vertex has a neighbour wi
 number is what makes connectedness of the Dynkin diagrams, finite and affine alike, a short check.
 
 Graphs with the same reachability relation have canonically equivalent connected components.
+Deleting any vertex leaves each connected component not containing it as a single component.
 
 ## Main results
 
 * `SimpleGraph.connected_of_exists_adj_lt`: a graph on a type with a well-founded `<`, in which
   every vertex other than `v₀` has an adjacent vertex below it, is connected.
+* `SimpleGraph.ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one`: deleting a
+  vertex leaves each other connected component intact.
 -/
 
 public section
@@ -48,6 +51,51 @@ def connectedComponentEquivOfReachableEq {V : Type*} (G : SimpleGraph V)
     {H : SimpleGraph V} (h : G.Reachable = H.Reachable) (v : V) :
     (G.connectedComponentEquivOfReachableEq h).symm (H.connectedComponentMk v) =
       G.connectedComponentMk v := (rfl)
+
+/-! ### Components after deleting a vertex -/
+
+/-- Deleting a vertex leaves every other connected component intact: exactly one component of the
+graph with `v` deleted maps onto each component not containing `v`. -/
+theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
+    {V : Type*} {G : SimpleGraph V} {v : V} {C : G.ConnectedComponent}
+    (hC : C ≠ G.connectedComponentMk v) :
+    Nat.card {D : (G.induce ({v}ᶜ : Set V)).ConnectedComponent //
+      D.map (Embedding.induce ({v}ᶜ : Set V)).toHom = C} = 1 := by
+  classical
+  rw [Nat.card_eq_one_iff_unique]
+  constructor
+  · constructor
+    intro D E
+    obtain ⟨x, hxD⟩ := D.1.exists_rep
+    obtain ⟨y, hyE⟩ := E.1.exists_rep
+    have hxC : G.connectedComponentMk (x : V) = C :=
+      (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom x).symm.trans
+        ((congrArg (ConnectedComponent.map
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.2)
+    have hyC : G.connectedComponentMk (y : V) = C :=
+      (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom y).symm.trans
+        ((congrArg (ConnectedComponent.map
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.2)
+    obtain ⟨p⟩ := ConnectedComponent.exact (hxC.trans hyC.symm)
+    have hvp : v ∉ p.support := by
+      intro hv
+      have hxv : G.connectedComponentMk (x : V) = G.connectedComponentMk v :=
+        ConnectedComponent.sound (p.takeUntil v hv).reachable
+      exact hC (hxC.symm.trans hxv)
+    have hxy : (G.induce ({v}ᶜ : Set V)).Reachable x y :=
+      (p.induce ({v}ᶜ : Set V) fun z hz ↦
+        Set.mem_compl_singleton_iff.mpr fun hzv ↦ hvp (hzv ▸ hz)).reachable
+    apply Subtype.ext
+    exact hxD.symm.trans ((ConnectedComponent.sound hxy).trans hyE)
+  · obtain ⟨x, hxC⟩ := C.exists_rep
+    have hxv : x ≠ v := by
+      intro h
+      subst x
+      exact hC hxC.symm
+    let x' : ↑({v}ᶜ : Set V) := ⟨x, Set.mem_compl_singleton_iff.mpr hxv⟩
+    refine ⟨⟨(G.induce ({v}ᶜ : Set V)).connectedComponentMk x', ?_⟩⟩
+    rw [ConnectedComponent.map_mk]
+    exact hxC
 
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 

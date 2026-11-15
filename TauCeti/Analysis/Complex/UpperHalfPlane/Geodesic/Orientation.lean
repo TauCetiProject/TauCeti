@@ -357,18 +357,26 @@ theorem mem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {A B C : ℍ} (
 
 /-- Two points `x` and `y` cannot each lie to the left of the geodesic from a third point `v`
 towards the other. -/
-theorem notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {v x y : ℍ} (hvx : v ≠ x)
-    (hvy : v ≠ y) (hy : y ∈ leftHalfPlane (geodesicBetween v x)) :
+theorem notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane {v x y : ℍ}
+    (hy : y ∈ leftHalfPlane (geodesicBetween v x)) :
     x ∉ leftHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have hvx : v ≠ x := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left v y)
+    (notMem_range_geodesicLine_of_mem_leftHalfPlane hx)
+  have hvy : v ≠ y := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left v x)
+    (notMem_range_geodesicLine_of_mem_leftHalfPlane hy)
   have h := (orientedAngle_sign_eq_one_iff hvx).2 hx
   rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_one_iff hvy).2 hy] at h
   exact absurd h (by decide)
 
 /-- Two points `x` and `y` cannot each lie to the right of the geodesic from a third point `v`
 towards the other. -/
-theorem notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {v x y : ℍ} (hvx : v ≠ x)
-    (hvy : v ≠ y) (hy : y ∈ rightHalfPlane (geodesicBetween v x)) :
+theorem notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane {v x y : ℍ}
+    (hy : y ∈ rightHalfPlane (geodesicBetween v x)) :
     x ∉ rightHalfPlane (geodesicBetween v y) := fun hx ↦ by
+  have hvx : v ≠ x := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left v y)
+    (Set.disjoint_left.1 (disjoint_rightHalfPlane_range_geodesicLine _) hx)
+  have hvy : v ≠ y := ne_of_mem_of_not_mem (mem_range_geodesicLine_geodesicBetween_left v x)
+    (Set.disjoint_left.1 (disjoint_rightHalfPlane_range_geodesicLine _) hy)
   have h := (orientedAngle_sign_eq_neg_one_iff hvx).2 hx
   rw [orientedAngle_rev, Real.Angle.sign_neg, (orientedAngle_sign_eq_neg_one_iff hvy).2 hy] at h
   exact absurd h (by decide)

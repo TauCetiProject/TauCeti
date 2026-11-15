@@ -14,8 +14,9 @@ public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 /-!
 # Extending a valuation to Wedhorn's topological localisation
 
-Roadmap Layer 3.1 attaches to a rational subset `U = R(T/s)` of `X = Spa(A, A⁺)` a coordinate
-ring together with its ring of integral elements, and asks for a natural homeomorphism
+To a rational subset `U = R(T/s)` of `X = Spa(A, A⁺)` one attaches a coordinate ring together
+with its ring of integral elements, and Wedhorn's Proposition 8.2 (2) identifies its adic spectrum
+with `U` by a natural homeomorphism
 
 ```text
 Spa (A_U, A_U⁺) ≃ U.
@@ -98,9 +99,9 @@ below; every statement here concerns `Aₛ` with `locTopology`.
 The mathematics is Huber's, in the form of Wedhorn's §8.1 identification of the adic spectrum of
 a rational localisation with the rational subset; the Lean is written against this repository's
 own `locTopology` and `locSubring` API together with Mathlib's `Valuation.extendToLocalization`,
-and follows no existing formalisation. AINTLIB — the roadmap's designated prior formalisation of
-this material — was **not** consulted: no checkout of it was available in the authoring
-environment. Nothing is ported.
+and follows no existing formalisation. AINTLIB, a prior formalisation of this material, was
+**not** consulted: no checkout of it was available in the authoring environment. Nothing is
+ported.
 -/
 
 public section

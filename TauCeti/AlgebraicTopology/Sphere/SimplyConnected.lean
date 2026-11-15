@@ -370,7 +370,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
     simp [hz, mem_ball, hγnorm] at hmem
   have hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := fun t =>
     coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t
-  exact ⟨γ', γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL hγ' hGne, hγ'⟩
+  exact ⟨γ', γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hγ' hGne, hγ'⟩
 
 /-- In a real vector space of rank greater than two, finitely many two-vector spans do not
 cover: some nonzero vector lies in none of them. -/
@@ -444,6 +444,12 @@ theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
     simp [← Module.finrank_eq_rank]
   rw [hrank]
   exact_mod_cast (by omega : 2 < n + 1)
+
+/-- The unit sphere `Sⁿ⁺²` of `ℝⁿ⁺³` is simply connected, as an instance; this covers the
+two-sphere. -/
+instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
+    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
+  simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
 
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :

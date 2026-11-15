@@ -102,8 +102,6 @@ theorem isPullback_algebraicActionMap_fst_snd :
     (isPullback_affineToricSchemeMap_fst_snd_bot Φ.lattice Ψ.lattice)
     (Φ.isPullback_fst_snd_algebraicMap Ψ)
     (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
-    (affineToricSchemeMap_comp_specMap_algebraMap _ _ _ _ _ _)
-    (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
     (FanHom.algebraicMap_comp_algebraicRealizationStructureMap _)
   convert h using 1 <;> apply pullback.hom_ext <;> simp
 

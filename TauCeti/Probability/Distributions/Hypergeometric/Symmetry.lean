@@ -48,8 +48,8 @@ theorem hypergeometricMeasure_comm (N K n : ℕ) :
     let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
     let _ := isProbabilityMeasure_hypergeometricMeasure hn hK
     refine Measure.ext_of_measureReal_singleton fun k ↦ ?_
-    rw [hypergeometricMeasure_real_singleton hK hn,
-      hypergeometricMeasure_real_singleton hn hK]
+    rw [hypergeometricMeasure_real_singleton hK,
+      hypergeometricMeasure_real_singleton hn]
     by_cases hkK : k ≤ K <;> by_cases hkn : k ≤ n
     · simp only [ite_eq_left hkK, ite_eq_left hkn]
       have hsubK : (N - k) - (K - k) = N - K := by omega

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.LatticeDefect
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
@@ -142,7 +143,6 @@ private theorem finite_quotSMulTop_additive_unitFiltration_zero (n : ℕ) [NeZer
   have : NeZero n := ⟨fun h ↦ NeZero.ne (n : L) (by simp [h])⟩
   exact finite_quotSMulTop_of_exact exact_unitFiltrationSubtypeInt_valuationInt
     (fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h)))
-    surjective_valuationInt
 
 /-- The inclusion of `U(L,j)` in `U(L,i)` for `i ≤ j`, written additively, as a `ℤ`-linear map. -/
 private noncomputable abbrev unitFiltrationInclusionInt {i j : ℕ} (h : i ≤ j) :
@@ -174,7 +174,6 @@ instance finite_quotSMulTop_additive_unitFiltration (n : ℕ) [NeZero (n : L)] (
     (QuotientAddGroup.mk' H).toIntLinearMap
   refine finite_quotSMulTop_of_exact (g := g)
     (fun x ↦ ?_) (injective_unitFiltrationInclusionInt (Nat.zero_le i))
-    (QuotientAddGroup.mk'_surjective H ·)
   rw [AddMonoidHom.coe_toIntLinearMap, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
     Additive.mem_toAddSubgroup, Subgroup.mem_subgroupOf]
   exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨_, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.2⟩
@@ -306,11 +305,9 @@ private noncomputable def deepUnitLogHom {n : ℕ}
   map_zero' := by simp
   map_add' u v := by simp
   map_smul' σ u := Subtype.ext <| by
-    have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
     rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
       coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
-    exact (AlgEquiv.map_log_of_mem_unitFiltration_one σ p
-      (unitFiltration_antitone hn1 u.toMul.2)).symm
+    exact (AlgEquiv.map_log σ (u.toMul : Lˣ)).symm
 
 /-- **The deep units have the defect of the integers**: for `(p - 1) n > e`, the logarithm
 identifies `U(L,n)` Galois-equivariantly with `𝓂[L]^n`, which has finite index in `𝒪[L]`, so
@@ -344,8 +341,7 @@ theorem latticeDefect_unitFiltration_eq_finrank_smul [CommRing k] [CharP k p] (i
     latticeDefect k (L ≃ₐ[K] L) p (Additive (unitFiltration L i)) =
       Module.finrank ℚ_[p] K • permK0 k (L ≃ₐ[K] L) (L ≃ₐ[K] L) := by
   have hn : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.le_mul_of_pos_left _
-      (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   rw [latticeDefect_unitFiltration_eq K L k p i _, latticeDefect_unitFiltration_eq_integerRing K L
     k p hn, latticeDefect_integerRing_eq_finrank_smul]
 

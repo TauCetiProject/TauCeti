@@ -82,10 +82,8 @@ private theorem exists_curvatureTensor_coordinates (x₀ : M) :
   let A : M → E →L[ℝ] E →L[ℝ] E →L[ℝ] E := fun x ↦
     inCoordinates E (TangentSpace I) (E →L[ℝ] E →L[ℝ] E)
       (fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)
-      x₀ x x₀ x (cov.curvatureTensorCLM (V := TangentSpace I)
-        (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) x)
-  have hR := contMDiff_curvatureTensorCLM (F := E) (V := fun x : M ↦ TangentSpace I x)
-    (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) cov
+      x₀ x x₀ x (cov.curvatureTensorCLM (V := TangentSpace I) x)
+  have hR := contMDiff_curvatureTensorCLM (F := E) (V := fun x : M ↦ TangentSpace I x) cov
   refine ⟨A, ((mdifferentiableAt_hom_bundle _).1 (hR.mdifferentiableAt (by simp))).2,
     fun x hx a b c ↦ ?_⟩
   dsimp only [A]
@@ -273,7 +271,7 @@ theorem HasParallelCurvature.inner_curvatureTensor_eq_of_alongCurveWithin_eq_zer
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     inner ℝ (cov.curvatureTensor (γ a) (U a) (V a) (W a)) (Z a) =
       inner ℝ (cov.curvatureTensor (γ b) (U b) (V b) (W b)) (Z b) := by
-  exact hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ
+  exact hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ
     (fun t ht ↦ cov.differentiableWithinAt_sectionCoord_curvatureTensor (hγ t ht)
       (hU t ht) (hV t ht) (hW t ht)) hZ
     (fun t ht ↦ h.alongCurveWithin_curvatureTensor_eq_zero cov (hs t ht) (hγ t ht)

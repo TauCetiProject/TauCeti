@@ -36,8 +36,9 @@ separation or completeness hypotheses on the model.
 * `TauCeti.deRhamCohomology.const_injective`: on a nonempty manifold, distinct constants have
   distinct degree-zero classes.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
-* `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a finite discrete manifold,
-  `H⁰_dR(M)` has dimension the number of points.
+* `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a discrete manifold,
+  `finrank ℝ H⁰_dR(M) = Nat.card M`, so `H⁰_dR(M)` has dimension the number of points when `M` is
+  finite (both sides are `0` when `M` is infinite).
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
 
@@ -181,15 +182,19 @@ theorem finrank_deRhamCohomology_zero [ConnectedSpace M] :
   rw [← (LinearEquiv.ofBijective _ hconst).finrank_eq, Module.finrank_self]
 
 variable (M) in
-/-- On a finite discrete manifold, degree-zero de Rham cohomology has dimension the number of
-points, since every real function is locally constant. -/
-theorem finrank_deRhamCohomology_zero_of_discreteTopology [DiscreteTopology M] [Finite M] :
+/-- On a discrete manifold, degree-zero de Rham cohomology has dimension the number of points,
+since every real function is locally constant. For an infinite manifold both sides are `0` by
+convention. -/
+theorem finrank_deRhamCohomology_zero_of_discreteTopology [DiscreteTopology M] :
     Module.finrank ℝ (deRhamCohomology I M 0) = Nat.card M := by
-  have : Fintype M := Fintype.ofFinite M
   have hcoe : Function.Bijective (LocallyConstant.coeFnₗ ℝ : LocallyConstant M ℝ →ₗ[ℝ] M → ℝ) :=
     ⟨DFunLike.coe_injective, fun f ↦ ⟨⟨f, .of_discrete f⟩, rfl⟩⟩
-  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq,
-    Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq]
+  rcases finite_or_infinite M with hM | hM
+  · have : Fintype M := Fintype.ofFinite M
+    rw [Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+  · rw [Nat.card_eq_zero_of_infinite, Module.finrank, rank_fun_infinite]
+    exact Cardinal.toNat_apply_of_aleph0_le (Cardinal.infinite_iff.mp inferInstance)
 
 /-- On a preconnected noncompact manifold, the only compactly supported closed `0`-form is zero:
 its function is locally constant, hence constant, and a nonzero constant function on a noncompact

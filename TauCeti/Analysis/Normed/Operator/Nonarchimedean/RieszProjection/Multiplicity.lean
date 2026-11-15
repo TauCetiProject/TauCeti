@@ -55,7 +55,7 @@ namespace IsRieszProjection
 section Ring
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
-  [NormedCommRing R] [NormOneClass R] [TauCeti.NormedRing.IsTate R]
+  [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   [IsUltrametricDist R] [CompleteSpace R]
   {u E : C₀(I, R) →L[R] C₀(I, R)} {a : R} {h : ℕ}
 

@@ -38,9 +38,10 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
     dsimp only [M]
-    rw [natCard_primaryComponent A p, natCard_primaryComponent A q]
-    exact ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors p.2)
-      (Nat.prime_of_mem_primeFactors q.2)).mpr (by simpa using hpq)).pow _ _
+    have hp := Nat.prime_of_mem_primeFactors p.2
+    have hq := Nat.prime_of_mem_primeFactors q.2
+    rw [natCard_primaryComponent A hp, natCard_primaryComponent A hq]
+    exact ((Nat.coprime_primes hp hq).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv
   have he := Submodule.spanFinrank_map_eq_of_injective e.toLinearMap e.injective
     (p := ⊤)

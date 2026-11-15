@@ -25,7 +25,7 @@ ENV = dict(STATUS_SHA="a" * 40, BUILD_JOB_RESULT="success", BUILD_STATE="success
 def job(status="completed", conclusion="success", confirmed=True):
     return dict(id=7, name=finalizer.PUBLISHER, status=status, conclusion=conclusion,
                 runner_name="nsc-publisher" if status != "queued" else "",
-                labels=[finalizer.MACHINE_LABEL, "namespace-features:github.run-id=12"],
+                labels=[finalizer.MACHINE_LABEL],
                 steps=[dict(name=finalizer.CONFIRM, conclusion="success" if confirmed else "skipped")])
 
 
@@ -115,13 +115,24 @@ class FinalizerTests(unittest.TestCase):
         self.assertEqual(result[0], "success")
         self.assertEqual(elapsed, 30)
 
-    def test_failed_canceled_or_missing_sandbox_never_waits_or_posts_green(self):
+    def test_canceled_missing_or_failed_audits_never_wait_or_post_green(self):
         wait = Mock(side_effect=AssertionError("no publisher wait after failed audit"))
-        for result in ["failure", "cancelled", "skipped", ""]:
+        for result in ["cancelled", "skipped", ""]:
             for state in ["success", "failure", ""]:
                 self.assertEqual(finalizer.terminal_state(dict(ENV, BUILD_JOB_RESULT=result,
                     BUILD_STATE=state), wait=wait)[0], "failure")
-        self.assertEqual(finalizer.terminal_state(dict(ENV, BUILD_STATE="failure"), wait=wait)[0], "failure")
+        for result in ["success", "failure"]:
+            for state in ["failure", ""]:
+                self.assertEqual(finalizer.terminal_state(dict(ENV, BUILD_JOB_RESULT=result,
+                    BUILD_STATE=state), wait=wait)[0], "failure")
+
+    def test_report_failure_after_successful_audits_still_requires_publication(self):
+        env = dict(ENV, BUILD_JOB_RESULT="failure", BUILD_STATE="success")
+        for published in ["success", "failure"]:
+            with self.subTest(published=published):
+                wait = Mock(return_value=(published, "publication result"))
+                self.assertEqual(finalizer.terminal_state(env, wait=wait)[0], published)
+                wait.assert_called_once_with(12, 2)
 
     def test_unconfigured_publication_preserves_existing_optional_behavior(self):
         wait = Mock(side_effect=AssertionError("publication not configured"))
@@ -136,7 +147,11 @@ class FinalizerTests(unittest.TestCase):
         observe = Mock(return_value=data)
         self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=observe)[0], "success")
         observe.assert_called_once_with(7, "main")
-        for field, value in [("id", 8), ("head_sha", "c" * 40), ("state", "canceled"),
+        withdrawn = copy.deepcopy(data)
+        withdrawn["requested_batch"].update(state="canceled", head_sha=None, train=None)
+        self.assertEqual(finalizer.terminal_state(env, wait=wait, observe=lambda *_: withdrawn),
+                         ("withdrawn", "batch withdrawn; no verdict posted"))
+        for field, value in [("id", 8), ("head_sha", "c" * 40),
                              ("train", dict(candidate_id=2, generation=4, staging_ref="staging-candidate-2-3"))]:
             stale = copy.deepcopy(data)
             stale["requested_batch"][field] = value
@@ -152,11 +167,11 @@ class FinalizerTests(unittest.TestCase):
     def test_status_uses_exact_sha_and_retries_boundedly(self):
         for state in ["success", "failure"]:
             with patch.dict(os.environ, ENV, clear=True), patch.object(finalizer, "terminal_state", return_value=(state, "result")), \
-                 patch.object(finalizer, "api", side_effect=[dict(run_attempt=2), OSError(), dict(run_attempt=2), {}]) as post, \
+                 patch.object(finalizer, "api", side_effect=[dict(run_attempt=2), [], OSError(), dict(run_attempt=2), [], {}]) as post, \
                  patch.object(finalizer.time, "sleep"), \
                  contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(finalizer.main(), 0 if state == "success" else 1)
-                self.assertEqual(post.call_count, 4)
+                self.assertEqual(post.call_count, 6)
                 path, payload = post.call_args.args
                 self.assertEqual(path, "/statuses/" + ENV["STATUS_SHA"])
                 self.assertEqual(payload["state"], state)
@@ -169,47 +184,59 @@ class FinalizerTests(unittest.TestCase):
 
     def test_known_superseded_attempt_skips_status_and_canceled_run_cannot_be_green(self):
         for latest, count, posted_state in [(dict(run_attempt=3), 1, None),
-                                            (dict(run_attempt=2, conclusion="cancelled"), 2, "failure")]:
+                                            (dict(run_attempt=2, conclusion="cancelled"), 3, "failure")]:
             with patch.dict(os.environ, ENV, clear=True), \
                  patch.object(finalizer, "terminal_state", return_value=("success", "confirmed")), \
-                 patch.object(finalizer, "api", side_effect=[latest, {}]) as post, \
+                 patch.object(finalizer, "api", side_effect=[latest, [], {}]) as post, \
                  contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(finalizer.main(), 1)
                 self.assertEqual(post.call_count, count)
                 if posted_state:
                     self.assertEqual(post.call_args.args[1]["state"], posted_state)
 
-    def test_observation_api_has_fixed_authority_bounded_io_and_scoped_attempt(self):
-        with patch.dict(os.environ, GH_TOKEN="test-token"), patch.object(finalizer.urllib.request, "urlopen") as request:
-            response = request.return_value.__enter__.return_value
-            response.read.return_value = b'{"jobs": [], "total_count": 0}'
+    def test_observation_api_uses_shared_client_and_conditional_attempt_reads(self):
+        client = Mock()
+        with patch.object(finalizer, "_client", client):
             finalizer.api("/actions/runs/12/attempts/2/jobs?per_page=100")
-            self.assertEqual(request.call_args.args[0].full_url,
-                             "https://api.github.com/repos/TauCetiProject/TauCeti/actions/runs/12/attempts/2/jobs?per_page=100")
-            self.assertEqual(request.call_args.kwargs["timeout"], 15)
-            response.read.assert_called_once_with(finalizer.MAX_BYTES + 1)
+        client.request.assert_called_once_with("GET", "repos/TauCetiProject/TauCeti/actions/runs/12/attempts/2/jobs?per_page=100",
+                                               None, conditional=True, idempotent=False)
 
-    def test_final_post_honors_retry_after_with_a_bounded_recovery_budget(self):
-        for retry_after in ["60", "Thu, 01 Jan 1970 00:01:00 GMT", "600", "invalid"]:
-            with self.subTest(retry_after=retry_after):
-                clock = Clock()
-                error = HTTPError("https://api.github.com", 429, "rate limited", {"Retry-After": retry_after}, None)
-                self.addCleanup(error.close)
-                with patch.dict(os.environ, ENV, clear=True), \
-                     patch.object(finalizer, "terminal_state", return_value=("success", "confirmed")), \
-                     patch.object(finalizer, "api", side_effect=error) as post, \
-                     patch.object(finalizer.time, "monotonic", clock), \
-                     patch.object(finalizer.time, "time", return_value=0), \
-                     patch.object(finalizer.time, "sleep", side_effect=clock.sleep), \
-                     contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                    self.assertEqual(finalizer.main(), 1)
-                    self.assertEqual(clock.now, finalizer.POST_RETRY_SECONDS)
-                    self.assertGreater(post.call_count, 0)
-                    self.assertLessEqual(post.call_count, 10)
+    def test_quota_exhaustion_exits_without_fast_retry_and_preserves_intent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = str(Path(directory) / "intent.json")
+            with patch.dict(os.environ, dict(ENV, TAUCETI_STATUS_INTENT=target), clear=True), \
+                 patch.object(finalizer, "terminal_state", return_value=("success", "confirmed")), \
+                 patch.object(finalizer, "api", side_effect=finalizer.Deferred("ci-status-app", finalizer.time.time() + 4000)) as post, \
+                 patch.object(finalizer.time, "sleep") as sleep, \
+                 contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(finalizer.main(), 75)
+            post.assert_called_once()
+            sleep.assert_not_called()
+            intent = json.loads(Path(target).read_text())
+            self.assertEqual(intent["payload"]["state"], "success")
+            with patch.object(finalizer, "terminal_state", side_effect=AssertionError("must not rebuild")), \
+                 patch.object(finalizer, "api", side_effect=[dict(run_attempt=2), [], {}]) as post, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(finalizer.main(["--resume", target]), 0)
+            self.assertEqual(post.call_args.args[0], "/statuses/" + ENV["STATUS_SHA"])
+
+    def test_resuming_intent_rejects_tampering_and_fences_successor(self):
+        payload = dict(state="success", context="build", description="ok",
+                       target_url="https://github.com/TauCetiProject/TauCeti/actions/runs/12")
+        original = finalizer.status_intent(ENV, payload)
+        for field, value in [("revision", "main"), ("repo", "other/repo"), ("attempt", 0),
+                             ("run_id", "12"), ("payload", dict(payload, context="arbitrary")),
+                             ("payload", dict(payload, target_url="https://evil.example"))]:
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                finalizer.validate_intent(dict(original, **{field: value}))
+        with patch.object(finalizer, "api", return_value=dict(run_attempt=3)) as post, \
+             contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(finalizer.publish(original), 1)
+        post.assert_called_once()
 
 
 class WorkflowBoundaryTests(unittest.TestCase):
-    def test_isolation_matcher_accepts_real_namespace_canary_label_encoding(self):
+    def test_retired_namespace_canary_is_not_current_publication_evidence(self):
         fixture = json.loads((ROOT / "scripts/publication_capacity_fixture.json").read_text())
         self.assertEqual(fixture["workflow_sha"], "d596be5aa001a0187cc3a3c7890314d7b0782e4a")
         by_name = {item["name"]: item for item in fixture["jobs"]}
@@ -222,14 +249,17 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 f"namespace-features:github.run-id={fixture['run_id']}"})
         # Only the sandbox identity is synthetic; publisher labels/name are verbatim API evidence.
         sandbox = dict(name="sandboxed-build", runner_name="fixture-sandbox")
-        self.assertTrue(finalizer.isolated_runner(dict(jobs=[sandbox]), by_name["publisher-capacity"], fixture["run_id"]))
+        self.assertFalse(finalizer.isolated_runner(dict(jobs=[sandbox]), by_name["publisher-capacity"], fixture["run_id"]))
 
     def test_separate_unprivileged_priority_runner_and_scoped_tokens(self):
         report = PR["finalize-merge-group-build"]
         publisher = PUB["jobs"]["publish"]
         for part, shape in [(report, "2x4"), (publisher, "4x8")]:
-            self.assertEqual(part["runs-on"], [f"nscloud-ubuntu-24.04-amd64-{shape}-with-features;job.priority=0",
-                                              "namespace-features:github.run-id=${{ github.run_id }}"])
+            from test_pick_runner import expression
+            self.assertEqual(expression(part["runs-on"], event="repository_dispatch", action="tauceti-bors-staging"),
+                             ["self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
+                              "fleet-74773fc7f54d4877add11d80113fe340"])
+            self.assertEqual(expression(part["runs-on"]), "ubuntu-24.04")
         self.assertEqual(report["needs"], "sandboxed-build")
         self.assertEqual(report["permissions"], {"contents": "read", "actions": "read", "statuses": "write"})
         self.assertEqual(report["timeout-minutes"], 30)
@@ -240,7 +270,8 @@ class WorkflowBoundaryTests(unittest.TestCase):
         self.assertNotIn("LAKE_CACHE_KEY", str(report))
         self.assertIn("tauceti-bors-staging", report["if"])
         gate = PR["publish-merge-group-cache"]
-        self.assertIn("needs.sandboxed-build.result == 'success'", gate["if"])
+        self.assertIn("!cancelled()", gate["if"])
+        self.assertIn("outputs.build-state == 'success'", gate["if"])
         self.assertIn("publication-required == 'true'", gate["if"])
         self.assertIs(gate["with"]["publication-required"], True)
         self.assertNotIn("LAKE_CACHE_KEY", str(PR["sandboxed-build"]))

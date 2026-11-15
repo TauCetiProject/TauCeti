@@ -24,7 +24,7 @@ be separated by the norm of an element of `𝕜`. They are separated after raisi
 Over an algebraically closed field `m`-th roots exist, so the radii themselves are separated:
 `NormedField.exists_lt_norm_lt_of_isAlgClosed`. Iterating, the norms of a sequence decrease
 strictly inside any interval `(r, s)`: `NormedField.exists_strictAnti_norm_mem_Ioo_of_isAlgClosed`.
-If instead the norms accumulate at `1`, then for `r < 1` and `n ≠ 0` some `ϖ` with `‖ϖ‖ < 1` has
+If instead the norms accumulate at `1`, then for `r < 1` and any `n` some `ϖ` with `‖ϖ‖ < 1` has
 `r < ‖ϖ‖ ^ n`: `NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt`.
 
 The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
@@ -41,6 +41,11 @@ into a relative error bound for `F - w / c`.
 -/
 
 public section
+
+/-- The inverse of an element of norm greater than one has norm less than one. -/
+theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
+    {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
+  simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
 
 namespace NormedField
 
@@ -100,10 +105,13 @@ theorem exists_strictAnti_norm_mem_Ioo_of_isAlgClosed [IsAlgClosed 𝕜] {r s : 
 
 variable {𝕜} in
 /-- **If the norms of `𝕜` accumulate at `1`, some element of norm less than one has `n`-th power
-of norm above any `r < 1`**: for `n ≠ 0` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
+of norm above any `r < 1`**: for every `n` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
 theorem exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt
-    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) {n : ℕ}
-    (hn : n ≠ 0) : ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) (n : ℕ) :
+    ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
+    exact ⟨ϖ, hϖ0, hϖ1, by simpa using hr⟩
   rcases le_or_gt r 0 with hr0 | hr0
   · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
     exact ⟨ϖ, hϖ0, hϖ1, hr0.trans_lt (by positivity)⟩

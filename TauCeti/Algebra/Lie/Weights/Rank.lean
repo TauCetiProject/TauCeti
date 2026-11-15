@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Algebra.Lie.Rank
 import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.CartanExists
 import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Dimension
 
 /-!
@@ -45,7 +46,6 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
 
 ## Main results
 
-* `LieSubalgebra.exists_forall_root_apply_ne_zero`: some element of `H` is nonzero under every root.
 * `LieSubalgebra.engel_eq_cartan_iff_forall_root_apply_ne_zero`: an element has Engel
   subalgebra `H` exactly when every root is nonzero on it.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
@@ -58,6 +58,8 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
   the rank of `L` is the dimension of every splitting Cartan subalgebra.
 * `LieSubalgebra.finrank_eq_rank_add_two_mul_card_isPos`: the parity identity
   `dim L = rank L + 2 · #Δ⁺`.
+* `TauCeti.rank_eq_one_of_finrank_eq_three`: over an algebraically closed field of characteristic
+  zero, a three-dimensional Lie algebra with non-degenerate Killing form has rank one.
 
 ## References
 
@@ -76,24 +78,13 @@ open LieAlgebra LieModule Module
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
 
-/-- **A generic element of a Cartan subalgebra avoids every root hyperplane.** Since the root set
-is finite and each root is a nonzero linear functional, finite hyperplane avoidance over the
-infinite field `K` supplies one `h : H` on which every root is nonzero. -/
-theorem exists_forall_root_apply_ne_zero [Infinite K] [LieModule.LinearWeights K H L] :
-    ∃ h : H, ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
-  let f : H.root → Module.Dual K H := fun α ↦ (α.1 : H →ₗ[K] K)
-  obtain ⟨h, hh⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists f fun α ↦ by
-    simpa [f] using DFunLike.ne_iff.mp
-      (Weight.coe_toLinear_ne_zero_iff.mpr (H.isNonZero_coe_root α))
-  exact ⟨h, fun α hα ↦ hh ⟨α, hα⟩⟩
-
 /-- An element of a Cartan subalgebra has Engel subalgebra equal to the Cartan subalgebra
 if and only if no root vanishes on it. The Cartan action is assumed triangularizable. -/
 theorem engel_eq_cartan_iff_forall_root_apply_ne_zero {h : H}
     [LieModule.IsTriangularizable K H L] :
     LieSubalgebra.engel K (h : L) = H ↔ ∀ α ∈ H.root, (α : H → K) h ≠ 0 := by
-  let N : LieSubmodule K H L := genWeightSpaceOf L 0 h
-  have hEngel : (LieSubalgebra.engel K (h : L)).toSubmodule = N.toSubmodule := by
+  have hEngel : (LieSubalgebra.engel K (h : L)).toSubmodule =
+      (genWeightSpaceOf L 0 h).toSubmodule := by
     ext x
     rw [LieSubalgebra.mem_toSubmodule, LieSubmodule.mem_toSubmodule,
       LieSubalgebra.mem_engel_iff, LieModule.mem_genWeightSpaceOf]
@@ -110,18 +101,13 @@ theorem engel_eq_cartan_iff_forall_root_apply_ne_zero {h : H}
     exact χ.genWeightSpace_ne_bot L (disjoint_self.mp (hdisj.mono_right hle))
   · intro hh
     refine le_antisymm ?_ (genWeightSpace_le_genWeightSpaceOf L h 0)
-    rw [eq_iSup_inf_genWeightSpace K H L N]
-    refine iSup_le fun χ ↦ ?_
-    by_cases hχ : χ.IsZero
-    · rw [hχ.eq]
-      exact inf_le_right
-    · have hχroot : χ ∈ H.root := by
-        simpa [LieSubalgebra.root] using hχ
-      have hχh : χ h ≠ 0 := hh χ hχroot
-      have hdisj : Disjoint N (genWeightSpace L χ) :=
-        (disjoint_genWeightSpaceOf K H L hχh.symm).mono_right
-          (genWeightSpace_le_genWeightSpaceOf L h χ)
-      simp [hdisj.eq_bot]
+    rw [genWeightSpaceOf_eq_iSup_genWeightSpace]
+    refine iSup₂_le fun χ hχh ↦ ?_
+    -- A weight vanishing at `h` is not a root, so it is the zero weight.
+    have hχ : χ.IsZero := by
+      by_contra hχ
+      exact hh χ (by simpa [LieSubalgebra.root] using hχ) hχh
+    rw [hχ.eq]
 
 /-- **Every Cartan subalgebra is the Engel subalgebra of one of its elements** when its action has
 linear weights and is triangularizable over an infinite field. -/
@@ -131,9 +117,8 @@ theorem exists_engel_eq_cartan [Infinite K] [LieModule.LinearWeights K H L]
   obtain ⟨h, hh⟩ := exists_forall_root_apply_ne_zero H
   exact ⟨h, (H.engel_eq_cartan_iff_forall_root_apply_ne_zero).mpr hh⟩
 
-/-- **The rank is at most the dimension of a Cartan subalgebra.** Choose a root-regular Cartan
-element whose Engel subalgebra is `H`, then apply Mathlib's Engel-subalgebra dimension bound
-`LieAlgebra.rank_le_finrank_engel`. -/
+/-- **The rank is at most the dimension of a Cartan subalgebra** whose action has linear weights
+and is triangularizable, over an infinite field. -/
 theorem rank_le_finrank_cartan [Infinite K] [LieModule.LinearWeights K H L]
     [LieModule.IsTriangularizable K H L] :
     LieAlgebra.rank K L ≤ finrank K H := by
@@ -205,3 +190,31 @@ theorem finrank_eq_rank_add_two_mul_card_isPos [CharZero K] [IsKilling K L]
   exact TauCeti.finrank_eq_finrank_cartan_add_two_mul_card_isPos H b
 
 end LieSubalgebra
+
+namespace TauCeti
+
+open LieAlgebra LieModule Module
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [IsKilling K L]
+
+/-- **A three-dimensional Lie algebra with non-degenerate Killing form has rank one**, over an
+algebraically closed field of characteristic zero. -/
+theorem rank_eq_one_of_finrank_eq_three (h : finrank K L = 3) : LieAlgebra.rank K L = 1 := by
+  obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base K L
+  -- By the parity identity `d = l + 2 · #Δ⁺` the rank is one or three; three is ruled out below.
+  have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
+  rw [H.rank_eq_finrank_cartan]
+  have hH : finrank K H ≠ 3 := by
+    intro h3
+    have htop : H = ⊤ :=
+      H.toSubmodule_eq_top.mp (Submodule.eq_top_of_finrank_eq (h3.trans h.symm))
+    -- The Cartan subalgebra is abelian and its inclusion is onto, so `L` is abelian, hence zero.
+    have : IsLieAbelian L :=
+      (H.incl.range_eq_top.mp (H.incl_range.trans htop)).isLieAbelian inferInstance
+    have := (IsKilling.isLieAbelian_iff_subsingleton K L).mp this
+    rw [finrank_zero_of_subsingleton] at h
+    omega
+  omega
+
+end TauCeti

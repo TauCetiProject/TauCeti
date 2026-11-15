@@ -275,8 +275,6 @@ theorem GL2CuspidalVirtualCharacter_mem_irreducibleCharacters {θ : Eˣ →* ℂ
     (hθ : θ.comp (powMonoidHom (Fintype.card F)) ≠ θ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
     (GL2CuspidalVirtualCharacter F E θ ψ).1 ∈ irreducibleCharacters ℂ (GL (Fin 2) F) := by
   classical
-  let : Invertible (Nat.card (GL (Fin 2) F) : ℂ) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   refine mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (GL2CuspidalVirtualCharacter_mem_virtualCharacters θ ψ)
     (characterPairing_GL2CuspidalVirtualCharacter_self hθ hψ) (n := Fintype.card F - 1) ?_

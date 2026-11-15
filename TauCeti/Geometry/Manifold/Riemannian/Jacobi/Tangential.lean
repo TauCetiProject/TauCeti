@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
@@ -116,8 +117,8 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_curveVel
       (curveVelocityWithin I γ s r)) 0 s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hJ.isGeodesicCurveOn
-  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hJ.uniqueDiffOn t ht)
-    (hγ.mdifferentiableOn t ht) (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hγ.mdifferentiableOn t ht)
+    (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
@@ -137,8 +138,8 @@ private theorem IsJacobiFieldOn.hasDerivWithinAt_inner_curveVelocityWithin
         (curveVelocityWithin I γ s t)) s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := hJ.isGeodesicCurveOn
-  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hJ.uniqueDiffOn t ht)
-    (hγ.mdifferentiableOn t ht) (hJ.differentiableWithinAt_sectionCoord ht)
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hγ.mdifferentiableOn t ht)
+    (hJ.differentiableWithinAt_sectionCoord ht)
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   refine hprod.congr_deriv ?_
@@ -151,11 +152,8 @@ theorem IsJacobiFieldOn.inner_alongCurveWithin_curveVelocityWithin_eq
     inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s a) (curveVelocityWithin I γ s a) =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s b)
         (curveVelocityWithin I γ s b) := by
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr)
-    (C := 0) (fun _ _ ↦ by simp) hb ha
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
-  exact h
+  exact (IsPreconnected.eq_of_hasDerivWithinAt_zero hs
+    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr) hb ha).symm
 
 /-- **The tangential component of a Jacobi field is affine.** On a preconnected parameter set,
 `⟨J(t), γ'(t)⟩ = ⟨J(a), γ'(a)⟩ + (t - a) ⟨DJ(a), γ'(a)⟩`. -/
@@ -174,9 +172,8 @@ theorem IsJacobiFieldOn.inner_curveVelocityWithin_eq
     rw [hJ.inner_alongCurveWithin_curveVelocityWithin_eq hs hr ha] at h₁
     exact (h₁.sub (((hasDerivAt_id' r).sub_const a).mul_const c).hasDerivWithinAt).congr_deriv
       (by simp [c])
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    hderiv (C := 0) (fun _ _ ↦ by simp) ha ht
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero, sub_self, zero_mul, sub_zero] at h
+  have h := IsPreconnected.eq_of_hasDerivWithinAt_zero hs hderiv ha ht
+  simp only [sub_self, zero_mul, sub_zero] at h
   linarith
 
 /-- **Normal Jacobi fields.** A Jacobi field on a preconnected parameter set is orthogonal to the
@@ -225,8 +222,7 @@ private theorem IsGeodesicCurveOn.differentiableWithinAt_and_alongCurveWithin_st
   have hv := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
     h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
-      (h.mdifferentiableOn t ht) hJ hv
+  have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (h.mdifferentiableOn t ht) hJ hv
   rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht,
     inner_zero_right, add_zero] at hprod
   have hf := hprod.div_const (‖curveVelocityWithin I γ s t‖ ^ 2)

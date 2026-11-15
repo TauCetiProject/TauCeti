@@ -107,6 +107,15 @@ theorem blockUnitriangular_one {α : Type*} [Preorder α] {b : m → α} :
     (1 : Matrix m m R).BlockUnitriangular b :=
   ⟨blockTriangular_one, fun _ _ _ => rfl⟩
 
+/-- A matrix is block unitriangular if its entries agree with the identity whenever the row's
+block does not strictly precede the column's block. -/
+theorem blockUnitriangular_of_apply_eq_one_apply_of_not_lt {α : Type*} [Preorder α]
+    {b : m → α} (h : ∀ r s, ¬ b r < b s → M r s = (1 : Matrix m m R) r s) :
+    M.BlockUnitriangular b := by
+  refine ⟨fun r s hsr => ?_, fun r s hrs => h r s (by rw [hrs]; exact lt_irrefl _)⟩
+  rw [h r s (not_lt_of_gt hsr), one_apply_ne]
+  exact fun hrs => (ne_of_lt hsr) (congrArg b hrs.symm)
+
 /-- Restricting a block unitriangular matrix along an injective map of indices keeps it block
 unitriangular for the restricted ranking. -/
 theorem BlockUnitriangular.submatrix {n : Type*} [DecidableEq n] (h : M.BlockUnitriangular b)
@@ -373,7 +382,7 @@ theorem exists_blockLDU_iff (M : Matrix m m R) :
         fun j => ⟨fun _ => hk j (Finset.mem_univ j), fun _ => trivial⟩]
       exact hM k
     rwa [det_mul, det_mul, hL.det_eq_one, hU.det_eq_one, one_mul, mul_one] at hfull
-  · rintro ⟨L, D, U, hL, hD, hD', hU, hDdet, rfl⟩ i
+  · rintro ⟨L, D, U, hL, hD, _, hU, hDdet, rfl⟩ i
     have hp : ∀ ⦃j k⦄, b k ≤ b j → b j ≤ b i → b k ≤ b i := fun _ _ h₁ h₂ => h₁.trans h₂
     rw [det_toSquareBlockProp_blockLDU hL hU hp]
     exact hD.isUnit_det_toSquareBlockProp hDdet hp

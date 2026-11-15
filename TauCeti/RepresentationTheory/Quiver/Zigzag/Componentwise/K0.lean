@@ -104,7 +104,6 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagAlgebraGradedProj
   let _ := Fintype.ofFinite V
   exact isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
     (completeOrthogonalIdempotents_zigzagAlgebraBasis_inl k G)
-    (zigzagAlgebraBasis_inl_mem_integerGrade_zero k G)
     (isHomogeneous_span_zigzagAlgebraBasis_inl k G)
     (indecomposable_zigzagAlgebraGradedProjective k G)
 

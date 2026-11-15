@@ -91,8 +91,8 @@ theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
     rw [mem_supportingFace, ← he.eq_right_of_isFiniteFace hface]
     exact mem_supportingFace.mp (hcf.symm.subset ⟨hface.left_le_right, le_rfl⟩)
   rw [hcval] at hl hu
-  exact ⟨(isLowestDominant_iff_isLeast_supportingFace f v hb hv hG hf0 l).mpr hl,
-    (isDistinguished_iff_isGreatest_supportingFace f v hb hv hG hf0 u).mpr hu⟩
+  exact ⟨(isLowestDominant_iff_isLeast_supportingFace f v hb hv hG l).mpr hl,
+    (isDistinguished_iff_isGreatest_supportingFace f v hb hv hG u).mpr hu⟩
 
 /-- At a radius `b ^ σ` strictly below a radius `b ^ τ` with bounded weighted coefficients,
 the finite Newton face has endpoints `l, u` exactly when these are the first and last active

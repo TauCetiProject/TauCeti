@@ -51,10 +51,6 @@ here needs a nonempty-carrier hypothesis.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — `homDensity` and the
-  constant-graphon value. The counting lemmas, `cutNorm`, finite-graph compatibility with
-  `homDensityFin`, disjoint-union multiplicativity, and the catalogue of small-graph integrals are
-  separate targets and are not built here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.2.
 -/
 

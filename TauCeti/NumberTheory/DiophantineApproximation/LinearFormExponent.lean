@@ -28,8 +28,8 @@ how small nonzero values of integer polynomials of degree at most `n` can be at 
 * `linearFormApproximations_antitone`: the solution sets shrink as the exponent grows.
 * `ofReal_le_linearFormExponent_of_forall_lt`: if every exponent below `w` has infinitely many
   solutions, then `w ≤ w(θ)`.
-* `linearFormExponent_comp_le`: forgetting coordinates along an injective reindexing can only
-  decrease the exponent; in particular Mahler's exponent is monotone in the degree
+* `linearFormExponent_comp_le`: precomposing with a reindexing can only decrease the
+  exponent; in particular Mahler's exponent is monotone in the degree
   (`mahlerExponent_mono`).
 * `linearFormExponent_le_of_map`: an integer change of variables that multiplies the linear
   form by a fixed nonzero factor and grows sup norms at most linearly can only increase the
@@ -254,23 +254,35 @@ theorem linearFormExponent_le_of_map {θ : ι → ℝ} {θ' : κ → ℝ}
   calc B * ‖y‖ ^ (-w) ≤ ‖y‖ ^ (w - w') * ‖y‖ ^ (-w) := by gcongr
     _ = ‖y‖ ^ (-w') := by rw [← Real.rpow_add hy]; ring_nf
 
-/-- Restricting `θ` along an injective reindexing can only decrease the linear-form exponent:
-a solution for `θ ∘ f` extends by zero to a solution for `θ` with the same linear form and the
-same norm. -/
-theorem linearFormExponent_comp_le (θ : κ → ℝ) {f : ι → κ} (hf : Injective f) :
+/-- Precomposing `θ` with a reindexing `f` can only decrease the linear-form exponent: a solution
+for `θ ∘ f` gives one for `θ` with the same linear form, by adding up the coordinates in each
+fibre of `f`, which grows the sup norm by at most the factor `|ι| + 1`. -/
+theorem linearFormExponent_comp_le (θ : κ → ℝ) (f : ι → κ) :
     linearFormExponent (θ ∘ f) ≤ linearFormExponent θ := by
-  refine linearFormExponent_le_of_map (fun x ↦ (x.1, extend f x.2 0)) one_ne_zero (A := 1)
-    (fun x ↦ ?_) (fun x ↦ ?_)
-  · rw [one_mul, ← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
+  classical
+  refine linearFormExponent_le_of_map (fun x ↦ (x.1, fun k ↦ ∑ i with f i = k, x.2 i))
+    one_ne_zero (A := Fintype.card ι + 1) (fun x ↦ ?_) (fun x ↦ ?_)
+  · rw [one_mul]
     congr 1
+    simp only [Function.comp_apply]
+    push_cast
+    rw [← Finset.sum_fiberwise Finset.univ f fun i ↦ (x.2 i : ℝ) * θ (f i)]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    by_cases hk : ∃ i, f i = k
-    · obtain ⟨i, rfl⟩ := hk
-      simp [hf.extend_apply]
-    · simp [extend_apply' _ _ _ hk]
-  · have hnorm : ‖extend f x.2 0‖ = ‖x.2‖ :=
-      (hf.factorsThrough x.2).norm_extend (by simp)
-    simp [Prod.norm_def, hnorm]
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun i hi ↦ by rw [(Finset.mem_filter.1 hi).2]
+  · have hx := norm_nonneg x
+    rw [Prod.norm_def]
+    refine max_le ?_ ?_
+    · calc ‖x.1‖ ≤ ‖x‖ := le_max_left _ _
+        _ ≤ _ := by nlinarith [Nat.cast_nonneg (α := ℝ) (Fintype.card ι)]
+    · refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun k ↦ ?_
+      calc ‖∑ i with f i = k, x.2 i‖ ≤ ∑ i with f i = k, ‖x.2 i‖ := norm_sum_le _ _
+        _ ≤ ∑ i with f i = k, ‖x‖ :=
+          Finset.sum_le_sum fun i _ ↦ (norm_le_pi_norm x.2 i).trans (le_max_right _ _)
+        _ ≤ ∑ _i : ι, ‖x‖ := Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+          fun _ _ _ ↦ hx
+        _ = Fintype.card ι * ‖x‖ := by simp
+        _ ≤ _ := by nlinarith
 
 /-- The empty vector has linear-form exponent `0`: the linear form is then the integer `x₀`, which
 is at most `|x₀| ^ (-w)` in absolute value only for `x₀ = ± 1` when `0 < w`. -/
@@ -492,8 +504,7 @@ theorem infinite_linearFormApproximations_of_lt_card [Nonempty ι] {θ : ι → 
   -- Dirichlet's theorem bounds the linear form by `‖(xᵢ)ᵢ‖ ^ (-n)`, without the coordinate `x₀`.
   set T := {x : ℤ × (ι → ℤ) | x.2 ≠ 0 ∧ |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| ≤ ‖x.2‖ ^ (-n)}
   have hT : T.Infinite := by
-    have hD := dirichlet_linearForm_infinite θ fun y ⟨k, hk⟩ ↦ congrArg Prod.snd <|
-      hθ (-k, y) (by push_cast; rw [← hk]; simp [mul_comm])
+    have hD := dirichlet_linearForm_infinite θ
     refine (hD.image (neg_injective.prodMap injective_id).injOn).mono ?_
     rintro _ ⟨p, ⟨hp, hpL⟩, rfl⟩
     exact ⟨hp, by simpa [n, neg_add_eq_sub, mul_comm] using hpL⟩
@@ -661,7 +672,7 @@ end CoeffVec
 /-- Mahler's exponent is monotone in the degree. -/
 theorem mahlerExponent_mono (ξ : ℝ) : Monotone (mahlerExponent · ξ) := fun m n hmn ↦ by
   simpa [mahlerExponent_def, comp_def] using
-    linearFormExponent_comp_le (fun j : Fin n ↦ ξ ^ (j.val + 1)) (Fin.castLE_injective hmn)
+    linearFormExponent_comp_le (fun j : Fin n ↦ ξ ^ (j.val + 1)) (Fin.castLE hmn)
 
 /-- Constant integer polynomials give Mahler's exponent `0` in degree zero. -/
 @[simp]

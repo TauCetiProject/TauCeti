@@ -31,6 +31,10 @@ When the `S i` cover `X`, this file records three consequences.
 
 The covering hypothesis cannot be dropped in the second statement: points outside every `S i`
 form an open discrete subspace of `X`, while their products with `Z` need not be discrete.
+
+Finally, a set is closed as soon as it meets every member of the family in a closed subset of `X`
+(`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`), a restatement of
+`Topology.IsCoherentWith.isClosed_iff` with intersections in place of preimages in the subtypes.
 -/
 
 public section
@@ -114,3 +118,12 @@ theorem liftCoherent_restrict {i : ι} : (liftCoherent S φ hφ hS hSX).restrict
   simp only [restrict_apply, liftCoherent_coe]
 
 end ContinuousMap
+
+/-- If `X` carries the topology coherent with a family `S` of subsets, then a set which meets every
+member of `S` in a closed set is closed. -/
+theorem Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter {X : Type*} [TopologicalSpace X]
+    {S : Set (Set X)} (hS : IsCoherentWith S) {t : Set X} (ht : ∀ s ∈ S, IsClosed (t ∩ s)) :
+    IsClosed t := by
+  refine hS.isClosed_iff.2 fun s hs ↦ ?_
+  have := (ht s hs).preimage (continuous_subtype_val (p := (· ∈ s)))
+  rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at this

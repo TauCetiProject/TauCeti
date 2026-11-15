@@ -150,7 +150,7 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, rfl⟩ := hroots.symm.subset hz
     exact NumberField.norm_embedding_le_house x φ
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
-    rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
+    rw [NumberField.house_eq_sup', hφ, coe_nnNorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
 
 open Height NumberField in
@@ -163,13 +163,8 @@ theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [Numb
   rw [NumberField.house, canonicalEmbedding]
   refine (pi_norm_le_iff_of_nonneg (Real.exp_pos _).le).mpr fun φ ↦ ?_
   let w : InfinitePlace K := InfinitePlace.mk φ
-  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
-    (Sum.inr w) x
-  simp only [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
-    Nat.abs_cast] at h
-  have hm : (1 : ℝ) ≤ w.mult := by exact_mod_cast InfinitePlace.mult_pos (w := w)
   have hw : Real.log (w x) ≤ logHeight₁ x :=
-    (le_abs_self _).trans ((le_mul_of_one_le_left (abs_nonneg _) hm).trans h)
+    (le_abs_self _).trans (InfinitePlace.abs_log_le_logHeight₁ w x)
   -- The place constructed from φ evaluates x as the complex norm of φ x.
   change w x ≤ Real.exp (logHeight₁ x)
   rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]
@@ -347,7 +342,6 @@ at most `(2B)ᵈ`. -/
 theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {B : ℝ}
     (hB : 1 ≤ B) (hxB : house x ≤ B) :
     naiveHeight x ≤ (2 * B) ^ (minpoly ℚ x).natDegree := by
-  have halg : IsAlgebraic ℚ x := (hx.tower_top (A := ℚ)).isAlgebraic
   have hmon : (primitiveMinpoly x).Monic := by
     rw [primitiveMinpoly_eq_minpoly_int hx]
     exact minpoly.monic hx
@@ -356,7 +350,7 @@ theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {
   have hroots : ∀ z ∈ ((primitiveMinpoly x).map (Int.castRingHom ℂ)).roots, ‖z‖ ≤ B := by
     intro z hz
     refine (norm_le_house_of_mem_rootSet ?_).trans hxB
-    rw [← rootSet_primitiveMinpoly halg, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
+    rw [← rootSet_primitiveMinpoly x, rootSet_def, Finset.mem_coe, Multiset.mem_toFinset,
       aroots_def, algebraMap_int_eq]
     exact hz
   obtain ⟨i, hi⟩ := (primitiveMinpoly x).exists_eq_supNorm

@@ -40,7 +40,7 @@ public section
 
 open Module Matrix
 
-namespace TauCeti
+namespace LinearMap.BilinForm
 
 universe u
 
@@ -50,7 +50,7 @@ variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
 /-- Taking dual submodules with respect to a bilinear form reverses inclusions. -/
-theorem _root_.LinearMap.BilinForm.dualSubmodule_anti (B : LinearMap.BilinForm K V) :
+theorem dualSubmodule_anti (B : LinearMap.BilinForm K V) :
     Antitone (B.dualSubmodule (R := R)) :=
   fun _ _ h _ hx y hy => hx y (h hy)
 
@@ -64,7 +64,7 @@ the `R`-span of `b` whenever every `B x (b j)` lies in `R`. When `B` is nondegen
 The adjugate argument is adapted from Mathlib's `Algebra.discr_mul_isIntegral_mem_adjoin`, which
 treats the trace form of a separable field extension and a power basis; here it is stated for an
 arbitrary bilinear form and basis. -/
-theorem _root_.LinearMap.BilinForm.det_toMatrix_smul_mem_span (B : LinearMap.BilinForm K V)
+theorem det_toMatrix_smul_mem_span (B : LinearMap.BilinForm K V)
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι K V)
     (hb : ∀ i j, B (b i) (b j) ∈ (1 : Submodule R K)) {x : V}
     (hx : x ∈ B.dualSubmodule (Submodule.span R (Set.range b))) :
@@ -102,7 +102,7 @@ variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 /-- For a nondegenerate bilinear form `B` over the fraction field and a full lattice `N`, Mathlib's
 canonical pairing `B.dualSubmoduleToDual N` from the dual lattice to the dual of `N` is
 surjective. No lattice basis is needed. -/
-theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
+theorem dualSubmoduleToDual_surjective
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [N.IsLattice K] :
     Function.Surjective (B.dualSubmoduleToDual N) := by
@@ -129,7 +129,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
 
 /-- The dual submodule of a full lattice is canonically isomorphic to its `R`-linear dual
 whenever the ambient bilinear form is nondegenerate. -/
-noncomputable def _root_.LinearMap.BilinForm.dualSubmoduleEquivDual
+noncomputable def dualSubmoduleEquivDual
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [hN : N.IsLattice K] :
     B.dualSubmodule N ≃ₗ[R] Module.Dual R N :=
@@ -139,7 +139,7 @@ noncomputable def _root_.LinearMap.BilinForm.dualSubmoduleEquivDual
 
 /-- The underlying linear map of `dualSubmoduleEquivDual` is `B.dualSubmoduleToDual N`. -/
 @[simp]
-theorem _root_.LinearMap.BilinForm.dualSubmoduleEquivDual_apply
+theorem dualSubmoduleEquivDual_apply
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [N.IsLattice K] (x : B.dualSubmodule N) :
     LinearMap.BilinForm.dualSubmoduleEquivDual B hB N x = B.dualSubmoduleToDual N x :=
@@ -147,7 +147,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmoduleEquivDual_apply
 
 omit [IsDomain R] [Module.IsTorsionFree R K] in
 /-- Dualizing by `B.flip` and then by `B` recovers the original free full lattice. -/
-theorem _root_.LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip
+theorem dualSubmodule_dualSubmodule_flip
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
     B.dualSubmodule (B.flip.dualSubmodule N) = N := by
@@ -164,7 +164,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip
 
 omit [IsDomain R] [Module.IsTorsionFree R K] in
 /-- Dualizing by `B` and then by `B.flip` recovers the original free full lattice. -/
-theorem _root_.LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule
+theorem dualSubmodule_flip_dualSubmodule
     (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
     B.flip.dualSubmodule (B.dualSubmodule N) = N := by
@@ -180,7 +180,7 @@ variable {A K M : Type*} [CommRing A] [Field K] [AddCommGroup M] [Algebra A K] [
 /-- Over a Noetherian ring `A`, a submodule `N` which spans a finite-dimensional `K`-vector space
 `M` and lies in its own dual for a nondegenerate bilinear form `B` is finitely generated: it lies
 in the `A`-span of the dual basis of a basis of `M` chosen inside `N`. -/
-theorem _root_.LinearMap.BilinForm.fg_of_le_dualSubmodule [IsNoetherianRing A]
+theorem fg_of_le_dualSubmodule [IsNoetherianRing A]
     {B : LinearMap.BilinForm K M}
     (hB : B.Nondegenerate) {N : Submodule A M} (hspan : Submodule.span K (N : Set M) = ⊤)
     (hN : N ≤ B.dualSubmodule N) : N.FG := by
@@ -197,4 +197,4 @@ theorem _root_.LinearMap.BilinForm.fg_of_le_dualSubmodule [IsNoetherianRing A]
 
 end FG
 
-end TauCeti
+end LinearMap.BilinForm

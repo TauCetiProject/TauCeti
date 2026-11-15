@@ -167,7 +167,7 @@ theorem eigenvalue_prime_pow_add_two {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Na
     have := f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc 1)
     rwa [heckeTGeneratorRecGamma0_one, f.eigenvalue_congr (pow_one p) (hn := hpN)] at this
   -- the ring's two-step recurrence at the form, with `p • S_p` already read as `χ(p) p^{k−1}`
-  have h := heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k f.χ hp.pos hpN
+  have h := heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k f.χ hpN
     ⟨f.toCuspForm, f.mem_charSpace⟩ r
   rw [f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc r),
     f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc (r + 1)),

@@ -98,6 +98,7 @@ private theorem isInducing_presheafMap_inf_laurentCoverOpen {W : Opens ↥(spa A
   all_goals
     exact eqToHom_apply_presentationLimitPresheaf_map_apply P _ x
 
+omit [IsHuberRing A] in
 /-- **The topological induction of Wedhorn's Lemma 8.34(i).** Suppose that, for every rational
 subset `W` of `Spa(A, A⁺)` and every `f ∈ A`, sections on `W` carry the topology induced by
 restriction to the two Laurent pieces `W ∩ {|f| ≤ 1}` and `W ∩ {|f| ≥ 1}`. Then sections on a
@@ -115,6 +116,7 @@ theorem isInducing_presentationLimitPresheafMap_laurentSieve_of_isInducing
       (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus T W f }) ↦
         ((presentationLimitPresheaf P Aplus).map g.2.1.op).hom.1 x := by
   classical
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   let F := presentationLimitPresheaf P Aplus
   have hc {V : Opens ↥(spa Aplus)} (S : Sieve V) : Continuous
       (fun (x : F.obj (op V)) (g : (U : Opens ↥(spa Aplus)) × { f : U ⟶ V // S f }) ↦

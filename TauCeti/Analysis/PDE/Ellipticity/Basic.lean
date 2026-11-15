@@ -15,7 +15,9 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
+import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
@@ -32,8 +34,8 @@ for every `x ∈ Ω` and all vectors `η`, `ξ`, together with the quantitative 
 `0 < λ` and `λ ≤ Λ`. The lower bound is the coercivity hypothesis; the bilinear upper bound
 controls nonsymmetric coefficient fields for weak-form boundedness.
 
-This is the coefficient hypothesis named in the PDE roadmap before the energy bilinear form
-and Lax--Milgram arguments: constants are parameters, not hidden existential data.
+This is the coefficient hypothesis of the energy bilinear form and Lax--Milgram arguments:
+constants are parameters, not hidden existential data.
 
 ## Main declarations
 
@@ -68,6 +70,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
+* `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
+  the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
@@ -76,6 +80,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.isBounded_image_matrixBilinearForm`: these bilinear forms
   are bounded uniformly over the domain.
+* `TauCeti.PDE.UniformlyEllipticOn.pow_card_le_det`: a symmetric uniformly elliptic coefficient
+  matrix has determinant at least `λⁿ`.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
@@ -98,7 +104,7 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   coefficient field by its symmetric part preserves uniform ellipticity with the same
   constants.
 
-The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subsets of
+The vectors `η`, `ξ` lie in `EuclideanSpace ℝ n`, the space of gradients of functions on
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
 directly.
 -/
@@ -356,6 +362,28 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
   exact (div_le_iff₀' two_pos).2 (by
     simpa [Real.norm_eq_abs] using hsum)
 
+/-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
+the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
+the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
+lemma abs_sum_mul_apply_single_mul_apply_single_le [DecidableEq n] {A : Matrix n n ℝ} {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (L₁ L₂ : EuclideanSpace ℝ n →L[ℝ] ℝ) :
+    |∑ i, ∑ j, A i j * (L₁ (EuclideanSpace.single i 1) * L₂ (EuclideanSpace.single j 1))| ≤
+      Lam * ‖L₁‖ * ‖L₂‖ := by
+  set X := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₁
+  set Y := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₂
+  have hX (i : n) : L₁ (EuclideanSpace.single i 1) = X i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [X]
+  have hY (i : n) : L₂ (EuclideanSpace.single i 1) = Y i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [Y]
+  have h := hA X Y
+  rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
+  convert h using 2
+  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
 end BilinearForm
 
 /-! ### Matrix quadratic forms and uniform ellipticity -/
@@ -579,6 +607,18 @@ lemma quadraticForm_nonneg (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : 
     0 ≤ (a x).toQuadraticForm' ξ := by
   exact (mul_nonneg h.pos.le (sq_nonneg ‖ξ‖)).trans (h.lower_bound hx ξ)
 
+/-- The diagonal entries of a uniformly elliptic coefficient matrix are at most the upper
+constant, so its trace is at most `card n * Λ`. -/
+lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
+    (a x).trace ≤ Fintype.card n * Lam := by
+  have hdiag (i : n) : a x i i ≤ Lam := by
+    have h1 : |a x i i| ≤ Lam := by
+      simpa using h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single i 1)
+    exact (le_abs_self _).trans h1
+  calc (a x).trace = ∑ i, a x i i := rfl
+    _ ≤ ∑ _i : n, Lam := Finset.sum_le_sum fun i _ ↦ hdiag i
+    _ = Fintype.card n * Lam := by simp
+
 /-- Uniform ellipticity gives a positive quadratic form on every nonzero vector. -/
 lemma quadraticForm_pos (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
     {ξ : EuclideanSpace ℝ n} (hξ : ξ ≠ 0) :
@@ -652,6 +692,28 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
     |a x i j| ≤ Lam := by
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+
+/-- A symmetric uniformly elliptic coefficient matrix is positive definite. -/
+lemma posDef (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :
+    (a x).PosDef :=
+  Matrix.PosDef.of_toQuadraticForm' hsymm fun ξ hξ => by
+    simpa using h.quadraticForm_pos hx (ξ := WithLp.toLp 2 ξ) (by simpa using hξ)
+
+open scoped MatrixOrder in
+/-- A symmetric uniformly elliptic coefficient matrix has determinant at least `λⁿ`. -/
+lemma pow_card_le_det (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    (hsymm : (a x).IsSymm) : lam ^ Fintype.card n ≤ (a x).det := by
+  have h1 : (lam • (1 : Matrix n n ℝ)).PosSemidef := PosSemidef.one.smul h.pos.le
+  have h2 : lam • (1 : Matrix n n ℝ) ≤ a x := by
+    rw [Matrix.le_iff]
+    refine PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun ξ => ?_
+    · exact isHermitian_iff_isSymm.2 (hsymm.sub (isSymm_one.smul lam))
+    · have := h.lower_bound hx (WithLp.toLp 2 ξ)
+      simp only [toQuadraticForm'_apply, EuclideanSpace.norm_sq_eq] at this
+      simp only [star_trivial, sub_mulVec, dotProduct_sub, smul_mulVec, one_mulVec,
+        dotProduct_smul, smul_eq_mul, sub_nonneg]
+      simpa [dotProduct, Real.norm_eq_abs, sq_abs, sq] using this
+  simpa [det_smul] using h1.det_le_det h2
 
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
 bounded set, of operator norm at most the upper ellipticity constant. -/

@@ -97,7 +97,7 @@ theorem isPosDef_iff_posDef_baseChange {K : Type*} [CommRing K] [LinearOrder K]
   have := L.finiteDimensional
   (L.form.posDef_toQuadraticMap_baseChange_iff (K := K)).symm
 
-variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K] [StarOrderedRing K]
+variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [StarOrderedRing K]
 
 /-- **A lattice is positive definite exactly when its Gram matrix, cast to `ℝ`, is positive
 definite**, and more generally its cast to any linearly ordered field `K` whose order is the star

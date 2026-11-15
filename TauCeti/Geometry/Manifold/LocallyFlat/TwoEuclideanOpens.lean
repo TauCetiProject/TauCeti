@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.Boundary.BallExterior
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Geometry.Manifold.LocallyFlat.Separation
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -46,8 +48,6 @@ along their common boundary, which is a sphere by
 
 ## Main declarations
 
-* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: the coordinates of the points of `U` outside `V`
-  are bounded.
 * `TauCeti.ballExterior_subset_of_forall_notMem_norm_lt`: the exterior of a coordinate ball
   containing those coordinates lies in `V`.
 * `Homeomorph.coordinateSphereBicollar`: the radial bicollar `(x, t) ↦ eU⁻¹ ((R + exp t) • x)`
@@ -78,18 +78,6 @@ namespace TauCeti
 
 variable {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {U V : Set X} {R : ℝ}
-
-omit [NormedSpace ℝ E] in
-/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
-bounded coordinates in any homeomorphism `eU : U ≃ₜ E` with a normed space. -/
-theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] (hV : IsOpen V)
-    (hUV : U ∪ V = univ) (eU : U ≃ₜ E) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
-  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
-      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
-    exact hV.isClosed_compl.isCompact
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
-  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
 
 omit [NormedSpace ℝ E] in
 /-- In a space covered by `U` and `V`, if `r` bounds the coordinates of the points of `U` outside
@@ -271,15 +259,13 @@ private theorem closure_image_preimage_compl_closedBall [CompactSpace X] [T2Spac
     (hj : IsOpenEmbedding j) :
     closure (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)) =
       j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1)) := by
-  have hb := (isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp hj
-  rw [image_preimage_ballExterior_eq_union eU hR hR0]
-  refine (closure_minimal subset_union_left ?_).antisymm (union_subset subset_closure ?_)
-  · rw [← image_preimage_ballExterior_eq_union eU hR hR0]
-    exact (isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous).isClosed
-  rintro _ ⟨x, rfl⟩
-  refine closure_mono ?_ (hb.apply_mem_closure_image (s := Ioi 0) (by simp) x)
-  rintro _ ⟨p, hp, rfl⟩
-  exact mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
+  have hC := isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous
+  have hcompl := compl_range_coordinateSphereBicollar_eq_union eU hR hR0 hj.injective
+  rw [image_preimage_ballExterior_eq_union eU hR hR0] at hC hcompl ⊢
+  exact ((isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp
+    hj).closure_eq_union_range hC.isClosed.isOpen_compl
+    (disjoint_compl_right_iff_subset.2 subset_union_left) hcompl (s := Ioi 0) (by simp)
+    fun p hp ↦ mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
 
 end Separation
 

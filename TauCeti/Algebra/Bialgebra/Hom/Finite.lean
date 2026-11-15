@@ -37,12 +37,20 @@ variable {R H G : Type*} [CommRing R] [CommRing H] [CommRing G]
 
 /-- The scheme of homomorphisms from a split finite monoid scheme to a finite,
 finitely presented affine monoid scheme is finite over the base. -/
-theorem moduleFinite_of_split [Module.Finite R H] {ι : Type*} [Finite ι]
+theorem moduleFinite_of_split [Module.Finite R H] {ι : Type*}
     (e : G ≃ₐ[R] (ι → R)) : Module.Finite R (HomAlgebra R H G) := by
-  have : Module.Finite R (TauCeti.Algebra.WeilRestriction R G (G ⊗[R] H)) :=
-    TauCeti.Algebra.WeilRestriction.moduleFinite_of_split e
-  -- `HomAlgebra` is the quotient of this Weil restriction by the homomorphism equations.
-  infer_instance
+  classical
+  by_cases hR : Nontrivial R
+  · -- A split algebra which is finitely generated has finite index set.
+    have : Finite ι := by
+      have : Module.Finite R (ι → R) := Module.Finite.equiv e.toLinearEquiv
+      exact (Pi.linearIndependent_single_one ι R).finite
+    have : Module.Finite R (TauCeti.Algebra.WeilRestriction R G (G ⊗[R] H)) :=
+      TauCeti.Algebra.WeilRestriction.moduleFinite_of_split e
+    -- `HomAlgebra` is the quotient of this Weil restriction by the homomorphism equations.
+    infer_instance
+  · have := not_nontrivial_iff_subsingleton.mp hR
+    infer_instance
 
 /-- Homomorphisms from a finite constant monoid scheme to a finite, finitely presented
 affine monoid scheme form a finite scheme. -/

@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.Topology.Algebra.MvPolynomial.Aeval
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # The point topology on points of an affine algebra
@@ -205,14 +206,14 @@ theorem discreteTopology_of_finiteType [DiscreteTopology R] [Algebra.FiniteType 
   exact (isEmbedding_eval_generators (a := ((↑) : s → A)) (by simpa using hs)).discreteTopology
 
 /-- Without finite type, points over a discrete ring need not be discrete: for infinitely many
-variables and a nontrivial compact coefficient ring, such as `𝔽₂` with the discrete topology, the
-points of affine space are an infinite compact space, hence not discrete. -/
-theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R]
-    [CompactSpace R] : ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
+variables and a nontrivial coefficient ring, such as `𝔽₂` with the discrete topology, the points of
+affine space are not discrete, since every basic open set constrains only finitely many
+coordinates. -/
+theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R] :
+    ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
   have : DiscreteTopology (σ → R) :=
     (mvPolynomialHomeomorph k R σ).symm.isEmbedding.discreteTopology
-  have : Finite (σ → R) := finite_of_compact_of_discrete
-  exact not_finite (σ → R)
+  exact not_discreteTopology_pi this
 
 end CommSemiring
 

@@ -518,6 +518,7 @@ theorem eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero {n : ℕ}
   · exact hx.not_ge
       (valuation_xCoord_le_one_and_valuation_yCoord_le_one_of_nsmul_eq_zero u hn hP0 h).1
 
+omit [W.IsElliptic] in
 /-- **At bad reduction, the `n`-torsion with nonsingular reduction is small** (Silverman AEC
 VII.7.1): if the integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of
 points of `W(F)[n]` with nonsingular reduction divides `n`. In particular `E₀(F) ∩ W(F)[n]` is
@@ -526,6 +527,15 @@ theorem natCard_nonsingularReduction_inf_torsionBy_dvd (hΔ : u.valuation F W.Δ
     (hn : (n : A) ∉ u.asIdeal) :
     Nat.card ↥(W.nonsingularReduction (u.valuation F) ⊓ AddSubgroup.torsionBy W.Point n) ∣ n := by
   classical
+  by_cases hW : W.Δ = 0
+  · -- a singular curve: the bound holds for all its `n`-torsion
+    have hnF : (n : F) ≠ 0 := by
+      rw [← map_natCast (algebraMap A F)]
+      exact (map_ne_zero_iff _ (IsFractionRing.injective A F)).2 fun h0 ↦
+        hn (by rw [h0]; exact u.asIdeal.zero_mem)
+    exact (AddSubgroup.card_dvd_of_le inf_le_right).trans
+      (natCard_torsionBy_dvd_of_Δ_eq_zero hW hnF)
+  have : W.IsElliptic := ⟨isUnit_iff_ne_zero.2 hW⟩
   -- the reduced curve is singular, and `n` is invertible over the residue field
   have hΔk : ((integralModel (u.valuation F).valuationSubring W).map
       (residue (u.valuation F).valuationSubring)).Δ = 0 := by
@@ -574,6 +584,7 @@ theorem nonsingularReduction_inf_torsionBy_eq_bot
   exact AddSubgroup.mem_bot.2
     (congrArg Subtype.val (eq_zero_of_nonsingularReductionHom_eq_zero_of_nsmul_eq_zero u hn hρ hnP))
 
+omit [W.IsElliptic] in
 /-- **At bad reduction, torsion forces a large index of `E₀`** (Silverman AEC VII.7.1): if the
 integral model of `W` at `u` has singular reduction, then for `n ∉ u` the number of points of
 `W(F)[n]` divides `n · [E(F) : E₀(F)]`, where `E₀(F)` is the subgroup of points with nonsingular
@@ -587,6 +598,7 @@ theorem natCard_torsionBy_dvd_mul_index_nonsingularReduction (hΔ : u.valuation 
   exact mul_dvd_mul (AddSubgroup.relIndex_dvd_index_of_normal _ _)
     (natCard_nonsingularReduction_inf_torsionBy_dvd u hΔ hn)
 
+omit [W.IsElliptic] in
 /-- **At bad reduction, full `n`-torsion forces `n` to divide the index of `E₀`** (Silverman AEC
 VII.7.1): if the integral model of `W` at `u` has singular reduction and `W(F)[n]` has `n²` points
 for some `n ∉ u`, then `n` divides `[E(F) : E₀(F)]`. In particular, when that index is finite,

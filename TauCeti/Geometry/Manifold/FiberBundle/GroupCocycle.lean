@@ -109,19 +109,6 @@ private theorem contMDiff_of_localTriv_snd [ContMDiffSMul IG IF n G F]
     ContMDiff (IB.prod IF) (IB.prod IF) n
       fun x ↦
         ManifoldTotalSpace.homeomorph F _ (f ((ManifoldTotalSpace.homeomorph F _).symm x)) := by
-  -- The trivialization of a glued bundle at a base point is the chart chosen there.
-  have htriv : ∀ b, trivializationAt F
-      (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).Fiber b =
-        (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).localTriv
-          (indexAt b) := fun b ↦
-    congrArg (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).localTriv
-      (congrFun (fiberBundleCoreOfGroupCocycle_indexAt U c hc F hU indexAt hindex hcontinuous) b)
-  have htriv' : ∀ b, trivializationAt F
-      (fiberBundleCoreOfGroupCocycle U c' hc' F hU indexAt hindex hcontinuous').Fiber b =
-        (fiberBundleCoreOfGroupCocycle U c' hc' F hU indexAt hindex hcontinuous').localTriv
-          (indexAt b) := fun b ↦
-    congrArg (fiberBundleCoreOfGroupCocycle U c' hc' F hU indexAt hindex hcontinuous').localTriv
-      (congrFun (fiberBundleCoreOfGroupCocycle_indexAt U c' hc' F hU indexAt hindex hcontinuous') b)
   intro x₀
   have hproj₀ : ContMDiffAt (IB.prod IF) IB n
       (fun x ↦ ((ManifoldTotalSpace.homeomorph F _).symm x).proj) x₀ :=
@@ -133,8 +120,8 @@ private theorem contMDiff_of_localTriv_snd [ContMDiffSMul IG IF n G F]
     have hU₀ : (fun x ↦ ((ManifoldTotalSpace.homeomorph F _).symm x).proj) ⁻¹' U i ∈ 𝓝 x₀ :=
       hproj₀.continuousAt.preimage_mem_nhds ((hU i).mem_nhds (hindex _))
     have hsnd := ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IF x₀
-    rw [htriv] at hsnd
-    rw [hproj, htriv']
+    rw [trivializationAt_fiberBundleCoreOfGroupCocycle] at hsnd
+    rw [hproj, trivializationAt_fiberBundleCoreOfGroupCocycle]
     refine ContMDiffAt.congr_of_eventuallyEq ?_
       (eventually_of_mem hU₀ fun x hx ↦ hf i _ ((ManifoldTotalSpace.homeomorph F _).symm x).2 hx)
     exact (((hk i).contMDiffAt ((hU i).mem_nhds (hindex _))).comp x₀ hproj₀).smul hsnd

@@ -92,7 +92,7 @@ universe u v v'
 
 variable {k : Type u} {F : Type v} {F' : Type v'}
 variable [Field k] [Field F] [Field F']
-variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
+variable [Algebra k F'] [Algebra F F']
 
 section Transport
 
@@ -118,7 +118,6 @@ condition on the order filtration of `F'` at `P`. -/
 def ramificationGroup (i : ℕ) : Subgroup (P.integers.decompositionSubgroup F) :=
   IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The ramification groups of a place are the local-ring ramification groups of its valuation
 ring under the decomposition group. -/
 theorem ramificationGroup_def (i : ℕ) :
@@ -126,7 +125,6 @@ theorem ramificationGroup_def (i : ℕ) :
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
   (rfl)
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
 automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
 order at least `i + 1`. -/
@@ -145,19 +143,16 @@ theorem mem_ramificationGroup_iff {i : ℕ} {g : P.integers.decompositionSubgrou
       ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
     exact h x x.2
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The `0`-th ramification group is the inertia group** (Stichtenoth, Definition 3.8.4): acting
 trivially on the residue field is acting trivially to order `1` on the valuation ring. -/
 @[simp]
 theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSubgroup F :=
   IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup F P.integers
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The ramification groups decrease: vanishing to higher order is a stronger condition. -/
 theorem ramificationGroup_antitone : Antitone (ramificationGroup F P) := fun _ _ hij ↦
   IsLocalRing.ramificationGroup_antitone _ _ (Int.ofNat_le.mpr hij)
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Every ramification group sits inside the inertia group. -/
 theorem ramificationGroup_le_inertiaSubgroup (i : ℕ) :
     ramificationGroup F P i ≤ P.integers.inertiaSubgroup F := by
@@ -169,7 +164,6 @@ theorem ramificationGroup_le_inertiaSubgroup (i : ℕ) :
 instance normal_ramificationGroup (i : ℕ) : (ramificationGroup F P i).Normal :=
   IsLocalRing.instNormalRamificationGroup _ _ _
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The ramification groups meet in the trivial group** (Stichtenoth, Proposition 3.8.5): an
 automorphism fixing every function integral at `P` to every order is the identity, because the
 valuation ring of `P` has `F'` for its field of fractions. -/
@@ -189,7 +183,6 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
   exact ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
     hfix x x.2
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)] :
@@ -210,7 +203,6 @@ private theorem ord_inv_pow_add_two (ht : P.ord t = 1) (i : ℕ) :
   push_cast
   ring
 
-omit [Algebra k F] [IsScalarTower k F F'] in
 private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P (i + 1)) {x : F'}
     (hx : x ∈ P.integers) :
     ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x - x ∈

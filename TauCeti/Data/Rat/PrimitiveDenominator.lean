@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Rat.Defs
+public import Mathlib.RingTheory.Coprime.Lemmas
 
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.LinearCombination
@@ -21,7 +22,8 @@ quadratic `t² = x t + y`, it rescales the relation to a primitive integral one
 theory of lattices in quadratic fields (D. A. Cox, *Primes of the Form x² + ny²*, §7).
 
 The integer `a` is the common denominator `x.den * y.den` divided by the greatest common divisor
-of the three resulting integers.
+of the three resulting integers. Dually, any two rationals satisfy a primitive integral linear
+relation `u x + v y = 0` with `u, v` coprime.
 -/
 
 public section
@@ -67,5 +69,19 @@ theorem exists_primitive_common_denominator (x y : ℚ) :
     linear_combination (-Int.gcdA D (Int.gcd B C)) * ha
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdA B C) * hb
       + (-Int.gcdB D (Int.gcd B C) * Int.gcdB B C) * hc + (-Int.gcdB D (Int.gcd B C)) * h₂ - h₁
+
+/-- **A coprime integral linear relation.** Any two rationals `x` and `y` satisfy `u x + v y = 0`
+for coprime integers `u` and `v`. -/
+theorem exists_isCoprime_intCast_mul_add_intCast_mul_eq_zero (x y : ℚ) :
+    ∃ u v : ℤ, IsCoprime u v ∧ (u : ℚ) * x + (v : ℚ) * y = 0 := by
+  by_cases hy : y = 0
+  · exact ⟨0, 1, isCoprime_one_right, by simp [hy]⟩
+  · let t : ℚ := x / y
+    have hcop : IsCoprime t.num (t.den : ℤ) := Rat.isCoprime_num_den t
+    refine ⟨t.den, -t.num, hcop.symm.neg_right, ?_⟩
+    have hmul := congrArg (fun z : ℚ ↦ z * y) t.mul_den_eq_num
+    have ht : t * y = x := div_mul_cancel₀ x hy
+    push_cast
+    linear_combination hmul - (t.den : ℚ) * ht
 
 end Rat

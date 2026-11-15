@@ -93,7 +93,7 @@ theorem groupLikeBaseChange_bijective
       simp [f]
     rw [← BialgHom.coe_toAlgHom f, ← AlgHom.coe_restrictScalars' R, ← hmap]
     exact Algebra.TensorProduct.map_bijective Function.bijective_id e.bijective
-  let eK := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv R K
+  let eK := (MonoidAlgebra.scalarTensorBialgEquiv R K
     (G := _root_.GroupLike R A)).symm.trans
     (BialgEquiv.ofBijective f hf)
   let q := (TauCeti.MonoidAlgebra.groupLikeEquiv (R := K)
@@ -104,7 +104,7 @@ theorem groupLikeBaseChange_bijective
       GroupLike.evaluationBialgEquiv_toBialgHom, BialgEquiv.mapGroupLike_trans,
       MulEquiv.trans_apply, BialgEquiv.val_mapGroupLike,
       TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
+      MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
       BialgEquiv.ofBijective_apply, Bialgebra.TensorProduct.map_tmul,
       BialgHom.id_apply, MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul,
       val_groupLikeBaseChange]

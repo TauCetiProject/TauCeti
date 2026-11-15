@@ -217,6 +217,13 @@ theorem mapCoeff_comp (L' : G →L[ℝ] G') (L : F →L[ℝ] G) :
     mapCoeff (I := I) (M := M) (k := k) (L'.comp L) = (mapCoeff L').comp (mapCoeff L) :=
   (rfl)
 
+/-- Coefficient maps of smooth forms commute with transport of the degree. -/
+theorem mapCoeff_cast {l : ℕ} (h : k = l) (L : F →L[ℝ] G) (φ : SmoothForm I M F k) :
+    mapCoeff L (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M G n) h (mapCoeff L φ) := by
+  cases h
+  rfl
+
 /-- The exterior derivative of smooth forms is natural in the coefficient space. -/
 @[simp]
 theorem mextDerivₗ_mapCoeff [IsManifold I 2 M] (L : F →L[ℝ] G) (φ : SmoothForm I M F k) :

@@ -205,13 +205,13 @@ theorem image_range_inclusion (h : IsSmoothSliceDisc K Φ) :
   ext y
   simp only [mem_image, mem_range, exists_exists_eq_and, Function.comp_apply, h.apply_inclusion]
 
-/-- Reparametrizing a slice disc for `K` by a diffeomorphism `D` of the closed unit disc which
-preserves the boundary circle gives a slice disc for the reparametrization of `K` along the circle:
-if `D` is `σ : Circle → Circle` on the circle and `K' = K ∘ σ`, then `Φ ∘ D` is a slice disc for
-`K'`. -/
+/-- Reparametrizing a slice disc for `K` by a diffeomorphism `D` of the closed unit disc gives a
+slice disc for the reparametrization of `K` along the circle (a diffeomorphism preserves the
+boundary circle automatically): if `D` is `σ : Circle → Circle` on the circle and `K' = K ∘ σ`,
+then `Φ ∘ D` is a slice disc for `K'`. -/
 theorem comp_diffeomorph (h : IsSmoothSliceDisc K Φ)
     (D : closedBall (0 : ℂ) 1 ≃ₘ⟮𝓡∂ 2, 𝓡∂ 2⟯ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1) {σ : Circle → Circle}
+    {σ : Circle → Circle}
     (hσ : ∀ z : Circle, D (Set.inclusion sphere_subset_closedBall z) =
       Set.inclusion sphere_subset_closedBall (σ z))
     {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} (hK' : ∀ z, K' z = K (σ z)) :
@@ -219,8 +219,7 @@ theorem comp_diffeomorph (h : IsSmoothSliceDisc K Φ)
   isSmoothEmbedding := isSmoothEmbedding_comp_diffeomorph D h.isSmoothEmbedding
   preimage_boundary := by
     rw [preimage_comp, h.preimage_boundary]
-    ext x
-    simp [boundary_closedBall, hD]
+    exact D.preimage_boundary (by simp)
   apply_inclusion z := by rw [Function.comp_apply, hσ, h.apply_inclusion, hK']
 
 /-- Reparametrizing a slice disc for `K` by a linear isometry `e` of the plane gives a slice disc
@@ -230,7 +229,7 @@ theorem comp_unitClosedBallMap (h : IsSmoothSliceDisc K Φ) (e : ℂ ≃ₗᵢ[�
     (hσ : ∀ z, (σ z : ℂ) = e z) {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (hK' : ∀ z, K' z = K (σ z)) :
     IsSmoothSliceDisc K' (Φ ∘ e.toLinearIsometry.unitClosedBallMap) := by
-  have := h.comp_diffeomorph (e.unitClosedBallDiffeomorph (k := ∞)) (fun x ↦ by simp)
+  have := h.comp_diffeomorph (e.unitClosedBallDiffeomorph (k := ∞))
     (fun z ↦ Subtype.ext (by simp [hσ])) hK'
   rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
 
@@ -252,23 +251,25 @@ theorem unitClosedBallMap_comp (h : IsSmoothSliceDisc K Φ) (e : E ≃ₗᵢ[ℝ
 end IsSmoothSliceDisc
 
 /-- **Smooth sliceness is invariant under reparametrization by a disc diffeomorphism.** If a
-diffeomorphism `D` of the closed unit disc preserves the boundary circle and is `σ` there, then
-`K ∘ σ` is smoothly slice exactly when `K` is. -/
+diffeomorphism `D` of the closed unit disc is `σ` on the boundary circle, then `K ∘ σ` is smoothly
+slice exactly when `K` is. -/
 theorem isSmoothlySlice_congr_diffeomorph {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     {σ : Circle → Circle} (D : closedBall (0 : ℂ) 1 ≃ₘ⟮𝓡∂ 2, 𝓡∂ 2⟯ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1)
     (hσ : ∀ z : Circle, D (Set.inclusion sphere_subset_closedBall z) =
       Set.inclusion sphere_subset_closedBall (σ z))
     (hK' : ∀ z, K' z = K (σ z)) :
     IsSmoothlySlice K' ↔ IsSmoothlySlice K := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨Φ, hΦ⟩ := h.elim
-    refine (hΦ.comp_diffeomorph D.symm (D.toEquiv.norm_symm_apply_eq_one_iff hD)
+    have hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1 := fun x ↦ by
+      simpa [boundary_closedBall] using congrArg (x ∈ ·) (D.preimage_boundary (n := ∞) (by simp)
+        (I := 𝓡∂ 2) (I' := 𝓡∂ 2))
+    refine (hΦ.comp_diffeomorph D.symm
       (fun z ↦ (D.toEquiv.inclusion_restrictUnitSphere_symm_apply hD z).symm)
       fun z ↦ ?_).isSmoothlySlice
     exact ((hK' _).trans (congrArg K (D.toEquiv.apply_restrictUnitSphere_symm hD hσ z))).symm
   · obtain ⟨Φ, hΦ⟩ := h.elim
-    exact (hΦ.comp_diffeomorph D hD hσ hK').isSmoothlySlice
+    exact (hΦ.comp_diffeomorph D hσ hK').isSmoothlySlice
 
 /-! ### Invariance under rotation and reversal -/
 

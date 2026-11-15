@@ -52,13 +52,11 @@ and `m` is the multiplicity.
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal`: the finrank of a morphism space
   is additive over an internal decomposition of its target.
 
-## Roadmap
+## Applications
 
-This is infrastructure for the decomposition toolkit of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose multiplicity target
-`isotypicMultiplicity` counts the summands of a decomposition of `M` into irreducibles; the
-decompositions it counts are produced by `TauCeti.exists_isInternal_isIrreducible` of
-`TauCeti/Algebra/Lie/Submodule/Decomposition.lean`, in exactly the `DirectSum.IsInternal` form
+The multiplicity `LieModule.isotypicMultiplicity` counts the summands of a decomposition of `M` into
+irreducibles; the decompositions it counts are produced by `TauCeti.exists_isInternal_isIrreducible`
+of `TauCeti/Algebra/Lie/Submodule/Decomposition.lean`, in exactly the `DirectSum.IsInternal` form
 consumed here.
 -/
 
@@ -291,8 +289,7 @@ theorem finrank_lieModuleHom_eq_sum_of_isInternal (N : ι → LieSubmodule K L M
     (hfin : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ N i)) :
     finrank K (S →ₗ⁅K,L⁆ M) = ∑ i, finrank K (S →ₗ⁅K,L⁆ N i) := by
   let _ : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ N i) := hfin
-  rw [← (LieModuleEquiv.congrRight (M := S)
-      (DirectSum.lieModuleEquivOfIsInternal N h)).finrank_eq,
+  rw [← ((DirectSum.lieModuleEquivOfIsInternal N h).congrRight (M := S)).finrank_eq,
     (lieModuleHomDirectSumEquiv K L S fun i ↦ (N i : Type w)).finrank_eq,
     Module.finrank_pi_fintype]
 

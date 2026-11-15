@@ -75,7 +75,7 @@ theorem eulerDegree_injective_of_genus_eq_zero :
     rw [eulerDegree_mul k hdim, eulerDegree_inv k hdim, hab, add_neg_cancel]
   exact mul_inv_eq_one.mp ((eulerDegree_eq_zero_iff_of_genus_eq_zero hdim hφ hg _).mp h)
 
-variable [IsNoetherian X] [hX : Fact (∀ x : X, coheight x ≤ 1)]
+variable [hX : Fact (∀ x : X, coheight x ≤ 1)]
 
 include hφ hg in
 /-- The degree homomorphism on the Picard group is injective for a proper regular integral

@@ -36,7 +36,7 @@ Tau Ceti's pointed-cover classification.
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 open _root_.FundamentalGroup
 
@@ -46,12 +46,12 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 locally path-connected total space and path-connected base. For any chosen lift `e` of `x`, the
 deck action is regular exactly when the recovered subgroup
 `p_* π₁(E, e) ≤ π₁(X, x)` is normal. -/
-theorem _root_.IsCoveringMap.isRegular_iff_normal_range
+theorem isRegular_iff_normal_range
     [PathConnectedSpace E] [LocallyPathConnectedSpace E] [PathConnectedSpace X]
     (hp : _root_.IsCoveringMap p) (e : p ⁻¹' {x}) :
-    Deck.IsRegular p ↔
+    TauCeti.Deck.IsRegular p ↔
       (mapOfEq ⟨p, hp.continuous⟩ e.2).range.Normal := by
-  rw [Deck.isRegular_iff_fiber_isPretransitive hp e,
+  rw [TauCeti.Deck.isRegular_iff_fiber_isPretransitive hp e,
     IsCoveringMap.normal_range_iff hp e]
   constructor
   · intro htrans e'
@@ -81,4 +81,4 @@ theorem _root_.IsCoveringMap.isRegular_iff_normal_range
     apply Subtype.ext
     simpa only [deck.fiber_smul_coe] using he
 
-end TauCeti
+end IsCoveringMap

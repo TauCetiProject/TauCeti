@@ -139,8 +139,8 @@ theorem mfderiv_alongCurveWithin (hf : g.IsLocalIsometry g' f)
     differentiableWithinAt_sectionCoord (f ∘ γ) (fun r ↦ Y ((f ∘ γ) r))
       (hY.comp_mdifferentiableWithinAt t hfγ)
       (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
-  have hsource := h.isMetricCompatible.derivWithin_apply_alongCurveWithin hs hγ hV hXcoord
-  have htarget := h'.isMetricCompatible.derivWithin_apply_alongCurveWithin hs hfγ hfV hYcoord
+  have hsource := h.isMetricCompatible.derivWithin_apply_alongCurveWithin hγ hV hXcoord
+  have htarget := h'.isMetricCompatible.derivWithin_apply_alongCurveWithin hfγ hfV hYcoord
   -- Pairing with a pulled-back field is pairing with the field after applying `df`.
   have hpair (r : ℝ) (v : TangentSpace I (γ r)) :
       g (γ r) v (X (γ r)) = g' (f (γ r)) (mfderiv I J f (γ r) v) (Y (f (γ r))) := by

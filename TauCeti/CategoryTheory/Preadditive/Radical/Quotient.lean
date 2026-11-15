@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
--- Finite-dimensionality of the irreducible-morphism space between each pair of objects.
+-- Finiteness of the irreducible-morphism space between each pair of objects.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Noetherian.Defs
 -- Non-public: Mathlib's quotient operations occur only inside the declarations below, the API
 -- here standing in for them, and the dimension bound only inside proofs.
 import Mathlib.LinearAlgebra.Quotient.Basic
@@ -32,9 +33,10 @@ space is nontrivial exactly when an irreducible morphism `X ⟶ Y` exists — th
 is an arrow `X → Y`" mean "there is an irreducible morphism `X ⟶ Y`".  Second, **isomorphism
 invariance**: conjugating by isomorphisms `X ≅ X'` and `Y ≅ Y'` induces a `k`-linear equivalence
 `Irr(X, Y) ≃ₗ[k] Irr(X', Y')`, functorially, which is what lets the arrows be indexed by
-*isomorphism classes* of indecomposables.  Third, **finite-dimensionality** over a division ring
-whenever the ambient morphism space is finite-dimensional, with the dimension bounded by that of
-the ambient space.  This controls the irreducible-morphism space between each fixed pair of objects.
+*isomorphism classes* of indecomposables.  Third, **finiteness**: over a Noetherian ring the space
+is finitely generated whenever the ambient morphism space is, and over a division ring its
+dimension is bounded by that of the ambient space.  This controls the irreducible-morphism space
+between each fixed pair of objects.
 
 The detection statement is the only one that constrains the objects: it needs the two endomorphism
 rings to be local (the indecomposables of a Krull-Schmidt category) and the category to have binary
@@ -361,16 +363,28 @@ theorem irreducibleMorphismSpaceCongr_symm (e : X ≅ X') (e' : Y ≅ Y') :
 
 end Congr
 
-/-! ### Finite-dimensionality -/
+/-! ### Finiteness -/
 
 section Finite
 
-variable (k : Type*) [DivisionRing k] [Linear k C] (X Y : C)
+variable (k : Type*) [Ring k] [Linear k C] (X Y : C)
 
-instance [FiniteDimensional k (X ⟶ Y)] :
-    FiniteDimensional k (irreducibleMorphismSpace k X Y) :=
-  inferInstanceAs (FiniteDimensional k (jacobsonRadicalSubmodule k X Y ⧸
+/-- Over a Noetherian base ring, the space of irreducible morphisms is finitely generated as soon
+as `X ⟶ Y` is, being a quotient of a submodule of it. This covers finite-dimensional morphism
+spaces over a field as well as finitely generated ones over a commutative Artinian ring, the
+setting of Artin algebras. -/
+instance [IsNoetherianRing k] [Module.Finite k (X ⟶ Y)] :
+    Module.Finite k (irreducibleMorphismSpace k X Y) :=
+  inferInstanceAs (Module.Finite k (jacobsonRadicalSubmodule k X Y ⧸
     (jacobsonRadicalSqSubmodule k X Y).submoduleOf (jacobsonRadicalSubmodule k X Y)))
+
+end Finite
+
+/-! ### Dimension over a division ring -/
+
+section Finrank
+
+variable (k : Type*) [DivisionRing k] [Linear k C] (X Y : C)
 
 /-- **The space of irreducible morphisms is no larger than the morphism space it is carved out
 of.**  This bounds the dimension of the irreducible-morphism space between the fixed objects `X`
@@ -384,8 +398,8 @@ theorem finrank_irreducibleMorphismSpace_le [FiniteDimensional k (X ⟶ Y)] :
 /-- **The dimension of the space of irreducible morphisms is positive exactly when there is an
 irreducible morphism `X ⟶ Y`**, in a category with binary biproducts and between objects with local
 endomorphism rings: the dimension count of `TauCeti.nontrivial_irreducibleMorphismSpace_iff`.  Only
-the quotient itself has to be finite-dimensional here, which the instance above supplies whenever
-`X ⟶ Y` is. -/
+the quotient itself has to be finite-dimensional here, which the finiteness instance above supplies
+whenever `X ⟶ Y` is. -/
 theorem finrank_irreducibleMorphismSpace_pos_iff
     [FiniteDimensional k (irreducibleMorphismSpace k X Y)]
     [Limits.HasBinaryBiproducts C] [IsLocalRing (End X)] [IsLocalRing (End Y)] :
@@ -393,6 +407,6 @@ theorem finrank_irreducibleMorphismSpace_pos_iff
       ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by
   rw [Module.finrank_pos_iff_of_free, nontrivial_irreducibleMorphismSpace_iff]
 
-end Finite
+end Finrank
 
 end TauCeti

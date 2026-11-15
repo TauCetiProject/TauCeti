@@ -25,8 +25,8 @@ independent of its witnessing partition and, more generally, of every refinement
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.exists_partition_sum_pathELength_eq`: a piecewise
   smooth path has a witnessing partition whose piece lengths sum to its `pathELength`.
 
-This is the finite-partition part of Layer 0 of the Hopf--Rinow roadmap. It uses Mathlib's
-`Manifold.pathELength_add`; no separate notion of Riemannian length is introduced.
+These lemmas rest on Mathlib's `Manifold.pathELength_add`; no separate notion of Riemannian length
+is introduced.
 
 ## References
 

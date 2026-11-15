@@ -92,8 +92,7 @@ theorem eq_of_le_of_finrank_quotientLie_le (hIJ : I ≤ J)
   have hq_bijective : Function.Bijective (derivationCompLieHom (B := k) q) :=
     derivationCompLieHom_bijective_of_surjective_of_finrank_eq q hq_surjective hfinrank_eq
   have hconormal : conormalSubspace (HopfIdeal.ker q) = ⊥ :=
-    conormalSubspace_ker_eq_bot_of_surjective_of_derivationCompLieHom_surjective
-      q hq_surjective hq_bijective.2
+    conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective q hq_bijective.2
   have hq_kernel : HopfIdeal.ker q = ⊥ :=
     ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot q hq_surjective
       hI_smooth hI_connected hJ_smooth hJ_connected hconormal

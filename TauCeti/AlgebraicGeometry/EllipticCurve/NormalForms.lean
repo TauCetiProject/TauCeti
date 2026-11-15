@@ -52,7 +52,8 @@ re-established by hand at every such crossing.
 * `WeierstrassCurve.isShortNF_map` and `WeierstrassCurve.isShortNF_baseChange`: the same two
   statements for short normal form.
 * `WeierstrassCurve.VariableChange.r_eq_zero_of_isShortNF`, `…s_eq_zero_of_isShortNF` and
-  `…t_eq_zero_of_isShortNF`: a change of variables between short normal forms is a scaling.
+  `…t_eq_zero_of_isShortNF`, combined in `…eq_mk_u_of_isShortNF`: a change of variables between
+  short normal forms is a scaling.
 * `WeierstrassCurve.variableChange_a₄_of_isShortNF` and
   `WeierstrassCurve.variableChange_a₆_of_isShortNF`: it acts on the coefficients by
   `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
@@ -123,23 +124,39 @@ lemma VariableChange.t_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) : C.t = 0 :
     (C.u⁻¹.isUnit.pow 3).mul_right_eq_zero] at h
   exact h2.left (by simp only [mul_zero]; linear_combination h)
 
-/-- A change of variables between short normal forms has `r = 0`, when `2` and `3` are
-non-zero-divisors. -/
-lemma VariableChange.r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
-    C.r = 0 := by
+/-- A change of variables between short normal forms has `3 * r = 0`, when `2` is a
+non-zero-divisor. -/
+lemma VariableChange.three_mul_r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) :
+    3 * C.r = 0 := by
   have h := (C • W).a₂_of_isShortNF
   rw [variableChange_a₂, W.a₁_of_isShortNF, W.a₂_of_isShortNF, C.s_eq_zero_of_isShortNF W h2,
     (C.u⁻¹.isUnit.pow 2).mul_right_eq_zero] at h
-  exact h3.left (by simp only [mul_zero]; linear_combination h)
+  simpa using h
 
-/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` and `3` are
+/-- A change of variables between short normal forms has `r = 0`, when `2` and `3` are
 non-zero-divisors. -/
+lemma VariableChange.r_eq_zero_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
+    C.r = 0 :=
+  h3.left (by simpa using C.three_mul_r_eq_zero_of_isShortNF W h2)
+
+/-- **A change of variables between short normal forms is a scaling** `(x, y) ↦ (u²x, u³y)`, when
+`2` and `3` are non-zero-divisors. -/
+lemma VariableChange.eq_mk_u_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
+    C = ⟨C.u, 0, 0, 0⟩ := by
+  ext
+  · rfl
+  · exact C.r_eq_zero_of_isShortNF W h2 h3
+  · exact C.s_eq_zero_of_isShortNF W h2
+  · exact C.t_eq_zero_of_isShortNF W h2
+
+/-- Between short normal forms, a change of variables scales `a₄` by `u⁻⁴`, when `2` is a
+non-zero-divisor. -/
 @[simp]
-lemma variableChange_a₄_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular (3 : R)) :
+lemma variableChange_a₄_of_isShortNF (h2 : IsRegular (2 : R)) :
     (C • W).a₄ = C.u⁻¹ ^ 4 * W.a₄ := by
-  rw [variableChange_a₄, C.r_eq_zero_of_isShortNF W h2 h3, C.s_eq_zero_of_isShortNF W h2,
-    C.t_eq_zero_of_isShortNF W h2, W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
-  ring
+  rw [variableChange_a₄, C.s_eq_zero_of_isShortNF W h2, C.t_eq_zero_of_isShortNF W h2,
+    W.a₁_of_isShortNF, W.a₂_of_isShortNF, W.a₃_of_isShortNF]
+  linear_combination (C.u⁻¹ ^ 4 * C.r : R) * C.three_mul_r_eq_zero_of_isShortNF W h2
 
 /-- Between short normal forms, a change of variables scales `a₆` by `u⁻⁶`, when `2` and `3` are
 non-zero-divisors. -/

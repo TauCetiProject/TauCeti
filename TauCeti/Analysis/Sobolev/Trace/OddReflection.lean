@@ -491,11 +491,8 @@ theorem Wkp.exists_value_ae_eq_sub_comp_normalReflection {a : ℝ}
       fun x => innerSL ℝ (S.indicator g x) := by
     set w := (W1p0.extendByZeroL le_top ⟨Wkp.firstOrder 1 u, hu⟩ :
       W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p)
-    have hval : W1p.value (Wkp.firstOrder 1 u) = Wkp.value 2 u := by
-      rw [Wkp.value_succ, Wkp.value_one, Wkp.firstOrder_succ, Wkp.firstOrder_zero]
-    have hgrad : W1p.gradient (Wkp.firstOrder 1 u) = g :=
-      (congrArg W1p.gradient ((Wkp.firstOrder_succ 0 u).trans (Wkp.firstOrder_zero _))).trans
-        (Wkp.iteratedGradient_zero (Wkp.lowerOrder 1 u)).symm
+    have hval : W1p.value (Wkp.firstOrder 1 u) = Wkp.value 2 u := Wkp.value_firstOrder 1 u
+    have hgrad : W1p.gradient (Wkp.firstOrder 1 u) = g := Wkp.gradient_firstOrder_one u
     have hv := coeFn_extendByZeroLpₗᵢ ℝ hS (SetLike.coe_subset_coe.mpr le_top)
       (W1p.value (Wkp.firstOrder 1 u))
     have hg := coeFn_extendByZeroLpₗᵢ ℝ hS (SetLike.coe_subset_coe.mpr le_top)

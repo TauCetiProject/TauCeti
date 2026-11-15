@@ -61,11 +61,11 @@ def centralizerLsmulAlgEquivEnd (s : Set A) (hs : Algebra.adjoin R s = ⊤) :
             ((Subalgebra.mem_centralizer_iff R).1 f.property _
               (Set.mem_image_of_mem _ hb))).symm
         | algebraMap r => intro x; simp [algebraMap_smul]
-        | add b c hb hc ihb ihc => intro x; simp [add_smul, ihb, ihc]
-        | mul b c hb hc ihb ihc => intro x; simp [mul_smul, ihb, ihc] }
+        | add b c _ _ ihb ihc => intro x; simp [add_smul, ihb, ihc]
+        | mul b c _ _ ihb ihc => intro x; simp [mul_smul, ihb, ihc] }
   invFun f := ⟨f.restrictScalars R, by
     rw [Subalgebra.mem_centralizer_iff]
-    rintro _ ⟨a, ha, rfl⟩
+    rintro _ ⟨a, _, rfl⟩
     ext x
     exact (f.map_smul a x).symm⟩
   left_inv _ := rfl

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.Haar
-public import TauCeti.RepresentationTheory.Continuous.LeftRegular
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import Mathlib.MeasureTheory.Function.L2Space

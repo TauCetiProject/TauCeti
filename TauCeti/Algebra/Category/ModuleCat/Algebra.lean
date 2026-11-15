@@ -25,6 +25,10 @@ on.
 
 The morphism space is identified with the `A`-linear maps by `ModuleCat.homLinearEquiv`, and
 those embed in maps into a power of the target by `TauCeti.isNoetherian_linearMap_of_finite`.
+
+A module bundled in `ModuleCat A` remembers only the action of `A`. `ModuleCat.moduleOfAlgebra`
+recovers its `R`-action through the algebra map, for any commutative base ring `R`; Mathlib records
+this for algebras over a field in `ModuleCat.moduleOfAlgebraModule`.
 -/
 
 public section
@@ -36,6 +40,18 @@ open scoped ModuleCat.Algebra
 universe u v w
 
 namespace ModuleCat
+
+/-- A module over an `R`-algebra, as a module over `R`. Mathlib records this for algebras over a
+field in `ModuleCat.moduleOfAlgebraModule`. -/
+abbrev moduleOfAlgebra (R : Type u) [CommRing R] {B : Type v} [Ring B] [Algebra R B]
+    (M : ModuleCat.{w} B) : Module R M :=
+  Module.restrictScalars R B M
+
+attribute [local instance] moduleOfAlgebra in
+/-- The action of `R` given by `ModuleCat.moduleOfAlgebra` is the action through the algebra map. -/
+theorem isScalarTower_moduleOfAlgebra (R : Type u) [CommRing R] {B : Type v} [Ring B] [Algebra R B]
+    (M : ModuleCat.{w} B) : IsScalarTower R B M :=
+  IsScalarTower.restrictScalars R B M
 
 variable {R : Type u} {A : Type v} [CommRing R] [IsNoetherianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A]

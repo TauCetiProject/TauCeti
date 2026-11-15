@@ -143,7 +143,7 @@ theorem map_latticeConj_deligneSplitting_le_sup_WC (p q : ℤ) :
       mhs.deligneSplitting q p ⊔ mhs.WC (p + q - 2) := by
   intro x hx
   rw [mhs.map_latticeConj_deligneSplitting p q] at hx
-  obtain ⟨hxConj, hxW, hxSecond⟩ := by
+  obtain ⟨hxConj, _, hxSecond⟩ := by
     simpa only [Submodule.mem_inf, and_assoc] using hx
   obtain ⟨a, ha, t, ht, hat⟩ := Submodule.mem_sup.1 hxSecond
   have htW : t ∈ mhs.WC (p + q - 2) :=

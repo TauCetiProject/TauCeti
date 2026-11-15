@@ -11,9 +11,10 @@ public import Mathlib.Order.Basic
 /-!
 # Closed intervals in `pi`-space with an updated endpoint
 
-A point of the box `Icc a b` in `Π i, π i` stays in the box obtained by moving one coordinate of
-an endpoint past the point: lowering `b i` to some `s ≥ x i`, or raising `a i` to some `s ≤ x i`.
-These are the two halves of the box `Icc a b` cut along the coordinate `i` at `s`.
+A point `x` of the box `Icc a b` in `Π i, π i` stays in the box obtained by replacing `b i`
+with `s ≥ x i`, or by replacing `a i` with `s ≤ x i`. Only the indicated comparison with
+`x i` is required. When `π i` is linearly ordered and `s ∈ Icc (a i) (b i)`, the two updated
+boxes cover the original box and describe its cut along coordinate `i` at `s`.
 -/
 
 public section

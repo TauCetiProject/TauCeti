@@ -104,7 +104,7 @@ private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f �
   let _ := finiteIntermediateFieldTopology K Ω L
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have := finiteIntermediateField_valuativeExtension K Ω L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   have heq : AlgEquiv.autCongr e
       (AlgEquiv.restrictNormalHom E (maximalUnramifiedFrobenius K Ω)) =
       frobeniusAlgEquiv (K := K) (L := L) := by

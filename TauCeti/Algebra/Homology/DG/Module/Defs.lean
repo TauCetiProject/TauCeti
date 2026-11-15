@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.GradedModule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # Differential graded left modules
@@ -58,6 +59,11 @@ a differential graded algebra be a module over itself with no twist.
 * `TauCeti.IsDGLeftModule.map_decompose`: the differential commutes with the homogeneous
   projections of the grading, `dM (x_p) = (dM x)_{p + 1}`; in particular the homogeneous components
   of a cycle are cycles and those of a boundary are boundaries.
+* `TauCeti.IsDGLeftModule.exists_mem_of_forall_exists`: if every relative cycle of a degree-zero
+  map of differential graded left modules is a relative boundary, then a homogeneous relative cycle
+  is the relative boundary of homogeneous elements of the matching degrees.
+  Conversely (`TauCeti.IsDGLeftModule.exists_of_forall_mem_exists`), if every homogeneous
+  relative cycle is a relative boundary, then so is every relative cycle.
 * `TauCeti.IsDGLeftModule.leibniz_of_map_eq_zero`: the Leibniz rule for an arbitrary scalar against
   a cycle, with no sign and no homogeneity hypothesis.
 * `TauCeti.IsDGLeftModule.smul_mem_range_of_map_eq_zero`: a cycle of `A` carries a boundary of `M`
@@ -122,6 +128,25 @@ theorem map_decompose (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
   DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) p x
 
+/-- If every relative cycle `(c, w)` of a degree-zero map `f`, with `dM c = 0` and `f c = dN w`, is
+a relative boundary `(dM u, f u + dN v)`, then a homogeneous relative cycle is the relative
+boundary of homogeneous elements of the matching degrees: take homogeneous components. -/
+theorem exists_mem_of_forall_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
+    [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
+    [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)
+    (hN : IsDGLeftModule h 𝒩 dN) {f : M →ₗ[A] N} (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hrel : ∀ c w, dM c = 0 → f c = dN w → ∃ u v, dM u = c ∧ f u + dN v = w)
+    {n : ℤ} {c : M} {w : N} (hc : c ∈ ℳ n) (hw : w ∈ 𝒩 (n - 1)) (hdc : dM c = 0)
+    (hcw : f c = dN w) :
+    ∃ u v, u ∈ ℳ (n - 1) ∧ v ∈ 𝒩 (n - 1 - 1) ∧ dM u = c ∧ f u + dN v = w := by
+  obtain ⟨u, v, hu, huv⟩ := hrel c w hdc hcw
+  refine ⟨decompose ℳ u (n - 1), decompose 𝒩 v (n - 1 - 1), SetLike.coe_mem _,
+    SetLike.coe_mem _, ?_, ?_⟩
+  · rw [hM.map_decompose, sub_add_cancel, hu, decompose_of_mem_same _ hc]
+  · rw [hf.map_decompose, hN.map_decompose, add_zero, sub_add_cancel,
+      ← Submodule.coe_add, ← DirectSum.add_apply, ← decompose_add, huv,
+      decompose_of_mem_same _ hw]
+
 /-- Every homogeneous projection of a boundary is again a boundary. -/
 theorem decompose_mem_range (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : x ∈ LinearMap.range dM)
     (p : ℤ) : (decompose ℳ x p : M) ∈ LinearMap.range dM := by
@@ -136,6 +161,38 @@ theorem map_decompose_eq_zero (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : dM x 
     dM (decompose ℳ x p : M) = 0 := by
   rw [hM.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply,
     ZeroMemClass.coe_zero]
+
+/-- The converse of `exists_mem_of_forall_exists`: if every **homogeneous** relative cycle of a
+degree-zero map `f` is a relative boundary, then so is every relative cycle. The homogeneous
+components of a relative cycle are relative cycles, and the relative boundaries bounding them add
+up. -/
+theorem exists_of_forall_mem_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
+    [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
+    [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)
+    (hN : IsDGLeftModule h 𝒩 dN) {f : M →ₗ[A] N} (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hrel : ∀ n c w, c ∈ ℳ n → w ∈ 𝒩 (n - 1) → dM c = 0 → f c = dN w →
+      ∃ u v, dM u = c ∧ f u + dN v = w)
+    (c : M) (w : N) (hc : dM c = 0) (hcw : f c = dN w) :
+    ∃ u v, dM u = c ∧ f u + dN v = w := by
+  classical
+  have key (n : ℤ) :
+      ∃ u v, dM u = decompose ℳ c n ∧ f u + dN v = decompose 𝒩 w (n - 1) := by
+    refine hrel n _ _ (SetLike.coe_mem _) (SetLike.coe_mem _) (hM.map_decompose_eq_zero hc n) ?_
+    rw [hf.map_decompose, add_zero, hcw, hN.map_decompose, sub_add_cancel]
+  choose u v huv using key
+  -- Every degree in which `c` or `w` has a nonzero component, the latter shifted by one.
+  let s := (decompose ℳ c).support ∪ (decompose 𝒩 w).support.image (· + 1)
+  refine ⟨∑ n ∈ s, u n, ∑ n ∈ s, v n, ?_, ?_⟩
+  · simp_rw [map_sum, (huv _).1]
+    conv_rhs => rw [← DirectSum.sum_support_decompose ℳ c]
+    exact (Finset.sum_subset Finset.subset_union_left fun n _ hn ↦ by simpa using hn).symm
+  · simp_rw [map_sum, ← Finset.sum_add_distrib, (huv _).2]
+    conv_rhs => rw [← DirectSum.sum_support_decompose 𝒩 w]
+    rw [← Finset.sum_image (g := (· - 1)) (f := fun m ↦ (decompose 𝒩 w m : N))
+      fun _ _ _ _ h ↦ by simpa using h]
+    refine (Finset.sum_subset (fun m hm ↦ Finset.mem_image.mpr ⟨m + 1,
+      Finset.mem_union_right _ (Finset.mem_image_of_mem _ hm), add_sub_cancel_right m 1⟩)
+      fun m _ hm ↦ by simpa using hm).symm
 
 /-- The Leibniz rule against a cycle: the sign disappears with the term it multiplies, so the
 scalar need not be homogeneous. -/

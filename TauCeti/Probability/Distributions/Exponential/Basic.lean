@@ -132,9 +132,19 @@ theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   exact ae_pos_gammaMeasure 1 r
 
 /-- A random variable with an exponential law is almost surely positive. -/
-theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
   (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- A nonnegative random variable with an exponential law has probability strictly less than
+one of being zero. -/
+lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ≥0}
+    (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
+    P {ω | X ω = 0} < 1 := by
+  refine (measure_mono_null (fun ω hω ↦ ?_)
+    (ae_iff.1 (ae_pos_of_hasLaw_expMeasure hlaw))).trans_lt zero_lt_one
+  simp_all
 
 /-- The rate of an exponential law of a random variable on a probability space is positive,
 because `expMeasure r` is the zero measure for `r ≤ 0`. -/

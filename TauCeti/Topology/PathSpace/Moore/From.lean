@@ -30,6 +30,7 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
 * `TauCeti.MoorePathFrom X b`: the Moore paths starting at `b`.
 * `TauCeti.MoorePathFrom.refl X b`: the constant path of length zero at `b`.
 * `TauCeti.MoorePathFrom.leftAct`: concatenation of a Moore loop at `b` in front of a path.
+* `TauCeti.MoorePathFrom.endpoint X b`: the end point, which the left loop action preserves.
 * `TauCeti.MoorePathFrom.truncateHomotopy`: the homotopy from the constant map at the constant path
   to the identity, by truncation.
 
@@ -124,6 +125,23 @@ theorem smul_eq_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :
 
 instance : ContinuousSMul (MooreLoopSpace X b) (MoorePathFrom X b) :=
   ⟨continuous_leftAct⟩
+
+/-! ### The end point -/
+
+variable (X b) in
+/-- The **end point** of a Moore path from `b`, the projection of the path fibration
+`P_b X → X`. -/
+def endpoint : C(MoorePathFrom X b, X) :=
+  ⟨fun γ ↦ γ.toMoorePath.target, MoorePath.continuous_target.comp continuous_toMoorePath⟩
+
+theorem endpoint_apply (γ : MoorePathFrom X b) : endpoint X b γ = γ.toMoorePath.target :=
+  (rfl)
+
+/-- Concatenating a loop in front does not move the end point. -/
+@[simp]
+theorem endpoint_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :
+    endpoint X b (leftAct ω γ) = endpoint X b γ := by
+  simp [endpoint_apply]
 
 /-! ### The contraction -/
 

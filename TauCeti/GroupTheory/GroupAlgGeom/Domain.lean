@@ -147,7 +147,7 @@ theorem of_isCSA {ι : G →* H} (hH : IsCSA H) {a b : G} (hab : ¬Commute (ι a
     Subgroup.mem_centralizer_singleton_iff.2 (by simpa using (hxy 1).eq.symm)
   have hmem (g : G) : ι g ∈ Subgroup.centralizer {x} := by
     by_contra hg
-    exact (hH.centralizer_isTISubgroup hx).conj_notMem hg hyM hy
+    exact (hH.centralizer_isTISubgroup x).conj_notMem hg hyM hy
       (Subgroup.mem_centralizer_singleton_iff.2 (hxy g).eq.symm)
   have := hH.centralizer_isMulCommutative hx
   exact hab (setLike_mul_comm (hmem a) (hmem b))
@@ -184,7 +184,7 @@ private theorem exists_ne_one_forall_mem_normalClosure {ι : G →* H} (h : IsGD
   induction hs using Finset.Nonempty.cons_induction with
   | singleton k =>
     exact ⟨k, hs1 k (by simp), by simpa using Subgroup.subset_normalClosure rfl⟩
-  | cons k s hk hs ih =>
+  | cons k s hk _ ih =>
     obtain ⟨w, hw1, hw⟩ := ih fun k' hk' => hs1 k' (by simp [hk'])
     obtain ⟨⟨w', hw'⟩, hw'1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp
       (h.inf_ne_bot (hncl hw1) (hncl (hs1 k (by simp))))

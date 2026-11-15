@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.ExitExhaustion
-public import TauCeti.Probability.BrownianMotion.Geometric
+public import TauCeti.Probability.BrownianMotion.Geometric.Basic
 
 /-!
 # Expanding spot-domain exits

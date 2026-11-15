@@ -78,7 +78,7 @@ namespace ContRepresentation
 section Powers
 
 variable {𝕜 : Type} {G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+  [Monoid G] [TopologicalSpace G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)

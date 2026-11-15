@@ -55,6 +55,37 @@ theorem finSumFinRevEquiv_inr_val (p q n : ℕ) (hpq : p + q = n) (i : Fin q) :
   simp [finSumFinRevEquiv, Fin.rev]
   omega
 
+/-- Every index of the first block precedes every index of the second. -/
+@[simp]
+theorem finSumFinRevEquiv_inl_lt_inr (p q n : ℕ) (hpq : p + q = n) (i : Fin p) (j : Fin q) :
+    finSumFinRevEquiv p q n hpq (Sum.inl i) < finSumFinRevEquiv p q n hpq (Sum.inr j) := by
+  have := i.isLt
+  rw [Fin.lt_def, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inr_val]
+  omega
+
+/-- No index of the second block precedes an index of the first. -/
+@[simp]
+theorem not_finSumFinRevEquiv_inr_lt_inl (p q n : ℕ) (hpq : p + q = n) (i : Fin p) (j : Fin q) :
+    ¬finSumFinRevEquiv p q n hpq (Sum.inr j) < finSumFinRevEquiv p q n hpq (Sum.inl i) :=
+  (finSumFinRevEquiv_inl_lt_inr p q n hpq i j).not_gt
+
+/-- The first block is kept in order. -/
+@[simp]
+theorem finSumFinRevEquiv_inl_lt_inl_iff (p q n : ℕ) (hpq : p + q = n) {i i' : Fin p} :
+    finSumFinRevEquiv p q n hpq (Sum.inl i) < finSumFinRevEquiv p q n hpq (Sum.inl i') ↔
+      i < i' := by
+  rw [Fin.lt_def, finSumFinRevEquiv_inl_val, finSumFinRevEquiv_inl_val, Fin.lt_def]
+
+/-- The second block is read in reverse order. -/
+@[simp]
+theorem finSumFinRevEquiv_inr_lt_inr_iff (p q n : ℕ) (hpq : p + q = n) {j j' : Fin q} :
+    finSumFinRevEquiv p q n hpq (Sum.inr j) < finSumFinRevEquiv p q n hpq (Sum.inr j') ↔
+      j' < j := by
+  have := j.isLt
+  have := j'.isLt
+  rw [Fin.lt_def, finSumFinRevEquiv_inr_val, finSumFinRevEquiv_inr_val, Fin.lt_def]
+  omega
+
 /-- The family `(b (0, 0), b (0, 1), b (1, 0), b (1, 1), …)` of a doubly indexed family, listed
 pair by pair through `finProdFinEquiv`, splits off its first pair. -/
 theorem comp_finProdFinEquiv_symm_succ {α : Type*} {m : ℕ} (b : Fin (m + 1) × Fin 2 → α) :

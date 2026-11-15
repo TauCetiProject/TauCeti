@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Measure.Regular
 
@@ -12,20 +13,24 @@ public import Mathlib.MeasureTheory.Measure.Regular
 # Lusin's theorem
 
 A measurable map from a weakly regular measure space into a second-countable topological space is
-continuous off a set of arbitrarily small measure: for every measurable set `s` of finite measure
-and every `ε > 0` there is a closed set `F ⊆ s` with `μ (s \ F) < ε` on which the map is
+continuous off a set of arbitrarily small measure: for every null measurable set `s` of finite
+measure and every `ε > 0` there is a closed set `F ⊆ s` with `μ (s \ F) < ε` on which the map is
 continuous. This is **Lusin's theorem**. Its usual formulation with a compact set is the closed
 one followed by inner regularity by compact sets, and its usual hypothesis, a finite Borel measure
 on a Polish or metrizable space, is one of the regimes in which measures are weakly regular
 (Mathlib's `MeasureTheory.Measure.WeaklyRegular.of_pseudoMetrizableSpace_of_isFiniteMeasure`);
 for such a measure the whole space is an admissible `s`, and `μ (Set.univ \ F)` is `μ Fᶜ`.
+The admissible sets `s` are those measurable for the completion of `μ`, as in the classical
+statement: for Lebesgue measure on `ℝⁿ`, whose measurable space is the Borel σ-algebra, they are
+the Lebesgue measurable sets.
 
-The proof approximates `s` itself, the part of `s` mapped into each member of a countable basis of
-the target, and the part of `s` mapped into its complement, from inside by closed sets, and
-intersects the resulting unions; on the intersection every basic preimage is relatively open. For
-an almost-everywhere measurable map, the set `s` is first shrunk by the null set on which the map
-differs from a measurable one. A strongly measurable map has separable range, which is second
-countable in a pseudometrizable target, so the theorem applies to it through its range.
+The proof first replaces `s` by a measurable subset almost everywhere equal to it. It approximates
+that subset itself, the part of it mapped into each member of a countable basis of the target, and
+the part of it mapped into its complement, from inside by closed sets, and intersects the
+resulting unions; on the intersection every basic preimage is relatively open. For an
+almost-everywhere measurable map, the measurable subset is further shrunk by the null set on which
+the map differs from a measurable one. A strongly measurable map has separable range, which is
+second countable in a pseudometrizable target, so the theorem applies to it through its range.
 
 The theorem is the bridge from measurability to topology in arguments about weak convergence of
 measures: it lets a Borel map be treated as a continuous one on a closed set carrying almost all
@@ -36,8 +41,8 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
 ## Main statements
 
 * `Measurable.exists_isClosed_measure_sdiff_lt_continuousOn` — **Lusin's theorem**: a measurable
-  map into a second-countable space is continuous on a closed subset of any measurable set `s` of
-  finite measure whose complement in `s` has measure less than any prescribed `ε > 0`;
+  map into a second-countable space is continuous on a closed subset of any null measurable set
+  `s` of finite measure whose complement in `s` has measure less than any prescribed `ε > 0`;
 * `AEMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn` — the same for an
   almost-everywhere measurable map;
 * `MeasureTheory.StronglyMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn` and
@@ -46,8 +51,13 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
   pseudometrizable space, with no measurable structure and no countability assumption on the
   target;
 * `TauCeti.exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq` — Lusin's conclusion transfers
-  to an almost-everywhere equal map, which reduces each almost-everywhere version to its
-  everywhere counterpart.
+  to an almost-everywhere equal map and from the measurable subsets of a null measurable set to the
+  set itself, which reduces each almost-everywhere version to its everywhere counterpart and each
+  version to measurable sets;
+* `LowerSemicontinuous.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn` — a lower
+  semicontinuous function, with values in a second-countable linear order, of a map that is
+  continuous on measurable sets with arbitrarily small complement mass is almost-everywhere
+  measurable.
 
 ## References
 
@@ -65,22 +75,27 @@ open scoped ENNReal
 namespace TauCeti
 
 /-- Lusin's conclusion passes to a map almost everywhere equal to one for which it holds on every
-measurable subset of `s`: shrink `s` by a measurable null set containing the set where the two
-maps differ. No topological or measurable assumption on the target is needed. -/
+measurable subset of `s`: shrink `s` to a measurable subset that misses the set where the two
+maps differ and is almost everywhere equal to `s`. With `f = g`, this passes Lusin's conclusion
+from the measurable subsets of a null measurable set `s` to `s` itself. No topological or
+measurable assumption on the target is needed. -/
 theorem exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq {X Y : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] {μ : Measure X} {f g : X → Y}
-    {s : Set X} {ε : ℝ≥0∞} (hfg : f =ᵐ[μ] g) (hs : MeasurableSet s)
+    {s : Set X} {ε : ℝ≥0∞} (hfg : f =ᵐ[μ] g) (hs : NullMeasurableSet s μ)
     (hg : ∀ t ⊆ s, MeasurableSet t → ∃ F ⊆ t, IsClosed F ∧ μ (t \ F) < ε ∧ ContinuousOn g F) :
     ∃ F ⊆ s, IsClosed F ∧ μ (s \ F) < ε ∧ ContinuousOn f F := by
+  obtain ⟨t, hts, ht, hts_ae⟩ := hs.exists_measurable_subset_ae_eq
   set N := toMeasurable μ {x | f x ≠ g x} with hN
   have hNμ : μ N = 0 := by rw [hN, measure_toMeasurable]; exact ae_iff.1 hfg
-  obtain ⟨F, hFs, hF, hFμ, hFg⟩ :=
-    hg (s \ N) sdiff_subset (hs.diff (measurableSet_toMeasurable μ _))
-  refine ⟨F, hFs.trans sdiff_subset, hF, ?_, ?_⟩
-  · rwa [Set.sdiff_sdiff_comm, measure_sdiff_null hNμ] at hFμ
+  obtain ⟨F, hFt, hF, hFμ, hFg⟩ :=
+    hg (t \ N) (sdiff_subset.trans hts) (ht.diff (measurableSet_toMeasurable μ _))
+  refine ⟨F, hFt.trans (sdiff_subset.trans hts), hF, ?_, ?_⟩
+  · -- `t \ N` is almost everywhere equal to `t`, hence to `s`
+    have hs_ae : s =ᵐ[μ] t \ N := ((sdiff_null_ae_eq_self hNμ).trans hts_ae).symm
+    rwa [measure_congr (hs_ae.diff .rfl)]
   · refine hFg.congr fun x hx ↦ ?_
     by_contra hne
-    exact (hFs hx).2 (subset_toMeasurable μ _ hne)
+    exact (hFt hx).2 (subset_toMeasurable μ _ hne)
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace Y] [SecondCountableTopology Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
@@ -88,10 +103,13 @@ variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurable
 
 /-- **Lusin's theorem.** A measurable map `f` from a weakly regular measure space into a
 second-countable topological space is continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`,
-for every measurable set `s` of finite measure and every `ε > 0`. -/
+for every null measurable set `s` of finite measure and every `ε > 0`. -/
 theorem _root_.Measurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : Measurable f)
-    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
+    (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
     ∃ F ⊆ s, IsClosed F ∧ μ (s \ F) < ε ∧ ContinuousOn f F := by
+  -- it suffices to treat the measurable subsets `t` of `s`
+  refine exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq .rfl hs fun t hts ht ↦ ?_
+  have hμt : μ t ≠ ∞ := ne_top_of_le_ne_top hμs (measure_mono hts)
   set B := TopologicalSpace.countableBasis Y
   have : Countable B := (TopologicalSpace.countable_countableBasis Y).to_subtype
   have hε2 : ε / 2 ≠ 0 := (ENNReal.half_pos hε).ne'
@@ -99,28 +117,28 @@ theorem _root_.Measurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : Me
   have hδ2 : ∀ U : B, δ U / 2 ≠ 0 := fun U ↦ (ENNReal.half_pos (hδ U).ne').ne'
   have hU : ∀ U : B, MeasurableSet (f ⁻¹' U) := fun U ↦
     hf (TopologicalSpace.isOpen_of_mem_countableBasis U.2).measurableSet
-  have hne : ∀ t, t ⊆ s → μ t ≠ ∞ := fun t ht ↦ ne_top_of_le_ne_top hμs (measure_mono ht)
-  obtain ⟨K, hKs, hKclosed, hKμ⟩ := hs.exists_isClosed_sdiff_lt hμs hε2
+  have hne : ∀ u, u ⊆ t → μ u ≠ ∞ := fun u hu ↦ ne_top_of_le_ne_top hμt (measure_mono hu)
+  obtain ⟨K, hKt, hKclosed, hKμ⟩ := ht.exists_isClosed_sdiff_lt hμt hε2
   choose F hFsub hFclosed hFμ using fun U : B ↦
-    (hs.inter (hU U)).exists_isClosed_sdiff_lt (hne _ inter_subset_left) (hδ2 U)
+    (ht.inter (hU U)).exists_isClosed_sdiff_lt (hne _ inter_subset_left) (hδ2 U)
   choose G hGsub hGclosed hGμ using fun U : B ↦
-    (hs.diff (hU U)).exists_isClosed_sdiff_lt (hne _ sdiff_subset) (hδ2 U)
-  refine ⟨K ∩ ⋂ U, F U ∪ G U, inter_subset_left.trans hKs,
+    (ht.diff (hU U)).exists_isClosed_sdiff_lt (hne _ sdiff_subset) (hδ2 U)
+  refine ⟨K ∩ ⋂ U, F U ∪ G U, inter_subset_left.trans hKt,
     hKclosed.inter (isClosed_iInter fun U ↦ (hFclosed U).union (hGclosed U)), ?_, ?_⟩
-  · calc μ (s \ (K ∩ ⋂ U, F U ∪ G U))
-        = μ ((s \ K) ∪ ⋃ U, s \ (F U ∪ G U)) := by rw [sdiff_inter, sdiff_iInter]
-      _ ≤ μ (s \ K) + μ (⋃ U, s \ (F U ∪ G U)) := measure_union_le _ _
-      _ ≤ μ (s \ K) + ∑' U, μ (s \ (F U ∪ G U)) := add_le_add_right (measure_iUnion_le _) _
-      _ ≤ μ (s \ K) + ∑' U, δ U := add_le_add_right (tsum_le_tsum fun U ↦ ?_) _
+  · calc μ (t \ (K ∩ ⋂ U, F U ∪ G U))
+        = μ ((t \ K) ∪ ⋃ U, t \ (F U ∪ G U)) := by rw [sdiff_inter, sdiff_iInter]
+      _ ≤ μ (t \ K) + μ (⋃ U, t \ (F U ∪ G U)) := measure_union_le _ _
+      _ ≤ μ (t \ K) + ∑' U, μ (t \ (F U ∪ G U)) := add_le_add_right (measure_iUnion_le _) _
+      _ ≤ μ (t \ K) + ∑' U, δ U := add_le_add_right (tsum_le_tsum fun U ↦ ?_) _
       _ < ε / 2 + ε / 2 := ENNReal.add_lt_add hKμ hδε
       _ = ε := ENNReal.add_halves ε
-    have hsub : s \ (F U ∪ G U) ⊆ ((s ∩ f ⁻¹' U) \ F U) ∪ ((s \ f ⁻¹' U) \ G U) := fun x hx ↦ by
+    have hsub : t \ (F U ∪ G U) ⊆ ((t ∩ f ⁻¹' U) \ F U) ∪ ((t \ f ⁻¹' U) \ G U) := fun x hx ↦ by
       simp only [mem_sdiff, mem_union, not_or] at hx
       by_cases hxU : x ∈ f ⁻¹' U
       · exact Or.inl ⟨⟨hx.1, hxU⟩, hx.2.1⟩
       · exact Or.inr ⟨⟨hx.1, hxU⟩, hx.2.2⟩
-    calc μ (s \ (F U ∪ G U))
-        ≤ μ ((s ∩ f ⁻¹' U) \ F U) + μ ((s \ f ⁻¹' U) \ G U) :=
+    calc μ (t \ (F U ∪ G U))
+        ≤ μ ((t ∩ f ⁻¹' U) \ F U) + μ ((t \ f ⁻¹' U) \ G U) :=
           (measure_mono hsub).trans (measure_union_le _ _)
       _ ≤ δ U / 2 + δ U / 2 := add_le_add (hFμ U).le (hGμ U).le
       _ = δ U := ENNReal.add_halves _
@@ -133,13 +151,13 @@ theorem _root_.Measurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : Me
     · exact absurd hxG' hxG
 
 /-- **Lusin's theorem** for an almost-everywhere measurable map: it is continuous on a closed set
-`F ⊆ s` with `μ (s \ F) < ε`, for every measurable set `s` of finite measure and every
+`F ⊆ s` with `μ (s \ F) < ε`, for every null measurable set `s` of finite measure and every
 `ε > 0`. -/
 theorem _root_.AEMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn (hf : AEMeasurable f μ)
-    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
+    (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
     ∃ F ⊆ s, IsClosed F ∧ μ (s \ F) < ε ∧ ContinuousOn f F :=
   exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq hf.ae_eq_mk hs fun _t hts ht ↦
-    hf.measurable_mk.exists_isClosed_measure_sdiff_lt_continuousOn ht
+    hf.measurable_mk.exists_isClosed_measure_sdiff_lt_continuousOn ht.nullMeasurableSet
       (ne_top_of_le_ne_top hμs (measure_mono hts)) hε
 
 section StronglyMeasurable
@@ -151,11 +169,11 @@ countability assumption on the target. -/
 variable {Z : Type*} [TopologicalSpace Z] [TopologicalSpace.PseudoMetrizableSpace Z] {g : X → Z}
 
 /-- **Lusin's theorem** for a strongly measurable map into a pseudometrizable space: it is
-continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every measurable set `s` of finite
-measure and every `ε > 0`. The target needs no measurable structure and need not be second
+continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every null measurable set `s` of
+finite measure and every `ε > 0`. The target needs no measurable structure and need not be second
 countable. -/
 theorem _root_.MeasureTheory.StronglyMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn
-    (hg : StronglyMeasurable g) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
+    (hg : StronglyMeasurable g) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
     ∃ F ⊆ s, IsClosed F ∧ μ (s \ F) < ε ∧ ContinuousOn g F := by
   borelize Z
   have : SecondCountableTopology (range g) := hg.isSeparable_range.secondCountableTopology
@@ -165,15 +183,39 @@ theorem _root_.MeasureTheory.StronglyMeasurable.exists_isClosed_measure_sdiff_lt
   exact ⟨F, hFs, hF, hFμ, continuous_subtype_val.comp_continuousOn hFg⟩
 
 /-- **Lusin's theorem** for an almost-everywhere strongly measurable map into a pseudometrizable
-space: it is continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every measurable set `s`
-of finite measure and every `ε > 0`. -/
+space: it is continuous on a closed set `F ⊆ s` with `μ (s \ F) < ε`, for every null measurable set
+`s` of finite measure and every `ε > 0`. -/
 theorem _root_.MeasureTheory.AEStronglyMeasurable.exists_isClosed_measure_sdiff_lt_continuousOn
-    (hg : AEStronglyMeasurable g μ) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
+    (hg : AEStronglyMeasurable g μ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) (hε : ε ≠ 0) :
     ∃ F ⊆ s, IsClosed F ∧ μ (s \ F) < ε ∧ ContinuousOn g F :=
   exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq hg.ae_eq_mk hs fun _t hts ht ↦
-    hg.stronglyMeasurable_mk.exists_isClosed_measure_sdiff_lt_continuousOn ht
+    hg.stronglyMeasurable_mk.exists_isClosed_measure_sdiff_lt_continuousOn ht.nullMeasurableSet
       (ne_top_of_le_ne_top hμs (measure_mono hts)) hε
 
 end StronglyMeasurable
+
+/-- A lower semicontinuous function, with values in a second-countable linear order, of a map
+that is continuous on measurable sets with arbitrarily small complement mass is
+almost-everywhere measurable: the map is continuous on
+countably many measurable sets whose union is a full-measure set, and on each of them the
+composite is lower semicontinuous. The sets supplied by Lusin's theorem are closed, but only
+their measurability matters here. -/
+theorem _root_.LowerSemicontinuous.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn
+    {Ω W α : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    [TopologicalSpace W] [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [LinearOrder α]
+    [OrderTopology α] [SecondCountableTopology α] {h : W → α} {Φ : Ω → W} {μ : Measure Ω}
+    (hh : LowerSemicontinuous h)
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, MeasurableSet C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
+    AEMeasurable (fun x ↦ h (Φ x)) μ := by
+  choose C hC hΦC hμC using fun n : ℕ ↦ hΦ (n : ℝ≥0∞)⁻¹ (by simp)
+  have hmeas : ∀ n, AEMeasurable (fun x ↦ h (Φ x)) (μ.restrict (C n)) := fun n ↦
+    aemeasurable_restrict_of_measurable_subtype (hC n) (hh.comp (hΦC n).domRestrict).measurable
+  have hnull : μ (⋃ n, C n)ᶜ = 0 := by
+    by_contra hne
+    obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hne
+    exact hn.not_ge ((measure_mono (compl_subset_compl.2 (subset_iUnion C n))).trans (hμC n))
+  rw [← Measure.restrict_eq_self_of_ae_mem (s := ⋃ n, C n) (measure_eq_zero_iff_ae_notMem.1 hnull
+    |>.mono fun x hx ↦ not_not.1 hx)]
+  exact aemeasurable_iUnion_iff.2 hmeas
 
 end TauCeti

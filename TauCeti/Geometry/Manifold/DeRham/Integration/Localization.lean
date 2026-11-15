@@ -67,8 +67,7 @@ theorem eq_zero_of_integral_eq_zero_of_mem_range_extendByZero
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {c : compactlySupportedDeRhamCohomology I W n}
     (hc : c ∈ LinearMap.range (extendByZero h n))
     (hzero : integral (o.restrict W) c = 0) : c = 0 := by
-  have : SigmaCompactSpace U :=
-    ⟨Φ.toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range Φ.continuous⟩
+  have : SigmaCompactSpace U := Φ.toHomeomorph.symm.isClosedEmbedding.sigmaCompactSpace
   obtain ⟨d, rfl⟩ := hc
   rw [integral_extendByZero] at hzero
   have hd : d = 0 := (bijective_integral_of_diffeomorph_normedSpace (o.restrict U) Φ).injective

@@ -8,6 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.Topology.MetricSpace.Lipschitz
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -20,7 +25,9 @@ This file proves the equal-dimensional case of Sard's theorem for maps between t
 different finite-dimensional real normed spaces.  A differentiable map sends any set on which its
 derivative is nowhere surjective to a set of additive Haar measure zero.  In particular, the
 critical values of a differentiable map between spaces of equal dimension have measure zero, and
-the regular values are dense.
+the regular values are dense. For Lipschitz maps, the totalized critical values are also null,
+including images of nondifferentiability points. On the real line this says that the image of the
+zero set of the totalized derivative is Lebesgue-null.
 
 Mathlib proves the corresponding result for an endomorphism of one normed space in
 `addHaar_image_eq_zero_of_det_fderivWithin_eq_zero`.  We transport the codomain across a continuous
@@ -34,6 +41,8 @@ to maps whose source has strictly larger dimension, where higher regularity is n
   spaces sends a set of nonsurjective derivative points to a null set.
 * `Differentiable.addHaar_image_criticalPoints_eq_zero`: the critical values of a globally
   differentiable map between equal-dimensional spaces form a null set.
+* `LipschitzWith.addHaar_image_criticalPoints_eq_zero`: the same nullity for Lipschitz maps,
+  including their nondifferentiability points in the totalized critical set.
 * `Differentiable.dense_compl_image_criticalPoints`: the regular values of such a map are
   dense.
 
@@ -44,6 +53,7 @@ variables theorem, itself based on Fremlin, *Measure Theory*, volume 2.
 public section
 
 open Function MeasureTheory MeasureTheory.Measure Module Set
+open scoped NNReal
 
 namespace TauCeti
 
@@ -101,6 +111,42 @@ theorem _root_.Differentiable.addHaar_image_criticalPoints_eq_zero
   · intro x _
     exact (hf x).hasFDerivAt.hasFDerivWithinAt
   · exact fun x hx ↦ hx
+
+/-- The totalized critical values of a Lipschitz map between equal-dimensional real normed
+spaces have additive Haar measure zero. This includes the images of nondifferentiability points,
+where `fderiv` is zero by convention. No measurability hypothesis on the critical set is needed. -/
+theorem _root_.LipschitzWith.addHaar_image_criticalPoints_eq_zero {K : ℝ≥0}
+    (hf : LipschitzWith K f) (ν : Measure F) [IsAddHaarMeasure ν]
+    (hdim : finrank ℝ E = finrank ℝ F) :
+    ν (f '' {x | ¬ Surjective (fderiv ℝ f x)}) = 0 := by
+  let D := {x | DifferentiableAt ℝ f x}
+  have hD : (addHaar : Measure E) Dᶜ = 0 := by
+    exact ae_iff.mp (hf.ae_differentiableAt (μ := addHaar))
+  have hbad : ν (f '' Dᶜ) = 0 :=
+    hf.lipschitzOnWith.addHaar_image_eq_zero addHaar ν hdim.le hD
+  have hcrit : ν (f '' (D ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 := by
+    apply addHaar_image_eq_zero_of_not_surjective_fderivWithin ν hdim
+    · intro x hx
+      exact hx.1.hasFDerivAt.hasFDerivWithinAt
+    · exact fun x hx ↦ hx.2
+  apply measure_mono_null (t := f '' Dᶜ ∪ f '' (D ∩ {x | ¬ Surjective (fderiv ℝ f x)}))
+  · rintro _ ⟨x, hx, rfl⟩
+    by_cases hd : x ∈ D
+    · exact Or.inr ⟨x, ⟨hd, hx⟩, rfl⟩
+    · exact Or.inl ⟨x, hd, rfl⟩
+  · exact measure_union_null hbad hcrit
+
+/-- A Lipschitz function on the real line maps its totalized zero-derivative set to a
+Lebesgue-null set, including the images of all nondifferentiability points. -/
+theorem _root_.LipschitzWith.volume_image_setOf_deriv_eq_zero {K : ℝ≥0} {v : ℝ → ℝ}
+    (hv : LipschitzWith K v) : volume (v '' {r | deriv v r = 0}) = 0 := by
+  apply measure_mono_null (image_mono (t := {r | ¬ Surjective (fderiv ℝ v r)}) ?_)
+    (hv.addHaar_image_criticalPoints_eq_zero volume rfl)
+  intro r hr hsurj
+  obtain ⟨t, ht⟩ := hsurj 1
+  simp only [mem_ofPred_eq] at hr
+  rw [fderiv_eq_deriv_mul, hr, zero_mul] at ht
+  exact zero_ne_one ht
 
 /-- The regular values of a differentiable map between equal-dimensional finite-dimensional real
 normed spaces are dense. Here the regular values are expressed as the complement of the image of

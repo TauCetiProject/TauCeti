@@ -24,7 +24,9 @@ extended to its sheafification.
 
 The file also records that sections of a sheaf of sets are determined by their restrictions
 along the sieve on which a given section lifts through a locally surjective morphism
-(`CategoryTheory.Presheaf.ext_of_isLocallySurjective`).
+(`CategoryTheory.Presheaf.ext_of_isLocallySurjective`), and that at an object whose only
+covering sieve is the maximal one, such as the terminal object of a local site, a locally
+injective (resp. locally surjective) morphism is injective (resp. surjective) on sections.
 -/
 
 public section
@@ -71,5 +73,24 @@ lemma ext_of_isLocallySurjective {F Q : Cᵒᵖ ⥤ Type w} (η : F ⟶ Q)
     a = b :=
   (((isSheaf_iff_isSheaf_of_type J _).1 Z.property).isSeparated _
     (imageSieve_mem J η q)).ext fun _ f ⟨x, hx⟩ ↦ h f x hx
+
+/-- At an object whose only covering sieve is the maximal sieve, a locally surjective morphism
+of presheaves of types is surjective on sections. -/
+lemma surjective_app_of_isLocallySurjective {F G : Cᵒᵖ ⥤ Type w} (η : F ⟶ G)
+    [IsLocallySurjective J η] {X : C} (hX : ∀ S ∈ J X, S = ⊤) :
+    Function.Surjective (η.app (op X)) := by
+  intro s
+  have hs : imageSieve η s (𝟙 X) := by
+    rw [hX _ (imageSieve_mem J η s)]
+    trivial
+  obtain ⟨t, ht⟩ := hs
+  exact ⟨t, by simpa using ht⟩
+
+/-- At an object whose only covering sieve is the maximal sieve, a locally injective morphism
+of presheaves of types is injective on sections. -/
+lemma injective_app_of_isLocallyInjective {F G : Cᵒᵖ ⥤ Type w} (η : F ⟶ G)
+    [IsLocallyInjective J η] {X : C} (hX : ∀ S ∈ J X, S = ⊤) :
+    Function.Injective (η.app (op X)) := fun x y hxy ↦
+  (equalizerSieve_eq_top_iff (F := F) x y).mp (hX _ (equalizerSieve_mem J η x y hxy))
 
 end CategoryTheory.Presheaf

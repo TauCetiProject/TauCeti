@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 import TauCeti.Algebra.Group.End
@@ -76,10 +76,10 @@ theorem coe_frobenius_apply (g : D.points A) (i j : Fin D.dim) :
 
 /-- Frobenius raises the parameter of every numbered root subgroup to its `p ^ k`-th power. -/
 @[simp]
-theorem frobenius_rootSubgroup (γ : Fin t.numRoots) (u : A) :
-    D.frobenius p k A (D.rootSubgroup γ A (Multiplicative.ofAdd u)) =
-      D.rootSubgroup γ A (Multiplicative.ofAdd (u ^ p ^ k)) := by
-  rw [frobenius_def, map_rootSubgroup, toAdd_ofAdd, iterateFrobenius_def]
+theorem frobenius_rootSubgroupPoints (γ : Fin t.numRoots) (u : A) :
+    D.frobenius p k A (D.rootSubgroupPoints γ A (Multiplicative.ofAdd u)) =
+      D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u ^ p ^ k)) := by
+  rw [frobenius_def, map_rootSubgroupPoints, toAdd_ofAdd, iterateFrobenius_def]
 
 /-- On the actual weight-lattice torus, Frobenius raises every coordinate to its
 `p ^ k`-th power. -/

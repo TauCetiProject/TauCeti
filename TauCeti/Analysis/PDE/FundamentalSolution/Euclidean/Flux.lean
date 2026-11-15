@@ -50,11 +50,9 @@ theorem fderiv_newtonianKernel_sub_apply_sphere_normal (n : ℕ) (hn2 : n ≠ 2)
       -(((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         r ^ (1 - (n : ℝ))) := by
   have hu_norm : ‖(u : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere u
-  have hru : r • (u : EuclideanSpace ℝ (Fin n)) ≠ 0 :=
-    smul_ne_zero hr.ne' (ne_zero_of_mem_unit_sphere u)
   have hnorm_ru : ‖r • (u : EuclideanSpace ℝ (Fin n))‖ = r := by
     rw [norm_smul_of_nonneg hr.le, hu_norm, mul_one]
-  rw [fderiv_newtonianKernel_sub_apply n hn2 (by simpa using hru)]
+  rw [fderiv_newtonianKernel_sub_apply n hn2]
   simp only [add_sub_cancel_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hu_norm,
     one_pow, mul_one]
   rw [hnorm_ru]

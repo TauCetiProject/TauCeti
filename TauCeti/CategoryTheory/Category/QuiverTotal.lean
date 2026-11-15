@@ -35,6 +35,8 @@ function of the source over the arrows `Quiver.Costar x` with target `x`
 ## Main declarations
 
 * `Quiver.Total.comp`: the composite of two composable total arrows of a category.
+* `Quiver.Total.comp_inv_comp`, `Quiver.Total.inv_comp_comp`: in a groupoid, composing with an
+  arrow and with its inverse cancel.
 -/
 
 public section
@@ -139,5 +141,31 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
   dsimp only at hy hz hz' hw
   subst hy hz hz' hw
   simp
+
+section IsGroupoid
+
+variable [IsGroupoid C]
+
+/-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
+theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
+    (h' : a.right = ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h).left) :
+    a.comp ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h) h' = c := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨x', z, g⟩ := c
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+/-- Following the inverse of `a` by the composite of `a` with `b` gives back `b`. -/
+theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
+    (h' : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = (a.comp b h).left) :
+    (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp (a.comp b h) h' = b := by
+  obtain ⟨x, y, f⟩ := a
+  obtain ⟨y', z, g⟩ := b
+  dsimp only at h
+  subst h
+  simp [comp_def]
+
+end IsGroupoid
 
 end Quiver.Total

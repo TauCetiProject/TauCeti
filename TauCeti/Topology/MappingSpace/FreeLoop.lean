@@ -10,6 +10,9 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Topology.Homotopy.Homotopic.With
+import TauCeti.Topology.PathComponent
 
 /-!
 # Paths of free loops, closed unit-interval paths, and contractible free loops
@@ -23,18 +26,22 @@ compatibly with evaluation at `1 ∈ S¹`, constant loops, and the based loop fi
 
 Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) consists of the loops
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
-their own basepoint (`mem_contractibleLoops_iff_joined_const`). The constant loops embed in `𝓛₀Q`
-(`TauCeti.isEmbedding_constContractibleLoop`), with retraction `TauCeti.basepointContractibleLoop`
-given by evaluation at `1`. A path in the free loop space that starts at a constant loop stays in
-`𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`), so the paths from a constant loop to a
-constant loop, `TauCeti.ConstLoopPath`, are the same as such paths in `𝓛₀Q`
-(`TauCeti.constLoopPathHomeomorph`).
+their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is the union of the
+path components of the constant loops (`pathComponent_const_subset_contractibleLoops`). The
+constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
+`TauCeti.basepointContractibleLoop` given by evaluation at `1`. A path in the free loop space
+that starts at a constant loop stays in `𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`),
+so the paths from a constant loop to a constant loop, `TauCeti.ConstLoopPath`, are the same as
+such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 
 ## Main declarations
 
 * `TauCeti.ClosedUnitPath`, `TauCeti.circleMapHomeomorphClosedUnitPath`:
   `C(Circle, Q) ≃ₜ {p : C(I, Q) // p 0 = p 1}`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
+* `Path.continuous_toCircle`: reading loops as circle maps is continuous.
+* `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
+  they are homotopic through closed paths `I → Q`.
 * `TauCeti.contractibleLoops`, `TauCeti.basepointContractibleLoop`: the contractible free loops
   `𝓛₀Q` and basepoint evaluation `𝓛₀Q → Q` at `1 ∈ Circle`.
 * `TauCeti.constContractibleLoop`: the constant loops as a continuous map `Q → 𝓛₀Q`, an
@@ -179,7 +186,8 @@ private theorem factorsThrough_unitToCircle_iff (g : C(I, Q)) :
 /-- **Circle maps are closed unit-interval paths.** Precomposition with `unitToCircle` is a
 homeomorphism `C(Circle, Q) ≃ₜ ClosedUnitPath Q`. -/
 def circleMapHomeomorphClosedUnitPath : C(Circle, Q) ≃ₜ ClosedUnitPath Q :=
-  (ContinuousMap.homeomorphFactorsThrough unitToCircle unitToCircle_surjective).trans
+  (ContinuousMap.homeomorphFactorsThrough unitToCircle unitToCircle.continuous.isProperMap
+      unitToCircle_surjective).trans
     { toFun g := ⟨g.1, (factorsThrough_unitToCircle_iff g.1).1 g.2⟩
       invFun p := ⟨p.1, (factorsThrough_unitToCircle_iff p.1).2 p.2⟩
       left_inv _ := rfl
@@ -191,7 +199,8 @@ def circleMapHomeomorphClosedUnitPath : C(Circle, Q) ≃ₜ ClosedUnitPath Q :=
 theorem coe_circleMapHomeomorphClosedUnitPath (γ : C(Circle, Q)) :
     (circleMapHomeomorphClosedUnitPath γ : C(I, Q)) = γ.comp unitToCircle := by
   rw [circleMapHomeomorphClosedUnitPath, Homeomorph.trans_apply]
-  exact ContinuousMap.homeomorphFactorsThrough_apply unitToCircle unitToCircle_surjective γ
+  exact ContinuousMap.homeomorphFactorsThrough_apply unitToCircle
+    unitToCircle.continuous.isProperMap unitToCircle_surjective γ
 
 theorem circleMapHomeomorphClosedUnitPath_apply (γ : C(Circle, Q)) (t : I) :
     (circleMapHomeomorphClosedUnitPath γ).1 t = γ (unitToCircle t) := by
@@ -281,6 +290,11 @@ theorem basepointContractibleLoop_comp_constContractibleLoop :
     (basepointContractibleLoop (Q := Q)).comp constContractibleLoop = ContinuousMap.id Q :=
   ContinuousMap.ext basepointContractibleLoop_constContractibleLoop
 
+/-- The contractible free loops contain the path component of every constant loop. -/
+theorem pathComponent_const_subset_contractibleLoops (q : Q) :
+    pathComponent (ContinuousMap.const Circle q) ⊆ contractibleLoops Q :=
+  fun _ h ↦ mem_contractibleLoops_iff.2 ⟨q, h.symm⟩
+
 /-- A circle loop is contractible if and only if it is joined in `C(Circle, Q)` to the constant
 loop at its own basepoint `γ 1`. -/
 theorem mem_contractibleLoops_iff_joined_const {γ : C(Circle, Q)} :
@@ -292,3 +306,35 @@ theorem mem_contractibleLoops_iff_joined_const {γ : C(Circle, Q)} :
   exact hq.trans hc.symm
 
 end TauCeti
+
+/-! ### Free loops as loops, and free homotopies of loops -/
+
+section FreeLoop
+
+variable {X : Type*} [TopologicalSpace X]
+
+namespace Path
+
+variable {x y : X}
+
+/-- Reading loops at `x` as maps from the circle is continuous. -/
+theorem continuous_toCircle (x : X) : Continuous fun γ : Path x x ↦ γ.toCircle := by
+  simp_rw [← TauCeti.coe_basedMapCircleOneHomeomorphPath_symm]
+  exact continuous_subtype_val.comp (TauCeti.basedMapCircleOneHomeomorphPath x).symm.continuous
+
+/-- **Free homotopy of loops is homotopy through closed paths.** Two loops, at possibly different
+points, are joined by a path in `C(S¹, X)` exactly when they are homotopic as maps `I → X` through
+maps taking the same value at `0` and at `1`. -/
+theorem joined_toCircle_iff_homotopicWith (γ : Path x x) (γ' : Path y y) :
+    Joined γ.toCircle γ'.toCircle ↔
+      (γ : C(I, X)).HomotopicWith (γ' : C(I, X)) fun p ↦ p 0 = p 1 := by
+  have h {z : X} (ω : Path z z) : TauCeti.circleMapHomeomorphClosedUnitPath ω.toCircle =
+      ⟨ω, by simp⟩ := by
+    ext t
+    simp
+  rw [← (TauCeti.circleMapHomeomorphClosedUnitPath (Q := X)).joined_iff, h, h,
+    ContinuousMap.homotopicWith_iff_joined]
+
+end Path
+
+end FreeLoop

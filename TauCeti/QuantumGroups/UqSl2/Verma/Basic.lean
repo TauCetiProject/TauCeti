@@ -160,16 +160,8 @@ theorem k_smul_vec_zero : k q • vec q μ 0 = μ • vec q μ 0 := by
   exact k_sub_algebraMap_mem_vermaIdeal μ
 
 /-- The action of `K⁻¹` on the highest vector. -/
-theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 := by
-  rcases eq_or_ne μ 0 with rfl | hμ
-  · -- For `μ = 0` the highest vector is `K⁻¹ K v₀ = 0`.
-    have h : vec q 0 0 = 0 := by
-      rw [← one_smul (UqSl2 q) (vec q 0 0), ← kInv_mul_k, mul_smul, k_smul_vec_zero, zero_smul,
-        smul_zero]
-    rw [h, smul_zero, smul_zero]
-  · calc kInv q • vec q μ 0 = μ⁻¹ • kInv q • μ • vec q μ 0 := by
-          rw [smul_comm (kInv q) μ, inv_smul_smul₀ hμ]
-      _ = μ⁻¹ • vec q μ 0 := by rw [← k_smul_vec_zero, ← mul_smul, kInv_mul_k, one_smul]
+theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 :=
+  kInv_smul_of_mem_weightSpace (mem_weightSpace_iff.mpr k_smul_vec_zero)
 
 /-- The action of `K`: `K v_j = q^(-2j) μ v_j`. -/
 @[simp]
@@ -193,23 +185,16 @@ theorem vec_mem_weightSpace (j : ℕ) :
 theorem e_smul_vec_succ (j : ℕ) :
     e q • vec q μ (j + 1) =
       (quantumInteger q (j + 1) * (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) / (q - q⁻¹)) • vec q μ j := by
-  rcases eq_or_ne (q - q⁻¹) 0 with hq | hq
-  · -- At `q = ±1` the generators `E` and `F` commute, and both sides vanish.
-    have hc : Commute (e q) (f q) := by
-      have h := e_mul_f_sub_f_mul_e (q := q)
-      rwa [hq, inv_zero, zero_smul, sub_eq_zero] at h
-    rw [vec_eq_f_pow_smul, ← mul_smul, (hc.pow_right _).eq, mul_smul, e_smul_vec_zero, smul_zero,
-      hq, div_zero, zero_smul]
-  · have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • vec q μ 0 =
-        (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • vec q μ 0 := by
-      rw [sub_smul, smul_assoc, smul_assoc, k_smul_vec_zero, kInv_smul_vec_zero, smul_smul,
-        smul_smul, sub_smul]
-    rw [vec_eq_f_pow_smul, ← mul_smul, e_mul_f_pow hq, add_smul, mul_smul, e_smul_vec_zero,
-      smul_zero, zero_add, Nat.add_sub_cancel, smul_assoc, mul_smul (f q ^ j), hX,
-      smul_comm (f q ^ j), ← vec_eq_f_pow_smul, smul_smul]
-    congr 1
-    push_cast
-    ring
+  have hX : (q⁻¹ ^ j • k q - q ^ j • kInv q) • vec q μ 0 =
+      (q⁻¹ ^ j * μ - q ^ j * μ⁻¹) • vec q μ 0 := by
+    rw [sub_smul, smul_assoc, smul_assoc, k_smul_vec_zero, kInv_smul_vec_zero, smul_smul,
+      smul_smul, sub_smul]
+  rw [vec_eq_f_pow_smul, ← mul_smul, e_mul_f_pow, add_smul, mul_smul, e_smul_vec_zero,
+    smul_zero, zero_add, Nat.add_sub_cancel, smul_assoc, mul_smul (f q ^ j), hX,
+    smul_comm (f q ^ j), ← vec_eq_f_pow_smul, smul_smul]
+  congr 1
+  push_cast
+  ring
 
 /-! ### Spanning -/
 

@@ -215,25 +215,6 @@ theorem hasNondegenerateCriticalPointsOn_cosAddHalfSq :
     HasNondegenerateCriticalPointsOn cosAddHalfSq univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦ isNondegenerateCriticalPoint_cosAddHalfSq hz
 
-/-- At a critical point with `cos x = -1`, the Morse index is `0`. -/
-private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = -1) :
-    morseIndex cosAddHalfSq z = 0 := by
-  have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hz
-  refine hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.1 fun u hu ↦ ?_
-  rw [hessianQuadraticForm_cosAddHalfSq, hc]
-  have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
-    by_contra h
-    rw [not_or, not_not, not_not] at h
-    apply hu
-    ext i
-    fin_cases i
-    · simpa using h.1
-    · simpa using h.2
-  rcases hne with h | h
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
-
 /-- At a critical point with `cos x = 1`, the Morse index is `1`. -/
 private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
     (hz : fderiv ℝ cosAddHalfSq z = 0) (hc : Real.cos (z 0) = 1) :
@@ -244,8 +225,8 @@ private theorem morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one {z : Euclide
     rw [hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have h2 : morseIndex cosAddHalfSq z ≠ 2 := fun h ↦ by
-    have := (hnd.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.2
-      (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
+    have := ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
+      (f := cosAddHalfSq) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin])) e₁ (by simp)
     rw [neg_apply, hessianQuadraticForm_cosAddHalfSq, hc] at this
     norm_num at this
   have hle : morseIndex cosAddHalfSq z ≤ 2 := by
@@ -267,17 +248,26 @@ private noncomputable abbrev onAxis (z : EuclideanSpace ℝ (Fin 2)) : Euclidean
   EuclideanSpace.single 0 (z 0)
 
 private theorem fderiv_cosAddHalfSq_onAxis {z : EuclideanSpace ℝ (Fin 2)}
-    (h : Real.cos (z 0) = 1 ∨ Real.cos (z 0) = -1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
+    (h : Real.cos (z 0) = 1) : fderiv ℝ cosAddHalfSq (onAxis z) = 0 := by
   refine fderiv_cosAddHalfSq_eq_zero_iff.2 ⟨?_, by simp⟩
-  simpa using Real.sin_eq_zero_iff_cos_eq.2 h
+  simpa using Real.sin_eq_zero_iff_cos_eq.2 (Or.inl h)
 
 /-- At a point with `cos x = -1`, a minimum when it is critical, the Morse index is `0`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_neg_one {z : EuclideanSpace ℝ (Fin 2)}
     (hc : Real.cos (z 0) = -1) : morseIndex cosAddHalfSq z = 0 := by
-  have hw : Real.cos (onAxis z 0) = -1 := by simpa using hc
-  rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
-    morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_neg_one
-      (fderiv_cosAddHalfSq_onAxis (Or.inr hc)) hw]
+  refine morseIndex_eq_zero_of_posDef fun u hu ↦ ?_
+  rw [hessianQuadraticForm_cosAddHalfSq, hc]
+  have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
+    by_contra h
+    rw [not_or, not_not, not_not] at h
+    apply hu
+    ext i
+    fin_cases i
+    · simpa using h.1
+    · simpa using h.2
+  rcases hne with h | h
+  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
+  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
 
 /-- At a point with `cos x = 1`, a saddle when it is critical, the Morse index is `1`. -/
 theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
@@ -285,7 +275,7 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
   have hw : Real.cos (onAxis z 0) = 1 := by simpa using hc
   rw [morseIndex_cosAddHalfSq_congr (w := onAxis z) (by rw [hc, hw]),
     morseIndex_cosAddHalfSq_of_isCritical_of_cos_eq_one
-      (fderiv_cosAddHalfSq_onAxis (Or.inl hc)) hw]
+      (fderiv_cosAddHalfSq_onAxis hc) hw]
 
 /-- The negative-gradient flow of `cos x + y² / 2`. -/
 local notation "Φ" => negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq

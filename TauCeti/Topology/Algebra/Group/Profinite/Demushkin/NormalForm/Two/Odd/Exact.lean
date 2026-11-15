@@ -109,13 +109,9 @@ private theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_ta
         e r = demushkinWordTwoOddTop n (freeProPGen 2 n) * ((List.finRange n).tail.map t).prod := by
   have hr₁ : r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
     (pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).symm.le hr
-  -- A Demushkin group of odd rank has `q = 2`, so the degree-one form of `r` is not alternating.
-  have hq : demushkinQ hG = 2 :=
-    hG.demushkinQ_eq_two_of_odd_demushkinRank
-      (by rwa [demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG, Nat.card_fin])
   -- The normal form modulo `λ_2(F)`: `e₀` carries the class of `r` to that of the level-`∞` word.
   obtain ⟨e₀, he₀⟩ := hG.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop hr
-    (ContinuousMulEquiv.refl _) (hG.exists_cupFp_self_ne_zero_iff_demushkinQ_eq_two.2 hq) hn
+    (ContinuousMulEquiv.refl _) hn
   have hmem : e₀ r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
     (e₀ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom.map_pLowerCentralSeries_le
       (e₀ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ⟨r, hr₁, rfl⟩
@@ -129,7 +125,7 @@ private theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_ta
   obtain ⟨e₁, a, ha, he₁⟩ :=
     exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_mul_padicPow hn ⟨e₀ r, hmem⟩ h
   set t : Fin n → freeProP 2 (Fin n) :=
-    fun i ↦ (isProP_freeProP 2 (Fin n)).padicPow (of i) (a i) with ht_def
+    fun i ↦ (isProP_freeProP 2 (Fin n)).padicPow (of i) (a i)
   have ht : ∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure := fun i ↦ by
     simpa only [closedZpowers_def, Subgroup.zpowers_eq_closure] using
       (isProP_freeProP 2 (Fin n)).padicPow_mem_closedZpowers (of i) (a i)

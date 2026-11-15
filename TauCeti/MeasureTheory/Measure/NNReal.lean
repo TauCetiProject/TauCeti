@@ -61,11 +61,24 @@ theorem nnvolume_Iic (t : ℝ≥0) : nnvolume (Iic t) = (t : ℝ≥0∞) := by
   rw [nnvolume_apply, NNReal.image_coe_Iic, Real.volume_Icc]
   simp
 
+/-- The length of an initial interval with an extended endpoint, including infinity. -/
+@[simp]
+theorem nnvolume_setOf_coe_le (t : ℝ≥0∞) :
+    nnvolume {u : ℝ≥0 | (u : ℝ≥0∞) ≤ t} = t := by
+  induction t using ENNReal.recTopCoe with
+  | top => simp [nnvolume_apply, NNReal.range_coe]
+  | coe t => simpa only [ENNReal.coe_le_coe, Iic_def] using nnvolume_Iic t
+
 /-- A half-open interval has its usual length; the formula is zero for reversed endpoints. -/
 @[simp]
 theorem nnvolume_Ioc (s t : ℝ≥0) : nnvolume (Ioc s t) = ((t - s : ℝ≥0) : ℝ≥0∞) := by
   rw [nnvolume_apply, NNReal.image_coe_Ioc, Real.volume_Ioc]
   simp [ENNReal.ofReal_sub]
+
+/-- A constant-rate half-line intensity assigns rate times length to a half-open interval. -/
+theorem smul_nnvolume_Ioc (r s t : ℝ≥0) :
+    ((r : ℝ≥0∞) • nnvolume) (Ioc s t) = ((r * (t - s) : ℝ≥0) : ℝ≥0∞) := by
+  simp only [smul_apply, nnvolume_Ioc, smul_eq_mul, ENNReal.coe_mul]
 
 /-- Changing either endpoint convention leaves the length unchanged. -/
 @[simp]

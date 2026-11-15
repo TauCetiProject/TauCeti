@@ -349,13 +349,15 @@ theorem tensorToPi_bijective [Finite G]
   rw [← sum_tmul_eq hS z, hz]
   simp
 
-/-- For a free action of a finite group with invariant ring `R`, `A` is a finite `R`-module. -/
+omit [SMulCommClass G R A] in
+/-- For a free action of a finite group, `A` is a finite `R`-module whenever every fixed point of
+`A` lies in the image of `R`; no compatibility of the action with `R` is assumed. -/
 theorem moduleFinite [Finite G]
     (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
     Module.Finite R A := by
   classical
   have := Fintype.ofFinite G
-  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
+  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := FixedPoints.subring A G) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
   refine ⟨⟨S.image Prod.fst, eq_top_iff.mpr fun b _ ↦ ?_⟩⟩
   rw [← sum_sum_smul_mul hS b]

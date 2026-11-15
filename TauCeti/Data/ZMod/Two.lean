@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Finite
+public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Data.ZMod.Nilpotent
@@ -22,17 +24,28 @@ Since `2` is nilpotent in `ℤ/2^n` (`ZMod.isNilpotent_natCast_self_pow`), the u
 element is never a unit. These are the cases `p = 2` of `ZMod.isUnit_natCast_mul_add` and
 `ZMod.not_isUnit_natCast_mul`, stated with the numeral `2`.
 
+The cyclic group of order two, written multiplicatively as `C₂ = Multiplicative (ZMod 2)`, has
+exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C₂` has two terms.
+
 ## Main results
 
+* `ZMod.natCast_gcd_two`: `gcd(2, n)` and `n` agree modulo two.
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^n` when `u` is.
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
+* `Multiplicative.eq_one_or_eq_ofAdd_one`: every element of `C₂` is `1` or `σ`.
+* `TauCeti.sum_cyclicTwo`: a sum over `C₂` is the sum of the values at `1` and at `σ`.
 -/
 
 public section
 
 namespace ZMod
+
+/-- `gcd(2, n)` and `n` have the same parity. -/
+theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by
+  rw [Nat.gcd_rec, ← ZMod.natCast_mod n 2]
+  rcases Nat.mod_two_eq_zero_or_one n with h | h <;> rw [h] <;> decide
 
 /-- **The representative of a residue modulo two is the indicator of being nonzero.** -/
 theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by
@@ -60,3 +73,23 @@ theorem eq_two_mul_or_eq_two_mul_add_one (x : ZMod n) :
   · exact Or.inr ⟨c, by push_cast; ring⟩
 
 end ZMod
+
+namespace Multiplicative
+
+/-- Every element of `C₂` is `1` or the generator `σ = Multiplicative.ofAdd 1`. -/
+theorem eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2)) :
+    g = 1 ∨ g = Multiplicative.ofAdd 1 := by
+  revert g
+  decide
+
+end Multiplicative
+
+namespace TauCeti
+
+/-- A sum over `C₂` is the sum of the values at `1` and at the generator. -/
+theorem sum_cyclicTwo {M : Type*} [AddCommMonoid M] (f : Multiplicative (ZMod 2) → M) :
+    ∑ g, f g = f 1 + f (Multiplicative.ofAdd 1) :=
+  Fintype.sum_eq_add _ _ (by decide) fun g hg ↦ by
+    rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl <;> simp at hg
+
+end TauCeti

@@ -179,10 +179,10 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
     · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
       rw [hwg, Set.indicator_of_mem hxmem]
     · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
-  have hyoung := two_mul_real_inner_le_add_mul_norm_sq (-(ψ x * W1p.value w x) • b x)
+  have hyoung := two_mul_re_inner_le_add_mul_norm_sq (𝕜 := ℝ) (-(ψ x * W1p.value w x) • b x)
     (ψ x • W1p.gradient w x) (by positivity : (0 : ℝ) < 2 / lam)
-  simp only [real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
-    sq_abs, inv_div] at hyoung
+  simp only [RCLike.re_to_real, real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow,
+    Real.norm_eq_abs, sq_abs, inv_div] at hyoung
   have hb2 : (ψ x * W1p.value w x) ^ 2 * ‖b x‖ ^ 2 ≤ (ψ x * W1p.value w x) ^ 2 * beta ^ 2 :=
     mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb_bound x hx) 2)
       (sq_nonneg _)
@@ -235,7 +235,7 @@ theorem
     MemLp.of_bilin (inner ℝ) 1 (memLp_top_of_bound hb beta
       (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hb_bound)) (Lp.memLp _)
       continuous_inner
-      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     (memLp_top_of_bound hc gamma (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
       hc_bound)).fun_mul (Lp.memLp _)
@@ -347,7 +347,7 @@ constant `C > 0`, depending only on the dimension, such that the following holds
 additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`, and let
 `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
-with `w = (u - k)⁺`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
+with `w = (u - k)⁺`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ (2 (2Λ/λ)² (C / (R - r))² + (2β/λ)²) ∫_{B(x₀, R)} w²`. -/
 theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_lowerOrder :
@@ -366,18 +366,18 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_lowerOrder :
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) →
-      0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∫ x in ball x₀ r, ‖W1p.gradient (W1p.posPartAbove (by norm_num) hk u) x‖ ^ 2 ∂mu ≤
         (2 * (2 * Lam / lam) ^ 2 * (C / (R - r)) ^ 2 + (2 * beta / lam) ^ 2) *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
   obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma u k hk x₀ r R h ha hb hc hb_bound hc_bound hc_nonneg
-    hu hr hrR hball
+    hu hrR hball
   -- Caccioppoli's inequality for `w`, with the forcing and mass term dropped, localized to the
   -- balls.
   have hloc := hC (W1p.posPartAbove (by norm_num) hk u) (A := 2 * (2 * Lam / lam) ^ 2)
-    (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hr hrR hball
+    (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hrR hball
     fun ψ hψ hcpt hts =>
       h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos ha hb hc
         hb_bound hc_bound hc_nonneg hu hk hψ hcpt hts

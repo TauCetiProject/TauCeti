@@ -228,6 +228,11 @@ theorem IsGeodesicSegment.dist_source_apply (h : IsGeodesicSegment γ x y) {t : 
   have := h.dist_eq 0 (left_mem_Icc.2 zero_le_one) t ht
   rwa [h.source, zero_sub, abs_neg, abs_of_nonneg ht.1] at this
 
+/-- The extended distance from the source along a geodesic segment. -/
+theorem IsGeodesicSegment.edist_source_apply (h : IsGeodesicSegment γ x y) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : edist x (γ t) = ENNReal.ofReal (t * dist x y) := by
+  rw [edist_dist, h.dist_source_apply ht]
+
 /-- The point at time `t` of a geodesic segment from `x` to `y` is at distance
 `(1 - t) * dist x y` from `y`. -/
 theorem IsGeodesicSegment.dist_apply_target (h : IsGeodesicSegment γ x y) {t : ℝ}

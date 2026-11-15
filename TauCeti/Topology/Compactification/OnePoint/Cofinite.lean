@@ -35,13 +35,13 @@ public section
 open Filter Set Topology
 open scoped OnePoint
 
-namespace TauCeti
+namespace Filter.Tendsto
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {s : Set X} {a : X}
 
 /-- A set whose inclusion tends to `a` along the cofinite filter is discrete once `a` is
 removed. -/
-theorem _root_.Filter.Tendsto.discreteTopology_diff_singleton
+theorem discreteTopology_diff_singleton
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : DiscreteTopology ↥(s \ {a}) := by
   refine discreteTopology_iff_isOpen_singleton.mpr fun x ↦ ?_
   obtain ⟨U, V, hU, hV, haU, hxV, hUV⟩ := t2_separation (Ne.symm x.2.2)
@@ -53,7 +53,7 @@ theorem _root_.Filter.Tendsto.discreteTopology_diff_singleton
 /-- **A set converging to `a` along the cofinite filter, with `a` added, is the one-point
 compactification of its complement of `a`**: the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` that is
 the inclusion on `s \ {a}` and sends `∞` to `a`. -/
-noncomputable def _root_.Filter.Tendsto.onePointHomeomorphInsert
+noncomputable def onePointHomeomorphInsert
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : OnePoint ↥(s \ {a}) ≃ₜ ↥(insert a s) :=
   haveI : CompactSpace ↥(insert a s) := isCompact_iff_compactSpace.mp
     (by simpa only [Subtype.range_coe] using h.isCompact_insert_range_of_cofinite)
@@ -65,14 +65,14 @@ noncomputable def _root_.Filter.Tendsto.onePointHomeomorphInsert
 
 /-- The homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` is the inclusion on `s \ {a}`. -/
 @[simp]
-theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_apply_coe
+theorem onePointHomeomorphInsert_apply_coe
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) (x : ↥(s \ {a})) :
     h.onePointHomeomorphInsert x = ⟨x, mem_insert_of_mem a x.2.1⟩ :=
   (rfl)
 
 /-- The homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` sends the point at infinity to `a`. -/
 @[simp]
-theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_apply_infty
+theorem onePointHomeomorphInsert_apply_infty
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) :
     h.onePointHomeomorphInsert ∞ = ⟨a, mem_insert a s⟩ :=
   (rfl)
@@ -80,7 +80,7 @@ theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_apply_infty
 /-- The inverse of the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` sends `a` to the point at
 infinity. -/
 @[simp]
-theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_symm_apply_left
+theorem onePointHomeomorphInsert_symm_apply_left
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) :
     h.onePointHomeomorphInsert.symm ⟨a, mem_insert a s⟩ = ∞ := by
   rw [Homeomorph.symm_apply_eq, h.onePointHomeomorphInsert_apply_infty]
@@ -88,10 +88,10 @@ theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_symm_apply_left
 /-- The inverse of the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` is the inclusion on the points
 other than `a`. -/
 @[simp]
-theorem _root_.Filter.Tendsto.onePointHomeomorphInsert_symm_apply_of_ne
+theorem onePointHomeomorphInsert_symm_apply_of_ne
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) (y : ↥(insert a s)) (hy : (y : X) ≠ a) :
     h.onePointHomeomorphInsert.symm y =
       ((⟨y, y.2.resolve_left hy, hy⟩ : ↥(s \ {a})) : OnePoint ↥(s \ {a})) := by
   rw [Homeomorph.symm_apply_eq, h.onePointHomeomorphInsert_apply_coe]
 
-end TauCeti
+end Filter.Tendsto

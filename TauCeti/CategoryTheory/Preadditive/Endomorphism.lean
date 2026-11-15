@@ -8,12 +8,16 @@ module
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.RingTheory.Idempotents
+public import Mathlib.RingTheory.LocalRing.Basic
+import TauCeti.CategoryTheory.IrreducibleMorphism
 
 /-!
 # Endomorphism rings under isomorphisms and additive functors
 
 In a preadditive category, isomorphic objects have isomorphic endomorphism rings: conjugation
-`Iso.conj` is additive. An additive functor `F` induces a ring homomorphism
+`Iso.conj` is additive. The corner of `End X` at a split idempotent is the endomorphism ring of its
+image. An additive functor `F` induces a ring homomorphism
 `End X →+* End (F.obj X)`, refining the monoid homomorphism `Functor.mapEnd`, and it is surjective
 when `F` is full.
 
@@ -22,6 +26,8 @@ when `F` is full.
 * `CategoryTheory.Iso.endRingEquiv`: the ring isomorphism `End X ≃+* End Y` induced by `X ≅ Y`.
 * `CategoryTheory.Functor.mapEndRingHom`: the ring homomorphism `End X →+* End (F.obj X)` of an
   additive functor.
+* `IsIdempotentElem.endRingEquivCorner`: for an idempotent `e = p ≫ i` of `X` split through `Y`
+  (`i ≫ p = 𝟙 Y`), the corner `e (End X) e` is the endomorphism ring of `Y`.
 
 ## Main results
 
@@ -29,6 +35,9 @@ when `F` is full.
   `CategoryTheory.Functor.mapEndRingHom_apply_asHom`: the underlying morphisms.
 * `CategoryTheory.Functor.mapEndRingHom_surjective`: a full additive functor is surjective on
   endomorphism rings.
+* `TauCeti.isSplitEpi_or_isSplitEpi_of_add_eq_id` and
+  `TauCeti.isSplitMono_or_isSplitMono_of_add_eq_id`: when an object has a local endomorphism ring,
+  a decomposition of its identity into two composites singles out a split factor.
 -/
 
 public section
@@ -73,3 +82,86 @@ theorem mapEndRingHom_surjective (F : C ⥤ D) [F.Additive] [F.Full] (X : C) :
   ⟨End.of (F.preimage f.asHom), by ext; simp⟩
 
 end CategoryTheory.Functor
+
+namespace IsIdempotentElem
+
+open CategoryTheory
+
+variable {C : Type*} [Category* C] [Preadditive C]
+
+/-- **The corner of `End X` at a split idempotent is the endomorphism ring of its image**: if
+`e = p ≫ i` with `i ≫ p = 𝟙 Y`, then `g ↦ p ≫ g ≫ i` identifies `End Y` with `e (End X) e`. -/
+noncomputable def endRingEquivCorner {X Y : C} {e : End X} (he : IsIdempotentElem e)
+    (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) :
+    End Y ≃+* he.Corner where
+  toFun g := ⟨End.of (p ≫ g.asHom ≫ i), by
+    refine (Subsemigroup.mem_corner_iff he).2 ⟨End.ext ?_, End.ext ?_⟩ <;>
+      simp [← hpi, reassoc_of% hip]⟩
+  invFun c := End.of (i ≫ c.1.asHom ≫ p)
+  left_inv g := End.ext (by simp [reassoc_of% hip, hip])
+  right_inv c := by
+    obtain ⟨c, hc⟩ := c
+    obtain ⟨hl, hr⟩ := (Subsemigroup.mem_corner_iff he).1 hc
+    have hl' : c.asHom ≫ e.asHom = c.asHom := by simpa using congrArg End.asHom hl
+    have hr' : e.asHom ≫ c.asHom = c.asHom := by simpa using congrArg End.asHom hr
+    refine Subtype.ext (End.ext ?_)
+    -- Unfold the two `End.of` wrappers to compare the underlying morphisms.
+    change p ≫ (i ≫ c.asHom ≫ p) ≫ i = c.asHom
+    calc p ≫ (i ≫ c.asHom ≫ p) ≫ i = (p ≫ i) ≫ c.asHom ≫ (p ≫ i) := by simp only [Category.assoc]
+      _ = c.asHom := by rw [hpi, hl', hr']
+  map_mul' g h := by
+    apply Subtype.ext
+    -- The corner is a subtype of `End X` whose product is the product of `End X`.
+    change End.of (p ≫ (g * h).asHom ≫ i) = End.of (p ≫ g.asHom ≫ i) * End.of (p ≫ h.asHom ≫ i)
+    ext
+    simp [reassoc_of% hip]
+  map_add' g h := by
+    apply Subtype.ext
+    -- The corner is a subtype of `End X` whose sum is the sum of `End X`.
+    change End.of (p ≫ (g + h).asHom ≫ i) = End.of (p ≫ g.asHom ≫ i) + End.of (p ≫ h.asHom ≫ i)
+    ext
+    simp
+
+@[simp]
+theorem endRingEquivCorner_apply_val_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
+    (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (g : End Y) :
+    (he.endRingEquivCorner i p hip hpi g).1.asHom = p ≫ g.asHom ≫ i :=
+  (rfl)
+
+@[simp]
+theorem endRingEquivCorner_symm_apply_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
+    (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (c : he.Corner) :
+    ((he.endRingEquivCorner i p hip hpi).symm c).asHom = i ≫ c.1.asHom ≫ p :=
+  (rfl)
+
+end IsIdempotentElem
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {C : Type*} [Category* C] [Preadditive C] {Z A B : C}
+
+/-- **The identity of an object with a local endomorphism ring cannot be a sum of two morphisms
+factoring through non-split-epimorphisms into it.** -/
+theorem isSplitEpi_or_isSplitEpi_of_add_eq_id [IsLocalRing (End Z)] {a : Z ⟶ A} {x : A ⟶ Z}
+    {b : Z ⟶ B} {y : B ⟶ Z} (h : a ≫ x + b ≫ y = 𝟙 Z) : IsSplitEpi x ∨ IsSplitEpi y := by
+  have hab : End.of (a ≫ x) + End.of (b ≫ y) = (1 : End Z) := End.ext h
+  refine (IsLocalRing.isUnit_or_isUnit_of_add_one hab).imp (fun hu ↦ ?_) fun hu ↦ ?_
+  · have : IsIso (a ≫ x) := (isUnit_iff_isIso _).mp hu
+    exact isSplitEpi_of_isSplitEpi_comp a x
+  · have : IsIso (b ≫ y) := (isUnit_iff_isIso _).mp hu
+    exact isSplitEpi_of_isSplitEpi_comp b y
+
+/-- **The identity of an object with a local endomorphism ring cannot be a sum of two morphisms
+factoring through non-split-monomorphisms out of it.** -/
+theorem isSplitMono_or_isSplitMono_of_add_eq_id [IsLocalRing (End Z)] {x : Z ⟶ A} {a : A ⟶ Z}
+    {y : Z ⟶ B} {b : B ⟶ Z} (h : x ≫ a + y ≫ b = 𝟙 Z) : IsSplitMono x ∨ IsSplitMono y := by
+  have hab : End.of (x ≫ a) + End.of (y ≫ b) = (1 : End Z) := End.ext h
+  refine (IsLocalRing.isUnit_or_isUnit_of_add_one hab).imp (fun hu ↦ ?_) fun hu ↦ ?_
+  · have : IsIso (x ≫ a) := (isUnit_iff_isIso _).mp hu
+    exact isSplitMono_of_isSplitMono_comp x a
+  · have : IsIso (y ≫ b) := (isUnit_iff_isIso _).mp hu
+    exact isSplitMono_of_isSplitMono_comp y b
+
+end TauCeti

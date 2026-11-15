@@ -43,11 +43,6 @@ explicit carrier with the coordinate Hopf algebra of `SL_{r+1}`.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of the ReductiveGroups roadmap:
-it identifies the explicit full-weight type `A` carrier with the expected simply connected
-reductive group after extension to an algebraically closed field. Its consumer is milestone L0,
-"explicit pinned Chevalley--Demazure groups", of the CFSGStatement roadmap.
 -/
 
 public section

@@ -10,6 +10,7 @@ import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.RingTheory.Polynomial.Reductum
 
 /-!
 # Principal subresultant coefficients
@@ -172,6 +173,20 @@ matrix. -/
 theorem _root_.Polynomial.psc_def [CommRing R] (p q : R[X]) (m n j : ℕ) :
     psc p q m n j = (subresultantMatrix p q m n j).det := by
   rw [psc]
+
+/-- The principal subresultant coefficient reads only the coefficients of the left input below
+its formal bound, so it is unchanged by truncating the left input to that bound. -/
+@[simp]
+theorem _root_.Polynomial.psc_reductum_left [CommRing R] (p q : R[X]) (m n j : ℕ) :
+    psc (p.reductum (m + 1)) q m n j = psc p q m n j := by
+  rw [psc_def, psc_def]
+  congr 1
+  ext i k
+  induction k using Fin.addCases with
+  | left k => simp
+  | right k =>
+    simp only [subresultantMatrix_natAdd, coeff_reductum]
+    split_ifs <;> first | rfl | omega
 
 /-- The zeroth principal subresultant coefficient is the fixed-bound resultant. -/
 @[simp]

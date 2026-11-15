@@ -259,16 +259,18 @@ theorem cubicalChainModuleLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubica
   rw [cubicalChainModuleLof, LinearMap.comp_apply, cubicalChainLof_cast]
   rfl
 
-/-- Induction on the module: a property holds for every element once it holds for `0`, for the
+/-- Induction on the module: a property holds for every element once it holds for the
 homogeneous chains and is closed under sums. -/
 @[elab_as_elim]
 theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → Prop}
-    (m : cubicalChainModule Y G R) (zero : motive 0)
+    (m : cubicalChainModule Y G R)
     (lof : ∀ (n : ℕ) (c : NormalizedCubicalChain Y R n), motive (cubicalChainModuleLof Y G R n c))
     (add : ∀ m m', motive m → motive m' → motive (m + m')) : motive m := by
   obtain ⟨s⟩ := m
   induction s using DirectSum.induction_on with
-  | zero => exact zero
+  | zero =>
+    have h := lof 0 0
+    rwa [map_zero] at h
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
 
@@ -286,7 +288,6 @@ theorem cubicalChainModule_linearMap_ext {N : Type*} [AddCommMonoid N] [Module R
       f (cubicalChainModuleLof Y G R n c) = g (cubicalChainModuleLof Y G R n c)) : f = g :=
   LinearMap.ext fun m ↦ by
     induction m using cubicalChainModule.induction_on with
-    | zero => rw [map_zero, map_zero]
     | lof n c => exact h n c
     | add m m' hm hm' => rw [map_add, map_add, hm, hm']
 
@@ -431,7 +432,6 @@ theorem cubicalChainActBilin_one (m : cubicalChainModule Y G R) :
     rfl
   rw [h1]
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | lof n c =>
     rw [cubicalChainActBilin_lof_lof, act_one_eq_self]
     rfl
@@ -443,7 +443,6 @@ theorem cubicalChainActBilin_mul (m : cubicalChainModule Y G R)
     cubicalChainActBilin Y G R m (a * b) =
       cubicalChainActBilin Y G R (cubicalChainActBilin Y G R m a) b := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction a using DirectSum.induction_on with
@@ -633,7 +632,6 @@ theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
     (x : cubicalChainModule Y G R) :
     cubicalChainModuleLinearMap R f (op a • x) = op a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, smul_zero]
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof p c =>
     induction a using DirectSum.induction_on with

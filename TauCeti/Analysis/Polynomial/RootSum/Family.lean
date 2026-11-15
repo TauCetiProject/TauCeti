@@ -18,17 +18,17 @@ points lying in finitely many disjoint coordinate patches. If the multiplicity i
 `m i`, its coordinates form a block `Fin (m i) → ℂ`; a bijection
 `(Σ i, Fin (m i)) ≃ Fin n` regroups those blocks into the model space `Fin n → ℂ`.
 
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` proves that changing a
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` proves that changing a
 holomorphic surface coordinate is analytic on one block, including where roots collide. This file
 applies that result to a finite family of blocks and then conjugates the family by the possibly
 different source and target regroupings. The multiplicity-free `RCLike` version remains in
 `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`; the assembled complex statement is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`.
+`Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`.
 
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts sharing one
 block partition is analytic at every represented tuple. The transition between charts with
 arbitrary block partitions is proved directly from the filtered root sums of
-`TauCeti.Sym.analyticAt_sum_map_filter_coeffEquiv_symm` in
+`Sym.analyticAt_sum_map_filter_coeffEquiv_symm` in
 `TauCeti/Geometry/Manifold/SymmetricPower/Transition.lean`. For background on the symmetric-power
 setting, see
 Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.2. The
@@ -39,8 +39,8 @@ that section.
 public section
 
 open Topology
-
-namespace TauCeti
+open TauCeti (piSigmaConstHomeomorph analyticAt_piSigmaConstHomeomorph
+  analyticAt_piSigmaConstHomeomorph_symm)
 
 namespace Sym
 
@@ -58,7 +58,7 @@ private theorem analyticAt_pi_coeffEquiv_map_coeffEquiv_symm
     (hφ : ∀ i z, z ∈ (coeffEquiv ℂ (m i)).symm (c₀ i) → AnalyticAt ℂ (φ i) z) :
     AnalyticAt ℂ
       (fun c i => coeffEquiv ℂ (m i)
-        (_root_.Sym.map (φ i) ((coeffEquiv ℂ (m i)).symm (c i)))) c₀ := by
+        (Sym.map (φ i) ((coeffEquiv ℂ (m i)).symm (c i)))) c₀ := by
   refine AnalyticAt.pi fun i => ?_
   exact AnalyticAt.comp (f := fun c : (∀ i, Fin (m i) → ℂ) => c i)
     (analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt (hφ i))
@@ -76,14 +76,14 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_anal
     (hφ : ∀ i z, z ∈ (coeffEquiv ℂ (m i)).symm (c₀ i) → AnalyticAt ℂ (φ i) z) :
     AnalyticAt ℂ
       (fun c => piSigmaConstHomeomorph ℂ e' (fun i =>
-        coeffEquiv ℂ (m i) (_root_.Sym.map (φ i)
+        coeffEquiv ℂ (m i) (Sym.map (φ i)
           ((coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i)))))
       (piSigmaConstHomeomorph ℂ e c₀) := by
   have hin := analyticAt_piSigmaConstHomeomorph_symm e
     (piSigmaConstHomeomorph ℂ e c₀)
   have hblocks := analyticAt_pi_coeffEquiv_map_coeffEquiv_symm hφ
   have hblocks' : AnalyticAt ℂ
-      (fun c => fun i => coeffEquiv ℂ (m i) (_root_.Sym.map (φ i)
+      (fun c => fun i => coeffEquiv ℂ (m i) (Sym.map (φ i)
         ((coeffEquiv ℂ (m i)).symm (c i))))
       ((piSigmaConstHomeomorph ℂ e).symm (piSigmaConstHomeomorph ℂ e c₀)) := by
     rw [Homeomorph.symm_apply_apply]
@@ -91,17 +91,15 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm_of_anal
   have hmiddle := AnalyticAt.comp
     (f := (piSigmaConstHomeomorph ℂ e).symm) hblocks' hin
   have hmiddle' : AnalyticAt ℂ
-      (fun c => fun i => coeffEquiv ℂ (m i) (_root_.Sym.map (φ i)
+      (fun c => fun i => coeffEquiv ℂ (m i) (Sym.map (φ i)
         ((coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i))))
       (piSigmaConstHomeomorph ℂ e c₀) := by
     convert hmiddle using 1
     rfl
   convert AnalyticAt.comp
-    (f := fun c => fun i => coeffEquiv ℂ (m i) (_root_.Sym.map (φ i)
+    (f := fun c => fun i => coeffEquiv ℂ (m i) (Sym.map (φ i)
       ((coeffEquiv ℂ (m i)).symm ((piSigmaConstHomeomorph ℂ e).symm c i))))
     (analyticAt_piSigmaConstHomeomorph e' _) hmiddle' using 1
   rfl
 
 end Sym
-
-end TauCeti

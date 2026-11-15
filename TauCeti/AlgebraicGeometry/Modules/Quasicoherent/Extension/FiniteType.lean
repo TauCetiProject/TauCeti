@@ -125,8 +125,7 @@ theorem exists_isFiniteType_mono_isIso_restrict_of_quasiSeparatedSpace
   have : N'.IsFiniteType :=
     SheafOfModules.IsFiniteType.of_iso (R := X.ringCatSheaf)
       (M := (N'.restrict (⊤ : X.Opens).ι).restrict X.topIso.inv)
-      (((restrictFunctorComp X.topIso.inv (⊤ : X.Opens).ι).app N').symm ≪≫
-        (restrictFunctorCongr (X.toIso_inv_ι)).app N' ≪≫ restrictFunctorId.app N')
+      ((restrictFunctorInvCompHomIso X.topIso.symm).app N')
   exact ⟨N', inferInstance, inferInstance, i, inferInstance, hi⟩
 
 /-- A finite-type quasi-coherent submodule of the restriction of a quasi-coherent module along

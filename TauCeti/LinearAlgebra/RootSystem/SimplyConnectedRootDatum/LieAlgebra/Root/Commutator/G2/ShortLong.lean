@@ -18,12 +18,21 @@ computes the integral coefficients of the four-factor Chevalley multiplication f
 The divisions by two and three are exact in ℤ, before passing to the value ring.
 The formulas on Kostant-stable lattices therefore include characteristics two and three.
 
-The element commutator has factors in increasing root height at α + β, 2α + β,
+The short–long element commutator has factors in increasing root height at α + β, 2α + β,
 3α + β and 3α + 2β. Moving the long-root factor in the collection identity to the right
 changes its highest-root coefficient from b to 2b. The correction follows from the
 class-two relation for β and 3α + β and the Jacobi identity, using
 `commutatorElement_chevalleyRootSubgroup_of_lie_eq`. No faithfulness or weight-basis
 assumption is needed.
+
+The long–short element commutator follows from
+`chevalleyRootSubgroup_mul_of_g2_short_long` at the negative long-root parameter.
+For a short root `α` and a long root `β`, its four factors are ordered by increasing total
+degree: `α + β`, `2α + β`, `3α + β`, `3α + 2β`. Their coefficients are `-c`, `-d`, `-a`, `b`
+in the collection formula's notation. The highest-root coefficient is `b`, rather than the
+`2b` appearing when the short-root element comes first; this distinction matters when
+collecting arbitrary root products in a fixed order. The four root equations specify the
+full G₂ string without additional bracket or nilpotence assumptions on nonsimple root vectors.
 
 The exponential argument follows
 `kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul`; here its bracket hypotheses are
@@ -465,6 +474,39 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_long {α β γ δ ε
   simpa only [mul_assoc] using congrArg
     (fun z => x γ ((c : A) * (u * v)) * x δ ((d : A) * (u ^ 2 * v)) *
       x ε ((a : A) * (u ^ 3 * v)) * z) hdouble
+
+/-- The long–short G₂ element commutator, with factors in increasing total degree in `α`, `β`.
+Here `α` is the short root, `β` is the long root, and the long-root element occurs first in the
+commutator. The integer highest-root coefficient is the collection coefficient `b`, not `2b`.
+All coefficients are computed before passage to the commutative value ring. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_g2_long_short
+    {α β γ δ ε ζ : Fin G2.numRoots}
+    (hγ : (G2.simplyConnectedRootDatum ht).root γ =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
+    (hδ : (G2.simplyConnectedRootDatum ht).root δ =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root γ)
+    (hε : (G2.simplyConnectedRootDatum ht).root ε =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root δ)
+    (hζ : (G2.simplyConnectedRootDatum ht).root ζ =
+      (G2.simplyConnectedRootDatum ht).root δ + (G2.simplyConnectedRootDatum ht).root γ)
+    (A : CommAlgCat ℤ) (u v : A) :
+    let N := G2.structureConstant ht
+    let c := N α β
+    let d := c * (N α γ / 2)
+    let a := d * (N α δ / 3)
+    let b := d * c * (N δ γ / 3)
+    let x := fun i w => chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd w)
+    ⁅x β v, x α u⁆ =
+      x γ ((-c : A) * (u * v)) * x δ ((-d : A) * (u ^ 2 * v)) *
+        x ε ((-a : A) * (u ^ 3 * v)) * x ζ ((b : A) * (u ^ 3 * v ^ 2)) := by
+  have h := chevalleyRootSubgroup_mul_of_g2_short_long ht ρ M hM hnil hγ hδ hε hζ A u (-v)
+  dsimp only at h ⊢
+  simp only [mul_neg, neg_sq] at h
+  have hc := congrArg (fun g =>
+    chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) * g *
+      (chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u))⁻¹) h
+  simpa only [commutatorElement_def, ofAdd_neg, map_inv, mul_assoc,
+    mul_inv_cancel, mul_one, mul_inv_cancel_left, neg_mul] using hc
 
 end Lattice
 

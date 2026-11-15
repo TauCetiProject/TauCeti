@@ -32,12 +32,17 @@ numbering, and it is what the affine `E₈` matrix below is defined to be
 already carries affine matrices as *obstructions* inside the finite-type classification:
 `TauCeti.doubleForkCartanMatrix n` is the affine `Dₘ` matrix for `m = n + 5`, and
 `TauCeti.starCartanMatrix` at `![2, 2, 2]`, `![1, 3, 3]` and `![1, 2, 5]` is the affine `E₆`, `E₇`
-and `E₈` matrix. Those live on the sum and sigma
-index types that make the classification argument uniform rather than on `Fin`, and their marks are
-rational and unnormalized -- `TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so
-identifying them with the diagrams of this file is a relabelling problem of its own, of a piece
-with the Bourbaki relabelling that the roadmap asks for and that is not proved here either. This
-file is the affine complement, and it is deliberately *graph* first, because its consumers --
+and `E₈` matrix. Those live on the sum and sigma index types that make the classification argument
+uniform rather than on `Fin`, and their marks are rational and unnormalized --
+`TauCeti.starMark ![2, 2, 2]` is `9` times the marks below -- so identifying them with the diagrams
+of this file is a relabelling problem of its own, which this file does not address. For the three
+stars it is done in `TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Star.lean`
+(`TauCeti.AffineDynkinType.starCartanMatrix_two_two_two_eq_submatrix_E6` and its `E₇` and `E₈`
+analogues); the affine `Dₘ` matrix `TauCeti.doubleForkCartanMatrix` is not identified here.
+Relabelling the finite diagram left after deleting the affine node into the Bourbaki numbering is
+`TauCeti.AffineDynkinType.bourbakiNode`, in
+`TauCeti/LinearAlgebra/RootSystem/AffineDynkinType/Deletion.lean`. This file is the affine
+complement, and it is deliberately *graph* first, because its consumers --
 zigzag and preprojective algebras, and the McKay correspondence -- start from the diagram rather
 than from a root system.
 
@@ -81,6 +86,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.exists_adj_graph`: every node of a valid diagram has a neighbour.
 * `TauCeti.AffineDynkinType.isBipartite_graph_E6`, `.isBipartite_graph_E7`,
   `.isBipartite_graph_E8`: the exceptional diagrams are bipartite.
+* `TauCeti.AffineDynkinType.eq_of_graph_iso`: valid affine diagrams with isomorphic graphs are
+  equal.
 * `TauCeti.AffineDynkinType.graph_A_adj`, `.graph_D_adj`, `.graph_E6_adj`, `.graph_E7_adj`,
   `.graph_E8_adj`: adjacency in each diagram, as a condition on node numbers.
 * `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`: outside `A₁` the Cartan matrix is
@@ -99,10 +106,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 
 ## References
 
-This is the affine simply-laced family of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`; the `E₈` numbering below is the one that roadmap's
-`Suggested.lean` fixes in `affineE8ArmRel`. See V. Kac, *Infinite dimensional Lie algebras*,
-3rd ed., Chapter 4 and Table Aff 1, for the diagrams, their marks and the null root.
+See V. Kac, *Infinite dimensional Lie algebras*, 3rd ed., Chapter 4 and Table Aff 1, for the
+diagrams, their marks and the null root.
 -/
 
 public section
@@ -401,6 +406,93 @@ theorem isBipartite_graph_D {n : ℕ} (hn : 4 ≤ n) : (D n).graph.IsBipartite :
   have hij := (graph_D_adj hn (i := i) (j := j)).1 h
   simp only [ne_eq, Fin.mk.injEq]
   split_ifs <;> omega
+
+/-! ## The graph determines the diagram -/
+
+section GraphIso
+
+open Finset
+
+/-- A cycle `Ãₙ` with `n ≥ 2` has no leaf. -/
+private lemma card_filter_degree_A_eq_zero {n : ℕ} (hn : 2 ≤ n) :
+    #{v | (A n).graph.degree v = 1} = 0 := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  have e : (A (m + 2)).graph ≃g cycleGraph (m + 3) := by rw [graph_A]; exact .refl
+  refine card_eq_zero.2 (filter_eq_empty_iff.2 fun v _ ↦ ?_)
+  rw [← e.degree_eq v, cycleGraph_degree_three_le]
+  omega
+
+/-- Node `0` is a leaf of affine `Dₙ`, attached to node `1`. -/
+private lemma card_filter_degree_D_pos {n : ℕ} (hn : 4 ≤ n) :
+    0 < #{v | (D n).graph.degree v = 1} := by
+  refine card_pos.2 ⟨0, mem_filter.2 ⟨mem_univ _, degree_eq_one_iff_existsUnique_adj.2 ?_⟩⟩
+  refine ⟨⟨1, by simp; omega⟩, (graph_D_adj hn).2 (by simp; omega), fun j hj ↦ ?_⟩
+  replace hj := (graph_D_adj hn).1 hj
+  ext
+  simp only [Fin.val_zero] at hj ⊢
+  omega
+
+/-- Affine `D₆`, `D₇` and `D₈` have two trivalent nodes. -/
+private lemma card_filter_degree_D_eq_two {n : ℕ} (hn : n = 6 ∨ n = 7 ∨ n = 8) :
+    #{v | (D n).graph.degree v = 3} = 2 := by
+  -- `graph_D_adj` is stated on `Fin (n + 1)`; this restatement on `Fin (D n).nodes` lets `simp`
+  -- match the adjacency in the goal.
+  have h (i j : Fin (D n).nodes) := graph_D_adj (n := n) (i := i) (j := j) (by omega)
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, h]
+  rcases hn with rfl | rfl | rfl <;> decide
+
+/-- Affine `E₆` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E6 :
+    #{v | E6.graph.degree v = 1} = 3 ∧ #{v | E6.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E6_adj]
+  decide
+
+/-- Affine `E₇` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E7 :
+    #{v | E7.graph.degree v = 1} = 3 ∧ #{v | E7.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E7_adj]
+  decide
+
+/-- Affine `E₈` has three leaves and one trivalent node. -/
+private lemma card_filter_degree_E8 :
+    #{v | E8.graph.degree v = 1} = 3 ∧ #{v | E8.graph.degree v = 3} = 1 := by
+  simp only [← card_neighborFinset_eq_degree, neighborFinset_eq_filter, graph_E8_adj]
+  decide
+
+/-- **The graph determines a valid affine diagram.** If two valid affine simply-laced diagrams
+have isomorphic graphs, they are equal. This includes `Ã₁`, the only valid diagram on two nodes,
+although its graph forgets its double edge. Validity is needed: the degenerate `A 0` and `D 0`
+both have a single node. -/
+theorem eq_of_graph_iso {t t' : AffineDynkinType} (ht : t.Valid) (ht' : t'.Valid)
+    (e : t.graph ≃g t'.graph) : t = t' := by
+  -- The numbers of nodes, of leaves and of trivalent nodes tell the graphs apart: a cycle on at
+  -- least three nodes has no leaf, affine `Dₙ` has a leaf, and at seven, eight and nine nodes
+  -- affine `Dₙ` has two trivalent nodes where affine `E₆`, `E₇` and `E₈` have one.
+  have hnodes : t.nodes = t'.nodes := by simpa using Fintype.card_congr e.toEquiv
+  have hcard (k : ℕ) : #{v | t.graph.degree v = k} = #{v | t'.graph.degree v = k} :=
+    card_equiv e.toEquiv fun v ↦ by simp
+  have hleaf := hcard 1
+  have hfork := hcard 3
+  obtain ⟨hE6₁, hE6₃⟩ := card_filter_degree_E6
+  obtain ⟨hE7₁, hE7₃⟩ := card_filter_degree_E7
+  obtain ⟨hE8₁, hE8₃⟩ := card_filter_degree_E8
+  rcases t with n | n | _ | _ | _ <;> rcases t' with m | m | _ | _ | _ <;>
+    simp only [valid_A, valid_D, nodes_A, nodes_D, nodes_E6, nodes_E7, nodes_E8,
+      Nat.add_right_cancel_iff, A.injEq, D.injEq] at ht ht' hnodes ⊢
+  all_goals first
+    | omega
+    | have := card_filter_degree_A_eq_zero (n := n) (by omega)
+      first
+        | omega
+        | have := card_filter_degree_D_pos (n := m) (by omega); omega
+    | have := card_filter_degree_A_eq_zero (n := m) (by omega)
+      first
+        | omega
+        | have := card_filter_degree_D_pos (n := n) (by omega); omega
+    | have := card_filter_degree_D_eq_two (n := n) (by omega); omega
+    | have := card_filter_degree_D_eq_two (n := m) (by omega); omega
+
+end GraphIso
 
 /-! ## The generalized Cartan matrix -/
 

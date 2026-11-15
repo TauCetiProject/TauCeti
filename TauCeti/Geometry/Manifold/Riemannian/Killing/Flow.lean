@@ -111,11 +111,11 @@ private theorem IsKillingField.norm_variationField_flowOf (h : IsKillingField I 
   have heq := h.norm_variationField_eq isOpen_maximalIntegralCurveInterval
     isPreconnected_maximalIntegralCurveInterval hF hcurve (mem_flowDomain.mp ht)
       (mem_flowDomain.mp (mem_flowDomain_zero hX (c 0)))
-  have hzero : (fun q ↦ F q 0) = c := funext fun q ↦ flowOf_zero hX (c q)
+  have hzero : (fun q ↦ F q 0) = c := funext fun q ↦ flowOf_zero _ (c q)
   simp only [variationField_apply] at heq
   rw [hzero] at heq
   -- Rewriting the velocity curve does not rewrite the base point of its dependent fibre norm.
-  rw [show F 0 0 = c 0 from flowOf_zero hX (c 0)] at heq
+  rw [show F 0 0 = c 0 from flowOf_zero _ (c 0)] at heq
   simpa only [variationField_apply, F] using heq
 
 /-- The differential of the maximal flow of a Killing field preserves tangent norms wherever

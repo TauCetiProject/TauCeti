@@ -53,8 +53,6 @@ of length or distance is introduced.
 
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 1, Definition 2.9 and Chapter 7, Section 2,
   Definition 2.4.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Corner smoothing and the piecewise-`C¹` comparison".
 -/
 
 public section

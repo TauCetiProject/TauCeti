@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
@@ -70,12 +71,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance finiteNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs whose edges join consecutive vertices -/
 

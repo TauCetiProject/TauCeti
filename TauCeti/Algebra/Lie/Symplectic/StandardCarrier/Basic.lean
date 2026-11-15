@@ -218,22 +218,14 @@ algebra. -/
 noncomputable def rep :
     _root_.UniversalEnvelopingAlgebra ℚ (sp (Fin (n + 1)) ℚ) →ₐ[ℚ]
       Module.End ℚ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
-  LieSubalgebra.matrixRepresentation (sp (Fin (n + 1)) ℚ)
+  TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
+    ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
 
 theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply x v
-
-/-- A Cartan generator acts diagonally on every standard-module vector with the recorded
-coordinate weight. -/
-theorem rep_cartanGenerator_apply_apply (i : Fin (n + 1))
-    (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
-    (a : Fin (n + 1) ⊕ Fin (n + 1)) :
-    rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator n i)) v a =
-      (weight n a i : ℚ) * v a := by
-  rw [rep_ι_apply, val_cartanGenerator, cartanGeneratorMatrix, mulVec_diagonal]
+  TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix_apply x v
 
 /-- The source coordinate of a numbered root generator: the coordinate on whose basis vector the
 generator is nonzero with coefficient one. -/

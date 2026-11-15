@@ -10,11 +10,12 @@ public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.Compact.BilinearForm
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.RepresentationTheory.Compact.Unitarizable
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Invariant forms on the Lie algebra of a Lie group
@@ -36,6 +37,15 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
   under `ad`, in the sense of Mathlib's `LinearMap.BilinForm.lieInvariant`.
 * `TauCeti.Lie.exists_isSymm_bilinForm_Ad_invariant`: the Lie algebra of a compact Lie group has
   an `Ad`-invariant symmetric positive-definite bilinear form.
+* `TauCeti.Lie.averageAdjointBilinForm`: the normalized Haar average of a given real form.
+* `TauCeti.Lie.averageAdjointBilinForm_apply`: its inverse-adjoint integral formula.
+* `TauCeti.Lie.averageAdjointBilinForm_idempotent`: averaging is a linear projection on forms.
+* `TauCeti.Lie.isSymm_averageAdjointBilinForm` and `posDef_averageAdjointBilinForm`:
+  preservation of symmetry and positive definiteness.
+* `TauCeti.Lie.isInvariantForm_averageAdjointBilinForm` and
+  `lieInvariant_averageAdjointBilinForm`: group and infinitesimal invariance.
+* `TauCeti.Lie.averageAdjointBilinForm_eq_self` and `averageAdjointBilinForm_eq_self_iff`:
+  fixed forms are exactly the adjoint-invariant forms.
 * `LeftInvariantDerivation.exists_Ad_lie_eq_zero`: **Hunt's lemma**, for `X Y : 𝔤` in the Lie
   algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 * `TauCeti.Lie.lieInvariant_iff_adjoint_invariant`: on a connected group, tangent bilinear forms
@@ -47,6 +57,8 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
 
 ## References
 
+* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups*, Springer Monographs in
+  Mathematics (2012), Lemma 10.4.14, for averaging an arbitrary starting inner product.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 3.
 * J. Milnor, *Curvatures of left invariant metrics on Lie groups*, Advances in Math. 21
   (1976), 293–329.
@@ -113,6 +125,128 @@ theorem exists_isSymm_bilinForm_Ad_invariant [CompactSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ContRepresentation.exists_isSymm_bilinForm_invariant _
     (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous
+
+section AverageAdjoint
+
+variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+
+/-- The normalized Haar average of real bilinear forms on the Lie algebra, as a linear operator
+using inverse-adjoint pullback. -/
+def averageAdjointBilinForm :
+    LinearMap.BilinForm ℝ (LeftInvariantDerivation I G) →ₗ[ℝ]
+      LinearMap.BilinForm ℝ (LeftInvariantDerivation I G) := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  let e : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G) ≃ₗ[ℝ]
+      (LeftInvariantDerivation I G →L[ℝ] LeftInvariantDerivation I G →L[ℝ] ℝ) :=
+    ((LinearEquiv.refl ℝ (LeftInvariantDerivation I G)).arrowCongr
+      (LinearMap.toContinuousLinearMap :
+        (LeftInvariantDerivation I G →ₗ[ℝ] ℝ) ≃ₗ[ℝ]
+          LeftInvariantDerivation I G →L[ℝ] ℝ)).trans LinearMap.toContinuousLinearMap
+  exact ContinuousLinearMap.toLinearMap₁₂.comp
+    (((continuousAdjointRepresentation (I := I) (G := G)).averageBilinearForm
+      (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous).toLinearMap.comp
+        e.toLinearMap)
+
+/-- The adjoint average is the continuous averaging operator with its canonical Lie-group
+and finite-dimensional instances. -/
+private theorem averageAdjointBilinForm_eq
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) :
+    letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    letI : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+      finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+    averageAdjointBilinForm B₀ =
+      ((continuousAdjointRepresentation (I := I) (G := G)).averageBilinearForm
+        (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous
+        B₀.toContinuousBilinearMap).toBilinForm := by
+  rfl
+
+/-- The adjoint average is the inverse-adjoint pullback integral of its starting form. -/
+theorem averageAdjointBilinForm_apply
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) (X Y : LeftInvariantDerivation I G) :
+    letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    averageAdjointBilinForm B₀ X Y =
+      ∫ g : G, B₀ (Ad (I := I) g⁻¹ X) (Ad (I := I) g⁻¹ Y) ∂haarProb G := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  rw [averageAdjointBilinForm_eq, ContinuousLinearMap.toBilinForm_apply,
+    ContRepresentation.averageBilinearForm_apply]
+  simp only [LinearMap.toContinuousBilinearMap_apply, continuousAdjointRepresentation_apply]
+
+/-- Haar averaging under the adjoint action preserves symmetry. -/
+theorem isSymm_averageAdjointBilinForm
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) (hsymm : B₀.IsSymm) :
+    (averageAdjointBilinForm B₀).IsSymm := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  rw [averageAdjointBilinForm_eq]
+  exact ContRepresentation.isSymm_averageBilinearForm _ _ _ (by
+    rwa [LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap])
+
+/-- Haar averaging under the adjoint action preserves positive definiteness. -/
+theorem posDef_averageAdjointBilinForm
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G))
+    (hpos : B₀.toQuadraticMap.PosDef) :
+    (averageAdjointBilinForm B₀).toQuadraticMap.PosDef := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  rw [averageAdjointBilinForm_eq]
+  exact ContRepresentation.posDef_averageBilinearForm _ _ _ (by
+    rwa [LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap])
+
+/-- The adjoint average is invariant under the group adjoint representation. -/
+theorem isInvariantForm_averageAdjointBilinForm
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) :
+    Representation.IsInvariantForm
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation
+      (averageAdjointBilinForm B₀) := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  rw [averageAdjointBilinForm_eq]
+  exact ContRepresentation.isInvariantForm_averageBilinearForm _ _ _
+
+/-- The adjoint average is invariant under every infinitesimal adjoint operator. -/
+theorem lieInvariant_averageAdjointBilinForm
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) :
+    (averageAdjointBilinForm B₀).lieInvariant (LeftInvariantDerivation I G) :=
+  lieInvariant_of_isInvariantForm (isInvariantForm_averageAdjointBilinForm B₀)
+
+/-- The adjoint average fixes every form invariant under the adjoint representation. -/
+@[simp]
+theorem averageAdjointBilinForm_eq_self
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G))
+    (hB₀ : Representation.IsInvariantForm
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation B₀) :
+    averageAdjointBilinForm B₀ = B₀ := by
+  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  rw [averageAdjointBilinForm_eq, ContRepresentation.averageBilinearForm_eq_self]
+  · exact LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap B₀
+  · rwa [LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap]
+
+/-- Adjoint Haar averaging is idempotent. -/
+@[simp]
+theorem averageAdjointBilinForm_idempotent
+    (B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) :
+    averageAdjointBilinForm (averageAdjointBilinForm B) = averageAdjointBilinForm B :=
+  averageAdjointBilinForm_eq_self _ (isInvariantForm_averageAdjointBilinForm B)
+
+/-- A form is fixed by adjoint averaging exactly when it is adjoint-invariant. -/
+theorem averageAdjointBilinForm_eq_self_iff
+    (B₀ : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)) :
+    averageAdjointBilinForm B₀ = B₀ ↔ Representation.IsInvariantForm
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation B₀ := by
+  refine ⟨fun h ↦ ?_, averageAdjointBilinForm_eq_self B₀⟩
+  rw [← h]
+  exact isInvariantForm_averageAdjointBilinForm B₀
+
+end AverageAdjoint
 
 /-- The tangent Lie algebra of a compact Lie group has a continuous symmetric positive form
 invariant under the adjoint action. No connectedness or boundaryless-model hypothesis is needed. -/

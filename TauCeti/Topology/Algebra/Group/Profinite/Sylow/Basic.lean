@@ -174,15 +174,12 @@ theorem IsProPSylow.not_dvd_index_of_le [SeparatelyContinuousMul G] (hP : IsProP
     (V : OpenSubgroup G) (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
   -- the normal core of `V` is an open normal subgroup `N ≤ V`, and `[G : V]` is the index of the
   -- image of `V` in `G ⧸ N`, which divides the index of the image of `P`
-  let N : OpenNormalSubgroup G :=
-    { toSubgroup := V.toSubgroup.normalCore
-      isOpen' := Subgroup.isOpen_of_isClosed_of_finiteIndex _
-        (Subgroup.normalCore_isClosed _ V.isClosed) }
+  obtain ⟨N, hNV, -⟩ := V.exists_openNormalSubgroup_le
   intro hdvd
   refine hP.not_dvd_index N (hdvd.trans ?_)
   calc V.toSubgroup.index
       = (V.toSubgroup.map (QuotientGroup.mk' N.toSubgroup)).index := by
-        rw [Subgroup.index_map_mk'_eq_index_sup, sup_of_le_left (Subgroup.normalCore_le _)]
+        rw [Subgroup.index_map_mk'_eq_index_sup, sup_of_le_left hNV]
     _ ∣ (P.map (QuotientGroup.mk' N.toSubgroup)).index :=
         Subgroup.index_dvd_of_le (Subgroup.map_mono hPV)
 
@@ -200,10 +197,10 @@ theorem isProPSylow_iff_isPGroup_and_not_dvd_index :
   constructor
   · intro hP
     refine ⟨isProP_iff_isPGroup.mp hP.isProP, ?_⟩
-    let U := openNormalSubgroupBot G
+    let U : OpenNormalSubgroup G := ⊥
     have hindex : (P.map (QuotientGroup.mk' U.toSubgroup)).index = P.index :=
       P.index_map_eq (QuotientGroup.mk'_surjective U.toSubgroup) <| by
-        rw [QuotientGroup.ker_mk', openNormalSubgroupBot_toSubgroup]
+        rw [QuotientGroup.ker_mk', OpenNormalSubgroup.toSubgroup_bot]
         exact bot_le
     simpa only [hindex] using hP.not_dvd_index U
   · rintro ⟨hP, hindex⟩

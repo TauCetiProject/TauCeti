@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Regular.ProjectiveDimension
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.LocalRing.ProjectiveDimension
 import TauCeti.RingTheory.Regular.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -63,10 +64,8 @@ ring is a regular ring in Mathlib's sense.
 * `TauCeti.isRegularRing_of_isRegularLocalRing`: a regular local ring is a regular ring, so its
   localizations at primes are regular local rings (an instance).
 * `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`: if a regular
-  ring `R` is faithfully flat over a Noetherian ring `A`, every finite `A`-module has projective
-  dimension at most `dim R`.
-* `TauCeti.IsRegularRing.of_faithfullyFlat`: a Noetherian ring over which a regular ring of finite
-  Krull dimension is faithfully flat is regular.
+  ring `R` is faithfully flat over a ring `A`, every finite `A`-module has projective dimension at
+  most `dim R`.
 
 ## Proof
 
@@ -89,13 +88,14 @@ field of `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`, so `R ⧸ (x)` is
 regularity lifts along the nonzerodivisor `x`
 (`TauCeti.IsRegularLocalRing.of_quotient_nonZeroDivisor`).
 
-Along a faithfully flat map `A → R` from a Noetherian ring, base change preserves the projective
+Along a faithfully flat map `A → R`, base change preserves the projective
 dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so the bound over a
 regular ring `R` also bounds the finite `A`-modules. For a flat local
 homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
 dimension from which Serre's characterization of regular local rings deduces that `A` is regular
-(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)). If moreover `R` has finite Krull
-dimension, this bound makes the global dimension of `A` finite, so `A` is a regular ring.
+(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)); see
+`TauCeti.IsRegularLocalRing.of_faithfullyFlat` and
+`TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom` in `Descent.lean`.
 
 ## References
 
@@ -444,10 +444,10 @@ instance isRegularRing_of_isRegularLocalRing {R : Type u} [CommRing R] [IsRegula
 
 section FaithfullyFlat
 
-variable {A : Type w} [CommRing A] [IsNoetherianRing A] {R : Type u} [CommRing R]
+variable {A : Type w} [CommRing A] {R : Type u} [CommRing R]
   [Algebra A R] [Module.FaithfullyFlat A R]
 
-/-- If a regular ring `R` is faithfully flat over a Noetherian ring `A`, every finite `A`-module
+/-- If a regular ring `R` is faithfully flat over a ring `A`, every finite `A`-module
 has projective dimension at most `dim R`. Since a regular local ring is a regular ring
 (`TauCeti.isRegularRing_of_isRegularLocalRing`), this applies to a flat local homomorphism
 `A → R` of Noetherian local rings with `R` regular (`Module.FaithfullyFlat.of_flat_of_isLocalHom`).
@@ -455,28 +455,10 @@ has projective dimension at most `dim R`. Since a regular local ring is a regula
 theorem IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat [IsRegularRing R]
     [Small.{v} A] (M : Type v) [AddCommGroup M] [Module A M] [Module.Finite A M] :
     projectiveDimension (ModuleCat.of A M) ≤ ringKrullDim R := by
+  have : IsNoetherianRing A := .of_faithfullyFlat R
   have : Small.{max u v} R := small_max R
   rw [← ModuleCat.projectiveDimension_tensorProduct R M]
   exact ModuleCat.projectiveDimension_le_ringKrullDim _
-
-/-- **Regularity descends along faithfully flat extensions by regular rings of finite Krull
-dimension.** If a regular ring `R` of finite Krull dimension is faithfully flat over a Noetherian
-ring `A`, then `A` is a regular ring. -/
-theorem IsRegularRing.of_faithfullyFlat [IsRegularRing R] (hR : ringKrullDim R ≠ ⊤) :
-    IsRegularRing A := by
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, ringKrullDim R ≤ n := by
-    induction h : ringKrullDim R using WithBot.recBotCoe with
-    | bot => exact ⟨0, bot_le⟩
-    | coe d =>
-      lift d to ℕ using by simpa [h] using hR
-      exact ⟨d, le_rfl⟩
-  have hA : globalDimension.{w} A ≤ n := by
-    refine ((globalDimension_le_tfae.{w} A n).out 2 1).mp ?_
-    intro M _
-    exact (projectiveDimension_le_iff _ n).mp
-      ((IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat (R := R) M).trans hn)
-  exact isRegularRing_of_globalDimension_lt_top.{w, w}
-    (hA.trans_lt (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top n)))
 
 end FaithfullyFlat
 

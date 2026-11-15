@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.Probability.CDF
+public import Mathlib.MeasureTheory.Measure.Real
 
 /-!
 # Elementary real-measure identities and maps
@@ -14,14 +14,15 @@ public import Mathlib.Probability.CDF
 This file records elementary identities about measures on the real line. The absolute-value map
 folds the negative half-line onto the positive half-line. Squaring loses the sign of a real number
 and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
-signs apart. For a reflection-invariant finite measure, the pushforward under squaring is a complete
-invariant: the square records the mass of intervals symmetric about zero, while reflection
-invariance makes the two complementary tails equal. For a measure carried by the nonnegative
+signs apart. For a reflection-invariant measure, the pushforward under squaring is a complete
+invariant: such a measure is determined by its mass on subsets of `(0, ∞)` and on `{0}`, and the
+squared pushforward records both. For a measure carried by the nonnegative
 half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
 
 ## Main results
 
-* `TauCeti.volume_Ioc_inter_Ioo_zero_one` — the portion of an interval in the open unit interval;
+* `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
+  interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
@@ -29,7 +30,7 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 * `MeasureTheory.Measure.ae_eq_preimage_Ioc`,
   `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
   endpoint conventions of an interval with extended bounds do not matter;
-* `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
+* `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
@@ -37,9 +38,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 
 public section
 
-open MeasureTheory ProbabilityTheory Set
-
-private theorem measurable_abs : Measurable fun x : ℝ => |x| := continuous_abs.measurable
+open MeasureTheory Set
+open scoped Pointwise
 
 namespace MeasureTheory.Measure
 
@@ -55,15 +55,14 @@ theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
     · simp [hx, abs_of_neg hx, not_le.2 hx]
   have hdisj : Disjoint (s ∩ Ici 0) (-s ∩ Iio 0) :=
     disjoint_left.2 fun x hx hx' => not_le.2 hx'.2 hx.2
-  rw [Measure.map_apply measurable_abs hs, hpre,
-    measure_union hdisj (hs.neg.inter measurableSet_Iio), _root_.add_apply,
-    Measure.restrict_apply hs, Measure.restrict_apply hs, MeasureTheory.Measure.neg_apply,
-    (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
+  rw [Measure.map_apply (by fun_prop) hs, hpre,
+    measure_union hdisj (hs.neg.inter measurableSet_Iio)]
+  simp [Measure.restrict_apply hs]
 
 /-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/
 @[simp]
 theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
-  rw [Measure.map_apply measurable_abs (measurableSet_singleton 0)]
+  rw [Measure.map_apply (by fun_prop) (measurableSet_singleton 0)]
   congr 1
   ext x
   simp
@@ -88,7 +87,8 @@ theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
   have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
       (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
       t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
-    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+    (ae_subset.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm
+        h₁.eventuallySubset
   exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
     (preimage_mono Ioc_subset_Icc_self)).symm
 
@@ -103,6 +103,63 @@ theorem measureReal_eq_sub_of_preimage_Ioo_subset [IsFiniteMeasure μ] (hlr : l 
 
 end NullSingleton
 
+/-- Two reflection-invariant measures on `ℝ` are equal if their pushforwards under squaring are
+equal. Neither measure needs to be finite. -/
+theorem eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
+    (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
+    (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :
+    μ = ν := by
+  have hmeas : Measurable fun x : ℝ ↦ x ^ 2 := by fun_prop
+  -- A reflection-invariant measure is determined by its masses of measurable subsets of the open
+  -- positive half-line and of the origin: the negative half-line is the reflection of the former.
+  have hsplit : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ -x) = ρ → ∀ s, MeasurableSet s →
+      ρ s = ρ (s ∩ Ioi 0) + ρ (-s ∩ Ioi 0) + ρ (s ∩ {0}) := by
+    intro ρ hρ s hs
+    have : ρ.IsNegInvariant := ⟨hρ⟩
+    have hneg : ρ (s ∩ Iio 0) = ρ (-s ∩ Ioi 0) := by
+      rw [← Measure.measure_neg (μ := ρ) (s ∩ Iio 0), inter_neg, neg_Iio, neg_zero]
+    have hdiff : s \ Ioi 0 = (s ∩ {0}) ∪ (s ∩ Iio 0) := by
+      rw [sdiff_eq, compl_Ioi, ← Iio_union_right, inter_union_distrib_left, union_comm]
+    rw [← measure_inter_add_sdiff s (measurableSet_Ioi (a := (0 : ℝ))), hdiff,
+      measure_union ((disjoint_singleton_left.2 self_notMem_Iio).mono inter_subset_right
+        inter_subset_right) (hs.inter measurableSet_Iio), hneg]
+    ring
+  -- Squaring followed by `Real.sqrt` is folding, so the squared pushforward determines the folded
+  -- law, which records the atom at zero and twice the mass of a subset of the positive half-line.
+  have hfold : ∀ ρ : Measure ℝ, (ρ.map (fun x : ℝ ↦ x ^ 2)).map Real.sqrt = ρ.map (|·|) :=
+    fun ρ ↦ by
+      rw [Measure.map_map (by fun_prop) hmeas]
+      exact congrArg ρ.map (funext Real.sqrt_sq_eq_abs)
+  have hpos : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ -x) = ρ → ∀ t ⊆ Ioi 0,
+      ρ.map (|·|) t = 2 * ρ t := by
+    intro ρ hρ t hts
+    have hneg : ρ.neg = ρ := hρ
+    rw [Measure.map_abs_eq_restrict_add_restrict, hneg, _root_.add_apply,
+      Measure.restrict_eq_self _ (hts.trans Ioi_subset_Ici_self), Measure.restrict_eq_self _ hts,
+      two_mul]
+  have habs : μ.map (|·|) = ν.map (|·|) := by rw [← hfold μ, ← hfold ν, hsq]
+  ext s hs
+  have hμν : ∀ t ⊆ Ioi 0, μ t = ν t := fun t hts ↦ by
+    refine (ENNReal.mul_right_inj two_ne_zero (by finiteness)).1 ?_
+    rw [← hpos μ hμneg t hts, ← hpos ν hνneg t hts, habs]
+  have h0 : μ (s ∩ {0}) = ν (s ∩ {0}) := by
+    by_cases h : (0 : ℝ) ∈ s
+    · rw [inter_singleton_of_mem h, ← Measure.map_abs_apply_zero μ, ← Measure.map_abs_apply_zero ν,
+        habs]
+    · rw [inter_singleton_eq_empty.2 h]
+      simp
+  rw [hsplit μ hμneg s hs, hsplit ν hνneg s hs, hμν _ inter_subset_right,
+    hμν _ inter_subset_right, h0]
+
+/-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
+pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
+theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
+    (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  refine (Measure.map_congr ?_).trans Measure.map_id
+  filter_upwards [hμ] with t ht
+  simpa using Real.sqrt_sq ht
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -116,69 +173,13 @@ theorem map_volume_mul_add {c : ℝ} (hc : c ≠ 0) (d : ℝ) :
     Real.map_volume_mul_left hc, Measure.map_smul, map_add_right_eq_self]
   exact (measurable_add_const d).aemeasurable
 
-/-- The part of a subinterval `Ioc a b` of `[0, 1]` lying in the open unit interval has the full
-length `b - a`: the two intervals differ at most at the endpoint `1`. -/
+/-- For `c ≤ a` and `b ≤ d`, the part of `Ioc a b` lying in the open interval `Ioo c d` has the
+full length `b - a`: the two sets differ at most at the endpoint `d`. -/
 @[simp]
-theorem volume_Ioc_inter_Ioo_zero_one {a b : ℝ} (ha : 0 ≤ a) (hb : b ≤ 1) :
-    volume (Ioc a b ∩ Ioo 0 1) = ENNReal.ofReal (b - a) := by
+theorem volume_Ioc_inter_Ioo_of_le_of_le {a b c d : ℝ} (hca : c ≤ a) (hbd : b ≤ d) :
+    volume (Ioc a b ∩ Ioo c d) = ENNReal.ofReal (b - a) := by
   refine le_antisymm ((measure_mono inter_subset_left).trans_eq Real.volume_Ioc) ?_
   rw [← Real.volume_Ioo]
-  exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, ha.trans_lt ht.1, ht.2.trans_le hb⟩
-
-/-- Two reflection-invariant finite measures on `ℝ` are equal if their pushforwards under
-squaring are equal. -/
-theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
-    (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :
-    μ = ν := by
-  apply Measure.ext_of_Iic
-  intro x
-  rw [← measureReal_eq_measureReal_iff]
-  -- For a reflection-invariant finite measure `ρ`, twice the mass of `Iic x` is read off the
-  -- squared law: through the central interval `[-x, x]` when `0 ≤ x`, and through `(x, -x)` when
-  -- `x < 0`, the two complementary tails being equal by symmetry.
-  suffices h : ∀ ρ : Measure ℝ, IsFiniteMeasure ρ → ρ.map (fun y : ℝ ↦ -y) = ρ →
-      2 * ρ.real (Iic x) = if 0 ≤ x then
-        (ρ.map (· ^ 2)).real univ + (ρ.map (· ^ 2)).real (Iic (x ^ 2))
-      else (ρ.map (· ^ 2)).real univ - (ρ.map (· ^ 2)).real (Iio (x ^ 2)) by
-    have h' := h μ inferInstance hμneg
-    rw [hsq, ← h ν inferInstance hνneg] at h'
-    linarith
-  intro ρ _ hρ
-  have : ρ.IsNegInvariant := ⟨hρ⟩
-  rw [map_measureReal_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
-  split_ifs with hx
-  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iic,
-      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic (x ^ 2) = Icc (-x) x by
-        ext y; simp [sq_le_sq, abs_of_nonneg hx, abs_le]]
-    have htail : ρ.real (-Ioi x) = ρ.real (Ioi x) := by
-      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
-    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Iic (a := x))
-    rw [Set.neg_Ioi] at htail
-    rw [compl_Iic] at htot
-    rw [← Iio_union_Icc_eq_Iic (by linarith : -x ≤ x), measureReal_union
-      ((Iio_disjoint_Ici le_rfl).mono_right Icc_subset_Ici_self) measurableSet_Icc] at htot ⊢
-    linarith
-  · rw [map_measureReal_apply (by fun_prop) measurableSet_Iio,
-      show (fun y : ℝ ↦ y ^ 2) ⁻¹' Iio (x ^ 2) = Ioo x (-x) by
-        ext y; simp [sq_lt_sq, abs_of_neg (not_le.1 hx), abs_lt]]
-    have htail : ρ.real (-Ici (-x)) = ρ.real (Ici (-x)) := by
-      rw [measureReal_def, Measure.measure_neg, ← measureReal_def]
-    have htot := measureReal_add_measureReal_compl (μ := ρ) (measurableSet_Ici (a := -x))
-    rw [Set.neg_Ici, neg_neg] at htail
-    rw [compl_Ici, ← Iic_union_Ioo_eq_Iio (by linarith : x < -x),
-      measureReal_union ((Iic_disjoint_Ioi le_rfl).mono_right Ioo_subset_Ioi_self)
-        measurableSet_Ioo] at htot
-    linarith
-
-/-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
-pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
-theorem _root_.MeasureTheory.Measure.map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
-    (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
-  rw [Measure.map_map (by fun_prop) (by fun_prop)]
-  refine (Measure.map_congr ?_).trans Measure.map_id
-  filter_upwards [hμ] with t ht
-  simpa using Real.sqrt_sq ht
+  exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, hca.trans_lt ht.1, ht.2.trans_le hbd⟩
 
 end TauCeti

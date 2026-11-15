@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 hyperplane glue to one exponent and one analytic unit on the full product. The unit is
 nowhere zero, including on the hyperplane. No value of the original function there is used. -/
 theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s : Set ℂ}
-    (hU : IsOpen U) (hUc : IsConnected U) (hs : IsOpen s) (h0 : (0 : ℂ) ∈ s)
+    (hU : IsOpen U) (hUc : IsConnected U) (hs : IsOpen s)
     (hf : AnalyticOnNhd ℂ f (U ×ˢ (s \ {0})))
     (hf0 : ∀ p ∈ U ×ˢ (s \ {0}), f p ≠ 0)
     (hlocal : ∀ x ∈ U, ∃ e : ℤ, ∃ w : E × ℂ → ℂ,
@@ -44,6 +44,11 @@ theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s :
     ∃ e : ℤ, ∃ w : E × ℂ → ℂ, AnalyticOnNhd ℂ w (U ×ˢ s) ∧
       (∀ p ∈ U ×ˢ s, w p ≠ 0) ∧
       ∀ p ∈ U ×ˢ (s \ {0}), f p = p.2 ^ e * w p := by
+  -- If `0 ∉ s` nothing needs to be glued.
+  by_cases h0 : (0 : ℂ) ∈ s
+  swap
+  · rw [sdiff_singleton_eq_self h0] at hf hf0
+    exact ⟨0, f, hf, hf0, fun p _ ↦ by simp⟩
   -- Connectedness identifies the integer exponents of the local unit forms via
   -- TauCeti.exists_laurentExponents_of_isPreconnected.
   obtain ⟨e, -, he⟩ := exists_laurentExponents_of_isPreconnected
@@ -64,35 +69,15 @@ theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s :
     simp [q, m, hp hp0, zpow_ne_zero _ hp0]
   -- The quotient equals a continuous unit near each point of the hyperplane,
   -- so every transverse slice is bounded there and extends jointly analytically.
-  have hb : ∀ x ∈ U, ∃ t ∈ 𝓝 (0 : ℂ),
-      BddAbove (norm ∘ (fun z ↦ q (x, z)) '' (t \ {0})) := by
-    intro x hx
+  have hb := bddAbove_slice_of_local fun x hx ↦ by
     obtain ⟨v, hv, -, heq⟩ := hlocalq x hx
-    have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 0) (𝓝 (x, (0 : ℂ))) :=
-      continuous_const.prodMk continuous_id |>.tendsto 0
-    obtain ⟨C, hC⟩ := (hv.continuousAt.tendsto.comp hline).norm.isBoundedUnder_le
-    refine ⟨{z | (z ≠ 0 → q (x, z) = v (x, z)) ∧ ‖v (x, z)‖ ≤ C},
-      (hline.eventually heq).and hC, C, ?_⟩
-    rintro _ ⟨z, ⟨hz, hz0⟩, rfl⟩
-    simpa only [comp_apply, hz.1 hz0] using hz.2
+    exact ⟨v, hv.continuousAt, heq⟩
   -- The quotient extends jointly analytically by TauCeti.exists_analyticOnNhd_prod_eqOn.
   obtain ⟨w, hw, hwq⟩ := exists_analyticOnNhd_prod_eqOn hU hs hq (fun _ ↦ hb)
-  -- The extension agrees with the local unit also on the hyperplane, by uniqueness
-  -- of the limit along a punctured slice. Thus no zero is introduced by extension.
-  have hw0 (x : E) (hx : x ∈ U) : w (x, 0) ≠ 0 := by
-    obtain ⟨v, hv, hv0, heq⟩ := hlocalq x hx
-    have hline : Tendsto (fun z : ℂ ↦ (x, z)) (𝓝 0) (𝓝 (x, (0 : ℂ))) :=
-      continuous_const.prodMk continuous_id |>.tendsto 0
-    have hs0 : ∀ᶠ z in 𝓝[≠] (0 : ℂ), z ∈ s := nhdsWithin_le_nhds (hs.mem_nhds h0)
-    have heq' : (fun z : ℂ ↦ w (x, z)) =ᶠ[𝓝[≠] 0] fun z ↦ v (x, z) := by
-      filter_upwards [(hline.eventually heq).filter_mono nhdsWithin_le_nhds,
-        hs0, self_mem_nhdsWithin] with z hz hzs hz0
-      exact (hwq ⟨hx, hzs, hz0⟩).trans (hz hz0)
-    have hlim : Tendsto (fun z : ℂ ↦ w (x, z)) (𝓝[≠] 0) (𝓝 (w (x, 0))) :=
-      ((hw (x, 0) ⟨hx, h0⟩).continuousAt.tendsto.comp hline).mono_left nhdsWithin_le_nhds
-    have hlim' : Tendsto (fun z : ℂ ↦ v (x, z)) (𝓝[≠] 0) (𝓝 (v (x, 0))) :=
-      (hv.continuousAt.tendsto.comp hline).mono_left nhdsWithin_le_nhds
-    exact (tendsto_nhds_unique (hlim.congr' heq') hlim') ▸ hv0
+  have hw0 := extension_ne_zero_of_local hs h0 (fun x hx ↦ (hw (x, 0) ⟨hx, h0⟩).continuousAt) hwq
+    fun x hx ↦ by
+      obtain ⟨v, hv, hv0, heq⟩ := hlocalq x hx
+      exact ⟨v, hv.continuousAt, hv0, heq⟩
   have hform (p : E × ℂ) (hp : p ∈ U ×ˢ (s \ {0})) : f p = p.2 ^ m * w p := by
     rw [hwq hp]
     simp [q, zpow_ne_zero _ hp.2.2]

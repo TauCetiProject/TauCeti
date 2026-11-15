@@ -212,7 +212,6 @@ theorem finrank_fullyBlockedHomology_unknot_one :
     rw [range_fullyBlockedDifferential_unknot_one,
       finrank_span_singleton fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal_ne_zero]
   have hdim := (unknot 1).finrank_fullyBlockedHomology_add_two_mul_finrank_range
-    (unknot 1).fullyBlockedDifferential_comp_self_eq_zero
   rw [hB] at hdim
   norm_num [Nat.factorial] at hdim
   omega

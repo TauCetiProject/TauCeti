@@ -93,7 +93,7 @@ theorem IsNeighbor.transport {W : Type*} [AddCommGroup W] [Module ℚ W] (h : L.
 /-- The common index of two neighbors is nonzero, since the intersection of two lattices on the
 same rational space has finite index in each. -/
 theorem IsNeighbor.ne_zero (h : L.IsNeighbor M p) : p ≠ 0 :=
-  h.relIndex_inf_left ▸ Submodule.IsLattice.relIndex_ne_zero inf_le_left
+  h.relIndex_inf_left ▸ Submodule.IsLattice.relIndex_ne_zero
 
 /-- Two integral lattices are `1`-neighbors exactly when they are equal. -/
 @[simp]

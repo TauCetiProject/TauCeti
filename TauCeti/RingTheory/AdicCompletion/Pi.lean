@@ -28,6 +28,8 @@ coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coord
 * `IsHausdorff.pi`: adic Hausdorffness passes to products.
 * `IsPrecomplete.pi`, `IsAdicComplete.pi`: adic precompleteness and completeness pass to finite
   products.
+* `AdicCompletion.map_inl_map_fst_add_map_inr_map_snd`: an element of the completion of a binary
+  product `M × N` is the sum of the images of its completed components.
 * `TauCeti.exists_forall_pow_dvd_sub`: a `π`-adically Cauchy sequence of coordinate families over a
   precomplete ring has a limit.
 * `TauCeti.eq_zero_of_forall_pow_dvd`: over a Hausdorff ring, a coordinate family divisible by every
@@ -83,6 +85,18 @@ instance IsPrecomplete.pi [Finite ι] [∀ i, IsPrecomplete I (M i)] : IsPrecomp
 /-- A finite product of `I`-adically complete modules is `I`-adically complete. -/
 instance IsAdicComplete.pi [Finite ι] [∀ i, IsAdicComplete I (M i)] :
     IsAdicComplete I (∀ i, M i) where
+
+/-- An element of the adic completion of a binary product `M × N` is the sum of the images of its
+two completed components, under the completed inclusions. -/
+theorem AdicCompletion.map_inl_map_fst_add_map_inr_map_snd {M N : Type*} [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (z : AdicCompletion I (M × N)) :
+    map I (LinearMap.inl R M N) (map I (LinearMap.fst R M N) z) +
+      map I (LinearMap.inr R M N) (map I (LinearMap.snd R M N) z) = z := by
+  have h : LinearMap.inl R M N ∘ₗ LinearMap.fst R M N + LinearMap.inr R M N ∘ₗ
+      LinearMap.snd R M N = LinearMap.id := by
+    ext <;> simp
+  rw [map_comp_apply, map_comp_apply, ← LinearMap.add_apply, ← map_add, h, map_id,
+    LinearMap.id_apply]
 
 namespace TauCeti
 

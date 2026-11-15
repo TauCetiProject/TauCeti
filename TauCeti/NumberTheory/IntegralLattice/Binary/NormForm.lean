@@ -285,7 +285,6 @@ theorem binaryDiscriminant_neg_of_isPosDef (hV : Module.finrank ℚ V = 2)
     rw [L.determinant_eq_gramDet b]
     exact_mod_cast (L.intCast_gramDet b).symm ▸ hm.det_pos
   have he := L.binaryContent_sq_mul_binaryDiscriminant hV
-  have hsq := sq_nonneg (L.binaryContent hV : ℤ)
   nlinarith
 
 /-- Negating the lattice form preserves the primitive discriminant. -/

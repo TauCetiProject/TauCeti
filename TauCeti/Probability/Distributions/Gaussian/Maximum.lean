@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Relations
 
@@ -78,6 +79,33 @@ private theorem one_div_seven_le_mul_gaussianPDFReal {m : ℝ} (hm : 1 ≤ m) :
       rw [gaussianPDFReal_zero_one]
       gcongr
 
+/-- The maximum of the absolute values of `m` independent standard Gaussian random variables is
+at most `√(log m) / 4` with probability at most `7 / 8`. -/
+theorem measureReal_sup'_abs_le_sqrt_log_card_div_four_le (hindep : iIndepFun g P)
+    (hlaw : ∀ i, HasLaw (g i) (gaussianReal 0 1) P) :
+    P.real {ω | Finset.univ.sup' Finset.univ_nonempty (fun i => |g i ω|) ≤
+      √(Real.log (Fintype.card ι)) / 4} ≤ 7 / 8 := by
+  set m : ℝ := (Fintype.card ι : ℝ) with hm
+  set s : ℝ := √(Real.log m) / 4
+  set p : ℝ := gaussianPDFReal 0 1 (s + 1)
+  have hmp : 1 / 7 ≤ m * p :=
+    one_div_seven_le_mul_gaussianPDFReal (by rw [hm]; exact_mod_cast Fintype.card_pos)
+  have hq : cdf ((gaussianReal 0 1).map fun x => |x|) s ≤ 1 - p := by
+    rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ]
+    linarith [gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi (s := s) (by positivity)]
+  have h7 : rexp (-(1 / 7)) ≤ 7 / 8 := by
+    rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by norm_num)]
+    linarith [Real.add_one_le_exp (1 / 7 : ℝ)]
+  -- The absolute values `|g i|` are independent with a common law, so the maximum is at most `s`
+  -- with probability `cdf ^ m ≤ (1 - p) ^ m ≤ exp (-m p)`.
+  calc _ = cdf ((gaussianReal 0 1).map fun x => |x|) s ^ Fintype.card ι :=
+        measureReal_setOf_max_le_iid (hindep.comp (fun _ => abs) fun _ => measurable_abs)
+          (fun i => (hasLaw_map measurable_abs.aemeasurable).comp (hlaw i)) s
+    _ ≤ rexp (-p) ^ Fintype.card ι :=
+        pow_le_pow_left₀ (cdf_nonneg _ s) (hq.trans (Real.one_sub_le_exp_neg p)) _
+    _ = rexp (-(m * p)) := by rw [← Real.exp_nat_mul, hm, mul_neg]
+    _ ≤ 7 / 8 := (Real.exp_le_exp.2 (neg_le_neg hmp)).trans h7
+
 /-- The expected maximum of the absolute values of `m` independent standard Gaussian random
 variables is at least `√(log m) / 32`. -/
 theorem sqrt_log_card_div_le_integral_sup'_abs (hindep : iIndepFun g P)
@@ -85,59 +113,20 @@ theorem sqrt_log_card_div_le_integral_sup'_abs (hindep : iIndepFun g P)
     √(Real.log (Fintype.card ι)) / 32 ≤
       ∫ ω, Finset.univ.sup' Finset.univ_nonempty (fun i => |g i ω|) ∂P := by
   have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
-  set m : ℝ := (Fintype.card ι : ℝ) with hm
-  set s : ℝ := √(Real.log m) / 4 with hs
-  set M : Ω → ℝ := fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => |g i ω| with hM
-  have hm1 : 1 ≤ m := by rw [hm]; exact_mod_cast Fintype.card_pos
-  have hs0 : 0 ≤ s := by positivity
+  set s : ℝ := √(Real.log (Fintype.card ι)) / 4 with hs
+  set M : Ω → ℝ := fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => |g i ω|
   have hM0 : ∀ ω, 0 ≤ M ω := fun ω => (abs_nonneg _).trans
     (Finset.le_sup' (fun i => |g i ω|) (Finset.mem_univ (Classical.arbitrary ι)))
-  -- The absolute values `|g i|` are independent with common law `ν`.
-  set ν : Measure ℝ := (gaussianReal 0 1).map fun x => |x|
-  have hlawAbs : ∀ i, HasLaw (fun ω => |g i ω|) ν P := fun i =>
-    (hasLaw_map measurable_abs.aemeasurable).comp (hlaw i)
-  have hindepAbs : iIndepFun (fun i ω => |g i ω|) P :=
-    hindep.comp (fun _ => abs) fun _ => measurable_abs
-  -- Each `|g i|` exceeds `s` with probability at least `p = φ(s + 1)`, and `m p ≥ 1 / 7`.
-  set p : ℝ := gaussianPDFReal 0 1 (s + 1)
-  have hp : p ≤ ν.real (Ioi s) := by
-    have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs0 (t := 1)
-    rw [one_mul] at h
-    rw [map_measureReal_apply measurable_abs measurableSet_Ioi]
-    exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
-  have hmp : 1 / 7 ≤ m * p := one_div_seven_le_mul_gaussianPDFReal hm1
-  -- By independence, the maximum is at most `s` with probability at most `7 / 8`.
-  have hle : P.real {ω | M ω ≤ s} ≤ 7 / 8 := by
-    have hq : cdf ν s ≤ 1 - p := by
-      rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ]
-      linarith
-    have hp0 : 0 ≤ p := gaussianPDFReal_nonneg 0 1 _
-    have h7 : rexp (-(1 / 7)) ≤ 7 / 8 := by
-      rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by norm_num)]
-      linarith [Real.add_one_le_exp (1 / 7 : ℝ)]
-    calc P.real {ω | M ω ≤ s} = cdf ν s ^ Fintype.card ι :=
-          measureReal_setOf_max_le_iid hindepAbs hlawAbs s
-      _ ≤ rexp (-p) ^ Fintype.card ι :=
-          pow_le_pow_left₀ (cdf_nonneg ν s) (hq.trans (Real.one_sub_le_exp_neg p)) _
-      _ = rexp (-(m * p)) := by rw [← Real.exp_nat_mul, hm, mul_neg]
-      _ ≤ 7 / 8 := (Real.exp_le_exp.2 (neg_le_neg hmp)).trans h7
+  -- The maximum is at least `s` with probability at least `1 / 8`.
   have hge : 1 / 8 ≤ P.real {ω | s ≤ M ω} := by
     have h := measureReal_union_le (μ := P) {ω | M ω ≤ s} {ω | s ≤ M ω}
     rw [show {ω | M ω ≤ s} ∪ {ω | s ≤ M ω} = univ from
       eq_univ_of_forall fun ω => le_total (M ω) s, probReal_univ] at h
-    linarith
+    linarith [measureReal_sup'_abs_le_sqrt_log_card_div_four_le hindep hlaw]
   -- Markov's inequality for the integrable, nonnegative maximum.
-  have hint : Integrable M P := by
-    refine (integrable_finsetSum Finset.univ fun i _ =>
-      ((hlaw i).integrable IsGaussian.integrable_id).abs).mono' ?_ (ae_of_all _ fun ω => ?_)
-    · have : AEMeasurable M P := by
-        simp_rw [hM, Finset.sup'_univ_eq_ciSup]
-        exact AEMeasurable.iSup fun i => (hlawAbs i).aemeasurable
-      exact this.aestronglyMeasurable
-    · rw [Real.norm_eq_abs, abs_of_nonneg (hM0 ω)]
-      exact Finset.sup'_le _ _ fun i _ =>
-        Finset.single_le_sum (f := fun i => |g i ω|) (fun j _ => abs_nonneg _) (Finset.mem_univ i)
-  calc √(Real.log m) / 32 = s * (1 / 8) := by rw [hs]; ring
+  have hint : Integrable M P := integrable_finset_sup' _ fun i _ =>
+    ((hlaw i).integrable IsGaussian.integrable_id).abs
+  calc √(Real.log (Fintype.card ι)) / 32 = s * (1 / 8) := by rw [hs]; ring
     _ ≤ s * P.real {ω | s ≤ M ω} := by gcongr
     _ ≤ ∫ ω, M ω ∂P := mul_meas_ge_le_integral_of_nonneg (ae_of_all _ hM0) hint s
 

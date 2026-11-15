@@ -66,6 +66,7 @@ theorem indK0_resK0_eq_relIndex_nsmul {C D : Subgroup G} (h : D ≤ C)
       indK0_of_trivial_eq_relIndex_nsmul (k := k) p h hpow
   simpa only [← indK0_mul_resK0, one_mul, smul_mul_assoc] using congrArg (· * x) hunit
 
+omit [Fact p.Prime] in
 variable {p} in
 /-- For a finite cyclic subgroup `C`, its prime-to-`p` part `D` removes the `p`-part of the
 coefficient `|C|` in every induced restriction, uniformly in the Grothendieck class. -/
@@ -75,15 +76,22 @@ theorem _root_.Subgroup.exists_coprimePart_natCard_nsmul_indK0_resK0 (C : Subgro
       ∀ x : ExactK0 (finiteModulesExactStructure k[G]),
         Nat.card C • indK0 k C (resK0 k C.subtype x) =
           Nat.card D • indK0 k D (resK0 k D.subtype x) := by
-  obtain ⟨D, hDC, hDn, hDp, hpow, hindex⟩ :=
-    exists_coprimePart_of_isCyclic (Fact.out : p.Prime) (C := C)
-  let := hDn
-  have hDcyc : IsCyclic D := Subgroup.isCyclic_of_le hDC
-  refine ⟨D, hDC, hDcyc, hDp, hindex, fun x ↦ ?_⟩
-  have hcard := D.relIndex_mul_card C
-  rw [inf_eq_left.mpr hDC] at hcard
-  rw [indK0_resK0_eq_relIndex_nsmul p hDC hpow, ← mul_nsmul, hcard]
+  rcases CharP.char_is_prime_or_zero k p with hp | rfl
+  · have := Fact.mk hp
+    obtain ⟨D, hDC, hDn, hDp, hpow, hindex⟩ :=
+      exists_coprimePart_of_isCyclic (Fact.out : p.Prime) (C := C)
+    let := hDn
+    have hDcyc : IsCyclic D := Subgroup.isCyclic_of_le hDC
+    refine ⟨D, hDC, hDcyc, hDp, hindex, fun x ↦ ?_⟩
+    have hcard := D.relIndex_mul_card C
+    rw [inf_eq_left.mpr hDC] at hcard
+    rw [indK0_resK0_eq_relIndex_nsmul p hDC hpow, ← mul_nsmul, hcard]
+  · -- In characteristic zero there is no `p`-part to remove.
+    have hC : ¬ 0 ∣ Nat.card C := by simpa using (Nat.card_pos (α := C)).ne'
+    refine ⟨C, le_rfl, inferInstance, hC, ?_, fun x ↦ rfl⟩
+    simp [Nat.factorization_eq_zero_of_not_dvd hC]
 
+omit [Fact p.Prime] in
 /-- The Artin coefficient sum is an integral linear combination of induced restrictions from
 cyclic subgroups of order prime to the characteristic. A single finitely supported coefficient
 family gives the identity for every class in the exact Grothendieck ring. -/
@@ -110,7 +118,7 @@ theorem exists_linearCombination_indK0_resK0_eq_sum_artinCoeff :
       refine ⟨⟨D, hDcyc, hDp⟩, fun x ↦ ?_⟩
       simpa only [mul_smul, natCast_zsmul] using congrArg (C.artinCoeff • ·) (hD x).symm
     · refine ⟨⟨⊥, inferInstance, ?_⟩, fun x ↦ ?_⟩
-      · simpa using (Fact.out : p.Prime).not_dvd_one
+      · simpa using (CharP.char_ne_one k p) ∘ Nat.dvd_one.mp
       · simp [C.artinCoeff_eq_zero_of_not_isCyclic hC]
   choose D hD using hterm
   refine ⟨∑ C : Subgroup G,

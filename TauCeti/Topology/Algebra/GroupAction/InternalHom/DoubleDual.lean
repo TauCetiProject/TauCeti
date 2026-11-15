@@ -36,7 +36,7 @@ coefficient systems `ℤ/pⁱ` of a pro-`p` group are the case `n = pⁱ`.
 ## Main results
 
 * `TauCeti.InternalHom.natCard_of_addEquiv_zmod`: `Nat.card (InternalHom G M N) = Nat.card M` for
-  finite `M` killed by `n ≠ 0` and values in any additive group `N ≃+ ZMod n`.
+  `M` killed by `n ≠ 0` and values in any additive group `N ≃+ ZMod n`.
 * `TauCeti.InternalHom.eval_injective_of_addEquiv_zmod` and
   `TauCeti.InternalHom.eval_bijective_of_addEquiv_zmod`: evaluation into the double dual with
   values in any additive group `N ≃+ ZMod n`, whatever the action of `G` on `N`, is injective on a
@@ -101,9 +101,9 @@ section AddEquivZMod
 variable {N : Type*} [AddCommGroup N] (e : N ≃+ ZMod n)
 include e
 
-/-- **The internal dual of a finite module killed by `n` has the same order**, for values in any
+/-- **The internal dual of a module killed by `n` has the same order**, for values in any
 additive group `N ≃+ ZMod n`. -/
-theorem natCard_of_addEquiv_zmod [Finite M] (hM : ∀ x : M, n • x = 0) :
+theorem natCard_of_addEquiv_zmod (hM : ∀ x : M, n • x = 0) :
     Nat.card (InternalHom G M N) = Nat.card M := by
   rw [← e.natCard_addMonoidHom_zmod hM]
   exact Nat.card_congr ⟨toAddMonoidHom, of G, fun _ => rfl, fun _ => rfl⟩

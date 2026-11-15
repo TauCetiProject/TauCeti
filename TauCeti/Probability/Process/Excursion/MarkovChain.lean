@@ -158,11 +158,10 @@ end LoopMass
 
 /-! ## The law of an excursion -/
 
-section ExcursionLaw
+section ExcursionPrefix
 
-variable [Countable α] [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α}
+variable [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α}
 
-omit [Countable α] in
 /-- **The excursions of a chain started at `a₀` have prescribed masses.** Once the chain almost
 surely makes the visit closing the last prescribed excursion, prescribing the first excursions is
 prescribing the loop word they spell out, whose mass factors over the excursions. -/
@@ -176,6 +175,8 @@ theorem markovChainLaw_apply_setOf_excursionPrefix_eq {bs : List (List α)}
       (markovChainLaw_dirac_ae_apply_zero κ a₀) havoid,
     markovChainLaw_apply_setOf_loopPathAt]
 
+end ExcursionPrefix
+
 /-- The law of the first excursion of the chain started at `a₀`. Under the returning hypothesis,
 this is the law of the word traversed strictly between the first two visits to `a₀`. If either
 visit is absent, `visitTime` uses its junk value `0`, so the interval used by `excursion` may be
@@ -184,9 +185,14 @@ def excursionLaw (κ : Kernel α α) [IsMarkovKernel κ] (a₀ : α) : Measure (
   (markovChainLaw (Measure.dirac a₀) κ).map fun x => excursion x a₀ 0
 
 /-- The excursion law is a probability measure, being the law of a random word. -/
-instance isProbabilityMeasure_excursionLaw : IsProbabilityMeasure (excursionLaw κ a₀) := by
+instance isProbabilityMeasure_excursionLaw {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α} :
+    IsProbabilityMeasure (excursionLaw κ a₀) := by
   rw [excursionLaw]
   infer_instance
+
+section ExcursionLaw
+
+variable [Countable α] [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α}
 
 /-- The excursion law evaluated on a set of words. Every set of words is measurable, the state
 space being countable and discrete. -/
@@ -229,30 +235,34 @@ end ExcursionLaw
 
 /-! ## The excursion process is i.i.d. -/
 
-section IID
+section Measurability
 
-variable [Countable α] [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α}
+variable [MeasurableSingletonClass α]
 
-omit [Countable α] [IsMarkovKernel κ] in
 /-- A.e. measurability of the excursions of the coordinate process on path space. -/
 private theorem aemeasurable_excursionProcess_eval (μ : Measure (ℕ → α)) (a₀ : α) (k : ℕ) :
     AEMeasurable (excursionProcess (fun n (x : ℕ → α) => x n) a₀ k) μ :=
   aemeasurable_excursionProcess (fun i => (measurable_pi_apply i).aemeasurable) a₀
     (measurableSet_singleton a₀) k
 
-omit [Countable α] [IsMarkovKernel κ] in
 /-- A.e. measurability of the whole excursion sequence of the coordinate process. -/
 private theorem aemeasurable_excursionProcess_pi (μ : Measure (ℕ → α)) (a₀ : α) :
     AEMeasurable
       (fun (x : ℕ → α) => fun k => excursionProcess (fun n (y : ℕ → α) => y n) a₀ k x) μ :=
   AEMeasurable.of_eval fun k => aemeasurable_excursionProcess_eval μ a₀ k
 
-omit [MeasurableSpace α] [Countable α] [MeasurableSingletonClass α] in
+end Measurability
+
+omit [MeasurableSpace α] in
 /-- Prescribing the first `m` excursions of a path is prescribing them coordinatewise. -/
 private theorem excursionPrefix_eq_ofFn_iff (x : ℕ → α) (a₀ : α) {m : ℕ} (w : Fin m → List α) :
     excursionPrefix x a₀ m = List.ofFn w ↔ ∀ i : Fin m, excursion x a₀ i.val = w i := by
   rw [List.ext_getElem_iff]
   simp [excursionPrefix_def, Fin.forall_iff]
+
+section IID
+
+variable [Countable α] [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {a₀ : α}
 
 /-- **The finite-dimensional laws of the excursion process are products.** Once the chain almost
 surely makes its `m`-th return, its first `m` excursions are independent, each with law
@@ -398,9 +408,6 @@ end IID
 
 section ReturningChain
 
-variable [Countable α] [MeasurableSingletonClass α]
-
-omit [Countable α] [MeasurableSingletonClass α] in
 /-- **The chain that jumps to `a₀` from every state sits at `a₀` at every time.** -/
 @[simp]
 theorem markovChainLaw_const_map_eval (a₀ : α) (n : ℕ) :
@@ -412,7 +419,8 @@ theorem markovChainLaw_const_map_eval (a₀ : α) (n : ℕ) :
     rw [markovChainLaw_map_eval_succ, ih]
     simp
 
-omit [Countable α] in
+variable [MeasurableSingletonClass α]
+
 /-- **A chain with a recurrent base state exists.** The chain that jumps to `a₀` from every state
 returns to `a₀` at every time, so the returning hypothesis of this file is not vacuous. -/
 theorem ae_infinite_setOf_eq_markovChainLaw_const (a₀ : α) :
@@ -432,29 +440,18 @@ word: a chain that never leaves `a₀` returns to `a₀` at every step. -/
 @[simp]
 theorem excursionLaw_const (a₀ : α) :
     excursionLaw (Kernel.const α (Measure.dirac a₀)) a₀ = Measure.dirac ([] : List α) := by
-  refine Measure.ext_of_singleton fun e => ?_
-  by_cases hmem : a₀ ∈ e
-  · have hne : ([] : List α) ≠ e := by
-      rintro rfl
-      exact List.not_mem_nil hmem
-    rw [excursionLaw_apply_singleton_of_mem hmem, Measure.dirac_apply]
-    simp [hne]
-  · rw [excursionLaw_apply_singleton ((ae_infinite_setOf_eq_markovChainLaw_const a₀).mono
-        fun x hx => exists_visitCount_of_infinite hx 1) hmem,
-      Measure.dirac_apply]
-    match e with
-    | [] => simp
-    | b :: t =>
-      have hb : a₀ ≠ b := fun hb => hmem (hb ▸ List.mem_cons_self ..)
-      have hzero : (Kernel.const α (Measure.dirac a₀)) a₀ {b} = 0 := by
-        simp [hb]
-      have hweight : excursionWeight (Kernel.const α (Measure.dirac a₀)) a₀ (b :: t) = 0 := by
-        rw [excursionWeight]
-        simp only [loopPath_cons, loopPath_nil, List.consecutivePairs, List.cons_append,
-          List.tail_cons, List.zip_cons_cons, List.map_cons, List.prod_cons]
-        rw [hzero, zero_mul]
-      rw [hweight]
-      simp
+  have hall : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) (Kernel.const α (Measure.dirac a₀))),
+      ∀ n, x n = a₀ :=
+    ae_all_iff.2 fun n =>
+      HasLaw.ae_eq_of_dirac
+        ⟨(measurable_pi_apply n).aemeasurable, markovChainLaw_const_map_eval a₀ n⟩
+  have hnil : ∀ᵐ x ∂(markovChainLaw (Measure.dirac a₀) (Kernel.const α (Measure.dirac a₀))),
+      excursion x a₀ 0 = [] := by
+    filter_upwards [hall] with x hx
+    refine List.eq_nil_iff_forall_not_mem.2 fun b hb => ?_
+    obtain ⟨n, -, rfl⟩ := List.mem_map.1 (excursion_def x a₀ 0 ▸ hb)
+    simp [hx n] at hb
+  rw [excursionLaw, Measure.map_congr hnil, Measure.map_const, measure_univ, one_smul]
 
 end ReturningChain
 

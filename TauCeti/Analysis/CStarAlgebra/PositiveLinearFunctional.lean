@@ -36,6 +36,9 @@ this file records the norm facts about positive functionals in the form used on 
 
 These are Mathlib's `ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm` and
 `ContinuousLinearMap.monotone_iff_opNorm_eq_map_one`, restated for `WeakDual ℂ A`.
+
+Finally, `WeakDual.ext_nonneg`: a functional on a C⋆-algebra is determined by its values on
+nonnegative elements, since these span the algebra.
 -/
 
 public section
@@ -66,6 +69,13 @@ section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {φ : WeakDual ℂ A}
+
+/-- A functional on a C⋆-algebra is determined by its values on nonnegative elements, since
+these span the algebra. In particular two states that agree on nonnegative elements are equal. -/
+theorem ext_nonneg {φ ψ : WeakDual ℂ A} (h : ∀ a, 0 ≤ a → φ a = ψ a) : φ = ψ := by
+  have := LinearMap.ext_on (CStarAlgebra.span_nonneg (A := A))
+    (f := (toStrongDual φ : A →ₗ[ℂ] ℂ)) (g := toStrongDual ψ) fun a ha => h a ha
+  exact DFunLike.ext _ _ fun a => by simpa using LinearMap.congr_fun this a
 
 /-- A functional that is nonnegative on nonnegative elements is monotone. -/
 theorem monotone_toStrongDual_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :

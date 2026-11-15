@@ -90,6 +90,7 @@ private theorem valuation_lt_of_specializes {x z : closedPolydisc 1 K} (h : x ‚§
   rw [valuation_lt_iff] at hx ‚ä¢
   exact vlt_of_specializes ((subtype_specializes_iff x z).mp h) hx (hz.imp hne hne)
 
+omit [IsUltrametricDist K] in
 /-- If `x(T - a)` lies strictly above the constants `c` with `P c`, among them a nonzero one, and
 strictly below the constants with `Q c`, then so does `z(T - a)` at every specialization `z` of
 `x`. -/

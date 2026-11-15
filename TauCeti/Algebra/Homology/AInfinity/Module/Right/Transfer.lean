@@ -113,7 +113,7 @@ variable {AA : AInfinityAlgebra R A}
 
 section Unary
 
-variable (AA) (G : InternalGrading R M) (d : Module.End R M)
+variable (AA) (G : InternalGrading R M ℤ) (d : Module.End R M)
 
 /-- The **unary part** `d ⊗ 1 + (1 ⊗ b) ∘ (τ ⊗ 1)` of a module bar differential with unary
 operation `d`: the operator `d` on the module input, plus the algebra bar differential `b` on the
@@ -319,7 +319,7 @@ private theorem coact_comp_rTensor {P : Type*} [AddCommGroup P] [Module R P] (f 
 
 section Transfer
 
-variable {GN : InternalGrading R N} {dN : Module.End R N}
+variable {GN : InternalGrading R N ℤ} {dN : Module.End R N}
   (c : LinearSpecialContraction MM.differential dN)
   (hh : LinearMap.IsHomogeneous c.homotopy MM.grading.piece MM.grading.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl GN.piece MM.grading.piece 0)
@@ -541,7 +541,6 @@ theorem transferBarDifferential_comp_self :
       0 :=
   LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential_eq_zero _ _
     MM.unaryBarDifferential_add_higherBarDifferential_comp_self
-    (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.unaryBarDifferential_differential_comp_self
 
 include hincl hproj in

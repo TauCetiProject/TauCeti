@@ -110,7 +110,7 @@ private theorem valuation_aeval_mul_lt
       _ = A.valuation x := mul_one _
       _ ≤ A.valuation (y j) := hxy j
 
-/-- **Stichtenoth, Lemma 1.1.7.** Let `x` be a nonzero nonunit of a valuation subring `A` of `F`
+/-- **Stichtenoth, Lemma 1.1.7.** Let `x` be a nonzero element of a valuation subring `A` of `F`
 containing the constants. A family of nonunits of `A` whose valuations increase strictly
 along a linear order, and are all at least `A.valuation x` — hence nonzero — is linearly
 independent over `k(x)`.
@@ -119,40 +119,25 @@ In Stichtenoth's additive notation the hypothesis reads
 `ord x ≥ ord (y i₀) > ord (y i₁) > ⋯ > 0`, and the conclusion bounds the length of such a chain by
 `[F : k(x)]`. -/
 theorem linearIndependent_of_strictMono_valuation (hk : ∀ c : k, algebraMap k F c ∈ A) {x : F}
-    (hx0 : x ≠ 0) (hx : A.valuation x < 1) {ι : Type*} [LinearOrder ι] {y : ι → F}
+    (hx0 : x ≠ 0) {ι : Type*} [LinearOrder ι] {y : ι → F}
     (hy : ∀ i, A.valuation (y i) < 1)
     (hmono : StrictMono fun i ↦ A.valuation (y i)) (hxy : ∀ i, A.valuation x ≤ A.valuation (y i)) :
     LinearIndependent k⟮x⟯ y := by
   classical
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₁⟩⟩
+  · exact linearIndependent_empty_type
+  have hx : A.valuation x < 1 := (hxy i₁).trans_lt (hy i₁)
   have hxpos : 0 < A.valuation x := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 hx0)
   have hy0 : ∀ i, y i ≠ 0 := fun i ↦ (Valuation.ne_zero_iff _).1 (hxpos.trans_le (hxy i)).ne'
   have hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1 :=
     fun c ↦ (A.valuation_le_one_iff _).2 (hk c)
   have : A.valuation.IsTrivialOn k := .of_le_one _ hkle
-  have hxtr : Transcendental k x := Valuation.transcendental_of_ne_one k x hx0 hx.ne
-  have hinj : Function.Injective (aeval x : k[X] →ₐ[k] F) := transcendental_iff_injective.mp hxtr
   rw [← LinearIndependent.iff_fractionRing (Algebra.adjoin k {x}) k⟮x⟯, linearIndependent_iff']
   intro s g hsum i₀ hi₀
   by_contra hg0
-  -- Write the coefficients as polynomials in `x`.
-  have hrange : ∀ z : F, z ∈ Algebra.adjoin k ({x} : Set F) → ∃ p : k[X], aeval x p = z := by
-    intro z hz
-    rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hz
-  choose p hp using fun i ↦ hrange (g i : F) (g i).2
-  have hpa : ∀ i, algebraMap (Algebra.adjoin k ({x} : Set F)) F (g i) = aeval x (p i) :=
-    fun i ↦ by rw [Subalgebra.algebraMap_apply]; exact (hp i).symm
-  have hpzero : ∀ i, p i = 0 ↔ g i = 0 := fun i ↦ by
-    rw [← hinj.eq_iff, map_zero, hp i, ZeroMemClass.coe_eq_zero]
-  obtain ⟨m, q, hfactor, j₁, hj₁s, hqj₁⟩ :=
-    Polynomial.exists_common_X_pow_factor (s : Set ι) p
-      ⟨i₀, hi₀, fun h ↦ hg0 ((hpzero i₀).mp h)⟩
-  -- The relation, with the common factor `x ^ m` removed.
-  have hsumF : ∑ i ∈ s, aeval x (q i) * y i = 0 := by
-    refine mul_left_cancel₀ (pow_ne_zero m hx0) ?_
-    rw [Finset.mul_sum, mul_zero, ← hsum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Algebra.smul_def, hpa i, hfactor i hi]
-    simp [mul_assoc]
+  -- Remove the common power of `x` from the relation.
+  obtain ⟨q, hsumF, j₁, hj₁s, hqj₁⟩ :=
+    TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero hx0 s y g hsum hi₀ hg0
   -- Among the indices whose polynomial has nonzero constant term, take the largest.
   have hs'ne : (s.filter fun i ↦ (q i).coeff 0 ≠ 0).Nonempty :=
     ⟨j₁, Finset.mem_filter.2 ⟨hj₁s, hqj₁⟩⟩
@@ -188,7 +173,7 @@ private theorem not_exists_seq_valuation_strictMono (hF : IsFunctionField k F)
   have : FiniteDimensional k⟮x⟯ F :=
     hF.finiteDimensional_adjoin (Valuation.transcendental_of_ne_one k x hx0 hx.ne)
   have hli : LinearIndependent k⟮x⟯ fun i : Fin (Module.finrank k⟮x⟯ F + 1) ↦ y i :=
-    linearIndependent_of_strictMono_valuation hk hx0 hx (fun i ↦ hy i)
+    linearIndependent_of_strictMono_valuation hk hx0 (fun i ↦ hy i)
       (fun _ _ hij ↦ hmono hij) fun i ↦ hxy.trans (hmono.monotone (Nat.zero_le _))
   simpa using hli.fintype_card_le_finrank
 

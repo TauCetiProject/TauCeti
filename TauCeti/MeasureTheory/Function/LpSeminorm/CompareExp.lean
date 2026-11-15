@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Comparison of `Lᵖ` seminorms
@@ -31,8 +32,12 @@ This comparison is useful for embeddings of real interpolation spaces.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
+* `TauCeti.MeasureTheory.tendsto_eLpNorm_of_tendsto_eLpNorm_one`: convergence to zero in `L¹`
+  implies convergence to zero in `Lᵖ` for `p ≤ 1`.
 * `TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm`: if `eLpNorm (f i) p μ → 0`
   for some `1 ≤ p`, then `∫ ‖f i‖ ∂μ → 0`.
+* `TauCeti.MeasureTheory.not_tendsto_eLpNorm_sub_of_separated`: a sequence whose terms stay a
+  definite `L¹` distance apart has no subsequence converging in `Lᵖ` for any `1 ≤ p`.
 -/
 
 public section
@@ -50,7 +55,7 @@ variable {α E F : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 /-- If `‖u‖ ≤ ‖f‖ ^ r` almost everywhere with `r ≥ 0`, then `‖u‖_s ≤ ‖f‖_p ^ r` for the exponent
 `1 / s = r / p`. For `r = 0` this reads `‖u‖_∞ ≤ 1`. -/
 theorem eLpNorm_le_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞} {r : ℝ} (hr : 0 ≤ r)
-    (hf : AEStronglyMeasurable f μ) (hu : AEStronglyMeasurable u μ)
+    (hu : AEStronglyMeasurable u μ)
     (hs : s⁻¹ = ENNReal.ofReal r * p⁻¹) (hle : ∀ᵐ x ∂μ, ‖u x‖ ≤ ‖f x‖ ^ r) :
     eLpNorm u s μ ≤ eLpNorm f p μ ^ r := by
   rcases hr.eq_or_lt with rfl | hr
@@ -58,22 +63,26 @@ theorem eLpNorm_le_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞}
     subst hs
     rw [ENNReal.rpow_zero, eLpNorm_exponent_top hu]
     simpa using eLpNormEssSup_le_of_ae_bound (C := 1) (by simpa using hle)
-  · calc eLpNorm u s μ ≤ eLpNorm (fun x => ‖f x‖ ^ r) s μ := eLpNorm_mono_ae_real hu hle
-      _ = eLpNorm f (s * ENNReal.ofReal r) μ ^ r := eLpNorm_norm_rpow f hf hr
-      _ = eLpNorm f p μ ^ r := by
-        congr 2
-        have h0 : ENNReal.ofReal r ≠ 0 := by simpa using hr
-        rw [← inv_inv s, hs, ENNReal.mul_inv (Or.inl h0) (Or.inl ENNReal.ofReal_ne_top), inv_inv,
-          mul_comm, ← mul_assoc, ENNReal.mul_inv_cancel h0 ENNReal.ofReal_ne_top, one_mul]
+  · by_cases hf : AEStronglyMeasurable f μ
+    · calc eLpNorm u s μ ≤ eLpNorm (fun x => ‖f x‖ ^ r) s μ := eLpNorm_mono_ae_real hu hle
+        _ = eLpNorm f (s * ENNReal.ofReal r) μ ^ r := eLpNorm_norm_rpow f hf hr
+        _ = eLpNorm f p μ ^ r := by
+          congr 2
+          have h0 : ENNReal.ofReal r ≠ 0 := by simpa using hr
+          rw [← inv_inv s, hs, ENNReal.mul_inv (Or.inl h0) (Or.inl ENNReal.ofReal_ne_top),
+            inv_inv, mul_comm, ← mul_assoc, ENNReal.mul_inv_cancel h0 ENNReal.ofReal_ne_top,
+            one_mul]
+    · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.top_rpow_of_pos hr]
+      exact le_top
 
 /-- If `‖g‖ ≤ ‖f‖ ^ (q - 1)` almost everywhere, then `‖g‖_{q'} ≤ ‖f‖_q ^ (q - 1)` for Hölder
 conjugate exponents `q < ∞` and `q'`. -/
 theorem eLpNorm_le_eLpNorm_rpow_toReal_sub_one {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
-    (hq : q ≠ ∞) {f : α → E} {g : α → F} (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) (hle : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖f x‖ ^ (q.toReal - 1)) :
+    (hq : q ≠ ∞) {f : α → E} {g : α → F} (hg : AEStronglyMeasurable g μ)
+    (hle : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖f x‖ ^ (q.toReal - 1)) :
     eLpNorm g q' μ ≤ eLpNorm f q μ ^ (q.toReal - 1) := by
   have hr1 : 1 ≤ q.toReal := by simpa using ENNReal.toReal_mono hq hqq.one_le
-  refine eLpNorm_le_eLpNorm_rpow (by linarith) hf hg ?_ hle
+  refine eLpNorm_le_eLpNorm_rpow (by linarith) hg ?_ hle
   rw [← ENNReal.HolderConjugate.sub_one_mul_inv q q' hq, ENNReal.ofReal_sub _ zero_le_one,
     ENNReal.ofReal_toReal hq, ENNReal.ofReal_one]
 
@@ -89,16 +98,33 @@ theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGrou
     {l : Filter ι} {μ : Measure Ω} [IsFiniteMeasure μ] {f : ι → Ω → E} {p : ℝ≥0∞}
     (hp : 1 ≤ p) (h : Tendsto (fun i => eLpNorm (f i) p μ) l (𝓝 0)) :
     Tendsto (fun i => eLpNorm (f i) 1 μ) l (𝓝 0) := by
-  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp_top
-    · simp
-    rw [ENNReal.toReal_one, sub_nonneg]
-    gcongr
-    simpa using ENNReal.toReal_mono hp_top hp
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le)
     fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
-  simpa using ENNReal.Tendsto.mul_const h
-    (.inr (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top μ Set.univ)))
+  simpa using ENNReal.Tendsto.mul_const h (.inr (ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ Set.univ)))
+
+/-- On a finite measure space, convergence to zero in `L¹` implies convergence to zero in `Lᵖ`
+for every exponent `p ≤ 1`. No measurability hypothesis is needed: `eLpNorm (F i) 1 μ` is finite
+eventually along `l`, which forces `F i` to be a.e. strongly measurable. -/
+theorem tendsto_eLpNorm_of_tendsto_eLpNorm_one {ι E : Type*} [NormedAddCommGroup E]
+    {l : Filter ι} {μ : Measure Ω} [IsFiniteMeasure μ] {F : ι → Ω → E} {p : ℝ≥0∞}
+    (hp : p ≤ 1) (h : Tendsto (fun i => eLpNorm (F i) 1 μ) l (𝓝 0)) :
+    Tendsto (fun i => eLpNorm (F i) p μ) l (𝓝 0) := by
+  have hF : ∀ᶠ i in l, AEStronglyMeasurable (F i) μ := by
+    filter_upwards [h.eventually_lt_const ENNReal.zero_lt_top] with i hi
+    exact aestronglyMeasurable_of_eLpNorm_ne_top hi.ne
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact tendsto_const_nhds.congr' (hF.mono fun i hi => (eLpNorm_exponent_zero hi).symm)
+  have h_exp : 0 ≤ 1 / p.toReal - 1 / (1 : ℝ≥0∞).toReal := by
+    rw [ENNReal.toReal_one, div_one, sub_nonneg,
+      one_le_div (ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.one_ne_top hp))]
+    exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hp)
+  have h_lim := ENNReal.Tendsto.mul_const h
+    (Or.inr (ENNReal.rpow_ne_top_of_nonneg h_exp (measure_ne_top μ Set.univ)))
+  rw [zero_mul] at h_lim
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_lim
+    (Filter.Eventually.of_forall fun _ => zero_le)
+    (hF.mono fun i hi => eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hi)
 
 /-- **`Lᵖ` convergence implies `L¹` convergence on a finite measure space.** If `1 ≤ p` and a
 family `f` tends to `0` in `Lᵖ` along a filter `l`, then `∫ ‖f i‖` tends to `0` along `l`.
@@ -114,7 +140,31 @@ theorem tendsto_integral_norm_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGr
   refine hreal.congr' ?_
   filter_upwards [h.eventually_lt_const ENNReal.zero_lt_top] with i hi
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hi.ne
-  rw [eLpNorm_one_eq_lintegral_enorm hf, integral_norm_eq_lintegral_enorm hf]
+  rw [eLpNorm_one_eq_lintegral_eNorm hf, integral_norm_eq_lintegral_eNorm hf]
+
+/-- If, for all large `m`, the terms `f n` with `n` large stay at `L¹` distance at least `ε` from
+`f m`, then no subsequence of `f` converges in `Lᵖ` for any `1 ≤ p`, on a finite measure. -/
+theorem not_tendsto_eLpNorm_sub_of_separated {E : Type*} [NormedAddCommGroup E] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {f : ℕ → Ω → E} {ε : ℝ≥0∞} (hε : 0 < ε)
+    (hsep : ∀ᶠ m in atTop, ∀ᶠ n in atTop, ε ≤ eLpNorm (f m - f n) 1 μ) {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {φ : ℕ → ℕ} (hφ : StrictMono φ) {g : Ω → E} :
+    ¬ Tendsto (fun k => eLpNorm (f (φ k) - g) p μ) atTop (𝓝 0) := by
+  intro h
+  have h1 := tendsto_eLpNorm_one_of_tendsto_eLpNorm hp h
+  have hsep' : ∀ᶠ k in atTop, ∀ᶠ k' in atTop, ε ≤ eLpNorm (f (φ k) - f (φ k')) 1 μ :=
+    (hφ.tendsto_atTop.eventually hsep).mono fun _ hk => hφ.tendsto_atTop.eventually hk
+  have hsmall : ∀ᶠ k in atTop, eLpNorm (f (φ k) - g) 1 μ < ε / 2 :=
+    h1.eventually (gt_mem_nhds (ENNReal.half_pos hε.ne'))
+  obtain ⟨k₀, hk₀, hk₀small⟩ := (hsep'.and hsmall).exists
+  obtain ⟨k, hk, hksmall⟩ := (hk₀.and hsmall).exists
+  have htri : eLpNorm (f (φ k₀) - f (φ k)) 1 μ ≤
+      eLpNorm (f (φ k₀) - g) 1 μ + eLpNorm (f (φ k) - g) 1 μ := by
+    have : f (φ k₀) - f (φ k) = (f (φ k₀) - g) - (f (φ k) - g) := by abel
+    rw [this]
+    exact eLpNorm_sub_le le_rfl
+  have := (hk.trans htri).trans_lt (ENNReal.add_lt_add hk₀small hksmall)
+  rw [ENNReal.add_halves] at this
+  exact lt_irrefl _ this
 
 end MeasureTheory
 
@@ -133,14 +183,14 @@ theorem eLpNorm_le_one_of_exponent_le (hf : AEStronglyMeasurable f μ) (hp : 0 <
   by_cases hq : q = ∞
   · subst q
     rw [eLpNorm_exponent_top hf]
-    exact eLpNormEssSup_le_of_ae_enorm_bound hf1
+    exact eLpNormEssSup_le_of_ae_eNorm_bound hf1
   have hp' : p ≠ ∞ := ne_top_of_le_ne_top hq hpq
   have hq0 : q ≠ 0 := (hp.trans_le hpq).ne'
   have hint : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ≤ 1 := by
     rw [eLpNorm_eq_eLpNorm' hp.ne' hp' hf] at hfp
-    rw [lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp.ne' hp')]
+    rw [lintegral_rpow_eNorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp.ne' hp')]
     exact ENNReal.rpow_le_one hfp ENNReal.toReal_nonneg
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq hf]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq hf]
   apply ENNReal.rpow_le_one _ (by positivity)
   refine (lintegral_mono_ae ?_).trans hint
   filter_upwards [hf1] with x hx
@@ -155,9 +205,9 @@ theorem eLpNorm_le_of_exponent_le
   have hnorm : ∀ r, eLpNorm (M⁻¹ • fun x => ‖f x‖) r μ =
       (ENNReal.ofReal M)⁻¹ * eLpNorm f r μ := by
     intro r
-    rw [eLpNorm_const_smul, eLpNorm_congr_enorm_ae hf.norm hf
-      (Filter.Eventually.of_forall fun x => enorm_norm (f x)),
-      Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
+    rw [eLpNorm_const_smul, eLpNorm_congr_eNorm_ae hf.norm hf
+      (Filter.Eventually.of_forall fun x => eNorm_norm (f x)),
+      Real.eNorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
   have hscaled : eLpNorm (M⁻¹ • fun x => ‖f x‖) p μ ≤ 1 := by
     rw [hnorm]
     exact (mul_le_mul_right hfp _).trans_eq

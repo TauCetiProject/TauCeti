@@ -69,6 +69,70 @@ theorem IsFredholm.coprod_of_finiteDimensional {T : E →L[𝕜] F} (hT : IsFred
     LinearMap.HasFiniteRange.of_finite_dom.comp_right _
   simpa only [comp_fst_add_comp_snd] using (hT.comp hf).add_hasFiniteRange hB
 
+omit [CompleteSpace 𝕜] in
+/-- **Kernel charts of a sum of stabilizers.** A kernel coordinate `q` of the stabilization of
+`T` by `D₂` gives the kernel coordinate `(x, (l, l₃)) ↦ (q (x, l), l₃)` of its stabilization by
+`D₂.coprod D₃`, for any further directions `D₃`. -/
+theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ]
+    [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.coprod D₂).prod q).IsInvertible) (D₃ : Λ₃ →L[𝕜] F) :
+    ((T.coprod (D₂.coprod D₃)).prod ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
+      (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)).IsInvertible := by
+  obtain ⟨e, he⟩ := h
+  have hA (w : F × G) : (T.coprod D₂) (e.symm w) = w.1 := by
+    simpa using congrArg Prod.fst (congrArg (· (e.symm w)) he.symm)
+  have hq (w : F × G) : q (e.symm w) = w.2 := by
+    simpa using congrArg Prod.snd (congrArg (· (e.symm w)) he.symm)
+  have he' (z : E × Λ) : e.symm ((T.coprod D₂) z, q z) = z := by
+    rw [ContinuousLinearEquiv.symm_apply_eq]
+    exact (congrArg (· z) he).symm
+  -- The inverse solves `T x + D₂ l = y - D₃ l₃` and `q (x, l) = g` for `(x, l)`.
+  let S : F × G × Λ₃ →L[𝕜] (F × G) × Λ₃ :=
+    ((fst 𝕜 F (G × Λ₃) - D₃ ∘L snd 𝕜 G Λ₃ ∘L
+        snd 𝕜 F (G × Λ₃)).prod
+      (fst 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))).prod
+      (snd 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))
+  let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
+    (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
+      ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S
+  refine ⟨ContinuousLinearEquiv.equivOfInverse ((T.coprod (D₂.coprod D₃)).prod
+    ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
+      (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)) inv
+    (fun z ↦ ?_) (fun w ↦ ?_), rfl⟩
+  · obtain ⟨x, l, l₃⟩ := z
+    have := he' (x, l)
+    simp only [coprod_apply] at this
+    simp [inv, S, ← add_assoc, this]
+  · obtain ⟨y, g, m⟩ := w
+    have h1 := hA (y - D₃ m, g)
+    have h2 := hq (y - D₃ m, g)
+    simp only [coprod_apply] at h1
+    simp [inv, S, ← add_assoc, h1, h2]
+
+omit [CompleteSpace 𝕜] in
+/-- **Kernel charts under a change of models.** A kernel coordinate `q` of the stabilization of `T`
+by `D₂` stays a kernel coordinate after replacing the stabilizing space `Λ` and the coordinate
+space `G` by isomorphic spaces `Λ'` and `G'`: the stabilization by `D₂ ∘ eΛ` paired with
+`(x, l) ↦ eG (q (x, eΛ l))` is invertible. -/
+theorem IsInvertible.prod_coprod_comp {Λ Λ' G G' : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace 𝕜 Λ] [NormedAddCommGroup Λ'] [NormedSpace 𝕜 Λ'] [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+    {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.coprod D₂).prod q).IsInvertible) (eΛ : Λ' ≃L[𝕜] Λ) (eG : G ≃L[𝕜] G') :
+    ((T.coprod (D₂ ∘L (eΛ : Λ' →L[𝕜] Λ))).prod
+      ((eG : G →L[𝕜] G') ∘L q ∘L (ContinuousLinearMap.id 𝕜 E).prodMap (eΛ : Λ' →L[𝕜] Λ))
+      ).IsInvertible := by
+  have hcomp : (T.coprod (D₂ ∘L (eΛ : Λ' →L[𝕜] Λ))).prod
+      ((eG : G →L[𝕜] G') ∘L q ∘L (ContinuousLinearMap.id 𝕜 E).prodMap (eΛ : Λ' →L[𝕜] Λ)) =
+      ((ContinuousLinearEquiv.refl 𝕜 F).prodCongr eG : F × G →L[𝕜] F × G') ∘L
+        ((T.coprod D₂).prod q) ∘L
+        ((ContinuousLinearEquiv.refl 𝕜 E).prodCongr eΛ : E × Λ' →L[𝕜] E × Λ) := by
+    ext <;> simp
+  rw [hcomp]
+  exact (IsInvertible.comp (isInvertible_equiv (f := (ContinuousLinearEquiv.refl 𝕜 F).prodCongr eG))
+    h).comp (isInvertible_equiv (f := (ContinuousLinearEquiv.refl 𝕜 E).prodCongr eΛ))
+
 variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
@@ -92,7 +156,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
   have : FiniteDimensional 𝕜 S :=
     ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
-  have : IsClosed (S : Set F) := S.closed_of_finiteDimensional
+  have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
   have hsurj : Surjective (A x₀) := by
     apply LinearMap.range_eq_top.mp
@@ -107,5 +171,20 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
   obtain ⟨U, hU, hx₀, hUinv⟩ := exists_isOpen_isInvertible_prod hA hinv
   exact ⟨S, hSD, hS.symm, inferInstance, q, U, hU, hx₀, hUinv⟩
+
+/-- **Kernel charts with standard models.** A Fredholm operator between Banach spaces has a finite
+stabilization by `𝕜ⁿ` with a kernel coordinate in `𝕜ᵐ`: some `D₂ : 𝕜ⁿ →L[𝕜] F` and
+`q : E × 𝕜ⁿ →L[𝕜] 𝕜ᵐ` make the pair `(T.coprod D₂).prod q` invertible. -/
+theorem IsFredholm.exists_isInvertible_prod_coprod {T : E →L[𝕜] F}
+    (hT : IsFredholm T) :
+    ∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
+      ((T.coprod D₂).prod q).IsInvertible := by
+  obtain ⟨S, -, -, hS, q, U, -, hTU, hU⟩ :=
+    hT.exists_stabilization_kernel_coordinates (X := E →L[𝕜] F) (T := fun S ↦ S)
+      continuousAt_id (D := ⊤) (by simp)
+  have h : ((T.coprod S.subtypeL).prod q).IsInvertible := hU T hTU
+  have := (hT.coprod_of_finiteDimensional S.subtypeL).finite_ker
+  exact ⟨Module.finrank 𝕜 S, Module.finrank 𝕜 ((T.coprod S.subtypeL).ker), _, _,
+    h.prod_coprod_comp (.ofFinrankEq (by simp)) (.ofFinrankEq (by simp))⟩
 
 end ContinuousLinearMap

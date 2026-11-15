@@ -49,7 +49,7 @@ public section
 open Function Metric Module
 open scoped Manifold ContDiff
 
-namespace TauCeti
+namespace IsLocalDiffeomorph
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H] {M : Type*}
@@ -61,7 +61,7 @@ bijective**, hence a diffeomorphism by `IsLocalDiffeomorph.diffeomorphOfBijectiv
 are Hausdorff, and the source is compact and connected. The source model `E` also carries a real
 normed-space structure, which makes the manifold locally path-connected and hence, being
 connected, path-connected; this covers real and complex manifolds. -/
-theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace {I : ModelWithCorners 𝕜 E H}
+theorem bijective_of_compactSpace {I : ModelWithCorners 𝕜 E H}
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
     {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N]
     [SimplyConnectedSpace N]
@@ -74,13 +74,13 @@ theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace {I : ModelWithCorner
 /-- **A local diffeomorphism from a closed connected manifold to the unit sphere `Sⁿ`, `n ≥ 2`, is
 bijective**, hence a diffeomorphism by `IsLocalDiffeomorph.diffeomorphOfBijective`. The sphere
 carries Mathlib's stereographic atlas, and the source is compact, connected and Hausdorff. -/
-theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace_sphere {I : ModelWithCorners ℝ E H}
+theorem bijective_of_compactSpace_sphere {I : ModelWithCorners ℝ E H}
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ} [Fact (finrank ℝ F = n + 1)]
     (hn : 2 ≤ n) {f : M → sphere (0 : F) 1} (hf : IsLocalDiffeomorph I (𝓡 n) k f) :
     Bijective f :=
   have h2 : 2 < finrank ℝ F := by rw [(Fact.out : finrank ℝ F = n + 1)]; omega
   have : SimplyConnectedSpace (sphere (0 : F) 1) :=
-    simplyConnectedSpace_sphere (by exact_mod_cast lt_rank_of_lt_finrank h2) 0 zero_le_one
+    TauCeti.simplyConnectedSpace_sphere (by exact_mod_cast lt_rank_of_lt_finrank h2) 0 zero_le_one
   IsLocalDiffeomorph.bijective_of_compactSpace hf
 
-end TauCeti
+end IsLocalDiffeomorph

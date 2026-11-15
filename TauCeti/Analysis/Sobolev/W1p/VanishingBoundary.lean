@@ -40,7 +40,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set TopologicalSpace
+open Filter _root_.MeasureTheory Set TopologicalSpace
 open scoped ENNReal Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]

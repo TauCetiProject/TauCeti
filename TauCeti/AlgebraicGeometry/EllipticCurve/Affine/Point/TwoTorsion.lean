@@ -46,6 +46,8 @@ of multiplication by `2` (Silverman X.1.4).
 * `WeierstrassCurve.Affine.Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div`: the square root
   `((x - e)² - c_T) / ψ₂` of `x(2P) - e` is fixed by translation by `O` and `T`, and changes sign
   under translation by the other two points of order two.
+* `WeierstrassCurve.Affine.Point.two_ne_zero_of_two_lt_card`: more than two points of order
+  dividing two force `2 ≠ 0` (for an elliptic curve).
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
   of order two sends `x - e` to `±(x - e)`, with the same signs.
 
@@ -75,10 +77,10 @@ theorem Point.some_mem_torsionBy_two (h : W.Nonsingular x y)
     (hy : W.polynomialY.evalEval x y = 0) : some x y h ∈ AddSubgroup.torsionBy W.Point (2 : ℕ) := by
   rw [AddSubgroup.torsionBy.nsmul_iff, two_nsmul, (some_add_self_eq_zero_iff h).2 hy]
 
-/-- **The points of order two, seen from one of them**: if `T = (e, t)` has `ψ₂(e, t) = 0`, a point
-`S` with `2S = O` is `O`, `T`, or a point `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and `e₀ ≠ e`. -/
+/-- **The points of order two, seen from any point**: for a point `T = (e, t)`, a point `S` with
+`2S = O` is `O`, `T`, or a point `(e₀, t₀)` with `ψ₂(e₀, t₀) = 0` and `e₀ ≠ e`. -/
 theorem Point.eq_zero_or_eq_or_exists_of_add_self_eq_zero (hT : W.Nonsingular e t)
-    (hψ : W.polynomialY.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
+    {S : W.Point} (hS : S + S = 0) :
     S = 0 ∨ S = some e t hT ∨ ∃ (e₀ t₀ : F) (hT₀ : W.Nonsingular e₀ t₀),
       W.polynomialY.evalEval e₀ t₀ = 0 ∧ e₀ ≠ e ∧ S = some e₀ t₀ hT₀ := by
   rcases S with _ | ⟨e₀, t₀, hT₀⟩
@@ -86,7 +88,7 @@ theorem Point.eq_zero_or_eq_or_exists_of_add_self_eq_zero (hT : W.Nonsingular e 
   have hψ₀ := (some_add_self_eq_zero_iff hT₀).1 hS
   by_cases he : e₀ = e
   · subst he
-    obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT.1 hψ hT₀.1
+    obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT₀.1 hψ₀ hT.1
     exact Or.inr (Or.inl rfl)
   · exact Or.inr (Or.inr ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩)
 
@@ -106,12 +108,17 @@ theorem Point.xCoord_add_sub_mul_sub (hT : W.Nonsingular e t) (hψ : W.polynomia
   linear_combination h₁ - h₂ + (ℓ * (x - e) + (y - t) + W.a₁ * (x - e)) * key - (y - t) * hψ
 
 /-- **`ψ₂` under translation by a point of order two**: if `T = (e, t)` has `ψ₂(e, t) = 0` and
-`P = (x, y)` has `x ≠ e`, then `ψ₂(P + T)(x - e) = -ψ₂(P)(x(P + T) - e)`. -/
+`P = (x, y)` is any affine point, then `ψ₂(P + T)(x - e) = -ψ₂(P)(x(P + T) - e)`. -/
 theorem Point.evalEval_polynomialY_add_mul_sub (hT : W.Nonsingular e t)
-    (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y) (hx : x ≠ e) :
+    (hψ : W.polynomialY.evalEval e t = 0) (h : W.Nonsingular x y) :
     W.polynomialY.evalEval (some x y h + some e t hT).xCoord (some x y h + some e t hT).yCoord *
         (x - e) =
       -W.polynomialY.evalEval x y * ((some x y h + some e t hT).xCoord - e) := by
+  by_cases hx : x = e
+  · subst hx
+    obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT.1 hψ h.1
+    rw [add_self_of_Y_eq (evalEval_polynomialY_eq_zero_iff.1 hψ)]
+    simp [hψ]
   have key : (y - t) / (x - e) * (x - e) = y - t := div_mul_cancel₀ _ (sub_ne_zero.2 hx)
   rw [evalEval_polynomialY] at hψ
   rw [add_of_X_ne hx, xCoord_some, yCoord_some, slope_of_X_ne hx, evalEval_polynomialY,
@@ -154,7 +161,7 @@ theorem Point.evalEval_polynomialY_add_ne_zero (h : W.Nonsingular x y)
   have hψ₀ := (some_add_self_eq_zero_iff hT₀).1 hS
   have hx := X_ne_of_evalEval_polynomialY_ne_zero hT₀.1 hψ₀ h.1 hy
   have hA := xCoord_add_sub_mul_sub hT₀ hψ₀ h hx
-  have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h hx
+  have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h
   have hc : W.polynomialX.evalEval e₀ t₀ ≠ 0 := hT₀.2.resolve_right (not_not.2 hψ₀)
   intro h0
   rw [h0, zero_mul, neg_mul, zero_eq_neg, mul_eq_zero] at hB
@@ -173,13 +180,13 @@ theorem Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular
       (if S = 0 ∨ S = some e t hT then 1 else -1) *
         (((x - e) ^ 2 + W.polynomialX.evalEval e t) / W.polynomialY.evalEval x y) := by
   have hy' := evalEval_polynomialY_add_ne_zero h hy hS
-  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hψ hS with
+  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hS with
     rfl | rfl | ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩
   · simp
   · rw [ite_eq_left (Or.inr rfl), one_mul, div_eq_div_iff hy' hy]
     have hx := X_ne_of_evalEval_polynomialY_ne_zero hT.1 hψ h.1 hy
     have hA := xCoord_add_sub_mul_sub hT hψ h hx
-    have hB := evalEval_polynomialY_add_mul_sub hT hψ h hx
+    have hB := evalEval_polynomialY_add_mul_sub hT hψ h
     set x' := (some x y h + some e t hT).xCoord
     set ψ := W.polynomialY.evalEval x y
     set c := W.polynomialX.evalEval e t
@@ -188,7 +195,7 @@ theorem Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular
   · rw [ite_eq_right (by simp [he]), neg_one_mul, ← neg_div, div_eq_div_iff hy' hy]
     have hx := X_ne_of_evalEval_polynomialY_ne_zero hT₀.1 hψ₀ h.1 hy
     have hA := xCoord_add_sub_mul_sub hT₀ hψ₀ h hx
-    have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h hx
+    have hB := evalEval_polynomialY_add_mul_sub hT₀ hψ₀ h
     have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ hT₀.1 hψ₀ he
     set x' := (some x y h + some e₀ t₀ hT₀).xCoord
     set ψ := W.polynomialY.evalEval x y
@@ -198,13 +205,21 @@ theorem Point.sq_xCoord_add_sub_add_evalEval_polynomialX_div (hT : W.Nonsingular
       ψ * ((x - e₀) - (x' - e₀)) * hA
 
 /-- **The square root of `c_T` under translation by `E[2]`**: if `T = (e, t)` has `ψ₂(e, t) = 0`,
-`P = (x, y)` has `ψ₂(x, y) ≠ 0` and `(x - e)² = c_T`, as when `2P = T`, and `2S = O`, then
+`P = (x, y)` satisfies `(x - e)² = c_T`, as when `2P = T`, and `2S = O`, then
 `x(P + S) - e = ±(x - e)`, with the sign `+` exactly when `S ∈ {O, T}`. -/
 theorem Point.xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalEval e t = 0)
-    (h : W.Nonsingular x y) (hy : W.polynomialY.evalEval x y ≠ 0)
+    (h : W.Nonsingular x y)
     (hx2 : (x - e) ^ 2 + W.polynomialX.evalEval e t = 0) {S : W.Point} (hS : S + S = 0) :
     (some x y h + S).xCoord - e = (if S = 0 ∨ S = some e t hT then 1 else -1) * (x - e) := by
-  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hψ hS with
+  have hy : W.polynomialY.evalEval x y ≠ 0 := by
+    intro h0
+    by_cases hx : x = e
+    · subst hx
+      obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT.1 hψ h.1
+      exact (h.2.resolve_right (not_not.2 h0)) (by simpa using hx2)
+    · have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ h.1 h0 hx
+      exact (h.2.resolve_right (not_not.2 h0)) (by linear_combination hC - hx2)
+  rcases eq_zero_or_eq_or_exists_of_add_self_eq_zero hT hS with
     rfl | rfl | ⟨e₀, t₀, hT₀, hψ₀, he, rfl⟩
   · simp
   · rw [ite_eq_left (Or.inr rfl), one_mul]
@@ -218,5 +233,47 @@ theorem Point.xCoord_add_sub (hT : W.Nonsingular e t) (hψ : W.polynomialY.evalE
     have hC := evalEval_polynomialX_add_evalEval_polynomialX hT.1 hψ hT₀.1 hψ₀ he
     apply mul_right_cancel₀ (sub_ne_zero.2 hx)
     linear_combination hA - hC + hx2
+
+omit [DecidableEq F] in
+/-- More than two points of order dividing two force `2 ≠ 0`: in characteristic two the affine
+points of order dividing two lie on `a₁x + a₃ = 0`, and there is at most one of them. -/
+theorem Point.two_ne_zero_of_two_lt_card [W.IsElliptic] {S : Finset W.Point}
+    (hS : ∀ T ∈ S, -T = T) (hcard : 2 < S.card) : (2 : F) ≠ 0 := by
+  classical
+  intro h2
+  let _ : CharP F 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).mpr h2
+  -- An affine point of order dividing two satisfies `a₁x + a₃ = 0`, as `2y + a₁x + a₃ = 0`.
+  have hlin {x y : F} (h : W.Nonsingular x y) (hT : -Point.some x y h = Point.some x y h) :
+      W.a₁ * x + W.a₃ = 0 := by
+    rw [Point.neg_some, Point.some.injEq] at hT
+    have h := hT.2
+    simp only [negY] at h
+    linear_combination -h - y * h2
+  have hle : (S.erase 0).card ≤ 1 := by
+    refine Finset.card_le_one.mpr fun a ha b hb ↦ ?_
+    obtain ⟨ha0, haS⟩ := Finset.mem_erase.mp ha
+    obtain ⟨hb0, hbS⟩ := Finset.mem_erase.mp hb
+    cases a with
+    | zero => exact absurd rfl ha0
+    | some x y h =>
+    cases b with
+    | zero => exact absurd rfl hb0
+    | some x' y' h' =>
+    have hx := hlin h (hS _ haS)
+    have hx' := hlin h' (hS _ hbS)
+    -- `a₁ = 0` would force `a₃ = 0`, and then the discriminant vanishes.
+    have ha1 : W.a₁ ≠ 0 := fun h1 ↦ by
+      have h3 : W.a₃ = 0 := by simpa [h1] using hx
+      exact W.isUnit_Δ.ne_zero (by simp [W.Δ_of_char_two, h1, h3])
+    have hxx : x = x' := mul_left_cancel₀ ha1 (by linear_combination hx - hx')
+    subst hxx
+    have hn : W.negY x y' = y' := by
+      have h := hS _ hbS
+      rw [Point.neg_some, Point.some.injEq] at h
+      exact h.2
+    obtain rfl : y = y' := (Y_eq_of_X_eq h.left h'.left rfl).elim id (·.trans hn)
+    rfl
+  have := Finset.pred_card_le_card_erase (s := S) (a := 0)
+  omega
 
 end WeierstrassCurve.Affine

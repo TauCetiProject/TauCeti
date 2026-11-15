@@ -88,6 +88,16 @@ theorem mem_idealsAway_iff {S : Finset (HeightOneSpectrum R)}
       ∀ v ∈ S, FractionalIdeal.count K v (I : FractionalIdeal R⁰ K) = 0 :=
   Iff.rfl
 
+/-- A prime ideal that is an element of `idealsAway K S` is not in `S`: it has multiplicity one at
+itself, while the elements of `idealsAway K S` have multiplicity zero on `S`. -/
+theorem notMem_of_coe_eq_asIdeal {S : Finset (HeightOneSpectrum R)}
+    {I : (FractionalIdeal R⁰ K)ˣ} (hI : I ∈ idealsAway K S) {v : HeightOneSpectrum R}
+    (h : (I : FractionalIdeal R⁰ K) = (v.asIdeal : FractionalIdeal R⁰ K)) : v ∉ S :=
+  fun hv ↦ by
+    have := mem_idealsAway_iff.1 hI v hv
+    rw [h, FractionalIdeal.count_self] at this
+    exact one_ne_zero this
+
 variable (K) in
 /-- Ideals away from the empty set are canonically all invertible fractional ideals. -/
 def idealsAwayEmptyEquiv :
@@ -233,7 +243,7 @@ theorem mem_integralIdealsAway_iff_count_eq_zero {S : Finset (HeightOneSpectrum 
       ∀ v ∈ S, FractionalIdeal.count K v (I : FractionalIdeal R⁰ K) = 0 := by
   rw [mem_integralIdealsAway_iff]
   refine and_congr_right fun hI ↦ forall_congr' fun v ↦ forall_congr' fun _ ↦ ?_
-  rw [FractionalIdeal.count_coe K v hI, Int.natCast_eq_zero,
+  rw [FractionalIdeal.count_coeIdeal K v hI, Int.natCast_eq_zero,
     ← Associates.count_ne_zero_iff_dvd hI v.irreducible, not_not]
 
 variable (K) in

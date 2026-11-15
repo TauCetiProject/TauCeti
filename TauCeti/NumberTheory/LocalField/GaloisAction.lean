@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IsGaloisGroup.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -116,8 +117,8 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercing the action on the integer ring to `L` recovers the field automorphism. -/
-@[simp]
+/-- Coercing the action on the integer ring to `L` recovers the field automorphism. Not `@[simp]`:
+`simp` proves it from `TauCeti.coe_smul_integer` and `AlgEquiv.smul_def`. -/
 theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
     ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
   (rfl)
@@ -150,8 +151,8 @@ theorem smul_algebraMap_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
     [Module.Finite K K'] [Normal K K'] (σ : L ≃ₐ[K] L) (w : 𝒪[K']) :
     σ • algebraMap 𝒪[K'] 𝒪[L] w = algebraMap 𝒪[K'] 𝒪[L] (σ.restrictNormal K' • w) :=
   Subtype.ext (by
-    rw [coe_smul_integerRing, coe_algebraMap_integerRing, coe_algebraMap_integerRing,
-      coe_smul_integerRing, restrictNormal_commutes])
+    rw [coe_smul_integerRing, Valuation.HasExtension.val_algebraMap,
+      Valuation.HasExtension.val_algebraMap, coe_smul_integerRing, restrictNormal_commutes])
 
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where

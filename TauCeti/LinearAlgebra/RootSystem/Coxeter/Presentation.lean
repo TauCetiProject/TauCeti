@@ -204,7 +204,7 @@ theorem _root_.RootPairing.exists_isReduced_forall_isLeftDescent :
     ∃ ω : List b.support, (weylCoxeterSystem P b).IsReduced ω ∧
       ∀ i, (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i := by
   have := P.finite_weylGroup_of_base b
-  obtain ⟨w, hw⟩ := exists_forall_isLeftDescent (weylCoxeterSystem P b)
+  obtain ⟨w, hw⟩ := (weylCoxeterSystem P b).exists_forall_isLeftDescent
   obtain ⟨ω, hω, rfl⟩ := (weylCoxeterSystem P b).exists_isReduced w
   exact ⟨ω, hω, hw⟩
 

@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.Infinitary.GraphTranslation.BackTranslate
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruction
 public import TauCeti.ModelTheory.Interpolation.ConstantElimination
 public import TauCeti.ModelTheory.Interpolation.PCClass
+public import TauCeti.ModelTheory.Interpolation.SignedInseparability
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
 
 /-!
@@ -156,11 +157,23 @@ private def HasSep (R : Set (Σ n, L[[ℕ]].Relations n)) (K : Set ℕ)
   ∃ θ : L[[ℕ]].Sentenceω, θ.relationsIn ⊆ R ∧ θ.constantSupport ⊆ K ∧
     Γ.Entails θ ∧ Δ.Entails θ.not
 
+/-- Unsigned inseparability is signed inseparability with equal polarity budgets. -/
+private theorem not_hasSep_iff {R : Set (Σ n, L[[ℕ]].Relations n)} {K : Set ℕ}
+    {Γ Δ : L[[ℕ]].Theoryω} :
+    ¬ HasSep R K Γ Δ ↔ Theoryω.SignedInseparable Γ Δ (fun _ => R) K := by
+  rw [Theoryω.signedInseparable_iff]
+  constructor
+  · intro h θ hr hk hΓ hΔ
+    exact h ⟨θ, relationsInSigned_union_not true θ ▸ Set.union_subset (hr true) (hr false),
+      hk, hΓ, hΔ⟩
+  · rintro h ⟨θ, hr, hk, hΓ, hΔ⟩
+    exact h θ (fun s => (relationsInSigned_subset_relationsIn s θ).trans hr) hk hΓ hΔ
+
 /-- Negating a separator for `(Γ, Δ)` gives a separator for `(Δ, Γ)`. -/
 private theorem HasSep.symm {R : Set (Σ n, L[[ℕ]].Relations n)} {K : Set ℕ}
-    {Γ Δ : L[[ℕ]].Theoryω} : HasSep R K Γ Δ → HasSep R K Δ Γ := fun ⟨θ, hr, hs, hΓ, hΔ⟩ =>
-  ⟨θ.not, by simpa using hr, by simpa using hs, hΔ, Theoryω.entails_iff.2 fun M _ _ hM => by
-    simpa [SentenceInf.realize_not] using entails_realize hΓ M hM⟩
+    {Γ Δ : L[[ℕ]].Theoryω} (h : HasSep R K Γ Δ) : HasSep R K Δ Γ := by
+  by_contra hnone
+  exact not_hasSep_iff.2 (not_hasSep_iff.1 hnone).symm h
 
 /-- Reinterpret the single Henkin constant `c` as `m`, keeping `L` and all other constants fixed. -/
 @[instance_reducible]
@@ -314,22 +327,16 @@ private theorem InsepPair.exists_insert_left {R₁ R₂ : Set (Σ n, L.Relations
     (hex : ∀ (M : Type (max u v)) [L[[ℕ]].Structure M] [Nonempty M], Γ.Model M →
       ∃ k, SentenceInf.Realize (ψs k) M) :
     ∃ k, InsepPair R₁ R₂ (insert (ψs k) Γ) Δ := by
-  by_contra! hnone
-  choose θs hr hs hΓ hΔ using fun k =>
-    hp.hasSep_insert_left_of_not_insepPair (hrel k) (hsupp k) (hnone k)
-  refine hp.insep ⟨.iSup θs, by rw [relationsIn_iSup]; exact Set.iUnion_subset hr,
-    by rw [constantSupport_iSup]; exact Set.iUnion_subset hs,
-    Theoryω.entails_iff.2 fun M _ _ hM => ?_, Theoryω.entails_iff.2 fun M _ _ hM => ?_⟩
-  · obtain ⟨k, hk⟩ := hex M hM
-    exact SentenceInf.realize_iSup.2
-      ⟨k, entails_realize (hΓ k) M (Theoryω.model_insert_iff.2 ⟨hk, hM⟩)⟩
-  · rw [SentenceInf.realize_not, SentenceInf.realize_iSup]
-    exact fun ⟨k, hk⟩ => SentenceInf.realize_not.1 (entails_realize (hΔ k) M hM) hk
+  obtain ⟨k, hk⟩ := (not_hasSep_iff.1 hp.insep).exists_insert_left ψs
+    (Theoryω.entails_iff.2 fun M _ _ hM => SentenceInf.realize_iSup.2 (hex M hM))
+  refine ⟨k, hp.insert_left (hrel k) (hp.finite_pairSupport.subset (hsupp k)) ?_⟩
+  rw [pairSupport_insert_left_of_subset (hsupp k)]
+  exact not_hasSep_iff.2 hk
 
 private theorem InsepPair.not_bot_left {R₁ R₂ : Set (Σ n, L.Relations n)}
     {Γ Δ : L[[ℕ]].Theoryω} (hp : InsepPair R₁ R₂ Γ Δ) (hbot : ⊥ ∈ Γ) : False :=
-  hp.insep ⟨⊥, by simp, by simp, Theoryω.entails_of_mem hbot,
-    Theoryω.entails_iff.2 fun _ _ _ _ => by simp [SentenceInf.realize_not]⟩
+  (Theoryω.isSatisfiable_iff_not_entails_bot.1
+    (not_hasSep_iff.1 hp.insep).isSatisfiable_left) (Theoryω.entails_of_mem hbot)
 
 private theorem InsepPair.not_contradiction_same {R₁ R₂ : Set (Σ n, L.Relations n)}
     {Γ Δ : L[[ℕ]].Theoryω} (hp : InsepPair R₁ R₂ Γ Δ) {φ : L[[ℕ]].Sentenceω}

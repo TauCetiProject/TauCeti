@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 
 /-!
 # Points of exact order `N` on an elliptic curve
@@ -129,6 +130,20 @@ theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : 
           Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) ⟶
             Over.mk E.structureMap) :=
   Iff.rfl
+
+/-- Over an empty base every object of `Over S` is a group object and every morphism to a group
+object is a monoid homomorphism, so every point has exact order `N`. -/
+theorem isOfExactOrder_of_isEmpty [IsEmpty S]
+    {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} : E.IsOfExactOrder P N := by
+  have ht (X : Over S) : IsTerminal X := Over.isTerminalOfIsInitial isInitialOfIsEmpty X
+  rw [isOfExactOrder_def]
+  let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
+  let _ : MonObj X :=
+    { one := (ht _).from _, mul := (ht _).from _, one_mul := (ht _).hom_ext _ _,
+      mul_one := (ht _).hom_ext _ _, mul_assoc := (ht _).hom_ext _ _ }
+  let _ : GrpObj X :=
+    { inv := (ht _).from _, left_inv := (ht _).hom_ext _ _, right_inv := (ht _).hom_ext _ _ }
+  exact ⟨inferInstance, { one_hom := (ht _).hom_ext _ _, mul_hom := (ht _).hom_ext _ _ }⟩
 
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product

@@ -48,8 +48,7 @@ private noncomputable def spinThreeExteriorBasis
     Basis (Fin 2) K (ExteriorAlgebra K P.W) :=
   b.ExteriorAlgebra.reindex spinThreeIndexEquiv
 
-private noncomputable def spinThreeEquivMatrix
-    [NeZero (2 : K)] [FiniteDimensional K V]
+private noncomputable def spinThreeEquivMatrix [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (hV : finrank K V = 3) :
     ↥(CliffordAlgebra.even Q) ≃ₐ[K] Matrix (Fin 2) (Fin 2) K :=
@@ -203,7 +202,7 @@ private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     rfl
 
 private theorem spinThreeEquivMatrix_positiveRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -230,7 +229,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
       spinAction_positiveRoot_singleton P b z hcoord
 
 private theorem spinThreeEquivMatrix_negativeRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -261,7 +260,7 @@ private theorem spinThreeEquivMatrix_negativeRoot
 /-- The matrix model of the Spin group sends the positive root lift to the corresponding
 elementary transvection. -/
 private theorem spinThreeHom_positiveRootLift
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) (c : K) :
@@ -283,7 +282,7 @@ private theorem spinThreeHom_positiveRootLift
 /-- The matrix model of the Spin group sends the negative root lift to the corresponding
 elementary transvection. -/
 private theorem spinThreeHom_negativeRootLift
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) (c : K) :

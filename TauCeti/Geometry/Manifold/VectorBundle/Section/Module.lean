@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -18,7 +19,9 @@ The native `ContMDiffSection` carrier is a module over scalar-valued `ContMDiffM
 with pointwise multiplication. This extends its vector-space structure: constant functions
 act by the original scalar action, and the two actions form a scalar tower and commute.
 These structures allow function-linear maps on sections, in particular tensorial bundle
-operators, to be expressed using the usual `LinearMap` API.
+operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
+modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
+as needed by the algebraic theory of differential operators between modules of sections.
 
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
 ground field and intertwines multiplication with composition of scalar functions.
@@ -69,6 +72,31 @@ instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ 
 /-- Ground-field multiplication commutes with smooth-function multiplication on sections. -/
 instance instSMulCommClassContMDiffMap : SMulCommClass 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_comm c f s := by ext x; simp [smul_comm c (f x)]
+
+variable (I F n V) in
+/-- Evaluation of sections at a point as a ground-field linear map. -/
+def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
+  toFun s := s x
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
+  (rfl)
+
+/-- The points of `M` separate sections: a section lying in `ker (ev x) • Γ(V)` for every point
+`x` is zero. -/
+theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top (s : Cₛ^n⟮I; F, V⟯)
+    (hs : ∀ x, s ∈ RingHom.ker (ContMDiffMap.evalAlgHom x : C^n⟮I, M; 𝕜⟯ →ₐ[𝕜] 𝕜) •
+      (⊤ : Submodule C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯)) :
+    s = 0 := by
+  ext x
+  refine Submodule.smul_induction_on (p := fun t : Cₛ^n⟮I; F, V⟯ ↦ t x = 0) (hs x) ?_ ?_
+  · intro f hf t _
+    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply] at hf
+    simp [hf]
+  · intro t u ht hu
+    simp [ht, hu]
 
 end Module
 
@@ -160,7 +188,20 @@ theorem restrict_apply (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) (x : U) :
 
 end Restriction
 
-variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+variable [∀ x, AddCommGroup (V x)]
+
+/-- Closed support commutes with restriction to an open subset. -/
+@[simp]
+theorem tsupport_restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (s.restrict U).tsupport = Subtype.val ⁻¹' s.tsupport := by
+  rw [tsupport_def, tsupport_def]
+  -- The open carrier and the subtype of its underlying set are the same manifold.
+  erw [U.isOpen.isOpenMap_subtype_val.preimage_closure_eq_closure_preimage
+    continuous_subtype_val {x | s x ≠ 0}]
+  -- Restriction evaluates at the inclusion, so the two nonzero loci agree.
+  congr 1
+
+variable [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
 @[simp]
 theorem restrict_zero (U : Opens M) : (0 : Cₛ^n⟮I; F, V⟯).restrict U = 0 := by

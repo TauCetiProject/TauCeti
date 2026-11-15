@@ -33,6 +33,10 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
   maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
   functor `TopCatᵒᵖ ⥤ ModuleCat k`.
+* `TopCat.singularCohomologyChainCoefficientMap` and `TopCat.singularCohomologyChainCoefficientIso`:
+  the change of chain coefficients on singular cohomology, contravariantly functorial in the
+  coefficient morphism and natural in the space
+  (`TopCat.singularCohomologyChainCoefficientMap_naturality`).
 * `SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
   vertex of a simplicial set. `TopCat.constSingularCocycle` is the cocycle it defines
   for a space `X`. For `e` the unit of a ring of coefficients, its class is the unit of the
@@ -168,6 +172,77 @@ def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k w
   map_comp f g := TopCat.singularCohomologyMap_comp g.unop f.unop n
 
 end TauCeti
+
+namespace TopCat
+
+section ChainCoefficients
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R R' R'' : C}
+
+/-- The map `Hⁿ(X; R, M) ⟶ Hⁿ(X; R', M)` induced by a morphism `f : R' ⟶ R` of chain coefficients:
+precomposition with the induced map of singular chains `C(X; R') ⟶ C(X; R)`. -/
+abbrev singularCohomologyChainCoefficientMap (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (M : C) (f : R' ⟶ R) (n : ℕ) :
+    X.singularCohomology R k M n ⟶ X.singularCohomology R' k M n :=
+  HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+    (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X)).op) n
+
+@[simp]
+lemma singularCohomologyChainCoefficientMap_id (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (n : ℕ) :
+    X.singularCohomologyChainCoefficientMap k M (𝟙 R) n = 𝟙 _ := by
+  simp only [singularCohomologyChainCoefficientMap, CategoryTheory.Functor.map_id,
+    NatTrans.id_app, op_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
+@[reassoc]
+lemma singularCohomologyChainCoefficientMap_comp (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (f : R'' ⟶ R') (g : R' ⟶ R) (n : ℕ) :
+    X.singularCohomologyChainCoefficientMap k M (f ≫ g) n =
+      X.singularCohomologyChainCoefficientMap k M g n ≫
+        X.singularCohomologyChainCoefficientMap k M f n := by
+  simp only [singularCohomologyChainCoefficientMap, Functor.map_comp, NatTrans.comp_app, op_comp]
+  exact HomologicalComplex.homologyMap_comp _ _ _
+
+/-- The change of chain coefficients commutes with the maps induced by continuous maps. -/
+@[reassoc]
+lemma singularCohomologyChainCoefficientMap_naturality {X Y : TopCat.{w}} (g : X ⟶ Y)
+    (k : Type*) [Ring k] [Linear k C] (M : C) (f : R' ⟶ R) (n : ℕ) :
+    TopCat.singularCohomologyMap g n ≫ X.singularCohomologyChainCoefficientMap k M f n =
+      Y.singularCohomologyChainCoefficientMap k M f n ≫ TopCat.singularCohomologyMap g n := by
+  have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
+    (((SSet.chainComplexFunctor C).map f).naturality (toSSet.map g))
+  simp only [op_comp, Functor.map_comp] at h
+  exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · n) h.symm).trans
+      (HomologicalComplex.homologyMap_comp _ _ _))
+
+/-- The isomorphism `Hⁿ(X; R, M) ≅ Hⁿ(X; R', M)` induced by an isomorphism `e : R' ≅ R` of chain
+coefficients, with underlying map `TopCat.singularCohomologyChainCoefficientMap`. -/
+def singularCohomologyChainCoefficientIso (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (M : C) (e : R' ≅ R) (n : ℕ) :
+    X.singularCohomology R k M n ≅ X.singularCohomology R' k M n :=
+  (HomologicalComplex.homologyFunctor _ _ n).mapIso
+    ((TauCeti.ChainComplex.linearYonedaFunctor k M).mapIso
+      (((SSet.chainComplexFunctor C).mapIso e).app (toSSet.obj X)).op)
+
+@[simp]
+lemma singularCohomologyChainCoefficientIso_hom (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (e : R' ≅ R) (n : ℕ) :
+    (X.singularCohomologyChainCoefficientIso k M e n).hom =
+      X.singularCohomologyChainCoefficientMap k M e.hom n :=
+  (rfl)
+
+@[simp]
+lemma singularCohomologyChainCoefficientIso_inv (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (e : R' ≅ R) (n : ℕ) :
+    (X.singularCohomologyChainCoefficientIso k M e n).inv =
+      X.singularCohomologyChainCoefficientMap k M e.inv n :=
+  (rfl)
+
+end ChainCoefficients
+
+end TopCat
 
 namespace SSet
 

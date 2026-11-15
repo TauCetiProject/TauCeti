@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.LinearAlgebra.OrthogonalGroup
+public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Orthonormal
 
 /-!
@@ -136,7 +136,7 @@ manifold, through its linear isometry, with its action on orthonormal frames by 
 each vector. -/
 theorem stiefel.finiteOrthonormalFrameHomeomorph_smul (A : orthogonalGroup (Fin N) ℝ)
     (v : stiefel (EuclideanSpace ℝ (Fin N)) r) :
-    finiteOrthonormalFrameHomeomorph r N (orthogonalGroupToLinearIsometryEquiv A • v) =
+    finiteOrthonormalFrameHomeomorph r N (Matrix.UnitaryGroup.toLinearIsometryEquiv A • v) =
       finiteOrthonormalFrame.unitaryMap A (finiteOrthonormalFrameHomeomorph r N v) :=
   Subtype.ext <| funext fun i ↦ by simp
 

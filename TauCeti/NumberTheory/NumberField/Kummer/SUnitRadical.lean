@@ -93,12 +93,17 @@ Then every cyclic Galois intermediate field `F` of `E/K` of degree dividing `n`,
 finite place of `K` outside `S` has an unramified place above it, lies in the Kummer field
 `K(U_S^{1/n})` of the `S`-units. -/
 theorem le_kummerField_sUnits_of_isCyclic {S : Set (HeightOneSpectrum (𝓞 K))}
-    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) {n : ℕ} [NeZero n]
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤) {n : ℕ}
     [HasEnoughRootsOfUnity K n] {F : IntermediateField K E} [NumberField F] [IsGalois K F]
     [IsCyclic Gal(F/K)] (hFn : Module.finrank K F ∣ n)
     (hF : ∀ v ∉ S, ∃ w : HeightOneSpectrum (𝓞 F),
       w.asIdeal.LiesOver v.asIdeal ∧ Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) :
     F ≤ kummerField E n (S.unit K) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- For `n = 0` every element is a `0`-th root of `1`, so the Kummer field is everything.
+    intro x _
+    exact mem_kummerField_of_pow_eq (a := 1) (Subgroup.one_mem _) (by simp)
+  have : NeZero n := ⟨hn⟩
   -- `K` contains the roots of unity of order `[F : K]`, so `F = K(β)` with `β ^ [F : K] ∈ K`.
   have : HasEnoughRootsOfUnity K (Module.finrank K F) := HasEnoughRootsOfUnity.of_dvd K hFn
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Module.finrank K F)

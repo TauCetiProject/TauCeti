@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 
 /-!
-# Lebesgue integrals over a finite union
+# Lebesgue integrals over a union
 
 The Lebesgue integral over the union of finitely many sets is at most the sum of the integrals over
 the sets, without any disjointness or measurability assumption. This is the finite form of

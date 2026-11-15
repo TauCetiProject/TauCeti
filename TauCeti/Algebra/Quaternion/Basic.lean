@@ -11,11 +11,14 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Basic facts about the Hamilton quaternions
 
-This file collects elementary facts about the Hamilton quaternions `ℍ[R]` over a commutative ring
-`R` that depend on nothing beyond Mathlib's `Mathlib.Algebra.Quaternion`.
+This file collects elementary facts about the Hamilton quaternions `ℍ[R]`, and more generally the
+quaternion algebras `ℍ[R,c₁,c₂,c₃]`, over a commutative ring `R` that depend on nothing beyond
+Mathlib's `Mathlib.Algebra.Quaternion`.
 
 ## Main results
 
+* `QuaternionAlgebra.instStarModule`: scalars from a ring with trivial star commute with the
+  quaternion conjugation, so for example `ℍ` is a real star module.
 * `Quaternion.isLeftRegular_two`: if `ℍ[R]` has no zero divisors then `2` is left regular in `R`,
   because the quaternion `r + r i` squares to `2 r² i`.
 -/
@@ -23,6 +26,16 @@ This file collects elementary facts about the Hamilton quaternions `ℍ[R]` over
 public section
 
 open scoped Quaternion
+
+namespace QuaternionAlgebra
+
+variable {R : Type*} [CommRing R] [Star R] [TrivialStar R] {c₁ c₂ c₃ : R}
+
+/-- Quaternion conjugation commutes with scalars from a ring with trivial star. -/
+instance : StarModule R ℍ[R,c₁,c₂,c₃] where
+  star_smul r a := by rw [QuaternionAlgebra.star_smul, star_trivial r]
+
+end QuaternionAlgebra
 
 namespace Quaternion
 

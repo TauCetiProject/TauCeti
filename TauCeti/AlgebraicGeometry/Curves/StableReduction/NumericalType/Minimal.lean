@@ -301,12 +301,14 @@ lemma genusContribution_nonneg (hT : T.IsMinimal) (h : 1 < Fintype.card T.Compon
     (i : T.Component) : 0 ≤ T.genusContribution i :=
   (T.genusContribution_nonneg_iff h i).mpr (hT i)
 
-/-- In a minimal numerical type with more than one component, every contribution to the signed
-genus is at most `g - 1`. -/
-lemma genusContribution_le (hT : T.IsMinimal) (h : 1 < Fintype.card T.Component)
-    (i : T.Component) : T.genusContribution i ≤ T.arithmeticGenus - 1 := by
+/-- In a minimal numerical type, every contribution to the signed genus is at most `g - 1`. -/
+lemma genusContribution_le (hT : T.IsMinimal) (i : T.Component) :
+    T.genusContribution i ≤ T.arithmeticGenus - 1 := by
   rw [T.arithmeticGenus_eq_one_add_sum_genusContribution, add_sub_cancel_left]
-  exact Finset.single_le_sum (fun j _ ↦ hT.genusContribution_nonneg h j) (Finset.mem_univ i)
+  by_cases h : 1 < Fintype.card T.Component
+  · exact Finset.single_le_sum (fun j _ ↦ hT.genusContribution_nonneg h j) (Finset.mem_univ i)
+  · have := Fintype.card_le_one_iff_subsingleton.1 (not_lt.1 h)
+    exact (Fintype.sum_subsingleton _ i).ge
 
 /-- A minimal numerical type with more than one component has signed genus at least one
 ([Stacks, Tag 0C7B](https://stacks.math.columbia.edu/tag/0C7B)). -/
@@ -342,7 +344,7 @@ theorem genus_lt_arithmeticGenus (hT : T.IsMinimal) (h : 1 < Fintype.card T.Comp
   rcases Nat.eq_zero_or_pos (T.genus i) with hg | hg
   · rw [hg, Nat.cast_zero]
     linarith [hT.one_le_arithmeticGenus h]
-  · have hle := hT.genusContribution_le h i
+  · have hle := hT.genusContribution_le i
     have hneg : (T.intersection i i : ℚ) < 0 := by exact_mod_cast T.intersection_self_neg h i
     have hm : (1 : ℚ) ≤ T.multiplicity i := by exact_mod_cast (T.multiplicity i).pos
     have hw : (1 : ℚ) ≤ T.weight i := by exact_mod_cast (T.weight i).pos
@@ -363,7 +365,7 @@ theorem multiplicity_mul_abs_intersection_self_le (hT : T.IsMinimal)
     (T.multiplicity j : ℤ) * |T.intersection j j| ≤ 6 * T.arithmeticGenus - 6 := by
   obtain ⟨k, hk1, hk⟩ := T.exists_intersection_self_eq h j
   have he := T.two_mul_genusContribution_eq hk
-  have hle := hT.genusContribution_le h j
+  have hle := hT.genusContribution_le j
   set x : ℤ := (T.multiplicity j : ℤ) * (T.weight j : ℤ) with hx
   have hx1 : 1 ≤ x := one_le_mul_of_one_le_of_one_le
     (by exact_mod_cast (T.multiplicity j).pos) (by exact_mod_cast (T.weight j).pos)

@@ -47,17 +47,27 @@ theorem stdSymplecticForm_hamiltonianVectorField {H : V × V → ℝ} {x : V × 
   simp [inner_neg_left, add_comm]
 
 /-- In the cotangent model `V × V`, the Hamiltonian vector field of `H(q, p) = h(q)` is
-`X_H(q, p) = (0, -∇h(q))`: the flow moves the momentum by `-∇h` and fixes the position. -/
-theorem stdSymplecticForm_hamiltonianVectorField_comp_fst {h : V → ℝ} {x : V × V}
-    (hh : DifferentiableAt ℝ h x.1) :
+`X_H(q, p) = (0, -∇h(q))`: the flow moves the momentum by `-∇h` and fixes the position. If `h` is
+not differentiable at `q`, both sides are `0` by convention. -/
+theorem stdSymplecticForm_hamiltonianVectorField_comp_fst {h : V → ℝ} {x : V × V} :
     (stdSymplecticForm (V := V)).hamiltonianVectorField (fun y ↦ h y.1) x = (0, -∇ h x.1) := by
-  have hcomp : HasFDerivAt (fun y : V × V ↦ h y.1)
-      ((fderiv ℝ h x.1).comp (ContinuousLinearMap.fst ℝ V V)) x :=
-    hh.hasFDerivAt.comp x hasFDerivAt_fst
-  refine stdSymplecticForm_hamiltonianVectorField ?_
-  convert hcomp using 1
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [inner_gradient_left]
+  by_cases hh : DifferentiableAt ℝ h x.1
+  · have hcomp : HasFDerivAt (fun y : V × V ↦ h y.1)
+        ((fderiv ℝ h x.1).comp (ContinuousLinearMap.fst ℝ V V)) x :=
+      hh.hasFDerivAt.comp x hasFDerivAt_fst
+    refine stdSymplecticForm_hamiltonianVectorField ?_
+    convert hcomp using 1
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    simp [inner_gradient_left]
+  · -- Differentiability of `h ∘ fst` at `x` would give that of `h`, along `q ↦ (q, x.2)`.
+    have hd : ¬ DifferentiableAt ℝ (fun y : V × V ↦ h y.1) x := fun hd ↦ hh <|
+      DifferentiableAt.comp (g := fun y : V × V ↦ h y.1) (f := fun q : V ↦ (q, x.2)) x.1 hd
+        (differentiableAt_id.prodMk (differentiableAt_const x.2))
+    rw [gradient_eq_zero_of_not_differentiableAt hh,
+      (SymplecticForm.hamiltonianVectorField_eq_zero_iff _ _ _).2
+        (fderiv_zero_of_not_differentiableAt hd)]
+    rw [neg_zero]
+    rfl
 
 /-- The Poisson bracket on `V × V` in terms of partial gradients:
 `{F, G} = ⟪∇_q F, ∇_p G⟫ - ⟪∇_p F, ∇_q G⟫`. -/

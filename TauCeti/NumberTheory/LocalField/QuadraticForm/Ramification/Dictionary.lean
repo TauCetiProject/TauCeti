@@ -273,9 +273,9 @@ theorem unramified_class_unique (h2 : (2 : K) ≠ 0) (u u' : Kˣ)
       Even (normalizedValuation K b).toAdd) :
     IsSquare (u * u') := by
   obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hu))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu))
   obtain ⟨d', hd'⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hu'))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu'))
   exact isSquare_mul_of_even_defectExponent h2 hd.symm hd'.symm
     ((unramified_class_iff_even_defectExponent h2 hd.symm).mp hu)
     ((unramified_class_iff_even_defectExponent h2 hd'.symm).mp hu')
@@ -289,12 +289,12 @@ theorem defectExponent_eq_two_mul_natCastValuation_iff_isSquare_mul (h2 : (2 : K
     (hu : valuation K (u : K) = 1) :
     defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) ↔ IsSquare (u * Δ) := by
   obtain ⟨dΔ, hdΔ⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hΔ))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hΔ))
   refine ⟨fun h => isSquare_mul_of_even_defectExponent h2 h hdΔ.symm
     ⟨natCastValuation K 2 h2, by push_cast; ring⟩
     ((unramified_class_iff_even_defectExponent h2 hdΔ.symm).mp hΔ), fun h => ?_⟩
   have hu' := unramified_class_of_isSquare_mul h hΔ
-  have hsq := not_isSquare_of_unramified_class h2 hu'
+  have hsq := not_isSquare_of_unramified_class hu'
   obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp hsq)
   obtain ⟨r, hr⟩ := (unramified_class_iff_even_defectExponent h2 hd.symm).mp hu'
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hu hsq with h' | ⟨k, -, hk⟩

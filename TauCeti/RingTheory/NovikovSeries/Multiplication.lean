@@ -40,6 +40,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   (commutative) (semi)ring structures, with unit the monomial `single 0 1`.
 * `TauCeti.NovikovSeries.instAlgebra`: for an `S`-algebra `R`, Novikov series over `R` form an
   `S`-algebra, with `algebraMap S _ s = single 0 (algebraMap S R s)`.
+* `TauCeti.NovikovSeries.coeffZeroRingEquiv`: over a trivial exponent group, Novikov series are
+  identified with their constant coefficients.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra`: the group ring `R[H]` as a subring of Novikov
   series, by its coefficient map.
 
@@ -556,6 +558,34 @@ theorem mem_range_ofAddMonoidAlgebra_iff {a : NovikovSeries R H N} :
   exact ⟨fun ⟨x, hx⟩ => ⟨x.coeff, hx⟩, fun ⟨f, hf⟩ => ⟨.ofCoeff f, hf⟩⟩
 
 end AddMonoidAlgebra
+
+section Subsingleton
+
+variable [AddZeroClass H] [Subsingleton H] {N : H →+ ℝ}
+
+/-- **Novikov series over a trivial exponent group are their constant coefficients.** Taking the
+coefficient at `0` is a ring isomorphism onto `R`, with inverse `r ↦ single 0 r`. -/
+def coeffZeroRingEquiv [NonUnitalNonAssocSemiring R] : NovikovSeries R H N ≃+* R where
+  toFun a := a.coeff 0
+  invFun r := single 0 r
+  left_inv := single_zero_coeff_zero
+  right_inv := coeff_single_same 0
+  map_mul' a b := by
+    conv_lhs => rw [← single_zero_coeff_zero a, ← single_zero_coeff_zero b]
+    rw [single_mul_single, add_zero, coeff_single_same]
+  map_add' a b := coeff_add a b 0
+
+@[simp]
+theorem coeffZeroRingEquiv_apply [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N) :
+    coeffZeroRingEquiv a = a.coeff 0 :=
+  (rfl)
+
+@[simp]
+theorem coeffZeroRingEquiv_symm_apply [NonUnitalNonAssocSemiring R] (r : R) :
+    (coeffZeroRingEquiv (N := N)).symm r = single (0 : H) r :=
+  (rfl)
+
+end Subsingleton
 
 end NovikovSeries
 

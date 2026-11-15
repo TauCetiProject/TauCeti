@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+-- Proof-only: a Killing Lie algebra is finite over the base ring.
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Killing pairings of root spaces
@@ -78,12 +80,13 @@ theorem killingForm_ne_zero_of_mem_rootSpace {α : Weight K H L} (hα : α.IsNon
     (toSubmodule_rootSpace_eq_span (-α) hα.neg f hf₀ hf).le hy
   simp [hef]
 
-omit [CharZero K] in
+omit [CharZero K] [FiniteDimensional K L] in
 /-- The roots of a Lie algebra with non-degenerate Killing form are closed under negation, so a
 functional on the Cartan subalgebra is a root exactly when its negative is. -/
 @[simp]
 theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
     rootSpace H (-χ) = ⊥ ↔ rootSpace H χ = ⊥ := by
+  have : FiniteDimensional K L := finite_of_isKilling (R := K) (L := L)
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩

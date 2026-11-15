@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import Mathlib.RingTheory.DedekindDomain.Factorization
 
 /-!
 # Simultaneous approximation in finitely many adic completions
@@ -23,6 +24,9 @@ remainder theorem for pairwise distinct primes (`IsDedekindDomain.exists_forall_
   are simultaneously approximated by one element of `R`.
 * `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_pi`: the diagonal image of `R` is
   dense in the product of the completed integer rings at a finite set of places.
+* `IsDedekindDomain.HeightOneSpectrum.exists_forall_sub_mem_span_singleton`: one element of `R`
+  is congruent to a prescribed element of every `𝒪_v` modulo a fixed nonzero `c ∈ R`; only the
+  finitely many places containing `c` impose a condition.
 
 ## References
 
@@ -104,5 +108,28 @@ theorem denseRange_algebraMap_pi (s : Finset (HeightOneSpectrum R)) :
     DenseRange fun (x : R) (v : {v : HeightOneSpectrum R // v ∈ s}) ↦
       algebraMap R (v.1.adicCompletionIntegers K) x :=
   denseRange_algebraMap_pi_subtype (K := K) (fun v ↦ v ∈ s)
+
+/-- **Approximation modulo a nonzero element at every place.** Given an element `x v` of the
+ring of integers `𝒪_v` of every completion, a single `r ∈ R` is congruent to each `x v` modulo a
+fixed nonzero `c ∈ R`. Only the finitely many places containing `c` constrain `r`, since `c` is a
+unit of `𝒪_v` at every other place. -/
+theorem exists_forall_sub_mem_span_singleton {c : R} (hc : c ≠ 0)
+    (x : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) :
+    ∃ r : R, ∀ v : HeightOneSpectrum R,
+      algebraMap R (v.adicCompletionIntegers K) r - x v ∈
+        Ideal.span {algebraMap R (v.adicCompletionIntegers K) c} := by
+  have hfin : {v : HeightOneSpectrum R | v.asIdeal ∣ Ideal.span {c}}.Finite :=
+    Ideal.finite_factors (by simpa using hc)
+  choose e he using fun v : HeightOneSpectrum R ↦
+    v.exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow (K := K) hc
+  obtain ⟨r, hr⟩ := exists_forall_valued_sub_le (K := K) hfin.toFinset x e
+  refine ⟨r, fun v ↦ ?_⟩
+  by_cases hv : c ∈ v.asIdeal
+  · rw [he v, mem_maximalIdeal_pow_iff, AddSubgroupClass.coe_sub]
+    have := hr v (by simpa [Ideal.dvd_span_singleton] using hv)
+    rwa [Valuation.map_sub_swap, IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K),
+      ValuationSubring.algebraMap_apply] at this
+  · rw [Ideal.span_singleton_eq_top.mpr ((v.isUnit_algebraMap_adicCompletionIntegers_iff c).mpr hv)]
+    exact Submodule.mem_top
 
 end IsDedekindDomain.HeightOneSpectrum

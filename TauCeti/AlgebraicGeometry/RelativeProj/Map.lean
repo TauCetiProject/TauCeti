@@ -35,6 +35,8 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 * `CategoryTheory.CommMon.ι_relativeProjMap`: on the chart over `U`, the morphism of relative
   `Proj`s is the morphism of projective spectra, with the charts written as the coprojections of
   the gluing diagrams, as glued modules on the relative `Proj` use them.
+* `CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap`: the morphism maps the
+  image of `D₊(φ b)` in a chart of `Proj_X(A)` into the image of `D₊(b)` in a chart of `Proj_X(B)`.
 * `CategoryTheory.CommMon.relativeProjMap_id` and `CategoryTheory.CommMon.relativeProjMap_comp`:
   the construction is contravariantly functorial.
 * `CategoryTheory.CommMon.isPullback_relativeProjMap`: over the chart of `Proj_X(B)` above an
@@ -54,7 +56,7 @@ public section
 
 open CategoryTheory Limits DirectSum
 
-namespace TauCeti
+namespace CategoryTheory.CommMon
 
 open _root_.AlgebraicGeometry
 
@@ -76,7 +78,7 @@ variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] (φ :
 
 /-- The morphisms of projective spectra `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))` induced by a
 morphism `φ : B ⟶ A` of graded algebras, natural in the affine open `U`. -/
-def _root_.CategoryTheory.CommMon.relativeProjFunctorMap :
+def relativeProjFunctorMap :
     A.relativeProjFunctor ⟶ B.relativeProjFunctor where
   app U := Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2)
   naturality _ _ _ := (Proj.map_comp _ _ _ _).symm.trans <| (Proj.map_congr
@@ -85,13 +87,13 @@ def _root_.CategoryTheory.CommMon.relativeProjFunctorMap :
 
 /-- The components of `CategoryTheory.CommMon.relativeProjFunctorMap` are the morphisms of
 projective spectra induced by `φ`. -/
-theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app (U : X.AffineZariskiSite) :
+theorem relativeProjFunctorMap_app (U : X.AffineZariskiSite) :
     (CommMon.relativeProjFunctorMap φ hφ).app U =
       Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) :=
   (rfl)
 
 /-- The morphisms induced by `φ` lie over the coefficient rings `Γ(X, U)`. -/
-theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff
+theorem relativeProjFunctorMap_app_toSpecCoeff
     (U : X.AffineZariskiSite) :
     (CommMon.relativeProjFunctorMap φ hφ).app U ≫
         Proj.toSpecCoeff (B.gradedSectionsGrading U.toOpens) =
@@ -102,7 +104,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff
 /-- The morphisms induced by `φ` lie over the coefficient rings `Γ(X, U)`, composed with a further
 morphism. This is stated separately because the projective spectra are the charts of the relative
 `Proj`s only after unfolding, which defeats the reassociation in `@[reassoc]`. -/
-theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff_assoc
+theorem relativeProjFunctorMap_app_toSpecCoeff_assoc
     (U : X.AffineZariskiSite) {Y : Scheme.{u}} (g : Spec Γ(X, U.toOpens) ⟶ Y) :
     (CommMon.relativeProjFunctorMap φ hφ).app U ≫
         Proj.toSpecCoeff (B.gradedSectionsGrading U.toOpens) ≫ g =
@@ -113,13 +115,13 @@ theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff_ass
 /-- The morphism of relative `Proj`s `Proj_X(A) ⟶ Proj_X(B)` induced by a morphism `φ : B ⟶ A` of
 graded algebras, glued from the morphisms `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))` over the
 affine opens `U` of `X`. -/
-def _root_.CategoryTheory.CommMon.relativeProjMap : A.relativeProj ⟶ B.relativeProj :=
+def relativeProjMap : A.relativeProj ⟶ B.relativeProj :=
   colimMap (CommMon.relativeProjFunctorMap φ hφ)
 
 /-- On the chart over an affine open `U`, the morphism of relative `Proj`s induced by `φ` is the
 morphism of projective spectra induced by `φ`. -/
 @[reassoc]
-theorem _root_.CategoryTheory.CommMon.relativeProjCover_f_relativeProjMap
+theorem relativeProjCover_f_relativeProjMap
     (U : X.AffineZariskiSite) :
     A.relativeProjCover.f U ≫ CommMon.relativeProjMap φ hφ =
       (CommMon.relativeProjFunctorMap φ hφ).app U ≫ B.relativeProjCover.f U :=
@@ -128,16 +130,27 @@ theorem _root_.CategoryTheory.CommMon.relativeProjCover_f_relativeProjMap
 /-- On the chart over an affine open `U`, the morphism of relative `Proj`s induced by `φ` is the
 morphism of projective spectra induced by `φ`, with the charts written as the coprojections of the
 gluing diagrams. -/
-theorem _root_.CategoryTheory.CommMon.ι_relativeProjMap (U : X.AffineZariskiSite) :
+theorem ι_relativeProjMap (U : X.AffineZariskiSite) :
     colimit.ι A.relativeProjGluingData.functor U ≫ CommMon.relativeProjMap φ hφ =
       Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) ≫
         colimit.ι B.relativeProjGluingData.functor U :=
   (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).trans
     (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app φ hφ U))
 
+/-- The morphism of relative `Proj`s maps the image of `D₊(φ b)` in the chart of `Proj_X(A)` over
+`U` into the image of `D₊(b)` in the chart of `Proj_X(B)` over `U`. -/
+theorem _root_.CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap
+    (U : X.AffineZariskiSite) (b : ⨁ n, Γ(B.X n, U.toOpens)) :
+    colimit.ι A.relativeProjGluingData.functor U ''ᵁ
+        Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b) ≤
+      CommMon.relativeProjMap φ hφ ⁻¹ᵁ
+        (colimit.ι B.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ b) := by
+  rintro _ ⟨z, hz, rfl⟩
+  exact ⟨Proj.map _ (hφ U.toOpens U.2) z, hz, congr($(CommMon.ι_relativeProjMap φ hφ U) z).symm⟩
+
 /-- **The morphism of relative `Proj`s induced by `φ` lies over `X`.** -/
 @[reassoc (attr := simp)]
-theorem _root_.CategoryTheory.CommMon.relativeProjMap_relativeProjToBase :
+theorem relativeProjMap_relativeProjToBase :
     CommMon.relativeProjMap φ hφ ≫ B.relativeProjToBase = A.relativeProjToBase :=
   A.relativeProjCover.hom_ext _ _ fun (U : X.AffineZariskiSite) ↦ by
     have h := A.relativeProjCover_f_relativeProjToBase U
@@ -148,7 +161,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjMap_relativeProjToBase :
 /-- **Over an affine open `U` of `X`, the morphism of relative `Proj`s induced by `φ` is
 `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))`**: the chart of `Proj_X(A)` over `U` is the
 preimage of the chart of `Proj_X(B)` over `U`. -/
-theorem _root_.CategoryTheory.CommMon.isPullback_relativeProjMap (U : X.AffineZariskiSite) :
+theorem isPullback_relativeProjMap (U : X.AffineZariskiSite) :
     IsPullback (A.relativeProjCover.f U) ((CommMon.relativeProjFunctorMap φ hφ).app U)
       (CommMon.relativeProjMap φ hφ) (B.relativeProjCover.f U) := by
   refine (IsPullback.of_right ?_ (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).symm
@@ -168,7 +181,7 @@ variable {C : CommMon (GradedObject ℕ X.Modules)} [∀ n, (A.X n).IsQuasicoher
 /-- The identity of a graded algebra induces the identity on the projective spectra of its
 sections. -/
 @[simp]
-theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_id
+theorem relativeProjFunctorMap_id
     (h : ∀ U : X.Opens, IsAffineOpen U →
       HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
         (HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U)).map
@@ -179,7 +192,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_id
 
 /-- The morphisms of projective spectra induced by a composite of morphisms of graded algebras
 are the composites of the induced morphisms. -/
-theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
+theorem relativeProjFunctorMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
     (hφ : ∀ U : X.Opens, IsAffineOpen U →
       HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U) ≤
         (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
@@ -200,7 +213,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_comp (φ : C ⟶ B)
 
 /-- **The identity of a graded algebra induces the identity of its relative `Proj`.** -/
 @[simp]
-theorem _root_.CategoryTheory.CommMon.relativeProjMap_id
+theorem relativeProjMap_id
     (h : ∀ U : X.Opens, IsAffineOpen U →
       HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
         (HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U)).map
@@ -213,7 +226,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjMap_id
 
 /-- **The morphism of relative `Proj`s induced by a composite of morphisms of graded algebras is
 the composite of the induced morphisms.** -/
-theorem _root_.CategoryTheory.CommMon.relativeProjMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
+theorem relativeProjMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
     (hφ : ∀ U : X.Opens, IsAffineOpen U →
       HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U) ≤
         (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
@@ -252,7 +265,7 @@ relative `Proj`s**: if `φ : B ⟶ A` maps `⨁ n, Γ(Bₙ, U)` onto every homog
 positive degree of `⨁ n, Γ(Aₙ, U)` for every affine open `U` of `X`, then
 `Proj_X(A) ⟶ Proj_X(B)` is a closed immersion. -/
 @[stacks 01N0]
-theorem _root_.CategoryTheory.CommMon.isClosedImmersion_relativeProjMap :
+theorem isClosedImmersion_relativeProjMap :
     IsClosedImmersion (CommMon.relativeProjMap φ fun U hU ↦
       HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)) := by
   refine IsZariskiLocalAtTarget.of_openCover B.relativeProjCover fun U ↦ ?_
@@ -276,7 +289,7 @@ include hφ
 immersion of relative `Proj`s**: if `φ : B ⟶ A` is an epimorphism `Bₙ ⟶ Aₙ` of module sheaves for
 every `n > 0`, then `Proj_X(A) ⟶ Proj_X(B)` is a closed immersion. -/
 @[stacks 01N0]
-theorem _root_.CategoryTheory.CommMon.isClosedImmersion_relativeProjMap_of_epi :
+theorem isClosedImmersion_relativeProjMap_of_epi :
     IsClosedImmersion (CommMon.relativeProjMap φ fun U hU ↦
       HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ fun i hi ↦
         have := hφ i hi
@@ -289,4 +302,4 @@ end Epi
 
 end
 
-end TauCeti
+end CategoryTheory.CommMon

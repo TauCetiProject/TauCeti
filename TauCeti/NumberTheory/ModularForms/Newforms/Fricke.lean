@@ -61,8 +61,8 @@ the pseudo-eigenvalue is the Fricke sign.
   itself.
 * `TauCeti.commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace`: on `S_k(N, 1)`,
   `𝒲_N` commutes with `Tₙ` for every `n` prime to `N`.
-* `TauCeti.exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew`: a nonzero
-  form in the new part of `S_k(N, 1)` that is an eigenvector of every good `Tₚ` satisfies
+* `TauCeti.exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew`: a form
+  in the new part of `S_k(N, 1)` that is an eigenvector of every good `Tₚ` satisfies
   `𝒲_N f = ε • f` with `ε = 1` or `ε = -1`.
 * `HeckeRing.GL2.Newform.frickeSign`: the canonical Fricke sign of a newform of trivial
   nebentypus, together with its eigenvalue equation and sign law.
@@ -179,18 +179,19 @@ theorem commute_normalizedFrickeCharCuspOneEnd_heckeRingHomCuspCharSpace {n : �
 
 /-! ### The Fricke sign -/
 
-/-- **The Fricke sign**: a nonzero cusp form in the new part of
+/-- **The Fricke sign**: a cusp form in the new part of
 `S_k(N, 1)` that is an eigenvector of `Tₚ` at every prime `p ∤ N` is an eigenvector of the
-normalized Fricke operator, with eigenvalue `1` or `-1`. -/
+normalized Fricke operator, with eigenvalue `1` or `-1` (any eigenvalue for the zero form). -/
 theorem exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew
     {f : cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)}
     (ha : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
       heckeRingHomCuspCharSpace k 1 (heckeTCompositeGamma0 N p) f = c • f)
-    (hf : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k)
-    (hf0 : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ≠ 0) :
+    (hf : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k) :
     ∃ ε : ℂ, (ε = 1 ∨ ε = -1) ∧
       normalizedFrickeOperatorCusp k (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
         ε • (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  by_cases hf0 : (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) = 0
+  · exact ⟨1, Or.inl rfl, by rw [hf0, map_zero, smul_zero]⟩
   -- `𝒲_N ∘ 𝒲_N = (-1) ^ k`, and `(-1) ^ k = 1` since `f ≠ 0` has trivial nebentypus
   have hk : (-1 : ℂ) ^ k = 1 := by
     simpa using (char_neg_one_of_mem_cuspFormCharSpace f.2 hf0).symm
@@ -221,10 +222,10 @@ theorem Newform.exists_normalizedFrickeOperatorCusp_eq_smul (f : Newform N k) (h
     ∃ ε : ℂ, (ε = 1 ∨ ε = -1) ∧
       normalizedFrickeOperatorCusp k f.toCuspForm = ε • f.toCuspForm := by
   revert hχ
-  obtain ⟨⟨F, χ, hmem, a, heig, hne⟩, hnew, -⟩ := f
+  obtain ⟨⟨F, χ, hmem, a, heig, -⟩, hnew, -⟩ := f
   rintro rfl
   exact exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew (f := ⟨F, hmem⟩)
-    (fun p hp hpN ↦ ⟨a ⟨p, hp.pos⟩ hpN, heig ⟨p, hp.pos⟩ hpN⟩) hnew hne
+    (fun p hp hpN ↦ ⟨a ⟨p, hp.pos⟩ hpN, heig ⟨p, hp.pos⟩ hpN⟩) hnew
 
 /-- **The Fricke sign** `ε_N(f)` of a newform with trivial nebentypus. -/
 noncomputable def Newform.frickeSign (f : Newform N k) (hχ : f.χ = 1) : ℂ :=

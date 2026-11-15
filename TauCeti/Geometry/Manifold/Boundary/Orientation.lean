@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -80,25 +81,23 @@ theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1
 chart at `x` is `s * (g - c)` for a real function `g` and constants `c` and `s ≠ 0`. Then a
 tangent vector `v` at `x` points outward exactly when `s` times the derivative of `g` is negative
 on it. For `s = -1` this says that `g` increases along outward vectors. -/
-theorem isOutwardPointing_iff_mul_mvfderiv_neg [IsManifold (𝓡∂ (n + 1)) 1 M] {x : M}
+theorem isOutwardPointing_iff_mul_mvfderiv_neg {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) {g : M → ℝ} {c s : ℝ} (hs : s ≠ 0)
     (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = s * (g w - c))
     (v : TangentSpace (𝓡∂ (n + 1)) x) :
     IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
   -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.
   set t : M → ℝ := EuclideanSpace.proj (0 : Fin (n + 1)) ∘ extChartAt (𝓡∂ (n + 1)) x with ht
+  have hext := (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
   have hd : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) t x :=
     (EuclideanSpace.proj (0 : Fin (n + 1)) :
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x
-        (mdifferentiableAt_extChartAt (mem_chart_source _ x))
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x hext
   have hdt : mvfderiv (𝓡∂ (n + 1)) t x v =
       (NormedSpace.fromTangentSpace (extChartAt (𝓡∂ (n + 1)) x x)
         (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
           (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 := by
-    rw [ht, (EuclideanSpace.proj (0 : Fin (n + 1))).mvfderiv_comp_apply (I := 𝓡∂ (n + 1))
-      (mdifferentiableAt_extChartAt (mem_chart_source _ x))]
-    simp only [mvfderiv_apply_eq_mfderiv_apply,
-      mfderiv_extChartAt_self, NormedSpace.fromTangentSpace_apply]
+    rw [ht, (EuclideanSpace.proj (0 : Fin (n + 1))).mvfderiv_comp_apply (I := 𝓡∂ (n + 1)) hext]
+    simp only [mvfderiv_apply_eq_mfderiv_apply, NormedSpace.fromTangentSpace_apply]
     -- The tangent fibre of the half-space model is the model space itself, on which `proj 0` is
     -- evaluation in slot `0`; the tangent-space wrapper blocks the rewriting lemmas for both.
     rfl

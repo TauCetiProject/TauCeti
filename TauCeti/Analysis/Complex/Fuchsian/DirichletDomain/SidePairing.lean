@@ -38,6 +38,8 @@ such a Dirichlet presentation.
   Dirichlet face of the inverse of the side-pairing map of `i`.
 * `ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain`: the translates of
   a Dirichlet polygon have disjoint interiors.
+* `Subgroup.exists_sidePairing_of_compactSpace`: a Dirichlet polygon of a cocompact group is a
+  compact convex polygon whose sides are paired by elements of the group.
 * `Subgroup.exists_sidePairing_relatorQuotientTo_bijective_of_compactSpace`: a cocompact
   Fuchsian group is presented by the side pairing of a compact Dirichlet polygon.
 
@@ -101,7 +103,7 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
         (h : PSL(2, ℝ)) • leftHalfPlane (P.sideGeodesic i) := by
       rw [hs, leftHalfPlane_mul_dilation, sideGeodesic_def, sideGeodesic_def, vertex_smul,
         vertex_smul, leftHalfPlane_geodesicFromTo_smul _ (P.vertex_ne_vertex_add_one i)]
-    refine notMem_leftHalfPlane_of_range_eq_perpBisector hhp.symm hbis
+    refine notMem_leftHalfPlane_of_range_eq_perpBisector hbis
       ((P.mem_interior_carrier_iff p).1 hpint j) ?_
     rw [hleft]
     exact smul_mem_smul_set ((P.mem_interior_carrier_iff p).1 hpint i)
@@ -186,9 +188,10 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
     P.side_injective (by rw [← τ.map_smul_side, ← σ.map_smul_side, hmap])
   exact SidePairing.ext (Equiv.ext hpairτ) (funext hmap)
 
+omit [ProperlyDiscontinuousSMul Γ ℍ] in
 /-- **Distinct translates of the interior of a Dirichlet polygon are disjoint.** If the carrier
-of `P` is the Dirichlet domain of a properly discontinuous `Γ`, centred at a point with trivial
-stabilizer, then every nonidentity element of `Γ` moves the interior of `P` off itself. -/
+of `P` is the Dirichlet domain of `Γ`, centred at a point with trivial stabilizer, then every
+nonidentity element of `Γ` moves the interior of `P` off itself. -/
 theorem disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain
     (hP : P.carrier = dirichletDomain Γ p) (hp : p ∈ TauCeti.freeLocus Γ ℍ) (γ : Γ)
     (hγ : γ ≠ 1) : Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier) := by
@@ -203,6 +206,21 @@ open TauCeti TauCeti.UpperHalfPlane
 
 variable (Γ : Subgroup PSL(2, ℝ)) [DiscreteTopology Γ]
 
+/-- **Side pairings of Dirichlet polygons of cocompact groups.** Let `Γ ≤ PSL(2, ℝ)` be discrete
+with compact orbit space, and let `p ∈ ℍ` have trivial stabilizer. The Dirichlet domain of `Γ`
+centred at `p` is the carrier of a compact convex polygon whose sides are paired by elements of
+`Γ`. This side pairing is unique, by
+`TauCeti.UpperHalfPlane.ConvexPolygon.existsUnique_sidePairing_of_carrier_eq_dirichletDomain`. -/
+theorem exists_sidePairing_of_compactSpace [CompactSpace (MulAction.orbitRel.Quotient Γ ℍ)]
+    {p : ℍ} (hp : p ∈ freeLocus Γ ℍ) :
+    ∃ (n : ℕ) (_ : NeZero n) (P : CompactConvexPolygon n) (σ : P.toConvexPolygon.SidePairing),
+      (∀ i, σ.map i ∈ Γ) ∧ P.toConvexPolygon.carrier = dirichletDomain Γ p := by
+  obtain ⟨n, _, P, hP, -⟩ := exists_compactConvexPolygon_carrier_eq_dirichletDomain_of_compactSpace
+    Γ p
+  rw [← CompactConvexPolygon.carrier_toConvexPolygon] at hP
+  obtain ⟨σ, hσ, -⟩ := ConvexPolygon.existsUnique_sidePairing_of_carrier_eq_dirichletDomain hP hp
+  exact ⟨n, ‹NeZero n›, P, σ, hσ, hP⟩
+
 /-- **Dirichlet presentations of cocompact Fuchsian groups.** Let `Γ ≤ PSL(2, ℝ)` be discrete
 with compact orbit space, and let `p ∈ ℍ` have trivial stabilizer. The Dirichlet domain of `Γ`
 centred at `p` is a compact convex polygon `P` with a side pairing by elements of `Γ`, and `Γ` is
@@ -213,13 +231,9 @@ theorem exists_sidePairing_relatorQuotientTo_bijective_of_compactSpace
     ∃ (n : ℕ) (_ : NeZero n) (P : CompactConvexPolygon n) (σ : P.toConvexPolygon.SidePairing)
       (hmap : ∀ i, σ.map i ∈ Γ),
       P.carrier = dirichletDomain Γ p ∧ Function.Bijective (σ.relatorQuotientTo hmap) := by
-  obtain ⟨n, _, P, hP, -⟩ := exists_compactConvexPolygon_carrier_eq_dirichletDomain_of_compactSpace
-    Γ p
-  have hP' : P.toConvexPolygon.carrier = dirichletDomain Γ p := by
-    rw [CompactConvexPolygon.carrier_toConvexPolygon, hP]
-  obtain ⟨σ, hσ, -⟩ := ConvexPolygon.existsUnique_sidePairing_of_carrier_eq_dirichletDomain hP' hp
-  exact ⟨n, ‹NeZero n›, P, σ, hσ, hP, σ.relatorQuotientTo_bijective hσ
-    (hP' ▸ locallyFinite_smul_dirichletDomain p)
-    (ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP' hp)⟩
+  obtain ⟨n, _, P, σ, hσ, hP⟩ := Γ.exists_sidePairing_of_compactSpace hp
+  exact ⟨n, ‹NeZero n›, P, σ, hσ, P.carrier_toConvexPolygon ▸ hP, σ.relatorQuotientTo_bijective hσ
+    (hP ▸ locallyFinite_smul_dirichletDomain p)
+    (ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP hp)⟩
 
 end Subgroup

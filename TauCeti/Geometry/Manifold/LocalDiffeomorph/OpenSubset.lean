@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -17,17 +18,32 @@ to its intersection with an open set. This file provides the same operation for 
 domains are subsets of the original ones. It is used to make charts small, for example to make
 finitely many charts centred at distinct points pairwise disjoint.
 
+A partial diffeomorphism is also a diffeomorphism between its source and its target, each an open
+subset carrying the charts Mathlib restricts to it. This is the analogue for partial
+diffeomorphisms of Mathlib's `OpenPartialHomeomorph.toHomeomorphSourceTarget`, and lets results
+about diffeomorphisms be applied to a partial diffeomorphism on its domain.
+
 The file also records that the inclusion of an open subset, with the charts Mathlib restricts to
 it, is a local diffeomorphism. Structures defined through charts, such as orientations, can then
 be compared on an open subset and on the ambient manifold. An open subset equal to the whole
-manifold is diffeomorphic to it through its inclusion.
+manifold is diffeomorphic to it through its inclusion, and a diffeomorphism mapping an open subset
+onto another restricts to a diffeomorphism between them. A partial diffeomorphism out of an open
+subset can be carried, near any point of its source, to the ambient manifold.
 
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen` and its `symm` version: the
+  restrictions of the underlying open partial homeomorphism to an open set are smooth.
+* `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
+  between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
+  it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
+* `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
+  agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
 -/
 
 public section
@@ -84,6 +100,73 @@ theorem coe_restrOpen_symm (hs : IsOpen s) :
     ⇑(Φ.restrOpen s hs).toPartialEquiv.symm = Φ.toPartialEquiv.symm :=
   (rfl)
 
+/-- The open partial homeomorphism of a partial diffeomorphism has its source. -/
+theorem toOpenPartialHomeomorph_source :
+    Φ.toOpenPartialHomeomorph.source = Φ.source :=
+  congrArg PartialEquiv.source (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
+
+/-- The open partial homeomorphism of a partial diffeomorphism has its target. -/
+theorem toOpenPartialHomeomorph_target :
+    Φ.toOpenPartialHomeomorph.target = Φ.target :=
+  congrArg PartialEquiv.target (Φ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv)
+
+/-- The inverse of the open partial homeomorphism of a partial diffeomorphism is the inverse
+function of the partial diffeomorphism. -/
+@[simp]
+theorem coe_toOpenPartialHomeomorph_symm :
+    ⇑Φ.toOpenPartialHomeomorph.symm = Φ.symm :=
+  rfl
+
+/-- Restricting the open partial homeomorphism of a partial diffeomorphism to an open set keeps it
+smooth on its source. -/
+theorem contMDiffOn_toOpenPartialHomeomorph_restrOpen {V : Set M} (hV : IsOpen V) :
+    ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.restrOpen V hV)
+      (Φ.toOpenPartialHomeomorph.restrOpen V hV).source := by
+  rw [OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.restrOpen_source,
+    Φ.toFun'_toOpenPartialHomeomorph, Φ.toOpenPartialHomeomorph_source]
+  exact Φ.contMDiffOn.mono inter_subset_left
+
+/-- The inverse of the restriction of the open partial homeomorphism of a partial diffeomorphism to
+an open set is smooth on the target of the restriction. -/
+theorem contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm {V : Set M} (hV : IsOpen V) :
+    ContMDiffOn J I n (Φ.toOpenPartialHomeomorph.restrOpen V hV).symm
+      (Φ.toOpenPartialHomeomorph.restrOpen V hV).target := by
+  have htarget : (Φ.toOpenPartialHomeomorph.restrOpen V hV).target ⊆ Φ.target := by
+    rw [OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
+      ← Φ.toOpenPartialHomeomorph_target]
+    exact inter_subset_left
+  rw [OpenPartialHomeomorph.coe_restrOpen_symm, Φ.coe_toOpenPartialHomeomorph_symm]
+  exact Φ.symm.contMDiffOn.mono htarget
+
+/-- A partial diffeomorphism is a diffeomorphism between its source and its target, as open
+subsets of `M` and `N`. -/
+def toDiffeomorphSourceTarget :
+    (⟨Φ.source, Φ.open_source⟩ : TopologicalSpace.Opens M) ≃ₘ^n⟮I, J⟯
+      (⟨Φ.target, Φ.open_target⟩ : TopologicalSpace.Opens N) where
+  toEquiv := Φ.toOpenPartialHomeomorph.toHomeomorphSourceTarget.toEquiv
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
+    ((Φ.contMDiffOn x x.2).contMDiffAt (Φ.open_source.mem_nhds x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
+    ((Φ.symm.contMDiffOn x x.2).contMDiffAt (Φ.open_target.mem_nhds x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt
+
+/-- The diffeomorphism `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the partial
+diffeomorphism. -/
+@[simp]
+theorem toDiffeomorphSourceTarget_apply_coe
+    (x : (⟨Φ.source, Φ.open_source⟩ : TopologicalSpace.Opens M)) :
+    (Φ.toDiffeomorphSourceTarget x : N) = Φ x :=
+  (rfl)
+
+/-- The inverse of `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the inverse of the
+partial diffeomorphism. -/
+@[simp]
+theorem toDiffeomorphSourceTarget_symm_apply_coe
+    (x : (⟨Φ.target, Φ.open_target⟩ : TopologicalSpace.Opens N)) :
+    (Φ.toDiffeomorphSourceTarget.symm x : M) = Φ.symm x :=
+  (rfl)
+
 end PartialDiffeomorph
 
 namespace Diffeomorph
@@ -119,6 +202,37 @@ theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : 
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
   (rfl)
 
+section Subtype
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
+  {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
+
+/-- A diffeomorphism `g : M ≃ₘ N` restricts to a diffeomorphism between open subsets `U` and `V`
+that it maps onto each other, each carrying the charts Mathlib restricts to it. This is the smooth
+form of Mathlib's `Homeomorph.subtype`. -/
+def subtype (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) : U ≃ₘ^n⟮I, J⟯ V where
+  toEquiv := g.toEquiv.subtypeEquiv h_iff
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    (g.contMDiff.comp contMDiff_subtype_val)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
+    (g.symm.contMDiff.comp contMDiff_subtype_val)
+
+/-- The restriction `Diffeomorph.subtype` evaluates as the diffeomorphism. -/
+@[simp]
+theorem subtype_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (x : U) :
+    (g.subtype h_iff x : N) = g x :=
+  (rfl)
+
+/-- The inverse of the restriction `Diffeomorph.subtype` evaluates as the inverse
+diffeomorphism. -/
+@[simp]
+theorem subtype_symm_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (y : V) :
+    ((g.subtype h_iff).symm y : M) = g.symm y :=
+  (rfl)
+
+end Subtype
+
 end Diffeomorph
 
 namespace TauCeti
@@ -144,3 +258,42 @@ theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
   exact Φ.isLocalDiffeomorphAt I I n (mem_univ x)
 
 end TauCeti
+
+namespace PartialDiffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- **Carrying a partial diffeomorphism out of an open subset to the ambient manifold.** If `Φ` is
+a `C^n` partial diffeomorphism out of an open subset `U` of `M` and `x ∈ Φ.source`, then there is a
+`C^n` partial diffeomorphism `e` out of `M` whose source contains `x` and lies in `U`, which agrees
+with `Φ` at `x`, whose target lies in that of `Φ`, and whose inverse is the inverse of `Φ` followed
+by the inclusion of `U`. -/
+theorem exists_ambient_of_opens {U : TopologicalSpace.Opens M}
+    (Φ : PartialDiffeomorph I J U N n) {x : U} (hx : x ∈ Φ.source) :
+    ∃ e : PartialDiffeomorph I J M N n, (x : M) ∈ e.source ∧ e.source ⊆ U ∧ e x = Φ x ∧
+      e.target ⊆ Φ.target ∧ ∀ z ∈ e.target, e.symm z = Φ.symm z := by
+  -- Precompose `Φ` with a local inverse `Ψ` of the inclusion at `x`.
+  have hi := TauCeti.isLocalDiffeomorph_subtype_val (I := I) (n := n) (U := U) x
+  let Ψ := hi.localInverse
+  have hΨx : Ψ x = x := hi.localInverse_left_inv hi.localInverse_mem_target
+  refine ⟨Ψ.trans Φ, ?_, fun y hy ↦ ?_, ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [trans_source, mem_inter_iff, mem_preimage, hΨx]
+    exact ⟨hi.localInverse_mem_source, hx⟩
+  · rw [← hi.localInverse_right_inv ((Ψ.trans_source Φ).subset hy).1]
+    exact (Ψ y).2
+  · rw [coe_trans, Function.comp_apply, hΨx]
+  · exact ((Ψ.trans_target Φ).subset hz).1
+  · -- On the target of `Ψ`, the inverse of `Ψ` is the inclusion.
+    have hz' := ((Ψ.trans_target Φ).subset hz).2
+    have h := hi.localInverse_right_inv (Ψ.map_target hz')
+    rw [Ψ.right_inv hz'] at h
+    rw [coe_trans_symm, Function.comp_apply]
+    exact h.symm
+
+end PartialDiffeomorph

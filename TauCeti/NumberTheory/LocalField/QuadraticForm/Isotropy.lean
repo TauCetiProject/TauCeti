@@ -52,7 +52,7 @@ square classes, and a ternary form, which represents every unit outside one squa
 * `QuadraticForm.not_anisotropic_iff_localHasse_eq_of_finrank_eq_three`,
   `QuadraticForm.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four`,
   `QuadraticForm.not_anisotropic_of_five_le_finrank`: the same criteria for regular forms on
-  finite-dimensional spaces.
+  finite-dimensional spaces, the last one for every form (an anisotropic form is regular).
 * `QuadraticForm.exists_mem_unitValueSet_and_mem_of_five_le_finrank_add`: two regular spaces of
   positive dimension whose dimensions sum to at least five represent a common nonzero value.
 * `QuadraticForm.exists_nondegenerate_and_anisotropic_fin_four`: an anisotropic regular form on
@@ -107,8 +107,8 @@ private theorem exists_mem_unitValueSet_binary_and_neg_mem_of_not_isSquare (a b 
     ∃ x : Kˣ, x ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ∧
       -x ∈ unitValueSet (weightedSumSquares K ![(c : K), (d : K)]) := by
   have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
-  have hab : hilbertSymbol a (-(a * b)) = hilbertSymbol a b := hilbertSymbol_neg_self_mul h2 a b
-  have hcd : hilbertSymbol c (-(c * d)) = hilbertSymbol c d := hilbertSymbol_neg_self_mul h2 c d
+  have hab : hilbertSymbol a (-(a * b)) = hilbertSymbol a b := hilbertSymbol_neg_self_mul a b
+  have hcd : hilbertSymbol c (-(c * d)) = hilbertSymbol c d := hilbertSymbol_neg_self_mul c d
   simp only [mem_unitValueSet_binary_iff_hilbertSymbol_eq]
   by_cases hab' : IsSquare (-(a * b))
   · -- `⟨a, b⟩` is a hyperbolic plane and represents every unit, in particular `-c`.
@@ -151,7 +151,7 @@ theorem not_anisotropic_presentedForm_four_iff_of_isSquare (w : Fin 4 → Kˣ)
   have hlast : presentedForm ⟨2, fun i => w (Fin.natAdd 2 i)⟩ =
       weightedSumSquares K ![(w 2 : K), (w 3 : K)] := presentedForm_two _
   have hab : hilbertSymbol (w 0) (-(w 0 * w 1)) = hilbertSymbol (w 0) (w 1) :=
-    hilbertSymbol_neg_self_mul h2 (w 0) (w 1)
+    hilbertSymbol_neg_self_mul (w 0) (w 1)
   -- `⟨w₀, w₁⟩ ⊥ ⟨w₂, w₃⟩` is isotropic exactly when `⟨w₀, w₁⟩` has a unit value `x` with `-x` a
   -- value of `⟨w₂, w₃⟩`. Since `-w₀w₁` and `-w₂w₃` lie in the same square class, the two
   -- characters `(·, -w₀w₁)_K` and `(·, -w₂w₃)_K` agree, and `w₀` itself is a value of
@@ -339,12 +339,15 @@ theorem not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four
   exact RegularFormClass.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_rank_eq_four
     (by rwa [rank_formClass])
 
-/-- **Isotropy in dimension at least five** (Serre IV Thm 6 (iv)). Every regular quadratic form on
-a space of dimension at least five over `K` is isotropic. -/
-theorem not_anisotropic_of_five_le_finrank (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
-    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := by
-  rw [← anisotropic_formClass Q hQ]
+omit [FiniteDimensional K V] in
+/-- **Isotropy in dimension at least five** (Serre IV Thm 6 (iv)). Every quadratic form on a space
+of dimension at least five over `K` is isotropic. -/
+theorem not_anisotropic_of_five_le_finrank (Q : QuadraticForm K V)
+    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := fun hA ↦ by
+  -- an anisotropic form is regular, so the rank bound for regular forms applies
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   exact RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
+    ((anisotropic_formClass Q hA.nondegenerate).mpr hA)
 
 /-- Two regular local quadratic spaces of positive dimension whose dimensions sum to at least
 five represent a common nonzero value: their difference is isotropic by the bound in dimension
@@ -362,7 +365,7 @@ theorem exists_mem_unitValueSet_and_mem_of_five_le_finrank_add
     exact ⟨a, mem_unitValueSet.mpr ((represents_iff _ _).mpr ⟨y, ha.symm⟩)⟩
   have hneg : (-R).Nondegenerate := (QuadraticMap.nondegenerate_neg R).mpr hR
   have hiso : ¬(Q.prod (-R)).Anisotropic :=
-    not_anisotropic_of_five_le_finrank _ (hQ.prod hneg) (by simpa using hVW)
+    not_anisotropic_of_five_le_finrank _ (by simpa using hVW)
   obtain ⟨a, ha, hb⟩ :=
     (not_anisotropic_prod_iff_exists_mem_unitValueSet_neg_mem hQ.radical_eq_bot
       hneg.radical_eq_bot hnonempty).mp hiso

@@ -111,10 +111,10 @@ theorem exists_refinement_weightedEnergy_add_sq_lt (P : Finpartition (univ : Fin
   obtain ⟨A, B, hAB⟩ := lt_cutDiscrepancy_iff.1 hbad
   set R := atomise univ {A, B}
   refine ⟨P ⊓ R, inf_le_left, ?_, ?_⟩
-  · calc #(P ⊓ R).parts ≤ #P.parts * #R.parts := card_parts_inf_le_mul P R
-      _ ≤ #P.parts * 2 ^ 2 := by
-        gcongr
-        exact card_atomise_le.trans (Nat.pow_le_pow_right two_pos card_le_two)
+  · calc #(P ⊓ R).parts ≤ #P.parts * 2 ^ #({A, B} : Finset (Finset V)) :=
+        P.card_parts_inf_atomise_le _
+      _ ≤ #P.parts * 2 ^ 2 :=
+        Nat.mul_le_mul_left _ (Nat.pow_le_pow_right two_pos card_le_two)
       _ = 4 * #P.parts := by ring
   · by_contra! hgap
     -- Both sides of the rectangle are unions of parts of the refinement, which therefore

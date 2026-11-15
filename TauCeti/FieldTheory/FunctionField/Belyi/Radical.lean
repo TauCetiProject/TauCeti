@@ -15,7 +15,7 @@ import TauCeti.FieldTheory.RatFunc.Transcendental
 /-!
 # Radical algebraic Belyi pairs
 
-Let `F = k(t)(y)` with `y ^ n = u` for a nonzero `u ∈ k(t)`, over a field `k` of characteristic
+Let `F = k(t)(y)` with `y ^ n = u` for `u ∈ k(t)`, over a field `k` of characteristic
 zero. The ramification of a place of `k(t)` in `F` is governed by the order of `u` there: every
 place above `P` has ramification index `n / gcd(n, ord_P u)` (Stichtenoth, Proposition 3.7.3;
 this is `TauCeti.Place.ramificationIdx_eq_of_pow_eq`). So `F` is unramified outside `0`, `1` and
@@ -89,29 +89,29 @@ variable {k F : Type*} [Field k] [CharZero k] [Field F] [Algebra k F] [Algebra (
 namespace IsAlgebraicBelyiPair
 
 /-- **A radical extension unramified outside `0`, `1` and `∞` is a Belyi pair**: if
-`F = k(t)(y)` with `y ^ n = u` for a nonzero `u ∈ k(t)`, the constant field of `F` is `k`, and `n`
+`F = k(t)(y)` with `y ^ n = u` for `u ∈ k(t)`, the constant field of `F` is `k`, and `n`
 divides the order of `u` at every place of `k(t)` other than `0`, `1` and `∞`, then `F` is an
 algebraic Belyi pair. -/
 theorem of_pow_eq (hex : IsIntegrallyClosedIn k F) {y : F} {n : ℕ} {u : RatFunc k}
     (hgen : (RatFunc k)⟮y⟯ = ⊤) (hy : y ^ n = algebraMap (RatFunc k) F u) (hn : n ≠ 0)
-    (hu : u ≠ 0) (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u) :
+    (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u) :
     IsAlgebraicBelyiPair k F where
   isIntegrallyClosedIn := hex
   ramificationIdx_eq_one hP :=
     Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k (RatFunc k) hgen hy
-      (Nat.cast_ne_zero.mpr hn) hu (hdvd _ hP)
+      (Nat.cast_ne_zero.mpr hn) (hdvd _ hP)
 
 /-- **A radical extension unramified outside `0`, `1` and `∞` with a place of coprime order is a
-Belyi pair**: if `F = k(t)(y)` with `y ^ n = u` for a nonzero `u ∈ k(t)`, `n` divides the order
+Belyi pair**: if `F = k(t)(y)` with `y ^ n = u` for `u ∈ k(t)`, `n` divides the order
 of `u` at every place of `k(t)` other than `0`, `1` and `∞`, and `gcd(n, ord_P u) = 1` at some
 place `P`, then `F` is an algebraic Belyi pair. The place `P` keeps the constant field of `F`
 equal to `k`. -/
 theorem of_pow_eq_of_gcd_ord_eq_one {y : F} {n : ℕ} {u : RatFunc k}
     (hgen : (RatFunc k)⟮y⟯ = ⊤) (hy : y ^ n = algebraMap (RatFunc k) F u) (hn : n ≠ 0)
-    (hu : u ≠ 0) (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u)
+    (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u)
     (P : Place k (RatFunc k)) (hP : Int.gcd n (P.ord u) = 1) : IsAlgebraicBelyiPair k F :=
   of_pow_eq (isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
-    isIntegrallyClosedIn_ratFunc hgen hy (Nat.cast_ne_zero.mpr hn) hu P hP) hgen hy hn hu hdvd
+    isIntegrallyClosedIn_ratFunc hgen hy (Nat.cast_ne_zero.mpr hn) P hP) hgen hy hn hdvd
 
 /-- **The superelliptic Belyi pairs** `y ^ n = c t ^ a (t - 1) ^ b`: if `F = k(t)(y)` with
 `y ^ n = c t ^ a (t - 1) ^ b` for a nonzero `c ∈ k`, and `n` is coprime to one of `a`, `b` and
@@ -127,8 +127,7 @@ theorem of_pow_eq_X_zpow_mul_X_sub_one_zpow {y : F} {n : ℕ} {c : k} {a b : ℤ
     rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
     exact dvd_zero _
   obtain ⟨P, hP⟩ := Place.exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one hc hcop
-  exact of_pow_eq_of_gcd_ord_eq_one hgen hy hn
-    (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero hc a b) hdvd P hP
+  exact of_pow_eq_of_gcd_ord_eq_one hgen hy hn hdvd P hP
 
 end IsAlgebraicBelyiPair
 

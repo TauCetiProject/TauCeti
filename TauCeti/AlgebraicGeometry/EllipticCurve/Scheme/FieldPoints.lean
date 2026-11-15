@@ -252,7 +252,6 @@ theorem nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod [IsSepClosed K] (N : 
     Nonempty ((𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion N).X) ≃*
       Multiplicative (ZMod N × ZMod N)) := by
   classical
-  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   obtain ⟨e⟩ := W.torsion_addEquiv_prod N hN
   exact ⟨(W.toEllipticCurveGeomTorsionPointsMulEquiv N).trans (AddEquiv.toMultiplicative e)⟩
 

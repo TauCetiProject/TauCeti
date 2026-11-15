@@ -119,6 +119,26 @@ theorem kostantRootSubgroup_def :
   rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
   rfl
 
+/-- Replacing a generator family by one with the same selected root vector leaves the
+represented root-subgroup morphism unchanged. -/
+theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
+    (hM' : ∀ u ∈ kostantForm e' h, ∀ m ∈ M, ρ u m ∈ M)
+    (i' : I') (hnil' : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (he : e i = e' i') :
+    kostantRootSubgroup e h ρ M hM i hnil b =
+      kostantRootSubgroup e' h ρ M hM' i' hnil' b := by
+  have hcoord : kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
+      kostantRootSubgroupCoordinateMap e' h ρ M hM' i' hnil' b := by
+    apply CommHopfAlgCat.hom_ext
+    apply BialgHom.coe_toAlgHom_injective
+    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
+    intro r s
+    simp only [BialgHom.coe_toAlgHom]
+    rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
+    simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
+      kostantRootSubgroupComodule_coact, he]
+  rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
+
 section Points
 
 variable (A : Type*) [CommRing A]

@@ -34,7 +34,8 @@ greater than `dim E`, by homotopies of maps into the complex:
   the compression property behind Hatcher's Corollary 4.12, that the pair `(C, Xⁿ)` is
   `n`-connected.
 * In dimensions zero and one, this says that every point of `C` is joined to `Xⁿ`, and that
-  paths in `C` between points of `Xⁿ` compress into `Xⁿ` (`TauCeti.exists_joined_skeletonLT`,
+  paths in `C` between points of `Xⁿ` compress into `Xⁿ`, relative to their endpoints
+  (`TauCeti.exists_joined_skeletonLT`, `TauCeti.exists_path_homotopic_skeletonLT`,
   `TauCeti.joined_skeletonLT_iff`).
 
 These are the steps of the cellular approximation theorem that concern a single cell of the
@@ -219,28 +220,41 @@ theorem exists_joined_skeletonLT {n : ℕ} {A : Set X}
   let z : (univ : Set (Fin 0 → ℝ)) := ⟨0, mem_univ _⟩
   exact ⟨⟨_, hA ▸ hg z⟩, ⟨(H.evalAt z).symm.cast (by simp) (by simp)⟩⟩
 
+/-- **Paths in `C` between points of the `n`-skeleton compress into it up to homotopy**, for
+`n ≥ 1`. If `A` is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then every
+path in `C` between two points of `A` is homotopic in `C`, relative to its endpoints, to a path in
+`A`. For `n = 1` this says that the inclusion of the `1`-skeleton is surjective on fundamental
+groups. -/
+theorem exists_path_homotopic_skeletonLT {n : ℕ} {A : Set X} (hn : 0 < n)
+    (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C) {a b : A}
+    (γ : Path (inclusion hAC a) (inclusion hAC b)) :
+    ∃ γ' : Path a b, (γ'.map (continuous_inclusion hAC)).Homotopic γ := by
+  -- Compress the path, a map out of `I ⊆ ℝ`, into the skeleton relative to its endpoints.
+  obtain ⟨g, hγg, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := I)
+    isCompact_Icc (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne') γ.toContinuousMap
+  have hend : ({0, 1} : Set I) ⊆ {t | ((γ t : C) : X) ∈ skeletonLT C (n + 1)} := by
+    rintro t (rfl | rfl)
+    · rw [mem_ofPred_eq, γ.source, ← SetLike.mem_coe, hA]
+      exact a.2
+    · rw [mem_ofPred_eq, γ.target, ← SetLike.mem_coe, hA]
+      exact b.2
+  have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.source
+  have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.target
+  let γ' : Path a b :=
+    { toFun t := ⟨g t, hA ▸ hg t⟩
+      continuous_toFun := by fun_prop
+      source' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₀
+      target' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₁ }
+  have hγ' : (γ'.map (continuous_inclusion hAC)).toContinuousMap = g := by ext; rfl
+  exact ⟨γ', ⟨((hγg.mono hend).some.symm).cast hγ'.symm rfl⟩⟩
+
 /-- **Paths in `C` between points of the `n`-skeleton compress into it**, for `n ≥ 1`. If `A` is
 the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then two points of `A` are
 joined by a path in `A` exactly when they are joined by a path in `C`. -/
 theorem joined_skeletonLT_iff {n : ℕ} {A : Set X} (hn : 0 < n)
     (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C) {a b : A} :
-    Joined (inclusion hAC a) (inclusion hAC b) ↔ Joined a b := by
-  refine ⟨fun ⟨γ⟩ ↦ ?_, fun h ↦ h.map (continuous_inclusion hAC)⟩
-  -- Compress the path, a map out of `I ⊆ ℝ`, into the skeleton relative to its endpoints.
-  obtain ⟨g, hγg, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := I)
-    isCompact_Icc (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne') γ.toContinuousMap
-  have hend (t : I) (ht : t = 0 ∨ t = 1) :
-      ((γ t : C) : X) ∈ skeletonLT C (n + 1) := by
-    rcases ht with rfl | rfl
-    · rw [γ.source, ← SetLike.mem_coe, hA]
-      exact a.2
-    · rw [γ.target, ← SetLike.mem_coe, hA]
-      exact b.2
-  have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend 0 (.inl rfl))).symm.trans γ.source
-  have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend 1 (.inr rfl))).symm.trans γ.target
-  exact ⟨{ toFun t := ⟨g t, hA ▸ hg t⟩
-           continuous_toFun := by fun_prop
-           source' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₀
-           target' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₁ }⟩
+    Joined (inclusion hAC a) (inclusion hAC b) ↔ Joined a b :=
+  ⟨fun ⟨γ⟩ ↦ (exists_path_homotopic_skeletonLT hn hA hAC γ).elim fun γ' _ ↦ ⟨γ'⟩,
+    fun h ↦ h.map (continuous_inclusion hAC)⟩
 
 end TauCeti

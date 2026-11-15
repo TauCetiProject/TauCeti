@@ -385,6 +385,17 @@ theorem isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains [Subsingleton 
     alphaBoundary_one, betaBoundary_one, smul_zero, sub_zero, Pi.sub_apply, Pi.smul_apply,
     Pi.one_apply, smul_eq_mul, mul_one, Subsingleton.elim _ z, implies_true, true_and]
 
+/-- In a diagram with at most one basepoint, a nonnegative domain `E` from `x` to itself is a
+periodic domain plus a nonnegative number of copies of the whole surface: with a basepoint `z`,
+that number is `n_z(E)`, and without one `E` is itself periodic. -/
+theorem IsDomainBetween.exists_nonneg_sub_smul_one_mem_periodicDomains [Subsingleton Basepoint]
+    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) (hE₀ : 0 ≤ E) :
+    ∃ m : ℤ, 0 ≤ m ∧ E - m • 1 ∈ H.periodicDomains := by
+  rcases isEmpty_or_nonempty Basepoint with hB | ⟨⟨z⟩⟩
+  · exact ⟨0, le_rfl, by simpa using isDomainBetween_self_iff.mp ⟨hE, isEmptyElim⟩⟩
+  · exact ⟨E (H.basepoint z), hE₀ _,
+      (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE⟩
+
 variable (H) in
 /-- The supplied region incidence system is weakly admissible when every nonzero periodic domain
 has both positive and negative coefficients. Interpreting this for a geometric diagram requires

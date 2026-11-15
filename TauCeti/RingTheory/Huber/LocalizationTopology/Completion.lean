@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Localization.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 
+import Mathlib.Topology.Algebra.Algebra
+
 /-!
 # The completion `A⟨T/s⟩`
 
@@ -69,11 +71,11 @@ complete Hausdorff targets.
   Hausdorff topology.
 * `eq_id_of_comp_toCompletionLoc_eq_self` and `eq_comp_of_comp_toCompletionLoc_eq`: two
   corollaries of the previous item, saying that a continuous map compatible with the structure
-  maps is forced to be the identity, respectively the composite. These are **not** roadmap Layer
-  3.1's identity and composition laws for restriction maps: no restriction map is constructed
-  here, and these are conditional uniqueness statements about whatever compatible maps happen to
-  exist. They are what those laws will be proved *from* once the restriction maps themselves are
-  built.
+  maps is forced to be the identity, respectively the composite. These are **not** the identity
+  and composition laws for restriction maps: no restriction map is constructed here, and these
+  are conditional uniqueness statements about whatever compatible maps happen to exist. The
+  restriction maps and their laws are in
+  `TauCeti.RingTheory.Huber.LocalizationTopology.Restriction`.
 
 ## Provenance
 
@@ -500,6 +502,43 @@ theorem isHuberRing_completion_locTopology [IsTopologicalRing A] (P : PairOfDefi
   letI := isTopologicalRing_locUniformSpace P T s S hden
   ⟨⟨completionLocalization P T s S hden⟩⟩
 
+/-- The action of `A` on a localization piece `Aₛ` is continuous for the packaged uniformity
+`locUniformSpace`. -/
+theorem continuousSMul_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ContinuousSMul A S := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  exact continuousSMul_of_algebraMap A S (by
+    rw [locUniformSpace_toTopologicalSpace]
+    exact continuous_algebraMap_locTopology P T s S hden)
+
+/-- The action of `A` on the completion of a localization piece `Aₛ`, for the packaged uniformity
+`locUniformSpace`, is continuous. -/
+theorem continuousSMul_completion_locUniformSpace [IsTopologicalRing A] (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := continuousSMul_locUniformSpace P T s S hden
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S
+    ContinuousSMul A (UniformSpace.Completion S) := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := continuousSMul_locUniformSpace P T s S hden
+  let _ := uniformContinuousConstSMul_of_continuousConstSMul A S
+  exact continuousSMul_of_algebraMap A (UniformSpace.Completion S) <|
+    (continuous_toCompletionLoc P T s S hden).congr fun a ↦
+      (toCompletionLoc_apply P T s S hden a).trans
+        (UniformSpace.Completion.algebraMap_def S A a).symm
+
 /-- A topologically nilpotent denominator becomes a pseudouniformiser in the completed
 localization: it is inverted by localization and remains topologically nilpotent under the
 continuous structure map. -/
@@ -671,10 +710,10 @@ carries `φ'` on to `φ''`, then any continuous `k` carrying the structure map t
 
 Only the *source* is a completed localisation — that is where extensionality is applied — so the
 middle and target objects are arbitrary topological semirings, with `φ'` and `φ''` the ring
-homomorphisms out of `A` they are equipped with. At the roadmap's intended instance these are the
-completed localisations of two further presentations and their structure maps, but nothing here
-requires that, and no restriction map is constructed: this is a uniqueness statement about maps
-compatible with the structure maps, not Layer 3.1's composition law for restriction maps. -/
+homomorphisms out of `A` they are equipped with. In the intended instance these are the completed
+localisations of two further presentations and their structure maps, but nothing here requires
+that, and no restriction map is constructed: this is a uniqueness statement about maps compatible
+with the structure maps, not the composition law for restriction maps. -/
 theorem eq_comp_of_comp_toCompletionLoc_eq [IsTopologicalRing A] (P : PairOfDefinition A)
     (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S)

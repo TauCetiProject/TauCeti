@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Local frames of the Euclidean normal bundle
@@ -18,8 +19,8 @@ bundle before any vector-bundle structure on that family has been installed.
 
 The normal bundle is the one used in the Euclidean tubular-neighbourhood theorem. As in
 `ContDiffAt.starProjection_orthogonal_range`, the pointwise normal-projection result allows a
-complete, possibly infinite-dimensional ambient space. Neither compactness nor injectivity of
-the underlying map is required.
+possibly infinite-dimensional ambient space, which need not be complete. Neither compactness nor
+injectivity of the underlying map is required.
 
 ## References
 
@@ -40,10 +41,6 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n : WithTop ℕ∞} [IsManifold I (n + 1) M] {f : M → V}
-
-section Projection
-
-variable [CompleteSpace V]
 
 /-- Orthogonal projection onto the normal fibre of a `C^(n+1)` map is `C^n` at every point
 where its differential is injective. -/
@@ -81,8 +78,6 @@ theorem contMDiff_normalSubspace_starProjection
     ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n (fun x => (normalSubspace I f x).starProjection) :=
   fun x => contMDiffAt_normalSubspace_starProjection (hf x) (himm x)
 
-end Projection
-
 variable [FiniteDimensional ℝ V]
 
 /-- Any basis of one normal fibre of a `C^(n+1)` immersion extends to a `C^n` local normal
@@ -104,20 +99,16 @@ theorem exists_contMDiffOn_normalFrame {ι : Type*}
   let s : M → ι → V := fun x i => (normalSubspace I f x).starProjection (b i)
   have hs : ∀ i, ContMDiff I 𝓘(ℝ, V) n (fun x => s x i) := fun i =>
     (contMDiff_normalSubspace_starProjection hf himm).clm_apply contMDiff_const
-  have hs₀ : ∀ i, s x₀ i = (b i : V) := fun i =>
-    Submodule.starProjection_eq_self_iff.mpr (b i).property
-  have hli₀ : LinearIndependent ℝ (s x₀) := by
-    simpa only [funext hs₀, Function.comp_def, Submodule.subtype_apply] using
-      b.linearIndependent.map' (normalSubspace I f x₀).subtype
-        (Submodule.ker_subtype _)
-  let U : Set M := {x | LinearIndependent ℝ (s x)}
-  have hU : IsOpen U := isOpen_setOfPred_linearIndependent.preimage
-    (continuous_pi fun i => (hs i).continuous)
-  refine ⟨U, hU, hli₀, fun i => (hs i).contMDiffOn, ?_⟩
+  obtain ⟨U, hUli, hU, hx₀U⟩ := mem_nhds_iff.mp <|
+    eventually_linearIndependent_starProjection_apply (b := fun i => (b i : V))
+      (contMDiff_normalSubspace_starProjection hf himm).continuous.continuousAt
+      (b.linearIndependent.map' (normalSubspace I f x₀).subtype (Submodule.ker_subtype _))
+      fun i => (b i).property
+  refine ⟨U, hU, hx₀U, fun i => (hs i).contMDiffOn, ?_⟩
   intro x hx
   let v : ι → normalSubspace I f x := fun i =>
     ⟨s x i, Submodule.starProjection_apply_mem _ _⟩
-  have hli : LinearIndependent ℝ v := (hx : LinearIndependent ℝ (s x)).of_comp
+  have hli : LinearIndependent ℝ v := (hUli hx : LinearIndependent ℝ (s x)).of_comp
     (normalSubspace I f x).subtype
   have hdim : Fintype.card ι = Module.finrank ℝ (normalSubspace I f x) := by
     rw [← Module.finrank_eq_card_basis b]

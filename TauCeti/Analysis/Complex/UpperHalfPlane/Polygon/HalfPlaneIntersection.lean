@@ -646,8 +646,7 @@ private theorem eq_of_faceEnd_eq_inl {j k : κ} {w : ℍ} (hj : faceEnd (L j) K 
     leftHalfPlane_geodesicBetween_swap hkab.symm] at hy
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hsbj,
     leftHalfPlane_geodesicBetween_swap hjab.symm, hv] at hx
-  exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hkab.symm (hv ▸ hjab.symm) hy
-    hx
+  exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hy hx
 
 /-- Two faces do not start at the same point of `ℍ`. -/
 private theorem eq_of_faceStart_eq_inl {j k : κ} {z : ℍ}
@@ -667,7 +666,7 @@ private theorem eq_of_faceStart_eq_inl {j k : κ} {z : ℍ}
   -- both faces leave the common point, so each is on the left of the other seen from it
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hatk] at hy
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hatj, hv] at hx
-  exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hkab (hv ▸ hjab) hy hx
+  exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hy hx
 
 /-- The finite end of each face is the start of the face of another line. -/
 private theorem exists_ne_faceStart_eq_of_faceEnd_eq_inl {k : κ} {w : ℍ}

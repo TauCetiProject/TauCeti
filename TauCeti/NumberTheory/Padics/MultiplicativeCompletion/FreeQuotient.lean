@@ -420,8 +420,7 @@ private theorem nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension :
         Submodule.torsion ℤ_[p] (Additive ↑(padicCompletionUnits p L))) ≃ₗ[ℤ_[p]]
       (Fin (Module.finrank ℚ_[p] L + 1) → ℤ_[p])) := by
   have hi : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    (Nat.lt_succ_self _).trans_le
-      (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   obtain ⟨M, hM0, hM⟩ := exists_smul_mem_range_latticeMap hi
   exact nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range
     (latticeMap_injective hi) (Nat.cast_ne_zero.mpr hM0) hM

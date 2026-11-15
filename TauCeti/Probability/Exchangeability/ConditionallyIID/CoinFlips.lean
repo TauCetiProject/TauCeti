@@ -10,20 +10,17 @@ public import Mathlib.Probability.Distributions.Bernoulli
 import TauCeti.Probability.Distributions.Bernoulli.Measurability
 
 /-!
-# Exchangeable coin flips: the worked example of a random bias
+# Exchangeable coin flips with a random bias
 
-This file discharges the second worked example of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Worked examples"):
-
-> A `Bool`-valued sequence generated conditionally i.i.d. given a random `θ` (draw `θ`, then flip
-> i.i.d. `κ (θ ω)`-coins) is exchangeable, with `ω ↦ κ (θ ω)` (`κ` a two-point kernel) as the
-> directing measure — genuinely: the generating construction makes it a witness of
-> `ConditionallyIIDWith`, not merely a mixing representative.
+A `Bool`-valued sequence generated conditionally i.i.d. given a random `θ` (draw `θ`, then flip
+i.i.d. `κ (θ ω)`-coins) is exchangeable, with `ω ↦ κ (θ ω)` (`κ` a two-point kernel) as the
+directing measure — genuinely: the generating construction makes it a witness of
+`ConditionallyIIDWith`, not merely a mixing representative. This file works out that example.
 
 The two-point kernel is `coinKernel p = Ber(true, false, p)`, Mathlib's `bernoulliMeasure` bundled
 as a `ProbabilityMeasure Bool`; the parameter `θ` is the first coordinate of the canonical space
-`I × (ℕ → Bool)` and the bias measure `π` is arbitrary. As the roadmap insists, the directing
-measure is the *random probability measure* `ω ↦ coinKernel ω.1`, not the bias `ω ↦ ω.1` itself.
+`I × (ℕ → Bool)` and the bias measure `π` is arbitrary. The directing measure is the
+*random probability measure* `ω ↦ coinKernel ω.1`, not the bias `ω ↦ ω.1` itself.
 
 The example carries weight because the sequence is exchangeable without being independent:
 `not_iIndepFun_coinFlips` exhibits a two-point bias law for which the coordinates are dependent, so
@@ -87,8 +84,8 @@ theorem measurable_coinKernel : Measurable coinKernel :=
 
 variable (π : Measure I)
 
-/-- **The worked example.** Draw a bias from `π`, then flip i.i.d. coins with that bias: the
-resulting `Bool`-valued sequence is conditionally i.i.d. with directing measure
+/-- **Coin flips with a random bias.** Draw a bias from `π`, then flip i.i.d. coins with that bias:
+the resulting `Bool`-valued sequence is conditionally i.i.d. with directing measure
 `ω ↦ coinKernel ω.1`.
 
 This is the sharp conditional statement, not just the mixture identity: the generating construction

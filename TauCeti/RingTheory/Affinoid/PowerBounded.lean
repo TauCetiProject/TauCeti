@@ -176,7 +176,7 @@ theorem isPowerBounded_iff_supSeminorm_le_one (hA : IsAffinoidAlgebra K A) {f : 
     obtain ⟨n, hn⟩ := (tendsto_pow_atTop_atTop_of_one_lt h).eventually_gt_atTop C |>.exists
     refine (hC _ ⟨n + 1, rfl⟩).not_gt (hn.trans_le ?_)
     calc supSeminorm K f ^ n ≤ supSeminorm K f ^ (n + 1) := pow_le_pow_right₀ h.le n.le_succ
-      _ = supSeminorm K (f ^ (n + 1)) := (hA.supSeminorm_pow f n.succ_ne_zero).symm
+      _ = supSeminorm K (f ^ (n + 1)) := (supSeminorm_pow f n.succ_ne_zero).symm
       _ ≤ ‖f ^ (n + 1)‖ := hA.supSeminorm_le_norm _
   · -- `f` is integral over the image of the Gauss unit ball, which is power-bounded.
     obtain ⟨n, π, hπ⟩ := (isAffinoidAlgebra_iff K A).mp hA
@@ -200,7 +200,7 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra 
   · -- Some positive power of `f` has norm less than one.
     obtain ⟨N, hN⟩ := eventually_atTop.mp (hf.eventually (Metric.ball_mem_nhds 0 one_pos))
     rw [← pow_lt_one_iff_of_nonneg (supSeminorm_nonneg f) N.succ_ne_zero,
-      ← hA.supSeminorm_pow f N.succ_ne_zero]
+      ← supSeminorm_pow f N.succ_ne_zero]
     exact (hA.supSeminorm_le_norm _).trans_lt (mem_ball_zero_iff.mp (hN _ N.le_succ))
   · -- Write `f ^ n = c * u` with `|c| < 1` and `u` power-bounded.
     obtain ⟨c, hc0, hc1⟩ := NormedField.exists_norm_lt_one K
@@ -210,8 +210,8 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra 
       exact (hc1.trans (by simpa using hn)).false
     have hc : c ≠ 0 := norm_pos_iff.mp hc0
     have hu : Huber.IsPowerBounded (c⁻¹ • f ^ n) := by
-      rw [hA.isPowerBounded_iff_supSeminorm_le_one, hA.supSeminorm_smul,
-        hA.supSeminorm_pow f hn0, norm_inv, inv_mul_le_one₀ hc0]
+      rw [hA.isPowerBounded_iff_supSeminorm_le_one, supSeminorm_smul,
+        supSeminorm_pow f hn0, norm_inv, inv_mul_le_one₀ hc0]
       exact hn.le
     have hcn : IsTopologicallyNilpotent (algebraMap K A c) :=
       IsTopologicallyNilpotent.map (continuous_algebraMap K A)

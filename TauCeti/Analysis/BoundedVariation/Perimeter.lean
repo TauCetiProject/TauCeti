@@ -25,7 +25,8 @@ Mathlib's junk value `0` for non-integrable functions, and the perimeter may the
 carrying no geometric meaning.
 
 The perimeter only sees `s` up to null sets (`TauCeti.perimeter_congr_ae`), so topological
-frontier and perimeter can differ. Against an additive Haar measure, complements have the same
+frontier and perimeter can differ, and it only sees `s ∩ Ω`
+(`TauCeti.perimeter_congr_of_inter_eq`). Against an additive Haar measure, complements have the same
 perimeter (`TauCeti.perimeter_compl`), since their indicators differ by a constant. Lower
 semicontinuity under local convergence in measure (`TauCeti.perimeter_le_liminf`) supplies
 the semicontinuity half of the direct method for perimeter problems.
@@ -34,8 +35,9 @@ the semicontinuity half of the direct method for perimeter problems.
 
 * `TauCeti.perimeter μ Ω s`: the perimeter of `s` in `Ω`.
 * `TauCeti.perimeter_eq_iSup`: the perimeter of a null-measurable set as a supremum of `∫_s div φ`.
-* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_mono` and `TauCeti.perimeter_iSup`: invariance
-  under null modification inside `Ω`, and monotonicity and inner continuity in `Ω`.
+* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
+  and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
+  monotonicity and inner continuity in `Ω`.
 * `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty` and `TauCeti.perimeter_univ`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
@@ -83,6 +85,12 @@ theorem perimeter_eq_iSup (hs : NullMeasurableSet s μ) : perimeter μ Ω s =
 theorem perimeter_congr_ae (h : s =ᵐ[μ.restrict Ω] t) : perimeter μ Ω s = perimeter μ Ω t :=
   totalVariationOn_congr_ae (indicator_ae_eq_of_ae_eq_set h)
 
+/-- **Locality of the perimeter.** Sets that agree on `Ω` have the same perimeter in `Ω`. -/
+theorem perimeter_congr_of_inter_eq [OpensMeasurableSpace E] (h : s ∩ Ω = t ∩ Ω) :
+    perimeter μ Ω s = perimeter μ Ω t :=
+  perimeter_congr_ae <| eventuallyEqSet_iff.2 <| (ae_restrict_mem Ω.isOpen.measurableSet).mono
+    fun y hy => by simpa [hy] using Set.ext_iff.1 h y
+
 /-- The perimeter grows with the open set. -/
 theorem perimeter_mono (h : Ω' ≤ Ω) : perimeter μ Ω' s ≤ perimeter μ Ω s :=
   totalVariationOn_mono h
@@ -98,6 +106,15 @@ theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· �
 theorem perimeter_empty : perimeter μ Ω ∅ = 0 := by
   rw [perimeter_def, indicator_empty]
   exact totalVariationOn_zero
+
+/-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
+respect to `μ`, because the indicator of `t` vanishes off `s`. -/
+theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
+    perimeter (μ.restrict s) Ω t = perimeter μ Ω t := by
+  rw [perimeter_def, perimeter_def, totalVariationOn_def, totalVariationOn_def]
+  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
+  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [indicator_of_notMem (fun hxt => hx (h hxt))]
 
 section Haar
 

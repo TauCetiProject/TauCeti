@@ -66,12 +66,9 @@ private theorem isIntegral_of_pPolynomial_mem_subalgebra (p e : ℕ) [Fact p.Pri
       Subalgebra.center K Uₖ)
     (S : Subalgebra K (Subalgebra.center K Uₖ))
     (hS : (⟨_, hc⟩ : Subalgebra.center K Uₖ) ∈ S) :
-    let _ : Algebra S Uₖ := Subalgebra.centralSubalgebraAlgebra S
     IsIntegral S (_root_.UniversalEnvelopingAlgebra.ι K x) := by
-  let _ : Algebra S Uₖ := Subalgebra.centralSubalgebraAlgebra S
-  have hTower : IsScalarTower K S Uₖ := Subalgebra.isScalarTower_centralSubalgebraAlgebra S
   have hKS : ∀ k : K, algebraMap S Uₖ (algebraMap K S k) = algebraMap K Uₖ k := fun k ↦
-    (hTower.algebraMap_apply K S Uₖ k).symm
+    (IsScalarTower.algebraMap_apply K S Uₖ k).symm
   let c : S := ⟨⟨_, hc⟩, hS⟩
   let r : Polynomial S :=
     (∑ i : Fin e, Polynomial.C (algebraMap K S (a i)) * Polynomial.X ^ p ^ (i : ℕ)) -
@@ -90,8 +87,8 @@ private theorem isIntegral_of_pPolynomial_mem_subalgebra (p e : ℕ) [Fact p.Pri
         WithBot.coe_lt_coe.mpr (pow_pos (Fact.out : p.Prime).pos e)
   have hc' : algebraMap S Uₖ c =
       _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ e +
-        ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ (i : ℕ) :=
-    Subalgebra.centralSubalgebraAlgebra_algebraMap_apply S c
+        ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ (i : ℕ) := by
+    rw [Subalgebra.algebraMap_def, Subalgebra.centerAlgebra_algebraMap_apply]
   refine ⟨Polynomial.X ^ p ^ e + r, Polynomial.monic_X_pow_add hr, ?_⟩
   rw [← Polynomial.aeval_def]
   dsimp only [r]
@@ -123,7 +120,6 @@ theorem exists_pCentralGenerators_moduleFinite (p : ℕ) [Fact p.Prime] [CharP K
             _root_.UniversalEnvelopingAlgebra.ι K (Module.finBasis K L i) ^ p ^ (j : ℕ)) ∧
       (∀ i, (c i : Uₖ) ∈ (HopfIdeal.augmentation K Uₖ).toIdeal) ∧
       let S := Algebra.adjoin K (Set.range c)
-      let _ : Algebra S Uₖ := Subalgebra.centralSubalgebraAlgebra S
       IsNoetherianRing S ∧ Module.Finite S Uₖ := by
   let b := Module.finBasis K L
   choose e a hc using fun i ↦ exists_pCentralPolynomial K L p (b i)
@@ -138,11 +134,9 @@ theorem exists_pCentralGenerators_moduleFinite (p : ℕ) [Fact p.Prime] [CharP K
   · let S := Algebra.adjoin K (Set.range c)
     let _ : Algebra.FiniteType K S :=
       Algebra.FiniteType.adjoin_of_finite (Set.finite_range c)
-    let _ : Algebra S Uₖ := Subalgebra.centralSubalgebraAlgebra S
-    let hTower : IsScalarTower K S Uₖ := Subalgebra.isScalarTower_centralSubalgebraAlgebra S
     refine ⟨Algebra.FiniteType.isNoetherianRing K S, ?_⟩
-    exact @moduleFinite_of_isIntegral_of_span_eq_top K L _ _ _ Uₖ _ _ S _ _ _ hTower _
-      b b.span_eq (AlgHom.id K Uₖ) Function.surjective_id
+    exact moduleFinite_of_isIntegral_of_span_eq_top K L S b b.span_eq (AlgHom.id K Uₖ)
+      Function.surjective_id
       fun i ↦ isIntegral_of_pPolynomial_mem_subalgebra K L p (e i) (a i) (b i) (hc i) S
         (Algebra.subset_adjoin (Set.mem_range_self i))
 

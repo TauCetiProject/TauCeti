@@ -52,6 +52,8 @@ only along a null frontier, is itself a fundamental domain.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
+* `MeasureTheory.covolume_eq_index_mul_covolume`: the same multiplicativity at finite index, with
+  the index as a natural number.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),
@@ -398,5 +400,16 @@ theorem covolume_eq_card_mul_covolume {G α : Type*} [Group G] [MulAction G α]
   · intro q q' hqq'
     refine hs.aedisjoint fun heq ↦ hqq' ?_
     rw [← q.out_eq', ← q'.out_eq', inv_inj.mp heq]
+
+/-- **Covolume is multiplicative in a finite index**: the form of
+`MeasureTheory.covolume_eq_card_mul_covolume` for `Δ` of finite index in `Γ`, with the index
+`[Γ : Δ]` as a natural number. -/
+theorem covolume_eq_index_mul_covolume {G α : Type*} [Group G] [MulAction G α]
+    [MeasurableSpace α] {μ : Measure α} {Γ Δ : Subgroup G} [MeasurableConstSMul Γ α]
+    [SMulInvariantMeasure Γ α μ] [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ)
+    [Δ.IsFiniteRelIndex Γ] :
+    covolume Δ α μ = (Δ.subgroupOf Γ).index * covolume Γ α μ := by
+  rw [covolume_eq_card_mul_covolume h, ENat.card_eq_coe_natCard, ENat.toENNReal_coe,
+    Subgroup.index]
 
 end MeasureTheory

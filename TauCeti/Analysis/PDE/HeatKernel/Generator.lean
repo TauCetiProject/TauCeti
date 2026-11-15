@@ -58,7 +58,8 @@ noncomputable section
 
 namespace TauCeti
 
-open ContinuousLinearMap Filter InnerProductSpace Laplacian MeasureTheory Semigroups Set Topology
+open ContinuousLinearMap Filter InnerProductSpace Laplacian _root_.MeasureTheory Semigroups Set
+  Topology
 open scoped Convolution ENNReal NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]

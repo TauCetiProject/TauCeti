@@ -36,7 +36,7 @@ variable {m Ω q : ℝ}
 @[simp]
 theorem integrable_rpow_nakagamiMeasure_iff (hm : 0 < m) (hΩ : 0 < Ω) (q : ℝ) :
     Integrable (fun x : ℝ ↦ x ^ q) (nakagamiMeasure m Ω) ↔ -2 * m < q := by
-  rw [nakagamiMeasure_eq_chiMeasure hm hΩ]
+  rw [nakagamiMeasure_eq_chiMeasure]
   simpa only [neg_mul] using
     integrable_rpow_chiMeasure_iff (by positivity : 0 < 2 * m) (by positivity) q
 
@@ -55,10 +55,8 @@ theorem integral_rpow_nakagamiMeasure (hm : 0 < m) (hΩ : 0 < Ω) (hq : -2 * m <
 /-- Every natural power is integrable, including at invalid parameters where the law is zero. -/
 theorem integrable_pow_nakagamiMeasure (m Ω : ℝ) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (nakagamiMeasure m Ω) := by
-  by_cases h : 0 < m ∧ 0 < Ω
-  · rw [nakagamiMeasure_eq_chiMeasure h.1 h.2]
-    exact integrable_pow_chiMeasure _ _ n
-  · simp [nakagamiMeasure_of_not_pos h]
+  rw [nakagamiMeasure_eq_chiMeasure]
+  exact integrable_pow_chiMeasure _ _ n
 
 /-- Natural moments of a Nakagami law, including order zero. -/
 @[simp]
@@ -81,7 +79,7 @@ theorem integral_id_nakagamiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
 @[simp high]
 theorem integral_sq_nakagamiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
     ∫ x, x ^ 2 ∂nakagamiMeasure m Ω = Ω := by
-  rw [nakagamiMeasure_eq_chiMeasure hm hΩ, integral_sq_chiMeasure (by positivity) (by positivity),
+  rw [nakagamiMeasure_eq_chiMeasure, integral_sq_chiMeasure (by positivity) (by positivity),
     sq_sqrt (by positivity)]
   field_simp
 
@@ -103,10 +101,8 @@ theorem variance_id_nakagamiMeasure (hm : 0 < m) (hΩ : 0 < Ω) :
 /-- Every exponential moment of a Nakagami law is finite, in all parameter regimes. -/
 theorem integrable_exp_mul_id_nakagamiMeasure (m Ω t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x)) (nakagamiMeasure m Ω) := by
-  by_cases h : 0 < m ∧ 0 < Ω
-  · rw [nakagamiMeasure_eq_chiMeasure h.1 h.2]
-    exact integrable_exp_mul_id_chiMeasure _ _ t
-  · simp [nakagamiMeasure_of_not_pos h]
+  rw [nakagamiMeasure_eq_chiMeasure]
+  exact integrable_exp_mul_id_chiMeasure _ _ t
 
 /-- The exact exponential-integrability domain is the entire real line. -/
 @[simp]

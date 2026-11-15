@@ -104,7 +104,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] eNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Closed paths in `Eₙ` -/
 

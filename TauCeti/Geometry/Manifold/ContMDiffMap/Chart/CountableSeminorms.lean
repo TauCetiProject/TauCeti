@@ -38,6 +38,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {ι : Type*} (c : ι → M)
   (hcover : ∀ x : M, ∃ i, x ∈ (extChartAt I (c i)).source)
 
+/-- If compact pieces `P i`, `i ∈ t`, of a chart target cover a compact set `L`, and the chart
+seminorm on each piece is bounded by `C i ≥ 0` times a seminorm `q`, then the chart seminorm on
+`L` is bounded by `1 + ∑ i ∈ t, C i` times `q`. -/
+theorem chartCkSeminorm_le_of_subset_biUnion {κ : Type*} (x : M)
+    (L : TopologicalSpace.Compacts (extChartAt I x).target) (t : Finset κ)
+    (P : κ → TopologicalSpace.Compacts (extChartAt I x).target)
+    (hLP : (L : Set (extChartAt I x).target) ⊆ ⋃ i ∈ t, (P i : Set (extChartAt I x).target))
+    (k : ℕ) (hk : k ≤ n) (q : Seminorm 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯) {C : κ → ℝ}
+    (hC : ∀ i ∈ t, 0 ≤ C i) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (hb : ∀ i ∈ t, chartCkSeminorm x (P i) k hk f ≤ C i * q f) :
+    chartCkSeminorm x L k hk f ≤ (1 + ∑ i ∈ t, C i) * q f := by
+  have hsum : 0 ≤ ∑ i ∈ t, C i := Finset.sum_nonneg hC
+  refine (chartCkSeminorm_le_iff x L k hk f
+    (mul_nonneg (add_nonneg zero_le_one hsum) (apply_nonneg q f))).mpr fun m hm z hz ↦ ?_
+  obtain ⟨i, hit, hzi⟩ := mem_iUnion₂.mp (hLP hz)
+  have hderiv := (chartCkSeminorm_le_iff x (P i) k hk f
+    (apply_nonneg _ _)).mp le_rfl m hm z hzi
+  have hCi : C i ≤ 1 + ∑ j ∈ t, C j :=
+    (Finset.single_le_sum hC hit).trans (le_add_of_nonneg_left zero_le_one)
+  exact hderiv.trans ((hb i hit).trans (mul_le_mul_of_nonneg_right hCi (apply_nonneg q f)))
+
 include hcover in
 /-- Every compact chart seminorm is bounded by a positive multiple of a finite supremum of
 seminorms from any covering chart system. -/
@@ -70,22 +91,11 @@ theorem exists_chartCkSeminorm_le_finset_sup (x : M)
   let q : Seminorm 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
     t.sup fun i ↦ chartCkSeminorm (F := F) (c i) (L i) k hk
   have hsum : 0 ≤ ∑ i ∈ t, C i := Finset.sum_nonneg fun i _ ↦ (hC i).le
-  have htotal : 0 < 1 + ∑ i ∈ t, C i := add_pos_of_pos_of_nonneg zero_lt_one hsum
-  refine ⟨t, L, 1 + ∑ i ∈ t, C i, htotal, fun f ↦ ?_⟩
-  refine (chartCkSeminorm_le_iff x K k hk f
-    (mul_nonneg htotal.le (apply_nonneg q f))).mpr fun m hm z hz ↦ ?_
-  have hz' : z ∈ (K : Set (extChartAt I x).target) := hz
-  rw [hKP] at hz'
-  obtain ⟨i, hit, hzi⟩ := mem_iUnion₂.mp hz'
-  have hderiv := (chartCkSeminorm_le_iff x (A i) k hk f
-    (apply_nonneg _ _)).mp le_rfl m hm z hzi
-  have hq : chartCkSeminorm (F := F) (c i) (L i) k hk ≤ q :=
-    Finset.le_sup (f := fun i ↦ chartCkSeminorm (F := F) (c i) (L i) k hk) hit
-  have hCi : C i ≤ 1 + ∑ j ∈ t, C j :=
-    (Finset.single_le_sum (fun j _ ↦ (hC j).le) hit).trans (le_add_of_nonneg_left zero_le_one)
-  exact hderiv.trans ((hbound i f).trans
-    ((mul_le_mul_of_nonneg_left (hq f) (hC i).le).trans
-      (mul_le_mul_of_nonneg_right hCi (apply_nonneg q f))))
+  refine ⟨t, L, 1 + ∑ i ∈ t, C i, add_pos_of_pos_of_nonneg zero_lt_one hsum, fun f ↦ ?_⟩
+  refine chartCkSeminorm_le_of_subset_biUnion x K t A hKP.subset k hk q
+    (fun i _ ↦ (hC i).le) f fun i hit ↦ (hbound i f).trans ?_
+  exact mul_le_mul_of_nonneg_left
+    (Finset.le_sup (f := fun i ↦ chartCkSeminorm (F := F) (c i) (L i) k hk) hit f) (hC i).le
 
 /-- Compact chart seminorms on a chosen chart cover and chosen compact exhaustions.
 The index is countable whenever the chart cover index is countable. -/

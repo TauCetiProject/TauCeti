@@ -47,13 +47,8 @@ theorem PoincareInequality.variance_le_of_lipschitzWith
   have hε_le (n : ℕ) : 1 / ((n : ℝ) + 1) ≤ 1 := by
     apply (div_le_one (by positivity)).2
     linarith [Nat.cast_nonneg (α := ℝ) n]
-  have hbound (n : ℕ) (x : E) : ‖g n x‖ ≤ ‖f x‖ + 1 := by
-    have hd : ‖g n x - f x‖ ≤ 1 / ((n : ℝ) + 1) := by
-      simpa only [dist_eq_norm] using (hgf n x).le
-    calc
-      ‖g n x‖ ≤ ‖g n x - f x‖ + ‖f x‖ := norm_le_norm_sub_add _ _
-      _ ≤ 1 + ‖f x‖ := by linarith [hd.trans (hε_le n)]
-      _ = ‖f x‖ + 1 := add_comm _ _
+  have hbound (n : ℕ) (x : E) : ‖g n x‖ ≤ ‖f x‖ + 1 :=
+    norm_le_norm_add_const_of_dist_le ((hgf n x).le.trans (hε_le n))
   have hbL : MemLp (fun x ↦ ‖f x‖ + 1) 2 μ := hfL.norm.add (memLp_const 1)
   have hgL (n : ℕ) : MemLp (g n) 2 μ :=
     hbL.mono' (hgs n).continuous.aestronglyMeasurable (.of_forall (hbound n))

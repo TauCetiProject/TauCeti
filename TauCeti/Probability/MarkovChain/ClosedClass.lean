@@ -10,6 +10,7 @@ public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.MarkovChain.Recurrence
+public import TauCeti.Data.ENat.ENNReal
 
 /-!
 # Entrance into closed communicating classes and restriction of path laws
@@ -48,6 +49,7 @@ namespace ProbabilityTheory.Kernel
 
 variable {S : Type*} [MeasurableSpace S] [Finite S] [MeasurableSingletonClass S]
 
+omit [MeasurableSingletonClass S] in
 private theorem exists_pow_apply_isClosedSet_communicatingClass_pos (κ : Kernel S S)
     (x : S) :
     ∃ n, 0 < (κ ^ n) x {y | κ.IsClosedSet (κ.communicatingClass y)} := by
@@ -190,6 +192,18 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFinite
 variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] {s : Set S}
   (κ : Kernel S S) [IsMarkovKernel κ] (hs : MeasurableSet s)
   [IsMarkovKernel (κ.subtype hs)]
+
+/-- Restricting to a closed set preserves the extended mean positive return time. -/
+@[simp]
+theorem meanReturnTime_subtype (x : s) :
+    (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
+  have hpre : Subtype.val ⁻¹' ({x.val} : Set S) = ({x} : Set s) := by
+    ext y
+    simp [Subtype.ext_iff]
+  simpa only [meanReturnTime_def, hpre, Measure.map_dirac,
+    WithTop.recTopCoe_top_natCast_eq_toENNReal] using
+    κ.lintegral_hittingAfter_markovChainLaw_subtype hs (Measure.dirac x)
+      (measurableSet_singleton x.val) 1
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]

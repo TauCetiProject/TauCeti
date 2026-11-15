@@ -257,6 +257,14 @@ theorem swapHorizontal_idOn {s : Finset α} (ha : a ∈ s) (hb : b ∉ s) :
   simp only [hxb, false_and, ne_eq, not_false_eq_true, true_and, false_or]
   tauto
 
+/-- A diagram with a single moving strand has no horizontal strand to move. -/
+theorem swapHorizontal_single {i j : α} (h : i < j) (a b : α) :
+    (single i j h.le).swapHorizontal a b = single i j h.le := by
+  have key (a b : α) : ¬(single i j h.le).CanMoveHorizontal a b := fun hm ↦ by
+    obtain ⟨rfl, rfl⟩ := mem_single.1 hm.mem
+    exact h.ne rfl
+  exact swapHorizontal_of_not (key a b) (key b a)
+
 /-! ### Strands crossing a horizontal strand -/
 
 /-- The number of strands of `φ` that cross a horizontal strand at `c`: the strands starting below
@@ -366,7 +374,7 @@ theorem crossingCount_resolve (hq : q ∈ φ.inversions) (hc : c ≠ q.2) :
     filter_congr fun x hx ↦ by rw [he hx]]
   rcases lt_or_gt_of_ne hc with hcj | hjc
   · -- Below `j` the two counts agree strand by strand.
-    refine congrArg card (filter_congr fun x hx ↦ ?_)
+    refine congrArg card (filter_congr fun x _ ↦ ?_)
     rcases eq_or_ne x i with rfl | hxi
     · rw [Equiv.swap_apply_left, hfi, hfj]
       exact and_congr_right fun _ ↦ iff_of_true (hcj.trans_le hjB) (hcj.trans (hjB.trans_lt hBA))

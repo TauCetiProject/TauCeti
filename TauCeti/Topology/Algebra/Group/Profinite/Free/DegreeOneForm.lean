@@ -9,45 +9,49 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 import Mathlib.Data.Nat.Choose.Dvd
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.Topology.Algebra.Group.Heisenberg
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 
 /-!
 # The degree-one form of a free pro-`p` group and changes of basis
 
-Let `F = freeProP p X` be the free pro-`p` group on a finite type `X`, with canonical generators
+Let `F = freeProP p X` be the free pro-`p` group on a type `X`, with canonical generators
 `x_i = freeProP.of i`, and let `gr_1(F) = λ_1(F) ⧸ λ_2(F)` be the degree-one graded piece of its
 lower `p`-series. Two continuous characters `χ, ψ : F → 𝔽_p` lift to a continuous homomorphism
 `F → H(𝔽_p)` into the Heisenberg group over `𝔽_p`, `x_i ↦ (χ x_i, ψ x_i, 0)`; on `λ_1(F)` its
 `(1, 3)`-entry is a homomorphism killing `λ_2(F)`, the **Heisenberg functional**
-`TauCeti.freeProP.heisenbergFunctional χ ψ : gr_1(F) →ₗ[𝔽_p] 𝔽_p`. It is the unique linear
-functional with
+`TauCeti.freeProP.heisenbergFunctional χ ψ : gr_1(F) →ₗ[𝔽_p] 𝔽_p`. For finite `X` it is the
+unique linear functional with
 
   `[⟦u⟧, ⟦v⟧] ↦ χ u · ψ v - χ v · ψ u`   and   `π ⟦u⟧ ↦ (p choose 2) · χ u · ψ u`
 
-on the brackets and `p`-power classes of degree-zero classes. Assembling these functionals gives
+on the brackets and `p`-power classes of degree-zero classes; for arbitrary `X` it is the unique
+such functional that is continuous on `λ_1(F)`
+(`TauCeti.freeProP.heisenbergFunctional_unique_of_continuous`). Assembling these functionals gives
 the **degree-one form** `TauCeti.freeProP.degreeOneForm ρ`, an `𝔽_p`-bilinear form on the
 continuous `𝔽_p`-dual `H¹(F, 𝔽_p) = Hom_cont(F, 𝔽_p)` attached linearly to each class
-`ρ ∈ gr_1(F)`. The form is skew-symmetric, and alternating for odd `p`. In the basis of the dual
-which is dual to the generators (`TauCeti.freeProP.dualBasis`), its matrix has the commutator
-coordinates of `ρ` in the standard basis of `gr_1(F)` above the diagonal, their negatives below
-it, and `(p choose 2)` times the `p`-power coordinates on the diagonal. These are the coordinates
-Labute reads off the class `⟦r⟧` of a relator `r ∈ λ_1(F)` to describe the cup product on
-`H¹(F ⧸ ⟪r⟫, 𝔽_p)` (Labute, Proposition 3); the identification of the degree-one form of `⟦r⟧`
-with that cup product is not proved in this file.
+`ρ ∈ gr_1(F)`. The form is skew-symmetric, and alternating for odd `p`. For finite `X`, in the
+basis of the dual which is dual to the generators (`TauCeti.freeProP.dualBasis`), its matrix has
+the commutator coordinates of `ρ` in the standard basis of `gr_1(F)` above the diagonal, their
+negatives below it, and `(p choose 2)` times the `p`-power coordinates on the diagonal. These
+are the coordinates Labute reads off the class `⟦r⟧` of a relator `r ∈ λ_1(F)` to describe the cup
+product on `H¹(F ⧸ ⟪r⟫, 𝔽_p)` (Labute, Proposition 3); the identification of the degree-one form
+of `⟦r⟧` with that cup product is not proved in this file.
 
 Its transformation law is the change-of-basis law of that matrix: a continuous homomorphism
 `φ : F → F'` between free pro-`p` groups carries the form of `ρ` to the form of `φ_* ρ` pulled back
 along the transpose of `φ` on the duals, `B_{φ_* ρ}(χ, ψ) = B_ρ(χ ∘ φ, ψ ∘ φ)`, which in matrices is
-`B ↦ Pᵀ B P`. Every linear automorphism of the dual is the transpose of a continuous automorphism
-of `F` (`TauCeti.freeProP.exists_continuousMulEquiv_continuousZModDualMap_eq`). Hence a change of
-basis of `F` brings the matrix of the form of `ρ` into any shape a basis of the dual provides, in
-particular into the normal forms of the bilinear-form theory. This normalizes the form of `ρ`
-only: for odd `p` the diagonal factor `(p choose 2)` vanishes in `𝔽_p`, so the form does not see
-the `p`-power coordinates of `ρ`. Those coordinates are read off by the coordinate characters
-instead, and they transform under a continuous homomorphism through the values of the coordinate
-characters on the images of the generators. Bringing a relator into normal form modulo `λ_2(F)`
-(Labute, Proposition 4) combines both, and is carried out in
+`B ↦ Pᵀ B P`. For finite `X`, every linear automorphism of the dual is the transpose of a
+continuous automorphism of `F`
+(`TauCeti.freeProP.exists_continuousMulEquiv_continuousZModDualMap_eq`). Hence, for finite `X`, a
+change of basis of `F` brings the matrix of the form of `ρ` into any shape a basis of the dual
+provides, in particular into the normal forms of the bilinear-form theory. This normalizes the form
+of `ρ` only: for odd `p` the diagonal factor `(p choose 2)` vanishes in `𝔽_p`, so the form does not
+see the `p`-power coordinates of `ρ`. For finite `X`, those coordinates are read off by the
+coordinate characters instead, and they transform under a continuous homomorphism through the
+values of the coordinate characters on the images of the generators. Bringing a relator into normal
+form modulo `λ_2(F)` (Labute, Proposition 4) combines both, and is carried out in
 `TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.DegreeOneForm`.
 
 ## Main definitions
@@ -62,7 +66,15 @@ characters on the images of the generators. Bringing a relator into normal form 
 * `TauCeti.freeProP.heisenbergFunctional_gradedBracket_gradedMkZero`,
   `TauCeti.freeProP.heisenbergFunctional_gradedPow_gradedMkZero`,
   `TauCeti.freeProP.heisenbergFunctional_unique`: the values of the Heisenberg functional on
-  brackets and `p`-power classes characterize it.
+  brackets and `p`-power classes characterize it among all linear functionals for finite `X`.
+* `TauCeti.freeProP.continuous_heisenbergFunctional_gradedMk`,
+  `TauCeti.freeProP.heisenbergFunctional_unique_of_continuous`: for arbitrary `X`, the functional
+  is continuous on `λ_1(F)`, and is the only functional continuous there with these values.
+
+The remaining results below, on the matrix of the form in the dual basis, the coordinates and the
+automorphism theorem, are stated for finite `X`; the symmetry and transformation-law results, and
+the transformation law of the Heisenberg functional, hold for arbitrary `X`.
+
 * `TauCeti.freeProP.degreeOneForm_swap`, `TauCeti.freeProP.isRefl_degreeOneForm`,
   `TauCeti.freeProP.isAlt_degreeOneForm_of_ne_two`, `TauCeti.freeProP.isSymm_degreeOneForm_of_two`:
   the degree-one form is skew-symmetric, hence reflexive, alternating for odd `p`, and symmetric
@@ -201,7 +213,9 @@ private theorem heisenbergZ_eq_one_of_mem {y : pLowerCentralSeries p (freeProP p
 group `F`: the `𝔽_p`-linear functional on `gr_1(F)` induced on `λ_1(F)` by the `(1, 3)`-entry of
 the continuous homomorphism `F → H(𝔽_p)`, `x_i ↦ (χ x_i, ψ x_i, 0)`, into the Heisenberg group over
 `𝔽_p`. It is characterized by its values `[⟦u⟧, ⟦v⟧] ↦ χ u · ψ v - χ v · ψ u` and
-`π ⟦u⟧ ↦ (p choose 2) · χ u · ψ u` (`TauCeti.freeProP.heisenbergFunctional_unique`). -/
+`π ⟦u⟧ ↦ (p choose 2) · χ u · ψ u`: among all linear functionals for finite `X`
+(`TauCeti.freeProP.heisenbergFunctional_unique`), and among functionals continuous on `λ_1(F)` for
+arbitrary `X` (`TauCeti.freeProP.heisenbergFunctional_unique_of_continuous`). -/
 noncomputable def heisenbergFunctional : gradedPiece p (freeProP p X) 1 →ₗ[ZMod p] ZMod p :=
   (QuotientGroup.lift ((pLowerCentralSeries p (freeProP p X) 2).subgroupOf
       (pLowerCentralSeries p (freeProP p X) 1)) (heisenbergZ χ ψ) fun _ hy ↦
@@ -236,6 +250,112 @@ theorem heisenbergFunctional_gradedPow_gradedMkZero (u : freeProP p X) :
   rw [h, HeisenbergGroup.pow_eq, heisenbergHom_x, heisenbergHom_y]
   simp [nsmul_eq_mul]
 
+/-- The Heisenberg functional is continuous on `λ_1(F)` through `gradedMk`. -/
+theorem continuous_heisenbergFunctional_gradedMk :
+    Continuous fun y : pLowerCentralSeries p (freeProP p X) 1 ↦
+      heisenbergFunctional χ ψ (gradedMk p (freeProP p X) 1 y) := by
+  simp_rw [heisenbergFunctional_gradedMk]
+  exact (continuous_of_discreteTopology (f := fun a : HeisenbergLift.{u} p ↦ a.down.z)).comp
+    ((heisenbergHom χ ψ).continuous.comp continuous_subtype_val)
+
+/-- **Uniqueness of the Heisenberg functional among continuous functionals**, for arbitrary `X`: a
+linear functional on `gr_1(F)` that is continuous on `λ_1(F)` and has the values
+`[⟦u⟧, ⟦v⟧] ↦ χ u · ψ v - χ v · ψ u` and `π ⟦u⟧ ↦ (p choose 2) · χ u · ψ u` is the Heisenberg
+functional of `χ` and `ψ`. -/
+theorem heisenbergFunctional_unique_of_continuous
+    {f : gradedPiece p (freeProP p X) 1 →ₗ[ZMod p] ZMod p}
+    (hf : Continuous fun y : pLowerCentralSeries p (freeProP p X) 1 ↦
+      f (gradedMk p (freeProP p X) 1 y))
+    (hbr : ∀ u v : freeProP p X,
+      f (gradedBracket p _ 0 0 (gradedMkZero p _ u) (gradedMkZero p _ v)) =
+        (χ u).toAdd * (ψ v).toAdd - (χ v).toAdd * (ψ u).toAdd)
+    (hpow : ∀ u : freeProP p X,
+      f (gradedPow p _ 0 (gradedMkZero p _ u)) = p.choose 2 • ((χ u).toAdd * (ψ u).toAdd)) :
+    f = heisenbergFunctional χ ψ :=
+  linearMap_ext_gradedPiece_one_of_continuous hf (continuous_heisenbergFunctional_gradedMk χ ψ)
+    (fun u ↦ (hpow u).trans (heisenbergFunctional_gradedPow_gradedMkZero χ ψ u).symm)
+    fun u v ↦ (hbr u v).trans (heisenbergFunctional_gradedBracket_gradedMkZero χ ψ u v).symm
+
+/-- The Heisenberg functional is additive in its first character. -/
+@[simp]
+theorem heisenbergFunctional_mul_left (χ' : freeProP p X →ₜ* Multiplicative (ZMod p)) :
+    heisenbergFunctional (χ * χ') ψ = heisenbergFunctional χ ψ + heisenbergFunctional χ' ψ :=
+  linearMap_ext_gradedPiece_one_of_continuous (continuous_heisenbergFunctional_gradedMk _ _)
+    ((continuous_heisenbergFunctional_gradedMk _ _).add
+      (continuous_heisenbergFunctional_gradedMk _ _))
+    (fun u ↦ by
+      simp only [LinearMap.add_apply, heisenbergFunctional_gradedPow_gradedMkZero,
+        ContinuousMonoidHom.mul_apply, toAdd_mul]
+      rw [add_mul, nsmul_add])
+    fun u v ↦ by
+      simp only [LinearMap.add_apply, heisenbergFunctional_gradedBracket_gradedMkZero,
+        ContinuousMonoidHom.mul_apply, toAdd_mul]
+      ring
+
+/-- The Heisenberg functional is additive in its second character. -/
+@[simp]
+theorem heisenbergFunctional_mul_right (ψ' : freeProP p X →ₜ* Multiplicative (ZMod p)) :
+    heisenbergFunctional χ (ψ * ψ') = heisenbergFunctional χ ψ + heisenbergFunctional χ ψ' :=
+  linearMap_ext_gradedPiece_one_of_continuous (continuous_heisenbergFunctional_gradedMk _ _)
+    ((continuous_heisenbergFunctional_gradedMk _ _).add
+      (continuous_heisenbergFunctional_gradedMk _ _))
+    (fun u ↦ by
+      simp only [LinearMap.add_apply, heisenbergFunctional_gradedPow_gradedMkZero,
+        ContinuousMonoidHom.mul_apply, toAdd_mul]
+      rw [mul_add, nsmul_add])
+    fun u v ↦ by
+      simp only [LinearMap.add_apply, heisenbergFunctional_gradedBracket_gradedMkZero,
+        ContinuousMonoidHom.mul_apply, toAdd_mul]
+      ring
+
+/-- The Heisenberg functional of the trivial character and any character vanishes. -/
+@[simp]
+theorem heisenbergFunctional_one_left : heisenbergFunctional 1 ψ = 0 :=
+  linearMap_ext_gradedPiece_one_of_continuous (continuous_heisenbergFunctional_gradedMk _ _)
+    continuous_const (fun u ↦ by rw [heisenbergFunctional_gradedPow_gradedMkZero]; simp)
+    fun u v ↦ by rw [heisenbergFunctional_gradedBracket_gradedMkZero]; simp
+
+/-- The Heisenberg functional of any character and the trivial character vanishes. -/
+@[simp]
+theorem heisenbergFunctional_one_right : heisenbergFunctional χ 1 = 0 :=
+  linearMap_ext_gradedPiece_one_of_continuous (continuous_heisenbergFunctional_gradedMk _ _)
+    continuous_const (fun u ↦ by rw [heisenbergFunctional_gradedPow_gradedMkZero]; simp)
+    fun u v ↦ by rw [heisenbergFunctional_gradedBracket_gradedMkZero]; simp
+
+variable {Y : Type u}
+
+/-- **Naturality of the Heisenberg functional.** A continuous homomorphism `φ : F → F'` between
+free pro-`p` groups carries the Heisenberg functional of `χ, ψ` on
+`gr_1(F')` back to the Heisenberg functional of `χ ∘ φ, ψ ∘ φ` on `gr_1(F)`. -/
+theorem heisenbergFunctional_comp_gradedMap (χ ψ : freeProP p Y →ₜ* Multiplicative (ZMod p))
+    (φ : freeProP p X →ₜ* freeProP p Y) :
+    (heisenbergFunctional χ ψ).comp ((gradedMap p φ.toMonoidHom φ.continuous 1).toZModLinearMap p) =
+      heisenbergFunctional (χ.comp φ) (ψ.comp φ) :=
+  linearMap_ext_gradedPiece_one_of_continuous
+    (by
+      simp_rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedMk]
+      exact (continuous_heisenbergFunctional_gradedMk χ ψ).comp
+        ((φ.continuous.comp continuous_subtype_val).subtype_mk _))
+    (continuous_heisenbergFunctional_gradedMk _ _)
+    (fun u ↦ by
+      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedPow,
+        gradedMap_gradedMkZero, heisenbergFunctional_gradedPow_gradedMkZero,
+        heisenbergFunctional_gradedPow_gradedMkZero]
+      rfl)
+    fun u v ↦ by
+      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedBracket_zero_zero,
+        gradedMap_gradedMkZero, gradedMap_gradedMkZero,
+        heisenbergFunctional_gradedBracket_gradedMkZero,
+        heisenbergFunctional_gradedBracket_gradedMkZero]
+      rfl
+
+/-- **Naturality of the Heisenberg functional, on a class.** -/
+theorem heisenbergFunctional_gradedMap (χ ψ : freeProP p Y →ₜ* Multiplicative (ZMod p))
+    (φ : freeProP p X →ₜ* freeProP p Y) (ρ : gradedPiece p (freeProP p X) 1) :
+    heisenbergFunctional χ ψ (gradedMap p φ.toMonoidHom φ.continuous 1 ρ) =
+      heisenbergFunctional (χ.comp φ) (ψ.comp φ) ρ :=
+  LinearMap.congr_fun (heisenbergFunctional_comp_gradedMap χ ψ φ) ρ
+
 variable [Finite X]
 
 private theorem isOpen_pLowerCentralSeries_two :
@@ -268,82 +388,11 @@ theorem heisenbergFunctional_unique {f : gradedPiece p (freeProP p X) 1 →ₗ[Z
   linearMap_ext (fun u ↦ (hpow u).trans (heisenbergFunctional_gradedPow_gradedMkZero χ ψ u).symm)
     fun u v ↦ (hbr u v).trans (heisenbergFunctional_gradedBracket_gradedMkZero χ ψ u v).symm
 
-/-- The Heisenberg functional is additive in its first character. -/
-@[simp]
-theorem heisenbergFunctional_mul_left (χ' : freeProP p X →ₜ* Multiplicative (ZMod p)) :
-    heisenbergFunctional (χ * χ') ψ = heisenbergFunctional χ ψ + heisenbergFunctional χ' ψ :=
-  linearMap_ext
-    (fun u ↦ by
-      simp only [LinearMap.add_apply, heisenbergFunctional_gradedPow_gradedMkZero,
-        ContinuousMonoidHom.mul_apply, toAdd_mul]
-      rw [add_mul, nsmul_add])
-    fun u v ↦ by
-      simp only [LinearMap.add_apply, heisenbergFunctional_gradedBracket_gradedMkZero,
-        ContinuousMonoidHom.mul_apply, toAdd_mul]
-      ring
-
-/-- The Heisenberg functional is additive in its second character. -/
-@[simp]
-theorem heisenbergFunctional_mul_right (ψ' : freeProP p X →ₜ* Multiplicative (ZMod p)) :
-    heisenbergFunctional χ (ψ * ψ') = heisenbergFunctional χ ψ + heisenbergFunctional χ ψ' :=
-  linearMap_ext
-    (fun u ↦ by
-      simp only [LinearMap.add_apply, heisenbergFunctional_gradedPow_gradedMkZero,
-        ContinuousMonoidHom.mul_apply, toAdd_mul]
-      rw [mul_add, nsmul_add])
-    fun u v ↦ by
-      simp only [LinearMap.add_apply, heisenbergFunctional_gradedBracket_gradedMkZero,
-        ContinuousMonoidHom.mul_apply, toAdd_mul]
-      ring
-
-/-- The Heisenberg functional of the trivial character and any character vanishes. -/
-@[simp]
-theorem heisenbergFunctional_one_left : heisenbergFunctional 1 ψ = 0 :=
-  linearMap_ext (fun u ↦ by rw [heisenbergFunctional_gradedPow_gradedMkZero]; simp)
-    fun u v ↦ by rw [heisenbergFunctional_gradedBracket_gradedMkZero]; simp
-
-/-- The Heisenberg functional of any character and the trivial character vanishes. -/
-@[simp]
-theorem heisenbergFunctional_one_right : heisenbergFunctional χ 1 = 0 :=
-  linearMap_ext (fun u ↦ by rw [heisenbergFunctional_gradedPow_gradedMkZero]; simp)
-    fun u v ↦ by rw [heisenbergFunctional_gradedBracket_gradedMkZero]; simp
-
-variable {Y : Type u}
-
-/-- **Naturality of the Heisenberg functional.** A continuous homomorphism `φ : F → F'` between
-free pro-`p` groups, with `F` of finite rank, carries the Heisenberg functional of `χ, ψ` on
-`gr_1(F')` back to the Heisenberg functional of `χ ∘ φ, ψ ∘ φ` on `gr_1(F)`. -/
-theorem heisenbergFunctional_comp_gradedMap (χ ψ : freeProP p Y →ₜ* Multiplicative (ZMod p))
-    (φ : freeProP p X →ₜ* freeProP p Y) :
-    (heisenbergFunctional χ ψ).comp ((gradedMap p φ.toMonoidHom φ.continuous 1).toZModLinearMap p) =
-      heisenbergFunctional (χ.comp φ) (ψ.comp φ) :=
-  linearMap_ext
-    (fun u ↦ by
-      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedPow,
-        gradedMap_gradedMkZero, heisenbergFunctional_gradedPow_gradedMkZero,
-        heisenbergFunctional_gradedPow_gradedMkZero]
-      rfl)
-    fun u v ↦ by
-      rw [LinearMap.comp_apply, AddMonoidHom.coe_toZModLinearMap, gradedMap_gradedBracket_zero_zero,
-        gradedMap_gradedMkZero, gradedMap_gradedMkZero,
-        heisenbergFunctional_gradedBracket_gradedMkZero,
-        heisenbergFunctional_gradedBracket_gradedMkZero]
-      rfl
-
-/-- **Naturality of the Heisenberg functional, on a class.** -/
-theorem heisenbergFunctional_gradedMap (χ ψ : freeProP p Y →ₜ* Multiplicative (ZMod p))
-    (φ : freeProP p X →ₜ* freeProP p Y) (ρ : gradedPiece p (freeProP p X) 1) :
-    heisenbergFunctional χ ψ (gradedMap p φ.toMonoidHom φ.continuous 1 ρ) =
-      heisenbergFunctional (χ.comp φ) (ψ.comp φ) ρ :=
-  LinearMap.congr_fun (heisenbergFunctional_comp_gradedMap χ ψ φ) ρ
-
 end Heisenberg
 
 /-! ### The degree-one form -/
 
 section Form
-
-variable [Finite X]
 
 /-- The Heisenberg functional at a fixed class and first character, as a linear functional of the
 second character. -/
@@ -380,11 +429,11 @@ private theorem degreeOneFormAux_apply (ρ : gradedPiece p (freeProP p X) 1)
   rw [degreeOneFormAux, AddMonoidHom.coe_toZModLinearMap, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
     degreeOneFormRight_apply]
 
-/-- **The degree-one form** of a free pro-`p` group `F` of finite rank: the `𝔽_p`-bilinear form
+/-- **The degree-one form** of a free pro-`p` group `F`: the `𝔽_p`-bilinear form
 `(χ, ψ) ↦ heisenbergFunctional χ ψ ρ` on the continuous `𝔽_p`-dual of `F`, attached
-`𝔽_p`-linearly to a class `ρ ∈ gr_1(F)`. Its matrix in the dual basis of the generators has the
-commutator coordinates of `ρ` above the diagonal and `(p choose 2)` times the `p`-power
-coordinates on it (`TauCeti.freeProP.degreeOneForm_dualBasis_of_lt`,
+`𝔽_p`-linearly to a class `ρ ∈ gr_1(F)`. For `X` finite, its matrix in the dual basis of the
+generators has the commutator coordinates of `ρ` above the diagonal and `(p choose 2)` times the
+`p`-power coordinates on it (`TauCeti.freeProP.degreeOneForm_dualBasis_of_lt`,
 `TauCeti.freeProP.degreeOneForm_dualBasis_self`); for the class of a relator `r ∈ λ_1(F)` these
 are the coordinates Labute attaches to the one-relator group `F ⧸ ⟪r⟫`. -/
 noncomputable def degreeOneForm : gradedPiece p (freeProP p X) 1 →ₗ[ZMod p]
@@ -426,7 +475,9 @@ theorem degreeOneForm_swap (ρ : gradedPiece p (freeProP p X) 1)
     (χ ψ : continuousZModDual p (freeProP p X)) :
     degreeOneForm ρ ψ χ = -degreeOneForm ρ χ ψ := by
   rw [degreeOneForm_apply, degreeOneForm_apply, ← LinearMap.neg_apply]
-  refine LinearMap.congr_fun (linearMap_ext (fun u ↦ ?_) fun u v ↦ ?_) ρ
+  refine LinearMap.congr_fun (linearMap_ext_gradedPiece_one_of_continuous
+    (continuous_heisenbergFunctional_gradedMk _ _)
+    (continuous_heisenbergFunctional_gradedMk _ _).neg (fun u ↦ ?_) fun u v ↦ ?_) ρ
   · rw [LinearMap.neg_apply, heisenbergFunctional_gradedPow_gradedMkZero,
       heisenbergFunctional_gradedPow_gradedMkZero, mul_comm, eq_neg_iff_add_eq_zero, ← add_nsmul,
       ← two_mul, Nat.choose_two_right, Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self p),
@@ -447,8 +498,9 @@ theorem isAlt_degreeOneForm_of_ne_two (hp : p ≠ 2) (ρ : gradedPiece p (freePr
     (degreeOneForm ρ).IsAlt := by
   intro χ
   rw [degreeOneForm_apply]
-  refine (LinearMap.congr_fun (linearMap_ext (g := 0) (fun u ↦ ?_) fun u v ↦ ?_) ρ).trans
-    (LinearMap.zero_apply ρ)
+  refine (LinearMap.congr_fun (linearMap_ext_gradedPiece_one_of_continuous (f₂ := 0)
+    (continuous_heisenbergFunctional_gradedMk _ _) continuous_const (fun u ↦ ?_)
+    fun u v ↦ ?_) ρ).trans (LinearMap.zero_apply ρ)
   · rw [heisenbergFunctional_gradedPow_gradedMkZero, LinearMap.zero_apply, nsmul_eq_mul,
       (ZMod.natCast_eq_zero_iff _ _).mpr (Nat.Prime.dvd_choose_self Fact.out two_ne_zero
         (lt_of_le_of_ne (Nat.Prime.two_le Fact.out) hp.symm)), zero_mul]
@@ -461,10 +513,10 @@ theorem isSymm_degreeOneForm_of_two (hp : p = 2) (ρ : gradedPiece p (freeProP p
   refine ⟨fun χ ψ ↦ ?_⟩
   rw [degreeOneForm_swap, ZMod.neg_eq_self_mod_two]
 
-variable {Y : Type u} [Finite Y]
+variable {Y : Type u}
 
 /-- **The transformation law of the degree-one form.** A continuous homomorphism `φ : F → F'`
-between free pro-`p` groups of finite rank carries the degree-one form of `ρ ∈ gr_1(F)` to the
+between free pro-`p` groups carries the degree-one form of `ρ ∈ gr_1(F)` to the
 degree-one form of `φ_* ρ` pulled back along the transpose of `φ` on the continuous duals:
 `B_{φ_* ρ}(χ, ψ) = B_ρ(χ ∘ φ, ψ ∘ φ)`. In matrices, a change of generators by `P` acts on the
 matrix of the form by `B ↦ Pᵀ B P`. -/
@@ -497,13 +549,22 @@ theorem nondegenerate_degreeOneForm_gradedMap_iff (e : freeProP p X ≃ₜ* free
     rfl
   rw [h, LinearMap.BilinForm.nondegenerate_congr_iff]
 
+/-- In odd rank a nondegenerate degree-one form is not alternating, since a nondegenerate
+alternating form lives on an even-dimensional space (the continuous dual has dimension `Nat.card X`
+by `TauCeti.freeProP.dualBasis`). -/
+theorem not_isAlt_degreeOneForm_of_odd_card (ρ : gradedPiece p (freeProP p X) 1)
+    (hnd : (degreeOneForm ρ).Nondegenerate) (hn : Odd (Nat.card X)) :
+    ¬ (degreeOneForm ρ).IsAlt := fun h ↦ by
+  have : Finite X := Nat.finite_of_card_ne_zero hn.pos.ne'
+  have := LinearMap.BilinForm.IsAlt.even_finrank h hnd
+  rw [Module.finrank_eq_nat_card_basis (dualBasis p X)] at this
+  exact (Nat.not_even_iff_odd.2 hn) this
+
 end Form
 
 /-! ### Coordinates of the degree-one form -/
 
 section Coordinates
-
-variable [Finite X]
 
 /-- Evaluation of the degree-one form at two fixed characters, as a linear functional on
 `gr_1(F)`. -/
@@ -518,7 +579,7 @@ private theorem evalDegreeOneForm_apply (χ ψ : continuousZModDual p (freeProP 
     (ρ : gradedPiece p (freeProP p X) 1) : evalDegreeOneForm χ ψ ρ = degreeOneForm ρ χ ψ := by
   rw [evalDegreeOneForm, AddMonoidHom.coe_toZModLinearMap, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
 
-variable [LinearOrder X]
+variable [Finite X] [LinearOrder X]
 
 /-- **The degree-one form reads off the commutator coordinates**: for `i < j`, the value of the
 form of `ρ` on the `i`-th and `j`-th coordinate characters is the coefficient of `[⟦x_i⟧, ⟦x_j⟧]` in
@@ -594,10 +655,12 @@ theorem degreeOneForm_dualBasis_self (ρ : gradedPiece p (freeProP p X) 1) (i : 
       simp [Pi.single_apply, mul_comm]
   exact (evalDegreeOneForm_apply _ _ ρ).symm.trans (LinearMap.congr_fun h ρ)
 
+omit [LinearOrder X] in
 /-- **At `p = 2` the degree-one form determines the class**: the diagonal entries of its matrix
 are the `2`-power coordinates and the entries above the diagonal the commutator coordinates. -/
 theorem degreeOneForm_injective_of_two (hp : p = 2) :
     Function.Injective (degreeOneForm (p := p) (X := X)) := by
+  let : LinearOrder X := IsWellOrder.linearOrder WellOrderingRel
   intro ρ₁ ρ₂ h
   rw [(degreeOneBasis p X).ext_elem_iff]
   rintro (k | ⟨⟨i, j⟩, hij⟩)
@@ -883,6 +946,8 @@ theorem exists_continuousMulEquiv_degreeOneForm_gradedMap_dualBasis
   rw [degreeOneForm_gradedMap, LinearMap.compl₁₂_apply, he, he, Module.Basis.equiv_apply,
     Module.Basis.equiv_apply, Equiv.refl_apply, Equiv.refl_apply]
 
+end Automorphism
+
 /-- **Any matrix of the degree-one form is attained in the dual basis of the generators after an
 automorphism.** For every class `ρ ∈ gr_1(F)` and every basis `η` of the continuous `𝔽_p`-dual of
 `F`, there is a continuous automorphism `e` of `F` such that the matrix of the degree-one form of
@@ -900,8 +965,6 @@ theorem exists_continuousMulEquiv_toMatrix_degreeOneForm_gradedMap [Fintype X] [
   obtain ⟨e, he⟩ := exists_continuousMulEquiv_degreeOneForm_gradedMap_dualBasis ρ η
   exact ⟨e, Matrix.ext fun i j ↦ by
     rw [LinearMap.BilinForm.toMatrix_apply, LinearMap.BilinForm.toMatrix_apply, he]⟩
-
-end Automorphism
 
 end freeProP
 

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
+import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 
 /-!
 # Locally Lipschitz functions are weakly differentiable
@@ -35,7 +36,8 @@ of `φ` inside `Ω`, so it agrees there with a globally Lipschitz function
 (`LipschitzWith.integral_lineDeriv_mul_eq`) applies to that extension, and near the support of `φ`
 its line derivative is `u'` almost everywhere. Measurability and local integrability of `u'`
 come from `LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`. A vector-valued `u` is
-reduced to the real case by testing the identity against continuous linear functionals.
+reduced to the real case by testing the identity against continuous linear functionals
+(`TauCeti.hasWeakLineDerivOn_of_forall_strongDual`).
 
 ## Main declarations
 
@@ -102,19 +104,19 @@ open set `Ω` and has line derivative `u' x` in the direction `v` at almost ever
 theorem _root_.LocallyLipschitzOn.hasWeakLineDerivOn [CompleteSpace F]
     (hu : LocallyLipschitzOn Ω u) (h : ∀ᵐ x ∂μ, x ∈ Ω → HasLineDerivAt ℝ u (u' x) x v) :
     HasWeakLineDerivOn μ Ω u u' v := by
-  have hui := hu.continuousOn.locallyIntegrableOn (μ := μ) Ω.isOpen.measurableSet
   have hu'i := hu.locallyIntegrableOn_of_ae_hasLineDerivAt (μ := μ) Ω.isOpen h
-  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hui, hu'i, fun φ => ?_⟩
   -- Test the identity against every continuous linear functional `ℓ`, reducing to `ℓ ∘ u`.
-  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ => ?_
+  refine hasWeakLineDerivOn_of_forall_strongDual
+    (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) hu'i fun ℓ => ?_
   have hℓ : LocallyLipschitzOn Ω fun x => ℓ (u x) := fun x hx => by
     obtain ⟨C, s, hs, hC⟩ := hu hx
     exact ⟨‖ℓ‖₊ * C, s, hs, ℓ.lipschitzWith.comp_lipschitzOnWith hC⟩
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
+    hℓ.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet, ℓ.locallyIntegrableOn_comp hu'i,
+    fun φ => ?_⟩
   have key := integral_mul_eq_neg_integral_lineDeriv_mul hℓ
     (h.mono fun x hx hxΩ => (ℓ.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hx hxΩ) :)) φ
-  rw [map_neg, ← ℓ.integral_comp_comm (integrable_lineDeriv_smul_of_locallyIntegrableOn hui φ v),
-    ← ℓ.integral_comp_comm (φ.integrable_smul hu'i)]
-  simp only [map_smul, smul_eq_mul]
+  simp only [smul_eq_mul]
   have hc : ∫ x, (φ : E → ℝ) x * ℓ (u' x) ∂μ = ∫ x, ℓ (u' x) * (φ : E → ℝ) x ∂μ := by
     simp_rw [mul_comm]
   rw [hc, key, neg_neg]

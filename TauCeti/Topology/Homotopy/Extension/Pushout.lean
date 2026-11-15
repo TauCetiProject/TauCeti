@@ -279,11 +279,9 @@ theorem exists_homotopic_id_of_homotopic_id (h : IsPushout i a j k)
   simp only [TopCat.hom_comp] at hFE hEψ hFE' ⊢
   -- `ψ` is a left and `F ≫ Fg` a right homotopy inverse of `E`, so `F ≫ Fg` is a left one too.
   have hx : ((Fg.hom.comp F.hom).comp E.hom).Homotopic (ContinuousMap.id _) :=
-    ((hEψ.homotopic_of_comp_homotopic_id (r := Fg.hom.comp F.hom) hFE).symm.comp
-      (.refl E.hom)).trans hEψ
+    hFE.comp_homotopic_id_of_comp_homotopic_id (f := Fg.hom.comp F.hom) hEψ
   -- `Ff ≫ E'` is a left and `E ≫ F` a right homotopy inverse of `Fg`, so `E ≫ F` is a left one too.
-  exact ((hFE'.homotopic_of_comp_homotopic_id (r := F.hom.comp E.hom) hx).symm.comp
-    (.refl Fg.hom)).trans hFE'
+  exact hx.comp_homotopic_id_of_comp_homotopic_id (f := F.hom.comp E.hom) hFE'
 
 end ChangeOfBase
 

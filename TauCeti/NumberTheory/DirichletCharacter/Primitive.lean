@@ -55,7 +55,7 @@ theorem IsPrimitive.mul_eq_one_iff {χ : DirichletCharacter R N}
     (hχ : χ.IsPrimitive) (hψ : ψ.IsPrimitive) (hψq : ψ.IsQuadratic) :
     χ.mul ψ = 1 ↔ ∃ h : N = M, h ▸ χ = ψ := by
   have : NeZero (Nat.lcm N M) := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne M)⟩
-  have hq := isQuadratic_changeLevel hψq (Nat.dvd_lcm_right N M)
+  have hq := hψq.changeLevel (Nat.dvd_lcm_right N M)
   rw [DirichletCharacter.mul, mul_eq_one_iff_eq_inv, hq.inv]
   exact hχ.changeLevel_eq_changeLevel_iff hψ _ _
 

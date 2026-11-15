@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
+public import TauCeti.Topology.Homotopy.Cube.Concatenation
 public import TauCeti.Topology.Homotopy.Homotopic.With
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
@@ -42,7 +43,9 @@ distinguished direction, and in the order of Mathlib's `HomotopyGroup.mul_spec`.
 * `TauCeti.BasedTopPair.pathSpace`: the space of paths from `A` to `a₀`.
 * `TauCeti.RelGenLoop.pathSpaceHomeo`: relative cubes are generalized loops in the path space.
 * `TauCeti.RelGenLoop.transAt`, `TauCeti.RelGenLoop.symmAt`: concatenation and reversal of
-  relative cubes along a direction of `I^N`.
+  relative cubes along a direction of `I^N`, which are `TauCeti.cubeTransAt` and
+  `TauCeti.cubeSymmAt` on the underlying maps (`TauCeti.RelGenLoop.coe_transAt`,
+  `TauCeti.RelGenLoop.coe_symmAt`).
 * `TauCeti.RelHomotopyGroup.pathSpaceEquiv`, `TauCeti.RelHomotopyGroup.pathSpaceMulEquiv`:
   `π_{n+1}(X, A, a₀) ≅ π_n(P, c)`.
 * `TauCeti.RelHomotopyGroup.group`, `TauCeti.RelHomotopyGroup.commGroup`: the group structures,
@@ -191,6 +194,17 @@ theorem symmAt_apply (i : N) (p : RelGenLoop N X) (s : I) (t : I^N) :
     symmAt i p (s, t) = p (s, fun j => if j = i then σ (t i) else t j) := by
   rw [symmAt, pathSpaceHomeo_symm_apply, GenLoop.symmAt, GenLoop.coe_copy]
   exact pathSpaceHomeo_apply_apply _ _ _
+
+/-- The concatenation of two relative cubes is their concatenation as maps out of the cube. -/
+theorem coe_transAt (i : N) (p q : RelGenLoop N X) :
+    (transAt i p q : C(I × (I^N), X.pair.fst)) = cubeTransAt i p q fun s t ↦
+      (apply_update p s t i (.inr rfl)).trans (apply_update q s t i (.inl rfl)).symm :=
+  ContinuousMap.ext fun w ↦ (transAt_apply i p q w.1 w.2).trans (cubeTransAt_apply ..).symm
+
+/-- The reversal of a relative cube is its reversal as a map out of the cube. -/
+theorem coe_symmAt (i : N) (p : RelGenLoop N X) :
+    (symmAt i p : C(I × (I^N), X.pair.fst)) = cubeSymmAt i p :=
+  ContinuousMap.ext fun w ↦ (symmAt_apply i p w.1 w.2).trans (cubeSymmAt_apply ..).symm
 
 @[simp]
 theorem pathSpaceHomeo_transAt (i : N) (p q : RelGenLoop N X) :

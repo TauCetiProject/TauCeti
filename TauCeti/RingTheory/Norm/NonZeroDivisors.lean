@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Nonsingular
 public import Mathlib.RingTheory.Norm.Defs
 
 /-!
-# Norms of non-zero-divisors in finite free algebras
+# Norms of non-zero-divisors and units in finite free algebras
 
 Let `S` be a commutative `R`-algebra that is free of finite rank as an `R`-module. The norm
 `Algebra.norm R x` is the determinant of multiplication by `x` in a basis. By the theorem of
@@ -21,9 +21,10 @@ injective exactly when its determinant is a non-zero-divisor. Hence `x` is a non
 with no domain hypothesis on `R` or `S`.
 
 By the Cayley–Hamilton theorem `x` divides the image of its norm in `S`
-(`Algebra.dvd_algebraMap_norm`). Together these say that every non-zero-divisor of `S` divides
-the image of a non-zero-divisor of `R`, which identifies the total ring of fractions of `S` with
-a localization of `S` at non-zero-divisors of `R`
+(`Algebra.dvd_algebraMap_norm`). Hence `x` is a unit of `S` exactly when its norm is a unit of `R`
+(`Algebra.isUnit_norm_iff`). The first two results together say that every non-zero-divisor of
+`S` divides the image of a non-zero-divisor of `R`, which identifies the total ring of fractions
+of `S` with a localization of `S` at non-zero-divisors of `R`
 (`TauCeti.RingTheory.Localization.FiniteFree`).
 
 ## Main results
@@ -32,6 +33,7 @@ a localization of `S` at non-zero-divisors of `R`
   is left regular exactly when `x` is.
 * `Algebra.norm_mem_nonZeroDivisors_iff`: `x` is a non-zero-divisor exactly when its norm is.
 * `Algebra.dvd_algebraMap_norm`: `x` divides the image of its norm.
+* `Algebra.isUnit_norm_iff`: `x` is a unit exactly when its norm is.
 -/
 
 public section
@@ -79,5 +81,11 @@ theorem dvd_algebraMap_norm (x : S) : x ∣ algebraMap R S (norm R x) := by
     simpa only [Polynomial.coeff_map] using hp.dvd_coeff_zero
   rw [norm_eq_matrix_det b, Matrix.det_eq_sign_charpoly_coeff, map_mul]
   exact Dvd.dvd.mul_left hdvd _
+
+/-- In a commutative algebra that is free of finite rank, an element is a unit exactly when its
+norm is a unit of the base ring. -/
+@[simp]
+theorem isUnit_norm_iff {x : S} : IsUnit (norm R x) ↔ IsUnit x :=
+  ⟨fun h ↦ isUnit_of_dvd_unit (dvd_algebraMap_norm x) (h.map _), fun h ↦ h.map _⟩
 
 end Algebra

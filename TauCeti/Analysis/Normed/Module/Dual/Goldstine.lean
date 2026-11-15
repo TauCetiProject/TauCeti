@@ -50,13 +50,7 @@ of `x`. -/
 theorem closure_image_inclusionInDoubleDualWeak_closedBall (x : E) (r : ℝ) :
     closure (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall x r)) =
       WeakDual.toStrongDual ⁻¹' closedBall (inclusionInDoubleDual 𝕜 E x) r := by
-  -- `WeakDual` carries no `IsScalarTower ℝ 𝕜` or `LocallyConvexSpace ℝ` instance; transfer them
-  -- from the continuous dual and from the seminorms defining the weak-star topology, as needed
-  -- for real Hahn–Banach separation. The real structure on `E` gives convexity of balls.
-  let : IsScalarTower ℝ 𝕜 (WeakDual 𝕜 (StrongDual 𝕜 E)) :=
-    inferInstanceAs (IsScalarTower ℝ 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 E)))
-  let : LocallyConvexSpace ℝ (WeakDual 𝕜 (StrongDual 𝕜 E)) :=
-    (WeakDual.withSeminorms 𝕜 (StrongDual 𝕜 E)).toLocallyConvexSpace
+  -- The real structure on `E` gives convexity of balls.
   let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
   let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
   set S := inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall x r)

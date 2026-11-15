@@ -141,7 +141,6 @@ theorem toAlgEquiv_conjAct_kUnit :
   · simp [ConjAct.units_smul_def, k_mul_e, mul_assoc, smul_smul, sq]
   · simp [ConjAct.units_smul_def, k_mul_f, mul_assoc, smul_smul, sq]
   · simp [ConjAct.units_smul_def, mul_assoc]
-  · simp [ConjAct.units_smul_def]
 
 /-- Conjugation by an integer power of `K` rescales `E`. -/
 theorem kUnit_zpow_mul_e_mul_inv (b : ℤ) :

@@ -141,7 +141,7 @@ variable [W.IsElliptic]
 `p`-torsion of `W` over `Ω` is trivial exactly when it is over `AlgebraicClosure K`, since
 `AlgebraicClosure K` embeds into `Ω` and an extension of an algebraically closed field adds no
 torsion. -/
-theorem isSupersingular_iff_of_isAlgClosed (hp : p ≠ 0) (Ω : Type*) [Field Ω] [IsAlgClosed Ω]
+theorem isSupersingular_iff_of_isAlgClosed (Ω : Type*) [Field Ω] [IsAlgClosed Ω]
     [Algebra K Ω] [DecidableEq Ω] :
     W.IsSupersingular p ↔ AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point p = ⊥ := by
   classical
@@ -154,24 +154,24 @@ theorem isSupersingular_iff_of_isAlgClosed (hp : p ≠ 0) (Ω : Type*) [Field Ω
   have hbc : (W.baseChange (AlgebraicClosure K)).baseChange Ω = W.baseChange Ω :=
     map_baseChange W (IsScalarTower.toAlgHom K (AlgebraicClosure K) Ω)
   rw [IsSupersingular, ← torsionBy_baseChange_eq_bot_iff_of_isAlgClosed
-    (W.baseChange (AlgebraicClosure K)) (Ω := Ω) (Nat.cast_ne_zero.mpr hp), hbc]
+    (W.baseChange (AlgebraicClosure K)) (Ω := Ω), hbc]
 
 /-- **Supersingularity is invariant under field extension**: for an arbitrary extension `L / K`,
 not necessarily algebraic, `W` is supersingular exactly when its base change to `L` is. -/
-theorem isSupersingular_baseChange_iff (hp : p ≠ 0) (L : Type*) [Field L] [Algebra K L] :
+theorem isSupersingular_baseChange_iff (L : Type*) [Field L] [Algebra K L] :
     (W.baseChange L).IsSupersingular p ↔ W.IsSupersingular p := by
   classical
   have : (W.baseChange L).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   -- As above, `map_baseChange` collapses the double base change along `K → L → AlgebraicClosure L`.
   have hbc : (W.baseChange L).baseChange (AlgebraicClosure L) = W.baseChange (AlgebraicClosure L) :=
     map_baseChange W (IsScalarTower.toAlgHom K L (AlgebraicClosure L))
-  rw [isSupersingular_iff_of_isAlgClosed hp (AlgebraicClosure L),
-    W.isSupersingular_iff_of_isAlgClosed hp (AlgebraicClosure L), hbc]
+  rw [isSupersingular_iff_of_isAlgClosed (AlgebraicClosure L),
+    W.isSupersingular_iff_of_isAlgClosed (AlgebraicClosure L), hbc]
 
 /-- **Ordinarity is invariant under field extension.** -/
-theorem isOrdinary_baseChange_iff (hp : p ≠ 0) (L : Type*) [Field L] [Algebra K L] :
+theorem isOrdinary_baseChange_iff (L : Type*) [Field L] [Algebra K L] :
     (W.baseChange L).IsOrdinary p ↔ W.IsOrdinary p :=
-  (isSupersingular_baseChange_iff hp L).not
+  (isSupersingular_baseChange_iff L).not
 
 end Elliptic
 

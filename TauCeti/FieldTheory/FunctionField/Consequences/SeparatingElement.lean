@@ -298,11 +298,7 @@ theorem exists_mem_transcendental_and_isSeparable_adjoin [PerfectField k]
     (hlt : degree D < p * (2 * (finrank k V : ℤ) - 2)) :
     ∃ x ∈ V, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
   obtain ⟨x, hxV, hx⟩ := exists_mem_notMem_fieldRange_frobenius hF hex p hD₀ hDg hV hlt
-  cases (inferInstance : ExpChar F p) with
-  | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
-  | prime hp =>
-    let _ : Fact p.Prime := ⟨hp⟩
-    exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
+  exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
 
 end Divisor
 
@@ -344,7 +340,7 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
   -- It suffices to find a separating element of `L(W)`.
   suffices hx : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F by
     obtain ⟨x, hxW, hxt, hxs⟩ := hx
-    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
+    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW
     exact ⟨x, hxt, hxs, by omega⟩
   obtain ⟨p, hp⟩ := ExpChar.exists F
   cases hp with

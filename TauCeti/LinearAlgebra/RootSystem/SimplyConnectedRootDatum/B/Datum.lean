@@ -157,10 +157,6 @@ private lemma corootIdx_typeBReflIdx (z w : Fin (2 * n) × Fin n) :
   rw [typeBReflIdx, corootIdx_index hRw, corootIdx_def, corootIdx_def, rootIdx_def,
     ← hp, ← hq, ← hu, ← hv]
   refine smul_right_injective _ (by norm_num : (2 : ℤ) ≠ 0) ?_
-  have hc : (2 : ℤ) * (rootOfPair p q ⬝ᵥ corootOfPair u v) =
-      rootOfPair p q ⬝ᵥ signedCoweight u + rootOfPair p q ⬝ᵥ signedCoweight v := by
-    rw [← dotProduct_add, ← corootOfPair_add_self u v, dotProduct_add]
-    ring
   calc (2 : ℤ) • (corootOfPair u v -
         (rootOfPair p q ⬝ᵥ corootOfPair u v) • corootOfPair p q)
       = (2 : ℤ) • corootOfPair u v -
@@ -169,7 +165,7 @@ private lemma corootIdx_typeBReflIdx (z w : Fin (2 * n) × Fin n) :
     _ = signedCoweight u + signedCoweight v -
           (rootOfPair p q ⬝ᵥ signedCoweight u + rootOfPair p q ⬝ᵥ signedCoweight v) •
             corootOfPair p q := by
-        rw [two_smul_corootOfPair, hc]
+        rw [two_smul_corootOfPair, two_mul_dotProduct_corootOfPair]
     _ = (signedCoweight u - (rootOfPair p q ⬝ᵥ signedCoweight u) • corootOfPair p q) +
           (signedCoweight v - (rootOfPair p q ⬝ᵥ signedCoweight v) • corootOfPair p q) := by
         simp only [add_smul]
@@ -188,8 +184,7 @@ private lemma rootIdx_injective : Injective (rootIdx : Fin (2 * n) × Fin n → 
 private lemma corootIdx_injective : Injective (corootIdx : Fin (2 * n) × Fin n → Fin n → ℤ) := by
   intro z z' h
   refine index_eq_of_pair_mem_iff fun m => ?_
-  rw [← two_mul_signedWeight_dotProduct_corootIdx_iff,
-    ← two_mul_signedWeight_dotProduct_corootIdx_iff, h]
+  rw [← signedWeight_dotProduct_corootIdx_pos_iff, ← signedWeight_dotProduct_corootIdx_pos_iff, h]
 
 /-! ## The enumeration of the roots -/
 

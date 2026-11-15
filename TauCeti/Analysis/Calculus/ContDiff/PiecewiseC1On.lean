@@ -42,14 +42,21 @@ curve for which these hypotheses can be established.
 * `TauCeti.IsPiecewiseC1On.of_breakpoints`, `TauCeti.IsPiecewiseC1On.exists_breakpoints` —
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
 * `TauCeti.IsPiecewiseC1On.mono` — restrict the regularity to a subinterval `[[c, d]] ⊆ [[a, b]]`.
+* `TauCeti.IsPiecewiseC1On.congr` — the predicate only depends on the curve on `[[a, b]]`.
 * `TauCeti.isPiecewiseC1On_comm`, `TauCeti.IsPiecewiseC1On.symm` — endpoint-swap invariance.
 * `TauCeti.IsPiecewiseC1On.add`, `TauCeti.IsPiecewiseC1On.sub`,
   `TauCeti.IsPiecewiseC1On.const_smul` — the predicate is stable under the module operations
   on curves, the two breakpoint sets being merged by union.
+* `ContDiffOn.comp_isPiecewiseC1On` — composition with a map that is `C¹` on a set containing
+  the trace, with the same breakpoints.
 * `TauCeti.IsPiecewiseC1On.comp_const_sub` — reversal `t ↦ γ (c - t)` preserves the predicate,
   with reflected endpoints and breakpoints.
+* `TauCeti.IsPiecewiseC1On.comp_add_const` — translation `t ↦ γ (t + c)` of the parameter.
 * `TauCeti.IsPiecewiseC1On.if_le` — the concatenation `t ↦ if t ≤ b then γ t else δ t` of a curve
   on `[a, b]` and a curve on `[b, c]` agreeing at `b` is piecewise `C¹` on `[a, c]`.
+* `TauCeti.IsPiecewiseC1On.trans`, `TauCeti.IsPiecewiseC1On.trans_iterate` — a curve that is
+  piecewise `C¹` on `[[a, b]]` and on `[[b, c]]` is piecewise `C¹` on `[[a, c]]`, and likewise
+  along a finite chain of parameters.
 * `TauCeti.IsPiecewiseC1On.exists_finset_differentiableAt`,
   `TauCeti.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a finite
   (hence countable) set, in the exact shapes the raw contour-integral lemmas consume.
@@ -144,6 +151,14 @@ theorem IsPiecewiseC1On.mono (h : IsPiecewiseC1On γ a b) {c d : ℝ}
   obtain ⟨hlu, hvu⟩ := (Icc_subset_Icc_iff (hxuv.1.trans hxuv.2).le).1 huv
   exact Finset.mem_filter.mpr ⟨hxp, hlu.trans_lt hxuv.1, hxuv.2.trans_le hvu⟩
 
+/-- Piecewise-`C¹` regularity only depends on the curve on `[[a, b]]`: a curve agreeing there
+with a piecewise-`C¹` curve is piecewise `C¹`, with the same breakpoints. -/
+theorem IsPiecewiseC1On.congr {η : ℝ → E} (h : IsPiecewiseC1On γ a b)
+    (heq : EqOn η γ (uIcc a b)) : IsPiecewiseC1On η a b := by
+  obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
+  exact .of_breakpoints (h.continuousOn.congr heq) p hp fun c d hcd hdisj =>
+    (hC1 c d hcd hdisj).congr fun t ht => heq (hcd ht)
+
 /-- Piecewise-`C¹` regularity is symmetric in the endpoints, since `[[a, b]] = [[b, a]]`. -/
 theorem isPiecewiseC1On_comm : IsPiecewiseC1On γ a b ↔ IsPiecewiseC1On γ b a := by
   simp only [isPiecewiseC1On_iff, Set.uIcc_comm a b, min_comm a b, max_comm a b]
@@ -183,6 +198,17 @@ theorem IsPiecewiseC1On.const_smul {R : Type*} [Semiring R] [Module R E] [SMulCo
   exact ⟨h.continuousOn.const_smul c, p, hp,
     fun u v huv hdisj => (hC1 u v huv hdisj).const_smul c⟩
 
+/-- **Composition with a `C¹` map.** If `f` is `C¹` on a set containing the trace of a
+piecewise-`C¹` curve `γ` on `[[a, b]]`, then `f ∘ γ` is piecewise `C¹` there, with the same
+breakpoints. -/
+theorem _root_.ContDiffOn.comp_isPiecewiseC1On {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : E → F} {U : Set E} (hf : ContDiffOn ℝ 1 f U)
+    (h : IsPiecewiseC1On γ a b) (hmap : MapsTo γ (uIcc a b) U) :
+    IsPiecewiseC1On (f ∘ γ) a b := by
+  obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
+  exact .of_breakpoints (hf.continuousOn.comp h.continuousOn hmap) p hp fun c d hcd hdisj =>
+    hf.comp (hC1 c d hcd hdisj) fun t ht => hmap (hcd ht)
+
 /-- **Reversal of a piecewise-`C¹` curve.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the
 reversed curve `t ↦ γ (c - t)` is piecewise `C¹` on `[[c - a, c - b]]`, with the reflected
 breakpoints. -/
@@ -210,6 +236,15 @@ theorem IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
         ⟨by linarith [hx.2], by linarith [hx.1]⟩
     exact (hC1 _ _ hsub hdisj').comp (contDiff_const.sub contDiff_id).contDiffOn
       fun t ht => ⟨by linarith [ht.2], by linarith [ht.1]⟩
+
+/-- **Translation of the parameter.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the translated
+curve `t ↦ γ (t + c)` is piecewise `C¹` on `[[a - c, b - c]]`. -/
+theorem IsPiecewiseC1On.comp_add_const (h : IsPiecewiseC1On γ a b) (c : ℝ) :
+    IsPiecewiseC1On (fun t => γ (t + c)) (a - c) (b - c) := by
+  -- Translation is reversal about `0` followed by reversal about `-c`.
+  convert (h.comp_const_sub 0).comp_const_sub (-c) using 1
+  · simp
+  all_goals ring
 
 /-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
 piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
@@ -253,6 +288,35 @@ theorem IsPiecewiseC1On.if_le {δ : ℝ → E} {c : ℝ} (h₁ : IsPiecewiseC1On
     · have hsub : Icc d e ⊆ Icc b c := fun t ht => ⟨hbd.trans ht.1, (hde ht).2⟩
       refine (hC₂ d e (uIcc_of_le hbc ▸ hsub) (Set.disjoint_left.2 fun x hx hxde =>
         hnot x (by simp [Finset.mem_coe.1 hx]) hxde)).congr fun t ht => hη₂ (hsub ht)
+
+/-- **Gluing along adjacent intervals.** A curve that is piecewise `C¹` on `[[a, b]]` and on
+`[[b, c]]` is piecewise `C¹` on `[[a, c]]`. No order between `a`, `b` and `c` is assumed. -/
+theorem IsPiecewiseC1On.trans {c : ℝ} (h₁ : IsPiecewiseC1On γ a b)
+    (h₂ : IsPiecewiseC1On γ b c) : IsPiecewiseC1On γ a c := by
+  have key {a b c : ℝ} (hab : a ≤ b) (hbc : b ≤ c) (h₁ : IsPiecewiseC1On γ a b)
+      (h₂ : IsPiecewiseC1On γ b c) : IsPiecewiseC1On γ a c := by
+    simpa only [ite_self] using h₁.if_le h₂ hab hbc rfl
+  rcases le_total a b with hab | hba <;> rcases le_total b c with hbc | hcb
+  · exact key hab hbc h₁ h₂
+  · rcases le_total a c with hac | hca
+    · exact h₁.mono (uIcc_subset_uIcc left_mem_uIcc (mem_uIcc.2 (.inl ⟨hac, hcb⟩)))
+    · exact h₂.mono (uIcc_subset_uIcc (mem_uIcc.2 (.inr ⟨hca, hab⟩)) right_mem_uIcc)
+  · rcases le_total a c with hac | hca
+    · exact h₂.mono (uIcc_subset_uIcc (mem_uIcc.2 (.inl ⟨hba, hac⟩)) right_mem_uIcc)
+    · exact h₁.mono (uIcc_subset_uIcc left_mem_uIcc (mem_uIcc.2 (.inr ⟨hbc, hca⟩)))
+  · exact (key hcb hba h₂.symm h₁.symm).symm
+
+/-- **Gluing along a finite chain of parameters.** If `γ` is piecewise `C¹` on each interval
+`[[t k, t (k + 1)]]` for `k < n`, then it is piecewise `C¹` on `[[t 0, t n]]`. -/
+theorem IsPiecewiseC1On.trans_iterate {t : ℕ → ℝ} {n : ℕ}
+    (h : ∀ k < n, IsPiecewiseC1On γ (t k) (t (k + 1))) : IsPiecewiseC1On γ (t 0) (t n) := by
+  induction n with
+  | zero =>
+    refine .of_contDiffOn fun x hx => ?_
+    rw [uIcc_self, mem_singleton_iff] at hx
+    rw [uIcc_self, hx]
+    exact contDiffWithinAt_singleton
+  | succ n ih => exact (ih fun k hk => h k (hk.trans n.lt_succ_self)).trans (h n n.lt_succ_self)
 
 /-- **Differentiability off a finite set.** A piecewise-`C¹` curve is differentiable at every
 interior parameter outside a finite set — the breakpoints. -/

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Elliptic homogeneous symbols and their inverses
@@ -30,6 +31,8 @@ degree:
 * `HomogeneousSymbol.spatialDeriv_inverse` and `HomogeneousSymbol.frequencyDeriv_inverse`: the
   derivatives of the inverse are `-(a⁻¹ ∘ ∂a ∘ a⁻¹)`, the formula behind the derivative
   estimates of inverse symbols.
+* `HomogeneousSymbol.isElliptic_adjoint_iff`: between Hilbert spaces, the pointwise adjoint of a
+  symbol is elliptic exactly when the symbol is.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -132,21 +135,14 @@ section Inverse
 
 variable [CompleteSpace V] (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic)
 
-include ha in
-/-- The pointwise inverse of an invertible continuous linear map is smooth along a smooth family,
-as a map of real variables. -/
-private theorem contDiffAt_inverse_coefficient {p : X × E} (hp : p.2 ≠ 0) :
-    ContDiffAt ℝ ∞ (fun q ↦ (a.coefficient q).inverse) p :=
-  (((ha p.1 p.2 hp).contDiffAt_map_inverse (𝕜 := ℂ)).restrict_scalars ℝ).comp p
-    (a.contDiffAt_coefficient hp)
-
 /-- The inverse `(x, ξ) ↦ a (x, ξ)⁻¹` of an elliptic homogeneous symbol `a` of degree `m`, a
 homogeneous symbol of degree `-m`. -/
 noncomputable def inverse (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic) :
     HomogeneousSymbol X E W V (-m) where
   coefficient p := (a.coefficient p).inverse
   zero_covector x := by simp
-  contDiffOn_coefficient _ hp := (contDiffAt_inverse_coefficient a ha hp).contDiffWithinAt
+  contDiffOn_coefficient p hp :=
+    ((a.contDiffAt_coefficient hp).clm_inverse (ha p.1 p.2 hp)).contDiffWithinAt
   homogeneous x ξ t ht := by
     rw [a.homogeneous x ξ t ht, ← Complex.coe_smul, ContinuousLinearMap.inverse_smul,
       ← Complex.ofReal_inv, Complex.coe_smul, Real.rpow_neg ht.le]
@@ -217,29 +213,15 @@ derivative of `a⁻¹` in the direction `q` is `-(a⁻¹ ∘ a' q ∘ a⁻¹)`. 
 theorem fderiv_coefficient_inverse {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
     fderiv ℝ (a.inverse ha).coefficient p q =
       -((a.inverse ha).coefficient p ∘L (fderiv ℝ a.coefficient p q ∘L
-        (a.inverse ha).coefficient p)) := by
-  obtain ⟨x, ξ⟩ := p
-  -- Near `p`, `a⁻¹ ∘ a` is the constant identity, so the product rule for it vanishes.
-  have hloc : ((a.inverse ha).comp a).coefficient =ᶠ[𝓝 (x, ξ)]
-      fun _ ↦ ContinuousLinearMap.id ℂ V := by
-    filter_upwards [(isOpen_compl_singleton.preimage continuous_snd).mem_nhds hp] with q hq
-    rw [coefficient_comp]
-    exact coefficient_inverse_comp_coefficient a ha (x := q.1) (ξ := q.2) hq
-  have hzero := fderiv_coefficient_comp (a.inverse ha) a hp q
-  rw [hloc.fderiv_eq, fderiv_const_apply, zero_apply] at hzero
-  -- Compose `0 = (a⁻¹)' q ∘ a + a⁻¹ ∘ a' q` on the right with `a⁻¹`.
-  have h := congrArg (· ∘L (a.inverse ha).coefficient (x, ξ)) hzero
-  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
-    ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hp,
-    ContinuousLinearMap.comp_id] at h
-  exact eq_neg_of_add_eq_zero_left h.symm
+        (a.inverse ha).coefficient p)) :=
+  (a.differentiableAt_coefficient hp).fderiv_clm_inverse (ha p.1 p.2 hp) q
 
 /-- The spatial derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂ₓa ∘ a⁻¹)`. -/
 theorem spatialDeriv_inverse (v : X) :
     (a.inverse ha).spatialDeriv v =
       -((a.inverse ha).comp ((a.spatialDeriv v).comp (a.inverse ha))).castDegree (by ring) :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 /-- The frequency derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂_ξa ∘ a⁻¹)`; its
@@ -252,6 +234,16 @@ theorem frequencyDeriv_inverse (w : E) :
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 end Inverse
+
+/-! ### Adjoints -/
+
+/-- Between Hilbert spaces, the pointwise adjoint of a homogeneous symbol is elliptic exactly
+when the symbol is. -/
+@[simp]
+theorem isElliptic_adjoint_iff {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+    [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+    {a : HomogeneousSymbol X E V W m} : a.adjoint.IsElliptic ↔ a.IsElliptic := by
+  simp only [isElliptic_iff, coefficient_adjoint, ContinuousLinearMap.isInvertible_adjoint_iff]
 
 end HomogeneousSymbol
 

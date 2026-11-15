@@ -39,9 +39,11 @@ solution.
 These polynomials form a real vector space of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`
 (`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, as functions on the
 closed disc, has real dimension `max (k + 1) 0` (`TauCeti.finrank_unitDiscCauchyRiemannKernel`).
-For `k ≥ -1` this is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once
-the cokernel is known to vanish; the cokernel, which needs Sobolev completions, is not treated
-here.
+Evaluation identifies the conjugate-reciprocal polynomials with the solutions
+(`TauCeti.conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel`); for `k = 0`, real boundary
+values, the solutions are the real constants. For `k ≥ -1` the dimension is `1 + k`, rank plus
+Maslov index, as the Riemann–Roch formula predicts once the cokernel is known to vanish; the
+cokernel, which needs Sobolev completions, is not treated here.
 
 For odd Maslov index `k = 2 * m + 1` the coefficients pair off as `a_{k-j} = conj aⱼ`, so a
 solution is `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(k-j))` and is determined by its Taylor coefficients
@@ -62,6 +64,9 @@ coefficients with Fourier coefficients of boundary values in
 * `TauCeti.unitDiscCauchyRiemannKernel k`: the real subspace of functions on the closed unit disc
   that are restrictions of functions holomorphic on the open unit disc and continuous on its
   closure, satisfying `u w = w ^ k * conj (u w)` on the unit circle.
+* `TauCeti.conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel k`: the real-linear isomorphism
+  from the conjugate-reciprocal polynomials of degree at most `k` to the solutions, by
+  evaluation.
 * `TauCeti.unitDiscCauchyRiemannKernelJetEquiv m`: for `k = 2 * m + 1`, the real-linear
   isomorphism from the solutions to `ℂ^(m+1)` given by the Taylor coefficients of order at most
   `m` at the centre.
@@ -79,6 +84,8 @@ coefficients with Fourier coefficients of boundary values in
   finite-dimensional real vector space.
 * `TauCeti.finrank_unitDiscCauchyRiemannKernel`: the solutions form a real vector space of
   dimension `(k + 1).toNat`.
+* `TauCeti.mem_unitDiscCauchyRiemannKernel_zero_iff`: for Maslov index `0` the solutions are the
+  real constants.
 * `DiffContOnCl.eqOn_sum_iteratedDeriv_div_factorial_of_eq_zpow_mul_conj`: for
   `k = 2 * m + 1`, a solution is `∑_{j ≤ m} (aⱼ zʲ + conj aⱼ z^(k-j))` with `aⱼ = u⁽ʲ⁾(0) / j!`.
 * `DiffContOnCl.eqOn_zero_of_eq_zpow_mul_conj_of_iteratedDeriv_eq_zero`: for `k = 2 * m + 1`, a
@@ -272,14 +279,60 @@ instance finiteDimensional_unitDiscCauchyRiemannKernel (k : ℤ) :
   rw [unitDiscCauchyRiemannKernel_eq_map]
   infer_instance
 
+/-- **The solutions are the conjugate-reciprocal polynomials.** The real-linear isomorphism from
+the conjugate-reciprocal polynomials of degree at most `k` to the solutions of the Cauchy–Riemann
+equation on the unit disc with boundary values on the line `w ^ (k / 2) ℝ`, given by evaluation on
+the closed disc (`TauCeti.conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_apply`). -/
+noncomputable def conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel (k : ℤ) :
+    conjReciprocalPolynomials k ≃ₗ[ℝ] unitDiscCauchyRiemannKernel k :=
+  (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).trans
+    (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map.symm)
+
+/-- The isomorphism evaluates a conjugate-reciprocal polynomial on the closed disc. -/
+@[simp]
+theorem conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_apply
+    (p : conjReciprocalPolynomials k) (z : closedBall (0 : ℂ) 1) :
+    (conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel k p : closedBall (0 : ℂ) 1 → ℂ) z =
+      (p : ℂ[X]).eval (z : ℂ) := by
+  simp only [conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, Submodule.coe_equivMapOfInjective_apply,
+    LinearMap.coe_restrictScalars, evalOn_apply]
+
+/-- The inverse of the isomorphism sends a solution to the polynomial that agrees with it on the
+closed disc. -/
+@[simp]
+theorem eval_conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_symm_apply
+    (g : unitDiscCauchyRiemannKernel k) (z : closedBall (0 : ℂ) 1) :
+    (((conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel k).symm g :
+      conjReciprocalPolynomials k) : ℂ[X]).eval (z : ℂ) = (g : closedBall (0 : ℂ) 1 → ℂ) z := by
+  rw [← conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
 `w ^ (k / 2) ℝ` form a real vector space of dimension `k + 1` when `k ≥ -1`, and `0` when
 `k < 0`. -/
 theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
-    finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
-  rw [unitDiscCauchyRiemannKernel_eq_map, ← finrank_conjReciprocalPolynomials k]
-  exact (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).finrank_eq.symm
+    finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat :=
+  (conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel k).finrank_eq.symm.trans
+    (finrank_conjReciprocalPolynomials k)
 
+/-- **Maslov index zero.** For the boundary condition `u w = conj (u w)` on the unit circle, that
+is, real boundary values, the solutions are exactly the real constants. -/
+theorem mem_unitDiscCauchyRiemannKernel_zero_iff :
+    g ∈ unitDiscCauchyRiemannKernel 0 ↔ ∃ r : ℝ, g = fun _ => (r : ℂ) := by
+  refine ⟨fun hg => ?_, ?_⟩
+  · obtain ⟨p, hp, rfl⟩ := mem_unitDiscCauchyRiemannKernel_iff_exists_eval.mp hg
+    obtain ⟨hp₀, hp₁⟩ := mem_conjReciprocalPolynomials_iff.mp hp
+    have hc : p = C (p.coeff 0) := by
+      ext n
+      rcases n with _ | n
+      · simp
+      · rw [hp₀ (n + 1) (by omega), coeff_C_of_ne_zero n.succ_ne_zero]
+    refine ⟨(p.coeff 0).re, funext fun z => ?_⟩
+    rw [hc, eval_C, coeff_C_zero]
+    exact (conj_eq_iff_re.mp (hp₁ 0 0 (by simp)).symm).symm
+  · rintro ⟨r, rfl⟩
+    exact ⟨fun _ => r, diffContOnCl_const, fun w _ => by simp, rfl⟩
 
 /-! ### Odd Maslov index: the jets at the centre -/
 
@@ -347,9 +400,8 @@ real vector space of solutions with `ℂ^(m+1)`
 value `u 0` and the first derivative `u' 0`. -/
 noncomputable def unitDiscCauchyRiemannKernelJetEquiv (m : ℕ) :
     unitDiscCauchyRiemannKernel (2 * m + 1) ≃ₗ[ℝ] (Fin (m + 1) → ℂ) :=
-  (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map).trans <|
-    (Submodule.equivMapOfInjective _ evalOn_closedBall_injective _).symm.trans
-      (conjReciprocalLowerCoeffEquiv m)
+  (conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel _).symm.trans
+    (conjReciprocalLowerCoeffEquiv m)
 
 /-- The jet isomorphism sends the restriction of a solution `u` to the closed disc to its Taylor
 coefficients `u⁽ʲ⁾(0) / j!` at the centre, for `j ≤ m`. -/
@@ -359,12 +411,10 @@ theorem unitDiscCauchyRiemannKernelJetEquiv_apply (hu : DiffContOnCl ℂ u (ball
     (j : Fin (m + 1)) :
     unitDiscCauchyRiemannKernelJetEquiv m g j = iteratedDeriv j u 0 / (j : ℕ) ! := by
   obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
-  have hsymm : (Submodule.equivMapOfInjective _ evalOn_closedBall_injective
-      (conjReciprocalPolynomials (2 * m + 1))).symm
-        (LinearEquiv.ofEq _ _ unitDiscCauchyRiemannKernel_eq_map g) = ⟨p, hp⟩ := by
+  have hsymm : (conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel _).symm g = ⟨p, hp⟩ := by
     rw [LinearEquiv.symm_apply_eq]
     ext z
-    simp [evalOn_apply, ← hg, h z.2]
+    simp [← hg, h z.2]
   simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.trans_apply, hsymm,
     conjReciprocalLowerCoeffEquiv_apply]
   rw [iteratedDeriv_zero_div_factorial_eq_coeff h]
@@ -380,8 +430,7 @@ theorem unitDiscCauchyRiemannKernelJetEquiv_symm_apply (a : Fin (m + 1) → ℂ)
   have hc (j : Fin (m + 1)) : (q : ℂ[X]).coeff j = a j :=
     coeff_conjReciprocalLowerCoeffEquiv_symm_apply a j
   simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.symm_trans_apply,
-    LinearEquiv.symm_symm, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    Submodule.coe_equivMapOfInjective_apply, LinearMap.coe_restrictScalars, evalOn_apply]
+    LinearEquiv.symm_symm, conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_apply]
   rw [eq_sum_of_mem_conjReciprocalPolynomials q.2, eval_finsetSum, Finset.sum_range]
   simp [hc]
 

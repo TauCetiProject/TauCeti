@@ -45,11 +45,15 @@ theorem mem_realCliffordUnitLevel (n : ℕ) (x : Fin n → ℝ) :
     x ∈ realCliffordUnitLevel n ↔ realCliffordForm n 0 x = 1 := by
   rfl
 
-/-- A positive-definite real Spin group acts transitively on every nonzero quadratic level set in
+/-- A positive-definite real Spin group acts transitively on every quadratic level set in
 dimension at least two. -/
 theorem exists_spinVectorAction_eq_of_posDef (Q : QuadraticForm ℝ V) (hQ : Q.PosDef)
-    (hrank : 2 ≤ Module.finrank ℝ V) {x y : V} (hxy : Q x = Q y) (hy : Q y ≠ 0) :
+    (hrank : 2 ≤ Module.finrank ℝ V) {x y : V} (hxy : Q x = Q y) :
     ∃ s : spinGroup Q, spinVectorAction Q s x = y := by
+  by_cases hy : Q y = 0
+  · have hy0 : y = 0 := hQ.anisotropic y hy
+    have hx0 : x = 0 := hQ.anisotropic x (hxy.trans hy)
+    exact ⟨1, by simp [hx0, hy0]⟩
   obtain ⟨g, hg⟩ := QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate
     Q hQ.anisotropic.nondegenerate hrank hxy hy
   obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_posDef Q hQ g
@@ -66,7 +70,6 @@ theorem exists_realCliffordSpinGroupZero_spinVectorAction_eq (n : ℕ) (hn : 2 �
   apply exists_spinVectorAction_eq_of_posDef _ (posDef_realCliffordForm_zero n)
   · simpa using hn
   · exact hx.trans hy.symm
-  · simp [hy]
 
 /-- The compact real Spin action on the unit level is transitive in dimension at least two. -/
 theorem isPretransitive_realCliffordUnitLevel (n : ℕ) (hn : 2 ≤ n) :

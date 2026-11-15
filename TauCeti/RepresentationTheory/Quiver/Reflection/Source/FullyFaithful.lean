@@ -19,11 +19,11 @@ cokernel of the outgoing map
 `Mᵢ → ∏_{a : i ⟶ b} M_b`.
 
 This file proves that source reflection is fully faithful on morphisms whose target has injective
-outgoing map. Faithfulness follows directly from naturality of the outgoing map. For fullness, a
-morphism of reflected representations determines the components away from `i`. Naturality along
-the reversed arrows says that their product map carries the range of the outgoing map of the source
-into the range for the target. A linear retraction of the target's injective outgoing map then
-recovers the missing component at `i`.
+outgoing map, and full on all morphisms. Faithfulness follows directly from naturality of the
+outgoing map. For fullness, a morphism of reflected representations determines the components away
+from `i`. Naturality along the reversed arrows says that their product map carries the range of the
+outgoing map of the source into the range for the target. A linear section of the surjection of the
+target's vertex space onto that range then recovers the missing component at `i`.
 
 The finite-arrow hypothesis is essential to this argument: it lets a vector in the product be
 written as the sum of its coordinate vectors, so naturality along each reversed arrow determines
@@ -36,10 +36,10 @@ admissible reflection sequence.
 
 ## Main results
 
-* `TauCeti.sourceReflectionFunctor_map_injective`,
-  `TauCeti.sourceReflectionFunctor_map_surjective`, and
-  `TauCeti.sourceReflectionFunctor_map_bijective`: source reflection is fully faithful when the
-  outgoing map of the target is injective.
+* `TauCeti.sourceReflectionFunctor_map_surjective`: source reflection is full.
+* `TauCeti.sourceReflectionFunctor_map_injective` and
+  `TauCeti.sourceReflectionFunctor_map_bijective`: source reflection is faithful, hence fully
+  faithful, when the outgoing map of the target is injective.
 * `TauCeti.nonempty_iso_of_nonempty_iso_sourceReflectRep`: source reflection reflects
   isomorphisms under injectivity of both outgoing maps.
 * `TauCeti.indecomposable_sourceReflectRep`: source reflection preserves indecomposability when
@@ -217,77 +217,76 @@ private theorem sourceHomQuot_mk [Finite (Σ b : Q, (i ⟶ b))]
   rw [sourceHomQuot_mk_single θ e.2 (f e)]
   congr 2
 
-/-- A linear retraction of an injective outgoing map. -/
-private noncomputable def sourceRetraction (_hinj : Function.Injective (outgoingMap N i)) :
-    ((e : Σ b : Q, (i ⟶ b)) → N.obj e.1) →ₗ[k] N.obj i :=
-  (outgoingMap N i).leftInverse
-
-private theorem sourceRetraction_outgoingMap (hinj : Function.Injective (outgoingMap N i))
-    (y : N.obj i) : sourceRetraction hinj (outgoingMap N i y) = y :=
-  LinearMap.leftInverse_apply_of_inj (LinearMap.ker_eq_bot.mpr hinj) y
-
-/-- The missing component at the source, recovered by retracting the coordinatewise map into the
-injective outgoing map of the target. -/
-private noncomputable def sourceHomSource (hinj : Function.Injective (outgoingMap N i)) :
-    M.obj i →ₗ[k] N.obj i :=
-  (sourceRetraction hinj).comp ((sourceHomPi θ).comp (outgoingMap M i))
-
-/-- The recovered source component makes the square of outgoing maps commute. -/
-private theorem outgoingMap_sourceHomSource [Finite (Σ b : Q, (i ⟶ b))]
-    (hinj : Function.Injective (outgoingMap N i))
-    (y : M.obj i) :
-    outgoingMap N i (sourceHomSource θ hinj y) = sourceHomPi θ (outgoingMap M i y) := by
+/-- The coordinatewise map sends the image of the outgoing map of `M` into the image of the
+outgoing map of `N`. -/
+private theorem sourceHomPi_outgoingMap_mem_range [Finite (Σ b : Q, (i ⟶ b))] (y : M.obj i) :
+    sourceHomPi θ (outgoingMap M i y) ∈ LinearMap.range (outgoingMap N i) := by
   have hq : (LinearMap.range (outgoingMap N i)).mkQ
       (sourceHomPi θ (outgoingMap M i y)) = 0 := by
     rw [← sourceHomQuot_mk θ]
     rw [Submodule.mkQ_apply, (Submodule.Quotient.mk_eq_zero _).mpr
       (LinearMap.mem_range_self (outgoingMap M i) y), map_zero]
-  obtain ⟨z, hz⟩ := (Submodule.Quotient.mk_eq_zero _).mp (by
-    simpa only [Submodule.mkQ_apply] using hq)
-  have hsource : sourceHomSource θ hinj y = z := by
-    rw [sourceHomSource, LinearMap.comp_apply, LinearMap.comp_apply, ← hz,
-      sourceRetraction_outgoingMap hinj]
-  rw [hsource, hz]
+  exact (Submodule.Quotient.mk_eq_zero _).mp (by simpa only [Submodule.mkQ_apply] using hq)
+
+/-- The missing component at the source, recovered by composing the coordinatewise map, corestricted
+to the image of the outgoing map of the target, with a linear section of the surjection of the
+source of `N` onto that image. -/
+private noncomputable def sourceHomSource [Finite (Σ b : Q, (i ⟶ b))] :
+    M.obj i →ₗ[k] N.obj i :=
+  (LinearMap.exists_rightInverse_of_surjective (outgoingMap N i).rangeRestrict
+      (LinearMap.range_rangeRestrict _)).choose ∘ₗ
+    ((sourceHomPi θ).comp (outgoingMap M i)).codRestrict (LinearMap.range (outgoingMap N i))
+      (sourceHomPi_outgoingMap_mem_range θ)
+
+/-- The recovered source component makes the square of outgoing maps commute. -/
+private theorem outgoingMap_sourceHomSource [Finite (Σ b : Q, (i ⟶ b))] (y : M.obj i) :
+    outgoingMap N i (sourceHomSource θ y) = sourceHomPi θ (outgoingMap M i y) := by
+  have hsec := (LinearMap.exists_rightInverse_of_surjective (outgoingMap N i).rangeRestrict
+      (LinearMap.range_rangeRestrict _)).choose_spec
+  have := congrArg Subtype.val (LinearMap.congr_fun hsec
+    (((sourceHomPi θ).comp (outgoingMap M i)).codRestrict (LinearMap.range (outgoingMap N i))
+      (sourceHomPi_outgoingMap_mem_range θ) y))
+  simpa [sourceHomSource] using this
 
 open scoped Classical in
 private noncomputable def sourceHomPreimageApp
-    (hinj : Function.Injective (outgoingMap N i)) (j : Q) : M.obj j ⟶ N.obj j :=
+    [Finite (Σ b : Q, (i ⟶ b))] (j : Q) : M.obj j ⟶ N.obj j :=
   if hj : j = i then
-    eqToHom (by rw [hj]) ≫ ModuleCat.ofHom (sourceHomSource θ hinj) ≫ eqToHom (by rw [hj])
+    eqToHom (by rw [hj]) ≫ ModuleCat.ofHom (sourceHomSource θ) ≫ eqToHom (by rw [hj])
   else sourceHomAway θ hj
 
-private theorem sourceHomPreimageApp_self (hinj : Function.Injective (outgoingMap N i)) :
-    sourceHomPreimageApp θ hinj i = ModuleCat.ofHom (sourceHomSource θ hinj) := by
+private theorem sourceHomPreimageApp_self [Finite (Σ b : Q, (i ⟶ b))] :
+    sourceHomPreimageApp θ i = ModuleCat.ofHom (sourceHomSource θ) := by
   classical
   simp [sourceHomPreimageApp]
 
-private theorem sourceHomPreimageApp_of_ne (hinj : Function.Injective (outgoingMap N i))
-    {j : Q} (hj : j ≠ i) : sourceHomPreimageApp θ hinj j = sourceHomAway θ hj := by
+private theorem sourceHomPreimageApp_of_ne [Finite (Σ b : Q, (i ⟶ b))]
+    {j : Q} (hj : j ≠ i) : sourceHomPreimageApp θ j = sourceHomAway θ hj := by
   classical
   simp [sourceHomPreimageApp, hj]
 
 /-- Every coordinate of the outgoing product is indexed by an arrow out of the source, so on that
 product the reconstructed morphism acts coordinatewise as `TauCeti.sourceHomPi`. -/
-private theorem sourceHomPreimageApp_coord (hinj : Function.Injective (outgoingMap N i))
+private theorem sourceHomPreimageApp_coord [Finite (Σ b : Q, (i ⟶ b))]
     (f : (e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :
-    (fun e ↦ sourceHomPreimageApp θ hinj e.1 (f e)) = sourceHomPi θ f :=
+    (fun e ↦ sourceHomPreimageApp θ e.1 (f e)) = sourceHomPi θ f :=
   funext fun e ↦ by
-    rw [sourceHomPreimageApp_of_ne θ hinj (hi.ne_of_hom e.2), sourceHomPi_apply]
+    rw [sourceHomPreimageApp_of_ne θ (hi.ne_of_hom e.2), sourceHomPi_apply]
 
 private theorem sourceHomPreimageApp_naturality
-    [Finite (Σ b : Q, (i ⟶ b))] (hinj : Function.Injective (outgoingMap N i))
+    [Finite (Σ b : Q, (i ⟶ b))]
     {a b : Q} (e : a ⟶ b) :
-    M.map e.toPath ≫ sourceHomPreimageApp θ hinj b =
-      sourceHomPreimageApp θ hinj a ≫ N.map e.toPath := by
+    M.map e.toPath ≫ sourceHomPreimageApp θ b =
+      sourceHomPreimageApp θ a ≫ N.map e.toPath := by
   rcases eq_or_ne a i with rfl | ha
-  · rw [sourceHomPreimageApp_self, sourceHomPreimageApp_of_ne θ hinj (hi.ne_of_hom e)]
+  · rw [sourceHomPreimageApp_self, sourceHomPreimageApp_of_ne θ (hi.ne_of_hom e)]
     refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
-    have hcoord := congrFun (outgoingMap_sourceHomSource θ hinj y) ⟨b, e⟩
+    have hcoord := congrFun (outgoingMap_sourceHomSource θ y) ⟨b, e⟩
     simpa [outgoingMap_apply, sourceHomPi_apply] using hcoord.symm
-  · rw [sourceHomPreimageApp_of_ne θ hinj ha]
+  · rw [sourceHomPreimageApp_of_ne θ ha]
     rcases eq_or_ne b i with rfl | hb
     · exact (hi.isEmpty_hom a).elim e
-    · rw [sourceHomPreimageApp_of_ne θ hinj hb]
+    · rw [sourceHomPreimageApp_of_ne θ hb]
       have hnat := θ.naturality (reflectArrowOfNeOfNe ha hb e).toPath
       rw [sourceFunctorObj_map_reflectArrowOfNeOfNe M hi ha hb e,
         sourceFunctorObj_map_reflectArrowOfNeOfNe N hi ha hb e] at hnat
@@ -296,18 +295,15 @@ private theorem sourceHomPreimageApp_naturality
         (sourceReflectObj_of_ne M hi hb) (sourceReflectObj_of_ne N hi hb)
         (sourceReflectObj_of_ne N hi ha) _ _ (θ.app b) (θ.app a) hnat
 
-private noncomputable def sourceHomPreimage [Finite (Σ b : Q, (i ⟶ b))]
-    (hinj : Function.Injective (outgoingMap N i)) : M ⟶ N :=
-  Paths.liftNatTrans (sourceHomPreimageApp θ hinj)
-    fun e ↦ sourceHomPreimageApp_naturality θ hinj e
+private noncomputable def sourceHomPreimage [Finite (Σ b : Q, (i ⟶ b))] : M ⟶ N :=
+  Paths.liftNatTrans (sourceHomPreimageApp θ)
+    fun e ↦ sourceHomPreimageApp_naturality θ e
 
-private theorem sourceHomPreimage_app [Finite (Σ b : Q, (i ⟶ b))]
-    (hinj : Function.Injective (outgoingMap N i)) (j : Q) :
-    (sourceHomPreimage (θ := θ) hinj).app j = sourceHomPreimageApp θ hinj j := rfl
+private theorem sourceHomPreimage_app [Finite (Σ b : Q, (i ⟶ b))] (j : Q) :
+    (sourceHomPreimage (θ := θ)).app j = sourceHomPreimageApp θ j := rfl
 
-private theorem sourceReflectionFunctor_map_sourceHomPreimage
-    [Finite (Σ b : Q, (i ⟶ b))] (hinj : Function.Injective (outgoingMap N i)) :
-    (sourceReflectionFunctor i hi).map (sourceHomPreimage (θ := θ) hinj) = θ := by
+private theorem sourceReflectionFunctor_map_sourceHomPreimage [Finite (Σ b : Q, (i ⟶ b))] :
+    (sourceReflectionFunctor i hi).map (sourceHomPreimage (θ := θ)) = θ := by
   refine NatTrans.ext (funext fun j ↦ ?_)
   by_cases hj : j = i
   · subst j
@@ -318,15 +314,15 @@ private theorem sourceReflectionFunctor_map_sourceHomPreimage
     induction q using Submodule.Quotient.induction_on with
     | _ f =>
       simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
-      rw [sourceReflectionFunctor_map_app_self_mk (sourceHomPreimage (θ := θ) hinj) hi f]
+      rw [sourceReflectionFunctor_map_app_self_mk (sourceHomPreimage (θ := θ)) hi f]
       simp only [sourceHomPreimage_app]
-      rw [sourceHomPreimageApp_coord θ hinj f,
+      rw [sourceHomPreimageApp_coord θ f,
         ← Submodule.mkQ_apply (LinearMap.range (outgoingMap M i)) f, sourceHomQuot_mk θ f]
-  · have happ : (sourceHomPreimage (θ := θ) hinj).app j =
+  · have happ : (sourceHomPreimage (θ := θ)).app j =
         eqToHom (sourceReflectObj_of_ne M hi hj).symm ≫ θ.app j ≫
           eqToHom (sourceReflectObj_of_ne N hi hj) :=
-      (sourceHomPreimage_app (θ := θ) hinj j).trans (sourceHomPreimageApp_of_ne θ hinj hj)
-    refine (sourceReflectionFunctor_map_app_of_ne (sourceHomPreimage (θ := θ) hinj) hi hj).trans ?_
+      (sourceHomPreimage_app (θ := θ) j).trans (sourceHomPreimageApp_of_ne θ hj)
+    refine (sourceReflectionFunctor_map_app_of_ne (sourceHomPreimage (θ := θ)) hi hj).trans ?_
     exact (congrArg
       (fun g : M.obj j ⟶ N.obj j ↦ eqToHom (sourceReflectObj_of_ne M hi hj) ≫ g ≫
         eqToHom (sourceReflectObj_of_ne N hi hj).symm) happ).trans
@@ -337,12 +333,10 @@ private theorem sourceReflectionFunctor_map_sourceHomPreimage
 
 variable (hi)
 
-/-- **Source reflection is full** on morphisms whose target has injective outgoing map. -/
-theorem sourceReflectionFunctor_map_surjective [Finite (Σ b : Q, (i ⟶ b))]
-    (hinj : Function.Injective (outgoingMap N i)) :
+/-- **Source reflection is full.** -/
+theorem sourceReflectionFunctor_map_surjective [Finite (Σ b : Q, (i ⟶ b))] :
     Function.Surjective fun η : M ⟶ N ↦ (sourceReflectionFunctor i hi).map η :=
-  fun θ ↦ ⟨sourceHomPreimage (θ := θ) hinj,
-    sourceReflectionFunctor_map_sourceHomPreimage θ hinj⟩
+  fun θ ↦ ⟨sourceHomPreimage (θ := θ), sourceReflectionFunctor_map_sourceHomPreimage θ⟩
 
 /-- **Source reflection is fully faithful** on morphisms whose target has injective outgoing
 map. -/
@@ -350,7 +344,7 @@ theorem sourceReflectionFunctor_map_bijective [Finite (Σ b : Q, (i ⟶ b))]
     (hinj : Function.Injective (outgoingMap N i)) :
     Function.Bijective fun η : M ⟶ N ↦ (sourceReflectionFunctor i hi).map η :=
   ⟨sourceReflectionFunctor_map_injective hi hinj,
-    sourceReflectionFunctor_map_surjective hi hinj⟩
+    sourceReflectionFunctor_map_surjective hi⟩
 
 /-- **Source reflection reflects isomorphisms** when both outgoing maps are injective. -/
 theorem nonempty_iso_of_nonempty_iso_sourceReflectRep
@@ -362,8 +356,8 @@ theorem nonempty_iso_of_nonempty_iso_sourceReflectRep
   have θ' : (sourceReflectionFunctor i hi).obj M ≅ (sourceReflectionFunctor i hi).obj N :=
     eqToIso (sourceReflectionFunctor_obj i hi M) ≪≫ θ ≪≫
       eqToIso (sourceReflectionFunctor_obj i hi N).symm
-  obtain ⟨f, hf⟩ := sourceReflectionFunctor_map_surjective (M := M) (N := N) hi hinjN θ'.hom
-  obtain ⟨g, hg⟩ := sourceReflectionFunctor_map_surjective (M := N) (N := M) hi hinjM θ'.inv
+  obtain ⟨f, hf⟩ := sourceReflectionFunctor_map_surjective (M := M) (N := N) hi θ'.hom
+  obtain ⟨g, hg⟩ := sourceReflectionFunctor_map_surjective (M := N) (N := M) hi θ'.inv
   refine ⟨⟨f, g, ?_, ?_⟩⟩
   · refine sourceReflectionFunctor_map_injective (M := M) (N := M) hi hinjM ?_
     simp only [Functor.map_comp, hf, hg]

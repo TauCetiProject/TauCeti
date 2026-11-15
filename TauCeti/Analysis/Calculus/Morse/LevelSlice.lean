@@ -55,7 +55,7 @@ theorem IsNegativeGradient.orbit_strictAnti_of_nonconstant
     exact hanti ht.2.le
   have hgrad : ∀ t ∈ Ioo a b, ∇ f (φ t x) = 0 := by
     intro t ht
-    apply (hφ.isIntegralCurve x).gradient_eq_zero_of_eventually_const_value (hf t)
+    apply (hφ.isIntegralCurve x).gradient_eq_zero_of_eventually_const_value
     exact Filter.Eventually.mono (isOpen_Ioo.mem_nhds ht) fun u hu ↦ hval u hu
   have hderiv : ∀ t ∈ Ioo a b, deriv (fun u ↦ φ u x) t = 0 := by
     intro t ht

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Basic
 public import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 public import TauCeti.RingTheory.Nilpotent.RootString.Basic
@@ -119,9 +119,8 @@ theorem dividedPower_zsmul_apply_mem (e : ι → L) (h : κ → L)
     (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
     (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) (c : ℤ) (k : ι) : ∀ n, ∀ v ∈ M,
     Associative.dividedPower n (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) • v ∈ M := by
-  intro n v hv
-  rw [Associative.dividedPower_zsmul, smul_assoc]
-  exact M.zsmul_mem (dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) _
+  exact fun n => Associative.dividedPower_zsmul_smul_mem c _ M
+    (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv)
 
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
@@ -134,10 +133,9 @@ theorem commute_kostantRootSubgroupPoints {i j : ι} (hij : ⁅e i, e j⁆ = 0)
     (f g : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     Commute (kostantRootSubgroupPoints e h ρ M hM i hi f)
       (kostantRootSubgroupPoints e h ρ M hM j hj g) := by
-  have hcomm := commute_of_lie_eq_zero ρ hij
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  exact commute_baseChangeExp M hcomm _ _ _ _
+  exact commute_baseChangeExp_of_lie_eq_zero ρ M hij _ _ _ _
 
 /-- **The Chevalley commutator relation for Kostant root subgroups.** Suppose the distinguished
 root vectors satisfy `⁅eᵢ, eⱼ⁆ = c • eₖ` with `eₖ` central for both, and let `w` be any
@@ -163,19 +161,10 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq {i j k : ι} {c : ℤ}
       kostantRootSubgroupPoints e h ρ M hM j hj g *
         kostantRootSubgroupPoints e h ρ M hM k hk w *
         kostantRootSubgroupPoints e h ρ M hM i hi f := by
-  -- The commutator of the first two root vectors is `c` times the third.
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ hij
-  -- The third root vector commutes with the other two.
-  have hcxz := commute_of_lie_eq_zero ρ hik
-  have hcyz := commute_of_lie_eq_zero ρ hjk
-  -- Stability of `M` under the divided powers of the scaled commutator.
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  rw [hw, ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk]
-  exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy (Commute.smul_right hcxz c)
-    (Commute.smul_right hcyz c) hi hj _ _ hMz _ _
+  rw [hw]
+  exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hij hik hjk hi hj hk _ _ _ _ _
 
 /-- The Chevalley commutator relation with the third `𝔾ₐ`-point written out: it is the point whose
 parameter is `c` times the product of the parameters of `f` and `g`. -/

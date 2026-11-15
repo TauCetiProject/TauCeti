@@ -71,7 +71,7 @@ namespace InternalGrading
 variable {R : Type u} {A : Type u'} {M : Type v}
 variable [Semiring R] [Semiring A]
 variable [AddCommMonoid M] [Module R M] [Module A M]
-variable {ι : Type} [DecidableEq ι]
+variable {ι : Type*} [DecidableEq ι]
 
 /-- An internally graded module is generated in degree `d` if the `A`-span of its degree-`d`
 homogeneous piece is the whole module.  The grading pieces are `R`-submodules, while `A` is the
@@ -160,7 +160,7 @@ theorem linearMap_eq_zero_of_isGeneratedInDegree [AddMonoid ι] (G : InternalGra
 
 section DirectSum
 
-variable {ι : Type*} {M : ι → Type v} {κ : Type} [DecidableEq κ]
+variable {ι : Type*} {M : ι → Type v} {κ : Type*} [DecidableEq κ]
 variable [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, Module A (M i)]
 
 /-- An external direct sum is generated in degree `d` if every summand is generated in degree
@@ -220,7 +220,7 @@ variable {k : Type u} {A : Type u'} {M : Type v}
 variable [Semiring k] [Semiring A] [Module k A]
 variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
-variable {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
+variable {G : InternalGrading k M ℤ} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}
 
 include 𝒜 in
 omit [IsScalarTower k A M] in
@@ -254,11 +254,24 @@ theorem IsGeneratedInDegree.piece_add_eq_smul (hG : G.IsGeneratedInDegree A d) (
   rw [_root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2]
   exact Submodule.smul_mem_smul (DirectSum.decompose 𝒜 (c i) m).2 (g i).2
 
+omit [IsScalarTower k A M] in
 /-- Over a nonnegatively graded scalar semiring, a module generated in degree `d` has no nonzero
 homogeneous elements of degree below `d`. -/
 theorem IsGeneratedInDegree.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
     (hG : G.IsGeneratedInDegree A d) {p : ℤ} (hp : p < d) : G.piece p = ⊥ := by
-  rw [← sub_add_cancel p d, hG.piece_add_eq_smul 𝒜, h𝒜 _ (by omega), Submodule.bot_smul]
+  classical
+  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.1 ((G.isGeneratedInDegree_iff d).1 hG x)
+  rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
+    DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).2
+    (a := c i) (i := p - d)
+  rw [sub_add_cancel] at h
+  have h0 : (DirectSum.decompose 𝒜 (c i) (p - d) : A) = 0 := by
+    exact (Submodule.eq_bot_iff _).1 (h𝒜 (p - d) (by omega)) _
+      (DirectSum.decompose 𝒜 (c i) (p - d)).2
+  rw [h, h0, zero_smul]
 
 /-- A graded module generated in degree `d` has every homogeneous piece of degree above `d`
 inside `A₊ M`, the products of elements of positive degree with elements of the module. -/
@@ -272,8 +285,8 @@ generated in degree `d'` to a module generated in degree `d < d' + δ` takes val
 The source has no homogeneous elements below degree `d'`, so every nonzero homogeneous image
 has degree strictly above `d`. -/
 theorem apply_mem_smul_top_of_isGeneratedInDegree (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
-    {M' : Type w} [AddCommMonoid M'] [Module k M'] [Module A M'] [IsScalarTower k A M']
-    {G' : InternalGrading k M'} [SetLike.GradedSMul 𝒜 G'.piece] {d' δ : ℤ}
+    {M' : Type w} [AddCommMonoid M'] [Module k M'] [Module A M']
+    {G' : InternalGrading k M' ℤ} [SetLike.GradedSMul 𝒜 G'.piece] {d' δ : ℤ}
     (hG' : G'.IsGeneratedInDegree A d') (hG : G.IsGeneratedInDegree A d) (hd : d < d' + δ)
     {f : M' →ₗ[A] M} (hf : LinearMap.IsHomogeneous f G'.piece G.piece δ) (x : M') :
     f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by

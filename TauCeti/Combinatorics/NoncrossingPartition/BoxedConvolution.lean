@@ -90,11 +90,33 @@ theorem coeff_boxedConvolution {n : ℕ} (hn : n ≠ 0) (f g : R⟦X⟧) :
         (∏ B ∈ π.1.parts, coeff #B f) * ∏ B ∈ (kreweras π).1.parts, coeff #B g := by
   rw [boxedConvolution, coeff_mk, ite_eq_right hn]
 
+/-- A positive coefficient of boxed convolution depends only on the positive coefficients
+of its inputs. -/
+theorem coeff_boxedConvolution_congr {n : ℕ} (hn : n ≠ 0) {f g f' g' : R⟦X⟧}
+    (hf : ∀ k, k ≠ 0 → coeff k f = coeff k f')
+    (hg : ∀ k, k ≠ 0 → coeff k g = coeff k g') :
+    coeff n (f.boxedConvolution g) = coeff n (f'.boxedConvolution g') := by
+  rw [coeff_boxedConvolution hn, coeff_boxedConvolution hn]
+  refine sum_congr rfl fun π _ => congrArg₂ (· * ·) ?_ ?_
+  · exact prod_congr rfl fun B hB => hf #B (π.1.nonempty_of_mem_parts hB).card_pos.ne'
+  · exact prod_congr rfl fun B hB => hg #B ((kreweras π).1.nonempty_of_mem_parts hB).card_pos.ne'
+
 /-- The constant coefficient of the boxed convolution of `f` and `g` is `f₀ g₀`. -/
 @[simp]
 theorem constantCoeff_boxedConvolution (f g : R⟦X⟧) :
     constantCoeff (boxedConvolution f g) = constantCoeff f * constantCoeff g := by
   rw [← coeff_zero_eq_constantCoeff_apply, boxedConvolution, coeff_mk, ite_eq_left rfl]
+
+/-- Applying a homomorphism to the coefficients commutes with scalar boxed convolution. -/
+@[simp]
+theorem map_boxedConvolution {S : Type*} [CommSemiring S] (f g : R⟦X⟧) (a : R →+* S) :
+    map a (f.boxedConvolution g) = (map a f).boxedConvolution (map a g) := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [coeff_map, coeff_zero_eq_constantCoeff_apply, constantCoeff_boxedConvolution,
+      map_mul]
+    simp only [← coeff_zero_eq_constantCoeff_apply, coeff_map]
+  · simp only [coeff_map, coeff_boxedConvolution hn, map_sum, map_mul, map_prod]
 
 /-- The linear coefficient of the boxed convolution of `f` and `g` is `f₁ g₁`. -/
 @[simp]

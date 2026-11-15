@@ -80,14 +80,9 @@ theorem Algebra.exists_norm_eq_of_norm_sub_mem {I : Ideal R} [HenselianRing R I]
     rw [hQP, coeff_C_mul, Matrix.coeff_charpolyRev_eq_neg_trace]
   -- `N(a)` is a unit: it differs from the unit `v` by an element of `I`, which lies in the
   -- Jacobson radical.
-  obtain ⟨ν, hν⟩ : IsUnit (Algebra.norm R a) := by
-    obtain ⟨u, rfl⟩ := hv
-    have h : Algebra.norm R a = u * (↑u⁻¹ * (Algebra.norm R a - u) + 1) := by
-      rw [mul_add, mul_one, ← mul_assoc, Units.mul_inv, one_mul, sub_add_cancel]
-    rw [h]
-    refine u.isUnit.mul (Ideal.isUnit_of_sub_one_mem_jacobson _ ?_)
-    rw [add_sub_cancel_right]
-    exact HenselianRing.jac (I.mul_mem_left _ hav)
+  let := isLocalHom_of_le_jacobson (HenselianRing.jac (I := I))
+  obtain ⟨ν, hν⟩ : IsUnit (Algebra.norm R a) :=
+    (isUnit_map_iff (Ideal.Quotient.mk I) _).mp (by rw [Ideal.Quotient.eq.mpr hav]; exact hv.map _)
   -- Solve the monic equation `Q(t) = κ v N(a)⁻¹` by Hensel's lemma at the approximate root `0`.
   let f := Q - C (κ * (v * (ν⁻¹ : Rˣ)))
   have hf : f.Monic := (Matrix.charpoly_monic _).sub_of_left <| degree_C_le.trans_lt <| by

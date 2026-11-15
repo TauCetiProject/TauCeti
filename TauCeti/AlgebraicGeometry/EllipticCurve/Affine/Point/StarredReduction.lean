@@ -332,7 +332,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero {ϖ : v.valuati
     (hroot : ∀ t : ResidueField v.valuationSubring,
       t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ ≠ 0) :
     W.nonsingularReduction v = ⊤ := by
-  obtain ⟨h₁, -, h₃, -, -, hd⟩ := isTateTerminal_IStar_zero.1 h
+  obtain ⟨h₁, -, h₃, -, -, _⟩ := isTateTerminal_IStar_zero.1 h
   refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx _ hE ↦ ?_
   obtain ⟨t, rfl⟩ := hx
@@ -352,7 +352,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IVStar {ϖ : v.valuationSu
     (hroot : ∀ t : ResidueField v.valuationSubring,
       t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0) :
     W.nonsingularReduction v = ⊤ := by
-  obtain ⟨h₁, h₂, -, h₄, -, hb₆⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨h₁, h₂, -, h₄, -, _⟩ := isTateTerminal_IVStar.1 h
   refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx hy hE ↦ ?_
   obtain ⟨-, t, -, -, ht⟩ := exists_eq_sq_mul_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hx hy

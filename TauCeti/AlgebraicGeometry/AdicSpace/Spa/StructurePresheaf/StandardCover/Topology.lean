@@ -236,7 +236,7 @@ private theorem isInducing_presentationLimitMap_pieces_of_completion
   -- Transport along Remark 8.4 to the presentation limits over `P`.
   exact ((σ (spaBasicOpen Aplus U s) (spaBasicOpen_mem_spaRationalOpens hU)
     le_rfl).isInducing_pi_iff_of_homeomorph
-    (fun t ↦ σ (pieces t) (hrat t) inf_le_left) fun x t ↦ by
+    (fun t ↦ (σ (pieces t) (hrat t) inf_le_left).isInducing) fun x t ↦ by
       rw [σ_apply, σ_apply]
       exact presentationLimitLocIso_hom_presentationLimitMap_apply P Aplus U s S hden hAplus
         hU (spaBasicOpen_mem_spaRationalOpens hU) (hrat t) le_rfl inf_le_left x).mpr hBpl

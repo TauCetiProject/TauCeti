@@ -203,8 +203,8 @@ theorem faithfulSMul_symmetricAlgebraMulSemiringAction_iff :
     letI := ρ.symmetricAlgebraMulSemiringAction
     FaithfulSMul G (SymmetricAlgebra R M) ↔ Function.Injective ρ := by
   let := ρ.symmetricAlgebraMulSemiringAction
-  refine ⟨fun h g₁ g₂ hg ↦ h.eq_of_smul_eq_smul fun p ↦ ?_,
-    fun hρ ↦ ⟨fun h ↦ hρ <| LinearMap.ext fun m ↦ ι_injective R M ?_⟩⟩
+  refine ⟨fun h g₁ g₂ hg ↦ h.eq_of_smul_eq_smul fun p ↦ ?_, fun hρ ↦
+    ⟨fun h ↦ hρ <| LinearMap.ext fun m ↦ SymmetricAlgebra.ι_injective R M ?_⟩⟩
   · simp [symmetricAlgebraMulSemiringAction_smul, hg]
   · simpa [symmetricAlgebraMulSemiringAction_smul] using h (SymmetricAlgebra.ι R M m)
 
@@ -257,7 +257,7 @@ theorem isHomogeneous_symmetricAlgebraInvariants :
 theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
     SymmetricAlgebra.ι R M m ∈ ρ.symmetricAlgebraInvariants ↔ ∀ g : G, ρ g m = m := by
   simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_ι,
-    (ι_injective R M).eq_iff]
+    (SymmetricAlgebra.ι_injective R M).eq_iff]
 
 section Map
 
@@ -330,7 +330,7 @@ algebra exactly when it acts trivially on its degree-one generators. -/
 theorem ker_symmetricAlgebra : ρ.symmetricAlgebra.ker = ρ.ker := by
   ext g
   simp only [MonoidHom.mem_ker]
-  refine ⟨fun h ↦ LinearMap.ext fun m ↦ ι_injective R M ?_, fun h ↦ ?_⟩
+  refine ⟨fun h ↦ LinearMap.ext fun m ↦ SymmetricAlgebra.ι_injective R M ?_, fun h ↦ ?_⟩
   · have hm := LinearMap.congr_fun h (SymmetricAlgebra.ι R M m)
     simpa [symmetricAlgebra_apply, SymmetricAlgebra.map_apply_ι] using hm
   · ext p

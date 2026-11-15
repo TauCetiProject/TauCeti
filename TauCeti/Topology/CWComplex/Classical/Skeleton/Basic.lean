@@ -17,9 +17,14 @@ Characteristic-map lemmas describe their continuity on the closed unit ball (bun
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).  The preimages of the skeleta under a map
-into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
+skeleton above any given level, which gives induction principles over the skeleta
+(`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
+`0`-cell, the `0`-skeleton is the base together with that point
+(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
+preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
+also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
+a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -154,6 +159,67 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
+
+/-- **Induction on the skeleta.** A property of points holds on `skeletonLT C n` as soon as it
+holds on the base and, at every point `map m j y` of an open `m`-cell with `m < n`, it follows
+from its truth on `skeletonLT C m`. -/
+lemma forall_mem_skeletonLT_of_map {P : X → Prop} {n : ℕ∞} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ m : ℕ, (m : ℕ∞) < n → ∀ (j : cell C m) (y : Fin m → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (m : ℕ∞) : Set X), P x) → P (map m j y)) :
+    ∀ x ∈ (skeletonLT C n : Set X), P x := by
+  have hnat (k : ℕ) (hk : (k : ℕ∞) ≤ n) : ∀ x ∈ (skeletonLT C (k : ℕ∞) : Set X), P x := by
+    induction k with
+    | zero => simpa [skeletonLT_zero_eq_base] using hD
+    | succ k ih =>
+      have hk' : (k : ℕ∞) < n := lt_of_lt_of_le (mod_cast k.lt_succ_self) hk
+      intro x hx
+      obtain hx | ⟨j, y, hy, rfl⟩ := mem_skeletonLT_or_exists_map hx
+      · exact ih hk'.le x hx
+      · exact hcell k hk' j y hy (ih hk'.le)
+  induction n using ENat.recTopCoe with
+  | top =>
+    intro x hx
+    obtain ⟨k, hk⟩ := exists_mem_skeletonLT_add 0 (skeletonLT_top (C := C) ▸ hx)
+    exact hnat (0 + k) le_top x hk
+  | coe n => exact hnat n le_rfl
+
+/-- **Induction on the skeleta**, for all points of the complex: a property holds on `C` as soon
+as it holds on the base and, at every point `map n j y` of an open `n`-cell, it follows from its
+truth on `skeletonLT C n`. -/
+lemma forall_mem_complex_of_map {P : X → Prop} (hD : ∀ x ∈ D, P x)
+    (hcell : ∀ n (j : cell C n) (y : Fin n → ℝ), ‖y‖ < 1 →
+      (∀ x ∈ (skeletonLT C (n : ℕ∞) : Set X), P x) → P (map n j y)) :
+    ∀ x ∈ C, P x := by
+  simpa only [skeletonLT_top] using
+    forall_mem_skeletonLT_of_map (n := ⊤) hD fun m _ ↦ hcell m
+
+/-- **Closed subsets of the `0`-skeleton.** A subset `A` of the `0`-skeleton `skeletonLT C 1`,
+which consists of the base `D` and the `0`-cells, is closed as soon as `A ∩ D` is closed. -/
+lemma isClosed_of_subset_skeletonLT_one {A : Set X} (hA : A ⊆ skeletonLT C 1)
+    (hAD : IsClosed (A ∩ D)) : IsClosed A :=
+  -- `A` misses every open cell of positive dimension.
+  isClosed_of_disjoint_openCell_or_isClosed_inter_closedCell
+    (hA.trans (skeletonLT C 1).subset_complex) hAD fun n hn _ ↦
+    .inl ((disjoint_skeletonLT_openCell (by norm_cast)).mono_left hA)
+
+/-- **Maps into the `0`-skeleton.** A continuous map from a preconnected space into the
+`0`-skeleton stays in any part `B` of the `0`-skeleton which, like its complement there, meets the
+base in a closed set, as soon as it meets `B` at one point. -/
+lemma forall_mem_of_subset_skeletonLT_one {B : Set X} (hB : B ⊆ skeletonLT C 1)
+    (hBD : IsClosed (B ∩ D))
+    (hBD' : IsClosed (((skeletonLT C 1 : Set X) \ B) ∩ D)) {Y : Type*} [TopologicalSpace Y]
+    [PreconnectedSpace Y] (γ : C(Y, X)) (hγ : ∀ y, γ y ∈ skeletonLT C 1) {y₀ : Y}
+    (h₀ : γ y₀ ∈ B) : ∀ y, γ y ∈ B := by
+  have hclosed := (isClosed_of_subset_skeletonLT_one hB hBD).preimage γ.continuous
+  have hopen : IsOpen (γ ⁻¹' B) := by
+    have h := (isClosed_of_subset_skeletonLT_one sdiff_subset hBD').preimage γ.continuous
+    rw [← isClosed_compl_iff]
+    convert h using 1
+    ext s
+    exact ⟨fun hs ↦ ⟨hγ s, hs⟩, fun hs ↦ hs.2⟩
+  have huniv := (isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left
+    (nonempty_of_mem (mem_preimage.mpr h₀)).ne_empty
+  exact fun y ↦ (huniv ▸ mem_univ y : y ∈ γ ⁻¹' B)
 
 variable {E : Type*}
 

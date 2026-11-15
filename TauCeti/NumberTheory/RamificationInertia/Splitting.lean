@@ -48,9 +48,10 @@ lying over a prime `P` of `R` equals the rank of `S` over `R`, then each such pr
 over `P` and has trivial inertia degree. No Galois hypothesis is needed. -/
 theorem ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank
     {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S] [Module.Finite R S]
-    [Module.Flat R S] (P : Ideal R) [P.IsPrime] (Q : Ideal S)
+    [Module.Flat R S] (P : Ideal R) (Q : Ideal S)
     [Q.IsPrime] [Q.LiesOver P] (hsplit : (P.primesOver S).ncard = finrank R S) :
     Q.ramificationIdx R = 1 ∧ Q.inertiaDeg R = 1 := by
+  have := Ideal.isPrime_of_liesOver Q P
   have := (Algebra.QuasiFinite.finite_primesOver (S := S) P).fintype
   have h := Ideal.sum_ramification_inertia_eq_finrank (S := S) P
   rw [← hsplit, Set.ncard_eq_toFinset_card', Set.toFinset_card, Fintype.card_eq_sum_ones] at h

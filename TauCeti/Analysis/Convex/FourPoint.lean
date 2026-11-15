@@ -28,10 +28,13 @@ public section
 
 namespace TauCeti
 
+variable {𝕜 β : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β]
+
 /-- Convexity bounds the sum at two intermediate points by the sum at two endpoints whenever
-both pairs have the same sum. Only the endpoints need to be assumed in the convex domain. -/
-theorem add_le_add_of_convexOn_of_add_eq {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] {s : Set 𝕜} {f : 𝕜 → 𝕜} (hf : ConvexOn 𝕜 s f)
+both pairs have the same sum. The function may take values in any ordered additive monoid that is
+a `𝕜`-module, and only the endpoints need to be assumed in the convex domain. -/
+theorem add_le_add_of_convexOn_of_add_eq {s : Set 𝕜} {f : 𝕜 → β} (hf : ConvexOn 𝕜 s f)
     {a b c d : 𝕜} (hc : c ∈ s) (hd : d ∈ s) (hca : c ≤ a) (had : a ≤ d)
     (hsum : a + b = c + d) : f a + f b ≤ f c + f d := by
   rcases eq_or_lt_of_le (hca.trans had) with hcd | hcd
@@ -52,14 +55,13 @@ theorem add_le_add_of_convexOn_of_add_eq {𝕜 : Type*} [Field 𝕜] [LinearOrde
     have h₂ := hf.2 hc hd hv hu (by linarith)
     simp only [smul_eq_mul, ha, hb] at h₁ h₂
     calc
-      f a + f b ≤ (u * f c + v * f d) + (v * f c + u * f d) := add_le_add h₁ h₂
+      f a + f b ≤ (u • f c + v • f d) + (v • f c + u • f d) := add_le_add h₁ h₂
       _ = f c + f d := by
-        linear_combination (f c + f d) * huv
+        match_scalars <;> linear_combination huv
 
 /-- Convex displacement costs satisfy the Monge four-point inequality on ordered points.
 The convexity domain need only contain the two extreme, crossed displacements. -/
-theorem add_sub_le_add_sub_of_convexOn {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] {s : Set 𝕜} {f : 𝕜 → 𝕜} (hf : ConvexOn 𝕜 s f)
+theorem add_sub_le_add_sub_of_convexOn {s : Set 𝕜} {f : 𝕜 → β} (hf : ConvexOn 𝕜 s f)
     {x₁ x₂ y₁ y₂ : 𝕜} (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂)
     (h₁ : x₁ - y₂ ∈ s) (h₂ : x₂ - y₁ ∈ s) :
     f (x₁ - y₁) + f (x₂ - y₂) ≤ f (x₁ - y₂) + f (x₂ - y₁) := by

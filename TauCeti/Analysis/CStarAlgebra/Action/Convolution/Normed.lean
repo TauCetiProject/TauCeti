@@ -45,8 +45,12 @@ open scoped CompactlySupported
 namespace TauCeti.CStarAction.ConvolutionAlgebra
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  [MeasurableSpace G] [OpensMeasurableSpace G]
-  {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
+  [MeasurableSpace G]
+
+section OpensMeasurable
+
+variable [OpensMeasurableSpace G] {α : CStarAction G A} {μ : Measure G}
+  [IsFiniteMeasureOnCompacts μ]
 
 /-- Realize a compactly supported convolution coefficient as a Bochner L¹ class. -/
 def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ where
@@ -138,9 +142,12 @@ instance : NonUnitalNormedRing (ConvolutionAlgebra α μ) where
 
 end FullSupport
 
+end OpensMeasurable
+
 section Star
 
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
+variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsMulLeftInvariant]
 
 /-- For a left-invariant measure the twisted involution is an isometry for the L¹ seminorm,
 `‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density

@@ -159,8 +159,8 @@ theorem cyclicGroupTwo_centralCharacterSearch :
     (cyclicClassData 2).centralCharacterSearch (F := ZMod 3) =
       cyclicGroupTwoModularCentralRows := by
   rw [cyclicGroupTwoModularCentralRows]
-  apply (cyclicClassData 2).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_cyclicGroup_two_three (fun x : ℤ => (x : ZMod 3))
+  apply (cyclicClassData 2).centralCharacterSearch_eq_rowsOfMap
+    (fun x : ℤ => (x : ZMod 3))
     cyclicGroupTwoCentralCharacterTable
   · intro i
     fin_cases i <;> decide

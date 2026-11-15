@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
+public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Continuity and measurability of the Cholesky equivalence
@@ -56,66 +58,52 @@ theorem continuous_choleskyReconstruction :
   exact (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose).congr
     fun L ↦ (choleskyReconstruction_coe L).symm
 
+/-- The factors of the matrices in a set `K` of positive-definite matrices are the lower-triangular
+matrices with nonnegative diagonal whose Gram matrix lies in `K`: the positivity of the diagonal is
+automatic. -/
+private theorem image_val_preimage_choleskyReconstruction (K : Set (PosDefMatrix p)) :
+    Subtype.val '' (choleskyReconstruction ⁻¹' K) =
+      {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
+        L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K} := by
+  ext L
+  constructor
+  · rintro ⟨L, hL, rfl⟩
+    exact ⟨L.2.1, fun i ↦ (L.2.2 i).le, _, hL, choleskyReconstruction_coe L⟩
+  · rintro ⟨htri, hdiag, A, hA, hAL⟩
+    -- `hAL` is stated through the lambda `fun A ↦ ↑A`; restating it beta-reduces that lambda so
+    -- that it can rewrite the determinant of `A`.
+    have hAL' : (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
+    have hdet : L.det ≠ 0 := by
+      have h := A.2.det_pos
+      rw [hAL', Matrix.det_mul, Matrix.det_transpose, ← sq] at h
+      exact pow_ne_zero_iff two_ne_zero |>.1 h.ne'
+    have hpos : ∀ i, 0 < L i i := fun i ↦
+      (hdiag i).lt_of_ne (htri.det_ne_zero_iff.mp hdet i).symm
+    refine ⟨⟨L, htri, hpos⟩, ?_, rfl⟩
+    have hrec : choleskyReconstruction ⟨L, htri, hpos⟩ = A :=
+      Subtype.ext (Subtype.ext ((choleskyReconstruction_coe _).trans hAL.symm))
+    rw [Set.mem_preimage, hrec]
+    exact hA
+
 /-- Reconstruction from positive-diagonal lower-triangular factors is a proper map: the factors of
 a compact set of positive-definite matrices form a compact set. -/
 theorem isProperMap_choleskyReconstruction :
     IsProperMap (@choleskyReconstruction p) := by
   refine isProperMap_iff_isCompact_preimage.2 ⟨continuous_choleskyReconstruction, fun K hK ↦ ?_⟩
-  set K' := (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K
-  have hK'c : IsCompact K' := hK.image (continuous_subtype_val.comp continuous_subtype_val)
+  have hK'c : IsCompact ((fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K) :=
+    hK.image (continuous_subtype_val.comp continuous_subtype_val)
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
-  -- The factors of the matrices in `K` are the lower-triangular matrices with nonnegative diagonal
-  -- whose Gram matrix lies in `K'`; the positivity of the diagonal is then automatic.
-  set T : Set (Matrix (Fin p) (Fin p) ℝ) :=
-    {L | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧ L * Lᵀ ∈ K'}
-  have himage : Subtype.val '' (choleskyReconstruction ⁻¹' K) = T := by
-    ext L
-    constructor
-    · rintro ⟨L, hL, rfl⟩
-      exact ⟨L.2.1, fun i ↦ (L.2.2 i).le, _, hL, choleskyReconstruction_coe L⟩
-    · rintro ⟨htri, hdiag, A, hA, hAL⟩
-      have hdet : (∏ i, L i i) ^ 2 ≠ 0 := by
-        have hAL' : (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
-        have h := A.2.det_pos
-        rw [hAL', Matrix.det_mul,
-          Matrix.det_transpose, Matrix.det_of_isLowerTriangular L htri, ← sq] at h
-        exact h.ne'
-      have hpos : ∀ i, 0 < L i i := fun i ↦ (hdiag i).lt_of_ne
-        (Finset.prod_ne_zero_iff.1 ((pow_ne_zero_iff two_ne_zero).1 hdet) i
-          (Finset.mem_univ i)).symm
-      refine ⟨⟨L, htri, hpos⟩, ?_, rfl⟩
-      have hrec : choleskyReconstruction ⟨L, htri, hpos⟩ = A :=
-        Subtype.ext (Subtype.ext ((choleskyReconstruction_coe _).trans hAL.symm))
-      rw [Set.mem_preimage, hrec]
-      exact hA
-  have hTclosed : IsClosed T := by
-    have htri : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular} := by
-      simp only [Matrix.IsLowerTriangular, Matrix.BlockTriangular, Set.ofPred_forall]
-      exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
-        isClosed_eq (continuous_id.matrix_elem i j) continuous_const
-    have hdiag : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | ∀ i, 0 ≤ L i i} := by
-      simp only [Set.ofPred_forall]
-      exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
-    exact htri.inter (hdiag.inter
-      (hK'c.isClosed.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
-  -- Each entry of a factor is bounded by the square root of the trace of its Gram matrix.
-  have hTbox : T ⊆ Set.pi Set.univ fun _ ↦ Set.pi Set.univ fun _ ↦ Set.Icc (-√c) √c := by
-    rintro L ⟨-, -, hL⟩ i - j -
-    refine abs_le.1 (Real.abs_le_sqrt ?_)
-    have htrace : (L * Lᵀ).trace = ∑ i, ∑ k, L i k * L i k := by
-      simp [Matrix.trace, Matrix.mul_apply]
-    calc L i j ^ 2 = L i j * L i j := sq _
-      _ ≤ ∑ k, L i k * L i k :=
-        Finset.single_le_sum (fun k _ ↦ mul_self_nonneg (L i k)) (Finset.mem_univ j)
-      _ ≤ ∑ i, ∑ k, L i k * L i k :=
-        Finset.single_le_sum (f := fun i ↦ ∑ k, L i k * L i k)
-          (fun i _ ↦ Finset.sum_nonneg fun k _ ↦ mul_self_nonneg (L i k)) (Finset.mem_univ i)
-      _ = (L * Lᵀ).trace := htrace.symm
-      _ ≤ c := hc ⟨_, hL, rfl⟩
-  have hTc : IsCompact T :=
-    (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦ isCompact_Icc).of_isClosed_subset
-      hTclosed hTbox
-  exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2 (himage ▸ hTc)
+  have hTclosed : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
+      L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K} :=
+    (isClosed_setOfPred_blockTriangular (b := OrderDual.toDual)).inter
+      (Matrix.isClosed_setOfPred_nonneg_diag.inter
+        (hK'c.isClosed.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
+  have hTc := (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦
+    isCompact_Icc (a := -√c) (b := √c)).of_isClosed_subset hTclosed
+      (fun L hL i _ j _ ↦ abs_le.1 ((Matrix.abs_apply_le_sqrt_trace_mul_transpose L i j).trans
+        (Real.sqrt_le_sqrt (hc ⟨_, hL.2.2, rfl⟩))))
+  exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2
+    ((image_val_preimage_choleskyReconstruction K) ▸ hTc)
 
 /-- Cholesky factorization is continuous. -/
 theorem continuous_cholesky : Continuous (@cholesky p) := by

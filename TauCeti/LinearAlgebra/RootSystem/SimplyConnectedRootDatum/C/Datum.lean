@@ -320,28 +320,27 @@ def typeCIndexEquiv (n : ℕ) : TypeCIndex n ≃ Fin (2 * n ^ 2) :=
       (((finTwoEquiv.symm.prodCongr (Equiv.refl (Fin n))).trans finProdFinEquiv).prodCongr
         (Equiv.refl (Fin n)))).trans (finProdFinEquiv.trans (finCongr (by ring)))
 
+/-- The simply connected root datum of type `Cₙ` on its root indices `TypeCIndex n`: the root and
+coroot at `i` are `typeCRoot i` and `typeCCoroot i`, and reflection in the `i`-th root permutes the
+indices by `typeCReflectionIdx i`. The pinned datum is its transport along `typeCIndexEquiv`. -/
+private def typeCIndexRootDatum (n : ℕ) : RootDatum (TypeCIndex n) (Fin n → ℤ) (Fin n → ℤ) where
+  toLinearMap := dotProductBilin ℤ ℤ
+  root := ⟨typeCRoot, typeCRoot_injective⟩
+  coroot := ⟨typeCCoroot, typeCCoroot_injective⟩
+  root_coroot_two := typeCRoot_dotProduct_typeCCoroot_self
+  reflectionPerm := typeCReflectionPerm
+  reflectionPerm_root := typeCRoot_typeCReflectionIdx
+  reflectionPerm_coroot := typeCCoroot_typeCReflectionIdx
+
 /-- The pinned simply connected root datum of type `Cₙ`.
 
 Both lattices are `Fin n → ℤ`: the character lattice in the fundamental-weight basis and the
 cocharacter lattice in the simple-coroot basis. The `2 * n ^ 2` roots are the classical
 `± e_a ± e_b` with `a ≠ b` and `± 2 e_a`, enumerated with the simple roots first; see
 `TauCeti.DynkinType.root_typeCSimpleIndex`. -/
-def typeCSimplyConnectedRootDatum (n : ℕ) :
-    RootDatum (Fin (2 * n ^ 2)) (Fin n → ℤ) (Fin n → ℤ) where
-  toLinearMap := dotProductBilin ℤ ℤ
-  root := ⟨fun k => typeCRoot ((typeCIndexEquiv n).symm k),
-    typeCRoot_injective.comp (typeCIndexEquiv n).symm.injective⟩
-  coroot := ⟨fun k => typeCCoroot ((typeCIndexEquiv n).symm k),
-    typeCCoroot_injective.comp (typeCIndexEquiv n).symm.injective⟩
-  root_coroot_two k := typeCRoot_dotProduct_typeCCoroot_self _
-  reflectionPerm k := ((typeCIndexEquiv n).symm.trans
-    (typeCReflectionPerm ((typeCIndexEquiv n).symm k))).trans (typeCIndexEquiv n)
-  reflectionPerm_root k l := by
-    simpa using
-      typeCRoot_typeCReflectionIdx ((typeCIndexEquiv n).symm k) ((typeCIndexEquiv n).symm l)
-  reflectionPerm_coroot k l := by
-    simpa using
-      typeCCoroot_typeCReflectionIdx ((typeCIndexEquiv n).symm k) ((typeCIndexEquiv n).symm l)
+noncomputable def typeCSimplyConnectedRootDatum (n : ℕ) :
+    RootDatum (Fin (2 * n ^ 2)) (Fin n → ℤ) (Fin n → ℤ) :=
+  (typeCIndexRootDatum n).map (typeCIndexEquiv n) (LinearEquiv.refl ℤ _) (LinearEquiv.refl ℤ _)
 
 /-- The pinned pairing of type `Cₙ` is the dot product of the two lattices. -/
 @[simp] theorem toLinearMap_typeCSimplyConnectedRootDatum (x y : Fin n → ℤ) :
@@ -429,7 +428,9 @@ def typeCSimpleIndex (n : ℕ) (i : Fin n) : Fin (2 * n ^ 2) :=
 lemma typeCSimpleIndex_injective : Injective (typeCSimpleIndex n) :=
   Fin.castLE_injective (typeC_le_two_mul_sq n)
 
-private lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
+/-- The numbered simple root is encoded by consecutive classical coordinates, with the
+successor clamped at the last node. -/
+@[simp] lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
     (typeCIndexEquiv n).symm (typeCSimpleIndex n i) = (i, Order.succ i, false) := by
   have hi : (i : ℕ) < n := i.isLt
   simp [typeCIndexEquiv, typeCShapeEquiv, finProdFinEquiv, Fin.divNat, Fin.modNat,
@@ -561,7 +562,8 @@ private lemma linearIndependent_typeCSimpleRoot (n : ℕ) :
   rw [h]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact linearIndependent_empty_type
-  · exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.C_det hn]; norm_num)
+  · exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.C n)
+      (by rw [CartanMatrix.C_det hn]; norm_num)
 
 private lemma linearIndependent_typeCSimpleCoroot (n : ℕ) :
     LinearIndependent ℤ (typeCSimpleCoroot (n := n)) := by

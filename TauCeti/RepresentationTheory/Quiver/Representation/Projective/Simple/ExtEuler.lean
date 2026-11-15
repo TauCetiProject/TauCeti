@@ -34,7 +34,11 @@ open scoped ModuleCat
 
 universe v w
 
-variable (k : Type (max v w)) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
+variable (k : Type (max v w)) (Q : Type v) [Field k] [Quiver.{w} Q]
+
+section Finite
+
+variable [Finite Q]
 
 private theorem finiteDimensional_hom_vertexSimpleModuleResolution_X₁ (i : Q)
     [Finite ((j : Q) × (i ⟶ j))]
@@ -154,36 +158,6 @@ theorem extEuler_vertexSimpleModule (i : Q)
   simp only [Nat.cast_sum] at hadd ⊢
   omega
 
-section EulerForm
-
-variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
-
-/-- The Ext-Euler characteristic of a vertex simple is the quiver Euler form of its
-dimension vector against that of the target module. -/
-theorem extEuler_vertexSimpleModule_eq_eulerForm (i : Q)
-    (Y : ModuleCat (pathAlgebra k Q))
-    (hYi : FiniteDimensional k
-      (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj i)))
-    (hY : ∀ (j : Q), (i ⟶ j) → FiniteDimensional k
-      (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj j))) :
-    extEuler k (isEulerAdmissible_vertexSimpleModule k Q i Y hYi hY) =
-      eulerForm Q
-        (fun j ↦ (dimVector ((quiverRepFunctor k Q).obj (vertexSimpleModule k Q i)) j : ℤ))
-        (fun j ↦ (dimVector ((quiverRepFunctor k Q).obj Y) j : ℤ)) := by
-  classical
-  rw [extEuler_vertexSimpleModule k Q i Y hYi hY,
-    dimVector_eq_of_iso (vertexSimpleModuleIso k Q i),
-    dimVector_simpleRep]
-  have hsingle : (fun j ↦ ((Pi.single i 1 : Q → ℕ) j : ℤ)) = Pi.single i 1 := by
-    funext j
-    simp [Pi.single_apply]
-  rw [hsingle, eulerForm_single_left]
-  congr 1
-  rw [Fintype.sum_sigma]
-  simp [Finset.sum_const]
-
-end EulerForm
-
 open scoped Classical in
 /-- The Ext-Euler value between vertex simples is the Kronecker delta minus the number of
 arrows from the first vertex to the second. -/
@@ -216,5 +190,37 @@ theorem extEuler_vertexSimpleModule_vertexSimpleModule (i j : Q)
     right_inv := by intro f; rfl
   }
   simpa only [Fintype.card_subtype, Nat.card_eq_fintype_card] using Fintype.card_congr e
+
+end Finite
+
+section EulerForm
+
+variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
+
+/-- The Ext-Euler characteristic of a vertex simple is the quiver Euler form of its
+dimension vector against that of the target module. -/
+theorem extEuler_vertexSimpleModule_eq_eulerForm (i : Q)
+    (Y : ModuleCat (pathAlgebra k Q))
+    (hYi : FiniteDimensional k
+      (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj i)))
+    (hY : ∀ (j : Q), (i ⟶ j) → FiniteDimensional k
+      (((quiverRepFunctor k Q).obj Y).obj ((Paths.of Q).obj j))) :
+    extEuler k (isEulerAdmissible_vertexSimpleModule k Q i Y hYi hY) =
+      eulerForm Q
+        (fun j ↦ (dimVector ((quiverRepFunctor k Q).obj (vertexSimpleModule k Q i)) j : ℤ))
+        (fun j ↦ (dimVector ((quiverRepFunctor k Q).obj Y) j : ℤ)) := by
+  classical
+  rw [extEuler_vertexSimpleModule k Q i Y hYi hY,
+    dimVector_eq_of_iso (vertexSimpleModuleIso k Q i),
+    dimVector_simpleRep]
+  have hsingle : (fun j ↦ ((Pi.single i 1 : Q → ℕ) j : ℤ)) = Pi.single i 1 := by
+    funext j
+    simp [Pi.single_apply]
+  rw [hsingle, eulerForm_single_left]
+  congr 1
+  rw [Fintype.sum_sigma]
+  simp [Finset.sum_const]
+
+end EulerForm
 
 end TauCeti

@@ -103,7 +103,7 @@ open Polynomial WeierstrassCurve WeierstrassCurve.Affine IsDedekindDomain
 
 open scoped Polynomial.Bivariate
 
-namespace TauCeti
+namespace WeierstrassCurve.Affine.CoordinateRing
 
 section
 
@@ -117,7 +117,7 @@ instance argument, discharged by
 `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed` once the coordinate
 ring is known integrally closed — which for an elliptic curve is
 `WeierstrassCurve.Affine.isIntegrallyClosed_coordinateRing`. -/
-noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace
+noncomputable def pointPlace
     {y : F} (h : W.Equation x y) :
     HeightOneSpectrum W.CoordinateRing :=
   HeightOneSpectrum.ofPrime
@@ -126,7 +126,7 @@ noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace
 
 /-- The ideal underlying the place of a point is `⟨X - x, Y - y⟩`. -/
 @[simp]
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal
+theorem pointPlace_asIdeal
     {y : F} (h : W.Equation x y) :
     (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).asIdeal = CoordinateRing.XYIdeal W x (C
         y) := by
@@ -135,7 +135,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal
 /-- **`pointPlace` is injective**: two points of the curve have the same place exactly when they
 have the same coordinates. -/
 @[simp]
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff
+theorem pointPlace_eq_iff
     {x₁ x₂ y₁ y₂ : F} (h₁ : W.Equation x₁ y₁) (h₂ : W.Equation x₂ y₂) :
     WeierstrassCurve.Affine.CoordinateRing.pointPlace h₁ =
         WeierstrassCurve.Affine.CoordinateRing.pointPlace h₂ ↔ x₁ = x₂ ∧ y₁ = y₂ := by
@@ -147,7 +147,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff
 
 /-- **A height-one prime containing both generators of the ideal of a point is that point's
 place**: the ideal of a point is maximal, so the containment cannot be strict. -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.eq_pointPlace_of_mem_asIdeal {y : F}
+theorem eq_pointPlace_of_mem_asIdeal {y : F}
     (h : W.Equation x y) {Q : HeightOneSpectrum W.CoordinateRing}
     (hX : CoordinateRing.XClass W x ∈ Q.asIdeal) (hY : CoordinateRing.YClass W (C y) ∈ Q.asIdeal) :
     Q = WeierstrassCurve.Affine.CoordinateRing.pointPlace h := by
@@ -165,7 +165,7 @@ variable (K : Type*) [Field K] [Algebra W.CoordinateRing K] [IsFractionRing W.Co
 
 /-- **A quotient of coordinate-ring classes has no pole at a point where its denominator does not
 vanish.** -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_le_one {y : F}
+theorem valuation_pointPlace_div_le_one {y : F}
     (h : W.Equation x y) {p q : F[X][Y]} (hq : q.evalEval x y ≠ 0) :
     (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
       (algebraMap W.CoordinateRing K (CoordinateRing.mk W p) /
@@ -180,7 +180,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_l
 
 /-- **A quotient of coordinate-ring classes vanishes at a point where its numerator does and its
 denominator does not.** -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_lt_one {y : F}
+theorem valuation_pointPlace_div_lt_one {y : F}
     (h : W.Equation x y) {p q : F[X][Y]} (hq : q.evalEval x y ≠ 0) (hp : p.evalEval x y = 0) :
     (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
       (algebraMap W.CoordinateRing K (CoordinateRing.mk W p) /
@@ -197,7 +197,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.valuation_pointPlace_div_l
 
 /-- **A quotient of coordinate-ring classes has a pole at a point where its denominator vanishes
 and its numerator does not.** -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.one_lt_valuation_pointPlace_div {y : F}
+theorem one_lt_valuation_pointPlace_div {y : F}
     (h : W.Equation x y) {p q : F[X][Y]} (hp : p.evalEval x y ≠ 0) (hq : q.evalEval x y = 0)
     (hq0 : CoordinateRing.mk W q ≠ 0) :
     1 < (WeierstrassCurve.Affine.CoordinateRing.pointPlace h).valuation K
@@ -220,7 +220,7 @@ end Valuation
 over the base, and here that rank is one — which is the sense in which the point–place dictionary
 lands in the *degree-one* places. -/
 @[simp]
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one
+theorem pointPlace.finrank_residueField_eq_one
     {y : F} (h : W.Equation x y) :
     Module.finrank F (W.CoordinateRing ⧸ (WeierstrassCurve.Affine.CoordinateRing.pointPlace
         h).asIdeal) = 1 := by
@@ -229,7 +229,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residue
 
 /-- **Every degree-one place is the place of a point**, the converse of
 `pointPlace.finrank_residueField_eq_one`. -/
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq
+theorem exists_pointPlace_eq
     {v : HeightOneSpectrum W.CoordinateRing}
     (hv : Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1) :
     ∃ (x y : F) (h : W.Equation x y), WeierstrassCurve.Affine.CoordinateRing.pointPlace h = v := by
@@ -239,7 +239,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq
 
 variable (W) in
 /-- Send a solution of `W.Equation` to its degree-one place. -/
-private noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.equationToDegreeOnePlace
+private noncomputable def equationToDegreeOnePlace
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1} :=
@@ -248,7 +248,7 @@ private noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.equation
 
 variable (W) in
 /-- Sending an equation solution to its degree-one place is bijective. -/
-private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.equationToDegreeOnePlace_bijective :
+private theorem equationToDegreeOnePlace_bijective :
     Function.Bijective (WeierstrassCurve.Affine.CoordinateRing.equationToDegreeOnePlace W) :=
   ⟨fun p q h ↦ Subtype.ext <| Prod.ext_iff.mpr <|
       (WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff p.2 q.2).mp (Subtype.ext_iff.mp h),
@@ -261,7 +261,7 @@ variable (W) in
 degree-one places of its coordinate ring, a solution going to the prime `⟨X - x, Y - y⟩`.
 For elliptic `W`, these solutions are the nonzero affine points by `equation_iff_nonsingular`.
 Injectivity is `pointPlace_eq_iff` and surjectivity is `exists_pointPlace_eq`. -/
-noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace :
+noncomputable def equationEquivDegreeOnePlace :
     {xy : F × F // W.Equation xy.1 xy.2} ≃
       {v : HeightOneSpectrum W.CoordinateRing //
         Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1} :=
@@ -270,7 +270,7 @@ noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.equationEquivDeg
 
 /-- The dictionary sends a point to its place. -/
 @[simp]
-theorem _root_.WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace_apply_coe
+theorem equationEquivDegreeOnePlace_apply_coe
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     (WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W p : HeightOneSpectrum
         W.CoordinateRing) = WeierstrassCurve.Affine.CoordinateRing.pointPlace p.2 := by
@@ -280,7 +280,7 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlac
 /-- Reading the dictionary backwards and then taking the place recovers the original place. -/
 @[simp]
 theorem
-    _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_equationEquivDegreeOnePlace_symm_apply
+    pointPlace_equationEquivDegreeOnePlace_symm_apply
     (v : {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1}) :
     WeierstrassCurve.Affine.CoordinateRing.pointPlace
@@ -292,6 +292,6 @@ theorem
 
 end
 
-end TauCeti
+end WeierstrassCurve.Affine.CoordinateRing
 
 end

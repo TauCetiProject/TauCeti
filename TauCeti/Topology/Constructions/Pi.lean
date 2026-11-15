@@ -99,13 +99,15 @@ theorem exists_univ_pi_subset {I κ : Type*} [Finite κ] {V : I → Set X}
 can be shrunk to nonempty open sets `W i ⊆ V i` so that for each of finitely many dense open sets
 `U c ⊆ κ c → X`, every box `∏ j, W (t j)` along an injective tuple `t : κ c → I` lies in `U c`. -/
 theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C → Type*}
-    [∀ c, Finite (κ c)] {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
+    {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
     {U : ∀ c, Set (κ c → X)} (hUo : ∀ c, IsOpen (U c)) (hUd : ∀ c, Dense (U c)) :
     ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧ (∀ i, W i ⊆ V i) ∧
       ∀ c (t : κ c → I), Injective t → univ.pi (fun j => W (t j)) ⊆ U c := by
   classical
   -- treat the finitely many pairs of a set `U c` and an injective tuple one at a time
   let Q := Σ c, {t : κ c → I // Injective t}
+  have : ∀ c, Finite {t : κ c → I // Injective t} := fun c ↦
+    Finite.of_equiv (κ c ↪ I) (Equiv.subtypeInjectiveEquivEmbedding (κ c) I).symm
   have : Fintype Q := Fintype.ofFinite Q
   suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
       (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
@@ -116,11 +118,28 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
   | empty => exact ⟨V, hVo, hVne, fun _ => subset_rfl, by simp⟩
   | insert q s _ ih =>
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := ih
+    have := Finite.of_injective q.2.1 q.2.2
     obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ :=
       exists_univ_pi_subset hWo hWne q.2.2 (hUo q.1) (hUd q.1)
     refine ⟨W', hW'o, hW'ne, fun i => (hW'W i).trans (hWV i), fun q' hq' => ?_⟩
     rcases Finset.mem_insert.1 hq' with rfl | hq'
     · exact hW'
     · exact (pi_mono fun j _ => hW'W _).trans (hW q' hq')
+
+/-- An infinite product of nontrivial spaces is not discrete: every basic open set constrains only
+finitely many coordinates, so it contains a point differing from any given one in a free
+coordinate. -/
+theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+    [Infinite ι] [∀ i, Nontrivial (Y i)] : ¬DiscreteTopology (∀ i, Y i) := fun _ ↦ by
+  classical
+  choose x y hxy using fun i ↦ exists_pair_ne (Y i)
+  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 (isOpen_discrete ({x} : Set (∀ i, Y i))) x rfl
+  obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
+  have hmem : Function.update x j (y j) ∈ (I : Set ι).pi u := fun i hi ↦ by
+    rw [Function.update_of_ne (by rintro rfl; exact hj hi)]
+    exact (hu i hi).2
+  have := congrFun (hsub hmem) j
+  simp only [Function.update_self] at this
+  exact hxy j this.symm
 
 end TauCeti

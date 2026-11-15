@@ -16,7 +16,9 @@ fibre count `TauCeti.RiemannSurface.exists_nhds_localMultiplicity_fiber_sum`, wh
 every neighbourhood `U` of a point `x`, a neighbourhood `V` of `f x` all of whose points have a
 preimage in `U`. As a consequence, if `f` is holomorphic and nonconstant near `x` and `g` is
 nonconstant near `f x`, then `g ∘ f` is nonconstant near `x`, which is how nonconstancy of a
-composite of holomorphic maps is established.
+composite of holomorphic maps is established. A holomorphic map from a nonempty compact Riemann
+surface to a connected one which is constant near no point is surjective, since its range is open,
+closed and nonempty.
 
 Nonconstancy is spelled pointwise, as `¬ EventuallyConst f (𝓝 x)`, exactly as in the local fibre
 count; on a connected `X` this is equivalent to `f` being nonconstant by the identity theorem,
@@ -27,6 +29,8 @@ which is not part of this file.
 * `TauCeti.RiemannSurface.nhds_le_map_nhds_of_not_eventuallyConst`: the open mapping theorem at
   a point.
 * `TauCeti.RiemannSurface.isOpenMap_of_forall_not_eventuallyConst`: the open mapping theorem.
+* `TauCeti.RiemannSurface.surjective_of_forall_not_eventuallyConst`: a map from a nonempty compact
+  Riemann surface to a connected one which is constant near no point is surjective.
 * `TauCeti.RiemannSurface.not_eventuallyConst_comp`: a composite of maps nonconstant near a point
   is nonconstant near it.
 
@@ -66,6 +70,17 @@ theorem isOpenMap_of_forall_not_eventuallyConst (hf : MDifferentiable 𝓘(ℂ) 
     (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) : IsOpenMap f :=
   isOpenMap_iff_nhds_le.2 fun x ↦
     nhds_le_map_nhds_of_not_eventuallyConst (.of_forall fun y ↦ hf y) (hne x)
+
+/-- **Surjectivity.** A holomorphic map from a nonempty compact Riemann surface to a connected
+Riemann surface which is constant near no point is surjective: its range is open by the open
+mapping theorem, closed because it is compact, and nonempty, hence everything. -/
+theorem surjective_of_forall_not_eventuallyConst [CompactSpace X] [T2Space Y] [PreconnectedSpace Y]
+    [Nonempty X] (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) :
+    Surjective f := by
+  have hopen : IsOpen (range f) := (isOpenMap_of_forall_not_eventuallyConst hf hne).isOpen_range
+  have hclosed : IsClosed (range f) := (isCompact_range hf.continuous).isClosed
+  exact range_eq_univ.1
+    ((isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left (range_nonempty f).ne_empty)
 
 /-- If `f` is holomorphic and nonconstant near `x` and `g` is not constant near `f x`, then
 `g ∘ f` is not constant near `x`: by the open mapping theorem, constancy of `g ∘ f` near `x`

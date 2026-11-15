@@ -55,7 +55,7 @@ open PowerSeries (IsEntire)
 
 namespace ContinuousLinearMap
 
-variable {R M : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R M : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [Module R M] [ContinuousConstSMul R M]
 

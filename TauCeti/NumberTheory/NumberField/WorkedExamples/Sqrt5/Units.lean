@@ -60,8 +60,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
   obtain ⟨w, hw, hwθ⟩ := exists_isReal_and_apply_eq_goldenRatio hmin hgen
   have hwu : w u = Real.goldenRatio := by rw [hu]; exact hwθ
   have h1 : 1 < w u := by rw [hwu]; exact Real.one_lt_goldenRatio
-  refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen)
-    (finrank_eq_two hmin hgen ▸ Nat.prime_two) hw h1
+  refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen) hw h1
   rw [hwu]
   exact unitCandidateEliminationCertificate_goldenRatio (finrank_eq_two hmin hgen)
 

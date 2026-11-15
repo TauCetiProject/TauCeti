@@ -288,7 +288,7 @@ theorem exists_mem_span_range_of_proj_eq (x : completedGroupAlgebra R Γ)
     exact MonoidAlgebra.sum_coeff_single _
 
 instance [Nontrivial R] : Nontrivial (completedGroupAlgebra R Γ) :=
-  (proj R Γ { toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }).toRingHom.domain_nontrivial
+  (proj R Γ ⊤).toRingHom.domain_nontrivial
 
 /-- Over a coefficient ring without zero divisors, the completed group algebra has no scalar
 torsion: every nonzero scalar acts injectively, as it does on each coefficient of each level. -/
@@ -439,7 +439,7 @@ theorem dense_span_range_of :
   obtain ⟨V, hV⟩ : ∃ V : OpenNormalSubgroup Γ, ∀ U ∈ I, V ≤ U := by
     clear hst
     induction I using Finset.induction_on with
-    | empty => exact ⟨openNormalSubgroupTop Γ, by simp⟩
+    | empty => exact ⟨⊤, by simp⟩
     | insert U I _ ih =>
       obtain ⟨V, hV⟩ := ih
       exact ⟨V ⊓ U, by

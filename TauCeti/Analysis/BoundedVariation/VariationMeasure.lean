@@ -187,15 +187,20 @@ theorem forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral
   simpa only [monoCLM_apply, le_refl, hUΩ, and_self, ite_true] using
     hconv (monoCLM ℝ ψ : 𝓓(Ω, ℝ))
 
-/-- A test vector field on `Ω` supported in an open set `U ⊆ Ω` with norm at most one pairs with
+/-- A test vector field on `Ω` supported in an open set `U` with norm at most one pairs with
 `u` to at most `|Du|(U)`. -/
 theorem enorm_integral_divergenceCLM_mul_le_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
-    (hU : U ≤ Ω) (φ : 𝓓(Ω, E)) (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
+    (φ : 𝓓(Ω, E)) (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
     ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) := by
-  let φU : 𝓓(U, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
+  -- Replace `U` by `U ⊓ Ω`, which lies in `Ω` and has the same preimage in `Ω`.
+  have hφU' : tsupport φ ⊆ ((U ⊓ Ω : Opens E) : Set E) := fun x hx => ⟨hφU hx, φ.tsupport_subset hx⟩
+  have hpre : (((↑) : Ω → E) ⁻¹' (U : Set E)) = ((↑) : Ω → E) ⁻¹' ((U ⊓ Ω : Opens E) : Set E) := by
+    ext x
+    simp
+  let φU : 𝓓((U ⊓ Ω : Opens E), E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU'⟩
   have hdiv (x : E) : divergenceCLM φU x = divergenceCLM φ x := by simp [φU]
-  rw [variationMeasure_preimage_coe hu hfin hU, Real.enorm_eq_ofReal_abs]
+  rw [hpre, variationMeasure_preimage_coe hu hfin inf_le_right, Real.eNorm_eq_ofReal_abs]
   simpa only [hdiv] using ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) φU hφ
 
 /-- The total mass of the variation measure of a function of locally finite variation on `Ω` is

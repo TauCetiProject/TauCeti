@@ -64,7 +64,7 @@ half-plane near `z` into the sector and `g` is injective off its zeros. -/
 private theorem abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
-    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {ρ β : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {ρ β : ℝ} {c b : ℂ}
     (hS : {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < β * Real.pi / 2} ⊆
       f '' upperHalfPlaneSet) {x : ℝ} {r : ℝ}
     (hS₂ : ball (x : ℂ) r ∩ upperHalfPlaneSet ⊆
@@ -94,7 +94,7 @@ private theorem abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero
   have hwS : w ∉ S := fun hw =>
     add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
   rw [hGw, Complex.abs_arg_div_comm]
-  exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖}) hb
+  exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖})
     (isOpen_lt continuous_const (by fun_prop)) (fun y hy _ => and_iff_right hy)
     (le_max_left ρ 0 |>.trans_lt hwfar)
     (sub_ne_zero.mp (norm_pos_iff.mp ((le_max_right ρ 0).trans_lt hwfar)))
@@ -156,7 +156,7 @@ theorem exists_ball_sector_end_of_inverted_coordinate
   -- the other boundary values lie on the two bounding rays
   have hrays (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hz0 : z.im = 0) (hGz : G z ≠ 0) :
       |(G z).arg| = β * Real.pi / 2 :=
-    abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero hgc hgf hgi hb hS hS₂ (h₂ hz) hz0
+    abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero hgc hgf hgi hS hS₂ (h₂ hz) hz0
       (hgG hGz) (hfar z (h₃ hz) hz0.ge (hgG hGz))
   -- the sector geometry makes `x` an isolated zero
   obtain ⟨r₅, hr₅, hiso⟩ := Metric.mem_nhdsWithin_iff.mp <| eventually_ne_zero_of_sector hβ hr₄

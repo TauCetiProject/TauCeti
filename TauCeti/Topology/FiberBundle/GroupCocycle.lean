@@ -110,6 +110,14 @@ lemma fiberBundleCoreOfGroupCocycle_indexAt :
     (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).indexAt =
       indexAt := (rfl)
 
+/-- The trivialization of the glued bundle at a base point is the chart chosen there. -/
+@[simp]
+lemma trivializationAt_fiberBundleCoreOfGroupCocycle (b : B) :
+    trivializationAt F (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).Fiber
+        b =
+      (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).localTriv
+        (indexAt b) := (rfl)
+
 /-- The core's coordinate change is the given group action. -/
 @[simp]
 lemma fiberBundleCoreOfGroupCocycle_coordChange (i j : ι) (b : B) (v : F) :

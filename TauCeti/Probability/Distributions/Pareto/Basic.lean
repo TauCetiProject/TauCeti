@@ -42,9 +42,6 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, the Pareto target — the
-  mean and its non-integrability threshold, the variance and its non-integrability threshold,
-  the cdf, and `integrableExpSet id (paretoMeasure t r) = Set.Iic 0`.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   Chapter 20.
 * `Mathlib.Probability.Distributions.Pareto`, whose density normalization is reused here.
@@ -273,7 +270,7 @@ theorem integrable_exp_mul_id_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (u : �
   have hmoment : ¬ Integrable (fun x : ℝ => x ^ r) (paretoMeasure t r) := fun h =>
     lt_irrefl r ((integrable_rpow_paretoMeasure_iff ht hr r).mp h)
   refine ⟨fun h => not_lt.mp fun hu => ?_, integrable_exp_mul_id_paretoMeasure_of_nonpos ht hr⟩
-  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow r measurable_id.aemeasurable
+  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow r
     (ae_paretoMeasure_mem_Ici t r) hr.le hmoment hu h
 
 /-- The exact exponential-integrability domain of the identity under a nondegenerate Pareto law

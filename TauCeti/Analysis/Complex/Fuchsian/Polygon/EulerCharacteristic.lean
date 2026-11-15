@@ -689,7 +689,7 @@ end CellMap
 include hlf in
 /-- A group with locally finite translates of `P` is discrete, so `Γ \ ℍ` is Hausdorff. -/
 private theorem discreteTopology_of_locallyFinite_carrier : DiscreteTopology Γ :=
-  discreteTopology_of_locallyFinite_smul
+  discreteTopology_of_locallyFinite_smul (fun _ ↦ by fun_prop)
     (P.toConvexPolygon.nonempty_interior_carrier.mono interior_subset) hlf
 
 /-- The CW structure on the quotient by a compact fundamental polygon. -/

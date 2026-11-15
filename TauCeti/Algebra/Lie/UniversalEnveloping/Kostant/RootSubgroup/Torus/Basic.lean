@@ -498,6 +498,17 @@ theorem kostantTorusPoints_injective
         simp [Algebra.smul_def]),
     smul_tmul', smul_eq_mul]
 
+/-- Reindexing a weight basis and its weights together does not change the torus action. -/
+@[simp]
+theorem kostantTorusPoints_reindex {η' : Type*} (f : η ≃ η') :
+    kostantTorusPoints M (b.reindex f) (wt ∘ f.symm) A =
+      kostantTorusPoints M b wt A := by
+  refine MonoidHom.ext fun s => Units.ext <| (b.baseChange A).ext fun x => ?_
+  have hx : b x = b.reindex f (f x) := by simp
+  rw [Module.Basis.baseChange_apply, kostantTorusPoints_tmul_basis M b wt, hx,
+    kostantTorusPoints_tmul_basis]
+  simp
+
 end Pointwise
 
 /-! ### Coordinate cocharacters -/

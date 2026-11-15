@@ -66,11 +66,15 @@ namespace Scheme
 of nonnegative order is a section of that local ring. This is the local half of the statement that
 a rational function without poles is regular. -/
 theorem exists_algebraMap_stalk_eq_of_ord_nonneg {x : X}
-    [IsDiscreteValuationRing (X.presheaf.stalk x)] (hx : coheight x = 1)
+    [IsDiscreteValuationRing (X.presheaf.stalk x)]
     {f : X.functionField} (hf : 0 ≤ X.ord f x) :
     ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
   rcases eq_or_ne f 0 with rfl | hf0
   · exact ⟨0, map_zero _⟩
+  have hx : coheight x = 1 := by
+    have := ringKrullDim_stalk_eq_coheight x
+    rw [IsDiscreteValuationRing.ringKrullDim_eq_one] at this
+    exact_mod_cast this.symm
   refine IsDiscreteValuationRing.exists_lift_of_le_one ?_
   have h1 : (1 : ℤᵐ⁰) ≤ X.ordHom x hx f := by
     simpa using (X.le_ord_iff hx hf0 (n := 0)).mp (by simpa using hf)
@@ -107,7 +111,7 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
   refine exists_germToFunctionField_eq_of_forall_mem_range fun y hy ↦ ?_
   rcases eq_or_lt_of_le (hU y hy) with hy' | hy'
   · have : IsDiscreteValuationRing (X.presheaf.stalk y) := hDVR ⟨y, hy'⟩ hy
-    exact exists_algebraMap_stalk_eq_of_ord_nonneg hy' (hf ⟨y, hy'⟩ hy)
+    exact exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨y, hy'⟩ hy)
   · exact exists_algebraMap_stalk_eq_of_coheight_eq_zero (Order.lt_one_iff.mp hy') f
 
 /-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
@@ -127,7 +131,7 @@ theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
     (f := (f : X.functionField)) fun y hy ↦ (hf y hy).ge
   obtain ⟨b, hb⟩ := exists_germToFunctionField_eq_of_ord_nonneg hDVR hU
     (f := ((f⁻¹ : X.functionFieldˣ) : X.functionField)) fun y hy ↦ by
-      rw [Units.val_inv_eq_inv_val, ord_inv, hf y hy, neg_zero]
+      rw [Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hf y hy, neg_zero]
   have hab : a * b = 1 := by
     refine X.germToFunctionField_injective U ?_
     rw [map_mul, ha, hb, map_one, Units.mul_inv]

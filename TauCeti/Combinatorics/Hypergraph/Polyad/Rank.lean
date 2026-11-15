@@ -60,26 +60,8 @@ theorem IsTopRegularOverPolyad.abs_relDensityOn_sub_mul_card_le
     (h : H.IsTopRegularOverPolyad P δ 1) (c : κ) (Q : Subpolyad3 P) :
     |(H.relDensityOn c Q.support : ℝ) - H.relativeDensity c P| * #Q.support ≤
       δ * #P.support := by
-  have : Nonempty κ := ⟨c⟩
-  have hδ := h.nonneg
-  by_cases hQ : δ * #P.support ≤ (#Q.support : ℝ)
-  · calc
-      _ ≤ δ * #Q.support := by
-        gcongr
-        exact isTopRegularOverPolyad_one_iff.1 h c Q hQ
-      _ ≤ _ := by gcongr; exact Q.support_subset
-  · have h₀ : (0 : ℝ) ≤ H.relDensityOn c Q.support := by
-      exact_mod_cast H.relDensityOn_nonneg c Q.support
-    have h₁ : (H.relDensityOn c Q.support : ℝ) ≤ 1 := by
-      exact_mod_cast H.relDensityOn_le_one c Q.support
-    have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := by
-      exact_mod_cast H.relativeDensity_nonneg c P
-    have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := by
-      exact_mod_cast H.relativeDensity_le_one c P
-    have hd : |(H.relDensityOn c Q.support : ℝ) - H.relativeDensity c P| ≤ 1 :=
-      abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
-    calc _ ≤ 1 * (#Q.support : ℝ) := by gcongr
-      _ ≤ _ := by simpa using (lt_of_not_ge hQ).le
+  simpa using h.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le c (ι := Unit)
+    le_rfl fun _ ↦ Q
 
 /-- Rank-one top regularity bounds the signed discrepancy on a finite union of subpolyads,
 with a loss bounded by the number of subsets of the indexing type. -/

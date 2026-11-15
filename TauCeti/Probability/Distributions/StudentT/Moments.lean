@@ -11,7 +11,7 @@ public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
@@ -94,7 +94,7 @@ private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq 
     have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
         studentTPDFReal ν z * z ^ q := by
       intro z hz
-      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
+      simpa [g] using abs_deriv_smul_studentTPDFReal (ν := ν) q hz
     have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
         (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
       intro z hz

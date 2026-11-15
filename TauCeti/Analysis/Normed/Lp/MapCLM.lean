@@ -24,6 +24,12 @@ its characterizing API, at every exponent `1 ≤ p ≤ ∞` and over every nontr
   composing coordinatewise composes the direct sums;
 * its operator norm is exactly the supremum `⨆ i, ‖T i‖` (`lp.norm_mapCLM`).
 
+Taking the same operator `T : X →L[𝕜] Y` in every coordinate gives its ampliation
+`lp.ampliation ι p T = ⊕_{i : ι} T : ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)`, bundled as a bounded linear map
+of `T`. It has the same norm as `T` for nonempty `ι`, so it is injective, and it is compatible
+with composition. On `ℓ²(ℕ, H)` it is the device that defines the ultrastrong and ultraweak
+operator topologies from the strong and weak ones.
+
 On Hilbert spaces and `p = 2` the direct sum is moreover compatible with adjoints, so these laws
 let representations of an algebra on the summands be assembled into one on the direct sum; the
 adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
@@ -35,6 +41,7 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 * `lp.mapCLM_inj`: the direct sum determines the family.
 * `lp.mapCLM_add`, `lp.mapCLM_smul`, `lp.mapCLM_id`, `lp.mapCLM_comp`: the algebraic laws.
 * `lp.norm_mapCLM`: `‖⊕ T i‖ = ⨆ i, ‖T i‖`.
+* `lp.ampliation`, `lp.norm_ampliation`, `lp.ampliation_comp`: the ampliation of one operator.
 
 ## References
 
@@ -43,7 +50,7 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal lp
 
 namespace lp
 
@@ -169,5 +176,76 @@ theorem norm_mapCLM (T : ∀ i, E i →L[𝕜] F i) {K : ℝ} (hK : 0 ≤ K) (hT
   rw [mapCLM_congr rfl hK hTK (Real.iSup_nonneg fun i ↦ norm_nonneg (T i))
     fun i ↦ le_ciSup hbdd i]
   exact norm_mapCLM_le _ _ _ _
+
+section Ampliation
+
+variable (ι p) {X Y Z : Type*}
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+
+/-- The **ampliation** `T ↦ ⊕_{i : ι} T` of an operator to `ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)`, acting by
+`T` in every coordinate, as a bounded linear map of `T`. -/
+noncomputable def ampliation : (X →L[𝕜] Y) →L[𝕜] (ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)) :=
+  LinearMap.mkContinuous
+    { toFun T := mapCLM p (fun _ ↦ T) (norm_nonneg T) fun _ ↦ le_rfl
+      map_add' T S := by ext x i; simp
+      map_smul' c T := by ext x i; simp }
+    1 fun T ↦ by simpa using norm_mapCLM_le p (fun _ : ι ↦ T) (norm_nonneg T) fun _ ↦ le_rfl
+
+variable {ι p}
+
+theorem ampliation_eq_mapCLM (T : X →L[𝕜] Y) :
+    ampliation ι p T = mapCLM p (fun _ ↦ T) (norm_nonneg T) fun _ ↦ le_rfl :=
+  (rfl)
+
+@[simp]
+theorem ampliation_apply_apply (T : X →L[𝕜] Y) (x : ℓ^p(ι, X)) (i : ι) :
+    ampliation ι p T x i = T (x i) := by
+  simp [ampliation_eq_mapCLM]
+
+/-- The ampliation maps the coordinate vector `single i x` to `single i (T x)`. -/
+@[simp]
+theorem ampliation_single [DecidableEq ι] (T : X →L[𝕜] Y) (i : ι) (x : X) :
+    ampliation ι p T (lp.single p i x) = lp.single p i (T x) := by
+  simp [ampliation_eq_mapCLM]
+
+theorem norm_ampliation_le (T : X →L[𝕜] Y) : ‖ampliation ι p T‖ ≤ ‖T‖ :=
+  norm_mapCLM_le p _ (norm_nonneg T) fun _ ↦ le_rfl
+
+/-- Over a nonempty index type the ampliation preserves the operator norm. -/
+@[simp]
+theorem norm_ampliation [Nonempty ι] (T : X →L[𝕜] Y) : ‖ampliation ι p T‖ = ‖T‖ := by
+  rw [ampliation_eq_mapCLM, norm_mapCLM, ciSup_const]
+
+theorem ampliation_injective [Nonempty ι] :
+    Function.Injective (ampliation ι p : (X →L[𝕜] Y) → ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)) := by
+  classical
+  intro T S h
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  ext x
+  simpa using congr($h (lp.single p i x) i)
+
+@[simp]
+theorem ampliation_id :
+    ampliation ι p (ContinuousLinearMap.id 𝕜 X) = ContinuousLinearMap.id 𝕜 ℓ^p(ι, X) := by
+  ext x i
+  simp
+
+@[simp]
+theorem ampliation_comp (T : Y →L[𝕜] Z) (S : X →L[𝕜] Y) :
+    ampliation ι p (T ∘L S) = ampliation ι p T ∘L ampliation ι p S := by
+  ext x i
+  simp
+
+@[simp]
+theorem ampliation_one : ampliation ι p (1 : X →L[𝕜] X) = 1 :=
+  ampliation_id
+
+@[simp]
+theorem ampliation_mul (T S : X →L[𝕜] X) :
+    ampliation ι p (T * S) = ampliation ι p T * ampliation ι p S :=
+  ampliation_comp T S
+
+end Ampliation
 
 end lp

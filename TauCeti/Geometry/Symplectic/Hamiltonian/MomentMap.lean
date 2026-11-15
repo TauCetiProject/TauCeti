@@ -59,7 +59,11 @@ finite-dimensional manifold, its image is the annihilator `𝔤_x^0` of the isot
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_differential`). So `dμ_x` is surjective exactly when
 `𝔤_x = 0`, that is, when the action is locally free at `x`, and the rank of `dμ_x` is the
 dimension of the orbit tangent space. These identities describe the tangent spaces of the
-levels of a moment map, the starting point of symplectic reduction.
+levels of a moment map, the starting point of symplectic reduction. Along a Hamiltonian vector
+field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
+tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
+(`TauCeti.SmoothTwoForm.IsMomentMap.mem_ker_differential_iff_of_isHamiltonianVectorField`).
 
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
@@ -72,7 +76,9 @@ manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie
 vanishes at `x` exactly when `σ(Z_M x, Z'_M x) = μ(x)(⁅Z, Z'⁆)` for all `Z, Z'`
 (`TauCeti.SmoothTwoForm.momentCocycle_eq_zero_iff`), and then `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the
 isotropy algebra `𝔤_x` lies in the coadjoint stabilizer of `μ(x)`
-(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`). For a nondegenerate form, if
+moreover `μ(x)` is coadjoint-fixed, the components of `μ` pairwise Poisson-commute at `x`
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -333,6 +339,23 @@ theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
     InfinitesimalAction.mem_orbitTangent_iff, forall_exists_index, forall_apply_eq_imp_iff,
     SmoothForm.bilinFormAt_apply, h.differential_apply_eq_eval₂, LinearMap.zero_apply]
 
+/-- The differential of a moment map along a Hamiltonian vector field `X` of `f`:
+`⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`. -/
+theorem differential_apply_of_isHamiltonianVectorField (h : σ.IsMomentMap a μ) {f : M → ℝ}
+    {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) (x : M) (Z : 𝔤) :
+    h.differential x (X x) Z = -mvfderiv I f x (a Z x) := by
+  rw [h.differential_apply_eq_eval₂, SmoothBundleForm.eval₂_swap,
+    isHamiltonianVectorField_iff.1 hX x (a Z x)]
+
+/-- **Noether's theorem at a point.** A Hamiltonian vector field `X` of `f` is tangent to the
+level of a moment map at `x`, `X x ∈ ker dμ_x`, exactly when the derivative of `f` at `x` vanishes
+along every generated vector field `Z_M`. -/
+theorem mem_ker_differential_iff_of_isHamiltonianVectorField (h : σ.IsMomentMap a μ)
+    {f : M → ℝ} {X : (x : M) → TangentSpace I x} (hX : σ.IsHamiltonianVectorField f X) (x : M) :
+    X x ∈ LinearMap.ker (h.differential x) ↔ ∀ Z, mvfderiv I f x (a Z x) = 0 := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff,
+    h.differential_apply_of_isHamiltonianVectorField hX, LinearMap.zero_apply, neg_eq_zero]
+
 /-- At a point where the form is nondegenerate, the image of the differential of a moment map is
 the image of the transpose of the orbit map `Z ↦ Z_M(x)`. -/
 theorem range_differential_eq_range_dualMap [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ)
@@ -468,6 +491,16 @@ theorem momentCocycle_apply_eq_poissonBracket [FiniteDimensional ℝ E] (h : σ.
     σ.momentCocycle a μ x Z Z' = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm
       (σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x - μ x ⁅Z, Z'⁆) := by
   rw [momentCocycle_apply, h.poissonBracket_eq_eval₂ hσ]
+
+/-- **Components of a moment map Poisson-commute** at a point where the cocycle of the moment map
+vanishes and `μ(x)` is coadjoint-fixed, for instance everywhere for an infinitesimally
+equivariant moment map of an abelian Lie algebra. -/
+theorem poissonBracket_eq_zero [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ)
+    (hσ : σ.IsNondegenerate) {x : M} (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) (Z Z' : 𝔤) :
+    σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x = 0 := by
+  rw [h.poissonBracket_eq_eval₂ hσ, momentCocycle_eq_zero_iff.1 hc,
+    apply_lie_eq_zero_of_lieAnnihilator_eq_top hμ]
 
 /-- If the cocycle of a moment map vanishes at `x`, its differential carries the generated vector
 `Z_M x` to the coadjoint action of `Z` on `μ(x)`: `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`. -/

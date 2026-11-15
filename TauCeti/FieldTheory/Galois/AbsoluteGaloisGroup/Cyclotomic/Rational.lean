@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Profinite
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 public import TauCeti.NumberTheory.Cyclotomic.Surjectivity
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
@@ -13,16 +14,18 @@ import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 /-!
 # Surjectivity of rational cyclotomic characters
 
-The absolute Galois group of `ℚ` realizes every unit modulo each positive integer, and
-every `p`-adic unit for each prime `p`, through its action on roots of unity. Irreducibility
-of cyclotomic polynomials over `ℚ` supplies the finite-level surjectivity; compactness of
-the absolute Galois group supplies a single automorphism realizing all `p`-power levels.
+The absolute Galois group of `ℚ` realizes every unit modulo each positive integer, every
+`p`-adic unit for each prime `p`, and every profinite unit, through its action on roots of
+unity. Irreducibility of cyclotomic polynomials over `ℚ` supplies the finite-level
+surjectivity; compactness of the absolute Galois group supplies a single automorphism realizing
+all `p`-power levels, or all positive levels at once.
 The `p`-adic statements cover both `localCyclotomicCharacter` on the absolute Galois group
 and Mathlib's `cyclotomicCharacter` on ring automorphisms of `AlgebraicClosure ℚ`.
 
 These statements concern the full rational absolute Galois group. They do not assert
-surjectivity over arbitrary number fields, nor simultaneous realization of independently
-specified `p`-adic units at different primes.
+surjectivity over arbitrary number fields. Simultaneous realization of independently specified
+`p`-adic units at different primes is the profinite statement, since `(Additive zHat)ˣ` is the
+product of the groups `ℤ_[p]ˣ` (`TauCeti.zHat.unitsEquivPiPadicInt`).
 
 ## References
 
@@ -56,5 +59,12 @@ theorem surjective_cyclotomicCharacter_rat (p : ℕ) [Fact p.Prime] :
   intro u
   obtain ⟨σ, hσ⟩ := surjective_localCyclotomicCharacter_rat p u
   exact ⟨σ.toRingEquiv, (localCyclotomicCharacter_apply p ℚ σ).symm.trans hσ⟩
+
+/-- **The profinite cyclotomic character of `G_ℚ` is surjective**: every profinite unit
+`(Additive zHat)ˣ` is realized by an element of the absolute Galois group of `ℚ`. -/
+theorem surjective_profiniteCyclotomicCharacter_rat :
+    Function.Surjective (profiniteCyclotomicCharacter ℚ) :=
+  profiniteCyclotomicCharacter_surjective_of_irreducible fun n ↦
+    Polynomial.cyclotomic.irreducible_rat n.pos
 
 end TauCeti

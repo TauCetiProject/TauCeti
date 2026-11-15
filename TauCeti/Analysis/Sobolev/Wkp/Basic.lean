@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import Mathlib.MeasureTheory.Measure.SeparableMeasure
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 
@@ -34,6 +35,9 @@ instance, for `sin` in `W^{1,∞}(ℝ)`.  The derivative fields above first orde
 so the norm of `W^{k,2}(Ω)` with `k ≥ 2` need not be induced by an inner product: on
 `Ω = (0,1)² ⊆ ℝ²`, for instance, `x²/2` and `y²/2` violate the parallelogram law.  It is a
 Banach-space norm, not in general the Hilbert-space norm of `H^k(Ω)`.
+
+For finite `p`, the full iterated weak-derivative graph topology is second countable, hence
+separable. No separability assertion is made for `p = ∞`.
 
 ## Implementation notes
 
@@ -141,6 +145,21 @@ theorem SobolevStage.instCompleteSpace (j : ℕ) :
 
 attribute [instance] SobolevStage.instCompleteSpace
 
+/-- At finite exponent, every iterated weak-derivative graph stage is second countable. -/
+instance SobolevStage.instSecondCountableTopology [Fact (p ≠ ⊤)] (j : ℕ) :
+    SecondCountableTopology
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space := by
+  induction j with
+  | zero =>
+    -- The first stage is definitionally the value-gradient `Lᵖ` subspace `W1p`.
+    exact (inferInstance : SecondCountableTopology (W1p mu Omega p))
+  | succ j ih =>
+    have := ih
+    -- The next stage is a graph in the product of the preceding stage and an `Lᵖ` space.
+    exact (inferInstance : SecondCountableTopology
+      (WeakDerivStep mu Omega p
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).iteratedGradientL))
+
 /-- The arbitrary-order, real-valued weak Sobolev space `W^{k,p}(Ω)`.  At order zero this is
 `Lᵖ(Ω)`; order one is `W1p`; every further order adjoins the weak derivative of the highest
 derivative field from the preceding order. -/
@@ -170,6 +189,12 @@ theorem Wkp.instCompleteSpace :
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).completeSpace
 
 attribute [instance] Wkp.instCompleteSpace
+
+/-- At every order and finite exponent, the full weak Sobolev topology is second countable. -/
+instance Wkp.instSecondCountableTopology [Fact (p ≠ ⊤)] :
+    (k : ℕ) → SecondCountableTopology (Wkp mu Omega p k)
+  | 0 => inferInstance
+  | k + 1 => SobolevStage.instSecondCountableTopology k
 
 namespace Wkp
 
@@ -249,6 +274,12 @@ theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
     value k (u + v) = value k u + value k v :=
   map_add (valueL k) u v
 
+/-- The value component preserves subtraction. -/
+@[simp]
+theorem value_sub (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u - v) = value k u - value k v :=
+  map_sub (valueL k) u v
+
 /-- The value component preserves scalar multiplication. -/
 @[simp]
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
@@ -325,6 +356,21 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
   induction k with
   | zero => exact (value_one u).symm
   | succ k ih => rw [firstOrder_succ, ih, value_succ (k + 1) u]
+
+/-- At second order, the first-order part is the lower-order part. -/
+@[simp] theorem firstOrder_one (u : Wkp mu Omega p 2) : firstOrder 1 u = lowerOrder 1 u :=
+  (firstOrder_succ 0 u).trans (firstOrder_zero _)
+
+/-- At second order, the weak gradient of the first-order part is the highest derivative of the
+lower-order part. -/
+theorem gradient_firstOrder_one (u : Wkp mu Omega p 2) :
+    W1p.gradient (firstOrder 1 u) = iteratedGradient 0 (lowerOrder 1 u) := by
+  rw [firstOrder_one, iteratedGradient_zero]
+
+/-- At second order, the `Lᵖ` value of the lower-order part is the `Lᵖ` value. -/
+@[simp] theorem value_lowerOrder_one (u : Wkp mu Omega p 2) :
+    W1p.value (lowerOrder 1 u) = value 2 u :=
+  (congrArg W1p.value (firstOrder_one u)).symm.trans (value_firstOrder 1 u)
 
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
@@ -464,6 +510,12 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
+/-- On an empty domain every Sobolev space is trivial. -/
+theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :
+    Subsingleton (Wkp mu Omega p k) :=
+  ⟨fun _ _ ↦ ext k (Lp.ext (Filter.Eventually.filter_mono
+    (ae_eq_bot.2 (Measure.restrict_eq_zero.2 (by simp [h]))).le Filter.eventually_bot))⟩
+
 /-- The graph norm controls the one-order-lower Sobolev component. -/
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖lowerOrder k u‖ ≤ ‖u‖ := by
@@ -513,9 +565,9 @@ theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
       rw [lowerOrder_zero, iteratedGradient_zero]
       exact W1p.norm_le_norm_value_add_norm_gradient u
   | succ k =>
-      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
-        norm_nonneg (iteratedGradient (k + 1) u)]
+      rw [lowerOrder_succ, iteratedGradient_succ]
+      exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The
@@ -560,6 +612,28 @@ theorem continuous_iff_lowerOrder_iteratedGradient (k : ℕ) {Y : Type*} [Topolo
   exact ⟨fun h => ⟨fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).1,
       fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).2⟩,
     fun h y => (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨h.1 y, h.2 y⟩⟩
+
+/-- Approximations defined at every order converge at every order once they converge at order
+zero and in each highest weak derivative, provided they commute with `lowerOrder`. For each `u`
+of order `k` satisfying a side condition `P k u` inherited by `lowerOrder`, `v k u hu` is a family
+of approximations of `w k u`. -/
+theorem tendsto_of_tendsto_iteratedGradient {U : Opens E} {I : Type*} {l : Filter I}
+    {P : ∀ k, Wkp mu Omega p k → Prop} (hP : ∀ k u, P (k + 1) u → P k (lowerOrder k u))
+    {v : ∀ k (u : Wkp mu Omega p k), P k u → I → Wkp mu U p k}
+    {w : ∀ k, Wkp mu Omega p k → Wkp mu U p k}
+    (hv : ∀ k u hu i, lowerOrder k (v (k + 1) u hu i) = v k (lowerOrder k u) (hP k u hu) i)
+    (hw : ∀ k u, lowerOrder k (w (k + 1) u) = w k (lowerOrder k u))
+    (hzero : ∀ u hu, Filter.Tendsto (v 0 u hu) l (nhds (w 0 u)))
+    (hgrad : ∀ k u hu, Filter.Tendsto (fun i => iteratedGradient k (v (k + 1) u hu i)) l
+      (nhds (iteratedGradient k (w (k + 1) u)))) :
+    ∀ k u hu, Filter.Tendsto (v k u hu) l (nhds (w k u)) := by
+  intro k
+  induction k with
+  | zero => exact hzero
+  | succ k ih =>
+      intro u hu
+      refine (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨?_, hgrad k u hu⟩
+      simpa only [hv, hw] using ih _ (hP k u hu)
 
 end Wkp
 

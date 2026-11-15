@@ -23,6 +23,11 @@ image of the quotient kernel plus the span of the image of a representative. Thi
 the underlying submodule when lifting a cyclic submodule of a subquotient, for example an
 eigenline, into the ambient module.
 
+A linear map `φ : P → M` induces an isomorphism from the quotient of `P` by the preimage of a
+submodule `F` onto the subquotient `(F ⊔ range φ) ⧸ F`;
+`Submodule.quotientComapEquivSupQuotient` generalizes the second isomorphism theorem, which is
+the case `φ = p.subtype`.
+
 Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
 
@@ -86,6 +91,39 @@ theorem map_comap_mkQ_span_singleton (S : Submodule R M) (f : M →ₗ[R] N) (v 
     simp [Submodule.map_span]
   rw [← hspan, Submodule.comap_map_mkQ, Submodule.map_sup]
   simp [Submodule.map_span]
+
+/-- The map `φ` induces a linear isomorphism from the quotient of `P` by the preimage of `F`
+under `φ` onto the subquotient `(F ⊔ range φ) ⧸ F`. For `φ = p.subtype` this is the second
+isomorphism theorem `LinearMap.quotientInfEquivSupQuotient`. -/
+noncomputable def quotientComapEquivSupQuotient {P : Type*} [AddCommGroup P] [Module R P]
+    (F : Submodule R M) (φ : P →ₗ[R] M) :
+    (P ⧸ F.comap φ) ≃ₗ[R]
+      (F ⊔ LinearMap.range φ : Submodule R M) ⧸
+        F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
+  let ψ : P →ₗ[R] (F ⊔ LinearMap.range φ : Submodule R M) ⧸
+      F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
+    (F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M)).mkQ ∘ₗ
+      φ.codRestrict _ fun c ↦ Submodule.mem_sup_right ⟨c, rfl⟩
+  Submodule.quotEquivOfEq _ _ (by
+    ext c
+    simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero]
+    simp only [Submodule.submoduleOf, Submodule.mem_comap, LinearMap.codRestrict_apply,
+      Submodule.coe_subtype]) ≪≫ₗ
+  ψ.quotKerEquivOfSurjective (by
+    apply LinearMap.range_eq_top.mp
+    simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top, LinearMap.range_codRestrict]
+    exact (Submodule.submoduleOf_sup_of_le le_sup_left le_sup_right).symm.trans
+      (Submodule.submoduleOf_eq_top.mpr le_rfl))
+
+@[simp]
+theorem quotientComapEquivSupQuotient_apply_mk {P : Type*} [AddCommGroup P] [Module R P]
+    (F : Submodule R M) (φ : P →ₗ[R] M) (c : P) :
+    quotientComapEquivSupQuotient F φ (Submodule.Quotient.mk c) =
+      Submodule.Quotient.mk (p := F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M))
+        ⟨φ c, Submodule.mem_sup_right ⟨c, rfl⟩⟩ := by
+  simp [quotientComapEquivSupQuotient]
+  rfl
 
 end Submodule
 

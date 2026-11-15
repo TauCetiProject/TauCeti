@@ -38,18 +38,18 @@ both points into one fibre by path lifting, then using exactness at `π_0` of th
 with surjectivity of `g` on fundamental groups. Every fibre is used, not only the fibre over a
 chosen base point, since `B` need not be path connected.
 
-Two special cases:
+A special case is **base change along a weak homotopy equivalence**. The base change of a Serre
+fibration `p : E → B` along a weak homotopy equivalence `g : B' → B` has total space weakly
+equivalent to `E` (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`): the base change has
+the same fibres (`TopCat.Hom.fiberPullbackFstIso`). Pulling back along a CW approximation of the
+base in this way replaces a Serre fibration over an arbitrary base by one over a CW complex,
+without changing the weak homotopy type of the total space.
 
-* **Base change along a weak homotopy equivalence.** The base change of a Serre fibration
-  `p : E → B` along a weak homotopy equivalence `g : B' → B` has total space weakly equivalent to
-  `E` (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`): the base change has the same
-  fibres (`TopCat.Hom.fiberPullbackFstIso`). Pulling back along a CW approximation of the base
-  in this way replaces a Serre fibration over an arbitrary base by one over a CW complex,
-  without changing the weak homotopy type of the total space.
-* **Weakly contractible fibres.** A Serre fibration whose fibres are all path connected, with
-  trivial higher homotopy groups, is a weak homotopy equivalence
-  (`TauCeti.TopCat.isWeakHomotopyEquivalence_of_forall_fiber`). Nonemptiness of every fibre,
-  which is part of path connectedness, is needed: otherwise `p` misses a point of `B`.
+Another is **restriction over a weakly equivalent subspace**. If the inclusion of subspaces
+`S ⊆ T` of the base is a weak homotopy equivalence, so is the inclusion `p⁻¹(S) ⊆ p⁻¹(T)`
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`): the restrictions of `p` over `S`
+and over `T` are Serre fibrations with the same fibres. For instance the preimage of a
+deformation retract of the base is weakly equivalent to the preimage of the ambient subspace.
 
 ## Main results
 
@@ -57,8 +57,8 @@ Two special cases:
   homotopy equivalence on the bases and on every fibre is one on the total spaces.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`: base change of a Serre fibration along a
   weak homotopy equivalence.
-* `TauCeti.TopCat.isWeakHomotopyEquivalence_of_forall_fiber`: a Serre fibration with weakly
-  contractible fibres is a weak homotopy equivalence.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`: restriction of a Serre fibration
+  over a weakly equivalent subspace.
 
 ## References
 
@@ -172,29 +172,19 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
     (hp' : serreFibrations p') (hg : g.hom.IsWeakHomotopyEquivalence)
     (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (y : p.fiber b)
     (h : Joined (f e.1) (f y.1)) : Joined e.1 y.1 := by
-  -- Points of the fibres are zero-dimensional generalized loops, whose classes are their path
-  -- components (`homotopyGroupEquivZerothHomotopyOfIsEmpty`).
-  let ℓ : Ω^ (Fin 0) (p.fiber b) e := (genLoopHomeoOfIsEmpty (Fin 0) e).symm y
-  have hℓ : ℓ 0 = y := genLoopHomeoOfIsEmpty_symm_apply y 0
   -- The image of `y` in the fibre of `p'` is joined to the base point in `E'`, so its class is a
   -- boundary, of an element which comes from `B` since `g` is surjective on `π_1`.
-  obtain ⟨y', hy'⟩ : HomotopyGroup.map (sq.fiberMap b).hom rfl (⟦ℓ⟧ : HomotopyGroup _ _ _) ∈
-      range (fibrationBoundary hp' (sq.fiberMap b e)) := by
-    rw [mem_range_fibrationBoundary_iff hp', HomotopyGroup.map_mk]
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) _).injective
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, hℓ,
-      TopCat.Hom.fiberι_apply, sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
-    exact ZerothHomotopy.sound h.symm.somePath
+  obtain ⟨y', hy'⟩ := (joined_iff_mem_range_fibrationBoundary hp' (e := sq.fiberMap b e)
+    (sq.fiberMap b y)).1 <| by rwa [sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
   obtain ⟨γ, rfl⟩ := (hg.map_bijective (Option (Fin 0)) b).2 y'
   rw [fibrationBoundary_map sq hp hp'] at hy'
   -- Since the fibre map is injective on `π_0`, the class of `y` itself is a boundary, so it is
   -- joined to the base point in `E`.
-  have h0 := (mem_range_fibrationBoundary_iff hp).1 ⟨γ, (hfib.map_bijective (Fin 0) e).1 hy'⟩
-  have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1) h0
-  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-    homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hℓ, TopCat.Hom.fiberι_apply] at h1
-  exact (Quotient.exact h1).symm
+  refine (joined_iff_mem_range_fibrationBoundary hp (e := e) y).2
+    ⟨γ, (hfib.map_bijective (Fin 0) e).1 (hy'.trans ?_)⟩
+  rw [HomotopyGroup.map_mk]
+  exact congrArg _ (GenLoop.ext _ _ fun t ↦ by
+    rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, genLoopHomeoOfIsEmpty_symm_apply])
 
 end Comparison
 
@@ -278,25 +268,27 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
   rw [h₁]
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
 
-/-- **A Serre fibration with weakly contractible fibres is a weak homotopy equivalence.** If every
-fibre of the Serre fibration `p : E → B` is path connected (in particular nonempty) and has
-trivial homotopy groups in positive degrees, then `p` is a weak homotopy equivalence. -/
-theorem isWeakHomotopyEquivalence_of_forall_fiber (hp : serreFibrations p)
-    (hconn : ∀ b, PathConnectedSpace (p.fiber b))
-    (hπ : ∀ b (x : p.fiber b) n, Subsingleton (HomotopyGroup (Fin (n + 1)) (p.fiber b) x)) :
-    p.hom.IsWeakHomotopyEquivalence := by
-  let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
-  refine isWeakHomotopyEquivalence_of_commSq hp (MorphismProperty.id_mem _ B) sq
-    ((mem_weakEquivalences_iff _).1 (weakEquivalences.id_mem B)) fun b ↦ ?_
-  -- The fibre of the identity is a point, so the fibre map is a weak homotopy equivalence
-  -- exactly when the fibre of `p` is weakly contractible.
-  have : Subsingleton (TopCat.Hom.fiber (𝟙 B) ((𝟙 B : B ⟶ B) b)) :=
-    ⟨fun x y ↦ Subtype.ext <| by
-      simpa using (Set.mem_singleton_iff.1 x.2).trans (Set.mem_singleton_iff.1 y.2).symm⟩
-  refine ContinuousMap.isWeakHomotopyEquivalence_iff_joined.2
-    ⟨fun y ↦ ⟨Classical.arbitrary _, Subsingleton.elim _ y ▸ Joined.refl _⟩,
-      fun _ _ _ ↦ PathConnectedSpace.joined _ _, fun n x ↦ ?_⟩
-  have := hπ b x n
-  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+/-- **Restriction of a Serre fibration over a weakly equivalent subspace.** If `p : E ⟶ B` is a
+Serre fibration and `S ⊆ T` are subspaces of `B` whose inclusion is a weak homotopy equivalence,
+then the inclusion `p⁻¹(S) ⊆ p⁻¹(T)` is a weak homotopy equivalence. -/
+theorem isWeakHomotopyEquivalence_inclusion_preimage (hp : serreFibrations p) {S T : Set B}
+    (hST : S ⊆ T) (h : (ContinuousMap.inclusion hST).IsWeakHomotopyEquivalence) :
+    (ContinuousMap.inclusion
+      (preimage_mono hST : p ⁻¹' S ⊆ p ⁻¹' T)).IsWeakHomotopyEquivalence := by
+  let sq : CommSq (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono hST : p ⁻¹' S ⊆ p ⁻¹' T)))
+      (TopCat.ofHom (p.hom.restrictPreimage S)) (TopCat.ofHom (p.hom.restrictPreimage T))
+      (TopCat.ofHom (ContinuousMap.inclusion hST)) := ⟨rfl⟩
+  refine isWeakHomotopyEquivalence_of_commSq (mem_serreFibrations_restrictPreimage hp S)
+    (mem_serreFibrations_restrictPreimage hp T) sq h fun b ↦ ?_
+  -- Both fibres over `b` consist of the points of `E` over `b`, so the fibre map is invertible.
+  have hy (y : (TopCat.ofHom (p.hom.restrictPreimage T)).fiber (ContinuousMap.inclusion hST b)) :
+      p y.1.1 = b.1 :=
+    congrArg Subtype.val (mem_singleton_iff.1 y.2)
+  have : IsIso (sq.fiberMap b) :=
+    ⟨TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1.1, by simp [hy y]⟩, Subtype.ext (hy y)⟩,
+      by fun_prop⟩,
+      by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b x),
+      by ext x; simpa using congrArg Subtype.val (sq.fiberMap_apply_coe b _)⟩
+  exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso (sq.fiberMap b))
 
 end TauCeti.TopCat

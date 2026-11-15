@@ -17,7 +17,7 @@ generator.
 
 public section
 
-namespace TauCeti
+namespace LinearMap
 
 universe u₁ u₂ u₃ u₄ u₅
 
@@ -27,10 +27,10 @@ variable {R : Type u₁} {R₂ : Type u₂} {M : Type u₃} {M₂ : Type u₄} {
 
 include σ in
 /-- Two semilinear maps agree on `W ⊔ R ∙ x` if and only if they agree on `W` and at `x`. -/
-theorem _root_.LinearMap.eqOn_sup_span_singleton_iff {f g : F} {W : Submodule R M} {x : M} :
+theorem eqOn_sup_span_singleton_iff {f g : F} {W : Submodule R M} {x : M} :
     Set.EqOn f g ↑(W ⊔ Submodule.span R {x}) ↔ Set.EqOn f g W ∧ f x = g x := by
   rw [← LinearMap.coe_ofClass (f := f), ← LinearMap.coe_ofClass (f := g),
     ← LinearMap.le_eqLocus, ← LinearMap.le_eqLocus, sup_le_iff,
     Submodule.span_singleton_le_iff_mem, LinearMap.mem_eqLocus]
 
-end TauCeti
+end LinearMap

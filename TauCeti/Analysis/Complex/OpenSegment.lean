@@ -9,31 +9,36 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Convex.Segment
 
 /-!
-# The open segment from `0` to `1` in `ℂ`
+# Open segments between real points of `ℂ`
 
-Mathlib's `openSegment ℝ 0 1` in `ℂ` is the image of the open real interval `(0, 1)`. This file
-records its description in coordinates: the real points strictly between `0` and `1`.
+The open segment of `ℂ` joining two real points is the image of the corresponding open segment
+of `ℝ`. This file records its description in coordinates.
 
 ## Main results
 
-* `TauCeti.Complex.mem_openSegment_zero_one`: `w ∈ openSegment ℝ 0 1` exactly when `w` is real
+* `Complex.mem_openSegment_ofReal`: `w ∈ openSegment ℝ (a : ℂ) b` exactly when `w` is real with
+  `re w ∈ openSegment ℝ a b`.
+* `Complex.mem_openSegment_zero_one`: `w ∈ openSegment ℝ 0 1` exactly when `w` is real
   with `0 < re w < 1`.
 -/
 
 public section
 
-namespace TauCeti.Complex
+namespace Complex
+
+/-- A point of `ℂ` lies on the open segment joining two real points exactly when it is real and
+its real part lies on the open segment joining them in `ℝ`. -/
+@[simp]
+theorem mem_openSegment_ofReal {w : ℂ} {a b : ℝ} :
+    w ∈ openSegment ℝ (a : ℂ) b ↔ w.im = 0 ∧ w.re ∈ openSegment ℝ a b := by
+  simp only [openSegment, Set.mem_ofPred_eq, Complex.ext_iff]
+  grind [add_re, add_im, real_smul, mul_re, mul_im, ofReal_re, ofReal_im, smul_eq_mul]
 
 /-- A point of `ℂ` lies on the open segment from `0` to `1` exactly when it is real and strictly
 between `0` and `1`. -/
 @[simp]
 theorem mem_openSegment_zero_one {w : ℂ} :
     w ∈ openSegment ℝ (0 : ℂ) 1 ↔ w.im = 0 ∧ 0 < w.re ∧ w.re < 1 := by
-  rw [openSegment_eq_image]
-  constructor
-  · rintro ⟨θ, ⟨h0, h1⟩, rfl⟩
-    simp [h0, h1]
-  · rintro ⟨him, h0, h1⟩
-    refine ⟨w.re, ⟨h0, h1⟩, _root_.Complex.ext ?_ ?_⟩ <;> simp [him]
+  simpa [openSegment_eq_Ioo] using mem_openSegment_ofReal (w := w) (a := 0) (b := 1)
 
-end TauCeti.Complex
+end Complex

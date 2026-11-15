@@ -446,15 +446,14 @@ instance finiteDimensional_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] 
 
 /-- The dimension of the span of the paths of length `n` into `j` is the number of such paths:
 distinct paths are linearly independent in the path algebra. -/
-theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j : R) :
+theorem finrank_pathsInto (n : ℕ) (j : R) :
     Module.finrank k (pathsInto k n j) =
       Nat.card {p : Σ s : R, Path s j // p.2.length = n} := by
-  have := Fintype.ofFinite (PathInto R n j)
   have hli : LinearIndependent k
       fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R) := by
     have h := (pathAlgebraBasis k R).linearIndependent.comp _ (pathInto_injective n j)
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
-  rw [pathsInto, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
+  rw [pathsInto, ← Module.finrank_eq_nat_card_basis (Module.Basis.span hli)]
 
 instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
     FiniteDimensional k (pathsBetween k n i j) :=
@@ -462,9 +461,8 @@ instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween
 
 /-- The dimension of the length-`n` corner from `i` to `j` is the number of length-`n` paths
 from `i` to `j`. -/
-theorem finrank_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
+theorem finrank_pathsBetween (n : ℕ) (i j : R) :
     Module.finrank k (pathsBetween k n i j) = Nat.card (PathBetween R n i j) := by
-  have := Fintype.ofFinite (PathBetween R n i j)
   have hli : LinearIndependent k
       fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R) := by
     have h := (pathAlgebraBasis k R).linearIndependent.comp
@@ -473,7 +471,7 @@ theorem finrank_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] 
         simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
         exact Subtype.ext h)
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
-  rw [pathsBetween, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
+  rw [pathsBetween, ← Module.finrank_eq_nat_card_basis (Module.Basis.span hli)]
 
 end Field
 

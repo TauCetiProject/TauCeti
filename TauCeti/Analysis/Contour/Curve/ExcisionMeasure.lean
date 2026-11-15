@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Indicator
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -31,6 +32,8 @@ null set of times.
 * `TauCeti.Contour.nullMeasurableSet_excision`: the excised parameter set is null-measurable
   against any measure for which the curve is a.e. measurable.
 * `TauCeti.Contour.measurableSet_excision`: its measurable specialization.
+* `TauCeti.Contour.aestronglyMeasurable_indicator_excision`: excising from an integrand supported
+  where the curve is differentiable keeps it a.e. strongly measurable.
 * `TauCeti.Contour.measure_setOf_mem_eq_zero_of_injOn`: an injective curve meets a finite set at
   a null set of times.
 * `TauCeti.Contour.tendsto_intervalIntegral_excisionIndicator`: the excision indicator's integral
@@ -71,6 +74,30 @@ theorem measurableSet_excision {γ : ℝ → ℂ} (hγm : Measurable γ) (S : Fi
   rw [h]
   exact Finset.measurableSet_biUnion _ fun s _ =>
     measurableSet_le ((hγm.sub_const s).norm) measurable_const
+
+/-- **Excising a curve's `ε`-neighbourhood of finitely many points keeps a.e.-strong
+measurability, if the integrand is supported where the curve is differentiable.** Off the set of
+differentiability the integrand vanishes, and on it the curve is continuous, hence measurable, so
+the excised parameter set is null-measurable for the restricted measure. -/
+theorem aestronglyMeasurable_indicator_excision {γ : ℝ → ℂ} {a b : ℝ} {G : ℝ → ℂ}
+    (hG : MeasureTheory.AEStronglyMeasurable G (MeasureTheory.volume.restrict (Set.uIoc a b)))
+    (hG0 : ∀ t, ¬ DifferentiableAt ℝ γ t → G t = 0) (S : Finset ℂ) (ε : ℝ) :
+    MeasureTheory.AEStronglyMeasurable ({t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator G)
+      (MeasureTheory.volume.restrict (Set.uIoc a b)) := by
+  have hD : MeasurableSet {t | DifferentiableAt ℝ γ t} := measurableSet_of_differentiableAt ℝ γ
+  have hγD : AEMeasurable γ
+      ((MeasureTheory.volume.restrict (Set.uIoc a b)).restrict {t | DifferentiableAt ℝ γ t}) :=
+    (ContinuousOn.aemeasurable (s := {t | DifferentiableAt ℝ γ t})
+      (fun t (ht : DifferentiableAt ℝ γ t) => ht.continuousAt.continuousWithinAt) hD).mono_measure
+      (MeasureTheory.Measure.restrict_mono_measure MeasureTheory.Measure.restrict_le_self _)
+  have hsupp : Function.support ({t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator G) ⊆
+      {t | DifferentiableAt ℝ γ t} := fun t ht => by
+    by_contra hdiff
+    exact ht (by simp [hG0 t hdiff])
+  rw [← Set.indicator_eq_self.mpr hsupp]
+  exact (aestronglyMeasurable_indicator_iff hD).mpr
+    ((hG.mono_measure MeasureTheory.Measure.restrict_le_self).indicator₀
+      (nullMeasurableSet_excision hγD S ε).compl)
 
 /-- A point lying off a finite set stays off it by a fixed positive margin. -/
 private theorem exists_pos_le_norm_sub_of_notMem {S : Finset ℂ} {z : ℂ} (hz : z ∉ S) :

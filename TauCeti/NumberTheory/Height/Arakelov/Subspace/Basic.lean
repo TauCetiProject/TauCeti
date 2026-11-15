@@ -221,11 +221,13 @@ theorem relativeSubspaceArakelovLogHeight_top :
     relativeSubspaceArakelovLogHeight (⊤ : Submodule K (ι → K)) = 0 := by
   simp [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight]
 
-/-- The relative Arakelov height of the line spanned by a nonzero vector is the Arakelov height of
+/-- The relative Arakelov height of the line spanned by a vector is the Arakelov height of
 the vector. -/
 @[simp]
-theorem relativeSubspaceArakelovHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceArakelovHeight_span_singleton (x : ι → K) :
     relativeSubspaceArakelovHeight (K ∙ x) = arakelovMulHeight x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   have h := relativeSubspaceArakelovHeight_span_range (linearIndependent_unique_iff.2 hx :
     LinearIndependent K ![x])
   rw [Matrix.range_cons, Matrix.range_empty, union_empty] at h
@@ -234,13 +236,13 @@ theorem relativeSubspaceArakelovHeight_span_singleton {x : ι → K} (hx : x ≠
   ext i
   simp
 
-/-- The relative logarithmic Arakelov height of the line spanned by a nonzero vector is the
-logarithmic Arakelov height of the vector. -/
+/-- The relative logarithmic Arakelov height of the line spanned by a vector is the logarithmic
+Arakelov height of the vector. -/
 @[simp]
-theorem relativeSubspaceArakelovLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem relativeSubspaceArakelovLogHeight_span_singleton (x : ι → K) :
     relativeSubspaceArakelovLogHeight (K ∙ x) = arakelovLogHeight x := by
   rw [relativeSubspaceArakelovLogHeight_eq_log_relativeSubspaceArakelovHeight,
-    relativeSubspaceArakelovHeight_span_singleton hx, arakelovLogHeight_eq_log_arakelovMulHeight]
+    relativeSubspaceArakelovHeight_span_singleton, arakelovLogHeight_eq_log_arakelovMulHeight]
 
 /-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
 product has the relative Arakelov height of `U`. -/
@@ -370,13 +372,15 @@ of the vector. -/
 theorem subspaceHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     subspaceHeight (K ∙ x) = height2 x := by
   have h := arakelovMulHeight_eq_height2 x
-  rwa [ite_eq_right hx, one_div, ← relativeSubspaceArakelovHeight_span_singleton hx] at h
+  rwa [ite_eq_right hx, one_div, ← relativeSubspaceArakelovHeight_span_singleton] at h
 
-/-- The absolute logarithmic height of the line spanned by a nonzero vector is the logarithm of
-the absolute Euclidean height of the vector. -/
+/-- The absolute logarithmic height of the line spanned by a vector is the logarithm of the
+absolute Euclidean height of the vector. -/
 @[simp]
-theorem subspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
+theorem subspaceLogHeight_span_singleton (x : ι → K) :
     subspaceLogHeight (K ∙ x) = Real.log (height2 x) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
   rw [subspaceLogHeight, subspaceHeight_span_singleton hx]
 
 /-- **Duality of heights**, Evertse–Ferretti (6.13). The orthogonal complement of a subspace `U` of
