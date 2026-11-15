@@ -70,6 +70,7 @@ theorem ext_coeffTensor {u v : MvPolynomial σ R ⊗[R] M}
         coeff_monomial, Finsupp.single_apply]
   simpa [TensorProduct.equivFinsuppOfBasisLeft_apply, hcoord, coeffTensor] using h s
 
+/-- Unique natural division transfers from `M` to `MvPolynomial σ R ⊗[R] M`. -/
 instance [HasUniqueDiv M] : HasUniqueDiv (MvPolynomial σ R ⊗[R] M) := by
   classical
   exact (TensorProduct.equivFinsuppOfBasisLeft (basisMonomials σ R)).injective.hasUniqueDiv
@@ -306,6 +307,7 @@ noncomputable def homogeneousTensorZeroEquiv : M ≃ₗ[R] homogeneousTensorSubm
       simp [(Submodule.mem_bot R).mp hp0])
     fun hx hy ↦ Submodule.add_mem ⊥ hx hy
 
+/-- Finite variables and a finite coefficient module make `homogeneousTensorSubmodule` finite. -/
 instance [Finite σ] [Module.Finite R M] (k : ℕ) :
     Module.Finite R (homogeneousTensorSubmodule σ R M k) := Module.Finite.range _
 

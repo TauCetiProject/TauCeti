@@ -100,7 +100,8 @@ noncomputable def monogenicSubmodule (c : σ → Module.End R M) (k : ℕ) :
 @[simp] theorem cliffordDirac_eq_zero_of_isEmpty [IsEmpty σ] (c : σ → Module.End R M) :
     cliffordDirac c = 0 := by simp [cliffordDirac]
 
-theorem mem_monogenicSubmodule {c : σ → Module.End R M} {k : ℕ} {u : MvPolynomial σ R ⊗[R] M} :
+@[simp] theorem mem_monogenicSubmodule {c : σ → Module.End R M} {k : ℕ}
+    {u : MvPolynomial σ R ⊗[R] M} :
     u ∈ monogenicSubmodule c k ↔
       u ∈ homogeneousTensorSubmodule σ R M k ∧ cliffordDirac c u = 0 := Iff.rfl
 
@@ -268,8 +269,9 @@ section Ring
 
 variable {σ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype σ]
 
-theorem bijective_of_comp_self_eq_neg_one {f : Module.End R M} (hf : f ∘ₗ f = -1) :
-    Function.Bijective f :=
+/-- An endomorphism squaring to `-1` is bijective, with inverse `-f`. -/
+theorem _root_.Module.End.bijective_of_comp_self_eq_neg_one {f : Module.End R M}
+    (hf : f ∘ₗ f = -1) : Function.Bijective f :=
   ⟨fun _ _ hxy ↦ by simpa [← LinearMap.comp_apply, hf] using congrArg (-f) hxy,
    fun y ↦ ⟨-f y, by simp [← LinearMap.comp_apply, hf]⟩⟩
 
@@ -704,6 +706,7 @@ section Field
 
 variable {σ K M : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [Fintype σ]
 
+/-- Finite-dimensional `M` makes `monogenicSubmodule c k` finite-dimensional. -/
 instance [Module.Finite K M] (c : σ → Module.End K M) (k : ℕ) :
     FiniteDimensional K (monogenicSubmodule c k) :=
   Submodule.finiteDimensional_of_le (monogenicSubmodule_le_homogeneousTensorSubmodule c k)

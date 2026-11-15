@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Basic
 import Mathlib.Algebra.Algebra.Rat
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
-import TauCeti.LinearAlgebra.Eigenspace.Involution
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # Chiral homogeneous and monogenic polynomials
@@ -50,7 +50,9 @@ section General
 
 variable {σ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
-theorem mem_eigenspace_lTensor_iff (γ : Module.End R M) (ε : R) (u : MvPolynomial σ R ⊗[R] M) :
+/-- Membership in the `ε`-eigenspace of `γ.lTensor (MvPolynomial σ R)` is coefficientwise. -/
+theorem _root_.Module.End.mem_eigenspace_lTensor_iff (γ : Module.End R M) (ε : R)
+    (u : MvPolynomial σ R ⊗[R] M) :
     u ∈ Module.End.eigenspace (γ.lTensor (MvPolynomial σ R)) ε ↔
       ∀ s : σ →₀ ℕ, coeffTensor s u ∈ γ.eigenspace ε := by
   simp only [Module.End.mem_eigenspace_iff]
@@ -82,7 +84,7 @@ private theorem subtype_lTensor_mem_chiralHomogeneousSubmodule (γ : Module.End 
         (homogeneousTensorSubmodule σ R (γ.eigenspace ε) k).subtype) x ∈
       chiralHomogeneousSubmodule σ γ ε k := by
   rw [LinearMap.comp_apply, Submodule.coe_subtype, chiralHomogeneousSubmodule, Submodule.mem_inf,
-    mem_eigenspace_lTensor_iff]
+    γ.mem_eigenspace_lTensor_iff]
   exact ⟨lTensor_mem_homogeneousTensorSubmodule (γ.eigenspace ε).subtype x.2, fun s ↦ by
     rw [coeffTensor_lTensor]; exact (coeffTensor s x.1).2⟩
 
@@ -98,7 +100,7 @@ private theorem subtype_lTensor_bijective (γ : Module.End R M) (ε : R) (k : �
       coeffTensor_lTensor] at hs
     exact Subtype.ext hs
   · obtain ⟨hu_hom, hγu⟩ := mem_chiralHomogeneousSubmodule.mp hu
-    have hc := (mem_eigenspace_lTensor_iff γ ε u).mp (Module.End.mem_eigenspace_iff.mpr hγu)
+    have hc := (γ.mem_eigenspace_lTensor_iff ε u).mp (Module.End.mem_eigenspace_iff.mpr hγu)
     obtain ⟨I, hdeg, -, hsum⟩ := exists_finset_sum_monomial_tmul_coeffTensor hu_hom
     refine ⟨⟨∑ s ∈ I, monomial s (1 : R) ⊗ₜ[R] ⟨coeffTensor s u, hc s⟩,
       Submodule.sum_mem _ fun s hs ↦
@@ -233,27 +235,13 @@ private theorem disjoint_eigenspace_lTensor_one_neg_one (γ : Module.End R M) :
       have h := (Module.End.mem_eigenspace_iff.mp hu₁).symm.trans
         (Module.End.mem_eigenspace_iff.mp hu₂)
       rw [one_smul, neg_one_smul] at h; rw [two_smul]; nth_rw 2 [h]; exact add_neg_cancel u
-    simpa using congrArg ((⅟2 : R) • ·) h2u
+    exact (isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2u
 
-private theorem inf_eigenspace_lTensor_sup_neg {N : Submodule R (MvPolynomial σ R ⊗[R] M)}
-    {γ : Module.End R M} (hγ_sq : γ ∘ₗ γ = 1)
-    (hN : ∀ u ∈ N, γ.lTensor (MvPolynomial σ R) u ∈ N) :
-    (N ⊓ Module.End.eigenspace (γ.lTensor (MvPolynomial σ R)) 1) ⊔
-      (N ⊓ Module.End.eigenspace (γ.lTensor (MvPolynomial σ R)) (-1)) = N := by
-  have hT : Function.Involutive
-      (γ.lTensor (MvPolynomial σ R) : Module.End R (MvPolynomial σ R ⊗[R] M)) := fun u ↦ by
-    rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hγ_sq]
-    exact LinearMap.lTensor_id_apply (MvPolynomial σ R) M u
-  have h1 : (1 : R) * 1 = 1 := one_mul 1
-  have h2 : (-1 : R) * -1 = 1 := by ring
-  refine le_antisymm (sup_le inf_le_left inf_le_left) fun u hu ↦ Submodule.mem_sup.mpr
-    ⟨Module.End.eigenProjOfInvolutive hT h1 u, ⟨?_, (Module.End.eigenProjOfInvolutive hT h1 u).2⟩,
-      Module.End.eigenProjOfInvolutive hT h2 u, ⟨?_, (Module.End.eigenProjOfInvolutive hT h2 u).2⟩,
-      Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hT h1 h2 u⟩
-  · rw [Module.End.coe_eigenProjOfInvolutive_apply, one_smul]
-    exact N.smul_mem _ (N.add_mem hu (hN u hu))
-  · rw [Module.End.coe_eigenProjOfInvolutive_apply, neg_one_smul]
-    exact N.smul_mem _ (N.add_mem hu (N.neg_mem (hN u hu)))
+omit [Invertible (2 : R)] in
+private theorem lTensor_involutive {γ : Module.End R M} (hγ_sq : γ ∘ₗ γ = 1) :
+    Function.Involutive (γ.lTensor (MvPolynomial σ R)) := fun u ↦ by
+  rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hγ_sq]
+  exact LinearMap.lTensor_id_apply (MvPolynomial σ R) M u
 
 theorem disjoint_chiralHomogeneousSubmodule_neg (σ : Type*) (γ : Module.End R M) (k : ℕ) :
     Disjoint (chiralHomogeneousSubmodule σ γ 1 k) (chiralHomogeneousSubmodule σ γ (-1) k) :=
@@ -264,7 +252,8 @@ theorem chiralHomogeneousSubmodule_sup_neg {γ : Module.End R M} (hγ_sq : γ �
     (σ : Type*) (k : ℕ) :
     chiralHomogeneousSubmodule σ γ 1 k ⊔ chiralHomogeneousSubmodule σ γ (-1) k =
       homogeneousTensorSubmodule σ R M k :=
-  inf_eigenspace_lTensor_sup_neg hγ_sq fun _ ↦ lTensor_mem_homogeneousTensorSubmodule γ
+  Module.End.inf_eigenspace_sup_inf_eigenspace_neg (isUnit_of_invertible 2)
+    (lTensor_involutive hγ_sq) (one_mul 1) fun _ ↦ lTensor_mem_homogeneousTensorSubmodule γ
 
 theorem disjoint_chiralMonogenicSubmodule_neg [Fintype σ] (c : σ → Module.End R M)
     (γ : Module.End R M) (k : ℕ) :
@@ -276,7 +265,8 @@ theorem chiralMonogenicSubmodule_sup_neg [Fintype σ] {c : σ → Module.End R M
     (hγ_sq : γ ∘ₗ γ = 1) (hγ_anti : ∀ i, γ ∘ₗ c i + c i ∘ₗ γ = 0) (k : ℕ) :
     chiralMonogenicSubmodule c γ 1 k ⊔ chiralMonogenicSubmodule c γ (-1) k =
       monogenicSubmodule c k :=
-  inf_eigenspace_lTensor_sup_neg hγ_sq fun _ ↦ lTensor_mem_monogenicSubmodule hγ_anti
+  Module.End.inf_eigenspace_sup_inf_eigenspace_neg (isUnit_of_invertible 2)
+    (lTensor_involutive hγ_sq) (one_mul 1) fun _ ↦ lTensor_mem_monogenicSubmodule hγ_anti
 
 end Involution
 
@@ -325,7 +315,7 @@ theorem chiralMonogenicSubmodule_sup_map_cliffordMul [Algebra ℚ R] {c : σ →
           (Submodule.sub_mem _ (lTensor_mem_monogenicSubmodule hγ_anti hm)
             (Submodule.smul_mem _ ε hm))) ⟨Γ w + ε • w, heq.symm⟩
     have hw_zero : Γ w + ε • w = 0 := cliffordMul_injective
-      (bijective_of_comp_self_eq_neg_one (hc_sq i₀)).1 (by rw [← heq, hzero, map_zero])
+      (Module.End.bijective_of_comp_self_eq_neg_one (hc_sq i₀)).1 (by rw [← heq, hzero, map_zero])
     exact Submodule.mem_sup.mpr
       ⟨m, ⟨hm, Module.End.mem_eigenspace_iff.mpr (sub_eq_zero.mp hzero)⟩, cliffordMul c w,
         ⟨w, ⟨hw, Module.End.mem_eigenspace_iff.mpr
@@ -343,8 +333,8 @@ theorem exists_cliffordDirac_eq_of_mem_chiralHomogeneousSubmodule [Algebra ℚ R
   obtain ⟨u, hu, huP, -, hDu⟩ := exists_cliffordDirac_eq_of_mapsTo
     (P := γ.eigenspace ε) (Q := γ.eigenspace (-ε)) (fun m hm ↦ by simpa [← hmap] using hm)
     (fun j ↦ Module.End.mapsTo_genEigenspace_neg_of_anticommute (hγ_anti j) ε 1)
-    hv.1 ((mem_eigenspace_lTensor_iff γ (-ε) v).mp hv.2)
-  exact ⟨u, ⟨hu, (mem_eigenspace_lTensor_iff γ ε u).mpr huP⟩, hDu⟩
+    hv.1 ((γ.mem_eigenspace_lTensor_iff (-ε) v).mp hv.2)
+  exact ⟨u, ⟨hu, (γ.mem_eigenspace_lTensor_iff ε u).mpr huP⟩, hDu⟩
 
 end Fischer
 
@@ -353,6 +343,7 @@ section Field
 variable {σ K M : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
 
 omit [CharZero K] in
+/-- Finite `σ` and finite-dimensional `M` make `chiralHomogeneousSubmodule` finite-dimensional. -/
 instance [Finite σ] [Module.Finite K M] (γ : Module.End K M) (ε : K) (k : ℕ) :
     FiniteDimensional K (chiralHomogeneousSubmodule σ γ ε k) :=
   Submodule.finiteDimensional_of_le (chiralHomogeneousSubmodule_le_homogeneousTensorSubmodule γ ε k)
@@ -360,6 +351,7 @@ instance [Finite σ] [Module.Finite K M] (γ : Module.End K M) (ε : K) (k : ℕ
 variable [Fintype σ]
 
 omit [CharZero K] in
+/-- Finite-dimensional `M` makes `chiralMonogenicSubmodule` finite-dimensional. -/
 instance [Module.Finite K M] (c : σ → Module.End K M) (γ : Module.End K M) (ε : K) (k : ℕ) :
     FiniteDimensional K (chiralMonogenicSubmodule c γ ε k) :=
   Submodule.finiteDimensional_of_le (chiralMonogenicSubmodule_le_monogenicSubmodule c γ ε k)

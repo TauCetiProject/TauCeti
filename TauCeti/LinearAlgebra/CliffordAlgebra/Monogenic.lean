@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RingTheory.MvPolynomial.Monogenic.Chiral
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -140,7 +139,7 @@ theorem finrank_monogenicSubmodule_coordAction (k : ℕ) :
     · rw [MvPolynomial.monogenicSubmodule_succ_eq_bot_of_isEmpty, finrank_bot,
         Fintype.card_eq_zero]; simp
   · exact MvPolynomial.finrank_monogenicSubmodule_of_bijective
-      (MvPolynomial.bijective_of_comp_self_eq_neg_one
+      (Module.End.bijective_of_comp_self_eq_neg_one
         (coordAction_orthonormalBasis_comp_self hQ ρ b i₀)) k
 
 end OrthonormalField
@@ -237,7 +236,7 @@ theorem finrank_chiralMonogenicSubmodule_complexCoordAction_of_bijective_lsmul
   obtain ⟨i₀⟩ : Nonempty σ := Fintype.card_pos_iff.mp (by omega)
   have := Module.Finite.of_surjective_end _ h.2
   have hc : Function.Surjective (complexCoordAction Q S b i₀) :=
-    (MvPolynomial.bijective_of_comp_self_eq_neg_one (coordAction_orthonormalBasis_comp_self hQ
+    (Module.End.bijective_of_comp_self_eq_neg_one (coordAction_orthonormalBasis_comp_self hQ
       (((Algebra.lsmul ℂ ℂ S).restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q)) b i₀)).2
   rw [MvPolynomial.finrank_chiralMonogenicSubmodule hc
       (lsmul_complexVolume_comp_complexCoordAction_add o hn b) μ k,
