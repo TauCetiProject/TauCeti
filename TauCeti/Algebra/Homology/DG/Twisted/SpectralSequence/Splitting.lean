@@ -491,6 +491,7 @@ theorem shiftedModuleComplexHomologyEquiv_homologyπ (p n : ℤ)
 /-- The inverse of the identification of `shiftedModuleComplexHomologyEquiv` sends the class in
 `H^{n + p}(ℳ)` of a cycle `z` of `ℳ` of degree `n + p` to the class of the corresponding cycle of
 `shiftedModuleComplex hM p`. -/
+@[simp]
 theorem shiftedModuleComplexHomologyEquiv_symm_mk (p n : ℤ) (z : hM.cycles)
     (hz : (z : M) ∈ ℳ (n + p)) :
     (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM p n).symm
