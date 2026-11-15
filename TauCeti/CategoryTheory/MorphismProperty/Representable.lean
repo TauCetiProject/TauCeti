@@ -30,6 +30,10 @@ changes of a relatively representable diagonal `X ⟶ X ⨯ X`.
   relatively representable, `b : F.obj V ⟶ X`, and `G : F.obj T ⟶ X ⨯ X` with components
   `F.map u ≫ a` and `F.map v ≫ b`, the base change of the diagonal of `X` along `G` is the base
   change of `(fst, snd) : U ×_X V ⟶ U ⨯ V` along `(u, v) : T ⟶ U ⨯ V`.
+* `CategoryTheory.Functor.relativelyRepresentable.diag_of_mono`,
+  `CategoryTheory.Functor.relativelyRepresentable.diag_prod`, and
+  `CategoryTheory.Functor.relativelyRepresentable.diag_pullback`: relative representability of the
+  diagonal passes to subobjects, binary products, and pullbacks.
 -/
 
 public section
@@ -121,6 +125,78 @@ theorem isPullback_diag_snd [F.Full] [F.Faithful] [HasBinaryProduct U V]
     · rw [hX.lift_fst, ht₁]
       simp only [← Functor.map_comp_assoc, reassoc_of% hm₂]
     · simp [hm₂]
+
+end Functor.relativelyRepresentable
+
+namespace Limits
+
+/-- For a monomorphism `ι : X ⟶ Y` between objects with binary self-products, the diagonal of `X`
+is the pullback of the diagonal of `Y` along `ι ⨯ ι`. -/
+theorem isPullback_diag_of_mono {D : Type*} [Category* D] {X Y : D}
+    [HasBinaryProduct X X] [HasBinaryProduct Y Y] (ι : X ⟶ Y) [Mono ι] :
+    IsPullback ι (Limits.diag X) (Limits.diag Y) (prod.map ι ι) := by
+  refine IsPullback.mk' (by ext <;> simp)
+    (fun _ _ _ h₁ _ ↦ (cancel_mono ι).1 h₁) fun _ a b h ↦ ?_
+  have h₁ : a = (b ≫ prod.fst) ≫ ι := by simpa using h =≫ prod.fst
+  have h₂ : a = (b ≫ prod.snd) ≫ ι := by simpa using h =≫ prod.snd
+  have h₁₂ : b ≫ prod.fst = b ≫ prod.snd := (cancel_mono ι).1 (h₁.symm.trans h₂)
+  exact ⟨b ≫ prod.fst, h₁.symm, by ext <;> simp [h₁₂]⟩
+
+end Limits
+
+namespace Functor.relativelyRepresentable
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D] {F : C ⥤ D}
+
+/-- Relative representability of the diagonal passes along monomorphisms. -/
+theorem diag_of_mono {X Y : D} [HasBinaryProduct X X] [HasBinaryProduct Y Y]
+    (ι : X ⟶ Y) [Mono ι] (hY : F.relativelyRepresentable (Limits.diag Y)) :
+    F.relativelyRepresentable (Limits.diag X) :=
+  (isStableUnderBaseChange F).of_isPullback (Limits.isPullback_diag_of_mono ι) hY
+
+/-- Relative representability of the diagonal is stable under binary products. -/
+theorem diag_prod [HasBinaryProducts D] {X Y : D}
+    (hX : F.relativelyRepresentable (Limits.diag X))
+    (hY : F.relativelyRepresentable (Limits.diag Y)) :
+    F.relativelyRepresentable (Limits.diag (X ⨯ Y)) := by
+  have : F.relativelyRepresentable.IsStableUnderComposition :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  let e : (X ⨯ Y) ⨯ (X ⨯ Y) ≅ (X ⨯ X) ⨯ (Y ⨯ Y) :=
+    { hom := prod.lift (prod.map prod.fst prod.fst) (prod.map prod.snd prod.snd)
+      inv := prod.lift (prod.map prod.fst prod.fst) (prod.map prod.snd prod.snd)
+      hom_inv_id := by ext <;> simp
+      inv_hom_id := by ext <;> simp }
+  have h₁ : F.relativelyRepresentable (prod.map (Limits.diag X) (𝟙 Y)) :=
+    (isStableUnderBaseChange F).of_isPullback (IsPullback.of_prod_fst_with_id (Limits.diag X) Y) hX
+  have h₂ : F.relativelyRepresentable (prod.map (Limits.diag Y) (𝟙 (X ⨯ X))) :=
+    (isStableUnderBaseChange F).of_isPullback
+      (IsPullback.of_prod_fst_with_id (Limits.diag Y) (X ⨯ X)) hY
+  have h₂' : F.relativelyRepresentable (prod.map (𝟙 (X ⨯ X)) (Limits.diag Y)) := by
+    have hfac : prod.map (𝟙 (X ⨯ X)) (Limits.diag Y) =
+        (prod.braiding (X ⨯ X) Y).hom ≫ prod.map (Limits.diag Y) (𝟙 (X ⨯ X)) ≫
+          (prod.braiding (Y ⨯ Y) (X ⨯ X)).hom := by ext <;> simp
+    rw [hfac, F.relativelyRepresentable.cancel_left_of_respectsIso,
+      F.relativelyRepresentable.cancel_right_of_respectsIso]
+    exact h₂
+  have : IsIso e.inv := e.isIso_inv
+  have hfac : Limits.diag (X ⨯ Y) =
+      (prod.map (Limits.diag X) (𝟙 Y) ≫ prod.map (𝟙 (X ⨯ X)) (Limits.diag Y)) ≫ e.inv := by
+    ext <;> simp [e]
+  rw [hfac]
+  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.comp_mem _ _ _ h₁ h₂')
+    (of_isIso F e.inv)
+
+/-- Relative representability of the diagonal is stable under pullbacks. -/
+theorem diag_pullback [HasBinaryProducts D] {X Y Z : D} (f : X ⟶ Z) (g : Y ⟶ Z)
+    [HasPullback f g]
+    (hX : F.relativelyRepresentable (Limits.diag X))
+    (hY : F.relativelyRepresentable (Limits.diag Y)) :
+    F.relativelyRepresentable (Limits.diag (Limits.pullback f g)) := by
+  have : Mono (prod.lift (Limits.pullback.fst f g) (Limits.pullback.snd f g)) :=
+    ⟨fun _ _ h ↦ Limits.pullback.hom_ext (by simpa using h =≫ prod.fst)
+      (by simpa using h =≫ prod.snd)⟩
+  exact diag_of_mono (prod.lift (Limits.pullback.fst f g) (Limits.pullback.snd f g))
+    (diag_prod hX hY)
 
 end Functor.relativelyRepresentable
 
