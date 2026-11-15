@@ -39,8 +39,8 @@ family of lifts, `L (s, x + T) = L (s, x) + T`, with positive derivative in `x`,
 smooth because the quotient map `ℝ → AddCircle T` is a local diffeomorphism. For the inverse, each
 slice `L (s, ·)` is a bijection of `ℝ` with positive derivative, so the inverses of the slices are
 jointly `C^n` by the inverse function theorem for smooth families of diffeomorphisms
-(`ContDiffOn.parametric_invFun_of_injective`); they again form a family of lifts, which descends to
-the circle.
+(`ContDiffOn.parametric_invFun_of_injective_fderiv`); they again form a family of lifts, which
+descends to the circle.
 
 Every `C^n` diffeomorphism `φ` of the circle, `n ≠ 0`, has such a presentation, or the mirror
 one: by `Diffeomorph.exists_addCircle_lift` it has a `C^n` lift with either
@@ -130,8 +130,8 @@ include hL hn hper hpos in
 /-- The inverse family of lifts is `C^n`, by the inverse function theorem for smooth families of
 diffeomorphisms. -/
 private theorem contDiff_invLift : ContDiff ℝ n (invLift L) := by
-  have h := (hL.contDiffOn (s := univ ×ˢ univ)).parametric_invFun_of_injective isOpen_univ
-    (ENat.one_le_iff_ne_zero_withTop.2 hn) (fun s _ ↦ bijective_slice hL hn hper hpos s)
+  have h := (hL.contDiffOn (s := univ ×ˢ univ)).parametric_invFun_of_injective_fderiv
+    isOpen_univ (ENat.one_le_iff_ne_zero_withTop.2 hn) (fun s _ ↦ bijective_slice hL hn hper hpos s)
     fun s _ x u v huv ↦ by
       rw [(hasDerivAt_slice hL hn s x).hasFDerivAt.fderiv] at huv
       simpa [(hpos s x).ne'] using huv
