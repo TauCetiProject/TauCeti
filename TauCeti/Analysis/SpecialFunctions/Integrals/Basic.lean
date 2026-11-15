@@ -60,6 +60,11 @@ Interval integrals of elementary functions in closed form or as series, continui
   `b ≥ 0`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
+* `Function.Periodic.intervalIntegral_add_zsmul_eq'`,
+  `Function.Periodic.intervalIntegral_eq_two_smul_of_even`,
+  `Function.Periodic.intervalIntegral_add_int_mul_of_even`: integrals of periodic functions over
+  several periods, and of even periodic functions over a period, without integrability
+  hypotheses where possible.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`,
   `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
   `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
@@ -399,6 +404,69 @@ theorem integral_pow_mul_sub (p r : ℝ) (n : ℕ) :
   field_simp
   ring
 
+end TauCeti
+
+namespace Function.Periodic
+
+open MeasureTheory Set intervalIntegral
+
+variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {T : ℝ}
+
+/-- An even `T`-periodic function (`T ≠ 0`) that is interval integrable from `0` to `T / 2` is
+interval integrable over every interval. -/
+theorem intervalIntegrable_of_even (hper : Periodic f T) (heven : Function.Even f) (hT : T ≠ 0)
+    (hf : IntervalIntegrable f volume 0 (T / 2)) (a b : ℝ) : IntervalIntegrable f volume a b := by
+  have hfun : (fun x ↦ f (T - x)) = f := funext fun x ↦ by
+    rw [sub_eq_neg_add, hper (-x), heven x]
+  have h2 : IntervalIntegrable f volume (T / 2) T := by
+    have h := hf.comp_sub_left T
+    rw [hfun, show T - T / 2 = T / 2 by ring, sub_zero] at h
+    exact h.symm
+  exact hper.intervalIntegrable₀ hT (hf.trans h2) a b
+
+variable [NormedSpace ℝ E]
+
+/-- Version of `Function.Periodic.intervalIntegral_add_zsmul_eq` without the integrability
+hypothesis: if `f` is not interval integrable over one period, it is not interval integrable over
+`n` periods for `n ≠ 0`, and both sides are `0`. -/
+theorem intervalIntegral_add_zsmul_eq' (hper : Periodic f T) (n : ℤ) (t : ℝ) :
+    ∫ x in t..t + n • T, f x = n • ∫ x in t..t + T, f x := by
+  rcases eq_or_ne T 0 with rfl | hT
+  · simp
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  by_cases h : IntervalIntegrable f volume t (t + T)
+  · exact hper.intervalIntegral_add_zsmul_eq n t (hper.intervalIntegrable hT h)
+  · rw [integral_undef h, smul_zero]
+    exact integral_undef fun hI ↦ h ((hper.zsmul n).intervalIntegrable (smul_ne_zero hn hT) hI _ _)
+
+/-- An even `T`-periodic function integrates over a period to twice its integral over a half
+period; no integrability hypothesis is needed. -/
+theorem intervalIntegral_eq_two_smul_of_even (hper : Periodic f T) (heven : Function.Even f) :
+    ∫ x in (0 : ℝ)..T, f x = (2 : ℝ) • ∫ x in (0 : ℝ)..T / 2, f x := by
+  have h := hper.intervalIntegral_add_eq 0 (-(T / 2))
+  rw [zero_add, show -(T / 2) + T = T / 2 by ring] at h
+  rw [h, intervalIntegral.integral_eq_two_smul_of_even heven]
+
+/-- **Quasi-periodicity** of the integral of an even `T`-periodic function that is interval
+integrable from `0` to `T / 2`: adding `n` periods to the upper limit adds `2 n` times the integral
+over `[0, T / 2]`. -/
+theorem intervalIntegral_add_int_mul_of_even (hper : Periodic f T) (heven : Function.Even f)
+    (hf : IntervalIntegrable f volume 0 (T / 2)) (a x : ℝ) (n : ℤ) :
+    ∫ θ in a..x + n * T, f θ =
+      (∫ θ in a..x, f θ) + (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..T / 2, f θ := by
+  rcases eq_or_ne T 0 with rfl | hT
+  · simp
+  have hint := hper.intervalIntegrable_of_even heven hT hf
+  rw [← intervalIntegral.integral_add_adjacent_intervals (hint a x) (hint x _), ← zsmul_eq_mul,
+    hper.intervalIntegral_add_zsmul_eq' n x, hper.intervalIntegral_add_eq x 0, zero_add,
+    hper.intervalIntegral_eq_two_smul_of_even heven, ← Int.cast_smul_eq_zsmul ℝ n, smul_smul,
+    mul_comm (n : ℝ) 2]
+
+end Function.Periodic
+
+namespace TauCeti
+
 /-! ### Integrands depending only on `sin² θ`
 
 A function of the form `θ ↦ G (sin θ ^ 2)` is even and `π`-periodic, which gives oddness and
@@ -407,25 +475,9 @@ quasi-periodicity of its integral from `0`. -/
 /-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
 theorem integral_comp_sin_sq_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (G : ℝ → E)
     (x : ℝ) :
-    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) := by
-  have h := intervalIntegral.integral_comp_neg (a := 0) (b := x) fun θ ↦ G (Real.sin θ ^ 2)
-  simp only [Real.sin_neg, neg_sq, neg_zero] at h
-  rw [h, intervalIntegral.integral_symm]
-
-open MeasureTheory Set in
-/-- If `θ ↦ G (sin² θ)` is interval integrable on `[0, π/2]`, it is interval integrable on every
-interval. -/
-theorem intervalIntegrable_comp_sin_sq {E : Type*} [NormedAddCommGroup E] (G : ℝ → E)
-    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (a b : ℝ) :
-    IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume a b := by
-  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
-    simp only [Real.sin_add_pi, neg_sq]
-  have h2 : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume (Real.pi / 2) Real.pi := by
-    have h := hG.comp_sub_left Real.pi
-    simp only [Real.sin_pi_sub, sub_zero] at h
-    rwa [show Real.pi - Real.pi / 2 = Real.pi / 2 by ring, IntervalIntegrable.symm_iff] at h
-  refine hper.intervalIntegrable₀ Real.pi_ne_zero ?_ a b
-  simpa using hG.trans h2
+    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) :=
+  intervalIntegral.integral_zero_neg_of_even (g := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) x
 
 open MeasureTheory in
 /-- **Quasi-periodicity** of the integral from `0` of an integrand depending only on
@@ -436,30 +488,11 @@ theorem integral_comp_sin_sq_add_int_mul_pi {E : Type*} [NormedAddCommGroup E] [
     (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (x : ℝ) (n : ℤ) :
     ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
       (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-        (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
-    simp only [Real.sin_add_pi, neg_sq]
-  have heven : Function.Even (fun θ ↦ G (Real.sin θ ^ 2)) := fun θ ↦ by
-    simp only [Real.sin_neg, neg_sq]
-  have hint := intervalIntegrable_comp_sin_sq G hG
-  calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
-      = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
-        (intervalIntegral.integral_add_adjacent_intervals (hint 0 x) (hint x _)).symm
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          (n : ℝ) • ∫ θ in x..x + Real.pi, G (Real.sin θ ^ 2) := by
-        have h := hper.intervalIntegral_add_zsmul_eq n x hint
-        simp only [zsmul_eq_mul] at h
-        rw [h, ← Int.cast_smul_eq_zsmul ℝ n]
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          (n : ℝ) • ∫ θ in -(Real.pi / 2)..-(Real.pi / 2) + Real.pi, G (Real.sin θ ^ 2) := by
-        rw [hper.intervalIntegral_add_eq x (-(Real.pi / 2))]
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          (n : ℝ) • ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        ring_nf
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        rw [intervalIntegral.integral_of_even heven (Real.pi / 2), smul_smul, mul_comm]
+        (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) :=
+  Function.Periodic.intervalIntegral_add_int_mul_of_even
+    (f := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_add_pi, neg_sq])
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) hG 0 x n
 
 /-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
 uniformly in `β`. -/
@@ -470,33 +503,20 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
 
-open MeasureTheory Set in
 /-- The integral from `0` to `n π` of an integrand depending only on `sin² θ` is `2 n` times its
-integral over `[0, π/2]`, without any integrability assumption: if the integrand is not integrable
-on `[0, π/2]`, it is not integrable on any interval from `0` to a nonzero multiple of `π`, and
-both sides are `0`. -/
+integral over `[0, π/2]`, without any integrability assumption. -/
 theorem integral_comp_sin_sq_int_mul_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (G : ℝ → E) (n : ℤ) :
     ∫ θ in (0 : ℝ)..n * Real.pi, G (Real.sin θ ^ 2) =
       (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  by_cases hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)
-  · simpa using integral_comp_sin_sq_add_int_mul_pi G hG 0 n
-  · rw [intervalIntegral.integral_undef hG, smul_zero]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · refine intervalIntegral.integral_undef fun h ↦ hG ?_
-      have hπ := Real.pi_pos
-      rcases lt_or_gt_of_ne hn with hn | hn
-      · -- negative multiple: use evenness
-        have hn1 : (n : ℝ) ≤ -1 := by exact_mod_cast (by omega : n ≤ -1)
-        have h1 : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume (-(Real.pi / 2)) 0 :=
-          h.symm.mono_set (uIcc_subset_uIcc (mem_uIcc.2 (Or.inl ⟨by nlinarith, by linarith⟩))
-            right_mem_uIcc)
-        have h2 := h1.comp_sub_left 0
-        simpa using h2.symm
-      · have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
-        exact h.mono_set (uIcc_subset_uIcc left_mem_uIcc
-          (mem_uIcc.2 (Or.inl ⟨by positivity, by nlinarith⟩)))
+  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
+    simp only [Real.sin_add_pi, neg_sq]
+  have heven : Function.Even (fun θ ↦ G (Real.sin θ ^ 2)) := fun θ ↦ by
+    simp only [Real.sin_neg, neg_sq]
+  have h := hper.intervalIntegral_add_zsmul_eq' n 0
+  rw [zero_add, zero_add, zsmul_eq_mul] at h
+  rw [h, hper.intervalIntegral_eq_two_smul_of_even heven, ← Int.cast_smul_eq_zsmul ℝ n, smul_smul,
+    mul_comm (n : ℝ) 2]
 
 end TauCeti
 
