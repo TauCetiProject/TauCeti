@@ -104,10 +104,7 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
     have hW : MDifferentiableAt I I.tangent (fun y ↦ (W i y : TangentBundle I M)) p := by
       fin_cases i
       exacts [h.mdifferentiable_hamiltonianVectorField hF p, hY]
-    have hd := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-      (hW.mdifferentiableWithinAt (s := univ))
-    rw [preimage_univ, univ_inter] at hd
-    exact hd.differentiableAt (by rw [I.range_eq_univ]; exact univ_mem)
+    exact hW.differentiableAt_mpullbackWithin_extChartAt_symm
   have hσ : DifferentiableAt ℝ (RoughForm.inChartAt σ.1 p) (extChartAt I p p) :=
     RoughForm.differentiableAt_inChartAt σ.1 ((σ.contMDiff p).mdifferentiableAt (by simp))
   -- The Hessian against `Y p = u` is the derivative of `dF(Y) = σ(X_F, Y)`.
@@ -158,7 +155,7 @@ theorem injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff (h : σ.IsNo
   have hker (w : TangentSpace I p) : criticalHessian I F p w = 0 ↔ L w = 0 := by
     refine ⟨fun hw ↦ isNondegenerate_iff_separatingLeft.1 h p (L w) fun u ↦ ?_, fun hw ↦ ?_⟩
     · rw [← criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
-      rfl
+      exact zero_apply u
     · ext u
       rw [criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
       exact (SmoothBundleForm.eval₂_apply σ p 0 u).trans
@@ -184,7 +181,7 @@ theorem eventually_isNondegenerateFixedPt_flowOf_hamiltonianVectorField (h : σ.
   have hF2 : ContMDiff I 𝓘(ℝ) 2 F := hF.of_le (by norm_num)
   have hcrit := (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.1 hp).2.1
   exact eventually_isNondegenerateFixedPt_flowOf
-    (h.contMDiff_hamiltonianVectorField (n := 2) (by simp) (hF.of_le (by norm_num)))
+    (h.contMDiff_hamiltonianVectorField (n := 2) (by simp) hF)
     (h.hamiltonianVectorField_eq_zero_iff.2 hcrit)
     ((injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff h hF2 hcrit).2 hp)
 

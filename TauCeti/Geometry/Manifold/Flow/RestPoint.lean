@@ -42,6 +42,8 @@ constant orbits of `ε F` for small `ε > 0`.
 
 * `TauCeti.mem_flowDomain_of_eq_zero`, `TauCeti.flowOf_eq_self_of_eq_zero`: the flow is defined at
   a rest point for all time and fixes it.
+* `TauCeti.mdifferentiableAt_flowOf_of_eq_zero`: the time-`t` maps are differentiable at a rest
+  point.
 * `TauCeti.hasDerivAt_mfderiv_flowOf_of_eq_zero`: the differentials of the time-`t` maps at a rest
   point have derivative the linearization of the field at `t = 0`.
 * `TauCeti.eventually_isNondegenerateFixedPt_flowOf`: on a finite-dimensional manifold, a rest
@@ -80,6 +82,15 @@ theorem flowOf_eq_self_of_eq_zero [IsManifold I 1 M] [BoundarylessManifold I M]
     flowOf v t p = p :=
   flowOf_eq_of_isMIntegralCurve hv (isMIntegralCurve_const hp) t
 
+/-- **The time-`t` maps of the flow are differentiable at a rest point.** For a `C¹` field `v` on a
+boundaryless manifold modelled on a Banach space, every time-`t` map of the flow is differentiable
+at a point where `v` vanishes. -/
+theorem mdifferentiableAt_flowOf_of_eq_zero [CompleteSpace E] [IsManifold I 1 M]
+    [BoundarylessManifold I M] (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hp : v p = 0) (t : ℝ) : MDifferentiableAt I I (flowOf v t) p :=
+  (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id
+    (mem_flowDomain_of_eq_zero hp t)).mdifferentiableAt one_ne_zero
+
 variable [CompleteSpace E] [I.Boundaryless] [IsManifold I 2 M]
 
 /-- **Linearization of the flow at a rest point.** For a `C²` vector field `v` vanishing at `p`, the
@@ -107,10 +118,8 @@ theorem hasDerivAt_mfderiv_flowOf_of_eq_zero
       (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast hG) hV)
     |>.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)
   -- Each time-`t` map fixes `p`, so its differential is read in the single chart at `p`.
-  have hd : MDifferentiableAt I I (flowOf v t) p :=
-    (contMDiffAt_flowOf_comp one_le_two hv contMDiffAt_const contMDiffAt_id
-      (mem_flowDomain_of_eq_zero hp t)).mdifferentiableAt two_ne_zero
-  exact hd.mfderiv_eq_fderiv_extChartAt_conj (flowOf_eq_self_of_eq_zero hv1 hp t)
+  exact (mdifferentiableAt_flowOf_of_eq_zero hv1 hp t).mfderiv_eq_fderiv_extChartAt_conj
+    (flowOf_eq_self_of_eq_zero hv1 hp t)
 
 /-- **A rest point with injective linearization is a nondegenerate fixed point of the short-time
 maps.** On a boundaryless manifold modelled on a finite-dimensional space, let `v` be a `C²` vector
@@ -133,7 +142,6 @@ theorem eventually_isNondegenerateFixedPt_flowOf [FiniteDimensional ℝ E]
     (E := E) (A := fun t ↦ (mfderiv I I (flowOf v t) p : E →L[ℝ] E)) h0 hL] with t ht
   -- `ht` is about vectors of `E`, which are the tangent vectors at `p` by definition.
   exact isNondegenerateFixedPt_iff.2 ⟨flowOf_eq_self_of_eq_zero hv1 hp t,
-    (contMDiffAt_flowOf_comp one_le_two hv contMDiffAt_const contMDiffAt_id
-      (mem_flowDomain_of_eq_zero hp t)).mdifferentiableAt two_ne_zero, ht⟩
+    mdifferentiableAt_flowOf_of_eq_zero hv1 hp t, ht⟩
 
 end TauCeti

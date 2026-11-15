@@ -541,13 +541,7 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hg : ContDiffAt ℝ 2 g (ψ x) := hf.contDiffAt_comp_extChartAt_symm
   have hDg : DifferentiableAt ℝ (fderiv ℝ g) (ψ x) :=
     (hg.fderiv_right (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
-  have hV : DifferentiableAt ℝ V (ψ x) := by
-    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-      (hY.mdifferentiableWithinAt (s := univ))
-    have h' : DifferentiableWithinAt ℝ V univ (ψ x) := by
-      simpa only [V, preimage_univ, univ_inter,
-        ModelWithCorners.Boundaryless.range_eq_univ] using h
-    exact h'.differentiableAt univ_mem
+  have hV : DifferentiableAt ℝ V (ψ x) := hY.differentiableAt_mpullbackWithin_extChartAt_symm
   -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
   have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
       (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
