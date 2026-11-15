@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Analysis.Normed.Module.FilledIn
 
 /-!
 # Runge's approximation theorem and holomorphic hulls

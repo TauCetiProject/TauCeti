@@ -7,13 +7,11 @@ module
 
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.Normed.Module.Convex
-public import Mathlib.LinearAlgebra.Dimension.Basic
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.FilledIn
 -- Provides `NormedSpace.toLocallyConvexSpace`, hence `LocallyConnectedSpace E`.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Normed.Module.FilledHull
-import TauCeti.Geometry.Manifold.Connected
 
 /-!
 # Filled compact exhaustions of open sets
@@ -29,12 +27,6 @@ The explicit sequence `TauCeti.rungeExhaustion Ω n = closedBall 0 (n + 1) \ thi
 realizes this exhaustion: each stage is compact, lies in `Ω`, nests into the interior of the next
 stage, and is filled in `Ω` by `IsOpen.isFilledIn_closedBall_sdiff_thickening`.
 
-This file also provides two normed-space operations on sets filled in `Ω` used in Runge hull
-arguments: compactness of the domain-relative fill of a compact set `K`
-(`IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn`) and preservation of
-`TauCeti.IsFilledIn` under inserting a point when `1 < Module.rank ℝ E`
-(`TauCeti.IsFilledIn.insert`).
-
 ## Main declarations
 
 * `IsOpen.isFilledIn_closedBall_sdiff_thickening`: a closed ball with a thickening of `Ωᶜ`
@@ -44,10 +36,6 @@ arguments: compactness of the domain-relative fill of a compact set `K`
   monotonicity, covering of `Ω`, compact cofinality, and filledness in `Ω`.
 * `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real normed space has a
   compact exhaustion by sets filled in it.
-* `IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn`: a compact set together
-  with all relatively compact components of `Ω \ K` in `Ω` is compact.
-* `TauCeti.IsFilledIn.insert`: inserting a point preserves `TauCeti.IsFilledIn` in real dimension
-  greater than one.
 
 ## References
 
@@ -96,18 +84,6 @@ theorem IsOpen.isFilledIn_closedBall_sdiff_thickening {Ω : Set E} (hΩ : IsOpen
     exact hx (closedConvexHull_min subset_rfl (convex_closedBall _ _) isClosed_closedBall
       (filledHull_subset_closedConvexHull (nonempty_closedBall.mpr hr)
         (filledHull_mono sdiff_subset hxH)))
-
-/-- In a proper real normed space, a compact set `K` together with all connected components of
-`Ω \ K` having compact closure inside an open set `Ω` is compact. -/
-theorem IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn
-    {K Ω : Set E} (hK : IsCompact K) (hΩ : IsOpen Ω) :
-    IsCompact (K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
-      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}) :=
-  isCompact_of_isClosed_isBounded
-    (hK.isClosed.isClosed_union_setOf_isCompact_closure_connectedComponentIn hΩ)
-    ((isBounded_filledHull.mpr hK.isBounded).subset
-      (union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull
-        (hΩ.sdiff hK.isClosed)))
 
 end ClosedBallThickening
 
@@ -215,41 +191,6 @@ theorem exists_subset_rungeExhaustion_of_isCompact {Ω K : Set E} (hΩ : IsOpen 
 theorem isFilledIn_rungeExhaustion [NormedSpace ℝ E] [ProperSpace E] {Ω : Set E} (hΩ : IsOpen Ω)
     (n : ℕ) : IsFilledIn (rungeExhaustion Ω n) Ω :=
   hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)
-
-/-- In a real normed space of dimension greater than one, inserting a point into `K` when `Ω \ K`
-is open preserves `TauCeti.IsFilledIn K Ω`. -/
-protected theorem IsFilledIn.insert [NormedSpace ℝ E] {K Ω : Set E} (h : IsFilledIn K Ω)
-    (hrank : 1 < Module.rank ℝ E) (hΩK : IsOpen (Ω \ K)) (z : E) :
-    IsFilledIn (insert z K) Ω := by
-  refine isFilledIn_iff.mpr fun x hx ⟨hcpt, hsub⟩ => ?_
-  have hxΩK : x ∈ Ω \ K := ⟨hx.1, fun hxK => hx.2 (mem_insert_of_mem z hxK)⟩
-  have hxz : x ≠ z := fun hxz => hx.2 (hxz ▸ mem_insert z K)
-  let C := connectedComponentIn (Ω \ K) x
-  let C₁ := connectedComponentIn (Ω \ insert z K) x
-  have hpre : IsPreconnected (C \ {z}) :=
-    isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank (E := E) hrank
-      hΩK.connectedComponentIn isPreconnected_connectedComponentIn
-      isClosed_singleton (finite_singleton z).isDiscrete
-  have hC_sub : C \ {z} ⊆ C₁ :=
-    hpre.subset_connectedComponentIn ⟨mem_connectedComponentIn hxΩK, hxz⟩ fun w ⟨hwC, hwz⟩ =>
-      ⟨(connectedComponentIn_subset _ _ hwC).1,
-        fun hw_ins => hw_ins.elim hwz (connectedComponentIn_subset _ _ hwC).2⟩
-  by_cases hzC : z ∈ C
-  · have hzΩ : z ∈ Ω := (connectedComponentIn_subset _ _ hzC).1
-    have hcl_sub : closure C ⊆ insert z (closure C₁) := by
-      have hC_ins : C ⊆ insert z C₁ := fun w hw => by
-        by_cases hwz : w = z
-        · exact mem_insert_iff.mpr (Or.inl hwz)
-        · exact mem_insert_of_mem z (hC_sub ⟨hw, hwz⟩)
-      exact (closure_mono hC_ins).trans <| by
-        rw [insert_eq, closure_union, isClosed_singleton.closure_eq, ← insert_eq]
-    exact isFilledIn_iff.mp h x hxΩK
-      ⟨(hcpt.insert z).of_isClosed_subset isClosed_closure hcl_sub,
-        hcl_sub.trans (insert_subset_iff.mpr ⟨hzΩ, hsub⟩)⟩
-  · have hC_eq : connectedComponentIn (Ω \ K) x = C₁ :=
-      Subset.antisymm ((sdiff_singleton_eq_self hzC).symm.trans_subset hC_sub)
-        (connectedComponentIn_mono x (sdiff_subset_sdiff Subset.rfl (subset_insert z K)))
-    exact isFilledIn_iff.mp h x hxΩK ⟨hC_eq.symm ▸ hcpt, hC_eq.symm ▸ hsub⟩
 
 end RungeExhaustion
 

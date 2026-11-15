@@ -17,6 +17,7 @@ import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Convex.Caratheodory
+import TauCeti.Analysis.Normed.Module.InfDist
 
 /-!
 # Holomorphic hulls
@@ -164,20 +165,6 @@ theorem iInf_edist_holomorphicHull_eq {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
           edist_comm a ζ ▸ iInf₂_le_of_le a ha (iInf₂_le ζ hζ)
       _ ≤ edist z ζ := infEDist_le_edist_of_mem_holomorphicHull hKΩ hz hζ
 
-/-- For any point `x ∈ Ω` in `ℂ`, the real distance from `x` to `frontier Ω` equals its real
-distance to `Ωᶜ`. -/
-private lemma infDist_frontier_eq_infDist_compl {Ω : Set ℂ} {x : ℂ} (hx : x ∈ Ω) :
-    infDist x (frontier Ω) = infDist x Ωᶜ := by
-  by_cases hΩ : Ω = Set.univ
-  · subst hΩ
-    simp
-  obtain ⟨y, hy_fr, hy_dist⟩ := exists_mem_frontier_infDist_compl_eq_dist hx hΩ
-  refine le_antisymm (hy_dist ▸ infDist_le_dist_of_mem hy_fr) ?_
-  rw [← infDist_closure]
-  refine infDist_le_infDist_of_subset (fun w hw => ?_) ⟨y, hy_fr⟩
-  rw [frontier_eq_closure_inter_closure] at hw
-  exact hw.2
-
 /-- Real distance to `frontier Ω` is preserved by taking the holomorphic hull of any subset
 `K ⊆ Ω`. -/
 theorem iInf_infDist_frontier_holomorphicHull_eq {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
@@ -192,15 +179,8 @@ theorem iInf_infDist_frontier_holomorphicHull_eq {Ω K : Set ℂ} (hKΩ : K ⊆ 
     intro s hs
     rw [iInf_subtype', ENNReal.toReal_iInf
       (fun z : s => ((iInf₂_le w₀ hw₀).trans_lt (edist_lt_top (z : ℂ) w₀)).ne)]
-    refine congrArg iInf (funext fun z => (le_antisymm ?_ ?_).symm)
-    · rw [infDist_frontier_eq_infDist_compl (hs z.2)]
-      refine (le_infDist ⟨w₀, hw₀⟩).mpr fun w hw => ?_
-      rw [dist_edist]
-      exact ENNReal.toReal_mono (edist_ne_top _ _) (iInf₂_le w hw)
-    · rw [infDist_frontier_eq_infDist_compl (hs z.2), ← ENNReal.ofReal_le_iff_le_toReal
-        ((iInf₂_le w₀ hw₀).trans_lt (edist_lt_top (z : ℂ) w₀)).ne]
-      exact le_iInf₂ fun w hw =>
-        edist_dist (z : ℂ) w ▸ ENNReal.ofReal_le_ofReal (infDist_le_dist_of_mem hw)
+    exact congrArg iInf (funext fun z =>
+      infDist_frontier_eq_infDist_compl (subset_closure (hs z.2)))
   rw [h_eq holomorphicHull_subset, h_eq hKΩ, iInf_edist_holomorphicHull_eq hKΩ]
 
 /-- For any subset `Ω ⊆ ℂ` and compact `K ⊆ Ω`, `holomorphicHull Ω K` is compact. -/
