@@ -112,7 +112,7 @@ def listMinHeight : List V → 𝕜
   | [] => 0
   | v :: l => min 0 (f v + listMinHeight l)
 
-variable {f} {v w : V} {l l₁ l₂ : List V}
+variable {f}
 
 @[simp]
 theorem listMinHeight_nil : listMinHeight f ([] : List V) = 0 :=
@@ -232,7 +232,7 @@ variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 
 section MinHeight
 
-variable {f : Dual 𝕜 V} {l l₁ l₂ : List V}
+variable {f : Dual 𝕜 V} {l₁ l₂ : List V}
 
 theorem listMinHeight_consMerge (v : V) (l : List V) :
     listMinHeight f (consMerge 𝕜 v l) = listMinHeight f (v :: l) := by
