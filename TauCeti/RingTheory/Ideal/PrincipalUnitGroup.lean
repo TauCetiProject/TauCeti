@@ -44,7 +44,13 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.principalUnitGroupQuotientEquiv`: for `J * J ≤ J'` and `J` in the Jacobson radical,
   `(1 + J) ⧸ ((1 + J) ∩ (1 + J')) ≃* J ⧸ (J ∩ J')`, which reads `(1 + J) ⧸ (1 + J') ≃* J ⧸ J'`
   when `J' ≤ J`.
-* `Ideal.principalUnitGroupPowQuotientEquiv`: the successive quotients
+* `Ideal.PrincipalUnitGroupPowGraded`: the `i`-th graded piece `(1 + I ^ i) ⧸ (1 + I ^ (i + 1))`
+  of the filtration by powers of `I`.
+* `Ideal.principalUnitGroupPowZeroQuotientEquiv`: at depth zero,
+  `(1 + I ^ 0) ⧸ (1 + I ^ 1) ≃* (R ⧸ I)ˣ` for `I` in the Jacobson radical; specialized to the
+  maximal ideal of a local ring as
+  `TauCeti.IsLocalRing.maximalIdealPrincipalUnitGroupZeroEquivResidueFieldUnits`.
+* `Ideal.principalUnitGroupPowQuotientEquiv`: the positive-depth successive quotients
   `(1 + I ^ (n + 1)) ⧸ (1 + I ^ (n + 2)) ≃* I ^ (n + 1) ⧸ I ^ (n + 2)` of the filtration by powers.
 
 ## Main results
@@ -213,12 +219,56 @@ theorem principalUnitGroupQuotientEquiv_mk {J J' : Ideal R} (h : J * J ≤ J')
     QuotientGroup.quotientMulEquivOfEq_mk,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
+/-- The `i`-th graded piece `(1 + I ^ i) ⧸ (1 + I ^ (i + 1))` of the filtration of `Rˣ` by the
+principal unit groups of the powers of `I`. At `i = 0`, `I ^ 0 = ⊤`, so `1 + I ^ 0 = ⊤`. -/
+abbrev PrincipalUnitGroupPowGraded (I : Ideal R) (i : ℕ) :=
+  (I ^ i).principalUnitGroup ⧸
+    (I ^ (i + 1)).principalUnitGroup.subgroupOf (I ^ i).principalUnitGroup
+
+private def principalUnitGroupPowZeroToQuotientUnits (I : Ideal R) :
+    (I ^ 0).principalUnitGroup →* (R ⧸ I)ˣ :=
+  (Units.map (Quotient.mk I).toMonoidHom).comp (I ^ 0).principalUnitGroup.subtype
+
+private theorem ker_principalUnitGroupPowZeroToQuotientUnits (I : Ideal R) :
+    (principalUnitGroupPowZeroToQuotientUnits I).ker =
+      (I ^ 1).principalUnitGroup.subgroupOf (I ^ 0).principalUnitGroup := by
+  ext u
+  rw [pow_one, Subgroup.mem_subgroupOf, principalUnitGroup_eq_ker_unitsMap I, MonoidHom.mem_ker,
+    MonoidHom.mem_ker, principalUnitGroupPowZeroToQuotientUnits, MonoidHom.comp_apply,
+    Subgroup.coe_subtype]
+
+private theorem principalUnitGroupPowZeroToQuotientUnits_surjective {I : Ideal R}
+    (hI : I ≤ jacobson ⊥) :
+    Function.Surjective (principalUnitGroupPowZeroToQuotientUnits I) := by
+  intro v
+  obtain ⟨u, rfl⟩ := unitsMap_quotientMk_surjective hI v
+  exact ⟨⟨u, by simp⟩, rfl⟩
+
+/-- At depth zero, the graded piece `(1 + I ^ 0) ⧸ (1 + I ^ 1)` of the filtration by powers of an
+ideal `I` in the Jacobson radical is `(R ⧸ I)ˣ`: `1 + I ^ 0 = ⊤` and `1 + I ^ 1 = 1 + I`. -/
+noncomputable def principalUnitGroupPowZeroQuotientEquiv {I : Ideal R} (hI : I ≤ jacobson ⊥) :
+    I.PrincipalUnitGroupPowGraded 0 ≃* (R ⧸ I)ˣ :=
+  (QuotientGroup.quotientMulEquivOfEq
+    (ker_principalUnitGroupPowZeroToQuotientUnits I).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _
+      (principalUnitGroupPowZeroToQuotientUnits_surjective hI))
+
+/-- On the class of a unit `u`, the depth-zero graded equivalence acts by reduction modulo `I`. -/
+@[simp]
+theorem principalUnitGroupPowZeroQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson ⊥)
+    (u : (I ^ 0).principalUnitGroup) :
+    principalUnitGroupPowZeroQuotientEquiv hI (QuotientGroup.mk u) =
+      Units.map (Quotient.mk I).toMonoidHom (u : Rˣ) := by
+  simp only [principalUnitGroupPowZeroQuotientEquiv, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+  rfl
+
 /-- The successive quotients of the filtration of the principal unit group of an ideal `I` in the
 Jacobson radical by the principal unit groups of its powers:
 `(1 + I ^ (n + 1)) ⧸ (1 + I ^ (n + 2)) ≃* I ^ (n + 1) ⧸ I ^ (n + 2)`, by `1 + x ↦ x`. -/
 noncomputable def principalUnitGroupPowQuotientEquiv {I : Ideal R} (hI : I ≤ jacobson ⊥) (n : ℕ) :
-    (I ^ (n + 1)).principalUnitGroup ⧸
-        (I ^ (n + 2)).principalUnitGroup.subgroupOf (I ^ (n + 1)).principalUnitGroup ≃*
+    I.PrincipalUnitGroupPowGraded (n + 1) ≃*
       Multiplicative (↥(I ^ (n + 1)) ⧸ Submodule.comap (I ^ (n + 1)).subtype (I ^ (n + 2))) :=
   principalUnitGroupQuotientEquiv (by rw [← pow_add]; exact pow_le_pow_right (by omega))
     ((pow_le_self n.succ_ne_zero).trans hI)
@@ -233,3 +283,27 @@ theorem principalUnitGroupPowQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson
 end CommRing
 
 end Ideal
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing
+
+/-- For a commutative local ring `R`, the depth-zero graded piece of the filtration of `Rˣ` by
+principal unit groups of powers of the maximal ideal is canonically the unit group of the residue
+field. -/
+noncomputable def maximalIdealPrincipalUnitGroupZeroEquivResidueFieldUnits
+    (R : Type*) [CommRing R] [IsLocalRing R] :
+    (maximalIdeal R).PrincipalUnitGroupPowGraded 0 ≃* (ResidueField R)ˣ :=
+  (maximalIdeal R).principalUnitGroupPowZeroQuotientEquiv
+    (by rw [Ideal.jacobson_bot]; exact (ringJacobson_eq_maximalIdeal R).ge)
+
+/-- On the class of a unit `u`, the depth-zero graded equivalence acts by the residue map on
+units. -/
+@[simp]
+theorem maximalIdealPrincipalUnitGroupZeroEquivResidueFieldUnits_mk
+    {R : Type*} [CommRing R] [IsLocalRing R] (u : (maximalIdeal R ^ 0).principalUnitGroup) :
+    maximalIdealPrincipalUnitGroupZeroEquivResidueFieldUnits R (QuotientGroup.mk u) =
+      Units.map (residue R).toMonoidHom (u : Rˣ) :=
+  Ideal.principalUnitGroupPowZeroQuotientEquiv_mk _ u
+
+end TauCeti.IsLocalRing
