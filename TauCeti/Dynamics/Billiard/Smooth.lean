@@ -12,7 +12,8 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Topology.Order.MonotoneContinuity
 
 /-!
 # Smoothness of the billiard next-collision map
@@ -80,38 +81,6 @@ namespace TauCeti
 
 attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
 
-private theorem one_sub_sq_pos {v : ℝ} (hv : v ∈ Ioo (-1) 1) : 0 < 1 - v ^ 2 := by
-  nlinarith [hv.1, hv.2]
-
-private theorem sqrt_one_sub_sq_pos {v : ℝ} (hv : v ∈ Ioo (-1) 1) : 0 < √(1 - v ^ 2) :=
-  Real.sqrt_pos.2 (one_sub_sq_pos hv)
-
-/-- One half of `continuousAt_of_strictMonoOn_comp`: if `g` is strictly increasing on a
-neighbourhood `S` of `f x`, `f` maps a neighbourhood of `x` into `S` and `g ∘ f` is continuous at
-`x`, then `f` stays above every `b < f x` near `x`. -/
-private theorem eventually_lt_of_strictMonoOn_comp {X α β : Type*} [TopologicalSpace X]
-    [LinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
-    [LinearOrder β] [TopologicalSpace β] [OrderTopology β]
-    {f : X → α} {g : α → β} {S : Set α} {x : X} (hg : StrictMonoOn g S) (hS : S ∈ 𝓝 (f x))
-    (hf : ∀ᶠ y in 𝓝 x, f y ∈ S) (hgf : ContinuousAt (g ∘ f) x) {b : α} (hb : b < f x) :
-    ∀ᶠ y in 𝓝 x, b < f y := by
-  obtain ⟨l, hl, hlS⟩ := exists_Ioc_subset_of_mem_nhds hS ⟨b, hb⟩
-  obtain ⟨τ, hτ₁, hτ₂⟩ := exists_between (max_lt hl hb)
-  have hτS : τ ∈ S := hlS ⟨(le_max_left _ _).trans_lt hτ₁, hτ₂.le⟩
-  filter_upwards [hf, hgf.eventually (lt_mem_nhds (hg hτS (mem_of_mem_nhds hS) hτ₂))]
-    with y hy hgy
-  exact ((le_max_right _ _).trans_lt hτ₁).trans ((hg.lt_iff_lt hτS hy).1 hgy)
-
-/-- If `g` is strictly increasing on a neighbourhood `S` of `f x`, `f` maps a neighbourhood of `x`
-into `S` and `g ∘ f` is continuous at `x`, then `f` is continuous at `x`. -/
-private theorem continuousAt_of_strictMonoOn_comp {X α β : Type*} [TopologicalSpace X]
-    [LinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
-    [LinearOrder β] [TopologicalSpace β] [OrderTopology β]
-    {f : X → α} {g : α → β} {S : Set α} {x : X} (hg : StrictMonoOn g S) (hS : S ∈ 𝓝 (f x))
-    (hf : ∀ᶠ y in 𝓝 x, f y ∈ S) (hgf : ContinuousAt (g ∘ f) x) : ContinuousAt f x :=
-  tendsto_order.2 ⟨fun _ hb ↦ eventually_lt_of_strictMonoOn_comp hg hS hf hgf hb,
-    fun _ hb ↦ eventually_lt_of_strictMonoOn_comp (α := αᵒᵈ) (β := βᵒᵈ) hg.dual hS hf hgf hb⟩
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2)]
 
 namespace StrictConvexBilliardTable
@@ -127,7 +96,7 @@ theorem contDiffAt_uncurry_outgoingDir {x : ℝ × ℝ} (hχ : ContDiffAt ℝ n 
     funext fun y ↦ χ.outgoingDir_def y.1 y.2
   have hd : ContDiffAt ℝ n (fun y : ℝ × ℝ ↦ deriv χ y.1) x := hχ.comp x contDiffAt_fst
   have hsq : ContDiffAt ℝ n (fun y : ℝ × ℝ ↦ √(1 - y.2 ^ 2)) x :=
-    (contDiffAt_const.sub (contDiffAt_snd.pow 2)).sqrt (one_sub_sq_pos hx).ne'
+    (contDiffAt_const.sub (contDiffAt_snd.pow 2)).sqrt (Real.one_sub_sq_pos hx).ne'
   rw [he]
   exact (contDiffAt_snd.smul hd).add
     (hsq.smul (o.rightAngleRotation.contDiff.contDiffAt.comp x hd))
@@ -304,7 +273,7 @@ private theorem continuousAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     ContinuousAt (χ.nextParam s) v := by
   have hk : ContinuousAt (fun v' : ℝ ↦ v' / √(1 - v' ^ 2)) v :=
     continuousAt_id.div (continuousAt_const.sub (continuousAt_id.pow 2)).sqrt
-      (sqrt_one_sub_sq_pos hv).ne'
+      (Real.sqrt_one_sub_sq_pos hv).ne'
   have hv' : ∀ᶠ v' in 𝓝 v, v' ∈ Ioo (-1) 1 := isOpen_Ioo.mem_nhds hv
   refine continuousAt_of_strictMonoOn_comp (χ.strictAntiOn_chordCot s).dual_right
     (isOpen_Ioo.mem_nhds (χ.nextParam_mem_Ioo hv))
@@ -318,7 +287,7 @@ theorem hasDerivAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     HasDerivAt (χ.nextParam s)
       (-(‖χ (χ.nextParam s v) - χ s‖ /
         (√(1 - v ^ 2) * √(1 - χ.nextTangential s v ^ 2)))) v := by
-  have hv₂ := one_sub_sq_pos hv
+  have hv₂ := Real.one_sub_sq_pos hv
   -- The chord cotangent `ψ(t(v')) = v' / √(1 - v' ^ 2)` is inverted by `t` near `v`.
   have hψ := χ.hasDerivAt_chordCot (χ.nextParam_mem_Ioo (s := s) hv)
   rw [χ.sub_eq_norm_smul_outgoingDir hv, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
@@ -336,7 +305,7 @@ theorem hasDerivAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
   have hr₂ : r ^ 2 = 1 - v ^ 2 := Real.sq_sqrt hv₂.le
   have hr : r ≠ 0 := (Real.sqrt_pos.2 hv₂).ne'
   have hℓ : ℓ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  have hw : √(1 - w ^ 2) ≠ 0 := (sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)).ne'
+  have hw : √(1 - w ^ 2) ≠ 0 := (Real.sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)).ne'
   have hψ₀ : ℓ * -√(1 - w ^ 2) / (ℓ * r) ^ 2 ≠ 0 :=
     div_ne_zero (mul_ne_zero hℓ (neg_ne_zero.2 hw)) (pow_ne_zero 2 (mul_ne_zero hℓ hr))
   convert hψ.of_comp_left (χ.continuousAt_nextParam hv) hk hψ₀ hcomp using 1
@@ -349,8 +318,8 @@ theorem deriv_nextParam_neg {s v : ℝ} (hv : v ∈ Ioo (-1) 1) : deriv (χ.next
   rw [(χ.hasDerivAt_nextParam hv).deriv, neg_neg_iff_pos]
   have hℓ : 0 < ‖χ (χ.nextParam s v) - χ s‖ :=
     norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  exact div_pos hℓ (mul_pos (sqrt_one_sub_sq_pos hv)
-    (sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
+  exact div_pos hℓ (mul_pos (Real.sqrt_one_sub_sq_pos hv)
+    (Real.sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
 
 /-- For a fixed starting point `χ(s)`, the parameter of the next collision is strictly decreasing
 in the tangential component `v ∈ (-1, 1)`: aiming further forward moves the next collision point
