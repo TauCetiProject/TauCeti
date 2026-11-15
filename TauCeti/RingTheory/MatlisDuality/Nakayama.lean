@@ -74,8 +74,9 @@ theorem IsInjectiveEnvelope.bijective_mapOp_lcomp (hf : IsInjectiveEnvelope f)
     (P : Type w) [AddCommGroup P] [Module A P] [Module.Finite A P]
     (Q : Type w') [AddCommGroup Q] [Module A Q] [Module.Finite A Q] [Module.Projective A Q] :
     Function.Bijective fun g : P →ₗ[A] Q => mapOp (R := R) (E := E) (g.lcomp Aᵐᵒᵖ A) :=
-  (hf.bijective_mapOp (isFiniteLength_dual R A Q) (isFiniteLength_dual R A P)).comp
-    (opDual_lcomp_bijective A Q)
+  have := hf.moduleInjective
+  (MatlisDual.bijective_mapOp hf.length_quotient_linearMap_eq_one (isFiniteLength_dual R A Q)
+    (isFiniteLength_dual R A P)).comp (opDual_lcomp_bijective A Q)
 
 variable {I : Type w} [AddCommGroup I] [Module R I] [Module A I] [IsScalarTower R A I]
   [Module.Finite A I] [Module.Injective A I] [Small.{w} A]
@@ -88,7 +89,9 @@ def IsInjectiveEnvelope.nakayamaEquiv (hf : IsInjectiveEnvelope f) :
     I ≃ₗ[A] MatlisDual R E (Module.Dual A (MatlisDual R E I →ₗ[Aᵐᵒᵖ] A)) :=
   have := hf.finite_op_matlisDual (A := A) (N := I)
   have := hf.moduleProjective_op_matlisDual_of_injective (A := A) (N := I)
-  (hf.matlisDualEvalEquiv (isFiniteLength_of_finite_trans R A I)).trans
+  have := hf.moduleInjective
+  (MatlisDual.evalEquiv hf.length_quotient_linearMap_eq_one
+    (isFiniteLength_of_finite_trans R A I)).trans
     (congrOp (unopDualEvalEquiv A (MatlisDual R E I)).symm)
 
 /-- `nakayamaEquiv x` sends the evaluation `ψ = (p ↦ p φ)` at `φ : D_R I` to `φ x`. Every
