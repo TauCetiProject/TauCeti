@@ -44,8 +44,9 @@ individual coefficients indexed by `ι → ℕ` in several variables.
   coefficients.
 * `AnalyticAt.mvTaylorCoeff_smul` and `AnalyticAt.mvTaylorCoeff_mul`: Cauchy product rule over
   `Finset.Iic α` for functions valued in a normed `𝕜`-algebra and a module over it.
-* `ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero`: vanishing of all Taylor coefficients in a
-  fixed total degree is preserved under precomposition by a continuous linear map.
+* `ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero`: for `G` analytic at `A x`, vanishing of all
+  Taylor coefficients of `G` at `A x` in a fixed total degree is preserved under precomposition by
+  `A`.
 * `AnalyticAt.prod_factorial_smul_mvTaylorCoeff` and
   `AnalyticAt.factorial_smul_mvTaylorCoeff_of_unique`: comparison with `iteratedFDeriv` and, in
   one variable, `iteratedDeriv`.
@@ -108,7 +109,7 @@ theorem mvTaylorCoeff_zero {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : Ana
   obtain ⟨p, hp⟩ := hf
   rw [hp.mvTaylorCoeff_eq, p.mvCoeff_zero_eq_apply 0, hp.coeff_zero 0]
 
-@[to_fun]
+@[to_fun mvTaylorCoeff_fun_add]
 theorem mvTaylorCoeff_add {f g : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x)
     (hg : AnalyticAt 𝕜 g x) (α : ι → ℕ) :
     TauCeti.mvTaylorCoeff (f + g) x α =
@@ -118,7 +119,7 @@ theorem mvTaylorCoeff_add {f g : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : An
   rw [(hp.add hq).mvTaylorCoeff_eq, hp.mvTaylorCoeff_eq, hq.mvTaylorCoeff_eq,
     FormalMultilinearSeries.mvCoeff_add]
 
-@[to_fun]
+@[to_fun mvTaylorCoeff_fun_sub]
 theorem mvTaylorCoeff_sub {f g : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x)
     (hg : AnalyticAt 𝕜 g x) (α : ι → ℕ) :
     TauCeti.mvTaylorCoeff (f - g) x α =
@@ -149,7 +150,7 @@ theorem mvTaylorCoeff_const_of_ne_zero (c : F) (x : ι → 𝕜) {α : ι → �
     mvTaylorCoeff (fun _ ↦ c) x α = 0 := by
   simp [mvTaylorCoeff_const, hα]
 
-@[to_fun, simp]
+@[to_fun (attr := simp) mvTaylorCoeff_fun_zero]
 theorem mvTaylorCoeff_zero (x : ι → 𝕜) (α : ι → ℕ) :
     mvTaylorCoeff (0 : (ι → 𝕜) → F) x α = 0 := by
   rw [Pi.zero_def]
@@ -157,7 +158,7 @@ theorem mvTaylorCoeff_zero (x : ι → 𝕜) (α : ι → ℕ) :
 
 /-- **Constant multiples**: multiplying a function by a scalar multiplies every Taylor coefficient
 by that scalar, with no analyticity assumption. -/
-@[to_fun, simp]
+@[to_fun (attr := simp) mvTaylorCoeff_fun_const_smul]
 theorem mvTaylorCoeff_const_smul (c : 𝕜) (f : (ι → 𝕜) → F) (x : ι → 𝕜) (α : ι → ℕ) :
     mvTaylorCoeff (c • f) x α = c • mvTaylorCoeff f x α := by
   rcases eq_or_ne c 0 with rfl | hc
@@ -170,12 +171,12 @@ theorem mvTaylorCoeff_const_smul (c : 𝕜) (f : (ι → 𝕜) → F) (x : ι �
         hf ⟨c⁻¹ • q, by simpa [inv_smul_smul₀ hc] using hq.const_smul (c := c⁻¹)⟩
       rw [mvTaylorCoeff_of_not_analyticAt hcf, mvTaylorCoeff_of_not_analyticAt hf, smul_zero]
 
-@[to_fun, simp]
+@[to_fun (attr := simp) mvTaylorCoeff_fun_neg]
 theorem mvTaylorCoeff_neg (f : (ι → 𝕜) → F) (x : ι → 𝕜) (α : ι → ℕ) :
     mvTaylorCoeff (-f) x α = -mvTaylorCoeff f x α := by
   rw [← neg_one_smul 𝕜 f, mvTaylorCoeff_const_smul, neg_one_smul]
 
-@[to_fun]
+@[to_fun mvTaylorCoeff_fun_sum]
 theorem mvTaylorCoeff_sum {κ : Type*} (s : Finset κ) {f : κ → (ι → 𝕜) → F} {x : ι → 𝕜}
     (hf : ∀ j ∈ s, AnalyticAt 𝕜 (f j) x) (α : ι → ℕ) :
     mvTaylorCoeff (∑ j ∈ s, f j) x α = ∑ j ∈ s, mvTaylorCoeff (f j) x α := by
@@ -221,8 +222,9 @@ theorem mvTaylorCoeff_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 
   rw [(L.comp_hasFPowerSeriesOnBall hp).hasFPowerSeriesAt.mvTaylorCoeff_eq,
     hp.hasFPowerSeriesAt.mvTaylorCoeff_eq, L.mvCoeff_compFormalMultilinearSeries]
 
-/-- **Linear change of variables**: if all Taylor coefficients of `G` at `A x` of total degree `k`
-vanish, then so do all Taylor coefficients of `G ∘ A` at `x` of total degree `k`. -/
+/-- **Linear change of variables**: for `G` analytic at `A x`, if all Taylor coefficients of `G` at
+`A x` of total degree `k` vanish, then so do all Taylor coefficients of `G ∘ A` at `x` of total
+degree `k`. -/
 theorem mvTaylorCoeff_comp_eq_zero {κ : Type*} [Fintype κ] {G : (ι → 𝕜) → F}
     (A : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) {x : κ → 𝕜} (hG : AnalyticAt 𝕜 G (A x)) {k : ℕ}
     (h : ∀ α : ι → ℕ, ∑ i, α i = k → TauCeti.mvTaylorCoeff G (A x) α = 0) :
@@ -322,137 +324,141 @@ theorem mvTaylorCoeff_prod_pow_zero (τ α : ι → ℕ) :
 
 end TauCeti
 
+/-- Pairs `(β, γ)` of multi-indices summing to `μ` correspond to `β ∈ Finset.Iic μ` via
+`β ↦ (β, μ - β)`. -/
+private def addFiberEquivIic [DecidableEq ι] (μ : ι → ℕ) :
+    {p : (ι → ℕ) × (ι → ℕ) // p.1 + p.2 = μ} ≃ {β : ι → ℕ // β ∈ Finset.Iic μ} where
+  toFun p := ⟨p.1.1, mem_Iic.2 fun i ↦ Nat.le.intro (congrFun p.2 i)⟩
+  invFun β := ⟨(β.1, μ - β.1), funext fun i ↦ Nat.add_sub_of_le (mem_Iic.1 β.2 i)⟩
+  left_inv := fun ⟨⟨_, _⟩, h⟩ ↦
+    Subtype.ext <| Prod.ext rfl <| funext fun i ↦ (Nat.eq_sub_of_add_eq' (congrFun h i)).symm
+  right_inv := fun ⟨_, _⟩ ↦ rfl
+
+/-- Reindexing the Cauchy-product cone `(μ, β ≤ μ)` by the summands `(β, μ - β)`. -/
+private def sigmaIicEquivProd [DecidableEq ι] :
+    (Σ μ : ι → ℕ, {β : ι → ℕ // β ∈ Finset.Iic μ}) ≃ ((ι → ℕ) × (ι → ℕ)) :=
+  (Equiv.sigmaCongrRight fun μ ↦ (addFiberEquivIic μ).symm).trans
+    (Equiv.sigmaFiberEquiv fun p : (ι → ℕ) × (ι → ℕ) ↦ p.1 + p.2)
+
+/-- Normal convergence of two multi-index families on the closed polydisc of radius `ρ ≥ 0`
+implies normal convergence of their Cauchy convolution over `Finset.Iic μ`. -/
+private theorem summable_norm_sum_Iic_smul_mul_pow {A : Type*} [SeminormedRing A]
+    [Module A F] [IsBoundedSMul A F] [DecidableEq ι] (a : (ι → ℕ) → A) (b : (ι → ℕ) → F)
+    {ρ : ℝ} (hρ : 0 ≤ ρ)
+    (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
+    (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) :
+    Summable fun μ : ι → ℕ ↦ ‖∑ β ∈ Finset.Iic μ, a β • b (μ - β)‖ * ρ ^ (∑ i, μ i) := by
+  have hmajor : Summable fun μ : ι → ℕ ↦
+      ∑ β ∈ Finset.Iic μ, (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (μ - β)‖ * ρ ^ (∑ i, (μ - β) i)) := by
+    have hsigma := (sigmaIicEquivProd (ι := ι)).summable_iff.mpr
+      (ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity))
+    convert hsigma.sigma' (fun _ ↦ (hasSum_fintype _).summable) with μ
+    rw [tsum_fintype, ← sum_coe_sort (Finset.Iic μ)]
+    rfl
+  refine hmajor.of_nonneg_of_le (fun _ ↦ by positivity) fun μ ↦ ?_
+  calc ‖∑ β ∈ Finset.Iic μ, a β • b (μ - β)‖ * ρ ^ (∑ i, μ i)
+      ≤ (∑ β ∈ Finset.Iic μ, ‖a β‖ * ‖b (μ - β)‖) * ρ ^ (∑ i, μ i) := by
+        gcongr
+        exact (norm_sum_le _ _).trans (sum_le_sum fun β _ ↦ norm_smul_le _ _)
+    _ = ∑ β ∈ Finset.Iic μ,
+          (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (μ - β)‖ * ρ ^ (∑ i, (μ - β) i)) := by
+        rw [sum_mul]
+        refine sum_congr rfl fun β hβ ↦ ?_
+        have hadd : ∑ i, β i + ∑ i, (μ - β) i = ∑ i, μ i := by
+          rw [← sum_add_distrib]
+          exact sum_congr rfl fun i _ ↦ Nat.add_sub_of_le (mem_Iic.1 hβ i)
+        rw [← hadd, pow_add]
+        ring
+
+/-- Product of two unconditionally and absolutely convergent series for a bounded module action,
+without requiring completeness of the codomain. -/
+private theorem hasSum_smul_of_summable_norm {κ₁ κ₂ A : Type*} [SeminormedRing A]
+    [Module A F] [IsBoundedSMul A F] {u : κ₁ → A} {v : κ₂ → F} {s : A} {t : F}
+    (hu : HasSum u s) (hv : HasSum v t)
+    (hu_norm : Summable fun i ↦ ‖u i‖) (hv_norm : Summable fun j ↦ ‖v j‖) :
+    HasSum (fun p : κ₁ × κ₂ ↦ u p.1 • v p.2) (s • t) := by
+  classical
+  have huv_norm : Summable fun p : κ₁ × κ₂ ↦ ‖u p.1 • v p.2‖ :=
+    (hu_norm.mul_of_nonneg hv_norm (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)).of_nonneg_of_le
+      (fun _ ↦ norm_nonneg _) fun _ ↦ norm_smul_le _ _
+  refine hasSum_of_subseq_of_summable huv_norm tendsto_finsetProd_atTop ?_
+  rw [← prod_atTop_atTop_eq]
+  have hu_lim : Tendsto (fun S ↦ ∑ i ∈ S, u i) atTop (𝓝 s) := by
+    simpa only [HasSum, SummationFilter.unconditional_filter] using hu
+  have hv_lim : Tendsto (fun T ↦ ∑ j ∈ T, v j) atTop (𝓝 t) := by
+    simpa only [HasSum, SummationFilter.unconditional_filter] using hv
+  simpa only [Function.comp_def, sum_product, ← smul_sum, ← sum_smul] using
+    (hu_lim.comp tendsto_fst).smul (hv_lim.comp tendsto_snd)
+
+/-- Cauchy-product `HasSum` over `Finset.Iic μ` for two norm-summable multi-index series under a
+bounded module action, without requiring completeness of `F`. -/
+private theorem hasSum_sum_Iic_smul {A : Type*} [SeminormedRing A]
+    [Module A F] [IsBoundedSMul A F] [DecidableEq ι] {u : (ι → ℕ) → A} {v : (ι → ℕ) → F}
+    {s : A} {t : F} (hu : HasSum u s) (hv : HasSum v t)
+    (hu_norm : Summable fun β ↦ ‖u β‖) (hv_norm : Summable fun γ ↦ ‖v γ‖) :
+    HasSum (fun μ : ι → ℕ ↦ ∑ β ∈ Finset.Iic μ, u β • v (μ - β)) (s • t) := by
+  have huv := hasSum_smul_of_summable_norm hu hv hu_norm hv_norm
+  refine (((Equiv.sigmaFiberEquiv fun p : (ι → ℕ) × (ι → ℕ) ↦ p.1 + p.2).hasSum_iff).mpr
+    huv).sigma fun μ ↦ ?_
+  rw [← (addFiberEquivIic μ).symm.hasSum_iff]
+  convert hasSum_fintype (_ ∘ (addFiberEquivIic μ).symm) using 1
+  rw [← sum_coe_sort (Finset.Iic μ)]
+  rfl
+
 namespace AnalyticAt
 
 /-- **Product rule for Taylor coefficients**: for an algebra-valued function `f` and a
 module-valued function `g` both analytic at `x`, the Taylor coefficients of `f • g` are given by the
 Cauchy convolution over `Finset.Iic α`. -/
-@[to_fun]
+@[to_fun mvTaylorCoeff_fun_smul]
 theorem mvTaylorCoeff_smul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
-    [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] [SMulCommClass 𝕜 A F]
+    [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F]
     [DecidableEq ι] {f : (ι → 𝕜) → A} {g : (ι → 𝕜) → F} {x : ι → 𝕜}
     (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) (α : ι → ℕ) :
     TauCeti.mvTaylorCoeff (f • g) x α =
       ∑ β ∈ Finset.Iic α, TauCeti.mvTaylorCoeff f x β • TauCeti.mvTaylorCoeff g x (α - β) := by
+  -- Intersect the polydiscs of normal convergence of `f` and `g` at `x`.
   obtain ⟨ρ₁, hρ₁, hsum₁, hf_sum⟩ := hf.exists_hasSum_mvTaylorCoeff
   obtain ⟨ρ₂, hρ₂, hsum₂, hg_sum⟩ := hg.exists_hasSum_mvTaylorCoeff
   let ρ : ℝ≥0 := min ρ₁ ρ₂
   have hρ : 0 < ρ := lt_min hρ₁ hρ₂
   have hsum₁' : Summable fun β : ι → ℕ ↦ ‖TauCeti.mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i) :=
-    hsum₁.of_nonneg_of_le (fun _ ↦ by positivity) fun β ↦ by
-      gcongr; exact min_le_left ρ₁ ρ₂
+    hsum₁.of_nonneg_of_le (fun _ ↦ by positivity) fun β ↦ by gcongr; exact min_le_left ρ₁ ρ₂
   have hsum₂' : Summable fun γ : ι → ℕ ↦ ‖TauCeti.mvTaylorCoeff g x γ‖ * (ρ : ℝ) ^ (∑ i, γ i) :=
-    hsum₂.of_nonneg_of_le (fun _ ↦ by positivity) fun γ ↦ by
-      gcongr; exact min_le_right ρ₁ ρ₂
-  have hprod_sum : Summable fun p : (ι → ℕ) × (ι → ℕ) ↦
-      (‖TauCeti.mvTaylorCoeff f x p.1‖ * (ρ : ℝ) ^ (∑ i, p.1 i)) *
-        (‖TauCeti.mvTaylorCoeff g x p.2‖ * (ρ : ℝ) ^ (∑ i, p.2 i)) :=
-    hsum₁'.mul_of_nonneg hsum₂' (fun _ ↦ by positivity) (fun _ ↦ by positivity)
+    hsum₂.of_nonneg_of_le (fun _ ↦ by positivity) fun γ ↦ by gcongr; exact min_le_right ρ₁ ρ₂
+  -- Apply Cauchy-product normal convergence and `HasSum` on the common polydisc.
   let c : (ι → ℕ) → F :=
     fun μ ↦ ∑ β ∈ Finset.Iic μ, TauCeti.mvTaylorCoeff f x β • TauCeti.mvTaylorCoeff g x (μ - β)
-  have hc_sum : Summable fun μ : ι → ℕ ↦ ‖c μ‖ * (ρ : ℝ) ^ (∑ i, μ i) := by
-    refine summable_of_sum_le
-      (c := ∑' p : (ι → ℕ) × (ι → ℕ),
-        (‖TauCeti.mvTaylorCoeff f x p.1‖ * (ρ : ℝ) ^ (∑ i, p.1 i)) *
-          (‖TauCeti.mvTaylorCoeff g x p.2‖ * (ρ : ℝ) ^ (∑ i, p.2 i)))
-      (fun _ ↦ by positivity) fun s ↦ ?_
-    let T : Finset ((ι → ℕ) × (ι → ℕ)) :=
-      (s.sigma fun μ ↦ Finset.Iic μ).image fun q ↦ (q.2, q.1 - q.2)
-    have hinj : Set.InjOn (fun q : Σ _ : ι → ℕ, ι → ℕ ↦ (q.2, q.1 - q.2))
-        (s.sigma fun μ ↦ Finset.Iic μ) := by
-      rintro ⟨μ₁, β₁⟩ h₁ ⟨μ₂, β₂⟩ h₂ h
-      have hβ : β₁ = β₂ := congrArg Prod.fst h
-      have hsub : μ₁ - β₁ = μ₂ - β₂ := congrArg Prod.snd h
-      subst hβ
-      have hμ : μ₁ = μ₂ := funext fun i ↦ by
-        have h1 : β₁ i ≤ μ₁ i := mem_Iic.1 (mem_sigma.1 h₁).2 i
-        have h2 : β₁ i ≤ μ₂ i := mem_Iic.1 (mem_sigma.1 h₂).2 i
-        have hi : μ₁ i - β₁ i = μ₂ i - β₁ i := congrFun hsub i
-        rw [← Nat.sub_add_cancel h1, hi, Nat.sub_add_cancel h2]
-      subst hμ
-      rfl
-    calc ∑ μ ∈ s, ‖c μ‖ * (ρ : ℝ) ^ (∑ i, μ i)
-        ≤ ∑ μ ∈ s, ∑ β ∈ Finset.Iic μ,
-            (‖TauCeti.mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i)) *
-              (‖TauCeti.mvTaylorCoeff g x (μ - β)‖ * (ρ : ℝ) ^ (∑ i, (μ - β) i)) := by
-          refine sum_le_sum fun μ _ ↦ ?_
-          calc ‖c μ‖ * (ρ : ℝ) ^ (∑ i, μ i)
-              ≤ (∑ β ∈ Finset.Iic μ,
-                  ‖TauCeti.mvTaylorCoeff f x β‖ * ‖TauCeti.mvTaylorCoeff g x (μ - β)‖) *
-                  (ρ : ℝ) ^ (∑ i, μ i) := by
-                gcongr
-                exact (norm_sum_le _ _).trans (sum_le_sum fun β _ ↦ norm_smul_le _ _)
-            _ = ∑ β ∈ Finset.Iic μ,
-                  (‖TauCeti.mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i)) *
-                    (‖TauCeti.mvTaylorCoeff g x (μ - β)‖ * (ρ : ℝ) ^ (∑ i, (μ - β) i)) := by
-                rw [sum_mul]
-                refine sum_congr rfl fun β hβ ↦ ?_
-                have hadd : ∑ i, β i + ∑ i, (μ - β) i = ∑ i, μ i := by
-                  rw [← sum_add_distrib]
-                  exact sum_congr rfl fun i _ ↦ Nat.add_sub_of_le (mem_Iic.1 hβ i)
-                rw [← hadd, pow_add]
-                ring
-      _ = ∑ p ∈ T,
-            (‖TauCeti.mvTaylorCoeff f x p.1‖ * (ρ : ℝ) ^ (∑ i, p.1 i)) *
-              (‖TauCeti.mvTaylorCoeff g x p.2‖ * (ρ : ℝ) ^ (∑ i, p.2 i)) := by
-          rw [sum_image hinj, sum_sigma]
-      _ ≤ _ := hprod_sum.sum_le_tsum T fun _ _ ↦ by positivity
-  refine TauCeti.mvTaylorCoeff_eq_of_hasSum hρ hc_sum (fun y hy ↦ ?_) α
+  have hc_sum : Summable fun μ : ι → ℕ ↦ ‖c μ‖ * (ρ : ℝ) ^ (∑ i, μ i) :=
+    summable_norm_sum_Iic_smul_mul_pow (TauCeti.mvTaylorCoeff f x) (TauCeti.mvTaylorCoeff g x)
+      ρ.coe_nonneg hsum₁' hsum₂'
+  refine TauCeti.mvTaylorCoeff_eq_of_hasSum (c := c) hρ hc_sum (fun y hy ↦ ?_) α
   have hy₁ : ‖y‖ < (ρ₁ : ℝ) := hy.trans_le (min_le_left ρ₁ ρ₂)
   have hy₂ : ‖y‖ < (ρ₂ : ℝ) := hy.trans_le (min_le_right ρ₁ ρ₂)
-  let u : (ι → ℕ) → A := fun β ↦ (∏ i, y i ^ β i) • TauCeti.mvTaylorCoeff f x β
-  let v : (ι → ℕ) → F := fun γ ↦ (∏ i, y i ^ γ i) • TauCeti.mvTaylorCoeff g x γ
-  have hu_norm : Summable fun β ↦ ‖u β‖ := by
-    refine hsum₁'.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun β ↦ ?_
-    rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
-    gcongr with i
-    rw [norm_pow]
-    gcongr
-    exact (norm_le_pi_norm y i).trans hy.le
-  have hv_norm : Summable fun γ ↦ ‖v γ‖ := by
-    refine hsum₂'.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun γ ↦ ?_
-    rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
-    gcongr with i
-    rw [norm_pow]
-    gcongr
-    exact (norm_le_pi_norm y i).trans hy.le
-  have huv_norm : Summable fun p : (ι → ℕ) × (ι → ℕ) ↦ ‖u p.1 • v p.2‖ :=
-    (hu_norm.mul_of_nonneg hv_norm (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)).of_nonneg_of_le
-      (fun _ ↦ norm_nonneg _) fun _ ↦ norm_smul_le _ _
-  -- Multiply the two absolutely convergent series over rectangle exhaustions, then group by sum.
-  have huv : HasSum (fun p : (ι → ℕ) × (ι → ℕ) ↦ u p.1 • v p.2) (f (x + y) • g (x + y)) := by
-    refine hasSum_of_subseq_of_summable huv_norm tendsto_finsetProd_atTop ?_
-    rw [← prod_atTop_atTop_eq]
-    have hu_lim : Tendsto (fun s ↦ ∑ β ∈ s, u β) atTop (𝓝 (f (x + y))) := by
-      simpa only [HasSum, SummationFilter.unconditional_filter] using hf_sum y hy₁
-    have hv_lim : Tendsto (fun s ↦ ∑ γ ∈ s, v γ) atTop (𝓝 (g (x + y))) := by
-      simpa only [HasSum, SummationFilter.unconditional_filter] using hg_sum y hy₂
-    simpa only [Function.comp_def, sum_product, ← smul_sum, ← sum_smul] using
-      (hu_lim.comp tendsto_fst).smul (hv_lim.comp tendsto_snd)
-  refine (((Equiv.sigmaFiberEquiv fun p : (ι → ℕ) × (ι → ℕ) ↦ p.1 + p.2).hasSum_iff).mpr
-    huv).sigma fun μ ↦ ?_
-  let efib : {p : (ι → ℕ) × (ι → ℕ) // p.1 + p.2 = μ} ≃ {β : ι → ℕ // β ∈ Finset.Iic μ} :=
-    { toFun := fun p ↦ ⟨p.1.1, mem_Iic.2 fun i ↦ Nat.le.intro (congrFun p.2 i)⟩
-      invFun := fun β ↦ ⟨(β.1, μ - β.1), funext fun i ↦ Nat.add_sub_of_le (mem_Iic.1 β.2 i)⟩
-      left_inv := fun ⟨⟨_, _⟩, h⟩ ↦
-        Subtype.ext <| Prod.ext rfl <| funext fun i ↦ (Nat.eq_sub_of_add_eq' (congrFun h i)).symm
-      right_inv := fun ⟨_, _⟩ ↦ rfl }
-  rw [← efib.symm.hasSum_iff]
-  convert hasSum_fintype (_ ∘ efib.symm) using 1
-  simp only [c, smul_sum]
-  rw [← sum_coe_sort (Finset.Iic μ)]
-  refine Fintype.sum_congr _ _ fun ⟨β, hβ⟩ ↦ ?_
-  have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (μ - β) i) = ∏ i, y i ^ μ i := by
-    rw [← prod_mul_distrib]
-    refine prod_congr rfl fun i _ ↦ ?_
-    rw [← pow_add, Pi.sub_apply, Nat.add_sub_of_le (mem_Iic.1 hβ i)]
-  simp only [efib, Equiv.sigmaFiberEquiv, Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk,
-    Function.comp_apply, u, v]
-  rw [smul_assoc, ← smul_comm (∏ i, y i ^ (μ - β) i), smul_smul, hpow]
+  have hterm : (fun μ : ι → ℕ ↦ (∏ i, y i ^ μ i) • c μ) =
+      fun μ ↦ ∑ β ∈ Finset.Iic μ,
+        ((∏ i, y i ^ β i) • TauCeti.mvTaylorCoeff f x β) •
+          ((∏ i, y i ^ (μ - β) i) • TauCeti.mvTaylorCoeff g x (μ - β)) := by
+    ext μ
+    rw [smul_sum]
+    refine sum_congr rfl fun β hβ ↦ ?_
+    have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (μ - β) i) = ∏ i, y i ^ μ i := by
+      rw [← prod_mul_distrib]
+      exact prod_congr rfl fun i _ ↦ by
+        rw [← pow_add, Pi.sub_apply, Nat.add_sub_of_le (mem_Iic.1 hβ i)]
+    rw [← algebraMap_smul A (∏ i, y i ^ (μ - β) i), Algebra.smul_def, smul_smul, mul_assoc,
+      ← Algebra.commutes, ← mul_assoc, ← map_mul, hpow, ← Algebra.smul_def, smul_assoc]
+  rw [hterm]
+  exact hasSum_sum_Iic_smul
+    (u := fun β ↦ (∏ i, y i ^ β i) • TauCeti.mvTaylorCoeff f x β)
+    (v := fun γ ↦ (∏ i, y i ^ γ i) • TauCeti.mvTaylorCoeff g x γ)
+    (hf_sum y hy₁) (hg_sum y hy₂)
+    (TauCeti.summable_norm_prod_pow_smul hy.le hsum₁')
+    (TauCeti.summable_norm_prod_pow_smul hy.le hsum₂')
 
-/-- **Product rule for algebra-valued analytic functions**: the Taylor coefficients of `f * g` are
-the Cauchy products over `Finset.Iic α`. -/
-@[to_fun]
+/-- **Product rule for algebra-valued analytic functions**: for `f` and `g` both analytic at `x`,
+the Taylor coefficients of `f * g` are the Cauchy products over `Finset.Iic α`. -/
+@[to_fun mvTaylorCoeff_fun_mul]
 theorem mvTaylorCoeff_mul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
     [DecidableEq ι] {f g : (ι → 𝕜) → A} {x : ι → 𝕜}
     (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) (α : ι → ℕ) :
@@ -460,10 +466,10 @@ theorem mvTaylorCoeff_mul {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
       ∑ β ∈ Finset.Iic α, TauCeti.mvTaylorCoeff f x β * TauCeti.mvTaylorCoeff g x (α - β) :=
   hf.mvTaylorCoeff_smul hg α
 
-/-- **Agreement with iterated Fréchet derivatives**: for any tuple `v` of standard basis vectors
-whose coordinate counts are `α`, `(∏ i, (α i)!) • mvTaylorCoeff f x α` equals
-`iteratedFDeriv 𝕜 (∑ i, α i) f x` evaluated at `v`. No factorial is inverted, so this holds in
-every characteristic. -/
+/-- **Agreement with iterated Fréchet derivatives**: for `f` analytic at `x` and any coordinate
+tuple `v : Fin (∑ i, α i) → ι` whose coordinate counts are `α`,
+`(∏ i, (α i)!) • mvTaylorCoeff f x α` equals `iteratedFDeriv 𝕜 (∑ i, α i) f x` evaluated at
+`fun j ↦ Pi.single (v j) 1`. No factorial is inverted, so this holds in every characteristic. -/
 theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
     {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (α : ι → ℕ)
     (v : Fin (∑ i, α i) → ι)
@@ -509,8 +515,9 @@ theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
   rw [← Fintype.card_subtype, Fintype.card_congr hbij, DomMulAct.stabilizer_card v]
   exact prod_congr rfl fun i _ ↦ by rw [hv i]
 
-/-- **One-variable specialization**: for a singleton index type `ι`, `(α default)! • mvTaylorCoeff`
-of `z ↦ f (z default)` at `fun _ ↦ x` equals `iteratedDeriv (α default) f x`. -/
+/-- **One-variable specialization**: for `f` analytic at `x` and a singleton index type `ι`,
+`(α default)! • mvTaylorCoeff` of `z ↦ f (z default)` at `fun _ ↦ x` equals
+`iteratedDeriv (α default) f x`. -/
 theorem factorial_smul_mvTaylorCoeff_of_unique [Unique ι] [CompleteSpace F]
     {f : 𝕜 → F} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) (α : ι → ℕ) :
     (α default)! • TauCeti.mvTaylorCoeff (fun z : ι → 𝕜 ↦ f (z default)) (fun _ ↦ x) α =

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Data.Fin.VecNotation
 public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
 import Mathlib.Analysis.Analytic.Constructions
+import TauCeti.Analysis.Complex.RealDeriv
 
 /-!
 # Examples of multi-index power series and Taylor coefficients
@@ -168,16 +168,7 @@ example :
       have hd : DifferentiableAt ℂ (fun w : ℂ ↦ (f (ι₁ w)) - 1) (x 0) :=
         hcomp.differentiableAt.sub (differentiableAt_const 1)
       simpa [f, ι₁] using hd
-    have hR : fderiv ℝ (conj : ℂ → ℂ) (x 0) = Complex.conjCLE.toContinuousLinearMap :=
-      Complex.conjCLE.hasFDerivAt.fderiv
-    have hI := congrArg (fun L : ℂ →L[ℝ] ℂ ↦ L Complex.I) (hconj.fderiv_restrictScalars ℝ)
-    have h1 := congrArg (fun L : ℂ →L[ℝ] ℂ ↦ L 1) (hconj.fderiv_restrictScalars ℝ)
-    simp only [ContinuousLinearMap.coe_restrictScalars', hR, ContinuousLinearEquiv.coe_coe,
-      Complex.conjCLE_apply, map_one, Complex.conj_I] at hI h1
-    have hlin : fderiv ℂ (conj : ℂ → ℂ) (x 0) Complex.I =
-        Complex.I * fderiv ℂ (conj : ℂ → ℂ) (x 0) 1 := by simp
-    rw [← h1, mul_one, ← hI] at hlin
-    exact Complex.I_ne_zero (by linear_combination -hlin / 2)
+    exact Complex.not_differentiableAt_conj (x 0) hconj
   refine ⟨fun x α ↦ mvTaylorCoeff_of_not_analyticAt (hnot x) α, ?_⟩
   rw [mvTaylorCoeff_of_not_analyticAt (hnot 0) 0]
   simp [f]
