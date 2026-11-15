@@ -36,8 +36,10 @@ isomorphism from `(E, ω, J₀)` to `(E, ω, J)`
 
 The Riesz operator of `g_J` is `H = -J₀ J`
 (`SymplecticForm.continuousLinearMapOfBilin_associatedBilinForm`), and the key identity is
-`H J₀ H = J₀`, which says that conjugation by `J₀` inverts `H`. Hence
-`J₀ H^(1/2) J₀⁻¹` is a positive square root of `H⁻¹`, so it is `T_J`, and then
+`H J₀ H = J₀`, which says that conjugation by `J₀` inverts `H`
+(`SymplecticForm.continuousLinearMapOfBilin_associatedBilinForm_mul_mul`). Hence
+`J₀ H^(1/2) J₀⁻¹` is a positive square root of `H⁻¹`, so it is `T_J`
+(`SymplecticForm.unitaryTransport_eq_neg_mul_sqrt_mul`), and then
 `T_J J₀ = J₀ H^(1/2) = J₀ H T_J = J T_J`. Preservation of `ω` follows, since
 `ω(u, v) = g_J(u, -J v)` and `ω(u, v) = ⟪u, -J₀ v⟫`.
 
@@ -203,6 +205,61 @@ theorem unitaryTransport_eq_one : ω.unitaryTransport J₀ = 1 := by
       innerSL_apply_apply]
   rw [unitaryTransport_def, h, ContinuousLinearMap.metricChangeTransport_innerSL]
 
+/-- **Conjugation by `J₀` inverts the Riesz operator** `H` of the metric `g_J = ω(·, J ·)`: if the
+inner product of `E` is the metric `ω(·, J₀ ·)` of `J₀` and `J` preserves `ω`, then
+`H J₀ H = J₀`. -/
+theorem continuousLinearMapOfBilin_associatedBilinForm_mul_mul (hJ : ω.Invariant J) :
+    (ω.associatedBilinForm J).toContinuousBilinearMap♯ *
+        LinearMap.toContinuousLinearMap J₀.toLinearMap *
+        (ω.associatedBilinForm J).toContinuousBilinearMap♯ =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap := by
+  set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
+  set B := LinearMap.toContinuousLinearMap J.toLinearMap
+  have hAA : A * A = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
+  have hBB : B * B = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J
+  -- `H = -J₀ J`, so `H J₀ H = J₀ J J₀ J₀ J = -J₀ J J = J₀`.
+  calc _ = -(A * B) * A * -(A * B) := by
+        rw [continuousLinearMapOfBilin_associatedBilinForm hJ₀ hJ]
+    _ = A * B * (A * A) * B := by noncomm_ring
+    _ = A := by rw [hAA, mul_neg_one, neg_mul, mul_assoc, hBB]; simp
+
+/-- **The unitary transport as a conjugate square root**: if the inner product of `E` is the metric
+`ω(·, J₀ ·)` of `J₀` and `J` is `ω`-compatible, then `T_J = J₀ H^(1/2) J₀⁻¹ = -J₀ H^(1/2) J₀`,
+where `H` is the Riesz operator of `g_J = ω(·, J ·)`. -/
+theorem unitaryTransport_eq_neg_mul_sqrt_mul (hJ : ω.Compatible J) :
+    ω.unitaryTransport J = -(LinearMap.toContinuousLinearMap J₀.toLinearMap *
+      CFC.sqrt (ω.associatedBilinForm J).toContinuousBilinearMap♯ *
+      LinearMap.toContinuousLinearMap J₀.toLinearMap) := by
+  set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
+  set H := (ω.associatedBilinForm J).toContinuousBilinearMap♯
+  have hpos := hJ.isStrictlyPositive_continuousLinearMapOfBilin
+  have hAA : A * A = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
+  have hHAH : H * A * H = A :=
+    continuousLinearMapOfBilin_associatedBilinForm_mul_mul hJ₀ hJ.invariant
+  -- `X = J₀ H J₀` is the inverse of `H`, so it commutes with `H^(1/2)`.
+  set X := A * H * A
+  have hHX : H * X = -1 := by simp only [X, ← mul_assoc, hHAH, hAA]
+  have hXH : X * H = -1 := by simp only [X, mul_assoc, hHAH, hAA]
+  have hRX : Commute (CFC.sqrt H) X := by
+    rw [CFC.sqrt_eq_rpow, CFC.rpow_def]
+    exact Commute.cfc_nnreal (hHX.trans hXH.symm) _
+  set R := CFC.sqrt H
+  have hRR : R * R = H := CFC.sqrt_mul_sqrt_self H hpos.nonneg
+  refine (ContinuousLinearMap.metricChangeTransport_eq_iff hpos).2 ⟨?_, ?_⟩
+  · have hconj := (ContinuousLinearMap.nonneg_iff_isPositive.1 (CFC.sqrt_nonneg H)).conj_adjoint A
+    rw [ω.adjoint_eq_neg_of_forall_inner_apply_eq (A := A)
+      (ω.inner_apply_left_eq_of_apply_apply_eq_inner hJ₀)] at hconj
+    rw [ContinuousLinearMap.nonneg_iff_isPositive]
+    convert hconj using 1
+    simp only [ContinuousLinearMap.comp_neg, ContinuousLinearMap.mul_def,
+      ContinuousLinearMap.comp_assoc, R, A]
+  · have h₁ : R * X * R = -1 := by
+      rw [hRX.eq, mul_assoc, hRR, hXH]
+    calc -(A * R * A) * H * -(A * R * A) = A * (R * X * R) * A := by
+          simp only [X]
+          noncomm_ring
+      _ = 1 := by rw [h₁]; simp [hAA]
+
 /-- **The unitary transport intertwines the complex structures**, as an identity of operators:
 if the inner product of `E` is the metric `ω(·, J₀ ·)` of `J₀` and `J` is `ω`-compatible, then
 `T_J ∘ J₀ = J ∘ T_J`. -/
@@ -212,44 +269,16 @@ theorem unitaryTransport_mul_toContinuousLinearMap (hJ : ω.Compatible J) :
   set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
   set B := LinearMap.toContinuousLinearMap J.toLinearMap
   set H := (ω.associatedBilinForm J).toContinuousBilinearMap♯
+  set R := CFC.sqrt H
   have hpos := hJ.isStrictlyPositive_continuousLinearMapOfBilin
   have hH : H = -(A * B) := continuousLinearMapOfBilin_associatedBilinForm hJ₀ hJ.invariant
   have hAA : A * A = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
-  have hBB : B * B = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J
-  -- Conjugation by `J₀` inverts `H`: `X = J₀ H J₀ = J J₀` satisfies `H X = X H = -1`.
-  set X := A * H * A
-  have hX : X = B * A := by
-    simp only [X, hH, mul_neg, neg_mul, ← mul_assoc, hAA, neg_neg, one_mul]
-  have hHX : H * X = -1 := by
-    rw [hX, hH, neg_mul, show A * B * (B * A) = A * (B * B) * A by simp only [mul_assoc], hBB]
-    simp [hAA]
-  have hXH : X * H = -1 := by
-    rw [hX, hH, mul_neg, show B * A * (A * B) = B * (A * A) * B by simp only [mul_assoc], hAA]
-    simp [hBB]
-  have hRX : Commute (CFC.sqrt H) X := by
-    rw [CFC.sqrt_eq_rpow, CFC.rpow_def]
-    exact Commute.cfc_nnreal (hHX.trans hXH.symm) _
-  set R := CFC.sqrt H
   have hRR : R * R = H := CFC.sqrt_mul_sqrt_self H hpos.nonneg
-  -- The candidate `J₀ R J₀⁻¹ = -J₀ R J₀` for `T_J`.
-  have hT : ω.unitaryTransport J = -(A * R * A) := by
-    refine (ContinuousLinearMap.metricChangeTransport_eq_iff hpos).2 ⟨?_, ?_⟩
-    · have hconj := (ContinuousLinearMap.nonneg_iff_isPositive.1 (CFC.sqrt_nonneg H)).conj_adjoint A
-      rw [ω.adjoint_eq_neg_of_forall_inner_apply_eq (A := A)
-        (ω.inner_apply_left_eq_of_apply_apply_eq_inner hJ₀)] at hconj
-      rw [ContinuousLinearMap.nonneg_iff_isPositive]
-      convert hconj using 1
-      simp only [ContinuousLinearMap.comp_neg, ContinuousLinearMap.mul_def,
-        ContinuousLinearMap.comp_assoc, R, A]
-    · have h₁ : R * X * R = -1 := by
-        rw [hRX.eq, mul_assoc, hRR, hXH]
-      calc -(A * R * A) * H * -(A * R * A) = A * (R * X * R) * A := by
-            simp only [X]
-            noncomm_ring
-        _ = 1 := by rw [h₁]; simp [hAA]
+  have hT : ω.unitaryTransport J = -(A * R * A) := unitaryTransport_eq_neg_mul_sqrt_mul hJ₀ hJ
   have hRT : R * ω.unitaryTransport J = 1 :=
     ContinuousLinearMap.sqrt_mul_metricChangeTransport hpos
   have hB : B = A * H := by rw [hH, mul_neg, ← mul_assoc, hAA]; simp
+  -- `T_J J₀ = J₀ H^(1/2) = J₀ H T_J = J T_J`.
   calc ω.unitaryTransport J * A = A * R := by rw [hT]; simp [mul_assoc, hAA]
     _ = A * R * (R * ω.unitaryTransport J) := by rw [hRT, mul_one]
     _ = B * ω.unitaryTransport J := by rw [hB, ← hRR]; noncomm_ring

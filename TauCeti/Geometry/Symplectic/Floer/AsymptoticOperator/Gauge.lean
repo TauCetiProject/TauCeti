@@ -17,8 +17,9 @@ import TauCeti.Analysis.Normed.Module.ContinuousInverse
 
 Let `A ζ = J_t (ζ' - S_t ζ)` be the asymptotic operator of a Hamiltonian orbit
 (`TauCeti.Floer.asymptoticOperator`), acting on loops in a symplectic vector space `(V, ω)` with
-complex structures `J_t`. Writing loops in a moving frame `Φ_t : U ≃ V`, `ζ = Φ η`, turns the
-linear equation `ζ' = S_t ζ` into `η' = S^Φ_t η` for the **gauge transform**
+complex structures `J_t`. Writing differentiable loops in a moving frame `Φ_t : U ≃ V`,
+differentiable in `t`, as `ζ = Φ η` turns the linear equation `ζ' = S_t ζ` into `η' = S^Φ_t η` for
+the **gauge transform**
 
 `S^Φ_t = Φ_t⁻¹ (S_t Φ_t - Φ_t')`
 
@@ -32,7 +33,7 @@ If moreover each `Φ_t` is symplectic from `(U, ω')` to `(V, ω)` and every `S_
 infinitesimally symplectic, as the linearized Hamiltonian vector field along an orbit is, then so
 is every `S^Φ_t` (`TauCeti.Floer.symplecticForm_gaugeTransform_apply_add_eq_zero`). The kernel of
 an asymptotic operator does not depend on its complex structures, and the frame preserves
-periodicity, so a periodic frame identifies the periodic kernels of the two operators
+periodicity, so a differentiable periodic frame identifies the periodic kernels of the two operators
 (`TauCeti.Floer.forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff`): one of them is
 injective on periodic loops exactly when the other one is.
 
@@ -44,10 +45,12 @@ asymptotic operator of an orbit into an operator with the constant complex struc
 (`SymplecticForm.asymptoticOperator_unitaryTransport_eq`) whose periodic kernel is trivial exactly
 when the orbit is nondegenerate (`SymplecticForm` theorem
 `isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero`).
-The coefficient `S^Φ_t` is infinitesimally symplectic, continuous and one-periodic by
-`TauCeti.Floer.symplecticForm_gaugeTransform_apply_add_eq_zero`,
-`TauCeti.Floer.continuous_gaugeTransform` and `TauCeti.Floer.periodic_gaugeTransform`, so the
-transformed operator `J₀ (∂_t - S^Φ_t)` is symmetric for the fixed `L²` inner product of `E`
+The coefficient `S^Φ_t` is infinitesimally symplectic and one-periodic by
+`TauCeti.Floer.symplecticForm_gaugeTransform_apply_add_eq_zero` and
+`TauCeti.Floer.periodic_gaugeTransform`. If moreover the family `J_t` is `C¹` and `S` is continuous,
+then the frame is `C¹` (`ContDiff.unitaryTransport`) and `S^Φ_t` is continuous by
+`TauCeti.Floer.continuous_gaugeTransform`, so the transformed operator `J₀ (∂_t - S^Φ_t)` is
+symmetric for the fixed `L²` inner product of `E` on `C¹` one-periodic loops
 (`TauCeti.Floer.integral_associatedBilinForm_asymptoticOperator_comm`).
 
 ## Main definitions
@@ -88,8 +91,10 @@ variable {U V : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] [NormedAddComm
   {S : ℝ → V →L[ℝ] V} {Φ : ℝ → U ≃L[ℝ] V} {ζ : ℝ → U} {t : ℝ}
 
 /-- The **gauge transform** `Φ_t⁻¹ (S_t Φ_t - Φ_t')` of a family `S_t` of endomorphisms of `V` by
-a family of isomorphisms `Φ_t : U ≃ V`. A loop `η` solves `η' = S^Φ_t η` exactly when `Φ η` solves
-`ζ' = S_t ζ`, so this is the coefficient of the linear equation in the moving frame `Φ`. -/
+a family of isomorphisms `Φ_t : U ≃ V`. For a frame differentiable in `t`, a differentiable loop
+`η` solves `η' = S^Φ_t η` exactly when `Φ η` solves `ζ' = S_t ζ`
+(`TauCeti.Floer.deriv_comp_sub_apply`), so this is the coefficient of the linear equation in the
+moving frame `Φ`. -/
 noncomputable def gaugeTransform (Φ : ℝ → U ≃L[ℝ] V) (S : ℝ → V →L[ℝ] V) (t : ℝ) : U →L[ℝ] U :=
   ((Φ t).symm : V →L[ℝ] U) ∘L
     (S t ∘L (Φ t : U →L[ℝ] V) - deriv (fun s ↦ (Φ s : U →L[ℝ] V)) t)
@@ -187,11 +192,8 @@ theorem periodic_gaugeTransform {c : ℝ} (hΦ : Periodic Φ c) (hS : Periodic S
 /-- A `C¹` frame and a continuous coefficient have a continuous gauge transform. -/
 theorem continuous_gaugeTransform (hΦ : ContDiff ℝ 1 fun s ↦ (Φ s : U →L[ℝ] V))
     (hS : Continuous S) : Continuous (gaugeTransform Φ S) := by
-  have hinv : Continuous fun s ↦ ((Φ s).symm : V →L[ℝ] U) := by
-    simpa only [ContinuousLinearMap.inverse_equiv] using
-      hΦ.continuous.clm_inverse fun _ ↦ ContinuousLinearMap.isInvertible_equiv
   have hd : Continuous (deriv fun s ↦ (Φ s : U →L[ℝ] V)) := hΦ.continuous_deriv le_rfl
-  exact hinv.clm_comp ((hS.clm_comp hΦ.continuous).sub hd)
+  exact hΦ.continuous.continuousLinearEquiv_symm.clm_comp ((hS.clm_comp hΦ.continuous).sub hd)
 
 /-- **Periodic frames identify the periodic kernels.** For a differentiable `c`-periodic frame
 `Φ_t` and any complex structures `J_t` and `J'_t`, the asymptotic operator `A_{J', S^Φ}` of the
@@ -206,11 +208,8 @@ theorem forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff [Complet
   constructor
   · intro h η hη hηp hA
     -- Pull `η` back to the loop `Φ⁻¹ η`, which is differentiable since inversion is smooth.
-    have hinv : Differentiable ℝ fun s ↦ ((Φ s).symm : V →L[ℝ] U) := fun s ↦ by
-      simpa only [ContinuousLinearMap.inverse_equiv] using
-        (hΦd s).clm_inverse_of_completeSpace ⟨Φ s, rfl⟩
     set ζ : ℝ → U := fun s ↦ (Φ s).symm (η s)
-    have hζ : Differentiable ℝ ζ := fun s ↦ ((hinv s).hasDerivAt.clm_apply
+    have hζ : Differentiable ℝ ζ := fun s ↦ ((hΦd.continuousLinearEquiv_symm s).hasDerivAt.clm_apply
       (hη s).hasDerivAt).differentiableAt
     have hΦζ : (fun s ↦ Φ s (ζ s)) = η := funext fun s ↦ by simp [ζ]
     have h0 := h ζ hζ (fun s ↦ by simp only [ζ, hΦp s, hηp s]) fun t ↦

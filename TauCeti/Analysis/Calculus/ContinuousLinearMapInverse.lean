@@ -44,6 +44,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   family is invertible.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
   Banach spaces, on any domain, is differentiable at an invertible base point.
+* `DifferentiableAt.continuousLinearEquiv_symm`, `Differentiable.continuousLinearEquiv_symm`: the
+  same for the inverses of a family of continuous linear equivalences.
 * `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
   `DifferentiableAt.fderiv_clm_inverse`: the derivative `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹` of an inverse
   family along a direction.
@@ -246,6 +248,21 @@ theorem DifferentiableAt.clm_inverse_of_completeSpace [CompleteSpace G]
     DifferentiableAt 𝕜 (fun y => (f y).inverse) x :=
   ((hx.contDiffAt_map_inverse (𝕜 := 𝕜') (n := 1)).differentiableAt one_ne_zero).restrictScalars 𝕜
     |>.comp x hf
+
+/-- A family of continuous linear equivalences between Banach spaces, differentiable at a point,
+has inverse operators differentiable there. -/
+theorem DifferentiableAt.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : DifferentiableAt 𝕜 (fun y ↦ (A y : G →L[𝕜'] H)) x) :
+    DifferentiableAt 𝕜 (fun y ↦ ((A y).symm : H →L[𝕜'] G)) x := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using
+    hA.clm_inverse_of_completeSpace ⟨A x, rfl⟩
+
+/-- A differentiable family of continuous linear equivalences between Banach spaces has a
+differentiable family of inverse operators. -/
+theorem Differentiable.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : Differentiable 𝕜 fun y ↦ (A y : G →L[𝕜'] H)) :
+    Differentiable 𝕜 fun y ↦ ((A y).symm : H →L[𝕜'] G) :=
+  fun y ↦ (hA y).continuousLinearEquiv_symm
 
 /-- The derivative of the inverse of a differentiable family of continuous linear maps between
 Banach spaces at an invertible base point: `D(f⁻¹)(v) = -f⁻¹ (f' v) f⁻¹`. -/
