@@ -38,8 +38,10 @@ value of `A ⊕ B` occurs as often as in `A` and `B` together. In particular the
 * `LinearMap.adjoint_prodMap_withLpMap`: `(A ⊕ B)† = A† ⊕ B†`.
 * `LinearMap.finrank_eigenspace_prodMap_withLpMap`: the eigenspaces of `T₁ ⊕ T₂` have dimension
   `dim ker(T₁ - μ) + dim ker(T₂ - μ)`.
-* `LinearMap.ncard_ofPred_singularValues_prodMap_withLpMap`: a positive value occurs among the
-  singular values of `A ⊕ B` as often as among those of `A` and `B` together.
+* `LinearMap.ncard_ofPred_singularValues_prodMap_withLpMap`: a value occurs among the
+  singular values of `A ⊕ B` as often as among those of `A` and `B` together, counted by
+  `Set.ncard`; for a value `s ≤ 0` both sides are `0` (no negative value occurs, and `0` occurs
+  infinitely often).
 * `LinearMap.singularValues_prodMap_withLpMap_self`: `σᵢ(A ⊕ A) = σ_{⌊i/2⌋}(A)`.
 * `LinearMap.kyFanSum_prodMap_withLpMap_self`: `K₂ₖ(A ⊕ A) = 2 Kₖ(A)`.
 
@@ -156,12 +158,16 @@ theorem adjoint_prodMap_withLpMap (A : E₁ →ₗ[𝕜] F₁) (B : E₂ →ₗ[
   refine ((eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm
   simp [WithLp.map, prodMap_apply, WithLp.prod_inner_apply, adjoint_inner_left]
 
-/-- A positive value `s` occurs among the singular values of `A ⊕ B` as often as among those of
-`A` and of `B` together. -/
+/-- A value `s` occurs among the singular values of `A ⊕ B` as often as among those of
+`A` and of `B` together (counted by `Set.ncard`, so `0` when infinite, as for `s = 0`). -/
 theorem ncard_ofPred_singularValues_prodMap_withLpMap (A : E₁ →ₗ[𝕜] F₁) (B : E₂ →ₗ[𝕜] F₂)
-    {s : ℝ} (hs : 0 < s) :
+    {s : ℝ} :
     {i | ((A.prodMap B).withLpMap 2).singularValues i = s}.ncard =
       {i | A.singularValues i = s}.ncard + {i | B.singularValues i = s}.ncard := by
+  rcases le_or_gt s 0 with hs | hs
+  · rw [ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs,
+      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs,
+      ncard_ofPred_singularValues_eq_zero_of_nonpos _ hs]
   rw [ncard_ofPred_singularValues_eq _ hs, ncard_ofPred_singularValues_eq _ hs,
     ncard_ofPred_singularValues_eq _ hs, adjoint_prodMap_withLpMap, ← withLpMap_comp,
     prodMap_comp, finrank_eigenspace_prodMap_withLpMap]
@@ -181,15 +187,9 @@ theorem singularValues_prodMap_withLpMap_self (A : E₁ →ₗ[𝕜] F₁) (i : 
   suffices ((A.prodMap A).withLpMap 2).singularValues = d by rw [this, hd]
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (fun i j hij ↦ by simpa only [hd] using A.singularValues_antitone (Nat.div_le_div_right hij))
-    fun s hs ↦ ?_
-  rcases (lt_or_gt_of_ne hs) with hs | hs
-  · have hempty (f : ℕ → ℝ) (hf : ∀ i, 0 ≤ f i) : {i | f i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i hi ↦ (hf i).not_gt (hi ▸ hs)
-    rw [hempty _ (singularValues_nonneg _), hempty d fun i ↦ by
-      simpa only [hd] using A.singularValues_nonneg _]
-  · rw [ncard_ofPred_singularValues_prodMap_withLpMap A A hs, ← mul_two,
-      ← Set.ncard_preimage_div]
-    simp only [hd, Set.preimage_ofPred_eq]
+    fun s _ ↦ ?_
+  rw [ncard_ofPred_singularValues_prodMap_withLpMap A A, ← mul_two, ← Set.ncard_preimage_div]
+  simp only [hd, Set.preimage_ofPred_eq]
 
 /-- **Ky Fan sums of a doubled block.** `K₂ₖ(A ⊕ A) = 2 Kₖ(A)`. -/
 theorem kyFanSum_prodMap_withLpMap_self (A : E₁ →ₗ[𝕜] F₁) (k : ℕ) :
