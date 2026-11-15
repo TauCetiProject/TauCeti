@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.OpenDisc.Eval
+public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.Taylor
 
 /-!
 # Analytic substitution on open discs
@@ -14,10 +15,39 @@ Let `g` be a series on the open disc of radius `S₀`. Suppose that its Gauss no
 smaller closed disc is strictly less than `R₀`. Substitution by `g` then defines a continuous
 ring homomorphism from series on the open disc of radius `R₀` to those on the open disc of
 radius `S₀`. It is the convergent sum `∑ aₙ gⁿ`, not formal substitution: the constant
-coefficient of `g` need not vanish.
+coefficient of `g` need not vanish. Whenever Mathlib's formal substitution `PowerSeries.subst`
+is defined on `g` (for instance when the constant coefficient of `g` is nilpotent), the two
+substitutions agree (`TauCeti.PowerSeries.OnOpenDisc.coe_analyticSubst_eq_subst`).
 
 Restriction to any smaller closed disc identifies this sum with evaluation in the corresponding
 Banach algebra. This gives the local Gauss bounds and compatibility with point evaluation.
+Rescaling `f(X) ↦ f(uX)` (`TauCeti.PowerSeries.OnOpenDisc.rescaleHom`) and affine coordinate
+changes `f(X) ↦ f(a + uX)` (`TauCeti.PowerSeries.OnOpenDisc.affineHom`) for `‖a‖ < R₀` and
+`‖u‖ * S₀ ≤ R₀` are continuous ring homomorphisms between open-disc algebras and agree with the
+corresponding analytic substitutions.
+
+## Main definitions
+
+* `TauCeti.PowerSeries.OnOpenDisc.analyticSubst`: substitution `f ↦ f(g(X))` between open-disc
+  series when `g` maps every smaller closed disc strictly inside the source open disc.
+* `TauCeti.PowerSeries.OnOpenDisc.rescaleHom` and `TauCeti.PowerSeries.OnOpenDisc.affineHom`:
+  rescaling `f(X) ↦ f(uX)` and affine pullback `f(X) ↦ f(a + uX)` as ring homomorphisms between
+  open-disc subrings.
+
+## Main results
+
+* `TauCeti.PowerSeries.OnOpenDisc.continuous_analyticSubst`,
+  `TauCeti.PowerSeries.OnOpenDisc.evalAt_analyticSubst`, and
+  `TauCeti.PowerSeries.OnOpenDisc.analyticSubst_comp_analyticSubst`: continuity, compatibility with
+  point evaluation, and composition of analytic substitutions.
+* `TauCeti.PowerSeries.OnOpenDisc.coe_analyticSubst_eq_subst`: agreement with formal substitution
+  `PowerSeries.subst` whenever `PowerSeries.HasSubst` holds.
+* `TauCeti.PowerSeries.OnOpenDisc.rescaleHom_eq_analyticSubst`,
+  `TauCeti.PowerSeries.OnOpenDisc.taylorHom_eq_analyticSubst`, and
+  `TauCeti.PowerSeries.OnOpenDisc.affineHom_eq_analyticSubst`: rescaling, Taylor translation, and
+  affine pullbacks are special cases of analytic substitution.
+* `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_affineHom`: compatibility of affine pullbacks with
+  algebra-valued point evaluation.
 
 ## References
 
@@ -30,6 +60,8 @@ open Filter PowerSeries
 open scoped Topology
 
 namespace TauCeti.PowerSeries.OnOpenDisc
+
+section AnalyticSubst
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   {R₀ S₀ : ℝ} [Fact (0 < S₀)]
@@ -230,6 +262,29 @@ theorem evalAt_analyticSubst (hb : ‖b‖ < S₀) (f : OnOpenDisc.subring R R�
 
 end Evaluation
 
+/-- Whenever formal substitution by `g` is defined, analytic substitution has the same
+underlying formal power series. -/
+theorem coe_analyticSubst_eq_subst (hsub : PowerSeries.HasSubst (g : R⟦X⟧))
+    (f : OnOpenDisc.subring R R₀) :
+    (analyticSubst g hg f : R⟦X⟧) = (f : R⟦X⟧).subst (g : R⟦X⟧) := by
+  ext m
+  rw [coeff_analyticSubst, coeff_subst' hsub]
+  have hfin : (fun n ↦ coeff n (f : R⟦X⟧) * coeff m ((g : R⟦X⟧) ^ n)).HasFiniteSupport := by
+    simpa only [smul_eq_mul] using coeff_subst_finite' hsub (f : R⟦X⟧) m
+  simpa only [smul_eq_mul] using tsum_eq_finsum hfin
+
+/-- Substituting the zero series extracts the constant coefficient as a constant series. -/
+@[simp]
+theorem analyticSubst_zero
+    (hg0 : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s (0 : OnOpenDisc.subring R S₀)‖ < R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    analyticSubst 0 hg0 f =
+      OnOpenDisc.polynomialHom (Polynomial.C (constantCoeff (f : R⟦X⟧))) := by
+  apply restrict_injective substRadius
+  rw [restrict_analyticSubst, map_zero, evalAt_at_zero, restrict_polynomialHom_C]
+
+section Composition
+
 variable {T₀ : ℝ} [Fact (0 < T₀)]
 
 /-- Analytic substitutions compose, with the strict radius condition supplied by the
@@ -244,6 +299,8 @@ theorem analyticSubst_comp_analyticSubst [NormOneClass R] (h : OnOpenDisc.subrin
     simp
   · simp
 
+end Composition
+
 /-- Substituting the variable itself is the identity. -/
 @[simp]
 theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
@@ -254,5 +311,289 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
     (fun s ↦ by simpa only [norm_restrict_X] using s.2.2)
     (RingHom.id _) continuous_id (fun _ ↦ rfl) rfl
   exact (RingHom.congr_fun heq f).symm
+
+end AnalyticSubst
+
+section PolynomialBounds
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {R₀ S₀ : ℝ}
+
+attribute [local instance] radius_pos
+
+/-- An affine linear polynomial `a + uX` has closed-disc Gauss norm at most `max ‖a‖ (‖u‖ * s)`. -/
+theorem norm_restrict_C_add_C_mul_X_le (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ ≤
+      max ‖a‖ (‖u‖ * (s : ℝ)) := by
+  rw [norm_eq_gaussNorm, coe_restrict, OnOpenDisc.coe_polynomialHom, gaussNorm_eq]
+  refine ciSup_le fun n ↦ ?_
+  match n with
+  | 0 => simp
+  | 1 => simp
+  | n + 2 =>
+    have h0 : coeff (n + 2)
+        ((Polynomial.C a + Polynomial.C u * Polynomial.X : Polynomial R) : R⟦X⟧) = 0 := by
+      simp
+    rw [h0, norm_zero, zero_mul]
+    positivity
+
+/-- The monomial `uX` maps smaller closed discs strictly inside the source open disc when
+`0 < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
+theorem norm_restrict_C_mul_X_lt [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X))‖ < R₀ := by
+  have hs : 0 < (s : ℝ) := s.2.1
+  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
+    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+    · simp [← hu0, (Fact.out : 0 < R₀)]
+    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
+  have hle := norm_restrict_C_add_C_mul_X_le 0 u s
+  rw [map_zero, zero_add, norm_zero, max_eq_right (by positivity)] at hle
+  exact hle.trans_lt hus_lt
+
+/-- The linear polynomial `a + uX` maps smaller closed discs strictly inside the source open disc
+whenever `‖a‖ < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
+theorem norm_restrict_C_add_C_mul_X_lt {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ <
+      R₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
+    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+    · simp [← hu0, hR₀]
+    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
+  exact (norm_restrict_C_add_C_mul_X_le a u s).trans_lt (max_lt ha hus_lt)
+
+/-- The translated variable `X + a` maps smaller closed discs strictly inside the open disc when
+`‖a‖ < R₀` and `‖(1 : R)‖ = 1`. -/
+theorem norm_restrict_X_add_C_lt [NormOneClass R] {a : R} (ha : ‖a‖ < R₀)
+    (s : Set.Ioo (0 : ℝ) R₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.X + Polynomial.C a))‖ < R₀ := by
+  have h := norm_restrict_C_add_C_mul_X_lt (S₀ := R₀) ha (u := 1) (by simp) s
+  simpa [add_comm] using h
+
+end PolynomialBounds
+
+section Rescale
+
+variable {R : Type*} [NormedCommRing R] {R₀ S₀ : ℝ}
+
+/-- Rescaling `f(X) ↦ f(uX)` as a ring homomorphism from series on the open disc of radius `R₀`
+to series on the open disc of radius `S₀`, whenever `‖u‖ * S₀ ≤ R₀`. -/
+noncomputable def rescaleHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀ :=
+  ((PowerSeries.rescale u).comp (OnOpenDisc.subring R R₀).subtype).codRestrict _ fun f ↦
+    OnOpenDisc.mem_subring.mpr (((OnOpenDisc.mem_subring.mp f.2).mono hu).rescale)
+
+/-- Rescaling acts as `PowerSeries.rescale` on the underlying formal power series. -/
+@[simp]
+theorem coe_rescaleHom {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    (rescaleHom hu f : R⟦X⟧) = PowerSeries.rescale u (f : R⟦X⟧) :=
+  (rfl)
+
+/-- Rescaling fixes constant series. -/
+@[simp]
+theorem rescaleHom_C {u : R} (hu : ‖u‖ * S₀ ≤ R₀) (a : R) :
+    rescaleHom hu (OnOpenDisc.polynomialHom (Polynomial.C a)) =
+      OnOpenDisc.polynomialHom (Polynomial.C a) := by
+  apply Subtype.ext
+  ext n
+  cases n <;> simp
+
+/-- Rescaling sends the variable `X` to `uX`. -/
+@[simp]
+theorem rescaleHom_X {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
+    rescaleHom hu (OnOpenDisc.polynomialHom Polynomial.X) =
+      OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X) := by
+  apply Subtype.ext
+  ext n
+  cases n with
+  | zero => simp
+  | succ n => cases n <;> simp
+
+/-- Rescaling by `1` is the identity. -/
+@[simp]
+theorem rescaleHom_one (h1 : ‖(1 : R)‖ * R₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    rescaleHom h1 f = f :=
+  Subtype.ext (by simp)
+
+/-- Rescalings compose by multiplying their factors. -/
+theorem rescaleHom_rescaleHom {T₀ : ℝ} {u v : R} (hu : ‖u‖ * S₀ ≤ R₀) (hv : ‖v‖ * T₀ ≤ S₀)
+    (huv : ‖u * v‖ * T₀ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    rescaleHom hv (rescaleHom hu f) = rescaleHom huv f :=
+  Subtype.ext (by simp [PowerSeries.rescale_rescale])
+
+section Ultrametric
+
+variable [IsUltrametricDist R]
+
+attribute [local instance] radius_pos
+
+/-- Rescaling on a target closed disc of radius `s` is controlled by any source closed disc of
+radius `r` with `‖u‖ * s ≤ r`. -/
+theorem norm_restrict_rescaleHom_le {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) (r : Set.Ioo (0 : ℝ) R₀) (hus : ‖u‖ * (s : ℝ) ≤ r)
+    (f : OnOpenDisc.subring R R₀) :
+    ‖restrict s (rescaleHom hu f)‖ ≤ ‖restrict r f‖ := by
+  have hs : 0 < (s : ℝ) := s.2.1
+  have hf := hasGaussNorm_of_isRestricted (restrict r f).2
+  rw [coe_restrict] at hf
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_rescaleHom,
+    gaussNorm_eq]
+  refine ciSup_le fun n ↦ (?_ : _ ≤ ‖coeff n (f : R⟦X⟧)‖ * (r : ℝ) ^ n).trans
+    (le_gaussNorm norm (r : ℝ) (f : R⟦X⟧) hf n)
+  cases n with
+  | zero => simp
+  | succ n =>
+    rw [coeff_rescale]
+    calc ‖u ^ (n + 1) * coeff (n + 1) (f : R⟦X⟧)‖ * (s : ℝ) ^ (n + 1)
+        ≤ (‖u‖ ^ (n + 1) * ‖coeff (n + 1) (f : R⟦X⟧)‖) * (s : ℝ) ^ (n + 1) :=
+          mul_le_mul_of_nonneg_right
+            ((norm_mul_le _ _).trans
+              (mul_le_mul_of_nonneg_right (norm_pow_le' u (Nat.succ_pos n)) (norm_nonneg _)))
+            (pow_nonneg hs.le _)
+      _ = ‖coeff (n + 1) (f : R⟦X⟧)‖ * (‖u‖ * (s : ℝ)) ^ (n + 1) := by rw [mul_pow]; ring
+      _ ≤ ‖coeff (n + 1) (f : R⟦X⟧)‖ * (r : ℝ) ^ (n + 1) :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hus _) (norm_nonneg _)
+
+/-- Rescaling is uniformly continuous for the open-disc Gauss uniformities when the source radius
+is positive. -/
+theorem uniformContinuous_rescaleHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
+    UniformContinuous (rescaleHom hu) := by
+  refine uniformContinuous_iff.mpr fun s ↦ ?_
+  have hs : 0 < (s : ℝ) := s.2.1
+  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
+    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+    · simp [← hu0, (Fact.out : 0 < R₀)]
+    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
+  obtain ⟨r, hr1, hr2⟩ := exists_between hus_lt
+  let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, (by positivity : 0 ≤ ‖u‖ * (s : ℝ)).trans_lt hr1, hr2⟩
+  let φ := ((restrict (R := R) s).comp (rescaleHom hu)).toAddMonoidHom
+  refine uniformContinuous_of_continuousAt_zero φ ?_
+  rw [ContinuousAt, map_zero]
+  let : Fact (0 < (r' : ℝ)) := ⟨r'.2.1⟩
+  have h := (uniformContinuous_restrict (R := R) r').continuous.tendsto 0
+  refine squeeze_zero_norm (fun f ↦ norm_restrict_rescaleHom_le hu s r' hr1.le f) ?_
+  simpa only [map_zero, norm_zero] using h.norm
+
+/-- Rescaling is continuous for the open-disc Gauss topologies when the source radius is
+positive. -/
+@[continuity]
+theorem continuous_rescaleHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
+    Continuous (rescaleHom hu) :=
+  (uniformContinuous_rescaleHom hu).continuous
+
+/-- Rescaling agrees with analytic substitution by `uX`. -/
+theorem rescaleHom_eq_analyticSubst [CompleteSpace R] [Fact (0 < R₀)] [Fact (0 < S₀)] {u : R}
+    (hu : ‖u‖ * S₀ ≤ R₀) :
+    rescaleHom hu =
+      analyticSubst (OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X))
+        (norm_restrict_C_mul_X_lt hu) :=
+  eq_analyticSubst _ _ _ (continuous_rescaleHom hu) (rescaleHom_C hu) (rescaleHom_X hu)
+
+end Ultrametric
+
+end Rescale
+
+section Affine
+
+/-- In an ultrametric normed algebra with norm-one identity, an affine map `b ↦ u • b + a` sends
+points of the open disc of radius `S₀` into the open disc of radius `R₀` whenever `‖a‖ < R₀` and
+`‖u‖ * S₀ ≤ R₀`. -/
+theorem norm_smul_add_algebraMap_lt {R A : Type*} [SeminormedCommRing R] [SeminormedRing A]
+    [Algebra R A] [IsBoundedSMul R A] [IsUltrametricDist A] [NormOneClass A] {R₀ S₀ : ℝ}
+    {a u : R} {b : A} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (hb : ‖b‖ < S₀) :
+    ‖u • b + algebraMap R A a‖ < R₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hub : ‖u • b‖ < R₀ := by
+    refine (norm_smul_le u b).trans_lt ?_
+    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
+    · simp [← hu0, hR₀]
+    · exact (mul_lt_mul_of_pos_left hb hu0).trans_le hu
+  have haA : ‖algebraMap R A a‖ < R₀ := by
+    have h : ‖algebraMap R A a‖ ≤ ‖a‖ := by
+      simpa only [Algebra.algebraMap_eq_smul_one, norm_one, mul_one] using norm_smul_le a (1 : A)
+    exact h.trans_lt ha
+  exact (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hub haA)
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {R₀ S₀ : ℝ}
+
+attribute [local instance] radius_pos
+
+/-- Taylor translation agrees with analytic substitution by `X + a`. -/
+theorem taylorHom_eq_analyticSubst [NormOneClass R] [Fact (0 < R₀)] {a : R} (ha : ‖a‖ < R₀) :
+    taylorHom ha =
+      analyticSubst (OnOpenDisc.polynomialHom (Polynomial.X + Polynomial.C a))
+        (norm_restrict_X_add_C_lt ha) :=
+  eq_analyticSubst _ _ _ (continuous_taylorHom ha) (fun c ↦ by simp) (by simp)
+
+/-- Affine change of coordinates `f(X) ↦ f(a + uX)` as a ring homomorphism from series on the open
+disc of radius `R₀` to series on the open disc of radius `S₀`, for `‖a‖ < R₀` and
+`‖u‖ * S₀ ≤ R₀`. -/
+noncomputable def affineHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀ :=
+  (rescaleHom hu).comp (taylorHom ha)
+
+/-- Affine pullback is Taylor translation followed by rescaling. -/
+theorem affineHom_apply {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    affineHom ha hu f = rescaleHom hu (taylorHom ha f) :=
+  (rfl)
+
+/-- On formal power series, `affineHom` rescales the Taylor translate. -/
+@[simp]
+theorem coe_affineHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    (affineHom ha hu f : R⟦X⟧) = PowerSeries.rescale u (PowerSeries.taylor a (f : R⟦X⟧)) := by
+  rw [affineHom_apply, coe_rescaleHom, coe_taylorHom]
+
+/-- Affine coordinate change fixes constant series. -/
+@[simp]
+theorem affineHom_C {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (c : R) :
+    affineHom ha hu (OnOpenDisc.polynomialHom (Polynomial.C c)) =
+      OnOpenDisc.polynomialHom (Polynomial.C c) := by
+  simp [affineHom_apply]
+
+/-- Affine coordinate change sends `X` to `a + uX`. -/
+@[simp]
+theorem affineHom_X {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    affineHom ha hu (OnOpenDisc.polynomialHom Polynomial.X) =
+      OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X) := by
+  rw [affineHom_apply, taylorHom_polynomialHom, Polynomial.taylor_X, map_add, map_add,
+    rescaleHom_X, rescaleHom_C, ← map_add, add_comm]
+
+/-- Affine coordinate change is continuous for the open-disc Gauss topologies. -/
+@[continuity]
+theorem continuous_affineHom {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) :
+    Continuous (affineHom ha hu) := by
+  have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
+  exact (continuous_rescaleHom hu).comp (continuous_taylorHom ha)
+
+/-- Evaluating an affine pullback `f(a + uX)` at an algebra point `b` in the target open disc
+agrees with evaluating `f` at `u • b + algebraMap R A a` whenever that point lies in the source
+open disc. -/
+theorem evalAtHom_comp_affineHom {A : Type*} [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+    [CompleteSpace A] {a u : R} {b : A} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (hb : ‖b‖ < S₀)
+    (hab : ‖u • b + algebraMap R A a‖ < R₀) :
+    (OnOpenDisc.evalAtHom R hb).comp (affineHom ha hu) = OnOpenDisc.evalAtHom R hab := by
+  have : Fact (0 < R₀) := ⟨(norm_nonneg a).trans_lt ha⟩
+  apply ringHom_ext
+  · exact (continuous_evalAtHom hb).comp (continuous_affineHom ha hu)
+  · exact continuous_evalAtHom hab
+  · intro c
+    simp [OnOpenDisc.evalAtHom_apply]
+  · rw [RingHom.comp_apply, affineHom_X, OnOpenDisc.evalAtHom_apply, OnOpenDisc.coe_polynomialHom,
+      evalAt_coe]
+    simp [OnOpenDisc.evalAtHom_apply, Algebra.smul_def, add_comm]
+
+/-- Affine coordinate change agrees with analytic substitution by `a + uX`. -/
+theorem affineHom_eq_analyticSubst [Fact (0 < S₀)] {a u : R} (ha : ‖a‖ < R₀)
+    (hu : ‖u‖ * S₀ ≤ R₀) :
+    affineHom ha hu =
+      analyticSubst
+        (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))
+        (norm_restrict_C_add_C_mul_X_lt ha hu) :=
+  eq_analyticSubst _ _ _ (continuous_affineHom ha hu) (affineHom_C ha hu) (affineHom_X ha hu)
+
+end Affine
 
 end TauCeti.PowerSeries.OnOpenDisc

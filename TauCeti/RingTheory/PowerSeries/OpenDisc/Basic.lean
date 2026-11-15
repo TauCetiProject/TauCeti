@@ -53,7 +53,9 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 ## Main definitions
 
 * `PowerSeries.OnOpenDisc`: `f` is restricted at every radius `0 < r < R₀`.
-* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`.
+* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`, carrying
+  module and algebra structures (`TauCeti.PowerSeries.OnOpenDisc.instModuleSubring`,
+  `TauCeti.PowerSeries.OnOpenDisc.instAlgebraSubring`) from compatible actions on the coefficients.
 
 ## Main results
 
@@ -83,6 +85,9 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   `f(aX)` lies on the open disc of radius `R₀`.
 * `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
   the open unit disc.
+* `TauCeti.PowerSeries.OnOpenDisc.instModuleSubring` and
+  `TauCeti.PowerSeries.OnOpenDisc.instAlgebraSubring`: scalar and algebra structures on
+  `PowerSeries.OnOpenDisc.subring R R₀` induced from the coefficients.
 
 ## References
 
@@ -246,6 +251,15 @@ theorem OnOpenDisc.sub (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) : (f - 
 /-- A scalar multiple `a • f` of a series on an open disc lies on that disc. -/
 theorem OnOpenDisc.smul (a : R) (hf : f.OnOpenDisc R₀) : (a • f).OnOpenDisc R₀ :=
   fun r hr hrR ↦ (hf r hr hrR).smul a
+
+/-- A scalar action on the coefficients compatible with left multiplication preserves the
+open-disc condition. -/
+theorem OnOpenDisc.smul_of_tower {S : Type*} [Semiring S] [Module S R] [IsScalarTower S R R]
+    (s : S) (hf : f.OnOpenDisc R₀) : (s • f).OnOpenDisc R₀ := by
+  have heq : s • f = (s • (1 : R)) • f := by
+    ext n
+    simp
+  exact heq ▸ hf.smul (s • (1 : R))
 
 /-- A finite sum of series on an open disc lies on that disc. -/
 theorem OnOpenDisc.sum {ι : Type*} {s : Finset ι} {f : ι → R⟦X⟧}
@@ -418,3 +432,85 @@ theorem onOpenDisc_log : (log K).OnOpenDisc 1 :=
 end NormedField
 
 end PowerSeries
+
+namespace TauCeti.PowerSeries.OnOpenDisc
+
+open _root_.PowerSeries
+
+variable {R : Type*} [NormedRing R] {R₀ : ℝ}
+
+/-- A scalar action on the coefficients compatible with left multiplication induces a module
+structure on series on the open disc, with coefficientwise scalar multiplication. -/
+noncomputable instance instModuleSubring {S : Type*} [Semiring S] [Module S R]
+    [IsScalarTower S R R] : Module S (OnOpenDisc.subring R R₀) where
+  smul s f := ⟨s • (f : R⟦X⟧),
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).smul_of_tower s)⟩
+  one_smul f := Subtype.ext (one_smul S (f : R⟦X⟧))
+  mul_smul s t f := Subtype.ext (mul_smul s t (f : R⟦X⟧))
+  smul_zero s := Subtype.ext (smul_zero s)
+  smul_add s f g := Subtype.ext (smul_add s (f : R⟦X⟧) g)
+  add_smul s t f := Subtype.ext (add_smul s t (f : R⟦X⟧))
+  zero_smul f := Subtype.ext (zero_smul S (f : R⟦X⟧))
+
+/-- Scalars act on open-disc series as on their underlying formal power series. -/
+@[simp]
+theorem coe_smul_subring {S : Type*} [Semiring S] [Module S R] [IsScalarTower S R R]
+    (s : S) (f : OnOpenDisc.subring R R₀) :
+    ((s • f : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (f : R⟦X⟧) :=
+  (rfl)
+
+/-- Scalar towers on the coefficients induce scalar towers on open-disc series. -/
+instance {S T : Type*} [Semiring S] [Semiring T] [Module S R] [Module T R]
+    [IsScalarTower S R R] [IsScalarTower T R R] [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (OnOpenDisc.subring R R₀) where
+  smul_assoc s t f := Subtype.ext (smul_assoc s t (f : R⟦X⟧))
+
+/-- An algebra structure on the coefficients induces one on open-disc power series through
+constant series, without requiring commutativity or ultrametricity of the coefficient ring. -/
+noncomputable instance instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (OnOpenDisc.subring R R₀) where
+  algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact OnOpenDisc.mem_subring.mpr (onOpenDisc_C _)
+  commutes' s f := Subtype.ext <| by
+    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
+      Algebra.commutes s (f : R⟦X⟧)
+  smul_def' s f := Subtype.ext <| by
+    rw [coe_smul_subring, Subring.coe_mul, RingHom.codRestrict_apply]
+    convert Algebra.smul_def s (f : R⟦X⟧) using 1
+
+/-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
+@[simp]
+theorem coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = PowerSeries.C (algebraMap S R s) := by
+  calc
+    _ = algebraMap S R⟦X⟧ s := (rfl)
+    _ = _ := PowerSeries.algebraMap_apply
+
+/-- Constant polynomials from a base algebra agree with the induced algebra map into open-disc
+series. -/
+theorem polynomialHom_C_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C (algebraMap S R s)) =
+      algebraMap S (OnOpenDisc.subring R R₀) s :=
+  Subtype.ext (by simp)
+
+/-- Constant polynomials embed into the open-disc algebra through the scalar map. -/
+theorem polynomialHom_C_eq_algebraMap {R : Type*} [NormedCommRing R] (a : R) :
+    OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a) =
+      algebraMap R (OnOpenDisc.subring R R₀) a :=
+  Subtype.ext (by simp)
+
+-- Verify that `instModuleSubring` and `instAlgebraSubring` introduce no diamond with `ℕ`, `ℤ`, or
+-- `Algebra.toModule`.
+example :
+    (AddCommMonoid.toNatModule : Module ℕ (OnOpenDisc.subring R R₀)) = instModuleSubring :=
+  rfl
+
+example : AddCommGroup.toIntModule (OnOpenDisc.subring R R₀) = instModuleSubring :=
+  rfl
+
+example {S : Type*} [CommSemiring S] [Algebra S R] :
+    (Algebra.toModule : Module S (OnOpenDisc.subring R R₀)) = instModuleSubring := by
+  with_reducible_and_instances rfl
+
+end TauCeti.PowerSeries.OnOpenDisc
