@@ -19,8 +19,11 @@ source-target map descends. Thus passing to germs preserves the local topology o
 charts, while identifying ineffective labels globally. The quotient is a topological groupoid,
 and its only ineffective arrows are units.
 
-No Hausdorffness or properness is needed for the local-homeomorphism statements. In particular,
-they do not assert Hausdorffness of the effective arrow space of an arbitrary étale groupoid.
+No Hausdorffness or properness is needed for the local-homeomorphism statements, and second
+countability descends directly along the open arrow quotient. Every ineffective kernel of the
+effective quotient is trivial, so applying effective reduction a second time is faithful. When
+the object space is Hausdorff, the effective arrow space is Hausdorff if and only if the
+ineffective arrows of `C` form a closed subset of the original arrow space.
 
 ## References
 
@@ -242,6 +245,112 @@ theorem ineffectiveArrows_eq_range_unit :
   · rintro _ ⟨x, rfl⟩
     let := isTopologicalGroupoid hs
     exact id_mem_ineffectiveArrows (isLocalHomeomorph_source hs) x
+
+omit hs [IsTopologicalGroupoid C] [TopologicalSpace (Quiver.Total C)] in
+/-- Objects of the effective quotient inherit the Hausdorff property from `C`. -/
+instance instT2SpaceObjects [T2Space C] : T2Space (EffectiveQuotient C) :=
+  (objHomeomorph C).symm.isEmbedding.t2Space
+
+omit hs [IsTopologicalGroupoid C] [TopologicalSpace (Quiver.Total C)] in
+/-- Objects of the effective quotient inherit second countability from `C`. -/
+instance instSecondCountableTopologyObjects [SecondCountableTopology C] :
+    SecondCountableTopology (EffectiveQuotient C) :=
+  (objHomeomorph C).symm.secondCountableTopology
+
+/-- Second countability of the total arrow space descends along the open arrow quotient map of an
+étale topological groupoid. -/
+theorem secondCountableTopology_arrows [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (Quiver.Total (EffectiveQuotient C)) :=
+  (isOpenQuotientMap_mapTotal hs).secondCountableTopology
+
+/-- Every ineffective kernel of the effective quotient is trivial: no nonidentity automorphism of
+`EffectiveQuotient C` induces the identity germ. -/
+@[simp]
+theorem ineffectiveKernel_eq_bot (x : EffectiveQuotient C) :
+    letI := isTopologicalGroupoid hs
+    ineffectiveKernel (isLocalHomeomorph_source hs) x = ⊥ := by
+  let := isTopologicalGroupoid hs
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
+  rw [mem_ineffectiveKernel, ineffectiveArrows_eq_range_unit hs] at hg
+  obtain ⟨y, hy⟩ := hg
+  have hyx : y = x := congrArg Quiver.Total.left hy
+  subst hyx
+  exact Aut.ext (Iso.ext (eq_of_heq (Quiver.Total.mk.inj hy).2.2).symm)
+
+/-- Effective reduction is idempotent up to isomorphism: the projection from `EffectiveQuotient C`
+to its own effective quotient is faithful. -/
+theorem faithful_toEffectiveQuotient :
+    letI := isTopologicalGroupoid hs
+    (toEffectiveQuotient (EffectiveQuotient C)).Faithful := by
+  let := isTopologicalGroupoid hs
+  exact (toEffectiveQuotient_faithful_iff (isLocalHomeomorph_source hs)).mpr
+    (ineffectiveKernel_eq_bot hs)
+
+/-- If the effective arrow space is Hausdorff, the ineffective arrows of `C` form a closed set:
+they are the preimage of the unit retract of `EffectiveQuotient C`. -/
+theorem isClosed_ineffectiveArrows_of_t2Space_arrows
+    [T2Space (Quiver.Total (EffectiveQuotient C))] :
+    IsClosed (ineffectiveArrows C) := by
+  let := isTopologicalGroupoid hs
+  rw [← preimage_ineffectiveArrows hs, ineffectiveArrows_eq_range_unit hs]
+  exact (Function.LeftInverse.isClosed_range (f := Quiver.Total.left) (fun _ ↦ rfl)
+    continuous_source IsTopologicalGroupoid.continuous_unit).preimage
+    isQuotientMap_mapTotal.continuous
+
+/-- For an étale topological groupoid over a Hausdorff object space, closedness of
+`ineffectiveArrows C` makes the effective arrow space Hausdorff. -/
+theorem t2Space_arrows_of_isClosed_ineffectiveArrows [T2Space C]
+    (hcl : IsClosed (ineffectiveArrows C)) :
+    T2Space (Quiver.Total (EffectiveQuotient C)) := by
+  rw [t2Space_iff_of_isOpenQuotientMap (isOpenQuotientMap_mapTotal hs)]
+  let E : Set (Quiver.Total C × Quiver.Total C) := {p | p.1.right = p.2.right}
+  have hE : IsClosed E := isClosed_eq
+    (IsTopologicalGroupoid.continuous_target.comp continuous_fst)
+    (IsTopologicalGroupoid.continuous_target.comp continuous_snd)
+  let pair : E → {q : Quiver.Total C × Quiver.Total C // q.1.right = q.2.left} :=
+    fun p ↦ ⟨(p.1.1, ⟨p.1.2.right, p.1.2.left, inv p.1.2.hom⟩), p.2⟩
+  have hpair : Continuous pair :=
+    ((continuous_fst.comp continuous_subtype_val).prodMk
+      (IsTopologicalGroupoid.continuous_inverse.comp
+        (continuous_snd.comp continuous_subtype_val))).subtype_mk _
+  let δ : E → Quiver.Total C :=
+    (fun q : {q : Quiver.Total C × Quiver.Total C // q.1.right = q.2.left} ↦
+      q.1.1.comp q.1.2 q.2) ∘ pair
+  have hδ : Continuous δ := IsTopologicalGroupoid.continuous_comp.comp hpair
+  have himg : IsClosed ((Subtype.val : E → _) '' (δ ⁻¹' ineffectiveArrows C)) :=
+    hE.isClosedEmbedding_subtypeVal.isClosedMap _ (hcl.preimage hδ)
+  convert himg using 1
+  ext ⟨⟨x₁, y₁, f⟩, ⟨x₂, y₂, g⟩⟩
+  constructor
+  · intro hm
+    have hx : x₁ = x₂ := (isHomeomorph_toEffectiveQuotient_obj (C := C)).injective
+      (congrArg Quiver.Total.left hm)
+    have hy : y₁ = y₂ := (isHomeomorph_toEffectiveQuotient_obj (C := C)).injective
+      (congrArg Quiver.Total.right hm)
+    subst hx hy
+    have hmf : (toEffectiveQuotient C).map f = (toEffectiveQuotient C).map g :=
+      eq_of_heq (Quiver.Total.mk.inj hm).2.2
+    refine ⟨⟨(⟨x₁, y₁, f⟩, ⟨x₁, y₁, g⟩), rfl⟩, ?_, rfl⟩
+    simpa [δ, pair, Quiver.Total.comp_def] using (toEffectiveQuotient_map_eq_iff hs).mp hmf
+  · rintro ⟨⟨⟨a, b⟩, hab⟩, hmem, heq⟩
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj heq
+    have hy : y₁ = y₂ := hab
+    subst hy
+    have hmem' : (⟨x₁, x₂, f ≫ inv g⟩ : Quiver.Total C) ∈ ineffectiveArrows C := by
+      simpa [δ, pair, Quiver.Total.comp_def] using hmem
+    have hx : x₁ = x₂ := left_eq_right_of_mem_ineffectiveArrows hmem'
+    subst hx
+    have hmf : (toEffectiveQuotient C).map f = (toEffectiveQuotient C).map g :=
+      (toEffectiveQuotient_map_eq_iff hs).mpr hmem'
+    simp [Prefunctor.mapTotal, hmf]
+
+/-- **Hausdorff criterion for the effective arrow space.** For an étale topological groupoid over a
+Hausdorff object space, the total arrow space of `EffectiveQuotient C` is Hausdorff if and only if
+`ineffectiveArrows C` is closed in `Quiver.Total C`. -/
+theorem t2Space_arrows_iff_isClosed_ineffectiveArrows [T2Space C] :
+    T2Space (Quiver.Total (EffectiveQuotient C)) ↔ IsClosed (ineffectiveArrows C) :=
+  ⟨fun _ ↦ isClosed_ineffectiveArrows_of_t2Space_arrows hs,
+    t2Space_arrows_of_isClosed_ineffectiveArrows hs⟩
 
 end EffectiveQuotient
 
