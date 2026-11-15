@@ -59,6 +59,8 @@ for `0 ≤ A ≤ B`.
   zeros;
 * `Matrix.filter_map_eigenvalues_conjTranspose_mul_self` — `Aᴴ * A` and `A * Aᴴ` have the same
   nonzero eigenvalues, counted with multiplicity;
+* `Matrix.IsHermitian.exists_unitaryGroup_mul_mul_star_eq_iff` — two Hermitian matrices are
+  unitarily conjugate exactly when they have the same characteristic polynomial;
 * `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
@@ -309,3 +311,35 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
     simp +contextual [Multiset.mem_replicate]
 
 end Matrix
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A B : Matrix ι ι 𝕜}
+
+/-- **Unitary conjugacy of Hermitian matrices.** A Hermitian matrix `B` is a unitary conjugate
+`U A Uᴴ` of a Hermitian matrix `A` exactly when the two have the same characteristic polynomial,
+that is, the same eigenvalues counted with multiplicity. -/
+theorem exists_unitaryGroup_mul_mul_star_eq_iff (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    (∃ U : unitaryGroup ι 𝕜, (U : Matrix ι ι 𝕜) * A * star (U : Matrix ι ι 𝕜) = B) ↔
+      B.charpoly = A.charpoly := by
+  constructor
+  · rintro ⟨U, rfl⟩
+    rw [Matrix.mul_assoc, Matrix.charpoly_mul_comm, Matrix.mul_assoc,
+      UnitaryGroup.star_mul_self, Matrix.mul_one]
+  · intro h
+    -- Both matrices diagonalize to `diag(λ)` for the same sorted eigenvalues `λ`.
+    have hev := (hB.eigenvalues_eq_eigenvalues_iff hA).2 h
+    -- Name the eigenvector unitaries, so that rewriting `A` and `B` leaves them untouched.
+    let V := hA.eigenvectorUnitary
+    let W := hB.eigenvectorUnitary
+    refine ⟨W * star V, ?_⟩
+    conv_rhs => rw [hB.spectral_theorem]
+    conv_lhs => rw [hA.spectral_theorem]
+    simp only [conjStarAlgAut_apply, hev, Submonoid.coe_mul, star_mul, star_star, coe_star,
+      ← Matrix.mul_assoc, V, W]
+    rw [Matrix.mul_assoc _ (star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)),
+      UnitaryGroup.star_mul_self, Matrix.mul_one,
+      Matrix.mul_assoc _ (star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)),
+      UnitaryGroup.star_mul_self, Matrix.mul_one]
+
+end Matrix.IsHermitian
