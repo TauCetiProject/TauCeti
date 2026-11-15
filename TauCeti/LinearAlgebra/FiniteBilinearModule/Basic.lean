@@ -44,7 +44,7 @@ restriction to a subgroup can be degenerate.
   the part of the orthogonal complement lying in the subgroup.
 * `TauCeti.FiniteBilinearModule.Isometry.map_orthogonalComplement`: an isometry carries
   orthogonal complements to orthogonal complements.
-* `TauCeti.FiniteBilinearModule.Isometry.comap_orthogonalComplement`: the inverse image of an
+* `TauCeti.FiniteBilinearModule.Isometry.orthogonalComplement_comap`: the inverse image of an
   orthogonal complement under an isometry is the orthogonal complement of the inverse image.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalComplementEquiv`: the induced equivalence
   between corresponding orthogonal complements.
@@ -778,7 +778,7 @@ theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isomet
 /-- The inverse image of an orthogonal complement under an isometry is the orthogonal complement
 of the inverse image. -/
 @[simp]
-theorem Isometry.comap_orthogonalComplement {B : FiniteBilinearModule} (f : Isometry A B)
+theorem Isometry.orthogonalComplement_comap {B : FiniteBilinearModule} (f : Isometry A B)
     (K : AddSubgroup B) :
     A.orthogonalComplement (K.comap f.toAddEquiv) =
       (B.orthogonalComplement K).comap f.toAddEquiv := by
@@ -823,7 +823,7 @@ theorem Isometry.map_mem_orthogonalComplement_of_forall_mem {B : FiniteBilinearM
     f x ∈ B.orthogonalComplement K := by
   have hx' : x ∈ A.orthogonalComplement (K.comap f.toAddEquiv) :=
     A.orthogonalComplement_anti (fun y hy ↦ h y hy) hx
-  rwa [f.comap_orthogonalComplement, AddSubgroup.mem_comap] at hx'
+  rwa [f.orthogonalComplement_comap, AddSubgroup.mem_comap] at hx'
 
 /-- An isometry carrying `H` onto `K` carries every element of `H^⊥` into `K^⊥`. -/
 theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModule}
@@ -860,7 +860,7 @@ theorem Isometry.isIsotropic_comap_iff {B : FiniteBilinearModule} (f : Isometry 
     (K : AddSubgroup B) :
     A.IsIsotropic (K.comap f.toAddEquiv) ↔ B.IsIsotropic K := by
   rw [A.isIsotropic_iff_le_orthogonalComplement, B.isIsotropic_iff_le_orthogonalComplement,
-    f.comap_orthogonalComplement, AddSubgroup.comap_le_comap_of_surjective
+    f.orthogonalComplement_comap, AddSubgroup.comap_le_comap_of_surjective
       f.toAddEquiv.surjective]
 
 /-- An isometry transports Lagrangian subgroups. -/

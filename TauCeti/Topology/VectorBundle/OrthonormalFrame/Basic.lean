@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -102,6 +102,9 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 * D. Husemoller, *Fibre Bundles*, third edition, Graduate Texts in Mathematics 20, Springer
   (1994), Chapter 4 (principal bundles and their associated fibre bundles) and Chapter 5, §§4–5
   (the principal bundle of orthonormal frames).
+* The dimension-free properness generalization draws on
+  [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
+  [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
