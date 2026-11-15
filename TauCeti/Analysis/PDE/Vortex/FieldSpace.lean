@@ -330,12 +330,6 @@ theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
       (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h
 
-private theorem finrank_add_two_mul_lt {s : ℝ} {n : ℕ} (hs : n + 1 < s) :
-    (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
-  rw [Complex.finrank_real_complex]
-  push_cast
-  linarith
-
 /-- Membership in `sobolevFields s` only depends on the field up to a null set. -/
 theorem mem_sobolevFields_of_ae_eq {s : ℝ} {y y' : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields s) (hyy' : y =ᵐ[volume] y') : y' ∈ sobolevFields s :=
@@ -349,8 +343,8 @@ theorem exists_contDiff_ae_eq_of_mem_sobolevFields {s : ℝ} {n : ℕ} (hs : n +
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) :
     ∃ y' : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ n y' ∧ y =ᵐ[volume] y' := by
   choose g hg hyg using fun i ↦
-    exists_contDiff_ae_eq_of_mem_realSobolevFunctions (finrank_add_two_mul_lt hs)
-      (mem_sobolevFields.1 hy i)
+    exists_contDiff_ae_eq_of_mem_realSobolevFunctions
+      (finrank_real_complex_add_two_mul_lt_two_mul hs) (mem_sobolevFields.1 hy i)
   refine ⟨fun z ↦ WithLp.toLp 2 fun i ↦ g i z, contDiff_euclidean.2 fun i ↦ by simpa using hg i, ?_⟩
   filter_upwards [ae_all_iff.2 hyg] with z hz
   ext i
@@ -361,16 +355,17 @@ in `sobolevFields s` is `Cⁿ`. -/
 theorem contDiff_apply_of_mem_sobolevFields {s : ℝ} {n : ℕ} (hs : n + 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y)
     (i : Fin 4) : ContDiff ℝ n (fun z ↦ y z i) :=
-  contDiff_of_mem_realSobolevFunctions (finrank_add_two_mul_lt hs) (mem_sobolevFields.1 hy i)
-    ((PiLp.continuous_apply 2 _ i).comp hcont)
+  contDiff_of_mem_realSobolevFunctions (finrank_real_complex_add_two_mul_lt_two_mul hs)
+    (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
 
 /-- **Bounded derivatives of continuous Sobolev fields.** For `s > n + 1`, every coordinate of a
 continuous field in `sobolevFields s` has bounded `n`-th derivative on the whole plane. -/
 theorem exists_norm_iteratedFDeriv_apply_le_of_mem_sobolevFields {s : ℝ} {n : ℕ} (hs : n + 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y)
     (i : Fin 4) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ y z i) z‖ ≤ C :=
-  exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions (finrank_add_two_mul_lt hs)
-    (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
+  exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions
+    (finrank_real_complex_add_two_mul_lt_two_mul hs) (mem_sobolevFields.1 hy i)
+    ((PiLp.continuous_apply 2 _ i).comp hcont)
 
 /-! ### The affine field space -/
 

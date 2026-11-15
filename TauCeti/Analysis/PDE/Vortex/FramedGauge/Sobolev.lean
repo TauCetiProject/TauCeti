@@ -220,10 +220,7 @@ the Sobolev embedding of `H^s(ℂ)` into `C^k`. In particular the elements of `G
 theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {k : ℕ} (hk : k + 1 < s)
     {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) : ContDiff ℝ k (fun z ↦ (u z : ℂ)) := by
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
-  have hk' : (finrank ℝ ℂ : ℝ) + 2 * k < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
+  have hk' := finrank_real_complex_add_two_mul_lt_two_mul hk
   have hre := contDiff_of_mem_realSobolevFunctions hk' hu₁
     ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
   have him := contDiff_of_mem_realSobolevFunctions hk' hu₂

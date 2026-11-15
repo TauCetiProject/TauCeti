@@ -442,18 +442,12 @@ theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
 
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
 `s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
-`C^k` representative given by `MemSobolev.exists_contDiff_ae_eq`. -/
+`C^k` representative given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions`. -/
 theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
     ContDiff ℝ k f := by
-  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
-  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
-  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
-    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
-  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
-  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
-  exact hf ▸ Complex.reCLM.contDiff.comp hg
+  obtain ⟨g, hg, hfg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs hf
+  exact ((hcont.ae_eq_iff_eq volume hg.continuous).1 hfg) ▸ hg
 
 /-- **Derivatives of Sobolev functions vanish at infinity.** For a continuous representative `g`
 of an `L²` function in `H^s` and `s > j + dim E / 2`, the `j`-th derivative of `g` tends to zero
@@ -535,6 +529,14 @@ namespace TauCeti
 /-- For `s > 1`, the order `s` is above half the real dimension of the plane, so `H^s(ℂ)` embeds
 into the continuous functions vanishing at infinity and is an algebra. -/
 theorem finrank_real_complex_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
+  rw [Complex.finrank_real_complex]
+  push_cast
+  linarith
+
+/-- For `s > n + 1`, the order `s` exceeds `n` plus half the real dimension of the plane, so
+`H^s(ℂ)` embeds into `C^n`. -/
+theorem finrank_real_complex_add_two_mul_lt_two_mul {s : ℝ} {n : ℕ} (hs : n + 1 < s) :
+    (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
   rw [Complex.finrank_real_complex]
   push_cast
   linarith
