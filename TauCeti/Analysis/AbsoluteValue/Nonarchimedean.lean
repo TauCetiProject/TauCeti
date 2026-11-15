@@ -40,7 +40,9 @@ finite place of the extension.
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
   `IsNonarchimedean.apply_le_one_of_isIntegral_int`. This is the absolute-value analogue of
   Mathlib's `Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows the same size
-  argument on the equation of integrality.
+  argument on the equation of integrality. For the norm of a normed ring with multiplicative
+  ultrametric norm it says that algebraic integers lie in the closed unit ball,
+  `IsUltrametricDist.norm_le_one_of_isIntegral`.
 * `AbsoluteValue.nonarchRpow`: for `t > 0`, the function `x ↦ v x ^ t` is again an absolute value
   when `v` is nonarchimedean, equivalent to `v`, nonarchimedean, and lying over the corresponding
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
@@ -146,6 +148,13 @@ theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : I
   simpa using hv.apply_intCast_le_one (by simp) v.map_one v.map_neg (n := r)
 
 end IsNonarchimedean
+
+/-- In a normed ring whose norm is multiplicative and ultrametric, every element integral over `ℤ`
+has norm at most `1`. -/
+theorem IsUltrametricDist.norm_le_one_of_isIntegral {R : Type*} [NormedRing R] [NormMulClass R]
+    [IsUltrametricDist R] {x : R} (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 :=
+  IsNonarchimedean.apply_le_one_of_isIntegral_int (v := IsAbsoluteValue.toAbsoluteValue norm)
+    isNonarchimedean_norm hx
 
 namespace AbsoluteValue
 
