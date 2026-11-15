@@ -73,30 +73,25 @@ theorem uniformContinuous_addRightUniformSpace_iff {β : Type*} [PseudoMetricSpa
   let : UniformSpace G := IsTopologicalAddGroup.rightUniformSpace G
   rw [UniformContinuous, uniformity_eq_comap_nhds_zero',
     ((𝓝 (0 : G)).basis_sets.comap _).tendsto_iff Metric.uniformity_basis_dist]
-  refine forall₂_congr fun ε _ => ⟨fun ⟨U, hU, h⟩ => ?_, fun h => ?_⟩
+  refine forall₂_congr fun ε _ => ⟨fun ⟨U, hU, h⟩ => ?_, fun h => ⟨_, h, fun p hp => ?_⟩⟩
   · filter_upwards [hU] with u hu x
     rw [dist_comm]
     exact h (x, u + x) (by simpa using hu)
-  · refine ⟨_, h, fun p hp => ?_⟩
-    simpa [dist_comm] using hp p.1
+  · simpa [dist_comm] using hp p.1
+
+private theorem addUcb_tendsto {f : G →ᵇ 𝕜} :
+    (∀ ε > 0, ∀ᶠ u in 𝓝 (0 : G), ∀ x, ‖f (u + x) - f x‖ < ε) ↔
+      Tendsto (fun u => f.compContinuous (ContinuousMap.addLeft u)) (𝓝 0) (𝓝 f) := by
+  simp only [← dist_eq_norm, BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff]
 
 variable (𝕜 G) in
 /-- The bounded continuous functions `f : G →ᵇ 𝕜` on a topological additive group such that
 `f (u + x)` is uniformly close to `f x` for all `u` near `0`, as a subalgebra of `G →ᵇ 𝕜`. -/
 def addUcbSubalgebra : Subalgebra 𝕜 (G →ᵇ 𝕜) where
   carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (0 : G), ∀ x, ‖f (u + x) - f x‖ < ε}
-  mul_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff] at hf hg ⊢
-    exact hf.mul hg
-  add_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff] at hf hg ⊢
-    exact hf.add hg
-  algebraMap_mem' c := by
-    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
-      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff]
-    exact tendsto_const_nhds
+  mul_mem' hf hg := addUcb_tendsto.2 ((addUcb_tendsto.1 hf).mul (addUcb_tendsto.1 hg))
+  add_mem' hf hg := addUcb_tendsto.2 ((addUcb_tendsto.1 hf).add (addUcb_tendsto.1 hg))
+  algebraMap_mem' _ := addUcb_tendsto.2 tendsto_const_nhds
 
 /-- The defining condition of `addUcbSubalgebra 𝕜 G`. -/
 theorem mem_addUcbSubalgebra_iff {f : G →ᵇ 𝕜} :
@@ -107,9 +102,8 @@ theorem mem_addUcbSubalgebra_iff {f : G →ᵇ 𝕜} :
 `u → 0`. -/
 theorem mem_addUcbSubalgebra_iff_tendsto {f : G →ᵇ 𝕜} :
     f ∈ addUcbSubalgebra 𝕜 G ↔
-      Tendsto (fun u => f.compContinuous (ContinuousMap.addLeft u)) (𝓝 0) (𝓝 f) := by
-  simp only [mem_addUcbSubalgebra_iff, ← dist_eq_norm,
-    BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff]
+      Tendsto (fun u => f.compContinuous (ContinuousMap.addLeft u)) (𝓝 0) (𝓝 f) :=
+  addUcb_tendsto
 
 /-- Precomposition with `Multiplicative.toAdd` identifies `addUcbSubalgebra 𝕜 G` with
 `ucbSubalgebra 𝕜 (Multiplicative G)`. -/
@@ -128,9 +122,7 @@ theorem mem_ucbSubalgebra_multiplicative_iff {f : Multiplicative G →ᵇ 𝕜} 
     f ∈ ucbSubalgebra 𝕜 (Multiplicative G) ↔
       f.compContinuous ⟨Multiplicative.ofAdd, continuous_ofAdd⟩ ∈ addUcbSubalgebra 𝕜 G := by
   rw [mem_addUcbSubalgebra_iff_multiplicative]
-  convert Iff.rfl
-  ext
-  simp
+  exact Iff.of_eq (congrArg (· ∈ _) (BoundedContinuousFunction.ext fun _ => rfl))
 
 /-- A bounded continuous function with compact support belongs to `addUcbSubalgebra 𝕜 G`. -/
 theorem mem_addUcbSubalgebra_of_hasCompactSupport {f : G →ᵇ 𝕜} (hf : HasCompactSupport f) :
@@ -143,9 +135,7 @@ theorem mem_addUcbSubalgebra_of_hasCompactSupport {f : G →ᵇ 𝕜} (hf : HasC
 variable (G) in
 /-- The real bounded continuous functions `f` on `G` such that `f (u + x)` is uniformly close to
 `f x` for all `u` near `0`, as a subalgebra of `G →ᵇ ℝ`. -/
-@[expose]
-def addUcb : Subalgebra ℝ (G →ᵇ ℝ) :=
-  addUcbSubalgebra ℝ G
+@[expose] def addUcb : Subalgebra ℝ (G →ᵇ ℝ) := addUcbSubalgebra ℝ G
 
 variable (G) in
 /-- The real Banach algebra of bounded functions on an additive topological group `G` that are
@@ -153,10 +143,8 @@ uniformly continuous under small left addition, with the supremum norm, algebra 
 pointwise order of `G →ᵇ ℝ`. -/
 abbrev AddUCB : Type _ := addUcb G
 
-variable (G) in
-/-- `addUcb G` is the case `𝕜 = ℝ` of `addUcbSubalgebra 𝕜 G`. -/
-theorem addUcb_eq_addUcbSubalgebra : addUcb G = addUcbSubalgebra ℝ G :=
-  rfl
+theorem addUcb_eq_addUcbSubalgebra (G : Type*) [AddGroup G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] : addUcb G = addUcbSubalgebra ℝ G := rfl
 
 /-- The defining condition of `addUcb G`. -/
 theorem mem_addUcb_iff {f : G →ᵇ ℝ} :
@@ -175,90 +163,62 @@ theorem mem_addUcb_iff_uniformContinuous {f : G →ᵇ ℝ} :
        UniformContinuous f) := by
   simp only [mem_addUcb_iff, ← Real.dist_eq, uniformContinuous_addRightUniformSpace_iff]
 
-/-- A bounded continuous function with compact support belongs to `addUcb G`. -/
 theorem mem_addUcb_of_hasCompactSupport {f : G →ᵇ ℝ} (hf : HasCompactSupport f) : f ∈ addUcb G :=
   mem_addUcbSubalgebra_of_hasCompactSupport hf
 
 /-- `addUcb G` is closed in `G →ᵇ ℝ`: a uniform limit of functions in `addUcb G` lies in
 `addUcb G`. -/
 theorem isClosed_addUcb : IsClosed (addUcb G : Set (G →ᵇ ℝ)) := by
-  refine isClosed_of_closure_subset fun f hf ε hε => ?_
-  obtain ⟨g, hg, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / 3) (by positivity)
-  filter_upwards [hg (ε / 3) (by positivity)] with u hu x
-  simp only [← dist_eq_norm] at hu ⊢
-  calc dist (f (u + x)) (f x)
-      ≤ dist (f (u + x)) (g (u + x)) + dist (g (u + x)) (g x) + dist (g x) (f x) :=
-        dist_triangle4 _ _ _ _
-    _ < ε / 3 + ε / 3 + ε / 3 := by
-        gcongr
-        · exact (BoundedContinuousFunction.dist_coe_le_dist _).trans_lt hfg
-        · exact hu x
-        · exact (BoundedContinuousFunction.dist_coe_le_dist _).trans_lt (by rwa [dist_comm])
-    _ = ε := by ring
+  have h : (addUcb G : Set (G →ᵇ ℝ)) =
+      (fun f : G →ᵇ ℝ => f.compContinuous ⟨Multiplicative.toAdd, continuous_toAdd⟩) ⁻¹'
+        (ucb (Multiplicative G) : Set (Multiplicative G →ᵇ ℝ)) :=
+    Set.ext fun _ => mem_addUcbSubalgebra_iff_multiplicative
+  rw [h]
+  refine isClosed_ucb.preimage (LipschitzWith.of_dist_le_mul (K := 1) fun f g => ?_).continuous
+  rw [dist_eq_norm, dist_eq_norm, NNReal.coe_one, one_mul]
+  exact (f - g).norm_compContinuous_le ⟨Multiplicative.toAdd, continuous_toAdd⟩
 
-/-- `AddUCB G` is a real normed group for the supremum norm of `G →ᵇ ℝ`. -/
-instance : NormedAddCommGroup (AddUCB G) :=
-  inferInstance
+instance : NormedAddCommGroup (AddUCB G) := inferInstance
+instance : CompleteSpace (AddUCB G) := isClosed_addUcb.completeSpace_coe
+instance : NormSMulClass ℝ (AddUCB G) := ⟨fun c f => norm_smul c (f : G →ᵇ ℝ)⟩
 
-/-- `AddUCB G` is a real Banach space. -/
-instance : CompleteSpace (AddUCB G) :=
-  isClosed_addUcb.completeSpace_coe
+@[simp] theorem const_mem_addUcb (c : ℝ) : BoundedContinuousFunction.const G c ∈ addUcb G :=
+  fun _ hε => .of_forall fun _ _ => by simpa using hε
 
-/-- Scalar multiplication on `AddUCB G` scales the supremum norm. -/
-instance : NormSMulClass ℝ (AddUCB G) :=
-  ⟨fun c f => norm_smul c (f : G →ᵇ ℝ)⟩
-
-/-- Constant functions belong to `addUcb G`. -/
-@[simp]
-theorem const_mem_addUcb (c : ℝ) : BoundedContinuousFunction.const G c ∈ addUcb G :=
-  fun ε hε => .of_forall fun _ _ => by simpa using hε
-
-/-- `addUcb G` is closed under the pointwise maximum. -/
+/-- `addUcb G` is closed under the pointwise maximum, minimum, and absolute value. -/
 theorem sup_mem_addUcb {f g : G →ᵇ ℝ} (hf : f ∈ addUcb G) (hg : g ∈ addUcb G) :
-    f ⊔ g ∈ addUcb G := by
-  rw [mem_addUcb_iff_tendsto] at hf hg ⊢
-  exact hf.sup_nhds hg
+    f ⊔ g ∈ addUcb G :=
+  mem_addUcb_iff_tendsto.2 ((mem_addUcb_iff_tendsto.1 hf).sup_nhds (mem_addUcb_iff_tendsto.1 hg))
 
-/-- `addUcb G` is closed under the pointwise minimum. -/
 theorem inf_mem_addUcb {f g : G →ᵇ ℝ} (hf : f ∈ addUcb G) (hg : g ∈ addUcb G) :
-    f ⊓ g ∈ addUcb G := by
-  rw [mem_addUcb_iff_tendsto] at hf hg ⊢
-  exact hf.inf_nhds hg
+    f ⊓ g ∈ addUcb G :=
+  mem_addUcb_iff_tendsto.2 ((mem_addUcb_iff_tendsto.1 hf).inf_nhds (mem_addUcb_iff_tendsto.1 hg))
 
-/-- `addUcb G` is closed under the pointwise absolute value. -/
 theorem abs_mem_addUcb {f : G →ᵇ ℝ} (hf : f ∈ addUcb G) : |f| ∈ addUcb G :=
   sup_mem_addUcb hf (neg_mem hf)
 
-/-- `AddUCB G` is a lattice for the pointwise maximum and minimum. -/
 instance : Lattice (AddUCB G) :=
   Subtype.lattice (fun _ _ => sup_mem_addUcb) (fun _ _ => inf_mem_addUcb)
 
-/-- The supremum norm of `AddUCB G` is solid for its pointwise order. -/
 instance : HasSolidNorm (AddUCB G) where
   solid _ _ h := HasSolidNorm.solid (α := G →ᵇ ℝ) h
 
-/-- A left translate `x ↦ f (g + x)` of a function in `addUcbSubalgebra 𝕜 G` lies in
+/-- Left and right translates of functions in `addUcbSubalgebra 𝕜 G` stay in
 `addUcbSubalgebra 𝕜 G`. -/
 theorem compContinuous_addLeft_mem_addUcbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ addUcbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.addLeft g) ∈ addUcbSubalgebra 𝕜 G := by
   rw [mem_addUcbSubalgebra_iff_multiplicative] at hf ⊢
   exact compContinuous_mulLeft_mem_ucbSubalgebra hf (Multiplicative.ofAdd g)
 
-/-- A right translate `x ↦ f (x + g)` of a function in `addUcbSubalgebra 𝕜 G` lies in
-`addUcbSubalgebra 𝕜 G`. -/
 theorem compContinuous_addRight_mem_addUcbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ addUcbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.addRight g) ∈ addUcbSubalgebra 𝕜 G := by
-  rw [mem_addUcbSubalgebra_iff] at hf ⊢
-  intro ε hε
-  filter_upwards [hf ε hε] with u hu x
-  simpa [add_assoc] using hu (x + g)
+  rw [mem_addUcbSubalgebra_iff_multiplicative] at hf ⊢
+  exact compContinuous_mulRight_mem_ucbSubalgebra hf (Multiplicative.ofAdd g)
 
-/-- A left translate `x ↦ f (g + x)` of a function in `addUcb G` lies in `addUcb G`. -/
 theorem compContinuous_addLeft_mem_addUcb {f : G →ᵇ ℝ} (hf : f ∈ addUcb G) (g : G) :
     f.compContinuous (ContinuousMap.addLeft g) ∈ addUcb G :=
   compContinuous_addLeft_mem_addUcbSubalgebra hf g
 
-/-- A right translate `x ↦ f (x + g)` of a function in `addUcb G` lies in `addUcb G`. -/
 theorem compContinuous_addRight_mem_addUcb {f : G →ᵇ ℝ} (hf : f ∈ addUcb G) (g : G) :
     f.compContinuous (ContinuousMap.addRight g) ∈ addUcb G :=
   compContinuous_addRight_mem_addUcbSubalgebra hf g
@@ -271,26 +231,20 @@ section Basic
 
 variable {G : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
 
-@[simp, norm_cast]
-theorem coe_sup (f g : AddUCB G) : ((f ⊔ g : AddUCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊔ (g : G →ᵇ ℝ) :=
-  rfl
+@[simp, norm_cast] theorem coe_sup (f g : AddUCB G) :
+    ((f ⊔ g : AddUCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊔ (g : G →ᵇ ℝ) := rfl
 
-@[simp, norm_cast]
-theorem coe_inf (f g : AddUCB G) : ((f ⊓ g : AddUCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊓ (g : G →ᵇ ℝ) :=
-  rfl
+@[simp, norm_cast] theorem coe_inf (f g : AddUCB G) :
+    ((f ⊓ g : AddUCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊓ (g : G →ᵇ ℝ) := rfl
 
-@[simp, norm_cast]
-theorem coe_abs (f : AddUCB G) : ((|f| : AddUCB G) : G →ᵇ ℝ) = |(f : G →ᵇ ℝ)| :=
-  rfl
+@[simp, norm_cast] theorem coe_abs (f : AddUCB G) :
+    ((|f| : AddUCB G) : G →ᵇ ℝ) = |(f : G →ᵇ ℝ)| := rfl
 
 /-- Two elements of `AddUCB G` are equal when they agree at every point. -/
-@[ext]
-theorem ext {f g : AddUCB G} (h : ∀ x, (f : G →ᵇ ℝ) x = (g : G →ᵇ ℝ) x) : f = g :=
+@[ext] theorem ext {f g : AddUCB G} (h : ∀ x, (f : G →ᵇ ℝ) x = (g : G →ᵇ ℝ) x) : f = g :=
   Subtype.ext (BoundedContinuousFunction.ext h)
 
-/-- The order on `AddUCB G` is the pointwise order. -/
-theorem le_def {f g : AddUCB G} : f ≤ g ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ (g : G →ᵇ ℝ) x :=
-  Iff.rfl
+theorem le_def {f g : AddUCB G} : f ≤ g ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ (g : G →ᵇ ℝ) x := Iff.rfl
 
 /-- Each value of an element of `AddUCB G` is bounded by its supremum norm. -/
 theorem abs_apply_le_norm (f : AddUCB G) (x : G) : |(f : G →ᵇ ℝ) x| ≤ ‖f‖ :=
@@ -328,90 +282,64 @@ theorem coe_rightTranslation (g : G) (f : AddUCB G) :
     (rightTranslation g f : G →ᵇ ℝ) = (f : G →ᵇ ℝ).compContinuous (ContinuousMap.addRight g) :=
   BoundedContinuousFunction.compContinuousₗᵢ_apply ..
 
-@[simp]
-theorem leftTranslation_apply (g : G) (f : AddUCB G) (x : G) :
+@[simp] theorem leftTranslation_apply (g : G) (f : AddUCB G) (x : G) :
     (leftTranslation g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (-g + x) :=
   DFunLike.congr_fun (coe_leftTranslation g f) x
 
-@[simp]
-theorem rightTranslation_apply (g : G) (f : AddUCB G) (x : G) :
+@[simp] theorem rightTranslation_apply (g : G) (f : AddUCB G) (x : G) :
     (rightTranslation g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (x + g) :=
   DFunLike.congr_fun (coe_rightTranslation g f) x
 
-@[simp]
-theorem leftTranslation_zero : leftTranslation (0 : G) = LinearIsometryEquiv.refl ℝ (AddUCB G) := by
-  ext
-  simp
+@[simp] theorem leftTranslation_zero :
+    leftTranslation (0 : G) = LinearIsometryEquiv.refl ℝ (AddUCB G) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp
 
 theorem leftTranslation_add (g h : G) :
-    leftTranslation (g + h) = (leftTranslation h).trans (leftTranslation g) := by
-  ext
-  simp [add_assoc]
+    leftTranslation (g + h) = (leftTranslation h).trans (leftTranslation g) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp [add_assoc]
 
 theorem leftTranslation_add_apply (g h : G) (f : AddUCB G) :
     leftTranslation (g + h) f = leftTranslation g (leftTranslation h f) := by
   rw [leftTranslation_add, LinearIsometryEquiv.trans_apply]
 
-@[simp]
-theorem leftTranslation_symm (g : G) : (leftTranslation g).symm = leftTranslation (-g) := by
-  ext
-  simp [leftTranslation]
+@[simp] theorem leftTranslation_symm (g : G) : (leftTranslation g).symm = leftTranslation (-g) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp [leftTranslation]
 
-@[simp]
-theorem rightTranslation_zero :
-    rightTranslation (0 : G) = LinearIsometryEquiv.refl ℝ (AddUCB G) := by
-  ext
-  simp
+@[simp] theorem rightTranslation_zero :
+    rightTranslation (0 : G) = LinearIsometryEquiv.refl ℝ (AddUCB G) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp
 
 theorem rightTranslation_add (g h : G) :
-    rightTranslation (g + h) = (rightTranslation h).trans (rightTranslation g) := by
-  ext
-  simp [add_assoc]
+    rightTranslation (g + h) = (rightTranslation h).trans (rightTranslation g) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp [add_assoc]
 
 theorem rightTranslation_add_apply (g h : G) (f : AddUCB G) :
     rightTranslation (g + h) f = rightTranslation g (rightTranslation h f) := by
   rw [rightTranslation_add, LinearIsometryEquiv.trans_apply]
 
-@[simp]
-theorem rightTranslation_symm (g : G) : (rightTranslation g).symm = rightTranslation (-g) := by
-  ext
-  simp [rightTranslation]
+@[simp] theorem rightTranslation_symm (g : G) : (rightTranslation g).symm = rightTranslation (-g) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp [rightTranslation]
 
-/-- Left translation preserves and reflects the pointwise order. -/
-@[simp]
-theorem leftTranslation_le_leftTranslation_iff {g : G} {f f' : AddUCB G} :
-    leftTranslation g f ≤ leftTranslation g f' ↔ f ≤ f' := by
-  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
-  simpa using le_def.1 h (g + x)
+@[simp] theorem leftTranslation_le_leftTranslation_iff {g : G} {f f' : AddUCB G} :
+    leftTranslation g f ≤ leftTranslation g f' ↔ f ≤ f' :=
+  ⟨fun h => le_def.2 fun x => by simpa using le_def.1 h (g + x),
+    fun h => le_def.2 fun _ => by simpa using le_def.1 h _⟩
 
-/-- Left translation fixes the constant function `1`. -/
-@[simp]
-theorem leftTranslation_apply_one (g : G) : leftTranslation g 1 = 1 := by
-  ext
-  simp
+@[simp] theorem leftTranslation_apply_one (g : G) : leftTranslation g 1 = 1 := ext fun _ => by simp
 
-/-- Left translation fixes every constant function. -/
-@[simp]
-theorem leftTranslation_apply_algebraMap (g : G) (c : ℝ) :
+@[simp] theorem leftTranslation_apply_algebraMap (g : G) (c : ℝ) :
     leftTranslation g (algebraMap ℝ (AddUCB G) c) = algebraMap ℝ (AddUCB G) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
-/-- Right translation preserves and reflects the pointwise order. -/
-@[simp]
-theorem rightTranslation_le_rightTranslation_iff {g : G} {f f' : AddUCB G} :
-    rightTranslation g f ≤ rightTranslation g f' ↔ f ≤ f' := by
-  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
-  simpa using le_def.1 h (x + -g)
+@[simp] theorem rightTranslation_le_rightTranslation_iff {g : G} {f f' : AddUCB G} :
+    rightTranslation g f ≤ rightTranslation g f' ↔ f ≤ f' :=
+  ⟨fun h => le_def.2 fun x => by simpa using le_def.1 h (x + -g),
+    fun h => le_def.2 fun _ => by simpa using le_def.1 h _⟩
 
-/-- Right translation fixes the constant function `1`. -/
-@[simp]
-theorem rightTranslation_apply_one (g : G) : rightTranslation g 1 = 1 := by
-  ext
-  simp
+@[simp] theorem rightTranslation_apply_one (g : G) : rightTranslation g 1 = 1 :=
+  ext fun _ => by simp
 
-/-- Right translation fixes every constant function. -/
-@[simp]
-theorem rightTranslation_apply_algebraMap (g : G) (c : ℝ) :
+@[simp] theorem rightTranslation_apply_algebraMap (g : G) (c : ℝ) :
     rightTranslation g (algebraMap ℝ (AddUCB G) c) = algebraMap ℝ (AddUCB G) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
@@ -423,21 +351,16 @@ theorem tendsto_leftTranslation_apply_nhds_zero (f : AddUCB G) :
 
 /-- The orbit map `g ↦ L_g f` of `f ∈ AddUCB G` is continuous for the supremum norm. -/
 theorem continuous_leftTranslation_apply (f : AddUCB G) :
-    Continuous fun g : G => leftTranslation g f := by
-  refine continuous_iff_continuousAt.2 fun g => ?_
-  have h₁ : Tendsto (fun h : G => -g + h) (𝓝 g) (𝓝 0) := by
-    simpa using (continuous_const_add (-g)).tendsto g
-  have h₂ := ((leftTranslation g).continuous.tendsto f).comp
-    ((tendsto_leftTranslation_apply_nhds_zero f).comp h₁)
-  refine h₂.congr fun h => ?_
-  ext
-  simp
+    Continuous fun g : G => leftTranslation g f :=
+  continuous_iff_continuousAt.2 fun g =>
+    (((leftTranslation g).continuous.tendsto f).comp <|
+      (tendsto_leftTranslation_apply_nhds_zero f).comp <| by
+        simpa using (continuous_const_add (-g)).tendsto g).congr fun _ => ext fun _ => by simp
 
 /-- Left and right translations of `AddUCB G` commute. -/
 theorem commute_leftTranslation_rightTranslation (g h : G) :
-    Commute (leftTranslation g) (rightTranslation h) := by
-  ext
-  simp [add_assoc]
+    Commute (leftTranslation g) (rightTranslation h) :=
+  LinearIsometryEquiv.ext fun _ => ext fun _ => by simp [add_assoc]
 
 /-- On a finite additive group, the sum of the left translates `L_g f` is the constant function
 `∑ x, f x`. -/
@@ -463,51 +386,33 @@ variable {G A B : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGrou
 `addUcb G`. -/
 theorem _root_.TauCeti.compContinuous_mem_addUcb {f : A →ᵇ ℝ} (hf : f ∈ addUcb A) (φ : G →ₜ+ A) :
     f.compContinuous (φ : C(G, A)) ∈ addUcb G := by
-  have hφ : Tendsto φ (𝓝 0) (𝓝 0) := by
-    simpa using φ.continuous.tendsto (0 : G)
-  rw [mem_addUcb_iff] at hf ⊢
-  intro ε hε
-  filter_upwards [hφ.eventually (hf ε hε)] with u hu x
-  simpa using hu (φ x)
+  rw [addUcb_eq_addUcbSubalgebra, mem_addUcbSubalgebra_iff_multiplicative] at hf ⊢
+  exact compContinuous_mem_ucb hf φ.toMultiplicative
 
 /-- The pullback `f ↦ f ∘ φ` along a continuous additive homomorphism `φ : G →ₜ+ A`, as a unital
 algebra homomorphism from `AddUCB A` to `AddUCB G`. -/
-def compRightAlgHom (φ : G →ₜ+ A) : AddUCB A →ₐ[ℝ] AddUCB G where
-  toFun f := ⟨(f : A →ᵇ ℝ).compContinuous (φ : C(G, A)), compContinuous_mem_addUcb f.2 φ⟩
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+def compRightAlgHom (φ : G →ₜ+ A) : AddUCB A →ₐ[ℝ] AddUCB G :=
+  { toFun f := ⟨(f : A →ᵇ ℝ).compContinuous (φ : C(G, A)), compContinuous_mem_addUcb f.2 φ⟩
+    map_one' := rfl, map_mul' _ _ := rfl, map_zero' := rfl, map_add' _ _ := rfl
+    commutes' _ := rfl }
 
-@[simp]
-theorem compRightAlgHom_apply (φ : G →ₜ+ A) (f : AddUCB A) (x : G) :
-    (compRightAlgHom φ f : G →ᵇ ℝ) x = (f : A →ᵇ ℝ) (φ x) :=
-  (rfl)
+@[simp] theorem compRightAlgHom_apply (φ : G →ₜ+ A) (f : AddUCB A) (x : G) :
+    (compRightAlgHom φ f : G →ᵇ ℝ) x = (f : A →ᵇ ℝ) (φ x) := (rfl)
 
-@[simp]
-theorem compRightAlgHom_id :
-    compRightAlgHom (ContinuousAddMonoidHom.id G) = AlgHom.id ℝ (AddUCB G) :=
-  (rfl)
+@[simp] theorem compRightAlgHom_id :
+    compRightAlgHom (ContinuousAddMonoidHom.id G) = AlgHom.id ℝ (AddUCB G) := (rfl)
 
 theorem compRightAlgHom_comp (ψ : A →ₜ+ B) (φ : G →ₜ+ A) :
-    compRightAlgHom (ψ.comp φ) = (compRightAlgHom φ).comp (compRightAlgHom ψ) :=
-  (rfl)
+    compRightAlgHom (ψ.comp φ) = (compRightAlgHom φ).comp (compRightAlgHom ψ) := (rfl)
 
-/-- The pullback preserves the pointwise order. -/
 theorem monotone_compRightAlgHom (φ : G →ₜ+ A) : Monotone (compRightAlgHom φ) :=
   fun _ _ h => le_def.2 fun x => le_def.1 h (φ x)
 
-/-- Along a surjective continuous additive homomorphism, the pullback preserves and reflects the
-pointwise order. -/
-@[simp]
-theorem compRightAlgHom_le_compRightAlgHom_iff {φ : G →ₜ+ A} (hφ : Function.Surjective φ)
-    {f f' : AddUCB A} : compRightAlgHom φ f ≤ compRightAlgHom φ f' ↔ f ≤ f' := by
-  refine ⟨fun h => le_def.2 fun y => ?_, fun h => monotone_compRightAlgHom φ h⟩
-  obtain ⟨x, rfl⟩ := hφ y
-  exact le_def.1 h x
+@[simp] theorem compRightAlgHom_le_compRightAlgHom_iff {φ : G →ₜ+ A} (hφ : Function.Surjective φ)
+    {f f' : AddUCB A} : compRightAlgHom φ f ≤ compRightAlgHom φ f' ↔ f ≤ f' :=
+  ⟨fun h => le_def.2 fun y => have ⟨x, hx⟩ := hφ y; hx ▸ le_def.1 h x,
+    fun h => monotone_compRightAlgHom φ h⟩
 
-/-- The pullback does not increase the supremum norm. -/
 theorem norm_compRightAlgHom_apply_le (φ : G →ₜ+ A) (f : AddUCB A) :
     ‖compRightAlgHom φ f‖ ≤ ‖f‖ :=
   (f : A →ᵇ ℝ).norm_compContinuous_le _
@@ -515,24 +420,19 @@ theorem norm_compRightAlgHom_apply_le (φ : G →ₜ+ A) (f : AddUCB A) :
 /-- Along a surjective continuous additive homomorphism, the pullback preserves the supremum
 norm. -/
 theorem norm_compRightAlgHom_apply {φ : G →ₜ+ A} (hφ : Function.Surjective φ) (f : AddUCB A) :
-    ‖compRightAlgHom φ f‖ = ‖f‖ := by
-  refine le_antisymm (norm_compRightAlgHom_apply_le φ f) ?_
-  rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
-  refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun y => ?_
-  obtain ⟨x, rfl⟩ := hφ y
-  exact (compRightAlgHom φ f : G →ᵇ ℝ).norm_coe_le_norm x
+    ‖compRightAlgHom φ f‖ = ‖f‖ :=
+  le_antisymm (norm_compRightAlgHom_apply_le φ f) <| by
+    rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
+    exact (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun y =>
+      have ⟨x, hx⟩ := hφ y; hx ▸ (compRightAlgHom φ f : G →ᵇ ℝ).norm_coe_le_norm x
 
-/-- The pullback intertwines left translation by `φ g` with left translation by `g`. -/
 theorem compRightAlgHom_leftTranslation (φ : G →ₜ+ A) (g : G) (f : AddUCB A) :
-    compRightAlgHom φ (leftTranslation (φ g) f) = leftTranslation g (compRightAlgHom φ f) := by
-  ext
-  simp
+    compRightAlgHom φ (leftTranslation (φ g) f) = leftTranslation g (compRightAlgHom φ f) :=
+  ext fun _ => by simp
 
-/-- The pullback intertwines right translation by `φ g` with right translation by `g`. -/
 theorem compRightAlgHom_rightTranslation (φ : G →ₜ+ A) (g : G) (f : AddUCB A) :
-    compRightAlgHom φ (rightTranslation (φ g) f) = rightTranslation g (compRightAlgHom φ f) := by
-  ext
-  simp
+    compRightAlgHom φ (rightTranslation (φ g) f) = rightTranslation g (compRightAlgHom φ f) :=
+  ext fun _ => by simp
 
 end CompRight
 
@@ -543,10 +443,8 @@ section Discrete
 variable {G : Type*} [AddGroup G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- On a discrete additive group the `addUcb` subalgebra is the entire bounded-function algebra. -/
-@[simp]
-theorem _root_.TauCeti.addUcb_eq_top : addUcb G = ⊤ := by
-  ext f
-  simp [mem_addUcb_iff, nhds_discrete]
+@[simp] theorem _root_.TauCeti.addUcb_eq_top : addUcb G = ⊤ :=
+  Subalgebra.ext fun f => by simp [mem_addUcb_iff, nhds_discrete]
 
 variable (G) in
 /-- The canonical algebra equivalence from `AddUCB G` to all bounded functions on a discrete
@@ -554,42 +452,30 @@ additive group. -/
 def discreteAlgEquiv : AddUCB G ≃ₐ[ℝ] (G →ᵇ ℝ) :=
   (Subalgebra.equivOfEq _ _ addUcb_eq_top).trans Subalgebra.topEquiv
 
-@[simp]
-theorem discreteAlgEquiv_apply (f : AddUCB G) : discreteAlgEquiv G f = (f : G →ᵇ ℝ) :=
-  (rfl)
+@[simp] theorem discreteAlgEquiv_apply (f : AddUCB G) : discreteAlgEquiv G f = (f : G →ᵇ ℝ) := (rfl)
 
-@[simp]
-theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
+@[simp] theorem coe_discreteAlgEquiv_symm (f : G →ᵇ ℝ) :
     ((discreteAlgEquiv G).symm f : G →ᵇ ℝ) = f :=
   (discreteAlgEquiv G).apply_symm_apply f
 
-@[simp]
-theorem discreteAlgEquiv_symm_compContinuous_addLeft (g : G) (f : G →ᵇ ℝ) :
+@[simp] theorem discreteAlgEquiv_symm_compContinuous_addLeft (g : G) (f : G →ᵇ ℝ) :
     (discreteAlgEquiv G).symm (f.compContinuous (ContinuousMap.addLeft (-g))) =
-      leftTranslation g ((discreteAlgEquiv G).symm f) := by
-  apply (discreteAlgEquiv G).injective
-  simp [coe_leftTranslation]
+      leftTranslation g ((discreteAlgEquiv G).symm f) :=
+  (discreteAlgEquiv G).injective (by simp [coe_leftTranslation])
 
-@[simp]
-theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
-    (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h :=
-  Iff.rfl
+@[simp] theorem discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff {f h : G →ᵇ ℝ} :
+    (discreteAlgEquiv G).symm f ≤ (discreteAlgEquiv G).symm h ↔ f ≤ h := Iff.rfl
 
 variable (G) in
 /-- The discrete identification as a linear isometry equivalence for the supremum norm. -/
-def discreteLinearIsometryEquiv : AddUCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ) where
-  toLinearEquiv := (discreteAlgEquiv G).toLinearEquiv
-  norm_map' _ := rfl
+def discreteLinearIsometryEquiv : AddUCB G ≃ₗᵢ[ℝ] (G →ᵇ ℝ) :=
+  { (discreteAlgEquiv G).toLinearEquiv with norm_map' _ := rfl }
 
-@[simp]
-theorem discreteLinearIsometryEquiv_apply (f : AddUCB G) :
-    discreteLinearIsometryEquiv G f = (f : G →ᵇ ℝ) :=
-  (rfl)
+@[simp] theorem discreteLinearIsometryEquiv_apply (f : AddUCB G) :
+    discreteLinearIsometryEquiv G f = (f : G →ᵇ ℝ) := (rfl)
 
-@[simp]
-theorem discreteLinearIsometryEquiv_symm_apply (f : G →ᵇ ℝ) :
-    (discreteLinearIsometryEquiv G).symm f = (discreteAlgEquiv G).symm f :=
-  (rfl)
+@[simp] theorem discreteLinearIsometryEquiv_symm_apply (f : G →ᵇ ℝ) :
+    (discreteLinearIsometryEquiv G).symm f = (discreteAlgEquiv G).symm f := (rfl)
 
 end Discrete
 
@@ -607,90 +493,64 @@ variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup 
 variable (G) in
 /-- Precomposition with `Multiplicative.ofAdd` identifies `UCB (Multiplicative G)` with `AddUCB G`
 as a real unital algebra. -/
-def ofMultiplicative : UCB (Multiplicative G) ≃ₐ[ℝ] AddUCB G where
-  toFun f := ⟨(f : Multiplicative G →ᵇ ℝ).compContinuous ⟨Multiplicative.ofAdd, continuous_ofAdd⟩,
-    (mem_ucbSubalgebra_multiplicative_iff (𝕜 := ℝ)).1 f.2⟩
-  invFun f := ⟨(f : G →ᵇ ℝ).compContinuous ⟨Multiplicative.toAdd, continuous_toAdd⟩,
-    (mem_addUcbSubalgebra_iff_multiplicative (𝕜 := ℝ)).1 f.2⟩
-  left_inv _ := ext fun _ => rfl
-  right_inv _ := AddUCB.ext fun _ => rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+def ofMultiplicative : UCB (Multiplicative G) ≃ₐ[ℝ] AddUCB G :=
+  { toFun f := ⟨(f : Multiplicative G →ᵇ ℝ).compContinuous ⟨Multiplicative.ofAdd, continuous_ofAdd⟩,
+      (mem_ucbSubalgebra_multiplicative_iff (𝕜 := ℝ)).1 f.2⟩
+    invFun f := ⟨(f : G →ᵇ ℝ).compContinuous ⟨Multiplicative.toAdd, continuous_toAdd⟩,
+      (mem_addUcbSubalgebra_iff_multiplicative (𝕜 := ℝ)).1 f.2⟩
+    left_inv _ := ext fun _ => rfl, right_inv _ := AddUCB.ext fun _ => rfl
+    map_mul' _ _ := rfl, map_add' _ _ := rfl, commutes' _ := rfl }
 
-@[simp]
-theorem ofMultiplicative_apply (f : UCB (Multiplicative G)) (x : G) :
-    (ofMultiplicative G f : G →ᵇ ℝ) x =
-      (f : Multiplicative G →ᵇ ℝ) (Multiplicative.ofAdd x) :=
-  (rfl)
+@[simp] theorem ofMultiplicative_apply (f : UCB (Multiplicative G)) (x : G) :
+    (ofMultiplicative G f : G →ᵇ ℝ) x = (f : Multiplicative G →ᵇ ℝ) (.ofAdd x) := (rfl)
 
-@[simp]
-theorem ofMultiplicative_symm_apply (f : AddUCB G) (x : Multiplicative G) :
-    ((ofMultiplicative G).symm f : Multiplicative G →ᵇ ℝ) x = (f : G →ᵇ ℝ) x.toAdd :=
-  (rfl)
+@[simp] theorem ofMultiplicative_symm_apply (f : AddUCB G) (x : Multiplicative G) :
+    ((ofMultiplicative G).symm f : Multiplicative G →ᵇ ℝ) x = (f : G →ᵇ ℝ) x.toAdd := (rfl)
 
-@[simp]
-theorem norm_ofMultiplicative (f : UCB (Multiplicative G)) :
-    ‖(ofMultiplicative G f : G →ᵇ ℝ)‖ = ‖(f : Multiplicative G →ᵇ ℝ)‖ := by
-  refine le_antisymm ((f : Multiplicative G →ᵇ ℝ).norm_compContinuous_le _) ?_
-  exact ((ofMultiplicative G f : G →ᵇ ℝ).norm_compContinuous_le
-    ⟨Multiplicative.toAdd, continuous_toAdd⟩)
+@[simp] theorem norm_ofMultiplicative (f : UCB (Multiplicative G)) :
+    ‖(ofMultiplicative G f : G →ᵇ ℝ)‖ = ‖(f : Multiplicative G →ᵇ ℝ)‖ :=
+  le_antisymm ((f : Multiplicative G →ᵇ ℝ).norm_compContinuous_le _)
+    ((ofMultiplicative G f : G →ᵇ ℝ).norm_compContinuous_le
+      ⟨Multiplicative.toAdd, continuous_toAdd⟩)
 
-@[simp]
-theorem norm_ofMultiplicative_symm (f : AddUCB G) :
+@[simp] theorem norm_ofMultiplicative_symm (f : AddUCB G) :
     ‖((ofMultiplicative G).symm f : Multiplicative G →ᵇ ℝ)‖ = ‖(f : G →ᵇ ℝ)‖ := by
   simpa only [AlgEquiv.apply_symm_apply] using
     (norm_ofMultiplicative ((ofMultiplicative G).symm f)).symm
 
 variable (G) in
 /-- `UCB.ofMultiplicative` as a linear isometry equivalence for the supremum norm. -/
-def ofMultiplicativeₗᵢ : UCB (Multiplicative G) ≃ₗᵢ[ℝ] AddUCB G where
-  toLinearEquiv := (ofMultiplicative G).toLinearEquiv
-  norm_map' f := by simp
+def ofMultiplicativeₗᵢ : UCB (Multiplicative G) ≃ₗᵢ[ℝ] AddUCB G :=
+  { (ofMultiplicative G).toLinearEquiv with norm_map' _ := by simp }
 
-@[simp]
-theorem ofMultiplicativeₗᵢ_apply (f : UCB (Multiplicative G)) :
-    ofMultiplicativeₗᵢ G f = ofMultiplicative G f :=
-  (rfl)
+@[simp] theorem ofMultiplicativeₗᵢ_apply (f : UCB (Multiplicative G)) :
+    ofMultiplicativeₗᵢ G f = ofMultiplicative G f := (rfl)
 
-@[simp]
-theorem ofMultiplicativeₗᵢ_symm_apply (f : AddUCB G) :
-    (ofMultiplicativeₗᵢ G).symm f = (ofMultiplicative G).symm f :=
-  (rfl)
+@[simp] theorem ofMultiplicativeₗᵢ_symm_apply (f : AddUCB G) :
+    (ofMultiplicativeₗᵢ G).symm f = (ofMultiplicative G).symm f := (rfl)
 
-@[simp]
-theorem ofMultiplicative_le_ofMultiplicative_iff {f g : UCB (Multiplicative G)} :
-    ofMultiplicative G f ≤ ofMultiplicative G g ↔ f ≤ g := by
-  simp [AddUCB.le_def, UCB.le_def]
+@[simp] theorem ofMultiplicative_le_ofMultiplicative_iff {f g : UCB (Multiplicative G)} :
+    ofMultiplicative G f ≤ ofMultiplicative G g ↔ f ≤ g := by simp [AddUCB.le_def, UCB.le_def]
 
-@[simp]
-theorem ofMultiplicative_symm_le_ofMultiplicative_symm_iff {f g : AddUCB G} :
+@[simp] theorem ofMultiplicative_symm_le_ofMultiplicative_symm_iff {f g : AddUCB G} :
     (ofMultiplicative G).symm f ≤ (ofMultiplicative G).symm g ↔ f ≤ g := by
   simp [AddUCB.le_def, UCB.le_def]
 
-@[simp]
-theorem ofMultiplicative_leftTranslation (g : G) (f : UCB (Multiplicative G)) :
-    ofMultiplicative G (leftTranslation (Multiplicative.ofAdd g) f) =
-      AddUCB.leftTranslation g (ofMultiplicative G f) :=
-  AddUCB.ext fun _ => by simp
+@[simp] theorem ofMultiplicative_leftTranslation (g : G) (f : UCB (Multiplicative G)) :
+    ofMultiplicative G (leftTranslation (.ofAdd g) f) =
+      AddUCB.leftTranslation g (ofMultiplicative G f) := AddUCB.ext fun _ => by simp
 
-@[simp]
-theorem ofMultiplicative_symm_leftTranslation (g : G) (f : AddUCB G) :
+@[simp] theorem ofMultiplicative_symm_leftTranslation (g : G) (f : AddUCB G) :
     (ofMultiplicative G).symm (AddUCB.leftTranslation g f) =
-      leftTranslation (Multiplicative.ofAdd g) ((ofMultiplicative G).symm f) :=
-  ext fun _ => by simp
+      leftTranslation (.ofAdd g) ((ofMultiplicative G).symm f) := ext fun _ => by simp
 
-@[simp]
-theorem ofMultiplicative_rightTranslation (g : G) (f : UCB (Multiplicative G)) :
-    ofMultiplicative G (rightTranslation (Multiplicative.ofAdd g) f) =
-      AddUCB.rightTranslation g (ofMultiplicative G f) :=
-  AddUCB.ext fun _ => by simp
+@[simp] theorem ofMultiplicative_rightTranslation (g : G) (f : UCB (Multiplicative G)) :
+    ofMultiplicative G (rightTranslation (.ofAdd g) f) =
+      AddUCB.rightTranslation g (ofMultiplicative G f) := AddUCB.ext fun _ => by simp
 
-@[simp]
-theorem ofMultiplicative_compRightAlgHom (φ : G →ₜ+ A) (f : UCB (Multiplicative A)) :
+@[simp] theorem ofMultiplicative_compRightAlgHom (φ : G →ₜ+ A) (f : UCB (Multiplicative A)) :
     ofMultiplicative G (compRightAlgHom φ.toMultiplicative f) =
-      AddUCB.compRightAlgHom φ (ofMultiplicative A f) :=
-  AddUCB.ext fun _ => by simp
+      AddUCB.compRightAlgHom φ (ofMultiplicative A f) := AddUCB.ext fun _ => by simp
 
 end UCB
 
@@ -716,87 +576,61 @@ theorem _root_.TauCeti.mem_addUcbSubalgebra_additive_iff {𝕜 : Type*} [NormedF
     f ∈ addUcbSubalgebra 𝕜 (Additive H) ↔
       f.compContinuous ⟨Additive.ofMul, continuous_ofMul⟩ ∈ ucbSubalgebra 𝕜 H := by
   rw [mem_ucbSubalgebra_iff_additive]
-  convert Iff.rfl
-  ext
-  simp
+  exact Iff.of_eq (congrArg (· ∈ _) (BoundedContinuousFunction.ext fun _ => rfl))
 
 variable (H) in
 /-- Precomposition with `Additive.ofMul` identifies `AddUCB (Additive H)` with `UCB H` as a real
 unital algebra. -/
-def ofAdditive : AddUCB (Additive H) ≃ₐ[ℝ] UCB H where
-  toFun f := ⟨(f : Additive H →ᵇ ℝ).compContinuous ⟨Additive.ofMul, continuous_ofMul⟩,
-    (mem_addUcbSubalgebra_additive_iff (𝕜 := ℝ)).1 f.2⟩
-  invFun f := ⟨(f : H →ᵇ ℝ).compContinuous ⟨Additive.toMul, continuous_toMul⟩,
-    (mem_ucbSubalgebra_iff_additive (𝕜 := ℝ)).1 f.2⟩
-  left_inv _ := ext fun _ => rfl
-  right_inv _ := UCB.ext fun _ => rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+def ofAdditive : AddUCB (Additive H) ≃ₐ[ℝ] UCB H :=
+  { toFun f := ⟨(f : Additive H →ᵇ ℝ).compContinuous ⟨Additive.ofMul, continuous_ofMul⟩,
+      (mem_addUcbSubalgebra_additive_iff (𝕜 := ℝ)).1 f.2⟩
+    invFun f := ⟨(f : H →ᵇ ℝ).compContinuous ⟨Additive.toMul, continuous_toMul⟩,
+      (mem_ucbSubalgebra_iff_additive (𝕜 := ℝ)).1 f.2⟩
+    left_inv _ := ext fun _ => rfl, right_inv _ := UCB.ext fun _ => rfl
+    map_mul' _ _ := rfl, map_add' _ _ := rfl, commutes' _ := rfl }
 
-@[simp]
-theorem ofAdditive_apply (f : AddUCB (Additive H)) (x : H) :
-    (ofAdditive H f : H →ᵇ ℝ) x = (f : Additive H →ᵇ ℝ) (Additive.ofMul x) :=
-  (rfl)
+@[simp] theorem ofAdditive_apply (f : AddUCB (Additive H)) (x : H) :
+    (ofAdditive H f : H →ᵇ ℝ) x = (f : Additive H →ᵇ ℝ) (Additive.ofMul x) := (rfl)
 
-@[simp]
-theorem ofAdditive_symm_apply (f : UCB H) (x : Additive H) :
-    ((ofAdditive H).symm f : Additive H →ᵇ ℝ) x = (f : H →ᵇ ℝ) x.toMul :=
-  (rfl)
+@[simp] theorem ofAdditive_symm_apply (f : UCB H) (x : Additive H) :
+    ((ofAdditive H).symm f : Additive H →ᵇ ℝ) x = (f : H →ᵇ ℝ) x.toMul := (rfl)
 
-@[simp]
-theorem norm_ofAdditive (f : AddUCB (Additive H)) :
-    ‖(ofAdditive H f : H →ᵇ ℝ)‖ = ‖(f : Additive H →ᵇ ℝ)‖ := by
-  refine le_antisymm ((f : Additive H →ᵇ ℝ).norm_compContinuous_le _) ?_
-  exact ((ofAdditive H f : H →ᵇ ℝ).norm_compContinuous_le ⟨Additive.toMul, continuous_toMul⟩)
+@[simp] theorem norm_ofAdditive (f : AddUCB (Additive H)) :
+    ‖(ofAdditive H f : H →ᵇ ℝ)‖ = ‖(f : Additive H →ᵇ ℝ)‖ :=
+  le_antisymm ((f : Additive H →ᵇ ℝ).norm_compContinuous_le _)
+    ((ofAdditive H f : H →ᵇ ℝ).norm_compContinuous_le ⟨Additive.toMul, continuous_toMul⟩)
 
-@[simp]
-theorem norm_ofAdditive_symm (f : UCB H) :
+@[simp] theorem norm_ofAdditive_symm (f : UCB H) :
     ‖((ofAdditive H).symm f : Additive H →ᵇ ℝ)‖ = ‖(f : H →ᵇ ℝ)‖ := by
   simpa only [AlgEquiv.apply_symm_apply] using (norm_ofAdditive ((ofAdditive H).symm f)).symm
 
 variable (H) in
 /-- `AddUCB.ofAdditive` as a linear isometry equivalence for the supremum norm. -/
-def ofAdditiveₗᵢ : AddUCB (Additive H) ≃ₗᵢ[ℝ] UCB H where
-  toLinearEquiv := (ofAdditive H).toLinearEquiv
-  norm_map' f := by simp
+def ofAdditiveₗᵢ : AddUCB (Additive H) ≃ₗᵢ[ℝ] UCB H :=
+  { (ofAdditive H).toLinearEquiv with norm_map' _ := by simp }
 
-@[simp]
-theorem ofAdditiveₗᵢ_apply (f : AddUCB (Additive H)) :
-    ofAdditiveₗᵢ H f = ofAdditive H f :=
-  (rfl)
+@[simp] theorem ofAdditiveₗᵢ_apply (f : AddUCB (Additive H)) :
+    ofAdditiveₗᵢ H f = ofAdditive H f := (rfl)
 
-@[simp]
-theorem ofAdditiveₗᵢ_symm_apply (f : UCB H) :
-    (ofAdditiveₗᵢ H).symm f = (ofAdditive H).symm f :=
-  (rfl)
+@[simp] theorem ofAdditiveₗᵢ_symm_apply (f : UCB H) :
+    (ofAdditiveₗᵢ H).symm f = (ofAdditive H).symm f := (rfl)
 
-@[simp]
-theorem ofAdditive_le_ofAdditive_iff {f g : AddUCB (Additive H)} :
-    ofAdditive H f ≤ ofAdditive H g ↔ f ≤ g := by
-  simp [AddUCB.le_def, UCB.le_def]
+@[simp] theorem ofAdditive_le_ofAdditive_iff {f g : AddUCB (Additive H)} :
+    ofAdditive H f ≤ ofAdditive H g ↔ f ≤ g := by simp [AddUCB.le_def, UCB.le_def]
 
-@[simp]
-theorem ofAdditive_symm_le_ofAdditive_symm_iff {f g : UCB H} :
-    (ofAdditive H).symm f ≤ (ofAdditive H).symm g ↔ f ≤ g := by
-  simp [AddUCB.le_def, UCB.le_def]
+@[simp] theorem ofAdditive_symm_le_ofAdditive_symm_iff {f g : UCB H} :
+    (ofAdditive H).symm f ≤ (ofAdditive H).symm g ↔ f ≤ g := by simp [AddUCB.le_def, UCB.le_def]
 
-@[simp]
-theorem ofAdditive_leftTranslation (h : H) (f : AddUCB (Additive H)) :
-    ofAdditive H (leftTranslation (Additive.ofMul h) f) =
-      UCB.leftTranslation h (ofAdditive H f) :=
+@[simp] theorem ofAdditive_leftTranslation (h : H) (f : AddUCB (Additive H)) :
+    ofAdditive H (leftTranslation (.ofMul h) f) = UCB.leftTranslation h (ofAdditive H f) :=
   UCB.ext fun _ => by simp
 
-@[simp]
-theorem ofAdditive_symm_leftTranslation (h : H) (f : UCB H) :
+@[simp] theorem ofAdditive_symm_leftTranslation (h : H) (f : UCB H) :
     (ofAdditive H).symm (UCB.leftTranslation h f) =
-      leftTranslation (Additive.ofMul h) ((ofAdditive H).symm f) :=
-  ext fun _ => by simp
+      leftTranslation (.ofMul h) ((ofAdditive H).symm f) := ext fun _ => by simp
 
-@[simp]
-theorem ofAdditive_compRightAlgHom (φ : H →ₜ* K) (f : AddUCB (Additive K)) :
-    ofAdditive H (compRightAlgHom φ.toAdditive f) =
-      UCB.compRightAlgHom φ (ofAdditive K f) :=
+@[simp] theorem ofAdditive_compRightAlgHom (φ : H →ₜ* K) (f : AddUCB (Additive K)) :
+    ofAdditive H (compRightAlgHom φ.toAdditive f) = UCB.compRightAlgHom φ (ofAdditive K f) :=
   UCB.ext fun _ => by simp
 
 end AddUCB
