@@ -149,7 +149,7 @@ theorem tensorAdicCompletionLinearMapEquiv_symm_apply_tmul (f : N →ₗ[R] E)
     (a : _root_.AdicCompletion (maximalIdeal R) R) (x : N) :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     (hι.tensorAdicCompletionLinearMapEquiv N).symm f (a ⊗ₜ x) = a • f x :=
-  AdicCompletion.torsionTensorLiftEquiv_apply_tmul hι.mem_primaryComponent f a x
+  a.torsionTensorLiftEquiv_apply_tmul hι.mem_primaryComponent f x
 
 end CompletionHomAdjunction
 

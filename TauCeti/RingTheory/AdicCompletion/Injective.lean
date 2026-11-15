@@ -367,7 +367,7 @@ def torsionTensorLiftEquiv :
     LinearEquiv.congrLeft M (_root_.AdicCompletion I R) (ofTensorProductEquiv I N).symm
 
 @[simp]
-theorem torsionTensorLiftEquiv_apply_tmul (f : N →ₗ[R] M)
+theorem _root_.AdicCompletion.torsionTensorLiftEquiv_apply_tmul (f : N →ₗ[R] M)
     (a : _root_.AdicCompletion I R) (x : N) :
     letI := torsionModule hM
     torsionTensorLiftEquiv hM f (a ⊗ₜ x) = a • f x := by
