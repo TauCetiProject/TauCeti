@@ -941,19 +941,19 @@ theorem IsNilvalent.nonempty_iso_iff {W₁ : ClosedWeb.{u}} {W₂ : ClosedWeb.{v
   ⟨fun ⟨f⟩ ↦ Nat.card_congr f.circleEquiv, fun h ↦
     ⟨h₁.isoCircles.trans ((nonempty_iso_circles_iff.2 h).some.trans h₂.isoCircles.symm)⟩⟩
 
-/-- The empty web and a single circle are different webs: both are nilvalent, but only the second
-has a circle. -/
-theorem not_nonempty_iso_empty_circles_punit :
-    ¬Nonempty ((∅ : ClosedWeb.{u}).Iso (circles PUnit.{v + 1})) := by
+/-- The empty web is not isomorphic to a nonempty web of circles, such as a single circle: both
+are nilvalent, but only the second has a circle. -/
+theorem not_nonempty_iso_empty_circles {C : Type v} [Finite C] [Nonempty C] :
+    ¬Nonempty ((∅ : ClosedWeb.{u}).Iso (circles C)) := by
   rw [empty_eq_circles, nonempty_iso_circles_iff]
-  simp
+  simpa using (Nat.card_pos (α := C)).ne
 
 /-! ### The theta web -/
 
 /-- A theta web: two vertices joined by three interval edges. Edges `0` and `1` run from vertex `0`
 to vertex `1` and edge `2` runs back, so vertex `0` is a split and vertex `1` a merge. The source
-end of an edge is `Sum.inl` and its target end `Sum.inr`. The rotation cycles through the ends of
-edges `0`, `1`, `2` at vertex `0` and through the ends of edges `0`, `2`, `1` at vertex `1`. -/
+end of an edge is `Sum.inl` and its target end `Sum.inr`. At each of the two vertices, the
+rotation cycles through the ends of edges `0`, `1`, `2` in this order. -/
 abbrev theta : ClosedWeb.{0} where
   Vertex := Fin 2
   Edge := Fin 3
@@ -966,7 +966,7 @@ abbrev theta : ClosedWeb.{0} where
     letI x : Fin 3 → Fin 3 ⊕ Fin 3 := Sum.inl
     letI y : Fin 3 → Fin 3 ⊕ Fin 3 := Sum.inr
     (Equiv.swap (x 0) (x 1) * Equiv.swap (x 1) (y 2)) *
-      (Equiv.swap (y 0) (x 2) * Equiv.swap (x 2) (y 1))
+      (Equiv.swap (y 0) (y 1) * Equiv.swap (y 1) (x 2))
   sumElim_bijective := by rw [Sum.elim_inl_inr]; exact bijective_id
   vertex_eq_vertex_iff {x y} := by
     refine ⟨fun h ↦ ?_, fun h ↦ h.apply_eq_of_apply_eq fun z ↦ by revert z; decide⟩
