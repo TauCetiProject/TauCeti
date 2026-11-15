@@ -48,7 +48,10 @@ the three paths, with traces `Path.transAssoc γ₁ γ₂ γ₃` (in `TauCeti.To
 On the loop space `Ω X x` these traces are natural for products of path classes
 (`HSpace.pathHmul_pathHmul_comp_transAssoc`), again by
 `FundamentalGroupoidFunctor.homotopicMapsNatIso`. For discs this says that placing three discs
-side by side does not depend on the bracketing, up to rebracketing their boundary loops.
+side by side does not depend on the bracketing, up to rebracketing their boundary loops. At the
+constant loop the associator is compatible with the transports along `e ⋀ e = e` and
+`(e ⋀ e) ⋀ e = e` (`HSpace.hmul_e_e_e`,
+`HSpace.transAssoc_refl_comp_pathHmul_id_eqToHom_comp_eqToHom`).
 
 ## References
 
@@ -89,6 +92,10 @@ theorem pathHmul_id (a b : Y) :
   rw [FundamentalGroupoid.id_eq_path_refl, FundamentalGroupoid.id_eq_path_refl,
     FundamentalGroupoid.id_eq_path_refl]
   exact congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)
+
+/-- The neutral element multiplied by itself twice, `(e ⋀ e) ⋀ e`, is `e`. -/
+theorem hmul_e_e_e : (((e : Y) ⋀ e) ⋀ e) = e :=
+  (congrArg (· ⋀ e) hmul_e_e).trans hmul_e_e
 
 /-- The product of two transports along equalities of points is a transport. -/
 @[simp]
@@ -318,5 +325,22 @@ theorem pathHmul_pathHmul_comp_transAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃
   induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
   rw [Path.transAssoc_def, Path.transAssoc_def]
   exact h
+
+/-- At the constant loop `c`, the associator `(c ⋀ c) ⋀ c ⟶ c ⋀ (c ⋀ c)` followed by the
+transports `c ⋀ (c ⋀ c) ⟶ c ⋀ c ⟶ c` along `c ⋀ c = c` is the transport along
+`(c ⋀ c) ⋀ c = c`. -/
+theorem transAssoc_refl_comp_pathHmul_id_eqToHom_comp_eqToHom :
+    Path.transAssoc (Path.refl x) (Path.refl x) (Path.refl x) ≫
+        pathHmul (𝟙 (⟨Path.refl x⟩ : FundamentalGroupoid (Path x x)))
+          (eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e)) ≫
+        eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) =
+      eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e_e) := by
+  rw [Path.transAssoc_refl]
+  -- The goal is type-correct only after unfolding the H-space structure of the loop space, whose
+  -- neutral element `e` is `Path.refl x`, so rewriting with `pathHmul_id_eqToHom` finds no
+  -- instance and the remaining steps are terms.
+  exact (congrArg (eqToHom _ ≫ · ≫ eqToHom _)
+    (pathHmul_id_eqToHom _ (congrArg FundamentalGroupoid.mk hmul_e_e))).trans
+      ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _))
 
 end HSpace

@@ -99,6 +99,11 @@ theorem reparamHomotopy_apply (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0
     (s : I) (γ : Path x y) :
     reparamHomotopy f hf hf₀ hf₁ (s, γ) = (Homotopy.reparam γ f hf hf₀ hf₁).eval s := (rfl)
 
+/-- The straight-line homotopy to a reparametrization fixes the constant path. -/
+theorem reparamHomotopy_refl (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1)
+    (s : I) : reparamHomotopy f hf hf₀ hf₁ (s, refl x) = refl x :=
+  (rfl)
+
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`
 does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops at once and fixes
 the constant loop. -/
@@ -204,6 +209,11 @@ theorem transAssoc_def (γ₁ : Path x₀ x₁) (γ₂ : Path x₁ x₂) (γ₃ 
     transAssoc γ₁ γ₂ γ₃ = ⟦transAssocHomotopy.evalAt (γ₁, γ₂, γ₃)⟧ :=
   (rfl)
 
+/-- The associativity homotopy fixes the triple of constant paths. -/
+theorem transAssocHomotopy_refl (θ : I) :
+    transAssocHomotopy (θ, (refl x, refl x, refl x)) = refl x := by
+  simp [transAssocHomotopy, -reparamHomotopy_apply, reparamHomotopy_refl]
+
 /-- At the constant paths the associator is the constant path, transported along
 `(c ⬝ c) ⬝ c = c ⬝ (c ⬝ c)`. -/
 @[simp]
@@ -212,15 +222,9 @@ theorem transAssoc_refl :
       CategoryTheory.eqToHom
         (congrArg FundamentalGroupoid.mk (by rw [refl_trans_refl, refl_trans_refl])) := by
   rw [FundamentalGroupoid.eqToHom_eq (by rw [refl_trans_refl, refl_trans_refl])]
-  refine congrArg Path.Homotopic.Quotient.mk
-    (Path.ext (funext fun θ => Path.ext (funext fun t => ?_)))
-  simp only [coe_mk, Homotopy.evalAt, transAssocHomotopy_apply, Homotopy.transAssoc,
-    Homotopy.reparam, coe_toContinuousMap, refl_trans_refl, coe_symm_eq, refl_apply, coe_mk',
-    Homotopy.eval_apply, Homotopy.curry_apply, HomotopyWith.coe_toHomotopy, Homotopy.symm_apply,
-    Homotopy.cast_apply, cast_coe]
-  -- What remains is the reparametrizing homotopy of the constant path, a structure literal
-  -- whose value is `x` by definition.
-  rfl
+  refine congrArg Path.Homotopic.Quotient.mk (Path.ext (funext fun θ => ?_))
+  rw [ContinuousMap.Homotopy.evalAt_apply, transAssocHomotopy_refl]
+  simp only [cast_coe, refl_apply, refl_trans_refl]
 
 /-! ### Prepending a path -/
 

@@ -86,15 +86,13 @@ three caps side by side on top of `W`. -/
 def glue₃ (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
     (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) : RawCap γ₀ :=
   W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
-    eqToHom (congrArg FundamentalGroupoid.mk
-      ((congrArg (· ⋀ HSpace.e) HSpace.hmul_e_e).trans HSpace.hmul_e_e))
+    eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e_e)
 
 theorem glue₃_def (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
     (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
     glue₃ W D₁ D₂ D₃ =
       W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
-        eqToHom (congrArg FundamentalGroupoid.mk
-          ((congrArg (· ⋀ HSpace.e) HSpace.hmul_e_e).trans HSpace.hmul_e_e)) :=
+        eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e_e) :=
   (rfl)
 
 /-- **Sewing a pair of pants into the first input.** Gluing caps along a pair of pants
@@ -115,8 +113,7 @@ theorem pantsGlue_pantsGlue_left (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) := by
         rw [pantsGlue_def, pantsGlue_def, h]
     _ = P ≫ HSpace.pathHmul P' (𝟙 _) ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
-          eqToHom (congrArg FundamentalGroupoid.mk
-            ((congrArg (· ⋀ HSpace.e) HSpace.hmul_e_e).trans HSpace.hmul_e_e)) := by
+          eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e_e) := by
         rw [HSpace.pathHmul_eqToHom_id (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)]
         simp only [Category.assoc, eqToHom_trans]
     -- The four-holed sphere `P ≫ (P' ⋀ 𝟙)` ends at `(γ₁ ⬝ γ₂) ⋀ γ₃` and the gluing map starts at
@@ -140,24 +137,16 @@ theorem glue₃_eq_pantsGlue_pantsGlue_right
       HSpace.pathHmul (𝟙 _) Q' ≫ HSpace.pathHmul D₁ (HSpace.pathHmul D₂ D₃) ≫
         HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) := by
     rw [← HSpace.pathHmul_comp, ← HSpace.pathHmul_comp, Category.id_comp, Category.comp_id]
-  have ht : Path.transAssoc (Path.refl x) (Path.refl x) (Path.refl x) ≫
-      HSpace.pathHmul (𝟙 (⟨Path.refl x⟩ : FundamentalGroupoid (Ω X x)))
-        (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) ≫
-      eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) =
-      eqToHom (congrArg FundamentalGroupoid.mk
-        ((congrArg (· ⋀ HSpace.e) HSpace.hmul_e_e).trans HSpace.hmul_e_e)) := by
-    rw [Path.transAssoc_refl]
-    exact (congrArg (eqToHom _ ≫ · ≫ eqToHom _)
-      (HSpace.pathHmul_id_eqToHom _ (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e))).trans
-        ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _))
   -- As in `pantsGlue_pantsGlue_left`, the objects `(γ₁ ⬝ γ₂) ⬝ γ₃` and `(γ₁ ⋀ γ₂) ⋀ γ₃` only agree
-  -- after unfolding the product of the loop space, so the reassociations are terms.
+  -- after unfolding the product of the loop space, so the reassociations, including the one
+  -- around `hW`, are terms.
   calc glue₃ W D₁ D₂ D₃
       = W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫
           Path.transAssoc (Path.refl x) (Path.refl x) (Path.refl x) ≫
           HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) ≫
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) :=
-        congrArg (W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫ ·) ht.symm
+        congrArg (W ≫ HSpace.pathHmul (HSpace.pathHmul D₁ D₂) D₃ ≫ ·)
+          HSpace.transAssoc_refl_comp_pathHmul_id_eqToHom_comp_eqToHom.symm
     _ = W ≫ Path.transAssoc γ₁ γ₂ γ₃ ≫ HSpace.pathHmul D₁ (HSpace.pathHmul D₂ D₃) ≫
           HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e)) ≫
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) :=
@@ -168,10 +157,9 @@ theorem glue₃_eq_pantsGlue_pantsGlue_right
           eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) := (Category.assoc _ _ _).symm
     _ = Q ≫ (HSpace.pathHmul (𝟙 _) Q' ≫ HSpace.pathHmul D₁ (HSpace.pathHmul D₂ D₃) ≫
           HSpace.pathHmul (𝟙 _) (eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e))) ≫
-          eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) := by
-        rw [hW]
-        simp only [Category.assoc]
-        rfl
+          eqToHom (congrArg FundamentalGroupoid.mk HSpace.hmul_e_e) :=
+        (congrArg (· ≫ _) hW).trans ((Category.assoc _ _ _).trans (congrArg (Q ≫ ·)
+          ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).symm.trans (Category.assoc _ _ _).symm)))
     _ = pantsGlue Q D₁ (pantsGlue Q' D₂ D₃) := by rw [pantsGlue_def, pantsGlue_def, h]
 
 /-- Gluing caps along a four-holed sphere `W` is gluing them along `W`, read as a pair of pants
