@@ -458,8 +458,8 @@ private theorem dysonSeriesLeft_apply_mem_twistedContDiff (hM : Continuous M)
   refine ⟨contDiff_one_iff_deriv.2 ⟨fun t => (hΨ t).differentiableAt, ?_⟩, fun t => ?_⟩
   · rw [funext fun t => (hΨ t).deriv]
     exact hM.clm_apply ((continuous_dysonSeriesLeft hM).clm_apply continuous_const)
-  beta_reduce
-  rw [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, hPx, map_smul]
+  simpa using dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hM hper (n := 1)
+    (by simpa using hPx) t
 
 /-- **The kernel of `L` is the kernel of `ε - Ψ(d)`.** Evaluation at `0` is a linear equivalence
 from the twisted solutions of `w' = M w` onto the vectors `x` with `Ψ(d) x = ε • x`; the inverse
