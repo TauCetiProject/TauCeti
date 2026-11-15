@@ -24,7 +24,8 @@ positive integral, bounds for the integral of the reciprocal of a function bound
 positive constant, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+unions with disjoint sets, and identifies the integrals over two measurable sets of a function
+vanishing off their intersection.
 
 ## Main statements
 
@@ -50,6 +51,8 @@ unions with disjoint sets.
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `MeasureTheory.setIntegral_eq_setIntegral_of_forall_sdiff_eq_zero`: a function vanishing on
+  `s \ t` and on `t \ s` has the same integral over the measurable sets `s` and `t`.
 -/
 
 public section
@@ -272,5 +275,15 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+/-- If `f` vanishes on `s \ t` and on `t \ s`, for measurable sets `s` and `t`, then its
+integrals over `s` and `t` agree. -/
+theorem setIntegral_eq_setIntegral_of_forall_sdiff_eq_zero {f : α → E} {s t : Set α}
+    (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : ∀ x ∈ s \ t, f x = 0)
+    (hts : ∀ x ∈ t \ s, f x = 0) : ∫ x in s, f x ∂μ = ∫ x in t, f x ∂μ := by
+  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hs inter_subset_left
+      fun x hx ↦ hst x ⟨hx.1, fun h ↦ hx.2 ⟨hx.1, h⟩⟩,
+    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero ht inter_subset_right
+      fun x hx ↦ hts x ⟨hx.1, fun h ↦ hx.2 ⟨h, hx.1⟩⟩]
 
 end MeasureTheory
