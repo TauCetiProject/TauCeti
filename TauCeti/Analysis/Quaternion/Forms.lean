@@ -104,13 +104,52 @@ theorem dq_single (i : Fin 4) (r : ℝ) :
 theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm :=
   (rfl)
 
+/-- Applying `dq` to the coordinates of `q` recovers `q`. -/
+theorem dq_linearEquivTuple (q : ℍ) :
+    dq (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q) = q :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm_apply_apply q
+
+/-- Taking coordinates of `dq x` recovers `x`. -/
+theorem linearEquivTuple_dq (x : Fin 4 → ℝ) :
+    QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) (dq x) = x :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
 /-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
 `EuclideanSpace ℝ (Fin 4)`. -/
 theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
   rw [← _root_.Quaternion.norm_toLp_equivTuple]
   congr 2
-  simp only [coe_dq, _root_.Quaternion.equivTuple]
-  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+  exact linearEquivTuple_dq x
+
+/-- Each coordinate of `x : Fin 4 → ℝ` is bounded in absolute value by the Euclidean norm of
+`dq x`. -/
+theorem abs_apply_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x‖ := by
+  simpa [norm_dq, Real.norm_eq_abs] using PiLp.norm_apply_le (WithLp.toLp 2 x) i
+
+/-- In four dimensions, a uniform coordinate bound `|x i| ≤ d` implies the Euclidean norm bound
+`‖dq x‖ ≤ 2 * d` (since `√(4 d²) = 2 d`). -/
+theorem norm_dq_le_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hd : 0 ≤ d) (hx : ∀ i, |x i| ≤ d) :
+    ‖dq x‖ ≤ 2 * d := by
+  refine (mul_self_le_mul_self_iff (b := 2 * d) (norm_nonneg (dq x)) (by positivity)).2 ?_
+  rw [← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
+  have hsq (i : Fin 4) : x i ^ 2 ≤ d ^ 2 := by
+    simpa [sq_abs] using sq_le_sq.2 ((hx i).trans (le_abs_self d))
+  have h0 := hsq 0; have h1 := hsq 1; have h2 := hsq 2; have h3 := hsq 3
+  simp only [dq_apply]
+  linarith
+
+/-- Strict four-dimensional coordinate-to-Euclidean norm bound: if `|x i| < d` for all `i`, then
+`‖dq x‖ < 2 * d`. -/
+theorem norm_dq_lt_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| < d) :
+    ‖dq x‖ < 2 * d := by
+  have hd : 0 < d := (abs_nonneg (x 0)).trans_lt (hx 0)
+  refine (mul_self_lt_mul_self_iff (b := 2 * d) (norm_nonneg (dq x)) (by positivity)).2 ?_
+  rw [← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
+  have hsq (i : Fin 4) : x i ^ 2 < d ^ 2 := by
+    simpa [sq_abs] using sq_lt_sq.2 ((hx i).trans_le (le_abs_self d))
+  have h0 := hsq 0; have h1 := hsq 1; have h2 := hsq 2; have h3 := hsq 3
+  simp only [dq_apply]
+  linarith
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/

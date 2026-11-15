@@ -258,6 +258,10 @@ namespace LeftFueterAt
 theorem differentiableAt (hf : LeftFueterAt f q) : DifferentiableAt ℝ f q :=
   (leftFueterAt_iff.1 hf).1
 
+/-- A left regular function is continuous at the point. -/
+theorem continuousAt (hf : LeftFueterAt f q) : ContinuousAt f q :=
+  hf.differentiableAt.continuousAt
+
 /-- The left Fueter equation holds for the derivative `fderiv ℝ f q`. -/
 theorem fueterLeft_fderiv (hf : LeftFueterAt f q) : fueterLeft (fderiv ℝ f q) = 0 :=
   (leftFueterAt_iff.1 hf).2
@@ -306,6 +310,10 @@ namespace RightFueterAt
 /-- A right regular function is real differentiable at the point. -/
 theorem differentiableAt (hf : RightFueterAt f q) : DifferentiableAt ℝ f q :=
   (rightFueterAt_iff.1 hf).1
+
+/-- A right regular function is continuous at the point. -/
+theorem continuousAt (hf : RightFueterAt f q) : ContinuousAt f q :=
+  hf.differentiableAt.continuousAt
 
 /-- The right Fueter equation holds for the derivative `fderiv ℝ f q`. -/
 theorem fueterRight_fderiv (hf : RightFueterAt f q) : fueterRight (fderiv ℝ f q) = 0 :=
@@ -476,6 +484,10 @@ theorem mono (hf : LeftFueterOn f t) (hst : s ⊆ t) : LeftFueterOn f s :=
 theorem differentiableOn (hf : LeftFueterOn f s) : DifferentiableOn ℝ f s :=
   fun q hq ↦ (hf q hq).differentiableAt.differentiableWithinAt
 
+/-- A left regular function on a set is continuous on that set. -/
+theorem continuousOn (hf : LeftFueterOn f s) : ContinuousOn f s :=
+  fun q hq ↦ (hf q hq).continuousAt.continuousWithinAt
+
 end LeftFueterOn
 
 namespace RightFueterOn
@@ -485,6 +497,10 @@ theorem mono (hf : RightFueterOn f t) (hst : s ⊆ t) : RightFueterOn f s :=
 
 theorem differentiableOn (hf : RightFueterOn f s) : DifferentiableOn ℝ f s :=
   fun q hq ↦ (hf q hq).differentiableAt.differentiableWithinAt
+
+/-- A right regular function on a set is continuous on that set. -/
+theorem continuousOn (hf : RightFueterOn f s) : ContinuousOn f s :=
+  fun q hq ↦ (hf q hq).continuousAt.continuousWithinAt
 
 end RightFueterOn
 
