@@ -184,19 +184,16 @@ noncomputable def stabilizeXSuccHomologyEquiv :
     (G.stabilizeX s.succ (G.X s).succ s).unblockedHomology R ≃ₗ[R]
       G.unblockedHomology R :=
   LinearEquiv.ofBijective
-    { toFun := G.stabilizeXSuccHomologyMap s R
-      map_add' := map_add _
-      map_smul' := fun r y => by
-        simpa only [AlgHom.coe_toRingHom, AlgHom.commutes, algebraMap_smul,
-          RingHom.id_apply] using
-          (G.stabilizeXSuccHomologyMap s R).map_smulₛₗ (algebraMap R S r) y }
-    (G.stabilizeXSuccHomologyMap_bijective s R)
+    ((G.stabilizeXSuccHomologyMap s R).restrictScalarsOfCommutes R
+      fun _ ↦ by rw [RingHom.coe_coe, AlgHom.commutes])
+    (by simpa using G.stabilizeXSuccHomologyMap_bijective s R)
 
 /-- The forward equivalence is the semilinear homology comparison. -/
 @[simp]
 theorem stabilizeXSuccHomologyEquiv_apply
     (y : (G.stabilizeX s.succ (G.X s).succ s).unblockedHomology R) :
-    G.stabilizeXSuccHomologyEquiv s R y = G.stabilizeXSuccHomologyMap s R y := (rfl)
+    G.stabilizeXSuccHomologyEquiv s R y = G.stabilizeXSuccHomologyMap s R y := by
+  simp [stabilizeXSuccHomologyEquiv]
 
 end GridDiagram
 

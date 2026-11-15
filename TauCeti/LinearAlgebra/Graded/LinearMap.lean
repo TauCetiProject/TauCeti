@@ -142,6 +142,13 @@ theorem IsHomogeneous.smul [DistribSMul S N] [SMulCommClass R S N]
   intro p x hx
   simpa using SMulMemClass.smul_mem s (hf hx)
 
+/-- Restricting scalars of a homogeneous linear map preserves its degree. -/
+theorem IsHomogeneous.restrictScalars (R₀ : Type*) [Semiring R₀] [Module R₀ M] [Module R₀ N]
+    [_root_.LinearMap.CompatibleSMul M N R₀ R] {f : M →ₗ[R] N} {𝒜 : ι → σM} {ℬ : ι → σN} {q : ι}
+    (hf : IsHomogeneous f 𝒜 ℬ q) :
+    IsHomogeneous (f.restrictScalars R₀) 𝒜 ℬ q :=
+  hf
+
 /-- Linear maps of a fixed degree form a submodule over any scalar ring acting on the target. -/
 def homogeneousSubmodule [Semiring S] [Module S N] [SMulCommClass R S N]
     [AddSubmonoidClass σN N] [SMulMemClass σN S N] (𝒜 : ι → σM)

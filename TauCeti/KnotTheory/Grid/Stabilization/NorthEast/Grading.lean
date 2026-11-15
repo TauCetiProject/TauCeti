@@ -25,8 +25,11 @@ is required only to use integer Alexander degrees.
 
 ## References
 
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.3 and 5.2;
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.3, 4.6 and 5.2;
 Manolescu--Ozsváth--Szabó--Thurston, *On combinatorial link Floer homology*, Section 3.2.
+The homology piece equivalences adapt the south-west stabilization comparison in
+`TauCeti.KnotTheory.Grid.Stabilization.Bigraded`
+(`OddComponentGridDiagram.stabilizeXHomologyPieceEquiv`).
 -/
 
 public section
@@ -113,6 +116,17 @@ theorem stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ ×
   exact G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
     (G.stabilizeXSuccChainMap_mem_bigradedChainMinusPiece s R hz)
 
+private theorem isHomogeneous_stabilizeXSuccHomologyEquiv :
+    LinearMap.IsHomogeneous (G.1.stabilizeXSuccHomologyEquiv s R).toLinearMap
+      ((G.stabilizeXSucc s).bigradedUnblockedHomologyGrading R).piece
+      (G.bigradedUnblockedHomologyGrading R).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p z hz
+  rw [bigradedUnblockedHomologyGrading_piece] at hz
+  simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
+    LinearEquiv.coe_coe, GridDiagram.stabilizeXSuccHomologyEquiv_apply] using
+    G.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece s R hz
+
 /-- The north-east stabilization comparison reflects homology bidegrees as well as preserving
 them. -/
 @[simp]
@@ -120,43 +134,20 @@ theorem stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece_iff (g : �
     (y : (G.stabilizeXSucc s).1.unblockedHomology R) :
     G.1.stabilizeXSuccHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g ↔
       y ∈ (G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g := by
-  have he : LinearMap.IsHomogeneous (G.1.stabilizeXSuccHomologyEquiv s R).toLinearMap
-      ((G.stabilizeXSucc s).bigradedUnblockedHomologyGrading R).piece
-      (G.bigradedUnblockedHomologyGrading R).piece 0 := by
-    rw [LinearMap.isHomogeneous_def]
-    intro p z hz
-    rw [bigradedUnblockedHomologyGrading_piece] at hz
-    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
-      LinearEquiv.coe_coe, GridDiagram.stabilizeXSuccHomologyEquiv_apply] using
-      G.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece s R hz
-  constructor
-  · intro hy
-    rw [← bigradedUnblockedHomologyGrading_piece,
-      ← GridDiagram.stabilizeXSuccHomologyEquiv_apply] at hy
-    have h := he.linearEquiv_symm.map_mem hy
-    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
-      LinearEquiv.coe_coe, ← GridDiagram.stabilizeXSuccHomologyEquiv_apply,
-      LinearEquiv.symm_apply_apply] using h
-  · exact G.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece s R
-
-private theorem map_stabilizeXSuccHomologyEquiv_piece (g : ℤ × ℤ) :
-    Submodule.map (G.1.stabilizeXSuccHomologyEquiv s R).toLinearMap
-      ((G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g) =
-      G.bigradedUnblockedHomologyPiece R g := by
-  ext y
-  rw [Submodule.mem_map_equiv]
-  have h := G.stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece_iff s R g
-    ((G.1.stabilizeXSuccHomologyEquiv s R).symm y)
-  rw [← GridDiagram.stabilizeXSuccHomologyEquiv_apply, LinearEquiv.apply_symm_apply] at h
-  exact h.symm
+  simpa only [bigradedUnblockedHomologyGrading_piece,
+    GridDiagram.stabilizeXSuccHomologyEquiv_apply] using
+    (G.isHomogeneous_stabilizeXSuccHomologyEquiv s R).linearEquiv_mem_piece_iff
+      (p := g) (x := y)
 
 /-- The specified north-east stabilization comparison identifies each homogeneous homology piece
 with the piece of the same bidegree in the original grid. -/
 noncomputable def stabilizeXSuccHomologyPieceEquiv (g : ℤ × ℤ) :
     (G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g ≃ₗ[R]
       G.bigradedUnblockedHomologyPiece R g :=
-  (G.1.stabilizeXSuccHomologyEquiv s R).ofSubmodules _ _
-    (G.map_stabilizeXSuccHomologyEquiv_piece s R g)
+  ((LinearEquiv.ofEq _ _
+    ((G.stabilizeXSucc s).bigradedUnblockedHomologyGrading_piece R g).symm).trans
+    ((G.isHomogeneous_stabilizeXSuccHomologyEquiv s R).pieceLinearEquiv g)).trans
+    (LinearEquiv.ofEq _ _ (G.bigradedUnblockedHomologyGrading_piece R g))
 
 /-- On homogeneous classes, the piece equivalence is the specified homology comparison. -/
 @[simp]
@@ -164,8 +155,7 @@ theorem coe_stabilizeXSuccHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g) :
     (G.stabilizeXSuccHomologyPieceEquiv s R g y : G.1.unblockedHomology R) =
       G.1.stabilizeXSuccHomologyMap s R y := by
-  rw [stabilizeXSuccHomologyPieceEquiv, LinearEquiv.ofSubmodules_apply,
-    GridDiagram.stabilizeXSuccHomologyEquiv_apply]
+  simp [stabilizeXSuccHomologyPieceEquiv]
 
 /-- The inverse piece comparison is the inverse of the specified total homology equivalence. -/
 @[simp]
@@ -174,6 +164,6 @@ theorem coe_stabilizeXSuccHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     ((G.stabilizeXSuccHomologyPieceEquiv s R g).symm y :
         (G.stabilizeXSucc s).1.unblockedHomology R) =
       (G.1.stabilizeXSuccHomologyEquiv s R).symm y := by
-  rw [stabilizeXSuccHomologyPieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
+  simp [stabilizeXSuccHomologyPieceEquiv]
 
 end TauCeti.OddComponentGridDiagram

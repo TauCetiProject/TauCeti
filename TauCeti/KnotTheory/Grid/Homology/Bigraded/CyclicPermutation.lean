@@ -119,16 +119,9 @@ noncomputable def bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv (g : ℤ
     (fun _ => (G.unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff R).symm)
   map_add' x y := Subtype.ext
     ((G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R).map_add x y)
-  map_smul' r y := Subtype.ext (by
-    have hr : ((renameEquiv R (finRotate n)).toRingEquiv :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)
-          (algebraMap R (MvPolynomial (Fin n) R) r) =
-        algebraMap R (MvPolynomial (Fin n) R) r :=
-      (renameEquiv R (finRotate n)).commutes r
-    have h := (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R).map_smulₛₗ
-      (algebraMap R (MvPolynomial (Fin n) R) r) y
-    rw [hr, algebraMap_smul, algebraMap_smul] at h
-    exact h)
+  map_smul' r y := Subtype.ext
+    (SemilinearMapClass.map_smul_of_commutes (renameEquiv R (finRotate n)).commutes
+      (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R) r (y : G.1.unblockedHomology R))
 
 /-- On underlying classes the column-piece equivalence is the original column equivalence. -/
 @[simp]

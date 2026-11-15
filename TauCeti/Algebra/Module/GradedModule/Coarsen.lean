@@ -39,6 +39,8 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
   when its components outside the fibre over `k` vanish.
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
+* `TauCeti.coarsenGrading_fst` and `TauCeti.coarsenGrading_snd`: coarsening a product-indexed
+  grading along a coordinate projection takes the supremum over the other coordinate.
 * `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
 -/
 
@@ -106,6 +108,21 @@ theorem coarsenGrading_coarsenGrading {ν : Type*} (ℳ : ι → Submodule R M) 
   · exact le_coarsenGrading ℳ (g ∘ f) i |>.trans_eq (by rw [Function.comp_apply, hi, hk])
   · exact (le_coarsenGrading ℳ f i).trans
       (le_coarsenGrading (coarsenGrading ℳ f) g (f i) |>.trans_eq (by rw [← hi]; rfl))
+
+/-- Coarsening a product-indexed family along `Prod.fst` takes the supremum over the second
+coordinate. -/
+@[simp]
+theorem coarsenGrading_fst (ℳ : ι × κ → Submodule R M) (i : ι) :
+    coarsenGrading ℳ Prod.fst i = ⨆ k : κ, ℳ (i, k) := by
+  rw [coarsenGrading_apply, iSup_prod, iSup_comm]
+  simp
+
+/-- Coarsening a product-indexed family along `Prod.snd` takes the supremum over the first
+coordinate. -/
+@[simp]
+theorem coarsenGrading_snd (ℳ : ι × κ → Submodule R M) (k : κ) :
+    coarsenGrading ℳ Prod.snd k = ⨆ i : ι, ℳ (i, k) := by
+  simp [coarsenGrading_apply, iSup_prod]
 
 variable [DecidableEq ι] [DecidableEq κ]
 

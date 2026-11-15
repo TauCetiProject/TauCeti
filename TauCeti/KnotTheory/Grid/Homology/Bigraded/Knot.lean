@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Coarsen
-public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Finite
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Homology.Tau
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import TauCeti.KnotTheory.Grid.Homology.Bigraded.Finite
 
 /-!
 # The Maslov--Alexander bigrading on knot grid homology over `R[U]`
@@ -20,6 +22,13 @@ variable acts as `U`, so multiplication by `U` lowers bidegree by `(2, 1)`
 (`GridDiagram.IsKnot.X_smul_mem_bigradedUnblockedHomologyGrading_piece`). Projecting bidegrees onto
 their second coordinate recovers `GridDiagram.IsKnot.alexanderUnblockedHomologyGrading`.
 
+On any grid diagram with an odd number of components whose `X`-marking state receives an even
+number of counted rectangles from every grid state, each monomial multiple `V^e • λ⁻` witnesses
+positive ground-ring `finrank` in bidegree `bidegree X - (2 |e|, |e|)` over a Noetherian ring of
+characteristic two (`OddComponentGridDiagram.finrank_bigradedUnblockedHomologyPiece_pos`), giving a
+positive-`finrank` `U`-tower on knot grids
+(`GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_pos`).
+
 Two knot grids, possibly of different sizes, have isomorphic `GH⁻` as Maslov--Alexander bigraded
 `R[U]`-modules (`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic`) when some `R[U]`-linear
 equivalence between their homologies preserves bidegrees. Coarsening along `Prod.snd` shows that
@@ -29,13 +38,19 @@ bidegree gives `R`-linear equivalences on all homogeneous pieces
 (`BigradedUnblockedHomologyIsomorphic.nonempty_piece_linearEquiv`), hence equal piece `finrank`s
 (`BigradedUnblockedHomologyIsomorphic.finrank_piece_eq`).
 
-As for the Alexander-only relation, grid-move maps that are bijective, bidegree-preserving, and
-semilinear along a polynomial ring homomorphism commuting with the specialization `V_j ↦ U`
-witness the bigraded isomorphism (`BigradedUnblockedHomologyIsomorphic.of_semilinearMap`).
+Adapting the Alexander-graded isomorphism API `GridDiagram.IsKnot.UnblockedHomologyIsomorphic` and
+`GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap` in
+`TauCeti.KnotTheory.Grid.Homology.KnotAlexander`, grid-move maps that are bijective,
+bidegree-preserving, and semilinear along a polynomial ring homomorphism commuting with the
+specialization `V_j ↦ U` witness the bigraded isomorphism
+(`BigradedUnblockedHomologyIsomorphic.of_semilinearMap`).
 
 ## References
 
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.3, 4.6 and Chapter 5.
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.3, 4.6 and Chapters 5
+and 6. The bigraded `R[U]`-isomorphism relation closely adapts
+`TauCeti.KnotTheory.Grid.Homology.KnotAlexander` (`GridDiagram.IsKnot.UnblockedHomologyIsomorphic`
+and `GridDiagram.IsKnot.UnblockedHomologyIsomorphic.of_semilinearMap`).
 -/
 
 public section
@@ -43,6 +58,53 @@ public section
 open MvPolynomial
 
 namespace TauCeti
+
+namespace OddComponentGridDiagram
+
+/-- On a grid diagram with an odd number of link components, the class of the `X`-marking state is
+homogeneous of bidegree `(M_O(G.1.X), A(G.1.X))`. -/
+theorem XMarkingClass_mem_bigradedUnblockedHomologyPiece {n : ℕ}
+    (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2] :
+    G.1.XMarkingClass R ∈ G.bigradedUnblockedHomologyPiece R (G.bidegree G.1.X) := by
+  rw [G.1.XMarkingClass_def]
+  refine G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ?_
+  rw [G.1.coe_XMarkingCycle]
+  exact G.single_one_mem_bigradedChainMinusPiece R G.1.X
+
+/-- On an odd-component grid diagram whose `X`-marking state receives an even number of counted
+rectangles from every grid state, every monomial multiple `V^e • λ⁻` witnesses positive `finrank`
+in bidegree `bidegree X - (2 |e|, |e|)` over any Noetherian commutative ring of characteristic
+two. -/
+theorem finrank_bigradedUnblockedHomologyPiece_pos {n : ℕ} (G : OddComponentGridDiagram n)
+    (K : Type*) [CommRing K] [CharP K 2] [IsNoetherianRing K]
+    (hX : ∀ x : GridState n, Even (G.1.unblockedRectangles x G.1.X).card) (e : Fin n →₀ ℕ) :
+    0 < Module.finrank K
+      (G.bigradedUnblockedHomologyPiece K
+        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ)))) := by
+  have : Nontrivial K := CharP.nontrivial_of_char_ne_one (v := 2) (by decide)
+  have hmem : (monomial e (1 : K)) • G.1.XMarkingClass K ∈
+      G.bigradedUnblockedHomologyPiece K
+        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ))) :=
+    G.monomial_smul_mem_bigradedUnblockedHomologyPiece K e 1
+      (G.XMarkingClass_mem_bigradedUnblockedHomologyPiece K)
+  have hinj : Function.Injective (LinearMap.toSpanSingleton K
+      (G.bigradedUnblockedHomologyPiece K
+        (G.bidegree G.1.X - (2 * (e.degree : ℤ), (e.degree : ℤ))))
+      ⟨(monomial e (1 : K)) • G.1.XMarkingClass K, hmem⟩) := by
+    intro r₁ r₂ hr
+    have hr' : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) K) • G.1.XMarkingClass K = 0 := by
+      have hval : (r₁ - r₂) • ((monomial e (1 : K)) • G.1.XMarkingClass K) = 0 := by
+        have hcoe := congrArg Subtype.val hr
+        simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
+        rwa [sub_smul, sub_eq_zero]
+      rwa [← algebraMap_smul (MvPolynomial (Fin n) K), smul_smul, algebraMap_eq,
+        C_mul_monomial, mul_one] at hval
+    exact sub_eq_zero.mp (G.1.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K hX hr')
+  have hle := LinearMap.finrank_le_finrank_of_injective hinj
+  rw [Module.finrank_self] at hle
+  exact Nat.lt_of_lt_of_le Nat.zero_lt_one hle
+
+end OddComponentGridDiagram
 
 namespace GridDiagram.IsKnot
 
@@ -61,6 +123,21 @@ theorem bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
       hG.toOddComponentGridDiagram.bigradedUnblockedHomologyPiece R g := by
   rw [bigradedUnblockedHomologyGrading,
     OddComponentGridDiagram.bigradedUnblockedHomologyGrading_piece]
+
+/-- Over a Noetherian commutative ring of characteristic two, each homogeneous piece of a knot
+grid's bundled bigrading on `GH⁻` is finitely generated over the ground ring. -/
+instance finite_bigradedUnblockedHomologyGrading_piece [IsNoetherianRing R] (g : ℤ × ℤ) :
+    Module.Finite R ((hG.bigradedUnblockedHomologyGrading R).piece g) := by
+  rw [bigradedUnblockedHomologyGrading_piece]
+  exact hG.toOddComponentGridDiagram.finite_bigradedUnblockedHomologyPiece R g
+
+/-- The degree-`g` piece of a knot grid's bigrading agrees with `bigradedUnblockedHomologyPiece`
+computed with any odd-component witness on the same underlying diagram. -/
+theorem bigradedUnblockedHomologyGrading_piece_eq_mk
+    (hodd : Odd G.componentCount) (g : ℤ × ℤ) :
+    (hG.bigradedUnblockedHomologyGrading R).piece g =
+      OddComponentGridDiagram.bigradedUnblockedHomologyPiece ⟨G, hodd⟩ R g := by
+  rw [bigradedUnblockedHomologyGrading_piece]
 
 /-- Coarsening a knot grid's `(O-Maslov, Alexander)` bigrading along `Prod.snd` recovers its
 Alexander grading. -/
@@ -113,10 +190,21 @@ theorem XMarkingClass_mem_bigradedUnblockedHomologyGrading_piece :
     G.XMarkingClass R ∈
       (hG.bigradedUnblockedHomologyGrading R).piece
         (hG.toOddComponentGridDiagram.bidegree G.X) := by
-  rw [bigradedUnblockedHomologyGrading_piece, G.XMarkingClass_def]
-  refine hG.toOddComponentGridDiagram.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ?_
-  rw [G.coe_XMarkingCycle]
-  exact hG.toOddComponentGridDiagram.single_one_mem_bigradedChainMinusPiece R G.X
+  rw [bigradedUnblockedHomologyGrading_piece]
+  exact hG.toOddComponentGridDiagram.XMarkingClass_mem_bigradedUnblockedHomologyPiece R
+
+/-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from every
+grid state, each `U ^ k • λ⁻` witnesses positive `finrank` in bidegree `bidegree X - (2k, k)` over
+any Noetherian commutative ring of characteristic two. -/
+theorem finrank_bigradedUnblockedHomologyGrading_piece_pos [IsNoetherianRing R]
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (k : ℕ) :
+    0 < Module.finrank R ((hG.bigradedUnblockedHomologyGrading R).piece
+      (hG.toOddComponentGridDiagram.bidegree G.X - (2 * (k : ℤ), (k : ℤ)))) := by
+  let i : Fin n := ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩
+  rw [bigradedUnblockedHomologyGrading_piece]
+  have h := hG.toOddComponentGridDiagram.finrank_bigradedUnblockedHomologyPiece_pos R hX
+    (Finsupp.single i k)
+  rwa [Finsupp.degree_single] at h
 
 end GridDiagram.IsKnot
 
@@ -202,11 +290,7 @@ theorem BigradedUnblockedHomologyIsomorphic.unblockedHomologyIsomorphic
   have := hG'.isScalarTower_unblockedHomology (R := R)
   obtain ⟨e, he⟩ := h
   refine ⟨e, LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
-  have heR : LinearMap.IsHomogeneous (e.restrictScalars R).toLinearMap
-      (hG.bigradedUnblockedHomologyGrading R).piece
-      (hG'.bigradedUnblockedHomologyGrading R).piece 0 :=
-    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ he.map_mem hy
-  have hcoarsen := heR.coarsenGrading (AddMonoidHom.snd ℤ ℤ)
+  have hcoarsen := (he.restrictScalars R).coarsenGrading (AddMonoidHom.snd ℤ ℤ)
   rw [← coarsen_bigradedUnblockedHomologyGrading_snd, InternalGrading.coarsen_piece] at hy ⊢
   exact hcoarsen.map_mem hy
 
@@ -227,18 +311,8 @@ theorem BigradedUnblockedHomologyIsomorphic.nonempty_piece_linearEquiv
   have := hG.isScalarTower_unblockedHomology (R := R)
   have := hG'.isScalarTower_unblockedHomology (R := R)
   obtain ⟨e, he⟩ := h
-  have heR : LinearMap.IsHomogeneous (e.restrictScalars R).toLinearMap
-      (hG.bigradedUnblockedHomologyGrading R).piece
-      (hG'.bigradedUnblockedHomologyGrading R).piece 0 :=
-    LinearMap.isHomogeneous_def.mpr fun p y hy ↦ he.map_mem hy
-  have heR_symm := heR.linearEquiv_symm
-  refine ⟨(e.restrictScalars R).ofSubmodules _ _ ?_⟩
-  ext y
-  rw [Submodule.mem_map_equiv]
-  exact ⟨fun hy ↦ by
-      simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-        heR.map_mem hy,
-    fun hy ↦ by simpa only [add_zero, LinearEquiv.coe_coe] using heR_symm.map_mem hy⟩
+  exact ⟨LinearMap.IsHomogeneous.pieceLinearEquiv (e := e.restrictScalars R)
+    (he.restrictScalars R) g⟩
 
 /-- Knot grids with isomorphic bigraded `GH⁻` have equal ground-ring `finrank` in every
 Maslov--Alexander bidegree. -/

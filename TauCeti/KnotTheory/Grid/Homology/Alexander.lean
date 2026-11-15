@@ -44,6 +44,10 @@ the Alexander grading. For a knot, every variable acts as `U`; the resulting deg
 * `TauCeti.OddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece`: if an
   equivalence intertwining two unblocked differentials preserves the Alexander grading of chains,
   the induced equivalence of `GH⁻` preserves the Alexander grading.
+* `TauCeti.OddComponentGridDiagram.finite_alexanderHomologyGrading_piece` and
+  `TauCeti.OddComponentGridDiagram.finite_alexanderUnblockedHomologyGrading_piece`: over a
+  Noetherian commutative ring of characteristic two, every Alexander piece of `GH⁻` is finitely
+  generated over the ground ring.
 
 ## References
 
@@ -70,6 +74,14 @@ noncomputable def alexanderHomologyGrading :
   (G.alexanderChainMinusGrading R).homology
     (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R)
     (G.1.unblockedDifferential_comp_self_eq_zero R)
+
+/-- Over a Noetherian commutative ring of characteristic two, each Alexander piece of
+`ker ∂⁻ ⧸ im ∂⁻` is finitely generated over the ground ring. -/
+instance finite_alexanderHomologyGrading_piece [IsNoetherianRing R] (a : ℤ) :
+    Module.Finite R ((G.alexanderHomologyGrading R).piece a) := by
+  let _ : AddCommGroup (GridChainMinus R n) := inferInstance
+  rw [alexanderHomologyGrading]
+  infer_instance
 
 variable {G R}
 
@@ -106,6 +118,13 @@ noncomputable def alexanderUnblockedHomologyGrading :
     InternalGrading R (G.1.unblockedHomology R) ℤ :=
   (G.alexanderHomologyGrading R).map
     ((G.1.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
+
+/-- Over a Noetherian commutative ring of characteristic two, each Alexander piece of `GH⁻` is
+finitely generated over the ground ring. -/
+instance finite_alexanderUnblockedHomologyGrading_piece [IsNoetherianRing R] (a : ℤ) :
+    Module.Finite R ((G.alexanderUnblockedHomologyGrading R).piece a) := by
+  rw [alexanderUnblockedHomologyGrading]
+  infer_instance
 
 /-- A class of `GH⁻` is Alexander-homogeneous of degree `a` exactly when its image in the
 cycle quotient is homogeneous of that degree. -/

@@ -38,6 +38,11 @@ Combined with the invariance of `GH⁻` under the diagonal reflection, which exc
 commutations, `GH⁻` is invariant under every elementary commutation
 (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_isCommutation`).
 
+## Main definitions
+
+* `TauCeti.GridDiagram.unblockedHomologyCommutationEquiv`: the pentagon-counting map of a validated
+  column commutation packaged as a semilinear equivalence on `GH⁻`.
+
 ## Main results
 
 * `TauCeti.GridDiagram.unblockedHomologyCommutationMap_bijective`: **commutation invariance of
@@ -98,6 +103,22 @@ theorem unblockedHomologyCommutationMap_bijective :
     refine ⟨(G').commutationHomotopy R C.reverse z, ?_⟩
     simp only [AddSubgroupClass.coe_sub,
       G.commutationMap_commutationMap_reverse_of_mem_ker C R z.2, add_sub_cancel_left]
+
+/-- The pentagon-counting map of a validated column commutation as a semilinear equivalence on
+`GH⁻`, along the transposition of the two swapped column variables. -/
+noncomputable def unblockedHomologyCommutationEquiv :
+    G.unblockedHomology R ≃ₛₗ[((renameEquiv R
+      (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)]
+      (G').unblockedHomology R :=
+  LinearEquiv.ofBijective (G.unblockedHomologyCommutationMap R C)
+    (G.unblockedHomologyCommutationMap_bijective C R)
+
+/-- `unblockedHomologyCommutationEquiv` acts by `unblockedHomologyCommutationMap`. -/
+@[simp]
+theorem unblockedHomologyCommutationEquiv_apply (y : G.unblockedHomology R) :
+    G.unblockedHomologyCommutationEquiv C R y = G.unblockedHomologyCommutationMap R C y :=
+  LinearEquiv.ofBijective_apply _ y
 
 end GridDiagram
 

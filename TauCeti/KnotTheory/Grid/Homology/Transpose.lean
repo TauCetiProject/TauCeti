@@ -125,6 +125,15 @@ theorem transposeRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : G
   rw [hdegree]
   exact hc x.transpose e he
 
+/-- The diagonal reflection identifies each Maslov--Alexander piece of `GC⁻`. -/
+theorem transposeRenameEquiv_mem_bigradedChainMinusPiece_iff {g : ℤ × ℤ} {c : GridChainMinus R n} :
+    G.1.transposeRenameEquiv R c ∈ G.transpose.bigradedChainMinusPiece R g ↔
+      c ∈ G.bigradedChainMinusPiece R g := by
+  refine ⟨fun hc ↦ ?_, G.transposeRenameEquiv_mem_bigradedChainMinusPiece R⟩
+  have h := G.transpose.transposeRenameEquiv_mem_bigradedChainMinusPiece R hc
+  rwa [G.val_transpose, G.1.transposeRenameEquiv_transpose_transposeRenameEquiv,
+    G.transpose_transpose] at h
+
 /-- The diagonal reflection, including the renaming of the coefficient variables along `G.O`,
 preserves the Alexander grading of unblocked chains. -/
 theorem transposeRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}

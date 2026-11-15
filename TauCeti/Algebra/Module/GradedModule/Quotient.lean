@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
@@ -110,6 +111,15 @@ theorem submodule_piece (p : ι) :
     (G.submodule U hU).piece p = (G.piece p).comap (U.subtype.restrictScalars R) :=
   (rfl)
 
+/-- When the ambient piece `G.piece p` is Noetherian over `R`, the degree-`p` piece of any
+homogeneous submodule is finitely generated over `R`. -/
+instance finite_submodule_piece (p : ι) [IsNoetherian R (G.piece p)] :
+    Module.Finite R ((G.submodule U hU).piece p) := by
+  rw [submodule_piece]
+  exact Module.Finite.of_injective ((U.subtype.restrictScalars R).restrict fun _ hx ↦ hx)
+    fun _ _ h ↦ Subtype.ext (Subtype.ext
+      (by simpa [_root_.LinearMap.restrict_apply] using congrArg (fun z : G.piece p ↦ (z : M)) h))
+
 theorem mem_submodule_piece {p : ι} {x : U} :
     x ∈ (G.submodule U hU).piece p ↔ (x : M) ∈ G.piece p :=
   Iff.rfl
@@ -153,6 +163,13 @@ include hf in
 of the elements of the kernel lying in the degree-`p` piece of `M`. -/
 noncomputable def ker : InternalGrading R (_root_.LinearMap.ker f) ι :=
   G.submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker
+
+/-- When the ambient piece `G.piece p` is Noetherian over `R`, the degree-`p` piece of the kernel of
+a homogeneous map is finitely generated over `R`. -/
+instance finite_ker_piece (p : ι) [IsNoetherian R (G.piece p)] :
+    Module.Finite R ((G.ker hf).piece p) := by
+  rw [ker]
+  infer_instance
 
 /-- An element of the kernel of `f` is homogeneous of degree `p` exactly when it is homogeneous of
 degree `p` in `M`. -/
@@ -198,6 +215,12 @@ noncomputable def quotient : InternalGrading R (M ⧸ U) ι where
 theorem quotient_piece (p : ι) :
     (G.quotient U hU).piece p = (G.piece p).map (U.mkQ.restrictScalars R) :=
   (rfl)
+
+/-- Finite generation of `G.piece p` passes to the degree-`p` piece of any homogeneous quotient. -/
+instance finite_quotient_piece (p : ι) [Module.Finite R (G.piece p)] :
+    Module.Finite R ((G.quotient U hU).piece p) := by
+  rw [quotient_piece]
+  infer_instance
 
 /-- An element of the quotient has degree `p` exactly when it is the class of an element of
 degree `p`. -/

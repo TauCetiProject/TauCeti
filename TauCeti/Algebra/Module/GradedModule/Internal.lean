@@ -45,10 +45,14 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `InternalGrading.quadraticTwist`: multiplication of degree `p` by
   `(-1)^(p choose 2)`.
 * `InternalGrading.twistedTuple`: a tuple with a consecutive block of letters Koszul-twisted.
+* `LinearMap.IsHomogeneous.pieceLinearEquiv`: restriction of a degree-zero homogeneous `R`-linear
+  equivalence to each homogeneous piece.
 
 ## Main results
 
-* `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.ext` and `TauCeti.InternalGrading.eq_of_piece_le`: internal gradings are
+  determined by their homogeneous pieces, and pointwise inclusion between two internal gradings
+  forces equality.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
@@ -64,8 +68,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
   is multiplicative and fixes the unit, so it may be applied factorwise to products.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
-* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
-  linear equivalence is homogeneous.
+* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm` and
+  `TauCeti.LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: the inverse of a degree-zero
+  homogeneous linear equivalence is homogeneous and reflects piece membership.
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
@@ -120,6 +125,25 @@ theorem ext : ∀ {G H : InternalGrading R M ι}, (∀ p, G.piece p = H.piece p)
 /-- The decomposition attached to an internal grading. -/
 noncomputable instance (G : InternalGrading R M ι) : DirectSum.Decomposition G.piece :=
   G.isInternal.chooseDecomposition
+
+/-- Pointwise inclusion between two internal gradings of the same module forces equality: any
+homogeneous element of `H` decomposes in `G` into components that also lie in the corresponding
+pieces of `H`. -/
+theorem eq_of_piece_le {G H : InternalGrading R M ι} (h : ∀ p, G.piece p ≤ H.piece p) :
+    G = H := by
+  ext p x
+  refine ⟨fun hx ↦ h p hx, fun hx ↦ ?_⟩
+  suffices ∀ y : M, (DirectSum.decompose H.piece y p : M) ∈ G.piece p by
+    simpa [DirectSum.decompose_of_mem_same H.piece hx] using this x
+  intro y
+  induction y using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous q z =>
+    by_cases hqp : q = p
+    · subst p
+      simp [DirectSum.decompose_of_mem_same H.piece (h q z.2)]
+    · simp [DirectSum.decompose_of_mem_ne H.piece (h q z.2) hqp]
+  | add y₁ y₂ hy₁ hy₂ => simpa using (G.piece p).add_mem hy₁ hy₂
 
 /-- The internal grading carried by a family of submodules with a `DirectSum.Decomposition`.  This
 is the bridge from Mathlib's decomposition typeclass, under which graded algebras are stated, to
@@ -326,6 +350,13 @@ theorem map_trans {P : Type*} [AddCommMonoid P] [Module R P]
   intro x
   simp
 
+/-- Transporting a finitely generated homogeneous piece across a linear equivalence preserves finite
+generation. -/
+instance finite_map_piece (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) (p : ι)
+    [Module.Finite R (G.piece p)] : Module.Finite R ((G.map e).piece p) := by
+  rw [map_piece]
+  infer_instance
+
 end Map
 
 /-- An additive map that vanishes on every homogeneous piece except degree `i` sees only the
@@ -381,6 +412,53 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+/-- A degree-zero homogeneous linear equivalence between internally graded modules preserves and
+reflects piece membership. The equivalence may be linear over a ring `S` other than the ring `R`
+over which the homogeneous pieces are submodules. -/
+theorem linearEquiv_mem_piece_iff {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) {p : ι} {x : M} :
+    e x ∈ H.piece p ↔ x ∈ G.piece p :=
+  ⟨fun hx ↦ by
+      simpa only [add_zero, LinearEquiv.coe_coe, e.symm_apply_apply] using
+        he.linearEquiv_symm.map_mem hx,
+    fun hx ↦ by simpa only [add_zero, LinearEquiv.coe_coe] using he.map_mem hx⟩
+
+/-- A degree-zero homogeneous `R`-linear equivalence carries each homogeneous piece onto the
+corresponding target piece. -/
+theorem linearEquiv_map_piece {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) :
+    (G.piece p).map e.toLinearMap = H.piece p := by
+  ext y
+  rw [Submodule.mem_map]
+  exact ⟨by rintro ⟨x, hx, rfl⟩; exact he.linearEquiv_mem_piece_iff.mpr hx,
+    fun hy ↦ ⟨e.symm y, he.linearEquiv_mem_piece_iff.mp (by simpa using hy), by simp⟩⟩
+
+/-- A degree-zero homogeneous `R`-linear equivalence between internally graded modules restricts to
+a linear equivalence on each homogeneous piece. -/
+def pieceLinearEquiv {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) :
+    G.piece p ≃ₗ[R] H.piece p :=
+  e.ofSubmodules (G.piece p) (H.piece p) (he.linearEquiv_map_piece p)
+
+/-- On homogeneous elements, `pieceLinearEquiv` acts by the ambient equivalence `e`. -/
+@[simp]
+theorem coe_pieceLinearEquiv_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) (x : G.piece p) :
+    (he.pieceLinearEquiv p x : N) = e x :=
+  (rfl)
+
+/-- On homogeneous elements, `(he.pieceLinearEquiv p).symm` acts by `e.symm`. -/
+@[simp]
+theorem coe_pieceLinearEquiv_symm_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) (y : H.piece p) :
+    ((he.pieceLinearEquiv p).symm y : M) = e.symm y :=
+  (rfl)
 
 section Decompose
 
