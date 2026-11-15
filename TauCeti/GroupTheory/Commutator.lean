@@ -40,12 +40,18 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   of `A` and `B` in `G ⧸ N` commute.
 * `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: two subgroups that normalize each
   other and meet trivially centralize each other.
+* `TauCeti.commute_of_mem_ker_of_mem_normalizer`: if `f.comp φ` is injective, an element of
+  `f.ker` normalizing `φ.range` centralizes `φ.range`.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
   into a monoid commute exactly when their commutator lies in the kernel.
 * `MonoidHom.commutator_top_ker_comp_le_ker`: if `p` has central kernel, then `φ` kills the
   commutators of arbitrary elements with the kernel of `p ∘ φ`.
+* `MonoidHom.commutatorElement_eq_of_ker_le_center`,
+  `MonoidHom.commute_commutatorElement_of_commute_of_ker_le_center`: over a homomorphism `p` with
+  central kernel, `⁅u, v⁆` depends only on `p u` and `p v`, and commutes with `w` whenever `p w`
+  commutes with both.
 * `MonoidHom.eq_of_comp_eq_of_ker_le_center`: two homomorphisms from a perfect group which agree
   modulo a central subgroup are equal.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
@@ -366,6 +372,23 @@ theorem _root_.MonoidHom.commutatorElement_mem_ker_iff {M : Type*} [Monoid M] (f
     commutatorElement_eq_one_iff_commute, ← Commute.units_val_iff, MonoidHom.coe_toHomUnits,
     MonoidHom.coe_toHomUnits]
 
+/-- If `f.comp φ` is injective, then any element of `f.ker` that normalizes `φ.range` commutes
+with every element of `φ.range`: their commutator lies in `φ.range` and is killed by `f`. -/
+theorem commute_of_mem_ker_of_mem_normalizer {H M : Type*} [Group H] [Monoid M]
+    {f : G →* M} {φ : H →* G} (hinj : Function.Injective (f.comp φ))
+    {z : G} (hz : z ∈ f.ker) (hnorm : z ∈ normalizer (φ.range : Set G))
+    {y : G} (hy : y ∈ φ.range) : Commute z y := by
+  obtain ⟨h, hh⟩ : ⁅z, y⁆ ∈ φ.range := by
+    rw [commutatorElement_def]
+    exact mul_mem (((mem_normalizer_iff (H := φ.range)).mp hnorm y).mp hy) (inv_mem hy)
+  have hh1 : h = 1 := hinj <| by
+    have hker : ⁅z, y⁆ ∈ f.ker := f.commutatorElement_mem_ker_iff.mpr <| by
+      rw [MonoidHom.mem_ker.mp hz]
+      exact Commute.one_left (f y)
+    rw [map_one, MonoidHom.comp_apply, hh]
+    exact MonoidHom.mem_ker.mp hker
+  exact commutatorElement_eq_one_iff_commute.mp (hh ▸ hh1 ▸ map_one φ)
+
 /-- Two classes in `G ⧸ N` commute exactly when the commutator of representatives lies in `N`. -/
 theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
     Commute (a : G ⧸ N) (b : G ⧸ N) ↔ ⁅a, b⁆ ∈ N := by
@@ -380,21 +403,44 @@ theorem _root_.MonoidHom.commutator_top_ker_comp_le_ker {E F : Type*} [Group E] 
   rw [commutator_le]
   exact fun f _ r hr ↦ φ.commutatorElement_mem_ker_iff.mpr (mem_center_iff.mp (hp hr) (φ f))
 
+/-- If `p : E →* G` has central kernel, then the commutator `⁅u, v⁆` in `E` depends only on the
+images `p u` and `p v`. -/
+theorem _root_.MonoidHom.commutatorElement_eq_of_ker_le_center {E : Type*} [Group E]
+    {p : E →* G} (hp : p.ker ≤ center E) {u₁ u₂ v₁ v₂ : E}
+    (hu : p u₁ = p u₂) (hv : p v₁ = p v₂) : ⁅u₁, v₁⁆ = ⁅u₂, v₂⁆ := by
+  have hzu : u₂⁻¹ * u₁ ∈ center E := hp <| by
+    rw [MonoidHom.mem_ker, map_mul, map_inv, hu, inv_mul_cancel]
+  have hzv : v₂⁻¹ * v₁ ∈ center E := hp <| by
+    rw [MonoidHom.mem_ker, map_mul, map_inv, hv, inv_mul_cancel]
+  simpa only [mul_inv_cancel_left] using
+    commutatorElement_mul_mul_of_mem_center (a := u₂) (c := v₂) hzu hzv
+
+/-- If `p : E →* G` has central kernel and `p w` commutes with both `p u` and `p v`, then `w`
+commutes with `⁅u, v⁆` in `E`. -/
+theorem _root_.MonoidHom.commute_commutatorElement_of_commute_of_ker_le_center {E : Type*}
+    [Group E] {p : E →* G} (hp : p.ker ≤ center E) {w u v : E}
+    (hwu : Commute (p w) (p u)) (hwv : Commute (p w) (p v)) : Commute w ⁅u, v⁆ := by
+  refine eq_mul_of_mul_inv_eq ?_
+  calc
+    w * ⁅u, v⁆ * w⁻¹ = ⁅w * u * w⁻¹, w * v * w⁻¹⁆ := by
+      simp only [← MulAut.conj_apply]
+      exact map_commutatorElement (MulAut.conj w) u v
+    _ = ⁅u, v⁆ := MonoidHom.commutatorElement_eq_of_ker_le_center hp
+      (by rw [map_mul, map_mul, map_inv, hwu.eq, mul_inv_cancel_right])
+      (by rw [map_mul, map_mul, map_inv, hwv.eq, mul_inv_cancel_right])
+
 /-- **Two homomorphisms from a perfect group which agree modulo a central subgroup are equal.**
 Their pointwise quotient takes central values, so it is a homomorphism to an abelian group, and it
 is trivial on commutators. -/
 theorem _root_.MonoidHom.eq_of_comp_eq_of_ker_le_center {E H : Type*} [Group E] [Group H]
     [Group.IsPerfect H] {f₁ f₂ : H →* E} {p : E →* G} (hp : p.ker ≤ center E)
     (h : p.comp f₁ = p.comp f₂) : f₁ = f₂ := by
-  have hz (c : H) : (f₂ c)⁻¹ * f₁ c ∈ center E := hp <| by
-    rw [MonoidHom.mem_ker, map_mul, map_inv, ← MonoidHom.comp_apply, ← MonoidHom.comp_apply, h,
-      inv_mul_cancel]
   refine MonoidHom.eq_of_eqOn_dense (s := commutatorSet H) ?_ ?_
   · rw [← commutator_eq_closure, Group.IsPerfect.commutator_eq_top]
   · rintro _ ⟨a, b, rfl⟩
-    rw [map_commutatorElement, map_commutatorElement,
-      ← commutatorElement_mul_mul_of_mem_center (a := f₂ a) (c := f₂ b) (hz a) (hz b),
-      mul_inv_cancel_left, mul_inv_cancel_left]
+    rw [map_commutatorElement, map_commutatorElement]
+    exact MonoidHom.commutatorElement_eq_of_ker_le_center hp
+      (DFunLike.congr_fun h a) (DFunLike.congr_fun h b)
 
 /-- **Homomorphisms into a commutative monoid separate elements only in a commutative group.** If
 for every `g ≠ 1` some homomorphism `φ : G →* A` into a commutative monoid has `φ g ≠ 1`, then `G`

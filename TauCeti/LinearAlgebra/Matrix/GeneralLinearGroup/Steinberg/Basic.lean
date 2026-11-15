@@ -74,6 +74,9 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
 
 ## References
 
+* R. Steinberg, *Générateurs, relations et revêtements de groupes algébriques*, in *Colloq.
+  Théorie des Groupes Algébriques (Bruxelles, 1962)*, Librairie Universitaire, Louvain;
+  Gauthier-Villars, Paris (1962), 113–127.
 * J. Milnor, *Introduction to Algebraic K-Theory*, Annals of Mathematics Studies 72 (1971), §5.
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
   Mathematics 145 (2013), Chapter III, §5, Definition 5.1.
@@ -129,6 +132,16 @@ theorem of_eq_x (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
 
 /-! ### Defining relations and algebraic consequences -/
 
+private theorem lift_x_eq_one_of_mem {r : FreeGroup ({p : ι × ι // p.1 ≠ p.2} × R)}
+    (hr : r ∈ steinbergIndexedRels ι R) :
+    FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ x pa.1.2 pa.2) r = 1 := by
+  have hlift : FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ x pa.1.2 pa.2) =
+      PresentedGroup.mk (steinbergIndexedRels ι R) := by
+    ext ⟨p, a⟩
+    exact FreeGroup.lift_apply_of.trans (of_eq_x p a).symm
+  rw [hlift]
+  exact PresentedGroup.one_of_mem hr
+
 /-- Additivity of Steinberg generators in the parameter:
 `x_{ij}(a + b) = x_{ij}(a) * x_{ij}(b)`. -/
 @[simp]
@@ -139,7 +152,7 @@ theorem x_add {i j : ι} (hij : i ≠ j) (a b : R) :
   have hmem : FreeGroup.of (⟨(i, j), hij⟩, a) * FreeGroup.of (⟨(i, j), hij⟩, b) *
       (FreeGroup.of (⟨(i, j), hij⟩, a + b))⁻¹ ∈ steinbergIndexedRels ι R :=
     Or.inl ⟨⟨(i, j), hij⟩, a, b, rfl⟩
-  simpa only [x, PresentedGroup.of, ← map_inv, ← map_mul] using PresentedGroup.one_of_mem hmem
+  simpa only [map_mul, map_inv, FreeGroup.lift_apply_of] using lift_x_eq_one_of_mem hmem
 
 /-- The Steinberg generator with parameter zero is the identity. -/
 @[simp]
@@ -176,7 +189,7 @@ theorem commute_x {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l) (hjk : j ≠ k)
       (FreeGroup.of (⟨(i, j), hij⟩, a))⁻¹ * (FreeGroup.of (⟨(k, l), hkl⟩, b))⁻¹ ∈
       steinbergIndexedRels ι R :=
     Or.inr (Or.inl ⟨⟨(i, j), hij⟩, ⟨(k, l), hkl⟩, a, b, hjk, hli.symm, rfl⟩)
-  simpa only [x, PresentedGroup.of, ← map_inv, ← map_mul] using PresentedGroup.one_of_mem hmem
+  simpa only [map_mul, map_inv, FreeGroup.lift_apply_of] using lift_x_eq_one_of_mem hmem
 
 /-- Steinberg generators at the same pair of indices commute. -/
 theorem commute_x_self {i j : ι} (hij : i ≠ j) (a b : R) : Commute (x hij a) (x hij b) :=
@@ -191,8 +204,8 @@ theorem commutatorElement_x {i j k : ι} (hij : i ≠ j) (hjk : j ≠ k) (hik : 
       (FreeGroup.of (⟨(i, j), hij⟩, a))⁻¹ * (FreeGroup.of (⟨(j, k), hjk⟩, b))⁻¹ *
       (FreeGroup.of (⟨(i, k), hik⟩, a * b))⁻¹ ∈ steinbergIndexedRels ι R :=
     Or.inr (Or.inr ⟨i, j, k, hij, hjk, hik, a, b, rfl⟩)
-  simpa only [commutatorElement_def, x, PresentedGroup.of, ← map_inv, ← map_mul] using
-    PresentedGroup.one_of_mem hmem
+  simpa only [commutatorElement_def, map_mul, map_inv, FreeGroup.lift_apply_of] using
+    lift_x_eq_one_of_mem hmem
 
 /-- The reverse-chained commutator relation `⁅x_{ij}(a), x_{ki}(b)⁆ = x_{kj}(-(b * a))` for
 pairwise distinct indices `i, j, k`, obtained from `commutatorElement_x` by inversion. -/
@@ -227,6 +240,14 @@ theorem subgroup_eq_top_iff {H : Subgroup (IndexedSteinbergGroup ι R)} :
     H = ⊤ ↔ ∀ ⦃i j : ι⦄ (hij : i ≠ j) (a : R), x hij a ∈ H :=
   ⟨fun h _ _ _ _ ↦ h ▸ Subgroup.mem_top _,
     fun h ↦ top_unique fun z _ ↦ PresentedGroup.generated_by _ H (fun ⟨_, a⟩ ↦ h _ a) z⟩
+
+/-- The range of a homomorphism out of `IndexedSteinbergGroup ι R` lies in a subgroup `H` if and
+only if the image of every Steinberg generator `x hij a` lies in `H`. -/
+theorem range_le_iff {G : Type*} [Group G] {φ : IndexedSteinbergGroup ι R →* G}
+    {H : Subgroup G} :
+    φ.range ≤ H ↔ ∀ ⦃i j : ι⦄ (hij : i ≠ j) (a : R), φ (x hij a) ∈ H := by
+  rw [MonoidHom.range_eq_map, Subgroup.map_le_iff_le_comap, top_le_iff, subgroup_eq_top_iff]
+  simp only [Subgroup.mem_comap]
 
 private theorem lift_rels {G : Type*} [Group G] (f : ∀ ⦃i j : ι⦄, i ≠ j → R → G)
     (hadd : ∀ ⦃i j : ι⦄ (hij : i ≠ j) (a b : R), f hij (a + b) = f hij a * f hij b)
@@ -368,21 +389,21 @@ theorem congrIndex_symm (e : ι ≃ κ) :
 
 /-! ### Degenerate cases and `St₂(R)` as a free product -/
 
+private theorem subsingleton_of_forall_x_eq_one
+    (h : ∀ ⦃i j : ι⦄ (hij : i ≠ j) (a : R), x hij a = 1) :
+    Subsingleton (IndexedSteinbergGroup ι R) := by
+  have hid : MonoidHom.id (IndexedSteinbergGroup ι R) = 1 := hom_ext h
+  exact subsingleton_of_forall_eq 1 (DFunLike.congr_fun hid)
+
 /-- Over a trivial ring every Steinberg generator is `x_{ij}(0) = 1`, so the Steinberg group is
 trivial. -/
-instance [Subsingleton R] : Subsingleton (IndexedSteinbergGroup ι R) := by
-  have htop : (⊥ : Subgroup (IndexedSteinbergGroup ι R)) = ⊤ :=
-    subgroup_eq_top_iff.mpr fun _ _ hij a ↦ by
-      rw [Subsingleton.elim a 0, x_zero]
-      exact Subgroup.one_mem _
-  exact subsingleton_of_forall_eq 1 fun u ↦ Subgroup.mem_bot.mp (htop.symm ▸ Subgroup.mem_top u)
+instance [Subsingleton R] : Subsingleton (IndexedSteinbergGroup ι R) :=
+  subsingleton_of_forall_x_eq_one fun _ _ hij a ↦ Subsingleton.elim a 0 ▸ x_zero hij
 
 /-- When the index type has at most one element there are no distinct index pairs, so the Steinberg
 group is trivial. -/
-instance [Subsingleton ι] : Subsingleton (IndexedSteinbergGroup ι R) := by
-  have htop : (⊥ : Subgroup (IndexedSteinbergGroup ι R)) = ⊤ :=
-    subgroup_eq_top_iff.mpr fun i j hij _ ↦ (hij (Subsingleton.elim i j)).elim
-  exact subsingleton_of_forall_eq 1 fun u ↦ Subgroup.mem_bot.mp (htop.symm ▸ Subgroup.mem_top u)
+instance [Subsingleton ι] : Subsingleton (IndexedSteinbergGroup ι R) :=
+  subsingleton_of_forall_x_eq_one fun i j hij _ ↦ (hij (Subsingleton.elim i j)).elim
 
 private def finTwoGenToCoprod ⦃i j : Fin 2⦄ (_ : i ≠ j) (a : R) :
     Monoid.Coprod (Multiplicative R) (Multiplicative R) :=
@@ -489,17 +510,12 @@ theorem toGL_x {i j : ι} (hij : i ≠ j) (a : R) :
 /-- The image of `IndexedSteinbergGroup.toGL` in `GL ι R` is the elementary subgroup
 `TauCeti.elementarySubgroup ι R`. -/
 theorem range_toGL :
-    (toGL (ι := ι) (R := R)).range = TauCeti.elementarySubgroup ι R := by
-  refine le_antisymm ?_ (elementarySubgroup_le_iff.2 fun i j hij a ↦ ⟨x hij a, toGL_x hij a⟩)
-  rintro _ ⟨z, rfl⟩
-  have htop : z ∈ (TauCeti.elementarySubgroup ι R).comap toGL := by
-    have : (TauCeti.elementarySubgroup ι R).comap (toGL (ι := ι) (R := R)) = ⊤ :=
-      subgroup_eq_top_iff.mpr fun i j hij a ↦ by
-        rw [Subgroup.mem_comap, toGL_x]
-        exact transvectionUnit_mem_elementarySubgroup hij a
-    rw [this]
-    exact Subgroup.mem_top z
-  exact htop
+    (toGL (ι := ι) (R := R)).range = TauCeti.elementarySubgroup ι R :=
+  le_antisymm
+    (range_le_iff.mpr fun _ _ hij a ↦ by
+      rw [toGL_x]
+      exact transvectionUnit_mem_elementarySubgroup hij a)
+    (elementarySubgroup_le_iff.2 fun i j hij a ↦ ⟨x hij a, toGL_x hij a⟩)
 
 /-- The canonical surjective homomorphism `St_ι(R) →* E_ι(R)` onto the elementary subgroup. -/
 def toElementarySubgroup :
@@ -577,11 +593,11 @@ system of groups indexed by `ℕ`. -/
 instance : DirectedSystem (fun n : ℕ ↦ IndexedSteinbergGroup (Fin n) R)
     (fun _ _ h ↦ stabilize h) where
   map_self n u := by
-    have hemb : Fin.castLEEmb (le_refl n) = Function.Embedding.refl (Fin n) := by ext; rfl
+    have hemb : Fin.castLEEmb (le_refl n) = Function.Embedding.refl (Fin n) := by ext; simp
     simp [stabilize, hemb]
   map_map _ _ _ hij hjk u := by
     have hemb : (Fin.castLEEmb hij).trans (Fin.castLEEmb hjk) = Fin.castLEEmb (hij.trans hjk) := by
-      ext; rfl
+      ext; simp
     simp [stabilize, hemb]
 
 variable (R) in
@@ -598,7 +614,7 @@ theorem ofFin_x {n : ℕ} {i j : Fin n} (hij : i ≠ j) (a : R) :
 @[simp]
 theorem ofFin_stabilize {m n : ℕ} (h : m ≤ n) (u : IndexedSteinbergGroup (Fin m) R) :
     ofFin R n (stabilize h u) = ofFin R m u := by
-  have hemb : (Fin.castLEEmb h).trans Fin.valEmbedding = Fin.valEmbedding := by ext; rfl
+  have hemb : (Fin.castLEEmb h).trans Fin.valEmbedding = Fin.valEmbedding := by ext; simp
   simp [ofFin, stabilize, hemb]
 
 theorem ofFin_comp_stabilize {m n : ℕ} (h : m ≤ n) :
@@ -643,7 +659,7 @@ private theorem liftFin_apply_eq {G : Type*} [Group G]
       (fun h ↦ hij (congrArg Fin.val h)) a) := by
   have hle : max i j + 1 ≤ N := by omega
   rw [← hf (max i j + 1) N hle, IndexedSteinbergGroup.mapIndex_x]
-  rfl
+  simp only [Fin.castLEEmb_apply, Fin.castLE_mk]
 
 /-- **Colimit universal property of `St(R)`**: a compatible family of homomorphisms out of the
 finite-rank Steinberg groups `Stₙ(R)` induces a homomorphism out of `St(R)`. -/
