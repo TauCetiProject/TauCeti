@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
+import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -31,10 +32,14 @@ are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
+Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other than
+`k` (`Set.ncard_preimage_succAbove`).
+
 For an injective map `f` from a finite type into a linear order, the number of indices whose value
 lies below `f a` determines `a` (`Set.injective_ncard_setOf_lt`): it is the rank of `f a` among
 the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
-(`Set.encard_setOf_ncard_setOf_lt_eq`).
+(`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
+is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
@@ -177,6 +182,12 @@ theorem encard_setOf_ncard_setOf_lt_eq {ι α : Type*} [Finite ι] [LinearOrder 
     rintro k rfl
     exact hj (hlt k)
 
+/-- For a strictly monotone map `f` on `Fin n`, exactly `k` indices have value below `f k`. -/
+theorem ncard_setOf_lt_of_strictMono {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α}
+    (hf : StrictMono f) (k : Fin n) : {i | f i < f k}.ncard = k := by
+  simp_rw [hf.lt_iff_lt]
+  rw [show {i : Fin n | i < k} = ↑(Finset.Iio k) by ext; simp, ncard_coe_finset, Fin.card_Iio]
+
 /-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
 holds on twice as many indices as on `ι`. Both sides are `0` when the set on `ι` is infinite. -/
 theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
@@ -184,6 +195,13 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
+
+/-- Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other
+than `k`. -/
+theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 1))) :
+    (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
+  rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
+    Fin.range_succAbove, ← sdiff_eq]
 
 /-- The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`. -/
 @[simp]

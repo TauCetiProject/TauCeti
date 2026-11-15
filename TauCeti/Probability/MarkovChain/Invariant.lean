@@ -128,6 +128,12 @@ theorem IsPositiveRecurrent.isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] 
     (hx : κ.IsPositiveRecurrent x) : κ.IsRecurrent x :=
   isRecurrent_of_meanReturnTime_ne_top hx.meanReturnTime_ne_top
 
+/-- Started at a positive recurrent state `x`, the chain returns to `x` almost surely. -/
+theorem IsPositiveRecurrent.ae_hittingAfter_ne_top [MeasurableSingletonClass α]
+    {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsPositiveRecurrent x) :
+    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤ :=
+  hx.isRecurrent.ae_hittingAfter_one_ne_top
+
 /-- A positive recurrent state is not transient. -/
 theorem IsPositiveRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
     (hx : κ.IsPositiveRecurrent x) : ¬ κ.IsTransient x := by
@@ -256,36 +262,37 @@ theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKern
   -- `ENat` (`ℕ∞`) is semireducibly `WithTop ℕ`, so the `Nat.cast` superlevel sets are defeq.
   rfl
 
+/-- At any state that is not positive recurrent, the cycle occupation measure has infinite total
+mass, even without measurable singletons. -/
+theorem cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
+    {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
+    κ.cycleOccupation x Set.univ = ∞ :=
+  top_unique ((not_lt_top_iff.mp ((isPositiveRecurrent_iff κ x).not.mp hx)) ▸
+    κ.meanReturnTime_le_cycleOccupation_univ x)
+
+/-- At any state that is not positive recurrent, the cycle occupation measure is not finite. -/
+theorem not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent {κ : Kernel α α}
+    [IsMarkovKernel κ] {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
+    ¬ IsFiniteMeasure (κ.cycleOccupation x) :=
+  fun _ => (measure_lt_top (κ.cycleOccupation x) Set.univ).ne
+    (cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent hx)
+
 /-- If `x` does not reach `y`, the cycle occupation measure around `x` assigns mass zero to `{y}`.
 No measurability of singletons is needed. -/
 theorem cycleOccupation_singleton_eq_zero_of_not_reaches {κ : Kernel α α} [IsMarkovKernel κ]
     {x y : α} (hxy : ¬ κ.Reaches x y) :
     κ.cycleOccupation x {y} = 0 := by
-  let P := markovChainLaw (Measure.dirac x) κ
-  let μ : ℕ → Measure α := fun n =>
-    (P.restrict {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map fun w => w n
-  have hstep : ∀ n : ℕ, μ n {y} = 0 := fun n => by
-    have hpow : (κ ^ n) x {y} = 0 :=
-      nonpos_iff_eq_zero.mp (not_lt.mp fun hn => hxy ((reaches_def x y).mpr ⟨n, hn⟩))
-    let B := toMeasurable ((κ ^ n) x) {y}
-    have hB : MeasurableSet B := measurableSet_toMeasurable _ _
-    have hyB : ({y} : Set α) ⊆ B := subset_toMeasurable _ _
-    refine nonpos_iff_eq_zero.mp ((measure_mono hyB).trans ?_)
-    rw [Measure.map_apply (measurable_pi_apply n) hB,
-      Measure.restrict_apply (hB.preimage (measurable_pi_apply n))]
-    refine (measure_mono Set.inter_subset_left).trans ?_
-    have hlaw : P ((fun w : ℕ → α => w n) ⁻¹' B) = (κ ^ n) x B := by
-      rw [← Measure.map_apply (measurable_pi_apply n) hB, Measure.markovChainLaw_map_eval,
-        Measure.dirac_bind (κ ^ n).measurable]
-    rw [hlaw, measure_toMeasurable, hpow]
-  let B := ⋂ n : ℕ, toMeasurable (μ n) {y}
-  have hB : MeasurableSet B := MeasurableSet.iInter fun n => measurableSet_toMeasurable _ _
-  have hyB : ({y} : Set α) ⊆ B :=
-    Set.subset_iInter fun n => subset_toMeasurable (μ n) {y}
-  refine nonpos_iff_eq_zero.mp ((measure_mono hyB).trans ?_)
-  rw [cycleOccupation_def, Measure.sum_apply _ hB]
-  refine (tsum_eq_zero_iff.mpr fun n => nonpos_iff_eq_zero.mp ?_).le
-  exact (measure_mono (Set.iInter_subset _ n)).trans (by rw [measure_toMeasurable, hstep n])
+  rw [cycleOccupation_def, Measure.sum_apply_eq_zero]
+  intro n
+  have hle : ((markovChainLaw (Measure.dirac x) κ).restrict
+      {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map (fun w => w n) {y} ≤
+      (κ ^ n) x {y} := by
+    have hres : (markovChainLaw (Measure.dirac x) κ).restrict
+        {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} ≤
+        markovChainLaw (Measure.dirac x) κ := Measure.restrict_le_self
+    simpa only [Measure.markovChainLaw_map_eval, Measure.dirac_bind (κ ^ n).measurable] using
+      Measure.map_mono hres (measurable_pi_apply n) ({y} : Set α)
+  exact nonpos_iff_eq_zero.mp (hle.trans (not_lt.mp fun hn => hxy ((reaches_def x y).mpr ⟨n, hn⟩)))
 
 private theorem cycleStep_zero (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
     cycleStep κ x 0 = Measure.dirac x := by
@@ -482,6 +489,14 @@ theorem IsPositiveRecurrent.isFiniteMeasure_cycleOccupation [MeasurableSingleton
     IsFiniteMeasure (κ.cycleOccupation x) :=
   ⟨by rw [cycleOccupation_univ]; exact hx.meanReturnTime_lt_top⟩
 
+/-- When singletons are measurable, `κ.cycleOccupation x` is a finite measure if and only if `x` is
+positive recurrent. -/
+theorem isFiniteMeasure_cycleOccupation_iff [MeasurableSingletonClass α] {κ : Kernel α α}
+    [IsMarkovKernel κ] {x : α} :
+    IsFiniteMeasure (κ.cycleOccupation x) ↔ κ.IsPositiveRecurrent x :=
+  ⟨fun h => by_contra fun hx => not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent hx h,
+    IsPositiveRecurrent.isFiniteMeasure_cycleOccupation⟩
+
 /-- If `x` is positive recurrent, `κ.cycleOccupation x` is `κ`-invariant. -/
 theorem IsPositiveRecurrent.invariant_cycleOccupation [MeasurableSingletonClass α]
     {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsPositiveRecurrent x) :
@@ -612,6 +627,22 @@ theorem Invariant.apply_singleton_eq_zero_of_not_isPositiveRecurrent [Measurable
   have hle := hμ.apply_singleton_mul_meanReturnTime_le x
   rw [htop, ENNReal.mul_top hne] at hle
   exact (measure_lt_top μ Set.univ).not_ge hle
+
+/-- On a countable state space with measurable singletons, if no state is positive recurrent under
+`κ`, then every finite `κ`-invariant measure vanishes. -/
+theorem Invariant.eq_zero_of_forall_not_isPositiveRecurrent [Countable α]
+    [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {μ : Measure α}
+    [IsFiniteMeasure μ] (hμ : κ.Invariant μ) (h : ∀ x, ¬ κ.IsPositiveRecurrent x) :
+    μ = 0 :=
+  Measure.ext_of_singleton fun x => hμ.apply_singleton_eq_zero_of_not_isPositiveRecurrent (h x)
+
+/-- On a countable state space with measurable singletons, a Markov kernel with no positive
+recurrent states admits no invariant probability measure. -/
+theorem not_invariant_of_forall_not_isPositiveRecurrent [Countable α] [MeasurableSingletonClass α]
+    {κ : Kernel α α} [IsMarkovKernel κ] (h : ∀ x, ¬ κ.IsPositiveRecurrent x)
+    (π : Measure α) [IsProbabilityMeasure π] :
+    ¬ κ.Invariant π :=
+  fun hπ => IsProbabilityMeasure.ne_zero π (hπ.eq_zero_of_forall_not_isPositiveRecurrent h)
 
 /-- If a finite `κ`-invariant measure assigns positive mass to `{x}`, then `x` is positive
 recurrent. -/
@@ -757,6 +788,24 @@ theorem isPositiveRecurrent_iff_isPositiveRecurrent {κ : Kernel α α} [IsMarko
     [IsIrreducible Measure.count κ] (x y : α) :
     κ.IsPositiveRecurrent x ↔ κ.IsPositiveRecurrent y :=
   Communicates.isPositiveRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
+
+/-- On a counting-measure-irreducible chain with a state that is not positive recurrent, every
+finite `κ`-invariant measure vanishes. -/
+theorem Invariant.eq_zero_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
+    [IsIrreducible Measure.count κ] {μ : Measure α} [IsFiniteMeasure μ] (hμ : κ.Invariant μ)
+    {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
+    μ = 0 := by
+  have := countable_of_isIrreducible_count (κ := κ)
+  exact hμ.eq_zero_of_forall_not_isPositiveRecurrent fun y =>
+    mt (isPositiveRecurrent_iff_isPositiveRecurrent x y).mpr hx
+
+/-- On a counting-measure-irreducible chain with a state that is not positive recurrent, no
+invariant probability measure exists. -/
+theorem not_invariant_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
+    [IsIrreducible Measure.count κ] {x : α} (hx : ¬ κ.IsPositiveRecurrent x)
+    (π : Measure α) [IsProbabilityMeasure π] :
+    ¬ κ.Invariant π :=
+  fun hπ => IsProbabilityMeasure.ne_zero π (hπ.eq_zero_of_not_isPositiveRecurrent hx)
 
 /-- **Existence and uniqueness of the invariant probability measure** from a positive recurrent
 state of a counting-measure-irreducible chain. -/

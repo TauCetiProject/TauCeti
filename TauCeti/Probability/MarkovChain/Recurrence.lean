@@ -74,6 +74,13 @@ def IsTransient (κ : Kernel S S) [IsMarkovKernel κ] (x : S) : Prop :=
 /-- Transience is the failure of almost-sure return. -/
 theorem isTransient_iff : κ.IsTransient x ↔ ¬ κ.IsRecurrent x := Iff.rfl
 
+/-- Congruence in the kernel argument of `Kernel.IsTransient`. -/
+theorem isTransient_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
+    (h : κ = η) (x : S) :
+    κ.IsTransient x ↔ η.IsTransient x := by
+  subst h
+  rfl
+
 /-- The return probability of a transient state is strictly less than one. -/
 theorem isTransient_iff_return_probability_lt_one : κ.IsTransient x ↔
     markovChainLaw (Measure.dirac x) κ

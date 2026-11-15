@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 public import TauCeti.Probability.MarkovChain.FiniteEntrance
 public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.MarkovChain.Recurrence
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!

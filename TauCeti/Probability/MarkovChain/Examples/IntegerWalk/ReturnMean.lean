@@ -7,13 +7,12 @@ module
 
 public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Basic
 public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Recurrence
-public import TauCeti.Probability.MarkovChain.NullRecurrence
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
-# Infinite mean return time and null recurrence of nearest-neighbor integer walks
+# Infinite mean return time of nearest-neighbor integer walks
 
 Every nearest-neighbor integer walk `integerWalk p` (`p : unitInterval`) has infinite
 extended mean first positive return time, with no symmetry assumption on `p`. For the
@@ -23,11 +22,9 @@ reciprocal extended mean return time; a finite mean would give a positive recipr
 every biased walk (`p ≠ 1 / 2`), including the deterministic endpoints `0` and `1`, the
 walk is transient and therefore also has infinite mean return time.
 
-Combining this unconditional infinite-mean formula with the return-series recurrence
-criterion classifies every integer walk across the recurrence trichotomy:
-
-* no state of `integerWalk p` is positive recurrent for any `p : unitInterval`;
-* `integerWalk p` is null recurrent if and only if `(p : ℝ) = 1 / 2`.
+State classification consequences (null recurrence at `p = 1 / 2` and absence of positive
+recurrent states for every `p`) follow in
+`TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Classification`.
 
 ## References
 
@@ -83,23 +80,14 @@ infinite, for both symmetric and biased parameters (including the deterministic 
 theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
     (integerWalk p).meanReturnTime x = ∞ := by
   by_cases hp : (p : ℝ) = 1 / 2
-  · refine (Kernel.IsNullRecurrent.meanReturnTime_eq_top ?_)
-    exact (integerWalk p).isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero.2
-      ⟨(integerWalk_isRecurrent_iff p x).mpr hp, tendsto_integerWalk_integral_visitCount_div p hp x⟩
+  · by_contra hfinite
+    have h1 : 0 < (integerWalk p).meanReturnTime x :=
+      zero_lt_one.trans_le (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x))
+    have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
+      ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite) (ENNReal.inv_ne_top.mpr h1.ne')
+    have hLLN := (integerWalk p).tendsto_integral_visitCount_div_markovChainLaw_dirac x
+    exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
   · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top
-
-/-- No nearest-neighbor integer walk has a positive recurrent state. -/
-@[simp↓]
-theorem not_integerWalk_isPositiveRecurrent (p : unitInterval) (x : ℤ) :
-    ¬ (integerWalk p).IsPositiveRecurrent x := by
-  simp [Kernel.isPositiveRecurrent_iff, integerWalk_meanReturnTime_eq_top]
-
-/-- **Null recurrence of the symmetric integer walk.** A nearest-neighbor integer walk is null
-recurrent at `x` if and only if `(p : ℝ) = 1 / 2`. -/
-@[simp↓]
-theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
-    (integerWalk p).IsNullRecurrent x ↔ (p : ℝ) = 1 / 2 := by
-  simp [Kernel.isNullRecurrent_iff, integerWalk_isRecurrent_iff, integerWalk_meanReturnTime_eq_top]
 
 end TauCeti.Probability
 

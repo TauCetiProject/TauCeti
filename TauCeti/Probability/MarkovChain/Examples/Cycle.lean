@@ -10,7 +10,7 @@ public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.Probability.UniformOn
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Kernel.Reachability
-public import TauCeti.Probability.MarkovChain.NullRecurrence
+public import TauCeti.Probability.MarkovChain.Classification
 public import TauCeti.Probability.MarkovChain.Period
 
 /-!
@@ -161,12 +161,12 @@ theorem cycleKernel_tendsto_tvDist_uniformOn_iff (x : Fin n) :
   exact inv_inj.mp (hkac.symm.trans hunif)
 
 /-- Every state of the finite cycle is positive recurrent. -/
-theorem cycleKernel_isPositiveRecurrent (x : Fin n) :
+@[simp] theorem cycleKernel_isPositiveRecurrent (x : Fin n) :
     (cycleKernel n).IsPositiveRecurrent x := by
   simp [Kernel.isPositiveRecurrent_iff]
 
 /-- Every state of the finite cycle is recurrent. -/
-theorem cycleKernel_isRecurrent (x : Fin n) :
+@[simp] theorem cycleKernel_isRecurrent (x : Fin n) :
     (cycleKernel n).IsRecurrent x :=
   (cycleKernel_isPositiveRecurrent n x).isRecurrent
 
@@ -175,9 +175,10 @@ theorem cycleKernel_isRecurrent (x : Fin n) :
     ¬ (cycleKernel n).IsTransient x :=
   (cycleKernel_isPositiveRecurrent n x).not_isTransient
 
+-- `Kernel.not_isNullRecurrent_of_finite` already supplies the `simp` lemma on `Fin n`.
 /-- No state of the finite cycle is null recurrent. -/
 theorem not_cycleKernel_isNullRecurrent (x : Fin n) :
     ¬ (cycleKernel n).IsNullRecurrent x :=
-  (cycleKernel n).not_isNullRecurrent_of_finite x
+  Kernel.not_isNullRecurrent_of_finite
 
 end TauCeti.Probability

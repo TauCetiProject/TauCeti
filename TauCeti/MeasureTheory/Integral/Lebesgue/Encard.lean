@@ -18,10 +18,13 @@ measures of the sets `{x | P k x}`, by exchanging the sum and the integral.
 
 ## Main statements
 
-* `MeasureTheory.lintegral_encard_setOf_eq_tsum`: `∫⁻ x, #{k | P k x} ∂μ = ∑' k, μ {x | P k x}`.
-* `MeasureTheory.lintegral_enat_eq_tsum`: `∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k, μ {x | (k : ℕ∞) < f x}`.
-* `MeasureTheory.lintegral_enat_le_tsum`: `∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∑' k, μ {x | (k : ℕ∞) < f x}`,
-  for arbitrary (not necessarily measurable) `f : β → ℕ∞`.
+* `MeasureTheory.lintegral_encard_setOf_eq_tsum` and
+  `MeasureTheory.lintegral_encard_setOf_le_tsum`: `∫⁻ x, #{k | P k x} ∂μ` equals
+  `∑' k, μ {x | P k x}` for measurable predicates and is bounded above by that outer-measure sum in
+  general.
+* `MeasureTheory.lintegral_enat_eq_tsum` and `MeasureTheory.lintegral_enat_le_tsum`:
+  `∫⁻ x, (f x : ℝ≥0∞) ∂μ` equals `∑' k, μ {x | (k : ℕ∞) < f x}` when strict superlevel sets are
+  measurable, and is bounded above by `∑' k, μ {x | (k : ℕ∞) < f x}` for arbitrary `f : β → ℕ∞`.
 -/
 
 public section
@@ -42,6 +45,21 @@ theorem lintegral_encard_setOf_eq_tsum {ι β : Type*} [Countable ι] [Measurabl
   rw [lintegral_tsum fun k => (measurable_const.indicator (hP k)).aemeasurable]
   simp_rw [lintegral_indicator_const (hP _), one_mul]
 
+/-- For an arbitrary countable family of (not necessarily measurable) predicates `P k`, the lower
+Lebesgue integral of `#{k | P k x}` is bounded above by the sum of the outer measures
+`μ {x | P k x}`. -/
+theorem lintegral_encard_setOf_le_tsum {ι β : Type*} [Countable ι] [MeasurableSpace β]
+    (μ : Measure β) (P : ι → β → Prop) :
+    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ ≤ ∑' k, μ {x | P k x} := by
+  let M : ι → Set β := fun k => toMeasurable μ {x | P k x}
+  have hM : ∀ k, MeasurableSet {x | x ∈ M k} := fun k => measurableSet_toMeasurable μ _
+  calc
+    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ ≤ ∫⁻ x, ({k | x ∈ M k}.encard : ℝ≥0∞) ∂μ :=
+      lintegral_mono fun x =>
+        ENat.toENNReal_mono (Set.encard_le_encard fun k hk => subset_toMeasurable μ _ hk)
+    _ = ∑' k, μ (M k) := lintegral_encard_setOf_eq_tsum μ hM
+    _ = ∑' k, μ {x | P k x} := tsum_congr fun k => measure_toMeasurable _
+
 /-- **Tail-sum formula for `ℕ∞`-valued functions.** The Lebesgue integral of an `ℕ∞`-valued
 function whose strict superlevel sets are measurable is `∑' k : ℕ, μ {x | (k : ℕ∞) < f x}`. -/
 theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
@@ -53,17 +71,8 @@ theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure �
 measurable) `f : β → ℕ∞`, the lower Lebesgue integral of `f` is bounded above by the sum of the
 outer measures `μ {x | (k : ℕ∞) < f x}`. -/
 theorem lintegral_enat_le_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β) (f : β → ℕ∞) :
-    ∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} := by
-  let M : ℕ → Set β := fun k => toMeasurable μ {x | (k : ℕ∞) < f x}
-  have hM : ∀ k : ℕ, MeasurableSet {x | x ∈ M k} := fun k => measurableSet_toMeasurable μ _
-  calc
-    ∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∫⁻ x, ({k : ℕ | x ∈ M k}.encard : ℝ≥0∞) ∂μ :=
-      lintegral_mono fun x => by
-        rw [← Set.encard_setOf_natCast_lt (f x)]
-        exact ENat.toENNReal_mono
-          (Set.encard_le_encard fun k hk => subset_toMeasurable μ _ hk)
-    _ = ∑' k : ℕ, μ (M k) := lintegral_encard_setOf_eq_tsum μ hM
-    _ = ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} :=
-      tsum_congr fun k => measure_toMeasurable _
+    ∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} :=
+  (lintegral_congr fun _ => by simp).trans_le
+    (lintegral_encard_setOf_le_tsum μ fun (k : ℕ) x => (k : ℕ∞) < f x)
 
 end MeasureTheory
