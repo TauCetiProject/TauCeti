@@ -469,12 +469,6 @@ private theorem meromorphicAt_cuspFunction_coeff_cyclicIsogenyPolynomial_j (k : 
     exact isBoundedAtImInfty_qParam_pow_mul_coeff_prod _
       (fun _ hA ↦ (mem_primitiveReps.1 hA).1) k
 
-/-- The `(k + 1)`-st coefficient of `(X - C a) * p` over any commutative ring `R`. Stating this for
-generic `R` avoids semireducible `Semiring` mismatches on `(LaurentSeries _)[X]` under `module`. -/
-private theorem coeff_X_sub_C_mul_succ {R : Type*} [CommRing R] (a : R) (p : R[X]) (k : ℕ) :
-    ((X - C a) * p).coeff (k + 1) = p.coeff k - a * p.coeff (k + 1) := by
-  rw [sub_mul, coeff_sub, coeff_X_mul, coeff_C_mul]
-
 /-- At width `n`, the Laurent `q`-expansion commutes with the coefficients of a `Finset` product of
 linear factors `X - C (g A τ)`. -/
 private theorem meromorphicAt_and_laurentQExpansion_coeff_prod_X_sub_C
@@ -519,7 +513,7 @@ private theorem meromorphicAt_and_laurentQExpansion_coeff_prod_X_sub_C
             fun τ : ℍ ↦
               (∏ B ∈ s, (X - C (j (toGLReal (NeZero.ne (n : ℤ)) B • τ)))).coeff (k + 1) := by
         ext τ
-        rw [Finset.prod_insert hAs, coeff_X_sub_C_mul_succ]
+        rw [Finset.prod_insert hAs, coeff_X_sub_C_mul]
         rfl
       rw [hfun]
       have hm1 := (ih hs' k).1
@@ -527,7 +521,7 @@ private theorem meromorphicAt_and_laurentQExpansion_coeff_prod_X_sub_C
       refine ⟨UpperHalfPlane.meromorphicAt_cuspFunction_sub hm1 hm2, ?_⟩
       rw [UpperHalfPlane.laurentQExpansion_sub hm1 hm2,
         UpperHalfPlane.laurentQExpansion_mul hA (ih hs' (k + 1)).1,
-        (ih hs' k).2, (ih hs' (k + 1)).2, Finset.prod_insert hAs, coeff_X_sub_C_mul_succ]
+        (ih hs' k).2, (ih hs' (k + 1)).2, Finset.prod_insert hAs, coeff_X_sub_C_mul]
 
 end CyclicExpansion
 
@@ -825,7 +819,7 @@ private theorem coeff_prod_repLaurentSeries_isIntegral
       simp only [mul_coeff_zero, coeff_sub, coeff_X_zero, coeff_C_zero, zero_sub]
       exact hmul_int (fun m ↦ by simpa using (hA m).neg) (ih hs' 0) g
     | succ k =>
-      rw [coeff_X_sub_C_mul_succ, HahnSeries.coeff_sub]
+      rw [coeff_X_sub_C_mul, HahnSeries.coeff_sub]
       exact (ih hs' k g).sub (hmul_int hA (ih hs' (k + 1)) g)
 
 /-- Every `σ ∈ Gal(ℚ(ζ_n) / ℚ)` fixes `∏ A ∈ primitiveReps n, (X - C (repLaurentSeries A))`. -/
