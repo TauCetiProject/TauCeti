@@ -169,9 +169,8 @@ end ExplicitFields
 theorem algebraMap_adicCompletionExtension_algebraMap (x : K) :
     algebraMap (v.adicCompletion K) (w.adicCompletion L) (algebraMap K (v.adicCompletion K) x) =
       algebraMap L (w.adicCompletion L) (algebraMap K L x) := by
-  rw [algebraMap_adicCompletionExtensionAlgebra, algebraMap_adicCompletion,
-    algebraMap_adicCompletion, Function.comp_apply, Function.comp_apply,
-    Algebra.algebraMap_self_apply, Algebra.algebraMap_self_apply, adicCompletionExtension_coe]
+  simp [algebraMap_adicCompletionExtensionAlgebra, algebraMap_adicCompletion,
+    adicCompletionExtension_coe]
 
 /-- The `w`-adic valuation in `L_w` of an irreducible element of `𝒪_v` equals `exp (-e(w ∣ v))`. -/
 theorem valued_algebraMap_adicCompletion_of_irreducible {π : v.adicCompletionIntegers K}
@@ -179,14 +178,13 @@ theorem valued_algebraMap_adicCompletion_of_irreducible {π : v.adicCompletionIn
     Valued.v (algebraMap (v.adicCompletionIntegers K) (w.adicCompletion L) π) =
       WithZero.exp (-(w.asIdeal.ramificationIdx R : ℤ)) := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rw [IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K)
-      (w.adicCompletion L),
+  rw [IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K),
     algebraMap_adicCompletionExtensionAlgebra, valued_adicCompletionExtension,
     Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot,
     v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ, ← WithZero.exp_nsmul]
   simp
 
-/-- The maximal ideal of `𝒪_v` extends to the `e(w ∣ v)`-th power of the maximal ideal of `𝒪_w`. -/
+/-- The maximal ideal of `𝒪_v` extends to `𝔪_w ^ e(w ∣ v)`. -/
 theorem map_maximalIdeal_adicCompletionIntegers_eq_pow :
     (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)).map
         (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
@@ -194,17 +192,14 @@ theorem map_maximalIdeal_adicCompletionIntegers_eq_pow :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
   rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
   refine w.span_singleton_eq_maximalIdeal_pow ?_
-  rw [← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K)
-    (w.adicCompletionIntegers L) (w.adicCompletion L)]
+  rw [← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)]
   exact v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
 
-/-- The degree of the residue-field extension of completed integer rings is the global inertia
-degree `w.asIdeal.inertiaDeg R` (including any inseparable factor). -/
+/-- The residue-field extension degree of `𝒪_w / 𝒪_v` equals `w.asIdeal.inertiaDeg R`. -/
 @[simp]
 theorem finrank_residueField_adicCompletionIntegers :
     Module.finrank (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
-        (IsLocalRing.ResidueField (w.adicCompletionIntegers L)) =
-      w.asIdeal.inertiaDeg R := by
+        (IsLocalRing.ResidueField (w.adicCompletionIntegers L)) = w.asIdeal.inertiaDeg R := by
   rw [Ideal.inertiaDeg_eq_of_isMaximal v.asIdeal w.asIdeal]
   refine (Algebra.finrank_eq_of_equiv_equiv
     ((v.residueFieldEquivAdicCompletionIntegers (K := K)).trans

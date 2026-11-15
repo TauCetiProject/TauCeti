@@ -251,20 +251,22 @@ theorem galRestrict_apply_mem_differentIdeal_iff [IsDedekindDomain S] [IsTorsion
 
 section Equiv
 
+variable {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ : Type*}
+  [CommRing A₁] [Field K₁] [CommRing B₁] [Field L₁]
+  [Algebra A₁ K₁] [Algebra B₁ L₁] [Algebra A₁ B₁] [Algebra K₁ L₁] [Algebra A₁ L₁]
+  [IsScalarTower A₁ K₁ L₁] [IsScalarTower A₁ B₁ L₁]
+  [CommRing A₂] [Field K₂] [CommRing B₂] [Field L₂]
+  [Algebra A₂ K₂] [Algebra B₂ L₂] [Algebra A₂ B₂] [Algebra K₂ L₂] [Algebra A₂ L₂]
+  [IsScalarTower A₂ K₂ L₂] [IsScalarTower A₂ B₂ L₂]
+  (eA : A₁ ≃+* A₂) (eK : K₁ ≃+* K₂) (eB : B₁ ≃+* B₂) (eL : L₁ ≃+* L₂)
+  (hAK : ∀ a, eK (algebraMap A₁ K₁ a) = algebraMap A₂ K₂ (eA a))
+  (hBL : ∀ b, eL (algebraMap B₁ L₁ b) = algebraMap B₂ L₂ (eB b))
+  (hKL : (algebraMap K₂ L₂).comp eK.toRingHom = eL.toRingHom.comp (algebraMap K₁ L₁))
+
+include eA eK eB hAK hBL hKL in
 /-- **Compatible ring equivalences of integral towers transport membership in the complementary
 module.** -/
-theorem mem_traceDual_one_iff_of_equiv {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ : Type*}
-    [CommRing A₁] [Field K₁] [CommRing B₁] [Field L₁]
-    [Algebra A₁ K₁] [Algebra B₁ L₁] [Algebra A₁ B₁] [Algebra K₁ L₁] [Algebra A₁ L₁]
-    [IsScalarTower A₁ K₁ L₁] [IsScalarTower A₁ B₁ L₁]
-    [CommRing A₂] [Field K₂] [CommRing B₂] [Field L₂]
-    [Algebra A₂ K₂] [Algebra B₂ L₂] [Algebra A₂ B₂] [Algebra K₂ L₂] [Algebra A₂ L₂]
-    [IsScalarTower A₂ K₂ L₂] [IsScalarTower A₂ B₂ L₂]
-    (eA : A₁ ≃+* A₂) (eK : K₁ ≃+* K₂) (eB : B₁ ≃+* B₂) (eL : L₁ ≃+* L₂)
-    (hAK : ∀ a, eK (algebraMap A₁ K₁ a) = algebraMap A₂ K₂ (eA a))
-    (hBL : ∀ b, eL (algebraMap B₁ L₁ b) = algebraMap B₂ L₂ (eB b))
-    (hKL : (algebraMap K₂ L₂).comp eK.toRingHom = eL.toRingHom.comp (algebraMap K₁ L₁))
-    (z : L₁) :
+theorem mem_traceDual_one_iff_of_equiv (z : L₁) :
     z ∈ Submodule.traceDual A₁ K₁ (1 : Submodule B₁ L₁) ↔
       eL z ∈ Submodule.traceDual A₂ K₂ (1 : Submodule B₂ L₂) := by
   have htr (u : L₁) : eK (Algebra.trace K₁ L₁ u) = Algebra.trace K₂ L₂ (eL u) := by
@@ -274,72 +276,43 @@ theorem mem_traceDual_one_iff_of_equiv {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ 
       fun ⟨a, ha⟩ ↦ ⟨eA.symm a, eK.injective (by rw [hAK, eA.apply_symm_apply, ha])⟩⟩
   simp only [Submodule.mem_traceDual, Submodule.mem_one, forall_exists_index,
     forall_apply_eq_imp_iff, Algebra.traceForm_apply]
-  refine ⟨fun h b ↦ ?_, fun h b ↦ ?_⟩
-  · have hb := (hrange _).mp (h (eB.symm b))
-    rwa [htr, map_mul, hBL, eB.apply_symm_apply] at hb
-  · exact (hrange _).mpr (by rw [htr, map_mul, hBL]; exact h (eB b))
+  exact ⟨fun h b ↦ by
+      have hb := (hrange _).mp (h (eB.symm b))
+      rwa [htr, map_mul, hBL, eB.apply_symm_apply] at hb,
+    fun h b ↦ (hrange _).mpr (by rw [htr, map_mul, hBL]; exact h (eB b))⟩
 
+variable [IsDomain A₁] [IsIntegrallyClosed A₁] [IsDedekindDomain B₁] [IsFractionRing A₁ K₁]
+  [Module.IsTorsionFree A₁ B₁] [IsIntegralClosure B₁ A₁ L₁] [FiniteDimensional K₁ L₁]
+  [Algebra.IsSeparable K₁ L₁]
+  [IsDomain A₂] [IsIntegrallyClosed A₂] [IsDedekindDomain B₂] [IsFractionRing A₂ K₂]
+  [Module.IsTorsionFree A₂ B₂] [IsIntegralClosure B₂ A₂ L₂] [FiniteDimensional K₂ L₂]
+  [Algebra.IsSeparable K₂ L₂]
+
+include eA eK eL hAK hBL hKL in
 /-- **Compatible ring equivalences of integral closures transport membership in the different
 ideal.** -/
-theorem mem_differentIdeal_iff_of_equiv {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ : Type*}
-    [CommRing A₁] [IsDomain A₁] [IsIntegrallyClosed A₁] [Field K₁]
-    [CommRing B₁] [IsDedekindDomain B₁] [Field L₁]
-    [Algebra A₁ K₁] [IsFractionRing A₁ K₁] [Algebra B₁ L₁]
-    [Algebra A₁ B₁] [Module.IsTorsionFree A₁ B₁] [Algebra K₁ L₁] [Algebra A₁ L₁]
-    [IsScalarTower A₁ K₁ L₁] [IsScalarTower A₁ B₁ L₁]
-    [IsIntegralClosure B₁ A₁ L₁] [FiniteDimensional K₁ L₁] [Algebra.IsSeparable K₁ L₁]
-    [CommRing A₂] [IsDomain A₂] [IsIntegrallyClosed A₂] [Field K₂]
-    [CommRing B₂] [IsDedekindDomain B₂] [Field L₂]
-    [Algebra A₂ K₂] [IsFractionRing A₂ K₂] [Algebra B₂ L₂]
-    [Algebra A₂ B₂] [Module.IsTorsionFree A₂ B₂] [Algebra K₂ L₂] [Algebra A₂ L₂]
-    [IsScalarTower A₂ K₂ L₂] [IsScalarTower A₂ B₂ L₂]
-    [IsIntegralClosure B₂ A₂ L₂] [FiniteDimensional K₂ L₂] [Algebra.IsSeparable K₂ L₂]
-    (eA : A₁ ≃+* A₂) (eK : K₁ ≃+* K₂) (eB : B₁ ≃+* B₂) (eL : L₁ ≃+* L₂)
-    (hAK : ∀ a, eK (algebraMap A₁ K₁ a) = algebraMap A₂ K₂ (eA a))
-    (hBL : ∀ b, eL (algebraMap B₁ L₁ b) = algebraMap B₂ L₂ (eB b))
-    (hKL : (algebraMap K₂ L₂).comp eK.toRingHom = eL.toRingHom.comp (algebraMap K₁ L₁))
-    (y : B₁) :
+theorem mem_differentIdeal_iff_of_equiv (y : B₁) :
     y ∈ differentIdeal A₁ B₁ ↔ eB y ∈ differentIdeal A₂ B₂ := by
   rw [mem_differentIdeal_iff_forall_mem_traceDual (K := K₁) (L := L₁),
     mem_differentIdeal_iff_forall_mem_traceDual (K := K₂) (L := L₂)]
   refine ⟨fun hy z' hz' ↦ ?_, fun hy z hz ↦ ?_⟩
-  · have hz₁ : eL.symm z' ∈ Submodule.traceDual A₁ K₁ (1 : Submodule B₁ L₁) :=
-      (mem_traceDual_one_iff_of_equiv eA eK eB eL hAK hBL hKL (eL.symm z')).mpr
-        (by rwa [eL.apply_symm_apply])
-    obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL.symm z') hz₁)
-    refine Submodule.mem_one.mpr ⟨eB b, ?_⟩
-    have hb' := congrArg eL hb
-    rwa [hBL, map_mul, eL.apply_symm_apply, hBL] at hb'
-  · have hz₂ : eL z ∈ Submodule.traceDual A₂ K₂ (1 : Submodule B₂ L₂) :=
-      (mem_traceDual_one_iff_of_equiv eA eK eB eL hAK hBL hKL z).mp hz
-    obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL z) hz₂)
-    refine Submodule.mem_one.mpr ⟨eB.symm b, eL.injective ?_⟩
-    rw [hBL, eB.apply_symm_apply, hb, map_mul, hBL]
+  · obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL.symm z') <|
+      (mem_traceDual_one_iff_of_equiv eA eK eB eL hAK hBL hKL _).mpr (by rwa [eL.apply_symm_apply]))
+    exact Submodule.mem_one.mpr ⟨eB b, by
+      have hb' := congrArg eL hb; rwa [hBL, map_mul, eL.apply_symm_apply, hBL] at hb'⟩
+  · obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL z) <|
+      (mem_traceDual_one_iff_of_equiv eA eK eB eL hAK hBL hKL z).mp hz)
+    exact Submodule.mem_one.mpr ⟨eB.symm b, eL.injective (by rw [hBL, eB.apply_symm_apply, hb,
+      map_mul, hBL])⟩
 
+include eA eK eL hAK hBL hKL in
 /-- **Compatible ring equivalences of integral closures transport the different ideal.** -/
-theorem map_differentIdeal_of_equiv {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ : Type*}
-    [CommRing A₁] [IsDomain A₁] [IsIntegrallyClosed A₁] [Field K₁]
-    [CommRing B₁] [IsDedekindDomain B₁] [Field L₁]
-    [Algebra A₁ K₁] [IsFractionRing A₁ K₁] [Algebra B₁ L₁]
-    [Algebra A₁ B₁] [Module.IsTorsionFree A₁ B₁] [Algebra K₁ L₁] [Algebra A₁ L₁]
-    [IsScalarTower A₁ K₁ L₁] [IsScalarTower A₁ B₁ L₁]
-    [IsIntegralClosure B₁ A₁ L₁] [FiniteDimensional K₁ L₁] [Algebra.IsSeparable K₁ L₁]
-    [CommRing A₂] [IsDomain A₂] [IsIntegrallyClosed A₂] [Field K₂]
-    [CommRing B₂] [IsDedekindDomain B₂] [Field L₂]
-    [Algebra A₂ K₂] [IsFractionRing A₂ K₂] [Algebra B₂ L₂]
-    [Algebra A₂ B₂] [Module.IsTorsionFree A₂ B₂] [Algebra K₂ L₂] [Algebra A₂ L₂]
-    [IsScalarTower A₂ K₂ L₂] [IsScalarTower A₂ B₂ L₂]
-    [IsIntegralClosure B₂ A₂ L₂] [FiniteDimensional K₂ L₂] [Algebra.IsSeparable K₂ L₂]
-    (eA : A₁ ≃+* A₂) (eK : K₁ ≃+* K₂) (eB : B₁ ≃+* B₂) (eL : L₁ ≃+* L₂)
-    (hAK : ∀ a, eK (algebraMap A₁ K₁ a) = algebraMap A₂ K₂ (eA a))
-    (hBL : ∀ b, eL (algebraMap B₁ L₁ b) = algebraMap B₂ L₂ (eB b))
-    (hKL : (algebraMap K₂ L₂).comp eK.toRingHom = eL.toRingHom.comp (algebraMap K₁ L₁)) :
+theorem map_differentIdeal_of_equiv :
     (differentIdeal A₁ B₁).map (eB : B₁ →+* B₂) = differentIdeal A₂ B₂ := by
   ext y
   rw [Ideal.mem_map_iff_of_surjective (eB : B₁ →+* B₂) (by simpa using eB.surjective)]
-  exact ⟨fun ⟨x, hx, hxy⟩ ↦
-      hxy ▸ (mem_differentIdeal_iff_of_equiv eA eK eB eL hAK hBL hKL x).mp hx,
-    fun hy ↦ ⟨eB.symm y, (mem_differentIdeal_iff_of_equiv eA eK eB eL hAK hBL hKL (eB.symm y)).mpr
+  exact ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ (mem_differentIdeal_iff_of_equiv eA eK eB eL hAK hBL hKL x).mp hx,
+    fun hy ↦ ⟨eB.symm y, (mem_differentIdeal_iff_of_equiv eA eK eB eL hAK hBL hKL _).mpr
       (by rwa [eB.apply_symm_apply]), eB.apply_symm_apply y⟩⟩
 
 end Equiv

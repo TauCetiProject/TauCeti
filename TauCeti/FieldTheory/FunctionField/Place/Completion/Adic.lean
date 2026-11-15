@@ -16,15 +16,12 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 The intrinsic completion at a place whose valuation agrees with that of a height-one prime `p` of a
 Dedekind domain `R` with fraction field `F` is canonically `p.adicCompletion F`
 (`TauCeti.Place.completionEquivAdicCompletionOfValuationEq`, requiring no `k`-algebra structure on
-`R`). The comparison is a continuous `k`-algebra equivalence preserving the normalized valuation.
-It restricts to a continuous ring equivalence of completed valuation rings
+`R`). The continuous `k`-algebra equivalence preserves the valuation, restricts to a continuous
+ring equivalence of completed valuation rings
 (`TauCeti.Place.completionIntegersRingEquivAdicCompletionIntegersOfValuationEq`), upgrades to a
-`k`-algebra equivalence when `R` is a `k`-algebra
-(`TauCeti.Place.completionIntegersEquivAdicCompletionIntegers`), identifies maximal ideals and
-residue fields, and commutes with completed field extensions
-(`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`). Thus local
-calculations made with places can be transported to and from adic completions on arbitrary Dedekind
-models, even when the constant field grows across an extension.
+`k`-algebra equivalence when `R` is a `k`-algebra, identifies maximal ideals and residue fields,
+and commutes with completed field extensions
+(`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`).
 
 The field comparison uses Mathlib's `HeightOneSpectrum.adicCompletion.equiv` and
 `adicCompletion.uniformEquiv`; the residue comparison uses
@@ -49,8 +46,7 @@ namespace TauCeti.Place
 section SinglePlace
 
 variable (k F : Type*) {R : Type*} [Field k] [Field F] [CommRing R]
-  [IsDedekindDomain R] [Algebra k R] [Algebra R F] [IsFractionRing R F] [Algebra k F]
-  [IsScalarTower k R F] (p : HeightOneSpectrum R)
+  [IsDedekindDomain R] [Algebra R F] [IsFractionRing R F] [Algebra k F] (p : HeightOneSpectrum R)
 
 -- The equality parameter transports the valued and uniform structures from the adic valuation
 -- to an equal place valuation, without unfolding the dependent place-completion carrier.
@@ -83,106 +79,90 @@ private theorem valuation_completionAdicRingEquiv (v : Valuation F ℤᵐ⁰)
   subst v
   exact HeightOneSpectrum.adicCompletion.valued_ofCompletion_apply F p y
 
-omit [Algebra k R] [IsScalarTower k R F] in
+section ValuationEq
+
+variable (P : Place k F) (hP : P.valuation = p.valuation F)
+
 /-- The completion of a place with the Dedekind model's valuation is its adic completion, over the
-constants `k` (with no `k`-algebra assumption on `R`). The equality transports the dependent
-completion structures. -/
-def completionEquivAdicCompletionOfValuationEq (P : Place k F)
-    (hP : P.valuation = p.valuation F) : P.Completion ≃A[k] p.adicCompletion F where
-  toAlgEquiv := AlgEquiv.ofRingEquiv
-    (f := completionAdicRingEquiv F p _ hP) fun c ↦ by
-      rw [← P.completionEmbedding.commutes, completionEmbedding_apply,
-        completionAdicRingEquiv_embedding, ← IsScalarTower.algebraMap_apply k F _]
+constants `k` (with no `k`-algebra assumption on `R`). -/
+def completionEquivAdicCompletionOfValuationEq : P.Completion ≃A[k] p.adicCompletion F where
+  toAlgEquiv := AlgEquiv.ofRingEquiv (f := completionAdicRingEquiv F p _ hP) fun c ↦ by
+    rw [← P.completionEmbedding.commutes, completionEmbedding_apply,
+      completionAdicRingEquiv_embedding, ← IsScalarTower.algebraMap_apply k F _]
   continuous_toFun := continuous_completionAdicRingEquiv F p _ hP
   continuous_invFun := continuous_completionAdicRingEquiv_symm F p _ hP
 
-omit [Algebra k R] [IsScalarTower k R F] in
-private theorem completionEquivAdicCompletionOfValuationEq_apply (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : P.Completion) :
+private theorem completionEquivAdicCompletionOfValuationEq_apply (x : P.Completion) :
     completionEquivAdicCompletionOfValuationEq k F p P hP x =
       completionAdicRingEquiv F p _ hP x := rfl
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The comparison carries the intrinsic field embedding to the adic field embedding. -/
 @[simp]
-theorem completionEquivAdicCompletionOfValuationEq_completionEmbedding (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : F) :
+theorem completionEquivAdicCompletionOfValuationEq_completionEmbedding (x : F) :
     completionEquivAdicCompletionOfValuationEq k F p P hP (P.completionEmbedding x) =
       algebraMap F (p.adicCompletion F) x := by
   rw [completionEquivAdicCompletionOfValuationEq_apply, completionEmbedding_apply,
     completionAdicRingEquiv_embedding]
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The comparison preserves the normalized valuation on completed functions. -/
 @[simp]
-theorem valuation_completionEquivAdicCompletionOfValuationEq (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : P.Completion) :
+theorem valuation_completionEquivAdicCompletionOfValuationEq (x : P.Completion) :
     Valued.v (completionEquivAdicCompletionOfValuationEq k F p P hP x) =
       P.completionPlace.valuation x := by
   rw [completionEquivAdicCompletionOfValuationEq_apply, completionPlace_valuation]
   exact valuation_completionAdicRingEquiv F p _ hP x
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The comparison preserves uniformizers for the normalized completed valuations. -/
 @[simp]
-theorem isUniformizer_completionEquivAdicCompletionOfValuationEq_iff (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : P.Completion) :
+theorem isUniformizer_completionEquivAdicCompletionOfValuationEq_iff (x : P.Completion) :
     (Valued.v : Valuation (p.adicCompletion F) ℤᵐ⁰).IsUniformizer
         (completionEquivAdicCompletionOfValuationEq k F p P hP x) ↔
       P.completionPlace.valuation.IsUniformizer x := by
   rw [TauCeti.isUniformizer_adicCompletion_iff, Valuation.IsUniformizer.iff,
     Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
       P.completionPlace.valuation_surjective,
-    valuation_completionEquivAdicCompletionOfValuationEq]
-  rfl
+    valuation_completionEquivAdicCompletionOfValuationEq]; rfl
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The field comparison identifies the two rings of integers. -/
 @[simp]
-theorem completionEquivAdicCompletionOfValuationEq_mem_integers_iff (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : P.Completion) :
+theorem completionEquivAdicCompletionOfValuationEq_mem_integers_iff (x : P.Completion) :
     completionEquivAdicCompletionOfValuationEq k F p P hP x ∈ p.adicCompletionIntegers F ↔
       x ∈ P.completionPlace.integers := by
   rw [HeightOneSpectrum.mem_adicCompletionIntegers,
     valuation_completionEquivAdicCompletionOfValuationEq, mem_integers_iff]
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The ring equivalence of completed valuation rings induced by
 `completionEquivAdicCompletionOfValuationEq`, requiring no `k`-algebra structure on `R`. -/
-def completionIntegersRingEquivAdicCompletionIntegersOfValuationEq (P : Place k F)
-    (hP : P.valuation = p.valuation F) :
+def completionIntegersRingEquivAdicCompletionIntegersOfValuationEq :
     P.completionPlace.integers ≃+* p.adicCompletionIntegers F :=
   (completionEquivAdicCompletionOfValuationEq k F p P hP).toAlgEquiv.toRingEquiv.restrict
     P.completionPlace.integers (p.adicCompletionIntegers F)
     fun x ↦ (completionEquivAdicCompletionOfValuationEq_mem_integers_iff k F p P hP x).symm
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- `completionIntegersRingEquivAdicCompletionIntegersOfValuationEq` is the restriction of
 `completionEquivAdicCompletionOfValuationEq`. -/
 @[simp]
-theorem completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply (P : Place k F)
-    (hP : P.valuation = p.valuation F) (x : P.completionPlace.integers) :
+theorem completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply
+    (x : P.completionPlace.integers) :
     (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F p P hP x :
-        p.adicCompletion F) =
-      completionEquivAdicCompletionOfValuationEq k F p P hP x :=
-  (rfl)
+        p.adicCompletion F) = completionEquivAdicCompletionOfValuationEq k F p P hP x := (rfl)
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- `completionIntegersRingEquivAdicCompletionIntegersOfValuationEq` is continuous. -/
-theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq (P : Place k F)
-    (hP : P.valuation = p.valuation F) :
+theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq :
     Continuous (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F p P hP) :=
   ((completionEquivAdicCompletionOfValuationEq k F p P hP).continuous.comp
     continuous_subtype_val).subtype_mk _
 
-omit [Algebra k R] [IsScalarTower k R F] in
 /-- The inverse of `completionIntegersRingEquivAdicCompletionIntegersOfValuationEq` is
 continuous. -/
-theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_symm
-    (P : Place k F) (hP : P.valuation = p.valuation F) :
+theorem continuous_completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_symm :
     Continuous (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F p P hP).symm :=
   ((completionEquivAdicCompletionOfValuationEq k F p P hP).symm.continuous.comp
     continuous_subtype_val).subtype_mk _
+
+end ValuationEq
+
+variable [Algebra k R] [IsScalarTower k R F]
 
 /-- The completion of the adic place is the affine-model adic completion, over the constants. -/
 def completionEquivAdicCompletion : (ofPrime k F p).Completion ≃A[k] p.adicCompletion F :=
@@ -314,33 +294,31 @@ variable {k k' F F' R B : Type*} [Field k] [Field k'] [Field F] [Field F']
   (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
   (hv : P.valuation = v.valuation F) (hw : P'.valuation = w.valuation F')
 
-/-- `completionEquivAdicCompletionOfValuationEq` intertwines the intrinsic completed extension
-`Place.completionExtension` with `HeightOneSpectrum.adicCompletionExtension`, even when the
-constant field grows and `B` is not a `k'`-algebra. -/
+/-- `completionEquivAdicCompletionOfValuationEq` intertwines `Place.completionExtension` with
+`HeightOneSpectrum.adicCompletionExtension`, even when the constant field grows. -/
 theorem completionEquivAdicCompletionOfValuationEq_completionExtension (x : P.Completion) :
     completionEquivAdicCompletionOfValuationEq k' F' w P' hw (P.completionExtension P' hP x) =
       v.adicCompletionExtension F F' w
         (completionEquivAdicCompletionOfValuationEq k F v P hv x) := by
   let eK := completionEquivAdicCompletionOfValuationEq k F v P hv
   let eL := completionEquivAdicCompletionOfValuationEq k' F' w P' hw
-  have hf : eL.symm.toAlgEquiv.toRingEquiv.toRingHom.comp
-        ((v.adicCompletionExtension F F' w).comp eK.toAlgEquiv.toRingEquiv.toRingHom) =
-      P.completionExtension P' hP := by
-    refine P.eq_completionExtension_of_continuous P' hP
+  have hf : eL.symm.toRingEquiv.toRingHom.comp
+      ((v.adicCompletionExtension F F' w).comp eK.toRingEquiv.toRingHom) =
+      P.completionExtension P' hP :=
+    P.eq_completionExtension_of_continuous P' hP
       (eL.symm.continuous.comp ((v.continuous_adicCompletionExtension F F' w).comp eK.continuous))
-      fun y ↦ ?_
-    simp only [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
-      ContinuousAlgEquiv.coe_toAlgEquiv, RingHom.coe_coe, Function.comp_apply, eK, eL,
-      completionEquivAdicCompletionOfValuationEq_completionEmbedding]
-    rw [eL.symm_apply_eq]
-    simp [eL, HeightOneSpectrum.algebraMap_adicCompletion,
-      HeightOneSpectrum.adicCompletionExtension_coe]
-  exact ((RingEquiv.symm_apply_eq eL.toAlgEquiv.toRingEquiv).mp
-    (congrArg (fun g : _ →+* _ ↦ g x) hf)).symm
+      fun y ↦ by
+        simp only [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
+          ContinuousAlgEquiv.coe_toAlgEquiv, RingHom.coe_coe, Function.comp_apply, eK, eL,
+          completionEquivAdicCompletionOfValuationEq_completionEmbedding]
+        rw [eL.symm_apply_eq]
+        simp [eL, HeightOneSpectrum.algebraMap_adicCompletion,
+          HeightOneSpectrum.adicCompletionExtension_coe]
+  exact ((RingEquiv.symm_apply_eq eL.toRingEquiv).mp (congrArg (fun g : _ →+* _ ↦ g x) hf)).symm
 
 open scoped AdicCompletionExtension in
-/-- Ring-homomorphism naturality of `completionEquivAdicCompletionOfValuationEq` with respect to
-`completionExtensionAlgebra` and `adicCompletionExtensionAlgebra`. -/
+/-- Naturality of `completionEquivAdicCompletionOfValuationEq` with `completionExtensionAlgebra`
+and `adicCompletionExtensionAlgebra`. -/
 theorem algebraMap_comp_completionEquivAdicCompletionOfValuationEq :
     letI := P.completionExtensionAlgebra P' hP
     (algebraMap (v.adicCompletion F) (w.adicCompletion F')).comp
@@ -350,10 +328,9 @@ theorem algebraMap_comp_completionEquivAdicCompletionOfValuationEq :
         (algebraMap P.Completion P'.Completion) := by
   let _ := P.completionExtensionAlgebra P' hP
   refine RingHom.ext fun x ↦ ?_
-  dsimp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
-    ContinuousAlgEquiv.coe_toAlgEquiv, RingHom.coe_coe]
-  rw [P.algebraMap_completionExtensionAlgebra P' hP,
-    v.algebraMap_adicCompletionExtensionAlgebra F F' w]
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
+    ContinuousAlgEquiv.coe_toAlgEquiv, RingHom.coe_coe, P.algebraMap_completionExtensionAlgebra,
+    v.algebraMap_adicCompletionExtensionAlgebra (K := F) (L := F')]
   exact (completionEquivAdicCompletionOfValuationEq_completionExtension v w P P' hP hv hw x).symm
 
 end Extension
