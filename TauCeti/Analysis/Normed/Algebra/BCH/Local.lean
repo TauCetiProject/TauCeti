@@ -18,8 +18,9 @@ that this expression is a local logarithm; its values away from the origin
 have no mathematical role.
 
 The exponential of this germ is the product of the two exponentials. Its
-restrictions to either coordinate axis are the identity germ, and over any
-characteristic-zero normed field its chosen representative is analytic at the origin.
+restrictions to either coordinate axis are the identity germ, and over a
+characteristic-zero nontrivially normed field with continuous `ℚ`-scalar multiplication
+(for instance `ℝ` or `ℂ`) its chosen representative is analytic at the origin.
 
 ## Main declarations
 
@@ -69,7 +70,7 @@ theorem localBCH_value [NormedAlgebra ℚ A] [CompleteSpace A] : (localBCH A).va
 section Analytic
 
 variable (𝕂 : Type*) [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
-  [ContinuousSMul ℚ≥0 𝕂] [NormedAlgebra 𝕂 A] [CompleteSpace A]
+  [NormedAlgebra 𝕂 A] [CompleteSpace A]
 
 /-- The representative defining `localBCH` is analytic at the origin. -/
 theorem analyticAt_localBCH_representative :
