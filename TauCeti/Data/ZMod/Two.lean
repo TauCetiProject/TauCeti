@@ -30,7 +30,11 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 ## Main results
 
 * `ZMod.natCast_gcd_two`: `gcd(2, n)` and `n` agree modulo two.
+* `ZMod.eq_zero_or_eq_one`: every element of `ZMod 2` is `0` or `1`.
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
+* `ZMod.neg_one_pow_val_add`, `ZMod.neg_one_pow_val_sum`, `ZMod.neg_one_pow_val_inj`: the sign
+  `a ↦ (-1 : R) ^ a.val` turns addition in `ZMod 2` into multiplication in any ring `R` and is
+  injective whenever `2 ≠ 0` in `R`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^n` when `u` is.
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
@@ -47,10 +51,60 @@ theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by
   rw [Nat.gcd_rec, ← ZMod.natCast_mod n 2]
   rcases Nat.mod_two_eq_zero_or_one n with h | h <;> rw [h] <;> decide
 
+/-- Every element of `ZMod 2` is `0` or `1`. -/
+theorem eq_zero_or_eq_one (a : ZMod 2) : a = 0 ∨ a = 1 := by
+  revert a
+  decide
+
+/-- A product in `ZMod 2` equals `1` if and only if both factors equal `1`. -/
+theorem mul_eq_one_iff {a b : ZMod 2} : a * b = 1 ↔ a = 1 ∧ b = 1 := by
+  revert a b
+  decide
+
 /-- **The representative of a residue modulo two is the indicator of being nonzero.** -/
 theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by
   revert a
   decide
+
+/-- In any ring, `(-1) ^ a.val` for `a : ZMod 2` equals `1` at `0` and `-1` at `1`. -/
+theorem neg_one_pow_val_eq_ite {R : Type*} [Ring R] (a : ZMod 2) :
+    (-1 : R) ^ a.val = if a = 0 then 1 else -1 := by
+  have hval1 : (1 : ZMod 2).val = 1 := rfl
+  have h10 : (1 : ZMod 2) ≠ 0 := by decide
+  rcases eq_zero_or_eq_one a with rfl | rfl <;> simp [h10, hval1]
+
+/-- The sign `a ↦ (-1) ^ a.val` carries addition in `ZMod 2` to multiplication in any ring. -/
+theorem neg_one_pow_val_add {R : Type*} [Ring R] (a b : ZMod 2) :
+    (-1 : R) ^ (a + b).val = (-1 : R) ^ a.val * (-1 : R) ^ b.val := by
+  have hval1 : (1 : ZMod 2).val = 1 := rfl
+  have h11 : (1 : ZMod 2) + 1 = 0 := by decide
+  rcases eq_zero_or_eq_one a with rfl | rfl <;>
+    rcases eq_zero_or_eq_one b with rfl | rfl <;> simp [h11, hval1]
+
+/-- In any commutative ring, `(-1) ^ (∑ i ∈ s, f i).val` is the product of `(-1) ^ (f i).val`. -/
+theorem neg_one_pow_val_sum {R ι : Type*} [CommRing R] (s : Finset ι) (f : ι → ZMod 2) :
+    (-1 : R) ^ (∑ i ∈ s, f i).val = ∏ i ∈ s, (-1 : R) ^ (f i).val := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => rw [Finset.sum_cons, Finset.prod_cons, neg_one_pow_val_add, ih]
+
+/-- In any ring where `2 ≠ 0`, `a ↦ (-1 : R) ^ a.val` is injective on `ZMod 2`. -/
+theorem neg_one_pow_val_inj {R : Type*} [Ring R] [NeZero (2 : R)] {a b : ZMod 2}
+    (h : (-1 : R) ^ a.val = (-1 : R) ^ b.val) : a = b := by
+  have hval1 : (1 : ZMod 2).val = 1 := rfl
+  have h1 : (1 : R) ≠ -1 := fun h1 ↦ NeZero.ne (2 : R) <| by
+    rw [← one_add_one_eq_two]
+    nth_rw 2 [h1]
+    exact add_neg_cancel 1
+  rcases eq_zero_or_eq_one a with rfl | rfl <;>
+    rcases eq_zero_or_eq_one b with rfl | rfl
+  · rfl
+  · simp only [val_zero, pow_zero, hval1, pow_one] at h
+    exact absurd h h1
+  · simp only [hval1, pow_one, val_zero, pow_zero] at h
+    exact absurd h.symm h1
+  · rfl
 
 variable {n : ℕ}
 
