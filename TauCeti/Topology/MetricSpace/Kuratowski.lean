@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import Mathlib.Topology.MetricSpace.Kuratowski
 import Mathlib.Topology.Algebra.Module.Basic
+import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -33,6 +34,9 @@ Polish path spaces, to separable pseudometric spaces.
 * `TauCeti.isometry_kuratowskiEmbedding`: the Fréchet–Kuratowski embedding is an isometry.
 * `TauCeti.exists_isometry_separableSpace_completeSpace`: a separable pseudometric space maps
   isometrically into a separable Banach space.
+* `Isometry.exists_mem_dist_le_two_mul_dist_add`: an approximate nearest point of the image of an
+  isometry, chosen in a given dense set. It brings an approximation made in the ambient space back
+  to the domain.
 -/
 
 public section
@@ -81,3 +85,28 @@ theorem exists_isometry_separableSpace_completeSpace (Y : Type*) [PseudoMetricSp
     Isometry.of_dist_eq hι.dist_eq⟩
 
 end TauCeti
+
+namespace Isometry
+
+open Metric
+
+/-- For an isometry `ι : Z → E` of a nonempty space, every `y : E` has a point `z` of a dense set
+`D ⊆ Z` with `dist s z ≤ 2 * dist (ι s) y + 2 * r` for every `s : Z`: an approximate nearest point
+of the image of `ι`, moved slightly into `D`. -/
+theorem exists_mem_dist_le_two_mul_dist_add {Z E : Type*} [PseudoMetricSpace Z]
+    [PseudoMetricSpace E] [Nonempty Z] {ι : Z → E} (hι : Isometry ι) {D : Set Z} (hD : Dense D)
+    (y : E) {r : ℝ} (hr : 0 < r) :
+    ∃ z ∈ D, ∀ s, dist s z ≤ 2 * dist (ι s) y + 2 * r := by
+  obtain ⟨_, ⟨s₀, rfl⟩, hs₀⟩ :=
+    (infDist_lt_iff (range_nonempty ι)).1 (lt_add_of_pos_right (infDist y (range ι)) hr)
+  obtain ⟨z, hzD, hz⟩ := hD.exists_dist_lt s₀ hr
+  refine ⟨z, hzD, fun s ↦ ?_⟩
+  have h₁ := dist_triangle s s₀ z
+  have h₂ := hι.dist_eq s s₀
+  have h₃ := dist_triangle (ι s) y (ι s₀)
+  have h₄ : infDist y (range ι) ≤ dist (ι s) y := by
+    rw [dist_comm]
+    exact infDist_le_dist_of_mem (mem_range_self s)
+  linarith
+
+end Isometry

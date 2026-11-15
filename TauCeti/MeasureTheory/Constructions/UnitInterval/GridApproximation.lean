@@ -33,10 +33,6 @@ subset. Neither separability nor completeness of `Z` is assumed.
 
 ## Main statements
 
-* `TauCeti.unitInterval.dist_le_one_div_of_cellIdx_eq`: two points of the same cell of the
-  `m`-fold equipartition are at distance at most `1 / m`.
-* `TauCeti.unitInterval.measurePreserving_up_cellFin`: the cell index, lifted to any universe,
-  carries `volume` to the uniform measure on `ULift (Fin n)`.
 * `TauCeti.unitInterval.exists_dist_comp_cellFin_lt`: a continuous function on the unit square is
   uniformly approximated by grid step functions.
 * `TauCeti.unitInterval.exists_eLpNorm_sub_comp_cellFin_lt`: for `p ≠ ∞`, every
@@ -63,22 +59,7 @@ namespace TauCeti
 
 namespace unitInterval
 
-universe u
-
-variable {m : ℕ} {p : ℝ≥0∞}
-
-/-- Two points of the same cell of the `m`-fold equipartition of `[0, 1]` are at distance at most
-`1 / m`. -/
-theorem dist_le_one_div_of_cellIdx_eq (hm : 0 < m) {x y : I} (h : cellIdx m x = cellIdx m y) :
-    dist x y ≤ 1 / m := by
-  have hx₁ := cellIdx_div_le m x
-  have hx₂ := le_cellIdx_add_one_div hm x
-  have hy₁ := cellIdx_div_le m y
-  have hy₂ := le_cellIdx_add_one_div hm y
-  rw [h] at hx₁ hx₂
-  rw [add_div] at hx₂ hy₂
-  rw [Subtype.dist_eq, Real.dist_eq, abs_le]
-  constructor <;> linarith
+variable {p : ℝ≥0∞}
 
 /-- A grid step function `(x, y) ↦ G (cellFin n x, cellFin n y)` is strongly measurable. -/
 theorem stronglyMeasurable_comp_cellFin {β : Type*} [TopologicalSpace β] (n : ℕ) [NeZero n]
@@ -86,22 +67,6 @@ theorem stronglyMeasurable_comp_cellFin {β : Type*} [TopologicalSpace β] (n : 
     StronglyMeasurable fun q : I × I ↦ G (cellFin n q.1, cellFin n q.2) :=
   StronglyMeasurable.of_discrete.comp_measurable
     ((measurable_cellFin.comp measurable_fst).prodMk (measurable_cellFin.comp measurable_snd))
-
-/-- The cell index, lifted to any universe, carries `volume` on the unit interval to the uniform
-measure on `ULift (Fin n)`. -/
-theorem measurePreserving_up_cellFin (n : ℕ) [NeZero n] :
-    MeasurePreserving (fun x : I ↦ ULift.up.{u} (cellFin n x)) volume
-      (ProbabilityTheory.uniformOn univ) := by
-  have hm : Measurable fun x : I ↦ ULift.up.{u} (cellFin n x) :=
-    measurable_up.comp measurable_cellFin
-  refine ⟨hm, Measure.ext_of_singleton fun i ↦ ?_⟩
-  have hpre : (fun x : I ↦ ULift.up.{u} (cellFin n x)) ⁻¹' {i} = cellFin n ⁻¹' {i.down} := by
-    ext x
-    simp only [mem_preimage, mem_singleton_iff, ULift.ext_iff]
-  rw [Measure.map_apply hm (measurableSet_singleton i), hpre,
-    measurePreserving_cellFin.measure_preimage (measurableSet_singleton _).nullMeasurableSet,
-    ProbabilityTheory.uniformOn_univ, ProbabilityTheory.uniformOn_univ, Measure.count_singleton,
-    Measure.count_singleton, Fintype.card_ulift]
 
 /-- A continuous function on the unit square is uniformly within any positive `r` of a grid step
 function: its values at one chosen point of each cell, once the grid is fine enough. -/
@@ -147,25 +112,6 @@ theorem exists_eLpNorm_sub_comp_cellFin_lt {E : Type*} [NormedAddCommGroup E] [N
           (ae_of_all _ fun q ↦ by rw [← dist_eq_norm]; exact (hG q).le)
     _ ≤ η := by simpa using hrη.le
 
-/-- For an isometry `ι : Z → E` of a nonempty space, every `y : E` has a point `z` of a dense set
-`D ⊆ Z` with `dist s z ≤ 2 * dist (ι s) y + 2 * r` for every `s : Z`: an approximate nearest point
-of the image of `ι`, moved slightly into `D`. -/
-private theorem exists_mem_dist_le_two_mul_dist_add {Z E : Type*} [PseudoMetricSpace Z]
-    [PseudoMetricSpace E] [Nonempty Z] {ι : Z → E} (hι : Isometry ι) {D : Set Z} (hD : Dense D)
-    (y : E) {r : ℝ} (hr : 0 < r) :
-    ∃ z ∈ D, ∀ s, dist s z ≤ 2 * dist (ι s) y + 2 * r := by
-  obtain ⟨_, ⟨s₀, rfl⟩, hs₀⟩ :=
-    (infDist_lt_iff (range_nonempty ι)).1 (lt_add_of_pos_right (infDist y (range ι)) hr)
-  obtain ⟨z, hzD, hz⟩ := hD.exists_dist_lt s₀ hr
-  refine ⟨z, hzD, fun s ↦ ?_⟩
-  have h₁ := dist_triangle s s₀ z
-  have h₂ := hι.dist_eq s s₀
-  have h₃ := dist_triangle (ι s) y (ι s₀)
-  have h₄ : infDist y (range ι) ≤ dist (ι s) y := by
-    rw [dist_comm]
-    exact infDist_le_dist_of_mem (mem_range_self s)
-  linarith
-
 /-- **Grid step approximation of metric-valued kernels.** Let `κ : I × I → Z` be almost everywhere
 strongly measurable with values in a pseudometric space, with finite `p`-th moment
 `‖(x, y) ↦ edist (κ (x, y)) z₀‖_p < ∞` about some point `z₀`, for a finite exponent `p`. Then for
@@ -190,12 +136,12 @@ theorem exists_eLpNorm_edist_comp_cellFin_lt {Z : Type*} [PseudoMetricSpace Z] (
     hι.continuous.comp_aestronglyMeasurable hκ
   have hf : MemLp (fun q ↦ ι (κ q)) p volume := by
     refine (eLpNorm_mono_eNorm hfm fun q ↦ ?_).trans_lt hz₀
-    rw [eNorm_eq_self, ← hι.edist_eq, hι₀, eDist_eq_eNorm_sub, sub_zero]
+    simp [← hι.edist_eq, hι₀]
   obtain ⟨η, hη, hhalf⟩ := exists_Lp_half ℝ (volume : Measure (I × I)) p hε.ne'
   obtain ⟨r, -, hr₀, hrη⟩ := ENNReal.lt_iff_exists_real_btwn.1 (ENNReal.half_pos hη.ne')
   have hr : 0 < r := ENNReal.ofReal_pos.1 hr₀
   obtain ⟨n, hn, G, hG⟩ := exists_eLpNorm_sub_comp_cellFin_lt hp hf (ENNReal.half_pos hη.ne')
-  choose ω hωD hω using fun ij ↦ exists_mem_dist_le_two_mul_dist_add hι hD (G ij) hr
+  choose ω hωD hω using fun ij ↦ hι.exists_mem_dist_le_two_mul_dist_add hD (G ij) hr
   refine ⟨n, hn, ω, hωD, ?_⟩
   -- Pointwise, `dist (κ q) (ω ij) ≤ 2 ‖g q‖ + 2 r` on the cell `ij` of `q`.
   set g := fun q : I × I ↦ ι (κ q) - G (cellFin n q.1, cellFin n q.2)
@@ -203,9 +149,9 @@ theorem exists_eLpNorm_edist_comp_cellFin_lt {Z : Type*} [PseudoMetricSpace Z] (
     hfm.sub (stronglyMeasurable_comp_cellFin n G).aestronglyMeasurable
   have hpt : ∀ q, ‖edist (κ q) (ω (cellFin n q.1, cellFin n q.2))‖ₑ ≤
       ‖((2 : ℝ) • fun q ↦ ‖g q‖) q + 2 * r‖ₑ := fun q ↦ by
-    rw [eNorm_eq_self, edist_dist, Pi.smul_apply, smul_eq_mul,
-      Real.eNorm_of_nonneg (by positivity), ← dist_eq_norm]
-    exact ENNReal.ofReal_le_ofReal (hω _ _)
+    simpa [edist_dist, g, ← dist_eq_norm] using
+      (ENNReal.ofReal_le_ofReal (hω (cellFin n q.1, cellFin n q.2) (κ q))).trans_eq
+        (Real.eNorm_of_nonneg (by positivity)).symm
   refine (eLpNorm_mono_eNorm (by fun_prop) hpt).trans_lt (hhalf _ _ ?_ ?_)
   · rw [eLpNorm_const_smul, eLpNorm_norm _ hgm, show ‖(2 : ℝ)‖ₑ = 2 by
       simpa using Real.eNorm_natCast 2]

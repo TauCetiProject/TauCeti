@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Constructions.UnitInterval.GridApproximation
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Space
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # Finite uniform kernels and separability of the Gromov–Wasserstein space
@@ -118,8 +119,12 @@ theorem exists_finiteUniform_edist_lt [Fact (1 ≤ p)] (hp : p ≠ ∞) {D : Set
   obtain ⟨n, hn, ω, hωD, hlt⟩ := unitInterval.exists_eLpNorm_edist_comp_cellFin_lt hp
     (K.aestronglyMeasurable_kernel.comp_measurePreserving hgg)
     (hz₀.comp_measurePreserving hgg) hD hε
+  -- The lifted cell index carries `volume` to the uniform law on the carrier `ULift (Fin n)`.
+  have hup : MeasurePreserving (ULift.up.{u} : Fin n → ULift.{u} (Fin n))
+      (ProbabilityTheory.uniformOn univ) (ProbabilityTheory.uniformOn univ) :=
+    ⟨measurable_up, Equiv.ulift.symm.map_uniformOn_univ⟩
   refine ⟨n, hn, ω, hωD, (edist_le_eLpNorm (L := finiteUniform n ω) hg
-    (TauCeti.unitInterval.measurePreserving_up_cellFin n)).trans_lt ?_⟩
+    (hup.comp unitInterval.measurePreserving_cellFin)).trans_lt ?_⟩
   rwa [← Measure.volume_eq_prod]
 
 /-- **Separability of measured kernels** (compare Bauer–Mémoli–Needham–Nishino, Propositions 36
@@ -134,9 +139,9 @@ theorem separableSpace [Fact (1 ≤ p)] [SeparableSpace Z] (hp : p ≠ ∞) :
     finiteUniform (n := x.1 + 1) fun ij ↦ (x.2 ij : Z), countable_range _, ?_⟩⟩
   refine EMetric.dense_iff.2 fun K ε hε ↦ ?_
   obtain ⟨n, hn, ω, hωD, hlt⟩ := exists_finiteUniform_edist_lt hp hD K hε
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.out
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.out
   exact ⟨_, by rw [Metric.mem_eball, edist_comm]; exact hlt,
-    ⟨⟨m, fun ij ↦ ⟨ω ij, hωD ij⟩⟩, rfl⟩⟩
+    ⟨⟨m, fun ij ↦ ⟨ω ij, hωD ij⟩⟩, by simp⟩⟩
 
 end GromovWassersteinPresentation
 
