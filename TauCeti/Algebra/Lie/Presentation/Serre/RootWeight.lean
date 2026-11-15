@@ -199,7 +199,7 @@ theorem map_serreLift_iInf_eigenspace_ad_pairingIn (j : H.root) :
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply, hpair,
     LieSubmodule.mem_toSubmodule]
   simpa only [Weight.toLinear_apply, Weight.coe_coe] using
-    (mem_rootSpace_iff_forall_lie_coroot b (j : Weight K H L).toLinear).symm
+    (b.mem_rootSpace_iff_forall_lie_coroot (j : Weight K H L).toLinear).symm
 
 /-- **The Serre lift is injective on the weight space of a root.** -/
 theorem ker_serreLift_inf_iInf_eigenspace_ad_pairingIn (j : H.root) :

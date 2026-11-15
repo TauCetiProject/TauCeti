@@ -195,10 +195,10 @@ theorem lieSpan_eq_top_of_isSerreSystem {b : (rootSystem H).Base} {e f : ↥b.su
   refine lieSpan_range_union_eq_top_of_mem_rootSpace b e f (fun i ↦ hS.isSl2Triple
     (by rw [Matrix.transpose_apply, b.cartanMatrix_apply_same])
     (ZeroMemClass.coe_eq_zero.not.mpr ((rootSystem H).ne_zero' i))) (fun i ↦ ?_) fun i ↦ ?_
-  · refine (mem_rootSpace_iff_forall_lie_coroot b ((i : H.root) : Weight K H L).toLinear).2
+  · refine (b.mem_rootSpace_iff_forall_lie_coroot ((i : H.root) : Weight K H L).toLinear).2
       fun k ↦ ?_
     rw [hS.lie_H_E_smul, hpair, Weight.toLinear_apply]
-  · refine (mem_rootSpace_iff_forall_lie_coroot b (-((i : H.root) : Weight K H L).toLinear)).2
+  · refine (b.mem_rootSpace_iff_forall_lie_coroot (-((i : H.root) : Weight K H L).toLinear)).2
       fun k ↦ ?_
     rw [hS.lie_H_F_smul, hpair, LinearMap.neg_apply, Weight.toLinear_apply]
 
