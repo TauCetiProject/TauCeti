@@ -141,6 +141,24 @@ private noncomputable def zigZagZero
     norm_φ_ψ_sub_le := hv.choose_spec }
 
 open Classical in
+private theorem zigZagZero_G
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n)) :
+    (zigZagZero α β φ₀ ψ₀ hφψ).G = denseSeed β 0 :=
+  rfl
+
+open Classical in
+private theorem zigZagZero_F
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n)) :
+    (zigZagZero α β φ₀ ψ₀ hφψ).F =
+      (zigZagZero α β φ₀ ψ₀ hφψ).G.image
+        (conjHom (zigZagZero α β φ₀ ψ₀ hφψ).u (ψ₀ 0)) ∪ denseSeed α 0 :=
+  rfl
+
+open Classical in
 private noncomputable def zigZagSucc
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
     (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
@@ -161,6 +179,43 @@ private noncomputable def zigZagSucc
     G := G'
     norm_φ_ψ_sub_le := hv.choose_spec }
 
+open Classical in
+private theorem zigZagSucc_u
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
+    (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) :
+    (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u =
+      (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+        (by positivity)).choose :=
+  rfl
+
+open Classical in
+private theorem zigZagSucc_G
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
+    (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) :
+    (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).G =
+      s.G.image (β n) ∪ s.F.image (conjHom s.v (φ₀ n)) ∪ denseSeed β (n + 1) :=
+  rfl
+
+open Classical in
+private theorem zigZagSucc_F
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
+    (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) :
+    (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).F =
+      s.F.image (α n) ∪
+        (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).G.image
+          (conjHom (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u (ψ₀ (n + 1))) ∪
+        denseSeed α (n + 1) :=
+  rfl
+
 private theorem zigZagSucc_norm_ψ_φ_sub_le
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
     (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
@@ -168,8 +223,9 @@ private theorem zigZagSucc_norm_ψ_φ_sub_le
     (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
     (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) {a : A n} (ha : a ∈ s.F) :
     ‖conjHom (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u (ψ₀ (n + 1)) (conjHom s.v (φ₀ n) a) - α n a‖ ≤
-      (1 / 2 : ℝ) ^ n :=
-  (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+      (1 / 2 : ℝ) ^ n := by
+  rw [zigZagSucc_u]
+  exact (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
     (by positivity)).choose_spec a ha
 
 private noncomputable def zigZag
@@ -180,6 +236,14 @@ private noncomputable def zigZag
     ∀ n, ZigZagStage β φ₀ ψ₀ n
   | 0 => zigZagZero α β φ₀ ψ₀ hφψ
   | n + 1 => zigZagSucc α β φ₀ ψ₀ hψφ hφψ n (zigZag α β φ₀ ψ₀ hψφ hφψ n)
+
+private theorem zigZag_zero
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n)) :
+    zigZag α β φ₀ ψ₀ hψφ hφψ 0 = zigZagZero α β φ₀ ψ₀ hφψ :=
+  rfl
 
 private theorem zigZag_succ
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -207,31 +271,33 @@ theorem IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent
         (fun n ↦ (F n : Set (A n))) (fun n ↦ (G n : Set (B n)))
         (fun n ↦ (1 / 2 : ℝ) ^ n) (fun n ↦ (1 / 2 : ℝ) ^ n) := by
   classical
-  have hseedA (m : ℕ) : (denseSeed α m : Set (A m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).F :=
-    Finset.coe_subset.mpr <| by cases m <;> exact Finset.subset_union_right
-  have hseedB (m : ℕ) : (denseSeed β m : Set (B m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).G :=
-    Finset.coe_subset.mpr <| by
-      cases m with
-      | zero => exact Finset.Subset.refl _
-      | succ m => exact Finset.subset_union_right
+  have hseedA (m : ℕ) : (denseSeed α m : Set (A m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).F := by
+    intro x hx
+    cases m <;> simp [zigZag_zero, zigZag_succ, zigZagZero_F, zigZagSucc_F,
+      Finset.mem_coe.mp hx]
+  have hseedB (m : ℕ) : (denseSeed β m : Set (B m)) ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).G := by
+    intro x hx
+    cases m <;> simp [zigZag_zero, zigZag_succ, zigZagZero_G, zigZagSucc_G,
+      Finset.mem_coe.mp hx]
   refine ⟨fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).u,
     fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).v,
     fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).F,
     fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).G, ?_⟩
   refine
-    { mapsTo_α := fun n a ha ↦ Finset.mem_coe.mpr <|
-        Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ ha))
-      mapsTo_β := fun n b hb ↦ Finset.mem_coe.mpr <|
-        Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hb))
-      mapsTo_φ := fun n a ha ↦ Finset.mem_coe.mpr <|
-        Finset.mem_union_left _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ ha))
+    { mapsTo_α := fun n a ha ↦ by
+        simp only [Finset.mem_coe, zigZag_succ, zigZagSucc_F, Finset.mem_union] at ha ⊢
+        grind [Finset.mem_image_of_mem]
+      mapsTo_β := fun n b hb ↦ by
+        simp only [Finset.mem_coe, zigZag_succ, zigZagSucc_G, Finset.mem_union] at hb ⊢
+        grind [Finset.mem_image_of_mem]
+      mapsTo_φ := fun n a ha ↦ by
+        simp only [Finset.mem_coe, zigZag_succ, zigZagSucc_G, Finset.mem_union] at ha ⊢
+        grind [Finset.mem_image_of_mem]
       mapsTo_ψ := fun m b hb ↦ by
-        cases m with
-        | zero =>
-          exact Finset.mem_coe.mpr <| Finset.mem_union_left _ (Finset.mem_image_of_mem _ hb)
-        | succ m =>
-          exact Finset.mem_coe.mpr <|
-            Finset.mem_union_left _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hb))
+        cases m <;>
+          simp only [Finset.mem_coe, zigZag_zero, zigZag_succ, zigZagZero_F, zigZagSucc_F,
+            Finset.mem_union] at hb ⊢ <;>
+          grind [Finset.mem_image_of_mem]
       approx_A := exists_approx_of_denseSeed_subset α hseedA
       approx_B := exists_approx_of_denseSeed_subset β hseedB
       norm_ψ_φ_sub_le := fun n a ha ↦ by
