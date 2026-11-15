@@ -127,19 +127,19 @@ theorem disjoint_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : Set V}
     Disjoint (intrinsicInterior ℝ P) (intrinsicInterior ℝ Q) :=
   Set.disjoint_left.mpr fun _ hxP hxQ => hne (C.eq_of_mem_intrinsicInterior hP hQ hxP hxQ)
 
-/-- If one cell is contained in another and their affine spans have the same dimension,
+/-- If one cell is contained in another and the larger cell has no greater affine dimension,
 the cells are equal. -/
-theorem eq_of_subset_of_finrank_direction_eq (C : FinitePolyhedralComplex h)
+theorem eq_of_subset_of_finrank_direction_le (C : FinitePolyhedralComplex h)
     {P Q : Set V} (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hPQ : P ⊆ Q)
-    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction =
-      Module.finrank ℝ (affineSpan ℝ Q).direction) : P = Q := by
+    (hdim : Module.finrank ℝ (affineSpan ℝ Q).direction ≤
+      Module.finrank ℝ (affineSpan ℝ P).direction) : P = Q := by
   have := h.finiteDimensional
   by_contra hne
   have hlt := TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior
     (C.isConvexPolyhedron hP).convex (C.nonempty P hP) hPQ
     (C.disjoint_intrinsicInterior hP hQ hne)
   rw [direction_affineSpan, direction_affineSpan] at hdim
-  exact (ne_of_lt hlt) hdim
+  exact hlt.not_ge hdim
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}
