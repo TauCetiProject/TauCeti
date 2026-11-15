@@ -113,6 +113,7 @@ theorem tensorProductCoeff_def :
     tensorProductCoeff N N' = N.coeff ⊗ₖₜ[R] N'.idMorphism + N.idMorphism ⊗ₖₜ[R] N'.coeff :=
   (rfl)
 
+@[simp]
 theorem tensorProductCoeff_apply (x y : X) (x' y' : X') :
     tensorProductCoeff N N' (x, x') (y, y') =
       N.coeff x y ⊗ₜ[R] (if x' = y' then ιB (N'.idem x') else 0) +
