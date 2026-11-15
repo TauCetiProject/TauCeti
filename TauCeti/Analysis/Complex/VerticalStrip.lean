@@ -74,8 +74,7 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
   exact preimage_mono (closure_minimal Ioo_subset_Icc_self isClosed_Icc)
 
 /-- The closure of a nondegenerate open vertical strip is the corresponding closed strip. -/
-@[simp]
-theorem closure_verticalStrip (hab : a ≠ b) :
+@[simp] theorem closure_verticalStrip (hab : a ≠ b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab]; rfl
 
@@ -90,21 +89,17 @@ theorem DiffContOnCl.intervalIntegral_add_mul_I_eq {E : Type*} [NormedAddCommGro
     [NormedSpace ℂ E] {f : ℂ → E} {a b : ℝ} (hf : DiffContOnCl ℂ f (verticalStrip a b))
     (hab : a ≤ b) (T : ℝ) (hper : ∀ x ∈ Icc a b, f (x + T * I) = f x) :
     (∫ y : ℝ in 0..T, f (a + y * I)) = ∫ y : ℝ in 0..T, f (b + y * I) := by
-  rcases hab.eq_or_lt with rfl | hab
-  · rfl
+  rcases hab.eq_or_lt with rfl | hab; · rfl
   have hrect := Complex.integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn f
     ⟨a, 0⟩ ⟨b, T⟩
-    (hf.continuousOn.mono fun z hz => by
-      rw [closure_verticalStrip hab.ne]
-      simpa [uIcc_of_le hab.le] using hz.1)
-    (hf.differentiableOn.mono fun z hz => by
+    (hf.continuousOn.mono fun _ hz => by
+      rw [closure_verticalStrip hab.ne]; simpa [uIcc_of_le hab.le] using hz.1)
+    (hf.differentiableOn.mono fun _ hz => by
       simpa [min_eq_left hab.le, max_eq_right hab.le] using hz.1)
   have htop : (∫ x : ℝ in a..b, f (x + T * I)) = ∫ x : ℝ in a..b, f (x + (0 : ℝ) * I) :=
     intervalIntegral.integral_congr fun x hx => by
-      rw [ofReal_zero, zero_mul, add_zero]
-      exact hper x (uIcc_of_le hab.le ▸ hx)
-  rw [htop, sub_self, zero_add, sub_eq_zero, smul_right_inj I_ne_zero] at hrect
-  exact hrect.symm
+      rw [ofReal_zero, zero_mul, add_zero]; exact hper x (uIcc_of_le hab.le ▸ hx)
+  rw [htop, sub_self, zero_add, sub_eq_zero, smul_right_inj I_ne_zero] at hrect; exact hrect.symm
 
 /-- Twisting a `T`-vertically periodic strip function by `exp (-(2π m / T) z)` (`m : ℤ`) preserves
 vertical `T`-periodicity, so its vertical integrals over `0..T` along `re z = a` and `re z = b`
@@ -115,12 +110,10 @@ theorem DiffContOnCl.intervalIntegral_exp_smul_add_mul_I_eq {E : Type*}
     (hper : ∀ x ∈ Icc a b, f (x + T * I) = f x) (m : ℤ) :
     (∫ y : ℝ in 0..T, exp (-(2 * Real.pi * m / T : ℂ) * (a + y * I)) • f (a + y * I)) =
       ∫ y : ℝ in 0..T, exp (-(2 * Real.pi * m / T : ℂ) * (b + y * I)) • f (b + y * I) := by
-  rcases eq_or_ne T 0 with rfl | hT
-  · simp
+  rcases eq_or_ne T 0 with rfl | hT; · simp
   set ω : ℂ := -(2 * Real.pi * m / T : ℂ)
-  have hexp : Differentiable ℂ fun z : ℂ => exp (ω * z) := by fun_prop
-  refine (hexp.diffContOnCl.smul hf).intervalIntegral_add_mul_I_eq hab T fun x hx => ?_
+  refine ((by fun_prop : Differentiable ℂ fun z : ℂ => exp (ω * z)).diffContOnCl.smul
+    hf).intervalIntegral_add_mul_I_eq hab T fun x hx => ?_
   have hωT : ω * (T * I) = ((-m : ℤ) : ℂ) * (2 * Real.pi * I) := by
-    have : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT
-    simp only [ω]; push_cast; field_simp
+    have : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT; simp only [ω]; push_cast; field_simp
   simp only [hper x hx, mul_add, Complex.exp_add, hωT, Complex.exp_int_mul_two_pi_mul_I, mul_one]

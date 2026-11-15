@@ -96,8 +96,7 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
 /-- A Fourier monomial turns a difference of points into `fourier n x * fourier (-n) y`. -/
 theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * fourier (-n) y := by
-  rw [fourier_apply, zsmul_sub, sub_eq_add_neg, AddCircle.toCircle_add, Circle.coe_mul,
-    ← fourier_apply, ← neg_zsmul, ← fourier_apply]
+  simp [sub_eq_add_neg, AddCircle.toCircle_add]
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/

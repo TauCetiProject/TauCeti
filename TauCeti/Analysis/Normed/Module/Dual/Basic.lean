@@ -73,33 +73,26 @@ theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0
   rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
   exact hx
 
-/-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` is at least
-the sum of the norms of its restrictions to the two factors. -/
-private theorem norm_comp_inl_add_norm_comp_inr_le [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-    (Ψ : StrongDual 𝕜 (E × F)) :
-    ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ ≤ ‖Ψ‖ := by
-  set f₀ := Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)
-  set f₁ := Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)
-  have hball (y₀ : E) (hy₀ : y₀ ∈ closedBall (0 : E) 1) (y₁ : F)
-      (hy₁ : y₁ ∈ closedBall (0 : F) 1) : re (f₀ y₀) + re (f₁ y₁) ≤ ‖Ψ‖ := by
-    have hnorm : ‖(y₀, y₁)‖ ≤ 1 := by
-      simp [Prod.norm_def, mem_closedBall_zero_iff.1 hy₀, mem_closedBall_zero_iff.1 hy₁]
-    rw [← map_add, Ψ.comp_inl_add_comp_inr (y₀, y₁)]
-    exact (re_le_norm _).trans <| (Ψ.le_opNorm _).trans <|
-      (mul_le_mul_of_nonneg_left hnorm (norm_nonneg Ψ)).trans_eq (mul_one _)
-  have h₁ : ∀ y₁ ∈ closedBall (0 : F) 1, re (f₁ y₁) ≤ ‖Ψ‖ - ‖f₀‖ := fun y₁ hy₁ ↦ by
-    have := re_apply_add_mul_norm_le (f := f₀) (x := 0) (u := ‖Ψ‖ - re (f₁ y₁)) zero_le_one
-      fun y₀ hy₀ ↦ by linarith [hball y₀ hy₀ y₁ hy₁]
-    linarith [show re (f₀ 0) = 0 by simp]
-  linarith [re_apply_add_mul_norm_le (f := f₁) (x := 0) zero_le_one h₁, show re (f₁ 0) = 0 by simp]
-
 /-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` equals the
 sum of the norms of its restrictions to the two factors. -/
 theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     (Ψ : StrongDual 𝕜 (E × F)) :
-    ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ = ‖Ψ‖ :=
-  le_antisymm (norm_comp_inl_add_norm_comp_inr_le Ψ) <|
-    (congrArg norm Ψ.coprod_comp_inl_inr.symm).trans_le
-      ((Ψ.comp (.inl 𝕜 E F)).opNorm_coprod_le (Ψ.comp (.inr 𝕜 E F)))
+    ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ = ‖Ψ‖ := by
+  set f₀ := Ψ.comp (.inl 𝕜 E F); set f₁ := Ψ.comp (.inr 𝕜 E F)
+  refine le_antisymm ?_
+    ((congrArg norm Ψ.coprod_comp_inl_inr.symm).trans_le (f₀.opNorm_coprod_le f₁))
+  have hball {y₀ : E} (hy₀ : y₀ ∈ closedBall 0 1) {y₁ : F} (hy₁ : y₁ ∈ closedBall 0 1) :
+      re (f₀ y₀) + re (f₁ y₁) ≤ ‖Ψ‖ := by
+    have hnorm : ‖(y₀, y₁)‖ ≤ 1 := by
+      simp [Prod.norm_def, mem_closedBall_zero_iff.1 hy₀, mem_closedBall_zero_iff.1 hy₁]
+    rw [← map_add, Ψ.comp_inl_add_comp_inr (y₀, y₁)]
+    exact (re_le_norm _).trans <|
+      (Ψ.le_opNorm _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ) hnorm
+  have h₁ : ∀ y₁ ∈ closedBall (0 : F) 1, re (f₁ y₁) ≤ ‖Ψ‖ - ‖f₀‖ := fun y₁ hy₁ ↦ by
+    have h0 := re_apply_add_mul_norm_le (f := f₀) (x := 0) (u := ‖Ψ‖ - re (f₁ y₁)) zero_le_one
+      fun y₀ hy₀ ↦ by linarith [hball hy₀ hy₁]
+    rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+  have h0 := re_apply_add_mul_norm_le (f := f₁) (x := 0) zero_le_one h₁
+  rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
 
 end StrongDual

@@ -13,13 +13,10 @@ import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 # The non-regular couple `(C₀(ℕ, E), ℓ^∞(ℕ, E))`
 
 `CompatibleCouple.c0LpInfty 𝕜 E` embeds `C₀(ℕ, E)` and `ℓ^∞(ℕ, E)` into `ℓ^∞(ℕ, E)`. Its first
-intersection projection `interFst` is surjective onto `C₀(ℕ, E)`, hence has dense range
-(`c0LpInfty_interFst_surjective`, `denseRange_c0LpInfty_interFst`), whereas `interSnd` does not
-have dense range in `ℓ^∞(ℕ, E)` when `E` is nontrivial (`not_denseRange_c0LpInfty_interSnd`).
-This couple therefore witnesses that density of `X₀ ∩ X₁` in a single endpoint suffices neither
-for `CompatibleCouple.IsRegular` (`not_isRegular_c0LpInfty`) nor for injectivity of dual
-restriction on the other endpoint (`not_injective_precomp_c0LpInfty_interSnd`), motivating the
-two-sided density hypothesis in `CompatibleCouple.dual`.
+projection `interFst` is surjective onto `C₀(ℕ, E)`, whereas `interSnd` is not dense in
+`ℓ^∞(ℕ, E)` when `E` is nontrivial. Thus one-sided density suffices neither for
+`CompatibleCouple.IsRegular` nor for injectivity of dual restriction on the other endpoint,
+motivating the two-sided density hypothesis in `CompatibleCouple.dual`.
 
 ## References
 
@@ -46,7 +43,6 @@ def c0LpInfty : CompatibleCouple 𝕜 C₀(ℕ, E) (lp (fun _ : ℕ ↦ E) ∞) 
 
 @[simp] theorem c0LpInfty_embed₀ :
     (c0LpInfty 𝕜 E).embed₀ = (ZeroAtInftyContinuousMap.toLpInfty 𝕜).toContinuousLinearMap := (rfl)
-
 @[simp] theorem c0LpInfty_embed₁ : (c0LpInfty 𝕜 E).embed₁ = ContinuousLinearMap.id 𝕜 _ := (rfl)
 
 /-- The first projection from the intersection of `(C₀(ℕ, E), ℓ^∞(ℕ, E))` onto `C₀(ℕ, E)` is
@@ -62,7 +58,6 @@ theorem denseRange_c0LpInfty_interFst : DenseRange (c0LpInfty 𝕜 E).interFst :
 `ℓ^∞(ℕ, E)`. -/
 theorem not_denseRange_c0LpInfty_interSnd [Nontrivial E] :
     ¬ DenseRange (c0LpInfty 𝕜 E).interSnd := by
-  -- A nonzero constant sequence `e` has `ℓ^∞` distance at least `‖e‖ / 2` from every null sequence.
   intro hd; obtain ⟨e, he⟩ := exists_ne (0 : E)
   have he0 : 0 < ‖e‖ := norm_pos_iff.2 he
   let u : lp (fun _ : ℕ ↦ E) ∞ :=
