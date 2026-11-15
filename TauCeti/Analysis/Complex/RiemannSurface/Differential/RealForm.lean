@@ -134,11 +134,14 @@ theorem inChartAt_toRoughForm [IsManifold 𝓘(ℂ) 1 X] (ω : OneForm X) (x₀ 
       ω.coeff e z := by
     rw [← ω.coeff_smul_mvfderiv (chart_mem_maximalAtlas x₀) hz, smul_apply,
       mvfderiv_mfderiv_symm (chart_mem_maximalAtlas x₀) hz, smul_eq_mul, mul_one]
-  -- Evaluate both sides on `v`: the left side is `ω` at `e.symm z` on the derivative of the chart
-  -- inverse, which is `v 0` times the coefficient by `h1` and `h2`; the right side is `f * v 0`.
-  rw [RoughForm.inChartAt_apply, toRoughForm_apply, extChartAt_model_symm_eq_chartAt_symm,
-    ModelWithCorners.range_eq_univ, mfderivWithin_univ, hv, h1, map_smul, h2,
-    ContinuousAlternatingMap.smul_apply, dzForm_apply, smul_eq_mul, smul_eq_mul, mul_comm]
+  -- Normalize the chart: the left side is `ω` at `e.symm z` on the complex derivative of the chart
+  -- inverse applied to `v 0`.
+  have h3 : ω.toRoughForm.inChartAt x₀ z v =
+      ω (e.symm z) (mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z (v 0)) := by
+    rw [RoughForm.inChartAt_apply, toRoughForm_apply, extChartAt_model_symm_eq_chartAt_symm,
+      ModelWithCorners.range_eq_univ, mfderivWithin_univ, hv]
+  -- Evaluate: by `h1` and `h2` this is `v 0` times the coefficient, which is `(f dz) v`.
+  simp [h3, h1, h2, mul_comm]
 
 section IsManifold
 
