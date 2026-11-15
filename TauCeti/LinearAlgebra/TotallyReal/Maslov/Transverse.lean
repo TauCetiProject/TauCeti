@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
 public import TauCeti.Topology.Algebra.Matrix.Symmetric
