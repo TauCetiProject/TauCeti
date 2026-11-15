@@ -51,6 +51,9 @@ permutations.
   conjugate of the transposition `(0 1)` or of the rotation `(0 1 2)`.
 * `TauCeti.closure_finRotate_three_swap_eq_top`: the transposition `(0 1)` and the rotation
   `(0 1 2)` generate `S₃`.
+* `Equiv.Perm.isSwap_fin_three_iff`: a permutation of three points is a transposition exactly when
+  it is `(0 1)`, `(0 2)`, or `(1 2)`.
+* `TauCeti.setOf_isSwap_perm_fin_three`: the same, as an equality of sets.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
 * `TauCeti.coe_stabilizer_perm_fin_three`: the same, as an equality of sets.
@@ -103,6 +106,14 @@ theorem fin_three_conj_cases (g : Equiv.Perm (Fin 3)) :
   revert g
   decide
 
+/-- A permutation of `Fin 3` is a transposition if and only if it is `(0 1)`, `(0 2)`, or
+`(1 2)`. -/
+theorem isSwap_fin_three_iff (σ : Equiv.Perm (Fin 3)) :
+    σ.IsSwap ↔ σ = Equiv.swap 0 1 ∨ σ = Equiv.swap 0 2 ∨ σ = Equiv.swap 1 2 := by
+  rw [← card_support_eq_two]
+  revert σ
+  decide
+
 end Equiv.Perm
 
 namespace TauCeti
@@ -112,6 +123,11 @@ theorem closure_finRotate_three_swap_eq_top :
     Subgroup.closure {finRotate 3, Equiv.swap (0 : Fin 3) 1} = ⊤ := by
   simpa using Equiv.Perm.closure_cycle_adjacent_swap (σ := finRotate 3) isCycle_finRotate
     support_finRotate 0
+
+/-- The transpositions of `S₃`, as a set: `(0 1)`, `(0 2)`, and `(1 2)`. -/
+theorem setOf_isSwap_perm_fin_three :
+    {σ : Equiv.Perm (Fin 3) | σ.IsSwap} = {Equiv.swap 0 1, Equiv.swap 0 2, Equiv.swap 1 2} :=
+  Set.ext Equiv.Perm.isSwap_fin_three_iff
 
 /-- **A permutation of three points fixing `a` is the identity or the transposition of the other
 two points.** Written with `a + 1` and `a + 2` so that the statement is uniform in `a`: those are

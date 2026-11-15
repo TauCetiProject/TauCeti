@@ -54,10 +54,7 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Idempotents
 
 universe v u
 
-variable {C : Type u} [Category.{v} C]
-
-
-variable [Preadditive C]
+variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 namespace ExactStructure
 
@@ -122,7 +119,8 @@ private theorem karoubiConflations_isInflation_of_retract {P Q : Karoubi C} {f :
           rw [← reassoc_of% heD, ← h₂, Category.assoc, h₁, Category.comp_id] }
   · ext <;> simp [h₁]
 
-/-- An inflation of the idempotent completion is a retract of the image of an inflation of `E`. -/
+/-- A morphism of the idempotent completion is an inflation if and only if it is a retract of the
+image of an inflation of `E`. -/
 private theorem karoubiConflations_isInflation_iff {P Q : Karoubi C} (f : P ⟶ Q) :
     E.karoubiConflations.IsInflation f ↔ ∃ (A B : C) (a : A ⟶ B),
       E.IsInflation a ∧ Nonempty (RetractArrow f ((toKaroubi C).map a)) := by
@@ -178,7 +176,8 @@ private theorem karoubiConflations_isDeflation_of_retract {Q R : Karoubi C} {g :
         comm₂₃ := wr.symm }
   · ext <;> simp [h₁]
 
-/-- A deflation of the idempotent completion is a retract of the image of a deflation of `E`. -/
+/-- A morphism of the idempotent completion is a deflation if and only if it is a retract of the
+image of a deflation of `E`. -/
 private theorem karoubiConflations_isDeflation_iff {Q R : Karoubi C} (g : Q ⟶ R) :
     E.karoubiConflations.IsDeflation g ↔ ∃ (B D : C) (d : B ⟶ D),
       E.IsDeflation d ∧ Nonempty (RetractArrow g ((toKaroubi C).map d)) := by
