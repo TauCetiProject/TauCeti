@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
@@ -144,28 +144,13 @@ monomorphisms. -/
 theorem rlp_monomorphisms [Fibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
   intro A B i (hi : Mono i)
   refine ⟨fun {a b} sq ↦ ?_⟩
-  -- Deform `b ≫ h.section_` along the shrinking, extending the shrinking homotopy on `A`, by
-  -- lifting against the anodyne pushout-product of `i` with the vertex `0` of `Δ[1]`; the other
-  -- end of the deformation is a lift.
-  let P := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, 0].ι
-  have hP : anodyneExtensions P.ι := anodyneExtensions_pushoutObjObjι P (.horn_ι 0)
-  have := hP p (mem_fibrations p)
-  let φ : P.pt ⟶ X := P.isPushout.desc (fst _ _ ≫ b ≫ h.section_) (a ▷ _ ≫ h.homotopy.h) (by
-    have e : X ◁ Λ[1, 0].ι ≫ h.homotopy.h = fst _ _ ≫ p ≫ h.section_ := by
-      have hι : X ◁ Λ[1, 0].ι = fst _ _ ≫ ι₀ := CartesianMonoidalCategory.hom_ext _ _
-        (by simp) (by simp [horn_one_ι_eq_const, comp_const])
-      rw [hι, Category.assoc, Homotopy.h₀]
-    dsimp
-    rw [whisker_exchange_assoc, e]
-    simp [sq.w_assoc])
-  have sq' : CommSq φ P.ι p (fst _ _ ≫ b) := ⟨P.hom_ext (by simp [φ]) (by
-    simp [φ, sq.w])⟩
-  exact ⟨⟨{ l := ι₁ ≫ sq'.lift
-            fac_left := by
-              have e : i ▷ Δ[1] = P.inr ≫ P.ι := P.inr_ι.symm
-              rw [← ι₁_comp_assoc, e, Category.assoc, sq'.fac_left]
-              simp [φ]
-            fac_right := by simp }⟩⟩
+  -- Deform `b ≫ h.section_` along the shrinking, extending the shrinking homotopy on `A`, by the
+  -- covering homotopy extension property of `p`; the other end of the deformation is a lift.
+  obtain ⟨L, -, hL, hLp⟩ := exists_lift_cylinder_ι₀_of_mono i p (fst _ _ ≫ b) (b ≫ h.section_)
+    (a ▷ Δ[1] ≫ h.homotopy.h) (by simp) (by simp [sq.w]) (by simp [sq.w_assoc])
+  exact ⟨⟨{ l := ι₁ ≫ L
+            fac_left := by rw [← ι₁_comp_assoc, hL]; simp
+            fac_right := by simp [hLp] }⟩⟩
 
 end Shrinking
 

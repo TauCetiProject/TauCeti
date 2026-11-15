@@ -17,11 +17,12 @@ The ends `Z ⊗ {0}` and `Z ⊗ {1}` of the cylinder `Z ⊗ Δ[1]` are anodyne e
 homotopy into the base of a Kan fibration lifts, starting from a lift of either of its ends.
 
 More generally, a Kan fibration has the covering homotopy extension property with respect to every
-monomorphism `i : A ⟶ B` (`SSet.exists_lift_cylinder_of_mono`): a homotopy `B ⊗ Δ[1] ⟶ Y` lifts,
-extending a lift of its start `B ⊗ {0}` and a compatible lift of its restriction to
-`A ⊗ Δ[1]`. This is lifting against the pushout-product of `i` with `Λ[1, 0] ⟶ Δ[1]`, the
-inclusion of `B ⊗ {0} ∪ A ⊗ Δ[1]` into `B ⊗ Δ[1]`, which is anodyne by the theorem of Joël Riou
-and Jack McKoen in Mathlib (`SSet.anodyneExtensions_pushoutObjObjι`).
+monomorphism `i : A ⟶ B` (`SSet.exists_lift_cylinder_ι₀_of_mono`,
+`SSet.exists_lift_cylinder_ι₁_of_mono`): a homotopy `B ⊗ Δ[1] ⟶ Y` lifts, extending a lift of
+one of its ends `B ⊗ {k}` and a compatible lift of its restriction to `A ⊗ Δ[1]`. This is lifting
+against the pushout-product of `i` with `Λ[1, k] ⟶ Δ[1]`, the inclusion of
+`B ⊗ {k} ∪ A ⊗ Δ[1]` into `B ⊗ Δ[1]`, which is anodyne by the theorem of Joël Riou and Jack
+McKoen in Mathlib (`SSet.anodyneExtensions_pushoutObjObjι`).
 
 ## References
 
@@ -87,31 +88,52 @@ lemma anodyneExtensions_ι₁ (Z : SSet.{u}) : anodyneExtensions (ι₁ : Z ⟶ 
   cylinderEnd_one Z ▸ anodyneExtensions_cylinderEnd Z 1
 
 /-- The covering homotopy extension property of a Kan fibration `p : X ⟶ Y` with respect to a
-monomorphism `i : A ⟶ B`: a homotopy `H : B ⊗ Δ[1] ⟶ Y` lifts along `p`, extending a lift `g` of
-its start and a lift `L` of its restriction to `A ⊗ Δ[1]` which agree on `A ⊗ {0}`. -/
-theorem exists_lift_cylinder_of_mono {A B X Y : SSet.{u}} (i : A ⟶ B) [Mono i] (p : X ⟶ Y)
-    [Fibration p] (H : B ⊗ Δ[1] ⟶ Y) (g : B ⟶ X) (L : A ⊗ Δ[1] ⟶ X) (hg : g ≫ p = ι₀ ≫ H)
-    (hL : L ≫ p = i ▷ Δ[1] ≫ H) (hgL : i ≫ g = ι₀ ≫ L) :
-    ∃ L' : B ⊗ Δ[1] ⟶ X, ι₀ ≫ L' = g ∧ i ▷ Δ[1] ≫ L' = L ∧ L' ≫ p = H := by
-  -- Lift against the anodyne pushout-product of `i` with the vertex `0` of `Δ[1]`, the
-  -- inclusion of `B ⊗ {0} ∪ A ⊗ Δ[1]`, on which `g` and `L` define a map.
-  let P := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, 0].ι
-  have := anodyneExtensions_pushoutObjObjι P (.horn_ι 0) p (mem_fibrations p)
+monomorphism `i : A ⟶ B`, at the end `k` of the cylinder: a homotopy `H : B ⊗ Δ[1] ⟶ Y` lifts
+along `p`, extending a lift `g` of its restriction to `B ⊗ {k}` and a lift `L` of its restriction
+to `A ⊗ Δ[1]` which agree on `A ⊗ {k}`. -/
+private lemma exists_lift_cylinderEnd_of_mono {A B X Y : SSet.{u}} (k : Fin 2) (i : A ⟶ B)
+    [Mono i] (p : X ⟶ Y) [Fibration p] (H : B ⊗ Δ[1] ⟶ Y) (g : B ⟶ X) (L : A ⊗ Δ[1] ⟶ X)
+    (hg : g ≫ p = cylinderEnd B k ≫ H) (hL : L ≫ p = i ▷ Δ[1] ≫ H)
+    (hgL : i ≫ g = cylinderEnd A k ≫ L) :
+    ∃ L' : B ⊗ Δ[1] ⟶ X, cylinderEnd B k ≫ L' = g ∧ i ▷ Δ[1] ≫ L' = L ∧ L' ≫ p = H := by
+  -- Lift against the anodyne pushout-product of `i` with the vertex `k` of `Δ[1]`, the
+  -- inclusion of `B ⊗ {k} ∪ A ⊗ Δ[1]`, on which `g` and `L` define a map.
+  let P := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, k].ι
+  have := anodyneExtensions_pushoutObjObjι P (.horn_ι k) p (mem_fibrations p)
   let φ : P.pt ⟶ X := P.isPushout.desc (fst _ _ ≫ g) L (by
     dsimp
-    rw [whiskerLeft_horn_one_ι, cylinderEnd_zero, Category.assoc, ← hgL, whiskerRight_fst_assoc])
+    rw [whiskerLeft_horn_one_ι, Category.assoc, ← hgL, whiskerRight_fst_assoc])
   have sq : CommSq φ P.ι p H := ⟨P.hom_ext
     (by simp only [φ, IsPushout.inl_desc_assoc, P.inl_ι_assoc, curriedTensor_obj_map,
-      whiskerLeft_horn_one_ι, cylinderEnd_zero, Category.assoc, hg])
+      whiskerLeft_horn_one_ι, Category.assoc, hg])
     (by simp [φ, hL])⟩
-  obtain ⟨s, hs₁, hs₂⟩ := exists_section_whiskerLeft_horn_one_ι B 0
+  obtain ⟨s, hs₁, hs₂⟩ := exists_section_whiskerLeft_horn_one_ι B k
   refine ⟨sq.lift, ?_, ?_, sq.fac_right⟩
-  · have e : B ◁ Λ[1, 0].ι = P.inl ≫ P.ι := P.inl_ι.symm
-    -- `ι₀` is the composite of the section `s` with `B ⊗ Λ[1, 0] ⟶ B ⊗ Δ[1]`.
-    rw [← cylinderEnd_zero, ← hs₂, e, Category.assoc, Category.assoc, sq.fac_left]
+  · have e : B ◁ Λ[1, k].ι = P.inl ≫ P.ι := P.inl_ι.symm
+    -- The end is the composite of the section `s` with `B ⊗ Λ[1, k] ⟶ B ⊗ Δ[1]`.
+    rw [← hs₂, e, Category.assoc, Category.assoc, sq.fac_left]
     simp [φ, reassoc_of% hs₁]
   · have e : i ▷ Δ[1] = P.inr ≫ P.ι := P.inr_ι.symm
     rw [e, Category.assoc, sq.fac_left]
     simp [φ]
+
+/-- The covering homotopy extension property of a Kan fibration `p : X ⟶ Y` with respect to a
+monomorphism `i : A ⟶ B`: a homotopy `H : B ⊗ Δ[1] ⟶ Y` lifts along `p`, extending a lift `g` of
+its start and a lift `L` of its restriction to `A ⊗ Δ[1]` which agree on `A ⊗ {0}`. -/
+theorem exists_lift_cylinder_ι₀_of_mono {A B X Y : SSet.{u}} (i : A ⟶ B) [Mono i] (p : X ⟶ Y)
+    [Fibration p] (H : B ⊗ Δ[1] ⟶ Y) (g : B ⟶ X) (L : A ⊗ Δ[1] ⟶ X) (hg : g ≫ p = ι₀ ≫ H)
+    (hL : L ≫ p = i ▷ Δ[1] ≫ H) (hgL : i ≫ g = ι₀ ≫ L) :
+    ∃ L' : B ⊗ Δ[1] ⟶ X, ι₀ ≫ L' = g ∧ i ▷ Δ[1] ≫ L' = L ∧ L' ≫ p = H :=
+  exists_lift_cylinderEnd_of_mono 0 i p H g L hg hL hgL
+
+/-- The covering homotopy extension property of a Kan fibration `p : X ⟶ Y` with respect to a
+monomorphism `i : A ⟶ B`, backwards in time: a homotopy `H : B ⊗ Δ[1] ⟶ Y` lifts along `p`,
+extending a lift `g` of its end and a lift `L` of its restriction to `A ⊗ Δ[1]` which agree on
+`A ⊗ {1}`. -/
+theorem exists_lift_cylinder_ι₁_of_mono {A B X Y : SSet.{u}} (i : A ⟶ B) [Mono i] (p : X ⟶ Y)
+    [Fibration p] (H : B ⊗ Δ[1] ⟶ Y) (g : B ⟶ X) (L : A ⊗ Δ[1] ⟶ X) (hg : g ≫ p = ι₁ ≫ H)
+    (hL : L ≫ p = i ▷ Δ[1] ≫ H) (hgL : i ≫ g = ι₁ ≫ L) :
+    ∃ L' : B ⊗ Δ[1] ⟶ X, ι₁ ≫ L' = g ∧ i ▷ Δ[1] ≫ L' = L ∧ L' ≫ p = H :=
+  exists_lift_cylinderEnd_of_mono 1 i p H g L hg hL hgL
 
 end SSet

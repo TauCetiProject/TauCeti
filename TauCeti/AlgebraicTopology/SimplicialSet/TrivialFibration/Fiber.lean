@@ -24,9 +24,9 @@ which is a weak equivalence is a trivial fibration to the contractibility of its
 
 The case of a map to a point comes first: a map from `K` to a terminal simplicial set is a trivial
 fibration exactly when `K` is a weakly contractible Kan complex
-(`SSet.rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible`). Over a point, a shrinking in
-the sense of `TauCeti/AlgebraicTopology/SimplicialSet/TrivialFibration.lean` is a homotopy from a
-constant map to the identity.
+(`SSet.rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal`). Over a point, a
+shrinking in the sense of `TauCeti/AlgebraicTopology/SimplicialSet/TrivialFibration.lean` is a
+homotopy from a constant map to the identity.
 
 For a Kan fibration `p` with weakly contractible fibres it suffices to lift against the boundary
 inclusions `∂Δ[n] ⟶ Δ[n]`. Given a square from `∂Δ[n] ⟶ Δ[n]` to `p` with top map `a` and bottom
@@ -37,13 +37,13 @@ map `b`, let `y` be the image under `b` of the initial vertex, and compose the c
   `y`.
 * That end is a map from `∂Δ[n]` to the contractible fibre, so it extends to `Δ[n]`.
 * Lift the homotopy over all of `Δ[n]`, extending these two lifts
-  (`SSet.exists_lift_cylinder_of_mono`). Its end over `1` solves the lifting problem.
+  (`SSet.exists_lift_cylinder_ι₀_of_mono`). Its end over `1` solves the lifting problem.
 
 ## Main results
 
-* `SSet.rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible`: a map to a terminal
-  simplicial set is a trivial fibration exactly when its source is a weakly contractible Kan
-  complex.
+* `SSet.rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal`: a map to a
+  terminal simplicial set is a trivial fibration exactly when its source is a weakly
+  contractible Kan complex.
 * `SSet.rlp_monomorphisms_of_isWeaklyContractible_fiber`: a Kan fibration whose fibres are weakly
   contractible is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff_fibration_and_isWeaklyContractible_fiber`: the resulting
@@ -73,8 +73,8 @@ variable {X Y : SSet.{u}}
 /-- A map `p : K ⟶ T` to a terminal simplicial set has the right lifting property with respect to
 all monomorphisms (it is a trivial fibration) if and only if `K` is a weakly contractible Kan
 complex. -/
-theorem rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible {K T : SSet.{u}}
-    (hT : IsTerminal T) (p : K ⟶ T) :
+theorem rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
+    {K T : SSet.{u}} (hT : IsTerminal T) (p : K ⟶ T) :
     (monomorphisms SSet.{u}).rlp p ↔ KanComplex K ∧ IsWeaklyContractible K := by
   rw [rlp_monomorphisms_iff, ← isFibrant_iff_of_isTerminal p hT]
   refine and_congr_right fun _ ↦ ⟨fun ⟨h⟩ ↦ ?_, fun _ ↦ ?_⟩
@@ -108,7 +108,7 @@ theorem rlp_monomorphisms_of_isWeaklyContractible_fiber (p : X ⟶ Y) [Fibration
   let L₁ := sq₁.lift
   have hL₁ : ι₀ ≫ L₁ ≫ p = const y := by rw [sq₁.fac_right, ι₀_comp_assoc, hC₀, comp_const]
   -- The fibre over `y` is a contractible Kan complex, so the end of `L₁` extends to `Δ[n]`.
-  have hF := (rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible
+  have hF := (rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     stdSimplex.isTerminalObj₀ (stdSimplex.isTerminalObj₀.from (fiber p y : SSet.{u}))).2
       ⟨inferInstance, hp y⟩ _ (monomorphisms.infer_property ∂Δ[n].ι)
   have sqF : CommSq (Subcomplex.lift (ι₀ ≫ L₁) ((range_le_fiber_iff _ p y).2 hL₁)) ∂Δ[n].ι
@@ -121,7 +121,7 @@ theorem rlp_monomorphisms_of_isWeaklyContractible_fiber (p : X ⟶ Y) [Fibration
     have := (range_le_fiber_iff (fiber p y).ι p y).1 (by simp)
     simp [g, this]
   -- Lift the contraction over `Δ[n]`, prescribed by `L₁` on the boundary and by `g` over `0`.
-  obtain ⟨L, -, hL, hLp⟩ := exists_lift_cylinder_of_mono ∂Δ[n].ι p (C.h ≫ b) g L₁
+  obtain ⟨L, -, hL, hLp⟩ := exists_lift_cylinder_ι₀_of_mono ∂Δ[n].ι p (C.h ≫ b) g L₁
     (by rw [hgp, hC₀]) sq₁.fac_right hg
   -- Its end over `1` lies over `b` and extends `a`.
   exact ⟨⟨⟨ι₁ ≫ L, by rw [← ι₁_comp_assoc, hL, sq₁.fac_left],
@@ -140,7 +140,7 @@ theorem rlp_monomorphisms_iff_fibration_and_isWeaklyContractible_fiber {p : X �
   have : (monomorphisms SSet.{u}).rlp ((Subcomplex.ofSimplex y).fromPreimage p) :=
     fun _ _ i hi ↦ have := hp i hi; inferInstance
   rw [fiber_eq_preimage]
-  exact ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible
+  exact ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     (Subcomplex.isTerminalOfSimplex y) _).1 this).2
 
 end SSet
