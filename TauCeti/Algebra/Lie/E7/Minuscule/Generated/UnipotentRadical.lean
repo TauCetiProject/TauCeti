@@ -8,8 +8,7 @@ module
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 import TauCeti.Algebra.Lie.E7.Minuscule.Generated.RelativeBaseChange
 
 /-!
@@ -43,7 +42,8 @@ this conclusion to that carrier.
 
 The normal-subgroup elimination follows the generated type-`E₆` subgroup in
 `TauCeti.Algebra.Lie.E6.Minuscule.Generated.UnipotentRadical`, using the generic faithful-comodule
-theorem.
+theorem and the generic descent along field extensions in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange`.
 -/
 
 public section
@@ -71,20 +71,13 @@ theorem eq_augmentation_generated_of_isNormal_of_smoothUnipotent
     I = HopfIdeal.augmentation k (generatedCoordinateHopfAlgebra k) := by
   let K := AlgebraicClosure k
   let _ := isReduced_generatedCoordinateHopfAlgebra K
-  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
-  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
-  have hbase := smoothUnipotentCommHopfAlgProperty.baseChange (K := K)
-    (FiniteTypeCommHopfAlgCat.quotient
-      (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra k)) I) hU
+  refine HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_baseChange K
+    (H := finiteTypeGeneratedCoordinateHopfAlgebra k) (fun J hJ hUJ ↦ ?_) I hI hU
   exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso K
     (finiteTypeGeneratedCoordinateHopfAlgebra K) (Fin 56 → K)
-    ((finiteTypeGeneratedCoordinateHopfAlgebra k).baseChange (K := K))
-    (generatedCoordinateHopfAlgebraBaseChangeIso k K).symm
+    _ (generatedCoordinateHopfAlgebraBaseChangeIso k K).symm
     Comodule.isCompletelyReducible_of_isSimpleOrder (isFaithful_generatedStandardComodule K)
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I) (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI)
-    ((smoothUnipotentCommHopfAlgProperty K).prop_of_iso
-      (CategoryTheory.ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty K)
-        (CommHopfAlgCat.quotientBaseChangeIso (K := K) I).symm) hbase)
+    J hJ hUJ
 
 /-- **The unipotent radical of the subgroup generated over a field by the type-`E₇` minuscule
 root subgroups and weight torus is trivial.** -/
