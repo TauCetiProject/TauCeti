@@ -237,7 +237,7 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
       (t : Matrix n n K) = Q.unitaryTransvection σ e a := by
     rcases hperf with ⟨c, hc0, hcsq, hσc⟩ | ⟨u, w, hu0, hws, hu, hw, huw⟩ | ⟨hcard, c, hc0, hc1⟩
     · obtain ⟨h, -, hhe, -, -⟩ :=
-        exists_mem_iSup_unitaryTransvectionSubgroup_mulVec_eq_smul_and_inv_smul_and_eq_self
+        exists_mem_elementaryUnitaryGroup_mulVec_eq_smul_and_inv_smul_and_eq_self
           hσ hQ hε hadm he hf hef hc0 hσc
       exact unitaryTransvection_mem_commutator_of_mulVec_eq_smul hσ hQ he
         (by rwa [hσc, ← sq]) hhe ha
