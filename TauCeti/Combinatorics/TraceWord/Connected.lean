@@ -17,14 +17,12 @@ unordered cyclic edge sets are disjoint cancel by independence, while pairs whos
 multiset contains a singleton edge vanish by centering. Every remaining pair shares at least one
 unordered cyclic edge and traverses each unordered cyclic edge at least twice across the pair.
 
-Concatenating two walks at a common vertex gives a walk of `k₁ + k₂` steps visiting at most
-`(k₁ + k₂) / 2 + 1` vertices. Equality `#(V₁ ∪ V₂) = (k₁ + k₂) / 2 + 1` cannot occur: saturating
-the path vertex bound `card V = card N + 1` equips the visited vertices with a `ℤ/2ℤ`-valued
-labeling that flips exclusively across a chosen nonloop edge, forcing each closed walk `w₁` and
-`w₂` to traverse their shared edge an even—hence at least twice—number of times, which requires at
-least `4 + 2 * ((k₁ + k₂) / 2 - 1) > k₁ + k₂` steps. Therefore a connected singleton-free pair
-visits at most `(k₁ + k₂) / 2` vertices overall, losing a full factor of `n` compared with two
-independent leading walks and yielding `O(n⁻²)` variance bounds for normalized traces.
+This file bounds the combined vertex set and cardinality of such connected singleton-free pairs
+`(w₁, w₂)` of lengths `k₁` and `k₂`: their union visits at most `(k₁ + k₂) / 2` vertices, so over a
+nonempty finite alphabet `β` there are at most
+`|β| ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂)` such pairs. For `n × n` Wigner matrices with
+`n⁻¹/²`-scaled entries, the factor `n ^ ((k₁ + k₂) / 2)` is absorbed by the entry scaling
+`((√n)⁻¹) ^ (k₁ + k₂)`, leaving `O(n⁻²)` after the two `n⁻¹` trace normalizations.
 
 ## Main results
 
@@ -159,9 +157,10 @@ private theorem exists_concat_path_of_eq {k₁ k₂ : ℕ} (w₁ : Fin k₁ → 
           p (k₁ + 1 + s + 1) = w₂ (finRotate (k₂ + 1) (rot b₀ s)) := by
         rcases eq_or_ne s 0 with rfl | hs
         · exact ⟨hseam, by simpa [p] using congrArg w₂ (hrot b₀ 0)⟩
-        · have hsub : k₁ + 1 + s + 1 - (k₁ + 1) = s + 1 := by omega
-          simp [p, show ¬ k₁ + 1 + s ≤ k₁ + 1 by omega,
-            show ¬ k₁ + 1 + s + 1 ≤ k₁ + 1 by omega, hsub, hrot]
+        · have hle₁ : ¬ k₁ + 1 + s ≤ k₁ + 1 := by omega
+          have hle₂ : ¬ k₁ + 1 + s + 1 ≤ k₁ + 1 := by omega
+          have hsub : k₁ + 1 + s + 1 - (k₁ + 1) = s + 1 := by omega
+          simp [p, hle₁, hle₂, hsub, hrot]
       refine ⟨p, ?_, ?_, fun i ↦ ?_, fun j ↦ ?_⟩
       · ext x; simp only [mem_image, mem_range, mem_union, mem_univ, true_and]
         refine ⟨fun ⟨r, _, hx⟩ ↦ ?_, ?_⟩

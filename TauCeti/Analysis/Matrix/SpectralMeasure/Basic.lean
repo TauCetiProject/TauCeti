@@ -323,9 +323,7 @@ normalized trace of `A ^ k` without taking a real part, since `A ^ k` is Hermiti
 theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
     ((∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) : ℝ) : 𝕜) =
       ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
-  rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow]
-  push_cast
-  rfl
+  simp [integral_spectralMeasure, hA.trace_pow_eq_sum_eigenvalues_pow]
 
 /-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
 dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/

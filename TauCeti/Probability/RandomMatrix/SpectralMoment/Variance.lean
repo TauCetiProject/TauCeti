@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Covariance
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.Moments.Variance
 import Mathlib.Analysis.PSeries
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
-import TauCeti.Probability.Moments.Variance
 
 /-!
 # Covariance, variance, and concentration of Wigner empirical spectral moments
