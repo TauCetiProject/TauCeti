@@ -46,8 +46,11 @@ Cartan's formula without manufacturing any global extension:
   `MeromorphicOn.discCharacteristic_mono`, `MeromorphicOn.discCharacteristic_monotoneOn_Ioc`,
   `MeromorphicOn.discCharacteristic_monotoneOn_Ioo`,
   `AnalyticOnNhd.proximity_top_monotoneOn_Icc`, `AnalyticOnNhd.proximity_top_monotoneOn_Ico`, and
-  `DifferentiableOn.proximity_top_monotoneOn_Ico`): `discCharacteristic f` is monotone on `(0, R]`,
-  and `ValueDistribution.proximity g ⊤` is monotone on `[0, R)` for holomorphic `g : ℂ → ℂ`.
+  `DifferentiableOn.proximity_top_monotoneOn_Ico`): for `f, g : ℂ → ℂ`,
+  `discCharacteristic f` is monotone on `(0, R]` when `f` is meromorphic on `closedBall 0 R`
+  and on `(0, R)` when `f` is meromorphic on `ball 0 R`, and `ValueDistribution.proximity g ⊤`
+  is monotone on `[0, R)` for `g` holomorphic on `ball 0 R` (and on `[0, R]` when analytic on a
+  neighbourhood of `closedBall 0 R`).
 
 ## Implementation notes
 

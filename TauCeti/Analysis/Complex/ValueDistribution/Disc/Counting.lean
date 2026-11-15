@@ -505,10 +505,11 @@ theorem discCounting_eq_zero_iff_exists_analyticAt [ProperSpace 𝕜]
   rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg h0]
   exact forall₂_congr fun z hz ↦ (hf z (ball_subset_closedBall hz)).meromorphicOrderAt_nonneg_iff
 
-/-- Pointwise holomorphy criterion on `ball 0 r` when removable singularities have been filled in:
-if `f` is continuous at every point of `ball 0 r` where `0 ≤ meromorphicOrderAt f z` (note that
-assuming `ContinuousOn f (ball 0 r)` into the normed space `E` outright would already exclude poles
-by `MeromorphicAt.analyticAt`), then `discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r)`. -/
+/-- Pointwise analyticity criterion on `ball 0 r` when removable singularities have been filled in:
+under `MeromorphicOn f (closedBall 0 r)` and `0 ≤ meromorphicOrderAt f 0`, if `f` is continuous at
+every point of `ball 0 r` where `0 ≤ meromorphicOrderAt f z` (note that assuming
+`ContinuousOn f (ball 0 r)` into the normed space `E` outright would already exclude poles by
+`MeromorphicAt.analyticAt`), then `discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r)`. -/
 theorem discCounting_eq_zero_iff_analyticOnNhd_of_continuousAt [ProperSpace 𝕜]
     (hf : MeromorphicOn f (closedBall 0 r)) (h0 : 0 ≤ meromorphicOrderAt f 0)
     (hrem : ∀ z ∈ ball 0 r, 0 ≤ meromorphicOrderAt f z → ContinuousAt f z) :
