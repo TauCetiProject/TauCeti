@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
-import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
 /-!
 # Trajectories of the continuation field of a constant path
