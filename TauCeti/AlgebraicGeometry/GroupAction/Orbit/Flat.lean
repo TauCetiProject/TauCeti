@@ -78,16 +78,10 @@ private theorem flat_toOrbit_of_isAlgClosed [IsAlgClosed k] [IsReduced G.left] :
 /-- Over any field, the surjective projection from a geometrically reduced finite-type group onto
 any orbit scheme is flat. Together with local finite presentation, it is an fppf cover. -/
 instance flat_toOrbit [GeometricallyReduced G.hom] : Flat (toOrbit G x) := by
-  let K : Type u := AlgebraicClosure k
-  let f : Spec (.of K) ⟶ Spec (.of k) := Spec.map (CommRingCat.ofHom (algebraMap k K))
+  let f := Spec.algebraMap k (AlgebraicClosure k)
   let := (Over.pullback f).modObjObj G X
-  have : IsReduced ((Over.pullback f).obj G).left :=
-    pullback_of_geometrically ‹GeometricallyReduced G.hom›.1 K f
-  have hcov : (@Surjective ⊓ @Flat ⊓ @QuasiCompact : MorphismProperty Scheme)
-      ((orbitBaseChangeIso f G x).hom ≫ pullback.fst (orbitToBase G x) f) :=
-    ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  exact MorphismProperty.of_isPullback_of_descendsAlong
-    (isPullback_toOrbit_baseChange f G x) hcov
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
+    (isPullback_toOrbit_baseChange f G x)
     (flat_toOrbit_of_isAlgClosed ((Over.pullback f).obj G) _)
 
 end TauCeti.SchemeAction

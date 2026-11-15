@@ -249,8 +249,6 @@ theorem isPullback_toOrbit_baseChange :
       (toOrbit G x) :=
   (isPullback_orbitProjection f G x).of_iso
     (.refl _) (orbitBaseChangeIso f G x).symm (.refl _) (.refl _)
-    (by rw [Iso.refl_hom, Category.id_comp, Iso.symm_hom, Iso.comp_inv_eq,
-      toOrbit_orbitBaseChangeIso_hom])
-    (by simp) (by simp) (by simp)
+    (by simp [Iso.comp_inv_eq]) (by simp) (by simp) (by simp)
 
 end TauCeti.SchemeAction

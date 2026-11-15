@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Flat
 public import TauCeti.AlgebraicGeometry.GroupAction.Stabilizer
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 
 /-!
@@ -95,10 +96,8 @@ theorem smooth_toOrbit_iff [GeometricallyReduced G.hom] :
   have hp : Smooth (fst G (stabilizer G x)).left := by
     rw [Over.fst_left]
     infer_instance
-  have hf : (@Surjective ⊓ @Flat ⊓ @QuasiCompact : MorphismProperty Scheme)
-      (toOrbit G x) := ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  exact MorphismProperty.of_isPullback_of_descendsAlong
-    (isPullback_toOrbit_rightMul G x) hf hp
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
+    (isPullback_toOrbit_rightMul G x) hp
 
 /-- Over any field of characteristic zero, orbit projections for affine finite-type groups are
 smooth. No algebraic closedness, connectedness or reducedness hypothesis on the acting group is

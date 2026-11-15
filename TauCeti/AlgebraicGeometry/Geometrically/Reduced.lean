@@ -13,10 +13,12 @@ import TauCeti.RingTheory.TensorProduct.Reduced
 # Geometrically reduced morphisms and schemes over perfect fields
 
 Mathlib's `AlgebraicGeometry.GeometricallyReduced` is stable under base change. This file records
-its compatibility with isomorphisms and Zariski-local descent on the target, and shows that every
-reduced scheme over a perfect field is geometrically reduced over that field, without any
-finiteness hypothesis. In particular, typeclass search supplies `GeometricallyReduced` for reduced
-schemes over algebraically closed, finite, and characteristic-zero fields.
+its compatibility with isomorphisms and Zariski-local descent on the target, reducedness of base
+changes along morphisms from integral subsingleton schemes (such as spectra of fields, without a
+flatness or Noetherian hypothesis), and shows that every reduced scheme over a perfect field is
+geometrically reduced over that field, without any finiteness hypothesis. In particular, typeclass
+search supplies `GeometricallyReduced` for reduced schemes over algebraically closed, finite, and
+characteristic-zero fields.
 
 ## Main declarations
 
@@ -24,6 +26,10 @@ schemes over algebraically closed, finite, and characteristic-zero fields.
   isomorphisms on both source and target.
 * `TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_geometricallyReduced`: `GeometricallyReduced`
   is Zariski-local on the target.
+* `TauCeti.AlgebraicGeometry.isReduced_pullback_of_geometricallyReduced` and
+  `TauCeti.AlgebraicGeometry.isReduced_over_pullback_obj_left`: pulling back a geometrically
+  reduced morphism along a morphism from an integral subsingleton scheme (such as `Spec K` for a
+  field `K`) yields a reduced scheme.
 * `TauCeti.AlgebraicGeometry.geometricallyReduced_of_perfectField`: a reduced scheme over a
   perfect field is geometrically reduced over that field.
 
@@ -53,6 +59,24 @@ instance isZariskiLocalAtTarget_geometricallyReduced :
     IsZariskiLocalAtTarget @GeometricallyReduced :=
   GeometricallyReduced.eq_geometrically ▸ inferInstance
 
+/-- Pulling back a geometrically reduced morphism along a morphism from an integral subsingleton
+scheme (in particular, `Spec K` for a field `K`) gives a reduced scheme, without any flatness or
+Noetherian hypothesis. -/
+instance isReduced_pullback_of_geometricallyReduced {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S)
+    [GeometricallyReduced f] [IsIntegral Y] [Subsingleton Y] :
+    IsReduced (pullback f g) :=
+  self_of_isIntegral_of_geometrically
+    (inferInstance : GeometricallyReduced (pullback.snd f g)).1
+
+/-- Base change of an object in `Over S` with geometrically reduced structure morphism along a
+morphism from an integral subsingleton scheme (such as `Spec K` for a field `K`) has a reduced
+underlying scheme. -/
+instance isReduced_over_pullback_obj_left {S S' : Scheme.{u}} (f : S' ⟶ S)
+    [IsIntegral S'] [Subsingleton S'] (Y : Over S) [GeometricallyReduced Y.hom] :
+    IsReduced ((Over.pullback f).obj Y).left := by
+  dsimp only [Over.pullback, Over.mk_left]
+  infer_instance
+
 private theorem geometricallyReduced_Spec_of_perfectField {k : Type u} [Field k]
     [PerfectField k] (A : CommRingCat.{u}) [IsReduced (Spec A)] (f : Spec A ⟶ Spec (.of k)) :
     GeometricallyReduced f := by
@@ -61,8 +85,9 @@ private theorem geometricallyReduced_Spec_of_perfectField {k : Type u} [Field k]
   have : _root_.IsReduced A := (affine_isReduced_iff A).mp ‹_›
   obtain ⟨φ, hφ⟩ := Spec.map_surjective f
   algebraize [φ.hom]
-  have halg : Spec.map (CommRingCat.ofHom (algebraMap k A)) = f := hφ
-  let e : pullback f (Spec.map (CommRingCat.ofHom (algebraMap k K))) ≅ Spec (.of (A ⊗[k] K)) :=
+  have halg : Spec.map (CommRingCat.ofHom (algebraMap k A)) = f := by
+    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, hφ]
+  let e : pullback f (Spec.algebraMap k K) ≅ Spec (.of (A ⊗[k] K)) :=
     pullback.congrHom halg.symm rfl ≪≫ pullbackSpecIso k A K
   have : _root_.IsReduced (A ⊗[k] K) := TauCeti.instIsReducedTensorProductOfPerfectField k A K
   exact isReduced_of_isOpenImmersion e.hom
@@ -74,16 +99,16 @@ instance (priority := low) geometricallyReduced_of_perfectField {k : Type u} [Fi
     GeometricallyReduced f := by
   rw [geometricallyReduced_iff, geometrically_iff_of_commRing_of_isClosedUnderIsomorphisms]
   intro K _ _
-  let g : Spec (.of K) ⟶ Spec (.of k) := Spec.map (CommRingCat.ofHom (algebraMap k K))
+  let g := Spec.algebraMap k K
   refine @IsReduced.of_openCover _ (Scheme.Pullback.openCoverOfLeft X.affineCover f g)
     fun (i : X.affineCover.I₀) ↦ ?_
   have hSpec : GeometricallyReduced
       ((X.affineCover.X i).isoSpec.inv ≫ X.affineCover.f i ≫ f) :=
     geometricallyReduced_Spec_of_perfectField Γ(X.affineCover.X i, ⊤) _
-  have hChart : GeometricallyReduced (X.affineCover.f i ≫ f) :=
+  have : GeometricallyReduced (X.affineCover.f i ≫ f) :=
     (MorphismProperty.cancel_left_of_respectsIso @GeometricallyReduced
       (X.affineCover.X i).isoSpec.inv _).mp hSpec
-  exact pullback_of_geometrically hChart.1 K g
+  exact isReduced_pullback_of_geometricallyReduced (X.affineCover.f i ≫ f) g
 
 end AlgebraicGeometry
 

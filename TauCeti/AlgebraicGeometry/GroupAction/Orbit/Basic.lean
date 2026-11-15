@@ -145,6 +145,7 @@ theorem orbit_pullback {S' : Scheme.{u}} (f : S' ⟶ S) (x : 𝟙_ (Over S) ⟶ 
     (Over.isPullback_pullback_map_left f (orbitMap G x))
 
 /-- Base change along a universally open morphism commutes with taking orbit closures. -/
+@[simp]
 theorem orbitClosure_pullback {S' : Scheme.{u}} (f : S' ⟶ S) [UniversallyOpen f]
     (x : 𝟙_ (Over S) ⟶ X) :
     letI := (Over.pullback f).modObjObj G X
@@ -157,6 +158,7 @@ theorem orbitClosure_pullback {S' : Scheme.{u}} (f : S' ⟶ S) [UniversallyOpen 
       (pullback.fst X.hom f).continuous]
 
 /-- Base change along a universally open morphism commutes with taking orbit boundaries. -/
+@[simp]
 theorem orbitBoundary_pullback {S' : Scheme.{u}} (f : S' ⟶ S) [UniversallyOpen f]
     (x : 𝟙_ (Over S) ⟶ X) :
     letI := (Over.pullback f).modObjObj G X

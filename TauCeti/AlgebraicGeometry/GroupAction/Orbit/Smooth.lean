@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.GroupAction.Orbit.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 
 /-!
@@ -97,15 +98,10 @@ instance smooth_orbitToBase {k : Type u} [Field k] (G : Over (Spec (.of k)))
     [LocallyOfFiniteType G.hom] [CompactSpace G.left]
     [LocallyOfFiniteType X.hom] [CompactSpace X.left] [GeometricallyReduced G.hom]
     (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) : Smooth (orbitToBase G x) := by
-  let K : Type u := AlgebraicClosure k
-  let f : Spec (.of K) ⟶ Spec (.of k) := Spec.map (CommRingCat.ofHom (algebraMap k K))
+  let f := Spec.algebraMap k (AlgebraicClosure k)
   let := (Over.pullback f).modObjObj G X
-  have : IsReduced ((Over.pullback f).obj G).left :=
-    pullback_of_geometrically ‹GeometricallyReduced G.hom›.1 K f
-  have hcov : (@Surjective ⊓ @Flat ⊓ @QuasiCompact : MorphismProperty Scheme) f :=
-    ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
-  exact MorphismProperty.of_isPullback_of_descendsAlong
-    (isPullback_orbitToBase_baseChange f G x) hcov
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
+    (isPullback_orbitToBase_baseChange f G x)
     (smooth_orbitToBase_of_isAlgClosed ((Over.pullback f).obj G) _)
 
 end TauCeti.SchemeAction

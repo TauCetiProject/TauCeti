@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Pullback.Over
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
@@ -213,13 +214,10 @@ acting on a finite-type scheme is locally closed. Neither algebraic closedness o
 field nor smoothness, reducedness, affineness or separatedness is required. -/
 theorem isLocallyClosed_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     IsLocallyClosed (orbit G x) := by
-  let K : Type u := AlgebraicClosure k
-  let f : Spec (.of K) ⟶ Spec (.of k) := Spec.map (CommRingCat.ofHom (algebraMap k K))
+  let f := Spec.algebraMap k (AlgebraicClosure k)
   let := (Over.pullback f).modObjObj G X
-  have hπ : IsOpenQuotientMap (pullback.fst X.hom f) :=
-    ⟨(pullback.fst X.hom f).surjective, (pullback.fst X.hom f).continuous,
-      (pullback.fst X.hom f).isOpenMap⟩
-  rw [← hπ.isLocallyClosed_preimage_iff, ← orbit_pullback G f x]
+  rw [← (pullback.fst X.hom f).isOpenQuotientMap.isLocallyClosed_preimage_iff,
+    ← orbit_pullback G f x]
   exact isLocallyClosed_orbit_of_isAlgClosed ((Over.pullback f).obj G) _
 
 /-- Over any field, the geometric orbit of a rational point is open in its closure. -/
