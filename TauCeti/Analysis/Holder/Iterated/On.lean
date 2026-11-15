@@ -13,7 +13,6 @@ public import Mathlib.Topology.Sets.Opens
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.Iterated.Jet
 import TauCeti.Analysis.Holder.JetBounds
-import TauCeti.Topology.EMetricSpace.Lipschitz
 import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -149,13 +148,13 @@ private def extend {G : Type*} [Zero G] (g : Ω → G) : E → G :=
   Function.extend ((↑) : Ω → E) g 0
 
 omit [NormedSpace ℝ E] in
-private theorem extend_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) : extend g (x : E) = g x :=
-  Subtype.val_injective.extend_apply g 0 x
-
-omit [NormedSpace ℝ E] in
 private theorem extend_of_mem {G : Type*} [Zero G] (g : Ω → G) {y : E} (hy : y ∈ Ω) :
     extend g y = g ⟨y, hy⟩ :=
-  extend_coe g ⟨y, hy⟩
+  Function.extend_val_apply hy
+
+omit [NormedSpace ℝ E] in
+private theorem extend_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) : extend g (x : E) = g x :=
+  extend_of_mem g x.2
 
 omit [NormedSpace ℝ E] in
 /-- Near a point of `Ω`, the extension by zero of a map on `Ω` agrees with every map which
@@ -310,7 +309,9 @@ theorem ext {f g : CkHolderOnSpace k α Ω F} (h : ∀ x, f x = g x) : f = g :=
 -- so the left-hand side is not in simp normal form.
 theorem iteratedFDeriv_zero_apply (f : CkHolderOnSpace k α Ω F) (x : Ω) (m : Fin 0 → E) :
     f.iteratedFDeriv 0 x m = f x := by
-  rw [Subsingleton.elim m 0]
+  rw [Subsingleton.elim m 0, ← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply]
+  -- `0` and `⟨0, _⟩` are the same element of `Fin (k + 1)` by definition. The order appears in
+  -- the type of the multilinear maps, so `Fin.mk_zero` cannot rewrite it.
   rfl
 
 /-- The recorded derivative fields are the iterated Fréchet derivatives within `Ω` of every map
@@ -369,7 +370,7 @@ theorem norm_eq (f : CkHolderOnSpace k α Ω F) :
     ‖f‖ = ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ +
       nnHolderNorm α (f.iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F) := by
   rw [← norm_toJet, HolderJet.norm_eq]
-  rfl
+  simp only [iteratedFDeriv, iteratedFDerivHolder]
 
 /-- The supremum norm of each derivative field is controlled by the `C^{k,α}(Ω)` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderOnSpace k α Ω F) (i : Fin (k + 1)) :
@@ -586,7 +587,9 @@ theorem coe_iteratedFDerivHolder_ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ
     ((ofContDiffOn g hg hbdd hholder).iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F) =
       (Ω : Set E).domRestrict (iteratedFDerivWithin ℝ k g Ω) :=
   funext fun x ↦ by
-    rw [iteratedFDerivHolder_apply, iteratedFDeriv_ofContDiffOn]
+    rw [iteratedFDerivHolder_apply, iteratedFDeriv_ofContDiffOn, Set.domRestrict_apply]
+    -- The two sides differ only in the order `↑(Fin.last k)`, which is `k` by definition. The
+    -- order appears in the type of the multilinear maps, so `Fin.val_last` cannot rewrite it.
     rfl
 
 /-- On an open subset `U ⊆ Ω`, the iterated derivatives within `U` of the extension by zero of an
@@ -628,66 +631,108 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderOnSpace k 
   unfold CkHolderOnSpace
   exact isClosed_isJetGraph.completeSpace_coe
 
+/-! ### Elements built from the extension by zero -/
+
+section OfExtend
+
+variable {k' : ℕ} {β : ℝ≥0} {U : Opens E}
+
+/-- The element of `C^{k',β}(U)` given by the extension by zero of an element of `C^{k,α}(Ω)`, on
+an open subset `U ⊆ Ω` and for `k' ≤ k`, when the `k'`-th derivative of the extension is
+`β`-Hölder on `U` with constant `C`. The restriction and both inclusions are built from it. -/
+private def ofExtend (f : CkHolderOnSpace k α Ω F) (hU : U ≤ Ω) (hk : k' ≤ k) {C : ℝ≥0}
+    (hC : HolderOnWith C β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U) :
+    CkHolderOnSpace k' β U F :=
+  ofContDiffOn (extend ⇑f)
+    (((f.contDiffOn fun y ↦ extend_coe _ y).of_le (by exact_mod_cast hk)).mono hU)
+    (fun _ hi ↦ ⟨‖f‖, fun _ hx ↦ norm_iteratedFDerivWithin_extend_le f hU (hi.trans hk) hx⟩)
+    ⟨C, hC⟩
+
+private theorem ofExtend_apply (f : CkHolderOnSpace k α Ω F) (hU : U ≤ Ω) (hk : k' ≤ k)
+    {C : ℝ≥0} (hC : HolderOnWith C β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U) (x : U) :
+    ofExtend f hU hk hC x = f ⟨x, hU x.2⟩ := by
+  rw [ofExtend, ofContDiffOn_apply, extend_of_mem]
+
+private theorem iteratedFDeriv_ofExtend (f : CkHolderOnSpace k α Ω F) (hU : U ≤ Ω) (hk : k' ≤ k)
+    {C : ℝ≥0} (hC : HolderOnWith C β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U)
+    (i : Fin (k' + 1)) (x : U) :
+    (ofExtend f hU hk hC).iteratedFDeriv i x =
+      f.iteratedFDeriv ⟨i, by omega⟩ ⟨x, hU x.2⟩ := by
+  rw [ofExtend, iteratedFDeriv_ofContDiffOn,
+    iteratedFDerivWithin_extend f hU (i.is_le.trans hk) x.2]
+
+/-- Each derivative field of `ofExtend` has supremum norm at most that of the derivative field of
+the same order of the element it is built from. -/
+private theorem norm_iteratedFDeriv_ofExtend_le (f : CkHolderOnSpace k α Ω F) (hU : U ≤ Ω)
+    (hk : k' ≤ k) {C : ℝ≥0}
+    (hC : HolderOnWith C β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U) (i : Fin (k' + 1))
+    (j : Fin (k + 1)) (hij : (i : ℕ) = j) :
+    ‖(ofExtend f hU hk hC).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv j‖ := by
+  obtain ⟨j, hj⟩ := j
+  subst hij
+  refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ ?_
+  rw [iteratedFDeriv_ofExtend]
+  exact (f.iteratedFDeriv _).norm_coe_le_norm _
+
+/-- The Hölder seminorm of the top derivative field of `ofExtend` is at most the given Hölder
+constant. -/
+private theorem nnHolderNorm_ofExtend_le (f : CkHolderOnSpace k α Ω F) (hU : U ≤ Ω) (hk : k' ≤ k)
+    {C : ℝ≥0} (hC : HolderOnWith C β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U) :
+    nnHolderNorm β ((ofExtend f hU hk hC).iteratedFDerivHolder : U → E [×k']→L[ℝ] F) ≤ C := by
+  rw [ofExtend, coe_iteratedFDerivHolder_ofContDiffOn]
+  exact (HolderWith.restrict_iff.2 hC).nnholderNorm_le
+
+/-- `ofExtend` as a linear map, for a Hölder constant `C f` chosen for each element `f`. -/
+private def ofExtendₗ (hU : U ≤ Ω) (hk : k' ≤ k) (C : CkHolderOnSpace k α Ω F → ℝ≥0)
+    (hC : ∀ f, HolderOnWith (C f) β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U) :
+    CkHolderOnSpace k α Ω F →ₗ[ℝ] CkHolderOnSpace k' β U F where
+  toFun f := ofExtend f hU hk (hC f)
+  map_add' f g := ext fun x ↦ by simp only [ofExtend_apply, coe_add, Pi.add_apply]
+  map_smul' c f := ext fun x ↦ by
+    simp only [ofExtend_apply, coe_smul, Pi.smul_apply, RingHom.id_apply]
+
+private theorem ofExtendₗ_apply (hU : U ≤ Ω) (hk : k' ≤ k) (C : CkHolderOnSpace k α Ω F → ℝ≥0)
+    (hC : ∀ f, HolderOnWith (C f) β (iteratedFDerivWithin ℝ k' (extend ⇑f) U) U)
+    (f : CkHolderOnSpace k α Ω F) : ofExtendₗ hU hk C hC f = ofExtend f hU hk (hC f) := by
+  rw [ofExtendₗ, LinearMap.coe_mk, AddHom.coe_mk]
+
+end OfExtend
+
 /-! ### Restriction to a smaller open set -/
 
 section Restrict
 
 variable {Ω' : Opens E}
 
-/-- Restriction to an open subset, as a linear map. -/
-private def restrictₗ (h : Ω' ≤ Ω) : CkHolderOnSpace k α Ω F →ₗ[ℝ] CkHolderOnSpace k α Ω' F where
-  toFun f := ofContDiffOn (extend ⇑f) ((f.contDiffOn fun y ↦ extend_coe _ y).mono h)
-    (fun _ hi ↦ ⟨‖f‖, fun _ hx ↦ norm_iteratedFDerivWithin_extend_le f h hi hx⟩)
-    ⟨_, fun x hx y hy ↦ by
-      rw [iteratedFDerivWithin_extend f h le_rfl hx, iteratedFDerivWithin_extend f h le_rfl hy,
-        ← iteratedFDerivWithin_extend f le_rfl le_rfl (h hx),
-        ← iteratedFDerivWithin_extend f le_rfl le_rfl (h hy)]
-      exact (f.holderOnWith_iteratedFDerivWithin fun y ↦ extend_coe _ y) x (h hx) y (h hy)⟩
-  map_add' f g := ext fun x ↦ by
-    simp only [ofContDiffOn_apply, coe_add, Pi.add_apply, extend_of_mem _ (h x.2)]
-  map_smul' c f := ext fun x ↦ by
-    simp only [ofContDiffOn_apply, coe_smul, Pi.smul_apply, extend_of_mem _ (h x.2),
-      RingHom.id_apply]
-
-private theorem iteratedFDeriv_restrictₗ (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F)
-    (i : Fin (k + 1)) (x : Ω') :
-    (restrictₗ h f).iteratedFDeriv i x = f.iteratedFDeriv i (Set.inclusion h x) := by
-  rw [restrictₗ, LinearMap.coe_mk, AddHom.coe_mk, iteratedFDeriv_ofContDiffOn,
-    iteratedFDerivWithin_extend f h i.is_le x.2]
+/-- On an open subset `Ω' ⊆ Ω`, the `k`-th derivative of the extension by zero of an element of
+`C^{k,α}(Ω)` is `α`-Hölder on `Ω'`, with the Hölder seminorm of its `k`-th derivative field. -/
+private theorem holderOnWith_restrict (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F) :
+    HolderOnWith (nnHolderNorm α (f.iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F)) α
+      (iteratedFDerivWithin ℝ k (extend ⇑f) Ω') Ω' := fun x hx y hy ↦ by
+  rw [iteratedFDerivWithin_extend f h le_rfl hx, iteratedFDerivWithin_extend f h le_rfl hy,
+    ← iteratedFDerivWithin_extend f le_rfl le_rfl (h hx),
+    ← iteratedFDerivWithin_extend f le_rfl le_rfl (h hy)]
+  exact (f.holderOnWith_iteratedFDerivWithin fun y ↦ extend_coe _ y) x (h hx) y (h hy)
 
 /-- **Restriction** of an element of `C^{k,α}(Ω)` to an open subset `Ω' ⊆ Ω`. Both the supremum
 norms and the Hölder seminorm can only decrease, so it has norm at most one
 (`TauCeti.CkHolderOnSpace.norm_restrictL_le`). -/
 def restrictL (h : Ω' ≤ Ω) : CkHolderOnSpace k α Ω F →L[ℝ] CkHolderOnSpace k α Ω' F :=
-  (restrictₗ h).mkContinuous 1 fun f ↦ by
-    rw [one_mul, norm_eq, norm_eq f]
-    have hfield (i : Fin (k + 1)) :
-        ‖(restrictₗ h f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i‖ :=
-      (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
-        rw [iteratedFDeriv_restrictₗ]
-        exact (f.iteratedFDeriv i).norm_coe_le_norm _
-    have hholder : ((restrictₗ h f).iteratedFDerivHolder : Ω' → E [×k]→L[ℝ] F) =
-        (f.iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F) ∘ Set.inclusion h :=
-      funext fun x ↦ by
-        rw [Function.comp_apply, iteratedFDerivHolder_apply, iteratedFDerivHolder_apply,
-          iteratedFDeriv_restrictₗ]
-    have hH : (nnHolderNorm α ((restrictₗ h f).iteratedFDerivHolder : Ω' → E [×k]→L[ℝ] F) : ℝ) ≤
-        nnHolderNorm α (f.iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F) := by
-      rw [hholder]
-      have := HolderSpace.nnHolderNorm_comp_le (LipschitzWith.inclusion h) f.iteratedFDerivHolder
-      rw [NNReal.one_rpow, mul_one] at this
-      exact_mod_cast this
-    exact add_le_add (Finset.sum_le_sum fun i _ ↦ hfield i) hH
+  (ofExtendₗ h le_rfl _ (holderOnWith_restrict h)).mkContinuous 1 fun f ↦ by
+    rw [one_mul, ofExtendₗ_apply, norm_eq, norm_eq f]
+    exact add_le_add
+      (Finset.sum_le_sum fun i _ ↦ norm_iteratedFDeriv_ofExtend_le f h le_rfl _ i i rfl)
+      (NNReal.coe_le_coe.2 (nnHolderNorm_ofExtend_le f h le_rfl _))
 
 @[simp]
 theorem restrictL_apply (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F) (x : Ω') :
     restrictL h f x = f ⟨x, h x.2⟩ := by
-  simp [restrictL, restrictₗ, extend_of_mem _ (h x.2)]
+  rw [restrictL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, ofExtend_apply]
 
 @[simp]
 theorem iteratedFDeriv_restrictL (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F) (i : Fin (k + 1))
-    (x : Ω') : (restrictL h f).iteratedFDeriv i x = f.iteratedFDeriv i ⟨x, h x.2⟩ :=
-  iteratedFDeriv_restrictₗ h f i x
+    (x : Ω') : (restrictL h f).iteratedFDeriv i x = f.iteratedFDeriv i ⟨x, h x.2⟩ := by
+  rw [restrictL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, iteratedFDeriv_ofExtend]
 
 @[simp]
 theorem restrictL_self (h : Ω ≤ Ω) (f : CkHolderOnSpace k α Ω F) : restrictL h f = f := by
@@ -722,57 +767,39 @@ private theorem holderOnWith_of_le (f : CkHolderOnSpace k α Ω F)
   (f.holderOnWith_iteratedFDerivWithin fun y ↦ extend_coe _ y).of_le
     (fun _ hx _ hy ↦ Metric.edist_le_diam_of_mem hΩ hx hy) hβα
 
-/-- On a bounded open set, the inclusion `C^{k,α}(Ω) ⊆ C^{k,β}(Ω)` for `β ≤ α`, as a linear
-map. -/
-private def inclusionₗ (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β ≤ α) :
-    CkHolderOnSpace k α Ω F →ₗ[ℝ] CkHolderOnSpace k β Ω F where
-  toFun f := ofContDiffOn (extend ⇑f) (f.contDiffOn fun y ↦ extend_coe _ y)
-    (fun _ hi ↦ ⟨‖f‖, fun _ hx ↦ norm_iteratedFDerivWithin_extend_le f le_rfl hi hx⟩)
-    ⟨_, holderOnWith_of_le f hΩ hβα⟩
-  map_add' f g := ext fun x ↦ by simp [extend_coe]
-  map_smul' c f := ext fun x ↦ by simp [extend_coe]
-
-private theorem iteratedFDeriv_inclusionₗ (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β ≤ α)
-    (f : CkHolderOnSpace k α Ω F) (i : Fin (k + 1)) :
-    (inclusionₗ hΩ hβα f).iteratedFDeriv i = f.iteratedFDeriv i := by
-  ext1 x
-  rw [inclusionₗ, LinearMap.coe_mk, AddHom.coe_mk, iteratedFDeriv_ofContDiffOn,
-    iteratedFDerivWithin_extend f le_rfl i.is_le x.2]
-
 /-- **The inclusion `C^{k,α}(Ω) ⊆ C^{k,β}(Ω)`** for `β ≤ α` on a bounded open set `Ω`: an
 `α`-Hölder function on `Ω` is `β`-Hölder there, and the inclusion has norm at most
 `max 1 (D^(α - β))`, `D` the diameter of `Ω` (`TauCeti.CkHolderOnSpace.norm_inclusionL_le`). -/
 def inclusionL (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β ≤ α) :
     CkHolderOnSpace k α Ω F →L[ℝ] CkHolderOnSpace k β Ω F :=
-  (inclusionₗ hΩ hβα).mkContinuous
+  (ofExtendₗ le_rfl le_rfl _ fun f ↦ holderOnWith_of_le f hΩ hβα).mkContinuous
       (max 1 (((Metric.diam (Ω : Set E)).toNNReal : ℝ) ^ ((α : ℝ) - β))) fun f ↦ by
+    have hH := NNReal.coe_le_coe.2
+      (nnHolderNorm_ofExtend_le f le_rfl le_rfl (holderOnWith_of_le f hΩ hβα))
+    rw [NNReal.coe_mul, NNReal.coe_rpow] at hH
+    have hfield := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
+      norm_iteratedFDeriv_ofExtend_le f le_rfl le_rfl (holderOnWith_of_le f hΩ hβα) i i rfl
+    rw [ofExtendₗ_apply, norm_eq, norm_eq f]
     set D : ℝ := ((Metric.diam (Ω : Set E)).toNNReal : ℝ) ^ ((α : ℝ) - β)
     set H : ℝ := ((nnHolderNorm α (f.iteratedFDerivHolder : Ω → E [×k]→L[ℝ] F) : ℝ≥0) : ℝ)
     set S : ℝ := ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖
-    have hH : (nnHolderNorm β ((inclusionₗ hΩ hβα f).iteratedFDerivHolder :
-        Ω → E [×k]→L[ℝ] F) : ℝ) ≤ H * D := by
-      rw [inclusionₗ, LinearMap.coe_mk, AddHom.coe_mk, coe_iteratedFDerivHolder_ofContDiffOn]
-      have h := NNReal.coe_le_coe.2
-        (HolderWith.restrict_iff.2 (holderOnWith_of_le f hΩ hβα)).nnholderNorm_le
-      rwa [NNReal.coe_mul, NNReal.coe_rpow] at h
     have hS : 0 ≤ S := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
     have hH0 : 0 ≤ H := NNReal.coe_nonneg _
     have h₁ : (1 : ℝ) ≤ max 1 D := le_max_left _ _
     have h₂ : D ≤ max 1 D := le_max_right _ _
-    rw [norm_eq, norm_eq f]
-    simp only [iteratedFDeriv_inclusionₗ]
     nlinarith
 
 @[simp]
 theorem inclusionL_apply (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β ≤ α)
     (f : CkHolderOnSpace k α Ω F) (x : Ω) : inclusionL hΩ hβα f x = f x := by
-  simp [inclusionL, inclusionₗ, extend_coe]
+  rw [inclusionL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, ofExtend_apply]
 
 @[simp]
 theorem iteratedFDeriv_inclusionL (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β ≤ α)
     (f : CkHolderOnSpace k α Ω F) (i : Fin (k + 1)) :
-    (inclusionL hΩ hβα f).iteratedFDeriv i = f.iteratedFDeriv i :=
-  iteratedFDeriv_inclusionₗ hΩ hβα f i
+    (inclusionL hΩ hβα f).iteratedFDeriv i = f.iteratedFDeriv i := by
+  ext1 x
+  rw [inclusionL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, iteratedFDeriv_ofExtend]
 
 @[simp]
 theorem inclusionL_self (hΩ : Bornology.IsBounded (Ω : Set E)) (h : α ≤ α)
@@ -821,26 +848,6 @@ private theorem holderOnWith_succ (f : CkHolderOnSpace (k + 1) α Ω F)
   rw [iteratedFDerivWithin_of_isOpen k Ω.isOpen hx, iteratedFDerivWithin_of_isOpen k Ω.isOpen hy]
   exact h x hx y hy
 
-/-- On a convex open set and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)`, as a linear
-map. -/
-private def succInclusionₗ (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
-    CkHolderOnSpace (k + 1) α Ω F →ₗ[ℝ] CkHolderOnSpace k α Ω F where
-  toFun f := ofContDiffOn (extend ⇑f)
-    ((f.contDiffOn fun y ↦ extend_coe _ y).of_le (by exact_mod_cast k.le_succ))
-    (fun _ hi ↦ ⟨‖f‖, fun _ hx ↦
-      norm_iteratedFDerivWithin_extend_le f le_rfl (hi.trans k.le_succ) hx⟩)
-    ⟨_, holderOnWith_succ f hΩ hα⟩
-  map_add' f g := ext fun x ↦ by simp [extend_coe]
-  map_smul' c f := ext fun x ↦ by simp [extend_coe]
-
-private theorem iteratedFDeriv_succInclusionₗ (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
-    (f : CkHolderOnSpace (k + 1) α Ω F) (i : Fin (k + 1)) :
-    (succInclusionₗ hΩ hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc := by
-  ext1 x
-  rw [succInclusionₗ, LinearMap.coe_mk, AddHom.coe_mk, iteratedFDeriv_ofContDiffOn,
-    iteratedFDerivWithin_extend f le_rfl (i.is_le.trans k.le_succ) x.2]
-  rfl
-
 /-- **The inclusion `C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)`** on a convex open set `Ω`, for `α ≤ 1`. By the
 mean value inequality the `α`-Hölder seminorm of `D^k f` on `Ω` is at most
 `‖D^{k+1} f‖_∞ + 2 ‖D^k f‖_∞`, so the inclusion has norm at most `3`
@@ -848,33 +855,35 @@ mean value inequality the `α`-Hölder seminorm of `D^k f` on `Ω` is at most
 the Hölder seminorm compares values at points of `Ω` that no path in `Ω` joins efficiently. -/
 def succInclusionL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderOnSpace (k + 1) α Ω F →L[ℝ] CkHolderOnSpace k α Ω F :=
-  (succInclusionₗ hΩ hα).mkContinuous 3 fun f ↦ by
-    have hH : (nnHolderNorm α ((succInclusionₗ hΩ hα f).iteratedFDerivHolder :
-        Ω → E [×k]→L[ℝ] F) : ℝ) ≤ ‖f.iteratedFDeriv (Fin.last (k + 1))‖ +
-          2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖ := by
-      rw [succInclusionₗ, LinearMap.coe_mk, AddHom.coe_mk, coe_iteratedFDerivHolder_ofContDiffOn]
-      have h := NNReal.coe_le_coe.2
-        (HolderWith.restrict_iff.2 (holderOnWith_succ f hΩ hα)).nnholderNorm_le
-      rwa [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm, coe_nnNorm] at h
+  (ofExtendₗ le_rfl k.le_succ _ fun f ↦ holderOnWith_succ f hΩ hα).mkContinuous 3 fun f ↦ by
+    have hH := NNReal.coe_le_coe.2
+      (nnHolderNorm_ofExtend_le f le_rfl k.le_succ (holderOnWith_succ f hΩ hα))
+    rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm, coe_nnNorm] at hH
+    have hfield := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
+      norm_iteratedFDeriv_ofExtend_le f le_rfl k.le_succ (holderOnWith_succ f hΩ hα) i
+        i.castSucc (Fin.val_castSucc i).symm
     have hsum : ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i.castSucc‖ +
         ‖f.iteratedFDeriv (Fin.last (k + 1))‖ ≤ ‖f‖ := by
       rw [← Fin.sum_univ_castSucc (fun i ↦ ‖f.iteratedFDeriv i‖), norm_eq f]
       exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
     have hk := norm_iteratedFDeriv_le f (Fin.last k).castSucc
-    rw [norm_eq]
-    simp only [iteratedFDeriv_succInclusionₗ]
+    rw [ofExtendₗ_apply, norm_eq]
     linarith
 
 @[simp]
 theorem succInclusionL_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderOnSpace (k + 1) α Ω F) (x : Ω) : succInclusionL hΩ hα f x = f x := by
-  simp [succInclusionL, succInclusionₗ, extend_coe]
+  rw [succInclusionL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, ofExtend_apply]
 
 @[simp]
 theorem iteratedFDeriv_succInclusionL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderOnSpace (k + 1) α Ω F) (i : Fin (k + 1)) :
-    (succInclusionL hΩ hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc :=
-  iteratedFDeriv_succInclusionₗ hΩ hα f i
+    (succInclusionL hΩ hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc := by
+  ext1 x
+  rw [succInclusionL, LinearMap.mkContinuous_apply, ofExtendₗ_apply, iteratedFDeriv_ofExtend]
+  -- `⟨↑i, _⟩` and `i.castSucc` are the same element of `Fin (k + 2)` by definition. The order
+  -- appears in the type of the multilinear maps, so `Fin.val_castSucc` cannot rewrite it.
+  rfl
 
 /-- The inclusion `C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)` on a convex open set has norm at most `3`. -/
 theorem norm_succInclusionL_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :

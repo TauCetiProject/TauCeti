@@ -308,7 +308,7 @@ theorem norm_eq (f : CkHolderSpace k α E F) :
     ‖f‖ = ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ +
       nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) := by
   rw [← norm_toJet, HolderJet.norm_eq, ← coe_iteratedFDerivHolder]
-  rfl
+  simp only [iteratedFDeriv, iteratedFDerivHolder]
 
 /-- The supremum norm of each iterated derivative field is controlled by the `C^{k,α}` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpace k α E F) (i : Fin (k + 1)) :

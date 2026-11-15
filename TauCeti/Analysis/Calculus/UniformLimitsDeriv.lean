@@ -82,29 +82,23 @@ theorem isClosed_setOf_hasFDerivAt_extend_comp {𝕜 : Type*} {E : Type u} {Y Z 
     ((continuous_fst.tendsto j).comp hjlim)
   have hd := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
     ((continuous_snd.tendsto j).comp hjlim)
-  have hext (g : s → E →L[𝕜] Y) (y : E) (hy : y ∈ s) :
-      Function.extend ((↑) : s → E) g 0 y = g ⟨y, hy⟩ :=
-    Subtype.val_injective.extend_apply g 0 ⟨y, hy⟩
-  have hext' (g : s → Y) (y : E) (hy : y ∈ s) :
-      Function.extend ((↑) : s → E) g e y = g ⟨y, hy⟩ :=
-    Subtype.val_injective.extend_apply g e ⟨y, hy⟩
   have h := hasFDerivAt_of_tendstoUniformlyOn (l := atTop) hs
     (f := fun n ↦ Function.extend ((↑) : s → E) ((J n).1 : s → Y) e)
     (f' := fun n ↦ Function.extend ((↑) : s → E) (L ∘ ((J n).2 : s → Z)) 0)
     (g := Function.extend ((↑) : s → E) (j.1 : s → Y) e)
     (g' := Function.extend ((↑) : s → E) (L ∘ (j.2 : s → Z)) 0) ?_ ?_ ?_ x.2
-  · rwa [hext _ _ x.2] at h
+  · rwa [Function.extend_val_apply x.2] at h
   · rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
     convert hL.comp_tendstoUniformly hd using 1
     · funext n y
-      exact hext _ _ y.2
+      exact Function.extend_val_apply y.2
     · funext y
-      exact hext _ _ y.2
+      exact Function.extend_val_apply y.2
   · intro n y hy
-    rw [hext _ _ hy]
+    rw [Function.extend_val_apply hy]
     exact hJ n ⟨y, hy⟩
   · intro y hy
-    simp only [hext' _ _ hy]
+    simp only [Function.extend_val_apply hy]
     exact hv.tendsto_at ⟨y, hy⟩
 
 /-- The derivative graph of bounded continuous fields on a nondegenerate closed interval is
