@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarTower
 public import TauCeti.Algebra.Coalgebra.GroupLike.BaseChange
-public import TauCeti.FieldTheory.PurelyInseparable.TensorProduct
+public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.FieldTheory.PurelyInseparable.BaseChange
+import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
 # Purely inseparable descent of split bialgebras
@@ -18,7 +20,9 @@ field extension, each of them descends uniquely, and the original group-like ele
 already span. No finite-generation or perfectness hypothesis is required.
 
 The two pullbacks of a character to the tensor square agree by connected-spectrum
-rigidity. A linear functional taking one to one then descends its coefficients.
+rigidity: the tensor square is a local ring
+(`TauCeti.IsPurelyInseparable.isLocalRing_tensorProduct`). A linear functional taking one to one
+then descends its coefficients.
 -/
 
 public section
@@ -73,8 +77,8 @@ theorem groupLikeBaseChange_bijective_of_isPurelyInseparable
   refine ⟨hinj, ?_⟩
   intro g
   let B := L ⊗[k] L
-  let : ConnectedSpace (PrimeSpectrum B) :=
-    IsPurelyInseparable.connectedSpace_primeSpectrum_tensorProduct k L
+  have : ConnectedSpace (PrimeSpectrum B) :=
+    inferInstanceAs (ConnectedSpace (PrimeSpectrum (L ⊗[k] L)))
   let δ₁ := Algebra.TensorProduct.map
     (Algebra.TensorProduct.includeLeft : L →ₐ[k] B) (AlgHom.id k A)
   let δ₂ := Algebra.TensorProduct.map

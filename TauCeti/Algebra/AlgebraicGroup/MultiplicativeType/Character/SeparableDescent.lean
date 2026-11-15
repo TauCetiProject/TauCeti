@@ -82,23 +82,23 @@ theorem existsUnique_geometricCharacterMap_eq_of_multiplicativeType
       F (TensorProduct.map τ.toLinearMap LinearMap.id x) =
         TensorProduct.map τ.toLinearMap LinearMap.id (F x) := by
     apply (F.map_smul_iff_groupLike hHspan τ).2 _ x
-    simpa only [F, MonoidHom.groupLikeMap_liftBialgHom] using hq τ
+    simpa only [F, MonoidHom.mapGroupLike_liftBialgHom] using hq τ
   let g : H.obj ⟶ K.obj := _root_.CommHopfAlgCat.ofHom (F.galoisDescend hequiv)
   have hg : CommHopfAlgCat.geometricCharacterMap g = f := by
     apply MonoidHom.ext
     intro x
     obtain ⟨y, rfl⟩ := eH.surjective x
-    have hmap : GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) g.hom) y =
+    have hmap : (Bialgebra.TensorProduct.map (BialgHom.id L L) g.hom).mapGroupLike y =
         q y := by
       simp only [g, _root_.CommHopfAlgCat.hom_ofHom, BialgHom.map_galoisDescend,
-        F, MonoidHom.groupLikeMap_liftBialgHom]
+        F, MonoidHom.mapGroupLike_liftBialgHom]
     have hnatural :
         CommHopfAlgCat.geometricCharacterMap g (eH y) =
-          eK (GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) g.hom) y) := by
+          eK ((Bialgebra.TensorProduct.map (BialgHom.id L L) g.hom).mapGroupLike y) := by
       apply _root_.GroupLike.val_injective
       simp only [CommHopfAlgCat.val_geometricCharacterMap,
         CommHopfAlgCat.hom_baseChangeMap, eH, eK, val_groupLikeScalarTowerEquiv,
-        GroupLike.val_map]
+        BialgHom.val_mapGroupLike]
       induction y.val using TensorProduct.inductionOn with
       | add a b ha hb => simp only [map_add, ha, hb]
       | tmul a b =>
