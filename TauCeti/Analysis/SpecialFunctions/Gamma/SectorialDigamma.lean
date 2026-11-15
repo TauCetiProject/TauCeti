@@ -562,7 +562,7 @@ theorem exists_norm_digamma_le_log {a b : ℝ} (ha : 0 < a) :
   have hbound : ‖digamma s‖ ≤ D + Real.log (|s.im| + 2) := by
     have h := norm_add_le (digamma s - Complex.log s) (Complex.log s)
     rw [sub_add_cancel] at h
-    have hlog := norm_log_on_positive_strip_le ha hs
+    have hlog := norm_log_le_of_re_mem_Icc ha hs
     dsimp [D]
     linarith
   have hL : Real.log 2 ≤ Real.log (|s.im| + 2) :=

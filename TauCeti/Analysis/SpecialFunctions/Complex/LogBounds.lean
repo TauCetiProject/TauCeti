@@ -32,7 +32,7 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
-The estimate `Complex.norm_log_on_positive_strip_le` bounds the principal logarithm uniformly
+The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm uniformly
 in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
 Its proof adapts Robby Sneiderman’s strip argument from
 [PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
@@ -43,7 +43,7 @@ term takes.
 
 ## Main results
 
-* `Complex.norm_log_on_positive_strip_le`: an explicit principal-log norm bound on every
+* `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
   positive vertical strip, including empty and singleton strips.
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
@@ -194,7 +194,7 @@ theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w�
   linarith
 
 /-- A principal-log estimate uniform in the real part on a positive vertical strip. -/
-theorem norm_log_on_positive_strip_le {a b : ℝ} (ha : 0 < a) {s : ℂ}
+theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
     (hs : s.re ∈ Set.Icc a b) :
     ‖Complex.log s‖ ≤ |Real.log a| + Real.log (|b| + 1) +
       Real.log (|s.im| + 2) + Real.pi / 2 := by
