@@ -52,9 +52,6 @@ invariants:
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.measurableSet_setOf_sentenceTheory_eq`: agreement of
-  `sentenceTheory θ` defines a measurable equivalence graph on configurations over a countable
-  carrier.
 * `TauCeti.RelationalConfiguration.exists_sentenceTheory_comp_eq` and
   `TauCeti.RelationalConfiguration.exists_sentenceTheory_comp_eq_id`: Borel Cantor observables and
   Cantor recovery by `L_{ω₁ω}` sentence sequences.
@@ -89,24 +86,13 @@ public section
 
 universe u v w uι
 
-open Cardinal FirstOrder FirstOrder.Language MeasurableSpace MeasureTheory Set
+open FirstOrder FirstOrder.Language MeasurableSpace MeasureTheory Set
 
 namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
 /-! ### Borel Cantor observables and Cantor recovery -/
-
-/-- Agreement of `sentenceTheory θ` defines a measurable equivalence graph on configurations over a
-countable carrier. -/
-theorem measurableSet_setOf_sentenceTheory_eq [Countable ι] [Countable V]
-    (θ : ℕ → L.SentenceInf ι) :
-    MeasurableSet
-      {p : RelationalConfiguration L V × RelationalConfiguration L V |
-        sentenceTheory θ p.1 = sentenceTheory θ p.2} :=
-  measurableSet_eq_fun
-    ((measurable_sentenceTheory θ).comp measurable_fst)
-    ((measurable_sentenceTheory θ).comp measurable_snd)
 
 /-- **Borel Cantor observables are sentence spectra.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
@@ -163,11 +149,6 @@ theorem exists_forall_mem_modelsOf_iff [∀ n, Countable (L.Relations n)] [Count
 
 /-! ### Sentence-spectrum characterization of thinness -/
 
-/-- Cantor space `ℕ → Bool` is uncountable. -/
-private theorem not_countable_nat_bool : ¬ Countable (ℕ → Bool) := by
-  rw [← mk_le_aleph0_iff]
-  simpa using aleph0_lt_continuum
-
 /-- **Countable sentence spectra force thinness.** In a countable relational vocabulary on a
 countable carrier `V`, if every countable `L_{ω₁ω}` sentence sequence takes only countably many
 truth-value patterns on `C`, then `C` is thin for isomorphism. No measurability or invariance
@@ -182,7 +163,7 @@ theorem isThinOn_of_countable_image_sentenceTheory [∀ n, Countable (L.Relation
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_comp_eq_id hf.measurable fun _ _ => hanti _ _
   have huniv : (univ : Set (ℕ → Bool)).Countable :=
     (hcount θ).mono fun x _ => (mem_image _ _ _).2 ⟨f x, hfC x, hθ x⟩
-  exact not_countable_nat_bool (countable_univ_iff.1 huniv)
+  exact not_countable_univ huniv
 
 /-- **Thin Borel sets have countable sentence spectra.** In a countable relational vocabulary on a
 countable carrier `V`, if a Borel set `C` is thin for isomorphism, every countable `L_{ω₁ω}`
@@ -248,7 +229,7 @@ theorem not_hasCantorAntichainOn_of_sentence_splits [∀ n, Countable (L.Relatio
     TauCeti.countable_range_of_splits (P := fun n (x : ℕ → Bool) => x n = true) id
       (fun x y h => funext fun n => Bool.eq_iff_iff.2 (h n)) hcantor_split
   rw [range_id] at hrange
-  exact not_countable_nat_bool (countable_univ_iff.1 hrange)
+  exact not_countable_univ hrange
 
 /-- **Single-sentence splits force thinness.** Under the hypotheses of
 `not_hasCantorAntichainOn_of_sentence_splits`, the set `C` is thin for isomorphism. -/

@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.MeasureTheory.Constructions.Polish.Perfect
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.MetricSpace.Perfect
+import TauCeti.Data.Set.Countable
 import TauCeti.Topology.Bases
 import TauCeti.Topology.Perfect
 
@@ -278,10 +279,7 @@ theorem HasCantorAntichainOn.exists_measurableSet [T2Space X] [MeasurableSpace X
     ∃ s ⊆ A, MeasurableSet s ∧ ¬ s.Countable ∧ ∀ x ∈ s, ∀ y ∈ s, E x y → x = y := by
   obtain ⟨f, hf, hA, hinj, hE⟩ := h.exists_injective
   refine ⟨range f, hA, (isCompact_range hf).measurableSet, fun hc => ?_, ?_⟩
-  · have hunc : ¬ Countable (ℕ → Bool) := by
-      rw [← mk_le_aleph0_iff]
-      simpa using aleph0_lt_continuum
-    exact hunc (countable_univ_iff.1 (by simpa using hc.preimage hinj))
+  · exact not_countable_univ (by simpa using hc.preimage hinj)
   · rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩ hab
     by_contra hne
     exact hE a b (fun h => hne (congrArg f h)) hab

@@ -297,17 +297,53 @@ theorem SentenceInf.realize_imp {M : Type w} [L.Structure M] {φ ψ : L.Sentence
     SentenceInf.Realize (φ.imp ψ) M ↔ (φ.Realize M → ψ.Realize M) := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_imp]
 
+/-- A biconditional of sentences holds exactly when the two sentences have the same truth
+value. -/
+@[simp]
+theorem SentenceInf.realize_iff {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ.iff ψ) M ↔ (φ.Realize M ↔ ψ.Realize M) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iff]
+
+/-- An equality sentence holds in a structure exactly when its two closed terms evaluate to the
+same element. -/
+theorem SentenceInf.realize_equal {M : Type w} [L.Structure M]
+    {t₁ t₂ : L.Term (Empty ⊕ Fin 0)} :
+    SentenceInf.Realize (BoundedFormulaInf.equal t₁ t₂ : L.SentenceInf ι) M ↔
+      t₁.realize (Sum.elim Empty.elim (default : Fin 0 → M)) =
+        t₂.realize (Sum.elim Empty.elim (default : Fin 0 → M)) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_equal]
+
 /-- Every closed term equals itself in every structure. -/
 @[simp]
 theorem SentenceInf.realize_equal_self {M : Type w} [L.Structure M] (t : L.Term (Empty ⊕ Fin 0)) :
     SentenceInf.Realize (BoundedFormulaInf.equal t t : L.SentenceInf ι) M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_equal]
 
+/-- The true sentence holds in every structure. -/
+@[simp]
+theorem SentenceInf.realize_top {M : Type w} [L.Structure M] :
+    SentenceInf.Realize (⊤ : L.SentenceInf ι) M ↔ True := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_top]
+
 /-- The false sentence holds in no structure. -/
 @[simp]
 theorem SentenceInf.realize_bot {M : Type w} [L.Structure M] :
     SentenceInf.Realize (⊥ : L.SentenceInf ι) M ↔ False := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_bot]
+
+/-- A finite conjunction of sentences holds exactly when every sentence in the list holds. -/
+@[simp]
+theorem SentenceInf.realize_foldr_inf {M : Type w} [L.Structure M] (l : List (L.SentenceInf ι)) :
+    SentenceInf.Realize (l.foldr (· ⊓ ·) ⊤) M ↔ ∀ φ ∈ l, φ.Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_foldr_inf]
+
+/-- A universally quantified sentence holds in a structure exactly when its body holds at every
+element. -/
+@[simp]
+theorem SentenceInf.realize_all {M : Type w} [L.Structure M]
+    {φ : L.BoundedFormulaInf ι Empty 1} :
+    SentenceInf.Realize φ.all M ↔ ∀ a : M, φ.Realize Empty.elim (Fin.snoc default a) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all]
 
 /-- An infinitary disjunction of sentences holds exactly when some sentence holds. -/
 @[simp]

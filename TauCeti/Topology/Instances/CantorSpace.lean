@@ -54,6 +54,8 @@ the proof that eventual equality `E₀` is generically ergodic.
   of the other.
 * `PiNat.isOpenEmbedding_prependWord`: over a discrete alphabet, `prependWord w` is an open
   embedding onto the clopen set `wordCylinder w`.
+* `PiNat.isTopologicalBasis_wordCylinder`: over a discrete alphabet, word cylinders form a
+  topological basis for `ℕ → α`.
 * `PiNat.wordCylinder_reverse_res`: `wordCylinder (res x n).reverse = cylinder x n`.
 * `PiNat.image_flipAt_wordCylinder`: `flipAt n` maps `wordCylinder w` onto the cylinder of `w`
   with its `n`-th letter negated.
@@ -301,6 +303,17 @@ theorem isOpen_wordCylinder [TopologicalSpace α] [DiscreteTopology α] (w : Lis
 theorem isClopen_wordCylinder [TopologicalSpace α] [DiscreteTopology α] (w : List α) :
     IsClopen (wordCylinder w) :=
   ⟨isClosed_wordCylinder w, isOpen_wordCylinder w⟩
+
+/-- Over a discrete alphabet, the word cylinders form a topological basis for `ℕ → α`. -/
+theorem isTopologicalBasis_wordCylinder [TopologicalSpace α] [DiscreteTopology α] :
+    TopologicalSpace.IsTopologicalBasis (range (wordCylinder (α := α))) := by
+  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ fun x U hx hU => ?_
+  · rintro _ ⟨w, rfl⟩
+    exact isOpen_wordCylinder w
+  · obtain ⟨_, ⟨y, n, rfl⟩, hxy, hsub⟩ :=
+      (isTopologicalBasis_cylinders (fun _ => α)).exists_subset_of_mem_open hx hU
+    exact ⟨wordCylinder (res y n).reverse, mem_range_self _,
+      by simpa using hxy, by simpa using hsub⟩
 
 /-- Over an alphabet whose singletons are measurable, every word cylinder is measurable for the
 product σ-algebra. -/

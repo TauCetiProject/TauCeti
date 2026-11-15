@@ -56,6 +56,8 @@ Borel, hence analytic.
   `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
   set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
   analytic.
+* `MeasureTheory.AnalyticSet.exists_continuous_range_eq`: every nonempty analytic set is the range
+  of a continuous map from Baire space `ℕ → ℕ`.
 * `MeasureTheory.AnalyticSet.mk_le_continuum`: an analytic set has at most `𝔠` points.
 
 ## References
@@ -199,13 +201,22 @@ theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α]
   rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage_measurableSet hs
 
+/-- Every nonempty analytic set is the range of a continuous map from Baire space `ℕ → ℕ`. -/
+theorem AnalyticSet.exists_continuous_range_eq {s : Set α} (hs : AnalyticSet s)
+    (hne : s.Nonempty) : ∃ f : (ℕ → ℕ) → α, Continuous f ∧ range f = s := by
+  -- `MeasureTheory.AnalyticSet` is `@[no_expose]` in Mathlib, so recover the Baire-space
+  -- surjection via `analyticSet_iff_exists_polishSpace_range`.
+  obtain ⟨γ, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
+  obtain ⟨_, x₀, -⟩ := hne
+  have : Nonempty γ := ⟨x₀⟩
+  obtain ⟨g, hg, hgs⟩ := PolishSpace.exists_nat_nat_continuous_surjective γ
+  exact ⟨f ∘ g, hf.comp hg, hgs.range_comp f⟩
+
 /-- An analytic set has at most continuum many points. -/
 theorem AnalyticSet.mk_le_continuum {s : Set α} (hs : AnalyticSet s) : #s ≤ 𝔠 := by
-  obtain ⟨γ, _, _, f, -, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
-  rcases isEmpty_or_nonempty γ with _ | _
-  · simp [range_eq_empty f]
-  · obtain ⟨g, -, hg⟩ := PolishSpace.exists_nat_nat_continuous_surjective γ
-    rw [← hg.range_comp f]
-    simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := f ∘ g)
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · simp
+  · obtain ⟨f, -, rfl⟩ := hs.exists_continuous_range_eq hne
+    simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := f)
 
 end MeasureTheory

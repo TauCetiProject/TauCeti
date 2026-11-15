@@ -9,6 +9,8 @@ public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 import TauCeti.ModelTheory.Infinitary.CodedConnectives
+import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+import TauCeti.Topology.Instances.CantorSpace
 
 /-!
 # The López–Escobar theorem and analytic invariant separation
@@ -31,11 +33,11 @@ an isomorphism-invariant bi-analytic set is the model class of a sentence
 The proof of `exists_sentence_separating` splits into two cases according to whether `V` is empty:
 
 * On an empty carrier (`[IsEmpty V]`), every permutation is trivial, so isomorphism of
-  configurations is equality (`isoSetoid_eq_bot_of_isEmpty`). Moreover, positive-arity atoms do not
-  exist, and each nullary atom coordinate is read by a quantifier-free relational sentence; hence
-  every set in the product σ-algebra on `RelationalConfiguration L V` is already `modelsOf θ` for
-  some `θ : L.Sentenceω` (`exists_modelsOf_eq_of_measurableSet_of_isEmpty`), with no countability
-  assumption on `L`. In a countable relational vocabulary, Lusin's separation theorem
+  configurations is equality (`isoSetoid_eq_bot_of_subsingleton`). Moreover, positive-arity atoms do
+  not exist, and each nullary atom coordinate is read by a quantifier-free relational sentence;
+  hence every set in the product σ-algebra on `RelationalConfiguration L V` is already `modelsOf θ`
+  for some `θ : L.Sentenceω` (`exists_modelsOf_eq_of_measurableSet_of_isEmpty`), with no
+  countability assumption on `L`. In a countable relational vocabulary, Lusin's separation theorem
   (`MeasureTheory.AnalyticSet.measurablySeparable`) separates `A` and `B` by a Borel set, which is
   then `modelsOf θ`.
 * On a nonempty countable carrier (`[Nonempty V]`), non-trivial analytic sets `A` and `B` are
@@ -43,10 +45,10 @@ The proof of `exists_sentence_separating` splits into two cases according to whe
   the elements of `V` and nullary predicates for the graph of a Baire-space witness `z : ℕ → ℕ`
   expresses the isomorphism saturation of `Set.range f` as a `PC_{ω₁ω}` class: constants name the
   carrier bijectively, nullary predicates trace out a single function `z : ℕ → ℕ`, and for each atom
-  `R(x)` the open preimage `{z | (f z).eval (atom R x) = true}` is a countable union of basic
-  cylinders. Disjointness of isomorphism saturations means the two `PC_{ω₁ω}` classes share no
-  countable nonempty model, so projective-class separation (`FirstOrder.Language.pcSeparation`)
-  produces a separating `L_{ω₁ω}` sentence.
+  `R(x)` the open preimage `{z | (f z).eval (atom R x) = true}` is a countable union of basic word
+  cylinders (`PiNat.isTopologicalBasis_wordCylinder`). Disjointness of isomorphism saturations means
+  the two `PC_{ω₁ω}` classes share no countable nonempty model, so projective-class separation
+  (`FirstOrder.Language.pcSeparation`) produces a separating `L_{ω₁ω}` sentence.
 
 Finally, pulling analytic sets forward along a measurable map `f : X → RelationalConfiguration L V`
 from an arbitrary standard Borel space `X` (`MeasurableSet.analyticSet_image`) yields **relative
@@ -56,8 +58,6 @@ preimage `f ⁻¹' modelsOf θ` of a single `L_{ω₁ω}` sentence `θ`.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes of infinitary
-  sentences are isomorphism invariant.
 * `TauCeti.RelationalConfiguration.exists_modelsOf_eq_of_measurableSet_of_isEmpty`: on an empty
   carrier, every measurable set of configurations is `modelsOf θ` for some `θ : L.Sentenceω`.
 * `TauCeti.RelationalConfiguration.exists_sentence_separating` and
@@ -99,46 +99,7 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
-/-! ### Isomorphism invariance of model classes and disjointness of saturations -/
-
-/-- The model class of an infinitary sentence is invariant under isomorphism of configurations. -/
-theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) := by
-  rw [isomorphismInvariant_iff]
-  rintro c d h hc
-  obtain ⟨e⟩ := isoSetoid_apply.1 h
-  exact (Language.Equiv.mem_modelsOf_iff e φ).mp hc
-
-/-- If `B` is isomorphism invariant and disjoint from `A`, no isomorphism class meets both `A` and
-`B`. -/
-theorem IsomorphismInvariant.disjoint_image_quotientMk_right
-    {A B : Set (RelationalConfiguration L V)} (hB : IsomorphismInvariant B) (hAB : Disjoint A B) :
-    Disjoint (Quotient.mk (isoSetoid L V) '' A) (Quotient.mk (isoSetoid L V) '' B) := by
-  rwa [disjoint_image_left, isomorphismInvariant_iff_preimage_image_quotientMk.1 hB]
-
-/-- If `A` is isomorphism invariant and disjoint from `B`, no isomorphism class meets both `A` and
-`B`. -/
-theorem IsomorphismInvariant.disjoint_image_quotientMk_left
-    {A B : Set (RelationalConfiguration L V)} (hA : IsomorphismInvariant A) (hAB : Disjoint A B) :
-    Disjoint (Quotient.mk (isoSetoid L V) '' A) (Quotient.mk (isoSetoid L V) '' B) :=
-  (hA.disjoint_image_quotientMk_right hAB.symm).symm
-
 /-! ### Empty carriers -/
-
-/-- On an empty carrier, two relational configurations are isomorphic if and only if they are
-equal. -/
-@[simp]
-theorem isoSetoid_iff_eq_of_isEmpty [IsEmpty V] {c d : RelationalConfiguration L V} :
-    isoSetoid L V c d ↔ c = d := by
-  rw [isoSetoid_iff_exists_perm_smul_eq]
-  refine ⟨fun ⟨σ, hσ⟩ => ?_, fun h => ⟨1, by simp [h]⟩⟩
-  have hσ1 : σ = 1 := Equiv.ext isEmptyElim
-  simpa [hσ1] using hσ
-
-/-- On an empty carrier, the isomorphism setoid on relational configurations is equality. -/
-theorem isoSetoid_eq_bot_of_isEmpty [IsEmpty V] : isoSetoid L V = ⊥ := by
-  ext c d
-  exact isoSetoid_iff_eq_of_isEmpty
 
 /-- On an empty carrier, every set of configurations in the product σ-algebra is the model class of
 an `L_{ω₁ω}` sentence. No countability assumption on `L` is needed. -/
@@ -158,8 +119,7 @@ theorem exists_modelsOf_eq_of_measurableSet_of_isEmpty [IsEmpty V]
   rw [@measurable_iff L V (RelationalConfiguration L V) m id]
   intro a
   induction a using Atom.induction_atom with
-  | h R x =>
-    rename_i k
+  | @h k R x =>
     cases k with
     | succ k => exact isEmptyElim (x 0)
     | zero =>
@@ -173,58 +133,16 @@ theorem exists_modelsOf_eq_of_measurableSet_of_isEmpty [IsEmpty V]
           BoundedFormulaInf.realize_rel, ← toStructure_relMap]
         exact iff_of_eq (congrArg _ (Subsingleton.elim _ _))
       intro s _
-      by_cases ht : true ∈ s <;> by_cases hf : false ∈ s
-      · refine ⟨⊤, ?_⟩
-        ext c
-        simp only [modelsOf_top, mem_univ, mem_preimage, id_eq, true_iff]
-        cases hc : c.eval (atom R Fin.elim0) <;> simp [ht, hf]
-      · refine ⟨φ₀, ?_⟩
-        ext c
-        rw [hφ₀, mem_preimage, id_eq]
-        cases hc : c.eval (atom R Fin.elim0) <;> simp [ht, hf]
-      · refine ⟨φ₀.not, ?_⟩
-        ext c
-        rw [modelsOf_not, mem_compl_iff, hφ₀, mem_preimage, id_eq]
-        cases hc : c.eval (atom R Fin.elim0) <;> simp [ht, hf]
-      · refine ⟨⊥, ?_⟩
-        ext c
-        simp only [modelsOf_bot, mem_empty_iff_false, mem_preimage, id_eq, false_iff]
-        cases hc : c.eval (atom R Fin.elim0) <;> simp [ht, hf]
+      classical
+      refine ⟨if true ∈ s then if false ∈ s then ⊤ else φ₀
+        else if false ∈ s then φ₀.not else ⊥, ?_⟩
+      ext c
+      by_cases ht : true ∈ s <;> by_cases hf : false ∈ s <;>
+        cases hc : c.eval (atom R Fin.elim0) <;> simp [ht, hf, hφ₀, hc]
 
 /-! ### `PC_{ω₁ω}` presentation of continuous Baire-space images -/
 
 section PCSentence
-
-omit [L.IsRelational] in
-/-- Every nonempty analytic set in a topological space is the range of a continuous map from Baire
-space `ℕ → ℕ`. -/
-private theorem exists_continuous_range_eq_of_analyticSet {α : Type*} [TopologicalSpace α]
-    {s : Set α} (hs : AnalyticSet s) (hne : s.Nonempty) :
-    ∃ f : (ℕ → ℕ) → α, Continuous f ∧ range f = s := by
-  obtain ⟨γ, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
-  obtain ⟨_, x₀, -⟩ := hne
-  have : Nonempty γ := ⟨x₀⟩
-  obtain ⟨g, hg, hgs⟩ := PolishSpace.exists_nat_nat_continuous_surjective γ
-  exact ⟨f ∘ g, hf.comp hg, hgs.range_comp f⟩
-
-/-- Basic clopen cylinder in Baire space `ℕ → ℕ` determined by a finite set of coordinate-value
-pairs. -/
-private def baireCylinder (p : Finset (ℕ × ℕ)) : Set (ℕ → ℕ) :=
-  {z | ∀ q ∈ p, z q.1 = q.2}
-
-omit [L.IsRelational] in
-/-- An open subset of Baire space `ℕ → ℕ` is the union of the finite coordinate cylinders contained
-in it. -/
-private theorem mem_open_iff_exists_baireCylinder {U : Set (ℕ → ℕ)} (hU : IsOpen U) (z : ℕ → ℕ) :
-    z ∈ U ↔ ∃ p : {p : Finset (ℕ × ℕ) // baireCylinder p ⊆ U}, z ∈ baireCylinder p.1 := by
-  refine ⟨fun hz => ?_, fun ⟨p, hp⟩ => p.2 hp⟩
-  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 hU z hz
-  refine ⟨⟨I.image fun i => (i, z i), fun z' hz' => hsub fun i hi => ?_⟩, ?_⟩
-  · rw [hz' (i, z i) (Finset.mem_image_of_mem _ hi)]
-    exact (hu i hi).2
-  · rintro _ hp
-    obtain ⟨i, -, rfl⟩ := Finset.mem_image.1 hp
-    rfl
 
 /-- Auxiliary vocabulary naming the vertices of `V` by constants and the graph of a Baire-space
 point `z : ℕ → ℕ` by nullary relation symbols indexed by `ℕ × ℕ`. -/
@@ -243,6 +161,38 @@ private abbrev vSym (v : V) : (L.sum (witnessLang V)).Functions 0 :=
 /-- The nullary relation symbol in `L.sum (witnessLang V)` naming `q : ℕ × ℕ`. -/
 private abbrev qSym (q : ℕ × ℕ) : (L.sum (witnessLang V)).Relations 0 :=
   (LHom.sumInr : witnessLang V →ᴸ L.sum (witnessLang V)).onRelation (n := 0) q
+
+/-- The `(witnessLang V)`-structure on `M` interpreting constants via `e : V → M` and nullary
+relations `ℕ × ℕ` as the graph of `z : ℕ → ℕ`. -/
+@[instance_reducible]
+private def witnessStructure {M : Type*} (e : V → M) (z : ℕ → ℕ) :
+    (witnessLang V).Structure M where
+  funMap {k} fn _ :=
+    match k, fn with
+    | 0, v => e v
+    | _ + 1, p => p.elim
+  RelMap {k} rl _ :=
+    match k, rl with
+    | 0, q => z q.1 = q.2
+    | _ + 1, p => p.elim
+
+omit [L.IsRelational] in
+private theorem funMap_vSym_witnessStructure {M : Type*} [L.Structure M]
+    (e : V → M) (z : ℕ → ℕ) (v : V) :
+    letI : (witnessLang V).Structure M := witnessStructure e z
+    Structure.funMap (vSym (L := L) v) (Fin.elim0 : Fin 0 → M) = e v := by
+  let : (witnessLang V).Structure M := witnessStructure e z
+  rw [vSym, LHom.map_onFunction]
+  rfl
+
+omit [L.IsRelational] in
+private theorem relMap_qSym_witnessStructure {M : Type*} [L.Structure M]
+    (e : V → M) (z : ℕ → ℕ) (q : ℕ × ℕ) :
+    letI : (witnessLang V).Structure M := witnessStructure e z
+    Structure.RelMap (qSym (L := L) (V := V) q) (Fin.elim0 : Fin 0 → M) ↔ z q.1 = q.2 := by
+  let : (witnessLang V).Structure M := witnessStructure e z
+  rw [qSym, LHom.map_onRelation]
+  rfl
 
 /-- The constant term in `L.sum (witnessLang V)` naming `v : V`. -/
 private def vConst {n : ℕ} (v : V) : (L.sum (witnessLang V)).Term (Empty ⊕ Fin n) :=
@@ -289,16 +239,13 @@ private theorem realize_relOnConsts {M : Type*} [iM : L.Structure M]
   exact iff_of_eq <| @LHom.map_onRelation L (L.sum (witnessLang V)) LHom.sumInl M iM S _ k R
     (fun i => @Structure.funMap (L.sum (witnessLang V)) M S 0 (vSym (x i)) Fin.elim0)
 
-/-- Noncomputable index coding into `ℕ` for any countable index type. -/
-private noncomputable def natCoding (α : Type*) [Countable α] : IndexCoding α ℕ :=
-  IndexCoding.ofEncodableWith (Encodable.ofCountable α)
-
 /-- Sentence in `L.sum (witnessLang V)` expressing membership of the encoded Baire-space point in an
-open set `U ⊆ (ℕ → ℕ)` as a countable disjunction of finite conjunctions of `baireAtom`s. -/
+open set `U ⊆ (ℕ → ℕ)` as a countable disjunction of finite conjunctions of `baireAtom`s over word
+cylinders contained in `U`. -/
 private noncomputable def openSetSentence (U : Set (ℕ → ℕ)) :
     (L.sum (witnessLang V)).Sentenceω :=
-  BoundedFormulaInf.iSupAlong (natCoding {p : Finset (ℕ × ℕ) // baireCylinder p ⊆ U})
-    fun p => (p.1.toList.map baireAtom).foldr (· ⊓ ·) ⊤
+  BoundedFormulaInf.iSupAlong (IndexCoding.ofCountable {w : List ℕ // PiNat.wordCylinder w ⊆ U})
+    fun w => ((List.finRange w.1.length).map fun i => baireAtom (i.1, w.1[i])).foldr (· ⊓ ·) ⊤
 
 omit [L.IsRelational] in
 private theorem realize_openSetSentence_iff {M : Type*} [(L.sum (witnessLang V)).Structure M]
@@ -306,15 +253,140 @@ private theorem realize_openSetSentence_iff {M : Type*} [(L.sum (witnessLang V))
     (hz : ∀ q : ℕ × ℕ,
       Structure.RelMap (qSym (L := L) (V := V) q) (Fin.elim0 : Fin 0 → M) ↔ z q.1 = q.2) :
     SentenceInf.Realize (openSetSentence (L := L) (V := V) U) M ↔ z ∈ U := by
-  rw [openSetSentence, SentenceInf.realize_def, FormulaInf.realize_def,
-    BoundedFormulaInf.realize_iSupAlong, mem_open_iff_exists_baireCylinder hU z]
-  refine exists_congr fun p => ?_
-  rw [BoundedFormulaInf.realize_foldr_inf]
-  simp only [List.mem_map, Finset.mem_toList, forall_exists_index, and_imp,
-    forall_apply_eq_imp_iff₂]
-  refine forall₂_congr fun q _ => ?_
-  have hba := realize_baireAtom (L := L) (V := V) (M := M) q
-  simpa [SentenceInf.realize_def, FormulaInf.realize_def] using hba.trans (hz q)
+  have hmem : z ∈ U ↔ ∃ w : {w : List ℕ // PiNat.wordCylinder w ⊆ U},
+      z ∈ PiNat.wordCylinder w.1 := by
+    refine ⟨fun hz => ?_, fun ⟨w, hw⟩ => w.2 hw⟩
+    obtain ⟨_, ⟨w, rfl⟩, hzw, hsub⟩ :=
+      PiNat.isTopologicalBasis_wordCylinder.exists_subset_of_mem_open hz hU
+    exact ⟨⟨w, hsub⟩, hzw⟩
+  rw [openSetSentence, SentenceInf.realize_iSupAlong, hmem]
+  refine exists_congr fun w => ?_
+  rw [SentenceInf.realize_foldr_inf, PiNat.mem_wordCylinder_iff]
+  simp only [List.mem_map, List.mem_finRange, true_and, forall_exists_index]
+  refine ⟨fun h i hi => (hz (i, w.1[i])).1 <| (realize_baireAtom _).1 (h _ ⟨i, hi⟩ rfl), ?_⟩
+  rintro h _ ⟨i, hi⟩ rfl
+  exact (realize_baireAtom _).2 <| (hz (i, w.1[i])).2 (h i hi)
+
+/-- Sentence asserting that the witness constants `V` are pairwise distinct. -/
+private noncomputable def injSent [Countable V] : (L.sum (witnessLang V)).Sentenceω :=
+  BoundedFormulaInf.iInfAlong (IndexCoding.ofCountable {p : V × V // p.1 ≠ p.2})
+    fun p => (BoundedFormulaInf.equal (vConst p.1.1) (vConst p.1.2)).not
+
+omit [L.IsRelational] in
+private theorem realize_injSent_iff [Countable V] {M : Type*}
+    [(L.sum (witnessLang V)).Structure M] :
+    SentenceInf.Realize (injSent (L := L) (V := V)) M ↔
+      Function.Injective
+        (fun v : V => Structure.funMap (vSym (L := L) v) (Fin.elim0 : Fin 0 → M)) := by
+  rw [injSent, SentenceInf.realize_iInfAlong]
+  simp only [SentenceInf.realize_not, SentenceInf.realize_equal, realize_vConst]
+  refine ⟨fun h u w huw => by_contra fun hne => h ⟨(u, w), hne⟩ huw, ?_⟩
+  rintro h ⟨⟨u, w⟩, hne⟩ huw
+  exact hne (h huw)
+
+/-- Sentence asserting that every element of the carrier is named by some witness constant `v : V`.
+-/
+private noncomputable def surjSent [Countable V] : (L.sum (witnessLang V)).Sentenceω :=
+  BoundedFormulaInf.all <|
+    BoundedFormulaInf.iSupAlong (IndexCoding.ofCountable V) fun v =>
+      BoundedFormulaInf.equal (.var (Sum.inr 0)) (vConst v)
+
+omit [L.IsRelational] in
+private theorem realize_surjSent_iff [Countable V] {M : Type*}
+    [(L.sum (witnessLang V)).Structure M] :
+    SentenceInf.Realize (surjSent (L := L) (V := V)) M ↔
+      Function.Surjective
+        (fun v : V => Structure.funMap (vSym (L := L) v) (Fin.elim0 : Fin 0 → M)) := by
+  rw [surjSent, SentenceInf.realize_all]
+  refine forall_congr' fun m => ?_
+  rw [BoundedFormulaInf.realize_iSupAlong]
+  refine exists_congr fun v => ?_
+  simp only [BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr, Fin.snoc_zero,
+    realize_vConst, eq_comm]
+
+/-- Sentence asserting that the nullary predicates `qSym (m, n)` form the graph of a function
+`z : ℕ → ℕ`. -/
+private def funcSent : (L.sum (witnessLang V)).Sentenceω :=
+  BoundedFormulaInf.iInf fun m : ℕ =>
+    (BoundedFormulaInf.iSup fun n : ℕ => baireAtom (m, n)) ⊓
+      BoundedFormulaInf.iInf fun n₁ : ℕ =>
+        BoundedFormulaInf.iInf fun n₂ : ℕ =>
+          if n₁ = n₂ then ⊤ else (baireAtom (m, n₁) ⊓ baireAtom (m, n₂)).not
+
+omit [L.IsRelational] in
+private theorem realize_funcSent_iff {M : Type*} [(L.sum (witnessLang V)).Structure M] :
+    SentenceInf.Realize (funcSent (L := L) (V := V)) M ↔
+      ∃ z : ℕ → ℕ, ∀ q : ℕ × ℕ,
+        Structure.RelMap (qSym (L := L) (V := V) q) (Fin.elim0 : Fin 0 → M) ↔ z q.1 = q.2 := by
+  rw [funcSent, SentenceInf.realize_iInf]
+  constructor
+  · intro h
+    have htot (m : ℕ) : ∃ n : ℕ,
+        Structure.RelMap (qSym (L := L) (V := V) (m, n)) (Fin.elim0 : Fin 0 → M) := by
+      have hm := (SentenceInf.realize_inf.1 (h m)).1
+      simpa only [SentenceInf.realize_iSup, realize_baireAtom] using hm
+    choose z hz using htot
+    refine ⟨z, fun ⟨m, n⟩ => ⟨fun hq => ?_, fun (hmn : z m = n) => hmn ▸ hz m⟩⟩
+    by_contra hne
+    have hm := (SentenceInf.realize_inf.1 (h m)).2
+    rw [SentenceInf.realize_iInf] at hm
+    have hm₁ := hm (z m)
+    rw [SentenceInf.realize_iInf] at hm₁
+    have hm₂ := hm₁ n
+    simp only [hne, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_inf,
+      realize_baireAtom] at hm₂
+    exact hm₂ ⟨hz m, hq⟩
+  · rintro ⟨z, hgraph⟩ m
+    rw [SentenceInf.realize_inf, SentenceInf.realize_iSup]
+    refine ⟨⟨z m, (realize_baireAtom (L := L) (V := V) (M := M) (m, z m)).2
+      ((hgraph (m, z m)).2 rfl)⟩, ?_⟩
+    rw [SentenceInf.realize_iInf]
+    intro n₁
+    rw [SentenceInf.realize_iInf]
+    intro n₂
+    by_cases h : n₁ = n₂
+    · simp [h]
+    · simp only [h, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_inf,
+        realize_baireAtom, hgraph]
+      rintro ⟨h₁, h₂⟩
+      exact h (h₁.symm.trans h₂)
+
+/-- Sentence asserting that every `L`-relation `R` holds on the witness constants for a tuple `x`
+if and only if the encoded Baire-space point lies in `{z | (f z).eval (atom R x) = true}`. -/
+private noncomputable def atomSent [∀ n, Countable (L.Relations n)] [Countable V]
+    (f : (ℕ → ℕ) → RelationalConfiguration L V) : (L.sum (witnessLang V)).Sentenceω :=
+  BoundedFormulaInf.iInf fun k : ℕ =>
+    BoundedFormulaInf.iInfAlong (IndexCoding.ofCountable (L.Relations k × (Fin k → V))) fun p =>
+      (relOnConsts p.1 p.2).iff
+        (openSetSentence {z : ℕ → ℕ | (f z).eval (atom p.1 p.2) = true})
+
+omit [L.IsRelational] in
+private theorem realize_atomSent_iff [∀ n, Countable (L.Relations n)] [Countable V]
+    {f : (ℕ → ℕ) → RelationalConfiguration L V} (hf : Continuous f)
+    {M : Type*} [iM : L.Structure M] [S : (L.sum (witnessLang V)).Structure M]
+    [@LHom.IsExpansionOn L (L.sum (witnessLang V)) LHom.sumInl M iM S]
+    {z : ℕ → ℕ}
+    (hgraph : ∀ q : ℕ × ℕ,
+      @Structure.RelMap (L.sum (witnessLang V)) M S 0 (qSym q) Fin.elim0 ↔ z q.1 = q.2) :
+    @SentenceInf.Realize _ ℕ (atomSent f) M S ↔
+      ∀ (k : ℕ) (R : L.Relations k) (x : Fin k → V),
+        @Structure.RelMap L M iM k R
+          (fun i => @Structure.funMap (L.sum (witnessLang V)) M S 0 (vSym (x i)) Fin.elim0) ↔
+          (f z).eval (atom R x) = true := by
+  have hOpen (a : Atom L V) : IsOpen {z' : ℕ → ℕ | (f z').eval a = true} :=
+    (isOpen_discrete ({true} : Set Bool)).preimage ((continuous_eval a).comp hf)
+  rw [atomSent, SentenceInf.realize_iInf]
+  refine ⟨fun h k R x => ?_, fun h k => ?_⟩
+  · have hk := h k
+    rw [SentenceInf.realize_iInfAlong] at hk
+    have ha := SentenceInf.realize_iff.1 (hk (R, x))
+    exact (realize_relOnConsts (V := V) R x).symm.trans <|
+      ha.trans (realize_openSetSentence_iff (L := L) (V := V) (hOpen (atom R x)) hgraph)
+  · rw [SentenceInf.realize_iInfAlong]
+    rintro ⟨R, x⟩
+    rw [SentenceInf.realize_iff, realize_relOnConsts (V := V) R x,
+      realize_openSetSentence_iff (L := L) (V := V) (hOpen (atom R x)) hgraph]
+    exact h k R x
 
 /-- `L_{ω₁ω}` sentence in `L.sum (witnessLang V)` presenting the isomorphism saturation of
 `Set.range f` as a `PC_{ω₁ω}` class: the constants `V` biject with the carrier, the nullary
@@ -322,25 +394,7 @@ relations `ℕ × ℕ` form the graph of a point `z : ℕ → ℕ`, and every at
 elements iff `z` lies in `{z' | (f z').eval (atom R x) = true}`. -/
 private noncomputable def pcSentence [∀ n, Countable (L.Relations n)] [Countable V]
     (f : (ℕ → ℕ) → RelationalConfiguration L V) : (L.sum (witnessLang V)).Sentenceω :=
-  let injSent : (L.sum (witnessLang V)).Sentenceω :=
-    BoundedFormulaInf.iInfAlong (natCoding {p : V × V // p.1 ≠ p.2})
-      fun p => (BoundedFormulaInf.equal (vConst p.1.1) (vConst p.1.2)).not
-  let surjSent : (L.sum (witnessLang V)).Sentenceω :=
-    BoundedFormulaInf.all <|
-      BoundedFormulaInf.iSupAlong (natCoding V) fun v =>
-        BoundedFormulaInf.equal (.var (Sum.inr 0)) (vConst v)
-  let funcSent : (L.sum (witnessLang V)).Sentenceω :=
-    BoundedFormulaInf.iInf fun m : ℕ =>
-      (BoundedFormulaInf.iSup fun n : ℕ => baireAtom (m, n)) ⊓
-        BoundedFormulaInf.iInf fun n₁ : ℕ =>
-          BoundedFormulaInf.iInf fun n₂ : ℕ =>
-            if n₁ = n₂ then ⊤ else (baireAtom (m, n₁) ⊓ baireAtom (m, n₂)).not
-  let atomSent : (L.sum (witnessLang V)).Sentenceω :=
-    BoundedFormulaInf.iInf fun k : ℕ =>
-      BoundedFormulaInf.iInfAlong (natCoding (L.Relations k × (Fin k → V))) fun p =>
-        (relOnConsts p.1 p.2).iff
-          (openSetSentence {z : ℕ → ℕ | (f z).eval (atom p.1 p.2) = true})
-  (injSent ⊓ surjSent) ⊓ (funcSent ⊓ atomSent)
+  (injSent ⊓ surjSent) ⊓ (funcSent ⊓ atomSent f)
 
 /-- An `L`-structure `M` belongs to the projective class of `pcSentence f` along `LHom.sumInl` if
 and only if `M` is isomorphic to `(f z).toStructure` for some `z : ℕ → ℕ`. -/
@@ -349,8 +403,6 @@ private theorem pcMem_pcSentence_iff [∀ n, Countable (L.Relations n)] [Countab
     {M : Type*} [iM : L.Structure M] :
     (LHom.sumInl : L →ᴸ L.sum (witnessLang V)).PCMem (pcSentence f) M ↔
       ∃ c ∈ range f, Nonempty (@Language.Equiv L V M c.toStructure iM) := by
-  have hOpen (a : Atom L V) : IsOpen {z : ℕ → ℕ | (f z).eval a = true} :=
-    (isOpen_discrete ({true} : Set Bool)).preimage ((continuous_eval a).comp hf)
   rw [LHom.pcMem_iff]
   constructor
   · rintro ⟨S, hS, hΘ⟩
@@ -358,132 +410,38 @@ private theorem pcMem_pcSentence_iff [∀ n, Countable (L.Relations n)] [Countab
     let : @LHom.IsExpansionOn L (L.sum (witnessLang V)) LHom.sumInl M iM S := hS
     rw [pcSentence, SentenceInf.realize_inf, SentenceInf.realize_inf, SentenceInf.realize_inf] at hΘ
     obtain ⟨⟨hinjS, hsurjS⟩, ⟨hfuncS, hatomS⟩⟩ := hΘ
-    let val : V → M := fun v =>
-      @Structure.funMap (L.sum (witnessLang V)) M S 0 (vSym v) Fin.elim0
-    -- Constants `v : V` interpret injectively and surjectively in `M`.
-    have hinj : Function.Injective val := by
-      intro u w huw
-      by_contra hne
-      rw [SentenceInf.realize_def, FormulaInf.realize_def,
-        BoundedFormulaInf.realize_iInfAlong] at hinjS
-      have hp := hinjS ⟨(u, w), hne⟩
-      simp only [BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal,
-        realize_vConst] at hp
-      exact hp huw
-    have hsurj : Function.Surjective val := by
-      intro m
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all] at hsurjS
-      have hm := hsurjS m
-      rw [BoundedFormulaInf.realize_iSupAlong] at hm
-      obtain ⟨v, hv⟩ := hm
-      simp only [BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr,
-        realize_vConst] at hv
-      exact ⟨v, hv.symm⟩
-    -- Nullary predicates `ℕ × ℕ` define the graph of a single point `z : ℕ → ℕ`.
-    rw [SentenceInf.realize_iInf] at hfuncS
-    have htot (m : ℕ) : ∃ n : ℕ,
-        @Structure.RelMap (L.sum (witnessLang V)) M S 0 (qSym (m, n)) Fin.elim0 := by
-      have hm := (SentenceInf.realize_inf.1 (hfuncS m)).1
-      rw [SentenceInf.realize_iSup] at hm
-      obtain ⟨n, hn⟩ := hm
-      exact ⟨n, (realize_baireAtom (L := L) (V := V) (M := M) (m, n)).1 hn⟩
-    choose z hz using htot
-    have hgraph (q : ℕ × ℕ) :
-        @Structure.RelMap (L.sum (witnessLang V)) M S 0 (qSym q) Fin.elim0 ↔ z q.1 = q.2 := by
-      rcases q with ⟨m, n⟩
-      refine ⟨fun hq => ?_, fun hmn => ?_⟩
-      · by_contra hne
-        have hm := (SentenceInf.realize_inf.1 (hfuncS m)).2
-        rw [SentenceInf.realize_iInf] at hm
-        have hm₁ := hm (z m)
-        rw [SentenceInf.realize_iInf] at hm₁
-        have hm₂ := hm₁ n
-        simp only [hne, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_inf,
-          realize_baireAtom] at hm₂
-        exact hm₂ ⟨hz m, hq⟩
-      · dsimp only at hmn
-        exact hmn ▸ hz m
-    -- Assemble the `L`-isomorphism `(f z).toStructure ≃[L] M` from `Equiv.ofBijective val`.
-    let eV : V ≃ M := Equiv.ofBijective val ⟨hinj, hsurj⟩
+    have hbij : Function.Bijective
+        (fun v : V => @Structure.funMap (L.sum (witnessLang V)) M S 0 (vSym v) Fin.elim0) :=
+      ⟨realize_injSent_iff.1 hinjS, realize_surjSent_iff.1 hsurjS⟩
+    obtain ⟨z, hgraph⟩ := realize_funcSent_iff.1 hfuncS
+    have hatom := (realize_atomSent_iff hf hgraph).1 hatomS
     refine ⟨f z, mem_range_self z, ⟨?_⟩⟩
     let : L.Structure V := (f z).toStructure
     refine
-      { toEquiv := eV
+      { toEquiv := Equiv.ofBijective _ hbij
         map_fun' := fun {k} fn _ => isEmptyElim fn
         map_rel' := fun {k} R x => ?_ }
-    rw [SentenceInf.realize_iInf] at hatomS
-    have hk := hatomS k
-    rw [SentenceInf.realize_def, FormulaInf.realize_def,
-      BoundedFormulaInf.realize_iInfAlong] at hk
-    have ha : @SentenceInf.Realize _ ℕ (relOnConsts (V := V) R x) M S ↔
-        @SentenceInf.Realize _ ℕ
-          (openSetSentence (L := L) (V := V) {z : ℕ → ℕ | (f z).eval (atom R x) = true}) M S := by
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def] using hk (R, x)
-    have hrel := (realize_relOnConsts (V := V) R x).symm.trans <|
-      ha.trans (realize_openSetSentence_iff (L := L) (V := V) (hOpen (atom R x)) hgraph)
-    simpa [eV, val, Function.comp_def, toStructure_relMap] using hrel
+    have hcomp :
+        (Equiv.ofBijective _ hbij) ∘ x =
+          fun i => @Structure.funMap (L.sum (witnessLang V)) M S 0 (vSym (x i)) Fin.elim0 :=
+      funext fun i => Equiv.ofBijective_apply _ hbij (x i)
+    rw [Equiv.toFun_as_coe, hcomp, hatom k R x, ← toStructure_relMap]
   · rintro ⟨_, ⟨z, rfl⟩, ⟨e⟩⟩
-    -- Expand `M` by interpreting constants via `e` and nullary predicates via the graph of `z`.
     let : L.Structure V := (f z).toStructure
-    let : (witnessLang V).Structure M :=
-      { funMap := fun {k} fn _ =>
-          match k, fn with
-          | 0, v => e v
-          | _ + 1, p => p.elim
-        RelMap := fun {k} rl _ =>
-          match k, rl with
-          | 0, q => z q.1 = q.2
-          | _ + 1, p => p.elim }
+    let : (witnessLang V).Structure M := witnessStructure e z
+    have hval := funMap_vSym_witnessStructure (L := L) (M := M) e z
+    have hgraph := relMap_qSym_witnessStructure (L := L) (M := M) e z
     refine ⟨_, inferInstance, ?_⟩
-    have hval (v : V) :
-        @Structure.funMap (L.sum (witnessLang V)) M _ 0 (vSym v) Fin.elim0 = e v := rfl
-    have hgraph (q : ℕ × ℕ) :
-        @Structure.RelMap (L.sum (witnessLang V)) M _ 0 (qSym q) Fin.elim0 ↔ z q.1 = q.2 :=
-      Iff.rfl
     rw [pcSentence, SentenceInf.realize_inf, SentenceInf.realize_inf, SentenceInf.realize_inf]
     refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-    · rw [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iInfAlong]
-      rintro ⟨⟨u, w⟩, hne⟩
-      simp only [BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal, realize_vConst,
-        hval]
-      exact fun heq => hne (e.injective heq)
-    · rw [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all]
-      intro m
-      rw [BoundedFormulaInf.realize_iSupAlong]
-      refine ⟨e.symm m, ?_⟩
-      simp only [BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr,
-        realize_vConst, hval, e.apply_symm_apply]
-      rfl
-    · rw [SentenceInf.realize_iInf]
-      intro m
-      rw [SentenceInf.realize_inf, SentenceInf.realize_iSup]
-      refine ⟨⟨z m, (realize_baireAtom (L := L) (V := V) (M := M) (m, z m)).2 rfl⟩, ?_⟩
-      rw [SentenceInf.realize_iInf]
-      intro n₁
-      rw [SentenceInf.realize_iInf]
-      intro n₂
-      by_cases h : n₁ = n₂
-      · simp [h, SentenceInf.realize_def, FormulaInf.realize_def]
-      · simp only [h, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_inf,
-          realize_baireAtom]
-        rintro ⟨h₁, h₂⟩
-        exact h (((hgraph (m, n₁)).1 h₁).symm.trans ((hgraph (m, n₂)).1 h₂))
-    · rw [SentenceInf.realize_iInf]
-      intro k
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iInfAlong]
-      rintro ⟨R, x⟩
-      simp only [BoundedFormulaInf.realize_iff]
+    · exact realize_injSent_iff.2 (by simpa only [hval] using e.injective)
+    · exact realize_surjSent_iff.2 (by simpa only [hval] using e.surjective)
+    · exact realize_funcSent_iff.2 ⟨z, hgraph⟩
+    · refine (realize_atomSent_iff hf hgraph).2 fun k R x => ?_
       have htuple :
-          (fun i => @Structure.funMap (L.sum (witnessLang V)) M _ 0 (vSym (x i)) Fin.elim0) =
-            e ∘ x := funext fun i => hval (x i)
-      have hrel : @SentenceInf.Realize _ ℕ (relOnConsts (V := V) R x) M _ ↔
-          (f z).eval (atom R x) = true :=
-        (@realize_relOnConsts L V M iM _ inferInstance k R x).trans <|
-          (iff_of_eq (congrArg _ htuple)).trans <|
-            (@Language.Equiv.map_rel L V M (f z).toStructure iM e _ R x).trans
-              (toStructure_relMap (f z) R x)
-      simpa [SentenceInf.realize_def, FormulaInf.realize_def] using
-        hrel.trans (realize_openSetSentence_iff (L := L) (V := V) (hOpen (atom R x)) hgraph).symm
+          (fun i => Structure.funMap (vSym (L := L) (x i)) (Fin.elim0 : Fin 0 → M)) = e ∘ x :=
+        funext fun i => hval (x i)
+      rw [htuple, @Language.Equiv.map_rel L V M (f z).toStructure iM e k R x, toStructure_relMap]
 
 end PCSentence
 
@@ -511,8 +469,8 @@ theorem exists_sentence_separating [∀ n, Countable (L.Relations n)] [Countable
     exact ⟨θ, hAC, hBC.symm⟩
   · -- Nonempty countable carrier: present the isomorphism saturations of `A` and `B` as `PC_{ω₁ω}`
     -- classes and separate them by `pcSeparation`.
-    obtain ⟨f, hf, rfl⟩ := exists_continuous_range_eq_of_analyticSet hA hAne
-    obtain ⟨g, hg, rfl⟩ := exists_continuous_range_eq_of_analyticSet hB hBne
+    obtain ⟨f, hf, rfl⟩ := hA.exists_continuous_range_eq hAne
+    obtain ⟨g, hg, rfl⟩ := hB.exists_continuous_range_eq hBne
     obtain ⟨θ, hθ₁, hθ₂⟩ := pcSeparation.{u, v, w, 0, w, 0, w, w} (pcSentence f) (pcSentence g)
       fun M iM _ _ hM₁ hM₂ => by
         obtain ⟨c, hc, ⟨e₁⟩⟩ := (pcMem_pcSentence_iff hf).1 hM₁

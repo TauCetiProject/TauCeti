@@ -25,10 +25,12 @@ to the same `i` carry the same branch. The realization of the coded connective i
 
 ## Main results
 
-* `FirstOrder.Language.BoundedFormulaInf.realize_iInfAlong`: the coded conjunction is realized
-  exactly when every branch is.
-* `FirstOrder.Language.BoundedFormulaInf.realize_iSupAlong`: the coded disjunction is realized
-  exactly when some branch is.
+* `FirstOrder.Language.BoundedFormulaInf.realize_iInfAlong` and
+  `FirstOrder.Language.SentenceInf.realize_iInfAlong`: the coded conjunction is realized exactly
+  when every branch is.
+* `FirstOrder.Language.BoundedFormulaInf.realize_iSupAlong` and
+  `FirstOrder.Language.SentenceInf.realize_iSupAlong`: the coded disjunction is realized exactly
+  when some branch is.
 
 ## References
 
@@ -103,6 +105,20 @@ theorem realize_iSupAlong {c : IndexCoding ι κ} {φs : ι → L.BoundedFormula
   exact c.exists_pad_false_iff _
 
 end BoundedFormulaInf
+
+/-- A coded conjunction of sentences holds in a structure exactly when every conjunct holds. -/
+@[simp]
+theorem SentenceInf.realize_iInfAlong {M : Type w} [L.Structure M] {c : IndexCoding ι κ}
+    {φs : ι → L.SentenceInf κ} :
+    SentenceInf.Realize (BoundedFormulaInf.iInfAlong c φs) M ↔ ∀ i, (φs i).Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iInfAlong]
+
+/-- A coded disjunction of sentences holds in a structure exactly when some disjunct holds. -/
+@[simp]
+theorem SentenceInf.realize_iSupAlong {M : Type w} [L.Structure M] {c : IndexCoding ι κ}
+    {φs : ι → L.SentenceInf κ} :
+    SentenceInf.Realize (BoundedFormulaInf.iSupAlong c φs) M ↔ ∃ i, (φs i).Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iSupAlong]
 
 end Language
 
