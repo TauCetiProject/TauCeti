@@ -32,6 +32,8 @@ contraction lowers the degree by one, and left multiplication by a generator rai
 * `TauCeti.ExteriorAlgebra.contractLeft_mem_integerGrading`: contraction has degree `-1`.
 * `TauCeti.ExteriorAlgebra.ι_mul_mem_integerGrading`: left multiplication by a generator has
   degree one.
+* `TauCeti.ExteriorAlgebra.mul_self_eq_zero_of_mem_integerGrading_one`: degree-one elements square
+  to zero.
 -/
 
 public section
@@ -70,6 +72,13 @@ theorem integerGrading_of_neg {p : ℤ} (hp : p < 0) : integerGrading R M p = �
 theorem ι_mem_integerGrading_one (m : M) : ExteriorAlgebra.ι R m ∈ integerGrading R M 1 := by
   rw [← Nat.cast_one, integerGrading_natCast, _root_.ExteriorAlgebra.exteriorPower, pow_one]
   exact LinearMap.mem_range_self _ _
+
+/-- **Degree-one elements of an exterior algebra square to zero.** -/
+theorem mul_self_eq_zero_of_mem_integerGrading_one {x : ExteriorAlgebra R M}
+    (hx : x ∈ integerGrading R M 1) : x * x = 0 := by
+  rw [← Nat.cast_one, integerGrading_natCast, _root_.ExteriorAlgebra.exteriorPower, pow_one] at hx
+  obtain ⟨m, rfl⟩ := hx
+  exact ExteriorAlgebra.ι_sq_zero m
 
 /-- **The grade involution acts on the piece of degree `p` by `(-1) ^ p`.** -/
 theorem involute_of_mem_integerGrading {p : ℤ} {x : ExteriorAlgebra R M}
