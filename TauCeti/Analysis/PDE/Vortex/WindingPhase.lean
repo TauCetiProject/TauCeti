@@ -54,12 +54,14 @@ trivialization has connection coefficients `(-(1 / 2) ∂_t log |α|², (1 / 2) 
 (`TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_zero_of_equation_eq_zero`,
 `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_one_of_equation_eq_zero`), and so does
 `x - x_ref`, whose section is `(|α| - 1) (z / |z|)^m`. The second derivatives of `log |α|²` decay
-(`TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`), as do the gradient of `|α|²` and the modulus
-defect. Hence outside a compact set the derivatives of both the end trivialization and of
-`x - x_ref` are at most `K exp (-c |z|)`
+(`TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`), as do the gradient
+of `|α|²` and the modulus defect. Hence outside a compact set the derivatives of both the end
+trivialization and of `x - x_ref` are at most `K exp (-c |z|)`
 (`TauCeti.Vortex.exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp`,
-`TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`). Higher derivatives
-are not treated here.
+`TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`). When the connection
+is `C¹`, the bound for `x - x_ref` holds on the whole plane
+(`TauCeti.Vortex.exists_norm_fderiv_sub_referenceField_le_mul_exp`). Higher derivatives are not
+treated here.
 
 ## Main definitions
 
@@ -81,6 +83,8 @@ are not treated here.
 * `TauCeti.Vortex.exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp`,
   `TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`: the first
   derivatives of the end trivialization and of `x - x_ref` decay exponentially.
+* `TauCeti.Vortex.exists_norm_fderiv_sub_referenceField_le_mul_exp`: for a vortex with `C¹`
+  connection, the first derivatives of `x - x_ref` decay exponentially on the whole plane.
 * `TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`: framed gauge normalization of the
   end phase.
 * `TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`: every smooth
@@ -396,14 +400,9 @@ private theorem gaugeTransform_inv_windingPhase_apply_zero_one {z : ℂ} (hz : z
   set y := gaugeTransform (windingPhase m)⁻¹ x
   set N : ℂ → ℝ := fun w ↦ ‖sectionValue x w‖ with hN
   have hu := Circle.differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
-  -- `|α| = √|α|²` is differentiable at `z`, and `log |α|² = 2 log |α|`.
+  -- `|α|` is differentiable at `z`, and `log |α|² = 2 log |α|`.
   have hNz : 0 < N z := norm_pos_iff.mpr hα
-  have hNd : DifferentiableAt ℝ N z := by
-    have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z := by fun_prop
-    have h : (fun w ↦ Real.sqrt (4 * (x w 2 ^ 2 + x w 3 ^ 2))) = N := funext fun w ↦ by
-      rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
-    rw [← h]
-    exact hs.sqrt (by rw [← sq_norm_sectionValue]; positivity)
+  have hNd : DifferentiableAt ℝ N z := (hasFDerivAt_norm_sectionValue hp hq hα).differentiableAt
   have hℓ (v : ℂ) : fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z v =
       2 * fderiv ℝ N z v / N z := by
     have heq : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =
@@ -512,17 +511,16 @@ theorem sub_referenceField_apply_one_of_equation_eq_zero (f : ContDiffBump (0 : 
 /-! ### Exponential decay of the first derivatives -/
 
 /-- Outside a disc beyond which the section of a vortex `x` is `|α|` times the winding phase and
-nonzero, each connection coefficient of the end trivialization of `x` is differentiable, with
-derivative at most half the second derivative of `log |α|²`. -/
+nonzero, the derivative of each connection coefficient of the end trivialization of `x` is at most
+half the second derivative of `log |α|²`. -/
 private theorem norm_fderiv_gaugeTransform_inv_windingPhase_apply_le
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) {R : ℝ} (hR : 0 ≤ R)
     (hphase : ∀ w : ℂ, R < ‖w‖ → sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
     (hα : ∀ w : ℂ, R < ‖w‖ → sectionValue x w ≠ 0) {z : ℂ} (hz : R < ‖z‖) {i : Fin 4}
     (hi : i = 0 ∨ i = 1) :
-    DifferentiableAt ℝ (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w i) z ∧
-      ‖fderiv ℝ (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w i) z‖ ≤
-        ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ / 2 := by
+    ‖fderiv ℝ (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w i) z‖ ≤
+      ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ / 2 := by
   have hU : ∀ᶠ w in 𝓝 z, R < ‖w‖ := (isOpen_lt continuous_const continuous_norm).mem_nhds hz
   have hw₀ : ∀ w : ℂ, R < ‖w‖ → w ≠ 0 := fun w hw ↦ norm_pos_iff.mp (hR.trans_lt hw)
   have hphase' : ∀ w : ℂ, R < ‖w‖ →
@@ -551,7 +549,6 @@ private theorem norm_fderiv_gaugeTransform_inv_windingPhase_apply_le
         (by simp [hsol w]) (by simp [hsol w]) (hphase' w hw) (hα w hw)]
       ring
   have hd := (hℓcd.hasFDerivAt_fderiv_apply le_rfl v).const_mul a
-  refine ⟨(hd.differentiableAt).congr_of_eventuallyEq hcoeff, ?_⟩
   rw [hcoeff.fderiv_eq, hd.fderiv]
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   have h := (fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z).le_opNorm₂ u v
@@ -578,20 +575,6 @@ private theorem exists_radius_sectionValue_eq_and_quarter_le
   · exact ((le_max_left R₀ R₂).trans (le_max_left _ _)).trans hw.le
   · exact ((le_max_right R₀ R₂).trans (le_max_left _ _)).trans hw.le
 
-/-- The second derivatives of `log |α|²` decay at every rate `c < 1 / 2`. -/
-private theorem exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
-    (hc : c < 1 / 2) :
-    ∃ K, ∀ᶠ z in cocompact ℂ,
-      ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ ≤
-        K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim hc 2).bound
-  refine ⟨K, hK.mono fun z hz ↦ ?_⟩
-  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  rwa [Real.norm_of_nonneg (Real.exp_pos _).le] at hz
-
 /-- **The pointwise derivative of the end trivialization.** Beyond a radius `R ≥ 0` outside which
 the section of a vortex `x` is `|α|` times the winding phase and `|α|² ≥ 1 / 4`, the derivative of
 the end trivialization of `x` is bounded by the second derivative of `log |α|²` (the derivative of
@@ -604,57 +587,32 @@ private theorem norm_fderiv_gaugeTransform_inv_windingPhase_le
     ‖fderiv ℝ (gaugeTransform (windingPhase m)⁻¹ x) z‖ ≤
       ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ +
         ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ := by
-  set y := gaugeTransform (windingPhase m)⁻¹ x
-  set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) with hs_def
   have hU : ∀ᶠ w in 𝓝 z, R < ‖w‖ := (isOpen_lt continuous_const continuous_norm).mem_nhds hz
-  have hspos : ∀ w : ℂ, R < ‖w‖ → 0 < s w := fun w hw ↦
-    (by norm_num : (0 : ℝ) < 1 / 4).trans_le (hquarter w hw)
   have hα : ∀ w : ℂ, R < ‖w‖ → sectionValue x w ≠ 0 := fun w hw h ↦ by
     have := sq_norm_sectionValue x w
     rw [h, norm_zero] at this
-    linarith [hspos w hw]
-  obtain ⟨hd0, hb0⟩ := norm_fderiv_gaugeTransform_inv_windingPhase_apply_le (m := m) hp hq hsol hR
+    linarith [hquarter w hw]
+  have hpz := hp.differentiable (by norm_num) z
+  have hqz := hq.differentiable (by norm_num) z
+  have hb0 := norm_fderiv_gaugeTransform_inv_windingPhase_apply_le (m := m) hp hq hsol hR
     hphase hα hz (i := 0) (.inl rfl)
-  obtain ⟨hd1, hb1⟩ := norm_fderiv_gaugeTransform_inv_windingPhase_apply_le (m := m) hp hq hsol hR
+  have hb1 := norm_fderiv_gaugeTransform_inv_windingPhase_apply_le (m := m) hp hq hsol hR
     hphase hα hz (i := 1) (.inr rfl)
-  -- Near `z` the section of `y` is `|α| = √|α|²`, with section coordinates `(|α| / 2, 0)`.
-  have hnorm : ∀ w, ‖sectionValue x w‖ = Real.sqrt (s w) := fun w ↦ by
-    simp only [hs_def]
-    rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
-  have hN : HasFDerivAt (fun w ↦ Real.sqrt (s w))
-      ((1 / (2 * Real.sqrt (s z))) • fderiv ℝ s z) z :=
-    (((contDiff_normSq hp hq).differentiable (by norm_num)) z).hasFDerivAt.sqrt
-      (hspos z hz).ne'
-  have hσ : sectionValue y =ᶠ[𝓝 z] fun w ↦ ofRealCLM (Real.sqrt (s w)) :=
-    hU.mono fun w hw ↦ by
-      rw [sectionValue_gaugeTransform_inv_windingPhase (hphase w hw), hnorm]
-      rfl
-  have h2 : (fun w ↦ y w 2) =ᶠ[𝓝 z] fun w ↦ Real.sqrt (s w) * (1 / 2) := hU.mono fun w hw ↦
-    (gaugeTransform_inv_windingPhase_apply_two (hphase w hw)).trans (by rw [hnorm]; ring)
-  have h3 : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := hU.mono fun w hw ↦
-    gaugeTransform_inv_windingPhase_apply_three (hphase w hw)
-  have hyd : DifferentiableAt ℝ y z := by
-    refine differentiableAt_euclidean.mpr fun i ↦ ?_
-    fin_cases i
-    exacts [hd0, hd1, (hN.differentiableAt.mul_const _).congr_of_eventuallyEq h2,
-      (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq h3]
-  -- `‖D |α|‖ ≤ ‖D |α|²‖`, since `|α| ≥ 1 / 2`.
-  have hsqrt : 1 / 2 ≤ Real.sqrt (s z) := by
-    rw [show (1 / 2 : ℝ) = Real.sqrt (1 / 4) by
-      rw [show (1 / 4 : ℝ) = (1 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
-    exact Real.sqrt_le_sqrt (hquarter z hz)
-  have hσd : ‖fderiv ℝ (sectionValue y) z‖ ≤ ‖fderiv ℝ s z‖ := by
-    have hd : HasFDerivAt (fun w ↦ ofRealCLM (Real.sqrt (s w)))
-        (ofRealCLM.comp ((1 / (2 * Real.sqrt (s z))) • fderiv ℝ s z)) z :=
-      ofRealCLM.hasFDerivAt.comp z hN
+  set y := gaugeTransform (windingPhase m)⁻¹ x
+  -- Near `z` the section of `y` is the real function `|α|`, and `‖D |α|‖ ≤ ‖D |α|²‖`.
+  have hσ : sectionValue y =ᶠ[𝓝 z] fun w ↦ ofRealCLM ‖sectionValue x w‖ :=
+    hU.mono fun w hw ↦ sectionValue_gaugeTransform_inv_windingPhase (hphase w hw)
+  have hσd : ‖fderiv ℝ (sectionValue y) z‖ ≤ ‖fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z‖ := by
+    have hd : HasFDerivAt (fun w ↦ ofRealCLM ‖sectionValue x w‖)
+        (ofRealCLM.comp (fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z)) z :=
+      ofRealCLM.hasFDerivAt.comp z
+        (hasFDerivAt_norm_sectionValue hpz hqz (hα z hz)).differentiableAt.hasFDerivAt
     rw [hσ.fderiv_eq, hd.fderiv]
     refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-    rw [ofRealCLM_norm, one_mul, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    refine mul_le_of_le_one_left (norm_nonneg _) ?_
-    rw [div_le_one (by positivity)]
-    linarith
-  have h := norm_fderiv_le_add_norm_fderiv_sectionValue hyd
-  linarith [norm_nonneg (fderiv ℝ s z)]
+    rw [ofRealCLM_norm, one_mul]
+  have h := norm_fderiv_le_add_norm_fderiv_sectionValue y z
+  have hN := norm_fderiv_norm_sectionValue_le hpz hqz (hquarter z hz)
+  linarith [norm_nonneg (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z)]
 
 /-- **Exponential decay of the first derivatives of the end trivialization.** Let `x` be a plane
 vortex with `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
@@ -677,6 +635,58 @@ theorem exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp
   have h := norm_fderiv_gaugeTransform_inv_windingPhase_le hp hq hsol (by linarith) hphR hqR hzR
   linarith [hK₂ z]
 
+/-- Beyond a radius `R ≥ max 1 rOut` outside which the section of `x` is `|α|` times the winding
+phase, the section of `x - x_ref` is `(|α| - 1) (z / |z|)^m`. Where moreover
+`1 / 4 ≤ |α|² ≤ 1`, its derivative is bounded by the gradient of `|α|²` and the modulus defect. -/
+private theorem norm_fderiv_sectionValue_sub_referenceField_le (f : ContDiffBump (0 : ℝ)) {R : ℝ}
+    (hR : max 1 f.rOut ≤ R)
+    (hphase : ∀ w : ℂ, R < ‖w‖ → sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
+    {z : ℂ} (hz : R < ‖z‖) (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (hquarter : 1 / 4 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hone : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1) :
+    ‖fderiv ℝ (sectionValue (x - referenceField f m)) z‖ ≤
+      ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ +
+        m * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) := by
+  have hR₁ : 1 ≤ R := (le_max_left _ _).trans hR
+  have hU : ∀ᶠ w in 𝓝 z, R < ‖w‖ := (isOpen_lt continuous_const continuous_norm).mem_nhds hz
+  have hz₀ : z ≠ 0 := norm_pos_iff.mp ((zero_lt_one.trans_le hR₁).trans hz)
+  have hs2 := sq_norm_sectionValue x z
+  have hN : 1 / 2 ≤ ‖sectionValue x z‖ := by nlinarith [norm_nonneg (sectionValue x z)]
+  have hN1 : ‖sectionValue x z‖ ≤ 1 := by nlinarith [norm_nonneg (sectionValue x z)]
+  -- The section is `(|α| - 1)` times the winding phase near `z`.
+  have hσ : sectionValue (x - referenceField f m) =ᶠ[𝓝 z]
+      (fun w ↦ ofRealCLM (‖sectionValue x w‖ - 1)) * fun w ↦ (windingPhase m w : ℂ) :=
+    hU.mono fun w hw ↦ by
+      have hw₀ : w ≠ 0 := norm_pos_iff.mp ((zero_lt_one.trans_le hR₁).trans hw)
+      simp only [sectionValue_sub, sectionValue_referenceField,
+        referenceSection_eq_phase f m (rOut_le_norm_sq f (hR.trans_lt hw)),
+        ← coe_windingPhase m hw₀, Pi.mul_apply, ofRealCLM_apply]
+      nth_rw 1 [hphase w hw]
+      push_cast
+      ring
+  have hNd := (hasFDerivAt_norm_sectionValue hp hq (norm_pos_iff.mp (by linarith))).differentiableAt
+  have hprod : HasFDerivAt ((fun w ↦ ofRealCLM (‖sectionValue x w‖ - 1)) *
+      fun w ↦ (windingPhase m w : ℂ)) _ z :=
+    (ofRealCLM.hasFDerivAt.comp z (hNd.hasFDerivAt.sub_const 1)).mul
+      (differentiableAt_windingPhase m hz₀).hasFDerivAt
+  -- Bounds for the two factors.
+  have hdefect : |‖sectionValue x z‖ - 1| ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+    rw [abs_of_nonpos (by linarith)]
+    nlinarith
+  have hdN := norm_fderiv_norm_sectionValue_le hp hq hquarter
+  have hdW : ‖fderiv ℝ (fun w ↦ (windingPhase m w : ℂ)) z‖ ≤ m :=
+    (norm_fderiv_windingPhase_le m hz₀).trans
+      (div_le_self (Nat.cast_nonneg m) (hR₁.trans hz.le))
+  rw [hσ.fderiv_eq, hprod.fderiv]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, Circle.norm_coe, one_mul]
+  simp only [Function.comp_apply, ofRealCLM_apply, norm_real, Real.norm_eq_abs]
+  have h1 := ContinuousLinearMap.opNorm_comp_le ofRealCLM
+    (fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z)
+  rw [ofRealCLM_norm, one_mul] at h1
+  have h2 := mul_le_mul hdefect hdW (norm_nonneg _) (by linarith)
+  linarith
+
 /-- **The pointwise derivative of the distance to the reference field.** Beyond a radius
 `R ≥ max 1 rOut` outside which the section of a vortex `x` is `|α|` times the winding phase and
 `|α|² ≥ 1 / 4`, the derivative of `x - x_ref` is bounded by the second derivative of `log |α|²`
@@ -692,93 +702,30 @@ private theorem norm_fderiv_sub_referenceField_le
       ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ +
         ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ +
         m * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) := by
-  set F := x - referenceField f m with hF_def
-  set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) with hs_def
-  have hR₁ : 1 ≤ R := (le_max_left _ _).trans hR
   have hU : ∀ᶠ w in 𝓝 z, R < ‖w‖ := (isOpen_lt continuous_const continuous_norm).mem_nhds hz
-  have hrOut : ∀ w : ℂ, R < ‖w‖ → f.rOut ≤ ‖w‖ ^ 2 := fun w hw ↦ rOut_le_norm_sq f (hR.trans_lt hw)
-  have hz₀ : z ≠ 0 := norm_pos_iff.mp ((zero_lt_one.trans_le hR₁).trans hz)
-  have hspos : ∀ w : ℂ, R < ‖w‖ → 0 < s w := fun w hw ↦
-    (by norm_num : (0 : ℝ) < 1 / 4).trans_le (hquarter w hw)
   have hα : ∀ w : ℂ, R < ‖w‖ → sectionValue x w ≠ 0 := fun w hw h ↦ by
     have := sq_norm_sectionValue x w
     rw [h, norm_zero] at this
-    linarith [hspos w hw]
-  -- The connection coefficients of `F` are those of the end trivialization near `z`.
+    linarith [hquarter w hw]
+  -- The connection coefficients of `x - x_ref` are those of the end trivialization near `z`.
   have hconn (i : Fin 4) (hi : i = 0 ∨ i = 1) :
-      ‖fderiv ℝ (fun w ↦ F w i) z‖ ≤
-        ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (s w))) z‖ / 2 := by
-    have heq : (fun w ↦ F w i) =ᶠ[𝓝 z] fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w i :=
-      hU.mono fun w hw ↦
-        sub_referenceField_apply_eq_gaugeTransform_inv_windingPhase_apply f (hrOut w hw) hi
+      ‖fderiv ℝ (fun w ↦ (x - referenceField f m) w i) z‖ ≤
+        ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))) z‖ / 2 := by
+    have heq : (fun w ↦ (x - referenceField f m) w i) =ᶠ[𝓝 z]
+        fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w i :=
+      hU.mono fun w hw ↦ sub_referenceField_apply_eq_gaugeTransform_inv_windingPhase_apply f
+        (rOut_le_norm_sq f (hR.trans_lt hw)) hi
     rw [heq.fderiv_eq]
-    exact (norm_fderiv_gaugeTransform_inv_windingPhase_apply_le hp hq hsol (by linarith) hphase
-      hα hz hi).2
-  -- The section of `F` is `(|α| - 1)` times the winding phase near `z`.
-  have hσ : sectionValue F =ᶠ[𝓝 z]
-      (fun w ↦ ofRealCLM (Real.sqrt (s w) - 1)) * fun w ↦ (windingPhase m w : ℂ) :=
-    hU.mono fun w hw ↦ by
-      have hw₀ : w ≠ 0 := norm_pos_iff.mp ((zero_lt_one.trans_le hR₁).trans hw)
-      simp only [hF_def, sectionValue_sub, sectionValue_referenceField,
-        referenceSection_eq_phase f m (hrOut w hw), ← coe_windingPhase m hw₀, hs_def,
-        Pi.mul_apply, ofRealCLM_apply]
-      rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
-      nth_rw 1 [hphase w hw]
-      push_cast
-      ring
-  have hN : HasFDerivAt (fun w ↦ Real.sqrt (s w))
-      ((1 / (2 * Real.sqrt (s z))) • fderiv ℝ s z) z :=
-    (((contDiff_normSq hp hq).differentiable (by norm_num)) z).hasFDerivAt.sqrt
-      (hspos z hz).ne'
-  have hW := (differentiableAt_windingPhase m hz₀).hasFDerivAt
-  have hprod : HasFDerivAt ((fun w ↦ ofRealCLM (Real.sqrt (s w) - 1)) *
-      fun w ↦ (windingPhase m w : ℂ)) _ z := (ofRealCLM.hasFDerivAt.comp z (hN.sub_const 1)).mul hW
-  -- Bounds for the two factors.
-  have hsqrt : 1 / 2 ≤ Real.sqrt (s z) := by
-    rw [show (1 / 2 : ℝ) = Real.sqrt (1 / 4) by
-      rw [show (1 / 4 : ℝ) = (1 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
-    exact Real.sqrt_le_sqrt (hquarter z hz)
-  have hsqrt1 : Real.sqrt (s z) ≤ 1 := Real.sqrt_le_one.mpr (hone z)
-  have hdefect : |Real.sqrt (s z) - 1| ≤ 1 - s z := by
-    rw [abs_of_nonpos (by linarith)]
-    have := Real.sq_sqrt (hspos z hz).le
-    nlinarith
-  have hdN : ‖(1 / (2 * Real.sqrt (s z))) • fderiv ℝ s z‖ ≤ ‖fderiv ℝ s z‖ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    refine mul_le_of_le_one_left (norm_nonneg _) ?_
-    rw [div_le_one (by positivity)]
-    linarith
-  have hdW : ‖fderiv ℝ (fun w ↦ (windingPhase m w : ℂ)) z‖ ≤ m :=
-    (norm_fderiv_windingPhase_le m hz₀).trans
-      (div_le_self (Nat.cast_nonneg m) (hR₁.trans hz.le))
-  have hσd : ‖fderiv ℝ (sectionValue F) z‖ ≤ ‖fderiv ℝ s z‖ + m * (1 - s z) := by
-    rw [hσ.fderiv_eq, hprod.fderiv]
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, norm_smul, Circle.norm_coe, one_mul]
-    simp only [Function.comp_apply, ofRealCLM_apply, norm_real, Real.norm_eq_abs]
-    have h1 := ContinuousLinearMap.opNorm_comp_le ofRealCLM
-      ((1 / (2 * Real.sqrt (s z))) • fderiv ℝ s z)
-    rw [ofRealCLM_norm, one_mul] at h1
-    have h2 : |Real.sqrt (s z) - 1| * ‖fderiv ℝ (fun w ↦ (windingPhase m w : ℂ)) z‖ ≤
-        (1 - s z) * m :=
-      mul_le_mul hdefect hdW (norm_nonneg _) (by linarith [hone z])
-    linarith
-  -- Assemble the connection and the section.
-  have hFd : DifferentiableAt ℝ F z := by
-    have hc := differentiableAt_connection_of_equation hp.contDiffAt hq.contDiffAt
-      (fun h ↦ (hspos z hz).ne' (by simp only [hs_def]; rw [h, mul_zero]))
-      (Eventually.of_forall fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩)
-    refine (differentiableAt_euclidean.mpr fun i ↦ ?_).sub
-      ((contDiff_referenceField f m).differentiable (by simp) z)
-    fin_cases i
-    exacts [hc.1, hc.2, hp.differentiable (by norm_num) z, hq.differentiable (by norm_num) z]
-  have h := norm_fderiv_le_add_norm_fderiv_sectionValue hFd
-  have hs₁ : s z ≤ 1 := hone z
-  have hm : 0 ≤ (m : ℝ) * (1 - s z) := mul_nonneg (Nat.cast_nonneg _) (by linarith)
-  calc ‖fderiv ℝ F z‖ ≤ ‖fderiv ℝ (fderiv ℝ (fun w ↦ Real.log (s w))) z‖ + ‖fderiv ℝ s z‖ +
-        m * (1 - s z) := by
-        linarith [hconn 0 (.inl rfl), hconn 1 (.inr rfl), norm_nonneg (fderiv ℝ s z)]
-    _ = _ := rfl
+    exact norm_fderiv_gaugeTransform_inv_windingPhase_apply_le hp hq hsol
+      (zero_le_one.trans ((le_max_left _ _).trans hR)) hphase hα hz hi
+  have hσd := norm_fderiv_sectionValue_sub_referenceField_le f hR hphase hz
+    (hp.differentiable (by norm_num) z) (hq.differentiable (by norm_num) z) (hquarter z hz)
+    (hone z)
+  have h := norm_fderiv_le_add_norm_fderiv_sectionValue (x - referenceField f m) z
+  have hm : 0 ≤ (m : ℝ) * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :=
+    mul_nonneg (Nat.cast_nonneg _) (by linarith [hone z])
+  linarith [hconn 0 (.inl rfl), hconn 1 (.inr rfl),
+    norm_nonneg (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z)]
 
 /-- **Exponential decay of the first derivatives of an end-normalized vortex.** Let `x` be a plane
 vortex with `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
@@ -809,6 +756,28 @@ theorem exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp
     _ ≤ K₁ * Real.exp (-(c * ‖z‖)) + K₂ * Real.exp (-(c * ‖z‖)) +
         m * (K₃ * Real.exp (-(c * ‖z‖))) := by linarith [hK₂ z]
     _ = (K₁ + K₂ + m * K₃) * Real.exp (-(c * ‖z‖)) := by ring
+
+/-- **Exponential decay of the first derivatives of an end-normalized vortex on the plane.** Let
+`x` be a plane vortex with `C¹` connection and `|α| → 1` at infinity whose section is `|α|` times
+the winding phase `(z / |z|)^m` outside a compact set. Then for every `c < 1 / 2` the derivative of
+`x - x_ref` decays at rate `c` on the whole plane: `‖D (x - x_ref) (z)‖ ≤ K exp (-c |z|)`. -/
+theorem exists_norm_fderiv_sub_referenceField_le_mul_exp
+    (hb₁ : ContDiff ℝ 1 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 1 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
+    (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) :
+    ∃ K, ∀ z, ‖fderiv ℝ (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨K, hK⟩ :=
+    exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp hp hq hsol hlim hphase f hc
+  have hx : ContDiff ℝ 1 x := by
+    refine contDiff_euclidean.2 fun i ↦ ?_
+    fin_cases i
+    exacts [hb₁, hb₂, hp.of_le (by norm_num), hq.of_le (by norm_num)]
+  have hF : ContDiff ℝ 1 (x - referenceField f m) :=
+    hx.sub ((contDiff_referenceField f m).of_le (by simp))
+  exact exists_forall_le_mul_exp_of_eventually_le (hF.continuous_fderiv one_ne_zero).norm hK
 
 /-! ### Framed gauge normalization of the end phase -/
 

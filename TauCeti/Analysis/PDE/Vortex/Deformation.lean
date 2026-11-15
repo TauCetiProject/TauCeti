@@ -246,12 +246,44 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
     ofRealCLM_apply, smul_eq_mul]
   ring
 
+/-- Where the section is nonzero, its modulus `|α| = √|α|²` is differentiable, with derivative
+`d |α|² / (2 |α|)`. -/
+theorem hasFDerivAt_norm_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hα : sectionValue x z ≠ 0) :
+    HasFDerivAt (fun w ↦ ‖sectionValue x w‖)
+      ((1 / (2 * ‖sectionValue x z‖)) • fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z) z := by
+  have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z := by fun_prop
+  have hsqrt (w : ℂ) : Real.sqrt (4 * (x w 2 ^ 2 + x w 3 ^ 2)) = ‖sectionValue x w‖ := by
+    rw [← sq_norm_sectionValue, Real.sqrt_sq (norm_nonneg _)]
+  have h := hs.hasFDerivAt.sqrt
+    (by rw [← sq_norm_sectionValue]; exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hα))
+  simpa only [hsqrt] using h
+
+/-- Where `|α|² ≥ 1 / 4`, the derivative of the modulus `|α|` of the section is at most that of
+`|α|²`. -/
+theorem norm_fderiv_norm_sectionValue_le {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hquarter : 1 / 4 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ‖fderiv ℝ (fun w ↦ ‖sectionValue x w‖) z‖ ≤
+      ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ := by
+  have hN : 1 / 2 ≤ ‖sectionValue x z‖ := by
+    nlinarith [sq_norm_sectionValue x z, norm_nonneg (sectionValue x z)]
+  rw [(hasFDerivAt_norm_sectionValue hp hq (norm_pos_iff.mp (by linarith))).fderiv, norm_smul,
+    Real.norm_eq_abs, abs_of_pos (by positivity)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ?_
+  rw [div_le_one (by positivity)]
+  linarith
+
 /-- The derivative of a field is controlled by those of its connection coefficients and of its
 section: `‖D x‖ ≤ ‖D b₁‖ + ‖D b₂‖ + ‖D α‖ / 2`. -/
-theorem norm_fderiv_le_add_norm_fderiv_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hx : DifferentiableAt ℝ x z) :
+theorem norm_fderiv_le_add_norm_fderiv_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖fderiv ℝ x z‖ ≤ ‖fderiv ℝ (fun w ↦ x w 0) z‖ + ‖fderiv ℝ (fun w ↦ x w 1) z‖ +
       ‖fderiv ℝ (sectionValue x) z‖ / 2 := by
+  by_cases hx : DifferentiableAt ℝ x z
+  swap
+  · rw [fderiv_zero_of_not_differentiableAt hx, norm_zero]
+    positivity
   have hi := differentiableAt_euclidean.mp hx
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
   have h0 := (fderiv ℝ (fun w ↦ x w 0) z).le_opNorm v
