@@ -35,8 +35,9 @@ commutative ring.
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
 * `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
   inverse.
-* `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
-  induced linear automorphism on column vectors.
+* `TauCeti.one_sub_vecMulVec_mulVec`, `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply`, and its
+  inverse counterpart compute the matrix-vector product and induced linear automorphism on column
+  vectors.
 -/
 
 public section
@@ -116,6 +117,11 @@ end Ring
 
 variable [CommRing R]
 
+/-- A rank-one perturbation of the identity subtracts the row pairing in the column direction. -/
+theorem one_sub_vecMulVec_mulVec (u v x : α → R) :
+    (1 - vecMulVec u v) *ᵥ x = x - (v ⬝ᵥ x) • u := by
+  rw [sub_mulVec, one_mulVec, vecMulVec_mulVec, op_smul_eq_smul]
+
 /-- The quadratic relation for a rank-one perturbation of the identity whose self-pairing is
 `t + 1`. -/
 theorem one_sub_vecMulVec_mul_self (t : R) {u v : α → R} (h : v ⬝ᵥ u = t + 1) :
@@ -148,7 +154,7 @@ theorem oneSubVecMulVecGL_toLinearEquiv_apply (t : Rˣ) (u v x : α → R)
         x - (v ⬝ᵥ x) • u := by
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_oneSubVecMulVecGL,
-    Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul]
+    one_sub_vecMulVec_mulVec]
 
 /-- The inverse induced automorphism rescales the same row pairing by the inverse unit. -/
 @[simp]

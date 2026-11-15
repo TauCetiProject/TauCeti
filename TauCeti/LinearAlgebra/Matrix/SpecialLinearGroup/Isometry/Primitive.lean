@@ -49,8 +49,8 @@ special isometries:
   unitary transvection along `c • y - x` fixes `u` (since `c • y - x ∈ u^⊥`) and sends `x` to
   `c • y`; when `B(y, x) = 0`, two such steps pass through an isotropic vector `v + a • x ∈ u^⊥`
   paired nontrivially with both `x` and `y`
-  (`Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero` in
-  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/IsotropicPoints.lean`).
+  (`Matrix.exists_mem_iSup_unitaryTransvectionSubgroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`
+  in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/IsotropicPoints.lean`).
 
 Together these give `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul`: the
 stabilizer of `u` connects `[x]` to `[y]` whenever both lie off `K ∙ u` and `B(u, x) = 0` holds
@@ -174,8 +174,10 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
     ∃ g ∈ Q.specialIsometryGroup σ, ∃ c ≠ (0 : K),
       (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = c • y := by
   by_cases hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0
-  · exact exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
-      hσ hQ hdet htr hadm hx hy hx_span hy_span hux (h.mp hux)
+  · obtain ⟨t, -, c, hc, htu, htx⟩ :=
+      exists_mem_iSup_unitaryTransvectionSubgroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
+        hσ hQ hdet htr hadm hx hy hx_span hy_span hux (h.mp hux)
+    exact ⟨t, t.2, c, hc, htu, htx⟩
   · have huy : (σ ∘ u) ⬝ᵥ (Q *ᵥ y) ≠ 0 := mt h.mpr hux
     set c := ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)) / ((σ ∘ u) ⬝ᵥ (Q *ᵥ y))
     have hc : c ≠ 0 := div_ne_zero hux huy

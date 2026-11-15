@@ -14,6 +14,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
+import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
 # The standard sesquilinear form with a specified twist
@@ -40,29 +41,38 @@ the Hermitian metric making a chosen basis orthonormal, for instance the increas
 an exterior algebra.
 
 More generally, for a ring endomorphism `σ` and a Gram matrix `Q`, write
-`B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A matrix `g` with
-`σ(g)ᵀ Q g = Q` intertwines the row covectors `σ(x)ᵀ Q` (`Matrix.comp_mulVec_vecMul_vecMul`) and
-hence preserves `B` (`Matrix.comp_mulVec_dotProduct_mulVec_mulVec`). If `σ` is an involution and
-`σ(Q)ᵀ = ε Q`, then `(σ(ε) ε) • Q = Q` (`Matrix.map_mul_self_smul_eq_self`) and `B` is
-`ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)` (`Matrix.apply_comp_dotProduct_mulVec`), with symmetric
+`B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A matrix `g` satisfies
+`σ(g)ᵀ Q g = Q` if and only if it preserves all values of `B`
+(`Matrix.comp_mulVec_vecMul_vecMul`, `Matrix.comp_mulVec_dotProduct_mulVec_mulVec`,
+`Matrix.transpose_map_mul_mul_eq_self`, `Matrix.transpose_map_mul_mul_eq_self_iff`). If `σ` is an
+involution and `σ(Q)ᵀ = ε Q`, then `(σ(ε) ε) • Q = Q` (`Matrix.map_mul_self_smul_eq_self`) and `B`
+is `ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)` (`Matrix.apply_comp_dotProduct_mulVec`), with symmetric
 orthogonality (`Matrix.comp_dotProduct_mulVec_eq_zero_comm`,
 `Matrix.comp_dotProduct_mulVec_ne_zero_comm`) and transposed conjugate rank-one update
 `σ(x (σ(y)ᵀ Q))ᵀ = ε (Q y) σ(x)ᵀ` (`Matrix.transpose_map_vecMulVec_vecMul`). With `ε * ε = 1`,
-this gives `B(y, x) = ε σ(B(x, y))` (`Matrix.comp_dotProduct_mulVec_swap`) and a formula for
-`B(u + c x, u + c x)` when `x` is isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
+this gives `B(y, x) = ε σ(B(x, y))` (`Matrix.comp_dotProduct_mulVec_swap`), a formula for
+`B(u + c x, u + c x)` when `x` is isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`),
+orthogonal decomposition along a hyperbolic pair
+(`Matrix.exists_eq_add_and_comp_dotProduct_mulVec_eq_zero`), and the determinant formula
+`A.det = c₁ * c₂` for a matrix rescaling a hyperbolic pair and fixing its orthogonal complement
+(`Matrix.det_eq_mul_of_mulVec_eq_smul`).
 
 Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` (which
 forces `ε * ε = 1` when `Q ≠ 0` or `Q` is invertible over a nonempty index type,
 `Matrix.mul_self_eq_one_of_trace` and `Matrix.mul_self_eq_one_of_trace_of_det_ne_zero`), a vector
 `u` with `B(u, x) ≠ 0` corrects to an isotropic `u + c x`
-(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, one or two
+(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`), and for invertible `Q` any
+nonzero isotropic vector extends to a hyperbolic pair
+(`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one`). For invertible `Q`, one or two
 vectors outside a line `K ∙ u` are separated from `u` by the form when `σ` is surjective
 (`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero`,
 `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair`), and when `u` is isotropic with
 `B(u, x) = 0` and `u ∉ K ∙ x` this yields an isotropic vector orthogonal to `x` and not to `u`
 (`Matrix.exists_comp_dotProduct_mulVec_self_eq_zero_and_eq_zero_and_ne_zero`); any two nonzero
 vectors also pair nontrivially with a common vector
-(`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). If moreover the trace
+(`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). A matrix rescaling a hyperbolic pair and an
+orthogonal anisotropic vector while fixing their common orthogonal complement has determinant
+`c₁ * c₂ * c₃` (`Matrix.det_eq_mul_mul_of_mulVec_eq_smul`). If moreover the trace
 has a nonzero kernel element and some nonzero vector is isotropic, a matrix scaling every isotropic
 vector is scalar (`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
 -/
@@ -163,6 +173,29 @@ theorem comp_mulVec_dotProduct_mulVec_mulVec {g : Matrix n n R} (hg : (g.map σ)
     (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
   rw [dotProduct_mulVec, dotProduct_mulVec, comp_mulVec_vecMul_vecMul hg, ← dotProduct_mulVec]
 
+/-- **A matrix preserving all values of the form preserves its Gram matrix.** For the
+`σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y` of Gram matrix `Q`, if `B(g x, g y) = B(x, y)` for all
+`x, y`, then `σ(g)ᵀ Q g = Q`. -/
+theorem transpose_map_mul_mul_eq_self {g : Matrix n n R}
+    (hg : ∀ x y : n → R, (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)) :
+    (g.map σ)ᵀ * Q * g = Q := by
+  classical
+  refine mulVec_injective (funext fun y ↦ funext fun i ↦ ?_)
+  have hi := hg (Pi.single i 1) y
+  rw [(funext (σ.map_mulVec g _) : σ ∘ (g *ᵥ _) = _), ← vecMul_transpose, dotProduct_mulVec,
+    dotProduct_mulVec, vecMul_vecMul, vecMul_vecMul, ← Matrix.mul_assoc,
+    ← dotProduct_mulVec] at hi
+  have hs : σ ∘ Pi.single i (1 : R) = Pi.single i 1 := funext fun j ↦ by
+    by_cases hij : j = i <;> simp [hij]
+  simpa [hs] using hi
+
+/-- A matrix `g` satisfies `σ(g)ᵀ Q g = Q` if and only if it preserves all values of the
+`σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y`. -/
+theorem transpose_map_mul_mul_eq_self_iff {g : Matrix n n R} :
+    (g.map σ)ᵀ * Q * g = Q ↔
+      ∀ x y : n → R, (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) :=
+  ⟨comp_mulVec_dotProduct_mulVec_mulVec, transpose_map_mul_mul_eq_self⟩
+
 /-- Applying `σ(Q)ᵀ = ε Q` twice for an involutive `σ` gives `(σ(ε) * ε) • Q = Q`. -/
 theorem map_mul_self_smul_eq_self {R n : Type*} [Semiring R] {Q : Matrix n n R} {σ : R →+* R}
     (hσ : Function.Involutive σ) {ε : R} (hQ : (Q.map σ)ᵀ = ε • Q) :
@@ -232,6 +265,92 @@ theorem comp_add_smul_dotProduct_mulVec_add_smul (hσ : Function.Involutive σ) 
   ring
 
 end GramMatrix
+
+section CommRing
+
+variable {R n : Type*} [CommRing R] [Fintype n] {Q : Matrix n n R} {σ : R →+* R} {ε : R}
+
+/-- Subtracting `(ε * B(f, x)) • e` makes `x` orthogonal to `f` on the left when `B(f, e) = ε` and
+`ε * ε = 1`. -/
+theorem comp_dotProduct_mulVec_sub_smul_eq_zero (hε : ε * ε = 1) {e f : n → R}
+    (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (x : n → R) :
+    (σ ∘ f) ⬝ᵥ (Q *ᵥ (x - (ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e)) = 0 := by
+  simp only [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, hfe]
+  linear_combination -((σ ∘ f) ⬝ᵥ (Q *ᵥ x)) * hε
+
+/-- The remainder `x - (ε * B(f, x)) • e - B(e, x) • f` is orthogonal to `e` when `B(e, e) = 0`
+and `B(e, f) = 1`. -/
+theorem comp_dotProduct_mulVec_sub_smul_sub_smul_eq_zero_left {e f : n → R}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (x : n → R) :
+    (σ ∘ e) ⬝ᵥ (Q *ᵥ (x - (ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e - ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) • f)) = 0 := by
+  simp [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, he, hef]
+
+/-- The remainder `x - (ε * B(f, x)) • e - B(e, x) • f` is orthogonal to `f` when `ε * ε = 1`,
+`B(f, f) = 0`, and `B(f, e) = ε`. -/
+theorem comp_dotProduct_mulVec_sub_smul_sub_smul_eq_zero_right (hε : ε * ε = 1) {e f : n → R}
+    (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (x : n → R) :
+    (σ ∘ f) ⬝ᵥ (Q *ᵥ (x - (ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e - ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) • f)) = 0 := by
+  rw [mulVec_sub, dotProduct_sub, comp_dotProduct_mulVec_sub_smul_eq_zero hε hfe, mulVec_smul,
+    dotProduct_smul, hf, smul_zero, sub_zero]
+
+/-- **Orthogonal decomposition along a hyperbolic pair.** For isotropic `e, f` with `B(e, f) = 1`,
+`B(f, e) = ε`, and `ε * ε = 1`, any vector `x` decomposes as
+`(ε * B(f, x)) • e + B(e, x) • f + w` with `B(e, w) = 0` and `B(f, w) = 0`. -/
+theorem exists_eq_add_and_comp_dotProduct_mulVec_eq_zero (hε : ε * ε = 1) {e f : n → R}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
+    (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε) (x : n → R) :
+    ∃ w : n → R, (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0 ∧
+      x = (ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e + ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) • f + w :=
+  ⟨x - (ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ x))) • e - ((σ ∘ e) ⬝ᵥ (Q *ᵥ x)) • f,
+    comp_dotProduct_mulVec_sub_smul_sub_smul_eq_zero_left he hef x,
+    comp_dotProduct_mulVec_sub_smul_sub_smul_eq_zero_right hε hf hfe x, by module⟩
+
+end CommRing
+
+/-- **Determinant of a matrix rescaling a hyperbolic pair.** If `A *ᵥ e = c₁ • e`,
+`A *ᵥ f = c₂ • f`, and `A` fixes pointwise every vector orthogonal to both `e` and `f` under a
+`σ`-sesquilinear form with `B(e, e) = B(f, f) = 0`, `B(e, f) = 1`, `B(f, e) = ε`, and `ε * ε = 1`,
+then `A.det = c₁ * c₂`. -/
+theorem det_eq_mul_of_mulVec_eq_smul {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    {A Q : Matrix n n R} {σ : R →+* R} {ε : R} (hε : ε * ε = 1) {e f : n → R}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
+    (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε)
+    {c₁ c₂ : R} (hAe : A *ᵥ e = c₁ • e) (hAf : A *ᵥ f = c₂ • f)
+    (hAw : ∀ w : n → R, (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0 → A *ᵥ w = w) :
+    A.det = c₁ * c₂ := by
+  let M₁ : Matrix n n R := 1 - vecMulVec ((1 - c₁) • e) (ε • ((σ ∘ f) ᵥ* Q))
+  let M₂ : Matrix n n R := 1 - vecMulVec ((1 - c₂) • f) ((σ ∘ e) ᵥ* Q)
+  have hM₂e : M₂ *ᵥ e = e := by
+    rw [TauCeti.one_sub_vecMulVec_mulVec, ← dotProduct_mulVec, he, zero_smul, sub_zero]
+  have hM₂f : M₂ *ᵥ f = c₂ • f := by
+    rw [TauCeti.one_sub_vecMulVec_mulVec, ← dotProduct_mulVec, hef, one_smul]
+    module
+  have hM₁e : M₁ *ᵥ e = c₁ • e := by
+    rw [TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec, hfe, smul_eq_mul,
+      hε, one_smul]
+    module
+  have hM₁f : M₁ *ᵥ f = f := by
+    rw [TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec, hf, smul_zero,
+      zero_smul, sub_zero]
+  have hA : A = M₁ * M₂ := mulVec_injective (funext fun x ↦ by
+    obtain ⟨w, hew, hfw, hx_eq⟩ :=
+      exists_eq_add_and_comp_dotProduct_mulVec_eq_zero hε he hf hef hfe x
+    have hM₂w : M₂ *ᵥ w = w := by
+      rw [TauCeti.one_sub_vecMulVec_mulVec, ← dotProduct_mulVec, hew, zero_smul, sub_zero]
+    have hM₁w : M₁ *ᵥ w = w := by
+      rw [TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec, hfw, smul_zero,
+        zero_smul, sub_zero]
+    rw [hx_eq, ← mulVec_mulVec]
+    simp only [mulVec_add, mulVec_smul, hAe, hAf, hAw w hew hfw, hM₂e, hM₂f, hM₂w, hM₁e, hM₁f,
+      hM₁w, smul_smul])
+  have hd₁ : M₁.det = c₁ := by
+    rw [TauCeti.det_one_sub_vecMulVec, smul_dotProduct, dotProduct_smul, ← dotProduct_mulVec, hfe,
+      smul_eq_mul, smul_eq_mul]
+    linear_combination -(1 - c₁) * hε
+  have hd₂ : M₂.det = c₂ := by
+    rw [TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hef, smul_eq_mul]
+    ring
+  rw [hA, det_mul, hd₁, hd₂]
 
 section Field
 
@@ -413,7 +532,109 @@ theorem exists_eq_scalar_of_forall_mulVec_eq_smul (hσ : Function.Involutive σ)
     exact add_right_cancel h
   · exact hpair hu
 
+omit [DecidableEq n] in
+/-- If `g` preserves `Q` and sends `u` to a nonzero multiple of `e`, then `g` sends any vector
+orthogonal to `u` to a vector orthogonal to `e`. -/
+theorem comp_dotProduct_mulVec_mulVec_eq_zero_of_mulVec_eq_smul {g : Matrix n n K}
+    (hg : (g.map σ)ᵀ * Q * g = Q) {u e x : n → K} {c : K} (hc : c ≠ 0)
+    (hgu : g *ᵥ u = c • e) (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) :
+    (σ ∘ e) ⬝ᵥ (Q *ᵥ (g *ᵥ x)) = 0 := by
+  have h : (σ ∘ (c • e)) ⬝ᵥ (Q *ᵥ (g *ᵥ x)) = 0 := by
+    rw [← hgu, comp_mulVec_dotProduct_mulVec_mulVec hg, hux]
+  rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul] at h
+  exact (mul_eq_zero.mp h).resolve_left ((map_ne_zero σ).mpr hc)
+
+/-- **Extending a nonzero isotropic vector to a hyperbolic pair.** Let `σ` be an involution, let
+`Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
+elements `s` with `σ(s) = ε s`. Any nonzero isotropic vector `e` pairs with some nonzero isotropic
+vector `f` satisfying `B(e, f) = 1`, `B(f, e) = ε`, `ε * ε = 1`, and `σ ε = ε`. -/
+theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {e : n → K} (he₀ : e ≠ 0)
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) :
+    ∃ f : n → K, f ≠ 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧
+      (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε ∧ ε * ε = 1 ∧ σ ε = ε := by
+  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp he₀; ⟨i⟩
+  have hε : ε * ε = 1 := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
+  obtain ⟨u, hue, -⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet he₀ he₀
+  obtain ⟨c, hf₀⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr he hue
+  set f₀ := u + c • e
+  have hef₀ : (σ ∘ e) ⬝ᵥ (Q *ᵥ f₀) ≠ 0 :=
+    (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mpr (by simpa [f₀, he] using hue)
+  set f := ((σ ∘ e) ⬝ᵥ (Q *ᵥ f₀))⁻¹ • f₀
+  have hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 := by
+    rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, hf₀, smul_zero,
+      smul_zero]
+  have hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 := by
+    rw [mulVec_smul, dotProduct_smul, smul_eq_mul, inv_mul_cancel₀ hef₀]
+  have hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
+    rw [comp_dotProduct_mulVec_swap hσ hQ hε, hef, map_one, mul_one]
+  have hσε : σ ε = ε := by
+    have h := apply_comp_dotProduct_mulVec hσ hQ f e
+    rwa [hfe, hef, mul_one] at h
+  exact ⟨f, fun h0 ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa [h0] using hef.symm), hf, hef, hfe, hε,
+    hσε⟩
+
 end Field
+
+/-- **Determinant of a matrix rescaling a hyperbolic pair and an orthogonal anisotropic vector.**
+Let `σ` be an involution and `Q` an `ε`-Hermitian matrix with `ε * ε = 1`. If `A` rescales a
+hyperbolic pair `(e, f)` by `c₁, c₂`, rescales an orthogonal anisotropic vector `v` by `c₃`, and
+fixes pointwise every vector orthogonal to `e`, `f`, and `v`, then `A.det = c₁ * c₂ * c₃`. -/
+theorem det_eq_mul_mul_of_mulVec_eq_smul {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
+    {A Q : Matrix n n K} {σ : K →+* K} {ε : K} (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {e f v : n → K}
+    (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) (hf : (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0)
+    (hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1) (hev : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0)
+    (hfv : (σ ∘ f) ⬝ᵥ (Q *ᵥ v) = 0) (hvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) ≠ 0)
+    {c₁ c₂ c₃ : K} (hAe : A *ᵥ e = c₁ • e) (hAf : A *ᵥ f = c₂ • f)
+    (hAv : A *ᵥ v = c₃ • v)
+    (hAw : ∀ w : n → K, (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0 → (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0 →
+      (σ ∘ v) ⬝ᵥ (Q *ᵥ w) = 0 → A *ᵥ w = w) :
+    A.det = c₁ * c₂ * c₃ := by
+  have hfe : (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
+    rw [comp_dotProduct_mulVec_swap hσ hQ hε, hef, map_one, mul_one]
+  have hve := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev
+  have hvf := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hfv
+  by_cases hc₃ : c₃ = 0
+  · subst hc₃
+    have hv0 : v ≠ 0 := fun h0 ↦ hvv (by simp [h0])
+    simp [exists_mulVec_eq_zero_iff.mp ⟨v, hv0, by simpa using hAv⟩]
+  let M₃ : Matrix n n K :=
+    1 - vecMulVec ((1 - c₃⁻¹) • v) (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ • ((σ ∘ v) ᵥ* Q))
+  have hd₃ : M₃.det = c₃⁻¹ := by
+    rw [TauCeti.det_one_sub_vecMulVec, smul_dotProduct, dotProduct_smul, ← dotProduct_mulVec,
+      smul_eq_mul, smul_eq_mul]
+    field_simp
+    ring
+  have hAM₃_v : (A * M₃) *ᵥ v = v := by
+    rw [← mulVec_mulVec, TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct, ← dotProduct_mulVec,
+      smul_eq_mul, inv_mul_cancel₀ hvv, one_smul, mulVec_sub, mulVec_smul, hAv, smul_smul]
+    have hc₃' : (1 - c₃⁻¹) * c₃ = c₃ - 1 := by field_simp
+    rw [hc₃']
+    module
+  have hAM₃_w (w : n → K) (hew : (σ ∘ e) ⬝ᵥ (Q *ᵥ w) = 0) (hfw : (σ ∘ f) ⬝ᵥ (Q *ᵥ w) = 0) :
+      (A * M₃) *ᵥ w = w := by
+    set w₀ := w - (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ w))) • v
+    have hvw₀ : (σ ∘ v) ⬝ᵥ (Q *ᵥ w₀) = 0 := by
+      simp only [w₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul]
+      field_simp
+      ring
+    have hw_eq : w = (((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹ * ((σ ∘ v) ⬝ᵥ (Q *ᵥ w))) • v + w₀ := by
+      dsimp [w₀]
+      module
+    rw [hw_eq, mulVec_add, mulVec_smul, hAM₃_v, ← mulVec_mulVec, TauCeti.one_sub_vecMulVec_mulVec,
+      smul_dotProduct, ← dotProduct_mulVec, hvw₀, smul_zero, zero_smul, sub_zero, hAw w₀
+        (by simp [w₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hew, hev])
+        (by simp [w₀, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, hfw, hfv]) hvw₀]
+  have hdet_prod := det_eq_mul_of_mulVec_eq_smul hε he hf hef hfe
+    (by rw [← mulVec_mulVec, TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct,
+      ← dotProduct_mulVec, hve, smul_zero, zero_smul, sub_zero, hAe])
+    (by rw [← mulVec_mulVec, TauCeti.one_sub_vecMulVec_mulVec, smul_dotProduct,
+      ← dotProduct_mulVec, hvf, smul_zero, zero_smul, sub_zero, hAf]) hAM₃_w
+  rw [det_mul, hd₃] at hdet_prod
+  calc A.det = A.det * c₃⁻¹ * c₃ := by rw [inv_mul_cancel_right₀ hc₃]
+    _ = c₁ * c₂ * c₃ := by rw [hdet_prod]
 
 variable {R M n : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype n]
   [DecidableEq n] (b : Module.Basis n R M)

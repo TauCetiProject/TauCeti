@@ -53,7 +53,14 @@ as the model for this file.
 * `Matrix.coe_mul_unitaryTransvection_mul_coe_inv` and
   `Matrix.coe_mul_siegelTransvection_mul_coe_inv`: an isometry `g` conjugates `τ_{v,a}` to
   `τ_{g v,a}` and `S(u, w, c)` to `S(g u, g w, c)`.
+* `Matrix.coe_inv_specialIsometryGroup_eq_unitaryTransvection` and
+  `Matrix.coe_inv_specialIsometryGroup_eq_siegelTransvection`: explicit matrices for the inverses
+  of unitary transvections and Siegel transformations in `Q.specialIsometryGroup σ`.
 * `Matrix.unitaryTransvectionSubgroup_smul`: `T(g • p) = g T(p) g⁻¹`.
+* `Matrix.normal_iSup_unitaryTransvectionSubgroup` and
+  `Matrix.unitaryTransvection_mem_iSup_unitaryTransvectionSubgroup`: the supremum of the point
+  transvection subgroups is normal and contains every unitary transvection along an isotropic
+  vector in `Q.specialIsometryGroup σ`.
 
 ## References
 
@@ -114,6 +121,29 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection (hσ : Functio
       (transpose_map_siegelTransvection_mul_mul_self hσ hQ hu huw hc),
     rfl⟩
 
+/-- The inverse in `Q.specialIsometryGroup σ` of a Siegel transformation `S(u, w, c)` with
+`B(u, u) = B(u, w) = B(w, u) = 0` has matrix `S(u, -w, -c - ε B(w, w))`. -/
+theorem coe_inv_specialIsometryGroup_eq_siegelTransvection {s : Q.specialIsometryGroup σ} {ε : K}
+    {u w : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0)
+    (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) {c : K}
+    (hcs : ((s : SpecialLinearGroup n K) : Matrix n n K) = Q.siegelTransvection σ ε u w c) :
+    (((s⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u (-w) (-c - ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w))) :=
+  coe_inv_specialIsometryGroup_eq_of_mul_eq_one <| by
+    rw [hcs]
+    exact siegelTransvection_mul_siegelTransvection_neg_eq_one hu huw hwu c
+
+/-- The inverse in `Q.specialIsometryGroup σ` of a unitary transvection `τ_{v,a}` along an
+isotropic vector `v` has matrix `τ_{v,-a}`. -/
+theorem coe_inv_specialIsometryGroup_eq_unitaryTransvection {t : Q.specialIsometryGroup σ}
+    {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (hct : ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (((t⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ v (-a) :=
+  coe_inv_specialIsometryGroup_eq_of_mul_eq_one <| by
+    rw [hct, unitaryTransvection_mul_unitaryTransvection hv, add_neg_cancel,
+      unitaryTransvection_zero]
+
 end CommRing
 
 section Field
@@ -136,16 +166,8 @@ def unitaryTransvectionSubgroup (p : Q.isotropicPoints σ) :
       unitaryTransvection_mul_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p)]
   inv_mem' {g} := by
     rintro ⟨a, ha⟩
-    refine ⟨-a, ?_⟩
-    have h₁ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
-        Q.unitaryTransvection σ (p : ℙ K (n → K)).rep (-a) = 1 := by
-      rw [ha, unitaryTransvection_mul_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p),
-        add_neg_cancel, unitaryTransvection_zero]
-    have h₂ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
-        ((g⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) = 1 := by
-      rw [← SpecialLinearGroup.coe_mul, ← Subgroup.coe_mul, mul_inv_cancel, Subgroup.coe_one,
-        SpecialLinearGroup.coe_one]
-    rw [← inv_eq_right_inv h₂, inv_eq_right_inv h₁]
+    exact ⟨-a,
+      coe_inv_specialIsometryGroup_eq_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p) ha⟩
 
 /-- An isometry lies in the transvection group of `p` exactly when it is a unitary transvection
 along the chosen representative of `p`. -/
@@ -182,7 +204,7 @@ instance (p : Q.isotropicPoints σ) : IsMulCommutative (Q.unitaryTransvectionSub
         Subgroup.coe_mul, SpecialLinearGroup.coe_mul, ha, hb,
         unitaryTransvection_mul_unitaryTransvection hv,
         unitaryTransvection_mul_unitaryTransvection hv, add_comm]
-    exact Subtype.ext (Subtype.ext (Subtype.ext h))⟩⟩
+    exact Subtype.ext (specialIsometryGroup_ext h)⟩⟩
 
 /-- **Conjugation moves transvection groups along the action**: `T(g • p) = g T(p) g⁻¹`. -/
 theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
@@ -228,7 +250,46 @@ theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
     rw [MulAut.smul_def, MulAut.conj_apply, Subgroup.coe_mul, Subgroup.coe_mul,
       SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, ha, hconj]
 
+/-- The supremum of the unitary transvection groups over all isotropic points is normal in
+`Q.specialIsometryGroup σ`, since conjugation permutes the summands along the action. -/
+instance normal_iSup_unitaryTransvectionSubgroup :
+    (⨆ p : Q.isotropicPoints σ, Q.unitaryTransvectionSubgroup σ p).Normal := by
+  refine ⟨fun x hx g ↦ ?_⟩
+  suffices ⨆ p, Q.unitaryTransvectionSubgroup σ p ≤
+      (⨆ p, Q.unitaryTransvectionSubgroup σ p).comap (MulAut.conj g).toMonoidHom by
+    simpa [Subgroup.mem_comap, MulAut.conj_apply] using this hx
+  refine iSup_le fun p y hy ↦ Subgroup.mem_comap.mpr ?_
+  refine le_iSup (Q.unitaryTransvectionSubgroup σ) (g • p) ?_
+  rw [unitaryTransvectionSubgroup_smul, Subgroup.mem_smul_pointwise_iff_exists]
+  exact ⟨y, hy, by simp [MulAut.smul_def, MulAut.conj_apply]⟩
+
+/-- Any unitary transvection along an isotropic vector (zero or nonzero) that belongs to
+`Q.specialIsometryGroup σ` lies in the supremum of the point transvection subgroups. -/
+theorem unitaryTransvection_mem_iSup_unitaryTransvectionSubgroup {g : SpecialLinearGroup n K}
+    (hg : g ∈ Q.specialIsometryGroup σ) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (hga : (g : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (⟨g, hg⟩ : Q.specialIsometryGroup σ) ∈
+      ⨆ p : Q.isotropicPoints σ, Q.unitaryTransvectionSubgroup σ p := by
+  by_cases hv0 : v = 0
+  · have h1 : (⟨g, hg⟩ : Q.specialIsometryGroup σ) = 1 :=
+      specialIsometryGroup_ext (by simp [hv0, hga])
+    rw [h1]
+    exact one_mem _
+  · let p : Q.isotropicPoints σ :=
+      ⟨Projectivization.mk K v hv0, (mk_mem_isotropicPoints_iff hv0).mpr hv⟩
+    exact Subgroup.mem_iSup_of_mem p ((mem_unitaryTransvectionSubgroup_mk_iff hv0 p.2).mpr ⟨a, hga⟩)
+
 variable {ε : K}
+
+/-- An admissible unitary transvection along an isotropic vector `v` gives an element of the
+transvection supremum with matrix `Q.unitaryTransvection σ v a`. -/
+theorem exists_mem_iSup_unitaryTransvectionSubgroup_coe_eq_unitaryTransvection
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) {v : n → K}
+    (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K} (ha : a + ε * σ a = 0) :
+    ∃ t ∈ ⨆ p : Q.isotropicPoints σ, Q.unitaryTransvectionSubgroup σ p,
+      ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a := by
+  obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hv ha
+  exact ⟨⟨g, hg⟩, unitaryTransvection_mem_iSup_unitaryTransvectionSubgroup hg hv hga, hga⟩
 
 /-- **Every admissible parameter gives an isometry.** If `σ` is an involution and `Q` is
 `ε`-Hermitian, then for every `a` with `a + ε σ(a) = 0` the transvection `τ_{v,a}` along the

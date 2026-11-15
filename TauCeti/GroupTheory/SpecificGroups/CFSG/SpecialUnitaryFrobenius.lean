@@ -76,8 +76,12 @@ description of the special linear matrices with coordinates in it from
   `B(c x, y) = c ^ q B(x, y)`.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_swap`: the form is `(-1) ^ r`-Hermitian.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_mulVec_mulVec`: `SU_{r+1}(q)` preserves the form.
-* `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: the coordinate vectors off the middle
-  coordinate are isotropic.
+* `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: coordinate vectors `eᵢ` and `eⱼ` are
+  orthogonal for the unitary form whenever `j ≠ i.rev` (and `eᵢ` is isotropic off the middle
+  coordinate).
+* `TauCeti.ValidLieTypeIndex.exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le`:
+  in rank `3 ≤ r`, the first two coordinate vectors span a two-dimensional totally isotropic
+  subspace.
 * `TauCeti.ValidLieTypeIndex.isPreprimitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
   primitively on its isotropic points.
 * `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: an
@@ -282,13 +286,41 @@ theorem unitaryForm_smul_left (c : GaloisField d.characteristic (d.fieldExponent
     unitaryForm d r (c • x) y = c ^ d.fieldOrder * unitaryForm d r x y := by
   rw [LinearMap.map_smulₛₗ₂, coe_iterateFrobenius_galoisField, smul_eq_mul]
 
-/-- **Isotropic coordinate vectors.** The coordinate vector `eᵢ` is isotropic for the form
-`B(x, y) = σ(x)ᵀ Q y` unless `i` is the middle coordinate `i = r - i`: the entry `Qᵢᵢ` vanishes off
-the anti-diagonal. -/
-theorem unitaryForm_single_single {i : Fin (r + 1)} (hi : i ≠ i.rev) :
-    unitaryForm d r (Pi.single i 1) (Pi.single i 1) = 0 := by
+/-- **Orthogonality and isotropy of coordinate vectors.** The coordinate vectors `eᵢ` and `eⱼ` are
+orthogonal for the form `B(x, y) = σ(x)ᵀ Q y` whenever `j ≠ i.rev` (in particular, `eᵢ` is
+isotropic unless `i = i.rev`): the entry `Qᵢⱼ` vanishes off the anti-diagonal. -/
+theorem unitaryForm_single_single {i j : Fin (r + 1)} (hij : j ≠ i.rev) :
+    unitaryForm d r (Pi.single i 1) (Pi.single j 1) = 0 := by
   rw [unitaryForm, toLinearMapₛₗ₂'_single, typeAGraphConjugator_apply]
-  simp only [hi, ↓reduceIte]
+  simp only [hij, ↓reduceIte]
+
+/-- In rank `3 ≤ r`, the first two coordinate vectors `e₀` and `e₁` span a two-dimensional totally
+isotropic subspace for the form `B(x, y) = σ(x)ᵀ Q y`. -/
+theorem exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le (hr : 3 ≤ r) :
+    ∃ u w : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2),
+      u ≠ 0 ∧ w ∉ GaloisField d.characteristic (d.fieldExponent * 2) ∙ u ∧
+        (iterateFrobenius _ d.characteristic d.fieldExponent ∘ u) ⬝ᵥ
+          ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+            Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ u) = 0 ∧
+        (iterateFrobenius _ d.characteristic d.fieldExponent ∘ w) ⬝ᵥ
+          ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+            Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ w) = 0 ∧
+        (iterateFrobenius _ d.characteristic d.fieldExponent ∘ u) ⬝ᵥ
+          ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+            Matrix (Fin (r + 1)) (Fin (r + 1)) _) *ᵥ w) = 0 := by
+  let i₀ : Fin (r + 1) := ⟨0, by omega⟩
+  let i₁ : Fin (r + 1) := ⟨1, by omega⟩
+  refine ⟨Pi.single i₀ 1, Pi.single i₁ 1, Pi.single_ne_zero_iff.mpr one_ne_zero, fun hmem ↦ ?_,
+    ?_, ?_, ?_⟩
+  · obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
+    have h1 := congrFun ha i₁
+    simp [i₀, i₁] at h1
+  · rw [← d.unitaryForm_apply]
+    exact d.unitaryForm_single_single (by simp [i₀, Fin.ext_iff]; omega)
+  · rw [← d.unitaryForm_apply]
+    exact d.unitaryForm_single_single (by simp [i₁, Fin.ext_iff]; omega)
+  · rw [← d.unitaryForm_apply]
+    exact d.unitaryForm_single_single (by simp [i₀, i₁, Fin.ext_iff]; omega)
 
 end UnitaryForm
 
@@ -299,21 +331,23 @@ section IsotropicPoints
 variable {r : ℕ}
 
 /-- The field with `q²` elements has `q²` elements, with `q = p ^ e`. -/
-private theorem natCard_galoisField :
+theorem natCard_galoisField :
     Nat.card (GaloisField d.characteristic (d.fieldExponent * 2)) =
       (d.characteristic ^ d.fieldExponent) ^ 2 := by
   rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
 
-/-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
-private theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` of `𝔽_{q²}` is onto the elements `s` with
+`σ(s) = (-1) ^ r s`, where `σ` is the `q`-power Frobenius. -/
+theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
     {s : GaloisField d.characteristic (d.fieldExponent * 2)}
     (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = (-1) ^ r * s) :
     ∃ t, t + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
   simp_rw [iterateFrobenius_def] at hs ⊢
   exact FiniteField.exists_add_neg_one_pow_mul_pow_eq natCard_galoisField r hs
 
-/-- The trace `t ↦ t + (-1) ^ r σ(t)` has a nonzero kernel element. -/
-private theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
+/-- The trace `t ↦ t + (-1) ^ r σ(t)` of `𝔽_{q²}` has a nonzero kernel element, where `σ` is the
+`q`-power Frobenius. -/
+theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
     ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
       a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
   simp_rw [iterateFrobenius_def]
