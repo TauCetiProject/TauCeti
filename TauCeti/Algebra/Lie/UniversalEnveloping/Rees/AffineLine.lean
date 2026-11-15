@@ -18,16 +18,19 @@ dilation `x` and the translation `y`, with `[x, y] = y`. Its Rees generators `X 
 `Y = j(y)` in the PBW Rees algebra satisfy `X Y = Y (X + t)`, where `t` is the deformation
 parameter, and in `U(L)` the generators satisfy `ι x ι y = ι y (ι x + 1)`.
 
-Through ordered evaluation `y ^ a x ^ b ↦ Y ^ a X ^ b` the multiplication of the Rees algebra is
-therefore the ordered product `TauCeti.affineStar` with parameter `t`, over the parameter ring
-`R[t]`, and the multiplication of `U(L)` is the ordered product with parameter `1`, over `R`.
-Evaluating the parameter at `1` intertwines the two comparisons.
+Ordered evaluation `y ^ a x ^ b ↦ Y ^ a X ^ b` into the Rees algebra therefore carries the
+ordered product `TauCeti.affineStar` with parameter `t`, over the parameter ring `R[t]`, to the
+Rees multiplication, and ordered evaluation into `U(L)` carries the ordered product with
+parameter `1`, over `R`, to the multiplication of `U(L)`. Evaluating the parameter at `1`
+intertwines the two comparisons.
 
 By the Poincaré–Birkhoff–Witt theorem the ordered monomials `ι y ^ a ι x ^ b` form a basis of
-`U(L)` over any commutative ring, so the comparison with `U(L)` is bijective. This makes the
-ordered product associative at parameter `1`; rescaling `x` by a unit moves any unit parameter
-to `1`, and every parameter is a specialization of the Laurent variable, which proves
-associativity for every parameter over every commutative ring.
+`U(L)` over any commutative ring, so the comparison with `U(L)` is bijective; bijectivity is
+shown only for `U(L)`, not for the Rees algebra. This makes the ordered product associative at
+parameter `1`; rescaling `x` by a unit moves any unit parameter to `1`, and every parameter is a
+specialization of the Laurent variable, which proves associativity for every parameter over every
+commutative ring. Over a commutative semiring, ordered monomials are images of ordered monomials
+over `ℕ[t]`, which embeds in `ℤ[t]`.
 
 ## Main results
 
@@ -77,7 +80,7 @@ theorem reesGenerator_dilation_mul_reesGenerator_translation :
     (coeffSubalgebra.commute_X (pbwFiltration R L) _ (reesGenerator R L (translation R))).eq,
     add_comm]
 
-/-- **The Rees multiplication is the ordered product.** Ordered evaluation
+/-- **Ordered evaluation into the Rees algebra is multiplicative.** Ordered evaluation
 `y ^ a x ^ b ↦ Y ^ a X ^ b` into the PBW Rees algebra carries the ordered product with parameter
 `t` to the multiplication of the Rees algebra. -/
 theorem orderedEval_reesGenerator_affineStar (p q : MvPolynomial (Fin 2) R[X]) :
@@ -119,11 +122,9 @@ theorem evalOne_orderedEval_reesGenerator (p : MvPolynomial (Fin 2) R[X]) :
         (MvPolynomial.map (Polynomial.evalRingHom (1 : R)) p) := by
   induction p using MvPolynomial.induction_on' with
   | monomial s a =>
-      rw [orderedEval_monomial, MvPolynomial.map_monomial, orderedEval_monomial,
-        Algebra.smul_def, map_mul, map_mul, map_pow, map_pow, evalOne_reesGenerator,
-        evalOne_reesGenerator, Algebra.smul_def, coeffSubalgebra.evalOne_apply,
-        coeffSubalgebra.coe_algebraMap, Polynomial.eval_map, Polynomial.eval₂_at_one,
-        Polynomial.coe_evalRingHom]
+      simp only [orderedEval_monomial, MvPolynomial.map_monomial, Algebra.smul_def, map_mul,
+        map_pow, evalOne_reesGenerator]
+      simp [coeffSubalgebra.evalOne_apply, Polynomial.eval_map]
   | add p q hp hq => rw [map_add, map_add, hp, hq, map_add, map_add]
 
 section Associativity
@@ -145,25 +146,6 @@ private theorem translationFirstBasis_zero :
 private theorem translationFirstBasis_one : translationFirstBasis R 1 = dilation R := by
   ext <;> simp [translationFirstBasis]
 
-private theorem ι_translation_pow_mul_ι_dilation_pow (m n : ℕ) :
-    _root_.UniversalEnvelopingAlgebra.ι R (translation R) ^ m *
-        _root_.UniversalEnvelopingAlgebra.ι R (dilation R) ^ n =
-      (translationFirstBasis R).pbwBasis (Finsupp.single 0 m + Finsupp.single 1 n) := by
-  have hword : (List.replicate m (0 : Fin 2) ++ List.replicate n 1).Pairwise (· ≤ ·) := by
-    simp [List.pairwise_append, List.pairwise_replicate]
-  have hmon : pbwMonomial R L (translationFirstBasis R) (List.replicate m 0 ++ List.replicate n 1) =
-      _root_.UniversalEnvelopingAlgebra.ι R (translation R) ^ m *
-        _root_.UniversalEnvelopingAlgebra.ι R (dilation R) ^ n := by
-    simp [pbwMonomial_def, translationFirstBasis_zero, translationFirstBasis_one,
-      List.prod_replicate]
-  apply (translationFirstBasis R).pbwEval_bijective.injective
-  refine Eq.trans ?_ (Module.Basis.pbwEval_pbwBasis (translationFirstBasis R) _).symm
-  rw [← hmon]
-  rw [(translationFirstBasis R).pbwEval_pbwMonomial hword]
-  refine congrArg (fun s ↦ monomial s 1) ?_
-  ext i
-  fin_cases i <;> simp [Multiset.toFinsupp_apply, List.count_replicate]
-
 variable (R) in
 /-- **The ordered comparison for `U(L)`.** Ordered evaluation `y ^ a x ^ b ↦ ι y ^ a ι x ^ b` is
 a linear bijection from polynomials over `R` onto the enveloping algebra of the affine Lie
@@ -177,11 +159,13 @@ theorem orderedEval_ι_bijective :
       ((basisMonomials (Fin 2) R).equiv (translationFirstBasis R).pbwBasis
         (Finsupp.domCongr (Equiv.swap (0 : Fin 2) 1)).toEquiv).toLinearMap := by
     refine (basisMonomials (Fin 2) R).ext fun s ↦ ?_
+    have hs : (Finsupp.domCongr (Equiv.swap (0 : Fin 2) 1)).toEquiv s =
+        Finsupp.equivFunOnFinite.symm ![s 1, s 0] := by
+      ext i
+      fin_cases i <;> simp
     rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply, coe_basisMonomials, orderedEval_monomial,
-      one_smul, ι_translation_pow_mul_ι_dilation_pow]
-    congr 1
-    ext i
-    fin_cases i <;> simp
+      one_smul, hs, Module.Basis.pbwBasis_eq_prod_pow_fin]
+    simp [List.finRange_succ, translationFirstBasis_zero, translationFirstBasis_one]
   rw [h]
   exact LinearEquiv.bijective _
 
@@ -251,11 +235,9 @@ namespace TauCeti
 
 open MvPolynomial LieAlgebra.AffineLine
 
-/-- **Associativity of the ordered product.** For every parameter `h`, the ordered product
-`TauCeti.affineStar h` is associative. The proof transports the multiplication of the enveloping
-algebra of the affine Lie algebra through its Poincaré–Birkhoff–Witt basis; a unit parameter is
-rescaled to `1`, and the general parameter is a specialization of the Laurent variable. -/
-theorem affineStar_assoc {S : Type*} [CommRing S] (h : S) (p q r : MvPolynomial (Fin 2) S) :
+/-- Associativity of the ordered product over a commutative ring. -/
+private theorem affineStar_assoc_of_commRing {S : Type*} [CommRing S] (h : S)
+    (p q r : MvPolynomial (Fin 2) S) :
     affineStar h (affineStar h p q) r = affineStar h p (affineStar h q r) := by
   have key (p q r : MvPolynomial (Fin 2) S[X]) :
       affineStar Polynomial.X (affineStar Polynomial.X p q) r =
@@ -271,5 +253,37 @@ theorem affineStar_assoc {S : Type*} [CommRing S] (h : S) (p q r : MvPolynomial 
     (key (map Polynomial.C p) (map Polynomial.C q) (map Polynomial.C r))
   simpa only [map_affineStar, map_map, hψ, map_id, Polynomial.coe_eval₂RingHom,
     Polynomial.eval₂_X] using this
+
+/-- **Associativity of the ordered product.** For every parameter `h` in a commutative semiring,
+the ordered product `TauCeti.affineStar h` is associative. -/
+theorem affineStar_assoc {S : Type*} [CommSemiring S] (h : S) (p q r : MvPolynomial (Fin 2) S) :
+    affineStar h (affineStar h p q) r = affineStar h p (affineStar h q r) := by
+  -- Ordered monomials over `S` are images of ordered monomials over `ℕ[X]`, and the ordered
+  -- product over `ℕ[X]` is associative because `ℕ[X]` embeds in the commutative ring `ℤ[X]`.
+  have key (p q r : MvPolynomial (Fin 2) ℕ[X]) :
+      affineStar Polynomial.X (affineStar Polynomial.X p q) r =
+        affineStar Polynomial.X p (affineStar Polynomial.X q r) := by
+    apply MvPolynomial.map_injective (Polynomial.mapRingHom (Nat.castRingHom ℤ))
+      (Polynomial.map_injective _ Nat.cast_injective)
+    simpa only [map_affineStar, Polynomial.coe_mapRingHom, Polynomial.map_X] using
+      affineStar_assoc_of_commRing Polynomial.X _ _ _
+  let φ : ℕ[X] →+* S := Polynomial.eval₂RingHom (Nat.castRingHom S) h
+  have hφ (a b : ℕ) : map φ (X 1 ^ a * X 0 ^ b) = (X 1 ^ a * X 0 ^ b : MvPolynomial (Fin 2) S) := by
+    simp
+  have hφX : φ Polynomial.X = h := by simp [φ]
+  induction p using MvPolynomial.induction_on_X_pow_mul_X_pow with
+  | smul a p hp => simp only [map_smul, LinearMap.smul_apply, hp]
+  | add p p' hp hp' => simp only [map_add, LinearMap.add_apply, hp, hp']
+  | X_pow a b =>
+      induction q using MvPolynomial.induction_on_X_pow_mul_X_pow with
+      | smul c q hq => simp only [map_smul, LinearMap.smul_apply, hq]
+      | add q q' hq hq' => simp only [map_add, LinearMap.add_apply, hq, hq']
+      | X_pow c d =>
+          induction r using MvPolynomial.induction_on_X_pow_mul_X_pow with
+          | smul e r hr => simp only [map_smul, hr]
+          | add r r' hr hr' => simp only [map_add, hr, hr']
+          | X_pow e f =>
+              rw [← hφ a b, ← hφ c d, ← hφ e f, ← hφX, ← map_affineStar, ← map_affineStar,
+                ← map_affineStar, ← map_affineStar, key]
 
 end TauCeti
