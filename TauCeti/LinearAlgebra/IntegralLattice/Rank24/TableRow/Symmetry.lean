@@ -188,7 +188,7 @@ private theorem glueSymmetryIsometry_apply {g : Equiv.Perm (Fin r.components.len
 
 /-- Reading coordinates of `x` at equal positions, through casts of the coordinate index to their
 ranks, gives the same value. -/
-private theorem apply_cast_eq_apply_cast (x : ∀ i, Fin (r.componentType i).rank → ℚ)
+theorem apply_cast_eq_apply_cast (x : ∀ i, Fin (r.componentType i).rank → ℚ)
     {a b : Fin r.components.length} (hab : a = b) {n : ℕ} (ha : n = (r.componentType a).rank)
     (hb : n = (r.componentType b).rank) (j : Fin n) :
     x a (Fin.cast ha j) = x b (Fin.cast hb j) := by
