@@ -40,12 +40,10 @@ variable (K σ) in
 reversal form. -/
 def upperRootHom : HeisenbergGroup.unitarySubgroup σ →*
     (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ :=
-  (HeisenbergGroup.toSpecialLinear.comp (HeisenbergGroup.unitarySubgroup σ).subtype).codRestrict
-    _ fun a ↦ by
-      rw [coe_typeAGraphConjugator_two, Matrix.mem_specialIsometryGroup_iff]
-      simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype,
-        HeisenbergGroup.coe_toSpecialLinear] using
-          HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
+  (MulEquiv.subgroupCongr (by rw [coe_typeAGraphConjugator_two])).toMonoidHom.comp
+    ((HeisenbergGroup.toSpecialLinear.subgroupComap
+      (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ)).comp
+        (MulEquiv.subgroupCongr (HeisenbergGroup.unitarySubgroup_eq_comap σ)).toMonoidHom)
 
 /-- The upper root embedding retains its Heisenberg matrix. -/
 @[simp]
@@ -56,8 +54,37 @@ theorem coe_upperRootHom (a : HeisenbergGroup.unitarySubgroup σ) :
 variable (K σ) in
 /-- The upper root embedding is faithful. -/
 theorem upperRootHom_injective : Function.Injective (upperRootHom K σ) := by
-  intro a b h
-  exact Subtype.ext (HeisenbergGroup.toSpecialLinear_injective (congrArg Subtype.val h))
+  unfold upperRootHom
+  exact (MulEquiv.subgroupCongr (by rw [coe_typeAGraphConjugator_two])).injective.comp
+    ((HeisenbergGroup.toSpecialLinear.subgroupComap_injective _
+      HeisenbergGroup.toSpecialLinear_injective).comp
+        (MulEquiv.subgroupCongr (HeisenbergGroup.unitarySubgroup_eq_comap σ)).injective)
+
+/-- An isometry belongs to the upper root group exactly when its matrix is upper
+unitriangular. -/
+theorem mem_range_upperRootHom_iff
+    (g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :
+    g ∈ (upperRootHom K σ).range ↔
+      ((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).IsUpperUnitriangular := by
+  rw [← HeisenbergGroup.mem_range_toSpecialLinear_iff]
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact ⟨a, rfl⟩
+  · rintro ⟨a, ha⟩
+    have ha' : a ∈ HeisenbergGroup.unitarySubgroup σ := by
+      rw [HeisenbergGroup.unitarySubgroup_eq_comap, Subgroup.mem_comap, ha]
+      simpa only [coe_typeAGraphConjugator_two] using g.property
+    exact ⟨⟨a, ha'⟩, Subtype.ext ha⟩
+
+/-- The upper root matrix acts on vectors by its three coordinate formulas. -/
+theorem upperRootHom_smul_vec (a : HeisenbergGroup.unitarySubgroup σ) (v : Fin 3 → K) :
+    (upperRootHom K σ a : SpecialLinearGroup (Fin 3) K) • v =
+      ![v 0 + (a : HeisenbergGroup K).x * v 1 + (a : HeisenbergGroup K).z * v 2,
+        v 1 + (a : HeisenbergGroup K).y * v 2, v 2] := by
+  rw [coe_upperRootHom, Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec,
+    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply]
+  ext i
+  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three]
 
 end Ring
 
@@ -70,14 +97,13 @@ theorem upperRootHom_smul_infinity (a : HeisenbergGroup.unitarySubgroup σ) :
   apply Subtype.ext
   rw [SubMulAction.val_smul, Subgroup.smul_def, coe_infinity, Projectivization.smul_mk]
   congr 1
-  rw [coe_upperRootHom, Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec,
-    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply]
-  ext i
-  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  rw [upperRootHom_smul_vec]
+  simp
 
 variable (hσ : Function.Involutive σ)
 
 /-- The action on an affine point is given by multiplication by the upper root matrix. -/
+@[simp]
 theorem upperRootHom_smul_point (a : HeisenbergGroup.unitarySubgroup σ)
     (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     upperRootHom K σ a • point K σ c =
@@ -90,10 +116,9 @@ theorem upperRootHom_smul_point (a : HeisenbergGroup.unitarySubgroup σ)
   rw [SubMulAction.val_smul, Subgroup.smul_def, coe_point, Projectivization.smul_mk,
     coe_point]
   congr 1
-  rw [coe_upperRootHom, Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec,
-    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.toMatrix_apply]
+  rw [upperRootHom_smul_vec]
   ext i
-  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three] <;> ring
+  fin_cases i <;> simp <;> ring
 
 /-- The orbit of `[0 : 0 : 1]` records the two free root parameters. -/
 theorem upperRootHom_smul_zero (a : HeisenbergGroup.unitarySubgroup σ) :

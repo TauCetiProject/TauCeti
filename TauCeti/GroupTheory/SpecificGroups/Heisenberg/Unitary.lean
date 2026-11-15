@@ -43,6 +43,11 @@ the trace of the second free coordinate equals the norm of the first. -/
 def unitarySubgroup : Subgroup (HeisenbergGroup R) :=
   (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear
 
+/-- The unitary root subgroup is the preimage of the signed reversal isometry group. -/
+theorem unitarySubgroup_eq_comap :
+    unitarySubgroup σ =
+      (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear := (rfl)
+
 variable {σ}
 
 /-- Membership in the unitary root subgroup is preservation of the signed reversal form. -/
