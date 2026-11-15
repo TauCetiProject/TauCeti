@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Pi
 public import Mathlib.Algebra.Star.StarAlgHom
 
 /-!

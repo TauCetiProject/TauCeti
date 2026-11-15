@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
+import Mathlib.Data.Matrix.Basis
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: positivity of powers, nonvanishing of factors, and noncommutativity
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -17,7 +18,8 @@ strictly positive. This is the form in which positivity propagates along the pow
 matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
-zero.
+zero. Over a nontrivial coefficient `NonAssocSemiring` and a nontrivial finite index type, square
+matrix multiplication is noncommutative.
 
 ## Main results
 
@@ -26,6 +28,8 @@ zero.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.not_isMulCommutative`: `Matrix m m R` is not multiplicatively commutative when `m` and
+  `R` are nontrivial.
 -/
 
 public section
@@ -34,10 +38,9 @@ open scoped Matrix
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
 section StrictOrderedSemiring
 
+variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix n n R}
 
 /-- If `A` is entrywise nonnegative and its power `A ^ k`, for some `k > 0`, is strictly positive,
@@ -81,5 +84,15 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
+
+/-- A square matrix semiring `Matrix m m R` over a nontrivial `NonAssocSemiring` and a nontrivial
+finite index type is not multiplicatively commutative. -/
+theorem not_isMulCommutative {m R : Type*} [Fintype m] [Nontrivial m] [NonAssocSemiring R]
+    [Nontrivial R] : ¬IsMulCommutative (Matrix m m R) := by
+  classical
+  rintro ⟨⟨hcomm⟩⟩
+  obtain ⟨i, j, hij⟩ := exists_pair_ne m
+  have h := congrFun (congrFun (hcomm (single i j (1 : R)) (single j i 1)) i) i
+  simp [hij.symm] at h
 
 end Matrix

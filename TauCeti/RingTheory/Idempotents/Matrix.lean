@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -24,10 +24,10 @@ Together these say that `α` is a full idempotent corner of `Matrix n n α`, the
 Morita equivalence. In a product of matrix rings over division rings, one such unit per factor
 selects a full idempotent whose corner is a product of division rings.
 
-Over a division ring `K`, any finite family of pairwise orthogonal nonzero idempotents in
-`Matrix n n K` has cardinality at most `Fintype.card n` (`OrthogonalIdempotents.card_le_of_matrix`),
-because choosing one nonzero row from each idempotent yields a left `K`-linearly independent family
-in `n → K`.
+Over a domain `K` satisfying `StrongRankCondition` (for instance any commutative integral domain or
+division ring), any finite family of pairwise orthogonal nonzero idempotents in `Matrix n n K` has
+cardinality at most `Fintype.card n` (`OrthogonalIdempotents.card_le_of_matrix`), because choosing
+one nonzero row from each idempotent yields a left `K`-linearly independent family in `n → K`.
 
 ## Main definitions
 
@@ -40,7 +40,8 @@ in `n → K`.
   entry `(i, i)`.
 * `Matrix.twoSidedIdeal_span_single_one_eq_top`: the diagonal matrix unit `Eᵢᵢ` is full.
 * `OrthogonalIdempotents.card_le_of_matrix`: a family of pairwise orthogonal nonzero idempotents in
-  `Matrix n n K` over a division ring `K` has size at most `Fintype.card n`.
+  `Matrix n n K` over a domain `K` satisfying `StrongRankCondition` has size at most
+  `Fintype.card n`.
 -/
 
 public section
@@ -107,30 +108,30 @@ theorem twoSidedIdeal_span_single_one_eq_top [NonAssocRing α] (i : n) :
 
 end Matrix
 
-/-- Over a division ring `K`, a finite family of pairwise orthogonal nonzero idempotents in
+/-- Over a domain `K` satisfying `StrongRankCondition` (for instance any commutative integral
+domain or division ring), a finite family of pairwise orthogonal nonzero idempotents in
 `Matrix n n K` has cardinality at most `Fintype.card n`. -/
-theorem OrthogonalIdempotents.card_le_of_matrix {K ι n : Type*} [DivisionRing K] [Fintype ι]
-    [Fintype n] [DecidableEq n] {e : ι → Matrix n n K} (he : OrthogonalIdempotents e)
-    (hne : ∀ i, e i ≠ 0) : Fintype.card ι ≤ Fintype.card n := by
+theorem OrthogonalIdempotents.card_le_of_matrix {K ι n : Type*} [Ring K] [IsDomain K]
+    [StrongRankCondition K] [Fintype ι] [Fintype n] [DecidableEq n] {e : ι → Matrix n n K}
+    (he : OrthogonalIdempotents e) (hne : ∀ i, e i ≠ 0) : Fintype.card ι ≤ Fintype.card n := by
   classical
   have hex (i : ι) : ∃ r : n, e i r ≠ 0 := Function.ne_iff.mp (hne i)
   let r (i : ι) : n := (hex i).choose
   let w (i : ι) : n → K := e i (r i)
   have hw_ne (i : ι) : w i ≠ 0 := (hex i).choose_spec
   have hw_mul (i j : ι) : Matrix.vecMul (w i) (e j) = if i = j then w i else 0 := by
-    ext col
-    have hmul : Matrix.vecMul (w i) (e j) col = (e i * e j) (r i) col := rfl
-    rw [hmul, he.mul_eq]
+    rw [← Matrix.mul_apply_eq_vecMul, he.mul_eq]
+    ext c
     by_cases hij : i = j <;> simp [hij, w]
   have hli : LinearIndependent K w := by
     rw [linearIndependent_iff']
     intro s c hc j hj
     have h0 : Matrix.vecMul (∑ i ∈ s, c i • w i) (e j) = 0 := by rw [hc, Matrix.zero_vecMul]
     have hsum : Matrix.vecMul (∑ i ∈ s, c i • w i) (e j) = c j • w j := by
-      have hlin : (Matrix.vecMul · (e j)) =
-          AddMonoidHom.mk' (fun v : n → K ↦ Matrix.vecMul v (e j))
-            (Matrix.add_vecMul (e j)) := rfl
-      rw [congrFun hlin, map_sum]
-      simp [AddMonoidHom.mk'_apply, Matrix.smul_vecMul, hw_mul, hj]
-    exact (smul_eq_zero.mp (hsum.symm.trans h0)).resolve_right (hw_ne j)
+      simp [Matrix.sum_vecMul, Matrix.smul_vecMul, hw_mul, hj]
+    obtain ⟨col, hcol⟩ := Function.ne_iff.mp (hw_ne j)
+    have hmul : c j * w j col = 0 := by
+      simpa only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply] using
+        congrFun (hsum.symm.trans h0) col
+    exact (mul_eq_zero.mp hmul).resolve_right hcol
   simpa only [Module.finrank_fintype_fun_eq_card] using hli.fintype_card_le_finrank

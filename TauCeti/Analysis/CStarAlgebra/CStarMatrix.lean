@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.Idempotents
 import TauCeti.Algebra.Star.Basic
+import TauCeti.Data.Matrix.Mul
+import TauCeti.RingTheory.Idempotents.Matrix
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
@@ -15,11 +18,13 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Positivity in matrix C⋆-algebras by quadratic forms
+# Algebraic API and quadratic-form positivity in matrix C⋆-algebras
 
 For a non-unital C⋆-algebra `A` and a finite type `n`, Mathlib makes `CStarMatrix n n A` a
-C⋆-algebra and orders it by the spectral order. This file proves that a matrix `M` is positive in
-this order exactly when its finite quadratic forms are positive in `A`:
+C⋆-algebra and orders it by the spectral order. Alongside basic `Module.Finite`, `Module.finrank`,
+`CStarMatrix.toOneByOne`, noncommutativity, and orthogonal-idempotent rank bounds transported from
+`Matrix`, this file proves that a matrix `M` is positive in the spectral order exactly when its
+finite quadratic forms are positive in `A`:
 
 `0 ≤ M ↔ ∀ x : n → A, 0 ≤ ∑ i, ∑ j, star (x i) * M i j * x j`.
 
@@ -30,6 +35,13 @@ Hilbert C⋆-module.
 
 ## Main declarations
 
+* `CStarMatrix.instModuleFinite`, `Module.finrank_cstarMatrix`: finite generation and `finrank` of
+  `CStarMatrix m n A`.
+* `CStarMatrix.not_isMulCommutative`: `CStarMatrix m m A` is noncommutative when `m` and `A` are
+  nontrivial.
+* `OrthogonalIdempotents.card_le_of_cstarMatrix`: pairwise orthogonal nonzero idempotents in
+  `CStarMatrix n n K` over a domain `K` satisfying `StrongRankCondition` have size at most
+  `Fintype.card n`.
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
@@ -52,7 +64,73 @@ namespace CStarMatrix
 
 section Algebraic
 
-variable {n R A : Type*}
+variable {m n R A : Type*}
+
+/-- `CStarMatrix m n A` inherits finite generation over `R` from `m → n → A`. -/
+instance instModuleFinite [Finite m] [Finite n] [Semiring R] [AddCommMonoid A] [Module R A]
+    [Module.Finite R A] : Module.Finite R (CStarMatrix m n A) :=
+  Module.Finite.equiv
+    ((Matrix.ofLinearEquiv R).trans (ofMatrixₗ (m := m) (n := n) (R := R) (A := A)))
+
+/-- The `finrank` of `CStarMatrix m n A` over `R` matches `Module.finrank_matrix`. -/
+@[simp]
+theorem _root_.Module.finrank_cstarMatrix (R A : Type*) [Semiring R] [StrongRankCondition R]
+    [AddCommMonoid A] [Module R A] [Module.Free R A] (m n : Type*) [Fintype m] [Fintype n] :
+    Module.finrank R (CStarMatrix m n A) =
+      Fintype.card m * Fintype.card n * Module.finrank R A :=
+  (ofMatrixₗ (m := m) (n := n) (R := R) (A := A)).symm.finrank_eq.trans
+    (Module.finrank_matrix R A m n)
+
+/-- Applying `CStarMatrix.toOneByOne` produces the constant `1 × 1` C⋆-matrix. -/
+@[simp]
+theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
+    (a : A) (i j : n) : toOneByOne n R A a i j = a :=
+  (rfl)
+
+/-- Applying `(CStarMatrix.toOneByOne n R A).symm` reads the `(default, default)` entry. -/
+@[simp]
+theorem toOneByOne_symm_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A]
+    [Module R A] (M : CStarMatrix n n A) : (toOneByOne n R A).symm M = M default default :=
+  (rfl)
+
+/-- `CStarMatrix.toOneByOne` agrees with `ofMatrix` of a constant `1 × 1` matrix. -/
+theorem toOneByOne_eq_ofMatrix [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A]
+    [Module R A] (a : A) : toOneByOne n R A a = ofMatrix (Matrix.of fun _ _ ↦ a) :=
+  ext fun _ _ ↦ by simp
+
+/-- Entrywise evaluation of `CStarMatrix.reindexₐ` without casting through `Matrix.reindex`. -/
+theorem reindexₐ_apply_apply [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
+    [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) (i j : n) :
+    reindexₐ R A e M i j = M (e.symm i) (e.symm j) :=
+  (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
+@[simp]
+lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
+@[simp]
+lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
+    ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- A square matrix algebra `CStarMatrix m m A` over a nontrivial `NonAssocSemiring` and a
+nontrivial finite index type is not multiplicatively commutative. -/
+theorem not_isMulCommutative [Fintype m] [Nontrivial m] [NonAssocSemiring A] [Nontrivial A] :
+    ¬IsMulCommutative (CStarMatrix m m A) := fun ⟨⟨hcomm⟩⟩ ↦
+  Matrix.not_isMulCommutative ⟨⟨fun M N ↦ by
+    simpa only [ofMatrix_symm_mul, Equiv.symm_apply_apply] using
+      congrArg ofMatrix.symm (hcomm (ofMatrix M) (ofMatrix N))⟩⟩
+
+/-- Over a domain `K` satisfying `StrongRankCondition`, any finite family of pairwise orthogonal
+nonzero idempotents in `CStarMatrix n n K` has cardinality at most `Fintype.card n`. -/
+theorem _root_.OrthogonalIdempotents.card_le_of_cstarMatrix {K ι n : Type*} [Ring K] [IsDomain K]
+    [StrongRankCondition K] [Fintype ι] [Fintype n] [DecidableEq n]
+    {e : ι → CStarMatrix n n K} (he : OrthogonalIdempotents e) (hne : ∀ i, e i ≠ 0) :
+    Fintype.card ι ≤ Fintype.card n :=
+  (he.map CStarMatrix.ofMatrixRingEquiv.symm.toRingHom).card_le_of_matrix fun i h ↦
+    hne i <| CStarMatrix.ofMatrixRingEquiv.symm.injective <| by
+      simpa using h
 
 /-- Scalars commute past matrix multiplication on the left, as for `Matrix`. -/
 instance instIsScalarTowerSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
@@ -65,16 +143,6 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     [DistribMulAction R A] [SMulCommClass R A A] :
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
-
-/-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
-@[simp]
-lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
-    ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
-
-/-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
-@[simp]
-lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
-    ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
