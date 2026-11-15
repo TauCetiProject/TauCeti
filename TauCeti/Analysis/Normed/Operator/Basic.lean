@@ -31,7 +31,9 @@ In particular, it supplies the common continuity step for
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`).
+`AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
+any ball about `0` into any neighbourhood of `0`
+(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -70,6 +72,10 @@ If `J * J = -1` for a continuous linear operator `J` on a normed space over any 
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
 (`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
 (`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
+
+If `a₀ ‖w‖² ≤ g w` and `‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖²` is bounded by
+`(2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, comparing an energy density with a perturbed middle
+term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
 
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
@@ -152,6 +158,15 @@ end AddMonoidHomClass
 
 namespace ContinuousLinearMap
 
+/-- The extended operator norm is continuous for the operator topology. This instance also
+fixes the standard extended norm when forming integrability statements for iterated operators. -/
+noncomputable instance instContinuousENorm {𝕜 𝕜₂ E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] : ContinuousENorm (E →SL[σ] F) :=
+  (@SeminormedAddGroup.toESeminormedAddMonoid (E →SL[σ] F) inferInstance).toContinuousENorm
+
 section Semilinear
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
@@ -198,6 +213,14 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
   AddMonoidHomClass.tendsto_apply_of_eventually_bound
     (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
+
+/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
+about `0` into any prescribed neighbourhood of `0`. -/
+theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T : ι → X →L[𝕜] Y}
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {V : Set Y} (hV : V ∈ 𝓝 0) (R : ℝ) :
+    ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+  (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
+    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
@@ -588,6 +611,32 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
   refine (hbound (τ := fun x ↦ Φ x (σ x)) hinv).congr' ?_ EventuallyEq.rfl
   filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
   exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
+
+end
+
+section
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- **Comparison of energy densities.** If `a₀ ‖w‖² ≤ g w` for all `w`, with `a₀ > 0`, and
+`‖S‖ ≤ m`, then `‖p‖² + ‖q‖² + ‖v‖² ≤ (2 + 2 m²) / a₀ (g p + g (q - S v) + g v)`, since
+`‖q‖² ≤ 2 ‖q - S v‖² + 2 m² ‖v‖²`. -/
+theorem norm_sq_add_norm_sq_add_norm_sq_le {g : E → ℝ} {a₀ m : ℝ} (ha₀ : 0 < a₀)
+    (hg : ∀ w, a₀ * ‖w‖ ^ 2 ≤ g w) {S : E →L[𝕜] E} (hS : ‖S‖ ≤ m) (p q v : E) :
+    ‖p‖ ^ 2 + ‖q‖ ^ 2 + ‖v‖ ^ 2 ≤ (2 + 2 * m ^ 2) / a₀ * (g p + g (q - S v) + g v) := by
+  have hm₀ : 0 ≤ m := (norm_nonneg _).trans hS
+  have hq : ‖q‖ ≤ ‖q - S v‖ + m * ‖v‖ :=
+    calc ‖q‖ = ‖(q - S v) + S v‖ := by rw [sub_add_cancel]
+      _ ≤ ‖q - S v‖ + ‖S v‖ := norm_add_le _ _
+      _ ≤ ‖q - S v‖ + m * ‖v‖ := by gcongr; exact S.le_of_opNorm_le hS v
+  have hq₂ : ‖q‖ ^ 2 ≤ 2 * ‖q - S v‖ ^ 2 + 2 * m ^ 2 * ‖v‖ ^ 2 := by
+    nlinarith [norm_nonneg q, sq_nonneg (‖q - S v‖ - m * ‖v‖), mul_nonneg hm₀ (norm_nonneg v)]
+  calc _ ≤ (2 + 2 * m ^ 2) * (‖p‖ ^ 2 + ‖q - S v‖ ^ 2 + ‖v‖ ^ 2) := by
+        nlinarith [mul_nonneg (sq_nonneg m) (sq_nonneg ‖p‖),
+          mul_nonneg (sq_nonneg m) (sq_nonneg ‖q - S v‖), sq_nonneg ‖p‖, sq_nonneg ‖v‖]
+    _ = (2 + 2 * m ^ 2) / a₀ * (a₀ * ‖p‖ ^ 2 + a₀ * ‖q - S v‖ ^ 2 + a₀ * ‖v‖ ^ 2) := by
+        field_simp
+    _ ≤ _ := by gcongr <;> exact hg _
 
 end
 
