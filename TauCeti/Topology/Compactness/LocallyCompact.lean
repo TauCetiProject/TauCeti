@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
+public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Sets.Opens
+import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Separation.Hausdorff
 
 /-!
@@ -22,6 +25,11 @@ statement about a quotient, such as a group modulo a kernel, is pulled back to t
 A continuous injection out of a weakly locally compact space into a Hausdorff space is a
 topological embedding on an open neighbourhood of any compact set
 (`Continuous.exists_opens_isEmbedding_restrict`).
+
+In a locally compact Hausdorff space, let `q` be continuous, above `a` off a compact set `Z`, and
+such that every point is joined to `Z` by a preconnected set on which `q` does not increase. Then
+for each open neighbourhood `U` of `Z`, the sublevels of `q` just above `a` lie in `U`, and their
+closed versions are compact (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
 -/
 
 public section
@@ -41,6 +49,34 @@ theorem locallyCompactSpace_of_forall_exists_mem_nhds {X : Type*} [TopologicalSp
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds hW
   exact ⟨(↑) '' K, Filter.image_mem_map hKx, image_subset_iff.mpr hKW,
     hKc.image continuous_subtype_val⟩
+
+/-- Let `q` be a continuous function which is above `a` off a compact set `Z`, and suppose every
+point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for every open
+neighbourhood `U` of `Z` there is `m > a` such that the sublevel `{q < m}` lies in `U` and the
+closed sublevels `{q ≤ δ}`, `δ < m`, are compact: they lie in a compact neighbourhood of `Z`
+inside `U`, on whose boundary `q ≥ m`. -/
+theorem exists_gt_setOf_lt_subset_and_isCompact {X α : Type*} [TopologicalSpace X]
+    [LocallyCompactSpace X] [T2Space X] [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [NoMaxOrder α] {Z U : Set X} (hZ : IsCompact Z) (hU : IsOpen U)
+    (hZU : Z ⊆ U) {q : X → α} (hq : Continuous q) {a : α} (hqZ : ∀ x, q x ≤ a → x ∈ Z)
+    (hpath : ∀ x, ∃ C : Set X, IsPreconnected C ∧ x ∈ C ∧ (C ∩ Z).Nonempty ∧ ∀ y ∈ C, q y ≤ q x) :
+    ∃ m, a < m ∧ {x | q x < m} ⊆ U ∧ ∀ δ < m, IsCompact {x | q x ≤ δ} := by
+  obtain ⟨N, hNc, hZN, hNU⟩ := exists_compact_between hZ hU hZU
+  obtain ⟨m, hm, hmN⟩ : ∃ m, a < m ∧ ∀ x ∈ N \ interior N, m ≤ q x :=
+    (hNc.diff isOpen_interior).exists_forall_le' hq.continuousOn fun x hx ↦
+      not_le.1 fun hle ↦ hx.2 (hZN (hqZ x hle))
+  -- A point with `q < m` is joined to `Z` without crossing the boundary of `N`.
+  have hqN (x : X) (hx : q x < m) : x ∈ interior N := by
+    obtain ⟨C, hC, hxC, hCZ, hCq⟩ := hpath x
+    refine hC.subset_left_of_subset_union isOpen_interior hNc.isClosed.isOpen_compl
+      (disjoint_compl_right.mono_left interior_subset) (fun y hy ↦ ?_)
+      (hCZ.mono (inter_subset_inter_right _ hZN)) hxC
+    by_cases hyN : y ∈ N
+    · exact Or.inl (by_contra fun hint ↦ (hmN y ⟨hyN, hint⟩).not_gt ((hCq y hy).trans_lt hx))
+    · exact Or.inr hyN
+  refine ⟨m, hm, fun x hx ↦ hNU (interior_subset (hqN x hx)), fun δ hδ ↦ ?_⟩
+  exact hNc.of_isClosed_subset (isClosed_le hq continuous_const) fun x hx ↦
+    interior_subset (hqN x (lt_of_le_of_lt hx hδ))
 
 end TauCeti
 
