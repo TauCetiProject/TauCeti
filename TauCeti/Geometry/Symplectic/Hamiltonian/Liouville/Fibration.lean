@@ -745,15 +745,16 @@ theorem quotientPeriodLatticeHomeomorph_symm_apply_self {b : B} (x : π ⁻¹' {
   rw [Homeomorph.symm_apply_eq, quotientPeriodLatticeHomeomorph_zero]
 
 /-- **The period lattice is a full lattice.** For a regular Lagrangian torus fibration, the period
-lattice at `b` spans `T*_b B`. The discreteness instance holds by
+lattice at `b` spans `T*_b B`, with the discreteness instance
 `IsLagrangianTorusFibration.discreteTopology_periodLattice`. -/
-theorem isZLattice_periodLattice (b : B)
-    [DiscreteTopology (h.periodLattice h.isProperMap hσc b)] :
-    IsZLattice ℝ (h.periodLattice h.isProperMap hσc b).toIntSubmodule where
-  span_top := by
-    have := h.compactSpace_quotient_periodLattice hσc b
-    rw [AddSubgroup.coe_toIntSubmodule]
-    exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
+theorem isZLattice_periodLattice (b : B) :
+    letI := h.discreteTopology_periodLattice hσc b
+    IsZLattice ℝ (h.periodLattice h.isProperMap hσc b).toIntSubmodule := by
+  have := h.discreteTopology_periodLattice hσc b
+  have := h.compactSpace_quotient_periodLattice hσc b
+  refine ⟨?_⟩
+  rw [AddSubgroup.coe_toIntSubmodule]
+  exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
 /-- **The period lattice has rank `n`.** For a regular Lagrangian torus fibration over a manifold
 of dimension `n`, the period lattice at `b` is a free abelian group of rank `n`. -/
