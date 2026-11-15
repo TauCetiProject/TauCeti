@@ -110,11 +110,7 @@ theorem not_memLp_top_log_max_one_neg_log_norm [Nontrivial E] [μ.IsOpenPosMeasu
 /-- The function `t ↦ log (max 1 (-t))` is `1`-Lipschitz. -/
 private theorem lipschitzWith_log_max_one_neg :
     LipschitzWith 1 fun t : ℝ => Real.log (max 1 (-t)) := by
-  have h := (Real.lipschitzOnWith_log_Ici one_pos).comp
-    (((LipschitzWith.id.neg : LipschitzWith 1 fun t : ℝ => -t).const_max 1).lipschitzOnWith
-      (s := univ))
-    (fun t _ => le_max_left (1 : ℝ) (-t))
-  simpa [Function.comp_def] using lipschitzOnWith_univ.1 h
+  simpa [Function.comp_def] using Real.lipschitzWith_log_max_one.comp LipschitzWith.id.neg
 
 /-- The function `t ↦ log (max 1 (-(c t)))` is `|c|`-Lipschitz. -/
 private theorem lipschitzWith_log_max_one_neg_mul (c : ℝ) :
@@ -130,11 +126,9 @@ private theorem uniformContinuous_log_max_one_neg_sub (k : ℝ) :
     UniformContinuous fun x : E =>
       Real.log (max 1 (-Real.log (max ‖x‖ (Real.exp (-k))))) -
         Real.log (max 1 (-(Real.log (max ‖x‖ (Real.exp (-k))) / k))) := by
-  have hℓ : UniformContinuous fun x : E => Real.log (max ‖x‖ (Real.exp (-k))) := by
-    have h := (Real.lipschitzOnWith_log_Ici (Real.exp_pos (-k))).comp
-      (((lipschitzWith_one_norm (E := E)).max_const (Real.exp (-k))).lipschitzOnWith (s := univ))
-      (fun (x : E) _ => le_max_right ‖x‖ (Real.exp (-k)))
-    exact (lipschitzOnWith_univ.1 h).uniformContinuous
+  have hℓ : UniformContinuous fun x : E => Real.log (max ‖x‖ (Real.exp (-k))) :=
+    ((lipschitzWith_one_norm (E := E)).max_const (Real.exp (-k))).log (Real.exp_pos (-k))
+      (fun x => le_max_right ‖x‖ (Real.exp (-k))) |>.uniformContinuous
   have hψ : UniformContinuous fun t : ℝ => Real.log (max 1 (-(t / k))) := by
     simpa only [div_eq_inv_mul] using (lipschitzWith_log_max_one_neg_mul k⁻¹).uniformContinuous
   exact (lipschitzWith_log_max_one_neg.uniformContinuous.comp hℓ).sub (hψ.comp hℓ)
@@ -159,9 +153,11 @@ private theorem log_max_one_neg_log_norm_eq_add {k : ℝ} (hk : 1 ≤ k) {x : E}
   have hdiv : 1 ≤ -(Real.log ‖x‖ / k) := by
     rw [← neg_div, le_div_iff₀ hk0]
     linarith
-  rw [max_eq_right hlt.le, Real.log_exp, neg_neg, max_eq_right hk,
-    neg_div_self hk0.ne', neg_neg, max_self, Real.log_one, max_eq_right (by linarith),
-    max_eq_right hdiv, ← neg_div, Real.log_div (by linarith) hk0.ne']
+  have hnlog : 1 ≤ -Real.log ‖x‖ := by linarith
+  have hkk : -(-k / k) = 1 := by field_simp
+  simp only [max_eq_right hlt.le, Real.log_exp, hkk, max_eq_right hnlog, max_eq_right hdiv,
+    neg_neg, max_eq_right hk, max_self, Real.log_one]
+  rw [← neg_div, Real.log_div (by linarith) hk0.ne']
   ring
 
 variable [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]

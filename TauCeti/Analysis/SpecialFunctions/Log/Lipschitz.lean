@@ -15,6 +15,10 @@ For `a > 0` the logarithm is `a⁻¹`-Lipschitz on `[a, ∞)`
 (`Real.lipschitzOnWith_log_Ici`): for `a ≤ y ≤ x`,
 `log x - log y = log (x / y) ≤ x / y - 1 = (x - y) / y ≤ (x - y) / a`.
 The constant is the supremum of the derivative `1 / t` over `[a, ∞)`, so it is optimal.
+
+Consequently the logarithm of a `K`-Lipschitz function bounded below by `a > 0` is
+`a⁻¹ K`-Lipschitz (`LipschitzWith.log`), and `t ↦ log (max 1 t)` is `1`-Lipschitz
+(`Real.lipschitzWith_log_max_one`).
 -/
 
 public section
@@ -40,5 +44,20 @@ theorem lipschitzOnWith_log_Ici {a : ℝ} (ha : 0 < a) :
     · rw [dist_eq, abs_of_nonneg (sub_nonneg.2 hxy), inv_mul_eq_div]
       exact div_le_div_of_nonneg_left (sub_nonneg.2 hxy) ha hy
   linarith
+
+end Real
+
+/-- **The logarithm of a `K`-Lipschitz function bounded below by `a > 0` is `a⁻¹ K`-Lipschitz.** -/
+theorem LipschitzWith.log {α : Type*} [PseudoEMetricSpace α] {K : NNReal} {g : α → ℝ} {a : ℝ}
+    (hg : LipschitzWith K g) (ha : 0 < a) (hga : ∀ x, a ≤ g x) :
+    LipschitzWith (Real.toNNReal a⁻¹ * K) fun x => Real.log (g x) :=
+  lipschitzOnWith_univ.1 <|
+    (Real.lipschitzOnWith_log_Ici ha).comp hg.lipschitzOnWith fun x _ => hga x
+
+namespace Real
+
+/-- The function `t ↦ log (max 1 t)` is `1`-Lipschitz. -/
+theorem lipschitzWith_log_max_one : LipschitzWith 1 fun t : ℝ => log (max 1 t) := by
+  simpa using (LipschitzWith.id.const_max 1).log one_pos fun t => le_max_left 1 t
 
 end Real
