@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.GroupTheory.Index
 public import TauCeti.LinearAlgebra.Trace.HattoriStallings
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.Basis
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 
@@ -26,11 +27,11 @@ ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →+ A` without 
 * `MonoidAlgebra.cyclicCoeffOne`: `Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Lemma 64.15.1).
 * `LinearMap.hattoriStallingsGroupTrace` and `LinearMap.projectiveGroupTrace`: group-ring traces
   over arbitrary `Λ` and commutative `A`.
-* `LinearMap.hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom`: induction along an
-  injective group homomorphism `p : H →* G` preserves the trace (Lemma 64.15.3).
-* `LinearMap.hattoriStallingsGroupTrace_of_restrictSubgroup`: restriction to `H ≤ G` multiplies the
+* `LinearMap.hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom_of_injective`:
+  induction along an injective group homomorphism `p : H →* G` preserves the trace (Lemma 64.15.3).
+* `LinearMap.hattoriStallingsGroupTrace_eq_index_nsmul`: restriction to `H ≤ G` multiplies the
   trace by `H.index` (Lemma 64.15.2).
-* `LinearMap.hattoriStallingsTrace_of_twistedSMul` and
+* `LinearMap.hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocus` and
   `LinearMap.hattoriStallingsTrace_restrictScalars_eq_card_nsmul_hattoriStallingsGroupTrace`:
   automorphism-twisted traces and forgetting the `G`-action (`Tr_Λ(u, P) = |G| • Tr_Λ^G(u, P)`).
 
@@ -46,9 +47,9 @@ noncomputable section
 
 namespace MonoidAlgebra
 
-section CyclicCoeffOne
+section CoeffOne
 
-variable (Λ G : Type*) [Ring Λ] [Group G]
+variable (Λ G : Type*) [Ring Λ] [One G]
 
 /-- Extracting the coefficient at `1 : G` as a `ℤ`-linear map `Λ[G] →ₗ[ℤ] Λ`. -/
 def coeffOneIntLinearMap : MonoidAlgebra Λ G →ₗ[ℤ] Λ where
@@ -61,9 +62,15 @@ theorem coeffOneIntLinearMap_apply (x : MonoidAlgebra Λ G) :
     coeffOneIntLinearMap Λ G x = x.coeff 1 :=
   (rfl)
 
+end CoeffOne
+
+section CyclicCoeffOne
+
+variable (Λ G : Type*) [Ring Λ] [Group G]
+
 variable {Λ G} in
 /-- Modulo `[Λ, Λ]`, the identity coefficient of a product in `Λ[G]` is symmetric. -/
-theorem mkQ_coeff_mul_one_comm (x y : MonoidAlgebra Λ G) :
+theorem commutatorSubmodule_mkQ_coeff_one_mul_comm (x y : MonoidAlgebra Λ G) :
     (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((x * y).coeff 1) =
       (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((y * x).coeff 1) := by
   induction x using induction_linear with
@@ -95,7 +102,8 @@ theorem coeff_one_mem_commutatorSubmodule {x : MonoidAlgebra Λ G}
     x.coeff 1 ∈ TauCeti.commutatorSubmodule ℤ Λ := by
   have hle : TauCeti.commutatorSubmodule ℤ (MonoidAlgebra Λ G) ≤
       LinearMap.ker ((TauCeti.commutatorSubmodule ℤ Λ).mkQ.comp (coeffOneIntLinearMap Λ G)) :=
-    (TauCeti.commutatorSubmodule_le_ker_iff _).2 fun a b ↦ mkQ_coeff_mul_one_comm a b
+    (TauCeti.commutatorSubmodule_le_ker_iff _).2 fun a b ↦
+      commutatorSubmodule_mkQ_coeff_one_mul_comm a b
   simpa [Submodule.Quotient.mk_eq_zero] using LinearMap.mem_ker.1 (hle hx)
 
 /-- **The identity-coefficient map on cyclic quotients**
@@ -127,31 +135,17 @@ theorem cyclicCoeffOne_mapRingHom {Λ' : Type*} [Ring Λ'] (φ : Λ →+* Λ')
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
   simp
 
-/-- Pushing forward along an injective monoid homomorphism preserves the identity coefficient. -/
-theorem coeff_mapDomainRingHom_one {R H M : Type*} [Semiring R] [Monoid H] [Monoid M]
-    {p : H →* M} (hp : Function.Injective p) (x : MonoidAlgebra R H) :
-    (mapDomainRingHom R p x).coeff 1 = x.coeff 1 := by
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy =>
-    rw [map_add, coeff_add, coeff_add, Finsupp.add_apply, Finsupp.add_apply, hx, hy]
-  | single h r =>
-    simp only [mapDomainRingHom_apply, mapDomain_single, coeff_single]
-    by_cases hh : h = 1
-    · subst hh; simp
-    · have hp1 : (1 : M) ≠ p h := fun heq ↦ hh ((map_eq_one_iff p hp).1 heq.symm)
-      simp [Finsupp.single_eq_of_ne hp1, Finsupp.single_eq_of_ne (Ne.symm hh)]
-
 /-- Pushing forward along an injective group homomorphism `p : H →* G` preserves `cyclicCoeffOne`
 (Stacks Project, Section 64.15, Lemma 64.15.3). -/
 @[simp]
-theorem cyclicCoeffOne_mapDomainRingHom {H : Type*} [Group H] {p : H →* G}
+theorem cyclicCoeffOne_mapDomainRingHom_of_injective {H : Type*} [Group H] {p : H →* G}
     (hp : Function.Injective p) (c : TauCeti.cyclicQuotient ℤ (MonoidAlgebra Λ H)) :
     cyclicCoeffOne Λ G (TauCeti.cyclicQuotientRingHomMap (mapDomainRingHom Λ p) c) =
       cyclicCoeffOne Λ H c := by
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
   rw [TauCeti.cyclicQuotientRingHomMap_mk, cyclicCoeffOne_mk, cyclicCoeffOne_mk,
-    coeff_mapDomainRingHom_one hp]
+    mapDomainRingHom_apply, coeff_mapDomain, ← p.map_one,
+    Finsupp.mapDomain_apply_of_injective hp]
 
 end CyclicCoeffOne
 
@@ -237,7 +231,7 @@ variable {Λ G : Type*} [Ring Λ] [Group G]
 theorem hattoriStallingsGroupTrace_regular
     (u : Module.End (MonoidAlgebra Λ G) (MonoidAlgebra Λ G)) :
     hattoriStallingsGroupTrace Λ G (MonoidAlgebra Λ G) u =
-      (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((u 1).coeff 1) := by
+      Submodule.Quotient.mk ((u 1).coeff 1) := by
   rw [hattoriStallingsGroupTrace_apply,
     hattoriStallingsTrace_eq_of_basis (Module.Basis.singleton Unit (MonoidAlgebra Λ G)),
     Module.Basis.hattoriStallingsTrace_apply, MonoidAlgebra.cyclicCoeffOne_mkQ]
@@ -246,16 +240,17 @@ theorem hattoriStallingsGroupTrace_regular
 /-- **Induction along an injective group homomorphism** (Stacks Project, Section 64.15,
 Lemma 64.15.3): `Tr_Λ^G(Λ[G] ⊗_{Λ[H]} u) = Tr_Λ^H(u)`. -/
 @[simp]
-theorem hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom {H Q : Type*} [Group H]
-    [AddCommGroup Q] [Module (MonoidAlgebra Λ H) Q] [Module.Finite (MonoidAlgebra Λ H) Q]
-    [Module.Projective (MonoidAlgebra Λ H) Q] {p : H →* G} (hp : Function.Injective p)
-    (u : Module.End (MonoidAlgebra Λ H) Q) :
+theorem hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom_of_injective
+    {H Q : Type*} [Group H] [AddCommGroup Q] [Module (MonoidAlgebra Λ H) Q]
+    [Module.Finite (MonoidAlgebra Λ H) Q] [Module.Projective (MonoidAlgebra Λ H) Q]
+    {p : H →* G} (hp : Function.Injective p) (u : Module.End (MonoidAlgebra Λ H) Q) :
     hattoriStallingsGroupTrace Λ G
         (TauCeti.BalancedExtension (MonoidAlgebra.mapDomainRingHom Λ p) Q)
         (TauCeti.BalancedExtension.map (MonoidAlgebra.mapDomainRingHom Λ p) u) =
       hattoriStallingsGroupTrace Λ H Q u := by
   rw [hattoriStallingsGroupTrace_apply, hattoriStallingsTrace_balancedExtension_map,
-    MonoidAlgebra.cyclicCoeffOne_mapDomainRingHom hp, ← hattoriStallingsGroupTrace_apply]
+    MonoidAlgebra.cyclicCoeffOne_mapDomainRingHom_of_injective hp,
+    ← hattoriStallingsGroupTrace_apply]
 
 end RegularAndInduction
 
@@ -264,21 +259,21 @@ end LinearMap
 namespace LinearEquiv
 
 /-- **Group-isomorphism transport of `hattoriStallingsGroupTrace`.** -/
-theorem hattoriStallingsGroupTrace_eq_of_semilinear {Λ H G P P' : Type*} [Ring Λ] [Group H]
+theorem hattoriStallingsGroupTrace_eq_of_mapDomainRingHom {Λ H G P P' : Type*} [Ring Λ] [Group H]
     [Group G] [AddCommGroup P] [Module (MonoidAlgebra Λ H) P] [AddCommGroup P']
     [Module (MonoidAlgebra Λ G) P'] [Module.Finite (MonoidAlgebra Λ H) P]
     [Module.Projective (MonoidAlgebra Λ H) P] [Module.Finite (MonoidAlgebra Λ G) P']
     [Module.Projective (MonoidAlgebra Λ G) P']
     {σ : MonoidAlgebra Λ H →+* MonoidAlgebra Λ G}
     {σ' : MonoidAlgebra Λ G →+* MonoidAlgebra Λ H}
-    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : H ≃* G)
-    (hσ : σ = MonoidAlgebra.mapDomainRingHom Λ e.toMonoidHom) (j : P ≃ₛₗ[σ] P')
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (j : P ≃ₛₗ[σ] P') {e : H ≃* G}
+    (hσ : σ = MonoidAlgebra.mapDomainRingHom Λ e.toMonoidHom)
     {u : Module.End (MonoidAlgebra Λ H) P} {u' : Module.End (MonoidAlgebra Λ G) P'}
     (h : ∀ x, u' (j x) = j (u x)) :
     LinearMap.hattoriStallingsGroupTrace Λ G P' u' =
       LinearMap.hattoriStallingsGroupTrace Λ H P u := by
   rw [LinearMap.hattoriStallingsGroupTrace_apply, j.hattoriStallingsTrace_eq_map h, hσ,
-    MonoidAlgebra.cyclicCoeffOne_mapDomainRingHom e.injective,
+    MonoidAlgebra.cyclicCoeffOne_mapDomainRingHom_of_injective e.injective,
     ← LinearMap.hattoriStallingsGroupTrace_apply]
 
 end LinearEquiv
@@ -310,90 +305,12 @@ private theorem sum_coeff_twisted_eq_card_nsmul (σ : G ≃* G) [Fintype G]
       simp [eCoset, Subgroup.groupEquivQuotientProdSubgroup_symm_apply, MonoidHom.ofInjective_apply]
   have hinv : ∀ (q : G ⧸ Z.subtype.range) (z : Z),
       (σ (eCoset (q, z)))⁻¹ * eCoset (q, z) = (σ q.out⁻¹)⁻¹ * q.out⁻¹ := fun q z ↦ by
-    have hz : σ (z : G) = (z : G) := z.2
+    have hz : σ (z : G) = (z : G) := MonoidHom.mem_eqLocusM.1 z.2
     rw [heCoset, map_mul, hz, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
   rw [← eCoset.sum_comp, Fintype.sum_prod_type_right]
   simp only [hinv, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, Z]
 
 variable {P : Type*} [AddCommGroup P] [Module (MonoidAlgebra Λ G) P]
-
-/-- If `G ⧸ H` is infinite, any finite projective `Λ[G]`-module that is finitely generated over
-`Λ[H]` is trivial. -/
-private theorem subsingleton_of_infinite_quotient (H : Subgroup G) [Infinite (G ⧸ H)]
-    (P : Type*) [AddCommGroup P] [Module (MonoidAlgebra Λ G) P] [Module (MonoidAlgebra Λ H) P]
-    [Module.Finite (MonoidAlgebra Λ G) P] [Module.Projective (MonoidAlgebra Λ G) P]
-    [Module.Finite (MonoidAlgebra Λ H) P]
-    (hP : ∀ (r : MonoidAlgebra Λ H) (p : P), r • p = mapDomainRingHom Λ H.subtype r • p) :
-    Subsingleton P := by
-  classical
-  obtain ⟨r, π, i, -, -, hπi⟩ :=
-    Module.Finite.exists_comp_eq_id_of_projective (MonoidAlgebra Λ G) P
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := MonoidAlgebra Λ H) (M := P)
-  refine subsingleton_iff_forall_eq 0 |>.2 fun p ↦ ?_
-  have hip : i p = 0 := by
-    funext k; by_contra hne
-    obtain ⟨g₁, hg₁⟩ := Finsupp.support_nonempty_iff.2 (coeff_eq_zero.not.2 hne)
-    let S : Finset (G ⧸ H) :=
-      s.biUnion fun m ↦ (i m k).coeff.support.image fun g₀ ↦ QuotientGroup.mk g₀⁻¹
-    have hsupp : ∀ (x : P) (g : G), g ∈ (i x k).coeff.support →
-        (QuotientGroup.mk g⁻¹ : G ⧸ H) ∈ S := fun x ↦ by
-      have hx : x ∈ Submodule.span (MonoidAlgebra Λ H) (s : Set P) := hs.symm ▸ Submodule.mem_top
-      induction hx using Submodule.span_induction with
-      | mem m hm => exact fun g hg ↦ Finset.mem_biUnion.2 ⟨m, hm, Finset.mem_image_of_mem _ hg⟩
-      | zero => simp
-      | add x y _ _ hx hy =>
-        intro g hg; rw [map_add, Pi.add_apply, coeff_add] at hg
-        exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hx g) (hy g)
-      | smul c x _ hx =>
-        induction c using induction_linear with
-        | zero => simp
-        | add c₁ c₂ hc₁ hc₂ =>
-          intro g hg; rw [add_smul, map_add, Pi.add_apply, coeff_add] at hg
-          exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hc₁ g) (hc₂ g)
-        | single h a =>
-          intro g hg
-          have himg : i (MonoidAlgebra.single h a • x) k =
-              MonoidAlgebra.single (h : G) a * i x k := by
-            rw [hP, map_smul]; simp [Pi.smul_apply, smul_eq_mul]
-          rw [himg, Finsupp.mem_support_iff, coeff_single_mul_apply] at hg
-          have hq : (QuotientGroup.mk g⁻¹ : G ⧸ H) = QuotientGroup.mk ((h : G)⁻¹ * g)⁻¹ :=
-            QuotientGroup.eq.2 (by simp)
-          exact hq ▸ hx _ (Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hg))
-    obtain ⟨q, hq⟩ := Infinite.exists_notMem_finset S
-    let t : G := q.out⁻¹ * g₁⁻¹
-    have ht : t * g₁ ∈ (i (MonoidAlgebra.single t (1 : Λ) • p) k).coeff.support := by
-      rw [congrFun (map_smul i (MonoidAlgebra.single t (1 : Λ)) p) k, Pi.smul_apply, smul_eq_mul,
-        Finsupp.mem_support_iff, coeff_single_mul_apply, inv_mul_cancel_left, one_mul]
-      exact Finsupp.mem_support_iff.1 hg₁
-    have hq' : (QuotientGroup.mk (t * g₁)⁻¹ : G ⧸ H) = q := by simp [t]
-    exact hq (hq' ▸ hsupp _ _ ht)
-  simpa [hip] using (LinearMap.congr_fun hπi p).symm
-
-/-- If `G` is infinite, any finite projective `Λ[G]`-module finitely generated over `Λ` is
-trivial. -/
-private theorem subsingleton_of_infinite_group [Infinite G]
-    (P : Type*) [AddCommGroup P] [Module Λ P] [Module (MonoidAlgebra Λ G) P]
-    [IsScalarTower Λ (MonoidAlgebra Λ G) P] [Module.Finite (MonoidAlgebra Λ G) P]
-    [Module.Projective (MonoidAlgebra Λ G) P] [Module.Finite Λ P] :
-    Subsingleton P := by
-  let H : Subgroup G := ⊥
-  let _ : Module (MonoidAlgebra Λ H) P := Module.compHom P (mapDomainRingHom Λ H.subtype)
-  have : Infinite (G ⧸ H) :=
-    Infinite.of_injective (QuotientGroup.quotientBot (G := G)).symm
-      (QuotientGroup.quotientBot (G := G)).symm.injective
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := Λ) (M := P)
-  let M : Submodule Λ P :=
-    { Submodule.span (MonoidAlgebra Λ H) (s : Set P) with
-      smul_mem' c x hx := by
-        have hc : (MonoidAlgebra.single (1 : H) c : MonoidAlgebra Λ H) • x = c • x := by
-          change mapDomainRingHom Λ H.subtype (MonoidAlgebra.single 1 c) • x = c • x
-          have h1 : mapDomainRingHom Λ H.subtype (MonoidAlgebra.single 1 c) =
-              c • (1 : MonoidAlgebra Λ G) := by simp [one_def]
-          rw [h1, smul_assoc, one_smul]
-        exact hc ▸ Submodule.smul_mem _ _ hx }
-  have hle : (⊤ : Submodule Λ P) ≤ M := hs ▸ Submodule.span_le.2 Submodule.subset_span
-  have : Module.Finite (MonoidAlgebra Λ H) P := ⟨⟨s, top_unique fun p hp ↦ hle hp⟩⟩
-  exact subsingleton_of_infinite_quotient (Λ := Λ) H P (fun _ _ ↦ rfl)
 
 /-- Evaluating `hattoriStallingsGroupTrace Λ H P u_H` on a `Λ[G]`-free retract `(π, i)` of `P` via
 the coset basis `basisCosets Λ H.subtype`. -/
@@ -432,8 +349,8 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract (H : Subgroup G)
   have hb : bPi ⟨k, q⟩ =
       (MonoidAlgebra.single q.out⁻¹ (1 : Λ) : MonoidAlgebra Λ G) •
         Pi.single k (1 : MonoidAlgebra Λ G) := by
-    ext j; by_cases hjk : j = k; · subst hjk; simp [bPi]
-    · simp [bPi, Pi.single_eq_of_ne hjk]
+    simp only [bPi, Pi.basis_apply, TauCeti.MonoidAlgebra.basisCosets_apply]
+    rw [← Pi.single_smul', smul_eq_mul, mul_one]
   have hv : (i_H ∘ₗ u_H ∘ₗ π_H) (bPi ⟨k, q⟩) =
       i (u_H ((MonoidAlgebra.single q.out⁻¹ (1 : Λ) : MonoidAlgebra Λ G) •
         π (Pi.single k 1))) := by
@@ -445,7 +362,7 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract (H : Subgroup G)
 
 /-- **Subgroup restriction of the group-ring Hattori–Stallings trace** (Stacks Project,
 Section 64.15, Lemma 64.15.2): `Tr_Λ^H(u, P) = H.index • Tr_Λ^G(u, P)`. -/
-theorem hattoriStallingsGroupTrace_of_restrictSubgroup (H : Subgroup G)
+theorem hattoriStallingsGroupTrace_eq_index_nsmul (H : Subgroup G)
     [Module (MonoidAlgebra Λ H) P] [Module.Finite (MonoidAlgebra Λ G) P]
     [Module.Projective (MonoidAlgebra Λ G) P] [Module.Finite (MonoidAlgebra Λ H) P]
     [Module.Projective (MonoidAlgebra Λ H) P]
@@ -480,52 +397,14 @@ theorem hattoriStallingsGroupTrace_of_restrictSubgroup (H : Subgroup G)
         rw [hu, map_smul u]; exact congrFun (map_smul i _ _) k
       simp [himg]
     simp [hq]
-  · have := subsingleton_of_infinite_quotient H P hP
+  · have := TauCeti.MonoidAlgebra.subsingleton_of_infinite_quotient Λ H P hP
     simp
-
-/-- An endomorphism `φ : P →ₗ[Λ] P` satisfying `φ (single g 1 • p) = single (σ g) 1 • φ p` restricts
-to a `Λ[H]`-linear endomorphism on any subgroup `H ≤ σ.toMonoidHom.eqLocus (.id G)`. -/
-def restrictFixedSubgroup [Module Λ P] [IsScalarTower Λ (MonoidAlgebra Λ G) P]
-    {σ : G ≃* G} {H : Subgroup G} (hle : H ≤ σ.toMonoidHom.eqLocus (.id G))
-    [Module (MonoidAlgebra Λ H) P]
-    (hP : ∀ (r : MonoidAlgebra Λ H) (p : P), r • p = mapDomainRingHom Λ H.subtype r • p)
-    (φ : Module.End Λ P)
-    (hφ : ∀ (g : G) (p : P), φ (MonoidAlgebra.single g (1 : Λ) • p) =
-      MonoidAlgebra.single (σ g) (1 : Λ) • φ p) :
-    Module.End (MonoidAlgebra Λ H) P where
-  toFun := φ
-  map_add' := map_add φ
-  map_smul' r p := by
-    rw [RingHom.id_apply, hP, hP]
-    induction r using induction_linear with
-    | zero => simp
-    | add x y hx hy => rw [map_add, add_smul, map_add, add_smul, hx, hy]
-    | single h c =>
-      simp only [mapDomainRingHom_apply, mapDomain_single]
-      have hh : σ (H.subtype h) = H.subtype h := hle h.2
-      have hsmul : ∀ (g : G) (q : P),
-          MonoidAlgebra.single g c • q = c • (MonoidAlgebra.single g (1 : Λ) • q) := fun g q ↦ by
-        have hc : (MonoidAlgebra.single g c : MonoidAlgebra Λ G) =
-            c • MonoidAlgebra.single g (1 : Λ) := by rw [smul_single, smul_eq_mul, mul_one]
-        rw [hc, smul_assoc]
-      rw [hsmul, map_smul, hφ, hh, ← hsmul]
-
-@[simp]
-theorem restrictFixedSubgroup_apply [Module Λ P] [IsScalarTower Λ (MonoidAlgebra Λ G) P]
-    {σ : G ≃* G} {H : Subgroup G} (hle : H ≤ σ.toMonoidHom.eqLocus (.id G))
-    [Module (MonoidAlgebra Λ H) P]
-    (hP : ∀ (r : MonoidAlgebra Λ H) (p : P), r • p = mapDomainRingHom Λ H.subtype r • p)
-    (φ : Module.End Λ P)
-    (hφ : ∀ (g : G) (p : P), φ (MonoidAlgebra.single g (1 : Λ) • p) =
-      MonoidAlgebra.single (σ g) (1 : Λ) • φ p) (p : P) :
-    restrictFixedSubgroup hle hP φ hφ p = φ p :=
-  (rfl)
 
 /-- **Trace of an automorphism-twisted endomorphism of a finite projective `Λ[G]`-module.** If
 `σ : G ≃* G`, `Z = σ.toMonoidHom.eqLocus (.id G)`, and `φ : P →ₗ[Λ] P` satisfies
 `φ (single g 1 • p) = single (σ g) 1 • φ p`, then `Tr_Λ(φ, P) = |Z| • Tr_Λ^Z(φ, P)`. -/
-theorem hattoriStallingsTrace_of_twistedSMul {σ : G ≃* G} {Z : Subgroup G}
-    (hZ : Z = σ.toMonoidHom.eqLocus (.id G)) [Module Λ P]
+theorem hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocus
+    {σ : G ≃* G} {Z : Subgroup G} (hZ : Z = σ.toMonoidHom.eqLocus (.id G)) [Module Λ P]
     [IsScalarTower Λ (MonoidAlgebra Λ G) P] [Module.Finite (MonoidAlgebra Λ G) P]
     [Module.Projective (MonoidAlgebra Λ G) P] [Module.Finite Λ P] [Module.Projective Λ P]
     [Module (MonoidAlgebra Λ Z) P] [Module.Finite (MonoidAlgebra Λ Z) P]
@@ -559,8 +438,8 @@ theorem hattoriStallingsTrace_of_twistedSMul {σ : G ≃* G} {Z : Subgroup G}
     have hLHS : ∀ g : G,
         (bΛ.repr ((i_Λ ∘ₗ φ ∘ₗ π_Λ) (bΛ ⟨k, g⟩))) ⟨k, g⟩ = yk.coeff ((σ g)⁻¹ * g) := fun g ↦ by
       have hb : bΛ ⟨k, g⟩ = MonoidAlgebra.single g (1 : Λ) • Pi.single k 1 := by
-        ext j; by_cases hjk : j = k; · subst hjk; simp [bΛ]
-        · simp [bΛ, Pi.single_eq_of_ne hjk]
+        simp only [bΛ, Pi.basis_apply, MonoidAlgebra.basis_apply]
+        rw [← Pi.single_smul', smul_eq_mul, mul_one]
       have himg : ((i_Λ ∘ₗ φ ∘ₗ π_Λ) (bΛ ⟨k, g⟩)) k =
           MonoidAlgebra.single (σ g) (1 : Λ) * yk := by
         rw [hb, comp_apply, comp_apply]
@@ -579,7 +458,7 @@ theorem hattoriStallingsTrace_of_twistedSMul {σ : G ≃* G} {Z : Subgroup G}
       rw [himg, coeff_single_mul_apply, one_mul]
     simp only [hLHS, hRHS, ← Finset.smul_sum]
     exact sum_coeff_twisted_eq_card_nsmul σ yk
-  · have := subsingleton_of_infinite_group (Λ := Λ) (G := G) P
+  · have := TauCeti.MonoidAlgebra.subsingleton_of_infinite_group Λ G P
     simp
 
 /-- **Forgetting a group action multiplies the group-ring trace by `|G|`** (Stacks Project,
@@ -590,41 +469,22 @@ theorem hattoriStallingsTrace_restrictScalars_eq_card_nsmul_hattoriStallingsGrou
     [Module.Finite Λ P] [Module.Projective Λ P] (u : Module.End (MonoidAlgebra Λ G) P) :
     hattoriStallingsTrace Λ P (u.restrictScalars Λ) =
       Nat.card G • hattoriStallingsGroupTrace Λ G P u := by
-  rcases finite_or_infinite G with _ | _
-  · classical
-    let _ : Fintype G := Fintype.ofFinite G
-    obtain ⟨r, π, i, -, -, hπi⟩ :=
-      Module.Finite.exists_comp_eq_id_of_projective (MonoidAlgebra Λ G) P
-    let bG : Module.Basis (Fin r) (MonoidAlgebra Λ G) (Fin r → MonoidAlgebra Λ G) :=
-      Pi.basisFun (MonoidAlgebra Λ G) (Fin r)
-    let bΛ : Module.Basis ((_ : Fin r) × G) Λ (Fin r → MonoidAlgebra Λ G) :=
-      Pi.basis fun _ ↦ MonoidAlgebra.basis G Λ
-    have hret : (π.restrictScalars Λ).comp (i.restrictScalars Λ) = .id :=
-      LinearMap.ext fun p ↦ LinearMap.congr_fun hπi p
-    rw [hattoriStallingsTrace_eq_of_retract bΛ (i.restrictScalars Λ) (π.restrictScalars Λ) hret,
-      Module.Basis.hattoriStallingsTrace_apply, hattoriStallingsGroupTrace_apply,
-      hattoriStallingsTrace_eq_of_retract bG i π hπi, Module.Basis.hattoriStallingsTrace_apply,
-      MonoidAlgebra.cyclicCoeffOne_mkQ, ← map_nsmul]
-    congr 1
-    simp only [Fintype.sum_sigma, coeff_sum, Finsupp.finsetSum_apply, Finset.smul_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    have hterm : ∀ g : G,
-        (bΛ.repr ((i.restrictScalars Λ ∘ₗ u.restrictScalars Λ ∘ₗ π.restrictScalars Λ)
-          (bΛ ⟨k, g⟩))) ⟨k, g⟩ = ((bG.repr ((i ∘ₗ u ∘ₗ π) (bG k))) k).coeff 1 := fun g ↦ by
-      have hb : bΛ ⟨k, g⟩ = MonoidAlgebra.single g (1 : Λ) • Pi.single k 1 := by
-        ext j; by_cases hjk : j = k; · subst hjk; simp [bΛ]
-        · simp [bΛ, Pi.single_eq_of_ne hjk]
-      have himg : (i (u (π (bΛ ⟨k, g⟩)))) k =
-          MonoidAlgebra.single g (1 : Λ) * (i (u (π (Pi.single k 1)))) k := by
-        rw [hb, map_smul, map_smul]
-        exact congrFun (map_smul i (MonoidAlgebra.single g (1 : Λ)) _) k
-      have hrepr : ∀ v, (bΛ.repr v) ⟨k, g⟩ = (v k).coeff g := fun v ↦ by simp [bΛ]
-      change (bΛ.repr (i (u (π (bΛ ⟨k, g⟩))))) ⟨k, g⟩ = _
-      rw [hrepr, himg, coeff_single_mul_apply, inv_mul_cancel, one_mul]
-      simp [bG]
-    simp only [hterm, Finset.sum_const, Finset.card_univ, Nat.card_eq_fintype_card]
-  · have := subsingleton_of_infinite_group (Λ := Λ) (G := G) P
-    simp
+  let Z : Subgroup G := ⊤
+  let φZ := mapDomainRingHom Λ Z.subtype
+  let _ : Module (MonoidAlgebra Λ Z) (MonoidAlgebra Λ G) := φZ.toModule
+  let _ : Module (MonoidAlgebra Λ Z) P := Module.compHom P φZ
+  obtain ⟨_, _, _, _, _⟩ :=
+    Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := Λ) Z (fun _ _ ↦ rfl) P
+      fun _ _ ↦ rfl
+  have hZ : Z = (MulEquiv.refl G).toMonoidHom.eqLocus (.id G) :=
+    (MonoidHom.eqLocus_same (.id G)).symm
+  have hPZ : ∀ (r : MonoidAlgebra Λ Z) (p : P), r • p = φZ r • p := fun _ _ ↦ rfl
+  let u_Z : Module.End (MonoidAlgebra Λ Z) P :=
+    (u.restrictScalars Λ).toMonoidAlgebraLinearMap fun z p ↦ by simp [hPZ]
+  rw [hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocus hZ
+      hPZ (u.restrictScalars Λ) u_Z (fun g p ↦ by simp) (fun p ↦ by simp [u_Z]),
+    hattoriStallingsGroupTrace_eq_index_nsmul Z hPZ u u_Z (fun p ↦ by simp [u_Z]),
+    Subgroup.index_top, one_smul, Subgroup.card_top]
 
 end Restriction
 
@@ -635,23 +495,81 @@ variable (A G P : Type*) [CommRing A] [Group G] [AddCommGroup P] [Module (Monoid
 
 /-- **The scalar-valued group-ring trace over a commutative ring** `Tr_A^G(u, P) ∈ A`. -/
 def projectiveGroupTrace : Module.End (MonoidAlgebra A G) P →+ A :=
-  (TauCeti.cyclicQuotientEquivOfCommRing ℤ A).toAddMonoidHom.comp
+  (TauCeti.cyclicQuotientEquivOfComm ℤ A).toAddMonoidHom.comp
     (hattoriStallingsGroupTrace A G P)
 
 variable {A G P}
 
 theorem projectiveGroupTrace_apply (u : Module.End (MonoidAlgebra A G) P) :
     projectiveGroupTrace A G P u =
-      TauCeti.cyclicQuotientEquivOfCommRing ℤ A (hattoriStallingsGroupTrace A G P u) :=
+      TauCeti.cyclicQuotientEquivOfComm ℤ A (hattoriStallingsGroupTrace A G P u) :=
   (rfl)
 
 theorem hattoriStallingsGroupTrace_eq_mkQ_projectiveGroupTrace
     (u : Module.End (MonoidAlgebra A G) P) :
     hattoriStallingsGroupTrace A G P u =
       (TauCeti.commutatorSubmodule ℤ A).mkQ (projectiveGroupTrace A G P u) := by
-  rw [projectiveGroupTrace_apply, ← TauCeti.cyclicQuotientEquivOfCommRing_symm_apply]
-  exact ((TauCeti.cyclicQuotientEquivOfCommRing ℤ A).symm_apply_apply
+  rw [Submodule.mkQ_apply, projectiveGroupTrace_apply,
+    ← TauCeti.cyclicQuotientEquivOfComm_symm_apply]
+  exact ((TauCeti.cyclicQuotientEquivOfComm ℤ A).symm_apply_apply
     (hattoriStallingsGroupTrace A G P u)).symm
+
+/-- Cyclicity of `projectiveGroupTrace` across finite projective left `A[G]`-modules. -/
+theorem projectiveGroupTrace_comp_comm {Q : Type*} [AddCommGroup Q]
+    [Module (MonoidAlgebra A G) Q] [Module.Finite (MonoidAlgebra A G) Q]
+    [Module.Projective (MonoidAlgebra A G) Q]
+    (u : P →ₗ[MonoidAlgebra A G] Q) (v : Q →ₗ[MonoidAlgebra A G] P) :
+    projectiveGroupTrace A G P (v ∘ₗ u) = projectiveGroupTrace A G Q (u ∘ₗ v) := by
+  rw [projectiveGroupTrace_apply, projectiveGroupTrace_apply, hattoriStallingsGroupTrace_comp_comm]
+
+/-- Conjugation invariance of `projectiveGroupTrace`. -/
+@[simp]
+theorem projectiveGroupTrace_conj {Q : Type*} [AddCommGroup Q]
+    [Module (MonoidAlgebra A G) Q] [Module.Finite (MonoidAlgebra A G) Q]
+    [Module.Projective (MonoidAlgebra A G) Q]
+    (u : Module.End (MonoidAlgebra A G) P) (e : P ≃ₗ[MonoidAlgebra A G] Q) :
+    projectiveGroupTrace A G Q (e.conjRingEquiv u) = projectiveGroupTrace A G P u := by
+  simp [projectiveGroupTrace_apply]
+
+/-- Additivity of `projectiveGroupTrace` on direct products. -/
+@[simp]
+theorem projectiveGroupTrace_prodMap {Q : Type*} [AddCommGroup Q]
+    [Module (MonoidAlgebra A G) Q] [Module.Finite (MonoidAlgebra A G) Q]
+    [Module.Projective (MonoidAlgebra A G) Q]
+    (u : Module.End (MonoidAlgebra A G) P) (v : Module.End (MonoidAlgebra A G) Q) :
+    projectiveGroupTrace A G (P × Q) (u.prodMap v) =
+      projectiveGroupTrace A G P u + projectiveGroupTrace A G Q v := by
+  simp [projectiveGroupTrace_apply]
+
+/-- On the zero module `projectiveGroupTrace` vanishes. -/
+@[simp]
+theorem projectiveGroupTrace_eq_zero_of_subsingleton [Subsingleton P]
+    (u : Module.End (MonoidAlgebra A G) P) :
+    projectiveGroupTrace A G P u = 0 := by
+  simp [projectiveGroupTrace_apply]
+
+/-- On the regular left `A[G]`-module `A[G]`, `Tr_A^G(u) = (u 1).coeff 1`. -/
+@[simp]
+theorem projectiveGroupTrace_regular
+    (u : Module.End (MonoidAlgebra A G) (MonoidAlgebra A G)) :
+    projectiveGroupTrace A G (MonoidAlgebra A G) u = (u 1).coeff 1 := by
+  simp [projectiveGroupTrace_apply]
+
+/-- `projectiveGroupTrace` is `A`-linear in the endomorphism. -/
+@[simp]
+theorem projectiveGroupTrace_smul [Module A P] [IsScalarTower A (MonoidAlgebra A G) P]
+    [SMulCommClass (MonoidAlgebra A G) A P] (a : A) (u : Module.End (MonoidAlgebra A G) P) :
+    projectiveGroupTrace A G P (a • u) = a * projectiveGroupTrace A G P u := by
+  classical
+  obtain ⟨n, π, i, -, -, hπi⟩ :=
+    Module.Finite.exists_comp_eq_id_of_projective (MonoidAlgebra A G) P
+  simp only [projectiveGroupTrace_apply, hattoriStallingsGroupTrace_apply,
+    hattoriStallingsTrace_eq_of_retract (Pi.basisFun (MonoidAlgebra A G) (Fin n)) i π hπi,
+    Module.Basis.hattoriStallingsTrace_apply, MonoidAlgebra.cyclicCoeffOne_mkQ,
+    TauCeti.cyclicQuotientEquivOfComm_mkQ, MonoidAlgebra.coeff_sum,
+    Finsupp.finsetSum_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp
 
 /-- Scalar extension of `projectiveGroupTrace` along `φ : A →+* B`. -/
 @[simp]
@@ -662,15 +580,14 @@ theorem projectiveGroupTrace_balancedExtension_mapRingHom {B : Type*} [CommRing 
         (TauCeti.BalancedExtension.map (MonoidAlgebra.mapRingHom G φ) u) =
       φ (projectiveGroupTrace A G P u) := by
   rw [projectiveGroupTrace_apply, hattoriStallingsGroupTrace_balancedExtension_mapRingHom,
-    hattoriStallingsGroupTrace_eq_mkQ_projectiveGroupTrace, TauCeti.cyclicQuotientRingHomMap_mkQ,
-    TauCeti.cyclicQuotientEquivOfCommRing_mkQ]
+    TauCeti.cyclicQuotientEquivOfComm_cyclicQuotientRingHomMap, ← projectiveGroupTrace_apply]
 
 /-- Induction along an injective group homomorphism preserves `projectiveGroupTrace`. -/
 @[simp]
-theorem projectiveGroupTrace_balancedExtension_mapDomainRingHom {H Q : Type*} [Group H]
-    [AddCommGroup Q] [Module (MonoidAlgebra A H) Q] [Module.Finite (MonoidAlgebra A H) Q]
-    [Module.Projective (MonoidAlgebra A H) Q] {p : H →* G} (hp : Function.Injective p)
-    (u : Module.End (MonoidAlgebra A H) Q) :
+theorem projectiveGroupTrace_balancedExtension_mapDomainRingHom_of_injective
+    {H Q : Type*} [Group H] [AddCommGroup Q] [Module (MonoidAlgebra A H) Q]
+    [Module.Finite (MonoidAlgebra A H) Q] [Module.Projective (MonoidAlgebra A H) Q]
+    {p : H →* G} (hp : Function.Injective p) (u : Module.End (MonoidAlgebra A H) Q) :
     projectiveGroupTrace A G
         (TauCeti.BalancedExtension (MonoidAlgebra.mapDomainRingHom A p) Q)
         (TauCeti.BalancedExtension.map (MonoidAlgebra.mapDomainRingHom A p) u) =
@@ -678,7 +595,7 @@ theorem projectiveGroupTrace_balancedExtension_mapDomainRingHom {H Q : Type*} [G
   simp [projectiveGroupTrace_apply, hp]
 
 /-- Subgroup restriction multiplies `projectiveGroupTrace` by `[G : H]`. -/
-theorem projectiveGroupTrace_of_restrictSubgroup (H : Subgroup G)
+theorem projectiveGroupTrace_eq_index_mul (H : Subgroup G)
     [Module (MonoidAlgebra A H) P] [Module.Finite (MonoidAlgebra A H) P]
     [Module.Projective (MonoidAlgebra A H) P]
     (hP : ∀ (r : MonoidAlgebra A H) (p : P),
@@ -686,8 +603,8 @@ theorem projectiveGroupTrace_of_restrictSubgroup (H : Subgroup G)
     (u : Module.End (MonoidAlgebra A G) P) (u_H : Module.End (MonoidAlgebra A H) P)
     (hu : ∀ p, u_H p = u p) :
     projectiveGroupTrace A H P u_H = H.index * projectiveGroupTrace A G P u := by
-  have h := congrArg (TauCeti.cyclicQuotientEquivOfCommRing ℤ A).toAddMonoidHom
-    (hattoriStallingsGroupTrace_of_restrictSubgroup H hP u u_H hu)
+  have h := congrArg (TauCeti.cyclicQuotientEquivOfComm ℤ A).toAddMonoidHom
+    (hattoriStallingsGroupTrace_eq_index_nsmul H hP u u_H hu)
   simpa [hattoriStallingsGroupTrace_eq_mkQ_projectiveGroupTrace, map_nsmul, nsmul_eq_mul] using h
 
 /-- Over a commutative ring `A`, `Tr_A(u, P) = |G| * Tr_A^G(u, P)`. -/
@@ -696,7 +613,7 @@ theorem projectiveTrace_restrictScalars_eq_card_mul_projectiveGroupTrace
     (u : Module.End (MonoidAlgebra A G) P) :
     projectiveTrace A P (u.restrictScalars A) =
       (Nat.card G : A) * projectiveGroupTrace A G P u := by
-  have h := congrArg (TauCeti.cyclicQuotientEquivOfCommRing ℤ A).toAddMonoidHom
+  have h := congrArg (TauCeti.cyclicQuotientEquivOfComm ℤ A).toAddMonoidHom
     (hattoriStallingsTrace_restrictScalars_eq_card_nsmul_hattoriStallingsGroupTrace u)
   simpa [hattoriStallingsTrace_eq_projectiveTrace,
     hattoriStallingsGroupTrace_eq_mkQ_projectiveGroupTrace, map_nsmul, nsmul_eq_mul] using h

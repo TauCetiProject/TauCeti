@@ -40,6 +40,9 @@ none of the further theory built on it.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
+* `TauCeti.MonoidAlgebra.singleOneSMulLinearMap` and `LinearMap.toMonoidAlgebraLinearMap`:
+  noncommutative (`Semiring`) generalizations of Mathlib's `MonoidAlgebra.GroupSMul.linearMap` and
+  `MonoidAlgebra.equivariantOfLinearOfComm`.
 
 ## References
 
@@ -135,6 +138,88 @@ theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG
     exact isIntegral_one
   | add x y hx hy => exact hx.add hy
   | smul r x hx => exact hx.smul r
+
+section ModuleAction
+
+variable {Λ G P : Type*} [Semiring Λ] [Monoid G] [AddCommMonoid P] [Module Λ P]
+  [Module (_root_.MonoidAlgebra Λ G) P] [IsScalarTower Λ (_root_.MonoidAlgebra Λ G) P]
+
+/-- Action of a monoid-algebra basis element `single g 1` commutes with scalar multiplication by
+`Λ`, even when `Λ` is noncommutative. -/
+theorem single_one_smul_comm (g : G) (c : Λ) (p : P) :
+    _root_.MonoidAlgebra.single g (1 : Λ) • (c • p) =
+      c • (_root_.MonoidAlgebra.single g (1 : Λ) • p) := by
+  rw [← smul_one_smul (_root_.MonoidAlgebra Λ G) c p, ← mul_smul]
+  have h : _root_.MonoidAlgebra.single g (1 : Λ) * (c • (1 : _root_.MonoidAlgebra Λ G)) =
+      c • _root_.MonoidAlgebra.single g (1 : Λ) := by
+    rw [_root_.MonoidAlgebra.one_def, _root_.MonoidAlgebra.smul_single, smul_eq_mul, mul_one,
+      _root_.MonoidAlgebra.single_mul_single, mul_one, one_mul, _root_.MonoidAlgebra.smul_single,
+      smul_eq_mul, mul_one]
+  rw [h, smul_assoc]
+
+/-- Action of `single g c` factors into the `Λ`-action of `c` and the action of `single g 1`. -/
+theorem single_smul_eq_smul_single_one_smul (g : G) (c : Λ) (p : P) :
+    _root_.MonoidAlgebra.single g c • p = c • (_root_.MonoidAlgebra.single g (1 : Λ) • p) := by
+  rw [← _root_.MonoidAlgebra.smul_of, _root_.MonoidAlgebra.of_apply, smul_assoc]
+
+variable (Λ P) in
+/-- Action of a monoid element `g : G` on a `Λ[G]`-module `P` as a `Λ`-linear endomorphism
+`p ↦ single g 1 • p`. Generalizes Mathlib's `MonoidAlgebra.GroupSMul.linearMap` to a possibly
+noncommutative semiring `Λ`. -/
+noncomputable def singleOneSMulLinearMap (g : G) : P →ₗ[Λ] P where
+  toFun p := _root_.MonoidAlgebra.single g (1 : Λ) • p
+  map_add' := smul_add _
+  map_smul' c p := by rw [RingHom.id_apply, single_one_smul_comm]
+
+@[simp]
+theorem singleOneSMulLinearMap_apply (g : G) (p : P) :
+    singleOneSMulLinearMap Λ P g p = _root_.MonoidAlgebra.single g (1 : Λ) • p :=
+  (rfl)
+
+@[simp]
+theorem singleOneSMulLinearMap_one :
+    singleOneSMulLinearMap Λ P (1 : G) = LinearMap.id := by
+  ext p
+  simp [← _root_.MonoidAlgebra.one_def]
+
+@[simp]
+theorem singleOneSMulLinearMap_mul (g h : G) :
+    singleOneSMulLinearMap Λ P (g * h) =
+      singleOneSMulLinearMap Λ P g ∘ₗ singleOneSMulLinearMap Λ P h := by
+  ext p
+  simp [← mul_smul]
+
+/-- Promote a `Λ`-linear map `f : P →ₗ[Λ] Q` between `Λ[G]`-modules to a `Λ[G]`-linear map when it
+commutes with the action of every basis element `single g 1`. Generalizes Mathlib's
+`MonoidAlgebra.equivariantOfLinearOfComm` to a possibly noncommutative semiring `Λ`. -/
+def _root_.LinearMap.toMonoidAlgebraLinearMap {Q : Type*} [AddCommMonoid Q] [Module Λ Q]
+    [Module (_root_.MonoidAlgebra Λ G) Q] [IsScalarTower Λ (_root_.MonoidAlgebra Λ G) Q]
+    (f : P →ₗ[Λ] Q)
+    (hf : ∀ (g : G) (p : P),
+      f (_root_.MonoidAlgebra.single g (1 : Λ) • p) =
+        _root_.MonoidAlgebra.single g (1 : Λ) • f p) :
+    P →ₗ[_root_.MonoidAlgebra Λ G] Q where
+  toFun := f
+  map_add' := map_add f
+  map_smul' r p := by
+    rw [RingHom.id_apply]
+    induction r using _root_.MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add x y hx hy => rw [add_smul, map_add, add_smul, hx, hy]
+    | single g c =>
+      rw [single_smul_eq_smul_single_one_smul, map_smul, hf, ← single_smul_eq_smul_single_one_smul]
+
+@[simp]
+theorem _root_.LinearMap.toMonoidAlgebraLinearMap_apply {Q : Type*} [AddCommMonoid Q] [Module Λ Q]
+    [Module (_root_.MonoidAlgebra Λ G) Q] [IsScalarTower Λ (_root_.MonoidAlgebra Λ G) Q]
+    (f : P →ₗ[Λ] Q)
+    (hf : ∀ (g : G) (p : P),
+      f (_root_.MonoidAlgebra.single g (1 : Λ) • p) =
+        _root_.MonoidAlgebra.single g (1 : Λ) • f p) (p : P) :
+    f.toMonoidAlgebraLinearMap hf p = f p :=
+  (rfl)
+
+end ModuleAction
 
 end MonoidAlgebra
 
