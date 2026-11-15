@@ -14,14 +14,15 @@ public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 Let `i : S → M` be a compact nondegenerate critical submanifold of a smooth function `f`, on the
 level `f = c`, and let `g` be a smooth fibre metric on its normal bundle. Write `M_t = {f ≤ t}`.
 Crossing the level attaches the negative disc bundle: for a Morse–Bott normal form `Θ` near the
-zero section of the normal bundle and all small `ε > 0`, the sublevel `M_{c+ε}` strong
-deformation retracts onto `M_{c-ε} ∪ Θ(D_ε)`, where `D_ε` is the negative disc bundle of size `ε`
+zero section of the normal bundle and all small `ε > 0` such that the band `f⁻¹[c-ε, c+ε]` is
+compact and all its critical points lie on `i`, the sublevel `M_{c+ε}` strong deformation
+retracts onto `M_{c-ε} ∪ Θ(D_ε)`, where `D_ε` is the negative disc bundle of size `ε`
 (`IsNondegenerateCriticalSubmanifold.exists_sublevel_union_negativeDiscBundle_deformation`, in
 the namespace `TauCeti.SmoothEmbedding`).
 
 This file reads that attachment in relative singular homology. The image `Θ(D_ε)` lies in the
 critical sublevel `M_c`, since the normal Hessian is negative on the negative normal spaces, and
-the deformation fixes `M_{c-ε} ∪ Θ(D_ε)`. So the inclusion of pairs
+the deformation fixes `M_{c-ε} ∪ Θ(D_ε)`. So, for the same `ε`, the inclusion of pairs
 
 `(M_{c-ε} ∪ Θ(D_ε), M_{c-ε}) ⟶ (M_{c+ε}, M_{c-ε})`
 
