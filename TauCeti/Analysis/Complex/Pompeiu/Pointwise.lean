@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
 # Pointwise bounds for the Cauchy transform of supercritical data
@@ -19,9 +20,10 @@ times the `L^q` norm of the reciprocal kernel truncated at the sum of the input 
 radii, where `q` is conjugate to `p`. The latter norm is finite because `q < 2`.
 These bounds are useful for Cauchy integral equations with rough zeroth-order coefficients.
 The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.
-For bounded data the transform is moreover continuous on the whole plane
-(`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
-kernel continuously in `L¹` on the support disc. On supercritical data supported in discs the
+For all supercritical data (`q < 2`) supported in a closed disc, the transform is continuous on the
+whole plane (`TauCeti.continuous_cauchyTransform_of_memLp`, with bounded-data corollary
+`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole translates a truncated
+reciprocal kernel continuously in `L^q`. On supercritical data supported in discs the
 transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
 
 The normalization is `T f = π⁻¹ ∫ (w - z)⁻¹ • f z`, inverting
@@ -118,39 +120,85 @@ theorem cauchyTransform_sub_cauchyTransform_eq_setIntegral [p.HolderConjugate q]
   rw [integral_sub (integrable_sub_inv_smul_of_memLp hq hf hs w')
     (integrable_sub_inv_smul_of_memLp hq hf hs w)]
 
+private theorem norm_cauchyTransform_sub_le_eLpNorm_sub [p.HolderConjugate q] (hq : q < 2)
+    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) {R : ℝ} {w w' : ℂ}
+    (hw : w ∈ closedBall c R) (hw' : w' ∈ closedBall c R) :
+    ‖cauchyTransform f w' - cauchyTransform f w‖ ≤
+      Real.pi⁻¹ * ((eLpNorm (fun u ↦ truncatedCauchyKernel (r + R) (u + (w' - w)) -
+          truncatedCauchyKernel (r + R) u) q volume).toReal *
+        (eLpNorm f p volume).toReal) := by
+  set k := truncatedCauchyKernel (r + R)
+  have hk : MemLp k q volume := memLp_truncatedCauchyKernel hq (r + R)
+  have hshift : (∫ z, k z • f (w' - z)) = ∫ u, k (u + (w' - w)) • f (w - u) := by
+    have h := integral_add_right_eq_self (μ := volume) (fun z ↦ k z • f (w' - z)) (w' - w)
+    simpa only [show ∀ u : ℂ, w' - (u + (w' - w)) = w - u by intro; ring] using h.symm
+  have hkm : MemLp (fun u ↦ k (u + (w' - w))) q volume :=
+    hk.comp_measurePreserving (measurePreserving_add_right volume (w' - w))
+  have hi1 : Integrable (fun u ↦ k (u + (w' - w)) • f (w - u)) := by
+    simpa only [ContinuousLinearMap.lsmul_apply] using
+      (ConvolutionExists.of_memLp_memLp (ContinuousLinearMap.lsmul ℝ ℂ) hkm hf w).integrable
+  have hi2 : Integrable (fun u ↦ k u • f (w - u)) := by
+    simpa only [ContinuousLinearMap.lsmul_apply] using
+      (ConvolutionExists.of_memLp_memLp (ContinuousLinearMap.lsmul ℝ ℂ) hk hf w).integrable
+  have hdiff : cauchyTransform f w' - cauchyTransform f w =
+      (Real.pi : ℂ)⁻¹ • (((fun u ↦ k (u + (w' - w)) - k u) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f)
+        w) := by
+    rw [cauchyTransform_apply, cauchyTransform_apply,
+      integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw',
+      integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw, hshift, ← smul_sub,
+      ← integral_sub hi1 hi2]
+    simp only [convolution_def, ContinuousLinearMap.lsmul_apply, sub_smul]
+  have hconv : ‖((fun u ↦ k (u + (w' - w)) - k u) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f) w‖ₑ ≤
+      eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume * eLpNorm f p volume := by
+    calc _ ≤ ‖(ContinuousLinearMap.lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F)‖ₑ *
+          eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume * eLpNorm f p volume :=
+          eNorm_convolution_le (ContinuousLinearMap.lsmul ℝ ℂ)
+            (hkm.sub hk).aestronglyMeasurable hf.aestronglyMeasurable w
+      _ ≤ 1 * eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume * eLpNorm f p volume := by
+          gcongr
+          exact ContinuousLinearMap.opENorm_lsmul_le
+      _ = _ := by rw [one_mul]
+  rw [hdiff, norm_pi_inv_smul]
+  gcongr
+  have hfin : eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume * eLpNorm f p volume ≠ ⊤ :=
+    ENNReal.mul_ne_top (hkm.sub hk).eLpNorm_ne_top hf.eLpNorm_ne_top
+  simpa only [ENNReal.toReal_mul, toReal_eNorm] using ENNReal.toReal_mono hfin hconv
+
+/-- **Continuity of the Cauchy transform of supercritical data.** For `Lᵖ` data supported in a
+closed disc whose conjugate exponent satisfies `q < 2` (that is, `2 < p ≤ ∞`), the Cauchy transform
+is continuous on the whole plane: near each pole it is a convolution against a fixed truncated
+reciprocal kernel in `L^q`, whose translates vary continuously in `L^q`. -/
+theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
+    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
+    Continuous (cauchyTransform f) := by
+  refine continuous_iff_continuousAt.2 fun w ↦ tendsto_iff_norm_sub_tendsto_zero.2 ?_
+  set R := dist w c + 1
+  set k := truncatedCauchyKernel (r + R)
+  have hk : MemLp k q volume := memLp_truncatedCauchyKernel hq (r + R)
+  have hw : w ∈ closedBall c R := mem_closedBall.2 (by linarith)
+  have hbound : ∀ᶠ w' in 𝓝 w, ‖cauchyTransform f w' - cauchyTransform f w‖ ≤
+      Real.pi⁻¹ * ((eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume).toReal *
+        (eLpNorm f p volume).toReal) := by
+    filter_upwards [ball_mem_nhds w zero_lt_one] with w' hw'
+    exact norm_cauchyTransform_sub_le_eLpNorm_sub hq hf hs hw <|
+      mem_closedBall.2 ((dist_triangle w' w c).trans (by linarith [mem_ball.1 hw']))
+  have hlim0 : Tendsto (fun w' : ℂ ↦ (eLpNorm (fun u ↦ k (u + (w' - w)) - k u) q volume).toReal)
+      (𝓝 w) (𝓝 0) := by
+    have hsub : Tendsto (fun w' : ℂ ↦ w' - w) (𝓝 w) (𝓝 0) := by
+      simpa using (tendsto_id (x := 𝓝 w)).sub_const w
+    simpa only [ENNReal.toReal_zero, Function.comp_def] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+        ((hk.tendsto_eLpNorm_comp_add_sub (ENNReal.HolderConjugate.one_le q p) hq.ne_top).comp hsub)
+  have hlim := (hlim0.mul_const (eLpNorm f p volume).toReal).const_mul Real.pi⁻¹
+  simp only [zero_mul, mul_zero] at hlim
+  exact squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hbound hlim
+
 /-- **Continuity of the Cauchy transform of bounded data.** The Cauchy transform of an essentially
-bounded measurable map supported in a closed disc is continuous on the whole plane: moving the
-pole moves the reciprocal kernel continuously in `L¹` on the disc. -/
+bounded measurable map supported in a closed disc is continuous on the whole plane. -/
 theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volume)
     (hs : support f ⊆ closedBall c r) {M : ℝ} (hM : ∀ᵐ z, ‖f z‖ ≤ M) :
-    Continuous (cauchyTransform f) := by
-  have hfM : MemLp f ∞ volume := memLp_top_of_bound hf M hM
-  -- the difference of two values is controlled by the `L¹` distance of the moved kernels
-  have hbound (w w' : ℂ) : ‖cauchyTransform f w' - cauchyTransform f w‖ ≤
-      Real.pi⁻¹ * (M * ∫ z in closedBall c r, ‖(z - w')⁻¹ - (z - w)⁻¹‖) := by
-    have hk : IntegrableOn (fun z ↦ (w' - z)⁻¹ - (w - z)⁻¹) (closedBall c r) :=
-      ((Complex.locallyIntegrable_sub_inv w').integrableOn_isCompact
-        (isCompact_closedBall c r)).sub
-        ((Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact (isCompact_closedBall c r))
-    have hnorm (z : ℂ) : ‖(z - w')⁻¹ - (z - w)⁻¹‖ = ‖(w' - z)⁻¹ - (w - z)⁻¹‖ := by
-      rw [← neg_sub w' z, ← neg_sub w z, inv_neg, inv_neg, neg_sub_neg, norm_sub_rev]
-    calc ‖cauchyTransform f w' - cauchyTransform f w‖
-        = Real.pi⁻¹ * ‖∫ z in closedBall c r, ((w' - z)⁻¹ - (w - z)⁻¹) • f z‖ := by
-          rw [cauchyTransform_sub_cauchyTransform_eq_setIntegral (p := ∞) (q := 1) (by norm_num)
-            hfM hs, norm_smul]
-          simp
-      _ ≤ Real.pi⁻¹ * ∫ z in closedBall c r, M * ‖(w' - z)⁻¹ - (w - z)⁻¹‖ := by
-          gcongr
-          refine norm_integral_le_of_norm_le (hk.norm.const_mul M)
-            ((ae_restrict_of_ae hM).mono fun z hz ↦ ?_)
-          rw [norm_smul, mul_comm]
-          exact mul_le_mul_of_nonneg_right hz (norm_nonneg _)
-      _ = Real.pi⁻¹ * (M * ∫ z in closedBall c r, ‖(z - w')⁻¹ - (z - w)⁻¹‖) := by
-          simp only [hnorm, integral_const_mul]
-  refine continuous_iff_continuousAt.2 fun w ↦ tendsto_iff_norm_sub_tendsto_zero.2 ?_
-  have hlim := (tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall
-    (tendsto_id (x := 𝓝 w)) c r).const_mul M |>.const_mul Real.pi⁻¹
-  simp only [mul_zero] at hlim
-  exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun w' ↦ hbound w w') hlim
+    Continuous (cauchyTransform f) :=
+  continuous_cauchyTransform_of_memLp (p := ∞) (q := 1) (by norm_num) (memLp_top_of_bound hf M hM)
+    hs
 
 end TauCeti
