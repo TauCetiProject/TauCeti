@@ -14,6 +14,7 @@ public import Mathlib.Analysis.RCLike.Basic
 -- `SeparatingDual.exists_continuousLinearEquiv_apply_eq` for the change of coordinates.
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Analytic.IteratedFDeriv
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Convex.PathConnected
@@ -22,12 +23,17 @@ import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Analytic functions are determined by their restrictions to lines
+# Analytic functions are determined by their jets and restrictions to lines
 
-A function analytic at `p` vanishes on a neighbourhood of `p` exactly when its restriction
-`t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The nontrivial
-direction is the identity principle along each line: on a ball around `p` where `f` is analytic,
-the restriction to the line through `p` and a point `y` of the ball is analytic on a disc
+Over a characteristic-zero nontrivially normed field, a function analytic at `p` vanishes on a
+neighbourhood of `p` if and only if all of its iterated Fréchet derivatives at `p` vanish
+(`AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`): on a ball of convergence, the
+homogeneous term of degree `n` evaluated on `(y, …, y)` is `(n!)⁻¹` times `D^n f(p)(y, …, y)`.
+
+Over `ℝ` or `ℂ`, a function analytic at `p` also vanishes on a neighbourhood of `p` exactly when its
+restriction `t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The
+nontrivial direction is the identity principle along each line: on a ball around `p` where `f` is
+analytic, the restriction to the line through `p` and a point `y` of the ball is analytic on a disc
 containing `0` and `1`, so it vanishes at `1`, that is at `y`.
 
 In several complex variables this is the first step of putting a nonzero germ in general position:
@@ -40,6 +46,8 @@ lives.
 
 ## Main declarations
 
+* `AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`: over characteristic zero, an
+  analytic function vanishes near `p` exactly when all its iterated derivatives at `p` vanish.
 * `AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`: an analytic function
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
@@ -54,6 +62,36 @@ lives.
 public section
 
 open Filter Metric Topology
+
+section CharZero
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **An analytic function into a Banach space is determined near a point by its jet.** Over a
+characteristic-zero nontrivially normed field, a function into a complete normed space analytic at
+`p` vanishes on a neighbourhood of `p` if and only if every iterated Fréchet derivative
+`iteratedFDeriv 𝕜 n f p` vanishes. Completeness of `F` ensures `f` is smooth near `p` so its higher
+iterated derivatives reflect the power series coefficients. -/
+theorem AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero [CompleteSpace F]
+    {f : E → F} {p : E} (hf : AnalyticAt 𝕜 f p) :
+    f =ᶠ[𝓝 p] 0 ↔ ∀ n : ℕ, iteratedFDeriv 𝕜 n f p = 0 := by
+  refine ⟨fun h n ↦ by simpa using (h.iteratedFDeriv 𝕜 n).eq_of_nhds, fun h ↦ ?_⟩
+  obtain ⟨s, r, hsr⟩ := hf
+  have hsub : ContinuousAt (· - p) p := continuousAt_id.sub continuousAt_const
+  filter_upwards [hsub.preimage_mem_nhds (by simpa using Metric.eball_mem_nhds (0 : E) hsr.r_pos)]
+    with y hy
+  have hterm (n : ℕ) : s n (fun _ ↦ y - p) = 0 := by
+    have hsum := hsr.iteratedFDeriv_eq_sum_of_completeSpace (fun _ : Fin n ↦ y - p)
+    rw [h n, zero_apply, Finset.sum_const, Finset.card_univ,
+      Fintype.card_perm, Fintype.card_fin, ← Nat.cast_smul_eq_nsmul 𝕜] at hsum
+    exact (smul_eq_zero.1 hsum.symm).resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero n))
+  have hzero : HasSum (fun n ↦ s n fun _ ↦ y - p) (0 : F) := by
+    simp_rw [hterm]
+    exact hasSum_zero
+  simpa [add_sub_cancel] using (hsr.hasSum hy).unique hzero
+
+end CharZero
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]

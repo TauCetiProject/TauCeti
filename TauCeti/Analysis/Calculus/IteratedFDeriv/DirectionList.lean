@@ -37,7 +37,8 @@ evaluated on the directions.
   variables.
 * `List.Perm.iteratedFDerivAlong_eq`: over `ℝ` or `ℂ`, reordering the directions does not change
   the iterated directional derivative.
-* `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: the comparison with `iteratedFDeriv`.
+* `ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`,
+  `TauCeti.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv`: the comparison with `iteratedFDeriv`.
 -/
 
 public section
@@ -239,6 +240,14 @@ theorem _root_.ContinuousLinearMap.iteratedFDerivAlong_cons_cons (L : E →L[�
   | nil => rw [iteratedFDerivAlong_cons, L.iteratedFDerivAlong_singleton]; funext x; simp
   | cons w ws ih => rw [iteratedFDerivAlong_cons, ih v w]; funext x; simp
 
+/-- Iterated directional derivatives commute with right-subtraction of a constant. -/
+theorem iteratedFDerivAlong_comp_sub (f : E → F) (vs : List E) (a x : E) :
+    iteratedFDerivAlong 𝕜 vs (fun z => f (z - a)) x = iteratedFDerivAlong 𝕜 vs f (x - a) := by
+  induction vs generalizing x with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [iteratedFDerivAlong_cons_apply, funext ih, fderiv_comp_sub, iteratedFDerivAlong_cons_apply]
+
 /-- **Chain rule for an affine change of variables.** If `φ` has the constant derivative `L`,
 the iterated directional derivative of `f ∘ φ` along `vs` is that of `f` along the image of `vs`
 under `L`, evaluated at `φ z`. -/
@@ -301,19 +310,31 @@ theorem _root_.List.Perm.iteratedFDerivAlong_eq [IsRCLikeNormedField 𝕜] {vs w
   | swap v w vs => exact iteratedFDerivAlong_swap hf w v vs hvs
   | trans h₁₂ _ ih₁ ih₂ => exact (ih₁ hvs).trans (ih₂ (h₁₂.length_eq ▸ hvs))
 
-/-- The iterated directional derivative of a `C^k` map along the directions `m 0, …, m (k - 1)` is
-the `k`-th iterated derivative evaluated on them. -/
-theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} (hf : ContDiff 𝕜 k f)
-    (m : Fin k → E) (x : E) :
+/-- For a map which is `C^k` at `x`, its iterated directional derivative along `m 0, …, m (k - 1)`
+at `x` is the `k`-th iterated derivative evaluated on them. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} {x : E}
+    (hf : ContDiffAt 𝕜 k f x) (m : Fin k → E) :
     iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m := by
   induction k generalizing x with
   | zero => simp [Subsingleton.elim m Fin.elim0]
   | succ k ih =>
-    rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply,
-      funext (ih (hf.of_le (by exact_mod_cast Nat.le_succ k)) fun i => m i.succ),
+    obtain ⟨u, hu, hcu⟩ := hf.contDiffOn (m := k) (by exact_mod_cast Nat.le_succ k) (by simp)
+    obtain ⟨s, hsu, hso, hxs⟩ := mem_nhds_iff.mp hu
+    have hev : iteratedFDerivAlong 𝕜 (List.ofFn fun i => m i.succ) f =ᶠ[𝓝 x]
+        fun y => iteratedFDeriv 𝕜 k f y (fun i => m i.succ) := by
+      filter_upwards [hso.mem_nhds hxs] with y hy
+      exact ih (hcu.contDiffAt (Filter.mem_of_superset (hso.mem_nhds hy) hsu)) _
+    rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
       fderiv_continuousMultilinear_apply_const_apply
-        ((hf.differentiable_iteratedFDeriv (m := k) (by exact_mod_cast Nat.lt_succ_self k)) x),
+        (hf.differentiableAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k)),
       iteratedFDeriv_succ_apply_left]
     rfl
+
+/-- The iterated directional derivative of a `C^k` map along the directions `m 0, …, m (k - 1)` is
+the `k`-th iterated derivative evaluated on them. -/
+theorem iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → F} {k : ℕ} (hf : ContDiff 𝕜 k f)
+    (m : Fin k → E) (x : E) :
+    iteratedFDerivAlong 𝕜 (List.ofFn m) f x = iteratedFDeriv 𝕜 k f x m :=
+  hf.contDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv m
 
 end TauCeti

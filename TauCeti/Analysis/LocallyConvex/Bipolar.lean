@@ -16,7 +16,10 @@ the set characterize its closure. No completeness or Hausdorff hypothesis is nee
 
 For an arbitrary set, the bipolar is the closed absolutely convex hull after adjoining
 zero. Adjoining zero matters for the empty set, since Mathlib's absolutely convex hull
-of the empty set is empty, whereas a bipolar always contains zero.
+of the empty set is empty, whereas a bipolar always contains zero. Specializing to a
+submodule characterizes its topological closure as the intersection of the kernels of all
+continuous linear functionals vanishing on it
+(`Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero`).
 
 The pairing and both polars are Mathlib's `topDualPairing`, `StrongDual.polar`, and
 `LinearMap.polar`; no separate bipolar carrier is introduced. The separation argument
@@ -109,3 +112,32 @@ theorem mem_closedAbsConvexHull_iff {s : Set E} (hne : s.Nonempty) {x : E} :
   rfl
 
 end StrongDual
+
+namespace Submodule
+
+/-- In a real or complex locally convex space, a vector lies in the topological closure of a
+submodule if and only if every continuous linear functional vanishing on the submodule also
+vanishes at the vector. -/
+theorem mem_topologicalClosure_iff_forall_dual_eq_zero (S : Submodule 𝕜 E) {x : E} :
+    x ∈ S.topologicalClosure ↔ ∀ f : StrongDual 𝕜 E, (∀ y ∈ S, f y = 0) → f x = 0 := by
+  constructor
+  · intro hx f hf
+    exact closure_minimal (s := (S : Set E)) (t := {y | f y = 0}) (fun y hy ↦ hf y hy)
+      (isClosed_eq f.continuous continuous_const) (by rwa [← S.topologicalClosure_coe])
+  · intro h
+    by_contra hx
+    have : ContinuousSMul ℝ E := IsScalarTower.continuousSMul 𝕜
+    obtain ⟨f, u, hfu, hux⟩ := RCLike.geometric_hahn_banach_closed_point (𝕜 := 𝕜)
+      (S.topologicalClosure.restrictScalars ℝ).convex S.isClosed_topologicalClosure hx
+    -- A real upper bound on a subspace forces the functional to vanish there.
+    have hfS : ∀ y ∈ S, f y = 0 := fun y hy ↦ by
+      by_contra hy0
+      have hlt := hfu ((((u + 1 : ℝ) : 𝕜) / f y) • y)
+        (S.le_topologicalClosure (S.smul_mem _ hy))
+      rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hy0, RCLike.ofReal_re] at hlt
+      linarith
+    have hu0 : 0 < u := by simpa using hfu 0 S.topologicalClosure.zero_mem
+    rw [h f hfS, map_zero] at hux
+    exact (hu0.trans hux).false
+
+end Submodule

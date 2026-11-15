@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
@@ -16,18 +17,23 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 
 Let `E` be a finite-dimensional real inner product space. If `f : E → ℝ` is harmonic at `x`, then
 so is each of its directional derivatives `y ↦ Df(y) v`
-(`InnerProductSpace.HarmonicAt.fderiv_apply`), and so is its gradient `∇f`, whose coordinates in an
-orthonormal basis are directional derivatives (`InnerProductSpace.HarmonicAt.gradient`).
-Consequently every estimate proved for harmonic functions, such as the decay of their oscillation
-and of their integrals on shrinking balls, applies verbatim to the partial derivatives and to the
-gradient of a harmonic function. This is how gradient decay estimates for solutions of
-constant-coefficient elliptic equations are reduced to the harmonic case.
+(`InnerProductSpace.HarmonicAt.fderiv_apply`), each iterated directional derivative
+`TauCeti.iteratedFDerivAlong ℝ vs f` (`InnerProductSpace.HarmonicAt.iteratedFDerivAlong`), and its
+gradient `∇f`, whose coordinates in an orthonormal basis are directional derivatives
+(`InnerProductSpace.HarmonicAt.gradient`). Consequently every estimate proved for harmonic
+functions, such as the decay of their oscillation and of their integrals on shrinking balls, applies
+verbatim to the partial derivatives and to the gradient of a harmonic function. This is how gradient
+decay estimates for solutions of constant-coefficient elliptic equations are reduced to the harmonic
+case.
 
 ## Main declarations
 
 * `InnerProductSpace.HarmonicAt.fderiv_apply`: a directional derivative of a function harmonic at
   `x` is harmonic at `x`.
 * `InnerProductSpace.HarmonicOnNhd.fderiv_apply`: the same on a set.
+* `InnerProductSpace.HarmonicAt.iteratedFDerivAlong` and
+  `InnerProductSpace.HarmonicOnNhd.iteratedFDerivAlong`: iterated directional derivatives of a
+  harmonic function are harmonic.
 * `InnerProductSpace.HarmonicAt.gradient` and `InnerProductSpace.HarmonicOnNhd.gradient`: the
   gradient of a harmonic function is harmonic.
 
@@ -80,6 +86,22 @@ the directional derivative `y ↦ Df(y) v`, for every direction `v`. -/
 theorem HarmonicOnNhd.fderiv_apply {s : Set E} (hf : HarmonicOnNhd f s) (v : E) :
     HarmonicOnNhd (fun y => fderiv ℝ f y v) s :=
   fun x hx => (hf x hx).fderiv_apply v
+
+/-- **Iterated directional derivatives of harmonic functions are harmonic.** If `f` is harmonic at
+`x`, then so is `TauCeti.iteratedFDerivAlong ℝ vs f`, for every list of directions `vs`. -/
+theorem HarmonicAt.iteratedFDerivAlong {x : E} (hf : HarmonicAt f x) (vs : List E) :
+    HarmonicAt (TauCeti.iteratedFDerivAlong ℝ vs f) x := by
+  induction vs with
+  | nil => simpa using hf
+  | cons v vs ih =>
+    rw [TauCeti.iteratedFDerivAlong_cons]
+    exact ih.fderiv_apply v
+
+/-- **Iterated directional derivatives of harmonic functions are harmonic.** If `f` is harmonic on
+`s`, then so is `TauCeti.iteratedFDerivAlong ℝ vs f`, for every list of directions `vs`. -/
+theorem HarmonicOnNhd.iteratedFDerivAlong {s : Set E} (hf : HarmonicOnNhd f s) (vs : List E) :
+    HarmonicOnNhd (TauCeti.iteratedFDerivAlong ℝ vs f) s :=
+  fun x hx => (hf x hx).iteratedFDerivAlong vs
 
 /-- **The gradient of a harmonic function is harmonic.** If `f` is harmonic at `x`, then so is
 its gradient `∇f`, as a vector-valued function: in an orthonormal basis its coordinates are the

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.Distribution
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
@@ -57,6 +58,8 @@ derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` a
 
 * `Distribution.translatePairing`: the regularization `x ↦ T (ρ (· - x))`.
 * `Distribution.fderiv_translatePairing_apply`: the derivative identity.
+* `Distribution.iteratedFDerivAlong_translatePairing_eq`: iterated directional derivatives of the
+  regularization are given by pairing `T` with the derivatives of `z ↦ ρ (y - z)`.
 * `Distribution.contDiffOn_translatePairing`: the regularization is smooth.
 * `Distribution.translatePairing_eq_of_lineDerivOp_eq_zero`: if all derivatives of `T` vanish,
   the regularization is constant on preconnected open sets of admissible translations.
@@ -249,6 +252,74 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
     fderiv ℝ (T.translatePairing ρ) x v = (∂_{v} T).translatePairing ρ x := by
   obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_translatePairing T ρ hx
   rw [hL.fderiv, hLv]
+
+/-- On admissible translations, regularizing `∂_{v} T` by `ρ` agrees with regularizing `T` by
+`-∂_{v} ρ`. -/
+theorem lineDerivOp_translatePairing_eq (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
+    (hx : MapsTo (· + x) (tsupport ρ) Ω) (v : E) :
+    (∂_{v} T).translatePairing ρ x = T.translatePairing (-∂_{v} ρ) x := by
+  have hφ : ∀ y, (-∂_{v} (translateOfMapsTo ρ hx) : 𝓓(Ω, ℝ)) y = (-∂_{v} ρ : 𝓓(V, ℝ)) (y - x) := by
+    intro y
+    simp only [FunLike.coe_neg, Pi.neg_apply, TestFunction.lineDerivOp_apply_eq_fderiv, neg_inj]
+    rw [show (translateOfMapsTo ρ hx : E → ℝ) = fun w => ρ (w - x) from
+      funext (translateOfMapsTo_apply ρ hx), fderiv_comp_sub]
+  rw [translatePairing_eq _ (translateOfMapsTo_apply ρ hx), translatePairing_eq T hφ,
+    lineDerivOp_apply_apply, map_neg]
+
+/-- Iterated `-∂_{v}` on a test function, matching differentiation with respect to the translation
+variable in `z ↦ ρ (y - z)`. -/
+private def iteratedNegLineDeriv : List E → 𝓓(V, ℝ) → 𝓓(V, ℝ)
+  | [], ρ => ρ
+  | v :: vs, ρ => -∂_{v} (iteratedNegLineDeriv vs ρ)
+
+private theorem tsupport_iteratedNegLineDeriv_subset (vs : List E) (ρ : 𝓓(V, ℝ)) :
+    tsupport (iteratedNegLineDeriv vs ρ : E → ℝ) ⊆ tsupport ρ := by
+  induction vs with
+  | nil => exact Subset.rfl
+  | cons v vs ih =>
+    rw [iteratedNegLineDeriv, FunLike.coe_neg, tsupport_neg]
+    exact (TestFunction.tsupport_lineDerivOp_subset _ v).trans ih
+
+private theorem iteratedNegLineDeriv_sub_apply (vs : List E) (ρ : 𝓓(V, ℝ)) (y z : E) :
+    iteratedNegLineDeriv vs ρ (y - z) =
+      TauCeti.iteratedFDerivAlong ℝ vs (fun w => ρ (y - w)) z := by
+  induction vs generalizing z with
+  | nil => simp [iteratedNegLineDeriv]
+  | cons v vs ih =>
+    let ψ := iteratedNegLineDeriv vs ρ
+    have hd := (ψ.contDiff.differentiable (by simp) (y - z)).hasFDerivAt.comp z
+      ((hasFDerivAt_const y z).sub (hasFDerivAt_id z))
+    have hdf : fderiv ℝ (fun w => ψ (y - w)) z v = -fderiv ℝ (ψ : E → ℝ) (y - z) v := by
+      simpa [Function.comp_def] using congrArg (· v) hd.fderiv
+    rw [TauCeti.iteratedFDerivAlong_cons_apply, ← funext ih, hdf]
+    simp [iteratedNegLineDeriv, ψ, TestFunction.lineDeriv_eq_fderiv]
+
+private theorem iteratedFDerivAlong_translatePairing_eq_translatePairing (T : 𝓓'(Ω, F))
+    (ρ : 𝓓(V, ℝ)) (vs : List E) {x : E} (hx : MapsTo (· + x) (tsupport ρ) Ω) :
+    TauCeti.iteratedFDerivAlong ℝ vs (T.translatePairing ρ) x =
+      T.translatePairing (iteratedNegLineDeriv vs ρ) x := by
+  have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
+  induction vs generalizing x with
+  | nil => simp [iteratedNegLineDeriv]
+  | cons v vs ih =>
+    have hev : TauCeti.iteratedFDerivAlong ℝ vs (T.translatePairing ρ) =ᶠ[𝓝 x]
+        T.translatePairing (iteratedNegLineDeriv vs ρ) := by
+      filter_upwards [hU.mem_nhds hx] with z hz using ih hz
+    have hx' : MapsTo (· + x) (tsupport (iteratedNegLineDeriv vs ρ)) Ω :=
+      hx.mono_left (tsupport_iteratedNegLineDeriv_subset vs ρ)
+    rw [TauCeti.iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
+      fderiv_translatePairing_apply T _ hx' v, lineDerivOp_translatePairing_eq T _ hx' v,
+      iteratedNegLineDeriv]
+
+/-- **Iterated directional derivatives of a regularization.** At an admissible translation `x`, the
+iterated directional derivative of `T.translatePairing ρ` along `vs` is `T` applied to any test
+function on `Ω` agreeing with `y ↦ TauCeti.iteratedFDerivAlong ℝ vs (fun z => ρ (y - z)) x`. -/
+theorem iteratedFDerivAlong_translatePairing_eq (T : 𝓓'(Ω, F)) {ρ : 𝓓(V, ℝ)} {x : E}
+    (hx : MapsTo (· + x) (tsupport ρ) Ω) (vs : List E) {φ : 𝓓(Ω, ℝ)}
+    (hφ : ∀ y, φ y = TauCeti.iteratedFDerivAlong ℝ vs (fun z => ρ (y - z)) x) :
+    TauCeti.iteratedFDerivAlong ℝ vs (T.translatePairing ρ) x = T φ := by
+  rw [iteratedFDerivAlong_translatePairing_eq_translatePairing T ρ vs hx]
+  exact translatePairing_eq T fun y => (hφ y).trans (iteratedNegLineDeriv_sub_apply vs ρ y x).symm
 
 /-- **Regularizations are smooth.** The regularization `x ↦ T (ρ (· - x))` is smooth on the open
 set of translations for which `ρ (· - x)` is supported in `Ω`. -/
