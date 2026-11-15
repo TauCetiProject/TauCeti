@@ -239,7 +239,7 @@ theorem map_braidHom (h : algebraMap R S q = q') {n : ℕ} (b : BraidGroup n) :
   have hb : (Units.map (map h : InfiniteTypeAHeckeAlgebra R q →* _)).comp (braidHom R q n) =
       braidHom S q' n :=
     BraidGroup.hom_ext fun i ↦ Units.ext <| by simp
-  exact congrArg Units.val (DFunLike.congr_fun hb b)
+  simpa using congrArg Units.val (DFunLike.congr_fun hb b)
 
 /-- Coefficient change intertwines `TypeAHeckeAlgebra.toInfinite`. -/
 @[simp]

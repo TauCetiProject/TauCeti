@@ -539,7 +539,9 @@ theorem ocneanuTrace_map {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
     (Algebra.linearMap R S).comp (ocneanuTrace R q z)
   have hτR := isMarkovTrace_ocneanuTrace (R := R) (q := q) z
   have hτS := isMarkovTrace_ocneanuTrace (R := S) (q := q') (algebraMap R S z)
-  refine LinearMap.mem_eqLocus.1 <| Submodule.eq_top_iff'.1
+  suffices hmem : x ∈ LinearMap.eqLocus ψ₁ ψ₂ by
+    simpa [ψ₁, ψ₂] using LinearMap.mem_eqLocus.1 hmem
+  refine Submodule.eq_top_iff'.1
     (eq_top_of_algebraMap_mem_of_mul_T_mul_mem (P := LinearMap.eqLocus ψ₁ ψ₂)
       (fun r ↦ LinearMap.mem_eqLocus.2 ?_) (fun n ih a ha b hb ↦ LinearMap.mem_eqLocus.2 ?_)) x
   · simp [ψ₁, ψ₂, AlgHom.commutes,
@@ -570,25 +572,24 @@ theorem pow_mul_ocneanuTrace_map_mem {S : Type*} [CommRing S] [Algebra R S] {q' 
   let L (m : ℕ) : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
     ((LinearMap.mulLeft S (C ^ m)).comp (ocneanuTrace S q' z)).restrictScalars R ∘ₗ
       (map h).toLinearMap
+  have hmem (m : ℕ) (y : InfiniteTypeAHeckeAlgebra R q) :
+      y ∈ (Subalgebra.toSubmodule A).comap (L m) ↔ C ^ m * ocneanuTrace S q' z (map h y) ∈ A := by
+    simp [L]
   have hτS := isMarkovTrace_ocneanuTrace (R := S) (q := q') z
-  refine toSubmodule_stage_le_of_algebraMap_mem_of_mul_T_mul_mem
+  refine (hmem n x).1 <| toSubmodule_stage_le_of_algebraMap_mem_of_mul_T_mul_mem
     (P := fun m ↦ (Subalgebra.toSubmodule A).comap (L m))
-    (fun r ↦ ?_) (fun m ih y hy ↦ ?_) (fun m ih a ha b hb ↦ ?_) n hx
-  · simp only [Submodule.mem_comap, Subalgebra.mem_toSubmodule, L, LinearMap.comp_apply,
-      LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply,
-      AlgHom.commutes, IsScalarTower.algebraMap_apply R S (InfiniteTypeAHeckeAlgebra S q'),
+    (fun r ↦ (hmem 0 _).2 ?_) (fun m ih y hy ↦ (hmem (m + 1) _).2 ?_)
+    (fun m ih a ha b hb ↦ (hmem (m + 1) _).2 ?_) n ((Subalgebra.mem_toSubmodule _).2 hx)
+  · simp only [AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R S (InfiniteTypeAHeckeAlgebra S q'),
       hτS.map_algebraMap, pow_zero, one_mul]
     exact A.algebraMap_mem r
-  · have hy' : C ^ m * ocneanuTrace S q' z (map h y) ∈ A := ih hy
-    simp only [Submodule.mem_comap, Subalgebra.mem_toSubmodule, L, LinearMap.comp_apply,
-      LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply, pow_succ']
-    rw [mul_assoc]
+  · have hy' : C ^ m * ocneanuTrace S q' z (map h y) ∈ A := (hmem m y).1 (ih hy)
+    rw [pow_succ', mul_assoc]
     exact A.mul_mem hC hy'
   · have hba : C ^ m * ocneanuTrace S q' z (map h (b * a)) ∈ A :=
-      ih ((Subalgebra.mem_toSubmodule _).2 (mul_mem hb ha))
-    simp only [Submodule.mem_comap, Subalgebra.mem_toSubmodule, L, LinearMap.comp_apply,
-      LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply,
-      map_mul, map_T, pow_succ']
+      (hmem m (b * a)).1 (ih ((Subalgebra.mem_toSubmodule _).2 (mul_mem hb ha)))
+    simp only [map_mul, map_T, pow_succ']
     rw [hτS.map_mul_T_mul (map_mem_stage h ha) (map_mem_stage h hb), ← map_mul]
     have hmul : C * C ^ m * (z * ocneanuTrace S q' z (map h (b * a))) =
         C * z * (C ^ m * ocneanuTrace S q' z (map h (b * a))) := by ring

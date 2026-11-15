@@ -35,8 +35,13 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
-* `TauCeti.MarkovBraid.heckeTrace_sigma_two` and `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv`:
-  explicit two-strand crossing formulas before and after imposing stabilization.
+* `TauCeti.MarkovBraid.heckeTrace_stabilize_eq_mul` and
+  `TauCeti.MarkovBraid.heckeTrace_stabilizeInv_eq_mul`: general positive and negative stabilization
+  formulas before imposing the normalization equations.
+* `TauCeti.MarkovBraid.heckeTrace_sigma_two`, `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv`,
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two_eq_one`, and
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv_eq_one`: explicit two-strand crossing formulas
+  before and after imposing stabilization.
 * `TauCeti.MarkovEquiv.heckeTrace_eq_of_sq_mul`: Markov invariance when `z` is a unit `a` and
   `l ^ 2 * z = z - (q - q⁻¹)`.
 
@@ -105,22 +110,38 @@ theorem heckeTrace_conj (htr : ∀ x y, τ (x * y) = τ (y * x)) (C : R) (l : R�
   rw [map_braidHom_conj htr]
   simp [map_mul, map_inv]
 
+/-- Positive Markov stabilization multiplies the normalized Hecke trace by `C * l * z`. -/
+theorem heckeTrace_stabilize_eq_mul (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (b : BraidGroup (n + 1)) :
+    heckeTrace ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ τ C l =
+      C * (l : R) * z * heckeTrace ⟨n, b⟩ τ C l := by
+  simp only [heckeTrace_def]
+  rw [hτ.map_braidHom_stabilize]
+  simp only [map_mul,
+    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
+    toAdd_mul, toAdd_ofAdd, zpow_add, zpow_one, Units.val_mul, pow_succ]
+  ring
+
+/-- Negative Markov stabilization multiplies the normalized Hecke trace by
+`C * l⁻¹ * (z - (q - q⁻¹))`. -/
+theorem heckeTrace_stabilizeInv_eq_mul (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (b : BraidGroup (n + 1)) :
+    heckeTrace ⟨n + 1, BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹⟩ τ C l =
+      C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) * heckeTrace ⟨n, b⟩ τ C l := by
+  simp only [heckeTrace_def]
+  rw [hτ.map_braidHom_stabilizeInv]
+  simp only [map_mul, map_inv,
+    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
+    toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, Units.val_mul, pow_succ]
+  ring
+
 /-- Positive Markov stabilization preserves the normalized Hecke trace when
 `C * l * z = 1`. -/
 theorem heckeTrace_stabilize (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hpos : C * (l : R) * z = 1) (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
-  simp only [heckeTrace_def]
-  rw [hτ.map_braidHom_stabilize]
-  simp only [map_mul,
-    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
-    toAdd_mul, toAdd_ofAdd, zpow_add, zpow_one, Units.val_mul, pow_succ]
-  calc
-    _ = (C * (l : R) * z) *
-        (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-          τ (braidHom R q (n + 1) b)) := by ring
-    _ = _ := by rw [hpos, one_mul]
+  rw [heckeTrace_stabilize_eq_mul hτ, hpos, one_mul]
 
 /-- Negative Markov stabilization preserves the normalized Hecke trace when
 `C * l⁻¹ * (z - (q - q⁻¹)) = 1`. -/
@@ -129,16 +150,7 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
-  simp only [heckeTrace_def]
-  rw [hτ.map_braidHom_stabilizeInv]
-  simp only [map_mul, map_inv,
-    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
-    toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, Units.val_mul, pow_succ]
-  calc
-    _ = (C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹))) *
-        (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-          τ (braidHom R q (n + 1) b)) := by ring
-    _ = _ := by rw [hneg, one_mul]
+  rw [heckeTrace_stabilizeInv_eq_mul hτ, hneg, one_mul]
 
 /-- **The skein relation attached to a linear relation between a generator and its inverse.** If
 `x • T i + y • (T i)⁻¹ + s • 1 = 0` in the Hecke algebra, then for a crossing `σ i` in any braid
@@ -188,24 +200,16 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
 the stabilization relation. -/
 theorem heckeTrace_sigma_two (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
     heckeTrace ⟨1, BraidGroup.sigma (n := 2) 0⟩ τ C l = C * (l : R) * z := by
-  have hs : BraidGroup.sigma (n := 2) 0 =
-      BraidGroup.strandIncl (1 : BraidGroup 1) * BraidGroup.sigma (Fin.last 0) := by
-    simp [Fin.last]
-  rw [heckeTrace_def, BraidGroup.exponentSum_sigma]
-  rw [hs, hτ.map_braidHom_stabilize]
-  simp [hτ.map_one, mul_assoc]
+  simpa [Fin.last, heckeTrace_one hτ.map_one] using
+    heckeTrace_stabilize_eq_mul hτ C l (1 : BraidGroup 1)
 
 /-- On two strands, the single negative crossing has normalized trace
 `C * l⁻¹ * (z - (q - q⁻¹))` before imposing the stabilization relation. -/
 theorem heckeTrace_sigma_two_inv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
     heckeTrace ⟨1, (BraidGroup.sigma (n := 2) 0)⁻¹⟩ τ C l =
       C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) := by
-  have hs : (BraidGroup.sigma (n := 2) 0)⁻¹ =
-      BraidGroup.strandIncl (1 : BraidGroup 1) * (BraidGroup.sigma (Fin.last 0))⁻¹ := by
-    simp [Fin.last]
-  rw [heckeTrace_def, map_inv, BraidGroup.exponentSum_sigma]
-  rw [hs, hτ.map_braidHom_stabilizeInv]
-  simp [hτ.map_one, mul_assoc]
+  simpa [Fin.last, heckeTrace_one hτ.map_one] using
+    heckeTrace_stabilizeInv_eq_mul hτ C l (1 : BraidGroup 1)
 
 /-- Under positive stabilization normalization, the single positive crossing on two strands has
 normalized trace `1`. -/
@@ -257,20 +261,18 @@ theorem heckeBraidInvariant_mk (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) (β : MarkovBraid) :
     heckeBraidInvariant hτ C l hpos hneg (Quot.mk MarkovEquiv β) = β.heckeTrace τ C l := (rfl)
 
-/-- When the positive stabilization constant `z` is a unit `a`, setting `C = (l * a)⁻¹` satisfies
-the positive stabilization equation `C * l * z = 1`. -/
-theorem inv_mul_hecke_pos_eq_one (a l : Rˣ) (ha : (a : R) = z) :
+/-- If `(a : R) = z`, then `(l * a)⁻¹ * l * z = 1`. -/
+theorem val_inv_mul_mul_mul_eq_one (a l : Rˣ) (ha : (a : R) = z) :
     (↑(l * a)⁻¹ : R) * (l : R) * z = 1 := by
   rw [← ha, mul_assoc, ← Units.val_mul]
   exact Units.inv_mul (l * a)
 
-/-- When `z` is a unit `a` and `l ^ 2 * z = z - (q - q⁻¹)`, setting `C = (l * a)⁻¹` satisfies the
-negative stabilization equation `C * l⁻¹ * (z - (q - q⁻¹)) = 1`. -/
-theorem inv_mul_hecke_neg_eq_one (a l : Rˣ) (ha : (a : R) = z)
-    (hl : (l : R) ^ 2 * z = z - ((q : R) - ↑q⁻¹)) :
-    (↑(l * a)⁻¹ : R) * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1 := by
+/-- If `(a : R) = z` and `l ^ 2 * z = b`, then `(l * a)⁻¹ * l⁻¹ * b = 1`. -/
+theorem val_inv_mul_mul_inv_mul_eq_one (a l : Rˣ) {b : R} (ha : (a : R) = z)
+    (hl : (l : R) ^ 2 * z = b) :
+    (↑(l * a)⁻¹ : R) * (↑l⁻¹ : R) * b = 1 := by
   rw [← hl, ← ha, ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← Units.val_mul, ← Units.val_mul]
-  exact congrArg Units.val (by group : (l * a)⁻¹ * l⁻¹ * (l ^ 2 * a) = 1)
+  exact (congrArg Units.val (by group : (l * a)⁻¹ * l⁻¹ * (l ^ 2 * a) = 1)).trans Units.val_one
 
 /-- Markov invariance of `MarkovBraid.heckeTrace` for `C = (l * a)⁻¹` whenever `(a : R) = z` and
 `l ^ 2 * z = z - (q - q⁻¹)`. -/
@@ -278,7 +280,7 @@ theorem MarkovEquiv.heckeTrace_eq_of_sq_mul {β γ : MarkovBraid} (h : MarkovEqu
     (hτ : IsMarkovTrace z τ) (a l : Rˣ) (ha : (a : R) = z)
     (hl : (l : R) ^ 2 * z = z - ((q : R) - ↑q⁻¹)) :
     β.heckeTrace τ ↑(l * a)⁻¹ l = γ.heckeTrace τ ↑(l * a)⁻¹ l :=
-  h.heckeTrace_eq hτ ↑(l * a)⁻¹ l (inv_mul_hecke_pos_eq_one a l ha)
-    (inv_mul_hecke_neg_eq_one (q := q) a l ha hl)
+  h.heckeTrace_eq hτ ↑(l * a)⁻¹ l (val_inv_mul_mul_mul_eq_one a l ha)
+    (val_inv_mul_mul_inv_mul_eq_one a l ha hl)
 
 end TauCeti

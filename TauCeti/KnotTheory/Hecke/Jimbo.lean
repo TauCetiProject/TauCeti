@@ -75,19 +75,17 @@ variable {R : Type*} [CommRing R] {N : ℕ}
 
 namespace KnotTheory
 
-/-- When `c` inverts the `N`-colour quantum dimension, `C = ∑ a, jimboWeight q a`,
-`l = (q ^ N)⁻¹`, and `z = c * q ^ N` satisfy the positive Markov stabilization identity
-`C * l * z = 1`. -/
-theorem jimboWeight_sum_hecke_pos_eq_one (q : Rˣ) {c : R}
+/-- When `c` inverts the `N`-colour quantum dimension,
+`(∑ a, jimboWeight q a) * (q ^ N)⁻¹ * (c * q ^ N) = 1`. -/
+theorem sum_jimboWeight_mul_inv_pow_mul_eq_one (q : Rˣ) {c : R}
     (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
     (∑ a : Fin N, jimboWeight q a) * (↑(q ^ N)⁻¹ : R) * (c * ↑(q ^ N)) = 1 := by
   have hq : (↑(q ^ N)⁻¹ : R) * ↑(q ^ N) = 1 := Units.inv_mul (q ^ N)
   linear_combination (∑ a : Fin N, jimboWeight q a) * c * hq + hc
 
-/-- When `c` inverts the `N`-colour quantum dimension, `C = ∑ a, jimboWeight q a`,
-`l = (q ^ N)⁻¹`, and `z = c * q ^ N` satisfy the negative Markov stabilization identity
-`C * l⁻¹ * (z - (q - q⁻¹)) = 1`. -/
-theorem jimboWeight_sum_hecke_neg_eq_one (q : Rˣ) {c : R}
+/-- When `c` inverts the `N`-colour quantum dimension,
+`(∑ a, jimboWeight q a) * ((q ^ N)⁻¹)⁻¹ * (c * q ^ N - (q - q⁻¹)) = 1`. -/
+theorem sum_jimboWeight_mul_inv_inv_pow_mul_sub_eq_one (q : Rˣ) {c : R}
     (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
     (∑ a : Fin N, jimboWeight q a) * (↑((q ^ N)⁻¹)⁻¹ : R) *
         (c * ↑(q ^ N) - ((q : R) - ↑q⁻¹)) = 1 := by
@@ -113,7 +111,7 @@ theorem heckeTrace_ocneanuTrace_eq_mul_jimboTrace (β : MarkovBraid) (q : Rˣ) {
         (∑ a : Fin N, jimboWeight q a) (q ^ N)⁻¹ =
       c * β.jimboTrace (N := N) q := by
   rw [heckeTrace_def, jimboTrace_def, ← TypeAHeckeAlgebra.toInfinite_braidHom,
-    ← TypeAHeckeAlgebra.mul_jimboWeightedTrace_eq_ocneanuTrace hc,
+    ← TypeAHeckeAlgebra.pow_mul_jimboWeightedTrace_eq_ocneanuTrace hc,
     TypeAHeckeAlgebra.jimboWeightedTrace_braidHom, inv_zpow', zpow_neg]
   have hcancel :
       (∑ a : Fin N, jimboWeight q a) ^ β.predStrands * c ^ (β.predStrands + 1) = c := by
@@ -141,8 +139,8 @@ theorem heckeBraidInvariant_ocneanuTrace_mk_eq_mul_jimboTrace (β : MarkovBraid)
     (hc : c * ∑ a : Fin N, KnotTheory.jimboWeight q a = 1) :
     heckeBraidInvariant (isMarkovTrace_ocneanuTrace (q := q) (c * ↑(q ^ N)))
         (∑ a : Fin N, KnotTheory.jimboWeight q a) (q ^ N)⁻¹
-        (KnotTheory.jimboWeight_sum_hecke_pos_eq_one q hc)
-        (KnotTheory.jimboWeight_sum_hecke_neg_eq_one q hc)
+        (KnotTheory.sum_jimboWeight_mul_inv_pow_mul_eq_one q hc)
+        (KnotTheory.sum_jimboWeight_mul_inv_inv_pow_mul_sub_eq_one q hc)
         (Quot.mk MarkovEquiv β) =
       c * β.jimboTrace (N := N) q :=
   (heckeBraidInvariant_mk _ _ _ _ _ β).trans
@@ -174,17 +172,14 @@ variable {K R : Type*} [Field K] [CommRing R]
 
 namespace KnotTheory
 
-/-- Given a ring homomorphism `φ : K →+* R` from a field `K`, under the Hecke normalization
-equations `C * l * z = 1` and `C * l⁻¹ * (z - (q - q⁻¹)) = 1`, evaluating `homflyUnknot K` along
-`φ` at inner variable `u = q - q⁻¹` and outer variable `l⁻¹` produces the strand-number factor
-`C`. -/
-theorem eval₂_homflyUnknot_eq_of_hecke_normalization (φ : K →+* R) {q u l : Rˣ} {z C : R}
+/-- Given a ring homomorphism `φ : K →+* R` from a field `K`, under the normalization equations
+`C * l * z = 1` and `C * l⁻¹ * (z - u) = 1`, evaluating `homflyUnknot K` along `φ` at inner
+variable `u` and outer variable `l⁻¹` produces the strand-number factor `C`. -/
+theorem eval₂_homflyUnknot_eq_of_hecke_normalization (φ : K →+* R) {u l : Rˣ} {z C : R}
     (hpos : C * (l : R) * z = 1)
-    (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1)
-    (hu : (u : R) = (q : R) - ↑q⁻¹) :
+    (hneg : C * (↑l⁻¹ : R) * (z - (u : R)) = 1) :
     eval₂ (eval₂ φ u) l⁻¹ (homflyUnknot K) = C := by
   simp only [homflyUnknot_def, map_mul, map_sub, eval₂_C, eval₂_T, zpow_one, zpow_neg_one, inv_inv]
-  rw [← hu] at hneg
   have hCz : C * z = ↑l⁻¹ := by
     linear_combination (↑l⁻¹ : R) * hpos - C * z * l.mul_inv
   have hCsub : C * (z - (u : R)) = (l : R) := by
@@ -216,7 +211,7 @@ theorem eval₂_reducedHomfly_eq_heckeTrace (φ : K →+* R) {q u l : Rˣ} {z C 
     simpa only [map_sub, map_mul, eval₂_T, eval₂_C, zpow_one, zpow_neg_one, inv_inv, one_mul,
       hu] using hs
   · rw [reducedHomfly_strandIncl, map_mul,
-      eval₂_homflyUnknot_eq_of_hecke_normalization φ hpos hneg hu]
+      eval₂_homflyUnknot_eq_of_hecke_normalization φ hpos (by rwa [← hu] at hneg)]
 
 /-- Unreduced HOMFLY comparison: when `R` receives a ring homomorphism `φ : K →+* R` from a field
 `K`, evaluating `β.homfly K` along `φ` at inner variable `u = q - q⁻¹` and outer variable `l⁻¹`
@@ -228,7 +223,7 @@ theorem eval₂_homfly_eq_mul_heckeTrace (φ : K →+* R) {q u l : Rˣ} {z C : R
     (hu : (u : R) = (q : R) - ↑q⁻¹) (β : MarkovBraid) :
     eval₂ (eval₂ φ u) l⁻¹ (β.homfly K) = C * β.heckeTrace τ C l := by
   rw [← homflyUnknot_mul_reducedHomfly, map_mul,
-    eval₂_homflyUnknot_eq_of_hecke_normalization φ hpos hneg hu,
+    eval₂_homflyUnknot_eq_of_hecke_normalization φ hpos (by rwa [← hu] at hneg),
     eval₂_reducedHomfly_eq_heckeTrace φ hτ hpos hneg hu]
 
 /-- Every positive-rank `homflySpecialization` of `β.reducedHomfly K` equals the normalized Ocneanu
