@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.GraphSteinberg
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected.Frobenius
 
 /-!
 # The indexed Steinberg action on every root subgroup
@@ -23,7 +22,7 @@ the index, without a point-generation assumption or a comparison with a represen
 
 The construction combines the all-root diagram equation
 `DynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints` with naturality of the
-Chevalley datum's root subgroups under Frobenius. The point group and root enumeration are those
+root-subgroup matrices under Frobenius. The point group and root enumeration are those
 of the existing full-weight Kostant construction; no new carrier or root maps are introduced.
 
 ## References
@@ -50,7 +49,7 @@ variable (d : GraphTwistedIndex) (A : Type v) [CommRing A] [ExpChar A d.1.charac
 parameter and then the signed diagram action. The sign is indexed on the source root. -/
 @[simp]
 theorem scSteinberg_chevalleyToralRootSubgroupPoints
-    (α : Fin d.1.dynkinType.numRoots) (u : A) :
+    (α : Fin d.1.dynkinType.numRoots) (u : Multiplicative A) :
     d.scSteinberg A
       (DynkinType.chevalleyToralRootSubgroupPoints
         (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
@@ -59,20 +58,28 @@ theorem scSteinberg_chevalleyToralRootSubgroupPoints
         (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
         (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
         (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
-        (d.1.dynkinType.scWeight d.1.dynkinType_valid) α A (Multiplicative.ofAdd u)) =
+        (d.1.dynkinType.scWeight d.1.dynkinType_valid) α A u) =
       DynkinType.chevalleyToralRootSubgroupPoints _ _ _ _ _ _
         (d.1.dynkinType.diagramRootPerm d.1.dynkinType_valid
           d.diagramPerm_mem_diagramSymmetry α) A
         (Multiplicative.ofAdd
           (((d.1.dynkinType.chevalleyDiagramSign d.1.dynkinType_valid
-            d.diagramPerm_mem_diagramSymmetry α : ℤ) : A) * u ^ d.1.fieldOrder)) := by
+            d.diagramPerm_mem_diagramSymmetry α : ℤ) : A) *
+            Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   have hγ := congrArg Subtype.val
     (d.1.dynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints
       d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry α A
-        (u ^ d.1.characteristic ^ d.1.fieldExponent))
+        (Multiplicative.toAdd u ^ d.1.characteristic ^ d.1.fieldExponent))
   simp only [DynkinType.coe_scToralDiagramAutPoints] at hγ
-  have hp := d.1.dynkinType.map_iterateFrobenius_chevalleyToralRootSubgroupPoints
-    d.1.dynkinType_valid d.1.characteristic d.1.fieldExponent A α u
+  have hp := DynkinType.map_iterateFrobenius_chevalleyToralRootSubgroupPoints
+    (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
+      (d.1.dynkinType.scModule d.1.dynkinType_valid))
+    (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+    (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
+    (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
+    (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+    (d.1.dynkinType.scWeight d.1.dynkinType_valid)
+    d.1.characteristic d.1.fieldExponent A α u
   apply Subtype.ext
   refine (d.coe_scSteinberg A _).trans ?_
   simpa only [d.1.fieldOrder_eq_characteristic_pow] using
