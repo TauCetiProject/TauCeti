@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # Transport of test functions along continuous linear equivalences
@@ -40,7 +42,7 @@ reflections.
   transported test vector field is the transported divergence.
 * `TestFunction.compConj`: a test function on a conjugation-invariant open set of `ℂ` composed
   with complex conjugation, with its derivatives `TestFunction.fderiv_compConj` and
-  `TestFunction.lineDeriv_compConj`.
+  `TestFunction.lineDeriv_compConj` and its Laplacian `TestFunction.laplacian_compConj`.
 
 ## Implementation notes
 
@@ -173,8 +175,8 @@ end ContinuousLinearEquiv
 
 namespace TestFunction
 
-open Complex Set TopologicalSpace
-open scoped ComplexConjugate Distributions
+open Complex InnerProductSpace Set TopologicalSpace
+open scoped ComplexConjugate Distributions Laplacian
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens ℂ} {n : ℕ∞}
 
@@ -210,5 +212,13 @@ theorem lineDeriv_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}
     lineDeriv ℝ (compConj hΩ φ : ℂ → F) z v = lineDeriv ℝ (φ : ℂ → F) (conj z) (conj v) := by
   simp only [lineDeriv, compConj_apply, map_add, Complex.real_smul, map_mul,
     Complex.conj_ofReal]
+
+/-- The Laplacian of `φ ∘ conj` at `z` is that of `φ` at `conj z`. -/
+theorem laplacian_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z : ℂ) :
+    Δ (compConj hΩ φ : ℂ → F) z = Δ (φ : ℂ → F) (conj z) := by
+  have h : (compConj hΩ φ : ℂ → F) = (φ : ℂ → F) ∘ conjLIE := by
+    ext z
+    simp
+  rw [h, TauCeti.laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, conjLIE_apply]
 
 end TestFunction

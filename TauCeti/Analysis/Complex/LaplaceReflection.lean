@@ -22,7 +22,6 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -189,7 +188,7 @@ theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [
     twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
       starSchwarzReflection ξ := by
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
-  rcases (show z.im ≠ 0 from hz).lt_or_gt with hz | hz
+  rcases lt_or_gt_of_ne hz with hz | hz
   · rw [twistedReflection_of_im_neg hz, starSchwarzReflection_of_im_neg hz,
       ContinuousLinearEquiv.coe_coe, starL'_apply]
   · rw [twistedReflection_of_im_pos hz, starSchwarzReflection_of_im_nonneg hz.le]
@@ -199,7 +198,7 @@ differ only on the real axis. -/
 theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
     twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ := by
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
-  rcases (show z.im ≠ 0 from hz).lt_or_gt with hz | hz
+  rcases lt_or_gt_of_ne hz with hz | hz
   · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
       ContinuousLinearMap.id_apply]
   · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
@@ -308,14 +307,6 @@ private theorem integral_lapIntegrand_add_data (φ : 𝓓(Ω, ℝ)) {a b c a' b'
   simp only [lapIntegrand, Pi.add_apply, smul_add]
   abel
 
-/-- The Laplacian of `φ ∘ conj` at `z` is that of `φ` at `conj z`. -/
-private theorem laplacian_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
-    Δ (TestFunction.compConj hΩ φ : ℂ → ℝ) z = Δ (φ : ℂ → ℝ) (conj z) := by
-  have h : (TestFunction.compConj hΩ φ : ℂ → ℝ) = (φ : ℂ → ℝ) ∘ conjLIE := by
-    ext z
-    simp
-  rw [h, laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, conjLIE_apply]
-
 /-- **The reflection formula.** The weak Laplace integrand of the reflected data against `φ`
 integrates to the half-plane integrand of the data against `φ`, plus that of `R` applied to the
 data against `φ ∘ conj`. -/
@@ -344,8 +335,8 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : MapsTo (starRingE
         (upper.indicator g) z + J (conjLIE z) := by
     have h1 : conj (1 : ℂ) = 1 := by simp
     have hI : conj I = -I := by simp
-    simp only [J, lapIntegrand, laplacian_compConj, TestFunction.fderiv_compConj, conjLIE_apply,
-      RCLike.conj_conj, h1, hI, map_neg, twistedReflection, neg_apply,
+    simp only [J, lapIntegrand, TestFunction.laplacian_compConj, TestFunction.fderiv_compConj,
+      conjLIE_apply, RCLike.conj_conj, h1, hI, map_neg, twistedReflection, neg_apply,
       smul_add, smul_neg, neg_smul]
     abel
   have hJc : Integrable fun z ↦ J (conjLIE z) := (integrable_comp conjLIE J).2 hJ
