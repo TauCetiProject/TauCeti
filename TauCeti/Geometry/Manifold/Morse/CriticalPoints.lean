@@ -111,8 +111,7 @@ polynomial in the Morse inequalities.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
-  `TauCeti.IsMorse.criticalCount_neg`; in a band, the critical points of `-f` are those of `f`
-  with complementary index (`TauCeti.IsMorse.setOf_neg_band_eq`).
+  `TauCeti.IsMorse.criticalCount_neg`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
   nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
   the maximum is one of index the dimension.
@@ -1127,9 +1126,8 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
 
-/-- **Critical points of `-f` in a band.** The critical points of index `i` of `-f` with values
-in `(-b, -a]` are the critical points of the Morse function `f` with values in `[a, b)` and
-complementary index `dim M - i`. -/
+/-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
+`f` with values in `[a, b)` and complementary index `dim M - i`. -/
 theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
     {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
       {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
