@@ -12,8 +12,6 @@ import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Existence
 import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Involutive
 import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Overlap
 import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Topology
-import TauCeti.Geometry.Manifold.Immersion.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
@@ -24,10 +22,10 @@ leaf of an involutive `C^m` distribution of constant rank `k`, for `1 ≤ m` (`m
 `m + 1 ≤ r`: a connected `k`-dimensional `C^m` integral manifold with its own intrinsic manifold
 topology whose parametrization is injective and whose image contains the image of every horizontal
 differentiable map from a preconnected `C¹` manifold meeting it. Consequently, the images of the
-leaves partition the ambient manifold, any maximal connected injectively parametrized `C^m`
-integral manifold through a point is `C^m` diffeomorphic to the canonical leaf over the ambient
-manifold, and when `2 ≤ m` a `C^m` constant-rank distribution is involutive if and only if every
-point lies on a `C^m` integral manifold (or global leaf).
+leaves partition the ambient manifold, any inclusion-maximal connected injectively parametrized
+`C^m` integral manifold through a point is `C^m` diffeomorphic to the canonical leaf over the
+ambient manifold, and when `2 ≤ m` a `C^m` constant-rank distribution is involutive if and only if
+every point lies on a `C^m` integral manifold (or global leaf).
 
 A global leaf need not be an embedded submanifold of `M`, as illustrated by dense irrational-slope
 lines on a torus, so its ambient image with the subspace topology need not be a manifold. Equipping
@@ -68,7 +66,7 @@ coordinates.
   `TauCeti.IsInvolutiveDistribution.disjoint_range_leaf_iff`: the leaf images partition `M`.
 * `TauCeti.IsInvolutiveDistribution.range_eq_range_leaf_of_maximal` and
   `TauCeti.IsInvolutiveDistribution.exists_diffeomorph_leaf_of_maximal`: ambient-image equality and
-  uniqueness of maximal preconnected injective `C^m` integral manifolds up to `C^m` diffeomorphism
+  uniqueness of inclusion-maximal preconnected `C^m` integral manifolds up to `C^m` diffeomorphism
   over `M`.
 * `TauCeti.IsInvolutiveDistribution.existsUnique_contMDiff_factor_leaf_of_isHorizontalMap` and
   `TauCeti.IsInvolutiveDistribution.existsUnique_contMDiff_factor_leaf`: unique `C^n` (`n ≤ m`)
@@ -190,34 +188,6 @@ def IsInvolutiveDistribution.leaf {m : ℕ∞} (hm : 1 ≤ m) {r : ℕ∞ω} (hm
     isImmersion := hL.isImmersion
     range_mfderiv := hL.range_mfderiv }
 
-omit [I.Boundaryless] in
-/-- A horizontal differentiable map into `M` locally lands in the affine slice plaque through each
-image point. -/
-private theorem eventually_mem_slice_plaque {m : ℕ∞} (hm : 1 ≤ m)
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J 1 P]
-    {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {g : P → M}
-    (hg_hor : IsHorizontalMap J D g) (hg_diff : MDifferentiable J I g) {q₀ : P}
-    {W : Submodule ℝ E} {Φ : PartialDiffeomorph I 𝓘(ℝ, E) M E m}
-    (hxΦ : g q₀ ∈ Φ.source)
-    (hΦflat : ∀ y ∈ Φ.source, (D y).map (mfderiv I 𝓘(ℝ, E) Φ y).toLinearMap = W)
-    {S : Set M}
-    (hslice : IsSliceChart Φ.toOpenPartialHomeomorph
-      (range fun w : W ↦ Φ (g q₀) + (w : E)) S) :
-    ∀ᶠ q in 𝓝 q₀, g q ∈ S := by
-  have hm0 : (m : ℕ∞ω) ≠ 0 := ne_of_gt (zero_lt_one.trans_le (by exact_mod_cast hm))
-  have hDp (z : M) (hz : z ∈ Φ.source) : (D z).map (mvfderiv I Φ z).toLinearMap ≤ W := by
-    rw [(D z).map_mvfderiv_eq_map_mfderiv (I := I) (x := z) Φ]
-    exact (hΦflat z hz).le
-  have hstay := hg_hor.eventually_sub_mem hg_diff.mdifferentiableOn isOpen_univ
-    (Φ.contMDiffOn.mdifferentiableOn hm0) Φ.open_source W.isClosed_of_finiteDimensional hDp
-    (mem_univ q₀) hxΦ
-  have hgΦ := hg_diff.continuous.continuousAt.preimage_mem_nhds (Φ.open_source.mem_nhds hxΦ)
-  filter_upwards [hgΦ, hstay] with q hqΦ hqW
-  refine (isSliceChart_iff.mp hslice (g q) hqΦ).mpr ⟨⟨Φ (g q) - Φ (g q₀), hqW⟩, ?_⟩
-  simp only [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, add_sub_cancel]
-
 /-- Every horizontal differentiable map from a `C¹` manifold (possibly with boundary or corners)
 into `M` is continuous into the intrinsic leaf topology on `M`. -/
 private theorem continuous_toTopology_comp_of_isHorizontalMap {m : ℕ∞} (hm : 1 ≤ m)
@@ -229,27 +199,21 @@ private theorem continuous_toTopology_comp_of_isHorizontalMap {m : ℕ∞} (hm :
     {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J 1 P]
     {g : P → M} (hg_hor : IsHorizontalMap J D g) (hg_diff : MDifferentiable J I g) :
     Continuous (WithTopology.toTopology (leafTop (I := I) m k D) ∘ g) := by
-  classical
+  rcases isEmpty_or_nonempty P with hE | ⟨⟨q₀⟩⟩
+  · exact continuous_iff_continuousAt.mpr fun q ↦ hE.elim q
   let t := leafTop (I := I) m k D
   let : TopologicalSpace M := tM
-  rw [continuous_iff_continuousAt]
-  intro q₀
-  obtain ⟨W, Φ, V, v, f, _, hxΦ, hΦflat, _, _, hemb, hslice, hf⟩ :=
-    hinv.exists_isIntegralManifold_euclidean hm hmr hD (g q₀)
-  have hmem : ∀ᶠ q in 𝓝 q₀, g q ∈ range f :=
-    eventually_mem_slice_plaque hm hg_hor hg_diff hxΦ hΦflat hslice
-  let hloc : P → V := fun q ↦ if hq : g q ∈ range f then hq.choose else v
-  have hfeq : f ∘ hloc =ᶠ[𝓝 q₀] g := by
-    filter_upwards [hmem] with q hq
-    simp only [hloc, Function.comp_apply, hq, ↓reduceDIte, hq.choose_spec]
-  have hhcont : ContinuousAt hloc q₀ :=
-    hemb.isInducing.continuousAt_iff.mpr (hg_diff.continuous.continuousAt.congr hfeq.symm)
-  let p₀ : Plaque (I := I) m k D := ⟨V, f, hemb.injective, hf⟩
-  have hp₀ : Continuous (WithTopology.toTopology t ∘ p₀.map) :=
-    (isOpenEmbedding_integral_coinduced (J := 𝓡 k)
+  let _ : ChartedSpace (EuclideanSpace ℝ (Fin k)) (WithTopology M t) :=
+    leafChartedSpace hm hmr hinv hD
+  let _ : IsManifold (𝓡 k) m (WithTopology M t) :=
+    isManifold_leafChartedSpace hm hmr hinv hD
+  have : Nonempty M := ⟨g q₀⟩
+  have hf : IsIntegralManifold (I := I) (𝓡 k) m D (WithTopology.ofTopology (t := t)) :=
+    isIntegralManifold_ofTopology (J := 𝓡 k)
       (fun p : Plaque (I := I) m k D ↦ p.isIntegralManifold)
-      hm hmr hinv hD (fun p ↦ p.injective) p₀).continuous
-  exact (hp₀.continuousAt.comp hhcont).congr (hfeq.fun_comp (WithTopology.toTopology t))
+      hm hmr hinv hD (fun p ↦ p.injective) (plaque_cover hm hmr hinv hD)
+  exact hf.continuous_of_comp_eq_of_isHorizontalMap hm (WithTopology.ofTopology_injective t)
+    hmr hinv hD hg_hor hg_diff (funext fun q ↦ WithTopology.ofTopology_toTopology t (g q))
 
 end Construction
 
@@ -443,31 +407,33 @@ theorem IsInvolutiveDistribution.exists_diffeomorph_leaf_of_mem
 
 /-- On a finite-dimensional real `C^r` manifold with boundaryless model, any preconnected `C^m`
 integral manifold (`m : ℕ∞`, `1 ≤ m`, `m + 1 ≤ r`) of an involutive `C^m` distribution `D` of rank
-`k` through `x` that contains the image of every connected `C^m` integral manifold meeting it has
-the same ambient image as the canonical leaf through `x`. -/
+`k` through `x` whose ambient image is inclusion-maximal among connected injectively parametrized
+`C^m` integral manifolds has the same ambient image as the canonical leaf through `x`. -/
 theorem IsInvolutiveDistribution.range_eq_range_leaf_of_maximal
     (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
     (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I m k D) {x : M}
     (L : IntegralManifold (I := I) m D k) [PreconnectedSpace L.carrier] (hx : x ∈ range L.map)
     (hmax : ∀ N' : IntegralManifold.{u, u} (I := I) m D k, ConnectedSpace N'.carrier →
-      (range N'.map ∩ range L.map).Nonempty → range N'.map ⊆ range L.map) :
-    range L.map = range (hinv.leaf hm hmr hD x).map :=
-  Subset.antisymm
-    (hinv.range_subset_leaf hm hmr hD (WithTop.coe_le_coe.mpr hm) L
-      ⟨x, hx, hinv.mem_range_leaf_self hm hmr hD x⟩)
-    (hmax (hinv.leaf hm hmr hD x) inferInstance ⟨x, hinv.mem_range_leaf_self hm hmr hD x, hx⟩)
+      Injective N'.map → range L.map ⊆ range N'.map → range N'.map ⊆ range L.map) :
+    range L.map = range (hinv.leaf hm hmr hD x).map := by
+  have hsub : range L.map ⊆ range (hinv.leaf hm hmr hD x).map :=
+    hinv.range_subset_leaf hm hmr hD (WithTop.coe_le_coe.mpr hm) L
+      ⟨x, hx, hinv.mem_range_leaf_self hm hmr hD x⟩
+  exact Subset.antisymm hsub
+    (hmax (hinv.leaf hm hmr hD x) inferInstance (hinv.map_leaf_injective hm hmr hD x) hsub)
 
 /-- On a finite-dimensional real `C^r` manifold with boundaryless model, any preconnected
 injectively parametrized `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`, `m + 1 ≤ r`) of an involutive
-`C^m` distribution `D` of rank `k` through `x` that contains the image of every connected `C^m`
-integral manifold meeting it is `C^m` diffeomorphic over `M` to the canonical leaf through `x`. -/
+`C^m` distribution `D` of rank `k` through `x` whose ambient image is inclusion-maximal among
+connected injectively parametrized `C^m` integral manifolds is `C^m` diffeomorphic over `M` to the
+canonical leaf through `x`. -/
 theorem IsInvolutiveDistribution.exists_diffeomorph_leaf_of_maximal
     (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
     (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I m k D) {x : M}
     (L : IntegralManifold (I := I) m D k) [PreconnectedSpace L.carrier]
     (hinj : Injective L.map) (hx : x ∈ range L.map)
     (hmax : ∀ N' : IntegralManifold.{u, u} (I := I) m D k, ConnectedSpace N'.carrier →
-      (range N'.map ∩ range L.map).Nonempty → range N'.map ⊆ range L.map) :
+      Injective N'.map → range L.map ⊆ range N'.map → range N'.map ⊆ range L.map) :
     ∃ e : Diffeomorph (𝓡 k) (𝓡 k) L.carrier (hinv.leaf hm hmr hD x).carrier m,
       ∀ z, (hinv.leaf hm hmr hD x).map (e z) = L.map z :=
   L.isIntegralManifold.exists_diffeomorph_of_range_eq
@@ -490,23 +456,10 @@ theorem IsInvolutiveDistribution.existsUnique_contMDiff_factor_leaf_of_isHorizon
     (hr : range g ⊆ range (hinv.leaf hm hmr hD x).map) :
     ∃! h : P → (hinv.leaf hm hmr hD x).carrier,
       ContMDiff K (𝓡 k) n h ∧ (hinv.leaf hm hmr hD x).map ∘ h = g := by
-  let : TopologicalSpace M := tM
-  let _ : IsManifold (𝓡 k) n (hinv.leaf hm hmr hD x).carrier := .of_le hnm
-  let _ : IsManifold I n M := .of_le (hnm.trans (le_self_add.trans hmr))
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  have hmem (p : P) : WithTopology.toTopology (leafTop (I := I) m k D) (g p) ∈
-      connectedComponent (WithTopology.toTopology (leafTop (I := I) m k D) x) :=
-    (mem_range_leaf_iff_mem_connectedComponent hm hmr hinv hD).mp (hr (mem_range_self p))
-  let h : P → (hinv.leaf hm hmr hD x).carrier :=
-    fun p ↦ ⟨WithTopology.toTopology (leafTop (I := I) m k D) (g p), hmem p⟩
-  have hc : Continuous h :=
-    (continuous_toTopology_comp_of_isHorizontalMap hm hmr hinv hD hg_hor
-      (hg.mdifferentiable hn0)).subtype_mk hmem
-  have hcomp : (hinv.leaf hm hmr hD x).map ∘ h = g :=
-    funext fun p ↦ WithTopology.ofTopology_toTopology (leafTop (I := I) m k D) (g p)
-  refine ⟨h, ⟨(ContMDiff.iff_comp_isImmersion
-      ((hinv.leaf hm hmr hD x).isImmersion.of_le hnm)).mpr ⟨hc, hcomp.symm ▸ hg⟩, hcomp⟩,
-    fun h' ⟨_, hcomp'⟩ ↦ funext fun p ↦ ?_⟩
+  obtain ⟨h, hh, hcomp⟩ :=
+    (hinv.leaf hm hmr hD x).isIntegralManifold.exists_contMDiff_factor_of_isHorizontalMap
+      hm (hinv.map_leaf_injective hm hmr hD x) hmr hinv hD hn hnm hg_hor hg hr
+  refine ⟨h, ⟨hh, hcomp⟩, fun h' ⟨_, hcomp'⟩ ↦ funext fun p ↦ ?_⟩
   exact hinv.map_leaf_injective hm hmr hD x (congrFun (hcomp'.trans hcomp.symm) p)
 
 /-- Over a second-countable finite-dimensional real `C^r` manifold with boundaryless model (`1 ≤ m`,
