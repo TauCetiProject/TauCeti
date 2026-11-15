@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -18,6 +21,13 @@ has strict derivative `-f t` at each `t > a` where `f` is continuous. If `f` is 
 the whole ray, the derivative identity also gives a formula for every higher iterated
 derivative. These results apply to Banach-space-valued integrands and support differential
 closure arguments for improper integrals.
+
+For a real function `g` integrable on `(x, ∞)`, with tail integral
+`Ψ v = ∫ u in Ioi v, g u`, the product `g * Ψ ^ k` is integrable on `(x, ∞)`
+(`MeasureTheory.IntegrableOn.mul_pow_integral_Ioi`) with integral
+`Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
+The tail integral of a function nonnegative on `(a, ∞)` is antitone there
+(`MeasureTheory.antitoneOn_integral_Ioi`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
@@ -36,7 +46,8 @@ example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ �
 ## References
 
 * Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'`,
-  `intervalIntegral.integral_hasStrictDerivAt_right` and
+  `intervalIntegral.integral_hasStrictDerivAt_right`,
+  `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub` and
   `HasCompactSupport.integral_Ioi_deriv_eq`.
 -/
 
@@ -88,7 +99,88 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
     exact hint.deriv_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hu)) hu
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
 
+section Real
+
+variable {g : ℝ → ℝ} {x : ℝ}
+
+/-- If `g` is integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, then
+`v ↦ g v * Ψ v ^ k` is integrable on `(x, ∞)`. -/
+theorem mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
+    IntegrableOn (fun v ↦ g v * (∫ u in Ioi v, g u) ^ k) (Ioi x) := by
+  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
+    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
+  refine Integrable.mono' (hint.norm.mul_const ((∫ u in Ioi x, ‖g u‖) ^ k))
+    (hint.aestronglyMeasurable.mul ((hΨ.pow k).aestronglyMeasurable measurableSet_Ioi)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
+  rw [norm_mul, norm_pow]
+  gcongr
+  exact (norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
+    (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv.le).eventuallySubset)
+
+/-- For `g` integrable on `(x, ∞)`, with tail integral `Ψ v = ∫ u in Ioi v, g u`, the integral
+of `g * Ψ ^ k` over `(x, ∞)` is `Ψ x ^ (k + 1) / (k + 1)`. This identity is behind the factorial
+decay of the Picard increments of Volterra integral equations on a half-line. -/
+theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : ℕ) :
+    ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k = (∫ u in Ioi x, g u) ^ (k + 1) / (k + 1) := by
+  set Ψ : ℝ → ℝ := fun v ↦ ∫ u in Ioi v, g u
+  -- on `[x, y]`, `Ψ` is `Ψ x` minus a primitive of `g`
+  have hΨeq {y : ℝ} (hy : x ≤ y) : Ψ y = Ψ x - ∫ u in x..y, g u := by
+    simp only [Ψ, ← intervalIntegral.integral_interval_add_Ioi hint
+      (hint.mono_set (Ioi_subset_Ioi hy)), add_sub_cancel_left]
+  have hfin {y : ℝ} (hy : x ≤ y) :
+      ∫ v in x..y, g v * Ψ v ^ k = (Ψ x ^ (k + 1) - Ψ y ^ (k + 1)) / (k + 1) := by
+    have hgi : IntervalIntegrable g volume x y :=
+      (intervalIntegrable_iff_integrableOn_Ioc_of_le hy).2 (hint.mono_set Ioc_subset_Ioi_self)
+    have hΨac : AbsolutelyContinuousOnInterval Ψ x y :=
+      ((LipschitzWith.const (Ψ x)).lipschitzOnWith.absolutelyContinuousOnInterval.sub
+        (hgi.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)).congr
+        fun v hv ↦ (hΨeq (uIcc_of_le hy ▸ hv).1).symm
+    have hpow (n : ℕ) : AbsolutelyContinuousOnInterval (fun v ↦ Ψ v ^ n) x y := by
+      induction n with
+      | zero =>
+        simpa using (LipschitzWith.const (1 : ℝ)).lipschitzOnWith.absolutelyContinuousOnInterval
+      | succ n ih => simpa only [pow_succ] using ih.fun_mul hΨac
+    have hderiv : ∀ᵐ v, v ∈ uIoc x y →
+        deriv (fun v ↦ Ψ v ^ (k + 1)) v = -((k + 1) * (g v * Ψ v ^ k)) := by
+      filter_upwards [hgi.ae_hasDerivAt_integral, Measure.ae_ne volume y] with v hv hvy hvI
+      rw [uIoc_of_le hy] at hvI
+      have hvI' : v ∈ Ioo x y := ⟨hvI.1, hvI.2.lt_of_ne hvy⟩
+      have hΨv : HasDerivAt Ψ (-g v) v := by
+        rw [← zero_sub]
+        refine ((hasDerivAt_const v (Ψ x)).sub (hv (Ioc_subset_Icc_self.trans
+          (uIcc_of_le hy).symm.subset hvI) x left_mem_uIcc)).congr_of_eventuallyEq ?_
+        filter_upwards [Ioo_mem_nhds hvI'.1 hvI'.2] with w hw
+        exact hΨeq hw.1.le
+      rw [(hΨv.fun_pow (k + 1)).deriv]
+      push_cast
+      ring
+    have := hpow (k + 1) |>.integral_deriv_eq_sub
+    rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_neg,
+      intervalIntegral.integral_const_mul] at this
+    field_simp
+    linarith
+  refine tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi x
+    (hint.mul_pow_integral_Ioi k) tendsto_id) ?_
+  have htend : Tendsto Ψ atTop (𝓝 0) := tendsto_integral_Ioi_zero tendsto_id
+  have hlim := ((htend.pow (k + 1)).const_sub (Ψ x ^ (k + 1))).div_const ((k : ℝ) + 1)
+  rw [zero_pow k.succ_ne_zero, sub_zero] at hlim
+  exact hlim.congr' ((eventually_ge_atTop x).mono fun y hy ↦ (hfin hy).symm)
+
+end Real
+
 end MeasureTheory.IntegrableOn
+
+namespace MeasureTheory
+
+/-- If `f` is nonnegative on `(a, ∞)` and integrable on `(x, ∞)` for every `x > a`, then its tail
+integral `x ↦ ∫ v in Ioi x, f v` is antitone on `(a, ∞)`. -/
+theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi a, 0 ≤ f v)
+    (hint : ∀ x ∈ Ioi a, IntegrableOn f (Ioi x)) :
+    AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a) := fun x (hx : a < x) _ _ hxy ↦
+  setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
+    (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
+
+end MeasureTheory
 
 section Ray
 
