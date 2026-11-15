@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 public import TauCeti.CategoryTheory.Localization.Monoidal.Functor
 public import TauCeti.RingTheory.Almost.Algebra
 public import TauCeti.RingTheory.Localization.Module
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Inverting an element of `m` on almost modules and almost algebras
@@ -241,6 +242,8 @@ noncomputable def toAlmostCompInvertIso {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
   Module.fac S (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ))
     (isZero_localizedModuleFunctor_obj_of_isAlmostZero S hϖ)
 
+/-- `invert S hϖ` lifts `ModuleCat.localizedModuleFunctor (Submonoid.powers ϖ)` along
+`Module.toAlmost S`. -/
 noncomputable instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     Localization.Lifting (Module.toAlmost S) S.almostZero.isoModSerre
       (ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)) (invert S hϖ) :=
@@ -254,19 +257,24 @@ noncomputable def toAlmostCompInvertExtendScalarsIso {ϖ : V} (hϖ : ϖ ∈ S.id
   toAlmostCompInvertIso S hϖ ≪≫
     ModuleCat.localizedModuleFunctorIsoExtendScalars (Submonoid.powers ϖ)
 
+/-- `invert S hϖ` lifts `ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))` along
+`Module.toAlmost S`. -/
 noncomputable instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) :
     Localization.Lifting (Module.toAlmost S) S.almostZero.isoModSerre
       (ModuleCat.extendScalars (algebraMap V (Localization.Away ϖ))) (invert S hϖ) :=
   ⟨toAlmostCompInvertExtendScalarsIso S hϖ⟩
 
+/-- `invert S hϖ` preserves finite limits. -/
 instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : PreservesFiniteLimits (invert S hϖ) := by
   dsimp only [invert]
   infer_instance
 
+/-- `invert S hϖ` preserves finite colimits. -/
 instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : PreservesFiniteColimits (invert S hϖ) := by
   dsimp only [invert]
   infer_instance
 
+/-- `invert S hϖ` is an additive functor. -/
 instance {ϖ : V} (hϖ : ϖ ∈ S.ideal) : (invert S hϖ).Additive :=
   Functor.additive_of_preserves_binary_products _
 
@@ -497,30 +505,38 @@ theorem invert_obj (ϖ : V) (A : Algebra S) :
       (CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A) :=
   (rfl)
 
+/-- `V`-algebra structure on `(Algebra.invert S ϖ).obj A`. -/
 noncomputable instance (ϖ : V) (A : Algebra S) :
     _root_.Algebra V ((invert S ϖ).obj A) :=
   inferInstanceAs
     (_root_.Algebra V
       ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- `(Algebra.elements S).obj A`-algebra structure on `(Algebra.invert S ϖ).obj A`. -/
 noncomputable instance (ϖ : V) (A : Algebra S) :
     _root_.Algebra ((Algebra.elements S).obj A) ((invert S ϖ).obj A) :=
   inferInstanceAs
     (_root_.Algebra ((Algebra.elements S).obj A)
       ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- Compatibility of the `V`- and `(Algebra.elements S).obj A`-algebra structures on
+`(Algebra.invert S ϖ).obj A`. -/
 instance (ϖ : V) (A : Algebra S) :
     IsScalarTower V ((Algebra.elements S).obj A) ((invert S ϖ).obj A) :=
   inferInstanceAs
     (IsScalarTower V ((Algebra.elements S).obj A)
       ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- Compatibility of the `V`- and `Localization.Away ϖ`-algebra structures on
+`(Algebra.invert S ϖ).obj A`. -/
 instance (ϖ : V) (A : Algebra S) :
     IsScalarTower V (Localization.Away ϖ) ((invert S ϖ).obj A) :=
   inferInstanceAs
     (IsScalarTower V (Localization.Away ϖ)
       ((CommAlgCat.localizationFunctor (Submonoid.powers ϖ)).obj ((Algebra.elements S).obj A)))
 
+/-- `(Algebra.invert S ϖ).obj A` is a localization of `(Algebra.elements S).obj A` at the image of
+`Submonoid.powers ϖ`. -/
 instance (ϖ : V) (A : Algebra S) :
     IsLocalization
       (_root_.Algebra.algebraMapSubmonoid ((Algebra.elements S).obj A) (Submonoid.powers ϖ))
@@ -672,12 +688,6 @@ end Algebra
 
 section Complexes
 
-private theorem mapHomologicalComplex_obj_exactAt_iff {C D ι : Type*} [Category* C] [Category* D]
-    [Preadditive C] [Preadditive D] {c : ComplexShape ι} (F : C ⥤ D) [F.Additive]
-    (K : HomologicalComplex C c) (i : ι) :
-    ((F.mapHomologicalComplex c).obj K).ExactAt i ↔ ((K.sc i).map F).Exact :=
-  Iff.rfl
-
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
 namespace Module
@@ -697,7 +707,7 @@ theorem exactAt_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShap
     (K : HomologicalComplex (ModuleCat.{u} V) c) (i : ι) :
     (((toAlmost S).mapHomologicalComplex c).obj K).ExactAt i ↔
       S.IsAlmostZero (K.homology i) := by
-  rw [mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
   rfl
 
 end Module
@@ -727,7 +737,7 @@ theorem exactAt_localizedModuleFunctor_of_isAlmostZero_homology {ι : Type*} {c 
     (hK : S.IsAlmostZero (K.homology i)) :
     (((ModuleCat.localizedModuleFunctor.{u} (Submonoid.powers ϖ)).mapHomologicalComplex c).obj
       K).ExactAt i := by
-  rw [mapHomologicalComplex_obj_exactAt_iff]
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff]
   exact exact_localizedModuleFunctor_of_isAlmostZero_homology S hϖ hK
 
 /-- A homological complex of `V`-modules whose `i`-th homology is almost zero becomes exact at `i`
@@ -737,7 +747,7 @@ theorem exactAt_extendScalars_away_of_isAlmostZero_homology {ι : Type*} {c : Co
     (hK : S.IsAlmostZero (K.homology i)) :
     (((ModuleCat.extendScalars
       (algebraMap V (Localization.Away ϖ))).mapHomologicalComplex c).obj K).ExactAt i := by
-  rw [mapHomologicalComplex_obj_exactAt_iff]
+  rw [Functor.mapHomologicalComplex_obj_exactAt_iff]
   exact exact_extendScalars_away_of_isAlmostZero_homology S hϖ hK
 
 end Complexes

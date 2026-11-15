@@ -35,7 +35,7 @@ public section
 
 open CategoryTheory Limits
 
-universe u
+universe u v
 
 namespace Submonoid
 
@@ -134,11 +134,11 @@ variable {R : Type u} [CommRing R]
 
 /-- The bundled `Localization M`-algebra `Localization (Algebra.algebraMapSubmonoid A M)`
 associated with a commutative `R`-algebra `A`. -/
-noncomputable abbrev localizationObj (M : Submonoid R) (A : CommAlgCat.{u} R) :
-    CommAlgCat.{u} (Localization M) :=
+noncomputable abbrev localizationObj (M : Submonoid R) (A : CommAlgCat.{v} R) :
+    CommAlgCat.{v} (Localization M) :=
   CommAlgCat.of (Localization M) (Localization (Algebra.algebraMapSubmonoid A M))
 
-private theorem algebraMapSubmonoid_le_comap (M : Submonoid R) {A B : CommAlgCat.{u} R}
+private theorem algebraMapSubmonoid_le_comap (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) :
     Algebra.algebraMapSubmonoid A M ≤
       (Algebra.algebraMapSubmonoid B M).comap f.hom.toRingHom := by
@@ -147,8 +147,8 @@ private theorem algebraMapSubmonoid_le_comap (M : Submonoid R) {A B : CommAlgCat
 
 /-- Two morphisms out of `localizationObj M A` in `CommAlgCat (Localization M)` agree once they
 agree on canonical numerators from `A`. -/
-theorem localizationObj_hom_ext {M : Submonoid R} {A : CommAlgCat.{u} R}
-    {B : CommAlgCat.{u} (Localization M)} {f g : localizationObj M A ⟶ B}
+theorem localizationObj_hom_ext {M : Submonoid R} {A : CommAlgCat.{v} R}
+    {B : CommAlgCat.{v} (Localization M)} {f g : localizationObj M A ⟶ B}
     (h : ∀ a : A, f.hom (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a) =
       g.hom (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a)) :
     f = g := by
@@ -157,7 +157,7 @@ theorem localizationObj_hom_ext {M : Submonoid R} {A : CommAlgCat.{u} R}
   exact IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) (RingHom.ext h)
 
 /-- The `Localization M`-algebra homomorphism induced by `f : A ⟶ B` in `CommAlgCat R`. -/
-noncomputable def localizationMap (M : Submonoid R) {A B : CommAlgCat.{u} R} (f : A ⟶ B) :
+noncomputable def localizationMap (M : Submonoid R) {A B : CommAlgCat.{v} R} (f : A ⟶ B) :
     localizationObj M A ⟶ localizationObj M B :=
   CommAlgCat.ofHom
     { toRingHom := IsLocalization.map (S := Localization (Algebra.algebraMapSubmonoid A M))
@@ -185,13 +185,13 @@ noncomputable def localizationMap (M : Submonoid R) {A B : CommAlgCat.{u} R} (f 
 
 /-- `localizationMap M f` acts via `f` on canonical numerators `algebraMap A _ a`. -/
 @[simp]
-theorem localizationMap_hom_algebraMap (M : Submonoid R) {A B : CommAlgCat.{u} R}
+theorem localizationMap_hom_algebraMap (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) (a : A) :
     (localizationMap M f).hom (algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a) =
       algebraMap B (Localization (Algebra.algebraMapSubmonoid B M)) (f.hom a) :=
   IsLocalization.map_eq (algebraMapSubmonoid_le_comap M f) a
 
-private theorem localizationMap_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{u} R}
+private theorem localizationMap_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) (a : A) (m : M) :
     (localizationMap M f).hom
         (IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a
@@ -208,7 +208,7 @@ private theorem localizationMap_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{u} 
 /-- The functor `CommAlgCat R ⥤ CommAlgCat (Localization M)` sending a commutative `R`-algebra `A`
 to `Localization (Algebra.algebraMapSubmonoid A M)`. -/
 noncomputable def localizationFunctor (M : Submonoid R) :
-    CommAlgCat.{u} R ⥤ CommAlgCat.{u} (Localization M) where
+    CommAlgCat.{v} R ⥤ CommAlgCat.{v} (Localization M) where
   obj := localizationObj M
   map := localizationMap M
   map_id A := localizationObj_hom_ext fun a ↦ by
@@ -224,28 +224,35 @@ noncomputable def localizationFunctor (M : Submonoid R) :
 
 /-- Object value of `localizationFunctor M` on `A`. -/
 @[simp]
-theorem localizationFunctor_obj (M : Submonoid R) (A : CommAlgCat.{u} R) :
+theorem localizationFunctor_obj (M : Submonoid R) (A : CommAlgCat.{v} R) :
     (localizationFunctor M).obj A = localizationObj M A :=
   (rfl)
 
-noncomputable instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
+/-- `R`-algebra structure on `(localizationFunctor M).obj A`. -/
+noncomputable instance (M : Submonoid R) (A : CommAlgCat.{v} R) :
     Algebra R ((localizationFunctor M).obj A) :=
   inferInstanceAs (Algebra R (Localization (Algebra.algebraMapSubmonoid A M)))
 
-noncomputable instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
+/-- `A`-algebra structure on `(localizationFunctor M).obj A`. -/
+noncomputable instance (M : Submonoid R) (A : CommAlgCat.{v} R) :
     Algebra A ((localizationFunctor M).obj A) :=
   inferInstanceAs (Algebra A (Localization (Algebra.algebraMapSubmonoid A M)))
 
-instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
+/-- Compatibility of the `R`- and `A`-algebra structures on `(localizationFunctor M).obj A`. -/
+instance (M : Submonoid R) (A : CommAlgCat.{v} R) :
     IsScalarTower R A ((localizationFunctor M).obj A) :=
   inferInstanceAs (IsScalarTower R A (Localization (Algebra.algebraMapSubmonoid A M)))
 
-instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
+/-- Compatibility of the `R`- and `Localization M`-algebra structures on
+`(localizationFunctor M).obj A`. -/
+instance (M : Submonoid R) (A : CommAlgCat.{v} R) :
     IsScalarTower R (Localization M) ((localizationFunctor M).obj A) :=
   inferInstanceAs
     (IsScalarTower R (Localization M) (Localization (Algebra.algebraMapSubmonoid A M)))
 
-instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
+/-- `(localizationFunctor M).obj A` is a localization of `A` at
+`Algebra.algebraMapSubmonoid A M`. -/
+instance (M : Submonoid R) (A : CommAlgCat.{v} R) :
     IsLocalization (Algebra.algebraMapSubmonoid A M) ((localizationFunctor M).obj A) :=
   inferInstanceAs
     (IsLocalization (Algebra.algebraMapSubmonoid A M)
@@ -253,7 +260,7 @@ instance (M : Submonoid R) (A : CommAlgCat.{u} R) :
 
 /-- On canonical numerators `algebraMap A _ a`, `(localizationFunctor M).map f` acts through `f`. -/
 @[simp]
-theorem localizationFunctor_map_hom_algebraMap (M : Submonoid R) {A B : CommAlgCat.{u} R}
+theorem localizationFunctor_map_hom_algebraMap (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) (a : A) :
     ((localizationFunctor M).map f).hom
         (algebraMap A ((localizationFunctor M).obj A) a) =
@@ -262,7 +269,7 @@ theorem localizationFunctor_map_hom_algebraMap (M : Submonoid R) {A B : CommAlgC
 
 /-- On fractions `a / m`, `(localizationFunctor M).map f` applies `f` to the numerator. -/
 @[simp]
-theorem localizationFunctor_map_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{u} R}
+theorem localizationFunctor_map_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) (a : A) (m : M) :
     ((localizationFunctor M).map f).hom
         (IsLocalization.mk' ((localizationFunctor M).obj A) a
@@ -273,7 +280,7 @@ theorem localizationFunctor_map_hom_mk' (M : Submonoid R) {A B : CommAlgCat.{u} 
 
 /-- Viewed as an `R`-linear map, `(localizationFunctor M).map f` agrees with the localized module
 map of `f.hom.toLinearMap` at `M`. -/
-theorem localizationFunctor_map_toLinearMap (M : Submonoid R) {A B : CommAlgCat.{u} R}
+theorem localizationFunctor_map_toLinearMap (M : Submonoid R) {A B : CommAlgCat.{v} R}
     (f : A ⟶ B) :
     ((localizationFunctor M).map f).hom.toLinearMap.restrictScalars R =
       IsLocalizedModule.map M
@@ -295,14 +302,14 @@ theorem localizationFunctor_map_toLinearMap (M : Submonoid R) {A B : CommAlgCat.
 /-- If some `m ∈ M` annihilates `1 : A` (equivalently `A`), then `(localizationFunctor M).obj A` is
 the zero algebra. -/
 theorem subsingleton_localizationFunctor_obj_of_smul_one_eq_zero {M : Submonoid R}
-    {A : CommAlgCat.{u} R} {m : R} (hm : m ∈ M) (h : m • (1 : A) = 0) :
+    {A : CommAlgCat.{v} R} {m : R} (hm : m ∈ M) (h : m • (1 : A) = 0) :
     Subsingleton ((localizationFunctor M).obj A) :=
   IsLocalization.subsingleton (M := Algebra.algebraMapSubmonoid A M)
     (S := (localizationFunctor M).obj A)
     ⟨m, hm, by simpa [Algebra.smul_def] using h⟩
 
 /-- When every element of `M` maps to a unit in `A`, `A ≃ₐ[R] (localizationFunctor M).obj A`. -/
-noncomputable def localizationFunctorObjAlgEquivOfIsUnit {M : Submonoid R} (A : CommAlgCat.{u} R)
+noncomputable def localizationFunctorObjAlgEquivOfIsUnit {M : Submonoid R} (A : CommAlgCat.{v} R)
     (hM : ∀ m ∈ M, IsUnit (algebraMap R A m)) :
     A ≃ₐ[R] (localizationFunctor M).obj A :=
   (IsLocalization.atUnits A (Algebra.algebraMapSubmonoid A M)
@@ -311,7 +318,7 @@ noncomputable def localizationFunctorObjAlgEquivOfIsUnit {M : Submonoid R} (A : 
 
 /-- `localizationFunctorObjAlgEquivOfIsUnit` acts as `algebraMap A _`. -/
 @[simp]
-theorem localizationFunctorObjAlgEquivOfIsUnit_apply {M : Submonoid R} (A : CommAlgCat.{u} R)
+theorem localizationFunctorObjAlgEquivOfIsUnit_apply {M : Submonoid R} (A : CommAlgCat.{v} R)
     (hM : ∀ m ∈ M, IsUnit (algebraMap R A m)) (a : A) :
     localizationFunctorObjAlgEquivOfIsUnit A hM a =
       algebraMap A ((localizationFunctor M).obj A) a :=

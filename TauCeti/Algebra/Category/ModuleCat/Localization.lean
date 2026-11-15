@@ -13,9 +13,10 @@ public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 
 For a commutative ring `R` and a submonoid `T` of `R`, Mathlib's
 `ModuleCat.localizedModuleFunctor T` sends an `R`-module `M` to the shrunk localized module
-`Shrink (LocalizedModule T M)`. When `M` lives in the same universe as `R`, unshrinking identifies
-`M.localizedModule T` with `LocalizedModule T M` (`ModuleCat.localizedModuleIso`), and composing
-with `ModuleCat.extendScalarsLocalizationIso` gives a natural isomorphism
+`Shrink (LocalizedModule T M)`. When `M` lives in a universe `max u v` at least that of `R`,
+unshrinking identifies `M.localizedModule T` with `LocalizedModule T M`
+(`ModuleCat.localizedModuleIso`), and composing with `ModuleCat.extendScalarsLocalizationIso` gives
+a natural isomorphism
 `ModuleCat.localizedModuleFunctor T ≅ ModuleCat.extendScalars (algebraMap R (Localization T))`
 (`ModuleCat.localizedModuleFunctorIsoExtendScalars`). In particular, extension of scalars to a
 localization preserves finite limits.
@@ -23,7 +24,7 @@ localization preserves finite limits.
 
 public section
 
-universe u
+universe u v
 
 namespace ModuleCat
 
@@ -32,15 +33,15 @@ open scoped TensorProduct ChangeOfRings
 
 variable {R : Type u} [CommRing R]
 
-/-- When `M` lives in the universe of `R`, unshrinking identifies `M.localizedModule T` with
+/-- For `M : ModuleCat.{max u v} R`, unshrinking identifies `M.localizedModule T` with
 `LocalizedModule T M` as `Localization T`-modules. -/
-noncomputable def localizedModuleIso (M : ModuleCat.{u} R) (T : Submonoid R) :
+noncomputable def localizedModuleIso (M : ModuleCat.{max u v} R) (T : Submonoid R) :
     M.localizedModule T ≅ of (Localization T) (LocalizedModule T M) :=
-  (Shrink.linearEquiv.{u} (Localization T) (LocalizedModule T M)).toModuleIso
+  (Shrink.linearEquiv.{max u v} (Localization T) (LocalizedModule T M)).toModuleIso
 
 /-- `localizedModuleIso` sends `M.localizedModuleMkLinearMap T m` to `LocalizedModule.mk m 1`. -/
 @[simp]
-theorem localizedModuleIso_hom_mkLinearMap (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) :
+theorem localizedModuleIso_hom_mkLinearMap (M : ModuleCat.{max u v} R) (T : Submonoid R) (m : M) :
     (M.localizedModuleIso T).hom (M.localizedModuleMkLinearMap T m) = LocalizedModule.mk m 1 :=
   -- `localizedModuleIso` unshrinks via `(equivShrink _).symm`, while `localizedModuleMkLinearMap`
   -- shrinks `LocalizedModule.mk m 1` via `equivShrink _`.
@@ -49,7 +50,7 @@ theorem localizedModuleIso_hom_mkLinearMap (M : ModuleCat.{u} R) (T : Submonoid 
 /-- The inverse of `localizedModuleIso` sends `m / t` to
 `(1 / t) • localizedModuleMkLinearMap m`. -/
 @[simp]
-theorem localizedModuleIso_inv_mk (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) (t : T) :
+theorem localizedModuleIso_inv_mk (M : ModuleCat.{max u v} R) (T : Submonoid R) (m : M) (t : T) :
     (M.localizedModuleIso T).inv (LocalizedModule.mk m t) =
       Localization.mk 1 t • M.localizedModuleMkLinearMap T m := by
   apply (ConcreteCategory.bijective_of_isIso (M.localizedModuleIso T).hom).1
@@ -61,7 +62,7 @@ theorem localizedModuleIso_inv_mk (M : ModuleCat.{u} R) (T : Submonoid R) (m : M
 
 /-- Naturality of `M.localizedModuleIso T ≪≫ (M.extendScalarsLocalizationIso T).symm`. -/
 private theorem localizedModuleMap_comp_extendScalarsLocalizationIso
-    (T : Submonoid R) {M N : ModuleCat.{u} R} (f : M ⟶ N) :
+    (T : Submonoid R) {M N : ModuleCat.{max u v} R} (f : M ⟶ N) :
     localizedModuleMap T f ≫
         (N.localizedModuleIso T).hom ≫ (N.extendScalarsLocalizationIso T).inv =
       ((M.localizedModuleIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv) ≫
@@ -103,30 +104,33 @@ private theorem localizedModuleMap_comp_extendScalarsLocalizationIso
 /-- Module localization at `T` is naturally isomorphic to extension of scalars along
 `R → Localization T`. -/
 noncomputable def localizedModuleFunctorIsoExtendScalars (T : Submonoid R) :
-    localizedModuleFunctor.{u} T ≅ extendScalars (algebraMap R (Localization T)) :=
+    localizedModuleFunctor.{max u v} T ≅
+      extendScalars.{u, u, max u v} (algebraMap R (Localization T)) :=
   NatIso.ofComponents
     (fun M ↦
-      (M.localizedModuleIso T : (localizedModuleFunctor.{u} T).obj M ≅ _) ≪≫
+      (M.localizedModuleIso T : (localizedModuleFunctor.{max u v} T).obj M ≅ _) ≪≫
         (M.extendScalarsLocalizationIso T).symm)
     (fun f ↦ localizedModuleMap_comp_extendScalarsLocalizationIso T f)
 
 /-- Forward component of `localizedModuleFunctorIsoExtendScalars`. -/
 @[simp]
-theorem localizedModuleFunctorIsoExtendScalars_hom_app (T : Submonoid R) (M : ModuleCat.{u} R) :
+theorem localizedModuleFunctorIsoExtendScalars_hom_app (T : Submonoid R)
+    (M : ModuleCat.{max u v} R) :
     (localizedModuleFunctorIsoExtendScalars T).hom.app M =
       (M.localizedModuleIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv :=
   (rfl)
 
 /-- Inverse component of `localizedModuleFunctorIsoExtendScalars`. -/
 @[simp]
-theorem localizedModuleFunctorIsoExtendScalars_inv_app (T : Submonoid R) (M : ModuleCat.{u} R) :
+theorem localizedModuleFunctorIsoExtendScalars_inv_app (T : Submonoid R)
+    (M : ModuleCat.{max u v} R) :
     (localizedModuleFunctorIsoExtendScalars T).inv.app M =
       (M.extendScalarsLocalizationIso T).hom ≫ (M.localizedModuleIso T).inv :=
   (rfl)
 
 /-- Extension of scalars to a localization preserves finite limits, since localization is flat. -/
 instance preservesFiniteLimits_extendScalars_localization (T : Submonoid R) :
-    PreservesFiniteLimits (extendScalars.{u, u, u} (algebraMap R (Localization T))) :=
-  preservesFiniteLimits_of_natIso (localizedModuleFunctorIsoExtendScalars T)
+    PreservesFiniteLimits (extendScalars.{u, u, max u v} (algebraMap R (Localization T))) :=
+  preservesFiniteLimits_of_natIso (localizedModuleFunctorIsoExtendScalars.{u, v} T)
 
 end ModuleCat

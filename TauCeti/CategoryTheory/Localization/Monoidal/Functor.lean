@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Localization.Monoidal.Functor
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
+import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 
 /-!
 # Braided universal property of localized monoidal categories
@@ -43,19 +44,18 @@ theorem curriedTensorPreIsoPost_braiding (M N : D) :
   let Y := L.objPreimage N
   let eM : M ≅ L.obj X := (L.objObjPreimageIso M).symm
   let eN : N ≅ L.obj Y := (L.objObjPreimageIso N).symm
-  have hδ : δ L X Y ≫ (β_ (L.obj X) (L.obj Y)).hom = L.map (β_ X Y).hom ≫ δ L Y X := by
-    rw [← cancel_epi (μ L X Y), Functor.Monoidal.μ_δ_assoc,
-      Functor.LaxBraided.braided_assoc, Functor.Monoidal.μ_δ, Category.comp_id]
   rw [curriedTensorPreIsoPost_hom_app_app' L W F G eM eN,
     curriedTensorPreIsoPost_hom_app_app' L W F G eN eM]
   simp only [Category.assoc, ← Functor.map_comp]
-  rw [BraidedCategory.braiding_naturality, reassoc_of% hδ, Functor.map_comp,
+  rw [BraidedCategory.braiding_naturality, Functor.δ_braiding_assoc L X Y, Functor.map_comp,
     ← reassoc_of% (Lifting.iso L W G F).inv.naturality (β_ X Y).hom,
     reassoc_of% (Functor.LaxBraided.braided (F := G) X Y),
     reassoc_of% (BraidedCategory.braiding_naturality
       (F.map eM.hom ≫ (Lifting.iso L W G F).hom.app X)
       (F.map eN.hom ≫ (Lifting.iso L W G F).hom.app Y))]
 
+-- `@[expose]` is required so `(functorBraidedOfComp L W F G).toLaxBraided.toLaxMonoidal` unfolds to
+-- `(functorMonoidalOfComp L W F G).toLaxMonoidal` during downstream typeclass synthesis.
 /-- Braided monoidal structure on `F`, given that `F` lifts a braided monoidal functor `G` along a
 braided monoidal localization functor `L`. Its underlying monoidal structure is
 `functorMonoidalOfComp L W F G`. -/
