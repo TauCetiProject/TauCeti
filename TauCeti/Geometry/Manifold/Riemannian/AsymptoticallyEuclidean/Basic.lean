@@ -11,7 +11,6 @@ public import Mathlib.Topology.Maps.Proper.Basic
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -25,12 +24,12 @@ import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 An *asymptotically Euclidean (AE) end* of order `t` on a Riemannian `n`-manifold `M` is a smooth
 injective parametrization of an open subset of `M` by the coordinate exterior
 `{x ∈ ℝⁿ : R < ‖x‖}` of a closed ball (`0 < R`), with bijective differential on that exterior, in
-which the pullback metric coefficients `g_ij(x) = ⟨dφ_x e_i, dφ_x e_j⟩` decay to `δ_ij` at rate
-`‖x‖ ^ (-t)` together with their first two Euclidean derivatives at rates `‖x‖ ^ (-t - 1)` and
-`‖x‖ ^ (-t - 2)`. Following Lee–Parker and decoupling the analytic hypotheses of Cecchini–Zeidler,
-integrability of the scalar curvature on the end is kept separate from `AsymptoticallyEuclideanEnd`
-so that coordinate flux computations and geometric constructions apply without curvature
-integrability assumptions.
+which the pullback metric coefficients `g_ij(x) = ⟨dφ_x e_i, dφ_x e_j⟩` are `C²` on the exterior
+and decay to `δ_ij` at rate `‖x‖ ^ (-t)` together with their first two Euclidean derivatives at
+rates `‖x‖ ^ (-t - 1)` and `‖x‖ ^ (-t - 2)`. Following Lee–Parker and decoupling the analytic
+hypotheses of Cecchini–Zeidler, integrability of the scalar curvature on the end is kept separate
+from `AsymptoticallyEuclideanEnd` so that coordinate flux computations and geometric constructions
+apply without curvature integrability assumptions.
 
 An end stores its parametrization on the open submanifold `exteriorOpen n radius`, making
 `AsymptoticallyEuclideanEnd` extensional (`@[ext]`). Its coordinate metric coefficients
@@ -90,6 +89,12 @@ def exteriorOpen (n : ℕ) (R : ℝ) : Opens (EuclideanSpace ℝ (Fin n)) :=
 @[simp] theorem mem_exteriorOpen {n : ℕ} {R : ℝ} {x : EuclideanSpace ℝ (Fin n)} :
     x ∈ exteriorOpen n R ↔ R < ‖x‖ := Iff.rfl
 
+/-- Increasing the excision radius shrinks `exteriorOpen`: for `R ≤ R'`,
+`exteriorOpen n R' ≤ exteriorOpen n R`. -/
+theorem exteriorOpen_anti {n : ℕ} {R R' : ℝ} (h : R ≤ R') :
+    exteriorOpen n R' ≤ exteriorOpen n R :=
+  fun _ hx => h.trans_lt (mem_exteriorOpen.mp hx)
+
 /-- The exterior `exteriorOpen n R` is the complement of the closed ball of radius `R` at `0`. -/
 theorem coe_exteriorOpen_eq_compl_closedBall (n : ℕ) (R : ℝ) :
     (exteriorOpen n R : Set (EuclideanSpace ℝ (Fin n))) = (closedBall 0 R)ᶜ := by
@@ -103,13 +108,8 @@ theorem exteriorOpen_coe_ne_zero {n : ℕ} {R : ℝ} (hR : 0 ≤ R) (x : exterio
 /-- In positive dimension, `exteriorOpen n R` is nonempty for every `R`. -/
 theorem exteriorOpen_nonempty {n : ℕ} (hn : 1 ≤ n) (R : ℝ) :
     (exteriorOpen n R : Set (EuclideanSpace ℝ (Fin n))).Nonempty := by
-  let r := max R 0 + 1
-  have hr0 : 0 < r := by positivity
-  let e₀ : EuclideanSpace ℝ (Fin n) := EuclideanSpace.single ⟨0, hn⟩ 1
-  have he₀ : ‖e₀‖ = 1 := by simp [e₀]
-  refine ⟨r • e₀, mem_exteriorOpen.mpr ?_⟩
-  rw [norm_smul, Real.norm_of_nonneg hr0.le, he₀, mul_one]
-  exact lt_of_le_of_lt (le_max_left R 0) (lt_add_one _)
+  have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  exact NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
 
 /-- In dimension at least `2`, `exteriorOpen n R` is path-connected. -/
 theorem isPathConnected_exteriorOpen {n : ℕ} (hn : 2 ≤ n) (R : ℝ) :
@@ -127,36 +127,8 @@ theorem isConnected_exteriorOpen {n : ℕ} (hn : 2 ≤ n) (R : ℝ) :
 /-- The coordinate norm map `x ↦ ⟨‖x‖, ...⟩` from `exteriorOpen n R` to `Set.Ioi R` is proper. -/
 theorem isProperMap_exteriorOpen_norm {n : ℕ} {R : ℝ} :
     IsProperMap (fun x : exteriorOpen n R =>
-      (⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩ : Ioi R)) := by
-  rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨by fun_prop, fun K hK => ?_⟩
-  set K' : Set ℝ := Subtype.val '' K
-  have hK' : IsCompact K' := hK.image continuous_subtype_val
-  have hK'_sub : K' ⊆ Ioi R := by rintro _ ⟨r, -, rfl⟩; exact r.2
-  set A : Set (EuclideanSpace ℝ (Fin n)) := norm ⁻¹' K'
-  have hA_bdd : Bornology.IsBounded A := by
-    obtain ⟨B, hB⟩ := hK'.isBounded.subset_closedBall 0
-    rw [isBounded_iff_subset_closedBall 0]
-    exact ⟨B, fun x hx => mem_closedBall_zero_iff.mpr
-      ((le_abs_self ‖x‖).trans (mem_closedBall_zero_iff.mp (hB hx)))⟩
-  have hA_compact : IsCompact A :=
-    Metric.isCompact_iff_isClosed_bounded.mpr ⟨hK'.isClosed.preimage continuous_norm, hA_bdd⟩
-  let liftA : A → exteriorOpen n R := fun x => ⟨x.1, mem_exteriorOpen.mpr (hK'_sub x.2)⟩
-  have hrange : range liftA =
-      (fun x : exteriorOpen n R =>
-        (⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩ : Ioi R)) ⁻¹' K := by
-    ext x
-    simp only [mem_range, mem_preimage, liftA, A, K']
-    constructor
-    · rintro ⟨⟨y, hy⟩, hxy⟩
-      obtain rfl : y = x.1 := congrArg Subtype.val hxy
-      obtain ⟨r, hrK, hrval⟩ := hy
-      exact (Subtype.ext hrval : r = ⟨‖(x : EuclideanSpace ℝ (Fin n))‖, _⟩) ▸ hrK
-    · intro hxK
-      exact ⟨⟨x.1, ⟨⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩, hxK, rfl⟩⟩, rfl⟩
-  rw [← hrange]
-  have : CompactSpace A := isCompact_iff_compactSpace.mp hA_compact
-  exact isCompact_range (by fun_prop)
+      (⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩ : Ioi R)) :=
+  isProperMap_norm_Ioi R
 
 /-! ### Pullback metric coefficients -/
 
@@ -198,15 +170,21 @@ theorem pullbackMetricCoeff_diag_nonneg (φ : EuclideanSpace ℝ (Fin n) → M)
     0 ≤ pullbackMetricCoeff φ x i i := by
   rw [pullbackMetricCoeff_diag]; positivity
 
+private theorem inner_apply_basisFun_self_pos {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {L : EuclideanSpace ℝ (Fin n) →L[ℝ] V} (hinj : Injective L)
+    (i : Fin n) :
+    0 < ⟪L (EuclideanSpace.basisFun (Fin n) ℝ i), L (EuclideanSpace.basisFun (Fin n) ℝ i)⟫ := by
+  rw [real_inner_self_eq_norm_sq]
+  refine sq_pos_of_pos (norm_pos_iff.mpr fun h0 => ?_)
+  exact (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.ne_zero i
+    (hinj (h0.trans (map_zero L).symm))
+
 /-- At a point where `mfderiv` is injective, every diagonal metric coefficient is strictly
 positive. -/
 theorem pullbackMetricCoeff_diag_pos {φ : EuclideanSpace ℝ (Fin n) → M}
     {x : EuclideanSpace ℝ (Fin n)} (hinj : Injective (mfderiv (𝓡 n) (𝓡 n) φ x)) (i : Fin n) :
-    0 < pullbackMetricCoeff φ x i i := by
-  rw [pullbackMetricCoeff_diag]
-  refine sq_pos_of_pos (norm_pos_iff.mpr fun h0 => ?_)
-  exact (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.ne_zero i
-    (hinj (h0.trans (map_zero _).symm))
+    0 < pullbackMetricCoeff φ x i i :=
+  inner_apply_basisFun_self_pos hinj i
 
 /-- The Riemannian metric coefficients of a map `φ : exteriorOpen n R → M` defined on the exterior
 `{x ∈ ℝⁿ : R < ‖x‖}`, extended by `0` on `{x : ‖x‖ ≤ R}`. -/
@@ -245,6 +223,15 @@ theorem exteriorMetricCoeff_symm {R : ℝ} (φ : exteriorOpen n R → M)
   by_cases hx : R < ‖x‖
   · rw [exteriorMetricCoeff_of_lt _ hx, exteriorMetricCoeff_of_lt _ hx, real_inner_comm]
   · rw [exteriorMetricCoeff_of_le _ (not_lt.mp hx), exteriorMetricCoeff_of_le _ (not_lt.mp hx)]
+
+/-- At an exterior point `R < ‖x‖` where `mfderiv` is injective, every diagonal exterior metric
+coefficient is strictly positive. -/
+theorem exteriorMetricCoeff_diag_pos {R : ℝ} {φ : exteriorOpen n R → M}
+    {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖)
+    (hinj : Injective (mfderiv (𝓡 n) (𝓡 n) φ ⟨x, mem_exteriorOpen.mpr hx⟩)) (i : Fin n) :
+    0 < exteriorMetricCoeff φ x i i := by
+  rw [exteriorMetricCoeff_of_lt φ hx]
+  exact inner_apply_basisFun_self_pos hinj i
 
 /-- Restricting an ambient map `φ : ℝⁿ → M` to `exteriorOpen n R` gives the same metric
 coefficients at every point of `{x : R < ‖x‖}`. -/
@@ -286,28 +273,14 @@ theorem pullbackMetricCoeff_euclideanSpace {n : ℕ}
       TauCeti.mvfderiv_eq_fderiv_apply]
   exact congrArg₂ (inner ℝ) (h _) (h _)
 
-/-- On flat `EuclideanSpace ℝ (Fin n)`, the identity map has Kronecker-delta metric coefficients
-`δ_ij`. -/
-@[simp] theorem pullbackMetricCoeff_id {n : ℕ} (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff (id : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x i j =
-      if i = j then 1 else 0 := by
-  rw [pullbackMetricCoeff_euclideanSpace, fderiv_id, ContinuousLinearMap.id_apply]
-  exact orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j
-
-/-- On flat `EuclideanSpace ℝ (Fin n)`, scaling `y ↦ c • y` has constant metric coefficients
-`c ^ 2 δ_ij`. -/
-theorem pullbackMetricCoeff_const_smul {n : ℕ} (c : ℝ) (x : EuclideanSpace ℝ (Fin n))
-    (i j : Fin n) :
-    pullbackMetricCoeff (fun y : EuclideanSpace ℝ (Fin n) => c • y) x i j =
-      if i = j then c ^ 2 else 0 := by
-  have hd : fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) => c • y) x =
-      c • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n)) :=
-    ((hasFDerivAt_id x).const_smul c).fderiv
-  rw [pullbackMetricCoeff_euclideanSpace, hd]
-  simp only [smul_apply, ContinuousLinearMap.id_apply, inner_smul_left, inner_smul_right,
-    RCLike.conj_to_real]
-  rw [orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j]
-  split_ifs <;> ring
+/-- Every continuous linear self-map `L` of flat `EuclideanSpace ℝ (Fin n)` has constant pullback
+metric coefficients `⟪L e_i, L e_j⟫`. -/
+theorem pullbackMetricCoeff_continuousLinearMap {n : ℕ}
+    (L : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))
+    (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
+    pullbackMetricCoeff (L : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x i j =
+      ⟪L (EuclideanSpace.basisFun (Fin n) ℝ i), L (EuclideanSpace.basisFun (Fin n) ℝ j)⟫ := by
+  rw [pullbackMetricCoeff_euclideanSpace, L.fderiv]
 
 /-- Every linear isometry equivalence of `EuclideanSpace ℝ (Fin n)` has Kronecker-delta pullback
 metric coefficients `δ_ij`. -/
@@ -316,13 +289,33 @@ metric coefficients `δ_ij`. -/
     (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
     pullbackMetricCoeff (O : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x i j =
       if i = j then 1 else 0 := by
-  have hd : fderiv ℝ (O : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x =
-      O.toContinuousLinearEquiv.toContinuousLinearMap :=
-    O.toContinuousLinearEquiv.toContinuousLinearMap.hasFDerivAt.fderiv
-  rw [pullbackMetricCoeff_euclideanSpace, hd]
-  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
-    O.inner_map_map]
-  exact orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
+    O.inner_map_map, orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j]
+    using pullbackMetricCoeff_continuousLinearMap
+      O.toContinuousLinearEquiv.toContinuousLinearMap x i j
+
+/-- On flat `EuclideanSpace ℝ (Fin n)`, the identity map has Kronecker-delta metric coefficients
+`δ_ij`. -/
+@[simp] theorem pullbackMetricCoeff_id {n : ℕ} (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
+    pullbackMetricCoeff (id : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x i j =
+      if i = j then 1 else 0 :=
+  pullbackMetricCoeff_linearIsometryEquiv
+    (LinearIsometryEquiv.refl ℝ (EuclideanSpace ℝ (Fin n))) x i j
+
+/-- On flat `EuclideanSpace ℝ (Fin n)`, scaling `y ↦ c • y` has constant metric coefficients
+`c ^ 2 δ_ij`. -/
+@[simp] theorem pullbackMetricCoeff_const_smul {n : ℕ} (c : ℝ) (x : EuclideanSpace ℝ (Fin n))
+    (i j : Fin n) :
+    pullbackMetricCoeff (fun y : EuclideanSpace ℝ (Fin n) => c • y) x i j =
+      if i = j then c ^ 2 else 0 := by
+  have h := pullbackMetricCoeff_continuousLinearMap
+    (c • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n))) x i j
+  simp only [FunLike.coe_smul, ContinuousLinearMap.coe_id', Pi.smul_def, id_eq,
+    smul_apply, ContinuousLinearMap.id_apply, inner_smul_left, inner_smul_right,
+    RCLike.conj_to_real,
+    orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j] at h
+  rw [h]
+  split_ifs <;> ring
 
 end EuclideanMetricCoeff
 
@@ -331,9 +324,9 @@ end EuclideanMetricCoeff
 /-- An *asymptotically Euclidean end* of `M` of order `t`: a smooth injective parametrization
 `param : exteriorOpen n radius → M` of an open subset of `M` by `{x ∈ ℝⁿ : radius < ‖x‖}`
 (`0 < radius`), with bijective differential everywhere on that exterior, whose metric coefficients
-`g_ij` decay to `δ_ij` at rate `‖x‖ ^ (-t)` along with their first and second Euclidean derivatives
-at rates `‖x‖ ^ (-t - 1)` and `‖x‖ ^ (-t - 2)` (Cecchini–Zeidler, Definition 2.1, without the
-scalar-curvature integrability clause). -/
+`g_ij` are `C²` on the exterior and decay to `δ_ij` at rate `‖x‖ ^ (-t)` along with their first and
+second Euclidean derivatives at rates `‖x‖ ^ (-t - 1)` and `‖x‖ ^ (-t - 2)` (Cecchini–Zeidler,
+Definition 2.1, without the scalar-curvature integrability clause). -/
 @[ext]
 structure AsymptoticallyEuclideanEnd (n : ℕ) (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
@@ -352,6 +345,9 @@ structure AsymptoticallyEuclideanEnd (n : ℕ) (M : Type*) [TopologicalSpace M]
   isOpen_range : IsOpen (range param)
   /-- Bijectivity of the differential at every point of the exterior. -/
   mfderiv_bijective : ∀ x : exteriorOpen n radius, Bijective (mfderiv (𝓡 n) (𝓡 n) param x)
+  /-- `C²` regularity of the coordinate metric coefficients on the exterior. -/
+  contDiffOn_metricCoeff : ∀ i j : Fin n,
+    ContDiffOn ℝ 2 (fun y => exteriorMetricCoeff param y i j) (exteriorOpen n radius)
   /-- Asymptotic Euclidean decay up to second derivatives of the metric coefficients. -/
   decay : ∃ C : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), radius < ‖x‖ → ∀ i j : Fin n,
     |exteriorMetricCoeff param x i j - if i = j then 1 else 0| ≤ C * ‖x‖ ^ (-t) ∧
@@ -374,8 +370,8 @@ theorem ext_iff_forall {E₁ E₂ : AsymptoticallyEuclideanEnd n M t} :
         E₁.param ⟨x, mem_exteriorOpen.mpr hx⟩ =
           E₂.param ⟨x, mem_exteriorOpen.mpr (hR ▸ hx)⟩ := by
   refine ⟨by rintro rfl; exact ⟨rfl, fun _ _ => rfl⟩, fun ⟨hR, hφ⟩ => ?_⟩
-  rcases E₁ with ⟨R₁, hR₁, φ₁, _, _, _, _, _⟩
-  rcases E₂ with ⟨R₂, hR₂, φ₂, _, _, _, _, _⟩
+  rcases E₁ with ⟨R₁, hR₁, φ₁, _, _, _, _, _, _⟩
+  rcases E₂ with ⟨R₂, hR₂, φ₂, _, _, _, _, _, _⟩
   dsimp only at hR hφ; subst hR
   suffices φ₁ = φ₂ by subst this; rfl
   exact funext fun ⟨x, hx⟩ => hφ x (mem_exteriorOpen.mp hx)
@@ -409,11 +405,14 @@ theorem metricCoeff_symm (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
 
 /-- Every diagonal metric coefficient of an end is strictly positive on `{x : E.radius < ‖x‖}`. -/
 theorem metricCoeff_diag_pos {x : EuclideanSpace ℝ (Fin n)} (hx : E.radius < ‖x‖) (i : Fin n) :
-    0 < E.metricCoeff x i i := by
-  rw [E.metricCoeff_of_lt hx, real_inner_self_eq_norm_sq]
-  refine sq_pos_of_pos (norm_pos_iff.mpr fun h0 => ?_)
-  exact (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.ne_zero i
-    ((E.mfderiv_bijective ⟨x, mem_exteriorOpen.mpr hx⟩).1 (h0.trans (map_zero _).symm))
+    0 < E.metricCoeff x i i :=
+  exteriorMetricCoeff_diag_pos hx (E.mfderiv_bijective ⟨x, mem_exteriorOpen.mpr hx⟩).1 i
+
+/-- On `{x : E.radius < ‖x‖}`, the metric coefficients `E.metricCoeff · i j` are `C²`. -/
+theorem contDiffAt_metricCoeff {x : EuclideanSpace ℝ (Fin n)} (hx : E.radius < ‖x‖)
+    (i j : Fin n) : ContDiffAt ℝ 2 (fun y => E.metricCoeff y i j) x :=
+  (E.contDiffOn_metricCoeff i j).contDiffAt
+    ((exteriorOpen n E.radius).isOpen.mem_nhds (mem_exteriorOpen.mpr hx))
 
 /-- If an ambient map `φ : ℝⁿ → M` agrees with `E.param` on `{x : E.radius < ‖x‖}`, then
 `E.metricCoeff` agrees with `pullbackMetricCoeff φ` on a neighbourhood of every exterior point. -/
@@ -477,13 +476,14 @@ theorem isConnected_image (hn : 2 ≤ n) : IsConnected E.image :=
   (E.isPathConnected_image hn).isConnected
 
 /-- **Smart constructor from an ambient map.** Any map `φ : ℝⁿ → M` that is smooth, injective, open
-onto its image, has bijective differential on `{x : R < ‖x‖}`, and satisfies the `C²` decay bounds
-for `pullbackMetricCoeff φ` there defines an `AsymptoticallyEuclideanEnd`. -/
+onto its image, and has bijective differential on `{x : R < ‖x‖}`, such that `pullbackMetricCoeff φ`
+is `C²` there and satisfies the `C²` decay bounds, defines an `AsymptoticallyEuclideanEnd`. -/
 def ofFun {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
     (hφ : ContMDiffOn (𝓡 n) (𝓡 n) ∞ φ {x | R < ‖x‖})
     (hinj : InjOn φ {x | R < ‖x‖})
     (hopen : IsOpen (φ '' {x | R < ‖x‖}))
     (hbij : ∀ x : EuclideanSpace ℝ (Fin n), R < ‖x‖ → Bijective (mfderiv (𝓡 n) (𝓡 n) φ x))
+    (hreg : ∀ i j : Fin n, ContDiffOn ℝ 2 (fun y => pullbackMetricCoeff φ y i j) {x | R < ‖x‖})
     (hdecay : ∃ C : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), R < ‖x‖ → ∀ i j : Fin n,
       |pullbackMetricCoeff φ x i j - if i = j then 1 else 0| ≤ C * ‖x‖ ^ (-t) ∧
       ‖fderiv ℝ (fun y => pullbackMetricCoeff φ y i j) x‖ ≤ C * ‖x‖ ^ (-t - 1) ∧
@@ -501,6 +501,9 @@ def ofFun {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
       ContinuousLinearMap.ext
         (TauCeti.Manifold.mfderiv_comp_subtype_val_apply (U := exteriorOpen n R))
     rw [heq]; exact hbij x.1 (mem_exteriorOpen.mp x.2)
+  contDiffOn_metricCoeff i j :=
+    (hreg i j).congr fun y hy =>
+      exteriorMetricCoeff_comp_subtype_of_lt φ (mem_exteriorOpen.mp hy) i j
   decay := by
     obtain ⟨C, hC⟩ := hdecay
     refine ⟨C, fun x hx i j => ?_⟩
@@ -510,23 +513,24 @@ def ofFun {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
     exact hC x hx i j
 
 @[simp] theorem ofFun_radius {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
-    (hφ) (hinj) (hopen) (hbij) (hdecay) :
-    (ofFun (t := t) hR φ hφ hinj hopen hbij hdecay).radius = R := (rfl)
+    (hφ) (hinj) (hopen) (hbij) (hreg) (hdecay) :
+    (ofFun (t := t) hR φ hφ hinj hopen hbij hreg hdecay).radius = R := (rfl)
 
 @[simp] theorem ofFun_param_apply {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
-    (hφ) (hinj) (hopen) (hbij) (hdecay)
-    (x : exteriorOpen n (ofFun (t := t) hR φ hφ hinj hopen hbij hdecay).radius) :
-    (ofFun (t := t) hR φ hφ hinj hopen hbij hdecay).param x = φ x.1 := (rfl)
+    (hφ) (hinj) (hopen) (hbij) (hreg) (hdecay)
+    (x : exteriorOpen n (ofFun (t := t) hR φ hφ hinj hopen hbij hreg hdecay).radius) :
+    (ofFun (t := t) hR φ hφ hinj hopen hbij hreg hdecay).param x = φ x.1 := (rfl)
 
 @[simp] theorem ofFun_image {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
-    (hφ) (hinj) (hopen) (hbij) (hdecay) :
-    (ofFun (t := t) hR φ hφ hinj hopen hbij hdecay).image = φ '' {x | R < ‖x‖} := by
-  rw [ofFun, image_def, range_comp, Subtype.range_coe_subtype]; rfl
+    (hφ) (hinj) (hopen) (hbij) (hreg) (hdecay) :
+    (ofFun (t := t) hR φ hφ hinj hopen hbij hreg hdecay).image = φ '' {x | R < ‖x‖} := by
+  rw [ofFun, image_def, range_comp, Subtype.range_coe_subtype]
+  simp only [mem_exteriorOpen]
 
 @[simp] theorem ofFun_metricCoeff_of_lt {R : ℝ} (hR : 0 < R) (φ : EuclideanSpace ℝ (Fin n) → M)
-    (hφ) (hinj) (hopen) (hbij) (hdecay) {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖)
+    (hφ) (hinj) (hopen) (hbij) (hreg) (hdecay) {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖)
     (i j : Fin n) :
-    (ofFun (t := t) hR φ hφ hinj hopen hbij hdecay).metricCoeff x i j =
+    (ofFun (t := t) hR φ hφ hinj hopen hbij hreg hdecay).metricCoeff x i j =
       pullbackMetricCoeff φ x i j :=
   exteriorMetricCoeff_comp_subtype_of_lt φ hx i j
 
@@ -541,6 +545,7 @@ def ofLE {t₁ t₂ : ℝ} (E : AsymptoticallyEuclideanEnd n M t₂) (ht : t₁ 
   injective := E.injective
   isOpen_range := E.isOpen_range
   mfderiv_bijective := E.mfderiv_bijective
+  contDiffOn_metricCoeff := E.contDiffOn_metricCoeff
   decay := by
     obtain ⟨C, hC⟩ := E.decay
     refine ⟨max C 0 * E.radius ^ (t₁ - t₂), fun x hx i j => ?_⟩
@@ -580,35 +585,17 @@ def ofLE {t₁ t₂ : ℝ} (E : AsymptoticallyEuclideanEnd n M t₂) (ht : t₁ 
 
 private theorem mfderiv_comp_inc {R' : ℝ} (hR' : E.radius ≤ R') (z : exteriorOpen n R')
     (v : TangentSpace (𝓡 n) z) :
-    mfderiv (𝓡 n) (𝓡 n)
-      (E.param ∘ fun w : exteriorOpen n R' =>
-        (⟨w.1, mem_exteriorOpen.mpr (hR'.trans_lt (mem_exteriorOpen.mp w.2))⟩ :
-          exteriorOpen n E.radius)) z v =
-      mfderiv (𝓡 n) (𝓡 n) E.param
-        ⟨z.1, mem_exteriorOpen.mpr (hR'.trans_lt (mem_exteriorOpen.mp z.2))⟩ v := by
-  let inc : exteriorOpen n R' → exteriorOpen n E.radius :=
-    fun w => ⟨w.1, mem_exteriorOpen.mpr (hR'.trans_lt (mem_exteriorOpen.mp w.2))⟩
-  have hinc_smooth : ContMDiff (𝓡 n) (𝓡 n) ∞ inc :=
-    (TauCeti.ContMDiff.subtypeVal_comp_iff (exteriorOpen n E.radius) _).mp contMDiff_subtype_val
-  have hsub : mfderiv (𝓡 n) (𝓡 n) ((Subtype.val : exteriorOpen n E.radius → _) ∘ inc) z v =
-      mfderiv (𝓡 n) (𝓡 n) inc z v :=
-    TauCeti.Manifold.mfderiv_subtype_val_comp_apply v
-  have hsub' : (Subtype.val : exteriorOpen n E.radius → _) ∘ inc =
-      (Subtype.val : exteriorOpen n R' → _) := rfl
-  rw [hsub', Manifold.mfderiv_subtype_val] at hsub
+    mfderiv (𝓡 n) (𝓡 n) (E.param ∘ Opens.inclusion (exteriorOpen_anti hR')) z v =
+      mfderiv (𝓡 n) (𝓡 n) E.param (Opens.inclusion (exteriorOpen_anti hR') z) v := by
   rw [mfderiv_comp z (E.contMDiff.contMDiffAt.mdifferentiableAt (by simp))
-    (hinc_smooth.contMDiffAt.mdifferentiableAt (by simp)), ContinuousLinearMap.comp_apply,
-    ← hsub, ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply]
+    ((contMDiff_inclusion (exteriorOpen_anti hR')).mdifferentiableAt one_ne_zero),
+    ContinuousLinearMap.comp_apply, TauCeti.Manifold.mfderiv_inclusion_apply]
 
 private theorem exteriorMetricCoeff_comp_inc {R' : ℝ} (hR' : E.radius ≤ R')
     {x : EuclideanSpace ℝ (Fin n)} (hx : R' < ‖x‖) (i j : Fin n) :
-    exteriorMetricCoeff
-      (E.param ∘ fun z : exteriorOpen n R' =>
-        (⟨z.1, mem_exteriorOpen.mpr (hR'.trans_lt (mem_exteriorOpen.mp z.2))⟩ :
-          exteriorOpen n E.radius)) x i j =
+    exteriorMetricCoeff (E.param ∘ Opens.inclusion (exteriorOpen_anti hR')) x i j =
       exteriorMetricCoeff E.param x i j := by
-  have hyE : E.radius < ‖x‖ := hR'.trans_lt hx
-  rw [exteriorMetricCoeff_of_lt _ hx, exteriorMetricCoeff_of_lt _ hyE]
+  rw [exteriorMetricCoeff_of_lt _ hx, exteriorMetricCoeff_of_lt _ (hR'.trans_lt hx)]
   exact congrArg₂ (inner ℝ) (E.mfderiv_comp_inc hR' ⟨x, mem_exteriorOpen.mpr hx⟩ _)
     (E.mfderiv_comp_inc hR' ⟨x, mem_exteriorOpen.mpr hx⟩ _)
 
@@ -621,12 +608,22 @@ section SmoothManifold
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
   [IsManifold (𝓡 n) ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡 n) x)] {t : ℝ}
 
+omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡 n) x)] in
+private theorem isLocalDiffeomorph_of_injective_mfderiv {U : Opens (EuclideanSpace ℝ (Fin n))}
+    {φ : U → M} (hφ : ContMDiff (𝓡 n) (𝓡 n) ∞ φ)
+    (hmf : ∀ x : U, Injective (mfderiv (𝓡 n) (𝓡 n) φ x)) :
+    IsLocalDiffeomorph (𝓡 n) (𝓡 n) ∞ φ := fun x =>
+  isLocalDiffeomorphAt_of_injective_mfderiv hφ.contMDiffOn isOpen_univ (mem_univ x)
+    BoundarylessManifold.isInteriorPoint (by simp) (hmf x) rfl
+
 /-- **Smart constructor on a smooth manifold.** On a smooth `n`-manifold `M`, a smooth injective
 map `φ : exteriorOpen n R → M` with injective differential everywhere on the exterior and `C²`
-asymptotic Euclidean decay defines an `AsymptoticallyEuclideanEnd`. -/
+metric coefficients with asymptotic Euclidean decay defines an `AsymptoticallyEuclideanEnd`. -/
 def ofIsManifold {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
     (hφ : ContMDiff (𝓡 n) (𝓡 n) ∞ φ) (hinj : Injective φ)
     (hmf : ∀ x : exteriorOpen n R, Injective (mfderiv (𝓡 n) (𝓡 n) φ x))
+    (hreg : ∀ i j : Fin n,
+      ContDiffOn ℝ 2 (fun y => exteriorMetricCoeff φ y i j) (exteriorOpen n R))
     (hdecay : ∃ C : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), R < ‖x‖ → ∀ i j : Fin n,
       |exteriorMetricCoeff φ x i j - if i = j then 1 else 0| ≤ C * ‖x‖ ^ (-t) ∧
       ‖fderiv ℝ (fun y => exteriorMetricCoeff φ y i j) x‖ ≤ C * ‖x‖ ^ (-t - 1) ∧
@@ -638,43 +635,42 @@ def ofIsManifold {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
   contMDiff := hφ
   injective := hinj
   isOpen_range := by
-    have hloc : IsLocalDiffeomorph (𝓡 n) (𝓡 n) ∞ φ := fun x =>
-      isLocalDiffeomorphAt_of_injective_mfderiv hφ.contMDiffOn isOpen_univ (mem_univ x)
-        BoundarylessManifold.isInteriorPoint (by simp) (hmf x) rfl
     rw [← image_univ]
-    exact hloc.isLocalHomeomorph.isOpenMap univ isOpen_univ
+    exact (isLocalDiffeomorph_of_injective_mfderiv hφ hmf).isLocalHomeomorph.isOpenMap univ
+      isOpen_univ
   mfderiv_bijective x := by
     have : FiniteDimensional ℝ (TangentSpace (𝓡 n) x) :=
       inferInstanceAs (FiniteDimensional ℝ (EuclideanSpace ℝ (Fin n)))
     have : FiniteDimensional ℝ (TangentSpace (𝓡 n) (φ x)) :=
       inferInstanceAs (FiniteDimensional ℝ (EuclideanSpace ℝ (Fin n)))
     exact ⟨hmf x, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank rfl).mp (hmf x)⟩
+  contDiffOn_metricCoeff := hreg
   decay := hdecay
 
 @[simp] theorem ofIsManifold_radius {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
-    (hφ) (hinj) (hmf) (hdecay) :
-    (ofIsManifold (t := t) hR φ hφ hinj hmf hdecay).radius = R := (rfl)
+    (hφ) (hinj) (hmf) (hreg) (hdecay) :
+    (ofIsManifold (t := t) hR φ hφ hinj hmf hreg hdecay).radius = R := (rfl)
 
 @[simp] theorem ofIsManifold_param_apply {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
-    (hφ) (hinj) (hmf) (hdecay)
-    (x : exteriorOpen n (ofIsManifold (t := t) hR φ hφ hinj hmf hdecay).radius) :
-    (ofIsManifold (t := t) hR φ hφ hinj hmf hdecay).param x = φ ⟨x.1,
+    (hφ) (hinj) (hmf) (hreg) (hdecay)
+    (x : exteriorOpen n (ofIsManifold (t := t) hR φ hφ hinj hmf hreg hdecay).radius) :
+    (ofIsManifold (t := t) hR φ hφ hinj hmf hreg hdecay).param x = φ ⟨x.1,
       mem_exteriorOpen.mpr (by simpa [ofIsManifold_radius] using mem_exteriorOpen.mp x.2)⟩ := (rfl)
 
 @[simp] theorem ofIsManifold_image {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
-    (hφ) (hinj) (hmf) (hdecay) :
-    (ofIsManifold (t := t) hR φ hφ hinj hmf hdecay).image = range φ := (rfl)
+    (hφ) (hinj) (hmf) (hreg) (hdecay) :
+    (ofIsManifold (t := t) hR φ hφ hinj hmf hreg hdecay).image = range φ := (rfl)
 
 @[simp] theorem ofIsManifold_metricCoeff {R : ℝ} (hR : 0 < R) (φ : exteriorOpen n R → M)
-    (hφ) (hinj) (hmf) (hdecay) :
-    (ofIsManifold (t := t) hR φ hφ hinj hmf hdecay).metricCoeff = exteriorMetricCoeff φ := (rfl)
+    (hφ) (hinj) (hmf) (hreg) (hdecay) :
+    (ofIsManifold (t := t) hR φ hφ hinj hmf hreg hdecay).metricCoeff = exteriorMetricCoeff φ :=
+  (rfl)
 
 variable (E : AsymptoticallyEuclideanEnd n M t)
 
 /-- On a smooth manifold `M`, the parametrization of an AE end is a smooth local diffeomorphism. -/
-theorem isLocalDiffeomorph : IsLocalDiffeomorph (𝓡 n) (𝓡 n) ∞ E.param := fun x =>
-  isLocalDiffeomorphAt_of_injective_mfderiv E.contMDiff.contMDiffOn isOpen_univ (mem_univ x)
-    BoundarylessManifold.isInteriorPoint (by simp) (E.mfderiv_bijective x).1 rfl
+theorem isLocalDiffeomorph : IsLocalDiffeomorph (𝓡 n) (𝓡 n) ∞ E.param :=
+  isLocalDiffeomorph_of_injective_mfderiv E.contMDiff fun x => (E.mfderiv_bijective x).1
 
 /-- On a smooth manifold `M`, an AE end parametrizes its open image by a smooth diffeomorphism
 `exteriorOpen n E.radius ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ E.openImage`. -/
@@ -709,39 +705,37 @@ def diffeomorphImage : exteriorOpen n E.radius ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ E.
 
 /-- **Shrinking an AE end to a larger excision radius.** Restricting an AE end `E` on a smooth
 manifold `M` from `E.radius` to any `R' ≥ E.radius` gives an AE end of the same order `t`. -/
-def restrictRadius {R' : ℝ} (hR' : E.radius ≤ R') : AsymptoticallyEuclideanEnd n M t :=
-  let inc : exteriorOpen n R' → exteriorOpen n E.radius :=
-    fun x => ⟨x.1, mem_exteriorOpen.mpr (hR'.trans_lt (mem_exteriorOpen.mp x.2))⟩
-  have hinc_open : IsOpen (range inc) := by
-    have hr : range inc = Subtype.val ⁻¹' (exteriorOpen n R' : Set (EuclideanSpace ℝ (Fin n))) := by
-      ext y; exact ⟨by rintro ⟨z, rfl⟩; exact z.2, fun hy => ⟨⟨y.1, hy⟩, rfl⟩⟩
-    rw [hr]; exact (exteriorOpen n R').isOpen.preimage continuous_subtype_val
-  have hinc_smooth : ContMDiff (𝓡 n) (𝓡 n) ∞ inc :=
-    (TauCeti.ContMDiff.subtypeVal_comp_iff (exteriorOpen n E.radius) _).mp contMDiff_subtype_val
-  { radius := R'
-    radius_pos := E.radius_pos.trans_le hR'
-    param := E.param ∘ inc
-    contMDiff := E.contMDiff.comp hinc_smooth
-    injective := fun _ _ h =>
-      Subtype.ext (congrArg (Subtype.val : exteriorOpen n E.radius → _) (E.injective h))
-    isOpen_range := by
-      rw [range_comp]
-      exact E.isLocalDiffeomorph.isLocalHomeomorph.isOpenMap _ hinc_open
-    mfderiv_bijective := fun x => by
-      have heq : mfderiv (𝓡 n) (𝓡 n) (E.param ∘ inc) x = mfderiv (𝓡 n) (𝓡 n) E.param (inc x) :=
-        ContinuousLinearMap.ext (E.mfderiv_comp_inc hR' x)
-      rw [heq]; exact E.mfderiv_bijective (inc x)
-    decay := by
-      obtain ⟨C, hC⟩ := E.decay
-      refine ⟨C, fun x hx i j => ?_⟩
-      have hev : (fun y => exteriorMetricCoeff (E.param ∘ inc) y i j) =ᶠ[𝓝 x]
-          (fun y => exteriorMetricCoeff E.param y i j) := by
-        filter_upwards [(exteriorOpen n R').isOpen.mem_nhds (mem_exteriorOpen.mpr hx)] with y hy
-        exact E.exteriorMetricCoeff_comp_inc hR' (mem_exteriorOpen.mp hy) i j
-      have hx0 : exteriorMetricCoeff (E.param ∘ inc) x i j = exteriorMetricCoeff E.param x i j :=
-        hev.self_of_nhds
-      rw [hx0, hev.fderiv_eq, (hev.fderiv (𝕜 := ℝ)).fderiv_eq]
-      exact hC x (hR'.trans_lt hx) i j }
+def restrictRadius {R' : ℝ} (hR' : E.radius ≤ R') : AsymptoticallyEuclideanEnd n M t where
+  radius := R'
+  radius_pos := E.radius_pos.trans_le hR'
+  param := E.param ∘ Opens.inclusion (exteriorOpen_anti hR')
+  contMDiff := E.contMDiff.comp (contMDiff_inclusion (exteriorOpen_anti hR'))
+  injective := E.injective.comp (Set.inclusion_injective (exteriorOpen_anti hR'))
+  isOpen_range := by
+    rw [range_comp]
+    exact E.isLocalDiffeomorph.isLocalHomeomorph.isOpenMap _
+      (Opens.isOpenEmbedding_of_le (exteriorOpen_anti hR')).isOpen_range
+  mfderiv_bijective x := by
+    have heq : mfderiv (𝓡 n) (𝓡 n) (E.param ∘ Opens.inclusion (exteriorOpen_anti hR')) x =
+        mfderiv (𝓡 n) (𝓡 n) E.param (Opens.inclusion (exteriorOpen_anti hR') x) :=
+      ContinuousLinearMap.ext (E.mfderiv_comp_inc hR' x)
+    rw [heq]; exact E.mfderiv_bijective _
+  contDiffOn_metricCoeff i j :=
+    (E.contDiffOn_metricCoeff i j).congr_mono
+      (fun y hy => E.exteriorMetricCoeff_comp_inc hR' (mem_exteriorOpen.mp hy) i j)
+      (exteriorOpen_anti hR')
+  decay := by
+    obtain ⟨C, hC⟩ := E.decay
+    refine ⟨C, fun x hx i j => ?_⟩
+    have hev : (fun y =>
+        exteriorMetricCoeff (E.param ∘ Opens.inclusion (exteriorOpen_anti hR')) y i j) =ᶠ[𝓝 x]
+        (fun y => exteriorMetricCoeff E.param y i j) := by
+      filter_upwards [(exteriorOpen n R').isOpen.mem_nhds (mem_exteriorOpen.mpr hx)] with y hy
+      exact E.exteriorMetricCoeff_comp_inc hR' (mem_exteriorOpen.mp hy) i j
+    have hx0 : exteriorMetricCoeff (E.param ∘ Opens.inclusion (exteriorOpen_anti hR')) x i j =
+        exteriorMetricCoeff E.param x i j := hev.self_of_nhds
+    rw [hx0, hev.fderiv_eq, (hev.fderiv (𝕜 := ℝ)).fderiv_eq]
+    exact hC x (hR'.trans_lt hx) i j
 
 @[simp] theorem restrictRadius_radius {R' : ℝ} (hR' : E.radius ≤ R') :
     (E.restrictRadius hR').radius = R' := (rfl)
@@ -750,6 +744,20 @@ def restrictRadius {R' : ℝ} (hR' : E.radius ≤ R') : AsymptoticallyEuclideanE
     (x : exteriorOpen n (E.restrictRadius hR').radius) :
     (E.restrictRadius hR').param x = E.param ⟨x.1, mem_exteriorOpen.mpr
       (hR'.trans_lt (by simpa [restrictRadius_radius] using mem_exteriorOpen.mp x.2))⟩ := (rfl)
+
+@[simp] theorem restrictRadius_image {R' : ℝ} (hR' : E.radius ≤ R') :
+    (E.restrictRadius hR').image =
+      E.param '' {x : exteriorOpen n E.radius | R' < ‖(x : EuclideanSpace ℝ (Fin n))‖} := by
+  rw [restrictRadius, image_def, range_comp]
+  congr 1
+  ext ⟨x, hx⟩
+  simp [Opens.inclusion, Set.inclusion]
+
+/-- Restricting an AE end to a larger excision radius `R' ≥ E.radius` shrinks its image in `M`. -/
+theorem restrictRadius_image_subset {R' : ℝ} (hR' : E.radius ≤ R') :
+    (E.restrictRadius hR').image ⊆ E.image := by
+  rw [restrictRadius_image, image_def]
+  exact image_subset_range _ _
 
 @[simp] theorem restrictRadius_metricCoeff_of_lt {R' : ℝ} (hR' : E.radius ≤ R')
     {x : EuclideanSpace ℝ (Fin n)} (hx : R' < ‖x‖) (i j : Fin n) :
@@ -773,11 +781,13 @@ theorem coe_endRadius_param (x : exteriorOpen n E.radius) :
 /-- The real-valued coordinate radius `y ↦ (E.endRadius y : ℝ)` is smooth on `E.openImage`. -/
 theorem contMDiff_coe_endRadius :
     ContMDiff (𝓡 n) 𝓘(ℝ) ∞ (fun y : E.openImage => (E.endRadius y : ℝ)) := by
+  have heq : (fun y : E.openImage => (E.endRadius y : ℝ)) =
+      norm ∘ fun z : E.openImage => (E.diffeomorphImage.symm z : EuclideanSpace ℝ (Fin n)) := by
+    ext y; simp
+  rw [heq]
   intro y
   have hne : (E.diffeomorphImage.symm y : EuclideanSpace ℝ (Fin n)) ≠ 0 :=
     exteriorOpen_coe_ne_zero E.radius_pos.le _
-  change ContMDiffAt (𝓡 n) 𝓘(ℝ) ∞
-    (norm ∘ fun z : E.openImage => (E.diffeomorphImage.symm z : EuclideanSpace ℝ (Fin n))) y
   exact ((contDiffAt_norm ℝ hne).contMDiffAt).comp y
     (contMDiff_subtype_val.comp E.diffeomorphImage.symm.contMDiff).contMDiffAt
 
@@ -787,7 +797,8 @@ theorem isProperMap_endRadius : IsProperMap E.endRadius := by
   have heq : E.endRadius =
       (fun x : exteriorOpen n E.radius =>
         (⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩ : Ioi E.radius)) ∘
-        E.diffeomorphImage.toHomeomorph.symm := rfl
+        E.diffeomorphImage.toHomeomorph.symm := by
+    ext y; simp
   rw [heq]
   exact isProperMap_exteriorOpen_norm.comp E.diffeomorphImage.toHomeomorph.symm.isProperMap
 
@@ -811,9 +822,8 @@ theorem isCompact_image_annulus {r₁ r₂ : ℝ} (hr₁ : E.radius < r₁) :
     refine ⟨E.diffeomorphImage.symm y, ?_, E.param_diffeomorphImage_symm y⟩
     have hval : ‖(E.diffeomorphImage.symm y : EuclideanSpace ℝ (Fin n))‖ = r :=
       (congrArg Subtype.val hyr).symm
-    change r₁ ≤ ‖(E.diffeomorphImage.symm y : EuclideanSpace ℝ (Fin n))‖ ∧
-      ‖(E.diffeomorphImage.symm y : EuclideanSpace ℝ (Fin n))‖ ≤ r₂
-    rw [hval]; exact ⟨hr₁', hr₂'⟩
+    rw [Set.mem_ofPred_eq, hval]
+    exact ⟨hr₁', hr₂'⟩
 
 end SmoothManifold
 
@@ -862,6 +872,9 @@ def endsUnion : Set M := ⋃ a, (A.ends a).image
 
 theorem endsUnion_def : A.endsUnion = ⋃ a, (A.ends a).image := (rfl)
 
+@[simp] theorem mem_endsUnion_iff {p : M} : p ∈ A.endsUnion ↔ ∃ a, p ∈ (A.ends a).image :=
+  mem_iUnion
+
 /-- The union of all end images is open in `M`. -/
 theorem isOpen_endsUnion : IsOpen A.endsUnion := isOpen_iUnion fun a => (A.ends a).isOpen_image
 
@@ -869,6 +882,9 @@ theorem isOpen_endsUnion : IsOpen A.endsUnion := isOpen_iUnion fun a => (A.ends 
 def compactCore : Set M := A.endsUnionᶜ
 
 theorem compactCore_def : A.compactCore = A.endsUnionᶜ := (rfl)
+
+@[simp] theorem mem_compactCore_iff {p : M} : p ∈ A.compactCore ↔ ∀ a, p ∉ (A.ends a).image := by
+  simp [compactCore_def]
 
 /-- The compact core is closed in `M`. -/
 theorem isClosed_compactCore : IsClosed A.compactCore := A.isOpen_endsUnion.isClosed_compl
@@ -899,14 +915,14 @@ def AsymptoticallyEuclideanEnd.euclideanId (n : ℕ) {R : ℝ} (hR : 0 < R) (t :
   AsymptoticallyEuclideanEnd.ofFun hR id contMDiffOn_id (Set.injOn_id {x | R < ‖x‖})
     (by simpa only [image_id] using isOpen_lt continuous_const continuous_norm)
     (fun x _ => by simpa [mfderiv_id] using Function.bijective_id)
+    (fun i j => by simp only [pullbackMetricCoeff_id]; exact contDiffOn_const)
     ⟨0, fun x _ i j => by
       have hd1 : fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) =>
           pullbackMetricCoeff id y i j) = 0 := by simp [pullbackMetricCoeff_id]
       rw [pullbackMetricCoeff_id, sub_self, abs_zero, zero_mul, hd1]
       refine ⟨le_rfl, ?_, ?_⟩
       · rw [Pi.zero_apply, norm_zero, zero_mul]
-      · rw [show (0 : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ) =
-            fun _ => 0 from rfl, fderiv_const_apply, zero_mul]
+      · rw [Pi.zero_def, fderiv_const_apply, zero_mul]
         exact (norm_zero (E :=
           EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ)).le⟩
 
@@ -925,7 +941,7 @@ def AsymptoticallyEuclideanEnd.euclideanId (n : ℕ) {R : ℝ} (hR : 0 < R) (t :
     (hR : 0 < R) (t : ℝ) {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖) (i j : Fin n) :
     (AsymptoticallyEuclideanEnd.euclideanId n hR t).metricCoeff x i j =
       if i = j then 1 else 0 := by
-  rw [euclideanId, ofFun_metricCoeff_of_lt _ _ _ _ _ _ _ hx, pullbackMetricCoeff_id]
+  rw [euclideanId, ofFun_metricCoeff_of_lt _ _ _ _ _ _ _ _ hx, pullbackMetricCoeff_id]
 
 /-- **Flat Euclidean space is finite-ended AE of every order.** Excising `closedBall 0 1` gives a
 single AE end of flat `EuclideanSpace ℝ (Fin n)` with compact complement. -/
