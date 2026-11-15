@@ -23,7 +23,10 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
-The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`).
+The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
+the real chart of a map injective on a set, on the corresponding set
+(`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
+of its image (`TauCeti.Complex.image_realChart_preimage`).
 Subtracting a real number `c` is subtracting `(c, 0)` in real coordinates
 (`TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero`).
 -/
@@ -100,5 +103,21 @@ theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
 theorem equivRealProdCLM_symm_sub_prodMk_zero (z : ℝ × ℝ) (c : ℝ) :
     Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
   apply Complex.ext <;> simp
+
+/-- The real chart of a map injective on the image of `s` in `ℂ` is injective on `s`. -/
+theorem injOn_realChart {f : ℂ → ℂ} {s : Set (ℝ × ℝ)}
+    (hf : Set.InjOn f (Complex.equivRealProdCLM.symm '' s)) : Set.InjOn (realChart f) s :=
+  fun _ hp _ hq h ↦ Complex.equivRealProdCLM.symm.injective <|
+    hf (Set.mem_image_of_mem _ hp) (Set.mem_image_of_mem _ hq)
+      (by simpa using congrArg Complex.equivRealProdCLM.symm h)
+
+/-- The real chart of `f` maps the real coordinates of a set `s` onto the real coordinates of
+`f '' s`. -/
+theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
+    realChart f '' (Complex.equivRealProdCLM.symm ⁻¹' s) =
+      Complex.equivRealProdCLM.symm ⁻¹' (f '' s) := by
+  rw [realChart, Set.image_comp, Set.image_comp,
+    Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
+    Complex.equivRealProdCLM.image_eq_preimage_symm]
 
 end TauCeti.Complex
