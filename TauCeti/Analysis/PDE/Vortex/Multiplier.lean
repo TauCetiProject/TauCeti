@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
@@ -111,14 +112,14 @@ theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circl
     fin_cases i
     exacts [h0, h0, neg_mem (hc 3), hc 2]
   -- A single bound for the derivatives through order `k` of `Re u` and of `Im u`.
-  choose! C hC using hbound
+  obtain ⟨C, hC⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbound
+  have hC0 := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hC).1
   have hL (L : ℂ →L[ℝ] ℝ) : ∃ M ≥ 0, ∀ n ≤ k, ∀ z,
       ‖iteratedFDeriv ℝ n (fun z ↦ L (u z : ℂ)) z‖ ≤ M := by
-    refine ⟨‖L‖ * ∑ n ∈ Finset.range (k + 1), |C n|, by positivity, fun n hn z ↦ ?_⟩
+    refine ⟨‖L‖ * C, by positivity, fun n hn z ↦ ?_⟩
     refine (L.norm_iteratedFDeriv_comp_left hu.contDiffAt (by exact_mod_cast le_top)).trans ?_
     gcongr
-    exact (hC n hn z).trans ((le_abs_self _).trans (Finset.single_le_sum
-      (f := fun n ↦ |C n|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hn))))
+    exact hC n hn z
   obtain ⟨Mr, hMr, hre⟩ := hL Complex.reCLM
   obtain ⟨Mi, hMi, him⟩ := hL Complex.imCLM
   convert add_mem (add_mem hP

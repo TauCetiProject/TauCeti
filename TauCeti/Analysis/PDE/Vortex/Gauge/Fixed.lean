@@ -36,7 +36,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
   of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and
-  each is the negative transpose of the other (`inner_gaugeFixedAdjointSymbol`).
+  each is the negative transpose of the other (`inner_gaugeFixedAdjointSymbol`). Both are jointly
+  continuous (`continuous_gaugeFixedOperatorSymbol`, `continuous_gaugeFixedAdjointSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -400,6 +401,13 @@ theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
     gaugeFixedOperatorSymbol d (r • v) = r • gaugeFixedOperatorSymbol d v := by
   ext i
   fin_cases i <;> simp <;> ring
+
+/-- The operator symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedOperatorSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedOperatorSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedOperatorSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
 
 /-- The two symbols are negative transposes of each other, as the principal symbols of a
 first-order operator and of its formal adjoint: `⟪u, σ*(d) v⟫ = -⟪σ(d) u, v⟫`. -/

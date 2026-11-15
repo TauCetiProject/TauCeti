@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
@@ -27,7 +28,7 @@ vortices are grafted onto the normal discs of a pseudoholomorphic curve.
 
 The weight `w = exp(c ρ)` is smooth, and its logarithmic gradient `c dρ`,
 `dρ = ⟪z, ·⟫ / ρ`, has bounded derivatives of every order
-(`exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le`). By the Leibniz rule
+(`exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`). By the Leibniz rule
 `L_x* (w η) = w L_x* η + σ*(dw) η` (`gaugeFixedAdjoint_fun_smul`), and since the symbol of the
 adjoint is the negative transpose of the symbol of `L_x` (`inner_gaugeFixedAdjointSymbol`), a
 weak solution `y` of `L_x y = f` gives a weak solution `w y` of
@@ -123,11 +124,16 @@ derivatives bounded uniformly through order `k`, in the form consumed by
 private theorem exists_forall_norm_iteratedFDeriv_inner_mul_le (v : ℂ) (k : ℕ) :
     ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n
       (fun z : ℂ ↦ ⟪z, v⟫ * (1 + ‖z‖ ^ 2) ^ (-(1 / 2) : ℝ)) z‖ ≤ M := by
-  choose C hC using exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_neg_half_le v
-  refine ⟨∑ n ∈ Finset.range (k + 1), max (C n) 0,
-    Finset.sum_nonneg fun n _ ↦ le_max_right _ _, fun n hn z ↦ (hC n z).trans ?_⟩
-  exact (le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
-    (fun n _ ↦ le_max_right _ _) (Finset.mem_range.2 (Nat.lt_succ_of_le hn)))
+  obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists fun n _ ↦ by
+    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le v (-(1 / 2)) n
+    refine ⟨max C 0, fun z ↦ (hC z).trans ?_⟩
+    -- The bracket factor `(1 + ‖z‖ ^ 2) ^ (-n / 2)` is at most one.
+    have h1 : (1 + ‖z‖ ^ 2) ^ (-(1 / 2) + 1 / 2 - n / 2 : ℝ) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg z])
+        (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith)
+    exact (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)).trans
+      (mul_le_of_le_one_right (le_max_right _ _) h1)
+  exact ⟨M, (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM).1, hM⟩
 
 /-- The directions in which the entries of the matrix of `σ(dρ)` differentiate `ρ`: the entry
 `(i, j)` is the derivative of `ρ` in the direction `symbolDirections i j`. -/
