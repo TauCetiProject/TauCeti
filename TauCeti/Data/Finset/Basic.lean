@@ -183,9 +183,7 @@ theorem card_even_card_finset {ι : Type*} [Finite ι] :
   have htot : (Finset.univ.filter fun s : Finset ι => Even s.card).card
       + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
     rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
-  have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
-    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
-    rw [← pow_succ', Nat.sub_add_cancel hpos]
+  have hpow := (mul_pow_sub_one (Fintype.card_pos_iff.mpr ⟨i⟩).ne' (2 : ℕ)).symm
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
   omega
 
@@ -194,19 +192,12 @@ theorem card_even_card_finset {ι : Type*} [Finite ι] :
 theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
     Nat.card {S : Finset ι // Odd S.card} = 2 ^ (Nat.card ι - 1) := by
   classical
-  let _ := Fintype.ofFinite ι
-  have heven := card_even_card_finset (ι := ι)
-  have htot : (Finset.univ.filter fun s : Finset ι => Even s.card).card
-      + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
-    rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
-  have hodd : (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card
-      = (Finset.univ.filter fun s : Finset ι => Odd s.card).card := by
-    simp only [Nat.not_even_iff_odd]
-  have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
-    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos
-    rw [← pow_succ', Nat.sub_add_cancel hpos]
-  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
-  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card] at heven
+  have h := Nat.card_congr (Equiv.sumCompl fun S : Finset ι => Even S.card)
+  have := Fintype.ofFinite ι
+  rw [Nat.card_sum, TauCeti.card_even_card_finset,
+    Nat.card_congr (Equiv.subtypeEquivRight fun S : Finset ι => Nat.not_even_iff_odd),
+    Nat.card_eq_fintype_card (α := Finset ι), Fintype.card_finset,
+    ← Nat.card_eq_fintype_card (α := ι), ← mul_pow_sub_one Nat.card_pos.ne' (2 : ℕ)] at h
   omega
 
 end TauCeti
@@ -486,14 +477,8 @@ be summed first over `c` and then over the interval of possible `b`. -/
 theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddCommMonoid M]
     (a : α) (f : α → α → M) :
     ∑ b ∈ univ.filter (a ≤ ·), ∑ c ∈ univ.filter (b ≤ ·), f b c =
-      ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c := by
-  calc _ = ∑ b, ∑ c, if a ≤ b ∧ b ≤ c then f b c else 0 := by
-        rw [sum_filter]
-        refine sum_congr rfl fun b _ => ?_
-        by_cases h : a ≤ b <;> simp [h, sum_filter]
-    _ = _ := by
-        rw [sum_comm]
-        exact sum_congr rfl fun c _ => (sum_filter _ _).symm
+      ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c :=
+  sum_comm' fun _ _ => by simp
 
 /-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
 position of `s` between two of them. -/
@@ -789,10 +774,8 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
 between their images. -/
 theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
     [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
-    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
-  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
-  have := mem_Ioo.1 (hS hs)
-  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) :=
+  image_subset_iff.2 fun _ hs ↦ by simpa using he.mapsTo_Ioo (by simpa using hS hs)
 
 /-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
 monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
