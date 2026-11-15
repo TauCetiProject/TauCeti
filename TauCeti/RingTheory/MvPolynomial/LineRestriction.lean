@@ -174,6 +174,25 @@ theorem eval₂_shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
       Polynomial.eval₂_add, Polynomial.eval₂_C, Polynomial.eval₂_mul, Polynomial.eval₂_X,
       eval_X, eval_C, Pi.add_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
 
+/-- Evaluating the sheared polynomial in an `R`-algebra at a base point and a height is algebra
+evaluation of the original polynomial at the sheared point. -/
+@[simp]
+theorem eval₂_aeval_shearToPolynomial {A : Type*} [CommSemiring A] [Algebra R A]
+    (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R)
+    (y : Fin n → A) (t : A) :
+    Polynomial.eval₂ (RingHomClass.toRingHom (aeval (R := R) y)) t (shearToPolynomial i a p) =
+      aeval (i.insertNth t fun j ↦ y j + a j • t) p := by
+  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
+  have hC : (Polynomial.eval₂RingHom (RingHomClass.toRingHom (aeval (R := R) y)) t).comp
+      (Polynomial.C.comp C) = algebraMap R A := by
+    ext c
+    simp
+  rw [hC, coe_eval₂Hom, ← aeval_def]
+  congr 2
+  funext k
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k <;>
+    simp [Algebra.smul_def]
+
 private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
     i.insertNth Polynomial.X
         (fun j ↦ Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X) =
