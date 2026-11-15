@@ -44,6 +44,11 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 
 * `Polynomial.meromorphicAt_eval_inv_sub`: a polynomial in `(z - a)⁻¹` is meromorphic at `a`.
 * `TauCeti.meromorphicOrderAt_eval_inv_sub`: the order at `a` of `z ↦ P((z - a)⁻¹)`.
+* `TauCeti.eq_zero_of_eval_inv_sub_eventuallyEq` and
+  `TauCeti.eq_zero_of_sum_div_sub_pow_eventuallyEq`: a nonzero polynomial without constant term in
+  `(z - a)⁻¹`, and a nonzero finite sum of poles `d / (z - b) ^ (k + 1)` at distinct points or of
+  distinct orders, do not agree on punctured neighbourhoods of their poles with a function
+  continuous at them.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
 * `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
@@ -100,17 +105,53 @@ theorem meromorphicOrderAt_eval_inv_sub {P : 𝕜[X]} (hP : P ≠ 0) (a : 𝕜) 
     rw [← h, smul_eq_mul, zpow_neg, zpow_natCast, inv_pow, mul_comm]
 
 /-- A polynomial without constant term in the inverse coordinate `(z - a)⁻¹` agrees with a function
-analytic at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
-`a`. -/
+continuous at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
+`a`, near which it is unbounded. -/
 theorem eq_zero_of_eval_inv_sub_eventuallyEq {P : 𝕜[X]} (hP : P.coeff 0 = 0) {g : 𝕜 → 𝕜}
-    (hg : AnalyticAt 𝕜 g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
+    (hg : ContinuousAt g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
   by_contra hP0
-  have hord := hg.meromorphicOrderAt_nonneg
-  rw [← meromorphicOrderAt_congr h, meromorphicOrderAt_eval_inv_sub hP0] at hord
-  have hd : P.natDegree = 0 := by
-    have : (0 : ℤ) ≤ -(P.natDegree : ℤ) := mod_cast hord
-    omega
-  exact hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hd : P.natDegree ≠ 0 := fun hd ↦ hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hord : meromorphicOrderAt (fun z ↦ P.eval (z - a)⁻¹) a < 0 := by
+    rw [meromorphicOrderAt_eval_inv_sub hP0]
+    exact_mod_cast (neg_neg_iff_pos.2 (Int.natCast_pos.2 (Nat.pos_of_ne_zero hd)))
+  exact ((tendsto_cobounded_of_meromorphicOrderAt_neg hord).congr' h).not_tendsto
+    (Metric.disjoint_cobounded_nhds (g a)) (hg.tendsto.mono_left nhdsWithin_le_nhds)
+
+/-- **Poles at distinct points or of distinct orders are independent.** Let `(a i, n i)`, `i : ι`,
+be pairwise distinct. If the finite sum of poles `Σ i, d i / (z - a i) ^ (n i + 1)` agrees, on a
+punctured neighbourhood of each `a i`, with a function continuous at `a i`, then all the
+coefficients `d i` vanish. -/
+theorem eq_zero_of_sum_div_sub_pow_eventuallyEq {ι : Type*} [Fintype ι] {a : ι → 𝕜} {n : ι → ℕ}
+    (hinj : Injective fun i ↦ (a i, n i)) {d : ι → 𝕜} {g : 𝕜 → 𝕜}
+    (hg : ∀ i, ContinuousAt g (a i))
+    (h : ∀ i, (fun z ↦ ∑ k, d k / (z - a k) ^ (n k + 1)) =ᶠ[𝓝[≠] a i] g) : d = 0 := by
+  classical
+  funext i
+  -- The poles at `a i` form a polynomial `P` in `(z - a i)⁻¹` without constant term.
+  set s := Finset.univ.filter fun k ↦ a k = a i
+  set P : 𝕜[X] := ∑ k ∈ s, monomial (n k + 1) (d k)
+  have hP : P = 0 := by
+    refine eq_zero_of_eval_inv_sub_eventuallyEq (a := a i)
+      (g := fun z ↦ g z - ∑ k ∈ sᶜ, d k / (z - a k) ^ (n k + 1))
+      (by simp [P, coeff_monomial]) ((hg i).sub ?_) ?_
+    · -- The remaining poles lie away from `a i`.
+      refine tendsto_finsetSum _ fun k hk ↦ ?_
+      have hk : a k ≠ a i := by simpa [s] using hk
+      exact continuousAt_const.div ((continuousAt_id.sub continuousAt_const).pow _)
+        (pow_ne_zero _ (sub_ne_zero.2 hk.symm))
+    · filter_upwards [h i] with z hz
+      rw [eq_sub_iff_add_eq, ← hz, ← Finset.sum_add_sum_compl s]
+      congr 1
+      simp only [P, eval_finsetSum, eval_monomial]
+      refine Finset.sum_congr rfl fun k hk ↦ ?_
+      rw [(Finset.mem_filter.1 hk).2, inv_pow, div_eq_mul_inv]
+  -- Its coefficient of `X ^ (n i + 1)` is `d i`.
+  have hcoeff := congrArg (fun Q : 𝕜[X] ↦ Q.coeff (n i + 1)) hP
+  simp only [P, finsetSum_coeff, coeff_monomial, coeff_zero] at hcoeff
+  rw [Finset.sum_eq_single_of_mem i (by simp [s]) fun k hk hki ↦ ?_] at hcoeff
+  · simpa using hcoeff
+  · have hn : n k ≠ n i := fun hn ↦ hki (hinj (Prod.ext (Finset.mem_filter.1 hk).2 hn))
+    simp [hn]
 
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
 `(z - a)⁻ᴺ h z = P((z - a)⁻¹) + q z` with `P = Σ_{j<N} c_j X ^ (N - j)`, where
@@ -179,7 +220,7 @@ private theorem eq_of_coe_sub_evalInvSub_eq {φ : meromorphicGerms 𝕜 a} {P Q 
     (hφP : ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g)
     (hφQ : ((φ - evalInvSub a Q : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g') : P = Q := by
   refine sub_eq_zero.1 <| eq_zero_of_eval_inv_sub_eventuallyEq (by rw [coeff_sub, hP, hQ, sub_zero])
-    (hg'.sub hg) (Germ.coe_eq.1 ?_)
+    (hg'.sub hg).continuousAt (Germ.coe_eq.1 ?_)
   rw [← coe_evalInvSub, Germ.coe_sub, ← hφP, ← hφQ, ← AddSubgroupClass.coe_sub, map_sub]
   congr 1
   abel

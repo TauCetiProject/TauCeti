@@ -29,7 +29,7 @@ of `∂bar f = a f`, for instance for the section of a plane vortex, and it is t
 topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow`. The exponent of such a
 factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has at most one zero
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
-`f`.
+`f`, which are isolated (`TauCeti.IsZeroMultiplicity.eventually_ne_zero`).
 
 Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
 (`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
@@ -100,12 +100,18 @@ theorem continuous (h : IsZeroMultiplicity f n) : Continuous f :=
   continuous_of_eventually_eq_pow_mul fun z ↦
     (isZeroMultiplicity_iff.1 h z).imp fun _ hv ↦ ⟨hv.1, hv.2.2⟩
 
+/-- **The zeros of a function with a zero multiplicity function are isolated**: `f` has no zeros
+on a punctured neighbourhood of any point. -/
+theorem eventually_ne_zero (h : IsZeroMultiplicity f n) (z : ℂ) : ∀ᶠ w in 𝓝[≠] z, f w ≠ 0 := by
+  obtain ⟨v, hv, hv₀, hf⟩ := isZeroMultiplicity_iff.1 h z
+  filter_upwards [nhdsWithin_le_nhds (hf.and (hv.eventually_ne hv₀)), self_mem_nhdsWithin]
+    with w ⟨hw, hvw⟩ (hwz : w ≠ z)
+  rw [hw]
+  exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hwz)) hvw
+
 /-- A function with a zero multiplicity function is not identically zero. -/
-theorem exists_ne_zero (h : IsZeroMultiplicity f n) : ∃ w, f w ≠ 0 := by
-  obtain ⟨v, hv, hv₀, hf⟩ := isZeroMultiplicity_iff.1 h 0
-  obtain ⟨w, ⟨hw, hvw⟩, hw₀⟩ := (((hf.and (hv.eventually_ne hv₀)).filter_mono
-    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := {0}ᶜ))).exists
-  exact ⟨w, by rw [hw]; exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.2 hw₀)) hvw⟩
+theorem exists_ne_zero (h : IsZeroMultiplicity f n) : ∃ w, f w ≠ 0 :=
+  (h.eventually_ne_zero 0).exists
 
 /-- The multiplicity vanishes exactly off the zeros of `f`. -/
 theorem eq_zero_iff (h : IsZeroMultiplicity f n) {z : ℂ} : n z = 0 ↔ f z ≠ 0 := by
