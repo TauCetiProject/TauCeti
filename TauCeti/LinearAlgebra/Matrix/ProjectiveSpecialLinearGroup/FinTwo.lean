@@ -81,8 +81,7 @@ theorem mk_inv_mul_mul (S Y : SL(2, R)) :
 /-- Negating a special linear matrix does not change its class in `PSL(2, R)`. -/
 @[simp]
 theorem mk_neg (A : SL(2, R)) : ((-A : SL(2, R)) : PSL(2, R)) = A := by
-  rw [QuotientGroup.eq_iff_div_mem, show (-A) / A = (-1 : SL(2, R)) by
-    rw [← neg_one_mul A]; exact mul_div_cancel_right _ _]
+  rw [QuotientGroup.eq_iff_div_mem, ← neg_one_mul A, mul_div_cancel_right]
   exact Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of

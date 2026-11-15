@@ -111,12 +111,10 @@ theorem evenGenerator_eq_mul_S_mul_neg_adjugate (a b c d : ℤ) : evenGenerator 
     !![a, c; b, d] * (ModularGroup.S : Matrix (Fin 2) (Fin 2) ℤ) * -adjugate !![a, c; b, d] := by
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [evenGenerator, ModularGroup.coe_S, Matrix.adjugate_fin_two] <;> ring
-
 /-- Factorization `M · !![1, -1; 1, 0] · (-adjugate M) = oddGenerator a b c d`. -/
 theorem oddGenerator_eq_mul_mul_neg_adjugate (a b c d : ℤ) :
     oddGenerator a b c d = !![a, c; b, d] * !![1, -1; 1, 0] * -adjugate !![a, c; b, d] := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [oddGenerator, Matrix.adjugate_fin_two] <;> ring
-
 /-- Factorization `M' · S · (-adjugate M) = freeGenerator a b c d a' b' c' d'`. -/
 theorem freeGenerator_eq_mul_S_mul_neg_adjugate (a b c d a' b' c' d' : ℤ) :
     freeGenerator a b c d a' b' c' d' = !![a', c'; b', d'] *
@@ -136,7 +134,6 @@ def sideSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
 theorem S_inv_eq_sideSL :
     ModularGroup.S⁻¹ = sideSL (a := 0) (b := 1) (c := 1) (d := 0) (by ring) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [sideSL, ModularGroup.coe_S]
-
 /-- `R⁻¹` is the positive-determinant lift `sideSL` of the side `(-1 / 1, 1 / 0)`. -/
 theorem R_inv_eq_sideSL :
     TauCeti.ModularGroup.R⁻¹ = sideSL (a := -1) (b := 1) (c := 1) (d := 0) (by ring) := by
@@ -147,13 +144,11 @@ def evenSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
   ⟨evenGenerator a b c d, by rw [det_evenGenerator, h, one_pow]⟩
 @[simp] theorem coe_evenSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (evenSL h : Matrix (Fin 2) (Fin 2) ℤ) = evenGenerator a b c d := (rfl)
-
 /-- The `SL(2, ℤ)` lift of `oddGenerator` on a unimodular side `c * b - a * d = 1`. -/
 def oddSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
   ⟨oddGenerator a b c d, by rw [det_oddGenerator, h, one_pow]⟩
 @[simp] theorem coe_oddSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (oddSL h : Matrix (Fin 2) (Fin 2) ℤ) = oddGenerator a b c d := (rfl)
-
 /-- The `SL(2, ℤ)` lift of `freeGenerator` on two unimodular sides. -/
 def freeSL {a b c d a' b' c' d' : ℤ} (h : c * b - a * d = 1)
     (h' : c' * b' - a' * d' = 1) : SL(2, ℤ) :=
@@ -183,8 +178,7 @@ theorem freeSL_eq_sideSL_mul_S_inv_mul_inv {a b c d a' b' c' d' : ℤ}
 
 @[simp] theorem evenSL_sq {a b c d : ℤ} (h : c * b - a * d = 1) :
     evenSL h ^ 2 = (-1 : SL(2, ℤ)) := by
-  rw [evenSL_eq_conj_S_inv, ← MulAut.conj_apply, ← map_pow,
-    show ModularGroup.S⁻¹ ^ 2 = (-1 : SL(2, ℤ)) by decide]
+  rw [evenSL_eq_conj_S_inv, ← MulAut.conj_apply, ← map_pow, inv_pow, TauCeti.ModularGroup.S_sq]
   ext i j; fin_cases i <;> fin_cases j <;> simp
 @[simp] theorem coe_evenSL_sq {a b c d : ℤ} (h : c * b - a * d = 1) :
     (evenSL h : PSL(2, ℤ)) ^ 2 = 1 := by
@@ -194,8 +188,8 @@ theorem freeSL_eq_sideSL_mul_S_inv_mul_inv {a b c d a' b' c' d' : ℤ}
   inv_eq_of_mul_eq_one_right (by rw [← sq, coe_evenSL_sq])
 @[simp] theorem oddSL_pow_three {a b c d : ℤ} (h : c * b - a * d = 1) :
     oddSL h ^ 3 = (-1 : SL(2, ℤ)) := by
-  rw [oddSL_eq_conj_R_inv, ← MulAut.conj_apply, ← map_pow, show TauCeti.ModularGroup.R⁻¹ ^ 3 =
-    (-1 : SL(2, ℤ)) by rw [inv_pow, TauCeti.ModularGroup.R_pow_three]; decide]
+  rw [oddSL_eq_conj_R_inv, ← MulAut.conj_apply, ← map_pow, inv_pow,
+    TauCeti.ModularGroup.R_pow_three]
   ext i j; fin_cases i <;> fin_cases j <;> simp
 @[simp] theorem coe_oddSL_pow_three {a b c d : ℤ} (h : c * b - a * d = 1) :
     (oddSL h : PSL(2, ℤ)) ^ 3 = 1 := by
@@ -204,7 +198,7 @@ theorem freeSL_eq_sideSL_mul_S_inv_mul_inv {a b c d a' b' c' d' : ℤ}
 @[simp] theorem freeSL_inv {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) : (freeSL h h')⁻¹ = -freeSL h' h := by
   rw [freeSL_eq_sideSL_mul_S_inv_mul_inv h h', freeSL_eq_sideSL_mul_S_inv_mul_inv h' h]
-  simp [mul_assoc, show (ModularGroup.S⁻¹ : SL(2, ℤ))⁻¹ = -ModularGroup.S⁻¹ by decide]
+  simp [ModularGroup.S_inv, mul_assoc]
 @[simp] theorem coe_freeSL_inv {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     (freeSL h h' : PSL(2, ℤ))⁻¹ = freeSL h' h := by
@@ -273,50 +267,49 @@ theorem cuspOfEndpoint_eq_iff {p q : ℤ × ℤ} (hp : p ≠ (0, 0)) (hq : q ≠
     [simp [cuspOfEndpoint, hbd, (by exact_mod_cast hbd : (b : ℚ) + d = 0)];
      simp [cuspOfEndpoint, hbd, (by exact_mod_cast hbd : (b : ℚ) + d ≠ 0)]]
 
-private theorem mapGL_conj_smul {g₁ g₂ u : SL(2, ℤ)} (x : OnePoint ℚ) :
-    SpecialLinearGroup.mapGL ℚ (g₂ * u * g₁⁻¹) • (SpecialLinearGroup.mapGL ℚ g₁ • x) =
-      SpecialLinearGroup.mapGL ℚ g₂ • (SpecialLinearGroup.mapGL ℚ u • x) := by
-  rw [← mul_smul, ← map_mul, mul_assoc, inv_mul_cancel, mul_one, map_mul, mul_smul]
-
 /-- `evenSL` carries the left endpoint `a / b` to the right endpoint `c / d`. -/
 theorem evenSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (evenSL h) • cuspOfEndpoint (a, b) = cuspOfEndpoint (c, d) := by
-  rw [← sideSL_smul_infty h, evenSL_eq_conj_S_inv, mapGL_conj_smul, S_inv_eq_sideSL,
-    sideSL_smul_infty]; simp [cuspOfEndpoint]
+  rw [← sideSL_smul_infty h, evenSL_eq_conj_S_inv, map_mul, map_mul, map_inv _ (sideSL h),
+    mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_infty]; simp [cuspOfEndpoint]
 /-- `evenSL` carries the right endpoint `c / d` back to the left endpoint `a / b`. -/
 theorem evenSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (evenSL h) • cuspOfEndpoint (c, d) = cuspOfEndpoint (a, b) := by
-  rw [← sideSL_smul_zero h, evenSL_eq_conj_S_inv, mapGL_conj_smul, S_inv_eq_sideSL,
-    sideSL_smul_zero]; exact sideSL_smul_infty h
+  rw [← sideSL_smul_zero h, evenSL_eq_conj_S_inv, map_mul, map_mul, map_inv _ (sideSL h),
+    mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_zero]
+  exact sideSL_smul_infty h
 /-- `oddSL` carries `a / b` to the mediant `(a + c) / (b + d)`. -/
 theorem oddSL_smul_left {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (a, b) =
       cuspOfEndpoint (a + c, b + d) := by
-  rw [← sideSL_smul_infty h, oddSL_eq_conj_R_inv, mapGL_conj_smul, R_inv_eq_sideSL,
-    sideSL_smul_infty]; simp [cuspOfEndpoint]
+  rw [← sideSL_smul_infty h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
+    mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_infty]; simp [cuspOfEndpoint]
 /-- `oddSL` carries the mediant `(a + c) / (b + d)` to `c / d`. -/
 theorem oddSL_smul_mediant {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (a + c, b + d) =
       cuspOfEndpoint (c, d) := by
-  rw [← sideSL_smul_neg_one h, oddSL_eq_conj_R_inv, mapGL_conj_smul, R_inv_eq_sideSL,
-    sideSL_smul_neg_one]; simp [cuspOfEndpoint]
+  rw [← sideSL_smul_neg_one h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
+    mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_neg_one]; simp [cuspOfEndpoint]
 /-- `oddSL` carries `c / d` back to `a / b`. -/
 theorem oddSL_smul_right {a b c d : ℤ} (h : c * b - a * d = 1) :
     SpecialLinearGroup.mapGL ℚ (oddSL h) • cuspOfEndpoint (c, d) = cuspOfEndpoint (a, b) := by
-  rw [← sideSL_smul_zero h, oddSL_eq_conj_R_inv, mapGL_conj_smul, R_inv_eq_sideSL,
-    sideSL_smul_zero]; exact sideSL_smul_infty h
+  rw [← sideSL_smul_zero h, oddSL_eq_conj_R_inv, map_mul, map_mul, map_inv _ (sideSL h),
+    mul_smul, mul_smul, inv_smul_smul, R_inv_eq_sideSL, sideSL_smul_zero]
+  exact sideSL_smul_infty h
 /-- `freeSL` carries `a / b` to `c' / d'`. -/
 theorem freeSL_smul_left {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     SpecialLinearGroup.mapGL ℚ (freeSL h h') • cuspOfEndpoint (a, b) = cuspOfEndpoint (c', d') := by
-  rw [← sideSL_smul_infty h, freeSL_eq_sideSL_mul_S_inv_mul_inv, mapGL_conj_smul, S_inv_eq_sideSL,
-    sideSL_smul_infty]; simp [cuspOfEndpoint]
+  rw [← sideSL_smul_infty h, freeSL_eq_sideSL_mul_S_inv_mul_inv, map_mul, map_mul,
+    map_inv _ (sideSL h), mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_infty]
+  simp [cuspOfEndpoint]
 /-- `freeSL` carries `c / d` to `a' / b'`. -/
 theorem freeSL_smul_right {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     SpecialLinearGroup.mapGL ℚ (freeSL h h') • cuspOfEndpoint (c, d) = cuspOfEndpoint (a', b') := by
-  rw [← sideSL_smul_zero h, freeSL_eq_sideSL_mul_S_inv_mul_inv, mapGL_conj_smul, S_inv_eq_sideSL,
-    sideSL_smul_zero]; exact sideSL_smul_infty h'
+  rw [← sideSL_smul_zero h, freeSL_eq_sideSL_mul_S_inv_mul_inv, map_mul, map_mul,
+    map_inv _ (sideSL h), mul_smul, mul_smul, inv_smul_smul, S_inv_eq_sideSL, sideSL_smul_zero]
+  exact sideSL_smul_infty h'
 
 /-! ### Elliptic fixed points in `ℍ` -/
 
@@ -380,31 +373,33 @@ def sideLiftSL (F : FareySymbol) (i : Fin F.labels.length) : SL(2, ℤ) :=
   sideSL (F.unimodular_endpoints i)
 theorem sideLiftSL_def (F : FareySymbol) (i : Fin F.labels.length) :
     F.sideLiftSL i = sideSL (F.unimodular_endpoints i) := (rfl)
-
 /-- The even generator in `SL(2, ℤ)` attached to side `i` of `F`. -/
 def evenSideSL (F : FareySymbol) (i : Fin F.labels.length) : SL(2, ℤ) :=
   evenSL (F.unimodular_endpoints i)
 theorem evenSideSL_def (F : FareySymbol) (i : Fin F.labels.length) :
     F.evenSideSL i = evenSL (F.unimodular_endpoints i) := (rfl)
-
 /-- The odd generator in `SL(2, ℤ)` attached to side `i` of `F`. -/
 def oddSideSL (F : FareySymbol) (i : Fin F.labels.length) : SL(2, ℤ) :=
   oddSL (F.unimodular_endpoints i)
 theorem oddSideSL_def (F : FareySymbol) (i : Fin F.labels.length) :
     F.oddSideSL i = oddSL (F.unimodular_endpoints i) := (rfl)
-
 /-- The free generator in `SL(2, ℤ)` pairing side `i` with side `j` of `F`. -/
 def freeSideSL (F : FareySymbol) (i j : Fin F.labels.length) : SL(2, ℤ) :=
   freeSL (F.unimodular_endpoints i) (F.unimodular_endpoints j)
 theorem freeSideSL_def (F : FareySymbol) (i j : Fin F.labels.length) :
     F.freeSideSL i j = freeSL (F.unimodular_endpoints i) (F.unimodular_endpoints j) := (rfl)
+/-- Reversing the order of a side pair negates the inverse of `freeSideSL` in `SL(2, ℤ)`. -/
+@[simp] theorem freeSideSL_inv (F : FareySymbol) (i j : Fin F.labels.length) :
+    (F.freeSideSL i j)⁻¹ = -F.freeSideSL j i := freeSL_inv _ _
+/-- Reversing the order of a side pair inverts `freeSideSL` in `PSL(2, ℤ)`. -/
+@[simp] theorem coe_freeSideSL_inv (F : FareySymbol) (i j : Fin F.labels.length) :
+    (F.freeSideSL i j : PSL(2, ℤ))⁻¹ = F.freeSideSL j i := coe_freeSL_inv _ _
 
 /-- The left cusp in `OnePoint ℚ` of side `i` of `F`. -/
 def leftCusp (F : FareySymbol) (i : Fin F.labels.length) : OnePoint ℚ :=
   cuspOfEndpoint (F.leftEndpoint i)
 theorem leftCusp_def (F : FareySymbol) (i : Fin F.labels.length) :
     F.leftCusp i = cuspOfEndpoint (F.leftEndpoint i) := (rfl)
-
 /-- The right cusp in `OnePoint ℚ` of side `i` of `F`. -/
 def rightCusp (F : FareySymbol) (i : Fin F.labels.length) : OnePoint ℚ :=
   cuspOfEndpoint (F.rightEndpoint i)
@@ -426,8 +421,7 @@ theorem rightCusp_def (F : FareySymbol) (i : Fin F.labels.length) :
 theorem oddSideSL_smul_leftCusp (F : FareySymbol) (i : Fin F.labels.length) :
     SpecialLinearGroup.mapGL ℚ (F.oddSideSL i) • F.leftCusp i =
       cuspOfEndpoint ((F.leftEndpoint i).1 + (F.rightEndpoint i).1,
-        (F.leftEndpoint i).2 + (F.rightEndpoint i).2) :=
-  oddSL_smul_left _
+        (F.leftEndpoint i).2 + (F.rightEndpoint i).2) := oddSL_smul_left _
 @[simp] theorem oddSideSL_smul_rightCusp (F : FareySymbol) (i : Fin F.labels.length) :
     SpecialLinearGroup.mapGL ℚ (F.oddSideSL i) • F.rightCusp i = F.leftCusp i :=
   oddSL_smul_right _
@@ -491,13 +485,14 @@ theorem freeSideSL_ne_neg_one {F : FareySymbol} {i j : Fin F.labels.length}
       (F.rightEndpoint i).1 * (F.rightEndpoint j).1 = 0 := by
     simpa [freeSideSL_def, coe_freeSL, freeGenerator_def] using
       congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) hneg
-  rw [show F.leftEndpoint i = (-1, 0) by simp [leftEndpoint_def, hi0],
-    show F.rightEndpoint i = ((F.xs[0]'F.xs_length_pos).num, 1) by
-      simp [rightEndpoint_def, hi0, endpoints_succ F 0 F.xs_length_pos, F.den_xs_zero],
-    show F.leftEndpoint j = ((F.xs[F.xs.length - 1]'(by omega)).num, 1) by
-      simp [leftEndpoint_def, show j.val = F.xs.length - 1 + 1 by omega,
-        endpoints_succ F (F.xs.length - 1) (by omega), F.den_xs_pred_length],
-    show F.rightEndpoint j = (1, 0) by simp [rightEndpoint_def, hjlast]] at h01
+  have hj_succ : j.val = F.xs.length - 1 + 1 := by omega
+  have hli : F.leftEndpoint i = (-1, 0) := by simp [leftEndpoint_def, hi0]
+  have hri : (F.rightEndpoint i).1 = (F.xs[0]'F.xs_length_pos).num := by
+    simp [rightEndpoint_def, hi0, endpoints_succ F 0 F.xs_length_pos]
+  have hlj : (F.leftEndpoint j).1 = (F.xs[F.xs.length - 1]'(by omega)).num := by
+    simp [leftEndpoint_def, hj_succ, endpoints_succ F (F.xs.length - 1) (by omega)]
+  have hrj : F.rightEndpoint j = (1, 0) := by simp [rightEndpoint_def, hjlast]
+  rw [hli, hri, hlj, hrj] at h01
   have hlt_xs :=
     F.getElem_xs_lt_getElem_xs_of_lt F.xs_length_pos (j := F.xs.length - 1) (by omega) (by omega)
   rw [← Rat.intCast_num_of_den_eq_one F.den_xs_zero,
@@ -533,14 +528,13 @@ private theorem trace_freeSideSL_of_lt_of_sharesCusp {F : FareySymbol}
   have hPN : sideCross (F.leftEndpoint i) (F.rightEndpoint j) *
       sideCross (F.rightEndpoint i) (F.leftEndpoint j) = 0 := by
     rcases (F.sharesCusp_iff_of_lt hij).mp hsc with hadj | ⟨hi0, hjlast⟩
-    · simp [sideCross, show F.leftEndpoint j = F.rightEndpoint i by
-        simp [leftEndpoint_def, rightEndpoint_def, ← hadj]]
+    · simp [sideCross, leftEndpoint_def, rightEndpoint_def, ← hadj]
     · simp [sideCross, leftEndpoint_def, rightEndpoint_def, hi0, hjlast]
   rw [hPN, sub_zero] at hid
   have hX1 : sideCross (F.leftEndpoint i) (F.leftEndpoint j) = 1 := le_antisymm (by
     by_contra! hlt; have := mul_le_mul hlt hY (by omega) (by omega); omega) hX
-  rw [htr, hX1, show sideCross (F.rightEndpoint i) (F.rightEndpoint j) = 1 by
-    rw [hX1, one_mul] at hid; exact hid]; rfl
+  have hY1 : sideCross (F.rightEndpoint i) (F.rightEndpoint j) = 1 := by simpa [hX1] using hid
+  rw [htr, hX1, hY1]; rfl
 
 /-- Ordered sides `i < j` sharing a cusp (`1 < F.xs.length`) give a parabolic `F.freeSideSL i j`. -/
 theorem isParabolic_coe_freeSideSL_of_lt_of_sharesCusp {F : FareySymbol}
@@ -584,8 +578,8 @@ theorem isParabolic_coe_freeSideSL_iff {F : FareySymbol} {i j : Fin F.labels.len
       (Matrix.ProjectiveSpecialLinearGroup.IsParabolic (F.freeSideSL i j : PSL(2, ℤ)) ↔
         F.SharesCusp i j) by
     rcases lt_or_gt_of_ne hne with hij | hji; · exact this hij
-    rw [freeSideSL_def, ← coe_freeSL_inv, Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff,
-      ← freeSideSL_def, sharesCusp_comm]; exact this hji
+    rw [← coe_freeSideSL_inv, Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff,
+      sharesCusp_comm]; exact this hji
   intro i j hij; by_cases hsc : F.SharesCusp i j
   · exact ⟨fun _ ↦ hsc, fun _ ↦ F.isParabolic_coe_freeSideSL_of_lt_of_sharesCusp hxs hij hsc⟩
   · refine ⟨fun hpar ↦ False.elim ?_, fun h ↦ False.elim (hsc h)⟩
@@ -691,7 +685,7 @@ theorem group_eq_closure_orderedGeneratorSet (F : FareySymbol) :
     · exact Subgroup.subset_closure ⟨i, Or.inr (Or.inl ⟨hi, rfl⟩)⟩
     · rcases lt_or_gt_of_ne hne with hij | hji
       · exact Subgroup.subset_closure ⟨i, Or.inr (Or.inr ⟨j, l, hij, hi, hj, rfl⟩)⟩
-      · rw [freeSideSL_def, ← coe_freeSL_inv, ← freeSideSL_def]
+      · rw [← coe_freeSideSL_inv]
         exact inv_mem (Subgroup.subset_closure ⟨j, Or.inr (Or.inr ⟨i, l, hji, hj, hi, rfl⟩)⟩))
     (Subgroup.closure_mono fun g ⟨i, h⟩ ↦ ⟨i, h.imp id (Or.imp id fun ⟨j, l, hij, hi, hj, hg⟩ ↦
       ⟨j, l, hij.ne, hi, hj, hg⟩)⟩)
@@ -724,16 +718,19 @@ theorem sideLiftSL_translate (k : ℤ) (F : FareySymbol) (i : Fin (F.translate k
     simp [sideLiftSL_def, ModularGroup.coe_T_zpow, leftEndpoint_translate, rightEndpoint_translate]
   ring
 
+/-- Translating `F` by `k ∈ ℤ` conjugates `evenSideSL` by `T ^ k` in `SL(2, ℤ)`. -/
 theorem evenSideSL_translate (k : ℤ) (F : FareySymbol) (i : Fin (F.translate k).labels.length) :
     (F.translate k).evenSideSL i =
       ModularGroup.T ^ k * F.evenSideSL (i.cast (by simp)) * (ModularGroup.T ^ k)⁻¹ := by
   rw [evenSideSL_def, evenSideSL_def, evenSL_eq_conj_S_inv, evenSL_eq_conj_S_inv, ← sideLiftSL_def,
     sideLiftSL_translate, _root_.mul_inv_rev]; simp [sideLiftSL_def, mul_assoc]
+/-- Translating `F` by `k ∈ ℤ` conjugates `oddSideSL` by `T ^ k` in `SL(2, ℤ)`. -/
 theorem oddSideSL_translate (k : ℤ) (F : FareySymbol) (i : Fin (F.translate k).labels.length) :
     (F.translate k).oddSideSL i =
       ModularGroup.T ^ k * F.oddSideSL (i.cast (by simp)) * (ModularGroup.T ^ k)⁻¹ := by
   rw [oddSideSL_def, oddSideSL_def, oddSL_eq_conj_R_inv, oddSL_eq_conj_R_inv, ← sideLiftSL_def,
     sideLiftSL_translate, _root_.mul_inv_rev]; simp [sideLiftSL_def, mul_assoc]
+/-- Translating `F` by `k ∈ ℤ` conjugates `freeSideSL` by `T ^ k` in `SL(2, ℤ)`. -/
 theorem freeSideSL_translate (k : ℤ) (F : FareySymbol) (i j : Fin (F.translate k).labels.length) :
     (F.translate k).freeSideSL i j =
       ModularGroup.T ^ k * F.freeSideSL (i.cast (by simp)) (j.cast (by simp)) *
@@ -751,12 +748,13 @@ theorem group_translate (k : ℤ) (F : FareySymbol) : (F.translate k).group =
     have h := Subgroup.map_mono
       (f := (MulAut.conj ((ModularGroup.T : PSL(2, ℤ)) ^ k)).toMonoidHom) (hle (-k) (F.translate k))
     rw [← translate_add, neg_add_cancel, translate_zero, Subgroup.map_map] at h
-    rwa [show (MulAut.conj ((ModularGroup.T : PSL(2, ℤ)) ^ k)).toMonoidHom.comp
-      (MulAut.conj ((ModularGroup.T : PSL(2, ℤ)) ^ (-k))).toMonoidHom = MonoidHom.id _ from
+    have hcomp : (MulAut.conj ((ModularGroup.T : PSL(2, ℤ)) ^ k)).toMonoidHom.comp
+        (MulAut.conj ((ModularGroup.T : PSL(2, ℤ)) ^ (-k))).toMonoidHom = MonoidHom.id _ :=
       MonoidHom.ext fun x ↦ by
         rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
           ← MulAut.mul_apply, ← map_mul, ← _root_.zpow_add, add_neg_cancel, _root_.zpow_zero,
-          map_one]; rfl, Subgroup.map_id] at h
+          map_one]; rfl
+    rwa [hcomp, Subgroup.map_id] at h
   intro m G; rw [group_def, Subgroup.closure_le]
   rintro x ⟨i, ⟨hi, rfl⟩ | ⟨hi, rfl⟩ | ⟨j, l, hne, hi, hj, rfl⟩⟩
   · refine ⟨_, G.coe_evenSideSL_mem_group (i := i.cast (by simp)) (by simpa using hi), ?_⟩
@@ -775,16 +773,19 @@ theorem sideLiftSL_reflect (F : FareySymbol) (i : Fin F.reflect.labels.length) :
   ext p q; fin_cases p <;> fin_cases q <;>
     simp [sideLiftSL_def, S_inv_eq_sideSL, F.leftEndpoint_reflect i, F.rightEndpoint_reflect i]
 
+/-- Reflecting `F` sends `evenSideSL i` to `-conjJ (F.evenSideSL i.rev)` in `SL(2, ℤ)`. -/
 theorem evenSideSL_reflect (F : FareySymbol) (i : Fin F.reflect.labels.length) :
     F.reflect.evenSideSL i = -SpecialLinearGroup.conjJ (F.evenSideSL (i.rev.cast (by simp))) := by
   rw [evenSideSL_def, evenSideSL_def, evenSL_eq_conj_S_inv, evenSL_eq_conj_S_inv, ← sideLiftSL_def,
     ← sideLiftSL_def, sideLiftSL_reflect]; simp [_root_.mul_inv_rev, mul_assoc]
+/-- Reflecting `F` sends `oddSideSL i` to `(conjJ (F.oddSideSL i.rev))⁻¹` in `SL(2, ℤ)`. -/
 theorem oddSideSL_reflect (F : FareySymbol) (i : Fin F.reflect.labels.length) :
     F.reflect.oddSideSL i = SpecialLinearGroup.conjJ (F.oddSideSL (i.rev.cast (by simp)))⁻¹ := by
   rw [oddSideSL_def, oddSideSL_def, oddSL_eq_conj_R_inv, oddSL_eq_conj_R_inv, ← sideLiftSL_def,
     ← sideLiftSL_def, sideLiftSL_reflect]
   simp only [_root_.mul_inv_rev, inv_inv, SpecialLinearGroup.conjJ_mul,
     SpecialLinearGroup.conjJ_inv, ← TauCeti.ModularGroup.S_inv_mul_R_inv_mul_S, mul_assoc]
+/-- Reflecting `F` sends `freeSideSL i j` to `-conjJ (F.freeSideSL i.rev j.rev)` in `SL(2, ℤ)`. -/
 theorem freeSideSL_reflect (F : FareySymbol) (i j : Fin F.reflect.labels.length) :
     F.reflect.freeSideSL i j =
       -SpecialLinearGroup.conjJ (F.freeSideSL (i.rev.cast (by simp)) (j.rev.cast (by simp))) := by
@@ -804,16 +805,16 @@ theorem group_reflect (F : FareySymbol) :
     refine le_antisymm (hle F) ?_
     have h := Subgroup.map_mono (f := φ.toMonoidHom) (hle F.reflect)
     rw [reflect_reflect, Subgroup.map_map] at h
-    rwa [show φ.toMonoidHom.comp φ.toMonoidHom = MonoidHom.id _ by
-      ext A; simp [QuotientGroup.mk'_apply, hφ_mk], Subgroup.map_id] at h
+    have hφ_comp : φ.toMonoidHom.comp φ.toMonoidHom = MonoidHom.id _ := by
+      ext A; simp [QuotientGroup.mk'_apply, hφ_mk]
+    rwa [hφ_comp, Subgroup.map_id] at h
   intro G; rw [group_def, Subgroup.closure_le]
   rintro x ⟨i, ⟨hi, rfl⟩ | ⟨hi, rfl⟩ | ⟨j, l, hne, hi, hj, rfl⟩⟩
   · rw [evenSideSL_reflect, Matrix.ProjectiveSpecialLinearGroup.mk_neg, ← hφ_mk]
-    rw [G.getElem_reflect_labels] at hi
-    exact Subgroup.mem_map_of_mem _ (G.coe_evenSideSL_mem_group hi)
+    exact Subgroup.mem_map_of_mem _ (G.coe_evenSideSL_mem_group (G.getElem_reflect_labels i ▸ hi))
   · rw [oddSideSL_reflect, ← hφ_mk, QuotientGroup.mk_inv, map_inv]
-    rw [G.getElem_reflect_labels] at hi
-    exact inv_mem (Subgroup.mem_map_of_mem _ (G.coe_oddSideSL_mem_group hi))
+    exact inv_mem (Subgroup.mem_map_of_mem _
+      (G.coe_oddSideSL_mem_group (G.getElem_reflect_labels i ▸ hi)))
   · rw [freeSideSL_reflect, Matrix.ProjectiveSpecialLinearGroup.mk_neg, ← hφ_mk]
     rw [G.getElem_reflect_labels] at hi hj
     exact Subgroup.mem_map_of_mem _ (G.coe_freeSideSL_mem_group
@@ -858,11 +859,12 @@ theorem oddSideSL_levelOne_one : levelOne.oddSideSL ⟨1, by simp⟩ = -TauCeti.
   have hU : (TauCeti.ModularGroup.U : PSL(2, ℤ)) ∈ levelOne.group := by
     rw [← Matrix.ProjectiveSpecialLinearGroup.mk_neg, ← oddSideSL_levelOne_one]
     exact levelOne.coe_oddSideSL_mem_group (by simp)
-  refine Set.pair_subset hS ?_
-  rw [← inv_inv (ModularGroup.T : PSL(2, ℤ)), show ((ModularGroup.T : PSL(2, ℤ)))⁻¹ =
-    (ModularGroup.S : PSL(2, ℤ))⁻¹ * TauCeti.ModularGroup.U by
+  have hTinv : ((ModularGroup.T : PSL(2, ℤ)))⁻¹ =
+      (ModularGroup.S : PSL(2, ℤ))⁻¹ * TauCeti.ModularGroup.U := by
     rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul,
-      TauCeti.ModularGroup.S_inv_mul_U]]
+      TauCeti.ModularGroup.S_inv_mul_U]
+  refine Set.pair_subset hS ?_
+  rw [← inv_inv (ModularGroup.T : PSL(2, ℤ)), hTinv]
   exact inv_mem (mul_mem (inv_mem hS) hU)
 
 /-- The free generator pairing sides `0` and `2` of `gamma0Two` is `-T`. -/
@@ -891,7 +893,7 @@ theorem comap_group_gamma0Two :
     · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
       exact ⟨B, CongruenceSubgroup.mem_Gamma0_iff_dvd.mpr ⟨-1, by decide⟩, by simp [hB]⟩
     · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-    · rw [Fin.getElem_fin] at hli hlj; change i < j at hij; have : j < 3 := by simpa using hj
+    · rw [Fin.getElem_fin] at hli hlj; rw [Fin.mk_lt_mk] at hij; have : j < 3 := by simpa using hj
       interval_cases i <;> interval_cases j <;> try omega
       · simp at hlj
       · exact ⟨(-ModularGroup.T : SL(2, ℤ)),
@@ -947,7 +949,7 @@ theorem comap_group_gammaTwo :
     rcases h with ⟨hlab, rfl⟩ | ⟨hlab, rfl⟩ | ⟨⟨j, hj⟩, l, hij, hli, hlj, rfl⟩
     · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
     · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-    · rw [Fin.getElem_fin] at hli hlj; change i < j at hij; have : j < 4 := by simpa using hj
+    · rw [Fin.getElem_fin] at hli hlj; rw [Fin.mk_lt_mk] at hij; have : j < 4 := by simpa using hj
       interval_cases i <;> interval_cases j <;> try omega
       all_goals simp only [gammaTwo_labels, List.getElem_cons_zero, List.getElem_cons_succ,
         SideLabel.free.injEq] at hli hlj

@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.RingTheory.Coprime.Lemmas
 public import TauCeti.Data.Rat.Lemmas
 import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.Int.Interval
 import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Tactic.IntervalCases
@@ -19,14 +20,14 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-import TauCeti.Data.List.OfFn
 
 /-!
 # Farey symbols
 
 A **Farey symbol** (`TauCeti.FareySymbol`), introduced by Kulkarni, is a finite combinatorial
-datum encoding a finite-index subgroup of `PSL(2, ℤ)` together with a fundamental hyperbolic
-polygon and a presentation by independent generators.
+datum consisting of an ordered list of reduced rational cusps and paired or elliptic side labels;
+`TauCeti.NumberTheory.Modular.FareySymbol.Generators` constructs the associated side generators
+and subgroup of `PSL(2, ℤ)`.
 
 Concretely, it consists of a strictly increasing nonempty list `x_0 < x_1 < ⋯ < x_m` of reduced
 rationals `x_i = a_i / b_i` (`b_i > 0`), extended by the two signed representatives `-1 / 0` and
@@ -34,7 +35,7 @@ rationals `x_i = a_i / b_i` (`b_i > 0`), extended by the two signed representati
 and `x_m` to be integers), together with labels from `TauCeti.SideLabel` (`even`, `odd`, `free j`)
 on the `m + 2` sides `(x_{i - 1}, x_i)` such that every free label occurs zero or two times and
 `1 < xs.length` or an `odd` label occurs (equivalently `6 < 6 * freePairs + 3 * evenCount +
-4 * oddCount`, excluding the infinite-index singletons `[0]` with `[even, even]` or
+4 * oddCount`, excluding the degenerate singletons `[0]` with `[even, even]` or
 `[free j, free j]`).
 
 ## Main definitions and results
@@ -44,7 +45,7 @@ on the `m + 2` sides `(x_{i - 1}, x_i)` such that every free label occurs zero o
   side counts `e₂`, `e₃`, `r` satisfying `evenCount + oddCount + 2 * freePairs = labels.length`.
 * `TauCeti.FareySymbol.nondegenerate_iff_six_lt_score`,
   `TauCeti.FareySymbol.six_lt_six_mul_freePairs_add_three_mul_evenCount_add_four_mul_oddCount`:
-  equivalence between nondegeneracy and the hyperbolic-area bound `6 < 6r + 3e₂ + 4e₃`.
+  equivalence between nondegeneracy and the score bound `6 < 6r + 3e₂ + 4e₃`.
 * `TauCeti.FareySymbol.endpoints`, `TauCeti.FareySymbol.leftEndpoint`,
   `TauCeti.FareySymbol.rightEndpoint`, `TauCeti.FareySymbol.unimodular_endpoints`: homogeneous
   endpoints `[(-1, 0), (a_0, b_0), …, (a_m, b_m), (1, 0)]` and side unimodularity.
@@ -286,7 +287,9 @@ theorem exists_other_free {F : FareySymbol} {i : Fin F.labels.length} {l : ℕ}
     Finset.ext fun j ↦ by
       simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
       exact ⟨fun hj ↦ by_contra fun hne ↦ hall j hne hj, fun h ↦ h ▸ hi⟩
-  have hcard := F.labels.card_filter_getElem_eq_count (.free l)
+  have hcard : (Finset.univ.filter fun j : Fin F.labels.length ↦ F.labels[j] = .free l).card =
+      F.labels.count (.free l) := by
+    simpa using (List.count_ofFn (fun j : Fin F.labels.length ↦ F.labels[j]) (.free l)).symm
   rw [hfilter, Finset.card_singleton, hcnt] at hcard; omega
 
 /-- The partner of a free side `i` in `F` is unique: no third side can share its free label. -/
@@ -300,7 +303,10 @@ theorem eq_of_free_partner {F : FareySymbol} {i j₁ j₂ : Fin F.labels.length}
     simp only [Finset.mem_insert, Finset.mem_singleton] at hk
     simp only [Finset.mem_filter, Finset.mem_univ, true_and]
     rcases hk with rfl | rfl | rfl <;> assumption
-  have hle := (Finset.card_le_card hsub).trans_eq (F.labels.card_filter_getElem_eq_count (.free l))
+  have hcard : (Finset.univ.filter fun j : Fin F.labels.length ↦ F.labels[j] = .free l).card =
+      F.labels.count (.free l) := by
+    simpa using (List.count_ofFn (fun j : Fin F.labels.length ↦ F.labels[j]) (.free l)).symm
+  have hle := (Finset.card_le_card hsub).trans_eq hcard
   rw [Finset.card_insert_of_notMem (by simp [hne₁.symm, hne₂.symm]),
     Finset.card_insert_of_notMem (by simp [h12]), Finset.card_singleton, hcnt] at hle
   omega
@@ -439,10 +445,11 @@ theorem unimodular_endpoints (F : FareySymbol) (i : Fin F.labels.length) :
     rcases lt_or_eq_of_le (Nat.le_of_lt_succ hi) with hj | hj
     · rw [endpoints_succ F j (by omega), endpoints_succ F (j + 1) hj]
       exact F.unimodular j hj
-    · have hden : (F.xs[j]'(by omega)).den = 1 := by
-        simpa [show j = F.xs.length - 1 by omega] using F.den_xs_pred_length
-      have hlast : F.endpoints[j + 1 + 1]'(by simp; omega) = (1, 0) := by
-        simp [show j + 1 = F.xs.length from hj]
+    · have hj_pred : j = F.xs.length - 1 := by omega
+      have hden : (F.xs[j]'(by omega)).den = 1 := by
+        simpa [hj_pred] using F.den_xs_pred_length
+      have hlast : F.endpoints[j + 1 + 1]'(by simp [endpoints_length]; omega) = (1, 0) := by
+        simpa [← hj] using F.endpoints_last
       rw [hlast, endpoints_succ F j (by omega), hden]; ring
 
 /-- For ordered indices `k < l` into `F.endpoints` other than the opposite infinite pair
