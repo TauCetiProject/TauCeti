@@ -18,7 +18,8 @@ The Cartier operator of modulus `q` and index `r` selects coefficients at the in
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
 original series. The Cartier components of a product are sums of products of components whose
 residues add up to the given residue, shifted by `X` when the residues carry; for modulus `2`
-this is the product formula for even and odd parts. Over a finite field, expansion by its
+this is the product formula for even and odd parts. Rescaling the variable by `a` rescales each
+Cartier component, so the odd part of `F(-X) F(X)` vanishes. Over a finite field, expansion by its
 cardinality is the Frobenius power, so these identities give the usual Cartier identities used
 in residue averaging. Since the `j`-th iterate of that expansion is the `q ^ j`-th power map
 (`FiniteField.PowerSeries.expand_card_pow_apply`),
@@ -116,6 +117,20 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
 
 end Semiring
 
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- Rescaling the variable by `a` multiplies the Cartier component of modulus `q` and index `r`
+by `a ^ r` and rescales it by `a ^ q`. -/
+theorem cartier_rescale (q r : ℕ) (a : R) (F : PowerSeries R) :
+    cartier R q r (rescale a F) = a ^ r • rescale (a ^ q) (cartier R q r F) := by
+  ext n
+  simp only [coeff_cartier, coeff_rescale, coeff_smul, smul_eq_mul]
+  ring
+
+end CommSemiring
+
 section CommRing
 
 variable {R : Type*} [CommRing R]
@@ -190,18 +205,18 @@ theorem sum_X_pow_mul_expand_cartier (q : ℕ) (hq : q ≠ 0) (F : PowerSeries R
 theorem cartier_X_pow_mul_expand (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (F : PowerSeries R) :
     cartier R q r (X ^ m * expand q hq F) = if m % q = r then X ^ (m / q) * F else 0 := by
   have hm : (X : R⟦X⟧) ^ m * expand q hq F = expand q hq (X ^ (m / q) * F) * X ^ (m % q) := by
-    rw [map_mul, map_pow, expand_X, ← pow_mul, mul_right_comm, ← pow_add, Nat.div_add_mod]
-  rw [hm, cartier_expand_mul q r hq hr, X_pow_eq (m % q), cartier_monomial q r _ hr, Nat.mod_mod,
-    Nat.mod_div_self, monomial_zero_eq_C, map_one]
-  split_ifs <;> simp
+    simp [expand_X, ← pow_mul, mul_right_comm, ← pow_add, Nat.div_add_mod]
+  rw [hm, cartier_expand_mul q r hq hr]
+  simp [X_pow_eq, cartier_monomial _ _ _ hr]
 
 /-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
 `F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
 modulo `q`, shifted by `X` when the residues carry past `q`. -/
-theorem cartier_mul (q r : ℕ) (hq : q ≠ 0) (hr : r < q) (F G : PowerSeries R) :
+theorem cartier_mul (q r : ℕ) (hr : r < q) (F G : PowerSeries R) :
     cartier R q r (F * G) = ∑ a ∈ Finset.range q, ∑ b ∈ Finset.range q,
       if (a + b) % q = r then X ^ ((a + b) / q) * (cartier R q a F * cartier R q b G)
       else 0 := by
+  have hq : q ≠ 0 := Nat.ne_zero_of_lt hr
   have hF := sum_X_pow_mul_expand_cartier q hq F
   have hG := sum_X_pow_mul_expand_cartier q hq G
   calc cartier R q r (F * G)
@@ -219,14 +234,33 @@ even part of `F * G` is `F₀ G₀ + X F₁ G₁`. -/
 theorem cartier_two_zero_mul (F G : PowerSeries R) :
     cartier R 2 0 (F * G) =
       cartier R 2 0 F * cartier R 2 0 G + X * (cartier R 2 1 F * cartier R 2 1 G) := by
-  simp [cartier_mul 2 0 two_ne_zero two_pos, Finset.sum_range_succ]
+  simp [cartier_mul 2 0 two_pos, Finset.sum_range_succ]
 
 /-- The odd part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
 odd part of `F * G` is `F₀ G₁ + F₁ G₀`. -/
 theorem cartier_two_one_mul (F G : PowerSeries R) :
     cartier R 2 1 (F * G) =
       cartier R 2 0 F * cartier R 2 1 G + cartier R 2 1 F * cartier R 2 0 G := by
-  simp [cartier_mul 2 1 two_ne_zero one_lt_two, Finset.sum_range_succ]
+  simp [cartier_mul 2 1 one_lt_two, Finset.sum_range_succ]
+
+/-- The even part of `F(-X)` is the even part of `F`, evaluated at `X`. -/
+@[simp]
+theorem cartier_two_zero_rescale_neg_one (F : PowerSeries R) :
+    cartier R 2 0 (rescale (-1) F) = cartier R 2 0 F := by
+  simp [cartier_rescale]
+
+/-- The odd part of `F(-X)` is minus the odd part of `F`. -/
+@[simp]
+theorem cartier_two_one_rescale_neg_one (F : PowerSeries R) :
+    cartier R 2 1 (rescale (-1) F) = -cartier R 2 1 F := by
+  simp [cartier_rescale]
+
+/-- The product `F(-X) F(X)` is even: its odd part vanishes. -/
+@[simp]
+theorem cartier_two_one_rescale_neg_one_mul_self (F : PowerSeries R) :
+    cartier R 2 1 (rescale (-1) F * F) = 0 := by
+  rw [cartier_two_one_mul, cartier_two_zero_rescale_neg_one, cartier_two_one_rescale_neg_one]
+  ring
 
 /-- A series whose coefficients vanish away from the multiples of `q` is the expansion of its
 residue-zero Cartier component. -/

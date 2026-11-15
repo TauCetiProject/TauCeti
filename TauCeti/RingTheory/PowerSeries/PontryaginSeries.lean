@@ -34,7 +34,8 @@ of roots, `p(E_ℝ) = ∏ⱼ (1 + xⱼ²)`.
 
 The even and odd parts are the Cartier components `PowerSeries.cartier R 2 0` and
 `PowerSeries.cartier R 2 1`; their product formulas are `PowerSeries.cartier_two_zero_mul` and
-`PowerSeries.cartier_two_one_mul`.
+`PowerSeries.cartier_two_one_mul`, and the evenness of `C(-X) C(X)` is
+`PowerSeries.cartier_two_one_rescale_neg_one_mul_self`.
 
 ## Main definitions
 
@@ -47,12 +48,14 @@ The even and odd parts are the Cartier components `PowerSeries.cartier R 2 0` an
 * `PowerSeries.twice_even_product_correction_eq_zero`: if the odd coefficients of `P` are
   annihilated by `2`, then twice the difference between an even coefficient of `P * Q` and the
   convolution of the even coefficients of `P` and `Q` vanishes.
-* `PowerSeries.pontryaginSeries_mul_of_isLeftRegular_two`: the Pontryagin series is
-  multiplicative when `2` is a non-zero-divisor and the odd coefficients of one factor are
-  annihilated by `2`.
+* `PowerSeries.pontryaginSeries_mul_of_isLeftRegular_two_of_two_mul_coeff_eq_zero`: the
+  Pontryagin series is multiplicative when `2` is a non-zero-divisor and the odd coefficients of
+  one factor are annihilated by `2`.
+* `PowerSeries.expand_rescale_pontryaginSeries_of_cartier_two_one_eq_zero`: an even series is
+  recovered from its Pontryagin series by `p ↦ p(-X²)`.
 * `PowerSeries.expand_rescale_pontryaginSeries_rescale_neg_one_mul_self`: Milnor–Stasheff's formula
   for the Pontryagin series of `C(-X) C(X)`.
-* `PowerSeries.pontryaginSeries_rescale_neg_one_prod_mul_prod`: on formal roots,
+* `PowerSeries.pontryaginSeries_rescale_neg_one_prod_map_one_add_C_mul_X_mul_self`: on formal roots,
   `C = ∏ⱼ (1 + xⱼ X)` gives the Pontryagin series `∏ⱼ (1 + xⱼ² X)`.
 
 ## References
@@ -94,15 +97,67 @@ series. -/
 @[simp]
 theorem constantCoeff_pontryaginSeries (C : R⟦X⟧) :
     constantCoeff (pontryaginSeries R C) = constantCoeff C := by
-  rw [← coeff_zero_eq_constantCoeff_apply, ← coeff_zero_eq_constantCoeff_apply,
-    coeff_pontryaginSeries, pow_zero, one_mul, mul_zero]
+  simp [← coeff_zero_eq_constantCoeff_apply, -coeff_zero_eq_constantCoeff]
 
 /-- The trivial total Chern class has trivial Pontryagin series. -/
 @[simp]
 theorem pontryaginSeries_one : pontryaginSeries R (1 : R⟦X⟧) = 1 := by
   simp [pontryaginSeries_apply]
 
+/-- The Pontryagin series of a constant series is that constant. -/
+@[simp]
+theorem pontryaginSeries_C (a : R) : pontryaginSeries R (C a) = C a := by
+  ext k
+  rcases k with _ | k <;> simp [coeff_C]
+
+/-- The Pontryagin series of `X` vanishes: `X` has no even part. -/
+@[simp]
+theorem pontryaginSeries_X : pontryaginSeries R (X : R⟦X⟧) = 0 := by
+  ext k
+  simp [coeff_X]
+
+/-- The Pontryagin series commutes with multiplication by constants. -/
+@[simp]
+theorem pontryaginSeries_C_mul (a : R) (F : R⟦X⟧) :
+    pontryaginSeries R (C a * F) = C a * pontryaginSeries R F := by
+  simp [← smul_eq_C_mul]
+
+/-- The Pontryagin series of an even monomial: `a X²ᵏ ↦ (-1)ᵏ a Xᵏ`. -/
+@[simp]
+theorem pontryaginSeries_monomial_two_mul (k : ℕ) (a : R) :
+    pontryaginSeries R (monomial (2 * k) a) = monomial k ((-1) ^ k * a) := by
+  ext n
+  simp [coeff_monomial]
+  split_ifs <;> simp_all
+
+/-- The Pontryagin series of an odd monomial vanishes. -/
+@[simp]
+theorem pontryaginSeries_monomial_two_mul_add_one (k : ℕ) (a : R) :
+    pontryaginSeries R (monomial (2 * k + 1) a) = 0 := by
+  ext n
+  simp [coeff_monomial]
+  omega
+
+/-- Rescaling the variable by `a` rescales the Pontryagin series by `a ^ 2`. -/
+theorem pontryaginSeries_rescale (a : R) (F : R⟦X⟧) :
+    pontryaginSeries R (rescale a F) = rescale (a ^ 2) (pontryaginSeries R F) := by
+  simp [pontryaginSeries_apply, cartier_rescale, rescale_rescale, mul_comm]
+
+/-- The Pontryagin series of `F(-X)` is that of `F`. -/
+@[simp]
+theorem pontryaginSeries_rescale_neg_one (F : R⟦X⟧) :
+    pontryaginSeries R (rescale (-1) F) = pontryaginSeries R F := by
+  simp [pontryaginSeries_apply]
+
+/-- The Pontryagin series of `F(X²)` is `F(-X)`. -/
+@[simp]
+theorem pontryaginSeries_expand_two (F : R⟦X⟧) :
+    pontryaginSeries R (expand 2 two_ne_zero F) = rescale (-1) F := by
+  ext n
+  simp
+
 /-- The Pontryagin series is natural for coefficient ring homomorphisms. -/
+@[simp]
 theorem map_pontryaginSeries {S : Type*} [CommRing S] (f : R →+* S) (C : R⟦X⟧) :
     map f (pontryaginSeries R C) = pontryaginSeries S (map f C) := by
   ext k
@@ -128,10 +183,10 @@ theorem coeff_succ_pontryaginSeries_mul (P Q : R⟦X⟧) (k : ℕ) :
         coeff p.1 (pontryaginSeries R P) * coeff p.2 (pontryaginSeries R Q) +
       (-1) ^ (k + 1) * ∑ p ∈ Finset.antidiagonal k,
         coeff (2 * p.1 + 1) P * coeff (2 * p.2 + 1) Q := by
-  rw [pontryaginSeries_mul, map_sub, coeff_mul, coeff_succ_X_mul, coeff_rescale, coeff_mul,
-    sub_eq_add_neg, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_neg_distrib]
+  rw [pontryaginSeries_mul, map_sub, coeff_succ_X_mul, ← coeff_mul]
+  simp only [coeff_rescale, coeff_mul, coeff_cartier, Finset.mul_sum, sub_eq_add_neg,
+    ← Finset.sum_neg_distrib]
   refine congrArg _ (Finset.sum_congr rfl fun p _ ↦ ?_)
-  simp only [coeff_cartier, pow_succ]
   ring
 
 /-- **The `2`-torsion of the Pontryagin Whitney correction.** If the odd coefficients of `P` are
@@ -155,7 +210,8 @@ theorem twice_even_product_correction_eq_zero (P Q : R⟦X⟧)
 /-- **Multiplicativity of the Pontryagin series away from `2`.** If `2` is a non-zero-divisor in
 `R` and the odd coefficients of `P` are annihilated by `2`, then the Pontryagin series of
 `P * Q` is the product of the Pontryagin series of `P` and `Q`. -/
-theorem pontryaginSeries_mul_of_isLeftRegular_two (h2 : IsLeftRegular (2 : R)) (P Q : R⟦X⟧)
+theorem pontryaginSeries_mul_of_isLeftRegular_two_of_two_mul_coeff_eq_zero
+    (h2 : IsLeftRegular (2 : R)) (P Q : R⟦X⟧)
     (hodd : ∀ j : ℕ, 2 * coeff (2 * j + 1) P = 0) :
     pontryaginSeries R (P * Q) = pontryaginSeries R P * pontryaginSeries R Q := by
   have hP : cartier R 2 1 P = 0 := by
@@ -163,25 +219,14 @@ theorem pontryaginSeries_mul_of_isLeftRegular_two (h2 : IsLeftRegular (2 : R)) (
     exact h2 (by simpa using hodd j)
   simp [pontryaginSeries_mul, hP]
 
-/-- The product `C(-X) C(X)` is even: its odd part vanishes. -/
-theorem cartier_two_one_rescale_neg_one_mul_self (C : R⟦X⟧) :
-    cartier R 2 1 (rescale (-1) C * C) = 0 := by
-  ext n
-  simp only [coeff_cartier, coeff_mul, coeff_rescale, map_zero]
-  -- The involution `(i, j) ↦ (j, i)` of the antidiagonal of the odd number `2n + 1` reverses the
-  -- parity of the first index, so it pairs each term with its negative.
-  refine Finset.sum_involution (fun p _ ↦ p.swap) (fun p hp ↦ ?_) (fun p hp _ h ↦ ?_)
-    (fun p hp ↦ by simp only [Finset.mem_antidiagonal, Prod.fst_swap, Prod.snd_swap] at hp ⊢; omega)
-    (fun p _ ↦ p.swap_swap)
-  · have hsum := Finset.mem_antidiagonal.1 hp
-    have hpar : (-1 : R) ^ p.2 = -(-1) ^ p.1 := by
-      rcases Nat.even_or_odd p.1 with h | h
-      · rw [h.neg_one_pow, (show Odd p.2 by grind).neg_one_pow]
-      · rw [h.neg_one_pow, (show Even p.2 by grind).neg_one_pow, neg_neg]
-    simp only [Prod.fst_swap, Prod.snd_swap, hpar]
-    ring
-  · have hsum := Finset.mem_antidiagonal.1 hp
-    exact absurd (Prod.ext_iff.1 h) (by grind)
+/-- An even series is recovered from its Pontryagin series `p` as `p(-X²)`. -/
+theorem expand_rescale_pontryaginSeries_of_cartier_two_one_eq_zero {C : R⟦X⟧}
+    (hC : cartier R 2 1 C = 0) :
+    expand 2 two_ne_zero (rescale (-1) (pontryaginSeries R C)) = C := by
+  rw [pontryaginSeries_apply, rescale_neg_one_rescale_neg_one]
+  refine expand_cartier_zero_of_coeff_eq_zero 2 two_ne_zero fun n hn ↦ ?_
+  obtain ⟨m, rfl⟩ := Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hn)
+  simpa using congrArg (coeff m) hC
 
 /-- **Milnor–Stasheff's formula for a complex bundle.** For a series `C`, standing for the total
 Chern class of a complex bundle `E`, the series `C(-X) C(X)` is the total Chern class of the
@@ -190,17 +235,14 @@ satisfies `p(-X²) = C(-X) C(X)`, that is, `1 - p₁ + p₂ - ⋯ = (1 - c₁ + 
 -/
 theorem expand_rescale_pontryaginSeries_rescale_neg_one_mul_self (C : R⟦X⟧) :
     expand 2 two_ne_zero (rescale (-1) (pontryaginSeries R (rescale (-1) C * C))) =
-      rescale (-1) C * C := by
-  rw [pontryaginSeries_apply, rescale_rescale, neg_one_mul, neg_neg, rescale_one,
-    RingHom.id_apply]
-  refine expand_cartier_zero_of_coeff_eq_zero 2 two_ne_zero fun n hn ↦ ?_
-  obtain ⟨m, rfl⟩ := Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hn)
-  simpa using congrArg (coeff m) (cartier_two_one_rescale_neg_one_mul_self C)
+      rescale (-1) C * C :=
+  expand_rescale_pontryaginSeries_of_cartier_two_one_eq_zero
+    (cartier_two_one_rescale_neg_one_mul_self C)
 
 /-- **The Pontryagin series on formal roots.** For `C = ∏ⱼ (1 + xⱼ X)`, standing for the total
 Chern class of a complex bundle with Chern roots `xⱼ`, the Pontryagin series of `C(-X) C(X)` is
 `∏ⱼ (1 + xⱼ² X)`; that is, `p(E_ℝ) = ∏ⱼ (1 + xⱼ²)`. -/
-theorem pontryaginSeries_rescale_neg_one_prod_mul_prod (s : Multiset R) :
+theorem pontryaginSeries_rescale_neg_one_prod_map_one_add_C_mul_X_mul_self (s : Multiset R) :
     pontryaginSeries R (rescale (-1) (s.map fun x ↦ 1 + C x * X).prod *
       (s.map fun x ↦ 1 + C x * X).prod) = (s.map fun x ↦ 1 + C (x ^ 2) * X).prod := by
   set c := (s.map fun x ↦ 1 + C x * X).prod
@@ -214,6 +256,6 @@ theorem pontryaginSeries_rescale_neg_one_prod_mul_prod (s : Multiset R) :
     ring
   have h' := congrArg (rescale (-1 : R)) (expand_injective 2 two_ne_zero
     ((expand_rescale_pontryaginSeries_rescale_neg_one_mul_self c).trans hc))
-  simpa only [rescale_rescale, neg_one_mul, neg_neg, rescale_one, RingHom.id_apply] using h'
+  simpa only [rescale_neg_one_rescale_neg_one] using h'
 
 end PowerSeries
