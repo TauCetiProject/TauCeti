@@ -16,15 +16,12 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny.Differential
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ThirdPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 import TauCeti.RingTheory.FormalGroup.Frobenius.Basic
-import TauCeti.RingTheory.LaurentSeries.Substitution.MvPowerSeries
 import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
-import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # Morphisms of elliptic curves induce homomorphisms of formal group laws
@@ -162,27 +159,6 @@ private theorem curveEval_comp_fieldPullback {W₁ W₂ : WeierstrassCurve K}
   simp only [curveEval, AlgHom.comp_apply, φ.functionFieldLaurentExpansion_fieldPullback,
     TauCeti.LaurentSeries.mvSubstAlgHom_comp_substAlgHom_apply]
 
-private theorem fracCurve_eq_baseChange (W : WeierstrassCurve K) :
-    fracCurve W σ (FractionRing (MvPowerSeries σ K)) =
-      W⁄(FractionRing (MvPowerSeries σ K)) := by
-  rw [fracCurve_def,
-    ← IsScalarTower.algebraMap_eq K (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K))]
-  rfl
-
-private theorem thetaPoint_nonsingular (W : WeierstrassCurve K) [W.IsElliptic]
-    {q : MvPowerSeries σ K} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
-    (fracCurve W σ (FractionRing (MvPowerSeries σ K))).toAffine.Nonsingular
-      (algebraMap (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K)) q /
-        algebraMap (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K))
-          (PowerSeries.subst q (formalW W)))
-      (-1 / algebraMap (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K))
-        (PowerSeries.subst q (formalW W))) := by
-  refine chord_point_nonsingular _ ?_ (W.algebraMap_subst_formalW_ne_zero hq hq0)
-    (W.fracCurve_Δ_ne_zero W.toAffine.isUnit_Δ.ne_zero)
-  have hw := congrArg (algebraMap (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K)))
-    (subst_formalW_wEquation W (.of_constantCoeff_zero hq))
-  simpa [fracCurve_def, wEquationRHS_def] using hw
-
 /-- Transport `thetaPoint` along `fracCurve W σ M = W⁄M`. -/
 private noncomputable def thetaBasePoint (W : WeierstrassCurve K) [W.IsElliptic]
     [DecidableEq (FractionRing (MvPowerSeries σ K))]
@@ -190,7 +166,7 @@ private noncomputable def thetaBasePoint (W : WeierstrassCurve K) [W.IsElliptic]
     (W.toAffine⁄(FractionRing (MvPowerSeries σ K))).Point :=
   AddEquiv.cast
     (M := fun V : WeierstrassCurve (FractionRing (MvPowerSeries σ K)) ↦ V.toAffine.Point)
-    (fracCurve_eq_baseChange (σ := σ) W)
+    (W.fracCurve_eq_baseChange (σ := σ))
     (W.thetaPoint (W.fracCurve_Δ_ne_zero W.toAffine.isUnit_Δ.ne_zero) hq hq0)
 
 private theorem thetaBasePoint_inj (W : WeierstrassCurve K) [W.IsElliptic]
@@ -199,16 +175,7 @@ private theorem thetaBasePoint_inj (W : WeierstrassCurve K) [W.IsElliptic]
     (h₁ : MvPowerSeries.constantCoeff q₁ = 0) (h₂ : MvPowerSeries.constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (h : thetaBasePoint W h₁ hq₁0 = thetaBasePoint W h₂ hq₂0) : q₁ = q₂ :=
-  W.thetaPoint_inj _ h₁ h₂ hq₁0 hq₂0 ((AddEquiv.cast _).injective h)
-
-private theorem subst_pairSubstitution_formalAdd_eq (W : WeierstrassCurve K)
-    {a b : MvPowerSeries σ K}
-    (ha : MvPowerSeries.constantCoeff a = 0) (hb : MvPowerSeries.constantCoeff b = 0) :
-    MvPowerSeries.subst (pairSubstitution a b) (formalAdd W) =
-      MvPowerSeries.subst ![a, b] (formalGroup W).toPowerSeries := by
-  rw [formalGroup_toPowerSeries, MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
-    (MvPowerSeries.hasSubst_finTwo (.of_constantCoeff_zero ha) (.of_constantCoeff_zero hb))]
-  congr 1; funext s; rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
+  (W.thetaPoint_inj _ h₁ h₂ hq₁0 hq₂0).mp ((AddEquiv.cast _).injective h)
 
 private theorem thetaBasePoint_add_of_subst_separates (W : WeierstrassCurve K) [W.IsElliptic]
     [DecidableEq (FractionRing (MvPowerSeries σ K))]
@@ -221,10 +188,12 @@ private theorem thetaBasePoint_add_of_subst_separates (W : WeierstrassCurve K) [
     thetaBasePoint W h₁ hq₁0 + thetaBasePoint W h₂ hq₂0 =
       thetaBasePoint W (q := MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries)
         (by
-          rw [← subst_pairSubstitution_formalAdd_eq W h₁ h₂]
+          rw [← W.subst_pairSubstitution_formalAdd_eq
+            (.of_constantCoeff_zero h₁) (.of_constantCoeff_zero h₂)]
           exact constantCoeff_subst_pair_formalAdd W h₁ h₂)
         (by
-          rw [← subst_pairSubstitution_formalAdd_eq W h₁ h₂]
+          rw [← W.subst_pairSubstitution_formalAdd_eq
+            (.of_constantCoeff_zero h₁) (.of_constantCoeff_zero h₂)]
           exact W.subst_pair_formalAdd_ne_zero hg h₁ h₂ hg₁ hg₂) := by
   have hΔ := W.fracCurve_Δ_ne_zero (σ := σ) (KK := FractionRing (MvPowerSeries σ K))
     W.toAffine.isUnit_Δ.ne_zero
@@ -239,15 +208,18 @@ private theorem thetaBasePoint_add_of_subst_separates (W : WeierstrassCurve K) [
     subst hab; rfl
   simp only [thetaBasePoint, ← map_add,
     W.thetaPoint_add_of_subst_separates hΔ hg h₁ h₂ hq₁0 hq₂0 hg₁ hg₂ hF hF0]
-  exact congrArg _ (htheta_congr (subst_pairSubstitution_formalAdd_eq W h₁ h₂) hF _ hF0 _)
+  exact congrArg _ (htheta_congr
+    (W.subst_pairSubstitution_formalAdd_eq (.of_constantCoeff_zero h₁) (.of_constantCoeff_zero h₂))
+    hF _ hF0 _)
 
 private theorem map_curveEval_genericPoint (W : WeierstrassCurve K) [W.IsElliptic]
     [DecidableEq (FractionRing (MvPowerSeries σ K))]
     {q : MvPowerSeries σ K} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
     Point.map (curveEval W hq hq0) W.toAffine.genericPoint = thetaBasePoint W hq hq0 := by
   rw [genericPoint_eq_some, Point.map_some, thetaBasePoint,
-    W.thetaPoint_eq_some _ hq hq0 (thetaPoint_nonsingular W hq hq0), AddEquiv.cast_apply,
-    Point.cast_some (fracCurve_eq_baseChange W), Point.some.injEq]
+    W.thetaPoint_eq_some _ hq hq0
+      (W.thetaPoint_nonsingular (W.fracCurve_Δ_ne_zero W.toAffine.isUnit_Δ.ne_zero) hq hq0),
+    AddEquiv.cast_apply, Point.cast_some W.fracCurve_eq_baseChange, Point.some.injEq]
   exact ⟨by
       rw [curveEval, AlgHom.comp_apply, W.functionFieldLaurentExpansion_genericX_eq_div, map_div₀,
         TauCeti.LaurentSeries.mvSubstAlgHom_coe, TauCeti.LaurentSeries.mvSubstAlgHom_coe,
@@ -267,11 +239,64 @@ private theorem map_curveEval_tautologicalPoint {W₁ W₂ : WeierstrassCurve K}
   rw [tautologicalPoint_eq_map_genericPoint, Point.map_map, curveEval_comp_fieldPullback,
     map_curveEval_genericPoint]
 
+/-- If `F(X₁, f₃(X₀)) = F(F(X₁, f₁(X₀)), f₂(X₀))` in `MvPowerSeries (Fin 2) R`, specializing
+`(X₀, X₁) ↦ (X, 0)` sends `X₁` to `0` and each `fᵢ(X₀)` to `fᵢ`, so the left unit law of `F`
+immediately yields `f₃ = F(f₁, f₂)`. -/
+private theorem eq_subst_formalGroup_of_subst_add_left {R : Type*} [CommRing R]
+    (F : FormalGroup R) {f₁ f₂ f₃ : R⟦X⟧}
+    (hf₁ : PowerSeries.constantCoeff f₁ = 0) (hf₂ : PowerSeries.constantCoeff f₂ = 0)
+    (hf₃ : PowerSeries.constantCoeff f₃ = 0)
+    (h : MvPowerSeries.subst
+        ![(MvPowerSeries.X (1 : Fin 2) : MvPowerSeries (Fin 2) R),
+          PowerSeries.subst (MvPowerSeries.X (0 : Fin 2)) f₃]
+        F.toPowerSeries =
+      MvPowerSeries.subst
+        ![MvPowerSeries.subst
+            ![(MvPowerSeries.X (1 : Fin 2) : MvPowerSeries (Fin 2) R),
+              PowerSeries.subst (MvPowerSeries.X (0 : Fin 2)) f₁]
+            F.toPowerSeries,
+          PowerSeries.subst (MvPowerSeries.X (0 : Fin 2)) f₂]
+        F.toPowerSeries) :
+    f₃ = MvPowerSeries.subst ![f₁, f₂] F.toPowerSeries := by
+  let q₀ : MvPowerSeries (Fin 2) R := MvPowerSeries.X 0
+  let q₁ : MvPowerSeries (Fin 2) R := MvPowerSeries.X 1
+  let s₀ : Fin 2 → R⟦X⟧ := ![PowerSeries.X, 0]
+  have hs₀ : MvPowerSeries.HasSubst s₀ := MvPowerSeries.HasSubst.X_zero
+  have hq₀c : MvPowerSeries.constantCoeff q₀ = 0 := constantCoeff_X 0
+  have hq₁c : MvPowerSeries.constantCoeff q₁ = 0 := constantCoeff_X 1
+  have hs₀_X₁ : MvPowerSeries.subst s₀ q₁ = 0 := by
+    rw [MvPowerSeries.subst_X hs₀]; rfl
+  have hs₀_subst (f : R⟦X⟧) : MvPowerSeries.subst s₀ (PowerSeries.subst q₀ f) = f := by
+    rw [subst_powerSeriesSubst hs₀ (.of_constantCoeff_zero hq₀c), MvPowerSeries.subst_X hs₀]
+    exact PowerSeries.X_subst f
+  have hs₀_pair (f : R⟦X⟧) (hf : PowerSeries.constantCoeff f = 0) :
+      MvPowerSeries.subst s₀ (MvPowerSeries.subst ![q₁, PowerSeries.subst q₀ f] F.toPowerSeries) =
+        f := by
+    have hfc := PowerSeries.constantCoeff_subst_eq_zero hq₀c f hf
+    rw [MvPowerSeries.subst_comp_subst_apply
+      (MvPowerSeries.hasSubst_finTwo (.of_constantCoeff_zero hq₁c)
+        (.of_constantCoeff_zero hfc)) hs₀]
+    convert F.zero_add (.of_constantCoeff_zero' hf) using 2
+    funext i; fin_cases i; exacts [hs₀_X₁, hs₀_subst f]
+  have hspec := congrArg (MvPowerSeries.subst s₀) h
+  have hF₁c : MvPowerSeries.constantCoeff
+      (MvPowerSeries.subst ![q₁, PowerSeries.subst q₀ f₁] F.toPowerSeries) = 0 :=
+    MvPowerSeries.constantCoeff_subst_eq_zero
+      (MvPowerSeries.hasSubst_finTwo (.of_constantCoeff_zero hq₁c)
+        (.of_constantCoeff_zero (PowerSeries.constantCoeff_subst_eq_zero hq₀c f₁ hf₁)))
+      (fun i ↦ by fin_cases i; exacts [hq₁c, PowerSeries.constantCoeff_subst_eq_zero hq₀c f₁ hf₁])
+      F.zero_constantCoeff
+  rw [hs₀_pair f₃ hf₃, MvPowerSeries.subst_comp_subst_apply
+    (MvPowerSeries.hasSubst_finTwo (.of_constantCoeff_zero hF₁c)
+      (.of_constantCoeff_zero (PowerSeries.constantCoeff_subst_eq_zero hq₀c f₂ hf₂))) hs₀] at hspec
+  refine hspec.trans ?_
+  congr 1; funext i; fin_cases i; exacts [hs₀_pair f₁ hf₁, hs₀_subst f₂]
+
 /-- Auxiliary parameter separation for three nonzero series `f₁, f₂, f₃` with zero constant term
 whose `thetaBasePoint`s at `X₀ ∈ MvPowerSeries (Fin 2) K` satisfy
 `θ(f₃(X₀)) = θ(f₁(X₀)) + θ(f₂(X₀))`: translating on the left by `θ(X₁)` separates all three chord
-additions under `coordSpecialize 1` (`X₁ ↦ X`, `X₀ ↦ 0`), and cancelling `X₁` in
-`(formalGroup W).Point (Fin 2)` followed by `(X₀, X₁) ↦ (X, 0)` yields `f₃ = F(f₁, f₂)`. -/
+additions under `coordSpecialize 1` (`X₁ ↦ X`, `X₀ ↦ 0`), and specializing `(X₀, X₁) ↦ (X, 0)` via
+`eq_subst_formalGroup_of_subst_add_left` yields `f₃ = F(f₁, f₂)`. -/
 private theorem eq_subst_formalGroup_of_thetaBasePoint_add (W : WeierstrassCurve K) [W.IsElliptic]
     [DecidableEq (FractionRing (MvPowerSeries (Fin 2) K))]
     {f₁ f₂ f₃ : K⟦X⟧}
@@ -295,6 +320,7 @@ private theorem eq_subst_formalGroup_of_thetaBasePoint_add (W : WeierstrassCurve
         (PowerSeries.subst_ne_zero (constantCoeff_X (0 : Fin 2))
           (nonZeroDivisors.ne_zero X_mem_nonZeroDivisors) hf₂0)) :
     f₃ = MvPowerSeries.subst ![f₁, f₂] (formalGroup W).toPowerSeries := by
+  -- Step 1: add the independent point `θ(X₁)` on the left so each chord addition can be separated.
   set q₀ : MvPowerSeries (Fin 2) K := MvPowerSeries.X 0
   set q₁ : MvPowerSeries (Fin 2) K := MvPowerSeries.X 1
   have hq₀c : MvPowerSeries.constantCoeff q₀ = 0 := constantCoeff_X 0
@@ -310,6 +336,7 @@ private theorem eq_subst_formalGroup_of_thetaBasePoint_add (W : WeierstrassCurve
         thetaBasePoint W hf₁c (PowerSeries.subst_ne_zero hq₀c hq₀0 hf₁0)) +
       thetaBasePoint W hf₂c (PowerSeries.subst_ne_zero hq₀c hq₀0 hf₂0) := by
     rw [hpts, ← add_assoc]
+  -- Step 2: separate all three additions via `coordSpecialize 1` (`X₁ ↦ X`, `X₀ ↦ 0`).
   set g : Fin 2 → MvPowerSeries Unit K := coordSpecialize (O := K) (1 : Fin 2)
   have hg : MvPowerSeries.HasSubst g := hasSubst_coordSpecialize _
   have hg_q₁ : MvPowerSeries.subst g q₁ = PowerSeries.X :=
@@ -334,27 +361,9 @@ private theorem eq_subst_formalGroup_of_thetaBasePoint_add (W : WeierstrassCurve
   rw [thetaBasePoint_add_of_subst_separates W hg hq₁c hf₃c _ _ hg_q₁ (hg_subst _ hf₃),
     thetaBasePoint_add_of_subst_separates W hg hq₁c hf₁c _ _ hg_q₁ (hg_subst _ hf₁),
     thetaBasePoint_add_of_subst_separates W hg _ hf₂c _ _ hg_F₁ (hg_subst _ hf₂)] at hpts'
-  have hseries := thetaBasePoint_inj W _ _ _ _ hpts'
-  let p₁ : (formalGroup W).Point (Fin 2) := ⟨q₁, .of_constantCoeff_zero hq₁c⟩
-  let pf₁ : (formalGroup W).Point (Fin 2) := ⟨PowerSeries.subst q₀ f₁, .of_constantCoeff_zero hf₁c⟩
-  let pf₂ : (formalGroup W).Point (Fin 2) := ⟨PowerSeries.subst q₀ f₂, .of_constantCoeff_zero hf₂c⟩
-  let pf₃ : (formalGroup W).Point (Fin 2) := ⟨PowerSeries.subst q₀ f₃, .of_constantCoeff_zero hf₃c⟩
-  have hp : p₁ + pf₃ = p₁ + (pf₁ + pf₂) := by rw [← add_assoc]; exact Subtype.ext hseries
-  have hcancel : pf₃.val = (pf₁ + pf₂).val :=
-    congrArg (fun p : (formalGroup W).Point (Fin 2) ↦ p.val) (add_left_cancel hp)
-  rw [FormalGroup.add_apply] at hcancel
-  let s₀ : Fin 2 → PowerSeries K := ![PowerSeries.X, 0]
-  have hs₀ : MvPowerSeries.HasSubst s₀ := MvPowerSeries.HasSubst.X_zero
-  have hs₀_subst (f : K⟦X⟧) : MvPowerSeries.subst s₀ (PowerSeries.subst q₀ f) = f := by
-    rw [subst_powerSeriesSubst hs₀ (.of_constantCoeff_zero hq₀c), MvPowerSeries.subst_X hs₀]
-    dsimp only [s₀]
-    rw [Matrix.cons_val_zero, PowerSeries.X_subst]
-  have hspec := congrArg (MvPowerSeries.subst s₀) hcancel
-  rw [hs₀_subst f₃, MvPowerSeries.subst_comp_subst_apply
-    (MvPowerSeries.hasSubst_finTwo (.of_constantCoeff_zero hf₁c) (.of_constantCoeff_zero hf₂c))
-    hs₀] at hspec
-  refine hspec.trans ?_
-  congr 1; funext i; fin_cases i <;> exact hs₀_subst _
+  -- Step 3: pull back along `thetaBasePoint_inj` and specialize `(X₀, X₁) ↦ (X, 0)`.
+  exact eq_subst_formalGroup_of_subst_add_left (formalGroup W) hf₁ hf₂ hf₃
+    (thetaBasePoint_inj W _ _ _ _ hpts')
 
 end SeriesEval
 
@@ -571,6 +580,17 @@ theorem formalSeries_add (f g : Hom W₁.toAffine W₂.toAffine) :
 theorem formalPoint_sub (f g : Hom W₁.toAffine W₂.toAffine) :
     (f - g).formalPoint = f.formalPoint - g.formalPoint :=
   formalPointAddHom.map_sub f g
+
+/-- The formal series of `f - g` is obtained by substituting `f.formalSeries` and
+`PowerSeries.subst g.formalSeries (formalGroup W₂).addInvX` into
+`(formalGroup W₂).toPowerSeries`. -/
+@[simp]
+theorem formalSeries_sub (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f - g).formalSeries =
+      MvPowerSeries.subst
+        ![f.formalSeries, PowerSeries.subst g.formalSeries (formalGroup W₂).addInvX]
+        (formalGroup W₂).toPowerSeries := by
+  rw [sub_eq_add_neg, formalSeries_add, formalSeries_neg]
 
 /-- The formal-group point of `n • f` (`n : ℕ`) is `n • f.formalPoint`. -/
 @[simp]
@@ -911,10 +931,10 @@ theorem formalGroupHom_zsmul [W₂.IsElliptic] (n : ℤ) (f : Hom W₁.toAffine 
   ext : 1; simp
 
 /-- Scalar multiplication by `n : ℕ` on a morphism post-composes its `FormalGroupHom` with
-`(formalGroup W₂).zsmulHom n`. -/
+`(formalGroup W₂).nsmulHom n`. -/
 @[simp]
 theorem formalGroupHom_nsmul [W₂.IsElliptic] (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
-    (n • f).formalGroupHom = ((formalGroup W₂).zsmulHom n).comp f.formalGroupHom := by
+    (n • f).formalGroupHom = ((formalGroup W₂).nsmulHom n).comp f.formalGroupHom := by
   ext : 1; simp
 
 /-- Evaluating `f.formalGroupHom` on the formal-group point of `g` gives

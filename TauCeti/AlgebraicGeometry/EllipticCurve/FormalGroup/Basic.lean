@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Inverse
 import TauCeti.RingTheory.MvPowerSeries.Rename
@@ -33,6 +34,9 @@ power-series-valued points whose constant coefficient is nilpotent.
 
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
+* `WeierstrassCurve.subst_pairSubstitution_formalAdd_eq`: substituting a pair `(a, b)` into the
+  `Unit ⊕ Unit`-indexed `formalAdd W` agrees with substituting `![a, b]` into
+  `(formalGroup W).toPowerSeries`.
 * `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
 * `WeierstrassCurve.nsmulSeries_two_formalGroup`: doubling is the inverse of the third
   intersection parameter of the tangent.
@@ -81,6 +85,18 @@ theorem map_formalGroup {S : Type*} [CommRing S] (W : WeierstrassCurve R) (φ : 
     formalGroup (W.map φ) = (formalGroup W).map φ := by
   apply FormalGroup.ext
   simp [formalGroup, MvPowerSeries.rename_map]
+
+/-- Substituting a pair `(a, b)` into the `Unit ⊕ Unit`-indexed `formalAdd W` agrees with
+substituting `![a, b]` into the `Fin 2`-indexed `(formalGroup W).toPowerSeries`. -/
+theorem subst_pairSubstitution_formalAdd_eq (W : WeierstrassCurve R) {σ : Type*}
+    {a b : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) (hb : PowerSeries.HasSubst b) :
+    subst (pairSubstitution a b) (formalAdd W) =
+      subst ![a, b] (formalGroup W).toPowerSeries := by
+  rw [formalGroup_toPowerSeries, MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
+    (MvPowerSeries.hasSubst_finTwo ha hb)]
+  congr 1
+  funext s
+  rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
 
 /-- The formal group law of a Weierstrass curve is commutative. This makes its power-series-valued
 points whose constant coefficient is nilpotent an additive commutative monoid through Mathlib's

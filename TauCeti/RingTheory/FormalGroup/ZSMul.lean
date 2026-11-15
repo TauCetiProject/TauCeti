@@ -153,6 +153,13 @@ noncomputable def zsmulHom [F.IsComm] (n : ℤ) : TauCeti.FormalGroupHom F F whe
 theorem zsmulHom_toPowerSeries [F.IsComm] (n : ℤ) :
     (F.zsmulHom n).toPowerSeries = F.zsmulSeries n := (rfl)
 
+/-- Integer multiplication as a bundled endomorphism extends natural-number multiplication. -/
+@[simp]
+theorem zsmulHom_natCast [F.IsComm] (n : ℕ) :
+    F.zsmulHom n = F.nsmulHom n := by
+  ext : 1
+  simp
+
 /-- Integer multiplication commutes with base change as a bundled endomorphism. -/
 @[simp]
 theorem map_zsmulHom [F.IsComm] (f : R →+* S) (n : ℤ) :

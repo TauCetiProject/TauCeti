@@ -7,13 +7,11 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.RingTheory.Ideal.Maximal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # The Hasse invariant as Landweber's `v₁` for Weierstrass formal groups
@@ -109,15 +107,10 @@ theorem heightIdeal_formalGroup_two_eq_top_iff (hp : p.Prime) :
     (formalGroup W).heightIdeal p 2 = ⊤ ↔
       IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)})
         (PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential)) := by
-  set A := PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential
-  set I := Ideal.span {(p : R)}
-  -- `(p, A)` is the preimage of the ideal `(A)` of `R ⧸ (p)`
-  have h : Ideal.span {(p : R), A} = (Ideal.span {Ideal.Quotient.mk I A}).comap
-      (Ideal.Quotient.mk I) := by
-    rw [← Set.image_singleton (f := Ideal.Quotient.mk I), ← Ideal.map_span,
-      Ideal.comap_map_of_surjective'
-      _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, Ideal.span_insert, sup_comm]
-  rw [heightIdeal_formalGroup_two W hp, h, ← Ideal.span_singleton_eq_top, Ideal.comap_eq_top_iff]
+  rw [← (formalGroup W).heightIdeal_one hp]
+  refine ((formalGroup W).isUnit_mk_heightIdeal_iff_of_sub_mem hp ?_).symm
+  rw [(formalGroup W).heightIdeal_one hp, pow_one, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
+  exact W.natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferential hp
 
 /-- **Landweber's conditions in heights `0` and `1` through the Hasse invariant.** For a prime
 `p` and an `R`-module `M`, the sequence `(p, v₁)` of the formal group of a Weierstrass curve is
@@ -136,34 +129,21 @@ over any commutative ring `R`, every prime `p`, and every `n ≥ 3`, the `n`-th 
 `I_n(formalGroup W)` is the unit ideal. -/
 theorem heightIdeal_formalGroup_eq_top [W.IsElliptic] (hp : p.Prime) {n : ℕ} (hn : 3 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ := by
-  by_contra hne
-  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal _ hne
-  let _ : Field (R ⧸ 𝔪) := @Ideal.Quotient.field R _ 𝔪 h𝔪
+  rw [(formalGroup W).heightIdeal_eq_top_iff_forall_height_lt hp (by omega)]
+  intro K _ _ φ
   have : Fact p.Prime := ⟨hp⟩
-  have hp𝔪 : (p : R) ∈ 𝔪 := by
-    have h1 : (formalGroup W).heightIdeal p 1 ≤ 𝔪 :=
-      ((formalGroup W).heightIdeal_mono (by omega : 1 ≤ n)).trans hle
-    rwa [(formalGroup W).heightIdeal_one hp, Ideal.span_singleton_le_iff_mem] at h1
-  have : CharP (R ⧸ 𝔪) p := (CharP.charP_iff_prime_eq_zero hp).mpr <| by
-    rwa [← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq_zero_iff_mem]
-  have hbot : (formalGroup (W.map (Ideal.Quotient.mk 𝔪))).heightIdeal p n = ⊥ := by
-    rw [W.map_formalGroup, ← FormalGroup.map_heightIdeal, Ideal.map_eq_bot_iff_le_ker,
-      Ideal.mk_ker]
-    exact hle
-  have hge : (n : ℕ∞) ≤ (formalGroup (W.map (Ideal.Quotient.mk 𝔪))).height p :=
-    ((formalGroup (W.map (Ideal.Quotient.mk 𝔪))).heightIdeal_eq_bot_iff_le_height).mp hbot
-  have hle2 := (W.map (Ideal.Quotient.mk 𝔪)).height_formalGroup_le_two (p := p)
-  have h32 : (3 : ℕ∞) ≤ 2 := (Nat.cast_le.mpr hn).trans (hge.trans hle2)
-  exact absurd h32 (by decide)
+  rw [← W.map_formalGroup φ]
+  exact ((W.map φ).height_formalGroup_le_two (p := p)).trans_lt
+    (by exact_mod_cast (by omega : 2 < n))
 
 /-- **Landweber's `v₂` is a unit modulo `I₂` for every elliptic curve**: over any commutative
 ring `R` and for any prime `p`, the image of `coeff (p ^ 2) ((formalGroup W).nsmulSeries p)` in
 `R ⧸ (formalGroup W).heightIdeal p 2` is a unit. -/
 theorem isUnit_mk_coeff_sq_nsmulSeries_formalGroup [W.IsElliptic] (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
-      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) := by
-  rw [Ideal.Quotient.isUnit_mk_iff, sup_comm, ← (formalGroup W).heightIdeal_succ hp 2]
-  exact W.heightIdeal_formalGroup_eq_top hp le_rfl
+      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) :=
+  ((formalGroup W).isUnit_mk_coeff_nsmulSeries_iff hp 2).mpr
+    (W.heightIdeal_formalGroup_eq_top hp le_rfl)
 
 end WeierstrassCurve
 

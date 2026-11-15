@@ -122,49 +122,6 @@ theorem isEquiv_comap_pointPlace_map {x y : F} (h : W.Equation x y) :
   rw [Place.valuation_ofPrime, ← h𝔭]
   exact he.symm
 
-/-- On `F[genericX, genericY] ⊆ F(W)`, the second-factor embedding `FunctionField.map` is
-bounded by `1` and agrees with `algebraMap` to first order at the diagonal place. -/
-private theorem valuation_pointPlace_functionFieldMap_sub_lt_one_of_mem_adjoin
-    (heq : (W.map (algebraMap F W.FunctionField)).Equation W.genericX W.genericY)
-    {a : W.FunctionField} (ha : a ∈ Algebra.adjoin F {W.genericX, W.genericY}) :
-    let L := W.FunctionField
-    let ι := algebraMap F L
-    let v := (Place.ofPrime L (W.map ι).FunctionField (CoordinateRing.pointPlace heq)).valuation
-    v (FunctionField.map W ι a) ≤ 1 ∧ v (FunctionField.map W ι a - algebraMap L _ a) < 1 := by
-  set L := W.FunctionField
-  set ι := algebraMap F L
-  set v := (Place.ofPrime L (W.map ι).FunctionField (CoordinateRing.pointPlace heq)).valuation
-  set w := FunctionField.map W ι
-  set c := algebraMap L (W.map ι).FunctionField
-  have hc_le (b : L) : v (c b) ≤ 1 := Valuation.IsTrivialOn.valuation_algebraMap_le_one v b
-  have hgen_le (b : L) (hlt : v (w b - c b) < 1) : v (w b) ≤ 1 ∧ v (w b - c b) < 1 := by
-    have hsplit : w b = (w b - c b) + c b := by ring
-    exact ⟨hsplit ▸ (v.map_add _ _).trans (max_le hlt.le (hc_le _)), hlt⟩
-  refine Algebra.adjoin_induction ?_ ?_ ?_ ?_ ha
-  · rintro b (rfl | rfl)
-    · refine hgen_le _ ?_
-      have hwX : w W.genericX = (W.map ι).genericX := FunctionField.map_genericX W ι
-      rw [hwX]
-      exact valuation_pointPlace_genericX_sub_lt_one (W.map ι) heq
-    · refine hgen_le _ ?_
-      have hwY : w W.genericY = (W.map ι).genericY := FunctionField.map_genericY W ι
-      rw [hwY]
-      exact valuation_pointPlace_genericY_sub_lt_one (W.map ι) heq
-  · intro k
-    have hk : w (algebraMap F L k) = c (algebraMap F L k) := FunctionField.map_algebraMap W ι k
-    exact ⟨hk ▸ hc_le _, by rw [hk, sub_self, Valuation.map_zero]; exact zero_lt_one⟩
-  · intro x y _ _ hx hy
-    refine ⟨by rw [map_add]; exact (v.map_add _ _).trans (max_le hx.1 hy.1), ?_⟩
-    rw [map_add, map_add, add_sub_add_comm]
-    exact (v.map_add _ _).trans_lt (max_lt hx.2 hy.2)
-  · intro x y _ _ hx hy
-    refine ⟨by rw [map_mul, Valuation.map_mul]; exact mul_le_one' hx.1 hy.1, ?_⟩
-    have hmul_sub : w x * w y - c x * c y = (w x - c x) * w y + c x * (w y - c y) := by ring
-    rw [map_mul, map_mul, hmul_sub]
-    refine (v.map_add _ _).trans_lt (max_lt ?_ ?_)
-    · rw [Valuation.map_mul]; exact Left.mul_lt_one_of_lt_of_le hx.2 hy.1
-    · rw [Valuation.map_mul]; exact Right.mul_lt_one_of_le_of_lt (hc_le x) hy.2
-
 /-- **At the diagonal place of `W.genericPoint` on `W⁄F(W)`, the second-factor embedding
 `FunctionField.map W (algebraMap F F(W))` agrees with `algebraMap F(W) _` to first order on every
 element of `F(W)`.** -/
@@ -183,15 +140,33 @@ theorem valuation_pointPlace_functionFieldMap_sub_lt_one
   set c := algebraMap L (W.map ι).FunctionField
   set r' : L := algebraMap W.CoordinateRing L r
   set s' : L := algebraMap W.CoordinateRing L s
-  have hr := valuation_pointPlace_functionFieldMap_sub_lt_one_of_mem_adjoin W heq
-    (algebraMap_mem_adjoin_genericX_genericY W r)
-  have hs := valuation_pointPlace_functionFieldMap_sub_lt_one_of_mem_adjoin W heq
-    (algebraMap_mem_adjoin_genericX_genericY W s)
+  have heq' : ((W.map ι)⁄L).toAffine.Equation W.genericX W.genericY := by
+    change ((W.map ι).map (algebraMap L L)).Equation W.genericX W.genericY
+    rw [Algebra.algebraMap_self]
+    exact heq
+  have heval : (CoordinateRing.evalAlgHom heq').toRingHom.comp (CoordinateRing.map W ι) =
+      algebraMap W.CoordinateRing L := by
+    refine CoordinateRing.ringHom_ext W (fun a ↦ ?_) ?_ ?_
+    · simp only [RingHom.comp_apply, CoordinateRing.map_algebraMap, AlgHom.toRingHom_eq_coe,
+        RingHom.coe_coe, AlgHom.commutes]
+      exact (IsScalarTower.algebraMap_apply F W.CoordinateRing L a).symm
+    · simp [genericX_def]; rfl
+    · simp [genericY_def]; rfl
+  have hcoord (t : W.CoordinateRing) :
+      v (w (algebraMap W.CoordinateRing L t) - c (algebraMap W.CoordinateRing L t)) < 1 := by
+    rw [FunctionField.map_algebraMap_coordinateRing,
+      IsScalarTower.algebraMap_apply L (W.map ι).CoordinateRing (W.map ι).FunctionField,
+      ← map_sub, Place.valuation_ofPrime_algebraMap_lt_one_iff,
+      CoordinateRing.pointPlace_asIdeal, CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero heq',
+      map_sub, AlgHom.commutes, sub_eq_zero]
+    exact congrArg (fun f : W.CoordinateRing →+* L ↦ f t) heval
+  have hr := hcoord r
+  have hs := hcoord s
   have hs0 : s' ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs_mem
   have hcs : v (c s') = 1 := Valuation.IsTrivialOn.eq_one (v := v) s' hs0
   have hws : v (w s') = 1 := by
     have hsplit : w s' = (w s' - c s') + c s' := by ring
-    rw [hsplit, v.map_add_eq_of_lt_right (hs.2.trans_eq hcs.symm), hcs]
+    rw [hsplit, v.map_add_eq_of_lt_right (hs.trans_eq hcs.symm), hcs]
   have hws0 : w s' ≠ 0 := fun h ↦ by simp [h] at hws
   have hcs0 : c s' ≠ 0 := (map_ne_zero_iff c c.injective).mpr hs0
   have hquot : w (r' / s') - c (r' / s') =
@@ -199,10 +174,10 @@ theorem valuation_pointPlace_functionFieldMap_sub_lt_one
     rw [map_div₀, map_div₀]; field_simp [hws0, hcs0]; ring
   rw [hquot, map_div₀, Valuation.map_mul, hws, hcs, mul_one, div_one]
   refine (v.map_sub _ _).trans_lt (max_lt ?_ ?_)
-  · rw [Valuation.map_mul, hcs, mul_one]; exact hr.2
+  · rw [Valuation.map_mul, hcs, mul_one]; exact hr
   · rw [Valuation.map_mul]
     exact Right.mul_lt_one_of_le_of_lt
-      (Valuation.IsTrivialOn.valuation_algebraMap_le_one v r') hs.2
+      (Valuation.IsTrivialOn.valuation_algebraMap_le_one v r') hs
 
 end BaseChange
 
