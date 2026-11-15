@@ -33,12 +33,12 @@ every `w` is the finite sum of the products `χ i • w`
 (`TauCeti.SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one`), and `χ i • w` vanishes off
 the closed set `tsupport (χ i) ⊆ A.dom i` (`TauCeti.SobolevSection.contMDiffSMulL_mem_aeZeroOff`).
 An element `u` vanishing off a closed subset `L` of the domain of chart `i` is the extension by
-zero `TauCeti.SobolevSection.extendLocalL` of its chart-`i` components, and extension by zero is
+zero `TauCeti.SobolevSection.extendByZeroL` of its chart-`i` components, and extension by zero is
 continuous. To approximate `u`, take a smooth cutoff `ψ` equal to one on `L` with support in the
 chart domain, approximate the chart-`i` components of `u` by functions smooth on the chart image
 (Meyers–Serrin, `TauCeti.Wkp.exists_contDiffOn_approximation`), and multiply them by `ψ`. The
 products are the chart readings of `C^∞` sections vanishing off `tsupport ψ`, whose chart-`i`
-components converge to those of `u`; continuity of `extendLocalL` gives convergence in
+components converge to those of `u`; continuity of `extendByZeroL` gives convergence in
 `W^{k,p}(V)`.
 
 Extension by zero is the only step that depends on the order `k`. Over surfaces it follows from
@@ -191,8 +191,8 @@ private theorem mem_closure_range_of_mem_aeZeroOff [T2Space M] (hp : p ≠ ⊤)
     have hT' := (T.continuous.tendsto _).comp (hlim j)
     rw [hTu j] at hT'
     exact hT'
-  have hE := ((extendLocalL h (isClosed_tsupport ψ) hψi).continuous.tendsto _).comp hconv
-  simp only [Function.comp_def, extendLocalL_chartRestrictL] at hE
+  have hE := ((extendByZeroL h (isClosed_tsupport ψ) hψi).continuous.tendsto _).comp hconv
+  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
   exact (Submodule.isClosed_topologicalClosure _).mem_of_tendsto hE
     (Eventually.of_forall fun m ↦ Submodule.le_topologicalClosure _ (ha m))
 

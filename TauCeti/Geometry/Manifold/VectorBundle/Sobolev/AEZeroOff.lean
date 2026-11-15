@@ -26,7 +26,7 @@ subspace `TauCeti.SobolevSection.chartAeZeroOff A μ p k i L` of chart-`i` tuple
 everywhere off `L`. When, for closed `L`, every such tuple arises in this way (the property
 `TauCeti.SobolevSection.HasExtensionByZero A μ p k`), the chart-`i` components form a linear
 equivalence (`TauCeti.SobolevSection.chartRestrictEquiv`). Its inverse followed by the inclusion is
-the extension by zero `TauCeti.SobolevSection.extendLocalL` from chart-`i` tuples to `W^{k,p}(V)`,
+the extension by zero `TauCeti.SobolevSection.extendByZeroL` from chart-`i` tuples to `W^{k,p}(V)`,
 which is continuous by the closed graph theorem.
 
 ## Main definitions
@@ -40,7 +40,7 @@ which is continuous by the closed graph theorem.
 * `TauCeti.SobolevSection.HasExtensionByZero`: for closed `L` inside the domain of chart `i`,
   every chart-`i` tuple vanishing off `L` consists of the chart-`i` components of an element of
   `W^{k,p}(V)`.
-* `TauCeti.SobolevSection.chartRestrictEquiv`, `TauCeti.SobolevSection.extendLocalL`: the
+* `TauCeti.SobolevSection.chartRestrictEquiv`, `TauCeti.SobolevSection.extendByZeroL`: the
   resulting isomorphism, and extension by zero.
 
 ## Main results
@@ -52,8 +52,8 @@ which is continuous by the closed graph theorem.
 * `TauCeti.SobolevSection.contMDiffSMulL_mem_aeZeroOff`: `φ • w` vanishes off `tsupport φ`.
 * `TauCeti.SobolevSection.chartRestrictL_injective`: an element vanishing off a subset of the
   domain of chart `i` is determined by its chart-`i` components.
-* `TauCeti.SobolevSection.chartRestrictL_extendLocalL`,
-  `TauCeti.SobolevSection.extendLocalL_chartRestrictL`: extension by zero and the chart
+* `TauCeti.SobolevSection.chartRestrictL_extendByZeroL`,
+  `TauCeti.SobolevSection.extendByZeroL_chartRestrictL`: extension by zero and the chart
   components are inverse to each other.
 
 ## References
@@ -315,7 +315,7 @@ almost everywhere off `L` defines an element of `W^{k,p}(V)`, vanishing off `L`,
 components are the given functions. This is a continuous linear map from the closed subspace
 `TauCeti.SobolevSection.chartAeZeroOff A μ p k i L` into `W^{k,p}(V)`, by the closed graph
 theorem. -/
-def extendLocalL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M} (hL : IsClosed L)
+def extendByZeroL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M} (hL : IsClosed L)
     (hLi : L ⊆ A.dom i) : chartAeZeroOff A μ p k i L →L[ℝ] SobolevSection A μ p k :=
   ContinuousLinearMap.ofSeqClosedGraph
     (g := (aeZeroOff A μ p k L).subtype ∘ₗ (chartRestrictEquiv A μ p k h hL hLi).symm.toLinearMap)
@@ -333,42 +333,42 @@ def extendLocalL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M} (hL
       rw [← hx, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
         ← chartRestrictEquiv_apply h hL hLi, e.symm_apply_apply, Submodule.subtype_apply]
 
-theorem extendLocalL_apply (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
+theorem extendByZeroL_apply (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A μ p k i L) :
-    extendLocalL h hL hLi g = (chartRestrictEquiv A μ p k h hL hLi).symm g := by
-  rw [extendLocalL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, LinearMap.comp_apply,
+    extendByZeroL h hL hLi g = (chartRestrictEquiv A μ p k h hL hLi).symm g := by
+  rw [extendByZeroL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, LinearMap.comp_apply,
     LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
 
-theorem extendLocalL_mem_aeZeroOff (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
+theorem extendByZeroL_mem_aeZeroOff (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A μ p k i L) :
-    extendLocalL h hL hLi g ∈ aeZeroOff A μ p k L := by
-  rw [extendLocalL_apply]
+    extendByZeroL h hL hLi g ∈ aeZeroOff A μ p k L := by
+  rw [extendByZeroL_apply]
   exact ((chartRestrictEquiv A μ p k h hL hLi).symm g).2
 
 /-- The chart-`i` components of the extension by zero are the given tuple. -/
 @[simp]
-theorem chartRestrictL_extendLocalL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
+theorem chartRestrictL_extendByZeroL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A μ p k i L) :
-    chartRestrictL A μ p k i L ⟨_, extendLocalL_mem_aeZeroOff h hL hLi g⟩ = g := by
-  simp_rw [extendLocalL_apply, Subtype.coe_eta, ← chartRestrictEquiv_apply h hL hLi,
+    chartRestrictL A μ p k i L ⟨_, extendByZeroL_mem_aeZeroOff h hL hLi g⟩ = g := by
+  simp_rw [extendByZeroL_apply, Subtype.coe_eta, ← chartRestrictEquiv_apply h hL hLi,
     LinearEquiv.apply_symm_apply]
 
 /-- The chart-`i` components of the extension by zero are the given functions. -/
 @[simp]
-theorem extendLocalL_apply_self (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
+theorem extendByZeroL_apply_self (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A μ p k i L) :
-    ((extendLocalL h hL hLi g : SobolevSection A μ p k) :
+    ((extendByZeroL h hL hLi g : SobolevSection A μ p k) :
       A.sectionChartData.SobolevData μ p k) i =
       (g : Fin (finrank ℝ F) → Wkp μ (A.image i) p k) := by
-  rw [← coe_chartRestrictL_apply A μ p k i L ⟨_, extendLocalL_mem_aeZeroOff h hL hLi g⟩,
-    chartRestrictL_extendLocalL]
+  rw [← coe_chartRestrictL_apply A μ p k i L ⟨_, extendByZeroL_mem_aeZeroOff h hL hLi g⟩,
+    chartRestrictL_extendByZeroL]
 
 /-- An element vanishing off `L` is the extension by zero of its chart-`i` components. -/
 @[simp]
-theorem extendLocalL_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
+theorem extendByZeroL_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (w : aeZeroOff A μ p k L) :
-    extendLocalL h hL hLi (chartRestrictL A μ p k i L w) = w := by
-  rw [extendLocalL_apply, ← chartRestrictEquiv_apply h hL hLi, LinearEquiv.symm_apply_apply]
+    extendByZeroL h hL hLi (chartRestrictL A μ p k i L w) = w := by
+  rw [extendByZeroL_apply, ← chartRestrictEquiv_apply h hL hLi, LinearEquiv.symm_apply_apply]
 
 end Extension
 
