@@ -9,15 +9,15 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 
 /-!
-# The classical doubly-laced root systems are not G₂
+# The doubly-laced root systems are not G₂
 
-The Cartan integers of the pinned rational systems of types B and C have absolute value at
-most two. These instances make the root-string bounds outside G₂ available for the classical
-families in arbitrary valid rank, in particular for collecting their positive root subgroups.
+The Cartan integers of the pinned rational systems of types B, C, and F₄ have absolute value at
+most two. These instances make the root-string bounds outside G₂ available for all doubly-laced
+families, in particular for collecting their positive root subgroups.
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates II and III.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates II, III, and VIII.
 -/
 
 public section
@@ -51,5 +51,12 @@ instance instIsNotG2RationalRootSystemC (n : ℕ) (hn : (C n).Valid) :
   isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
     rw [simplyConnectedRootDatum_C]
     exact abs_pairing_typeCSimplyConnectedRootDatum_le_two)
+
+/-- The Cartan integers of the rational type-F₄ system lie between `-2` and `2`. -/
+instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
+    (F4.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
+    rw [simplyConnectedRootDatum_F4]
+    exact abs_pairing_f4SimplyConnectedRootDatum_le_two)
 
 end TauCeti.DynkinType
