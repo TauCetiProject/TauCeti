@@ -123,8 +123,9 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq_prod`: two maps of `S¹ × ℝ` into `Sⁿ × ℝ` which
   agree on a line `{z₀} × ℝ` have the same derivative at `(z₀, t)` when their slices at time `t`
   have the same velocity at `z₀` along `Circle.exp`.
-* `TauCeti.deriv_coe_fst_comp_circleExp_ne_zero`: for such a map which is the line `s ↦ (y, s)`
-  over `z₀` and has injective derivative, the sphere component of the slice has nonzero velocity.
+* `TauCeti.deriv_coe_fst_comp_circleExp_ne_zero`: for such a map with injective derivative at
+  `(z₀, t)`, whose sphere component is stationary at `t` along the line over `z₀`, the sphere
+  component of the slice at time `t` has nonzero velocity.
 * `TauCeti.exists_contMDiff_circle_hasDerivAt`: an arbitrarily small smooth function on the circle
   vanishing at a given point with velocity `1` there along `Circle.exp`.
 * `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
@@ -787,15 +788,14 @@ theorem mfderiv_eq_of_deriv_comp_circleExp_eq_prod {f g : Circle × ℝ → sphe
   · -- On the line `{exp (θ i)} × ℝ` the two maps agree.
     rw [show (fun z : ℝ => f (Circle.exp θ, z)) = fun z => g (Circle.exp θ, z) from funext hline]
 
-/-- A map `Γ` of the cylinder `S¹ × ℝ` into `Sⁿ × ℝ` which is the line `s ↦ (y, s)` over
-`exp (θ i)`, and has injective derivative at `(exp (θ i), t)`, has a slice
-`θ' ↦ Γ (exp (θ' i), t)` whose sphere component has nonzero velocity at `θ`. Otherwise the
-derivative of `Γ` would kill a vector `(u, -c)`, with `u` tangent to the circle and `c` the time
-component of the slice velocity. -/
-theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 : E) 1 × ℝ}
-    {θ t : ℝ} {y : sphere (0 : E) 1}
+/-- A map `Γ` of the cylinder `S¹ × ℝ` into `Sⁿ × ℝ` with injective derivative at
+`(exp (θ i), t)`, whose sphere component is stationary at `t` along the line over `exp (θ i)`, has a
+slice `θ' ↦ Γ (exp (θ' i), t)` whose sphere component has nonzero velocity at `θ`. Otherwise the
+derivative of `Γ` would send both `(u, 0)`, with `u` tangent to the circle, and the time direction
+`(0, 1)` into the line `0 × ℝ`, so it would kill a nonzero combination of them. -/
+theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 : E) 1 × ℝ} {θ t : ℝ}
     (hinj : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t)))
-    (hline : ∀ s, Γ (Circle.exp θ, s) = (y, s)) :
+    (hvert : mfderiv 𝓘(ℝ) (𝓡 n) (fun s => (Γ (Circle.exp θ, s)).1) t = 0) :
     deriv (fun θ' => ((Γ (Circle.exp θ', t)).1 : E)) θ ≠ 0 := by
   intro h0
   have hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) :=
@@ -811,29 +811,25 @@ theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 :
     rw [h0, smul_zero] at h
     exact injective_mvfderiv_subtypeVal_sphere _ (h.symm.trans (map_zero _).symm)
   set c : ℝ := mfderiv (𝓡 1) 𝓘(ℝ) (fun z => (Γ (z, t)).2) (Circle.exp θ) u
-  set w : TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (Circle.exp θ, t) := (u, -c)
-  -- The two components of the derivative of `Γ` in the direction `w` vanish.
-  have ha : mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓡 n) (fun q => (Γ q).1) (Circle.exp θ, t) w = 0 := by
-    rw [mfderiv_prod_eq_add_apply hΓ.fst]
-    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).1) = fun _ => y :=
-      funext fun s => by rw [hline]
-    rw [hs, mfderiv_const]
-    exact (add_zero _).trans h₁
-  have hb : mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ) (fun q => (Γ q).2) (Circle.exp θ, t) w = 0 := by
-    rw [mfderiv_prod_eq_add_apply hΓ.snd]
-    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).2) = fun s => s :=
-      funext fun s => by rw [hline]
-    have hid : mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ => (Γ (Circle.exp θ, s)).2) t =
-        ContinuousLinearMap.id ℝ ℝ := by
-      rw [hs]
-      exact mfderiv_id
-    rw [hid]
-    exact add_neg_cancel c
-  have hkey : mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) w = 0 := by
-    have hdecomp := mfderiv_prodMk hΓ.fst hΓ.snd
-    rw [hdecomp]
-    exact Prod.ext ha hb
-  exact hu (congrArg Prod.fst (hinj (hkey.trans (map_zero _).symm)) :)
+  set a : ℝ := mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun s => (Γ (Circle.exp θ, s)).2) t (1 : ℝ)
+  -- The derivative of `Γ` sends `(α • u, r)` to `(0, α * c + r * a)`.
+  have hkey (α r : ℝ) (hαr : α * c + r * a = 0) :
+      ((α • u, r) : TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (Circle.exp θ, t)) = 0 := by
+    set w : TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (Circle.exp θ, t) := (α • u, r)
+    have ha : mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓡 n) (fun q => (Γ q).1) (Circle.exp θ, t) w = 0 := by
+      rw [mfderiv_prod_eq_add_apply hΓ.fst, hvert]
+      exact (add_zero _).trans ((map_smul _ α u).trans ((congrArg (α • ·) h₁).trans (smul_zero α)))
+    have hb : mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ) (fun q => (Γ q).2) (Circle.exp θ, t) w = 0 := by
+      rw [mfderiv_prod_eq_add_apply hΓ.snd]
+      exact (congrArg₂ (· + ·) (map_smul _ α u)
+        ((congrArg _ (mul_one r).symm).trans (map_smul _ r (1 : ℝ)))).trans hαr
+    have hw : mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) w = 0 := by
+      rw [mfderiv_prodMk hΓ.fst hΓ.snd]
+      exact Prod.ext ha hb
+    exact hinj (hw.trans (map_zero _).symm)
+  rcases eq_or_ne a 0 with ha | ha
+  · exact one_ne_zero (congrArg Prod.snd (hkey 0 1 (by rw [ha]; ring)))
+  · exact hu ((smul_eq_zero.1 (congrArg Prod.fst (hkey a (-c) (by ring)))).resolve_left ha)
 
 /-- A smooth real function on the circle, of absolute value at most `δ`, which vanishes at
 `exp (θ₀ i)` and has velocity `1` there along `Circle.exp`: `κ arctan (sin (θ - θ₀) / κ)` with

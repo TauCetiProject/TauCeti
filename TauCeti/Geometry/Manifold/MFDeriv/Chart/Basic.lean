@@ -110,9 +110,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   image.
 * `ContinuousAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
   derivative with the canonical source tangent identification.
-* `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target, at a
-  point with unique derivatives, the derivative of the inverse chart is its derivative within the
-  model range.
+* `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the model range, at a
+  point of the chart target where the subset has unique derivatives, the derivative of the inverse
+  chart is its derivative within the model range.
 * `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt` and
   `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
   transport differentiability near a point between a product of manifolds and model spaces
@@ -683,14 +683,14 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
 
 end ChartOverlap
 
-/-- On a subset of the chart target, at a point where it has unique derivatives, the derivative of
-the inverse chart within the subset is its derivative within the model range. -/
-theorem mfderivWithin_extChartAt_symm_of_subset (x₀ : M) {s : Set E}
-    (hs : s ⊆ (extChartAt I x₀).target) {y : E} (hy : y ∈ s) (hsu : UniqueDiffWithinAt 𝕜 s y) :
+/-- On a subset of the model range, at a point of the chart target where the subset has unique
+derivatives, the derivative of the inverse chart within the subset is its derivative within the
+model range. -/
+theorem mfderivWithin_extChartAt_symm_of_subset (x₀ : M) {s : Set E} (hs : s ⊆ range I) {y : E}
+    (hy : y ∈ (extChartAt I x₀).target) (hsu : UniqueDiffWithinAt 𝕜 s y) :
     mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm s y =
       mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) y :=
-  mfderivWithin_subset (fun _ hz ↦ extChartAt_target_subset_range x₀ (hs hz))
-    hsu.uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm (hs hy))
+  mfderivWithin_subset hs hsu.uniqueMDiffWithinAt (mdifferentiableWithinAt_extChartAt_symm hy)
 
 end TauCeti
 

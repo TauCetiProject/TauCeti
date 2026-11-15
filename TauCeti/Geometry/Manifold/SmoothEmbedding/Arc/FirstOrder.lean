@@ -194,8 +194,11 @@ private theorem fderiv_track_left_fst_ne_zero (F : Concordance K K')
     (h₀ : ∀ t, F (Circle.exp θ₀, t) = (L (Circle.exp θ₀), t)) (t : ℝ) :
     (fderiv ℝ (track F) (θ₀, t) (1, 0)).1 ≠ 0 := by
   rw [fderiv_track_left_apply]
+  have hvert : (fun s => (F (Circle.exp θ₀, s)).1) = fun _ => L (Circle.exp θ₀) :=
+    funext fun s => by rw [h₀]
   exact deriv_coe_fst_comp_circleExp_ne_zero
-    ((F.toSmoothEmbedding.isImmersion.isDiffImmersionAt (by simp) _).mfderiv_injective) h₀
+    ((F.toSmoothEmbedding.isImmersion.isDiffImmersionAt (by simp) _).mfderiv_injective)
+    (by rw [hvert]; exact mfderiv_const)
 
 /-- The circle velocity of the straight line over `exp (θ₀ i)` is orthogonal to the point `v`. -/
 private theorem inner_fderiv_track_left_fst (F : Concordance K K')
