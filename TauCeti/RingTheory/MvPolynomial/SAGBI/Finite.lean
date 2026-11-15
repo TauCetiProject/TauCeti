@@ -19,17 +19,12 @@ Instead, existence of a finite SAGBI basis of `A` is equivalent to finite genera
 algebra `m.initialAlgebra A`, and over a field to finite generation of its monoid of leading
 exponents `m.leadingExponents A`.
 
-The second part of the file constructs the classic counterexample of Robbiano and Sweedler: over
-every nontrivial commutative ring without zero divisors, the three-generator subalgebra
-`R[X 0 + X 1, X 0 * X 1, X 0 * X 1 ^ 2]` of `MvPolynomial (Fin 2) R` is finitely generated, yet
-its monoid of leading exponents for the lexicographic order is not finitely generated. Over a
-field, its initial algebra is therefore not finitely generated and no finite subset is a SAGBI
-basis.
-
 ## Main results
 
 * `MonomialOrder.IsSAGBIBasis.exists_finset_subset`: any SAGBI basis contains a finite SAGBI basis
   whenever the initial algebra is finitely generated.
+* `MonomialOrder.exists_finset_isSAGBIBasis_iff_fg_initialAlgebra`: over any commutative semiring,
+  `A` admits a finite SAGBI basis if and only if `m.initialAlgebra A` is finitely generated.
 * `MonomialOrder.finiteType_initialAlgebra_iff_fg_leadingExponents` and
   `MonomialOrder.fg_initialAlgebra_iff_fg_leadingExponents`: over a field, the initial algebra of
   `A` is finitely generated as a `k`-algebra if and only if `m.leadingExponents A` is finitely
@@ -37,16 +32,11 @@ basis.
 * `MonomialOrder.exists_finset_isSAGBIBasis_iff` and
   `MonomialOrder.exists_finset_monic_isSAGBIBasis_iff`: over a field, `A` admits a finite (or
   finite monic) SAGBI basis if and only if `m.leadingExponents A` is finitely generated.
-* `TauCeti.fg_robbianoSweedlerSubalgebra`, `TauCeti.not_fg_leadingExponents_robbianoSweedler`,
-  `TauCeti.not_fg_initialAlgebra_robbianoSweedler`, and
-  `TauCeti.not_isSAGBIBasis_finset_robbianoSweedler`: the Robbiano–Sweedler subalgebra
-  `R[X 0 + X 1, X 0 * X 1, X 0 * X 1 ^ 2]` is finitely generated, while its `lex`-leading exponent
-  monoid and initial algebra are not, so it has no finite `lex`-SAGBI basis.
 
 ## References
 
 * L. Robbiano, M. Sweedler, *Subalgebra bases*, in *Commutative Algebra (Salvador, 1988)*,
-  Lecture Notes in Mathematics 1430, Springer, 1990, 61–87, Example 1.20 and Example 4.11.
+  Lecture Notes in Mathematics 1430, Springer, 1990, 61–87.
 * D. Kapur, K. Madlener, *A completion procedure for computing a canonical basis for a
   k-subalgebra*, in *Computers and Mathematics*, Springer, 1989, 1–11.
 * B. Sturmfels, *Gröbner Bases and Convex Polytopes*, University Lecture Series 8, AMS, 1996,
@@ -128,8 +118,8 @@ theorem exists_finset_isSAGBIBasis_iff :
     fg_initialAlgebra_iff_fg_leadingExponents
 
 /-- Over a field, `A` has a finite monic SAGBI basis if and only if its monoid of leading exponents
-is finitely generated. Zero members are discarded rather than normalized; for the base-field
-subalgebra the empty basis is valid. -/
+is finitely generated. All members of a monic basis are nonzero; for the base-field subalgebra `⊥`
+the empty basis `∅` is valid. -/
 theorem exists_finset_monic_isSAGBIBasis_iff :
     (∃ B : Finset (MvPolynomial σ k), (∀ b ∈ B, m.Monic b) ∧
       m.IsSAGBIBasis (B : Set (MvPolynomial σ k)) A) ↔ (m.leadingExponents A).FG := by
@@ -146,275 +136,3 @@ theorem exists_finset_monic_isSAGBIBasis_iff :
 end Field
 
 end MonomialOrder
-
-namespace TauCeti
-
-open MonomialOrder
-
-section RobbianoSweedler
-
-/-- The three generators `X 0 + X 1`, `X 0 * X 1`, `X 0 * X 1 ^ 2` of the Robbiano–Sweedler
-subalgebra of `MvPolynomial (Fin 2) R`. -/
-noncomputable def robbianoSweedlerGen (R : Type*) [CommSemiring R] :
-    Fin 3 → MvPolynomial (Fin 2) R :=
-  ![X 0 + X 1, X 0 * X 1, X 0 * X 1 ^ 2]
-
-/-- The `0`-th Robbiano–Sweedler generator is `X 0 + X 1`. -/
-@[simp]
-theorem robbianoSweedlerGen_zero (R : Type*) [CommSemiring R] :
-    robbianoSweedlerGen R 0 = X 0 + X 1 :=
-  (rfl)
-
-/-- The `1`-st Robbiano–Sweedler generator is `X 0 * X 1`. -/
-@[simp]
-theorem robbianoSweedlerGen_one (R : Type*) [CommSemiring R] :
-    robbianoSweedlerGen R 1 = X 0 * X 1 :=
-  (rfl)
-
-/-- The `2`-nd Robbiano–Sweedler generator is `X 0 * X 1 ^ 2`. -/
-@[simp]
-theorem robbianoSweedlerGen_two (R : Type*) [CommSemiring R] :
-    robbianoSweedlerGen R 2 = X 0 * X 1 ^ 2 :=
-  (rfl)
-
-/-- The Robbiano–Sweedler subalgebra `R[X 0 + X 1, X 0 * X 1, X 0 * X 1 ^ 2]` of
-`MvPolynomial (Fin 2) R`. Although finitely generated as an `R`-algebra, its `lex`-initial algebra
-is infinitely generated. -/
-noncomputable def robbianoSweedlerSubalgebra (R : Type*) [CommSemiring R] :
-    Subalgebra R (MvPolynomial (Fin 2) R) :=
-  Algebra.adjoin R (Set.range (robbianoSweedlerGen R))
-
-/-- Unfolding lemma for `TauCeti.robbianoSweedlerSubalgebra`. -/
-theorem robbianoSweedlerSubalgebra_def (R : Type*) [CommSemiring R] :
-    robbianoSweedlerSubalgebra R = Algebra.adjoin R (Set.range (robbianoSweedlerGen R)) :=
-  (rfl)
-
-/-- The Robbiano–Sweedler subalgebra is finitely generated as an `R`-algebra. -/
-theorem fg_robbianoSweedlerSubalgebra (R : Type*) [CommSemiring R] :
-    (robbianoSweedlerSubalgebra R).FG :=
-  Subalgebra.fg_def.2 ⟨Set.range (robbianoSweedlerGen R), Set.finite_range _, rfl⟩
-
-section CommSemiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- Specializing `(X 0, X 1)` to `(X 0, 0)` and to `(0, X 0)` agrees on every element of
-`robbianoSweedlerSubalgebra R`, since the three generators map to `(X 0, 0, 0)` under both
-algebra endomorphisms. -/
-theorem aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra
-    {f : MvPolynomial (Fin 2) R} (hf : f ∈ robbianoSweedlerSubalgebra R) :
-    aeval ![X 0, (0 : MvPolynomial (Fin 2) R)] f =
-      aeval ![(0 : MvPolynomial (Fin 2) R), X 0] f := by
-  have hle : robbianoSweedlerSubalgebra R ≤
-      AlgHom.equalizer (aeval ![X 0, (0 : MvPolynomial (Fin 2) R)])
-        (aeval ![(0 : MvPolynomial (Fin 2) R), X 0]) := by
-    refine Algebra.adjoin_le ?_
-    rintro _ ⟨i, rfl⟩
-    fin_cases i <;> simp
-  exact hle hf
-
-/-- A polynomial in `MvPolynomial (Fin 2) R` whose `lex`-leading exponent vanishes at `0` involves
-only the variable `X 1`. -/
-private theorem eq_single_one_of_mem_support_of_degree_zero_eq_zero
-    {f : MvPolynomial (Fin 2) R} (h0 : (lex.degree f) 0 = 0) {u : Fin 2 →₀ ℕ}
-    (hu : u ∈ f.support) : u = Finsupp.single 1 (u 1) := by
-  have hsupp : (u.support : Set (Fin 2)) ⊆ Set.Ici (1 : Fin 2) := by
-    refine coe_support_subset_of_lex_le (IsUpperSet.Ici (1 : Fin 2)) (lex.le_degree hu) ?_
-    intro i hi
-    fin_cases i
-    · exact absurd h0 (Finsupp.mem_support_iff.1 hi)
-    · exact Set.mem_Ici.2 le_rfl
-  ext i
-  fin_cases i
-  · rw [Fin.zero_eta, Finsupp.single_eq_of_ne Fin.zero_ne_one]
-    by_contra hu0
-    have hmem : (1 : Fin 2) ≤ 0 := hsupp (Finsupp.mem_support_iff.2 hu0)
-    omega
-  · simp
-
-/-- Evaluating `(X 0, X 1) ↦ (0, X 0)` turns `c X 1 ^ m` into `c X 0 ^ m`. -/
-private theorem aeval_zero_X_monomial_single_one (m : ℕ) (c : R) :
-    aeval ![(0 : MvPolynomial (Fin 2) R), X 0] (monomial (Finsupp.single 1 m) c) =
-      monomial (Finsupp.single 0 m) c := by
-  rw [aeval_monomial, algebraMap_eq, Finsupp.prod_single_index (by simp), Matrix.cons_val_one,
-    Matrix.cons_val_zero, X, monomial_pow, C_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-    smul_eq_mul, mul_one]
-
-/-- No nonconstant pure polynomial in `X 1` belongs to `robbianoSweedlerSubalgebra R`: every
-nonzero element whose `lex`-leading exponent vanishes at `0` has `lex`-degree `0`. -/
-theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 2) R}
-    (hf : f ∈ robbianoSweedlerSubalgebra R) (hf0 : f ≠ 0) (h0 : (lex.degree f) 0 = 0) :
-    lex.degree f = 0 := by
-  classical
-  set d := (lex.degree f) 1
-  by_contra hd0
-  have hd : Finsupp.single (0 : Fin 2) d ≠ 0 := fun h ↦ hd0 <| by
-    have hd' : d = 0 := by simpa using congrArg (fun u : Fin 2 →₀ ℕ ↦ u 0) h
-    ext i
-    fin_cases i
-    · exact h0
-    · exact hd'
-  have heval := congrArg (fun p : MvPolynomial (Fin 2) R ↦ p.coeff (Finsupp.single 0 d))
-    (aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf)
-  have hleft :
-      (aeval ![X 0, (0 : MvPolynomial (Fin 2) R)] f).coeff (Finsupp.single 0 d) = 0 := by
-    conv_lhs => rw [f.as_sum]
-    rw [map_sum, coeff_sum]
-    refine Finset.sum_eq_zero fun u hu ↦ ?_
-    rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu]
-    rcases eq_or_ne (u 1) 0 with hu1 | hu1
-    · simp [hu1, coeff_C, hd.symm]
-    · simp [aeval_monomial, Finsupp.prod_single_index, zero_pow hu1]
-  have hright : (aeval ![(0 : MvPolynomial (Fin 2) R), X 0] f).coeff (Finsupp.single 0 d) =
-      f.coeff (lex.degree f) := by
-    conv_lhs => rw [f.as_sum]
-    rw [map_sum, coeff_sum]
-    have hmem : lex.degree f ∈ f.support := lex.degree_mem_support hf0
-    rw [Finset.sum_eq_single (lex.degree f)]
-    · conv_lhs => rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem]
-      rw [aeval_zero_X_monomial_single_one, coeff_monomial, ite_eq_left_iff.2 fun h ↦ absurd rfl h,
-        ← eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem]
-    · intro u hu hne
-      conv_lhs => rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu]
-      rw [aeval_zero_X_monomial_single_one, coeff_monomial, ite_eq_right_iff]
-      intro heq
-      have hu1 : u 1 = d := by simpa using congrArg (fun v : Fin 2 →₀ ℕ ↦ v 0) heq
-      exact absurd (by
-        rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu,
-          eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem, hu1]) hne
-    · exact fun h ↦ absurd hmem h
-  exact (lex.leadingCoeff_ne_zero_iff.2 hf0) (hright.symm.trans heval.symm |>.trans hleft)
-
-end CommSemiring
-
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
-/-- The fundamental cancellation relation in `MvPolynomial (Fin 2) R` driving infinite SAGBI
-completion on `robbianoSweedlerSubalgebra R`:
-`(X 0 + X 1) * (X 0 * X 1 ^ (n + 1)) - (X 0 * X 1) * (X 0 * X 1 ^ n) = X 0 * X 1 ^ (n + 2)`. -/
-theorem robbianoSweedler_step_identity (n : ℕ) :
-    ((X 0 + X 1) * (X 0 * X 1 ^ (n + 1)) -
-      (X 0 * X 1) * (X 0 * X 1 ^ n) : MvPolynomial (Fin 2) R) =
-    X 0 * X 1 ^ (n + 2) := by
-  ring
-
-/-- Every monomial `X 0 * X 1 ^ (n + 1)` (`n : ℕ`) belongs to `robbianoSweedlerSubalgebra R`. -/
-theorem mul_X_one_pow_mem_robbianoSweedlerSubalgebra (n : ℕ) :
-    (X 0 * X 1 ^ (n + 1) : MvPolynomial (Fin 2) R) ∈ robbianoSweedlerSubalgebra R := by
-  induction n using Nat.strong_induction_on with
-  | ind n ih =>
-    match n with
-    | 0 =>
-      rw [robbianoSweedlerSubalgebra_def, pow_one]
-      exact Algebra.subset_adjoin ⟨1, rfl⟩
-    | 1 =>
-      rw [robbianoSweedlerSubalgebra_def]
-      exact Algebra.subset_adjoin ⟨2, rfl⟩
-    | m + 2 =>
-      rw [← robbianoSweedler_step_identity (R := R) (m + 1)]
-      have hg0 : (X 0 + X 1 : MvPolynomial (Fin 2) R) ∈ robbianoSweedlerSubalgebra R := by
-        rw [robbianoSweedlerSubalgebra_def]
-        exact Algebra.subset_adjoin ⟨0, rfl⟩
-      have hg1 : (X 0 * X 1 : MvPolynomial (Fin 2) R) ∈ robbianoSweedlerSubalgebra R := by
-        rw [robbianoSweedlerSubalgebra_def]
-        exact Algebra.subset_adjoin ⟨1, rfl⟩
-      exact sub_mem (mul_mem hg0 (ih (m + 1) (by omega))) (mul_mem hg1 (ih m (by omega)))
-
-section NoZeroDivisors
-
-variable [NoZeroDivisors R] [Nontrivial R]
-
-/-- For every `n : ℕ`, the exponent `(1, n + 1)` is a `lex`-leading exponent of
-`robbianoSweedlerSubalgebra R`. -/
-theorem single_add_single_mem_leadingExponents_robbianoSweedler (n : ℕ) :
-    Finsupp.single (0 : Fin 2) 1 + Finsupp.single 1 (n + 1) ∈
-      lex.leadingExponents (robbianoSweedlerSubalgebra R) := by
-  classical
-  have hmon : (X 0 * X 1 ^ (n + 1) : MvPolynomial (Fin 2) R) =
-      monomial (Finsupp.single 0 1 + Finsupp.single 1 (n + 1)) 1 := by
-    rw [X, X, monomial_pow, monomial_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-      smul_eq_mul, mul_one]
-  refine mem_leadingExponents_iff.2
-    ⟨X 0 * X 1 ^ (n + 1), mul_X_one_pow_mem_robbianoSweedlerSubalgebra n, ?_, ?_⟩
-  · rw [hmon]
-    exact monomial_eq_zero.not.2 one_ne_zero
-  · rw [hmon, degree_monomial]
-    simp
-
-/-- Every nonzero `lex`-leading exponent `a` of `robbianoSweedlerSubalgebra R` has `1 ≤ a 0`. -/
-theorem pos_apply_zero_of_mem_leadingExponents_robbianoSweedler {a : Fin 2 →₀ ℕ}
-    (ha : a ∈ lex.leadingExponents (robbianoSweedlerSubalgebra R)) (ha0 : a ≠ 0) :
-    0 < a 0 := by
-  obtain ⟨f, hf, hf0, rfl⟩ := mem_leadingExponents_iff.1 ha
-  exact Nat.pos_of_ne_zero fun h0 ↦
-    ha0 (degree_eq_zero_of_mem_robbianoSweedlerSubalgebra hf hf0 h0)
-
-/-- The monoid of `lex`-leading exponents of `robbianoSweedlerSubalgebra R` is not finitely
-generated, even though `robbianoSweedlerSubalgebra R` is generated as an `R`-algebra by three
-polynomials. -/
-theorem not_fg_leadingExponents_robbianoSweedler :
-    ¬ (lex.leadingExponents (robbianoSweedlerSubalgebra R)).FG := by
-  intro hfg
-  obtain ⟨S, hS⟩ := AddSubmonoid.isAddFG_iff.1 hfg
-  set M := S.sup fun s ↦ s 1
-  -- Every generator `s ∈ S` satisfies `s 1 ≤ M * s 0`, and that linear inequality is preserved
-  -- under sums, so it holds across `AddSubmonoid.closure S`, contradicting `(1, M + 1)`.
-  have hbound : ∀ x ∈ AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)), x 1 ≤ M * x 0 := by
-    intro x hx
-    induction hx using AddSubmonoid.closure_induction with
-    | mem s hs =>
-      have hs' : s ∈ lex.leadingExponents (robbianoSweedlerSubalgebra R) :=
-        hS ▸ AddSubmonoid.subset_closure hs
-      rcases eq_or_ne s 0 with rfl | hs0
-      · simp
-      · calc
-          s 1 ≤ M := Finset.le_sup (f := fun t : Fin 2 →₀ ℕ ↦ t 1) hs
-          _ ≤ M * s 0 := Nat.le_mul_of_pos_right M
-            (pos_apply_zero_of_mem_leadingExponents_robbianoSweedler hs' hs0)
-    | zero => simp
-    | add x y _ _ ihx ihy =>
-      simp only [Finsupp.coe_add, Pi.add_apply, mul_add]
-      omega
-  have hmem : Finsupp.single (0 : Fin 2) 1 + Finsupp.single 1 (M + 1) ∈
-      AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)) := by
-    rw [hS]
-    exact single_add_single_mem_leadingExponents_robbianoSweedler M
-  have hle := hbound _ hmem
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
-    add_zero, zero_add, mul_one] at hle
-  omega
-
-end NoZeroDivisors
-
-end CommRing
-
-section Field
-
-variable (k : Type*) [Field k]
-
-/-- Over a field, the `lex`-initial algebra of `robbianoSweedlerSubalgebra k` is not finitely
-generated as a `k`-algebra. -/
-theorem not_fg_initialAlgebra_robbianoSweedler :
-    ¬ (lex.initialAlgebra (robbianoSweedlerSubalgebra k)).FG :=
-  lex.fg_initialAlgebra_iff_fg_leadingExponents.not.2 not_fg_leadingExponents_robbianoSweedler
-
-/-- Over a field, the `lex`-initial algebra of `robbianoSweedlerSubalgebra k` is not of finite type
-over `k`. -/
-theorem not_finiteType_initialAlgebra_robbianoSweedler :
-    ¬ Algebra.FiniteType k (lex.initialAlgebra (robbianoSweedlerSubalgebra k)) :=
-  lex.finiteType_initialAlgebra_iff_fg_leadingExponents.not.2
-    not_fg_leadingExponents_robbianoSweedler
-
-/-- Over a field, no finite subset is a `lex`-SAGBI basis of `robbianoSweedlerSubalgebra k`. -/
-theorem not_isSAGBIBasis_finset_robbianoSweedler (B : Finset (MvPolynomial (Fin 2) k)) :
-    ¬ lex.IsSAGBIBasis (B : Set (MvPolynomial (Fin 2) k)) (robbianoSweedlerSubalgebra k) :=
-  fun hB ↦ not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents B.finite_toSet)
-
-end Field
-
-end RobbianoSweedler
-
-end TauCeti

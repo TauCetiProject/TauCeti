@@ -31,8 +31,9 @@ completion sequences (`MonomialOrder.IsFairSAGBISequence`), proves that every fa
 sequence exhausts `m.leadingExponents` and `m.initialAlgebra` unconditionally and terminates at a
 SAGBI basis whenever the initial algebra is finitely generated, constructs a concrete certified
 batch completion sequence equipped with surjective presentation retractions from any finite monic
-family (and, via `MvPolynomial.rescale`, from any finite nonzero family), and exhibits the
-infinite toric-binomial completion chain on `TauCeti.robbianoSweedlerSubalgebra`.
+family, and deduces the existence of a finite monic SAGBI basis with a surjective presentation
+homomorphism for any finite nonzero family whose generated subalgebra has finitely generated
+leading-exponent monoid.
 
 ## Main definitions and results
 
@@ -54,14 +55,13 @@ infinite toric-binomial completion chain on `TauCeti.robbianoSweedlerSubalgebra`
   `MonomialOrder.IsFairSAGBISequence.exists_isSAGBIBasis_iff_fg_leadingExponents`: finite-stage
   termination under finite generation of the initial algebra, and equivalence for sequences of
   finite families.
-* `MonomialOrder.sagbiCompletionFamily`, `MonomialOrder.sagbiCompletionRetract`,
-  `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`, and
-  `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: concrete certified batch completion with
-  surjective presentation retractions, including leading-coefficient rescaling for nonmonic finite
-  nonzero families.
-* `TauCeti.robbianoSweedlerStage`, `TauCeti.isSubduction_robbianoSweedlerStage`, and
-  `TauCeti.adjoin_leadingTerm_robbianoSweedlerStage_lt`: explicit infinite sequence of nonzero
-  toric-binomial subduction-remainder steps on `TauCeti.robbianoSweedlerSubalgebra`.
+* `MonomialOrder.sagbiCompletionFamily`, `MonomialOrder.sagbiCompletionRetract`, and
+  `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`: concrete certified batch completion
+  with surjective presentation retractions starting from a finite monic family.
+* `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: every finite nonzero family whose
+  generated subalgebra has finitely generated leading-exponent monoid admits a finite monic SAGBI
+  basis together with a surjective presentation homomorphism relating the evaluation maps and
+  kernels.
 
 ## References
 
@@ -705,7 +705,11 @@ private noncomputable def batchStageSeq (m : MonomialOrder σ) (c₀ : ι₀ →
   | 0 => ⟨ι₀, inferInstance, c₀, AlgHom.id k (MvPolynomial ι₀ k)⟩
   | n + 1 => m.nextBatchStage (m.batchStageSeq c₀ n)
 
-/-- The finite index type of stage `n` of batch SAGBI completion starting from `c₀`. -/
+/-- The finite index type of stage `n` of batch SAGBI completion starting from `c₀`: stage `0` is
+`ι₀`, and stage `n + 1` extends stage `n` by a sum with the subtype of elements in a chosen finite
+binomial generating set of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` whose
+chosen subduction remainder with respect to stage `n` is nonzero. Intended for a monic family
+`c₀`. -/
 noncomputable def sagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : Type u :=
   (m.batchStageSeq c₀ n).Idx
@@ -715,13 +719,23 @@ instance instFiniteSagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ →
     (n : ℕ) : Finite (m.sagbiCompletionIndex c₀ n) :=
   (m.batchStageSeq c₀ n).instFinite
 
-/-- The generator family at stage `n` of batch SAGBI completion starting from `c₀`. -/
+/-- The generator family at stage `n` of batch SAGBI completion starting from `c₀`. Stage `0` is
+`c₀`; at stage `n + 1`, each binomial in a chosen finite binomial generating set of
+`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` is subducted with respect to
+stage `n`, and `m.monicNormalize` of every nonzero remainder is adjoined. Intended for a monic
+initial family `c₀` so that unscaled toric binomials cancel leading terms and yield a fair
+completion sequence (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`). -/
 noncomputable def sagbiCompletionFamily (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : m.sagbiCompletionIndex c₀ n → MvPolynomial σ k :=
   (m.batchStageSeq c₀ n).family
 
 /-- The surjective presentation retraction from stage `n` of batch SAGBI completion back to the
-initial polynomial ring `MvPolynomial ι₀ k`. -/
+initial polynomial ring `MvPolynomial ι₀ k`. Starting from `AlgHom.id` at stage `0`, each step
+composes with `MonomialOrder.subductionRetract` for the chosen finite binomial generating set of
+`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` and the nonzero subduction
+remainders adjoined at that step. Intended for a monic initial family `c₀`, for which
+`(aeval c₀).comp (m.sagbiCompletionRetract c₀ n) = aeval (m.sagbiCompletionFamily c₀ n)`
+(`MonomialOrder.aeval_comp_sagbiCompletionRetract`). -/
 noncomputable def sagbiCompletionRetract (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : MvPolynomial (m.sagbiCompletionIndex c₀ n) k →ₐ[k] MvPolynomial ι₀ k :=
   (m.batchStageSeq c₀ n).retract
@@ -801,13 +815,11 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
       m.chosenSubductionPair_spec (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) _,
       fun hr ↦ ⟨Sum.inr ⟨pB, hr⟩, rfl⟩⟩
 
-/-- **Certified finite SAGBI completion of a finite nonzero family.** Let
-`b : ι₀ → MvPolynomial σ k` be a finite family of nonzero polynomials whose generated subalgebra
-`k[b]` has finitely generated leading-exponent monoid. Normalizing `b`, running fair batch
-completion to termination, and composing the presentation retraction with
-`MvPolynomial.rescale (m.leadingCoeff ∘ b)⁻¹` yields a finite monic SAGBI basis
-`c : κ → MvPolynomial σ k` of `k[b]` and a surjective `k`-algebra retraction
-`φ : MvPolynomial κ k →ₐ[k] MvPolynomial ι₀ k` with `(aeval b).comp φ = aeval c` and
+/-- **Certified finite SAGBI completion of a finite nonzero family.** If
+`b : ι₀ → MvPolynomial σ k` is a finite family of nonzero polynomials whose generated subalgebra
+`k[b]` has finitely generated leading-exponent monoid, then there exist a finite monic SAGBI basis
+`c : κ → MvPolynomial σ k` of `k[b]` and a surjective `k`-algebra homomorphism
+`φ : MvPolynomial κ k →ₐ[k] MvPolynomial ι₀ k` satisfying `(aeval b).comp φ = aeval c` and
 `(RingHom.ker (aeval c)).map φ = RingHom.ker (aeval b)`. -/
 theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
     (hb : ∀ i, b i ≠ 0)
@@ -848,222 +860,3 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
 end BatchCompletion
 
 end MonomialOrder
-
-namespace TauCeti
-
-open MonomialOrder
-
-section RobbianoSweedlerInfinite
-
-/-- For the lexicographic order on `Fin 2 →₀ ℕ`, `Finsupp.single 1 1 ≺[lex] Finsupp.single 0 1`
-(`X 1 ≺[lex] X 0`). -/
-private theorem single_one_lt_single_zero_lex :
-    Finsupp.single (1 : Fin 2) 1 ≺[lex] Finsupp.single 0 1 := by
-  rw [lex_lt_iff, Finsupp.Lex.lt_iff]
-  refine ⟨0, fun j hj ↦ (Fin.not_lt_zero j hj).elim, ?_⟩
-  simp
-
-private theorem coeff_X_zero_add_X_one_single_zero {R : Type*} [CommSemiring R] :
-    (X 0 + X 1 : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 1) = 1 := by
-  classical
-  have hne : Finsupp.single (1 : Fin 2) 1 ≠ Finsupp.single 0 1 :=
-    ne_of_apply_ne (fun f ↦ f 0) (by simp)
-  rw [X, X]
-  simp [hne]
-
-private theorem degree_X_zero_add_X_one {R : Type*} [CommSemiring R] [Nontrivial R] :
-    lex.degree (X 0 + X 1 : MvPolynomial (Fin 2) R) = Finsupp.single 0 1 := by
-  classical
-  have hcoeff : (X 0 + X 1 : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 1) = 1 :=
-    coeff_X_zero_add_X_one_single_zero
-  refine lex.toSyn.injective (le_antisymm (lex.degree_le_iff.2 fun u hu ↦ ?_)
-    (lex.le_degree (mem_support_iff.2 (hcoeff.symm ▸ one_ne_zero))))
-  rcases Finset.mem_union.1 (support_add hu) with hu | hu
-  · rw [X] at hu
-    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
-  · rw [X] at hu
-    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
-    exact single_one_lt_single_zero_lex.le
-
-private theorem monic_X_zero_add_X_one {R : Type*} [CommSemiring R] :
-    lex.Monic (X 0 + X 1 : MvPolynomial (Fin 2) R) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · exact Monic.of_subsingleton
-  · rw [Monic, leadingCoeff, degree_X_zero_add_X_one, coeff_X_zero_add_X_one_single_zero]
-
-private theorem X_zero_mul_X_one_pow_eq_monomial {R : Type*} [CommSemiring R] (m : ℕ) :
-    (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) =
-      monomial (Finsupp.single 0 1 + Finsupp.single 1 m) 1 := by
-  rw [X, X, monomial_pow, monomial_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-    smul_eq_mul, mul_one]
-
-private theorem degree_X_zero_mul_X_one_pow {R : Type*} [CommSemiring R] [Nontrivial R] (m : ℕ) :
-    lex.degree (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) =
-      Finsupp.single 0 1 + Finsupp.single 1 m := by
-  classical
-  rw [X_zero_mul_X_one_pow_eq_monomial, degree_monomial]
-  simp
-
-private theorem monic_X_zero_mul_X_one_pow {R : Type*} [CommSemiring R] (m : ℕ) :
-    lex.Monic (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) := by
-  rw [X_zero_mul_X_one_pow_eq_monomial]
-  exact lex.monic_monomial_one
-
-/-- Explicit stage `n` (`Fin (n + 3) → MvPolynomial (Fin 2) R`) of one-relation-at-a-time
-completion on `robbianoSweedlerSubalgebra R`: index `0` is `X 0 + X 1`, and index `i > 0` is
-`X 0 * X 1 ^ (i : ℕ)`. -/
-noncomputable def robbianoSweedlerStage (R : Type*) [CommSemiring R] (n : ℕ) (i : Fin (n + 3)) :
-    MvPolynomial (Fin 2) R :=
-  if (i : ℕ) = 0 then X 0 + X 1 else X 0 * X 1 ^ (i : ℕ)
-
-/-- Stage `0` of `robbianoSweedlerStage R` coincides with the initial generator family
-`robbianoSweedlerGen R`. -/
-@[simp]
-theorem robbianoSweedlerStage_zero_eq (R : Type*) [CommSemiring R] :
-    robbianoSweedlerStage R 0 = robbianoSweedlerGen R := by
-  funext i
-  fin_cases i <;> simp [robbianoSweedlerStage]
-
-/-- Every generator at stage `n` of `robbianoSweedlerStage R` is `lex`-monic over any commutative
-semiring. -/
-theorem monic_robbianoSweedlerStage {R : Type*} [CommSemiring R]
-    (n : ℕ) (i : Fin (n + 3)) : lex.Monic (robbianoSweedlerStage R n i) := by
-  by_cases hi : (i : ℕ) = 0 <;>
-    simp [robbianoSweedlerStage, hi, monic_X_zero_add_X_one, monic_X_zero_mul_X_one_pow]
-
-/-- All three initial generators of `robbianoSweedlerGen R` are `lex`-monic over any commutative
-semiring. -/
-theorem monic_robbianoSweedlerGen {R : Type*} [CommSemiring R] (i : Fin 3) :
-    lex.Monic (robbianoSweedlerGen R i) := by
-  rw [← robbianoSweedlerStage_zero_eq]
-  exact monic_robbianoSweedlerStage 0 i
-
-/-- The `lex`-leading exponent of the `i`-th generator of `robbianoSweedlerStage R n` is `(1, i)`.
--/
-theorem degree_robbianoSweedlerStage {R : Type*} [CommSemiring R] [Nontrivial R]
-    (n : ℕ) (i : Fin (n + 3)) :
-    lex.degree (robbianoSweedlerStage R n i) =
-      Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ) := by
-  by_cases hi : (i : ℕ) = 0 <;>
-    simp [robbianoSweedlerStage, hi, degree_X_zero_add_X_one, degree_X_zero_mul_X_one_pow]
-
-/-- The toric binomial `Y 0 * Y (n + 2) - Y 1 * Y (n + 1)` at stage `n` of
-`robbianoSweedlerStage`. -/
-noncomputable def robbianoSweedlerBinomial (R : Type*) [CommRing R] (n : ℕ) :
-    MvPolynomial (Fin (n + 3)) R :=
-  monomial (Finsupp.single 0 1 + Finsupp.single ⟨n + 2, by omega⟩ 1) 1 -
-    monomial (Finsupp.single ⟨1, by omega⟩ 1 + Finsupp.single ⟨n + 1, by omega⟩ 1) 1
-
-/-- `robbianoSweedlerBinomial R n` belongs to the toric ideal of the leading exponents of
-`robbianoSweedlerStage R n` (both monomials have common leading exponent `(2, n + 2)`). -/
-theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
-    robbianoSweedlerBinomial R n ∈
-      TauCeti.toricIdeal R (fun i ↦ lex.degree (robbianoSweedlerStage R n i)) := by
-  refine TauCeti.monomial_sub_monomial_mem_toricIdeal ?_
-  simp only [map_add, Finsupp.linearCombination_single, one_smul, degree_robbianoSweedlerStage]
-  ext d
-  fin_cases d <;> simp; omega
-
-/-- Evaluating `robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields the next
-monomial `X 0 * X 1 ^ (n + 3)`. -/
-theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) :
-    aeval (robbianoSweedlerStage R n) (robbianoSweedlerBinomial R n) =
-      (X 0 * X 1 ^ (n + 3) : MvPolynomial (Fin 2) R) := by
-  have hmul (a b : Fin (n + 3)) :
-      aeval (robbianoSweedlerStage R n)
-        (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
-        robbianoSweedlerStage R n a * robbianoSweedlerStage R n b := by
-    have hmon : (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
-        monomial (Finsupp.single a 1) 1 * monomial (Finsupp.single b 1) 1 := by
-      rw [monomial_mul_monomial, one_mul]
-    rw [hmon, map_mul, aeval_monomial, aeval_monomial, map_one, one_mul, one_mul,
-      Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), pow_one, pow_one]
-  rw [robbianoSweedlerBinomial, map_sub, hmul, hmul]
-  have h0 : robbianoSweedlerStage R n 0 = X 0 + X 1 := by simp [robbianoSweedlerStage]
-  have hlast : robbianoSweedlerStage R n ⟨n + 2, by omega⟩ = X 0 * X 1 ^ (n + 2) := by
-    simp [robbianoSweedlerStage]
-  have h1 : robbianoSweedlerStage R n ⟨1, by omega⟩ = X 0 * X 1 := by
-    simp [robbianoSweedlerStage]
-  have hprev : robbianoSweedlerStage R n ⟨n + 1, by omega⟩ = X 0 * X 1 ^ (n + 1) := by
-    simp [robbianoSweedlerStage]
-  rw [h0, hlast, h1, hprev]
-  exact robbianoSweedler_step_identity (n + 1)
-
-/-- At every stage `n` over a nontrivial commutative ring, the toric binomial
-`robbianoSweedlerBinomial R n` subducts with zero quotient expression `Q = 0` and nonzero
-irreducible remainder `X 0 * X 1 ^ (n + 3)`. -/
-theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
-    lex.IsSubduction (robbianoSweedlerStage R n)
-      (aeval (robbianoSweedlerStage R n) (robbianoSweedlerBinomial R n))
-      0 (X 0 * X 1 ^ (n + 3)) := by
-  have hbound : ∀ x ∈ AddSubmonoid.closure
-      (Set.range (lex.degree ∘ robbianoSweedlerStage R n)), x 1 ≤ (n + 2) * x 0 := by
-    intro x hx
-    induction hx using AddSubmonoid.closure_induction with
-    | mem _ ha =>
-      obtain ⟨i, rfl⟩ := ha
-      simp only [Function.comp_apply, degree_robbianoSweedlerStage, Finsupp.coe_add, Pi.add_apply,
-        Finsupp.single_eq_same, Finsupp.single_eq_of_ne Fin.zero_ne_one,
-        Finsupp.single_eq_of_ne Fin.zero_ne_one.symm, add_zero, zero_add, mul_one]
-      omega
-    | zero => simp
-    | add _ _ _ _ ihx ihy =>
-      simp only [Finsupp.coe_add, Pi.add_apply, mul_add]
-      omega
-  refine ⟨by simp [aeval_robbianoSweedlerStage_binomial], by simp, fun a ha hmem ↦ ?_,
-    by simp [aeval_robbianoSweedlerStage_binomial]⟩
-  rw [X_zero_mul_X_one_pow_eq_monomial] at ha
-  have ha' := Finset.mem_singleton.1 (support_monomial_subset ha)
-  have hle := hbound a hmem
-  rw [ha'] at hle
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
-    add_zero, zero_add, mul_one] at hle
-  omega
-
-section Field
-
-variable {k : Type*} [Field k]
-
-/-- No stage of batch SAGBI completion starting from `robbianoSweedlerGen k` is a `lex`-SAGBI
-basis of `robbianoSweedlerSubalgebra k`: without finite generation of the initial algebra,
-certified completion runs forever even on a three-generator subalgebra of `k[X 0, X 1]`. -/
-theorem not_isSAGBIBasis_sagbiCompletionFamily_robbianoSweedler (n : ℕ) :
-    ¬ lex.IsSAGBIBasis (Set.range (lex.sagbiCompletionFamily (robbianoSweedlerGen k) n))
-      (robbianoSweedlerSubalgebra k) := by
-  intro hB
-  exact not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents (Set.finite_range _))
-
-/-- Stage `n + 1` of `robbianoSweedlerStage k` is obtained from stage `n` by adjoining the monic
-normalization of the nonzero remainder `X 0 * X 1 ^ (n + 3)`. -/
-theorem range_robbianoSweedlerStage_succ (n : ℕ) :
-    Set.range (robbianoSweedlerStage k (n + 1)) =
-      insert (lex.monicNormalize (X 0 * X 1 ^ (n + 3)))
-        (Set.range (robbianoSweedlerStage k n)) := by
-  rw [(monic_X_zero_mul_X_one_pow (R := k) (n + 3)).monicNormalize_eq]
-  ext f
-  constructor
-  · rintro ⟨i, rfl⟩
-    rcases Fin.eq_castSucc_or_eq_last i with ⟨j, rfl⟩ | rfl
-    · right
-      exact ⟨j, by simp [robbianoSweedlerStage]⟩
-    · left
-      simp [robbianoSweedlerStage]
-  · rintro (rfl | ⟨j, rfl⟩)
-    · exact ⟨Fin.last (n + 3), by simp [robbianoSweedlerStage]⟩
-    · exact ⟨j.castSucc, by simp [robbianoSweedlerStage]⟩
-
-/-- The leading-term subalgebras of `robbianoSweedlerStage k n` form an infinite strictly
-ascending chain of completion steps inside `lex.initialAlgebra (robbianoSweedlerSubalgebra k)`. -/
-theorem adjoin_leadingTerm_robbianoSweedlerStage_lt (n : ℕ) :
-    Algebra.adjoin k (lex.leadingTerm '' Set.range (robbianoSweedlerStage k n)) <
-      Algebra.adjoin k (lex.leadingTerm '' Set.range (robbianoSweedlerStage k (n + 1))) := by
-  rw [range_robbianoSweedlerStage_succ]
-  exact (isSubduction_robbianoSweedlerStage (R := k) n).adjoin_leadingTerm_lt
-    (monic_X_zero_mul_X_one_pow (R := k) (n + 3)).ne_zero
-
-end Field
-
-end RobbianoSweedlerInfinite
-
-end TauCeti
