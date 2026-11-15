@@ -65,8 +65,7 @@ theorem dawson_eq (z : ℂ) :
     dawson z = exp (-z ^ 2) * (z * ∫ s in (0 : ℝ)..1, exp (((s : ℂ) * z) ^ 2)) := by
   rw [dawson_def, intervalIntegral.integral_const_mul]
 
-/-- **The differential equation of Dawson's integral** (DLMF 7.10.1 for `F`):
-`F′(z) = 1 − 2zF(z)`. -/
+/-- **The differential equation of Dawson's integral**: `F′(z) = 1 − 2zF(z)`. -/
 theorem hasDerivAt_dawson (z : ℂ) : HasDerivAt dawson (1 - 2 * z * dawson z) z := by
   have hf : Differentiable ℂ fun u : ℂ => exp (u ^ 2) := by fun_prop
   have hG := hf.hasDerivAt_smul_integral_comp_mul z
@@ -78,8 +77,10 @@ theorem hasDerivAt_dawson (z : ℂ) : HasDerivAt dawson (1 - 2 * z * dawson z) z
   have heq : ((fun w : ℂ => exp (-w ^ 2)) * fun w : ℂ => w * ∫ t : ℝ in 0..1, exp ((t * w) ^ 2)) =
       dawson := funext fun w => (dawson_eq w).symm
   rw [heq] at h
+  have hcancel : exp (-z ^ 2) * exp (z ^ 2) = 1 := by
+    rw [← exp_add, neg_add_cancel, exp_zero]
   convert h using 1
-  rw [dawson_eq, show exp (-z ^ 2) * exp (z ^ 2) = 1 by rw [← exp_add]; simp]
+  rw [dawson_eq, hcancel]
   ring
 
 /-- Dawson's integral is entire. -/
@@ -110,9 +111,7 @@ theorem dawson_mul_I (y : ℝ) :
         I * ((y * Real.exp (-(s * y) ^ 2) : ℝ) : ℂ) := fun s => by
       have : ((s : ℂ) * (y * I)) ^ 2 = ((-(s * y) ^ 2 : ℝ) : ℂ) := by
         push_cast
-        ring_nf
-        rw [I_sq]
-        ring
+        linear_combination ((s : ℂ) * y) ^ 2 * I_sq
       rw [this, ← ofReal_exp]
       push_cast
       ring
@@ -125,9 +124,7 @@ theorem dawson_mul_I (y : ℝ) :
     simpa only [smul_eq_mul, zero_mul, one_mul] using h
   have hsq : -((y : ℂ) * I) ^ 2 = ((y ^ 2 : ℝ) : ℂ) := by
     push_cast
-    ring_nf
-    rw [I_sq]
-    ring
+    linear_combination -(y : ℂ) ^ 2 * I_sq
   rw [dawson_def, hint, hsq, ← ofReal_exp, Real.erf_def]
   push_cast
   field_simp
