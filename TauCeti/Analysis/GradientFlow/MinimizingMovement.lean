@@ -246,7 +246,7 @@ theorem le_apply_of_forall_mem_moreauYosidaResolvent
 /-- The multi-step estimate of
 `TauCeti.apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent` in real numbers:
 `d(u m, u n)² ≤ 2 (n - m) τ (φ (u m) - φ (u n))` when the energies are real. -/
-private theorem toReal_edist_sq_le_mul_sub
+theorem toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent
     (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) {m n : ℕ} (hmn : m < n)
     (hfmn : edist (u m) (u n) ≠ ⊤) {em en : ℝ} (hem : φ (u m) = em) (hen : φ (u n) = en) :
     (edist (u m) (u n)).toReal ^ 2 ≤ 2 * ((n - m : ℕ) * τ) * (em - en) := by
@@ -289,7 +289,7 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
   · rw [hmn', edist_self, zero_pow two_ne_zero]
     exact zero_le
   have hk : (0 : ℝ) < (n - m : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hmn'
-  have hD := toReal_edist_sq_le_mul_sub hu hτ hmn' hfmn hem hen
+  have hD := toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent hu hτ hmn' hfmn hem hen
   set D := (edist (u m) (u n)).toReal
   -- `(n - m) τ ≤ t - s + τ`, `φ (u m) ≤ E`, and the a priori lower bound on `φ (u n)`.
   have hkτ : ((n - m : ℕ) : ℝ) * τ ≤ t - s + τ := by
@@ -305,7 +305,7 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     exact_mod_cast this
   have hexp : (1 + 8 * τ / τ') ^ n ≤ Real.exp (8 * (t + τ) / τ') := by
     have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
-      (add_nonneg (hs.trans hst) τ.2)
+      (add_nonneg (hs.trans hst) (NNReal.coe_nonneg τ))
     rwa [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
   have hdiff : em - en ≤ (E - A) * (1 + Real.exp (8 * (t + τ) / τ')) := by
     nlinarith [mul_le_mul_of_nonneg_left hexp (sub_nonneg.2 hAE)]
@@ -320,12 +320,11 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     _ ≤ 2 * (t - s + τ) * ((E - A) * (1 + Real.exp (8 * (t + τ) / τ'))) := by gcongr
     _ = _ := by ring
 
-/-- The a priori bounds for one minimizing movement sequence, in the form needed for
-`TauCeti.exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent`: if
-`A ≤ φ_{τ'}(u 0)` and `φ (u 0) ≤ S` for real numbers `A` and `S`, then up to the step `⌈T / τ⌉₊`
-the energy is at least `A - (S - A) B` and the distance from `u 0` is at most
-`(2τ' (S - A) B) ^ (1 / 2)`, where `B = exp (8 (T + τ') / τ')` does not depend on `τ`. -/
-private theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
+/-- **A priori energy and distance bounds for one minimizing movement sequence.** If
+`A ≤ φ_{τ'}(u 0)` and `φ (u 0) ≤ S` for real numbers `A` and `S` with `0 < τ` and `4τ ≤ τ'`, then
+up to the step `⌈T / τ⌉₊` the energy is at least `A - (S - A) B` and the distance from `u 0` is at
+most `(2τ' (S - A) B) ^ (1 / 2)`, where `B = exp (8 (T + τ') / τ')` does not depend on `τ`. -/
+theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
     (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) (hττ' : 4 * τ ≤ τ')
     {A S : ℝ} (hA : (A : EReal) ≤ moreauYosida φ τ' (u 0)) (hS : φ (u 0) ≤ S) {T : ℝ}
     (hT : 0 ≤ T) {n : ℕ} (hn : n ≤ ⌈T / τ⌉₊) :
@@ -356,7 +355,7 @@ private theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
           rw [div_mul_eq_mul_div]
           exact pow_le_pow_right₀ (le_add_of_nonneg_right (by positivity)) hn
       _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity)
-        (add_nonneg hT τ.2)
+        (add_nonneg hT (NNReal.coe_nonneg τ))
       _ ≤ B := Real.exp_le_exp.2 (by rw [div_mul_eq_mul_div]; gcongr)
   have hP1 : 1 ≤ (1 + 8 * (τ : ℝ) / τ') ^ n :=
     one_le_pow₀ (le_add_of_nonneg_right (by positivity))
@@ -615,6 +614,25 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
     rw [← ENNReal.rpow_two]
     exact (ENNReal.le_rpow_inv_iff two_pos).1 h
 
+/-- For every `k : ℕ`, four times the canonical step size `τ' / (4 * (k + 1))` is at most `τ'`. -/
+theorem four_mul_div_four_mul_add_one_le (τ' : ℝ≥0) (k : ℕ) :
+    4 * (τ' / (4 * (k + 1))) ≤ τ' := by
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+  nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k), NNReal.coe_nonneg τ']
+
+/-- The canonical step-size sequence `k ↦ τ' / (4 * (k + 1))` tends to `0`. -/
+theorem tendsto_div_four_mul_add_one (τ' : ℝ≥0) :
+    Tendsto (fun k : ℕ ↦ τ' / (4 * (k + 1))) atTop (𝓝 0) := by
+  refine NNReal.tendsto_coe.1 ?_
+  have h := tendsto_one_div_add_atTop_nhds_zero_nat.const_mul ((τ' : ℝ) / 4)
+  rw [mul_zero] at h
+  refine h.congr fun k ↦ ?_
+  push_cast
+  have : (k : ℝ) + 1 ≠ 0 := by positivity
+  field_simp
+
 /-- **Existence of generalized minimizing movements** (Ambrosio–Gigli–Savaré, Section 2.2).
 Let `l y` be the filter of an auxiliary convergence `y_n ⇀ y` on an extended metric space `X`,
 possibly weaker than that of the metric, such that
@@ -650,20 +668,10 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
   have hE : φ x₀ = E := (EReal.coe_toReal hφx₀ hEbot).symm
   have hEA : 0 ≤ E - A := sub_nonneg.2 (by exact_mod_cast hA ▸ hE ▸ moreauYosida_le_self φ τ' x₀)
   -- The time steps `τ' / (4 (k + 1))`, and minimizing movement sequences from `x₀`.
-  set τ : ℕ → ℝ≥0 := fun k ↦ τ' / (4 * (k + 1)) with hτ_def
+  set τ : ℕ → ℝ≥0 := fun k ↦ τ' / (4 * (k + 1))
   have hτ k : 0 < τ k := by positivity
-  have hττ' k : 4 * τ k ≤ τ' := by
-    rw [← NNReal.coe_le_coe]
-    push_cast [hτ_def]
-    rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-    nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k), NNReal.coe_nonneg τ']
-  have hτ0 : Tendsto τ atTop (𝓝 0) := by
-    refine NNReal.tendsto_coe.1 ?_
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul ((τ' : ℝ) / 4)
-    rw [mul_zero] at this
-    refine this.congr fun k ↦ ?_
-    push_cast [hτ_def]
-    field_simp
+  have hττ' k : 4 * τ k ≤ τ' := four_mul_div_four_mul_add_one_le τ' k
+  have hτ0 : Tendsto τ atTop (𝓝 0) := tendsto_div_four_mul_add_one τ'
   choose U hU0 hU using fun k ↦ exists_forall_mem_moreauYosidaResolvent
     (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt
     (((le_mul_of_one_le_left zero_le (by norm_num)).trans (hττ' k)).trans_lt (half_lt_self hτ₀))
