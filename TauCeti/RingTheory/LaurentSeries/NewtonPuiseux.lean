@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
 import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.RingTheory.LaurentSeries.SlopeNormalization
