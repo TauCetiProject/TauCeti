@@ -58,6 +58,8 @@ easy half of Sarason's characterization.
   bounded mean oscillation.
 * `TauCeti.bmoSeminorm_eq_iSup_sharpMaximalFunction`: the seminorm is the supremum of `f^#`.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
+* `LipschitzWith.bmoSeminorm_comp_le`: for an a.e. strongly measurable function, composing with a
+  `K`-Lipschitz map into a Banach space multiplies the BMO seminorm by at most `2 K`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
@@ -197,6 +199,29 @@ theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
   refine (laverage_le_essSup _).trans (essSup_le_of_ae_le _ (hae.mono fun y hy => ?_))
   rw [two_mul]
   exact eNorm_sub_le.trans (add_le_add hy havg)
+
+/-- For an almost everywhere strongly measurable `f`, composing with a `K`-Lipschitz map into a
+Banach space multiplies the BMO seminorm by at most `2 K`. For instance, the truncations
+`max (-N) (min f N)` of a real `f` have BMO seminorm at most `2 ‖f‖_{BMO}`. -/
+theorem _root_.LipschitzWith.bmoSeminorm_comp_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] {φ : F → G} {K : ℝ≥0} (hφ : LipschitzWith K φ)
+    (hf : AEStronglyMeasurable f μ) : bmoSeminorm (φ ∘ f) μ ≤ 2 * K * bmoSeminorm f μ := by
+  refine bmoSeminorm_le fun c r => ?_
+  set B := ball c r
+  calc ⨍⁻ y in B, ‖(φ ∘ f) y - ⨍ z in B, (φ ∘ f) z ∂μ‖ₑ ∂μ
+      ≤ ⨍⁻ x in B, ⨍⁻ y in B, ‖φ (f x) - φ (f y)‖ₑ ∂μ ∂μ :=
+        setLAverage_enorm_sub_setAverage_le_setLAverage_setLAverage
+          (hφ.continuous.comp_aestronglyMeasurable hf.restrict)
+    _ ≤ ⨍⁻ x in B, ⨍⁻ y in B, K * ‖f x - f y‖ₑ ∂μ ∂μ :=
+        setLAverage_mono_ae B (.of_forall fun x => setLAverage_mono_ae B (.of_forall fun y => by
+          simpa only [eDist_eq_eNorm_sub] using hφ.edist_le_mul (f x) (f y)))
+    _ = K * ⨍⁻ x in B, ⨍⁻ y in B, ‖f x - f y‖ₑ ∂μ ∂μ := by
+        simp only [laverage_const_mul ENNReal.coe_ne_top]
+    _ ≤ K * (2 * bmoSeminorm f μ) := by
+        gcongr
+        exact setLAverage_setLAverage_enorm_sub_le.trans
+          (by gcongr; exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r)
+    _ = 2 * K * bmoSeminorm f μ := by ring
 
 /-! ### Functions of bounded mean oscillation -/
 
