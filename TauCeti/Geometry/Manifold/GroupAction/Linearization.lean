@@ -21,7 +21,9 @@ A finite group acting by `C^n` maps on a boundaryless Banach manifold admits an 
 on their entire domains. In finite-dimensional real inner product spaces the target can be
 chosen to be an invariant ball for an averaged inner product, inside any prescribed
 neighbourhood of the fixed point. `ContRepresentation.mulActionOpens` restricts the linear
-action to any invariant open subset, with its inclusion formula and smoothness theorem.
+action to any invariant open subset, with its inclusion formula, smoothness theorem, germ-kernel
+identification `ContRepresentation.germKernel_eq_ker_of_val_smul`, and fixed-subspace description
+`ContRepresentation.stabilizer_eq_germKernel_iff_of_val_smul` of the principal locus.
 
 This upgrades topological linearization to smooth local models. No faithfulness is required:
 the linear representation has exactly the original ineffective germ kernel.
@@ -42,6 +44,8 @@ open Set Filter Topology
 open scoped Manifold ContDiff
 
 namespace ContRepresentation
+
+section Monoid
 
 variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [Monoid G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -76,6 +80,110 @@ theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
   apply (TauCeti.ContMDiff.subtypeVal_comp_iff B _).mp
   simpa only [Function.comp_def, val_mulActionOpens_smul] using
     (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
+
+end Monoid
+
+section Group
+
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [Group G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The fixed subspace of `σ g` is the whole space `E` precisely when `g` lies in the kernel of
+`σ`. -/
+theorem eqLocus_eq_top_iff_mem_ker (σ : ContRepresentation 𝕜 G E) (g : G) :
+    LinearMap.eqLocus (σ g).toLinearMap LinearMap.id = ⊤ ↔ g ∈ σ.toMonoidHom.ker := by
+  rw [Submodule.eq_top_iff', MonoidHom.mem_ker, ContRepresentation.toMonoidHom_apply,
+    ContinuousLinearMap.ext_iff]
+  rfl
+
+/-- Every element outside the kernel of `σ` fixes only a proper linear subspace of `E`. -/
+theorem eqLocus_lt_top_iff_notMem_ker (σ : ContRepresentation 𝕜 G E) (g : G) :
+    LinearMap.eqLocus (σ g).toLinearMap LinearMap.id < ⊤ ↔ g ∉ σ.toMonoidHom.ker := by
+  rw [lt_top_iff_ne_top, not_iff_not, σ.eqLocus_eq_top_iff_mem_ker]
+
+/-- On any open subset `B` of `E` carrying a `G`-action compatible with `σ`, the germ kernel at
+every point `v : B` equals the global kernel `σ.toMonoidHom.ker`: a linear map fixing a nonempty
+open subset of `E` fixes all of `E`. -/
+theorem germKernel_eq_ker_of_val_smul (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) [MulAction G B]
+    (hval : ∀ (g : G) (v : B), (g • v : B).val = σ g v) (v : B) :
+    TauCeti.MulAction.germKernel G v = σ.toMonoidHom.ker := by
+  ext g
+  refine ⟨fun hg ↦ ?_, fun hg ↦ TauCeti.MulAction.mem_germKernel.mpr (.of_forall fun w ↦ ?_)⟩
+  · obtain ⟨U, hUsub, hUo, hvU⟩ := mem_nhds_iff.mp (TauCeti.MulAction.mem_germKernel.mp hg)
+    have hint : (v : E) ∈
+        interior (LinearMap.eqLocus (σ g).toLinearMap LinearMap.id : Set E) := by
+      refine mem_interior.mpr ⟨(Subtype.val : B → E) '' U, ?_,
+        B.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hUo, ⟨v, hvU, rfl⟩⟩
+      rintro _ ⟨w, hwU, rfl⟩
+      change σ g w = w
+      rw [← hval g w, hUsub hwU]
+    exact (σ.eqLocus_eq_top_iff_mem_ker g).mp
+      ((LinearMap.eqLocus (σ g).toLinearMap LinearMap.id).eq_top_of_nonempty_interior'
+        ⟨v, hint⟩)
+  · apply Subtype.ext
+    rw [hval g w, show σ g = 1 from MonoidHom.mem_ker.mp hg]
+    exact one_apply_eq_self _
+
+/-- On any nonempty open subset `B` of `E` carrying a `G`-action compatible with `σ`, the kernel of
+the permutation action on `B` equals `σ.toMonoidHom.ker`. -/
+theorem ker_toPermHom_eq_ker_of_val_smul (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) [MulAction G B] [Nonempty B]
+    (hval : ∀ (g : G) (v : B), (g • v : B).val = σ g v) :
+    (MulAction.toPermHom G B).ker = σ.toMonoidHom.ker := by
+  obtain ⟨v₀⟩ := ‹Nonempty B›
+  refine le_antisymm ?_ fun g hg ↦ MonoidHom.mem_ker.mpr (Equiv.Perm.ext fun w ↦ ?_)
+  · rw [← σ.germKernel_eq_ker_of_val_smul B hval v₀]
+    exact TauCeti.MulAction.ker_toPermHom_le_germKernel v₀
+  · apply Subtype.ext
+    rw [MulAction.toPermHom_apply, MulAction.toPerm_apply, hval g w,
+      show σ g = 1 from MonoidHom.mem_ker.mp hg, Equiv.Perm.one_apply]
+    exact one_apply_eq_self _
+
+/-- On an open subset `B` of `E` carrying a `G`-action compatible with `σ`, a point `v : B` has
+stabilizer equal to its germ kernel precisely when `v` avoids the proper fixed subspace of every
+`g ∉ σ.toMonoidHom.ker`. -/
+theorem stabilizer_eq_germKernel_iff_of_val_smul (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) [MulAction G B]
+    (hval : ∀ (g : G) (v : B), (g • v : B).val = σ g v) (v : B) :
+    MulAction.stabilizer G v = TauCeti.MulAction.germKernel G v ↔
+      ∀ g ∉ σ.toMonoidHom.ker,
+        (v : E) ∉ LinearMap.eqLocus (σ g).toLinearMap LinearMap.id := by
+  have hmem (g : G) :
+      g ∈ MulAction.stabilizer G v ↔
+        (v : E) ∈ LinearMap.eqLocus (σ g).toLinearMap LinearMap.id := by
+    rw [MulAction.mem_stabilizer_iff, Subtype.ext_iff, hval g v]
+    rfl
+  refine ⟨fun h g hg hv ↦ hg ?_, fun h ↦ le_antisymm (fun g hg ↦ ?_)
+    (TauCeti.MulAction.germKernel_le_stabilizer v)⟩
+  · rw [← σ.germKernel_eq_ker_of_val_smul B hval v, ← h]
+    exact (hmem g).mpr hv
+  · rw [σ.germKernel_eq_ker_of_val_smul B hval v]
+    by_contra hnot
+    exact h g hnot ((hmem g).mp hg)
+
+/-- At every point of an invariant open subset `B`, the germ kernel of `σ.mulActionOpens B hB` is
+the kernel of `σ`. -/
+@[simp]
+theorem germKernel_mulActionOpens (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) (v : B) :
+    letI := σ.mulActionOpens B hB
+    TauCeti.MulAction.germKernel G v = σ.toMonoidHom.ker :=
+  letI := σ.mulActionOpens B hB
+  σ.germKernel_eq_ker_of_val_smul B (σ.val_mulActionOpens_smul B hB) v
+
+/-- On an invariant open subset `B`, the principal locus of `σ.mulActionOpens B hB` is the
+complement in `B` of the proper fixed subspaces of elements outside `σ.toMonoidHom.ker`. -/
+theorem stabilizer_mulActionOpens_eq_germKernel_iff (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) (v : B) :
+    letI := σ.mulActionOpens B hB
+    MulAction.stabilizer G v = TauCeti.MulAction.germKernel G v ↔
+      ∀ g ∉ σ.toMonoidHom.ker,
+        (v : E) ∉ LinearMap.eqLocus (σ g).toLinearMap LinearMap.id :=
+  letI := σ.mulActionOpens B hB
+  σ.stabilizer_eq_germKernel_iff_of_val_smul B (σ.val_mulActionOpens_smul B hB) v
+
+end Group
 
 end ContRepresentation
 

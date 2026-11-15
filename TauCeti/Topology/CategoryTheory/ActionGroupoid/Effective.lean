@@ -9,7 +9,11 @@ public import Mathlib.CategoryTheory.Quotient
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Effective
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
-public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Basic
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Coarse
+public import TauCeti.Topology.CategoryTheory.Groupoid.Constructions
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Topology
+
+import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
 # The effective quotient of an action groupoid
@@ -37,7 +41,11 @@ without boundary (`TauCeti.germKernel_eq_ker`).
 For a discrete group, `G ⋉ X` is an étale topological groupoid, and these are its ineffective
 arrows and effective quotient in the sense of `TauCeti.ineffectiveArrows` and
 `TauCeti.EffectiveQuotient`: an arrow is ineffective exactly when its label lies in the germ kernel
-at its source, and the two germ relations agree (`TauCeti.germRel_actionCategory`).
+at its source, and the two germ relations agree (`TauCeti.germRel_actionCategory`). When `G` acts
+trivially on `X`, `G ⋉ X` is the trivial gerbe `G × X ⇒ X`: every arrow is ineffective, every
+ineffective kernel is isomorphic to `G`, the coarse space is `X`, the effective quotient is
+equivalent to `Discrete X`, and for nonempty `X` and nontrivial `G` the groupoid is not equivalent
+to any thin category (in particular, not equivalent to its effective quotient).
 
 ## Main declarations
 
@@ -59,10 +67,16 @@ at its source, and the two germ relations agree (`TauCeti.germRel_actionCategory
 * `TauCeti.ActionGroupoid.Effective.toQuotientKer`: if every germ kernel is the kernel of the
   action, this equivalence identifies the effective quotient with the action groupoid of the
   faithful quotient action.
-* `TauCeti.mem_ineffectiveArrows_map_iff_mem_germKernel`,
+* `TauCeti.stabilizerMulEquivAutOfChart`, `TauCeti.map_stabilizerMulEquivAutOfChart_germKernel`,
+  `TauCeti.ineffectiveKernel_eq_top_iff_stabilizer_eq_germKernel`,
   `TauCeti.card_ineffectiveKernel_eq_card_germKernel`: in a local action chart `G ⋉ X ⥤ C` of an
-  étale groupoid, ineffective arrows of `C` are the arrows labelled by germ kernel elements, and
-  the ineffective kernel of `C` has the order of the germ kernel.
+  étale groupoid, the stabilizer is isomorphic to `Aut (ι y)`, the germ kernel maps onto the
+  ineffective kernel, and the ineffective kernel is all of `Aut (ι y)` precisely when the
+  stabilizer equals the germ kernel.
+* `TauCeti.ActionGroupoid.ineffectiveArrows_eq_univ_of_smul_eq_self`,
+  `TauCeti.ActionGroupoid.effectiveQuotientEquivalenceDiscreteOfSmulEqSelf`,
+  `TauCeti.ActionGroupoid.isEmpty_equivalence_effectiveQuotient_of_smul_eq_self`: the trivial gerbe
+  `G × X ⇒ X` and its effective reduction to `Discrete X`.
 
 ## References
 
@@ -347,6 +361,79 @@ theorem _root_.TauCeti.mem_ineffectiveArrows_map_iff_mem_germKernel (hι : Funct
     ActionCategory.totalEquiv_symm_apply_right, hι.eq_iff]
   exact eq_comm
 
+omit [TopologicalSpace X] [TopologicalSpace (Quiver.Total C)] in
+/-- In a fully faithful action chart `F : G ⋉ X ⥤ C` lying over `ι`, the stabilizer of `y` is
+isomorphic to the isotropy group `Aut (ι y)`. -/
+noncomputable def _root_.TauCeti.stabilizerMulEquivAutOfChart [F.Full] [F.Faithful]
+    (hobj : ∀ a, F.obj a = ι a.back) (y : X) :
+    stabilizer G y ≃* Aut (ι y) :=
+  (ActionCategory.stabilizerMulEquivAut G y).trans
+    (((Functor.FullyFaithful.ofFullyFaithful F).autMulEquivOfFullyFaithful
+        (ActionCategory.objEquiv G X y)).trans
+      (Aut.autMulEquivOfIso
+        (eqToIso (show F.obj (ActionCategory.objEquiv G X y) = ι y from hobj _))))
+
+omit [TopologicalSpace X] [TopologicalSpace (Quiver.Total C)] in
+@[simp]
+theorem _root_.TauCeti.stabilizerMulEquivAutOfChart_apply_asIso_hom [F.Full] [F.Faithful]
+    (hobj : ∀ a, F.obj a = ι a.back) (y : X) (g : stabilizer G y) :
+    (stabilizerMulEquivAutOfChart hobj y g).asIso.hom =
+      eqToHom (show F.obj (ActionCategory.objEquiv G X y) = ι y from hobj _).symm ≫
+        F.map (ActionCategory.stabilizerMulEquivAut G y g).asIso.hom ≫
+          eqToHom (show F.obj (ActionCategory.objEquiv G X y) = ι y from hobj _) := by
+  simp [stabilizerMulEquivAutOfChart, eqToIso.inv, eqToIso.hom]
+
+/-- Under `TauCeti.stabilizerMulEquivAutOfChart`, an element of `stabilizer G y` maps into the
+ineffective kernel of `C` at `ι y` precisely when it lies in `germKernel G y`. -/
+theorem _root_.TauCeti.mem_ineffectiveKernel_stabilizerMulEquivAutOfChart_iff
+    [TopologicalSpace C] [IsTopologicalGroupoid C]
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    (y : X) (g : stabilizer G y) :
+    stabilizerMulEquivAutOfChart hobj y g ∈ ineffectiveKernel hs (ι y) ↔
+      (g : G) ∈ germKernel G y := by
+  have key : ∀ {p q : C} (e : p = q) (k : p ⟶ p),
+      (⟨q, q, eqToHom e.symm ≫ k ≫ eqToHom e⟩ : Quiver.Total C) = ⟨p, p, k⟩ := by
+    rintro p _ rfl k
+    simp
+  rw [mem_ineffectiveKernel, stabilizerMulEquivAutOfChart_apply_asIso_hom,
+    key (show F.obj (ActionCategory.objEquiv G X y) = ι y from hobj _),
+    mem_ineffectiveArrows_map_iff_mem_germKernel hι hobj _ (hσ _),
+    ActionCategory.stabilizerMulEquivAut_apply_hom_hom]
+  rfl
+
+/-- In a fully faithful local action chart `F : G ⋉ X ⥤ C`, `TauCeti.stabilizerMulEquivAutOfChart`
+maps the germ kernel of `G` at `y` onto the ineffective kernel of `C` at `ι y`. -/
+theorem _root_.TauCeti.map_stabilizerMulEquivAutOfChart_germKernel
+    [TopologicalSpace C] [IsTopologicalGroupoid C]
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    (y : X) :
+    ((germKernel G y).subgroupOf (stabilizer G y)).map
+      (stabilizerMulEquivAutOfChart hobj y).toMonoidHom = ineffectiveKernel hs (ι y) := by
+  ext e
+  rw [Subgroup.mem_map_equiv, Subgroup.mem_subgroupOf,
+    ← mem_ineffectiveKernel_stabilizerMulEquivAutOfChart_iff hs hι hobj hσ y,
+    MulEquiv.apply_symm_apply]
+
+/-- In a fully faithful local action chart `F : G ⋉ X ⥤ C`, the ineffective kernel of `C` at `ι y`
+is all of `Aut (ι y)` precisely when the stabilizer of `y` equals the germ kernel at `y`. -/
+theorem _root_.TauCeti.ineffectiveKernel_eq_top_iff_stabilizer_eq_germKernel
+    [TopologicalSpace C] [IsTopologicalGroupoid C]
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    [F.Full] [F.Faithful] (hι : Function.Injective ι) (hobj : ∀ a, F.obj a = ι a.back)
+    (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
+      (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
+    (y : X) :
+    ineffectiveKernel hs (ι y) = ⊤ ↔ stabilizer G y = germKernel G y := by
+  rw [Subgroup.eq_top_iff', (stabilizerMulEquivAutOfChart hobj y).surjective.forall]
+  simp only [mem_ineffectiveKernel_stabilizerMulEquivAutOfChart_iff hs hι hobj hσ y, Subtype.forall]
+  exact ⟨fun h ↦ le_antisymm h (germKernel_le_stabilizer y), fun h g hg ↦ h ▸ hg⟩
+
 /-- **Ineffective kernels in a local action chart.** Let `F : G ⋉ X ⥤ C` be a fully faithful
 functor to an étale groupoid lying over an injective map `ι` of objects, such that for each label
 `g` the arrows `F` assigns to `g` are parametrized by their sources through an open embedding, as
@@ -358,35 +445,172 @@ theorem _root_.TauCeti.card_ineffectiveKernel_eq_card_germKernel [TopologicalSpa
     (hσ : ∀ g : G, IsOpenEmbedding fun y : X ↦
       (⟨_, _, F.map ((ActionCategory.totalEquiv G X).symm (g, y)).hom⟩ : Quiver.Total C))
     (y : X) : Nat.card (ineffectiveKernel hs (ι y)) = Nat.card (germKernel G y) := by
-  let a := ActionCategory.objEquiv G X y
-  have h : F.obj a = ι y := hobj a
-  -- The stabilizer of `y` is the isotropy group of `C` at `ι y`, through the fully faithful `F`.
-  let Φ : stabilizer G y ≃* Aut (ι y) := (ActionCategory.stabilizerMulEquivAut G y).trans
-    (((Functor.FullyFaithful.ofFullyFaithful F).autMulEquivOfFullyFaithful a).trans
-      (Aut.autMulEquivOfIso (eqToIso h)))
-  have hmem (g : stabilizer G y) :
-      (g : G) ∈ germKernel G y ↔ Φ g ∈ ineffectiveKernel hs (ι y) := by
-    have key : ∀ {p q : C} (e : p = q) (k : p ⟶ p),
-        (⟨q, q, eqToHom e.symm ≫ k ≫ eqToHom e⟩ : Quiver.Total C) = ⟨p, p, k⟩ := by
-      rintro p _ rfl k
-      simp
-    have hΦ : (Φ g).asIso.hom =
-        eqToHom h.symm ≫ F.map (ActionCategory.stabilizerMulEquivAut G y g).asIso.hom ≫
-          eqToHom h := by
-      simp [Φ]
-    rw [mem_ineffectiveKernel, hΦ, key h,
-      mem_ineffectiveArrows_map_iff_mem_germKernel hι hobj _ (hσ _),
-      ActionCategory.stabilizerMulEquivAut_apply_hom_hom]
-    -- The source `a.back` is `y`, as in Mathlib's `ActionCategory.coe_back`, which is `rfl`.
-    rfl
-  calc Nat.card (ineffectiveKernel hs (ι y))
-      = Nat.card ((germKernel G y).subgroupOf (stabilizer G y)) :=
-        (Nat.card_congr (Φ.toEquiv.subtypeEquiv fun g ↦
-          Subgroup.mem_subgroupOf.trans (hmem g))).symm
-    _ = Nat.card (germKernel G y) :=
-        Nat.card_congr (Subgroup.subgroupOfEquivOfLe (germKernel_le_stabilizer y)).toEquiv
+  rw [← map_stabilizerMulEquivAutOfChart_germKernel hs hι hobj hσ y,
+    Subgroup.card_map_of_injective (stabilizerMulEquivAutOfChart hobj y).injective]
+  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe (germKernel_le_stabilizer y)).toEquiv
 
 end Chart
+
+section TrivialAction
+
+/-- For a trivial action on a topological space (for instance `MulAction.ofEndHom 1`, where
+`htriv` is `fun _ _ ↦ rfl`), the germ kernel at every point is the whole group. -/
+theorem germKernel_eq_top_of_smul_eq_self (htriv : ∀ (g : G) (x : X), g • x = x) (x : X) :
+    germKernel G x = ⊤ :=
+  (Subgroup.eq_top_iff' _).mpr fun g ↦ mem_germKernel.mpr (.of_forall fun y ↦ htriv g y)
+
+/-- A trivial action on a topological space is continuous for every topology on the acting
+group. -/
+theorem continuousSMul_of_smul_eq_self [TopologicalSpace G]
+    (htriv : ∀ (g : G) (x : X), g • x = x) : ContinuousSMul G X :=
+  ⟨continuous_snd.congr fun p ↦ (htriv p.1 p.2).symm⟩
+
+/-- A trivial action of a compact group on a Hausdorff space is proper. -/
+theorem properSMul_of_smul_eq_self [TopologicalSpace G] [CompactSpace G] [T2Space X]
+    (htriv : ∀ (g : G) (x : X), g • x = x) : ProperSMul G X := by
+  let := continuousSMul_of_smul_eq_self htriv
+  exact TauCeti.properSMul_of_compactSpace G X
+
+/-- For a trivial action, the coarse space of `G ⋉ X` is homeomorphic to `X`: every orbit is a
+singleton. -/
+def isomorphismClassesHomeomorphOfSmulEqSelf (htriv : ∀ (g : G) (x : X), g • x = x) :
+    _root_.Quotient (isIsomorphicSetoid (ActionCategory G X)) ≃ₜ X :=
+  (orbitQuotientHomeomorphIsomorphismClasses G X).symm.trans
+    { toFun := _root_.Quotient.lift id fun _ b ⟨g, hg⟩ ↦ hg.symm.trans (htriv g b)
+      invFun := _root_.Quotient.mk (MulAction.orbitRel G X)
+      left_inv q := by induction q using _root_.Quotient.inductionOn with | h x => rfl
+      right_inv _ := rfl
+      continuous_toFun := isQuotientMap_quotient_mk'.continuous_iff.mpr continuous_id
+      continuous_invFun := continuous_quotient_mk' }
+
+@[simp]
+theorem isomorphismClassesHomeomorphOfSmulEqSelf_mk (htriv : ∀ (g : G) (x : X), g • x = x)
+    (a : ActionCategory G X) :
+    isomorphismClassesHomeomorphOfSmulEqSelf htriv (_root_.Quotient.mk _ a) = a.back := by
+  simp only [isomorphismClassesHomeomorphOfSmulEqSelf, Homeomorph.trans_apply,
+    orbitQuotientHomeomorphIsomorphismClasses_symm_mk]
+  rfl
+
+@[simp]
+theorem isomorphismClassesHomeomorphOfSmulEqSelf_symm_apply
+    (htriv : ∀ (g : G) (x : X), g • x = x) (x : X) :
+    (isomorphismClassesHomeomorphOfSmulEqSelf htriv).symm x =
+      _root_.Quotient.mk _ (ActionCategory.objEquiv G X x) := by
+  rw [Homeomorph.symm_apply_eq, isomorphismClassesHomeomorphOfSmulEqSelf_mk]
+  rfl
+
+omit [TopologicalSpace X] in
+/-- For a trivial action of a nontrivial group on a nonempty type, the action groupoid `G ⋉ X` is
+not categorically equivalent to any thin category: every object has nontrivial isotropy `G`. -/
+theorem isEmpty_equivalence_of_smul_eq_self [Nonempty X] [Nontrivial G]
+    (htriv : ∀ (g : G) (x : X), g • x = x) {D : Type*} [Category D] [Quiver.IsThin D] :
+    IsEmpty (ActionCategory G X ≌ D) := by
+  refine ⟨fun e ↦ ?_⟩
+  obtain ⟨x₀⟩ := ‹Nonempty X›
+  have hbot := ActionCategory.stabilizer_eq_bot_of_faithful e.functor x₀
+  rw [(Subgroup.eq_top_iff' (stabilizer G x₀)).mpr fun g ↦ htriv g x₀] at hbot
+  exact top_ne_bot hbot
+
+section DiscreteTrivialAction
+
+variable [TopologicalSpace G] [DiscreteTopology G]
+
+/-- For a discrete group acting trivially on `X`, every arrow of the trivial gerbe `G ⋉ X` is
+ineffective. -/
+theorem ineffectiveArrows_eq_univ_of_smul_eq_self (htriv : ∀ (g : G) (x : X), g • x = x) :
+    ineffectiveArrows (ActionCategory G X) = Set.univ :=
+  Set.eq_univ_of_forall fun a ↦
+    mem_ineffectiveArrows_actionCategory_iff.mpr (by simp [germKernel_eq_top_of_smul_eq_self htriv])
+
+/-- For a discrete group acting trivially on a nonempty Hausdorff space `X`, the source-target map
+of `G ⋉ X` is proper precisely when `G` is finite. -/
+theorem isProperMap_source_target_iff_finite_of_smul_eq_self [T2Space X] [Nonempty X]
+    (htriv : ∀ (g : G) (x : X), g • x = x) :
+    IsProperMap (fun f : Quiver.Total (ActionCategory G X) ↦ (f.left, f.right)) ↔ Finite G := by
+  rw [isProperMap_source_target_iff]
+  refine ⟨fun hp ↦ ?_, fun _ ↦ properSMul_of_smul_eq_self htriv⟩
+  obtain ⟨x₀⟩ := ‹Nonempty X›
+  have hc : IsCompact (Set.univ : Set G) := by
+    convert ProperSMul.isCompact_setOfPred_inter_nonempty (G := G)
+        (isCompact_singleton (x := x₀)) (isCompact_singleton (x := x₀)) using 1
+    ext g
+    simp [htriv]
+  have := isCompact_univ_iff.mp hc
+  exact finite_of_compact_of_discrete
+
+variable [ContinuousSMul G X]
+
+/-- At every object of the trivial gerbe `G ⋉ X`, the ineffective kernel is the full isotropy
+group. -/
+theorem ineffectiveKernel_eq_top_of_smul_eq_self (htriv : ∀ (g : G) (x : X), g • x = x)
+    (a : ActionCategory G X) :
+    ineffectiveKernel (isLocalHomeomorph_source G X) a = ⊤ :=
+  (Subgroup.eq_top_iff' _).mpr fun _ ↦ by simp [ineffectiveArrows_eq_univ_of_smul_eq_self htriv]
+
+/-- At every point `x : X` of the trivial gerbe `G ⋉ X`, the ineffective kernel is isomorphic to
+`G`. -/
+def ineffectiveKernelMulEquivOfSmulEqSelf (htriv : ∀ (g : G) (x : X), g • x = x) (x : X) :
+    ineffectiveKernel (isLocalHomeomorph_source G X) (ActionCategory.objEquiv G X x) ≃* G :=
+  ((MulEquiv.subgroupCongr (ineffectiveKernel_eq_top_of_smul_eq_self htriv _)).trans
+    Subgroup.topEquiv).trans
+      (ActionCategory.autMulEquivOfMemFixedPoints G
+        (show x ∈ fixedPoints G X from fun g ↦ htriv g x))
+
+@[simp]
+theorem ineffectiveKernelMulEquivOfSmulEqSelf_apply (htriv : ∀ (g : G) (x : X), g • x = x)
+    (x : X)
+    (e : ineffectiveKernel (isLocalHomeomorph_source G X) (ActionCategory.objEquiv G X x)) :
+    ineffectiveKernelMulEquivOfSmulEqSelf htriv x e = e.val.asIso.hom.hom := by
+  simp [ineffectiveKernelMulEquivOfSmulEqSelf]
+
+/-- On the trivial gerbe `G ⋉ X`, the order of the ineffective kernel is constantly `Nat.card G` on
+every coarse isomorphism class. -/
+theorem coarseCardIneffectiveKernel_of_smul_eq_self (htriv : ∀ (g : G) (x : X), g • x = x)
+    (q : _root_.Quotient (isIsomorphicSetoid (ActionCategory G X))) :
+    coarseCardIneffectiveKernel (isLocalHomeomorph_source G X) q = Nat.card G := by
+  induction q using _root_.Quotient.inductionOn with
+  | h a =>
+    rw [coarseCardIneffectiveKernel_mk, ← ActionCategory.back_coe a]
+    exact Nat.card_congr (ineffectiveKernelMulEquivOfSmulEqSelf htriv a.back).toEquiv
+
+/-- The effective quotient of the trivial gerbe `G ⋉ X` is categorically equivalent to the unit
+groupoid `Discrete X`. -/
+def effectiveQuotientEquivalenceDiscreteOfSmulEqSelf (htriv : ∀ (g : G) (x : X), g • x = x) :
+    EffectiveQuotient (ActionCategory G X) ≌ Discrete X :=
+  (EffectiveQuotient.equivalenceDiscreteOfIneffectiveArrowsEqUniv
+    (isLocalHomeomorph_source G X) (ineffectiveArrows_eq_univ_of_smul_eq_self htriv)).trans
+      (Discrete.equivalence (ActionCategory.objEquiv G X).symm)
+
+@[simp]
+theorem effectiveQuotientEquivalenceDiscreteOfSmulEqSelf_functor_obj_toEffectiveQuotient
+    (htriv : ∀ (g : G) (x : X), g • x = x) (a : ActionCategory G X) :
+    (effectiveQuotientEquivalenceDiscreteOfSmulEqSelf htriv).functor.obj
+      ((toEffectiveQuotient (ActionCategory G X)).obj a) = Discrete.mk a.back := by
+  simp only [effectiveQuotientEquivalenceDiscreteOfSmulEqSelf, Equivalence.trans_functor,
+    Functor.comp_obj,
+    EffectiveQuotient.equivalenceDiscreteOfIneffectiveArrowsEqUniv_functor_obj_toEffectiveQuotient,
+    Discrete.equivalence_functor, Discrete.functor_obj_eq_as]
+  rfl
+
+@[simp]
+theorem effectiveQuotientEquivalenceDiscreteOfSmulEqSelf_inverse_obj
+    (htriv : ∀ (g : G) (x : X), g • x = x) (x : X) :
+    (effectiveQuotientEquivalenceDiscreteOfSmulEqSelf htriv).inverse.obj (Discrete.mk x) =
+      (toEffectiveQuotient (ActionCategory G X)).obj (ActionCategory.objEquiv G X x) := by
+  simp [effectiveQuotientEquivalenceDiscreteOfSmulEqSelf]
+
+/-- For a nontrivial discrete group acting trivially on a nonempty space `X`, the trivial gerbe
+`G ⋉ X` is not categorically equivalent to its effective quotient. -/
+theorem isEmpty_equivalence_effectiveQuotient_of_smul_eq_self [Nonempty X] [Nontrivial G]
+    (htriv : ∀ (g : G) (x : X), g • x = x) :
+    IsEmpty (ActionCategory G X ≌ EffectiveQuotient (ActionCategory G X)) := by
+  have := EffectiveQuotient.isThin_of_ineffectiveArrows_eq_univ
+    (isLocalHomeomorph_source G X) (ineffectiveArrows_eq_univ_of_smul_eq_self htriv)
+  exact isEmpty_equivalence_of_smul_eq_self htriv
+
+end DiscreteTrivialAction
+
+end TrivialAction
 
 variable [ContinuousConstSMul G X]
 
