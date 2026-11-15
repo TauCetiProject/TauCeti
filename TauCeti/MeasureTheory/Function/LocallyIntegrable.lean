@@ -33,6 +33,9 @@ variables, onto any set whose image stays inside the original domain. For such a
 integrability does not depend on the choice of the Haar measure, since any two differ by a finite
 positive factor.
 
+In an order with compact closed intervals, a function locally integrable on `[a, ∞)` is
+integrable on every interval `(a, b]`.
+
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
 
@@ -97,6 +100,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   group, local integrability for one additive Haar measure gives it for every other.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
+* `MeasureTheory.LocallyIntegrableOn.integrableOn_Ioc_of_Ici`: local integrability on `[a, ∞)`
+  gives integrability on every `(a, b]`.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
   relatively compact open subdomains.
 * `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
@@ -122,12 +127,16 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `Continuous.integrable_of_support_subset_isCompact`: a continuous function supported in a
+  compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`, with `U` not required to be open.
+* `Continuous.integrable_clm_apply_of_continuousOn`: the same for a continuous compactly
+  supported function to which an operator family continuous on `U` is applied.
 * `Continuous.integrable_sum_mul_of_continuousOn` and
   `Continuous.integrable_mul_sum_sq_of_continuousOn`: the same for the coordinatewise pairing of a
   family of coordinate vectors continuous on `U` with a continuous one compactly supported in `U`,
@@ -445,6 +454,19 @@ theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ
 
 end CompactLocalization
 
+section OrderIntervals
+
+variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X] [Preorder X] [CompactIccSpace X]
+  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε] {μ : Measure X} {f : X → ε}
+  {a : X}
+
+/-- A function locally integrable on `[a, ∞)` is integrable on every interval `(a, b]`. -/
+theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) :
+    IntegrableOn f (Ioc a b) μ :=
+  (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
+
+end OrderIntervals
+
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 
 section ExtendByZero
@@ -568,6 +590,16 @@ section ContinuousOn
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
 
+/-- A continuous function supported in a compact set is integrable for any measure finite on
+compact sets. Neither closedness nor measurability of the compact set is required. -/
+theorem Continuous.integrable_of_support_subset_isCompact {f : X → E} {K : Set X}
+    (hf : Continuous f) (hK : IsCompact K) (hsupp : Function.support f ⊆ K) :
+    Integrable f μ := by
+  have hmeas := hf.stronglyMeasurable_of_support_subset_isCompact hK hsupp
+  exact (hf.continuousOn.integrableOn_of_subset_isCompact hK hmeas.measurableSet_support
+    hsupp ((measure_mono hsupp).trans_lt hK.measure_lt_top).ne).integrable_of_forall_notMem_eq_zero
+    (fun _ hx ↦ Function.notMem_support.mp hx)
+
 /-- The squared norm of a continuous compactly supported function is integrable for any measure
 finite on compact sets. -/
 theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
@@ -598,6 +630,21 @@ theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [Topological
     (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
   (hb.smul_of_continuousOn_of_tsupport_subset hbU ha).integrable_of_hasCompactSupport
     hbc.smul_left
+
+/-- An operator family `L` continuous on a set `U`, applied to a continuous compactly supported
+function `u` whose support lies in `U`, is integrable, for any measure finite on compact sets. The
+family `L` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_clm_apply_of_continuousOn {𝕜 V W : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] {L : X → V →L[𝕜] W} {u : X → V} {U : Set X} (hu : Continuous u)
+    (huc : HasCompactSupport u) (huU : tsupport u ⊆ U) (hL : ContinuousOn L U) :
+    Integrable (fun x ↦ L x (u x)) μ := by
+  have hK : ContinuousOn (fun x ↦ L x (u x)) (tsupport u) :=
+    (hL.mono huU).clm_apply hu.continuousOn
+  have hsupp : Function.support (fun x ↦ L x (u x)) ⊆ Function.support u :=
+    fun x hx h0 ↦ hx (by simp [h0])
+  rw [← integrableOn_iff_integrable_of_support_subset (hsupp.trans (subset_tsupport u))]
+  exact hK.integrableOn_compact' huc.isCompact (isClosed_tsupport u).measurableSet
 
 /-- The coordinatewise pairing `x ↦ ∑ k ∈ s, g x k * f x k` of a continuous compactly supported
 family of coordinate vectors `f`, whose support lies in a set `U`, with a family `g` continuous on
