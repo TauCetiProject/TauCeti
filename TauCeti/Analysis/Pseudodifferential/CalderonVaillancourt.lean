@@ -15,7 +15,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.CotlarStein
-import TauCeti.Analysis.Pseudodifferential.Sobolev.Basic
+import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd

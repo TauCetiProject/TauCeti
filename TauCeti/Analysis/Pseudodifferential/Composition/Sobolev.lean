@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.Sobolev.Basic
+public import TauCeti.Analysis.Pseudodifferential.Sobolev
 
 /-!
 # Composition of quantizations on Sobolev spaces
