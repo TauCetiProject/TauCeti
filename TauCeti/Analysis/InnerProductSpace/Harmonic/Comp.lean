@@ -15,8 +15,8 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 # Real functions of harmonic functions
 
 Let `h : E → ℝ` be harmonic at `x` on a finite-dimensional real inner product space, and let
-`F : ℝ → ℝ` be twice differentiable at `h x`. The chain rule for the Laplacian loses its
-first-order term, so `Δ (F ∘ h) x = F'' (h x) ‖∇h x‖²`
+`F : ℝ → ℝ` be twice continuously differentiable (`C²`) near `h x`. The chain rule for the
+Laplacian loses its first-order term, so `Δ (F ∘ h) x = F'' (h x) ‖∇h x‖²`
 (`InnerProductSpace.HarmonicAt.laplacian_comp`). In particular a concave function of a harmonic
 function is superharmonic (`InnerProductSpace.HarmonicAt.laplacian_comp_nonpos`).
 
@@ -45,21 +45,22 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {h : E → ℝ} {F : ℝ → ℝ} {x : E}
 
 /-- **The Laplacian of a function of a harmonic function.** If `h` is harmonic at `x` and `F` is
-twice differentiable at `h x`, then `Δ (F ∘ h) x = F'' (h x) ‖∇h x‖²`. -/
+twice continuously differentiable (`C²`) near `h x`, then `Δ (F ∘ h) x = F'' (h x) ‖∇h x‖²`. -/
 theorem HarmonicAt.laplacian_comp (hh : HarmonicAt h x) (hF : ContDiffAt ℝ 2 F (h x)) :
     Δ (F ∘ h) x = deriv (deriv F) (h x) * ‖∇ h x‖ ^ 2 := by
   rw [hF.laplacian_comp hh.1, hh.2.self_of_nhds, Pi.zero_apply, mul_zero, add_zero]
 
 /-- **A concave function of a harmonic function is superharmonic.** If `h` is harmonic at `x`
-and `F` is twice differentiable at `h x` with `F'' (h x) ≤ 0`, then `Δ (F ∘ h) x ≤ 0`. -/
+and `F` is twice continuously differentiable (`C²`) near `h x` with `F'' (h x) ≤ 0`, then
+`Δ (F ∘ h) x ≤ 0`. -/
 theorem HarmonicAt.laplacian_comp_nonpos (hh : HarmonicAt h x) (hF : ContDiffAt ℝ 2 F (h x))
     (hF₂ : deriv (deriv F) (h x) ≤ 0) : Δ (F ∘ h) x ≤ 0 := by
   rw [hh.laplacian_comp hF]
   exact mul_nonpos_of_nonpos_of_nonneg hF₂ (sq_nonneg _)
 
-/-- If `h` is harmonic on a segment `[p, q]`, `F` is twice differentiable at the values of `h` on
-the segment, and the derivative of `F` takes different values at `h p` and `h q`, then the
-Laplacian of `F ∘ h` is nonzero at some point of the open segment `(p, q)`. -/
+/-- If `h` is harmonic on a segment `[p, q]`, `F` is twice continuously differentiable (`C²`)
+near each value of `h` on the segment, and the derivative of `F` takes different values at `h p`
+and `h q`, then the Laplacian of `F ∘ h` is nonzero at some point of the open segment `(p, q)`. -/
 theorem HarmonicOnNhd.exists_mem_openSegment_laplacian_comp_ne_zero {p q : E}
     (hh : HarmonicOnNhd h (segment ℝ p q)) (hF : ∀ y ∈ segment ℝ p q, ContDiffAt ℝ 2 F (h y))
     (hne : deriv F (h p) ≠ deriv F (h q)) :
