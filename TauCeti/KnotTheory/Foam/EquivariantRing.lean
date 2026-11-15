@@ -76,7 +76,7 @@ namespace TauCeti
 
 /-- The `gl(N)` equivariant coefficient ring `Λ_N = ℤ[e₁, …, e_N]`, realized as
 `MvPolynomial (Fin N) ℤ` with `MvPolynomial.X i` representing `e_{i + 1}`. -/
-abbrev EquivariantRing (N : ℕ) : Type := _root_.MvPolynomial (Fin N) ℤ
+abbrev EquivariantRing (N : ℕ) : Type := MvPolynomial (Fin N) ℤ
 
 namespace EquivariantRing
 
@@ -105,22 +105,22 @@ theorem even_weight (N : ℕ) (i : Fin N) : Even (weight N i) :=
 /-- The integral quantum grading on `EquivariantRing N` placing `X i = e_{i + 1}` in degree
 `2 * (i + 1)`. -/
 def grading (N : ℕ) : ℤ → Submodule ℤ (EquivariantRing N) :=
-  _root_.MvPolynomial.weightedHomogeneousSubmodule ℤ (weight N)
+  MvPolynomial.weightedHomogeneousSubmodule ℤ (weight N)
 
 /-- `grading N` is the weighted homogeneous submodule family for `weight N`. -/
 theorem grading_def (N : ℕ) :
-    grading N = _root_.MvPolynomial.weightedHomogeneousSubmodule ℤ (weight N) :=
+    grading N = MvPolynomial.weightedHomogeneousSubmodule ℤ (weight N) :=
   (rfl)
 
 /-- Membership in `grading N d` is weighted homogeneity of weight `d` with respect to `weight N`. -/
 theorem mem_grading_iff {N : ℕ} {d : ℤ} {f : EquivariantRing N} :
     f ∈ grading N d ↔ f.IsWeightedHomogeneous (weight N) d := by
-  rw [grading_def, _root_.MvPolynomial.mem_weightedHomogeneousSubmodule]
+  rw [grading_def, MvPolynomial.mem_weightedHomogeneousSubmodule]
 
 /-- The `ℤ`-graded algebra structure on `EquivariantRing N` induced by `grading N`. -/
 @[instance_reducible]
 noncomputable def gradedAlgebra (N : ℕ) : GradedAlgebra (grading N) :=
-  _root_.MvPolynomial.weightedGradedAlgebra ℤ (weight N)
+  MvPolynomial.weightedGradedAlgebra ℤ (weight N)
 
 attribute [instance] gradedAlgebra
 
@@ -129,24 +129,24 @@ homogeneous component for `weight N`. -/
 @[simp]
 theorem coe_decompose_grading (N : ℕ) (f : EquivariantRing N) (d : ℤ) :
     (DirectSum.decompose (grading N) f d : EquivariantRing N) =
-      _root_.MvPolynomial.weightedHomogeneousComponent (weight N) d f :=
-  _root_.MvPolynomial.weightedDecomposition.decompose'_apply ℤ (weight N) f d
+      MvPolynomial.weightedHomogeneousComponent (weight N) d f :=
+  MvPolynomial.weightedDecomposition.decompose'_apply ℤ (weight N) f d
 
 /-- Integer constants lie in degree zero of `EquivariantRing.grading N`. -/
-theorem C_mem_grading_zero (N : ℕ) (c : ℤ) : _root_.MvPolynomial.C c ∈ grading N 0 := by
+theorem C_mem_grading_zero (N : ℕ) (c : ℤ) : MvPolynomial.C c ∈ grading N 0 := by
   rw [mem_grading_iff]
-  exact _root_.MvPolynomial.isWeightedHomogeneous_C (weight N) c
+  exact MvPolynomial.isWeightedHomogeneous_C (weight N) c
 
 /-- The variable `X i = e_{i + 1}` is homogeneous of degree `2 * (i + 1)` in `EquivariantRing N`. -/
 theorem X_mem_grading (N : ℕ) (i : Fin N) :
-    _root_.MvPolynomial.X i ∈ grading N (2 * ((i : ℕ) + 1 : ℤ)) := by
+    MvPolynomial.X i ∈ grading N (2 * ((i : ℕ) + 1 : ℤ)) := by
   rw [mem_grading_iff, ← weight_apply]
-  exact _root_.MvPolynomial.isWeightedHomogeneous_X ℤ (weight N) i
+  exact MvPolynomial.isWeightedHomogeneous_X ℤ (weight N) i
 
 /-- `EquivariantRing N` vanishes in strictly negative degrees. -/
 theorem grading_eq_bot_of_lt_zero (N : ℕ) {d : ℤ} (hd : d < 0) : grading N d = ⊥ := by
   rw [grading_def]
-  exact TauCeti.MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
+  exact weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
 
 /-- Every monomial exponent vector `c : Fin N →₀ ℕ` has even quantum weight in `EquivariantRing N`.
 -/
@@ -160,7 +160,7 @@ theorem even_finsupp_weight (N : ℕ) (c : Fin N →₀ ℕ) : Even (Finsupp.wei
 /-- Every odd-degree homogeneous piece of `EquivariantRing N` vanishes. -/
 theorem grading_eq_bot_of_odd (N : ℕ) {d : ℤ} (hd : Odd d) : grading N d = ⊥ :=
   (Submodule.eq_bot_iff _).mpr fun _ hf ↦
-    _root_.MvPolynomial.IsWeightedHomogeneous.eq_zero_of_no_monomials (mem_grading_iff.mp hf)
+    MvPolynomial.IsWeightedHomogeneous.eq_zero_of_no_monomials (mem_grading_iff.mp hf)
       fun c hc ↦ by
         obtain ⟨k, hk⟩ := even_finsupp_weight N c
         obtain ⟨l, hl⟩ := hd
@@ -170,7 +170,7 @@ theorem grading_eq_bot_of_odd (N : ℕ) {d : ℤ} (hd : Odd d) : grading N d = �
 theorem grading_zero_eq_range (N : ℕ) :
     grading N 0 = LinearMap.range (Algebra.linearMap ℤ (EquivariantRing N)) := by
   rw [grading_def]
-  exact TauCeti.MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range ℤ (weight_pos N)
+  exact weightedHomogeneousSubmodule_zero_eq_range ℤ (weight_pos N)
 
 /-- Membership in `grading N (2 * m)` (`m : ℕ`) is equivalent to `ℕ`-weighted homogeneity of weight
 `m` for the standard elementary-symmetric weights `i ↦ i + 1`. -/
@@ -193,18 +193,18 @@ theorem mem_grading_two_mul_iff {N : ℕ} {m : ℕ} {f : EquivariantRing N} :
 polynomial in `N` variables is homogeneous of polynomial degree `m` if and only if its coordinate
 polynomial in `EquivariantRing N` lies in quantum degree `2 * m`. -/
 theorem esymmAlgEquiv_symm_mem_grading_iff {σ : Type*} [Fintype σ] {N : ℕ}
-    (hn : Fintype.card σ = N) (p : _root_.MvPolynomial.symmetricSubalgebra σ ℤ) (m : ℕ) :
-    (_root_.MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p ∈ grading N (2 * (m : ℤ)) ↔
-      (p : _root_.MvPolynomial σ ℤ).IsHomogeneous m := by
+    (hn : Fintype.card σ = N) (p : MvPolynomial.symmetricSubalgebra σ ℤ) (m : ℕ) :
+    (MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p ∈ grading N (2 * (m : ℤ)) ↔
+      (p : MvPolynomial σ ℤ).IsHomogeneous m := by
   rw [mem_grading_two_mul_iff]
-  refine ⟨fun hq ↦ ?_, _root_.MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm hn⟩
-  have hp_eq : _root_.MvPolynomial.aeval
-      (fun i : Fin N ↦ _root_.MvPolynomial.esymm σ ℤ ((i : ℕ) + 1))
-      ((_root_.MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p) = (p : _root_.MvPolynomial σ ℤ) := by
-    rw [← _root_.MvPolynomial.esymmAlgHom_apply, ← _root_.MvPolynomial.esymmAlgEquiv_apply σ ℤ hn,
+  refine ⟨fun hq ↦ ?_, MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm hn⟩
+  have hp_eq : MvPolynomial.aeval
+      (fun i : Fin N ↦ MvPolynomial.esymm σ ℤ ((i : ℕ) + 1))
+      ((MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p) = (p : MvPolynomial σ ℤ) := by
+    rw [← MvPolynomial.esymmAlgHom_apply, ← MvPolynomial.esymmAlgEquiv_apply σ ℤ hn,
       AlgEquiv.apply_symm_apply]
   rw [← hp_eq]
-  exact hq.aeval fun i ↦ _root_.MvPolynomial.isHomogeneous_esymm ((i : ℕ) + 1)
+  exact hq.aeval fun i ↦ MvPolynomial.isHomogeneous_esymm ((i : ℕ) + 1)
 
 /-- Any degree-zero idempotent on a finite shifted free module `I → EquivariantRing N` splits
 homogeneously through some `Fin n → EquivariantRing N` via maps `ι` and `π` satisfying
@@ -224,7 +224,7 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
       (∀ (q : ℤ) (v : I → EquivariantRing N),
         (∀ j, v j ∈ grading N (q - s j)) → ∀ i, π v i ∈ grading N (q - d i)) := by
   simp only [grading_def] at hhom ⊢
-  exact TauCeti.MvPolynomial.exists_weightedHomogeneous_splitting_of_idempotent
+  exact exists_weightedHomogeneous_splitting_of_idempotent
     (weight_pos N) s p hp hhom
 
 /-- Any two finite homogeneous bases of the range of a degree-zero endomorphism on
@@ -241,7 +241,7 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent (N : ℕ) {I : Typ
     (hb₂ : ∀ i j, (b₂ i).val j ∈ grading N (d₂ i - s j)) :
     Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val := by
   simp only [grading_def] at hhom hb₁ hb₂
-  exact TauCeti.MvPolynomial.multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent
+  exact multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent
     (weight_pos N) s p hhom b₁ d₁ hb₁ b₂ d₂ hb₂
 
 /-- Any finite homogeneous basis of the range of a rank-one homogeneous projection
@@ -278,7 +278,7 @@ theorem exists_homogeneous_basis_range_idempotent (N m : ℕ) (s : Fin m → ℤ
       (d : Fin n → ℤ),
       ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) := by
   simp only [EquivariantRing.grading_def] at hhom ⊢
-  exact TauCeti.MvPolynomial.exists_weightedHomogeneous_basis_range_idempotent
+  exact exists_weightedHomogeneous_basis_range_idempotent
     (EquivariantRing.weight_pos N) s p hp hhom
 
 section ConcreteVerifications
@@ -345,7 +345,7 @@ private theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
 private theorem e1_offDiag_degree (N : ℕ) :
     let proj₀ : (Fin 2 → EquivariantRing (N + 1)) →ₗ[EquivariantRing (N + 1)]
       EquivariantRing (N + 1) := LinearMap.proj 0
-    let w : Fin 2 → EquivariantRing (N + 1) := ![1, _root_.MvPolynomial.X 0]
+    let w : Fin 2 → EquivariantRing (N + 1) := ![1, MvPolynomial.X 0]
     let p := (LinearMap.toSpanSingleton (EquivariantRing (N + 1))
       (Fin 2 → EquivariantRing (N + 1)) w).comp proj₀
     p.comp p = p ∧
@@ -355,7 +355,7 @@ private theorem e1_offDiag_degree (N : ℕ) :
       Multiset.map d Finset.univ.val = {2}) := by
   let proj₀ : (Fin 2 → EquivariantRing (N + 1)) →ₗ[EquivariantRing (N + 1)]
     EquivariantRing (N + 1) := LinearMap.proj 0
-  let w : Fin 2 → EquivariantRing (N + 1) := ![1, _root_.MvPolynomial.X 0]
+  let w : Fin 2 → EquivariantRing (N + 1) := ![1, MvPolynomial.X 0]
   let p := (LinearMap.toSpanSingleton (EquivariantRing (N + 1))
     (Fin 2 → EquivariantRing (N + 1)) w).comp proj₀
   have hw : ∀ j : Fin 2, w j ∈ EquivariantRing.grading (N + 1) (![2, 0] 0 - ![2, 0] j) := by

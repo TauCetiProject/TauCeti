@@ -33,14 +33,14 @@ over a principal ideal domain apply directly to `MvPolynomial σ R`.
   characterization of `Finsupp.weight` for ordered additive monoid weights.
 * `MvPolynomial.weightedHomogeneousComponent_zero_of_pos`: degree-zero weighted homogeneous
   component for strictly positive weights in an ordered additive monoid.
-* `TauCeti.MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero`,
-  `TauCeti.MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range`: negative-degree vanishing and
-  connectedness of `MvPolynomial.weightedHomogeneousSubmodule R w`.
-* `TauCeti.MvPolynomial.connectedAugmentation_weightedHomogeneousSubmodule_eq_constantCoeff`:
+* `MvPolynomial.connectedAugmentation_weightedHomogeneousSubmodule_eq_constantCoeff`:
   agreement of `GradedAlgebra.connectedAugmentation` with `MvPolynomial.constantCoeff`.
-* `TauCeti.MvPolynomial.exists_weightedHomogeneous_splitting_of_idempotent`,
-  `TauCeti.MvPolynomial.exists_weightedHomogeneous_basis_range_idempotent`,
-  `TauCeti.MvPolynomial.multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent`:
+* `TauCeti.weightedHomogeneousSubmodule_eq_bot_of_lt_zero`,
+  `TauCeti.weightedHomogeneousSubmodule_zero_eq_range`: negative-degree vanishing and
+  connectedness of `MvPolynomial.weightedHomogeneousSubmodule R w`.
+* `TauCeti.exists_weightedHomogeneous_splitting_of_idempotent`,
+  `TauCeti.exists_weightedHomogeneous_basis_range_idempotent`,
+  `TauCeti.multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent`:
   homogeneous splittings, homogeneous bases, and shift-multiset invariance for degree-zero
   idempotents over positively `ℤ`-weighted polynomial rings over a PID.
 -/
@@ -70,14 +70,13 @@ end Finsupp
 
 namespace MvPolynomial
 
-variable {σ R M : Type*} [CommSemiring R]
-  [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
+variable {σ R : Type*} [CommSemiring R]
 
 /-- If every variable has strictly positive weight in an ordered additive commutative monoid `M`,
 the degree-zero weighted homogeneous component of `φ` is `C (φ.coeff 0)`. -/
 @[simp]
-theorem weightedHomogeneousComponent_zero_of_pos (φ : MvPolynomial σ R) {w : σ → M}
-    (hw : ∀ i, 0 < w i) :
+theorem weightedHomogeneousComponent_zero_of_pos {M : Type*} [AddCommMonoid M] [PartialOrder M]
+    [IsOrderedAddMonoid M] (φ : MvPolynomial σ R) {w : σ → M} (hw : ∀ i, 0 < w i) :
     weightedHomogeneousComponent w 0 φ = C (φ.coeff 0) := by
   classical
   ext d
@@ -87,9 +86,49 @@ theorem weightedHomogeneousComponent_zero_of_pos (φ : MvPolynomial σ R) {w : �
     simp
   · simp [(d.weight_eq_zero_iff_of_pos hw).not.mpr hd, Ne.symm hd]
 
+section IntWeights
+
+attribute [local instance] weightedGradedAlgebra
+
+/-- For any `ℤ`-weight function `w : σ → ℤ` making `MvPolynomial σ R` a connected nonnegatively
+graded `R`-algebra, the canonical graded augmentation agrees with `MvPolynomial.constantCoeff`. -/
+@[simp]
+theorem connectedAugmentation_weightedHomogeneousSubmodule_eq_constantCoeff
+    (φ : MvPolynomial σ R) {w : σ → ℤ}
+    (hneg : ∀ m < 0, weightedHomogeneousSubmodule R w m = ⊥)
+    (hzero : ∀ ψ ∈ weightedHomogeneousSubmodule R w 0,
+      ψ ∈ LinearMap.range (Algebra.linearMap R (MvPolynomial σ R))) :
+    TauCeti.GradedAlgebra.connectedAugmentation hneg hzero φ = constantCoeff φ := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  have hw : ∀ i, 0 < w i := fun i ↦ by
+    classical
+    rcases lt_trichotomy (w i) 0 with hlt | h0 | hgt
+    · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w (w i) :=
+        isWeightedHomogeneous_X R w i
+      rw [hneg (w i) hlt, Submodule.mem_bot] at hX
+      exact absurd (congrArg (·.coeff (Finsupp.single i 1)) hX) (by simp)
+    · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w 0 :=
+        h0 ▸ isWeightedHomogeneous_X R w i
+      obtain ⟨c, hc⟩ := hzero (X i) hX
+      have h1 := congrArg (·.coeff (Finsupp.single i 1)) hc
+      simp [Algebra.linearMap_apply, algebraMap_eq, coeff_C, eq_comm (a := (0 : σ →₀ ℕ))] at h1
+    · exact hgt
+  have h := congrArg constantCoeff
+    (TauCeti.GradedAlgebra.algebraMap_connectedAugmentation hneg hzero φ)
+  have hdec : (DirectSum.decompose (weightedHomogeneousSubmodule R w) φ 0 : MvPolynomial σ R) =
+      weightedHomogeneousComponent w 0 φ :=
+    weightedDecomposition.decompose'_apply R w φ 0
+  rwa [algebraMap_eq, constantCoeff_C, hdec, φ.weightedHomogeneousComponent_zero_of_pos hw,
+    constantCoeff_C] at h
+
+end IntWeights
+
 end MvPolynomial
 
-namespace TauCeti.MvPolynomial
+namespace TauCeti
+
+open MvPolynomial
 
 section OrderedMonoid
 
@@ -99,55 +138,33 @@ variable (R : Type*) [CommSemiring R] {σ M : Type*}
 /-- For nonnegative weights `w : σ → M`, every weighted homogeneous submodule of strictly negative
 degree vanishes. -/
 theorem weightedHomogeneousSubmodule_eq_bot_of_lt_zero {w : σ → M} (hw : ∀ i, 0 ≤ w i) {m : M}
-    (hm : m < 0) : _root_.MvPolynomial.weightedHomogeneousSubmodule R w m = ⊥ :=
+    (hm : m < 0) : weightedHomogeneousSubmodule R w m = ⊥ :=
   (Submodule.eq_bot_iff _).mpr fun _ hφ ↦
-    _root_.MvPolynomial.IsWeightedHomogeneous.eq_zero_of_no_monomials hφ fun d ↦
+    IsWeightedHomogeneous.eq_zero_of_no_monomials hφ fun d ↦
       ne_of_gt (lt_of_lt_of_le hm (d.weight_nonneg hw))
 
 /-- For strictly positive weights `w : σ → M`, the degree-zero weighted homogeneous submodule of
 `MvPolynomial σ R` is the image of `algebraMap R (MvPolynomial σ R)`. -/
 theorem weightedHomogeneousSubmodule_zero_eq_range {w : σ → M} (hw : ∀ i, 0 < w i) :
-    _root_.MvPolynomial.weightedHomogeneousSubmodule R w 0 =
-      LinearMap.range (Algebra.linearMap R (_root_.MvPolynomial σ R)) := by
+    weightedHomogeneousSubmodule R w 0 =
+      LinearMap.range (Algebra.linearMap R (MvPolynomial σ R)) := by
   ext φ
-  rw [_root_.MvPolynomial.mem_weightedHomogeneousSubmodule, LinearMap.mem_range]
+  rw [mem_weightedHomogeneousSubmodule, LinearMap.mem_range]
   constructor
   · intro hφ
     refine ⟨φ.coeff 0, ?_⟩
-    rw [Algebra.linearMap_apply, _root_.MvPolynomial.algebraMap_eq, _root_.MvPolynomial.C_apply]
-    exact (_root_.MvPolynomial.IsWeightedHomogeneous.eq_monomial_of_unique_weight hφ
+    rw [Algebra.linearMap_apply, algebraMap_eq, C_apply]
+    exact (IsWeightedHomogeneous.eq_monomial_of_unique_weight hφ
       fun d hd ↦ (d.weight_eq_zero_iff_of_pos hw).mp hd).symm
   · rintro ⟨c, rfl⟩
-    rw [Algebra.linearMap_apply, _root_.MvPolynomial.algebraMap_eq]
-    exact _root_.MvPolynomial.isWeightedHomogeneous_C w c
+    rw [Algebra.linearMap_apply, algebraMap_eq]
+    exact isWeightedHomogeneous_C w c
 
 end OrderedMonoid
 
 section IntWeights
 
-attribute [local instance] _root_.MvPolynomial.weightedGradedAlgebra
-
-/-- For strictly positive integer weights `w : σ → ℤ`, the canonical graded augmentation on
-`MvPolynomial σ R` agrees with `MvPolynomial.constantCoeff`. -/
-@[simp]
-theorem connectedAugmentation_weightedHomogeneousSubmodule_eq_constantCoeff
-    (R : Type*) [CommSemiring R] {σ : Type*} {w : σ → ℤ} (hw : ∀ i, 0 < w i)
-    (φ : _root_.MvPolynomial σ R) :
-    GradedAlgebra.connectedAugmentation
-      (𝒜 := _root_.MvPolynomial.weightedHomogeneousSubmodule R w)
-      (fun _ hm ↦ weightedHomogeneousSubmodule_eq_bot_of_lt_zero R (fun i ↦ (hw i).le) hm)
-      (fun _ ha ↦ (weightedHomogeneousSubmodule_zero_eq_range R hw) ▸ ha) φ =
-      _root_.MvPolynomial.constantCoeff φ := by
-  have h := GradedAlgebra.algebraMap_connectedAugmentation
-    (𝒜 := _root_.MvPolynomial.weightedHomogeneousSubmodule R w)
-    (fun _ hm ↦ weightedHomogeneousSubmodule_eq_bot_of_lt_zero R (fun i ↦ (hw i).le) hm)
-    (fun _ ha ↦ (weightedHomogeneousSubmodule_zero_eq_range R hw) ▸ ha) φ
-  have h' := congrArg _root_.MvPolynomial.constantCoeff h
-  have hdec : (DirectSum.decompose (_root_.MvPolynomial.weightedHomogeneousSubmodule R w) φ 0 :
-      _root_.MvPolynomial σ R) = _root_.MvPolynomial.weightedHomogeneousComponent w 0 φ :=
-    _root_.MvPolynomial.weightedDecomposition.decompose'_apply R w φ 0
-  rwa [_root_.MvPolynomial.algebraMap_eq, _root_.MvPolynomial.constantCoeff_C, hdec,
-    φ.weightedHomogeneousComponent_zero_of_pos hw, _root_.MvPolynomial.constantCoeff_C] at h'
+attribute [local instance] weightedGradedAlgebra
 
 /-- Over a principal ideal domain `k`, any degree-zero idempotent on a finite shifted free module
 over a positively `ℤ`-weighted polynomial ring `MvPolynomial σ k` splits homogeneously. -/
@@ -155,26 +172,24 @@ theorem exists_weightedHomogeneous_splitting_of_idempotent
     {k : Type*} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
     {σ : Type*} {w : σ → ℤ} (hw : ∀ i, 0 < w i)
     {I : Type*} [Finite I] (s : I → ℤ)
-    (p : (I → _root_.MvPolynomial σ k) →ₗ[_root_.MvPolynomial σ k] (I → _root_.MvPolynomial σ k))
+    (p : (I → MvPolynomial σ k) →ₗ[MvPolynomial σ k] (I → MvPolynomial σ k))
     (hp : p.comp p = p)
-    (hhom : ∀ (d : ℤ) (v : I → _root_.MvPolynomial σ k),
-      (∀ j, v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j)) →
-      ∀ j, p v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j)) :
+    (hhom : ∀ (d : ℤ) (v : I → MvPolynomial σ k),
+      (∀ j, v j ∈ weightedHomogeneousSubmodule k w (d - s j)) →
+      ∀ j, p v j ∈ weightedHomogeneousSubmodule k w (d - s j)) :
     ∃ (n : ℕ) (d : Fin n → ℤ)
-      (ι : (Fin n → _root_.MvPolynomial σ k) →ₗ[_root_.MvPolynomial σ k]
-        (I → _root_.MvPolynomial σ k))
-      (π : (I → _root_.MvPolynomial σ k) →ₗ[_root_.MvPolynomial σ k]
-        (Fin n → _root_.MvPolynomial σ k)),
+      (ι : (Fin n → MvPolynomial σ k) →ₗ[MvPolynomial σ k] (I → MvPolynomial σ k))
+      (π : (I → MvPolynomial σ k) →ₗ[MvPolynomial σ k] (Fin n → MvPolynomial σ k)),
       π.comp ι = LinearMap.id ∧
       ι.comp π = p ∧
-      (∀ (q : ℤ) (u : Fin n → _root_.MvPolynomial σ k),
-        (∀ i, u i ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (q - d i)) →
-        ∀ j, ι u j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (q - s j)) ∧
-      (∀ (q : ℤ) (v : I → _root_.MvPolynomial σ k),
-        (∀ j, v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (q - s j)) →
-        ∀ i, π v i ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (q - d i)) :=
+      (∀ (q : ℤ) (u : Fin n → MvPolynomial σ k),
+        (∀ i, u i ∈ weightedHomogeneousSubmodule k w (q - d i)) →
+        ∀ j, ι u j ∈ weightedHomogeneousSubmodule k w (q - s j)) ∧
+      (∀ (q : ℤ) (v : I → MvPolynomial σ k),
+        (∀ j, v j ∈ weightedHomogeneousSubmodule k w (q - s j)) →
+        ∀ i, π v i ∈ weightedHomogeneousSubmodule k w (q - d i)) :=
   exists_homogeneous_splitting_of_idempotent_of_connected
-    (𝒜 := _root_.MvPolynomial.weightedHomogeneousSubmodule k w)
+    (𝒜 := weightedHomogeneousSubmodule k w)
     (fun _ hm ↦ weightedHomogeneousSubmodule_eq_bot_of_lt_zero k (fun i ↦ (hw i).le) hm)
     (fun _ ha ↦ (weightedHomogeneousSubmodule_zero_eq_range k hw) ▸ ha) s p hp hhom
 
@@ -185,17 +200,17 @@ theorem exists_weightedHomogeneous_basis_range_idempotent
     {k : Type*} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
     {σ : Type*} {w : σ → ℤ} (hw : ∀ i, 0 < w i)
     {I : Type*} [Finite I] (s : I → ℤ)
-    (p : (I → _root_.MvPolynomial σ k) →ₗ[_root_.MvPolynomial σ k] (I → _root_.MvPolynomial σ k))
+    (p : (I → MvPolynomial σ k) →ₗ[MvPolynomial σ k] (I → MvPolynomial σ k))
     (hp : p.comp p = p)
-    (hhom : ∀ (d : ℤ) (v : I → _root_.MvPolynomial σ k),
-      (∀ j, v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j)) →
-      ∀ j, p v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j)) :
+    (hhom : ∀ (d : ℤ) (v : I → MvPolynomial σ k),
+      (∀ j, v j ∈ weightedHomogeneousSubmodule k w (d - s j)) →
+      ∀ j, p v j ∈ weightedHomogeneousSubmodule k w (d - s j)) :
     ∃ (n : ℕ)
-      (b : Module.Basis (Fin n) (_root_.MvPolynomial σ k) (LinearMap.range p))
+      (b : Module.Basis (Fin n) (MvPolynomial σ k) (LinearMap.range p))
       (d : Fin n → ℤ),
-      ∀ i j, (b i).val j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d i - s j) :=
+      ∀ i j, (b i).val j ∈ weightedHomogeneousSubmodule k w (d i - s j) :=
   exists_homogeneous_basis_range_idempotent_of_connected
-    (𝒜 := _root_.MvPolynomial.weightedHomogeneousSubmodule k w)
+    (𝒜 := weightedHomogeneousSubmodule k w)
     (fun _ hm ↦ weightedHomogeneousSubmodule_eq_bot_of_lt_zero k (fun i ↦ (hw i).le) hm)
     (fun _ ha ↦ (weightedHomogeneousSubmodule_zero_eq_range k hw) ▸ ha) s p hp hhom
 
@@ -206,24 +221,22 @@ theorem multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent
     {k : Type*} [CommRing k] [Nontrivial k]
     {σ : Type*} {w : σ → ℤ} (hw : ∀ i, 0 < w i)
     {I : Type*} [Finite I] (s : I → ℤ)
-    (p : (I → _root_.MvPolynomial σ k) →ₗ[_root_.MvPolynomial σ k] (I → _root_.MvPolynomial σ k))
-    (hhom : ∀ (d : ℤ) (v : I → _root_.MvPolynomial σ k),
-      (∀ j, v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j)) →
-      ∀ j, p v j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d - s j))
+    (p : (I → MvPolynomial σ k) →ₗ[MvPolynomial σ k] (I → MvPolynomial σ k))
+    (hhom : ∀ (d : ℤ) (v : I → MvPolynomial σ k),
+      (∀ j, v j ∈ weightedHomogeneousSubmodule k w (d - s j)) →
+      ∀ j, p v j ∈ weightedHomogeneousSubmodule k w (d - s j))
     {n₁ n₂ : ℕ}
-    (b₁ : Module.Basis (Fin n₁) (_root_.MvPolynomial σ k) (LinearMap.range p)) (d₁ : Fin n₁ → ℤ)
-    (hb₁ : ∀ i j,
-      (b₁ i).val j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d₁ i - s j))
-    (b₂ : Module.Basis (Fin n₂) (_root_.MvPolynomial σ k) (LinearMap.range p)) (d₂ : Fin n₂ → ℤ)
-    (hb₂ : ∀ i j,
-      (b₂ i).val j ∈ _root_.MvPolynomial.weightedHomogeneousSubmodule k w (d₂ i - s j)) :
+    (b₁ : Module.Basis (Fin n₁) (MvPolynomial σ k) (LinearMap.range p)) (d₁ : Fin n₁ → ℤ)
+    (hb₁ : ∀ i j, (b₁ i).val j ∈ weightedHomogeneousSubmodule k w (d₁ i - s j))
+    (b₂ : Module.Basis (Fin n₂) (MvPolynomial σ k) (LinearMap.range p)) (d₂ : Fin n₂ → ℤ)
+    (hb₂ : ∀ i j, (b₂ i).val j ∈ weightedHomogeneousSubmodule k w (d₂ i - s j)) :
     Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val :=
   multiset_map_eq_of_homogeneous_basis_range_idempotent
-    (𝒜 := _root_.MvPolynomial.weightedHomogeneousSubmodule k w)
+    (𝒜 := weightedHomogeneousSubmodule k w)
     (fun _ hm ↦ weightedHomogeneousSubmodule_eq_bot_of_lt_zero k (fun i ↦ (hw i).le) hm)
     (fun _ ha ↦ (weightedHomogeneousSubmodule_zero_eq_range k hw) ▸ ha) s p hhom
     b₁ d₁ hb₁ b₂ d₂ hb₂
 
 end IntWeights
 
-end TauCeti.MvPolynomial
+end TauCeti
