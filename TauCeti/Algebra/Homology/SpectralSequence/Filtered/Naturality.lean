@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -22,7 +23,9 @@ A morphism of complexes `f : K ⟶ L` sending each piece `F n` of an increasing 
 into the piece `G n` of an increasing filtration of `L` induces a morphism of their functors
 `CochainComplex.filtrationFunctorMap f hf : filtrationFunctor F hF ⟶ filtrationFunctor G hG`,
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
-their spectral sequences.
+their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
+that morphism is the map in cohomology of the induced morphisms of graded pieces
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`).
 
 ## Main definitions
 
@@ -33,13 +36,16 @@ their spectral sequences.
 
 * `CochainComplex.spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom`: on graded pieces,
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
+* `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
+  on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
+  of graded pieces.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
 -/
 
 public section
 
-open CategoryTheory Limits ComposableArrows
+open CategoryTheory Limits ComposableArrows Abelian.SpectralObject
 
 namespace CochainComplex
 
@@ -133,5 +139,35 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     filtrationFunctorMap_app_comp_assoc]
 
 end FiltrationMap
+
+section FirstPage
+
+variable {F G : EInt ⥤ CochainComplex C ℤ}
+
+/-- **The morphism of spectral sequences on the first page.** Let `α : F ⟶ G` be a morphism of
+functors `EInt ⥤ CochainComplex C ℤ` whose transition maps `F_q ⟶ F_{q+1}` and `G_q ⟶ G_{q+1}`
+are monomorphisms. On the first page, whose object at `(p, q)` is the cohomology
+`H^{p+q}(F_{q+1}/F_q)` of a graded piece, the morphism of spectral sequences induced by `α` is the
+map in cohomology of the induced morphism of graded pieces `F_{q+1}/F_q ⟶ G_{q+1}/G_q`. -/
+@[reassoc]
+lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
+    (α : F ⟶ G) (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ)
+    (hn : n = pq.1 + pq.2) [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))]
+    [Mono (G.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))] :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom 2 le_rfl).f pq ≫
+        (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        HomologicalComplex.homologyMap
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+  simp only [spectralSequenceMap_hom, spectralSequencePageMap_f,
+    spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom]
+  -- The degree of the recipe `coreE₂Cohomological` at `pq` is only definitionally
+  -- `pq.1 + pq.2`, so the general first-page lemma is instantiated before rewriting with it.
+  have h := spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom coreE₂Cohomological
+    (spectralObjectMap α) pq (i₁ : EInt) (i₂ : EInt) (by simp [hi₁]) (by simp [hi₂]) n hn
+  rw [reassoc_of% h, spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
+  exact (Category.assoc _ _ _).symm
+
+end FirstPage
 
 end CochainComplex

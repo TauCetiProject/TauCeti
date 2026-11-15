@@ -39,6 +39,9 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
   with the corresponding `TopPair.twistedHomologyCoefficientMap`.
 * `TopPair.shortExact_twistedChainComplexShortComplex`: the twisted chains of the subspace, of the
   ambient space and of the pair form a short exact sequence of chain complexes.
+* `TopPair.twistedChainComplexXSplitting`, `TopPair.twistedChainComplexXRetract`: that sequence is
+  split in each degree, so the relative twisted chains are a retract of the ambient ones, and are
+  projective when the fibres of the system are (`TopPair.projective_twistedChainComplex_X`).
 * `TopPair.twistedHomology`, `TopPair.twistedHomologyπ` and `TopPair.twistedHomologyδ`, with the
   three exactness statements `TopPair.twistedHomology_exact_subspace`,
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
@@ -142,6 +145,32 @@ def isColimitCokernelCoforkTwistedChainComplexX (i : ℕ) :
       (P.twistedChainComplex_condition_f L i)) :=
   CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
     (HomologicalComplex.eval _ _ i)
+
+/-- The degree-`i` part `0 ⟶ Cᵢ(A; L|A) ⟶ Cᵢ(X; L) ⟶ Cᵢ(X, A; L) ⟶ 0` of the twisted chain
+sequence of a pair is split: it is exact since the relative chains are the cokernel of the
+subspace chains, and its first map is a split monomorphism, induced by the injection of the
+singular simplices of `A` into those of `X`. -/
+def twistedChainComplexXSplitting (i : ℕ) :
+    (ShortComplex.mk _ _ (P.twistedChainComplex_condition_f L i)).Splitting :=
+  ShortComplex.Splitting.ofExactOfRetraction _
+    (ShortComplex.exact_of_g_is_cokernel _ (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+    (retraction ((LocalCoefficientSystem.twistedChainComplexMap P.map L).f i))
+    (IsSplitMono.id _) (epi_of_isColimit_cofork (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+
+/-- The relative twisted chains `Cᵢ(X, A; L)` of a pair are a retract of the ambient twisted
+chains `Cᵢ(X; L)`: the degree-`i` twisted chain sequence of the pair is split
+(`TopPair.twistedChainComplexXSplitting`), so the quotient map to the relative chains has a
+section. -/
+def twistedChainComplexXRetract (i : ℕ) :
+    Retract ((P.twistedChainComplex L).X i) (L.twistedChainComplex.X i) :=
+  ⟨(P.twistedChainComplexXSplitting L i).s, (P.twistedChainComplexπ L).f i,
+    (P.twistedChainComplexXSplitting L i).s_g⟩
+
+/-- If every fibre of `L` is projective, then so is every degree of the relative twisted chain
+complex of a pair, a retract of the ambient twisted chains. -/
+instance projective_twistedChainComplex_X [∀ x, Projective (L.obj x)] (i : ℕ) :
+    Projective ((P.twistedChainComplex L).X i) :=
+  (P.twistedChainComplexXRetract L i).projective
 
 /-- Descend a map out of the ambient twisted chains to the relative twisted chain complex when it
 vanishes on the chains of the subspace. -/

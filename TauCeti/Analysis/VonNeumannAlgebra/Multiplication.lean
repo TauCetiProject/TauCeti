@@ -604,9 +604,8 @@ theorem exists_isStarProjection_mul_eq_and_ne_of_not_isAtom {μ : Measure α}
     ∃ Q : multiplicationAlgebra μ, IsStarProjection Q ∧ Q ≠ 0 ∧ Q * P = Q ∧ Q ≠ P := by
   obtain ⟨E, hE, hμE, s, hs, hsE, hμs_pos, hp_op⟩ :=
     exists_measurableSet_subset_and_comp_multiplicationOperator_eq hP hP0
-  have hnot_atom := hμ s
-  simp only [Measure.isAtom_iff, hs, hμs_pos, true_and, not_forall, not_or] at hnot_atom
-  obtain ⟨t, ht, hts, hμt0, hμts⟩ := hnot_atom
+  obtain ⟨t, hts, ht, hμt_pos, hμts_lt⟩ :=
+    (Measure.IsAtom.not_isAtom_iff_exists hs hμs_pos).mp (hμ s)
   have hμt_fin : μ t ≠ ∞ := ((measure_mono (hts.trans hsE)).trans_lt hμE.lt_top).ne
   set q := SimpleFunc.toLpTop μ ℂ (SimpleFunc.piecewise t ht (1 : SimpleFunc α ℂ) 0)
   set eE := SimpleFunc.toLpTop μ ℂ (SimpleFunc.piecewise E hE (1 : SimpleFunc α ℂ) 0)
@@ -616,7 +615,8 @@ theorem exists_isStarProjection_mul_eq_and_ne_of_not_isAtom {μ : Measure α}
   refine ⟨Q, isStarProjection_multiplicationOperator_toLpTop_piecewise_one_zero ht, ?_, ?_, ?_⟩
   · intro hQ0
     have hft : indicatorConstLp 2 ht hμt_fin (1 : ℂ) ≠ 0 := by
-      rwa [Ne, indicatorConstLp_two_one_eq_zero_iff ht hμt_fin]
+      rw [Ne, indicatorConstLp_two_one_eq_zero_iff ht hμt_fin]
+      exact hμt_pos.ne'
     have hQt := Lp.multiplicationOperator_toLpTop_piecewise_one_zero_indicatorConstLp ht ht
       hμt_fin (1 : ℂ)
     have hQ0' : Lp.multiplicationOperator (E := ℂ) q = 0 := congrArg Subtype.val hQ0
@@ -640,7 +640,7 @@ theorem exists_isStarProjection_mul_eq_and_ne_of_not_isAtom {μ : Measure α}
       _ = Q * (P * E_op) := by rw [mul_assoc, mul_comm E_op P]
       _ = Q := by rw [hPE, hQS]
   · exact fun hQP ↦ multiplicationOperator_toLpTop_piecewise_ne_of_subset hE hμE hs ht hsE hts
-      hμts hp_op (congrArg Subtype.val hQP)
+      hμts_lt.ne hp_op (congrArg Subtype.val hQP)
 
 /-- On any `σ`-finite countably separated measurable space with null singletons (such as
 `(unitInterval, volume)` or `(ℝ, volume)`), `multiplicationAlgebra μ` has no minimal nonzero star
@@ -649,7 +649,8 @@ theorem exists_isStarProjection_mul_eq_and_ne [MeasurableSpace.CountablySeparate
     [SigmaFinite μ] [NullSingletonClass μ] {P : multiplicationAlgebra μ}
     (hP : IsStarProjection P) (hP0 : P ≠ 0) :
     ∃ Q : multiplicationAlgebra μ, IsStarProjection Q ∧ Q ≠ 0 ∧ Q * P = Q ∧ Q ≠ P :=
-  exists_isStarProjection_mul_eq_and_ne_of_not_isAtom (Measure.not_isAtom μ) hP hP0
+  exists_isStarProjection_mul_eq_and_ne_of_not_isAtom Measure.not_isAtom_of_nullSingletonClass
+    hP hP0
 
 /-- If every level set `{x | a x = c}` is `μ`-null, then `Lp.multiplicationOperator a` on
 `Lp ℂ 2 μ` has no eigenvalues. -/

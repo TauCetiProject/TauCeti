@@ -27,9 +27,11 @@ for a discrete module over a topological *group* is exactly continuity of the ac
 discrete `G`-modules whose `G`-action is continuous — not on all of them — the two translations are
 shown to be mutually inverse, both on objects and on morphisms.
 
-The construction `TauCeti.ofDiscreteModule` itself is available for *every* discrete `G`-module,
-since a discrete module makes each operator continuous whatever the action does in the group
-variable. It is only its *smoothness* that needs `ContinuousSMul G M`, and that hypothesis cannot
+The construction `TauCeti.ofDiscreteModule` itself is available for every discrete `G`-module
+with continuous scalar action `ContinuousSMul R M` (automatic when `R` is discrete, as for the
+coefficients `ℤ`), since a discrete module makes each operator continuous whatever the action does
+in the group variable. It is only its *smoothness* that needs `ContinuousSMul G M`, and that
+hypothesis cannot
 be dropped: `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` exhibits a discrete module
 with a discontinuous action whose object is discrete but not smooth. So the source side of the
 dictionary is the discrete `G`-modules with continuous `G`-action, and the image of the
@@ -170,10 +172,7 @@ open CategoryTheory in
 `ContinuousSMul G` of the same action on the same space, by `TopRep.toActionTopModFunc_smul`;
 `Action.IsContinuous` is by definition the left-hand `ContinuousSMul`. -/
 lemma isContinuous_toActionTopModFunc_iff (X : TopRep R G) :
-    (toActionTopModFunc.obj X).IsContinuous ↔ ContinuousSMul G X.V := by
-  change ContinuousSMul G ((forget₂ (Action (TopModuleCat R) G) TopCat).obj
-    (toActionTopModFunc.obj X)) ↔ ContinuousSMul G X.V
-  exact Iff.rfl
+    (toActionTopModFunc.obj X).IsContinuous ↔ ContinuousSMul G X.V := Iff.rfl
 
 end ActionTop
 
@@ -188,9 +187,7 @@ attribute [local instance] distribMulAction
 `MulAction.stabilizer`, in which `continuousSMul_iff_stabilizer_isOpen` is stated, and that
 phrasing. -/
 lemma coe_stabilizer (X : TopRep R G) (x : X.V) :
-    (MulAction.stabilizer G x : Set G) = {g : G | X.ρ g x = x} := by
-  ext g
-  simp [MulAction.mem_stabilizer_iff]
+    (MulAction.stabilizer G x : Set G) = {g : G | X.ρ g x = x} := (rfl)
 
 end Group
 
@@ -211,11 +208,13 @@ variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
   [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M]
 
 /-- A discrete `G`-module, in Mathlib's unbundled classes, as an object of `TopRep R G`. Every
-operator is continuous because the module is discrete, which is all this construction needs;
+operator is continuous because the module is discrete, which is all this construction needs
+beyond the continuity of the scalar action `ContinuousSMul R M` (automatic when `R` is discrete);
 continuity in the group variable is a separate hypothesis `ContinuousSMul G M`, carried by
 `TauCeti.ofDiscreteModule_isSmoothDiscrete`. So the result is a discrete object of `TopRep R G`
-for any discrete module, and a *smooth* discrete one as soon as that hypothesis is available;
-`TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` is a module where it is not.
+for any discrete module with `ContinuousSMul R M`, and a *smooth* discrete one as soon as that
+hypothesis is available; `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod` is a module
+where it is not.
 
 This is the continuous counterpart of `Rep.ofDistribMulAction`. The body is `@[expose]`d because a
 consumer must see that the underlying module of the result is `M` itself before it can state
@@ -266,11 +265,7 @@ structure IsSmoothDiscrete (X : TopRep R G) : Prop where
 discrete. -/
 lemma isSmoothDiscrete_of_ρ_apply_eq_self (X : TopRep R G) [DiscreteTopology X.V]
     (htriv : ∀ (g : G) (x : X.V), X.ρ g x = x) : IsSmoothDiscrete R X := by
-  refine ⟨inferInstance, fun x ↦ ?_⟩
-  have hstabilizer : {g : G | X.ρ g x = x} = Set.univ :=
-    Set.eq_univ_of_forall fun g ↦ htriv g x
-  rw [hstabilizer]
-  exact isOpen_univ
+  exact ⟨inferInstance, fun x ↦ by simpa only [htriv, Set.ofPred_true] using isOpen_univ⟩
 
 /-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
 the whole monoid. -/
@@ -290,12 +285,9 @@ lemma proves the goal `IsSmoothDiscrete R (TopRep.res φ X)` verbatim. -/
 lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H →* G}
     (hφ : Continuous φ) {X : TopRep R G} (hX : IsSmoothDiscrete R X) :
     IsSmoothDiscrete R (TopRep.of (X.ρ.restrict φ)) := by
-  refine ⟨hX.discreteTopology, fun x ↦ ?_⟩
-  have hpre : {h : H | (TopRep.of (X.ρ.restrict φ)).ρ h x = x} = φ ⁻¹' {g : G | X.ρ g x = x} := by
-    ext h
-    simp
-  rw [hpre]
-  exact (hX.stabilizer_isOpen x).preimage hφ
+  -- The stabilizer of `x` for `X.ρ.restrict φ` is the preimage under `φ` of the stabilizer of `x`
+  -- for `X.ρ`, by definition of `restrict`, so the openness term typechecks as is.
+  exact ⟨hX.discreteTopology, fun x ↦ (hX.stabilizer_isOpen x).preimage hφ⟩
 
 /-- Smoothness passes to the source of an injective morphism: a continuous injection into a
 discrete space has discrete source, and by equivariance the stabilizer of `x` is the stabilizer
@@ -330,13 +322,10 @@ Read on an arbitrary discrete `X` it says less: the image of `TauCeti.ofDiscrete
 discrete modules is every discrete object, smooth or not
 (`TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod`). -/
 @[simp] lemma ofDiscreteModule_eq_self (X : TopRep R G) [DiscreteTopology X.V] :
-    ofDiscreteModule R G X.V = X := by
-  have h : (ofDiscreteModule R G X.V).ρ = X.ρ :=
-    DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun (x : X.V) ↦
-      (ofDiscreteModule_ρ_apply_apply g x).trans (TopRep.distribMulAction_smul X g x)
-  -- The two objects have the same underlying module by construction, and `X` is `TopRep.of X.ρ`
-  -- by structure eta, so they agree as soon as their operators do.
-  exact congrArg (TopRep.of (X := X.V)) h
+    ofDiscreteModule R G X.V = X :=
+  -- `X` is `TopRep.of X.ρ` by structure eta, and the operators of `ofDiscreteModule` unfold to
+  -- `X.ρ`, so the two sides agree by `rfl`.
+  (rfl)
 
 variable (R G)
 
@@ -346,15 +335,10 @@ lemma ofDiscreteModule_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R 
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [SMulCommClass G R M]
     [ContinuousSMul R M] [ContinuousSMul G M] :
     IsSmoothDiscrete R (ofDiscreteModule R G M) := by
-  refine ⟨‹DiscreteTopology M›, fun (m : M) ↦ ?_⟩
-  have hpre : {g : G | (ofDiscreteModule R G M).ρ g m = m} = (fun g : G ↦ g • m) ⁻¹' {m} := by
-    ext g
-    -- After `ofDiscreteModule_ρ_apply_apply` both sides read `g • m = m`; the last step is the
-    -- membership in the singleton, which `simp` leaves at reducible transparency.
-    simp
-    rfl
-  rw [hpre]
-  exact (isOpen_discrete {m}).preimage (by fun_prop)
+  -- The stabilizer of `m` unfolds to `(fun g ↦ g • m) ⁻¹' {m}` by
+  -- `ofDiscreteModule_ρ_apply_apply`, so the preimage of the open singleton is the goal.
+  exact ⟨‹DiscreteTopology M›, fun (m : M) ↦
+    (isOpen_discrete {m}).preimage (f := fun g : G ↦ g • m) (by fun_prop)⟩
 
 end IsSmoothDiscrete
 
@@ -819,15 +803,9 @@ module, with the action read off from its operators by `TopRep.distribMulAction`
 @[expose] def ofSmoothDiscrete :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ DiscreteRep.{u, v, w} R G where
   obj X := { V := X.obj.V }
-  -- Equivariance for the derived actions is `TopRep.distribMulAction_smul` on each side of the
-  -- intertwining identity that `φ` already carries.
-  map {X Y} φ :=
-    φ.hom.hom.toContinuousLinearMap.toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-      fun g x ↦ (congrArg _ (TopRep.distribMulAction_smul X.obj g x)).trans
-        ((φ.hom.hom.isIntertwining g x).trans
-          (TopRep.distribMulAction_smul Y.obj g (φ.hom.hom x)).symm)
-  map_id _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
-  map_comp _ _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
+  map φ := φ.hom.hom.toIntertwiningMap
+  map_id _ := rfl
+  map_comp _ _ := rfl
 
 /-- `ofSmoothDiscrete` keeps the underlying module of a smooth discrete representation. -/
 @[simp] lemma ofSmoothDiscrete_obj_V (X : SmoothDiscreteTopRep.{u, v, w} R G) :
