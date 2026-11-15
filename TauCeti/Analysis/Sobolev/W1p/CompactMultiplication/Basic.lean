@@ -14,7 +14,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Holder
 # Compact multiplication by `Lᵖ` functions on first-order Sobolev spaces
 
 Let `Ω` be a bounded open subset of a finite-dimensional real inner product space of dimension
-`n ≥ 1`, let `n < p < ∞` and `1 ≤ q ≤ p`. For `α ∈ Lᵖ(Ω, G)`, multiplication
+`n`, let `n < p < ∞` and `1 ≤ q ≤ p`. For `α ∈ Lᵖ(Ω, G)`, multiplication
 
 `u ↦ u α : W^{1,q}_0(Ω) → L^q(Ω, G)`
 
@@ -61,13 +61,13 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {p q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
 /-- Compact multiplication on a Sobolev space `X` over `Ω` from an extension operator into
 `W^{1,q}(E)` that preserves values on `Ω`, and a compact value map into `L^q(Ω)`. The operator is
 the mixed product `W1p.mixedBilinL` composed with the extension. -/
-private theorem exists_isCompactOperator_value_smul_of_extensionL {X : Type*}
+private theorem exists_isCompactOperator_value_smul_of_extensionL [Nontrivial E] {X : Type*}
     [SeminormedAddCommGroup X] [NormedSpace ℝ X] {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [CompleteSpace G] {Ω : Set E} (hΩ : IsBounded Ω)
     (hnp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
@@ -104,9 +104,23 @@ private theorem exists_isCompactOperator_value_smul_of_extensionL {X : Type*}
   exact B.isCompactOperator_holderL_comp_of_ae_eq ENNReal.coe_ne_top hV (S.comp T)
     (fun u => (hS (T u)).trans (hTV u)) α
 
+/-- **Compact multiplication by bounded coefficients on `W^{1,q}_0`.** For a bounded open `Ω`
+and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact operator `W^{1,q}_0(Ω) → L^q(Ω, G)`
+for every finite `q ≥ 1`. -/
+theorem W1p0.exists_isCompactOperator_value_smul_of_memLp_top {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω : Opens E} (hΩ : IsBounded (Ω : Set E))
+    {α : E → G} (hα : MemLp α ∞ (μ.restrict Ω)) :
+    ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
+      (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
+        IsCompactOperator M := by
+  obtain ⟨M, hM, hMc⟩ := IsCompactOperator.exists_isCompactOperator_smul_of_memLp_top
+    (q := (q : ℝ≥0∞)) (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ)
+    hα
+  exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
+
 /-- **Compact multiplication by `Lᵖ` functions on `W^{1,q}_0`.** Let `Ω` be a bounded open
-subset of a finite-dimensional real inner product space of dimension `n ≥ 1`, and let
-`n < p < ∞` and `1 ≤ q ≤ p`. For `α ∈ Lᵖ(Ω, G)`, multiplication `u ↦ u α` is a compact operator
+subset of a finite-dimensional real inner product space of dimension `n`, and let `n < p < ∞`
+and `1 ≤ q ≤ p`. For `α ∈ Lᵖ(Ω, G)`, multiplication `u ↦ u α` is a compact operator
 `W^{1,q}_0(Ω) → L^q(Ω, G)`.
 
 No boundary regularity is needed. This is the local form of McDuff--Salamon, Lemma C.2.2. -/
@@ -116,6 +130,12 @@ theorem W1p0.exists_isCompactOperator_value_smul {G : Type*} [NormedAddCommGroup
     ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
       (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
         IsCompactOperator M := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On a trivial space `α` is constant, hence bounded.
+    have hα : MemLp (α : E → G) ∞ (μ.restrict Ω) := by
+      rw [show (α : E → G) = fun _ => α 0 from funext fun x => congrArg _ (Subsingleton.elim x 0)]
+      exact memLp_top_const _
+    exact W1p0.exists_isCompactOperator_value_smul_of_memLp_top hΩ hα
   -- Extension by zero preserves values on `Ω`.
   let T : W1p0 μ Ω q →L[ℝ] W1p μ ⊤ q :=
     (w1p0Submodule μ ⊤ q).toSubmodule.subtypeL.comp (W1p0.extendByZeroL le_top)
@@ -130,7 +150,6 @@ theorem W1p0.exists_isCompactOperator_value_smul {G : Type*} [NormedAddCommGroup
     (W1p0.isCompactOperator_valueL ENNReal.coe_ne_top hΩ) hT α
   exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
 
-omit [Nontrivial E] in
 /-- **Compact multiplication by `Lᵖ` functions on bounded Lipschitz domains.** Let
 `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, let `n = dim (ℝ × E) = 1 + dim E`, and let
 `n < p < ∞` and `1 ≤ q ≤ p`. For `α ∈ Lᵖ(Ω, G)`, multiplication `u ↦ u α` is a compact operator
@@ -169,7 +188,6 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_memLp {G : Type*} [NormedAdd
   filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
   rw [h₁, h₂]
 
-omit [Nontrivial E] in
 /-- Compact multiplication on `W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` by a
 coefficient `α ∈ Lʳ(Ω, G)` given as a function, for `n < r` and `q ≤ r`: the function form of
 `TauCeti.W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith`. -/
@@ -189,22 +207,6 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWit
   filter_upwards [hM u, hα.coeFn_toLp] with x h₁ h₂
   rw [h₁, h₂]
 
-omit [Nontrivial E] in
-/-- **Compact multiplication by bounded coefficients on `W^{1,q}_0`.** For a bounded open `Ω`
-and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact operator `W^{1,q}_0(Ω) → L^q(Ω, G)`
-for every finite `q ≥ 1`. -/
-theorem W1p0.exists_isCompactOperator_value_smul_of_memLp_top {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω : Opens E} (hΩ : IsBounded (Ω : Set E))
-    {α : E → G} (hα : MemLp α ∞ (μ.restrict Ω)) :
-    ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
-      (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
-        IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ := IsCompactOperator.exists_isCompactOperator_smul_of_memLp_top
-    (q := (q : ℝ≥0∞)) (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ)
-    hα
-  exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
-
-omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on bounded Lipschitz domains.** For a
 bounded Lipschitz domain `Ω ⊆ ℝ × E` and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact
 operator `W^{1,q}(Ω) → L^q(Ω, G)` for every finite `q ≥ 1`. -/

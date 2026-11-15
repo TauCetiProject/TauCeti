@@ -65,7 +65,6 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_isAdmissibleRealizationExpon
     ∃ M : W1p0 μ Ω q →L[ℝ] Lp ℝ q (μ.restrict Ω),
       (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • Wkp.value m α x) ∧
         IsCompactOperator M := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   have hnp : (finrank ℝ E : ℝ≥0) < p := by
     rw [hE]
     exact_mod_cast hp
@@ -76,7 +75,8 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_isAdmissibleRealizationExpon
         (Measure.restrict_mono_set μ (subset_closure.trans hΩΩ'))
     exact W1p0.exists_isCompactOperator_value_smul_of_memLp hΩ hnp
       (le_of_isAdmissibleRealizationExponent_one hp hq) hα
-  | succ m => exact W1p0.exists_isCompactOperator_value_smul_of_wkp hΩ hΩΩ' hnp.le m α
+  | succ m =>
+    exact W1p0.exists_isCompactOperator_value_smul_of_wkp hΩ hΩΩ' (by exact_mod_cast hnp.le) m α
 
 namespace W1p
 
@@ -102,8 +102,10 @@ theorem
     exact W1p.exists_isCompactOperator_value_smul_of_isLipschitzDomainWith hΩ hb hnp
       (le_of_isAdmissibleRealizationExponent_one hp hq) (Wkp.value 0 α)
   | succ m =>
+    have hnp' : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0) ≤ (m + 1 : ℕ) * p :=
+      hnp.le.trans (le_mul_of_one_le_left zero_le (by simp))
     exact W1p.exists_isCompactOperator_value_smul_of_wkp_of_isLipschitzDomainWith hΩ hb m
-      (hnp.le.trans (le_mul_of_one_le_left zero_le le_add_self)) α
+      (by exact_mod_cast hnp') α
 
 end W1p
 
