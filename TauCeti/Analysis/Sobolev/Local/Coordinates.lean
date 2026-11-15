@@ -27,6 +27,10 @@ for all `i`, and `Module.Basis.memWkpLoc_succ_iff_hasWeakLineDerivOn` identifies
 definition `TauCeti.MemWkpLoc` with the classical partial-derivative definition for `1 ≤ q`.
 For maps on `ℂ`, `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` specializes this to `1` and `I`.
 
+On an open set, the precise representative of a locally `Lᵖ` map is reconstructed from the
+precise representatives of its coordinates wherever these are continuous
+(`Module.Basis.eqOn_preciseRepresentative_sum_repr`).
+
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, second edition, §5.2.
@@ -167,6 +171,36 @@ theorem memWkpLoc_one_iff_hasWeakLineDerivOn [IsFiniteMeasureOnCompacts (volume 
     b.memWkpLoc_succ_iff_hasWeakLineDerivOn (k := 0) (U := U) (ξ := ξ) hq
 
 end Domain
+
+section PreciseRepresentative
+
+open TauCeti.MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
+  {p : ENNReal} {Ω : Opens E} {f : E → F}
+
+/-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
+coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
+combination of those precise representatives with the vectors of `b`. -/
+theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 ≤ p)
+    (hf : MemLpLoc p Ω f)
+    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun x => b.repr (f x) i) Ω) :
+    Set.EqOn (preciseRepresentative volume f)
+      (fun x => ∑ i, preciseRepresentative volume (fun y => b.repr (f y) i) x • b i) Ω := by
+  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
+    (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
+    (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
+  have hcoord : ∀ i, (fun x => b.repr (f x) i) =ᵐ[volume.restrict Ω]
+      preciseRepresentative volume fun x => b.repr (f x) i := fun i =>
+    (b.memLpLoc_iff.1 hf i).ae_eq_preciseRepresentative hp
+  filter_upwards [ae_all_iff.2 hcoord] with x hx
+  conv_lhs => rw [← b.sum_repr (f x)]
+  exact Finset.sum_congr rfl fun i _ => by rw [← hx i]
+
+end PreciseRepresentative
 
 end Module.Basis
 
