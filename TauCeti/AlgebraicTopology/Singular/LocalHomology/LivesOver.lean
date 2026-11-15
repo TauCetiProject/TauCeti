@@ -124,7 +124,7 @@ end Localization
 
 section LivesOver
 
-variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ)
   {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
 /-- A class `α ∈ Hₖ(E)` **lives over the fundamental class** of `M` at `b`, for a map
@@ -204,7 +204,7 @@ theorem livesOverFundamentalClass_id_zsmul_fundamentalClass_iff (b : M) (d : ℤ
       d ≠ 0 := by
   rw [livesOverFundamentalClass_iff, fiberLocalization_id, map_zsmul]
   erw [ModuleCat.comp_apply]
-  erw [localHomologyRestriction_singularHomologyπ_fundamentalClass]
+  erw [← singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_fundamentalClass]
   rw [not_iff_not]
   exact ⟨fun h ↦ o.zsmul_left_injective hn b (h.trans (zero_smul ℤ _).symm),
     fun h ↦ h ▸ zero_smul ℤ _⟩

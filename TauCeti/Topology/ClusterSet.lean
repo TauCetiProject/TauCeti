@@ -64,6 +64,8 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   set a singleton, in particular at a point of `U` where `f` is continuous; conversely a
   subsingleton cluster set at a point of `closure U` produces a limit, provided `f` maps `U` into a
   compact set.
+* `ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier` — off the frontier of `U` a cluster
+  set of a continuous map is a point or empty.
 * `TauCeti.exists_mem_closure_mem_clusterSetOn`,
   `TauCeti.exists_mem_frontier_mem_clusterSetOn_of_notMem_image`,
   `TauCeti.closure_image_eq_biUnion_clusterSetOn` and
@@ -170,6 +172,14 @@ lemma isCompact_clusterSetOn [T2Space Y] (hK : IsCompact K) (hfK : MapsTo f U K)
     clusterSetOn_subset_closure_image.trans <|
       hK.isClosed.closure_subset_iff.mpr hfK.image_subset
 
+/-- **Off the closure of `U` the cluster set is empty**: the filter `𝓝[U] w` is then trivial. -/
+@[simp]
+lemma clusterSetOn_eq_empty_of_notMem_closure (hw : w ∉ closure U) : clusterSetOn f U w = ∅ := by
+  have hbot : 𝓝[U] w = ⊥ := not_neBot.mp fun h => hw (mem_closure_iff_nhdsWithin_neBot.mpr h)
+  ext v
+  rw [mem_clusterSetOn_iff_frequently, hbot]
+  simpa using (⟨univ, univ_mem⟩ : ∃ s : Set Y, s ∈ 𝓝 v)
+
 /-- **The cluster set is nonempty at every point of the closure**, provided `f` maps `U` into a
 compact set. Some such hypothesis is needed: the cluster set of `z ↦ 1 / z` on
 `ball 0 1 \ {0}` at `0` is empty, the values escaping to infinity. -/
@@ -220,6 +230,17 @@ theorem exists_tendsto_of_clusterSetOn_subsingleton (hK : IsCompact K) (hfK : Ma
   obtain ⟨v, hv⟩ := clusterSetOn_nonempty hK hfK hw
   exact ⟨v, hK.tendsto_nhds_of_unique_mapClusterPt
     (mem_of_superset self_mem_nhdsWithin hfK) fun _ _ hu => hsub hu hv⟩
+
+/-- **Off the frontier of a set the cluster set is a subsingleton.** At a point of the interior of
+`U` it is the single value `f w` by continuity, and at a point outside `closure U` it is empty. -/
+theorem _root_.ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier [T2Space Y]
+    (hfc : ContinuousOn f U) (hw : w ∉ frontier U) : (clusterSetOn f U w).Subsingleton := by
+  by_cases hwU : w ∈ U
+  · rw [clusterSetOn_eq_singleton_of_continuousWithinAt hwU (hfc w hwU)]
+    exact subsingleton_singleton
+  · rw [clusterSetOn_eq_empty_of_notMem_closure fun hc =>
+      hw ⟨hc, fun hi => hwU (interior_subset hi)⟩]
+    exact subsingleton_empty
 
 /-! ## The cluster sets cover the closure of the image -/
 

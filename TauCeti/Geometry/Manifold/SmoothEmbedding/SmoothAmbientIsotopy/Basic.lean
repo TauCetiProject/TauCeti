@@ -23,9 +23,6 @@ specialization along `SmoothEmbedding.toContMDiffMap`. Smooth knots are obtained
 domain to be the circle and the codomain to be the ambient 3-manifold. Forgetting the
 diffeotopy's smoothness recovers continuous ambient isotopy.
 
-This is the specialization of `TauCeti.Diffeotopy` requested by Layer 4 of the
-GeometricTopology roadmap, in the milestone “equivalence in each presentation.”
-
 ## Main definitions
 
 * `TauCeti.SmoothEmbedding.SmoothAmbientIsotopic`: smooth ambient isotopy of bundled smooth

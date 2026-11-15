@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
-import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Geometry.Manifold.ContMDiff.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -168,15 +168,9 @@ theorem exists_equivariant_contMDiff_chart
         (fun z hz => χ.mem_restrInvariant_source_iff.mp hz.2 g)
     exact hg.contDiffOn.sub contDiffOn_const
   -- The smooth inverse function theorem supplies smoothness on the entire target.
-  obtain ⟨Θ, hΘ, hxΘ, hΘV, hΘsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph hAsmooth hV hxV hn
-      (e := ContinuousLinearEquiv.refl 𝕜 E) hA.hasFDerivAt.fderiv.symm
+  obtain ⟨Θ, hΘ, hxΘ, -, he₀smooth, he₀symm⟩ :=
+    exists_contMDiffOn_trans_of_hasFDerivAt hχsmooth hχsymm hAsmooth hV hxV hn hA.hasFDerivAt
   let e₀ := χ.trans Θ
-  have he₀smooth : ContMDiffOn I 𝓘(𝕜, E) n e₀ e₀.source :=
-    ((hΘ ▸ hAsmooth.mono hΘV).contMDiffOn).comp
-      (hχsmooth.mono inter_subset_left) inter_subset_right
-  have he₀symm : ContMDiffOn 𝓘(𝕜, E) I n e₀.symm e₀.target :=
-    hχsymm.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right
   -- Use the common Bochner restriction to retain equivariance without losing smoothness.
   let e := e₀.restrInvariant G
   have hΘeq : EqOn Θ (A ∘ χ.symm) Θ.source := fun z _ => congrFun hΘ z

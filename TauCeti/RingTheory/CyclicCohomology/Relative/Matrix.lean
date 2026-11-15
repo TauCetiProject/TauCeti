@@ -39,7 +39,8 @@ variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
 matrices. -/
 theorem matrixCochainExtension_map_algebraMap_eq_zero {ι : Type*} [Fintype ι] {n : ℕ}
     (φ : relativeCyclicCochains R A M n) (a : Fin (n + 1) → Matrix ι ι R) :
-    matrixCochainExtension ι n (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ Unitization R A) M)
+    matrixCochainExtension ι n (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+        Unitization R A) M)
       (fun k ↦ (a k).map (algebraMap R (Unitization R A))) = 0 := by
   rw [matrixCochainExtension_apply]
   exact Finset.sum_eq_zero fun p _ ↦

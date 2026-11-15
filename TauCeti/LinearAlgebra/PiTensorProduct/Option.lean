@@ -61,11 +61,12 @@ theorem optionEquiv_tprod {α : Type x} (P : Option α → Type v)
   exact (TensorProduct.congr_tmul _ _ _ _).trans
     (congrArg _ (subsingletonEquiv_apply_tprod PUnit.unit _))
 
-/-- Reattaching the factor at `none` to a pure tensor. -/
+/-- Reattaching the factor at `none` to a pure tensor: the factors `f i` and `y` are assembled into
+the family `Option.rec y f` indexed by `Option α`. -/
 @[simp]
 theorem optionEquiv_symm_tmul {α : Type x} (P : Option α → Type v)
-    [∀ o, AddCommMonoid (P o)] [∀ o, Module R (P o)] (m : ∀ o, P o) :
-    (optionEquiv P).symm (tprod R (fun i ↦ m (some i)) ⊗ₜ m none) = tprod R m := by
+    [∀ o, AddCommMonoid (P o)] [∀ o, Module R (P o)] (f : ∀ i, P (some i)) (y : P none) :
+    (optionEquiv P).symm (tprod R f ⊗ₜ y) = tprod R (Option.rec y f) := by
   rw [LinearEquiv.symm_apply_eq, optionEquiv_tprod]
 
 end PiTensorProduct

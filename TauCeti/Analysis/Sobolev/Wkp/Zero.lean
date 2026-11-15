@@ -320,7 +320,7 @@ theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega
   have hm : AEStronglyMeasurable (iteratedFDeriv ℝ (k + 1) (phi : E → ℝ)) mu :=
     (phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
   -- The restriction is dropped on the pointwise norms, since `phi` vanishes outside `Omega`.
-  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.enorm_def, ← eLpNorm_norm _ hm,
+  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.eNorm_def, ← eLpNorm_norm _ hm,
     ← eLpNorm_restrict_eq_of_support_subset (s := Omega) hm.norm
       (by simpa using (support_iteratedFDeriv_subset _).trans phi.tsupport_subset)]
   refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm.norm.restrict ?_

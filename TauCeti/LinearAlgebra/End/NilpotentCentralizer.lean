@@ -42,9 +42,69 @@ namespace Module.End
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [Module.Finite K V]
 
+omit [Module.Finite K V] in
+/-- A nilpotent endomorphism with finite-dimensional kernel lives on a finite-dimensional space. -/
+theorem finite_of_pow_eq_zero_of_finite_ker {f : Module.End K V} {n : ℕ} (hn : f ^ n = 0)
+    (hfin : Module.Finite K (LinearMap.ker f)) : Module.Finite K V := by
+  have hfg : ∀ k : ℕ, (LinearMap.ker (f ^ k)).FG := by
+    intro k
+    induction k with
+    | zero => rw [pow_zero, Module.End.one_eq_id, LinearMap.ker_id]; exact Submodule.fg_bot
+    | succ k ih =>
+      refine Submodule.fg_of_fg_map_of_fg_inf_ker f (s := LinearMap.ker (f ^ (k + 1))) ?_ ?_
+      · refine Submodule.FG.of_le ih ?_
+        rintro _ ⟨v, hv, rfl⟩
+        rw [SetLike.mem_coe, LinearMap.mem_ker, pow_succ, Module.End.mul_eq_comp,
+          LinearMap.comp_apply] at hv
+        exact hv
+      · exact Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) inf_le_right
+  have h := hfg n
+  rw [hn, LinearMap.ker_zero] at h
+  exact Module.finite_def.2 h
+
+omit [Module.Finite K V] in
+/-- The centralizer of a nilpotent endomorphism of an infinite-dimensional space is
+infinite-dimensional: `w ↦ (x ↦ φ x • w)` embeds `ker f` for a nonzero functional `φ` vanishing on
+the range of `f`. -/
+theorem not_finite_centralizer_of_pow_eq_zero {f : Module.End K V} {n : ℕ} (hn : f ^ n = 0)
+    (hV : ¬ Module.Finite K V) : ¬ Module.Finite K (Subalgebra.centralizer K {f}) := by
+  intro hfin
+  have hker : ¬ Module.Finite K (LinearMap.ker f) := fun hk ↦
+    hV (finite_of_pow_eq_zero_of_finite_ker hn hk)
+  have hlt : LinearMap.range f < ⊤ := by
+    refine lt_top_iff_ne_top.2 fun h ↦ hV ?_
+    have hs' : Function.Surjective (f ^ n) := by
+      rw [FunLike.coe_pow_eq_iterate]
+      exact (LinearMap.range_eq_top.1 h).iterate n
+    have : Subsingleton V := ⟨fun a b ↦ by
+      obtain ⟨a', rfl⟩ := hs' a
+      obtain ⟨b', rfl⟩ := hs' b
+      simp [hn]⟩
+    infer_instance
+  obtain ⟨φ, hφ0, hφ⟩ := Submodule.exists_dual_map_eq_bot_of_lt_top hlt inferInstance
+  have hφf (x : V) : φ (f x) = 0 := by
+    have : φ (f x) ∈ (LinearMap.range f).map φ := ⟨f x, ⟨x, rfl⟩, rfl⟩
+    rw [hφ] at this
+    simpa using this
+  obtain ⟨x₀, hx₀⟩ := DFunLike.ne_iff.1 hφ0
+  let ψ : LinearMap.ker f →ₗ[K] Subalgebra.centralizer K {f} :=
+    LinearMap.codRestrict (Subalgebra.centralizer K {f}).toSubmodule
+      (LinearMap.smulRightₗ φ ∘ₗ (LinearMap.ker f).subtype) fun w ↦ by
+        rw [Subalgebra.mem_toSubmodule, Subalgebra.mem_centralizer_iff]
+        intro g hg
+        rw [Set.mem_singleton_iff.1 hg]
+        ext x
+        simp [hφf, LinearMap.mem_ker.1 w.2]
+  refine hker (Module.Finite.of_injective ψ fun w w' h ↦ ?_)
+  have : φ x₀ • (w : V) = φ x₀ • (w' : V) :=
+    congrArg (fun z : Subalgebra.centralizer K {f} ↦ (z : Module.End K V) x₀) h
+  exact Subtype.ext (smul_right_injective V hx₀ this)
+
+omit [Module.Finite K V] in
 /-- The centralizer dimension of a nilpotent endomorphism is the sum of squared
 successive kernel-dimension increases. Any bound with `f ^ n = 0` is allowed,
-including `n = 0` when the vector space is zero. -/
+including `n = 0` when the vector space is zero. For an infinite-dimensional vector space both
+sides are `0` by the `finrank` convention. -/
 theorem finrank_centralizer_eq_sum_sq_ker (f : Module.End K V) {n : ℕ}
     (hn : f ^ n = 0) :
     Module.finrank K (Subalgebra.centralizer K {f}) =
@@ -52,78 +112,92 @@ theorem finrank_centralizer_eq_sum_sq_ker (f : Module.End K V) {n : ℕ}
         (Module.finrank K (LinearMap.ker (f ^ (k + 1))) -
           Module.finrank K (LinearMap.ker (f ^ k))) ^ 2 := by
   classical
-  -- Evaluation makes the original vector space a module over the truncated algebra.
-  have hvan : ∀ p ∈ Ideal.span {(X ^ n : K[X])}, aeval f p = 0 := by
-    intro p hp
-    obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton.mp hp
-    simp [hn]
-  let ρ₀ : AdjoinRoot (X ^ n : K[X]) →ₐ[K] Module.End K V :=
-    Ideal.Quotient.liftₐ _ (aeval f) hvan
-  let A := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
-  let ρ : A →ₐ[K] Module.End K V := ρ₀.comp (AlgEquiv.toOpposite K _).symm.toAlgHom
-  let : Module A V := Module.compHom V ρ.toRingHom
-  have hact (a : A) (v : V) : a • v = ρ a v := rfl
-  let : IsScalarTower K A V := ⟨fun c a v => by
-    simp only [hact, map_smul, LinearMap.smul_apply]⟩
-  have hroot : ρ (op (AdjoinRoot.root (X ^ n : K[X]))) = f := by
-    -- The opposite equivalence cancels the opposite scalar in the action.
-    change ρ₀ (AdjoinRoot.root (X ^ n : K[X])) = f
-    exact (congrArg (fun g : K[X] →ₐ[K] Module.End K V => g X)
-      (Ideal.Quotient.liftₐ_comp (Ideal.span {(X ^ n : K[X])}) (aeval f) hvan)).trans
-        (aeval_X f)
-  have : Module.Finite A V := Module.Finite.of_restrictScalars_finite K A V
-  obtain ⟨r, len, hlen, ⟨e₀⟩⟩ :=
-    TauCeti.exists_linearEquiv_directSum_quotient_span_op_root_X_pow_pow (K := K) (n := n) V
-  let M (i : Fin r) := A ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}
-  let e := e₀.trans (DirectSum.linearEquivFunOnFintype A (Fin r) M)
-  let eK := e.restrictScalars K
-  -- Transport the scalar-linear endomorphism algebra to the finite block product.
-  have hgen : Algebra.adjoin K {op (AdjoinRoot.root (X ^ n : K[X]))} = ⊤ := by
-    have hset : unop ⁻¹' {AdjoinRoot.root (X ^ n : K[X])} =
-        {op (AdjoinRoot.root (X ^ n : K[X]))} := by
-      ext a
-      exact unop_injective.eq_iff' rfl
-    simpa only [Subalgebra.op_adjoin, Subalgebra.op_top, hset] using
-      congrArg Subalgebra.op (AdjoinRoot.adjoinRoot_eq_top (f := (X ^ n : K[X])))
-  have hscalar : Algebra.lsmul K K V (op (AdjoinRoot.root (X ^ n : K[X]))) = f := by
-    ext v
-    exact congrArg (fun g : Module.End K V => g v) hroot
-  have hdim : Module.finrank K (Subalgebra.centralizer K {f}) =
-      ∑ k ∈ Finset.range n, (Finset.univ.filter fun i => k < len i).card ^ 2 := by
-    have ec := TauCeti.centralizerLsmulAlgEquivEnd (M := V) _ hgen
-    rw [Set.image_singleton, hscalar] at ec
-    rw [ec.toLinearEquiv.finrank_eq, (e.conjAlgEquiv K).toLinearEquiv.finrank_eq,
-      TauCeti.finrank_end_pi_cyclic_root_pow len (fun i => (hlen i).2)]
-    exact Finset.sum_sum_min_eq_sum_sq_card_filter Finset.univ len n fun i _ => (hlen i).2
-  -- The same decomposition computes every kernel, hence identifies the columns intrinsically.
-  have hker (k : ℕ) : Module.finrank K (LinearMap.ker (f ^ k)) =
-      ∑ i, min k (len i) := by
-    let g := DistribSMul.toLinearMap K ((i : Fin r) → M i)
-      (op (AdjoinRoot.root (X ^ n : K[X]) ^ k))
-    have hpow (v : V) : op (AdjoinRoot.root (X ^ n : K[X]) ^ k) • v = (f ^ k) v := by
-      rw [hact, op_pow, map_pow, hroot]
-    have hinter (v : V) : eK ((f ^ k) v) = g (eK v) := by
-      rw [← hpow]
-      exact e.map_smul _ v
-    have heq : LinearMap.ker (f ^ k) = (LinearMap.ker g).comap eK.toLinearMap := by
+  by_cases hV : Module.Finite K V
+  · -- Evaluation makes the original vector space a module over the truncated algebra.
+    have hvan : ∀ p ∈ Ideal.span {(X ^ n : K[X])}, aeval f p = 0 := by
+      intro p hp
+      obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton.mp hp
+      simp [hn]
+    let ρ₀ : AdjoinRoot (X ^ n : K[X]) →ₐ[K] Module.End K V :=
+      Ideal.Quotient.liftₐ _ (aeval f) hvan
+    let A := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
+    let ρ : A →ₐ[K] Module.End K V := ρ₀.comp (AlgEquiv.toOpposite K _).symm.toAlgHom
+    let : Module A V := Module.compHom V ρ.toRingHom
+    have hact (a : A) (v : V) : a • v = ρ a v := rfl
+    let : IsScalarTower K A V := ⟨fun c a v => by
+      simp only [hact, map_smul, LinearMap.smul_apply]⟩
+    have hroot : ρ (op (AdjoinRoot.root (X ^ n : K[X]))) = f := by
+      -- The opposite equivalence cancels the opposite scalar in the action.
+      change ρ₀ (AdjoinRoot.root (X ^ n : K[X])) = f
+      exact (congrArg (fun g : K[X] →ₐ[K] Module.End K V => g X)
+        (Ideal.Quotient.liftₐ_comp (Ideal.span {(X ^ n : K[X])}) (aeval f) hvan)).trans
+          (aeval_X f)
+    have : Module.Finite A V := Module.Finite.of_restrictScalars_finite K A V
+    obtain ⟨r, len, hlen, ⟨e₀⟩⟩ :=
+      TauCeti.exists_linearEquiv_directSum_quotient_span_op_root_X_pow_pow (K := K) (n := n) V
+    let M (i : Fin r) := A ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}
+    let e := e₀.trans (DirectSum.linearEquivFunOnFintype A (Fin r) M)
+    let eK := e.restrictScalars K
+    -- Transport the scalar-linear endomorphism algebra to the finite block product.
+    have hgen : Algebra.adjoin K {op (AdjoinRoot.root (X ^ n : K[X]))} = ⊤ := by
+      have hset : unop ⁻¹' {AdjoinRoot.root (X ^ n : K[X])} =
+          {op (AdjoinRoot.root (X ^ n : K[X]))} := by
+        ext a
+        exact unop_injective.eq_iff' rfl
+      simpa only [Subalgebra.op_adjoin, Subalgebra.op_top, hset] using
+        congrArg Subalgebra.op (AdjoinRoot.adjoinRoot_eq_top (f := (X ^ n : K[X])))
+    have hscalar : Algebra.lsmul K K V (op (AdjoinRoot.root (X ^ n : K[X]))) = f := by
       ext v
-      simp only [LinearMap.mem_ker, Submodule.mem_comap, LinearEquiv.coe_coe,
-        ← hinter, eK.map_eq_zero_iff]
-    rw [(LinearEquiv.ofEq _ _ heq).finrank_eq,
-      (eK.ofSubmodule' (LinearMap.ker g)).finrank_eq]
-    exact TauCeti.finrank_ker_smul_pi_cyclic_root_pow len (fun i => (hlen i).2) k
-  rw [hdim]
-  apply Finset.sum_congr rfl
-  intro k _
-  congr 1
-  rw [hker, hker, ← Finset.sum_tsub_distrib Finset.univ
-    (fun i _ => min_le_min_right (len i) (Nat.le_succ k))]
-  have hcount := Finset.sum_boole (R := ℕ) (fun i => k < len i) Finset.univ
-  simp only [Nat.cast_id] at hcount
-  rw [← hcount]
-  apply Finset.sum_congr rfl
-  intro i _
-  split_ifs <;> omega
+      exact congrArg (fun g : Module.End K V => g v) hroot
+    have hdim : Module.finrank K (Subalgebra.centralizer K {f}) =
+        ∑ k ∈ Finset.range n, (Finset.univ.filter fun i => k < len i).card ^ 2 := by
+      have ec := TauCeti.centralizerLsmulAlgEquivEnd (M := V) _ hgen
+      rw [Set.image_singleton, hscalar] at ec
+      rw [ec.toLinearEquiv.finrank_eq, (e.conjAlgEquiv K).toLinearEquiv.finrank_eq,
+        TauCeti.finrank_end_pi_cyclic_root_pow len (fun i => (hlen i).2)]
+      exact Finset.sum_sum_min_eq_sum_sq_card_filter Finset.univ len n fun i _ => (hlen i).2
+    -- The same decomposition computes every kernel, hence identifies the columns intrinsically.
+    have hker (k : ℕ) : Module.finrank K (LinearMap.ker (f ^ k)) =
+        ∑ i, min k (len i) := by
+      let g := DistribSMul.toLinearMap K ((i : Fin r) → M i)
+        (op (AdjoinRoot.root (X ^ n : K[X]) ^ k))
+      have hpow (v : V) : op (AdjoinRoot.root (X ^ n : K[X]) ^ k) • v = (f ^ k) v := by
+        rw [hact, op_pow, map_pow, hroot]
+      have hinter (v : V) : eK ((f ^ k) v) = g (eK v) := by
+        rw [← hpow]
+        exact e.map_smul _ v
+      have heq : LinearMap.ker (f ^ k) = (LinearMap.ker g).comap eK.toLinearMap := by
+        ext v
+        simp only [LinearMap.mem_ker, Submodule.mem_comap, LinearEquiv.coe_coe,
+          ← hinter, eK.map_eq_zero_iff]
+      rw [(LinearEquiv.ofEq _ _ heq).finrank_eq,
+        (eK.ofSubmodule' (LinearMap.ker g)).finrank_eq]
+      exact TauCeti.finrank_ker_smul_pi_cyclic_root_pow len (fun i => (hlen i).2) k
+    rw [hdim]
+    apply Finset.sum_congr rfl
+    intro k _
+    congr 1
+    rw [hker, hker, ← Finset.sum_tsub_distrib Finset.univ
+      (fun i _ => min_le_min_right (len i) (Nat.le_succ k))]
+    have hcount := Finset.sum_boole (R := ℕ) (fun i => k < len i) Finset.univ
+    simp only [Nat.cast_id] at hcount
+    rw [← hcount]
+    apply Finset.sum_congr rfl
+    intro i _
+    split_ifs <;> omega
+  · -- `V` is infinite-dimensional and both sides vanish.
+    have hker : ¬ Module.Finite K (LinearMap.ker f) := fun hfin ↦
+      hV (finite_of_pow_eq_zero_of_finite_ker hn hfin)
+    -- Every positive power of `f` then has an infinite-dimensional kernel, so the right side is
+    -- `0`.
+    have hpow (k : ℕ) : ¬ Module.Finite K (LinearMap.ker (f ^ (k + 1))) := fun hfin ↦
+      hker (Module.Finite.iff_fg.2 (Submodule.FG.of_le (Module.Finite.iff_fg.1 hfin) (by
+        rw [pow_succ, Module.End.mul_eq_comp]
+        exact LinearMap.ker_le_ker_comp f (f ^ k))))
+    rw [Module.finrank_of_not_finite (not_finite_centralizer_of_pow_eq_zero hn hV)]
+    refine (Finset.sum_eq_zero fun k _ ↦ ?_).symm
+    rw [Module.finrank_of_not_finite (hpow k)]
+    simp
 
 /-- **The centralizer dimension of a nilpotent endomorphism** is `∑ⱼ (λ'ⱼ)²`, the sum of the
 squares of the parts of the conjugate `λ'` of its Jordan partition `λ`. -/

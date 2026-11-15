@@ -163,9 +163,9 @@ private theorem ae_edist_kernelEccentricity_le [SFinite μ] [SFinite ν] {π : M
       ((continuous_id.edist continuous_const).comp_aestronglyMeasurable hY) hsnd).symm
   rw [heX, heY, ENNReal.edist_le_iff_le_add_right]
   constructor
-  · refine (eLpNorm_mono_enorm hF fun q' ↦ ?_).trans (eLpNorm_add_le hp)
+  · refine (eLpNorm_mono_eNorm hF fun q' ↦ ?_).trans (eLpNorm_add_le hp)
     simpa [add_comm] using edist_triangle (ωX (q.1, q'.1)) (ωY (q.2, q'.2)) z₀
-  · refine (eLpNorm_mono_enorm hG fun q' ↦ ?_).trans (eLpNorm_add_le hp)
+  · refine (eLpNorm_mono_eNorm hG fun q' ↦ ?_).trans (eLpNorm_add_le hp)
     simpa [add_comm] using edist_triangle_left (ωY (q.2, q'.2)) z₀ (ωX (q.1, q'.1))
 
 /-- The difference of the eccentricities at the two ends of a coupling is almost everywhere
@@ -192,9 +192,9 @@ theorem eLpNorm_edist_kernelEccentricity_le_gromovWassersteinDistortion [SFinite
       gromovWassersteinDistortion p ωX ωY π := by
   rw [gromovWassersteinDistortion_def,
     eLpNorm_prod_eq_eLpNorm_eLpNorm (hπ.aestronglyMeasurable_edist hωX hωY)]
-  refine eLpNorm_mono_enorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_
+  refine eLpNorm_mono_eNorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_
   filter_upwards [ae_edist_kernelEccentricity_le hπ hp hωX hωY z₀] with q hq
-  simpa only [enorm_eq_self] using hq
+  simpa only [eNorm_eq_self] using hq
 
 /-- The Wasserstein distance between the two eccentricity distributions is at most the
 distortion of any coupling of the source measures. -/
@@ -270,12 +270,12 @@ theorem edist_gromovWassersteinSize_le_wassersteinEDist_map_kernelEccentricity [
     gromovWassersteinSize_eq_eLpNorm_of_map_eq hωY measurable_snd hσ.snd_eq,
     ENNReal.edist_le_iff_le_add_right]
   constructor
-  · refine (eLpNorm_mono_enorm measurable_fst.aestronglyMeasurable fun z ↦ ?_).trans
+  · refine (eLpNorm_mono_eNorm measurable_fst.aestronglyMeasurable fun z ↦ ?_).trans
       (eLpNorm_add_le hp)
-    simpa only [Pi.add_apply, enorm_eq_self] using ENNReal.le_add_edist z.1 z.2
-  · refine (eLpNorm_mono_enorm measurable_snd.aestronglyMeasurable fun z ↦ ?_).trans
+    simpa only [Pi.add_apply, eNorm_eq_self] using ENNReal.le_add_edist z.1 z.2
+  · refine (eLpNorm_mono_eNorm measurable_snd.aestronglyMeasurable fun z ↦ ?_).trans
       (eLpNorm_add_le hp)
-    simpa only [Pi.add_apply, enorm_eq_self, edist_comm z.1] using ENNReal.le_add_edist z.2 z.1
+    simpa only [Pi.add_apply, eNorm_eq_self, edist_comm z.1] using ENNReal.le_add_edist z.2 z.1
 
 /-- GW convergence implies Wasserstein convergence of eccentricity distributions, for every
 exponent `1 ≤ p`, including `∞`. The carriers and measures may vary with the index. -/

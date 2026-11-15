@@ -178,7 +178,7 @@ theorem coeff_formalGroup_sub_mem_augmentationIdeal (d : Fin 2 →₀ ℕ) :
 /-- Integers `cᵢ` with `∑_{0 < i < n} cᵢ (n.choose i / d_n) = 1`, for `n ≥ 2`. -/
 private def bezout (n : ℕ) : ℕ → ℤ :=
   if h : 2 ≤ n then
-    (exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one h)).choose
+    (gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one h)).choose
   else 0
 
 private theorem sum_bezout (n : ℕ+) :
@@ -186,7 +186,7 @@ private theorem sum_bezout (n : ℕ+) :
       bezout (n + 1) i = 1 := by
   have hn : 2 ≤ (n : ℕ) + 1 := by have := n.pos; omega
   simp only [bezout, hn, ↓reduceDIte]
-  simpa only [Nat.add_sub_cancel] using (exists_sum_natCast_mul_eq_one_of_gcd_eq_one
+  simpa only [Nat.add_sub_cancel] using (gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1
     (gcd_choose_div_lazardGcd_eq_one hn)).choose_spec
 
 /-- The **generator** `xₙ` of the indecomposables of the Lazard ring in degree `2n`: the integral

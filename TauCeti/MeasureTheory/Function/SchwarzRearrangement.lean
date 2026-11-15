@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
+-- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
@@ -399,10 +402,10 @@ theorem eLpNorm_schwarzRearrangement (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
   · rw [eLpNorm_exponent_zero hg, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top hf']
-    simp only [eLpNormEssSup_eq_essSup_enorm, enorm_eq_self, essSup_schwarzRearrangement]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf']
-  simp only [enorm_eq_self]
+    simp only [eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self, essSup_schwarzRearrangement]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hg,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
+  simp only [eNorm_eq_self]
   rw [lintegral_rpow_schwarzRearrangement μ hf (ENNReal.toReal_pos hp0 hptop)]
 
 /-- The Schwarz rearrangement of an a.e.-measurable function lies in `Lᵖ` exactly when the function
@@ -587,14 +590,14 @@ theorem eLpNorm_edist_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf : AEM
   have hg' := (measurable_schwarzRearrangement μ g).aemeasurable (μ := μ)
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top (hmeas hf' hg'), eLpNorm_exponent_top (hmeas hf hg),
-      eLpNormEssSup_eq_essSup_enorm, eLpNormEssSup_eq_essSup_enorm]
-    simp only [enorm_eq_self]
+      eLpNormEssSup_eq_essSup_eNorm, eLpNormEssSup_eq_essSup_eNorm]
+    simp only [eNorm_eq_self]
     exact essSup_le_of_ae_le _
       (.of_forall (edist_schwarzRearrangement_le_essSup μ f g))
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf' hg'),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hmeas hf hg)]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf' hg'),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop (hmeas hf hg)]
+  simp only [eNorm_eq_self]
   exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_schwarzRearrangement_le μ hf hg
     (by simpa using ENNReal.toReal_mono hptop hp)) (by positivity)
 

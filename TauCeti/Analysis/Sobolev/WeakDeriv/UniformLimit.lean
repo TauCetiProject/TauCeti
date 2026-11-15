@@ -91,9 +91,10 @@ theorem tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniform
   set ψ : 𝓓(⟨Ω, hΩ⟩, ℝ) := TestFunction.lineDerivCLM ℝ w φ
   have hcoe : (ψ : E → ℝ) = fun x ↦ lineDeriv ℝ (φ : E → ℝ) x w :=
     funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
-  have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ) hΩ
-    (fun i ↦ (hu i).continuousOn) hv.continuousOn ψ.continuous ψ.hasCompactSupport
-    ψ.tsupport_subset (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
+  have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ)
+    ψ.continuous ψ.hasCompactSupport
+    (Eventually.of_forall fun i ↦ (hu i).continuousOn.mono ψ.tsupport_subset)
+    (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
       ψ.tsupport_subset ψ.hasCompactSupport)).neg
   simp only [hcoe] at key
   rw [hvw.integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg] at key
@@ -145,12 +146,16 @@ theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteD
   filter_upwards [hC, hmid] with i hCi hi
   have h1 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
     ((hlocu i).integrable_smul_left_of_hasCompactSupport ha hac haΩ)
-    (φ.integrable_smul (hlocu i)) haK hφK' hφa (B := max C 0 * ‖w‖) fun x hx ↦
-      ((fderiv ℝ (u i) x).le_opNorm w).trans (by gcongr; exact (hCi x hx).trans (le_max_left _ _))
+    (φ.integrable_smul (hlocu i)) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
+    (ae_of_all _ fun x _ ↦ hφa x) (B := max C 0 * ‖w‖) (ae_of_all _ fun x hx ↦
+      ((fderiv ℝ (u i) x).le_opNorm w).trans
+        (by gcongr; exact (hCi x hx).trans (le_max_left _ _)))
   have h2 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
     (hlocv.integrable_smul_left_of_hasCompactSupport ha hac haΩ)
-    (φ.integrable_smul hlocv) haK hφK' hφa (B := max D 0 * ‖w‖) fun x hx ↦
-      ((fderiv ℝ v x).le_opNorm w).trans (by gcongr; exact (hD x hx).trans (le_max_left _ _))
+    (φ.integrable_smul hlocv) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
+    (ae_of_all _ fun x _ ↦ hφa x) (B := max D 0 * ‖w‖) (ae_of_all _ fun x hx ↦
+      ((fderiv ℝ v x).le_opNorm w).trans
+        (by gcongr; exact (hD x hx).trans (le_max_left _ _)))
   rw [dist_eq_norm] at hi ⊢
   have hsplit : ∫ x, a x • fderiv ℝ (u i) x w ∂μ - ∫ x, a x • fderiv ℝ v x w ∂μ =
       (∫ x, a x • fderiv ℝ (u i) x w ∂μ - ∫ x, φ x • fderiv ℝ (u i) x w ∂μ) +

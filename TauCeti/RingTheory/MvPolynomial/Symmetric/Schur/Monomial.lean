@@ -78,8 +78,6 @@ type.  It is the shape of the sorting argument in this file and has no other con
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2, where `s_λ = ∑_μ K_{λμ} m_μ` is read off
   the tableau definition.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "the `msymm`-to-`schurPoly` change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section

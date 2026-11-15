@@ -143,11 +143,11 @@ private theorem exists_le_one :
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
       fun U _ φ hφU hφ => ?_
-    rw [Measure.setLIntegral_rnDeriv hlam, ← enorm_neg, ← hrep]
+    rw [Measure.setLIntegral_rnDeriv hlam, ← eNorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin φ hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   congr 1
   refine integral_congr_ae ?_
@@ -174,8 +174,8 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
     have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φΩ x := by simp [φΩ]
     simp_rw [hdiv, hσ φΩ]
     refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
-    rw [← Real.enorm_eq_ofReal_abs, ← lintegral_indicator (hUV ▸ hV.measurableSet)]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    rw [← Real.eNorm_eq_ofReal_abs, ← lintegral_indicator (hUV ▸ hV.measurableSet)]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     by_cases hx : x ∈ ((↑) : Ω → E) ⁻¹' (U : Set E)
     · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
@@ -293,8 +293,8 @@ theorem ae_eq_polarDensity {σ : Ω → E} (hσ : LocallyIntegrable σ (variatio
 /-- The pairing of `u` with a test vector field `φ` on `Ω` is bounded by `∫ ‖φ‖ d|Du|`. -/
 theorem enorm_integral_divergenceCLM_mul_le_lintegral_enorm (φ : 𝓓(Ω, E)) :
     ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂variationMeasure μ Ω u := by
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, enorm_neg]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono_ae ?_)
+  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, eNorm_neg]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
   filter_upwards [ae_norm_polarDensity_eq_one hu hfin] with x hx
   rw [← ofReal_norm, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans_eq (by rw [hx, mul_one]))
