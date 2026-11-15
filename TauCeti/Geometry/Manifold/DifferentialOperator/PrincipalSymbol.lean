@@ -100,11 +100,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {x : M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-private theorem ker_evalAlgHom (x : M) :
-    RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) = smoothVanishingIdeal I x :=
-  Ideal.ext fun _ ↦ by simp
-
 /-! ### The commutator symbol -/
 
 variable (I) in
@@ -131,13 +126,13 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
   have hd (i : Fin m) : mvfderiv I (f i) x = smoothCotangentEquiv hx
       ((smoothVanishingIdeal I x).toCotangent
-        ⟨f i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (-f i x), by simp⟩) := by
+        ⟨f i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (-ContMDiffMap.evalAlgHom x (f i)), by simp⟩) := by
     rw [smoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc,
       mvfderiv_add ((f i).contMDiff.mdifferentiable (by simp) x) mdifferentiableAt_const,
       mvfderiv_const, add_zero]
   simp only [hd]
-  rw [smoothCommutatorSymbol, pointCommutatorSymbol_toCotangent _ (ker_evalAlgHom x).ge,
-    commutatorSymbol_add_algebraMap, ContMDiffMap.evalAlgHom_apply]
+  rw [smoothCommutatorSymbol, pointCommutatorSymbol_toCotangent_add_algebraMap _ (ker_evalAlgHom x),
+    ContMDiffMap.evalAlgHom_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem smoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}

@@ -554,6 +554,15 @@ theorem pointCommutatorSymbol_toCotangent (hJ : J ≤ RingHom.ker φ) {m : ℕ}
   rw [smul_eq_mul, Ideal.mul_top] at h
   exact sub_eq_zero.1 ((map_sub φ _ _).symm.trans (RingHom.mem_ker.1 (hJ h)))
 
+/-- When `J` is the kernel of `φ`, the point commutator symbol at the classes of
+`a₁ - φ(a₁), …, aₘ - φ(aₘ) ∈ J`, for arbitrary `aᵢ ∈ A`, is `φ([⋯[D, a₁], …, aₘ] 1)`. -/
+theorem pointCommutatorSymbol_toCotangent_add_algebraMap (hJ : RingHom.ker φ = J) {m : ℕ}
+    (D : differentialOperators 𝕜 A A A m) (a : Fin m → A) :
+    pointCommutatorSymbol φ e D (fun i ↦ e (J.toCotangent
+        ⟨a i + algebraMap 𝕜 A (-φ (a i)), hJ.le <| RingHom.mem_ker.2 <| by simp⟩)) =
+      φ (commutatorSymbol 𝕜 A A A m D a 1) := by
+  rw [pointCommutatorSymbol_toCotangent e hJ.ge, commutatorSymbol_add_algebraMap]
+
 /-- The point commutator symbol is symmetric. -/
 theorem pointCommutatorSymbol_comp_perm {m : ℕ}
     (D : differentialOperators 𝕜 A A A m) (v : Fin m → V) (σ : Equiv.Perm (Fin m)) :

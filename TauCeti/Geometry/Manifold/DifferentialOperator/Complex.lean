@@ -121,12 +121,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {x : M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-private theorem ker_complexEvalAlgHom (x : M) :
-    RingHom.ker (ContMDiffMap.complexEvalAlgHom x : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] ℂ) =
-      complexSmoothVanishingIdeal I x :=
-  Ideal.ext fun _ ↦ by simp
-
 /-! ### The commutator symbol -/
 
 variable (I) in
@@ -156,14 +150,15 @@ theorem complexSmoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
   have hc (c : ℂ) : ⇑(algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
   have hd (i : Fin m) : mvfderiv I (f i) x = complexSmoothCotangentEquiv hx
       ((complexSmoothVanishingIdeal I x).toCotangent
-        ⟨f i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-f i x), by simp⟩) := by
+        ⟨f i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-ContMDiffMap.complexEvalAlgHom x (f i)),
+          by simp⟩) := by
     rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc,
       mvfderiv_add ((f i).contMDiff.mdifferentiable (by simp) x) mdifferentiableAt_const,
       mvfderiv_const, add_zero]
   simp only [hd]
   rw [complexSmoothCommutatorSymbol,
-    pointCommutatorSymbol_toCotangent _ (ker_complexEvalAlgHom x).ge,
-    commutatorSymbol_add_algebraMap, ContMDiffMap.complexEvalAlgHom_apply]
+    pointCommutatorSymbol_toCotangent_add_algebraMap _ (ker_complexEvalAlgHom x),
+    ContMDiffMap.complexEvalAlgHom_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem complexSmoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -334,8 +329,8 @@ theorem complexSmoothPrincipalSymbol_one_mvfderiv (hx : I.IsInteriorPoint x)
         f x * (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 x := by
   rw [complexSmoothPrincipalSymbol_def, Nat.factorial_one, Nat.cast_one, inv_one, one_mul,
     complexSmoothCommutatorSymbol_mvfderiv hx _ fun _ ↦ f, ← Matrix.vec_single_eq_const f,
-    commutatorSymbol_one_apply, one_smul, smul_eq_mul, ContMDiffMap.coe_sub, Pi.sub_apply,
-    ContMDiffMap.coe_mul, Pi.mul_apply]
+    commutatorSymbol_one_apply]
+  simp
 
 /-- The principal symbol of a derivation `δ` of the complex smooth functions at `df_x` is
 `(δ f)(x)`. -/
