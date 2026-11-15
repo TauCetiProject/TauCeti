@@ -16,8 +16,10 @@ step, leaving the link of the new vertex as an explicit hypothesis. The hypothes
 remaining local calculation: once it is supplied, every vertex link in the subdivision has the
 required type.
 
-The new-vertex link calculation is kept separate because its proof is the geometric
-boundary-of-a-closed-star argument.
+The new-vertex link is the join of the boundary of the starred face with its link. Showing that
+it has the required type needs the links of all faces of a combinatorial manifold, which
+`CombinatorialManifold.Link` computes; there the hypothesis is discharged
+(`PreAbstractSimplicialComplex.IsCombinatorialManifold.stellarSubdivision`).
 -/
 
 public section

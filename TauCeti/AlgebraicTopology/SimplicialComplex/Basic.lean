@@ -97,6 +97,56 @@ vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
 
+/-- The image of a complex depends only on the values of the vertex map at its vertices. -/
+theorem map_congr {κ : Type*} [DecidableEq κ] {f g : ι → κ}
+    (h : ∀ x, ({x} : Finset ι) ∈ K → f x = g x) : K.map f = K.map g := by
+  refine SetLike.ext fun τ => ?_
+  simp only [mem_map_iff]
+  refine exists_congr fun ρ => and_congr_right fun hρ => ?_
+  rw [Finset.image_congr fun x hx => h x (singleton_mem_of_mem hρ hx)]
+
+/-- The vertices of an image complex are the images of the vertices. -/
+theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {y : κ} :
+    ({y} : Finset κ) ∈ K.map f ↔ ∃ x, ({x} : Finset ι) ∈ K ∧ f x = y := by
+  constructor
+  · intro h
+    obtain ⟨ρ, hρ, hρy⟩ := mem_map_iff.mp h
+    obtain ⟨x, hx⟩ := (K.isRelLowerSet_faces hρ).1
+    have hfx : f x ∈ ρ.image f := Finset.mem_image_of_mem f hx
+    rw [hρy, Finset.mem_singleton] at hfx
+    exact ⟨x, singleton_mem_of_mem hρ hx, hfx⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact mem_map_iff.mpr ⟨{x}, hx, Finset.image_singleton f x⟩
+
+/-- Under an injective vertex map, the image of a finite set is a face of the image complex
+exactly when the set is a face. -/
+theorem image_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ}
+    (hf : Function.Injective f) : σ.image f ∈ K.map f ↔ σ ∈ K := by
+  refine ⟨fun h => ?_, fun h => mem_map_iff.mpr ⟨σ, h, rfl⟩⟩
+  obtain ⟨ρ, hρ, hρσ⟩ := mem_map_iff.mp h
+  rwa [← Finset.image_injective hf hρσ]
+
+/-- An injective vertex map is injective on complexes. -/
+theorem map_injective {κ : Type*} [DecidableEq κ] {f : ι → κ} (hf : Function.Injective f) :
+    Function.Injective fun K : PreAbstractSimplicialComplex ι => K.map f := by
+  intro K L hKL
+  refine SetLike.ext fun σ => ?_
+  rw [← image_mem_map_iff (K := K) hf, ← image_mem_map_iff (K := L) hf]
+  exact iff_of_eq (congrArg (σ.image f ∈ ·) hKL)
+
+/-- The image of the void complex is void. -/
+@[simp]
+theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (⊥ : PreAbstractSimplicialComplex ι).map f = ⊥ :=
+  eq_bot_iff.mpr fun _ hτ => by
+    obtain ⟨_, hρ, -⟩ := mem_map_iff.mp hτ
+    exact hρ.elim
+
+/-- A complex with finitely many faces has finitely many vertices. -/
+theorem finite_setOf_singleton_mem (hK : K.faces.Finite) :
+    {x | ({x} : Finset ι) ∈ K}.Finite :=
+  hK.preimage Finset.singleton_injective.injOn
+
 end PreAbstractSimplicialComplex
 
 namespace TauCeti.PreAbstractSimplicialComplex
