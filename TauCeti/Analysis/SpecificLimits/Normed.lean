@@ -90,6 +90,21 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
 
 variable {K : Type*} [NormedField K]
 
+/-- The geometric series with coefficients `(k + 1)²` sums to `(1 + x) / (1 - x)³`. -/
+theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {x : K} (hx : ‖x‖ < 1) :
+    HasSum (fun k : ℕ ↦ ((k : K) + 1) ^ 2 * x ^ k) ((1 + x) / (1 - x) ^ 3) := by
+  have H := ((hasSum_sq_mul_geometric_of_norm_lt_one hx).add
+    ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left 2)).add
+    (hasSum_geometric_of_norm_lt_one hx)
+  convert H using 1
+  · ext k
+    ring
+  · have hne : 1 - x ≠ 0 := sub_ne_zero.mpr (fun h ↦ by
+      have : x = 1 := h.symm
+      simp only [this, norm_one, lt_self_iff_false] at hx)
+    field_simp
+    ring
+
 /-- The geometric series with coefficient and exponent both shifted by one. -/
 theorem tsum_natCast_succ_mul_pow_succ (r : K) (hr : ‖r‖ < 1) :
     (∑' d : ℕ, ((d + 1 : ℕ) : K) * r ^ (d + 1)) = r / (1 - r) ^ 2 := by
