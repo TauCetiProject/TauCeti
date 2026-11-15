@@ -36,9 +36,10 @@ added, in the normalization of the interior weak equation `TauCeti.IsWeakCRSolut
 No condition on `ξ` along `ℝ` is part of the definition. By Green's formula the boundary term of
 a classical solution is `∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds`, so restricting the test functions to
 `φ(s) ∈ Λ` weakly imposes `⟪Λ, J(s) ξ(s)⟫ = 0`, that is `J(s) ξ(s) ∈ Λᗮ`. This is the boundary
-condition `ξ(s) ∈ Λ` exactly when `J(s)⁻¹ Λᗮ = Λ`, for instance when `V = Λ ⊕ J(s) Λ` is an
-orthogonal decomposition, as for `J(s) = i` and `Λ = ℝⁿ ⊆ ℂⁿ` (the case of McDuff–Salamon and of
-the Checks below). For general `(J, Λ)` the two conditions differ: `Λ = ⊥` imposes nothing.
+condition `ξ(s) ∈ Λ` exactly when `J(s)⁻¹ Λᗮ = Λ`, for instance when `J(s)` is invertible and
+`V = Λ ⊕ J(s) Λ` is an orthogonal decomposition, as for `J(s) = i` and `Λ = ℝⁿ ⊆ ℂⁿ` (the case of
+McDuff–Salamon and of the Checks below). For general `(J, Λ)` the two conditions differ: `Λ = ⊥`
+imposes nothing.
 
 ## Main results
 
