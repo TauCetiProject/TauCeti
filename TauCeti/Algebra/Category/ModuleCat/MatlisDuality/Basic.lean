@@ -14,15 +14,16 @@ public import TauCeti.RingTheory.MatlisDuality.Basic
 Let `R` be a commutative ring and `A` an `R`-algebra. This file packages the Matlis dual
 `D_R = Hom_R(-, E)` of `TauCeti/RingTheory/MatlisDuality/Basic.lean` as contravariant
 additive functors between `ModuleCat A` and `ModuleCat Aᵐᵒᵖ`, and evaluation as a natural
-isomorphism on modules of finite length over `R`, when `E` is an injective hull of `R ⧸ J(R)` and
-`R ⧸ J(R)` is semisimple.
+isomorphism on modules of finite length over `R`, when `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has
+length one for every maximal ideal `𝔪`, for instance when `E` is an injective hull of `R ⧸ J(R)`
+and `R ⧸ J(R)` is semisimple.
 
 ## Main definitions
 
 * `ModuleCat.matlisDual` and `ModuleCat.matlisDualOp`: `D_R` as a contravariant additive functor
   from left to right modules and from right to left modules.
-* `TauCeti.IsInjectiveEnvelope.moduleCatEvalIso` and
-  `TauCeti.IsInjectiveEnvelope.moduleCatEvalIsoOp`: biduality for bundled modules of finite length.
+* `ModuleCat.matlisDualEvalIso` and `ModuleCat.matlisDualEvalIsoOp`: biduality for bundled modules
+  of finite length over `R`.
 
 ## Implementation notes
 
@@ -172,69 +173,61 @@ instance : (matlisDualOp R E (A := A)).Additive where
 
 end Right
 
-end ModuleCat
-
-namespace TauCeti
-
-open ModuleCat
-
-attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
-
 section Eval
 
-variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)] {E : Type v}
-  [AddCommGroup E] [Module R E] [Small.{v} R] {f : R ⧸ Ring.jacobson R →ₗ[R] E} {A : Type t}
-  [Ring A] [Algebra R A] (hf : IsInjectiveEnvelope f)
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
+  [Module.Injective R E] [Small.{v} R] {A : Type t} [Ring A] [Algebra R A]
+  (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 
-include hf
+include hE
 
 /-- Matlis biduality for a left `A`-module `M` of finite length over `R`, as an isomorphism
 `M ≅ D_R (D_R M)` of bundled modules. -/
-def IsInjectiveEnvelope.moduleCatEvalIso (M : ModuleCat.{v} A) (hM : IsFiniteLength R M) :
+def matlisDualEvalIso (M : ModuleCat.{max v w} A) (hM : IsFiniteLength R M) :
     M ≅ matlisDualOpObj R E (matlisDualObj R E M) :=
-  ((hf.matlisDualEvalEquiv hM).trans
+  ((MatlisDual.evalEquiv hE hM).trans
     ((MatlisDual.congrOp (matlisDualObjEquiv R E M)).trans
       (matlisDualOpObjEquiv R E (matlisDualObj R E M)).symm)).toModuleIso
 
 /-- The isomorphism `M ≅ D_R (D_R M)` is evaluation. -/
 @[simp]
-theorem IsInjectiveEnvelope.moduleCatEvalIso_hom_apply (M : ModuleCat.{v} A)
+theorem matlisDualEvalIso_hom_apply (M : ModuleCat.{max v w} A)
     (hM : IsFiniteLength R M) (x : M) (φ : matlisDualObj R E M) :
-    equivLinearMap R E _ (matlisDualOpObjEquiv R E _ ((hf.moduleCatEvalIso M hM).hom x)) φ =
+    equivLinearMap R E _ (matlisDualOpObjEquiv R E _ ((matlisDualEvalIso hE M hM).hom x)) φ =
       equivLinearMap R E M (matlisDualObjEquiv R E M φ) x := by
-  simp [moduleCatEvalIso]
+  simp [matlisDualEvalIso]
 
 /-- Matlis biduality for a right `A`-module `N` of finite length over `R`, as an isomorphism
 `N ≅ D_R (D_R N)` of bundled modules. -/
-def IsInjectiveEnvelope.moduleCatEvalIsoOp (N : ModuleCat.{v} Aᵐᵒᵖ) (hN : IsFiniteLength R N) :
+def matlisDualEvalIsoOp (N : ModuleCat.{max v w} Aᵐᵒᵖ) (hN : IsFiniteLength R N) :
     N ≅ matlisDualObj R E (matlisDualOpObj R E N) :=
-  ((hf.matlisDualEvalEquivOp (A := A) hN).trans
+  ((MatlisDual.evalEquivOp (A := A) hE hN).trans
     ((MatlisDual.congr (matlisDualOpObjEquiv R E N)).trans
       (matlisDualObjEquiv R E (matlisDualOpObj R E N)).symm)).toModuleIso
 
 /-- The isomorphism `N ≅ D_R (D_R N)` is evaluation. -/
 @[simp]
-theorem IsInjectiveEnvelope.moduleCatEvalIsoOp_hom_apply (N : ModuleCat.{v} Aᵐᵒᵖ)
+theorem matlisDualEvalIsoOp_hom_apply (N : ModuleCat.{max v w} Aᵐᵒᵖ)
     (hN : IsFiniteLength R N) (x : N) (φ : matlisDualOpObj R E N) :
-    equivLinearMap R E _ (matlisDualObjEquiv R E _ ((hf.moduleCatEvalIsoOp N hN).hom x)) φ =
+    equivLinearMap R E _ (matlisDualObjEquiv R E _ ((matlisDualEvalIsoOp hE N hN).hom x)) φ =
       equivLinearMap R E N (matlisDualOpObjEquiv R E N φ) x := by
-  simp [moduleCatEvalIsoOp]
+  simp [matlisDualEvalIsoOp]
 
 /-- The isomorphism `M ≅ D_R (D_R M)` is natural in `M`. -/
-theorem IsInjectiveEnvelope.moduleCatEvalIso_hom_naturality {M M' : ModuleCat.{v} A} (g : M ⟶ M')
+theorem matlisDualEvalIso_hom_naturality {M M' : ModuleCat.{max v w} A} (g : M ⟶ M')
     (hM : IsFiniteLength R M) (hM' : IsFiniteLength R M') :
-    g ≫ (hf.moduleCatEvalIso M' hM').hom =
-      (hf.moduleCatEvalIso M hM).hom ≫ matlisDualOpMap R E (matlisDualMap R E g) := by
+    g ≫ (matlisDualEvalIso hE M' hM').hom =
+      (matlisDualEvalIso hE M hM).hom ≫ matlisDualOpMap R E (matlisDualMap R E g) := by
   ext x
   apply (matlisDualOpObjEquiv R E _).injective
   ext φ
   simp
 
 /-- The isomorphism `N ≅ D_R (D_R N)` is natural in `N`. -/
-theorem IsInjectiveEnvelope.moduleCatEvalIsoOp_hom_naturality {N N' : ModuleCat.{v} Aᵐᵒᵖ}
+theorem matlisDualEvalIsoOp_hom_naturality {N N' : ModuleCat.{max v w} Aᵐᵒᵖ}
     (g : N ⟶ N') (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
-    g ≫ (hf.moduleCatEvalIsoOp N' hN').hom =
-      (hf.moduleCatEvalIsoOp N hN).hom ≫ matlisDualMap R E (matlisDualOpMap R E g) := by
+    g ≫ (matlisDualEvalIsoOp hE N' hN').hom =
+      (matlisDualEvalIsoOp hE N hN).hom ≫ matlisDualMap R E (matlisDualOpMap R E g) := by
   ext x
   apply (matlisDualObjEquiv R E _).injective
   ext φ
@@ -242,17 +235,17 @@ theorem IsInjectiveEnvelope.moduleCatEvalIsoOp_hom_naturality {N N' : ModuleCat.
 
 /-- Evaluation on the dual `D_R M` of `M` is precomposition with the inverse of evaluation on `M`.
 This is the triangle identity of the Matlis duality. -/
-theorem IsInjectiveEnvelope.moduleCatEvalIsoOp_matlisDualObj_hom (M : ModuleCat.{v} A)
+theorem matlisDualEvalIsoOp_matlisDualObj_hom (M : ModuleCat.{max v w} A)
     (hM : IsFiniteLength R M) (hM' : IsFiniteLength R (matlisDualObj R E M)) :
-    (hf.moduleCatEvalIsoOp (A := A) (matlisDualObj R E M) hM').hom =
-      matlisDualMap R E (hf.moduleCatEvalIso M hM).inv := by
+    (matlisDualEvalIsoOp hE (A := A) (matlisDualObj R E M) hM').hom =
+      matlisDualMap R E (matlisDualEvalIso hE M hM).inv := by
   ext φ
   apply (matlisDualObjEquiv R E _).injective
   ext Ψ
-  obtain ⟨x, rfl⟩ : ∃ x, (hf.moduleCatEvalIso M hM).hom x = Ψ :=
-    ⟨(hf.moduleCatEvalIso M hM).inv Ψ, by simp⟩
+  obtain ⟨x, rfl⟩ : ∃ x, (matlisDualEvalIso hE M hM).hom x = Ψ :=
+    ⟨(matlisDualEvalIso hE M hM).inv Ψ, (matlisDualEvalIso hE M hM).inv_hom_id_apply Ψ⟩
   simp
 
 end Eval
 
-end TauCeti
+end ModuleCat
