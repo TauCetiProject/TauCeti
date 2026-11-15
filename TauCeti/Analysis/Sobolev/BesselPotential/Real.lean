@@ -129,7 +129,7 @@ theorem coeFn_toLp_inclusion_ae_eq_reValue (hs : 0 ≤ s) {u : H^{s}(E)}
     (hu : u ∈ realSubmodule E s hs) :
     (inclusion hs u).toLp =ᵐ[volume] fun x ↦ (reValue u x : ℂ) := by
   filter_upwards [hu] with x hx
-  exact Complex.ext (by simp [reValue_apply hs]) (by simp [hx])
+  exact Complex.ext (by simp [reValue_apply hs]) (by simpa using hx)
 
 /-- The real part of an element of the real subspace of `H^s(E)` is a real `H^s` function. -/
 theorem reValue_mem_realSobolevFunctions (hs : 0 ≤ s) {u : H^{s}(E)}
@@ -143,7 +143,7 @@ theorem eq_of_reValue_ae_eq (hs : 0 ≤ s) {u v : H^{s}(E)} (hu : u ∈ realSubm
   refine toLp_inclusion_injective hs (Lp.ext ?_)
   filter_upwards [coeFn_toLp_inclusion_ae_eq_reValue hs hu,
     coeFn_toLp_inclusion_ae_eq_reValue hs hv, h] with x h₁ h₂ h₃
-  simp [h₁, h₂, h₃]
+  rw [h₁, h₂, h₃]
 
 /-- The `L²` function of the element of `H^s(E)` defined by a real `H^s` function `f` is `f`,
 almost everywhere. -/
@@ -176,7 +176,7 @@ theorem coeFn_toLp_inclusion_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ}
 theorem reValue_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
     reValue (ofRealSobolev hf hs : H^{s}(E)) =ᵐ[volume] f := by
   filter_upwards [coeFn_toLp_inclusion_ofRealSobolev hs hf] with x hx
-  simp [reValue_apply hs, hx]
+  rw [reValue_apply hs, hx, Complex.ofReal_re]
 
 /-- An element of the real subspace is recovered from its real part by `ofRealSobolev`. -/
 theorem ofRealSobolev_reValue (hs : 0 ≤ s) (u : realSubmodule E s hs) :
@@ -201,7 +201,8 @@ theorem continuous_integral_reValue_mul {ψ : E → ℝ} (hψ : MemLp ψ 2 volum
     filter_upwards [hΨ] with x hx
     simp [reValue_apply hs, hx, mul_comm]
   simp_rw [heq]
-  exact RCLike.continuous_re.comp (continuous_const.inner (continuous_toLp_inclusion hs))
+  exact RCLike.continuous_re.comp (continuous_const.inner
+    ((inclusionLp hs).continuous.congr fun u ↦ (toLp_inclusion hs u).symm))
 
 /-- The real subspace of `H^s(E)` is closed. -/
 theorem isClosed_realSubmodule (hs : 0 ≤ s) : IsClosed (realSubmodule E s hs : Set H^{s}(E)) := by
@@ -209,7 +210,8 @@ theorem isClosed_realSubmodule (hs : 0 ≤ s) : IsClosed (realSubmodule E s hs :
   set T : H^{s}(E) → Lp ℝ 2 (volume : Measure E) :=
     fun u ↦ Complex.imCLM.compLp (inclusion hs u).toLp
   have hT : Continuous T :=
-    (Complex.imCLM.compLpL 2 (volume : Measure E)).continuous.comp (continuous_toLp_inclusion hs)
+    (Complex.imCLM.compLpL 2 (volume : Measure E)).continuous.comp
+      ((inclusionLp hs).continuous.congr fun u ↦ (toLp_inclusion hs u).symm)
   have hset : (realSubmodule E s hs : Set H^{s}(E)) = T ⁻¹' {0} := by
     ext u
     simp only [SetLike.mem_coe, mem_realSubmodule_iff, Set.mem_preimage, Set.mem_singleton_iff, T]
@@ -218,11 +220,11 @@ theorem isClosed_realSubmodule (hs : 0 ≤ s) : IsClosed (realSubmodule E s hs :
     · intro h
       filter_upwards [Complex.imCLM.coeFn_compLp (p := 2) (μ := volume) (inclusion hs u).toLp,
         h] with x h₁ h₂
-      simp [h₁, h₂]
+      rw [h₁, Complex.imCLM_apply, h₂, Pi.zero_apply]
     · intro h
       filter_upwards [Complex.imCLM.coeFn_compLp (p := 2) (μ := volume) (inclusion hs u).toLp,
         h] with x h₁ h₂
-      simpa [h₂] using h₁.symm
+      rw [← Complex.imCLM_apply, ← h₁, h₂, Pi.zero_apply]
   rw [hset]
   exact isClosed_singleton.preimage hT
 

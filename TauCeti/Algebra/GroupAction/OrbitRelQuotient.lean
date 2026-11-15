@@ -110,7 +110,7 @@ private lemma eq_of_bot_orbitRel {x y : X}
   exact hsmul.symm
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
-noncomputable def MulAction.orbitRelQuotientBotEquiv :
+def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
   { toFun := Quotient.lift (fun x : X => x) fun _ _ h => eq_of_bot_orbitRel h
     invFun := Quotient.mk''
@@ -451,7 +451,7 @@ lemma MulAction.normalizerOrbitRelQuotientEquiv_symm_apply (H : Subgroup G)
   by simp [MulAction.normalizerOrbitRelQuotientEquiv]
 
 /-- The normalizer action on the orbit quotient as a permutation representation. -/
-noncomputable def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizer (H : Set G) →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) where
   toFun := MulAction.normalizerOrbitRelQuotientEquiv H
@@ -493,7 +493,7 @@ lemma MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem
   exact Quotient.sound' ⟨⟨(g : G), hg⟩, rfl⟩
 
 /-- The action of the normalizer on an orbit quotient descends to `N(H) / H`. -/
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizerQuotient H →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) :=
   Subgroup.normalizerQuotientLift H (MulAction.normalizerOrbitRelQuotientPermHom (X := X) H)
@@ -511,7 +511,7 @@ lemma MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup
 
 /-- The normalizer quotient `N(H) / H` acts on the quotient by `H`-orbits. -/
 @[implicit_reducible]
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
     MulAction (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
   MulAction.compHom (MulAction.orbitRel.Quotient H X)
     (MulAction.normalizerQuotientOrbitRelQuotientPermHom (X := X) H)
@@ -858,12 +858,16 @@ theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient 
   (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
+@[to_additive AddAction.comp_orbitRelQuotientLift
+  /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/]
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
     h ∘ MulAction.orbitRelQuotientLift f hf =
       MulAction.orbitRelQuotientLift (h ∘ f) fun g x ↦ congrArg h (hf g x) :=
   MulAction.eq_orbitRelQuotientLift_iff.2 (rfl)
 
 /-- The descent of a pair of invariant maps is the pair of their descents. -/
+@[to_additive AddAction.orbitRelQuotientLift_prodMk
+  /-- The descent of a pair of invariant maps is the pair of their descents. -/]
 theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
     (hf' : ∀ (g : G) (x : X), f' (g • x) = f' x) :
     MulAction.orbitRelQuotientLift (fun x ↦ (f x, f' x))
@@ -1074,6 +1078,7 @@ theorem orbitRelQuotientMap_mk (s : S) :
 
 /-- The orbit map of an invariant subset composed with the orbit projection of `S` is the orbit
 projection of `X` restricted to `S`. -/
+@[simp]
 theorem orbitRelQuotientMap_comp_mk :
     S.orbitRelQuotientMap ∘ Quotient.mk (orbitRel H S) =
       Quotient.mk (orbitRel G X) ∘ Subtype.val :=

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
+public import TauCeti.CategoryTheory.Limits.Shapes.Kernels
 
 /-!
 # Kernel–cokernel pairs
@@ -48,6 +49,9 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.IsKernelCokernelPair.op`, `TauCeti.isKernelCokernelPair_op_iff` and
   `TauCeti.isKernelCokernelPair_unop_iff`: the notion is self-dual, which is what makes the
   Bühler axioms transport to the opposite category.
+* `TauCeti.IsKernelCokernelPair.isPushout_of_isZero`: the square of the deflation of a
+  kernel–cokernel pair against a zero object is a pushout, by
+  `CategoryTheory.IsPushout.of_isColimit_cokernelCofork`.
 * `TauCeti.IsKernelCokernelPair.of_isIso_f_of_isZero` and
   `TauCeti.IsKernelCokernelPair.of_isIso_g_of_isZero`: an isomorphism is both an inflation and
   a deflation.
@@ -170,6 +174,13 @@ theorem eq_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k 
   rw [← cancel_epi S.g, hl, h.g_desc]
 
 end Factorizations
+
+/-- **The cokernel square of a kernel–cokernel pair against a zero object is a pushout**: for a
+kernel–cokernel pair `X₁ ⟶ X₂ ⟶ X₃` and a zero object `Y`, the square with `X₁ ⟶ Y ⟶ X₃` is a
+pushout square, as `X₂ ⟶ X₃` is a cokernel of `X₁ ⟶ X₂`. -/
+theorem isPushout_of_isZero (h : IsKernelCokernelPair S) {Y : C} (hY : IsZero Y) :
+    IsPushout S.f (0 : S.X₁ ⟶ Y) S.g (0 : Y ⟶ S.X₃) :=
+  IsPushout.of_isColimit_cokernelCofork h.gIsCokernel hY
 
 open ZeroObject in
 /-- **A kernel–cokernel pair has homology** in a category with a zero object: the cycles are the
