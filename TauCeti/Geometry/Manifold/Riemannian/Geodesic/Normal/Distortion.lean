@@ -209,6 +209,7 @@ private theorem norm_riemannianLog_sub_le_of_edist_lt {p : M} {R c : ℝ}
   rwa [← ofReal_norm, ← ENNReal.ofReal_mul hc0.le,
     ENNReal.ofReal_le_ofReal_iff (by positivity)] at hle
 
+omit [T2Space M] in
 /-- **The exponential map nearly preserves distances near the origin.** For every `c > 1`, on a
 sufficiently small normal ball the exponential map distorts extended distances by at most the
 factor `c` in each direction: `edist v w ≤ c * edist (exp_p v) (exp_p w)` and
