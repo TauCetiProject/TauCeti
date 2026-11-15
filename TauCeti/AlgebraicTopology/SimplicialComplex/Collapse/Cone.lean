@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.FaceCount
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Cone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
-import Mathlib.Order.Preorder.Finite
 
 /-!
 # A finite cone collapses to its apex
@@ -51,17 +50,6 @@ termination measure.
 public section
 
 namespace PreAbstractSimplicialComplex
-
-/-- A finite complex with a face missing `v` has one that is maximal among the faces missing
-`v`. -/
-private theorem exists_maximal_notMem_of_mem {ι : Type*}
-    {K : _root_.PreAbstractSimplicialComplex ι} {v : ι} {σ : Finset ι} (hfin : K.faces.Finite)
-    (hσ : σ ∈ K) (hv : v ∉ σ) :
-    ∃ τ ∈ K, v ∉ τ ∧ ∀ ⦃ω : Finset ι⦄, ω ∈ K → v ∉ ω → τ ⊆ ω → ω = τ := by
-  obtain ⟨τ, -, hτ⟩ :=
-    (hfin.subset fun _ hρ => hρ.1 : {ρ : Finset ι | ρ ∈ K ∧ v ∉ ρ}.Finite).exists_le_maximal
-      ⟨hσ, hv⟩
-  exact ⟨τ, hτ.prop.1, hτ.prop.2, fun _ hω hvω hτω => hτ.eq_of_ge ⟨hω, hvω⟩ hτω⟩
 
 section IsCone
 

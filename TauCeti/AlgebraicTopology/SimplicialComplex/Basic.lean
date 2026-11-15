@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Order.Preorder.Finite
 
 /-!
 # Basic abstract simplicial complex API
@@ -96,6 +97,15 @@ to say that a vertex is *unused* by a complex, as needed when a construction adj
 vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
+
+/-- A finite complex with a face missing `v` has one that is maximal among the faces missing
+`v`. -/
+theorem exists_maximal_notMem_of_mem (hfin : K.faces.Finite) (hσ : σ ∈ K) (hv : v ∉ σ) :
+    ∃ τ ∈ K, v ∉ τ ∧ ∀ ⦃ω : Finset ι⦄, ω ∈ K → v ∉ ω → τ ⊆ ω → ω = τ := by
+  obtain ⟨τ, -, hτ⟩ :=
+    (hfin.subset fun _ hρ => hρ.1 : {ρ : Finset ι | ρ ∈ K ∧ v ∉ ρ}.Finite).exists_le_maximal
+      ⟨hσ, hv⟩
+  exact ⟨τ, hτ.prop.1, hτ.prop.2, fun _ hω hvω hτω => hτ.eq_of_ge ⟨hω, hvω⟩ hτω⟩
 
 end PreAbstractSimplicialComplex
 
