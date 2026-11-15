@@ -90,6 +90,32 @@ private theorem exp_logModulus {z : ℂ} (hz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0) :
   rw [logModulus, ← sq_norm_sectionValue, Real.log_pow, Nat.cast_ofNat,
     mul_div_cancel_left₀ _ two_ne_zero, Real.exp_log h0]
 
+private theorem contDiffAt_logModulus (hx : ContDiff ℝ ∞ x) {z : ℂ}
+    (hz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0) : ContDiffAt ℝ ∞ (logModulus x) z := by
+  have h2 := contDiff_euclidean.1 hx 2
+  have h3 := contDiff_euclidean.1 hx 3
+  have hs : ContDiff ℝ ∞ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by fun_prop
+  exact (hs.contDiffAt.log (mul_ne_zero four_ne_zero hz)).div_const 2
+
+/-- The section takes the value `c` exactly when its real coordinates are `c.re / 2` and
+`c.im / 2`. -/
+private theorem sectionValue_eq_iff {z c : ℂ} :
+    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
+  rw [sectionValue_apply, Complex.ext_iff]
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  constructor <;> rintro ⟨h2, h3⟩ <;> constructor <;> linarith
+
+/-- In the trivialization untwisting the winding phase, a section `|α|` times the winding phase
+is the positive real function `|α| = exp ψ`, with coordinates `(exp ψ / 2, 0)`. -/
+private theorem gaugeTransform_inv_windingPhase_apply {w : ℂ}
+    (hw : sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
+    (hw' : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0) :
+    gaugeTransform (windingPhase m)⁻¹ x w 2 = Real.exp (logModulus x w) / 2 ∧
+      gaugeTransform (windingPhase m)⁻¹ x w 3 = 0 := by
+  have hs := sectionValue_gaugeTransform_inv_windingPhase hw
+  rw [← exp_logModulus hw', sectionValue_eq_iff, ofReal_re, ofReal_im, zero_div] at hs
+  exact hs
+
 /-- The field `(-∂₂ g, ∂₁ g, (exp g - 1) x_ref)` determined by a real function `g`, the
 logarithmic modulus of the section in the end region. -/
 private def modelField (f : ContDiffBump (0 : ℝ)) (m : ℕ) (g : ℂ → ℝ) (z : ℂ) :
@@ -148,32 +174,11 @@ private theorem sub_referenceField_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
     exact conjCLE.contDiff.contDiffAt.comp z (contDiffAt_windingPhase m hz₀)
   have hysol : equation y z = 0 :=
     (equation_gaugeTransform_eq_zero_iff hinv fun i ↦ (hxd i).differentiable (by simp) z).2 hsol
-  -- In the end trivialization the section is the real function `|α| = exp ψ`.
   have hsec : ∀ᶠ w in 𝓝 z, y w 2 = Real.exp (logModulus x w) / 2 ∧ y w 3 = 0 := by
     filter_upwards [hphase, hpos] with w hw hw'
-    have h1 : ((windingPhase m w)⁻¹ : Circle) * (windingPhase m w : ℂ) = 1 := by
-      rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-    have hs : sectionValue y w = ‖sectionValue x w‖ := by
-      rw [sectionValue_gaugeTransform, Pi.inv_apply]
-      nth_rw 1 [hw]
-      rw [mul_left_comm, h1, mul_one]
-    rw [sectionValue_apply, ← exp_logModulus hw'] at hs
-    constructor
-    · have := congrArg Complex.re hs
-      simp only [mul_re, add_re, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
-      linarith
-    · have := congrArg Complex.im hs
-      simp only [mul_im, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
-      linarith
-  have hψ : DifferentiableAt ℝ (logModulus x) z := by
-    have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z :=
-      ((((hxd 2).differentiable (by simp) z).pow 2).add
-        (((hxd 3).differentiable (by simp) z).pow 2)).const_mul 4
-    have hfun : logModulus x = fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) * 2⁻¹ := by
-      funext w
-      rw [logModulus, div_eq_mul_inv]
-    rw [hfun]
-    exact (hs.log (by simpa using hpos.self_of_nhds)).mul_const _
+    exact gaugeTransform_inv_windingPhase_apply hw hw'
+  have hψ : DifferentiableAt ℝ (logModulus x) z :=
+    (contDiffAt_logModulus hx hpos.self_of_nhds).differentiableAt (by simp)
   obtain ⟨hy0, hy1⟩ := connection_eq_of_section_eq_exp hψ hysol hsec
   -- The end trivialization fixes the connection coordinates of `x - x_ref`.
   have hiso : y z - vacuumField z =
@@ -188,23 +193,16 @@ private theorem sub_referenceField_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
   have hsx : sectionValue x z = ‖sectionValue x z‖ * sectionValue (referenceField f m) z := by
     rw [sectionValue_referenceField, referenceSection_eq_phase f m hrOut, ← coe_windingPhase m hz₀]
     exact hphase.self_of_nhds
-  rw [← exp_logModulus hpos.self_of_nhds, sectionValue_apply, sectionValue_apply] at hsx
-  have hs2 := congrArg Complex.re hsx
-  have hs3 := congrArg Complex.im hsx
-  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
-    im_ofNat] at hs2 hs3
-  rw [modelField]
+  rw [← exp_logModulus hpos.self_of_nhds, sectionValue_eq_iff, re_ofReal_mul,
+    im_ofReal_mul] at hsx
+  obtain ⟨hs2, hs3⟩ := hsx
+  obtain ⟨hr2, hr3⟩ := sectionValue_eq_iff.1 (rfl : sectionValue (referenceField f m) z = _)
   ext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Fin.isValue, PiLp.sub_apply, Matrix.cons_val_zero]
-    linarith
-  · simp only [Fin.mk_one, Fin.isValue, PiLp.sub_apply, Matrix.cons_val_one,
-      Matrix.cons_val_zero]
-    linarith
-  · simp only [Fin.reduceFinMk, Fin.isValue, PiLp.sub_apply, Matrix.cons_val]
-    linear_combination hs2 / 2
-  · simp only [Fin.reduceFinMk, Fin.isValue, PiLp.sub_apply, Matrix.cons_val]
-    linear_combination hs3 / 2
+  fin_cases i <;> simp [modelField]
+  · linarith
+  · linarith
+  · linear_combination hs2 - Real.exp (logModulus x z) * hr2
+  · linear_combination hs3 - Real.exp (logModulus x z) * hr3
 
 /-! ### The cut-off logarithmic modulus -/
 
@@ -217,9 +215,6 @@ private def cutoffLogModulus (b : ContDiffBump (0 : ℂ)) (x : ℂ → Euclidean
 private theorem contDiff_cutoffLogModulus (b : ContDiffBump (0 : ℂ)) (hx : ContDiff ℝ ∞ x)
     (hb : ∀ z, b.rIn - 1 ≤ ‖z‖ → 1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
     ContDiff ℝ ∞ (cutoffLogModulus b x) := by
-  have h2 := contDiff_euclidean.1 hx 2
-  have h3 := contDiff_euclidean.1 hx 3
-  have hs : ContDiff ℝ ∞ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by fun_prop
   refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
   rcases lt_or_ge ‖z‖ b.rIn with hz | hz
   · -- The cutoff factor vanishes near `z`.
@@ -227,10 +222,8 @@ private theorem contDiff_cutoffLogModulus (b : ContDiffBump (0 : ℂ)) (hx : Con
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hz)] with w hw
     rw [cutoffLogModulus, b.one_of_mem_closedBall (ball_subset_closedBall hw), sub_self,
       zero_mul]
-  · have hz' : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≠ 0 := (hb z (by linarith)).trans_lt' one_half_pos |>.ne'
-    have hlog : ContDiffAt ℝ ∞ (logModulus x) z :=
-      (hs.contDiffAt.log hz').div_const 2
-    exact (contDiffAt_const.sub b.contDiff.contDiffAt).mul hlog
+  · have hz' : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h ↦ by linarith [hb z (by linarith)]
+    exact (contDiffAt_const.sub b.contDiff.contDiffAt).mul (contDiffAt_logModulus hx hz')
 
 private theorem cutoffLogModulus_eventuallyEq (b : ContDiffBump (0 : ℂ)) {z : ℂ}
     (hz : b.rOut < ‖z‖) : cutoffLogModulus b x =ᶠ[𝓝 z] logModulus x := by
@@ -290,34 +283,30 @@ private theorem hasCompactSupport_cutoffLogModulus_remainder (b : ContDiffBump (
     intro h
     simp only [t, h, mul_zero, lt_self_iff_false] at ht
   have heq := cutoffLogModulus_eventuallyEq (x := x) b hz
-  have hs : ContDiff ℝ ∞ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
-    have h3 := hxd 3
-    fun_prop
   -- `Δ log |α| = (|α|² - 1) / 8` off the zeros of `α`.
   have hΔ : Δ (logModulus x) z = (t - 1) / 8 := by
-    have hlog : ContDiffAt ℝ 2 (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z :=
-      (hs.contDiffAt.log ht.ne').of_le (by norm_cast)
-    have hfun : logModulus x = (2⁻¹ : ℝ) • fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
+    have hfun : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) = (2 : ℝ) • logModulus x := by
       funext w
-      simp [logModulus, div_eq_inv_mul]
-    rw [hfun, InnerProductSpace.laplacian_smul _ hlog, laplacian_log_normSq_of_equation_eq_zero
-      ((hxd 2).contDiffAt.of_le (by norm_cast)) ((hxd 3).contDiffAt.of_le (by norm_cast)) hα
-      (.of_forall hsol), smul_eq_mul]
-    ring
+      rw [Pi.smul_apply, smul_eq_mul, logModulus, mul_div_cancel₀ _ two_ne_zero]
+    have h := laplacian_log_normSq_of_equation_eq_zero ((hxd 2).contDiffAt.of_le (by norm_cast))
+      ((hxd 3).contDiffAt.of_le (by norm_cast)) hα (.of_forall hsol)
+    rw [hfun, InnerProductSpace.laplacian_smul _
+      ((contDiffAt_logModulus hx hα).of_le (by norm_cast)), smul_eq_mul] at h
+    linear_combination h / 2
   have hexp : Real.exp (2 * logModulus x z) = t := by
     rw [logModulus, mul_div_cancel₀ _ two_ne_zero, Real.exp_log ht]
   rw [(InnerProductSpace.laplacian_congr_nhds heq).self_of_nhds, heq.self_of_nhds, hΔ, hexp,
     logModulus]
   ring
 
-/-- **The nonlinearity lies in `H^(2n)` with `g`.** For a square integrable `g` with
-`|g| ≤ 1 / 2`, the function `exp (2g) - 1 - 2g` lies in `H^(2n)` whenever `g` does: for `n = 0`
-because `|exp (2g) - 1 - 2g| ≤ 4 g² ≤ 2 |g|`, and for `n ≥ 1` by the exponential on the Sobolev
-algebra. -/
+/-- **The nonlinearity lies in `H^(2n)` with `g`.** For `g` with `|g| ≤ 1 / 2`, the function
+`exp (2g) - 1 - 2g` lies in `H^(2n)` whenever `g` does: for `n = 0` because
+`|exp (2g) - 1 - 2g| ≤ 4 g² ≤ 2 |g|` and `g` is square integrable, and for `n ≥ 1` by the
+exponential on the Sobolev algebra. -/
 private theorem exp_two_mul_sub_one_sub_mem_realSobolevFunctions {g : ℂ → ℝ}
-    (hL : MemLp g 2 volume) (hbd : ∀ z, |g z| ≤ 1 / 2) {n : ℕ}
-    (hn : g ∈ realSobolevFunctions ℂ (2 * n) 2) :
+    (hbd : ∀ z, |g z| ≤ 1 / 2) {n : ℕ} (hn : g ∈ realSobolevFunctions ℂ (2 * n) 2) :
     (fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z) ∈ realSobolevFunctions ℂ (2 * n) 2 := by
+  have hL := memLp_of_mem_realSobolevFunctions hn
   rcases Nat.eq_zero_or_pos n with rfl | hpos
   · rw [Nat.cast_zero, mul_zero, mem_realSobolevFunctions_zero_iff]
     have h2g := hL.aestronglyMeasurable.const_mul 2
@@ -389,7 +378,7 @@ private theorem cutoffLogModulus_mem_realSobolevFunctions (b : ContDiffBump (0 :
           ring
         rw [hfun]
         exact sub_mem (hk _) (Submodule.smul_mem _ _
-          (exp_two_mul_sub_one_sub_mem_realSobolevFunctions hL (fun z ↦ (hbd z).2) ih))
+          (exp_two_mul_sub_one_sub_mem_realSobolevFunctions (fun z ↦ (hbd z).2) ih))
   obtain ⟨n, hn⟩ := exists_nat_ge (s / 2)
   exact realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith) (hstep n)
 

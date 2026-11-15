@@ -186,7 +186,7 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
 /-- If the section of `x` is `|α|` times the winding phase near `z`, then its end
 trivialization has the real section `|α|` there. -/
-private theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
+theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
     (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
     sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
   have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
