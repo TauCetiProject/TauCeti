@@ -38,16 +38,19 @@ namespace TauCeti.GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
 
+local notation "hGₜ" => G.isKnot_transpose.mpr hG
+local notation "Base(" R ", " n ", " i ")" =>
+  ModuleCat.restrictScalars (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+
 private theorem transpose_toOddComponentGridDiagram :
-    hG.toOddComponentGridDiagram.transpose =
-      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram :=
+    hG.toOddComponentGridDiagram.transpose = (hGₜ).toOddComponentGridDiagram :=
   Subtype.ext rfl
 
 private theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece {R : Type*}
     [CommSemiring R] {i : Fin n} (g : ℤ × ℤ) (c : GridChainHat R n i)
     (hc : c ∈ hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g) :
     G.simplyBlockedTransposeEquiv R i c ∈
-      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram.bigradedChainHatPiece R (G.O i) g := by
+      (hGₜ).toOddComponentGridDiagram.bigradedChainHatPiece R (G.O i) g := by
   rw [← transpose_toOddComponentGridDiagram hG]
   exact (OddComponentGridDiagram.simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece_iff _).mpr hc
 
@@ -123,14 +126,11 @@ theorem simplyBlockedHomologyTransposeEquiv_symm_oneVariableSpecializationHomolo
 /-- Diagonal reflection preserves and reflects both homology degrees of `G-hat`. -/
 @[simp]
 theorem simplyBlockedHomologyTransposeEquiv_mem_bigradedHatHomologyPiece_iff
-    {g : ℤ × ℤ} {y : (ModuleCat.restrictScalars (MvPolynomial.C :
-      R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj (hG.simplyBlockedHomology R i)} :
+    {g : ℤ × ℤ} {y : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i)} :
     hG.simplyBlockedHomologyTransposeEquiv R i y ∈
-        (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram.bigradedHatHomologyPiece
-          R (G.O i) g ↔
+        (hGₜ).toOddComponentGridDiagram.bigradedHatHomologyPiece R (G.O i) g ↔
       y ∈ hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g :=
-  hG.simplyBlockedHomologyEquivOfIntertwining_mem_bigradedHatHomologyPiece_iff R
-    (G.isKnot_transpose.mpr hG) (G.simplyBlockedTransposeEquiv R i)
+  hG.simplyBlockedHomologyEquivOfIntertwining_mem_bigradedHatHomologyPiece_iff R hGₜ _
     (G.simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv R i)
     (simplyBlockedRenameEquiv R G.O.toPerm i).commutes
     (simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece hG)
@@ -138,10 +138,8 @@ theorem simplyBlockedHomologyTransposeEquiv_mem_bigradedHatHomologyPiece_iff
 /-- Diagonal reflection restricted to a homogeneous piece of `G-hat`. -/
 noncomputable def simplyBlockedHomologyTransposePieceEquiv (g : ℤ × ℤ) :
     hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g ≃ₗ[R]
-      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram.bigradedHatHomologyPiece
-        R (G.O i) g :=
-  hG.simplyBlockedHomologyPieceEquivOfIntertwining R
-    (G.isKnot_transpose.mpr hG) (G.simplyBlockedTransposeEquiv R i)
+      (hGₜ).toOddComponentGridDiagram.bigradedHatHomologyPiece R (G.O i) g :=
+  hG.simplyBlockedHomologyPieceEquivOfIntertwining R hGₜ (G.simplyBlockedTransposeEquiv R i)
     (G.simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv R i)
     (simplyBlockedRenameEquiv R G.O.toPerm i).commutes
     (simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece hG) g
@@ -152,14 +150,10 @@ noncomputable def simplyBlockedHomologyTransposePieceEquiv (g : ℤ × ℤ) :
 theorem coe_simplyBlockedHomologyTransposePieceEquiv (g : ℤ × ℤ)
     (y : hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g) :
     (hG.simplyBlockedHomologyTransposePieceEquiv R i g y :
-      (ModuleCat.restrictScalars (MvPolynomial.C :
-        R →+* MvPolynomial {c : Fin n // c ≠ G.O i} R)).obj
-          ((G.isKnot_transpose.mpr hG).simplyBlockedHomology R (G.O i))) =
+      (Base(R, n, G.O i)).obj ((hGₜ).simplyBlockedHomology R (G.O i))) =
       hG.simplyBlockedHomologyTransposeEquiv R i
-        (y : (ModuleCat.restrictScalars (MvPolynomial.C :
-          R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj (hG.simplyBlockedHomology R i)) :=
-  hG.coe_simplyBlockedHomologyPieceEquivOfIntertwining R
-    (G.isKnot_transpose.mpr hG) (G.simplyBlockedTransposeEquiv R i)
+        (y : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i)) :=
+  hG.coe_simplyBlockedHomologyPieceEquivOfIntertwining R hGₜ (G.simplyBlockedTransposeEquiv R i)
     (G.simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv R i)
     (simplyBlockedRenameEquiv R G.O.toPerm i).commutes
     (simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece hG) g y
@@ -173,20 +167,18 @@ variable (K : Type*) [Field K] [CharP K 2] (i : Fin n)
 /-- The bigraded Poincaré series of `G-hat` is invariant under diagonal reflection, transporting
 the blocked column from `i` to `G.O i`. -/
 theorem bigradedSimplyBlockedHomologyPoincareSeries_transpose :
-    (G.isKnot_transpose.mpr hG).bigradedSimplyBlockedHomologyPoincareSeries K (G.O i) =
+    (hGₜ).bigradedSimplyBlockedHomologyPoincareSeries K (G.O i) =
       hG.bigradedSimplyBlockedHomologyPoincareSeries K i :=
-  hG.bigradedSimplyBlockedHomologyPoincareSeries_eq_of_intertwining K
-    (G.isKnot_transpose.mpr hG) (G.simplyBlockedTransposeEquiv K i)
+  hG.bigradedSimplyBlockedHomologyPoincareSeries_eq_of_intertwining K hGₜ _
     (G.simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv K i)
     (simplyBlockedRenameEquiv K G.O.toPerm i).commutes
     (simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece hG)
 
 /-- The Alexander-graded Euler characteristic of `G-hat` is invariant under diagonal reflection. -/
 theorem gradedSimplyBlockedHomologyEulerChar_transpose :
-    (G.isKnot_transpose.mpr hG).gradedSimplyBlockedHomologyEulerChar K (G.O i) =
+    (hGₜ).gradedSimplyBlockedHomologyEulerChar K (G.O i) =
       hG.gradedSimplyBlockedHomologyEulerChar K i :=
-  hG.gradedSimplyBlockedHomologyEulerChar_eq_of_intertwining K
-    (G.isKnot_transpose.mpr hG) (G.simplyBlockedTransposeEquiv K i)
+  hG.gradedSimplyBlockedHomologyEulerChar_eq_of_intertwining K hGₜ _
     (G.simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv K i)
     (simplyBlockedRenameEquiv K G.O.toPerm i).commutes
     (simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece hG)

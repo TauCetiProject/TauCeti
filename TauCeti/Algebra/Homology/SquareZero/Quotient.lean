@@ -27,14 +27,13 @@ acts on the chain module freely and is null-homotopic on the simply blocked comp
 the long exact sequence of `0 → M ⧸ N → M ⧸ N → M ⧸ (N ⊔ range v) → 0`, whose connecting map is
 surjective because `v` acts by zero on homology.
 
-A surjection `π : N → P` whose kernel is the image of an injective chain map `f : M → N` makes the
-second-factor projection `M × N → P` a quasi-isomorphism from `LinearMap.mappingCone d e f` to `P`
-(`LinearMap.mappingConeProjectionHomologyEquiv`). A chain homotopy `e ∘ h + h ∘ d = f - g` gives an
-explicit linear isomorphism `(a, b) ↦ (a, h a + b)` between `mappingCone d e f` and
-`mappingCone d e g` (`LinearMap.mappingConeHomotopyEquiv`). Composing the two identifies the
-homologies of two quotients of `(M, d)` by homotopic injective endomorphisms `f₁` and `f₂`
-(`LinearMap.homologyEquivOfHomotopicInjective`), sending the class of `π₁ b` (for `f₁ a + d b = 0`)
-to the class of `π₂ (h a + b)`.
+A surjection `π : N → P` with kernel `range f` for an injective chain map `f : M → N` makes
+`(a, b) ↦ π b` a quasi-isomorphism from `LinearMap.mappingCone d e f` to `P`
+(`LinearMap.mappingConeProjectionHomologyEquiv`), while a homotopy `e ∘ h + h ∘ d = f - g` gives a
+cone isomorphism `(a, b) ↦ (a, h a + b)` (`LinearMap.mappingConeHomotopyEquiv`). Composing them
+compares the quotients of `(M, d)` by homotopic injective endomorphisms `f₁` and `f₂`
+(`LinearMap.homologyEquivOfHomotopicInjective`), sending `[π₁ b]` (for `f₁ a + d b = 0`) to
+`[π₂ (h a + b)]`.
 
 ## Main definitions
 
@@ -43,21 +42,15 @@ to the class of `π₂ (h a + b)`.
 * `LinearMap.quotientHomologyEquivOfSurjective`: its identification with the homology of `d'`
   along a surjection with kernel `N`.
 * `LinearMap.quotientHomologyMapOfLE`: the map `H(M ⧸ N) → H(M ⧸ N')` induced by `N ≤ N'`.
-* `LinearMap.quotientHomologyProdEquiv`: the equivalence
-  `H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ (N ⊔ range v))`.
-* `LinearMap.mappingConeHomotopyEquiv`: the automorphism `(a, b) ↦ (a, h a + b)` intertwining the
-  mapping cones of two chain-homotopic maps.
-* `LinearMap.mappingConeProjectionHomologyEquiv`: the homology equivalence from the mapping cone of
-  an injective chain map onto its quotient.
-* `LinearMap.homologyEquivOfHomotopicInjective`: the homology equivalence between two quotients by
-  chain-homotopic injective endomorphisms.
+* `LinearMap.quotientHomologyProdEquiv`: `H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ (N ⊔ range v))`.
+* `LinearMap.mappingConeHomotopyEquiv`, `LinearMap.mappingConeProjectionHomologyEquiv`, and
+  `LinearMap.homologyEquivOfHomotopicInjective`: the mapping-cone shearing equivalence, quotient
+  projection equivalence, and resulting homology comparison of homotopic injective quotients.
 
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
-  and Monographs 208, 2015, Section 4.6 (Propositions 4.6.13 and 4.6.15), where these quotient and
-  mapping-cone comparisons relate simply blocked and fully blocked grid homology and compare
-  different choices of blocked marking.
+  and Monographs 208, 2015, Section 4.6 (Propositions 4.6.13 and 4.6.15).
 -/
 
 public section
@@ -423,26 +416,21 @@ variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S 
   (hπe : π ∘ₗ e = q ∘ₗ π)
 
 include he hf hinj in
-/-- If `f` is injective with `f ∘ d = e ∘ f` and `e ∘ e = 0`, any pair `(a, b)` with `f a + e b = 0`
-automatically has `d a = 0` and so is a cycle of `mappingCone d e f`. -/
+/-- If `f` is injective with `f ∘ d = e ∘ f` and `e ∘ e = 0`, any `(a, b)` with `f a + e b = 0`
+has `d a = 0` and so is a cycle of `mappingCone d e f`. -/
 theorem mem_ker_mappingCone_of_add_eq_zero {a : M} {b : N} (hab : f a + e b = 0) :
     (a, b) ∈ ker (mappingCone d e f) := by
   have hda : d a = 0 := hinj <| by
-    have hfd : f (d a) = e (f a) := congr($hf a)
-    have heb : f a = -e b := eq_neg_of_add_eq_zero_left hab
-    have heeb : e (e b) = 0 := congr($he b)
-    rw [hfd, heb, map_neg, heeb, neg_zero, map_zero]
+    rw [← comp_apply, hf, comp_apply, eq_neg_of_add_eq_zero_left hab, map_neg, ← comp_apply, he,
+      LinearMap.zero_apply, neg_zero, map_zero]
   simp [mem_ker, hda, hab]
 
 include hexact hπe in
-/-- The second-factor projection `(a, b) ↦ π b` intertwines `mappingCone d e f` with `q` when
-`range f ≤ ker π` and `π ∘ e = q ∘ π`. -/
+/-- `(a, b) ↦ π b` intertwines `mappingCone d e f` with `q` when `Exact f π` and `π ∘ e = q ∘ π`. -/
 theorem comp_snd_comp_mappingCone :
-    (π ∘ₗ snd S M N) ∘ₗ mappingCone d e f = q ∘ₗ (π ∘ₗ snd S M N) := by
-  refine LinearMap.ext fun ⟨a, b⟩ => ?_
-  have hfa : π (f a) = 0 := (hexact (f a)).mpr ⟨a, rfl⟩
-  have hπeb : π (e b) = q (π b) := congr($hπe b)
-  simp [comp_apply, hfa, hπeb]
+    (π ∘ₗ snd S M N) ∘ₗ mappingCone d e f = q ∘ₗ (π ∘ₗ snd S M N) :=
+  LinearMap.ext fun ⟨a, b⟩ => by
+    simp [comp_apply, (hexact (f a)).mpr ⟨a, rfl⟩, (congr($hπe b) : π (e b) = q (π b))]
 
 include hinj hπ in
 private theorem bijective_homologyMap_comp_snd :
@@ -451,38 +439,29 @@ private theorem bijective_homologyMap_comp_snd :
   refine ⟨(homologyMap_injective_iff _ _ _ _).mpr fun ⟨a, b⟩ hab ⟨c', hc'⟩ => ?_,
     (homologyMap_surjective_iff _ _ _ _).mpr fun z hz => ?_⟩
   · simp only [mem_ker, mappingCone_apply, Prod.mk_eq_zero, neg_eq_zero] at hab
-    simp only [comp_apply, snd_apply] at hc'
-    obtain ⟨_, hab⟩ := hab
     obtain ⟨c, rfl⟩ := hπ c'
-    have hπec : π (e c) = q (π c) := congr($hπe c)
-    have hπbec : π (b - e c) = 0 := by rw [map_sub, hπec, hc', sub_self]
-    obtain ⟨u, hu⟩ := (hexact (b - e c)).mp hπbec
+    obtain ⟨u, hu⟩ := (hexact (b - e c)).mp <| by
+      rw [map_sub, (congr($hπe c) : π (e c) = q (π c)), hc', comp_apply, snd_apply, sub_self]
     have hfdu : -d u = a := hinj <| by
-      have hfdu' : f (d u) = e (f u) := congr($hf u)
-      have heec : e (e c) = 0 := congr($he c)
-      rw [map_neg, hfdu', hu, map_sub, heec, sub_zero, neg_eq_iff_add_eq_zero, add_comm]
-      exact hab
-    refine ⟨(u, c), ?_⟩
-    rw [mappingCone_apply, Prod.fst, Prod.snd, hfdu, hu, sub_add_cancel]
+      rw [map_neg, ← comp_apply, hf, comp_apply, hu, map_sub, ← comp_apply, he,
+        LinearMap.zero_apply, sub_zero, neg_eq_iff_add_eq_zero, add_comm]
+      exact hab.2
+    exact ⟨(u, c), by rw [mappingCone_apply, Prod.fst, Prod.snd, hfdu, hu, sub_add_cancel]⟩
   · obtain ⟨b, rfl⟩ := hπ z
-    have hπeb : π (e b) = 0 := by
-      have hπeb' : π (e b) = q (π b) := congr($hπe b)
-      rw [hπeb', mem_ker.mp hz]
-    obtain ⟨a', ha'⟩ := (hexact (e b)).mp hπeb
-    have hab : f (-a') + e b = 0 := by rw [map_neg, ha', neg_add_cancel]
-    exact ⟨(-a', b), mem_ker_mappingCone_of_add_eq_zero he hf hinj hab, 0, by simp⟩
+    obtain ⟨a', ha'⟩ := (hexact (e b)).mp <| by
+      rw [(congr($hπe b) : π (e b) = q (π b)), mem_ker.mp hz]
+    refine ⟨(-a', b), mem_ker_mappingCone_of_add_eq_zero he hf hinj ?_, 0, by simp⟩
+    rw [map_neg, ha', neg_add_cancel]
 
-/-- When `0 → M --f--> N --π--> P → 0` is short exact on chains, the second-factor projection
-`(a, b) ↦ π b` induces an isomorphism from the homology of `mappingCone d e f` onto the homology of
-`q`. -/
+/-- When `0 → M --f--> N --π--> P → 0` is short exact on chains, `(a, b) ↦ π b` induces an
+isomorphism from the homology of `mappingCone d e f` onto the homology of `q`. -/
 noncomputable def mappingConeProjectionHomologyEquiv :
     (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S] q.homology hq :=
   LinearEquiv.ofBijective _ (bijective_homologyMap_comp_snd hd he hq hf hinj hπ hexact hπe)
 
 /-- `mappingConeProjectionHomologyEquiv` sends the class of `(a, b)` to the class of `π b`. -/
 @[simp]
-theorem mappingConeProjectionHomologyEquiv_mk
-    (z : ker (mappingCone d e f)) :
+theorem mappingConeProjectionHomologyEquiv_mk (z : ker (mappingCone d e f)) :
     mappingConeProjectionHomologyEquiv hd he hq hf hinj hπ hexact hπe (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨π z.1.2,
         map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact hπe) z.2⟩ := by

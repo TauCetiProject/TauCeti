@@ -19,51 +19,39 @@ public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Bigraded
 
 For knot grid diagrams `G` and `G'` over a commutative ring `R` of characteristic two,
 `GridDiagram.IsKnot.SimplyBlockedHomologyIsomorphic` expresses that their simply blocked grid
-homologies `G-hat` — blocking any chosen column `i` of `G` and any chosen column `j` of `G'` — are
-isomorphic as `(O-Maslov, Alexander)`-bigraded `R`-modules via an `R`-linear equivalence of bidegree
-`(0, 0)`.
+homologies `G-hat` — blocking column `i` of `G` and column `j` of `G'` — are isomorphic as
+`(O-Maslov, Alexander)`-bigraded `R`-modules via an `R`-linear equivalence of bidegree `(0, 0)`.
 
-This file establishes that `SimplyBlockedHomologyIsomorphic` holds across any sequence of grid
-moves and any choices of blocked columns
-(`GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_of_movesTo`):
+This file proves `SimplyBlockedHomologyIsomorphic` across any sequence of grid moves and any
+choices of blocked columns (`GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_of_movesTo`):
 
-* **Basepoint independence:** changing the blocked column on a fixed knot grid preserves bigraded
-  `G-hat` (`simplyBlockedHomologyIsomorphic_self`), using the `X`-homotopy mapping-cone comparison
-  of `Homology/SimplyBlocked/Basepoint.lean`. Consequently any move comparison proved for one pair
-  of blocked columns extends immediately to arbitrary blocked columns on source and target.
-* **Symmetries and cyclic permutations:** cyclic row and column permutations, diagonal reflection
-  (`transpose`), and the toroidal half-turn (`rotate`) preserve bigraded `G-hat`.
-* **Commutations:** column commutations preserve bigraded `G-hat` by the pentagon-hexagon homotopy
-  (`Homology/Commutation/Bigraded.lean`), and row commutations reduce to column commutations by
-  diagonal reflection.
+* **Basepoint independence** (`simplyBlockedHomologyIsomorphic_self`): changing the blocked column
+  preserves bigraded `G-hat` (`Homology/SimplyBlocked/Basepoint.lean`), extending any move
+  comparison from one pair of blocked columns to arbitrary ones (`of_some`).
+* **Symmetries and commutations:** cyclic row/column permutations, `transpose`, and `rotate`
+  preserve bigraded `G-hat`; column commutations follow from `Homology/Commutation/Bigraded.lean`
+  and row commutations follow by `transpose`.
 * **Stabilizations and destabilizations:** south-west corner `X`-stabilizations preserve bigraded
-  `G-hat` (`Stabilization/SimplyBlocked/Bigraded.lean`), north-east corner `X`-stabilizations
-  reduce to south-west ones via the toroidal half-turn (`GridDiagram.rotate_stabilizeX_succ`), and
-  all remaining elementary stabilizations and destabilizations reduce to these two corners up to
-  cyclic permutations and commutations (`GridDiagram.IsStabilization.exists_commutationMovesTo`).
+  `G-hat` (`Stabilization/SimplyBlocked/Bigraded.lean`), north-east ones conjugate by `rotate`
+  (`GridDiagram.rotate_stabilizeX_succ`), and all elementary stabilizations/destabilizations reduce
+  to these via `GridDiagram.IsStabilization.exists_commutationMovesTo`.
 
-Over a field of characteristic two, it follows that the bigraded Poincaré series and the
-Alexander-graded Euler characteristic of `G-hat` are unchanged by arbitrary grid moves and choices
-of blocked column (`bigradedSimplyBlockedHomologyPoincareSeries_eq_of_movesTo` and
-`gradedSimplyBlockedHomologyEulerChar_eq_of_movesTo`). This establishes invariance of the
-isomorphism class of bigraded `G-hat`; naturality of the maps associated to different move sequences
-is not addressed here.
+Over a field of characteristic two, the bigraded Poincaré series and Alexander-graded Euler
+characteristic of `G-hat` are invariant under grid moves and choices of blocked column
+(`bigradedSimplyBlockedHomologyPoincareSeries_eq_of_movesTo` and
+`gradedSimplyBlockedHomologyEulerChar_eq_of_movesTo`). Naturality across distinct move sequences is
+not addressed here.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.GridDiagram.IsKnot.SimplyBlockedHomologyIsomorphic`: existence of a bidegree-`(0, 0)`
   `R`-linear equivalence between the restricted-scalar simply blocked homologies of two knot grids.
-
-## Main results
-
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_self`: bigraded `G-hat` is
-  independent of the blocked column.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_of_isMove` and
-  `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_of_movesTo`: **invariance of bigraded
-  `G-hat` under grid moves**.
+* `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyIsomorphic_self`,
+  `simplyBlockedHomologyIsomorphic_of_isMove`, and `simplyBlockedHomologyIsomorphic_of_movesTo`:
+  basepoint independence and grid-move invariance of bigraded `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_eq_of_movesTo` and
-  `TauCeti.GridDiagram.IsKnot.gradedSimplyBlockedHomologyEulerChar_eq_of_movesTo`: invariance of
-  the bigraded Poincaré series and Alexander-graded Euler characteristic under grid moves.
+  `gradedSimplyBlockedHomologyEulerChar_eq_of_movesTo`: grid-move invariance of the Poincaré series
+  and Euler characteristic.
 
 ## References
 
@@ -78,6 +66,9 @@ noncomputable section
 
 open CategoryTheory
 
+local notation "Base(" R ", " n ", " i ")" =>
+  ModuleCat.restrictScalars (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+
 namespace TauCeti.GridDiagram.IsKnot
 
 section Relation
@@ -90,13 +81,8 @@ variable {n m k : ℕ} {G : GridDiagram n} {G' : GridDiagram m} {G'' : GridDiagr
 bigraded simply blocked grid homology over `R` if there is an `R`-linear equivalence between their
 restricted-scalar homologies that is homogeneous of `(O-Maslov, Alexander)` bidegree `(0, 0)`. -/
 def SimplyBlockedHomologyIsomorphic (i : Fin n) (j : Fin m) : Prop :=
-  ∃ e :
-      (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
-          (hG.simplyBlockedHomology R i) ≃ₗ[R]
-      (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)).obj
-          (hG'.simplyBlockedHomology R j),
+  ∃ e : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i) ≃ₗ[R]
+      (Base(R, m, j)).obj (hG'.simplyBlockedHomology R j),
     LinearMap.IsHomogeneous e.toLinearMap
       (hG.toOddComponentGridDiagram.bigradedHatHomologyGrading R i).piece
       (hG'.toOddComponentGridDiagram.bigradedHatHomologyGrading R j).piece 0
@@ -108,37 +94,28 @@ theorem SimplyBlockedHomologyIsomorphic.refl (i : Fin n) :
 
 variable {hG hG' hG'' R}
 
-/-- Unfold `SimplyBlockedHomologyIsomorphic` to the existence of a bidegree-`(0, 0)` `R`-linear
-equivalence. -/
+/-- Unfold `SimplyBlockedHomologyIsomorphic` to a bidegree-`(0, 0)` `R`-linear equivalence. -/
 theorem simplyBlockedHomologyIsomorphic_def {i : Fin n} {j : Fin m} :
     hG.SimplyBlockedHomologyIsomorphic hG' R i j ↔
-      ∃ e :
-          (ModuleCat.restrictScalars
-            (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
-              (hG.simplyBlockedHomology R i) ≃ₗ[R]
-          (ModuleCat.restrictScalars
-            (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)).obj
-              (hG'.simplyBlockedHomology R j),
+      ∃ e : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i) ≃ₗ[R]
+          (Base(R, m, j)).obj (hG'.simplyBlockedHomology R j),
         LinearMap.IsHomogeneous e.toLinearMap
           (hG.toOddComponentGridDiagram.bigradedHatHomologyGrading R i).piece
           (hG'.toOddComponentGridDiagram.bigradedHatHomologyGrading R j).piece 0 :=
   Iff.rfl
 
-/-- Isomorphism of bigraded `G-hat` is symmetric: the inverse of a degree-zero equivalence of
-internally graded modules has degree zero. -/
+/-- Isomorphism of bigraded `G-hat` is symmetric. -/
 theorem SimplyBlockedHomologyIsomorphic.symm {i : Fin n} {j : Fin m}
     (h : hG.SimplyBlockedHomologyIsomorphic hG' R i j) :
-    hG'.SimplyBlockedHomologyIsomorphic hG R j i := by
-  obtain ⟨e, he⟩ := h
-  exact ⟨e.symm, he.linearEquiv_symm⟩
+    hG'.SimplyBlockedHomologyIsomorphic hG R j i :=
+  let ⟨e, he⟩ := h; ⟨e.symm, he.linearEquiv_symm⟩
 
 /-- Isomorphism of bigraded `G-hat` is transitive. -/
 theorem SimplyBlockedHomologyIsomorphic.trans {i : Fin n} {j : Fin m} {l : Fin k}
     (h : hG.SimplyBlockedHomologyIsomorphic hG' R i j)
     (h' : hG'.SimplyBlockedHomologyIsomorphic hG'' R j l) :
     hG.SimplyBlockedHomologyIsomorphic hG'' R i l := by
-  obtain ⟨e, he⟩ := h
-  obtain ⟨e', he'⟩ := h'
+  obtain ⟨e, he⟩ := h; obtain ⟨e', he'⟩ := h'
   exact ⟨e.trans e', by simpa only [LinearEquiv.coe_trans, add_zero] using he'.comp he⟩
 
 /-- Symmetry of `SimplyBlockedHomologyIsomorphic` as an equivalence. -/
@@ -154,10 +131,8 @@ theorem SimplyBlockedHomologyIsomorphic.nonempty_piece_linearEquiv {i : Fin n} {
     Nonempty (hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g ≃ₗ[R]
       hG'.toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) := by
   obtain ⟨e, he⟩ := h
-  refine ⟨e.ofSubmodules _ _ ?_⟩
-  ext y
-  rw [Submodule.mem_map_equiv]
-  refine ⟨fun hy => ?_, fun hy => ?_⟩
+  refine ⟨e.ofSubmodules _ _ (Submodule.ext fun y => (Submodule.mem_map_equiv _).trans ⟨fun hy =>
+    ?_, fun hy => ?_⟩)⟩
   · rw [← OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy ⊢
     simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using he.map_mem hy
   · rw [← OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy ⊢
@@ -167,12 +142,10 @@ theorem SimplyBlockedHomologyIsomorphic.nonempty_piece_linearEquiv {i : Fin n} {
 theorem SimplyBlockedHomologyIsomorphic.finrank_bigradedHatHomologyPiece_eq {i : Fin n} {j : Fin m}
     (h : hG.SimplyBlockedHomologyIsomorphic hG' R i j) (g : ℤ × ℤ) :
     Module.finrank R (hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g) =
-      Module.finrank R (hG'.toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) := by
-  obtain ⟨e⟩ := h.nonempty_piece_linearEquiv g
-  exact e.finrank_eq
+      Module.finrank R (hG'.toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) :=
+  let ⟨e⟩ := h.nonempty_piece_linearEquiv g; e.finrank_eq
 
-/-- A semilinear equivalence between simply blocked homologies whose ring homomorphism fixes
-constant polynomials and that preserves homogeneous pieces witnesses
+/-- A semilinear equivalence fixing constant polynomials and preserving homogeneous pieces witnesses
 `SimplyBlockedHomologyIsomorphic`. -/
 theorem SimplyBlockedHomologyIsomorphic.of_semilinearEquiv {i : Fin n} {j : Fin m}
     {σ : MvPolynomial {c : Fin n // c ≠ i} R →+* MvPolynomial {c : Fin m // c ≠ j} R}
@@ -180,10 +153,7 @@ theorem SimplyBlockedHomologyIsomorphic.of_semilinearEquiv {i : Fin n} {j : Fin 
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     (hσ : ∀ r : R, σ (MvPolynomial.C r) = MvPolynomial.C r)
     (e : hG.simplyBlockedHomology R i ≃ₛₗ[σ] hG'.simplyBlockedHomology R j)
-    (hdeg : ∀ ⦃g : ℤ × ℤ⦄
-      ⦃y : (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
-          (hG.simplyBlockedHomology R i)⦄,
+    (hdeg : ∀ ⦃g : ℤ × ℤ⦄ ⦃y : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i)⦄,
       y ∈ hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g →
         e y ∈ hG'.toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) :
     hG.SimplyBlockedHomologyIsomorphic hG' R i j := by
@@ -191,17 +161,10 @@ theorem SimplyBlockedHomologyIsomorphic.of_semilinearEquiv {i : Fin n} {j : Fin 
     Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
   let _ : Module R (hG'.simplyBlockedHomology R j) :=
     Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)
-  let eR :
-      (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
-          (hG.simplyBlockedHomology R i) ≃ₗ[R]
-      (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin m // c ≠ j} R)).obj
-          (hG'.simplyBlockedHomology R j) :=
+  let eR : (Base(R, n, i)).obj (hG.simplyBlockedHomology R i) ≃ₗ[R]
+      (Base(R, m, j)).obj (hG'.simplyBlockedHomology R j) :=
     e.toAddEquiv.toLinearEquiv fun r y => by
-      have hy := e.map_smulₛₗ (MvPolynomial.C r) y
-      rw [hσ] at hy
-      exact hy
+      have hy := e.map_smulₛₗ (MvPolynomial.C r) y; rwa [hσ] at hy
   refine ⟨eR, LinearMap.isHomogeneous_def.mpr fun g y hy => ?_⟩
   rw [OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy
   rw [add_zero, OddComponentGridDiagram.bigradedHatHomologyGrading_piece]
@@ -212,8 +175,7 @@ end Relation
 section FieldConsequences
 
 variable {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m}
-  {hG : G.IsKnot} {hG' : G'.IsKnot} {K : Type*} [Field K] [CharP K 2]
-  {i : Fin n} {j : Fin m}
+  {hG : G.IsKnot} {hG' : G'.IsKnot} {K : Type*} [Field K] [CharP K 2] {i : Fin n} {j : Fin m}
 
 /-- Over a field of characteristic two, isomorphic bigraded simply blocked homologies have equal
 bigraded Poincaré series. -/
@@ -241,7 +203,6 @@ section Moves
 variable {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m}
   (hG : G.IsKnot) (R : Type*) [CommRing R] [CharP R 2]
 
-/-- Every knot grid has size at least `2`, hence has a canonical first column `0`. -/
 private def firstColumn {k : ℕ} {H : GridDiagram k} (hH : H.IsKnot) : Fin k :=
   ⟨0, Nat.pos_of_ne_zero hH.ne_zero⟩
 
@@ -266,61 +227,49 @@ variable {hG} in
 theorem simplyBlockedHomologyIsomorphic_of_eq {G₁ : GridDiagram n} {hG₁ : G₁.IsKnot}
     (h : G = G₁) (i j : Fin n) :
     hG.SimplyBlockedHomologyIsomorphic hG₁ R i j := by
-  subst h
-  exact hG.simplyBlockedHomologyIsomorphic_self R i j
+  subst h; exact hG.simplyBlockedHomologyIsomorphic_self R i j
 
 /-- Cyclic permutation of the rows preserves bigraded `G-hat`. -/
 theorem simplyBlockedHomologyIsomorphic_relabelRows_finRotate (i j : Fin n) :
-    hG.SimplyBlockedHomologyIsomorphic
-      ((G.isKnot_relabelRows (finRotate n)).mpr hG) R i j :=
+    hG.SimplyBlockedHomologyIsomorphic ((G.isKnot_relabelRows (finRotate n)).mpr hG) R i j :=
   (SimplyBlockedHomologyIsomorphic.of_semilinearEquiv (fun _ => rfl)
-    (hG.simplyBlockedHomologyRelabelRowsFinRotateEquiv R i)
-    fun {_ _} hy =>
+    (hG.simplyBlockedHomologyRelabelRowsFinRotateEquiv R i) fun {_ _} =>
       (hG.simplyBlockedHomologyRelabelRowsFinRotateEquiv_mem_bigradedHatHomologyPiece_iff
-        R i).mpr hy).of_some i j
+        R i).mpr).of_some i j
 
 /-- Cyclic permutation of the columns preserves bigraded `G-hat`. -/
 theorem simplyBlockedHomologyIsomorphic_relabelColumns_finRotate (i j : Fin n) :
-    hG.SimplyBlockedHomologyIsomorphic
-      ((G.isKnot_relabelColumns (finRotate n)).mpr hG) R i j :=
+    hG.SimplyBlockedHomologyIsomorphic ((G.isKnot_relabelColumns (finRotate n)).mpr hG) R i j :=
   (SimplyBlockedHomologyIsomorphic.of_semilinearEquiv
     (simplyBlockedRenameEquiv R (finRotate n) i).commutes
-    (hG.simplyBlockedHomologyRelabelColumnsFinRotateEquiv R i)
-    fun {_ _} hy =>
+    (hG.simplyBlockedHomologyRelabelColumnsFinRotateEquiv R i) fun {_ _} =>
       (hG.simplyBlockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedHatHomologyPiece_iff
-        R i).mpr hy).of_some i j
+        R i).mpr).of_some i j
 
 /-- Diagonal reflection (`transpose`) preserves bigraded `G-hat`. -/
 theorem simplyBlockedHomologyIsomorphic_transpose (i j : Fin n) :
     hG.SimplyBlockedHomologyIsomorphic (G.isKnot_transpose.mpr hG) R i j :=
   (SimplyBlockedHomologyIsomorphic.of_semilinearEquiv
     (simplyBlockedRenameEquiv R G.O.toPerm i).commutes
-    (hG.simplyBlockedHomologyTransposeEquiv R i)
-    fun {_ _} hy =>
+    (hG.simplyBlockedHomologyTransposeEquiv R i) fun {_ _} =>
       (hG.simplyBlockedHomologyTransposeEquiv_mem_bigradedHatHomologyPiece_iff
-        R i).mpr hy).of_some i j
+        R i).mpr).of_some i j
 
 /-- The toroidal half-turn (`rotate`) preserves bigraded `G-hat`. -/
 theorem simplyBlockedHomologyIsomorphic_rotate (i j : Fin n) :
     hG.SimplyBlockedHomologyIsomorphic (G.isKnot_rotate.mpr hG) R i j :=
   (SimplyBlockedHomologyIsomorphic.of_semilinearEquiv
     (simplyBlockedRenameEquiv R Fin.revPerm i).commutes
-    (hG.simplyBlockedHomologyRotateEquiv R i)
-    fun {_ _} hy =>
-      (hG.simplyBlockedHomologyRotateEquiv_mem_bigradedHatHomologyPiece_iff
-        R i).mpr hy).of_some i j
+    (hG.simplyBlockedHomologyRotateEquiv R i) fun {_ _} =>
+      (hG.simplyBlockedHomologyRotateEquiv_mem_bigradedHatHomologyPiece_iff R i).mpr).of_some i j
 
 /-- Validated column commutation preserves bigraded `G-hat`. -/
 theorem simplyBlockedHomologyIsomorphic_swapColumns (C : ColumnCommutationData G) (i j : Fin n) :
-    hG.SimplyBlockedHomologyIsomorphic
-      (C.isColumnCommutation.isKnot_iff.mpr hG) R i j := by
-  suffices h0 : hG.SimplyBlockedHomologyIsomorphic
-      (C.isColumnCommutation.isKnot_iff.mpr hG) R i
-      (Equiv.swap C.column (finRotate n C.column) i) from
-    h0.of_some i j
-  refine ⟨hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i, ?_⟩
-  rw [LinearMap.isHomogeneous_def]
-  intro g y hy
+    hG.SimplyBlockedHomologyIsomorphic (C.isColumnCommutation.isKnot_iff.mpr hG) R i j := by
+  refine (?_ : hG.SimplyBlockedHomologyIsomorphic _ R i
+    (Equiv.swap C.column (finRotate n C.column) i)).of_some i j
+  refine ⟨hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i,
+    LinearMap.isHomogeneous_def.mpr fun g y hy => ?_⟩
   rw [OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy
   rw [add_zero, OddComponentGridDiagram.bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
     hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i]
@@ -368,36 +317,25 @@ theorem simplyBlockedHomologyIsomorphic_stabilizeX (s : Fin n) (i : Fin n) (j : 
   let hG' := (G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG
   have hstab : hG'.toOddComponentGridDiagram = hG.toOddComponentGridDiagram.stabilizeX s :=
     Subtype.ext (hG.toOddComponentGridDiagram.val_stabilizeX s).symm
-  suffices h0 : hG'.SimplyBlockedHomologyIsomorphic hG R (s.castSucc.succAbove i) i from
-    h0.symm.of_some i j
+  refine (?_ : hG'.SimplyBlockedHomologyIsomorphic hG R (s.castSucc.succAbove i) i).symm.of_some i j
   refine ⟨G.oneVariableSpecializationStabilizeXHomologyEquiv s i R,
     LinearMap.isHomogeneous_def.mpr fun g y hy => ?_⟩
   rw [OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy
   rw [add_zero, OddComponentGridDiagram.bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
     G.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y]
-  obtain ⟨z, hz, rfl⟩ :=
-    (hG'.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R _).mp hy
-  have hz' :
-      (G.stabilizeX s.castSucc (G.X s).castSucc s).simplyBlockedChainEquiv R
-          (s.castSucc.succAbove i) z ∈
-        (hG.toOddComponentGridDiagram.stabilizeX s).bigradedChainHatPiece R
-          (s.castSucc.succAbove i) g := by
-    rw [← hstab]
-    exact hz
+  obtain ⟨z, hz, rfl⟩ := (hG'.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R _).mp hy
   have heq : (G.oneVariableSpecializationStabilizeXHomologyMap s i R
       ((G.stabilizeX s.castSucc (G.X s).castSucc s).oneVariableSpecializationHomologyClass
         R (s.castSucc.succAbove i) z) :
-      (ModuleCat.restrictScalars
-        (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
-          ((G.simplyBlockedComplex R i).homology ())) =
-    G.oneVariableSpecializationHomologyClass R i
-      (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) :=
-    G.oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
-      s i R z
+      (Base(R, n, i)).obj ((G.simplyBlockedComplex R i).homology ())) =
+      G.oneVariableSpecializationHomologyClass R i
+        (G.oneVariableSpecializationStabilizeXCyclesMap s i R z) :=
+    G.oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass s i R z
   rw [heq]
   apply OddComponentGridDiagram.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
   rw [G.simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap]
-  exact hG.toOddComponentGridDiagram.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R hz'
+  exact hG.toOddComponentGridDiagram.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R
+    (by rwa [← hstab])
 
 /-- North-east corner `X`-stabilization preserves bigraded `G-hat`, by conjugating south-west
 corner `X`-stabilization of `G.rotate` with the toroidal half-turn. -/
