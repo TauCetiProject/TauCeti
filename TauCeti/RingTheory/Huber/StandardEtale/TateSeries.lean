@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 
-import TauCeti.RingTheory.Huber.Padic.Field
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.NonUnit
 import TauCeti.RingTheory.MvPowerSeries.Derivative
@@ -21,51 +20,33 @@ Over a nonarchimedean commutative ring `A`, `TauCeti.Huber.tateSeries N A` is th
 restricted power series in `N` variables — the specialization of
 `TauCeti.Huber.weightedRestrictedSubring` to the trivial weight family `Tᵢ = {1}`, with coordinate
 variables `TauCeti.Huber.tateSeries.X` and coefficientwise subring
-`TauCeti.Huber.tateSeriesPlus N A Aplus` consisting of restricted series whose coefficients lie in
-`Aplus`.
-
-When `A` is complete and Hausdorff, `tateSeries N A` is already complete and Hausdorff
-(`TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight`,
-`TauCeti.Huber.t0Space_weightedRestrictedSubring_one_weight`), so
-`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies the completed polydisc ring
-`restrictedMvPowerSeriesCompletion N A` with `tateSeries N A`. Working directly on `tateSeries N A`
-retains access to formal partial derivatives `MvPowerSeries.pderiv` on the underlying power series,
-which preserve restrictedness (`TauCeti.Huber.IsWeightedRestricted.pderiv_one_weight`) and carry
-`tateSeriesPlus N A Aplus` into itself.
+`TauCeti.Huber.tateSeriesPlus N A Aplus`. When `A` is complete and Hausdorff, `tateSeries N A` is
+complete and Hausdorff, so `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies
+`restrictedMvPowerSeriesCompletion N A` with `tateSeries N A` while retaining termwise formal
+partial derivatives `MvPowerSeries.pderiv`.
 
 For a Huber pair `S = (A, A⁺)`, `TauCeti.Huber.tateSeriesPair N A S` is the uncompleted unit-weight
 Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
-`tateSeriesPlus N A S.plus` with no integral closure needed
-(`TauCeti.Huber.tateSeriesPair_plus`). When `tateSeries N A` is complete and Hausdorff, the inverse
-completion comparison `(restrictedMvPowerSeriesCompletionEquiv N A).symm` maps
-`tateSeriesPlus N A S.plus` onto `S.polydiscPlus N`
-(`TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`) and sends each `tateSeries.X N A i` to
-`Pair.polydiscVar N A i`.
+`tateSeriesPlus N A S.plus` (`TauCeti.Huber.tateSeriesPair_plus`) and maps under
+`(restrictedMvPowerSeriesCompletionEquiv N A).symm` onto `S.polydiscPlus N`
+(`TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`).
 
 ## Main definitions
 
-* `TauCeti.Huber.tateSeries`: the restricted power-series ring `A⟨T₁, …, T_N⟩` at unit weights.
-* `TauCeti.Huber.tateSeries.X`: the `i`-th coordinate variable `Tᵢ ∈ A⟨T₁, …, T_N⟩`.
+* `TauCeti.Huber.tateSeries` and `TauCeti.Huber.tateSeries.X`: `A⟨T₁, …, T_N⟩` and coordinate `Tᵢ`.
 * `TauCeti.Huber.tateSeries.pderiv`: formal partial derivative `∂/∂Tⱼ` on `tateSeries N A`.
-* `TauCeti.Huber.tateSeries.renameAlgHom` and `TauCeti.Huber.tateSeries.castSuccAlgHom`: variable
-  renaming along `Fin N ↪ Fin M` and inclusion of the first `N` variables into `N + 1` variables.
-* `TauCeti.Huber.tateSeries.mapRingHom`: coefficientwise continuous ring homomorphism
-  `tateSeries N A →+* tateSeries N B` induced by a continuous ring homomorphism `A →+* B`.
-* `TauCeti.Huber.tateSeriesPlus`: the subring `A⁺⟨T₁, …, T_N⟩` of restricted series with
-  coefficients in a subring `A⁺ ⊆ A`.
-* `TauCeti.Huber.tateSeriesPair`: the Huber pair `(A⟨T⟩, A⁺⟨T⟩)` attached to a Huber pair
-  `S = (A, A⁺)`.
+* `TauCeti.Huber.tateSeries.renameAlgHom`, `TauCeti.Huber.tateSeries.castSuccAlgHom`, and
+  `TauCeti.Huber.tateSeries.mapRingHom`: variable renaming, `N ↪ N + 1` inclusion, and base change.
+* `TauCeti.Huber.tateSeriesPlus` and `TauCeti.Huber.tateSeriesPair`: the coefficientwise subring
+  `A⁺⟨T₁, …, T_N⟩` and Huber pair `(A⟨T⟩, A⁺⟨T⟩)`.
 
 ## Main results
 
 * `TauCeti.Huber.mem_tateSeriesPlus_iff` and `TauCeti.Huber.tateSeriesPlus_eq_weightedSubring`:
   `f ∈ tateSeriesPlus N A Aplus` iff every coefficient of `f` lies in `Aplus`.
 * `TauCeti.Huber.tateSeries.pderiv_mem_tateSeriesPlus`: `∂/∂Tⱼ` preserves `tateSeriesPlus`.
-* `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: `(restrictedMvPowerSeriesCompletionEquiv
-  N A).symm` identifies `tateSeriesPlus N A S.plus` with `S.polydiscPlus N`.
-* `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: over a Huber ring with a topologically
-  nilpotent element `ϖ` and an open subring `Aplus`, every restricted series is scaled into
-  `tateSeriesPlus` by a power of `ϖ`.
+* `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: comparison with `S.polydiscPlus N`.
+* `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: rescaling into an open subring by `ϖ ^ m`.
 
 ## References
 
@@ -137,24 +118,14 @@ noncomputable def tateSeries.pderiv (j : Fin N) :
       ((mem_weightedRestrictedSubring.mp f.2).pderiv_one_weight j)⟩
   map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv j) _ _)
   map_smul' a f := Subtype.ext <| by
-    dsimp only
-    have hsmul : ((a • f : tateSeries N A) : MvPowerSeries (Fin N) A) =
-        a • (f : MvPowerSeries (Fin N) A) := by
-      rw [Algebra.smul_def, MulMemClass.coe_mul, tateSeries.coe_algebraMap,
-        MvPowerSeries.smul_eq_C_mul]
-    have hsmul' : ((a • ⟨MvPowerSeries.pderiv j (f : MvPowerSeries (Fin N) A),
-          mem_weightedRestrictedSubring.mpr
-            ((mem_weightedRestrictedSubring.mp f.2).pderiv_one_weight j)⟩ : tateSeries N A) :
-        MvPowerSeries (Fin N) A) = a • MvPowerSeries.pderiv j (f : MvPowerSeries (Fin N) A) := by
-      rw [Algebra.smul_def, MulMemClass.coe_mul, tateSeries.coe_algebraMap,
-        MvPowerSeries.smul_eq_C_mul]
-    rw [RingHom.id_apply, hsmul, hsmul', (MvPowerSeries.pderiv j).map_smul]
+    simp only [RingHom.id_apply, Algebra.smul_def, MulMemClass.coe_mul, tateSeries.coe_algebraMap]
+    rw [← MvPowerSeries.smul_eq_C_mul, ← MvPowerSeries.smul_eq_C_mul,
+      (MvPowerSeries.pderiv j).map_smul]
 
 @[simp]
 theorem tateSeries.coe_pderiv (j : Fin N) (f : tateSeries N A) :
     (tateSeries.pderiv j f : MvPowerSeries (Fin N) A) =
-      MvPowerSeries.pderiv j (f : MvPowerSeries (Fin N) A) :=
-  (rfl)
+      MvPowerSeries.pderiv j (f : MvPowerSeries (Fin N) A) := (rfl)
 
 @[simp]
 theorem tateSeries.pderiv_weightedC (j : Fin N) (a : A) :
@@ -204,27 +175,20 @@ theorem mem_tateSeriesPlus_iff {Aplus : Subring A} {f : tateSeries N A} :
     f ∈ tateSeriesPlus N A Aplus ↔
       ∀ ν, MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A) ∈ Aplus := by
   rw [tateSeriesPlus, Subring.mem_comap, Subring.subtype_apply, RingHom.mem_range]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨g, hg⟩ ν
-    rw [← hg, MvPowerSeries.coeff_map]
-    exact (MvPowerSeries.coeff ν g).2
-  · let g : MvPowerSeries (Fin N) Aplus :=
-      fun ν ↦ ⟨MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A), h ν⟩
-    refine ⟨g, MvPowerSeries.ext fun ν ↦ ?_⟩
-    rw [MvPowerSeries.coeff_map, MvPowerSeries.coeff_apply]
-    rfl
+  refine ⟨by rintro ⟨g, hg⟩ ν; rw [← hg, MvPowerSeries.coeff_map]; exact (g.coeff ν).2, fun h ↦ ?_⟩
+  let g : MvPowerSeries (Fin N) Aplus := fun ν ↦ ⟨_, h ν⟩
+  refine ⟨g, MvPowerSeries.ext fun ν ↦ ?_⟩
+  rw [MvPowerSeries.coeff_map, MvPowerSeries.coeff_apply]; rfl
 
 /-- **`tateSeriesPlus N A Aplus` coincides with `weightedSubring` at the trivial weight `{1}`.** -/
 theorem tateSeriesPlus_eq_weightedSubring (Aplus : Subring A) :
     tateSeriesPlus N A Aplus =
       weightedSubring (fun _ : Fin N ↦ ({1} : Set A)) isWeightFamily_one_weight Aplus := by
-  ext f
-  simp [mem_tateSeriesPlus_iff, mem_weightedSubring, mem_weightedNhd, weightMul_one_weight]
+  ext f; simp [mem_tateSeriesPlus_iff, mem_weightedSubring, mem_weightedNhd, weightMul_one_weight]
 
 @[simp]
 theorem tateSeriesPlus_top : tateSeriesPlus N A ⊤ = ⊤ := by
-  ext f
-  simp [mem_tateSeriesPlus_iff]
+  ext f; simp [mem_tateSeriesPlus_iff]
 
 @[simp]
 theorem weightedC_mem_tateSeriesPlus_iff {Aplus : Subring A} {a : A} :
@@ -265,11 +229,9 @@ theorem tateSeries.coe_renameAlgHom {M : ℕ} (e : Fin N ↪ Fin M) (f : tateSer
 theorem tateSeries.continuous_renameAlgHom {M : ℕ} (e : Fin N ↪ Fin M) :
     Continuous (tateSeries.renameAlgHom (A := A) e) := by
   have h : (tateSeries.renameAlgHom (A := A) e : tateSeries N A → tateSeries M A) =
-      weightedRename e isWeightFamily_one_weight isWeightFamily_one_weight
-        (fun _ ↦ subset_rfl) :=
+      weightedRename e isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ subset_rfl) :=
     funext fun f ↦ weightedRenameAlgHom_apply e _ _ _ f
-  rw [h]
-  exact continuous_weightedRename e isWeightFamily_one_weight isWeightFamily_one_weight
+  exact h ▸ continuous_weightedRename e isWeightFamily_one_weight isWeightFamily_one_weight
     fun _ ↦ subset_rfl
 
 @[simp]
@@ -284,10 +246,10 @@ theorem tateSeries.renameAlgHom_X {M : ℕ} (e : Fin N ↪ Fin M) (i : Fin N) :
 theorem tateSeries.renameAlgHom_mem_tateSeriesPlus {M : ℕ} (e : Fin N ↪ Fin M)
     {Aplus : Subring A} {f : tateSeries N A} (hf : f ∈ tateSeriesPlus N A Aplus) :
     tateSeries.renameAlgHom e f ∈ tateSeriesPlus M A Aplus := by
+  classical
   rw [mem_tateSeriesPlus_iff] at hf ⊢
   intro ν
   rw [tateSeries.coe_renameAlgHom]
-  classical
   by_cases hdom : ν ∈ Set.range (Finsupp.mapDomain e)
   · obtain ⟨μ, rfl⟩ := hdom
     rw [← Finsupp.embDomain_eq_mapDomain e, MvPowerSeries.coeff_embDomain_rename]
@@ -302,17 +264,13 @@ theorem tateSeries.pderiv_renameAlgHom_apply {M : ℕ} (e : Fin N ↪ Fin M) (j 
     tateSeries.pderiv (e j) (tateSeries.renameAlgHom e f) =
       tateSeries.renameAlgHom e (tateSeries.pderiv j f) := by
   apply Subtype.ext
-  have ha : MvPowerSeries.HasSubst (MvPowerSeries.X (R := A) ∘ e) :=
-    MvPowerSeries.HasSubst.X_comp e
   rw [tateSeries.coe_pderiv, tateSeries.coe_renameAlgHom, tateSeries.coe_renameAlgHom,
     tateSeries.coe_pderiv, MvPowerSeries.rename_eq_subst, MvPowerSeries.rename_eq_subst,
-    MvPowerSeries.pderiv_subst ha _ (e j), Finset.sum_eq_single j]
+    MvPowerSeries.pderiv_subst (MvPowerSeries.HasSubst.X_comp e) _ (e j), Finset.sum_eq_single j]
   · simp [Function.comp_apply, MvPowerSeries.pderiv_X_self]
   · intro i _ hij
-    have heij : e i ≠ e j := e.injective.ne hij
-    simp [Function.comp_apply, MvPowerSeries.pderiv_X_of_ne heij]
-  · intro hj
-    exact absurd (Finset.mem_univ j) hj
+    simp [Function.comp_apply, MvPowerSeries.pderiv_X_of_ne (e.injective.ne hij)]
+  · exact fun hj ↦ absurd (Finset.mem_univ j) hj
 
 /-- Partial differentiation at a variable outside `Set.range e` annihilates
 `tateSeries.renameAlgHom e f`. -/
@@ -320,13 +278,11 @@ theorem tateSeries.pderiv_renameAlgHom_of_notMem_range {M : ℕ} (e : Fin N ↪ 
     (hm : m ∉ Set.range e) (f : tateSeries N A) :
     tateSeries.pderiv m (tateSeries.renameAlgHom e f) = 0 := by
   apply Subtype.ext
-  have ha : MvPowerSeries.HasSubst (MvPowerSeries.X (R := A) ∘ e) :=
-    MvPowerSeries.HasSubst.X_comp e
   rw [tateSeries.coe_pderiv, tateSeries.coe_renameAlgHom, ZeroMemClass.coe_zero,
-    MvPowerSeries.rename_eq_subst, MvPowerSeries.pderiv_subst ha _ m]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  have hne : e j ≠ m := fun h ↦ hm ⟨j, h⟩
-  simp [Function.comp_apply, MvPowerSeries.pderiv_X_of_ne hne]
+    MvPowerSeries.rename_eq_subst,
+    MvPowerSeries.pderiv_subst (MvPowerSeries.HasSubst.X_comp e) _ m]
+  exact Finset.sum_eq_zero fun j _ ↦ by
+    simp [Function.comp_apply, MvPowerSeries.pderiv_X_of_ne (fun h ↦ hm ⟨j, h⟩)]
 
 /-- **Inclusion `A⟨T₁, …, T_N⟩ →ₐ[A] A⟨T₁, …, T_N, S⟩` of the first `N` variables.** -/
 noncomputable abbrev tateSeries.castSuccAlgHom :
@@ -341,70 +297,62 @@ theorem tateSeries.pderiv_castSuccAlgHom_last (f : tateSeries N A) :
   tateSeries.pderiv_renameAlgHom_of_notMem_range Fin.castSuccEmb
     (by rintro ⟨i, hi⟩; exact Fin.castSucc_ne_last i hi) f
 
+section Map
+
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [NonarchimedeanRing B] {φ : A →+* B}
+
 /-- **Coefficientwise functoriality on `tateSeries N`:** a continuous ring homomorphism
 `φ : A →+* B` induces a continuous ring homomorphism `tateSeries N A →+* tateSeries N B`. -/
-noncomputable def tateSeries.mapRingHom {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) :
+noncomputable def tateSeries.mapRingHom (hφ : Continuous φ) :
     tateSeries N A →+* tateSeries N B :=
-  weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight
-    fun _ ↦ by simp
+  weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight fun _ ↦ by simp
 
 @[simp]
-theorem tateSeries.coe_mapRingHom {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) (f : tateSeries N A) :
+theorem tateSeries.coe_mapRingHom (hφ : Continuous φ) (f : tateSeries N A) :
     (tateSeries.mapRingHom hφ f : MvPowerSeries (Fin N) B) =
       MvPowerSeries.map φ (f : MvPowerSeries (Fin N) A) :=
   coe_weightedMap hφ _ f
 
 /-- `tateSeries.mapRingHom hφ` is continuous. -/
-theorem tateSeries.continuous_mapRingHom {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) :
+theorem tateSeries.continuous_mapRingHom (hφ : Continuous φ) :
     Continuous (tateSeries.mapRingHom (N := N) hφ) :=
-  continuous_weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight
-    fun _ ↦ by simp
+  continuous_weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight fun _ ↦ by simp
 
 @[simp]
-theorem tateSeries.mapRingHom_weightedC {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) (a : A) :
+theorem tateSeries.mapRingHom_weightedC (hφ : Continuous φ) (a : A) :
     tateSeries.mapRingHom (N := N) hφ
         (weightedC (fun _ : Fin N ↦ ({1} : Set A)) isWeightFamily_one_weight a) =
       weightedC (fun _ : Fin N ↦ ({1} : Set B)) isWeightFamily_one_weight (φ a) :=
   Subtype.ext (by simp [MvPowerSeries.map_C])
 
-theorem tateSeries.mapRingHom_algebraMap {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) (a : A) :
+theorem tateSeries.mapRingHom_algebraMap (hφ : Continuous φ) (a : A) :
     tateSeries.mapRingHom (N := N) hφ (algebraMap A (tateSeries N A) a) =
       algebraMap B (tateSeries N B) (φ a) := by
   rw [algebraMap_weightedRestrictedSubring, algebraMap_weightedRestrictedSubring,
     tateSeries.mapRingHom_weightedC]
 
 @[simp]
-theorem tateSeries.mapRingHom_X {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) (i : Fin N) :
+theorem tateSeries.mapRingHom_X (hφ : Continuous φ) (i : Fin N) :
     tateSeries.mapRingHom hφ (tateSeries.X N A i) = tateSeries.X N B i :=
   Subtype.ext (by simp)
 
 /-- If `φ` maps `Aplus` into `Bplus`, then `tateSeries.mapRingHom hφ` maps
 `tateSeriesPlus N A Aplus` into `tateSeriesPlus N B Bplus`. -/
-theorem tateSeries.mapRingHom_mem_tateSeriesPlus {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A}
+theorem tateSeries.mapRingHom_mem_tateSeriesPlus (hφ : Continuous φ) {Aplus : Subring A}
     {Bplus : Subring B} (hAB : ∀ a ∈ Aplus, φ a ∈ Bplus) {f : tateSeries N A}
     (hf : f ∈ tateSeriesPlus N A Aplus) :
     tateSeries.mapRingHom hφ f ∈ tateSeriesPlus N B Bplus := by
   rw [mem_tateSeriesPlus_iff] at hf ⊢
-  intro ν
-  rw [tateSeries.coe_mapRingHom, MvPowerSeries.coeff_map]
-  exact hAB _ (hf ν)
+  exact fun ν ↦ by rw [tateSeries.coe_mapRingHom, MvPowerSeries.coeff_map]; exact hAB _ (hf ν)
 
 /-- Formal partial differentiation commutes with `tateSeries.mapRingHom`. -/
 @[simp]
-theorem tateSeries.pderiv_mapRingHom {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) (j : Fin N) (f : tateSeries N A) :
+theorem tateSeries.pderiv_mapRingHom (hφ : Continuous φ) (j : Fin N) (f : tateSeries N A) :
     tateSeries.pderiv j (tateSeries.mapRingHom hφ f) =
       tateSeries.mapRingHom hφ (tateSeries.pderiv j f) := by
-  apply Subtype.ext
-  ext ν
-  simp [MvPowerSeries.coeff_pderiv]
+  apply Subtype.ext; ext ν; simp [MvPowerSeries.coeff_pderiv]
+
+end Map
 
 /-- **Rescaling a restricted series into an open subring:** if `ϖ` is topologically nilpotent and
 `Aplus` is an open subring of `A`, then every `f : tateSeries N A` satisfies
@@ -432,10 +380,10 @@ theorem exists_pow_smul_mem_tateSeriesPlus {Aplus : Subring A}
         weightMul (fun _ : Fin N ↦ ({1} : Set A)) ν U.toAddSubgroup :=
       not_not.mp fun h ↦ hν (hbad.mem_toFinset.mpr h)
     rw [weightMul_one_weight] at hmemU
-    have hmemAplus : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A) ∈ Aplus := hmemU
+    have hmem : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A) ∈ Aplus := hmemU
     rcases m.eq_zero_or_pos with rfl | _
-    · simpa using hmemAplus
-    · exact Aplus.mul_mem hm.2 hmemAplus
+    · simpa using hmem
+    · exact Aplus.mul_mem hm.2 hmem
 
 end Nonarchimedean
 
@@ -466,61 +414,9 @@ theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
           tateSeries N A →+* restrictedMvPowerSeriesCompletion N A) =
       S.polydiscPlus N := by
   rw [tateSeriesPlus_eq_weightedSubring, ← S.map_polydiscPlus_equiv N, Subring.map_map]
-  ext x
-  simp
+  ext x; simp
 
 end HuberPair
-
-/-! ### Sanity checks for `tateSeries.X` and `tateSeriesPlus` -/
-
-section Checks
-
--- `tateSeries_X_coe`: as a power series, `Tᵢ` is `MvPowerSeries.X i`.
-example {N : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] (i : Fin N) :
-    (tateSeries.X N A i : MvPowerSeries (Fin N) A) = MvPowerSeries.X i :=
-  tateSeries.coe_X i
-
--- `tateSeries_X_own_coefficient`: over `ℚ_[2]` in two variables, `coeff (single 0 1) (X 0) = 1`.
-example [Fact (Nat.Prime 2)] :
-    MvPowerSeries.coeff (Finsupp.single (0 : Fin 2) 1)
-      (tateSeries.X 2 ℚ_[2] 0 : MvPowerSeries (Fin 2) ℚ_[2]) = 1 := by
-  simp
-
--- `tateSeries_X_other_coefficient`: `coeff (single 1 1) (X 0) = 0`.
-example [Fact (Nat.Prime 2)] :
-    MvPowerSeries.coeff (Finsupp.single (1 : Fin 2) 1)
-      (tateSeries.X 2 ℚ_[2] 0 : MvPowerSeries (Fin 2) ℚ_[2]) = 0 := by
-  rw [tateSeries.coe_X, MvPowerSeries.coeff_X, ite_eq_right_iff]
-  intro h
-  have h0 := congrArg (fun ν : Fin 2 →₀ ℕ ↦ ν 0) h
-  simp at h0
-
--- `tateSeries_X_sum_constant`: `coeff 0 (X 0 + X 1) = 0`.
-example [Fact (Nat.Prime 2)] :
-    MvPowerSeries.coeff 0
-      ((tateSeries.X 2 ℚ_[2] 0 + tateSeries.X 2 ℚ_[2] 1 : tateSeries 2 ℚ_[2]) :
-        MvPowerSeries (Fin 2) ℚ_[2]) = 0 := by
-  simp
-
--- `tateSeries_X_not_isUnit`: over a nonzero `A`, `Tᵢ` is not a unit of `A⟨T⟩`.
-example {N : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] [Nontrivial A]
-    (i : Fin N) : ¬IsUnit (tateSeries.X N A i) :=
-  tateSeries.not_isUnit_X i
-
--- `tateSeriesPlus_constant` & `tateSeriesPlus_inverse_constant`: over `(ℚ_[p], ℤ_[p])`, `p` lies in
--- `ℤ_[p]⟨T⟩` whereas `p⁻¹` does not.
-example (p : ℕ) [hp : Fact p.Prime] (N : ℕ) :
-    algebraMap ℚ_[p] (tateSeries N ℚ_[p]) p ∈ tateSeriesPlus N ℚ_[p] (_root_.PadicInt.subring p) ∧
-      algebraMap ℚ_[p] (tateSeries N ℚ_[p]) (p : ℚ_[p])⁻¹ ∉
-        tateSeriesPlus N ℚ_[p] (_root_.PadicInt.subring p) := by
-  rw [algebraMap_mem_tateSeriesPlus_iff, algebraMap_mem_tateSeriesPlus_iff]
-  refine ⟨natCast_mem (_root_.PadicInt.subring p) p, fun h ↦ ?_⟩
-  have hnorm : ‖((p : ℚ_[p])⁻¹)‖ ≤ 1 := h
-  rw [norm_inv, _root_.Padic.norm_p, inv_inv] at hnorm
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  linarith
-
-end Checks
 
 end TauCeti.Huber
 
