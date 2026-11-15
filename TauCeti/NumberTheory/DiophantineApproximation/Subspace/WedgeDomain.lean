@@ -85,7 +85,8 @@ open scoped Classical in
 /-- **The exponents of the wedge domain** `S(Q)` (Bombieri–Gubler 7.5.30). At a `p`-subset `T`
 of the forms, the exponent is `∑ t ∈ T, c v t`, plus, at an archimedean `v`, the logarithm to base
 `Q` of `C * ∏ t ∈ T, μ (σ v⁻¹ t)`, multiplied by `μ (k - 1) / μ k` when every `σ v⁻¹ t` is at least
-`k`, that is when `T` is the image of the top block `{k, …, N - 1}` under `σ v`. -/
+`k`. For `k + p = N` this says exactly that `T` is the image of the top block `{k, …, N - 1}`
+under `σ v`. -/
 def wedgeExponent (c : AbsoluteValue K ℝ → ι → ℝ)
     (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι) (μ : ℕ → ℝ) (C : ℝ) (k p : ℕ) (Q : ℝ)
     (v : AbsoluteValue K ℝ) (T : Set.powersetCard ι p) : ℝ :=
