@@ -30,7 +30,9 @@ after period in both directions: its trajectory is defined for all time
 (`TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`) and is a `T`-periodic solution. Evaluation at
 the initial time `s` is therefore an equivalence between `T`-periodic solutions and the fixed points
 of the **return map** `timeDependentFlowOf X s (s + T)` in its domain
-(`TauCeti.periodicSolutionsEquivFixedPoints`).
+(`TauCeti.periodicSolutionsEquivFixedPoints`). In particular a periodic solution whose initial
+point is isolated among the fixed points of the return map is isolated among the periodic
+solutions (`TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`).
 
 On a compact boundaryless manifold modelled on a finite-dimensional space the return map is defined
 and `C¹` everywhere. If every periodic solution is nondegenerate, meaning that its initial point is
@@ -67,6 +69,9 @@ isolated, fixed points is finite.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
+* `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`: a periodic
+  solution through an isolated fixed point of the return map is isolated among the periodic
+  solutions.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
@@ -88,8 +93,8 @@ public section
 
 noncomputable section
 
-open Function Set
-open scoped Manifold
+open Filter Function Set
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -272,6 +277,31 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
     ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).1 t =
       timeDependentFlowOf X s t x :=
   (rfl)
+
+omit [CompleteSpace E] in
+/-- **Periodic solutions through isolated fixed points are isolated.** Let `γ` be a `T`-periodic
+solution of `X` whose value `γ s` is isolated among the fixed points of the return map
+`timeDependentFlowOf X s (s + T)`. Then every `T`-periodic solution `δ` whose value `δ s` is close
+enough to `γ s` is `γ` itself. For a nondegenerate fixed point the isolation is
+`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`. -/
+theorem eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt {γ : ℝ → M}
+    (hγ : γ ∈ periodicSolutions X T)
+    (hiso : ∀ᶠ p in 𝓝[≠] γ s, ¬IsFixedPt (timeDependentFlowOf X s (s + T)) p) :
+    ∀ᶠ p in 𝓝 (γ s), ∀ δ ∈ periodicSolutions X T, δ s = p → δ = γ := by
+  -- A solution defined for all time is the trajectory of the flow from time `s`.
+  have hflow {δ : ℝ → M} (hδ : δ ∈ periodicSolutions X T) (t : ℝ) :
+      timeDependentFlowOf X s t (δ s) = δ t := by
+    have hδ' (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := hδ.1 u
+    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hδ'
+      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  filter_upwards [eventually_nhdsWithin_iff.1 hiso] with p hp δ hδ hδp
+  -- The value `δ s` is a fixed point of the return map close to `γ s`, hence equal to it.
+  have hδγ : δ s = γ s := by
+    by_contra hne
+    exact hp (hδp ▸ hne) (hδp ▸ (hflow hδ (s + T)).trans (hδ.2 s))
+  funext t
+  rw [← hflow hδ t, ← hflow hγ t, hδγ]
 
 section Complete
 
