@@ -69,6 +69,8 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.detachedCircleCount D c t`: the circles of the smoothing of `c` that meet no
   other crossing.
 * `TauCeti.PDCode.resolveCrossing D c t`: the code with the crossing `c` smoothed.
+* `TauCeti.PDCode.resolveCrossingHalfEdge D c`: the half-edge of `D` corresponding to a half-edge
+  of `D.resolveCrossing c t`.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv D c t s`: the resolved circles of a state of
   the resolution are those of `D` smoothed by the extended state `c.insertNth t s`.
 
@@ -91,6 +93,10 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv_saddleResolvedCircleMap`: the circle
   correspondence commutes with the saddles at the other crossings.
 * `TauCeti.PDCode.IsPlanar.resolveCrossing`: the resolutions of a planar code are planar.
+* `TauCeti.PDCode.componentCount_resolveCrossing_add_one_of_not_sameCycle` and
+  `TauCeti.PDCode.componentCount_resolveCrossing_alternatives`: resolving a crossing between two
+  distinct components lowers the component count by one in both smoothings, whereas resolving a
+  self-crossing gives component counts `c` and `c + 1`.
 
 ## References
 
@@ -1087,6 +1093,388 @@ theorem resolveCrossingResolvedCircleEquiv_saddleResolvedCircleMap {s s' : Fin n
         saddleResolvedCircleMap_inl, saddleCircleMap_mk]
 
 end ResolvedCircle
+
+/-! ### Half-edge embedding and component counts of a resolution -/
+
+section ComponentCount
+
+/-- The half-edge of `D` corresponding to a half-edge position of `D.resolveCrossing c t`: slot `k`
+of crossing `i` of the resolution comes from slot `k` of crossing `c.succAbove i` of `D`. -/
+def resolveCrossingHalfEdge (y : Fin (4 * n)) : Fin (4 * (n + 1)) :=
+  D.slotEquiv c (.inl y)
+
+/-- Slot `k` of crossing `i` of a resolution embeds as slot `k` of crossing `c.succAbove i` of
+`D`. -/
+@[simp] theorem resolveCrossingHalfEdge_crossingSlotEquiv (i : Fin n) (k : Fin 4) :
+    D.resolveCrossingHalfEdge c (crossingSlotEquiv n (i, k)) = D.crossing (c.succAbove i) k :=
+  D.slotEquiv_inl c i k
+
+/-- Distinct half-edges of a resolution come from distinct half-edges of `D`. -/
+theorem resolveCrossingHalfEdge_injective : Function.Injective (D.resolveCrossingHalfEdge c) :=
+  (D.slotEquiv c).injective.comp Sum.inl_injective
+
+/-- If a `Bool` colouring of the half-edges of `D` flips along every arc of `D` and along the two
+arcs of the local smoothing of `c`, then the restricted colouring on `D.resolveCrossing c t` flips
+along every arc of that resolution. -/
+theorem bool_not_resolveCrossing_edgePair_val (t : Bool) {o : Fin (4 * (n + 1)) → Bool}
+    (hedge : ∀ x, o (D.edgePair.val x) = !o x)
+    (hsmooth : ∀ k : Fin 4,
+      o (D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) k)) =
+        !o (D.crossing c k))
+    (y : Fin (4 * n)) :
+    o (D.resolveCrossingHalfEdge c ((D.resolveCrossing c t).edgePair.val y)) =
+      !o (D.resolveCrossingHalfEdge c y) := by
+  have hstep : ∀ (M : PerfectMatching (Fin (4 * n) ⊕ Fin 4)),
+      (∀ x, o (D.slotEquiv c (M.val x)) = !o (D.slotEquiv c x)) →
+        ∀ {a b}, o (D.slotEquiv c b) = !o (D.slotEquiv c a) →
+          ∀ x, o (D.slotEquiv c ((M.reconnect a b).val x)) = !o (D.slotEquiv c x) := by
+    intro M hM a b hab x
+    have hswap : ∀ z, o (D.slotEquiv c (Equiv.swap (M.val a) b z)) = o (D.slotEquiv c z) := by
+      intro z
+      rcases eq_or_ne z (M.val a) with rfl | hz₁
+      · rw [Equiv.swap_apply_left, hab, hM]
+      · rcases eq_or_ne z b with rfl | hz₂
+        · rw [Equiv.swap_apply_right, hM, hab]
+        · rw [Equiv.swap_apply_of_ne_of_ne hz₁ hz₂]
+    rw [PerfectMatching.reconnect_val, permCongr_apply, Equiv.symm_swap, hswap, hM, hswap]
+  have hM₀ : ∀ x, o (D.slotEquiv c ((D.slotMatching c).val x)) = !o (D.slotEquiv c x) := fun x ↦ by
+    rw [slotMatching_val, permCongr_apply, symm_symm, apply_symm_apply, hedge]
+  have hs₀ : o (D.slotEquiv c (.inr (D.localSmoothing c t 0))) = !o (D.slotEquiv c (.inr 0)) := by
+    simpa [slotEquiv_inr, localSmoothing] using hsmooth 0
+  have hM₁ : ∀ x, o (D.slotEquiv c ((D.pinchedOnce c t).val x)) = !o (D.slotEquiv c x) :=
+    hstep (D.slotMatching c) hM₀ hs₀
+  have hs₂ : o (D.slotEquiv c (.inr (D.localSmoothing c t 2))) = !o (D.slotEquiv c (.inr 2)) := by
+    simpa [slotEquiv_inr, localSmoothing] using hsmooth 2
+  have hM₂ : ∀ x, o (D.slotEquiv c ((D.pinchedTwice c t).val x)) = !o (D.slotEquiv c x) :=
+    hstep (D.pinchedOnce c t) hM₁ hs₂
+  have hy := hM₂ (.inl y)
+  rwa [pinchedTwice_val, Perm.sumCongr_apply, Sum.map_inl] at hy
+
+/-- Reconnecting the arcs of `D` at slot `k` of `c` to its smoothing partner adds two orbits to
+the product with `Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t)`
+unless the arc at `k` already returns to that partner. -/
+private theorem orbitCount_crossingTurn_mul_reconnect_inr (t : Bool)
+    (M : PerfectMatching (Fin (4 * n) ⊕ Fin 4)) (k : Fin 4) :
+    orbitCount (Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t) *
+        (M.reconnect (.inr k) (.inr (D.localSmoothing c t k))).val) =
+      orbitCount (Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t) *
+        M.val) + if M.val (.inr k) = .inr (D.localSmoothing c t k) then 0 else 2 := by
+  split_ifs with h
+  · rw [← h, PerfectMatching.reconnect_partner, add_zero]
+  · have hk : D.localSmoothing c t k ≠ k := slotSmoothing_ne _ k
+    exact M.orbitCount_mul_reconnect (a := .inr k) (by simp [localSmoothing])
+      (by simpa using hk) h
+
+/-- Twice the component count of `D.resolveCrossing c t` equals the orbit count of replacing the
+passage through `c` by `D.localSmoothing c t`, plus twice the crossing-free circles of `D`. -/
+private theorem two_mul_componentCount_resolveCrossing (t : Bool) :
+    2 * (D.resolveCrossing c t).componentCount =
+      orbitCount (Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t) *
+        (D.slotMatching c).val) + 2 * D.crossinglessComponentCount := by
+  set R := D.resolveCrossing c t
+  set U := Perm.sumCongr R.crossingTurn (D.localSmoothing c t)
+  have h₁ : orbitCount (U * (D.pinchedOnce c t).val) = orbitCount (U * (D.slotMatching c).val) +
+      if (D.slotMatching c).val (.inr 0) = .inr (D.localSmoothing c t 0) then 0 else 2 :=
+    D.orbitCount_crossingTurn_mul_reconnect_inr c t _ 0
+  have h₂ : orbitCount (U * (D.pinchedTwice c t).val) = orbitCount (U * (D.pinchedOnce c t).val) +
+      if (D.pinchedOnce c t).val (.inr 2) = .inr (D.localSmoothing c t 2) then 0 else 2 :=
+    D.orbitCount_crossingTurn_mul_reconnect_inr c t _ 2
+  have h₃ : orbitCount (U * (D.pinchedTwice c t).val) = orbitCount R.componentPerm + 4 := by
+    rw [pinchedTwice_val, Perm.sumCongr_mul, localSmoothing_mul_self, Perm.orbitCount_sumCongr,
+      componentPerm_def, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rw [h₃] at h₂
+  rw [componentCount_eq, crossingComponentCount_def, resolveCrossing_crossinglessComponentCount,
+    detachedCircleCount]
+  obtain ⟨r, hr⟩ := R.even_orbitCount_componentPerm
+  split_ifs at h₁ h₂ ⊢ <;> omega
+
+/-- Each local smoothing on `Fin 4` is obtained from `oppositeCrossingSlot` by two disjoint
+transpositions pairing `0` with `slotSmoothing (!b) 0` and `2` with its opposite slot. -/
+private theorem slotSmoothing_eq_swap_mul_swap_mul_oppositeCrossingSlot (b : Bool) :
+    ∀ m : Fin 4, slotSmoothing b m =
+      Equiv.swap 2 (oppositeCrossingSlot (slotSmoothing (!b) 0))
+        (Equiv.swap 0 (slotSmoothing (!b) 0) (oppositeCrossingSlot m)) := by
+  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_true, slotSmoothing_false,
+    oppositeCrossingSlot_apply] <;> decide
+
+/-- Transporting `Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t)` to
+the half-edges of `D` multiplies `D.crossingTurn` on the left by two opposite transpositions at
+crossing `c`. -/
+private theorem permCongr_sumCongr_crossingTurn_localSmoothing (t : Bool) :
+    (D.slotEquiv c).permCongr
+        (Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t)) =
+      let k := slotSmoothing (!(bif t then D.overPair c else !D.overPair c)) 0
+      Equiv.swap (D.crossingTurn (D.crossing c 0)) (D.crossingTurn (D.crossing c k)) *
+        Equiv.swap (D.crossing c 0) (D.crossing c k) * D.crossingTurn := by
+  set b := bif t then D.overPair c else !D.overPair c
+  set k := slotSmoothing (!b) 0
+  have ht₀ : D.crossingTurn (D.crossing c 0) = D.crossing c 2 := by
+    rw [crossing_apply, crossingTurn_crossing, oppositeCrossingSlot_apply]
+    rfl
+  have htk : D.crossingTurn (D.crossing c k) = D.crossing c (oppositeCrossingSlot k) := by
+    rw [crossing_apply, crossingTurn_crossing]
+  have hinj : Function.Injective (D.crossing c) := fun _ _ h ↦ (D.crossing_eq_crossing_iff.mp h).2
+  ext h : 1
+  obtain ⟨x, rfl⟩ := (D.slotEquiv c).surjective h
+  rcases x with y | m
+  · obtain ⟨⟨i, l⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+    have hne : ∀ s : Fin 4, D.crossing (c.succAbove i) (oppositeCrossingSlot l) ≠ D.crossing c s :=
+      fun s hs ↦ Fin.succAbove_ne c i (D.crossing_eq_crossing_iff.mp hs).1
+    have hR : (D.resolveCrossing c t).crossingTurn (crossingSlotEquiv n (i, l)) =
+        crossingSlotEquiv n (i, oppositeCrossingSlot l) := by
+      simpa [crossing_resolveCrossing] using (D.resolveCrossing c t).crossingTurn_crossing i l
+    rw [permCongr_apply, symm_apply_apply, Perm.sumCongr_apply, Sum.map_inl, hR, slotEquiv_inl,
+      slotEquiv_inl, Perm.mul_apply, Perm.mul_apply, D.crossing_apply (c.succAbove i) l,
+      crossingTurn_crossing, ht₀, htk, Equiv.swap_apply_of_ne_of_ne (hne 0) (hne k),
+      Equiv.swap_apply_of_ne_of_ne (hne 2) (hne (oppositeCrossingSlot k))]
+  · rw [permCongr_apply, symm_apply_apply, Perm.sumCongr_apply, Sum.map_inr, slotEquiv_inr,
+      slotEquiv_inr, localSmoothing, Perm.mul_apply, Perm.mul_apply, D.crossing_apply c m,
+      crossingTurn_crossing, ht₀, htk, slotSmoothing_eq_swap_mul_swap_mul_oppositeCrossingSlot,
+      hinj.swap_apply, hinj.swap_apply]
+
+/-- Conjugating `componentPerm` by `crossingTurn` inverts it. -/
+private theorem crossingTurn_permCongr_componentPerm {m : ℕ} (E : PDCode m) :
+    E.crossingTurn.permCongr E.componentPerm = E.componentPerm⁻¹ := by
+  have hsymm : E.crossingTurn.symm = E.crossingTurn :=
+    Equiv.ext fun z ↦ E.crossingTurn.symm_apply_eq.mpr (E.crossingTurn_apply_apply z).symm
+  refine mul_eq_one_iff_eq_inv.mp (Equiv.ext fun x ↦ ?_)
+  rw [Perm.mul_apply, permCongr_apply, hsymm, componentPerm_apply, componentPerm_apply,
+    crossingTurn_apply_apply, Perm.one_apply]
+  exact (congrArg E.edgePair.val (E.crossingTurn_apply_apply (E.edgePair.val x))).trans
+    (E.edgePair.apply_apply x)
+
+/-- `crossingTurn` carries each directed component orbit to the reversed orbit, so it preserves
+`SameCycle` for `componentPerm`. -/
+theorem sameCycle_componentPerm_crossingTurn_iff {m : ℕ} (E : PDCode m)
+    {x y : Fin (4 * m)} :
+    E.componentPerm.SameCycle (E.crossingTurn x) (E.crossingTurn y) ↔
+      E.componentPerm.SameCycle x y := by
+  have h := (sameCycle_permCongr E.componentPerm E.crossingTurn
+    (x := E.crossingTurn x) (y := E.crossingTurn y)).symm
+  rwa [E.crossingTurn_apply_apply, E.crossingTurn_apply_apply,
+    E.crossingTurn_permCongr_componentPerm, sameCycle_inv] at h
+
+/-- No half-edge lies in the same directed `componentPerm` orbit as its opposite-slot partner. -/
+private theorem not_sameCycle_componentPerm_crossingTurn {m : ℕ} (E : PDCode m) (x : Fin (4 * m)) :
+    ¬ E.componentPerm.SameCycle x (E.crossingTurn x) := by
+  intro h
+  have hedge : E.componentPerm.SameCycle (E.edgePair.val x) (E.crossingTurn x) := ⟨1, by simp⟩
+  have hself : (E.crossingTurn * E.edgePair.val).SameCycle x (E.edgePair.val x) := by
+    rw [← E.componentPerm_def]
+    exact h.trans hedge.symm
+  exact E.isPerfectMatching_crossingTurn.not_sameCycle_self_apply E.edgePair.prop x hself
+
+/-- When `u ≠ v` share a directed `componentPerm` orbit, both `Equiv.swap u v` and its
+`crossingTurn` conjugate split an orbit, increasing `orbitCount` by two. -/
+private theorem orbitCount_swap_crossingTurn_mul_of_sameCycle {m : ℕ} (E : PDCode m)
+    {u v : Fin (4 * m)} (huv : u ≠ v) (h : E.componentPerm.SameCycle u v) :
+    orbitCount (Equiv.swap (E.crossingTurn u) (E.crossingTurn v) *
+        (Equiv.swap u v * E.componentPerm)) =
+      orbitCount E.componentPerm + 2 := by
+  have htuv : E.crossingTurn u ≠ E.crossingTurn v := E.crossingTurn.injective.ne huv
+  have htu_u : ¬ E.componentPerm.SameCycle (E.crossingTurn u) u := fun h' ↦
+    E.not_sameCycle_componentPerm_crossingTurn u h'.symm
+  have htu_v : ¬ E.componentPerm.SameCycle (E.crossingTurn u) v := fun h' ↦
+    htu_u (h'.trans h.symm)
+  have hsc₂ : (Equiv.swap u v * E.componentPerm).SameCycle
+      (E.crossingTurn u) (E.crossingTurn v) := by
+    have hsq : (Equiv.swap u v * (Equiv.swap u v * E.componentPerm)).SameCycle
+        (E.crossingTurn u) (E.crossingTurn v) := by
+      rw [Equiv.swap_mul_self_mul]
+      exact (E.sameCycle_componentPerm_crossingTurn_iff).mpr h
+    rcases hsq.sameCycle_or_of_swap_mul with hsc | ⟨hu | hv, -⟩
+    · exact hsc
+    · rcases hu.sameCycle_or_of_swap_mul with h₁ | ⟨h₁ | h₁, -⟩
+      · exact absurd h₁ htu_u
+      · exact absurd h₁ htu_u
+      · exact absurd h₁ htu_v
+    · rcases hv.sameCycle_or_of_swap_mul with h₁ | ⟨h₁ | h₁, -⟩
+      · exact absurd h₁ htu_v
+      · exact absurd h₁ htu_u
+      · exact absurd h₁ htu_v
+  rw [orbitCount_swap_mul_of_sameCycle htuv hsc₂, orbitCount_swap_mul_of_sameCycle huv h]
+
+/-- When `u` shares a directed `componentPerm` orbit with `E.crossingTurn v` (and `u ≠ v`),
+`Equiv.swap u v` merges the two opposite directed orbits into one and its `crossingTurn` conjugate
+splits that merged orbit back into two, leaving `orbitCount` unchanged. -/
+private theorem orbitCount_swap_crossingTurn_mul_of_sameCycle_crossingTurn {m : ℕ} (E : PDCode m)
+    {u v : Fin (4 * m)} (huv : u ≠ v) (h : E.componentPerm.SameCycle u (E.crossingTurn v)) :
+    orbitCount (Equiv.swap (E.crossingTurn u) (E.crossingTurn v) *
+        (Equiv.swap u v * E.componentPerm)) =
+      orbitCount E.componentPerm := by
+  have huv_not : ¬ E.componentPerm.SameCycle u v := fun h' ↦
+    E.not_sameCycle_componentPerm_crossingTurn v (h'.symm.trans h)
+  have htuv : E.crossingTurn u ≠ E.crossingTurn v := E.crossingTurn.injective.ne huv
+  have hab : (Equiv.swap u v * E.componentPerm).SameCycle u v :=
+    sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle
+      (E.componentPerm.injective.mem_periodicPts v) huv_not
+  have htu_v : E.componentPerm.SameCycle (E.crossingTurn u) v := by
+    have h' := (E.sameCycle_componentPerm_crossingTurn_iff).mpr h
+    rwa [E.crossingTurn_apply_apply] at h'
+  have hsc₂ : (Equiv.swap u v * E.componentPerm).SameCycle (E.crossingTurn u) (E.crossingTurn v) :=
+    (hab.swap_mul_of_sameCycle htu_v).trans (hab.symm.trans (hab.swap_mul_of_sameCycle h))
+  have hmerge := orbitCount_swap_mul_add_one_of_not_sameCycle huv_not
+  rw [orbitCount_swap_mul_of_sameCycle htuv hsc₂]
+  omega
+
+/-- When `u` and `v` lie on distinct undirected components, both `Equiv.swap u v` and its
+`crossingTurn` conjugate merge distinct orbits, decreasing `orbitCount` by two. -/
+private theorem orbitCount_swap_crossingTurn_mul_add_two_of_not_sameCycle {m : ℕ} (E : PDCode m)
+    {u v : Fin (4 * m)} (h₁ : ¬ E.componentPerm.SameCycle u v)
+    (h₂ : ¬ E.componentPerm.SameCycle u (E.crossingTurn v)) :
+    orbitCount (Equiv.swap (E.crossingTurn u) (E.crossingTurn v) *
+        (Equiv.swap u v * E.componentPerm)) + 2 =
+      orbitCount E.componentPerm := by
+  have hsc₂ : ¬ (Equiv.swap u v * E.componentPerm).SameCycle
+      (E.crossingTurn u) (E.crossingTurn v) := by
+    intro hcon
+    rcases hcon.sameCycle_or_of_swap_mul with htu | ⟨htu | htu, -⟩
+    · exact h₁ ((E.sameCycle_componentPerm_crossingTurn_iff).mp htu)
+    · exact E.not_sameCycle_componentPerm_crossingTurn u htu.symm
+    · have h' := (E.sameCycle_componentPerm_crossingTurn_iff).mpr htu
+      rw [E.crossingTurn_apply_apply] at h'
+      exact h₂ h'
+  have hm₁ := orbitCount_swap_mul_add_one_of_not_sameCycle h₁
+  have hm₂ := orbitCount_swap_mul_add_one_of_not_sameCycle hsc₂
+  omega
+
+/-- Twice the component count of `D.resolveCrossing c t` equals the orbit count of the
+double-transposition perturbation of `D.componentPerm` at `c`, plus twice the crossing-free
+circles of `D`. -/
+private theorem two_mul_componentCount_resolveCrossing_eq_orbitCount (t : Bool) :
+    2 * (D.resolveCrossing c t).componentCount =
+      let k := slotSmoothing (!(bif t then D.overPair c else !D.overPair c)) 0
+      orbitCount (Equiv.swap (D.crossingTurn (D.crossing c 0)) (D.crossingTurn (D.crossing c k)) *
+        (Equiv.swap (D.crossing c 0) (D.crossing c k) * D.componentPerm)) +
+        2 * D.crossinglessComponentCount := by
+  have hedge : (D.slotEquiv c).permCongr (D.slotMatching c).val = D.edgePair.val := by
+    rw [slotMatching_val]
+    ext x : 1
+    simp [permCongr_apply]
+  rw [D.two_mul_componentCount_resolveCrossing c t,
+    ← Equiv.orbitCount_permCongr (D.slotEquiv c), Equiv.permCongr_mul,
+    D.permCongr_sumCongr_crossingTurn_localSmoothing c t, hedge]
+  dsimp only
+  rw [mul_assoc, mul_assoc, ← componentPerm_def]
+
+/-- **Component count when resolving a crossing between two distinct components.** If the two
+strands at crossing `c` belong to different undirected components (so slot `0` shares a directed
+`componentPerm` orbit with neither slot `1` nor slot `3`), then both the `A`- and `B`-resolutions
+merge those two components into one and have `D.componentCount - 1` components. -/
+theorem componentCount_resolveCrossing_add_one_of_not_sameCycle (t : Bool)
+    (h₁ : ¬ D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 1))
+    (h₃ : ¬ D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 3)) :
+    (D.resolveCrossing c t).componentCount + 1 = D.componentCount := by
+  have h2 := D.two_mul_componentCount_resolveCrossing_eq_orbitCount c t
+  dsimp only at h2
+  set b := bif t then D.overPair c else !D.overPair c
+  have horb : orbitCount (Equiv.swap (D.crossingTurn (D.crossing c 0))
+        (D.crossingTurn (D.crossing c (slotSmoothing (!b) 0))) *
+      (Equiv.swap (D.crossing c 0) (D.crossing c (slotSmoothing (!b) 0)) *
+        D.componentPerm)) + 2 = orbitCount D.componentPerm := by
+    cases hb : b
+    · have hk : slotSmoothing (!false) 0 = 1 := by rw [Bool.not_false, slotSmoothing_true]; decide
+      have ht₁ : D.crossingTurn (D.crossing c 1) = D.crossing c 3 := by
+        rw [crossing_apply, crossingTurn_crossing, oppositeCrossingSlot_apply]; rfl
+      rw [hk]
+      exact D.orbitCount_swap_crossingTurn_mul_add_two_of_not_sameCycle h₁ (by rwa [ht₁])
+    · have hk : slotSmoothing (!true) 0 = 3 := by rw [Bool.not_true, slotSmoothing_false]; decide
+      have ht₃ : D.crossingTurn (D.crossing c 3) = D.crossing c 1 := by
+        rw [crossing_apply, crossingTurn_crossing, oppositeCrossingSlot_apply]; rfl
+      rw [hk]
+      exact D.orbitCount_swap_crossingTurn_mul_add_two_of_not_sameCycle h₃ (by rwa [ht₃])
+  obtain ⟨r, hr⟩ := D.even_orbitCount_componentPerm
+  have hD : D.componentCount = orbitCount D.componentPerm / 2 + D.crossinglessComponentCount := by
+    rw [componentCount_eq, crossingComponentCount_def]
+  omega
+
+/-- Unified self-crossing helper: when slot `0` shares a directed `componentPerm` orbit with
+`slotSmoothing (!b₀) 0`, choosing `t` with local smoothing `b₀` splits the component (`c + 1`) and
+choosing `!t` leaves the component count at `c`. -/
+private theorem componentCount_resolveCrossing_of_sameCycle_slotSmoothing (t : Bool)
+    (h : D.componentPerm.SameCycle (D.crossing c 0)
+      (D.crossing c (slotSmoothing (!(bif t then D.overPair c else !D.overPair c)) 0))) :
+    (D.resolveCrossing c t).componentCount = D.componentCount + 1 ∧
+      (D.resolveCrossing c (!t)).componentCount = D.componentCount := by
+  have hb' : (bif !t then D.overPair c else !D.overPair c) =
+      !(bif t then D.overPair c else !D.overPair c) := by
+    cases t <;> cases D.overPair c <;> rfl
+  have hc₁ := D.two_mul_componentCount_resolveCrossing_eq_orbitCount c t
+  have hc₂ := D.two_mul_componentCount_resolveCrossing_eq_orbitCount c (!t)
+  dsimp only at hc₁ hc₂
+  rw [hb', Bool.not_not] at hc₂
+  generalize (bif t then D.overPair c else !D.overPair c) = b at h hc₁ hc₂
+  have hne₁ : D.crossing c 0 ≠ D.crossing c (slotSmoothing (!b) 0) := fun hc ↦
+    slotSmoothing_ne (!b) 0 (D.crossing_eq_crossing_iff.mp hc).2.symm
+  have hne₂ : D.crossing c 0 ≠ D.crossing c (slotSmoothing b 0) := fun hc ↦
+    slotSmoothing_ne b 0 (D.crossing_eq_crossing_iff.mp hc).2.symm
+  have htk : D.crossingTurn (D.crossing c (slotSmoothing b 0)) =
+      D.crossing c (slotSmoothing (!b) 0) := by
+    rw [crossing_apply, crossingTurn_crossing]
+    congr 1
+    cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_true, slotSmoothing_false,
+      oppositeCrossingSlot_apply] <;> decide
+  rw [D.orbitCount_swap_crossingTurn_mul_of_sameCycle hne₁ h] at hc₁
+  rw [D.orbitCount_swap_crossingTurn_mul_of_sameCycle_crossingTurn hne₂ (by rwa [htk])] at hc₂
+  obtain ⟨r, hr⟩ := D.even_orbitCount_componentPerm
+  have hD : D.componentCount = orbitCount D.componentPerm / 2 + D.crossinglessComponentCount := by
+    rw [componentCount_eq, crossingComponentCount_def]
+  omega
+
+/-- If slots `0` and `1` of crossing `c` lie in the same directed `componentPerm` orbit, resolving
+`c` by `!D.overPair c` splits that component (`c + 1` components), whereas resolving `c` by
+`D.overPair c` leaves the component count unchanged (`c` components). -/
+theorem componentCount_resolveCrossing_of_sameCycle_zero_one
+    (h : D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 1)) :
+    (D.resolveCrossing c (!D.overPair c)).componentCount = D.componentCount + 1 ∧
+      (D.resolveCrossing c (D.overPair c)).componentCount = D.componentCount := by
+  have hb : (bif !D.overPair c then D.overPair c else !D.overPair c) = false := by
+    cases D.overPair c <;> rfl
+  have hk : slotSmoothing (!false) 0 = 1 := by rw [Bool.not_false, slotSmoothing_true]; decide
+  simpa using D.componentCount_resolveCrossing_of_sameCycle_slotSmoothing c (!D.overPair c)
+    (by rwa [hb, hk])
+
+/-- If slots `0` and `3` of crossing `c` lie in the same directed `componentPerm` orbit, resolving
+`c` by `D.overPair c` splits that component (`c + 1` components), whereas resolving `c` by
+`!D.overPair c` leaves the component count unchanged (`c` components). -/
+theorem componentCount_resolveCrossing_of_sameCycle_zero_three
+    (h : D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 3)) :
+    (D.resolveCrossing c (D.overPair c)).componentCount = D.componentCount + 1 ∧
+      (D.resolveCrossing c (!D.overPair c)).componentCount = D.componentCount := by
+  have hb : (bif D.overPair c then D.overPair c else !D.overPair c) = true := by
+    cases D.overPair c <;> rfl
+  have hk : slotSmoothing (!true) 0 = 3 := by rw [Bool.not_true, slotSmoothing_false]; decide
+  exact D.componentCount_resolveCrossing_of_sameCycle_slotSmoothing c (D.overPair c)
+    (by rwa [hb, hk])
+
+/-- **Component-count dichotomy at a resolved crossing.** Either both smoothings of `c` merge two
+components into one (`c - 1` components each), or `c` is a self-crossing and the two smoothings
+have `c` and `c + 1` components in some order. -/
+theorem componentCount_resolveCrossing_alternatives :
+    ((D.resolveCrossing c true).componentCount + 1 = D.componentCount ∧
+        (D.resolveCrossing c false).componentCount + 1 = D.componentCount) ∨
+      ((D.resolveCrossing c true).componentCount = D.componentCount ∧
+        (D.resolveCrossing c false).componentCount = D.componentCount + 1) ∨
+      ((D.resolveCrossing c true).componentCount = D.componentCount + 1 ∧
+        (D.resolveCrossing c false).componentCount = D.componentCount) := by
+  by_cases h₁ : D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 1)
+  · obtain ⟨ha, hb⟩ := D.componentCount_resolveCrossing_of_sameCycle_zero_one c h₁
+    cases ho : D.overPair c
+    · simp only [ho, Bool.not_false] at ha hb
+      exact .inr (.inr ⟨ha, hb⟩)
+    · simp only [ho, Bool.not_true] at ha hb
+      exact .inr (.inl ⟨hb, ha⟩)
+  · by_cases h₃ : D.componentPerm.SameCycle (D.crossing c 0) (D.crossing c 3)
+    · obtain ⟨ha, hb⟩ := D.componentCount_resolveCrossing_of_sameCycle_zero_three c h₃
+      cases ho : D.overPair c
+      · simp only [ho, Bool.not_false] at ha hb
+        exact .inr (.inl ⟨hb, ha⟩)
+      · simp only [ho, Bool.not_true] at ha hb
+        exact .inr (.inr ⟨ha, hb⟩)
+    · exact .inl ⟨D.componentCount_resolveCrossing_add_one_of_not_sameCycle c true h₁ h₃,
+        D.componentCount_resolveCrossing_add_one_of_not_sameCycle c false h₁ h₃⟩
+
+end ComponentCount
 
 /-- The `A`-resolution of the kink consists of two crossing-free circles. -/
 theorem crossinglessComponentCount_resolveCrossing_kink_true :
