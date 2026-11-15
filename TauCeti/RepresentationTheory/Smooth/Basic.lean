@@ -8,10 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Nonarchimedean.LocallyProfinite
-import Mathlib.GroupTheory.Perm.Fin
-import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.GroupTheory.QuotientGroup.Basic
-import TauCeti.NumberTheory.Padics.QuotientTower
 
 /-!
 # Smooth representations and smooth vectors
@@ -41,10 +38,13 @@ and closed under conjugation (`Representation.isOpen_stabilizer_add`,
   descents along normal subgroups acting trivially, and coset permutation representations
   `A[G ⧸ U]` for open subgroups `U` are smooth.
 
-When `A` is a commutative ring and `G` is locally profinite (locally compact, Hausdorff, and
-totally disconnected), van Dantzig's theorem refines open stabilizers to compact open subgroups:
-`ρ.smoothVectors` is the union (and supremum) of the invariant submodules `V^U` as `U` ranges over
-compact open subgroups of `G` (`Representation.coe_smoothVectors_eq_biUnion_invariants_isCompact`,
+When `G` is a weakly locally compact zero-dimensional topological group (in particular, any locally
+profinite group), van Dantzig's theorem refines open stabilizers to compact open subgroups over any
+semiring `A` (`Representation.mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer`,
+`Representation.isSmooth_iff_exists_isCompact_openSubgroup_le_stabilizer`). When `A` is a
+commutative ring, `ρ.smoothVectors` is the union (and supremum) of the invariant submodules `V^U`
+as `U` ranges over compact open subgroups of `G`
+(`Representation.coe_smoothVectors_eq_biUnion_invariants_isCompact`,
 `Representation.toSubmodule_smoothVectors_eq_biSup_invariants_isCompact`), and `ρ` is smooth if and
 only if `V = ⋃_U V^U` over compact open `U`
 (`Representation.biUnion_invariants_isCompact_eq_univ_iff_isSmooth`).
@@ -58,13 +58,16 @@ only if `V = ⋃_U V^U` over compact open `U`
 
 ## Main results
 
-* `Representation.isSmooth_iff_exists_openSubgroup_le_stabilizer`
+* `Representation.isSmooth_iff_exists_openSubgroup_le_stabilizer` and
+  `Representation.mem_smoothVectors_iff_exists_openSubgroup_le_stabilizer`
 * `Subrepresentation.instIsSmoothToRepresentation` and `Subrepresentation.instIsSmoothQuotient`
 * `Representation.instIsSmoothOfMulActionQuotient`
 * `Representation.isSmooth_leftRegular_iff_discreteTopology` and
   `Representation.smoothVectors_leftRegular_eq_bot`
 * `Representation.smoothVectors_eq_top_iff` and `Subrepresentation.le_smoothVectors_iff_isSmooth`
-* `Representation.mem_smoothVectors_iff_exists_isCompact_openSubgroup`,
+* `Representation.mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer` and
+  `Representation.isSmooth_iff_exists_isCompact_openSubgroup_le_stabilizer`
+* `Representation.mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants`,
   `Representation.coe_smoothVectors_eq_biUnion_invariants_isCompact`, and
   `Representation.isSmooth_iff_forall_exists_isCompact_openSubgroup_mem_invariants`
 
@@ -72,6 +75,13 @@ only if `V = ⋃_U V^U` over compact open `U`
 
 * J. N. Bernstein, *Representations of p-adic groups*, Harvard lecture notes by K. E. Rumelhart
   (1992), Chapter I, §1.1, Definition 2 and Proposition 1, p. 7.
+* [mathlib4#41525](https://github.com/leanprover-community/mathlib4/pull/41525) and the Lean Zulip
+  thread
+  [class and def (p-adic reps)](https://leanprover-community.github.io/archive/stream/116395-maths/topic/class.20and.20def.20%28p-adic.20reps%29.html)
+  for the module path and interface design (`Representation.IsSmooth` as a `Prop`-valued
+  open-stabilizer class on algebraic `Representation`, `smoothVectors` as a `Subrepresentation`,
+  and separating topological-group smoothness from locally profinite hypotheses); no code is
+  vendored.
 -/
 
 public section
@@ -103,8 +113,7 @@ theorem isSmooth_iff (ρ : Representation A G V) :
     ρ.IsSmooth ↔ ∀ v : V, IsOpen ((ρ.stabilizer v : Subgroup G) : Set G) :=
   ⟨fun h ↦ h.isOpen_stabilizer, fun h ↦ ⟨h⟩⟩
 
-/-- In a smooth representation, every vector is fixed by an open subgroup (namely its own
-stabilizer). -/
+/-- In a smooth representation, every vector is fixed by some open subgroup of `G`. -/
 theorem IsSmooth.exists_openSubgroup_le_stabilizer {ρ : Representation A G V} [ρ.IsSmooth]
     (v : V) : ∃ U : OpenSubgroup G, U.toSubgroup ≤ ρ.stabilizer v :=
   ⟨⟨ρ.stabilizer v, ρ.isOpen_stabilizer v⟩, le_rfl⟩
@@ -152,7 +161,7 @@ instance _root_.Subrepresentation.instIsSmoothToRepresentation {ρ : Representat
     exact ρ.isOpen_stabilizer v
 
 /-- Smoothness pulls back along an injective intertwining map. -/
-theorem IsSmooth.of_injective_intertwiningMap {ρ : Representation A G V}
+theorem IntertwiningMap.isSmooth_of_injective {ρ : Representation A G V}
     {σ : Representation A G W} [σ.IsSmooth] (f : ρ.IntertwiningMap σ) (hf : Function.Injective f) :
     ρ.IsSmooth where
   isOpen_stabilizer v := by
@@ -162,8 +171,8 @@ theorem IsSmooth.of_injective_intertwiningMap {ρ : Representation A G V}
 /-- Equivalent representations are simultaneously smooth. -/
 theorem Equiv.isSmooth_iff {ρ : Representation A G V} {σ : Representation A G W}
     (e : ρ.Equiv σ) : ρ.IsSmooth ↔ σ.IsSmooth :=
-  ⟨fun _ ↦ .of_injective_intertwiningMap e.symm.toIntertwiningMap e.symm.injective,
-    fun _ ↦ .of_injective_intertwiningMap e.toIntertwiningMap e.injective⟩
+  ⟨fun _ ↦ e.symm.toIntertwiningMap.isSmooth_of_injective e.symm.injective,
+    fun _ ↦ e.toIntertwiningMap.isSmooth_of_injective e.injective⟩
 
 /-- Restricting a smooth representation along a continuous group homomorphism produces a smooth
 representation. -/
@@ -239,8 +248,7 @@ theorem isOpen_stabilizer_add [SeparatelyContinuousMul G] (ρ : Representation A
   Subgroup.isOpen_mono (ρ.le_stabilizer_add v w) (hv.inter hw)
 
 /-- Group translation preserves openness of vector stabilizers when `G` has separately continuous
-multiplication: `ρ.stabilizer (ρ g v)` is the preimage of `ρ.stabilizer v` under the continuous
-conjugation `x ↦ g⁻¹ * x * g`. -/
+multiplication. -/
 theorem isOpen_stabilizer_apply [SeparatelyContinuousMul G] (ρ : Representation A G V) (g : G)
     {v : V} (hv : IsOpen ((ρ.stabilizer v : Subgroup G) : Set G)) :
     IsOpen ((ρ.stabilizer (ρ g v) : Subgroup G) : Set G) := by
@@ -248,9 +256,8 @@ theorem isOpen_stabilizer_apply [SeparatelyContinuousMul G] (ρ : Representation
   exact hv.preimage (((continuous_mul_const g).comp (continuous_const_mul g⁻¹)).congr fun x ↦ by
     simp [MulAut.conj_symm_apply])
 
-/-- **The subrepresentation of smooth vectors** `V^∞`: the vectors of `V` whose stabilizer in `G`
-is open. Separate continuity of multiplication in `G` (satisfied by every `IsTopologicalGroup G`)
-closes open stabilizers under addition, scalar multiplication, and translation by `G`. -/
+/-- **The subrepresentation of smooth vectors** `V^∞` of a representation `ρ` of a group `G` with
+separately continuous multiplication: the vectors of `V` whose stabilizer in `G` is open. -/
 def smoothVectors [SeparatelyContinuousMul G] (ρ : Representation A G V) :
     Subrepresentation ρ where
   toSubmodule :=
@@ -272,17 +279,24 @@ theorem coe_smoothVectors [SeparatelyContinuousMul G] (ρ : Representation A G V
   (rfl)
 
 /-- A vector lies in `ρ.smoothVectors` if and only if it is fixed by some open subgroup of `G`. -/
-theorem mem_smoothVectors_iff_exists_openSubgroup [SeparatelyContinuousMul G]
+theorem mem_smoothVectors_iff_exists_openSubgroup_le_stabilizer [SeparatelyContinuousMul G]
     {ρ : Representation A G V} {v : V} :
     v ∈ ρ.smoothVectors ↔ ∃ U : OpenSubgroup G, U.toSubgroup ≤ ρ.stabilizer v := by
   rw [mem_smoothVectors_iff]
   exact ⟨fun hv ↦ ⟨⟨ρ.stabilizer v, hv⟩, le_rfl⟩,
     fun ⟨_, hU⟩ ↦ Subgroup.isOpen_of_openSubgroup (ρ.stabilizer v) hU⟩
 
-/-- Over a commutative semiring `A`, `ρ.smoothVectors` coincides with the `A[G]`-submodule of
-`ρ.asModule` generated by the vectors with open stabilizer: since vectors with open stabilizer are
-already closed under `0`, `+`, scalar multiplication, and `G`-translation, their `A[G]`-span adds no
-new elements. -/
+omit [TopologicalSpace G] in
+/-- Typed membership bridge across the type synonym `ρ.asModule = V` and identity equivalence
+`ρ.asModuleEquiv = LinearEquiv.refl`, since Mathlib's `Subrepresentation.mem_asSubmodule_iff`
+types its element in `V` rather than `ρ.asModule`. -/
+private theorem mem_asSubmodule_iff_asModuleEquiv {R : Type*} [CommSemiring R] [Module R V]
+    {ρ : Representation R G V} {σ : Subrepresentation ρ} (w : ρ.asModule) :
+    w ∈ σ.asSubmodule ↔ ρ.asModuleEquiv w ∈ σ :=
+  Subrepresentation.mem_asSubmodule_iff (σ := σ) (v := ρ.asModuleEquiv w)
+
+/-- Over a commutative semiring `R`, `ρ.smoothVectors` coincides with the `R[G]`-submodule of
+`ρ.asModule` generated by the vectors with open stabilizer. -/
 theorem smoothVectors_eq_ofSubmodule'_span {R : Type*} [CommSemiring R]
     [SeparatelyContinuousMul G] [Module R V] (ρ : Representation R G V) :
     ρ.smoothVectors = Subrepresentation.ofSubmodule'
@@ -292,11 +306,12 @@ theorem smoothVectors_eq_ofSubmodule'_span {R : Type*} [CommSemiring R]
       {w : ρ.asModule | IsOpen ((ρ.stabilizer (ρ.asModuleEquiv w) : Subgroup G) : Set G)} =
         (ρ.smoothVectors.asSubmodule : Set ρ.asModule) := by
     ext w
-    exact (mem_smoothVectors_iff (ρ := ρ) (v := ρ.asModuleEquiv w)).symm.trans
-      (Subrepresentation.mem_asSubmodule_iff (σ := ρ.smoothVectors) (v := ρ.asModuleEquiv w)).symm
-  rw [hset, Submodule.span_eq]
-  exact (Subrepresentation.subrepresentationSubmoduleOrderIso (ρ := ρ)).symm_apply_apply
-    ρ.smoothVectors
+    rw [Set.mem_ofPred_eq, SetLike.mem_coe, mem_asSubmodule_iff_asModuleEquiv,
+      mem_smoothVectors_iff]
+  rw [hset, Submodule.span_eq, ← Subrepresentation.subrepresentationSubmoduleOrderIso_apply,
+    ← Subrepresentation.subrepresentationSubmoduleOrderIso_symm_apply]
+  exact ((Subrepresentation.subrepresentationSubmoduleOrderIso (ρ := ρ)).symm_apply_apply
+    ρ.smoothVectors).symm
 
 /-- **The restriction of any representation to its smooth vectors is smooth.** -/
 instance instIsSmoothSmoothVectors [SeparatelyContinuousMul G] (ρ : Representation A G V) :
@@ -321,9 +336,9 @@ theorem _root_.Subrepresentation.le_smoothVectors_iff_isSmooth [SeparatelyContin
 @[simp]
 theorem smoothVectors_eq_top_iff [SeparatelyContinuousMul G] (ρ : Representation A G V) :
     ρ.smoothVectors = ⊤ ↔ ρ.IsSmooth := by
-  rw [eq_top_iff, isSmooth_iff]
-  exact ⟨fun h v ↦ mem_smoothVectors_iff.mp (h _root_.trivial),
-    fun h v _ ↦ mem_smoothVectors_iff.mpr (h v)⟩
+  rw [← Subrepresentation.toSubmodule_injective.eq_iff, Subrepresentation.toSubmodule_top,
+    Submodule.eq_top_iff', isSmooth_iff]
+  simp_rw [Subrepresentation.mem_toSubmodule, mem_smoothVectors_iff]
 
 /-- For a smooth representation `ρ`, `ρ.smoothVectors = ⊤`. -/
 theorem smoothVectors_eq_top [SeparatelyContinuousMul G] (ρ : Representation A G V) [ρ.IsSmooth] :
@@ -409,27 +424,19 @@ theorem isSmooth_leftRegular_iff_discreteTopology [Nontrivial A] [SeparatelyCont
   rw [stabilizer_leftRegular_single 1 one_ne_zero] at hopen
   exact hopen
 
-/-- **In a non-discrete `T₁` group, the left regular representation has no nonzero smooth
-vectors.** Every nonzero element of `A[G]` has finite stabilizer, which in a `T₁` space cannot be
-open unless `{1}` is open. -/
+/-- **In a non-discrete `T₁` group with separately continuous multiplication, the left regular
+representation has no nonzero smooth vectors.** -/
 theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
     (hG : ¬ DiscreteTopology G) :
     (leftRegular A G).smoothVectors = ⊥ := by
-  rw [eq_bot_iff]
+  rw [← Subrepresentation.toSubmodule_injective.eq_iff, Subrepresentation.toSubmodule_bot,
+    Submodule.eq_bot_iff]
   intro x hx
+  rw [Subrepresentation.mem_toSubmodule, mem_smoothVectors_iff] at hx
   by_contra hx0
-  have hfin : ((leftRegular A G).stabilizer x : Set G).Finite := finite_stabilizer_leftRegular hx0
-  have hopen : IsOpen ((leftRegular A G).stabilizer x : Set G) := mem_smoothVectors_iff.mp hx
-  have hclosed : IsClosed (((leftRegular A G).stabilizer x : Set G) \ {1}) :=
-    hfin.sdiff.isClosed
-  have h1 : ({1} : Set G) =
-      ((leftRegular A G).stabilizer x : Set G) ∩
-        (((leftRegular A G).stabilizer x : Set G) \ {1})ᶜ := by
-    ext g
-    simp only [Set.mem_singleton_iff, Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_sdiff, not_and,
-      not_not]
-    exact ⟨fun hg ↦ ⟨hg ▸ one_mem _, fun _ ↦ hg⟩, fun ⟨hg, h⟩ ↦ h hg⟩
-  exact hG (discreteTopology_of_isOpen_singleton_one (h1 ▸ hopen.inter hclosed.isOpen_compl))
+  exact hG (discreteTopology_of_isOpen_singleton_one
+    (isOpen_singleton_of_finite_mem_nhds 1 (hx.mem_nhds (one_mem _))
+      (finite_stabilizer_leftRegular hx0)))
 
 /-- In a product `∏ i, A[G ⧸ H i]` of coset permutation representations over a nontrivial
 semiring `A`, if `⨅ i, H i` is not open in `G`, then the family of basepoints
@@ -450,6 +457,35 @@ theorem not_isSmooth_pi_ofMulAction_quotient [Nontrivial A] {ι : Type*} {H : ι
   simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
     MulAction.stabilizer_quotient] at hopen
   exact hH hopen
+
+section LocallyProfinite
+
+variable [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G] [ZeroDimensionalSpace G]
+
+/-- **Smooth vectors over a locally profinite group:** in a weakly locally compact zero-dimensional
+topological group `G` (in particular, any locally profinite group), `v ∈ ρ.smoothVectors` if and
+only if `v` is fixed by some *compact* open subgroup `U` of `G`. -/
+theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer
+    {ρ : Representation A G V} {v : V} :
+    v ∈ ρ.smoothVectors ↔
+      ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ U.toSubgroup ≤ ρ.stabilizer v := by
+  rw [mem_smoothVectors_iff_exists_openSubgroup_le_stabilizer]
+  refine ⟨fun ⟨U₀, hU₀⟩ ↦ ?_, fun ⟨U, _, hU⟩ ↦ ⟨U, hU⟩⟩
+  obtain ⟨U, hUcpt, hUU₀⟩ := U₀.exists_isCompact_le
+  exact ⟨U, hUcpt, fun _ hg ↦ hU₀ (hUU₀ hg)⟩
+
+/-- **Smoothness over a locally profinite group:** in a weakly locally compact zero-dimensional
+topological group `G` (in particular, any locally profinite group), `ρ` is smooth if and only if
+every vector is fixed by some compact open subgroup `U` of `G`. -/
+theorem isSmooth_iff_exists_isCompact_openSubgroup_le_stabilizer (ρ : Representation A G V) :
+    ρ.IsSmooth ↔ ∀ v : V, ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧
+      U.toSubgroup ≤ ρ.stabilizer v := by
+  rw [← smoothVectors_eq_top_iff, ← Subrepresentation.toSubmodule_injective.eq_iff,
+    Subrepresentation.toSubmodule_top, Submodule.eq_top_iff']
+  simp_rw [Subrepresentation.mem_toSubmodule,
+    mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer]
+
+end LocallyProfinite
 
 end Semiring
 
@@ -490,7 +526,8 @@ variable [SeparatelyContinuousMul G]
 theorem mem_smoothVectors_iff_exists_openSubgroup_mem_invariants
     {ρ : Representation A G V} {v : V} :
     v ∈ ρ.smoothVectors ↔ ∃ U : OpenSubgroup G, v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
-  simp_rw [mem_smoothVectors_iff_exists_openSubgroup, le_stabilizer_iff_mem_invariants_comp_subtype]
+  simp_rw [mem_smoothVectors_iff_exists_openSubgroup_le_stabilizer,
+    le_stabilizer_iff_mem_invariants_comp_subtype]
 
 /-- Over a commutative ring, `ρ` is smooth if and only if every vector lies in `V^U` for some open
 subgroup `U` of `G`. -/
@@ -522,63 +559,65 @@ end TopologicalGroup
 
 section LocallyProfinite
 
-variable [IsTopologicalGroup G] [T2Space G] [WeaklyLocallyCompactSpace G]
-  [TotallyDisconnectedSpace G]
+variable [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G] [ZeroDimensionalSpace G]
 
-/-- **Smooth vectors over a locally profinite group:** `v ∈ ρ.smoothVectors` if and only if `v` is
-fixed by some *compact* open subgroup `U` of `G`. -/
-theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup {ρ : Representation A G V} {v : V} :
+/-- **Smooth vectors via compact-open invariants:** in a weakly locally compact zero-dimensional
+topological group `G` (in particular, any locally profinite group), `v ∈ ρ.smoothVectors` if and
+only if `v ∈ V^U` for some *compact* open subgroup `U` of `G`. -/
+theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants
+    {ρ : Representation A G V} {v : V} :
     v ∈ ρ.smoothVectors ↔
       ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧
         v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
-  rw [mem_smoothVectors_iff_exists_openSubgroup]
-  refine ⟨fun ⟨U₀, hU₀⟩ ↦ ?_, fun ⟨U, _, hU⟩ ↦
-    ⟨U, (ρ.le_stabilizer_iff_mem_invariants_comp_subtype U.toSubgroup v).mpr hU⟩⟩
-  obtain ⟨U, hUcpt, hUU₀⟩ := TauCeti.exists_isCompact_openSubgroup_le U₀
-  exact ⟨U, hUcpt, (ρ.le_stabilizer_iff_mem_invariants_comp_subtype U.toSubgroup v).mp
-    fun _ hg ↦ hU₀ (hUU₀ hg)⟩
+  simp_rw [mem_smoothVectors_iff_exists_isCompact_openSubgroup_le_stabilizer,
+    le_stabilizer_iff_mem_invariants_comp_subtype]
 
-/-- **Union of compact-open invariants:** for a locally profinite group `G`, the carrier of
-`ρ.smoothVectors` is `⋃_U V^U` as `U` ranges over compact open subgroups of `G`. -/
+/-- **Union of compact-open invariants:** for a weakly locally compact zero-dimensional topological
+group `G` (in particular, any locally profinite group), the carrier of `ρ.smoothVectors` is
+`⋃_U V^U` as `U` ranges over compact open subgroups of `G`. -/
 theorem coe_smoothVectors_eq_biUnion_invariants_isCompact (ρ : Representation A G V) :
     (ρ.smoothVectors : Set V) =
       ⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         (invariants (ρ.comp U.toSubgroup.subtype) : Set V) := by
   ext v
-  simp only [SetLike.mem_coe, mem_smoothVectors_iff_exists_isCompact_openSubgroup, Set.mem_iUnion,
-    exists_prop]
+  simp only [SetLike.mem_coe, mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants,
+    Set.mem_iUnion, exists_prop]
 
-/-- For a locally profinite group `G`, the underlying `A`-submodule of `ρ.smoothVectors` is the
-supremum of `V^U` over all compact open subgroups `U` of `G`. -/
+/-- For a weakly locally compact zero-dimensional topological group `G` (in particular, any locally
+profinite group), the underlying `A`-submodule of `ρ.smoothVectors` is the supremum of `V^U` over
+all compact open subgroups `U` of `G`. -/
 theorem toSubmodule_smoothVectors_eq_biSup_invariants_isCompact (ρ : Representation A G V) :
     ρ.smoothVectors.toSubmodule =
       ⨆ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         invariants (ρ.comp U.toSubgroup.subtype) := by
   refine le_antisymm (fun v hv ↦ ?_) (iSup₂_le fun U hU v hv ↦ ?_)
-  · obtain ⟨U, hUcpt, hU⟩ := mem_smoothVectors_iff_exists_isCompact_openSubgroup.mp hv
+  · obtain ⟨U, hUcpt, hU⟩ :=
+      mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mp hv
     exact Submodule.mem_iSup_of_mem U (Submodule.mem_iSup_of_mem hUcpt hU)
-  · exact mem_smoothVectors_iff_exists_isCompact_openSubgroup.mpr ⟨U, hU, hv⟩
+  · exact mem_smoothVectors_iff_exists_isCompact_openSubgroup_mem_invariants.mpr ⟨U, hU, hv⟩
 
-/-- **Smoothness over a locally profinite group:** `ρ` is smooth if and only if every vector lies
-in `V^U` for some compact open subgroup `U` of `G`. -/
+/-- **Smoothness via compact-open invariants:** in a weakly locally compact zero-dimensional
+topological group `G` (in particular, any locally profinite group), `ρ` is smooth if and only if
+every vector lies in `V^U` for some compact open subgroup `U` of `G`. -/
 theorem isSmooth_iff_forall_exists_isCompact_openSubgroup_mem_invariants
     (ρ : Representation A G V) :
     ρ.IsSmooth ↔ ∀ v : V, ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧
       v ∈ invariants (ρ.comp U.toSubgroup.subtype) := by
-  rw [← smoothVectors_eq_top_iff, eq_top_iff]
-  refine ⟨fun h v ↦ mem_smoothVectors_iff_exists_isCompact_openSubgroup.mp (h _root_.trivial),
-    fun h v _ ↦ mem_smoothVectors_iff_exists_isCompact_openSubgroup.mpr (h v)⟩
+  simp_rw [isSmooth_iff_exists_isCompact_openSubgroup_le_stabilizer,
+    le_stabilizer_iff_mem_invariants_comp_subtype]
 
-/-- For a locally profinite group `G`, `V = ⋃_U V^U` over compact open subgroups `U` if and only if
-`ρ` is smooth. -/
+/-- For a weakly locally compact zero-dimensional topological group `G` (in particular, any locally
+profinite group), `V = ⋃_U V^U` over compact open subgroups `U` if and only if `ρ` is smooth. -/
 theorem biUnion_invariants_isCompact_eq_univ_iff_isSmooth (ρ : Representation A G V) :
     (⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
       (invariants (ρ.comp U.toSubgroup.subtype) : Set V)) = Set.univ ↔ ρ.IsSmooth := by
-  rw [← coe_smoothVectors_eq_biUnion_invariants_isCompact, ← smoothVectors_eq_top_iff]
-  exact ⟨fun h ↦ SetLike.coe_injective (h.trans rfl), fun h ↦ h ▸ rfl⟩
+  rw [← coe_smoothVectors_eq_biUnion_invariants_isCompact, Set.eq_univ_iff_forall,
+    ← smoothVectors_eq_top_iff, ← Subrepresentation.toSubmodule_injective.eq_iff,
+    Subrepresentation.toSubmodule_top, Submodule.eq_top_iff']
+  simp_rw [SetLike.mem_coe, Subrepresentation.mem_toSubmodule]
 
-/-- For a locally profinite group `G`, `⨆_U V^U = ⊤` over compact open subgroups `U` if and only if
-`ρ` is smooth. -/
+/-- For a weakly locally compact zero-dimensional topological group `G` (in particular, any locally
+profinite group), `⨆_U V^U = ⊤` over compact open subgroups `U` if and only if `ρ` is smooth. -/
 theorem biSup_invariants_isCompact_eq_top_iff_isSmooth (ρ : Representation A G V) :
     (⨆ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
       invariants (ρ.comp U.toSubgroup.subtype)) = ⊤ ↔ ρ.IsSmooth := by
@@ -590,143 +629,3 @@ end LocallyProfinite
 end CommRing
 
 end Representation
-
-end
-
-/-! ### Concrete checks and counterexamples -/
-
-section Examples
-
-open Filter Set Topology Representation
-open scoped MonoidAlgebra
-
--- Checks for `ℤ_p` (written multiplicatively via `Multiplicative ℤ_[p]`):
--- 1. `ℤ[ℤ_p]` is not smooth and its smooth vectors are `⊥`.
--- 2. `ℤ[ℤ_p ⧸ p^n ℤ_p]` is smooth and every vector is fixed by `p^n ℤ_p`.
--- 3. `∏_n ℤ[ℤ_p ⧸ p^n ℤ_p]` is not smooth, the family of basepoints not being smooth.
-section PadicGroup
-
-variable (p : ℕ) [Fact p.Prime]
-
-example : ¬ (leftRegular ℤ (Multiplicative ℤ_[p])).IsSmooth ∧
-    (leftRegular ℤ (Multiplicative ℤ_[p])).smoothVectors = ⊥ := by
-  have hnd : ¬ DiscreteTopology (Multiplicative ℤ_[p]) := fun h ↦ by
-    have : DiscreteTopology (Multiplicative ℤ_[p]) := h
-    have : Finite (Multiplicative ℤ_[p]) := finite_of_compact_of_discrete
-    have : Infinite (Multiplicative ℤ_[p]) := Infinite.of_injective
-      (fun n : ℕ ↦ Multiplicative.ofAdd (n : ℤ_[p])) fun _ _ hab ↦
-        Nat.cast_injective (Multiplicative.ofAdd.injective hab)
-    exact _root_.not_finite (Multiplicative ℤ_[p])
-  exact ⟨by simpa using hnd, smoothVectors_leftRegular_eq_bot hnd⟩
-
-example (n : ℕ) :
-    let U := ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toOpenSubgroup
-    (ofMulAction ℤ (Multiplicative ℤ_[p]) (Multiplicative ℤ_[p] ⧸ U.toSubgroup)).IsSmooth ∧
-      ∀ v : ℤ[Multiplicative ℤ_[p] ⧸ U.toSubgroup],
-        U.toSubgroup ≤
-          (ofMulAction ℤ (Multiplicative ℤ_[p])
-            (Multiplicative ℤ_[p] ⧸ U.toSubgroup)).stabilizer v :=
-  ⟨inferInstance,
-    le_stabilizer_ofMulAction_quotient
-      ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toSubgroup⟩
-
-example :
-    let H : ℕ → Subgroup (Multiplicative ℤ_[p]) :=
-      fun n ↦ ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toSubgroup
-    ¬ (Representation.pi fun n ↦
-        ofMulAction ℤ (Multiplicative ℤ_[p]) (Multiplicative ℤ_[p] ⧸ H n)).IsSmooth ∧
-      (fun n ↦ MonoidAlgebra.single ((1 : Multiplicative ℤ_[p]) : Multiplicative ℤ_[p] ⧸ H n) 1) ∉
-        (Representation.pi fun n ↦
-          ofMulAction ℤ (Multiplicative ℤ_[p]) (Multiplicative ℤ_[p] ⧸ H n)).smoothVectors := by
-  intro H
-  have hnotOpen : ¬ IsOpen (((⨅ n, H n : Subgroup (Multiplicative ℤ_[p])) :
-      Set (Multiplicative ℤ_[p]))) := by
-    rw [(TauCeti.FiniteQuotientTower.padicTower p).iInf_ker_eq_bot]
-    intro h1
-    have : DiscreteTopology (Multiplicative ℤ_[p]) := discreteTopology_of_isOpen_singleton_one h1
-    have : Finite (Multiplicative ℤ_[p]) := finite_of_compact_of_discrete
-    have : Infinite (Multiplicative ℤ_[p]) := Infinite.of_injective
-      (fun n : ℕ ↦ Multiplicative.ofAdd (n : ℤ_[p])) fun _ _ hab ↦
-        Nat.cast_injective (Multiplicative.ofAdd.injective hab)
-    exact _root_.not_finite (Multiplicative ℤ_[p])
-  exact ⟨not_isSmooth_pi_ofMulAction_quotient hnotOpen,
-    notMem_smoothVectors_pi_ofMulAction_quotient hnotOpen⟩
-
-end PadicGroup
-
--- Check (discrete `G`): `V^∞ = ⊤` for every representation of a discrete group.
-example {A G V : Type*} [Semiring A] [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    [AddCommMonoid V] [Module A V] (ρ : Representation A G V) :
-    ρ.smoothVectors = ⊤ :=
-  ρ.smoothVectors_eq_top
-
--- Check (topology): give `S₃` the topology generated by `H₀ = ⟨swap 0 1⟩`. In `ℚ[S₃ ⧸ H₀]`, the
--- basis vector at the identity coset has open stabilizer `H₀`, whereas its translate by
--- `swap 1 2` has stabilizer `conj (swap 1 2) • H₀`, which is not open. Thus an arbitrary topology
--- on `G` without continuity of multiplication does not yield a `G`-stable subset of vectors with
--- open stabilizer.
-section BadTopologyS3
-
-open Equiv
-
-private abbrev s3Subgroup : Subgroup (Perm (Fin 3)) :=
-  Subgroup.closure {swap (0 : Fin 3) 1}
-
-private local instance : TopologicalSpace (Perm (Fin 3)) :=
-  TopologicalSpace.generateFrom {(s3Subgroup : Set (Perm (Fin 3)))}
-
-private theorem s3Subgroup_eq_stabilizer_two :
-    s3Subgroup = MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) := by
-  refine le_antisymm ?_ fun σ hσ ↦ ?_
-  · rw [Subgroup.closure_le, Set.singleton_subset_iff, SetLike.mem_coe,
-      MulAction.mem_stabilizer_iff]
-    decide
-  · rw [MulAction.mem_stabilizer_iff] at hσ
-    have hcases : σ = 1 ∨ σ = swap (0 : Fin 3) 1 := by
-      decide +revert
-    rcases hcases with rfl | rfl
-    · exact one_mem _
-    · exact Subgroup.subset_closure rfl
-
-example :
-    let ρ := ofMulAction ℚ (Perm (Fin 3)) (Perm (Fin 3) ⧸ s3Subgroup)
-    let e₀ : ℚ[Perm (Fin 3) ⧸ s3Subgroup] :=
-      MonoidAlgebra.single ((1 : Perm (Fin 3)) : Perm (Fin 3) ⧸ s3Subgroup) 1
-    IsOpen ((ρ.stabilizer e₀ : Subgroup (Perm (Fin 3))) : Set (Perm (Fin 3))) ∧
-      ¬ IsOpen ((ρ.stabilizer (ρ (swap 1 2) e₀) : Subgroup (Perm (Fin 3))) :
-        Set (Perm (Fin 3))) := by
-  intro ρ e₀
-  refine ⟨?_, fun hopen ↦ ?_⟩
-  · have he₀ : ρ.stabilizer e₀ = s3Subgroup := by
-      simp [e₀, ρ, stabilizer_ofMulAction_single _ (one_ne_zero' ℚ)]
-    rw [he₀]
-    exact TopologicalSpace.isOpen_generateFrom_of_mem rfl
-  · have htr : ρ (swap 1 2) e₀ = MonoidAlgebra.single
-        ((swap (1 : Fin 3) 2 : Perm (Fin 3)) : Perm (Fin 3) ⧸ s3Subgroup) 1 := by
-      simp [ρ, e₀]
-    have hmem_iff (g : Perm (Fin 3)) :
-        g ∈ ρ.stabilizer (ρ (swap 1 2) e₀) ↔
-          (((swap (1 : Fin 3) 2)⁻¹ * g * swap 1 2 : Perm (Fin 3)) (2 : Fin 3)) = 2 := by
-      rw [htr, stabilizer_ofMulAction_single _ (one_ne_zero' ℚ), MulAction.mem_stabilizer_iff,
-        TauCeti.smul_quotientGroup_mk_eq_self_iff, s3Subgroup_eq_stabilizer_two,
-        MulAction.mem_stabilizer_iff]
-      rfl
-    have h02 : swap (0 : Fin 3) 2 ∈ ρ.stabilizer (ρ (swap 1 2) e₀) :=
-      (hmem_iff (swap 0 2)).mpr (by decide)
-    have hnot02 : swap (0 : Fin 3) 2 ∉ (s3Subgroup : Set (Perm (Fin 3))) := by
-      rw [SetLike.mem_coe, s3Subgroup_eq_stabilizer_two, MulAction.mem_stabilizer_iff]
-      decide
-    have hnhds : ((ρ.stabilizer (ρ (swap 1 2) e₀) : Subgroup (Perm (Fin 3))) :
-        Set (Perm (Fin 3))) ∈ 𝓝 (swap (0 : Fin 3) 2) :=
-      hopen.mem_nhds h02
-    have htop : 𝓝 (swap (0 : Fin 3) 2) = ⊤ := by
-      rw [TopologicalSpace.nhds_generateFrom, eq_top_iff]
-      exact le_iInf₂ fun _ ⟨ha, hs⟩ ↦ (hnot02 (Set.mem_singleton_iff.mp hs ▸ ha)).elim
-    rw [htop, Filter.mem_top] at hnhds
-    have h12 : swap (1 : Fin 3) 2 ∈ ρ.stabilizer (ρ (swap 1 2) e₀) :=
-      Set.eq_univ_iff_forall.mp hnhds (swap 1 2)
-    exact absurd ((hmem_iff (swap 1 2)).mp h12) (by decide)
-
-end BadTopologyS3
-
-end Examples

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Pi
-import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Vector stabilizers in representations
@@ -26,7 +26,9 @@ compute vector stabilizers across standard constructions on representations:
   `Subrepresentation.le_stabilizer_quotient_mk`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.stabilizer_leftRegular_single`, `Representation.finite_stabilizer_leftRegular`,
-  and coset permutation modules `A[G ⧸ N]`);
+  trivial subgroup restrictions `Representation.isTrivial_comp_subtype_iff` and
+  `Representation.le_stabilizer_of_isTrivial_comp_subtype`, and coset permutation modules
+  `A[G ⧸ N]`);
 * the Galois-style correspondence `H ≤ ρ.stabilizer v ↔ v ∈ invariants (ρ.comp H.subtype)`
   linking stabilizers to subgroup invariants
   (`Representation.le_stabilizer_iff_mem_invariants_comp_subtype`).
@@ -41,6 +43,8 @@ compute vector stabilizers across standard constructions on representations:
 * `Representation.le_stabilizer_quotient_mk` and `Subrepresentation.le_stabilizer_quotient_mk`
 * `Representation.stabilizer_ofMulAction_single` and `Representation.stabilizer_leftRegular_single`
 * `Representation.finite_stabilizer_leftRegular`
+* `Representation.isTrivial_comp_subtype_iff` and
+  `Representation.le_stabilizer_of_isTrivial_comp_subtype`
 * `Representation.le_stabilizer_iff_mem_invariants_comp_subtype`
 -/
 
@@ -154,14 +158,8 @@ the point stabilizer of `x` in `G`. -/
 @[simp]
 theorem stabilizer_ofMulAction_single (x : X) {a : A} (ha : a ≠ 0) :
     (ofMulAction A G X).stabilizer (MonoidAlgebra.single x a) = MulAction.stabilizer G x := by
-  classical
-  refine le_antisymm (fun g hg ↦ ?_) (le_stabilizer_ofMulAction_single x a)
-  rw [mem_stabilizer] at hg
-  have hcoeff := congrArg (fun f : A[X] ↦ f.coeff (g • x)) hg
-  simp only [ofMulAction_single, MonoidAlgebra.coeff_single, Finsupp.single_eq_same] at hcoeff
-  by_contra hgx
-  rw [MulAction.mem_stabilizer_iff] at hgx
-  exact ha (by simpa [Ne.symm hgx] using hcoeff)
+  ext g
+  simp [MonoidAlgebra.single_left_inj ha]
 
 end MulAction
 
@@ -171,9 +169,7 @@ theorem stabilizer_leftRegular_single (g : G) {a : A} (ha : a ≠ 0) :
     (leftRegular A G).stabilizer (MonoidAlgebra.single g a) = ⊥ := by
   simp [ha]
 
-/-- **Every nonzero vector in the left regular representation has finite stabilizer.** If `g`
-fixes `x ≠ 0` in `A[G]`, then `g` translates any element `g₀` in the support of `x` to another
-element of the finite support of `x`. -/
+/-- **Every nonzero vector in the left regular representation has finite stabilizer.** -/
 theorem finite_stabilizer_leftRegular {x : A[G]} (hx : x ≠ 0) :
     ((leftRegular A G).stabilizer x : Set G).Finite := by
   obtain ⟨g₀, hg₀⟩ := Finsupp.support_nonempty_iff.mpr (MonoidAlgebra.coeff_eq_zero.not.mpr hx)
@@ -183,19 +179,25 @@ theorem finite_stabilizer_leftRegular {x : A[G]} (hx : x ≠ 0) :
   rw [coeff_ofMulAction, smul_eq_mul, inv_mul_cancel_left] at hcoeff
   exact Finset.mem_coe.mpr (Finsupp.mem_support_iff.mpr (hcoeff ▸ Finsupp.mem_support_iff.mp hg₀))
 
-/-- For a normal subgroup `N` of `G`, the restriction of the coset permutation representation
-`A[G ⧸ N]` to `N` is trivial. -/
-instance instIsTrivialOfMulActionQuotientCompSubtype (N : Subgroup G) [N.Normal] :
-    IsTrivial ((ofMulAction A G (G ⧸ N)).comp N.subtype) where
-  out n := by
-    ext x
-    simp [Subgroup.smul_def, TauCeti.smul_quotient_eq_self_of_mem n.2]
+/-- The restriction of `ρ` to a subgroup `H` is trivial if and only if `H` fixes every vector of
+`V`. -/
+theorem isTrivial_comp_subtype_iff (ρ : Representation A G V) (H : Subgroup G) :
+    IsTrivial (ρ.comp H.subtype) ↔ ∀ v : V, H ≤ ρ.stabilizer v :=
+  ⟨fun h v g hg ↦ LinearMap.congr_fun (h.out ⟨g, hg⟩) v,
+    fun h ↦ ⟨fun ⟨_, hg⟩ ↦ LinearMap.ext fun v ↦ h v hg⟩⟩
+
+/-- If the restriction of `ρ` to a subgroup `H` is trivial, then `H` is contained in the
+stabilizer of every vector. -/
+theorem le_stabilizer_of_isTrivial_comp_subtype (ρ : Representation A G V) (H : Subgroup G)
+    [IsTrivial (ρ.comp H.subtype)] (v : V) :
+    H ≤ ρ.stabilizer v :=
+  (ρ.isTrivial_comp_subtype_iff H).mp ‹_› v
 
 /-- Every normal subgroup `N` of `G` is contained in the stabilizer of every vector of the coset
 permutation representation `A[G ⧸ N]`. -/
 theorem le_stabilizer_ofMulAction_quotient (N : Subgroup G) [N.Normal] (v : A[G ⧸ N]) :
-    N ≤ (ofMulAction A G (G ⧸ N)).stabilizer v := fun g hg ↦
-  LinearMap.congr_fun (isTrivial_def ((ofMulAction A G (G ⧸ N)).comp N.subtype) ⟨g, hg⟩) v
+    N ≤ (ofMulAction A G (G ⧸ N)).stabilizer v :=
+  le_stabilizer_of_isTrivial_comp_subtype (ofMulAction A G (G ⧸ N)) N v
 
 end Semiring
 
@@ -217,7 +219,6 @@ variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
 
 /-- A subgroup `H ≤ G` fixes a vector `v` (that is, `H ≤ ρ.stabilizer v`) if and only if `v` lies
 in the `H`-invariants `invariants (ρ.comp H.subtype)`. -/
-@[simp]
 theorem le_stabilizer_iff_mem_invariants_comp_subtype (ρ : Representation A G V)
     (H : Subgroup G) (v : V) :
     H ≤ ρ.stabilizer v ↔ v ∈ invariants (ρ.comp H.subtype) := by

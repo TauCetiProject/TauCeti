@@ -37,11 +37,16 @@ on the target group of the homomorphism.
 * `OpenSubgroup.instLocallyCompactSpace`, `OpenSubgroup.instWeaklyLocallyCompactSpace`,
   `OpenSubgroup.instCompactSpace`: local compactness and compactness inherited from the ambient
   group, with additive versions on `OpenAddSubgroup`.
+
+## Main results
+
 * `OpenSubgroup.isCompact_of_subset`, `OpenSubgroup.isCompact_inf_left`,
   `OpenSubgroup.isCompact_inf_right`: compactness of open subgroups inside compact sets and
   stability of compact open subgroups under intersection.
 * `OpenSubgroup.eq_top_of_preconnectedSpace`: in a preconnected group with separately continuous
   multiplication, every open subgroup is `⊤`.
+* `OpenSubgroup.continuous_mk_inf_iff`, `OpenSubgroup.continuous_mk_comap_iff`: continuity into
+  coset spaces of intersections and preimages of open subgroups.
 -/
 
 public section
@@ -99,28 +104,30 @@ instance instCompactSpace [SeparatelyContinuousMul G] [CompactSpace G] (U : Open
     CompactSpace U :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
 
-/-- Every open subgroup contained in a compact subset is compact, since open subgroups are
-closed. -/
+/-- In a group with separately continuous multiplication, every open subgroup contained in a
+compact subset is compact. -/
 @[to_additive
-/-- Every open additive subgroup contained in a compact subset is compact, since open additive
-subgroups are closed. -/]
+/-- In an additive group with separately continuous addition, every open additive subgroup
+contained in a compact subset is compact. -/]
 theorem isCompact_of_subset [SeparatelyContinuousMul G] (U : OpenSubgroup G) {K : Set G}
     (hK : IsCompact K) (hUK : (U : Set G) ⊆ K) : IsCompact (U : Set G) :=
   hK.of_isClosed_subset U.isClosed hUK
 
-/-- The intersection of a compact open subgroup with any open subgroup is compact. -/
+/-- In a group with separately continuous multiplication, the intersection of a compact open
+subgroup with any open subgroup is compact. -/
 @[to_additive
-/-- The intersection of a compact open additive subgroup with any open additive subgroup is
-compact. -/]
+/-- In an additive group with separately continuous addition, the intersection of a compact open
+additive subgroup with any open additive subgroup is compact. -/]
 theorem isCompact_inf_left [SeparatelyContinuousMul G] {U : OpenSubgroup G}
     (hU : IsCompact (U : Set G)) (V : OpenSubgroup G) :
     IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
   (U ⊓ V).isCompact_of_subset hU Set.inter_subset_left
 
-/-- The intersection of any open subgroup with a compact open subgroup is compact. -/
+/-- In a group with separately continuous multiplication, the intersection of any open subgroup
+with a compact open subgroup is compact. -/
 @[to_additive
-/-- The intersection of any open additive subgroup with a compact open additive subgroup is
-compact. -/]
+/-- In an additive group with separately continuous addition, the intersection of any open additive
+subgroup with a compact open additive subgroup is compact. -/]
 theorem isCompact_inf_right [SeparatelyContinuousMul G] (U : OpenSubgroup G) {V : OpenSubgroup G}
     (hV : IsCompact (V : Set G)) : IsCompact ((U ⊓ V : OpenSubgroup G) : Set G) :=
   (U ⊓ V).isCompact_of_subset hV Set.inter_subset_right
