@@ -166,6 +166,25 @@ theorem comp_ofFun (g : E → F) (hg : Continuous g) (f : Ω → E)
     (hf : AEStronglyMeasurable f μ) :
     comp g hg (ofFun f hf) = ofFun (g ∘ f) (hg.comp_aestronglyMeasurable hf) := (rfl)
 
+/-- Composition with the identity leaves a random variable unchanged. -/
+@[simp]
+theorem comp_id (f : L0 E μ) : comp id continuous_id f = f := by
+  apply toAEEqFun_injective
+  exact AEEqFun.comp_id f.toAEEqFun
+
+/-- Iterated continuous composition agrees with composition by the composite map. -/
+theorem comp_comp (g : F → G) (g' : E → F) (hg : Continuous g) (hg' : Continuous g')
+    (f : L0 E μ) : comp g hg (comp g' hg' f) = comp (g ∘ g') (hg.comp hg') f := by
+  apply toAEEqFun_injective
+  exact AEEqFun.comp_comp g g' hg hg' f.toAEEqFun
+
+/-- A continuous map sends a constant random variable to its constant value. -/
+@[simp]
+theorem comp_const (g : E → F) (hg : Continuous g) (c : E) :
+    comp g hg (const μ c) = const μ (g c) := by
+  apply toAEEqFun_injective
+  exact AEEqFun.comp_mk g hg (fun _ : Ω ↦ c) aestronglyMeasurable_const
+
 /-- Apply a continuous function of two variables to random variables. -/
 def comp₂ (g : E → F → G) (hg : Continuous (Function.uncurry g))
     (f₁ : L0 E μ) (f₂ : L0 F μ) : L0 G μ :=
@@ -190,6 +209,14 @@ theorem comp₂_ofFun_ofFun (g : E → F → G) (hg : Continuous (Function.uncur
     (hf₂ : AEStronglyMeasurable f₂ μ) :
     comp₂ g hg (ofFun f₁ hf₁) (ofFun f₂ hf₂) =
       ofFun (fun x ↦ g (f₁ x) (f₂ x)) (hg.comp_aestronglyMeasurable (hf₁.prodMk hf₂)) := (rfl)
+
+/-- A continuous binary map sends constant random variables to its constant value. -/
+@[simp]
+theorem comp₂_const_const (g : E → F → G) (hg : Continuous (Function.uncurry g))
+    (c : E) (d : F) : comp₂ g hg (const μ c) (const μ d) = const μ (g c d) := by
+  apply toAEEqFun_injective
+  exact AEEqFun.comp₂_mk_mk g hg (fun _ : Ω ↦ c) (fun _ : Ω ↦ d)
+    aestronglyMeasurable_const aestronglyMeasurable_const
 
 end Topological
 
