@@ -104,11 +104,11 @@ theorem criticalHessian_mul_sphereHeight (c : ℝ) {v x : sphere (0 : E) 1}
     criticalHessian (𝓡 n) (fun y ↦ c * sphereHeight v y) x a b =
       -(c * sphereHeight v x) * ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x a,
         mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x b⟫_ℝ := by
-  rw [show (fun y ↦ c * sphereHeight v y) = (fun t ↦ c * t) ∘ sphereHeight v from rfl,
-    criticalHessian_scalar_comp (φ := fun t ↦ c * t) (contMDiff_sphereHeight v x)
+  have hcomp : (fun y ↦ c * sphereHeight v y) = (fun t ↦ c * t) ∘ sphereHeight v := rfl
+  rw [hcomp, criticalHessian_scalar_comp (φ := fun t ↦ c * t) (contMDiff_sphereHeight v x)
       (contDiff_const.mul contDiff_id).contDiffAt hx]
-  simp only [smul_apply, smul_eq_mul, criticalHessian_sphereHeight hx]
-  rw [show deriv (fun t ↦ c * t) (sphereHeight v x) = c by simp]
+  simp only [smul_apply, smul_eq_mul, criticalHessian_sphereHeight hx, deriv_const_mul_field',
+    deriv_id'', mul_one]
   ring
 
 /-- **The Morse index of a rescaled height.** For `c ≠ 0`, at a critical point `x` of the height
