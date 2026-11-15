@@ -81,7 +81,8 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
   operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
   frames.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`: the ranges of a `C^n`
-  fibrewise linear map of constant rank between vector bundles have `C^n` local frames.
+  fibrewise linear map of constant rank from a `C^n` vector bundle to a vector bundle of finite
+  rank have `C^n` local frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -376,27 +377,29 @@ theorem contMDiff_totalSpace_inclusion [Fintype ι] [ContMDiffVectorBundle n F E
     ⟨(mem_trivializationAtlas_fiberBundle_iff hV _).mpr ⟨U, hU, Y, hY, hYn, rfl⟩⟩
   exact hY.contMDiffAt_totalSpace_subbundle hU hYn hp
 
-/-- A `C^n` map into the total space of `E` with values in a subbundle given by `C^n` local frames
-is `C^n` as a map into the subbundle. The frame coordinates are recovered from the ambient vector
-by a `C^n` left inverse of the frame (`ContMDiffAt.exists_contMDiffAt_leftInverse`). -/
-theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+/-- A `C^k` map into the total space of `E` with values in a subbundle given by `C^n` local frames,
+`k ≤ n`, is `C^k` as a map into the subbundle, with the structures `hV.fiberBundle` and
+`hV.vectorBundle` installed by `letI`. -/
+theorem contMDiffAt_totalSpace_mk_of_le [Fintype ι] [ContMDiffVectorBundle n F E IB]
     {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
     {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] {k : ℕ∞ω} (hk : k ≤ n)
     (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) {b : M → B} {w : ∀ m, E (b m)} {m₀ : M}
-    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) n (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
+    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) k (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
     (hmem : ∀ m, w m ∈ V (b m)) :
     letI := subbundleTopology F (F' := ι → 𝕜') V
     letI := hV.fiberBundle
     letI := hV.vectorBundle
     letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
-    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) n
+    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) k
       (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ := by
   let := subbundleTopology F (F' := ι → 𝕜') V
   let := hV.fiberBundle
   let := hV.vectorBundle
   let := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
-  let := hV.contMDiffVectorBundle
+  have := hV.contMDiffVectorBundle
+  have : ContMDiffVectorBundle k (ι → 𝕜') (fun x ↦ V x) IB := .of_le hk
+  have : ContMDiffVectorBundle k F E IB := .of_le hk
   have : CompleteSpace 𝕜' := by
     let := IsRCLikeNormedField.rclike 𝕜'
     infer_instance
@@ -412,9 +415,9 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
   have hbE : b m₀ ∈ eE.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
   obtain ⟨L, hL, hLinv⟩ := ContMDiffAt.exists_contMDiffAt_leftInverse
     (IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜') (y₀ := b m₀)
-      (fun i ↦ (hYn i).contMDiffAt (hU.mem_nhds hbU)) hbE)
+      (fun i ↦ ((hYn i).of_le hk).contMDiffAt (hU.mem_nhds hbU)) hbE)
     (.of_injective_of_finiteDimensional_domain (hY.injective_trivOperator hbU))
-  have hLr : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] ι → 𝕜') n (fun m ↦ (L (b m)).restrictScalars 𝕜) m₀ :=
+  have hLr : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] ι → 𝕜') k (fun m ↦ (L (b m)).restrictScalars 𝕜) m₀ :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F (ι → 𝕜') 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt (hL.comp m₀ hb)
   refine (hLr.clm_apply hv).congr_of_eventuallyEq ?_
@@ -429,6 +432,23 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
   rw [IsSubbundleFrameOn.trivialization_apply hY hU (p := ⟨b m, ⟨w m, hmem m⟩⟩) hmU]
   dsimp only
   rw [ContinuousLinearMap.coe_restrictScalars', ← hc, hmL c]
+
+/-- A `C^n` map into the total space of `E` with values in a subbundle given by `C^n` local frames
+is `C^n` as a map into the subbundle. -/
+theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) {b : M → B} {w : ∀ m, E (b m)} {m₀ : M}
+    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) n (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) n
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ :=
+  hV.contMDiffAt_totalSpace_mk_of_le le_rfl hw hmem
 
 end HasLocalContMDiffSubbundleFrames
 
@@ -567,10 +587,10 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
 
 /-- **Local frames from a smooth fibrewise linear map of constant rank.** Let `P x` be
 `𝕜'`-linear maps from the fibres `E₁ x` of a `C^n` vector bundle to the fibres `E₂ x` of a
-vector bundle over `𝕜'`, whose ranges `V x` all have dimension `r`, and such that
-`p ↦ P p.proj p` is a `C^n` map of total spaces. Then `V` has `C^n` local frames of size `r`:
-near `x₀`, apply `P` to sections of `E₁` through preimages of a basis of `V x₀`. Typical
-examples of `P` are fibrewise orthogonal projections. -/
+vector bundle over `𝕜'` with finite-dimensional model fibre `F₂`, whose ranges `V x` all have
+dimension `r`, and such that `p ↦ P p.proj p` is a `C^n` map of total spaces. Then `V` has
+`C^n` local frames of size `r`, each of the form `x ↦ P x (s x)` for a `C^n` local section `s` of
+`E₁`. Typical examples of `P` are fibrewise orthogonal projections. -/
 theorem hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range {r : ℕ}
     {V : Π x, Submodule 𝕜' (E₂ x)} (P : Π x, E₁ x →ₗ[𝕜'] E₂ x)
     (hP : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
