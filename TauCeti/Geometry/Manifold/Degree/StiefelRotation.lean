@@ -93,12 +93,10 @@ theorem mvfderiv_stiefel_coe_fst_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
     (p : TangentSpace ((𝓢).prod (𝓡 1)) x) (i : Fin 2) :
     mvfderiv ((𝓢).prod (𝓡 1)) (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) x p =
       mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x p).1 i := by
-  have hι := ((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero
-  have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) =
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i) ∘
-        ((↑) : stiefel E 2 → Fin 2 → E)) ∘ Prod.fst := rfl
-  rw [hf, mvfderiv_comp_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
-  exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_apply hι p.1
+  rw [Manifold.tangentSpaceProdEquiv_apply]
+  -- The map is `y ↦ proj i (y.1 : Fin 2 → E)` by definition.
+  exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_fst_apply
+    (((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero) p
 
 /-- Read in `E`, the derivative of the first component `((u, v), z) ↦ u` of the Stiefel rotation
 family sends a tangent vector `(t, c)` to the first vector of `t`, read in `Fin 2 → E`. -/
@@ -136,14 +134,6 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
   have hL (L : ℂ →L[ℝ] ℝ) : MDifferentiableAt ((𝓢).prod (𝓡 1)) 𝓘(ℝ)
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x :=
     (L.mdifferentiableAt.comp x.2 hκ).comp x mdifferentiableAt_snd
-  have hL' (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓢).prod (𝓡 1))
-      (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x p =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x p).2) := by
-    have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-        (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd := rfl
-    rw [hf, mvfderiv_comp_snd_apply, Manifold.tangentSpaceProdEquiv_apply]
-    exact L.mvfderiv_comp_apply hκ p.2
   -- Write the map as a sum of products of scalar and vector-valued functions.
   have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ ((stiefelRotationFamily y).2 : E)) =
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -154,8 +144,9 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
   rw [hf, mvfderiv_add ((hL _).smul (hv 0)) ((hL _).smul (hv 1)),
     mvfderiv_smul (hL _) (hv 0), mvfderiv_smul (hL _) (hv 1)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL' Complex.reCLM, hL' Complex.imCLM, mvfderiv_stiefel_coe_fst_apply,
-    mvfderiv_stiefel_coe_fst_apply]
+  rw [Complex.reCLM.mvfderiv_comp_snd_apply hκ, Complex.imCLM.mvfderiv_comp_snd_apply hκ,
+    mvfderiv_stiefel_coe_fst_apply, mvfderiv_stiefel_coe_fst_apply,
+    Manifold.tangentSpaceProdEquiv_apply]
   simp only [Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 

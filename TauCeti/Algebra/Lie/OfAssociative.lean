@@ -64,8 +64,7 @@ If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 
 
 ## References
 
-This is the general construction behind the "Kostant's setting, packaged" target of Layer 9 in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`; see
+This is the general construction behind Kostant's Clifford-algebra setting; see
 `TauCeti/LinearAlgebra/CliffordAlgebra/Quadratic/Lie/LeftRegular.lean` for that specialization.
 
 * B. Kostant, *Clifford algebra analogue of the Hopf--Koszul--Samelson theorem*, Adv. Math. 125

@@ -82,7 +82,7 @@ theorem integrable_id_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1
     exact (memLp_id_gaussianReal 1).integrable (by norm_num)
   have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + (s : ℝ) * x) =
       stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs), Real.nnnorm_of_nonneg s.2] using
+    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs), Real.nnNorm_of_nonneg s.2] using
       (stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m)
         (b := (s : ℝ)) (Or.inl (NNReal.coe_ne_zero.mpr hs.ne')))
   rw [← hmap, ← memLp_one_iff_integrable,
@@ -139,7 +139,7 @@ theorem integral_id_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
 /-- A random variable with a stable law of shape greater than one has mean equal to the
 law's corrected `S₁` location. -/
 theorem integral_of_hasLaw_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
+    {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
     {s : ℝ≥0} {m : ℝ} (hX : HasLaw X (stableMeasure α β s m) P) :
     ∫ ω, X ω ∂P = stableS1Location α β s m :=
   hX.integral_eq.trans (integral_id_stableMeasure hα hβ s m)

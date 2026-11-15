@@ -389,7 +389,7 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
     if hz : z.2 ∈ O then LO.map (z.1, ⟨z.2, hz⟩) else L.map z
   have hraw_pos : ∀ (t : I) {x : X} (hx : x ∈ O), raw (t, x) = LO.map (t, ⟨x, hx⟩) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_neg : ∀ (t : I) {x : X} (hx : x ∉ O), raw (t, x) = L.map (t, x) := by
+  have hraw_neg : ∀ (t : I) {x : X}, x ∉ O → raw (t, x) = L.map (t, x) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
   have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦ by
     by_cases hx : x ∈ O
@@ -823,8 +823,8 @@ theorem HasHomotopyLiftingProperty.of_partitionOfUnity {p : E → B}
   have hL_eq : ∀ n t a, cumTime μ n a = cumTime μ (n + 1) a →
       (L (n + 1)).map (t, a) = (L n).map (t, a) :=
     fun n ↦ (stepChoice n (L n)).2
-  have hL_stable : ∀ {N n : ℕ} (hNn : N ≤ n) {a : A}
-      (hsupp : μ.finsupport a ⊆ Finset.range N) (t : I),
+  have hL_stable : ∀ {N n : ℕ}, N ≤ n → ∀ {a : A},
+      μ.finsupport a ⊆ Finset.range N → ∀ (t : I),
       (L n).map (t, a) = (L N).map (t, a) := by
     intro N n hNn a hsupp t
     induction n, hNn using Nat.le_induction with

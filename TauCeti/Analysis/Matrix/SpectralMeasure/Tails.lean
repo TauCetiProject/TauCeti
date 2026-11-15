@@ -57,7 +57,7 @@ theorem setIntegral_abs_pow_spectralMeasure_le_trace_pow (A : Matrix n n 𝕜)
         ∑ i, (hA.eigenvalues i) ^ (2 * k) / R ^ (2 * k - p) := by
       apply mul_le_mul_of_nonneg_left _ (by positivity)
       apply Finset.sum_le_sum
-      intro i hi
+      intro i _
       by_cases hx : R ≤ |hA.eigenvalues i|
       · rw [Set.indicator_of_mem hx]
         apply (le_div_iff₀ (pow_pos hR _)).2
@@ -110,7 +110,7 @@ theorem isTightMeasureSet_range_spectralMeasure_of_trace_pow_le
   rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le]
   intro ε hε
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hε
-  obtain ⟨R, hR, htail⟩ := exists_pos_setIntegral_abs_pow_spectralMeasure_lt A hA
+  obtain ⟨R, _, htail⟩ := exists_pos_setIntegral_abs_pow_spectralMeasure_lt A hA
     (p := 0) (k := k) (by omega) hC (ε := (δ : ℝ)) (by exact_mod_cast hδ)
   refine ⟨Set.Icc (-R) R, isCompact_Icc, ?_⟩
   rintro μ ⟨i, rfl⟩

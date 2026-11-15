@@ -41,10 +41,8 @@ on the set of period-domain points is out of scope; it needs flag-variety topolo
   effective Hodge structure exactly when its prescribed Hodge type is effective.
 * `TauCeti.Hodge.tatePoint`: the Tate structure `ℤ(m)` as a point of its period domain.
 
-The signature of `PeriodDomain.Point` is adapted from the roadmap's formal companion
-`HodgeStructures/Suggested.lean`. The mathematics follows Griffiths, *Periods of integrals on
-algebraic manifolds II*, §1, and Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*,
-§4. This is Layer L3 of `TauCetiRoadmap/HodgeStructures/README.md`.
+The mathematics follows Griffiths, *Periods of integrals on algebraic manifolds II*, §1, and
+Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*, §4.
 -/
 
 public section

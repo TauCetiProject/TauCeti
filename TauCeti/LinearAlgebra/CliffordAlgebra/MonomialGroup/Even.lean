@@ -178,6 +178,7 @@ theorem span_monomialGroupEven_eq_even (hb : (QuadraticMap.associated Q).IsOrtho
     rw [(isUnit_of_invertible (2 : R)).mul_right_eq_zero.mp h2, zero_smul]
     exact zero_mem _
 
+omit [LinearOrder I] in
 /-- **The order of the even signed monomials**: for a nonempty finite orthogonal basis of `n`
 generators squaring to `±1`, over a nontrivial ring in which `2` is invertible, there are
 `2 ^ n` of them, half of the group of signed monomials. -/

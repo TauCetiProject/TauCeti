@@ -46,7 +46,6 @@ construction.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, section 1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 3.
 -/
 
 public section

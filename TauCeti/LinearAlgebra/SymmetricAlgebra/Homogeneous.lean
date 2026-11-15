@@ -38,9 +38,8 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
-This is the homogeneous-piece prerequisite for the degreewise PBW comparison map in
-Layer 3, “PBW, a substantial sub-project”, of the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
+These pieces are the domains of the degreewise PBW comparison maps in
+`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 -/
 
 public section

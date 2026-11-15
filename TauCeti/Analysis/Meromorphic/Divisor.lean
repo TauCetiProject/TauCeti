@@ -16,8 +16,9 @@ their support.
 
 At a point `z ∈ U`, Mathlib's `MeromorphicOn.divisor f U` evaluates to
 `(meromorphicOrderAt f z).untop₀`, while zero counts of analytic functions are stated in terms of
-`analyticOrderNatAt f z`. The comparison identifies the local multiplicity. Local finiteness
-also gives finite divisor support on subsets of compact sets and bounded regions whose
+`analyticOrderNatAt f z`. The comparison identifies the local multiplicity; in particular the
+divisor vanishes where `f` is analytic and nonzero, with no meromorphy hypothesis. Local
+finiteness also gives finite divisor support on subsets of compact sets and bounded regions whose
 closures lie in the meromorphic domain. For whole-space divisors, it makes norm sublevels
 of support finite and bounds sums over their subsets by the corresponding closed-ball count.
 
@@ -25,12 +26,15 @@ of support finite and bounds sums over their subsets by the corresponding closed
 
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
+* `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
   norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
   is bounded by the containing closed-ball count.
 * `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
   meromorphic orders.
+* `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
+  the divisor is positive exactly at a zero.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -104,6 +108,20 @@ theorem MeromorphicOn.divisor_eq_analyticOrderNatAt {𝕜 E : Type*} [Nontrivial
   rw [hm.divisor_apply hz, hf.meromorphicOrderAt_eq, analyticOrderNatAt]
   cases analyticOrderAt f z <;> simp
 
+/-- The divisor of a function vanishes at a point where the function is analytic and nonzero.
+No meromorphy hypothesis is needed: if `f` is not meromorphic on `U`, or `z ∉ U`, the divisor is
+`0` by definition. In particular an entire function with `f 0 ≠ 0` has `0` outside the support of
+its divisor. -/
+theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : MeromorphicOn.divisor f U z = 0 := by
+  by_cases hm : MeromorphicOn f U
+  · by_cases hz : z ∈ U
+    · rw [hm.divisor_eq_analyticOrderNatAt hf hz, analyticOrderNatAt,
+        hf.analyticOrderAt_eq_zero.mpr hfz, ENat.toNat_zero, Nat.cast_zero]
+    · simp [hz]
+  · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
+
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/
 theorem MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq
@@ -118,6 +136,18 @@ theorem MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq
   rw [hf.divisor_apply hz, hg.divisor_apply hz] at heq
   have hcoe := congrArg (fun n : ℤ ↦ (n : WithTop ℤ)) heq
   simpa only [WithTop.coe_untop₀_of_ne_top hfz, WithTop.coe_untop₀_of_ne_top hgz] using hcoe
+
+/-- At a point `z ∈ U` where a function meromorphic on `U` is analytic and does not vanish
+identically nearby, its divisor on `U` is positive exactly when `f z = 0`. -/
+theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hm : MeromorphicOn f U) (hf : AnalyticAt 𝕜 f z) (hz : z ∈ U)
+    (htop : meromorphicOrderAt f z ≠ ⊤) :
+    0 < divisor f U z ↔ f z = 0 := by
+  rw [hf.meromorphicOrderAt_eq] at htop
+  have h : analyticOrderAt f z ≠ ⊤ := fun h ↦ htop (by simp [h])
+  rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
+    ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
 
 open Set
 

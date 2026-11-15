@@ -53,12 +53,11 @@ whenever its discriminant is a unit. Over a field that last statement is one dir
 `Polynomial.separable_quadratic_iff_discrim_ne_zero`, in every characteristic.
 
 The two splitting criteria are consumed by the node-polynomial criteria of
-`TauCeti/AlgebraicGeometry/EllipticCurve/NodePolynomial.lean`, which advance
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 5 (twists): whether the node polynomial of a
+`TauCeti/AlgebraicGeometry/EllipticCurve/NodePolynomial.lean`: whether the node polynomial of a
 multiplicative reduction splits over the residue field is exactly whether that reduction is split.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/Algebra/Polynomial/QuadraticDiscriminant.lean` at the roadmap's pin `bc2fe8ff7396`,
+`FLT/Mathlib/Algebra/Polynomial/QuadraticDiscriminant.lean` at commit `bc2fe8ff7396`,
 FLT PR #1088, Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`;
 following this repository's convention for adapted material, the upstream authorship is credited
 here rather than in the copyright header. Ported with the source's `@[expose]` dropped, and

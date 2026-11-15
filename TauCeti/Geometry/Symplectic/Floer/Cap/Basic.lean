@@ -57,6 +57,8 @@ is `productClass glue D₁ D₂ D₀ = D₀ -ᵥ glue D₁ D₂ ∈ Γ`. Recappi
   grading.
 * `TauCeti.Floer.productClass_vadd_fst`, `TauCeti.Floer.productClass_vadd_snd`,
   `TauCeti.Floer.productClass_vadd_out`: the recapping laws for the product class.
+* `TauCeti.Floer.productClass_eq_sub_of_eq_vadd`: recapping the glued cap by `B` changes the
+  product class by `−B`.
 * `TauCeti.Floer.productClass_eq_add_sub`: the change of reference caps for the product class.
 * `TauCeti.Floer.add_sub_add_map_productClass_eq`: the cap independence of
   `f₁ + f₂ − f₀ + φ(A)` for functions `fᵢ` obeying the recapping law for `φ`; with `φ` the area
@@ -140,7 +142,7 @@ theorem eq_iff_action_eq_and_index_eq {a : C → ℝ} {m : C → ℤ}
     (ha : ∀ (γ : PeriodGroup ω c) (D : C), a (γ +ᵥ D) = PeriodGroup.area ω c γ + a D)
     (hm : ∀ (γ : PeriodGroup ω c) (D : C), m (γ +ᵥ D) = 2 * PeriodGroup.chern ω c γ + m D)
     {D D' : C} : D = D' ↔ a D = a D' ∧ m D = m D' := by
-  refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨haD, hmD⟩ => ?_⟩
+  refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨_, _⟩ => ?_⟩
   have harea := ha (D -ᵥ D') D'
   have hchern := hm (D -ᵥ D') D'
   rw [vsub_vadd] at harea hchern
@@ -219,6 +221,13 @@ theorem productClass_vadd_snd [VAdd (PeriodGroup ω c) C₂]
     (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
     productClass glue D₁ (γ +ᵥ D₂) D₀ = productClass glue D₁ D₂ D₀ - γ := by
   rw [productClass_def, hglue, vsub_vadd_eq_vsub_sub, productClass_def]
+
+/-- If another gluing map `glue'` glues `D₁` and `D₂` to the cap glued by `glue`, recapped by
+`γ`, then the product class for `glue'` is the product class for `glue` minus `γ`. -/
+theorem productClass_eq_sub_of_eq_vadd {glue' : C₁ → C₂ → C₀} {γ : PeriodGroup ω c} {D₁ : C₁}
+    {D₂ : C₂} (h : glue' D₁ D₂ = γ +ᵥ glue D₁ D₂) (D₀ : C₀) :
+    productClass glue' D₁ D₂ D₀ = productClass glue D₁ D₂ D₀ - γ := by
+  rw [productClass_def, h, vsub_vadd_eq_vsub_sub, productClass_def]
 
 variable [AddTorsor (PeriodGroup ω c) C₁] [AddTorsor (PeriodGroup ω c) C₂]
 

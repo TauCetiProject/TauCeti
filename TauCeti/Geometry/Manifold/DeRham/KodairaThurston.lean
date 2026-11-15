@@ -283,7 +283,7 @@ private theorem periods_surjective : Function.Surjective periods := by
   rintro ⟨a, b, s⟩
   refine ⟨a • deRhamCohomology.mk _ 1 dxForm + b • deRhamCohomology.mk _ 1 dyForm +
     s • deRhamCohomology.mk _ 1 dtForm, ?_⟩
-  simp [periods]
+  simp [periods, homologyPeriodHom_loopClass]
 
 /-- **The first de Rham cohomology of the Kodaira–Thurston manifold is `ℝ³`**: a class is
 determined by its periods on the loops of the generators `((1, 0, 0), 0)`, `((0, 1, 0), 0)` and
@@ -309,19 +309,19 @@ theorem deRhamCohomologyOneEquiv_apply (c : deRhamCohomology 𝓘(ℝ, Cover) Ko
 @[simp]
 theorem deRhamCohomologyOneEquiv_mk_dxForm :
     deRhamCohomologyOneEquiv (deRhamCohomology.mk _ 1 dxForm) = (1, 0, 0) := by
-  simp [deRhamCohomologyOneEquiv, periods]
+  simp [deRhamCohomologyOneEquiv, periods, homologyPeriodHom_loopClass]
 
 /-- The class of `dy` corresponds to the second standard basis vector of `ℝ³`. -/
 @[simp]
 theorem deRhamCohomologyOneEquiv_mk_dyForm :
     deRhamCohomologyOneEquiv (deRhamCohomology.mk _ 1 dyForm) = (0, 1, 0) := by
-  simp [deRhamCohomologyOneEquiv, periods]
+  simp [deRhamCohomologyOneEquiv, periods, homologyPeriodHom_loopClass]
 
 /-- The class of `dt` corresponds to the third standard basis vector of `ℝ³`. -/
 @[simp]
 theorem deRhamCohomologyOneEquiv_mk_dtForm :
     deRhamCohomologyOneEquiv (deRhamCohomology.mk _ 1 dtForm) = (0, 0, 1) := by
-  simp [deRhamCohomologyOneEquiv, periods]
+  simp [deRhamCohomologyOneEquiv, periods, homologyPeriodHom_loopClass]
 
 /-- **The first Betti number of the Kodaira–Thurston manifold is three.** -/
 theorem finrank_deRhamCohomology_one :

@@ -337,7 +337,7 @@ theorem comp_left (h : σ.IsIntegrableSystem F) (hσ : σ.IsNondegenerate) (hU :
       refine (mvfderiv_comp_apply_of_differentiableAt hψc hF v).trans ?_
       rw [mvfderiv_apply_eq_mfderiv_apply, hv]
       exact (fderiv ℝ (fun z ↦ ψ z c) (F x)).map_zero
-    exact hσ.poissonBracket_eq_zero_of_ker_le hF (h.poissonBracket_eq_zero · · x) (hker a)
+    exact hσ.poissonBracket_eq_zero_of_ker_le (h.poissonBracket_eq_zero · · x) (hker a)
       (hker b)
   dense_setOf_isRegularPoint := by
     refine h.dense_setOf_isRegularPoint.mono fun x hx ↦ ?_

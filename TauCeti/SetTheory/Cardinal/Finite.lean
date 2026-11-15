@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Basic.Denumerable
 
 /-!
-# Cardinalities of products with finitely many nontrivial factors and of ranges
+# Finite and extended cardinalities
 
 Mathlib's `Nat.card_pi` computes the cardinality of a product `∀ i, X i` over a finite index type.
 This file allows an arbitrary index type, provided that all factors outside a finite set `s` have
@@ -22,6 +23,13 @@ the range of `f'`.
 For instance, two linear maps intertwined by linear equivalences on the source and on the target
 have ranges of the same cardinality; this is a counting step of exact-sequence arguments.
 
+For countable types, equality of extended natural cardinalities also gives an equivalence,
+including when both types are infinite.
+
+Finally, the cardinality `Nat.card` of an infinite type is `0`, and `0` is coprime only to `1`, so a
+type whose cardinality is coprime to that of an infinite type has `Nat.card` equal to `1`, and in
+particular is a subsingleton.
+
 ## Main results
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
@@ -31,6 +39,10 @@ have ranges of the same cardinality; this is a counting step of exact-sequence a
   type is `0`.
 * `Nat.card_range_eq_card_range_of_comp_eq`: `Nat.card (Set.range f) = Nat.card (Set.range f')`
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
+* `TauCeti.finite_of_natCast_card_ne_zero`: a type whose cardinality has a nonzero cast in an
+  additive monoid with one is finite, since `Nat.card` vanishes on infinite types.
+* `Nat.Coprime.subsingleton_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and `α` is
+  infinite, then `β` is a subsingleton.
 -/
 
 public section
@@ -88,4 +100,36 @@ theorem card_range_eq_card_range_of_comp_eq {α β γ δ : Type*} {f : α → β
     Nat.card (Set.range f) = Nat.card (Set.range f') := by
   rw [← he.range_comp f', ← h, Set.range_comp, Nat.card_image_of_injOn he']
 
+/-- If the cardinalities of `α` and `β` are coprime and `α` is infinite, then `β` is a
+subsingleton. -/
+theorem Coprime.subsingleton_of_infinite {α β : Type*} [Infinite α]
+    (h : (Nat.card α).Coprime (Nat.card β)) : Subsingleton β := by
+  rw [Nat.card_eq_zero_of_infinite, Nat.coprime_zero_left] at h
+  exact (Nat.card_eq_one_iff_unique.mp h).1
+
 end Nat
+
+namespace TauCeti
+
+/-- Countable types with equal extended natural cardinalities admit an equivalence. -/
+theorem nonempty_equiv_of_enatCard_eq {α β : Type*} [Countable α] [Countable β]
+    (h : ENat.card α = ENat.card β) : Nonempty (α ≃ β) := by
+  classical
+  cases finite_or_infinite α with
+  | inl hfin =>
+    have := hfin
+    have : Finite β := ENat.card_lt_top.1 (by rw [← h]; exact ENat.card_lt_top.2 hfin)
+    let := Fintype.ofFinite α
+    let := Fintype.ofFinite β
+    exact Fintype.card_eq.1 (by simpa [ENat.card_eq_coe_fintype_card] using h)
+  | inr hinf =>
+    have := hinf
+    have : Infinite β := ENat.card_eq_top.1 (by rw [← h]; simp)
+    exact nonempty_equiv_of_countable
+
+/-- A type is finite if its cardinality has a nonzero cast. -/
+theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]
+    (h : (Nat.card α : R) ≠ 0) : Finite α :=
+  Nat.finite_of_card_ne_zero fun hcard ↦ h (by simp [hcard])
+
+end TauCeti

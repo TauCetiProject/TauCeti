@@ -20,6 +20,10 @@ inverse Fourier transform is the Fourier transform evaluated at `-x`
 (`Real.fourierInv_mul_convolution_eq`). Read backwards, this writes the pointwise product of two
 functions with integrable Fourier transforms as the inverse Fourier transform of an integrable
 function, which is how products are handled in Fourier-side Sobolev estimates.
+
+For a real kernel `k` and a function `f` with values in a complex Banach space, the plain
+convolution `k ⋆ f` has Fourier transform `𝓕 k • 𝓕 f`, with `k` viewed as complex valued
+(`Real.fourier_convolution_eq`).
 -/
 
 public section
@@ -39,5 +43,18 @@ transforms. -/
 theorem fourierInv_mul_convolution_eq {f₁ f₂ : E → R} (hf₁ : Integrable f₁) (hf₂ : Integrable f₂)
     (x : E) : 𝓕⁻ (f₁ ⋆[mul ℂ R] f₂) x = 𝓕⁻ f₁ x * 𝓕⁻ f₂ x := by
   simp only [fourierInv_eq_fourier_neg, fourier_mul_convolution_eq hf₁ hf₂]
+
+/-- **The convolution theorem for a real kernel.** For an integrable real kernel `k` and an
+integrable `f`, the Fourier transform of `k ⋆ f` is `𝓕 k • 𝓕 f`, with `k` viewed as complex
+valued. -/
+theorem fourier_convolution_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [CompleteSpace F] {k : E → ℝ} {f : E → F} (hk : Integrable k) (hf : Integrable f) (ξ : E) :
+    𝓕 (k ⋆ f) ξ = 𝓕 (fun x ↦ (k x : ℂ)) ξ • 𝓕 f ξ := by
+  -- The real convolution is the complex one with the kernel viewed as complex valued.
+  have hk' : k ⋆ f = (fun x ↦ (k x : ℂ)) ⋆[lsmul ℂ ℂ] f := by
+    ext x
+    simp only [convolution_lsmul, Complex.coe_smul]
+  have hki : Integrable (fun x ↦ (k x : ℂ)) := hk.ofReal
+  rw [hk', fourier_smul_convolution_eq hki hf]
 
 end Real

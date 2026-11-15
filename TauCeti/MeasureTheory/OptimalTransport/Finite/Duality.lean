@@ -75,8 +75,6 @@ codomain: the inner supremum is `⊤` at a plan whose marginals are wrong.
   §1.1.2, for the finite duality and complementary slackness.
 * M. Sion, *On general minimax theorems*, Pacific J. Math. 8 (1958), 171--176.
 * `Mathlib.Topology.Sion`, formalized by Antoine Chambert-Loir and Anatole Dedecker.
-
-This is Layer 2, item 3 of the optimal-transport roadmap.
 -/
 
 public section

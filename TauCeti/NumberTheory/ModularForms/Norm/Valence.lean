@@ -273,7 +273,7 @@ with the cusp order of the level-one norm, is `k · [SL(2, ℤ) : Γ] / 12`.
 `Σ_{P ∈ Γ \ ℍ} (2 / |Stab_Γ P|) · ord_P f + ord_∞(Nm f) = k · [SL(2, ℤ) : Γ] / 12`.
 
 This is `valence_formula_weighted` transported along the norm map: the interior mass is already
-indexed by the `Γ`-orbits, weighted as the roadmap's `1 / e_P` up to the factor
+indexed by the `Γ`-orbits, weighted as the level-one `1 / e_P` up to the factor
 `|Stab_Γ P| = |{±I} ∩ Γ| · e_P` (see `weightedOrderOfVanishingOnSubgroupOrbit`), and the index
 is the **full** coset index, as it must be for odd weight with `-I ∉ Γ`.
 

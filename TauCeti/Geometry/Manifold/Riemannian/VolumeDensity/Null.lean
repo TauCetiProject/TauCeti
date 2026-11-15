@@ -70,7 +70,7 @@ private theorem riemannianVolume_eq_zero_iff_image_of_measurableSet {α : M} {s 
   constructor
   · intro hz
     have ha := (lintegral_eq_zero_iff' (hd.aemeasurable him)).mp hz
-    have hfalse : ∀ᵐ y ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
+    have hfalse : ∀ᵐ _ ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
       filter_upwards [ae_restrict_mem him, ha] with y hy hyzero
       obtain ⟨x, hx, rfl⟩ := hy
       have hp := chartVolumeDensity_pos (I := I) α (by

@@ -202,7 +202,7 @@ private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
   set v : ι → ℍ := Pi.single i 1 - y with hv
   by_cases hv0 : v = 0
   · exact ⟨1, one_mem _, by rw [Matrix.one_mulVec]; exact sub_eq_zero.1 hv0⟩
-  set s : ℝ := ∑ k, normSq (v k) with hs
+  set s : ℝ := ∑ k, normSq (v k)
   have hvv : star v ⬝ᵥ v = (s : ℍ) := star_dotProduct_self_quaternion v
   have hs0 : s ≠ 0 := by
     intro h

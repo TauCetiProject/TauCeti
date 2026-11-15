@@ -136,7 +136,7 @@ theorem isSeifertLoop_connectedSum_add_iff (p : ℕ × ℕ) :
   have hlen : List.length (w₁.connectedSum w₂) = w₁.length + w₂.length :=
     length_connectedSum w₁ w₂
   simp only [isSeifertLoop_iff, levelAt_connectedSum_add, hinj.eq_iff, hlen, add_lt_add_iff_left]
-  refine and_congr_right fun h12 ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ ⟨?_, ?_⟩
+  refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_congr_right fun _ ↦ ⟨?_, ?_⟩
   · intro h k hk hk'
     have := h (w₁.length + k) (by omega) (by omega)
     rwa [levelAt_connectedSum_add, hinj.ne_iff] at this
@@ -256,7 +256,7 @@ theorem submatrix_seifertMatrix_connectedSum :
   ext (a | a) (b | b)
   · -- two loops of `w₁` keep their letters
     obtain ⟨ha₁, ha₂⟩ := hlt₁ a
-    obtain ⟨hb₁, hb₂⟩ := hlt₁ b
+    obtain ⟨hb₁, _⟩ := hlt₁ b
     simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₁, seifertMatrix_apply,
       Subtype.ext_iff, seifertLoopsConnectedSumEquiv_inl, levelAt_connectedSum_of_lt w₁ w₂ ha₁,
       levelAt_connectedSum_of_lt w₁ w₂ hb₁, signAt_connectedSum_of_lt w₁ w₂ ha₁,

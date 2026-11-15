@@ -30,8 +30,10 @@ distances. For a general time domain, the `1`-Lipschitz condition is only needed
 
 Every nonnegative time before the cut time is minimizing, and so is the cut time itself as
 soon as it lies in `T`. Past the cut time, either the prefix leaves `T` or the distance to `S` is
-strictly smaller than the elapsed time. When `T` is the set of times spent in a closed set and the
-rays depend continuously on a parameter, the cut time is upper semicontinuous in that parameter.
+strictly smaller than the elapsed time. When the rays and their time domains depend on a parameter,
+the cut time is upper semicontinuous in it as soon as the prefix conditions `[0, t] ⊆ T` are closed
+in the parameter and the positions are continuous where they hold; this covers the times spent in a
+closed set by a continuous family of rays.
 Measurability of the cut time is in `TauCeti.MeasureTheory.MeasurableSpace.RayCutTime`.
 
 ## Main definitions
@@ -48,6 +50,8 @@ Measurability of the cut time is in `TauCeti.MeasureTheory.MeasurableSpace.RayCu
   `TauCeti.rayCutTime_mem_rayMinimizingTimes`: the nonnegative times before the cut time are
   minimizing, and so is the cut time when it lies in `T`.
 * `TauCeti.not_subset_or_infEDist_lt_of_rayCutTime_lt`: the alternative past the cut time.
+* `TauCeti.upperSemicontinuous_rayCutTime`: upper semicontinuity of the cut time of a family of
+  rays whose prefix conditions are closed in the parameter and whose positions are continuous.
 * `TauCeti.upperSemicontinuous_rayCutTime_preimage`: upper semicontinuity of the cut time of
   a continuous family of rays, with time domain the times spent in a closed set `D`.
 -/
@@ -267,6 +271,46 @@ theorem not_subset_or_infEDist_lt_of_rayCutTime_lt
     exact fun he ↦ hcut.not_ge (le_rayCutTime ⟨ht, hprefix, he⟩)
   · exact Or.inl hprefix
 
+/-- **Upper semicontinuity of the cut time of a family of rays.** Let `Γ` be a family of rays from
+`S` with time domains `T`, each `1`-Lipschitz on the prefixes `[0, u] ⊆ T p` with `u ≤ R`.
+Suppose that for every `t ∈ (0, R)` the parameters whose time
+domain contains `[0, t]` form a closed set, on which the position at time `t` is continuous. Then
+the cut time is upper semicontinuous in the parameter. -/
+theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P → ℝ → X}
+    {T : P → Set ℝ} (hΓ : ∀ p, ∀ u ≤ R, Icc 0 u ⊆ T p → LipschitzOnWith 1 (Γ p) (Icc 0 u))
+    (hR : 0 ≤ R) (h0T : ∀ p, 0 ∈ T p) (h0S : ∀ p, Γ p 0 ∈ S)
+    (hT : ∀ t ∈ Ioo 0 R, IsClosed {p | Icc 0 t ⊆ T p})
+    (hc : ∀ t ∈ Ioo 0 R, ContinuousOn (fun p ↦ Γ p t) {p | Icc 0 t ⊆ T p}) :
+    UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (T p) R := by
+  have hI (p : P) : rayCutTime (Γ p) S (T p) R ∈ Icc 0 R := rayCutTime_mem_Icc hR (h0T p) (h0S p)
+  rw [upperSemicontinuous_iff_isClosed_preimage]
+  intro t
+  rcases le_or_gt t 0 with ht0 | _
+  · convert isClosed_univ
+    exact eq_univ_of_forall fun p ↦ ht0.trans (hI p).1
+  rcases le_or_gt t R with htR | htR
+  · have heq : (fun p ↦ rayCutTime (Γ p) S (T p) R) ⁻¹' Ici t =
+        ⋂ s ∈ Ioo 0 t,
+          {p | Icc 0 s ⊆ T p} ∩ {p | infEDist (Γ p s) S = ENNReal.ofReal s} := by
+      ext p
+      simp only [mem_preimage, mem_Ici, mem_iInter, mem_inter_iff, mem_ofPred_eq]
+      constructor
+      · intro hp s hs
+        exact (mem_rayMinimizingTimes_of_lt_rayCutTime (hΓ p) hR (h0T p) (h0S p)
+          hs.1.le (hs.2.trans_le hp)).2
+      · intro hp
+        by_contra hlt
+        obtain ⟨s, hcs, hst⟩ := exists_between (lt_of_not_ge hlt)
+        have hs := hp s ⟨(hI p).1.trans_lt hcs, hst⟩
+        exact hcs.not_ge (le_rayCutTime ⟨⟨(hI p).1.trans hcs.le, hst.le.trans htR⟩, hs⟩)
+    rw [heq]
+    refine isClosed_biInter fun s hs ↦ ?_
+    have hsR : s ∈ Ioo 0 R := ⟨hs.1, hs.2.trans_le htR⟩
+    exact (continuous_infEDist.comp_continuousOn (hc s hsR)).preimage_isClosed_of_isClosed
+      (hT s hsR) isClosed_singleton
+  · convert isClosed_empty
+    exact eq_empty_of_forall_notMem fun p hp ↦ (htR.trans_le hp).not_ge (hI p).2
+
 end CutTime
 
 section ClosedSet
@@ -303,32 +347,10 @@ theorem upperSemicontinuous_rayCutTime_preimage {P : Type*} [TopologicalSpace P]
     {Γ : P → ℝ → X} (hD : IsClosed D) (hR : 0 ≤ R) (hΓ : ∀ p, LipschitzOnWith 1 (Γ p) (Icc 0 R))
     (h0S : ∀ p, Γ p 0 ∈ S) (h0D : ∀ p, Γ p 0 ∈ D)
     (hc : ∀ t ∈ Icc 0 R, Continuous fun p ↦ Γ p t) :
-    UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (Γ p ⁻¹' D) R := by
-  have hI (p : P) : rayCutTime (Γ p) S (Γ p ⁻¹' D) R ∈ Icc 0 R :=
-    rayCutTime_mem_Icc (T := Γ p ⁻¹' D) hR (h0D p) (h0S p)
-  rw [upperSemicontinuous_iff_isClosed_preimage]
-  intro t
-  rcases le_or_gt t 0 with ht0 | ht0
-  · convert isClosed_univ
-    exact eq_univ_of_forall fun p ↦ ht0.trans (hI p).1
-  rcases le_or_gt t R with htR | htR
-  · have ht : t ∈ Icc 0 R := ⟨ht0.le, htR⟩
-    have heq : (fun p ↦ rayCutTime (Γ p) S (Γ p ⁻¹' D) R) ⁻¹' Ici t =
-        (⋂ u ∈ Icc 0 t, (fun p ↦ Γ p u) ⁻¹' D) ∩ {p | infEDist (Γ p t) S = ENNReal.ofReal t} := by
-      ext p
-      have hmem := rayCutTime_preimage_mem_rayMinimizingTimes hD hR (hΓ p) (h0S p) (h0D p)
-      rw [mem_preimage, mem_Ici, le_rayCutTime_iff
-        (fun u hu _ ↦ (hΓ p).mono (Icc_subset_Icc_right hu)) hR (h0D p) (h0S p)
-        (hmem.2.1 (right_mem_Icc.mpr hmem.1.1)) ht0.le]
-      simp only [mem_rayMinimizingTimes, ht, true_and, mem_inter_iff, mem_iInter₂,
-        mem_preimage, mem_ofPred_eq, subset_def]
-    rw [heq]
-    exact (isClosed_biInter fun u (hu : u ∈ Icc 0 t) ↦
-      hD.preimage (hc u ⟨hu.1, hu.2.trans htR⟩)).inter
-      (isClosed_eq (continuous_infEDist.comp (hc t ht)) continuous_const)
-  · convert isClosed_empty
-    exact eq_empty_of_forall_notMem fun p hp ↦
-      (htR.trans_le hp).not_ge (hI p).2
+    UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (Γ p ⁻¹' D) R :=
+  upperSemicontinuous_rayCutTime (fun p _ hu _ ↦ (hΓ p).mono (Icc_subset_Icc_right hu)) hR h0D
+    h0S (fun _ ht ↦ hD.setOfPred_mapsTo fun u hu ↦ hc u ⟨hu.1, hu.2.trans ht.2.le⟩)
+    fun t ht ↦ (hc t ⟨ht.1.le, ht.2.le⟩).continuousOn
 
 end ClosedSet
 

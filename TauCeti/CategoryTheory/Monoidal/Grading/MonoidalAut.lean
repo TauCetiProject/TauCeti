@@ -65,7 +65,7 @@ private def degreeScalars (χ : universalGradingGroup C →* Rˣ) : SimpleClasse
   fun S ↦ χ (universalGradingGroup.degree S)
 
 private theorem degreeScalars_one : degreeScalars (1 : universalGradingGroup C →* Rˣ) = 1 :=
-  funext fun S ↦ by simp [degreeScalars]
+  funext fun _ ↦ by simp [degreeScalars]
 
 private theorem degreeScalars_mul (χ ψ : universalGradingGroup C →* Rˣ) :
     degreeScalars (χ * ψ) = degreeScalars ψ * degreeScalars χ :=

@@ -32,8 +32,8 @@ extension of fields has at most `[L_w : K_v]` automorphisms.
 
 The target place of `completionCongr` is an arbitrary `w'` together with the equation
 `w' = σ • w`, so that no transport along an equality of places is needed. Both completions carry
-the `K_v`-algebra structure `NumberField.LiesOver.completionMap`, available in the
-`NumberField.LiesOver` scope.
+Mathlib's `K_v`-algebra structure `AbsoluteValue.Completion.algebraOfLiesOver`, used here as a
+local instance.
 
 These are the archimedean counterparts of `IsDedekindDomain.HeightOneSpectrum.completionCongr`,
 `IsDedekindDomain.HeightOneSpectrum.decompositionHom` and
@@ -79,7 +79,7 @@ public section
 noncomputable section
 
 open Module
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace
 
@@ -113,25 +113,23 @@ private theorem isometry_withAbsCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace
 /-- The ring isomorphism `L_w ≃ L_{w'}` extending the isometry `σ`. -/
 private def completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} (h : w' = σ • w) :
     w.Completion ≃+* w'.Completion :=
-  ((Completion.equiv w).trans (AbsoluteValue.Completion.equiv w.1)).trans
+  (AbsoluteValue.Completion.equiv w.1).trans
     ((UniformSpace.Completion.mapRingEquiv _
     (isometry_withAbsCongr σ h).continuous
     ((isometry_withAbsCongr σ h).right_inv
       (WithAbs.congr w.1 w'.1 σ.toRingEquiv).right_inv).continuous).trans
-    ((Completion.equiv w').trans (AbsoluteValue.Completion.equiv w'.1)).symm)
+    (AbsoluteValue.Completion.equiv w'.1).symm)
 
 private theorem continuous_completionRingEquiv (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
     (h : w' = σ • w) : Continuous (completionRingEquiv σ h) :=
-  (Completion.continuous_ofCompletion w').comp <|
-    (AbsoluteValue.Completion.continuous_ofCompletion w'.1).comp <|
-      UniformSpace.Completion.continuous_map.comp <|
-        (AbsoluteValue.Completion.continuous_toCompletion w.1).comp
-          (Completion.continuous_toCompletion w)
+  (AbsoluteValue.Completion.continuous_ofCompletion w'.1).comp <|
+    UniformSpace.Completion.continuous_map.comp <|
+      AbsoluteValue.Completion.continuous_toCompletion w.1
 
 private theorem completionRingEquiv_coe (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L}
     (h : w' = σ • w) (x : WithAbs w.1) :
     completionRingEquiv σ h x = (WithAbs.congr w.1 w'.1 σ.toRingEquiv x : WithAbs w'.1) :=
-  Completion.ext <| AbsoluteValue.Completion.toCompletion_injective w'.1 <|
+  AbsoluteValue.Completion.toCompletion_injective w'.1 <|
     UniformSpace.Completion.mapRingHom_coe (isometry_withAbsCongr σ h).continuous x
 
 variable (v : InfinitePlace K)
@@ -142,16 +140,18 @@ def completionCongr (σ : L ≃ₐ[K] L) {w w' : InfinitePlace L} [w.LiesOver v]
     (h : w' = σ • w) : w.Completion ≃ₐ[v.Completion] w'.Completion :=
   AlgEquiv.ofRingEquiv (f := completionRingEquiv σ h) fun a ↦ by
     -- both sides are continuous in `a`, and `σ` fixes the image of `K`
-    induction a using Completion.induction_on with
+    induction a using AbsoluteValue.Completion.induction_on with
     | hp =>
       exact isClosed_eq ((continuous_completionRingEquiv σ h).comp
-        (LiesOver.continuous_completionMap v w)) (LiesOver.continuous_completionMap v w')
+        (AbsoluteValue.Completion.continuous_map v.1 w.1))
+        (AbsoluteValue.Completion.continuous_map v.1 w'.1)
     | ih a =>
-      rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, LiesOver.completionMap_coe,
-        LiesOver.completionMap_coe, completionRingEquiv_coe]
+      rw [AbsoluteValue.Completion.algebraMap_apply_of_liesOver,
+        AbsoluteValue.Completion.algebraMap_apply_of_liesOver, AbsoluteValue.Completion.map_coe,
+        AbsoluteValue.Completion.map_coe, completionRingEquiv_coe]
       congr 2
       apply WithAbs.ofAbs_injective
-      simp [WithAbs.ofAbs_algebraMap]
+      simp
 
 variable {v}
 
@@ -177,7 +177,7 @@ theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w
     (hfL : ∀ x : L, f (algebraMap L w.Completion x) = algebraMap L w'.Completion (σ x)) :
     f = completionCongr v σ h :=
   Completion.funext_of_continuous hf (continuous_completionCongr v σ h) fun x ↦ by
-    rw [hfL, Completion.algebraMap_apply, Completion.algebraMap_apply,
+    rw [hfL, Completion.algebraMap_apply_eq_coe, Completion.algebraMap_apply_eq_coe,
       completionCongr_algebraMap]
 
 /-- `completionCongr` depends only on the automorphism, not on the proof that it carries `w`
@@ -204,8 +204,9 @@ theorem completionCongr_trans {w'' : InfinitePlace L} [w''.LiesOver v]
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
   AlgEquiv.ext (congrFun (eq_completionCongr_of_continuous (τ * σ) _
     ((continuous_completionCongr v τ hτ).comp (continuous_completionCongr v σ hσ)) fun x ↦ by
-      rw [AlgEquiv.trans_apply, Completion.algebraMap_apply, Completion.algebraMap_apply,
-        completionCongr_algebraMap, completionCongr_algebraMap, AlgEquiv.mul_apply]))
+      rw [AlgEquiv.trans_apply, Completion.algebraMap_apply_eq_coe,
+        Completion.algebraMap_apply_eq_coe, completionCongr_algebraMap, completionCongr_algebraMap,
+        AlgEquiv.mul_apply]))
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 @[simp]
@@ -255,8 +256,8 @@ theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
   ext x
   refine (algebraMap L w.Completion).injective <|
     (AlgEquiv.restrictNormal_commutes ((decompositionHom v w τ).restrictScalars K) L x).trans ?_
-  rw [AlgEquiv.restrictScalars_apply, Completion.algebraMap_apply, Completion.algebraMap_apply,
-    decompositionHom_algebraMap]
+  rw [AlgEquiv.restrictScalars_apply, Completion.algebraMap_apply_eq_coe,
+    Completion.algebraMap_apply_eq_coe, decompositionHom_algebraMap]
 
 variable (v w) in
 /-- The decomposition group of `w` acts faithfully on `L_w`. -/
@@ -265,8 +266,8 @@ theorem decompositionHom_injective : Function.Injective (decompositionHom v w) :
   intro τ hτ
   ext x
   have := congr($hτ (x : w.Completion))
-  rw [decompositionHom_algebraMap, AlgEquiv.one_apply, ← Completion.algebraMap_apply,
-    ← Completion.algebraMap_apply] at this
+  rw [decompositionHom_algebraMap, AlgEquiv.one_apply, ← Completion.algebraMap_apply_eq_coe,
+    ← Completion.algebraMap_apply_eq_coe] at this
   exact (algebraMap L w.Completion).injective this
 
 /-- An element of the decomposition group of `w` fixes every `x ∈ L` whose image in `L_w` comes
@@ -276,8 +277,9 @@ theorem apply_eq_self_of_algebraMap_mem_range (τ : MulAction.stabilizer (L ≃�
     (τ : L ≃ₐ[K] L) x = x := by
   obtain ⟨c, hc⟩ := hx
   apply (algebraMap L w.Completion).injective
-  rw [Completion.algebraMap_apply, Completion.algebraMap_apply,
-    ← decompositionHom_algebraMap (v := v), ← Completion.algebraMap_apply, ← hc, AlgEquiv.commutes]
+  rw [Completion.algebraMap_apply_eq_coe, Completion.algebraMap_apply_eq_coe,
+    ← decompositionHom_algebraMap (v := v), ← Completion.algebraMap_apply_eq_coe, ← hc,
+    AlgEquiv.commutes]
 
 /-- **The decomposition group is trivial when `L` is generated by elements of `K_v`.** If `L` is
 generated over `K` by elements whose images in `L_w` come from `K_v`, then the decomposition group

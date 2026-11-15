@@ -742,7 +742,7 @@ zeros.** -/
 theorem finite_setOf_eq_zero (hf : f ≠ 0) : {x | f x = ((0 : ℂ) : OnePoint ℂ)}.Finite := by
   have h : {x | f x ≠ ((0 : ℂ) : OnePoint ℂ)} ∈ Filter.codiscrete X := by
     refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
-    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y hy hy0
+    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y _ hy0
     exact fun h ↦ hy0 (finitePart_of_eq_coe h)
   exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
     ⟨mem_univ y, (· hy)⟩

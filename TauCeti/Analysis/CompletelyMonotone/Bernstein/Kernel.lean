@@ -38,9 +38,6 @@ The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, a
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV; see also
 R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012),
 Theorem 1.4.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  (BCR semigroup--Bochner).
 -/
 
 public section

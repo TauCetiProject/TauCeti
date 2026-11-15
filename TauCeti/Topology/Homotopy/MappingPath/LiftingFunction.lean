@@ -35,6 +35,9 @@ target.
   `TauCeti.LiftingFunction.lift`.
 * `TauCeti.LiftingFunction.liftFamily`: the lifts of a continuous family of paths, as a continuous
   map, with `liftFamily_apply`, `liftFamily_zero` and `apply_liftFamily`.
+* `TauCeti.LiftingFunction.fst`: the canonical lifting function of the projection `B × F → B`.
+* `TauCeti.LiftingFunction.ofHomeomorphOver`: transfer of a lifting function along a homeomorphism
+  over the base.
 * `TauCeti.MappingPathSpace.endpointLiftingFunction f`: the path-concatenation lifting function
   of the endpoint map of `MappingPathSpace f`.
 
@@ -153,6 +156,46 @@ theorem isHurewiczFibration (Λ : LiftingFunction p) : IsHurewiczFibration.{w} p
   refine ⟨(Λ.liftFamily f γ h₀).comp ContinuousMap.prodSwap, funext fun x ↦ ?_, fun a ↦ ?_⟩
   · simp [γ]
   · simp
+
+/-- The canonical lifting function for the first projection `B × F → B`: the lift of a path `γ`
+from `(b, x)` at time `t` is `(γ t, x)`, keeping the fiber coordinate constant. -/
+def fst (B : Type v) (F : Type u') [TopologicalSpace B] [TopologicalSpace F] :
+    LiftingFunction (ContinuousMap.fst : C(B × F, B)) where
+  toContinuousMap := ContinuousMap.curry ⟨fun q ↦ (q.1.val.2 q.2, q.1.val.1.2), by fun_prop⟩
+  apply_zero' x := Prod.ext x.property rfl
+  comp_apply' _ := by ext; rfl
+
+/-- Lifting along the first projection keeps the second coordinate fixed. -/
+@[simp]
+theorem fst_lift_apply {B : Type v} {F : Type u'} [TopologicalSpace B] [TopologicalSpace F]
+    (x : B × F) (γ : C(I, B)) (h : γ 0 = ContinuousMap.fst x) (t : I) :
+    (fst B F).lift x γ h t = (γ t, x.2) :=
+  (rfl)
+
+/-- Transfer a lifting function along a homeomorphism `e : E' ≃ₜ E` over the base `B`:
+a path starting at `p' x` is lifted in `E` from `e x` and carried back to `E'` by `e.symm`. -/
+def ofHomeomorphOver {E' : Type u'} [TopologicalSpace E'] {p' : C(E', B)}
+    (Λ : LiftingFunction p) (e : E' ≃ₜ E) (h : ∀ x, p (e x) = p' x) :
+    LiftingFunction p' where
+  toContinuousMap :=
+    ⟨fun z ↦ (e.symm : C(E, E')).comp
+        (Λ.lift (e z.val.1) z.val.2 (z.property.trans (h z.val.1).symm)),
+      (ContinuousMap.continuous_postcomp (e.symm : C(E, E'))).comp
+        (Λ.continuous_lift (e.continuous.comp continuous_subtype_val.fst)
+          continuous_subtype_val.snd fun z ↦ z.property.trans (h z.val.1).symm)⟩
+  apply_zero' z := by simp
+  comp_apply' z := by
+    ext t
+    simp [← h]
+
+/-- The lift transferred along `e : E' ≃ₜ E` lifts from `e x` and applies `e.symm`. -/
+@[simp]
+theorem ofHomeomorphOver_lift_apply {E' : Type u'} [TopologicalSpace E'] {p' : C(E', B)}
+    (Λ : LiftingFunction p) (e : E' ≃ₜ E) (h : ∀ x, p (e x) = p' x)
+    (x : E') (γ : C(I, B)) (hγ : γ 0 = p' x) (t : I) :
+    (Λ.ofHomeomorphOver e h).lift x γ hγ t =
+      e.symm (Λ.lift (e x) γ (hγ.trans (h x).symm) t) :=
+  (rfl)
 
 end LiftingFunction
 

@@ -192,7 +192,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   -- The overlaid difference vanishes unless one of the two coordinates is mismatched.
   set B : Set ((κ × κ) × (κ × κ)) :=
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
-      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
   have hle := abs_overlayDiff_ofMatrix_le_indicator (ν := ν) (ν' := ν') π b hb
   refine (cutDist_le _ _ hπ).trans ?_

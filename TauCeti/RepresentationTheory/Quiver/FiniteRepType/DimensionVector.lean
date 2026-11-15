@@ -36,11 +36,6 @@ its own class, which is all a map out of the skeleton needs.
 
 The vertex spaces remain in `max v w x`, matching the universe in which the reflection functors
 produce them and preserving the common API used by the finite-representation-type results.
-
-## References
-
-This supports the dimension-vector map in the Gabriel correspondence of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section

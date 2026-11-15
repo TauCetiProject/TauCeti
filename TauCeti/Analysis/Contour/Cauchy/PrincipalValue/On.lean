@@ -22,7 +22,7 @@ eventually `IntervalIntegrable` and its integral tends to `v` as `ε → 0⁺`.
 This is the set-level (`…On`) companion of `HasCauchyPVAt` (`CauchyPrincipalValue.lean`), which
 excises a single prescribed point `z₀`; the naming mirrors Mathlib's `MeromorphicAt` (at a point)
 versus `MeromorphicOn` (on a set). The **finite excision set** `S` is bound **existentially**, so
-the predicate is intrinsic to `(γ, f)` and stays faithful to the roadmap's `S`-free signature: it
+the predicate is intrinsic to `(γ, f)` and its signature is `S`-free: it
 holds when *some* finite set satisfies the two clauses. A prescribed set — for instance the pole set
 of the generalized residue theorem, with intended value `2πi · ∑_{s ∈ S} n_γ(s) · res f s` — can be
 used as the witness once its integrability and `Tendsto` clauses have been proved. Enlarging a
@@ -74,9 +74,8 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
 ## Provenance
 
 Migrated and adapted from the AINTLIB `LeanModularForms` project (the multi-point principal value
-`CauchyPrincipalValueExistsOn`), specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of
-the contour-integration roadmap, with the singular set bound existentially and the
-truncated-integrability clause added.
+`CauchyPrincipalValueExistsOn`), specialised to curves given as raw functions `γ : ℝ → ℂ` on
+`[a, b]`, with the singular set bound existentially and the truncated-integrability clause added.
 
 ## References
 

@@ -20,9 +20,8 @@ the faces indexing a subdivision simplex form a chain, all their barycenters lie
 face in that chain. The affine extension therefore lands in the realization of `K`.
 
 This file constructs that canonical continuous map. It is the forward map in the homeomorphism
-between the realizations of a complex and its barycentric subdivision required by Layer 11 of the
-GeometricTopology roadmap. The inverse is constructed and proved continuous in
-`Subdivision.Homeomorph`.
+between the realizations of a complex and its barycentric subdivision. The inverse is constructed
+and proved continuous in `Subdivision.Homeomorph`.
 
 The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
 "Derived Subdivisions".

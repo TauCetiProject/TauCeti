@@ -421,7 +421,7 @@ theorem isBigO_primeSummatory_log_absNorm_div_sub_log :
       =O[atTop] fun _ ↦ (1 : ℝ) := by
   obtain ⟨B, hB⟩ := exists_primePowerSummatory_higherPrimePowerWeight_div_le K
   set R : ℝ → ℝ := primePowerSummatory K
-    (fun A ↦ higherPrimePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K))) with hR
+    (fun A ↦ higherPrimePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K)))
   -- Splitting off the higher prime powers leaves exactly the primes.
   have hsplit (x : ℝ) : primePowerSummatory K
       (fun A ↦ primePowerWeight A / Ideal.absNorm (A : Ideal (𝓞 K))) x =

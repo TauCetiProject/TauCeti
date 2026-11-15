@@ -47,7 +47,7 @@ theorem coeff_charpolyRev_finiteCompression [CommRing R] {A : Matrix ι ι R}
   · intro s hs
     exact mem_powersetCard.mpr ⟨fun i hi ↦ property_of_mem_map_subtype s hi,
       by simpa using (mem_powersetCard.mp hs).2⟩
-  · intro s hs t ht h
+  · intro s _ t _ h
     exact Finset.map_injective _ h
   · intro s hs
     have hsub := (mem_powersetCard.mp hs).1
@@ -55,7 +55,7 @@ theorem coeff_charpolyRev_finiteCompression [CommRing R] {A : Matrix ι ι R}
     exact mem_powersetCard.mpr ⟨subset_univ _, by
       rw [← card_map (Function.Embedding.subtype (· ∈ S)), subtype_map_of_mem hsub]
       exact (mem_powersetCard.mp hs).2⟩
-  · intro s hs
+  · intro s _
     let e : s ≃ s.map (Function.Embedding.subtype (· ∈ S)) :=
       Finset.equivMap (Function.Embedding.subtype (· ∈ S)) s
     rw [principalMinor_def, ← det_submatrix_equiv_self e, submatrix_submatrix,
@@ -83,7 +83,7 @@ theorem tendsto_coeff_charpolyRev_finiteCompression [CommRing R] [TopologicalSpa
       ∑ s ∈ (S.powersetCard n).subtype (fun s ↦ s.card = n), A.principalMinor s.1)
       atTop (𝓝 (∑' s : {s : Finset ι // s.card = n}, A.principalMinor s)) :=
     hA.hasSum.comp hcofinal
-  simp only [sum_subtype_of_mem _ (fun s hs ↦ (mem_powersetCard.mp hs).2)] at h
+  simp only [sum_subtype_of_mem _ (fun _ hs ↦ (mem_powersetCard.mp hs).2)] at h
   rcases neg_one_pow_eq_or R n with hn | hn
   · simpa only [coeff_charpolyRev_finiteCompression, Matrix.charCoeff_def, hn, one_mul] using h
   · simpa only [coeff_charpolyRev_finiteCompression, Matrix.charCoeff_def, hn, neg_one_mul]

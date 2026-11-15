@@ -70,10 +70,6 @@ above correct rather than merely plausible.
 * E. Artin, *Theorie der Zöpfe*, Abh. Math. Sem. Univ. Hamburg 4 (1925), 47-72.
 * E. Brieskorn, K. Saito, *Artin-Gruppen und Coxeter-Gruppen*, Invent. Math. 17 (1972), 245-271.
 * J. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Mathematics Studies 82 (1974).
-
-This file is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), which asks for "braid closures (over
-`PresentedMonoid` braid groups with the Artin relations)" as one of the presentations of a knot.
 -/
 
 public section
@@ -282,7 +278,7 @@ theorem ArtinGroup.toCoxeterGroup_gen (i : B) :
 surjective. -/
 theorem ArtinGroup.toCoxeterGroup_surjective :
     Function.Surjective (ArtinGroup.toCoxeterGroup cs) := by
-  rw [← MonoidHom.range_eq_top, eq_top_iff, ← cs.subgroup_closure_range_simple,
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← cs.subgroupClosure_range_simple,
     Subgroup.closure_le]
   rintro _ ⟨i, rfl⟩
   exact ⟨ArtinGroup.gen M i, ArtinGroup.toCoxeterGroup_gen cs i⟩

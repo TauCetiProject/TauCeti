@@ -44,8 +44,7 @@ and the result here then identifies the subgroup with the identity.
 * J. S. Milne, *Algebraic Groups* (2017), §4.a and §5.
 * T. A. Springer, *Linear Algebraic Groups*, §2.2.
 
-This advances the worked-example target `GLₙ` is reductive in Layer 6 of the ReductiveGroups
-roadmap. It supplies the faithful-representation step used after normal-subgroup invariants and
+This file supplies the faithful-representation step used after normal-subgroup invariants and
 Kolchin's fixed-vector theorem.
 -/
 

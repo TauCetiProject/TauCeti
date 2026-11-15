@@ -307,7 +307,7 @@ private theorem eventually_cExp_sqrt_one_add_norm_sub_sq_mem {V : Set F} {x y : 
     ∀ᶠ s : ℝ in 𝓝 0, ‖-fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x + s • η‖ < 1 ∧
       x + OpenPartialHomeomorph.univUnitBall.symm
         ((toDual ℝ F).symm (-fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x + s • η)) ∈ V := by
-  set p := -fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x with hp_def
+  set p := -fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x
   have hp : (toDual ℝ F).symm p = OpenPartialHomeomorph.univUnitBall (y - x) :=
     toDual_symm_neg_fderiv_sqrt_one_add_norm_sub_sq x y
   have hball : (toDual ℝ F).symm p ∈ Metric.ball (0 : F) 1 :=
@@ -336,7 +336,6 @@ private theorem deriv_deriv_sqrt_one_add_norm_sub_sq_cExp {V : Set F} {x ξ : F}
       cExp (fun z : F × F ↦ √(1 + ‖z.1 - z.2‖ ^ 2)) V x q‖ ^ 2)) 0 =
       (‖ξ‖ ^ 2 - q ξ ^ 2) * √(1 - ‖q‖ ^ 2) := by
   have hr : 0 < 1 - ‖q‖ ^ 2 := by nlinarith [norm_nonneg q]
-  have hσ : 0 < √(1 - ‖q‖ ^ 2) := Real.sqrt_pos.2 hr
   set σ := (√(1 - ‖q‖ ^ 2))⁻¹
   have hσsq : σ ^ 2 = (1 - ‖q‖ ^ 2)⁻¹ := by rw [inv_pow, Real.sq_sqrt hr.le]
   have hf : (fun t : ℝ ↦ √(1 + ‖x + t • ξ - (x + σ • (toDual ℝ F).symm q)‖ ^ 2)) =
@@ -429,7 +428,6 @@ theorem satisfiesStrongMTW_sqrt_one_add_norm_sub_sq {U V : Set F} {R : ℝ}
   have h₂ : ‖η‖ ^ 2 ≤ ‖η‖ ^ 2 + η (y - x) ^ 2 := by nlinarith [sq_nonneg (η (y - x))]
   have hρ : √(1 + ‖y - x‖ ^ 2) ≤ √(1 + R ^ 2) :=
     Real.sqrt_le_sqrt (by nlinarith [norm_nonneg (y - x)])
-  have hρpos : 0 < √(1 + ‖y - x‖ ^ 2) := Real.sqrt_pos.2 (by positivity)
   calc (√(1 + R ^ 2))⁻¹ * ‖ξ‖ ^ 2 * ‖η‖ ^ 2
       = ‖ξ‖ ^ 2 * ‖η‖ ^ 2 * (√(1 + R ^ 2))⁻¹ := by ring
     _ ≤ ‖ξ‖ ^ 2 * ‖η‖ ^ 2 * (√(1 + ‖y - x‖ ^ 2))⁻¹ := by gcongr

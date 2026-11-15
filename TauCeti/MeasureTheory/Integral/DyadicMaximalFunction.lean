@@ -142,7 +142,8 @@ theorem setOf_lt_dyadicMaximalFunction_eq [Nonempty ι] (hf : ∫⁻ y, ‖f y�
   simp only [mem_ofPred_eq, mem_iUnion, lt_dyadicMaximalFunction_iff, exists_prop]
   constructor
   · rintro ⟨k, m, hx, hlt⟩
-    obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hf ht hlt
+    obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage le_rfl
+      (by simpa only [ENNReal.rpow_one] using hf) ht hlt
     exact ⟨q, hq, hsub hx⟩
   · rintro ⟨q, hq, hx⟩
     exact ⟨q.1, q.2, hx, lt_setLAverage_of_mem_calderonZygmundCubes hq⟩
@@ -154,8 +155,7 @@ theorem mul_volume_lt_dyadicMaximalFunction_le (f : (ι → ℝ) → F) (t : ℝ
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- In dimension zero every dyadic cube is the whole space, of volume `1`, so `M_d f` is the
     -- constant `‖f‖₁`.
-    have hQ (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
-      eq_univ_of_forall fun y => mem_dyadicCube.2 (Subsingleton.elim _ _)
+    have hQ (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ := dyadicCube_eq_univ k m
     have hvol : volume (univ : Set (ι → ℝ)) = 1 := by
       rw [← hQ 0 0, volume_dyadicCube, Fintype.card_eq_zero, pow_zero, ENNReal.ofReal_one]
     have hM (x : ι → ℝ) : dyadicMaximalFunction f x = ∫⁻ y, ‖f y‖ₑ := by
@@ -251,7 +251,8 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
     -- Calderón–Zygmund cube `Q` with `x ∈ 3Q`.
     obtain ⟨y, hyQ, hyB⟩ := hm
     refine le_of_not_gt fun hlt' => ?_
-    obtain ⟨q, hq, hkq, hQq⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hf ht hlt'
+    obtain ⟨q, hq, hkq, hQq⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage le_rfl
+      (by simpa only [ENNReal.rpow_one] using hf) ht hlt'
     have hyq := mem_closedBall.1 (dyadicCube_subset_closedBall q.1 q.2 (hQq hyQ))
     have h2k : (2 : ℝ) ^ (j + 1) ≤ 2 ^ q.1 := zpow_le_zpow_right₀ one_le_two hkq
     refine hnot q hq (mem_ball.2 ?_)

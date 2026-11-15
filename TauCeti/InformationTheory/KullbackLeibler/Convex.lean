@@ -249,7 +249,7 @@ private theorem mul_enorm_sub_add_two_mul_ofReal_klFun_le {x y : ℝ} (hx : 0 �
   have hm : 0 ≤ klFun (2⁻¹ * x + 2⁻¹ * y) := klFun_nonneg (by positivity)
   calc _ = ENNReal.ofReal (t * |x - y| + 2 * klFun (2⁻¹ * x + 2⁻¹ * y)) := by
         rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul t.coe_nonneg,
-          ENNReal.ofReal_mul zero_le_two, Real.enorm_eq_ofReal_abs]
+          ENNReal.ofReal_mul zero_le_two, Real.eNorm_eq_ofReal_abs]
         simp
     _ ≤ ENNReal.ofReal (t ^ 2 * (x + y) + klFun x + klFun y) :=
         ENNReal.ofReal_le_ofReal (mul_abs_sub_add_two_mul_klFun_le hx hy t.coe_nonneg)

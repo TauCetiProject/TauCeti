@@ -34,7 +34,7 @@ universe uR uA uB uC
 variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing R] [Ring A] [Ring B] [Ring C]
   [Algebra R A] [Algebra R B] [Algebra R C]
-  {G : InternalGrading R A} {H : InternalGrading R B} {K : InternalGrading R C}
+  {G : InternalGrading R A ℤ} {H : InternalGrading R B ℤ} {K : InternalGrading R C ℤ}
   [GradedAlgebra G.piece] [GradedAlgebra H.piece] [GradedAlgebra K.piece]
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hA : IsDGAlgebra G.piece dA} {hB : IsDGAlgebra H.piece dB}

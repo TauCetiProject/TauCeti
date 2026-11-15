@@ -521,7 +521,7 @@ theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (hp : p ≠ 
     -- The law `μ_t` is at distance `t * W_p (μ, ν)` from `μ`.
     have hdist : edist μ (c t) = ‖t‖ₑ * edist μ ν := by
       rw [edist_dist, edist_dist, hc.dist_source_apply ht, ENNReal.ofReal_mul ht.1,
-        Real.enorm_eq_ofReal ht.1]
+        Real.eNorm_eq_ofReal ht.1]
     rw [← eLpNorm_sub_eq_eLpNorm_edist, hscale, eLpNorm_sub_eq_eLpNorm_edist, hopt]
     simpa only [WassersteinSpace.edist_def] using hdist.symm
 

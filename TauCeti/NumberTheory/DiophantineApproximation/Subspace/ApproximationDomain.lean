@@ -374,7 +374,7 @@ theorem span_approxModule_eq_top [Finite ι] [NumberField K] (S₀ : Finset (Fin
   obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_mul_apply_le S₀ fun v _ ↦ hS0 v
   have hdK : (d : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hd0
   have hmem (j : ι) : (d : K) • Pi.basisFun K ι j ∈ approxModule S₀ L c Q := by
-    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v hv k ↦ ?_⟩
+    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v _ k ↦ ?_⟩
     · rw [map_smul, smul_eq_mul, map_mul]
       calc v (d : K) * v (L v.1 i (Pi.basisFun K ι j))
           ≤ v (d : K) * (S v * |Q| ^ c v.1 i) :=
