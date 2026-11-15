@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.ResidueField
+public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.Algebra.Category.CommAlgCat.Fppf
 
 /-!
@@ -16,26 +18,28 @@ commutative `R`-algebra `A` to the set of morphisms `Spec A ⟶ X` over `Spec R`
 `Type (u + 1)`.
 
 This file upgrades `pointsSheaf` to a functor `TauCeti.CommAlgCat.pointsSheafFunctor` and proves
-that it is fully faithful. Because the relative spectrum functor `algSpec` is full, faithful, and
-cover-dense for the fppf topology on `Over (Spec R)`, `(CommAlgCat R)ᵒᵖ` is a dense subsite of
-`Over (Spec R)`. By the comparison lemma, restricting fppf sheaves on `Over (Spec R)` to affine
-schemes is an equivalence of sheaf categories (`TauCeti.CommAlgCat.fppfSheafEquiv`), and
-`pointsSheafFunctor` is isomorphic to subcanonical Yoneda followed by this equivalence.
+that it is fully faithful. Because `(CommAlgCat R)ᵒᵖ` is a dense subsite of `Over (Spec R)` for
+the fppf topology (`TauCeti.CommAlgCat.isDenseSubsite_algSpec`), restricting fppf sheaves on
+`Over (Spec R)` to affine schemes is an equivalence of sheaf categories
+(`TauCeti.CommAlgCat.fppfSheafEquiv`), and `pointsSheafFunctor` is naturally isomorphic to
+subcanonical Yoneda followed by this equivalence (`TauCeti.CommAlgCat.pointsSheafFunctorIso`).
 
 Consequently, morphisms and isomorphisms between the fppf sheaves of points of two `R`-schemes
 descend uniquely to morphisms and isomorphisms of the `R`-schemes themselves
-(`TauCeti.CommAlgCat.homOfPointsSheafHom`, `TauCeti.CommAlgCat.isoOfPointsSheafIso`).
+(`TauCeti.CommAlgCat.homOfPointsSheafHom`, `TauCeti.CommAlgCat.isoOfPointsSheafIso`). Moreover,
+any `R`-scheme morphism whose induced map on fppf sheaves of points is locally surjective is
+surjective on underlying schemes
+(`TauCeti.CommAlgCat.surjective_left_of_isLocallySurjective_pointsSheafMap`).
 
 ## Main declarations
 
-* `TauCeti.CommAlgCat.isDenseSubsite_algSpec`: the affine fppf site is a dense subsite of
-  schemes over `Spec R` with the fppf topology.
-* `TauCeti.CommAlgCat.fppfSheafEquiv`: equivalence between affine fppf sheaves and fppf sheaves
-  on schemes over `Spec R`.
 * `TauCeti.CommAlgCat.pointsSheafMap`: the morphism of fppf point sheaves induced by an
   `R`-scheme morphism.
 * `TauCeti.CommAlgCat.pointsSheafFunctor`: the functor sending an `R`-scheme to its fppf sheaf of
   points.
+* `TauCeti.CommAlgCat.pointsSheafFunctorIso`: natural isomorphism identifying `pointsSheafFunctor`
+  with subcanonical Yoneda on `Over (Spec R)` followed by
+  `(fppfSheafEquiv R (Type (u + 1))).inverse`.
 * `TauCeti.CommAlgCat.fullyFaithfulPointsSheafFunctor`: full faithfulness of
   `pointsSheafFunctor`.
 * `TauCeti.CommAlgCat.homOfPointsSheafHom`: the unique `R`-scheme morphism inducing a morphism of
@@ -44,6 +48,8 @@ descend uniquely to morphisms and isomorphisms of the `R`-schemes themselves
   morphisms of their fppf sheaves of points.
 * `TauCeti.CommAlgCat.isoOfPointsSheafIso`: the unique `R`-scheme isomorphism inducing an
   isomorphism of fppf sheaves of points.
+* `TauCeti.CommAlgCat.surjective_left_of_isLocallySurjective_pointsSheafMap`: fppf-local
+  surjectivity on sheaves of points implies surjectivity on underlying schemes.
 
 ## References
 
@@ -62,42 +68,6 @@ namespace TauCeti
 universe u
 
 namespace CommAlgCat
-
-section SiteEquiv
-
-variable (R : Type u) [CommRing R]
-
-/-- Relative spectra of commutative `R`-algebras form a dense subsite of schemes over `Spec R`
-for the fppf topology. -/
-instance isDenseSubsite_algSpec :
-    (algSpec (CommRingCat.of R)).IsDenseSubsite (fppfTopology R)
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) := by
-  let _ : (algSpec (CommRingCat.of R)).Full :=
-    (algSpec.fullyFaithful (R := CommRingCat.of R)).full
-  let _ : (algSpec (CommRingCat.of R)).Faithful :=
-    (algSpec.fullyFaithful (R := CommRingCat.of R)).faithful
-  rw [fppfTopology_def]
-  infer_instance
-
-/-- **Comparison lemma for the affine fppf site.** Sheaves of types in `Type (u + 1)` on the
-affine fppf site `(CommAlgCat R)ᵒᵖ` are equivalent to fppf sheaves on all schemes over
-`Spec R`. -/
-noncomputable def fppfSheafEquiv :
-    Sheaf (fppfTopology R) (Type (u + 1)) ≌
-      Sheaf (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) (Type (u + 1)) :=
-  Functor.IsDenseSubsite.sheafEquiv (fppfTopology R)
-    (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
-    (algSpec (CommRingCat.of R)) (Type (u + 1))
-
-/-- The inverse of `fppfSheafEquiv` restricts an fppf sheaf on schemes over `Spec R` to affine
-`R`-schemes along `algSpec`. -/
-theorem fppfSheafEquiv_inverse :
-    (fppfSheafEquiv R).inverse =
-      (algSpec (CommRingCat.of R)).sheafPushforwardContinuous (Type (u + 1))
-        (fppfTopology R) (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) :=
-  (rfl)
-
-end SiteEquiv
 
 section Functor
 
@@ -204,13 +174,31 @@ theorem pointsSheafFunctor_mapIso {X Y : Over (Spec (CommRingCat.of R))} (e : X 
 variable (R) in
 /-- `pointsSheafFunctor` is naturally isomorphic to subcanonical Yoneda on `Over (Spec R)`
 followed by restriction along `algSpec`. -/
-private noncomputable def pointsSheafFunctorIso :
+noncomputable def pointsSheafFunctorIso :
     pointsSheafFunctor R ≅
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R))).uliftYoneda.{u + 1} ⋙
-        (fppfSheafEquiv R).inverse :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
-    ext A ⟨a⟩
+        (fppfSheafEquiv R (Type (u + 1))).inverse :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ by
+    ext _ ⟨_⟩
     rfl
+
+/-- At each `R`-scheme `X`, `pointsSheafFunctorIso` is the identity sheaf isomorphism. -/
+@[simp]
+theorem pointsSheafFunctorIso_app (X : Over (Spec (CommRingCat.of R))) :
+    dsimp% (pointsSheafFunctorIso R).app X = Iso.refl (pointsSheaf X) :=
+  (rfl)
+
+/-- The forward component of `pointsSheafFunctorIso` at `X` is the identity morphism. -/
+@[simp]
+theorem pointsSheafFunctorIso_hom_app (X : Over (Spec (CommRingCat.of R))) :
+    dsimp% (pointsSheafFunctorIso R).hom.app X = 𝟙 (pointsSheaf X) :=
+  (rfl)
+
+/-- The inverse component of `pointsSheafFunctorIso` at `X` is the identity morphism. -/
+@[simp]
+theorem pointsSheafFunctorIso_inv_app (X : Over (Spec (CommRingCat.of R))) :
+    dsimp% (pointsSheafFunctorIso R).inv.app X = 𝟙 (pointsSheaf X) :=
+  (rfl)
 
 variable (R) in
 /-- **The fppf sheaf-of-points functor is fully faithful.** Morphisms between schemes over
@@ -219,7 +207,7 @@ noncomputable def fullyFaithfulPointsSheafFunctor :
     (pointsSheafFunctor R).FullyFaithful :=
   Functor.FullyFaithful.ofIso
     (((Scheme.fppfTopology.over (Spec (CommRingCat.of R))).fullyFaithfulUliftYoneda).comp
-      (fppfSheafEquiv R).fullyFaithfulInverse)
+      (fppfSheafEquiv R (Type (u + 1))).fullyFaithfulInverse)
     (pointsSheafFunctorIso R).symm
 
 instance instFullPointsSheafFunctor : (pointsSheafFunctor R).Full :=
@@ -382,6 +370,74 @@ theorem isoOfPointsSheafIso_trans {X Y Z : Over (Spec (CommRingCat.of R))}
     isoOfPointsSheafIso (e₁ ≪≫ e₂) = isoOfPointsSheafIso e₁ ≪≫ isoOfPointsSheafIso e₂ := by
   ext : 1
   exact homOfPointsSheafHom_comp e₁.hom e₂.hom
+
+/-- **Local surjectivity on fppf point sheaves implies surjectivity on underlying schemes.**
+If `f : X ⟶ Y` over `Spec R` induces a locally surjective morphism `pointsSheaf X ⟶ pointsSheaf Y`,
+then `f.left : X.left ⟶ Y.left` is surjective. -/
+theorem surjective_left_of_isLocallySurjective_pointsSheafMap
+    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
+    [Sheaf.IsLocallySurjective (pointsSheafMap f)] :
+    Surjective f.left := by
+  refine ⟨fun y ↦ ?_⟩
+  let φ₀ : CommRingCat.of R ⟶ Y.left.residueField y :=
+    Spec.preimage (Y.left.fromSpecResidueField y ≫ Y.hom)
+  let _ : Algebra R (Y.left.residueField y) := φ₀.hom.toAlgebra
+  have hφ₀ : Spec.map (CommRingCat.ofHom (algebraMap R (Y.left.residueField y))) =
+      Y.left.fromSpecResidueField y ≫ Y.hom :=
+    Spec.map_preimage _
+  let A : CommAlgCat.{u} R := CommAlgCat.of R (Y.left.residueField y)
+  let yPt : (algSpec (CommRingCat.of R)).obj (op A) ⟶ Y :=
+    Over.homMk (Y.left.fromSpecResidueField y) hφ₀.symm
+  let ySection : (pointsSheaf Y).obj.obj (op (op A)) := ULift.up yPt
+  let S : Sieve (op A) := Presheaf.imageSieve (pointsSheafMap f).hom ySection
+  have hS : S ∈ fppfTopology R (op A) :=
+    Presheaf.imageSieve_mem (CA := fun X ↦ X) (fppfTopology R) (pointsSheafMap f).hom
+      (U := op (op A)) ySection
+  let _ : (algSpec (CommRingCat.of R)).Full :=
+    (algSpec.fullyFaithful (R := CommRingCat.of R)).full
+  let _ : (algSpec (CommRingCat.of R)).Faithful :=
+    (algSpec.fullyFaithful (R := CommRingCat.of R)).faithful
+  have : Scheme.fppfPrecoverage.HasIsos := ⟨fun g _ ↦ g.singleton_mem_fppfPrecoverage⟩
+  rw [fppfTopology_def, Functor.mem_inducedTopology_iff_of_isCoverDense,
+    GrothendieckTopology.mem_over_iff,
+    Precoverage.mem_toGrothendieck_iff_of_isStableUnderComposition] at hS
+  obtain ⟨P, ⟨hsurj, -⟩, hPS⟩ := hS
+  let z₀ : Spec (Y.left.residueField y) := IsLocalRing.closedPoint (Y.left.residueField y)
+  obtain ⟨_, _, hg, z, hgz⟩ := hsurj z₀
+  cases hg with
+  | @of Z g hg =>
+  have hgS := hPS Z g hg
+  rw [Sieve.overEquiv_iff] at hgS
+  obtain ⟨B, ψ, hB, hψS, hfac⟩ := hgS
+  obtain ⟨⟨xPt⟩, hxPt⟩ := hψS
+  rw [pointsSheafMap_hom_app_apply] at hxPt
+  have hxEq : xPt ≫ f = (algSpec (CommRingCat.of R)).map ψ ≫ yPt :=
+    congrArg ULift.down hxPt
+  let z' : Z := z
+  let g' : Z ⟶ Spec (Y.left.residueField y) := g
+  have hgz' : g' z' = z₀ := hgz
+  have hcomp :
+      (hB.left : Z ⟶ _) ≫ xPt.left ≫ f.left = g' ≫ Y.left.fromSpecResidueField y := by
+    have h := congrArg Over.Hom.left (show hB ≫ xPt ≫ f = Over.homMk g _ ≫ yPt by
+      rw [hxEq, ← Category.assoc, hfac])
+    dsimp [yPt] at h
+    exact h
+  have hz : ((hB.left : Z ⟶ _) ≫ xPt.left ≫ f.left) z' =
+      (g' ≫ Y.left.fromSpecResidueField y) z' :=
+    congrArg (fun m : Z ⟶ Y.left ↦ m z') hcomp
+  rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hgz',
+    Scheme.fromSpecResidueField_apply] at hz
+  exact ⟨xPt.left ((hB.left : Z ⟶ _) z'), hz⟩
+
+/-- Descending a locally surjective morphism of fppf point sheaves yields a surjective morphism on
+underlying schemes. -/
+instance instSurjectiveHomOfPointsSheafHomLeft
+    {X Y : Over (Spec (CommRingCat.of R))} (α : pointsSheaf X ⟶ pointsSheaf Y)
+    [Sheaf.IsLocallySurjective α] :
+    Surjective (homOfPointsSheafHom α).left := by
+  have : Sheaf.IsLocallySurjective (pointsSheafMap (homOfPointsSheafHom α)) := by
+    rwa [pointsSheafMap_homOfPointsSheafHom]
+  exact surjective_left_of_isLocallySurjective_pointsSheafMap (homOfPointsSheafHom α)
 
 end Functor
 

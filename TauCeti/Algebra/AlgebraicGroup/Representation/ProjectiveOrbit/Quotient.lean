@@ -32,7 +32,9 @@ A locally bijective morphism of sheaves is an isomorphism.
 
 ## Main declarations
 
-* `Comodule.projectiveOrbitPointsSheaf`: the fppf sheaf of points of a projective orbit scheme.
+* `Comodule.projectiveOrbitPointsSheaf`, `Comodule.projectiveOrbitPointsSheafIsoPointsSheaf`: the
+  fppf sheaf of points of a projective orbit scheme and its identification with
+  `CommAlgCat.pointsSheaf`.
 * `Comodule.toProjectiveOrbitPoints`: the orbit map on points.
 * `Comodule.fppfHomogeneousQuotientToProjectiveOrbitPoints`: the orbit map descended to `G/N`.
 * `Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints`: **`G/N` is represented by the
@@ -72,6 +74,44 @@ theorem projectiveOrbitPointsSheaf_obj (m : M) (hm : Module.IsUnimodular k m) :
       ((algSpec (CommRingCat.of k)).op ⋙
         yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙
           uliftFunctor.{u + 1, u} :=
+  (rfl)
+
+/-- `projectiveOrbitPointsSheaf` agrees with `CommAlgCat.pointsSheaf` of the projective orbit
+scheme over `Spec k`. -/
+theorem projectiveOrbitPointsSheaf_eq_pointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm =
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  (rfl)
+
+/-- Canonical identification of `projectiveOrbitPointsSheaf` with `CommAlgCat.pointsSheaf` of the
+projective orbit scheme over `Spec k`. -/
+noncomputable def projectiveOrbitPointsSheafIsoPointsSheaf
+    (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm ≅
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  eqToIso (projectiveOrbitPointsSheaf_eq_pointsSheaf (H := H) m hm)
+
+/-- Forward evaluation of `projectiveOrbitPointsSheafIsoPointsSheaf` removes the
+`projectiveOrbitPointsSheaf_obj` cast on affine orbit points. -/
+@[simp]
+theorem projectiveOrbitPointsSheafIsoPointsSheaf_hom_hom_app_apply
+    (m : M) (hm : Module.IsUnimodular k m) (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
+    (x : (algSpec (CommRingCat.of k)).obj A.unop ⟶
+      Over.mk (projectiveOrbitToSpec (H := H) m hm)) :
+    (projectiveOrbitPointsSheafIsoPointsSheaf (H := H) m hm).hom.hom.app A
+        ((projectiveOrbitPointsSheaf_obj (H := H) m hm).symm ▸ ULift.up x) =
+      ULift.up x :=
+  (rfl)
+
+/-- Inverse evaluation of `projectiveOrbitPointsSheafIsoPointsSheaf` casts an affine orbit point
+into `projectiveOrbitPointsSheaf`. -/
+@[simp]
+theorem projectiveOrbitPointsSheafIsoPointsSheaf_inv_hom_app_apply
+    (m : M) (hm : Module.IsUnimodular k m) (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ)
+    (x : (algSpec (CommRingCat.of k)).obj A.unop ⟶
+      Over.mk (projectiveOrbitToSpec (H := H) m hm)) :
+    dsimp% (projectiveOrbitPointsSheafIsoPointsSheaf (H := H) m hm).inv.hom.app A (ULift.up x) =
+      (projectiveOrbitPointsSheaf_obj (H := H) m hm).symm ▸ ULift.up x :=
   (rfl)
 
 /-- An algebra-valued group point followed by the orbit map lies over the base field. -/
