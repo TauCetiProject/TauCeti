@@ -52,6 +52,48 @@ variable {t : DynkinType} {ht : t.Valid} (D E : ChevalleyDatum t ht)
 
 include hf
 
+/-- A root-preserving elementary comparison takes values in the target elementary subgroup. -/
+theorem range_elementaryHom_le : f.range ≤ E.elementarySubgroup A := by
+  let i := MulEquiv.subgroupCongr (D.elementarySubgroup_def A)
+  let F := f.comp i.symm.toMonoidHom
+  rintro _ ⟨a, rfl⟩
+  suffices ∀ x hx, F ⟨x, hx⟩ ∈ E.elementarySubgroup A by
+    exact this (i a) (i a).property
+  intro x hx
+  induction hx using Subgroup.closure_induction with
+  | mem x hx =>
+    obtain ⟨γ, u, rfl⟩ := Set.mem_iUnion.mp hx
+    -- subgroupCongr changes only membership proofs, so F agrees with f on root values.
+    exact (hf γ u) ▸ E.rootSubgroupPoints_mem_elementarySubgroup A γ u
+  | one => exact (map_one F).symm ▸ (E.elementarySubgroup A).one_mem
+  | mul x y hx hy ihx ihy =>
+    exact (map_mul F ⟨x, hx⟩ ⟨y, hy⟩).symm ▸ (E.elementarySubgroup A).mul_mem ihx ihy
+  | inv x hx ihx => exact (map_inv F ⟨x, hx⟩).symm ▸ (E.elementarySubgroup A).inv_mem ihx
+
+private theorem comp_normalizerMonoidHom_torusPoints (s : Fin t.rank → Aˣ) :
+    f.comp (((D.elementarySubgroup A).normalizerMonoidHom.comp
+      (Subgroup.inclusion (D.range_torusPoints_le_normalizer_elementarySubgroup A)))
+        ⟨D.torusPoints A s, ⟨s, rfl⟩⟩).toMonoidHom =
+      (MulAut.conj (E.torusPoints A (D.torusRestriction E h s))).toMonoidHom.comp f := by
+  apply MonoidHom.ext
+  intro a
+  let i := MulEquiv.subgroupCongr (D.elementarySubgroup_def A)
+  -- subgroupCongr and its inverse leave ambient values unchanged; only membership proofs differ.
+  have hi : ∀ γ u, (f.comp i.symm.toMonoidHom)
+      ⟨D.rootSubgroupPoints γ A u,
+        Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨γ, u, rfl⟩)⟩ =
+      E.rootSubgroupPoints γ A u := fun γ u => hf γ u
+  have hact := D.map_rootGeneratedTorusAction E A h (f.comp i.symm.toMonoidHom) hi s (i a)
+  -- The subgroup equivalence changes membership proofs, not ambient conjugation.
+  have harg : i.symm (D.rootGeneratedTorusAction A s (i a)) =
+      (((D.elementarySubgroup A).normalizerMonoidHom.comp
+        (Subgroup.inclusion (D.range_torusPoints_le_normalizer_elementarySubgroup A)))
+          ⟨D.torusPoints A s, ⟨s, rfl⟩⟩) a := by
+    apply Subtype.ext
+    exact D.coe_rootGeneratedTorusAction A s (i a)
+  simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, harg,
+    MulEquiv.symm_apply_apply, MulAut.conj_apply] using hact
+
 /-- A root-preserving elementary comparison extends uniquely with the prescribed actual torus
 map if it agrees with that map wherever an actual torus point is elementary. -/
 theorem existsUnique_extendElementaryHom
@@ -72,26 +114,9 @@ theorem existsUnique_extendElementaryHom
       f.comp (((D.elementarySubgroup A).normalizerMonoidHom.comp
         (Subgroup.inclusion (D.range_torusPoints_le_normalizer_elementarySubgroup A)))
           b).toMonoidHom = (MulAut.conj (g b)).toMonoidHom.comp f := by
-    obtain ⟨s, hs⟩ := b.property
-    have hb : b = ⟨D.torusPoints A s, ⟨s, rfl⟩⟩ := Subtype.ext hs.symm
-    subst b
-    apply MonoidHom.ext
-    intro a
-    let i := MulEquiv.subgroupCongr (D.elementarySubgroup_def A)
-    have hi : ∀ γ u, (f.comp i.symm.toMonoidHom)
-        ⟨D.rootSubgroupPoints γ A u,
-          Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨γ, u, rfl⟩)⟩ =
-        E.rootSubgroupPoints γ A u := fun γ u => hf γ u
-    have hact := D.map_rootGeneratedTorusAction E A h (f.comp i.symm.toMonoidHom) hi s (i a)
-    -- The subgroup equivalence changes membership proofs, not ambient conjugation.
-    have harg : i.symm (D.rootGeneratedTorusAction A s (i a)) =
-        (((D.elementarySubgroup A).normalizerMonoidHom.comp
-          (Subgroup.inclusion (D.range_torusPoints_le_normalizer_elementarySubgroup A)))
-            ⟨D.torusPoints A s, ⟨s, rfl⟩⟩) a := by
-      apply Subtype.ext
-      exact D.coe_rootGeneratedTorusAction A s (i a)
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, harg] at hact
-    exact hact.trans (congrArg (fun z => z * f a * z⁻¹) (hg s).symm)
+    obtain ⟨s, rfl⟩ := (D.torusPoints A).rangeRestrict_surjective b
+    exact (D.comp_normalizerMonoidHom_torusPoints E h f hf s).trans
+      (congrArg (fun z => (MulAut.conj z).toMonoidHom.comp f) (hg s).symm)
   have hagree (a : ↥(D.elementarySubgroup A ⊓ (D.torusPoints A).range)) :
       f ⟨a, a.property.1⟩ = g ⟨a, a.property.2⟩ := by
     obtain ⟨s, hs⟩ := a.property.2
@@ -114,9 +139,7 @@ theorem existsUnique_extendElementaryHom
       · exact MonoidHom.ext fun a => hleft a
       · apply MonoidHom.ext
         intro b
-        obtain ⟨s, hs⟩ := b.property
-        have hb : b = ⟨D.torusPoints A s, ⟨s, rfl⟩⟩ := Subtype.ext hs.symm
-        subst b
+        obtain ⟨s, rfl⟩ := (D.torusPoints A).rangeRestrict_surjective b
         exact (hright s).trans (hg s).symm
     exact MonoidHom.ext fun x => DFunLike.congr_fun heq (q x)
 
@@ -210,18 +233,8 @@ theorem range_extendElementaryHom_le :
         (D.torusPoints_mem_extendedElementarySubgroup A s)⟩ := Subtype.ext has.symm
   rw [hx, D.extendElementaryHom_mul_torusPoints E h f hf hcompat ⟨a, ha⟩ s]
   apply (E.extendedElementarySubgroup A).mul_mem
-  · have hmap : D.elementarySubgroup A ≤
-        ((E.extendedElementarySubgroup A).comap f).map (D.elementarySubgroup A).subtype := by
-      rw [D.elementarySubgroup_le_iff]
-      intro γ u
-      exact ⟨⟨D.rootSubgroupPoints γ A u,
-        D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩,
-        by simpa only [SetLike.mem_coe, Subgroup.mem_comap, hf] using
-          E.elementarySubgroup_le_extendedElementarySubgroup A
-            (E.rootSubgroupPoints_mem_elementarySubgroup A γ u), rfl⟩
-    obtain ⟨b, hb, hab⟩ := hmap ha
-    have : b = (⟨a, ha⟩ : D.elementarySubgroup A) := Subtype.ext hab
-    exact this ▸ hb
+  · exact E.elementarySubgroup_le_extendedElementarySubgroup A
+      (D.range_elementaryHom_le E f hf ⟨⟨a, ha⟩, rfl⟩)
   · exact E.torusPoints_mem_extendedElementarySubgroup A _
 
 end
