@@ -406,6 +406,21 @@ theorem exponentSum_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
       rw [MonoidHom.comp_apply, strandIncl_sigma i, exponentSum_sigma, exponentSum_sigma]
   exact DFunLike.congr_fun h b
 
+/-- The exponent parity of an elementary braid is the nonidentity element. -/
+@[simp]
+theorem exponentParity_sigma (i : Fin (n - 1)) :
+    ArtinGroup.exponentParity (CoxeterMatrix.A (n - 1)) (sigma i) = Multiplicative.ofAdd 1 := by
+  rw [sigma_eq_gen, ArtinGroup.exponentParity_gen]
+
+/-- Adding an uncrossed strand does not change the exponent parity of a braid.
+
+Not `@[simp]`, for the reason given at `TauCeti.BraidGroup.exponentSum_strandIncl`. -/
+theorem exponentParity_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    ArtinGroup.exponentParity _ (strandIncl b) = ArtinGroup.exponentParity _ b := by
+  rw [← ofAdd_toAdd (ArtinGroup.exponentParity _ (strandIncl b)),
+    ArtinGroup.toAdd_exponentParity, exponentSum_strandIncl, ← ArtinGroup.toAdd_exponentParity,
+    ofAdd_toAdd]
+
 /-- The added strand does not interfere: on the old strands, `strandIncl b` permutes exactly as
 `b` does. -/
 @[simp]
@@ -499,6 +514,10 @@ theorem natAdd_sigma (n : ℕ) {m : ℕ} (i : Fin m) :
 
 /-- The pure braid group: the braids that return every strand to its own position. -/
 def pureSubgroup (n : ℕ) : Subgroup (BraidGroup n) := (permHom n).ker
+
+/-- The defining equation of `TauCeti.BraidGroup.pureSubgroup`. -/
+theorem pureSubgroup_eq_ker (n : ℕ) : pureSubgroup n = (permHom n).ker :=
+  (rfl)
 
 @[simp]
 theorem mem_pureSubgroup {b : BraidGroup n} : b ∈ pureSubgroup n ↔ permHom n b = 1 := Iff.rfl

@@ -12,8 +12,9 @@ public import Mathlib.GroupTheory.Coxeter.Basic
 
 This file evaluates Mathlib's alternating words through an arbitrary family, specialises that
 evaluation to the lengths the braid relations are read off at, and computes the reversal of an
-alternating word. It also records the degenerate rank-zero case: a Coxeter system whose simple
-reflections are indexed by an empty type has a trivial group.
+alternating word. It splits the Coxeter relations into involutions and braid relations, and it
+also records the degenerate rank-zero case: a Coxeter system whose simple reflections are indexed
+by an empty type has a trivial group.
 
 ## Main results
 
@@ -24,6 +25,8 @@ reflections are indexed by an empty type has a trivial group.
   themselves. The evaluations at lengths `2` and `3` are special cases.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
+* `CoxeterMatrix.isLiftable_iff`: a family satisfies the Coxeter relations exactly when it
+  consists of involutions satisfying the braid relations.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
@@ -77,6 +80,66 @@ theorem reverse_alternatingWord (i i' : B) (m : ℕ) :
     by_cases hm : Even m <;> simp [hm, CoxeterSystem.alternatingWord_succ', parity_simps]
 
 end TauCeti
+
+namespace CoxeterMatrix
+
+variable {B G : Type*} (M : CoxeterMatrix B)
+
+/-- In a group, involutions satisfying the braid relations of `M` satisfy its Coxeter relations. -/
+private theorem isLiftable_of_braidWord [Group G] {f : B → G} (hsq : ∀ i, f i * f i = 1)
+    (hbraid : ∀ i i', ((CoxeterSystem.braidWord M i i').map f).prod =
+      ((CoxeterSystem.braidWord M i' i).map f).prod) :
+    M.IsLiftable f := by
+  intro i i'
+  have h := hbraid i i'
+  rw [CoxeterSystem.braidWord, CoxeterSystem.braidWord, M.symmetric i' i,
+    TauCeti.prod_map_alternatingWord, TauCeti.prod_map_alternatingWord] at h
+  -- With `a = f i` and `b = f i'` involutions, `b * a` is the inverse of `x = a * b`.
+  have hinv : f i' * f i = (f i * f i')⁻¹ := by
+    rw [mul_inv_rev, inv_eq_of_mul_eq_one_right (hsq i), inv_eq_of_mul_eq_one_right (hsq i')]
+  rw [hinv, inv_pow] at h
+  obtain ⟨k, hk | hk⟩ := Nat.even_or_odd' (M i i')
+  · -- `x ^ k = x⁻ᵏ`, so `x ^ (2 * k) = 1`.
+    have hk2 : 2 * k / 2 = k := by omega
+    simp only [hk, even_two_mul, ite_true, one_mul, hk2] at h
+    rw [hk, pow_mul', pow_two, mul_eq_one_iff_eq_inv]
+    exact h
+  · -- `b * x ^ k = a * x⁻ᵏ`, so `x ^ (k + 1) = x⁻ᵏ` and `x ^ (2 * k + 1) = 1`.
+    have hk2 : (2 * k + 1) / 2 = k := by omega
+    have hodd : ¬ Even (2 * k + 1) := by simp [parity_simps]
+    simp only [hk, hodd, ite_false, hk2] at h
+    calc (f i * f i') ^ M i i' = f i * (f i' * (f i * f i') ^ k) * (f i * f i') ^ k := by
+          rw [hk, pow_succ', two_mul, pow_add]
+          simp only [mul_assoc]
+      _ = 1 := by rw [h, ← mul_assoc (f i), hsq i, one_mul, inv_mul_cancel]
+
+/-- **The Coxeter relations are involutions plus braid relations.** A family `f` of elements of a
+monoid satisfies the Coxeter relations `(f i * f i') ^ M i i' = 1` of `M` exactly when every `f i`
+is an involution and the family satisfies the braid relations of `M`, the equalities of the two
+alternating words of length `M i i'`. So a Coxeter group with matrix `M` is the quotient of the
+Artin-Tits group of `M` by the squares of its generators. -/
+theorem isLiftable_iff [Monoid G] {f : B → G} :
+    M.IsLiftable f ↔ (∀ i, f i * f i = 1) ∧
+      ∀ i i', ((CoxeterSystem.braidWord M i i').map f).prod =
+        ((CoxeterSystem.braidWord M i' i).map f).prod := by
+  constructor
+  · intro hf
+    refine ⟨fun i ↦ by simpa [M.diagonal] using hf i i, fun i i' ↦ ?_⟩
+    have h := congrArg (M.toCoxeterSystem.lift ⟨f, hf⟩)
+      (M.toCoxeterSystem.wordProd_braidWord_eq i i')
+    simpa only [CoxeterSystem.wordProd, map_list_prod, List.map_map, Function.comp_def,
+      CoxeterSystem.lift_apply_simple] using h
+  · -- Every `f i` is a unit; apply the group case in the units of `G`.
+    rintro ⟨hsq, hbraid⟩ i i'
+    let u : B → Gˣ := fun i ↦ ⟨f i, f i, hsq i, hsq i⟩
+    have hu : ∀ l : List B, (((l.map u).prod : Gˣ) : G) = (l.map f).prod := fun l ↦ by
+      rw [← Units.coeHom_apply, map_list_prod, List.map_map]
+      rfl
+    have h := isLiftable_of_braidWord M (f := u) (fun i ↦ Units.ext (hsq i))
+      (fun i i' ↦ Units.ext (by rw [hu, hu, hbraid])) i i'
+    simpa [u] using congrArg Units.val h
+
+end CoxeterMatrix
 
 namespace CoxeterSystem
 
