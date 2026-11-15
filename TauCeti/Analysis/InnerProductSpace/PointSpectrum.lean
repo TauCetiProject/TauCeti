@@ -789,8 +789,8 @@ theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Sub
 theorem injective_sub_smul_id_iff {T : E →L[𝕜] E} {c : 𝕜} :
     Function.Injective (T - c • ContinuousLinearMap.id 𝕜 E) ↔
       ¬ Module.End.HasEigenvalue (T : E →ₗ[𝕜] E) c := by
-  rw [Module.End.hasEigenvalue_iff, not_not, Module.End.eigenspace_def, LinearMap.ker_eq_bot,
-    Module.End.one_eq_id, ← coe_id, ← toLinearMap_smul, ← toLinearMap_sub, coe_coe]
+  rw [← coe_coe, ← LinearMap.ker_eq_bot]
+  simp [Module.End.hasEigenvalue_iff, Module.End.eigenspace_def, Module.End.one_eq_id]
 
 /-- The real-operator form of `Module.End.pointSpectralSubspace_sub_smul_one`: the point-spectral
 subspace of `T - ρ • id` selected by `Ω` is that of `T` selected by `(· - ρ) ⁻¹' Ω`. -/

@@ -15,7 +15,7 @@ Two facts about symmetric operators complementing Mathlib's
 
 * the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
 * a symmetric bounded operator on a real inner product space shifted by a real multiple of the
-  identity is symmetric (`ContinuousLinearMap.isSymmetric_sub_smul_id`);
+  identity is symmetric (`LinearMap.IsSymmetric.clm_sub_smul_id`);
 * the symmetric bounded operators form a closed subset of `E →L[𝕜] E`
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
@@ -49,13 +49,13 @@ section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-namespace ContinuousLinearMap
+namespace LinearMap
 
-/-- A symmetric operator shifted by a real multiple of the identity is symmetric. -/
-theorem isSymmetric_sub_smul_id {A : F →L[ℝ] F} (hA : (A : F →ₗ[ℝ] F).IsSymmetric) (c : ℝ) :
+/-- A symmetric bounded operator shifted by a real multiple of the identity is symmetric. -/
+theorem IsSymmetric.clm_sub_smul_id {A : F →L[ℝ] F} (hA : (A : F →ₗ[ℝ] F).IsSymmetric) (c : ℝ) :
     ((A - c • ContinuousLinearMap.id ℝ F : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := by
-  simpa using hA.sub (LinearMap.IsSymmetric.id.smul (c := c) (by simp))
+  simpa using hA.sub (IsSymmetric.id.smul (c := c) (by simp))
 
-end ContinuousLinearMap
+end LinearMap
 
 end Real

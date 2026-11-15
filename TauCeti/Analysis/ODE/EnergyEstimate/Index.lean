@@ -671,10 +671,8 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of
       hcplus hplus
   exact index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     continuous_modelCoefficient hSminus hSplus
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-      (le_inv_mul_iff₀ hαminus).2 (hgapminus v))
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-      (le_inv_mul_iff₀ hαplus).2 (hgapplus v))
+    (ContinuousLinearMap.injective_of_forall_mul_norm_le hαminus hgapminus)
+    (ContinuousLinearMap.injective_of_forall_mul_norm_le hαplus hgapplus)
     hMbot hMtop ML hML
 
 /-- **The index of the trajectory operator with hyperbolic limits counts stable directions.** Let

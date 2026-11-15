@@ -38,9 +38,11 @@ compositions obeys the three-term estimate
 (`ContinuousLinearMap.enorm_comp_sub_comp_le`).
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), and on a finite-dimensional space the
-converse holds (`ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective`); its
-lower and upper bounds satisfy
+(`ContinuousLinearMap.injective_of_forall_norm_le`, or
+`ContinuousLinearMap.injective_of_forall_mul_norm_le` for a bound `α ‖x‖ ≤ ‖f x‖`), and on a
+finite-dimensional space the converse holds
+(`ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective`); its lower and upper
+bounds satisfy
 `1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
@@ -198,6 +200,12 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- An operator bounded below in the form `α ‖x‖ ≤ ‖f x‖` with `α > 0` is injective. -/
+theorem injective_of_forall_mul_norm_le {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {α : ℝ} (hα : 0 < α) (h : ∀ x, α * ‖x‖ ≤ ‖f x‖) :
+    Function.Injective f :=
+  injective_of_forall_norm_le fun x ↦ (le_inv_mul_iff₀ hα).2 (h x)
 
 /-- Conversely, an injective operator on a finite-dimensional space over a complete field is
 bounded below: `α ‖x‖ ≤ ‖f x‖` for some `α > 0`. -/

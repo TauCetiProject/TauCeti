@@ -336,12 +336,11 @@ private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A
   have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
     ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
   have hinjplus : Function.Injective Aplus :=
-    ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v)
+    ContinuousLinearMap.injective_of_forall_mul_norm_le hα hplus
   have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     hA (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
     hsymplus
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hminus v))
-    hinjplus hbot htop AL hAL
+    (ContinuousLinearMap.injective_of_forall_mul_norm_le hα hminus) hinjplus hbot htop AL hAL
   have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
     hbot htop AL hAL
   -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.

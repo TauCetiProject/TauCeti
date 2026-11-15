@@ -125,8 +125,8 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
     (trajectoryOperator (p := 2) AL).index =
       ∑ᶠ t, ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)))) := by
-  have hinjminus := injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hminus v)
-  have hinjplus := injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v)
+  have hinjminus := injective_of_forall_mul_norm_le hα hminus
+  have hinjplus := injective_of_forall_mul_norm_le hα hplus
   obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
     (LinearMap.ker_eq_bot.2 hinjminus) (LinearMap.ker_eq_bot.2 hinjplus) hbot htop
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=

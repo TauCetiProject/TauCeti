@@ -146,8 +146,7 @@ theorem isFredholm_trajectoryOperator_sub_smul_id_iff (hA : Continuous A) (hw' :
       ¬ Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus ∧
         ¬ Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus := by
   rw [isFredholm_trajectoryOperator_iff (hA.sub (hw'.smul continuous_const))
-      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymminus δminus)
-      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymplus δplus)
+      (hsymminus.clm_sub_smul_id δminus) (hsymplus.clm_sub_smul_id δplus)
       (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) AL hAL,
     ContinuousLinearMap.injective_sub_smul_id_iff, ContinuousLinearMap.injective_sub_smul_id_iff]
 
@@ -173,8 +172,7 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus)) := by
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
       (hA.sub (hw'.smul continuous_const))
-      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymminus δminus)
-      (ContinuousLinearMap.isSymmetric_sub_smul_id hsymplus δplus)
+      (hsymminus.clm_sub_smul_id δminus) (hsymplus.clm_sub_smul_id δplus)
       (ContinuousLinearMap.injective_sub_smul_id_iff.2 hδminus)
       (ContinuousLinearMap.injective_sub_smul_id_iff.2 hδplus)
       (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) AL hAL,
