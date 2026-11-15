@@ -31,12 +31,13 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
 
 * `WeierstrassCurve.formalAdd_assoc` : **the associativity of the addition series**, for every
   Weierstrass curve over every commutative ring.
-* `WeierstrassCurve.thetaPoint_add_of_subst_separates` : the chord addition of parametrized
-  points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve `WeierstrassCurve.fracCurve` over a fraction
-  field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
-  the parametrized point `WeierstrassCurve.thetaPoint` and its coordinates
-  (`WeierstrassCurve.thetaPoint_eq_some`), because it is also how the addition series is compared
-  with other descriptions of the group law of `W`, such as the projective addition laws.
+* `WeierstrassCurve.thetaPoint_add_of_ne` and `WeierstrassCurve.thetaPoint_add_of_subst_separates` :
+  the chord addition of parametrized points, `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))` on the curve
+  `WeierstrassCurve.fracCurve` over a fraction field of the series ring, whenever `q₁` is neither
+  `q₂` nor `ι(q₂)` (in particular whenever a substitution separates `q₁` from `q₂`). They are
+  exported, together with `WeierstrassCurve.thetaPoint`, `WeierstrassCurve.thetaPoint_eq_some`,
+  `WeierstrassCurve.thetaPoint_neg`, and `WeierstrassCurve.thetaPoint_inj`, because they also
+  compare the addition series with the curve's group law and with morphisms of curves.
 
 ## Provenance
 
@@ -470,7 +471,7 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 The formal inverse was built to be the parameter of the reflected point, so this identifies that
 construction with the group inverse of `fracCurve W`. Both coordinates come out of the two
 readings of the inverse, `ι(q) = -(q * u(q)⁻¹)` and `w(ι(q)) = -(w(q) * u(q)⁻¹)`. -/
-private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
     (hi : constantCoeff (PowerSeries.subst q (formalInverse W)) = 0)
     (hi0 : PowerSeries.subst q (formalInverse W) ≠ 0) :
@@ -506,7 +507,7 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 
 The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate `q / w(q)` then
 pins down `q`. -/
-private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (h : W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0) : q₁ = q₂ := by
@@ -583,7 +584,7 @@ This is the form the associativity argument uses. Both nondegeneracy hypotheses 
 `thetaPoint_add` come out of those two: the intercept is nonzero by
 `pair_intercept_ne_zero_of_ne`, and the cross combination is then nonzero too, since
 `subst_pair_formalIntercept_mul_sub` factors it as `ν(q₁, q₂) (q₁ - q₂)`. -/
-private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) (hne₁ : q₁ ≠ q₂)
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W))
