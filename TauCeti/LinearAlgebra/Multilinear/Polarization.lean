@@ -34,6 +34,9 @@ values are the pure powers `⨂ₜ i, x`, the tensors with the same vector in ev
   multilinear map.
 * `PiTensorProduct.sum_neg_one_pow_card_smul_tprod_sum_compl`: its tensor-power instance, writing
   the full symmetrization of a pure tensor as an alternating sum of pure powers.
+* `TauCeti.map_add_add_sub_map_add_of_map_add`: the explicit three-variable polarization identity
+  for an unbundled map `V → V → V → W` additive in each argument, requiring only `[Add V]` and
+  `[AddCommGroup W]`.
 
 ## References
 
@@ -48,6 +51,21 @@ open scoped Finset TensorProduct
 universe u v w z
 
 namespace TauCeti
+
+/-- **Three-variable polarization.** For a map `F : V → V → V → W` into an additive commutative
+group that is additive in each argument, the alternating combination of its diagonal values on
+subsums of `u₁, u₂, u₃` equals the sum of `F` over all six permutations of `(u₁, u₂, u₃)`. -/
+theorem map_add_add_sub_map_add_of_map_add {V W : Type*} [Add V] [AddCommGroup W]
+    (F : V → V → V → W)
+    (h₁ : ∀ a₁ a₂ b c, F (a₁ + a₂) b c = F a₁ b c + F a₂ b c)
+    (h₂ : ∀ a b₁ b₂ c, F a (b₁ + b₂) c = F a b₁ c + F a b₂ c)
+    (h₃ : ∀ a b c₁ c₂, F a b (c₁ + c₂) = F a b c₁ + F a b c₂) (u₁ u₂ u₃ : V) :
+    F (u₁ + u₂ + u₃) (u₁ + u₂ + u₃) (u₁ + u₂ + u₃) -
+      F (u₁ + u₂) (u₁ + u₂) (u₁ + u₂) - F (u₁ + u₃) (u₁ + u₃) (u₁ + u₃) -
+      F (u₂ + u₃) (u₂ + u₃) (u₂ + u₃) + F u₁ u₁ u₁ + F u₂ u₂ u₂ + F u₃ u₃ u₃ =
+      F u₁ u₂ u₃ + F u₁ u₃ u₂ + F u₂ u₁ u₃ + F u₂ u₃ u₁ + F u₃ u₁ u₂ + F u₃ u₂ u₁ := by
+  simp only [h₁, h₂, h₃]
+  abel
 
 variable {ι : Type w} [DecidableEq ι]
 
