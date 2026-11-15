@@ -10,27 +10,35 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
-# Basic facts about manifolds and tangent spaces
+# Basic facts about manifolds, tangent spaces, and smoothness exponents
 
-Over a field satisfying `IsRCLikeNormedField`, `minSmoothness 𝕜 n = n`, so any `Cⁿ` manifold is
-also a `C^(minSmoothness 𝕜 n)` manifold (`IsManifold.minSmoothness_of_isRCLikeNormedField`). The
-tangent space `TangentSpace I x` of a manifold modelled on `I : ModelWithCorners 𝕜 E H` is
-linearly equivalent to the model vector space `E`, so its dimension is that of `E`. Tangent spaces
-at propositionally equal points are identified by `tangentSpaceCast`.
+A smoothness exponent `n : ℕ∞ω` with `[ENat.LEInfty n]` is not `ω`, so it is the image of an
+exponent in `ℕ∞`. Over a field satisfying `IsRCLikeNormedField`, `minSmoothness 𝕜 n = n`, so any
+`Cⁿ` manifold is also a `C^(minSmoothness 𝕜 n)` manifold
+(`IsManifold.minSmoothness_of_isRCLikeNormedField`). The tangent space `TangentSpace I x` of a
+manifold modelled on `I : ModelWithCorners 𝕜 E H` is linearly equivalent to the model vector space
+`E`, so its dimension is that of `E`. Tangent spaces at propositionally equal points are identified
+by `tangentSpaceCast`.
 
 ## Main results
 
+* `ENat.LEInfty.ne_top`: an exponent at most `∞` is not `ω`.
+* `IsManifold.minSmoothness_of_isRCLikeNormedField`: a `Cⁿ` manifold over an `IsRCLikeNormedField`
+  is a `C^(minSmoothness 𝕜 n)` manifold (opt-in local instance).
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
-* `IsManifold.minSmoothness_of_isRCLikeNormedField`: a `Cⁿ` manifold over an `IsRCLikeNormedField`
-  is a `C^(minSmoothness 𝕜 n)` manifold (opt-in local instance).
 -/
 
 public section
 
 open scoped ContDiff
+
+/-- A smoothness exponent which is at most `∞` is not `ω`, the top element of `ℕ∞ω`. This is the
+hypothesis needed to `lift` such an exponent to `ℕ∞`. -/
+theorem ENat.LEInfty.ne_top (n : ℕ∞ω) [ENat.LEInfty n] : n ≠ ⊤ :=
+  ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
 
 section Regularity
 

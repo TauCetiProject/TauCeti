@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 
 /-!
 # Classical symbols
@@ -39,6 +40,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
   `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
   principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`: at a nonzero frequency the
+  principal symbol is the high-frequency limit `σ(a)(x, ξ) = lim_{t → ∞} t ^ (-m) a(x, t ξ)`;
 * `TauCeti.ClassicalSymbol.principal_eq_zero_iff` and
   `TauCeti.ClassicalSymbol.principal_surjective`: the principal symbol vanishes exactly on the
   classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
@@ -356,6 +359,40 @@ theorem exists_norm_toSymbol_sub_principal_le {K : Set (CoordinateSpace n)} (hK 
   have h := congrFun hr (x, ξ)
   rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ] at h
   exact h ▸ hC x hx ξ
+
+/-- **The principal symbol is the high-frequency limit of the full symbol.** At a nonzero
+frequency `ξ`, `t ^ (-m) a(y, t ζ) → σ(a)(x, ξ)` as `t → ∞` and `(y, ζ) → (x, ξ)`. -/
+theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2))
+      (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 (a.principal.coefficient (x, ξ))) := by
+  have hσ : ContinuousAt a.principal.coefficient (x, ξ) :=
+    a.principal.contDiffOn_coefficient.continuousOn.continuousAt
+      ((isOpen_ne.preimage continuous_snd).mem_nhds hξ)
+  obtain ⟨b, hb⟩ := a.exists_sub_cutoffSymbol_principal default
+  have hr : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hN : {p : CoordinateSpace n × CoordinateSpace n | ‖ξ‖ / 2 < ‖p.2‖} ∈ 𝓝 (x, ξ) :=
+    (isOpen_lt continuous_const (continuous_norm.comp continuous_snd)).mem_nhds (half_lt_self hr)
+  -- For `‖t ζ‖ ≥ 2` the cut-off principal symbol is `σ(a)(y, t ζ) = t ^ m σ(a)(y, ζ)`, so
+  -- `t ^ (-m) a(y, t ζ) = σ(a)(y, ζ) + t ^ (-m) b(y, t ζ)` with `b` of order `m - 1`.
+  have heq : ∀ᶠ p : ℝ × (CoordinateSpace n × CoordinateSpace n) in atTop ×ˢ 𝓝 (x, ξ),
+      a.principal.coefficient p.2 + p.1 ^ (-m) • b.coefficient (p.2.1, p.1 • p.2.2) =
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) := by
+    filter_upwards [prod_mem_prod (eventually_ge_atTop (4 / ‖ξ‖)) hN]
+    rintro ⟨t, y, ζ⟩ ⟨ht, hζ⟩
+    have ht : 4 / ‖ξ‖ ≤ t := ht
+    have hζ : ‖ξ‖ / 2 < ‖ζ‖ := hζ
+    have ht0 : 0 < t := (by positivity : 0 < 4 / ‖ξ‖).trans_le ht
+    have h2 : 2 ≤ ‖t • ζ‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht0.le]
+      have : 4 ≤ t * ‖ξ‖ := by rwa [div_le_iff₀ hr] at ht
+      nlinarith
+    have h := congrFun hb (y, t • ζ)
+    rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ h2,
+      a.principal.homogeneous _ _ _ ht0] at h
+    simp [h, smul_sub, smul_smul, ← Real.rpow_add ht0]
+  simpa using ((hσ.tendsto.comp tendsto_snd).add
+    (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
 
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
