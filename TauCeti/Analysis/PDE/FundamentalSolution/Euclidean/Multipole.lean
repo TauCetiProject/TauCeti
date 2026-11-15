@@ -26,7 +26,7 @@ the dimension: `Gₙ` is invariant under orthogonal maps and homogeneous under d
 point `a ≠ 0` is carried to a fixed unit vector by a dilation composed with a reflection, which
 rescales the radius of convergence by `‖a‖`. The statements hold in every dimension; in dimension
 two the totalized kernel `TauCeti.newtonianKernel 2` is zero, and the logarithmic kernel of the
-plane is not treated here.
+plane is treated in `TauCeti.Analysis.PDE.FundamentalSolution.Planar.Multipole`.
 
 Expanding `y ↦ Gₙ(x - y)` about the origin gives the **exterior multipole expansion**: for
 `‖y‖` below a fixed multiple of `‖x‖`,
