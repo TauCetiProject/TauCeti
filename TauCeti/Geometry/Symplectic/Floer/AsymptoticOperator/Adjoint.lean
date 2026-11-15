@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -37,12 +37,13 @@ uses it to show that `D` has no classical cokernel on decaying maps.
   `g(D ξ, η) - g(ξ, D† η)` is `∂s g_t(ξ, η) + ∂t ω(ξ, η)`: the complex structure cancels from the
   `t`-derivative terms, and the zeroth-order terms cancel because `S_t` is infinitesimally
   symplectic. When `ξ` and `η` take equal values on the slices `t = 0` and `t = 1` the horizontal
-  terms cancel, so on a finite cylinder `[a, b] × [0, 1]` with `ξ` vanishing on the two boundary
-  slices the identity is `∫∫ g(D ξ, η) = ∫∫ g(ξ, D† η)`
+  terms cancel, so on a finite cylinder `[a, b] × [0, 1]` with `ξ` or `η` vanishing at each point
+  of the two boundary slices the identity is `∫∫ g(D ξ, η) = ∫∫ g(ξ, D† η)`
   (`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_of_periodic`), and for a
-  compactly supported `ξ` it holds over the whole plane
-  (`Floer.integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport`).
-* **Weak solutions of the adjoint equation.** A map `η` which is `C¹` on an open set `U` and
+  compactly supported `ξ` or `η` it holds over the whole plane
+  (`Floer.integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport` and
+  `Floer.integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport_right`).
+* **`C¹` weak solutions of the adjoint equation.** A map `η` which is `C¹` on an open set `U` and
   satisfies `∫∫ g(D ξ, η) = 0` for every smooth `ξ` compactly supported in `U` solves
   `D† η = 0` on `U` (`Floer.eqOn_stationaryCylinderAdjoint_zero_of_forall_integral_eq_zero`).
   This is the fundamental lemma of the calculus of variations
@@ -155,6 +156,13 @@ theorem _root_.Filter.EventuallyEq.stationaryCylinderAdjoint_eq {η₁ η₂ : �
     stationaryCylinderAdjoint J S η₁ z = stationaryCylinderAdjoint J S η₂ z := by
   rw [stationaryCylinderAdjoint_def, stationaryCylinderAdjoint_def, h.fderiv_eq, h.eq_of_nhds]
 
+/-- The formal adjoint vanishes off the topological support of the map. -/
+theorem stationaryCylinderAdjoint_of_notMem_tsupport (hz : z ∉ tsupport η) :
+    stationaryCylinderAdjoint J S η z = 0 := by
+  rw [stationaryCylinderAdjoint_def, image_eq_zero_of_notMem_tsupport hz,
+    fderiv_of_notMem_tsupport ℝ hz]
+  simp
+
 /-- **The weighted adjoint.** Conjugating the formal adjoint by the weight `e^{δ s}` shifts it by
 `+δ`, the opposite sign to `Floer.stationaryCylinderOperator_exp_smul` since `D†` contains `-∂s`:
 `D†(e^{-δ s} η) = e^{-δ s} (D† + δ) η`. -/
@@ -181,11 +189,8 @@ theorem stationaryCylinderAdjoint_sub_smul (δ : ℝ) (η : ℝ × ℝ → V) (z
     stationaryCylinderAdjoint J
         (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) η z =
       stationaryCylinderAdjoint J S η z - δ • η z := by
-  have h : J z.2 (J z.2 (η z)) = -η z := AlmostComplexStructure.apply_apply _ _
-  simp only [stationaryCylinderAdjoint_def, sub_apply, smul_apply,
-    LinearMap.coe_toContinuousLinearMap', sub_sub_eq_add_sub, map_add, map_sub, map_smul] at h ⊢
-  rw [h]
-  module
+  simpa only [stationaryCylinderAdjoint_eq_stationaryCylinderOperator_comp, neg_neg] using
+    stationaryCylinderOperator_sub_smul δ (fun w ↦ η (-w.1, w.2)) (-z.1, z.2)
 
 end Weight
 
@@ -229,35 +234,6 @@ theorem continuous_stationaryCylinderAdjoint (hJc : Continuous fun p : ℝ × V 
     (hSc : Continuous S) (hη : ContDiff ℝ 1 η) :
     Continuous (stationaryCylinderAdjoint J S η) :=
   continuousOn_univ.1 (continuousOn_stationaryCylinderAdjoint hJc hSc isOpen_univ hη.contDiffOn)
-
-omit [FiniteDimensional ℝ V] in
-/-- A map that is `C¹` near each point of a compact set `K` agrees near `K` with a `C¹` map of the
-plane: multiply it by a cutoff equal to one near `K`. -/
-private theorem exists_contDiff_eventuallyEq {f : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} (hK : IsCompact K)
-    (hf : ∀ z ∈ K, ContDiffAt ℝ 1 f z) :
-    ∃ g : ℝ × ℝ → V, ContDiff ℝ 1 g ∧ ∀ z ∈ K, g =ᶠ[𝓝 z] f := by
-  set W : Set (ℝ × ℝ) := {z | ContDiffAt ℝ 1 f z}
-  have hW : IsOpen W := isOpen_iff_mem_nhds.2 fun z hz ↦ ContDiffAt.eventually hz (by simp)
-  have hfW : ContDiffOn ℝ 1 f W := fun z hz ↦ ContDiffAt.contDiffWithinAt hz
-  obtain ⟨χ, hχ, -, hχ1, -, hχW⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hW hf
-  refine ⟨fun z ↦ χ z • f z, hfW.contDiff_smul_of_tsupport_subset hW
-    (hχ.of_le (by simp)).contDiffOn hχW, fun z hz ↦ ?_⟩
-  filter_upwards [hχ1 z hz] with w hw
-  rw [hw, one_smul]
-
-omit [FiniteDimensional ℝ V] in
-/-- The stationary cylinder operator at `z` depends only on the germ of the map at `z`. -/
-private theorem stationaryCylinderOperator_congr {ξ₁ ξ₂ : ℝ × ℝ → V} (h : ξ₁ =ᶠ[𝓝 z] ξ₂) :
-    stationaryCylinderOperator J S ξ₁ z = stationaryCylinderOperator J S ξ₂ z := by
-  rw [stationaryCylinderOperator_def, stationaryCylinderOperator_def, h.fderiv_eq, h.eq_of_nhds]
-
-omit [FiniteDimensional ℝ V] in
-/-- The stationary cylinder operator vanishes off the topological support of the map. -/
-private theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
-    stationaryCylinderOperator J S ξ z = 0 := by
-  rw [stationaryCylinderOperator_def, image_eq_zero_of_notMem_tsupport hz,
-    fderiv_of_notMem_tsupport ℝ hz]
-  simp
 
 /-- Green's formula for maps which are `C¹` on the whole plane. -/
 private theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add_of_contDiff
@@ -347,8 +323,8 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add
   have hR : IsCompact (Icc a₁ b₁ ×ˢ Icc a₂ b₂) := isCompact_Icc.prod isCompact_Icc
   have hm : MeasurableSet (Icc a₁ b₁ ×ˢ Icc a₂ b₂) := measurableSet_Icc.prod measurableSet_Icc
   -- Replace `ξ` and `η` by `C¹` maps of the plane which agree with them near the rectangle.
-  obtain ⟨ξ', hξ', hξξ'⟩ := exists_contDiff_eventuallyEq hR hξ
-  obtain ⟨η', hη', hηη'⟩ := exists_contDiff_eventuallyEq hR hη
+  obtain ⟨ξ', hξ', -, hξξ'⟩ := hR.exists_contDiff_eventuallyEq 1 hξ
+  obtain ⟨η', hη', -, hηη'⟩ := hR.exists_contDiff_eventuallyEq 1 hη
   have hv {s t : ℝ} (hs : s ∈ Icc a₁ b₁) (ht : t ∈ Icc a₂ b₂) :
       ξ' (s, t) = ξ (s, t) ∧ η' (s, t) = η (s, t) :=
     ⟨(hξξ' _ ⟨hs, ht⟩).eq_of_nhds, (hηη' _ ⟨hs, ht⟩).eq_of_nhds⟩
@@ -357,7 +333,7 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add
       = ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂,
           ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ' z) (η' z) :=
         setIntegral_congr_fun hm fun z hz ↦ by
-          rw [stationaryCylinderOperator_congr (hξξ' z hz), (hηη' z hz).eq_of_nhds]
+          rw [(hξξ' z hz).stationaryCylinderOperator_eq, (hηη' z hz).eq_of_nhds]
     _ = _ := setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add_of_contDiff
         hJ hJc hS hSc hξ' hη' h₁ h₂
     _ = _ := by
@@ -373,15 +349,17 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add
 
 /-- **Green's formula on a finite cylinder.** Under the hypotheses of
 `Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add` on `[a, b] × [0, 1]`,
-let `ξ` and `η` take equal values on the slices `t = 0` and `t = 1`, and let `ξ` vanish on the
-slices `s = a` and `s = b`. Then `∫∫ g(D ξ, η) = ∫∫ g(ξ, D† η)` over `[a, b] × [0, 1]`. -/
+let `ξ` and `η` take equal values on the slices `t = 0` and `t = 1`, and at each point of the
+slices `s = a` and `s = b` let `ξ` or `η` vanish. Then `∫∫ g(D ξ, η) = ∫∫ g(ξ, D† η)` over
+`[a, b] × [0, 1]`. -/
 theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_of_periodic
     (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) {a b : ℝ}
     (hξ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 1 ξ z)
     (hη : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 1 η z)
     (hξp : ∀ s ∈ Icc a b, ξ (s, 1) = ξ (s, 0)) (hηp : ∀ s ∈ Icc a b, η (s, 1) = η (s, 0))
-    (ha : ∀ t ∈ Icc (0 : ℝ) 1, ξ (a, t) = 0) (hb : ∀ t ∈ Icc (0 : ℝ) 1, ξ (b, t) = 0) :
+    (ha : ∀ t ∈ Icc (0 : ℝ) 1, ξ (a, t) = 0 ∨ η (a, t) = 0)
+    (hb : ∀ t ∈ Icc (0 : ℝ) 1, ξ (b, t) = 0 ∨ η (b, t) = 0) :
     ∫ z in Icc a b ×ˢ Icc 0 1,
         ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
       ∫ z in Icc a b ×ˢ Icc 0 1,
@@ -390,11 +368,52 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_of_periodi
   · simp [Icc_eq_empty_of_lt hab]
   have hv : ∫ t in Icc (0 : ℝ) 1, (ω.associatedBilinForm (J t) (ξ (b, t)) (η (b, t)) -
       ω.associatedBilinForm (J t) (ξ (a, t)) (η (a, t))) = 0 :=
-    setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ by simp [ha t ht, hb t ht]
+    setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ by
+      rcases ha t ht with h | h <;> rcases hb t ht with h' | h' <;> simp [h, h']
   have hh : ∫ s in Icc a b, (ω (ξ (s, 1)) (η (s, 1)) - ω (ξ (s, 0)) (η (s, 0))) = 0 :=
     setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦ by simp [hξp s hs, hηp s hs]
   rw [setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add hJ hJc hS hSc hab
     zero_le_one hξ hη, hv, hh, add_zero, add_zero]
+
+/-- Green's formula over the whole plane for `C¹` maps `ξ` and `η` such that at each point outside
+an open square one of them vanishes nearby. -/
+private theorem integral_associatedBilinForm_stationaryCylinderOperator_eq_of_contDiff
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 1 ξ)
+    (hη : ContDiff ℝ 1 η) {r : ℝ} (hr : 0 < r)
+    (h0 : ∀ z ∉ Ioo (-r) r ×ˢ Ioo (-r) r, z ∉ tsupport ξ ∨ z ∉ tsupport η) :
+    ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
+      ∫ z, ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η z) := by
+  have hout {z : ℝ × ℝ} (hz : z ∉ Icc (-r) r ×ˢ Icc (-r) r) : z ∉ Ioo (-r) r ×ˢ Ioo (-r) r :=
+    fun h ↦ hz (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self h)
+  -- Both integrals live on the closed square.
+  have hL := setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume)
+    (s := Icc (-r) r ×ˢ Icc (-r) r)
+    (f := fun z ↦ ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z))
+    fun z hz ↦ by
+      rcases h0 z (hout hz) with h | h
+      · rw [stationaryCylinderOperator_of_notMem_tsupport h, map_zero, LinearMap.zero_apply]
+      · rw [image_eq_zero_of_notMem_tsupport h, map_zero]
+  have hR := setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume)
+    (s := Icc (-r) r ×ˢ Icc (-r) r)
+    (f := fun z ↦ ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η z))
+    fun z hz ↦ by
+      rcases h0 z (hout hz) with h | h
+      · rw [image_eq_zero_of_notMem_tsupport h, map_zero, LinearMap.zero_apply]
+      · rw [stationaryCylinderAdjoint_of_notMem_tsupport h, map_zero]
+  rw [← hL, ← hR, setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add hJ hJc hS hSc
+    (by linarith) (by linarith) (fun z _ ↦ hξ.contDiffAt) (fun z _ ↦ hη.contDiffAt)]
+  -- On the sides of the square `ξ` or `η` vanishes.
+  have hb {z : ℝ × ℝ} (hz : z ∉ Ioo (-r) r ×ˢ Ioo (-r) r) : ξ z = 0 ∨ η z = 0 :=
+    (h0 z hz).imp image_eq_zero_of_notMem_tsupport image_eq_zero_of_notMem_tsupport
+  have hv (t : ℝ) : ω.associatedBilinForm (J t) (ξ (r, t)) (η (r, t)) -
+      ω.associatedBilinForm (J t) (ξ (-r, t)) (η (-r, t)) = 0 := by
+    rcases hb (z := (r, t)) fun h ↦ lt_irrefl r h.1.2 with h | h <;>
+      rcases hb (z := (-r, t)) fun h ↦ lt_irrefl (-r) h.1.1 with h' | h' <;> simp [h, h']
+  have hh (s : ℝ) : ω (ξ (s, r)) (η (s, r)) - ω (ξ (s, -r)) (η (s, -r)) = 0 := by
+    rcases hb (z := (s, r)) fun h ↦ lt_irrefl r h.2.2 with h | h <;>
+      rcases hb (z := (s, -r)) fun h ↦ lt_irrefl (-r) h.2.1 with h' | h' <;> simp [h, h']
+  simp only [hv, hh, integral_zero, add_zero]
 
 /-- **Green's formula for compactly supported maps.** Under the hypotheses of
 `Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add`, if `ξ` is `C¹` with
@@ -407,7 +426,7 @@ theorem integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompact
     ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
       ∫ z, ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η z) := by
   -- Replace `η` by a `C¹` map of the plane which agrees with it near the support of `ξ`.
-  obtain ⟨η', hη', hηη'⟩ := exists_contDiff_eventuallyEq hξc.isCompact hη
+  obtain ⟨η', hη', -, hηη'⟩ := hξc.isCompact.exists_contDiff_eventuallyEq 1 hη
   have h₁ : ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
       ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η' z) :=
     integral_congr_ae (Eventually.of_forall fun z ↦ by
@@ -424,40 +443,51 @@ theorem integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompact
         rw [(hηη' z hz).stationaryCylinderAdjoint_eq]
       · simp only [image_eq_zero_of_notMem_tsupport hz, map_zero, LinearMap.zero_apply])
   rw [h₁, ← h₂]
-  -- The support of `ξ` lies in an open square, so both integrals live on the closed square.
+  -- The support of `ξ` lies in an open square.
   obtain ⟨r, hr, hsub⟩ := hξc.isCompact.isBounded.subset_ball_lt 0 ((0 : ℝ), (0 : ℝ))
   rw [← ball_prod_same, Real.ball_zero_eq_Ioo] at hsub
-  have hout {z : ℝ × ℝ} (hz : z ∉ Icc (-r) r ×ˢ Icc (-r) r) : z ∉ tsupport ξ := fun h ↦
-    hz (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self (hsub h))
-  have hL := setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume)
-    (s := Icc (-r) r ×ˢ Icc (-r) r)
-    (f := fun z ↦ ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η' z))
-    fun z hz ↦ by
-      rw [stationaryCylinderOperator_of_notMem_tsupport (hout hz), map_zero, LinearMap.zero_apply]
-  have hR := setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume)
-    (s := Icc (-r) r ×ˢ Icc (-r) r)
-    (f := fun z ↦ ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η' z))
-    fun z hz ↦ by rw [image_eq_zero_of_notMem_tsupport (hout hz), map_zero, LinearMap.zero_apply]
-  rw [← hL, ← hR, setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add hJ hJc hS hSc
-    (by linarith) (by linarith) (fun z _ ↦ hξ.contDiffAt) (fun z _ ↦ hη'.contDiffAt)]
-  -- `ξ` vanishes on the sides of the square.
-  have h₁ (t : ℝ) : ξ (r, t) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl r (hsub h).1.2
-  have h₂ (t : ℝ) : ξ (-r, t) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (-r) (hsub h).1.1
-  have h₃ (s : ℝ) : ξ (s, r) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl r (hsub h).2.2
-  have h₄ (s : ℝ) : ξ (s, -r) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ lt_irrefl (-r) (hsub h).2.1
-  simp only [h₁, h₂, h₃, h₄]
-  simp
+  exact integral_associatedBilinForm_stationaryCylinderOperator_eq_of_contDiff hJ hJc hS hSc hξ hη'
+    hr fun z hz ↦ .inl fun h ↦ hz (hsub h)
 
-/-- **Weak solutions of the adjoint equation are strong solutions.** Let each `J_t` leave `ω`
-invariant and let `(t, v) ↦ J_t v` be continuous, and let each `S_t` be infinitesimally
+/-- **Green's formula for compactly supported maps, tested on the right.** Under the hypotheses
+of `Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_add`, if `η` is `C¹` with
+compact support and `ξ` is `C¹` near each point of the support of `η`, then
+`∫∫ g(D ξ, η) = ∫∫ g(ξ, D† η)` over the whole plane. -/
+theorem integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport_right
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hη : ContDiff ℝ 1 η)
+    (hηc : HasCompactSupport η) (hξ : ∀ z ∈ tsupport η, ContDiffAt ℝ 1 ξ z) :
+    ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
+      ∫ z, ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η z) := by
+  -- Replace `ξ` by a `C¹` map of the plane which agrees with it near the support of `η`.
+  obtain ⟨ξ', hξ', -, hξξ'⟩ := hηc.isCompact.exists_contDiff_eventuallyEq 1 hξ
+  have h₁ : ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) =
+      ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ' z) (η z) :=
+    integral_congr_ae (Eventually.of_forall fun z ↦ by
+      by_cases hz : z ∈ tsupport η
+      · dsimp only
+        rw [(hξξ' z hz).stationaryCylinderOperator_eq]
+      · simp only [image_eq_zero_of_notMem_tsupport hz, map_zero])
+  have h₂ : ∫ z, ω.associatedBilinForm (J z.2) (ξ' z) (stationaryCylinderAdjoint J S η z) =
+      ∫ z, ω.associatedBilinForm (J z.2) (ξ z) (stationaryCylinderAdjoint J S η z) :=
+    integral_congr_ae (Eventually.of_forall fun z ↦ by
+      by_cases hz : z ∈ tsupport η
+      · dsimp only
+        rw [(hξξ' z hz).eq_of_nhds]
+      · simp only [stationaryCylinderAdjoint_of_notMem_tsupport hz, map_zero])
+  rw [h₁, ← h₂]
+  -- The support of `η` lies in an open square.
+  obtain ⟨r, hr, hsub⟩ := hηc.isCompact.isBounded.subset_ball_lt 0 ((0 : ℝ), (0 : ℝ))
+  rw [← ball_prod_same, Real.ball_zero_eq_Ioo] at hsub
+  exact integral_associatedBilinForm_stationaryCylinderOperator_eq_of_contDiff hJ hJc hS hSc hξ' hη
+    hr fun z hz ↦ .inr fun h ↦ hz (hsub h)
+
+/-- **`C¹` weak solutions of the adjoint equation are classical solutions.** Let each `J_t`
+leave `ω` invariant and let `(t, v) ↦ J_t v` be continuous, and let each `S_t` be infinitesimally
 symplectic and depend continuously on `t`. If a map `η` which is `C¹` on an open set `U` is
 `L²`-orthogonal to `D ξ` for every smooth map `ξ` compactly supported in `U`, for the pairing
-`∫∫ g(·, ·)` with `g_t = ω(·, J_t ·)`, then `D† η = 0` on `U`. The pairing need not be positive:
-only its nondegeneracy is used. -/
+`∫∫ g(·, ·)` with `g_t = ω(·, J_t ·)`, then `D† η = 0` on `U`. The pairing need not be positive
+definite: `J_t` need only leave `ω` invariant, not tame it. -/
 theorem eqOn_stationaryCylinderAdjoint_zero_of_forall_integral_eq_zero
     (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) {U : Set (ℝ × ℝ)}
@@ -523,48 +553,6 @@ theorem eq_zero_of_stationaryCylinderAdjoint_eq_zero (hJ : ∀ t, ω.Compatible 
   funext z
   simpa [hρ] using congrFun h₀ (ρ z)
 
-omit [FiniteDimensional ℝ V] in
-/-- The periodization `Σₙ ξ₀ (s, t + n)` of a smooth map `ξ₀` compactly supported in
-`ℝ × (0, 1)` is a smooth map of period one in `t`, which vanishes for large `|s|` and agrees with
-`ξ₀` near `ℝ × (0, 1)`. -/
-private theorem exists_periodic_eventuallyEq {ξ₀ : ℝ × ℝ → V} (hξ₀ : ContDiff ℝ (⊤ : ℕ∞) ξ₀)
-    (hc : HasCompactSupport ξ₀) (hU : tsupport ξ₀ ⊆ univ ×ˢ Ioo 0 1) :
-    ∃ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ ∧ (∀ s t, ξ (s, t + 1) = ξ (s, t)) ∧
-      (∀ᶠ z in comap Prod.fst (cocompact ℝ), ξ z = 0) ∧
-      ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ξ =ᶠ[𝓝 z] ξ₀ := by
-  set g : ℤ → ℝ × ℝ → V := fun n z ↦ ξ₀ (z.1, z.2 + n)
-  have hg {n : ℤ} {z : ℝ × ℝ} (h : z.2 + n ∉ Ioo (0 : ℝ) 1) : g n z = 0 :=
-    image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun hz ↦ h (hU hz).2
-  refine ⟨fun z ↦ ∑' n, g n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun s t ↦ ?_, ?_, ?_⟩
-  · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
-    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
-      (fun n _ ↦ (hξ₀.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
-    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
-      (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
-    refine hg fun h ↦ hn (Finset.mem_Ioo.2 ⟨Int.floor_lt.2 ?_, Int.lt_ceil.2 ?_⟩) <;>
-      simp only [mem_preimage, mem_Ioo] at hw h <;> linarith
-  · -- Shifting `t` by one shifts the summation index.
-    refine Eq.trans (tsum_congr fun n ↦ ?_) ((Equiv.addRight (1 : ℤ)).tsum_eq fun n ↦ g n (s, t))
-    simp only [g, Equiv.coe_addRight, Int.cast_add, Int.cast_one]
-    ring_nf
-  · -- If `ξ₀` vanishes off `|s| ≤ R`, so does every term.
-    obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
-    filter_upwards [preimage_mem_comap (isCompact_closedBall (0 : ℝ) R).compl_mem_cocompact]
-      with z hz
-    refine (tsum_congr fun n : ℤ ↦ image_eq_zero_of_notMem_tsupport (f := ξ₀) (x := (z.1, z.2 + n))
-      fun h ↦ hz ?_).trans tsum_zero
-    have := mem_closedBall_zero_iff.1 (hR h)
-    exact mem_closedBall_zero_iff.2 ((norm_fst_le (z.1, z.2 + (n : ℝ))).trans this)
-  · -- On `ℝ × (0, 1)` only the term `n = 0` survives.
-    intro z hz
-    filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds hz] with w hw
-    refine (tsum_eq_single 0 fun n hn ↦ hg fun h ↦ hn ?_).trans (by simp [g])
-    have h₁ : (-1 : ℝ) < n := by linarith [hw.2.2, h.1]
-    have h₂ : (n : ℝ) < 1 := by linarith [hw.2.1, h.2]
-    have h₁' : (-1 : ℤ) < n := by exact_mod_cast h₁
-    have h₂' : n < 1 := by exact_mod_cast h₂
-    omega
-
 /-- **The stationary cylinder operator has no classical cokernel.** Let each `J_t` be
 `ω`-compatible and let `(t, v) ↦ J_t v` be continuous, and let each `S_t` be infinitesimally
 symplectic and depend continuously on `t`. Let `η` be a `C²` map of period one in `t`, which tends
@@ -591,7 +579,7 @@ theorem eq_zero_of_forall_integral_associatedBilinForm_stationaryCylinderOperato
   have hU0 : EqOn (stationaryCylinderAdjoint J S η) 0 U :=
     eqOn_stationaryCylinderAdjoint_zero_of_forall_integral_eq_zero (fun t ↦ (hJ t).invariant)
       hJc hS hSc hU hη₁.contDiffOn fun ξ₀ hξ₀ hξ₀c hξ₀U ↦ by
-        obtain ⟨ξ, hξ, hξp, hξd, hξξ₀⟩ := exists_periodic_eventuallyEq hξ₀ hξ₀c hξ₀U
+        obtain ⟨ξ, hξ, hξp, hξd, hξξ₀⟩ := exists_contDiff_periodic_eventuallyEq hξ₀ hξ₀c hξ₀U
         have hUc : U =ᵐ[volume] univ ×ˢ Icc (0 : ℝ) 1 :=
           Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
         calc ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ₀ z) (η z)
@@ -603,7 +591,7 @@ theorem eq_zero_of_forall_integral_associatedBilinForm_stationaryCylinderOperato
           _ = ∫ z in U,
                 ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) :=
               setIntegral_congr_fun hU.measurableSet fun z hz ↦ by
-                rw [stationaryCylinderOperator_congr (hξξ₀ z hz)]
+                rw [(hξξ₀ z hz).stationaryCylinderOperator_eq]
           _ = ∫ z in univ ×ˢ Icc 0 1,
                 ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) :=
               setIntegral_congr_set hUc

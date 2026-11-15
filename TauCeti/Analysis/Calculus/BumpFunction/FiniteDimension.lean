@@ -19,7 +19,9 @@ global integral identities, and lets cut-off vector fields keep the rest points 
 
 A function which is smooth, of finite or infinite order, on a neighbourhood of a point of a
 finite-dimensional real normed space agrees near that point with a globally smooth function of
-the same order. A smooth bump function performs the extension while preserving the original
+the same order, and a function of finite order `n` which is `C^n` at every point of a compact set
+agrees near that set with a globally `C^n` function (`IsCompact.exists_contDiff_eventuallyEq`).
+A smooth bump function performs the extension while preserving the original
 function near the base point. Since the bump is compactly supported, so is the representative,
 and a representative of order at least one is moreover globally Lipschitz.
 
@@ -85,6 +87,18 @@ theorem ContDiffAt.exists_contDiff_eventuallyEq_of_finiteDimensional
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ g =ᶠ[nhds x] f :=
   let ⟨s, hs, hfs⟩ := hf.contDiffOn le_rfl (by simp)
   hfs.exists_contDiff_eventuallyEq_of_finiteDimensional hs
+
+/-- A function which is `C^n`, for a finite order `n`, at every point of a compact subset of a
+finite-dimensional real normed space agrees near that compact set with a compactly supported
+globally `C^n` function. -/
+theorem IsCompact.exists_contDiff_eventuallyEq [FiniteDimensional ℝ E] (n : ℕ) {f : E → F}
+    {K : Set E} (hK : IsCompact K) (hf : ∀ x ∈ K, ContDiffAt ℝ n f x) :
+    ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ ∀ x ∈ K, g =ᶠ[nhds x] f := by
+  have hU : IsOpen {x | ContDiffAt ℝ n f x} :=
+    isOpen_iff_mem_nhds.2 fun x hx ↦ hx.eventually (by simp)
+  have hfU : ContDiffOn ℝ n f {x | ContDiffAt ℝ n f x} := fun x hx ↦ hx.contDiffWithinAt
+  obtain ⟨g, hg, hgc, -, -, hgf⟩ := hfU.exists_contDiff_eventuallyEq_on_isCompact hK hU hf
+  exact ⟨g, hg, hgc, hgf⟩
 
 /-- A function which is smooth of order at least one on a neighbourhood of a point of a
 finite-dimensional real normed space agrees near that point with a globally smooth **and globally

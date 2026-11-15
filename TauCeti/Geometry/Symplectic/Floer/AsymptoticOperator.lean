@@ -415,6 +415,19 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     exact (hasDerivAt_slice_right hξ).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
+/-- The stationary cylinder operator at `z` depends only on the germ of the map at `z`. -/
+theorem _root_.Filter.EventuallyEq.stationaryCylinderOperator_eq {ξ₁ ξ₂ : ℝ × ℝ → V}
+    (h : ξ₁ =ᶠ[𝓝 z] ξ₂) :
+    stationaryCylinderOperator J S ξ₁ z = stationaryCylinderOperator J S ξ₂ z := by
+  rw [stationaryCylinderOperator_def, stationaryCylinderOperator_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The stationary cylinder operator vanishes off the topological support of the map. -/
+theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
+    stationaryCylinderOperator J S ξ z = 0 := by
+  rw [stationaryCylinderOperator_def, image_eq_zero_of_notMem_tsupport hz,
+    fderiv_of_notMem_tsupport ℝ hz]
+  simp
+
 /-- A map of period one in the second coordinate has a derivative of period one in it. -/
 private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
     fderiv ℝ ξ (s, t + 1) = fderiv ℝ ξ (s, t) := by
