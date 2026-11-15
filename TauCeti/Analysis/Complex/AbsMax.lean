@@ -10,20 +10,23 @@ public import Mathlib.Analysis.Complex.AbsMax
 /-!
 # Relative maximum-modulus bounds on a disc
 
-Two consequences of the maximum modulus principle for a function `f` that is differentiable on
+Three consequences of the maximum modulus principle for a function `f` that is differentiable on
 `ball z₀ R` and continuous on its closure, under a bound on `sphere z₀ R` relative to the value
 at the centre:
 
 * if `‖f w‖ ≤ M ‖f z₀‖` on the sphere and `f z₀ ≠ 0`, then `1 ≤ M`;
+* if `‖f w‖ ≤ M ‖f z₀‖` on the sphere and `f` is nonzero somewhere on `closedBall z₀ R`, then
+  `f z₀ ≠ 0`;
 * if `‖P w * G w‖ ≤ M ‖P z₀ * G z₀‖` on the sphere, where `P` is nonzero there and at least as
   large as at the centre, then `‖G w‖ ≤ M ‖G z₀‖` on the closed disc.
 
-The second removes a factor `P` that is no smaller on the boundary than at the centre, such as a
+The last removes a factor `P` that is no smaller on the boundary than at the centre, such as a
 product of linear factors over zeros near `z₀`.
 
 ## Main results
 
 * `DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`
+* `DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul`
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
 -/
 
@@ -75,3 +78,16 @@ theorem Complex.norm_le_of_forall_mem_sphere_norm_mul_le {P G : ℂ → ℂ} (hR
     have : ‖G z₀‖ = 0 := le_antisymm hz₀ (norm_nonneg _)
     rw [this, mul_zero]
     exact hmax h0 hw
+
+/-- If `f` is differentiable on `ball z₀ R` and continuous on its closure, with
+`‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and `f` is nonzero somewhere on `closedBall z₀ R`, then
+`f z₀ ≠ 0`. -/
+theorem DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul {f : ℂ → ℂ}
+    (hf : DiffContOnCl ℂ f (ball z₀ R)) (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
+    {z : ℂ} (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 := by
+  rcases lt_or_ge 0 R with hR | hR
+  · intro h0
+    refine (norm_pos_iff.2 hfz).not_ge ?_
+    simpa [h0] using Complex.norm_le_of_forall_mem_sphere_norm_mul_le (P := fun _ ↦ 1) hR hf
+      (fun _ _ ↦ one_ne_zero) (fun _ _ ↦ le_rfl) (by simpa using hM) hz
+  · rwa [← dist_le_zero.1 ((mem_closedBall.1 hz).trans hR)]

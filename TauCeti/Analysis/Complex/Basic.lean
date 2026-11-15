@@ -23,7 +23,9 @@ expression is the denominator of the Möbius automorphisms of the unit disc and 
 pseudo-hyperbolic expression.
 
 Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
-does (`Complex.inv_re_pos`).
+does (`Complex.inv_re_pos`), and off the real axis its real part is bounded by `(2 |Im z|)⁻¹`
+(`Complex.inv_re_le_inv_two_mul_abs_im`). On a closed disc `closedBall z₀ r`, the real and
+imaginary parts stay within `r` of `z₀.re` and `z₀.im` and `‖z‖ ≤ |z₀.re| + |z₀.im| + r`.
 
 The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
 `‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
@@ -44,6 +46,15 @@ theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · rw [inv_re, div_pos_iff_of_pos_right (normSq_pos.mpr hz)]
+
+/-- Off the real axis, the real part of `z⁻¹` is at most `(2 |Im z|)⁻¹`. -/
+theorem Complex.inv_re_le_inv_two_mul_abs_im {z : ℂ} (hz : z.im ≠ 0) :
+    z⁻¹.re ≤ (2 * |z.im|)⁻¹ := by
+  have : 0 < |z.im| := abs_pos.2 hz
+  have : 0 < z.re * z.re + z.im * z.im :=
+    add_pos_of_nonneg_of_pos (mul_self_nonneg z.re) (mul_self_pos.2 hz)
+  rw [inv_re, normSq_apply, div_le_iff₀ this, le_inv_mul_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (z.re - |z.im|), sq_abs z.im]
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/
@@ -151,5 +162,28 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       rw [← map_sub, norm_conj]
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
+
+/-- On `closedBall z₀ r`, the real part differs from `z₀.re` by at most `r`. -/
+theorem abs_re_sub_le_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |z.re - z₀.re| ≤ r := by
+  simpa using (abs_re_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the imaginary part differs from `z₀.im` by at most `r`. -/
+theorem abs_im_sub_le_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |z.im - z₀.im| ≤ r := by
+  simpa using (abs_im_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the norm of `z` is at most `|z₀.re| + |z₀.im| + r`. -/
+theorem norm_le_abs_re_add_abs_im_add_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : ‖z‖ ≤ |z₀.re| + |z₀.im| + r :=
+  (norm_le_of_mem_closedBall hz).trans (add_le_add_left (norm_le_abs_re_add_abs_im z₀) r)
+
+/-- The distance from `z` to `(σ : ℂ) + z.im * I` on the same horizontal line is `|z.re - σ|`,
+so `z ∈ closedBall (σ + z.im * I) r` iff `|z.re - σ| ≤ r`. -/
+theorem mem_closedBall_ofReal_add_im_mul_I_iff {z : ℂ} {σ r : ℝ} :
+    z ∈ Metric.closedBall ((σ : ℂ) + z.im * I) r ↔ |z.re - σ| ≤ r := by
+  rw [Metric.mem_closedBall, dist_eq_norm,
+    show z - ((σ : ℂ) + z.im * I) = ((z.re - σ : ℝ) : ℂ) from Complex.ext (by simp) (by simp),
+    norm_real, Real.norm_eq_abs]
 
 end Complex

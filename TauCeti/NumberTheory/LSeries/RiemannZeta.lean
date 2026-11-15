@@ -9,11 +9,11 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
-import Mathlib.Analysis.MellinTransform
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
@@ -209,15 +209,15 @@ private theorem differentiableOn_mul_integral_fract :
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       {s : ℂ | 0 < s.re} := by
-  set g : ℝ → ℂ := (Set.Ici (1 : ℝ)).indicator fun t ↦ ((Int.fract t : ℝ) : ℂ)
+  set g : ℝ → ℂ := (Set.Ioi (1 : ℝ)).indicator fun t ↦ ((Int.fract t : ℝ) : ℂ)
   have hg_meas : Measurable g :=
-    (Complex.measurable_ofReal.comp measurable_fract).indicator measurableSet_Ici
+    (Complex.measurable_ofReal.comp measurable_fract).indicator measurableSet_Ioi
   have hg_bound (t : ℝ) : ‖g t‖ ≤ 1 := by
-    by_cases ht : 1 ≤ t
-    · simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr ht), norm_real, Real.norm_eq_abs,
+    by_cases ht : 1 < t
+    · simp only [g, Set.indicator_of_mem (Set.mem_Ioi.mpr ht), norm_real, Real.norm_eq_abs,
         abs_of_nonneg (Int.fract_nonneg t)]
       exact (Int.fract_lt_one t).le
-    · simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp ht)]
+    · simp [g, Set.indicator_of_notMem (mt Set.mem_Ioi.mp ht)]
   have hg_loc : MeasureTheory.LocallyIntegrableOn g (Set.Ioi 0) :=
     ((MeasureTheory.locallyIntegrable_const (1 : ℝ)).mono hg_meas.aestronglyMeasurable
       (.of_forall fun t ↦ by simpa using hg_bound t)).locallyIntegrableOn _
@@ -225,21 +225,11 @@ private theorem differentiableOn_mul_integral_fract :
     Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by simpa using hg_bound t⟩
   have hg_zero (r : ℝ) : g =O[𝓝[>] 0] fun t : ℝ ↦ t ^ (-r) :=
     Asymptotics.IsBigO.of_bound 0 <| eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) fun t ht ↦ by
-      simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp ht.2.not_ge)]
+      simp [g, Set.indicator_of_notMem (mt Set.mem_Ioi.mp ht.2.not_gt)]
   have hmellin (s : ℂ) :
       ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) = mellin g (-s) := by
-    have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • g t)
-        ((Set.Ici (1 : ℝ)).indicator fun t ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
-        (Set.Ioi 0) := fun t _ ↦ by
-      dsimp only
-      by_cases h1 : 1 ≤ t
-      · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1)]
-        simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr h1), smul_eq_mul, mul_comm, neg_add']
-      · simp [g, Set.indicator_of_notMem (mt Set.mem_Ici.mp h1)]
-    rw [mellin, MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hEq,
-      MeasureTheory.setIntegral_indicator measurableSet_Ici,
-      Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one),
-      MeasureTheory.integral_Ici_eq_integral_Ioi]
+    simpa [g, smul_eq_mul, mul_comm, sub_eq_add_neg, add_comm] using
+      (TauCeti.mellin_indicator_Ioi (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ)) zero_le_one (-s)).symm
   intro s hs
   have hd : DifferentiableAt ℂ (fun z : ℂ ↦ mellin g (-z)) s :=
     (mellin_differentiableAt_of_isBigO_rpow (a := 0) hg_loc hg_top (by simpa using hs) (hg_zero _)

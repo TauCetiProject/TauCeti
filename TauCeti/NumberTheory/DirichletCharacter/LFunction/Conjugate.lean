@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Conjugate
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -20,9 +20,8 @@ not the totalized Dirichlet series outside its convergence half-plane.
 
 For quadratic characters this gives reflection of zeros across the real axis and reality at
 real arguments away from the possible principal-character pole at `1`, including the interval
-to its left used in real-zero estimates. We also characterize differentiability of `χ.LFunction`
-(`not_differentiableAt_LFunctionTrivChar_one`, `differentiableAt_LFunction_iff`) and give the
-reflection identity for derivatives and their real-axis specialization.
+to its left used in real-zero estimates. We also give the reflection identity for derivatives and
+their real-axis specialization.
 
 The continuation is Mathlib's `DirichletCharacter.LFunction`; coefficientwise reflection uses
 `TauCeti.LSeries.LSeries_star`.
@@ -87,29 +86,6 @@ theorem LFunction_inv_conj_eq_zero_iff (s : ℂ) :
   · rcases h with ⟨rfl, rfl⟩
     simp
   · rw [LFunction_inv_conj χ (not_and_or.mp h), map_eq_zero]
-
-omit χ in
-/-- The principal Dirichlet `L`-function modulo `N` is not differentiable at its simple pole
-`s = 1`. -/
-theorem not_differentiableAt_LFunctionTrivChar_one :
-    ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
-  intro hd
-  have h0 : Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
-    have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
-      hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
-    simpa using h
-  have h1 := tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))
-  exact LFunctionTrivChar₁_apply_one_ne_zero N (by simpa using h1.symm)
-
-/-- The continued Dirichlet `L`-function `χ.LFunction` is differentiable at `s` if and only if
-`s ≠ 1` or `χ ≠ 1`. -/
-@[simp]
-theorem differentiableAt_LFunction_iff (s : ℂ) :
-    DifferentiableAt ℂ χ.LFunction s ↔ s ≠ 1 ∨ χ ≠ 1 := by
-  refine ⟨fun hd ↦ by_contra fun h ↦ ?_, χ.differentiableAt_LFunction s⟩
-  obtain ⟨hs1, hχ1⟩ := not_or.mp h
-  rw [not_ne_iff.mp hs1, not_ne_iff.mp hχ1] at hd
-  exact not_differentiableAt_LFunctionTrivChar_one hd
 
 /-- The derivatives of the continued L-functions of inverse characters satisfy the same
 reflection identity. At the pole `1` of the principal character both sides are `0`, as the

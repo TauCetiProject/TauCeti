@@ -95,25 +95,18 @@ theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
   · exact (analyticOn_riemannZeta z hz).meromorphicAt
 
 /-- The Riemann zeta function has a simple pole at `1`. -/
+@[simp]
 theorem meromorphicOrderAt_riemannZeta_one :
-    meromorphicOrderAt riemannZeta 1 = (-1 : ℤ) := by
-  have heq : riemannZeta =ᶠ[𝓝[≠] 1] completedRiemannZeta * fun s ↦ (Gammaℝ s)⁻¹ := by
-    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
-    rw [Pi.mul_apply, riemannZeta_def_of_ne_zero hs, div_eq_mul_inv]
-  have hΓ : meromorphicOrderAt (fun s ↦ (Gammaℝ s)⁻¹) 1 = 0 := by
-    rw [(Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicOrderAt_eq,
-      analyticOrderAt_eq_zero.2 (.inr (inv_ne_zero (by rw [Gammaℝ_one]; exact one_ne_zero)))]
-    rfl
-  rw [meromorphicOrderAt_congr heq, meromorphicOrderAt_mul (meromorphic_completedRiemannZeta 1)
-    (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt,
-    meromorphicOrderAt_completedRiemannZeta_one, hΓ, add_zero]
+    meromorphicOrderAt riemannZeta 1 = -1 := by
+  simpa using (meromorphic_riemannZeta 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    one_ne_zero (by simpa using riemannZeta_residue_one)
 
 /-- The Riemann zeta function has positive meromorphic order at `s` if and only if
 `riemannZeta s = 0` and `s ≠ 1`. -/
 theorem meromorphicOrderAt_riemannZeta_pos_iff {s : ℂ} :
     0 < meromorphicOrderAt riemannZeta s ↔ riemannZeta s = 0 ∧ s ≠ 1 := by
   rcases eq_or_ne s 1 with rfl | hs
-  · simp [meromorphicOrderAt_riemannZeta_one]
+  · simp
   · simp [(analyticOn_riemannZeta s hs).meromorphicOrderAt_pos_iff_eq_zero, hs]
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/

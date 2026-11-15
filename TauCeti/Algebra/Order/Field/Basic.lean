@@ -106,6 +106,9 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.le_div_mul_of_le`, `TauCeti.div_le_of_le_mul_of_le`,
+  `TauCeti.mul_lt_mul_inv_of_le_div_two_mul`: rescaling bounds across `0 < a ≤ b` and comparing
+  `M * L` against `a * δ⁻¹` when `δ ≤ (a / (2 * M)) / L`.
 -/
 
 public section
@@ -412,6 +415,32 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- Rescaling a nonnegative bound across a positive threshold `a ≤ b`: `c ≤ c / a * b`. -/
+theorem le_div_mul_of_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b c : α} (hc : 0 ≤ c) (ha : 0 < a) (hab : a ≤ b) : c ≤ c / a * b :=
+  (div_mul_cancel₀ c ha.ne').symm.trans_le (mul_le_mul_of_nonneg_left hab (div_nonneg hc ha.le))
+
+/-- If `c ≤ r * a` with `0 ≤ r` and `0 ≤ a ≤ b`, then `c / b ≤ r` (including `a = b = 0`, where
+`c / 0 = 0 ≤ r`). -/
+theorem div_le_of_le_mul_of_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b c r : α} (hr : 0 ≤ r) (ha : 0 ≤ a) (hab : a ≤ b) (hc : c ≤ r * a) :
+    c / b ≤ r := by
+  rcases (ha.trans hab).eq_or_lt with rfl | hb
+  · simp [hr]
+  · exact (div_le_iff₀ hb).2 (hc.trans (mul_le_mul_of_nonneg_left hab hr))
+
+/-- If `0 < δ ≤ (a / (2 * M)) / L` with `0 < M` and `0 < L`, then `M * L < a * δ⁻¹` (in fact
+`M * L ≤ (a / 2) * δ⁻¹` and `0 < a`). -/
+theorem mul_lt_mul_inv_of_le_div_two_mul {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a δ M L : α} (hδ : 0 < δ) (hM : 0 < M) (hL : 0 < L)
+    (h : δ ≤ a / (2 * M) / L) : M * L < a * δ⁻¹ := by
+  have ha : 0 < a := (by positivity : 0 < δ * L * (2 * M)).trans_le
+    ((le_div_iff₀ (by positivity : 0 < 2 * M)).1 ((le_div_iff₀ hL).1 h))
+  rw [lt_mul_inv_iff₀ hδ]
+  calc M * L * δ ≤ M * L * (a / (2 * M) / L) := by gcongr
+    _ = a / 2 := by field_simp
+    _ < a := half_lt_self ha
 
 end TauCeti
 

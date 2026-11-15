@@ -18,6 +18,8 @@ terms for `r ≥ 0`, since `log (2 + r) ≥ log 2 ≥ 1/2`.
 
 * `Real.mul_mul_log_one_add_add_mul_le`: for `A, B, r ≥ 0`,
   `A r log (1 + r) + B r ≤ (A + 2 B) (1 + r) log (2 + r)`.
+* `Real.log_mul_two_mul_add_le`: for `q ≥ 1`, `r ≥ 0` and `c ≥ 1`,
+  `log (q (2 r + c)) ≤ 2 log (q (r + c))`.
 -/
 
 public section
@@ -45,5 +47,16 @@ theorem mul_mul_log_one_add_add_mul_le {A B r : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ 
       rw [mul_assoc]
       exact add_le_add (mul_le_mul_of_nonneg_left h₁ hA) (mul_le_mul_of_nonneg_left h₂ hB)
     _ = (A + 2 * B) * (1 + r) * log (2 + r) := by ring
+
+/-- Doubling the variable inside a shifted logarithmic scale `log (q (r + c))` at most doubles the
+logarithm when `1 ≤ q`, `0 ≤ r`, and `1 ≤ c`. -/
+theorem log_mul_two_mul_add_le {q r c : ℝ} (hq : 1 ≤ q) (hr : 0 ≤ r) (hc : 1 ≤ c) :
+    log (q * (2 * r + c)) ≤ 2 * log (q * (r + c)) := by
+  have hsq : q * (2 * r + c) ≤ (q * (r + c)) ^ 2 := by
+    calc q * (2 * r + c) ≤ q * (r + c) ^ 2 :=
+        mul_le_mul_of_nonneg_left (by nlinarith) (zero_le_one.trans hq)
+      _ ≤ q ^ 2 * (r + c) ^ 2 := mul_le_mul_of_nonneg_right (by nlinarith) (sq_nonneg _)
+      _ = (q * (r + c)) ^ 2 := (mul_pow _ _ _).symm
+  exact (log_le_log (by positivity) hsq).trans_eq (by rw [log_pow]; push_cast; rfl)
 
 end Real

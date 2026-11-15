@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
 # Uniform bounds for deleted Euler factors
@@ -36,6 +35,18 @@ open Finset Complex Filter
 open scoped Topology
 
 namespace DirichletCharacter
+
+/-- Each Euler factor `z ↦ 1 - χ p * (p : ℂ) ^ (-z)` with `p ≠ 0` is entire. -/
+theorem differentiable_one_sub_mul_natCast_cpow {M p : ℕ} (χ : DirichletCharacter ℂ M)
+    (hp : p ≠ 0) : Differentiable ℂ fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z) := by
+  have : NeZero p := ⟨hp⟩
+  fun_prop
+
+/-- The finite product of deleted Euler factors over `N.primeFactors` is entire. -/
+theorem differentiable_prod_one_sub_mul_prime_cpow {M N : ℕ} (χ : DirichletCharacter ℂ M) :
+    Differentiable ℂ (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) :=
+  Differentiable.finsetProd fun _ hp ↦
+    differentiable_one_sub_mul_natCast_cpow χ (Nat.prime_of_mem_primeFactors hp).ne_zero
 
 private theorem norm_mul_prime_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ M)
     (hp : p.Prime) {δ : ℝ} (hδ : 0 < δ) {s : ℂ} (hs : δ ≤ s.re) :
@@ -111,26 +122,14 @@ the open right half-plane `Re(s) > 0`, including `s = 1` for principal character
     (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
     meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by
   set P : ℂ → ℂ := ∏ p ∈ N.primeFactors, fun z ↦ 1 - χ p * (p : ℂ) ^ (-z)
-  have hPdiff : Differentiable ℂ P := by
-    refine prod_induction _ (Differentiable ℂ) (fun _ _ hf hg ↦ hf.mul hg)
-      (differentiable_const 1) fun p hp ↦ ?_
-    have hp0 : (p : ℂ) ≠ 0 := mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
-    exact (differentiable_const 1).sub
-      ((differentiable_id.neg.const_cpow (.inl hp0)).const_mul (χ p))
   have hPs : P s ≠ 0 := by
     simpa [P, Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
-  have hPord : meromorphicOrderAt P s = 0 := by
-    rw [(hPdiff.analyticAt s).meromorphicOrderAt_eq, analyticOrderAt_eq_zero.2 (.inr hPs)]
-    rfl
-  have heq : (changeLevel hMN χ).LFunction =ᶠ[𝓝[≠] s] χ.LFunction * P := by
-    rcases eq_or_ne s 1 with rfl | hs1
-    · filter_upwards [self_mem_nhdsWithin] with z hz
-      simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz)]
-    · filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds hs1)] with z hz
-      simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz)]
+  have heq : (changeLevel hMN χ).LFunction =ᶠ[𝓝[≠] s] P * χ.LFunction := by
+    filter_upwards [(eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)] with z hz
+    simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz), mul_comm]
   rw [meromorphicOrderAt_congr heq,
-    meromorphicOrderAt_mul (χ.meromorphic_LFunction s) (hPdiff.analyticAt s).meromorphicAt,
-    hPord, add_zero]
+    meromorphicOrderAt_mul_of_ne_zero
+      ((differentiable_prod_one_sub_mul_prime_cpow χ).analyticAt s) hPs]
 
 /-- On the open right half-plane `Re(s) > 0`, the principal Dirichlet `L`-function modulo `N` has
 the same meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/

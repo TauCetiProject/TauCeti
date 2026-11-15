@@ -10,8 +10,8 @@ public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.LSeries.ThreeFourOne
 
 /-!
@@ -53,6 +53,10 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
   arguments.
 * `DirichletCharacter.im_logDeriv_LFunction_ofReal`: `L′/L(σ, χ)` is real for a real-valued
   character.
+* `DirichletCharacter.norm_term_twist_vonMangoldt`,
+  `DirichletCharacter.re_term_twist_vonMangoldt_add`, and
+  `DirichletCharacter.re_term_modOne_twist_vonMangoldt_ofReal`: norm and real-part formulas for
+  terms of the twisted von Mangoldt series.
 * `DirichletCharacter.norm_logDeriv_LFunction_le_of_le_re`,
   `DirichletCharacter.norm_logDeriv_LFunction_le`,
   `DirichletCharacter.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos`, and
@@ -72,17 +76,51 @@ namespace DirichletCharacter
 
 variable {N : ℕ} (χ : DirichletCharacter ℂ N) {s : ℂ}
 
+/-- The norm of the `n`-th term of the twisted von Mangoldt Dirichlet series is
+`‖χ n‖ * Λ n / n ^ s.re` (including `n = 0`, where both sides are `0`). -/
+theorem norm_term_twist_vonMangoldt (n : ℕ) :
+    ‖term (↗χ * ↗Λ) s n‖ = ‖χ n‖ * Λ n / (n : ℝ) ^ s.re := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rw [norm_term_eq]
+  simp [hn, abs_of_nonneg vonMangoldt_nonneg]
+
+/-- At `s = σ + u` with real `σ`, the real part of the `n`-th twisted von Mangoldt term factors
+out the real weight `Λ n / n ^ σ` (including `n = 0`, where both sides are `0`). -/
+theorem re_term_twist_vonMangoldt_add (σ : ℝ) (u : ℂ) (n : ℕ) :
+    (term (↗χ * ↗Λ) (σ + u) n).re =
+      (Λ n / (n : ℝ) ^ σ) * (χ n * (n : ℂ) ^ (-u)).re := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hn0 : (0 : ℝ) ≤ n := n.cast_nonneg
+  have hpow : (n : ℂ) ^ (-((σ : ℂ) + u)) = (((n : ℝ) ^ σ)⁻¹ : ℝ) * (n : ℂ) ^ (-u) := by
+    rw [neg_add, Complex.cpow_add _ _ (mod_cast hn), ← Complex.ofReal_natCast,
+      ← Complex.ofReal_neg, ← Complex.ofReal_cpow hn0, Real.rpow_neg hn0]
+  have hmul : term (↗χ * ↗Λ) (σ + u) n =
+      ((Λ n / (n : ℝ) ^ σ : ℝ) : ℂ) * (χ n * (n : ℂ) ^ (-u)) := by
+    rw [term_of_ne_zero hn, Pi.mul_apply, div_eq_mul_inv, ← Complex.cpow_neg, hpow,
+      div_eq_mul_inv, Complex.ofReal_mul]
+    ring
+  rw [hmul, Complex.re_ofReal_mul]
+
+omit χ in
+/-- For a character modulo `1` at real `σ`, the real part of the `n`-th twisted von Mangoldt term
+is `Λ n / n ^ σ`. -/
+theorem re_term_modOne_twist_vonMangoldt_ofReal (χ₀ : DirichletCharacter ℂ 1) (σ : ℝ) (n : ℕ) :
+    (term (↗χ₀ * ↗Λ) σ n).re = Λ n / (n : ℝ) ^ σ := by
+  simpa [Subsingleton.elim χ₀ 1, MulChar.one_apply (isUnit_of_subsingleton _)] using
+    χ₀.re_term_twist_vonMangoldt_add σ 0 n
+
 /-- On `1 ≤ re s`, the terms of the twisted von Mangoldt series at non-prime `n` are bounded by
 `Λ n / n`, independently of the character and of `s`. -/
 theorem norm_term_twist_vonMangoldt_nonprime_le (hs : 1 ≤ s.re) (n : ℕ) :
     ‖if n.Prime then 0 else term (↗χ * ↗Λ) s n‖ ≤ (if n.Prime then 0 else Λ n) / n := by
   split_ifs with hn
   · simp
-  rw [norm_term_eq]
-  split_ifs with h0
-  · simp [h0]
-  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr h0
-  rw [Pi.mul_apply, norm_mul, Complex.norm_real, Real.norm_of_nonneg vonMangoldt_nonneg]
+  rcases eq_or_ne n 0 with rfl | h0
+  · simp
+  have hn1 : (1 : ℝ) ≤ n := mod_cast Nat.one_le_iff_ne_zero.mpr h0
+  rw [χ.norm_term_twist_vonMangoldt]
   calc ‖χ n‖ * Λ n / n ^ s.re ≤ 1 * Λ n / n ^ (1 : ℝ) := by
         gcongr
         exact χ.norm_le_one _
@@ -238,11 +276,7 @@ theorem norm_logDeriv_LFunction_le_of_le_re [NeZero N] {σ : ℝ} (hσ : 1 < σ)
     rcases eq_or_ne n 0 with rfl | hn
     · simp
     have hn1 : (1 : ℝ) ≤ n := mod_cast Nat.one_le_iff_ne_zero.mpr hn
-    rw [norm_term_eq, ite_eq_right hn, term_of_ne_zero hn, Pi.mul_apply, Pi.mul_apply, norm_mul,
-      Complex.norm_real, Real.norm_of_nonneg vonMangoldt_nonneg,
-      show χ₀ n = 1 from MulChar.one_apply (isUnit_of_subsingleton _), one_mul,
-      ← Complex.ofReal_natCast, ← Complex.ofReal_cpow n.cast_nonneg, Complex.div_ofReal_re,
-      Complex.ofReal_re]
+    rw [χ.norm_term_twist_vonMangoldt, re_term_modOne_twist_vonMangoldt_ofReal]
     exact div_le_div₀ vonMangoldt_nonneg
       (mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n))
       (by positivity) (Real.rpow_le_rpow_of_exponent_le hn1 hs)
@@ -295,26 +329,13 @@ theorem threeFourOne_re_logDeriv_riemannZeta_LFunction_nonpos [NeZero N] {σ : �
   have hz : ‖z‖ ≤ 1 := by
     rw [norm_mul, ← Complex.ofReal_natCast, Complex.norm_cpow_eq_rpow_re_of_pos hn_pos]
     simpa using χ.norm_le_one n
-  have hterm {M : ℕ} {ψ : DirichletCharacter ℂ M} (u : ℂ) :
-      (term (↗ψ * ↗Λ) (σ + u) n).re =
-        (Λ n / (n : ℝ) ^ σ) * (ψ n * (n : ℂ) ^ (-u)).re := by
-    have hpow : (n : ℂ) ^ (-(σ + u)) = (((n : ℝ) ^ σ)⁻¹ : ℝ) * (n : ℂ) ^ (-u) := by
-      rw [neg_add, Complex.cpow_add _ _ (mod_cast hn), ← Complex.ofReal_natCast,
-        ← Complex.ofReal_neg, ← Complex.ofReal_cpow hn_pos.le, Real.rpow_neg hn_pos.le]
-    have hmul : term (↗ψ * ↗Λ) (σ + u) n =
-        ((Λ n / (n : ℝ) ^ σ : ℝ) : ℂ) * (ψ n * (n : ℂ) ^ (-u)) := by
-      rw [term_of_ne_zero hn, Pi.mul_apply, div_eq_mul_inv, ← Complex.cpow_neg, hpow,
-        div_eq_mul_inv, Complex.ofReal_mul]
-      ring
-    rw [hmul, Complex.re_ofReal_mul]
-  have ht₀ : (term (↗χ₀ * ↗Λ) σ n).re = Λ n / (n : ℝ) ^ σ := by
-    simpa [χ₀, MulChar.one_apply (isUnit_of_subsingleton _)] using hterm (ψ := χ₀) 0
   have ht₂ : (χ ^ 2) n * (n : ℂ) ^ (-(2 * (t : ℂ) * Complex.I)) = z ^ 2 := by
     have hexp : -(2 * (t : ℂ) * Complex.I) = (2 : ℕ) * -(t * Complex.I) := by
       push_cast; ring
     rw [sq χ, MulChar.mul_apply, hexp, Complex.cpow_nat_mul, hz_def]
     ring
-  rw [ht₀, hterm (t * Complex.I), ← hz_def, hterm (2 * t * Complex.I), ht₂]
+  rw [re_term_modOne_twist_vonMangoldt_ofReal, χ.re_term_twist_vonMangoldt_add σ (t * Complex.I) n,
+    ← hz_def, (χ ^ 2).re_term_twist_vonMangoldt_add σ (2 * t * Complex.I) n, ht₂]
   have h341 := TauCeti.LSeries.threeFourOneCombination_nonneg hz
   rw [TauCeti.LSeries.threeFourOneCombination_def] at h341
   nlinarith [div_nonneg (vonMangoldt_nonneg (n := n)) (Real.rpow_nonneg hn_pos.le σ)]
@@ -337,16 +358,15 @@ theorem norm_logDeriv_LFunction_changeLevel_sub_le {M : ℕ} [NeZero M] [NeZero 
     exact Real.log_nonneg (Nat.one_le_cast.mpr NeZero.one_le)
   have h : s ≠ 1 ∨ ψ ≠ 1 := not_and_or.mp h1
   set f : ℕ → ℂ → ℂ := fun p z ↦ 1 - ψ p * (p : ℂ) ^ (-z)
-  have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : Differentiable ℂ (f p) := by
-    have hp0 : (p : ℂ) ≠ 0 := mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
-    exact (differentiable_const 1).sub ((differentiable_id.neg.const_cpow (.inl hp0)).const_mul _)
+  have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : Differentiable ℂ (f p) :=
+    differentiable_one_sub_mul_natCast_cpow ψ (Nat.prime_of_mem_primeFactors hp).ne_zero
   have hPs : (∏ p ∈ N.primeFactors, f p) s ≠ 0 := by
     simpa [f, Finset.prod_apply] using
       prod_one_sub_mul_prime_cpow_ne_zero (N := N) ψ (zero_lt_one.trans_le hs)
   have hnef (p : ℕ) (hp : p ∈ N.primeFactors) : f p s ≠ 0 :=
     prod_ne_zero_iff.mp (by simpa [Finset.prod_apply] using hPs) p hp
   have hPdiff : Differentiable ℂ (∏ p ∈ N.primeFactors, f p) :=
-    prod_induction _ (Differentiable ℂ) (fun _ _ hg hh ↦ hg.mul hh) (differentiable_const 1) hdf
+    differentiable_prod_one_sub_mul_prime_cpow ψ
   have heq : (changeLevel hMN ψ).LFunction =ᶠ[𝓝 s] ψ.LFunction * ∏ p ∈ N.primeFactors, f p := by
     rcases h with hs1 | hψ
     · filter_upwards [eventually_ne_nhds hs1] with z hz
