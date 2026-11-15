@@ -91,14 +91,6 @@ theorem unknottingNumber_toGridLink_torusLink (p q : ℕ) (h : (p + 1).Coprime (
   le_antisymm (unknottingNumber_toGridLink_torusLink_le p q h)
     (le_unknottingNumber_toGridLink_torusLink p q h)
 
-/-- When `p + 1` and `q + 1` are not coprime, `torusLink p q` has multiple components and its
-unknotting number is `⊤`. -/
-theorem unknottingNumber_toGridLink_torusLink_eq_top {p q : ℕ} (h : ¬(p + 1).Coprime (q + 1)) :
-    (torusLink p q).toGridLink.unknottingNumber = ⊤ := by
-  by_contra hne
-  exact h ((isKnot_torusLink_iff p q).mp
-    ((isKnot_toGridLink (torusLink p q)).mp (isKnot_of_unknottingNumber_ne_top hne)))
-
 /-- Complete determination of the unknotting number of every standard torus link grid: `(p q / 2)`
 for torus knots (`(p + 1).Coprime (q + 1)`) and `⊤` for multi-component torus links. -/
 theorem unknottingNumber_toGridLink_torusLink_eq_ite (p q : ℕ) :

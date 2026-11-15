@@ -88,7 +88,8 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_oriented_overlap :
         (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
             ∑ D ∈ G.rectangleHexagonDecompositions C x x,
               G.rectangleHexagonWeight C R D =
-          1 + ∑ D ∈ G.pentagonPairDecompositions C x x, G.pentagonPairWeight C R D) ∧
+          1 + ∑ D ∈ G.pentagonPairDecompositions C C.reverse x x,
+            G.pentagonPairWeight C C.reverse R D) ∧
       ∀ x z : GridState n, z ≠ x →
         ((∑ D ∈ (G.hexagonRectangleDecompositions C x z).filter
                 (fun D => D.toRectangleDecomposition.HasSameSideOverlap),
@@ -102,7 +103,8 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_oriented_overlap :
             ∑ D ∈ (G.rectangleHexagonDecompositions C x z).filter
                 (fun D => D.toRectangleDecomposition.HasMixedSideOverlap),
               G.rectangleHexagonWeight C R D) =
-        ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
+        ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z,
+          G.pentagonPairWeight C C.reverse R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_overlap C R]
   constructor
   · intro h

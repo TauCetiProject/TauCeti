@@ -80,14 +80,13 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
     (G.hasMixedSideOverlap_of_mem_unpairedHexagonComposites C hzx hF)
   -- The counted commutation pentagons are the counted pentagons of both turn-side kinds.
   have hpair : (⟨m, P, Q⟩ : GridPentagonPairDecomposition _ _ _ _ x z) ∈
-      G.pentagonPairDecompositions C x z := by
-    rw [mem_pentagonPairDecompositions]
-    constructor
-    · cases P <;> simpa using hP
-    · cases Q <;> simpa using hQ
+      G.pentagonPairDecompositions C C.reverse x z := by
+    rw [G.mem_pentagonPairDecompositions C C.reverse, G.commutationPentagons_def C,
+      (G.swapColumns a b).commutationPentagons_def C.reverse]
+    exact ⟨hP, hQ⟩
   rcases hD with ⟨hside, hrec⟩ | ⟨hside, hrec⟩
-  · exact Or.inl ⟨hF, _, (G.mem_sameSidePentagonPairs C _).mpr ⟨hpair, hside⟩, hrec⟩
-  · exact Or.inr ⟨hF, _, (G.mem_mixedSidePentagonPairs C _).mpr ⟨hpair, hside⟩, hrec⟩
+  · exact Or.inl ⟨hF, _, (G.mem_sameSidePentagonPairs C C.reverse _).mpr ⟨hpair, hside⟩, hrec⟩
+  · exact Or.inr ⟨hF, _, (G.mem_mixedSidePentagonPairs C C.reverse _).mpr ⟨hpair, hside⟩, hrec⟩
 
 /-- The homotopy equation `∂ ∘ H + H ∘ ∂ = 1 + Ψ ∘ Φ` of a column commutation, over any
 commutative semiring of characteristic two: the hexagon-counting map `H` is a chain homotopy

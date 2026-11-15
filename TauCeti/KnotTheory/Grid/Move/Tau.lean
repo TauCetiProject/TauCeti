@@ -63,9 +63,10 @@ theorem tau_toGridLink {n : ℕ} {G : GridDiagram n} (hG : G.toGridLink.IsKnot) 
 
 /-- Diagonal reflection preserves `τ` of a grid knot. -/
 @[simp]
-theorem tau_transpose : ((isKnot_transpose).mpr hL).tau K = hL.tau K := by
+theorem tau_transpose {L : GridLink} (hL : L.transpose.IsKnot) :
+    hL.tau K = (isKnot_transpose.mp hL).tau K := by
   obtain ⟨⟨n, G⟩, rfl⟩ := L.exists_gridDiagram
-  have hG : G.IsKnot := (isKnot_toGridLink G).mp hL
+  have hG : G.IsKnot := (isKnot_toGridLink G).mp (isKnot_transpose.mp hL)
   rw [tau_eq_of_toGridLink_eq _ K ((G.isKnot_transpose).mpr hG) (transpose_toGridLink G).symm,
     tau_toGridLink]
   exact (hG.unblockedHomologyIsomorphic_transpose K).tau_eq.symm

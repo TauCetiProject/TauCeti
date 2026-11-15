@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSide
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Pair
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
 import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 
@@ -57,49 +58,18 @@ variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-/-! ### The mixed-side pentagon pairs -/
-
-/-- The counted forward--reverse pentagon pairs whose turns lie on opposite sides of the
-replaced grid line: terminal--initial and initial--terminal pairs. -/
-noncomputable def mixedSidePentagonPairs (x z : GridState n) :
-    Finset (GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :=
-  (G.pentagonPairDecompositions C x z).filter fun D => D.first.isLeft ≠ D.second.isLeft
-
-/-- A mixed-side pair is counted and has distinct turn-side indicators. -/
-@[simp]
-theorem mem_mixedSidePentagonPairs {x z : GridState n}
-    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
-    D ∈ G.mixedSidePentagonPairs C x z ↔
-      D ∈ G.pentagonPairDecompositions C x z ∧ D.first.isLeft ≠ D.second.isLeft := by
-  simp only [mixedSidePentagonPairs, Finset.mem_filter]
-
-/-- Every mixed-side pair is a term of the full round-trip coefficient sum. -/
-theorem mixedSidePentagonPairs_subset (x z : GridState n) :
-    G.mixedSidePentagonPairs C x z ⊆ G.pentagonPairDecompositions C x z :=
-  fun D hD => ((G.mem_mixedSidePentagonPairs C D).mp hD).1
-
-open scoped Classical in
-/-- The counted pentagon pairs that do not turn on the same side are exactly the mixed-side
-pairs. -/
-theorem pentagonPairDecompositions_sdiff_sameSidePentagonPairs (x z : GridState n) :
-    G.pentagonPairDecompositions C x z \ G.sameSidePentagonPairs C x z =
-      G.mixedSidePentagonPairs C x z := by
-  ext D
-  simp only [Finset.mem_sdiff, mem_sameSidePentagonPairs, mem_mixedSidePentagonPairs]
-  tauto
-
 /-! ### Matching with unpaired hexagon composites -/
 
 private theorem existsUnique_mixedSidePartner (R : Type*) [CommSemiring R]
     {x z : GridState n} (hzx : z ≠ x)
     (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z)
-    (hD : D ∈ G.mixedSidePentagonPairs C x z) :
+    (hD : D ∈ G.mixedSidePentagonPairs C C.reverse x z) :
     ∃! F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧
         F.toRectangleDecomposition = D.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R D := by
-  obtain ⟨hD, hside⟩ := (G.mem_mixedSidePentagonPairs C D).mp hD
-  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C D).mp hD
+        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C C.reverse R D := by
+  obtain ⟨hD, hside⟩ := (G.mem_mixedSidePentagonPairs C C.reverse D).mp hD
+  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C C.reverse D).mp hD
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -130,7 +100,7 @@ noncomputable def mixedSidePentagonPartners (x z : GridState n) :
     Finset (GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) := by
   classical
   exact (G.unpairedHexagonComposites C x z).filter fun F =>
-    ∃ D ∈ G.mixedSidePentagonPairs C x z,
+    ∃ D ∈ G.mixedSidePentagonPairs C C.reverse x z,
       D.toRectangleDecomposition = F.toRectangleDecomposition
 
 /-- Partners are exactly the unpaired composites sharing their underlying rectangle
@@ -140,7 +110,7 @@ theorem mem_mixedSidePentagonPartners {x z : GridState n}
     (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
     F ∈ G.mixedSidePentagonPartners C x z ↔
       F ∈ G.unpairedHexagonComposites C x z ∧
-        ∃ D ∈ G.mixedSidePentagonPairs C x z,
+        ∃ D ∈ G.mixedSidePentagonPairs C C.reverse x z,
           D.toRectangleDecomposition = F.toRectangleDecomposition := by
   classical
   simp only [mixedSidePentagonPartners, Finset.mem_filter]
@@ -154,7 +124,7 @@ theorem mixedSidePentagonPartners_subset (x z : GridState n) :
 equal total polynomial weight over every commutative semiring. -/
 theorem sum_pentagonPairWeight_mixedSide_eq_sum_partners
     (R : Type*) [CommSemiring R] {x z : GridState n} (hzx : z ≠ x) :
-    ∑ D ∈ G.mixedSidePentagonPairs C x z, G.pentagonPairWeight C R D =
+    ∑ D ∈ G.mixedSidePentagonPairs C C.reverse x z, G.pentagonPairWeight C C.reverse R D =
       ∑ F ∈ G.mixedSidePentagonPartners C x z, G.hexagonCompositeWeight C R F := by
   have hunpaired {F} (hF : F ∈ G.mixedSidePentagonPartners C x z) :=
     ((G.mem_unpairedHexagonComposites C F).mp (G.mixedSidePentagonPartners_subset C x z hF)).1
@@ -179,34 +149,9 @@ theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridS
   intro F hS hM
   obtain ⟨-, D, hD, hrecut⟩ := (G.mem_sameSidePentagonPartners C F).mp hS
   obtain ⟨-, E, -, hEF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hM
-  have hb : b ∈ F.toRectangleDecomposition.commonSideColumns :=
-    hEF ▸ G.finRotate_mem_commonSideColumns_of_pentagonPair C E
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut
-  obtain ⟨-, hside⟩ := (G.mem_sameSidePentagonPairs C D).mp hD
-  rcases D with ⟨m, P, Q⟩
-  cases P with
-  | inl P =>
-    cases Q with
-    | inl Q =>
-      have hcommon := (hrecut.isRecutOfRightEqRight (by
-        simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq,
-          C.reverse_column]))
-      apply hcommon.first_right_notMem_commonSideColumns
-      simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq] using hb
-    | inr Q => simp at hside
-  | inr P =>
-    cases Q with
-    | inl Q => simp at hside
-    | inr Q =>
-      have hcommon := (hrecut.isRecutOfLeftEqLeft (by
-        simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq,
-          C.reverse_column]))
-      apply hcommon.first_left_notMem_commonSideColumns
-      simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq] using hb
+  exact D.finRotate_notMem_commonSideColumns_of_isRecut C.reverse_column
+    ((G.mem_sameSidePentagonPairs C C.reverse D).mp hD).2 hrecut
+    (hEF ▸ E.finRotate_mem_commonSideColumns C.reverse_column)
 
 /-! ### The residual coefficient equation -/
 
@@ -218,8 +163,9 @@ theorem sum_sdiff_sameSide_eq_sum_sdiff_sameSide_iff_sum_residual_eq_zero
     (R : Type*) [CommSemiring R] [IsCancelAdd R] {x z : GridState n} (hzx : z ≠ x) :
     (∑ F ∈ G.unpairedHexagonComposites C x z \ G.sameSidePentagonPartners C x z,
           G.hexagonCompositeWeight C R F) =
-        ∑ D ∈ G.pentagonPairDecompositions C x z \ G.sameSidePentagonPairs C x z,
-          G.pentagonPairWeight C R D ↔
+        ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z \
+            G.sameSidePentagonPairs C C.reverse x z,
+          G.pentagonPairWeight C C.reverse R D ↔
       ∑ F ∈ (G.unpairedHexagonComposites C x z \ G.sameSidePentagonPartners C x z) \
           G.mixedSidePentagonPartners C x z, G.hexagonCompositeWeight C R F = 0 := by
   have hsub : G.mixedSidePentagonPartners C x z ⊆
@@ -227,7 +173,7 @@ theorem sum_sdiff_sameSide_eq_sum_sdiff_sameSide_iff_sum_residual_eq_zero
     fun F hF => Finset.mem_sdiff.mpr ⟨G.mixedSidePentagonPartners_subset C x z hF,
       Finset.disjoint_right.mp
         (G.disjoint_sameSidePentagonPartners_mixedSidePentagonPartners C) hF⟩
-  rw [G.pentagonPairDecompositions_sdiff_sameSidePentagonPairs C,
+  rw [G.pentagonPairDecompositions_sdiff_sameSidePentagonPairs C C.reverse,
     G.sum_pentagonPairWeight_mixedSide_eq_sum_partners C R hzx,
     ← Finset.sum_sdiff hsub (f := G.hexagonCompositeWeight C R)]
   exact add_eq_right

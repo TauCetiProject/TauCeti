@@ -67,8 +67,8 @@ characteristic two (where `τ(unknot) = 0`) gives `|τ(L)| ≤ u(L)`.
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
-  and Monographs 208, 2015, Sections 6.1 and 6.2: the crossing change maps, their composites,
-  Corollary 6.1.4, and Corollary 6.1.5 (`|τ(K)| ≤ u(K)`).
+  and Monographs 208, 2015, Sections 6.1 and 6.2: the crossing change maps, their composites, the
+  resulting crossing-change inequality for `τ`, and the unknotting bound `|τ(K)| ≤ u(K)`.
 * S. Sarkar, *Grid diagrams and the Ozsváth--Szabó tau-invariant*, Math. Res. Lett. 18 (2011),
   arXiv:1011.5265: the crossing change inequality and unknotting bound for `τ` from grid diagrams.
 -/

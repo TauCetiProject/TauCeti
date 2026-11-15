@@ -14,8 +14,10 @@ import TauCeti.Data.Nat.Choose.Basic
 # Unknotting numbers of torus link grids
 
 This file bounds the unknotting number (`GridLink.unknottingNumber`) of the grid links presented
-by the standard torus link grids. The Hopf link has unknotting number `⊤`, since it has two
-components. Removing a full twist on `P` strands costs at most `P choose 2` crossing changes
+by the standard torus link grids. Whenever `p + 1` and `q + 1` are not coprime, `torusLink p q` has
+multiple components and unknotting number `⊤`
+(`GridLink.unknottingNumber_toGridLink_torusLink_eq_top`), in particular for the Hopf link.
+Removing a full twist on `P` strands costs at most `P choose 2` crossing changes
 (`GridLink.crossingChangeGraph_edist_torusLink_add_le`), so the `(P, k P + 1)` torus knot is
 unknotted by `k (P choose 2) = (P - 1) ((k P + 1) - 1) / 2` crossing changes: the upper bound
 `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the Milnor conjecture for `Q ≡ 1 mod P`. This covers the
@@ -43,6 +45,8 @@ the winding numbers, following Euclid's algorithm on coprime `P` and `Q`, reduce
 
 ## Main results
 
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_top`: when `p + 1` and `q + 1` are not
+  coprime, `(torusLink p q).toGridLink` has unknotting number `⊤`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_one`: the Hopf link has unknotting
   number `⊤`.
 * `TauCeti.GridLink.isCrossingChange_toGridLink_torusLink_one_add_two`: the `(2, q + 3)` and
@@ -218,15 +222,20 @@ end GridDiagram
 
 namespace GridLink
 
+/-- When `p + 1` and `q + 1` are not coprime, `torusLink p q` has multiple components and its
+unknotting number is `⊤`. -/
+theorem unknottingNumber_toGridLink_torusLink_eq_top {p q : ℕ} (h : ¬(p + 1).Coprime (q + 1)) :
+    (GridDiagram.torusLink p q).toGridLink.unknottingNumber = ⊤ := by
+  by_contra hne
+  exact h ((GridDiagram.isKnot_torusLink_iff p q).mp
+    ((isKnot_toGridLink (GridDiagram.torusLink p q)).mp (isKnot_of_unknottingNumber_ne_top hne)))
+
 /-- The Hopf link, presented by the standard `4 × 4` grid of the `(2, 2)` torus link, has
 unknotting number `⊤`: it has two components, so no sequence of crossing changes reaches the
 unknot. -/
 theorem unknottingNumber_toGridLink_torusLink_one_one :
-    (GridDiagram.torusLink 1 1).toGridLink.unknottingNumber = ⊤ := by
-  by_contra h
-  have := isKnot_of_unknottingNumber_ne_top h
-  rw [isKnot_toGridLink] at this
-  exact GridDiagram.not_isKnot_torusLink_one_one this
+    (GridDiagram.torusLink 1 1).toGridLink.unknottingNumber = ⊤ :=
+  unknottingNumber_toGridLink_torusLink_eq_top (by decide)
 
 /-- The `(2, q + 3)` and `(2, q + 1)` torus links differ by one crossing change: exchanging the
 first two columns of the standard grid of the former is a cross-commutation, and the result is a

@@ -13,13 +13,14 @@ public import TauCeti.KnotTheory.Grid.Differential.Square.Repartition
 
 The homotopy equation for a column commutation compares three kinds of two-step domain. On its
 left are a commutation hexagon followed by a rectangle and a rectangle followed by a commutation
-hexagon. On its right are two commutation pentagons, the second for the reverse commutation. Each
+hexagon. On its right are two commutation pentagons, the second on the commuted diagram (turning at
+a second `ColumnTurn`, such as the reverse commutation or a crossing-change turn). Each
 commutation polygon may turn on either side of the replaced grid line.
 
 This file packages those alternatives and rewrites the matrix-coefficient equation as sums over
 finite families of composite domains. In this form every summand records the actual polygons it
 counts, rather than only their intermediate grid state. This is the input for the geometric
-pairing of juxtaposed domains in the proof of commutation invariance.
+pairing of juxtaposed domains in the commutation and crossing-change homotopy proofs.
 
 The two kinds of hexagon and pentagon are represented by sum types. This retains the distinction
 between the two turn sides while avoiding four parallel decomposition types. All three composite
@@ -32,7 +33,9 @@ whose counted finite families have membership characterizations.
   `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_commutationHexagonCoefficient` rewrite the
   two rectangle--hexagon matrix products as composite-domain sums.
 * `TauCeti.GridDiagram.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient`
-  rewrites the round-trip commutation coefficient as a sum over pairs of pentagons.
+  rewrites the pentagon matrix product for any pair of column turns as a sum over
+  `TauCeti.GridDiagram.pentagonPairDecompositions`, partitioned into
+  `TauCeti.GridDiagram.sameSidePentagonPairs` and `TauCeti.GridDiagram.mixedSidePentagonPairs`.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions`
   states the homotopy equation entirely in terms of the three finite domain families.
 * `TauCeti.GridHexagonCompositeDecomposition` combines the two orders of hexagon--rectangle
@@ -457,6 +460,11 @@ noncomputable def commutationPentagons (x y : GridState n) :
     Finset (GridCommutationPentagonBetween C.column C.turnRow x y) :=
   (G.pentagons C x y).disjSum (G.initialPentagons C x y)
 
+/-- Explicit `disjSum` formula for `commutationPentagons`. -/
+theorem commutationPentagons_def (x y : GridState n) :
+    G.commutationPentagons C x y = (G.pentagons C x y).disjSum (G.initialPentagons C x y) :=
+  (rfl)
+
 /-- A terminal-side commutation pentagon is counted exactly when it is a counted pentagon. -/
 @[simp]
 theorem inl_mem_commutationPentagons {x y : GridState n}
@@ -471,6 +479,16 @@ theorem inr_mem_commutationPentagons {x y : GridState n}
     (P : GridInitialPentagonBetween C.column C.turnRow x y) :
     Sum.inr P ∈ G.commutationPentagons C x y ↔ P ∈ G.initialPentagons C x y :=
   Finset.inr_mem_disjSum
+
+/-- Every counted commutation pentagon has an empty underlying rectangle. -/
+theorem isEmpty_of_mem_commutationPentagons {x y : GridState n}
+    {P : GridCommutationPentagonBetween C.column C.turnRow x y}
+    (hP : P ∈ G.commutationPentagons C x y) :
+    P.toGridRectangleBetween.IsEmpty := by
+  cases P with
+  | inl P => exact ((G.mem_pentagons P).mp ((G.inl_mem_commutationPentagons C P).mp hP)).1
+  | inr P =>
+    exact ((G.mem_initialPentagons P).mp ((G.inr_mem_commutationPentagons C P).mp hP)).1
 
 variable (R : Type*) [CommSemiring R]
 
@@ -501,6 +519,135 @@ theorem commutationPentagonCoefficient_eq_sum_weight (x y : GridState n) :
   simp only [commutationPentagonWeight_inl, commutationPentagonWeight_inr]
 
 end ColumnTurn
+
+section ColumnTurnPair
+
+variable {n : ℕ} (G : GridDiagram n) (C C' : ColumnTurn n)
+
+local notation "b" => finRotate n C.column
+
+/-- The pairs of pentagons counted in the round trip of `C` followed by `C'` on the commuted
+diagram. -/
+noncomputable def pentagonPairDecompositions (x z : GridState n) :
+    Finset (GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :=
+  GridTwoStepDecomposition.decompositionsOf (G.commutationPentagons C)
+    ((G.swapColumns C.column b).commutationPentagons C') x z
+
+/-- Membership in the counted pentagon-pair family is countedness of both pentagons. -/
+@[simp]
+theorem mem_pentagonPairDecompositions {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :
+    D ∈ G.pentagonPairDecompositions C C' x z ↔
+      D.first ∈ G.commutationPentagons C x D.middle ∧
+        D.second ∈ (G.swapColumns C.column b).commutationPentagons C' D.middle z := by
+  rw [pentagonPairDecompositions, GridTwoStepDecomposition.mem_decompositionsOf]
+
+/-- Both underlying rectangles of a counted pentagon pair are empty. -/
+theorem isEmpty_of_mem_pentagonPairDecompositions {x z : GridState n}
+    {D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z}
+    (hD : D ∈ G.pentagonPairDecompositions C C' x z) :
+    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
+  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C C' D).mp hD
+  exact ⟨G.isEmpty_of_mem_commutationPentagons C hP,
+    (G.swapColumns C.column b).isEmpty_of_mem_commutationPentagons C' hQ⟩
+
+/-- The counted pentagon pairs whose turns lie on the same side of the replaced grid line. -/
+noncomputable def sameSidePentagonPairs (x z : GridState n) :
+    Finset (GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :=
+  (G.pentagonPairDecompositions C C' x z).filter fun D => D.first.isLeft = D.second.isLeft
+
+/-- A same-side pair is counted and has equal turn-side indicators. -/
+@[simp]
+theorem mem_sameSidePentagonPairs {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :
+    D ∈ G.sameSidePentagonPairs C C' x z ↔
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft := by
+  simp only [sameSidePentagonPairs, Finset.mem_filter]
+
+/-- Every same-side pair is a counted pentagon pair. -/
+theorem sameSidePentagonPairs_subset (x z : GridState n) :
+    G.sameSidePentagonPairs C C' x z ⊆ G.pentagonPairDecompositions C C' x z :=
+  Finset.filter_subset _ _
+
+/-- The counted pentagon pairs whose turns lie on opposite sides of the replaced grid line. -/
+noncomputable def mixedSidePentagonPairs (x z : GridState n) :
+    Finset (GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :=
+  (G.pentagonPairDecompositions C C' x z).filter fun D => D.first.isLeft ≠ D.second.isLeft
+
+/-- A mixed-side pair is counted and has distinct turn-side indicators. -/
+@[simp]
+theorem mem_mixedSidePentagonPairs {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :
+    D ∈ G.mixedSidePentagonPairs C C' x z ↔
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft := by
+  simp only [mixedSidePentagonPairs, Finset.mem_filter]
+
+/-- Every mixed-side pair is a counted pentagon pair. -/
+theorem mixedSidePentagonPairs_subset (x z : GridState n) :
+    G.mixedSidePentagonPairs C C' x z ⊆ G.pentagonPairDecompositions C C' x z :=
+  Finset.filter_subset _ _
+
+/-- No pentagon pair turns both on the same side and on opposite sides. -/
+theorem disjoint_sameSidePentagonPairs_mixedSidePentagonPairs {x z : GridState n} :
+    Disjoint (G.sameSidePentagonPairs C C' x z) (G.mixedSidePentagonPairs C C' x z) :=
+  Finset.disjoint_filter.mpr fun _ _ h₁ h₂ => h₂ h₁
+
+open scoped Classical in
+/-- Every counted pentagon pair is either a same-side pair or a mixed-side pair. -/
+theorem pentagonPairDecompositions_eq_union (x z : GridState n) :
+    G.pentagonPairDecompositions C C' x z =
+      G.sameSidePentagonPairs C C' x z ∪ G.mixedSidePentagonPairs C C' x z := by
+  ext D
+  simp only [Finset.mem_union, mem_sameSidePentagonPairs, mem_mixedSidePentagonPairs]
+  tauto
+
+open scoped Classical in
+/-- The counted pentagon pairs that do not turn on the same side are exactly the mixed-side
+pairs. -/
+theorem pentagonPairDecompositions_sdiff_sameSidePentagonPairs (x z : GridState n) :
+    G.pentagonPairDecompositions C C' x z \ G.sameSidePentagonPairs C C' x z =
+      G.mixedSidePentagonPairs C C' x z := by
+  ext D
+  simp only [Finset.mem_sdiff, mem_sameSidePentagonPairs, mem_mixedSidePentagonPairs]
+  tauto
+
+variable (R : Type*) [CommSemiring R]
+
+/-- The weight of a pentagon pair: the first pentagon weight renamed because the first commutation
+map is semilinear, multiplied by the second pentagon weight on the commuted diagram. -/
+noncomputable def pentagonPairWeight {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :
+    MvPolynomial (Fin n) R :=
+  MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
+    (G.swapColumns C.column b).commutationPentagonWeight C' R D.second
+
+/-- The weight of a pentagon pair is the product of the renamed first weight and the second
+weight. -/
+theorem pentagonPairWeight_def {x z : GridState n}
+    (D : GridPentagonPairDecomposition C.column C.turnRow C'.column C'.turnRow x z) :
+    G.pentagonPairWeight C C' R D =
+      MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
+        (G.swapColumns C.column b).commutationPentagonWeight C' R D.second := (rfl)
+
+/-- The pentagon matrix product across the commuted diagram is the sum of the weights of the
+counted pentagon pairs. -/
+theorem sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient
+    (x z : GridState n) :
+    ∑ y : GridState n,
+        MvPolynomial.rename (Equiv.swap C.column b)
+            (G.commutationPentagonCoefficient R C x y) *
+          (G.swapColumns C.column b).commutationPentagonCoefficient R C' y z =
+      ∑ D ∈ G.pentagonPairDecompositions C C' x z, G.pentagonPairWeight C C' R D := by
+  simp_rw [G.commutationPentagonCoefficient_eq_sum_weight C R,
+    (G.swapColumns C.column b).commutationPentagonCoefficient_eq_sum_weight C' R,
+    map_sum, Finset.sum_mul_sum]
+  exact (GridTwoStepDecomposition.sum_decompositionsOf (G.commutationPentagons C)
+    ((G.swapColumns C.column b).commutationPentagons C')
+    (fun _ P Q => MvPolynomial.rename (Equiv.swap C.column b)
+      (G.commutationPentagonWeight C R P) *
+        (G.swapColumns C.column b).commutationPentagonWeight C' R Q)).symm
+
+end ColumnTurnPair
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
 
@@ -650,39 +797,6 @@ theorem mem_rectangleHexagonDecompositions {x z : GridState n}
         D.hexagon ∈ G.commutationHexagons C D.middle z := by
   classical
   simp [rectangleHexagonDecompositions]
-
-/-- The pairs of forward and reverse pentagons counted in the round-trip commutation map. -/
-noncomputable def pentagonPairDecompositions (x z : GridState n) :
-    Finset (GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
-      C.reverse.turnRow x z) :=
-  GridTwoStepDecomposition.decompositionsOf (G.commutationPentagons C)
-    ((G.swapColumns C.column b).commutationPentagons C.reverse) x z
-
-/-- Membership in the counted pentagon-pair family is countedness of the forward and reverse
-pentagons. -/
-@[simp]
-theorem mem_pentagonPairDecompositions {x z : GridState n}
-    (D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
-      C.reverse.turnRow x z) :
-    D ∈ G.pentagonPairDecompositions C x z ↔
-      D.first ∈ G.commutationPentagons C x D.middle ∧
-        D.second ∈ (G.swapColumns C.column b).commutationPentagons C.reverse D.middle z := by
-  classical
-  simp [pentagonPairDecompositions]
-
-/-- Both underlying rectangles of a counted pentagon pair are empty. -/
-theorem isEmpty_of_mem_pentagonPairDecompositions {x z : GridState n}
-    {D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
-      C.reverse.turnRow x z} (hD : D ∈ G.pentagonPairDecompositions C x z) :
-    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty := by
-  obtain ⟨hP, hQ⟩ := (G.mem_pentagonPairDecompositions C D).mp hD
-  rcases D with ⟨m, P, Q⟩
-  cases P <;> cases Q <;>
-    simp only [inl_mem_commutationPentagons, inr_mem_commutationPentagons,
-      mem_pentagons, mem_initialPentagons] at hP hQ <;>
-    simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-      GridCommutationPentagonBetween.toGridRectangleBetween_inl,
-      GridCommutationPentagonBetween.toGridRectangleBetween_inr] using And.intro hP.1 hQ.1
 
 /-- The weight of a counted hexagon followed by a rectangle. -/
 noncomputable def hexagonRectangleWeight {x z : GridState n}
@@ -849,24 +963,6 @@ theorem injOn_toRectangleDecomposition_hexagonCompositeDecompositions (x z : Gri
   exact GridHexagonCompositeDecomposition.injOn_toRectangleDecomposition_of_isLeft_iff
     (fun D => (G.XSet ∩ D.first.toGridRectangle.coveredSquares).Nonempty) key
 
-/-- The weight of a forward pentagon followed by a reverse pentagon. The first factor is renamed
-because the forward commutation map is semilinear. -/
-noncomputable def pentagonPairWeight {x z : GridState n}
-    (D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
-      C.reverse.turnRow x z) :
-    MvPolynomial (Fin n) R :=
-  MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
-    (G.swapColumns C.column b).commutationPentagonWeight C.reverse R D.second
-
-/-- The weight of a pentagon pair is the product of the renamed forward weight and the reverse
-weight. -/
-theorem pentagonPairWeight_def {x z : GridState n}
-    (D : GridPentagonPairDecomposition C.column C.turnRow C.reverse.column
-      C.reverse.turnRow x z) :
-    G.pentagonPairWeight C R D =
-      MvPolynomial.rename (Equiv.swap C.column b) (G.commutationPentagonWeight C R D.first) *
-        (G.swapColumns C.column b).commutationPentagonWeight C.reverse R D.second := (rfl)
-
 /-- The sum of the two kinds of hexagon coefficients is the sum of their combined weights. -/
 theorem commutationHexagonCoefficient_eq_sum_weight (x y : GridState n) :
     G.commutationHexagonCoefficient R C x y =
@@ -899,24 +995,6 @@ theorem sum_unblockedCoefficient_mul_commutationHexagonCoefficient (x z : GridSt
     (G.commutationHexagons C)
     (fun _ r P => G.OMonomial R r.toGridRectangle * G.commutationHexagonWeight C R P)).symm
 
-/-- The forward--reverse pentagon matrix product is the sum of the weights of the counted
-pentagon pairs. -/
-theorem sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient
-    (x z : GridState n) :
-    ∑ y : GridState n,
-        MvPolynomial.rename (Equiv.swap C.column b)
-            (G.commutationPentagonCoefficient R C x y) *
-          (G.swapColumns C.column b).commutationPentagonCoefficient R C.reverse y z =
-      ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
-  simp_rw [G.commutationPentagonCoefficient_eq_sum_weight C R,
-    (G.swapColumns C.column b).commutationPentagonCoefficient_eq_sum_weight C.reverse R,
-    map_sum, Finset.sum_mul_sum]
-  exact (GridTwoStepDecomposition.sum_decompositionsOf (G.commutationPentagons C)
-    ((G.swapColumns C.column b).commutationPentagons C.reverse)
-    (fun _ P Q => MvPolynomial.rename (Equiv.swap C.column b)
-      (G.commutationPentagonWeight C R P) *
-        (G.swapColumns C.column b).commutationPentagonWeight C.reverse R Q)).symm
-
 /-- The commutation homotopy equation holds exactly when the three finite composite-domain sums
 satisfy the coefficient identity for every source and target state. -/
 theorem unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions :
@@ -929,12 +1007,13 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions :
             ∑ D ∈ G.rectangleHexagonDecompositions C x z,
               G.rectangleHexagonWeight C R D =
           (if x = z then 1 else 0) +
-            ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
+            ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z,
+              G.pentagonPairWeight C C.reverse R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff C R]
   simp_rw [Finset.sum_add_distrib,
     G.sum_commutationHexagonCoefficient_mul_unblockedCoefficient C R,
     G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
-    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R]
+    G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C C.reverse R]
 
 end GridDiagram
 

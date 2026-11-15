@@ -45,6 +45,8 @@ same-side overlap. Each homotopy instantiates this with its own counted hexagons
   rectangles, one of which underlies a hexagon, underlies a counted composite.
 * `TauCeti.GridDiagram.exists_isRecut_of_hasSameSideOverlap_of_mem_iff`: for such a family, the
   recut of a counted composite with a same-side overlap underlies a counted composite.
+* `TauCeti.GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_isRecut`: recutting
+  a same-side pentagon pair removes the replaced grid line from the common side columns.
 
 ## References
 
@@ -379,3 +381,32 @@ theorem exists_isRecut_of_hasSameSideOverlap_of_mem_iff
   exact ⟨F', hF', hF'E ▸ hrecut⟩
 
 end TauCeti.GridDiagram
+
+namespace TauCeti.GridPentagonPairDecomposition
+
+/-- Recutting a pentagon pair whose two pentagons turn on the same side of the replaced grid line
+removes that line from the common side columns. -/
+theorem finRotate_notMem_commonSideColumns_of_isRecut
+    {n : ℕ} {a s b t : Fin n} {x z : GridState n}
+    (D : GridPentagonPairDecomposition a s b t x z) (hb : b = a)
+    (hside : D.first.isLeft = D.second.isLeft) {E : GridRectangleDecomposition x z}
+    (hrecut : D.toRectangleDecomposition.IsRecut E) :
+    finRotate n a ∉ E.commonSideColumns := by
+  subst hb
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · have hcommon := hrecut.isRecutOfRightEqRight (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq])
+    simpa only [toRectangleDecomposition,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq] using
+      hcommon.first_right_notMem_commonSideColumns
+  · simp at hside
+  · simp at hside
+  · have hcommon := hrecut.isRecutOfLeftEqLeft (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq])
+    simpa only [toRectangleDecomposition,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq] using
+      hcommon.first_left_notMem_commonSideColumns
+
+end TauCeti.GridPentagonPairDecomposition
