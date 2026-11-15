@@ -12,6 +12,8 @@ import Mathlib.Analysis.Complex.Isometry
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
+import TauCeti.Data.Set.Function
 
 /-!
 # The normalized Riemann map
@@ -54,7 +56,10 @@ domain, since the size of `deriv f z₀` is not free once the image is required 
 ## Main statements
 
 * `TauCeti.IsNormalizedRiemannMapOn` — the normalization, as a predicate, together with basic
-  consequences (`norm_deriv_pos`, `isSimplyConnected`, `ne_univ`, `deriv_eq`, `norm_deriv_eq`).
+  consequences (`norm_deriv_pos`, `isSimplyConnected`, `ne_univ`, `deriv_eq`, `bijOn_invFunOn`,
+  `differentiableOn_invFunOn`, `invFunOn_zero`).
+* `TauCeti.isNormalizedRiemannMapOn_norm_deriv_div_deriv_mul` — rotating an origin-centered
+  holomorphic bijection `Ω → 𝔻` by `‖deriv f z₀‖ / deriv f z₀` normalizes it.
 * `TauCeti.exists_isNormalizedRiemannMapOn` — existence of the normalized Riemann map.
 * `TauCeti.IsNormalizedRiemannMapOn.eqOn` — uniqueness: two normalized maps agree on the domain.
 * `TauCeti.riemannMapping_normalized` — the two combined.
@@ -156,33 +161,32 @@ theorem coe_norm_deriv : ((‖deriv f z₀‖ : ℝ) : ℂ) = deriv f z₀ := by
 
 end IsNormalizedRiemannMapOn
 
+/-- Rotating a holomorphic bijection `f : Ω → ball 0 1` sending `z₀ ∈ Ω` to `0` by the unimodular
+factor `‖deriv f z₀‖ / deriv f z₀` yields a normalized Riemann map of `Ω` at `z₀`. -/
+theorem isNormalizedRiemannMapOn_norm_deriv_div_deriv_mul (hΩo : IsOpen Ω) (hz₀ : z₀ ∈ Ω)
+    (hfd : DifferentiableOn ℂ f Ω) (hfbij : BijOn f Ω (ball (0 : ℂ) 1)) (hf0 : f z₀ = 0) :
+    IsNormalizedRiemannMapOn (fun z => ((‖deriv f z₀‖ : ℝ) : ℂ) / deriv f z₀ * f z) Ω z₀ := by
+  have hc : deriv f z₀ ≠ 0 := deriv_ne_zero_of_injOn hfd hΩo hfbij.injOn hz₀
+  have hcpos : 0 < ‖deriv f z₀‖ := norm_pos_iff.mpr hc
+  set u : ℂ := ((‖deriv f z₀‖ : ℝ) : ℂ) / deriv f z₀ with hu_def
+  have hnu : ‖u‖ = 1 := by
+    rw [hu_def, norm_div, Complex.norm_of_nonneg hcpos.le, div_self hcpos.ne']
+  refine ⟨hz₀, hfd.const_mul u, bijOn_ball_const_mul hnu hfbij, by simp [hf0], ?_⟩
+  rw [deriv_const_mul_field, hu_def, div_mul_cancel₀ _ hc]
+  exact Complex.zero_lt_real.mpr hcpos
+
 /-- **Existence of the normalized Riemann map.** Every nonempty, simply connected, open, proper
 subset `Ω` of `ℂ` carries, at each of its points `z₀`, a holomorphic bijection onto the open unit
-disc sending `z₀` to `0` with positive real derivative there.
-
-The extremal map of `TauCeti.exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots` already fixes
-the base point and is onto by `TauCeti.surjOn_ball_of_isMaxOn`; only a rotation is needed to make
-its derivative positive. -/
+disc sending `z₀` to `0` with positive real derivative there. -/
 theorem exists_isNormalizedRiemannMapOn (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω)
     (hΩ : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
     ∃ f : ℂ → ℂ, IsNormalizedRiemannMapOn f Ω z₀ := by
+  -- Rotate the extremal pointed disc injection of `ExtremalFamily.lean` (surjective by `Koebe`).
   obtain ⟨g, hg, hmax⟩ := exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots
     (hΩc.hasHolomorphicSquareRoots hΩo) hΩo hΩc.isPathConnected.isConnected.isPreconnected hΩ hz₀
-  have hbij : BijOn g Ω (ball (0 : ℂ) 1) :=
+  exact ⟨_, isNormalizedRiemannMapOn_norm_deriv_div_deriv_mul hΩo hz₀ hg.differentiableOn
     ⟨hg.mapsTo, hg.injOn,
-      surjOn_ball_of_isMaxOn hΩo (hΩc.hasHolomorphicSquareRoots hΩo) hz₀ hg hmax⟩
-  have hc : deriv g z₀ ≠ 0 := hg.deriv_ne_zero hΩo hz₀
-  have hcpos : 0 < ‖deriv g z₀‖ := norm_pos_iff.mpr hc
-  -- The rotation that turns `deriv g z₀` into its own modulus.
-  set u : ℂ := ((‖deriv g z₀‖ : ℝ) : ℂ) / deriv g z₀ with hu_def
-  have hnu : ‖u‖ = 1 := by
-    rw [hu_def, norm_div, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hcpos,
-      div_self hcpos.ne']
-  refine ⟨fun z => u * g z, hz₀, hg.differentiableOn.const_mul u,
-    bijOn_ball_const_mul hnu hbij, ?_, ?_⟩
-  · rw [hg.map_base, mul_zero]
-  · rw [deriv_const_mul_field, hu_def, div_mul_cancel₀ _ hc]
-    exact Complex.zero_lt_real.mpr hcpos
+      surjOn_ball_of_isMaxOn hΩo (hΩc.hasHolomorphicSquareRoots hΩo) hz₀ hg hmax⟩ hg.map_base⟩
 
 /-- **Uniqueness of the normalized Riemann map.** Two normalized Riemann maps of the same domain at
 the same base point agree on that domain.
@@ -232,7 +236,7 @@ theorem isSimplyConnected (hf : IsNormalizedRiemannMapOn f Ω z₀) (hΩo : IsOp
     IsSimplyConnected Ω :=
   (isSimplyConnected_and_ne_univ_of_bijOn_ball hΩo hf.differentiableOn hf.bijOn).1
 
-/-- No normalized Riemann map can have `Set.univ` as its domain, by Liouville's theorem. -/
+/-- No normalized Riemann map has `Set.univ` as its domain. -/
 theorem ne_univ (hf : IsNormalizedRiemannMapOn f Ω z₀) : Ω ≠ univ := by
   rintro rfl
   exact (isSimplyConnected_and_ne_univ_of_bijOn_ball isOpen_univ hf.differentiableOn hf.bijOn).2 rfl
@@ -248,12 +252,24 @@ theorem deriv_eq (hf : IsNormalizedRiemannMapOn f Ω z₀) (hg : IsNormalizedRie
   Filter.EventuallyEq.deriv_eq <|
     eventually_nhds_iff.mpr ⟨Ω, fun _ hz => hf.eqOn hg hΩo hz, hΩo, hf.base_mem⟩
 
-/-- Any two normalized Riemann maps of an open domain at the same base point have the same
-derivative norm at that base point. -/
-theorem norm_deriv_eq (hf : IsNormalizedRiemannMapOn f Ω z₀)
-    (hg : IsNormalizedRiemannMapOn g Ω z₀) (hΩo : IsOpen Ω) :
-    ‖deriv f z₀‖ = ‖deriv g z₀‖ :=
-  congrArg norm (hf.deriv_eq hg hΩo)
+/-- The inverse `Function.invFunOn f Ω` of a normalized Riemann map carries the open unit disc
+bijectively onto `Ω`. -/
+theorem bijOn_invFunOn (hf : IsNormalizedRiemannMapOn f Ω z₀) :
+    BijOn (Function.invFunOn f Ω) (ball (0 : ℂ) 1) Ω :=
+  hf.bijOn.invFunOn
+
+/-- On an open domain `Ω`, the inverse `Function.invFunOn f Ω` of a normalized Riemann map is
+holomorphic on `ball 0 1`. -/
+theorem differentiableOn_invFunOn (hf : IsNormalizedRiemannMapOn f Ω z₀) (hΩo : IsOpen Ω) :
+    DifferentiableOn ℂ (Function.invFunOn f Ω) (ball (0 : ℂ) 1) :=
+  hf.differentiableOn.invFunOn_of_bijOn hΩo hf.bijOn
+
+/-- The inverse `Function.invFunOn f Ω` of a normalized Riemann map sends `0` to the base point
+`z₀`. -/
+theorem invFunOn_zero (hf : IsNormalizedRiemannMapOn f Ω z₀) :
+    Function.invFunOn f Ω 0 = z₀ := by
+  rw [← hf.map_base]
+  exact hf.injOn.leftInvOn_invFunOn hf.base_mem
 
 end IsNormalizedRiemannMapOn
 

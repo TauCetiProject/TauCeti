@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Analysis.RCLike.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # The principal square root and the slit plane
 
 The principal square root has nonnegative real part, and its real part is strictly positive
-exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
+exactly on the slit plane; consequently squaring carries the open right half-plane bijectively
+onto `Complex.slitPlane` (`TauCeti.bijOn_sq_setOf_re_pos_slitPlane`). These facts control the
+branches in algebraic transformations involving sums of principal roots. The file also records
+the values `√i = e^{π i / 4}` and `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
 -/
 
 public section
@@ -93,3 +95,25 @@ theorem sqrt_add_sqrt_re_pos_iff (x y : ℂ) :
   · rintro (h | h) <;> linarith
 
 end Complex
+
+namespace TauCeti
+
+/-- Squaring maps the open right half-plane `{w | 0 < w.re}` bijectively onto
+`Complex.slitPlane`. -/
+theorem bijOn_sq_setOf_re_pos_slitPlane :
+    Set.BijOn (· ^ 2 : ℂ → ℂ) {w : ℂ | 0 < w.re} Complex.slitPlane := by
+  refine Set.InvOn.bijOn ⟨fun w hw => ?_, fun z _ => Complex.sq_sqrt z⟩
+    (fun w hw => by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw)
+    (fun z hz => (Complex.sqrt_re_pos_iff z).mpr hz)
+  have hw2 : w ^ 2 ∈ Complex.slitPlane := by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw
+  have hsq : Complex.sqrt (w ^ 2) ^ 2 = w ^ 2 := Complex.sq_sqrt (w ^ 2)
+  have hmul : (Complex.sqrt (w ^ 2) - w) * (Complex.sqrt (w ^ 2) + w) = 0 := by
+    linear_combination hsq
+  have hsum : Complex.sqrt (w ^ 2) + w ≠ 0 := by
+    intro h0
+    have hre := congrArg Complex.re h0
+    simp only [Complex.add_re, Complex.zero_re] at hre
+    linarith [(Complex.sqrt_re_pos_iff (w ^ 2)).mpr hw2, hw.out]
+  exact sub_eq_zero.mp ((mul_eq_zero.mp hmul).resolve_right hsum)
+
+end TauCeti
