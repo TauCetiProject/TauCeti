@@ -61,8 +61,8 @@ section SqEqOne
 
 variable {R : Type*} [CommMonoidWithZero R] {N : ℕ} {χ : DirichletCharacter R N}
 
-/-- The local factors of a character of order dividing two have order dividing two. -/
-theorem localFactor_sq_eq_one (hχ : χ ^ 2 = 1) (p : ℕ) : localFactor p χ ^ 2 = 1 := by
+/-- The local factors of a character of order dividing `n` have order dividing `n`. -/
+theorem localFactor_pow_eq_one {n : ℕ} (hχ : χ ^ n = 1) (p : ℕ) : localFactor p χ ^ n = 1 := by
   rw [← map_pow, hχ, map_one]
 
 /-- **The local conductor at an odd prime.** For an odd prime `p`, the local factor at `p` of a
@@ -70,14 +70,14 @@ character of order dividing two has conductor `1` or `p`. -/
 theorem conductor_localFactor_eq_one_or_eq_prime_of_sq_eq_one (hχ : χ ^ 2 = 1) {p : ℕ}
     (hp : p.Prime) (hp2 : p ≠ 2) :
     (localFactor p χ).conductor = 1 ∨ (localFactor p χ).conductor = p :=
-  conductor_eq_one_or_eq_prime_of_sq_eq_one hp hp2 _ (localFactor_sq_eq_one hχ p)
+  conductor_eq_one_or_eq_prime_of_sq_eq_one hp hp2 _ (localFactor_pow_eq_one hχ p)
 
 /-- **The local conductor at `2`.** The local factor at `2` of a character of order dividing two
 has conductor `1`, `4` or `8`. -/
 theorem conductor_localFactor_two_eq_one_or_four_or_eight_of_sq_eq_one (hχ : χ ^ 2 = 1) :
     (localFactor 2 χ).conductor = 1 ∨ (localFactor 2 χ).conductor = 4 ∨
       (localFactor 2 χ).conductor = 8 :=
-  conductor_eq_one_or_four_or_eight_of_sq_eq_one (localFactor_sq_eq_one hχ 2)
+  conductor_eq_one_or_four_or_eight_of_sq_eq_one (localFactor_pow_eq_one hχ 2)
 
 /-- An odd prime divides the conductor of a character of order dividing two at most once. -/
 theorem factorization_conductor_le_one_of_sq_eq_one (hχ : χ ^ 2 = 1) {p : ℕ} (hp : p.Prime)
