@@ -96,6 +96,8 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   solution operator of `-Δ + P` on `L²(E)`.
 * `TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq`: a weak
   solution gains two derivatives over `h`, `P h` and `g`.
+* `TauCeti.exists_mem_realSobolevFunctions_integral_mul_neg_laplacian_add_eq`: conversely,
+  `-Δw + w` of a real `w ∈ H^(s+2)(E)` is a real `H^s` function, weakly.
 * `TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq`: weak `L²`
   solutions lie in `H²(E)`.
 * `TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`: existence of
@@ -333,6 +335,94 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
     mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq (s := 0)
       (mem_realSobolevFunctions_zero_iff.2 hh) (mem_realSobolevFunctions_zero_iff.2 (hP.fun_mul hh))
       (mem_realSobolevFunctions_zero_iff.2 hg) hweak
+
+/-- The pairing of `-Δw + w`, for a real `L²` function `w`, with a real Schwartz function `φ` is
+`∫ w (-Δφ + φ)`. -/
+private theorem neg_laplacian_add_apply_postcompCLM (uw : Lp ℝ 2 (volume : Measure E))
+    (φ : 𝓢(E, ℝ)) :
+    (-Δ (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp uw) : 𝓢'(E, ℂ)) +
+        (1 : ℝ) • (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp uw) : 𝓢'(E, ℂ)))
+        (φ.postcompCLM Complex.ofRealCLM) =
+      ((-(∫ z, (Δ φ) z * uw z) + ∫ z, φ z * uw z : ℝ) : ℂ) := by
+  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, laplacian_postcompCLM,
+    Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+    Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, one_smul]
+  push_cast
+  ring
+
+/-- For a real `L²` function `w` in `H^(s+2)`, `s ≥ 0`, the distribution `-Δw + w` is a real `L²`
+function in `H^s`: its pairings with real test functions are real. -/
+private theorem exists_toTemperedDistribution_ofRealCLM_compLp_eq_neg_laplacian_add {s : ℝ}
+    (hs : 0 ≤ s) (uw : Lp ℝ 2 (volume : Measure E))
+    (hD : MemSobolev (s + 2) 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp uw))) :
+    ∃ Rr : Lp ℝ 2 (volume : Measure E),
+      (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp Rr) : 𝓢'(E, ℂ)) =
+        -Δ (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp uw) : 𝓢'(E, ℂ)) +
+          (1 : ℝ) • (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp uw) : 𝓢'(E, ℂ)) ∧
+      (Rr : E → ℝ) ∈ realSobolevFunctions E s 2 := by
+  have hT := (memSobolev_add_two_iff_neg_laplacian_add_smul one_pos).1 hD
+  obtain ⟨R, hR⟩ := memSobolev_zero_iff.1 (hT.mono hs)
+  set Rr : Lp ℝ 2 (volume : Measure E) := Complex.reCLM.compLp R
+  have hRr : Complex.ofRealCLM.compLp Rr = R := by
+    refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
+    refine ext_real fun φ _ ↦ ?_
+    have hint : Integrable (fun z ↦ (φ z : ℂ) * R z) volume :=
+      (φ.memLp 2 (μ := volume)).ofReal.integrable_mul (Lp.memLp R)
+    have hreal : (R : 𝓢'(E, ℂ)) (φ.postcompCLM Complex.ofRealCLM) =
+        ((-(∫ z, (Δ φ) z * uw z) + ∫ z, φ z * uw z : ℝ) : ℂ) := by
+      rw [← hR, neg_laplacian_add_apply_postcompCLM]
+    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
+    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, hreal]
+    congr 1
+    -- The real part of `∫ φ R` is `∫ φ Re R`.
+    have hre := congrArg Complex.re hreal
+    rw [Complex.ofReal_re, Lp.toTemperedDistribution_apply, ← Complex.reCLM_apply,
+      ← Complex.reCLM.integral_comp_comm (by simpa using hint)] at hre
+    rw [← hre]
+    refine integral_congr_ae ((Complex.reCLM.coeFn_compLp R).mono fun z hz ↦ ?_)
+    have hz' : Rr z = (R z).re := hz
+    simp [hz']
+  refine ⟨Rr, by rw [hRr, hR], mem_realSobolevFunctions_of_ae_eq_ofReal (by rw [← hR]; exact hT) ?_⟩
+  rw [← hRr]
+  exact (Complex.ofRealCLM.coeFn_compLp Rr).mono fun z hz ↦ by simp [hz]
+
+/-- **`-Δ + 1` maps real `H^(s+2)` functions to real `H^s` functions, weakly.** For a real
+function `w ∈ H^(s+2)(E)`, `s ≥ 0`, there is `g ∈ H^s(E)` with `-Δw + w = g` weakly:
+`∫ w (-Δφ + φ) = ∫ g φ` for every smooth compactly supported `φ`. This is the converse of
+`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq` for `P = 1`. -/
+theorem exists_mem_realSobolevFunctions_integral_mul_neg_laplacian_add_eq {s : ℝ} (hs : 0 ≤ s)
+    {w : E → ℝ} (hw : w ∈ realSobolevFunctions E (s + 2) 2) :
+    ∃ g ∈ realSobolevFunctions E s 2, ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, w z * (-Δ φ z + φ z) = ∫ z, g z * φ z := by
+  obtain ⟨uw, huw, hD⟩ := mem_realSobolevFunctions.1 hw
+  obtain ⟨Rr, hRr, hRs⟩ := exists_toTemperedDistribution_ofRealCLM_compLp_eq_neg_laplacian_add hs
+    uw hD
+  refine ⟨Rr, hRs, fun φ hφ hc ↦ ?_⟩
+  -- Pair `-Δw + w` with the Schwartz function `Φ` of `φ`, in two ways.
+  set Φ : 𝓢(E, ℝ) := hc.toSchwartzMap hφ
+  have hΦ (z : E) : Φ z = φ z := HasCompactSupport.toSchwartzMap_toFun _ _ z
+  have hΔΦ (z : E) : (Δ Φ) z = Δ φ z := by
+    rw [SchwartzMap.laplacian_apply]
+    congr 1
+  have h := Complex.ofReal_injective (((Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM
+    Rr Φ).symm.trans (congrArg (· (Φ.postcompCLM Complex.ofRealCLM)) hRr)).trans
+    (neg_laplacian_add_apply_postcompCLM uw Φ))
+  simp only [hΦ, hΔΦ] at h
+  have hφL : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hc
+  have hΔL : MemLp (Δ φ) 2 volume :=
+    ((hφ.of_le (by simp)).continuous_laplacian).memLp_of_hasCompactSupport hc.laplacian
+  have hwL := memLp_of_mem_realSobolevFunctions hw
+  calc ∫ z, w z * (-Δ φ z + φ z) = -(∫ z, Δ φ z * w z) + ∫ z, φ z * w z := by
+        rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ φ z * w z))
+          (g := fun z ↦ φ z * w z) (hΔL.integrable_mul hwL).neg (hφL.integrable_mul hwL)]
+        exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
+    _ = -(∫ z, Δ φ z * uw z) + ∫ z, φ z * uw z := by
+        congr 1
+        · exact congrArg Neg.neg (integral_congr_ae (huw.mono fun z hz ↦ by simp only [hz]))
+        · exact integral_congr_ae (huw.mono fun z hz ↦ by simp only [hz])
+    _ = ∫ z, Rr z * φ z := by
+        rw [← h]
+        exact integral_congr_ae (Eventually.of_forall fun z ↦ mul_comm _ _)
 
 end Regularity
 
