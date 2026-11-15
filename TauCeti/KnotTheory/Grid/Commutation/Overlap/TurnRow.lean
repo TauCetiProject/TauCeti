@@ -34,14 +34,6 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
-/-- The two rectangles share their terminal side when the rectangle and the pentagon do. -/
-private theorem first_right_eq_second_right_of_right_eq_right
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hcommon : D.rectangle.right = D.pentagon.right) :
-    D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right := by
-  simpa only [toRectangleDecomposition_first_right, toRectangleDecomposition_second_right]
-    using hcommon
-
 /-- The two rectangles have different initial sides when they share their terminal side
 and have exactly one common side. -/
 private theorem left_ne_left_of_right_eq_right
