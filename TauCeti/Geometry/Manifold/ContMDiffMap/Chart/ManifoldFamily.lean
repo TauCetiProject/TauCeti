@@ -36,6 +36,10 @@ Use `open scoped TauCeti.ManifoldWeakWhitney` to select the topology these state
   continuous map on `P × M` is visible in a target chart form an open set.
 * `ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt`: there the coordinate derivative of
   the family depends continuously on the parameter and the chart point jointly.
+* `ContDiffAt.continuousAt_iteratedFDerivWithin_extChartAt`: when `P` is a bare topological space
+  and the coordinate representative factors locally as `Fmap (b, ξ p)` for a `C^n` map `Fmap` and a
+  map `ξ` continuous at `p₀`, its coordinate derivatives through order `n` are jointly continuous
+  at `(p₀, z₀)`.
 * `ContMDiff.continuous_manifoldWeakWhitney`: joint `C^n` regularity gives continuity into the
   weak Whitney topology.
 * `ContMDiffMap.manifoldWeakWhitneyCurry`: the resulting continuous family, bundled.
@@ -45,7 +49,7 @@ The weak topology convention follows M. Hirsch, *Differential Topology*, GTM 33,
 
 public section
 
-open Set Topology
+open Filter Set Topology
 open scoped Manifold TauCeti.ManifoldWeakWhitney
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -163,6 +167,50 @@ theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {g : P × M → N
       simp only [Function.comp_apply, hd_def, (extChartAt I' p₀).left_inv hp.1]
       rw [iteratedFDerivWithin_inter_open hU'o hzU']
   exact hd.continuousAt ((hOo.prod hUo).mem_nhds (Set.mk_mem_prod hp₀O hzU))
+
+omit [ChartedSpace H' P] [IsManifold I n M] [IsManifold I' n P] [IsManifold J n N] in
+/-- If the coordinate representative `extChartAt J y ∘ g p ∘ (extChartAt I x).symm` of a family
+`g : P → M → N` indexed by a topological space `P` agrees near `(p₀, z₀)` with `Fmap (·, ξ p)` for
+a map `Fmap : E × E' → F` that is `C^n` at `(z₀, ξ p₀)` and a parameter map `ξ : P → E'` continuous
+at `p₀`, then for every `m ≤ n` its `m`-th coordinate derivative within `(extChartAt I x).target`
+is jointly continuous at `(p₀, z₀)`. -/
+theorem ContDiffAt.continuousAt_iteratedFDerivWithin_extChartAt
+    {g : P → M → N} {p₀ : P} {x : M} {y : N} {z₀ : (extChartAt I x).target}
+    {Fmap : E × E' → F} {ξ : P → E'}
+    (hF : ContDiffAt 𝕜 n Fmap ((z₀ : E), ξ p₀)) (hξ : ContinuousAt ξ p₀)
+    (hagree : ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
+      extChartAt J y (g q.1 ((extChartAt I x).symm q.2)) = Fmap (q.2, ξ q.1))
+    (m : ℕ) (hm : m ≤ n) :
+    ContinuousAt (fun q : P × (extChartAt I x).target ↦
+      iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ g q.1 ∘ (extChartAt I x).symm)
+        (extChartAt I x).target q.2) (p₀, z₀) := by
+  obtain ⟨W, hWo, h₀W, hFW'⟩ := (hF.of_le hm).contDiffOn' le_rfl (by simp)
+  have hFW : ContDiffOn 𝕜 m Fmap W := by simpa using hFW'
+  have hpart_cont : ContinuousAt
+      (fun w : E × E' ↦ iteratedFDeriv 𝕜 m (fun b ↦ Fmap (b, w.2)) w.1) ((z₀ : E), ξ p₀) :=
+    (hFW.continuousOn_iteratedFDeriv_partial hWo le_rfl).continuousAt (hWo.mem_nhds h₀W)
+  let Θ : P × (extChartAt I x).target → E × E' := fun q ↦ (q.2, ξ q.1)
+  have hΘ_cont : ContinuousAt Θ (p₀, z₀) :=
+    (continuous_subtype_val.comp continuous_snd).continuousAt.prodMk
+      (hξ.comp continuous_fst.continuousAt)
+  obtain ⟨Up, Uz, hUpo, hp₀Up, hUzo, hz₀Uz, hUpUz⟩ := mem_nhds_prod_iff'.1
+    (hagree.and (hΘ_cont.preimage_mem_nhds (hWo.mem_nhds h₀W)))
+  obtain ⟨Uz', hUz'o, hUz'_eq⟩ := isOpen_induced_iff.1 hUzo
+  refine (hpart_cont.comp_of_eq hΘ_cont rfl).congr ?_
+  filter_upwards [(hUpo.prod hUzo).mem_nhds ⟨hp₀Up, hz₀Uz⟩] with ⟨p, z⟩ ⟨hp, hz⟩
+  have hzUz' : (z : E) ∈ Uz' := by rwa [← hUz'_eq] at hz
+  have hW_pz : ((z : E), ξ p) ∈ W := (hUpUz ⟨hp, hz⟩).2
+  have hslice : ContDiffAt 𝕜 m (fun b ↦ Fmap (b, ξ p)) (z : E) :=
+    (hFW.contDiffAt (hWo.mem_nhds hW_pz)).comp (z : E) (contDiffAt_id.prodMk contDiffAt_const)
+  have heq : EqOn (extChartAt J y ∘ g p ∘ (extChartAt I x).symm) (fun b ↦ Fmap (b, ξ p))
+      ((extChartAt I x).target ∩ Uz') := fun b hb ↦ by
+    have hbUz : (⟨b, hb.1⟩ : (extChartAt I x).target) ∈ Uz := by rw [← hUz'_eq]; exact hb.2
+    exact (hUpUz (mk_mem_prod hp hbUz)).1
+  symm
+  rw [← iteratedFDerivWithin_inter_open hUz'o hzUz',
+    iteratedFDerivWithin_congr heq ⟨z.2, hzUz'⟩,
+    iteratedFDerivWithin_inter_open hUz'o hzUz']
+  exact iteratedFDerivWithin_eq_iteratedFDeriv (uniqueDiffOn_extChartAt_target x) hslice z.2
 
 /-- Joint `C^n` regularity gives continuity into the weak Whitney topology on manifold-valued
 `C^n` maps. Neither compactness nor absence of boundary is required of the parameter, the source

@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Topology
 public import TauCeti.Topology.MetricSpace.Isometry.Group
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
@@ -103,60 +102,6 @@ open scoped ContDiff ENNReal Manifold
 
 noncomputable section
 
-section GroupToIsometryEquiv
-
-namespace TauCeti.RiemannianIsometry
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-
-/-- The unit of `Isom I M` coerces to the unit of `M ≃ᵢ M`. -/
-@[simp]
-theorem toIsometryEquiv_one : ((1 : Isom I M) : M ≃ᵢ M) = 1 := by
-  ext x
-  simp
-
-/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves multiplication. -/
-@[simp]
-theorem toIsometryEquiv_mul (Φ Ψ : Isom I M) :
-    ((Φ * Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) * (Ψ : M ≃ᵢ M) := by
-  ext x
-  simp
-
-/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves inversion. -/
-@[simp]
-theorem toIsometryEquiv_inv (Φ : Isom I M) :
-    ((Φ⁻¹ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M)⁻¹ :=
-  eq_inv_of_mul_eq_one_left (by rw [← toIsometryEquiv_mul, inv_mul_cancel, toIsometryEquiv_one])
-
-/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves division. -/
-@[simp]
-theorem toIsometryEquiv_div (Φ Ψ : Isom I M) :
-    ((Φ / Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) / (Ψ : M ≃ᵢ M) := by
-  simp [div_eq_mul_inv]
-
-/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves natural powers. -/
-@[simp]
-theorem toIsometryEquiv_pow (Φ : Isom I M) (n : ℕ) :
-    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => simp [pow_succ, ih]
-
-/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves integer powers. -/
-@[simp]
-theorem toIsometryEquiv_zpow (Φ : Isom I M) (n : ℤ) :
-    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
-  cases n with
-  | ofNat n => simp
-  | negSucc n => simp
-
-end TauCeti.RiemannianIsometry
-
-end GroupToIsometryEquiv
-
 section Differential
 
 variable
@@ -172,25 +117,6 @@ variable
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   [IsRiemannianManifold J N]
-
-/-- If a map between real normed spaces is differentiable at `0` and preserves norms near `0`,
-its Fréchet derivative at `0` preserves norms. -/
-private theorem DifferentiableAt.norm_fderiv_zero_eq
-    {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
-    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] {Ψ : E₁ → E₂}
-    (hΨ : DifferentiableAt ℝ Ψ 0) (hnorm : ∀ᶠ u in 𝓝 (0 : E₁), ‖Ψ u‖ = ‖u‖) (v : E₁) :
-    ‖fderiv ℝ Ψ 0 v‖ = ‖v‖ := by
-  have hΨ0 : Ψ 0 = 0 := by
-    have h0 := hnorm.self_of_nhds
-    rwa [norm_zero, norm_eq_zero] at h0
-  have hpair := hΨ.hasFDerivAt.prodMk (hasFDerivAt_id (0 : E₁))
-  refine le_antisymm ?_ ?_
-  · simpa using hpair.norm_apply_le_mul_norm_apply
-      (L := ContinuousLinearMap.fst ℝ E₂ E₁) (M := ContinuousLinearMap.snd ℝ E₂ E₁)
-      (A := 1) (hnorm.mono fun u hu ↦ by simp [hΨ0, hu]) v
-  · simpa using hpair.norm_apply_le_mul_norm_apply
-      (L := ContinuousLinearMap.snd ℝ E₂ E₁) (M := ContinuousLinearMap.fst ℝ E₂ E₁)
-      (A := 1) (hnorm.mono fun u hu ↦ by simp [hΨ0, hu]) v
 
 namespace MDifferentiableAt
 
@@ -251,8 +177,9 @@ theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
     simp only [Ψ, L, comp_apply]
     rw [← hlog, hu2, hM.edist_riemannianExp_eq_of_mem_ball subset_rfl hu1, ← ofReal_norm,
       ENNReal.toReal_ofReal (norm_nonneg u)]
+  have hΨ0 : Ψ 0 = 0 := by simpa using hnorm_ev.self_of_nhds
   rw [← hfderiv]
-  exact hΨ_diff.norm_fderiv_zero_eq hnorm_ev v
+  exact hΨ_diff.norm_fderiv_apply_eq_of_eventually_norm_sub_eq (by simpa [hΨ0] using hnorm_ev) v
 
 /-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
 neighbourhood of `p`, then `df_p` preserves inner products of tangent vectors. -/
@@ -785,70 +712,6 @@ private theorem contDiffAt_chart_edist_sq_param {x : M} {y : N}
 
 end ChartEdistSqParam
 
-section JetParam
-
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- If a family `g : P → M → N` has coordinate representative locally equal to `Fmap (·, ξ p)` for
-a `C^∞` map `Fmap` and a parameter map `ξ` continuous at `p₀`, then its chart `m`-jet stays inside
-any open set `V` containing the `m`-jet at `(p₀, z₀)`. -/
-private theorem tendsto_chartJet_of_local_param {P : Type*} [TopologicalSpace P]
-    {g : P → M → N} {p₀ : P} {x : M} {y : N} {m : ℕ} {z₀ : (extChartAt I x).target}
-    {V : Set (E [×m]→L[ℝ] F)} (hV : IsOpen V) {d : ℕ} {Fmap : E × (Fin d → E) → F}
-    {ξ : P → Fin d → E} {Up : Set P} {Ub : Set E} (hUp : IsOpen Up) (hp₀ : p₀ ∈ Up)
-    (hUb : IsOpen Ub) (hz₀ : (z₀ : E) ∈ Ub) (hξ : ContinuousAt ξ p₀)
-    (hF : ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ p₀))
-    (hagree : ∀ ⦃p : P⦄, p ∈ Up → ∀ ⦃b : E⦄, b ∈ Ub →
-      g p ((extChartAt I x).symm b) ∈ (extChartAt J y).source ∧
-        extChartAt J y (g p ((extChartAt I x).symm b)) = Fmap (b, ξ p))
-    (hV₀ : iteratedFDerivWithin ℝ m (extChartAt J y ∘ g p₀ ∘ (extChartAt I x).symm)
-      (extChartAt I x).target z₀ ∈ V) :
-    ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
-      g q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt J y).source ∧
-        iteratedFDerivWithin ℝ m (extChartAt J y ∘ g q.1 ∘ (extChartAt I x).symm)
-          (extChartAt I x).target q.2 ∈ V := by
-  obtain ⟨W_F, hWF_nhds, hFW⟩ := hF.contDiffOn (m := (m : WithTop ℕ∞)) (by simp) (by simp)
-  obtain ⟨W_Fo, hWFo_sub, hWFo_open, h₀_W⟩ := _root_.mem_nhds_iff.1 hWF_nhds
-  have hpart_cont : ContinuousAt
-      (fun q : E × (Fin d → E) ↦ iteratedFDeriv ℝ m (fun b ↦ Fmap (b, q.2)) q.1)
-      ((z₀ : E), ξ p₀) :=
-    ((hFW.mono hWFo_sub).continuousOn_iteratedFDeriv_partial hWFo_open le_rfl).continuousAt
-      (hWFo_open.mem_nhds h₀_W)
-  let Θ : P × (extChartAt I x).target → E × (Fin d → E) := fun q ↦ (q.2, ξ q.1)
-  have hΘ0 : Θ (p₀, z₀) = ((z₀ : E), ξ p₀) := rfl
-  have hΘ_cont : ContinuousAt Θ (p₀, z₀) :=
-    (continuous_subtype_val.comp continuous_snd).continuousAt.prodMk
-      (hξ.comp continuous_fst.continuousAt)
-  have hjet_eq {p : P} (hp : p ∈ Up) {z : (extChartAt I x).target} (hz : (z : E) ∈ Ub) :
-      iteratedFDerivWithin ℝ m (extChartAt J y ∘ g p ∘ (extChartAt I x).symm)
-          (extChartAt I x).target z =
-        iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ (p, z)).2)) (Θ (p, z)).1 := by
-    rw [iteratedFDerivWithin_of_isOpen m (isOpen_extChartAt_target x) z.2]
-    have hev : (extChartAt J y ∘ g p ∘ (extChartAt I x).symm) =ᶠ[𝓝 (z : E)]
-        fun b ↦ Fmap (b, (Θ (p, z)).2) :=
-      eventually_of_mem (hUb.mem_nhds hz) fun b hb ↦ (hagree hp hb).2
-    exact (hev.iteratedFDeriv ℝ m).eq_of_nhds
-  have hV_at_0 : iteratedFDeriv ℝ m (fun b ↦ Fmap (b, ξ p₀)) (z₀ : E) ∈ V := by
-    have h := hjet_eq hp₀ hz₀
-    rw [hΘ0] at h
-    rwa [← h]
-  have hev_V : ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
-      iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ q).2)) (Θ q).1 ∈ V :=
-    (hpart_cont.comp_of_eq hΘ_cont hΘ0).preimage_mem_nhds (hV.mem_nhds hV_at_0)
-  have hev_UpUb : ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
-      q.1 ∈ Up ∧ (q.2 : E) ∈ Ub :=
-    (hUp.prod (hUb.preimage continuous_subtype_val)).mem_nhds ⟨hp₀, hz₀⟩
-  filter_upwards [hev_UpUb, hev_V] with ⟨p, z⟩ ⟨hp, hz⟩ hVz
-  exact ⟨(hagree hp hz).1, (hjet_eq hp hz).symm ▸ hVz⟩
-
-end JetParam
-
 section WeakWhitney
 
 open TauCeti TauCeti.Manifold
@@ -874,13 +737,11 @@ equals `Fmap (·, ξ e)` for a `C^∞` map `Fmap` and a continuous parameter map
 private theorem IsometryEquiv.exists_contDiffAt_chart_param (e₀ : M ≃ᵢ N) {x : M} {y : N}
     (z₀ : (extChartAt I x).target)
     (he₀z₀ : e₀ ((extChartAt I x).symm z₀) ∈ (extChartAt J y).source) :
-    ∃ (d : ℕ) (Fmap : E × (Fin d → E) → F) (ξ : (M ≃ᵢ N) → Fin d → E)
-      (Ue : Set (M ≃ᵢ N)) (Ub : Set E),
-      IsOpen Ue ∧ e₀ ∈ Ue ∧ IsOpen Ub ∧ (z₀ : E) ∈ Ub ∧
+    ∃ (d : ℕ) (Fmap : E × (Fin d → E) → F) (ξ : (M ≃ᵢ N) → Fin d → E),
       ContinuousAt ξ e₀ ∧ ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ e₀) ∧
-      ∀ ⦃e : M ≃ᵢ N⦄, e ∈ Ue → ∀ ⦃b : E⦄, b ∈ Ub →
-        e ((extChartAt I x).symm b) ∈ (extChartAt J y).source ∧
-          extChartAt J y (e ((extChartAt I x).symm b)) = Fmap (b, ξ e) := by
+      ∀ᶠ q : (M ≃ᵢ N) × (extChartAt I x).target in 𝓝 (e₀, z₀),
+        q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt J y).source ∧
+          extChartAt J y (q.1 ((extChartAt I x).symm q.2)) = Fmap (q.2, ξ q.1) := by
   set p₀ : M := (extChartAt I x).symm z₀
   obtain ⟨r, hr, WM, hWM_nhds, hWM⟩ :=
     exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p₀
@@ -925,29 +786,25 @@ private theorem IsometryEquiv.exists_contDiffAt_chart_param (e₀ : M ≃ᵢ N) 
     continuous_fst.eval (((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd)
   obtain ⟨Ue₁, Uz, hUe₁o, hUzo, he₀Ue₁, hz₀Uz, hUeUz⟩ :=
     isOpen_prod_iff.1 (Φ.open_source.preimage heval_cont) e₀ z₀ he₀p₀_src
-  obtain ⟨Ub', hUb'o, hUb'_eq⟩ := isOpen_induced_iff.1 hUzo
-  set Ub : Set E := (extChartAt I x).target ∩ Ub'
-  have hUbo : IsOpen Ub := (isOpen_extChartAt_target x).inter hUb'o
-  have hb₀Ub : (z₀ : E) ∈ Ub := ⟨z₀.2, by rwa [← hUb'_eq] at hz₀Uz⟩
   set Ue : Set (M ≃ᵢ N) :=
     Ue₁ ∩ ⋂ i : Fin d, (fun e : M ≃ᵢ N ↦ e.symm (yN i)) ⁻¹' (extChartAt I (a₀ i)).source
   have hUeo : IsOpen Ue := hUe₁o.inter <| isOpen_iInter_of_finite fun i ↦
     (isOpen_extChartAt_source (a₀ i)).preimage (hsymm_cont i)
   have he₀Ue : e₀ ∈ Ue := ⟨he₀Ue₁, mem_iInter.2 fun i ↦ mem_extChartAt_source (a₀ i)⟩
-  refine ⟨d, Fmap, ξ, Ue, Ub, hUeo, he₀Ue, hUbo, hb₀Ub, hξ_cont, hF_smooth, fun e he b hb ↦ ?_⟩
-  have hzb : (⟨b, hb.1⟩ : (extChartAt I x).target) ∈ Uz := by rw [← hUb'_eq]; exact hb.2
-  have hmemΦ : e ((extChartAt I x).symm b) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hzb)
+  refine ⟨d, Fmap, ξ, hξ_cont, hF_smooth, ?_⟩
+  filter_upwards [(hUeo.prod hUzo).mem_nhds ⟨he₀Ue, hz₀Uz⟩] with ⟨e, z⟩ ⟨he, hz⟩
+  have hmemΦ : e ((extChartAt I x).symm z) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hz)
   refine ⟨(hΦ_sub hmemΦ).2, ?_⟩
   have hct : (fun i ↦
-      (edist ((extChartAt I (a₀ i)).symm (ξ e i)) ((extChartAt I x).symm b)).toReal ^ 2) =
-      Φ (e ((extChartAt I x).symm b)) := by
+      (edist ((extChartAt I (a₀ i)).symm (ξ e i)) ((extChartAt I x).symm z)).toReal ^ 2) =
+      Φ (e ((extChartAt I x).symm z)) := by
     rw [hΦ_eq _ hmemΦ]
     ext i
     have hi_src : e.symm (yN i) ∈ (extChartAt I (a₀ i)).source := mem_iInter.1 he.2 i
     simp only [ξ, (extChartAt I (a₀ i)).left_inv hi_src]
-    have hiso : edist (yN i) (e ((extChartAt I x).symm b)) =
-        edist (e.symm (yN i)) ((extChartAt I x).symm b) := by
-      simpa only [e.apply_symm_apply] using e.edist_eq (e.symm (yN i)) ((extChartAt I x).symm b)
+    have hiso : edist (yN i) (e ((extChartAt I x).symm z)) =
+        edist (e.symm (yN i)) ((extChartAt I x).symm z) := by
+      simpa only [e.apply_symm_apply] using e.edist_eq (e.symm (yN i)) ((extChartAt I x).symm z)
     rw [hiso]
   dsimp only [Fmap]
   rw [hct]
@@ -959,14 +816,15 @@ to a smooth map `C^∞⟮I, M; J, N⟯` is continuous from the compact-open topo
 theorem IsometryEquiv.continuous_toContMDiffMap :
     Continuous fun e : M ≃ᵢ N ↦ (e.toRiemannianIsometry I J).toDiffeomorph.toContMDiffMap := by
   refine continuous_iff_continuousAt.2 fun e₀ ↦ ?_
-  refine ContMDiffMap.tendsto_manifoldWeakWhitney_iff.2 fun x y m _ K hK V hV h₀ ↦ ?_
+  refine ContMDiffMap.tendsto_manifoldWeakWhitney_iff.2 fun x y m hm K hK V hV h₀ ↦ ?_
   simp only [ContMDiffMap.mem_chartJetSet, Diffeomorph.coe_coe,
     RiemannianIsometry.coe_toDiffeomorph, IsometryEquiv.coe_toRiemannianIsometry] at h₀ ⊢
   refine hK.eventually_forall_of_forall_eventually fun z₀ hz₀ ↦ ?_
-  obtain ⟨d, Fmap, ξ, Ue, Ub, hUeo, he₀, hUbo, hz₀Ub, hξ, hF, hagree⟩ :=
+  obtain ⟨d, Fmap, ξ, hξ, hF, hagree⟩ :=
     e₀.exists_contDiffAt_chart_param (I := I) (J := J) z₀ (h₀ z₀ hz₀).1
-  exact tendsto_chartJet_of_local_param (I := I) (J := J) hV hUeo he₀ hUbo hz₀Ub hξ hF hagree
-    (h₀ z₀ hz₀).2
+  refine (hagree.mono fun _ h ↦ h.1).and ?_
+  exact (hF.continuousAt_iteratedFDerivWithin_extChartAt hξ
+    (hagree.mono fun _ h ↦ h.2) m hm).eventually (hV.mem_nhds (h₀ z₀ hz₀).2)
 
 variable [CompactSpace M]
 
