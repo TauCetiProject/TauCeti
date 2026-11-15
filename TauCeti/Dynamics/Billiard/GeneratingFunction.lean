@@ -51,11 +51,11 @@ For an `L`-periodic parametrization, `S` is `L`-periodic in each argument
 `TauCeti.billiardGeneratingFunction_add_period_snd`), hence invariant under translating both
 arguments by `L` (`TauCeti.billiardGeneratingFunction_add_period`), and the chord from `χ(t)` to
 `χ(s + L)` has the same length (`TauCeti.billiardGeneratingFunction_swap_add_period`). For a
-continuous curve `S` is continuous (`TauCeti.continuous_billiardGeneratingFunction`), and it is
-smooth wherever the chord is nondegenerate, `χ(t) ≠ χ(s)`
-(`TauCeti.contDiffAt_billiardGeneratingFunction`). For
-the boundary of a table this excludes the diagonal `t = s` and its translates `t = s + kL`, and
-the natural domain of `S` is the strip `s < t < s + L`.
+continuous curve `S` is continuous (`TauCeti.continuous_billiardGeneratingFunction`). If `χ` is
+`C^n` at `s` and at `t` and the chord is nondegenerate, `χ(t) ≠ χ(s)`, then `S` is `C^n` at
+`(s, t)` (`TauCeti.contDiffAt_billiardGeneratingFunction`). For the boundary of a table,
+nondegeneracy excludes the diagonal `t = s` and its translates `t = s + kL`, and the natural domain
+of `S` is the strip `s < t < s + L`.
 
 The mixed derivative is
 `∂_t ∂_s S = (‖D‖² ⟪χ'(s), χ'(t)⟫ - ⟪D, χ'(s)⟫ ⟪D, χ'(t)⟫) / ‖D‖³` with `D = χ(t) - χ(s)`
