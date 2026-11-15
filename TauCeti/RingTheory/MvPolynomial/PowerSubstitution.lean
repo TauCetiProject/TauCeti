@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
+public import Mathlib.Algebra.Polynomial.Basis
+public import Mathlib.RingTheory.Polynomial.DegreeLT
 import TauCeti.Data.Finsupp.Weight
 
 /-!
@@ -31,6 +33,14 @@ substitution is injective on polynomials of `Z`-degree below `B`.
   `degreeOf 0 F + B * degreeOf 1 F`.
 * `MvPolynomial.powerSubstitution_map`: naturality under a ring map of the coefficients.
 * `MvPolynomial.eval_powerSubstitution`: `F(X, X ^ B)` evaluated at `a` is `F(a, a ^ B)`.
+* `MvPolynomial.powerSubstitution_mem_degreeLT_iff`: for `F` of `Z`-degree below `B`, the degree of
+  `F(X, X ^ B)` is below `N` iff `F` is supported on the exponents of weight `μ 0 + B * μ 1 < N`.
+* `MvPolynomial.powerSubstitutionEquiv`: for `0 < B`, the substitution is a linear equivalence from
+  the polynomials of `Z`-degree below `B` (supported on the strip `{μ | μ 0 < B}`) onto `R[X]`.
+* `MvPolynomial.powerSubstitutionDegreeLTEquiv`: for `0 < B`, it restricts to a linear equivalence
+  from the polynomials supported on the weighted strip `{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` onto
+  `Polynomial.degreeLT R N`; in particular that space has rank `N`
+  (`MvPolynomial.finrank_restrictSupport_weightedStrip`).
 
 ## References
 
@@ -148,6 +158,121 @@ theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
   | monomial μ c => simp [eval_monomial, Finsupp.prod_fintype, pow_add, pow_mul]
   | add F G hF hG => simp [hF, hG]
 
+/-! ### Degree bounds and the weighted strip -/
+
+/-- If every exponent `μ` of `F` has weight `μ 0 + B * μ 1` below `N`, then `F(X, X ^ B)` has
+degree below `N`. -/
+theorem powerSubstitution_mem_degreeLT {B N : ℕ} {F : MvPolynomial (Fin 2) R}
+    (hF : F ∈ restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 + B * μ 1 < N}) :
+    powerSubstitution B F ∈ Polynomial.degreeLT R N := by
+  rw [Polynomial.mem_degreeLT, Polynomial.degree_lt_iff_coeff_zero]
+  intro n hn
+  refine Polynomial.notMem_support_iff.mp fun hmem ↦ ?_
+  obtain ⟨μ, hμ, rfl⟩ := Finset.mem_image.mp (support_powerSubstitution_subset B F hmem)
+  exact hn.not_gt (hF hμ)
+
+/-- For `F` of `Z`-degree below `B`, `F(X, X ^ B)` has degree below `N` exactly when every exponent
+`μ` of `F` has weight `μ 0 + B * μ 1` below `N`. -/
+theorem powerSubstitution_mem_degreeLT_iff {B N : ℕ} {F : MvPolynomial (Fin 2) R}
+    (hF : F.degreeOf 0 < B) :
+    powerSubstitution B F ∈ Polynomial.degreeLT R N ↔
+      F ∈ restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 + B * μ 1 < N} := by
+  refine ⟨fun h ↦ (mem_restrictSupport_iff R).mpr fun μ hμ ↦ ?_, powerSubstitution_mem_degreeLT⟩
+  have hμB : μ 0 < B := (degreeOf_lt_iff ((Nat.zero_le _).trans_lt hF)).mp hF μ hμ
+  have hc : (powerSubstitution B F).coeff (μ 0 + B * μ 1) ≠ 0 := by
+    rw [coeff_powerSubstitution hF hμB]
+    exact mem_support_iff.mp hμ
+  exact_mod_cast (Polynomial.le_degree_of_ne_zero hc).trans_lt (Polynomial.mem_degreeLT.mp h)
+
+variable {B : ℕ}
+
+/-- Division with remainder by `B` recovers an exponent `μ` with `μ 0 < B` from its weight
+`μ 0 + B * μ 1`. -/
+private theorem single_mod_add_single_div (hB : 0 < B) {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
+    single 0 ((μ 0 + B * μ 1) % B) + single 1 ((μ 0 + B * μ 1) / B) = μ := by
+  refine Finsupp.ext (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
+  · simp [Nat.mod_eq_of_lt hμ]
+  · simp [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ]
+
+/-- **The power substitution as a linear equivalence.** For `0 < B`, `F ↦ F(X, X ^ B)` is an
+`R`-linear equivalence from the polynomials supported on the strip `{μ | μ 0 < B}`, that is of
+`Z`-degree below `B`, onto `R[X]`. On monomials it is the bijection `μ ↦ μ 0 + B * μ 1` of the strip
+onto `ℕ`, whose inverse is division with remainder by `B`. See `powerSubstitutionEquiv_apply`. -/
+def powerSubstitutionEquiv (hB : 0 < B) :
+    restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B} ≃ₗ[R] Polynomial R :=
+  (basisRestrictSupport R _).equiv (Polynomial.basisMonomials R)
+    { toFun μ := (μ : Fin 2 →₀ ℕ) 0 + B * (μ : Fin 2 →₀ ℕ) 1
+      invFun n := ⟨single 0 (n % B) + single 1 (n / B), by simpa using Nat.mod_lt n hB⟩
+      left_inv μ := Subtype.ext (single_mod_add_single_div hB μ.2)
+      right_inv n := by simpa using Nat.mod_add_div n B }
+
+/-- `powerSubstitutionEquiv` is the power substitution. -/
+@[simp]
+theorem powerSubstitutionEquiv_apply (hB : 0 < B)
+    (F : restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B}) :
+    powerSubstitutionEquiv hB F = powerSubstitution B F := by
+  suffices (powerSubstitutionEquiv hB).toLinearMap =
+      (powerSubstitution B).toLinearMap ∘ₗ Submodule.subtype _ from LinearMap.congr_fun this F
+  refine (basisRestrictSupport R _).ext fun μ ↦ ?_
+  simp [powerSubstitutionEquiv, Polynomial.coe_basisMonomials]
+
+/-- The coefficients of the bivariate preimage of `P` under `powerSubstitutionEquiv` are those of
+`P`: the coefficient of `Z ^ μ 0 W ^ μ 1`, for `μ 0 < B`, is the coefficient of
+`X ^ (μ 0 + B * μ 1)` in `P`. -/
+theorem coeff_powerSubstitutionEquiv_symm (hB : 0 < B) (P : Polynomial R) {μ : Fin 2 →₀ ℕ}
+    (hμ : μ 0 < B) :
+    ((powerSubstitutionEquiv hB).symm P : MvPolynomial (Fin 2) R).coeff μ =
+      P.coeff (μ 0 + B * μ 1) := by
+  set F := (powerSubstitutionEquiv hB).symm P
+  have hP : P = powerSubstitution B F := by
+    rw [← powerSubstitutionEquiv_apply hB, LinearEquiv.apply_symm_apply]
+  rw [hP, coeff_powerSubstitution (degreeOf_lt_of_mem_restrictSupport F.2 hB fun _ h ↦ h) hμ]
+
+/-- **The weighted strip and `degreeLT`.** For `0 < B`, the power substitution `F ↦ F(X, X ^ B)` is
+an `R`-linear equivalence from the polynomials supported on the weighted strip
+`{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` onto `Polynomial.degreeLT R N`. On monomials it is the
+bijection `μ ↦ μ 0 + B * μ 1` of the strip onto `Fin N`. See
+`coe_powerSubstitutionDegreeLTEquiv_apply`. -/
+def powerSubstitutionDegreeLTEquiv (hB : 0 < B) (N : ℕ) :
+    restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N} ≃ₗ[R]
+      Polynomial.degreeLT R N :=
+  (basisRestrictSupport R _).equiv (Polynomial.degreeLT.basis R N)
+    { toFun μ := ⟨(μ : Fin 2 →₀ ℕ) 0 + B * (μ : Fin 2 →₀ ℕ) 1, μ.2.2⟩
+      invFun n := ⟨single 0 (n % B) + single 1 (n / B),
+        by simpa [Nat.mod_add_div] using And.intro (Nat.mod_lt n hB) n.2⟩
+      left_inv μ := Subtype.ext (single_mod_add_single_div hB μ.2.1)
+      right_inv n := Fin.ext <| by simpa using Nat.mod_add_div n B }
+
+/-- `powerSubstitutionDegreeLTEquiv` is the power substitution. -/
+@[simp]
+theorem coe_powerSubstitutionDegreeLTEquiv_apply (hB : 0 < B) (N : ℕ)
+    (F : restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N}) :
+    (powerSubstitutionDegreeLTEquiv hB N F : Polynomial R) = powerSubstitution B F := by
+  suffices (Polynomial.degreeLT R N).subtype ∘ₗ (powerSubstitutionDegreeLTEquiv hB N).toLinearMap =
+      (powerSubstitution B).toLinearMap ∘ₗ Submodule.subtype _ from LinearMap.congr_fun this F
+  refine (basisRestrictSupport R _).ext fun μ ↦ ?_
+  simp [powerSubstitutionDegreeLTEquiv, Polynomial.X_pow_eq_monomial]
+
+/-- The bivariate preimage of `P ∈ degreeLT R N` under `powerSubstitutionDegreeLTEquiv` is its
+preimage under `powerSubstitutionEquiv`. -/
+theorem coe_powerSubstitutionDegreeLTEquiv_symm_apply (hB : 0 < B) (N : ℕ)
+    (P : Polynomial.degreeLT R N) :
+    ((powerSubstitutionDegreeLTEquiv hB N).symm P : MvPolynomial (Fin 2) R) =
+      ↑((powerSubstitutionEquiv (R := R) hB).symm ↑P) := by
+  set F := (powerSubstitutionDegreeLTEquiv hB N).symm P
+  set G := (powerSubstitutionEquiv hB).symm (P : Polynomial R)
+  refine powerSubstitution_injOn B (degreeOf_lt_of_mem_restrictSupport F.2 hB fun _ h ↦ h.1)
+    (degreeOf_lt_of_mem_restrictSupport G.2 hB fun _ h ↦ h) ?_
+  rw [← coe_powerSubstitutionDegreeLTEquiv_apply hB N, ← powerSubstitutionEquiv_apply hB,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+/-- For `0 < B`, the polynomials supported on the weighted strip
+`{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` form a module of rank `N`. -/
+theorem finrank_restrictSupport_weightedStrip [StrongRankCondition R] (hB : 0 < B) (N : ℕ) :
+    Module.finrank R (restrictSupport R {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N}) = N := by
+  rw [(powerSubstitutionDegreeLTEquiv hB N).finrank_eq,
+    Module.finrank_eq_card_basis (Polynomial.degreeLT.basis R N), Fintype.card_fin]
+
 end CommSemiring
 
 /-! The bound `B` on the `Z`-degree cannot be dropped: `Z ^ 2` and `W` both map to `X ^ 2`. -/
@@ -158,5 +283,13 @@ example : powerSubstitution (R := ℤ) 2 (X 0 ^ 2) = powerSubstitution 2 (X 1) :
 example : (X 0 ^ 2 : MvPolynomial (Fin 2) ℤ) ≠ X 1 := by
   intro h
   simpa [degreeOf_X] using congrArg (degreeOf 0) h
+
+/-! For `B = 2`, the coefficient of `Z W` in the bivariate preimage of `X ^ 3 = X ^ (1 + 2 * 1)` is
+`1`. -/
+
+example : ((powerSubstitutionEquiv (R := ℤ) two_pos).symm (Polynomial.X ^ 3) :
+    MvPolynomial (Fin 2) ℤ).coeff (single 0 1 + single 1 1) = 1 := by
+  rw [coeff_powerSubstitutionEquiv_symm two_pos _ (by simp)]
+  simp [Polynomial.coeff_X_pow]
 
 end MvPolynomial
