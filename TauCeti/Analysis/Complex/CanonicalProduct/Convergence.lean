@@ -278,6 +278,16 @@ theorem hasProdLocallyUniformlyOn_weierstrassFactorOne_pow :
   intro K _ hK
   exact hasProdUniformlyOn_weierstrassFactorOne_pow a m hm hK
 
+/-- The repeated-index product, with one factor for each element of the multiplicity fibres
+`Fin (m i)`, converges locally uniformly on the whole plane to the product with natural
+multiplicities: grouping the finite fibres does not change the limit. -/
+theorem hasProdLocallyUniformlyOn_weierstrassFactorOne_sigma :
+    HasProdLocallyUniformlyOn (fun (p : Σ i, Fin (m i)) z ↦ weierstrassFactorOne (a p.1 * z))
+      (fun z ↦ ∏' i, weierstrassFactorOne (a i * z) ^ m i) Set.univ := by
+  simpa only [← tprod_weierstrassFactorOne_pow_eq_sigma a m hm] using
+    hasProdLocallyUniformlyOn_weierstrassFactorOne (fun p : Σ i, Fin (m i) ↦ a p.1)
+      (summable_sigma_norm_sq_weierstrass a m hm)
+
 /-- The weighted product vanishes exactly at a root whose prescribed multiplicity is nonzero. -/
 theorem tprod_weierstrassFactorOne_pow_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactorOne (a i * z) ^ m i) = 0 ↔

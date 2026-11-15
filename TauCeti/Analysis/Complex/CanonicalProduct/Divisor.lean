@@ -11,6 +11,15 @@ public import TauCeti.Analysis.Meromorphic.Divisor
 /-!
 # The genus-one product of a native zero divisor
 
+Let `S ⊆ ℂ ∖ {0}` carry natural multiplicities `m` with `∑ ρ, m ρ * ‖ρ⁻¹‖ ^ 2 < ∞`. The product
+`∏' ρ : S, E₁(ρ⁻¹ * z) ^ m ρ` is entire, has analytic order exactly `m ρ` at each `ρ ∈ S` and
+order zero elsewhere, and is also the locally uniform limit of the repeated-index product with
+one factor per unit of multiplicity. No countability, enumeration or compact-finiteness
+hypothesis on `S` is needed: the summability makes the support of `m` meet each compact set in
+finitely many points. In particular every nonnegative whole-plane divisor `D` with `D 0 = 0`
+and weighted inverse-square summable support is the native divisor of the normalized entire
+product over its support (`TauCeti.exists_entire_genusOne_product_of_divisor`).
+
 The product `TauCeti.divisorProductOne f` uses Mathlib's whole-plane divisor support as
 its index type and the divisor's natural values as multiplicities. For an entire `f` with
 `f 0 ≠ 0` and weighted inverse-square summability of its zeros, it is entire, normalized at
@@ -32,6 +41,7 @@ the single factor `E₁(s)`.
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 11.
+* A. Rainer, *Advanced Complex Analysis*, lecture notes, TU Wien, Theorem 14.3.
 -/
 
 public section
@@ -40,6 +50,125 @@ open Complex Filter Metric Topology
 open scoped BigOperators
 
 namespace TauCeti
+
+section Weighted
+
+variable {S : Set ℂ} (m : S → ℕ) (hsum : Summable (fun ρ : S ↦ (m ρ : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+
+include hsum
+
+/-- At a point `ρ` of a set `S` of nonzero points, the genus-one product over `S` with natural
+multiplicities `m` has analytic order exactly `m ρ`. -/
+theorem analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_mem (hS : (0 : ℂ) ∉ S)
+    (ρ : S) :
+    analyticOrderAt (fun w ↦ ∏' σ : S, weierstrassFactorOne ((σ : ℂ)⁻¹ * w) ^ m σ) ρ = m ρ :=
+  analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective (fun σ : S ↦ (σ : ℂ)⁻¹) m hsum
+    (fun _ _ h ↦ Subtype.ext (inv_inj.mp h)) (inv_mul_cancel₀ fun h ↦ hS (h ▸ ρ.property))
+
+/-- Off `S`, the genus-one product over `S` with natural multiplicities `m` has analytic order
+zero. -/
+theorem analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem {z : ℂ} (hz : z ∉ S) :
+    analyticOrderAt (fun w ↦ ∏' ρ : S, weierstrassFactorOne ((ρ : ℂ)⁻¹ * w) ^ m ρ) z = 0 := by
+  rw [analyticOrderAt_tprod_weierstrassFactorOne_pow (fun ρ : S ↦ (ρ : ℂ)⁻¹) m hsum z]
+  have hempty : {p : Σ ρ : S, Fin (m ρ) | (p.1 : ℂ)⁻¹ * z = 1} = ∅ := by
+    refine Set.eq_empty_of_forall_notMem fun p hp ↦ hz ?_
+    have hp0 : (p.1 : ℂ) ≠ 0 := by
+      rintro h
+      simp [h] at hp
+    exact (inv_mul_eq_one₀ hp0).mp hp ▸ p.1.property
+  simp [hempty]
+
+/-- The genus-one product over `S` with natural multiplicities `m` is analytic on the plane. -/
+private theorem analyticOnNhd_tprod_weierstrassFactorOne_inv_mul_pow :
+    AnalyticOnNhd ℂ (fun w ↦ ∏' ρ : S, weierstrassFactorOne ((ρ : ℂ)⁻¹ * w) ^ m ρ) Set.univ :=
+  fun w _ ↦ (differentiable_tprod_weierstrassFactorOne_pow _ m hsum).analyticAt w
+
+/-- At a point `ρ` of a set `S` of nonzero points, the native divisor of the genus-one product
+over `S` with natural multiplicities `m` is `m ρ`. -/
+theorem divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_mem (hS : (0 : ℂ) ∉ S) (ρ : S) :
+    MeromorphicOn.divisor (fun w ↦ ∏' σ : S, weierstrassFactorOne ((σ : ℂ)⁻¹ * w) ^ m σ)
+      Set.univ ρ = m ρ := by
+  rw [MeromorphicOn.AnalyticOnNhd.divisor_apply
+    (analyticOnNhd_tprod_weierstrassFactorOne_inv_mul_pow m hsum) (Set.mem_univ _),
+    analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_mem m hsum hS ρ]
+  simp
+
+/-- Off `S`, the native divisor of the genus-one product over `S` with natural multiplicities
+`m` vanishes. -/
+theorem divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem {z : ℂ} (hz : z ∉ S) :
+    MeromorphicOn.divisor (fun w ↦ ∏' ρ : S, weierstrassFactorOne ((ρ : ℂ)⁻¹ * w) ^ m ρ)
+      Set.univ z = 0 := by
+  rw [MeromorphicOn.AnalyticOnNhd.divisor_apply
+    (analyticOnNhd_tprod_weierstrassFactorOne_inv_mul_pow m hsum) (Set.mem_univ _),
+    analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem m hsum hz]
+  simp
+
+open scoped Classical in
+/-- **Genus-one products over weighted zero sets.** For a set `S` of nonzero points with natural
+multiplicities `m` and `∑ ρ, m ρ * ‖ρ⁻¹‖ ^ 2 < ∞`, the products of the powers
+`E₁(ρ⁻¹ * z) ^ m ρ` over `S` and of the single factors over the repeated index
+`Σ ρ : S, Fin (m ρ)` converge locally uniformly on `ℂ` to the same entire function `F`, with
+`F 0 = 1`, analytic order and divisor `m ρ` at each `ρ ∈ S`, and order zero off `S`. Zero
+multiplicities are allowed, and `S` need not be countable. -/
+theorem exists_entire_genusOne_product (hS : (0 : ℂ) ∉ S) :
+    ∃ F : ℂ → ℂ,
+      HasProdLocallyUniformlyOn
+        (fun (ρ : S) z ↦ weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ m ρ) F Set.univ ∧
+      HasProdLocallyUniformlyOn
+        (fun (p : Σ ρ : S, Fin (m ρ)) z ↦ weierstrassFactorOne ((p.1 : ℂ)⁻¹ * z)) F Set.univ ∧
+      Differentiable ℂ F ∧ F 0 = 1 ∧
+      ∀ z, analyticOrderAt F z = (if hz : z ∈ S then (m ⟨z, hz⟩ : ℕ∞) else 0) ∧
+        MeromorphicOn.divisor F Set.univ z = if hz : z ∈ S then (m ⟨z, hz⟩ : ℤ) else 0 :=
+  ⟨_, hasProdLocallyUniformlyOn_weierstrassFactorOne_pow _ m hsum,
+    hasProdLocallyUniformlyOn_weierstrassFactorOne_sigma _ m hsum,
+    differentiable_tprod_weierstrassFactorOne_pow _ m hsum, by simp, fun z ↦ by
+      by_cases hz : z ∈ S
+      · simpa only [hz, ↓reduceDIte] using
+          ⟨analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_mem m hsum hS ⟨z, hz⟩,
+            divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_mem m hsum hS ⟨z, hz⟩⟩
+      · simpa only [hz, ↓reduceDIte] using
+          ⟨analyticOrderAt_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem m hsum hz,
+            divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem m hsum hz⟩⟩
+
+end Weighted
+
+section OfDivisor
+
+variable (D : Function.locallyFinsuppWithin (Set.univ : Set ℂ) ℤ) (hD : 0 ≤ D) (hD0 : D 0 = 0)
+  (hsum : Summable (fun ρ : D.support ↦ ((D ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
+
+include hD hD0 hsum
+
+/-- A nonnegative whole-plane divisor `D` with `D 0 = 0` and weighted inverse-square summable
+support is the native divisor of the genus-one product over its support. -/
+theorem divisor_tprod_weierstrassFactorOne_inv_mul_pow_toNat :
+    MeromorphicOn.divisor
+      (fun z ↦ ∏' ρ : D.support, weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (D ρ).toNat)
+      Set.univ = D := by
+  ext z
+  by_cases hz : z ∈ D.support
+  · rw [divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_mem (fun ρ : D.support ↦ (D ρ).toNat)
+      hsum (by simp [hD0]) ⟨z, hz⟩]
+    exact Int.toNat_of_nonneg (by simpa using Function.locallyFinsuppWithin.le_def.1 hD z)
+  · rw [divisor_tprod_weierstrassFactorOne_inv_mul_pow_of_notMem
+      (fun ρ : D.support ↦ (D ρ).toNat) hsum hz]
+    exact (Function.notMem_support.mp hz).symm
+
+/-- **Realization of a divisor by a genus-one product.** A nonnegative whole-plane divisor `D`
+with `D 0 = 0` and `∑ ρ, D ρ * ‖ρ⁻¹‖ ^ 2 < ∞` over its support is the native divisor of an
+entire function `F` with `F 0 = 1`, namely the locally uniform limit of the products of
+`E₁(ρ⁻¹ * z) ^ D ρ` over the support of `D`. -/
+theorem exists_entire_genusOne_product_of_divisor :
+    ∃ F : ℂ → ℂ,
+      HasProdLocallyUniformlyOn
+        (fun (ρ : D.support) z ↦ weierstrassFactorOne ((ρ : ℂ)⁻¹ * z) ^ (D ρ).toNat)
+        F Set.univ ∧
+      Differentiable ℂ F ∧ F 0 = 1 ∧ MeromorphicOn.divisor F Set.univ = D :=
+  ⟨_, hasProdLocallyUniformlyOn_weierstrassFactorOne_pow _ _ hsum,
+    differentiable_tprod_weierstrassFactorOne_pow _ _ hsum, by simp,
+    divisor_tprod_weierstrassFactorOne_inv_mul_pow_toNat D hD hD0 hsum⟩
+
+end OfDivisor
 
 /-- The genus-one product over the support of the native whole-plane divisor,
 with its natural multiplicities. -/
@@ -204,31 +333,10 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
-  have h0 := (hf.analyticAt 0).notMem_divisor_support_of_ne_zero (U := Set.univ) hf0
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
-  have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
-    fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
-  ext z
-  rw [MeromorphicOn.AnalyticOnNhd.divisor_apply hpa (Set.mem_univ z)]
-  by_cases hz : z ∈ (MeromorphicOn.divisor f Set.univ).support
-  · let ρ : (MeromorphicOn.divisor f Set.univ).support := ⟨z, hz⟩
-    have hinj : Function.Injective
-        (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹) := by
-      intro r t h
-      apply Subtype.ext
-      exact inv_inj.mp h
-    have ho := analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective
-      (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹)
-      (fun r ↦ (MeromorphicOn.divisor f Set.univ r).toNat) hsum (z := z) (i := ρ)
-      hinj (inv_mul_cancel₀ (coe_ne_zero_of_mem_divisor_support h0 ρ))
-    rw [← divisorProductOne_eq] at ho
-    rw [ho]
-    simpa only [ENat.map_natCast, WithTop.untop₀_coe] using
-      Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
-  · have hdz : MeromorphicOn.divisor f Set.univ z = 0 := by
-      simpa only [Function.mem_support, not_not] using hz
-    rw [(hpa z trivial).analyticOrderAt_eq_zero.mpr (divisorProductOne_ne_zero hsum h0 hz), hdz]
-    simp
+  rw [divisorProductOne_eq]
+  exact divisor_tprod_weierstrassFactorOne_inv_mul_pow_toNat _
+    (MeromorphicOn.AnalyticOnNhd.divisor_nonneg fun z _ ↦ hf.analyticAt z)
+    ((hf.analyticAt 0).divisor_apply_eq_zero hf0) hsum
 
 end TauCeti
 
