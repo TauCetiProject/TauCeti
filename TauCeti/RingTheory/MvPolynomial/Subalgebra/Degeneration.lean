@@ -19,7 +19,9 @@ For a subalgebra `A` of `MvPolynomial σ R` and nonnegative integral weights `w 
 maximal-weight initial forms `weightInitialForm w f` of all elements `f ∈ A`. Restricting the
 ambient symbol map `TauCeti.MvPolynomial.weightReesSymbol R w` along the canonical embedding of
 `A.weightReesAlgebra w` into `TauCeti.MvPolynomial.weightReesAlgebra R w` produces the subalgebra
-symbol map `A.weightReesSymbol w : A.weightReesAlgebra w →ₐ[R] MvPolynomial σ R`.
+symbol map `A.weightReesSymbol w : A.weightReesAlgebra w →ₐ[R] MvPolynomial σ R`, which on a lifted
+Rees presentation `weightReesAevalLift` evaluates the constant term in `t` at the weight-`d i`
+components of the generators (`TauCeti.MvPolynomial.weightReesSymbol_weightReesAevalLift`).
 
 Even over an arbitrary commutative semiring (possibly with zero divisors, where `weightInitialForm`
 need not be multiplicative), the image of `A.weightReesSymbol w` is `A.weightInitialAlgebra w`,
@@ -313,6 +315,33 @@ theorem ker_weightReesSymbol (A : Subalgebra R (MvPolynomial σ R)) (w : σ → 
     exact A.weightReesSymbol_X w
 
 end WeightReesSymbol
+
+end Subalgebra
+
+namespace TauCeti.MvPolynomial
+
+attribute [local instance] Polynomial.algebra in
+@[simp]
+theorem weightReesSymbol_weightReesAevalLift {σ ι R : Type*} [CommSemiring R]
+    {A : Subalgebra R (MvPolynomial σ R)} {w : σ → ℕ} {c : ι → MvPolynomial σ R} {d : ι → ℕ}
+    (hcA : ∀ i, c i ∈ A) (hc : ∀ i, c i ∈ weightFiltration R w (d i))
+    (f : (MvPolynomial ι R)[X]) :
+    letI := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+    A.weightReesSymbol w (weightReesAevalLift hcA hc f) =
+      aeval (fun i ↦ weightedHomogeneousComponent w (d i) (c i)) (f.coeff 0) := by
+  let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+  let := coeffSubalgebra.isScalarTower (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+  let : IsScalarTower R R[X] (MvPolynomial ι R)[X] := IsScalarTower.of_algebraMap_eq fun r ↦ by
+    simp [Polynomial.algebraMap_apply, MvPolynomial.algebraMap_eq]
+  have h : (A.weightReesSymbol w).comp ((weightReesAevalLift hcA hc).restrictScalars R) =
+      (aeval fun i ↦ weightedHomogeneousComponent w (d i) (c i)).comp
+        ((Polynomial.aeval (0 : MvPolynomial ι R)).restrictScalars R) := by
+    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;> simp
+  simpa [← Polynomial.coeff_zero_eq_eval_zero] using congr($h f)
+
+end TauCeti.MvPolynomial
+
+namespace Subalgebra
 
 section Fibres
 
