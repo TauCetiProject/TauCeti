@@ -72,8 +72,11 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   and its continuity.
 * `TauCeti.Huber.weightedMapCompletion_id` and `TauCeti.Huber.weightedMapCompletion_comp`: the
   functor laws.
-* `TauCeti.Huber.weightedMapCompletionEquiv_apply` and `…_symm_apply`: each direction of the
-  equivalence is the corresponding `TauCeti.Huber.weightedMapCompletion`.
+* `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`,
+  `TauCeti.Huber.weightedMapCompletionEquiv_coe_weightedC` and
+  `TauCeti.Huber.weightedMapCompletionEquiv_coe_weightedX`: each direction of the equivalence is
+  the corresponding `TauCeti.Huber.weightedMapCompletion`, together with its action on canonical
+  constants and variables.
 * `TauCeti.Huber.continuous_weightedMapCompletionEquiv` and its `_symm`: the equivalence is one
   of topological rings.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv_coe`,
@@ -284,6 +287,41 @@ theorem weightedMapCompletionEquiv_symm_apply (e : A ≃+* B) (he : Continuous e
     (weightedMapCompletionEquiv e he he' hT hS hTS hST).symm y
       = weightedMapCompletion (φ := (e.symm : B →+* A)) he' hS hT hST y := by
   simp only [weightedMapCompletionEquiv, RingEquiv.ofRingHom_symm_apply]
+
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` maps the canonical image of `weightedC T hT a` to
+the canonical image of `weightedC S hS (e a)`. Provided alongside
+`TauCeti.Huber.weightedMapCompletionEquiv_apply` because `he : Continuous e` is typed on `⇑e`
+rather than `⇑(e : A →+* B)`, preventing `simp` from chaining `weightedMapCompletion_coe` without
+explicit `φ` instantiation. -/
+theorem weightedMapCompletionEquiv_coe_weightedC (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (a : A) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST
+        ((weightedC T hT a : weightedRestrictedSubring T hT) :
+          UniformSpace.Completion (weightedRestrictedSubring T hT))
+      = ((weightedC S hS (e a) : weightedRestrictedSubring S hS) :
+          UniformSpace.Completion (weightedRestrictedSubring S hS)) :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans <|
+    (weightedMapCompletion_coe (φ := (e : A →+* B)) he hT hS hTS _).trans
+      (congrArg _ (weightedMap_weightedC (φ := (e : A →+* B)) he hTS a))
+
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` maps the canonical image of `weightedX T hT i` to
+the canonical image of `weightedX S hS i`; see
+`TauCeti.Huber.weightedMapCompletionEquiv_coe_weightedC` for why this is stated separately from
+`TauCeti.Huber.weightedMapCompletionEquiv_apply`. -/
+theorem weightedMapCompletionEquiv_coe_weightedX (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (i : Fin k) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST
+        ((weightedX T hT i : weightedRestrictedSubring T hT) :
+          UniformSpace.Completion (weightedRestrictedSubring T hT))
+      = ((weightedX S hS i : weightedRestrictedSubring S hS) :
+          UniformSpace.Completion (weightedRestrictedSubring S hS)) :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans <|
+    (weightedMapCompletion_coe (φ := (e : A →+* B)) he hT hS hTS _).trans
+      (congrArg _ (weightedMap_weightedX (φ := (e : A →+* B)) he hTS i))
 
 /-- `TauCeti.Huber.weightedMapCompletionEquiv` is continuous. -/
 theorem continuous_weightedMapCompletionEquiv (e : A ≃+* B) (he : Continuous e)

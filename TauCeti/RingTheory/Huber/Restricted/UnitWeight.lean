@@ -41,8 +41,7 @@ equivalent to `‖aᵢ‖ ≤ cᵢ`.
 
 ## Main results
 
-* `TauCeti.Huber.isWeightBounded_singleton_of_norm_le` and
-  `TauCeti.Huber.isWeightBounded_units_of_norm_le`: coordinate norm bounds imply topological
+* `TauCeti.Huber.isWeightBounded_singleton_of_norm_le`: coordinate norm bounds imply topological
   weight-boundedness along any bounded ring homomorphism.
 * `TauCeti.Huber.IsPseudoUniformizer.isWeightBounded_units_iff_norm_le` and
   `TauCeti.Huber.isWeightBounded_units_iff_norm_le`: weight-boundedness is equivalent to
@@ -85,15 +84,6 @@ theorem isWeightBounded_singleton_of_norm_le {k : ℕ} {R S : Type*} [Seminormed
     IsWeightBounded φ (fun i ↦ ({u i} : Set R)) a :=
   (isWeightBounded_singleton_iff_forall_isPowerBounded φ u a).mpr fun i ↦
     isPowerBounded_map_mul_of_norm_le hφ (hu i) (ha i)
-
-/-- **Norm bounds imply unit weight-boundedness.** Along a bounded ring homomorphism `φ`, a tuple
-`a` with `‖aᵢ‖ ≤ cᵢ` is weight-bounded for unit weights `uᵢ` satisfying `‖uᵢ‖ * cᵢ = 1`. -/
-theorem isWeightBounded_units_of_norm_le {k : ℕ} {R S : Type*} [SeminormedCommRing R]
-    [SeminormedCommRing S] {φ : R →+* S} {C : ℝ} (u : Fin k → Rˣ) {c : Fin k → ℝ}
-    {a : Fin k → S} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
-    (ha : ∀ i, ‖a i‖ ≤ c i) :
-    IsWeightBounded φ (fun i ↦ ({(u i : R)} : Set R)) a :=
-  isWeightBounded_singleton_of_norm_le hφ (fun i ↦ (hc i).le) ha
 
 /-- **Equivalence of unit weight bounds and norm bounds under a power-multiplicative norm.** In a
 seminormed target ring with a pseudouniformiser and power-multiplicative norm, weight-boundedness
@@ -319,7 +309,8 @@ variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
 /-- Huber evaluation on unit-weighted series agrees with bounded Gauss-normed evaluation at radii
 `c`. Any witness `hb` of weight-boundedness may be supplied; in particular
-`isWeightBounded_units_of_norm_le u hφ hc ha` provides one from the norm bounds alone. -/
+`isWeightBounded_singleton_of_norm_le hφ (fun i ↦ (hc i).le) ha` provides one from the norm bounds
+alone. -/
 theorem weightedEvalHom_units_eq_restrictedEval₂OfBound
     (f : weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u)) :
     weightedEvalHom (isWeightFamily_units u) hφc hb f =

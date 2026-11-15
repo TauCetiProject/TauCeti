@@ -33,8 +33,8 @@ polynomials, is `TauCeti.Huber.dense_weightedPolynomials` in the parent module.
 
 Every singleton weight family `Tᵢ = {uᵢ}` is bounded, since `Tν` is then the singleton `{uᵛ}`,
 so any admissible singleton-weighted ring — in particular unit-weighted series and the ordinary
-restricted power-series ring `A⟨X⟩` at `Tᵢ = {1}` — gets each of the four facts by
-specialisation, with `T0Space` and `CompleteSpace` registered as instances.
+restricted power-series ring `A⟨X⟩` at `Tᵢ = {1}` — gets each of these facts by specialisation,
+with `T0Space`, `CompleteSpace`, and `IsDomain` on the completion registered as instances.
 
 Hausdorffness is purely topological — it uses only continuity of the coefficient maps — so it
 is proved in a section over a nonarchimedean ring with no uniformity of its own, which is the
@@ -75,6 +75,8 @@ singleton and trivial-weight specialisations are discharged with.
   bounded, `A⟨X⟩_T` over a Hausdorff base is Hausdorff.
 * `TauCeti.Huber.completeSpace_weightedRestrictedSubring` : Wedhorn 5.49(3) — with every weight
   bounded, `A⟨X⟩_T` over a complete base is complete.
+* `TauCeti.Huber.isDomain_completion_weightedRestrictedSubring` : with every weight bounded, the
+  completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain.
 * `TauCeti.Huber.isBounded_weightPow_singleton`,
   `TauCeti.Huber.continuous_coeff_singleton`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton`,
@@ -287,6 +289,18 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
   intro ν
   simpa [map_sub, hg] using hM f hf ν
 
+/-- **The completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain**
+whenever every weight is bounded: the uncompleted subring has no zero divisors, and completeness
+and Hausdorffness identify the completion with it. -/
+theorem isDomain_completion_weightedRestrictedSubring [T0Space A] [CompleteSpace A] [IsDomain A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) (hb : ∀ ν, IsBounded (weightPow T ν)) :
+    IsDomain (UniformSpace.Completion (weightedRestrictedSubring T hT)) :=
+  letI : T0Space (weightedRestrictedSubring T hT) := t0Space_weightedRestrictedSubring hT hb
+  letI : CompleteSpace (weightedRestrictedSubring T hT) :=
+    completeSpace_weightedRestrictedSubring hT hb
+  letI : IsDomain (weightedRestrictedSubring T hT) := NoZeroDivisors.to_isDomain _
+  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
+
 /-- For an admissible singleton weight family `Tᵢ = {uᵢ}`, the coefficient maps of `A⟨X⟩_T` are
 uniformly continuous. -/
 theorem uniformContinuous_coeff_singleton {u : Fin k → A}
@@ -303,15 +317,12 @@ instance completeSpace_weightedRestrictedSubring_singleton [CompleteSpace A] {u 
   completeSpace_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
 
 /-- **The completion of any admissible singleton-weighted restricted-series ring over a complete
-Hausdorff nonarchimedean domain is a domain**: the uncompleted subring has no zero divisors, and
-completeness and Hausdorffness identify the completion with it. -/
+Hausdorff nonarchimedean domain is a domain.** -/
 instance isDomain_completion_weightedRestrictedSubring_singleton [T0Space A] [CompleteSpace A]
     [IsDomain A] {u : Fin k → A} (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) :
     IsDomain (UniformSpace.Completion
       (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT)) :=
-  letI : IsDomain (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
-    NoZeroDivisors.to_isDomain _
-  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
+  isDomain_completion_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
 
 /-- At the trivial weight family the coefficient maps of `A⟨X⟩` are uniformly continuous:
 they are continuous additive group homomorphisms. -/

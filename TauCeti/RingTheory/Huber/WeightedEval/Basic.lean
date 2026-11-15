@@ -155,24 +155,6 @@ theorem isWeightBounded_one_weight_iff (φ : A →+* B) (b : Fin k → B) :
     simp [weightPow_one_weight]
   rw [isWeightBounded_iff, hset]
 
-/-- **At the one-weight family the hypothesis is exactly Wedhorn's**: the weighted monomials are
-bounded precisely when every variable is power-bounded.
-
-This is the case in which the weights impose nothing, so the hypothesis on the tuple is the
-familiar one; for a general `T` it is `TauCeti.Huber.IsWeightedVarPowerBounded` that plays this
-role. -/
-theorem isWeightBounded_one_weight_iff_forall_isPowerBounded (φ : A →+* B)
-    (b : Fin k → B) :
-    IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set A)) b ↔ ∀ i, IsPowerBounded (b i) := by
-  rw [isWeightBounded_one_weight_iff]
-  refine ⟨fun hb i ↦ isPowerBounded_iff.mpr (hb.subset ?_), fun hb ↦ ?_⟩
-  · rintro _ ⟨n, rfl⟩
-    exact ⟨Finsupp.single i n, by simp [Finsupp.single_apply, Finset.prod_ite_eq]⟩
-  · refine (isBounded_finsetProd Finset.univ
-      (fun i _ ↦ isPowerBounded_iff.mp (hb i))).subset ?_
-    rintro _ ⟨ν, rfl⟩
-    exact Set.finsetProd_mem_finsetProd Finset.univ _ _ fun i _ ↦ ⟨ν i, rfl⟩
-
 /-- **Wedhorn's coordinatewise hypothesis**: each weighted variable is power-bounded *as a set*,
 its powers all lying in one bounded subset of `B`.
 
@@ -225,13 +207,8 @@ when `φ(uᵢ) * bᵢ` is power-bounded as an element. -/
 theorem isWeightedVarPowerBounded_singleton_iff (φ : A →+* B) (u : Fin k → A) (b : Fin k → B) :
     IsWeightedVarPowerBounded φ (fun i ↦ ({u i} : Set A)) b ↔
       ∀ i, IsPowerBounded (φ (u i) * b i) := by
-  rw [isWeightedVarPowerBounded_iff]
-  refine forall_congr' fun i ↦ ?_
-  have hpow : (⋃ n : ℕ, weightedVar φ (fun j ↦ ({u j} : Set A)) b i ^ n) =
-      Set.range fun n : ℕ ↦ (φ (u i) * b i) ^ n := by
-    ext x
-    simp [Set.singleton_pow]
-  rw [isPowerBounded_iff, ← hpow]
+  simp_rw [isWeightedVarPowerBounded_iff, weightedVar_singleton, Set.singleton_pow,
+    isPowerBounded_iff, Set.iUnion_singleton_eq_range]
 
 /-- **For singleton weights `Tᵢ = {uᵢ}`, weight-boundedness is coordinatewise power-boundedness of
 the scaled arguments `φ(uᵢ) * bᵢ`.** Specialising to `u ≡ 1` recovers
@@ -240,6 +217,18 @@ theorem isWeightBounded_singleton_iff_forall_isPowerBounded (φ : A →+* B) (u 
     (b : Fin k → B) :
     IsWeightBounded φ (fun i ↦ ({u i} : Set A)) b ↔ ∀ i, IsPowerBounded (φ (u i) * b i) := by
   rw [isWeightBounded_iff_isWeightedVarPowerBounded, isWeightedVarPowerBounded_singleton_iff]
+
+/-- **At the one-weight family the hypothesis is exactly Wedhorn's**: the weighted monomials are
+bounded precisely when every variable is power-bounded.
+
+This is the case in which the weights impose nothing, so the hypothesis on the tuple is the
+familiar one; for a general `T` it is `TauCeti.Huber.IsWeightedVarPowerBounded` that plays this
+role. -/
+theorem isWeightBounded_one_weight_iff_forall_isPowerBounded (φ : A →+* B)
+    (b : Fin k → B) :
+    IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set A)) b ↔ ∀ i, IsPowerBounded (b i) := by
+  simpa only [map_one, one_mul] using
+    isWeightBounded_singleton_iff_forall_isPowerBounded φ (fun _ ↦ 1) b
 
 end Semiring
 
