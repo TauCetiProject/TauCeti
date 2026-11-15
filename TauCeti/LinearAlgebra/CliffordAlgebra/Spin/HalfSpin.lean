@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # The half-spin representations of `Spin(4)` and `Spinᶜ(4)`
@@ -41,6 +42,15 @@ does not act on vectors, so `Spinᶜ(4)` acts on vectors through its rotation
 `CliffordAlgebra.spinCGroup.toSpecialOrthogonal`. This is the equivariance that lets Clifford
 multiplication by cotangent vectors be defined on the associated spinor bundles `W^±` of a `Spinᶜ`
 structure.
+
+A conjugate-linear map `U : W → W'` of Clifford modules commuting with Clifford multiplication by
+vectors, such as the quaternionic structure `j` of the spinors, commutes with every real Clifford
+element, hence with `Spin(4)`, and maps `W^ε` into `W'^(conj ε)`
+(`CliffordAlgebra.map_mem_eigenspace_chirality`). As it conjugates the scalar `z`,
+it intertwines the action of `x ∈ Spinᶜ(4)` with that of its charge conjugate
+`spinCGroup.chargeConj x` (`CliffordAlgebra.apply_spinCGroupHalfSpinRep_apply`). This is the
+representation-level content of charge conjugation of spinors `ψ ↦ j ψ`, which carries the spinor
+bundles of a `Spinᶜ` structure to those of the conjugate structure.
 
 ## Main definitions
 
@@ -72,6 +82,9 @@ structure.
   `CliffordAlgebra.inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply`: the descended
   representations of `Spinᶜ(4)` are Clifford equivariant over its rotation, have determinant the
   determinant character, and are unitary.
+* `CliffordAlgebra.apply_spinGroup_apply` and `CliffordAlgebra.apply_spinCGroupHalfSpinRep_apply`:
+  a conjugate-linear Clifford intertwiner commutes with `Spin(4)` and intertwines each element of
+  `Spinᶜ(4)` with its charge conjugate.
 
 ## References
 
@@ -279,5 +292,44 @@ theorem inner_spinCGroupHalfSpinRep_apply_spinCGroupHalfSpinRep_apply
   rw [spinCGroupHalfSpinRep_mk, inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply o ε hρ]
 
 end Hermitian
+
+/-! ### Charge conjugation -/
+
+section ChargeConjugation
+
+variable {W W' : Type*} [AddCommGroup W] [Module ℂ W] [AddCommGroup W'] [Module ℂ W']
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'}
+  {U : W →ₗ⋆[ℂ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w))
+include hU
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- **A conjugate-linear Clifford intertwiner commutes with the Spin action**:
+`U (ρ(s) w) = ρ'(s) (U w)` for `s ∈ Spin(Q)`, because `s` is a real Clifford element. -/
+theorem apply_spinGroup_apply (s : spinGroup Q) (w : W) :
+    U (ρ s w) = ρ' s (U w) :=
+  apply_apply_eq_of_forall_ιₛₗ (fun r ↦ Complex.conj_ofReal r) hU _ w
+
+/-- **Charge conjugation of the half-spin representations of `Spinᶜ(4)`**: a conjugate-linear map
+`U` commuting with Clifford multiplication intertwines the action of `x` with that of its charge
+conjugate `spinCGroup.chargeConj x`,
+
+`U (ρ^ε(x) ψ) = ρ'^ε'(chargeConj x) (U ψ)`,
+
+for half-spinors `ψ ∈ W^ε` with `U ψ ∈ W'^ε'`. At `x = [s, z]` the Spin factor commutes with `U`
+and the scalar `z` becomes `conj z = z⁻¹`. Since `chargeConj x = x [1, (det x)⁻¹]`
+(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), a quaternionic structure
+`j : W → W` of the spinor module identifies the complex conjugate of the spinor bundle of a
+`Spinᶜ` structure with determinant line `L` with the spinor bundle of its twist by `L⁻¹`. -/
+theorem apply_spinCGroupHalfSpinRep_apply (hQ₀ : Q ≠ 0) (x : spinCGroup Q hQ₀) {ε ε' : ℂ}
+    (ψ : eigenspace (ρ (chirality Q o)) ε) (ψ' : eigenspace (ρ' (chirality Q o)) ε')
+    (hψ : (ψ' : W') = U ψ) :
+    U (spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ) =
+      spinCGroupHalfSpinRep o ρ' ε' hQ₀ (spinCGroup.chargeConj Q hQ₀ x) ψ' := by
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective Q hQ₀ x
+  simp only [spinCGroup.chargeConj_mk, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply,
+    LinearMap.smul_apply, Submodule.coe_smul, coe_halfSpinRep_apply, map_smulₛₗ,
+    apply_spinGroup_apply hU, hψ, Circle.coe_inv_eq_conj]
+
+end ChargeConjugation
 
 end CliffordAlgebra
