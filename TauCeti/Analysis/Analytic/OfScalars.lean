@@ -17,8 +17,10 @@ algebra need not be commutative: variables retain their original order inside ev
 block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
-zero they recover the coefficients. It also computes the scalar series of `z ↦ f (z ^ m)` on a
-ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`. Over a densely
+zero they recover the coefficients. It also computes the Cauchy product of two scalar power series
+on a common ball in any normed algebra (`HasFPowerSeriesOnBall.mul_ofScalars`) and the scalar
+series of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra
+with `‖1‖ = 1`. Over a densely
 normed field, a scalar series whose sum has no zero in a disk about the origin converges on that
 disk, because the sum is `0` wherever the series diverges.
 
@@ -196,6 +198,94 @@ theorem le_radius_ofScalars_of_ofScalarsSum_ne_zero {𝕜 : Type*} [DenselyNorme
   simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
 
 end FormalMultilinearSeries
+
+section MulOfScalars
+
+open FormalMultilinearSeries
+open scoped NNReal
+
+private theorem ofFn_eq_append {α : Type*} {n k : ℕ} (hk : k ≤ n) (m : Fin n → α) :
+    List.ofFn m =
+      List.ofFn (fun i : Fin k ↦ m (Fin.castLE hk i)) ++
+        List.ofFn (fun j : Fin (n - k) ↦ m ⟨k + j, by omega⟩) := by
+  refine List.ext_getElem (by simp only [List.length_append, List.length_ofFn]; omega)
+    fun i hi₁ hi₂ ↦ ?_
+  by_cases hik : i < k
+  · rw [List.getElem_append_left (by simp [hik])]
+    simp
+  · rw [List.getElem_append_right (by simp only [List.length_ofFn]; omega)]
+    simp only [List.length_ofFn, List.getElem_ofFn]
+    congr 1
+    ext
+    dsimp only
+    omega
+
+private theorem norm_ofScalars_sum_range_mul_le {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
+    [SeminormedRing A] [NormedAlgebra 𝕂 A] (c d : ℕ → 𝕂) (n : ℕ) :
+    ‖ofScalars A (fun m ↦ ∑ k ∈ Finset.range (m + 1), c k * d (m - k)) n‖ ≤
+      ∑ k ∈ Finset.range (n + 1), ‖ofScalars A c k‖ * ‖ofScalars A d (n - k)‖ := by
+  refine ContinuousMultilinearMap.opNorm_le_bound
+    (Finset.sum_nonneg fun _ _ ↦ by positivity) fun m ↦ ?_
+  simp only [ofScalars, _root_.smul_apply,
+    ContinuousMultilinearMap.mkPiAlgebraFin_apply, Finset.sum_smul, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k hk ↦ ?_)
+  have hkn : k ≤ n := Finset.mem_range_succ_iff.mp hk
+  let m₁ : Fin k → A := fun i ↦ m (Fin.castLE hkn i)
+  let m₂ : Fin (n - k) → A := fun j ↦ m ⟨k + j, by omega⟩
+  have hnorm_prod : ∏ i, ‖m i‖ = (∏ i, ‖m₁ i‖) * ∏ j, ‖m₂ j‖ := by
+    simp only [← Fin.prod_ofFn]
+    rw [ofFn_eq_append hkn fun i ↦ ‖m i‖, List.prod_append]
+  rw [ofFn_eq_append hkn m, List.prod_append, ← smul_mul_smul_comm]
+  calc ‖(c k • (List.ofFn m₁).prod) * (d (n - k) • (List.ofFn m₂).prod)‖
+      ≤ ‖ofScalars A c k m₁‖ * ‖ofScalars A d (n - k) m₂‖ := norm_mul_le _ _
+    _ ≤ (‖ofScalars A c k‖ * ∏ i, ‖m₁ i‖) * (‖ofScalars A d (n - k)‖ * ∏ j, ‖m₂ j‖) := by
+        gcongr <;> exact ContinuousMultilinearMap.le_opNorm _ _
+    _ = ‖ofScalars A c k‖ * ‖ofScalars A d (n - k)‖ * ∏ i, ‖m i‖ := by
+        rw [hnorm_prod]; ring
+
+/-- **Cauchy product of scalar power series on a ball.** In any normed `𝕂`-algebra `A`, if `f` and
+`g` are represented on the ball of radius `r` about `0` by the scalar power series `∑ c k • z ^ k`
+and `∑ d k • z ^ k`, then `z ↦ f z * g z` is represented on the same ball by the scalar power
+series with Cauchy product coefficients `∑ k ≤ n, c k * d (n - k)`. -/
+theorem _root_.HasFPowerSeriesOnBall.mul_ofScalars {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
+    [NormedRing A] [NormedAlgebra 𝕂 A] {f g : A → A} {c d : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars A c) 0 r)
+    (hg : HasFPowerSeriesOnBall g (ofScalars A d) 0 r) :
+    HasFPowerSeriesOnBall (fun z ↦ f z * g z)
+      (ofScalars A fun n ↦ ∑ k ∈ Finset.range (n + 1), c k * d (n - k)) 0 r where
+  r_le := ENNReal.le_of_forall_nnreal_lt fun ρ hρ ↦ by
+    apply le_radius_of_summable
+    have hp := (ofScalars A c).summable_norm_mul_pow (hρ.trans_le hf.r_le)
+    have hq := (ofScalars A d).summable_norm_mul_pow (hρ.trans_le hg.r_le)
+    have hmaj := summable_sum_mul_range_of_summable_norm'
+      (hp.congr fun _ ↦ (Real.norm_of_nonneg (by positivity)).symm) hp
+      (hq.congr fun _ ↦ (Real.norm_of_nonneg (by positivity)).symm) hq
+    refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hmaj
+    refine (mul_le_mul_of_nonneg_right (norm_ofScalars_sum_range_mul_le c d n)
+      (by positivity)).trans_eq ?_
+    rw [Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    have hn : (ρ : ℝ) ^ n = (ρ : ℝ) ^ k * (ρ : ℝ) ^ (n - k) := by
+      rw [← pow_add, Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp hk)]
+    rw [hn]
+    ring
+  r_pos := hf.r_pos
+  hasSum {y} hy := by
+    have hfy := hf.hasSum hy
+    have hgy := hg.hasSum hy
+    have hfn := (ofScalars A c).summable_norm_apply
+      (mem_eball_zero_iff.mpr ((mem_eball_zero_iff.mp hy).trans_le hf.r_le))
+    have hgn := (ofScalars A d).summable_norm_apply
+      (mem_eball_zero_iff.mpr ((mem_eball_zero_iff.mp hy).trans_le hg.r_le))
+    rw [zero_add] at hfy hgy ⊢
+    rw [← hfy.tsum_eq, ← hgy.tsum_eq]
+    refine (hasSum_sum_range_mul_of_summable_norm' hfn hfy.summable hgn hgy.summable).congr_fun
+      fun n ↦ ?_
+    simp only [ofScalars_apply_eq, Finset.sum_smul]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [smul_mul_smul_comm, ← pow_add, Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp hk)]
+
+end MulOfScalars
 
 namespace TauCeti
 

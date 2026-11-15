@@ -57,6 +57,10 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Complex.ascPochhammer_eval_mul_inv_Gamma_add` and `Real.ascPochhammer_eval_mul_inv_Gamma_add` —
+  `(z)ₙ (Γ(z + n))⁻¹ = (Γ z)⁻¹` for every `z`, including nonpositive integer poles.
+* `Complex.exists_norm_inv_Gamma_add_natCast_le` — polynomial-times-inverse-factorial bound
+  `‖(Γ(s + k))⁻¹‖ ≤ C (k + 1) ^ M / k!` along natural-number shifts for arbitrary complex `s`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -261,9 +265,64 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
 
+/-- Multiplying `(Γ(z + n))⁻¹` by the rising Pochhammer symbol `(z)ₙ` recovers `(Γ z)⁻¹` for every
+complex `z`, including nonpositive integer poles where Mathlib's `0⁻¹ = 0` matches the zeros of
+`1 / Γ`. -/
+theorem ascPochhammer_eval_mul_inv_Gamma_add (z : ℂ) (n : ℕ) :
+    (ascPochhammer ℂ n).eval z * (Gamma (z + n))⁻¹ = (Gamma z)⁻¹ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hrec := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (z + n)
+    rw [ascPochhammer_succ_eval, Nat.cast_succ, ← add_assoc, mul_assoc, ← hrec, ih]
+
+/-- For every complex parameter `s`, `‖(Γ(s + k))⁻¹‖` is bounded by a polynomial in `k + 1`
+divided by `k!`, with no half-plane restriction on `s`. -/
+theorem exists_norm_inv_Gamma_add_natCast_le (s : ℂ) :
+    ∃ C : ℝ, ∃ M : ℕ, 0 ≤ C ∧ ∀ k : ℕ, ‖(Gamma (s + k))⁻¹‖ ≤ C * ((k : ℝ) + 1) ^ M / k ! := by
+  let M : ℕ := ⌈1 - s.re⌉₊
+  have hsM : 1 ≤ (s + M).re := by
+    rw [add_re, natCast_re]
+    linarith [Nat.le_ceil (1 - s.re)]
+  have hp : ∀ j : ℕ, ∀ w : ℂ, ‖(ascPochhammer ℂ j).eval w‖ ≤ (‖w‖ + j) ^ j := fun j w => by
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      rw [ascPochhammer_succ_eval, norm_mul, pow_succ]
+      push_cast
+      refine mul_le_mul (ih.trans (pow_le_pow_left₀ (by positivity) (by linarith) j))
+        ((norm_add_le w j).trans (by rw [norm_natCast]; linarith)) (norm_nonneg _) (by positivity)
+  refine ⟨(‖s‖ + M + 1) ^ M * ‖(Gamma (s + M))⁻¹‖, M, by positivity, fun k => ?_⟩
+  have hshift : s + k + (M : ℂ) = s + M + k := by ring
+  rw [← ascPochhammer_eval_mul_inv_Gamma_add (s + k) M, hshift, norm_mul]
+  have hpoch : ‖(ascPochhammer ℂ M).eval (s + k)‖ ≤ ((‖s‖ + M + 1) * ((k : ℝ) + 1)) ^ M := by
+    refine (hp M (s + k)).trans (pow_le_pow_left₀ (by positivity) ?_ M)
+    calc ‖s + (k : ℂ)‖ + M ≤ ‖s‖ + k + M := by linarith [norm_add_le s (k : ℂ), norm_natCast k]
+      _ ≤ (‖s‖ + M + 1) * ((k : ℝ) + 1) := by nlinarith [norm_nonneg s, k.cast_nonneg (α := ℝ)]
+  calc ‖(ascPochhammer ℂ M).eval (s + k)‖ * ‖(Gamma (s + M + k))⁻¹‖
+      ≤ ((‖s‖ + M + 1) * ((k : ℝ) + 1)) ^ M * (‖(Gamma (s + M))⁻¹‖ / k !) := by
+        gcongr
+        exact norm_inv_Gamma_add_natCast_le hsM k
+    _ = (‖s‖ + M + 1) ^ M * ‖(Gamma (s + M))⁻¹‖ * ((k : ℝ) + 1) ^ M / k ! := by
+        rw [mul_pow]; ring
+
 end Complex
 
 namespace Real
+
+/-- Multiplying `(Γ(x + n))⁻¹` by `(x)ₙ` recovers `(Γ x)⁻¹` for every real `x`, including
+nonpositive integers. -/
+theorem ascPochhammer_eval_mul_inv_Gamma_add (x : ℝ) (n : ℕ) :
+    (ascPochhammer ℝ n).eval x * (Gamma (x + n))⁻¹ = (Gamma x)⁻¹ := by
+  have hp : (ascPochhammer ℂ n).eval (x : ℂ) = (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) := by
+    induction n with
+    | zero => simp
+    | succ n ih => simp [ascPochhammer_succ_eval, ih]
+  have h := Complex.ascPochhammer_eval_mul_inv_Gamma_add (x : ℂ) n
+  have hcast : (x : ℂ) + n = ((x + n : ℝ) : ℂ) := by push_cast; ring
+  rw [hcast, hp, Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_inv,
+    ← Complex.ofReal_inv, ← Complex.ofReal_mul] at h
+  exact Complex.ofReal_injective h
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
