@@ -11,6 +11,7 @@ public import Mathlib.Topology.Homotopy.Basic
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
+import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.SmoothApprox
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Sphere.Connected
@@ -127,12 +128,10 @@ theorem exists_eq_zero_of_continuous_of_inner_eq_zero (hn : Even n)
     ∃ x, v x = 0 := by
   by_contra! h0
   -- The unit tangent field `u = v / ‖v‖`.
-  let u : sphere (0 : E) 1 → sphere (0 : E) 1 := fun x ↦
-    ⟨‖v x‖⁻¹ • v x, by simp [norm_smul, norm_ne_zero_iff.2 (h0 x)]⟩
-  have hu : Continuous u :=
-    ((hv.norm.inv₀ fun x ↦ norm_ne_zero_iff.2 (h0 x)).smul hv).subtype_mk _
+  let u := normalizeToSphere v hv h0
   have hxu (x : sphere (0 : E) 1) : ⟪(x : E), (u x : E)⟫_ℝ = 0 := by
-    rw [real_inner_smul_right, real_inner_comm, ht, mul_zero]
+    rw [coe_normalizeToSphere_apply, NormedSpace.normalize, real_inner_smul_right, real_inner_comm,
+      ht, mul_zero]
   refine not_homotopic_id_neg_sphere hn ⟨
     { toFun p := ⟨Real.cos (Real.pi * p.1) • (p.2 : E) + Real.sin (Real.pi * p.1) • (u p.2 : E),
         mem_sphere_zero_iff_norm.2 (norm_cos_smul_add_sin_smul _ _ (hxu p.2) _)⟩
