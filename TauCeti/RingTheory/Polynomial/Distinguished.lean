@@ -9,8 +9,7 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 
-import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.Algebra.Polynomial.Degree.TrailingDegree
+import Mathlib.RingTheory.IntegralClosure.GoingDown
 
 /-!
 # Distinguished polynomials and the polynomial `(1 + X) ^ n - 1`
@@ -33,9 +32,9 @@ For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`,
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
 polynomials at `I` are monotonic in `I` and closed under finite products, including the empty
 product `1`. Conversely, every monic factor of a polynomial distinguished at `I` is distinguished
-at `I.radical` (and hence at `I` itself whenever `I` is radical, in particular prime or maximal):
-modulo any prime ideal containing `I` the ambient polynomial reduces to `X ^ n`, so any monic
-factor also reduces to a power of `X`.
+at `I.radical` (`Polynomial.IsDistinguishedAt.radical_of_dvd`, proved via
+`Polynomial.coeff_mem_radical_span_coeff_of_dvd`), and hence at `I` itself whenever `I` is
+radical, in particular prime or maximal (`Polynomial.IsDistinguishedAt.of_dvd`).
 
 ## Main results
 
@@ -137,23 +136,14 @@ variable {O : Type*} [CommRing O] {I J : Ideal O} {F G : O[X]} {p e : ℕ}
 theorem mono (hF : F.IsDistinguishedAt I) (hIJ : I ≤ J) : F.IsDistinguishedAt J :=
   ⟨⟨fun hn ↦ hIJ (hF.mem hn)⟩, hF.monic⟩
 
-/-- Every monic factor of a polynomial distinguished at `I` is distinguished at `I.radical`:
-modulo any prime ideal containing `I`, the ambient polynomial is a power of `X` and the quotient
-ring is a domain, so the monic factor is also a power of `X`. -/
+/-- Every monic factor of a polynomial distinguished at `I` is distinguished at `I.radical`. -/
 theorem radical_of_dvd (hF : F.IsDistinguishedAt I) (hG : G.Monic) (hGF : G ∣ F) :
     G.IsDistinguishedAt I.radical := by
-  refine ⟨⟨fun {k} hk ↦ ?_⟩, hG⟩
-  rw [Ideal.radical_eq_sInf, Ideal.mem_sInf]
-  rintro P ⟨hIP, hP⟩
-  have : IsDomain (O ⧸ P) := (Ideal.Quotient.isDomain_iff_prime P).mpr hP
-  have hdvd : G.map (Ideal.Quotient.mk P) ∣ X ^ F.natDegree := by
-    rw [← (hF.mono hIP).map_eq_X_pow]
-    exact map_dvd (Ideal.Quotient.mk P) hGF
-  have hGX := (hG.map (Ideal.Quotient.mk P)).eq_X_pow_of_dvd_X_pow hdvd
-  rw [hG.natDegree_map (Ideal.Quotient.mk P)] at hGX
-  have hk0 : (G.map (Ideal.Quotient.mk P)).coeff k = 0 := by
-    rw [hGX, coeff_X_pow, ite_eq_right hk.ne]
-  exact Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hk0)
+  refine ⟨⟨fun {k} hk ↦ Ideal.radical_mono ?_
+    (coeff_mem_radical_span_coeff_of_dvd F G hF.monic hG hGF k hk.ne)⟩, hG⟩
+  rw [Ideal.span_le]
+  rintro _ ⟨_, hi, rfl⟩
+  exact hF.mem hi
 
 /-- Over a radical ideal `I` (in particular any prime or maximal ideal), every monic factor of a
 polynomial distinguished at `I` is distinguished at `I`. -/

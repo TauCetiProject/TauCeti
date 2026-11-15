@@ -33,7 +33,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   complex normed space, `exists_analyticAt_toFilterGerm_eq`, `exists_toFilterGerm_eq_of_analyticAt`,
   and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
-  with the same germ;
+  with the same germ; on a subsingleton space, evaluation is bijective
+  (`eval_bijective_of_subsingleton`) and identifies the stalk with `ℂ` (`evalEquiv`);
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
@@ -253,6 +254,35 @@ theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).
 theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     eval I X x (germOfContMDiff f hf x) = f x :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
+
+variable (I X) in
+/-- On a subsingleton space, evaluation at the base point is bijective on the holomorphic stalk. -/
+theorem eval_bijective_of_subsingleton [Subsingleton X] (x : X) :
+    Bijective (eval I X x) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective I X x⟩
+  obtain ⟨f, -, hfs⟩ := exists_toFilterGerm_eq x s
+  refine (eq_zero_iff_of_toFilterGerm_eq (hfs _ le_rfl)).2 (Eventually.of_forall fun y ↦ ?_)
+  rw [Subsingleton.elim y x, ← eval_eq_of_toFilterGerm_eq (hfs _ le_rfl), hs, Pi.zero_apply]
+
+variable (I X) in
+/-- On a subsingleton space, evaluation at the base point identifies the holomorphic stalk with
+`ℂ`. -/
+def evalEquiv [Subsingleton X] (x : X) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+* ℂ :=
+  RingEquiv.ofBijective (eval I X x) (eval_bijective_of_subsingleton I X x)
+
+/-- `evalEquiv` evaluates a holomorphic germ at the base point. -/
+@[simp]
+theorem evalEquiv_apply [Subsingleton X] (x : X)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalEquiv I X x s = eval I X x s := by
+  rw [evalEquiv, RingEquiv.ofBijective_apply]
+
+/-- The inverse of `evalEquiv` sends a complex number `c` to the constant holomorphic germ `c`. -/
+@[simp]
+theorem evalEquiv_symm_apply [Subsingleton X] (x : X) (c : ℂ) :
+    (evalEquiv I X x).symm c = germOfContMDiff (fun _ ↦ c) contMDiff_const x := by
+  rw [RingEquiv.symm_apply_eq, evalEquiv_apply, eval_germOfContMDiff]
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}

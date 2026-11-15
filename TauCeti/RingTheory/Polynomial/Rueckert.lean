@@ -11,8 +11,6 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
-import Mathlib.Algebra.Ring.Hom.InjSurj
-
 /-!
 # Rückert's descent along polynomial-like ring maps
 
@@ -37,11 +35,11 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 (`RingHom.IsRueckert.exists_finite_quotient`). Consequently:
 
 * `RingHom.IsRueckert.isNoetherianRing`: if `A` is noetherian, so is `B`;
-* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` is a unique factorisation domain and `B`
-  is a domain, then `B` is a unique factorisation domain. Each `φ w` is a product of primes,
-  because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and an
-  irreducible `w ∈ W` generates a prime ideal whose quotient is identified with `B ⧸ (φ w)`;
-  conversely, `RingHom.IsRueckert.isPrime_span_apply_iff`, `RingHom.IsRueckert.prime_apply_iff`,
+* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` has unique factorisation and `B` has no
+  zero divisors, then `B` has unique factorisation. Each `φ w` is a product of primes, because a
+  monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and an irreducible `w ∈ W`
+  generates a prime ideal whose quotient is identified with `B ⧸ (φ w)`; conversely,
+  `RingHom.IsRueckert.isPrime_span_apply_iff`, `RingHom.IsRueckert.prime_apply_iff`,
   `RingHom.IsRueckert.irreducible_apply_iff`, `RingHom.IsRueckert.isRelPrime_apply_iff` and
   `RingHom.IsRueckert.squarefree_apply_iff` compare primality, irreducibility, relative primality
   and squarefreeness of `w ∈ W` directly with those of `φ w`;
@@ -179,15 +177,10 @@ theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := b
     Ideal.span_singleton_prime hp.ne_zero]
   exact hp
 
-/-- Over a ring `B` without zero divisors, the image of `w ∈ W` in `B` is prime if and only if
-`w` is prime in `A[X]`. -/
-theorem prime_apply_iff [NoZeroDivisors B] {w : A[X]} (hw : w ∈ W) :
+/-- For `w ∈ W`, the image `φ w` is prime in `B` if and only if `w` is prime in `A[X]`. -/
+theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) :
     Prime (φ w) ↔ Prime w := by
   refine ⟨fun hp ↦ ?_, h.prime_apply hw⟩
-  have : Nontrivial B := ⟨0, 1, fun h01 ↦
-    hp.not_isUnit (@Subsingleton.elim _ (subsingleton_of_zero_eq_one h01) (φ w) 1 ▸ isUnit_one)⟩
-  have : IsDomain B := NoZeroDivisors.to_isDomain B
-  have : IsDomain A[X] := Function.Injective.isDomain φ h.injective
   have hw0 : w ≠ 0 := (map_ne_zero_iff φ h.injective).mp hp.ne_zero
   rwa [← Ideal.span_singleton_prime hw0, ← h.isPrime_span_apply_iff hw,
     Ideal.span_singleton_prime hp.ne_zero]
@@ -243,33 +236,39 @@ theorem squarefree_of_squarefree_apply [NoZeroDivisors A] {w : A[X]} (hw : w ∈
     exact map_dvd φ ((mul_dvd_mul hdd'.symm.dvd hdd'.symm.dvd).trans hdw)
   exact hdd'.isUnit_iff.mpr (hd'1 ▸ isUnit_one)
 
-/-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
-product of primes. -/
-theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w : A[X]}
-    (hw : w ∈ W) : ∃ f : Multiset B, (∀ b ∈ f, Prime b) ∧ Associated f.prod (φ w) := by
+@[elab_as_elim]
+private theorem mem_induction [NoZeroDivisors A] {P : A[X] → Prop} {w : A[X]} (hw : w ∈ W)
+    (h1 : P 1) (hirr : ∀ {w}, w ∈ W → Irreducible w → P w)
+    (hmul : ∀ {f g}, f ∈ W → g ∈ W → P f → P g → P (f * g)) : P w := by
   induction hn : w.natDegree using Nat.strong_induction_on generalizing w with
   | _ n ih =>
-  have hm := h.monic hw
-  by_cases hirr : Irreducible w
-  · exact ⟨{φ w}, by simpa using h.prime_apply hw hirr.prime, by simp⟩
+  by_cases hw_irr : Irreducible w
+  · exact hirr hw hw_irr
   rcases eq_or_ne w 1 with rfl | hw1
-  · exact ⟨0, by simp, by simp⟩
+  · exact h1
   -- A reducible monic member of `W` is a product of two monic members of positive degree.
   obtain ⟨f, g, hf, hg, rfl, hf0, hg0⟩ : ∃ f g : A[X], f.Monic ∧ g.Monic ∧ f * g = w ∧
       f.natDegree ≠ 0 ∧ g.natDegree ≠ 0 := by
-    simpa [hm.irreducible_iff_natDegree, hw1, not_or] using hirr
+    simpa [(h.monic hw).irreducible_iff_natDegree, hw1, not_or] using hw_irr
   have hdeg := hf.natDegree_mul hg
-  obtain ⟨F, hF, hFf⟩ := ih f.natDegree (by omega)
-    (h.mem_of_dvd hw hf (dvd_mul_right f g)) rfl
-  obtain ⟨G, hG, hGg⟩ := ih g.natDegree (by omega)
-    (h.mem_of_dvd hw hg (dvd_mul_left g f)) rfl
-  refine ⟨F + G, fun b hb ↦ (Multiset.mem_add.mp hb).elim (hF b) (hG b), ?_⟩
+  have hfw := h.mem_of_dvd hw hf (dvd_mul_right f g)
+  have hgw := h.mem_of_dvd hw hg (dvd_mul_left g f)
+  exact hmul hfw hgw (ih f.natDegree (by omega) hfw rfl) (ih g.natDegree (by omega) hgw rfl)
+
+/-- Over a `UniqueFactorizationMonoid` `A`, the image of every member of `W` is associated to a
+product of primes. -/
+theorem exists_prime_factors_apply [UniqueFactorizationMonoid A] {w : A[X]}
+    (hw : w ∈ W) : ∃ f : Multiset B, (∀ b ∈ f, Prime b) ∧ Associated f.prod (φ w) := by
+  refine h.mem_induction hw ⟨0, by simp, by simp⟩
+    (fun hw hirr ↦ ⟨{φ _}, by simpa using h.prime_apply hw hirr.prime, by simp⟩)
+    fun _ _ ⟨F, hF, hFf⟩ ⟨G, hG, hGg⟩ ↦
+      ⟨F + G, fun b hb ↦ (Multiset.mem_add.mp hb).elim (hF b) (hG b), ?_⟩
   rw [Multiset.prod_add, map_mul]
   exact hFf.mul_mul hGg
 
-/-- **Rückert's factorial descent.** If `A` is a unique factorisation domain and `B` is a domain,
-then `B` is a unique factorisation domain. -/
-theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] :
+/-- **Rückert's factorial descent.** If `A` has unique factorisation and `B` has no zero divisors,
+then `B` has unique factorisation. -/
+theorem uniqueFactorizationMonoid [UniqueFactorizationMonoid A] [NoZeroDivisors B] :
     UniqueFactorizationMonoid B := by
   refine UniqueFactorizationMonoid.of_exists_prime_factors fun b hb ↦ ?_
   obtain ⟨α, u, w, hw, hu⟩ := h.exists_mul_eq hb
@@ -282,59 +281,41 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
 
-/-- Over a unique factorisation domain `A` and a domain `B`, the image `φ w` of `w ∈ W` is
-irreducible in `B` if and only if `w` is irreducible in `A[X]`. -/
-theorem irreducible_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] {w : A[X]}
+/-- Over a `UniqueFactorizationMonoid` `A` and a ring `B` without zero divisors, the image `φ w` of
+`w ∈ W` is irreducible in `B` if and only if `w` is irreducible in `A[X]`. -/
+theorem irreducible_apply_iff [UniqueFactorizationMonoid A] [NoZeroDivisors B] {w : A[X]}
     (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
   have := h.uniqueFactorizationMonoid
   rw [UniqueFactorizationMonoid.irreducible_iff_prime,
     UniqueFactorizationMonoid.irreducible_iff_prime, h.prime_apply_iff hw]
 
-/-- Over a unique factorisation domain `A` and a domain `B`, for `w ∈ W` and any `q : A[X]`, the
-images `φ w` and `φ q` are relatively prime in `B` if and only if `w` and `q` are relatively prime
-in `A[X]`. -/
-theorem isRelPrime_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] {w : A[X]}
+/-- Over a `UniqueFactorizationMonoid` `A` and a ring `B` without zero divisors, for `w ∈ W` and
+any `q : A[X]`, the images `φ w` and `φ q` are relatively prime in `B` if and only if `w` and `q`
+are relatively prime in `A[X]`. -/
+theorem isRelPrime_apply_iff [UniqueFactorizationMonoid A] [NoZeroDivisors B] {w : A[X]}
     (hw : w ∈ W) {q : A[X]} : IsRelPrime (φ w) (φ q) ↔ IsRelPrime w q := by
-  refine ⟨h.isRelPrime_of_isRelPrime_apply hw, fun hrel ↦ ?_⟩
+  refine ⟨h.isRelPrime_of_isRelPrime_apply hw, ?_⟩
   have := h.uniqueFactorizationMonoid
-  induction hn : w.natDegree using Nat.strong_induction_on generalizing w with
-  | _ n ih =>
-  by_cases hirr : Irreducible w
-  · exact ((h.irreducible_apply_iff hw).mpr hirr).isRelPrime_iff_not_dvd.mpr
-      ((h.dvd_iff hw q).not.mpr (hirr.isRelPrime_iff_not_dvd.mp hrel))
-  rcases eq_or_ne w 1 with rfl | hw1
-  · simp [isRelPrime_one_left]
-  obtain ⟨f, g, hf, hg, rfl, hf0, hg0⟩ : ∃ f g : A[X], f.Monic ∧ g.Monic ∧ f * g = w ∧
-      f.natDegree ≠ 0 ∧ g.natDegree ≠ 0 := by
-    simpa [(h.monic hw).irreducible_iff_natDegree, hw1, not_or] using hirr
-  have hdeg := hf.natDegree_mul hg
+  refine h.mem_induction hw (fun _ ↦ by simp [isRelPrime_one_left])
+    (fun hw hirr hrel ↦ ((h.irreducible_apply_iff hw).mpr hirr).isRelPrime_iff_not_dvd.mpr
+      ((h.dvd_iff hw q).not.mpr (hirr.isRelPrime_iff_not_dvd.mp hrel)))
+    fun _ _ ihf ihg hrel ↦ ?_
   rw [IsRelPrime.mul_left_iff] at hrel
   rw [map_mul, IsRelPrime.mul_left_iff]
-  exact ⟨ih f.natDegree (by omega) (h.mem_of_dvd hw hf (dvd_mul_right f g)) hrel.1 rfl,
-    ih g.natDegree (by omega) (h.mem_of_dvd hw hg (dvd_mul_left g f)) hrel.2 rfl⟩
+  exact ⟨ihf hrel.1, ihg hrel.2⟩
 
-/-- Over a unique factorisation domain `A` and a domain `B`, the image `φ w` of `w ∈ W` is
-squarefree in `B` if and only if `w` is squarefree in `A[X]`. -/
-theorem squarefree_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] {w : A[X]}
+/-- Over a `UniqueFactorizationMonoid` `A` and a ring `B` without zero divisors, the image `φ w` of
+`w ∈ W` is squarefree in `B` if and only if `w` is squarefree in `A[X]`. -/
+theorem squarefree_apply_iff [UniqueFactorizationMonoid A] [NoZeroDivisors B] {w : A[X]}
     (hw : w ∈ W) : Squarefree (φ w) ↔ Squarefree w := by
-  refine ⟨h.squarefree_of_squarefree_apply hw, fun hsq ↦ ?_⟩
+  refine ⟨h.squarefree_of_squarefree_apply hw, ?_⟩
   have := h.uniqueFactorizationMonoid
-  induction hn : w.natDegree using Nat.strong_induction_on generalizing w with
-  | _ n ih =>
-  by_cases hirr : Irreducible w
-  · exact ((h.irreducible_apply_iff hw).mpr hirr).squarefree
-  rcases eq_or_ne w 1 with rfl | hw1
-  · simp
-  obtain ⟨f, g, hf, hg, rfl, hf0, hg0⟩ : ∃ f g : A[X], f.Monic ∧ g.Monic ∧ f * g = w ∧
-      f.natDegree ≠ 0 ∧ g.natDegree ≠ 0 := by
-    simpa [(h.monic hw).irreducible_iff_natDegree, hw1, not_or] using hirr
-  have hdeg := hf.natDegree_mul hg
-  have hfw := h.mem_of_dvd hw hf (dvd_mul_right f g)
-  have hgw := h.mem_of_dvd hw hg (dvd_mul_left g f)
+  refine h.mem_induction hw (fun _ ↦ by simp)
+    (fun hw hirr _ ↦ ((h.irreducible_apply_iff hw).mpr hirr).squarefree)
+    fun hfw _ ihf ihg hsq ↦ ?_
   rw [squarefree_mul_iff] at hsq
   rw [map_mul, squarefree_mul_iff]
-  exact ⟨(h.isRelPrime_apply_iff hfw).mpr hsq.1, ih f.natDegree (by omega) hfw hsq.2.1 rfl,
-    ih g.natDegree (by omega) hgw hsq.2.2 rfl⟩
+  exact ⟨(h.isRelPrime_apply_iff hfw).mpr hsq.1, ihf hsq.2.1, ihg hsq.2.2⟩
 
 /-- Over a Jacobson ring `A`, every nonzero radical ideal of `B` is the intersection of the
 maximal ideals containing it. -/

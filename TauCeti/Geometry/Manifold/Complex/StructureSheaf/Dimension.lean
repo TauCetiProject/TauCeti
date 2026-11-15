@@ -48,8 +48,7 @@ stalks. No finite-dimensionality assumption is required for this comparison. -/
 theorem ringKrullDim_holomorphicStalk (e : E ≃L[ℂ] F) (a : E) :
     ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk a) =
       ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, F) F).presheaf.stalk (e a)) :=
-  (ringKrullDim_eq_of_ringEquiv
-    (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_bijective a))).symm
+  (ringKrullDim_eq_of_ringEquiv (e.holomorphicStalkEquiv a)).symm
 
 end ContinuousLinearEquiv
 

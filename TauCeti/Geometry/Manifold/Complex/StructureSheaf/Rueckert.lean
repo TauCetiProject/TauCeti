@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.RingTheory.Polynomial.Rueckert
 
 import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 import TauCeti.RingTheory.Polynomial.Distinguished
 
@@ -30,29 +31,28 @@ namely the polynomials over `𝒪_{E, x₀}` distinguished at the maximal ideal 
   (`existsUnique_weierstrassDivision_of_isDistinguishedAt`);
 * for every nonzero germ `f` at `(x₀, w₀)`, some continuous linear automorphism `L` of `E × ℂ`
   makes the centered pullback `L.holomorphicStalkCenteredEquiv (x₀, w₀) f` regular in the last
-  variable (`exists_map_residue_verticalPowerSeries_ne_zero`), and Weierstrass preparation
-  (`existsUnique_weierstrassPreparation`) then writes that pullback as a unit multiple of a
-  Weierstrass polynomial.
+  variable (`exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero`), and
+  Weierstrass preparation (`existsUnique_weierstrassPreparation`) then writes that pullback as a
+  unit multiple of a Weierstrass polynomial.
 
-As immediate consequences before inducting on dimension, a Weierstrass polynomial generates a
+As an immediate consequence before inducting on dimension, a Weierstrass polynomial generates a
 prime ideal (or is a prime element) in `𝒪_{E × ℂ, (x₀, w₀)}` if and only if it does so in
-`(𝒪_{E, x₀})[X]`, and irreducibility, relative primality, and squarefreeness of
-`evalVertical x₀ w₀ P` descend to `P`.
+`(𝒪_{E, x₀})[X]`. Combining `evalEquiv` in dimension `0`, `isRueckert_evalVertical` on
+`(Fin n → ℂ) × ℂ`, and chart pullback yields `stalk_induction`, which transfers any ring-theoretic
+property of `ℂ` stable under ring equivalences and Rückert extensions to the holomorphic stalk at
+any point of a finite-dimensional complex manifold without boundary.
 
 ## Main results
 
-* `TauCeti.holomorphicStructureSheaf.exists_map_residue_verticalPowerSeries_ne_zero`: every nonzero
+* `exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero`: every nonzero
   holomorphic germ on `E × ℂ` becomes regular in the last variable after a centered linear
   automorphism fixing the base point (without assuming `E` is finite-dimensional).
-* `TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`: `evalVertical x₀ w₀` satisfies
-  `RingHom.IsRueckert` for the polynomials distinguished at `𝔪_{x₀}`.
-* `TauCeti.holomorphicStructureSheaf.isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.prime_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.irreducible_of_irreducible_evalVertical_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.isRelPrime_of_isRelPrime_evalVertical_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.squarefree_of_squarefree_evalVertical_of_isDistinguishedAt`:
-  primality, irreducibility, relative primality, and squarefreeness descent for Weierstrass
-  polynomials.
+* `isRueckert_evalVertical`: `evalVertical x₀ w₀` satisfies `RingHom.IsRueckert` for the
+  polynomials distinguished at `𝔪_{x₀}`.
+* `isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
+  `prime_evalVertical_iff_of_isDistinguishedAt`: primality comparison for Weierstrass polynomials.
+* `stalk_induction`: dimension-induction and chart-descent principle for ring-theoretic properties
+  of holomorphic stalks on finite-dimensional complex manifolds without boundary.
 
 ## References
 
@@ -69,12 +69,15 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf
 
+section ModelSpace
+
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Every nonzero holomorphic germ at `(x₀, w₀) : E × ℂ` becomes regular in the last variable
 after pulling back along a centered linear automorphism `(x, w) ↦ (x₀, w₀) + L ((x, w) - (x₀, w₀))`
 fixing `(x₀, w₀)` (without assuming `E` is finite-dimensional). -/
-theorem exists_map_residue_verticalPowerSeries_ne_zero {x₀ : E} {w₀ : ℂ}
+theorem exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero
+    {x₀ : E} {w₀ : ℂ}
     {f : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
     (hf : f ≠ 0) :
     ∃ L : (E × ℂ) ≃L[ℂ] E × ℂ,
@@ -106,7 +109,8 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
     obtain ⟨⟨q, r⟩, ⟨_, hb⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
     exact ⟨r, q, by linear_combination hb⟩
   exists_mul_eq {b} hb := by
-    obtain ⟨L, hL⟩ := exists_map_residue_verticalPowerSeries_ne_zero hb
+    obtain ⟨L, hL⟩ :=
+      exists_map_residue_verticalPowerSeries_holomorphicStalkCenteredEquiv_ne_zero hb
     obtain ⟨⟨P, u⟩, ⟨hP, hu, hfac⟩, _⟩ := existsUnique_weierstrassPreparation hL
     refine ⟨L.holomorphicStalkCenteredEquiv (x₀, w₀), hu.unit⁻¹, P, hP, ?_⟩
     rw [hfac, mul_comm (evalVertical x₀ w₀ P) u, ← mul_assoc, IsUnit.val_inv_mul, one_mul]
@@ -130,34 +134,39 @@ theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
     Prime (evalVertical x₀ w₀ P) ↔ Prime P :=
   (isRueckert_evalVertical x₀ w₀).prime_apply_iff hP
 
-/-- If `evalVertical x₀ w₀ P` is irreducible in `𝒪_{E × ℂ, (x₀, w₀)}` for a distinguished
-polynomial `P` over `𝒪_{E, x₀}`, then `P` is irreducible in `(𝒪_{E, x₀})[X]`. -/
-theorem irreducible_of_irreducible_evalVertical_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
-    (hirr : Irreducible (evalVertical x₀ w₀ P)) : Irreducible P :=
-  (isRueckert_evalVertical x₀ w₀).irreducible_of_irreducible_apply hP hirr
-
-/-- If `evalVertical x₀ w₀ P` and `evalVertical x₀ w₀ Q` are relatively prime in
-`𝒪_{E × ℂ, (x₀, w₀)}` for a distinguished polynomial `P` and an arbitrary polynomial `Q` over
-`𝒪_{E, x₀}`, then `P` and `Q` are relatively prime in `(𝒪_{E, x₀})[X]`. -/
-theorem isRelPrime_of_isRelPrime_evalVertical_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P Q : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
-    (hrel : IsRelPrime (evalVertical x₀ w₀ P) (evalVertical x₀ w₀ Q)) : IsRelPrime P Q :=
-  (isRueckert_evalVertical x₀ w₀).isRelPrime_of_isRelPrime_apply hP hrel
-
-/-- If `evalVertical x₀ w₀ P` is squarefree in `𝒪_{E × ℂ, (x₀, w₀)}` for a distinguished
-polynomial `P` over `𝒪_{E, x₀}`, then `P` is squarefree in `(𝒪_{E, x₀})[X]`. -/
-theorem squarefree_of_squarefree_evalVertical_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)))
-    (hsq : Squarefree (evalVertical x₀ w₀ P)) : Squarefree P :=
-  (isRueckert_evalVertical x₀ w₀).squarefree_of_squarefree_apply hP hsq
-
 end FiniteDimensional
+
+end ModelSpace
+
+/-- Induction principle for ring-theoretic properties of holomorphic stalks on finite-dimensional
+complex manifolds without boundary: a property `P` of commutative rings that holds for `ℂ`, is
+preserved under ring equivalences, and ascends along any Rückert homomorphism `A[X] →+* B` between
+local integral domains holds for `(holomorphicStructureSheaf I X).presheaf.stalk x`. -/
+@[elab_as_elim]
+theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [FiniteDimensional ℂ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+    [I.Boundaryless] {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+    {P : ∀ (R : Type) [CommRing R], Prop} (hℂ : P ℂ)
+    (hequiv : ∀ {R S : Type} [CommRing R] [CommRing S], (R ≃+* S) → P R → P S)
+    (hrueckert : ∀ {A B : Type} [CommRing A] [IsDomain A] [IsLocalRing A]
+      [CommRing B] [IsDomain B] [IsLocalRing B] {φ : A[X] →+* B} {W : Set A[X]},
+      φ.IsRueckert W → P A → P B)
+    (x : X) :
+    P ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  have hmodel (n : ℕ) : ∀ y : Fin n → ℂ,
+      P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk y) := by
+    induction n with
+    | zero => exact fun y ↦ hequiv (evalEquiv 𝓘(ℂ, Fin 0 → ℂ) (Fin 0 → ℂ) y).symm hℂ
+    | succ n ih =>
+      intro y
+      let e : (Fin (n + 1) → ℂ) ≃L[ℂ] (Fin n → ℂ) × ℂ :=
+        ContinuousLinearEquiv.ofFinrankEq (by simp)
+      exact hequiv (e.holomorphicStalkEquiv y)
+        (hrueckert (isRueckert_evalVertical (e y).1 (e y).2) (ih (e y).1))
+  let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
+    ContinuousLinearEquiv.ofFinrankEq (by simp)
+  exact hequiv (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e))
+    (hmodel (Module.finrank ℂ E) ((e ∘ extChartAt I x) x))
 
 end TauCeti.holomorphicStructureSheaf
