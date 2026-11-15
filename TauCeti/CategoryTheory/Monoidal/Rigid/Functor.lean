@@ -71,11 +71,11 @@ equivalence.
   `CategoryTheory.Functor.mapExactPairing_coevaluation`;
 * `CategoryTheory.Functor.mapHasLeftDual` and `CategoryTheory.Functor.mapHasRightDual`: the image
   of an object with a left or right dual has the image of that dual as a dual;
-* `CategoryTheory.Functor.mapRightDualIso`: the comparison `F.obj Xᘁ ≅ (F.obj X)ᘁ`, characterized
-  by `CategoryTheory.Functor.mapRightDualIso_hom_whiskerRight_evaluation`, natural by
-  `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
-  composites by `CategoryTheory.Functor.mapRightDualIso_id` and
-  `CategoryTheory.Functor.mapRightDualIso_comp`;
+* `CategoryTheory.Functor.mapRightDualIso` and `CategoryTheory.Functor.mapLeftDualIso`: the
+  comparisons `F.obj Xᘁ ≅ (F.obj X)ᘁ` and `F.obj (ᘁX) ≅ ᘁ(F.obj X)`, characterized by
+  `CategoryTheory.Functor.mapRightDualIso_hom_whiskerRight_evaluation` and
+  `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, natural with respect to
+  adjoint mates, and computed for identities and composites;
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
   monoidal natural transformations and isomorphisms;
@@ -266,6 +266,86 @@ theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
   dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
   rw [comp_whiskerRight_assoc, mapRightDualIso_hom_whiskerRight_evaluation, μ_natural_left_assoc,
     ← G.map_comp_assoc, mapRightDualIso_hom_whiskerRight_evaluation]
+  simp
+
+variable (F) in
+/-- The canonical isomorphism `F.obj (ᘁX) ≅ ᘁ(F.obj X)` between the image of the left dual of `X`
+under a strong monoidal functor and the left dual of `F.obj X`: both are left duals of
+`F.obj X`, the first through the image pairing `F.mapExactPairing (ᘁX) X`. -/
+noncomputable def mapLeftDualIso (X : C) [HasLeftDual X] [_hFX : HasLeftDual (F.obj X)] :
+    F.obj (ᘁX) ≅ ᘁ(F.obj X) :=
+  leftDualIso (F.mapExactPairing (ᘁX) X) HasLeftDual.exact
+
+/-- Through `F.mapLeftDualIso X`, the evaluation of `(ᘁ(F.obj X), F.obj X)` is the image of the
+evaluation of `(ᘁX, X)`. This characterizes `F.mapLeftDualIso X`, by
+`CategoryTheory.ExactPairing.leftDualHom_ext`. -/
+@[reassoc]
+theorem whiskerLeft_mapLeftDualIso_hom_evaluation (X : C) [HasLeftDual X]
+    [_hFX : HasLeftDual (F.obj X)] :
+    F.obj X ◁ (F.mapLeftDualIso X).hom ≫ ε_ ᘁ(F.obj X) (F.obj X) =
+      μ F X (ᘁX) ≫ F.map (ε_ (ᘁX) X) ≫ η F := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom, ExactPairing.leftMate_comp_evaluation]
+  simp
+
+/-- Through the inverse of `F.mapLeftDualIso X`, the coevaluation of `(ᘁ(F.obj X), F.obj X)` is
+the image of the coevaluation of `(ᘁX, X)`. -/
+@[reassoc]
+theorem coevaluation_mapLeftDualIso_inv_whiskerRight (X : C) [HasLeftDual X]
+    [HasLeftDual (F.obj X)] :
+    η_ ᘁ(F.obj X) (F.obj X) ≫ (F.mapLeftDualIso X).inv ▷ F.obj X =
+      ε F ≫ F.map (η_ (ᘁX) X) ≫ δ F (ᘁX) X := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_inv, ExactPairing.coevaluation_comp_leftMate]
+  simp
+
+/-- Naturality of `F.mapLeftDualIso`: it intertwines the image of the left mate of `f` with the
+left mate of the image of `f`. -/
+@[reassoc]
+theorem mapLeftDualIso_hom_naturality {X Y : C} [HasLeftDual X] [HasLeftDual Y]
+    [HasLeftDual (F.obj X)] [HasLeftDual (F.obj Y)] (f : X ⟶ Y) :
+    F.map (ᘁf) ≫ (F.mapLeftDualIso X).hom = (F.mapLeftDualIso Y).hom ≫ ᘁ(F.map f) := by
+  refine ExactPairing.leftDualHom_ext (Y := F.obj X) ?_
+  -- Both sides evaluate to the image of the evaluation `f ▷ (ᘁY) ≫ ε_ (ᘁY) Y` of `ᘁf`.
+  have h : F.map (X ◁ ᘁf) ≫ F.map (ε_ (ᘁX) X) = F.map (f ▷ ᘁY) ≫ F.map (ε_ (ᘁY) Y) := by
+    rw [← F.map_comp, leftAdjointMate_comp_evaluation, F.map_comp]
+  simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc,
+    whiskerLeft_mapLeftDualIso_hom_evaluation, leftAdjointMate_comp_evaluation,
+    whisker_exchange_assoc, μ_natural_right_assoc, μ_natural_left_assoc, reassoc_of% h]
+
+/-- Naturality of the inverse of `F.mapLeftDualIso`. -/
+@[reassoc]
+theorem mapLeftDualIso_inv_naturality {X Y : C} [HasLeftDual X] [HasLeftDual Y]
+    [HasLeftDual (F.obj X)] [HasLeftDual (F.obj Y)] (f : X ⟶ Y) :
+    (ᘁ(F.map f)) ≫ (F.mapLeftDualIso X).inv = (F.mapLeftDualIso Y).inv ≫ F.map (ᘁf) := by
+  rw [Iso.comp_inv_eq, Category.assoc, mapLeftDualIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- For the identity functor, the comparison between the image of a left dual and the left dual of
+an image is the identity. Only `X` needs a left dual; it is passed explicitly as the left dual of
+`(𝟭 C).obj X`, which instance search does not unfold to `X`. -/
+@[simp]
+theorem mapLeftDualIso_id (X : C) [hX : HasLeftDual X] :
+    (𝟭 C).mapLeftDualIso X (_hFX := hX) = Iso.refl _ := by
+  ext
+  refine ExactPairing.leftDualHom_ext (Y := X) (X := ᘁX) ?_
+  refine (whiskerLeft_mapLeftDualIso_hom_evaluation (F := 𝟭 C) X (_hFX := hX)).trans ?_
+  simp
+
+/-- For a composite `F ⋙ G`, the comparison between the image of a left dual and the left dual of
+an image is the image under `G` of the comparison for `F`, followed by the comparison for `G`. Only
+the objects involved need left duals; that of `G.obj (F.obj X)` is passed explicitly as the left
+dual of `(F ⋙ G).obj X`, which instance search does not unfold. -/
+@[simp]
+theorem mapLeftDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
+    (G : D ⥤ E) [G.Monoidal] (X : C) [HasLeftDual X] [HasLeftDual (F.obj X)]
+    [hGFX : HasLeftDual (G.obj (F.obj X))] :
+    (F ⋙ G).mapLeftDualIso X (_hFX := hGFX) =
+      G.mapIso (F.mapLeftDualIso X) ≪≫ G.mapLeftDualIso (F.obj X) := by
+  ext
+  refine ExactPairing.leftDualHom_ext (Y := G.obj (F.obj X)) (X := ᘁ(G.obj (F.obj X))) ?_
+  refine (whiskerLeft_mapLeftDualIso_hom_evaluation (F := F ⋙ G) X (_hFX := hGFX)).trans ?_
+  -- Unfold the objects of the composite, so that the evaluation identities of `F` and `G` apply.
+  dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
+  rw [MonoidalCategory.whiskerLeft_comp_assoc, whiskerLeft_mapLeftDualIso_hom_evaluation,
+    μ_natural_right_assoc, ← G.map_comp_assoc, whiskerLeft_mapLeftDualIso_hom_evaluation]
   simp
 
 /-! ### Internal Hom comparisons -/

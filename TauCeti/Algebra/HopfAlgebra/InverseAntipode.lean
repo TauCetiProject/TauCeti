@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 
 /-!
 # The inverse of a bijective antipode
@@ -17,7 +18,9 @@ duals. No commutativity or star structure is assumed.
 
 Bijectivity holds in particular when `S²` is an inner automorphism `a ↦ g a g⁻¹`
 (`antipode_bijective_of_antipode_antipode`), as for the group-like element `K⁻¹` of
-`U_q(sl₂)`.
+`U_q(sl₂)`, and when `S` is involutive, as in a cocommutative Hopf algebra, where
+`inverseAntipode` agrees with `antipode` (`inverseAntipode_eq_of_involutive` and
+`inverseAntipode_eq_antipode_of_isCocomm`).
 
 The construction uses Mathlib's `LinearEquiv.ofBijective`. See C. Kassel,
 *Quantum Groups*, Chapter III, for inverse-antipode duality.
@@ -56,6 +59,20 @@ theorem antipode_inverseAntipode (hS : Function.Bijective (antipode R : H →ₗ
 theorem inverseAntipode_antipode (hS : Function.Bijective (antipode R : H →ₗ[R] H)) (a : H) :
     inverseAntipode hS (antipode R a) = a :=
   (LinearEquiv.ofBijective (antipode R) hS).symm_apply_apply a
+
+/-- When the antipode is involutive, its inverse linear map is the antipode itself. -/
+theorem inverseAntipode_eq_of_involutive (h : Function.Involutive (antipode R : H →ₗ[R] H))
+    (hS : Function.Bijective (antipode R : H →ₗ[R] H)) :
+    inverseAntipode hS = antipode R := by
+  ext a
+  exact hS.injective (by simp [h a])
+
+/-- In a cocommutative Hopf algebra, the inverse of the antipode is the antipode itself. -/
+@[simp]
+theorem inverseAntipode_eq_antipode_of_isCocomm [Coalgebra.IsCocomm R H]
+    (hS : Function.Bijective (antipode R : H →ₗ[R] H)) :
+    inverseAntipode hS = antipode R :=
+  inverseAntipode_eq_of_involutive antipode_involutive_of_isCocomm hS
 
 /-- The inverse antipode preserves the unit. -/
 @[simp]

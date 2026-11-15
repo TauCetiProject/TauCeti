@@ -29,6 +29,8 @@ categories of actions are computed on underlying objects (`Action.drinfeldIso_ho
 
 ## Main results
 
+* `FDRep.rightDual_ρ`, `FDRep.leftDual_ρ`: both the right and the left dual of `V` carry the
+  contragredient representation `Representation.dual V.ρ`;
 * `FDRep.drinfeldIso_hom_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld
   isomorphism, is the double-dual evaluation map;
 * `FDRep.trace_eq_smul`: the categorical trace is the linear trace;
@@ -48,6 +50,24 @@ namespace FDRep
 universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- The right dual of a finite-dimensional representation carries the contragredient
+representation `Representation.dual V.ρ`. -/
+@[simp]
+theorem rightDual_ρ (V : FDRep k G) : (Vᘁ : FDRep k G).ρ = Representation.dual V.ρ := by
+  ext g φ
+  have h := congrArg (fun u : V.Vᘁ ⟶ V.Vᘁ => u.hom.hom) (Action.rightDual_ρ V g)
+  rw [FGModuleCat.rightAdjointMate_hom] at h
+  exact LinearMap.congr_fun h φ
+
+/-- The left dual of a finite-dimensional representation carries the contragredient
+representation `Representation.dual V.ρ`. -/
+@[simp]
+theorem leftDual_ρ (V : FDRep k G) : (ᘁV : FDRep k G).ρ = Representation.dual V.ρ := by
+  ext g φ
+  have h := congrArg (fun u : (ᘁV.V : FGModuleCat k) ⟶ ᘁV.V => u.hom.hom) (Action.leftDual_ρ V g)
+  rw [FGModuleCat.leftAdjointMate_hom] at h
+  exact LinearMap.congr_fun h φ
 
 /-- The Drinfeld isomorphism `V ≅ Vᘁᘁ` of a finite-dimensional representation, which is the
 canonical pivotal isomorphism `pivotalIsoApp V` by `TauCeti.pivotalIsoApp_eq_drinfeldIso`, is on

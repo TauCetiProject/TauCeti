@@ -25,7 +25,11 @@ them on underlying objects.
 * `CategoryTheory.map_evaluation_hasRightDualOfEquivalence`: the image under `F` of the evaluation
   of the pulled-back right dual;
 * `CategoryTheory.map_coevaluation_hasRightDualOfEquivalence`: the image under `F` of the
-  coevaluation of the pulled-back right dual.
+  coevaluation of the pulled-back right dual;
+* `CategoryTheory.map_evaluation_hasLeftDualOfEquivalence`: the image under `F` of the evaluation
+  of the pulled-back left dual;
+* `CategoryTheory.map_coevaluation_hasLeftDualOfEquivalence`: the image under `F` of the
+  coevaluation of the pulled-back left dual.
 -/
 
 public section
@@ -53,6 +57,24 @@ theorem map_coevaluation_hasRightDualOfEquivalence (X : C) [HasRightDual (F.obj 
     F.map (@ExactPairing.coevaluation _ _ _ X _ (hasRightDualOfEquivalence adj X).exact) =
       η F ≫ (η_ (F.obj X) (F.obj X)ᘁ ≫
         F.obj X ◁ (adj.toEquivalence.counitIso.app (F.obj X)ᘁ).inv) ≫ μ F _ _ :=
+  F.map_preimage _
+
+/-- The evaluation of a left dual pulled back along a monoidal equivalence `F` is, by definition,
+the preimage under `F` of the evaluation of the left dual of `F.obj X` transported across the
+counit. -/
+theorem map_evaluation_hasLeftDualOfEquivalence (X : C) [HasLeftDual (F.obj X)] :
+    F.map (@ExactPairing.evaluation _ _ _ _ X (hasLeftDualOfEquivalence adj X).exact) =
+      δ F _ _ ≫ (F.obj X ◁ (adj.toEquivalence.counitIso.app ᘁ(F.obj X)).hom ≫
+        ε_ ᘁ(F.obj X) (F.obj X)) ≫ ε F :=
+  F.map_preimage _
+
+/-- The coevaluation of a left dual pulled back along a monoidal equivalence `F` is, by
+definition, the preimage under `F` of the coevaluation of the left dual of `F.obj X` transported
+across the counit. -/
+theorem map_coevaluation_hasLeftDualOfEquivalence (X : C) [HasLeftDual (F.obj X)] :
+    F.map (@ExactPairing.coevaluation _ _ _ _ X (hasLeftDualOfEquivalence adj X).exact) =
+      η F ≫ (η_ ᘁ(F.obj X) (F.obj X) ≫
+        (adj.toEquivalence.counitIso.app ᘁ(F.obj X)).inv ▷ F.obj X) ≫ μ F _ _ :=
   F.map_preimage _
 
 end CategoryTheory

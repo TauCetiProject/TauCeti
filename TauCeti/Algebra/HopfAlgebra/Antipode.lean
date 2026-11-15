@@ -17,9 +17,10 @@ structures. Mathlib already proves the multiplicative statement directly, as
 the antipode before comultiplication is the same as comultiplying, swapping the two tensor
 factors, and applying the antipode to each factor.
 
-For a commutative Hopf algebra, the antipode is involutive, hence defines an algebra
-automorphism. When the Hopf algebra is also cocommutative, the antipode is a bialgebra
-endomorphism, representing inversion on a commutative affine group.
+For a commutative or cocommutative Hopf algebra, the antipode is involutive, hence bijective; in
+the commutative case it defines an algebra automorphism. When the Hopf algebra is both commutative
+and cocommutative, the antipode is a bialgebra endomorphism, representing inversion on a
+commutative affine group.
 
 ## Main declarations
 
@@ -27,6 +28,10 @@ endomorphism, representing inversion on a commutative affine group.
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply`: the pointwise form.
 * `TauCeti.HopfAlgebra.antipode_antipode`: the antipode of a commutative Hopf algebra is
   involutive.
+* `TauCeti.HopfAlgebra.antipode_antipode_of_isCocomm`,
+  `TauCeti.HopfAlgebra.antipode_involutive_of_isCocomm`,
+  `TauCeti.HopfAlgebra.antipode_bijective_of_isCocomm`: the antipode of a cocommutative Hopf
+  algebra is involutive, hence bijective.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv`: the antipode as an algebra equivalence in the
   commutative case.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv_toAlgHom`: the underlying algebra homomorphism is
@@ -134,6 +139,51 @@ theorem antipodeAlgEquiv_symm :
   by rw [antipodeAlgEquiv, AlgEquiv.ofAlgHom_symm]
 
 end Commutative
+
+section Cocommutative
+
+/-- Antimultiplicativity of the antipode rewrites `S(y) * S(S(x))` as `S(S(x) * y)` on any tensor
+in `C ⊗[R] C`. -/
+private lemma mul_map_antipode_comp_antipode_comm (t : C ⊗[R] C) :
+    LinearMap.mul' R C (TensorProduct.map (antipode R) (antipode R ∘ₗ antipode R)
+      (TensorProduct.comm R C C t)) =
+      antipode R (LinearMap.mul' R C ((antipode R).rTensor C t)) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul x y => simp [antipode_mul_antidistrib]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+variable [Coalgebra.IsCocomm R C]
+
+/-- In a cocommutative Hopf algebra, `S ∘ S` is a right convolution inverse of `S`. -/
+private lemma antipode_convMul_antipode_comp_antipode :
+    (toConv (antipode R) : WithConv (C →ₗ[R] C)) * toConv (antipode R ∘ₗ antipode R) = 1 := by
+  apply WithConv.ofConv_injective
+  ext c
+  have h := mul_map_antipode_comp_antipode_comm (R := R) (C := C) (Coalgebra.comul c)
+  rw [Coalgebra.comm_comul, mul_antipode_rTensor_comul_apply] at h
+  simpa [LinearMap.convMul_apply, LinearMap.convOne_apply, Algebra.algebraMap_eq_smul_one] using h
+
+/-- In a cocommutative Hopf algebra, applying the antipode twice is the identity
+(Sweedler, *Hopf Algebras*, Proposition 4.0.6). -/
+@[simp]
+theorem antipode_antipode_of_isCocomm (c : C) :
+    HopfAlgebraStruct.antipode R (HopfAlgebraStruct.antipode R c) = c := by
+  have h := congrArg WithConv.ofConv
+    (left_inv_eq_right_inv LinearMap.id_mul_antipode
+      (antipode_convMul_antipode_comp_antipode (R := R) (C := C)))
+  exact (LinearMap.congr_fun h c).symm
+
+/-- The antipode of a cocommutative Hopf algebra is involutive. -/
+theorem antipode_involutive_of_isCocomm :
+    Function.Involutive (HopfAlgebra.antipode R : C →ₗ[R] C) :=
+  antipode_antipode_of_isCocomm
+
+/-- The antipode of a cocommutative Hopf algebra is bijective. -/
+theorem antipode_bijective_of_isCocomm :
+    Function.Bijective (HopfAlgebra.antipode R : C →ₗ[R] C) :=
+  antipode_involutive_of_isCocomm.bijective
+
+end Cocommutative
 
 /-- Postcomposing the antipode convolution identity `LinearMap.antipode_mul_id` with an algebra
 homomorphism `f`: the map `f ∘ₗ antipode` is a left convolution inverse of `f`. -/
