@@ -137,22 +137,15 @@ theorem fabrySecondCoeff_apply_neg (c : ℂ) (f g : ℂ → ℂ) (t : ℂ) :
     fabrySecondCoeff c f g (-t) = fabrySecondCoeff c f g t := by
   simp [fabrySecondCoeff_apply]
 
-private theorem hasDerivAt_mul_sq_div_two (c t : ℂ) :
-    HasDerivAt (fun s : ℂ => c * s ^ 2 / 2) (c * t) t := by
-  convert ((hasDerivAt_pow 2 t).const_mul c).div_const 2 using 1
-  ring
-
-private theorem hasDerivAt_sq (t : ℂ) : HasDerivAt (fun s : ℂ => s ^ 2) (2 * t) t := by
-  simpa using hasDerivAt_pow 2 t
-
 /-- The first derivative of Fabry's rescaling. -/
 theorem hasDerivAt_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
     (hw : DifferentiableAt ℂ w (t ^ 2)) :
     HasDerivAt (fabryTransform c w)
       (Complex.exp (c * t ^ 2 / 2) * (c * t * w (t ^ 2) + 2 * t * deriv w (t ^ 2))) t := by
-  have h := (hasDerivAt_mul_sq_div_two c t).cexp.mul
-    (hw.hasDerivAt.comp (h := fun s : ℂ => s ^ 2) t (hasDerivAt_sq t))
-  exact h.congr_deriv (by simp only [Function.comp_apply]; ring)
+  have hsq := hasDerivAt_pow 2 t
+  have h := ((hsq.const_mul c).div_const 2).cexp.mul
+    (hw.hasDerivAt.comp (h := fun s : ℂ => s ^ 2) t hsq)
+  exact h.congr_deriv (by simp only [Function.comp_apply]; norm_num; ring)
 
 /-- The first derivative of Fabry's rescaling, as a value of `deriv`. -/
 theorem deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ} (hw : DifferentiableAt ℂ w (t ^ 2)) :
@@ -189,15 +182,16 @@ theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
     filter_upwards [((continuous_pow 2).tendsto t).eventually hw.eventually_analyticAt]
       with s hs
     exact (hasDerivAt_fabryTransform c hs.differentiableAt).deriv
-  have hsq := hasDerivAt_sq t
+  have hsq := hasDerivAt_pow 2 t
   have hw₀ := hw.differentiableAt.hasDerivAt.comp (h := fun s : ℂ => s ^ 2) t hsq
   have hw₁ := hw.deriv.differentiableAt.hasDerivAt.comp (h := fun s : ℂ => s ^ 2) t hsq
-  have h := (hasDerivAt_mul_sq_div_two c t).cexp.mul
+  have h := ((hsq.const_mul c).div_const 2).cexp.mul
     (((hasDerivAt_id t).const_mul c).mul hw₀ |>.add (((hasDerivAt_id t).const_mul 2).mul hw₁))
   have h' : HasDerivAt (fun s =>
       Complex.exp (c * s ^ 2 / 2) * (c * s * w (s ^ 2) + 2 * s * deriv w (s ^ 2))) _ t := h
   rw [heq.deriv_eq, h'.deriv]
   simp only [Pi.mul_apply, Pi.add_apply, Function.comp_apply, id]
+  norm_num
   ring
 
 /-- The operator identity behind Fabry's transformation: for `t ≠ 0` and `w` holomorphic near
@@ -271,8 +265,9 @@ theorem hasSum_fabryFirstCoeff {f : ℂ → ℂ} {fc : ℕ → ℂ} {t : ℂ}
   · simp [fabryFirstCoeff_apply]
 
 /-- If `f(t²) = ∑ f_s t^{-2s}` and `t ≠ 0`, then `t F(t)` is the series
-`∑ (2 f_{s+1} - δ_{s0}) t^{-2s}` in even powers of `t⁻¹`, with constant term `2f₁ - 1`. This is
-the coefficient condition at a regular singularity at infinity. -/
+`∑ (2 f_{s+1} - δ_{s0}) t^{-2s}` in even powers of `t⁻¹`, with constant term `2f₁ - 1`. When
+the expansion of `f` holds throughout `|z| > a`, this at every `|t| > √a` is the condition on the
+first coefficient at a regular singularity at infinity. -/
 theorem hasSum_mul_fabryFirstCoeff {f : ℂ → ℂ} {fc : ℕ → ℂ} {t : ℂ} (ht : t ≠ 0)
     (hf : HasSum (fun s => fc s / (t ^ 2) ^ s) (f (t ^ 2))) :
     HasSum (fun s => (2 * fc (s + 1) - if s = 0 then 1 else 0) / t ^ (2 * s))
@@ -301,9 +296,10 @@ theorem hasSum_fabrySecondCoeff {f g : ℂ → ℂ} {fc gc : ℕ → ℂ} {t : �
     linear_combination (-t ^ 2) * hfg
 
 /-- In the case `G₀ = 4g₁ - 2f₀f₁ = 0` of `hasSum_fabrySecondCoeff`, `t² G(t)` is the series
-`∑ (4 g_{s+2} - 2 f₀ f_{s+2}) t^{-2s}`. Together with `hasSum_fabryFirstCoeff`, which makes
-`t F(t)` a series in `t⁻¹`, this says that infinity is a regular singularity of the transformed
-equation. -/
+`∑ (4 g_{s+2} - 2 f₀ f_{s+2}) t^{-2s}`. This is a statement at a single `t`. When the expansions
+of `f` and `g` hold throughout an exterior region `|z| > a`, applying it together with
+`hasSum_mul_fabryFirstCoeff` at every `t` with `|t| > √a` shows that infinity is a regular
+singularity of the transformed equation. -/
 theorem hasSum_sq_mul_fabrySecondCoeff {f g : ℂ → ℂ} {fc gc : ℕ → ℂ} {t : ℂ} (ht : t ≠ 0)
     (hf : HasSum (fun s => fc s / (t ^ 2) ^ s) (f (t ^ 2)))
     (hg : HasSum (fun s => gc s / (t ^ 2) ^ s) (g (t ^ 2)))
