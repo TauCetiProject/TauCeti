@@ -44,7 +44,7 @@ theorem cohomologyClass_quaternionRotations_ne_zero (k : ℕ)
     (GroupExtension.factorSet σ hσ
       (quaternionRotations (2 ^ k)).quotientExtension_inducesAction).cohomologyClass ≠ 0 :=
   mt ((quaternionRotations (2 ^ k)).exists_complement_iff_cohomologyClass_eq_zero σ hσ).mpr
-    (not_exists_isComplement'_quaternionRotations k)
+    (not_exists_isComplement'_quaternionRotations (2 ^ k))
 
 /-- For `k ≠ 0`, the central quotient extension of `QuaternionGroup (2 ^ k)` by its order-two
 centre has nonzero class in `H²` (in particular for `Q₈` at `k = 1`, where the quotient is `V₄`). -/
@@ -54,6 +54,7 @@ theorem cohomologyClass_center_quaternionGroup_ne_zero {k : ℕ} (hk : k ≠ 0)
       (Subgroup.center (QuaternionGroup (2 ^ k))).quotientExtension_inducesAction).cohomologyClass ≠
         0 :=
   mt ((Subgroup.center (QuaternionGroup (2 ^ k))).exists_complement_iff_cohomologyClass_eq_zero
-    σ hσ).mpr (not_exists_isComplement'_center_quaternionGroup hk)
+    σ hσ).mpr
+    (not_exists_isComplement'_center_quaternionGroup (Nat.ne_of_gt (one_lt_pow₀ (by decide) hk)))
 
 end TauCeti

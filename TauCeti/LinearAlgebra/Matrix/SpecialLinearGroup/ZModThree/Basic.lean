@@ -480,7 +480,7 @@ theorem not_exists_isLocalComplement_center_sl2ZModThreeQuaternionSubgroup :
         sl2ZModThreeQuaternionEquiv.toMonoidHom).IsComplement'
         (K.subgroupOf sl2ZModThreeQuaternionSubgroup) :=
     hmap.symm ▸ hK.isComplement'_subgroupOf
-  exact not_exists_isComplement'_zpowers_quaternionGroup_a 1
+  exact not_exists_isComplement'_zpowers_quaternionGroup_a 2
     ⟨_, hcomp.of_map sl2ZModThreeQuaternionEquiv.injective⟩
 
 /-- **Non-splitting of `SL(2, ZMod 3)` over its centre.** The central subgroup `{±1}` has no
