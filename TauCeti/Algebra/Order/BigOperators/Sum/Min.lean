@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Nat.Find
 
 /-!
-# Finite sums of truncations of natural numbers
+# Finite sums of truncations
+
+In a canonically ordered additive monoid with ordered subtraction, a finite family `f` splits
+against a second family `g` into the part `min (f x) (g x)` matched by `g` and the excess
+`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`.
 
 For a finite family `c` of natural numbers, the truncated sums `∑ l, min k (c l)` count the boxes
 in the first `k` columns of the Young diagram with rows `c l`. Their second differences count
@@ -19,11 +24,13 @@ the members of the family in a range: for `p < q`, the combination of the trunca
 
 ## Main results
 
+* `Finset.sum_min_add_sum_tsub`: the matched part and the excess add up to the total.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
-* `Finset.exists_ne_forall_sum_min_lt`: if the column counts of a family `b` are at most those
-  of a family `a` with the same sum, and strictly smaller for some `k`, then two distinct
-  members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`. Moving a box
-  between these two rows is the key step in generating dominance of partitions by box moves.
+* `Finset.exists_ne_forall_sum_min_lt`: if the sum of a family `a` is at most that of a family
+  `b` and, for some `k`, the column count of `b` is strictly smaller than that of `a`, then two
+  distinct members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
+  Moving a box between these two rows is the key step in generating dominance of partitions by
+  box moves.
 -/
 
 public section
@@ -31,6 +38,12 @@ public section
 namespace Finset
 
 variable {α ι κ : Type*}
+
+/-- The mass of `f` matched by `g` and the mass of `f` above `g` add up to `f`. -/
+theorem sum_min_add_sum_tsub {M : Type*} [AddCommMonoid M] [LinearOrder M]
+    [CanonicallyOrderedAdd M] [Sub M] [OrderedSub M] (s : Finset ι) (f g : ι → M) :
+    ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
+  simp_rw [← sum_add_distrib, add_comm (min _ _), tsub_add_min]
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/
@@ -41,48 +54,49 @@ theorem sum_min_add_sum_min_eq (u : Finset α) (c : α → ℕ) {p q : ℕ} (hpq
   exact sum_congr rfl fun l _ => by split_ifs <;> omega
 
 /-- A pair of rows realising a strict inequality of column counts. Let `a` and `b` be finite
-families of natural numbers with the same sum, such that for every `k` the column count
-`∑ min k (b l)` of `b` is at most the column count `∑ min k (a l)` of `a`, strictly for some `k`.
+families of natural numbers, the sum of `a` being at most the sum of `b`, such that for some `k`
+the column count
+`∑ min k (b l)` of `b` is strictly smaller than the column count `∑ min k (a l)` of `a`.
 Then `a` has two distinct members `a j ≤ a i` such that the inequality is strict for every `k`
 with `a j ≤ k ≤ a i`. Moving one box from row `j` to row `i` lowers the column count of `a`
-by one exactly for `a j ≤ k ≤ a i`, so the result still has column counts at least those
-of `b`. -/
+by one exactly for `a j ≤ k ≤ a i`. -/
 theorem exists_ne_forall_sum_min_lt {s : Finset ι} {t : Finset κ} {a : ι → ℕ} {b : κ → ℕ}
-    (hsum : ∑ l ∈ t, b l = ∑ l ∈ s, a l)
-    (hle : ∀ k, ∑ l ∈ t, min k (b l) ≤ ∑ l ∈ s, min k (a l))
+    (hsum : ∑ l ∈ s, a l ≤ ∑ l ∈ t, b l)
     (hlt : ∃ k, ∑ l ∈ t, min k (b l) < ∑ l ∈ s, min k (a l)) :
     ∃ i ∈ s, ∃ j ∈ s, i ≠ j ∧ a j ≤ a i ∧
       ∀ k, a j ≤ k → k ≤ a i → ∑ l ∈ t, min k (b l) < ∑ l ∈ s, min k (a l) := by
   classical
   obtain ⟨k₀, hk₀⟩ := hlt
-  -- The column counts agree from the largest member of either family on.
+  -- From the largest member of either family on, the column counts are the sums.
   have hbig : ∀ k, s.sup a ⊔ t.sup b ≤ k →
-      ∑ l ∈ t, min k (b l) = ∑ l ∈ s, min k (a l) := by
+      ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l) := by
     intro k hk
-    rw [sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_right.trans hk)),
-      sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_left.trans hk)), hsum]
-  -- `p < k₀ < q` are the nearest arguments around `k₀` where the column counts agree.
-  have hex : ∃ k, k₀ ≤ k ∧ ∑ l ∈ t, min k (b l) = ∑ l ∈ s, min k (a l) :=
+    rw [sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_left.trans hk)),
+      sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_right.trans hk))]
+    exact hsum
+  -- `p < k₀ < q` are the nearest arguments around `k₀` where the column count of `a` is at most
+  -- that of `b`.
+  have hex : ∃ k, k₀ ≤ k ∧ ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l) :=
     ⟨max k₀ (s.sup a ⊔ t.sup b), le_max_left _ _, hbig _ (le_max_right _ _)⟩
-  let p := Nat.findGreatest (fun k => ∑ l ∈ t, min k (b l) = ∑ l ∈ s, min k (a l)) k₀
+  let p := Nat.findGreatest (fun k => ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l)) k₀
   let q := Nat.find hex
-  have hp : ∑ l ∈ t, min p (b l) = ∑ l ∈ s, min p (a l) :=
-    Nat.findGreatest_spec (P := fun k => ∑ l ∈ t, min k (b l) = ∑ l ∈ s, min k (a l))
+  have hp : ∑ l ∈ s, min p (a l) ≤ ∑ l ∈ t, min p (b l) :=
+    Nat.findGreatest_spec (P := fun k => ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l))
       (Nat.zero_le k₀) (by simp)
-  have hq : ∑ l ∈ t, min q (b l) = ∑ l ∈ s, min q (a l) := (Nat.find_spec hex).2
+  have hq : ∑ l ∈ s, min q (a l) ≤ ∑ l ∈ t, min q (b l) := (Nat.find_spec hex).2
   have hpk₀ : p < k₀ := lt_of_le_of_ne (Nat.findGreatest_le k₀) fun h => by
     rw [h] at hp
-    exact hk₀.ne hp
+    exact hk₀.not_ge hp
   have hk₀q : k₀ < q := lt_of_le_of_ne (Nat.find_spec hex).1 fun h => by
     rw [← h] at hq
-    exact hk₀.ne hq
+    exact hk₀.not_ge hq
   -- Strictly between `p` and `q` the inequality is strict.
   have hrun : ∀ k, p < k → k < q → ∑ l ∈ t, min k (b l) < ∑ l ∈ s, min k (a l) := by
     intro k hpk hkq
-    refine (hle k).lt_of_ne fun heq => ?_
+    by_contra! hge
     rcases le_total k k₀ with hk | hk
-    · exact Nat.findGreatest_is_greatest hpk hk heq
-    · exact Nat.find_min hex hkq ⟨hk, heq⟩
+    · exact Nat.findGreatest_is_greatest hpk hk hge
+    · exact Nat.find_min hex hkq ⟨hk, hge⟩
   -- Comparing second differences at `p` and `q` gives two members of `a` strictly between them.
   have h₁ := hrun (p + 1) (Nat.lt_succ_self p) (by omega)
   have h₂ := hrun (q - 1) (by omega) (by omega)

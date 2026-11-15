@@ -271,11 +271,21 @@ the smallest algebra of sets containing the zero set and the positivity set of e
 the fibre with coefficients analytic on `U`. -/
 theorem setOf_isAnalyticCoeffBooleanCombination_subset {U : Set E}
     {ℬ : Set (Set (E × (ι → ℝ)))} (hℬ : IsSetAlgebra ℬ)
-    (eq_zero : ∀ f, IsAnalyticCoeffPolynomialOn U f → {p | f p = 0} ∈ ℬ)
     (pos : ∀ f, IsAnalyticCoeffPolynomialOn U f → {p | 0 < f p} ∈ ℬ) :
-    {t | IsAnalyticCoeffBooleanCombination U t} ⊆ ℬ :=
-  hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => h ▸ eq_zero f hf)
+    {t | IsAnalyticCoeffBooleanCombination U t} ⊆ ℬ := by
+  refine hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => ?_)
     (fun _ ⟨f, hf, h⟩ => h ▸ pos f hf)
+  have hneg : IsAnalyticCoeffPolynomialOn U fun p => -1 * f p :=
+    (analyticOnNhd_const (v := (-1 : ℝ))).isAnalyticCoeffPolynomialOn_comp_fst.mul hf
+  have : {p | f p = 0} = ({p | 0 < f p} ∪ {p | 0 < -1 * f p})ᶜ := by
+    ext p
+    simp only [mem_ofPred_eq, mem_compl_iff, mem_union, not_or, not_lt]
+    constructor
+    · intro hp
+      simp [hp]
+    · rintro ⟨h₁, h₂⟩
+      linarith
+  exact h ▸ this ▸ hℬ.compl_mem ((hℬ.union_mem (pos f hf) (pos _ hneg)))
 
 /-- The empty set is a Boolean combination of analytic-coefficient polynomial sign conditions. -/
 @[simp]
@@ -342,7 +352,6 @@ theorem mono (ht : IsAnalyticCoeffBooleanCombination U t) (hVU : V ⊆ U) :
     IsAnalyticCoeffBooleanCombination V t :=
   setOf_isAnalyticCoeffBooleanCombination_subset
     (isSetAlgebra_setOf_isAnalyticCoeffBooleanCombination ι V)
-    (fun _ hf => (hf.mono hVU).isAnalyticCoeffBooleanCombination_setOf_eq_zero)
     (fun _ hf => (hf.mono hVU).isAnalyticCoeffBooleanCombination_setOf_pos) ht
 
 /-- The preimage of a Boolean combination of analytic-coefficient polynomial sign conditions on `U`
@@ -353,7 +362,6 @@ theorem preimage_prodMap (ht : IsAnalyticCoeffBooleanCombination U t) {V : Set F
     IsAnalyticCoeffBooleanCombination V (Prod.map g id ⁻¹' t) :=
   setOf_isAnalyticCoeffBooleanCombination_subset
     ((isSetAlgebra_setOf_isAnalyticCoeffBooleanCombination ι V).preimage (Prod.map g id))
-    (fun _ hf => (hf.comp_prodMap hg hgVU).isAnalyticCoeffBooleanCombination_setOf_eq_zero)
     (fun _ hf => (hf.comp_prodMap hg hgVU).isAnalyticCoeffBooleanCombination_setOf_pos) ht
 
 /-- Pulling back a finite Boolean presentation by a reindexing of the fibre preserves it. -/
@@ -363,7 +371,6 @@ theorem preimage_comp_snd {κ : Type*} (ht : IsAnalyticCoeffBooleanCombination U
   setOf_isAnalyticCoeffBooleanCombination_subset
     ((isSetAlgebra_setOf_isAnalyticCoeffBooleanCombination κ U).preimage
       (fun p : E × (κ → ℝ) => (p.1, p.2 ∘ r)))
-    (fun _ hf => (hf.comp_snd r).isAnalyticCoeffBooleanCombination_setOf_eq_zero)
     (fun _ hf => (hf.comp_snd r).isAnalyticCoeffBooleanCombination_setOf_pos) ht
 
 /-- Over a fixed base point `u`, a Boolean combination of analytic-coefficient polynomial sign
@@ -371,11 +378,10 @@ conditions is a semialgebraic subset of the fibre. -/
 theorem isSemialgebraic_preimage_prodMk (ht : IsAnalyticCoeffBooleanCombination U t) (u : E) :
     IsSemialgebraic (Prod.mk u ⁻¹' t) := by
   refine setOf_isAnalyticCoeffBooleanCombination_subset
-    (isSetAlgebra_setOf_isSemialgebraic.preimage (Prod.mk u)) (fun f hf => ?_) (fun f hf => ?_) ht
-  all_goals
-    obtain ⟨q, hq⟩ := hf.exists_eval_eq u
-    simp only [mem_ofPred_eq, preimage_ofPred_eq, hq]
-  exacts [isSemialgebraic_eval_eq_zero q, isSemialgebraic_eval_pos q]
+    (isSetAlgebra_setOf_isSemialgebraic.preimage (Prod.mk u)) (fun f hf => ?_) ht
+  obtain ⟨q, hq⟩ := hf.exists_eval_eq u
+  simp only [mem_ofPred_eq, preimage_ofPred_eq, hq]
+  exact isSemialgebraic_eval_pos q
 
 /-- A Boolean combination of analytic-coefficient polynomial sign conditions on `U` is a Boolean
 combination of analytic sign conditions on the cylinder `U × (ι → ℝ)`. -/
@@ -383,7 +389,6 @@ theorem isAnalyticBooleanCombination [Fintype ι] (ht : IsAnalyticCoeffBooleanCo
     IsAnalyticBooleanCombination (Prod.fst ⁻¹' U) t :=
   setOf_isAnalyticCoeffBooleanCombination_subset
     (isSetAlgebra_setOf_isAnalyticBooleanCombination _)
-    (fun _ hf => isAnalyticBooleanCombination_setOf_eq_zero hf.analyticOnNhd)
     (fun _ hf => isAnalyticBooleanCombination_setOf_pos hf.analyticOnNhd) ht
 
 /-- **Sign-condition normal form.** A Boolean combination of analytic-coefficient polynomial sign

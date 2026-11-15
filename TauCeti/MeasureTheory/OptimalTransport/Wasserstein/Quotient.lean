@@ -88,7 +88,7 @@ theorem wassersteinEDist_eq_zero_iff_separationQuotient_eq (hp : p ≠ 0)
 distance for every exponent, even when the points are not equal. -/
 theorem wassersteinEDist_dirac_eq_zero_of_dist_eq_zero {x y : X} (hxy : dist x y = 0) :
     wassersteinEDist p (Measure.dirac x) (Measure.dirac y) = 0 := by
-  rw [Measure.dirac_eq_dirac_of_inseparable (Metric.inseparable_iff.2 hxy)]
+  rw [Measure.dirac_eq_dirac_iff_inseparable.2 (Metric.inseparable_iff.2 hxy)]
   exact wassersteinEDist_self_of_measurable_edist measurable_edist p (Measure.dirac y)
 
 end TauCeti

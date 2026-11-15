@@ -98,7 +98,7 @@ variable {K : Type*} [Field K] [AdmissibleAbsValues K] [Northcott (logHeight₁ 
 height has the Northcott property, such as a number field. -/
 theorem exists_isHeightIndependent {X : Set K} (hX : X.Infinite) (L M : ℝ) :
     ∃ β : ℕ → K, (∀ j, β j ∈ X) ∧ IsHeightIndependent L M β := by
-  obtain ⟨β, hβX, h₀, hβ⟩ := Northcott.exists_seq_mem_lt logHeight₁ (M * ·) hX L
+  obtain ⟨β, hβX, h₀, hβ⟩ := Northcott.exists_seq_mem_lt logHeight₁ (M * logHeight₁ ·) hX L
   exact ⟨β, hβX, h₀.le, fun j ↦ (hβ j).le⟩
 
 end Set.Infinite

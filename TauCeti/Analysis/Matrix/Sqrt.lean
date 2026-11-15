@@ -51,6 +51,7 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -158,6 +159,10 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
 section PosDef
 
 variable [DecidableEq ι] {S : Matrix ι ι 𝕜}
+
+/-- The square root of a positive-definite matrix has a unit determinant, so it is invertible. -/
+theorem PosDef.isUnit_det_sqrt (hS : S.PosDef) : IsUnit (CFC.sqrt S).det :=
+  (isUnit_iff_isUnit_det _).1 (hS.isStrictlyPositive.isUnit_cfcSqrt S)
 
 /-- **The scale form of the pencil.** For positive-definite `S` and any `X`, the matrix `S⁻¹ - X`
 is the congruence of the sandwich pencil `1 - CFC.sqrt S * X * CFC.sqrt S` by `(CFC.sqrt S)⁻¹`. -/

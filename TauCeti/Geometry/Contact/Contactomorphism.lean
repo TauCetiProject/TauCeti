@@ -316,8 +316,7 @@ theorem IsStrictContactomorphism.symm (h : e.IsStrictContactomorphism α β) :
 /-- The differential of a strict contactomorphism carries the Reeb vector field of `α` to the Reeb
 vector field of `β`. -/
 theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ F] (h : e.IsStrictContactomorphism α β) (hβ : β.IsContactForm)
-    (x : M) :
+    (h : e.IsStrictContactomorphism α β) (hβ : β.IsContactForm) (x : M) :
     mfderiv I J e x (α.reebVectorField x) = β.reebVectorField (e x) := by
   subst h
   exact hβ.mfderiv_reebVectorField_mpullback e e.contMDiff

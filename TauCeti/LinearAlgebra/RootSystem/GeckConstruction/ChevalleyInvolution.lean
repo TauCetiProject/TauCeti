@@ -36,26 +36,22 @@ the Chevalley involution on the concrete split semisimple Lie algebra produced f
 * `TauCeti.eq_geckChevalleyInvolution`: uniqueness from those generator values.
 * `TauCeti.geckChevalleyInvolution_symm`: the involution is its own inverse.
 
-## Roadmap
+## Implementation notes
 
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be built "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra",
-and insists on constructions rather than existence theorems. The involution constructed here is
-characterized on the simple generators and supplies the concrete compatibility needed when one
-later chooses opposite root vectors. Extending it to a normalized root-vector system and proving
-the resulting sign symmetry of the structure constants remain future work (Humphreys §25.2,
-Carter §4.1). `TauCeti.serreChevalleyInvolution` of
-`TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean` is that automorphism on the presented
-Lie algebra; this file supplies it on the concrete side. Geck's construction is the explicit
-realisation of a root datum by a matrix Lie algebra, proved semisimple with the given root system
-upstream, so it is a carrier of the kind Layer 9 demands, and
-`TauCeti.serreLift_comp_serreChevalleyInvolution` transports the presented involution to any such
-concrete algebra once the two are identified — an identification that needs the generator formulas
-`TauCeti.geckChevalleyInvolution_h`, `TauCeti.geckChevalleyInvolution_e` and
-`TauCeti.geckChevalleyInvolution_f` proved here. The Kostant `ℤ`-form of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/` is the other named ingredient, and milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md` is the downstream consumer of the assembled pinned
-group scheme.
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra, which is formed in
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/`; the group scheme itself is not formalised here.
+The involution constructed here is characterized on the simple generators and supplies the concrete
+compatibility needed when one chooses opposite root vectors; extended to a normalized root-vector
+system, it gives the sign symmetry of the structure constants (Humphreys §25.2, Carter §4.1).
+`TauCeti.serreChevalleyInvolution` of `TauCeti/Algebra/Lie/Presentation/Serre/Automorphism.lean` is
+that automorphism on the presented Lie algebra; this file supplies it on the concrete side. Geck's
+construction is the explicit realisation of a root datum by a matrix Lie algebra, proved semisimple
+with the given root system upstream, and `TauCeti.serreLift_comp_serreChevalleyInvolution`
+transports the presented involution to any such concrete algebra once the two are identified. For
+the pinned algebra `TauCeti.DynkinType.lieAlgebra` the resulting intertwining is
+`TauCeti.DynkinType.serreLift_serreChevalleyInvolution`, which rests on the generator formulas
+`TauCeti.geckChevalleyInvolution_e` and `TauCeti.geckChevalleyInvolution_f` proved here.
 
 ## References
 

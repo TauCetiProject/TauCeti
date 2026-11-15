@@ -25,6 +25,12 @@ every quotient map `q : X → Y` whose fibres are the points outside `A` and the
 sends the collapsed point back into `A`
 (`TauCeti.HasHomotopyExtensionProperty.collapseHomotopyEquiv_symm_apply_mem`).
 
+The homotopy extension property itself passes to the quotient: if `A` is closed and a quotient map
+`q` identifies only points of `A` with each other, then `q '' A` has the homotopy extension property
+in `Y` (`TauCeti.HasHomotopyExtensionProperty.image_of_isQuotientMap`). No contractibility is
+needed for this. For instance, collapsing the boundary of the cube `Iᵏ` onto the basepoint of the
+sphere `Sᵏ` shows that the basepoint of the sphere has the homotopy extension property.
+
 ## Proof
 
 A contraction of `A` is a homotopy from the identity of `A` to a constant map, and the homotopy
@@ -42,6 +48,9 @@ identity of `X` through `f_t`.
   ambient space which keeps it inside itself.
 * `TauCeti.HasHomotopyExtensionProperty.collapseHomotopyEquiv`: **collapsing a contractible
   subspace with the homotopy extension property is a homotopy equivalence.**
+* `TauCeti.HasHomotopyExtensionProperty.image_of_isQuotientMap`: the image of a closed subspace
+  with the homotopy extension property, under a quotient map identifying only its points, has the
+  homotopy extension property.
 
 ## References
 
@@ -170,5 +179,55 @@ theorem HasHomotopyExtensionProperty.collapseHomotopyEquiv_symm_apply_mem
     (hqA : ∀ x y, q x = q y ↔ x = y ∨ x ∈ A ∧ y ∈ A) {a : X} (ha : a ∈ A) :
     (hA.collapseHomotopyEquiv hq hqA).symm (q a) ∈ A :=
   (collapseInverse_apply hA hq hqA a).symm ▸ collapseDeformation_mem hA 1 ha
+
+/-! ### The homotopy extension property of the collapsed set -/
+
+/-- **The homotopy extension property passes to a quotient collapsing the subspace.** Let `A ⊆ X`
+be closed with the homotopy extension property, and let `q : X → Y` be a quotient map which only
+identifies points of `A` with each other: `q x = q y` implies `x = y` or `x, y ∈ A`. Then `q '' A`
+has the homotopy extension property in `Y`. A retraction of `I × X` onto `{0} × X ∪ I × A` fixes
+`I × A`, so it is compatible with `I × q` and descends to a retraction of `I × Y` onto
+`{0} × Y ∪ I × q '' A`. -/
+theorem HasHomotopyExtensionProperty.image_of_isQuotientMap (hA : HasHomotopyExtensionProperty A)
+    (hAc : IsClosed A) {q : X → Y} (hq : Topology.IsQuotientMap q)
+    (hqA : ∀ x y, q x = q y → x = y ∨ x ∈ A ∧ y ∈ A) :
+    HasHomotopyExtensionProperty (q '' A) := by
+  obtain ⟨r, hr, hr'⟩ := hA.exists_retraction
+  -- A point whose image lies in `q '' A` lies in `A`.
+  have hmem {x : X} (hx : q x ∈ q '' A) : x ∈ A := by
+    obtain ⟨a, ha, hax⟩ := hx
+    obtain rfl | ⟨hx, -⟩ := hqA x a hax.symm
+    exacts [ha, hx]
+  have hpre : q ⁻¹' (q '' A) = A :=
+    Set.Subset.antisymm (fun x hx => hmem hx) (Set.subset_preimage_image q A)
+  -- On a fibre of `I × q`, the retraction followed by `I × q` is constant.
+  have hfib (t : I) {x y : X} (hxy : q x = q y) :
+      ((r (t, x)).1, q (r (t, x)).2) = ((r (t, y)).1, q (r (t, y)).2) := by
+    obtain rfl | ⟨hx, hy⟩ := hqA x y hxy
+    · rfl
+    · rw [hr' (t, x) (mem_cylinderExtensionDomain_iff.2 (Or.inr hx)),
+        hr' (t, y) (mem_cylinderExtensionDomain_iff.2 (Or.inr hy)), hxy]
+  let s := Function.surjInv hq.surjective
+  have hs (y : Y) : q (s y) = y := Function.surjInv_eq hq.surjective y
+  let r' : I × Y → I × Y := fun p => ((r (p.1, s p.2)).1, q (r (p.1, s p.2)).2)
+  have hr'q (t : I) (x : X) : r' (t, q x) = ((r (t, x)).1, q (r (t, x)).2) :=
+    hfib t (hs (q x))
+  have hcont : Continuous r' := hq.continuous_lift_prod_right <| by
+    refine Continuous.congr (f := fun p : I × X => ((r p).1, q (r p).2))
+      (by fun_prop) fun p => (hr'q p.1 p.2).symm
+  refine hasHomotopyExtensionProperty_of_retraction (r := ⟨r', hcont⟩)
+    ((hq.isClosed_preimage (s := q '' A)).1 (by rwa [hpre])) (fun p => ?_) (fun p hp => ?_)
+  · obtain ⟨t, y⟩ := p
+    obtain ⟨x, rfl⟩ := hq.surjective y
+    rw [ContinuousMap.coe_mk, hr'q, mem_cylinderExtensionDomain_iff]
+    obtain h0 | hA' := mem_cylinderExtensionDomain_iff.1 (hr (t, x))
+    · exact Or.inl h0
+    · exact Or.inr (Set.mem_image_of_mem q hA')
+  · obtain ⟨t, y⟩ := p
+    obtain ⟨x, rfl⟩ := hq.surjective y
+    rw [ContinuousMap.coe_mk, hr'q]
+    obtain h0 | hy := mem_cylinderExtensionDomain_iff.1 hp
+    · rw [hr' (t, x) (mem_cylinderExtensionDomain_iff.2 (Or.inl h0))]
+    · rw [hr' (t, x) (mem_cylinderExtensionDomain_iff.2 (Or.inr (hmem hy)))]
 
 end TauCeti

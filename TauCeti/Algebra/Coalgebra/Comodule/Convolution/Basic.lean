@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Basic
-public import Mathlib.RingTheory.Coalgebra.Convolution
+public import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # The convolution algebra acts on a comodule
@@ -23,9 +23,9 @@ homomorphism to counit-valued derivations gives the differentiated action of an 
 
 public section
 
-namespace TauCeti.Comodule
-
 open WithConv TensorProduct
+
+namespace TauCeti.Comodule
 
 variable {R C M N : Type*} [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
@@ -51,19 +51,12 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     simp [coactComponent_apply]
   map_one' := by
     ext m
-    have h : (1 : WithConv (C →ₗ[R] R)).ofConv = Coalgebra.counit := by
-      ext c
-      simp
-    rw [h, coactComponent_counit]
+    rw [LinearMap.ofConv_one_eq_counit, coactComponent_counit]
     rfl
   map_mul' f g := by
     ext m
     rw [_root_.mul_apply_eq_comp, coactComponent_coactComponent]
-    have hp : f.ofConv ∘ₗ LinearMap.tensorComponent g.ofConv =
-        LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
-      ext c d
-      simp [mul_comm]
-    rw [← LinearMap.comp_assoc, hp, LinearMap.convMul_def, LinearMap.comp_assoc]
+    rw [LinearMap.convMul_eq_comp_tensorComponent]
   commutes' r := by
     ext m
     have h : (algebraMap R (WithConv (C →ₗ[R] R)) r).ofConv =

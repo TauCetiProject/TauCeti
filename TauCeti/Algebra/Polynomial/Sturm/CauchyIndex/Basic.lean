@@ -281,13 +281,14 @@ theorem cauchyIndex_eq_sum (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
   exact ⟨fun h => ⟨⟨support_cauchyJump_subset p q h.2, h.1⟩, h.2⟩,
     fun h => ⟨h.1.2, h.2⟩⟩
 
+omit [IsStrictOrderedRing R] in
 /-- The Cauchy index on a set depends only on which roots of `p` the set contains. -/
 theorem cauchyIndex_congr_of_isRoot {p : R[X]} (q : R[X]) {s t : Set R}
     (h : ∀ r, p.IsRoot r → (r ∈ s ↔ r ∈ t)) : cauchyIndex p q s = cauchyIndex p q t := by
-  classical
-  rw [cauchyIndex_eq_sum, cauchyIndex_eq_sum]
-  exact Finset.sum_congr (Finset.filter_congr fun r hr =>
-    h r (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hr))) fun _ _ => rfl
+  rw [cauchyIndex_def, cauchyIndex_def]
+  refine finsum_mem_inter_support_eq' (cauchyJump p q) s t fun x hx => h x ?_
+  by_contra hr
+  exact hx (cauchyJump_of_eval_ne_zero q hr)
 
 /-- The Cauchy index is additive over disjoint sets. -/
 theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
@@ -307,7 +308,7 @@ theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b <
   have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
     disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
   rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
-    ← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp)]
+    ← insert_right_Ioo hab, cauchyIndex_insert _ _ (by simp)]
   ring
 
 /-- Cancelling a common nonzero factor of `p` and `q` does not change the jumps of `q / p`. -/
@@ -333,8 +334,9 @@ theorem cauchyIndex_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (s : Set R)
     cauchyIndex (p * r) (q * r) s = cauchyIndex p q s := by
   simp only [cauchyIndex_def, cauchyJump_mul_right p q hr]
 
+omit [IsStrictOrderedRing R] in
 /-- Adding a multiple of `p` to `q` does not change the jumps of `q / p`. -/
-theorem cauchyJump_add_mul (p q r : R[X]) (a : R) :
+theorem cauchyJump_add_mul [IsDomain R] (p q r : R[X]) (a : R) :
     cauchyJump p (q + p * r) a = cauchyJump p q a := by
   by_cases hp : p = 0
   · simp [hp]
@@ -348,8 +350,12 @@ theorem cauchyJump_add_mul (p q r : R[X]) (a : R) :
   · -- At a pole of `q / p`, the term `p * r` vanishes to higher order than `q`.
     have hd : (X - C a) ^ (q.rootMultiplicity a + 1) ∣ p * r :=
       (pow_dvd_pow _ h).trans ((pow_rootMultiplicity_dvd p a).mul_right r)
-    rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_add_eq_left_of_dvd hq hd,
-      derivSignRight_mul, derivSignRight_mul, derivSignRight_add_eq_left_of_dvd hq hd]
+    have hpq : p * q ≠ 0 := mul_ne_zero hp hq
+    have hd' : (X - C a) ^ ((p * q).rootMultiplicity a + 1) ∣ p * (p * r) := by
+      rw [rootMultiplicity_mul hpq, add_assoc, pow_add]
+      exact mul_dvd_mul (pow_rootMultiplicity_dvd p a) hd
+    rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_add_eq_left_of_dvd hq hd, mul_add,
+      derivSignRight_add_eq_left_of_dvd hpq hd']
   · -- Away from poles of `q / p`, there is no pole of `(q + p * r) / p` either.
     rw [cauchyJump_of_rootMultiplicity_le h]
     by_cases hs : q + p * r = 0
@@ -358,8 +364,9 @@ theorem cauchyJump_add_mul (p q r : R[X]) (a : R) :
     rw [rootMultiplicity_mul (mul_ne_zero hp hr)]
     omega
 
+omit [IsStrictOrderedRing R] in
 /-- Adding a multiple of `p` to `q` does not change the index of `q / p`. -/
-theorem cauchyIndex_add_mul (p q r : R[X]) (s : Set R) :
+theorem cauchyIndex_add_mul [IsDomain R] (p q r : R[X]) (s : Set R) :
     cauchyIndex p (q + p * r) s = cauchyIndex p q s := by
   simp only [cauchyIndex_def, cauchyJump_add_mul]
 
@@ -454,7 +461,7 @@ end OrderedRing
 
 section Field
 
-variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [Field R] [LinearOrder R]
 
 /-- Reducing `q` modulo `p` does not change the jumps of `q / p`. -/
 theorem cauchyJump_mod (p q : R[X]) (a : R) : cauchyJump p (q % p) a = cauchyJump p q a := by

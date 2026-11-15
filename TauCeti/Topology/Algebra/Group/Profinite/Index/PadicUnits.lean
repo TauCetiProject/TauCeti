@@ -118,8 +118,7 @@ theorem profiniteIndex_zpowers_neg_one :
     have horder : profiniteOrder ℤ_[2]ˣ q = 0 :=
       isProP_iff_profiniteOrder_apply_eq_zero.mp isProP_units_padicInt_two q
         (fun h ↦ hq (Subtype.ext h))
-    have hlagrange := (Subgroup.zpowers (-1 : ℤ_[2]ˣ)).profiniteOrder_apply_eq_add_profiniteIndex
-      isClosed_zpowers_neg_one q
+    have hlagrange := (Subgroup.zpowers (-1 : ℤ_[2]ˣ)).profiniteOrder_apply_eq_add_profiniteIndex q
     rw [horder] at hlagrange
     exact (add_eq_zero.mp hlagrange.symm).2
 

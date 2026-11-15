@@ -334,6 +334,18 @@ theorem localOrientationOfManifoldOrientation_mk {n : ℕ}
         (l.chartOrientation x ⟨x, mem_chart_source E x⟩) hE := by
   simp only [localOrientationOfManifoldOrientation, Manifold.Orientation.lift_mk]
 
+/-- The local orientation selected by a manifold orientation at `x` is the oriented-chart
+generator, in the preferred chart at `x`, for the orientation of the tangent space at `x`. -/
+theorem localOrientationOfManifoldOrientation_eq {n : ℕ}
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (x : M) :
+    localOrientationOfManifoldOrientation o hE x =
+      (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) (o.orientationAt x)
+        hE := by
+  induction o using Manifold.Orientation.inductionOn with
+  | _ l =>
+    rw [localOrientationOfManifoldOrientation_mk, Manifold.Orientation.orientationAt_mk,
+      l.orientationAt_eq]
+
 /-- Reversing a manifold orientation reverses every local homology orientation it selects. -/
 @[simp]
 theorem localOrientationOfManifoldOrientation_neg {n : ℕ}

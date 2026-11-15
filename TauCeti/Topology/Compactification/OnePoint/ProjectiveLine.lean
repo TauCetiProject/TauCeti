@@ -281,9 +281,9 @@ theorem exists_smul_zero_infty_eq {a b : OnePoint K} (h : a ≠ b) :
     (Function.Embedding.embFinTwo (e.injective.ne h))
   have h₀ := DFunLike.congr_fun hγ 0
   have h₁ := DFunLike.congr_fun hγ 1
-  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_zero,
+  rw [smul_apply, Function.Embedding.embFinTwo_apply_zero,
     Function.Embedding.embFinTwo_apply_zero] at h₀
-  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_one,
+  rw [smul_apply, Function.Embedding.embFinTwo_apply_one,
     Function.Embedding.embFinTwo_apply_one] at h₁
   refine ⟨γ, by simp, ?_, ?_⟩
   · rw [← e.symm_apply_apply ((0 : K) : OnePoint K), equivProjectivization_symm_toGL_smul, h₀,

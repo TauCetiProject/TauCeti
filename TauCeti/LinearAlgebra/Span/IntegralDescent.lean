@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Span.Basic
 
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+
 /-!
 # Descending a span from an algebra to its ring of scalars
 
@@ -29,10 +31,20 @@ a root of unity `ζ` in a field of characteristic zero, through `Algebra.adjoin.
 is the descent step in Brauer's induction theorem, where a virtual character is first written as a
 combination of induced characters with coefficients in `ℤ[ζ]`.
 
+Over a field `R`, a retraction always exists. Applied pointwise to a finite linear combination
+in `ι → A`, this shows that a vector with coordinates in `R` lying in the `A`-span of vectors
+with coordinates in `R` lies in their `R`-span
+(`TauCeti.mem_span_of_mem_span_of_forall_apply_mem_range`). For `R` the algebraic numbers and
+`A = ℂ`, applied to the first `q`-expansion coefficients, it writes a modular form with algebraic
+coefficients in the span of forms with algebraic coefficients as an algebraic combination of them.
+
 ## Main statements
 
 * `TauCeti.mem_of_mem_span_of_mem_span_range`: an `R`-combination of `b` that is an
   `A`-combination of elements of `V` is already in `V`.
+* `TauCeti.mem_span_of_mem_span_of_forall_apply_mem_range`: over a field of scalars, a vector
+  with coordinates in the scalars is in the span over the scalars of any set of such vectors whose
+  span over the algebra contains it.
 
 ## References
 
@@ -94,5 +106,33 @@ theorem mem_of_mem_span_of_mem_span_range (hb : LinearIndependent A b) (t : A �
     simpa [← hcn, ht_alg] using hc i
   rw [hfw, ← hcn, hn0, Finsupp.mapRange_zero, map_zero, add_zero]
   exact hw
+
+/-- **Descent of a span of coordinate vectors from an algebra to its field of scalars.** Let `K`
+be a field and `L` a nontrivial `K`-algebra, and consider vectors `ι → L`. If a vector whose
+coordinates all lie in the image of `K` is in the `L`-span of a set of vectors with the same
+property, then it is in their `K`-span. -/
+theorem mem_span_of_mem_span_of_forall_apply_mem_range {K L : Type*} [Field K] [Ring L]
+    [Nontrivial L] [Algebra K L] {s : Set (ι → L)}
+    (hs : ∀ w ∈ s, ∀ i, w i ∈ (algebraMap K L).range) {v : ι → L}
+    (hv : ∀ i, v i ∈ (algebraMap K L).range) (h : v ∈ Submodule.span L s) :
+    v ∈ Submodule.span K s := by
+  classical
+  -- over a field, the scalars `K · 1` are a direct summand of `L`
+  obtain ⟨t, ht⟩ := (Algebra.linearMap K L).exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.mpr (FaithfulSMul.algebraMap_injective K L))
+  have ht_alg (a : K) : t (algebraMap K L a) = a := LinearMap.congr_fun ht a
+  have ht_mul (a : L) (b : K) : t (a * algebraMap K L b) = t a * b := by
+    rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+  -- retract the coefficients of a finite linear combination, coordinate by coordinate
+  obtain ⟨n, c, w, hw⟩ := Submodule.mem_span_set'.mp h
+  refine Submodule.mem_span_set'.mpr ⟨n, t ∘ c, w, ?_⟩
+  ext i
+  obtain ⟨a, ha⟩ := hv i
+  choose b hb using fun j ↦ hs (w j) (w j).property i
+  have hi := congrArg t (congrFun hw i)
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, ← hb, ← ha, map_sum, ht_mul,
+    ht_alg] at hi
+  simp only [Finset.sum_apply, Pi.smul_apply, Function.comp_apply, ← hb, Algebra.smul_def,
+    ← map_mul, ← map_sum, hi, ha]
 
 end TauCeti

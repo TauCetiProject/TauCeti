@@ -68,13 +68,11 @@ private theorem isElliptic_of_perfectField [PerfectField F] [W₂.IsElliptic]
   -- The slope at the singular point is a transcendental generator of `F(W₁)`.
   let e : RatFunc F ≃ₐ[F] W₁.FunctionField :=
     (RatFunc.algEquivOfTranscendental z
-      (hW.transcendental_div_of_isSingular W₁.isFunctionField Place.degree_infinity hs)).trans
+      (hW.transcendental_div_of_isSingular hs)).trans
       ((IntermediateField.equivOfEq (hW.adjoin_div_eq_top_of_isSingular W₁.isFunctionField
         Place.degree_infinity hs)).trans IntermediateField.topEquiv)
   -- So `φ^*` embeds `F(W₂)` into a rational function field, and by Lüroth's theorem `F(W₂)` has
   -- genus zero, while the function field of an elliptic curve has genus one.
-  have : Algebra.Transcendental F W₂.FunctionField :=
-    ⟨_, (Place.isWeierstrassCoordinates_infinity (W₂ : WeierstrassCurve F)).transcendental_x⟩
   have hgenus := genus_eq_zero_of_algHom_ratFunc (e.symm.toAlgHom.comp φ.fieldPullback)
   rw [WeierstrassCurve.Affine.genus_functionField] at hgenus
   exact one_ne_zero hgenus

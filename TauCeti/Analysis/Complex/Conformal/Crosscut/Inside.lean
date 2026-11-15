@@ -130,7 +130,6 @@ theorem exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall {U : S
   have hφ0 : g (v * ((0 : ℝ) : ℂ) + f z₀) = z₀ := by simp [hgf z₀ hz₀b]
   have hnorm : ‖z₀ - ζ‖ = ρ := by rwa [← dist_eq_norm, ← mem_sphere]
   set ψ := fun t : ℝ => ‖g (v * t + f z₀) - ζ‖ ^ 2
-  have hψ0 : ψ 0 = ρ ^ 2 := by simp [ψ, hgf z₀ hz₀b, hnorm]
   have hρsq : (0 : ℝ) < ρ ^ 2 := sq_pos_of_pos hρ
   have hev : ∀ᶠ t : ℝ in 𝓝 0, |ψ t - ρ ^ 2 - t * (2 * ρ ^ 2)| ≤ ρ ^ 2 * |t| :=
     eventually_abs_norm_sub_sq_sub_sub_mul_le hφ hφ0 hρ hnorm
@@ -182,7 +181,7 @@ theorem mem_closure_image_inter_sphere_inter_setOf_im_pos_and_mem_closure_inter_
   have hd0 : deriv f z₀ ≠ 0 :=
     deriv_ne_zero_of_injOn hf hU hinj hz₀b
   have hzζ : z₀ - ζ ≠ 0 := sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀s hρ.ne')
-  set v := deriv f z₀ * (z₀ - ζ) with hv_def
+  set v := deriv f z₀ * (z₀ - ζ)
   have hfz : HasDerivAt f (deriv f z₀) z₀ :=
     (hf.differentiableAt (hU.mem_nhds hz₀b)).hasDerivAt
   obtain ⟨θ₀, -, hθ₀⟩ := exists_mem_Icc_circleMap_eq 0 hz₀s
@@ -265,9 +264,6 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     hK.closure_subset_iff.mpr hγK
   set p := f z₀
   set v := deriv f z₀ * (z₀ - ζ)
-  have hv : v ≠ 0 :=
-    mul_ne_zero (deriv_ne_zero_of_injOn hf hUo hinj hz₀.1)
-      (sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀.2 hρ.ne'))
   obtain ⟨η, hη, hnear, hfar⟩ :=
     exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall hf hUo hinj hz₀ hρ
   obtain ⟨hleft, hright⟩ :=
@@ -291,7 +287,7 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     inter_subset_inter (subset_closure.trans hγKcl) subset_rfl
   have key := Contour.mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton
     (K := K) (v := v) (z₀ := p) (a := -(η / 2)) (b := η / 2) (s := 0)
-    hK hKb hv ⟨by linarith, by linarith⟩
+    hK hKb ⟨by linarith, by linarith⟩
     (by simpa using hseg) (by simpa using hKp)
     (by simpa using closure_mono (hγK' _) hleft) (by simpa using closure_mono (hγK' _) hright)
   rcases key with hx | hy

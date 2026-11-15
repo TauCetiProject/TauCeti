@@ -149,7 +149,7 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
       (finrankSupport_homology_subset_Icc (D.khovanovComplex hD R j)
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   simp only [ComplexShape.eulerCharSignsUpInt_χ]
 
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial

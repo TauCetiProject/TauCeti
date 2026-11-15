@@ -51,13 +51,13 @@ theorem structureConstant_G2_eq_two_or_eq_neg_two {α β γ : Fin G2.numRoots}
 
 /-- The bracket coefficient of two short `G₂` roots with a long sum is `±3`. -/
 theorem structureConstant_G2_eq_three_or_eq_neg_three {α β γ : Fin G2.numRoots}
-    (hα : g2Length α = 1) (hβ : g2Length β = 1) (hγ : g2Length γ = 3)
+    (hβ : g2Length β = 1) (hγ : g2Length γ = 3)
     (hadd : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β) :
     G2.structureConstant ht α β = 3 ∨ G2.structureConstant ht α β = -3 := by
   have hc : (G2.simplyConnectedRootDatum ht).chainBotCoeff α β = 2 := by
     rw [simplyConnectedRootDatum_G2]
-    apply g2_chainBotCoeff_eq_two_of_short_add_short_eq_long α β γ hα hβ hγ
+    apply g2_chainBotCoeff_eq_two_of_short_add_short_eq_long α β γ hβ hγ
     rw [simplyConnectedRootDatum_G2] at hadd
     exact hadd.trans (add_comm _ _)
   have h := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht) ⟨γ, hadd⟩

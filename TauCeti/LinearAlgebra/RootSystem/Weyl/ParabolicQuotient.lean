@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 import TauCeti.GroupTheory.Coxeter.ChainProperty
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The Weyl orbit of a dominant weight as a parabolic quotient
@@ -222,12 +223,14 @@ theorem bruhatLE_of_isMinimalCosetRep_of_smul_eq (hlam : lam ∈ dominantChamber
 
 /-! ### The reflection test -/
 
+omit [P.flip.IsReduced] in
 /-- **Reflection test in the Weyl group.** Reflecting in a positive root `β` with
 `⟨w λ, β^∨⟩ < 0` moves `w` one step down the Bruhat graph: `s_β w < w`, since the root `w⁻¹ β`
 pairs negatively with the dominant weight `λ` and so is a negative root. -/
 theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     {w : P.weylGroup} {β : ι} (hβ : b.IsPos β) (hneg : P.coroot' β (w • lam) < 0) :
     (weylCoxeterSystem P b).BruhatStep (RootPairing.weylGroup.ofIdx P β * w) w := by
+  have := P.flip_isReduced
   have hinv : β ∈ inversions P b w⁻¹ := by
     refine (mem_inversions P b w⁻¹ β).mpr ⟨hβ, fun hpos ↦ hneg.not_ge ?_⟩
     have h := coroot'_weylGroupToPerm_smul P w⁻¹ β (w • lam)
@@ -236,6 +239,7 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     exact coroot'_nonneg_of_mem_posRoots P b hlam ((mem_posRoots P b _).mpr hpos)
   exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr hinv
 
+omit [P.flip.IsReduced] in
 /-- **A simple reflection that does not shorten `w` pairs nonnegatively.** If `sᵢ` is not a left
 descent of `w`, then `⟨w λ, αᵢ^∨⟩ ≥ 0` for every dominant `λ`. -/
 theorem coroot'_smul_nonneg_of_not_isLeftDescent (hlam : lam ∈ dominantChamber P b)
@@ -245,6 +249,7 @@ theorem coroot'_smul_nonneg_of_not_isLeftDescent (hlam : lam ∈ dominantChamber
   rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
   exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.2) hneg).length_lt
 
+omit [P.flip.IsReduced] in
 /-- **A left descent pairs nonpositively.** If `sᵢ` is a left descent of `w`, then
 `⟨w λ, αᵢ^∨⟩ ≤ 0` for every dominant `λ`. -/
 theorem coroot'_smul_nonpos_of_isLeftDescent (hlam : lam ∈ dominantChamber P b)
@@ -410,6 +415,7 @@ theorem isMinimalCosetRep_simple_mul_of_coroot'_ne_zero {u : P.weylGroup}
   rw [← coroot'_simple_mul_smul_eq_neg, h, mul_smul, weylCoxeterSystem_simple,
     ofIdx_smul_eq_self_of_coroot'_eq_zero (mem_wallIndices.mp hj)]
 
+omit [P.flip.IsReduced] in
 /-- **A simple reflection on the positive side of its wall covers.** If `u` is a minimal coset
 representative of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, then `u ⋖ sᵢ u`. Its bond is `⟨u λ, αᵢ^∨⟩`, by
 `TauCeti.reflectionBond_simple_mul_smul_smul`. -/
@@ -426,6 +432,7 @@ theorem minimalCosetRepCovBy_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantC
     ⟨hu, isMinimalCosetRep_simple_mul_of_coroot'_ne_zero hu hi.ne',
       ((weylCoxeterSystem P b).bruhatStep_simple_mul i (by omega)).bruhatLE, hlen.symm⟩
 
+omit [P.flip.IsReduced] in
 /-- **`sᵢ` moves covers on the positive side of its wall up.** If `y ⋖ x` in `W / W_λ` with
 `⟨x λ, αᵢ^∨⟩ > 0` and `⟨y λ, αᵢ^∨⟩ > 0`, then `sᵢ y ⋖ sᵢ x`. -/
 theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos
@@ -447,6 +454,7 @@ theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos
       isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_right hx.ne',
       h.bruhatLE.simple_mul_of_not_isLeftDescent i hdx, by omega⟩
 
+omit [P.flip.IsReduced] in
 /-- **`sᵢ` moves covers on the negative side of its wall down.** If `y ⋖ x` in `W / W_λ` with
 `⟨x λ, αᵢ^∨⟩ < 0` and `⟨y λ, αᵢ^∨⟩ < 0`, then `sᵢ y ⋖ sᵢ x`. -/
 theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg

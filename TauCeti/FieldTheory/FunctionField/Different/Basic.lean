@@ -144,7 +144,7 @@ theorem differentIdeal_eq_top_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [De
         Submodule (integralClosure (P.integers) F') F')
       = ((1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') :
         Submodule (integralClosure (P.integers) F') F') := by
-    rw [FractionalIdeal.coe_dual_one, FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_dual_one, FractionalIdeal.coeToSubmodule_one]
     exact traceDual_one_eq_one_of_ord_discr_eq_zero F' P hb hd
   have hdual : FractionalIdeal.dual (P.integers) F
       (1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') = 1 :=
@@ -168,15 +168,6 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [FiniteDimensional F F']
 variable (k F) (P' : Place k' F')
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
-elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
-theorem algebraMap_mem_integers_of_mem_integralClosure
-    (b : integralClosure ((P'.restrict k F).integers) F') :
-    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
-  rw [Subalgebra.algebraMap_eq]
-  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
 
 /-- **The prime of `𝒪_P` below the centre of `P'` on the local model is the maximal ideal of
 `𝒪_P`**: the residue extension read on the local model is the residue-field extension of the two

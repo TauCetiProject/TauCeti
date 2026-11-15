@@ -102,6 +102,16 @@ theorem orderedWeightIndexEquiv_lt_of_eq_add_nsmul [Fintype η]
   rw [hrs, map_add, map_nsmul]
   exact lt_add_of_pos_right _ (nsmul_pos hα hn.ne')
 
+/-- Adding a positive multiple of a negative-degree root strictly increases the ordered index. -/
+theorem orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg [Fintype η]
+    (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) {α : κ → ℤ}
+    (hα : degree α < 0) {r s : η} {n : ℕ} (hn : 0 < n)
+    (hrs : wt r = wt s + n • α) :
+    orderedWeightIndexEquiv degree wt s < orderedWeightIndexEquiv degree wt r := by
+  apply orderedWeightIndexEquiv_lt_of_degree_lt degree wt
+  rw [hrs, map_add, map_nsmul]
+  exact add_lt_of_neg_right _ (nsmul_neg hα hn.ne')
+
 /-! ## The ordered basis and its weights -/
 
 omit [Module ℚ V] in

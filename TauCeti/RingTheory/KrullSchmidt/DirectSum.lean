@@ -36,8 +36,9 @@ external direct sums.
   indecomposable summands are matched by a bijection `ι ≃ κ` under which corresponding summands are
   isomorphic, with `TauCeti.exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end` in Azumaya's
   generality and `TauCeti.card_eq_card_of_directSum` for the number of summands.
-* `TauCeti.exists_equiv_linearEquiv_of_directSumEquiv`: the same for two abstract families of
-  summands compared by an isomorphism `(⨁ i, N i) ≃ₗ[A] ⨁ j, Q j`, with no ambient module.
+* `TauCeti.exists_equiv_linearEquiv_of_directSumEquiv`: the same for a family `N` of modules with
+  local endomorphism rings and a finite family `Q` of indecomposable modules, compared by an
+  isomorphism `(⨁ i, N i) ≃ₗ[A] ⨁ j, Q j`, with no ambient module.
 
 ## Implementation notes
 
@@ -160,14 +161,14 @@ variable {N : ι → Type y} [∀ i, AddCommGroup (N i)] [∀ i, Module A (N i)]
 variable {Q : κ → Type z} [∀ j, AddCommGroup (Q j)] [∀ j, Module A (Q j)]
 
 /-- **The Krull-Schmidt theorem for external direct sums**, in Azumaya's generality: if a module is
-isomorphic to a finite direct sum of modules with local endomorphism rings, and also to a finite
-direct sum of indecomposable modules, then the two families are matched by a bijection of their
+isomorphic to a direct sum of modules with local endomorphism rings, and also to a finite direct
+sum of indecomposable modules, then the two families are matched by a bijection of their
 index sets under which corresponding summands are isomorphic.
 
 No finiteness hypothesis on `M` is needed; for a module of finite length Fitting's lemma supplies
 the locality hypothesis, which is `TauCeti.exists_equiv_linearEquiv_of_directSum` below. -/
 theorem exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end
-    [Finite ι] [Finite κ]
+    [Finite κ]
     (eN : M ≃ₗ[A] ⨁ i, N i) (eQ : M ≃ₗ[A] ⨁ j, Q j)
     (hN : ∀ i, IsLocalRing (Module.End A (N i)))
     (hQ : ∀ j, IsIndecomposableModule A (Q j)) :
@@ -180,12 +181,12 @@ theorem exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end
   exact ⟨e, fun i ↦ ⟨(hPe i).some ≪≫ₗ (he i).some ≪≫ₗ (hRe (e i)).some.symm⟩⟩
 
 /-- **The Krull-Schmidt theorem for two abstract families of summands**: a direct sum of modules
-with local endomorphism rings that is isomorphic to a direct sum of indecomposable modules has its
-summands matched by a bijection of the index sets.
+with local endomorphism rings that is isomorphic to a finite direct sum of indecomposable modules
+has its summands matched by a bijection of the index sets, corresponding summands being isomorphic.
 
 This is `TauCeti.exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end` with the ambient module
 taken to be the first direct sum; it is the form to use when no ambient module is in play. -/
-theorem exists_equiv_linearEquiv_of_directSumEquiv [Finite ι] [Finite κ]
+theorem exists_equiv_linearEquiv_of_directSumEquiv [Finite κ]
     (e : (⨁ i, N i) ≃ₗ[A] ⨁ j, Q j)
     (hN : ∀ i, IsLocalRing (Module.End A (N i)))
     (hQ : ∀ j, IsIndecomposableModule A (Q j)) :

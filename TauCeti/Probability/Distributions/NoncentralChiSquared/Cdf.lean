@@ -81,10 +81,14 @@ theorem cdf_noncentralChiSquaredMeasure_zero_degree (l : ℝ≥0) (hx : 0 ≤ x)
   push_cast
   ring
 
-/-- No noncentral chi-squared law of nonnegative degree has mass below zero. -/
+/-- No noncentral chi-squared law has mass below zero, including the zero law at negative
+degrees. -/
 @[simp]
-theorem cdf_noncentralChiSquaredMeasure_of_neg (hk : 0 ≤ k) (l : ℝ≥0) (hx : x < 0) :
+theorem cdf_noncentralChiSquaredMeasure_of_neg (l : ℝ≥0) (hx : x < 0) :
     cdf (noncentralChiSquaredMeasure k l) x = 0 := by
+  by_cases hk : 0 ≤ k
+  swap
+  · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk), cdf_zero, ite_eq_right (not_le.2 hx)]
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
   have hnull : noncentralChiSquaredMeasure k l (Iic x) = 0 :=
     measure_eq_zero_iff_ae_notMem.2
@@ -101,7 +105,7 @@ theorem cdf_noncentralChiSquaredMeasure_zero (hk : 0 ≤ k) (l : ℝ≥0) :
   have heq : (Iic 0 : Set ℝ) =ᵐ[noncentralChiSquaredMeasure k l] {0} := by
     filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k l] with y hy
     simp only [mem_Iic, mem_singleton_iff]
-    exact propext ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
+    exact ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
   rw [cdf_eq_real, measureReal_congr heq, measureReal_def]
   by_cases hk0 : k = 0
   · simp [hk0, noncentralChiSquaredMeasure_zero_degree_mass, le_of_lt (exp_pos _)]
@@ -124,9 +128,14 @@ theorem cdf_noncentralChiSquaredMeasure_lt_one (hk : 0 ≤ k) (h : k ≠ 0 ∨ l
     cdf (noncentralChiSquaredMeasure k l) x < 1 :=
   Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_noncentralChiSquaredMeasure hk h) x
 
-/-- A positive cutoff has positive cumulative probability, including for the Dirac law. -/
-theorem cdf_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (l : ℝ≥0) (hx : 0 < x) :
+/-- A positive cutoff has positive cumulative probability, including for the Dirac law and the zero
+law at negative degrees. -/
+theorem cdf_noncentralChiSquaredMeasure_pos (l : ℝ≥0) (hx : 0 < x) :
     0 < cdf (noncentralChiSquaredMeasure k l) x := by
+  by_cases hk : 0 ≤ k
+  swap
+  · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk), cdf_zero, ite_eq_left hx.le]
+    exact one_pos
   by_cases h : k = 0 ∧ l = 0
   · rcases h with ⟨rfl, rfl⟩
     simp [noncentralChiSquaredMeasure_zero_noncentrality, chiSquaredMeasure_zero,
@@ -134,9 +143,14 @@ theorem cdf_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (l : ℝ≥0) (hx : 0
   · exact (cdf_nonneg _ 0).trans_lt
       (strictMonoOn_cdf_noncentralChiSquaredMeasure hk (not_and_or.mp h) (by simp) hx.le hx)
 
-/-- The cdf is continuous away from zero, also for the mixed degree-zero law. -/
-theorem continuousOn_cdf_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) :
+/-- The cdf is continuous away from zero, also for the mixed degree-zero law and for the zero law
+at negative degrees. -/
+theorem continuousOn_cdf_noncentralChiSquaredMeasure (l : ℝ≥0) :
     ContinuousOn (cdf (noncentralChiSquaredMeasure k l)) {0}ᶜ := by
+  by_cases hk : 0 ≤ k
+  swap
+  · rw [noncentralChiSquaredMeasure_of_neg (not_le.1 hk)]
+    exact continuousOn_cdf_zero
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
   intro x hx
   apply ContinuousAt.continuousWithinAt

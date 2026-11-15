@@ -250,8 +250,8 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     rw [DFunLike.coe_injective hlam, sub_sub_cancel]
     exact sum_mem fun a ha ↦ root_mem_posRootCone_of_mem_posRoots _ base
       ((mem_posRootsFinset _ base a).1 (hS ha))
-  exact (isDominantIntegral_weylVector (b := base)
+  exact (hv.isDominantIntegral
     |>.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-      hv.isDominantIntegral hcone hne) hcas.symm
+      hcone hne) hcas.symm
 
 end CliffordAlgebra

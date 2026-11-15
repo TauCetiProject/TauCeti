@@ -24,8 +24,8 @@ boundary line of that half-plane, which is exactly the situation in the Wiener--
 
 * `LSeriesSummable.continuousOn_LSeries`: `LSeries a` is continuous on the closed half-plane
   `{z | s.re ≤ z.re}` whenever `LSeriesSummable a s`.
-* `LSeriesSummable.continuous_LSeries_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is
-  continuous whenever `LSeriesSummable a s`.
+* `TauCeti.LSeries.continuous_vertical`: `fun t : ℝ ↦ LSeries a (s + t * I)` is continuous, with no
+  summability hypothesis (when `LSeriesSummable a s` fails the function is identically `0`).
 * `LSeriesSummable.tendsto_LSeries_nhdsGE`: at a real point of summability `σ`, the values of
   `LSeries a` along the real half-line `[σ, ∞)` tend to its value at `σ`.
 -/
@@ -47,11 +47,6 @@ theorem continuousOn_LSeries (hs : LSeriesSummable a s) :
     (fun n z _ ↦ (LSeries.hasDerivAt_term a n z).continuousAt.continuousWithinAt)
     (summable_norm_iff.mpr hs) (fun n _ hz ↦ LSeries.norm_term_le_of_re_le_re a hz n)
 
-/-- A Dirichlet series summable at `s` is continuous along the vertical line through `s`. -/
-theorem continuous_LSeries_vertical (hs : LSeriesSummable a s) :
-    Continuous fun t : ℝ ↦ LSeries a (s + t * I) :=
-  hs.continuousOn_LSeries.comp_continuous (by fun_prop) fun t ↦ by simp
-
 /-- Approaching a real point of summability `σ` along the real half-line `[σ, ∞)`, the values of
 a Dirichlet series converge to its value at `σ`. -/
 theorem tendsto_LSeries_nhdsGE {σ : ℝ} (hs : LSeriesSummable a σ) :
@@ -60,3 +55,22 @@ theorem tendsto_LSeries_nhdsGE {σ : ℝ} (hs : LSeriesSummable a σ) :
     continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun τ hτ ↦ by simpa using hτ
 
 end LSeriesSummable
+
+namespace TauCeti.LSeries
+
+open Complex
+
+/-- A Dirichlet series is continuous along any vertical line `{s + t * I | t : ℝ}`. If it is
+summable at `s` this is `continuousOn_LSeries`; otherwise it is summable at no point of the line,
+so it vanishes identically. -/
+theorem continuous_vertical (a : ℕ → ℂ) (s : ℂ) :
+    Continuous fun t : ℝ ↦ LSeries a (s + t * I) := by
+  by_cases hs : LSeriesSummable a s
+  · exact hs.continuousOn_LSeries.comp_continuous (by fun_prop) fun t ↦ by simp
+  · have h0 (t : ℝ) : LSeries a (s + t * I) = 0 :=
+      LSeries.eq_zero_of_not_LSeriesSummable _ _
+        fun h ↦ hs ((LSeriesSummable_iff_of_re_eq_re (by simp)).mp h)
+    simp only [h0]
+    exact continuous_const
+
+end TauCeti.LSeries

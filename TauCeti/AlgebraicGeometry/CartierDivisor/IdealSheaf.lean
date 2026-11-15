@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Characterization
-public import TauCeti.AlgebraicGeometry.IdealSheaf.Image
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.ZeroLocus
 
 /-!
 # The ideal sheaf of an effective Cartier divisor
@@ -112,21 +111,20 @@ lemma IsEffective.idealSheaf_zero (h : (0 : CartierDivisor X).IsEffective) :
 
 /-- The ideal obtained from rational local equations is an effective Cartier ideal sheaf. -/
 theorem IsEffective.isEffectiveCartier_idealSheaf (hD : D.IsEffective) :
-    hD.idealSheaf.IsEffectiveCartier := by
-  apply (Scheme.IdealSheafData.isEffectiveCartier_iff_isInvertible_sheaf hD.idealSheaf).mpr
-  exact (SheafOfModules.isInvertible X).prop_of_iso hD.idealSheafIso
-    (isInvertible_sheaf (-D))
+    hD.idealSheaf.IsEffectiveCartier :=
+  InvertibleSheaf.isEffectiveCartier_imageIdealSheaf
+    ⟨(-D).sheaf, isInvertible_sheaf (-D)⟩ hD.sheafToUnit
 
 /-- The ideal line bundle of the closed subscheme cut out by `D` has class `[𝒪_X(D)]⁻¹`.
 In particular its dual, the bundle used by the effective-divisor Abel map, has class `[𝒪_X(D)]`. -/
 theorem IsEffective.mk_idealSheaf_eq_inv (hD : D.IsEffective) :
     LineBundleClass.mk hD.isEffectiveCartier_idealSheaf.toInvertibleSheaf =
       D.toLineBundleClass⁻¹ := by
-  exact ((toLineBundleClass_eq_mk_iff (D := -D)
-    (L := hD.isEffectiveCartier_idealSheaf.toInvertibleSheaf)).mpr
-      ⟨hD.idealSheafIso ≪≫
-        (eqToIso hD.isEffectiveCartier_idealSheaf.toInvertibleSheaf_obj).symm⟩).symm.trans
-    (toLineBundleClass_neg D)
+  let L : InvertibleSheaf X := ⟨(-D).sheaf, isInvertible_sheaf (-D)⟩
+  have hclass : (-D).toLineBundleClass = LineBundleClass.mk L :=
+    toLineBundleClass_eq_mk_iff.mpr ⟨Iso.refl _⟩
+  exact (L.mk_toInvertibleSheaf_imageIdealSheaf hD.sheafToUnit).trans
+    (hclass.symm.trans (toLineBundleClass_neg D))
 
 end
 

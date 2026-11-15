@@ -19,12 +19,13 @@ import TauCeti.RingTheory.Invariant.Free
 /-!
 # Finite subgroups of linearly reductive groups
 
-Let `H` be the coordinate Hopf algebra of an affine group of finite type over a field `k`. If the
+Let `H` be the coordinate Hopf algebra of an affine group over a field `k`. If the
 group is linearly reductive, then every finite subgroup `Γ` of its group of rational points has
-order invertible in `k`. Consequently every rational point of finite order is semisimple. In
-characteristic `p` a nonidentity unipotent rational point would have order a nontrivial power of
-`p`, so there is none; over a perfect field of characteristic `p` every rational point of a
-linearly reductive group is therefore semisimple.
+order invertible in `k`. Consequently every rational point of finite order is semisimple. If
+moreover the coordinate algebra is of finite type (an algebraic group) and the characteristic is
+`p`, a nonidentity unipotent rational point would have order a nontrivial power of `p`, so there is
+none; over a perfect field of characteristic `p` every rational point of a linearly reductive
+algebraic group is therefore semisimple.
 
 Left translation by `Γ` is a free action on the coordinate algebra: a translate of a geometric
 point is the point itself only for the identity translation. By the theory of free actions of
@@ -37,16 +38,16 @@ constants by the order of `Γ`. Hence that order is nonzero in `k`.
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.natCast_card_ne_zero_of_isLinearlyReductive`: a finite subgroup of the
-  rational points of a linearly reductive group of finite type has order nonzero in the base
+  rational points of a linearly reductive group has order nonzero in the base
   field.
 * `TauCeti.HopfAlgebra.natCast_orderOf_ne_zero_of_isLinearlyReductive`: the order of a
   finite-order rational point is nonzero in the base field.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_isOfFinOrder`: every rational
   point of finite order is semisimple.
-* `TauCeti.HopfAlgebra.IsUnipotentPoint.eq_one_of_isLinearlyReductive`: in characteristic `p`,
-  the only unipotent rational point is the identity.
-* `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_charP`: over a perfect field
-  of characteristic `p`, every rational point is semisimple.
+* `TauCeti.HopfAlgebra.IsUnipotentPoint.eq_one_of_isLinearlyReductive`: for a coordinate algebra
+  of finite type in characteristic `p`, the only unipotent rational point is the identity.
+* `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_charP`: for a coordinate algebra
+  of finite type over a perfect field of characteristic `p`, every rational point is semisimple.
 
 ## References
 
@@ -76,9 +77,9 @@ private noncomputable def leftTranslationHom (Γ : Subgroup (WithConv (H →ₐ[
   map_mul' γ δ := by simp
 
 /-- **Finite subgroups of a linearly reductive group have invertible order.** If the affine group
-of finite type represented by `H` is linearly reductive, then the order of every finite subgroup
+represented by `H` is linearly reductive, then the order of every finite subgroup
 of its group of rational points is nonzero in the base field. -/
-theorem natCast_card_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
+theorem natCast_card_ne_zero_of_isLinearlyReductive
     (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H)
     (Γ : Subgroup (WithConv (H →ₐ[k] k))) [Finite Γ] :
     (Nat.card Γ : k) ≠ 0 := by
@@ -92,14 +93,23 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
     rfl
   -- Translation by `γ ≠ 1` fixes no geometric point, so some function has orbit sum `1`.
   obtain ⟨c, hc⟩ := MulSemiringAction.exists_sum_smul_eq_one
-    (G := Γ) fun γ hγ ↦
-      (MulSemiringAction.span_range_smul_sub_eq_top_iff (k := k) (K := AlgebraicClosure k)
-        γ).mpr fun x hx ↦ hγ <| by
-          have hfix : x.comp (leftTranslationAlgEquiv
-              ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k))).toAlgHom = x :=
-            AlgHom.ext fun a ↦ by simpa [hsmul] using DFunLike.congr_fun hx a
-          simpa using (comp_leftTranslationAlgEquiv_eq_self_iff
-            (algebraMap k (AlgebraicClosure k)).injective _ x).mp hfix
+    (G := Γ) (A := H) fun γ hγ ↦ by
+      by_contra hne
+      obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
+      have := hm
+      let : Field (H ⧸ m) := Ideal.Quotient.field m
+      let x : H →ₐ[k] AlgebraicClosure (H ⧸ m) :=
+        (IsScalarTower.toAlgHom k (H ⧸ m) (AlgebraicClosure (H ⧸ m))).comp
+          (Ideal.Quotient.mkₐ k m)
+      have hfix : x.comp (leftTranslationAlgEquiv
+          ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k))).toAlgHom = x := AlgHom.ext fun a ↦ by
+        have h : γ • a - a ∈ m := hle (Ideal.subset_span ⟨a, rfl⟩)
+        have h2 : Ideal.Quotient.mk m (γ • a) = Ideal.Quotient.mk m a :=
+          Ideal.Quotient.eq.mpr h
+        rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← hsmul]
+        simp [x, h2]
+      exact hγ <| by simpa using (comp_leftTranslationAlgEquiv_eq_self_iff
+        (algebraMap k (AlgebraicClosure (H ⧸ m))).injective _ x).mp hfix
   -- The orbit sum is the regular matrix coefficient of the functional `∑ γ, γ⁻¹`.
   let T : Comodule.Hom k H H H := Comodule.matrixCoefficientHom (M := H)
     (∑ γ : Γ, ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k)).ofConv.toLinearMap)
@@ -125,10 +135,10 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
   rw [hmconst, map_smul, hT1, hcard, zero_smul, smul_zero] at hTm
   simpa using congrArg (Coalgebra.counit (R := k) (A := H)) hTm
 
-/-- The order of a finite-order rational point of a linearly reductive group of finite type is
+/-- The order of a finite-order rational point of a linearly reductive group is
 nonzero in the base field. In characteristic `p`, no rational point has order divisible by
 `p`. -/
-theorem natCast_orderOf_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
+theorem natCast_orderOf_ne_zero_of_isLinearlyReductive
     (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H)
     {g : WithConv (H →ₐ[k] k)} (hg : IsOfFinOrder g) :
     (orderOf g : k) ≠ 0 := by
@@ -136,9 +146,9 @@ theorem natCast_orderOf_ne_zero_of_isLinearlyReductive [Algebra.FiniteType k H]
   simpa [Nat.card_zpowers] using
     natCast_card_ne_zero_of_isLinearlyReductive hH (Subgroup.zpowers g)
 
-/-- Every rational point of finite order of a linearly reductive group of finite type is
+/-- Every rational point of finite order of a linearly reductive group is
 semisimple, in every characteristic. -/
-theorem isSemisimplePoint_of_isLinearlyReductive_of_isOfFinOrder [Algebra.FiniteType k H]
+theorem isSemisimplePoint_of_isLinearlyReductive_of_isOfFinOrder
     (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H)
     {g : WithConv (H →ₐ[k] k)} (hg : IsOfFinOrder g) :
     IsSemisimplePoint g :=

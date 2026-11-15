@@ -110,7 +110,7 @@ private noncomputable def truncCLM (S : Finset (σ →₀ ℕ)) :
   toLinearMap := truncLinearMap S
   cont := AddMonoidHomClass.continuous_of_bound (truncLinearMap S) 1 fun f ↦ by
     classical
-    rw [one_mul, norm_le_iff (norm_nonneg f)]
+    rw [one_mul, norm_le_iff]
     intro t
     rw [coeff_truncLinearMap]
     split_ifs
@@ -158,7 +158,7 @@ theorem isCompletelyContinuous_restrictedRadiusCLM [Finite σ] (hrs : ∀ i, r i
     fun i ↦ (div_lt_one (hs i)).2 (hrs i)).eventually (ge_mem_nhds hε))
   refine ⟨(truncCLM hS.toFinset).comp (restrictedRadiusCLM fun i ↦ (hrs i).le),
     (isFiniteRank_truncCLM _).comp_right _, fun f ↦ ?_⟩
-  rw [norm_le_iff (mul_nonneg hε.le (norm_nonneg f))]
+  rw [norm_le_iff]
   intro t
   simp only [AddSubgroupClass.coe_sub, map_sub, ContinuousLinearMap.comp_apply, coeff_truncCLM,
     restrictedRadiusCLM_apply, coe_restrictedRadiusHom, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]

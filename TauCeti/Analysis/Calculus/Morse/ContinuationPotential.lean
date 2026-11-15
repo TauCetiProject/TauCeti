@@ -54,6 +54,18 @@ equation is then the base equation `τ' = C τ (1 - τ²)`, whose solutions are 
   `-∞` to `t = 1` at `+∞`, because the time coordinate `U(τ) = log τ - (1 / 2) log (1 - τ²)` of the
   base flow (`TauCeti.intervalBaseTimeCoordinate`) increases at rate at least `C - K`.
 
+**The rescaled field.** Multiplying the negative gradient by the positive function
+
+`λ = C t (1 - t²) / (C t (1 - t²) - ∂ₜ f)`
+
+(`TauCeti.continuationRescaling`) turns its time component into the base field `C t (1 - t²)`
+itself, so the time component of every trajectory of the rescaled field is a trajectory of the
+base potential `C h`. If `|∂ₜ f| ≤ K t (1 - t²)` with `0 ≤ K < C`, then `λ` lies between
+`C / (C + K)` and `C / (C - K)`, and it is `1` wherever `f` is independent of the time, so the two
+fields agree near the critical points. Being a bounded positive multiple, the rescaled field has
+the same oriented trajectories, reparametrized
+(`TauCeti.Geometry.Manifold.Morse.ContinuationPotential`).
+
 ## Main declarations
 
 * `TauCeti.continuationPotential`: the function `F(x, t) = C h(t) + f(x, t)`.
@@ -70,6 +82,11 @@ equation is then the base equation `τ' = C τ (1 - τ²)`, whose solutions are 
   of the open slab.
 * `TauCeti.tendsto_atTop_of_hasDerivAt_intervalBase` and
   `TauCeti.tendsto_atBot_of_hasDerivAt_intervalBase`: the limits of the time component.
+* `TauCeti.continuationRescaling`: the rescaling factor `λ`.
+* `TauCeti.continuationRescaling_mul_sub`: the rescaled time component is the base field.
+* `TauCeti.continuationRescaling_mem_Icc` and `TauCeti.continuationRescaling_pos`: bounds and
+  positivity of `λ`.
+* `TauCeti.continuationRescaling_eq_one`: `λ = 1` near the two ends.
 
 ## References
 
@@ -216,17 +233,9 @@ theorem isNondegenerateCriticalPoint_continuationPotential_iff {p : E} {t₀ : �
       IsNondegenerateCriticalPoint (fun x ↦ f (x, t₀)) p ∧
         IsNondegenerateCriticalPoint (intervalBasePotential C) t₀ := by
   have hE := continuationPotential_eventuallyEq (C := C) hf
-  have hh : ContDiffAt ℝ 2 (intervalBasePotential C) t₀ :=
-    (contDiff_intervalBasePotential C).contDiffAt
   constructor
   · intro h
-    have h' := h.congr_of_eventuallyEq hE
-    -- The slice is the restriction of the separated sum to `t = t₀`, up to a constant.
-    have hslice : ContDiffAt ℝ 2 (fun x ↦ f (x, t₀) + intervalBasePotential C t₀) p :=
-      h'.contDiffAt.comp (f := fun x : E ↦ (x, t₀)) p (by fun_prop)
-    have hp : ContDiffAt ℝ 2 (fun x ↦ f (x, t₀)) p := by
-      simpa using hslice.sub (contDiffAt_const (c := intervalBasePotential C t₀))
-    exact (isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff hp hh).1 h'
+    exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff.1 (h.congr_of_eventuallyEq hE)
   · rintro ⟨h₁, h₂⟩
     exact (h₁.comp_fst_add_comp_snd h₂).congr_of_eventuallyEq hE.symm
 
@@ -284,7 +293,6 @@ private theorem sq_le_mul_one_sub_sq {δ t : ℝ} (hδ : 0 < δ) (ht : t ∈ Icc
     δ ^ 2 ≤ t * (1 - t ^ 2) := by
   obtain ⟨h₁, h₂⟩ := ht
   have h₃ : δ * δ ≤ t * (1 - t) := mul_le_mul h₁ (by linarith) hδ.le (by linarith)
-  have h₄ : 0 ≤ t * (1 - t) := by nlinarith
   nlinarith
 
 variable {X : Type*} {g : X → ℝ → ℝ} {s : Set X} {δ : ℝ}
@@ -474,5 +482,123 @@ theorem tendsto_atBot_of_hasDerivAt_intervalBase {K : ℝ}
     (Eventually.of_forall fun s ↦ (hτI s).1.le) (eventually_le_atBot 0 |>.mono hbound)
 
 end Trajectory
+
+/-! ### The rescaled continuation field -/
+
+section Rescaling
+
+variable {E : Type*} {C K δ : ℝ} {f : E × ℝ → ℝ} {z : E × ℝ}
+
+/-- **The rescaling factor of the continuation field.** For a metric `dt² + g_t` on `E × ℝ`, the
+time component of the negative gradient of `F(x, t) = C h(t) + f(x, t)` is
+`C t (1 - t²) - ∂ₜ f`. Multiplying the field by
+
+`λ = C t (1 - t²) / (C t (1 - t²) - ∂ₜ f) = 1 + ∂ₜ f / (C t (1 - t²) - ∂ₜ f)`
+
+replaces this time component by the base field `C t (1 - t²)`
+(`TauCeti.continuationRescaling_mul_sub`). The second expression is the definition: it is `1`
+wherever `∂ₜ f` vanishes (`TauCeti.continuationRescaling_of_deriv_eq_zero`), in particular near
+the two end levels `t = 0` and `t = 1`, where the first expression is `0 / 0`. -/
+noncomputable def continuationRescaling (C : ℝ) (f : E × ℝ → ℝ) (z : E × ℝ) : ℝ :=
+  1 + deriv (fun s ↦ f (z.1, s)) z.2 /
+    (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2)
+
+theorem continuationRescaling_apply (C : ℝ) (f : E × ℝ → ℝ) (z : E × ℝ) :
+    continuationRescaling C f z = 1 + deriv (fun s ↦ f (z.1, s)) z.2 /
+      (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2) := (rfl)
+
+/-- The rescaling factor is `1` where the time derivative of `f` vanishes. -/
+@[simp]
+theorem continuationRescaling_of_deriv_eq_zero (h : deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
+    continuationRescaling C f z = 1 := by
+  simp [continuationRescaling_apply, h]
+
+/-- Away from the zeros of the time component `C t (1 - t²) - ∂ₜ f`, the rescaling factor is the
+quotient `C t (1 - t²) / (C t (1 - t²) - ∂ₜ f)`. -/
+theorem continuationRescaling_eq_div
+    (h : deriv (fun s ↦ f (z.1, s)) z.2 ≠ C * z.2 * (1 - z.2 ^ 2)) :
+    continuationRescaling C f z =
+      C * z.2 * (1 - z.2 ^ 2) / (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2) := by
+  have hd := sub_ne_zero.2 h.symm
+  rw [continuationRescaling_apply, eq_div_iff hd, add_mul, div_mul_cancel₀ _ hd]
+  ring
+
+/-- **The rescaled field projects to the base field.** Multiplying the time component
+`C t (1 - t²) - ∂ₜ f` of the continuation field by the rescaling factor gives the base field
+`C t (1 - t²)`, wherever the time component does not vanish or `∂ₜ f` does. -/
+theorem continuationRescaling_mul_sub
+    (h : deriv (fun s ↦ f (z.1, s)) z.2 ≠ C * z.2 * (1 - z.2 ^ 2) ∨
+      deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
+    continuationRescaling C f z * (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2) =
+      C * z.2 * (1 - z.2 ^ 2) := by
+  rcases h with h | h
+  · rw [continuationRescaling_eq_div h, div_mul_cancel₀ _ (sub_ne_zero.2 h.symm)]
+  · rw [continuationRescaling_of_deriv_eq_zero h, h, one_mul, sub_zero]
+
+/-- **Bounds for the rescaling factor.** If `|∂ₜ f| ≤ K t (1 - t²)` with `0 ≤ K < C` in the open
+slab `0 < t < 1`, and `∂ₜ f = 0` outside it, then the rescaling factor lies between `C / (C + K)`
+and `C / (C - K)`. -/
+theorem continuationRescaling_mem_Icc (hK : 0 ≤ K) (hKC : K < C)
+    (hb : z.2 ∈ Ioo 0 1 → |deriv (fun s ↦ f (z.1, s)) z.2| ≤ K * z.2 * (1 - z.2 ^ 2))
+    (hend : z.2 ∉ Ioo 0 1 → deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
+    continuationRescaling C f z ∈ Icc (C / (C + K)) (C / (C - K)) := by
+  have _ : 0 < C := hK.trans_lt hKC
+  by_cases ht : z.2 ∈ Ioo 0 1
+  · set b := deriv (fun s ↦ f (z.1, s)) z.2
+    have hw : 0 < z.2 * (1 - z.2 ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+    obtain ⟨hb₁, hb₂⟩ := abs_le.1 (hb ht)
+    -- The time component is at least `(C - K) t (1 - t²) > 0`.
+    have hden : 0 < C * z.2 * (1 - z.2 ^ 2) - b := by nlinarith
+    rw [continuationRescaling_eq_div (by linarith)]
+    constructor
+    · rw [div_le_div_iff₀ (by linarith) hden]
+      nlinarith
+    · rw [div_le_div_iff₀ hden (by linarith)]
+      nlinarith
+  · rw [continuationRescaling_of_deriv_eq_zero (hend ht)]
+    exact ⟨(div_le_one (by linarith)).2 (by linarith), (one_le_div (by linarith)).2 (by linarith)⟩
+
+/-- **The rescaling factor is positive** under the hypotheses of
+`TauCeti.continuationRescaling_mem_Icc`. -/
+theorem continuationRescaling_pos (hK : 0 ≤ K) (hKC : K < C)
+    (hb : z.2 ∈ Ioo 0 1 → |deriv (fun s ↦ f (z.1, s)) z.2| ≤ K * z.2 * (1 - z.2 ^ 2))
+    (hend : z.2 ∉ Ioo 0 1 → deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
+    0 < continuationRescaling C f z :=
+  (div_pos (hK.trans_lt hKC) (by linarith)).trans_le
+    (continuationRescaling_mem_Icc hK hKC hb hend).1
+
+/-- **The time derivative vanishes near the source end.** If `f (x, t) = f (x, 0)` for `t < δ`,
+then `∂ₜ f (x, t) = 0` for `t < δ`. -/
+theorem deriv_prodMk_eq_zero_of_lt (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hz : z.2 < δ) :
+    deriv (fun s ↦ f (z.1, s)) z.2 = 0 := by
+  rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ f (z.1, 0))
+    (eventually_of_mem (Iio_mem_nhds hz) fun s hs ↦ hf₀ z.1 s hs), deriv_const]
+
+/-- **The time derivative vanishes near the target end.** If `f (x, t) = f (x, 1)` for
+`t > 1 - δ`, then `∂ₜ f (x, t) = 0` for `t > 1 - δ`. -/
+theorem deriv_prodMk_eq_zero_of_gt (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hz : 1 - δ < z.2) : deriv (fun s ↦ f (z.1, s)) z.2 = 0 := by
+  rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ f (z.1, 1))
+    (eventually_of_mem (Ioi_mem_nhds hz) fun s hs ↦ hf₁ z.1 s hs), deriv_const]
+
+/-- **The time derivative vanishes near the two ends.** If `f (x, t) = f (x, 0)` for `t < δ` and
+`f (x, t) = f (x, 1)` for `t > 1 - δ`, then `∂ₜ f (x, t) = 0` for `t ∉ [δ, 1 - δ]`. -/
+theorem deriv_prodMk_eq_zero_of_notMem_Icc (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0))
+    (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1)) (hz : z.2 ∉ Icc δ (1 - δ)) :
+    deriv (fun s ↦ f (z.1, s)) z.2 = 0 := by
+  rcases lt_or_ge z.2 δ with h | h
+  · exact deriv_prodMk_eq_zero_of_lt hf₀ h
+  · exact deriv_prodMk_eq_zero_of_gt hf₁ (lt_of_not_ge fun h' ↦ hz ⟨h, h'⟩)
+
+/-- **The rescaling factor is `1` near the two ends.** If `f (x, t) = f (x, 0)` for `t < δ` and
+`f (x, t) = f (x, 1)` for `t > 1 - δ`, the rescaling factor is `1` outside `[δ, 1 - δ]`, so the
+rescaled field agrees with the original one there, in particular near the critical points of the
+continuation potential. -/
+theorem continuationRescaling_eq_one (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0))
+    (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1)) (hz : z.2 ∉ Icc δ (1 - δ)) :
+    continuationRescaling C f z = 1 :=
+  continuationRescaling_of_deriv_eq_zero (deriv_prodMk_eq_zero_of_notMem_Icc hf₀ hf₁ hz)
+
+end Rescaling
 
 end TauCeti

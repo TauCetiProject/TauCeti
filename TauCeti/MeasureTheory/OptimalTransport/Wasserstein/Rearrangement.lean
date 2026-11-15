@@ -165,9 +165,9 @@ theorem wassersteinEDist_eq_eLpNorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
     have hd : ∀ m : Measure (ℝ × ℝ), AEStronglyMeasurable (fun z : ℝ × ℝ ↦ edist z.1 z.2) m :=
       fun _ ↦ measurable_edist.aestronglyMeasurable
     rw [← eLpNorm_edist_quantileCoupling,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top (hd _),
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq_top (hd _)]
-    simp only [enorm_eq_self]
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq_top (hd _),
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq_top (hd _)]
+    simp only [eNorm_eq_self]
     exact ENNReal.rpow_le_rpow (lintegral_edist_rpow_quantileCoupling_le hπ
       (by simpa using ENNReal.toReal_mono hq_top hq)) (by positivity)
   rcases eq_or_ne p ∞ with rfl | hp_top
@@ -188,15 +188,17 @@ theorem wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (
       (volume.restrict (Ioo (0 : ℝ) 1)) :=
     ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
   rw [wassersteinEDist_eq_eLpNorm_quantile_sub hp,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hq]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal (zero_lt_one.trans_le hp).ne' hp_top hq]
 
 /-- **The quantile formula for the transport cost.** For `1 ≤ p < ∞`, the `p`-th power of the
 `p`-Wasserstein distance of two probability laws on `ℝ` is
-`∫₀¹ |μ.quantile t - ν.quantile t| ^ p dt`. -/
+`∫₀¹ |μ.quantile t - ν.quantile t| ^ p dt`. At `p = ∞`, where `p.toReal = 0`, both sides are `1`. -/
 theorem wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hp_top : p ≠ ∞) (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     wassersteinEDist p μ ν ^ p.toReal
       = ∫⁻ t in Ioo (0 : ℝ) 1, ‖μ.quantile t - ν.quantile t‖ₑ ^ p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
   rw [wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub hp hp_top, one_div,
     ENNReal.rpow_inv_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top).ne']
 

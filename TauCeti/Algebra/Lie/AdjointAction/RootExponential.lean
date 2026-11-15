@@ -138,12 +138,14 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*}
         exact b.toMatrixAlgEquiv_expAd (hd α) _ (hnil' α _)
       · simp [c, map_sum]
 
+omit [FiniteDimensional K L] in
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates
 of a basis `b` of `L`, a polynomial that vanishes at `g h` for every inner automorphism
 `g ∈ Int(L)` and every `h` in the splitting Cartan subalgebra `H` is the zero polynomial. -/
 theorem polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
     (b : Module.Basis ι K L) {q : MvPolynomial ι K}
     (hq : ∀ g ∈ intLieAlgebra K L, ∀ h ∈ H, eval (b.equivFun (g • h)) q = 0) : q = 0 := by
+  have := Module.Finite.of_basis b
   obtain ⟨p, ⟨v, hv⟩, hp⟩ :=
     H.exists_rootExponentialPolynomialParametrization b (Module.finBasis K H)
   refine eq_zero_of_forall_eval_eq_zero_of_mulVec_surjective_jacobiMatrixAt hv fun x ↦ ?_
@@ -151,6 +153,7 @@ theorem polynomial_eq_zero_of_intCartan {ι : Type*} [Finite ι]
   rw [← hgh]
   exact hq g hg h hh
 
+omit [FiniteDimensional K L] in
 /-- **Chevalley injectivity on polynomials.** In the coordinates of a basis `b` of `L`, a
 polynomial invariant under the inner automorphisms `Int(L)` that vanishes on the splitting Cartan
 subalgebra `H` is the zero polynomial. -/

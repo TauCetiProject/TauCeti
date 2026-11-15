@@ -63,8 +63,6 @@ def coneContraction (h : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimp
         continuous_induced_dom
       have hc : Continuous (fun p : unitInterval × StandardSimplex σ.1 => p.2.1 w) :=
         ((continuous_apply w).comp hx).comp continuous_snd
-      have ht : Continuous (fun p : unitInterval × StandardSimplex σ.1 => (p.1 : ℝ)) :=
-        continuous_subtype_val.comp continuous_fst
       have hh : Continuous (fun p : unitInterval × StandardSimplex σ.1 =>
           (1 - (p.1 : ℝ)) * p.2.1 w + (p.1 : ℝ) * (Finsupp.single v 1) w) := by
         fun_prop

@@ -380,7 +380,7 @@ theorem flowOf_flowOf_comm (hf : ContMDiff I 𝓘(ℝ) 3 f) (hg : ContMDiff I �
       fun u hu ↦ hσ.mfderiv_flowOf_apply_hamiltonianVectorField hf (hg.mdifferentiable two_ne_zero)
         hfg (hab hu).2
   have hγ0 : (flowOf X s ∘ fun u ↦ flowOf Y u x) 0 = flowOf X s x := by
-    rw [Function.comp_apply, flowOf_zero hY]
+    rw [Function.comp_apply, flowOf_zero]
   refine ⟨mem_flowDomain.2 (hγ.subset_maximalIntegralCurveInterval h0 hγ0 ht), ?_⟩
   rw [flowOf_apply]
   exact hγ.eqOn_maximalIntegralCurve hY h0 hγ0 ht

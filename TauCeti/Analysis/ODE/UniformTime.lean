@@ -22,6 +22,9 @@ Picard–Lindelöf solution space until all of its curves lie in a prescribed ne
   autonomous vector field and a neighbourhood `u` of `c`, there are a radius `r > 0` and a time
   `ε > 0` such that, for every initial time `t₀`, every initial point of `ball c r` carries a
   solution on `Ioo (t₀ - ε) (t₀ + ε)` staying in `u`.
+* `LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt`: for an autonomous locally
+  Lipschitz vector field, every initial point carries a solution on `Icc (t₀ - ε) (t₀ + ε)` for
+  every initial time `t₀`, with `ε > 0` depending only on the initial point.
 -/
 
 public section
@@ -80,3 +83,36 @@ theorem exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem
   rw [FunSpace.compProj_of_mem ht', FunSpace.next_apply]
 
 end ContDiffAt
+
+/-- **Picard–Lindelöf for a locally Lipschitz field.** An autonomous locally Lipschitz field
+on a complete space has, from every initial point and at every initial time `t₀`, a solution on
+`[t₀ - ε, t₀ + ε]`, where `ε > 0` depends only on the initial point.
+
+The construction of the Picard–Lindelöf data follows Mathlib's
+`IsPicardLindelof.of_contDiffAt_one`, whose proof uses only the local Lipschitz continuity of
+the `C¹` field. -/
+theorem LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {v : E → E}
+    (hv : LocallyLipschitz v) (y : E) :
+    ∃ ε > (0 : ℝ), ∀ t₀ : ℝ, ∃ α : ℝ → E, α t₀ = y ∧ ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
+      HasDerivWithinAt α (v (α t)) (Icc (t₀ - ε) (t₀ + ε)) t := by
+  obtain ⟨C, U, hU, hC⟩ := hv y
+  obtain ⟨ρ, hρ, hρU⟩ := Metric.mem_nhds_iff.1 hU
+  -- On the closed ball of radius `a = ρ / 2` the field is `C`-Lipschitz and bounded by `B`.
+  set a : ℝ≥0 := ⟨ρ / 2, by positivity⟩
+  have ha : (0 : ℝ) < a := half_pos hρ
+  have hball : closedBall y a ⊆ U := (closedBall_subset_ball (half_lt_self hρ)).trans hρU
+  set B : ℝ≥0 := C * a + ‖v y‖₊ + 1
+  have hB : (0 : ℝ) < B := by positivity
+  have hbound (z : E) (hz : z ∈ closedBall y a) : ‖v z‖ ≤ B := by
+    have h := (hC.norm_sub_le (hball hz) (hball (mem_closedBall_self a.2))).trans
+      (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hz) C.2)
+    calc ‖v z‖ ≤ ‖v z - v y‖ + ‖v y‖ := norm_le_norm_sub_add _ _
+      _ ≤ B := by
+        simp only [B, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_one, coe_nnNorm]
+        linarith
+  refine ⟨a / B, div_pos ha hB, fun t₀ ↦ ?_⟩
+  have hPL : IsPicardLindelof (fun _ ↦ v) (tmin := t₀ - a / B) (tmax := t₀ + a / B)
+      ⟨t₀, by simp [(div_pos ha hB).le]⟩ y a 0 B C :=
+    IsPicardLindelof.of_time_independent hbound (hC.mono hball) (by simp [field])
+  exact hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀

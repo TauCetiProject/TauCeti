@@ -81,20 +81,17 @@ private theorem exists_hexagonRectangle_side_iff (x : GridState n) (i : Bool) :
     cases P with
     | inl P =>
       simp only [GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hempty
-      have h := (GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mp ⟨m, P, r, hempty⟩
+      have h := GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff.mp ⟨m, P, r, hempty⟩
       cases i <;> simp_all only [Sum.isLeft_inl, Bool.true_eq_false, ite_true, and_self]
     | inr P =>
       simp only [GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hempty
-      have h := (GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mp ⟨m, P, r, hempty⟩
+      have h := GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff.mp ⟨m, P, r, hempty⟩
       cases i <;> simp_all only [Sum.isLeft_inr, Bool.false_eq_true, ite_false, and_self]
   -- Conversely the row tests construct the hexagon on the corresponding column annulus.
   · cases i with
     | true =>
       rintro ⟨hs, ht⟩
-      obtain ⟨m, P, r, h⟩ := (GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mpr ⟨hs, ht⟩
+      obtain ⟨m, P, r, h⟩ := GridHexagonBetween.exists_target_isEmpty_and_isEmpty_iff.mpr ⟨hs, ht⟩
       refine ⟨⟨m, Sum.inl P, r⟩, ?_, rfl⟩
       apply (G.mem_hexagonRectangleDecompositions_diagonal_iff C _).mpr
       simpa only [GridHexagonRectangleDecomposition.hexagon,
@@ -102,8 +99,8 @@ private theorem exists_hexagonRectangle_side_iff (x : GridState n) (i : Bool) :
         GridCommutationHexagonBetween.toGridRectangleBetween_inl] using h
     | false =>
       rintro ⟨hs, ht⟩
-      obtain ⟨m, P, r, h⟩ := (GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mpr ⟨hs, ht⟩
+      obtain ⟨m, P, r, h⟩ :=
+        GridInitialHexagonBetween.exists_target_isEmpty_and_isEmpty_iff.mpr ⟨hs, ht⟩
       refine ⟨⟨m, Sum.inr P, r⟩, ?_, rfl⟩
       apply (G.mem_hexagonRectangleDecompositions_diagonal_iff C _).mpr
       simpa only [GridHexagonRectangleDecomposition.hexagon,
@@ -175,20 +172,17 @@ private theorem exists_rectangleHexagon_side_iff (x : GridState n) (i : Bool) :
     cases P with
     | inl P =>
       simp only [GridCommutationHexagonBetween.toGridRectangleBetween_inl] at hempty
-      have h := (GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mp ⟨m, r, P, hempty⟩
+      have h := GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff.mp ⟨m, r, P, hempty⟩
       cases i <;> simp_all only [Sum.isLeft_inl, Bool.true_eq_false, ite_true, and_self]
     | inr P =>
       simp only [GridCommutationHexagonBetween.toGridRectangleBetween_inr] at hempty
-      have h := (GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mp ⟨m, r, P, hempty⟩
+      have h := GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff.mp ⟨m, r, P, hempty⟩
       cases i <;> simp_all only [Sum.isLeft_inr, Bool.false_eq_true, ite_false, and_self]
   -- Build the outgoing rectangle by a column swap, then the returning hexagon on those sides.
   · cases i with
     | true =>
       rintro ⟨hs, ht⟩
-      obtain ⟨m, r, P, h⟩ := (GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mpr ⟨hs, ht⟩
+      obtain ⟨m, r, P, h⟩ := GridHexagonBetween.exists_source_isEmpty_and_isEmpty_iff.mpr ⟨hs, ht⟩
       refine ⟨⟨m, r, Sum.inl P⟩, ?_, rfl⟩
       apply (G.mem_rectangleHexagonDecompositions_diagonal_iff C _).mpr
       simpa only [GridRectangleHexagonDecomposition.hexagon,
@@ -196,8 +190,8 @@ private theorem exists_rectangleHexagon_side_iff (x : GridState n) (i : Bool) :
         GridCommutationHexagonBetween.toGridRectangleBetween_inl] using h.symm
     | false =>
       rintro ⟨hs, ht⟩
-      obtain ⟨m, r, P, h⟩ := (GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff
-        C.column_ne_next).mpr ⟨hs, ht⟩
+      obtain ⟨m, r, P, h⟩ :=
+        GridInitialHexagonBetween.exists_source_isEmpty_and_isEmpty_iff.mpr ⟨hs, ht⟩
       refine ⟨⟨m, r, Sum.inr P⟩, ?_, rfl⟩
       apply (G.mem_rectangleHexagonDecompositions_diagonal_iff C _).mpr
       simpa only [GridRectangleHexagonDecomposition.hexagon,

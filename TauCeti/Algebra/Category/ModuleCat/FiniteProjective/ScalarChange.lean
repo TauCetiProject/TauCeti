@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.BalancedExtension
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
 /-!
 # Scalar change on finitely generated projective modules
@@ -36,6 +37,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 
 ## Main results
 
+* `TauCeti.SplitK0.of_extendScalars_obj`: the split `K₀` class of an extended module agrees
+  with the class of any module linearly isomorphic to its balanced extension.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
 * `RingHom.finiteProjectiveModules_le_inverseImage_restrictScalars_iff`: restriction of scalars
@@ -127,3 +130,17 @@ theorem finiteProjectiveModules_le_inverseImage_restrictScalars_iff :
         f.projective_restrictScalars_of_projective hproj M⟩
 
 end RingHom
+
+namespace TauCeti.SplitK0
+
+variable {f}
+
+/-- The class of `S ⊗_R P` is the class of any module isomorphic to it. -/
+theorem of_extendScalars_obj {P : (finiteProjectiveModules R).FullSubcategory}
+    {Q : (finiteProjectiveModules S).FullSubcategory}
+    (θ : BalancedExtension f P.obj ≃ₗ[S] Q.obj) :
+    SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj P) = SplitK0.of.{u} Q :=
+  SplitK0.of_congr (ObjectProperty.isoMk _
+    (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
+
+end TauCeti.SplitK0

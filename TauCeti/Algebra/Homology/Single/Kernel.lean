@@ -16,6 +16,8 @@ For a nonnegative cochain complex `K` coaugmented from `X` by `ι : X[0] ⟶ K`,
 quasi-isomorphism in degree `0` makes `X ⟶ K⁰ ⟶ K¹` exact with `X ⟶ K⁰` a monomorphism, and a
 quasi-isomorphism in degree `n + 1` makes `K` exact there. No injectivity of the terms of `K` is
 needed. This is the cochain counterpart of `TauCeti/Algebra/Homology/Single/Cokernel.lean`.
+The coaugmentations are natural in morphisms of coaugmented complexes
+(`CochainComplex.fromSingle₀Equiv_comp_f_zero`).
 
 The argument uses Mathlib's `ShortComplex.quasiIso_iff_of_zeros`.
 -/
@@ -27,6 +29,8 @@ open CategoryTheory Limits HomologicalComplex
 universe v u
 
 namespace CochainComplex
+
+section
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {K : CochainComplex C ℕ} {X : C}
   (ι : (single₀ C).obj X ⟶ K)
@@ -59,5 +63,22 @@ lemma exact_succ_of_quasiIsoAt (n : ℕ) [QuasiIsoAt ι (n + 1)] :
     (ShortComplex.mk _ _ (K.d_comp_d n (n + 1) (n + 2))).Exact :=
   (HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (by simp)
     (by simp only [CochainComplex.next]; rfl)).1 (exactAt_succ_of_quasiIsoAt ι n)
+
+end
+
+section Naturality
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
+  {K L : CochainComplex C ℕ} {X Y : C} {ι : (single₀ C).obj X ⟶ K} {ι' : (single₀ C).obj Y ⟶ L}
+  {f : X ⟶ Y} {φ : K ⟶ L}
+
+/-- Naturality of coaugmentations: if a morphism of complexes `φ : K ⟶ L` lies over
+`f : X ⟶ Y`, in the sense that `ι ≫ φ = f[0] ≫ ι'`, then the coaugmentations
+`X ⟶ K⁰` and `Y ⟶ L⁰` commute with `f` and `φ⁰`. -/
+lemma fromSingle₀Equiv_comp_f_zero (hφ : ι ≫ φ = (single₀ C).map f ≫ ι') :
+    (fromSingle₀Equiv K X ι).1 ≫ φ.f 0 = f ≫ (fromSingle₀Equiv L Y ι').1 := by
+  simpa using congrArg (fun g ↦ HomologicalComplex.Hom.f g 0) hφ
+
+end Naturality
 
 end CochainComplex

@@ -15,8 +15,7 @@ permissions:
 jobs:
   native-queue:
     # Three jobs enter one group together. All three must complete: the default
-    # one-pending behavior would cancel one. Run on Namespace so this contract
-    # check does not consume the GitHub-hosted capacity it protects.
+    # one-pending behavior would cancel one. This uses GitHub-hosted capacity.
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +24,7 @@ jobs:
       group: hosted-cap-contract-${{ github.run_id }}
       queue: max
       cancel-in-progress: false
-    runs-on: nscloud-ubuntu-24.04-amd64-2x4-with-features
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - run: echo 'Native concurrency queue accepted entrant ${{ matrix.entrant }}'

@@ -28,10 +28,14 @@ Every generalized loop factors through the tautological one
 (`GenLoop.map_toSphere_sphereGenLoop`), so this is the universal example of the Hurewicz map: every
 Hurewicz class is the image of that of the tautological loop
 (`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), which pins down the Hurewicz map on all spaces
-up to its value on `π_{n+1}(Sⁿ⁺¹)`. Since a homotopy of generalized loops along a path is a free
-homotopy of the corresponding maps out of the sphere
-(`TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`), and homotopic maps induce the same map on
-singular homology, base-point change along a path preserves Hurewicz classes
+up to its value on `π_{n+1}(Sⁿ⁺¹)`. In particular a generalized loop whose pointed map out of the
+sphere is bijective onto a Hausdorff space, that is a surjective loop identifying only points of
+the boundary of the cube, has a generating Hurewicz class
+(`GenLoop.isIso_hurewicz_of_bijective_toSphere`).
+
+Since a homotopy of generalized loops along a path is a free homotopy of the corresponding maps
+out of the sphere (`TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`), and homotopic maps induce
+the same map on singular homology, base-point change along a path preserves Hurewicz classes
 (`HomotopyGroup.hurewicz_homotopyGroupTransport`), and the images of the integral Hurewicz
 homomorphisms at two points joined by a path coincide
 (`HomotopyGroup.range_hurewiczIntHom_eq_of_joined`). With integer coefficients, the image of the
@@ -103,7 +107,7 @@ private abbrev diskInterior : Set (TopCat.disk.{0} (n + 1)) :=
 north pole. -/
 private lemma bijOn_diskToSphere :
     BijOn (diskToSphere n) (diskInterior n) {sphereNorthPole (n + 1)}ᶜ := by
-  refine ⟨fun _ hz ↦ hz, fun z hz w hw h ↦ ?_, fun y hy ↦ ?_⟩
+  refine ⟨fun _ hz ↦ hz, fun z hz w _ h ↦ ?_, fun y hy ↦ ?_⟩
   · rw [diskToSphere_apply, diskToSphere_apply, closedBallToSphere_eq_closedBallToSphere_iff] at h
     rcases h with h | ⟨h, -⟩
     · exact ULift.ext h
@@ -118,9 +122,6 @@ private lemma bijOn_diskToSphere :
 /-- On the interior of the disk the collapse map is an open embedding. -/
 private lemma isOpenEmbedding_diskToSphere_domRestrict :
     IsOpenEmbedding ((diskInterior n).domRestrict (diskToSphere n)) := by
-  have : CompactSpace (TopCat.disk.{0} (n + 1)) :=
-    (Homeomorph.ulift.{0}
-      (X := closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).symm.compactSpace
   refine ⟨IsEmbedding.subtypeVal.comp (g := Subtype.val) (f := ({sphereNorthPole (n + 1)}ᶜ :
     Set (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)).restrictPreimage (diskToSphere n))
       (IsClosedEmbedding.of_continuous_injective_isClosedMap
@@ -323,6 +324,18 @@ theorem hurewicz_eq_hurewicz_sphereGenLoop_comp (p : Ω^ (Fin (n + 1)) X x) :
     hurewicz R p = hurewicz R (sphereGenLoop (n + 1)) ≫
       ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom (toSphere p)) := by
   rw [← hurewicz_map R (toSphere p) (toSphere_sphereNorthPole p), map_toSphere_sphereGenLoop]
+
+/-- **A generalized loop that is a homeomorphism off the boundary has a generating Hurewicz class.**
+If the pointed map `GenLoop.toSphere p : Sⁿ⁺¹ → X` is bijective onto a Hausdorff space `X`, it is a
+homeomorphism, so the Hurewicz class of `p` is an isomorphism `R ≅ Hₙ₊₁(X; R)`, like that of the
+tautological loop. By `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`, the
+hypothesis says that `p` is surjective and identifies only points of the boundary of the cube. -/
+theorem isIso_hurewicz_of_bijective_toSphere [T2Space X] {p : Ω^ (Fin (n + 1)) X x}
+    (hp : Function.Bijective (toSphere p)) : IsIso (hurewicz R p) := by
+  have : IsIso (TopCat.ofHom (toSphere p)) :=
+    TopCat.isIso_of_bijective_of_isClosedMap _ hp (toSphere p).continuous.isClosedMap
+  rw [hurewicz_eq_hurewicz_sphereGenLoop_comp]
+  infer_instance
 
 end GenLoop
 

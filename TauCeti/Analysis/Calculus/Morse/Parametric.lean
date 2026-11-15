@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # The parametric Morse lemma in a trivial bundle
@@ -29,8 +30,13 @@ with the vertical Hessian at `(b, 0)`. Because no choice enters, it is natural f
 changes of coordinates: if `g (b, v) = f (b, e b v)` for linear equivalences `e b` depending
 continuously on `b`, then near the zero section
 `parametricMorseCoord g (b, v) = (e b)⁻¹ (parametricMorseCoord f (b, e b v))`
-(`TauCeti.eventually_parametricMorseCoord_comp`). Read in two trivializations of a vector bundle,
-the canonical coordinates of a function therefore agree near the zero section. This is the
+(`TauCeti.eventually_parametricMorseCoord_comp`). It also depends only on the germ of `f` along
+the zero section (`Filter.EventuallyEq.parametricMorseCoord`) and reads `f` only along fibres, so
+if `f' (σ b, T b v) = f (b, v)` near the zero section, for any change of parameter `σ` and fibre
+isomorphisms `T b` depending continuously on `b`, then
+`parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))` near the zero section
+(`TauCeti.eventually_parametricMorseCoord_transition`). Read in two trivializations of a vector
+bundle, the canonical coordinates of a function therefore agree near the zero section. This is the
 compatibility with bundle transitions needed to patch the local normal forms of a Morse–Bott
 function along its critical submanifold; the patching itself is not done here.
 
@@ -46,6 +52,10 @@ function along its critical submanifold; the patching itself is not done here.
   derivative the fibre projection on the zero section.
 * `TauCeti.eventually_parametricMorseCoord_comp`: naturality for fibrewise linear changes of
   coordinates.
+* `Filter.EventuallyEq.parametricMorseCoord`: the coordinate only depends on the germ of the
+  family along the zero section.
+* `TauCeti.eventually_parametricMorseCoord_transition`: compatibility with changes of
+  trivialization, allowing a change of parameter and only a local relation between the families.
 * `TauCeti.exists_parametric_morse_normal_form` and `TauCeti.exists_parametric_morse_chart`: the
   resulting coordinate change and local chart on a product neighbourhood, given by the canonical
   coordinate.
@@ -237,11 +247,7 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
       hessianAverage_comp_continuousLinearEquiv_apply (hslice z.1) (e z.1) 0 z.2 w w'
   -- The change of coordinates `ψ (b, v) = (b, e b v)` fixes `(a, 0)`.
   set ψ : P × E' → P × E := fun z ↦ (z.1, e z.1 z.2)
-  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := by
-    have h : ContinuousAt (fun z : P × E' ↦ e z.1 z.2) (a, 0) :=
-      ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : E'))) he
-        continuousAt_fst) continuousAt_snd
-    simpa [ψ] using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := he.tendsto_prodMk_clm_apply
   have hpair := (tendsto_verticalHessianPair hf).comp hψ
   -- Pulling back along `e b` conjugates the canonical congruence of `f` by `e b`.
   filter_upwards [eventually_morseCongruence_bilinearComp
@@ -253,6 +259,78 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
   simp
 
 end Naturality
+
+section Transition
+
+omit [NormedSpace ℝ P] in
+/-- **The canonical parametric Morse coordinate only depends on the germ of the family along the
+zero section.** If two families agree near `(a, 0)`, so do their canonical coordinates. -/
+theorem _root_.Filter.EventuallyEq.parametricMorseCoord {f₁ f₂ : P × E → ℝ}
+    (h : f₁ =ᶠ[𝓝 (a, 0)] f₂) :
+    parametricMorseCoord f₁ =ᶠ[𝓝 (a, 0)] parametricMorseCoord f₂ := by
+  obtain ⟨U, V, hU, haU, hV, h0V, hUV⟩ := mem_nhds_prod_iff'.mp h
+  obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.mp hV 0 h0V
+  filter_upwards [prod_mem_nhds (hU.mem_nhds haU) (Metric.ball_mem_nhds (0 : E) hr)] with z hz
+  obtain ⟨b, v⟩ := z
+  obtain ⟨hb, hv⟩ := hz
+  -- The two fibre restrictions agree on a ball containing the segment from `0` to `v`.
+  have hg (y : E) (hy : y ∈ Metric.ball (0 : E) r) :
+      (fun u ↦ f₁ (b, u)) =ᶠ[𝓝 y] fun u ↦ f₂ (b, u) :=
+    Filter.eventuallyEq_of_mem (Metric.isOpen_ball.mem_nhds hy) fun u hu ↦
+      hUV (Set.mk_mem_prod hb (hrV hu))
+  have hseg (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (0 : E) + t • v ∈ Metric.ball (0 : E) r :=
+    (convex_ball (0 : E) r).add_smul_mem (Metric.mem_ball_self hr) (by rwa [zero_add]) ht
+  rw [parametricMorseCoord_def, parametricMorseCoord_def,
+    hessianAverage_congr_of_eventuallyEq fun t ht ↦ hg _ (hseg t ht),
+    (hg 0 (Metric.mem_ball_self hr)).fderiv.fderiv_eq]
+
+variable {P' E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {f' : P' × E' → ℝ} {σ : P → P'} {T : P → E ≃L[ℝ] E'}
+
+omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
+/-- **The canonical parametric Morse coordinate only reads the family along fibres.** Changing
+the parameter of a family by any map `σ` changes its canonical coordinate in the same way. -/
+theorem parametricMorseCoord_comp_prodMap (f : P' × E → ℝ) (σ : P → P') (b : P) (v : E) :
+    parametricMorseCoord (fun z ↦ f (σ z.1, z.2)) (b, v) = parametricMorseCoord f (σ b, v) := by
+  simp only [parametricMorseCoord_def]
+
+/-- **The canonical parametric Morse coordinate under a change of trivialization.** Let a `C^2`
+family `f` have invertible vertical Hessian at `(a, 0)`, and let `f'` be the same family in other
+coordinates near the zero section: `f' (σ b, T b v) = f (b, v)` for `(b, v)` near `(a, 0)`, where
+`σ` is any change of parameter and `T b : E ≃L[ℝ] E'` are linear isomorphisms of the fibres
+depending continuously on `b` at `a`. No regularity of `f'` or `σ` is assumed. Then near `(a, 0)`
+the canonical coordinates correspond:
+`parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))`. -/
+theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible)
+    (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
+    (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseCoord f' (σ z.1, T z.1 z.2) =
+      T z.1 (parametricMorseCoord f z) := by
+  -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
+  have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
+    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+      ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
+        (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
+  -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
+  have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    hT.tendsto_prodMk_clm_apply
+  have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    hTsymm.tendsto_prodMk_clm_apply
+  -- Read in the parameter of `f`, the family `f'` is near `(a, 0)` the pullback of `f` along
+  -- `(T b)⁻¹`, whose canonical coordinate is natural.
+  have hloc : (fun z : P × E' ↦ f' (σ z.1, z.2)) =ᶠ[𝓝 (a, 0)]
+      fun z ↦ f (z.1, (T z.1).symm z.2) := by
+    filter_upwards [hψsymm.eventually hcomp] with z hz
+    simpa using hz
+  filter_upwards [hψ.eventually hloc.parametricMorseCoord,
+    hψ.eventually (eventually_parametricMorseCoord_comp hf hH (e := fun b ↦ (T b).symm) hTsymm)]
+    with z hloc' hnat
+  rw [parametricMorseCoord_comp_prodMap] at hloc'
+  rw [hloc', hnat]
+  simp
+
+end Transition
 
 /-- **Parametric Morse normal form.** A jointly `C^{n+2}` family with a critical zero section
 near `a` and invertible vertical Hessian at `(a, 0)` has a jointly `C^n` fiber coordinate change

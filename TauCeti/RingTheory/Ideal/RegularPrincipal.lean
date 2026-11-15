@@ -37,15 +37,15 @@ under the stated denominator-clearing and annihilator bounds. -/
 lemma map_mem_spanSubmonoid_nonZeroDivisors_away
     {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
     (g : A) [IsLocalization.Away g B] (q : Ideal A) (π : A) (hπ : π ∈ q)
-    (h1 : ∀ a ∈ q, g * a ∈ Ideal.span {π}) (h2 : ∀ b, π * b = 0 → g * b = 0) :
-    q.map (algebraMap A B) ∈ Ideal.spanSubmonoid (nonZeroDivisors B) := by
-  apply (Ideal.mem_spanSubmonoid_iff _).mpr
+    (h1 : ∀ a ∈ q, g * a ∈ span {π}) (h2 : ∀ b, π * b = 0 → g * b = 0) :
+    q.map (algebraMap A B) ∈ spanSubmonoid (nonZeroDivisors B) := by
+  apply (mem_spanSubmonoid_iff _).mpr
   refine ⟨⟨algebraMap A B π, ?_⟩, ?_⟩
   · apply mem_nonZeroDivisors_iff_left.mpr
     simpa only [smul_eq_mul] using
       (isSMulRegular_iff_right_eq_zero_of_smul.mp
         (IsLocalization.Away.isSMulRegular_algebraMap (B := B) h2))
-  · apply Ideal.map_algebraMap_away_eq_span_singleton (r := g) hπ
+  · apply map_algebraMap_away_eq_span_singleton (r := g) hπ
     intro x hx
     obtain ⟨a, ha, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
     exact h1 a ha
@@ -60,37 +60,37 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 non-zerodivisor along a flat ring homomorphism again gives such an ideal: the generator stays a
 non-zerodivisor because a flat module is torsion-free. -/
 lemma map_mem_spanSubmonoid_nonZeroDivisors_of_flat {J : Ideal R}
-    (hJ : J ∈ Ideal.spanSubmonoid (nonZeroDivisors R)) {f : R →+* S}
-    (hf : f.Flat) : J.map f ∈ Ideal.spanSubmonoid (nonZeroDivisors S) := by
+    (hJ : J ∈ spanSubmonoid (nonZeroDivisors R)) {f : R →+* S}
+    (hf : f.Flat) : J.map f ∈ spanSubmonoid (nonZeroDivisors S) := by
   let := f.toAlgebra
   have : Module.Flat R S := hf
-  obtain ⟨⟨s, hs⟩, rfl⟩ := (Ideal.mem_spanSubmonoid_iff _).mp hJ
-  apply (Ideal.mem_spanSubmonoid_iff _).mpr
-  refine ⟨⟨f s, ?_⟩, by rw [Ideal.map_span, Set.image_singleton]⟩
+  obtain ⟨⟨s, hs⟩, rfl⟩ := (mem_spanSubmonoid_iff _).mp hJ
+  apply (mem_spanSubmonoid_iff _).mpr
+  refine ⟨⟨f s, ?_⟩, by rw [map_span, Set.image_singleton]⟩
   exact Module.Flat.algebraMap_mem_nonZeroDivisors hs
 
 
 /-- Regular principality is preserved by a ring isomorphism. -/
 lemma map_mem_spanSubmonoid_nonZeroDivisors_of_bijective {J : Ideal R}
-    (hJ : J ∈ Ideal.spanSubmonoid (nonZeroDivisors R))
+    (hJ : J ∈ spanSubmonoid (nonZeroDivisors R))
     {f : R →+* S} (hf : Function.Bijective f) :
-    J.map f ∈ Ideal.spanSubmonoid (nonZeroDivisors S) := by
+    J.map f ∈ spanSubmonoid (nonZeroDivisors S) := by
   exact map_mem_spanSubmonoid_nonZeroDivisors_of_flat hJ (RingHom.Flat.of_bijective hf)
 
 /-- Regular principality descends along a ring isomorphism. -/
 lemma mem_spanSubmonoid_nonZeroDivisors_of_comap_of_bijective {J : Ideal S} {f : R →+* S}
-    (hf : Function.Bijective f) (hJ : J.comap f ∈ Ideal.spanSubmonoid (nonZeroDivisors R)) :
-    J ∈ Ideal.spanSubmonoid (nonZeroDivisors S) := by
-  rw [← Ideal.map_comap_of_surjective f hf.2 J]
+    (hf : Function.Bijective f) (hJ : J.comap f ∈ spanSubmonoid (nonZeroDivisors R)) :
+    J ∈ spanSubmonoid (nonZeroDivisors S) := by
+  rw [← map_comap_of_surjective f hf.2 J]
   exact map_mem_spanSubmonoid_nonZeroDivisors_of_bijective hJ hf
 
 /-- Regular principality is preserved by pulling back along a ring isomorphism. -/
 lemma comap_mem_spanSubmonoid_nonZeroDivisors_of_bijective {J : Ideal S}
-    (hJ : J ∈ Ideal.spanSubmonoid (nonZeroDivisors S))
+    (hJ : J ∈ spanSubmonoid (nonZeroDivisors S))
     {f : R →+* S} (hf : Function.Bijective f) :
-    J.comap f ∈ Ideal.spanSubmonoid (nonZeroDivisors R) := by
+    J.comap f ∈ spanSubmonoid (nonZeroDivisors R) := by
   have hmap : J.map ((RingEquiv.ofBijective f hf).symm : S →+* R) = J.comap f :=
-    Ideal.map_symm (RingEquiv.ofBijective f hf)
+    map_symm (RingEquiv.ofBijective f hf)
   rw [← hmap]
   exact map_mem_spanSubmonoid_nonZeroDivisors_of_bijective hJ (RingEquiv.bijective _)
 

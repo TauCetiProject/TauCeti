@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Group.NullFamily
 public import TauCeti.Analysis.Normed.Operator.Surjective
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
 # Triangular perturbations of the identity of `C₀(ℕ, E)`

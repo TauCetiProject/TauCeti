@@ -29,10 +29,8 @@ private theorem edgeEnds_spec_nonempty (e : G.edgeSet) :
     Nonempty {p : Sym2 G.vertexSet //
       ∀ x y : G.vertexSet, p = s(x, y) ↔ G.IsLink e.1 x.1 y.1} := by
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
-  refine ⟨⟨s(⟨x, hxy.left_mem⟩, ⟨y, hxy.right_mem⟩), ?_⟩⟩
-  intro u v
-  rw [Sym2.eq_iff]
-  simpa only [Subtype.ext_iff] using hxy.isLink_iff.symm
+  exact ⟨⟨s(⟨x, hxy.left_mem⟩, ⟨y, hxy.right_mem⟩), fun u v ↦ by
+    simpa only [Sym2.eq_iff, Subtype.ext_iff] using hxy.isLink_iff.symm⟩⟩
 
 /-- The unordered pair of actual vertices at the ends of an actual edge. -/
 noncomputable def edgeEnds (e : G.edgeSet) : Sym2 G.vertexSet :=
@@ -41,21 +39,14 @@ noncomputable def edgeEnds (e : G.edgeSet) : Sym2 G.vertexSet :=
 /-- `edgeEnds` records exactly the `IsLink` relation of an actual edge. -/
 @[simp]
 theorem edgeEnds_eq_iff_isLink (e : G.edgeSet) (x y : G.vertexSet) :
-    G.edgeEnds e = s(x, y) ↔ G.IsLink e.1 x.1 y.1 := by
-  classical
-  exact (Classical.choice (edgeEnds_spec_nonempty G e)).2 x y
+    G.edgeEnds e = s(x, y) ↔ G.IsLink e.1 x.1 y.1 :=
+  (Classical.choice (edgeEnds_spec_nonempty G e)).2 x y
 
 /-- The vertices in `edgeEnds e` are exactly the vertices incident to `e`. -/
 @[simp]
 theorem mem_edgeEnds_iff (e : G.edgeSet) (x : G.vertexSet) :
     x ∈ G.edgeEnds e ↔ G.Inc e.1 x.1 := by
-  constructor
-  · rw [Sym2.mem_iff_exists]
-    rintro ⟨y, hy⟩
-    exact ((G.edgeEnds_eq_iff_isLink e x y).1 hy).inc_left
-  · rintro ⟨y, hxy⟩
-    rw [Sym2.mem_iff_exists]
-    let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
-    exact ⟨y', (G.edgeEnds_eq_iff_isLink e x y').2 hxy⟩
+  simp only [Sym2.mem_iff_exists, edgeEnds_eq_iff_isLink]
+  exact ⟨fun ⟨_, hxy⟩ ↦ hxy.inc_left, fun h ↦ ⟨⟨_, h.isLink_other.right_mem⟩, h.isLink_other⟩⟩
 
 end Graph

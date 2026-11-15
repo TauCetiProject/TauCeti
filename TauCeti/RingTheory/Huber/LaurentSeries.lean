@@ -16,7 +16,7 @@ For a field `K` the formal Laurent series `K⸨X⸩`, with the `X`-adic topology
 `LaurentSeries.valued` instance, are a Tate ring: the power series are an open subring, the
 ideal `(X)` is a finitely generated ideal of definition, and `X` itself is a pseudouniformiser.
 
-`K⸨X⸩` is the equal-characteristic Tate example of the roadmap's Layer-0 Examples row.
+`K⸨X⸩` is the standard equal-characteristic example of a Tate ring.
 
 ## Main definitions
 
@@ -45,7 +45,7 @@ form and the `ℤᵐ⁰` bounds the rest of the file uses.
 
 ## Provenance
 
-New work; the roadmap names no source for this row.
+New work.
 
 ## References
 

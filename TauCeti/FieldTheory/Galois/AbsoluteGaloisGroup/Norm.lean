@@ -118,7 +118,7 @@ theorem algebraMap_norm_eq_prod_algHom [Algebra.IsSeparable K L] (b : L) :
 section Relative
 
 variable {K} {E E' : IntermediateField K (SeparableClosure K)} [Algebra E E']
-  [IsScalarTower E E' (SeparableClosure K)] [FiniteDimensional E E']
+  [IsScalarTower E E' (SeparableClosure K)]
   {W W' : OpenSubgroup (AbsoluteGaloisGroup K)}
 
 omit σ [FiniteDimensional K L] in
@@ -131,6 +131,16 @@ theorem coe_norm_eq_prod_quotient_out (hW : fixedField W.toSubgroup = E)
     ((Algebra.norm E x : E) : SeparableClosure K) =
       ∏ q : W.toSubgroup ⧸ W'.toSubgroup.subgroupOf W.toSubgroup,
         (q.out : AbsoluteGaloisGroup K) (x : SeparableClosure K) := by
+  -- `E'` is finite over `K`, and `K ⊆ E ⊆ E'` is a tower inside `Kˢ`, so `E'/E` is finite.
+  have : FiniteDimensional K E' := by
+    rw [← hW']
+    infer_instance
+  have : IsScalarTower K E E' := .of_algebraMap_eq fun x ↦
+    (algebraMap E' (SeparableClosure K)).injective
+    (by rw [← IsScalarTower.algebraMap_apply E E' (SeparableClosure K) (algebraMap K E x),
+      ← IsScalarTower.algebraMap_apply K E (SeparableClosure K) x,
+      ← IsScalarTower.algebraMap_apply K E' (SeparableClosure K) x])
+  have : FiniteDimensional E E' := Module.Finite.of_restrictScalars_finite K E E'
   let φ := IsScalarTower.toAlgHom E E' (SeparableClosure K)
   have : IsGalois E (SeparableClosure K) := IsGalois.tower_top_of_isGalois K E _
   have := Algebra.IsSeparable.of_algHom E (SeparableClosure K) φ

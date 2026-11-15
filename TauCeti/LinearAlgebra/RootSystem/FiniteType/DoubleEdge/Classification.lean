@@ -42,10 +42,10 @@ finite-type Cartan matrix carrying a double edge has a unique valid Dynkin type
 
 ## References
 
-This is the double-edge assembly step in the "classification of finite-type Cartan matrices"
-target of Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The numbering of
-`F₄` is Bourbaki's; see Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4 and
-plate VIII, or J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4.
+This is the double-edge assembly step in the classification of finite-type Cartan matrices. The
+numbering of `F₄` is Bourbaki's; see Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI,
+§4 and plate VIII, or J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§11.4.
 -/
 
 public section

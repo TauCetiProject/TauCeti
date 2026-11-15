@@ -92,7 +92,7 @@ theorem exists_characterPullback_eq_of_ker_le (Φ : A →ₐ[𝕜] B) (hΦ : Den
     ∃ ψ : characterSpace 𝕜 B, Φ.characterPullback ψ = χ := by
   have hbound (a : A) : ‖χ a‖ ≤ ‖Φ a‖ :=
     quasispectrum.norm_le_norm_of_mem (spectrum_subset_quasispectrum 𝕜 (Φ a)
-      (Φ.apply_mem_spectrum_of_ker_le hUnits (CharacterSpace.toAlgHom χ) hχ a))
+      (apply_mem_spectrum_of_ker_le Φ hUnits (CharacterSpace.toAlgHom χ) hχ a))
   let e : B →L[𝕜] 𝕜 := (CharacterSpace.toAlgHom χ).toLinearMap.extendOfNorm Φ.toLinearMap
   have he (a : A) : e (Φ a) = χ a :=
     LinearMap.extendOfNorm_eq hΦ ⟨1, fun a => by simpa using hbound a⟩ a

@@ -67,7 +67,6 @@ integral definition above and is not ported from it.
 public section
 
 open MeasureTheory Set Filter Topology
-open Complex (slitPlane mem_slitPlane_iff ofReal_mem_slitPlane)
 open scoped ComplexOrder
 
 namespace Complex
@@ -128,14 +127,12 @@ private theorem integrableOn_summand_of_mem_slitPlane {u v w : ℂ} (hu : u ∈ 
   have hcont := (((TauCeti.continuousOn_ofReal_add_cpow (Or.inl hu) (-(3 / 2))).mul
     (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
     (TauCeti.continuousOn_ofReal_add_cpow hw (-(1 / 2)))).mul
-    Complex.continuous_ofReal.continuousOn
-  obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu
-    (r := -(3 / 2)) (by norm_num)
+    continuous_ofReal.continuousOn
+  obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu (-(3 / 2))
   have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
   obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
   obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
   have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
-  have hCw0 : 0 ≤ Cw := by simpa using (norm_nonneg _).trans (hCw 1 one_pos)
   push_cast at hCu hCv hCw
   refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
     (Cu * Cv * Cw)).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
@@ -144,7 +141,7 @@ private theorem integrableOn_summand_of_mem_slitPlane {u v w : ℂ} (hu : u ∈ 
   have ht_cancel : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t = 1 := by
     rw [← Real.rpow_add ht0]
     norm_num [Real.rpow_neg_one, inv_mul_cancel₀ ht0.ne']
-  simp only [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0.le]
+  simp only [norm_mul, norm_real, Real.norm_of_nonneg ht0.le]
   calc ‖((t : ℂ) + u) ^ (-(3 / 2) : ℂ)‖ * ‖((t : ℂ) + v) ^ (-(1 / 2) : ℂ)‖ *
         ‖((t : ℂ) + w) ^ (-(1 / 2) : ℂ)‖ * t
       ≤ (Cu * (1 + t) ^ (-(3 / 2) : ℝ)) * (Cv * t ^ (-(1 / 2) : ℝ)) *
@@ -172,7 +169,7 @@ theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ 
           (u / ((t : ℂ) + u)) * t) (Ioi 0) := by
     rcases hu with hu | hu
     · exact integrableOn_summand_of_mem_slitPlane hu hv hw
-    · rw [Set.mem_singleton_iff.mp hu]
+    · rw [mem_singleton_iff.mp hu]
       simp
   refine (((hterm hx hy hz).add (hterm hy hz hx)).add (hterm hz hx hy)).congr_fun
     (fun t _ => ?_) measurableSet_Ioi
@@ -211,17 +208,17 @@ No hypothesis on `x, y, z` is needed: the substitution `t = l s` identifies the 
 whether or not they converge. -/
 theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
     carlsonRG (l * x) (l * y) (l * z) = (l : ℂ) ^ (1 / 2 : ℂ) * carlsonRG x y z := by
-  have hl0 : (l : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hl.ne'
+  have hl0 : (l : ℂ) ≠ 0 := ofReal_ne_zero.mpr hl.ne'
   have hscale (s : ℝ) (w : ℂ) : (((l * s : ℝ) : ℂ) + l * w) ^ (-(1 / 2) : ℂ) =
       (l : ℂ) ^ (-(1 / 2) : ℂ) * ((s : ℂ) + w) ^ (-(1 / 2) : ℂ) := by
-    rw [Complex.ofReal_mul, ← mul_add, TauCeti.ofReal_mul_cpow hl.le]
+    rw [ofReal_mul, ← mul_add, TauCeti.ofReal_mul_cpow hl.le]
   have hscale_div (s : ℝ) (w : ℂ) :
       (l : ℂ) * w / (((l * s : ℝ) : ℂ) + l * w) = w / ((s : ℂ) + w) := by
-    rw [Complex.ofReal_mul, ← mul_add, mul_div_mul_left _ _ hl0]
+    rw [ofReal_mul, ← mul_add, mul_div_mul_left _ _ hl0]
   -- `l² · (l^(-1/2))³ = l^(1/2)`: the Jacobian and the factor `t = l s` against the three
   -- rescaled powers.
   have hl3 : (l : ℂ) * (l : ℂ) * ((l : ℂ) ^ (-(1 / 2) : ℂ)) ^ 3 = (l : ℂ) ^ (1 / 2 : ℂ) := by
-    rw [← Complex.cpow_nat_mul, ← pow_two, ← Complex.cpow_natCast, ← Complex.cpow_add _ _ hl0]
+    rw [← cpow_nat_mul, ← pow_two, ← cpow_natCast, ← cpow_add _ _ hl0]
     norm_num
   have h := integral_comp_mul_left_Ioi' (carlsonRGIntegrand (l * x) (l * y) (l * z)) 0 hl
   rw [mul_zero] at h
@@ -229,9 +226,9 @@ theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
       fun s : ℝ => (l : ℂ) * ((l : ℂ) ^ (-(1 / 2) : ℂ)) ^ 3 * carlsonRGIntegrand x y z s := by
     funext s
     simp only [carlsonRGIntegrand]
-    rw [hscale, hscale, hscale, hscale_div, hscale_div, hscale_div, Complex.ofReal_mul]
+    rw [hscale, hscale, hscale, hscale_div, hscale_div, hscale_div, ofReal_mul]
     ring
-  rw [carlsonRG_def, carlsonRG_def, ← h, hfun, integral_const_mul, Complex.real_smul, ← hl3]
+  rw [carlsonRG_def, carlsonRG_def, ← h, hfun, integral_const_mul, real_smul, ← hl3]
   ring
 
 /-! ### Diagonal value -/
@@ -241,7 +238,7 @@ theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
 theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ (1 / 2 : ℂ) := by
   have hmem (t : ℝ) (ht : 0 ≤ t) : (t : ℂ) + x ∈ slitPlane :=
     TauCeti.ofReal_add_mem_slitPlane hx ht
-  have hx0 : x ≠ 0 := Complex.slitPlane_ne_zero hx
+  have hx0 : x ≠ 0 := slitPlane_ne_zero hx
   -- `-6x (t + x)^(-1/2) + 2x² (t + x)^(-3/2)` is an antiderivative of `3x t (t + x)^(-5/2)`.
   have hderiv : ∀ t ∈ Ici (0 : ℝ),
       HasDerivAt (fun t : ℝ => -6 * x * ((t : ℂ) + x) ^ (-((1 / 2 : ℝ) : ℂ)) +
@@ -255,18 +252,18 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
     simp only [id] at h
     convert h using 1
     unfold carlsonRGIntegrand
-    have hne := Complex.slitPlane_ne_zero (hmem t ht)
+    have hne := slitPlane_ne_zero (hmem t ht)
     -- Write every power of `w = t + x` through `u = w^(-1/2)`, using `u² = w⁻¹`.
     set w : ℂ := (t : ℂ) + x with hw
     set u : ℂ := w ^ (-(1 / 2) : ℂ) with hu
     have hu2 : u ^ 2 = w⁻¹ := by
-      rw [hu, ← Complex.cpow_nat_mul, ← Complex.cpow_neg_one]
+      rw [hu, ← cpow_nat_mul, ← cpow_neg_one]
       norm_num
     have hp3 : w ^ (-((1 / 2 : ℝ) : ℂ) - 1) = u ^ 3 := by
-      rw [hu, ← Complex.cpow_nat_mul]
+      rw [hu, ← cpow_nat_mul]
       norm_num
     have hp5 : w ^ (-((3 / 2 : ℝ) : ℂ) - 1) = u ^ 5 := by
-      rw [hu, ← Complex.cpow_nat_mul]
+      rw [hu, ← cpow_nat_mul]
       norm_num
     have ht' : (t : ℂ) = w - x := by rw [hw]; ring
     have hu2' : u ^ 2 * w = 1 := by rw [hu2, inv_mul_cancel₀ hne]
@@ -276,21 +273,21 @@ theorem carlsonRG_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRG x x x = x ^ 
   have hlim : Tendsto (fun t : ℝ => -6 * x * ((t : ℂ) + x) ^ (-((1 / 2 : ℝ) : ℂ)) +
       2 * x ^ 2 * ((t : ℂ) + x) ^ (-((3 / 2 : ℝ) : ℂ))) atTop (𝓝 0) := by
     simpa using
-      ((Complex.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
+      ((tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 1 / 2)).const_mul
         (-6 * x)).add
-      ((Complex.tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
+      ((tendsto_ofReal_add_cpow_neg x (by norm_num : (0 : ℝ) < 3 / 2)).const_mul
         (2 * x ^ 2))
   rw [carlsonRG_def, integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
     (integrableOn_carlsonRGIntegrand (Or.inl hx) (Or.inl hx) (Or.inl hx)) hlim]
   -- The value at `t = 0` is `-6 x · x^(-1/2) + 2 x² · x^(-3/2) = -4 x^(1/2)`.
   have h1 : x * x ^ (-((1 / 2 : ℝ) : ℂ)) = x ^ (1 / 2 : ℂ) := by
-    conv_lhs => enter [1]; rw [← Complex.cpow_one x]
-    rw [← Complex.cpow_add _ _ hx0]
+    conv_lhs => enter [1]; rw [← cpow_one x]
+    rw [← cpow_add _ _ hx0]
     norm_num
   have h2 : x ^ 2 * x ^ (-((3 / 2 : ℝ) : ℂ)) = x ^ (1 / 2 : ℂ) := by
-    rw [← Complex.cpow_natCast, ← Complex.cpow_add _ _ hx0]
+    rw [← cpow_natCast, ← cpow_add _ _ hx0]
     norm_num
-  simp only [Complex.ofReal_zero, zero_add]
+  simp only [ofReal_zero, zero_add]
   linear_combination (3 / 2 : ℂ) * h1 - (1 / 2 : ℂ) * h2
 
 /-! ### Two zero arguments -/
@@ -299,11 +296,11 @@ private theorem carlsonRGIntegrand_zero_zero_eq (z : ℂ) {t : ℝ} (ht : t ∈ 
     carlsonRGIntegrand 0 0 z t =
       z * (((t : ℂ) + z) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ) *
         ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) := by
-  have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (ne_of_gt ht)
+  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ne_of_gt ht)
   rw [carlsonRGIntegrand_def]
   simp only [add_zero, zero_div, zero_add]
-  rw [Complex.cpow_neg_half_mul_self (t : ℂ), div_eq_mul_inv z,
-    ← Complex.cpow_neg_half_mul_self ((t : ℂ) + z)]
+  rw [cpow_neg_half_mul_self (t : ℂ), div_eq_mul_inv z,
+    ← cpow_neg_half_mul_self ((t : ℂ) + z)]
   linear_combination (z * (((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) ^ 3) * inv_mul_cancel₀ ht0
 
 /-- At two zero arguments, `R_G(0, 0, z)` reduces to `(z / 2) R_F(z, z, z)` for every `z : ℂ`. -/
@@ -322,7 +319,7 @@ theorem integrableOn_carlsonRGIntegrand_zero_zero {z : ℂ} (hz : z ∈ slitPlan
     measurableSet_Ioi
   rcases hz with hz | hz
   · exact (integrableOn_carlsonRF_integrand (Or.inl hz) hz hz).const_mul z
-  · simp [Set.mem_singleton_iff.mp hz]
+  · simp [mem_singleton_iff.mp hz]
 
 /-- **Full-domain convergence of `R_G`.** Unlike `R_F`, `R_D`, and `R_J`, the defining integral of
 `carlsonRG x y z` converges absolutely on `(0, ∞)` for every triple `x, y, z ∈ slitPlane ∪ {0}`,
@@ -333,21 +330,21 @@ theorem integrableOn_carlsonRGIntegrand_of_mem_union {x y z : ℂ} (hx : x ∈ s
   rcases hy with hy | hy
   · rcases hz with hz | hz
     · exact integrableOn_carlsonRGIntegrand hx (Or.inl hy) (Or.inl hz)
-    · rw [Set.mem_singleton_iff.mp hz]
+    · rw [mem_singleton_iff.mp hz]
       rcases hx with hx | hx
       · rw [carlsonRGIntegrand_comm_right, carlsonRGIntegrand_comm_left]
         exact integrableOn_carlsonRGIntegrand (Or.inr rfl) (Or.inl hx) (Or.inl hy)
-      · rw [Set.mem_singleton_iff.mp hx, carlsonRGIntegrand_comm_right]
+      · rw [mem_singleton_iff.mp hx, carlsonRGIntegrand_comm_right]
         exact integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hy)
-  · rw [Set.mem_singleton_iff.mp hy]
+  · rw [mem_singleton_iff.mp hy]
     rcases hx with hx | hx
     · rcases hz with hz | hz
       · rw [carlsonRGIntegrand_comm_left]
         exact integrableOn_carlsonRGIntegrand (Or.inr rfl) (Or.inl hx) (Or.inl hz)
-      · rw [Set.mem_singleton_iff.mp hz, carlsonRGIntegrand_comm_left,
+      · rw [mem_singleton_iff.mp hz, carlsonRGIntegrand_comm_left,
           carlsonRGIntegrand_comm_right]
         exact integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hx)
-    · rw [Set.mem_singleton_iff.mp hx]
+    · rw [mem_singleton_iff.mp hx]
       exact integrableOn_carlsonRGIntegrand_zero_zero hz
 
 /-- **Two-zero value of `R_G`** (DLMF 19.20.4): `R_G(0, 0, z) = z^(1/2) / 2` for
@@ -356,9 +353,9 @@ theorem carlsonRG_zero_zero {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) :
     carlsonRG 0 0 z = z ^ (1 / 2 : ℂ) / 2 := by
   rw [carlsonRG_zero_zero_eq_mul_carlsonRF]
   rcases hz with hz | hz
-  · rw [carlsonRF_self hz, ← Complex.cpow_neg_half_mul_eq_cpow_half]
+  · rw [carlsonRF_self hz, ← cpow_neg_half_mul_eq_cpow_half]
     ring
-  · simp [Set.mem_singleton_iff.mp hz]
+  · simp [mem_singleton_iff.mp hz]
 
 /-- `simp` form of `carlsonRG_zero_zero` for `z ∈ slitPlane`. -/
 @[simp]
@@ -382,9 +379,9 @@ private noncomputable def carlsonRGPrimitive (x y z : ℂ) (t : ℝ) : ℂ :=
 private theorem carlsonRGPrimitive_zero (x y z : ℂ) :
     carlsonRGPrimitive x y z 0 =
       -(x ^ (1 / 2 : ℂ) * y ^ (1 / 2 : ℂ) * z ^ (-(1 / 2) : ℂ)) := by
-  rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_eq_cpow_half x,
-    ← Complex.cpow_neg_half_mul_eq_cpow_half y]
-  simp only [Complex.ofReal_zero, mul_zero, zero_add]
+  rw [carlsonRGPrimitive, ← cpow_neg_half_mul_eq_cpow_half x,
+    ← cpow_neg_half_mul_eq_cpow_half y]
+  simp only [ofReal_zero, mul_zero, zero_add]
   ring
 
 private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
@@ -396,13 +393,13 @@ private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ 
       -((y * ((t : ℂ) + x) ^ (1 / 2 : ℂ) + x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) *
         ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) := by
     funext t
-    rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_eq_cpow_half ((t : ℂ) + x)]
+    rw [carlsonRGPrimitive, ← cpow_neg_half_mul_eq_cpow_half ((t : ℂ) + x)]
     ring
   have hxt : ContinuousOn (fun t : ℝ => x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ici 0) := by
     rcases hx with hx | hx
-    · exact (continuousOn_const.mul Complex.continuous_ofReal.continuousOn).mul
+    · exact (continuousOn_const.mul continuous_ofReal.continuousOn).mul
         (TauCeti.continuousOn_ofReal_add_cpow_Ici hx _)
-    · simp [Set.mem_singleton_iff.mp hx, continuousOn_const]
+    · simp [mem_singleton_iff.mp hx, continuousOn_const]
   have hre : 0 < (1 / 2 : ℂ).re := by simp
   have hcont : ContinuousOn (carlsonRGPrimitive x y z) (Ici 0) := by
     rw [hfun]
@@ -432,7 +429,7 @@ private theorem tendsto_carlsonRGPrimitive_atTop {x y z : ℂ} (hx : x ∈ slitP
     calc ‖(x + y) * (t : ℂ) + x * y‖
         ≤ ‖(x + y) * (t : ℂ)‖ + ‖x * y‖ := norm_add_le _ _
       _ = ‖x + y‖ * t + ‖x * y‖ := by
-          rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0.le]
+          rw [norm_mul, norm_real, Real.norm_of_nonneg ht0.le]
       _ ≤ (‖x + y‖ + ‖x * y‖) * t := by nlinarith [norm_nonneg (x * y)]
   have hexp : (-(1 / 2) : ℝ) + -(1 / 2) = -1 := by norm_num
   have htinv : t * (t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ)) = 1 := by
@@ -464,7 +461,7 @@ private theorem hasDerivAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ slitPlan
       hw).comp_ofReal
     simp only [id] at h
     convert h using 1
-    rw [← Complex.cpow_nat_mul]
+    rw [← cpow_nat_mul]
     norm_num
   have hlin : HasDerivAt (fun s : ℝ => (x + y) * (s : ℂ) + x * y) (x + y) t := by
     simpa using (((hasDerivAt_id (t : ℂ)).const_mul (x + y)).add_const (x * y)).comp_ofReal
@@ -476,13 +473,13 @@ private theorem hasDerivAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ slitPlan
     set uy : ℂ := ((t : ℂ) + y) ^ (-(1 / 2) : ℂ)
     set uz : ℂ := ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)
     have hinv {w : ℂ} : ((t : ℂ) + w)⁻¹ = (((t : ℂ) + w) ^ (-(1 / 2) : ℂ)) ^ 2 := by
-      rw [sq, Complex.cpow_neg_half_mul_self]
+      rw [sq, cpow_neg_half_mul_self]
     have hux : ux ^ 2 * ((t : ℂ) + x) = 1 := by
-      rw [← hinv, inv_mul_cancel₀ (Complex.slitPlane_ne_zero hmx)]
+      rw [← hinv, inv_mul_cancel₀ (slitPlane_ne_zero hmx)]
     have huy : uy ^ 2 * ((t : ℂ) + y) = 1 := by
-      rw [← hinv, inv_mul_cancel₀ (Complex.slitPlane_ne_zero hmy)]
+      rw [← hinv, inv_mul_cancel₀ (slitPlane_ne_zero hmy)]
     have huz : uz ^ 2 * ((t : ℂ) + z) = 1 := by
-      rw [← hinv, inv_mul_cancel₀ (Complex.slitPlane_ne_zero hmz)]
+      rw [← hinv, inv_mul_cancel₀ (slitPlane_ne_zero hmz)]
     rw [div_eq_mul_inv x, div_eq_mul_inv y, div_eq_mul_inv z, hinv, hinv, hinv]
     linear_combination
       -(1 / 2 * y * ux * uy * uz) * hux -
@@ -528,10 +525,10 @@ theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 < z) :
   have heq : EqOn (carlsonRGIntegrand x y z) (fun t => ((f t : ℝ) : ℂ)) (Ioi 0) :=
     fun t ht => by
       have ht : (0 : ℝ) < t := ht
-      simp only [carlsonRGIntegrand, hf, Complex.ofReal_mul, Complex.ofReal_div,
-        Complex.ofReal_add, Complex.ofReal_cpow (by positivity : 0 ≤ t + x),
-        Complex.ofReal_cpow (by positivity : 0 ≤ t + y),
-        Complex.ofReal_cpow (by positivity : 0 ≤ t + z)]
+      simp only [carlsonRGIntegrand, hf, ofReal_mul, ofReal_div,
+        ofReal_add, ofReal_cpow (by positivity : 0 ≤ t + x),
+        ofReal_cpow (by positivity : 0 ≤ t + y),
+        ofReal_cpow (by positivity : 0 ≤ t + z)]
       -- After `push_cast` the two sides differ only in how the exponent `-(1 / 2)` is cast.
       push_cast
       ring
@@ -551,6 +548,6 @@ theorem carlsonRG_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 < z) :
       volume (Ioi (0 : ℝ)) ≤ volume (Function.support f ∩ Ioi 0))
     simp
   rw [carlsonRG_def, setIntegral_congr_fun measurableSet_Ioi heq, integral_complex_ofReal]
-  exact mul_pos (by norm_num) (Complex.zero_lt_real.mpr hI)
+  exact mul_pos (by norm_num) (zero_lt_real.mpr hI)
 
 end Complex

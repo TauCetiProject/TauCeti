@@ -390,7 +390,7 @@ theorem reindex_serreLift_folded (σ : Equiv.Perm I)
   have h := isSerreSystem_folded σ hB hdiag hoff hσ
   have hext : (reindexLieEquiv σ hσ hB fun i ↦ hdiag i ▸ even_two).toLieHom.comp (serreLift h) =
       serreLift h :=
-    serre_hom_ext (fun O ↦ by simp) (fun O ↦ by simp) fun O ↦ by simp
+    serre_hom_ext (fun O ↦ by simp) fun O ↦ by simp
   simpa using DFunLike.congr_fun hext x
 
 end ShellLieAlgebra

@@ -58,6 +58,8 @@ of `(Kˣ)ⁿ` with a step of the filtration, which is open in `Kˣ`.
   `U(K,i)` contains no nontrivial `n`-th root of unity.
 * `TauCeti.pow_mem_unitFiltration_add_natCastValuation_iff`: under the same depth condition, the
   `n`-th power map shifts every deeper step by exactly `v_K(n)` on `U(K,i)`.
+* `TauCeti.log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one`: in characteristic zero, a
+  root of unity `ζ ≠ 1` has `v_K(ζ - 1) ≤ v_K(p)`, with `p` the residue characteristic.
 * `TauCeti.map_powMonoidHom_unitFiltration_succ_of_isUnit`: when `n` is invertible in `𝒪[K]`,
   the `n`-th power map carries every positive-depth step onto itself.
 * `TauCeti.powMonoidHom_unitFiltration_succ_bijective_of_isUnit`: the same map is a bijection.
@@ -338,6 +340,24 @@ theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i :
       (hi p hp hpK (hpb.mul_left a)).trans_le (Nat.mul_le_mul_left _ (Nat.le_add_right _ _)))
       hub hua
     exact Subgroup.disjoint_def.mp (iha ha hia) ((mem_rootsOfUnity a u).mpr h1) hui
+
+/-- **A root of unity is shallow.** With `p` the residue characteristic and `e = v_K(p)`, a root of
+unity `ζ ≠ 1` of `K` has `v_K(ζ - 1) ≤ e`: the step `U(K, e + 1)` contains no nontrivial root of
+unity. -/
+theorem log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one [CharZero K] {ζ : Kˣ} {n : ℕ}
+    (hn : n ≠ 0) (hζn : ζ ^ n = 1) (hζ : ζ ≠ 1) :
+    WithZero.log (normalizedValuationWithZero K ((ζ : K) - 1)) ≤
+      natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K) := by
+  have hpK := natCast_ringChar_residueField_ne_zero K
+  have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  have hdeep : ζ ∉ unitFiltration K (natCastValuation K (ringChar 𝓀[K]) hpK + 1) := fun h ↦
+    hζ <| Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration hnK
+      fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK)
+      ((mem_rootsOfUnity n ζ).mpr hζn) h
+  rw [mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one (Nat.succ_ne_zero _) hζ]
+    at hdeep
+  push_cast at hdeep
+  omega
 
 /-- **Powers shift deep steps exactly.** For `(n : K) ≠ 0`, a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, and `x ∈ U(K,i)`, the power `x ^ n` lies in

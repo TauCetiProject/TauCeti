@@ -156,14 +156,14 @@ theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one
     Nonempty (X.functionField ≃ₐ[k] RatFunc k) := by
   have hX := IsCurveOver.topologicalKrullDim_eq_one (X := X) k
   have hdim := IsCurveOver.coheight_le_one (k := k) (X := X)
-  let _ : IsNoetherian X := IsCurveOver.isNoetherian k X
+  have : IsNoetherian X := IsCurveOver.isNoetherian k X
   have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
   have hex := IsCurveOver.valuativeCriterion_existence k X
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hX
   have hF := IsCurveOver.isFunctionField (k := k) (X := X)
   have hgF : TauCeti.genus k X.functionField = 0 := by
     rw [← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, genus_def, hg]
-  exact TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hk hgF
+  exact TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one hF hgF
     ⟨SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D, by
       rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor, hD]⟩
 

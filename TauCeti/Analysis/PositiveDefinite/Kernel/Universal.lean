@@ -12,22 +12,26 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 /-!
 # Universal kernels
 
-A kernel `k : X → X → 𝕜` is *universal* (`TauCeti.IsUniversalKernel`) when its continuous
-sections `k x` span a dense subspace of `C(X, 𝕜)`. For a continuous kernel on a compact space this
-is Steinwart's universality. On a finite discrete space every kernel with invertible matrix, in
-particular every positive-definite kernel, is universal, while the constant kernel `1`, which is
-positive semidefinite, is not universal on two points.
+A kernel `k : X → X → 𝕜` with values in a topological semiring `𝕜` is *universal*
+(`TauCeti.IsUniversalKernel`) when its continuous sections `k x` span a dense `𝕜`-submodule of
+`C(X, 𝕜)` for the compact-open topology. For real or complex scalars (`RCLike 𝕜`) on a compact
+space the compact-open topology is that of uniform convergence, and for a continuous kernel the
+condition is Steinwart's universality. On a finite discrete space every kernel with invertible
+matrix is universal, over any topological semiring. For real or complex scalars this includes every
+positive-definite kernel, while the constant kernel `1`, which is positive semidefinite, is not
+universal on two points.
 
 ## Main definitions
 
 * `TauCeti.IsUniversalKernel`: the continuous sections of a kernel span a dense subspace of
-  `C(X, 𝕜)`.
+  `C(X, 𝕜)` for the compact-open topology.
 
 ## Main results
 
-* `TauCeti.isUniversalKernel_of_isUnit` and `Matrix.PosDef.isUniversalKernel`: on a finite
-  discrete space, kernels with invertible matrix, in particular positive-definite ones, are
-  universal.
+* `TauCeti.isUniversalKernel_of_isUnit`: on a finite discrete space, a kernel with invertible
+  matrix over a topological semiring is universal.
+* `Matrix.PosDef.isUniversalKernel`: on a finite discrete space, a positive-definite kernel with
+  real or complex values is universal.
 
 ## References
 
@@ -41,12 +45,14 @@ open scoped ComplexOrder
 
 namespace TauCeti
 
-variable {𝕜 X : Type*} [RCLike 𝕜] [TopologicalSpace X]
+variable {𝕜 X : Type*} [Semiring 𝕜] [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+  [TopologicalSpace X]
 
 /-- A kernel `k : X → X → 𝕜` is *universal* when its continuous sections `k x` span a dense
-subspace of `C(X, 𝕜)`; sections that are not continuous are ignored. On a compact space this says
-that every continuous function is a uniform limit of finite linear combinations
-`∑ i, c i • k (x i)` of sections, so for a continuous kernel on a compact space it is Steinwart's
+subspace of `C(X, 𝕜)` for the compact-open topology; sections that are not continuous are
+ignored. For real or complex scalars (`RCLike 𝕜`) on a compact space this says that every
+continuous function is a uniform limit of finite linear combinations `∑ i, c i • k (x i)` of
+sections, so for a continuous real or complex kernel on a compact space it is Steinwart's
 universality. -/
 def IsUniversalKernel (k : X → X → 𝕜) : Prop :=
   Dense (Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} : Set C(X, 𝕜))
@@ -63,14 +69,12 @@ theorem isUniversalKernel_of_isUnit [Fintype X] [DecidableEq X] [DiscreteTopolog
   have htop : Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} = ⊤ := by
     refine Submodule.eq_top_iff'.2 fun f ↦ ?_
     -- `f` is the combination of the sections with coefficients `f ᵥ* k⁻¹`.
-    have hf : f = ∑ x, (⇑f ᵥ* (Matrix.of k)⁻¹) x •
+    have hf : f = ∑ x, (⇑f ᵥ* (↑hk.unit⁻¹ : Matrix X X 𝕜)) x •
         (⟨k x, continuous_of_discreteTopology⟩ : C(X, 𝕜)) := by
       ext y
-      have h := congrFun (show (⇑f ᵥ* (Matrix.of k)⁻¹) ᵥ* Matrix.of k = ⇑f by
-        rw [Matrix.vecMul_vecMul, Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).1 hk),
-          Matrix.vecMul_one]) y
-      simpa only [vecMul, dotProduct, ContinuousMap.coe_sum, ContinuousMap.coe_smul,
-        ContinuousMap.coe_mk, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, of_apply] using h.symm
+      have h : (⇑f ᵥ* (↑hk.unit⁻¹ : Matrix X X 𝕜)) ᵥ* Matrix.of k = ⇑f := by
+        rw [vecMul_vecMul, hk.val_inv_mul, vecMul_one]
+      simpa [vecMul, dotProduct] using (congrFun h y).symm
     rw [hf]
     exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
   rw [isUniversalKernel_def, htop, Submodule.top_coe]

@@ -100,8 +100,6 @@ theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
     have hpow : γ m = (mapGL ℝ u ^ n) ^ m := by simp [γ, pow_mul]
     exact hpow ▸ (Γ ⊓ 𝒮ℒ).pow_mem hmem m
   let d (m : ℕ) : ℂˣ := Units.mk0 (denom (γ m) z) (denom_ne_zero (γ m) z)
-  have hd_val (m : ℕ) : (d m : ℂ) = -((n * m : ℕ) : ℂ) * z + 1 :=
-    denom_mapGL_STS_inv_pow (n * m) z
   have hd_inj : Function.Injective d := fun m₁ m₂ hm ↦
     denom_mapGL_STS_inv_pow_injective hn z (congrArg Units.val hm)
   have hd_root (m : ℕ) : p.smeval (d m) = 0 := by

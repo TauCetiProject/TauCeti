@@ -125,7 +125,8 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
   set s : Set B := (skeletonLT C (i + 1) : Set B)
   have hst : s ⊆ t := skeletonLT_mono hk
   -- The `i`-skeleton of the subcomplex `t` is `s`.
-  have hts : (skeletonLT t (i + 1) : Set B) = s := coe_skeletonLT_skeletonLT hk
+  have hts : (skeletonLT t (i + 1) : Set B) = s :=
+    (coe_skeletonLT_skeletonLT _ _).trans (by rw [min_eq_left hk])
   -- The pair `(t, s)`, read as the pair of `t` and the preimage of `s` in `t`, is `i`-connected.
   let A : Set (_root_.TopCat.of t) := Subtype.val ⁻¹' s
   have h₀ (b : _root_.TopCat.of t) : ∃ a ∈ A, Joined b a := by

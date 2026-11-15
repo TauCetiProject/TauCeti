@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Uniform sampling with and without replacement
@@ -39,12 +40,14 @@ estimate is the classical union bound over unordered coordinate pairs, using
 * `uniformOn_not_injective_le` bounds the uniform-measure mass of collisions;
 * `uniformOn_injective_apply_eq` and `uniformOn_not_injective_apply_eq` compute the exact
   uniform-measure masses;
-* `uniformOn_le_univ_add_compl` and `uniformOn_univ_le_add_compl` give the general conditioning
+* `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
   under sampling without and with replacement;
 * `uniformOn_injective_le_add_choose_two_div` and
   `uniformOn_univ_le_injective_add_choose_two_div` give the quantitative forms.
+* `uniformOn_injective_mem_range_and_mem_range` computes the probability that a uniform
+  injective map hits two given distinct elements.
 
 These comparisons feed quantitative finite de Finetti bounds.
 -/
@@ -53,33 +56,27 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open Finset Function MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
 namespace TauCeti
 
 namespace Probability
 
-/-- The real-valued mass of an event under a finite uniform measure is the ratio of its
-cardinality to the cardinality of the sampling set. This also covers the zero measure when
-the sampling set is empty. -/
-theorem uniformOn_toReal {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
-    [MeasurableSingletonClass Ω] (S T : Set Ω) :
+/-- The real-valued mass of an event under a uniform measure is the ratio of its cardinality to
+the cardinality of the sampling set. This also covers the zero measure when the sampling set is
+empty or infinite, where both sides vanish. -/
+theorem uniformOn_toReal {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω]
+    (S T : Set Ω) :
     (uniformOn S T).toReal =
       (Nat.card {x : Ω // x ∈ S ∩ T} : ℝ) /
         (Nat.card {x : Ω // x ∈ S} : ℝ) := by
-  classical
-  cases nonempty_fintype Ω
-  let s : Finset Ω := S.toFinite.toFinset
-  let t : Finset Ω := T.toFinite.toFinset
-  have hs : (s : Set Ω) = S := by simp [s]
-  have ht : (t : Set Ω) = T := by simp [t]
-  rw [← hs, ← ht, uniformOn_apply_finset, ENNReal.toReal_div]
-  have hcard (U : Set Ω) : Nat.card {x : Ω // x ∈ U} = U.ncard := by
-    rw [Nat.card_eq_fintype_card, Set.fintypeCard_eq_ncard]
-  rw [hcard, hcard, ← Finset.coe_inter, Set.ncard_coe_finset,
-    Set.ncard_coe_finset]
-  simp only [ENNReal.toReal_natCast]
+  rw [Nat.card_coe_set_eq, Nat.card_coe_set_eq]
+  rcases S.finite_or_infinite with hS | hS
+  · simp [uniformOn, cond_apply hS.measurableSet, Measure.count_apply_finite _ hS,
+      Measure.count_apply_finite _ (hS.inter_of_left T), ← Set.ncard_eq_toFinset_card,
+      div_eq_inv_mul]
+  · simp [uniformOn_eq_zero.2 (.inl hS), hS.ncard]
 
 variable {ι κ : Type*}
 
@@ -96,13 +93,8 @@ theorem uniformOn_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonCl
       (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
   classical
-  have hcard : Fintype.card {f : ι → κ | Function.Injective f} =
-      (Fintype.card κ).descFactorial (Fintype.card ι) :=
-    (Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding ι κ)).trans
-      Fintype.card_embedding_eq
-  rw [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _),
-    ← Set.ncard_eq_toFinset_card _ (Set.toFinite _),
-    ← Set.fintypeCard_eq_ncard, hcard, Fintype.card_fun, Nat.cast_pow]
+  simp [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _), ← Fintype.card_subtype,
+    Fintype.card_subtype_injective]
 
 /-- The exact collision probability for a uniform random map on a nonempty finite function
 space. The descending factorial counts ordered samples without replacement, so this retains
@@ -113,44 +105,8 @@ theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSinglet
     uniformOn (Set.univ : Set (ι → κ)) {f | ¬ Function.Injective f} =
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
-  let _ : IsProbabilityMeasure (uniformOn (Set.univ : Set (ι → κ))) :=
-    isProbabilityMeasure_uniformOn Set.finite_univ Set.univ_nonempty
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_injective_apply_eq]
-
-private noncomputable def eqAtEquiv (i j : ι) (hij : i ≠ j) :
-    {x : ι → κ // x i = x j} ≃ ({a : ι // a ≠ j} → κ) := by
-  classical
-  exact
-    { toFun := fun x a => x.1 a.1
-      invFun := fun x =>
-        ⟨fun a => if ha : a = j then x ⟨i, hij⟩ else x ⟨a, ha⟩, by simp [hij]⟩
-      left_inv := fun x => by
-        ext a
-        by_cases ha : a = j
-        · subst a
-          dsimp only
-          rw [dite_eq_left rfl]
-          exact x.2
-        · dsimp only
-          rw [dite_eq_right ha]
-      right_inv := fun x => by
-        funext a
-        dsimp only
-        rw [dite_eq_right a.2] }
-
-private theorem card_eqAt (i j : ι) (hij : i ≠ j) :
-    Set.ncard {x : ι → κ | x i = x j} =
-      Fintype.card κ ^ (Fintype.card ι - 1) := by
-  classical
-  calc
-    Set.ncard {x : ι → κ | x i = x j} = Fintype.card {x : ι → κ // x i = x j} :=
-      Eq.symm (Set.fintypeCard_eq_ncard {x : ι → κ | x i = x j})
-    _ = Fintype.card ({a : ι // a ≠ j} → κ) :=
-      Fintype.card_congr (eqAtEquiv i j hij)
-    _ = Fintype.card κ ^ (Fintype.card ι - 1) := by
-      rw [Fintype.card_fun, Fintype.card_subtype_compl]
-      simp
 
 end
 
@@ -171,18 +127,16 @@ theorem uniformOn_apply_eq_apply [Finite ι] [MeasurableSpace κ]
       1 / (Fintype.card κ : ℝ≥0∞) := by
   classical
   cases nonempty_fintype ι
-  let hfinite : Set.Finite {x : ι → κ | x i = x j} := Set.toFinite _
-  rw [uniformOn_univ, Measure.count_apply_finite _ hfinite,
-    ← Set.ncard_eq_toFinset_card _ hfinite, card_eqAt i j hij, Fintype.card_fun]
-  have hι : 0 < Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
-  have hκ : (Fintype.card κ : ℝ≥0∞) ≠ 0 := by simp
-  have hcard_succ : Fintype.card ι = (Fintype.card ι - 1) + 1 := by omega
-  rw [hcard_succ, pow_succ]
-  have hpow_zero : (Fintype.card κ : ℝ≥0∞) ^ (Fintype.card ι - 1) ≠ 0 :=
-    pow_ne_zero _ hκ
-  have hpow_top : (Fintype.card κ : ℝ≥0∞) ^ (Fintype.card ι - 1) ≠ ∞ := by simp
-  simpa [div_eq_mul_inv] using ENNReal.mul_div_mul_left (1 : ℝ≥0∞)
-    (Fintype.card κ) hpow_zero hpow_top
+  -- The `card κ ^ (card ι - 1)` maps identifying `i` and `j`, times `card κ`, are all maps.
+  have hcard : Fintype.card κ * Set.ncard {x : ι → κ | x i = x j} =
+      Fintype.card κ ^ Fintype.card ι := by
+    rw [← Nat.card_coe_set_eq, Set.coe_ofPred, Nat.card_eq_fintype_card,
+      Fintype.card_subtype_apply_eq_apply hij, ← pow_succ',
+      Nat.sub_add_cancel (Fintype.card_pos_iff.2 ⟨i⟩)]
+  rw [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _),
+    ← Set.ncard_eq_toFinset_card _, ENNReal.div_eq_div_iff (by simp) (by simp) (by simp) (by simp),
+    Fintype.card_fun, mul_one]
+  exact_mod_cast hcard
 
 end
 
@@ -233,12 +187,9 @@ theorem uniformOn_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClas
   let _ : LinearOrder ι := (Fintype.equivFin ι).linearOrder
   cases isEmpty_or_nonempty κ with
   | inl hκ =>
-      cases isEmpty_or_nonempty ι with
-      | inl hι => simp [Function.Injective]
-      | inr hι =>
-          rw [Set.univ_eq_empty_iff.mpr (inferInstance : IsEmpty (ι → κ)),
-            uniformOn_empty_meas]
-          exact bot_le
+      have : {x : ι → κ | ¬Function.Injective x} = ∅ :=
+        Set.eq_empty_of_forall_notMem fun x hx => hx fun a => isEmptyElim (x a)
+      simp [this]
   | inr hκ =>
       rw [not_injective_set_eq_iUnion]
       calc
@@ -247,57 +198,47 @@ theorem uniformOn_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClas
           ≤ ∑ p ∈ coordinatePairs ι,
               uniformOn (Set.univ : Set (ι → κ)) {x | x p.1 = x p.2} :=
             measure_biUnion_finset_le _ _
-        _ = ∑ _p ∈ coordinatePairs ι, 1 / (Fintype.card κ : ℝ≥0∞) := by
-          apply Finset.sum_congr rfl
-          intro p hp
-          exact uniformOn_apply_eq_apply p.1 p.2 (mem_coordinatePairs p |>.1 hp).ne
+        _ = ∑ _p ∈ coordinatePairs ι, 1 / (Fintype.card κ : ℝ≥0∞) :=
+          Finset.sum_congr rfl fun p hp =>
+            uniformOn_apply_eq_apply p.1 p.2 (mem_coordinatePairs p |>.1 hp).ne
         _ = (Fintype.card ι).choose 2 / Fintype.card κ := by
           rw [Finset.sum_const, nsmul_eq_mul, card_coordinatePairs]
           simp [div_eq_mul_inv]
 
 end
 
-/-- Conditioning a finite uniform sample on an event `E` can increase the probability of an event
-`A` by at most the original probability of `Eᶜ`, provided `E` is nonempty.  When `E` is empty,
-Mathlib's `uniformOn E` is the zero measure and the inequality remains valid under that convention.
+/-- Conditioning the uniform measure on a finite set `s` on an event `E` can increase the
+probability of an event `A` by at most the original probability of `Eᶜ`, provided `s ∩ E` is
+nonempty.  When `s ∩ E` is empty, Mathlib's `uniformOn (s ∩ E)` is the zero measure and the
+inequality remains valid under that convention.
 
 This is the upper half of the elementary coupling bound between a uniform law and its
 conditioning. -/
-theorem uniformOn_le_univ_add_compl {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
-    [MeasurableSingletonClass Ω] (E A : Set Ω) :
-    uniformOn E A ≤ uniformOn Set.univ A + uniformOn Set.univ Eᶜ := by
-  cases isEmpty_or_nonempty Ω with
-  | inl =>
-      have hE : E = ∅ := by ext x; exact isEmptyElim x
-      have hA : A = ∅ := by ext x; exact isEmptyElim x
-      subst E
-      subst A
-      simp
-  | inr =>
-      have hfactor : uniformOn E A * uniformOn Set.univ E =
-          uniformOn Set.univ (A ∩ E) := by
-        rw [uniformOn_inter' Set.finite_univ, Set.univ_inter]
-      calc
-        uniformOn E A
-          = uniformOn E A * (uniformOn Set.univ E + uniformOn Set.univ Eᶜ) := by
-              rw [uniformOn_compl E Set.finite_univ Set.univ_nonempty, mul_one]
-        _ = uniformOn Set.univ (A ∩ E) +
-            uniformOn E A * uniformOn Set.univ Eᶜ := by rw [mul_add, hfactor]
-        _ ≤ uniformOn Set.univ A + uniformOn Set.univ Eᶜ := by
-          exact add_le_add (measure_mono Set.inter_subset_left)
-            (mul_le_of_le_one_left bot_le prob_le_one)
+theorem uniformOn_inter_le_add_compl {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω]
+    {s : Set Ω} (E A : Set Ω) (hs : s.Finite) :
+    uniformOn (s ∩ E) A ≤ uniformOn s A + uniformOn s Eᶜ := by
+  rcases s.eq_empty_or_nonempty with rfl | hs'
+  · simp
+  calc
+    uniformOn (s ∩ E) A
+      = uniformOn (s ∩ E) A * uniformOn s E + uniformOn (s ∩ E) A * uniformOn s Eᶜ := by
+        rw [← mul_add, uniformOn_compl E hs hs', mul_one]
+    _ ≤ uniformOn s A + uniformOn s Eᶜ := by
+      rw [← uniformOn_inter' hs]
+      exact add_le_add (measure_mono Set.inter_subset_left)
+        (mul_le_of_le_one_left bot_le prob_le_one)
 
-/-- Conditioning a finite uniform sample on an event `E` can decrease the probability of an event
-`A` by at most the original probability of `Eᶜ`, provided `E` is nonempty.  When `E` is empty,
-Mathlib's `uniformOn E` is the zero measure and the inequality remains valid under that convention.
+/-- Conditioning the uniform measure on a finite set `s` on an event `E` can decrease the
+probability of an event `A` by at most the original probability of `Eᶜ`, provided `s ∩ E` is
+nonempty.  When `s ∩ E` is empty, Mathlib's `uniformOn (s ∩ E)` is the zero measure and the
+inequality remains valid under that convention.
 
 This is the lower half of the elementary coupling bound between a uniform law and its
 conditioning. -/
-theorem uniformOn_univ_le_add_compl {Ω : Type*} [Finite Ω] [MeasurableSpace Ω]
-    [MeasurableSingletonClass Ω] (E A : Set Ω) :
-    uniformOn Set.univ A ≤ uniformOn E A + uniformOn Set.univ Eᶜ := by
-  rw [← uniformOn_add_compl_eq E A Set.finite_univ]
-  simp only [Set.univ_inter]
+theorem uniformOn_le_inter_add_compl {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω]
+    {s : Set Ω} (E A : Set Ω) (hs : s.Finite) :
+    uniformOn s A ≤ uniformOn (s ∩ E) A + uniformOn s Eᶜ := by
+  rw [← uniformOn_add_compl_eq E A hs]
   exact add_le_add (mul_le_of_le_one_right bot_le prob_le_one)
     (mul_le_of_le_one_left bot_le prob_le_one)
 
@@ -312,8 +253,8 @@ theorem uniformOn_injective_le_add [Finite ι] [Finite κ] [MeasurableSpace κ]
     (A : Set (ι → κ)) :
     uniformOn {x : ι → κ | Function.Injective x} A ≤
       uniformOn Set.univ A + uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  simpa only [Set.compl_ofPred] using
-    uniformOn_le_univ_add_compl {x : ι → κ | Function.Injective x} A
+  simpa only [Set.univ_inter, Set.compl_ofPred] using
+    uniformOn_inter_le_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
 
 /-- The uniform measure on all maps differs from the uniform measure on injective maps only on the
 collision event: for every event `A`, the former is at most the latter plus the collision measure.
@@ -326,8 +267,8 @@ theorem uniformOn_univ_le_injective_add [Finite ι] [Finite κ] [MeasurableSpace
     (A : Set (ι → κ)) :
     uniformOn Set.univ A ≤ uniformOn {x : ι → κ | Function.Injective x} A +
       uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
-  simpa only [Set.compl_ofPred] using
-    uniformOn_univ_le_add_compl {x : ι → κ | Function.Injective x} A
+  simpa only [Set.univ_inter, Set.compl_ofPred] using
+    uniformOn_le_inter_add_compl {x : ι → κ | Function.Injective x} A Set.finite_univ
 
 variable [Fintype ι] [Fintype κ]
 
@@ -356,6 +297,38 @@ theorem uniformOn_univ_le_injective_add_choose_two_div [MeasurableSpace κ]
       (Fintype.card ι).choose 2 / Fintype.card κ :=
   (uniformOn_univ_le_injective_add A).trans <|
     add_le_add le_rfl uniformOn_not_injective_le
+
+section TwoHit
+
+variable {a b : κ}
+
+/-- **Two-hit mass.** For distinct indices `a b : κ` and `|ι| ≤ |κ|`, a uniform injective index
+map `k : ι → κ` has both `a` and `b` in its range with probability
+`|ι| (|ι| - 1) / (|κ| (|κ| - 1))`.
+
+Without `|ι| ≤ |κ|` there is no injective index map, the left side is `0`, and the right side is
+positive once `|ι| ≥ 2`. -/
+theorem uniformOn_injective_mem_range_and_mem_range [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (hab : a ≠ b) (hικ : Fintype.card ι ≤ Fintype.card κ) :
+    uniformOn {k : ι → κ | Injective k} {k | a ∈ Set.range k ∧ b ∈ Set.range k} =
+      (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2 := by
+  classical
+  have hκ : 2 ≤ Fintype.card κ := Fintype.one_lt_card_iff.2 ⟨a, b, hab⟩
+  have h2 : ((Fintype.card κ).descFactorial 2 : ℝ≥0∞) ≠ 0 := by
+    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hκ))
+  have hm : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≠ 0 := by
+    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hικ))
+  have hset : {k : ι → κ | Injective k} = (({k | Injective k} : Finset (ι → κ)) : Set _) := by
+    simp
+  have hevt : {k : ι → κ | a ∈ Set.range k ∧ b ∈ Set.range k} =
+      (({k | a ∈ Set.range k ∧ b ∈ Set.range k} : Finset (ι → κ)) : Set _) := by
+    simp
+  rw [hset, hevt, uniformOn_apply_finset, ← filter_and,
+    ← Fintype.card_subtype (fun k : ι → κ => Injective k), Fintype.card_subtype_injective,
+    ENNReal.div_eq_div_iff h2 (ENNReal.natCast_ne_top _) hm (ENNReal.natCast_ne_top _)]
+  exact_mod_cast descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range hab
+
+end TwoHit
 
 end Probability
 

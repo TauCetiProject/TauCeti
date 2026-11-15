@@ -46,7 +46,7 @@ elements already compose partially, as arbitrary paths.
 
 public section
 
-namespace TauCeti
+namespace Quiver.Path
 
 universe u v
 
@@ -54,38 +54,38 @@ variable {V : Type u} [Quiver.{v} V] {a : V}
 
 /-- The `n`-th power of a closed path: `p` concatenated with itself `n` times, with the empty
 concatenation the trivial path. -/
-def _root_.Quiver.Path.loopPow (p : Quiver.Path a a) : ℕ → Quiver.Path a a
+def loopPow (p : Quiver.Path a a) : ℕ → Quiver.Path a a
   | 0 => Quiver.Path.nil
   | n + 1 => (p.loopPow n).comp p
 
 @[simp]
-theorem _root_.Quiver.Path.loopPow_zero (p : Quiver.Path a a) : p.loopPow 0 = Quiver.Path.nil :=
+theorem loopPow_zero (p : Quiver.Path a a) : p.loopPow 0 = Quiver.Path.nil :=
   (rfl)
 
 /-- **One more turn around `p` is one more concatenation**, the recursion `loopPow` is defined
 by. -/
 @[simp]
-theorem _root_.Quiver.Path.loopPow_succ (p : Quiver.Path a a) (n : ℕ) :
+theorem loopPow_succ (p : Quiver.Path a a) (n : ℕ) :
     p.loopPow (n + 1) = (p.loopPow n).comp p :=
   (rfl)
 
 /-- **Every power of the trivial path is trivial**: running around a path of no arrows changes
 nothing. -/
 @[simp]
-theorem _root_.Quiver.Path.nil_loopPow (n : ℕ) :
+theorem nil_loopPow (n : ℕ) :
     (Quiver.Path.nil : Quiver.Path a a).loopPow n = Quiver.Path.nil := by
   induction n <;> simp [*]
 
 /-- **The `n`-th power of a closed path has length `n * p.length`**: each of the `n` turns
 contributes the arrows of `p` once. -/
 @[simp]
-theorem _root_.Quiver.Path.length_loopPow (p : Quiver.Path a a) (n : ℕ) :
+theorem length_loopPow (p : Quiver.Path a a) (n : ℕ) :
     (p.loopPow n).length = n * p.length := by
   induction n <;> simp [*, Nat.add_mul]
 
 /-- Each turn around a closed path contributes its weight once. -/
 @[simp]
-theorem _root_.Quiver.Path.addWeight_loopPow {M : Type*} [AddMonoid M]
+theorem addWeight_loopPow {M : Type*} [AddMonoid M]
     (p : Quiver.Path a a) (w : ∀ {i j : V}, (i ⟶ j) → M) (n : ℕ) :
     (p.loopPow n).addWeight w = n • p.addWeight w := by
   induction n with
@@ -95,27 +95,27 @@ theorem _root_.Quiver.Path.addWeight_loopPow {M : Type*} [AddMonoid M]
 /-- **The powers of a closed path add exponents.** With `Quiver.Path.loopPow_zero` this says that
 `n ↦ p.loopPow n` is a monoid homomorphism from `(ℕ, +)` into the closed paths at `a` under
 concatenation. -/
-theorem _root_.Quiver.Path.loopPow_add (p : Quiver.Path a a) (m n : ℕ) :
+theorem loopPow_add (p : Quiver.Path a a) (m n : ℕ) :
     p.loopPow (m + n) = (p.loopPow m).comp (p.loopPow n) := by
   induction n <;> simp [← Nat.add_assoc, *]
 
 /-- **The powers of a closed path of positive length are pairwise distinct**, because their
 lengths are the distinct multiples of `p.length`. -/
-theorem _root_.Quiver.Path.loopPow_injective {p : Quiver.Path a a} (hp : 0 < p.length) :
+theorem loopPow_injective {p : Quiver.Path a a} (hp : 0 < p.length) :
     Function.Injective p.loopPow := fun _ _ hmn =>
   Nat.eq_of_mul_eq_mul_right hp (by simpa using congrArg Quiver.Path.length hmn)
 
 /-- **A nontrivial closed path forces infinitely many closed paths**, namely its powers. -/
-theorem _root_.Quiver.Path.infinite_of_ne_nil {p : Quiver.Path a a} (hp : p ≠ Quiver.Path.nil) :
+theorem infinite_of_ne_nil {p : Quiver.Path a a} (hp : p ≠ Quiver.Path.nil) :
     Infinite (Quiver.Path a a) :=
   Infinite.of_injective _ <| Quiver.Path.loopPow_injective <|
     Nat.pos_of_ne_zero fun h => hp (p.eq_nil_of_length_zero h)
 
 /-- **Finitely many closed paths at a vertex leave only the trivial one**, the contrapositive of
 `Quiver.Path.infinite_of_ne_nil`. -/
-theorem _root_.Quiver.Path.eq_nil_of_finite [Finite (Quiver.Path a a)] (p : Quiver.Path a a) :
+theorem eq_nil_of_finite [Finite (Quiver.Path a a)] (p : Quiver.Path a a) :
     p = Quiver.Path.nil := by
   by_contra hp
   exact (Quiver.Path.infinite_of_ne_nil hp).false
 
-end TauCeti
+end Quiver.Path

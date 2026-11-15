@@ -186,16 +186,17 @@ private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr 
   -- Hence `⟪w, m σ₀⟫ = 0` for every `w`.
   have hm0 : m σ₀ = 0 := by
     have hF : Continuous fun σ ↦ f (φ σ x) := hfs.continuous.comp hγ
-    have h0 := eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
+    have hFa := IsIntegralCurve.strictAnti_comp_neg_gradient
+      ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
+      (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)
+    have h0 := ContinuousOn.eq_zero_of_forall_intervalIntegral_mul_contDiffBump_comp
       (g := fun σ ↦ θ (φ σ x) * ⟪m σ₀, m σ⟫ + ⟪m σ₀, φ σ x⟫ * fderiv ℝ θ (φ σ x) (m σ))
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
           ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply
             hm))).continuousOn
-      hF.continuousOn ((IsIntegralCurve.strictAnti_comp_neg_gradient
-        ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
-        (fun t ↦ (gradient_negativeGradientFlow_eq_zero_iff f hf x t).not.2 hx)).strictAntiOn _)
-      hσ₀ (hkey (m σ₀))
+      hF.continuousOn (fun _ _ hσ ↦ hFa.injective hσ) (hσ₀.1.trans hσ₀.2)
+      (Ioo_subset_Icc_self hσ₀) (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0

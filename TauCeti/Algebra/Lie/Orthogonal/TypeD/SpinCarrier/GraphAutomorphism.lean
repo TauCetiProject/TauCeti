@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
-public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generation
 
@@ -334,7 +333,7 @@ private theorem graphAut_hom :
     (graphAut n hn).asIso.hom =
       eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫ (toralGraphAut n hn).asIso.hom ≫
         eqToHom (groupScheme_eq_kostantToralGroupScheme n hn).symm := by
-  rw [graphAut, TauCeti.CategoryTheory.autMulEquivOfIso_hom, eqToIso.inv, eqToIso.hom]
+  simp [graphAut]
 
 /-- **The graph automorphism renumbers every pinned raising and lowering root subgroup by the fork
 exchange, without changing its additive parameter.** This is the equation `γ (x_α(t)) = x_{γ α}(t)`

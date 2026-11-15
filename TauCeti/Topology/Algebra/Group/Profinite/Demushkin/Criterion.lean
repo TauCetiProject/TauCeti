@@ -63,12 +63,10 @@ universe u v
 attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Finite X] {r : freeProP p X}
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hr : r ∈ proPFrattini p (freeProP p X)) (e : presentedProP p X {r} ≃ₜ* G)
 
-omit [Fact p.Prime] [Finite X] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] in
+omit [Fact p.Prime] [Finite X] [IsTopologicalGroup G] in
 include hr in
 /-- The closed normal closure of a relator in the Frattini subgroup lies in the Frattini
 subgroup. -/
@@ -76,7 +74,7 @@ private theorem topologicalClosure_normalClosure_singleton_le_proPFrattini :
     (normalClosure {r}).topologicalClosure ≤ proPFrattini p (freeProP p X) :=
   (topologicalClosure_normalClosure_le_iff isClosed_proPFrattini).2 (Set.singleton_subset_iff.2 hr)
 
-omit [Finite X] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] in
+omit [Finite X] [IsTopologicalGroup G] in
 include hr in
 /-- Precomposition with `F → ⟨X ∣ r⟩ ≃ G` is a bijection from the continuous `𝔽_p`-dual of `G` onto
 that of `F`, because `⟪r⟫ ≤ Φ(F)`. -/
@@ -93,7 +91,6 @@ include hr e
 
 namespace freeProP
 
-omit [TotallyDisconnectedSpace G] in
 /-- **The cup form of a one-relator pro-`p` group is the degree-one form of its relator.** Let `F`
 be the free pro-`p` group on a finite type `X`, let `r ∈ Φ(F)`, and let `G ≅ ⟨X ∣ r⟩`. The cup
 product `a ⌣ b` of two classes of `H¹(G, 𝔽_p)` vanishes exactly when the degree-one form of the
@@ -109,12 +106,12 @@ theorem cupFp_eq_zero_iff_degreeOneForm_eq_zero (a b : cohomFp p G 1) :
         (((e : presentedProP p X {r} →ₜ* G).comp (Subgroup.quotientMkContinuousMonoidHom
           (normalClosure {r}).topologicalClosure)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G b)) = 0 := by
+  have : CompactSpace G := e.toHomeomorph.compactSpace
   rw [← map_eq_zero_iff _ (relatorFunctional_injective (isClosed_topologicalClosure _)
     (topologicalClosure_normalClosure_singleton_le_proPFrattini hr) e
     ⟨r, le_topologicalClosure _ (subset_normalClosure (Set.mem_singleton r))⟩ rfl),
     relatorFunctional_cupFp, neg_eq_zero]
 
-omit [TotallyDisconnectedSpace G] in
 /-- **The cup form is alternating exactly when the degree-one form of the relator is.** For
 `G ≅ ⟨X ∣ r⟩` with `r ∈ Φ(F)`, the degree-one form of the class of `r` in `gr_1(F)` is alternating
 exactly when every cup square `a ⌣ a` on `H¹(G, 𝔽_p)` vanishes. -/
@@ -132,7 +129,6 @@ end freeProP
 
 open freeProP
 
-omit [TotallyDisconnectedSpace G] in
 /-- **The relator of a Demushkin group has nondegenerate degree-one form** (Labute,
 Proposition 3). Let `G ≅ ⟨X ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group. Then the degree-one form
 of the class of `r` in `gr_1(F)` is nondegenerate: it is the cup form of `G` up to sign, and the
@@ -159,6 +155,8 @@ theorem isDemushkin_of_nondegenerate_degreeOneForm [Nonempty X]
     (hnd : (degreeOneForm (gradedMk p (freeProP p X) 1
       ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate) :
     IsDemushkin p G := by
+  have : CompactSpace G := e.toHomeomorph.compactSpace
+  have : TotallyDisconnectedSpace G := e.toHomeomorph.totallyDisconnectedSpace
   have hP : IsProP p G := (isProP_congr e).1 (presentedProP.isProP p X {r})
   have hbij := dualMap_bijective hr e
   have hdual := (cohomFpLinearEquivContinuousZModDual p G).surjective
@@ -217,6 +215,8 @@ theorem isDemushkin_iff_nondegenerate_degreeOneForm :
       ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate := by
   refine ⟨fun hG ↦ ⟨?_, hG.nondegenerate_degreeOneForm hr e⟩, fun ⟨hX, hnd⟩ ↦
     haveI := hX; isDemushkin_of_nondegenerate_degreeOneForm hr e hnd⟩
+  have : CompactSpace G := e.toHomeomorph.compactSpace
+  have : TotallyDisconnectedSpace G := e.toHomeomorph.totallyDisconnectedSpace
   -- `X` is nonempty: the presentation is minimal, so `#X` is the rank of `G`, which is positive.
   have hcard := (presentedProP.subset_proPFrattini_iff_card_eq {r} e
     hG.isTopologicallyFinitelyGenerated).1 (Set.singleton_subset_iff.2 hr)

@@ -76,8 +76,7 @@ theorem rank_symmetricPower_apply (n : ℕ) (E : FiniteLocallyFreeSheaf X) (x : 
   classical
   obtain ⟨U, hx, σ, hσ, hI⟩ := E.exists_generatingSections x
   rw [@rank_apply_eq_natCard _ ((symmetricPower X n).obj E) _ _ hx (σ.symmetricPower n)
-      (SheafOfModules.GeneratingSections.isIso_symmetricPower_π (R := X.sheaf) σ n)
-      (SheafOfModules.GeneratingSections.finite_symmetricPower_I (R := X.sheaf) σ n),
+      (SheafOfModules.GeneratingSections.isIso_symmetricPower_π (R := X.sheaf) σ n),
     E.rank_apply_eq_natCard hx σ]
   refine (congrArg Nat.card
     (SheafOfModules.GeneratingSections.symmetricPower_I (R := X.sheaf) σ n)).trans ?_

@@ -49,7 +49,7 @@ theorem IsSemialgebraic.semialgebraicDim_closure (hs : IsSemialgebraic s) :
   refine le_antisymm ?_ (semialgebraicDim_mono subset_closure)
   rcases s.eq_empty_or_nonempty with rfl | hne
   · simp
-  obtain ⟨-, -, -, -, d, hd, -⟩ := hs.closure.exists_isOpenEmbedding_semialgebraicDim_eq hne.closure
+  obtain ⟨-, -, -, -, d, hd, -⟩ := exists_isOpenEmbedding_semialgebraicDim_eq hne.closure
   -- A projection onto `d` coordinates maps `closure s` onto a set with nonempty interior.
   obtain ⟨ι, hι, hint⟩ := hs.closure.natCast_le_semialgebraicDim_iff.1 hd.ge
   rw [hd, hs.natCast_le_semialgebraicDim_iff]

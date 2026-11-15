@@ -115,7 +115,7 @@ theorem isCentralPoint_iff_existsUnique_rootsOfUnityScalarPoints
   · intro hg
     have hcenter := MulEquivClass.apply_mem_center (pointsMulEquiv R m (A := A))
       (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg))
-    obtain ⟨c, hc, hc2⟩ := (GLSymplecticFin.mem_center_iff hm _).mp hcenter
+    obtain ⟨c, hc, hc2⟩ := (GLSymplecticFin.mem_center_iff _).mp hcenter
     let ζ : rootsOfUnity 2 A :=
       ⟨Units.mkOfMulEqOne c c (by simpa [sq] using hc2),
         (mem_rootsOfUnity' 2 _).mpr hc2⟩
@@ -183,7 +183,7 @@ def rootsOfUnityOfCenterPoint (hm : m ≠ 0)
   let i : Fin (m + m) := ⟨0, by omega⟩
   let c := ((pointsMulEquiv R m (A := A) g.1).val : Matrix _ _ A) i i
   have hc : c ^ 2 = 1 := by
-    obtain ⟨d, hd, hd2⟩ := (GLSymplecticFin.mem_center_iff hm _).mp
+    obtain ⟨d, hd, hd2⟩ := (GLSymplecticFin.mem_center_iff _).mp
       (MulEquivClass.apply_mem_center (pointsMulEquiv R m (A := A))
         (HopfAlgebra.center_le_center g.2))
     simpa [c, hd, Matrix.scalar_apply] using hd2

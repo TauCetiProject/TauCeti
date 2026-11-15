@@ -11,11 +11,10 @@ public import TauCeti.Topology.Homotopy.AmbientIsotopic.Basic
 /-!
 # Continuous ambient isotopy of bundled smooth embeddings
 
-The geometric-topology roadmap treats geometric knot presentations as smooth embeddings,
-and asks that isotopy and ambient isotopy be defined generally before being specialised.
-`TauCeti.AmbientIsotopic` already gives the point-set ambient-isotopy relation for continuous
-maps. This file connects that relation to the bundled smooth embeddings of
-`TauCeti.Geometry.Manifold.SmoothEmbedding.Basic`.
+Geometric knot presentations are smooth embeddings, and isotopy and ambient isotopy are defined
+generally before being specialised to them. `TauCeti.AmbientIsotopic` already gives the point-set
+ambient-isotopy relation for continuous maps. This file connects that relation to the bundled
+smooth embeddings of `TauCeti.Geometry.Manifold.SmoothEmbedding.Basic`.
 
 The relation here does not assert that the ambient isotopy is smooth in time or in the ambient
 variable. It is the continuous ambient-isotopy relation on the underlying maps of two bundled

@@ -107,7 +107,7 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
   rw [hρ.measure_inter_blockCylinder_eq_prefix_of_strictMono_of_measurableSet_invariants
     hk hB hA_inv]
   set C : Set (ℕ → α) :=
-    blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B with hCdef
+    blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B
   -- The block factorization, already specialised to weight one and named as the witness.
   have hmass : (ρ (A ∩ C)).toReal = ∫ x in A, Q x ∂ρ := by
     rw [toReal_measure_inter_blockCylinder_eq_setIntegral_blockIndicatorProd A

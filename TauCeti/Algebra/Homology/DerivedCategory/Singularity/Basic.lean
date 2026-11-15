@@ -121,7 +121,7 @@ variable {C} in
 subcategory of the derived category which is stable under retracts and contains the projective
 objects placed in degree zero contains the perfect objects of the bounded derived category. -/
 theorem perfect_le_inverseImage_ι (Q : ObjectProperty (_root_.DerivedCategory C))
-    [Q.IsClosedUnderIsomorphisms] [Q.IsTriangulated] [Q.IsStableUnderRetracts]
+    [Q.IsTriangulated] [Q.IsStableUnderRetracts]
     (hQ : ∀ P : C, Projective P → Q ((_root_.DerivedCategory.singleFunctor C 0).obj P)) :
     perfect C ≤ Q.inverseImage _root_.DerivedCategory.Bounded.ι := by
   rw [perfect_eq, ObjectProperty.triangEnvelope_le_iff]

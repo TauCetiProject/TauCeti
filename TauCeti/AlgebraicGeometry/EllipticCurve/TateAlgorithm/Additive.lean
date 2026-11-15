@@ -303,25 +303,39 @@ theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_
   rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
   ring
 
+/-- From `4 b₈ = b₂ b₆ - b₄²`: if `b₂ = ϖ B₂`, `b₆ = ϖ² B₆` and `b₈ = ϖ³ B₈`, then
+`b₄² = ϖ³ (B₂ B₆ - 4 B₈)`. -/
+theorem _root_.WeierstrassCurve.b₄_sq_eq_pow_three_mul {B₂ B₆ B₈ : R}
+    (hB₂ : W.b₂ = ϖ * B₂) (hB₆ : W.b₆ = ϖ ^ 2 * B₆) (hB₈ : W.b₈ = ϖ ^ 3 * B₈) :
+    W.b₄ ^ 2 = ϖ ^ 3 * (B₂ * B₆ - 4 * B₈) := by
+  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
+    linear_combination W.b_relation
+  rw [heq, hB₂, hB₆, hB₈]
+  ring
+
+/-- At Step 4, the failed `b₈` test forces `ϖ ∣ b₄` for a prime `ϖ`. No domain hypothesis is
+needed. -/
+theorem _root_.WeierstrassCurve.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆) (hb₈ : ϖ ^ 3 ∣ W.b₈) :
+    ϖ ∣ W.b₄ := by
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  exact hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨ϖ ^ 2 * (B₂ * B₆ - 4 * B₈), by rw [W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈]; ring⟩
+
 /-- At Step 4, the failed `b₈` test forces `ϖ² ∣ b₄` from
 `4 b₈ = b₂ b₆ - b₄²`. No restriction on the residue characteristic is needed. -/
 theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
     [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 2 ∣ W.b₄ := by
-  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
-    linear_combination W.b_relation
+  obtain ⟨B₄, hB₄⟩ := W.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
   have hsq : ϖ ^ 3 ∣ W.b₄ ^ 2 := by
-    rw [heq]
     obtain ⟨B₂, hB₂⟩ := hb₂
     obtain ⟨B₆, hB₆⟩ := hb₆
     obtain ⟨B₈, hB₈⟩ := hb₈
-    refine ⟨B₂ * B₆ - 4 * B₈, ?_⟩
-    rw [hB₂, hB₆, hB₈]
-    ring
-  have hp : ϖ ∣ W.b₄ := hϖ.dvd_of_dvd_pow
-    ((dvd_pow_self ϖ (by decide : 3 ≠ 0)).trans hsq)
-  obtain ⟨B₄, hB₄⟩ := hp
+    exact ⟨_, W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈⟩
   have hB₄sq : ϖ ∣ B₄ ^ 2 := by
     rw [hB₄, mul_pow] at hsq
     rw [pow_succ ϖ 2] at hsq
@@ -332,17 +346,19 @@ theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_th
 /-- If the Step 4 test fails (`ϖ³ ∣ b₈`), then `ϖ⁴` divides the discriminant.
 The `ϖ² ∣ b₆` hypothesis already follows from the failed Step 3 test. -/
 theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
-    [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 4 ∣ W.Δ := by
-  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
+  obtain ⟨B₄, hB₄⟩ := W.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
   obtain ⟨B₂, hB₂⟩ := hb₂
-  obtain ⟨B₄, hB₄⟩ := hb₄
   obtain ⟨B₆, hB₆⟩ := hb₆
   obtain ⟨B₈, hB₈⟩ := hb₈
-  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * ϖ ^ 2 * B₄ ^ 3 - 27 * B₆ ^ 2 +
-    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
-  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  have hsq := W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * B₄ * (B₂ * B₆ - 4 * B₈) - 27 * B₆ ^ 2 +
+    9 * B₂ * B₄ * B₆, ?_⟩
+  have hb₄₃ : W.b₄ ^ 3 = ϖ ^ 4 * (B₄ * (B₂ * B₆ - 4 * B₈)) := by
+    rw [pow_succ, hsq, hB₄]
+    ring
+  rw [WeierstrassCurve.Δ, hb₄₃, hB₂, hB₄, hB₆, hB₈]
   ring
 
 /-- If the Step 5 test also fails (`ϖ³ ∣ b₆`), then `ϖ⁵` divides the discriminant.

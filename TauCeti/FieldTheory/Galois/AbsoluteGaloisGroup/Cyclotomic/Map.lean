@@ -77,7 +77,7 @@ theorem cyclotomicCharacter_absoluteGaloisGroupMap [Algebra K L]
     cyclotomicCharacter (SeparableClosure K) p (absoluteGaloisGroupMap τ g).toRingEquiv =
       cyclotomicCharacter (SeparableClosure L) p g.toRingEquiv :=
   (cyclotomicCharacter_eq_of_injective p (f := τ.toRingHom) τ.injective
-    (fun x ↦ (absoluteGaloisGroupMap_commutes τ g x).symm)
+    (fun _ x _ ↦ (absoluteGaloisGroupMap_commutes τ g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 /-! ### The cyclotomic orientation -/

@@ -35,8 +35,8 @@ This file contains basic facts about finite partial sums.
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
-* `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a finite sequence whose inclusive partial sums
-  all vanish is zero.
+* `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
+  over all lower intervals `Iic k` vanish is zero.
 -/
 
 public section
@@ -188,9 +188,10 @@ theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
 
 end PrefixSum
 
-/-- **A finite sequence all of whose inclusive partial sums vanish is zero.** -/
-theorem eq_zero_of_forall_sum_Iic_eq_zero {M : Type*} [AddCommMonoid M] (n : ℕ)
-    {y : Fin (n + 1) → M} (hy : ∀ k, ∑ j ∈ Iic k, y j = 0) : y = 0 := by
+/-- **A function all of whose sums over the lower intervals `Iic k` vanish is zero.** The index
+type is any partial order whose lower intervals are finite, such as `Fin n` or `ℕ`. -/
+theorem eq_zero_of_forall_sum_Iic_eq_zero {ι M : Type*} [PartialOrder ι] [LocallyFiniteOrderBot ι]
+    [AddCommMonoid M] {y : ι → M} (hy : ∀ k, ∑ j ∈ Iic k, y j = 0) : y = 0 := by
   funext k
   induction k using WellFoundedLT.induction with
   | _ k ih =>

@@ -144,7 +144,7 @@ def coinducedDiffeology (q : X → Q) : DiffeologicalSpace Q :=
     isPlotOn_congr := fun _ _ _ h ↦ ⟨fun hp ↦ hp.congr h, fun hp ↦ hp.congr h.symm⟩
     isPlot_const := fun y ↦ locallyLiftsOrConst_const q isOpen_univ y
     isPlotOn_reparam := by
-      intro n m u v hu hv p f h hp hf
+      intro n m u v _ hv p f h hp hf
       exact LocallyLiftsOrConst.comp_contDiffOn hp hv hf h
     locality := by
       intro n u hu p hp

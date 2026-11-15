@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.FiniteLength
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
+import TauCeti.RingTheory.Artinian.FiniteLength
 
 /-!
 # Finite-length modules
@@ -18,7 +20,8 @@ An object property holding on zero and simple modules and closed under short exa
 holds on every finite-length module. This packages composition-series induction in `ModuleCat`.
 
 The finite-length modules form the object property `ModuleCat.isFiniteLength R`, closed under
-subobjects (hence retracts and isomorphisms) and finite products.
+subobjects (hence retracts and isomorphisms) and finite products. Over a left Artinian ring it is
+the property of being finitely generated (`ModuleCat.isFiniteLength_eq_isFG`).
 -/
 
 public section
@@ -73,5 +76,15 @@ instance : (isFiniteLength.{u} R).IsClosedUnderBinaryProducts :=
 
 instance : (isFiniteLength.{u} R).IsClosedUnderFiniteProducts :=
   ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
+open TauCeti in
+/-- Over a left Artinian ring, a module is finitely generated exactly when it has finite length. -/
+theorem isFiniteLength_eq_isFG [IsArtinianRing R] :
+    isFiniteLength.{u} R = ModuleCat.isFG.{u} R :=
+  funext fun M ↦ propext <| by
+    rw [isFiniteLength_iff, ModuleCat.isFG_iff]
+    refine ⟨fun h ↦ ?_, fun _ ↦ isFiniteLength_of_finite R M⟩
+    have := (isFiniteLength_iff_isNoetherian_isArtinian.1 h).1
+    infer_instance
 
 end ModuleCat

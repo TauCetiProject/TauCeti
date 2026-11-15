@@ -93,7 +93,7 @@ theorem coord_two_mem_nonZeroDivisors : W'.coord 2 ∈ nonZeroDivisors W'.Coordi
       finSuccEquiv R 2 q %ₘ W'.cubic = 0 := by
     rw [Ideal.Quotient.eq_zero_iff_dvd, ← map_dvd_iff (finSuccEquiv R 2), finSuccEquiv_polynomial,
       Polynomial.modByMonic_eq_zero_iff_dvd W'.monic_cubic]
-    exact neg_dvd
+    exact neg_dvd (a := W'.cubic)
   refine mem_nonZeroDivisors_iff_left.mpr fun x hx ↦ ?_
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
   -- `Z` is a constant of `R[Y, Z][X]`, so the remainder of `Z * p` is `Z` times that of `p`

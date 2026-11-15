@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 public import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
-public import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
-public import Mathlib.RingTheory.Noetherian.UniqueFactorizationDomain
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rueckert
 
 /-!
 # Tate algebras are unique factorisation domains
@@ -21,13 +17,10 @@ therefore integrally closed, so Mathlib's going-down theorem applies to every in
 of a Tate algebra by a domain, such as the Noether normalisation of an affinoid domain.
 
 The proof is by induction on the number of variables, writing `K⟨X, Y⟩` as the univariate Tate
-algebra `K⟨X⟩⟨Y⟩`. Since `K⟨X, Y⟩` is a noetherian domain, it suffices to show that every
-irreducible element `f` is prime. An automorphism makes `f` distinguished in `Y` with a unit
-dominant coefficient, and Weierstrass preparation writes it as a unit multiple of a monic
-polynomial `ω ∈ K⟨X⟩[Y]`. Weierstrass division identifies `K⟨X⟩[Y] ⧸ (ω)` with
-`K⟨X⟩⟨Y⟩ ⧸ (ω)`. This comparison shows that `ω` is irreducible in `K⟨X⟩[Y]`, hence prime, because
-`K⟨X⟩[Y]` is a unique factorisation domain by induction and Gauss's lemma. So both quotients are
-domains, and `f` is prime.
+algebra `K⟨X⟩⟨Y⟩`. The inclusion `K⟨X⟩[Y] → K⟨X⟩⟨Y⟩` satisfies the Rückert hypotheses for the
+Weierstrass polynomials (`TauCeti.MvPowerSeries.isRueckert_polynomialToRestricted`), and
+Rückert's factorial descent (`RingHom.IsRueckert.uniqueFactorizationMonoid`) passes unique
+factorisation from `K⟨X⟩` to `K⟨X⟩⟨Y⟩`.
 
 ## Main results
 
@@ -37,8 +30,7 @@ domains, and `f` is prime.
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.2.6,
-  Theorem 1. The argument here replaces the Rückert-interface descent of §5.2.5 by the
-  Weierstrass quotient comparison.
+  Theorem 1, using the descent of §5.2.5.
 -/
 
 public section
@@ -55,33 +47,9 @@ local notation "Tate " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ 1
 `K⟨X, Y⟩`. -/
 private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
     [UniqueFactorizationMonoid (Tate σ)] : UniqueFactorizationMonoid (Tate (Option σ)) := by
-  let R := Tate σ
-  let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let ι := PowerSeries.polynomialToRestricted (R := R) 1
-  have : IsNoetherianRing (Tate (Option σ)) := isNoetherianRing_isRestricted_subring
-  refine { irreducible_iff_prime := fun {f} ↦ ⟨fun hf ↦ ?_, Prime.irreducible⟩ }
-  -- Make `f` distinguished in `Y`, and pass to its image `g` in `S = R⟨Y⟩`.
-  obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf.ne_zero
-  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
-  let E : Tate (Option σ) ≃+* S := (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Φ
-  have hE : E f = Φ (e f) := by simp [E]
-  rw [← MulEquiv.prime_iff E, hE]
-  rw [← MulEquiv.irreducible_iff E, hE] at hf
-  set g : S := Φ (e f)
-  -- Weierstrass preparation: `g = u * ι ω` with `u` a unit and `ω` monic.
-  obtain ⟨u, ω, hu', hm, hmul⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hu zero_lt_one g.2
-  have hg : g = u * ι ω := Subtype.ext (by simpa [g, Φ, ι] using hmul.symm)
-  have hassoc : Associated (ι ω) g := by
-    rw [hg, mul_comm]
-    exact associated_mul_unit_right _ _ hu'
-  have hω : PowerSeries.IsDistinguished 1 s (ω : PowerSeries R) :=
-    (hmul.symm ▸ hd).of_isUnit_mul zero_lt_one hu'
-  -- `ω` is irreducible, hence prime, in the unique factorisation domain `R[Y]`.
-  have hωp : Prime ω := UniqueFactorizationMonoid.irreducible_iff_prime.mp
-    (hω.irreducible_of_irreducible_polynomialToRestricted zero_lt_one hm
-      (hassoc.symm.irreducible hf))
-  -- So `ι ω` is prime by the quotient comparison, and so is `g`.
-  exact hassoc.prime ((hω.prime_polynomialToRestricted_iff zero_lt_one hm).mpr hωp)
+  have := (isRueckert_polynomialToRestricted (K := K) (σ := σ)).uniqueFactorizationMonoid
+  exact (restrictedOptionEquiv (R := K) (σ := σ) (c := fun _ ↦ 1)).symm.toMulEquiv
+    |>.uniqueFactorizationMonoid this
 
 /-- **Tate algebras are unique factorisation domains.** Over a complete nonarchimedean field `K`,
 the Tate algebra `K⟨X₁, …, Xₙ⟩` in finitely many variables is a unique factorisation domain. -/

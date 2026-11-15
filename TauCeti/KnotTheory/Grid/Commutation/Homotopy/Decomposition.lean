@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Basic
-public import TauCeti.KnotTheory.Grid.TwoStepDecomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Repartition
 
 /-!
@@ -42,8 +41,8 @@ whose counted finite families have membership characterizations.
 * `TauCeti.GridDiagram.XSet_inter_coveredSquares_of_mem_commutationHexagons` and
   `TauCeti.GridDiagram.X_cutColumn_mul_commutationHexagonWeight`: the rectangle under a counted
   commutation hexagon carries exactly one `X`-marking, in the column the hexagon cuts away
-  (`TauCeti.GridCommutationHexagonBetween.cutColumn`), and its weight exceeds the hexagon weight by
-  the variable of that column.
+  (`TauCeti.GridCommutationHexagonBetween.cutColumn`), and the variable of that column times the
+  hexagon weight is the weight of the rectangle (for every commutation hexagon, counted or not).
 
 ## References
 
@@ -75,20 +74,19 @@ def toGridRectangleBetween (P : GridCommutationHexagonBetween a s s' x y) :
   P.elim GridHexagonBetween.toGridRectangleBetween
     GridInitialHexagonBetween.toGridRectangleBetween
 
-/-- The toGridRectangleBetween accessor on a terminal-side hexagon. -/
+/-- The underlying rectangle of a terminal-side commutation hexagon. -/
 @[simp]
 theorem toGridRectangleBetween_inl (P : GridHexagonBetween a s' s x y) :
     toGridRectangleBetween (Sum.inl P) = P.toGridRectangleBetween := (rfl)
 
-/-- The toGridRectangleBetween accessor on a initial-side hexagon. -/
+/-- The underlying rectangle of an initial-side commutation hexagon. -/
 @[simp]
 theorem toGridRectangleBetween_inr (P : GridInitialHexagonBetween a s s' x y) :
     toGridRectangleBetween (Sum.inr P) = P.toGridRectangleBetween := (rfl)
 
 /-- The underlying rectangle determines a commutation hexagon, including its turn side. -/
 theorem toGridRectangleBetween_injective :
-    Function.Injective (toGridRectangleBetween (a := a) (s := s) (s' := s')
-      (x := x) (y := y)) := by
+    Function.Injective (toGridRectangleBetween (a := a) (s := s) (s' := s') (x := x) (y := y)) := by
   unfold toGridRectangleBetween
   apply Sum.elim_injective.mpr
   refine ⟨Function.injective_of_subsingleton _, Function.injective_of_subsingleton _, ?_⟩
@@ -101,12 +99,12 @@ noncomputable def coveredSquares (P : GridCommutationHexagonBetween a s s' x y) 
     Finset (Fin n × Fin n) :=
   P.elim GridHexagonBetween.coveredSquares GridInitialHexagonBetween.coveredSquares
 
-/-- The coveredSquares accessor on a terminal-side hexagon. -/
+/-- The covered squares of a terminal-side commutation hexagon. -/
 @[simp]
 theorem coveredSquares_inl (P : GridHexagonBetween a s' s x y) :
     coveredSquares (Sum.inl P) = P.coveredSquares := (rfl)
 
-/-- The coveredSquares accessor on a initial-side hexagon. -/
+/-- The covered squares of an initial-side commutation hexagon. -/
 @[simp]
 theorem coveredSquares_inr (P : GridInitialHexagonBetween a s s' x y) :
     coveredSquares (Sum.inr P) = P.coveredSquares := (rfl)
@@ -221,6 +219,21 @@ theorem mk_notMem_coveredSquares_right_column (P : GridCommutationHexagonBetween
       Grid.right_notMem_cIco, false_and, and_false, not_false_eq_true]
   | inr P => simp [P.mem_coveredSquares]
 
+/-- The rectangle under a commutation hexagon covers the `X`-marking of the column the hexagon cuts
+away, whenever the `X`-markings of the two columns lie in the bigons the hexagon cuts away. -/
+theorem cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem {G : GridDiagram n}
+    (hXcol : G.X a ∈ insert s (Grid.cIco s' s))
+    (hXnext : G.X (finRotate n a) ∈ insert s' (Grid.cIco s s'))
+    (P : GridCommutationHexagonBetween a s s' x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
+  cases P with
+  | inl P =>
+    rw [cutColumn_inl, toGridRectangleBetween_inl]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXcol
+  | inr P =>
+    rw [cutColumn_inr, toGridRectangleBetween_inr]
+    exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXnext
+
 end GridCommutationHexagonBetween
 
 /-- A commutation pentagon is either a pentagon turning on its terminal side or one turning on its
@@ -238,10 +251,12 @@ def toGridRectangleBetween (P : GridCommutationPentagonBetween a s x y) :
   P.elim GridPentagonBetween.toGridRectangleBetween
     GridInitialPentagonBetween.toGridRectangleBetween
 
+/-- The underlying rectangle of a terminal-side commutation pentagon. -/
 @[simp]
 theorem toGridRectangleBetween_inl (P : GridPentagonBetween a s x y) :
     toGridRectangleBetween (Sum.inl P) = P.toGridRectangleBetween := (rfl)
 
+/-- The underlying rectangle of an initial-side commutation pentagon. -/
 @[simp]
 theorem toGridRectangleBetween_inr (P : GridInitialPentagonBetween a s x y) :
     toGridRectangleBetween (Sum.inr P) = P.toGridRectangleBetween := (rfl)
@@ -477,10 +492,8 @@ theorem XSet_inter_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
 away, whether or not the hexagon is counted. -/
 theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
     (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
-    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
-  cases P with
-  | inl P => exact P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below
-  | inr P => exact P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_next_above
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares :=
+  P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below C.X_next_above
 
 /-- A commutation hexagon is counted exactly when its underlying rectangle is empty and carries
 exactly one `X`-marking, that of the column the hexagon cuts away. -/

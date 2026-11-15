@@ -778,8 +778,8 @@ theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] 
   let b := Module.finBasis R (N j)
   let b' := (Module.finBasis R (N' j)).reindex
     (finCongr (h.finrank_eq_of_equivalent h' hBB' hπ hπ' j).symm)
-  obtain ⟨u⟩ := H C C' hCs hC's hCapp b b' (b.isUnit_det_of_isPerfPair C hCp)
-    (b'.isUnit_det_of_isPerfPair C' hC'p) (f ∘ₗ ε.symm.toLinearMap ∘ₗ (N' j).subtype)
+  obtain ⟨u⟩ := H C C' hCs hC's hCapp b b' (b.isUnit_det_of_isPerfPair b C hCp)
+    (b'.isUnit_det_of_isPerfPair b' C' hC'p) (f ∘ₗ ε.symm.toLinearMap ∘ₗ (N' j).subtype)
     (fun x y ↦ by simpa using hsub (k := 1) (hf _ _ (hdvd x) (hdvd y)))
     fun hprev hnext x ↦ hsub (k := 2) (hf₂ hprev hnext _ (hdvd x))
   rw [← hC, ← hC']

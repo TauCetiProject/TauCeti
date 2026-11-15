@@ -58,7 +58,7 @@ private theorem quadratic_eq_glueWordMinimum (r : RootfulNiemeierType) (w : r.gl
       ((glueWordMinimum r.componentType
           (encodeGlueWord r.componentType r.isSimplyLaced_componentType w) / 2 : ℚ) :
         AddCircle (1 : ℚ)) := by
-  rw [DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two _ r.valid_componentType,
+  rw [DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two _ _,
     glueWordMinimum_encodeGlueWord]
 
 /-- **The glue subgroup of every row of the rootful rank-24 table is quadratically isotropic**:

@@ -42,7 +42,6 @@ theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_length_eq
 
 private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
-    (hα : f4Length (f4SignedSimpleRootIndex k) = 1)
     (hβ : f4Length β = 1)
     (hopp : f4SignedSimpleRootIndex k ≠ f4OppositeRootIndex β)
     (hno : ∀ δ : Fin 48, f4Length δ = 1 →
@@ -80,7 +79,7 @@ private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum
         rw [coe_f4ShortRootIdealFirstColumn,
           coe_f4ShortRootLieIdealBasis_symm_inl]
       _ = 0 := f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long
-        α β δ hα hβ hδlong hδroot
+        α β δ hβ hδlong hδroot
       _ = ((0 : f4ShortRootLieIdeal) : f4ModularChevalleyLieAlgebra) := rfl
 
 /-- A surviving long-source first-order quotient edge is the matching first-order edge for the
@@ -275,7 +274,6 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long
       ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property) hopp
       fun δ hδ hδeq => hedge ⟨δ, hδ, by rwa [hii] at hδeq⟩, map_zero]
   refine (f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum (isogenyReverse k) i
-    (by rw [← htargetSource]; exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff _).2 hk)
     i.property (fun heq => hopp ?_) fun δ hδ hδeq =>
       hedge ⟨δ, hδ, by rwa [← htargetSource] at hδeq⟩).symm
   simpa only [heq, f4OppositeRootIndex_f4OppositeRootIndex, isogenyReverse_isogenyReverse] using

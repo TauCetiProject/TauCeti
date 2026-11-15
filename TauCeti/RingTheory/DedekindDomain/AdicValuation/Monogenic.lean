@@ -51,6 +51,7 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
   [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)]
 
+omit [Finite (R ⧸ v.asIdeal)] in
 /-- A generator of the completed integer extension also generates the completed field extension. -/
 theorem adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top
     (x : w.adicCompletionIntegers L)

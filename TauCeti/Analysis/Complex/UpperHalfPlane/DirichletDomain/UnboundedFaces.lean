@@ -68,7 +68,7 @@ theorem exists_dirichletFace_eq_extGeodesicSegment_of_not_isBounded
       (isBounded_iff_bddBelow_bddAbove.mpr hbounded)
   have hclassification :
       (∃ a, S = Ici a) ∨ (∃ a, S = Iic a) ∨ S = univ :=
-    (ordConnected_preimage_geodesicLine_dirichletFace hg).eq_Ici_or_eq_Iic_or_eq_univ
+    ordConnected_preimage_geodesicLine_dirichletFace.eq_Ici_or_eq_Iic_or_eq_univ
       hS hclosed hnotOrderBounded
   rcases hclassification with ⟨a, hS⟩ | ⟨a, hS⟩ | hS
   · refine Or.inl ⟨geodesicLine k a, k • (∞ : OnePoint ℝ), ?_⟩

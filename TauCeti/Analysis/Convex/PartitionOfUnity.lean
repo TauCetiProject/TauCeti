@@ -9,11 +9,12 @@ public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
+import Mathlib.Algebra.BigOperators.Field
 
 /-!
 # Uniform approximation by finite partitions of unity
 
-A continuous map `F` from a compact normal space `X` to a real normed space is uniformly
+A continuous map `F` from a compact space `X` to a real normed space is uniformly
 approximated by the finite convex combinations `x ↦ ∑ᶠ k, ρ k x • F k` of its own values at
 finitely many points, with weights given by a partition of unity `ρ` indexed by those points.
 This reduces statements about the uniform norm on `C(X, E)` to statements about finitely many
@@ -32,10 +33,10 @@ open Set Metric
 
 namespace ContinuousMap
 
-variable {X E : Type*} [TopologicalSpace X] [CompactSpace X] [NormalSpace X]
+variable {X E : Type*} [TopologicalSpace X] [CompactSpace X]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A continuous map on a compact normal space is uniformly within `ε > 0` of the convex
+/-- A continuous map on a compact space is uniformly within `ε > 0` of the convex
 combinations of its values at the points of a finite set `s`, weighted by a partition of unity
 indexed by `s`. -/
 theorem exists_partitionOfUnity_dist_finsum_smul_le (F : C(X, E)) {ε : ℝ} (hε : 0 < ε) :
@@ -45,17 +46,33 @@ theorem exists_partitionOfUnity_dist_finsum_smul_le (F : C(X, E)) {ε : ℝ} (h�
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover (fun k : X ↦ F ⁻¹' ball (F k) ε)
     (fun k ↦ isOpen_ball.preimage F.continuous)
     (fun x _ ↦ mem_iUnion.2 ⟨x, mem_ball_self hε⟩)
-  obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate_of_locallyFinite isClosed_univ
-    (fun k : s ↦ F ⁻¹' ball (F k) ε) (fun k ↦ isOpen_ball.preimage F.continuous)
-    (locallyFinite_of_finite _) fun x hx ↦ by
-      obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.1 (hs hx)
-      exact mem_iUnion.2 ⟨⟨k, hk⟩, hxk⟩
+  -- The tent functions around the points of `s`, normalised to sum to one.
+  let g (k : s) : C(X, ℝ) := ⟨fun x ↦ max 0 (ε - dist (F k) (F x)), by fun_prop⟩
+  have hg_apply : ∀ k x, g k x = max 0 (ε - dist (F k) (F x)) := fun _ _ ↦ rfl
+  have hg : ∀ k x, 0 ≤ g k x := fun k x ↦ hg_apply k x ▸ le_max_left _ _
+  have hpos : ∀ x, 0 < ∑ k, g k x := fun x ↦ by
+    obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.1 (hs (mem_univ x))
+    exact Finset.sum_pos' (fun j _ ↦ hg j x) ⟨⟨k, hk⟩, Finset.mem_univ _,
+      lt_max_of_lt_right (sub_pos.2 (by simpa [dist_comm] using hxk))⟩
+  have hsum : ∀ x, ∑ k, g k x / ∑ j, g j x = 1 := fun x ↦ by
+    rw [← Finset.sum_div, div_self (hpos x).ne']
+  let ρ : PartitionOfUnity s X :=
+    { toFun := fun k ↦ ⟨fun x ↦ g k x / ∑ j, g j x,
+        (g k).continuous.div (continuous_finsetSum _ fun j _ ↦ (g j).continuous)
+          fun x ↦ (hpos x).ne'⟩
+      locallyFinite' := locallyFinite_of_finite _
+      nonneg' := fun k x ↦ div_nonneg (hg k x) (hpos x).le
+      sum_eq_one' := fun x _ ↦ by rw [finsum_eq_sum_of_fintype]; exact hsum x
+      sum_le_one' := fun x ↦ by rw [finsum_eq_sum_of_fintype]; exact (hsum x).le }
+  have hρ_apply : ∀ k x, ρ k x = g k x / ∑ j, g j x := fun _ _ ↦ rfl
   refine ⟨s, ρ, fun x ↦ ?_⟩
   rw [← mem_closedBall]
   refine ρ.finsum_smul_mem_convex (g := fun k _ ↦ F k) (mem_univ x) (fun k hk ↦ ?_)
     (convex_closedBall (F x) ε)
-  have hx : x ∈ F ⁻¹' ball (F k) ε := hρ k (subset_closure hk)
-  exact mem_closedBall_comm.1 (ball_subset_closedBall hx)
+  rw [hρ_apply, hg_apply] at hk
+  rw [mem_closedBall]
+  by_contra hgt
+  exact hk (by rw [max_eq_left (by linarith [not_le.1 hgt]), zero_div])
 
 /-- A finite family in `C(X, 𝕜)` is uniformly within `δ > 0` of the combinations
 `∑ k, f i k • ρ k` of its values at the points of a finite set, for a partition of unity `ρ`

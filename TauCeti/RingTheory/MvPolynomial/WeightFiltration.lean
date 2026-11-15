@@ -82,6 +82,8 @@ polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomi
 * `weightReesHom_weightHomogenization`, `weightHomogenization_mul`: for `p` of weight at most `n`,
   `weightReesHom` sends the homogenization of `p` in degree `n` to `p tⁿ`, and homogenization is
   multiplicative on the steps of the filtration.
+* `Polynomial.sum_weightHomogenization_coeff_weightReesHom`: every `f` is the sum of the
+  homogenizations in degree `n` of the coefficients of `tⁿ` in its image under `weightReesHom`.
 * `coeff_zero_weightHomogenization_sub`: for `r` weighted homogeneous of weight `n` and `Q` of
   weight less than `n`, the homogenization of `r - Q` in degree `n` reduces to `r` at `t = 0`.
 * `weightReesAeval_mem_weightReesAlgebra`, `aeval_mem_weightFiltration`: if each `c i` has weight
@@ -304,7 +306,7 @@ theorem _root_.Polynomial.coeff_coeff_weightReesHom (f : (MvPolynomial σ R)[X])
   classical
   induction f using Polynomial.induction_on' with
   | add f g hf hg =>
-    simp only [map_add, Polynomial.coeff_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hf,
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hf,
       hg]
     split_ifs <;> simp
   | monomial k p =>
@@ -334,7 +336,7 @@ theorem weightReesHom_monomial_monomial (k : ℕ) (v : σ →₀ ℕ) (r : R) :
   classical
   ext n u
   rw [Polynomial.coeff_coeff_weightReesHom]
-  simp only [Polynomial.coeff_monomial, coeff_monomial,
+  simp only [Polynomial.coeff_monomial_apply, coeff_monomial,
     apply_ite (fun q : MvPolynomial σ R ↦ q.coeff u), AddMonoidAlgebra.coeff_zero,
     Finsupp.coe_zero, Pi.zero_apply]
   split_ifs <;> first | rfl | (subst_vars; omega)
@@ -361,6 +363,19 @@ theorem range_weightReesHom : (weightReesHom R w).range = weightReesAlgebra R w 
     rw [weightReesHom_monomial_monomial, Nat.sub_add_cancel hv, LinearMap.restrictScalars_apply]
   rw [← Polynomial.sum_monomial_eq g, Polynomial.sum_def]
   exact Subalgebra.sum_mem _ fun n _ ↦ key n (TauCeti.mem_coeffSubalgebra_iff.mp hg n)
+
+/-- The coefficient of `tⁿ` in the image of `f` under `weightReesHom` has weight at most `n`. -/
+theorem _root_.Polynomial.coeff_weightReesHom_mem_weightFiltration (f : (MvPolynomial σ R)[X])
+    (n : ℕ) : (weightReesHom R w f).coeff n ∈ weightFiltration R w n :=
+  TauCeti.mem_coeffSubalgebra_iff.mp ((range_weightReesHom R w).le ⟨f, rfl⟩) n
+
+/-- `weightReesHom` fixes the polynomials in `t` with constant coefficients. -/
+@[simp]
+theorem _root_.Polynomial.weightReesHom_map_C (r : R[X]) :
+    weightReesHom R w (r.map (C : R →+* MvPolynomial σ R)) = r.map C := by
+  induction r using Polynomial.induction_on' with
+  | add p q hp hq => rw [Polynomial.map_add, map_add, hp, hq]
+  | monomial n a => simp [← Polynomial.C_mul_X_pow_eq_monomial]
 
 variable (R w) in
 /-- The Rees algebra of the weight filtration is isomorphic, as an `R`-algebra, to
@@ -449,7 +464,7 @@ theorem weightReesSymbol_monomial {n : ℕ} {b : MvPolynomial σ R}
       weightedHomogeneousComponent w n b := by
   classical
   ext v
-  rw [coeff_weightReesSymbol, TauCeti.coeffSubalgebra.coe_monomial, Polynomial.coeff_monomial,
+  rw [coeff_weightReesSymbol, TauCeti.coeffSubalgebra.coe_monomial, Polynomial.coeff_monomial_apply,
     coeff_weightedHomogeneousComponent]
   split_ifs <;> first | rfl | (subst_vars; contradiction)
 
@@ -512,12 +527,12 @@ theorem _root_.MvPolynomial.coeff_coeff_weightHomogenization (n k : ℕ) (p : Mv
   classical
   induction p using MvPolynomial.induction_on' with
   | monomial u r =>
+    rw [weightHomogenization_monomial, Polynomial.coeff_monomial_apply]
     rcases eq_or_ne u v with rfl | huv
-    · simp [Polynomial.coeff_monomial, apply_ite (fun q : MvPolynomial σ R ↦ q.coeff u)]
-    · simp [Polynomial.coeff_monomial, apply_ite (fun q : MvPolynomial σ R ↦ q.coeff v),
-        coeff_monomial, huv]
+    · split_ifs <;> simp
+    · split_ifs <;> simp [coeff_monomial, huv]
   | add p q hp hq =>
-    simp only [map_add, Polynomial.coeff_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp,
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp,
       hq]
     split_ifs <;> simp
 
@@ -529,11 +544,22 @@ theorem weightReesHom_weightHomogenization {n : ℕ} {p : MvPolynomial σ R}
   classical
   ext k v
   rw [Polynomial.coeff_coeff_weightReesHom, coeff_coeff_weightHomogenization,
-    Polynomial.coeff_monomial]
+    Polynomial.coeff_monomial_apply]
   by_cases hv : p.coeff v = 0
   · split_ifs <;> simp [hv]
   · have := mem_weightFiltration_iff.mp hp v (mem_support_iff.mpr hv)
     split_ifs <;> first | rfl | omega
+
+/-- Every `f` is the sum, over `n`, of the homogenizations in degree `n` of the coefficients of
+`tⁿ` in its image under `weightReesHom`. -/
+theorem _root_.Polynomial.sum_weightHomogenization_coeff_weightReesHom
+    (f : (MvPolynomial σ R)[X]) :
+    ∑ n ∈ (weightReesHom R w f).support,
+        weightHomogenization R w n ((weightReesHom R w f).coeff n) = f := by
+  apply weightReesHom_injective R w
+  simp_rw [map_sum, weightReesHom_weightHomogenization
+    (Polynomial.coeff_weightReesHom_mem_weightFiltration _ _)]
+  exact (weightReesHom R w f).as_sum_support.symm
 
 /-- Homogenization is multiplicative on the steps of the weight filtration: the homogenization of
 `p * q` in degree `m + n` is the product of the homogenizations of `p` in degree `m` and of `q` in

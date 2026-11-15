@@ -133,7 +133,7 @@ theorem fiberwisePoincareHomotopy_zero :
     fiberwisePoincareHomotopy (0 : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) = 0 := by
   have h : fiberScalingPullback (0 : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) = 0 := by
     funext z
-    ext v
+    ext _
     simp [fiberScalingPullback]
   rw [fiberwisePoincareHomotopy, h, cylinderHomotopy_zero]
 

@@ -98,7 +98,6 @@ private theorem two_div_mul_neg_inner_le (hlam : 0 < lam) (z w : ℝ)
   have hw : w ^ 2 = |w| ^ 2 := (sq_abs w).symm
   have hlhs : 2 / lam * -(z ^ 2 * ⟪f, g⟫_ℝ + 2 * (z * w) * ⟪f, q⟫_ℝ) ≤
       2 * z ^ 2 * s * ‖g‖ + 4 * |z| * |w| * s * ‖q‖ := by
-    have h2 : 0 < 2 / lam := by positivity
     calc 2 / lam * -(z ^ 2 * ⟪f, g⟫_ℝ + 2 * (z * w) * ⟪f, q⟫_ℝ)
         = 2 / lam * (z ^ 2 * -⟪f, g⟫_ℝ + 2 * -(z * w * ⟪f, q⟫_ℝ)) := by ring
       _ ≤ 2 / lam * (z ^ 2 * (lam * s * ‖g‖) + 2 * (|z| * |w| * (lam * s * ‖q‖))) := by
@@ -175,7 +174,7 @@ open Filter Metric in
 a constant `C > 0`, depending only on the dimension, such that the following holds for every
 additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every
-`v ∈ H¹₀(Ω)`. For every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
+`v ∈ H¹₀(Ω)`. For every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
 
 `∫_{B(x₀, r)} ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) (C / (R - r))² ∫_{B(x₀, R)} u² + (12/λ²) ∫_{B(x₀, R)} ‖F‖²`.
 -/
@@ -188,7 +187,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
       AEStronglyMeasurable a (mu.restrict Omega) → MemLp F 2 (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
-      0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
         2 * ((2 * Lam / lam) ^ 2 + 1) * (C / (R - r)) ^ 2 *
             ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu
@@ -196,11 +195,11 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
   obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff
     (ι := ι)
   refine ⟨C, hC0, ?_⟩
-  intro mu _ Omega a lam Lam F u x₀ r R h ha hF hu hr hrR hball
+  intro mu _ Omega a lam Lam F u x₀ r R h ha hF hu hrR hball
   -- The datum density `g = (12/λ²) ‖F‖²`.
   have hloc := hC u (A := 2 * ((2 * Lam / lam) ^ 2 + 1)) (g := fun x => 12 / lam ^ 2 * ‖F x‖ ^ 2)
     (by positivity) (hF.norm.integrable_sq.const_mul _)
-    (Eventually.of_forall fun x => by positivity) hr hrR hball fun ψ hψ hcpt hts => by
+    (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
       simp_rw [mul_left_comm (ψ _ ^ 2), integral_const_mul]
       exact h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt hts
   rwa [integral_const_mul] at hloc
@@ -242,8 +241,6 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set uB := W1p.restrictL hB u
   set m := ⨍ z in ball y (2 * ρ), W1p.value u z ∂mu
-  have hm : ⨍ z in (B : Set (EuclideanSpace ℝ ι)), W1p.value uB z ∂mu = m :=
-    average_congr (W1p.value_restrictL_ae hB u)
   -- `w = u - m` solves the same equation on `B`.
   set w : W1p mu B 2 := uB + W1p.const (-m)
   have hw : ∀ v : W1p0 mu B 2, energyFormH1 a 0 0 w (v : W1p mu B 2) =
@@ -252,7 +249,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence :
     exact energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v
   have hcacc := hC (mu := mu) (Omega := B) (u := w) (x₀ := y) (r := ρ) (R := 2 * ρ)
     (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
-    (hF.mono_measure (Measure.restrict_mono hball le_rfl)) hw hρ (by linarith) subset_rfl
+    (hF.mono_measure (Measure.restrict_mono hball le_rfl)) hw (by linarith) subset_rfl
   -- On `B`, `∇w = ∇u` and `w = u - m`.
   have e1 : ∫ x in ball y ρ, ‖W1p.gradient w x‖ ^ 2 ∂mu =
       ∫ x in ball y ρ, ‖W1p.gradient u x‖ ^ 2 ∂mu := by

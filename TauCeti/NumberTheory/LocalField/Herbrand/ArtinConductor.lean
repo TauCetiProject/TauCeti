@@ -161,7 +161,7 @@ theorem artinConductorExponent_mul_card_eq_sum_range (χ : (L ≃ₐ[K] L) →* 
         else Nat.card (lowerRamificationGroup K L i) := by
   have hP : ∃ i : ℕ, lowerRamificationGroup K L i ≤ χ.ker := ⟨n, hn⟩
   -- The indices where `χ` is nontrivial on `G_i` are those below `c`.
-  set c := Nat.find hP with hc
+  set c := Nat.find hP
   have hiff : ∀ i : ℕ, lowerRamificationGroup K L i ≤ χ.ker ↔ c ≤ i := fun i ↦
     ⟨Nat.find_min' hP, fun h ↦
       (lowerRamificationGroup_antitone K L (by exact_mod_cast h)).trans (Nat.find_spec hP)⟩

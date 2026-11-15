@@ -44,10 +44,6 @@ corresponding character formula is in `TauCeti.RepresentationTheory.Induction.Ch
 
 ## References
 
-This implements the first item of Layer 2, “Induction preserves finite-dimensionality, via an
-explicit coset model”, in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
-
 The coset-representative construction below — `rightCosetFactor` together with the two rewriting
 lemmas `rightCoset_mk_mul` and `rightCosetFactor_mul` that make it `S`-equivariant, and the proof
 plan of building an equivariant function from values at the chosen representatives — is adapted

@@ -9,8 +9,10 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Ball
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Moment
+import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.BoundedVariation.Compactness
-import TauCeti.Analysis.BoundedVariation.Convex
+import TauCeti.Analysis.BoundedVariation.SmoothApproximation
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 import TauCeti.Order.Monotone.Splice
@@ -26,12 +28,16 @@ differences.
 
 The main theorem is that a suitable choice of directions makes these symmetrals converge to the
 centered ball `B` with the volume of `s`, in the sense that `|S_{e (n-1)} ⋯ S_{e 0} s ∆ B| → 0`,
-that is, in `L¹` of the indicators. We prove it for every set in a family `𝒞` that is closed under
-all Steiner symmetrizations, consists of null-measurable sets contained in a fixed ball, and has
-uniformly bounded perimeter
+that is, in `L¹` of the indicators. We first prove it for every set in a family `𝒞` that is closed
+under all Steiner symmetrizations, consists of null-measurable sets contained in a fixed ball, and
+has uniformly bounded perimeter
 (`TauCeti.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_perimeter_le`).
-Bounded convex sets form such a family, so the successive symmetrals of every bounded convex set
-converge to the centered ball of the same volume
+Since Steiner symmetrization does not increase perimeter, the null-measurable subsets of a fixed
+ball with perimeter at most that of a given bounded set of finite perimeter form such a family.
+Approximation then removes both boundedness and finite perimeter: the theorem holds for every
+null-measurable set of finite volume
+(`NullMeasurableSet.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball`),
+in particular for every bounded convex set
 (`Convex.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball`).
 
 ## Strategy
@@ -54,6 +60,13 @@ moment `M(t) = ∫_t ‖x‖²` as the functional that identifies the limit.
   for `j = 0, 1, …` in turn, produces one sequence of directions along which the distance to `B`
   tends to zero, since it never increases
   (`TauCeti.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball`).
+* **Approximation.** A null-measurable set `s` of finite volume is within any `δ > 0` in volume of
+  a bounded open set `t` of finite perimeter
+  (`MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`). Along directions that
+  bring the symmetrals of `t` within `δ` of the centered ball `B'` with the volume of `t`, the
+  symmetrals of `s` stay within `δ` of those of `t`, by `L¹` contraction, and `|B' ∆ B| ≤ |t ∆ s|`.
+  So finitely many symmetrizations bring every successive symmetral of `s` within `3 δ` of `B`,
+  and concatenation applies.
 
 ## References
 
@@ -413,27 +426,114 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_peri
   obtain ⟨e', he', m, hm'⟩ := h ε hε
   exact ⟨e', he', m, by rwa [← measure_congr (EventuallyEqSet.rfl.symmDiff hball)]⟩
 
-/-- **Successive Steiner symmetrizations of a bounded convex set converge to a ball.** For every
-bounded convex set `s` there are unit vectors `e 0, e 1, …` such that the successive Steiner
-symmetrals `S_{e (n-1)} ⋯ S_{e 0} s` converge to the centered open ball `B` with the volume of
-`s`, in the sense that `|S_{e (n-1)} ⋯ S_{e 0} s ∆ B| → 0`. -/
-theorem _root_.Convex.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball
-    {s : Set E} (hs : Convex ℝ s) (hb : Bornology.IsBounded s) :
+/-! ### Sets of finite volume -/
+
+/-- **Bounded sets of finite perimeter.** The successive symmetrals of a bounded null-measurable
+set `s` of finite perimeter converge to the centered ball with the volume of `s`: they stay in a
+fixed centered ball and, since Steiner symmetrization does not increase perimeter, their
+perimeters are at most that of `s`. -/
+private theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_isBounded
+    {s : Set E} (hs : NullMeasurableSet s volume) (hb : Bornology.IsBounded s)
+    (hP : perimeter volume ⊤ s ≠ ∞) :
     ∃ r, volume (ball (0 : E) r) = volume s ∧ ∃ (e : ℕ → E) (he : ∀ k, ‖e k‖ = 1),
       Tendsto (fun n => volume (iterateSteinerSymmetrization e he s n ∆ ball (0 : E) r))
         atTop (𝓝 0) := by
   obtain ⟨R, hR⟩ := hb.subset_ball 0
-  -- Convex subsets of `ball 0 R` have perimeter at most that of the ball.
-  have hP : perimeter volume ⊤ (ball (0 : E) R) ≠ ∞ :=
-    ((convex_ball 0 R).perimeter_lt_top (μ := volume) isBounded_ball).ne
   refine exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_perimeter_le
-    (𝒞 := {t | Convex ℝ t ∧ t ⊆ ball 0 R}) (C := (perimeter volume ⊤ (ball (0 : E) R)).toNNReal)
-    (fun t ht e he => ⟨convex_steinerSymmetrization e he ht.1, ?_⟩)
-    (fun t ht => ht.1.nullMeasurableSet (μ := volume)) (fun t ht => ht.2) (fun t ht => ?_) ⟨hs, hR⟩
+    (𝒞 := {t | NullMeasurableSet t volume ∧ t ⊆ ball 0 R ∧
+      perimeter volume ⊤ t ≤ perimeter volume ⊤ s})
+    (C := (perimeter volume ⊤ s).toNNReal) (fun t ht e he => ⟨?_, ?_, ?_⟩)
+    (fun t ht => ht.1) (fun t ht => ht.2.1) (fun t ht => ?_) ⟨hs, hR, le_rfl⟩
+  · exact nullMeasurableSet_steinerSymmetrization e he ht.1
   · rw [← steinerSymmetrization_ball_zero e he R]
-    exact steinerSymmetrization_mono e he ht.2
+    exact steinerSymmetrization_mono e he ht.2.1
+  · exact (perimeter_steinerSymmetrization_le e he ht.1
+      (ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono ht.2.1))).trans ht.2.2
   · rw [ENNReal.coe_toNNReal hP]
-    exact ht.1.perimeter_le_of_subset ht.2 measurableSet_ball.nullMeasurableSet
-      measure_ball_lt_top.ne
+    exact ht.2.2
+
+/-- **Approximation by bounded sets of finite perimeter.** From a null-measurable set `s` of
+finite volume, finitely many Steiner symmetrizations reach sets arbitrarily close in volume to the
+centered ball `B` with the volume of `s`. -/
+private theorem exists_volume_iterateSteinerSymmetrization_symmDiff_ball_lt {s : Set E}
+    (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) {r : ℝ}
+    (hr : volume (ball (0 : E) r) = volume s) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (e : ℕ → E) (he : ∀ k, ‖e k‖ = 1) (m : ℕ),
+      volume (iterateSteinerSymmetrization e he s m ∆ ball 0 r) < ε := by
+  have hε₂ : 0 < ε / 2 := ENNReal.half_pos hε.ne'
+  -- Choose a bounded open set `t` of finite perimeter within `ε / 4` of `s`.
+  obtain ⟨u, c, hu, hconv, -⟩ := hs.exists_smooth_perimeter_approximation hfin
+  obtain ⟨k, hk⟩ := (hconv.eventually (gt_mem_nhds (ENNReal.half_pos hε₂.ne'))).exists
+  obtain ⟨huc, -, -, -, htb, -, htP⟩ := hu k
+  set t := {x | c k < u k x}
+  have ht : NullMeasurableSet t volume :=
+    (isOpen_lt continuous_const huc.continuous).measurableSet.nullMeasurableSet
+  -- Its successive symmetrals converge to the centered ball `B'` with the volume of `t`.
+  obtain ⟨r', hr', e, he, hlim⟩ :=
+    exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_isBounded ht
+      (htb.isBounded.subset subset_closure) htP.ne
+  obtain ⟨m, hm⟩ := (hlim.eventually (gt_mem_nhds hε₂)).exists
+  refine ⟨e, he, m, ?_⟩
+  -- Symmetrization contracts `|s ∆ t|`, and `|B' ∆ B| ≤ |t ∆ s|`.
+  calc volume (iterateSteinerSymmetrization e he s m ∆ ball 0 r)
+      ≤ volume (iterateSteinerSymmetrization e he s m ∆ iterateSteinerSymmetrization e he t m) +
+          volume (iterateSteinerSymmetrization e he t m ∆ ball 0 r') +
+          volume (ball (0 : E) r' ∆ ball 0 r) :=
+        (measure_symmDiff_le _ (ball 0 r') _).trans (by gcongr; exact measure_symmDiff_le _ _ _)
+    _ ≤ volume (t ∆ s) + volume (iterateSteinerSymmetrization e he t m ∆ ball 0 r') +
+          volume (t ∆ s) := by
+        refine add_le_add (add_le_add ?_ le_rfl) (measure_ball_symmDiff_ball_le hr' hr)
+        rw [symmDiff_comm t]
+        exact volume_iterateSteinerSymmetrization_symmDiff_le e he hs ht m
+    _ < ε / 2 / 2 + ε / 2 + ε / 2 / 2 := ENNReal.add_lt_add (ENNReal.add_lt_add hk hm) hk
+    _ = ε := by rw [add_right_comm, ENNReal.add_halves, ENNReal.add_halves]
 
 end TauCeti
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [FiniteDimensional ℝ E] [Nontrivial E]
+
+/-- **Convergence of successive Steiner symmetrizations to a ball.** For every null-measurable
+set `s` of finite volume there are unit vectors `e 0, e 1, …` such that the successive Steiner
+symmetrals `S_{e (n-1)} ⋯ S_{e 0} s` converge to the centered open ball `B` with the volume of
+`s`, in the sense that `|S_{e (n-1)} ⋯ S_{e 0} s ∆ B| → 0`. Neither boundedness nor finite
+perimeter is assumed. -/
+theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball
+    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) :
+    ∃ r, volume (ball (0 : E) r) = volume s ∧ ∃ (e : ℕ → E) (he : ∀ k, ‖e k‖ = 1),
+      Tendsto (fun n => volume (iterateSteinerSymmetrization e he s n ∆ ball (0 : E) r))
+        atTop (𝓝 0) := by
+  obtain ⟨r, -, hr⟩ := (volume : Measure E).exists_nonneg_addHaar_ball_eq hfin
+  refine ⟨r, hr, TauCeti.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball hs
+    fun e he n ε hε => ?_⟩
+  -- Every successive symmetral of `s` has the volume of `s`.
+  have hvol := volume_iterateSteinerSymmetrization e he hs n
+  exact exists_volume_iterateSteinerSymmetrization_symmDiff_ball_lt
+    (nullMeasurableSet_iterateSteinerSymmetrization e he hs n) (hvol ▸ hfin) (hvol ▸ hr) hε
+
+end MeasureTheory.NullMeasurableSet
+
+namespace Convex
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [FiniteDimensional ℝ E] [Nontrivial E]
+
+/-- **Successive Steiner symmetrizations of a bounded convex set converge to a ball.** For every
+bounded convex set `s` there are unit vectors `e 0, e 1, …` such that the successive Steiner
+symmetrals `S_{e (n-1)} ⋯ S_{e 0} s` converge to the centered open ball `B` with the volume of
+`s`, in the sense that `|S_{e (n-1)} ⋯ S_{e 0} s ∆ B| → 0`. -/
+theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball
+    {s : Set E} (hs : Convex ℝ s) (hb : Bornology.IsBounded s) :
+    ∃ r, volume (ball (0 : E) r) = volume s ∧ ∃ (e : ℕ → E) (he : ∀ k, ‖e k‖ = 1),
+      Tendsto (fun n => volume (iterateSteinerSymmetrization e he s n ∆ ball (0 : E) r))
+        atTop (𝓝 0) :=
+  NullMeasurableSet.exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball
+    (hs.nullMeasurableSet (μ := volume)) hb.measure_lt_top.ne
+
+end Convex

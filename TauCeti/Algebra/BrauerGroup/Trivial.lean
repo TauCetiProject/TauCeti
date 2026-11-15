@@ -98,11 +98,6 @@ Brauer-group computations go through the splitting side only.
 
 ## References
 
-This implements the Brauer-triviality prerequisites of the first bullet of Layer 6 ("the API that
-the identity and inverse rest on: finite-dimensional `Module.End K V` is Brauer-equivalent to `K`;
-`Matrix n n K` is Brauer-trivial") together with the "Finite base fields" bullet ("`BrauerGroup` of
-a finite field is trivial") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/

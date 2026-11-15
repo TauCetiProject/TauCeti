@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
+import TauCeti.RingTheory.MvPolynomial.GCDMonoid
 
 /-!
 # Lazard content and multiplicity reconstruction from squarefree bases
@@ -17,7 +18,7 @@ contains the evaluated content and a unit, and the removed base exponents are th
 exponents plus a weighted sum of the basis exponents. The weights do not depend on the base
 point, so invariant content and basis exponents give invariant input exponents.
 
-Likewise the root multiplicities of a nonzero input's Lazard evaluation are weighted sums of the
+Likewise the root multiplicities of an input's Lazard evaluation are weighted sums of the
 basis multiplicities, with weights independent of the base point, including where ordinary
 specialization is nullified. So invariant basis multiplicities give invariant input
 multiplicities; zero inputs have multiplicity zero.
@@ -37,7 +38,7 @@ open MvPolynomial Polynomial
 
 namespace Finset
 
-variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+variable {R : Type*} [CommRing R] {n : ℕ}
   {F B : Finset (Polynomial (MvPolynomial (Fin n) R))}
 
 local notation "swap" =>
@@ -59,6 +60,9 @@ theorem exists_lazardEval_eq_C_mul_prod (hB : F.IsSquarefreeBasis B)
       ∀ a : Fin n → R, (swap f).lazardEval (Polynomial.C ∘ a) =
         Polynomial.C (f.content.lazardEval a * (u : MvPolynomial (Fin n) R).lazardEval a) *
           ∏ b ∈ B, (swap b).lazardEval (Polynomial.C ∘ a) ^ e b := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨1, 0, fun a ↦ Subsingleton.elim _ _⟩
+  have := isDomain_of_normalizedGCDMonoid (σ := Fin n) (R := R)
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨u, e, fun a ↦ ?_⟩
   conv_lhs => rw [hfe]
@@ -69,13 +73,18 @@ theorem exists_lazardEval_eq_C_mul_prod (hB : F.IsSquarefreeBasis B)
   simpa only [map_pow, lazardEvalHom_apply] using
     map_prod (lazardEvalHom (Polynomial.C ∘ a)) (fun b ↦ swap b ^ e b) B
 
-/-- For a nonzero input, the removed base exponents are the content exponents plus the
+/-- The removed base exponents of an input are the content exponents plus the
 weighted sum of the basis exponents. The weights do not depend on the base point. -/
 theorem exists_lazardExponent_eq_content_add_sum (hB : F.IsSquarefreeBasis B)
-    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) (hf0 : f ≠ 0) :
+    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
     ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ a : Fin n → R,
       (swap f).lazardExponent (Polynomial.C ∘ a) = f.content.lazardExponent a +
         ∑ b ∈ B, e b • (swap b).lazardExponent (Polynomial.C ∘ a) := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · exact ⟨0, fun a ↦ by simp⟩
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨0, fun a ↦ by simp [Subsingleton.elim (swap f) 0, Subsingleton.elim f.content 0]⟩
+  have := isDomain_of_normalizedGCDMonoid (σ := Fin n) (R := R)
   obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   refine ⟨e, fun a ↦ ?_⟩
   have hc : f.content ≠ 0 := fun h ↦ hf0 (content_eq_zero_iff.mp h)
@@ -105,9 +114,7 @@ theorem lazardExponent_eq (hB : F.IsSquarefreeBasis B)
       (swap b).lazardExponent (Polynomial.C ∘ a')) :
     (swap f).lazardExponent (Polynomial.C ∘ a) =
       (swap f).lazardExponent (Polynomial.C ∘ a') := by
-  by_cases hf0 : f = 0
-  · simp [hf0]
-  obtain ⟨e, he⟩ := hB.exists_lazardExponent_eq_content_add_sum hf hf0
+  obtain ⟨e, he⟩ := hB.exists_lazardExponent_eq_content_add_sum hf
   rw [he a, he a', hc]
   exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦ congrArg (e b • ·) (hb b hb'))
 
@@ -115,13 +122,17 @@ end Content
 
 section Multiplicity
 
-/-- The multiplicities in a nonzero input's Lazard evaluation are fixed weighted sums
+variable [IsDomain R]
+
+/-- The multiplicities in an input's Lazard evaluation are fixed weighted sums
 of the multiplicities in the basis evaluations, even on nullified ordinary fibers. -/
 theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsSquarefreeBasis B)
-    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) (hf0 : f ≠ 0) :
+    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) :
     ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ (a : Fin n → R) (t : R),
       ((swap f).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
         ∑ b ∈ B, e b * ((swap b).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · exact ⟨0, fun a t ↦ by simp⟩
   obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_eq_sum (A := R) hf
   refine ⟨e, fun a t ↦ ?_⟩
   let φ : Polynomial (MvPolynomial (Fin n) R) →*₀ Polynomial R :=
@@ -147,9 +158,7 @@ theorem rootMultiplicity_lazardEval_eq (hB : F.IsSquarefreeBasis B)
       ((swap b).lazardEval (Polynomial.C ∘ a')).rootMultiplicity t') :
     ((swap f).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
       ((swap f).lazardEval (Polynomial.C ∘ a')).rootMultiplicity t' := by
-  by_cases hf0 : f = 0
-  · simp [hf0]
-  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_lazardEval_eq_sum hf hf0
+  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_lazardEval_eq_sum hf
   rw [he a t, he a' t']
   exact Finset.sum_congr rfl fun b hb' ↦ congrArg (e b * ·) (hb b hb')
 

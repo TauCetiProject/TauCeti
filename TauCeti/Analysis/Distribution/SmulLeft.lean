@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Multiplication of distributions by smooth functions
@@ -21,13 +23,25 @@ transposes differentiation of test functions.
 A complex multiplier `g + i h` acts on a complex distribution as `g T + i (h T)`; on complex test
 functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairing_smulLeftCLM`).
 
+When the support of `g` meets an open set `Ω'` only inside `Ω`, multiplication by `g` sends tests
+on `Ω'` to tests on `Ω` (`TestFunction.cutoffCLM`), and its transpose `Distribution.cutoffCLM`
+sends a distribution `T` on `Ω` to the distribution `φ ↦ T (g φ)` on `Ω'`, supported in the
+support of `g`. For a test function `g` on `Ω` and `Ω' = ⊤` this is the extension by zero of the
+compactly supported distribution `g T` from `Ω` to the whole space.
+
 ## Main declarations
 
 * `Distribution.smulLeftCLM`: the product `g T`, with `Distribution.smulLeftCLM_apply` and
   `Distribution.coe_smulLeftCLM`.
+* `Distribution.smulLeftCLM_const`: a constant `c` acts as the scalar `c`.
 * `Distribution.smulLeftCLM_smulLeftCLM`: multiplying by `h` and then by `g` is multiplying by
   `g h`.
+* `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of `g`
+  and of `T`.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
+* `Distribution.cutoffCLM`: the distribution `φ ↦ T (g φ)` on `Ω'`, with
+  `Distribution.cutoffCLM_apply`, `Distribution.dsupport_cutoffCLM_subset_inter` and
+  `Distribution.complexPairing_cutoffCLM`.
 
 ## References
 
@@ -62,6 +76,16 @@ theorem coe_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
     ⇑(smulLeftCLM hg T) = ⇑T ∘ ⇑(TestFunction.smulLeftCLM hg) :=
   (rfl)
 
+/-- Multiplying a distribution by the constant function `c` is scalar multiplication by `c`. -/
+@[simp]
+theorem smulLeftCLM_const (c : ℝ) (T : 𝓓'^{n}(Ω, F)) :
+    smulLeftCLM (contDiff_const (c := c)) T = c • T := by
+  ext φ
+  have h : TestFunction.smulLeftCLM (contDiff_const (c := c)) φ = c • φ := by
+    ext x
+    simp
+  simp [h]
+
 /-- Multiplying a distribution by `h` and then by `g` is multiplying it by `g h`. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
@@ -72,6 +96,12 @@ theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
   congr 1
   ext x
   simp [mul_comm]
+
+/-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
+theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
+    dsupport (smulLeftCLM hg T) ⊆ tsupport g ∩ dsupport T := by
+  rw [coe_smulLeftCLM]
+  exact dsupport_comp_smulLeftCLM_subset T hg
 
 /-- The complex-linear extension of `g T` to complex test functions pairs `g T` with `ψ` as `T`
 with `g ψ`. -/
@@ -85,5 +115,48 @@ theorem complexPairing_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, �
     ext x
     simp [-real_smul]
   simp [complexPairing_apply, hpart]
+
+section Cutoff
+
+variable {Ω' : Opens E} (hg : ContDiff ℝ n g) (hgΩ : tsupport g ∩ Ω' ⊆ Ω)
+
+/-- For a `C^n` function `g` whose support meets `Ω'` only inside `Ω`, the distribution
+`φ ↦ T (g φ)` on `Ω'` defined by a distribution `T` on `Ω`, as a continuous linear map on
+distributions of order at most `n`. For a test function `g` on `Ω` and `Ω' = ⊤` it is the
+extension by zero of `g T` from `Ω` to the whole space. -/
+def cutoffCLM : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω', F) :=
+  (TestFunction.cutoffCLM hg hgΩ).precompCompactConvergenceCLM F
+
+@[simp]
+theorem cutoffCLM_apply (T : 𝓓'^{n}(Ω, F)) (φ : 𝓓^{n}(Ω', ℝ)) :
+    cutoffCLM hg hgΩ T φ = T (TestFunction.cutoffCLM hg hgΩ φ) :=
+  (rfl)
+
+/-- As a function on test functions, `cutoffCLM hg hgΩ T` is `T` composed with multiplication
+by `g`. -/
+theorem coe_cutoffCLM (T : 𝓓'^{n}(Ω, F)) :
+    ⇑(cutoffCLM hg hgΩ T) = ⇑T ∘ ⇑(TestFunction.cutoffCLM hg hgΩ) :=
+  (rfl)
+
+/-- The support of `φ ↦ T (g φ)` lies both in the support of `g` and in the support of `T`. -/
+theorem dsupport_cutoffCLM_subset_inter (T : 𝓓'^{n}(Ω, F)) :
+    dsupport (cutoffCLM hg hgΩ T) ⊆ tsupport g ∩ dsupport T := by
+  rw [coe_cutoffCLM]
+  exact dsupport_comp_cutoffCLM_subset T hg hgΩ
+
+/-- The complex-linear extension of `φ ↦ T (g φ)` to complex test functions pairs it with `ψ` as
+`T` with `g ψ`. -/
+@[simp]
+theorem complexPairing_cutoffCLM (T : 𝓓'^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(Ω', ℂ)) :
+    (cutoffCLM hg hgΩ T).complexPairing ψ =
+      T.complexPairing (TestFunction.cutoffCLM hg hgΩ ψ) := by
+  have hpart (L : ℂ →L[ℝ] ℝ) :
+      TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.cutoffCLM hg hgΩ ψ) =
+        TestFunction.cutoffCLM hg hgΩ (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
+    ext x
+    simp [-real_smul]
+  simp [complexPairing_apply, hpart]
+
+end Cutoff
 
 end Distribution

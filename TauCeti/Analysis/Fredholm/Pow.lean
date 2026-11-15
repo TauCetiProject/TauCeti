@@ -43,31 +43,31 @@ variable {A : X →L[𝕜] X}
 
 /-- Over a complete nontrivially normed scalar field, every natural-number power of a Fredholm
 endomorphism is Fredholm. -/
-theorem IsFredholm.pow (hA : ContinuousLinearMap.IsFredholm A) :
-    ∀ n : ℕ, ContinuousLinearMap.IsFredholm (A ^ n)
+theorem IsFredholm.pow (hA : IsFredholm A) :
+    ∀ n : ℕ, IsFredholm (A ^ n)
   | 0 => by
-      rw [pow_zero, ContinuousLinearMap.one_def]
+      rw [pow_zero, one_def]
       exact .id
   | n + 1 => by
-      rw [pow_succ, ContinuousLinearMap.mul_def]
+      rw [pow_succ, mul_def]
       exact (hA.pow n).comp hA
 
 
 /-- The index of the `n`th power of a Fredholm endomorphism is `n` times its index. -/
 @[simp]
-theorem index_pow (A : X →L[𝕜] X) (hA : ContinuousLinearMap.IsFredholm A)
+theorem index_pow (A : X →L[𝕜] X) (hA : IsFredholm A)
     (n : ℕ) :
-    ContinuousLinearMap.index (A ^ n) = (n : ℤ) * ContinuousLinearMap.index A := by
+    index (A ^ n) = (n : ℤ) * index A := by
   induction n with
   | zero =>
-      simp only [pow_zero, ContinuousLinearMap.one_def, ContinuousLinearMap.index_id, Nat.cast_zero,
+      simp only [pow_zero, one_def, index_id, Nat.cast_zero,
         zero_mul]
   | succ n ih =>
-      have hcomp : ContinuousLinearMap.index ((A ^ n).comp A) =
-          ContinuousLinearMap.index (A ^ n) + ContinuousLinearMap.index A := by
-        simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      have hcomp : index ((A ^ n).comp A) =
+          index (A ^ n) + index A := by
+        simpa only [index_def, toLinearMap_comp] using
           (hA.pow n).index_comp hA
-      rw [pow_succ, ContinuousLinearMap.mul_def, hcomp, ih]
+      rw [pow_succ, mul_def, hcomp, ih]
       push_cast
       ring
 

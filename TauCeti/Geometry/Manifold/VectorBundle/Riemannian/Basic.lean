@@ -54,6 +54,11 @@ theorem toRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m 
     (g.ofLE h).toRiemannianMetric = g.toRiemannianMetric :=
   (rfl)
 
+/-- Forgetting regularity to the same order leaves a metric unchanged. -/
+@[simp]
+theorem ofLE_refl (g : ContMDiffRiemannianMetric IB n F E) (h : n ≤ n) :
+    g.ofLE h = g := (rfl)
+
 /-- The native fibre inner product installed from a metric evaluates to that metric. -/
 theorem inner_eq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
     (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v w : E x) :

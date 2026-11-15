@@ -31,6 +31,8 @@ The sign and argument conventions follow J. M. Lee, *Introduction to Riemannian 
 * `CovariantDerivative.riemannCurvatureTensor`: the metric-lowered curvature tensor.
 * `CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_swap_pairs`:
   pair-interchange symmetry.
+* `CovariantDerivative.IsMetricCompatible.twentyFour_mul_riemannCurvatureTensor_eq`:
+  mixed-difference polarization through the sectional-curvature numerators.
 * `CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`:
   `Rm` is the unique tensor with the curvature symmetries and the same values `T(u, v, v, u)` on
   linearly independent pairs.
@@ -138,6 +140,28 @@ theorem IsMetricCompatible.riemannCurvatureTensor_swap_pairs
       cov.riemannCurvatureTensor x w z u v := by
   simpa only [riemannCurvatureTensor_apply] using
     hcov.inner_curvatureTensor_swap_pairs ht x u v w z
+
+/-- Mixed-difference polarization of the metric-lowered curvature tensor of a
+metric-compatible torsion-free connection. Each term on the right is a sectional-curvature
+numerator `Rm(a, b, b, a)`, defined even when `a` and `b` are dependent. The order of the two
+mixed differences corresponds to the convention `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩`. -/
+theorem IsMetricCompatible.twentyFour_mul_riemannCurvatureTensor_eq
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (x : M) (u v w z : TangentSpace I x) :
+    24 * cov.riemannCurvatureTensor x u v w z =
+      (cov.riemannCurvatureTensor x (u + z) (v + w) (v + w) (u + z) -
+          cov.riemannCurvatureTensor x (u + z) (v - w) (v - w) (u + z) -
+        cov.riemannCurvatureTensor x (u - z) (v + w) (v + w) (u - z) +
+          cov.riemannCurvatureTensor x (u - z) (v - w) (v - w) (u - z)) -
+      (cov.riemannCurvatureTensor x (v + z) (u + w) (u + w) (v + z) -
+          cov.riemannCurvatureTensor x (v + z) (u - w) (u - w) (v + z) -
+        cov.riemannCurvatureTensor x (v - z) (u + w) (u + w) (v - z) +
+          cov.riemannCurvatureTensor x (v - z) (u - w) (u - w) (v - z)) :=
+  LinearMap.twentyFour_mul_apply_eq_of_cyclic_eq_zero
+    (cov.riemannCurvatureTensor_antisymm_first x)
+    (hcov.riemannCurvatureTensor_antisymm_last cov x)
+    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) u v w z
 
 variable {cov} in
 /-- For a metric-compatible torsion-free connection, the Riemann curvature tensor at `x` is the

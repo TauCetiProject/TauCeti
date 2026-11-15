@@ -128,10 +128,10 @@ theorem range_permutationOrbit :
     induction hx using Algebra.adjoin_induction with
     | mem x hx => obtain ⟨i, rfl⟩ := hx; exact hT i
     | algebraMap r => intro v hv; simpa using P.smul_mem r hv
-    | add x y hx hy ihx ihy =>
+    | add x y _ _ ihx ihy =>
       intro v hv
       simpa using P.add_mem (ihx v hv) (ihy v hv)
-    | mul x y hx hy ihx ihy =>
+    | mul x y _ _ ihx ihy =>
       intro v hv
       simpa only [map_mul, mul_apply_eq_comp] using ihx _ (ihy v hv)
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)

@@ -44,9 +44,9 @@ theorem lipschitzOnWith_ball_of_tendsto [l.NeBot] {x : E} {r C : ℝ}
     LipschitzOnWith C.toNNReal v (ball x r) := by
   refine lipschitzOnWith_iff_restrict.2 <| (isClosed_setOfPred_lipschitzWith _).mem_of_tendsto
     (tendsto_pi_nhds.2 fun y ↦ hlim y y.2) (hu.mono fun i hi ↦ ?_)
-  refine lipschitzOnWith_iff_restrict.1 <| Convex.lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+  refine lipschitzOnWith_iff_restrict.1 <| Convex.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun y hy ↦ (hi y hy).1) (fun y hy ↦ ?_) (convex_ball x r)
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal']
+  rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal']
   exact (hi y hy).2.trans (le_max_left _ _)
 
 /-- The pointwise limit on an open set `Ω` of maps differentiable on `Ω`, whose derivatives are

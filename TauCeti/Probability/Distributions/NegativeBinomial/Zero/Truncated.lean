@@ -27,7 +27,10 @@ zero:
 
 At the boundaries `r = 0` and `p = 1` the negative-binomial law is the point mass at zero and
 truncation removes all mass. The mass, mean and variance formulas cover these boundaries too, with
-the convention `1 / 0 = 0`.
+the convention `1 / 0 = 0`, and so does the quantile-rescaling formula
+`quantile_map_cast_negativeBinomialMeasure_cond_compl_zero`, since the zero measure has quantile
+`0` at every level. The cdf formulas and the least-index quantile characterization require
+`0 < r` and `p < 1`.
 
 ## References
 
@@ -82,7 +85,7 @@ theorem integrableExpSet_id_map_cast_negativeBinomialMeasure_cond_compl_zero (hr
       {t | (1 - p) * exp t < 1} := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   rw [Measure.integrableExpSet_id_map_natCast_cond_compl_zero,
-    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1]
+    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp]
 
 /-- The mean of the zero-truncated negative-binomial law is `r (1 - p) / p / (1 - p ^ r)`. -/
 theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 ≤ r) (hp : 0 < p)
@@ -106,7 +109,7 @@ theorem variance_id_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 ≤
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   rw [Measure.variance_id_map_natCast_cond_compl_zero _
       (integrable_pow_of_mem_interior_integrableExpSet
-        (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) 2),
+        zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure 2),
     integral_sq_map_cast_negativeBinomialMeasure hr.le hp hp1,
     integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1]
@@ -121,7 +124,7 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 < r) (hp : 
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
   rw [Measure.cdf_map_natCast_cond_compl_zero _
       (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hx,
-    cdf_map_cast_negativeBinomialMeasure hr hp hp1.le hx,
+    cdf_map_cast_negativeBinomialMeasure hr.le hp hx,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
 
 /-- Below one, the cdf of the zero-truncated negative-binomial law of positive shape and success
@@ -135,15 +138,14 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_of_lt_one (hr : 0 <
 
 /-- At an interior level `u`, the quantile of the zero-truncated negative-binomial law is the
 negative-binomial quantile at the rescaled level `p ^ r + u (1 - p ^ r)`. -/
-theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 < r) (hp : 0 < p)
-    (hp1 : p < 1) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     (((negativeBinomialMeasure r p)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile
         (p ^ r + u * (1 - p ^ r)) := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
-  rw [Measure.quantile_map_natCast_cond_compl_zero _
-      (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hu,
-    negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
+  let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
+  rw [Measure.quantile_map_natCast_cond_compl_zero _ hu,
+    negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 
 /-- A natural number is the quantile of the zero-truncated negative-binomial law at an interior
 level `u` exactly when it is the least index whose negative-binomial cumulative mass
@@ -155,7 +157,7 @@ theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_eq_iff (hr : 0
   have hpos := one_sub_rpow_pos hr hp hp1
   have hv : p ^ r + u * (1 - p ^ r) ∈ Ioo 0 1 :=
     ⟨by nlinarith [rpow_pos_of_pos hp r, hu.1], by nlinarith [hu.2]⟩
-  rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr hp hp1 hu,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp hp1.le hv]
+  rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr.le hp hp1.le hu,
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr.le hp hv]
 
 end TauCeti.Probability

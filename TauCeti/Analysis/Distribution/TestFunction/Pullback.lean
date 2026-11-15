@@ -158,7 +158,6 @@ private theorem exists_norm_iteratedFDeriv_pullbackFun_le (hΦ : ContDiffOn ℝ 
   refine ⟨∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * |R₁ j| * ((i - j)! * D ^ (i - j)),
     Finset.sum_nonneg fun j _ ↦ by positivity, fun ω hω B hB x hx ↦ ?_⟩
   have hxΩ : x ∈ Ω := hCΩ hx
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
   rw [((pullbackFun_eventuallyEq hxΩ).iteratedFDeriv ℝ i).eq_of_nhds,
     ← iteratedFDerivWithin_of_isOpen i Ω.isOpen hxΩ, Finset.sum_mul]
   refine (norm_iteratedFDerivWithin_clm_apply hM (hω.comp_contDiffOn hΦ)
@@ -467,19 +466,25 @@ theorem extDerivCLM_cutoffPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin k]→L[�
   exact extDeriv_pullback (ω.contDiff.differentiable (by simp) _)
     (hΦ.contDiffAt (Ω.isOpen.mem_nhds hxΩ)) (by simp)
 
-/-- **Composition of pullbacks with cutoffs**: `χ Φ^* (χ' Ψ^* ω) = (χ' ∘ Φ) χ (Ψ ∘ Φ)^* ω`, when
-`Φ` maps the support of `χ` into `Ω'`. -/
+/-- **Composition of pullbacks with cutoffs**: `χ Φ^* (χ' Ψ^* ω) = (χ' ∘ Φ) χ (Ψ ∘ Φ)^* ω`. Where
+`Φ x ∉ Ω'` both sides vanish, since `χ'` is supported in `Ω'`. -/
 theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
     {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω}
-    (hmaps : MapsTo Φ (tsupport χ) Ω') (ω : 𝓓(Ω'', E'' [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    (ω : 𝓓(Ω'', E'' [⋀^Fin k]→L[ℝ] F)) (x : E) :
     cutoffPullbackCLM χ Φ hΦ (cutoffPullbackCLM χ' Ψ hΨ ω) x =
       χ' (Φ x) • cutoffPullbackCLM χ (Ψ ∘ Φ) hΨΦ ω x := by
   by_cases hx : x ∈ tsupport χ
-  · have hxΩ : x ∈ Ω := χ.tsupport_subset hx
+  · by_cases hΦΩ : Φ x ∈ Ω'
+    swap
+    · have h0 : χ' (Φ x) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hΦΩ (χ'.tsupport_subset h)
+      simp only [cutoffPullbackCLM_apply, h0, zero_smul]
+      ext v
+      simp
+    have hxΩ : x ∈ Ω := χ.tsupport_subset hx
     have hΦx : DifferentiableAt ℝ Φ x :=
       (hΦ.contDiffAt (Ω.isOpen.mem_nhds hxΩ)).differentiableAt (by simp)
     have hΨx : DifferentiableAt ℝ Ψ (Φ x) :=
-      (hΨ.contDiffAt (Ω'.isOpen.mem_nhds (hmaps hx))).differentiableAt (by simp)
+      (hΨ.contDiffAt (Ω'.isOpen.mem_nhds hΦΩ)).differentiableAt (by simp)
     simp only [cutoffPullbackCLM_apply, Function.comp_apply, fderiv_comp x hΨx hΦx]
     ext v
     simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
