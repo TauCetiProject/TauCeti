@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differential operators on a finite-dimensional space in coordinates
@@ -29,6 +32,11 @@ vanish, if and only if it is a finite coordinate expression
 
 with smooth coefficients `c_α`; the coefficients are unique. No continuity of `D` is assumed.
 
+In these coordinates the principal symbol `TauCeti.smoothPrincipalSymbol`, defined by iterated
+commutators with multiplication operators, is the top-order part of the coordinate expression:
+`σ(D)(x, ξ) = ∑_{|α| = m} c_α(x) ∏ᵢ ξ(bᵢ) ^ αᵢ`, the monomial `∂^α` having principal symbol
+`ξ ↦ ∏ᵢ ξ(bᵢ) ^ αᵢ`.
+
 ## Main results
 
 * `Module.Basis.eq_coordinateOperator_coordinateCoeff`: a differential operator of order at most
@@ -37,6 +45,9 @@ with smooth coefficients `c_α`; the coefficients are unique. No continuity of `
   operators of order at most `m` are exactly the coordinate expressions of order `m`.
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
+* `Module.Basis.smoothPrincipalSymbol_multiIndexDeriv`,
+  `Module.Basis.smoothPrincipalSymbol_eq_sum_coordinateCoeff`: the principal symbol in
+  coordinates.
 
 ## References
 
@@ -108,5 +119,137 @@ theorem coordinateOperator_eq_zero_iff {m : ℕ} {c : (ι → ℕ) → C^∞⟮�
   TauCeti.coordinateOperator_eq_zero_iff _ _ b.lineDerivation_smoothCoord
     (fun x : E ↦ ContMDiffMap.evalAlgHom x)
     ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top
+
+/-! ### The principal symbol in coordinates -/
+
+/-- The principal symbol only depends on the underlying operator and on the order. -/
+private theorem smoothPrincipalSymbol_congr {x : E} (hx : 𝓘(ℝ, E).IsInteriorPoint x) {m k : ℕ}
+    {P : TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m}
+    {Q : TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k}
+    (hmk : m = k) (hPQ : (P : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) = Q)
+    (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) hx P ξ =
+      TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) hx Q ξ := by
+  subst hmk
+  rw [Subtype.ext hPQ]
+
+/-- A multi-index of order `k + 1` is a multi-index of order `k` plus a unit multi-index. -/
+private theorem exists_eq_add_single_of_sum_eq_succ {α : ι → ℕ} {k : ℕ} (hk : ∑ i, α i = k + 1) :
+    ∃ (i : ι) (α' : ι → ℕ), α = α' + Pi.single i 1 ∧ ∑ j, α' j = k := by
+  obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
+    by_contra! h
+    simp [h] at hk
+  have hα : α = (α - Pi.single i 1) + Pi.single i 1 := funext fun j ↦ by
+    rcases eq_or_ne j i with rfl | hj
+    · simp
+      omega
+    · simp [hj]
+  refine ⟨i, α - Pi.single i 1, hα, ?_⟩
+  have := congrArg (fun γ : ι → ℕ ↦ ∑ j, γ j) hα
+  simp only [Pi.add_apply, sum_add_distrib, Finset.sum_pi_single', mem_univ, ite_true] at this
+  omega
+
+omit [DecidableEq ι] in
+/-- The principal symbol of the monomial `∂^α = ∏ᵢ ∂ᵢ ^ αᵢ` in the partial derivatives along `b`,
+an operator of order `|α|`, is `ξ ↦ ∏ᵢ ξ(bᵢ) ^ αᵢ`. -/
+theorem smoothPrincipalSymbol_multiIndexDeriv {x : E} (hx : 𝓘(ℝ, E).IsInteriorPoint x)
+    (α : ι → ℕ) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) hx
+        ⟨TauCeti.multiIndexDeriv (fun i ↦ TauCeti.lineDerivation ℝ (b i))
+          (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α,
+          TauCeti.multiIndexDeriv_mem_differentialOperators _ _ α⟩ ξ =
+      ∏ i, ξ (b i) ^ α i := by
+  classical
+  obtain ⟨f, -, rfl⟩ := TauCeti.exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  -- Induction on the order `|α|`, removing one derivative `∂ᵢ` at a time.
+  suffices h : ∀ (k : ℕ) (α : ι → ℕ), ∑ i, α i = k →
+      TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) hx
+        ⟨TauCeti.multiIndexDeriv (fun i ↦ TauCeti.lineDerivation ℝ (b i))
+          (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α,
+          TauCeti.multiIndexDeriv_mem_differentialOperators _ _ α⟩ (mvfderiv 𝓘(ℝ, E) f x) =
+      ∏ i, mvfderiv 𝓘(ℝ, E) f x (b i) ^ α i from h _ α rfl
+  intro k
+  induction k with
+  | zero =>
+    intro α hk
+    obtain rfl : α = 0 := funext fun i ↦ Finset.sum_eq_zero_iff.1 hk i (mem_univ i)
+    rw [TauCeti.smoothPrincipalSymbol_mvfderiv]
+    simp
+  | succ k ih =>
+    intro α hk
+    obtain ⟨i, α', hα, hk'⟩ := exists_eq_add_single_of_sum_eq_succ hk
+    have hδ := (TauCeti.lineDerivation ℝ (b i)).mem_differentialOperators_one
+    rw [smoothPrincipalSymbol_congr hx (Q := ⟨_, TauCeti.comp_mem_differentialOperators
+        (TauCeti.multiIndexDeriv_mem_differentialOperators
+          (fun i ↦ TauCeti.lineDerivation ℝ (b i))
+          (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α') hδ⟩)
+        (by rw [hk, hk']) (by
+          dsimp only
+          conv_lhs => rw [hα]
+          rw [TauCeti.multiIndexDeriv_add_single, Module.End.mul_eq_comp])]
+    refine (TauCeti.smoothPrincipalSymbol_comp hx ⟨_,
+      TauCeti.multiIndexDeriv_mem_differentialOperators (fun i ↦ TauCeti.lineDerivation ℝ (b i))
+        (fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)) α'⟩ ⟨_, hδ⟩ _).trans ?_
+    rw [ih α' hk', TauCeti.smoothPrincipalSymbol_derivation_mvfderiv,
+      TauCeti.lineDerivation_apply_apply,
+      ← (TauCeti.mvfderiv_eq_fderiv_apply (𝕜 := ℝ) (f : E → ℝ) x (b i)), hα]
+    simp only [Pi.add_apply, pow_add, prod_mul_distrib]
+    congr 1
+    rw [Fintype.prod_eq_single i fun j hj ↦ by simp [hj]]
+    simp
+
+/-- **The principal symbol in coordinates.** The principal symbol at `x` of a differential
+operator `D` of order at most `m` on `C^∞(E)` is the top-order part of its coordinate expression
+`D f = ∑_{|α| ≤ m} c_α ∂^α f` along the basis `b`:
+`σ(D)(ξ) = ∑_{|α| = m} c_α(x) ∏ᵢ ξ(bᵢ) ^ αᵢ`. -/
+theorem smoothPrincipalSymbol_eq_sum_coordinateCoeff {x : E} (hx : 𝓘(ℝ, E).IsInteriorPoint x)
+    {m : ℕ} (D : TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) hx D ξ =
+      ∑ α ∈ piAntidiag univ m,
+        TauCeti.coordinateCoeff b.smoothCoord
+          (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) α x * ∏ i, ξ (b i) ^ α i := by
+  set c := TauCeti.coordinateCoeff b.smoothCoord
+    (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
+  set d : ι → Derivation ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ :=
+    fun i ↦ TauCeti.lineDerivation ℝ (b i)
+  have hd : ∀ i j, Commute (d i : Module.End ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (d j) :=
+    fun i j ↦ TauCeti.commute_lineDerivation (b i) (b j)
+  -- The summand `f ↦ c_α ∂^α f` of the coordinate expression, an operator of order `|α|`.
+  set T : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := fun α ↦
+    (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (c α)).restrictScalars ℝ ∘ₗ
+      TauCeti.multiIndexDeriv d hd α
+  have hT : ∀ α, T α ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (0 + ∑ i, α i) := fun α ↦
+    TauCeti.comp_mem_differentialOperators
+      (LinearMap.restrictScalars_mem_differentialOperators_zero _)
+      (TauCeti.multiIndexDeriv_mem_differentialOperators d hd α)
+  have hDT : (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) =
+      ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k, T α := by
+    refine (b.eq_coordinateOperator_coordinateCoeff D.2).trans (LinearMap.ext fun g ↦ ?_)
+    simp [T, c, d]
+  obtain ⟨f, -, rfl⟩ := TauCeti.exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  -- Each summand of order `|α| = m` contributes `c_α(x)` times the symbol of `∂^α`.
+  have htop : ∀ α ∈ piAntidiag univ m, ((m.factorial : ℝ))⁻¹ *
+      (TauCeti.smulCommutator ℝ f ^ m) (T α) 1 x =
+        c α x * ∏ i, mvfderiv 𝓘(ℝ, E) f x (b i) ^ α i := by
+    intro α hα
+    have hαm : ∑ i, α i = m := (mem_piAntidiag.1 hα).1
+    have h := TauCeti.smoothPrincipalSymbol_comp hx
+      ⟨_, LinearMap.restrictScalars_mem_differentialOperators_zero
+        (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (c α))⟩
+      ⟨_, TauCeti.multiIndexDeriv_mem_differentialOperators d hd α⟩ (mvfderiv 𝓘(ℝ, E) f x)
+    rw [b.smoothPrincipalSymbol_multiIndexDeriv hx α, TauCeti.smoothPrincipalSymbol_mvfderiv,
+      TauCeti.smoothPrincipalSymbol_mvfderiv] at h
+    simpa [T, hαm] using h
+  rw [TauCeti.smoothPrincipalSymbol_mvfderiv, hDT]
+  simp only [map_sum, LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, mul_sum]
+  rw [sum_range_succ, sum_congr rfl htop, add_eq_right]
+  refine sum_eq_zero fun k hk ↦ sum_eq_zero fun α hα ↦ ?_
+  rw [TauCeti.smulCommutator_pow_eq_zero (hT α) (by
+    rw [(mem_piAntidiag.1 hα).1]; simpa using hk)]
+  simp
 
 end Module.Basis
