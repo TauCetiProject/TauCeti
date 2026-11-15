@@ -33,7 +33,7 @@ the homology of `X` detect the cohomology of `X × Y`
 `pr₂^* : Hⁿ(Y; M) → Hⁿ(X × Y; M)` is cut out by the vanishing of these slant products
 (`TopCat.mem_range_singularCohomologyMap_snd_iff`).
 
-**Spheres.** For `X = Sᵈ⁺¹` the only homology of positive degree is `Hᵈ⁺¹(Sᵈ⁺¹; k) = k γ`, where
+**Spheres.** For `X = Sᵈ⁺¹` the only homology of positive degree is `H_{d+1}(Sᵈ⁺¹; k) = k γ`, where
 `γ` is the standard generator (`TauCeti.singularHomologyTopCatSphereGenerator`,
 `TauCeti.exists_eq_smul_singularHomologyTopCatSphereGenerator`). Let `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)` be the
 dual class (`TauCeti.singularCohomologyTopCatSphereGenerator`), with `⟨θ, γ⟩ = 1`
@@ -51,7 +51,16 @@ Then:
   a `k`-linear equivalence `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M) ≃ Hⁿ⁺ᵈ⁺¹(Y; M) × Hⁿ(Y; M)` whose inverse is
   `(b, c) ↦ pr₂^* b + pr₁^* θ ⌣ pr₂^* c` (`TopCat.singularCohomologySphereProdSlantEquiv`). This
   is the analogue, for an arbitrary coefficient module `M`, of the equivalence
-  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`.
+  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`;
+* for a map `γ : Sᵈ⁺¹ ⟶ X` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`, the two components of `(γ × 𝟙)^* φ` are the
+  restriction of `φ` to the slice `{γ x₀} × Y`, since the slant product by a point is restriction
+  (`TopCat.singularSlant_singularHomology₀Section`), and, by naturality, the slant product
+  `φ / γ_* [Sᵈ⁺¹]` by the image of the standard generator `[Sᵈ⁺¹]` (written `γ` above), so
+  `(γ × 𝟙)^* φ = pr₂^* (φ restricted to {γ x₀} × Y) + pr₁^* θ ⌣ pr₂^* (φ / γ_* [Sᵈ⁺¹])`
+  (`TopCat.singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singularCup_sphere`,
+  stated more generally for `γ × g` with `g : Y' ⟶ Y`, whose components are pulled back along
+  `g`). For a loop `γ : S¹ ⟶ X` this expresses the pullback of a class on `X × Y` to `S¹ × Y`
+  through its point and loop slant products.
 
 **Cup products.** With coefficients `M = k`, the decomposition turns the cup product into a
 multiplication table. The generator satisfies `θ ⌣ θ = 0`
@@ -107,7 +116,7 @@ variable {M}
 
 /-- **Classes of `Sᵈ⁺¹ × Y` pulled back from `Y`**: a class `φ ∈ Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` is pulled
 back from `Y` if and only if its slant product `φ / γ` by the standard generator `γ` of
-`Hᵈ⁺¹(Sᵈ⁺¹; k)` vanishes. -/
+`H_{d+1}(Sᵈ⁺¹; k)` vanishes. -/
 theorem mem_range_singularCohomologyMap_snd_sphere_iff (Y : TopCat.{w}) {d n : ℕ}
     (φ : (sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M
       (n + (d + 1))) :
@@ -132,7 +141,7 @@ theorem mem_range_singularCohomologyMap_snd_sphere_iff (Y : TopCat.{w}) {d n : �
     rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
 
 /-- **Classes of `Sᵈ⁺¹ × Y` are detected by two slant products**: for `x₀ ∈ Sᵈ⁺¹` and the
-standard generator `γ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)`, a class `φ ∈ Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` with
+standard generator `γ` of `H_{d+1}(Sᵈ⁺¹; k)`, a class `φ ∈ Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` with
 `φ / [x₀] = 0` and `φ / γ = 0` is zero. -/
 theorem eq_zero_of_singularSlant_sphere_eq_zero (Y : TopCat.{w}) {d : ℕ}
     (x₀ : sphere.{w} (d + 1)) {n : ℕ}
@@ -150,7 +159,7 @@ theorem eq_zero_of_singularSlant_sphere_eq_zero (Y : TopCat.{w}) {d : ℕ}
 variable (M)
 
 /-- **The decomposition of the cohomology of `Sᵈ⁺¹ × Y`**: for `x₀ ∈ Sᵈ⁺¹`, the standard
-generator `γ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` and the dual class `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)`, `⟨θ, γ⟩ = 1`, every
+generator `γ` of `H_{d+1}(Sᵈ⁺¹; k)` and the dual class `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)`, `⟨θ, γ⟩ = 1`, every
 `φ ∈ Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` is `pr₂^* (φ / [x₀]) + pr₁^* θ ⌣ pr₂^* (φ / γ)`. -/
 theorem singularCohomologyMap_snd_add_singularCup_sphere (Y : TopCat.{w}) {d : ℕ}
     (x₀ : sphere.{w} (d + 1)) {n : ℕ}
@@ -174,7 +183,7 @@ theorem singularCohomologyMap_snd_add_singularCup_sphere (Y : TopCat.{w}) {d : �
       TauCeti.singularKronecker_singularCohomologyTopCatSphereGenerator, one_smul, sub_self]
 
 /-- **The cohomology of `Sᵈ⁺¹ × Y`**: for `x₀ ∈ Sᵈ⁺¹`, the slant products by the class of `x₀`
-and by the standard generator `γ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` give a `k`-linear equivalence
+and by the standard generator `γ` of `H_{d+1}(Sᵈ⁺¹; k)` give a `k`-linear equivalence
 `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M) ≃ Hⁿ⁺ᵈ⁺¹(Y; M) × Hⁿ(Y; M)`. Its inverse sends `(b, c)` to
 `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`, where `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)` is dual to `γ`
 (`TopCat.singularCohomologyMap_snd_add_singularCup_sphere`). -/
@@ -207,7 +216,7 @@ def singularCohomologySphereProdSlantEquiv (Y : TopCat.{w}) {d : ℕ} (x₀ : sp
         one_smul]))
 
 /-- The decomposition of `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` records the slant products by the class of `x₀`
-and by the standard generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)`. -/
+and by the standard generator of `H_{d+1}(Sᵈ⁺¹; k)`. -/
 @[simp]
 lemma singularCohomologySphereProdSlantEquiv_apply (Y : TopCat.{w}) {d : ℕ}
     (x₀ : sphere.{w} (d + 1)) (n : ℕ)
@@ -235,6 +244,74 @@ lemma singularCohomologySphereProdSlantEquiv_symm_apply (Y : TopCat.{w}) {d : �
             (TauCeti.singularCohomologyTopCatSphereGenerator k d))
           (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2) :=
   (rfl)
+
+/-- **The slant decomposition of a class pulled back along a sphere**: for maps
+`γ : Sᵈ⁺¹ ⟶ X` and `g : Y' ⟶ Y` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`, the components of `(γ × g)^* φ` in
+the decomposition of `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y'; M)` at `x₀` are the pullback of `φ` along
+`y' ↦ (γ x₀, g y')` and the pullback along `g` of the slant product `φ / γ_* [Sᵈ⁺¹]` by the
+image of the standard generator. For `g = 𝟙 Y` the first component is the restriction of `φ` to
+the slice `{γ x₀} × Y`. -/
+theorem singularCohomologySphereProdSlantEquiv_singularCohomologyMap_tensorHom
+    {X Y Y' : TopCat.{w}} {d : ℕ} (γ : TopCat.sphere.{w} (d + 1) ⟶ X) (g : Y' ⟶ Y)
+    (x₀ : TopCat.sphere.{w} (d + 1)) (n : ℕ)
+    (φ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + (d + 1))) :
+    singularCohomologySphereProdSlantEquiv M Y' x₀ n
+        (TopCat.singularCohomologyMap (γ ⊗ₘ g) (n + (d + 1)) φ) =
+      (TopCat.singularCohomologyMap
+          (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y' (γ x₀))) g)
+          (n + (d + 1)) φ,
+        TopCat.singularCohomologyMap g n
+          (singularSlant k M X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom (d + 1) n (n + (d + 1))
+            (add_comm (d + 1) n)
+            (((singularHomologyFunctor (ModuleCat.{w} k) (d + 1)).obj (𝟙_ _)).map γ
+              (TauCeti.singularHomologyTopCatSphereGenerator k d)) φ)) := by
+  have hg : g ≫ CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y (γ x₀))) (𝟙 Y) =
+      CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y' (γ x₀))) g := by
+    -- a constant map precomposed with `g` is constant
+    exact CartesianMonoidalCategory.hom_ext _ _ (TopCat.ext fun _ ↦ by simp) (by simp)
+  refine Prod.ext ?_ ?_
+  · -- `γ` sends the point class of `x₀` to that of `γ x₀`, where slanting is restriction
+    have hx₀ : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ _)).map γ
+        (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k)) =
+          TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) (γ x₀) (1 : k) := by
+      simp [← ConcreteCategory.comp_apply]
+    simp only [singularCohomologySphereProdSlantEquiv_apply]
+    rw [singularSlant_naturality, hx₀,
+      singularSlant_singularHomology₀Section M X Y _ _ _ _ (fun s ↦ by simp), ← hg,
+      TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+  · -- slanting by the generator commutes with pulling back along `γ × g`
+    exact singularSlant_naturality M γ g _ _ _ _ _ _ φ
+
+/-- **A class pulled back along a sphere**: for maps `γ : Sᵈ⁺¹ ⟶ X` and `g : Y' ⟶ Y`, a point
+`x₀ ∈ Sᵈ⁺¹` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`,
+`(γ × g)^* φ = pr₂^* (ι^* φ) + pr₁^* θ ⌣ pr₂^* g^* (φ / γ_* [Sᵈ⁺¹])`, where
+`ι : y' ↦ (γ x₀, g y')` and `θ` is dual to the standard generator `[Sᵈ⁺¹]` of `H_{d+1}(Sᵈ⁺¹; k)`.
+For `g = 𝟙 Y`, `ι` is the inclusion of the slice through `γ x₀`; for a loop `γ` (`d = 0`) and a
+line bundle `U` on `X × Y`, the restriction of `c₁(U)` to `S¹ × Y` is thus determined by the
+point class of `U` and its loop class `c₁(U) / γ_* [S¹]`. -/
+theorem singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singularCup_sphere
+    {X Y Y' : TopCat.{w}} {d : ℕ} (γ : TopCat.sphere.{w} (d + 1) ⟶ X) (g : Y' ⟶ Y)
+    (x₀ : TopCat.sphere.{w} (d + 1)) {n : ℕ}
+    (φ : (X ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + (d + 1))) :
+    TopCat.singularCohomologyMap (γ ⊗ₘ g) (n + (d + 1)) φ =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y') (n + (d + 1))
+          (TopCat.singularCohomologyMap
+            (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y' (γ x₀))) g)
+            (n + (d + 1)) φ) +
+        (TopCat.sphere.{w} (d + 1) ⊗ Y').singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+          (λ_ M).hom (d + 1) n (n + (d + 1)) (add_comm (d + 1) n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y') (d + 1)
+            (TauCeti.singularCohomologyTopCatSphereGenerator k d))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y') n
+            (TopCat.singularCohomologyMap g n
+              (singularSlant k M X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom (d + 1) n (n + (d + 1))
+                (add_comm (d + 1) n)
+                (((singularHomologyFunctor (ModuleCat.{w} k) (d + 1)).obj (𝟙_ _)).map γ
+                  (TauCeti.singularHomologyTopCatSphereGenerator k d)) φ))) := by
+  rw [← (singularCohomologySphereProdSlantEquiv M Y' x₀ n).symm_apply_apply
+      (TopCat.singularCohomologyMap (γ ⊗ₘ g) (n + (d + 1)) φ),
+    singularCohomologySphereProdSlantEquiv_singularCohomologyMap_tensorHom,
+    singularCohomologySphereProdSlantEquiv_symm_apply]
 
 end Sphere
 
