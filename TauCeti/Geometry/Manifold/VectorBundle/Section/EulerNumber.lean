@@ -11,8 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Degree
 
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-
 /-!
 # The Euler number as a signed count of transverse zeros
 
@@ -118,6 +116,43 @@ private theorem exists_isolating_nhds_of_hasFDerivAt (e : Trivialization F (π F
   rw [hf0, φ.left_inv hx.1.1, hx0]
   exact congrArg Prod.snd (e.zeroSection ℝ hx.2.1)
 
+omit [FiniteDimensional ℝ X] [T2Space M] [IsManifold 𝓘(ℝ, X) 1 M] in
+/-- **A section has derivative the identity in the chart given by its linearization.** Let `z` be
+a zero of `s` whose fibre coordinate in a trivialization `e` is differentiable at `z`, and let
+`Λ : X ≃ F` agree with the linearization of `s` at `z` read in `e`. Then in the chart
+`Λ ∘ chartAt X z` the fibre coordinate of `s` has derivative the identity at the image of `z`. -/
+private theorem hasFDerivAt_transHomeomorph_chartAt_symm_eq_id (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {z : M} (hze : z ∈ e.baseSet) (hz : s z = 0)
+    (hg : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ (e ⟨y, s y⟩).2) z) (Λ : X ≃L[ℝ] F)
+    (hΛ : ∀ v, Λ v = e.continuousLinearMapAt ℝ z (sectionLinearization (F := F) 𝓘(ℝ, X) id s z v)) :
+    HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F
+        (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)
+        (s (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)))).2)
+      (ContinuousLinearMap.id ℝ F) ((chartAt X z).transHomeomorph Λ.toHomeomorph z) := by
+  set φ := (chartAt X z).transHomeomorph Λ.toHomeomorph
+  -- The derivative in `chartAt X z` is the linearization read in `e`, so precomposing with
+  -- `Λ⁻¹` gives the identity.
+  have hgc := hasFDerivAt_comp_chartAt_symm_sectionLinearization continuousAt_id hze hg hz
+  have hpt : chartAt X z z = Λ.symm (φ z) := (Λ.symm_apply_apply _).symm
+  rw [hpt] at hgc
+  have h₂ := hgc.comp (φ z) Λ.symm.hasFDerivAt
+  convert h₂ using 1
+  · ext v
+    rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
+      ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply, Function.comp_apply,
+      Function.comp_apply]
+    -- The two sides differ only by the base map `id` of the linearization.
+    rfl
+  ext v
+  -- The composite passes through `TangentSpace 𝓘(ℝ, X) z`, which is `X` only after unfolding,
+  -- so its topology instance differs syntactically from that of `X` and
+  -- `ContinuousLinearMap.comp_apply` fails to rewrite. `change` evaluates the two compositions
+  -- at `v` definitionally, and drops the coercion of `Λ.symm` to a continuous linear map.
+  change v = e.continuousLinearMapAt ℝ z
+    (sectionLinearization (F := F) 𝓘(ℝ, X) id s z (Λ.symm v))
+  rw [← hΛ]
+  exact (Λ.apply_symm_apply v).symm
+
 /-- **The local index at an orientation-preserving transverse zero is `1`.** Let `z` be a zero of
 a section `s` of an oriented bundle `E` of rank `n + 1` over a manifold oriented by `oM`, at which
 `s` is differentiable with invertible linearization `D : T_z M ≃ E_z`. If `D` carries the
@@ -133,46 +168,18 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   have := FiniteDimensional.of_finrank_eq_succ hF
   set e := trivializationAt F E z
   have hze : z ∈ e.baseSet := mem_baseSet_trivializationAt F E z
-  -- The fibre coordinate of `s` in the preferred trivialization, and its derivative in the chart.
+  -- The fibre coordinate of `s` in the preferred trivialization is differentiable at `z`.
   have hg : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ (e ⟨y, s y⟩).2) z :=
     ((mdifferentiableAt_totalSpace 𝓘(ℝ, X) (fun x ↦ TotalSpace.mk' F x (s x))).1 hsd).2
-  have hgc : HasFDerivAt ((fun y ↦ (e ⟨y, s y⟩).2) ∘ (chartAt X z).symm)
-      ((e.continuousLinearMapAt ℝ z).comp (sectionLinearization (F := F) 𝓘(ℝ, X) id s z))
-      (chartAt X z z) := by
-    have h₁ := (TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.1
-      hg).hasFDerivAt
-    -- The linearization lemma is stated for a base map, here `id`, so it reads the trivialization
-    -- at `id z`; `id_eq` puts it at `z`.
-    have hlin := continuousLinearMapAt_comp_sectionLinearization continuousAt_id hze hg hz
-    simp only [id_eq] at hlin
-    rw [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← hlin] at h₁
-    simp only [extChartAt, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
-      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_def, id] at h₁
-    exact h₁
   -- The chart `φ = Λ ∘ chartAt X z`, where `Λ = e_z ∘ D`, in which the section has derivative the
   -- identity at `φ z`.
   let Λ : X ≃L[ℝ] F := D.trans (e.continuousLinearEquivAt ℝ z hze)
   let φ : OpenPartialHomeomorph M F := (chartAt X z).transHomeomorph Λ.toHomeomorph
   have hzφ : z ∈ φ.source := mem_chart_source X z
-  have hA : HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F (φ.symm y) (s (φ.symm y)))).2)
-      (ContinuousLinearMap.id ℝ F) (φ z) := by
-    have hpt : chartAt X z z = Λ.symm (φ z) := (Λ.symm_apply_apply _).symm
-    rw [hpt] at hgc
-    have h₂ := hgc.comp (φ z) Λ.symm.hasFDerivAt
-    convert h₂ using 1
-    · ext v
-      rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
-        ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply, Function.comp_apply,
-        Function.comp_apply]
-    ext v
-    -- The composite passes through `TangentSpace 𝓘(ℝ, X) z`, which is `X` only after unfolding,
-    -- so its topology instance differs syntactically from that of `X` and
-    -- `ContinuousLinearMap.comp_apply` fails to rewrite. `change` evaluates the two compositions
-    -- at `v` definitionally, and drops the coercion of `Λ.symm` to a continuous linear map.
-    change v = e.continuousLinearMapAt ℝ z
-      (sectionLinearization (F := F) 𝓘(ℝ, X) id s z (Λ.symm v))
+  have hA := hasFDerivAt_transHomeomorph_chartAt_symm_eq_id e hze hz hg Λ fun v ↦ by
+    -- `Λ v` is `e_z (D v)` by definition of the composite.
     rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
-    exact (Λ.apply_symm_apply v).symm
+    rfl
   -- An isolating neighbourhood of `z` on which `e` reads the fibre orientations as at `z`.
   obtain ⟨U, hUo, hzU, hUz, hUe, hUφ, ho'⟩ := exists_isolating_nhds_of_hasFDerivAt o hF e φ hze hzφ
     hz hA ⟨1, by simpa using AntilipschitzWith.id⟩
@@ -236,24 +243,9 @@ theorem sectionIndex_toHomologicalOrientation_eq_ite {z : M} (hz : s z = 0)
   -- isomorphism, and it reverses the orientations since it does not preserve them.
   have := FiniteDimensional.of_finrank_eq_succ hF
   have := VectorBundle.finiteDimensional ℝ F E z
-  have hfin : finrank ℝ (TangentSpace 𝓘(ℝ, X) z) = finrank ℝ (E z) :=
-    hX.trans ((VectorBundle.finrank_eq ℝ F E z).trans hF).symm
-  set A := sectionLinearization (F := F) 𝓘(ℝ, X) id s z
-  have hinj : Function.Injective A :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin (f := A.toLinearMap)).2 hreg
-  -- Read in the preferred trivialization `e` at `z`, `A` is an isomorphism `X ≃ F` of
-  -- finite-dimensional normed spaces, hence a continuous linear equivalence.
-  set e := trivializationAt F E z
-  have hze : z ∈ e.baseSet := mem_baseSet_trivializationAt F E z
-  let B : X →L[ℝ] F := (e.continuousLinearEquivAt ℝ z hze : E z →L[ℝ] F).comp A
-  have hB : Function.Bijective B :=
-    ⟨(e.continuousLinearEquivAt ℝ z hze).injective.comp hinj,
-      (e.continuousLinearEquivAt ℝ z hze).surjective.comp hreg⟩
-  let D : TangentSpace 𝓘(ℝ, X) z ≃L[ℝ] E z :=
-    (LinearEquiv.ofBijective B.toLinearMap hB).toContinuousLinearEquiv.trans
-      (e.continuousLinearEquivAt ℝ z hze).symm
-  have hD : (D : TangentSpace 𝓘(ℝ, X) z →L[ℝ] E z) = A := ContinuousLinearMap.ext fun v ↦
-    (e.continuousLinearEquivAt ℝ z hze).symm_apply_apply (A v)
+  obtain ⟨D, hD⟩ : ∃ D : TangentSpace 𝓘(ℝ, X) z ≃L[ℝ] E z,
+      (D : TangentSpace 𝓘(ℝ, X) z →L[ℝ] E z) = sectionLinearization (F := F) 𝓘(ℝ, X) id s z :=
+    exists_continuousLinearEquiv_eq_sectionLinearization_of_surjective (hX.trans hF.symm) hreg
   rcases Orientation.eq_or_eq_neg ((oM.orientationAt z).map _ D.toLinearEquiv) (o z)
     (by rw [Fintype.card_fin, VectorBundle.finrank_eq ℝ F E z, hF]) with ho | ho
   · exact absurd ⟨D, hD, ho⟩ h

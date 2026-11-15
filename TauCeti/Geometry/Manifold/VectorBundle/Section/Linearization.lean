@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
@@ -151,6 +152,24 @@ theorem continuousLinearMapAt_comp_sectionLinearization
   ext v
   simp only [ContinuousLinearMap.comp_apply, e.continuousLinearMapAt_symmL he]
 
+/-- On a manifold modelled on its model space, the fiber coordinates of a section at a zero, read
+in the preferred chart, have Fréchet derivative the intrinsic linearization read in the
+trivialization. -/
+theorem hasFDerivAt_comp_chartAt_symm_sectionLinearization {N : Type*} [TopologicalSpace N]
+    [ChartedSpace EM N] {b : N → B} {s : ∀ y, E (b y)} {x : N}
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
+    (hs : MDifferentiableAt 𝓘(𝕜, EM) 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    HasFDerivAt ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
+      ((e.continuousLinearMapAt 𝕜 (b x)).comp (sectionLinearization (F := F) 𝓘(𝕜, EM) b s x))
+      (chartAt EM x x) := by
+  have h := (show DifferentiableAt 𝕜 ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
+      (chartAt EM x x) by
+    simpa only [extChartAt_model_symm_eq_chartAt_symm, extChartAt_model_apply_eq_chartAt_apply]
+      using hs.differentiableAt_comp_extChartAt_symm).hasFDerivAt
+  rw [fderiv_comp_chartAt_symm, ← continuousLinearMapAt_comp_sectionLinearization hb he hs hzero]
+    at h
+  exact h
+
 /-- A zero is regular for the intrinsic linearization exactly when its coordinate derivative
 is surjective. -/
 theorem surjective_sectionLinearization_iff
@@ -161,6 +180,33 @@ theorem surjective_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   exact Function.Surjective.of_comp_iff' (e.continuousLinearEquivAt 𝕜 (b x) he).symm.bijective _
+
+/-- When the model space of the source and the fiber have the same finite dimension, a surjective
+linearization is a continuous linear equivalence. -/
+theorem exists_continuousLinearEquiv_eq_sectionLinearization_of_surjective [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 EM] [FiniteDimensional 𝕜 F]
+    (hfin : Module.finrank 𝕜 EM = Module.finrank 𝕜 F)
+    (hreg : Function.Surjective (sectionLinearization (F := F) IM b s x)) :
+    ∃ D : TangentSpace IM x ≃L[𝕜] E (b x),
+      (D : TangentSpace IM x →L[𝕜] E (b x)) = sectionLinearization (F := F) IM b s x := by
+  let := VectorBundle.finiteDimensional 𝕜 F E (b x)
+  let : FiniteDimensional 𝕜 (TangentSpace IM x) := inferInstanceAs (FiniteDimensional 𝕜 EM)
+  set A := sectionLinearization (F := F) IM b s x
+  have hinj : Function.Injective A :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (hfin.trans (VectorBundle.finrank_eq 𝕜 F E (b x)).symm) (f := A.toLinearMap)).2 hreg
+  -- Read in the preferred trivialization `t` at `b x`, `A` is a linear isomorphism onto the
+  -- normed space `F`, hence a continuous linear equivalence.
+  set t := trivializationAt F E (b x)
+  have ht : b x ∈ t.baseSet := mem_baseSet_trivializationAt F E (b x)
+  let B : TangentSpace IM x →L[𝕜] F :=
+    (t.continuousLinearEquivAt 𝕜 (b x) ht : E (b x) →L[𝕜] F).comp A
+  have hB : Function.Bijective B :=
+    ⟨(t.continuousLinearEquivAt 𝕜 (b x) ht).injective.comp hinj,
+      (t.continuousLinearEquivAt 𝕜 (b x) ht).surjective.comp hreg⟩
+  exact ⟨(LinearEquiv.ofBijective B.toLinearMap hB).toContinuousLinearEquiv.trans
+      (t.continuousLinearEquivAt 𝕜 (b x) ht).symm, ContinuousLinearMap.ext fun v ↦
+    (t.continuousLinearEquivAt 𝕜 (b x) ht).symm_apply_apply (A v)⟩
 
 /-- At a zero, the intrinsic linearization has the same kernel as the derivative of any
 differentiable fiber-coordinate expression. -/

@@ -347,7 +347,8 @@ theorem _root_.OpenPartialHomeomorph.localOrientationTransport_localOrientationO
       (n + 1)) :=
     isIso_localHomologyMap Z (sourceRestrict φ) (isOpenEmbedding_sourceRestrict φ)
       (sourceRestrict_preimage_eq φ hKφ) hKc.isClosed
-      (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩, φ.right_inv (hKφ hz)⟩) (n + 1)
+      (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩,
+        (sourceRestrict_apply φ _).trans (φ.right_inv (hKφ hz))⟩) (n + 1)
   obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso (localHomologyMap Z (sourceRestrict φ)
     (sourceRestrict_preimage_eq φ hKφ).subset (n + 1))).2 c
   have hgx := localHomologyRestriction_localHomologyMap_subtypeVal_eq ω hE φ hKφ w hx hxK
@@ -425,11 +426,12 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
         (hWo.preimage continuous_subtype_val))
   have hgφS : (sourceRestrict φ).comp iφ ⁻¹' {φ a} = SW := by
     ext x
-    simp only [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply, SW]
+    simp only [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply, sourceRestrict_apply,
+      SW]
     exact ⟨fun h ↦ φ.injOn x.2.1.2 haφ h, fun h ↦ by rw [← h]; rfl⟩
   have : IsIso (localHomologyMap Z ((sourceRestrict φ).comp iφ) hgφS.subset (n + 1)) :=
     isIso_localHomologyMap Z _ hgφ hgφS isClosed_singleton
-      (singleton_subset_iff.2 ⟨⟨a, haW⟩, rfl⟩) (n + 1)
+      (singleton_subset_iff.2 ⟨⟨a, haW⟩, sourceRestrict_apply φ _⟩) (n + 1)
   obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso
     (localHomologyMap Z ((sourceRestrict φ).comp iφ) hgφS.subset (n + 1))).2
     ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source (φ a)) ω

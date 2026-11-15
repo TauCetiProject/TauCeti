@@ -68,7 +68,7 @@ theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
   (rfl)
 
 /-- The restriction of an open partial homeomorphism to its source is an open embedding. -/
-theorem isOpenEmbedding_sourceRestrict : IsOpenEmbedding e.sourceRestrict :=
+theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestrict :=
   e.isOpenEmbedding_restrict
 
 /-- A point of the source is the only point of the source that `e` sends to its image. -/
