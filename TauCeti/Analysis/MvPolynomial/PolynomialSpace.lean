@@ -121,6 +121,12 @@ theorem polynomialEvalₗ_X (i : ι) :
   ext x
   simp
 
+@[simp]
+theorem polynomialEvalₗ_mul (p q : MvPolynomial ι ℝ) :
+    polynomialEvalₗ ι (p * q) = polynomialEvalₗ ι p * polynomialEvalₗ ι q := by
+  ext x
+  simp
+
 /-- Every constant function belongs to every nonnegative degree bound. -/
 @[simp]
 theorem const_mem_polynomialsDegLE (m : ℕ) (c : ℝ) :
@@ -179,7 +185,7 @@ theorem mul_mem_polynomialsDegLE {m k : ℕ} {f g : EuclideanSpace ℝ ι → �
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
   obtain ⟨q, hq, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hg
   exact (mem_polynomialsDegLE_iff ι).2
-    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), by ext; simp⟩
+    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), polynomialEvalₗ_mul ι p q⟩
 
 /-- A finite product of polynomial functions has degree at most the sum of their degree bounds. -/
 theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
@@ -194,15 +200,14 @@ theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
     exact mul_mem_polynomialsDegLE (hf a (Finset.mem_insert_self a s))
       (ih fun b hb ↦ hf b (Finset.mem_insert_of_mem hb))
 
-/-- A product of coordinate projections over a subset of `Fin j` has total degree at most `m`
-whenever `j ≤ m`. -/
-theorem prod_coord_mem_polynomialsDegLE {m j : ℕ} (hj : j ≤ m)
-    (I : Fin j → ι) (S : Finset (Fin j)) :
-    (fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈ polynomialsDegLE ι m := by
-  have hcard : (∑ _ ∈ S, 1) ≤ m := by simpa using (Finset.card_le_univ S).trans (by simpa using hj)
-  convert polynomialsDegLE_mono ι hcard (finset_prod_mem_polynomialsDegLE S fun l _ ↦
-    (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl) using 1
-  ext x; simp
+/-- A finite product of coordinate projections indexed by `S : Finset α` has total degree at most
+`S.card`. -/
+theorem prod_coord_mem_polynomialsDegLE {α : Type*} (S : Finset α) (I : α → ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈ polynomialsDegLE ι S.card := by
+  convert finset_prod_mem_polynomialsDegLE S fun l _ ↦
+    (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl using 1
+  · simp
+  · ext x; simp
 
 /-- Translating the input by adding a fixed vector preserves the total-degree bound. -/
 theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}

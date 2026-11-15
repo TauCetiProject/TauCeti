@@ -143,7 +143,7 @@ theorem taylorPolynomial_add {m : ℕ} {u v : E → F} {y : E}
 theorem taylorPolynomial_sub {m : ℕ} {u v : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (hv : ContDiffAt 𝕜 m v y) :
     taylorPolynomial 𝕜 m (u - v) y = taylorPolynomial 𝕜 m u y - taylorPolynomial 𝕜 m v y := by
-  rw [sub_eq_add_neg, taylorPolynomial_add hu (show ContDiffAt 𝕜 m (-v) y from hv.neg),
+  rw [sub_eq_add_neg, taylorPolynomial_add hu (Pi.neg_def v ▸ hv.neg),
     taylorPolynomial_neg, sub_eq_add_neg]
 
 theorem taylorPolynomial_const_smul {m : ℕ} {u : E → F} {y : E}
@@ -176,7 +176,7 @@ theorem iteratedFDeriv_taylorPolynomial_self [IsRCLikeNormedField 𝕜] {m : ℕ
   let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   exact iteratedFDeriv_finiteJetPolynomial_self m (fun r ↦ iteratedFDeriv 𝕜 r.val u y) y
     ⟨j, Nat.lt_succ_of_le hj⟩
-    fun v σ ↦ iteratedFDeriv_comp_perm_of_contDiffAt (hu.of_le (by exact_mod_cast hj)) v σ
+    fun v σ ↦ (hu.of_le (by exact_mod_cast hj)).iteratedFDeriv_comp_perm_of_isRCLikeNormedField v σ
 
 end NormedField
 

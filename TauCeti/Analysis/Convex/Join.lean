@@ -14,11 +14,11 @@ Mathlib's `convexHull_insert` writes the convex hull of `insert a s` as the conv
 with the convex hull of `s`, provided `s` is nonempty. This file states the membership form with
 no nonemptiness hypothesis: a point of the convex hull of `insert a s` is either `a` itself or
 lies on a segment from `a` to a point of the convex hull of `s` (`TauCeti.mem_convexHull_insert`).
+Consequently, if `s` is convex, `x ∈ t`, and `t` is star-convex about every point of `s`, then
+`convexHull 𝕜 (insert x s) ⊆ t` (`Convex.convexHull_insert_subset_of_forall_starConvex`).
 
 The convex join of a point `x` with any set is star-convex about `x`
-(`TauCeti.starConvex_convexJoin_singleton_left`). Consequently, if `s` is convex, `x ∈ t`, and `t`
-is star-convex about every point of `s`, then `convexHull 𝕜 (insert x s) ⊆ t`
-(`Convex.convexHull_insert_subset_of_forall_starConvex`).
+(`TauCeti.starConvex_convexJoin_singleton_left`).
 -/
 
 public section

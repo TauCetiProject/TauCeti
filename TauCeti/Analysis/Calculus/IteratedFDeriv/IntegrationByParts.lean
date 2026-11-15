@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 
 /-!
 # Iterated integration by parts along a list of directions
@@ -20,22 +21,20 @@ moves the derivatives onto `f` in the reversed order with sign `(-1) ^ vs.length
   (-1 : ℝ) ^ vs.length • ∫ x, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ`.
 
 Here `g` is `C^{vs.length}` with compact support, while `f` is only assumed to be `C^{vs.length}`
-at the points of `tsupport g`: extending `f` off a neighborhood of `tsupport g` via
-`ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact` reduces the local statement to a globally
-`C^{vs.length}` map, where induction on `vs` applies Mathlib's single-step
-`integral_bilinear_fderiv_right_eq_neg_left_of_integrable`.
+at the points of `tsupport g`. Requiring smoothness of `f` only on the compact support of the test
+function `g` makes the formula directly applicable to locally smooth functions on open domains, as
+used for averaged Taylor polynomials and higher-order weak derivatives.
 
 ## Main results
 
-* `TauCeti.tsupport_iteratedFDerivAlong_subset`, `HasCompactSupport.iteratedFDerivAlong`:
-  differentiating along a list of directions shrinks the topological support and preserves compact
-  support.
 * `TauCeti.integral_bilinear_iteratedFDerivAlong_eq`: iterated integration by parts for a
   continuous bilinear pairing against a compactly supported test map `g`, requiring `f` to be
   `C^{vs.length}` only on `tsupport g`.
 * `TauCeti.integral_smul_iteratedFDerivAlong_eq`, `TauCeti.integral_mul_iteratedFDerivAlong_eq`:
-  specializations to scalar multiplication and multiplication.
-* `TauCeti.setIntegral_mul_iteratedFDerivAlong_eq`: set-integral form on any domain `s` containing
+  specializations to scalar multiplication and multiplication over a normed `ℝ`-algebra field `𝕜`.
+* `TauCeti.setIntegral_bilinear_iteratedFDerivAlong_eq`,
+  `TauCeti.setIntegral_smul_iteratedFDerivAlong_eq`,
+  `TauCeti.setIntegral_mul_iteratedFDerivAlong_eq`: set-integral forms on any domain `s` containing
   `tsupport g`.
 -/
 
@@ -45,29 +44,6 @@ namespace TauCeti
 
 open Filter MeasureTheory Set
 open scoped ContDiff Topology
-
-section Support
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Iterated directional differentiation shrinks the topological support. -/
-theorem tsupport_iteratedFDerivAlong_subset (vs : List E) (f : E → F) :
-    tsupport (iteratedFDerivAlong 𝕜 vs f) ⊆ tsupport f := by
-  induction vs with
-  | nil => rw [iteratedFDerivAlong_nil]
-  | cons v vs ih =>
-    rw [iteratedFDerivAlong_cons]
-    exact (tsupport_fderiv_apply_subset 𝕜 v).trans ih
-
-/-- Iterated directional differentiation preserves compact support. -/
-theorem _root_.HasCompactSupport.iteratedFDerivAlong {f : E → F} (hf : HasCompactSupport f)
-    (vs : List E) :
-    HasCompactSupport (iteratedFDerivAlong 𝕜 vs f) :=
-  hf.of_isClosed_subset (isClosed_tsupport _) (tsupport_iteratedFDerivAlong_subset vs f)
-
-end Support
 
 section IntegrationByParts
 
@@ -113,11 +89,9 @@ private theorem integral_bilinear_iteratedFDerivAlong_eq_of_contDiff
     have step2 := ih (f := iteratedFDerivAlong ℝ [v] f)
       (hf.iteratedFDerivAlong [v] (by simp [List.length_cons]))
       (hg.of_le (by exact_mod_cast Nat.le_succ ws.length))
-    simp only [iteratedFDerivAlong_cons_apply] at step1 ⊢
-    rw [step1, show (fun x ↦ B (fderiv ℝ f x v) (g' x)) =
-        fun x ↦ B (iteratedFDerivAlong ℝ [v] f x) (iteratedFDerivAlong ℝ ws g x) by ext; simp [g'],
-      step2, ← iteratedFDerivAlong_append, ← List.reverse_cons, List.length_cons, pow_succ',
-      neg_one_mul, neg_smul]
+    simp only [g', iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil] at step1 step2 ⊢
+    rw [step1, step2, ← iteratedFDerivAlong_append]
+    simp [pow_succ']
 
 /-- **Iterated integration by parts along a list of directions.** If `g` is `C^{vs.length}` with
 compact support and `f` is `C^{vs.length}` at every point of `tsupport g`, then
@@ -129,11 +103,9 @@ theorem integral_bilinear_iteratedFDerivAlong_eq
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
     ∫ x, B (f x) (iteratedFDerivAlong ℝ vs g x) ∂μ =
       (-1 : ℝ) ^ vs.length • ∫ x, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ := by
-  have hU : IsOpen {x | ContDiffAt ℝ vs.length f x} :=
-    isOpen_iff_mem_nhds.2 fun x hx ↦ ContDiffAt.eventually hx (by simp)
-  have hfU : ContDiffOn ℝ (vs.length : ℕ∞) f {x | ContDiffAt ℝ vs.length f x} :=
-    fun x hx ↦ by simpa using hx.contDiffWithinAt
-  obtain ⟨F, hF, -, -, -, hFf⟩ := hfU.exists_contDiff_eventuallyEq_on_isCompact hsupp hU hf
+  obtain ⟨U, hU, hsU, hfU⟩ := exists_isOpen_superset_contDiffOn (by simp) hf
+  have hfU' : ContDiffOn ℝ (vs.length : ℕ∞) f U := by simpa using hfU
+  obtain ⟨F, hF, -, -, -, hFf⟩ := hfU'.exists_contDiff_eventuallyEq_on_isCompact hsupp hU hsU
   have hlhs : (fun x ↦ B (F x) (iteratedFDerivAlong ℝ vs g x)) =
       fun x ↦ B (f x) (iteratedFDerivAlong ℝ vs g x) := by
     ext x; by_cases hx : x ∈ tsupport g
@@ -149,38 +121,64 @@ theorem integral_bilinear_iteratedFDerivAlong_eq
 
 /-- Scalar-multiplication form of `integral_bilinear_iteratedFDerivAlong_eq`. -/
 theorem integral_smul_iteratedFDerivAlong_eq
-    (vs : List E) {f : E → ℝ} {g : E → V}
+    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 V]
+    (vs : List E) {f : E → 𝕜} {g : E → V}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
     ∫ x, f x • iteratedFDerivAlong ℝ vs g x ∂μ =
       (-1 : ℝ) ^ vs.length • ∫ x, iteratedFDerivAlong ℝ vs.reverse f x • g x ∂μ := by
   simpa only [ContinuousLinearMap.lsmul_apply] using
-    integral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.lsmul ℝ ℝ) vs hf hg hsupp
+    integral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.lsmul ℝ 𝕜) vs hf hg hsupp
 
 /-- Scalar-product form of `integral_bilinear_iteratedFDerivAlong_eq`. -/
 theorem integral_mul_iteratedFDerivAlong_eq
-    (vs : List E) {f g : E → ℝ}
+    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    (vs : List E) {f g : E → 𝕜}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
     ∫ x, f x * iteratedFDerivAlong ℝ vs g x ∂μ =
-      (-1 : ℝ) ^ vs.length * ∫ x, iteratedFDerivAlong ℝ vs.reverse f x * g x ∂μ := by
-  simpa only [ContinuousLinearMap.mul_apply', smul_eq_mul] using
-    integral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.mul ℝ ℝ) vs hf hg hsupp
+      (-1 : 𝕜) ^ vs.length * ∫ x, iteratedFDerivAlong ℝ vs.reverse f x * g x ∂μ := by
+  simpa only [ContinuousLinearMap.mul_apply', Algebra.smul_def, map_pow, map_neg, map_one] using
+    integral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.mul ℝ 𝕜) vs hf hg hsupp
 
-/-- Set-integral form of `integral_mul_iteratedFDerivAlong_eq` over any set `s` containing
+/-- Set-integral form of `integral_bilinear_iteratedFDerivAlong_eq` over any set `s` containing
 `tsupport g`. -/
-theorem setIntegral_mul_iteratedFDerivAlong_eq
-    (vs : List E) {f g : E → ℝ} {s : Set E}
+theorem setIntegral_bilinear_iteratedFDerivAlong_eq
+    (B : V →L[ℝ] V' →L[ℝ] W) (vs : List E) {f : E → V} {g : E → V'} {s : Set E}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) (hs : tsupport g ⊆ s) :
-    ∫ x in s, f x * iteratedFDerivAlong ℝ vs g x ∂μ =
-      (-1 : ℝ) ^ vs.length * ∫ x in s, iteratedFDerivAlong ℝ vs.reverse f x * g x ∂μ := by
+    ∫ x in s, B (f x) (iteratedFDerivAlong ℝ vs g x) ∂μ =
+      (-1 : ℝ) ^ vs.length • ∫ x in s, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ := by
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hxs ↦ by
       simp [image_eq_zero_of_notMem_tsupport
         fun h ↦ hxs (hs (tsupport_iteratedFDerivAlong_subset vs g h))],
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hxs ↦ by
       simp [image_eq_zero_of_notMem_tsupport fun h ↦ hxs (hs h)]]
-  exact integral_mul_iteratedFDerivAlong_eq vs hf hg hsupp
+  exact integral_bilinear_iteratedFDerivAlong_eq B vs hf hg hsupp
+
+/-- Set-integral scalar-multiplication form of `integral_bilinear_iteratedFDerivAlong_eq` over any
+set `s` containing `tsupport g`. -/
+theorem setIntegral_smul_iteratedFDerivAlong_eq
+    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 V]
+    (vs : List E) {f : E → 𝕜} {g : E → V} {s : Set E}
+    (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
+    (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) (hs : tsupport g ⊆ s) :
+    ∫ x in s, f x • iteratedFDerivAlong ℝ vs g x ∂μ =
+      (-1 : ℝ) ^ vs.length • ∫ x in s, iteratedFDerivAlong ℝ vs.reverse f x • g x ∂μ := by
+  simpa only [ContinuousLinearMap.lsmul_apply] using
+    setIntegral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.lsmul ℝ 𝕜) vs hf hg hsupp hs
+
+/-- Set-integral scalar-product form of `integral_bilinear_iteratedFDerivAlong_eq` over any set `s`
+containing `tsupport g`. -/
+theorem setIntegral_mul_iteratedFDerivAlong_eq
+    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    (vs : List E) {f g : E → 𝕜} {s : Set E}
+    (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
+    (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) (hs : tsupport g ⊆ s) :
+    ∫ x in s, f x * iteratedFDerivAlong ℝ vs g x ∂μ =
+      (-1 : 𝕜) ^ vs.length * ∫ x in s, iteratedFDerivAlong ℝ vs.reverse f x * g x ∂μ := by
+  simpa only [ContinuousLinearMap.mul_apply', Algebra.smul_def, map_pow, map_neg, map_one] using
+    setIntegral_bilinear_iteratedFDerivAlong_eq (ContinuousLinearMap.mul ℝ 𝕜) vs hf hg hsupp hs
 
 end IntegrationByParts
 

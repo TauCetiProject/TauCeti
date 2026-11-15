@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Calculus.Taylor.Polynomial
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Analysis.MvPolynomial.Jacobian
 
 /-!
 # Multivariate Taylor polynomials of bounded-degree polynomial functions
@@ -29,8 +29,6 @@ every iterated Fréchet derivative of order strictly above `m` vanishes identica
 
 ## Main results
 
-* `TauCeti.hasFDerivAt_polynomialEvalₗ`, `TauCeti.fderiv_polynomialEvalₗ_apply`: the Fréchet
-  derivative of `polynomialEvalₗ ι p` in terms of formal partial derivatives `MvPolynomial.pderiv`.
 * `TauCeti.contDiff_of_mem_polynomialsDegLE`: bounded-degree polynomial functions are `C^n` for all
   `n : ℕ∞ω`.
 * `TauCeti.iteratedFDerivAlong_mem_polynomialsDegLE`: differentiating along `k` directions maps
@@ -59,12 +57,13 @@ variable {ι : Type*} [Fintype ι]
 /-- Formal evaluation `polynomialEvalₗ ι p` is smooth of every order `n : ℕ∞ω`. -/
 theorem contDiff_polynomialEvalₗ (p : MvPolynomial ι ℝ) {n : ℕ∞ω} :
     ContDiff ℝ n (polynomialEvalₗ ι p) := by
-  induction p using MvPolynomial.induction_on with
-  | C a => rw [polynomialEvalₗ_C]; exact contDiff_const
-  | add p q hp hq => rw [map_add]; exact hp.add hq
-  | mul_X p i hp =>
-    rw [show polynomialEvalₗ ι (p * X i) = fun x ↦ polynomialEvalₗ ι p x * x i by ext; simp]
-    exact hp.mul (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff
+  have heq : polynomialEvalₗ ι p = fun x ↦ eval (EuclideanSpace.equiv ι ℝ x) p := by
+    ext x
+    rw [polynomialEvalₗ_apply]
+    exact congrArg (eval · p) (funext fun i ↦ by simp [EuclideanSpace.equiv])
+  rw [heq]
+  exact (AnalyticOnNhd.eval_continuousLinearMap
+    (EuclideanSpace.equiv ι ℝ).toContinuousLinearMap p).contDiff.of_le le_top
 
 /-- Every bounded-degree polynomial function on `EuclideanSpace ℝ ι` is smooth of every order. -/
 theorem contDiff_of_mem_polynomialsDegLE {m : ℕ} {q : EuclideanSpace ℝ ι → ℝ}
@@ -72,31 +71,6 @@ theorem contDiff_of_mem_polynomialsDegLE {m : ℕ} {q : EuclideanSpace ℝ ι �
     ContDiff ℝ n q := by
   obtain ⟨p, -, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hq
   exact contDiff_polynomialEvalₗ p
-
-/-- The Fréchet derivative of `polynomialEvalₗ ι p` at `x` is the linear combination of coordinate
-projections weighted by the formal partial derivatives `pderiv i p` evaluated at `x`. -/
-theorem hasFDerivAt_polynomialEvalₗ (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) :
-    HasFDerivAt (polynomialEvalₗ ι p)
-      (∑ i : ι, polynomialEvalₗ ι (pderiv i p) x •
-        (EuclideanSpace.proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι →L[ℝ] ℝ)) x := by
-  classical
-  induction p using MvPolynomial.induction_on with
-  | C a => rw [polynomialEvalₗ_C]; simpa using hasFDerivAt_const a x
-  | add p q hp hq =>
-    rw [map_add]
-    exact (hp.add hq).congr_fderiv (by ext v; simp [add_smul, Finset.sum_add_distrib])
-  | mul_X p j hp =>
-    rw [show polynomialEvalₗ ι (p * X j) = fun y ↦ polynomialEvalₗ ι p y * y j by ext; simp]
-    refine (hp.mul (EuclideanSpace.proj (𝕜 := ℝ) j).hasFDerivAt).congr_fderiv ?_
-    ext v
-    simp [Derivation.leibniz, pderiv_X, Pi.single_apply, apply_ite (eval (fun i ↦ x i)),
-      add_mul, Finset.mul_sum, Finset.sum_add_distrib, mul_assoc]
-
-/-- Evaluating the Fréchet derivative of `polynomialEvalₗ ι p` at `x` in direction `v` gives
-`∑ i, v i * polynomialEvalₗ ι (pderiv i p) x`. -/
-theorem fderiv_polynomialEvalₗ_apply (p : MvPolynomial ι ℝ) (x v : EuclideanSpace ℝ ι) :
-    fderiv ℝ (polynomialEvalₗ ι p) x v = ∑ i : ι, v i * polynomialEvalₗ ι (pderiv i p) x := by
-  rw [(hasFDerivAt_polynomialEvalₗ p x).fderiv]; simp [mul_comm]
 
 end Fintype
 
@@ -107,11 +81,12 @@ theorem fderiv_apply_mem_polynomialsDegLE {ι : Type*} [Finite ι] {m : ℕ}
     (fun x ↦ fderiv ℝ q x v) ∈ polynomialsDegLE ι (m - 1) := by
   have := Fintype.ofFinite ι
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hq
-  rw [show (fun x ↦ fderiv ℝ (polynomialEvalₗ ι p) x v) =
-      ∑ i : ι, v i • polynomialEvalₗ ι (pderiv i p) by ext; simp [fderiv_polynomialEvalₗ_apply]]
-  refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ (v i) ?_
-  rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
-  exact (MvPolynomial.totalDegree_pderiv_le i p).trans (Nat.sub_le_sub_right hp 1)
+  convert Submodule.sum_mem (polynomialsDegLE ι (m - 1)) (t := Finset.univ) fun i _ ↦
+    Submodule.smul_mem _ (v i) ((polynomialEvalₗ_mem_polynomialsDegLE_iff ι (m - 1) _).2 <|
+      (MvPolynomial.totalDegree_pderiv_le i p).trans (Nat.sub_le_sub_right hp 1)) using 1
+  ext x
+  rw [funext (polynomialEvalₗ_apply ι p)]
+  simpa [mul_comm] using MvPolynomial.fderiv_eval_euclidean_apply p x v
 
 section Taylor
 
@@ -158,13 +133,14 @@ point `y`, the `m`-th Taylor polynomial `taylorPolynomial ℝ m u y` belongs to
 theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ ι → ℝ)
     (y : EuclideanSpace ℝ ι) :
     taylorPolynomial ℝ m u y ∈ polynomialsDegLE ι m := by
-  rw [show taylorPolynomial ℝ m u y = ∑ j ∈ Finset.range (m + 1),
-      (j ! : ℝ)⁻¹ • fun x ↦ iteratedFDeriv ℝ j u y (fun _ ↦ x - y) by
-    ext; simp [taylorPolynomial_apply]]
-  refine Submodule.sum_mem _ fun j hj ↦ Submodule.smul_mem _ _ <|
-    polynomialsDegLE_mono ι (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) ?_
-  exact comp_sub_mem_polynomialsDegLE y
-    (by simpa using (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_const_mem_polynomialsDegLE)
+  convert Submodule.sum_mem (polynomialsDegLE ι m) (t := Finset.range (m + 1)) fun j hj ↦
+    Submodule.smul_mem _ ((j ! : ℝ)⁻¹) <|
+      polynomialsDegLE_mono ι (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) <|
+        comp_sub_mem_polynomialsDegLE y (by
+          simpa using (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_const_mem_polynomialsDegLE)
+    using 1
+  ext x
+  simp [taylorPolynomial_apply]
 
 /-- Every polynomial function of degree at most `m` is reproduced by its `m`-th Taylor polynomial
 about any expansion center `y`. -/
