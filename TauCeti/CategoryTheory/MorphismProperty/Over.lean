@@ -17,10 +17,13 @@ the restricted over categories `P.Over Q X`:
 * `CategoryTheory.MorphismProperty.overEquivFullSubcategory`: equivalence between `P.Over ⊤ X` and
   any full subcategory of `Over X` characterized by `P` on structure morphisms;
 * `CategoryTheory.MorphismProperty.Over.pullbackId`: base change `Over.pullback P ⊤ (𝟙 X)` along
-  the identity morphism identifies with the identity functor;
+  the identity morphism identifies with the identity functor, adapting
+  `CategoryTheory.Over.pullbackId` from `Mathlib.CategoryTheory.Comma.Over.Pullback`;
 * `CategoryTheory.MorphismProperty.Over.iteratedSliceEquiv`: for `U : P.Over ⊤ X`, when `P` is
   stable under composition and satisfies `P.HasOfPostcompProperty P`, the slice category
-  `CategoryTheory.Over U` is equivalent to `P.Over ⊤ U.left`.
+  `CategoryTheory.Over U` is equivalent to `P.Over ⊤ U.left`, adapting
+  `CategoryTheory.Over.iteratedSliceEquiv`, `CategoryTheory.Over.iteratedSliceForward`, and
+  `CategoryTheory.Over.iteratedSliceBackward` from `Mathlib.CategoryTheory.Comma.Over.Basic`.
 -/
 
 public section
@@ -94,6 +97,49 @@ noncomputable def pullbackId :
   conjugateIsoEquiv (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial)
     Adjunction.id (Over.mapId ⊤ X).symm
 
+@[simp]
+lemma conjugateEquiv_symm_pullbackId_hom :
+    (conjugateEquiv (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial) Adjunction.id).symm
+      (pullbackId P X).hom = (Over.mapId ⊤ X).inv := by
+  simp [pullbackId]
+
+@[simp]
+lemma conjugateEquiv_symm_pullbackId_inv :
+    (conjugateEquiv Adjunction.id (Over.mapPullbackAdj P ⊤ (𝟙 X) (P.id_mem X) trivial)).symm
+      (pullbackId P X).inv = (Over.mapId ⊤ X).hom := by
+  simp [pullbackId]
+
+@[simp]
+lemma pullbackId_hom_app_left (Y : P.Over ⊤ X) :
+    ((pullbackId P X).hom.app Y).left = Limits.pullback.fst Y.hom (𝟙 X) := by
+  simp only [pullbackId, conjugateIsoEquiv_apply_hom, conjugateEquiv_apply_app, Adjunction.id_unit,
+    NatTrans.id_app, Functor.id_obj, Functor.id_map, Over.mapPullbackAdj_counit_app,
+    Category.id_comp]
+  exact Category.id_comp _
+
+@[simp]
+lemma pullbackId_inv_app_left_fst (Y : P.Over ⊤ X) :
+    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) = 𝟙 Y.left := by
+  rw [← pullbackId_hom_app_left]
+  exact congrArg (fun g : Y ⟶ Y ↦ g.left) ((pullbackId P X).inv_hom_id_app Y)
+
+@[simp]
+lemma pullbackId_inv_app_left_fst_assoc (Y : P.Over ⊤ X) {Z : C} (h : Y.left ⟶ Z) :
+    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.fst Y.hom (𝟙 X) ≫ h = h :=
+  (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ h) (pullbackId_inv_app_left_fst P X Y)).trans (Category.id_comp h))
+
+@[simp]
+lemma pullbackId_inv_app_left_snd (Y : P.Over ⊤ X) :
+    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) = Y.hom := by
+  simpa using Over.w ((pullbackId P X).inv.app Y)
+
+@[simp]
+lemma pullbackId_inv_app_left_snd_assoc (Y : P.Over ⊤ X) {Z : C} (h : X ⟶ Z) :
+    ((pullbackId P X).inv.app Y).left ≫ Limits.pullback.snd Y.hom (𝟙 X) ≫ h = Y.hom ≫ h :=
+  (Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ h) (pullbackId_inv_app_left_snd P X Y))
+
 end PullbackId
 
 section IteratedSlice
@@ -103,7 +149,6 @@ variable {C : Type*} [Category* C] {P : MorphismProperty C} {X : C}
 /-- Given `U : P.Over ⊤ X`, when `P` has the `of_postcomp` property with respect to itself, any
 morphism `α : V ⟶ U` in `P.Over ⊤ X` has underlying morphism `α.left : V.left ⟶ U.left` satisfying
 `P`. This defines the forward functor `(P.Over ⊤ X)/U ⥤ P.Over ⊤ U.left`. -/
-@[expose]
 def iteratedSliceForward [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) :
     CategoryTheory.Over U ⥤ P.Over ⊤ U.left where
   obj α := Over.mk ⊤ α.hom.left
@@ -120,46 +165,59 @@ lemma iteratedSliceForward_obj_left [P.HasOfPostcompProperty P] (U : P.Over ⊤ 
 @[simp]
 lemma iteratedSliceForward_obj_hom [P.HasOfPostcompProperty P] (U : P.Over ⊤ X)
     (α : CategoryTheory.Over U) :
-    ((iteratedSliceForward U).obj α).hom = α.hom.left :=
-  (rfl)
+    ((iteratedSliceForward U).obj α).hom = eqToHom (by simp) ≫ α.hom.left :=
+  (Category.id_comp _).symm
 
 @[simp]
 lemma iteratedSliceForward_map_left [P.HasOfPostcompProperty P] (U : P.Over ⊤ X)
     {α β : CategoryTheory.Over U} (κ : α ⟶ β) :
-    ((iteratedSliceForward U).map κ).left = κ.left.left :=
+    ((iteratedSliceForward U).map κ).left =
+      eqToHom (by simp) ≫ κ.left.left ≫ eqToHom (by simp) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- Composing `iteratedSliceForward U` with the forgetful functor to `C` recovers the composite
+forgetful functor on `CategoryTheory.Over U`. -/
+theorem iteratedSliceForward_forget [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) :
+    iteratedSliceForward U ⋙ Over.forget P ⊤ U.left ⋙ CategoryTheory.Over.forget U.left =
+      CategoryTheory.Over.forget U ⋙ Over.forget P ⊤ X ⋙ CategoryTheory.Over.forget X :=
   (rfl)
 
 /-- Given `U : P.Over ⊤ X`, post-composition with `U.hom` sends an object `V : P.Over ⊤ U.left` to
 an object over `U` in `P.Over ⊤ X`. -/
-@[expose]
 def iteratedSliceBackward [P.IsStableUnderComposition] (U : P.Over ⊤ X) :
     P.Over ⊤ U.left ⥤ CategoryTheory.Over U where
-  obj V := CategoryTheory.Over.mk (Over.homMk V.hom (w := rfl) : (Over.map ⊤ U.prop).obj V ⟶ U)
-  map f := CategoryTheory.Over.homMk ((Over.map ⊤ U.prop).map f) (by ext; exact Over.w f)
+  obj V := CategoryTheory.Over.mk
+    (Over.homMk V.hom (w := rfl) : (Over.map (X := U.left) (Y := X) ⊤ U.prop).obj V ⟶ U)
+  map f := CategoryTheory.Over.homMk
+    ((Over.map (X := U.left) (Y := X) ⊤ U.prop).map f) (by ext; exact Over.w f)
 
 @[simp]
 lemma iteratedSliceBackward_obj_left [P.IsStableUnderComposition] (U : P.Over ⊤ X)
     (V : P.Over ⊤ U.left) :
-    ((iteratedSliceBackward U).obj V).left = (Over.map ⊤ U.prop).obj V :=
+    ((iteratedSliceBackward U).obj V).left =
+      (Over.map (X := U.left) (Y := X) ⊤ U.prop).obj V :=
   (rfl)
 
 @[simp]
 lemma iteratedSliceBackward_obj_hom_left [P.IsStableUnderComposition] (U : P.Over ⊤ X)
     (V : P.Over ⊤ U.left) :
-    ((iteratedSliceBackward U).obj V).hom.left = V.hom :=
-  (rfl)
+    ((iteratedSliceBackward U).obj V).hom.left = eqToHom (by simp) ≫ V.hom :=
+  (Category.id_comp _).symm
 
 @[simp]
 lemma iteratedSliceBackward_map_left [P.IsStableUnderComposition] (U : P.Over ⊤ X)
     {V W : P.Over ⊤ U.left} (f : V ⟶ W) :
-    ((iteratedSliceBackward U).map f).left = (Over.map ⊤ U.prop).map f :=
-  (rfl)
+    ((iteratedSliceBackward U).map f).left =
+      eqToHom (by simp) ≫
+        (Over.map (X := U.left) (Y := X) ⊤ U.prop).map f ≫ eqToHom (by simp) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- Composing `iteratedSliceBackward U` with the forgetful functor from `CategoryTheory.Over U`
 recovers `Over.map ⊤ U.prop`. -/
 @[simp]
 theorem iteratedSliceBackward_forget [P.IsStableUnderComposition] (U : P.Over ⊤ X) :
-    iteratedSliceBackward U ⋙ CategoryTheory.Over.forget U = Over.map ⊤ U.prop :=
+    iteratedSliceBackward U ⋙ CategoryTheory.Over.forget U =
+      Over.map (X := U.left) (Y := X) ⊤ U.prop :=
   (rfl)
 
 /-- Composing `Over.map ⊤ hf` with the forgetful functor to `C` recovers the forgetful functor on
@@ -169,10 +227,17 @@ theorem map_forget_forget [P.IsStableUnderComposition] {Y : C} {f : Y ⟶ X} (hf
       Over.forget P ⊤ Y ⋙ CategoryTheory.Over.forget Y :=
   (rfl)
 
+/-- Composing `iteratedSliceBackward U` with the forgetful functors to `C` recovers the forgetful
+functor on `P.Over ⊤ U.left`. -/
+theorem iteratedSliceBackward_forget_forget [P.IsStableUnderComposition] (U : P.Over ⊤ X) :
+    iteratedSliceBackward U ⋙ CategoryTheory.Over.forget U ⋙
+      Over.forget P ⊤ X ⋙ CategoryTheory.Over.forget X =
+      Over.forget P ⊤ U.left ⋙ CategoryTheory.Over.forget U.left :=
+  (rfl)
+
 /-- For `U : P.Over ⊤ X`, the slice category `CategoryTheory.Over U` is equivalent to
 `P.Over ⊤ U.left` whenever `P` is stable under composition and satisfies `P.HasOfPostcompProperty P`
-(for example when `P` is étale, smooth, or open immersions). -/
-@[expose]
+(for example when `P` is étale, weakly étale, or open immersions). -/
 def iteratedSliceEquiv [P.IsStableUnderComposition] [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) :
     CategoryTheory.Over U ≌ P.Over ⊤ U.left where
   functor := iteratedSliceForward U
@@ -202,6 +267,30 @@ lemma iteratedSliceEquiv_inverse [P.IsStableUnderComposition] [P.HasOfPostcompPr
     (U : P.Over ⊤ X) :
     (iteratedSliceEquiv U).inverse = iteratedSliceBackward U :=
   (rfl)
+
+@[simp]
+lemma iteratedSliceEquiv_unitIso_hom_app_left_left [P.IsStableUnderComposition]
+    [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) (α : CategoryTheory.Over U) :
+    (((iteratedSliceEquiv U).unitIso.hom.app α).left).left = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma iteratedSliceEquiv_unitIso_inv_app_left_left [P.IsStableUnderComposition]
+    [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) (α : CategoryTheory.Over U) :
+    (((iteratedSliceEquiv U).unitIso.inv.app α).left).left = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_hom_app_left [P.IsStableUnderComposition]
+    [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) (V : P.Over ⊤ U.left) :
+    ((iteratedSliceEquiv U).counitIso.hom.app V).left = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma iteratedSliceEquiv_counitIso_inv_app_left [P.IsStableUnderComposition]
+    [P.HasOfPostcompProperty P] (U : P.Over ⊤ X) (V : P.Over ⊤ U.left) :
+    ((iteratedSliceEquiv U).counitIso.inv.app V).left = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
 
 end IteratedSlice
 

@@ -22,6 +22,8 @@ object under `z`, and by `z`: its target is the translate `g • z = F.map g z`
 of the total arrows of `C` and the total space, along the source and the anchor
 (`CategoryTheory.Functor.Elements.totalEquiv`). This is the algebraic description behind the
 topology of action categories of families in `TauCeti.Topology.CategoryTheory.Elements.Basic`.
+We also record the equivalence `CategoryTheory.NatIso.mapElementsEquiv` between categories of
+elements induced by a natural isomorphism of functors to types.
 
 ## References
 
@@ -30,7 +32,7 @@ topology of action categories of families in `TauCeti.Topology.CategoryTheory.El
 
 public section
 
-universe v
+universe w v
 
 namespace CategoryTheory
 
@@ -140,5 +142,49 @@ theorem precomp_obj_precompEquiv_symm (q : K.obj.Pullback (Functor.Elements.obj 
 end BaseChange
 
 end Functor.Elements
+
+section MapElementsEquiv
+
+variable {F G : C ⥤ Type w} (e : F ≅ G)
+
+/-- A natural isomorphism of functors to types induces an equivalence between their categories of
+elements. -/
+def NatIso.mapElementsEquiv : F.Elements ≌ G.Elements where
+  functor := e.hom.mapElements
+  inverse := e.inv.mapElements
+  unitIso := NatIso.ofComponents fun x ↦ Functor.Elements.isoMk (Iso.refl x.obj) (by simp)
+  counitIso := NatIso.ofComponents fun x ↦ Functor.Elements.isoMk (Iso.refl x.obj) (by simp)
+
+@[simp]
+lemma NatIso.mapElementsEquiv_functor :
+    (NatIso.mapElementsEquiv e).functor = e.hom.mapElements :=
+  (rfl)
+
+@[simp]
+lemma NatIso.mapElementsEquiv_inverse :
+    (NatIso.mapElementsEquiv e).inverse = e.inv.mapElements :=
+  (rfl)
+
+@[simp]
+lemma NatIso.mapElementsEquiv_unitIso_hom_app_hom (x : F.Elements) :
+    ((NatIso.mapElementsEquiv e).unitIso.hom.app x).hom = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma NatIso.mapElementsEquiv_unitIso_inv_app_hom (x : F.Elements) :
+    ((NatIso.mapElementsEquiv e).unitIso.inv.app x).hom = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma NatIso.mapElementsEquiv_counitIso_hom_app_hom (x : G.Elements) :
+    ((NatIso.mapElementsEquiv e).counitIso.hom.app x).hom = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+@[simp]
+lemma NatIso.mapElementsEquiv_counitIso_inv_app_hom (x : G.Elements) :
+    ((NatIso.mapElementsEquiv e).counitIso.inv.app x).hom = eqToHom (by simp) :=
+  (eqToHom_refl _ _).symm
+
+end MapElementsEquiv
 
 end CategoryTheory
