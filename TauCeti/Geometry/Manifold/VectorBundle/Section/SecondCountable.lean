@@ -24,8 +24,8 @@ genericity arguments vary the metric.
 
 ## Main results
 
-* `ContMDiffSection.secondCountableTopology_frameTopology`: the frame topology is second
-  countable.
+* `ContMDiffSection.secondCountableTopology_frameTopology_of_sigmaCompactDomains`: the frame
+  topology is second countable.
 
 ## References
 
@@ -57,8 +57,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- For countably many sigma-compact frame domains, on a manifold with locally compact model over a
 complete field and with second-countable model fibre, the compact derivative topology on `C^n`
 sections is second countable, hence separable. -/
-theorem secondCountableTopology_frameTopology [Countable ι] [CompleteSpace 𝕜]
-    [LocallyCompactSpace E] [SecondCountableTopology F] [∀ i, SigmaCompactSpace (U i)] :
+theorem secondCountableTopology_frameTopology_of_sigmaCompactDomains [Countable ι]
+    [CompleteSpace 𝕜] [LocallyCompactSpace E] [SecondCountableTopology F]
+    [∀ i, SigmaCompactSpace (U i)] :
     let _ := frameTopology (I := I) (n := n) e U hU
     SecondCountableTopology Cₛ^n⟮I; F, V⟯ := by
   let _ := frameTopology (I := I) (n := n) e U hU
