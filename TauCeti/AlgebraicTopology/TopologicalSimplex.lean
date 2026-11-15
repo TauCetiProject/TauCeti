@@ -9,21 +9,31 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
+public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
 
 /-!
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence contractible and in particular simply connected, and locally path connected. The
-geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it, is
-contractible as well.  This file also names its initial vertex, and the continuous map on the
-topological `n`-simplex that underlies a singular `n`-simplex of a space.
+lift, hence compact, Hausdorff, second countable, contractible and in particular simply connected,
+and locally path connected. Injective operators of `SimplexCategory`—in particular the cofaces
+`SimplexCategory.δ j`—induce closed embeddings of topological simplices. The geometric realization
+`|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it, is contractible as well.
+This file also names its initial vertex, and the continuous map on the topological `n`-simplex
+that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
+* `SimplexCategory.compactSpace`, `SimplexCategory.t2Space`,
+  `SimplexCategory.secondCountableTopology`: compactness, Hausdorffness and second countability of
+  `SimplexCategory.toTop.obj n`, and `SimplexCategory.isClosedEmbedding_toTop_map_of_injective`,
+  `SimplexCategory.isClosedEmbedding_toTop_map_δ`, `SimplexCategory.range_toTop_map_δ` for its
+  face inclusions.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
@@ -36,13 +46,59 @@ topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 public section
 
-open CategoryTheory Convexity
+open CategoryTheory Convexity Topology
 
 open scoped Simplicial
 
 universe u
 
 namespace SimplexCategory
+
+/-- `SimplexCategory` has countably many objects, indexed by their length. -/
+instance countable : Countable SimplexCategory :=
+  Function.Injective.countable (f := SimplexCategory.len) fun _ _ ↦ SimplexCategory.ext
+
+/-- Every topological simplex is compact, being a universe lift of a standard simplex on a finite
+type. -/
+instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
+  (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.compactSpace
+
+/-- Every topological simplex is Hausdorff, being a universe lift of a standard simplex over `ℝ`. -/
+instance t2Space (n : SimplexCategory) : T2Space (toTop.{u}.obj n) :=
+  (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.t2Space
+
+/-- Every topological simplex is second countable, as its weight coordinates embed it into a
+finite real product. -/
+instance secondCountableTopology (n : SimplexCategory) :
+    SecondCountableTopology (toTop.{u}.obj n) := by
+  have : SecondCountableTopology (StdSimplex ℝ (Fin (n.len + 1))) :=
+    (StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (n.len + 1))).secondCountableTopology
+  exact (Homeomorph.ulift.{u} (X := StdSimplex ℝ (Fin (n.len + 1)))).secondCountableTopology
+
+/-- Every injective operator of `SimplexCategory` induces a closed embedding of topological
+simplices. -/
+theorem isClosedEmbedding_toTop_map_of_injective {m n : SimplexCategory} {f : m ⟶ n}
+    (hf : Function.Injective f.toOrderHom) : IsClosedEmbedding (toTop.{u}.map f) := by
+  refine (ContinuousMap.continuous _).isClosedEmbedding ?_
+  intro x y hxy
+  exact ULift.ext (StdSimplex.map_injective hf (congrArg ULift.down hxy))
+
+/-- Every coface operator `SimplexCategory.δ j` induces a closed embedding of topological
+simplices. -/
+theorem isClosedEmbedding_toTop_map_δ {n : ℕ} (j : Fin (n + 2)) :
+    IsClosedEmbedding (toTop.{u}.map (δ j)) :=
+  isClosedEmbedding_toTop_map_of_injective Fin.succAbove_right_injective
+
+/-- The image of the `j`-th coface map in the topological `(n + 1)`-simplex is the facet where the
+`j`-th barycentric weight vanishes. -/
+theorem range_toTop_map_δ {n : ℕ} (j : Fin (n + 2)) :
+    Set.range (toTop.{u}.map (δ j)) = {t | t.down.weights j = 0} := by
+  ext t
+  refine ⟨?_, fun ht ↦ ?_⟩
+  · rintro ⟨s, rfl⟩
+    exact StdSimplex.weights_map_succAbove_self j s.down
+  · obtain ⟨w, hw⟩ := (StdSimplex.mem_range_map_succAbove_iff j t.down).2 ht
+    exact ⟨ULift.up w, ULift.ext hw⟩
 
 /-- Every topological simplex is contractible, being a universe lift of a standard simplex on a
 finite nonempty type. -/
