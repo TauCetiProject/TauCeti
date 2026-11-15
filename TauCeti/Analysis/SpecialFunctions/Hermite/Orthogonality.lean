@@ -21,22 +21,22 @@ public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 Mathlib defines the probabilists' Hermite polynomials `Polynomial.hermite : ℕ → ℤ[X]` and knows the
 Gaussian integral `∫ x, exp (-b x²) = √(π / b)`, but it records **no orthogonality relation**
-between the Hermite polynomials against the Gaussian weight. This file proves that relation, the
-milestone **A1** of the `OrthogonalL2Bases` roadmap
-(`TauCetiRoadmap/OrthogonalL2Bases/README.md`, Part A1): the Hermite polynomials are pairwise
-orthogonal, and self-paired to `n! · √(2π)`, in `L²` of the Gaussian weight.
+between the Hermite polynomials against the Gaussian weight. This file proves that relation: the
+Hermite polynomials are pairwise orthogonal, and self-paired to `n! · √(2π)`, in `L²` of the
+Gaussian weight.
 
 * `integrable_aeval_mul_gaussian`: every polynomial is integrable against the Gaussian weight
   `e^{-x²/2}`;
 * `integral_aeval_mul_hermite_succ`, the **one-step weighted-pairing recursion**
   `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w`;
 * `integral_aeval_mul_hermite`, iterating the recursion, `∫ p · Hₙ · w = ∫ (dⁿ/dxⁿ p) · w`;
-* **Milestone (Lebesgue form)** `integral_hermite_mul_hermite_mul_gaussian`:
+* **Lebesgue form** `integral_hermite_mul_hermite_mul_gaussian`:
   `∫ x, Hₘ(x) · Hₙ(x) · e^{-x²/2} = if m = n then n! · √(2π) else 0`, obtained by peeling the larger
   index down to a constant (`Polynomial.iterate_derivative_hermite`);
-* **Milestone (Gaussian-measure form)** `integral_hermite_mul_hermite_gaussianReal`:
+* **Gaussian-measure form** `integral_hermite_mul_hermite_gaussianReal`:
   `∫ x, Hₘ(x) · Hₙ(x) ∂(gaussianReal 0 1) = if m = n then n! else 0`, the Lebesgue form divided by
-  the `√(2π)` density. This is the form the Gaussian Hermite basis (A3′) consumes directly.
+  the `√(2π)` density. This is the form the Gaussian Hermite basis
+  (`TauCeti/Probability/Distributions/Gaussian/Hermite/Basis.lean`) consumes directly.
 
 The closed form of the density itself, `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`, is a fact
 about the Gaussian distribution rather than about the Hermite family, and lives in
@@ -80,7 +80,7 @@ private theorem integrable_aeval_mul_aeval_mul_gaussian (p q : ℤ[X]) :
     ext x; rw [map_mul]
   rw [e]; exact integrable_aeval_mul_gaussian _
 
-/-- **One-step weighted-pairing recursion** (target A1): the weighted pairing of `p` with `H_{n+1}`
+/-- **One-step weighted-pairing recursion**: the weighted pairing of `p` with `H_{n+1}`
 equals the weighted pairing of its derivative `p'` with `Hₙ`,
 `∫ p · H_{n+1} · e^{-x²/2} = ∫ p' · Hₙ · e^{-x²/2}`. -/
 theorem integral_aeval_mul_hermite_succ (p : ℤ[X]) (n : ℕ) :
@@ -138,7 +138,7 @@ private theorem integral_hermite_swap (m n : ℕ) :
       = ∫ x : ℝ, aeval x (hermite n) * aeval x (hermite m) * Real.exp (-(x ^ 2 / 2)) := by
   congr 1; ext x; ring
 
-/-- **The Hermite orthogonality relation, Lebesgue form** (milestone A1):
+/-- **The Hermite orthogonality relation, Lebesgue form**:
 `∫ x, Hₘ(x) · Hₙ(x) · e^{-x²/2} = if m = n then n! · √(2π) else 0`. -/
 theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
     (∫ x : ℝ, aeval x (hermite m) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)))
@@ -158,9 +158,9 @@ theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
       iterate_derivative_hermite, Nat.descFactorial_eq_zero_iff_lt.mpr h]
     simp
 
-/-- **The Hermite orthogonality relation, Gaussian-measure form** (milestone A1):
+/-- **The Hermite orthogonality relation, Gaussian-measure form**:
 `∫ x, Hₘ(x) · Hₙ(x) ∂(gaussianReal 0 1) = if m = n then n! else 0`. This is the Lebesgue form
-divided by the `√(2π)` density; it is the relation the Gaussian Hermite basis (A3′) consumes. -/
+divided by the `√(2π)` density; it is the relation the Gaussian Hermite basis consumes. -/
 theorem integral_hermite_mul_hermite_gaussianReal (m n : ℕ) :
     (∫ x : ℝ, aeval x (hermite m) * aeval x (hermite n) ∂(gaussianReal 0 1))
       = if m = n then (n.factorial : ℝ) else 0 := by

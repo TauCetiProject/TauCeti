@@ -186,7 +186,8 @@ theorem card_filter_dvd_orderOf_mul_prod_primeFactors (hf : f ∣ Fintype.card �
     exact Finset.prod_coe_sort f.primeFactors fun p => p ^ e p
   have hdvd : (∏ i, a i) ∣ Fintype.card α := by
     rw [hprod, Finset.prod_congr rfl fun p _ => by rw [he p]]
-    exact Nat.prod_pow_factorization_sub_factorization_add_one_dvd hf
+    exact Nat.prod_pow_factorization_sub_factorization_add_one_dvd fun p hp =>
+      (Nat.dvd_of_mem_primeFactors hp).trans hf
   have hmem : ∀ p (hp : p ∈ f.primeFactors), p ^ e p ∣ ∏ i, a i := fun p hp =>
     Finset.dvd_prod_of_mem a (Finset.mem_univ (⟨p, hp⟩ : ↥f.primeFactors))
   -- reducing a residue modulo a multiple of `p ^ e p` does not change divisibility by `p ^ e p`

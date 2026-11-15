@@ -35,13 +35,6 @@ field discharge it themselves.
   that scalar, so a finite-dimensional irreducible `gl n` module restricts irreducibly.
 * `TauCeti.gl_equiv_of_sl_equiv_of_central_scalar`: an `sl n`-module equivalence between two
   modules with the same scalar action of the identity matrix is a `gl n`-module equivalence.
-
-## References
-
-These are the two pinned `sl ↔ gl` transfer statements in Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-The exact suggested signature for the upgrade theorem is in
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Suggested.lean`.
 -/
 
 public section

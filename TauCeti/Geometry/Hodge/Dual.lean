@@ -211,7 +211,7 @@ the scalar `i^{-2p-n}` by which the Weil operator acts on the complementary comp
 theorem weilOperator_dual :
     hs.dual.weilOperator = hs.weilOperatorEquiv.symm.toLinearMap.dualMap := by
   refine (hs.dual.weilOperator_unique _ fun p φ hφ ↦ ?_).symm
-  refine hs.linearMap_ext_of_piece fun a x hx ↦ ?_
+  refine hs.addHom_ext_of_piece fun a x hx ↦ ?_
   simp only [LinearMap.dualMap_apply, LinearEquiv.coe_coe, weilOperatorEquiv_symm_apply,
     hs.weilOperator_apply_of_mem hx, LinearMap.smul_apply, map_smul, smul_eq_mul, sub_neg_eq_add]
   by_cases ha : a = -p

@@ -1,0 +1,436 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Cochain
+public import TauCeti.RingTheory.HochschildCohomology.Complex
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Algebra.Ring.GeomSum
+
+/-!
+# Cyclic cohomology of the ground ring
+
+For a commutative ring `R` and an `R`-module `M`, this file computes the cyclic cohomology
+`HCⁿ(R; M)` of `R` regarded as an algebra over itself. Every `M`-valued `n`-cochain on `R` is a
+product cochain `(a₀, …, aₙ) ↦ (a₀ ⋯ aₙ) • m` (Mathlib's `MultilinearMap.mkPiRing`). Every
+Hochschild face preserves the product of the entries, so the Hochschild coboundary of the
+product cochain is `(∑ᵢ (-1)ⁱ) • (a₀ ⋯ aₙ₊₁) • m`: it vanishes in even degree and is the product
+cochain of the same `m` in odd degree. Rotating the entries does not change their product, so the
+product cochain is cyclic exactly when `(-1)ⁿ • m = m`. These cochain and cocycle computations
+hold over any commutative semiring `R`.
+
+Consequently:
+
+* in odd degree there are no nonzero cyclic cocycles, and `HCⁿ(R; M) = 0`;
+* in even degree every cochain is a cyclic cocycle, and `m ↦ [(a₀ ⋯ aₙ) • m]` maps `M` onto
+  `HCⁿ(R; M)`. In degree zero it is injective; in positive even degree its kernel is the
+  `2`-torsion of `M`, the values of cyclic cochains of the preceding odd degree.
+
+So `HC²ᵏ(R; M) ≅ M` whenever multiplication by `2` is injective on `M`, for instance
+`HC²ᵏ(ℂ) ≅ ℂ` and `HC²ᵏ⁺¹(ℂ) = 0`. Over a general commutative ring,
+`HC²ᵏ⁺²(R; M) ≅ M ⧸ M[2]` where `M[2]` is the `2`-torsion submodule.
+
+The same computation shows that the Hochschild cohomology `HHⁿ(R, Hom_R(R, M))` vanishes for
+`n ≠ 0`: the Hochschild complex is `M →0 M →id M →0 M →id ⋯`.
+
+Under Connes' periodicity operator (`TauCeti.cyclicCocyclesPeriodicity`,
+`TauCeti.cyclicCohomology.periodicity`), the product cochain in even degree `n` is multiplied by
+`n / 2 + 1` (`TauCeti.cyclicCohomology.periodicity_mkPiRing`). In particular, the calibrated scalar
+`2m`-cocycles `σₘ(a₀, …, a₂ₘ) = m! a₀ ⋯ a₂ₘ` (`TauCeti.scalarCocycle`) satisfy `S(σₘ) = σₘ₊₁`
+(`TauCeti.cyclicCocyclesPeriodicity_scalarCocycle`).
+
+This is the unreduced cyclic-cochain theory of the ground ring. As in
+`TauCeti.RingTheory.CyclicCohomology.Cohomology`, it agrees with the cyclic-bicomplex theory
+when `R` contains `ℚ`. It contrasts with the reduced theory of
+`TauCeti.RingTheory.CyclicCohomology.Reduced`, whose complex for the ground ring is zero.
+
+## Main definitions
+
+* `TauCeti.mkPiRingCocycle`: the product cochain of `m` in even degree, as a cyclic cocycle.
+* `TauCeti.cyclicCohomology.mkPiRing`: the class in even degree of the product cochain of `m`.
+* `TauCeti.cyclicCohomology.selfEquiv`: `M ≃ HCⁿ(R; M)` for even `n` when `M` has no `2`-torsion.
+* `TauCeti.cyclicCohomology.selfQuotEquiv`: `M ⧸ M[2] ≃ HCⁿ(R; M)` for even `n ≠ 0`.
+* `TauCeti.scalarCocycle`: the calibrated scalar cyclic `2m`-cocycle
+  `σₘ(a₀, …, a₂ₘ) = m! a₀ ⋯ a₂ₘ` on a commutative ring.
+
+## Main results
+
+* `TauCeti.hochschildCoboundary_mkPiRing_of_even`, `TauCeti.hochschildCoboundary_mkPiRing_of_odd`:
+  the Hochschild coboundary of a product cochain.
+* `TauCeti.mkPiRing_mem_cyclicCochains_iff`: the product cochain of `m` is cyclic exactly when
+  `(-1)ⁿ • m = m`.
+* `TauCeti.cyclicCocycles_self_of_even`, `TauCeti.cyclicCocycles_self_of_odd`: the cyclic cocycles
+  of the ground ring are all cochains in even degree and zero in odd degree.
+* `TauCeti.isZero_cyclicCohomology_self_of_odd`: `HCⁿ(R; M) = 0` for odd `n`.
+* `TauCeti.isZero_hochschildCohomology_self`: `HHⁿ(R, Hom_R(R, M)) = 0` for `n ≠ 0`.
+* `TauCeti.cyclicCohomology.mkPiRing_surjective`, `TauCeti.cyclicCohomology.ker_mkPiRing`: the
+  class map is surjective, with kernel the `2`-torsion of `M` in positive even degree.
+* `TauCeti.cyclicCohomology.periodicity_mkPiRing`: Connes' periodicity operator multiplies
+  `mkPiRing` by `n / 2 + 1`.
+* `TauCeti.cyclicCocyclesPeriodicity_scalarCocycle`: `S(σₘ) = σₘ₊₁`.
+
+## References
+
+* A. Connes, *Noncommutative Geometry*, Chapter III, §1.
+* J.-L. Loday, *Cyclic Homology*, §2.1–2.2.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits
+
+namespace TauCeti
+
+universe u
+
+section Cochains
+
+variable (R : Type u) (M : Type*) [CommSemiring R] [AddCommGroup M] [Module R M] {n : ℕ}
+
+/-! ### Product cochains -/
+
+private theorem hochschildCoboundary_mkPiRing (n : ℕ) (m : M) :
+    hochschildCoboundary R R M n (MultilinearMap.mkPiRing R (Fin (n + 1)) m) =
+      if Even n then 0 else MultilinearMap.mkPiRing R (Fin (n + 2)) m := by
+  ext
+  simp only [hochschildCoboundary_apply, MultilinearMap.mkPiRing_apply, prod_hochschildFace,
+    ← Finset.sum_smul]
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ (-1 : ℤ) ^ i) (n + 2), neg_one_geom_sum]
+  split_ifs <;> simp_all [Nat.even_add_one]
+
+/-- In even degree the Hochschild coboundary of a product cochain on the ground ring vanishes. -/
+@[simp]
+theorem hochschildCoboundary_mkPiRing_of_even (hn : Even n) (m : M) :
+    hochschildCoboundary R R M n (MultilinearMap.mkPiRing R (Fin (n + 1)) m) = 0 := by
+  simp [hochschildCoboundary_mkPiRing, hn]
+
+/-- In odd degree the Hochschild coboundary of the product cochain
+`(a₀, …, aₙ) ↦ (a₀ ⋯ aₙ) • m` is the product cochain `(a₀, …, aₙ₊₁) ↦ (a₀ ⋯ aₙ₊₁) • m`. -/
+@[simp]
+theorem hochschildCoboundary_mkPiRing_of_odd (hn : Odd n) (m : M) :
+    hochschildCoboundary R R M n (MultilinearMap.mkPiRing R (Fin (n + 1)) m) =
+      MultilinearMap.mkPiRing R (Fin (n + 2)) m := by
+  simp [hochschildCoboundary_mkPiRing, Nat.not_even_iff_odd.2 hn]
+
+/-- In even degree the Hochschild coboundary of every cochain on the ground ring vanishes. -/
+theorem hochschildCoboundary_self_of_even (hn : Even n)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) :
+    hochschildCoboundary R R M n φ = 0 := by
+  rw [← φ.mkPiRing_apply_one_eq_self, hochschildCoboundary_mkPiRing_of_even R M hn]
+
+/-- In odd degree the Hochschild coboundary of a cochain on the ground ring is the product
+cochain of its value at `(1, …, 1)`. -/
+theorem hochschildCoboundary_self_of_odd (hn : Odd n)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) :
+    hochschildCoboundary R R M n φ =
+      MultilinearMap.mkPiRing R (Fin (n + 2)) (φ fun _ ↦ 1) := by
+  rw [← φ.mkPiRing_apply_one_eq_self, hochschildCoboundary_mkPiRing_of_odd R M hn]
+  simp
+
+variable {R M} in
+/-- The product cochain `(a₀, …, aₙ) ↦ (a₀ ⋯ aₙ) • m` is cyclic exactly when
+`(-1)ⁿ • m = m`. -/
+theorem mkPiRing_mem_cyclicCochains_iff {m : M} :
+    MultilinearMap.mkPiRing R (Fin (n + 1)) m ∈ cyclicCochains R R M n ↔
+      (-1 : ℤ) ^ n • m = m := by
+  rw [mem_cyclicCochains_iff]
+  refine ⟨fun h ↦ ?_, fun h a ↦ ?_⟩
+  · simpa using (h fun _ ↦ 1).symm
+  · rw [MultilinearMap.mkPiRing_apply, MultilinearMap.mkPiRing_apply, smul_comm, h]
+    exact congrArg (· • m) (Equiv.prod_comp (finRotate (n + 1)).symm a)
+
+variable {R M} in
+/-- In odd degree the product cochain of `m` is cyclic exactly when `2 • m = 0`. -/
+theorem mkPiRing_mem_cyclicCochains_iff_of_odd (hn : Odd n) {m : M} :
+    MultilinearMap.mkPiRing R (Fin (n + 1)) m ∈ cyclicCochains R R M n ↔ (2 : R) • m = 0 := by
+  rw [mkPiRing_mem_cyclicCochains_iff, hn.neg_one_pow, neg_one_smul, neg_eq_iff_add_eq_zero,
+    ← two_smul R m]
+
+/-! ### Cyclic cocycles -/
+
+/-- In even degree every cochain on the ground ring is cyclic. -/
+theorem cyclicCochains_self_of_even (hn : Even n) : cyclicCochains R R M n = ⊤ := by
+  refine eq_top_iff.2 fun φ _ ↦ ?_
+  rw [← φ.mkPiRing_apply_one_eq_self, mkPiRing_mem_cyclicCochains_iff, hn.neg_one_pow, one_smul]
+
+/-- In even degree every cyclic cochain on the ground ring is a cocycle. -/
+theorem cyclicCocycles_self_of_even (hn : Even n) : cyclicCocycles R R M n = ⊤ := by
+  refine eq_top_iff.2 fun φ _ ↦ ?_
+  rw [mem_cyclicCocycles_iff, hochschildCoboundary_self_of_even R M hn]
+
+/-- In odd degree the ground ring has no nonzero cyclic cocycles. -/
+theorem cyclicCocycles_self_of_odd (hn : Odd n) : cyclicCocycles R R M n = ⊥ := by
+  refine eq_bot_iff.2 fun φ hφ ↦ ?_
+  rw [mem_cyclicCocycles_iff, hochschildCoboundary_self_of_odd R M hn,
+    MultilinearMap.mkPiRing_eq_zero_iff] at hφ
+  rw [Submodule.mem_bot, ← Subtype.coe_inj,
+    ← (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M).mkPiRing_apply_one_eq_self,
+    hφ, MultilinearMap.mkPiRing_zero, ZeroMemClass.coe_zero]
+
+/-! ### Even cocycle representatives -/
+
+/-- The product cochain of `m` in even degree, as a cyclic cocycle. -/
+def mkPiRingCocycle (hn : Even n) : M →ₗ[R] cyclicCocycles R R M n :=
+  ((MultilinearMap.piRingEquiv (R := R) (ι := Fin (n + 1))).toLinearMap.codRestrict
+    (cyclicCochains R R M n) fun _ ↦ by simp [cyclicCochains_self_of_even R M hn]).codRestrict
+    (cyclicCocycles R R M n) fun _ ↦ by simp [cyclicCocycles_self_of_even R M hn]
+
+/-- The underlying multilinear map of `mkPiRingCocycle R M hn m` is `MultilinearMap.mkPiRing`. -/
+@[simp]
+theorem coe_mkPiRingCocycle (hn : Even n) (m : M) :
+    ((mkPiRingCocycle R M hn m : cyclicCochains R R M n) :
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+          R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
+  (rfl)
+
+private theorem mkPiRingCocycle_apply_one (hn : Even n) (φ : cyclicCocycles R R M n) :
+    mkPiRingCocycle R M hn
+        ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) = φ :=
+  Subtype.ext <| Subtype.ext <| MultilinearMap.mkPiRing_apply_one_eq_self _
+
+private theorem mkPiRingCocycle_surjective (hn : Even n) :
+    Function.Surjective (mkPiRingCocycle R M hn) := fun φ ↦
+  ⟨(φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1,
+    mkPiRingCocycle_apply_one R M hn φ⟩
+
+end Cochains
+
+section Cohomology
+
+variable (R : Type u) (M : Type*) [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
+
+/-! ### Cyclic cohomology -/
+
+/-- The cyclic cohomology of the ground ring vanishes in odd degree. -/
+theorem isZero_cyclicCohomology_self_of_odd (hn : Odd n) :
+    IsZero (cyclicCohomology R R M n) := by
+  have h (φ : cyclicCocycles R R M n) : φ = 0 :=
+    Subtype.ext ((Submodule.eq_bot_iff _).1 (cyclicCocycles_self_of_odd R M hn) φ φ.2)
+  refine @ModuleCat.isZero_of_subsingleton _ _ _ ⟨fun x y ↦ ?_⟩
+  obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective R R M n x
+  obtain ⟨ψ, rfl⟩ := cyclicCohomology.mk_surjective R R M n y
+  rw [h φ, h ψ]
+
+/-! ### Hochschild cohomology -/
+
+/-- The Hochschild cohomology `HHⁿ(R, Hom_R(R, M))` of the ground ring vanishes in positive
+degree: in even degree every cochain is the coboundary of a product cochain, and in odd degree the
+only cocycle is zero. -/
+theorem isZero_hochschildCohomology_self (hn : n ≠ 0) :
+    IsZero (hochschildCohomology R R M n) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [ModuleCat.isZero_iff_subsingleton]
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R R M (n + 1) c
+  rw [hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff]
+  rcases Nat.even_or_odd n with hn | hn
+  · -- in odd degree `n + 1` the cocycle condition forces `φ (1, …, 1) = 0`
+    have h := congrArg (fun ψ ↦ ψ fun _ ↦ (1 : R))
+      (hochschildCoboundary_self_of_odd R M hn.add_one φ.1)
+    simp only [mem_hochschildCocycles_iff.1 φ.2, zero_apply,
+      MultilinearMap.mkPiRing_apply, Finset.prod_const_one, one_smul] at h
+    refine ⟨0, ?_⟩
+    rw [map_zero, ← φ.1.mkPiRing_apply_one_eq_self, ← h, MultilinearMap.mkPiRing_zero]
+  · -- in even degree `n + 1` the cochain is the coboundary of a product cochain
+    exact ⟨MultilinearMap.mkPiRing R (Fin (n + 1)) (φ.1 fun _ ↦ 1), by
+      rw [hochschildCoboundary_mkPiRing_of_odd R M hn, φ.1.mkPiRing_apply_one_eq_self]⟩
+
+namespace cyclicCohomology
+
+/-- For even `n`, the class in `HCⁿ(R; M)` of the product cochain
+`(a₀, …, aₙ) ↦ (a₀ ⋯ aₙ) • m`. -/
+def mkPiRing (n : ℕ) (hn : Even n) : M →ₗ[R] cyclicCohomology R R M n :=
+  mk R R M n ∘ₗ mkPiRingCocycle R M hn
+
+/-- `mkPiRing R M n hn m` is the class of the product cochain of `m`. -/
+theorem mkPiRing_apply (hn : Even n) (m : M) :
+    mkPiRing R M n hn m =
+      mk R R M n ⟨⟨MultilinearMap.mkPiRing R (Fin (n + 1)) m,
+        by simp [cyclicCochains_self_of_even R M hn]⟩,
+        by simp [cyclicCocycles_self_of_even R M hn]⟩ :=
+  (rfl)
+
+/-- In even degree the class of a cyclic cocycle `φ` is the class of the product cochain of its
+value `φ(1, …, 1)`. -/
+theorem mk_eq_mkPiRing (hn : Even n) (φ : cyclicCocycles R R M n) :
+    mk R R M n φ =
+      mkPiRing R M n hn ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦
+          1) := by
+  rw [mkPiRing, LinearMap.comp_apply, mkPiRingCocycle_apply_one]
+
+/-- In even degree every cyclic cohomology class of the ground ring is the class of a product
+cochain. -/
+theorem mkPiRing_surjective (hn : Even n) : Function.Surjective (mkPiRing R M n hn) :=
+  (mk_surjective R R M n).comp (mkPiRingCocycle_surjective R M hn)
+
+variable {R M} in
+/-- In positive even degree the class of the product cochain of `m` vanishes exactly when
+`2 • m = 0`: the coboundaries are the product cochains of `2`-torsion elements, which are cyclic
+in the preceding odd degree. -/
+theorem mkPiRing_eq_zero_iff (hn : Even n) (hn₀ : n ≠ 0) {m : M} :
+    mkPiRing R M n hn m = 0 ↔ (2 : R) • m = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn₀
+  have hk : Odd k := by simpa [Nat.even_add_one] using hn
+  rw [mkPiRing, LinearMap.comp_apply, mk_eq_zero_iff, mem_cyclicCoboundaries_succ_iff,
+    ← mkPiRing_mem_cyclicCochains_iff_of_odd hk]
+  constructor
+  · rintro ⟨ψ, hψ⟩
+    have h := congrArg Subtype.val hψ
+    rw [coe_cyclicHochschildCoboundary_apply, hochschildCoboundary_self_of_odd R M hk,
+      coe_mkPiRingCocycle, MultilinearMap.mkPiRing_eq_iff] at h
+    rw [← h,
+      (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) ↦ R) M).mkPiRing_apply_one_eq_self]
+    exact ψ.2
+  · intro hm
+    exact ⟨⟨_, hm⟩, Subtype.ext <| by
+      rw [coe_cyclicHochschildCoboundary_apply, hochschildCoboundary_mkPiRing_of_odd R M hk,
+        coe_mkPiRingCocycle]⟩
+
+/-- In positive even degree the kernel of the class map is the `2`-torsion of `M`. -/
+theorem ker_mkPiRing (hn : Even n) (hn₀ : n ≠ 0) :
+    LinearMap.ker (mkPiRing R M n hn) = Submodule.torsionBy R M 2 := by
+  ext m
+  rw [LinearMap.mem_ker, mkPiRing_eq_zero_iff hn hn₀, Submodule.mem_torsionBy_iff]
+
+/-- In degree zero the class map is injective. -/
+theorem mkPiRing_zero_injective : Function.Injective (mkPiRing R M 0 even_zero) :=
+  (mk_zero_injective R R M).comp fun _ _ h ↦ MultilinearMap.mkPiRing_eq_iff.1
+    (congrArg (fun φ : cyclicCocycles R R M 0 ↦ (φ : cyclicCochains R R M 0).1) h)
+
+/-- In even degree the class map is injective when `M` has no `2`-torsion. -/
+theorem mkPiRing_injective (hn : Even n) (h2 : IsSMulRegular M (2 : R)) :
+    Function.Injective (mkPiRing R M n hn) := by
+  rcases eq_or_ne n 0 with rfl | hn₀
+  · exact mkPiRing_zero_injective R M
+  · rw [← LinearMap.ker_eq_bot, ker_mkPiRing R M hn hn₀, ← isSMulRegular_iff_torsionBy_eq_bot]
+    exact h2
+
+/-- If multiplication by `2` is injective on `M`, then `HCⁿ(R; M) ≅ M` in every even degree `n`,
+by the class of the product cochain. In particular `HC²ᵏ(ℂ) ≅ ℂ`. -/
+def selfEquiv (hn : Even n) (h2 : IsSMulRegular M (2 : R)) :
+    M ≃ₗ[R] cyclicCohomology R R M n :=
+  LinearEquiv.ofBijective (mkPiRing R M n hn)
+    ⟨mkPiRing_injective R M hn h2, mkPiRing_surjective R M hn⟩
+
+/-- `selfEquiv` sends `m` to the class of its product cochain. -/
+@[simp]
+theorem selfEquiv_apply (hn : Even n) (h2 : IsSMulRegular M (2 : R)) (m : M) :
+    selfEquiv R M hn h2 m = mkPiRing R M n hn m :=
+  (rfl)
+
+/-- The inverse of `selfEquiv` evaluates a representing cocycle at `(1, …, 1)`. -/
+@[simp]
+theorem selfEquiv_symm_mk (hn : Even n) (h2 : IsSMulRegular M (2 : R))
+    (φ : cyclicCocycles R R M n) :
+    (selfEquiv R M hn h2).symm (mk R R M n φ) =
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1 := by
+  rw [LinearEquiv.symm_apply_eq, selfEquiv_apply, mk_eq_mkPiRing R M hn]
+
+/-- In positive even degree `HCⁿ(R; M)` is the quotient of `M` by its `2`-torsion, by the class
+of the product cochain. -/
+def selfQuotEquiv (hn : Even n) (hn₀ : n ≠ 0) :
+    (M ⧸ Submodule.torsionBy R M 2) ≃ₗ[R] cyclicCohomology R R M n :=
+  (Submodule.quotEquivOfEq _ _ (ker_mkPiRing R M hn hn₀).symm).trans
+    ((mkPiRing R M n hn).quotKerEquivOfSurjective (mkPiRing_surjective R M hn))
+
+/-- `selfQuotEquiv` sends the class of `m` to the class of its product cochain. -/
+@[simp]
+theorem selfQuotEquiv_mk (hn : Even n) (hn₀ : n ≠ 0) (m : M) :
+    selfQuotEquiv R M hn hn₀ (Submodule.Quotient.mk m) = mkPiRing R M n hn m :=
+  by
+    simp only [selfQuotEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+    exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ m
+
+/-- The inverse of `selfQuotEquiv` sends a represented cohomology class to the quotient class of
+the representing cocycle's value at `(1, …, 1)`. -/
+@[simp]
+theorem selfQuotEquiv_symm_mk (hn : Even n) (hn₀ : n ≠ 0)
+    (φ : cyclicCocycles R R M n) :
+    (selfQuotEquiv R M hn hn₀).symm (mk R R M n φ) =
+      Submodule.Quotient.mk
+        ((φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) fun _ ↦ 1) := by
+  rw [LinearEquiv.symm_apply_eq, selfQuotEquiv_mk, mk_eq_mkPiRing R M hn]
+
+section Periodicity
+
+variable [Algebra ℚ R]
+
+/-- On the ground ring `R`, Connes' periodicity operator sends the even-degree product class
+`mkPiRing R M n hn x` to `n / 2 + 1` times `mkPiRing R M (n + 2) _ x`. -/
+@[simp]
+theorem periodicity_mkPiRing {n : ℕ} (hn : Even n) (x : M) :
+    periodicity R R M n (mkPiRing R M n hn x) =
+      ((n / 2 + 1 : ℕ) : R) • mkPiRing R M (n + 2) (hn.add even_two) x := by
+  rw [mkPiRing_apply, periodicity_mk, ← map_smul, mkPiRing_apply]
+  refine congrArg (mk R R M (n + 2))
+    (Subtype.ext <| Subtype.ext <| MultilinearMap.ext fun a ↦ ?_)
+  simp only [coe_cyclicCocyclesPeriodicity_apply, cochainPeriodicity_mkPiRing,
+    Nat.cast_smul_eq_nsmul R]
+
+end Periodicity
+
+end cyclicCohomology
+
+end Cohomology
+
+/-! ### Calibrated scalar cocycles -/
+
+section ScalarCocycle
+
+open scoped Nat
+
+variable (k : Type*) [CommRing k]
+
+/-- The **calibrated scalar cyclic `2m`-cocycle** `σₘ` on a commutative ring `k`, defined by
+`σₘ(a₀, …, a₂ₘ) = m! a₀ ⋯ a₂ₘ`. -/
+def scalarCocycle (m : ℕ) : cyclicCocycles k k k (2 * m) :=
+  mkPiRingCocycle k k (even_two_mul m) (m ! : k)
+
+/-- Pointwise formula `σₘ(a₀, …, a₂ₘ) = m! ∏ᵢ aᵢ`. -/
+theorem scalarCocycle_apply (m : ℕ) (a : Fin (2 * m + 1) → k) :
+    ((scalarCocycle k m : cyclicCochains k k k (2 * m)) :
+      MultilinearMap (RingHom.id k) (fun _ : Fin (2 * m + 1) ↦ k) k) a = (m ! : k) * ∏ i, a i := by
+  rw [scalarCocycle, coe_mkPiRingCocycle, MultilinearMap.mkPiRing_apply, smul_eq_mul, mul_comm]
+
+/-- In degree zero, `σ₀(a₀) = a₀` is the identity trace on `k`. -/
+theorem scalarCocycle_zero_apply (a : Fin 1 → k) :
+    ((scalarCocycle k 0 : cyclicCochains k k k 0) :
+      MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ k) k) a = a 0 := by
+  rw [scalarCocycle_apply k 0 a, Nat.factorial_zero, Nat.cast_one, one_mul, Fin.prod_univ_one]
+
+/-- In degree two, `σ₁(a₀, a₁, a₂) = a₀ a₁ a₂` is Connes' fundamental `2`-cocycle on `k`. -/
+theorem scalarCocycle_one_apply (a : Fin 3 → k) :
+    ((scalarCocycle k 1 : cyclicCochains k k k 2) :
+      MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ k) k) a = a 0 * a 1 * a 2 := by
+  rw [scalarCocycle_apply k 1 a, Nat.factorial_one, Nat.cast_one, one_mul, Fin.prod_univ_three]
+
+/-- Connes' cocycle periodicity operator maps `σₘ` to `σₘ₊₁`. -/
+@[simp]
+theorem cyclicCocyclesPeriodicity_scalarCocycle (m : ℕ) :
+    cyclicCocyclesPeriodicity k k k (2 * m) (scalarCocycle k m) = scalarCocycle k (m + 1) := by
+  apply Subtype.ext
+  apply Subtype.ext
+  have hdiv : 2 * m / 2 + 1 = m + 1 := by omega
+  have hfac : ((m + 1 : ℕ) • (m ! : k)) = ((m + 1)! : k) := by
+    rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.factorial_succ]
+  rw [coe_cyclicCocyclesPeriodicity_apply, scalarCocycle, coe_mkPiRingCocycle,
+    cochainPeriodicity_mkPiRing, hdiv, hfac]
+  -- `2 * m + 2` is definitionally `2 * (m + 1)` (`Nat.mul_succ`), matching `Fin (2 * (m + 1) + 1)`.
+  exact (coe_mkPiRingCocycle k k (even_two_mul (m + 1)) ((m + 1)! : k)).symm
+
+/-- The cyclic cohomology class of `scalarCocycle k m` is `mkPiRing` of `m!`. -/
+@[simp]
+theorem cyclicCohomology.mk_scalarCocycle (m : ℕ) :
+    cyclicCohomology.mk k k k (2 * m) (scalarCocycle k m) =
+      cyclicCohomology.mkPiRing k k (2 * m) (even_two_mul m) (m ! : k) := by
+  rw [cyclicCohomology.mkPiRing, LinearMap.comp_apply, scalarCocycle]
+
+end ScalarCocycle
+
+end TauCeti

@@ -27,12 +27,20 @@ unpinned install.
 What this cannot do is recognise an arbitrary new way to obtain an elan; no textual check can.
 It fixes the approved shape and closes the routes that were actually in use.
 
-To bump the pin, change ELAN_VER and ELAN_SHA256 together in every workflow that declares them;
+To bump the pin, change ELAN_VER, ELAN_SHA256 and the immutable release asset ID together in every workflow that declares them;
 the checksum is that of the release's elan-x86_64-unknown-linux-gnu.tar.gz asset.
 """
 
+import hashlib
+import http.server
+import io
+import os
 import pathlib
 import re
+import subprocess
+import tarfile
+import tempfile
+import threading
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -45,9 +53,12 @@ VER = re.compile(r"^\s*ELAN_VER:\s*(v[0-9][0-9A-Za-z.\-]*)\s*$", re.MULTILINE)
 # ${ELAN_VER} and the check ${ELAN_SHA256}, or the declared pin would describe a release the
 # workflow does not actually fetch, or a checksum it does not actually compare against.
 INSTALL = re.compile(
-    r'^[ \t]*curl -sSL -H "Accept: application/octet-stream" \\\n'
+    r'^[ \t]*if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \\\n'
     r'[ \t]*"https://github\.com/leanprover/elan/releases/download/\$\{ELAN_VER\}/'
-    r'elan-x86_64-unknown-linux-gnu\.tar\.gz" -o elan\.tar\.gz\n'
+    r'elan-x86_64-unknown-linux-gnu\.tar\.gz\?download=1" -o elan\.tar\.gz; then\n'
+    r'[ \t]*curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \\\n'
+    r'[ \t]*"https://api\.github\.com/repos/leanprover/elan/releases/assets/441516216" -o elan\.tar\.gz\n'
+    r'[ \t]*fi\n'
     r'[ \t]*echo "\$\{ELAN_SHA256\}  elan\.tar\.gz" \| sha256sum -c -\n'
     r'[ \t]*tar -xzf elan\.tar\.gz elan-init\n'
     r'[ \t]*\./elan-init -y --default-toolchain none\n'
@@ -136,6 +147,82 @@ class ElanPin(unittest.TestCase):
                         pattern.search(text),
                         f"{workflow.name} takes elan from {description}; install it from a "
                         "pinned leanprover/elan release verified by SHA-256 instead")
+
+
+class ElanDownload(unittest.TestCase):
+    """Exercise the production block against HTTP errors and mismatched bytes."""
+
+    def run_download(self, statuses, good_checksum=True):
+        buffer = io.BytesIO()
+        script = b"#!/bin/sh\nprintf installed > installed\n"
+        with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+            member = tarfile.TarInfo("elan-init")
+            member.size = len(script)
+            member.mode = 0o755
+            archive.addfile(member, io.BytesIO(script))
+        payload = buffer.getvalue()
+        requests = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                status = statuses[min(len(requests), len(statuses)-1)]
+                requests.append(self.path)
+                body = payload if status == 200 else b"Gateway timeout"
+                self.send_response(status)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                block = INSTALL.search(code(WORKFLOW_DIR / "pr-build.yml")).group()
+                block = re.sub(r'https://github.com/leanprover/elan/releases/download/[^" ]+',
+                               "http://127.0.0.1:" + str(server.server_port) + "/elan?download=1", block)
+                # GitHub run blocks remove the common YAML indentation.
+                block = "\n".join(line.lstrip() for line in block.splitlines())
+                block = re.sub(r"https://api.github.com/repos/leanprover/elan/releases/assets/[0-9]+",
+                               "http://127.0.0.1:" + str(server.server_port) + "/immutable-asset", block)
+                with tempfile.TemporaryDirectory() as directory:
+                    result = subprocess.run(["bash", "-euc", block], cwd=directory, capture_output=True, text=True,
+                        env={**os.environ, "ELAN_VER": "v4.2.3", "ELAN_SHA256": hashlib.sha256(payload).hexdigest()
+                             if good_checksum else "0" * 64}, timeout=30)
+                    installed = (pathlib.Path(directory) / "installed").exists()
+            finally:
+                server.shutdown()
+                thread.join(timeout=5)
+        return result, installed, requests
+
+    def test_transient_gateway_error_retries_then_installs_verified_bytes(self):
+        result, installed, requests = self.run_download([504, 200])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(installed)
+        self.assertEqual(len(requests), 2)
+
+    def test_failed_browser_url_falls_back_to_the_pinned_release_asset(self):
+        result, installed, requests = self.run_download([504, 504, 504, 504, 200])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(installed)
+        self.assertEqual(len(requests), 5)
+        self.assertEqual(requests[-1], "/immutable-asset")
+
+    def test_http_error_never_runs_the_installer(self):
+        result, installed, requests = self.run_download([504])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(installed)
+        self.assertEqual(len(requests), 8)
+        self.assertNotIn("FAILED", result.stdout)  # Fails at HTTP, before checksum.
+
+    def test_successful_download_with_wrong_checksum_never_runs_installer(self):
+        result, installed, requests = self.run_download([200], good_checksum=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(installed)
+        self.assertEqual(len(requests), 1)
+        self.assertIn("FAILED", result.stdout)
 
 
 if __name__ == "__main__":

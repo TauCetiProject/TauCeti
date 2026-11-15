@@ -267,19 +267,20 @@ theorem isGaugeEquivalent_one_of_walkTransition_eq (c : SkewZigzagParameter k G)
     subst hr
     exact hc _ _ (isPath_componentPath G w) hq
   refine isGaugeEquivalent_one_of_potential c (potential c) fun v w h ↦ ?_
+  have hroot : componentRoot G w = componentRoot G v :=
+    (componentRoot_eq_componentRoot_iff G).2 h.reachable.symm
   by_cases hw : w ∈ (componentPath G v).support
   -- The path to `v` runs through `w`; the part after `w` has the transition factor of the edge.
   · have hsplit := congrArg (walkTransition c) ((componentPath G v).take_spec hw)
     rw [walkTransition_append,
-      ← hpot (componentRoot_eq_of_adj G h) _
-          ((isPath_componentPath G v).takeUntil hw),
+      ← hpot hroot _ ((isPath_componentPath G v).takeUntil hw),
       hc _ h.symm.toWalk ((isPath_componentPath G v).dropUntil hw) h.symm.isPath_toWalk] at hsplit
     have hedge : walkTransition c h.symm.toWalk = (transition c h)⁻¹ := by
       rw [walkTransition_toWalk, transition_symm]
     rw [hedge] at hsplit
     exact (eq_mul_inv_iff_mul_eq.mp hsplit.symm).symm
   -- Otherwise the path to `v` extended by the edge is a path to `w`.
-  · rw [hpot (componentRoot_eq_of_adj G h) _ ((isPath_componentPath G v).concat hw h),
+  · rw [hpot hroot _ ((isPath_componentPath G v).concat hw h),
       walkTransition_concat, potential]
 
 end SkewZigzagParameter

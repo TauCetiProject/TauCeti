@@ -95,7 +95,7 @@ theorem classSum_commutes {k : Type*} [Semiring k] (C : ConjClasses G) (g : G) :
 end
 
 /-- The class sum of the conjugacy class of `1` is the unit of the group algebra: that class is the
-singleton `{1}` (`TauCeti.ConjClasses.carrier_mk_one`). -/
+singleton `{1}` (`ConjClasses.carrier_mk_one`). -/
 @[simp]
 theorem classSum_mk_one (k : Type*) [Semiring k] :
     classSum k (ConjClasses.mk (1 : G)) = 1 := by

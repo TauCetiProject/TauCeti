@@ -90,8 +90,8 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
     (π π' : 𝒪[K]) (hπ : Irreducible π) (hπ' : Irreducible π')
     (x : Additive (UnitFiltrationGraded K (n + 1))) :
     unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ x =
-      uniformizerChangeResidueAddEquiv π π' hπ hπ' (n + 1)
-        (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π' hπ' x) := by
+      IsLocalRing.residue 𝒪[K] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ (n + 1) *
+        unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π' hπ' x := by
   exact residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ'
     (n + 1) _
 

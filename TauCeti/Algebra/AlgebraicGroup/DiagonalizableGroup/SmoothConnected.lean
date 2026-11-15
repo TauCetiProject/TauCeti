@@ -9,9 +9,9 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
-public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric connectedness and reducedness of diagonalizable groups
@@ -36,9 +36,6 @@ of every split torus.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This establishes the geometric connectedness and reducedness of the split-torus case in Layer 4,
-"Tori: split and non-split", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -66,9 +63,9 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
     (G : FGCommGrpCat.{w}) [IsDomain (MonoidAlgebra K G)] :
     ConnectedSpace (PrimeSpectrum
       (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
-  let e := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
+  let e := (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
   have := connectedSpace_primeSpectrum_coordinateRing K G
-  exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  exact e.toRingHom.connectedSpace_primeSpectrum_of_injective e.injective
 
 /-- Scalar extension identifies a diagonalizable-group coordinate ring with the corresponding
 group algebra over the extension field. -/
@@ -77,7 +74,7 @@ private noncomputable def coordinateRingBaseChangeEquiv
     (K : Type v) [Field K] [Algebra k K] :
     MonoidAlgebra k G ⊗[k] K ≃+* MonoidAlgebra K G :=
   (Algebra.TensorProduct.comm k _ K).toRingEquiv.trans
-    (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv.toRingEquiv
+    (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv.toRingEquiv
 
 /-- **The coordinate Hopf algebra of a unique-product diagonalizable group is geometrically
 connected.** -/

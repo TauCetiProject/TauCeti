@@ -33,12 +33,6 @@ single summand.
   groupoid of a disjoint union is the monodromy of a covering space.
 * `TauCeti.CoveringSpace.sigmaMonodromyEquivalence`: **covering spaces of a disjoint union of
   nice spaces are equivalent to functors from its fundamental groupoid to types.**
-
-## References
-
-This is the disconnected case of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, whose alternative lens asks for covers in general to
-be described as functors out of the fundamental groupoid.
 -/
 
 public section
@@ -66,8 +60,8 @@ def sigmaMonodromyNatIso (f : ∀ i, E i → X i)
       (e z.as.1).app (FundamentalGroupoid.mk z.as.2))
     (by
       rintro ⟨⟨i', x⟩⟩ ⟨⟨i, y⟩⟩ m
-      obtain rfl : i = i' := sigmaFst_eq_of_quotient m
-      obtain ⟨γ, rfl⟩ := exists_quotient_map_sigmaMk_eq m
+      obtain rfl : i = i' := (Path.Homotopic.Quotient.sigma_fst_eq m).symm
+      obtain ⟨γ, rfl⟩ := Path.Homotopic.Quotient.exists_map_sigmaMk_eq m
       refine ConcreteCategory.hom_ext _ _ fun p => ?_
       have h : (sigmaMapFiberEquiv f i y).symm
           ((isCoveringMap_sigmaMap f hf).monodromy

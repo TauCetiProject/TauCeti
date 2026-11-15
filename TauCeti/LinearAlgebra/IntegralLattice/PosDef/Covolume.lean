@@ -9,6 +9,9 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
+
+import TauCeti.Algebra.Module.ZLattice.Integral
 
 /-!
 # The covolume of an integral lattice realized in Euclidean space
@@ -33,7 +36,7 @@ basis and rescale the coordinates by the square roots of its nonnegative diagona
 positive definite lattice the image spans, so every positive definite lattice has a realization;
 this is what lets geometry-of-numbers arguments in `ℝⁿ` be applied to an abstract positive
 definite lattice. In particular the determinant of a positive definite lattice is the square of a
-covolume, hence positive.
+covolume, hence positive, and a positive definite unimodular lattice has determinant `1`.
 
 ## Main results
 
@@ -53,6 +56,8 @@ covolume, hence positive.
   realization in `ℝⁿ`.
 * `TauCeti.IntegralLattice.IsPosDef.determinant_pos`: a positive definite lattice has positive
   determinant.
+* `TauCeti.IntegralLattice.IsPosDef.determinant_eq_one_of_isUnimodular`: a positive definite
+  unimodular lattice has determinant `1`.
 
 ## References
 
@@ -90,21 +95,12 @@ theorem det_gram_comp_eq_determinant {ι : Type*} [Fintype ι] [DecidableEq ι] 
     (Matrix.gram ℝ (fun i ↦ φ (e i))).det = L.determinant := by
   rw [gram_comp_eq_map_gramMatrix hφ, ← Int.cast_det, ← gramDet_def, L.determinant_eq_gramDet e]
 
-/-- The image of a map carrying the integral form to the inner product is discrete: its nonzero
-vectors have integral squared norm, hence norm at least `1`. -/
-theorem discreteTopology_range : DiscreteTopology (LinearMap.range φ) := by
-  refine discreteTopology_of_isOpen_singleton_zero <| Metric.isOpen_singleton_iff.mpr
-    ⟨1, one_pos, fun ⟨_, x, rfl⟩ hx ↦ Subtype.ext ?_⟩
-  have hlt : (L.integralForm x x : ℝ) < 1 := by
-    rw [← hφ, real_inner_self_eq_norm_sq]
-    have h1 : ‖φ x‖ < 1 := by simpa using hx
-    nlinarith [norm_nonneg (φ x)]
-  have h0 : (0 : ℝ) ≤ L.integralForm x x := hφ x x ▸ real_inner_self_nonneg
-  have hx0 : L.integralForm x x = 0 := by
-    have : L.integralForm x x < 1 := by exact_mod_cast hlt
-    have : 0 ≤ L.integralForm x x := by exact_mod_cast h0
-    omega
-  rw [ZeroMemClass.coe_zero, ← inner_self_eq_zero (𝕜 := ℝ), hφ, hx0, Int.cast_zero]
+/-- The image of a map carrying the integral form to the inner product is discrete: it is an
+integral lattice. -/
+theorem discreteTopology_range : DiscreteTopology (LinearMap.range φ) :=
+  (ZLattice.isIntegral_iff.2 (by
+    rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
+    exact ⟨L.integralForm x y, hφ x y⟩)).discreteTopology
 
 variable [L.IsNondegenerate]
 
@@ -119,9 +115,10 @@ theorem injective_of_inner_eq : Function.Injective φ := by
 
 /-- A map carrying the form of a nondegenerate lattice to the inner product carries every carrier
 basis to an `ℝ`-linearly independent family. -/
-theorem linearIndependent_comp_basis {ι : Type*} [Finite ι] (e : Basis ι ℤ L) :
+theorem linearIndependent_comp_basis {ι : Type*} (e : Basis ι ℤ L) :
     LinearIndependent ℝ (fun i ↦ φ (e i)) := by
   classical
+  have := Module.Finite.finite_basis e
   have := Fintype.ofFinite ι
   rw [← Matrix.det_gram_ne_zero_iff_linearIndependent, det_gram_comp_eq_determinant hφ]
   exact_mod_cast (determinant_ne_zero_iff L).mpr L.form_nondegenerate
@@ -218,5 +215,14 @@ theorem IsPosDef.determinant_pos (hL : L.IsPosDef) : 0 < L.determinant := by
   have : IsZLattice ℝ (LinearMap.range φ) := ⟨by rw [LinearMap.coe_range, hspan]⟩
   have h := covolume_range_sq_eq_determinant hφ hspan
   exact_mod_cast h ▸ pow_pos (ZLattice.covolume_pos _ _) 2
+
+/-- A positive definite unimodular lattice has determinant `1`. -/
+theorem IsPosDef.determinant_eq_one_of_isUnimodular (hLp : L.IsPosDef) (hLu : L.IsUnimodular) :
+    L.determinant = 1 := by
+  have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
+  have hpos := hLp.determinant_pos
+  rcases Int.isUnit_iff.mp (L.isUnimodular_iff_isUnit_determinant.mp hLu) with h | h
+  · exact h
+  · omega
 
 end TauCeti.IntegralLattice

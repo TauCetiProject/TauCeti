@@ -10,9 +10,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Conjugation
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Quotient
+import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Reduced
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
-import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # `SLₙ → PGLₙ` is a central isogeny
@@ -28,7 +27,7 @@ this file proves:
   morphism is injective, that is, `SLₙ → PGLₙ` is schematically dominant.
 
 Over a field these give the three conditions of `TauCeti.CommHopfAlgCat.IsCentralIsogeny`:
-faithful flatness follows from injectivity because `SLₙ` is smooth, hence geometrically reduced.
+faithful flatness follows from injectivity and geometric reducedness of `PGLₙ`.
 
 ## Main declarations
 
@@ -249,16 +248,14 @@ theorem injective_conjugationMap : Function.Injective (conjugationMap n R).hom :
 end Lift
 
 /-- **`SLₙ → PGLₙ` is a central isogeny** over a field, in every rank: it is finite with central
-kernel, and faithfully flat because it is schematically dominant and `SLₙ` is smooth. -/
+kernel, and faithfully flat because it is schematically dominant and `PGLₙ` is geometrically
+reduced. -/
 theorem isCentralIsogeny_conjugationMap (k : Type u) [Field k] :
     CommHopfAlgCat.IsCentralIsogeny (conjugationMap n k) := by
   have hinj := injective_conjugationMap n k
-  have : Algebra.IsGeometricallyReduced k (coordinateHopfAlgebra k n) :=
-    isGeometricallyReduced_of_smooth k _
-  have : Algebra.IsGeometricallyReduced k (ProjectiveGeneralLinear.coordinateHopfAlgebra n k) :=
-    .of_injective (conjugationMap n k).hom.toAlgHom hinj
   exact (CommHopfAlgCat.isCentralIsogeny_iff _).mpr ⟨finite_conjugationMap n k,
-    (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced _).mpr hinj,
+    (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced
+      (conjugationMap n k)).mpr hinj,
     isCentral_kernelHopfIdeal_conjugationMap n k⟩
 
 end

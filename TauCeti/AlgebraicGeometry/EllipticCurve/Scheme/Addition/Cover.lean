@@ -146,9 +146,9 @@ theorem span_range_chartPairLaw_eq_top [W.IsElliptic] (i j : Fin 3) :
   exact Projective.span_range_addXYZ_union_range_dblAddXYZ_eq_top
     ((W.toProjective.equation_chartPoint i).baseChange _)
     ((W.toProjective.equation_chartPoint j).baseChange _)
-    (TauCeti.Module.isUnimodular_of_isUnit_apply (i := i)
+    (IsUnit.isUnimodular_pi (i := i)
       (by simp [← Algebra.TensorProduct.one_def]))
-    (TauCeti.Module.isUnimodular_of_isUnit_apply (i := j)
+    (IsUnit.isUnimodular_pi (i := j)
       (by simp [← Algebra.TensorProduct.one_def]))
 
 /-- Every point of `E ×_S E` lies on the product `D₊(Xᵢ) ×_S D₊(Xⱼ)` of two charts, at a point

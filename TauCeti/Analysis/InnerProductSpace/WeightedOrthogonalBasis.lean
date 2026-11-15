@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.WeightL2Isometry
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # From an orthogonality relation to a Hilbert basis of a weighted measure
@@ -22,13 +23,12 @@ the normalized functions `fₙ/√cₙ`, viewed as elements of the weighted `L²
 `L²(w·μ)` (with `w·μ := μ.withDensity (ENNReal.ofReal ∘ w)`), form an orthonormal family; if in
 addition their span has trivial orthogonal complement, they form a `HilbertBasis`.
 
-This is the family-agnostic assembly step of Part B2 of the `OrthogonalL2Bases` roadmap: the
-orthogonality relation and the completeness hypothesis enter as arguments, so the bridge is
-grounded by construction and reusable across families. The canonical application is a family of
-orthogonal polynomials `f n := (p n).eval` (Hermite, Chebyshev, ...), but any orthogonal system of
-real-valued functions (e.g. trigonometric) fits the same bridge. The scalars are generic over
-`[RCLike 𝕜]`: the real function values are cast through `algebraMap ℝ 𝕜`, so a single construction
-serves both the real and complex `L²` spaces.
+The construction is family-agnostic: the orthogonality relation and the completeness hypothesis
+enter as arguments, so the same bridge serves every family that supplies them. The canonical
+application is a family of orthogonal polynomials `f n := (p n).eval` (Hermite, Chebyshev, ...),
+but any orthogonal system of real-valued functions (e.g. trigonometric) fits the same bridge. The
+scalars are generic over `[RCLike 𝕜]`: the real function values are cast through `algebraMap ℝ 𝕜`,
+so a single construction serves both the real and complex `L²` spaces.
 
 Two normalizations come out of one construction. The bare normalized functions are natively an
 orthonormal basis of the **weighted measure** `L²(w·μ)` (`hilbertBasisOfWeightedMeasure`); pushing
@@ -55,9 +55,9 @@ re-derive.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 open scoped ENNReal NNReal
 
@@ -198,7 +198,7 @@ noncomputable def hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) :
     HilbertBasis ℕ 𝕜 (Lp 𝕜 2 μ) :=
   (hilbertBasisOfWeightedMeasure f w c (hwpos.mono fun _ hx => hx.le) hwm hc horth hmem
-    hcomplete).mapₗᵢ (weightL2Isometry μ w hwpos hwm)
+    hcomplete).mapₗᵢ (weightL2Isometry 𝕜 μ w hwpos hwm)
 
 /-- Element-level characterization of the `√w`-envelope basis: the `weightL2Isometry`-image of the
 weighted-measure basis vector. -/
@@ -209,7 +209,7 @@ theorem coe_hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (μ.withDensity (fun x => ENNReal.ofReal (w x)))) (hcomplete :
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) (n : ℕ) :
     hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n
-      = weightL2Isometry μ w hwpos hwm (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n) := by
+      = weightL2Isometry 𝕜 μ w hwpos hwm (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n) := by
   rw [hilbertBasisOfOrthogonalSystem, HilbertBasis.mapₗᵢ_apply,
     coe_hilbertBasisOfWeightedMeasure f w c (hwpos.mono fun _ hx => hx.le) hwm hc horth hmem
       hcomplete]
@@ -230,15 +230,11 @@ theorem coeFn_hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) (n : ℕ) :
     ⇑(hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n)
       =ᵐ[μ] fun x => (algebraMap ℝ 𝕜) (f n x * Real.sqrt (w x) / Real.sqrt (c n)) := by
-  have hac : μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
-    withDensity_absolutelyContinuous' hwm.ennreal_ofReal <| by
-      filter_upwards [hwpos] with x hx
-      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-      exact hx
   rw [coe_hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n]
-  filter_upwards [weightL2Isometry_apply (𝕜 := 𝕜) μ w hwpos hwm
+  filter_upwards [coeFn_weightL2Isometry 𝕜 μ w hwpos hwm
       (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n),
-    (coeFn_bareNormalizedLp (𝕜 := 𝕜) f w c hmem n).filter_mono hac.ae_le] with x hx hbare
+    (coeFn_bareNormalizedLp (𝕜 := 𝕜) f w c hmem n).filter_mono
+      (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le] with x hx hbare
   rw [hx, hbare, Algebra.smul_def, ← map_mul]
   congr 1
   ring

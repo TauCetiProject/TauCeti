@@ -16,10 +16,10 @@ This file equips the universal enveloping algebra of a Lie algebra with its stan
 cocommutative bialgebra structure. Every element of the original Lie algebra is primitive:
 its comultiplication is `x ⊗ 1 + 1 ⊗ x`, and its counit is zero.
 
-The construction is needed for the Kostant integral form in the Chevalley--Demazure construction.
-The integral form is generated inside a universal enveloping algebra by divided powers of root
-vectors and binomial coefficients in coroots; its stability under this comultiplication is what
-eventually makes the corresponding distribution algebra a Hopf algebra over `ℤ`.
+The Kostant integral form is generated inside a universal enveloping algebra by divided powers of
+root vectors and binomial coefficients in coroots; its stability under this comultiplication is one
+of the facts that make it a Hopf algebra over `ℤ`
+(`TauCeti.UniversalEnvelopingAlgebra.instHopfAlgebraKostantForm`).
 
 ## Main definitions
 
@@ -32,6 +32,8 @@ eventually makes the corresponding distribution algebra a Hopf algebra over `ℤ
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι`: the comultiplication of a Lie generator.
+* `TauCeti.UniversalEnvelopingAlgebra.isPrimitiveElem_ι`: every canonical Lie image is
+  primitive over any commutative ring.
 * `TauCeti.UniversalEnvelopingAlgebra.counit_ι`: the counit of a Lie generator.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι_pow`: the comultiplication of a generator power.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι_dividedPower` and
@@ -43,10 +45,8 @@ eventually makes the corresponding distribution algebra a Hopf algebra over `ℤ
 
 ## References
 
-The construction follows J. E. Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, §26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1. It supplies a
-prerequisite for the Kostant `ℤ`-form in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+The construction follows J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
 The formal development is modelled on the closest Mathlib analogue,
 `Mathlib/RingTheory/Bialgebra/SymmetricAlgebra.lean` by Robert Hawkins, which makes the generators
@@ -160,6 +160,19 @@ theorem comul_ι' (x : L) :
       _root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x) ⊗ₜ[R] 1 +
         1 ⊗ₜ[R] _root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x) := by
   simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using comul_ι R L x
+
+/-- The canonical image of a Lie element is primitive over any commutative ring. -/
+theorem isPrimitiveElem_ι (x : L) :
+    Bialgebra.IsPrimitiveElem R (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  apply Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr
+  simpa only [add_comm] using comul_ι R L x
+
+/-- Primitivity of a canonical Lie image in the normal form used by `simp`. -/
+@[simp]
+theorem isPrimitiveElem_ι' (x : L) :
+    Bialgebra.IsPrimitiveElem R
+      (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x)) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using isPrimitiveElem_ι R L x
 
 /-- The bialgebra counit vanishes on Lie generators. -/
 -- `simp`-normal form is `counit_ι'`, since `simp` unfolds `ι` through `ι_apply`.

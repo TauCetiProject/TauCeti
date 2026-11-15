@@ -12,6 +12,7 @@ public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
 public import Mathlib.Topology.Algebra.Order.Floor
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Algebra.BigOperators.Group.Finset.Indicator
 
 /-!
 # Finite real-cutoff carriers for Northcott functions
@@ -118,6 +119,16 @@ theorem summatory_add {M : Type*} [AddCommMonoid M] (w₁ w₂ : ι → M) (x : 
     summatory N (w₁ + w₂) x = summatory N w₁ x + summatory N w₂ x := by
   simp [summatory, Finset.sum_add_distrib]
 
+/-- An indicator-weighted summatory function is additive along a finite pairwise disjoint family
+of supports. -/
+theorem summatory_indicator_biUnion_finset {κ M : Type*} [AddCommMonoid M]
+    (s : Finset κ) (f : κ → Set ι) (hdisj : (s : Set κ).PairwiseDisjoint f)
+    (w : ι → M) (x : ℝ) :
+    summatory N ((⋃ i ∈ s, f i).indicator w) x =
+      ∑ i ∈ s, summatory N ((f i).indicator w) x := by
+  simp_rw [summatory_apply, Finset.indicator_biUnion_apply s f hdisj]
+  exact Finset.sum_comm
+
 /-- Summation distributes over pointwise subtraction of weights. -/
 theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
     summatory N (w₁ - w₂) x = summatory N w₁ x - summatory N w₂ x := by
@@ -128,10 +139,24 @@ theorem summatory_const_mul (c : ℝ) (w : ι → ℝ) (x : ℝ) :
     summatory N (fun i ↦ c * w i) x = c * summatory N w x := by
   simp [summatory, Finset.mul_sum]
 
+/-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
+the summatory function by the value of the twist at that cutoff. -/
+theorem summatory_mul_eq_mul_summatory_of_le {R : Type*} [NonUnitalNonAssocCommSemiring R]
+    {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → R) (g : ℝ → R) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
+
 /-- Below a uniform lower bound for the `N`-values every summatory function vanishes. -/
 theorem summatory_eq_zero_of_lt {M : Type*} [AddCommMonoid M] {b x : ℝ}
     (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) (w : ι → M) : summatory N w x = 0 := by
   simp [summatory, normLE_eq_empty_of_lt N hb hx]
+
+/-- A summatory function vanishes below the cutoff `0`, since `N` takes natural values. -/
+theorem summatory_eq_zero_of_neg {M : Type*} [AddCommMonoid M] {x : ℝ} (hx : x < 0) (w : ι → M) :
+    summatory N w x = 0 :=
+  summatory_eq_zero_of_lt N (b := 0) (fun _ ↦ Nat.cast_nonneg _) hx w
 
 /-- For a nonnegative cutoff, a summatory function has the same value at the cutoff and at its
 natural floor. -/

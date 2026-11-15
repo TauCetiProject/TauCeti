@@ -14,20 +14,20 @@ import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 /-!
 # The weights of an irreducible highest weight module are stable under the Weyl group
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
 its root system, and let `M` be an irreducible `L`-module carrying a highest weight vector of
 dominant integral weight `lam`. This file records that the weights of `M` are stable under the
 reflection in each simple root, hence under the whole Weyl group, and that they are integral on the
 simple coroots.
 
-`M` is not assumed finite-dimensional: for the modules of Layer 4 of the highest weight roadmap
-finite-dimensionality is the conclusion, not a hypothesis. What is available instead is
-integrability along each simple root, proved in
+`M` is not assumed finite-dimensional: for such a module finite-dimensionality is a conclusion, not
+a hypothesis. What is available instead is integrability along each simple root, proved in
 `TauCeti/Algebra/Lie/HighestWeight/Integrable.lean`, and reflection stability is what
 `TauCeti/Algebra/Lie/Weights/Integrable.lean` extracts from it. Combined with the weight cone
 `lam - Q⁺` of `TauCeti/Algebra/Lie/HighestWeight/Module.lean`, stability under the reflections is
-what will confine the weights of `M` to a finite set.
+what confines the weights of `M` to a finite set
+(`TauCeti/Algebra/Lie/HighestWeight/Weight/Support.lean`).
 
 ## Main results
 
@@ -45,10 +45,6 @@ what will confine the weights of `M` to a finite set.
 
 ## References
 
-This is the weight-stability half of the "weight-cone bound" milestone of Layer 4, "the
-classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 -/
 
@@ -60,9 +56,9 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
 

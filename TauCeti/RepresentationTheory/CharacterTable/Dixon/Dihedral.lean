@@ -21,10 +21,6 @@ with `3` as its primitive sixth root.
 
 * `TauCeti.dihedralGroupFourDixonPrimeData`: Dixon prime data for `DihedralGroup 4`.
 * `TauCeti.dihedralGroupThreeDixonPrimeData`: Dixon prime data for `DihedralGroup 3`.
-
-## References
-
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "Certified Dixon prime data".
 -/
 
 public section

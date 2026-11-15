@@ -14,9 +14,10 @@ public import TauCeti.NumberTheory.Cyclotomic.Adjoin
 If `M` contains a primitive `m`-th root of unity and a subgroup `H ≤ Gal(M/K)` meets
 `Gal(M/K(μ_m))` trivially, then `M` is an `m`-th cyclotomic extension of the fixed field `M ^ H`.
 
-Only `M / K` is assumed finite and Galois. The root of unity enters as a hypothesis rather than
-through an ambient cyclotomic tower, so no separately quantified intermediate field or cyclotomic
-tower appears among the arguments — the fixed field itself is of course an `IntermediateField K M`,
+Only the subgroup `H` is assumed finite; `M / K` need not be finite or Galois. The root of unity
+enters as a hypothesis rather than through an ambient cyclotomic tower, so no separately quantified
+intermediate field or cyclotomic tower appears among the arguments — the fixed field itself is of
+course an `IntermediateField K M`,
 being the base of the conclusion.
 
 Nothing here needs `H` to be cyclic. The Chebotarev application takes `H = Subgroup.zpowers (σ, τ)`,
@@ -45,8 +46,8 @@ open IntermediateField
 The trivial meet says exactly that `M ^ H` and `K(μ_m)` generate `M`, so adjoining a primitive
 root to `M ^ H` recovers all of `M`. -/
 theorem IsPrimitiveRoot.fixedField_isCyclotomicExtension_of_inf_fixingSubgroup_eq_bot
-    {K M : Type*} [Field K] [Field M] [Algebra K M] [FiniteDimensional K M] [IsGalois K M]
-    {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) (H : Subgroup (M ≃ₐ[K] M))
+    {K M : Type*} [Field K] [Field M] [Algebra K M]
+    {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) (H : Subgroup (M ≃ₐ[K] M)) [Finite H]
     (hmeet : H ⊓ (adjoin K {b : M | b ^ m = 1}).fixingSubgroup = ⊥) :
     IsCyclotomicExtension {m} (fixedField H) M := by
   set F : IntermediateField K M := fixedField H

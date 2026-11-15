@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
+public import TauCeti.Algebra.Homology.ShortComplex.FunctorEquivalence
 
 /-!
-# Homology classes under a functor preserving homology
+# Homology classes and diagrams under functors preserving homology
 
 For a functor `F` preserving the left homology of a short complex `S`, Mathlib identifies the
 cycles and the homology of `S.map F` with the images under `F` of those of `S`, by
@@ -18,14 +19,19 @@ records the companion statement for the class map: under the two identifications
 `homologyπ` of `S.map F` is the image under `F` of the class map of `S`
 (`ShortComplex.homologyπ_comp_mapHomologyIso_hom`).
 
-This is what makes a homology class computed after applying `F` recognisable as the image of a
-class before applying it, for instance when a connecting map is constructed in an abelian category
-after forgetting structure from a non-abelian one.
+It also provides the natural isomorphism `ShortComplex.homologyDiagramIso` identifying the
+pointwise homology diagram `F ⋙ ShortComplex.homologyFunctor C` of a diagram
+`F : J ⥤ ShortComplex C` with the homology of the associated short complex of diagrams
+`(functorEquivalence J C).inverse.obj F` when that short complex has homology
+(`((functorEquivalence J C).inverse.obj F).HasHomology`) and evaluation at each object preserves
+its left and right homology.
 -/
 
 public section
 
 namespace CategoryTheory.ShortComplex
+
+section Map
 
 variable {C D : Type*} [Category C] [Category D] [Limits.HasZeroMorphisms C]
   [Limits.HasZeroMorphisms D] (S : ShortComplex C) (F : C ⥤ D) [F.PreservesZeroMorphisms]
@@ -60,5 +66,88 @@ theorem homologyπ_comp_mapHomologyIso_hom [S.HasHomology] [(S.map F).HasHomolog
     (Category.assoc _ _ _).symm.trans <|
     congrArg (· ≫ F.map S.homologyπ)
       (congrArg Iso.hom (LeftHomologyData.mapCyclesIso_eq h F)).symm
+
+end Map
+
+section Diagram
+
+variable {C J : Type*} [Category* C] [Limits.HasZeroMorphisms C] [Category* J]
+
+/-- Evaluating the homology of the short complex of diagrams attached to `F : J ⥤ ShortComplex C`
+along a morphism `f : X ⟶ Y` commutes with `ShortComplex.mapHomologyIso`. -/
+@[reassoc]
+theorem mapHomologyIso_evaluation_naturality (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
+    {X Y : J} (f : X ⟶ Y)
+    [((evaluation J C).obj X).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj X).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj Y).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [((evaluation J C).obj Y).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)] :
+    homologyMap
+        (((functorEquivalence J C).inverse.obj F).mapNatTrans ((evaluation J C).map f)) ≫
+      (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+        ((evaluation J C).obj Y)).hom =
+    (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+        ((evaluation J C).obj X)).hom ≫
+      ((functorEquivalence J C).inverse.obj F).homology.map f := by
+  -- Since `((evaluation J C).map f).app G = G.map f`, the right-hand factor is the component of
+  -- `NatTrans.app_homology ((evaluation J C).map f)` on `(functorEquivalence J C).inverse.obj F`.
+  rw [← Iso.inv_comp_eq]
+  exact (NatTrans.app_homology ((evaluation J C).map f)
+    ((functorEquivalence J C).inverse.obj F)).symm
+
+variable [CategoryWithHomology C]
+
+/-- The pointwise homology diagram of `F : J ⥤ ShortComplex C` is naturally isomorphic to the
+homology of the associated short complex of diagrams `(functorEquivalence J C).inverse.obj F` when
+`((functorEquivalence J C).inverse.obj F).HasHomology` holds and evaluation at each object
+preserves its left and right homology. -/
+noncomputable def homologyDiagramIso (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
+    [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)] :
+    F ⋙ homologyFunctor C ≅ ((functorEquivalence J C).inverse.obj F).homology :=
+  NatIso.ofComponents
+    (fun j ↦ homologyMapIso (diagramEvaluationIso F j).symm ≪≫
+      ((functorEquivalence J C).inverse.obj F).mapHomologyIso ((evaluation J C).obj j))
+    (fun {X Y} f ↦ by
+      dsimp [homologyFunctor, homologyMapIso]
+      rw [Category.assoc, ← mapHomologyIso_evaluation_naturality F f, ← Category.assoc,
+        ← Category.assoc, ← homologyMap_comp, ← homologyMap_comp,
+        diagramEvaluationIso_inv_naturality])
+
+/-- The forward component of `ShortComplex.homologyDiagramIso` at `j`. -/
+@[simp]
+theorem homologyDiagramIso_hom_app (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
+    [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)] (j : J) :
+    (homologyDiagramIso F).hom.app j =
+      homologyMap (diagramEvaluationIso F j).inv ≫
+        (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+          ((evaluation J C).obj j)).hom := by rfl
+
+/-- The inverse component of `ShortComplex.homologyDiagramIso` at `j`. -/
+@[simp]
+theorem homologyDiagramIso_inv_app (F : J ⥤ ShortComplex C)
+    [((functorEquivalence J C).inverse.obj F).HasHomology]
+    [∀ j : J, ((evaluation J C).obj j).PreservesLeftHomologyOf
+      ((functorEquivalence J C).inverse.obj F)]
+    [∀ j : J, ((evaluation J C).obj j).PreservesRightHomologyOf
+      ((functorEquivalence J C).inverse.obj F)] (j : J) :
+    (homologyDiagramIso F).inv.app j =
+      (((functorEquivalence J C).inverse.obj F).mapHomologyIso
+          ((evaluation J C).obj j)).inv ≫
+        homologyMap (diagramEvaluationIso F j).hom := by rfl
+
+end Diagram
 
 end CategoryTheory.ShortComplex

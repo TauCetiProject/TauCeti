@@ -29,9 +29,6 @@ solvable.
   group" is the classical form of what is proved here.
 * T. A. Springer, *Linear Algebraic Groups*, Corollary 2.4.13: a unipotent linear algebraic group
   is nilpotent, hence solvable.
-
-This completes the point-group solvability implication needed in Layer 5 of the ReductiveGroups
-roadmap.
 -/
 
 public section

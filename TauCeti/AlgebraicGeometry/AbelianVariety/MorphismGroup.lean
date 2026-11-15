@@ -29,19 +29,17 @@ Jacobian this pointwise product is the tensor product of line bundles.
   underlying commutative group objects as a multiplicative equivalence;
 * `AbelianVariety.Hom.toOverHom_mul`, `toOverHom_one`, `toOverHom_inv`, `toOverHom_div`: the
   underlying morphism over `Spec K` is a homomorphism of these groups;
+* `AbelianVariety.Hom.toSchemeHom_one`: the underlying scheme morphism of the identity element of
+  `A ⟶ B` is the structure morphism of `A` followed by the zero section of `B`;
 * `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`: composition is bimultiplicative,
   so `AbelianVariety K` behaves like a preadditive category with respect to this group law;
 * `AbelianVariety.Hom.leftComp` and `AbelianVariety.Hom.rightComp`: the same bimultiplicativity in
   bundled form, as homomorphisms of the homomorphism groups, with `Hom.comp_zpow` and
   `Hom.zpow_comp` the resulting integer-power laws.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API", by supplying the group structure
-on the homomorphism sets. Layer F's universal property produces a *unique* homomorphism of abelian
-varieties; the group law here is the ambient structure in which that uniqueness and the Albanese
-functoriality are expressed. No external mathematics is vendored; the group structure is transported
-from Mathlib's `CategoryTheory.MonObj.Hom.commGroup` on morphisms into a commutative group object,
-via the existing Tau Ceti abelian-variety homomorphism API.
+No external mathematics is vendored; the group structure is transported from Mathlib's
+`CategoryTheory.MonObj.Hom.commGroup` on morphisms into a commutative group object, via the
+existing Tau Ceti abelian-variety homomorphism API.
 -/
 
 public section
@@ -109,6 +107,14 @@ section). -/
     toOverHom (1 : A ⟶ B) = 1 := by
   rw [toOverHom_eq_homMulEquiv, map_one]
   simp only [Grp.Hom.hom_one, Mon.Hom.hom_one]
+
+/-- The scheme morphism underlying the identity element of the group `A ⟶ B` is the constant
+morphism through the zero section of `B`: the structure morphism of `A` followed by the zero
+section. -/
+@[simp] lemma toSchemeHom_one (A B : AbelianVariety K) :
+    toSchemeHom (1 : A ⟶ B) = A.toOver.hom ≫ B.zeroSection := by
+  rw [toSchemeHom, toOverHom_one, CategoryTheory.Hom.one_def, Over.comp_left,
+    Over.toUnit_left]
 
 /-- The underlying morphism over `Spec K` sends the inverse of a homomorphism to the pointwise
 inverse. -/

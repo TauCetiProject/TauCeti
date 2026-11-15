@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.TorusWeights
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.RootBasis
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Root.Basis
 import TauCeti.Data.List.Involutive
 
 /-!

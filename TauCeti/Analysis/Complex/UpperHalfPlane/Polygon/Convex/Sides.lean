@@ -6,22 +6,48 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Data.Fin.Basic
 
 /-!
-# Strict side inequalities for convex hyperbolic polygons
+# Sides, boundary and interior of convex hyperbolic polygons
 
-Distinct sides of a convex polygon have distinct supporting geodesic lines. Every point on a
-side other than its finite endpoints lies strictly to the left of all the other supporting
-lines. This identifies regular edge points by strict inequalities and permits local tessellation
-arguments without assuming those inequalities separately. The results include ideal vertices:
-a side can be a segment, a ray, or a full line.
+Distinct sides of a convex polygon have distinct supporting geodesic lines, and each side has
+two distinct points, so distinct sides are distinct sets. Every point on a side other than its
+finite endpoints lies strictly to the left of all the other supporting lines. This identifies
+regular edge points by strict inequalities and permits local tessellation arguments without
+assuming those inequalities separately. The results include ideal vertices: a side can be a
+segment, a ray, or a full line.
+
+A point of the polygon on the supporting line of a side lies on that side: beyond a finite
+endpoint, the line leaves the closed half-plane of the adjacent side. Hence the boundary of the
+polygon is the union of its sides, and so is null. A geodesic line through two points of the
+polygon and missing its interior is the supporting line of a side. A point near a regular side
+point, on the inner side of its line, is interior, so the interior is nonempty, and by convexity
+the polygon is the closure of its interior.
 
 ## Main results
 
 * `ConvexPolygon.range_sideGeodesic_ne`: distinct sides have distinct supporting lines.
 * `ConvexPolygon.mem_leftHalfPlane_of_mem_side`: a nonendpoint side point satisfies every
   other side inequality strictly.
+* `ConvexPolygon.carrier_inter_range_sideGeodesic`: the polygon meets the supporting line of a
+  side exactly in that side.
+* `ConvexPolygon.isClosed_side`, `ConvexPolygon.eq_of_mem_side_of_mem_side`: sides are closed,
+  and two distinct sides meet only at a finite vertex.
+* `ConvexPolygon.side_nontrivial`, `ConvexPolygon.side_injective`: every side has two distinct
+  points, and distinct sides are distinct sets.
+* `ConvexPolygon.exists_range_sideGeodesic_eq`: a line through two points of the polygon missing
+  its interior supports a side.
+* `ConvexPolygon.geodesicSegment_inter_interior_carrier_nonempty`: two distinct points of the
+  polygon not on a common side span a segment through the interior.
+* `ConvexPolygon.frontier_carrier`: the boundary is the union of the sides.
+* `ConvexPolygon.mem_interior_or_mem_side_or_vertex_eq_inl`: a point of the polygon is interior,
+  a nonendpoint side point, or a finite vertex.
+* `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
+* `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
+  interior is nonempty and dense in the polygon.
+* `ConvexPolygon.isPathConnected_carrier`: the polygon is path-connected.
 
 ## References
 
@@ -32,8 +58,8 @@ Beardon, *The Geometry of Discrete Groups*, Chapter 9.
 
 public section
 
-open UpperHalfPlane
-open scoped MatrixGroups
+open Filter MeasureTheory Set Topology UpperHalfPlane
+open scoped MatrixGroups OnePoint
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
@@ -73,5 +99,291 @@ theorem mem_leftHalfPlane_of_mem_side {i j : Fin n} {z : ℍ} (hz : z ∈ P.side
     (P.vertex_mem_extClosedLeftHalfPlane_sideGeodesic j i)
     (P.vertex_mem_extClosedLeftHalfPlane_sideGeodesic j (i + 1))
     (P.range_sideGeodesic_ne hji.symm) hz hzp hzq
+
+/-- Every side has a point other than its finite endpoints. -/
+theorem exists_mem_side_ne_endpoints (k : Fin n) :
+    ∃ z ∈ P.side k, P.vertex k ≠ .inl z ∧ P.vertex (k + 1) ≠ .inl z := by
+  have hg := P.isGeodesicFromTo_sideGeodesic k
+  rw [side_def]
+  rcases hp : P.vertex k with v | ξ <;> rcases hq : P.vertex (k + 1) with w | η <;>
+    rw [hp, hq] at hg
+  · obtain ⟨s, t, hst, rfl, rfl⟩ := isGeodesicFromTo_inl_inl.1 hg
+    refine ⟨geodesicLine (P.sideGeodesic k) ((s + t) / 2), ?_, ?_, ?_⟩
+    · rw [extGeodesicSegment_inl_inl, geodesicSegment_geodesicLine, uIcc_of_le hst.le]
+      exact mem_image_of_mem _ ⟨by linarith, by linarith⟩
+    · exact fun h ↦ by
+        have := geodesicLine_injective _ (Sum.inl_injective h)
+        linarith
+    · exact fun h ↦ by
+        have := geodesicLine_injective _ (Sum.inl_injective h)
+        linarith
+  · refine ⟨geodesicLine (rayToward v (.inr η)) 1, ?_, fun h ↦ ?_, Sum.inr_ne_inl⟩
+    · rw [extGeodesicSegment_inl_inr]
+      exact mem_image_of_mem _ (mem_Ici.2 zero_le_one)
+    · have := geodesicLine_injective _
+        ((geodesicLine_rayToward_zero v _).trans (Sum.inl_injective h))
+      norm_num at this
+  · refine ⟨geodesicLine (rayToward w (.inr ξ)) 1, ?_, Sum.inr_ne_inl, fun h ↦ ?_⟩
+    · rw [extGeodesicSegment_inr_inl]
+      exact mem_image_of_mem _ (mem_Ici.2 zero_le_one)
+    · have := geodesicLine_injective _
+        ((geodesicLine_rayToward_zero w _).trans (Sum.inl_injective h))
+      norm_num at this
+  · have hξη : ξ ≠ η := fun h ↦ hg.ne (congrArg _ h)
+    refine ⟨geodesicLine (geodesicFromTo (.inr ξ) (.inr η)) 0, ?_, Sum.inr_ne_inl,
+      Sum.inr_ne_inl⟩
+    rw [extGeodesicSegment_inr_inr hξη]
+    exact mem_range_self 0
+
+/-- On the supporting geodesic of side `k`, a parameter strictly between two parameters of
+points of the polygon is not on the supporting geodesic of another side. -/
+private theorem geodesicLine_notMem_range_sideGeodesic {k j : Fin n} (hjk : j ≠ k) {a c b : ℝ}
+    (hac : a < c) (hcb : c < b) (ha : geodesicLine (P.sideGeodesic k) a ∈ P.carrier)
+    (hb : geodesicLine (P.sideGeodesic k) b ∈ P.carrier) :
+    geodesicLine (P.sideGeodesic k) c ∉ range (geodesicLine (P.sideGeodesic j)) :=
+  disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
+    (geodesicLine_mem_leftHalfPlane_of_mem_closure hac hcb
+      (P.carrier_subset_closure_leftHalfPlane j ha) (P.carrier_subset_closure_leftHalfPlane j hb)
+      (P.range_sideGeodesic_ne hjk.symm))
+
+/-- **A point of the polygon on the supporting geodesic of a side running from an ideal point to a
+finite vertex lies on the side.** If the side `ξ → w` of the polygon, where `w` is the finite
+endpoint and lies on the supporting geodesic of the next side, is contained in the polygon, then
+every point of the polygon on the supporting geodesic of the side belongs to the side. This is the
+case of a backward ray `(-∞, t]` in `carrier_inter_range_sideGeodesic`. -/
+private theorem mem_extGeodesicSegment_inr_inl_of_mem_carrier {k : Fin n} (hk₁ : k + 1 ≠ k)
+    {ξ : OnePoint ℝ} {w : ℍ} {u : ℝ}
+    (hg : IsGeodesicFromTo (P.sideGeodesic k) (.inr ξ) (.inl w))
+    (hside : extGeodesicSegment (.inr ξ) (.inl w) ⊆ P.carrier)
+    (hx : geodesicLine (P.sideGeodesic k) u ∈ P.carrier)
+    (hnext : w ∈ range (geodesicLine (P.sideGeodesic (k + 1)))) :
+    geodesicLine (P.sideGeodesic k) u ∈ extGeodesicSegment (.inr ξ) (.inl w) := by
+  obtain ⟨rfl, t, rfl⟩ := isGeodesicFromTo_inr_inl.1 hg
+  -- the side is the backward ray `(-∞, t]`; a parameter `u > t` would put the finite endpoint,
+  -- a point of the line of the next side, strictly between two points of the polygon
+  rw [← geodesicLine_image_Iic] at hside ⊢
+  refine ⟨u, le_of_not_gt fun htu ↦ ?_, rfl⟩
+  exact P.geodesicLine_notMem_range_sideGeodesic hk₁ (sub_one_lt t) htu
+    (hside (mem_image_of_mem _ (sub_one_lt t).le)) hx hnext
+
+/-- The points of the polygon on the supporting geodesic of a side are exactly the points of
+that side. -/
+@[simp]
+theorem carrier_inter_range_sideGeodesic (k : Fin n) :
+    P.carrier ∩ range (geodesicLine (P.sideGeodesic k)) = P.side k := by
+  refine Subset.antisymm ?_
+    (subset_inter (P.side_subset_carrier k) (P.side_subset_range_sideGeodesic k))
+  rintro _ ⟨hx, u, rfl⟩
+  have hk₁ : k + 1 ≠ k := add_one_ne_self (by have := P.three_le; omega) k
+  have hk₀ : k - 1 ≠ k := sub_one_ne_self (by have := P.three_le; omega) k
+  -- a finite vertex lies on the supporting geodesics of both sides through it
+  have hprev {v : ℍ} (hv : P.vertex k = .inl v) :
+      v ∈ range (geodesicLine (P.sideGeodesic (k - 1))) :=
+    P.side_subset_range_sideGeodesic _
+      (P.mem_side_of_vertex_add_one_eq_inl (by rwa [sub_add_cancel]))
+  have hnext {w : ℍ} (hw : P.vertex (k + 1) = .inl w) :
+      w ∈ range (geodesicLine (P.sideGeodesic (k + 1))) :=
+    P.side_subset_range_sideGeodesic _ (P.mem_side_of_vertex_eq_inl hw)
+  have hside := P.side_subset_carrier k
+  have hg := P.isGeodesicFromTo_sideGeodesic k
+  rw [side_def] at hside ⊢
+  -- In each case the side is the image of an interval of parameters of `sideGeodesic k`. A
+  -- parameter `u` beyond a finite endpoint would put that endpoint, a vertex on the line of the
+  -- adjacent side, strictly between two points of the polygon on the line of side `k`.
+  rcases hp : P.vertex k with v | ξ <;> rcases hq : P.vertex (k + 1) with w | η <;>
+    rw [hp, hq] at hg hside
+  · -- a segment `[s, t]`
+    obtain ⟨s, t, hst, hs, ht⟩ := isGeodesicFromTo_inl_inl.1 hg
+    rw [extGeodesicSegment_inl_inl, ← hs, ← ht, geodesicSegment_geodesicLine,
+      uIcc_of_le hst.le]
+    refine mem_image_of_mem _ ⟨le_of_not_gt fun hus ↦ ?_, le_of_not_gt fun htu ↦ ?_⟩
+    · exact P.geodesicLine_notMem_range_sideGeodesic hk₀ hus hst hx
+        (ht ▸ P.vertex_mem_carrier hq) (hs ▸ hprev hp)
+    · exact P.geodesicLine_notMem_range_sideGeodesic hk₁ hst htu
+        (hs ▸ P.vertex_mem_carrier hp) hx (ht ▸ hnext hq)
+  · -- a forward ray `[s, ∞)`
+    obtain ⟨⟨s, hs⟩, hη⟩ := isGeodesicFromTo_inl_inr.1 hg
+    rw [extGeodesicSegment_inl_inr, ← hs, ← hη] at hside ⊢
+    simp only [rayToward_geodesicLine_inr_smul_infty, geodesicLine_mul_dilation] at hside ⊢
+    refine ⟨u - s, mem_Ici.2 (sub_nonneg.2 (le_of_not_gt fun hus ↦ ?_)), by
+      dsimp only
+      rw [add_sub_cancel]⟩
+    exact P.geodesicLine_notMem_range_sideGeodesic hk₀ hus (lt_add_one s) hx
+      (hside (mem_image_of_mem _ (mem_Ici.2 zero_le_one))) (hs ▸ hprev hp)
+  · -- a backward ray `(-∞, t]`
+    exact P.mem_extGeodesicSegment_inr_inl_of_mem_carrier hk₁ hg hside hx (hnext hq)
+  · -- the whole line
+    obtain ⟨hξ, hη⟩ := isGeodesicFromTo_inr_inr.1 hg
+    have hξη : ξ ≠ η := fun h ↦ (isGeodesicFromTo_inr_inr.2 ⟨hξ, hη⟩).ne (congrArg _ h)
+    rw [extGeodesicSegment_inr_inr hξη,
+      (isGeodesicFromTo_inr_inr.2 ⟨hξ, hη⟩).range_geodesicLine_eq
+        (isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη))]
+    exact mem_range_self u
+
+/-- A side of a convex polygon is closed. -/
+theorem isClosed_side (k : Fin n) : IsClosed (P.side k) := by
+  rw [← P.carrier_inter_range_sideGeodesic]
+  exact P.isClosed_carrier.inter (isometry_geodesicLine _).isClosedEmbedding.isClosed_range
+
+/-- A point of side `i` other than its finite endpoints lies on no other side. -/
+theorem eq_of_mem_side_of_mem_side {z : ℍ} {i k : Fin n} (hi : z ∈ P.side i)
+    (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z) (hk : z ∈ P.side k) :
+    i = k := by
+  by_contra hik
+  exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
+    (P.mem_leftHalfPlane_of_mem_side hi hzp hzq (Ne.symm hik))
+    (P.side_subset_range_sideGeodesic k hk)
+
+/-- A finite vertex lies on a side only as one of its two endpoints. -/
+theorem eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side {j k : Fin n} {z : ℍ}
+    (hj : P.vertex j = .inl z) (hz : z ∈ P.side k) : j = k ∨ j = k + 1 := by
+  by_contra! h
+  have hleft := P.vertex_mem_extLeftHalfPlane_sideGeodesic h.1 h.2
+  rw [hj, inl_mem_extLeftHalfPlane_iff] at hleft
+  exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _) hleft
+    (P.side_subset_range_sideGeodesic k hz)
+
+/-- Two distinct points of a convex polygon which do not lie on a common side span a geodesic
+segment meeting the interior of the polygon. -/
+theorem geodesicSegment_inter_interior_carrier_nonempty {z w : ℍ} (hz : z ∈ P.carrier)
+    (hw : w ∈ P.carrier) (hzw : z ≠ w) (hside : ∀ k, z ∈ P.side k → w ∉ P.side k) :
+    (geodesicSegment z w ∩ interior P.carrier).Nonempty := by
+  have hd : 0 < dist z w := dist_pos.2 hzw
+  refine ⟨geodesicLine (geodesicBetween z w) (dist z w / 2),
+    (mem_geodesicSegment_iff _ _ _).2 ⟨dist z w / 2, ⟨by positivity, by linarith⟩, rfl⟩,
+    (P.mem_interior_carrier_iff _).2 fun k ↦ ?_⟩
+  refine geodesicLine_mem_leftHalfPlane_of_mem_closure (s := 0) (t := dist z w)
+    (by linarith) (by linarith) ?_ ?_ fun he ↦ hside k ?_ ?_
+  · rw [geodesicLine_geodesicBetween_zero]
+    exact P.carrier_subset_closure_leftHalfPlane k hz
+  · rw [geodesicLine_geodesicBetween_dist]
+    exact P.carrier_subset_closure_leftHalfPlane k hw
+  · exact P.carrier_inter_range_sideGeodesic k ▸
+      ⟨hz, he ▸ ⟨0, geodesicLine_geodesicBetween_zero z w⟩⟩
+  · exact P.carrier_inter_range_sideGeodesic k ▸
+      ⟨hw, he ▸ ⟨dist z w, geodesicLine_geodesicBetween_dist z w⟩⟩
+
+/-- Every side of a convex polygon contains two distinct points. -/
+theorem side_nontrivial (i : Fin n) : (P.side i).Nontrivial := by
+  obtain ⟨z, hz, hzi, hzi'⟩ := P.exists_mem_side_ne_endpoints i
+  rcases hp : P.vertex i with v | ξ
+  · exact ⟨z, hz, v, P.mem_side_of_vertex_eq_inl hp, fun h ↦ hzi (by rw [hp, h])⟩
+  rcases hq : P.vertex (i + 1) with w | η
+  · exact ⟨z, hz, w, P.mem_side_of_vertex_add_one_eq_inl hq, fun h ↦ hzi' (by rw [hq, h])⟩
+  -- a side between two ideal vertices is a whole geodesic line
+  have hξη : ξ ≠ η := fun h ↦ P.vertex_ne_vertex_add_one i (by rw [hp, hq, h])
+  rw [side_def, hp, hq, extGeodesicSegment_inr_inr hξη]
+  exact ⟨_, mem_range_self 0, _, mem_range_self 1,
+    fun h ↦ zero_ne_one (geodesicLine_injective _ h)⟩
+
+/-- Two sides of a convex polygon with two distinct common points are the same side. -/
+theorem eq_of_nontrivial_side_inter_side {i j : Fin n} (h : (P.side i ∩ P.side j).Nontrivial) :
+    i = j := by
+  obtain ⟨x, hx, y, hy, hxy⟩ := h
+  by_contra hij
+  exact P.range_sideGeodesic_ne hij (range_geodesicLine_eq_of_mem hxy
+    (P.side_subset_range_sideGeodesic i hx.1) (P.side_subset_range_sideGeodesic i hy.1)
+    (P.side_subset_range_sideGeodesic j hx.2) (P.side_subset_range_sideGeodesic j hy.2))
+
+/-- Distinct sides of a convex polygon are distinct sets. -/
+theorem side_injective : Function.Injective P.side := fun i j hij ↦
+  P.eq_of_nontrivial_side_inter_side (by rw [hij, inter_self]; exact P.side_nontrivial j)
+
+/-- A geodesic line through two distinct points of a convex polygon and missing its interior
+is the supporting line of a side. -/
+theorem exists_range_sideGeodesic_eq {k : PSL(2, ℝ)}
+    (hk : Disjoint (interior P.carrier) (range (geodesicLine k))) {x y : ℍ} (hxy : x ≠ y)
+    (hx : x ∈ P.carrier ∩ range (geodesicLine k)) (hy : y ∈ P.carrier ∩ range (geodesicLine k)) :
+    ∃ j, range (geodesicLine (P.sideGeodesic j)) = range (geodesicLine k) := by
+  by_contra! hne
+  -- otherwise the segment from `x` to `y`, which lies on the line, crosses the interior
+  obtain ⟨z, hzs, hz⟩ := P.geodesicSegment_inter_interior_carrier_nonempty hx.1 hy.1 hxy
+    fun j hxj hyj ↦ hne j (range_geodesicLine_eq_of_mem hxy
+      (P.side_subset_range_sideGeodesic j hxj) (P.side_subset_range_sideGeodesic j hyj) hx.2 hy.2)
+  refine disjoint_left.1 hk hz ?_
+  rw [← range_geodesicLine_geodesicBetween_of_mem hx.2 hy.2 hxy]
+  exact geodesicSegment_subset_range_geodesicLine x y hzs
+
+/-- The boundary of a convex polygon is the union of its sides. -/
+@[simp]
+theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
+  refine Subset.antisymm (fun z hz ↦ ?_) (iUnion_subset P.side_subset_frontier_carrier)
+  rw [P.isClosed_carrier.frontier_eq] at hz
+  obtain ⟨hzc, hzi⟩ := hz
+  obtain ⟨k, hk⟩ : ∃ k, z ∉ leftHalfPlane (P.sideGeodesic k) := by
+    simpa using hzi
+  have hz := P.carrier_subset_closure_leftHalfPlane k hzc
+  rw [closure_leftHalfPlane] at hz
+  exact mem_iUnion.2 ⟨k, P.carrier_inter_range_sideGeodesic k ▸ ⟨hzc, hz.resolve_left hk⟩⟩
+
+/-- A point of a convex polygon is an interior point, a point of a side other than its finite
+endpoints, or a finite vertex. -/
+theorem mem_interior_or_mem_side_or_vertex_eq_inl {z : ℍ} (hz : z ∈ P.carrier) :
+    z ∈ interior P.carrier ∨
+      (∃ i, z ∈ P.side i ∧ P.vertex i ≠ .inl z ∧ P.vertex (i + 1) ≠ .inl z) ∨
+        ∃ j, P.vertex j = .inl z := by
+  by_cases hzi : z ∈ interior P.carrier
+  · exact Or.inl hzi
+  have hzf : z ∈ frontier P.carrier := P.isClosed_carrier.frontier_eq ▸ ⟨hz, hzi⟩
+  obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hzf)
+  by_cases h₀ : P.vertex i = .inl z
+  · exact Or.inr (Or.inr ⟨i, h₀⟩)
+  by_cases h₁ : P.vertex (i + 1) = .inl z
+  · exact Or.inr (Or.inr ⟨i + 1, h₁⟩)
+  exact Or.inr (Or.inl ⟨i, hi, h₀, h₁⟩)
+
+/-- The boundary of a convex polygon is a null set: it is the union of finitely many sides, each
+contained in a geodesic line. -/
+theorem volume_frontier_carrier : volume (frontier P.carrier) = 0 := by
+  rw [P.frontier_carrier]
+  exact measure_iUnion_null fun i ↦
+    measure_mono_null (P.side_subset_range_sideGeodesic i) (volume_range_geodesicLine _)
+
+/-- A convex polygon has nonempty interior. -/
+theorem nonempty_interior_carrier : (interior P.carrier).Nonempty := by
+  obtain ⟨z, hz, hzp, hzq⟩ := P.exists_mem_side_ne_endpoints 0
+  -- near the regular side point `z` every other side inequality stays strict
+  have hO : IsOpen (⋂ j : {j : Fin n // j ≠ 0}, leftHalfPlane (P.sideGeodesic j)) :=
+    isOpen_iInter_of_finite fun _ ↦ isOpen_leftHalfPlane _
+  have hzO : z ∈ ⋂ j : {j : Fin n // j ≠ 0}, leftHalfPlane (P.sideGeodesic j) :=
+    mem_iInter.2 fun j ↦ P.mem_leftHalfPlane_of_mem_side hz hzp hzq j.2
+  obtain ⟨w, hwO, hw⟩ := mem_closure_iff.1
+    (P.carrier_subset_closure_leftHalfPlane 0 (P.side_subset_carrier 0 hz)) _ hO hzO
+  refine ⟨w, (P.mem_interior_carrier_iff w).2 fun j ↦ ?_⟩
+  by_cases hj : j = 0
+  · exact hj ▸ hw
+  · exact mem_iInter.1 hwO ⟨j, hj⟩
+
+/-- A convex polygon is the closure of its interior. -/
+@[simp]
+theorem closure_interior_carrier : closure (interior P.carrier) = P.carrier := by
+  refine Subset.antisymm (closure_minimal interior_subset P.isClosed_carrier) fun x hx ↦ ?_
+  obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
+  rcases eq_or_ne x p with rfl | hxp
+  · exact subset_closure hp
+  -- the points of the geodesic segment from `x` to `p`, other than `x`, are interior
+  have hmem : ∀ t ∈ Ioo 0 (dist x p),
+      geodesicLine (geodesicBetween x p) t ∈ interior P.carrier := fun t ht ↦
+    (P.mem_interior_carrier_iff _).2 fun j ↦ geodesicLine_mem_leftHalfPlane_of_mem_closure ht.1 ht.2
+      (by rw [geodesicLine_geodesicBetween_zero]; exact P.carrier_subset_closure_leftHalfPlane j hx)
+      (by rw [geodesicLine_geodesicBetween_dist]
+          exact P.carrier_subset_closure_leftHalfPlane j (interior_subset hp))
+      fun he ↦ disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
+        ((P.mem_interior_carrier_iff p).1 hp j)
+        (he ▸ ⟨dist x p, geodesicLine_geodesicBetween_dist x p⟩)
+  have hlim : Tendsto (geodesicLine (geodesicBetween x p)) (𝓝[>] 0) (𝓝 x) := by
+    have h := ((isometry_geodesicLine (geodesicBetween x p)).continuous.tendsto 0).mono_left
+      (nhdsWithin_le_nhds (s := Ioi 0))
+    rwa [geodesicLine_geodesicBetween_zero] at h
+  refine mem_closure_of_tendsto hlim ?_
+  filter_upwards [Ioo_mem_nhdsGT (dist_pos.2 hxp)] with t ht using hmem t ht
+
+/-- A convex polygon is path-connected: it is nonempty and contains the geodesic segment between
+any two of its points. -/
+theorem isPathConnected_carrier : IsPathConnected P.carrier := by
+  obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
+  refine isPathConnected_iff.2 ⟨⟨p, interior_subset hp⟩, fun z hz w hw ↦ ?_⟩
+  exact ((isPathConnected_geodesicSegment z w).joinedIn z (left_mem_geodesicSegment z w) w
+    (right_mem_geodesicSegment z w)).mono (P.geodesicSegment_subset_carrier hz hw)
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

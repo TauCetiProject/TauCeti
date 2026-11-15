@@ -215,7 +215,7 @@ theorem isCompact_triangle {A B C : ℍ} (hAB : A ≠ B)
   rcases hcase with ⟨hA, hB⟩ | ⟨hB, hA⟩
   · rw [smul_triangle h hAB hBC hAC.symm, hA, hB]
     exact isCompact_triangle_of_normal_form hd hCre
-  · rw [← triangle_swap_left hC, smul_triangle h hAB.symm hAC hBC.symm, hA, hB]
+  · rw [← triangle_swap_left, smul_triangle h hAB.symm hAC hBC.symm, hA, hB]
     exact isCompact_triangle_of_normal_form hd hCre
 
 /-! ### The hull property -/

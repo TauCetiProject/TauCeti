@@ -91,7 +91,7 @@ variable (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTo
     (∀ (g : G) (a : A), g • a = a) → (∀ a : A, n • a = 0) →
     Function.Surjective (dualityMap0 G A N) ∧ Function.Injective (dualityMap1 G A N))
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
-  [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) (hMn : ∀ m : M, n • m = 0)
+  [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) (hMn : ∀ m : M, n • m = 0)
 
 include h hM hMn
 
@@ -128,13 +128,13 @@ discrete `G`-module `M` killed by `n`: the trace `Coind_V^G M → M` along a dee
 subgroup `V` vanishes on invariants, and `α₁` is injective on its kernel. -/
 theorem IsProP.dualityMap0_injective : Function.Injective (dualityMap0 G M N) := by
   obtain ⟨V, _, hV, htr⟩ := hG.exists_isOpen_trace_eq_zero_of_mem_H0 M hM
-  obtain ⟨k, hk⟩ := hM.exists_pow_smul_eq_zero
+  obtain ⟨k, hk⟩ := isAddPGroup_iff_exists_pow_nsmul_eq_zero.1 hM
   have hcoind : ∀ f : DiscreteCoind G V M, n • f = 0 := DiscreteCoind.nsmul_eq_zero hMn
   refine (DiscreteCoind.traceShortExact G V M hV).dualityMap0_injective_of_explicitCoeff0_eq_zero
     ((DiscreteCoind.traceShortExact G V M hV).precomp_inclDistribMulActionHom_surjective_of_baer
       N hN hcoind) ?_
     (hG.dualityMap0_surjective_dualityMap1_injective N hN hH2 h (DiscreteCoind.traceKer G V M)
-      (isPPrimaryTorsion_iff.2 fun f ↦
+      (fun f ↦
         ⟨k, Subtype.ext (by simpa using DiscreteCoind.nsmul_eq_zero hk f.1)⟩)
       fun f ↦ Subtype.ext (by simpa using hcoind f)).2
   refine AddMonoidHom.ext fun f ↦ Subtype.ext ?_
@@ -151,7 +151,7 @@ variable (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTo
     (∀ (g : G) (a : A), g • a = a) → (∀ a : A, n • a = 0) →
     Function.Surjective (dualityMap1 G A N) ∧ Function.Injective (dualityMap2 G A N))
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
-  [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) (hMn : ∀ m : M, n • m = 0)
+  [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) (hMn : ∀ m : M, n • m = 0)
 
 include h hM hMn
 
@@ -187,7 +187,7 @@ variable (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTo
     Function.Surjective (dualityMap0 G A N) ∧ Function.Bijective (dualityMap1 G A N) ∧
       Function.Injective (dualityMap2 G A N))
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
-  [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) (hMn : ∀ m : M, n • m = 0)
+  [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) (hMn : ∀ m : M, n • m = 0)
 
 include h hM hMn
 

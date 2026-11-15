@@ -48,6 +48,9 @@ invariant open `V` determine `M`.
   `TauCeti.IsLinearTopology.eq_of_forall_invariant_mkQ_eq`: for compact `Γ`, continuity into a
   linearly topologized `M`, and equality in a `T1` one, can be tested modulo the `Γ`-invariant
   open submodules.
+* `TauCeti.IsCompactModule.exists_le_ker_quotientToModuleEnd`,
+  `TauCeti.IsCompactModule.eq_of_forall_invariant_mkQ_eq`: the open-kernel and separation
+  statements for compact modules, over a compact ring in the separation statement.
 -/
 
 public section
@@ -117,6 +120,8 @@ end Submodule
 
 namespace TauCeti
 
+section LinearTopology
+
 variable {Γ R M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CompactSpace Γ] [Ring R]
   [AddCommGroup M] [Module R M] [TopologicalSpace M] [DistribMulAction Γ M] [SMulCommClass Γ R M]
   [ContinuousSMul Γ M] [IsLinearTopology R M]
@@ -151,5 +156,37 @@ theorem IsLinearTopology.eq_of_forall_invariant_mkQ_eq [ContinuousAdd M] [T1Spac
   rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, map_sub,
     h _ (N.isOpen_invariantCore Γ hN) (fun γ _ hx ↦ Submodule.smul_mem_invariantCore γ hx),
     sub_self]
+
+end LinearTopology
+
+namespace IsCompactModule
+
+variable {R M : Type*} [Ring R] [TopologicalSpace R] [AddCommGroup M] [Module R M]
+  [TopologicalSpace M] {V : Submodule R M} (hM : IsCompactModule R M)
+include hM
+
+/-- Every invariant open submodule of a compact module admits an open normal subgroup of `Γ`
+acting trivially on the quotient. -/
+theorem exists_le_ker_quotientToModuleEnd {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
+    [SeparatelyContinuousMul Γ] [DistribMulAction Γ M] [SMulCommClass Γ R M] [ContinuousSMul Γ M]
+    (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) (hVo : IsOpen (V : Set M)) :
+    ∃ U : OpenNormalSubgroup Γ, U.toSubgroup ≤ (Submodule.quotientToModuleEnd hV).ker :=
+  have := hM.compactSpace
+  have := hM.isTopologicalAddGroup
+  ⟨Submodule.quotientActionKernel hV hVo, (Submodule.quotientActionKernel_toSubgroup hV hVo).le⟩
+
+/-- **Separation by the invariant open submodules**, for a compact module over a compact ring: two
+elements that agree modulo every `Γ`-invariant open submodule are equal. -/
+theorem eq_of_forall_invariant_mkQ_eq [CompactSpace R] (Γ : Type*) [Monoid Γ]
+    [TopologicalSpace Γ] [CompactSpace Γ] [DistribMulAction Γ M] [SMulCommClass Γ R M]
+    [ContinuousSMul Γ M] {m m' : M}
+    (h : ∀ V : Submodule R M, IsOpen (V : Set M) → (∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) →
+      V.mkQ m = V.mkQ m') : m = m' :=
+  have := hM.isTopologicalAddGroup
+  have := hM.t2Space
+  have := hM.isLinearTopology
+  IsLinearTopology.eq_of_forall_invariant_mkQ_eq Γ h
+
+end IsCompactModule
 
 end TauCeti

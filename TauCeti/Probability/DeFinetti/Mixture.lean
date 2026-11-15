@@ -8,7 +8,7 @@ module
 -- Public: the generic mixture representation this specializes, and the directing measure whose law
 -- `deFinettiMeasure` is.
 public import TauCeti.Probability.Exchangeability.MixedIID.Mixture
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 
 /-!
 # The de Finetti measure
@@ -18,7 +18,7 @@ together with the specialization of the mixture representation to it.
 
 ## Main results
 
-* `deFinettiMeasure` — the law of `directingProbabilityMeasure`, bundled as a
+* `deFinettiMeasure` — the law of `tailConditionalProbabilityMeasure`, bundled as a
   `ProbabilityMeasure (ProbabilityMeasure α)`, with `deFinettiMeasure_toMeasure` exposing its
   underlying measure.
 * `pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_mixedIIDWith` — the mixture representation against
@@ -43,14 +43,13 @@ witness-free representation theorems for contractable and exchangeable processes
 
 ## Final representation
 
-The Layer 6 bullet in `TauCetiRoadmap/Exchangeability/README.md` asks for the mixture form with `π`
-the **unique** law of `ν`. That uniqueness is `mixedIID_mixingLaw_unique`, proved alongside the
-generic representation in `Exchangeability/MixedIID/Mixture.lean`; it is stated for `MixedIIDWith`
-witnesses and so does not mention `deFinettiMeasure`. The theorem `deFinetti_mixture` in
+The final form of the representation is the mixture form with `π` the **unique** law of `ν`. That
+uniqueness is `mixedIID_mixingLaw_unique`, proved alongside the generic representation in
+`Exchangeability/MixedIID/Mixture.lean`; it is stated for `MixedIIDWith` witnesses and so does not
+mention `deFinettiMeasure`. The theorem `deFinetti_mixture` in
 `TauCeti.Probability.DeFinetti.Representation` derives the unique mixing-law representation from
-exchangeability without assuming a witness, and
-`eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi` in
-`TauCeti.Probability.DeFinetti.CanonicalMixture` identifies its witness with `deFinettiMeasure`.
+exchangeability without assuming a witness, and `eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi`
+in `TauCeti.Probability.DeFinetti.CanonicalMixture` identifies its witness with `deFinettiMeasure`.
 -/
 
 public section
@@ -65,12 +64,12 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
-/-- The law of the canonical directing measure `directingProbabilityMeasure μ X`, as a probability
-measure on `ProbabilityMeasure α`.
+/-- The law of the canonical directing measure `tailConditionalProbabilityMeasure μ X`, as a
+probability measure on `ProbabilityMeasure α`.
 
 This is the **de Finetti measure** — the mixing law `π` of the de Finetti representation —
-*precisely when* `directingProbabilityMeasure μ X` is a `MixedIIDWith` witness for `X`, which is
-what `pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_mixedIIDWith` assumes. The definition itself
+*precisely when* `tailConditionalProbabilityMeasure μ X` is a `MixedIIDWith` witness for `X`, which
+is what `pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_mixedIIDWith` assumes. The definition itself
 assumes no exchangeability or contractability, so for a general measurable process it is just that
 pushforward and need not represent the path law at all.
 
@@ -84,13 +83,13 @@ measurability. -/
 def deFinettiMeasure (μ : Measure Ω) [IsProbabilityMeasure μ] (X : ℕ → Ω → α) :
     ProbabilityMeasure (ProbabilityMeasure α) :=
   ProbabilityMeasure.map (⟨μ, inferInstance⟩ : ProbabilityMeasure Ω)
-    (directingProbabilityMeasure μ X)
+    (tailConditionalProbabilityMeasure μ X)
 
 /-- The underlying measure of the de Finetti measure is the pushforward of the directing measure. -/
 @[simp]
 theorem deFinettiMeasure_toMeasure {μ : Measure Ω} [IsProbabilityMeasure μ] {X : ℕ → Ω → α} :
     (deFinettiMeasure μ X : Measure (ProbabilityMeasure α))
-      = μ.map (directingProbabilityMeasure μ X) := by
+      = μ.map (tailConditionalProbabilityMeasure μ X) := by
   simpa only [deFinettiMeasure, ProbabilityMeasure.coe_mk] using
     ProbabilityMeasure.toMeasure_map
       (⟨μ, inferInstance⟩ : ProbabilityMeasure Ω)
@@ -104,7 +103,7 @@ route. `pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_contractable`, in
 `TauCeti.Probability.DeFinetti.CanonicalMixture`, discharges it from contractability alone. -/
 theorem pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_mixedIIDWith {μ : Measure Ω}
     [IsProbabilityMeasure μ] {X : ℕ → Ω → α}
-    (h : MixedIIDWith μ X (directingProbabilityMeasure μ X)) :
+    (h : MixedIIDWith μ X (tailConditionalProbabilityMeasure μ X)) :
     pathLaw μ X
       = (deFinettiMeasure μ X : Measure (ProbabilityMeasure α)).bind
           fun P => Measure.infinitePi fun _ : ℕ => (P : Measure α) := by

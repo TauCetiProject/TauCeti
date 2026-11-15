@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.PrevertexUniqueness
+import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
@@ -130,13 +131,8 @@ theorem param_eq_of_bijOn_schwarzChristoffelPrimitive {U : Set ℂ} (hUb : IsBou
     a' = a ∧ e' = e ∧ A' = A ∧ B' = A * schwarzChristoffelPrimitive a e z₀ z₀' + B := by
   obtain ⟨rfl, heq⟩ := eq_and_eqOn_of_bijOn_schwarzChristoffelPrimitive hUb hUJ he he' z₀ z₀'
     hf hf' hv (ha.ne hij) (ha.ne hik) (ha.ne hjk) hi hj hk
-  -- A constant map is not injective on the upper half-plane, so `A ≠ 0`.
-  have hA : A ≠ 0 := by
-    rintro rfl
-    have h := hf.injOn (x₁ := I) (x₂ := 2 * I) (by simp [UpperHalfPlane.upperHalfPlaneSet])
-      (by simp [UpperHalfPlane.upperHalfPlaneSet]) (by simp)
-    exact I_ne_zero (by linear_combination -h)
-  exact ⟨rfl, (eqOn_const_mul_schwarzChristoffelPrimitive_add_iff ha z₀ z₀' hA).mp heq⟩
+  exact ⟨rfl, (eqOn_const_mul_schwarzChristoffelPrimitive_add_iff ha z₀ z₀'
+    (ne_zero_of_injOn_const_mul_add hf.injOn)).mp heq⟩
 
 end TauCeti
 

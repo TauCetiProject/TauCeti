@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Separating
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
@@ -33,6 +34,8 @@ by `W_Y⁻¹` gives the invariant-differential basis.
 ## Main results
 
 * `WeierstrassCurve.Affine.invariantDifferentialDenom_ne_zero`: the denominator is nonzero.
+* `WeierstrassCurve.Affine.invariantDifferentialDenom_sq`: its square is
+  `Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆`.
 * `WeierstrassCurve.Affine.existsUnique_smul_invariantDifferential`: every differential is
   `c • ω` for a unique `c`.
 
@@ -43,8 +46,9 @@ by `W_Y⁻¹` gives the invariant-differential basis.
 Silverman's III.1.5 says more than anything proved here: that `div ω = 0`, so that `ω` is
 regular and nonvanishing at every point. This file proves that `ω` is a *basis* of
 `Ω[K(E)/F]`, which does not imply that — a nonzero rational differential may have both zeros
-and poles. The divisor statement needs a pointwise regularity and nonvanishing theory not
-developed here.
+and poles. The divisor statement is proved, through the Kähler–Weil comparison, as
+`WeierstrassCurve.Affine.weilDifferentialDivisor_invariantDifferential` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Affine/FunctionField/Divisor/InvariantDifferential.lean`.
 
 ## Provenance
 
@@ -90,6 +94,16 @@ theorem invariantDifferentialDenom_eq_evalEval_polynomialY :
   simp only [invariantDifferentialDenom_def, WeierstrassCurve.baseChange,
     WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
 
+/-- **The denominator is the image of the class of `W_Y`** in the coordinate ring, which is what
+lets its values at the places of points be read off from `W_Y` at those points. -/
+theorem invariantDifferentialDenom_eq_algebraMap_mk_polynomialY :
+    invariantDifferentialDenom E =
+      algebraMap E.CoordinateRing E.FunctionField (CoordinateRing.mk E E.polynomialY) := by
+  have h := evalEval_genericX_genericY E E.polynomialY
+  rw [← WeierstrassCurve.Affine.map_polynomialY] at h
+  rw [invariantDifferentialDenom_eq_evalEval_polynomialY, ← h]
+  simp only [WeierstrassCurve.baseChange]
+
 /-- **The denominator of the invariant differential is nonzero.** It is the image of `W_Y` in
 `K(E)`, and `W_Y` is a nonzero polynomial of degree below `deg W`, so it survives both
 `F[X][Y] → F[E]` and `F[E] → K(E)`. -/
@@ -98,6 +112,33 @@ theorem invariantDifferentialDenom_ne_zero [E.IsElliptic] :
     invariantDifferentialDenom E ≠ 0 := by
   rw [invariantDifferentialDenom_eq_evalEval_polynomialY]
   exact evalEval_polynomialY_genericX_genericY_ne_zero E
+
+/-- **The square of the denominator is `Ψ₂Sq(x)`**: `(2y + a₁x + a₃)² = 4x³ + b₂x² + 2b₄x + b₆` at
+the generic point, by the Weierstrass equation. -/
+theorem invariantDifferentialDenom_sq :
+    invariantDifferentialDenom E ^ 2 = aeval (genericX E) E.Ψ₂Sq := by
+  have h := (den_duplication_eq (equation_genericX_genericY E)).symm
+  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃,
+    WeierstrassCurve.map_b₂, WeierstrassCurve.map_b₄, WeierstrassCurve.map_b₆] at h
+  simp only [invariantDifferentialDenom_def, WeierstrassCurve.Ψ₂Sq, map_add, map_mul, map_pow,
+    aeval_X, aeval_C, map_ofNat]
+  linear_combination h
+
+/-- **The denominator rescaled by `x⁻²`**: for `t ∈ L` with image `x⁻¹` in `F(W)`,
+`2 (y / x²) + a₁ t + a₃ t²` is `(2y + a₁x + a₃) / x²`. -/
+theorem two_mul_genericY_mul_add_algebraMap_eq (L : Type*) [CommRing L] [Algebra F L]
+    [Algebra L E.FunctionField] [IsScalarTower F L E.FunctionField] {t : L}
+    (ht : algebraMap L E.FunctionField t = (genericX E)⁻¹) :
+    2 * (genericY E * (genericX E)⁻¹ ^ 2) + algebraMap L E.FunctionField
+        (algebraMap F L E.a₁ * t + algebraMap F L E.a₃ * t ^ 2) =
+      invariantDifferentialDenom E * (genericX E ^ 2)⁻¹ := by
+  have hx : genericX E ≠ 0 := (transcendental_genericX E).ne_zero
+  have hC (c : F) : algebraMap L E.FunctionField (algebraMap F L c) =
+      algebraMap F E.FunctionField c :=
+    (IsScalarTower.algebraMap_apply F L E.FunctionField c).symm
+  simp only [map_add, map_mul, map_pow, ht, hC, invariantDifferentialDenom_def]
+  field_simp
+  ring
 
 /-! ### The invariant differential -/
 

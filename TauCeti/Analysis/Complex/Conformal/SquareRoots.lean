@@ -46,6 +46,9 @@ connectivity.
 
 ## References
 
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
+
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.11.
 -/
 

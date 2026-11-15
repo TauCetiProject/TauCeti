@@ -64,11 +64,7 @@ private theorem posMap_cupH0_H0π (M N : Rep k Q) (p : ℕ) (x : tateCohomology 
     posMap_comp_map]
   have hcoef : (resFunctor φ).map (M.tensorInvariant v) =
       (Rep.res φ M).tensorInvariant (N := Rep.res φ N) ⟨v, fun g ↦ v.2 (φ g)⟩ := by
-    ext m
-    -- Restriction keeps the underlying linear map, so both sides are `m ↦ m ⊗ v`.
-    exact (Rep.tensorInvariant_hom_apply M v m).trans
-      (Rep.tensorInvariant_hom_apply (Rep.res φ M) (N := Rep.res φ N)
-        ⟨v, fun g ↦ v.2 (φ g)⟩ m).symm
+    simpa only [Submodule.inclusion_apply] using Rep.resMap_tensorInvariant M N φ v
   rw [Category.comp_id, Category.id_comp, hcoef]
   rfl
 

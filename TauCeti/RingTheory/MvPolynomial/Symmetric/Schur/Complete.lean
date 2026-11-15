@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Algebra.MvPolynomial.Monomial
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 
@@ -81,8 +81,6 @@ without the Bender--Knuth involution that `TauCeti.schurPoly_isSymmetric` needs 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 3, where `s_{(n)} = h_n` sits beside `s_{(1ⁿ)} = e_n` as the first examples of a Schur
   function.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -350,8 +348,9 @@ polynomial**, `s_{(n)} = h_n`.  The diagram of `(n)` has at most one row: it is 
 theorem schurPoly_indiscrete (n : ℕ) :
     schurPoly σ R (Nat.Partition.indiscrete n) = hsymm σ R n := by
   rw [schurPoly_eq_rename,
-    diagramSchurPoly_eq_hsymm_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one n),
-    card_diagramOf, rename_hsymm]
+    diagramSchurPoly_eq_hsymm_of_colLen_le_one
+      (YoungDiagram.colLen_ofPartition_indiscrete_le_one n),
+    YoungDiagram.card_ofPartition, rename_hsymm]
 
 end Partition
 
@@ -365,9 +364,10 @@ theorem aeval_snoc_zero_hsymm (n d : ℕ) :
     aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0) (hsymm (Fin (n + 1)) R d) =
       hsymm (Fin n) R d := by
   have h : ∀ N, hsymm (Fin N) R d =
-      diagramSchurPoly N R (diagramOf (Nat.Partition.indiscrete d)) := fun N => by
-    rw [diagramSchurPoly_eq_hsymm_of_colLen_le_one (colLen_diagramOf_indiscrete_le_one d),
-      card_diagramOf]
+      diagramSchurPoly N R (YoungDiagram.ofPartition (Nat.Partition.indiscrete d)) := fun N => by
+    rw [diagramSchurPoly_eq_hsymm_of_colLen_le_one
+        (YoungDiagram.colLen_ofPartition_indiscrete_le_one d),
+      YoungDiagram.card_ofPartition]
   rw [h, h, aeval_snoc_zero_diagramSchurPoly]
 
 /-- **Stability of the integer-indexed complete homogeneous symmetric polynomials**: setting the

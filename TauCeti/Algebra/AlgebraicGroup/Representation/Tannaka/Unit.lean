@@ -132,22 +132,22 @@ theorem scalarExtensionComponent_one_tmul
         (1 ⊗ₜ[k] ⟨1, hOne⟩) = 1 ⊗ₜ[k] ⟨1, hOne⟩ := by
   let _ : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
   let i := regularUnitHom k H N hOne
-  have hnat := η.hom.hom.naturality i
-  have hunit := CategoryTheory.NatTrans.IsMonoidal.unit (τ := η.hom.hom)
+  have hnat := η.asIso.hom.hom.naturality i
+  have hunit := CategoryTheory.NatTrans.IsMonoidal.unit (τ := η.asIso.hom.hom)
   have hcat :
       ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor ≫
           (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).map i ≫
-            η.hom.hom.app (finiteRegularObject k H N) =
+            η.asIso.hom.hom.app (finiteRegularObject k H N) =
         ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor ≫
           (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).map i := by
     calc
       _ = ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor ≫
-          (η.hom.hom.app (𝟙_ (FGComoduleCat k H)) ≫
+          (η.asIso.hom.hom.app (𝟙_ (FGComoduleCat k H)) ≫
             (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).map i) :=
         congrArg (fun f ↦
           ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor ≫ f) hnat
       _ = (ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor ≫
-          η.hom.hom.app (𝟙_ (FGComoduleCat k H))) ≫
+          η.asIso.hom.hom.app (𝟙_ (FGComoduleCat k H))) ≫
             (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).map i :=
         (Category.assoc _ _ _).symm
       _ = _ := congrArg (fun f ↦

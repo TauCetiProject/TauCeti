@@ -1,0 +1,136 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.CommSq
+public import Mathlib.Topology.Category.TopCat.Basic
+
+/-!
+# Fibres of morphisms in `TopCat`
+
+The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is the preimage
+`p ⁻¹' {b}` with the subspace topology, and `TopCat.Hom.fiberι p b` is its inclusion into `E`.
+A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
+fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
+More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
+(`TopCat.Hom.preimageMap`).
+
+The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
+`AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
+-/
+
+public section
+
+open CategoryTheory
+
+universe u
+
+namespace TopCat.Hom
+
+variable {E B : TopCat.{u}}
+
+/-- The fibre `p ⁻¹' {b}` of a morphism `p : E ⟶ B` over a point `b`, with the subspace
+topology. -/
+abbrev fiber (p : E ⟶ B) (b : B) : TopCat.{u} := TopCat.of (p ⁻¹' {b})
+
+/-- The inclusion of the fibre of `p` over `b` into `E`. -/
+def fiberι (p : E ⟶ B) (b : B) : p.fiber b ⟶ E := TopCat.ofHom ⟨Subtype.val, by fun_prop⟩
+
+@[simp]
+lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.1 := (rfl)
+
+/-- The morphism `p` sends every point of its fibre over `b` to `b`. -/
+@[simp]
+lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.1 = b :=
+  x.2
+
+@[reassoc (attr := simp)]
+lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
+  ext x
+  exact x.2
+
+/-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
+into the part of `E'` over it. -/
+lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
+  exact he
+
+/-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
+parts over a subset `S` of `B`. -/
+def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
+  TopCat.ofHom ⟨(f.mapsTo_preimage_of_comp_eq hf S).restrict,
+    f.hom.continuous.restrict (f.mapsTo_preimage_of_comp_eq hf S)⟩
+
+@[simp]
+lemma coe_preimageMap_apply {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (f.preimageMap hf S x : E') = f x :=
+  (rfl)
+
+@[simp]
+lemma preimageMap_id {p : E ⟶ B} (hf : 𝟙 E ≫ p = p) (S : Set B) :
+    preimageMap (𝟙 E) hf S = 𝟙 _ :=
+  (rfl)
+
+/-- Restrictions of maps over `B` compose. It is stated in this direction so that `simp` can use
+it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma preimageMap_comp_preimageMap {E' E'' : TopCat.{u}} (f : E ⟶ E') (f' : E' ⟶ E'')
+    {p : E ⟶ B} {p' : E' ⟶ B} {p'' : E'' ⟶ B} (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p')
+    (S : Set B) :
+    f.preimageMap hf S ≫ f'.preimageMap hf' S =
+      preimageMap (f ≫ f') (by rw [Category.assoc, hf', hf]) S :=
+  (rfl)
+
+/-- On fibres, the restriction of a map `f` over `B` commutes with the inclusions of the fibres. -/
+@[reassoc (attr := simp)]
+lemma preimageMap_comp_fiberι {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (b : B) : f.preimageMap hf {b} ≫ p'.fiberι b = p.fiberι b ≫ f :=
+  (rfl)
+
+/-- The composite of two maps with finite fibres has finite fibres. -/
+theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
+    (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :
+    ∀ x, Finite ↥((p ≫ q) ⁻¹' {x}) := fun x => by
+  rw [TopCat.coe_comp, Set.preimage_comp]
+  exact ((Set.finite_coe_iff.mp (hfinq x)).preimage' fun b _ =>
+    Set.finite_coe_iff.mp (hfinp b)).to_subtype
+
+end TopCat.Hom
+
+namespace CategoryTheory.CommSq
+
+variable {E B E' B' E'' B'' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B'} {p'' : E'' ⟶ B''}
+  {f : E ⟶ E'} {g : B ⟶ B'} {f' : E' ⟶ E''} {g' : B' ⟶ B''}
+
+/-- A map of fibrations, that is, a commutative square from `p` to `p'`, maps the fibre of `p`
+over `b` to the fibre of `p'` over `g b`. -/
+def fiberMap (sq : CommSq f p p' g) (b : B) : p.fiber b ⟶ p'.fiber (g b) :=
+  TopCat.ofHom
+    { toFun x := ⟨f x.1, by simpa using ConcreteCategory.congr_hom sq.w x.1⟩
+      continuous_toFun := by fun_prop }
+
+@[simp]
+lemma fiberMap_apply_coe (sq : CommSq f p p' g) (b : B) (x : p.fiber b) :
+    (sq.fiberMap b x : E') = f x.1 := (rfl)
+
+@[reassoc (attr := simp)]
+lemma fiberMap_comp_fiberι (sq : CommSq f p p' g) (b : B) :
+    sq.fiberMap b ≫ p'.fiberι (g b) = p.fiberι b ≫ f := (rfl)
+
+/-- The identity square induces the identity on fibres. -/
+@[simp]
+lemma fiberMap_id (sq : CommSq (𝟙 E) p p (𝟙 B)) (b : B) : sq.fiberMap b = 𝟙 _ := (rfl)
+
+/-- The composite of the maps on fibres induced by two squares is the map on fibres induced by
+their horizontal composite.  It is stated in this direction so that `simp` can use it: the
+middle map `p'` cannot be recovered from the composite square, as for `eqToHom_trans`. -/
+@[reassoc (attr := simp)]
+lemma fiberMap_comp_fiberMap (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
+    sq.fiberMap b ≫ sq'.fiberMap (g b) = (sq.horiz_comp sq').fiberMap b := (rfl)
+
+end CategoryTheory.CommSq

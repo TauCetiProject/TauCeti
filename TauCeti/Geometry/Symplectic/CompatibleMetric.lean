@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
@@ -16,13 +16,12 @@ metric `g(v, w) = ω(v, J w)`. This file records the standard compatible-triple 
 `ω`, `J`, and `g` together, and packages the metric of a compatible pair as a genuine inner
 product through Mathlib's `InnerProductSpace.Core`.
 
-The metric is `TauCeti.SymplecticForm.associatedBilinForm`, already defined in
-`AlmostComplex.lean`. Compatibility makes it symmetric and positive definite (recorded there);
-here we add the relations that turn `(ω, J, g)` into a compatible triple: `J` is a `g`-isometry,
-`J` is `g`-skew-adjoint, and `ω` is recovered from `g` and `J`. The capstone
-`TauCeti.SymplecticForm.Compatible.innerProductCore` exhibits `g` as an inner product, the
-witness that the pointwise compatibility definition is non-vacuous and behaves as a metric
-should; the energy of a `J`-holomorphic curve in the analytic Heegaard Floer roadmap is measured
+The metric is `TauCeti.SymplecticForm.associatedBilinForm`, already defined in `AlmostComplex.lean`.
+Compatibility makes it symmetric and positive definite (recorded there); here we add the relations
+that turn `(ω, J, g)` into a compatible triple: `J` is a `g`-isometry, `J` is `g`-skew-adjoint, and
+`ω` is recovered from `g` and `J`. The capstone `TauCeti.SymplecticForm.Compatible.innerProductCore`
+exhibits `g` as an inner product, the witness that the pointwise compatibility definition is
+non-vacuous and behaves as a metric should; the energy of a `J`-holomorphic curve is measured
 against exactly this metric.
 
 ## Main declarations
@@ -37,10 +36,19 @@ against exactly this metric.
   `g(J v, w) = -g(v, J w)`.
 * `TauCeti.SymplecticForm.Invariant.associatedBilinForm_add_apply_self`: the symmetric
   polarization identity for `g(a + J b, a + J b)`.
-* `TauCeti.SymplecticForm.Compatible.associatedBilinForm_nondegenerate`: the metric is
-  nondegenerate.
+* `TauCeti.SymplecticForm.associatedBilinForm_apply_apply_of_isComplexLinearMap`: symplectic
+  complex-linear maps preserve the metric.
+* `TauCeti.SymplecticForm.Compatible.associatedBilinForm_add_add_le`: the vectors `a`, `b`, `c`
+  are controlled in the metric by `a + δ b`, `c + δ J b` and `b`.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
   `InnerProductSpace.Core ℝ V`.
+* `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
+  metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
+  `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
+  product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
+* `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
+  orthogonal almost complex structure `J` on a real inner product space.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -125,6 +133,16 @@ lemma associatedBilinForm_self_eq_zero
   · rintro rfl
     simp
 
+/-- A linear map carrying `ω` to `ω₂` and complex linear from `J` to `J₂` carries the metric
+`ω(·, J ·)` to the metric `ω₂(·, J₂ ·)`. In particular a symplectic map commuting with `J`
+preserves the metric of `(ω, J)`. -/
+lemma associatedBilinForm_apply_apply_of_isComplexLinearMap {W : Type*} [AddCommGroup W]
+    [Module ℝ W] {ω₂ : SymplecticForm W} {J₂ : AlmostComplexStructure W} {F : V →ₗ[ℝ] W}
+    (hω : ∀ v w, ω₂ (F v) (F w) = ω v w) (hF : IsComplexLinearMap J J₂ F) (v w : V) :
+    ω₂.associatedBilinForm J₂ (F v) (F w) = ω.associatedBilinForm J v w := by
+  rw [associatedBilinForm_apply, associatedBilinForm_apply,
+    ← (isComplexLinearMap_iff_apply J J₂ F).mp hF, hω]
+
 namespace Compatible
 
 /-- The metric recovers the symplectic form: `g(J v, w) = ω(v, w)`. -/
@@ -162,15 +180,30 @@ lemma associatedBilinForm_self_eq_zero (h : ω.Compatible J) {v : V} :
     ω.associatedBilinForm J v v = 0 ↔ v = 0 :=
   SymplecticForm.associatedBilinForm_self_eq_zero h.positive
 
-/-- The metric of a compatible pair is nondegenerate. -/
-lemma associatedBilinForm_nondegenerate (h : ω.Compatible J) :
-    (ω.associatedBilinForm J).Nondegenerate := by
-  refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    h.associatedBilinForm_isSymm.isRefl).mpr ?_
-  rw [LinearMap.separatingLeft_iff_linear_nontrivial]
-  intro v hv
-  refine h.associatedBilinForm_self_eq_zero.mp ?_
-  simpa using LinearMap.congr_fun hv v
+/-- A comparison of metric norms under a shift by `b` and `J b`: the vectors `a`, `c`, `b` are
+controlled by the shifted vectors `a + δ b` and `c + δ J b`, since `g(J b, J b) = g(b, b)`. It is
+the pointwise comparison of weighted energy densities under conjugation by an exponential
+weight. -/
+lemma associatedBilinForm_add_add_le (h : ω.Compatible J) (δ : ℝ) (a b c : V) :
+    (ω.associatedBilinForm J a a + ω.associatedBilinForm J c c) + ω.associatedBilinForm J b b ≤
+      (2 + 4 * δ ^ 2) * ((ω.associatedBilinForm J (a + δ • b) (a + δ • b) +
+        ω.associatedBilinForm J (c + δ • J b) (c + δ • J b)) + ω.associatedBilinForm J b b) := by
+  -- `g(x, x) ≤ 2 g(x + y, x + y) + 2 g(y, y)`, since the difference is `g(x + 2 y, x + 2 y)`.
+  have key (x y : V) : ω.associatedBilinForm J x x ≤
+      2 * ω.associatedBilinForm J (x + y) (x + y) + 2 * ω.associatedBilinForm J y y := by
+    have h' := h.associatedBilinForm_self_nonneg (x + (2 : ℝ) • y)
+    simp only [associatedBilinForm_apply, map_add, map_smul, LinearMap.add_apply,
+      LinearMap.smul_apply, smul_eq_mul] at h' ⊢
+    nlinarith [h.associatedBilinForm_apply_swap x y]
+  have h₁ := key a (δ • b)
+  have h₂ := key c (δ • J b)
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, h.associatedBilinForm_invariant b b]
+    at h₁ h₂
+  have ha := h.associatedBilinForm_self_nonneg (a + δ • b)
+  have hc := h.associatedBilinForm_self_nonneg (c + δ • J b)
+  have hb := h.associatedBilinForm_self_nonneg b
+  nlinarith [sq_nonneg δ, mul_nonneg (sq_nonneg δ) ha, mul_nonneg (sq_nonneg δ) hc,
+    mul_nonneg (sq_nonneg δ) hb]
 
 /-- The metric of a compatible pair, packaged as an `InnerProductSpace.Core ℝ V`.
 
@@ -197,6 +230,92 @@ lemma innerProductCore_inner (h : ω.Compatible J) (v w : V) :
 
 end Compatible
 
+section InnerProductSpace
+
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- Identifying the associated metric with a real inner product makes the symplectic form
+invariant under the almost complex structure. -/
+lemma invariant_of_apply_apply_eq_inner
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ω.Invariant J := by
+  rw [ω.invariant_iff J]
+  intro v w
+  calc
+    ω (J v) (J w) = ⟪J v, w⟫ := hg _ _
+    _ = ⟪w, J v⟫ := real_inner_comm _ _
+    _ = ω w (J (J v)) := (hg _ _).symm
+    _ = -ω w v := by simp
+    _ = ω v w := ω.neg_eq _ _
+
+/-- The almost complex structure preserves a norm when its squared norm is the diagonal
+`ω(v, J v)`. Only equality on the diagonal is needed. -/
+lemma norm_apply_eq_norm_of_apply_apply_self_eq_inner
+    (hg : ∀ v, ω v (J v) = ⟪v, v⟫) (v : V) : ‖J v‖ = ‖v‖ := by
+  have hself : ⟪J v, J v⟫ = ⟪v, v⟫ := by
+    simpa only [associatedBilinForm_apply, hg] using
+      ω.associatedBilinForm_apply_apply_self_eq J v
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, hself]
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)` of a symplectic form and an almost
+complex structure, then `ω` is bounded by the inner product norm: `|ω(v, w)| ≤ ‖v‖ ‖w‖`. -/
+theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w : V) :
+    |ω v w| ≤ ‖v‖ * ‖w‖ := by
+  -- `ω(v, w) = -⟪v, J w⟫`, and `J` is an isometry.
+  have hω : ω v w = -⟪v, J w⟫ := by
+    rw [← hg, J.apply_apply]
+    simp
+  have hJ := ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) w
+  rw [hω, abs_neg, ← hJ]
+  exact abs_real_inner_le_norm v (J w)
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then pairing with `J v` is `ω(v, ·)`:
+`⟪J v, w⟫ = ω(v, w)`. -/
+theorem inner_apply_left_eq_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = ω v w := by
+  have h : ω w (-v) = -ω w v := map_neg (ω.toBilinForm w) v
+  rw [real_inner_comm, ← hg, J.apply_apply, h, ω.neg_eq]
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then `J` is skew-adjoint:
+`⟪J v, w⟫ = -⟪v, J w⟫`. -/
+theorem inner_apply_left_eq_neg_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ := by
+  rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, real_inner_comm,
+    inner_apply_left_eq_of_apply_apply_eq_inner hg, ω.neg_eq]
+
+end InnerProductSpace
+
 end SymplecticForm
+
+namespace AlmostComplexStructure
+
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The **symplectic form** `ω(v, w) = ⟪J v, w⟫` associated to an orthogonal almost complex
+structure `J` on a real inner product space. -/
+noncomputable def symplecticForm {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : SymplecticForm V :=
+  have halt : ((innerₗ V).comp J.toLinearMap).IsAlt := fun v ↦ by
+    rw [LinearMap.comp_apply, innerₗ_apply_apply, real_inner_comm]
+    exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+  { toBilinForm := (innerₗ V).comp J.toLinearMap
+    isAlt := halt
+    nondegenerate := by
+      refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2 fun v hv ↦ ?_
+      have h0 : ⟪J v, J v⟫ = 0 := by simpa [LinearMap.comp_apply] using hv (J v)
+      rw [hJ, inner_self_eq_zero] at h0
+      exact h0 }
+
+@[simp]
+theorem symplecticForm_apply {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
+    J.symplecticForm hJ v w = ⟪J v, w⟫ :=
+  (rfl)
+
+end AlmostComplexStructure
 
 end TauCeti

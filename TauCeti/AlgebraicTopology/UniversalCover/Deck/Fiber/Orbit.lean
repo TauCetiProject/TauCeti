@@ -119,7 +119,6 @@ lemma fiberOrbitQuotientEquiv_refl :
 
 /-- Fibre-orbit quotient equivalences compose as the underlying over-base homeomorphisms
 compose. -/
-@[simp]
 lemma fiberOrbitQuotientEquiv_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
     (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) :
     fiberOrbitQuotientEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) b =

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.FieldTheory.IntermediateField.FieldRange
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.RingTheory.Unramified.Field
 
 /-!
@@ -34,6 +35,8 @@ where `ω₂` is the invariant differential of `W₂` (Silverman II.4.2(c)).
 * `TauCeti.Isogeny.pullbackDifferential_invariantDifferential`: `φ^*ω₂` is `dx / W_Y` read at the
   tautological point of `φ`, and `pullbackDifferential_negIsogeny_invariantDifferential`: negation
   pulls `ω` back to `-ω`.
+* `TauCeti.Isogeny.kaehlerDifferentialMap_eq_pullbackDifferential`: viewing `K(W₁)` as a
+  `K(W₂)`-algebra through `φ`, the pullback is `KaehlerDifferential.map`.
 * `TauCeti.Isogeny.evalEval_polynomialY_tautologicalPoint_ne_zero`: the denominator `W_Y` does not
   vanish at the tautological point of an isogeny.
 * `TauCeti.Isogeny.isSeparable_iff_pullbackDifferential_ne_zero`: **the differential criterion for
@@ -152,28 +155,25 @@ theorem pullbackDifferential_invariantDifferential [W₂.IsElliptic] (φ : Isoge
 @[simp]
 theorem pullbackDifferential_negIsogeny_invariantDifferential (W : WeierstrassCurve.Affine F) :
     (negIsogeny W).pullbackDifferential (invariantDifferential W) = -invariantDifferential W := by
-  -- Negation fixes `x` and sends `y` to `negY x y`.
-  have hx : (negIsogeny W).fieldPullback (genericX W) = genericX W := by
-    have : (negIsogeny W).fieldPullback (genericX W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.of W.polynomial Polynomial.X)) := by
-      rw [genericX_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_C]
-    rw [this, CoordinateRing.conj_mk_C, ← genericX_def]
-  have hy : (negIsogeny W).fieldPullback (genericY W) =
-      (W⁄W.FunctionField).toAffine.negY (genericX W) (genericY W) := by
-    have : (negIsogeny W).fieldPullback (genericY W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.root W.polynomial)) := by
-      rw [genericY_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_X]
-    rw [this, CoordinateRing.conj_mk_Y, ← evalEval_genericX_genericY, ← map_negPolynomial,
-      evalEval_negPolynomial]
-    simp only [WeierstrassCurve.baseChange]
-  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀, hx,
-    ← neg_smul, neg_inv]
+  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀,
+    fieldPullback_negIsogeny_genericX, ← neg_smul, neg_inv]
   congr 2
-  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes, hx, hy,
-    negY, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
+  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes,
+    fieldPullback_negIsogeny_genericX, fieldPullback_negIsogeny_genericY, negY,
+    WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
   ring
+
+/-- **The pullback is `KaehlerDifferential.map`**: when `K(W₁)` is a `K(W₂)`-algebra through the
+function-field pullback of `φ`, the pullback of differentials along `φ` is the functorial map
+`KaehlerDifferential.map` of the tower `F ⊆ K(W₂) ⊆ K(W₁)`. -/
+theorem kaehlerDifferentialMap_eq_pullbackDifferential (φ : Isogeny W₁ W₂)
+    [Algebra W₂.FunctionField W₁.FunctionField] [IsScalarTower F W₂.FunctionField W₁.FunctionField]
+    (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
+    (η : KaehlerDifferential F W₂.FunctionField) :
+    KaehlerDifferential.map F F W₂.FunctionField W₁.FunctionField η = φ.pullbackDifferential η := by
+  rw [pullbackDifferential_apply, ← KaehlerDifferential.mapSemilinear_toAlgHom_apply]
+  exact congrArg (fun f : W₂.FunctionField →ₐ[F] W₁.FunctionField ↦
+    KaehlerDifferential.mapSemilinear f η) (AlgHom.ext h)
 
 /-- **An isogeny is separable exactly when it pulls the invariant differential back to a nonzero
 differential.** -/
@@ -188,14 +188,6 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
     φ.isScalarTower_of_algebraMap_eq_fieldPullback halg
   have : FiniteDimensional W₂.FunctionField W₁.FunctionField :=
     φ.finiteDimensional_functionField halg
-  -- Under this algebra structure, `KaehlerDifferential.map` is the pullback of differentials.
-  have hφ : IsScalarTower.toAlgHom F W₂.FunctionField W₁.FunctionField = φ.fieldPullback :=
-    AlgHom.ext halg
-  have hmapφ : ∀ η, KaehlerDifferential.map F F W₂.FunctionField W₁.FunctionField η =
-      φ.pullbackDifferential η := fun η ↦ by
-    rw [pullbackDifferential_apply, ← KaehlerDifferential.mapSemilinear_toAlgHom_apply]
-    exact congrArg (fun f : W₂.FunctionField →ₐ[F] W₁.FunctionField ↦
-      KaehlerDifferential.mapSemilinear f η) hφ
   -- Separability over the field range is separability over `W₂.FunctionField` acting through
   -- `φ`: both are the equality of the separable degree with the degree.
   have hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔
@@ -220,10 +212,10 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
     have hspan : Submodule.span W₂.FunctionField {invariantDifferential W₂} = ⊤ :=
       (Submodule.span_singleton_eq_top_iff W₂.FunctionField _).mpr fun η ↦
         (existsUnique_smul_invariantDifferential W₂ η).exists
-    rw [TauCeti.range_mapBaseChange_eq_span_singleton
-      F W₂.FunctionField W₁.FunctionField _ hspan]
+    rw [TauCeti.range_mapBaseChange_eq_span_image F W₂.FunctionField W₁.FunctionField hspan,
+      Set.image_singleton]
     congr 2
-    exact hmapφ _
+    exact kaehlerDifferentialMap_eq_pullbackDifferential φ halg _
   -- In the one-dimensional `Ω[K₁/F]`, a differential spans exactly when it is nonzero.
   have hspan : ∀ v : KaehlerDifferential F W₁.FunctionField,
       Submodule.span W₁.FunctionField {v} = ⊤ ↔ v ≠ 0 := fun v ↦

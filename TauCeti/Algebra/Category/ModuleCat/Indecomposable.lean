@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Indecomposable modules are the indecomposable objects of `ModuleCat`
@@ -38,14 +39,6 @@ idempotents to split, which holds because `ModuleCat A` is abelian
 because `ModuleCat.Hom.hom` is a ring isomorphism `End M ≃+* Module.End A M`
 (`ModuleCat.endRingEquiv`), and the remaining halves match because a module object is a zero object
 exactly when its carrier is subsingleton (`ModuleCat.isZero_iff_subsingleton`).
-
-## References
-
-This supplies the categorical reading of Layer 2 ("the Krull-Schmidt theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose uniqueness bullet asks
-for the module-level theory to be transported "to `QuiverRep k Q` and to categorical biproducts";
-`QuiverRep k Q` is identified with `ModuleCat (pathAlgebra k Q)` there, so this equivalence is the
-step that carries indecomposability across.
 -/
 
 public section
@@ -78,7 +71,6 @@ finite length is indecomposable exactly when its ring of endomorphisms in the ca
 theorem indecomposable_iff_isLocalRing_end (M : ModuleCat.{v} A) (hM : IsFiniteLength A M) :
     Indecomposable M ↔ IsLocalRing (End M) := by
   rw [indecomposable_iff_isIndecomposableModule, isIndecomposableModule_iff_isLocalRing_end hM]
-  exact ⟨fun _ ↦ IsLocalRing.of_ringEquiv M.endRingEquiv.symm,
-    fun _ ↦ IsLocalRing.of_ringEquiv M.endRingEquiv⟩
+  exact ⟨fun _ ↦ M.endRingEquiv.symm.isLocalRing, fun _ ↦ M.endRingEquiv.isLocalRing⟩
 
 end TauCeti

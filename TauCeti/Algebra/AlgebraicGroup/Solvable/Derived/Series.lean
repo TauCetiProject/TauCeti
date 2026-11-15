@@ -35,7 +35,7 @@ reach the identity at the same index. -/
 @[simp] theorem derivedSeriesDefiningIdeal_eq_augmentation_iff_of_dense_points
     (h : HopfIdeal.vanishingIdeal (⊤ : Subgroup (WithConv (H →ₐ[k] k))) = ⊥) (n : ℕ) :
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ := by
   rw [derivedSeriesDefiningIdeal_eq_vanishingIdeal_derivedSeries_of_dense_points H h,
     HopfIdeal.vanishingIdeal_eq_augmentation_iff]
 
@@ -53,7 +53,7 @@ variable [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
 /-- Scheme-theoretic and abstract derived series reach the identity at the same index. -/
 theorem derivedSeriesDefiningIdeal_eq_augmentation_iff (n : ℕ) :
     derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H ↔
-      derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ :=
+      Subgroup.derivedSeries (WithConv (H →ₐ[k] k)) n = ⊥ :=
   H.derivedSeriesDefiningIdeal_eq_augmentation_iff_of_dense_points
     HopfIdeal.vanishingIdeal_top n
 
@@ -78,18 +78,16 @@ reduced finite-type affine group is equivalent to termination of its derived ser
 theorem iff_exists_derivedSeriesDefiningIdeal_eq_augmentation :
     geometricallySolvablePointsCommHopfAlgProperty k H ↔
       ∃ n, derivedSeriesDefiningIdeal H n = HopfIdeal.augmentation k H := by
-  rw [← isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation,
-    geometricallySolvablePointsCommHopfAlgProperty_iff]
-  let e : k ≃ₐ[k] AlgebraicClosure k := AlgEquiv.ofBijective
-    (Algebra.ofId k (AlgebraicClosure k)) IsAlgClosed.algebraMap_bijective_of_isIntegral
+  rw [← isSolvable_points_iff_exists_derivedSeriesDefiningIdeal_eq_augmentation]
   constructor
   · intro h
-    let := h
+    let e : k ≃ₐ[k] AlgebraicClosure k := AlgEquiv.ofBijective
+      (Algebra.ofId k (AlgebraicClosure k)) IsAlgClosed.algebraMap_bijective_of_isIntegral
+    let := (geometricallySolvablePointsCommHopfAlgProperty_iff k H).mp h
     exact Group.isSolvable_of_isSolvable_injective
       (f := AlgHom.mapValue e.toAlgHom) (AlgHom.mapValue_injective e.injective)
   · intro h
     let := h
-    exact Group.isSolvable_of_isSolvable_injective
-      (f := AlgHom.mapValue e.symm.toAlgHom) (AlgHom.mapValue_injective e.symm.injective)
+    exact geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed H
 
 end TauCeti.geometricallySolvablePointsCommHopfAlgProperty

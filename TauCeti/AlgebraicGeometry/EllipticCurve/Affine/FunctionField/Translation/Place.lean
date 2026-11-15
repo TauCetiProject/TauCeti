@@ -48,25 +48,48 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
   -- `σ • v` is the place of some point `R`, read off the reduction of the generic point
   have hdeg : (σ • v.1).degree = 1 := (Place.degree_smul σ v.1).trans v.2
   set R := (pointEquivDegreeOnePlace W).symm ⟨σ • v.1, hdeg⟩ with hR
-  have hRv : (pointEquivDegreeOnePlace W R).1 = σ • v.1 := by
-    rw [hR, Equiv.apply_symm_apply]
-  suffices R = Q - P by rw [← this, hRv]
+  suffices R = Q - P by rw [← this, hR, Equiv.apply_symm_apply]
   apply (Point.equivBaseChangeSelf W).injective
   -- the generic point is the image under `σ` of its translate by `-P`
   have hgen : genericPoint W = Point.map (σ : W.FunctionField →ₐ[F] W.FunctionField)
       (translatedGenericPoint W (-Point.equivBaseChangeSelf W P)) := by
     rw [map_translation_translatedGenericPoint, neg_add_cancel,
       translatedGenericPoint_zero]
-  -- the reduction depends on the place only, not on the proof that it has degree one
-  have hred : ∀ {w₁ w₂ : Place F W.FunctionField} (h : w₁ = w₂) (h₁ : w₁.degree = 1)
-      (h₂ : w₂.degree = 1), reductionOfDegreeEqOne W h₁ = reductionOfDegreeEqOne W h₂ := by
-    rintro _ _ rfl _ _
-    rfl
-  rw [← reductionOfDegreeEqOne_genericPoint W R, hred hRv _ hdeg, hgen,
+  rw [← reductionOfDegreeEqOne_genericPoint W R, hR, Equiv.apply_symm_apply, hgen,
     reductionOfDegreeEqOne_smul_map W σ v.2, translatedGenericPoint_def, map_add,
     reductionOfDegreeEqOne_genericPoint, reductionOfDegreeEqOne_baseChange, map_sub,
     sub_eq_add_neg]
 
 end WeierstrassCurve.Affine
+
+namespace TauCeti
+
+open WeierstrassCurve WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
+
+/-- Every nonidentity translate of a coordinate-ring function is regular at infinity. -/
+theorem _root_.WeierstrassCurve.Affine.valuation_translation_le_one
+    {P : (W⁄F).toAffine.Point} (hP : P ≠ 0)
+    (r : W.CoordinateRing) :
+    W.infinityPlace (translation W P (algebraMap W.CoordinateRing W.FunctionField r)) ≤ 1 := by
+  let Q := (Point.equivBaseChangeSelf W).symm P
+  have hQ : Q ≠ 0 := by
+    intro h
+    have := congrArg (Point.equivBaseChangeSelf W) h
+    exact hP (by simpa [Q] using this)
+  -- The inverse translation carries infinity to the place of the nonzero point `Q`.
+  have hplace : (translation W P)⁻¹ • Place.infinity W ≠ Place.infinity W := by
+    rw [← translation_neg, ← (Point.equivBaseChangeSelf W).apply_symm_apply P, ← map_neg,
+      ← coe_pointEquivDegreeOnePlace_zero, ← Point.zero_def,
+      translation_smul_pointEquivDegreeOnePlace, zero_sub, neg_neg]
+    intro h
+    have := (pointEquivDegreeOnePlace W).injective (Subtype.ext h)
+    exact hQ (by simpa [Q] using this)
+  simpa only [Place.valuation_smul, AlgEquiv.aut_inv, AlgEquiv.symm_symm,
+    Place.valuation_infinity] using
+    Place.valuation_algebraMap_le_one_of_ne_infinity hplace r
+
+end TauCeti
 
 end

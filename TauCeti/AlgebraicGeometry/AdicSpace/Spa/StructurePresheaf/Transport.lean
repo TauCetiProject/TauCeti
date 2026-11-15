@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.BaseChan
 
 import TauCeti.Topology.Sheaves.Functors
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
-import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 
 /-!
 # Transporting the sheaf property along isomorphisms and completion
@@ -37,8 +37,22 @@ between completed rational localisations of
 The consequences for `TauCeti.Huber.IsSheafyForEveryPresentation` are in
 `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation`.
 
+## Main definitions
+
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward` : the presentation-limit
+  presheaf of `(A, A⁺)` as the pushforward of that of `(B, B⁺)`, along mutually inverse continuous
+  ring homomorphisms.
+* `TauCeti.ValuationSpectrum.spaCompletionTopHom` : the homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`
+  as a morphism of `TopCat`.
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafCompletionIso` : the presentation-limit
+  presheaf of `(A, A⁺)` as the pushforward of that of `(Â, Â⁺)` along `spaCompletionTopHom`.
+* `TauCeti.ValuationSpectrum.spaComapTopIso` : the homeomorphism of adic spectra induced by
+  mutually inverse continuous ring homomorphisms.
+
 ## Main results
 
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafIsoPushforward_hom_app_comp_map_comp_π`:
+  on rational opens the transport isomorphism is the base change `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_of_ringEquiv` : invariance of
   the sheaf property under isomorphism.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionPlus_iff` : invariance of
@@ -87,7 +101,9 @@ through `ψ`, then base change along `φ`. -/
 private noncomputable def presentationLimitLeg (j : PresentationIndex (P := P') Bplus V) :
     presentationLimit (P := P) Aplus U ⟶ j.pres.completionLocObj :=
   presentationLimitπToPresentation Aplus U
-      (j.map ψ hψ (fun _ ↦ isOpen_map_of_continuous_inverse hφ hφψ hψφ) hplus' hVU) ≫
+      (j.map ψ hψ (fun I hI ↦ by
+        rw [Ideal.map_eq_image_of_surjective ψ (Function.RightInverse.surjective hψφ)]
+        exact (IsOpenMap.of_inverse hφ hψφ hφψ) I hI) hplus' hVU) ≫
     Presentation.mapHom φ hφ _ j.pres (by rw [PresentationIndex.map_pres_den, hφψ])
       (fun t ht ↦ by
         classical
@@ -176,26 +192,6 @@ private theorem presentationLimitMap_comp_presentationLimitHom {U₁ : Opens ↥
 -- `(B, B⁺)` along the homeomorphism `Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`; its components are
 -- assembled from the base-change maps `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩` of the universal property.
 
-omit [IsTopologicalRing A] [IsTopologicalRing B] in
-include hψφ in
-/-- Pulling back along `ψ` and then along `φ` is the identity of `Spa(A, A⁺)`. -/
-private theorem spaComap_spaComap (w : ↥(spa Aplus)) :
-    spaComap φ hφ Aplus Bplus hplus (spaComap ψ hψ Bplus Aplus hplus' w) = w := by
-  have hcomp : ψ.comp φ = RingHom.id A := RingHom.ext hψφ
-  refine Subtype.ext ?_
-  rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
-    comap_id, id]
-
-omit [IsTopologicalRing A] [IsTopologicalRing B] in
-include hψφ in
-/-- The preimage of `W` under the map of adic spectra induced by `φ` is contained in the image of
-`W`. -/
-private theorem mem_of_spaComap_mem_map (W : Opens ↥(spa Aplus)) (w : ↥(spa Aplus))
-    (hw : spaComap ψ hψ Bplus Aplus hplus' w ∈ (Opens.map (spaComapTopHom φ hφ hplus)).obj W) :
-    w ∈ W := by
-  rw [← spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus' w]
-  exact Opens.mem_map.mp hw
-
 /-- The comparison maps of `φ` and `ψ` as an isomorphism of presentation limits. -/
 private noncomputable def presentationLimitIso (W : Opens ↥(spa Aplus)) :
     presentationLimit (P := P) Aplus W ≅
@@ -206,8 +202,15 @@ private noncomputable def presentationLimitIso (W : Opens ↥(spa Aplus)) :
   hom_inv_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
   inv_hom_id := presentationLimitHom_comp_presentationLimitHom _ _ _ _ _ _ _ _ _ _
 
-/-- The presentation-limit presheaf of `(A, A⁺)` is the pushforward of that of `(B, B⁺)`. -/
-private noncomputable def presentationLimitPresheafIso :
+/-- **Transport of the presentation-limit presheaf along an isomorphism.** For mutually inverse
+continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
+`A⁺`, the presentation-limit presheaf of `(A, A⁺)` for a pair of definition `P` is isomorphic to
+the pushforward of that of `(B, B⁺)` for a pair of definition `P'` along the homeomorphism
+`Spa(B, B⁺) → Spa(A, A⁺)` induced by `φ`. On an open `W`, the component
+`𝒪_{Spa A}(W) → 𝒪_{Spa B}(φ⁻¹W)` is assembled from the base changes `A⟨T/s⟩ → B⟨φ(T)/φ(s)⟩` of
+the universal property. At `A = B` and `P = P'` this is the action on the structure presheaf of an
+automorphism of the pair `(A, A⁺)`. -/
+noncomputable def presentationLimitPresheafIsoPushforward :
     presentationLimitPresheaf P Aplus ≅
       (TopCat.Presheaf.pushforward _ (spaComapTopHom φ hφ hplus)).obj
         (presentationLimitPresheaf P' Bplus) :=
@@ -223,13 +226,65 @@ private noncomputable def presentationLimitPresheafIso :
         (hV := (Opens.map _).monotone (leOfHom f.unop))
         (hVU₁ := mem_of_spaComap_mem_map φ hφ hplus ψ hψ hψφ hplus' W.unop)]
 
+/-- **The transport isomorphism is the base change on rational opens.** On the sections over `W`,
+the component of `presentationLimitPresheafIsoPushforward`, restricted to an open `V ⊆ φ⁻¹W` and
+followed by the projection at an index `m` of `V`, is the projection at an index `i` of `W`
+followed by the base change `A⟨i⟩ → B⟨m⟩` of `φ`, whenever the denominator of `m` is the image of
+that of `i` and the numerators of `m` contain the images of those of `i`. -/
+@[reassoc]
+theorem presentationLimitPresheafIsoPushforward_hom_app_comp_map_comp_π
+    {W : Opens ↥(spa Aplus)} (i : PresentationIndex (P := P) Aplus W) {V : Opens ↥(spa Bplus)}
+    (hV : V ≤ (Opens.map (spaComapTopHom φ hφ hplus)).obj W)
+    (m : PresentationIndex (P := P') Bplus V)
+    (hden : m.pres.den = φ i.pres.den) (hnum : ∀ t ∈ i.pres.num, φ t ∈ m.pres.num) :
+    eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm ≫
+        (presentationLimitPresheafIsoPushforward φ hφ hplus ψ hψ hψφ hφψ hplus').hom.app
+          (Opposite.op W) ≫
+        eqToHom (presentationLimitPresheaf_obj P' Bplus _) ≫ presentationLimitMap hV ≫
+        presentationLimitπToPresentation Bplus V m =
+      presentationLimitπToPresentation Aplus W i ≫ i.pres.mapHom φ hφ m.pres hden hnum := by
+  simp only [presentationLimitPresheafIsoPushforward, NatIso.ofComponents_hom_app,
+    Iso.trans_hom, eqToIso.hom, presentationLimitIso, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp, presentationLimitMap_comp_πToPresentation, Functor.op_obj,
+    Opposite.unop_op, presentationLimitHom_comp_πToPresentation_assoc, presentationLimitLeg]
+  -- `i` refines the index `ψ(m)` of `W`, and both maps out of the projections restrict to
+  -- `A → B → B⟨m⟩` on `A`
+  refine (presentationLimitπToPresentation_comp_eq ?_ ?_).symm
+  · classical
+    refine Presentation.le_def.mpr ⟨1, ?_, fun t ht ↦ ?_⟩
+    · rw [PresentationIndex.map_pres_den, presentationIndexRestrict_obj_pres, hden, hψφ,
+        mul_one]
+    · rw [mul_one, PresentationIndex.map_pres_num, presentationIndexRestrict_obj_pres]
+      exact Finset.mem_image.mpr ⟨φ t, hnum t ht, hψφ t⟩
+  · rw [ObjectProperty.FullSubcategory.comp_hom, Presentation.toCompletionLocTopHom_comp_mapHom,
+      Presentation.toCompletionLocTopHom_comp_mapHom_assoc,
+      Presentation.toCompletionLocTopHom_comp_eqToHom_hom (presentationIndexRestrict_obj_pres hV m)]
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
 include hψφ hφψ in
-/-- The maps of adic spectra induced by `φ` and `ψ`, as an isomorphism of `TopCat`. -/
-private noncomputable def spaTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) where
+/-- **The homeomorphism of adic spectra induced by an isomorphism**: for mutually inverse
+continuous ring homomorphisms `φ : A → B` and `ψ : B → A` carrying `A⁺` into `B⁺` and `B⁺` into
+`A⁺`, the maps `Spa(B, B⁺) → Spa(A, A⁺)` and `Spa(A, A⁺) → Spa(B, B⁺)` they induce are mutually
+inverse, as an isomorphism of `TopCat`. -/
+noncomputable def spaComapTopIso : TopCat.of ↥(spa Bplus) ≅ TopCat.of ↥(spa Aplus) where
   hom := spaComapTopHom φ hφ hplus
   inv := spaComapTopHom ψ hψ hplus'
   hom_inv_id := TopCat.ext (spaComap_spaComap ψ hψ hplus' φ hφ hφψ hplus)
   inv_hom_id := TopCat.ext (spaComap_spaComap φ hφ hplus ψ hψ hψφ hplus')
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
+/-- The forward map of `spaComapTopIso` is the map of adic spectra induced by `φ`. -/
+@[simp]
+theorem spaComapTopIso_hom :
+    (spaComapTopIso φ hφ hplus ψ hψ hψφ hφψ hplus').hom = spaComapTopHom φ hφ hplus :=
+  (rfl)
+
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
+/-- The inverse map of `spaComapTopIso` is the map of adic spectra induced by `ψ`. -/
+@[simp]
+theorem spaComapTopIso_inv :
+    (spaComapTopIso φ hφ hplus ψ hψ hψφ hφψ hplus').inv = spaComapTopHom ψ hψ hplus' :=
+  (rfl)
 
 /-- **Sheafhood of the presentation limit is invariant under isomorphism.** If `e : A ≃+* B` is an
 isomorphism of topological rings carrying `A⁺` onto `B⁺`, then the presentation-limit presheaf of
@@ -248,8 +303,8 @@ theorem isSheaf_presentationLimitPresheaf_iff_of_ringEquiv (e : A ≃+* B) (he :
   exact TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (Aplus.map (e : A →+* B)))) (F := presentationLimitPresheaf P Aplus)
     (G := presentationLimitPresheaf P' (Aplus.map (e : A →+* B)))
-    (spaTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
-    (presentationLimitPresheafIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+    (spaComapTopIso _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
+    (presentationLimitPresheafIsoPushforward _ he h₁ _ he' e.symm_apply_apply e.apply_symm_apply h₂)
 
 end TauCeti.ValuationSpectrum
 
@@ -289,42 +344,9 @@ private theorem Presentation.coeRingHom_comp_completionExtendTopHom (p : Present
   exact Subtype.ext <| RingHom.ext <|
     Completion.extensionHom_coe _ (continuous_toCompletionLoc P p.num p.den _ _)
 
-/-- **Descent of `Â⟨T/s⟩` to `A⟨T/s⟩`.** When the presentation `q` of `Â` is the image of the
-presentation `p` of `A`, the extension to `Â` of the structure map `A → A⟨p⟩` extends uniquely to a
-continuous map `Â⟨q⟩ → A⟨p⟩`. -/
-private theorem existsUnique_continuous_ringHom_completion_comp_eq (p : Presentation P)
-    (q : Presentation P') (hden : q.den = p.den)
-    (hnum : ∀ t ∈ q.num, ∃ t₀ ∈ p.num, (t₀ : Completion A) = t) :
-    letI := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    ∃! g : Completion (Localization.Away q.den) →+* Completion (Localization.Away p.den),
-      Continuous g ∧ g.comp (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower) =
-        Completion.extensionHom _ (continuous_toCompletionLoc P p.num p.den _ _) := by
-  let _ := locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P' q.num q.den _ q.hasDenominatorPower
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isHuberRing_completion_locTopology P p.num p.den _ p.hasDenominatorPower
-  have hc := continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-  have hu := isUnit_toCompletionLoc_of_dvd P p.num p.den _ p.hasDenominatorPower (dvd_refl p.den)
-  have hs : IsUnit (Completion.extensionHom _ hc q.den) := by
-    rwa [hden, Completion.extensionHom_coe]
-  have hunit : hs.unit = hu.unit :=
-    Units.ext (by rw [IsUnit.unit_spec, IsUnit.unit_spec, hden, Completion.extensionHom_coe])
-  refine existsUnique_continuous_ringHom_completion_locTopology P' q.num q.den _
-    q.hasDenominatorPower Completion.continuous_extension.continuousAt hs fun t ht ↦ ?_
-  obtain ⟨t₀, ht₀, rfl⟩ := hnum t ht
-  rw [hunit, Completion.extensionHom_coe]
-  exact isPowerBounded_toCompletionLoc_mul_unit_inv P p.num p.den _ _ (mul_one p.den).symm hu
-    ((mul_one t₀).symm ▸ ht₀)
-
-/-- The morphism `Â⟨q⟩ ⟶ A⟨p⟩` of `existsUnique_continuous_ringHom_completion_comp_eq`. -/
+/-- The morphism `Â⟨q⟩ ⟶ A⟨p⟩` of
+`existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom`, for a presentation `q` of
+`Â` that is the image of the presentation `p` of `A`. -/
 private noncomputable def Presentation.completionHom (p : Presentation P) (q : Presentation P')
     (hden : q.den = p.den) (hnum : ∀ t ∈ q.num, ∃ t₀ ∈ p.num, (t₀ : Completion A) = t) :
     q.completionLocObj ⟶ p.completionLocObj := by
@@ -334,7 +356,8 @@ private noncomputable def Presentation.completionHom (p : Presentation P) (q : P
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have hg := existsUnique_continuous_ringHom_completion_comp_eq p q hden hnum
+  have hg := existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P p.num p.den _
+      p.hasDenominatorPower P' q.num q.den _ q.hasDenominatorPower hden.symm hnum
   exact InducedCategory.homMk (eqToHom (completionLocObj_obj P' q.num q.den _ _) ≫
     (⟨hg.choose, hg.choose_spec.1.1⟩ :
       TopCommRingCat.of (Completion (Localization.Away q.den)) ⟶
@@ -360,7 +383,8 @@ private theorem Presentation.toCompletionLocTopHom_comp_completionHom (p : Prese
   simp only [← Category.assoc]
   apply eq_whisker
   exact Subtype.ext
-    (existsUnique_continuous_ringHom_completion_comp_eq p q hden hnum).choose_spec.1.2
+    (existsUnique_continuous_ringHom_comp_toCompletionLoc_eq_extensionHom P p.num p.den _
+      p.hasDenominatorPower P' q.num q.den _ q.hasDenominatorPower hden.symm hnum).choose_spec.1.2
 
 end TauCeti.Huber.PairOfDefinition
 
@@ -377,7 +401,7 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTop
 variable (Aplus) in
 /-- The homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)` of Wedhorn's Proposition 7.48, as a morphism of
 `TopCat`. -/
-private noncomputable abbrev spaCompletionTopHom :
+noncomputable abbrev spaCompletionTopHom :
     TopCat.of ↥(spa (completionPlus Aplus)) ⟶ TopCat.of ↥(spa Aplus) :=
   (TopCat.isoOfHomeo (spaCompletionHomeomorph Aplus)).hom
 
@@ -668,13 +692,18 @@ private theorem presentationLimitMap_comp_presentationLimitDescendHom
       toCompletionLocTopHom_comp_homOfRationalSubsetSubset]
 
 variable (P P') in
-/-- The presentation-limit presheaf of `(A, A⁺)` is the pushforward of that of `(Â, Â⁺)` along the
-homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`. -/
-private noncomputable def presentationLimitPresheafCompletionIso
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    (hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a) :
+/-- **The structure presheaf is invariant under completion.** If `A⁺` consists of power-bounded
+elements and `Â⁺` is the closure of its image in the completion `Â`, the presentation-limit
+presheaf of `(A, A⁺)` for a pair of definition `P` of `A` is the pushforward of that of `(Â, Â⁺)`,
+for a pair of definition `P'` of `Â`, along the homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)`
+(`spaCompletionTopHom`). -/
+noncomputable def presentationLimitPresheafCompletionIso
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     presentationLimitPresheaf P Aplus ≅ (TopCat.Presheaf.pushforward _
       (spaCompletionTopHom Aplus)).obj (presentationLimitPresheaf P' (completionPlus Aplus)) :=
+  have hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a := fun _ ha ↦
+    mem_powerBoundedSubring.mp <| topologicalClosure_map_coeRingHom_le_powerBoundedSubring
+      (fun _ hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) (completionPlus_def Aplus ▸ ha)
   NatIso.ofComponents
     (fun W ↦ eqToIso (presentationLimitPresheaf_obj P Aplus W) ≪≫
       Iso.mk (presentationLimitDescendHom P' hAplus hAplus' W.unop)
@@ -687,6 +716,7 @@ private noncomputable def presentationLimitPresheafCompletionIso
         eqToIso.hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
       rw [presentationLimitMap_comp_presentationLimitDescendHom_assoc]
 
+omit [IsHuberRing A] in
 variable (P P') in
 /-- **Sheafhood of the presentation limit is invariant under completion.** If `A⁺` consists of
 power-bounded elements and `Â⁺` is the closure of its image in the completion `Â`, the
@@ -697,16 +727,14 @@ theorem isSheaf_presentationLimitPresheaf_completionPlus_iff
     Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (completionPlus Aplus)))
         (presentationLimitPresheaf P' (completionPlus Aplus)) ↔
       Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-        (presentationLimitPresheaf P Aplus) := by
-  have hAplus' : ∀ ⦃a⦄, a ∈ completionPlus Aplus → IsPowerBounded a := fun a ha ↦
-    mem_powerBoundedSubring.mp <| topologicalClosure_map_coeRingHom_le_powerBoundedSubring
-      (fun b hb ↦ mem_powerBoundedSubring.mpr (hAplus hb)) (completionPlus_def Aplus ▸ ha)
-  exact (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
+        (presentationLimitPresheaf P Aplus) :=
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward (X := TopCat.of ↥(spa Aplus))
     (Y := TopCat.of ↥(spa (completionPlus Aplus)))
     (F := presentationLimitPresheaf P Aplus)
     (G := presentationLimitPresheaf P' (completionPlus Aplus))
     (TopCat.isoOfHomeo (spaCompletionHomeomorph Aplus))
-    (presentationLimitPresheafCompletionIso P P' hAplus hAplus')).symm
+    (presentationLimitPresheafCompletionIso P P' hAplus)).symm
 
 end TauCeti.ValuationSpectrum
 

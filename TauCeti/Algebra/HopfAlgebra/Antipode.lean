@@ -18,7 +18,8 @@ the antipode before comultiplication is the same as comultiplying, swapping the 
 factors, and applying the antipode to each factor.
 
 For a commutative Hopf algebra, the antipode is involutive, hence defines an algebra
-automorphism. These facts are also recorded here in the commutative case.
+automorphism. When the Hopf algebra is also cocommutative, the antipode is a bialgebra
+endomorphism, representing inversion on a commutative affine group.
 
 ## Main declarations
 
@@ -31,6 +32,8 @@ automorphism. These facts are also recorded here in the commutative case.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv_toAlgHom`: the underlying algebra homomorphism is
   Mathlib's antipode algebra homomorphism.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv_symm`: the antipode equivalence is its own inverse.
+* `TauCeti.HopfAlgebra.antipodeBialgHom`: inversion as a bialgebra endomorphism in the
+  commutative and cocommutative case.
 
 ## Implementation notes
 
@@ -230,6 +233,40 @@ theorem antipode_comul_antidistrib_apply (c : C) :
       TensorProduct.map (antipode R) (antipode R)
         ((TensorProduct.comm R C C) (Coalgebra.comul c)) :=
   LinearMap.congr_fun antipode_comul_antidistrib c
+
+/-- The antipode of a commutative and cocommutative Hopf algebra, as a bialgebra
+endomorphism. Contravariantly, this represents inversion on a commutative affine group. -/
+noncomputable def antipodeBialgHom {A : Type v} [CommSemiring A] [_root_.HopfAlgebra R A]
+    [Coalgebra.IsCocomm R A] : A →ₐc[R] A :=
+  BialgHom.ofAlgHom (_root_.HopfAlgebra.antipodeAlgHom R A)
+    (by ext; simp)
+    (by
+      ext a
+      have hmap : (Algebra.TensorProduct.map (_root_.HopfAlgebra.antipodeAlgHom R A)
+          (_root_.HopfAlgebra.antipodeAlgHom R A)).toLinearMap =
+          TensorProduct.map (antipode R) (antipode R) := by
+        ext x y
+        simp
+      simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
+        _root_.HopfAlgebra.antipodeAlgHom_apply]
+      exact (LinearMap.congr_fun hmap _).trans
+        (by simpa only [Coalgebra.comm_comul]
+            using (antipode_comul_antidistrib_apply (R := R) a).symm))
+
+/-- The antipode bialgebra endomorphism acts by the antipode. -/
+@[simp]
+theorem antipodeBialgHom_apply {A : Type v} [CommSemiring A] [_root_.HopfAlgebra R A]
+    [Coalgebra.IsCocomm R A] (a : A) :
+    antipodeBialgHom (R := R) (A := A) a = antipode R a :=
+  (rfl)
+
+/-- The algebra morphism underlying the antipode bialgebra endomorphism. -/
+@[simp]
+theorem antipodeBialgHom_toAlgHom {A : Type v} [CommSemiring A] [_root_.HopfAlgebra R A]
+    [Coalgebra.IsCocomm R A] :
+    (antipodeBialgHom (R := R) (A := A) : A →ₐ[R] A) =
+      _root_.HopfAlgebra.antipodeAlgHom R A :=
+  (rfl)
 
 end
 

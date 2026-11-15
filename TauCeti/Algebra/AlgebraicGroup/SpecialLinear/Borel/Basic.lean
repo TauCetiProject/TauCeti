@@ -55,7 +55,6 @@ the upper-triangular subgroup is a Borel subgroup is proved in every rank in
 
 public section
 
-open CategoryTheory WithConv
 open scoped MatrixGroups
 
 namespace TauCeti.SpecialLinear.Borel
@@ -99,13 +98,6 @@ noncomputable abbrev coordinateMap :
     SpecialLinear.coordinateHopfAlgebra R 2 ⟶ coordinateHopfAlgebra R :=
   SpecialLinear.UpperTriangular.coordinateMap R 2
 
-/-- The upper-triangular quotient coordinate morphism sends an ambient coordinate to its quotient
-class. -/
-theorem coordinateMap_apply (h : SpecialLinear.coordinateHopfAlgebra R 2) :
-    (coordinateMap R).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R).toIdeal h :=
-  CommHopfAlgCat.mkQuotient_apply
-    (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R) h
-
 /-- The kernel of the upper-triangular quotient coordinate morphism is the principal
 lower-left-coordinate ideal. -/
 theorem coordinateMap_ker :
@@ -117,7 +109,7 @@ theorem coordinateMap_ker :
 @[simp↓]
 theorem coordinateMap_lowerLeftCoordinate :
     (coordinateMap R).hom (lowerLeftCoordinate R) = 0 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
   exact Ideal.Quotient.eq_zero_iff_mem.mpr
     (definingHopfIdeal_toIdeal R ▸ Ideal.mem_span_singleton_self _)
 
@@ -127,7 +119,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- An algebra-valued point belongs to the subgroup cut out in `SL₂` exactly when its matrix is
 upper triangular, equivalently when it belongs to `SL2Borel`. -/
-@[simp↓]
+@[simp↓ high]
 theorem mem_definingPointsSubgroup_iff
     (g : HopfAlgebra.points (R := R) (H := SpecialLinear.coordinateHopfAlgebra R 2)
       (CommAlgCat.of R A)) :
@@ -148,7 +140,7 @@ noncomputable def pointsMulEquiv :
 
 /-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
 ordinary inclusion of the standard Borel into `SL₂`. -/
-@[simp↓]
+@[simp↓ high]
 theorem pointsMulEquiv_coe
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :

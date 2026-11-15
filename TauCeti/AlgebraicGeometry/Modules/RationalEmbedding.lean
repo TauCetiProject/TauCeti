@@ -155,31 +155,9 @@ private lemma rationalApp_naturality (M : X.Modules) {U V T : X.Opens}
 rank-one trivialization on a dense open subset. -/
 def rationalTrivializationHom (M : X.Modules) {U : X.Opens}
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
-    (hU : Dense (U : Set X)) : M ⟶ Scheme.rationalFunctions X := by
-  classical
-  exact
-    { val :=
-      { app := fun V ↦ if hV : Nonempty V.unop then
-          letI := hV
-          rationalApp M e hU V.unop
-        else 0
-        naturality := fun {V T} i ↦ by
-          by_cases hT : Nonempty T.unop
-          · let _ : Nonempty T.unop := hT
-            let x : T.unop := Classical.choice hT
-            have hV : Nonempty V.unop := ⟨⟨x.1, i.unop.le x.2⟩⟩
-            let _ : Nonempty V.unop := hV
-            simp only [dite_eq_left hT, dite_eq_left hV]
-            ext s
-            exact rationalApp_naturality M e hU i.unop s
-          · have hbot : T.unop = ⊥ := (Opens.not_nonempty_iff_eq_bot T.unop).mp
-              (fun ⟨x, hx⟩ ↦ hT ⟨⟨x, hx⟩⟩)
-            let _ : Subsingleton
-                ((ModuleCat.restrictScalars (X.ringCatSheaf.obj.map i).hom).obj
-                  ((Scheme.rationalFunctions X).val.obj T)) :=
-              ⟨fun a b ↦ (Scheme.subsingleton_rationalFunctions T.unop hbot).elim a b⟩
-            ext s
-            exact Subsingleton.elim _ _ } }
+    (hU : Dense (U : Set X)) : M ⟶ Scheme.rationalFunctions X :=
+  Scheme.rationalFunctionsHom M (rationalApp M e hU)
+    (fun i s ↦ rationalApp_naturality M e hU i s)
 
 /-- On a nonempty open subset, `rationalTrivializationHom` is the rational function obtained by
 restricting to the chosen dense open and reading the section in the chosen basis. -/
@@ -191,8 +169,7 @@ theorem rationalFunctionsEquiv_rationalTrivializationHom_app (M : X.Modules)
     Scheme.rationalFunctionsEquiv V
         (Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) V s) =
       rationalFunction M e hU V s := by
-  simp only [rationalTrivializationHom, Scheme.Modules.Hom.app, dite_eq_left
-    (inferInstance : Nonempty V)]
+  rw [rationalTrivializationHom, Scheme.rationalFunctionsHom_app]
   exact (Scheme.rationalFunctionsEquiv V).apply_symm_apply _
 
 /-- On an integral scheme, the rational function of a local section of a line bundle determines
@@ -227,13 +204,10 @@ theorem rationalTrivializationHom_app_injective [IsIntegral X] (M : X.Modules)
     (e : SheafOfModules.free (R := X.ringCatSheaf.over U) PUnit ≅ M.over U)
     (hU : Dense (U : Set X)) (V : X.Opens) :
     Function.Injective (Scheme.Modules.Hom.app (rationalTrivializationHom M e hU) V) := by
-  intro s t h
-  by_cases hV : Nonempty V
-  · apply rationalFunction_injective M e hU V
-    rw [← rationalFunctionsEquiv_rationalTrivializationHom_app,
-      ← rationalFunctionsEquiv_rationalTrivializationHom_app, h]
-  · exact TopCat.Presheaf.section_ext ⟨M.presheaf, M.isSheaf⟩ V s t
-      fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+  apply Scheme.rationalFunctionsHom_app_injective
+  intro V _ s t h
+  apply rationalFunction_injective M e hU V
+  exact (Scheme.rationalFunctionsEquiv V).symm.injective h
 
 /-- On an integral scheme, a line bundle is a subsheaf of the sheaf of rational functions: the
 morphism determined by any rational trivialization is a monomorphism. -/

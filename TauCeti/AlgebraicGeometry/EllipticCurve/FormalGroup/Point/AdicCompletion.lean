@@ -60,12 +60,6 @@ local notation "O_v" => v.adicCompletionIntegers K
 local notation "K_v" => v.adicCompletion K
 local notation "m_v" => IsLocalRing.maximalIdeal O_v
 
-local instance : IsLinearTopology O_v O_v :=
-  v.isAdic_maximalIdeal_adicCompletionIntegers (K := K) ▸ Ideal.isLinearTopology m_v
-
-local instance : Fact (IsAdic m_v) :=
-  ⟨v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)⟩
-
 variable (W : WeierstrassCurve (v.adicCompletionIntegers K))
 
 /-- A curve over the completed valuation ring is an integral model of its base change to the
@@ -97,8 +91,7 @@ private theorem valued_formalWEval {t : O_v} (ht : t ∈ m_v) :
   rw [WeierstrassCurve.formalWEval_eq_pow_mul_formalUEval W hE]
   push_cast
   rw [map_mul, map_pow, valued_coe_isUnit v
-      (WeierstrassCurve.isUnit_formalUEval W
-        (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)) ht), mul_one]
+      (WeierstrassCurve.isUnit_formalUEval W hE), mul_one]
 
 private theorem ne_of_valued_lt {a b : O_v}
     (h : Valued.v (a : K_v) < Valued.v (b : K_v)) : a ≠ b :=
@@ -138,6 +131,40 @@ private theorem ne_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t �
       exact (mul_le_mul' W.a₃.property hw_le).trans_eq (one_mul _)
   exact (not_le_of_gt h2) hval
 
+/-- In characteristic two with `a₁ ≠ 0`, a small enough nonzero parameter avoids `t`, its formal
+inverse, and the formal-inverse fixed-point equation `s = W.formalInverseEval s`. -/
+private theorem exists_aux_param_of_a₁_ne_zero {t : O_v} (ht : t ∈ m_v) (ht0 : t ≠ 0)
+    (htwo' : ((2 : O_v) : K_v) = 0) (ha₁ : (W.a₁ : K_v) ≠ 0) :
+    ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ s ≠ t ∧ s ≠ W.formalInverseEval t ∧
+      s ≠ W.formalInverseEval s := by
+  have ha₁O : W.a₁ ≠ 0 := fun h ↦ ha₁ (by simp [h])
+  obtain ⟨s, hsm, hs0, hst, hsa₁, hsone⟩ :=
+    v.exists_ne_zero_mem_maximalIdeal_valued_lt ht0 ha₁O
+  refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
+    ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
+  intro hfix
+  have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
+    (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
+  push_cast at hcoe
+  rw [htwo'] at hcoe
+  have hsval0 : Valued.v (s : K_v) ≠ 0 := by
+    exact (_root_.map_eq_zero (Valued.v :
+      Valuation K_v (WithZero (Multiplicative ℤ)))).not.mpr
+        (fun h ↦ hs0 (ZeroMemClass.coe_eq_zero.mp h))
+  have hsq : Valued.v (s : K_v) ^ 2 < Valued.v (W.a₁ : K_v) :=
+    (pow_lt_self_of_lt_one₀ (pos_iff_ne_zero.mpr hsval0) hsone one_lt_two).trans hsa₁
+  have hw_le : Valued.v (W.a₃ * W.formalWEval s : K_v) ≤
+      Valued.v (s : K_v) ^ 3 := by
+    rw [map_mul, valued_formalWEval v W hsm]
+    exact (mul_le_mul' W.a₃.property le_rfl).trans_eq (one_mul _)
+  have hval : Valued.v (W.a₃ * W.formalWEval s : K_v) <
+      Valued.v (W.a₁ * s : K_v) := hw_le.trans_lt (by
+    rw [map_mul, pow_succ]
+    exact mul_lt_mul_of_pos_right hsq (pos_iff_ne_zero.mpr hsval0))
+  have heq : (W.a₁ * s : K_v) = -(W.a₃ * W.formalWEval s : K_v) :=
+    eq_neg_of_add_eq_zero_left hcoe.symm
+  exact hval.ne (by rw [heq, Valuation.map_neg])
+
 private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
     (ht : t ∈ m_v) (ht0 : t ≠ 0) :
     ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ s ≠ t ∧ s ≠ W.formalInverseEval t ∧
@@ -168,42 +195,11 @@ private theorem exists_aux_param [(W.baseChange K_v).IsElliptic] {t : O_v}
       push_cast at hcoe
       rw [htwo', ha₁, zero_mul, zero_add] at hcoe
       have hw0 : (W.formalWEval s : K_v) ≠ 0 :=
-        W.algebraMap_formalWEval_ne_zero (Fact.out : IsAdic m_v) hsm
+        W.algebraMap_formalWEval_ne_zero
+          ((Fact.out : IsAdic m_v).isTopologicallyNilpotent_of_mem hsm)
           ((FaithfulSMul.algebraMap_injective O_v K_v).ne hs0)
       exact (mul_ne_zero ha₃ hw0) hcoe.symm
-    · have ha₁O : W.a₁ ≠ 0 := fun h ↦ ha₁ (by simp [h])
-      obtain ⟨s, hsm, hs0, hst, hsa₁, hsone⟩ :=
-        v.exists_ne_zero_mem_maximalIdeal_valued_lt ht0 ha₁O
-      refine ⟨s, hsm, hs0, ne_of_valued_lt v hst,
-        ne_of_valued_lt v (valued_formalInverseEval v W ht ▸ hst), ?_⟩
-      intro hfix
-      have hcoe := congrArg (fun a : O_v ↦ (a : K_v))
-        (eq_two_of_formalInverseEval_self v W hsm hs0 hfix)
-      push_cast at hcoe
-      rw [htwo'] at hcoe
-      have hsval0 : Valued.v (s : K_v) ≠ 0 := by
-        exact (_root_.map_eq_zero (Valued.v :
-          Valuation K_v (WithZero (Multiplicative ℤ)))).not.mpr
-            (fun h ↦ hs0 (ZeroMemClass.coe_eq_zero.mp h))
-      have hsq : Valued.v (s : K_v) ^ 2 < Valued.v (W.a₁ : K_v) := by
-        calc
-          Valued.v (s : K_v) ^ 2 = Valued.v (s : K_v) * Valued.v (s : K_v) :=
-            pow_two _
-          _ < 1 * Valued.v (s : K_v) :=
-            mul_lt_mul_of_pos_right hsone (pos_iff_ne_zero.mpr hsval0)
-          _ = Valued.v (s : K_v) := one_mul _
-          _ < Valued.v (W.a₁ : K_v) := hsa₁
-      have hw_le : Valued.v (W.a₃ * W.formalWEval s : K_v) ≤
-          Valued.v (s : K_v) ^ 3 := by
-        rw [map_mul, valued_formalWEval v W hsm]
-        exact (mul_le_mul' W.a₃.property le_rfl).trans_eq (one_mul _)
-      have hval : Valued.v (W.a₃ * W.formalWEval s : K_v) <
-          Valued.v (W.a₁ * s : K_v) := hw_le.trans_lt (by
-        rw [map_mul, pow_succ]
-        exact mul_lt_mul_of_pos_right hsq (pos_iff_ne_zero.mpr hsval0))
-      have heq : (W.a₁ * s : K_v) = -(W.a₃ * W.formalWEval s : K_v) :=
-        eq_neg_of_add_eq_zero_left hcoe.symm
-      exact hval.ne (by rw [heq, Valuation.map_neg])
+    · exact exists_aux_param_of_a₁_ne_zero v W ht ht0 htwo' ha₁
   · -- the same `SubringClass` coercion, read in the other direction
     have htwoO : (2 : O_v) ≠ 0 := fun h ↦ htwo (congrArg (fun a : O_v ↦ (a : K_v)) h)
     obtain ⟨s, hsm, hs0, hst, hs2, _⟩ :=

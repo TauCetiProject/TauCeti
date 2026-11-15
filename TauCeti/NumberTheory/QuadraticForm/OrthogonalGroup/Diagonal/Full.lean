@@ -137,12 +137,7 @@ theorem fullAdelicSpinToSpecialOrthogonal_comp_fullAdelicSpinDiagonal :
     fullAdelicSpinDiagonal_apply, fullAdelicSpecialOrthogonalDiagonal_apply,
     finiteAdelicSpinToSpecialOrthogonal_finiteAdelicSpinDiagonal]
   apply Prod.ext
-  · have h := CliffordAlgebra.spinToSpecialOrthogonal_baseChange (A := ℝ) Q x
-    -- The base-change theorem transports the inverse of two; the real carrier uses its
-    -- canonical instance. Uniqueness identifies these instances.
-    rw [Subsingleton.elim ((Invertible.map (algebraMap ℚ ℝ) 2).copy 2 (map_ofNat _ _).symm)
-      (inferInstance : Invertible (2 : ℝ))] at h
-    exact h.symm
+  · exact (CliffordAlgebra.spinToSpecialOrthogonal_baseChange (A := ℝ) Q x).symm
   · rfl
 
 /-- The full adelic inclusion `SO → O` commutes with the rational diagonals. -/

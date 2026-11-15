@@ -72,7 +72,7 @@ private theorem extensionCone.exists_lt (p : K[X])
     rw [Nat.even_iff, hdegrees] at heven
     rw [Nat.odd_iff] at hodd ⊢
     omega
-  obtain ⟨r, hr, hrodd, hrq⟩ := exists_irreducible_factor_of_odd_natDegree q hqodd
+  obtain ⟨r, hr, hrodd, hrq⟩ := exists_irreducible_factor_of_odd_natDegree hqodd
   have hrdeg : r.natDegree < p.natDegree :=
     (natDegree_le_of_dvd hrq hq0).trans_lt hqdeg
   have hrw : r ∣ w := by rw [hq]; exact hrq.trans (dvd_mul_left q p)
@@ -91,14 +91,14 @@ theorem extensionCone.neg_one_notMem_adjoinRoot (p : K[X])
     (hodd : Odd p.natDegree) :
     -1 ∉ extensionCone (algebraMap K (AdjoinRoot p)) := by
   induction hn : p.natDegree using Nat.strong_induction_on generalizing p with
-  | h n ih =>
+  | ind n ih =>
     intro hneg
     obtain ⟨r, _, hrodd, hrdeg, hrneg⟩ := extensionCone.exists_lt p hodd hneg
     exact ih r.natDegree (hrdeg.trans_le hn.le) r hrodd rfl hrneg
 
 /-- An odd-degree simple field extension admits an order preserving the
 given order of the base field. -/
-theorem _root_.AdjoinRoot.exists_linearOrder (p : K[X]) [hp : Fact (Irreducible p)]
+theorem _root_.AdjoinRoot.exists_linearOrder (p : K[X]) [Fact (Irreducible p)]
     (hodd : Odd p.natDegree) :
     ∃ o : LinearOrder (AdjoinRoot p), letI := o
       IsStrictOrderedRing (AdjoinRoot p) ∧ StrictMono (algebraMap K (AdjoinRoot p)) :=

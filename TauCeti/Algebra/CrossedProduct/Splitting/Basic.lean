@@ -180,7 +180,7 @@ private theorem exists_scalar_mul_eq (g : (L ≃ₐ[K] L) → GL n L)
   have hcoe (x : GL n L) : ((map (σ : L →+* L) x : GL n L) : Matrix n n L) =
       (x : Matrix n n L).map σ := by
     ext; simp
-  refine exists_scalar_mul_eq_of_forall_conj_eq fun x ↦ Units.ext ?_
+  refine forall_conj_eq_iff_exists_scalar_mul_eq.1 fun x ↦ Units.ext ?_
   obtain ⟨m, hm⟩ := σ.mapMatrix.surjective (x : Matrix n n L)
   simp only [Units.val_mul, ← hm]
   rw [hg, AlgEquiv.mapMatrix_apply, splittingAut_mul, ← hg, ← hg]
@@ -272,7 +272,7 @@ theorem TwoCocycle.cohomologous_ofConjugators (g g' : (L ≃ₐ[K] L) → GL n L
     (hg : ∀ σ m, (g σ : Matrix n n L) * m * ((g σ)⁻¹ : GL n L) = splittingAut φ σ m)
     (hg' : ∀ σ m, (g' σ : Matrix n n L) * m * ((g' σ)⁻¹ : GL n L) = splittingAut φ σ m) :
     (ofConjugators φ g hg).Cohomologous (ofConjugators φ g' hg') := by
-  choose b hb using fun σ ↦ exists_scalar_mul_eq_of_forall_conj_eq (g := g' σ) (h := g σ)
+  choose b hb using fun σ ↦ (forall_conj_eq_iff_exists_scalar_mul_eq (g := g' σ) (h := g σ)).1
     fun x ↦ Units.ext (by simp only [Units.val_mul]; rw [hg', hg])
   refine cohomologous_iff.2 ⟨fun σ ↦ (b σ)⁻¹, fun σ τ ↦ ?_⟩
   have hw : (ofConjugators φ g' hg').toFun σ τ =

@@ -26,6 +26,8 @@ characterization is in `TauCeti.Algebra.AlgebraicGroup.Solvable.Derived.Series`.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 namespace CommHopfAlgCat
 
 noncomputable section

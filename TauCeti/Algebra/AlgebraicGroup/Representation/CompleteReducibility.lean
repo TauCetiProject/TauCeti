@@ -43,6 +43,8 @@ reductivity descends from it.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKilling`: over any
   field of characteristic zero, a geometrically connected finite-type affine group whose Lie
   algebra has nondegenerate Killing form is linearly reductive.
+* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_finiteType_of_connected_of_isKilling`: the
+  same, for a commutative Hopf algebra together with a proof that it is of finite type.
 
 ## References
 
@@ -123,5 +125,16 @@ theorem linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKill
   have := (isKilling_lie_baseChange_iff (k := k) (K := AlgebraicClosure k) (H := H)).2 ‹_›
   exact linearlyReductiveCommHopfAlgProperty.of_baseChange (AlgebraicClosure k)
     (linearlyReductiveCommHopfAlgProperty.of_isKilling (H := HK))
+
+/-- `linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKilling` for a commutative
+Hopf algebra given together with a proof that it is of finite type. This applies directly to
+coordinate Hopf algebras whose packaged finite-type form is only propositionally equal to them. -/
+theorem linearlyReductiveCommHopfAlgProperty.of_finiteType_of_connected_of_isKilling
+    {k : Type u} [Field k] [CharZero k] {H : CommHopfAlgCat.{u} k}
+    (hft : finiteTypeCommHopfAlgProperty k H)
+    [LieAlgebra.IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k))]
+    (hH : geometricallyConnectedCommHopfAlgProperty k H) :
+    linearlyReductiveCommHopfAlgProperty k H :=
+  of_geometricallyConnected_of_isKilling (H := ⟨H, hft⟩) hH
 
 end TauCeti

@@ -1,0 +1,210 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Connected.LocallyPathConnected
+public import Mathlib.Topology.Homotopy.Contractible
+public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
+import TauCeti.Dynamics.Flow.ClosedOrbit
+import TauCeti.Topology.Homotopy.AddCircle
+import TauCeti.Topology.Homotopy.Path
+import TauCeti.Topology.Homotopy.TubeNeighborhood
+
+/-!
+# Limits of periodic orbits of a flow
+
+Let `ϕ` be a continuous flow by `ℝ` on a space `X`, and let `xᵢ` be points with return times
+`Tᵢ`, `ϕ Tᵢ xᵢ = xᵢ`, converging along a filter to `x₀` and `T₀`. This file proves the three facts
+which turn such a family of periodic orbits into a periodic orbit through `x₀`:
+
+* `x₀` returns at time `T₀`, `ϕ T₀ x₀ = x₀`, when `X` is Hausdorff
+  (`Flow.apply_eq_self_of_tendsto`), since the return condition is closed;
+* if the return times are positive and tend to `0`, then `x₀` is a rest point
+  (`Flow.apply_eq_self_of_tendsto_zero`): each `xᵢ` returns at every integer multiple of `Tᵢ`, and
+  these multiples approximate any given time;
+* if `T₀ > 0` and the loops `t ↦ ϕ t xᵢ` on the circles `ℝ/Tᵢℤ` become null-homotopic after a
+  continuous map `j : X → Y`, then so does the limit loop `t ↦ ϕ t x₀` on `ℝ/T₀ℤ`, when `X` is
+  locally path-connected and semilocally simply connected (`Flow.exists_nullhomotopic_of_tendsto`),
+  as for instance every manifold and every open subset of one is. Taking for `j` the identity gives
+  null-homotopy in `X`; taking for `X` an invariant open subset of a space and for `j` its inclusion
+  into a larger subset `Y` gives null-homotopy in `Y`, although the flow need not preserve `Y`
+  (`Flow.exists_nullhomotopic_of_tendsto_of_isInvariant`).
+
+For the last statement, the limit loop lies in a tube: a chain of open sets along a partition of
+the loop, in which any two paths with common ends are homotopic. Tubes are open in the
+compact-open topology, so the nearby loops lie in the same tube, and joining the base points of a
+nearby loop and of the limit loop by a short path at both ends of the tube shows that the limit
+loop is conjugate to the nearby loop by that path. Applying `j` to this conjugation transports
+the null-homotopy of the nearby loop in `Y` to the limit loop.
+
+These are the compactness steps by which closed orbits of bounded period on nearby energy levels,
+produced by a variational or capacity argument, give a closed orbit on the limiting level, as in
+the Hofer–Zehnder–Struwe almost existence theorem.
+
+## Main results
+
+* `Flow.apply_eq_self_of_tendsto`: limits of periodic points are periodic, with the limit period.
+* `Flow.apply_eq_self_of_tendsto_zero`: limits of periodic points with periods tending to `0` are
+  rest points.
+* `Flow.exists_nullhomotopic_of_tendsto`: limits of periodic orbits of positive limit period that
+  are contractible after a continuous map are contractible after that map.
+* `Flow.exists_nullhomotopic_of_tendsto_of_isInvariant`: limits of periodic orbits in an invariant
+  open set `U ⊆ W` that are contractible in `W` are contractible in `W`.
+
+## References
+
+* H. Hofer, E. Zehnder, *Symplectic Invariants and Hamiltonian Dynamics*, Birkhäuser, 1994,
+  Section 4.2.
+-/
+
+public section
+
+noncomputable section
+
+open Filter Set Topology TauCeti
+open scoped unitInterval
+
+namespace Flow
+
+variable {X : Type*} [TopologicalSpace X] (ϕ : Flow ℝ X) {ι : Type*} {l : Filter ι}
+  {x : ι → X} {T : ι → ℝ} {x₀ : X} {T₀ : ℝ}
+
+/-- **Limits of periodic points are periodic.** If `xᵢ → x₀` and `Tᵢ → T₀` along a nontrivial
+filter, and eventually `xᵢ` returns to itself at time `Tᵢ`, then `x₀` returns to itself at time
+`T₀`. -/
+theorem apply_eq_self_of_tendsto [T2Space X] [l.NeBot] (hx : Tendsto x l (𝓝 x₀))
+    (hT : Tendsto T l (𝓝 T₀)) (hper : ∀ᶠ i in l, ϕ (T i) (x i) = x i) : ϕ T₀ x₀ = x₀ :=
+  tendsto_nhds_unique
+    (((ϕ.continuous continuous_fst continuous_snd).tendsto (T₀, x₀)).comp (hT.prodMk_nhds hx))
+    (hx.congr' (hper.mono fun _ h ↦ h.symm))
+
+/-- **Limits of fast periodic points are rest points.** If `xᵢ → x₀` along a nontrivial filter, and
+eventually `xᵢ` returns to itself at a positive time `Tᵢ`, where `Tᵢ → 0`, then `x₀` is fixed by
+the flow at every time. -/
+theorem apply_eq_self_of_tendsto_zero [T2Space X] [l.NeBot] (hx : Tendsto x l (𝓝 x₀))
+    (hT : Tendsto T l (𝓝 0)) (hpos : ∀ᶠ i in l, 0 < T i)
+    (hper : ∀ᶠ i in l, ϕ (T i) (x i) = x i) (t : ℝ) : ϕ t x₀ = x₀ := by
+  -- The multiples `⌊t / Tᵢ⌋ Tᵢ` are return times of `xᵢ` within `Tᵢ` of `t`.
+  refine ϕ.apply_eq_self_of_tendsto (T := fun i ↦ ⌊t / T i⌋ * T i) hx ?_ ?_
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun i ↦ t - T i) (h := fun _ ↦ t)
+      (by simpa using tendsto_const_nhds.sub hT) tendsto_const_nhds ?_ ?_ <;>
+      filter_upwards [hpos] with i hi
+    · have h := (div_le_iff₀ hi).1 (Int.lt_floor_add_one (t / T i)).le
+      linarith
+    · exact (le_div_iff₀ hi).1 (Int.floor_le (t / T i))
+  · filter_upwards [hper] with i hi
+    have hz := (ϕ.periods (x i)).zsmul_mem (ϕ.mem_periods.2 hi) ⌊t / T i⌋
+    rwa [ϕ.mem_periods, zsmul_eq_mul] at hz
+
+/-- The orbit segment `θ ↦ ϕ (θ τ) y`, `θ ∈ [0, 1]`, depends continuously on `(τ, y)`. -/
+private def orbitSegment (p : ℝ × X) : C(I, X) :=
+  ⟨fun θ ↦ ϕ (θ * p.1) p.2, ϕ.continuous (by fun_prop) continuous_const⟩
+
+private theorem continuous_orbitSegment : Continuous ϕ.orbitSegment :=
+  ContinuousMap.continuous_of_continuous_uncurry _
+    (ϕ.continuous (by fun_prop) (continuous_snd.comp continuous_fst))
+
+/-- The orbit segment of a point returning at time `τ`, as a based loop. -/
+private def orbitLoop {τ : ℝ} {y : X} (hy : ϕ τ y = y) : Path y y where
+  toContinuousMap := ϕ.orbitSegment (τ, y)
+  source' := by simp [orbitSegment, ϕ.map_zero_apply]
+  target' := by simpa [orbitSegment] using hy
+
+/-- The loop `t ↦ j (ϕ t y)` on `ℝ/τℤ` is null-homotopic exactly when the image under `j` of the
+orbit segment `θ ↦ ϕ (θ τ) y` is homotopic to the constant loop. -/
+private theorem nullhomotopic_iff_orbitLoop {Y : Type*} [TopologicalSpace Y] (j : C(X, Y))
+    {τ : ℝ} [Fact (0 < τ)] {y : X} (hy : ϕ τ y = y) {g : C(AddCircle τ, Y)}
+    (hg : ∀ t : ℝ, g t = j (ϕ t y)) :
+    g.Nullhomotopic ↔ ((ϕ.orbitLoop hy).map j.continuous).Homotopic (Path.refl (j y)) :=
+  g.nullhomotopic_iff_homotopic_refl _ fun θ ↦ by
+    simp [orbitLoop, orbitSegment, hg]
+
+/-- **Limits of contractible periodic orbits are contractible.** Let `X` be locally path-connected
+and semilocally simply connected, and let `j : X → Y` be continuous. Suppose that `xᵢ → x₀` and
+`Tᵢ → T₀ > 0` along a nontrivial filter, that `x₀` returns to itself at time `T₀` and eventually
+`xᵢ` at time `Tᵢ`, and that eventually the loop `t ↦ j (ϕ t xᵢ)` lifts to a null-homotopic map
+`ℝ/Tᵢℤ → Y`. Then the loop `t ↦ j (ϕ t x₀)` lifts to a null-homotopic map `ℝ/T₀ℤ → Y`. -/
+theorem exists_nullhomotopic_of_tendsto [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] [l.NeBot] {Y : Type*} [TopologicalSpace Y] (j : C(X, Y))
+    (hx : Tendsto x l (𝓝 x₀)) (hT : Tendsto T l (𝓝 T₀)) (hT₀ : 0 < T₀) (h₀ : ϕ T₀ x₀ = x₀)
+    (hret : ∀ᶠ i in l, ϕ (T i) (x i) = x i)
+    (h : ∀ᶠ i in l, ∃ g : C(AddCircle (T i), Y), g.Nullhomotopic ∧ ∀ t : ℝ, g t = j (ϕ t (x i))) :
+    ∃ g : C(AddCircle T₀, Y), g.Nullhomotopic ∧ ∀ t : ℝ, g t = j (ϕ t x₀) := by
+  have : Fact (0 < T₀) := ⟨hT₀⟩
+  -- The limit loop descends to the circle `ℝ/T₀ℤ`.
+  have hper : Function.Periodic (fun t ↦ j (ϕ t x₀)) T₀ := fun t ↦ by
+    simp only [ϕ.map_add, h₀]
+  let g₀ : C(AddCircle T₀, Y) :=
+    ⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2
+      (j.continuous.comp (ϕ.continuous continuous_id continuous_const))⟩
+  have hg₀ (t : ℝ) : g₀ t = j (ϕ t x₀) := hper.lift_coe t
+  refine ⟨g₀, (ϕ.nullhomotopic_iff_orbitLoop j h₀ hg₀).2 ?_, hg₀⟩
+  set γ₀ := ϕ.orbitLoop h₀
+  -- The limit loop lies in a tube, and a path-connected neighbourhood `W` of `x₀` lies in the
+  -- vertex sets at both of its ends.
+  obtain ⟨n, part, U, hγ₀⟩ := γ₀.exists_isInTube_of_semilocallySimplyConnectedOn
+    (.of_semilocallySimplyConnectedSpace _)
+  cases n with
+  | zero => exact isEmptyElim part
+  | succ n =>
+  have hV : U.V 0 ∩ U.V (Fin.last (n + 1)) ∈ 𝓝 x₀ := by
+    refine inter_mem ((U.isOpen_V _).mem_nhds ?_) ((U.isOpen_V _).mem_nhds ?_)
+    · simpa using hγ₀.mem_V 0
+    · simpa using hγ₀.mem_V (Fin.last _)
+  obtain ⟨W, ⟨hWx, hW⟩, hWV⟩ := (path_connected_basis x₀).mem_iff.1 hV
+  -- Choose a nearby periodic orbit in the same tube, with base point in `W`.
+  have htube : ∀ᶠ i in l, Path.IsInTube (ϕ.orbitSegment (T i, x i)) part U :=
+    (ϕ.continuous_orbitSegment.tendsto (T₀, x₀)).comp (hT.prodMk_nhds hx)
+      |>.eventually ((U.isOpen_setOf_isInTube part).mem_nhds hγ₀)
+  obtain ⟨i, hi, hxi, hTi, hyi, g, hg, hgx⟩ := (htube.and ((hx.eventually_mem hWx).and
+    ((hT.eventually (lt_mem_nhds hT₀)).and (hret.and h)))).exists
+  have : Fact (0 < T i) := ⟨hTi⟩
+  set γ := ϕ.orbitLoop hyi
+  have hγ : (γ.map j.continuous).Homotopic (Path.refl (j (x i))) :=
+    (ϕ.nullhomotopic_iff_orbitLoop j hyi hgx).1 hg
+  -- Join the base points by a path `α` in `W`; it lies in the vertex sets at both ends.
+  obtain ⟨α, hα⟩ := hW.joinedIn _ (mem_of_mem_nhds hWx) _ hxi
+  have key := hγ₀.trans_homotopic_trans (γ' := γ) hi
+    (range_subset_iff.2 fun t ↦ (hWV (hα t)).1) (range_subset_iff.2 fun t ↦ (hWV (hα t)).2)
+  -- So `j γ₀ · j α ≃ j α · j γ ≃ j α ≃ refl · j α`, and `j γ₀` is null-homotopic.
+  have key := key.map j
+  rw [Path.map_trans, Path.map_trans] at key
+  exact Path.Homotopic.trans_right_cancel <| key.trans <|
+    (Path.Homotopic.trans_right_of_nullhomotopic hγ).trans (Path.Homotopic.refl_trans _).symm
+
+/-- **Limits of periodic orbits contractible in a subset.** Let `X` be strongly locally
+contractible, as every manifold is, and let `U ⊆ W` be an open set invariant under `ϕ`. Suppose that
+`xᵢ → x₀` and `Tᵢ → T₀ > 0` along a nontrivial filter, with `x₀ ∈ U` returning to itself at time
+`T₀` and eventually `xᵢ ∈ U` returning to itself at time `Tᵢ`, and that eventually the loop
+`t ↦ ϕ t xᵢ` lifts to a null-homotopic map `ℝ/Tᵢℤ → W`. Then the loop `t ↦ ϕ t x₀` lifts to a
+null-homotopic map `ℝ/T₀ℤ → W`. The flow need not preserve `W`: the statement applies
+`exists_nullhomotopic_of_tendsto` to the flow restricted to `U` and to the inclusion of `U`
+into `W`. -/
+theorem exists_nullhomotopic_of_tendsto_of_isInvariant [StronglyLocallyContractibleSpace X]
+    [l.NeBot] {U W : Set X} (hU : IsOpen U) (hinv : IsInvariant ϕ U) (hUW : U ⊆ W)
+    (hxU : ∀ᶠ i in l, x i ∈ U) (hx₀ : x₀ ∈ U) (hx : Tendsto x l (𝓝 x₀))
+    (hT : Tendsto T l (𝓝 T₀)) (hT₀ : 0 < T₀) (h₀ : ϕ T₀ x₀ = x₀)
+    (hret : ∀ᶠ i in l, ϕ (T i) (x i) = x i)
+    (h : ∀ᶠ i in l, ∃ g : C(AddCircle (T i), W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : X) = ϕ t (x i)) :
+    ∃ g : C(AddCircle T₀, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : X) = ϕ t x₀ := by
+  have : StronglyLocallyContractibleSpace U := hU.stronglyLocallyContractibleSpace
+  -- The base points as points of `U`, eventually equal to `xᵢ`.
+  classical
+  let y (i : ι) : U := if hi : x i ∈ U then ⟨x i, hi⟩ else ⟨x₀, hx₀⟩
+  have hy : ∀ᶠ i in l, (y i : X) = x i := hxU.mono fun i hi ↦ by simp [y, hi]
+  obtain ⟨g₀, hg₀, hg₀x⟩ := (ϕ.restrict hinv).exists_nullhomotopic_of_tendsto
+    (x := y) (x₀ := ⟨x₀, hx₀⟩) (ContinuousMap.inclusion hUW)
+    (tendsto_subtype_rng.2 (hx.congr' (hy.mono fun _ h ↦ h.symm))) hT hT₀
+    (Subtype.ext (by simpa using h₀))
+    ((hret.and hy).mono fun i hi ↦ Subtype.ext (by simpa [hi.2] using hi.1))
+    ((h.and hy).mono fun i hi ↦ hi.1.imp fun g hg ↦
+      ⟨hg.1, fun t ↦ Subtype.ext (by simpa [hi.2] using hg.2 t)⟩)
+  exact ⟨g₀, hg₀, fun t ↦ by simp [hg₀x]⟩
+
+end Flow

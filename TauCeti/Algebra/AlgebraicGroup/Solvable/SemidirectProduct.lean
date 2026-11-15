@@ -35,9 +35,7 @@ normal closed subgroup with another closed subgroup.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-This supplies the source-side extension step for the solvable radical in Layer 6 of the
-ReductiveGroups roadmap. To prove that the scheme-theoretic multiplication image is again
-solvable, it remains to descend solvability from this source to its image.
+This supplies the source-side extension step for the solvable radical.
 -/
 
 public section

@@ -1,0 +1,35 @@
+{
+  "run_id": 38663031807,
+  "workflow_sha": "d596be5aa001a0187cc3a3c7890314d7b0782e4a",
+  "url": "https://github.com/TauCetiProject/TauCeti/actions/runs/38663031807",
+  "jobs": [
+    {
+      "id": 116188494888,
+      "name": "finalizer-capacity",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-15T00:58:19Z",
+      "started_at": "2026-10-15T00:58:29Z",
+      "completed_at": "2026-10-15T00:58:47Z",
+      "runner_name": "nsc-runner-3r2mhohu08e6u",
+      "labels": [
+        "nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0",
+        "namespace-features:github.run-id=38663031807"
+      ]
+    },
+    {
+      "id": 116188495224,
+      "name": "publisher-capacity",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-15T00:58:19Z",
+      "started_at": "2026-10-15T00:58:30Z",
+      "completed_at": "2026-10-15T00:58:47Z",
+      "runner_name": "nsc-runner-8k70079kijbrs",
+      "labels": [
+        "nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0",
+        "namespace-features:github.run-id=38663031807"
+      ]
+    }
+  ]
+}

@@ -22,12 +22,13 @@ Hopf-ideal quotient with the usual precomposition map on algebra-valued points.
 
 ## References
 
-This is the generalized-point form of the Layer 3 Hopf-ideal/closed-subgroup dictionary in the
-ReductiveGroups roadmap. It combines the represented group-object Yoneda equivalence with the
-point-level quotient API.
+This is the generalized-point form of the Hopf-ideal/closed-subgroup dictionary. It combines the
+represented group-object Yoneda equivalence with the point-level quotient API.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory Opposite
 
@@ -42,7 +43,7 @@ inclusion is the usual quotient-points homomorphism. -/
 @[simp]
 theorem grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H)
-    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ grpObj (quotient H I)) :
+    (X : (CommAlgCat.{u} R)ᵒᵖ) (q : X ⟶ CommHopfAlgCat.grpObj (quotient H I)) :
     grpObjPointsMulEquiv H X (q ≫ quotientGrpObjInclusion H I) =
       quotientPointsHom H I X.unop (grpObjPointsMulEquiv (quotient H I) X q) := by
   rw [quotientGrpObjInclusion_def]

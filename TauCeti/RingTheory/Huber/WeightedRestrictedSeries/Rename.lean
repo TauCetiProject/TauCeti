@@ -59,10 +59,13 @@ open Filter Finsupp
 
 namespace TauCeti.Huber
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] {k m : ℕ}
+variable {A : Type*} {k m : ℕ}
+
+section WeightPow
+
+variable [CommMonoid A]
 
 open Pointwise in
-omit [TopologicalSpace A] in
 private theorem weightPow_subset_weightPow_embDomain (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} (hTS : ∀ i, T i ⊆ S (e i)) (s : Fin k →₀ ℕ) :
     weightPow T s ⊆ weightPow S (embDomain e s) := by
@@ -72,12 +75,17 @@ private theorem weightPow_subset_weightPow_embDomain (e : Fin k ↪ Fin m) {T : 
   exact Fintype.prod_of_injective e e.injective _ _
     (fun j hj ↦ by rw [embDomain_of_notMem_range _ _ _ hj, pow_zero]) (by simp)
 
-omit [TopologicalSpace A] in
+end WeightPow
+
+variable [CommRing A]
+
 private theorem weightMul_le_weightMul_embDomain (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} (hTS : ∀ i, T i ⊆ S (e i)) (s : Fin k →₀ ℕ) (U : AddSubgroup A) :
     weightMul T s U ≤ weightMul S (embDomain e s) U :=
   weightMul_le.mpr fun _ ht _ hu ↦
     mul_mem_weightMul S _ U (weightPow_subset_weightPow_embDomain e hTS s ht) hu
+
+variable [TopologicalSpace A]
 
 /-- **Renaming preserves weighted restrictedness**: along an embedding `e` of the variables with
 each `T i ⊆ S (e i)`, a `T`-restricted series renames to an `S`-restricted one. The weights of the
@@ -94,13 +102,15 @@ theorem IsWeightedRestricted.rename (e : Fin k ↪ Fin m) {T : Fin k → Set A} 
       (by rwa [← funext (embDomain_eq_mapDomain e)]) ▸ zero_mem _)
   exact ⟨s, fun hs ↦ hν <| by simpa using weightMul_le_weightMul_embDomain e hTS s _ hs, rfl⟩
 
+variable [NonarchimedeanRing A]
+
 /-- **The homomorphism `A⟨X⟩_T → A⟨X⟩_S` induced by an embedding `e` of the variables**, sending
 `Xᵢ` to `X_{e i}`. Each weight `T i` must lie in the weight `S (e i)` of its image.
 
 It moves the variables and keeps the coefficients, where `TauCeti.Huber.weightedMap` moves the
 coefficients along a ring map and keeps the variables. Its values are computed by
 `TauCeti.Huber.coe_weightedRename`. -/
-noncomputable def weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+noncomputable def weightedRename (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S) (hTS : ∀ i, T i ⊆ S (e i)) :
     weightedRestrictedSubring T hT →+* weightedRestrictedSubring S hS :=
   (MvPowerSeries.rename e).toRingHom.restrict _ _ fun _ hf ↦
@@ -108,7 +118,7 @@ noncomputable def weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T
 
 /-- `weightedRename` is `MvPowerSeries.rename` with its domain and codomain cut down. -/
 @[simp]
-theorem coe_weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem coe_weightedRename (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i))
     (f : weightedRestrictedSubring T hT) :
     (weightedRename e hT hS hTS f : MvPowerSeries (Fin m) A) =
@@ -116,13 +126,13 @@ theorem coe_weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin
 
 /-- `weightedRename` fixes the constant series. -/
 @[simp]
-theorem weightedRename_weightedC [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem weightedRename_weightedC (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i))
     (a : A) : weightedRename e hT hS hTS (weightedC T hT a) = weightedC S hS a :=
   Subtype.ext (by simp)
 
 /-- The `A`-algebra-homomorphism form of `weightedRename`. -/
-noncomputable def weightedRenameAlgHom [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
+noncomputable def weightedRenameAlgHom (e : Fin k ↪ Fin m)
     {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, T i ⊆ S (e i)) :
     weightedRestrictedSubring T hT →ₐ[A] weightedRestrictedSubring S hS where
@@ -133,7 +143,7 @@ noncomputable def weightedRenameAlgHom [NonarchimedeanRing A] (e : Fin k ↪ Fin
 
 /-- The algebra-homomorphism form has the same underlying function as `weightedRename`. -/
 @[simp]
-theorem weightedRenameAlgHom_apply [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
+theorem weightedRenameAlgHom_apply (e : Fin k ↪ Fin m)
     {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, T i ⊆ S (e i)) (f : weightedRestrictedSubring T hT) :
     weightedRenameAlgHom e hT hS hTS f = weightedRename e hT hS hTS f := by
@@ -141,14 +151,14 @@ theorem weightedRenameAlgHom_apply [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
 
 /-- `weightedRename` sends the variable `Xᵢ` to `X_{e i}`. -/
 @[simp]
-theorem weightedRename_weightedX [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem weightedRename_weightedX (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i))
     (i : Fin k) : weightedRename e hT hS hTS (weightedX T hT i) = weightedX S hS (e i) :=
   Subtype.ext (by simp)
 
 /-- **`weightedRename` is continuous** for the weighted topologies, so it is a morphism of
 topological rings. -/
-theorem continuous_weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem continuous_weightedRename (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S) (hTS : ∀ i, T i ⊆ S (e i)) :
     Continuous (weightedRename e hT hS hTS) := by
   -- the basic neighbourhood `V⟨X⟩` of the source lands in `V⟨X⟩` of the target
@@ -162,7 +172,7 @@ theorem continuous_weightedRename [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {
 
 /-- **`weightedRename` is injective**, because `MvPowerSeries.rename` along an embedding is and
 the coercion to the ambient series ring is. -/
-theorem weightedRename_injective [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem weightedRename_injective (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i)) :
     Function.Injective (weightedRename e hT hS hTS) := fun f g hfg ↦ Subtype.ext <|
   MvPowerSeries.rename_injective e <| by
@@ -171,7 +181,7 @@ theorem weightedRename_injective [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T
 /-- **Equality after renaming is equality**: the `iff` form of
 `TauCeti.Huber.weightedRename_injective`. -/
 @[simp]
-theorem weightedRename_inj [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+theorem weightedRename_inj (e : Fin k ↪ Fin m) {T : Fin k → Set A}
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i))
     (f g : weightedRestrictedSubring T hT) :
     weightedRename e hT hS hTS f = weightedRename e hT hS hTS g ↔ f = g :=
@@ -179,7 +189,7 @@ theorem weightedRename_inj [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T : Fin
 
 /-- **The identity law**: renaming along `Function.Embedding.refl` is the identity. -/
 @[simp]
-theorem weightedRename_id [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeightFamily T) :
+theorem weightedRename_id {T : Fin k → Set A} (hT : IsWeightFamily T) :
     weightedRename (Function.Embedding.refl (Fin k)) hT hT (fun i ↦ (subset_rfl : T i ⊆ T i))
       = RingHom.id (weightedRestrictedSubring T hT) := by
   refine RingHom.ext fun f ↦ Subtype.ext ?_
@@ -195,7 +205,7 @@ theorem weightedRename_id [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsW
 /-- **The composition law**: renaming along a composite embedding is the composite of the
 renamings. With `weightedRename_id` this is what makes `A⟨X⟩_T` functorial in the variables, as
 `weightedMap_comp` and `weightedMap_id` do for the coefficient ring. -/
-theorem weightedRename_comp [NonarchimedeanRing A] {n : ℕ} (e₁ : Fin k ↪ Fin m)
+theorem weightedRename_comp {n : ℕ} (e₁ : Fin k ↪ Fin m)
     (e₂ : Fin m ↪ Fin n) {T : Fin k → Set A} {S : Fin m → Set A} {R : Fin n → Set A}
     (hT : IsWeightFamily T) (hS : IsWeightFamily S) (hR : IsWeightFamily R)
     (hTS : ∀ i, T i ⊆ S (e₁ i)) (hSR : ∀ i, S i ⊆ R (e₂ i)) :

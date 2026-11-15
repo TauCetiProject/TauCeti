@@ -165,8 +165,6 @@ theorem inertiaDeg_eq_two_of_mem_primesOver_two (hmin : minpoly ℤ θ = X ^ 2 -
     (hQ : Q ∈ Ideal.primesOver (Ideal.span {(2 : ℤ)}) (𝓞 K)) : Q.inertiaDeg ℤ = 2 := by
   have := hQ.1
   have := hQ.2
-  have hpr : (Ideal.span {(2 : ℤ)}).IsPrime :=
-    (PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible).isPrime
   rw [TauCeti.RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ Q
     (ncard_primesOver_two_eq_one hmin hgen)
     (ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ), RingOfIntegers.rank,
@@ -179,9 +177,7 @@ theorem map_span_two_eq_of_mem_primesOver (hmin : minpoly ℤ θ = X ^ 2 - X - 1
     (Ideal.span {(2 : ℤ)}).map (algebraMap ℤ (𝓞 K)) = Q := by
   have := hQ.1
   have := hQ.2
-  have hmax : (Ideal.span {(2 : ℤ)}).IsMaximal :=
-    PrincipalIdealRing.isMaximal_of_irreducible Int.prime_two.irreducible
-  exact TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one _ (by simp) Q
+  exact TauCeti.RamificationInertia.map_eq_of_ncard_primesOver_eq_one _ Q
     (ncard_primesOver_two_eq_one hmin hgen)
     (ramificationIdx_eq_one_of_mem_primesOver_two hmin hgen hQ)
 

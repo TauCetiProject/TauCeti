@@ -50,7 +50,7 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Phi : Fan i) (hPhi : Phi.IsRegular)
 
 /-- The boundary component indexed by a ray is the closure of the corresponding torus orbit. -/
-def analyticBoundaryComponent (rho : Phi.Ray) : Set (Phi.analyticRealization hPhi) :=
+noncomputable def analyticBoundaryComponent (rho : Phi.Ray) : Set (Phi.analyticRealization hPhi) :=
   closure (Phi.analyticConeOrbit hPhi rho.toCone)
 
 /-- A boundary component is the closure of the orbit indexed by its ray. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
@@ -52,7 +53,7 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
       (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))).isOpen.measurableSet
   have hcint : Integrable (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       ballGreenCorrector n x y) volume := by
-    simpa only [← hψ, smul_eq_mul] using integrable_smul_of_locallyIntegrableOn hc ψ
+    simpa only [← hψ, smul_eq_mul] using ψ.integrable_smul hc
   have hni : Integrable (fun y => Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y *
       newtonianKernel n (y - x)) volume := by
     let g : EuclideanSpace ℝ (Fin n) → ℝ := fun y => Δ (φ : _ → ℝ) (y + x)

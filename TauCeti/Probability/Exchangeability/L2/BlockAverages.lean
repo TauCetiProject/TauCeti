@@ -5,22 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.BlockAverage
+public import TauCeti.Probability.Process.BlockAverage.Measure
 public import TauCeti.Probability.Exchangeability.L2.Covariance
 
 /-!
 # Two-window L² bounds for block averages of a contractable sequence
 
-This file continues the Layer 3 (L²) lane of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Layer 3: L² averaging library and the
-standard-Borel de Finetti route"), building the "two-window L² bounds for block averages"
-milestone (`l2_bound_two_windows_uniform`) on top of the uniform covariance structure of a
-contractable L² sequence (`contractable_covariance_structure`).
+This file continues the L² route to de Finetti's theorem, building two-window L² bounds for block
+averages on top of the uniform covariance structure of a contractable L² sequence
+(`contractable_covariance_structure`).
 
 For a real-valued process `X : ℕ → Ω → ℝ` and a finite selection `k : Fin n → ℕ`, the
 *block average* `blockAverage X k = n⁻¹ • ∑ i, X (k i)` is the empirical mean of the block
 `(X (k i))ᵢ`; it is defined, with its measure-free algebra, in
-`TauCeti.Probability.Process.BlockAverage`.
+`TauCeti.Probability.Process.BlockAverage.Basic`.
 When `X` is contractable with `L²` coordinates, its second-moment structure is
 uniform: all coordinate variances agree and all off-diagonal covariances agree
 (`contractable_covariance_structure`). Writing `v = Var[X 0]` and `c = cov[X 0, X 1]`, this
@@ -49,12 +47,11 @@ Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005
 
 The covariance/variance bilinearity (`ProbabilityTheory.covariance_sum_sum`,
 `variance_sum`, `covariance_smul_left`, `variance_const_mul`) and the integral manipulations are
-Mathlib's; the contractability input is the Layer 0/3 API in
+Mathlib's; the contractability input is the API in
 `TauCeti.Probability.Exchangeability.Contractability` and
-`TauCeti.Probability.Exchangeability.L2.Covariance`. No material from
-`cameronfreer/exchangeability` is reused: the source carries the block-average bounds through a
-different, sequence-specific `L²` development, whereas this file records the closed-form
-second-moment identities directly.
+`TauCeti.Probability.Exchangeability.L2.Covariance`.
+
+The main result is `TauCeti.Probability.Contractable.integral_sq_blockAverage_sub_of_disjoint`.
 -/
 
 public section
@@ -69,23 +66,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → ℝ}
-
-/-- A block average of `L²` coordinates is itself `L²`. -/
-theorem memLp_blockAverage {n : ℕ} (k : Fin n → ℕ) (hX_L2 : ∀ i, MemLp (X (k i)) 2 μ) :
-    MemLp (blockAverage X k) 2 μ := by
-  rw [blockAverage_eq_sum]
-  exact (memLp_finsetSum' _ fun i _ => hX_L2 i).const_smul _
-
-/-- **Conditional expectation commutes with block averages.** The conditional expectation of a
-block average of integrable coordinates is the block average of their conditional expectations. -/
-theorem condExp_blockAverage {m : MeasurableSpace Ω} {n : ℕ} (k : Fin n → ℕ)
-    (hX : ∀ i, Integrable (X (k i)) μ) :
-    μ[blockAverage X k | m] =ᵐ[μ] blockAverage (fun i => μ[X i | m]) k := by
-  rw [blockAverage_eq_sum]
-  refine (condExp_smul _ _ _).trans ?_
-  filter_upwards [condExp_finsetSum (μ := μ) (m := m) (s := Finset.univ)
-    (f := fun i : Fin n => X (k i)) fun i _ => hX i] with ω hω
-  rw [Pi.smul_apply, hω, Finset.sum_apply, blockAverage_apply, smul_eq_mul]
 
 /-- The double sum of block covariances splits along the diagonal into the common variance and
 the common off-diagonal covariance of a contractable `L²` sequence. -/

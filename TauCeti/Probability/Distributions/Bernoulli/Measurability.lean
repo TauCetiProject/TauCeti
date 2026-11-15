@@ -6,19 +6,25 @@ Authors: Claude
 module
 
 public import Mathlib.Probability.Distributions.Bernoulli
+
 /-!
 # Parameter measurability for the Bernoulli distribution
 
-Measurability in the success probability lets measurable parameter maps produce measurable
-measure-valued Bernoulli families, in particular kernels.
+The Bernoulli measure `Ber(x, y, p)` depends measurably on its two atoms and its success
+probability jointly, so measurable parameter maps produce measurable measure-valued Bernoulli
+families, in particular kernels.
 -/
+
 public section
-noncomputable section
+
 open MeasureTheory ProbabilityTheory
-namespace TauCeti.Probability
-/-- **The Bernoulli family is measurable in its success probability.** -/
-@[fun_prop] theorem measurable_bernoulliMeasure {X : Type*} [MeasurableSpace X] (x y : X) :
-    Measurable fun p : unitInterval => bernoulliMeasure x y p := by
-  simp only [bernoulliMeasure]
-  fun_prop
-end TauCeti.Probability
+
+/-- **The Bernoulli family is measurable in its parameters**: if the atoms `x`, `y` and the
+success probability `p` depend measurably on `a`, then so does `Ber(x a, y a, p a)`. -/
+@[fun_prop]
+theorem Measurable.bernoulliMeasure {α X : Type*} [MeasurableSpace α] [MeasurableSpace X]
+    {x y : α → X} {p : α → unitInterval} (hx : Measurable x) (hy : Measurable y)
+    (hp : Measurable p) : Measurable fun a => Ber(x a, y a, p a) := by
+  refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
+  simp only [bernoulliMeasure_def, add_apply, smul_apply, Measure.dirac_apply' _ hs]
+  fun_prop (disch := exact hs)

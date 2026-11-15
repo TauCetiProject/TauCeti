@@ -53,7 +53,6 @@ theorem semilinearMonomialEquiv_frobeniusEquiv_conjugatePerm_not_mem_map_monomia
   refine semilinearMonomialEquiv_toEquiv_not_mem_map_of_ne_refl _ _ (fun h ↦ ?_) _
   -- Frobenius fixes `ω` only if `ω² = ω`, which contradicts `ω² + ω + 1 = 0` in characteristic two.
   have hfix : ω ^ 2 = ω := by simpa [frobenius_def] using RingEquiv.congr_fun h ω
-  have htwo : (2 : F) = 0 := CharTwo.two_eq_zero
   grind
 
 /-- The semilinear automorphism group of the hexacode strictly contains the image of its monomial

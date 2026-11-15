@@ -76,9 +76,7 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast_of_subset {d a : ℤ} (hd :
     {u : Finset ℤ} (huprod : ∏ P ∈ u, P = fundamentalDiscriminant a)
     (hsub : u ⊆ genusPrimeDiscriminants hd) :
     ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a : ℤ) : ℂ) := by
-  have hu : ∀ P ∈ u, IsPrimeDiscriminant P := fun P hP =>
-    (genusPrimeDiscriminants_spec hd).1 P (hsub hP)
-  obtain ⟨z, hzmem, hz⟩ := exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hu huprod
+  obtain ⟨z, hzmem, hz⟩ := exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq huprod
     (L := ℂ) (fun P => genusFieldRoot hd ⟨P.val, hsub P.property⟩) fun P => by simp
   refine ⟨z, adjoin_le_iff.mpr ?_ hzmem, ?_⟩
   · rintro _ ⟨P, rfl⟩
@@ -143,12 +141,8 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
   · -- Otherwise the two ramification constraints apply, and cut `u` down to a subset.
     obtain ⟨c, e, hsfc, he, hce⟩ :=
       Int.exists_squarefree_mul_sq (mul_ne_zero hsfa.ne_zero hd.ne_zero)
-    have hnsqc : ¬ IsSquare ((c : ℤ) : ℚ) := fun h => hsq <| by
-      have hcast : ((a * d : ℤ) : ℚ) = ((c : ℤ) : ℚ) * ((e : ℤ) : ℚ) ^ 2 := by
-        exact_mod_cast congrArg (fun n : ℤ => (n : ℚ)) hce
-      exact hcast ▸ (isSquare_mul_sq_iff (Int.cast_ne_zero.mpr he)).mpr h
     obtain ⟨u, hu, hue, huprod⟩ :=
-      (isFundamentalDiscriminant_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
+      (isFundamentalDiscr_fundamentalDiscriminant hsfa).exists_finset_primeDiscriminant
     obtain ⟨hs, hse, hsprod⟩ := genusPrimeDiscriminants_spec hd
     refine exists_mem_candidateGenusField_sq_eq_intCast_of_subset hd huprod
       (subset_of_forall_prime_dvd_fundamentalDiscriminant hs hse hsprod hu hue huprod hce
@@ -264,6 +258,6 @@ theorem exists_isUnramifiedIn_and_finrank_eq_two_pow_card {d : ℤ} (hd : Square
   · rw [← candidateGenusFieldBase_def hd]
     exact finrank_candidateGenusFieldBase hd hnsq
   · rw [← candidateGenusFieldBase_def hd]
-    exact fun q hq _ => isUnramifiedIn_candidateGenusField hd hnsq q
+    exact fun q _ _ => isUnramifiedIn_candidateGenusField hd q
 
 end TauCeti.Multiquadratic

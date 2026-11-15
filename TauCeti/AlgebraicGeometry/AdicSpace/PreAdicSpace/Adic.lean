@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
 /-!
 # Adic spaces and open adic subspaces
@@ -36,27 +37,42 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 * `TauCeti.PreAdicSpace.isAdic`: the adic spaces among the objects of `𝒱^pre`.
 * `TauCeti.AdicSpace`: Wedhorn's category `(Adic)`, the full subcategory of `𝒱^pre` of adic
   spaces.
-* `TauCeti.PreAdicSpace.restrictRestrictIso`: restricting a restriction is restricting to the
-  image.
 
 ## Main results
 
-* `TauCeti.PreAdicSpace.mem_affinoidOpens_restrict_iff`: an open of `X|_U` is an open affinoid
-  subspace exactly when its image in `X` is.
 * `TauCeti.PreAdicSpace.isBasis_affinoidOpens`: the open affinoid subspaces of a locally affinoid
   object form a basis of its topology.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid_restrict`, `TauCeti.PreAdicSpace.isSheafy_restrict`,
   `TauCeti.PreAdicSpace.isAdic_restrict`: being locally affinoid, sheafy, or adic passes to
   restrictions to opens, and `TauCeti.PreAdicSpace.isAdic_of_isOpenImmersion`: to the source of
   an open immersion.
+* `TauCeti.PreAdicSpace.isSheafy_restrict_of_range_subset`: if the restriction of `X` to an open
+  is sheafy, so is its restriction to every smaller open.
+
+* `TauCeti.PreAdicSpace.isPreAdic_restrict`: the restriction of a pre-adic space to an open is
+  pre-adic.
+* `TauCeti.PreAdicSpace.isLocallyAffinoid_of_jointly_surjective`: an object covered by open
+  immersions from locally affinoid objects is locally affinoid.
 * `TauCeti.PreAdicSpace.isPreAdic.isSheafy_iff`: a pre-adic space is sheafy exactly when its
   structure presheaf is a sheaf on its open affinoid subspaces.
-* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace`: `Spa(A, A⁺)` with a sheaf
-  structure presheaf is an adic space.
+* `TauCeti.PreAdicSpace.isPreAdic.isSheafy_of_forall_exists_le`,
+  `TauCeti.PreAdicSpace.isPreAdic.isSheafy_of_directed`: a pre-adic space is sheafy if each open
+  affinoid subspace lies in a sheafy open, for instance if it is exhausted by a directed family of
+  sheafy opens.
+* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace` and
+  `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing`: `Spa(A, A⁺)`
+  with a sheaf structure presheaf — in particular, the adic spectrum of a sheafy Huber pair — is
+  an adic space.
+* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionLocalization`: if the
+  structure presheaf of `Spa(A, A⁺)` is a sheaf, so is that of every rational localisation
+  `Spa(A⟨T/s⟩, A_U⁺)`.
+* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
+  for the rational localisation as a pair.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22, Remark 8.27 and §8.2.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22, Definition 8.26, Remark 8.27
+  and §8.2.
 -/
 
 public section
@@ -69,54 +85,6 @@ universe u
 
 namespace PreAdicSpace
 
-/-! ### Open affinoid subspaces of a restriction -/
-
-section Restrict
-
-variable {U : TopCat.{u}} (X : PreAdicSpace.{u}) {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
-
--- Both bases are the inclusion of a subtype followed by `f`, so a point lies in either range
--- exactly when it is the image of a point of `V`. The identifications of the two bases with
--- `f ∘ Subtype.val` are the `rfl`-lemmas `comp_base` and `ofRestrict_base`, which cannot be
--- rewritten inside `Set.range`: the source of the right-hand side of `ofRestrict_base` is the open
--- `(Opens.toTopCat _).obj V`, while the source of the left-hand side is the carrier of a
--- restriction, which unfolds to it only at default transparency, so the rewritten composite is
--- ill-typed for `rw`. The two sets are compared pointwise instead.
-private theorem range_ofRestrict_comp_ofRestrict_base (V : Opens (X.restrict h)) :
-    Set.range ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h).base =
-      Set.range (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding).base := by
-  ext y
-  constructor
-  · rintro ⟨⟨v, hv⟩, rfl⟩
-    exact ⟨⟨f v, v, hv, rfl⟩, rfl⟩
-  · rintro ⟨⟨_, v, hv, rfl⟩, rfl⟩
-    exact ⟨⟨v, hv⟩, rfl⟩
-
-/-- Restricting a restriction is restricting to the image: `X` restricted to `U` and then to an
-open `V` of `U` is isomorphic in `𝒱^pre` to `X` restricted to the image of `V` in `X`, both being
-open subspaces of `X` with the same image. The isomorphism is compatible with the canonical
-morphisms to `X` (`restrictRestrictIso_hom_ofRestrict`). -/
-noncomputable def restrictRestrictIso (V : Opens (X.restrict h)) :
-    (X.restrict h).restrict V.isOpenEmbedding ≅
-      X.restrict (h.isOpenMap.functor.obj V).isOpenEmbedding :=
-  IsOpenImmersion.isoOfRangeEq ((X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h)
-    (X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding)
-    (range_ofRestrict_comp_ofRestrict_base X h V)
-
-@[reassoc (attr := simp)]
-theorem restrictRestrictIso_hom_ofRestrict (V : Opens (X.restrict h)) :
-    (restrictRestrictIso X h V).hom ≫ X.ofRestrict (h.isOpenMap.functor.obj V).isOpenEmbedding =
-      (X.restrict h).ofRestrict V.isOpenEmbedding ≫ X.ofRestrict h :=
-  IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _
-
-/-- An open `V` of the restriction of `X` along an open embedding is an open affinoid subspace of
-the restriction exactly when its image in `X` is an open affinoid subspace of `X`. -/
-theorem mem_affinoidOpens_restrict_iff (V : Opens (X.restrict h)) :
-    V ∈ (X.restrict h).affinoidOpens ↔ h.isOpenMap.functor.obj V ∈ X.affinoidOpens :=
-  ObjectProperty.prop_iff_of_iso isAffinoid (restrictRestrictIso X h V)
-
-end Restrict
-
 /-! ### Open subspaces of locally affinoid and sheafy objects -/
 
 /-- **The open affinoid subspaces of a locally affinoid object form a basis of its topology.**
@@ -124,45 +92,19 @@ Every point lies in an open affinoid subspace `U`, which is isomorphic to some `
 the open affinoid subspaces of `Spa(A, A⁺)` form a basis of its topology; they are carried to open
 affinoid subspaces of `X` contained in `U`. -/
 theorem isBasis_affinoidOpens {X : PreAdicSpace.{u}} (hX : isLocallyAffinoid X) :
-    Opens.IsBasis X.affinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {W x} hxW ↦ ?_
-  obtain ⟨U, hU, hxU⟩ := hX x
-  obtain ⟨A, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff _).mp hU
-  -- `x` lies in `W ∩ U`, read as an open of `X|_U`, which is the preimage under `e` of its
-  -- preimage under `e⁻¹`; `e` is `forgetToTop.mapIso e` on the underlying spaces
-  have hxW₀ : (⟨x, hxU⟩ : X.restrict U.isOpenEmbedding) ∈
-      (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W := hxW
-  have hW₀ := Opens.map_hom_obj_map_inv_obj (forgetToTop.mapIso e)
-    ((Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W)
-  rw [← hW₀] at hxW₀
-  -- an open affinoid subspace `V'` of `Spa(A, A⁺)` between `e x` and the image of `W ∩ U`
-  obtain ⟨V', hV', hxV', hV'W⟩ := Opens.isBasis_iff_nbhd.mp
-    (ValuationSpectrum.isBasis_affinoidOpens_presentationLimitPreAdicSpace P S.plus _ hP)
-    (U := (Opens.map e.inv.base).obj ((Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W))
-    (x := e.hom.base ⟨x, hxU⟩) hxW₀
-  -- the preimage of `V'` under `e` is an open affinoid subspace of `X|_U` contained in `W ∩ U`
-  have hV'W' : (Opens.map e.hom.base).obj V' ≤
-      (Opens.map (X.ofRestrict U.isOpenEmbedding).base).obj W :=
-    ((Opens.map e.hom.base).monotone hV'W).trans (le_of_eq hW₀)
-  refine ⟨U.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map e.hom.base).obj V'), ?_, ?_, ?_⟩
-  · exact (mem_affinoidOpens_restrict_iff X U.isOpenEmbedding _).mp
-      ((map_hom_base_mem_affinoidOpens_iff e).mpr hV')
-  · exact ⟨⟨x, hxU⟩, hxV', rfl⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    exact hV'W' hz
+    Opens.IsBasis X.affinoidOpens :=
+  isBasis_propOpens isAffinoid (fun _ hY ↦
+    let ⟨_, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff _).mp hY
+    isBasis_propOpens_of_iso isAffinoid e
+      (ValuationSpectrum.isBasis_affinoidOpens_presentationLimitPreAdicSpace P S.plus _ hP)) hX
 
 variable {U : TopCat.{u}} {X : PreAdicSpace.{u}} {f : U ⟶ X.toTopCat} (h : IsOpenEmbedding f)
 
 /-- The restriction of a locally affinoid object of `𝒱^pre` to an open is locally affinoid: the
 open affinoid subspaces of `X` contained in the image of the open cover it. -/
 theorem isLocallyAffinoid_restrict (hX : isLocallyAffinoid X) :
-    isLocallyAffinoid (X.restrict h) := by
-  intro x
-  obtain ⟨V, hV, hxV, hVf⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_affinoidOpens hX)
-    (U := h.isOpenMap.functor.obj ⊤) (x := f x) ⟨x, trivial, rfl⟩
-  refine ⟨(Opens.map f).obj V, (mem_affinoidOpens_restrict_iff X h _).mpr ?_, hxV⟩
-  rw [Opens.functor_obj_map_obj, inf_eq_right.mpr hVf]
-  exact hV
+    isLocallyAffinoid (X.restrict h) :=
+  exists_mem_propOpens_restrict h isAffinoid (isBasis_affinoidOpens hX)
 
 /-- The restriction of a sheafy object of `𝒱^pre` to an open is sheafy, since the restriction of a
 sheaf to an open subspace is a sheaf. -/
@@ -171,11 +113,54 @@ theorem isSheafy_restrict (hX : isSheafy X) : isSheafy (X.restrict h) := by
   rw [restrict_toPresheafedSpace, PresheafedSpace.restrict_presheaf]
   exact TopCat.Presheaf.isSheaf_of_isOpenEmbedding h hX
 
+/-- If the restriction of `X` along an open embedding `g` is sheafy, then so is its restriction
+along every open embedding `f` whose image lies in the image of `g`: `X|_f` is the restriction of
+`X|_g` to the preimage of the image of `f`. -/
+theorem isSheafy_restrict_of_range_subset {V : TopCat.{u}} {g : V ⟶ X.toTopCat}
+    (hg : IsOpenEmbedding g) (hfg : Set.range f ⊆ Set.range g) (hX : isSheafy (X.restrict hg)) :
+    isSheafy (X.restrict h) := by
+  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage g.hom.2⟩
+  -- the image of `W` in `X` is the image of `f`; the open `W` of the restriction is an open of
+  -- `V` only up to unfolding, so the image is compared pointwise rather than rewritten
+  have hW : Set.range (Opens.inclusion' (hg.isOpenMap.functor.obj W)) = Set.range f := by
+    rw [Opens.set_range_inclusion']
+    ext y
+    refine ⟨fun ⟨_, hv, hy⟩ ↦ hy ▸ hv, fun hy ↦ ?_⟩
+    obtain ⟨v, rfl⟩ := hfg hy
+    exact ⟨v, hy, rfl⟩
+  exact ObjectProperty.prop_of_iso isSheafy
+    (restrictRestrictIso X hg W ≪≫ X.restrictIsoOfRangeEq _ h hW)
+    (isSheafy_restrict W.isOpenEmbedding hX)
+
+/-- **The restriction of a pre-adic space to an open is pre-adic.** It is locally affinoid, and its
+open affinoid subspaces are the opens whose images are open affinoid subspaces of `X`, to which
+the restricted structure presheaf is adapted (`TopCat.Presheaf.IsAdapted.restrict`). -/
+theorem isPreAdic_restrict (hX : isPreAdic X) : isPreAdic (X.restrict h) := by
+  refine ⟨isLocallyAffinoid_restrict h hX.isLocallyAffinoid, ?_⟩
+  rw [show (X.restrict h).affinoidOpens = h.functor.obj ⁻¹' X.affinoidOpens from
+    Set.ext (mem_propOpens_restrict_iff X h isAffinoid)]
+  -- the structure presheaf of `X.restrict h` is `h.functor.op ⋙ X.presheaf` by definition
+  -- (`PresheafedSpace.restrict_presheaf`); rewriting with it is blocked by the dependence of the
+  -- family of opens on the carrier
+  exact hX.isAdapted.restrict h
+
 /-- The source of an open immersion into a locally affinoid object is locally affinoid. -/
 theorem isLocallyAffinoid_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isLocallyAffinoid X)
     (f : Y ⟶ X) [IsOpenImmersion f] : isLocallyAffinoid Y :=
   ObjectProperty.prop_of_iso isLocallyAffinoid (IsOpenImmersion.isoRestrict f).symm
     (isLocallyAffinoid_restrict f.isOpenEmbedding hX)
+
+/-- **An object of `𝒱^pre` covered by open immersions from locally affinoid objects is locally
+affinoid.** A point `x = f i y` has an open affinoid neighbourhood in `U i`, which `f i` identifies
+with an open affinoid subspace of `X` containing `x`. -/
+theorem isLocallyAffinoid_of_jointly_surjective {ι : Type*} {U : ι → PreAdicSpace.{u}}
+    (f : ∀ i, U i ⟶ X) [∀ i, IsOpenImmersion (f i)] (hU : ∀ i, isLocallyAffinoid (U i))
+    (hf : ∀ x : X, ∃ (i : ι) (y : U i), (f i).base y = x) : isLocallyAffinoid X := by
+  intro x
+  obtain ⟨i, y, rfl⟩ := hf x
+  obtain ⟨V, hV, hyV⟩ := ObjectProperty.prop_of_iso isLocallyAffinoid
+    (IsOpenImmersion.isoRestrict (f i)) (hU i) y
+  exact ⟨_, (mem_propOpens_restrict_iff X (f i).isOpenEmbedding isAffinoid V).mp hV, y, hyV, rfl⟩
 
 /-- The source of an open immersion into a sheafy object is sheafy. -/
 theorem isSheafy_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isSheafy X) (f : Y ⟶ X)
@@ -195,6 +180,32 @@ theorem isPreAdic.isSheafy_iff (hX : isPreAdic X) :
         X.toPresheafedSpace.presheaf) :=
   TopCat.Presheaf.isSheaf_iff_of_isAdapted _ _ (isBasis_affinoidOpens hX.isLocallyAffinoid)
     hX.isAdapted
+
+/-- **A pre-adic space is sheafy if each open affinoid subspace lies in a sheafy open.** If every
+open affinoid subspace `V` of the pre-adic space `X` is contained in an open `U` with `X|_U`
+sheafy, then `X` is sheafy. The structure presheaf is determined by its values on the open affinoid
+subspaces, and the sheaf condition for a cover of `V` by open affinoid subspaces holds inside the
+sheafy open `U`. -/
+theorem isPreAdic.isSheafy_of_forall_exists_le (hX : isPreAdic X)
+    (h : ∀ V ∈ X.affinoidOpens, ∃ U : Opens X, V ≤ U ∧ isSheafy (X.restrict U.isOpenEmbedding)) :
+    isSheafy X :=
+  -- `X|_U` is sheafy when `U.isOpenEmbedding.functor.op ⋙ X.presheaf` is a sheaf, by definition of
+  -- the presheaf of a restriction (`PresheafedSpace.restrict_presheaf`)
+  TopCat.Presheaf.isSheaf_of_isAdapted_of_forall_exists_le _ _
+    (isBasis_affinoidOpens hX.isLocallyAffinoid) hX.isAdapted h
+
+/-- **A pre-adic space exhausted by sheafy opens is sheafy.** If a directed family of opens `U i`
+covers the pre-adic space `X` and every `X|_{U i}` is sheafy, then `X` is sheafy: an open affinoid
+subspace is quasi-compact, so it lies in a single `U i`. -/
+theorem isPreAdic.isSheafy_of_directed {ι : Type*} [Nonempty ι] (hX : isPreAdic X)
+    {U : ι → Opens X} (hU : Directed (· ≤ ·) U) (hcov : iSup U = ⊤)
+    (h : ∀ i, isSheafy (X.restrict (U i).isOpenEmbedding)) : isSheafy X := by
+  refine hX.isSheafy_of_forall_exists_le fun V hV ↦ ?_
+  obtain ⟨i, hi⟩ := (isCompact_of_mem_affinoidOpens hV).elim_directed_cover
+    (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen)
+    (by rw [← Opens.coe_iSup, hcov]; exact Set.subset_univ _)
+    fun i j ↦ hU i j
+  exact ⟨U i, hi, h i⟩
 
 /-! ### Adic spaces -/
 
@@ -252,6 +263,8 @@ namespace ValuationSpectrum
 
 open Huber
 
+section
+
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) (Aplus : Subring A) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
   (hP : P.ringOfDefinition ≤ Aplus)
@@ -271,6 +284,71 @@ theorem isAdic_presentationLimitPreAdicSpace
       (presentationLimitPresheaf P Aplus)) :
     PreAdicSpace.isAdic (presentationLimitPreAdicSpace P Aplus hAplus hP) :=
   ⟨hs, (isPreAdic_presentationLimitPreAdicSpace P Aplus hAplus hP).isLocallyAffinoid⟩
+
+include hAplus hP in
+/-- **Rational localisation preserves the sheaf condition**: if the structure presheaf of
+`Spa(A, A⁺)` is a sheaf and `T` spans an open ideal, then the structure presheaf of
+`Spa(A⟨T/s⟩, A_U⁺)` is a sheaf. By Wedhorn's Remark 8.8
+(`presentationLimitPreAdicSpaceLocIso`), `Spa(A⟨T/s⟩, A_U⁺)` is isomorphic in `𝒱^pre` to the
+restriction of `Spa(A, A⁺)` to `R(T/s)`, and the restriction of a sheaf to an open is a sheaf. -/
+theorem isSheaf_presentationLimitPresheaf_completionLocalization (T : Finset A) (s : A)
+    (S : Type u) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : P.HasDenominatorPower T s S) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    letI := P.locUniformSpace T s S hden
+    letI := P.isUniformAddGroup_locUniformSpace T s S hden
+    letI := P.isTopologicalRing_locUniformSpace T s S hden
+    Presheaf.IsSheaf
+      (Opens.grothendieckTopology ↥(spa (P.completedPlusSubring Aplus T s S hden)))
+      (presentationLimitPresheaf (P.completionLocalization T s S hden)
+        (P.completedPlusSubring Aplus T s S hden)) :=
+  letI := P.locUniformSpace T s S hden
+  letI := P.isUniformAddGroup_locUniformSpace T s S hden
+  letI := P.isTopologicalRing_locUniformSpace T s S hden
+  ObjectProperty.prop_of_iso PreAdicSpace.isSheafy
+    (presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT)
+    (PreAdicSpace.isSheafy_restrict _ hs)
+
+end
+
+open Huber.PairOfDefinition PreAdicSpace in
+/-- If `T` spans an open ideal and the structure presheaf of `Spa(A, A⁺)` is a sheaf, then so is the
+structure presheaf of `Spa` of the rational localisation `(A⟨T/s⟩, A_U⁺)`, as a pair
+(`PairOfDefinition.rationalLocalizationPair`). -/
+theorem isSheaf_presentationLimitPresheaf_rationalLocalizationPair {A : Type u}
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus) (T : Finset A) (s : A)
+    (L : Type u) [CommRing L] [Algebra A L] [IsLocalization.Away s L]
+    (hden : P.HasDenominatorPower T s L) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U.plus))
+      (presentationLimitPresheaf P U.plus)) :
+    letI := P.locUniformSpace T s L hden
+    letI := P.isUniformAddGroup_locUniformSpace T s L hden
+    letI := P.isTopologicalRing_locUniformSpace T s L hden
+    letI := P.isHuberRing_completion_locTopology T s L hden
+    Presheaf.IsSheaf
+      (Opens.grothendieckTopology ↥(spa (P.rationalLocalizationPair U hP T s L hden).plus))
+      (presentationLimitPresheaf (P.completionLocalization T s L hden)
+        (P.rationalLocalizationPair U hP T s L hden).plus) := by
+  let _ := P.locUniformSpace T s L hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s L hden
+  have _ := P.isTopologicalRing_locUniformSpace T s L hden
+  have _ := P.isHuberRing_completion_locTopology T s L hden
+  rw [rationalLocalizationPair_plus]
+  exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
+    U.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheaf
+
+/-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
+complete, Hausdorff, or Tate. -/
+theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
+    PreAdicSpace.isAdic
+      (presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP) :=
+  isAdic_presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP
+    (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
 
 end ValuationSpectrum
 

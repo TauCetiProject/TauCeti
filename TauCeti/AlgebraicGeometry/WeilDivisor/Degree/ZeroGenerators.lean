@@ -39,11 +39,8 @@ class is a sum of the classes of `[x] - [x₀]`. It is the combinatorial input t
 available at the free Weil-divisor level before line bundles, principal divisors, the Picard
 scheme, or the Jacobian variety exist.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve: Weil
-divisors `⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)", and feeds the
-Layer D/F Abel-map prerequisite `D ↦ 𝒪_X(D - d·x₀)`. No external mathematics is vendored; the
-proofs reuse Tau Ceti's `WeilDivisor` API and Mathlib's finitely-supported induction and subgroup
-`closure` machinery.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `WeilDivisor` API and Mathlib's
+finitely-supported induction and subgroup `closure` machinery.
 -/
 
 public section
@@ -128,7 +125,7 @@ lemma sum_zsmul_pointDifference (x₀ : X) (D : WeilDivisor X) :
     (D.sum fun x n => n • pointDifference x x₀) = D - degree D • ofPoint x₀ := by
   rw [← weightedDegree_one_eq_degree, ← sum_zsmul_weightedPointBaseDifference (fun _ => 1) x₀ D]
   refine Finsupp.sum_congr fun x _ => ?_
-  rw [weightedPointBaseDifference_eq_pointDifference]
+  rw [weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one (w := fun _ => 1) rfl]
 
 /-- A divisor of degree zero is the finite integer combination `Σ_x D(x) • ([x] - [x₀])` of point
 differences based at `x₀`.  This is the closed form of the Abel-Jacobi expansion of a degree-zero
@@ -152,7 +149,7 @@ theorem degreeZeroSubgroup_eq_closure_pointDifference (x₀ : X) :
   have h := weightedDegreeZeroSubgroup_eq_closure_weightedPointBaseDifference
     (fun _ : X => (1 : ℤ)) (x₀ := x₀) rfl
   rw [weightedDegreeZeroSubgroup_one] at h
-  simpa only [weightedPointBaseDifference_eq_pointDifference] using h
+  simpa only [weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one] using h
 
 end
 

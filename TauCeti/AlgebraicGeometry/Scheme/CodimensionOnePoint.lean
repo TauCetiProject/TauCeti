@@ -17,9 +17,8 @@ This file introduces the subtype of such points and records the one order-theore
 them that does not mention any further structure: a codimension-one point has no codimension-one
 generization other than itself.
 
-The type is used both by the divisor layer, where a codimension-one point represents a prime
-divisor, and by the place layer, where it is the centre of a function-field place; it is defined
-here so that neither layer has to depend on the other.
+Codimension-one points index prime divisors, and they arise as centres of places of the function
+field; this file holds only the common definition, independent of either theory.
 
 ## Main declarations
 
@@ -38,21 +37,19 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- A codimension-one point of a scheme. Such a point is the generic point of a prime divisor. -/
+/-- A codimension-one point of a scheme: a point of coheight one for the specialization order,
+that is, the generic point of an irreducible closed subset of codimension one. -/
 abbrev CodimensionOnePoint (X : Scheme.{u}) : Type u :=
   {x : X // coheight x = 1}
 
-/-- A codimension-one point admits no codimension-one generization other than itself: a strict
-generization has strictly smaller coheight, and both points have coheight one. -/
+/-- A codimension-one point admits no codimension-one generization other than itself. -/
 lemma CodimensionOnePoint.eq_of_specializes {X : Scheme.{u}} {x y : CodimensionOnePoint X}
     (h : (y : X) ⤳ (x : X)) : y = x := by
-  by_contra hne
-  have hne' : (x : X) ≠ (y : X) := fun hxy ↦ hne (Subtype.ext hxy.symm)
-  have hlt : (x : X) < (y : X) :=
-    ⟨h, fun hxy ↦ hne' (Inseparable.eq (inseparable_iff_specializes_and.mpr ⟨hxy, h⟩))⟩
-  have hy := Order.coheight_strictAnti hlt (by simp [y.property])
-  rw [x.property, y.property] at hy
-  exact absurd hy (lt_irrefl 1)
+  refine Subtype.ext (h.antisymm ?_).eq
+  by_contra hxy
+  have := coheight_add_one_le <|
+    lt_of_le_not_ge (Scheme.le_iff_specializes.mpr h) (mt Scheme.le_iff_specializes.mp hxy)
+  norm_num [x.property, y.property] at this
 
 end AlgebraicGeometry
 

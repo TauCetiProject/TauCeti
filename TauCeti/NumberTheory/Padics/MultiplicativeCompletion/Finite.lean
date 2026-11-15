@@ -36,6 +36,8 @@ and a vector in their intersection represents the element exactly.
   `ℤ_p`-module when `(Lˣ)^p` has finite index in `Lˣ`.
 * `TauCeti.span_range_padicCompletionUnitsOf_eq_top`: under the same hypothesis, the classes of
   the units of `L` span `A(L)` over `ℤ_p`.
+* `TauCeti.exists_eq_padicCompletionUnitsOf_add_pow_smul`: under the same hypothesis, every
+  element of `A(L)` is the class of a unit plus a `p ^ m`-multiple, for every `m`.
 * `TauCeti.module_finite_padicCompletionUnits_padicInt`: `A(L)` is a finitely generated
   `ℤ_p`-module for a nonarchimedean local field `L` with `(p : L) ≠ 0`.
 * `TauCeti.module_finite_padicCompletionUnits_monoidAlgebra_of_finiteIndex`: `A(L)` is a
@@ -160,6 +162,35 @@ theorem span_range_padicCompletionUnitsOf_eq_top
   rw [eq_top_iff, ← LinearMap.range_eq_top.2
     (surjective_linearCombination_padicCompletionUnitsOf_out p L), Fintype.range_linearCombination]
   exact Submodule.span_mono (Set.range_subset_iff.2 fun c ↦ ⟨c.out, rfl⟩)
+
+/-- If `(Lˣ)^p` has finite index in `Lˣ`, then for every `m` each element of `A(L)` is the class of
+a unit of `L` plus a `p ^ m`-multiple. -/
+theorem exists_eq_padicCompletionUnitsOf_add_pow_smul
+    [(powMonoidHom p : Lˣ →* Lˣ).range.FiniteIndex] (m : ℕ)
+    (x : Additive ↑(padicCompletionUnits p L)) :
+    ∃ (u : Lˣ) (y : Additive ↑(padicCompletionUnits p L)),
+      x = Additive.ofMul (padicCompletionUnitsOf p L u) + (p : ℤ_[p]) ^ m • y := by
+  have hx : x ∈ Submodule.span ℤ_[p]
+      (Set.range fun u : Lˣ ↦ Additive.ofMul (padicCompletionUnitsOf p L u)) := by
+    rw [span_range_padicCompletionUnitsOf_eq_top]
+    trivial
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    exact ⟨u, 0, by simp⟩
+  | zero => exact ⟨1, 0, by simp⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨u, a, rfl⟩ := hx
+    obtain ⟨v, b, rfl⟩ := hy
+    exact ⟨u * v, a + b, by rw [map_mul, ofMul_mul, smul_add]; abel⟩
+  | smul a x _ hx =>
+    obtain ⟨u, y, rfl⟩ := hx
+    -- Split `a` as a natural number plus a `p ^ m`-multiple.
+    obtain ⟨t, ht⟩ := Ideal.mem_span_singleton'.1 (PadicInt.appr_spec m a)
+    refine ⟨u ^ a.appr m, t • Additive.ofMul (padicCompletionUnitsOf p L u) + a • y, ?_⟩
+    have ha : (a.appr m : ℤ_[p]) = a - t * (p : ℤ_[p]) ^ m := by rw [ht, sub_sub_cancel]
+    rw [map_pow, ofMul_pow, ← padicCompletionUnits_natCast_smul, ha]
+    module
 
 /-- When `(Lˣ)^p` has finite index, `A(L)` is finite over the group algebra of any field
 automorphism group `Gal(L/K)`. -/

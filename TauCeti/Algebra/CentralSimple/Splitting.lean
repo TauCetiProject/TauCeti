@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.Algebra.CentralSimple.Degree` is imported publicly: `TauCeti.Algebra.deg` occurs in the
 -- statements below, and it is the separably closed base change
--- `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` proved there that makes
+-- `IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` proved there that makes
 -- a separably closed extension a splitting field. It also re-exports
 -- `Mathlib.RingTheory.TensorProduct.Basic` (the `⊗[K]` notation and the algebra structure on
 -- `L ⊗[K] A`) and `Mathlib.Algebra.Central.Basic`, which is why neither is imported again here.
@@ -15,16 +15,13 @@ public import TauCeti.Algebra.CentralSimple.Degree
 -- `TauCeti.Algebra.matrixBaseChangeAlgEquiv` is what splits a matrix algebra, and this module also
 -- supplies the `Matrix` type occurring in every statement below.
 public import TauCeti.Algebra.Matrix.BaseChange
--- Non-public: the dimension counts `Module.finrank_baseChange` and `Module.finrank_matrix`, the
--- matrix presentation of a central simple algebra over a finite field, and the real quaternions and
--- the fundamental theorem of algebra (`Complex.isAlgClosed`, the one heavy import here) of the
--- worked examples are all used only inside proofs, so downstream importers do not pay for them.
+-- The finite-field matrix presentation, matrix composition, and quaternion and complex-number
+-- facts are used only in proofs and examples.
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Data.Matrix.Composition
-import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.Algebra.CentralSimple.Wedderburn
 import TauCeti.Algebra.Central.Quaternion
-import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Splitting fields of a central simple algebra
@@ -40,15 +37,15 @@ predicate that a field extension splits a *polynomial*.
 
 ## The matrix size
 
-For a central simple `A` the size of the matrix algebra is not extra data: it is forced to be
-`TauCeti.Algebra.deg K A`. Scalar extension preserves the dimension
-(`Module.finrank L (L ⊗[K] A) = Module.finrank K A`) and `Matrix (Fin n) (Fin n) L` has dimension
-`n ^ 2` over `L`, so a splitting exhibits `Module.finrank K A` as `n ^ 2`; for a central simple `A`
-that dimension is already the square of the degree
-(`TauCeti.Algebra.deg_sq`), so `n = TauCeti.Algebra.deg K A`. This is
-`TauCeti.Algebra.IsSplittingField.nonempty_algEquiv_matrix_deg`, and it is why the existential in
-the definition costs nothing: the definition quantifies over `n` only so that it can be stated for
-an arbitrary `K`-algebra, where the degree is not yet meaningful.
+For any `K`-algebra `A` admitting a splitting, the matrix size is forced to be
+`TauCeti.Algebra.deg K A`. Scalar extension preserves dimension, and an `n × n` matrix algebra
+has dimension `n ^ 2`, so a splitting gives `Module.finrank K A = n ^ 2`. The characteristic
+property `TauCeti.Algebra.deg_eq_of_finrank_eq_sq` then identifies the degree with `n`.
+Neither centrality nor simplicity is needed for this identification.
+
+The dimension calculation `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` lives in
+`TauCeti/Algebra/Matrix/BaseChange.lean` and also allows extension to a nontrivial commutative
+`K`-algebra that need not be a field.
 
 ## Main results
 
@@ -58,6 +55,8 @@ an arbitrary `K`-algebra, where the degree is not yet meaningful.
   observation `TauCeti.Algebra.isSplittingField_matrix` that a full matrix algebra over `K` is
   split by every extension (by the base change `TauCeti.Algebra.matrixBaseChangeAlgEquiv` of
   `TauCeti/Algebra/Matrix/BaseChange.lean`).
+* `TauCeti.Algebra.IsSplittingField.finiteDimensional`: an algebra admitting a splitting field
+  is finite-dimensional over its base field.
 * `TauCeti.Algebra.IsSplittingField.matrix`: a splitting field for `A` also splits every full
   matrix algebra over `A`.
 * `TauCeti.Algebra.IsSplittingField.of_isScalarTower`: every further field extension of a
@@ -65,8 +64,8 @@ an arbitrary `K`-algebra, where the degree is not yet meaningful.
 * `TauCeti.Algebra.isSplittingField_self_iff`: `A` is split by its own base field exactly when it
   *is* a matrix algebra over it. This is the statement that "split" means what it should.
 * `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` and
-  `TauCeti.Algebra.IsSplittingField.nonempty_algEquiv_matrix_deg`: the dimension count and, for a
-  central simple `A`, the identification of the matrix size with the degree.
+  `TauCeti.Algebra.IsSplittingField.nonempty_algEquiv_matrix_deg`: the dimension count and the
+  identification of the matrix size with the degree, for any algebra admitting a splitting.
 * `TauCeti.Algebra.isSplittingField_of_isSepClosed`: **a separably closed extension splits
   every finite-dimensional central simple algebra**.
 * `TauCeti.Algebra.isSplittingField_self_of_finite`: **over a finite field every central simple
@@ -77,28 +76,22 @@ an arbitrary `K`-algebra, where the degree is not yet meaningful.
 `TauCeti.Algebra.IsSplittingField` is stated with `L ⊗[K] A`, the base field on the *left*, because
 that is the orientation in which `L ⊗[K] A` carries its `L`-algebra structure by
 `Algebra.TensorProduct.leftAlgebra` with no further glue, and it is the orientation of the base
-change already on `main` in `TauCeti/Algebra/CentralSimple/Degree.lean`.
+change in `TauCeti/Algebra/CentralSimple/Degree.lean`.
 
 The predicate deliberately asks for nothing of `A` beyond being a `K`-algebra: the elementary
-lemmas hold at that generality, and central simplicity is added only where the degree is mentioned.
-Nothing here needs `A` to be finite-dimensional either -- that is a consequence for a nonzero
-splitting, not a hypothesis.
+lemmas and the degree-size characterization hold at that generality. A splitting itself implies
+finite-dimensionality, by `TauCeti.Algebra.IsSplittingField.finiteDimensional`. Central simplicity
+and finite-dimensionality enter as assumptions only in the existence theorems for splitting fields.
 
 Splitting ascends along field towers: if `L` splits `A`, so does every field extension `M` of `L`
-(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. So a
-splitting field may always be enlarged, for instance to its normal closure in order to obtain a
-Galois splitting field. This holds for an arbitrary, possibly noncommutative, `K`-algebra `A`.
+(`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. A
+finite separable splitting extension may therefore be enlarged to its normal closure to obtain a
+finite Galois splitting extension. Ascent holds for any, possibly noncommutative, `K`-algebra `A`.
 
 ## References
 
-This implements the splitting-field half of the fourth bullet of Layer 6 ("Splitting fields,
-maximal subfields, and the index") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-whose `Suggested.lean` pins `IsSplittingField`; the stronger separably closed form of its pinned
-algebraically closed splitting theorem is `isSplittingField_of_isSepClosed`, together with
-the splitting half of its "Finite base fields" bullet. See P. Gille, T. Szamuely, *Central Simple
-Algebras and Galois Cohomology*, Section 2.2, and R. S. Pierce, *Associative Algebras*, GTM 88,
-Chapter 13.
+P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2, and
+R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 13.
 -/
 
 public section
@@ -115,7 +108,7 @@ namespace Algebra
 full matrix algebra over `L`.
 
 The matrix size is existentially quantified so that the predicate makes sense for an arbitrary
-`K`-algebra. For a finite-dimensional central simple `A` it is not a choice: it is forced to be
+`K`-algebra. Whenever a splitting exists, its size is forced to be
 `TauCeti.Algebra.deg K A` by `TauCeti.Algebra.IsSplittingField.nonempty_algEquiv_matrix_deg`. -/
 def IsSplittingField (K A L : Type*) [Field K] [Ring A] [Algebra K A] [Field L] [Algebra K L] :
     Prop :=
@@ -128,11 +121,20 @@ variable (K : Type*) [Field K] (A : Type*) [Ring A] [Algebra K A]
 algebra over `L` for some `n`.
 
 This is the characterization at the generality the predicate is stated at, and everything below
-goes through it rather than through the body; for a finite-dimensional central simple `A` the size
-is pinned by `TauCeti.Algebra.isSplittingField_iff_deg`. -/
+goes through it rather than through the body; the size is pinned by
+`TauCeti.Algebra.isSplittingField_iff_deg`. -/
 theorem isSplittingField_iff :
     IsSplittingField K A L ↔ ∃ n : ℕ, Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) :=
   Iff.rfl
+
+variable {K A L} in
+/-- An algebra admitting a splitting field is finite-dimensional over its base field.
+This includes the zero algebra: the matrix size of the splitting may be zero. -/
+theorem IsSplittingField.finiteDimensional (h : IsSplittingField K A L) :
+    FiniteDimensional K A := by
+  obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A L).1 h
+  let : Module.Finite L (L ⊗[K] A) := Module.Finite.equiv e.toLinearEquiv.symm
+  exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat L
 
 /-- Splitting is a property of the isomorphism class of `A`: a `K`-algebra isomorphic to a split
 one is split, by the same extension and with the same matrix size. -/
@@ -197,48 +199,32 @@ theorem isSplittingField_baseChange_self_iff :
     IsSplittingField L (L ⊗[K] A) L ↔ IsSplittingField K A L :=
   (isSplittingField_self_iff L (L ⊗[K] A)).trans (isSplittingField_iff K A L).symm
 
-/-- **The dimension count behind a splitting**: if `L ⊗[K] A` is `n × n` matrices over `L`, then
-`A` has dimension `n ^ 2` over `K`.
-
-Scalar extension preserves the dimension, and an `n × n` matrix algebra has dimension `n ^ 2`; no
-hypothesis on `A` is used, and in particular this is what *proves* that a split algebra has square
-dimension rather than assuming it. -/
-theorem finrank_eq_sq_of_algEquiv_matrix {n : ℕ} (e : L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) :
-    Module.finrank K A = n ^ 2 := by
-  rw [← Module.finrank_baseChange (R := L) (S := K) (M' := A), e.toLinearEquiv.finrank_eq]
-  simp [Module.finrank_matrix, sq]
-
-section CentralSimple
-
-variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
-
-/-- **The matrix size of a splitting is the degree.** For a finite-dimensional central simple `A`,
-any splitting `L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L` has `n = TauCeti.Algebra.deg K A`, so the
-splitting can always be restated at that size.
-
-The existential in `TauCeti.Algebra.IsSplittingField` is therefore not a choice: `n ^ 2` and
-`(deg K A) ^ 2` are both `Module.finrank K A` (`TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix`
-and `TauCeti.Algebra.deg_sq`), and squaring is injective on the naturals. -/
+/-- **The matrix size of a splitting is the degree.** Any splitting
+`L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L` has `n = TauCeti.Algebra.deg K A`, so the splitting
+can always be restated at that size. Centrality, simplicity, and finite-dimensionality need not
+be assumed: the splitting itself gives `Module.finrank K A = n ^ 2`. -/
 theorem IsSplittingField.nonempty_algEquiv_matrix_deg (h : IsSplittingField K A L) :
     Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin (deg K A)) (Fin (deg K A)) L) := by
   obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A L).1 h
-  have hsq : n ^ 2 = deg K A ^ 2 := by rw [← finrank_eq_sq_of_algEquiv_matrix K A L e, deg_sq]
-  have : n = deg K A := Nat.pow_left_injective (by norm_num) hsq
-  exact this ▸ ⟨e⟩
+  rw [deg_eq_of_finrank_eq_sq (finrank_eq_sq_of_algEquiv_matrix K A L e)]
+  exact ⟨e⟩
 
-/-- A finite-dimensional central simple algebra is split by `L` exactly when `L ⊗[K] A` is the
-matrix algebra of size its degree. -/
+/-- An algebra is split by `L` exactly when `L ⊗[K] A` is the matrix algebra of size its degree. -/
 theorem isSplittingField_iff_deg :
     IsSplittingField K A L ↔
       Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin (deg K A)) (Fin (deg K A)) L) :=
   ⟨IsSplittingField.nonempty_algEquiv_matrix_deg K A L,
     fun h ↦ (isSplittingField_iff K A L).2 ⟨deg K A, h⟩⟩
 
+section CentralSimple
+
+variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
+
 /-- **A separably closed extension splits every finite-dimensional central simple algebra.**
 
 This is the base case of the separable splitting theory, and it needs no theory of maximal
 subfields: over a separably closed field the Wedderburn division algebra collapses, which is
-exactly `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`. Every
+exactly `IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`. Every
 finite-dimensional central simple `K`-algebra therefore has a separable splitting field, namely a
 separable closure of `K`. -/
 theorem isSplittingField_of_isSepClosed [IsSepClosed L] : IsSplittingField K A L :=
@@ -282,16 +268,12 @@ its own base field and the notion is not vacuous. A splitting over `ℝ` would m
 algebra over `ℝ`, necessarily of size `2` by the dimension count, and a `2 × 2` matrix algebra has
 zero divisors while `ℍ[ℝ]` does not. -/
 example : ¬ IsSplittingField ℝ ℍ[ℝ] ℝ := by
-  rw [isSplittingField_self_iff]
-  rintro ⟨n, ⟨e⟩⟩
-  have hn : n = 2 := by
-    have h4 := finrank_eq_sq_of_algEquiv_matrix ℝ ℍ[ℝ] ℝ
-      ((Algebra.TensorProduct.lid ℝ ℍ[ℝ]).trans e)
-    rw [Quaternion.finrank_eq_four] at h4
-    have hsq : n ^ 2 = 2 ^ 2 := by omega
-    exact Nat.pow_left_injective (by norm_num) hsq
-  subst hn
-  exact (Quaternion.isEmpty_algEquiv_matrix ℝ (Fin 2)).elim e
+  have hdeg : deg ℝ ℍ[ℝ] = 2 :=
+    deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
+  rw [isSplittingField_iff_deg, hdeg]
+  rintro ⟨e⟩
+  exact (Quaternion.isEmpty_algEquiv_matrix ℝ (Fin 2)).elim
+    ((Algebra.TensorProduct.lid ℝ ℍ[ℝ]).symm.trans e)
 
 end Examples
 

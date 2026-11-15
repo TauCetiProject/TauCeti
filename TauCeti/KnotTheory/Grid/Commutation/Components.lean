@@ -35,10 +35,8 @@ grid homology attaches pentagon-counting chain maps to the same elementary commu
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.5, "Invariance over
-𝔽₂. Grid moves = commutation + (de)stabilization", by establishing that the already-defined
-elementary commutations preserve the link-component data from Lane G.1. The grid-move convention
-follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The grid-move convention follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section

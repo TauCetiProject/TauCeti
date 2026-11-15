@@ -44,10 +44,8 @@ the arbitrary-rank case, the **split torus** `T = D(Multiplicative (σ →₀ �
   `X_*(T) = Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`. We prove perfectness only
   in finite rank, the case relevant to root data.
 
-This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap),
-Layer 4: "Tori: split ... the **character lattice `X*(T)`** and **cocharacter lattice
-`X_*(T)`** with their **perfect pairing**: the input to root data", extending the rank-`1`
-pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split torus.
+This extends the rank-`1` pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split
+torus.
 
 ## Main declarations
 
@@ -76,8 +74,6 @@ identification `TauCeti.freeAbelianCharEquiv` is `TauCeti.Algebra.Group.FreeAbel
 The dot-product form reuses Mathlib's `Finsupp.linearCombination` and the additive/multiplicative
 type-tag adjunction `AddMonoidHom.toMultiplicative`; the bilinear packaging `dotPairing` and its
 perfectness use Mathlib's free-forgetful adjunction `Finsupp.llift` and `LinearMap.IsPerfPair`.
-This realizes the finite-rank split-torus perfect pairing of the Tau Ceti reductive-groups
-roadmap (Layer 4).
 -/
 
 public section
@@ -106,6 +102,13 @@ noncomputable def cocharEquiv :
 theorem cocharEquiv_apply (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ) (i : σ) :
     cocharEquiv ψ i = (ψ (Multiplicative.ofAdd (Finsupp.single i 1))).toAdd := by
   simp [cocharEquiv, Equiv.piCongrRight_apply]
+
+/-- The coordinate evaluation cocharacter corresponds to the standard coordinate vector. -/
+@[simp]
+theorem cocharEquiv_applyAddHom [DecidableEq σ] (i : σ) :
+    cocharEquiv (Finsupp.applyAddHom i).toMultiplicative = (Pi.single i 1 : σ → ℤ) := by
+  ext j
+  simp [cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
 
 /-- Reading off cocharacter coordinates is additive: the trivial cocharacter has zero
 coordinates. -/
@@ -283,13 +286,6 @@ noncomputable local instance cocharacterLatticeAddCommGroup
     AddCommGroup (MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
       (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
   MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeAddCommGroup _
-
-/-- The transported integer-module structure specialized to the standard split torus. -/
-noncomputable local instance cocharacterLatticeModule
-    (k : Type u) [Field k] (σ : Type u) [Finite σ] :
-    Module ℤ (MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
-      (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
-  MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeModule _
 
 /-- The dual comparison for a standard split torus, expressed in coordinates `σ → ℤ`. -/
 noncomputable def cocharacterLatticeCoordEquiv

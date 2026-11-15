@@ -214,7 +214,9 @@ lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq [IsCancelSMul (
         Subgroup.normalizerQuotientMk H
           ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
   exact TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq
-    (G := deck p) (X := p ⁻¹' {b}) H e φ ψ
+    (G := deck p) (X := p ⁻¹' {b}) H e
+    ⟨φ, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
+    ⟨ψ, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
 
 /-- For a preconnected cover, equality of subgroup fibre-orbit classes of two deck translates is
 equality of the corresponding inverse representatives in the normalizer quotient. -/

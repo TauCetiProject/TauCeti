@@ -43,9 +43,9 @@ injective (`CoordinateRing.algHom_injective`) and so extendable to the fraction 
 
 ## Main results
 
-* `WeierstrassCurve.Affine.translation_zero` and
-  `WeierstrassCurve.Affine.translation_add`: the action laws, `τ_O^* = 1` and
-  `τ_{P + Q}^* = τ_P^* ≫ τ_Q^*`.
+* `WeierstrassCurve.Affine.translation_zero`, `WeierstrassCurve.Affine.translation_add` and
+  `WeierstrassCurve.Affine.translation_neg`: the action laws, `τ_O^* = 1`,
+  `τ_{P + Q}^* = τ_P^* ≫ τ_Q^*` and `τ_{-P}^* = (τ_P^*)⁻¹`.
 * `WeierstrassCurve.Affine.translation_eq_one_iff` and
   `WeierstrassCurve.Affine.translation_injective` and
   `WeierstrassCurve.Affine.translationHom_injective`: the action is faithful.
@@ -58,13 +58,9 @@ injective (`CoordinateRing.algHom_injective`) and so extendable to the fraction 
 here; the function field gets its own instance from it, so the points of `W⁄F(W)` are available
 with no further assumption.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5**, third milestone: "function-field
-pullbacks of the translations `τ_P`, with the action and composition laws". Layer 1's dual-isogeny
-milestone consumes them — "`Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` **is** Galois with group `ker φ(Kˢᵉᵖ)` acting by
-translations" — and so does the place-free fibre count of Layer 1, where "translation moves the
-kernel fibre onto one".
+These pullbacks feed the dual isogeny, where for a separable isogeny `φ` the extension
+`Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` is Galois with group `ker φ(Kˢᵉᵖ)` acting by translations, and the
+place-free fibre count of an isogeny, where translation moves the kernel fibre onto one.
 
 ## References
 
@@ -72,9 +68,9 @@ kernel fibre onto one".
 
 ## Provenance
 
-Not a port: none of the pinned sources builds the translation action. The pullback is manufactured
-from Mathlib's `Affine.Point` group law rather than from the addition formulas directly, so the
-composition law is the associativity Mathlib already proved.
+Not a port: none of the external sources this library draws on builds the translation action.
+The pullback is manufactured from Mathlib's `Affine.Point` group law rather than from the addition
+formulas directly, so the composition law is the associativity Mathlib already proved.
 -/
 
 public section
@@ -323,6 +319,12 @@ noncomputable def translationHom :
 @[simp]
 theorem translationHom_apply (P : Multiplicative (W⁄F).toAffine.Point) :
     translationHom W P = translation W (Multiplicative.toAdd P) := (rfl)
+
+/-- **The translation by `-P` is the inverse of the translation by `P`.** -/
+@[simp]
+theorem translation_neg (P : (W⁄F).toAffine.Point) :
+    translation W (-P) = (translation W P)⁻¹ :=
+  map_inv (translationHom W) (Multiplicative.ofAdd P)
 
 /-- **The translation moves the coordinate `x` to the `x`-coordinate of the translate of the
 generic point**: this is what makes `translation` the pullback of `τ_P`. -/

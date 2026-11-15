@@ -25,9 +25,6 @@ the hypothesis `star a = -a` (Mathlib pins no such `StarAddMonoid` instance, sin
 identity on a real vector space, so the negation involution is supplied as a side hypothesis rather
 than an instance).
 
-This advances the `OneParameterSemigroups` roadmap, Part C ("Positive-definite functions and
-Bochner's theorem", `TauCetiRoadmap/OneParameterSemigroups/README.md`): the `API to develop` bullet
-"the PD-function ↔ PD-kernel equivalence (`K(a, b) = F(a + b⋆)`; `F(a − b)` for a group)".
 The function-side predicate `IsPositiveDefinite` lives in Tau Ceti, while the kernel side uses
 Mathlib's `Matrix.PosSemidef`; this file connects them and records the group form. No Mathlib code
 is vendored.

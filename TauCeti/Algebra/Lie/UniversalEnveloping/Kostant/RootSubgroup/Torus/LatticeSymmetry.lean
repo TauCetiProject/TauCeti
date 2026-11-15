@@ -80,7 +80,7 @@ theorem baseChangeInvariantRestrictUnit_mul_kostantTorusPoints
   apply Units.ext
   apply LinearMap.ext
   intro z
-  simp only [Units.val_mul, Module.End.mul_apply]
+  simp only [Units.val_mul, mul_apply_eq_comp]
   rw [AddEquiv.val_baseChangeInvariantRestrictUnit_apply,
     AddEquiv.val_baseChangeInvariantRestrictUnit_apply, kostantTorusPoints_apply,
     kostantTorusPoints_apply]
@@ -94,7 +94,7 @@ theorem baseChangeInvariantRestrictUnit_mul_kostantTorusPoints
         basisWeightTorus (b.baseChange A) wt
             (MulEquiv.arrowCongr σ (MulEquiv.refl Aˣ) s) * Θ :=
     basisWeightTorus_intertwine_of_map_basis (b.baseChange A) wt τ σ Θ cA hbase hwt s
-  simpa only [LinearEquiv.mul_apply] using
+  simpa only [mul_apply_eq_comp] using
     congrArg (fun f : (A ⊗[ℤ] M) ≃ₗ[A] (A ⊗[ℤ] M) => f z) hintertwine
 
 /-- **A compatible monomial lattice symmetry conjugates each Kostant torus point by reindexing

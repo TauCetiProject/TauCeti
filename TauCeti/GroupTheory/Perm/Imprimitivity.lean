@@ -59,7 +59,9 @@ namespace TauCeti
 open MulAction
 open scoped Pointwise
 
-variable {G α : Type*} [Group G] [MulAction G α] {B : Set α}
+section Transversal
+
+variable {G α : Type*} [SMul G α] {B : Set α}
 
 /-- An element of `G` carrying `B` onto the translate `C`. -/
 private noncomputable def blockTransversal (C : orbit G B) : G :=
@@ -68,7 +70,9 @@ private noncomputable def blockTransversal (C : orbit G B) : G :=
 private theorem blockTransversal_smul (C : orbit G B) : blockTransversal C • B = C :=
   (mem_orbit_iff.1 C.2).choose_spec
 
-variable [IsPretransitive G α]
+end Transversal
+
+variable {G α : Type*} [Group G] [MulAction G α] {B : Set α} [IsPretransitive G α]
 
 /-- The translate of the block `B` containing `x`. -/
 private noncomputable def blockOf (hB : IsBlock G B) (hBne : B.Nonempty) (x : α) : orbit G B :=
@@ -110,9 +114,11 @@ theorem _root_.MulAction.IsBlock.imprimitivityEquiv_fst_eq_iff {x : α} {C : orb
   ⟨fun h ↦ h ▸ mem_blockOf hB hBne x,
     fun h ↦ (hB.existsUnique_mem_orbit hBne x).unique (mem_blockOf hB hBne x) h⟩
 
-/-- The point of `α` corresponding to a grid position `(C, b)` lies in the translate `C`. -/
-theorem _root_.MulAction.IsBlock.imprimitivityEquiv_symm_apply_mem (y : orbit G B × B) :
-    (hB.imprimitivityEquiv hBne).symm y ∈ (y.1 : Set α) := by
+/-- A point corresponding to a grid position lies in a translate exactly when that translate
+is its first coordinate. -/
+@[simp]
+theorem _root_.MulAction.IsBlock.imprimitivityEquiv_symm_apply_mem_iff (y : orbit G B × B)
+    {C : orbit G B} : (hB.imprimitivityEquiv hBne).symm y ∈ (C : Set α) ↔ y.1 = C := by
   rw [← IsBlock.imprimitivityEquiv_fst_eq_iff hB hBne, Equiv.apply_symm_apply]
 
 /-- Moving a point by `g` moves the translate containing it by `g`. -/
@@ -127,7 +133,7 @@ private theorem _root_.MulAction.IsBlock.permCongrHom_toPerm_mem_range (g : G) :
     (hB.imprimitivityEquiv hBne).permCongrHom (MulAction.toPerm g) ∈
       (WreathProduct.imprimitiveToPerm (Equiv.Perm B) (orbit G B) B).range := by
   refine WreathProduct.mem_range_imprimitiveToPerm_iff.2 ⟨MulAction.toPerm g, fun y ↦ ?_⟩
-  simpa using IsBlock.imprimitivityEquiv_smul_fst hB hBne g ((hB.imprimitivityEquiv hBne).symm y)
+  simp
 
 /-- For a transitive action and a nonempty block `B`, the homomorphism from `G` to the wreath
 product `Sym(B) ≀ Sym(orbit G B)` through which `G` acts on the grid
@@ -157,11 +163,9 @@ imprimitive wreath-product action through `hB.toWreathProduct hBne`. -/
 theorem _root_.MulAction.IsBlock.imprimitivityEquiv_smul (g : G) (x : α) :
     hB.imprimitivityEquiv hBne (g • x) =
       hB.toWreathProduct hBne g • hB.imprimitivityEquiv hBne x := by
-  have h := DFunLike.congr_fun (IsBlock.imprimitiveToPerm_toWreathProduct hB hBne g)
-    (hB.imprimitivityEquiv hBne x)
-  rw [WreathProduct.imprimitiveToPerm_apply] at h
-  rw [WreathProduct.imprimitive_smul, h]
-  simp [Equiv.permCongrHom, Equiv.permCongr_apply]
+  simpa [-IsBlock.imprimitiveToPerm_toWreathProduct] using
+    (DFunLike.congr_fun (IsBlock.imprimitiveToPerm_toWreathProduct hB hBne g)
+      (hB.imprimitivityEquiv hBne x)).symm
 
 /-- The top component of `hB.toWreathProduct hBne g` is the action of `g` on the block system. -/
 @[simp]

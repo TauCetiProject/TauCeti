@@ -99,7 +99,7 @@ theorem abelianSquareZeroRepresentation_mul_eq_zero [IsLieAbelian L] (x y : L) :
     abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 := by
   apply LinearMap.ext
   intro z
-  simp [Module.End.mul_apply]
+  simp [mul_apply_eq_comp]
 
 /-- Every operator in the canonical abelian representation is square-zero. -/
 @[simp]

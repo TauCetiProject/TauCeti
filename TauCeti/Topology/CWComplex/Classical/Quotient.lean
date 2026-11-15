@@ -19,7 +19,8 @@ inclusion of `D` and by the characteristic maps, is a quotient map onto `C`.
 Products with a locally compact space preserve quotient maps, so a map out of `Z × C`, for `Z`
 locally compact, is continuous as soon as it is continuous on `Z × D` and on the product of `Z`
 with every closed cell, the latter read through the characteristic maps.  This is how homotopies
-out of a CW complex (the case `Z = I`) are built cell by cell.
+out of a CW complex (the case `Z = I`) are built cell by cell.  The criterion also holds for maps
+out of `Z × U` with `U` open in `C`, where continuity is only required at the points over `U`.
 
 ## Main results
 
@@ -29,6 +30,9 @@ out of a CW complex (the case `Z = I`) are built cell by cell.
   continuous on the base and along every characteristic map.
 * `TauCeti.continuous_prod_complex_iff`: the same criterion for maps out of `Z × C` with `Z`
   locally compact.
+* `TauCeti.continuous_prod_subtype_of_continuousOn_map`,
+  `TauCeti.continuousOn_prod_of_continuousOn_map`: the same criterion for maps out of `Z × U`
+  with `U` open in `C`.
 
 ## References
 
@@ -41,11 +45,9 @@ public section
 
 open Metric Set Topology Topology.RelCWComplex
 
-universe u
-
 namespace TauCeti
 
-variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
 
 /-- **A relative CW complex is a quotient of its base and its closed cells.**  The map from the
 disjoint union of the base `D` and of one closed unit ball for every cell, given by the inclusion
@@ -56,45 +58,24 @@ theorem isQuotientMap_sumElim_base_map :
         (⟨map p.1.1 p.1.2 p.2, closedCell_subset_complex p.1.1 p.1.2 ⟨p.2, p.2.2, rfl⟩⟩ : C)) := by
   refine isQuotientMap_iff_isClosed.2 ⟨?_, fun s ↦ ⟨fun hs ↦ hs.preimage ?_, fun hs ↦ ?_⟩⟩
   · rintro ⟨x, hx⟩
-    rw [← union (C := C)] at hx
-    obtain hx | hx := hx
+    simp_rw [← union (C := C), mem_union, mem_iUnion] at hx
+    obtain hx | ⟨n, j, y, hy, rfl⟩ := hx
     · exact ⟨.inl ⟨x, hx⟩, rfl⟩
-    · obtain ⟨n, j, y, hy, rfl⟩ : ∃ n j, x ∈ closedCell n j := by
-        simpa only [mem_iUnion] using hx
-      exact ⟨.inr ⟨⟨n, j⟩, ⟨y, hy⟩⟩, rfl⟩
-  · refine continuous_sum_dom.2 ⟨continuous_subtype_val.subtype_mk _, continuous_sigma fun m ↦ ?_⟩
-    exact ((continuousOn m.1 m.2).comp_continuous continuous_subtype_val
-      fun y ↦ y.2).subtype_mk _
-  -- It remains to see that `s` is closed when its preimage is: by the weak-topology axiom, it
-  -- suffices that its image in `X` meets the base and every closed cell in a closed set.
-  have hsub : ((↑) '' s : Set X) ⊆ C := by
-    rintro _ ⟨x, -, rfl⟩
-    exact x.2
-  rw [← preimage_image_eq s Subtype.val_injective]
-  refine IsClosed.preimage continuous_subtype_val <| (RelCWComplex.closed C _ hsub).2 ⟨?_, ?_⟩
-  · intro n j
-    have hK : IsClosed {y : closedBall (0 : Fin n → ℝ) 1 |
-        (⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ : C) ∈ s} :=
-      hs.preimage (continuous_inr.comp (continuous_sigmaMk (σ := fun m : Σ n, cell C n ↦
-        closedBall (0 : Fin m.1 → ℝ) 1) (i := ⟨n, j⟩)))
-    have hcpt := (isCompact_iff_compactSpace.1 (isCompact_closedBall (0 : Fin n → ℝ) 1))
-    convert (hK.isCompact.image ((continuousOn n j).comp_continuous continuous_subtype_val
-      fun y ↦ y.2)).isClosed using 1
-    ext x
-    constructor
-    · rintro ⟨⟨⟨x, hxC⟩, hxs, rfl⟩, y, hy, rfl⟩
-      exact ⟨⟨y, hy⟩, hxs, rfl⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨⟨_, hy, rfl⟩, y, y.2, rfl⟩
-  · have hK : IsClosed {d : D | (⟨d, base_subset_complex d.2⟩ : C) ∈ s} :=
-      hs.preimage continuous_inl
-    convert (isClosedBase C).isClosedMap_subtype_val _ hK using 1
-    ext x
-    constructor
-    · rintro ⟨⟨x, hxs, rfl⟩, hx⟩
-      exact ⟨⟨x, hx⟩, hxs, rfl⟩
-    · rintro ⟨d, hd, rfl⟩
-      exact ⟨⟨_, hd, rfl⟩, d.2⟩
+    · exact ⟨.inr ⟨⟨n, j⟩, y, hy⟩, rfl⟩
+  · exact continuous_sum_dom.2 ⟨continuous_subtype_val.subtype_mk _,
+      continuous_sigma fun m ↦ (continuousOn m.1 m.2).domRestrict.subtype_mk _⟩
+  -- It remains to see that `s` is closed when its preimage is. Write `s` as the trace on `C` of a
+  -- subset `A` of `C`; by the weak-topology axiom, it suffices that `A` meets the base and every
+  -- closed cell in a closed set, which are images of closed sets under closed maps.
+  obtain ⟨A, hAC, rfl⟩ : ∃ A ⊆ C, s = (↑) ⁻¹' A :=
+    ⟨_, Subtype.coe_image_subset C s, (preimage_image_eq s Subtype.val_injective).symm⟩
+  refine ((RelCWComplex.closed C A hAC).2 ⟨fun n j ↦ ?_, ?_⟩).preimage continuous_subtype_val
+  · rw [closedCell, ← range_domRestrict, ← image_preimage_eq_inter_range]
+    exact (continuousOn n j).domRestrict.isClosedMap _ (hs.preimage (continuous_inr.comp
+      (continuous_sigmaMk (σ := fun m : Σ n, cell C n ↦ closedBall (0 : Fin m.1 → ℝ) 1)
+        (i := ⟨n, j⟩))))
+  · rw [inter_comm, ← Subtype.image_preimage_coe]
+    exact (isClosedBase C).isClosedMap_subtype_val _ (hs.preimage continuous_inl)
 
 /-- A map out of a relative CW complex is continuous exactly when it is continuous on the base
 and along the characteristic map of every cell. -/
@@ -118,8 +99,7 @@ theorem continuous_prod_complex_iff {Z Y : Type*} [TopologicalSpace Z] [LocallyC
   refine ⟨fun hg ↦ ⟨fun n j ↦ hg.comp (continuous_fst.prodMk ?_), hg.comp
     (continuous_fst.prodMk ((continuous_subtype_val.comp continuous_snd).subtype_mk _))⟩,
     fun ⟨hcell, hbase⟩ ↦ isQuotientMap_sumElim_base_map.continuous_lift_prod_right ?_⟩
-  · exact (((continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2).comp
-      continuous_snd).subtype_mk _
+  · exact ((continuousOn n j).domRestrict.comp continuous_snd).subtype_mk _
   -- Split the product of `Z` with the disjoint union of the base and the closed cells into the
   -- products of `Z` with the summands.
   rw [← Homeomorph.prodSumDistrib.symm.comp_continuous_iff', continuous_sum_dom]
@@ -127,5 +107,50 @@ theorem continuous_prod_complex_iff {Z Y : Type*} [TopologicalSpace Z] [LocallyC
   rw [← (Homeomorph.prodComm _ _).trans Homeomorph.sigmaProdDistrib |>.symm.comp_continuous_iff',
     continuous_sigma_iff]
   exact fun m ↦ (hcell m.1 m.2).comp continuous_swap
+
+/-- **Continuity criterion for maps out of `Z × U`, for `U` open in a CW complex.** Let `U ⊆ C`
+be open in `C` and `Z` locally compact. A map `g` on `Z × X` restricts to a continuous map on
+`Z × U` as soon as it is continuous on `Z × D` and on the product of `Z` with every closed cell,
+read through the characteristic maps, at the points lying over `U`. -/
+theorem continuous_prod_subtype_of_continuousOn_map {Z Y : Type*} [TopologicalSpace Z]
+    [LocallyCompactSpace Z] [TopologicalSpace Y] {U : Set X} (hUC : U ⊆ C)
+    (hU : IsOpen ((↑) ⁻¹' U : Set C)) {g : Z × X → Y}
+    (hcell : ∀ n (j : cell C n), ContinuousOn
+      (fun p : Z × closedBall (0 : Fin n → ℝ) 1 ↦ g (p.1, map n j p.2)) {p | map n j p.2 ∈ U})
+    (hbase : ContinuousOn (fun p : Z × D ↦ g (p.1, p.2)) {p | (p.2 : X) ∈ U}) :
+    Continuous fun p : Z × U ↦ g (p.1, p.2) := by
+  refine continuous_def.2 fun V hV ↦ ?_
+  -- The preimage of `V` is the trace of a subset of `Z × C`, which is open by the cellwise
+  -- criterion for the indicator function with values in the Sierpiński space.
+  let T : Set (Z × C) := {p | (p.2 : X) ∈ U ∧ g (p.1, p.2) ∈ V}
+  have hT : IsOpen T := by
+    rw [isOpen_iff_continuous_mem, continuous_prod_complex_iff]
+    refine ⟨fun n j ↦ ?_, ?_⟩
+    · have hS : IsOpen {p : Z × closedBall (0 : Fin n → ℝ) 1 | map n j p.2 ∈ U} :=
+        hU.preimage ((((continuousOn n j).domRestrict.comp continuous_snd).subtype_mk
+          fun p ↦ closedCell_subset_complex n j ⟨p.2, p.2.2, rfl⟩))
+      exact isOpen_iff_continuous_mem.1 ((hcell n j).isOpen_inter_preimage hS hV)
+    · have hS : IsOpen {p : Z × D | (p.2 : X) ∈ U} :=
+        hU.preimage (((continuous_subtype_val.comp continuous_snd).subtype_mk
+          fun p ↦ base_subset_complex p.2.2))
+      exact isOpen_iff_continuous_mem.1 (hbase.isOpen_inter_preimage hS hV)
+  convert hT.preimage (continuous_fst.prodMk ((continuous_subtype_val.comp
+    continuous_snd).subtype_mk fun p : Z × U ↦ hUC p.2.2)) using 1
+  ext p
+  exact ⟨fun h ↦ ⟨p.2.2, h⟩, fun h ↦ h.2⟩
+
+/-- **Continuity criterion on `Z × U`, for `U` open in a CW complex**, in the form of continuity
+on `univ ×ˢ U`; see `TauCeti.continuous_prod_subtype_of_continuousOn_map`. -/
+theorem continuousOn_prod_of_continuousOn_map {Z Y : Type*} [TopologicalSpace Z]
+    [LocallyCompactSpace Z] [TopologicalSpace Y] {U : Set X} (hUC : U ⊆ C)
+    (hU : IsOpen ((↑) ⁻¹' U : Set C)) {g : Z × X → Y}
+    (hcell : ∀ n (j : cell C n), ContinuousOn
+      (fun p : Z × closedBall (0 : Fin n → ℝ) 1 ↦ g (p.1, map n j p.2)) {p | map n j p.2 ∈ U})
+    (hbase : ContinuousOn (fun p : Z × D ↦ g (p.1, p.2)) {p | (p.2 : X) ∈ U}) :
+    ContinuousOn g (univ ×ˢ U) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact (continuous_prod_subtype_of_continuousOn_map hUC hU hcell hbase).comp
+    ((continuous_fst.comp continuous_subtype_val).prodMk
+      ((continuous_snd.comp continuous_subtype_val).subtype_mk fun p ↦ p.2.2))
 
 end TauCeti

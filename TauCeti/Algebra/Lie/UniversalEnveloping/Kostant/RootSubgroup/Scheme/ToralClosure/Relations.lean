@@ -12,9 +12,8 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 # The pinning equation in the toral Kostant group scheme
 
 The toral Kostant group scheme is the closed subgroup scheme of `GLₙ` generated jointly by a
-represented split torus and a family of represented root subgroups. Both kinds of generators
-factor through that carrier, but the equation relating them was previously available only after
-mapping back into `GL_n`:
+represented split torus and a family of represented root subgroups. Both kinds of generators factor
+through that carrier, and in `GL_n` they satisfy the pinning equation:
 
 ```text
 t(s) x_i(u) t(s)⁻¹ = x_i(α(s) u).
@@ -39,11 +38,9 @@ assumption on the constructed group scheme.
 
 ## References
 
-This is the torus--root-subgroup compatibility equation intended for the future pinning of the
+This is the torus--root-subgroup compatibility equation required of a pinning of the
 Chevalley--Demazure group scheme; see J. E. Humphreys, *Linear Algebraic Groups*, Section 26, and
-R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 7.1. It advances the Pinnings and Root
-subgroup maps targets of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by
-milestone L0 of the CFSGStatement roadmap.
+R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 7.1.
 -/
 
 public section
@@ -129,8 +126,8 @@ theorem kostantWeightTorusToToral_mul_kostantRootSubgroupToToral
 `t(s)` sends the `i`th root-subgroup point with parameter `u` to the same root subgroup with
 parameter `α(s) u`, where `α` is the Cartan weight of `e_i`.
 
-This is the intrinsic equation later diagram automorphisms and Steinberg maps are normalized
-against; it no longer mentions the embedding of the constructed carrier into `GL_n`. -/
+The equation is intrinsic: it does not mention the embedding of the constructed carrier into
+`GL_n`. -/
 @[simp]
 theorem kostantWeightTorusToToral_conj_kostantRootSubgroupToToral
     {i : I} {α : κ → ℤ} (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)

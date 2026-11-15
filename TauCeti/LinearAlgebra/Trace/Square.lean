@@ -51,10 +51,8 @@ theorem trace_eq_trace_comp_self_of_toMatrix_diag (b : Module.Basis ι R M)
   let := Fintype.ofEquiv (ι × ι) e.symm
   rw [LinearMap.trace_eq_matrix_trace R B, LinearMap.trace_eq_matrix_trace R b,
     LinearMap.toMatrix_comp b b b f f, Matrix.trace, Matrix.trace]
-  simp only [Matrix.diag_apply, LinearMap.toMatrix_eq_basisToMatrix, hdiag, Matrix.mul_apply]
-  refine Eq.trans (Fintype.sum_equiv e _
-    (fun q ↦ b.toMatrix (f ∘ b) q.1 q.2 * b.toMatrix (f ∘ b) q.2 q.1)
-    fun _ ↦ rfl) ?_
-  exact Fintype.sum_prod_type _
+  simp only [Matrix.diag_apply, LinearMap.toMatrix_eq_basisToMatrix, hdiag, Matrix.mul_apply,
+    ← Fintype.sum_prod_type']
+  exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
 
 end Module.Basis

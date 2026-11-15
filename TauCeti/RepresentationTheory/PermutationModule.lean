@@ -73,15 +73,13 @@ variable {R X}
 
 /-- `TauCeti.ofDistribMulActionComapEquiv` is the identification of coefficients. -/
 @[simp]
-theorem ofDistribMulActionComapEquiv_single (x : X) (r : R) :
-    ofDistribMulActionComapEquiv R G X (Finsupp.single x r) = MonoidAlgebra.single x r := by
-  simp [ofDistribMulActionComapEquiv]
+theorem ofDistribMulActionComapEquiv_apply (f : X →₀ R) :
+    ofDistribMulActionComapEquiv R G X f = MonoidAlgebra.ofCoeff f := (rfl)
 
-/-- `TauCeti.ofDistribMulActionComapEquiv` reads a coefficient back off `R[X]`. -/
+/-- `TauCeti.ofDistribMulActionComapEquiv` reads the coefficients back off `R[X]`. -/
 @[simp]
-theorem ofDistribMulActionComapEquiv_symm_single (x : X) (r : R) :
-    (ofDistribMulActionComapEquiv R G X).symm (MonoidAlgebra.single x r) = Finsupp.single x r := by
-  simp [ofDistribMulActionComapEquiv]
+theorem ofDistribMulActionComapEquiv_symm_apply (x : MonoidAlgebra R X) :
+    (ofDistribMulActionComapEquiv R G X).symm x = x.coeff := (rfl)
 
 end TauCeti
 

@@ -42,8 +42,7 @@ of the smooth unipotent group `𝔾ₐ`.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This is a closure result needed in Layer 5, "Unipotent groups", of the ReductiveGroups roadmap.
-It supplies a basic input for comparing connected normal unipotent closed subgroups in the
+This supplies a basic input for comparing connected normal unipotent closed subgroups in the
 construction of the unipotent radical.
 -/
 
@@ -71,20 +70,20 @@ theorem isUnipotentPoint_mapDomain_iff_of_surjective
     (f : H →ₐc[k] K) (hf : Function.Surjective f)
     (g : WithConv (K →ₐ[k] L)) :
     IsUnipotentPoint (toConv (g.ofConv.comp (f : H →ₐ[k] K))) ↔ IsUnipotentPoint g := by
-  rw [← AlgHom.mapDomain_apply]
+  rw [← BialgHom.mapDomain_apply]
   constructor
   · intro hg
     rw [Point.isUnipotentPoint_iff_semisimplePart_eq_one] at hg ⊢
     let f' : CommHopfAlgCat.of k H ⟶ CommHopfAlgCat.of k K := CommHopfAlgCat.ofHom f
-    apply CommHopfAlgCat.mapPointsFunctor_app_injective_of_surjective f' hf
+    apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective f' hf
       (CommAlgCat.of k L)
     have hmap' :
-        (CommHopfAlgCat.mapPointsFunctor f').app (CommAlgCat.of k L)
+        (CommHopfAlgCat.Hom.mapPointsFunctor f').app (CommAlgCat.of k L)
           (Point.semisimplePart k K L g) = 1 := by
-      rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       simp only [HopfAlgebra.pointsFunctor_obj]
       dsimp [f']
-      rw [← AlgHom.mapDomain_apply, ← Point.semisimplePart_mapDomain]
+      rw [← BialgHom.mapDomain_apply, ← Point.semisimplePart_mapDomain]
       exact hg
     exact hmap'.trans (map_one _).symm
   · intro hg

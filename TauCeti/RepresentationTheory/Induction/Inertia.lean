@@ -29,7 +29,7 @@ it — is then Mathlib's generic stabilizer API.
 
 The inertia group contains `N` (`TauCeti.le_inertia`), because conjugating by an element `n` of `N`
 itself is an inner twist: `A.ρ n` intertwines `{}^n A` with `A`
-(`TauCeti.conjNormalFDRepIso`).  Together with the normality of `N` inside `inertia A`, which
+(`FDRep.conjNormalIso`).  Together with the normality of `N` inside `inertia A`, which
 Mathlib's `Subgroup.normal_subgroupOf` instance supplies for any subgroup of `G`, this is what makes
 the quotient `inertia A / N` — where the Clifford-theory obstruction lives — available.
 
@@ -60,14 +60,6 @@ restriction with a single `G`-orbit.
 * `FDRep.inertia_resFDRep`: a representation restricted from `G` to `N` has full inertia.
 * `TauCeti.char_conj_eq_of_mem_inertia`: the character of `A` is invariant under conjugation
   by an element of the inertia group.
-
-## References
-
-This file builds the inertia group of Layer 5 (Clifford theory over a normal subgroup) of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks for
-"the **inertia (stabilizer) group** `inertia V ≤ G` of an irreducible `V : FDRep k N` is
-`{g : G | {}^g V ≅ V}`, a subgroup containing `N`", and pins `inertia`, `mem_inertia_iff` and
-`le_inertia` in the accompanying `Suggested.lean`.
 -/
 
 public section
@@ -109,7 +101,7 @@ theorem stabilizer_le_inertia (A : FDRep k N) :
 /-- **The inertia group contains the normal subgroup**: conjugating by an element of `N` is an
 inner twist, so it fixes the isomorphism class. -/
 theorem le_inertia (A : FDRep k N) : N ≤ inertia A :=
-  fun n hn => mem_inertia_iff.2 ⟨conjNormalFDRepIso A ⟨n, hn⟩⟩
+  fun n hn => mem_inertia_iff.2 ⟨A.conjNormalIso ⟨n, hn⟩⟩
 
 /-- Isomorphic representations have the same inertia group: the inertia group depends only on the
 isomorphism class of `A`, which — once `A` is irreducible — is a point of `Irr(N)`. -/
@@ -187,11 +179,11 @@ theorem inertia_resFDRep (W : FDRep k G) (N : Subgroup G) [N.Normal] :
     inertia (N.resFDRep W) = ⊤ := by
   apply top_unique
   intro g _
-  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g) fun n ↦ ?_⟩
+  refine mem_inertia_iff.mpr ⟨Action.mkIso (W.ρAut g).asIso fun n ↦ ?_⟩
   -- Restriction preserves the underlying object. Rewriting `Action.res_obj_ρ` alone would
   -- leave incompatible object types in the compositions, so expose the ambient operators.
-  change Action.ρ W (MulAut.conjNormal g⁻¹ n : G) ≫ Action.ρ W g =
-    Action.ρ W g ≫ Action.ρ W (n : G)
+  change (Action.ρ W (MulAut.conjNormal g⁻¹ n : G)).asHom ≫ (Action.ρ W g).asHom =
+    (Action.ρ W g).asHom ≫ (Action.ρ W (n : G)).asHom
   ext v
   exact Representation.apply_conjNormal_inv ((forget₂ (FDRep k G) (Rep k G)).obj W).ρ g n v
 

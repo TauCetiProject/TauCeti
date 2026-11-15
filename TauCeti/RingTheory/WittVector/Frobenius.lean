@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.WittVector.Frobenius
 public import Mathlib.RingTheory.WittVector.Teichmuller
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Witt-vector Frobenius on Teichmüller representatives and the `(p, [ϖ])`-adic topology

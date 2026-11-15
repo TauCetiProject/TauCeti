@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -29,6 +28,10 @@ matrix `2I - c` is not positive definite; see
 
 ## Main results
 
+* `TauCeti.add_one_mul_le_of_two_mul_le_add`: a sequence with `2 s_0 ≤ s_1` and
+  `2 s_{j+1} ≤ s_{j+2} + s_j` up to `n` satisfies `(n + 1) s_0 ≤ s_n`.
+* `TauCeti.two_mul_sum_mul_le_sum_mul_sum_mul`: a weight `δ` with `2 δ_i ≤ ∑_j c_{ij} δ_j` doubles
+  the weighted sum of a nonnegative vector `e` at most up to the weighted sum of `c^T e`.
 * `TauCeti.add_one_mul_sum_mul_le_sum_mul`: under these hypotheses,
   `(m + 1) ∑_j δ_j d_0(j) ≤ ∑_j δ_j d_m(j)`.
 -/
@@ -37,14 +40,50 @@ public section
 
 namespace TauCeti
 
+/-- **Linear growth under a second-order inequality.** A sequence with `2 s_0 ≤ s_1` and
+`2 s_{j+1} ≤ s_{j+2} + s_j` whenever `j + 2 ≤ n` has increments at least `s_0` up to `n`, so
+`(n + 1) s_0 ≤ s_n`. -/
+theorem add_one_mul_le_of_two_mul_le_add {S : Type*} [NonAssocSemiring S] [PartialOrder S]
+    [IsOrderedCancelAddMonoid S] {s : ℕ → S} {n : ℕ} (h1 : 2 * s 0 ≤ s 1)
+    (h : ∀ j, j + 2 ≤ n → 2 * s (j + 1) ≤ s (j + 2) + s j) : ((n : S) + 1) * s 0 ≤ s n := by
+  -- Each step up to `n` adds at least `s 0`.
+  have hstep (j : ℕ) (hj : j + 1 ≤ n) : s j + s 0 ≤ s (j + 1) := by
+    induction j with
+    | zero => rwa [← two_mul]
+    | succ j ih =>
+      refine le_of_add_le_add_right (a := s j) ?_
+      calc s (j + 1) + s 0 + s j = s (j + 1) + (s j + s 0) := by rw [add_assoc, add_comm (s 0)]
+        _ ≤ 2 * s (j + 1) := by rw [two_mul]; gcongr; exact ih (by omega)
+        _ ≤ s (j + 1 + 1) + s j := h j (by omega)
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, add_one_mul]
+    grw [ih (fun j hj => h j (by omega)) fun j hj => hstep j (by omega)]
+    exact hstep n le_rfl
+
+/-- **Weighting by `δ` doubles at most to the weighted transposed sum.** If `2 δ_i ≤ ∑_j c_{ij} δ_j`
+and `e ≥ 0`, then `2 ∑_i δ_i e_i ≤ ∑_j δ_j ∑_i c_{ij} e_i`. -/
+theorem two_mul_sum_mul_le_sum_mul_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommSemiring S]
+    [PartialOrder S] [IsOrderedRing S] (c : ι → ι → S) {δ : ι → S}
+    (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {e : ι → S} (he : 0 ≤ e) :
+    2 * ∑ i, δ i * e i ≤ ∑ j, δ j * ∑ i, c i j * e i :=
+  calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by simp only [Finset.mul_sum, mul_assoc]
+    _ ≤ ∑ i, (∑ j, c i j * δ j) * e i :=
+        Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (he i)
+    _ = ∑ j, δ j * ∑ i, c i j * e i := by
+        simp only [Finset.sum_mul, Finset.mul_sum]
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
+
 /-- **Linear growth of weighted sums under a second-order inequality.** If `d_m(j) ≥ 0` satisfy
 `∑_i c_{ij} d_0(i) ≤ d_1(j)` and `∑_i c_{ij} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)`, and a
 nonnegative weight `δ` satisfies `2 δ_i ≤ ∑_j c_{ij} δ_j`, then the weighted sums
 `s_m = ∑_j δ_j d_m(j)` grow at least linearly: `(m + 1) s_0 ≤ s_m`. -/
-theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] (c : ι → ι → S) {δ : ι → S} (hδ0 : 0 ≤ δ)
-    (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {d : ℕ → ι → S} (hd0 : ∀ m j, 0 ≤ d m j)
-    (h1 : ∀ j, ∑ i, c i j * d 0 i ≤ d 1 j)
+theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommSemiring S]
+    [PartialOrder S] [IsOrderedRing S] [IsOrderedCancelAddMonoid S] (c : ι → ι → S) {δ : ι → S}
+    (hδ0 : 0 ≤ δ) (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {d : ℕ → ι → S}
+    (hd0 : ∀ m j, 0 ≤ d m j) (h1 : ∀ j, ∑ i, c i j * d 0 i ≤ d 1 j)
     (h2 : ∀ m j, ∑ i, c i j * d (m + 1) i ≤ d (m + 2) j + d m j) (m : ℕ) :
     ((m : S) + 1) * ∑ j, δ j * d 0 j ≤ ∑ j, δ j * d m j := by
   set s : ℕ → S := fun m => ∑ j, δ j * d m j with hs
@@ -52,28 +91,12 @@ theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [Co
   have key : ∀ e f : ι → S, 0 ≤ e → (∀ j, ∑ i, c i j * e i ≤ f j) →
       2 * ∑ i, δ i * e i ≤ ∑ j, δ j * f j := by
     intro e f he hef
-    calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by
-          rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ i, (∑ j, c i j * δ j) * e i :=
-          Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (he i)
-      _ = ∑ j, δ j * ∑ i, c i j * e i := by
-          simp only [Finset.sum_mul, Finset.mul_sum]
-          rw [Finset.sum_comm]
-          exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => by ring
-      _ ≤ ∑ j, δ j * f j :=
-          Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hef j) (hδ0 j)
+    exact (two_mul_sum_mul_le_sum_mul_sum_mul c hδ he).trans
+      (Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hef j) (hδ0 j))
   have hs1 : 2 * s 0 ≤ s 1 := key _ _ (hd0 0) h1
   have hs2 : ∀ m, 2 * s (m + 1) ≤ s (m + 2) + s m := by
     intro m
     simpa only [hs, mul_add, Finset.sum_add_distrib] using key _ _ (hd0 (m + 1)) (h2 m)
-  have hstep : ∀ m, s 0 ≤ s (m + 1) - s m ∧ ((m : S) + 1) * s 0 ≤ s m := by
-    intro m
-    induction m with
-    | zero => constructor <;> [linarith; simp]
-    | succ m ih =>
-      have := hs2 m
-      push_cast
-      constructor <;> linarith [ih.1, ih.2]
-  exact (hstep m).2
+  exact add_one_mul_le_of_two_mul_le_add hs1 fun j _ => hs2 j
 
 end TauCeti

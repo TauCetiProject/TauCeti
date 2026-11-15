@@ -13,8 +13,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 
 `Derivation.adDerivation` conjugates a tangent vector by a point of the Hopf algebra.
 `Tangent.Adjoint` shows that this is an action by linear automorphisms; this file adds the
-one statement that needs the Lie structure of `Tangent.Lie.Basic`, namely that each `Ad g` is
-an automorphism of the Lie bracket rather than merely of the module.
+Lie-bracket compatibility and bundles each `Ad g` as a Lie automorphism rather than merely
+an automorphism of the module.
 
 It is kept out of `Tangent.Adjoint` so that the non-Lie tangent aggregator does not re-export
 the Lie-algebra structure.
@@ -22,6 +22,8 @@ the Lie-algebra structure.
 ## Main results
 
 * `Derivation.adDerivation_lie`: `Ad g ⁅d₁, d₂⁆ = ⁅Ad g d₁, Ad g d₂⁆`.
+* `Derivation.adDerivationLieEquiv`: the adjoint action on counit-valued derivations,
+  bundled as a Lie automorphism.
 -/
 
 public section
@@ -29,6 +31,8 @@ public section
 namespace Derivation
 
 open TauCeti _root_.Coalgebra WithConv TensorProduct
+
+section Bracket
 
 -- Only the coefficient algebra `B` need be a ring: the bracket is a commutator, so the
 -- convolution algebra `A →ₗ[R] CounitAlgebra R A B` must admit subtraction, and it inherits that
@@ -64,5 +68,40 @@ theorem adDerivation_lie (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A 
     rw [← mul_assoc (toConv ((g⁻¹).ofConv.toLinearMap)), hinv, one_mul,
       ← mul_assoc (toConv ((g⁻¹).ofConv.toLinearMap)), hinv, one_mul]
   exact DFunLike.congr_fun (congrArg ofConv key) a
+
+end Bracket
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [HopfAlgebra R A]
+  [CommRing B] [Algebra R B]
+
+variable (B) in
+/-- Convolution conjugation by a point, bundled as a Lie automorphism of the
+counit-valued derivations. -/
+noncomputable def adDerivationLieEquiv
+    (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B)) :
+    Derivation R A (Bialgebra.CounitAlgebra R A B) ≃ₗ⁅B⁆
+      Derivation R A (Bialgebra.CounitAlgebra R A B) :=
+  let e := LinearMap.GeneralLinearGroup.toLinearEquiv ((adRepresentation B).asGroupHom g)
+  { e with
+    map_lie' := fun {v w} ↦ by
+      -- The field uses the linear-map projection of `e`; expose its pointwise action
+      -- so the representation's application lemmas can rewrite it.
+      change e ⁅v, w⁆ = ⁅e v, e w⁆
+      simpa only [e, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+        Representation.asGroupHom_apply, adRepresentation_apply] using
+        adDerivation_lie B g v w }
+
+/-- The bundled adjoint Lie automorphism acts by convolution conjugation. -/
+@[simp]
+theorem adDerivationLieEquiv_apply
+    (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B))
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    adDerivationLieEquiv B g d = adDerivation B g d := by
+  -- Unfold only the new wrapper; its underlying linear equivalence is that of
+  -- `adRepresentation`, whose action is characterized by `adRepresentation_apply`.
+  change LinearMap.GeneralLinearGroup.toLinearEquiv
+    ((adRepresentation B).asGroupHom g) d = _
+  simp only [LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+    Representation.asGroupHom_apply, adRepresentation_apply]
 
 end Derivation

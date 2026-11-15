@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.EqToHom
+public import Mathlib.CategoryTheory.Preadditive.Basic
 
 /-!
 # Transporting categorical morphisms along object equalities
@@ -18,11 +20,24 @@ and avoid exposing the definitional equality of the objects being transported.
 
 * `TauCeti.eqToHom_conjugate_cancel`: transporting a morphism and then transporting it back leaves
   it unchanged.
+* `TauCeti.eqToHom_conjugate_eq_id`, `TauCeti.eqToHom_conjugate_eq_comp` and
+  `TauCeti.eqToHom_conjugate_add`: transporting an identity, a composite or a sum gives the
+  identity, the composite of the transports or the sum of the transports.
 * `TauCeti.eqToHom_conjugate_square`: conjugating every edge preserves and reflects commutativity of
   a square.
 * `TauCeti.eq_of_eqToHom_conjugate`: two morphisms with equal conjugates are equal.
 * `TauCeti.eqToHom_conjugate_vertical_square_of_horizontal_square`: commutativity with conjugated
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
+* `TauCeti.eqToHom_eq_iso_hom_map_eqToHom`: transport along an index equality is conjugate, through
+  identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
+* `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
+  endpoints to morphisms which agree in the same way.
+* `CategoryTheory.Functor.map_comp_eqToHom_of_isThin`: on a thin category, the images under a
+  functor of two morphisms between equal endpoints agree up to the transports along those
+  equalities.
+* `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
+  functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
+  identifications of the endpoints.
 -/
 
 public section
@@ -38,6 +53,35 @@ theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
   subst X'
   subst Y'
   simp
+
+/-- **A transported identity is the identity**: conjugating a morphism equal to `𝟙 Y` by the
+object equality `X = Y` gives `𝟙 X`. -/
+theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
+    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
+  subst h
+  simp [hf]
+
+/-- **Transport distributes over composition**: if `f = g ≫ h`, the transport of `f` is the
+composite of the transports of `g` and `h`. -/
+theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
+    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z')
+    (hf : f = g ≫ h) :
+    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
+      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
+  subst hX
+  subst hY
+  subst hZ
+  simp [hf]
+
+/-- **Transport is additive**: in a preadditive category, if `f = g + h`, the transport of `f` is
+the sum of the transports of `g` and `h`. -/
+theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] {X X' Y Y' : C}
+    (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hfgh : f = g + h) :
+    eqToHom hX ≫ f ≫ eqToHom hY
+      = (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
+  subst hX
+  subst hY
+  simp [hfgh]
 
 /-- **Conjugating a commuting square by object equalities leaves it commuting**, and nothing else
 becomes commuting that way: the square of transported edges commutes exactly when the original
@@ -73,4 +117,56 @@ theorem eqToHom_conjugate_vertical_square_of_horizontal_square {C : Type*} [Cate
     p ≫ (eqToHom hB.symm ≫ f ≫ eqToHom hD) = (eqToHom hA.symm ≫ g ≫ eqToHom hE) ≫ q :=
   (eqToHom_conjugate_square hA hB hD hE p _ _ q).mp (by simpa using h)
 
+/-- **Transport along an index equality commutes with identifications through a functor**: given
+families `X` in `C` and `Y` in `D` with isomorphisms `e i : Y i ≅ F.obj (X i)`, the transport
+`Y i ⟶ Y j` along `i = j` is the conjugate by `e` of the image under `F` of the transport
+`X i ⟶ X j`. -/
+theorem eqToHom_eq_iso_hom_map_eqToHom {ι C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {X : ι → C} {Y : ι → D} (e : ∀ i, Y i ≅ F.obj (X i)) {i j : ι} (h : i = j) :
+    eqToHom (congrArg Y h) = (e i).hom ≫ F.map (eqToHom (congrArg X h)) ≫ (e j).inv := by
+  subst h
+  simp
+
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+/-- A functor sends morphisms which agree up to equalities of their endpoints to morphisms which
+agree in the same way. -/
+theorem map_heq {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D) {X Y X' Y' : C}
+    {f : X ⟶ Y} {f' : X' ⟶ Y'} (hX : X = X') (hY : Y = Y') (h : f ≍ f') :
+    F.map f ≍ F.map f' := by
+  subst hX hY
+  rw [eq_of_heq h]
+
+/-- On a thin category, such as a preorder, the images under a functor `F` of two morphisms
+`f : X ⟶ Y` and `g : X' ⟶ Y'` between equal endpoints agree up to the transports along those
+equalities, since `f` and `g` agree up to the same transports. -/
+theorem map_comp_eqToHom_of_isThin {C D : Type*} [Category* C] [Category* D] [Quiver.IsThin C]
+    (F : C ⥤ D) {X Y X' Y' : C} (f : X ⟶ Y) (g : X' ⟶ Y') (hX : X = X') (hY : Y = Y') :
+    F.map f ≫ eqToHom (congrArg F.obj hY) = eqToHom (congrArg F.obj hX) ≫ F.map g := by
+  subst hX hY
+  simp [Subsingleton.elim f g]
+
+/-- A functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to
+the identifications of the endpoints. -/
+theorem map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α ⥤ D) {a a' b b' : α}
+    (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    G.map (homOfLE h) =
+      eqToHom (congrArg G.obj ha) ≫ G.map (homOfLE (ha ▸ hb ▸ h)) ≫
+        eqToHom (congrArg G.obj hb).symm := by
+  subst ha hb
+  simp
+
+/-- The variant of `CategoryTheory.Functor.map_homOfLE_eq` for the opposites of the morphisms given
+by a functor `α ⥤ Dᵒᵖ`. -/
+theorem unop_map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α ⥤ Dᵒᵖ)
+    {a a' b b' : α} (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    (G.map (homOfLE h)).unop =
+      eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) hb) ≫
+        (G.map (homOfLE (ha ▸ hb ▸ h))).unop ≫
+          eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) ha).symm := by
+  subst ha hb
+  simp
+
+end CategoryTheory.Functor

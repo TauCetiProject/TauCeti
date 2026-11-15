@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the first Fischer group
 
-This file carries the `Fi₂₂` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the ATLAS presentation on the standard
-generators `a` and `b` as a `TauCeti.GroupPresentation`, together with its exact source, generator
-convention, transcription notes, expected counts, and the decidable count check.
+This file carries the `Fi₂₂` row of the sporadic presentation data. It records the ATLAS
+presentation on the standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with
+its exact source, generator convention, transcription notes, expected counts, and the decidable
+count check.
 
 The thirteen relators are
 
@@ -38,7 +38,7 @@ As an independent check, GAP 4.15.1 with AtlasRep 2.1.9 evaluates all thirteen d
 to the identity on the ATLAS standard generators in the 3510-point permutation representation of
 `Fi₂₂`. This is transcription provenance rather than a Lean theorem: the file asserts no order,
 finiteness, simplicity, or identification result. The separate comparison with the
-`FiniteSimpleGroups` development named by the roadmap is recorded below.
+`FiniteSimpleGroups` development is recorded below.
 
 ## Independent source-to-Lean read-through
 
@@ -63,7 +63,7 @@ two words represent the same central involution of `2·Fi₂₂`; killing either
 presentation. Thus the version 3 page's choice of `R1`, the omission of `R2`, and all twelve
 remaining source-order positions agree exactly with the sealed Lean row. This comparison was
 performed from the pinned source bytes independently of the original transcription and closes
-this row's S1 source-to-Lean read-through.
+this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -88,10 +88,8 @@ pair therefore generates that subgroup of order `64561751654400`.
 
 The check used Python 3.14.6, pynauty 2.8.8.1, and SymPy 1.14.0. Concatenating the transported
 forward image tables for `a` and then `b`, with each image stored as a two-byte little-endian
-integer, has SHA-256
-`66941048d1dd4532444563d0526fb210e2007d31ee8c58c51a9c8e1e8d7061de`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau
-Ceti.
+integer, has SHA-256 `66941048d1dd4532444563d0526fb210e2007d31ee8c58c51a9c8e1e8d7061de`. This is the
+independent comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row
@@ -151,28 +149,30 @@ and `b`.
 The ATLAS lists this as a presentation of the abstract group, separately from the relations used
 only to recognize standard generators inside an existing group. No structural property of the
 presented group is asserted here: this definition records only the cited generators and relators.
--/
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3.
+
+Source locator: F22G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/F22G1-P1; the relator data
+and the proof through the double-cover presentation are in
+https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/F22G1-P1.M and
+https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/2F22G1-P1.M
+
+Generator convention: The ATLAS standard generators a and b of Fi22, with a in class 2A, b of
+order 13, and ab of order 11, in that order, so index 0 is a and index 1 is b. Products are read
+left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s.
+
+Transcription notes: Transcribe the thirteen words displayed on the version 3 presentation page,
+using `(a*b^2)^21` as the fourth relator. The Magma data also gives `(a*b*a*b*a*b^-3)^5` as an
+interchangeable relator: the proof file identifies both words with the central involution of
+2.Fi22 and records successful index-3510 coset enumeration with either one. GAP 4.15.1 with
+AtlasRep 2.1.9 checks the thirteen displayed relators on the standard generators of the 3510-point
+Fi22 permutation representation. The independent comparison with the FiniteSimpleGroups
+construction is recorded in this module's documentation. -/
 def fi22Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3"
-  sourceLocator := "F22G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/F22G1-P1; the \
-    relator data and the proof through the double-cover presentation are in \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/F22G1-P1.M and \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/2F22G1-P1.M"
-  generatorConvention := "The ATLAS standard generators a and b of Fi22, with a in class 2A, \
-    b of order 13, and ab of order 11, in that order, so index 0 is a and index 1 is b. \
-    Products are read left to right, negative exponents denote inverses, and [r,s] denotes \
-    r^-1 s^-1 r s."
-  transcriptionNotes := "Transcribe the thirteen words displayed on the version 3 presentation \
-    page, using (a*b^2)^21 as the fourth relator. The Magma data also gives \
-    (a*b*a*b*a*b^-3)^5 as an interchangeable relator: the proof file identifies both words \
-    with the central involution of 2.Fi22 and records successful index-3510 coset enumeration \
-    with either one. GAP 4.15.1 with AtlasRep 2.1.9 checks the thirteen displayed relators on \
-    the standard generators of the 3510-point Fi22 permutation representation. The independent \
-    comparison with the FiniteSimpleGroups construction is recorded in this module's \
-    documentation."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 13
   transcribed :=
     [ .pow a 2,
@@ -189,58 +189,11 @@ def fi22Presentation : GroupPresentation where
       .pow (.commInvInv a (b ⬝ a ⬝ .pow b 5)) 2,
       .pow (.commInvInv a (.pow b 2 ⬝ a ⬝ .pow b 5)) 2 ]
 
-/-- The generator names recorded for `Fi₂₂`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `Fi₂₂`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem fi22Presentation_generatorNames : fi22Presentation.generatorNames = ["a", "b"] := by
-  simp [fi22Presentation]
-
-/-- The source recorded for `Fi₂₂`. The row's body is sealed, so this equation is what publishes
-the citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem fi22Presentation_source :
-    fi22Presentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite \
-      Group Representations, version 3" := by
-  simp [fi22Presentation]
-
-/-- The locator recorded for `Fi₂₂`, pointing at the presentation inside its source. -/
-@[simp]
-theorem fi22Presentation_sourceLocator :
-    fi22Presentation.sourceLocator = "F22G1-P1, \
-      https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/F22G1-P1; the relator data and the proof \
-      through the double-cover presentation are in \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/F22G1-P1.M and \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/F22/mag/2F22G1-P1.M" := by
-  simp [fi22Presentation]
-
-/-- The generator convention recorded for `Fi₂₂`, fixing which generator each relator index names
-and which of the two commutator conventions the source uses. -/
-@[simp]
-theorem fi22Presentation_generatorConvention :
-    fi22Presentation.generatorConvention = "The ATLAS standard generators a and b of Fi22, with a \
-      in class 2A, b of order 13, and ab of order 11, in that order, so index 0 is a and index 1 \
-      is b. Products are read left to right, negative exponents denote inverses, and [r,s] \
-      denotes r^-1 s^-1 r s." := by
-  simp [fi22Presentation]
-
-/-- The transcription notes recorded for `Fi₂₂`. -/
-@[simp]
-theorem fi22Presentation_transcriptionNotes :
-    fi22Presentation.transcriptionNotes = "Transcribe the thirteen words displayed on the version \
-      3 presentation page, using (a*b^2)^21 as the fourth relator. The Magma data also gives \
-      (a*b*a*b*a*b^-3)^5 as an interchangeable relator: the proof file identifies both words with \
-      the central involution of 2.Fi22 and records successful index-3510 coset enumeration with \
-      either one. GAP 4.15.1 with AtlasRep 2.1.9 checks the thirteen displayed relators on the \
-      standard generators of the 3510-point Fi22 permutation representation. The independent \
-      comparison with the FiniteSimpleGroups construction is recorded in this module's \
-      documentation." := by
-  simp [fi22Presentation]
-
-/-- The generator count `Fi₂₂`'s source states. With
-`TauCeti.Sporadic.fi22Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.fi22Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem fi22Presentation_expectedGeneratorCount : fi22Presentation.expectedGeneratorCount = 2 := by
+theorem fi22Presentation_generatorCount : fi22Presentation.generatorCount = 2 := by
   simp [fi22Presentation]
 
 /-- The relator count `Fi₂₂`'s source states. With
@@ -258,7 +211,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.fi22Presentation_generatorNames`. `Relator.comm` follows Mathlib's convention
+`TauCeti.Sporadic.fi22Presentation_generatorCount`. `Relator.comm` follows Mathlib's convention
 `⁅r, s⁆ = r s r⁻¹ s⁻¹`, so each source commutator `[r,s] = r⁻¹ s⁻¹ r s` appears here as
 `Relator.comm` applied to the two inverses. -/
 @[simp]
@@ -298,7 +251,7 @@ theorem fi22Presentation_transcribed :
             .pow (.gen ⟨1, by simp⟩) 5))) 2 ] := by
   simp [fi22Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Fi₂₂` agree with the transcribed data. -/
+/-- The relator count recorded for `Fi₂₂` agrees with the transcribed data. -/
 theorem fi22Presentation_matchesMetadata : fi22Presentation.matchesMetadata := by
   decide
 

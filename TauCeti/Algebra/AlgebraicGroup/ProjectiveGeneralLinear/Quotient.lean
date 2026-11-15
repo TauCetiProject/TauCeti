@@ -73,7 +73,7 @@ theorem exists_span_eq_top_forall_mapPoints_mem_range (A : CommAlgCat.{u} R)
     ∃ s : Finset A, Ideal.span (s : Set A) = ⊤ ∧ ∀ c ∈ s,
       HopfAlgebra.mapPoints
           (CommAlgCat.ofHom (IsScalarTower.toAlgHom R A (Localization.Away c))) q ∈
-        Set.range ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app
+        Set.range ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app
           (CommAlgCat.of R (Localization.Away c))) := by
   obtain ⟨s, hs, h⟩ := (pointsMulEquiv n R A q).exists_span_eq_top_forall_map_eq_innerAut
   refine ⟨s, hs, fun c hc => ?_⟩
@@ -81,7 +81,7 @@ theorem exists_span_eq_top_forall_mapPoints_mem_range (A : CommAlgCat.{u} R)
   obtain ⟨g, hg⟩ := h c hc (algebraMap A (Localization.Away c))
     (IsLocalization.Away.algebraMap_isUnit c)
   refine ⟨(GeneralLinear.pointsMulEquiv n).symm g, (pointsMulEquiv n R _).injective ?_⟩
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, pointsMulEquiv_conjugationMap,
     MulEquiv.apply_symm_apply]
   -- Both automorphisms of `Mₙ(A[1/c])` agree on the matrix units, which come from `Mₙ(A)`.
   refine AlgEquiv.toLinearMap_injective ((matrixUnitBasis n _).ext fun k => ?_)
@@ -116,7 +116,7 @@ theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     exact RingHom.finitePresentation_algebraMap.2 inferInstance
   · ext x c
     have := DFunLike.congr_fun (congrArg ofConv (hg c c.2)) x
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply (conjugationMap n R)
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (conjugationMap n R)
       (CommAlgCat.of R (S c)) (g c c.2) x, HopfAlgebra.mapPoints_apply] at this
     simpa [φ, S] using this
 

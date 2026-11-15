@@ -26,7 +26,7 @@ not split.
 
 The construction parallels `TauCeti/CategoryTheory/GrothendieckGroup/Monoidal/Basic.lean` for
 split `K₀`, with the biproduct relations replaced by conflations: the multiplication is the
-two-variable descent `TauCeti.ExactK0.BiadditiveInvariant.bilift` of `(X, Y) ↦ [X ⊗ Y]`. The
+biadditive map `TauCeti.ExactK0.map₂` induced by the tensor product bifunctor. The
 canonical comparison `TauCeti.ExactK0.fromSplit` from split `K₀` is a ring homomorphism,
 `TauCeti.ExactK0.fromSplitRingHom`.
 
@@ -75,25 +75,17 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
   [MonoidalCategory C] [MonoidalPreadditive C] [EssentiallySmall.{w} C]
   (E : ExactStructure C) [E.IsMonoidal]
 
-/-- The class of a tensor product, as an invariant additive on conflations in each variable: this
-is the datum that descends the tensor product to a multiplication on exact `K₀`. -/
-private noncomputable def mulInvariant : BiadditiveInvariant E E (ExactK0 E) where
-  obj X Y := of (X ⊗ Y)
-  map_iso₁ e Y := of_congr (whiskerRightIso e Y)
-  map_conflation₂ X _ hS :=
-    of_conflation ((ExactStructure.IsMonoidal.isConflationExact_tensorLeft X).map_conflation hS)
-  map_conflation₁ hS Y :=
-    of_conflation ((ExactStructure.IsMonoidal.isConflationExact_tensorRight Y).map_conflation hS)
-
-/-- Multiplication on exact `K₀`, as a biadditive map. -/
+/-- Multiplication on exact `K₀`, as a biadditive map: the map induced by the tensor product,
+which is conflation-exact in each variable. -/
 noncomputable def mulHom : ExactK0 E →+ ExactK0 E →+ ExactK0 E :=
-  (mulInvariant E).bilift
+  map₂ (curriedTensor C) ExactStructure.IsMonoidal.isConflationExact_tensorRight
+    ExactStructure.IsMonoidal.isConflationExact_tensorLeft
 
 variable {E}
 
 /-- Multiplication evaluates on classes of objects as the class of their tensor product. -/
 private lemma mulHom_of_of (X Y : C) : mulHom E (of X) (of Y) = of (X ⊗ Y) :=
-  (mulInvariant E).bilift_of_of X Y
+  map₂_of_of (curriedTensor C) _ _ X Y
 
 /-- The multiplication on exact `K₀` induced by the tensor product. -/
 noncomputable instance instMul : Mul (ExactK0 E) where
@@ -169,7 +161,7 @@ noncomputable instance instRing : Ring (ExactK0 E) where
 
 /-- Two ring homomorphisms out of exact `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
-theorem ringHom_ext {R : Type*} [NonAssocRing R] {f g : ExactK0 E →+* R}
+theorem ringHom_ext {R : Type*} [NonAssocSemiring R] {f g : ExactK0 E →+* R}
     (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   RingHom.toAddMonoidHom_injective (hom_ext h)
 
@@ -184,8 +176,7 @@ the tensor unit to `1` and is multiplicative on tensor products. With
 ring. -/
 noncomputable def liftRingHom : ExactK0 E →+* R where
   toFun := lift a
-  map_zero' := map_zero (lift a)
-  map_add' := map_add (lift a)
+  __ := lift a
   map_one' := by
     rw [one_def, lift_of]
     exact hone
@@ -206,7 +197,7 @@ invariant. -/
 @[simp]
 lemma liftRingHom_toAddMonoidHom :
     ((liftRingHom a hone hmul : ExactK0 E →+* R) : ExactK0 E →+ R) = lift a :=
-  hom_ext fun X => by rw [AddMonoidHom.coe_ofClass, liftRingHom_of, lift_of]
+  (rfl)
 
 end Lift
 
@@ -214,24 +205,27 @@ variable (E) in
 /-- **The comparison from split `K₀` is a ring homomorphism.** The canonical surjection
 `TauCeti.ExactK0.fromSplit` from the split Grothendieck ring onto the exact one preserves the unit
 and the product, since both are given by the tensor product on classes of objects. -/
-noncomputable def fromSplitRingHom : SplitK0 C →+* ExactK0 E :=
-  SplitK0.liftRingHom
-    { obj := fun X => of X
-      map_iso := fun _ _ e => of_congr e
-      map_biprod := of_biprod }
-    (one_def (E := E)).symm fun X Y => (of_mul_of X Y).symm
+noncomputable def fromSplitRingHom : SplitK0 C →+* ExactK0 E where
+  toFun := fromSplit E
+  __ := fromSplit E
+  map_one' := by rw [SplitK0.one_def, fromSplit_of, one_def]
+  map_mul' := by
+    rw [AddMonoidHom.map_mul_iff]
+    refine SplitK0.hom_ext fun X => SplitK0.hom_ext fun Y => ?_
+    simp only [AddMonoidHom.compr₂_apply, AddMonoidHom.mul_apply, AddMonoidHom.compl₂_apply,
+      AddMonoidHom.comp_apply, SplitK0.of_mul_of, fromSplit_of, of_mul_of]
 
 /-- The comparison ring homomorphism takes the class of an object to its class. -/
 @[simp]
 lemma fromSplitRingHom_of (X : C) : fromSplitRingHom E (SplitK0.of X) = of X :=
-  SplitK0.liftRingHom_of _ _ _ X
+  fromSplit_of X
 
 /-- The additive homomorphism underlying `TauCeti.ExactK0.fromSplitRingHom` is
 `TauCeti.ExactK0.fromSplit`. -/
 @[simp]
 lemma fromSplitRingHom_toAddMonoidHom :
     ((fromSplitRingHom E : SplitK0 C →+* ExactK0 E) : SplitK0 C →+ ExactK0 E) = fromSplit E :=
-  fromSplit_unique _ fun X => by rw [AddMonoidHom.coe_ofClass, fromSplitRingHom_of]
+  (rfl)
 
 /-- The comparison from split to exact Grothendieck rings is bijective when every
 conflation splits. -/
@@ -303,27 +297,31 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
 additive functor: the functorial map `TauCeti.ExactK0.map`, which the comparison isomorphisms of
 `F` make unit-preserving and multiplicative on tensor products. -/
 noncomputable def mapRingHom (F : C ⥤ D) [F.Additive] [F.Monoidal]
-    (hF : E.IsConflationExact E' F) : ExactK0 E →+* ExactK0 E' :=
-  liftRingHom ((liftEquiv (E := E) (G := ExactK0 E')).symm (map F hF))
-    (by
-      simp only [liftEquiv_symm_apply_obj, one_def, map_of]
-      exact of_congr (Functor.Monoidal.εIso F).symm)
-    fun X Y => by
-      simp only [liftEquiv_symm_apply_obj, map_of, of_mul_of]
-      exact of_congr (Functor.Monoidal.μIso F X Y).symm
+    (hF : E.IsConflationExact E' F) : ExactK0 E →+* ExactK0 E' where
+  toFun := map F hF
+  __ := map F hF
+  map_one' := by
+    rw [one_def, map_of, one_def]
+    exact of_congr (Functor.Monoidal.εIso F).symm
+  map_mul' := by
+    rw [AddMonoidHom.map_mul_iff]
+    refine hom_ext fun X => hom_ext fun Y => ?_
+    simp only [AddMonoidHom.compr₂_apply, AddMonoidHom.mul_apply, AddMonoidHom.compl₂_apply,
+      AddMonoidHom.comp_apply, of_mul_of, map_of]
+    exact of_congr (Functor.Monoidal.μIso F X Y).symm
 
 /-- The additive homomorphism underlying `TauCeti.ExactK0.mapRingHom` is the functorial map. -/
 @[simp]
 lemma mapRingHom_toAddMonoidHom (F : C ⥤ D) [F.Additive] [F.Monoidal]
     (hF : E.IsConflationExact E' F) :
-    ((mapRingHom F hF : ExactK0 E →+* ExactK0 E') : ExactK0 E →+ ExactK0 E') = map F hF := by
-  rw [mapRingHom, liftRingHom_toAddMonoidHom, ← liftEquiv_apply, Equiv.apply_symm_apply]
+    ((mapRingHom F hF : ExactK0 E →+* ExactK0 E') : ExactK0 E →+ ExactK0 E') = map F hF :=
+  (rfl)
 
 /-- The induced ring homomorphism takes the class of an object to the class of its image. -/
 @[simp]
 lemma mapRingHom_of (F : C ⥤ D) [F.Additive] [F.Monoidal] (hF : E.IsConflationExact E' F)
-    (X : C) : mapRingHom F hF (of X : ExactK0 E) = of (F.obj X) := by
-  rw [← AddMonoidHom.coe_ofClass, mapRingHom_toAddMonoidHom, map_of]
+    (X : C) : mapRingHom F hF (of X : ExactK0 E) = of (F.obj X) :=
+  map_of F hF X
 
 /-- `TauCeti.ExactK0.mapRingHom` sends the identity functor to the identity ring homomorphism. -/
 @[simp]

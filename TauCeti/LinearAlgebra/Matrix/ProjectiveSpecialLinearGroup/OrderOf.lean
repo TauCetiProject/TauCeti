@@ -22,7 +22,7 @@ of `Matrix.IsHyperbolic` — has infinite order.
 
 The matrix computations behind this are in `TauCeti.LinearAlgebra.Matrix.Trace.FinTwo`. The
 elliptic counterpart over `ℝ`, for traces `± 2 cos (π / k)`, is in
-`TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo`.
+`TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
 
 ## Main results
 

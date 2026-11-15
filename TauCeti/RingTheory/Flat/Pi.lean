@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 
 import Mathlib.Algebra.DirectSum.Module
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -20,7 +21,7 @@ upgrades it to faithful flatness.
 
 Mathlib defines `Module.FaithfullyFlat` as flatness plus `m • ⊤ ≠ ⊤` for every maximal ideal `m`,
 so the criterion is about locating a single component that keeps `m` proper — the factorwise half
-of that is `Ideal.smul_top_eq_top_of_pi`, a general ideal-action fact with no flatness or
+of that is `Ideal.smul_top_eq_top_of_surjective`, a general ideal-action fact with no flatness or
 finiteness in it, which lives in `TauCeti/RingTheory/Ideal/Operations.lean`: a product is
 faithfully flat as soon as each factor is flat and **no maximal ideal expands in every factor at
 once**. Individually the factors may all fail to be faithfully flat.
@@ -28,6 +29,7 @@ once**. Individually the factors may all fail to be faithfully flat.
 ## Main results
 
 * `Module.Flat.pi`: a finite product of flat modules is flat.
+* `Module.Flat.prod`: the product `N × P` of two flat modules is flat.
 * `Module.FaithfullyFlat.pi_of_exists_submodule_ne_top`: a finite product of flat modules is
   faithfully flat as soon as every maximal ideal stays proper in *some* factor.
 * `Module.FaithfullyFlat.pi_of_faithfullyFlat`: the special case of one distinguished faithfully
@@ -63,6 +65,21 @@ instance Flat.pi [Finite ι] [∀ i, Flat R (M i)] : Flat R (∀ i, M i) := by
   have := Fintype.ofFinite ι
   exact Flat.of_linearEquiv (DirectSum.linearEquivFunOnFintype R ι M).symm
 
+/-- The product of two flat modules is flat. -/
+instance Flat.prod {N P : Type*} [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+    [Flat R N] [Flat R P] : Flat R (N × P) := by
+  refine Flat.iff_lTensor_injectiveₛ.mpr fun Q _ _ Q' ↦ ?_
+  have h : (TensorProduct.prodLeft R R N P Q).toLinearMap ∘ₗ Q'.subtype.lTensor (N × P) =
+      (Q'.subtype.lTensor N).prodMap (Q'.subtype.lTensor P) ∘ₗ
+        (TensorProduct.prodLeft R R N P Q').toLinearMap := by
+    ext <;> simp
+  -- Up to `prodLeft`, tensoring `Q' → Q` with `N × P` is the product of the two tensored maps.
+  refine Function.Injective.of_comp (f := TensorProduct.prodLeft R R N P Q) ?_
+  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, h, LinearMap.coe_comp]
+  exact ((Flat.lTensor_preserves_injective_linearMap _ Q'.injective_subtype).prodMap
+    (Flat.lTensor_preserves_injective_linearMap _ Q'.injective_subtype)).comp
+      (LinearEquiv.injective _)
+
 end Flat
 
 section FaithfullyFlat
@@ -75,7 +92,8 @@ that the failures are not simultaneous. -/
 theorem FaithfullyFlat.pi_of_exists_submodule_ne_top [Finite ι] [∀ i, Flat R (M i)]
     (h : ∀ m : Ideal R, m.IsMaximal → ∃ i, m • (⊤ : Submodule R (M i)) ≠ ⊤) :
     FaithfullyFlat R (∀ i, M i) where
-  submodule_ne_top m hm htop := (h m hm).elim fun i hi ↦ hi (m.smul_top_eq_top_of_pi htop i)
+  submodule_ne_top m hm htop := (h m hm).elim fun i hi ↦
+    hi (m.smul_top_eq_top_of_surjective (LinearMap.proj i) (Function.surjective_eval i) htop)
 
 /-- **One faithfully flat factor carries a finite product of flat modules.** This is the special
 case of `FaithfullyFlat.pi_of_exists_submodule_ne_top` where one fixed index works for every

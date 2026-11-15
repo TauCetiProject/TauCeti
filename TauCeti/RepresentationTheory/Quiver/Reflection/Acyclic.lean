@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 
 This file develops the interaction between acyclicity and reflection at a sink or source. A
 nonempty finite acyclic quiver has a sink and a source, and reflecting at either one preserves
-acyclicity.
+acyclicity. These results support the sink-admissible reflection-functor constructions.
 
 ## Main results
 
@@ -23,11 +23,6 @@ acyclicity.
   acyclic.
 * `TauCeti.Quiver.IsAcyclic.reflect_of_isSource`: reflecting an acyclic quiver at a source leaves it
   acyclic.
-
-## References
-
-These results support the sink-admissible reflection-functor constructions in Layers 4 and 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section
@@ -51,7 +46,7 @@ theorem IsAcyclic.exists_isSink [Finite V] [Nonempty V] (h : IsAcyclic V) :
   by_contra hcon
   have hout : ∀ i : V, ∃ b : V, Nonempty (i ⟶ b) := fun i ↦ by
     by_contra hi
-    exact hcon ⟨i, IsSink_def i |>.mpr fun b ↦ not_nonempty_iff.mp fun hb ↦ hi ⟨b, hb⟩⟩
+    exact hcon ⟨i, isSink_iff i |>.mpr fun b ↦ not_nonempty_iff.mp fun hb ↦ hi ⟨b, hb⟩⟩
   have hlong : ∀ n : ℕ, ∃ (a b : V) (p : Path a b), p.length = n := by
     intro n
     induction n with
@@ -71,7 +66,7 @@ theorem IsAcyclic.exists_isSource [Finite V] [Nonempty V] (h : IsAcyclic V) :
   by_contra hcon
   have hin : ∀ i : V, ∃ a : V, Nonempty (a ⟶ i) := fun i ↦ by
     by_contra hi
-    exact hcon ⟨i, IsSource_def i |>.mpr fun a ↦ not_nonempty_iff.mp fun ha ↦ hi ⟨a, ha⟩⟩
+    exact hcon ⟨i, isSource_iff i |>.mpr fun a ↦ not_nonempty_iff.mp fun ha ↦ hi ⟨a, ha⟩⟩
   have hlong : ∀ n : ℕ, ∃ (a b : V) (p : Path a b), p.length = n := by
     intro n
     induction n with

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
--- Finite-dimensionality of the quotient, for the local finiteness of the Auslander-Reiten quiver.
+-- Finiteness of the irreducible-morphism space between each pair of objects.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Noetherian.Defs
 -- Non-public: Mathlib's quotient operations occur only inside the declarations below, the API
 -- here standing in for them, and the dimension bound only inside proofs.
 import Mathlib.LinearAlgebra.Quotient.Basic
@@ -32,9 +33,10 @@ space is nontrivial exactly when an irreducible morphism `X ⟶ Y` exists — th
 is an arrow `X → Y`" mean "there is an irreducible morphism `X ⟶ Y`".  Second, **isomorphism
 invariance**: conjugating by isomorphisms `X ≅ X'` and `Y ≅ Y'` induces a `k`-linear equivalence
 `Irr(X, Y) ≃ₗ[k] Irr(X', Y')`, functorially, which is what lets the arrows be indexed by
-*isomorphism classes* of indecomposables.  Third, **finite-dimensionality** over a division ring
-whenever the ambient morphism space is finite-dimensional, which is what makes the quiver locally
-finite.
+*isomorphism classes* of indecomposables.  Third, **finiteness**: over a Noetherian ring the space
+is finitely generated whenever the ambient morphism space is, and over a division ring its
+dimension is bounded by that of the ambient space.  This controls the irreducible-morphism space
+between each fixed pair of objects.
 
 The detection statement is the only one that constrains the objects: it needs the two endomorphism
 rings to be local (the indecomposables of a Krull-Schmidt category) and the category to have binary
@@ -42,14 +44,16 @@ biproducts, exactly as its input in `Radical.Basic` does.  The construction of t
 linear structure need none of that, so they are stated for an arbitrary `k`-linear category over a
 ring `k`.
 
-What is *not* built here is the bimodule structure of `Irr(X, Y)` over the residue division rings
-`End X / rad(End X)` and `End Y / rad(End Y)`.  It is the dimensions over *those* rings, not the
-`k`-dimension computed below, that count the arrows `X → Y` of the Auslander-Reiten quiver; the two
-counts do agree whenever both residue division rings are `k` itself, as happens for instance over an
-algebraically closed `k` when the two endomorphism algebras are finite-dimensional over it, but that
-is only a sufficient condition — they also agree, vacuously, whenever `Irr(X, Y)` vanishes.  So no
-statement below claims to compute an arrow multiplicity: what is proved is the `k`-dimension, its
-bound by `finrank k (X ⟶ Y)`, and its positivity exactly when an irreducible morphism exists.
+What is built not here but in `TauCeti/CategoryTheory/Preadditive/Radical/Bimodule.lean` is the
+bimodule structure of `Irr(X, Y)` over the residue division rings `End X / rad(End X)` and
+`End Y / rad(End Y)`, together with the positivity of the rank over each of them.  It is a rank
+over *those* rings, not the `k`-dimension computed below, that the textbook convention counts the
+arrows `X → Y` of a *valued* Auslander-Reiten quiver by; the counts do agree whenever both residue
+division rings are `k` itself, as happens for instance over an algebraically closed `k` when the
+two endomorphism algebras are finite-dimensional over it, but that is only a sufficient condition —
+they also agree, vacuously, whenever `Irr(X, Y)` vanishes.  So no statement below claims to compute
+an arrow multiplicity: what is proved is the `k`-dimension, its bound by `finrank k (X ⟶ Y)`, and
+its positivity exactly when an irreducible morphism exists.
 
 ## Main definitions
 
@@ -305,16 +309,12 @@ indexed by isomorphism classes of indecomposables rather than by objects. -/
 noncomputable def irreducibleMorphismSpaceCongr (e : X ≅ X') (e' : Y ≅ Y') :
     irreducibleMorphismSpace k X Y ≃ₗ[k] irreducibleMorphismSpace k X' Y' :=
   Submodule.Quotient.equiv _ _ (jacobsonRadicalSubmoduleCongr k e e') <| by
-    refine le_antisymm ?_ fun g hg => ?_
-    · rw [Submodule.map_le_iff_le_comap]
-      intro f hf
-      simp only [Submodule.mem_comap, LinearEquiv.coe_coe, mem_jacobsonRadicalSqSubmoduleIn,
-        coe_jacobsonRadicalSubmoduleCongr_apply] at hf ⊢
-      exact comp_mem_jacobsonRadicalSq_right (comp_mem_jacobsonRadicalSq_left e.inv hf) e'.hom
-    · refine ⟨(jacobsonRadicalSubmoduleCongr k e e').symm g, ?_, by simp⟩
-      simp only [SetLike.mem_coe, mem_jacobsonRadicalSqSubmoduleIn,
-        coe_jacobsonRadicalSubmoduleCongr_symm_apply] at hg ⊢
-      exact comp_mem_jacobsonRadicalSq_left e.hom (comp_mem_jacobsonRadicalSq_right hg e'.inv)
+    ext g
+    have h := congrArg (fun P : Submodule k (X' ⟶ Y') => (g : X' ⟶ Y') ∈ P)
+      (jacobsonRadicalSqSubmodule_map_homCongr k e e')
+    simpa only [Submodule.mem_map_equiv, mem_jacobsonRadicalSqSubmoduleIn,
+      mem_jacobsonRadicalSqSubmodule, Linear.homCongr_symm_apply,
+      coe_jacobsonRadicalSubmoduleCongr_symm_apply] using Iff.of_eq h
 
 /-- **Conjugation of the quotient is computed on representatives**: the image of the class of a
 radical morphism `f` is the class of its conjugate
@@ -363,22 +363,34 @@ theorem irreducibleMorphismSpaceCongr_symm (e : X ≅ X') (e' : Y ≅ Y') :
 
 end Congr
 
-/-! ### Finite-dimensionality -/
+/-! ### Finiteness -/
 
 section Finite
 
-variable (k : Type*) [DivisionRing k] [Linear k C] (X Y : C)
+variable (k : Type*) [Ring k] [Linear k C] (X Y : C)
 
-instance [FiniteDimensional k (X ⟶ Y)] :
-    FiniteDimensional k (irreducibleMorphismSpace k X Y) :=
-  inferInstanceAs (FiniteDimensional k (jacobsonRadicalSubmodule k X Y ⧸
+/-- Over a Noetherian base ring, the space of irreducible morphisms is finitely generated as soon
+as `X ⟶ Y` is, being a quotient of a submodule of it. This covers finite-dimensional morphism
+spaces over a field as well as finitely generated ones over a commutative Artinian ring, the
+setting of Artin algebras. -/
+instance [IsNoetherianRing k] [Module.Finite k (X ⟶ Y)] :
+    Module.Finite k (irreducibleMorphismSpace k X Y) :=
+  inferInstanceAs (Module.Finite k (jacobsonRadicalSubmodule k X Y ⧸
     (jacobsonRadicalSqSubmodule k X Y).submoduleOf (jacobsonRadicalSubmodule k X Y)))
 
+end Finite
+
+/-! ### Dimension over a division ring -/
+
+section Finrank
+
+variable (k : Type*) [DivisionRing k] [Linear k C] (X Y : C)
+
 /-- **The space of irreducible morphisms is no larger than the morphism space it is carved out
-of.**  This is the bound that makes the Auslander-Reiten quiver of a category with
-finite-dimensional morphism spaces locally finite.  Finite-dimensionality of `X ⟶ Y` is a genuine
-hypothesis and not merely a convenience: without it the right-hand side is `0` by the convention
-for `Module.finrank`, while the quotient can perfectly well be finite-dimensional and nonzero. -/
+of.**  This bounds the dimension of the irreducible-morphism space between the fixed objects `X`
+and `Y`.  Finite-dimensionality of `X ⟶ Y` is a genuine hypothesis and not merely a convenience:
+without it the right-hand side is `0` by the convention for `Module.finrank`, while the quotient
+can perfectly well be finite-dimensional and nonzero. -/
 theorem finrank_irreducibleMorphismSpace_le [FiniteDimensional k (X ⟶ Y)] :
     Module.finrank k (irreducibleMorphismSpace k X Y) ≤ Module.finrank k (X ⟶ Y) :=
   (Submodule.finrank_quotient_le _).trans (Submodule.finrank_le _)
@@ -386,8 +398,8 @@ theorem finrank_irreducibleMorphismSpace_le [FiniteDimensional k (X ⟶ Y)] :
 /-- **The dimension of the space of irreducible morphisms is positive exactly when there is an
 irreducible morphism `X ⟶ Y`**, in a category with binary biproducts and between objects with local
 endomorphism rings: the dimension count of `TauCeti.nontrivial_irreducibleMorphismSpace_iff`.  Only
-the quotient itself has to be finite-dimensional here, which the instance above supplies whenever
-`X ⟶ Y` is. -/
+the quotient itself has to be finite-dimensional here, which the finiteness instance above supplies
+whenever `X ⟶ Y` is. -/
 theorem finrank_irreducibleMorphismSpace_pos_iff
     [FiniteDimensional k (irreducibleMorphismSpace k X Y)]
     [Limits.HasBinaryBiproducts C] [IsLocalRing (End X)] [IsLocalRing (End Y)] :
@@ -395,6 +407,6 @@ theorem finrank_irreducibleMorphismSpace_pos_iff
       ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by
   rw [Module.finrank_pos_iff_of_free, nontrivial_irreducibleMorphismSpace_iff]
 
-end Finite
+end Finrank
 
 end TauCeti

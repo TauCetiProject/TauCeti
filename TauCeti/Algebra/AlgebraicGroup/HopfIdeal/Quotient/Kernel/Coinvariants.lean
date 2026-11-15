@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
@@ -48,12 +48,13 @@ over a value algebra in any universe. -/
 theorem ofConv_apply_eq_of_mem_coinvariants_kernelHopfIdeal (f : H ⟶ K) {x : K}
     (hx : x ∈ (kernelHopfIdeal f).coinvariants) {A : CommAlgCat.{w} R}
     (g g' : HopfAlgebra.points (R := R) (H := K) A)
-    (hgg' : (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g') :
+    (hgg' : (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g') :
     g.ofConv x = g'.ofConv x := by
   have hn : g⁻¹ * g' ∈ quotientPointsSubgroup K (kernelHopfIdeal f) A := by
     apply (mapPointsFunctor_app_eq_one_iff f A _).mp
-    rw [← mapPointsFunctor_app_apply]
-    exact ((mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
+    rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+    exact ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A).hom.eq_iff.mp hgg'.symm
   simpa only [mul_inv_cancel_left] using
     (HopfIdeal.ofConv_mul_apply_of_mem_coinvariants hx g hn).symm
 
@@ -62,7 +63,8 @@ points with the same image, over every value algebra in the coordinate algebras'
 theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     x ∈ (kernelHopfIdeal f).coinvariants ↔
       ∀ (A : CommAlgCat.{v} R) (g g' : HopfAlgebra.points (R := R) (H := K) A),
-        (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g' →
+        (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g = (CommHopfAlgCat.Hom.mapPointsFunctor
+          f).app A g' →
           g.ofConv x = g'.ofConv x := by
   constructor
   · intro hx A g g' hgg'
@@ -71,9 +73,9 @@ theorem mem_coinvariants_kernelHopfIdeal_iff (f : H ⟶ K) (x : K) :
     apply HopfIdeal.mem_coinvariants_iff_forall_mul.mpr
     intro A g n hn
     apply hx A (g * n) g
-    simp only [mapPointsFunctor_app_apply, ← AlgHom.mapDomain_apply]
-    apply (AlgHom.mapDomain (A := A) f.hom).eq_iff.mpr
-    simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, AlgHom.mapDomain_apply] using
+    simp only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply]
+    apply (BialgHom.mapDomain (A := A) f.hom).eq_iff.mpr
+    simpa only [inv_mul_cancel_left, MonoidHom.mem_ker, BialgHom.mapDomain_apply] using
       (mapPointsFunctor_app_eq_one_iff f A n).mpr hn
 
 /-- If the coordinate map is effective, the functions invariant under its kernel are precisely
@@ -90,8 +92,10 @@ theorem coinvariants_kernelHopfIdeal_eq_range_of_isEffective (f : H ⟶ K)
       toConv Algebra.TensorProduct.includeLeft
     let g' : HopfAlgebra.points (R := R) (H := K) A :=
       toConv (Algebra.TensorProduct.includeRight.restrictScalars R)
-    have hgg' : (mapPointsFunctor f).app A g = (mapPointsFunctor f).app A g' := by
-      rw [mapPointsFunctor_app_apply, mapPointsFunctor_app_apply]
+    have hgg' : (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor f).app A g' := by
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+        CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
       apply ofConv_injective
       ext a
       exact RingHom.congr_fun
@@ -110,7 +114,7 @@ theorem coinvariants_kernelHopfIdeal_eq_range_of_isEffective (f : H ⟶ K)
   · rintro ⟨a, rfl⟩
     apply (mem_coinvariants_kernelHopfIdeal_iff f _).mpr
     intro A g g' hgg'
-    simpa only [mapPointsFunctor_app_apply_apply, AlgHom.toRingHom_eq_coe,
+    simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply, AlgHom.toRingHom_eq_coe,
       AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom] using
       congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A ↦ p.ofConv a) hgg'
 
@@ -125,4 +129,52 @@ theorem coinvariants_kernelHopfIdeal_eq_range (f : H ⟶ K)
   exact coinvariants_kernelHopfIdeal_eq_range_of_isEffective f
     (Algebra.IsEffective.of_faithfullyFlat H K)
 
+/-- A faithfully flat affine-group morphism identifies its target with the represented
+quotient by its kernel. More generally, the canonical factorization through the coinvariants
+of any normal ideal equal to the kernel is bijective on coordinate algebras. -/
+theorem bijective_liftCoinvariants_of_faithfullyFlat
+    {I : HopfIdeal R K} [Module.Flat R K] [Module.Flat R I.coinvariants]
+    [Module.Flat R (K ⧸ Subalgebra.toSubmodule I.coinvariants)]
+    (hI : I.IsNormal) (f : H ⟶ K)
+    (hf : (f.hom.toAlgHom : H →+* K).FaithfullyFlat)
+    (hker : kernelHopfIdeal f = I) :
+    Function.Bijective (liftCoinvariants hI f hker.le).hom := by
+  constructor
+  · intro x y hxy
+    apply hf.injective
+    exact (coe_liftCoinvariants_apply hI f hker.le x).symm.trans
+      ((congrArg Subtype.val hxy).trans (coe_liftCoinvariants_apply hI f hker.le y))
+  · intro x
+    have hx : (x : K) ∈ f.hom.toAlgHom.range := by
+      rw [← coinvariants_kernelHopfIdeal_eq_range f hf, hker]
+      exact x.property
+    obtain ⟨y, hy⟩ := hx
+    refine ⟨y, Subtype.ext ?_⟩
+    exact (coe_liftCoinvariants_apply hI f hker.le y).trans hy
+
 end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat.Hom
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u v
+
+/-- An idempotent invariant under the kernel of a faithfully flat affine-group morphism
+is the pullback of an idempotent on the target. No finite-type hypothesis is needed. -/
+theorem exists_map_eq_of_isIdempotentElem_mem_coinvariants
+    {R : Type u} [CommRing R] {H K : CommHopfAlgCat.{v} R} (f : H ⟶ K)
+    (hf : f.hom.toAlgHom.toRingHom.FaithfullyFlat) {e : K}
+    (he : IsIdempotentElem e) (hcoinv : e ∈ (kernelHopfIdeal f).coinvariants) :
+    ∃ a : H, IsIdempotentElem a ∧ f.hom a = e := by
+  rw [coinvariants_kernelHopfIdeal_eq_range f hf] at hcoinv
+  obtain ⟨a, ha⟩ := hcoinv
+  -- The range witness evaluates the underlying AlgHom; refold the bialgebra morphism.
+  change f.hom a = e at ha
+  refine ⟨a, ?_, ha⟩
+  have hinj : Function.Injective f.hom := hf.injective
+  apply hinj
+  rw [map_mul, ha]
+  exact he
+
+end CommHopfAlgCat.Hom

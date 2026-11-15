@@ -406,7 +406,7 @@ theorem neg_derivWithin (hf : IsDifferenceCompletelyMonotone f)
     (hd : DifferentiableOn ℝ f (Ici 0)) :
     IsDifferenceCompletelyMonotone (fun t => -derivWithin f (Ici 0) t) := by
   intro l hl t ht
-  set n := l.length with hn
+  set n := l.length
   set u := fwdDiffList l f with hu
   have hud : DifferentiableOn ℝ u (Ici 0) := differentiableOn_fwdDiffList l hl hd
   -- The slope of `u` to the right of `t` has the sign `(-1)^(n+1)`.

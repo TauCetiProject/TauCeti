@@ -24,8 +24,7 @@ modules with linear weights again has linear weights.
 * `TauCeti.instLinearWeightsProd`: products of modules with linear weights have linear weights.
 * `TauCeti.finrank_genWeightSpace_prod`: over a field, generalized weight-space dimensions add.
 
-The first consumer is `TauCeti.formalCharacter_prod`, the product-additivity result supporting the
-"Formal characters" target in Layer 6 of the highest-weight representation-theory roadmap.
+`TauCeti.formalCharacter_prod` uses it to show that formal characters are additive on products.
 -/
 
 public section

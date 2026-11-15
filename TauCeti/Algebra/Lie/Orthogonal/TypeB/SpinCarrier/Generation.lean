@@ -212,6 +212,7 @@ open CategoryTheory in
 numbered root subgroups.** This drops the weight-torus hypothesis of
 `TauCeti.TypeBSpinCarrier.groupScheme_hom_ext`, which root generation of the carrier makes
 redundant. -/
+@[ext high]
 theorem groupScheme_hom_ext_of_rootSubgroup {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (f g : groupScheme n ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))

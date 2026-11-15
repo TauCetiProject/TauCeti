@@ -87,7 +87,7 @@ theorem convex_invariantMeasuresOfMeasureUnivEq {c : ℝ≥0∞} :
     Convex ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X c) := by
   rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ a b _ _ hab
   refine ⟨inferInstance, ?_⟩
-  simp [Measure.add_apply, Measure.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
+  simp [_root_.add_apply, _root_.smul_apply, hν₁u, hν₂u, ← add_mul, hab]
 
 /-- **A mixture of invariant measures is invariant**: if almost every measure of the kernel `κ` is
 `G`-invariant, then so is its mixture `κ ∘ₘ π`. The integral counterpart of the convexity of
@@ -133,7 +133,7 @@ theorem eq_smul_of_absolutelyContinuous (G : Type*) [SMul G X] [MeasurableConstS
   obtain ⟨c, hc⟩ := ae_eq_const_of_forall_ae_eq_comp_smul₀ G
     (measurable_rnDeriv ν μ).nullMeasurable hinv
   refine ⟨c, ?_⟩
-  ext s hs
+  ext s _
   calc ν s = ∫⁻ a in s, ν.rnDeriv μ a ∂μ := .symm <| setLIntegral_rnDeriv hνμ _
     _ = ∫⁻ _ in s, c ∂μ := lintegral_congr_ae <| hc.filter_mono <| ae_mono restrict_le_self
     _ = (c • μ) s := by simp
@@ -142,13 +142,14 @@ theorem eq_smul_of_absolutelyContinuous (G : Type*) [SMul G X] [MeasurableConstS
 same total mass, equals it.** The action-level analogue of
 `Ergodic.eq_of_absolutelyContinuous_measure_univ_eq`. -/
 theorem eq_of_absolutelyContinuous_measure_univ_eq (G : Type*) [SMul G X]
-    [MeasurableConstSMul G X] [IsFiniteMeasure μ] [IsFiniteMeasure ν] [ErgodicSMul G X μ]
+    [MeasurableConstSMul G X] [IsFiniteMeasure μ] [ErgodicSMul G X μ]
     [SMulInvariantMeasure G X ν] (hνμ : ν ≪ μ) (huniv : ν univ = μ univ) : ν = μ := by
+  have : IsFiniteMeasure ν := ⟨by rw [huniv]; exact measure_lt_top μ _⟩
   obtain ⟨c, rfl⟩ := eq_smul_of_absolutelyContinuous G hνμ
   rcases eq_or_ne μ 0 with rfl | hμ0
   · simp
   · have hc : c = 1 := by
-      rw [Measure.smul_apply, smul_eq_mul] at huniv
+      rw [_root_.smul_apply, smul_eq_mul] at huniv
       exact (ENNReal.mul_eq_right (measure_univ_ne_zero.mpr hμ0) (measure_ne_top μ _)).mp huniv
     rw [hc, one_smul]
 
@@ -166,7 +167,7 @@ theorem mem_extremePoints_measure_univ_eq {G : Type*} [SMul G X] [MeasurableCons
     μ ∈ extremePoints ℝ≥0∞ (invariantMeasuresOfMeasureUnivEq G X (μ univ)) := by
   rw [mem_extremePoints_iff_left]
   refine ⟨⟨inferInstance, rfl⟩, ?_⟩
-  rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨hν₂, hν₂u⟩ ⟨a, b, ha, hb, hab, hμ⟩
+  rintro ν₁ ⟨hν₁, hν₁u⟩ ν₂ ⟨_, _⟩ ⟨a, b, ha, _, _, hμ⟩
   have : IsFiniteMeasure ν₁ := ⟨by rw [hν₁u]; exact measure_lt_top μ _⟩
   have hac : ν₁ ≪ μ := hμ ▸ (absolutelyContinuous_smul ha.ne').add_right _
   exact eq_of_absolutelyContinuous_measure_univ_eq G hac hν₁u
@@ -199,14 +200,14 @@ theorem of_mem_extremePoints_measure_univ_eq {c : ℝ≥0∞} (hc : c ≠ ∞)
   -- an exactly invariant `t` of intermediate mass would write `μ` as a proper combination of
   -- the invariant measures `c • μ[|t]` and `c • μ[|tᶜ]` of mass `c`; countability of `G` reduces
   -- almost invariant events to exactly invariant ones
-  refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun t htm htinv => ?_
+  refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun t htm htinv => ?_
   have hmem {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (fun x => g • x) ⁻¹' u = u)
       (hu0 : μ u ≠ 0) : c • μ[|u] ∈ invariantMeasuresOfMeasureUnivEq G X c := by
     have := SMulInvariantMeasure.restrict (G := G) (μ := μ) hum huinv
     refine ⟨?_, ?_⟩
     · -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
       rw [ProbabilityTheory.cond]; infer_instance
-    · rw [Measure.smul_apply, (cond_isProbabilityMeasure hu0).1, smul_eq_mul, mul_one]
+    · rw [_root_.smul_apply, (cond_isProbabilityMeasure hu0).1, smul_eq_mul, mul_one]
   by_contra H
   obtain ⟨hs, hs'⟩ : μ t ≠ 0 ∧ μ tᶜ ≠ 0 := by
     simpa [eventuallyEmptyOrUniv_iff, ae_iff, and_comm] using! H
@@ -262,7 +263,7 @@ theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMe
   -- The mixture over a measurable set `B` of parameters is an invariant measure below `μ`, hence
   -- the multiple `π B • μ` of it.
   have hmix : ∀ B, MeasurableSet B → κ ∘ₘ π.restrict B = π B • μ := by
-    intro B hB
+    intro B _
     have happly : ∀ s, MeasurableSet s → (κ ∘ₘ π.restrict B) s = ∫⁻ z in B, κ z s ∂π :=
       fun s hs => Measure.bind_apply hs κ.aemeasurable
     have hle : κ ∘ₘ π.restrict B ≤ μ := by
@@ -281,7 +282,7 @@ theorem ae_eq_of_comp_eq [MeasurableSpace.CountablyGenerated X] [IsProbabilityMe
     ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite (κ.measurable_coe hs) measurable_const
       fun B hB _ => by
         rw [← Measure.bind_apply hs κ.aemeasurable, hmix B hB, setLIntegral_const,
-          Measure.smul_apply, smul_eq_mul, mul_comm]
+          _root_.smul_apply, smul_eq_mul, mul_comm]
   have hall : ∀ᵐ z ∂π, ∀ s : ProbabilityMeasureCodeIndex X, κ z s.1 = μ s.1 :=
     ae_all_iff.2 fun s => hset _ (measurableSet_probabilityMeasureCodeIndex s)
   filter_upwards [hall] with z hz

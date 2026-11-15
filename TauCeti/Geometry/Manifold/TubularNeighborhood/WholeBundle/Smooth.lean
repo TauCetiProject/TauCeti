@@ -7,15 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Radial.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.WholeBundle.Noncompact
-public import TauCeti.Geometry.Manifold.TubularNeighborhood.SmoothRadius
 
 /-!
 # Smooth embeddings of whole Euclidean normal bundles
 
-Radial compression followed by normal addition gives a smooth parametrization of an
-open neighbourhood of an embedded submanifold by its entire normal bundle. The radius
-may vary over a noncompact core, and the image can lie in any prescribed open neighbourhood.
-The map agrees with the core embedding on the zero section.
+Radial compression followed by normal addition defines a tubular map on the entire
+normal bundle. A smooth radius gives a smooth map, and a positive continuous radius
+whose normal tube embeds openly gives an open embedding. The radius may vary over a
+noncompact core. The map agrees with the core embedding on the zero section.
 
 The results establish smoothness and the open embedding property of the forward map.
 Smoothness of its inverse requires local normal coordinates, independently of radial
@@ -110,43 +109,5 @@ theorem contMDiff_normalBundleTubularMapOfRadius
   convert ((hf.of_le (by simp)).comp hb).add ((hr.comp hb).smul hv) using 1
   funext p
   exact normalBundleTubularMapOfRadius_apply f r p
-
-omit [IsManifold I (n + 1) M] in
-/-- A smooth Euclidean embedding of a boundaryless manifold has a smooth
-open embedding of its entire normal bundle into any prescribed open neighbourhood of its
-image. The embedding agrees with the core on the zero section. -/
-theorem exists_contMDiff_isOpenEmbedding_wholeNormalBundle_subset
-    [IsManifold I ∞ M]
-    (hf : ContMDiff I 𝓘(ℝ, V) ∞ f)
-    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
-    {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
-    letI := normalFiberBundle (hf.of_le (by simp)) himm hdim
-    ∃ Φ : TotalSpace F (fun x => normalSubspace I f x) → V,
-      ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) ∞ Φ ∧ IsOpenEmbedding Φ ∧
-      (∀ x, Φ (zeroSection F (fun x => normalSubspace I f x) x) = f x) ∧ range Φ ⊆ O := by
-  let := normalFiberBundle (hf.of_le (by simp)) himm hdim
-  have : SecondCountableTopology M := hind.secondCountableTopology
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  obtain ⟨r, hrpos, hemb, hOdisc⟩ :=
-    exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset (hf.of_le (by simp))
-      himm hind hO hfO
-  have hf' : ContMDiff I 𝓘(ℝ, V) (↑(⊤ : ℕ∞) + 1) f := by simpa using hf
-  have : IsManifold I (↑(⊤ : ℕ∞) + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  refine ⟨normalBundleTubularMapOfRadius (F := F) f r,
-    contMDiff_normalBundleTubularMapOfRadius hf' himm hdim r.contMDiff,
-    isOpenEmbedding_normalBundleTubularMapOfRadius f r.contMDiff.continuous hrpos hemb,
-    (fun x => by simp [zeroSection]), ?_⟩
-  rintro _ ⟨p, rfl⟩
-  have hu : ‖OpenPartialHomeomorph.univUnitBall (p.2 : V)‖ < 1 :=
-    mem_ball_zero_iff.mp
-      (OpenPartialHomeomorph.univUnitBall.map_source (mem_univ (p.2 : V)))
-  have hv : ‖r p.proj • OpenPartialHomeomorph.univUnitBall (p.2 : V)‖ < r p.proj := by
-    rw [norm_smul, Real.norm_of_nonneg (hrpos p.proj).le]
-    exact (mul_lt_mul_of_pos_left hu (hrpos p.proj)).trans_eq (mul_one _)
-  rw [normalBundleTubularMapOfRadius_apply]
-  exact hOdisc _ _ hv.le
 
 end TauCeti

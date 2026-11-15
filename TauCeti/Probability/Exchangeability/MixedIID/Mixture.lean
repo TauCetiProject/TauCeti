@@ -8,8 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.MixedIID.Implications
 -- Non-public: used only inside the proof below.
 import TauCeti.Probability.Process.PathLaw.FiniteMarginals
-import TauCeti.MeasureTheory.Measure.GiryMonad
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # The path law of a mixed i.i.d. process
@@ -47,11 +46,9 @@ the right `map_bind` to push the marginal inside the mixture, `map_prefixProj_in
 recognise each prefix marginal of an infinite power as the corresponding finite power, and
 `bind_map` to re-index the mixture over `μ` rather than over `μ.map ν`.
 
-This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 6, the directing-measure API bullet
-asking for the mixture-of-product-measures form. That bullet also asks for `π` to be the *unique*
-law of `ν`, which `mixedIID_mixingLaw_unique` now supplies: the mixture representation turns two
-witnesses into the same `Measure.bind`, and injectivity of `π ↦ π.bind (P ↦ P^{⊗ℕ})`
-(`Measure.ext_of_bind_infinitePi_eq`) identifies the mixing laws. The roadmap name
+Uniqueness of the mixing law (`mixedIID_mixingLaw_unique`) follows from the representation: it
+turns two witnesses into the same `Measure.bind`, and injectivity of `π ↦ π.bind (P ↦ P^{⊗ℕ})`
+(`Measure.ext_of_bind_infinitePi_eq`) identifies the mixing laws. The de Finetti form
 `deFinetti_mixture`, which derives the unique representation from exchangeability rather than
 assuming a witness, lives in `TauCeti.Probability.DeFinetti.Representation`.
 -/
@@ -99,10 +96,9 @@ theorem pathLaw_eq_bind_infinitePi_of_mixedIIDWith {μ : Measure Ω} [IsFiniteMe
         rw [map_prefixProj_pathLaw μ hΦ n, h.prefixLaw_eq_mixture n]
     _ = ((μ.map ν).bind fun P => Measure.infinitePi fun _ : ℕ => (P : Measure α)).map
           (prefixProj α n) := by
-        rw [TauCeti.MeasureTheory.map_bind hpow (measurable_prefixProj n)]
+        rw [Measure.map_bind hpow (measurable_prefixProj n).aemeasurable]
         simp_rw [hstep]
-        rw [TauCeti.MeasureTheory.bind_map hν hfin]
-        rfl
+        rw [Measure.bind_map hν hfin]
 
 /-- **The mixing law is a function of the path law.** Two mixed i.i.d. processes with the same path
 law — on possibly different sample spaces — have mixing representatives with the same law.
@@ -113,12 +109,17 @@ This is the sharp form of mixing-law uniqueness: the mixture representation writ
 witnesses for one and the same process (`mixedIID_mixingLaw_unique`) is the special case
 `hpath = rfl`. -/
 theorem mixedIID_mixingLaw_eq_of_pathLaw_eq {Ω' : Type*} [MeasurableSpace Ω']
-    {μ : Measure Ω} [IsFiniteMeasure μ] {μ' : Measure Ω'} [IsFiniteMeasure μ']
+    {μ : Measure Ω} [IsFiniteMeasure μ] {μ' : Measure Ω'}
     {X : ℕ → Ω → α} {Y : ℕ → Ω' → α}
     {ν : Ω → ProbabilityMeasure α} {ν' : Ω' → ProbabilityMeasure α}
     (h : MixedIIDWith μ X ν) (h' : MixedIIDWith μ' Y ν')
     (hpath : pathLaw μ X = pathLaw μ' Y) :
     μ.map ν = μ'.map ν' := by
+  have : IsFiniteMeasure (μ'.map fun ω i => Y i ω) := by
+    rw [← pathLaw_def, ← hpath, pathLaw_def]
+    infer_instance
+  have : IsFiniteMeasure μ' :=
+    Measure.isFiniteMeasure_of_map (AEMeasurable.of_eval h'.aemeasurable)
   have : IsFiniteMeasure (μ.map ν) := Measure.isFiniteMeasure_map _ _
   refine TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_
   rw [← pathLaw_eq_bind_infinitePi_of_mixedIIDWith h,
@@ -136,9 +137,7 @@ conditional predicate (`conditionallyIID_ae_unique`).
 mixing measures can produce identical `∞`-valued finite-dimensional mixtures, so mixing-law
 uniqueness fails at the hypothesis-light generality the definitions otherwise enjoy.
 
-Normalization, however, is not needed. The roadmap states this target with
-`[IsProbabilityMeasure μ]`, but the justification it gives only separates finite from infinite base
-measures, and the proof goes through for any finite `μ`. -/
+Normalization, however, is not needed: the proof goes through for any finite `μ`. -/
 theorem mixedIID_mixingLaw_unique {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     {ν ν' : Ω → ProbabilityMeasure α}
     (h : MixedIIDWith μ X ν) (h' : MixedIIDWith μ X ν') :

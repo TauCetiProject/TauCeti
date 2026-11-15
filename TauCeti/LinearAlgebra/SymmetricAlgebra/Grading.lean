@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import Mathlib.RingTheory.Nilpotent.Lemmas
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 
 /-!
@@ -26,10 +27,22 @@ splitting the recomposition map. No freeness of `M` is needed. This argument fol
 `TensorAlgebra.gradedAlgebra`, in `Mathlib/LinearAlgebra/TensorAlgebra/Grading.lean`, which grades
 the tensor algebra the same way.
 
+The degree-zero projection is the augmentation `SymmetricAlgebra.algebraMapInv`, which sends every
+generator to zero. Hence the irrelevant ideal of elements with zero constant term is the kernel of
+the augmentation, and it is a radical ideal over a reduced base, a prime ideal over a domain and
+a maximal ideal over a field.
+
 ## Main results
 
 * `gradedAlgebra`: the homogeneous pieces grade the symmetric algebra, so in particular they
   decompose it.
+* `toIdeal_irrelevant_eq_ker_algebraMapInv`: the irrelevant ideal is the kernel of the
+  augmentation.
+* `isRadical_toIdeal_irrelevant`: over a reduced base, the irrelevant ideal is radical.
+* `isPrime_toIdeal_irrelevant` and `isMaximal_toIdeal_irrelevant`: over a domain, respectively a
+  field, the irrelevant ideal is prime, respectively maximal.
+* `sub_decompose_mem_wordFiltrationPrevious`: an element of degree at most `n` in the degree
+  filtration agrees with its homogeneous component of degree `n` up to lower degree.
 -/
 
 public section
@@ -78,5 +91,93 @@ noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) 
           rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply,
             DirectSum.of_mul_of]
           exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) rfl)
+
+/-- The degree-zero projection of a symmetric algebra is the augmentation
+`SymmetricAlgebra.algebraMapInv`, followed by the inclusion of the scalars. -/
+theorem projZeroRingHom_eq_algebraMap_comp_algebraMapInv :
+    GradedRing.projZeroRingHom (homogeneousSubmodule R M) =
+      (algebraMap R (SymmetricAlgebra R M)).comp
+        ((SymmetricAlgebra.algebraMapInv : SymmetricAlgebra R M →ₐ[R] R) :
+          SymmetricAlgebra R M →+* R) := by
+  ext m
+  · rw [RingHom.comp_apply, GradedRing.projZeroRingHom_apply,
+      DirectSum.decompose_of_mem_same _ (SetLike.algebraMap_mem_graded _ _)]
+    simp [SymmetricAlgebra.algebraMap_leftInverse M m]
+  · simp [DirectSum.decompose_of_mem_ne _ (ι_mem_homogeneousSubmodule R M m) one_ne_zero,
+      SymmetricAlgebra.algebraMapInv_ι]
+
+/-- The irrelevant ideal of a symmetric algebra, of the elements with zero degree-zero component,
+is the kernel of the augmentation `SymmetricAlgebra.algebraMapInv`. -/
+theorem toIdeal_irrelevant_eq_ker_algebraMapInv :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal =
+      RingHom.ker (SymmetricAlgebra.algebraMapInv : SymmetricAlgebra R M →ₐ[R] R) := by
+  ext p
+  rw [HomogeneousIdeal.toIdeal_irrelevant, RingHom.mem_ker, RingHom.mem_ker,
+    projZeroRingHom_eq_algebraMap_comp_algebraMapInv, RingHom.comp_apply,
+    map_eq_zero_iff _ (SymmetricAlgebra.algebraMap_leftInverse M).injective, RingHom.coe_coe]
+
+variable {R M} in
+/-- An element is in the irrelevant ideal exactly when its augmentation is zero. -/
+theorem mem_irrelevant_iff_algebraMapInv_eq_zero {p : SymmetricAlgebra R M} :
+    p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ↔
+      SymmetricAlgebra.algebraMapInv p = 0 := by
+  rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker]
+
+/-- Over a reduced base, the irrelevant ideal of a symmetric algebra is a radical ideal: the
+quotient by it is the base ring. -/
+theorem isRadical_toIdeal_irrelevant [IsReduced R] :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.IsRadical := by
+  rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
+  exact (RingHom.ker_isRadical_iff_reduced_of_surjective
+    (SymmetricAlgebra.algebraMap_leftInverse M).surjective).2 ‹_›
+
+/-- Over a domain, the irrelevant ideal of a symmetric algebra is prime: the quotient by it is the
+base ring. -/
+instance isPrime_toIdeal_irrelevant [IsDomain R] :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).toIdeal.IsPrime := by
+  rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
+  exact RingHom.ker_isPrime _
+
+/-- Over a field, the irrelevant ideal of a symmetric algebra is maximal: the quotient by it is the
+base field. -/
+instance isMaximal_toIdeal_irrelevant (K : Type*) [Field K] [Module K M] :
+    (HomogeneousIdeal.irrelevant (homogeneousSubmodule K M)).toIdeal.IsMaximal := by
+  rw [toIdeal_irrelevant_eq_ker_algebraMapInv]
+  exact RingHom.ker_isMaximal_of_surjective _ (SymmetricAlgebra.algebraMap_leftInverse M).surjective
+
+end TauCeti.SymmetricAlgebra
+
+/-! ### Homogeneous components and the degree filtration -/
+
+namespace TauCeti.SymmetricAlgebra
+
+open TauCeti.Algebra
+
+variable {R : Type*} {M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- **An element of degree at most `n` agrees with its degree-`n` component up to lower degree**:
+if `p` lies in the `n`-th step of the degree filtration, the word filtration of the generators,
+then `p` minus its homogeneous component of degree `n` has degree strictly less than `n`. In
+degree zero this says that an element of degree zero is its own constant term. -/
+theorem sub_decompose_mem_wordFiltrationPrevious {n : ℕ} {p : SymmetricAlgebra R M}
+    (hp : p ∈ wordFiltration (SymmetricAlgebra.ι R M) n) :
+    p - (DirectSum.decompose (homogeneousSubmodule R M) p n : SymmetricAlgebra R M) ∈
+      wordFiltrationPrevious (SymmetricAlgebra.ι R M) n := by
+  rw [wordFiltration_eq_iSup_pow] at hp
+  refine Submodule.iSup_induction _ (motive := fun p ↦
+    p - (DirectSum.decompose (homogeneousSubmodule R M) p n : SymmetricAlgebra R M) ∈
+      wordFiltrationPrevious (SymmetricAlgebra.ι R M) n) hp ?_ (by simp) ?_
+  · rintro ⟨i, hi⟩ x hx
+    rcases hi.eq_or_lt with rfl | hlt
+    · rw [DirectSum.decompose_of_mem_same _ hx, sub_self]
+      exact zero_mem _
+    · -- a component of degree `i < n` is already of degree at most `n - 1`
+      rw [DirectSum.decompose_of_mem_ne _ hx hlt.ne, sub_zero]
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hlt
+      rw [wordFiltrationPrevious_succ]
+      exact wordFiltration_mono _ (Nat.le_add_right i m) (range_pow_le_wordFiltration _ i hx)
+  · intro x y hx hy
+    rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add, add_sub_add_comm]
+    exact add_mem hx hy
 
 end TauCeti.SymmetricAlgebra

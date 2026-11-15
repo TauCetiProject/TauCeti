@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
+public import TauCeti.GroupTheory.Finiteness
 
 /-!
 # Scheme-valued points and morphisms of diagonalizable group schemes
@@ -263,14 +264,14 @@ theorem groupSchemePointsMulEquiv_groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G
       (groupScheme R H).X) :
     groupSchemePointsMulEquiv (R := R) (A := A) G
         (p ≫ (groupSchemeMap R f).hom.hom) =
-      pointsMap (R := R) (A := A) (FGCommGrpCat.toMonoidHom f)
+      pointsMap (R := R) (A := A) f.hom.hom
         (groupSchemePointsMulEquiv (R := R) (A := A) H p) := by
   -- This crosses the local `groupSchemeMap` and typed-point wrappers to the existing
   -- coordinate-map action on convolution points; `coordinateMap` supplies the same map.
   change AlgebraicGeometry.Spec.mapMulEquiv.symm
       ((p ≫ (groupSchemeMap R f).hom.hom) ≫
         (groupSchemeIsoSpec (R := R) G).hom) =
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap R f).hom).app
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R f).hom).app
       (CommAlgCat.of R A)
         (AlgebraicGeometry.Spec.mapMulEquiv.symm
           (p ≫ (groupSchemeIsoSpec (R := R) H).hom))
@@ -339,7 +340,7 @@ theorem schemePointsMulEquiv_groupSchemeMap
     schemePointsMulEquiv (R := R) (A := A) G
         (p ≫ (groupSchemeMap R f).hom.hom) =
       (schemePointsMulEquiv (R := R) (A := A) H p).comp
-        (FGCommGrpCat.toMonoidHom f) := by
+        f.hom.hom := by
   rw [schemePointsMulEquiv, MulEquiv.trans_apply,
     groupSchemePointsMulEquiv_groupSchemeMap, pointsMulEquiv_pointsMap,
     schemePointsMulEquiv, MulEquiv.trans_apply]
@@ -463,6 +464,21 @@ theorem characterGroupSchemeMap_def (G : FGCommGrpCat.{u}) (g : G) :
       groupSchemeMap R (FGCommGrpCat.ofHom (uliftZPowersMulEquiv G g)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct group elements give distinct scheme-level characters. -/
+@[grind inj]
+theorem characterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (characterGroupSchemeMap (R := R) G) := by
+  intro g g' h
+  have h' := groupSchemeMap_injective R (by simpa only [characterGroupSchemeMap_def] using h)
+  simpa only [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom,
+    EmbeddingLike.apply_eq_iff_eq] using h'
+
+/-- Over a nontrivial base ring, `characterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem characterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}} {g g' : G} :
+    characterGroupSchemeMap (R := R) G g = characterGroupSchemeMap (R := R) G g' ↔ g = g' :=
+  (characterGroupSchemeMap_injective G).eq_iff
+
 /-- On scheme-valued points, the group-scheme character associated to `g` evaluates the
 corresponding `G`-character at `g`. -/
 @[simp high]
@@ -475,7 +491,7 @@ theorem multiplicativeGroupSchemePointsMulEquiv_characterGroupSchemeMap
       schemePointsMulEquiv (R := R) (A := A) G p g := by
   rw [multiplicativeGroupSchemePointsMulEquiv_apply, characterGroupSchemeMap_def,
     schemePointsMulEquiv_groupSchemeMap, MonoidHom.comp_apply,
-    FGCommGrpCat.toMonoidHom_ofHom, uliftZPowersMulEquiv_apply, toAdd_ofAdd, zpow_one]
+    FGCommGrpCat.hom_hom_ofHom, uliftZPowersMulEquiv_apply, toAdd_ofAdd, zpow_one]
 
 /-- A cocharacter `psi : G →* Multiplicative ℤ` gives a group-scheme morphism
 `𝔾ₘ ⟶ D(G)`. The target character lattice is universe-lifted only at this scheme
@@ -497,6 +513,24 @@ theorem cocharacterGroupSchemeMap_def (G : FGCommGrpCat.{u})
           ULift.{u} (Multiplicative ℤ)).toMonoidHom.comp psi)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct cocharacters give distinct scheme-level cocharacters. -/
+@[grind inj]
+theorem cocharacterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (cocharacterGroupSchemeMap (R := R) G) := by
+  intro psi psi' h
+  have h' := groupSchemeMap_injective R (by simpa only [cocharacterGroupSchemeMap_def] using h)
+  rw [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom, FGCommGrpCat.hom_hom_ofHom] at h'
+  ext g
+  simpa using congrArg (fun f ↦ f g) h'
+
+/-- Over a nontrivial base ring, `cocharacterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem cocharacterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}}
+    {psi psi' : G →* Multiplicative ℤ} :
+    cocharacterGroupSchemeMap (R := R) G psi = cocharacterGroupSchemeMap (R := R) G psi' ↔
+      psi = psi' :=
+  (cocharacterGroupSchemeMap_injective G).eq_iff
+
 /-- On scheme-valued points, a cocharacter raises the multiplicative-group unit to the
 ordinary integer obtained by evaluating the cocharacter. -/
 @[simp high]
@@ -508,7 +542,7 @@ theorem schemePointsMulEquiv_cocharacterGroupSchemeMap
         (p ≫ (cocharacterGroupSchemeMap (R := R) G psi).hom.hom) g =
       multiplicativeGroupSchemePointsMulEquiv (R := R) (A := A) p ^ (psi g).toAdd := by
   rw [cocharacterGroupSchemeMap_def, schemePointsMulEquiv_groupSchemeMap,
-    MonoidHom.comp_apply, FGCommGrpCat.toMonoidHom_ofHom]
+    MonoidHom.comp_apply, FGCommGrpCat.hom_hom_ofHom]
   exact schemePointsMulEquiv_multiplicativeCharacterGroup_apply p (psi g)
 
 /-- The `n`-th power endomorphism of the multiplicative group scheme. Its character-lattice
@@ -525,6 +559,20 @@ theorem powEndGroupSchemeMap_def (n : ℤ) :
       characterGroupSchemeMap (R := R) multiplicativeCharacterGroup
         (ULift.up (Multiplicative.ofAdd n)) := by
   rfl
+
+/-- Over a nontrivial base ring, distinct exponents give distinct power endomorphisms of the
+multiplicative group scheme. -/
+@[grind inj]
+theorem powEndGroupSchemeMap_injective [Nontrivial R] :
+    Function.Injective (powEndGroupSchemeMap (R := R)) := fun m n h ↦
+  Multiplicative.ofAdd.injective <| ULift.up_injective <|
+    characterGroupSchemeMap_injective _ (by simpa only [powEndGroupSchemeMap_def] using h)
+
+/-- Over a nontrivial base ring, `powEndGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem powEndGroupSchemeMap_inj [Nontrivial R] {m n : ℤ} :
+    powEndGroupSchemeMap (R := R) m = powEndGroupSchemeMap (R := R) n ↔ m = n :=
+  powEndGroupSchemeMap_injective.eq_iff
 
 /-- The scheme-level `n`-th power endomorphism raises every scheme-valued point to the
 ordinary integer power `n`. -/
@@ -550,7 +598,7 @@ theorem cocharacterGroupSchemeMap_comp_characterGroupSchemeMap
     powEndGroupSchemeMap_def, characterGroupSchemeMap_def, ← groupSchemeMap_comp]
   congr 1
   apply FGCommGrpCat.hom_ext
-  simp only [FGCommGrpCat.toMonoidHom_comp, FGCommGrpCat.toMonoidHom_ofHom]
+  simp only [FGCommGrpCat.hom_hom_comp, FGCommGrpCat.hom_hom_ofHom]
   apply (uliftZPowersMulEquiv (ULift.{u} (Multiplicative ℤ))).symm.injective
   rw [uliftZPowersMulEquiv_symm_apply, uliftZPowersMulEquiv_symm_apply]
   simp only [MonoidHom.comp_apply, uliftZPowersMulEquiv_apply, toAdd_ofAdd,

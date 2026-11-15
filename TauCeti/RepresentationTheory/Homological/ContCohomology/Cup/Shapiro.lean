@@ -79,7 +79,8 @@ section Multiplicativity
 
 section DegreeZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G] (U : Subgroup G)
+variable (G : Type uG) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G)
   (A : Type uA) [AddCommGroup A] [DistribMulAction U A]
   (B : Type uB) [AddCommGroup B] [DistribMulAction U B]
   (C : Type uC) [AddCommGroup C] [DistribMulAction U C]
@@ -116,10 +117,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Co
   (C : Type uC) [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
     [DistribMulAction U C] [ContinuousSMul U C]
   (μ : A →+ B →+ C) (hμ : ∀ (u : U) (a : A) (b : B), μ (u • a) (u • b) = u • μ a b)
-
-/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
-local instance instContinuousMulSubgroupMultiplicativity : ContinuousMul U :=
-  U.toSubmonoid.continuousMul
 
 omit [ContinuousSMul U A] in
 /-- **The Shapiro maps are multiplicative** for the `(0,1)` cup product. -/
@@ -239,7 +236,8 @@ so the multiplicativity above computes the corestriction of a cup product of `U`
 
 section DegreeZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G] (U : Subgroup G)
+variable (G : Type uG) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G)
   [U.FiniteIndex]
   (M : Type uA) [AddCommGroup M] [DistribMulAction U M]
   (N : Type uB) [AddCommGroup N] [DistribMulAction U N]
@@ -274,10 +272,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Co
   (P : Type uC) [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P]
     [DistribMulAction G P] [ContinuousSMul G P]
   (μ : M →+ N →+ P) (hμ : ∀ (u : U) (m : M) (n : N), μ (u • m) (u • n) = u • μ m n)
-
-/-- Multiplication on the subgroup `U` is continuous for the subspace topology. -/
-local instance instContinuousMulSubgroupCorestriction : ContinuousMul U :=
-  U.toSubmonoid.continuousMul
 
 omit [ContinuousSMul U M] in
 /-- **The corestriction of a `(0,1)` cup product of `U`** is the trace of the `(0,1)` cup product

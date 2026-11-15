@@ -28,6 +28,58 @@ namespace Subgroup
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)}
 
+/-- The fibres of the coset map to the interior fibre over `z` are the sets of cosets with the
+same orbit translate. -/
+private theorem card_fiber_eq_card_orbitOfCosetTranslate
+    (h : Δ ≤ Γ) (z : ℍ)
+    {φ : Γ ⧸ Δ.subgroupOf Γ → {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)}}
+    (hφ : ∀ c, φ c = orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)
+      (TauCeti.cosetToOrbitRelMapFiber h z c)) (c : Γ ⧸ Δ.subgroupOf Γ) :
+    Nat.card {r : Γ ⧸ Δ.subgroupOf Γ // φ r = φ c} =
+      Nat.card {r : Γ ⧸ Δ.subgroupOf Γ // TauCeti.orbitOfCosetTranslate z r =
+        TauCeti.orbitOfCosetTranslate z c} := by
+  apply Nat.card_congr
+  apply Equiv.subtypeEquivProp
+  funext r
+  apply propext
+  simp only [hφ, (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)).injective.eq_iff]
+  constructor
+  · intro heq
+    simpa only [TauCeti.cosetToOrbitRelMapFiber_apply] using congrArg Subtype.val heq
+  · intro heq
+    apply Subtype.ext
+    simpa only [TauCeti.cosetToOrbitRelMapFiber_apply] using heq
+
+/-- The number of cosets in the fibre of the coset map over the image of `c` is the local
+multiplicity of the quotient map there. -/
+private theorem card_fiber_eq_localMultiplicity
+    [DiscreteTopology Δ] [DiscreteTopology Γ] (h : Δ ≤ Γ) (z : ℍ)
+    {φ : Γ ⧸ Δ.subgroupOf Γ → {y : Δ.CompactifiedQuotient //
+      compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)}}
+    (hφ : ∀ c, φ c = orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)
+      (TauCeti.cosetToOrbitRelMapFiber h z c)) (c : Γ ⧸ Δ.subgroupOf Γ) :
+    Nat.card {r : Γ ⧸ Δ.subgroupOf Γ // φ r = φ c} =
+      localMultiplicity (compactifiedQuotientMap h) (φ c).1 := by
+  induction c using QuotientGroup.induction_on with
+  | H g =>
+    rw [card_fiber_eq_card_orbitOfCosetTranslate h z hφ]
+    have hcount := TauCeti.card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul
+      h z g
+    have hram := card_stabilizer_mul_ellipticRamificationIndex h (g⁻¹ • z)
+    rw [TauCeti.card_stabilizer_smul] at hram
+    have hsmall : 0 < Nat.card (stabilizer Δ (g⁻¹ • z)) := Nat.card_pos
+    have hindex : Nat.card {r : Γ ⧸ Δ.subgroupOf Γ // TauCeti.orbitOfCosetTranslate z r =
+        TauCeti.orbitOfCosetTranslate z ((g : Γ) : Γ ⧸ Δ.subgroupOf Γ)} =
+        ellipticRamificationIndex h (g⁻¹ • z) := by
+      nlinarith
+    rw [hindex, hφ]
+    simpa only [orbitFiberEquivCompactifiedFiber_apply,
+      TauCeti.cosetToOrbitRelMapFiber_apply, TauCeti.orbitOfCosetTranslate_mk,
+      Subgroup.smul_def, Subgroup.coe_inv] using
+      (localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex
+        h (g⁻¹ • z)).symm
+
 private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_mk
     [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
@@ -59,38 +111,7 @@ private theorem sum_localMultiplicity_compactifiedQuotientMap_fiber_mk
   have hweight (y : F) : Nat.card {c : C // φ c = y} =
       localMultiplicity (compactifiedQuotientMap h) y.1 := by
     obtain ⟨c, rfl⟩ := hφsurj y
-    induction c using QuotientGroup.induction_on with
-    | H g =>
-      have hfiber : Nat.card {r : C // φ r = φ ((g : Γ) : C)} =
-          Nat.card {r : C // TauCeti.orbitOfCosetTranslate z r =
-            TauCeti.orbitOfCosetTranslate z ((g : Γ) : C)} := by
-        apply Nat.card_congr
-        apply Equiv.subtypeEquivProp
-        funext r
-        apply propext
-        simp only [φ, (orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)).injective.eq_iff]
-        constructor
-        · intro heq
-          simpa only [TauCeti.cosetToOrbitRelMapFiber_apply] using congrArg Subtype.val heq
-        · intro heq
-          apply Subtype.ext
-          simpa only [TauCeti.cosetToOrbitRelMapFiber_apply] using heq
-      rw [hfiber]
-      have hcount := TauCeti.card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_inv_smul
-        h z g
-      have hram := card_stabilizer_mul_ellipticRamificationIndex h (g⁻¹ • z)
-      rw [TauCeti.card_stabilizer_smul] at hram
-      have hsmall : 0 < Nat.card (stabilizer Δ (g⁻¹ • z)) := Nat.card_pos
-      have hindex : Nat.card {r : C // TauCeti.orbitOfCosetTranslate z r =
-          TauCeti.orbitOfCosetTranslate z ((g : Γ) : C)} =
-          ellipticRamificationIndex h (g⁻¹ • z) := by
-        nlinarith
-      rw [hindex]
-      simpa only [φ, orbitFiberEquivCompactifiedFiber_apply,
-        TauCeti.cosetToOrbitRelMapFiber_apply, TauCeti.orbitOfCosetTranslate_mk,
-        Subgroup.smul_def, Subgroup.coe_inv] using
-        (localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex
-          h (g⁻¹ • z)).symm
+    exact card_fiber_eq_localMultiplicity h z (fun _ => rfl) c
   rw [finsum_eq_sum_of_fintype]
   simpa only [F, C, Subgroup.index_eq_card] using
     (calc

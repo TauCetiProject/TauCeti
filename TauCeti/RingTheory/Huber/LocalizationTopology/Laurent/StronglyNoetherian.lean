@@ -180,7 +180,7 @@ private theorem isStronglyNoetherian_completion_union [DecidableEq A]
     rw [Finset.union_empty] at hVdef
     subst hVdef
     exact hSN
-  | @insert a W haW ih =>
+  | @insert a W _ ih =>
     intro V hVdef hW hV
     rw [Finset.union_insert] at hVdef
     subst hVdef
