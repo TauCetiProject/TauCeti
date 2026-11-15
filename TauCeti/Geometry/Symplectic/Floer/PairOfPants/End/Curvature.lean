@@ -340,3 +340,4 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
   exact hB _ _
 
 end TauCeti.SmoothTwoForm
+

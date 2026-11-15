@@ -160,3 +160,4 @@ theorem logDeriv_tprod_weierstrassFactorOne_pow {z : ℂ}
   simpa only [logDeriv_weierstrassFactorOne_mul_pow] using ht
 
 end Complex
+

@@ -86,3 +86,4 @@ theorem exists_contMDiffMap_regular_definingFunction_norm_le
   exact hgerm p ((Set.ext_iff.mp hle p).mpr hp)
 
 end PartialDiffeomorph
+

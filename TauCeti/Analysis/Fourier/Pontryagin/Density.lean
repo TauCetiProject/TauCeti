@@ -81,3 +81,4 @@ theorem starAlgHom_ext {A : Type*} [CStarAlgebra A]
     (isClosed_eq (map_continuous φ) (map_continuous ψ)) h
 
 end PontryaginDual
+
