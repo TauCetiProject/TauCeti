@@ -68,8 +68,8 @@ theorem coe_detPhase {L : E →L[ℂ] E} (h : L.det ≠ 0) : (L.detPhase : ℂ) 
 /-- The determinant phase of an operator with vanishing determinant is `1`. -/
 theorem detPhase_of_det_eq_zero {L : E →L[ℂ] E} (h : L.det = 0) : L.detPhase = 1 := by
   ext1
-  rw [coe_detPhase_eq_sphereDirection, h, TauCeti.sphereDirection_zero]
-  rfl
+  rw [coe_detPhase_eq_sphereDirection, h, TauCeti.sphereDirection_zero,
+    Metric.unitSphere.coe_one, Circle.coe_one]
 
 /-- The determinant of an operator is its modulus times its determinant phase. -/
 theorem det_eq_norm_mul_detPhase (L : E →L[ℂ] E) : L.det = ‖L.det‖ * (L.detPhase : ℂ) := by
