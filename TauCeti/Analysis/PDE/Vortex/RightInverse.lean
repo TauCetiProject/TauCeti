@@ -147,8 +147,7 @@ theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Contin
     (hy_ker : ∀ z, gaugeFixedOperator x y z = 0) : hy_lp.toLp y ∈ weakGaugeFixedKernel μ hx := by
   rw [mem_weakGaugeFixedKernel_iff hx]; intro η hη hηc
   rw [hy_lp.integral_inner_toLp_left,
-    ← integral_inner_gaugeFixedOperator_of_hasCompactSupport_right hx hy
-      (hη.of_le (by norm_num)) hηc]; simp [hy_ker]
+    ← integral_inner_gaugeFixedOperator hx hy (hη.of_le (by norm_num)) (.inr hηc)]; simp [hy_ker]
 /-- Every element of `gaugeFixedKernel x` represents an element of `weakGaugeFixedKernel`. -/
 theorem toLp_mem_weakGaugeFixedKernel_of_mem_gaugeFixedKernel (hx : Continuous x)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x) :
@@ -181,7 +180,7 @@ theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
     exact (Submodule.mem_orthogonal _ _).1 (Submodule.starProjection_apply_mem _ _) (S η) ⟨η, rfl⟩
   rw [inner_gaugeFixedAdjointToLp hx, hQsol _ η η.contDiff η.hasCompactSupport, inner_sub_left,
     hPK_zero, sub_zero, inner_gaugeFixedAdjointToLp hx, hLψ_lp.integral_inner_toLp_left,
-    integral_inner_gaugeFixedOperator hx hψ hψc (η.contDiff.of_le (by norm_cast)),
+    integral_inner_gaugeFixedOperator hx hψ (η.contDiff.of_le (by norm_cast)) (.inl hψc),
     hψ_lp.integral_inner_toLp_left]
 
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
@@ -305,7 +304,7 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   -- Integration by parts: `∫ V² ⟪L_x L_x* η, η⟫ = ∫ ⟪L_x* η, L_x* (V² η)⟫`.
   have h₁ : ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ =
       ∫ z, ⟪gaugeFixedAdjoint x η z, H z⟫ ∂μ := by
-    rw [← integral_inner_gaugeFixedOperator hx.continuous hA hAc (hVη.of_le (by norm_num))]
+    rw [← integral_inner_gaugeFixedOperator hx.continuous hA (hVη.of_le (by norm_num)) (.inl hAc)]
     simp only [real_inner_smul_right]
   have h₂ := hweak _ hVη hVηc
   simp only [real_inner_smul_right] at h₂

@@ -98,12 +98,12 @@ theorem integral_inner_normalModelOperator {μ : Measure ℂ} [μ.IsAddHaarMeasu
           (Vortex.continuous_gaugeFixedAdjoint hx hξ₁) hw₁c)
         (hint (u := fun z ↦ (w z).2) hw₂.continuous
           (Vortex.continuous_gaugeFixedOperator hx hξ₂) hw₂c)]
-  refine congrArg₂ (· + ·) (Vortex.integral_inner_gaugeFixedOperator hx hw₁ hw₁c hξ₁) ?_
+  refine congrArg₂ (· + ·) (Vortex.integral_inner_gaugeFixedOperator hx hw₁ hξ₁ (.inl hw₁c)) ?_
   calc ∫ z, ⟪Vortex.gaugeFixedAdjoint x (Prod.snd ∘ w) z, (ξ z).2⟫ ∂μ
       = ∫ z, ⟪(Prod.snd ∘ ξ) z, Vortex.gaugeFixedAdjoint x (Prod.snd ∘ w) z⟫ ∂μ :=
         integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)
     _ = ∫ z, ⟪Vortex.gaugeFixedOperator x (Prod.snd ∘ ξ) z, (Prod.snd ∘ w) z⟫ ∂μ :=
-        (Vortex.integral_inner_gaugeFixedOperator_of_hasCompactSupport_right hx hξ₂ hw₂ hw₂c).symm
+        (Vortex.integral_inner_gaugeFixedOperator hx hξ₂ hw₂ (.inr hw₂c)).symm
     _ = ∫ z, ⟪(w z).2, Vortex.gaugeFixedOperator x (Prod.snd ∘ ξ) z⟫ ∂μ :=
         integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)
 
