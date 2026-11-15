@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.Analytic.Order
 
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.SpecialFunctions.Complex.LogTaylor
 
 /-!
