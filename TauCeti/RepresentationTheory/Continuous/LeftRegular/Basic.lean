@@ -40,6 +40,8 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
 * `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
   `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
+* `MeasureTheory.Measure.leftRegular_count_indicatorConstLp_singleton`: on counting-measure `Lᵖ`,
+  left translation by `g` sends the singleton indicator at `h` to that at `g * h`.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -135,5 +137,31 @@ theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ 
   exact Lp.ext (.of_forall fun x ↦ by simp [hconst x, hz])
 
 end Invariants
+
+section Count
+
+variable [MeasurableSingletonClass G]
+
+/-- Left translation by `g` on counting-measure `Lᵖ` sends the point mass at `h` to that at
+`g * h`. -/
+@[simp]
+theorem leftRegular_count_indicatorConstLp_singleton (g h : G) (c : E) :
+    (count : Measure G).leftRegular 𝕜 E p g
+      (indicatorConstLp p (measurableSet_singleton h) (by simp) c) =
+      indicatorConstLp p (measurableSet_singleton (g * h)) (by simp) c := by
+  refine Lp.ext (ae_count_iff.2 fun x => ?_)
+  have h1 := ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count p g
+    (indicatorConstLp p (measurableSet_singleton h) (by simp) c)) x
+  have h2 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
+    (hs := measurableSet_singleton h) (hμs := by simp) (c := c)) (g⁻¹ * x)
+  have h3 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
+    (hs := measurableSet_singleton (g * h)) (hμs := by simp) (c := c)) x
+  refine (h1.trans h2).trans (Eq.trans ?_ h3.symm)
+  by_cases hx : x = g * h
+  · simp [hx]
+  · have hx' : g⁻¹ * x ≠ h := fun e => hx (eq_mul_of_inv_mul_eq e)
+    simp [hx, hx']
+
+end Count
 
 end MeasureTheory.Measure

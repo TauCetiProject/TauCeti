@@ -6,21 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
-public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The right regular representation on vector-valued `Lᵖ`
 
 Let `μ` be a right-invariant measure on a group `G`, and `E` a normed space. Parallel to
 `MeasureTheory.Measure.leftRegular`, the group `G` acts on `Lᵖ(G, E)` by right translation,
-`(ρ g f) x = f (x * g)`. Because `(f (· * g)) (x * h) = f (x * (g * h))`, no inverse is needed in
-the group argument for `g ↦ ρ g` to be a homomorphism. Each right translation is an isometry, so
-the action is unitary on `L²(G, E)` for an inner product space `E`. When `μ` is bi-invariant, every
+`(ρ g f) x = f (x * g)`. Because `(f (· * h)) (x * g) = f (x * (g * h))`, we have
+`ρ g (ρ h f) = ρ (g * h) f`, so no inverse is needed in the group argument for `g ↦ ρ g` to be a
+homomorphism. Each right translation is an isometry, so the action is unitary on `L²(G, E)` for an
+inner product space `E`. For a topological group, `1 ≤ p < ∞`, and a locally finite measure that is
+inner regular with respect to compact sets on sets of finite measure, the action is strongly
+continuous (`MeasureTheory.Measure.continuous_rightRegular_apply`). When `μ` is bi-invariant, every
 left translation `μ.leftRegular 𝕜 E p g` commutes with every right translation
 `μ.rightRegular 𝕜 E p h` by associativity of multiplication in `G`.
 
-On the counting measure of a group with measurable singletons, `leftRegular` sends the singleton
-indicator at `h` to that at `g * h`, while `rightRegular` sends it to that at `h * g⁻¹`.
+On the counting measure of a group with measurable singletons, `rightRegular` sends the singleton
+indicator at `h` to that at `h * g⁻¹`.
 
 ## Main definitions
 
@@ -30,11 +33,13 @@ indicator at `h` to that at `g * h`, while `rightRegular` sends it to that at `h
 
 * `MeasureTheory.Measure.rightRegular_apply` and `MeasureTheory.Measure.coeFn_rightRegular`:
   `ρ g` is `Lp.compMeasurePreserving (· * g)`, represented by `x ↦ f (x * g)`.
+* `MeasureTheory.Measure.rightRegular_toLp`: on a compact group with a finite measure, `ρ g` acts
+  on the `Lp` class of a continuous function by right translation.
 * `MeasureTheory.Measure.isUnitary_rightRegular`: the action on `L²(G, E)` is unitary.
+* `MeasureTheory.Measure.continuous_rightRegular_apply`: the action is strongly continuous.
 * `MeasureTheory.Measure.commute_leftRegular_rightRegular`: left and right regular operators
   commute for any bi-invariant measure.
-* `MeasureTheory.Measure.leftRegular_count_indicatorConstLp_singleton` and
-  `MeasureTheory.Measure.rightRegular_count_indicatorConstLp_singleton`: actions on point masses.
+* `MeasureTheory.Measure.rightRegular_count_indicatorConstLp_singleton`: action on point masses.
 -/
 
 public section
@@ -81,6 +86,16 @@ theorem coeFn_rightRegular (g : G) (f : Lp E p μ) :
   rw [rightRegular_apply]
   exact Lp.coeFn_compMeasurePreserving f _
 
+/-- On a compact group with a finite right-invariant Borel measure, right translation sends the
+`Lp` class of a continuous function `F` to the class of `x ↦ F (x * g)`. -/
+@[simp]
+theorem rightRegular_toLp [TopologicalSpace G] [ContinuousMul G] [CompactSpace G] [BorelSpace G]
+    [SecondCountableTopologyEither G E] [IsFiniteMeasure μ] (F : C(G, E)) (g : G) :
+    μ.rightRegular 𝕜 E p g (ContinuousMap.toLp p μ 𝕜 F) =
+      ContinuousMap.toLp p μ 𝕜 (F.comp (.mulRight g)) := by
+  rw [rightRegular_apply]
+  exact Lp.compMeasurePreserving_toLp 𝕜 F (.mulRight g) (measurePreserving_mul_right μ g)
+
 /-- Right translation preserves the `Lᵖ` norm. -/
 @[simp]
 theorem norm_rightRegular_apply (g : G) (f : Lp E p μ) : ‖μ.rightRegular 𝕜 E p g f‖ = ‖f‖ := by
@@ -92,6 +107,18 @@ theorem isUnitary_rightRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGrou
     [InnerProductSpace 𝕜 E] : (μ.rightRegular 𝕜 E 2).IsUnitary := by
   rw [ContRepresentation.isUnitary_iff_norm_map]
   exact norm_rightRegular_apply μ 2
+
+/-- **The right regular representation is strongly continuous** for `p < ∞` and a locally finite
+measure that is inner regular with respect to compact sets on sets of finite measure: every orbit
+map `g ↦ ρ g f` is continuous. -/
+theorem continuous_rightRegular_apply [TopologicalSpace G] [IsTopologicalGroup G] [BorelSpace G]
+    [μ.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure μ] (hp : p ≠ ∞) (f : Lp E p μ) :
+    Continuous fun g : G => μ.rightRegular 𝕜 E p g f := by
+  have hg : Continuous fun g : G => ContinuousMap.mulRight (X := G) g :=
+    (ContinuousMap.curry
+      ⟨fun q : G × G => q.2 * q.1, continuous_snd.mul continuous_fst⟩).continuous
+  simp only [rightRegular_apply]
+  exact continuous_const.compMeasurePreservingLp hg _ hp
 
 /-- For a bi-invariant measure, every left regular operator commutes with every right regular
 operator. -/
@@ -107,26 +134,6 @@ theorem commute_leftRegular_rightRegular [μ.IsMulLeftInvariant] (g h : G) :
 section Count
 
 variable [MeasurableSingletonClass G]
-
-/-- Left translation by `g` on counting-measure `Lᵖ` sends the point mass at `h` to that at
-`g * h`. -/
-@[simp]
-theorem leftRegular_count_indicatorConstLp_singleton (g h : G) (c : E) :
-    (count : Measure G).leftRegular 𝕜 E p g
-      (indicatorConstLp p (measurableSet_singleton h) (by simp) c) =
-      indicatorConstLp p (measurableSet_singleton (g * h)) (by simp) c := by
-  refine Lp.ext (ae_count_iff.2 fun x => ?_)
-  have h1 := ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count p g
-    (indicatorConstLp p (measurableSet_singleton h) (by simp) c)) x
-  have h2 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton h) (hμs := by simp) (c := c)) (g⁻¹ * x)
-  have h3 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton (g * h)) (hμs := by simp) (c := c)) x
-  refine (h1.trans h2).trans (Eq.trans ?_ h3.symm)
-  by_cases hx : x = g * h
-  · simp [hx]
-  · have hx' : g⁻¹ * x ≠ h := fun e => hx (eq_mul_of_inv_mul_eq e)
-    simp [hx, hx']
 
 /-- Right translation by `g` on counting-measure `Lᵖ` sends the point mass at `h` to that at
 `h * g⁻¹`. -/

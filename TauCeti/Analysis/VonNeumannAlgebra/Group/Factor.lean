@@ -49,17 +49,6 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-/-- Finite-sum linearity of `groupVonNeumannCoeff`. -/
-theorem groupVonNeumannCoeff_sum {Γ ι : Type*} [One Γ] [MeasurableSpace Γ]
-    [MeasurableSingletonClass Γ] (s : Finset ι)
-    (f : ι → Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
-    (g : Γ) :
-    groupVonNeumannCoeff (∑ i ∈ s, f i) g = ∑ i ∈ s, groupVonNeumannCoeff (f i) g := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
-
 section Center
 
 variable {Γ : Type*} [Group Γ] [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
@@ -115,23 +104,6 @@ theorem mem_commutant_groupVonNeumannAlgebra_iff
     calc lk * x = (lk * x * lki) * lk := by
           simp only [lk, lki, mul_assoc, ← map_mul, inv_mul_cancel, map_one, mul_one]
       _ = x * lk := by rw [hconj_eq]
-
-/-- The `x`-th Fourier coefficient of a finite sum of left regular unitaries over `s` is the
-indicator of `x ∈ s`. -/
-@[simp]
-theorem groupVonNeumannCoeff_sum_leftRegular [DecidableEq Γ] (s : Finset Γ) (x : Γ) :
-    groupVonNeumannCoeff
-      (∑ h ∈ s, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 h) x =
-      if x ∈ s then 1 else 0 := by
-  rw [groupVonNeumannCoeff_sum]
-  by_cases hx : x ∈ s
-  · simp only [hx, ↓reduceIte]
-    exact (Finset.sum_eq_single x (fun h _ hne => groupVonNeumannCoeff_leftRegular_of_ne hne.symm)
-      (fun hxs => absurd hx hxs)).trans (groupVonNeumannCoeff_leftRegular_self x)
-  · simp only [hx, ↓reduceIte]
-    refine Finset.sum_eq_zero fun h hh => groupVonNeumannCoeff_leftRegular_of_ne ?_
-    rintro rfl
-    exact hx hh
 
 variable (Γ) in
 /-- **The ICC factor theorem** (Murray–von Neumann). The group von Neumann algebra

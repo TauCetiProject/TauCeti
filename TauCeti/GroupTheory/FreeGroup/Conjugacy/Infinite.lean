@@ -9,7 +9,6 @@ public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.Algebra.Group.Conj
 import TauCeti.GroupTheory.FreeGroup.CSA
-import TauCeti.GroupTheory.FreeGroup.Centralizer
 
 /-!
 # Infinite conjugacy classes in nonabelian free groups
@@ -44,11 +43,8 @@ end IsFreeGroup
 namespace FreeGroup
 
 /-- A free group on at least two generators is nonabelian. -/
-theorem not_isMulCommutative {α : Type*} [Nontrivial α] : ¬ IsMulCommutative (FreeGroup α) := by
-  intro hcomm
-  obtain ⟨a, b, hab⟩ := exists_pair_ne α
-  exact of_ne_one a (eq_one_of_commute_of_of_commute_of hab (Commute.refl (of a))
-    (isMulCommutative_iff.mp hcomm (of a) (of b)))
+theorem not_isMulCommutative {α : Type*} [Nontrivial α] : ¬ IsMulCommutative (FreeGroup α) :=
+  fun h => not_subsingleton α (isMulCommutative_iff_subsingleton.mp h)
 
 /-- Every nonidentity element of a free group on at least two generators has an infinite conjugacy
 class. -/

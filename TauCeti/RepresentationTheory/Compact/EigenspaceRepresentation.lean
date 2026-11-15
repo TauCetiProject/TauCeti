@@ -14,12 +14,12 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 # The finite-dimensional representations carried by convolution eigenspaces
 
 A compact group `G` acts on `L²(G)` by right translation, `(π g f) x = f (x * g)`
-(`TauCeti.rightRegularLp`). This action is isometric and strongly continuous, but nothing makes
-`g ↦ π g` continuous for the operator norm, so `L²(G)` itself does not come with the continuity
-hypothesis that Mathlib's `ContRepresentation` is usually paired with. Restricted to an
-eigenspace of a convolution operator at a nonzero eigenvalue it does: that eigenspace is
-finite-dimensional, right-translation invariant, and made of continuous functions, all of which
-`TauCeti.RepresentationTheory.Compact.Convolution` supplies.
+(`(haarProb G).rightRegular 𝕜 𝕜 2`, see `MeasureTheory.Measure.rightRegular`). This action is
+isometric and strongly continuous, but nothing makes `g ↦ π g` continuous for the operator norm, so
+`L²(G)` itself does not come with the continuity hypothesis that Mathlib's `ContRepresentation` is
+usually paired with. Restricted to an eigenspace of a convolution operator at a nonzero eigenvalue
+it does: that eigenspace is finite-dimensional, right-translation invariant, and made of continuous
+functions, all of which `TauCeti.RepresentationTheory.Compact.Convolution` supplies.
 
 This file assembles those three facts into the representation itself, and reads off the
 consequence the Peter-Weyl theorem needs: the continuous representative `μ⁻¹ • (k * f)` of an
@@ -40,7 +40,7 @@ quietly assume the theorem it serves.
 
 ## Main statements
 
-* `TauCeti.convolutionCLM_rightRegularLp`: convolution intertwines right translation on `L²(G)`
+* `TauCeti.convolutionCLM_rightRegular`: convolution intertwines right translation on `L²(G)`
   with right translation of continuous functions.
 * `TauCeti.continuous_convolutionEigenspaceRepresentation`: at a nonzero eigenvalue the eigenspace
   representation is continuous, so it is a genuine finite-dimensional continuous representation
@@ -59,8 +59,8 @@ quietly assume the theorem it serves.
 
 Continuity of `g ↦ π g` on the eigenspace is checked pointwise, which is enough because the
 eigenspace is finite-dimensional (`continuous_clm_apply`); pointwise it is the strong continuity
-`TauCeti.continuous_rightRegularLp_apply` of the right regular representation, so no separate
-argument about continuous representatives is needed.
+`MeasureTheory.Measure.continuous_rightRegular_apply` of the right regular representation, so no
+separate argument about continuous representatives is needed.
 
 The matrix coefficient is produced from the linear functional `h ↦ μ⁻¹ • (k * h) 1`, evaluation of
 the continuous representative at the identity. Its Riesz vector `y` satisfies
@@ -94,23 +94,23 @@ variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopolo
 
 /-- **Convolution intertwines right translation on `L²(G)` with right translation of continuous
 functions.** This is `TauCeti.convolutionCLM_compMeasurePreserving_mul_right` phrased in terms of
-`TauCeti.rightRegularLp`. -/
-theorem convolutionCLM_rightRegularLp (k : C(G, 𝕜)) (f : Lp 𝕜 2 (haarProb G)) (g : G) :
-    convolutionCLM k (rightRegularLp 𝕜 G g f)
+`MeasureTheory.Measure.rightRegular`. -/
+theorem convolutionCLM_rightRegular (k : C(G, 𝕜)) (f : Lp 𝕜 2 (haarProb G)) (g : G) :
+    convolutionCLM k ((haarProb G).rightRegular 𝕜 𝕜 2 g f)
       = (convolutionCLM k f).comp (.mulRight g) := by
-  rw [rightRegularLp_apply]
+  rw [(haarProb G).rightRegular_apply]
   exact ContinuousMap.ext fun x => convolutionCLM_compMeasurePreserving_mul_right k f g x
 
 /-- **The eigenspaces of a convolution operator are invariant under the right regular
 representation.** This is
 `TauCeti.compMeasurePreserving_mul_right_mem_eigenspace_convolutionOperator` phrased in terms of
-`TauCeti.rightRegularLp`. -/
-theorem rightRegularLp_mem_eigenspace_convolutionOperator (k : C(G, 𝕜)) (μ : 𝕜) (g : G)
+`MeasureTheory.Measure.rightRegular`. -/
+theorem rightRegular_mem_eigenspace_convolutionOperator (k : C(G, 𝕜)) (μ : 𝕜) (g : G)
     {f : Lp 𝕜 2 (haarProb G)}
     (hf : f ∈ Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ) :
-    rightRegularLp 𝕜 G g f ∈
+    (haarProb G).rightRegular 𝕜 𝕜 2 g f ∈
       Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ := by
-  rw [rightRegularLp_apply]
+  rw [(haarProb G).rightRegular_apply]
   exact compMeasurePreserving_mul_right_mem_eigenspace_convolutionOperator k μ g hf
 
 /-! ### The representation on an eigenspace of a convolution operator -/
@@ -121,21 +121,21 @@ convolution commutes with right translation. -/
 noncomputable def convolutionEigenspaceRepresentation (k : C(G, 𝕜)) (μ : 𝕜) :
     ContRepresentation 𝕜 G
       (Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ) :=
-  ContRepresentation.subrepresentation (rightRegularLp 𝕜 G) _
-    fun g _ hf => rightRegularLp_mem_eigenspace_convolutionOperator k μ g hf
+  ContRepresentation.subrepresentation ((haarProb G).rightRegular 𝕜 𝕜 2) _
+    fun g _ hf => rightRegular_mem_eigenspace_convolutionOperator k μ g hf
 
 @[simp]
 theorem coe_convolutionEigenspaceRepresentation_apply (k : C(G, 𝕜)) (μ : 𝕜) (g : G)
     (f : Module.End.eigenspace (convolutionOperator (G := G) k).toLinearMap μ) :
     ((convolutionEigenspaceRepresentation k μ g f : _) : Lp 𝕜 2 (haarProb G))
-      = rightRegularLp 𝕜 G g (f : Lp 𝕜 2 (haarProb G)) :=
+      = (haarProb G).rightRegular 𝕜 𝕜 2 g (f : Lp 𝕜 2 (haarProb G)) :=
   ContRepresentation.coe_subrepresentation_apply g f
 
 /-- **The eigenspace representation is unitary**, being a restriction of the unitary right regular
 representation. -/
 theorem isUnitary_convolutionEigenspaceRepresentation (k : C(G, 𝕜)) (μ : 𝕜) :
     ContRepresentation.IsUnitary (convolutionEigenspaceRepresentation k μ) :=
-  (isUnitary_rightRegularLp 𝕜 G).subrepresentation _
+  (haarProb G).isUnitary_rightRegular.subrepresentation _
 
 /-- **The eigenspace representation at a nonzero eigenvalue is continuous.** The eigenspace is
 finite-dimensional, so continuity for the operator norm may be checked one vector at a time; on a
@@ -151,7 +151,7 @@ theorem continuous_convolutionEigenspaceRepresentation (k : C(G, 𝕜)) {μ : �
   intro f
   rw [Topology.IsInducing.subtypeVal.continuous_iff]
   simpa only [Function.comp_def, coe_convolutionEigenspaceRepresentation_apply] using
-    continuous_rightRegularLp_apply (f : Lp 𝕜 2 (haarProb G))
+    (haarProb G).continuous_rightRegular_apply 2 ENNReal.ofNat_ne_top (f : Lp 𝕜 2 (haarProb G))
 
 /-! ### The eigenvectors are representative functions -/
 
@@ -188,7 +188,7 @@ theorem exists_smul_convolutionCLM_eq_star_matrixCoeff (k : C(G, 𝕜)) {μ : �
   ext g
   have hg : ⟪y, convolutionEigenspaceRepresentation k μ g ⟨f, hf⟩⟫_𝕜
       = μ⁻¹ * convolutionCLM k f g := by
-    rw [hy, coe_convolutionEigenspaceRepresentation_apply, convolutionCLM_rightRegularLp]
+    rw [hy, coe_convolutionEigenspaceRepresentation_apply, convolutionCLM_rightRegular]
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mulRight, one_mul]
   rw [ContinuousMap.star_apply, ContinuousMap.smul_apply, smul_eq_mul,
     ContRepresentation.matrixCoeff_apply, RCLike.star_def, inner_conj_symm, hg]

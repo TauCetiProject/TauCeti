@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import TauCeti.RepresentationTheory.Continuous.RightRegular
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.CStarAlgebra.DedekindFinite
+import TauCeti.RepresentationTheory.Continuous.Unitary.VonNeumann
 
 /-!
 # Group von Neumann algebras, mutual commutants, Fourier coefficients, and the canonical trace
@@ -105,28 +106,13 @@ theorem star_rightRegular_count (g : Γ) :
   rw [ContinuousLinearMap.star_eq_adjoint]
   exact (Measure.isUnitary_rightRegular Measure.count).adjoint_eq_inv g
 
-omit [MeasurableSpace Γ] [MeasurableMul Γ] in
-private theorem mem_commutant_adjoin_range_iff {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {π : ContRepresentation ℂ Γ H}
-    (hπ : π.IsUnitary) {T : H →L[ℂ] H} :
-    T ∈ (VonNeumannAlgebra.adjoin (Set.range π)).commutant ↔ ∀ g : Γ, π g * T = T * π g := by
-  refine ⟨fun hT g => mem_commutant_iff.1 hT _ (VonNeumannAlgebra.subset_adjoin _ ⟨g, rfl⟩),
-    fun hT => ?_⟩
-  rw [← SetLike.mem_coe, coe_commutant_adjoin, Set.mem_centralizer_iff]
-  rintro x (⟨g, rfl⟩ | hx)
-  · exact hT g
-  · obtain ⟨g, hg⟩ := Set.mem_star.1 hx
-    have hstar : x = π g⁻¹ := by
-      simpa [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv] using congr_arg star hg.symm
-    exact hstar ▸ hT g⁻¹
-
 /-- An operator lies in `L(Γ)'` if and only if it commutes with every left regular unitary. -/
 theorem mem_commutant_groupVonNeumannAlgebra_iff_leftRegular
     {T : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)} :
     T ∈ (groupVonNeumannAlgebra Γ).commutant ↔
       ∀ g : Γ, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g * T =
         T * (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g :=
-  mem_commutant_adjoin_range_iff (Measure.isUnitary_leftRegular Measure.count)
+  (Measure.isUnitary_leftRegular Measure.count).mem_commutant_adjoin_range_iff
 
 /-- An operator lies in `R(Γ)'` if and only if it commutes with every right regular unitary. -/
 theorem mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular
@@ -134,7 +120,7 @@ theorem mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular
     T ∈ (rightGroupVonNeumannAlgebra Γ).commutant ↔
       ∀ g : Γ, (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g * T =
         T * (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g :=
-  mem_commutant_adjoin_range_iff (Measure.isUnitary_rightRegular Measure.count)
+  (Measure.isUnitary_rightRegular Measure.count).mem_commutant_adjoin_range_iff
 
 /-- `L(Γ)` is contained in `R(Γ)'`. -/
 theorem groupVonNeumannAlgebra_le_commutant_rightGroupVonNeumannAlgebra :
@@ -207,6 +193,16 @@ theorem groupVonNeumannCoeff_add
     groupVonNeumannCoeff (x + y) g = groupVonNeumannCoeff x g + groupVonNeumannCoeff y g := by
   simp [groupVonNeumannCoeff_def, inner_add_right]
 
+/-- Finite-sum linearity of `groupVonNeumannCoeff`. -/
+theorem groupVonNeumannCoeff_sum {ι : Type*} (s : Finset ι)
+    (f : ι → Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
+    (g : Γ) :
+    groupVonNeumannCoeff (∑ i ∈ s, f i) g = ∑ i ∈ s, groupVonNeumannCoeff (f i) g := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+
 @[simp]
 theorem groupVonNeumannCoeff_sub
     (x y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) (g : Γ) :
@@ -226,6 +222,7 @@ theorem groupVonNeumannCoeff_one_one :
   simp [groupVonNeumannCoeff_def, (L2.countHilbertBasis ℂ Γ).orthonormal.1 1]
 
 /-- For `g ≠ 1`, the `g`-th Fourier coefficient of the identity operator is `0`. -/
+@[simp]
 theorem groupVonNeumannCoeff_one_of_ne {g : Γ} (hg : g ≠ 1) :
     groupVonNeumannCoeff
       (1 : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) g = 0 := by
@@ -425,10 +422,28 @@ theorem groupVonNeumannCoeff_leftRegular_self (g : Γ) :
   simp [groupVonNeumannCoeff_def, (L2.countHilbertBasis ℂ Γ).orthonormal.1 g]
 
 /-- For `h ≠ g`, the `h`-th Fourier coefficient of `leftRegular g` is `0`. -/
+@[simp]
 theorem groupVonNeumannCoeff_leftRegular_of_ne {g h : Γ} (hgh : h ≠ g) :
     groupVonNeumannCoeff ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g) h = 0 := by
   simp only [groupVonNeumannCoeff_def, leftRegular_countHilbertBasis, mul_one]
   exact (L2.countHilbertBasis ℂ Γ).orthonormal.2 hgh
+
+/-- The `x`-th Fourier coefficient of a finite sum of left regular unitaries over `s` is the
+indicator of `x ∈ s`. -/
+@[simp]
+theorem groupVonNeumannCoeff_sum_leftRegular [DecidableEq Γ] (s : Finset Γ) (x : Γ) :
+    groupVonNeumannCoeff
+      (∑ h ∈ s, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 h) x =
+      if x ∈ s then 1 else 0 := by
+  rw [groupVonNeumannCoeff_sum]
+  by_cases hx : x ∈ s
+  · simp only [hx, ↓reduceIte]
+    exact (Finset.sum_eq_single x (fun h _ hne => groupVonNeumannCoeff_leftRegular_of_ne hne.symm)
+      (fun hxs => absurd hx hxs)).trans (groupVonNeumannCoeff_leftRegular_self x)
+  · simp only [hx, ↓reduceIte]
+    refine Finset.sum_eq_zero fun h hh => groupVonNeumannCoeff_leftRegular_of_ne ?_
+    rintro rfl
+    exact hx hh
 
 /-- Operators in `groupVonNeumannAlgebra Γ` are uniquely determined by their Fourier
 coefficients. -/
@@ -455,6 +470,7 @@ theorem apply_countHilbertBasis_eq_rightRegular
 
 /-- For `x ∈ groupVonNeumannAlgebra Γ`, the `g`-th Fourier coefficient of `star x` is
 `conj (groupVonNeumannCoeff x g⁻¹)`. -/
+@[simp]
 theorem groupVonNeumannCoeff_star
     {x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)}
     (hx : x ∈ groupVonNeumannAlgebra Γ) (g : Γ) :

@@ -7,18 +7,24 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
-# The point-mass Hilbert basis of counting-measure `L²`
+# The point-mass Hilbert basis and Parseval identities on counting-measure `L²`
 
 For any measurable space `α` with measurable singletons and `𝕜` satisfying `RCLike 𝕜`, the
 singleton indicator classes `indicatorConstLp 2 (measurableSet_singleton a) _ 1` form a Hilbert
 basis `MeasureTheory.L2.countHilbertBasis 𝕜 α` of `Lp 𝕜 2 (Measure.count : Measure α)`. No
-countability of `α` is assumed: every `L²` class for the counting measure has countable support,
-its coordinate at `a` is its pointwise value `f a`, and Parseval's identity holds as an
-unconditional sum over `α`.
+countability of `α` is assumed: every `L²` class for the counting measure has countable support and
+its coordinate at `a` is its pointwise value `f a`.
+
+For an arbitrary measurable space `α` (without assuming measurable singletons), using strongly
+measurable `Lp` representatives and integration against `Measure.count = Measure.sum Measure.dirac`
+shows that every vector-valued `f : Lp E 2 (Measure.count : Measure α)` has square-summable
+pointwise norms with `‖f‖ ^ 2 = ∑' a, ‖f a‖ ^ 2`, and that scalar `L²` inner products expand
+unconditionally as `∑' a, conj (f a) * g a`.
 
 ## Main definitions
 
@@ -32,7 +38,8 @@ unconditional sum over `α`.
 * `MeasureTheory.L2.hasSum_countHilbertBasis`: `f` is the unconditional `L²`-sum
   `∑' a, f a • countHilbertBasis 𝕜 α a`.
 * `MeasureTheory.L2.summable_norm_sq_apply`, `MeasureTheory.L2.norm_sq_eq_tsum_apply`,
-  `MeasureTheory.L2.hasSum_conj_mul_apply`: square-summability of values and Parseval's identity.
+  `MeasureTheory.L2.hasSum_conj_mul_apply`: square-summability of values and Parseval's identities
+  without measurable-singleton assumptions.
 -/
 
 public section
@@ -40,6 +47,8 @@ public section
 open scoped ComplexConjugate ENNReal InnerProductSpace
 
 namespace MeasureTheory.L2
+
+section Basis
 
 variable {𝕜 α : Type*} [RCLike 𝕜] [MeasurableSpace α] [MeasurableSingletonClass α]
 
@@ -132,32 +141,63 @@ theorem hasSum_countHilbertBasis (f : Lp 𝕜 2 (Measure.count : Measure α)) :
     HasSum (fun a : α => f a • countHilbertBasis 𝕜 α a) f := by
   simpa only [countHilbertBasis_repr_apply] using (countHilbertBasis 𝕜 α).hasSum_repr f
 
-/-- The squared norms of the values of any counting-measure `L²` function are summable. -/
-theorem summable_norm_sq_apply (f : Lp 𝕜 2 (Measure.count : Measure α)) :
-    Summable fun a : α => ‖f a‖ ^ 2 := by
-  have hp : (0 : ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
-  have h := (lp.memℓp ((countHilbertBasis 𝕜 α).repr f)).summable hp
-  simpa only [ENNReal.toReal_ofNat, Real.rpow_two, countHilbertBasis_repr_apply] using h
+end Basis
 
-/-- **Parseval's norm identity** on counting-measure `L²`, with no countability assumption. -/
-theorem norm_sq_eq_tsum_apply (f : Lp 𝕜 2 (Measure.count : Measure α)) :
+section NormSq
+
+variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
+
+/-- The squared norms of the values of any counting-measure `L²` function are summable. -/
+theorem summable_norm_sq_apply (f : Lp E 2 (Measure.count : Measure α)) :
+    Summable fun a : α => ‖f a‖ ^ 2 := by
+  have hint : Integrable (fun a : α => ‖f a‖ ^ 2) (Measure.sum Measure.dirac) :=
+    (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable f)).mp (Lp.memLp f)
+  have hsm : StronglyMeasurable fun a : α => ‖f a‖ ^ 2 :=
+    (continuous_pow 2).comp_stronglyMeasurable (Lp.stronglyMeasurable f).norm
+  exact ((hasSum_integral_measure hint).congr_fun fun a => (integral_dirac' _ a hsm).symm).summable
+
+/-- **Parseval's norm identity** on counting-measure `L²`, with no countability or
+measurable-singleton assumption. -/
+theorem norm_sq_eq_tsum_apply (f : Lp E 2 (Measure.count : Measure α)) :
     ‖f‖ ^ 2 = ∑' a : α, ‖f a‖ ^ 2 := by
-  have hnorm : ‖f‖ = ‖(countHilbertBasis 𝕜 α).repr f‖ :=
-    ((countHilbertBasis 𝕜 α).repr.norm_map f).symm
-  rw [hnorm, lp.norm_eq_tsum_rpow (by norm_num : (0 : ℝ) < (2 : ℝ≥0∞).toReal)]
-  simp only [ENNReal.toReal_ofNat, Real.rpow_two, one_div, countHilbertBasis_repr_apply]
-  rw [← Real.rpow_natCast _ 2, Nat.cast_ofNat,
-    Real.rpow_inv_rpow (tsum_nonneg fun _ => sq_nonneg _) two_ne_zero]
+  have hint : Integrable (fun a : α => ‖f a‖ ^ 2) (Measure.sum Measure.dirac) :=
+    (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable f)).mp (Lp.memLp f)
+  have hsm : StronglyMeasurable fun a : α => ‖f a‖ ^ 2 :=
+    (continuous_pow 2).comp_stronglyMeasurable (Lp.stronglyMeasurable f).norm
+  have hnorm : ‖f‖ ^ 2 = ∫ a, ‖f a‖ ^ 2 ∂(Measure.sum Measure.dirac : Measure α) := by
+    rw [Lp.norm_def,
+      (Lp.memLp f).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
+    simp only [ENNReal.toReal_ofNat, Real.rpow_two]
+    rw [ENNReal.toReal_ofReal (Real.rpow_nonneg (integral_nonneg fun _ => sq_nonneg _) _),
+      ← Real.rpow_natCast _ 2, Nat.cast_ofNat,
+      Real.rpow_inv_rpow (integral_nonneg fun _ => sq_nonneg _) two_ne_zero]
+    rfl
+  rw [hnorm]
+  exact ((hasSum_integral_measure hint).congr_fun fun a =>
+    (integral_dirac' _ a hsm).symm).tsum_eq.symm
+
+end NormSq
+
+section Polarized
+
+variable {𝕜 α : Type*} [RCLike 𝕜] [MeasurableSpace α]
 
 /-- **Polarized Parseval identity** (`HasSum` form) on counting-measure `L²`. -/
 theorem hasSum_conj_mul_apply (f g : Lp 𝕜 2 (Measure.count : Measure α)) :
     HasSum (fun a : α => conj (f a) * g a) ⟪f, g⟫_𝕜 := by
-  simpa only [inner_countHilbertBasis_right, inner_countHilbertBasis_left] using
-    (countHilbertBasis 𝕜 α).hasSum_inner_mul_inner f g
+  have hint : Integrable (fun a : α => ⟪f a, g a⟫_𝕜) (Measure.sum Measure.dirac) :=
+    L2.integrable_inner (𝕜 := 𝕜) f g
+  have hsm : StronglyMeasurable fun a : α => ⟪f a, g a⟫_𝕜 :=
+    (Lp.stronglyMeasurable f).inner (Lp.stronglyMeasurable g)
+  rw [L2.inner_def]
+  exact (hasSum_integral_measure hint).congr_fun fun a => by
+    rw [integral_dirac' _ a hsm, RCLike.inner_apply, mul_comm]
 
 /-- **Polarized Parseval identity** (`tsum` form) on counting-measure `L²`. -/
 theorem tsum_conj_mul_apply (f g : Lp 𝕜 2 (Measure.count : Measure α)) :
     ∑' a : α, conj (f a) * g a = ⟪f, g⟫_𝕜 :=
   (hasSum_conj_mul_apply f g).tsum_eq
+
+end Polarized
 
 end MeasureTheory.L2

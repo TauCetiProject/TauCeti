@@ -16,7 +16,7 @@ import Mathlib.Tactic.NoncommRing
 In a unital C⋆-algebra `A`, `1 + star a * a` is invertible for every `a : A` because the real
 spectrum of `star a * a` is nonnegative. Kaplansky observed that for any idempotent `p`
 (`p * p = p`), setting `z = 1 + star (p - star p) * (p - star p)` gives
-`p * z = p * star p * p = z * p`, so `q = p * star p * z⁻¹` is a star projection sharing its left
+`p * z = p * star p * p = z * p`, so `q = p * star p * z⁻¹` is a star projection sharing its right
 ideal with `p` (`q * p = p` and `p * q = q`).
 
 Consequently, if `A` carries an additive tracial map `τ : A →+ G` that vanishes on no nonzero star
