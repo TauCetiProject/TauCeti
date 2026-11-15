@@ -66,34 +66,34 @@ private theorem rep_rootGenerator_latticeBasis
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))
-        ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W) =
       (1 : ℤ) •
-        ((latticeBasis n (basisIndex n (rootTargetSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootTargetSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W) := by
   cases k with
   | inl i =>
       refine Fin.lastCases ?_ (fun j => ?_) i
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_last, one_zsmul] using
           (polarization n).typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
             (TauCeti.splitOddPolarization_lineCoordinate_remainderOne ℚ (n + 1))
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_castSucc, one_zsmul] using
           (polarization n).typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) j
   | inr i =>
       refine Fin.lastCases ?_ (fun j => ?_) i
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_last, one_zsmul] using
           (polarization n).typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
             (TauCeti.splitOddPolarization_lineCoordinate_remainderOne ℚ (n + 1))
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_castSucc, one_zsmul] using
           (polarization n).typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
@@ -105,11 +105,11 @@ private theorem rep_rootGenerator_sq_apply_latticeBasis
         (TauCeti.typeBSimpleRootGeneratorFamily k))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
           (TauCeti.typeBSimpleRootGeneratorFamily k))
-        ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W)) = 0 := by
   have h := congrArg
     (fun f : Module.End ℚ (ExteriorAlgebra ℚ (polarization n).W) =>
-      f ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+      f ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
         ExteriorAlgebra ℚ (polarization n).W))
     ((polarization n).typeBSpinRep_simpleRootGenerator_sq
       (polarizationBasis n) (remainderOne n)

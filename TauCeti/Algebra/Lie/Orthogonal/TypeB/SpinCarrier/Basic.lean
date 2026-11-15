@@ -106,39 +106,15 @@ noncomputable abbrev lattice :=
 /-- The dimension of the spin module, expressed as the cardinality of its exterior basis. -/
 abbrev dimension := Fintype.card (Finset (Fin (n + 1)))
 
+/-- The enumeration of the sign sets by finite-ordinal spin-basis indices: `signSet n i` is the
+sign set represented by the index `i`, and `(signSet n).symm s` is the index of the sign set `s`. -/
+noncomputable def signSet : Fin (dimension n) ≃ Finset (Fin (n + 1)) :=
+  (Fintype.equivFin (Finset (Fin (n + 1)))).symm
+
 /-- The exterior coordinate basis, reindexed by a finite ordinal for the general-linear carrier. -/
 noncomputable def latticeBasis :
     Module.Basis (Fin (dimension n)) ℤ (lattice n).toAddSubgroup :=
-  (TauCeti.ExteriorAlgebra.integralLatticeBasis (polarizationBasis n)).reindex
-    (Fintype.equivFin (Finset (Fin (n + 1))))
-
-/-- The sign set represented by a finite-ordinal spin-basis index. -/
-noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin (n + 1)) :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).symm i
-
-/-- The finite-ordinal spin-basis index of a sign set: the inverse of `signSet`. -/
-noncomputable def basisIndex (s : Finset (Fin (n + 1))) : Fin (dimension n) :=
-  Fintype.equivFin (Finset (Fin (n + 1))) s
-
-/-- `basisIndex` is the enumeration `Fintype.equivFin` of the sign sets. -/
-theorem basisIndex_def (s : Finset (Fin (n + 1))) :
-    basisIndex n s = Fintype.equivFin (Finset (Fin (n + 1))) s :=
-  (rfl)
-
-/-- `signSet` recovers a sign set from its basis index. -/
-@[simp, grind =]
-theorem signSet_basisIndex (s : Finset (Fin (n + 1))) : signSet n (basisIndex n s) = s :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).symm_apply_apply s
-
-/-- `basisIndex` recovers a basis index from its sign set. -/
-@[simp, grind =]
-theorem basisIndex_signSet (i : Fin (dimension n)) : basisIndex n (signSet n i) = i :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply i
-
-/-- Distinct sign sets have distinct basis indices. -/
-@[simp, grind =]
-theorem basisIndex_inj {s t : Finset (Fin (n + 1))} : basisIndex n s = basisIndex n t ↔ s = t :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).apply_eq_iff_eq
+  (TauCeti.ExteriorAlgebra.integralLatticeBasis (polarizationBasis n)).reindex (signSet n).symm
 
 /-- The simply connected type-`Bₙ₊₁` weight of a spin-basis vector. -/
 noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin (n + 1) → ℤ :=
@@ -147,32 +123,28 @@ noncomputable abbrev basisWeight (i : Fin (dimension n)) : Fin (n + 1) → ℤ :
 /-- The `i`-th simple reflection on the finite-ordinal spin-basis indices: the sign-set reflection
 `DynkinType.typeBSpinReflection i`, conjugated by the enumeration of the sign sets. -/
 noncomputable def basisReflection (i : Fin (n + 1)) : Equiv.Perm (Fin (dimension n)) :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).permCongr (DynkinType.typeBSpinReflection i)
+  (signSet n).symm.permCongr (DynkinType.typeBSpinReflection i)
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
 @[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) :=
-  Equiv.symm_apply_apply _ _
+  Equiv.apply_symm_apply _ _
 
 /-- A simple reflection of the basis index of a sign set is the basis index of the reflected
 sign set. -/
 @[simp, grind =]
-theorem basisReflection_basisIndex (i : Fin (n + 1)) (s : Finset (Fin (n + 1))) :
-    basisReflection n i (basisIndex n s) = basisIndex n (DynkinType.typeBSpinReflection i s) := by
-  simp [basisReflection, basisIndex_def]
+theorem basisReflection_signSet_symm (i : Fin (n + 1)) (s : Finset (Fin (n + 1))) :
+    basisReflection n i ((signSet n).symm s) =
+      (signSet n).symm (DynkinType.typeBSpinReflection i s) := by
+  simp [basisReflection]
 
 /-- A simple reflection fixes a spin-basis index exactly when its coroot pairing vanishes. -/
 @[simp]
 theorem basisReflection_eq_self_iff (i : Fin (n + 1)) (a : Fin (dimension n)) :
     basisReflection n i a = a ↔ basisWeight n a i = 0 := by
-  constructor
-  · intro h
-    apply (DynkinType.typeBSpinReflection_eq_self_iff i _).1
-    simpa only [signSet_basisReflection] using congrArg (signSet n) h
-  · intro h
-    rw [← basisIndex_signSet n a, basisReflection_basisIndex, basisIndex_inj]
-    exact (DynkinType.typeBSpinReflection_eq_self_iff i _).2 h
+  rw [← (signSet n).apply_eq_iff_eq, signSet_basisReflection]
+  exact DynkinType.typeBSpinReflection_eq_self_iff i _
 
 /-- Each simple reflection on enumerated spin-basis indices is an involution. -/
 theorem basisReflection_involutive (i : Fin (n + 1)) :
@@ -182,9 +154,9 @@ theorem basisReflection_involutive (i : Fin (n + 1)) :
 
 /-- Enumeration transports a sequence of sign-set reflections to basis-index reflections. -/
 theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))) :
-    l.foldl (fun b j ↦ basisReflection n j b) (basisIndex n t) =
-      basisIndex n (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
-  List.foldl_hom _ fun t j ↦ basisReflection_basisIndex n j t
+    l.foldl (fun b j ↦ basisReflection n j b) ((signSet n).symm t) =
+      (signSet n).symm (l.foldl (fun t j ↦ DynkinType.typeBSpinReflection j t) t) :=
+  List.foldl_hom _ fun t j ↦ basisReflection_signSet_symm n j t
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
 @[simp]
@@ -192,7 +164,7 @@ theorem coe_latticeBasis (i : Fin (dimension n)) :
     ((latticeBasis n i : (lattice n).toAddSubgroup) :
         ExteriorAlgebra ℚ (polarization n).W) =
       (polarizationBasis n).ExteriorAlgebra (signSet n i) := by
-  rw [latticeBasis, Module.Basis.reindex_apply, signSet]
+  rw [latticeBasis, Module.Basis.reindex_apply, Equiv.symm_symm]
   exact TauCeti.ExteriorAlgebra.coe_integralLatticeBasis _ _
 
 /-- **Every represented numbered root generator squares to zero.** The simple root strings
@@ -362,8 +334,8 @@ theorem isCartanWeightVector_latticeBasis (i : Fin (dimension n)) :
 theorem span_range_basisWeight_eq_top :
     Submodule.span ℤ (Set.range (basisWeight n)) = ⊤ := by
   rw [← TauCeti.DynkinType.span_range_typeBSpinWeight_eq_top (n := n + 1),
-    ← (Fintype.equivFin (Finset (Fin (n + 1)))).symm.surjective.range_comp]
-  -- `basisWeight n` is `typeBSpinWeight` after `signSet n`, the inverse enumeration.
+    ← (signSet n).surjective.range_comp]
+  -- `basisWeight n` is `typeBSpinWeight` after the enumeration `signSet n`.
   rfl
 
 /-- The exterior basis vector of the singleton `{i}` has weight `1` at the simple coroot `hᵢ`, so

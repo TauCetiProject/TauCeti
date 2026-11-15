@@ -181,7 +181,7 @@ theorem basisCharacter_injective : Function.Injective (basisCharacter n) := by
     funext i
     simpa only [basisCharacter, SplitTorus.toAdd_weightCharacter] using
       congrArg (fun χ : Multiplicative (Fin (n + 1) →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-  exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
+  exact (signSet n).injective
     (DynkinType.typeBSpinWeight_injective hw)
 
 /-- A simple-root difference of spin weights is precisely a raising edge: the first weight
@@ -269,9 +269,9 @@ theorem isSimpleOrder_of_spinWeights_of_rootSubgroupPoints
     (basisCharacter_injective n) hweights
     (fun j ↦ ⇑(basisReflection n j)) (basisReflection_involutive n)
     (fun N a i ↦ single_basisReflection_mem n k N.toSubmodule (hroot N) a i)
-    (basisIndex n ∅) fun a ↦ by
+    ((signSet n).symm ∅) fun a ↦ by
       obtain ⟨l, hl⟩ := DynkinType.exists_typeBSpinReflections_eq (signSet n a)
-      exact ⟨l, by rw [foldl_basisReflection, hl, basisIndex_signSet]⟩
+      exact ⟨l, by rw [foldl_basisReflection, hl, Equiv.symm_apply_apply]⟩
 
 /-- **The standard comodule of the specialized type-`Bₙ₊₁` spin carrier is simple over every
 field.** -/

@@ -50,17 +50,17 @@ theorem single_mem_of_sub_mem_posRootCone
     (ha : Pi.single a (1 : R) ∈ N) : Pi.single b (1 : R) ∈ N := by
   have hpath := (typeBSpin_raisingPath_iff_mem_posRootCone (signSet n a) (signSet n b)).mpr hab
   have hmem : ∀ t, Relation.ReflTransGen TypeBSpinRaisingStep (signSet n a) t →
-      Pi.single (basisIndex n t) (1 : R) ∈ N := by
+      Pi.single ((signSet n).symm t) (1 : R) ∈ N := by
     intro t h
     induction h with
-    | refl => simpa only [basisIndex_signSet] using ha
+    | refl => simpa only [Equiv.symm_apply_apply] using ha
     | @tail t u _ htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeBSpinRaisingStep_iff _ _).mp htu
-      have hweight : basisWeight n (basisIndex n t) i = -1 := by
-        simpa only [basisWeight, signSet_basisIndex] using hi
-      simpa only [basisReflection_basisIndex] using
-        single_basisReflection_mem n R N i (basisIndex n t) hweight ih
-  simpa only [basisIndex_signSet] using hmem _ hpath
+      have hweight : basisWeight n ((signSet n).symm t) i = -1 := by
+        simpa only [basisWeight, Equiv.apply_symm_apply] using hi
+      simpa only [basisReflection_signSet_symm] using
+        single_basisReflection_mem n R N i ((signSet n).symm t) hweight ih
+  simpa only [Equiv.symm_apply_apply] using hmem _ hpath
 
 /-- A coordinate span is invariant precisely when its indices are upward closed for the
 integral positive-root order on spin weights. -/
