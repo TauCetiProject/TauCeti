@@ -20,8 +20,9 @@ octonions is a real inner product space for its **trace form**
 which is positive definite by `TauCeti.CompactAlbertAlgebra.trace_mul_self_pos`. Each octonion entry
 occurs twice in the Hermitian matrix, once conjugated, so this is the Frobenius inner product of the
 two matrices, and `‖A‖ ^ 2 = T(A ∘ A)` is the sum of the squared norms of all nine entries. By the
-associativity of the trace form, every multiplication operator `B ↦ A ∘ B` is self-adjoint, so `J`
-is a Euclidean Jordan algebra in the sense of Faraut–Korányi.
+associativity of the trace form, every multiplication operator `B ↦ A ∘ B` is self-adjoint. This is
+the inner-product half of the axioms of a Euclidean Jordan algebra in the sense of Faraut–Korányi;
+the Jordan identity of the compact carrier is not proved here.
 
 As a finite-dimensional real inner product space, `J` carries the topology of its 27 real
 coordinates: the coordinate isomorphism with `(Fin 3 → ℝ) × (Fin 3 → DivisionOctonionReal)` is a
@@ -133,7 +134,7 @@ theorem sqrt_two_mul_norm_offDiag_le (A : CompactAlbertAlgebra ℝ) (i : Fin 3) 
   linarith
 
 /-- **Multiplication operators are self-adjoint for the trace form**, `⟪A ∘ B, C⟫ = ⟪B, A ∘ C⟫`:
-this makes the compact Albert algebra a Euclidean Jordan algebra. -/
+the trace form is associative, as the inner product of a Euclidean Jordan algebra must be. -/
 theorem inner_mul_left (A B C : CompactAlbertAlgebra ℝ) : ⟪A * B, C⟫_ℝ = ⟪B, A * C⟫_ℝ := by
   rw [inner_def, inner_def, mul_comm A B, trace_mul_assoc]
 
