@@ -322,24 +322,23 @@ theorem centerPointwiseQuotientNatIsoPSL_inv_app_mk (A : CommAlgCat.{u} k)
 
 /-- Over an algebraically closed field, the pointwise center quotient of `SLₙ` is `PGLₙ`.
 This uses Mathlib's canonical isomorphism between projective general and special linear groups. -/
-noncomputable def centerPointwiseQuotientIsoPGLOfAlgClosed (hn : 0 < n)
+noncomputable def centerPointwiseQuotientIsoPGLOfAlgClosed
     (F : Type u) [Field F] [IsAlgClosed F] [Algebra k F] :
     CommHopfAlgCat.centerPointwiseQuotient
         (coordinateHopfAlgebra k n) (CommAlgCat.of k F) ≅
-      GrpCat.of (Matrix.ProjGenLinGroup (Fin n) F) := by
-  letI : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-  exact centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F) ≪≫
-    (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty
+      GrpCat.of (Matrix.ProjGenLinGroup (Fin n) F) :=
+  centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F) ≪≫
+    (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed
       (n := Fin n) (F := F)).symm.toGrpIso
 
 /-- The algebraically closed-field identification sends an `SLₙ`-point to the projective class
 of its underlying invertible matrix. -/
 @[simp]
-theorem centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk (hn : 0 < n)
+theorem centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk
     (F : Type u) [Field F] [IsAlgClosed F] [Algebra k F]
     (q : HopfAlgebra.points (R := k)
       (H := coordinateHopfAlgebra k n) (CommAlgCat.of k F)) :
-    (centerPointwiseQuotientIsoPGLOfAlgClosed n hn F).hom
+    (centerPointwiseQuotientIsoPGLOfAlgClosed n F).hom
         (↑q : HopfAlgebra.points (R := k)
             (H := coordinateHopfAlgebra k n) (CommAlgCat.of k F) ⧸
           CommHopfAlgCat.centerPointsSubgroup
@@ -347,28 +346,30 @@ theorem centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk (hn : 0 < n)
       Matrix.ProjGenLinGroup.mk
         (Matrix.SpecialLinearGroup.toGL
           (pointsMulEquiv (R := k) (A := F) n q)) := by
-  let _ : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
   unfold centerPointwiseQuotientIsoPGLOfAlgClosed
-  -- The composite categorical isomorphism computes through Mathlib's underlying PSL-to-PGL map.
-  change Matrix.ProjectiveSpecialLinearGroup.toPGL
+  change (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed (n := Fin n) (F := F)).symm
       ((centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F)).hom (↑q)) = _
-  rw [centerPointwiseQuotientIsoPSL_hom_mk,
-    Matrix.ProjectiveSpecialLinearGroup.toPGL_mk]
+  rw [centerPointwiseQuotientIsoPSL_hom_mk]
+  -- Mathlib's equivalence branches on `Nonempty (Fin n)`; in rank zero as well as in positive
+  -- rank, its inverse is the underlying PSL-to-PGL inclusion.
+  simp only [Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed,
+    Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty]
+  split_ifs <;> rfl
 
 /-- The inverse algebraically closed-field identification sends the projective class of a
 determinant-one matrix to the quotient class of its associated `SLₙ`-point. -/
 @[simp]
-theorem centerPointwiseQuotientIsoPGLOfAlgClosed_inv_mk_toGL (hn : 0 < n)
+theorem centerPointwiseQuotientIsoPGLOfAlgClosed_inv_mk_toGL
     (F : Type u) [Field F] [IsAlgClosed F] [Algebra k F]
     (g : Matrix.SpecialLinearGroup (Fin n) F) :
-    (centerPointwiseQuotientIsoPGLOfAlgClosed n hn F).inv
+    (centerPointwiseQuotientIsoPGLOfAlgClosed n F).inv
         (Matrix.ProjGenLinGroup.mk (Matrix.SpecialLinearGroup.toGL g)) =
       (↑((pointsMulEquiv (R := k) (A := F) n).symm g) :
         HopfAlgebra.points (R := k)
             (H := coordinateHopfAlgebra k n) (CommAlgCat.of k F) ⧸
           CommHopfAlgCat.centerPointsSubgroup
             (coordinateHopfAlgebra k n) (CommAlgCat.of k F)) := by
-  have h := centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk n hn F
+  have h := centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk n F
     ((pointsMulEquiv (R := k) (A := F) n).symm g)
   rw [MulEquiv.apply_symm_apply] at h
   rw [← h]
