@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.PDE.Vortex.ZeroMode
+import TauCeti.Analysis.PDE.Vortex.PotentialSolve
 
 /-!
 # Kernel elements of the vortex operator with prescribed poles

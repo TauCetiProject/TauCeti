@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+import TauCeti.Analysis.PDE.Vortex.PotentialSolve
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -80,9 +80,6 @@ It is square integrable, because `h ∈ H²` and the remaining part is supported
   part `c / (z - a)^k`.
 * `TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_eq_logVariation`: a smooth square-integrable
   kernel element of `L_x` whose `δα / α` has principal part `c / (z - a)^k`.
-* `TauCeti.Vortex.exists_contDiff_laplacian_eq_mul_sub`: the smooth `H²(ℂ; ℂ)` solution of
-  `Δh = P h - g` at a smooth field with `|α| → 1` at infinity, also used by
-  `TauCeti.Analysis.PDE.Vortex.KernelExistence` and `TauCeti.Analysis.PDE.Vortex.TangentKernel`.
 
 ## References
 
@@ -100,40 +97,6 @@ open MeasureTheory Filter Metric Complex TemperedDistribution
 open scoped Laplacian ContDiff Topology Distributions
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- The potential `P = |α|² / 4` of a continuous field whose section has unit modulus at infinity
-is bounded above. -/
-private theorem exists_forall_potential_le (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ M, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ M := by
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
-  refine ⟨max M 1, fun z ↦ ?_⟩
-  by_cases hz : z ∈ K
-  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hM z hz).trans (le_max_left _ _))
-  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
-    linarith [le_max_right M 1]
-
-/-- The potential `P = |α|² / 4` of a field whose section has unit modulus at infinity is
-bounded, nonnegative, and at least `1 / 8` outside some ball: the hypotheses of the Schrödinger
-solve. -/
-private theorem exists_memLp_top_potential_and_le (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ R : ℝ, MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ volume ∧
-      (∀ᵐ z ∂volume, 0 ≤ x z 2 ^ 2 + x z 3 ^ 2) ∧
-      ∀ᵐ z ∂(volume : Measure ℂ), R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  refine ⟨R, memLp_top_of_bound hPc.aestronglyMeasurable M (ae_of_all _ fun z ↦ ?_),
-    ae_of_all _ fun z ↦ by positivity, ae_of_all _ fun z hz ↦ (hR z hz).le⟩
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact hM z
 
 /-- Where the section vanishes to order `k`, `‖α‖ ≤ C ‖z - a‖ ^ k`, the potential
 `P = |α|² / 4` vanishes to order `2k`. -/
@@ -345,20 +308,6 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
 
 /-! ### Smooth kernel elements with a prescribed principal part -/
 
-/-- The section coordinates of a continuous field whose section has unit modulus at infinity are
-bounded. -/
-theorem memLp_top_apply (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
-    (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
-  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
-  have hxi : Continuous fun z ↦ x z i := by fun_prop
-  refine memLp_top_of_bound hxi.aestronglyMeasurable (M + 1) (ae_of_all _ fun z ↦ ?_)
-  rw [Real.norm_eq_abs]
-  have hz := hM z
-  rcases hi with rfl | rfl
-  · nlinarith [sq_nonneg (|x z 2| - 1), sq_abs (x z 2), sq_nonneg (x z 3), abs_nonneg (x z 2)]
-  · nlinarith [sq_nonneg (|x z 3| - 1), sq_abs (x z 3), sq_nonneg (x z 2), abs_nonneg (x z 3)]
-
 /-- A point outside the support of a cutoff `ρ` equal to one near `a` is not `a`. -/
 private theorem ne_of_notMem_tsupport {ρ : ℂ → ℝ} {a w : ℂ} (hρa : ρ =ᶠ[𝓝 a] 1)
     (hw : w ∉ tsupport ρ) : w ≠ a := by
@@ -455,21 +404,6 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
     rw [hρu, logVariation_add_apply x ((hu z hz).differentiableAt.restrictScalars ℝ)
       ((hv.differentiable (by simp)).const_smul (-1 : ℝ) z), logVariation_smul, hY₀u z hz]
     simp only [Pi.smul_apply, neg_smul, one_smul, sub_eq_add_neg]
-
-/-- For a smooth field whose section has unit modulus at infinity and a smooth `g ∈ L²(ℂ; ℂ)`,
-the equation `Δh = P h - g`, `P = |α|² / 4`, has a smooth solution `h ∈ H²(ℂ; ℂ)`. -/
-theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → ℂ}
-    (hgs : ContDiff ℝ ∞ g) (hg2 : MemLp g 2 volume) :
-    ∃ h : ℂ → ℂ, ContDiff ℝ ∞ h ∧ (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2 ∧
-      (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2 ∧
-      ∀ z, Δ h z = ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * h z - g z := by
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.mp hx i
-  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_potential_and_le hx.continuous hlim
-  obtain ⟨h, hhs, hh₁, hh₂, he⟩ :=
-    exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq
-      (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP hP₀ (by norm_num : (0 : ℝ) < 1 / 8) hPa hgs hg2
-  exact ⟨h, hhs, hh₁, hh₂, fun z ↦ by linear_combination -he z⟩
 
 /-- At a point where `u` is holomorphic, if `h` solves `Δh = P h - g` for the defect
 `g = -Δv - P (u - v)` of `u - v`, then `η = h + (u - v)` solves `Δη = P η` there. -/

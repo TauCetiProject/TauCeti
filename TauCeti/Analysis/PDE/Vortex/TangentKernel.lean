@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
-import TauCeti.Analysis.PDE.Vortex.ZeroMode
+import TauCeti.Analysis.PDE.Vortex.PotentialSolve
 import Mathlib.Algebra.Polynomial.Basis
 
 /-!
