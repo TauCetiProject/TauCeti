@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Exponent
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 
 /-!
@@ -63,7 +64,10 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
   `TauCeti.FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero`: the class vanishes exactly
   for the coboundaries, equivalently for the factor sets whose extension splits.
 * `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
-  when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+  when the pointwise `n`-th power of the factor set is a multiplicative coboundary; in particular,
+  `TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero` and
+  `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero` show that `Monoid.exponent M` and
+  `Nat.card M` kill every factor-set class.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
   nonzero `n`, a class killed by `n` admits a normalized rescaling by an action-aware
   coboundary whose values have `n`-th power one. For `n = 0`, no divisibility is needed.
@@ -161,6 +165,23 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
   rw [hcoe]
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
+
+/-- If `n`-th powers vanish pointwise on the values of a factor set, `n` kills its cohomology
+class: `α ^ n = 1` is the coboundary of the trivial cochain `1`. -/
+theorem nsmul_cohomologyClass_eq_zero_of_forall_pow_eq_one {n : ℕ}
+    (h : ∀ p : G × G, α p ^ n = 1) : n • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff n).2 ⟨fun _ ↦ 1, fun g₁ g₂ ↦ by simp [h (g₁, g₂)]⟩
+
+/-- The exponent of the coefficient group kills the cohomology class of every factor set. -/
+theorem exponent_nsmul_cohomologyClass_eq_zero :
+    Monoid.exponent M • α.cohomologyClass = 0 :=
+  α.nsmul_cohomologyClass_eq_zero_of_forall_pow_eq_one fun p ↦ Monoid.pow_exponent_eq_one (α p)
+
+/-- The `Nat.card` of the coefficient group kills the cohomology class of every factor set (when
+`M` is infinite, `Nat.card M = 0` by convention). -/
+theorem natCard_nsmul_cohomologyClass_eq_zero :
+    Nat.card M • α.cohomologyClass = 0 :=
+  α.nsmul_cohomologyClass_eq_zero_of_forall_pow_eq_one fun _ ↦ pow_card_eq_one'
 
 end Class
 

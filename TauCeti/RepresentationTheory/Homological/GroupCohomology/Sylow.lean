@@ -7,26 +7,39 @@ module
 
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
+import TauCeti.GroupTheory.PGroup
 
 /-!
 # Torsion of group cohomology and restriction to Sylow subgroups
 
-For a finite group `G`, the composite `Cor ∘ Res : Hⁿ(G, A) ⟶ Hⁿ(S, A) ⟶ Hⁿ(G, A)` is
-multiplication by the index `[G : S]`. Taking `S` trivial shows that `Hⁿ(G, A)` is killed by the
-order of `G` for `n ≥ 1`; taking `S` a Sylow `p`-subgroup shows that restriction to `S` is
-injective on the `p`-primary part of `Hⁿ(G, A)`, because `[G : S]` is prime to `p`. Consequently
-`Hⁿ(G, A)` vanishes for `n ≥ 1` as soon as, for every prime `p` dividing the order of `G`,
-`Hⁿ(P, A)` vanishes for some Sylow `p`-subgroup `P`, which is the reduction step of Tate's
-cohomological triviality criterion.
+For a finite-index subgroup `S ≤ G`, the composite `Cor ∘ Res : Hⁿ(G, A) ⟶ Hⁿ(S, A) ⟶ Hⁿ(G, A)`
+is multiplication by the index `[G : S]`. Taking `S` trivial when `G` is finite shows that
+`Hⁿ(G, A)` is killed by the order of `G` for `n ≥ 1`; taking `S` a Sylow `p`-subgroup of finite
+index shows that restriction to `S` is injective on the `p`-primary part of `Hⁿ(G, A)`, because
+`[G : S]` is prime to `p`.
+
+Consequently:
+* when `G` is finite and `A` is an additive `p`-group (not necessarily finite or of bounded
+  exponent), `Hⁿ(G, A)` is an additive `p`-group in every degree `n`, and restriction to any Sylow
+  `p`-subgroup of `G` is injective on all of `Hⁿ(G, A)`;
+* for an arbitrary coefficient representation `A` of a finite group `G`, `Hⁿ(G, A)` vanishes for
+  `n ≥ 1` as soon as, for every prime `p` dividing the order of `G`, `Hⁿ(P, A)` vanishes for some
+  Sylow `p`-subgroup `P`, which is the reduction step of Tate's cohomological triviality
+  criterion.
 
 ## Main statements
 
 * `TauCeti.groupCohomology.eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero`: an element of
-  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a Sylow `p`-subgroup is zero.
+  `Hⁿ(G, A)` killed by a power of `p` and by restriction to a finite-index Sylow `p`-subgroup is
+  zero.
 * `TauCeti.groupCohomology.eq_zero_of_map_sylow_eq_zero`: an element of `Hⁿ⁺¹(G, A)` whose
   restriction to a Sylow `p`-subgroup vanishes for every prime `p` is zero.
 * `TauCeti.groupCohomology.isZero_of_isZero_sylow`: `Hⁿ⁺¹(G, A) = 0` if, for every prime `p`
   dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some Sylow `p`-subgroup `P`.
+* `IsAddPGroup.groupCohomology`: for finite `G`, if `A` is an additive `p`-group, then so is
+  `Hⁿ(G, A)` in every degree `n`.
+* `IsAddPGroup.map_sylow_injective`: for finite `G` and `A` an additive `p`-group, restriction to
+  a Sylow `p`-subgroup is injective on `Hⁿ(G, A)` in every degree `n`.
 
 ## References
 
@@ -44,7 +57,7 @@ universe u
 
 open CategoryTheory Limits Rep
 
-variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+variable {k G : Type u} [CommRing k] [Group G]
 
 namespace TauCeti.groupCohomology
 
@@ -53,17 +66,18 @@ open _root_.groupCohomology
 variable (A : Rep k G) (n : ℕ)
 
 /-- **Restriction to a Sylow `p`-subgroup is injective on the `p`-primary part** (Milne II 1.33):
-an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a Sylow `p`-subgroup `P`
-vanishes is zero. -/
+an element of `Hⁿ(G, A)` killed by a power of `p` whose restriction to a finite-index Sylow
+`p`-subgroup `P` vanishes is zero. -/
 theorem eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero
-    (p : ℕ) [Fact p.Prime] (P : Sylow p G)
+    (p : ℕ) [Fact p.Prime] (P : Sylow p G) [(P : Subgroup G).FiniteIndex]
     {x : groupCohomology A n} {j : ℕ} (hx : p ^ j • x = 0)
     (h : map (P : Subgroup G).subtype (𝟙 (res (P : Subgroup G).subtype A)) n x = 0) :
-    x = 0 := by
+    x = 0 :=
   -- `[G : P]` kills `x` and is prime to `p`, hence to `p ^ j`; the two annihilators force `x = 0`.
-  exact (nsmul_eq_zero_iff_of_coprime <| Nat.Coprime.pow_left j <|
-    (Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 (Sylow.not_dvd_index P)).1
-    ⟨hx, index_nsmul_eq_zero_of_map_eq_zero (P : Subgroup G) h⟩
+  eq_zero_of_nsmul_eq_zero_of_coprime_index_of_map_eq_zero (P : Subgroup G) hx
+    (((Nat.Prime.coprime_iff_not_dvd ‹Fact p.Prime›.out).2 P.not_dvd_index).symm.pow_right j) h
+
+variable [Finite G]
 
 /-- **Restriction to the Sylow subgroups is jointly injective** (Milne II 1.33): an element of
 `Hⁿ⁺¹(G, A)` whose restriction vanishes, for every prime `p` dividing the order of `G`, on some
@@ -106,3 +120,35 @@ theorem isZero_of_isZero_sylow (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card
   exact ModuleCat.isZero_of_subsingleton _
 
 end TauCeti.groupCohomology
+
+namespace IsAddPGroup
+
+variable [Finite G]
+
+/-- **Cohomology of a finite group with `p`-primary torsion coefficients is `p`-primary torsion.**
+Neither finiteness nor bounded exponent of `A` is assumed: each inhomogeneous `n`-cochain has
+finite domain `Fin n → G`, so the `n`-cochains, `n`-cocycles, and `Hⁿ(G, A)` are additive
+`p`-groups in every degree `n`. -/
+theorem groupCohomology {p : ℕ} {A : Rep k G} (hA : IsAddPGroup p A) (n : ℕ) :
+    IsAddPGroup p (_root_.groupCohomology A n) := by
+  have hcochain : IsAddPGroup p ((_root_.groupCohomology.inhomogeneousCochains A).X n) :=
+    IsAddPGroup.pi fun _ ↦ hA
+  have hcycles : IsAddPGroup p (_root_.groupCohomology.cocycles A n) :=
+    hcochain.of_injective (_root_.groupCohomology.iCocycles A n).hom.toAddMonoidHom
+      ((ModuleCat.mono_iff_injective (_root_.groupCohomology.iCocycles A n)).1 inferInstance)
+  exact hcycles.of_surjective (_root_.groupCohomology.π A n).hom.toAddMonoidHom
+    ((ModuleCat.epi_iff_surjective (_root_.groupCohomology.π A n)).1 inferInstance)
+
+/-- **Restriction to a Sylow `p`-subgroup is injective when the coefficients are an additive
+`p`-group.** Neither finiteness nor bounded exponent of `A` is required, and every degree `n` is
+covered. -/
+theorem map_sylow_injective {p : ℕ} [Fact p.Prime] {A : Rep k G} (hA : IsAddPGroup p A)
+    (P : Sylow p G) (n : ℕ) :
+    Function.Injective
+      (_root_.groupCohomology.map (P : Subgroup G).subtype
+        (𝟙 (res (P : Subgroup G).subtype A)) n) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦
+    let ⟨_, hj⟩ := (hA.groupCohomology n).exists_pow_nsmul_eq_zero x
+    TauCeti.groupCohomology.eq_zero_of_pow_nsmul_eq_zero_of_map_sylow_eq_zero A n p P hj hx
+
+end IsAddPGroup

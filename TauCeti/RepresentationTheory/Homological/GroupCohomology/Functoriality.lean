@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.GroupTheory.Exponent
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
@@ -17,18 +18,28 @@ This file evaluates Mathlib's pullbacks `groupCohomology.mapCocycles₁` and
 `(f, φ)` at group elements, without unfolding the cochain map.
 
 It also records that `Hⁿ(G, -)` is an additive functor on `Rep k G`, so that the map
-`groupCohomology.map (MonoidHom.id G) φ n` induced by a morphism `φ` of representations is
-additive in `φ`. Consequently cohomology commutes with binary biproducts: if `c` is a biproduct
-bicone of `A` and `B`, for instance the concrete product `Rep.binaryBicone A B` on `A × B`, the
-maps induced by its projections identify `Hⁿ(G, c.pt)` with `Hⁿ(G, A) × Hⁿ(G, B)`, and the maps
-induced by its inclusions give the inverse.
+`groupCohomology.map (MonoidHom.id G) φ n` induced by a morphism `φ` of representations preserves
+zero, addition, negation, subtraction, and `ℕ`- and `ℤ`-multiples. Two immediate consequences are
+proved:
+* any natural number that annihilates the underlying additive group of `A` annihilates `Hⁿ(G, A)`
+  in every degree `n`, with no finiteness assumption on `G` or `A` — in particular the exponent
+  `AddMonoid.exponent A` and the cardinality `Nat.card A` annihilate `Hⁿ(G, A)`;
+* cohomology commutes with binary biproducts: if `c` is a biproduct bicone of `A` and `B`, for
+  instance the concrete product `Rep.binaryBicone A B` on `A × B`, the maps induced by its
+  projections identify `Hⁿ(G, c.pt)` with `Hⁿ(G, A) × Hⁿ(G, B)`, and the maps induced by its
+  inclusions give the inverse.
 
 ## Main statements
 
 * `TauCeti.groupCohomology.mapCocycles₁_apply`: the value of a pulled-back `1`-cocycle.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
-* `TauCeti.groupCohomology.map_id_add`: the map induced on cohomology is additive in the
+* `TauCeti.groupCohomology.map_id_add`, `TauCeti.groupCohomology.map_id_nsmul`,
+  `TauCeti.groupCohomology.map_id_zsmul`: the map induced on cohomology is additive in the
   morphism of representations.
+* `TauCeti.groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero`,
+  `TauCeti.groupCohomology.exponent_nsmul_eq_zero`,
+  `TauCeti.groupCohomology.natCard_V_nsmul_eq_zero`: annihilators, exponent, and cardinality of
+  the coefficient module kill `Hⁿ(G, A)` in every degree.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
   biproduct is the product of the cohomologies.
 -/
@@ -77,6 +88,54 @@ theorem map_id_add {A B : Rep k G} (φ ψ : A ⟶ B) (n : ℕ) :
 @[simp]
 theorem map_id_zero (A B : Rep k G) (n : ℕ) : map (MonoidHom.id G) (0 : A ⟶ B) n = 0 :=
   (functor k G n).map_zero A B
+
+/-- The map induced on `Hⁿ(G, -)` by `-φ` is the negative of the map induced by `φ`. -/
+@[simp]
+theorem map_id_neg {A B : Rep k G} (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (-φ) n = -map (MonoidHom.id G) φ n :=
+  (functor k G n).map_neg
+
+/-- The map induced on `Hⁿ(G, -)` by `φ - ψ` is the difference of the maps induced by `φ` and
+`ψ`. -/
+@[simp]
+theorem map_id_sub {A B : Rep k G} (φ ψ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (φ - ψ) n = map (MonoidHom.id G) φ n - map (MonoidHom.id G) ψ n :=
+  (functor k G n).map_sub
+
+/-- The map induced on `Hⁿ(G, -)` by `m • φ` (`m : ℕ`) is `m` times the map induced by `φ`. -/
+@[simp]
+theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
+  (functor k G n).map_nsmul
+
+/-- The map induced on `Hⁿ(G, -)` by `m • φ` (`m : ℤ`) is `m` times the map induced by `φ`. -/
+@[simp]
+theorem map_id_zsmul {A B : Rep k G} (m : ℤ) (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
+  (functor k G n).map_zsmul
+
+/-- Any natural number that annihilates the underlying additive group of `A` annihilates `Hⁿ(G, A)`
+in every degree `n`, without finiteness assumptions on `G` or `A`. -/
+theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ} (hA : ∀ a : A, m • a = 0)
+    {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
+  have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
+    Rep.hom_ext <| DFunLike.ext _ _ fun a ↦ by
+      rw [Rep.nsmul_hom, Representation.IntertwiningMap.coe_nsmul, Pi.smul_apply, Rep.hom_id]
+      exact hA a
+  calc m • x = (m • map (MonoidHom.id G) (𝟙 A) n).hom x := by simp
+    _ = (map (MonoidHom.id G) (m • 𝟙 A) n).hom x := by rw [map_id_nsmul]
+    _ = 0 := by simp [h0]
+
+/-- The additive exponent of the coefficient module annihilates `Hⁿ(G, A)` in every degree `n`. -/
+theorem exponent_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+    AddMonoid.exponent A • x = 0 :=
+  nsmul_eq_zero_of_forall_nsmul_eq_zero AddMonoid.exponent_nsmul_eq_zero x
+
+/-- The `Nat.card` of the coefficient module annihilates `Hⁿ(G, A)` in every degree `n` (when `A`
+is infinite, `Nat.card A = 0` by convention). -/
+theorem natCard_V_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+    Nat.card A • x = 0 :=
+  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
 
 end TauCeti.groupCohomology
 
