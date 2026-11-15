@@ -626,8 +626,8 @@ private theorem head_piece_zero (i : I) :
 
 /-- **The graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`**: the graded head `Sᵢ` of `A eᵢ` is
 one-dimensional, concentrated in degree zero, and `eⱼ` acts on it by `δᵢⱼ`. -/
-theorem smulGradedDimension_gradedIdempotentHead [Module.Finite k A] [DecidableEq I]
-    (j i : I) (hne : e i ≠ 0) :
+theorem smulGradedDimension_gradedIdempotentHead [DecidableEq I]
+    (j i : I) [Module.Finite k (gradedPositiveMulQuotient 𝒜 (he₀ i))] (hne : e i ≠ 0) :
     (gradedPositiveMulQuotient 𝒜 (he₀ i)).smulGradedDimension (e j) = if j = i then 1 else 0 := by
   ext p
   rw [GradedModuleCat.coeff_smulGradedDimension]
