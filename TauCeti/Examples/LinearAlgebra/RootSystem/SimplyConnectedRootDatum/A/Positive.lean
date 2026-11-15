@@ -32,7 +32,7 @@ example (k : Fin 7) :
     (typeASimplyConnectedBase 7).rootCoefficients (typeASimplyConnectedBase 7).highestRoot
       ⟨typeASimpleIndex 7 k, by
         rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact k.isLt⟩ = 1 :=
-  rootCoefficients_highestRoot_typeA k
+  congrFun rootCoefficients_highestRoot_typeA _
 
 /-- The highest root of type `A₇` has height `7`. -/
 example : (typeASimplyConnectedBase 7).height (typeASimplyConnectedBase 7).highestRoot = 7 := by
@@ -62,6 +62,6 @@ example : (typeASimplyConnectedBase 2).IsPos (typeAIndexEquiv 2 ⟨(1, 2), by de
 example : (typeASimplyConnectedBase 1).rootCoefficients (typeASimplyConnectedBase 1).highestRoot
     ⟨typeASimpleIndex 1 0, by
       rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact Fin.isLt 0⟩ = 1 :=
-  rootCoefficients_highestRoot_typeA 0
+  congrFun rootCoefficients_highestRoot_typeA _
 
 end TauCeti.Examples

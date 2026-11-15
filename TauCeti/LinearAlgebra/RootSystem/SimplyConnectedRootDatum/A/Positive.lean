@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Coefficients
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 
@@ -22,7 +21,10 @@ positive exactly when `a < b`, and no coefficient exceeds `1`.
 These formulas identify the actual index of the highest root as that of `e₀ - eₙ`, with all
 coefficients equal to `1` and height `n`. Every root lies below it in the positive root cone. The
 datum is not irreducible over `ℤ` in the sense of `RootPairing.IsIrreducible`, so these statements
-are proved from the coefficients rather than from the general highest-root theory.
+are proved from the coefficients rather than from the general highest-root theory, through the
+coefficient-dominance criteria of `TauCeti.LinearAlgebra.RootSystem.HighestRoot.Coefficients`.
+The arguments follow the type `C` file
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Positive`.
 
 ## Main results
 
@@ -30,7 +32,9 @@ are proved from the coefficients rather than from the general highest-root theor
   the coordinates of its coroot.
 * `TauCeti.DynkinType.isPos_typeAIndexEquiv_iff`: `e_a - e_b` is positive exactly when `a < b`.
 * `TauCeti.DynkinType.highestRoot_typeASimplyConnectedBase`: the highest root is `e₀ - eₙ`.
-* `TauCeti.DynkinType.rootCoefficients_highestRoot_typeA`: its coefficients are `(1, …, 1)`.
+* `TauCeti.DynkinType.rootCoefficients_highestRoot_typeA` and
+  `TauCeti.DynkinType.coroot_highestRoot_typeASimplyConnectedBase`: its coefficients and the
+  coordinates of its coroot are `(1, …, 1)`.
 * `TauCeti.DynkinType.root_highestRoot_sub_mem_posRootCone_typeA`: it lies above every root.
 * `TauCeti.DynkinType.height_highestRoot_typeASimplyConnectedBase`: its height is `n`.
 
@@ -83,10 +87,12 @@ theorem rootCoefficients_typeASimplyConnectedBase (j : Fin (n * (n + 1))) (k : F
   exact congrArg _ ((simpleEquiv n).symm_apply_eq.mpr rfl)
 
 /-- In Bourbaki numbering, no root of type `Aₙ` has a simple-root coefficient greater than `1`. -/
-theorem rootCoefficients_typeA_le_one (j : Fin (n * (n + 1))) (k : Fin n) :
-    (b).rootCoefficients j ⟨typeASimpleIndex n k, by simp⟩ ≤ 1 := by
+theorem rootCoefficients_typeA_le_one (j : Fin (n * (n + 1))) (k : (b).support) :
+    (b).rootCoefficients j k ≤ 1 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective j
-  rw [rootCoefficients_typeASimplyConnectedBase, coroot_typeAIndexEquiv]
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  simp only [simpleEquiv, Equiv.coe_fn_mk, rootCoefficients_typeASimplyConnectedBase,
+    coroot_typeAIndexEquiv]
   split_ifs <;> norm_num
 
 /-- **The root `e_a - e_b` of type `Aₙ` is positive exactly when `a < b`.** -/
@@ -118,53 +124,39 @@ theorem isPos_typeAIndexEquiv_iff (p : TypeAIndex n) :
 enumerated root index. -/
 theorem highestRoot_typeASimplyConnectedBase [NeZero n] :
     (b).highestRoot = typeAIndexEquiv n ⟨(0, Fin.last n), Fin.last_pos'.ne⟩ := by
-  let θ := typeAIndexEquiv n ⟨(0, Fin.last n), Fin.last_pos'.ne⟩
-  have hθ (k : (b).support) : (b).rootCoefficients θ k = 1 := by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    simp [simpleEquiv, θ, Fin.le_def]
-  have hle (k : (b).support) : (b).rootCoefficients (b).highestRoot k ≤
-      (b).rootCoefficients θ k := by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    rw [hθ]
-    exact rootCoefficients_typeA_le_one (b).highestRoot i
-  by_contra hne
-  obtain ⟨k, hk⟩ : ∃ k, (b).rootCoefficients (b).highestRoot k ≠
-      (b).rootCoefficients θ k := by
-    by_contra! heq
-    exact hne ((b).rootCoefficients_injective (funext heq))
-  have hlt := Finset.sum_lt_sum (fun k (_ : k ∈ univ) ↦ hle k)
-    ⟨k, mem_univ k, (hle k).lt_of_ne hk⟩
-  rw [(b).sum_rootCoefficients_eq_height, (b).sum_rootCoefficients_eq_height] at hlt
-  exact hlt.not_ge ((b).height_le_height_highestRoot θ)
+  refine (b).highestRoot_eq_of_rootCoefficients_le fun k ↦ ?_
+  refine (rootCoefficients_typeA_le_one _ k).trans_eq (Eq.symm ?_)
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  simp [simpleEquiv, Fin.le_def]
+
+/-- The coroot of the highest root of type `Aₙ` has all simple-coroot coordinates equal to `1`. -/
+@[simp]
+theorem coroot_highestRoot_typeASimplyConnectedBase [NeZero n] :
+    (P).coroot (b).highestRoot = 1 := by
+  ext k
+  rw [highestRoot_typeASimplyConnectedBase, coroot_typeAIndexEquiv]
+  simp [Fin.le_def]
 
 /-- The simple-root coefficients of the highest root of type `Aₙ` are all `1`. -/
-theorem rootCoefficients_highestRoot_typeA [NeZero n] (k : Fin n) :
-    (b).rootCoefficients (b).highestRoot ⟨typeASimpleIndex n k, by simp⟩ = 1 := by
-  rw [highestRoot_typeASimplyConnectedBase]
-  simp [Fin.le_def]
+@[simp]
+theorem rootCoefficients_highestRoot_typeA [NeZero n] :
+    (b).rootCoefficients (b).highestRoot = 1 := by
+  ext k
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  simp [simpleEquiv]
 
 /-- The highest root of the integral type `Aₙ` datum lies above every root in the positive root
 cone. No integral spanning or irreducibility assumption is needed. -/
 theorem root_highestRoot_sub_mem_posRootCone_typeA [NeZero n] (j : Fin (n * (n + 1))) :
-    (P).root (b).highestRoot - (P).root j ∈ posRootCone P b := by
-  rw [← (b).sum_rootCoefficients_smul_root (b).highestRoot,
-    ← (b).sum_rootCoefficients_smul_root j, ← Finset.sum_sub_distrib]
-  apply AddSubmonoid.sum_mem
-  intro k _
-  rw [← sub_smul]
-  have hle : (b).rootCoefficients j k ≤ (b).rootCoefficients (b).highestRoot k := by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    exact (rootCoefficients_typeA_le_one j i).trans_eq (rootCoefficients_highestRoot_typeA i).symm
-  rw [← Int.toNat_of_nonneg (sub_nonneg.mpr hle), natCast_zsmul]
-  exact (posRootCone P b).nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b
-    ((mem_posRoots P b _).mpr (RootPairing.Base.isPos_of_mem_support k.2))) _
+    (P).root (b).highestRoot - (P).root j ∈ posRootCone P b :=
+  (b).root_sub_mem_posRootCone_of_rootCoefficients_le fun k ↦ by
+    simpa using rootCoefficients_typeA_le_one j k
 
 /-- The height of the highest root of type `Aₙ` is `n`. -/
 @[simp]
 theorem height_highestRoot_typeASimplyConnectedBase [NeZero n] :
     (b).height (b).highestRoot = n := by
   rw [← (b).sum_rootCoefficients_eq_height, ← (simpleEquiv n).sum_comp]
-  simp only [simpleEquiv, Equiv.coe_fn_mk, rootCoefficients_highestRoot_typeA]
   simp
 
 end TauCeti.DynkinType
