@@ -49,6 +49,8 @@ dimension two that kernel vanishes identically, so the planar case is instead
 
 * `TauCeti.ballGreenCorrector`: the reflected Newtonian kernel correcting the boundary values.
 * `TauCeti.harmonicOnNhd_ballGreenCorrector`: harmonicity of the corrector inside the ball.
+* `TauCeti.contDiffOn_ballGreenCorrector`: joint smoothness of the corrector where
+  `‖x‖ ‖y‖ < 1`, and `TauCeti.ballGreenCorrector_nonneg`: its sign outside dimension one.
 * `TauCeti.ballGreenKernel`: the Dirichlet Green kernel of the unit ball.
 * `TauCeti.ballGreenKernel_comm`: symmetry of the Green kernel in its two arguments.
 * `TauCeti.harmonicAt_ballGreenKernel`: harmonicity in `y` away from the pole.
@@ -56,6 +58,9 @@ dimension two that kernel vanishes identically, so the planar case is instead
   `TauCeti.ballGreenKernel_eq_zero_of_norm_eq_one_right`: vanishing when either argument lies on
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
+* `TauCeti.ballGreenKernel_le_newtonianKernel`: domination by the Newtonian kernel outside
+  dimension one.
+* `TauCeti.measurable_ballGreenKernel`: joint measurability.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
 * `TauCeti.ballPoissonKernel_eq_zero_of_norm_eq_one_left`: it vanishes for a pole on the sphere.
 * `TauCeti.ballPoissonKernel_le_mul_ballPoissonKernel_zero`,
@@ -263,6 +268,38 @@ theorem hasFDerivAt_ballGreenCorrector (hn : n ≠ 2) {x y : EuclideanSpace ℝ 
     ((‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1) ^ (-(n : ℝ) / 2) *
       (‖x‖ ^ 2 * ⟪y, v⟫_ℝ - ⟪x, v⟫_ℝ)) * this
 
+/-- The corrector is jointly smooth in the pole and the variable wherever the reflection
+polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive, in particular wherever `‖x‖ ‖y‖ < 1`. -/
+theorem contDiffOn_ballGreenCorrector {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (Function.uncurry (ballGreenCorrector n))
+      {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) |
+        0 < ‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1} := by
+  have hfun : Function.uncurry (ballGreenCorrector n) =
+      fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
+        ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+          (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1) ^ ((2 - (n : ℝ)) / 2) := by
+    funext p
+    exact ballGreenCorrector_def p.1 p.2
+  have hpoly : ContDiff ℝ k fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
+      ‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1 :=
+    (((contDiff_norm_sq ℝ).comp contDiff_fst).mul ((contDiff_norm_sq ℝ).comp contDiff_snd)).sub
+      (contDiff_const.mul contDiff_inner) |>.add contDiff_const
+  rw [hfun]
+  exact contDiffOn_const.mul (hpoly.contDiffOn.rpow_const_of_ne fun p hp => (ne_of_gt hp))
+
+/-- Outside dimension one the corrector is nonnegative: it is a nonnegative multiple of a power
+of the reflection polynomial, which is at least `(1 - ‖x‖ ‖y‖)²`. -/
+theorem ballGreenCorrector_nonneg (hn : n ≠ 1) (x y : EuclideanSpace ℝ (Fin n)) :
+    0 ≤ ballGreenCorrector n x y := by
+  have hn2 : 0 ≤ (n : ℝ) * ((n : ℝ) - 2) := by
+    rcases Nat.lt_or_ge n 2 with h | h
+    · interval_cases n <;> simp_all
+    · have : (2 : ℝ) ≤ n := by exact_mod_cast h
+      nlinarith
+  rw [ballGreenCorrector_def]
+  exact mul_nonneg (inv_nonneg.mpr (mul_nonneg hn2 measureReal_nonneg))
+    (Real.rpow_nonneg ((sq_nonneg _).trans (one_sub_norm_mul_norm_sq_le x y)) _)
+
 /-! ### The Green kernel -/
 
 /-- The Dirichlet Green kernel of the Euclidean unit ball with pole `x`: the Newtonian kernel
@@ -339,6 +376,27 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
   exact sub_pos.mpr (by simpa only [mul_sub] using
     (newtonianKernel_rpow_sq_lt n hn
       (pos_of_ne_euclideanSpace hxy) hsub hlt))
+
+/-- Outside dimension one, the Green kernel of the unit ball is dominated by the Newtonian kernel
+with the same pole. -/
+theorem ballGreenKernel_le_newtonianKernel (hn : n ≠ 1) (x y : EuclideanSpace ℝ (Fin n)) :
+    ballGreenKernel n x y ≤ newtonianKernel n (y - x) := by
+  rw [ballGreenKernel_def]
+  exact sub_le_self _ (ballGreenCorrector_nonneg hn x y)
+
+/-- The Green kernel of the unit ball is jointly measurable in the pole and the variable. -/
+@[fun_prop]
+theorem measurable_ballGreenKernel : Measurable (Function.uncurry (ballGreenKernel n)) := by
+  have hfun : Function.uncurry (ballGreenKernel n) =
+      fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
+        ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+            ‖p.2 - p.1‖ ^ (2 - (n : ℝ)) -
+          ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+            (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1) ^ ((2 - (n : ℝ)) / 2) := by
+    funext p
+    exact (ballGreenKernel_def p.1 p.2).trans (by rw [newtonianKernel_def, ballGreenCorrector_def])
+  rw [hfun]
+  fun_prop
 
 /-- The Fréchet derivative of the Green kernel of the unit ball in `y`, away from the pole and
 wherever the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive. -/
