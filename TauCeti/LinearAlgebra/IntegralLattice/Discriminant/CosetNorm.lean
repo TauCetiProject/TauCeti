@@ -34,6 +34,10 @@ and `3/2` of the minuscule classes of `E₆` and `E₇`.
   lattices carries each discriminant class to a class with the same norms, so coset minima
   computed in one model of a lattice transfer to every isometric model
   (`TauCeti.IntegralLattice.Isometry.isLeast_form_self_iff_of_discriminantGroupEquiv_eq`).
+* `TauCeti.IntegralLattice.Isometry.image_dualCarrierEquiv_mk_eq_and_form_self_eq`,
+  `TauCeti.IntegralLattice.Isometry.ncard_mk_eq_and_form_self_eq_of_discriminantGroupEquiv_eq`:
+  an isometry carries the dual vectors of norm `r` in a discriminant class bijectively to those in
+  its image class, preserving their cardinality.
 
 ## References
 
@@ -116,6 +120,58 @@ theorem Isometry.isLeast_form_self_iff_of_discriminantGroupEquiv_eq {W : Type v}
     IsLeast {q : ℚ | ∃ y : M.dualCarrier, Submodule.Quotient.mk y = d ∧ M.form y y = q} r ↔
       IsLeast {q : ℚ | ∃ x : L.dualCarrier, Submodule.Quotient.mk x = c ∧ L.form x x = q} r := by
   rw [← h, e.setOf_form_self_discriminantGroupEquiv]
+
+/-- **Isometries transport membership in a discriminant class**: if `e` carries the class `c` to
+`d`, then `e.dualCarrierEquiv x` lies in `d` if and only if `x` lies in `c`. -/
+theorem Isometry.mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq {W : Type v}
+    [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    {x : L.dualCarrier} :
+    (Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) = d ↔
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) = c := by
+  rw [← h, ← discriminantGroupEquiv_mk, e.discriminantGroupEquiv.injective.eq_iff]
+
+/-- **Isometries transport the vectors of a given norm in a discriminant class**: if `e` carries
+the class `c` to `d`, then `e.dualCarrierEquiv x` lies in `d` with norm `r` if and only if `x`
+lies in `c` with norm `r`. -/
+theorem Isometry.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq
+    {W : Type v} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    {x : L.dualCarrier} {r : ℚ} :
+    ((Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) = d ∧
+        M.form (e.dualCarrierEquiv x) (e.dualCarrierEquiv x) = r) ↔
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) = c ∧ L.form x x = r := by
+  rw [e.mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq h, coe_dualCarrierEquiv_apply,
+    e.map_app]
+
+/-- **Isometries carry the vectors of a given norm in a discriminant class bijectively to the
+corresponding vectors in the image class.** -/
+theorem Isometry.image_dualCarrierEquiv_mk_eq_and_form_self_eq {W : Type v}
+    [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    (r : ℚ) :
+    e.dualCarrierEquiv '' {x : L.dualCarrier |
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) = c ∧ L.form x x = r} =
+      {y : M.dualCarrier |
+        (Submodule.Quotient.mk y : M.DiscriminantGroup) = d ∧ M.form y y = r} := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨e.dualCarrierEquiv.symm y, ?_, e.dualCarrierEquiv.apply_symm_apply y⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact (e.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq h).mpr hx
+  · refine (e.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq h).mp ?_
+    rwa [e.dualCarrierEquiv.apply_symm_apply]
+
+/-- **Isometries preserve the number of vectors of a given norm in a discriminant class.** -/
+theorem Isometry.ncard_mk_eq_and_form_self_eq_of_discriminantGroupEquiv_eq {W : Type v}
+    [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    (r : ℚ) :
+    {y : M.dualCarrier |
+      (Submodule.Quotient.mk y : M.DiscriminantGroup) = d ∧ M.form y y = r}.ncard =
+      {x : L.dualCarrier |
+        (Submodule.Quotient.mk x : L.DiscriminantGroup) = c ∧ L.form x x = r}.ncard := by
+  rw [← e.image_dualCarrierEquiv_mk_eq_and_form_self_eq h r,
+    Set.ncard_image_of_injective _ e.dualCarrierEquiv.injective]
 
 end IntegralLattice
 

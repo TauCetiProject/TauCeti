@@ -65,6 +65,8 @@ Reindexing the components along an equivalence to an equal family, through
 * `TauCeti.DynkinType.glueMinimum`: the shortest norm `μ_t(a)` of the coset labelled `a`.
 * `TauCeti.DynkinType.isLeast_glueMinimum`: `μ_t(a)` is the least norm of a dual vector in the
   coset `t.glueAlphabetIsometry hv ht a`, and it is attained.
+* `TauCeti.DynkinType.ncard_mk_eq_glueAlphabetIsometry_A_and_form_self_eq`: the coset of `Aₙ`
+  labelled `a` has `(n + 1).choose a.val` vectors attaining `μ_{Aₙ}(a)`.
 * `TauCeti.DynkinType.quadratic_glueAlphabet_eq_glueMinimum_div_two`: `q(a) = μ_t(a) / 2 mod ℤ`.
 * `TauCeti.DynkinType.glueMinimum_eq_zero_iff`: `μ_t(a) = 0` exactly when `a = 0`.
 * `TauCeti.DynkinType.glueLabelMinimum`: the shortest norm of a printed label.
@@ -216,6 +218,21 @@ theorem isLeast_glueMinimum (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLace
   | C n => exact absurd ht (not_isSimplyLaced_C n)
   | F4 => exact absurd ht not_isSimplyLaced_F4
   | G2 => exact absurd ht not_isSimplyLaced_G2
+
+/-- **The coset of `Aₙ` labelled `a` has `(n + 1).choose a.val` shortest vectors**: the dual
+vectors in the discriminant class `(A n).glueAlphabetIsometry hv ht a` of `(A n).rootLattice ht`
+attaining the shortest norm `(A n).glueMinimum ht a` have cardinality
+`(n + 1).choose (ZMod.val a)`. -/
+theorem ncard_mk_eq_glueAlphabetIsometry_A_and_form_self_eq (n : ℕ) (hv : (A n).Valid)
+    (ht : (A n).IsSimplyLaced) (a : (A n).glueAlphabet ht) :
+    {x : ((A n).rootLattice ht).dualCarrier |
+      Submodule.Quotient.mk x = (A n).glueAlphabetIsometry hv ht a ∧
+        ((A n).rootLattice ht).form x x = (A n).glueMinimum ht a}.ncard =
+      (n + 1).choose (ZMod.val (n := n + 1) a) := by
+  have he := (glueAlphabetIsometry_A_apply n hv ht a).symm
+  exact (Isometry.ncard_mk_eq_and_form_self_eq_of_discriminantGroupEquiv_eq
+    (Isometry.ofEq (rootLattice_A n ht).symm) he ((A n).glueMinimum ht a)).trans
+    (ncard_mk_eq_typeADiscriminantGroupEquiv_and_form_self_eq a)
 
 /-- **Shortest norms are nonnegative.** -/
 theorem glueMinimum_nonneg (t : DynkinType) (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :

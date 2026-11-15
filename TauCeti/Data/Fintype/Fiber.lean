@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.Fintype.Card
-public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Multiset.Fintype
+public import Mathlib.Data.Set.Card
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-! # Occurrence counts in finite families
 
@@ -38,8 +40,14 @@ covering the range is weighted by its occurrence count.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
   matching of the indices away from another fiber.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
-* `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
+* `Function.exists_perm_of_map_univ_eq`, `Function.map_univ_eq_iff_exists_perm`: equal multisets of
+  values characterize index permutations.
+* `Function.map_univ_eq_replicate_add_replicate_iff_occCount`: a family has `k` copies of `a` and
+  the remaining copies equal to `b` (`a ≠ b`) iff its values lie in `{a, b}` and `occCount f a = k`.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
+* `Multiset.map_univ_ite_mem`, `Multiset.map_univ_eq_replicate_add_replicate_iff_exists_finset`,
+  `Multiset.ncard_map_univ_eq_replicate_add_replicate`: two-valued families with prescribed
+  multiplicities correspond to `k`-element subsets and have count `(Fintype.card X).choose k`.
 
 -/
 
@@ -224,6 +232,48 @@ theorem exists_perm_of_map_univ_eq [Fintype X] {u v : X → S}
   intro a
   rw [occCount_eq_count_map_univ, occCount_eq_count_map_univ, h]
 
+/-- Two finite families have the same multiset of values if and only if they differ by a
+permutation of their indices. -/
+theorem map_univ_eq_iff_exists_perm [Fintype X] {u v : X → S} :
+    Finset.univ.val.map u = Finset.univ.val.map v ↔ ∃ σ : Equiv.Perm X, v ∘ σ = u :=
+  ⟨exists_perm_of_map_univ_eq, fun ⟨σ, hσ⟩ => by
+    rw [← hσ, ← Multiset.map_map, Multiset.map_univ_val_equiv]⟩
+
+/-- For distinct values `a` and `b`, the multiset of values of a finite family consists of `k`
+copies of `a` and `Fintype.card X - k` copies of `b` if and only if every entry is `a` or `b` and
+`a` occurs `k` times. -/
+theorem map_univ_eq_replicate_add_replicate_iff_occCount [Fintype X] {a b : S} (hab : a ≠ b)
+    {k : ℕ} {f : X → S} :
+    Finset.univ.val.map f =
+        Multiset.replicate k a + Multiset.replicate (Fintype.card X - k) b ↔
+      (∀ x, f x = a ∨ f x = b) ∧ occCount f a = k := by
+  classical
+  constructor
+  · intro h
+    refine ⟨fun x => ?_, ?_⟩
+    · have hx : f x ∈ Multiset.replicate k a + Multiset.replicate (Fintype.card X - k) b :=
+        h ▸ Multiset.mem_map_of_mem f (Finset.mem_univ x)
+      rcases Multiset.mem_add.mp hx with hx | hx
+      · exact Or.inl (Multiset.eq_of_mem_replicate hx)
+      · exact Or.inr (Multiset.eq_of_mem_replicate hx)
+    · rw [occCount_eq_count_map_univ, h, Multiset.count_add, Multiset.count_replicate_self,
+        Multiset.count_replicate, ite_eq_right hab.symm, add_zero]
+  · rintro ⟨hf, hk⟩
+    have hcard : occCount f a + occCount f b = Fintype.card X := by
+      have hsum := sum_occCount_eq_card f (T := {a, b}) fun x => by
+        simpa using hf x
+      rwa [Finset.sum_pair hab, Nat.card_eq_fintype_card] at hsum
+    ext z
+    rw [← occCount_eq_count_map_univ, Multiset.count_add, Multiset.count_replicate,
+      Multiset.count_replicate]
+    rcases eq_or_ne z a with rfl | hza
+    · simp [hab.symm, hk]
+    · rcases eq_or_ne z b with rfl | hzb
+      · simp [hza.symm]; omega
+      · simp only [ite_eq_right hza.symm, ite_eq_right hzb.symm, add_zero]
+        exact occCount_of_notMem_range f z fun ⟨x, hx⟩ =>
+          (hf x).elim (fun h => hza (hx ▸ h)) (fun h => hzb (hx ▸ h))
+
 end Function
 
 namespace Finset
@@ -268,5 +318,82 @@ theorem exists_map_univ_eq [Fintype X] (s : Multiset S) (h : s.card = Fintype.ca
   let e : X ≃ s := Fintype.equivOfCardEq (by simp [h])
   refine ⟨(fun x : s => (x : S)) ∘ e, ?_⟩
   rw [← Multiset.map_map, Multiset.map_univ_val_equiv, Multiset.map_univ_coe]
+
+/-- Mapping an indicator between two values over `Finset.univ` gives `s.card` copies of `a` and
+`Fintype.card X - s.card` copies of `b`. -/
+theorem map_univ_ite_mem [Fintype X] (s : Finset X) [DecidablePred (· ∈ s)] (a b : S) :
+    Finset.univ.val.map (fun x => if x ∈ s then a else b) =
+      replicate s.card a + replicate (Fintype.card X - s.card) b := by
+  classical
+  ext z
+  rw [← Function.occCount_eq_count_map_univ, count_add, count_replicate, count_replicate,
+    Function.occCount_eq_card_filter]
+  by_cases hza : a = z <;> by_cases hzb : b = z
+  · subst hza; subst hzb
+    have hle : s.card ≤ Fintype.card X := s.card_le_univ
+    simp; omega
+  · subst hza
+    simp only [↓reduceIte, ite_eq_right hzb, add_zero]
+    congr 1
+    ext x
+    simp [hzb]
+  · subst hzb
+    simp only [ite_eq_right hza, ↓reduceIte, zero_add, ← Finset.card_compl]
+    congr 1
+    ext x
+    simp [hza]
+  · simp only [ite_eq_right hza, ite_eq_right hzb, add_zero, Finset.card_eq_zero,
+      Finset.filter_eq_empty_iff]
+    intro x _
+    split_ifs <;> assumption
+
+/-- The multiset of values of a finite family consists of `k` copies of `a` and
+`Fintype.card X - k` copies of `b` if and only if the family is the `(a, b)`-indicator of a
+`k`-element subset. -/
+theorem map_univ_eq_replicate_add_replicate_iff_exists_finset [Fintype X] [DecidableEq X]
+    {a b : S} {k : ℕ} {f : X → S} :
+    Finset.univ.val.map f = replicate k a + replicate (Fintype.card X - k) b ↔
+      ∃ s : Finset X, s.card = k ∧ f = fun x => if x ∈ s then a else b := by
+  constructor
+  · intro h
+    rcases eq_or_ne a b with rfl | hab
+    · have hk : k ≤ (Finset.univ : Finset X).card := by
+        have hcard := congrArg card h
+        simp only [card_map, Finset.card_val, card_add, card_replicate] at hcard
+        omega
+      obtain ⟨s, -, hs⟩ := Finset.exists_subset_card_eq hk
+      refine ⟨s, hs, funext fun x => ?_⟩
+      have hx : f x ∈ replicate k a + replicate (Fintype.card X - k) a :=
+        h ▸ mem_map_of_mem f (Finset.mem_univ x)
+      rcases mem_add.mp hx with hx | hx <;> simp [eq_of_mem_replicate hx]
+    · classical
+      obtain ⟨hf, hk⟩ := (Function.map_univ_eq_replicate_add_replicate_iff_occCount hab).mp h
+      rw [Function.occCount_eq_card_filter] at hk
+      refine ⟨Finset.univ.filter (fun x => f x = a), hk, funext fun x => ?_⟩
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      rcases hf x with hx | hx <;> simp [hx, hab.symm]
+  · rintro ⟨s, rfl, rfl⟩
+    exact map_univ_ite_mem s a b
+
+/-- For distinct values `a` and `b`, the number of families `X → S` whose multiset of values
+consists of `k` copies of `a` and `Fintype.card X - k` copies of `b` is
+`(Fintype.card X).choose k`. -/
+theorem ncard_map_univ_eq_replicate_add_replicate [Fintype X] {a b : S} (hab : a ≠ b) (k : ℕ) :
+    {f : X → S |
+      Finset.univ.val.map f = replicate k a + replicate (Fintype.card X - k) b}.ncard =
+      (Fintype.card X).choose k := by
+  classical
+  let ind : Finset X → X → S := fun s x => if x ∈ s then a else b
+  have hinj : Function.Injective ind := fun s t hst => by
+    ext x
+    have hx := congrFun hst x
+    by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp_all [ind]
+  have hset : {f : X → S |
+      Finset.univ.val.map f = replicate k a + replicate (Fintype.card X - k) b} =
+      ind '' (Finset.powersetCard k (Finset.univ : Finset X) : Set (Finset X)) := by
+    ext f
+    simp [map_univ_eq_replicate_add_replicate_iff_exists_finset, ind, eq_comm]
+  rw [hset, Set.ncard_image_of_injective _ hinj, Set.ncard_coe_finset, Finset.card_powersetCard,
+    Finset.card_univ]
 
 end Multiset
