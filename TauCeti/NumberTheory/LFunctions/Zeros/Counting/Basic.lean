@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ReProdIm
 public import TauCeti.Analysis.Meromorphic.Counting.Conj
 public import TauCeti.Analysis.Meromorphic.Counting.Rectangle
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
