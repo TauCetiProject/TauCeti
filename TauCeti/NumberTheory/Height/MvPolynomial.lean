@@ -13,6 +13,7 @@ public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
+public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 import TauCeti.NumberTheory.Height.Basic
 
 /-!
@@ -21,7 +22,8 @@ import TauCeti.NumberTheory.Height.Basic
 The height of a multivariate polynomial is the native projective height of its finitely
 supported coefficient vector. The variables may form an infinite type: only the finitely
 many nonzero coefficients contribute. Nonzero scalar multiplication, injective variable
-renaming, and placement of a univariate polynomial in one coordinate preserve the height.
+renaming, blockwise dehomogenization of multihomogeneous polynomials, and placement of a
+univariate polynomial in one coordinate preserve the height.
 These comparisons allow auxiliary polynomials to be handled in their natural variable types.
 
 The normalization is relative to the admissible family of absolute values of the field.
@@ -217,6 +219,51 @@ theorem mulHeight_rename (p : MvPolynomial σ K) {f : σ → τ} (hf : Function.
 theorem logHeight_rename (p : MvPolynomial σ K) {f : σ → τ} (hf : Function.Injective f) :
     (rename f p).logHeight = p.logHeight := by
   rw [logHeight_eq_log_mulHeight, mulHeight_rename p hf, logHeight_eq_log_mulHeight]
+
+/-- If every nonzero coefficient of `q` occurs among the coefficients of `p`, then
+`q.mulHeight ≤ p.mulHeight`. -/
+theorem mulHeight_le_of_coeff_mem_range {p : MvPolynomial σ K} {q : MvPolynomial τ K}
+    (hq : ∀ m ∈ q.support, q.coeff m ∈ Set.range p.coeff) :
+    q.mulHeight ≤ p.mulHeight := by
+  have hmem (m : q.support) : ∃ n : p.support, p.coeff n = q.coeff m := by
+    obtain ⟨n, hn⟩ := hq m m.2
+    exact ⟨⟨n, mem_support_iff.mpr (hn ▸ mem_support_iff.mp m.2)⟩, hn⟩
+  choose g hg using hmem
+  rw [mulHeight_eq_support q, mulHeight_eq_support p]
+  simpa only [Function.comp_def, hg] using
+    Height.mulHeight_comp_le g (fun n : p.support ↦ p.coeff n)
+
+/-- If every nonzero coefficient of `q` occurs among the coefficients of `p`, then
+`q.logHeight ≤ p.logHeight`. -/
+theorem logHeight_le_of_coeff_mem_range {p : MvPolynomial σ K} {q : MvPolynomial τ K}
+    (hq : ∀ m ∈ q.support, q.coeff m ∈ Set.range p.coeff) :
+    q.logHeight ≤ p.logHeight :=
+  Real.log_le_log (mulHeight_pos q) (mulHeight_le_of_coeff_mem_range hq)
+
+/-- Dehomogenizing a multihomogeneous polynomial in two-variable blocks preserves its
+multiplicative coefficient height. -/
+theorem mulHeight_blockDehomogenize_of_isMultiHomogeneous {κ : Type*} [DecidableEq κ]
+    {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
+    (blockDehomogenize P).mulHeight = P.mulHeight := by
+  refine le_antisymm (mulHeight_le_of_coeff_mem_range fun m hm ↦ ?_)
+    (mulHeight_le_of_coeff_mem_range fun n hn ↦ ?_)
+  · obtain ⟨n, hn, hnm⟩ := (mem_support_blockDehomogenize_iff_of_isMultiHomogeneous hP).mp hm
+    have hm_eq : m = n.comapDomain (·, 1) (Prod.mk_left_injective 1).injOn := by
+      ext h; simp [hnm h]
+    have hnsum (h : κ) : n (h, 0) + n (h, 1) = e h := by
+      simpa [Fin.sum_univ_two] using isMultiHomogeneous_iff.mp hP n (mem_support_iff.mp hn) h
+    exact ⟨n, (hm_eq ▸ coeff_blockDehomogenize_of_isMultiHomogeneous hP hnsum).symm⟩
+  · have hnsum (h : κ) : n (h, 0) + n (h, 1) = e h := by
+      simpa [Fin.sum_univ_two] using isMultiHomogeneous_iff.mp hP n (mem_support_iff.mp hn) h
+    exact ⟨_, coeff_blockDehomogenize_of_isMultiHomogeneous hP hnsum⟩
+
+/-- Dehomogenizing a multihomogeneous polynomial in two-variable blocks preserves its
+logarithmic coefficient height. -/
+theorem logHeight_blockDehomogenize_of_isMultiHomogeneous {κ : Type*} [DecidableEq κ]
+    {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P) :
+    (blockDehomogenize P).logHeight = P.logHeight := by
+  rw [logHeight_eq_log_mulHeight, mulHeight_blockDehomogenize_of_isMultiHomogeneous hP,
+    logHeight_eq_log_mulHeight]
 
 end MvPolynomial
 

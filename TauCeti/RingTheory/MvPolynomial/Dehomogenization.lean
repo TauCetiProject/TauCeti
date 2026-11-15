@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Field.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 
@@ -27,7 +28,9 @@ Conversely, a homogeneous polynomial is recovered from its degree and its equati
 (`TauCeti.dehomogenize_injOn`), and every polynomial of total degree at most `N` is the equation of
 some homogeneous polynomial of degree `N` (`TauCeti.exists_isHomogeneous_dehomogenize_eq`).
 Together they lift a factorization in an affine chart to a factorization of the homogeneous
-equation, up to a power of the omitted coordinate.
+equation, up to a power of the omitted coordinate. On a single two-variable block (`κ = Fin 1`),
+`MvPolynomial.blockDehomogenize` agrees with `TauCeti.dehomogenize 0`
+(`MvPolynomial.blockDehomogenize_rename_finOne`).
 
 Combined with the weak Nullstellensatz, the pointwise criterion gives an identity of ideals:
 if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
@@ -347,3 +350,16 @@ theorem span_insert_range_pderiv_dehomogenize_eq_top {p : MvPolynomial (Fin (n +
 end Field
 
 end TauCeti
+
+namespace MvPolynomial
+
+/-- On one block (`κ = Fin 1`), `blockDehomogenize` agrees with `TauCeti.dehomogenize 0`. -/
+theorem blockDehomogenize_rename_finOne {R : Type*} [CommSemiring R] (P : MvPolynomial (Fin 2) R) :
+    blockDehomogenize (rename (fun i : Fin 2 ↦ ((0 : Fin 1), i)) P) =
+      TauCeti.dehomogenize (R := R) 0 P := by
+  rw [← AlgHom.comp_apply]
+  refine AlgHom.congr_fun ?_ P
+  ext i
+  fin_cases i <;> simp
+
+end MvPolynomial
