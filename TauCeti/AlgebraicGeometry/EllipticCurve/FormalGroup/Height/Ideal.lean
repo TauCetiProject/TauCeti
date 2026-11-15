@@ -36,7 +36,7 @@ acts injectively on `R` and `v₁` on `R ⧸ p`, may be tested on `A` instead of
 When `W` is elliptic, every specialization to a field of characteristic `p` has height at most `2`
 (`WeierstrassCurve.height_formalGroup_le_two`), so every higher Landweber height ideal `I_n(Ê)`
 with `n ≥ 3` is the unit ideal (`WeierstrassCurve.heightIdeal_formalGroup_eq_top`). By Landweber's
-recursion (`FormalGroup.heightIdeal_succ_eq_top_iff`), `v₂` (the coefficient of `T^(p²)` in
+recursion (`FormalGroup.isUnit_mk_coeff_nsmulSeries_iff`), `v₂` (the coefficient of `T^(p²)` in
 `[p]_Ê`) is a unit modulo `I₂(Ê) = (p, A)`
 (`WeierstrassCurve.isUnit_mk_coeff_sq_nsmulSeries_formalGroup`), reducing weak regularity of the
 entire Landweber sequence `(v₀, v₁, …, v_(m-1))` on any `R`-module `M` to weak regularity of
@@ -132,7 +132,7 @@ theorem heightIdeal_formalGroup_two_eq_top_iff (hp : p.Prime) :
     (formalGroup W).heightIdeal p 2 = ⊤ ↔
       IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)})
         (PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential)) := by
-  rw [(formalGroup W).heightIdeal_succ_eq_top_iff hp 1, (formalGroup W).heightIdeal_one hp,
+  rw [← (formalGroup W).isUnit_mk_coeff_nsmulSeries_iff hp 1, (formalGroup W).heightIdeal_one hp,
     pow_one, Ideal.Quotient.eq.mpr (Ideal.mem_span_singleton.mpr
       (W.natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferential hp))]
 
@@ -171,7 +171,7 @@ Weierstrass curve over a commutative ring `R`, for any prime `p`. -/
 theorem isUnit_mk_coeff_sq_nsmulSeries_formalGroup (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) :=
-  ((formalGroup W).heightIdeal_succ_eq_top_iff hp 2).mp
+  ((formalGroup W).isUnit_mk_coeff_nsmulSeries_iff hp 2).mpr
     (W.heightIdeal_formalGroup_eq_top hp le_rfl)
 
 /-- **Landweber's `v₂` is a unit modulo `(p, A)`**: for any elliptic Weierstrass curve `W` over a

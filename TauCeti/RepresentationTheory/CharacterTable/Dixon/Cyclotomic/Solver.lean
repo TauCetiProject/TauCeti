@@ -270,8 +270,7 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
     {degree : Fin d.numClasses → ℕ} (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (hcoeff : ∀ i k (l : Fin e.totient), 2 * ((omega i k).coeff l).natAbs < q.p)
-    (hrows : ∀ i, d.canonicalModularRow q i =
-      fun k ↦ Cyclotomic.reduce q.p q.root (omega i k)) :
+    (hrows : ∀ i, d.canonicalModularRow q i = fun k ↦ Cyclotomic.reduce q.p q.root (omega i k)) :
     ⟨omega, table, degree⟩ ∈ d.dixonCyclotomicCharacterTableCandidates e q := by
   have _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   have hroot : IsPrimitiveRoot q.root e := he ▸ q.isPrimitiveRoot_root
