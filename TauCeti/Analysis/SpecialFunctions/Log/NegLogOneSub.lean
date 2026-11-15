@@ -23,11 +23,12 @@ together with its exact domain of summability.
 
 ## Main results
 
-* `Real.neg_log_one_sub_sub_le`: for `0 ≤ x < 1`, the remainder is at most
-  `x² / (2 (1 - x))`.
+* `Real.neg_log_one_sub_sub_pos` and `Real.neg_log_one_sub_sub_le`: for `0 < x < 1` the remainder
+  is strictly positive, and for `0 ≤ x < 1` it is at most `x² / (2 (1 - x))`.
 * `Real.neg_log_one_sub_rpow_sub_le_div`: for `2 ≤ y` and `0 < s`, it is at most
   `y ^ (-2s) / (2 (1 - 2 ^ (-s)))`.
-* `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
+* `Real.neg_log_one_sub_rpow_sub_le` and `Real.neg_log_one_sub_inv_sub_inv_le`: for `2 ≤ y` and
+  `1 ≤ s`, it is at most `y⁻²` (in particular `-log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹` for `2 ≤ x`).
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
@@ -55,6 +56,11 @@ namespace Real
 theorem neg_log_one_sub_sub_nonneg {x : ℝ} (hx1 : x < 1) :
     0 ≤ -log (1 - x) - x := by
   linarith [log_le_sub_one_of_pos (sub_pos.mpr hx1)]
+
+/-- The quadratic remainder of `-log (1 - x)` is strictly positive for `0 < x < 1`. -/
+theorem neg_log_one_sub_sub_pos {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) :
+    0 < -log (1 - x) - x := by
+  linarith [log_lt_sub_one_of_pos (sub_pos.mpr hx1) (by linarith)]
 
 /-- The quadratic remainder of `-log (1 - x)` is at most `x² / (2 (1 - x))` for
 `0 ≤ x < 1`. This is Mathlib's complex logarithm bound read along the reals. -/
@@ -116,6 +122,17 @@ theorem neg_log_one_sub_rpow_sub_le {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) :
     _ ≤ (y ^ (-s)) ^ 2 := div_le_self (sq_nonneg _) (by linarith)
     _ = y ^ (-(2 * s)) := by rw [pow_two, ← rpow_add hy0, ← two_mul, mul_neg]
     _ ≤ y ^ (-(2 : ℝ)) := rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
+
+/-- For `1 < x`, the quadratic remainder `-log (1 - x⁻¹) - x⁻¹` is strictly positive. -/
+theorem neg_log_one_sub_inv_sub_inv_pos {x : ℝ} (hx : 1 < x) :
+    0 < -log (1 - x⁻¹) - x⁻¹ :=
+  neg_log_one_sub_sub_pos (inv_pos.mpr (zero_lt_one.trans hx)) (inv_lt_one_of_one_lt₀ hx)
+
+/-- For `2 ≤ x`, the quadratic remainder `-log (1 - x⁻¹) - x⁻¹` is at most `(x ^ 2)⁻¹`. -/
+theorem neg_log_one_sub_inv_sub_inv_le {x : ℝ} (hx : 2 ≤ x) :
+    -log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹ := by
+  have h := neg_log_one_sub_rpow_sub_le hx le_rfl
+  rwa [rpow_neg_one, rpow_neg (by linarith), rpow_two] at h
 
 /-- For `x ≤ 1/2`, `-log (1 - x) ≤ x + 2 x ^ 2`. -/
 theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :

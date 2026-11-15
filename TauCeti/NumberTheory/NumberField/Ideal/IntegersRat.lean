@@ -56,8 +56,8 @@ at its primes.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for an ideal `Q` lying over an ideal `p` of
   `ℤ`, the primes above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
-  the rational prime it corresponds to, and `Rat.HeightOneSpectrum.exists_absNorm_eq` shows
-  every rational prime arises this way.
+  the rational prime it corresponds to; `Rat.HeightOneSpectrum.exists_absNorm_eq` and
+  `Rat.HeightOneSpectrum.absNorm_asIdeal_injective` show every rational prime arises uniquely.
 * `Rat.HeightOneSpectrum.liesOver_span_absNorm`: a prime above a height-one prime `v` of `𝓞 ℚ`
   lies over the rational prime of `v` in `ℤ`.
 * `Rat.HeightOneSpectrum.valuation_natGenerator` and
@@ -253,6 +253,15 @@ open IsDedekindDomain
 theorem asIdeal_eq_span_natGenerator (v : HeightOneSpectrum (𝓞 ℚ)) :
     v.asIdeal = Ideal.span {((natGenerator v : ℕ) : 𝓞 ℚ)} := by
   rw [← absNorm_asIdeal, Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
+
+/-- Two height-one primes of `𝓞 ℚ` with the same absolute norm are equal. -/
+theorem absNorm_asIdeal_injective :
+    Function.Injective (fun v : HeightOneSpectrum (𝓞 ℚ) ↦ Ideal.absNorm v.asIdeal) := by
+  intro v w h
+  dsimp only at h
+  exact HeightOneSpectrum.ext (by
+    rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self v.asIdeal,
+      ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self w.asIdeal, h])
 
 /-- The rational prime of a height-one prime `v` of `𝓞 ℚ` is a uniformizer at `v`: its
 valuation there is `exp (-1)`. -/
