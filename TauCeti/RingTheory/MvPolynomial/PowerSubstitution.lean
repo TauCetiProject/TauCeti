@@ -23,14 +23,17 @@ substitution is injective on polynomials of `Z`-degree below `B`.
 
 * `MvPolynomial.coeff_powerSubstitution`: for `F` of `Z`-degree below `B` and `μ 0 < B`, the
   coefficient of `X ^ (μ 0 + B * μ 1)` in `F(X, X ^ B)` is the coefficient of `Z ^ μ 0 W ^ μ 1`.
-* `MvPolynomial.powerSubstitution_injOn`: the substitution is injective on polynomials of
-  `Z`-degree below `B`, for every `B` (at `B = 0` this set is empty).
+* `MvPolynomial.powerSubstitution_injOn`, `MvPolynomial.powerSubstitution_ne_zero`: the
+  substitution is injective on polynomials of `Z`-degree below `B` (for every `B`; at `B = 0` this
+  set is empty), so nonzero polynomials of `Z`-degree below `B` have nonzero image.
 * `MvPolynomial.support_powerSubstitution_subset`,
   `MvPolynomial.natDegree_powerSubstitution_le`: the exponents of `F(X, X ^ B)` are among the
   weights `μ 0 + B * μ 1` of the exponents of `F`, so its degree is at most
   `degreeOf 0 F + B * degreeOf 1 F`.
 * `MvPolynomial.powerSubstitution_map`: naturality under a ring map of the coefficients.
-* `MvPolynomial.eval_powerSubstitution`: `F(X, X ^ B)` evaluated at `a` is `F(a, a ^ B)`.
+* `MvPolynomial.eval_powerSubstitution`, `MvPolynomial.eval₂_powerSubstitution`,
+  `MvPolynomial.aeval_powerSubstitution`: `F(X, X ^ B)` evaluated at `a` (in `R`, along a ring map,
+  or in an `R`-algebra) is `F(a, a ^ B)`.
 
 ## References
 
@@ -101,6 +104,15 @@ theorem powerSubstitution_injOn (B : ℕ) :
   exact (injOn_aeval_X_pow (injOn_weight_vecCons_one B)).mono fun _ ↦
     mem_restrictSupport_of_degreeOf_lt
 
+/-- A nonzero bivariate polynomial of `Z`-degree below `B` has nonzero image under
+`powerSubstitution B`. -/
+theorem powerSubstitution_ne_zero {B : ℕ} {F : MvPolynomial (Fin 2) R} (hF : F ≠ 0)
+    (hZ : F.degreeOf 0 < B) : powerSubstitution B F ≠ 0 := by
+  intro h0
+  have hB : (0 : MvPolynomial (Fin 2) R).degreeOf 0 < B := by
+    simpa using (Nat.zero_le _).trans_lt hZ
+  exact hF (powerSubstitution_injOn B hZ hB (h0.trans (map_zero _).symm))
+
 /-- The power substitution preserves linear independence of a family of polynomials of
 `Z`-degree below `B`. -/
 theorem linearIndependent_powerSubstitution {ι : Type*} {B : ℕ} {φ : ι → MvPolynomial (Fin 2) R}
@@ -147,6 +159,18 @@ theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
   induction F using MvPolynomial.induction_on' with
   | monomial μ c => simp [eval_monomial, Finsupp.prod_fintype, pow_add, pow_mul]
   | add F G hF hG => simp [hF, hG]
+
+/-- Evaluating `F(X, X ^ B)` along a ring map `f : R →+* S` at `a` gives `eval₂ f ![a, a ^ B] F`. -/
+@[simp]
+theorem eval₂_powerSubstitution (f : R →+* S) (B : ℕ) (a : S) (F : MvPolynomial (Fin 2) R) :
+    (powerSubstitution B F).eval₂ f a = eval₂ f ![a, a ^ B] F := by
+  rw [← Polynomial.eval_map, ← powerSubstitution_map, eval_powerSubstitution, eval_map]
+
+/-- Evaluating `F(X, X ^ B)` at `a` in an `R`-algebra `S` gives `aeval ![a, a ^ B] F`. -/
+@[simp]
+theorem aeval_powerSubstitution [Algebra R S] (B : ℕ) (a : S) (F : MvPolynomial (Fin 2) R) :
+    Polynomial.aeval a (powerSubstitution B F) = aeval ![a, a ^ B] F := by
+  rw [Polynomial.aeval_def, aeval_def, eval₂_powerSubstitution]
 
 end CommSemiring
 
