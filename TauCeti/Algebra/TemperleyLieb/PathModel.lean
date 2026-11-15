@@ -22,15 +22,15 @@ Let `G` be a finite simple graph with a base vertex `v₀`, and let `r` be a wei
 vertices by nonzero scalars whose squares satisfy the adjacency eigenvector equation with
 eigenvalue `δ` along walks from `v₀`: at the endpoint `v` of every walk of fewer than `N` steps,
 the squared weights of the neighbours of `v` add up to `δ * r v ^ 2`
-(`TauCeti.TemperleyLieb.IsWalkEigenvectorUpTo`). This file builds from these data a representation
-of the Temperley–Lieb algebras up to `N` strands with loop value `δ` on walks in `G` starting at
-`v₀`, together with a Markov trace up to `N` strands, and proves that the trace is positive when
-the weights are self-adjoint. By bounded-level Markov uniqueness this proves positivity up to `N`
-strands of every Markov trace at `δ`. When `r · ^ 2` is a global eigenvector on `G` this holds on
-all numbers of strands; on the Dynkin graph `A_(m-1)` with weights `√[t + 1]` this gives
-positivity at `2 cos (π / m)`, while on a finite prefix of the half-line it gives positivity below
-the first bad level `⌊π / arccos (δ / 2)⌋` at inadmissible loop parameters (see
-`TauCeti.Algebra.TemperleyLieb.Positivity`).
+(`TauCeti.TemperleyLieb.IsSqWalkEigenvectorUpTo`). This file builds from these data a
+representation of the Temperley–Lieb algebras up to `N` strands with loop value `δ` on walks in `G`
+starting at `v₀`, together with a Markov trace up to `N` strands, and proves that the trace is
+positive when the weights are self-adjoint. By bounded-level Markov uniqueness this proves
+positivity up to `N` strands of every Markov trace at `δ`. When `r · ^ 2` is a global eigenvector
+on `G` this holds on all numbers of strands; on the Dynkin graph `A_(m-1)` with weights `√[t + 1]`
+this gives positivity at `2 cos (π / m)`, while on a finite prefix of the half-line it gives
+positivity below the first bad level `⌊π / arccos (δ / 2)⌋` at inadmissible positive loop
+parameters (see `TauCeti.Algebra.TemperleyLieb.Positivity`).
 
 The algebra on `n` strands acts on functions of vertex sequences `s : Fin (n + 1) → V`, among
 which the walks from `v₀` (`SimpleGraph.IsWalkFrom`) are the states of the model. The
@@ -54,8 +54,8 @@ is a sum of absolute squares with nonnegative weights.
 
 ## Main definitions
 
-* `TauCeti.TemperleyLieb.IsWalkEigenvectorUpTo`: the adjacency eigenvector equation at endpoints of
-  walks from `v₀` of fewer than `n` steps.
+* `TauCeti.TemperleyLieb.IsSqWalkEigenvectorUpTo`: the adjacency eigenvector equation for the
+  squared weights `r · ^ 2` at endpoints of walks from `v₀` of fewer than `n` steps.
 * `TauCeti.TemperleyLieb.pathGenerator`: the matrix of a generator in the path model.
 * `TauCeti.TemperleyLieb.pathRep`: the path representation of the Temperley–Lieb algebra.
 * `TauCeti.TemperleyLieb.pathWeight`: the weight of a vertex sequence in the trace.
@@ -74,7 +74,7 @@ is a sum of absolute squares with nonnegative weights.
   the analytic adjoint to the conjugate transpose.
 * `TauCeti.TemperleyLieb.pathTrace_star_mul_self_nonneg`: for self-adjoint weights, the trace of
   `x⋆ * x` is nonnegative.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_isWalkEigenvectorUpTo`,
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_isSqWalkEigenvectorUpTo`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_graph`: positivity of every
   Markov trace from a bounded or global path model.
 
@@ -96,50 +96,50 @@ open SimpleGraph (isWalkFrom_iff_init isWalkFrom_snoc isWalkFrom_zero)
 
 namespace TauCeti.TemperleyLieb
 
-variable {K : Type*} [Field K] {V : Type*} [Fintype V] (G : SimpleGraph V)
-  [DecidableRel G.Adj] (v₀ : V) (r : V → K)
-
 section Eigenvector
+
+variable {K : Type*} [Semiring K] {V : Type*} (G : SimpleGraph V) [G.LocallyFinite]
+  (v₀ : V) (r : V → K)
 
 /-- The squared vertex weights `r · ^ 2` satisfy the adjacency eigenvector equation with
 eigenvalue `δ` at the endpoints of all walks in `G` from `v₀` with fewer than `n` steps. On a
 truncated graph such as the first `N + 1` vertices of the half-line, this holds up to `N` steps
 even when the equation fails at the boundary vertex. -/
-def IsWalkEigenvectorUpTo (δ : K) (n : ℕ) : Prop :=
+def IsSqWalkEigenvectorUpTo (δ : K) (n : ℕ) : Prop :=
   ∀ ⦃k : ℕ⦄, k < n → ∀ s : Fin (k + 1) → V, G.IsWalkFrom v₀ s →
     ∑ u ∈ G.neighborFinset (s (Fin.last k)), r u ^ 2 = δ * r (s (Fin.last k)) ^ 2
 
 variable {G v₀ r}
 
-/-- Unfolding `TauCeti.TemperleyLieb.IsWalkEigenvectorUpTo`. -/
-theorem isWalkEigenvectorUpTo_iff {δ : K} {n : ℕ} :
-    IsWalkEigenvectorUpTo G v₀ r δ n ↔
+/-- Unfolding `TauCeti.TemperleyLieb.IsSqWalkEigenvectorUpTo`. -/
+theorem isSqWalkEigenvectorUpTo_iff {δ : K} {n : ℕ} :
+    IsSqWalkEigenvectorUpTo G v₀ r δ n ↔
       ∀ ⦃k : ℕ⦄, k < n → ∀ s : Fin (k + 1) → V, G.IsWalkFrom v₀ s →
         ∑ u ∈ G.neighborFinset (s (Fin.last k)), r u ^ 2 = δ * r (s (Fin.last k)) ^ 2 :=
   Iff.rfl
 
 /-- At level `0` the walk-endpoint eigenvector condition is vacuous. -/
 @[simp]
-theorem isWalkEigenvectorUpTo_zero (δ : K) : IsWalkEigenvectorUpTo G v₀ r δ 0 := by
-  simp [IsWalkEigenvectorUpTo]
+theorem isSqWalkEigenvectorUpTo_zero (δ : K) : IsSqWalkEigenvectorUpTo G v₀ r δ 0 := by
+  simp [IsSqWalkEigenvectorUpTo]
 
-/-- Monotonicity of `TauCeti.TemperleyLieb.IsWalkEigenvectorUpTo` in the step bound. -/
-theorem IsWalkEigenvectorUpTo.mono {δ : K} {m n : ℕ}
-    (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (hmn : m ≤ n) :
-    IsWalkEigenvectorUpTo G v₀ r δ m :=
+/-- Monotonicity of `TauCeti.TemperleyLieb.IsSqWalkEigenvectorUpTo` in the step bound. -/
+theorem IsSqWalkEigenvectorUpTo.mono {δ : K} {m n : ℕ}
+    (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (hmn : m ≤ n) :
+    IsSqWalkEigenvectorUpTo G v₀ r δ m :=
   fun _ hk ↦ hδ (hk.trans_le hmn)
 
 /-- A global eigenvector on `G` satisfies the walk-endpoint eigenvector condition up to every
 level. -/
-theorem isWalkEigenvectorUpTo_of_forall {δ : K}
+theorem isSqWalkEigenvectorUpTo_of_forall {δ : K}
     (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2) (n : ℕ) :
-    IsWalkEigenvectorUpTo G v₀ r δ n :=
+    IsSqWalkEigenvectorUpTo G v₀ r δ n :=
   fun _ _ s _ ↦ hδ (s _)
 
 /-- Along any walk `s` from `v₀`, the eigenvector equation holds at every position `a` with
 `a.val < n`. -/
-theorem IsWalkEigenvectorUpTo.sum_neighborFinset_apply {δ : K} {n m : ℕ}
-    (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) {s : Fin (m + 1) → V} (hs : G.IsWalkFrom v₀ s)
+theorem IsSqWalkEigenvectorUpTo.sum_neighborFinset_apply {δ : K} {n m : ℕ}
+    (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) {s : Fin (m + 1) → V} (hs : G.IsWalkFrom v₀ s)
     {a : Fin (m + 1)} (ha : a.val < n) :
     ∑ u ∈ G.neighborFinset (s a), r u ^ 2 = δ * r (s a) ^ 2 := by
   have ham : a.val ≤ m := Nat.le_of_lt_succ a.isLt
@@ -150,7 +150,8 @@ theorem IsWalkEigenvectorUpTo.sum_neighborFinset_apply {δ : K} {n m : ℕ}
 
 end Eigenvector
 
-variable [DecidableEq V]
+variable {K : Type*} [Field K] {V : Type*} [Fintype V] (G : SimpleGraph V)
+  [DecidableRel G.Adj] (v₀ : V) (r : V → K) [DecidableEq V]
 
 section Generator
 
@@ -218,7 +219,7 @@ variable (hr : ∀ v, r v ≠ 0) {δ : K}
 
 include hr in
 /-- Closing a loop multiplies a generator matrix by the loop value `δ`. -/
-theorem pathGenerator_mul_self (hδ : IsWalkEigenvectorUpTo G v₀ r δ m)
+theorem pathGenerator_mul_self (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ m)
     {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) :
     pathGenerator G v₀ r a b c * pathGenerator G v₀ r a b c =
@@ -401,7 +402,7 @@ on functions of the vertex sequences of length `n + 1`: the generator `e i` acts
 matrix at position `i + 1`. The generator matrices are supported on the walks in `G` starting at
 `v₀`, so on the functions supported on the other vertex sequences the representation acts through
 the character sending every generator to `0`. -/
-def pathRep (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) :
+def pathRep (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) :
     TemperleyLieb K δ n →ₐ[K] Matrix (Fin (n + 1) → V) (Fin (n + 1) → V) K :=
   lift (fun i ↦ pathGenerator G v₀ r ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩)
     (fun _ ↦ pathGenerator_mul_self hr hδ rfl rfl)
@@ -420,14 +421,14 @@ def pathRep (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) :
 /-- The path representation sends the generator `e i` to the generator matrix at position
 `i + 1`. -/
 @[simp]
-theorem pathRep_e (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (i : Fin (n - 1)) :
+theorem pathRep_e (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (i : Fin (n - 1)) :
     pathRep G v₀ hr hδ (e δ i) =
       pathGenerator G v₀ r ⟨i, by omega⟩ ⟨i + 1, by omega⟩ ⟨i + 2, by omega⟩ :=
   lift_e _ _ _ _ i
 
 /-- The path representation preserves walks and their endpoints: its matrix entry at `s` and `t`
 vanishes unless `s` and `t` are both walks from `v₀` or both not, and end at the same vertex. -/
-theorem pathRep_apply_eq_zero (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n)
+theorem pathRep_apply_eq_zero (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n)
     {s t : Fin (n + 1) → V}
     (h : ¬((G.IsWalkFrom v₀ s ↔ G.IsWalkFrom v₀ t) ∧ s (Fin.last n) = t (Fin.last n))) :
     pathRep G v₀ hr hδ x s t = 0 := by
@@ -453,11 +454,11 @@ theorem pathRep_apply_eq_zero (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (x : T
 
 /-- On the rows of walks, adding a straight strand acts on the path representation by extending
 walks by one step: the matrix of `strandIncl x` agrees with `extendLast` of the matrix of `x`. -/
-theorem pathRep_strandIncl_apply (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n + 2))
-    (hδ₁ : IsWalkEigenvectorUpTo G v₀ r δ (n + 1)) (x : TemperleyLieb K δ (n + 1))
-    {s : Fin (n + 3) → V} (hs : G.IsWalkFrom v₀ s) (t : Fin (n + 3) → V) :
-    pathRep G v₀ hr hδ₂ (strandIncl x) s t =
-      extendLast (α := fun _ ↦ V) (pathRep G v₀ hr hδ₁ x) s t := by
+theorem pathRep_strandIncl_apply (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1)) {s : Fin (n + 3) → V} (hs : G.IsWalkFrom v₀ s)
+    (t : Fin (n + 3) → V) :
+    pathRep G v₀ hr hδ (strandIncl x) s t =
+      extendLast (α := fun _ ↦ V) (pathRep G v₀ hr (hδ.mono (Nat.le_succ _)) x) s t := by
   induction x using TemperleyLieb.induction generalizing s t with
   | e i =>
     rw [strandIncl_e, pathRep_e, pathRep_e, ← pathGenerator_castSucc_apply hs]
@@ -471,9 +472,10 @@ theorem pathRep_strandIncl_apply (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n 
     by_cases hu : G.IsWalkFrom v₀ u
     · rw [hy hu]
     -- A row of a walk has no entry in the column of a non-walk.
-    rw [extendLast_apply, ite_eq_right_iff.2 fun hlast ↦ pathRep_apply_eq_zero hr hδ₁ x
-      fun h ↦ hu ((isWalkFrom_iff_init u).2 ⟨h.1.1 ((isWalkFrom_iff_init s).1 hs).1, by
-        rw [← h.2, ← hlast]; exact ((isWalkFrom_iff_init s).1 hs).2⟩), zero_mul, zero_mul]
+    rw [extendLast_apply, ite_eq_right_iff.2 fun hlast ↦
+      pathRep_apply_eq_zero hr (hδ.mono (Nat.le_succ _)) x fun h ↦
+        hu ((isWalkFrom_iff_init u).2 ⟨h.1.1 ((isWalkFrom_iff_init s).1 hs).1, by
+          rw [← h.2, ← hlast]; exact ((isWalkFrom_iff_init s).1 hs).2⟩), zero_mul, zero_mul]
 
 end Rep
 
@@ -492,7 +494,7 @@ theorem pathWeight_def {m : ℕ} (s : Fin (m + 1) → V) :
 
 /-- Extending walks of `m` steps by one step multiplies the total weight by `δ`, provided the
 vertex weights satisfy the walk-endpoint eigenvector equation up to `m + 1` steps. -/
-theorem sum_pathWeight_snoc {δ : K} {m : ℕ} (hδ : IsWalkEigenvectorUpTo G v₀ r δ (m + 1))
+theorem sum_pathWeight_snoc {δ : K} {m : ℕ} (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (m + 1))
     (t : Fin (m + 1) → V) :
     ∑ y, pathWeight G v₀ r (Fin.snoc t y : Fin (m + 2) → V) = δ * pathWeight G v₀ r t := by
   simp only [pathWeight_def, isWalkFrom_snoc, Fin.snoc_last, ite_and]
@@ -512,18 +514,18 @@ variable (G v₀) in
 /-- The **trace of the path model** on `n` strands: the trace of the path representation weighted
 by `TauCeti.TemperleyLieb.pathWeight`. It forms a Markov trace up to `N` strands when the
 eigenvector equation holds up to `N` steps (`TauCeti.TemperleyLieb.isMarkovTraceUpTo_pathTrace`). -/
-def pathTrace (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) : TemperleyLieb K δ n →ₗ[K] K :=
+def pathTrace (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) : TemperleyLieb K δ n →ₗ[K] K :=
   traceLinearMap (Fin (n + 1) → V) K K ∘ₗ LinearMap.mulLeft K (diagonal (pathWeight G v₀ r)) ∘ₗ
     (pathRep G v₀ hr hδ).toLinearMap
 
 /-- The trace of the path model is the weighted trace of the path representation. -/
-theorem pathTrace_apply (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n) :
+theorem pathTrace_apply (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n) :
     pathTrace G v₀ hr hδ x = trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr hδ x) :=
   (rfl)
 
 /-- The trace of the path model of the identity on `n` strands is `δ ^ n`. -/
 @[simp]
-theorem pathTrace_one (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) :
+theorem pathTrace_one (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) :
     pathTrace G v₀ hr hδ (1 : TemperleyLieb K δ n) = δ ^ n := by
   rw [pathTrace_apply, map_one, mul_one, trace_diagonal]
   induction n with
@@ -538,7 +540,7 @@ theorem pathTrace_one (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) :
 
 /-- The weight matrix of the path model commutes with the path representation, since the latter
 preserves walks and their endpoints. -/
-theorem commute_diagonal_pathWeight_pathRep (hδ : IsWalkEigenvectorUpTo G v₀ r δ n)
+theorem commute_diagonal_pathWeight_pathRep (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n)
     (x : TemperleyLieb K δ n) :
     Commute (diagonal (pathWeight G v₀ r)) (pathRep G v₀ hr hδ x) := by
   ext s t
@@ -548,43 +550,44 @@ theorem commute_diagonal_pathWeight_pathRep (hδ : IsWalkEigenvectorUpTo G v₀ 
   · rw [pathRep_apply_eq_zero hr hδ x h, mul_zero, zero_mul]
 
 /-- **The trace property** of the trace of the path model. -/
-theorem pathTrace_mul_comm (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (x y : TemperleyLieb K δ n) :
+theorem pathTrace_mul_comm (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (x y : TemperleyLieb K δ n) :
     pathTrace G v₀ hr hδ (x * y) = pathTrace G v₀ hr hδ (y * x) := by
   rw [pathTrace_apply, pathTrace_apply, map_mul, map_mul, ← mul_assoc,
     (commute_diagonal_pathWeight_pathRep hr hδ x).eq, mul_assoc, trace_mul_comm, mul_assoc]
 
 /-- On the diagonal weighted by walks, the path representation of `strandIncl x` agrees with
 `extendLast` of the path representation of `x`. -/
-private theorem pathWeight_mul_pathRep_strandIncl (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n + 2))
-    (hδ₁ : IsWalkEigenvectorUpTo G v₀ r δ (n + 1)) (x : TemperleyLieb K δ (n + 1))
-    (s t : Fin (n + 3) → V) :
-    pathWeight G v₀ r s * pathRep G v₀ hr hδ₂ (strandIncl x) s t =
-      pathWeight G v₀ r s * extendLast (α := fun _ ↦ V) (pathRep G v₀ hr hδ₁ x) s t := by
+private theorem pathWeight_mul_pathRep_strandIncl (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1)) (s t : Fin (n + 3) → V) :
+    pathWeight G v₀ r s * pathRep G v₀ hr hδ (strandIncl x) s t =
+      pathWeight G v₀ r s *
+        extendLast (α := fun _ ↦ V) (pathRep G v₀ hr (hδ.mono (Nat.le_succ _)) x) s t := by
   by_cases hs : G.IsWalkFrom v₀ s
-  · rw [pathRep_strandIncl_apply hr hδ₂ hδ₁ x hs]
+  · rw [pathRep_strandIncl_apply hr hδ x hs]
   · rw [pathWeight_def, ite_eq_right hs, zero_mul, zero_mul]
 
 /-- Adding a straight strand multiplies the trace of the path model by `δ`. -/
 @[simp]
-theorem pathTrace_strandIncl (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n + 2))
-    (hδ₁ : IsWalkEigenvectorUpTo G v₀ r δ (n + 1)) (x : TemperleyLieb K δ (n + 1)) :
-    pathTrace G v₀ hr hδ₂ (strandIncl x) = δ * pathTrace G v₀ hr hδ₁ x := by
+theorem pathTrace_strandIncl (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1)) :
+    pathTrace G v₀ hr hδ (strandIncl x) =
+      δ * pathTrace G v₀ hr (hδ.mono (Nat.le_succ _)) x := by
   simp only [pathTrace_apply, trace, Matrix.diag_apply, diagonal_mul]
-  rw [Finset.sum_congr rfl fun s _ ↦ pathWeight_mul_pathRep_strandIncl hr hδ₂ hδ₁ x s s,
+  rw [Finset.sum_congr rfl fun s _ ↦ pathWeight_mul_pathRep_strandIncl hr hδ x s s,
     Fintype.sum_fin_snoc, Finset.mul_sum]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   simp only [extendLast_apply, Fin.init_snoc, ite_true]
-  rw [← Finset.sum_mul, sum_pathWeight_snoc hδ₂, mul_assoc]
+  rw [← Finset.sum_mul, sum_pathWeight_snoc hδ, mul_assoc]
 
 /-- The weighted partial trace over the last step of walks, against the generator matrix capping
 the last step with the previous one, recovers the weighted trace one level down. -/
 private theorem trace_pathGenerator_mul_pathRep_strandIncl
-    (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n + 2))
-    (hδ₁ : IsWalkEigenvectorUpTo G v₀ r δ (n + 1)) (x : TemperleyLieb K δ (n + 1))
+    (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1))
     {a b c : Fin (n + 3)} (ha : a.val = n) (hb : b.val = n + 1) (hc : c.val = n + 2) :
     trace (pathGenerator G v₀ r a b c *
-        (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr hδ₂ (strandIncl x))) =
-      trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr hδ₁ x) := by
+        (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr hδ (strandIncl x))) =
+      trace (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr (hδ.mono (Nat.le_succ _)) x) := by
   obtain ⟨a', rfl, ha'⟩ : ∃ a' : Fin (n + 2), a = a'.castSucc ∧ a'.val = n :=
     ⟨⟨n, by omega⟩, Fin.ext ha, rfl⟩
   obtain rfl : b = (Fin.last (n + 1)).castSucc := Fin.ext hb
@@ -606,11 +609,12 @@ private theorem trace_pathGenerator_mul_pathRep_strandIncl
   rw [Fin.snoc_castSucc]
   rw [Finset.sum_eq_single_of_mem (t (Fin.last (n + 1))) ((G.mem_neighborFinset _ _).2 hadj)
     fun z _ hz ↦ by
-      rw [← Fin.snoc_update, pathWeight_mul_pathRep_strandIncl hr hδ₂ hδ₁ x, extendLast_apply,
+      rw [← Fin.snoc_update, pathWeight_mul_pathRep_strandIncl hr hδ x, extendLast_apply,
         Fin.init_snoc, Fin.init_snoc, Fin.snoc_last, Fin.snoc_last, ite_eq_left rfl,
-        pathRep_apply_eq_zero hr hδ₁ x fun h ↦ hz (by simpa using h.2), mul_zero, mul_zero]]
+        pathRep_apply_eq_zero hr (hδ.mono (Nat.le_succ _)) x fun h ↦ hz (by simpa using h.2),
+        mul_zero, mul_zero]]
   rw [update_eq_self_iff.2 (Fin.snoc_castSucc ..).symm,
-    pathWeight_mul_pathRep_strandIncl hr hδ₂ hδ₁ x,
+    pathWeight_mul_pathRep_strandIncl hr hδ x,
     extendLast_apply, ite_eq_left rfl, Fin.init_snoc, pathWeight_def, pathWeight_def,
     ite_eq_left ((isWalkFrom_snoc t _).2 ⟨ht, hadj.symm⟩), ite_eq_left ht, Fin.snoc_last]
   have := hr (t a')
@@ -619,27 +623,27 @@ private theorem trace_pathGenerator_mul_pathRep_strandIncl
 /-- **The Markov property** of the trace of the path model: capping the added last strand with the
 previous one does not change the trace. -/
 @[simp]
-theorem pathTrace_strandIncl_mul_e_last (hδ₂ : IsWalkEigenvectorUpTo G v₀ r δ (n + 2))
-    (hδ₁ : IsWalkEigenvectorUpTo G v₀ r δ (n + 1)) (x : TemperleyLieb K δ (n + 1)) :
-    pathTrace G v₀ hr hδ₂ (strandIncl x * e δ (Fin.last n)) = pathTrace G v₀ hr hδ₁ x := by
+theorem pathTrace_strandIncl_mul_e_last (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ (n + 2))
+    (x : TemperleyLieb K δ (n + 1)) :
+    pathTrace G v₀ hr hδ (strandIncl x * e δ (Fin.last n)) =
+      pathTrace G v₀ hr (hδ.mono (Nat.le_succ _)) x := by
   rw [pathTrace_apply, pathTrace_apply, map_mul, pathRep_e, ← mul_assoc, trace_mul_comm]
-  exact trace_pathGenerator_mul_pathRep_strandIncl hr hδ₂ hδ₁ x rfl rfl rfl
+  exact trace_pathGenerator_mul_pathRep_strandIncl hr hδ x rfl rfl rfl
 
 variable (G v₀) in
 /-- When the vertex weights satisfy the walk-endpoint eigenvector equation up to `N` steps, the
 traces of the path model form an unnormalized Markov trace up to `N` strands. -/
-theorem isMarkovTraceUpTo_pathTrace {N : ℕ} (hδ : IsWalkEigenvectorUpTo G v₀ r δ N) :
+theorem isMarkovTraceUpTo_pathTrace {N : ℕ} (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ N) :
     IsMarkovTraceUpTo K δ N (fun _ hn ↦ pathTrace G v₀ hr (hδ.mono hn)) :=
   ⟨fun _ hn ↦ pathTrace_one hr (hδ.mono hn),
     fun _ hn x y ↦ pathTrace_mul_comm hr (hδ.mono hn) x y,
-    fun _ hn x ↦ pathTrace_strandIncl hr (hδ.mono hn) (hδ.mono (Nat.le_of_succ_le hn)) x,
-    fun _ hn x ↦
-      pathTrace_strandIncl_mul_e_last hr (hδ.mono hn) (hδ.mono (Nat.le_of_succ_le hn)) x⟩
+    fun _ hn x ↦ pathTrace_strandIncl hr (hδ.mono hn) x,
+    fun _ hn x ↦ pathTrace_strandIncl_mul_e_last hr (hδ.mono hn) x⟩
 
 variable (G v₀) in
 /-- On `n ≤ N` strands, every Markov trace at loop value `δ` agrees with the trace of any path
 model whose weights satisfy the walk-endpoint eigenvector equation up to `N` steps. -/
-theorem IsMarkovTrace.eq_pathTrace_of_le {N : ℕ} (hδ : IsWalkEigenvectorUpTo G v₀ r δ N)
+theorem IsMarkovTrace.eq_pathTrace_of_le {N : ℕ} (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ N)
     {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K} (htr : IsMarkovTrace K δ tr)
     {n : ℕ} (hn : n ≤ N) :
     tr n = pathTrace G v₀ hr (hδ.mono hn) :=
@@ -649,16 +653,16 @@ variable (G v₀) in
 /-- The trace of a path model whose squared weights form a global eigenvector is an unnormalized
 Markov trace. -/
 theorem isMarkovTrace_pathTrace (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2) :
-    IsMarkovTrace K δ (fun m ↦ pathTrace G v₀ hr (isWalkEigenvectorUpTo_of_forall hδ m)) :=
+    IsMarkovTrace K δ (fun m ↦ pathTrace G v₀ hr (isSqWalkEigenvectorUpTo_of_forall hδ m)) :=
   isMarkovTrace_iff_forall_isMarkovTraceUpTo.2 fun N ↦
-    isMarkovTraceUpTo_pathTrace G v₀ hr (isWalkEigenvectorUpTo_of_forall hδ N)
+    isMarkovTraceUpTo_pathTrace G v₀ hr (isSqWalkEigenvectorUpTo_of_forall hδ N)
 
 variable (G v₀) in
 /-- Every Markov trace at the loop value `δ` is the trace of any global path model, by uniqueness
 of Markov traces. -/
 theorem IsMarkovTrace.eq_pathTrace (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
     {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K} (htr : IsMarkovTrace K δ tr) :
-    tr = fun m ↦ pathTrace G v₀ hr (isWalkEigenvectorUpTo_of_forall hδ m) :=
+    tr = fun m ↦ pathTrace G v₀ hr (isSqWalkEigenvectorUpTo_of_forall hδ m) :=
   htr.unique (isMarkovTrace_pathTrace G v₀ hr hδ)
 
 end Trace
@@ -703,7 +707,7 @@ include hrs in
 /-- For self-adjoint weights `r`, the path representation carries the analytic adjoint of the
 Temperley–Lieb algebra to the conjugate transpose of matrices. -/
 @[simp]
-theorem pathRep_star (hδ : IsWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n) :
+theorem pathRep_star (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n) :
     pathRep G v₀ hr hδ (star x) = (pathRep G v₀ hr hδ x)ᴴ := by
   refine (map_star_iff.mpr fun i ↦ ?_) x
   rw [pathRep_e, IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_pathGenerator hrs rfl rfl]
@@ -722,7 +726,7 @@ theorem pathWeight_nonneg {m : ℕ} (s : Fin (m + 1) → V) : 0 ≤ pathWeight G
 include hrs in
 /-- **Positivity of the trace of the path model.** For self-adjoint weights `r`, the trace of the
 path model is nonnegative on every element of the form `x⋆ * x`. -/
-theorem pathTrace_star_mul_self_nonneg (hδ : IsWalkEigenvectorUpTo G v₀ r δ n)
+theorem pathTrace_star_mul_self_nonneg (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ n)
     (x : TemperleyLieb K δ n) :
     0 ≤ pathTrace G v₀ hr hδ (star x * x) := by
   -- The trace of `D * Aᴴ * A` is the trace of `A * D * Aᴴ`, with `D` a nonnegative diagonal.
@@ -733,11 +737,11 @@ theorem pathTrace_star_mul_self_nonneg (hδ : IsWalkEigenvectorUpTo G v₀ r δ 
 omit [DecidableEq V] in
 include hr hrs in
 /-- **Bounded-level positivity of a Markov trace from a path model.** Let `G` be a finite graph
-with base vertex `v₀` and a weighting `r` by nonzero self-adjoint scalars satisfying the
+with base vertex `v₀` and a weighting `r` by nonzero self-adjoint scalars whose squares satisfy the
 walk-endpoint eigenvector equation with eigenvalue `δ` up to `N` steps. Then on every `n ≤ N`
 strands, every Markov trace at loop value `δ` is nonnegative on elements of the form `x⋆ * x`. -/
-theorem IsMarkovTrace.map_star_mul_self_nonneg_of_isWalkEigenvectorUpTo {N : ℕ} (v₀ : V)
-    (hδ : IsWalkEigenvectorUpTo G v₀ r δ N)
+theorem IsMarkovTrace.map_star_mul_self_nonneg_of_isSqWalkEigenvectorUpTo {N : ℕ} (v₀ : V)
+    (hδ : IsSqWalkEigenvectorUpTo G v₀ r δ N)
     {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K} (htr : IsMarkovTrace K δ tr)
     {n : ℕ} (hn : n ≤ N) (x : TemperleyLieb K δ n) :
     0 ≤ tr n (star x * x) := by
@@ -755,8 +759,8 @@ theorem IsMarkovTrace.map_star_mul_self_nonneg_of_graph [Nonempty V]
     (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
     {tr : ∀ n : ℕ, TemperleyLieb K δ n →ₗ[K] K} (htr : IsMarkovTrace K δ tr)
     (x : TemperleyLieb K δ n) : 0 ≤ tr n (star x * x) :=
-  htr.map_star_mul_self_nonneg_of_isWalkEigenvectorUpTo hr hrs (Classical.arbitrary V)
-    (isWalkEigenvectorUpTo_of_forall hδ n) le_rfl x
+  htr.map_star_mul_self_nonneg_of_isSqWalkEigenvectorUpTo hr hrs (Classical.arbitrary V)
+    (isSqWalkEigenvectorUpTo_of_forall hδ n) le_rfl x
 
 end Star
 

@@ -138,24 +138,6 @@ theorem coe_quotientStrandInclStarAlgHom (htr : IsMarkovTrace R δ tr) (n : ℕ)
     ⇑(htr.quotientStrandInclStarAlgHom n) = htr.quotientStrandIncl n :=
   (rfl)
 
-/-- Applying `quotientStrandInclStarAlgHom` to a quotient class includes its representative. -/
-theorem quotientStrandInclStarAlgHom_mk (htr : IsMarkovTrace R δ tr) (n : ℕ)
-    [((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))).IsStar]
-    [((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))).IsStar]
-    (x : TemperleyLieb R δ (n + 1)) :
-    htr.quotientStrandInclStarAlgHom n
-      (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x) =
-        Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
-          (strandIncl x) :=
-  htr.quotientStrandIncl_mk n x
-
-/-- The `⋆`-algebra strand inclusion between trace-radical quotients is injective. -/
-theorem quotientStrandInclStarAlgHom_injective (htr : IsMarkovTrace R δ tr) (n : ℕ)
-    [((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))).IsStar]
-    [((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))).IsStar] :
-    Function.Injective (htr.quotientStrandInclStarAlgHom n) :=
-  htr.quotientStrandIncl_injective n
-
 end Quotient
 
 end IsMarkovTrace

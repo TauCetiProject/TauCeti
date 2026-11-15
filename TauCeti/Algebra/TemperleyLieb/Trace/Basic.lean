@@ -28,9 +28,10 @@ So there is at most one Markov trace up to `N` strands
 tower (`TauCeti.TemperleyLieb.IsMarkovTrace.unique`), over every commutative semiring. Truncated
 path models on finite prefixes of the half-line define a Markov trace only up to `N` strands, and
 `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_isMarkovTraceUpTo` identifies those values with any
-global Markov trace. Likewise, rescaling a normalized strand-preserving tracial family `σ` by
-`δ ^ n` gives an unnormalized Markov trace (`TauCeti.TemperleyLieb.isMarkovTrace_pow_smul`). This
-file does not assert the existence of a Markov trace at every loop parameter.
+global Markov trace. Likewise, rescaling a normalized strand-preserving tracial family `σ`
+satisfying `δ * σ (n + 2) (strandIncl x * e δ (Fin.last n)) = σ (n + 1) x` by `δ ^ n` gives an
+unnormalized Markov trace (`TauCeti.TemperleyLieb.isMarkovTrace_pow_smul`). This file does not
+assert the existence of a Markov trace at every loop parameter.
 
 ## Main definitions
 
@@ -45,7 +46,8 @@ file does not assert the existence of a Markov trace at every loop parameter.
 * `TauCeti.TemperleyLieb.IsMarkovTraceUpTo.unique`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.unique`: bounded-level and global uniqueness of the Markov
   trace.
-* `TauCeti.TemperleyLieb.isMarkovTrace_pow_smul`: rescaling a normalized tower trace by `δ ^ n`
+* `TauCeti.TemperleyLieb.isMarkovTrace_pow_smul`: rescaling a normalized strand-preserving tracial
+  family satisfying `δ * σ (n + 2) (strandIncl x * e δ (Fin.last n)) = σ (n + 1) x` by `δ ^ n`
   gives an unnormalized Markov trace.
 
 ## References

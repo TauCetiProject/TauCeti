@@ -127,33 +127,19 @@ from `v₀` its value is at most `f v₀ + i`. -/
 theorem IsWalkFrom.apply_le_add {f : V → ℕ} (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1)
     {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) (i : Fin (m + 1)) :
     f (s i) ≤ f v₀ + i.val := by
-  induction m with
-  | zero => rw [Fin.eq_zero i, hs.apply_zero, Fin.val_zero, add_zero]
-  | succ m ih =>
-    obtain ⟨t, y, rfl⟩ : ∃ t y, s = Fin.snoc t y := ⟨_, _, (Fin.snoc_init_self s).symm⟩
-    rw [isWalkFrom_snoc] at hs
-    refine i.lastCases ?_ fun j ↦ ?_
-    · have h1 := ih hs.1 (Fin.last m)
-      have h2 := hf hs.2
-      simp only [Fin.snoc_last, Fin.val_last] at h1 ⊢
-      omega
-    · simpa only [Fin.snoc_castSucc, Fin.val_castSucc] using ih hs.1 j
+  induction i using Fin.induction with
+  | zero => rw [hs.apply_zero, Fin.val_zero, add_zero]
+  | succ i ih =>
+    have := hf (hs.2 i)
+    simp only [Fin.val_succ, Fin.val_castSucc] at ih ⊢
+    omega
 
 /-- If `f : V → ℕ` increases by at most `1` along edges of `G`, then at position `i` of a walk
 from `v₀` its value is at least `f v₀ - i`, written additively as `f v₀ ≤ f (s i) + i`. -/
 theorem IsWalkFrom.le_apply_add {f : V → ℕ} (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1)
     {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) (i : Fin (m + 1)) :
     f v₀ ≤ f (s i) + i.val := by
-  induction m with
-  | zero => rw [Fin.eq_zero i, hs.apply_zero, Fin.val_zero, add_zero]
-  | succ m ih =>
-    obtain ⟨t, y, rfl⟩ : ∃ t y, s = Fin.snoc t y := ⟨_, _, (Fin.snoc_init_self s).symm⟩
-    rw [isWalkFrom_snoc] at hs
-    refine i.lastCases ?_ fun j ↦ ?_
-    · have h1 := ih hs.1 (Fin.last m)
-      have h2 := hf hs.2.symm
-      simp only [Fin.snoc_last, Fin.val_last] at h1 ⊢
-      omega
-    · simpa only [Fin.snoc_castSucc, Fin.val_castSucc] using ih hs.1 j
+  have := hs.apply_le_add (f := fun v ↦ f v₀ - f v) (fun _ _ huv ↦ by have := hf huv.symm; omega) i
+  omega
 
 end SimpleGraph

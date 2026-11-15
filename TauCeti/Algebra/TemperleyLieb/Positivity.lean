@@ -50,7 +50,7 @@ Markov uniqueness identifies the resulting path-model trace with `tr n`, proving
 positive semidefinite on all strands even though `0 ∉ jonesLoopParameters`, whereas for `δ < 0`
 positivity fails already on one strand (`tr 1 1 = δ < 0`), giving the unrestricted real
 characterization
-`TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem`.
+`IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters`.
 
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
 `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
@@ -84,7 +84,7 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   inadmissible positive loop parameter.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff`,
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem**.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem`:
+* `IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters`:
   all-level positivity for arbitrary real loop parameters `δ`.
 
 ## References
@@ -129,9 +129,9 @@ positive semidefinite (`0` on positive strand counts and the norm square on `0` 
 theorem zero_notMem_jonesLoopParameters : (0 : ℝ) ∉ jonesLoopParameters :=
   notMem_jonesLoopParameters_of_nonpos le_rfl
 
-/-- A positive real `δ` is an admissible loop parameter if and only if `δ ^ 2` lies in the Jones
-index set `{4 cos² (π / m) : m ≥ 3} ∪ [4, ∞)`. -/
-theorem mem_jonesLoopParameters_iff_sq {δ : ℝ} (hδ : 0 < δ) :
+/-- A nonnegative real `δ` is an admissible loop parameter if and only if `δ ^ 2` lies in the
+Jones index set `{4 cos² (π / m) : m ≥ 3} ∪ [4, ∞)`. -/
+theorem mem_jonesLoopParameters_iff_sq {δ : ℝ} (hδ : 0 ≤ δ) :
     δ ∈ jonesLoopParameters ↔ (∃ m : ℕ, 3 ≤ m ∧ δ ^ 2 = 4 * cos (π / m) ^ 2) ∨ 4 ≤ δ ^ 2 := by
   constructor
   · rintro (⟨m, hm, rfl⟩ | h2)
@@ -240,11 +240,11 @@ private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
 /-- When the quantum integers `[1], …, [n + 1]` are nonnegative, the weights `√[t + 1]` on
 `pathGraph (n + 1)` satisfy the walk-endpoint eigenvector equation from `0` up to `n` steps: every
 walk of `k < n` steps from `0` ends at a vertex `< n`, away from the boundary vertex `n`. -/
-private theorem isWalkEigenvectorUpTo_pathGraph_sqrt_qInt {n : ℕ}
+private theorem isSqWalkEigenvectorUpTo_pathGraph_sqrt_qInt {n : ℕ}
     (hnonneg : ∀ j ∈ Finset.Icc 1 (n + 1), 0 ≤ qInt ℝ δ j) :
-    IsWalkEigenvectorUpTo (SimpleGraph.pathGraph (n + 1)) 0
+    IsSqWalkEigenvectorUpTo (SimpleGraph.pathGraph (n + 1)) 0
       (fun t : Fin (n + 1) ↦ ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ)) (δ : ℂ) n := by
-  rw [isWalkEigenvectorUpTo_iff]
+  rw [isSqWalkEigenvectorUpTo_iff]
   intro k hk s hs
   have hv : (s (Fin.last k)).val < n := by
     have hle := hs.apply_le_add (f := Fin.val)
@@ -349,33 +349,12 @@ theorem map_star_mul_self_nonneg_of_qInt_pos (htr : IsMarkovTrace ℂ (δ : ℂ)
     0 ≤ tr n (star x * x) := by
   have ht (t : Fin (n + 1)) : 0 < qInt ℝ δ (t + 1) :=
     hpos (t + 1) (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
-  exact htr.map_star_mul_self_nonneg_of_isWalkEigenvectorUpTo
+  exact htr.map_star_mul_self_nonneg_of_isSqWalkEigenvectorUpTo
     (G := SimpleGraph.pathGraph (n + 1))
     (r := fun t ↦ ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ))
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (ht t)).ne')
     (fun _ ↦ Complex.conj_ofReal _) 0
-    (isWalkEigenvectorUpTo_pathGraph_sqrt_qInt fun j hj ↦ (hpos j hj).le) le_rfl x
-
-/-- **Positivity below the first bad level.** At an inadmissible loop parameter `δ > 0`, the
-Hermitian form of a Markov trace on `n` strands is positive semidefinite for every
-`n < ⌊π / arccos (δ / 2)⌋`. -/
-theorem map_star_mul_self_nonneg_of_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ)
-    (hδJ : δ ∉ jonesLoopParameters) {n : ℕ} (hn : n < ⌊π / arccos (δ / 2)⌋₊)
-    (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    0 ≤ tr n (star x * x) :=
-  htr.map_star_mul_self_nonneg_of_qInt_pos (fun _ hj ↦ by
-    obtain ⟨hj1, hjn⟩ := Finset.mem_Icc.1 hj
-    exact qInt_pos_of_notMem_jonesLoopParameters hδ hδJ hj1 (by omega)) x
-
-/-- **The first bad level** for an abstract Markov trace. Let `0 < δ` be an inadmissible loop
-parameter and write `k = ⌊π / arccos (δ / 2)⌋`. Then the Hermitian form `(x, y) ↦ tr n (x⋆ * y)`
-on `n` strands is positive semidefinite exactly when `n < k`. -/
-theorem forall_map_star_mul_self_nonneg_iff_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : 0 < δ) (hδJ : δ ∉ jonesLoopParameters) {n : ℕ} :
-    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) ↔
-      n < ⌊π / arccos (δ / 2)⌋₊ :=
-  ⟨htr.lt_floor_of_forall_nonneg hδ hδJ,
-    fun hn ↦ htr.map_star_mul_self_nonneg_of_lt_floor hδ hδJ hn⟩
+    (isSqWalkEigenvectorUpTo_pathGraph_sqrt_qInt fun j hj ↦ (hpos j hj).le) le_rfl x
 
 /-- **Positivity at the discrete loop parameters.** For `δ = 2 cos (π / m)` with `m ≥ 2`, the
 Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every
@@ -407,21 +386,11 @@ theorem forall_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ (δ : ℂ) 
   · exact htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (by omega) hδm x
   · exact htr.map_star_mul_self_nonneg_of_two_le h2 x
 
-/-- For `δ > 0`, the Hermitian form of a Markov trace on `n` strands is positive semidefinite
-if and only if `δ` is admissible or `n < ⌊π / arccos (δ / 2)⌋`. -/
-theorem forall_map_star_mul_self_nonneg_iff_mem_or_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : 0 < δ) {n : ℕ} :
-    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) ↔
-      δ ∈ jonesLoopParameters ∨ n < ⌊π / arccos (δ / 2)⌋₊ := by
-  by_cases hδJ : δ ∈ jonesLoopParameters
-  · simp [(htr.forall_map_star_mul_self_nonneg_iff hδ).2 hδJ n, hδJ]
-  · simp [hδJ, htr.forall_map_star_mul_self_nonneg_iff_lt_floor hδ hδJ]
-
 /-- For an arbitrary real loop parameter `δ`, the Hermitian forms of a Markov trace are positive
 semidefinite on every number of strands if and only if `δ = 0` or `δ ∈ jonesLoopParameters`: at
 `δ = 0 = 2 cos (π / 2)` the forms remain positive semidefinite, whereas for `δ < 0` positivity
 already fails on `1` strand since `tr 1 1 = δ < 0`. -/
-theorem forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem
+theorem forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) :
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ tr n (star x * x)) ↔
       δ = 0 ∨ δ ∈ jonesLoopParameters := by
@@ -436,6 +405,51 @@ theorem forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem
   · refine iff_of_true (fun n x ↦ ?_) (Or.inl rfl)
     exact htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (m := 2) le_rfl (by simp) x
   · simp [hpos.ne', htr.forall_map_star_mul_self_nonneg_iff hpos]
+
+/-- **Positivity below the first bad level.** At any real loop parameter `δ`, the Hermitian form
+of a Markov trace on `n` strands is positive semidefinite for every
+`n < ⌊π / arccos (δ / 2)⌋`. -/
+theorem map_star_mul_self_nonneg_of_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    {n : ℕ} (hn : n < ⌊π / arccos (δ / 2)⌋₊) (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    0 ≤ tr n (star x * x) := by
+  rcases lt_trichotomy δ 0 with hneg | rfl | hpos
+  · have hθ : π / 2 < arccos (δ / 2) := pi_div_two_lt_arccos.2 (by linarith)
+    have hlt2 : π / arccos (δ / 2) < 2 := by
+      rw [div_lt_iff₀ (by linarith [pi_pos])]
+      linarith
+    have hfloor : ⌊π / arccos (δ / 2)⌋₊ < 2 :=
+      (Nat.floor_lt (div_nonneg pi_pos.le (by linarith [pi_pos]))).2 (by exact_mod_cast hlt2)
+    obtain rfl : n = 0 := by omega
+    exact htr.map_star_mul_self_nonneg_of_qInt_pos
+      (fun j hj ↦ by
+        obtain rfl : j = 1 := by simp only [Finset.mem_Icc] at hj; omega
+        simp) x
+  · exact htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.2
+      (Or.inl rfl) n x
+  · by_cases hδJ : δ ∈ jonesLoopParameters
+    · exact (htr.forall_map_star_mul_self_nonneg_iff hpos).2 hδJ n x
+    · exact htr.map_star_mul_self_nonneg_of_qInt_pos (fun _ hj ↦ by
+        obtain ⟨hj1, hjn⟩ := Finset.mem_Icc.1 hj
+        exact qInt_pos_of_notMem_jonesLoopParameters hpos hδJ hj1 (by omega)) x
+
+/-- **The first bad level** for an abstract Markov trace. Let `0 < δ` be an inadmissible loop
+parameter and write `k = ⌊π / arccos (δ / 2)⌋`. Then the Hermitian form `(x, y) ↦ tr n (x⋆ * y)`
+on `n` strands is positive semidefinite exactly when `n < k`. -/
+theorem forall_map_star_mul_self_nonneg_iff_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : 0 < δ) (hδJ : δ ∉ jonesLoopParameters) {n : ℕ} :
+    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) ↔
+      n < ⌊π / arccos (δ / 2)⌋₊ :=
+  ⟨htr.lt_floor_of_forall_nonneg hδ hδJ, fun hn ↦ htr.map_star_mul_self_nonneg_of_lt_floor hn⟩
+
+/-- For `δ > 0`, the Hermitian form of a Markov trace on `n` strands is positive semidefinite
+if and only if `δ` is admissible or `n < ⌊π / arccos (δ / 2)⌋`. -/
+theorem forall_map_star_mul_self_nonneg_iff_mem_jonesLoopParameters_or_lt_floor
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ) {n : ℕ} :
+    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) ↔
+      δ ∈ jonesLoopParameters ∨ n < ⌊π / arccos (δ / 2)⌋₊ := by
+  by_cases hδJ : δ ∈ jonesLoopParameters
+  · simp [(htr.forall_map_star_mul_self_nonneg_iff hδ).2 hδJ n, hδJ]
+  · simp [hδJ, htr.forall_map_star_mul_self_nonneg_iff_lt_floor hδ hδJ]
 
 end IsMarkovTrace
 
