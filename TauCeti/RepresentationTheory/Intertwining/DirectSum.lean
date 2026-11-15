@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.DirectSum.TensorProduct
 public import Mathlib.RepresentationTheory.Intertwining
 
 /-!
@@ -13,9 +13,8 @@ public import Mathlib.RepresentationTheory.Intertwining
 
 For families of representations `ρ i` and `σ i` of a monoid `G`, Mathlib forms the direct-sum
 representations `Representation.directSum ρ` and `Representation.directSum σ`. This file makes
-the direct sum functorial in intertwining maps, and reindexes a direct sum of representations
-along an equivalence of index types. Neither construction involves the group algebra, so the
-scalars only need to form a semiring.
+the direct sum functorial in intertwining maps, reindexes a direct sum of representations along an
+equivalence of index types, and distributes left tensor products over direct sums.
 
 ## Main definitions
 
@@ -23,11 +22,14 @@ scalars only need to form a semiring.
   compatible with identities and composition.
 * `Representation.directSumEquivCongrLeft`: reindexing a direct sum of representations along an
   equivalence of index types; its underlying linear equivalence is `DirectSum.lequivCongrLeft`.
+* `Representation.tprodDirectSumEquiv`: distributing `Representation.tprod` on the left over
+  `Representation.directSum`.
 -/
 
 public section
 
 open DirectSum
+open scoped TensorProduct
 
 namespace Representation
 
@@ -126,5 +128,35 @@ theorem directSumEquivCongrLeft_symm_lof [DecidableEq ι] [DecidableEq κ] (j : 
   DirectSum.lequivCongrLeft_symm_lof k
 
 end Reindex
+
+section TensorProduct
+
+variable {R H V₀ κ : Type*} [CommSemiring R] [Monoid H] [AddCommMonoid V₀] [Module R V₀]
+  (ρ₀ : Representation R H V₀) [DecidableEq κ]
+  {U : κ → Type*} [∀ i, AddCommMonoid (U i)] [∀ i, Module R (U i)]
+  (τ : ∀ i, Representation R H (U i))
+
+/-- **Left tensor product distributes over `Representation.directSum`.** -/
+noncomputable def tprodDirectSumEquiv :
+    (ρ₀.tprod (directSum τ)).Equiv (directSum fun i ↦ ρ₀.tprod (τ i)) :=
+  .mk (_root_.TensorProduct.directSumRight R R V₀ U) fun g ↦
+    _root_.TensorProduct.ext' fun v w ↦ by
+      induction w using DirectSum.induction_on with
+      | zero => simp
+      | of i x => simp [directSum_apply, ← DirectSum.lof_eq_of R]
+      | add x y hx hy => simp only [_root_.TensorProduct.tmul_add, map_add, hx, hy]
+
+@[simp]
+theorem toLinearEquiv_tprodDirectSumEquiv :
+    (tprodDirectSumEquiv ρ₀ τ).toLinearEquiv = _root_.TensorProduct.directSumRight R R V₀ U :=
+  (rfl)
+
+@[simp]
+theorem tprodDirectSumEquiv_tmul_lof (v : V₀) (i : κ) (u : U i) :
+    tprodDirectSumEquiv ρ₀ τ (v ⊗ₜ[R] lof R κ U i u) =
+      lof R κ (fun j ↦ V₀ ⊗[R] U j) i (v ⊗ₜ[R] u) := by
+  simp [tprodDirectSumEquiv]
+
+end TensorProduct
 
 end Representation

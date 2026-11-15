@@ -281,11 +281,14 @@ theorem SimpleFDRepClasses.equivFinCardConjClasses_mk_eq_iff (X : FDRep k G)
     SimpleFDRepClasses.mk_eq_mk_iff, nonempty_fdRepIso_iff, FDRep.of_ρ']
   exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
 
+omit [Finite G] in
 /-- **Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has as many
 simple isomorphism classes as `G` has conjugacy classes.** -/
 theorem card_simpleFDRepClasses :
-    Nat.card (SimpleFDRepClasses k G) = Nat.card (ConjClasses G) :=
-  (Nat.card_congr (SimpleFDRepClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
+    Nat.card (SimpleFDRepClasses k G) = Nat.card (ConjClasses G) := by
+  have : Finite G :=
+    Nat.finite_of_card_ne_zero fun h ↦ (isUnit_of_invertible (Nat.card G : k)).ne_zero (by simp [h])
+  exact (Nat.card_congr (SimpleFDRepClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
 
 end Models
 

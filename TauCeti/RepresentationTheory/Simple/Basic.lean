@@ -269,33 +269,24 @@ noncomputable def finrank (c : SimpleFDRepClasses k G) : ℕ :=
     (FDRep.isoToLinearEquiv iso).finrank_eq
 
 @[simp]
-theorem finrank_mk (X : FDRep k G) [Simple X] :
-    (mk X).finrank = Module.finrank k X :=
-  lift_mk X
+theorem finrank_mk (X : FDRep k G) [Simple X] : (mk X).finrank = Module.finrank k X := lift_mk X
 
 /-- Every simple isomorphism class has positive dimension. -/
 theorem finrank_pos (c : SimpleFDRepClasses k G) : 0 < c.finrank := by
   induction c using ind with
-  | h X hX =>
-    rw [finrank_mk]
-    exact (FDRep.isIrreducible_of_simple X).finrank_pos
+  | h X hX => rw [finrank_mk]; exact (FDRep.isIrreducible_of_simple X).finrank_pos
 
 variable (k G) in
 /-- The isomorphism class of the one-dimensional trivial representation in `FDRep k G`. -/
 noncomputable def trivial : SimpleFDRepClasses k G :=
   mk (FDRep.of (_root_.Representation.trivial k G k))
 
-/-- `SimpleFDRepClasses.trivial k G` is the class of `FDRep.of (Representation.trivial k G k)`. -/
-theorem trivial_def :
-    trivial k G = mk (FDRep.of (_root_.Representation.trivial k G k)) :=
-  (rfl)
+theorem trivial_def : trivial k G = mk (FDRep.of (_root_.Representation.trivial k G k)) := (rfl)
 
 open MonoidalCategory in
-/-- The class of the monoidal unit `𝟙_ (FDRep k G)` is `SimpleFDRepClasses.trivial k G`. -/
 @[simp]
 theorem mk_tensorUnit : mk (𝟙_ (FDRep k G)) = trivial k G := by
-  rw [trivial_def, mk_eq_mk_iff]
-  exact ⟨(eqToIso (FDRep.of_trivial k G)).symm⟩
+  rw [trivial_def, mk_eq_mk_iff]; exact ⟨(eqToIso (FDRep.of_trivial k G)).symm⟩
 
 @[simp]
 theorem finrank_trivial : (trivial k G).finrank = 1 := by
@@ -328,27 +319,22 @@ noncomputable def multiplicity (c : SimpleFDRepClasses k G) (W : FDRep k G) : �
 
 @[simp]
 theorem multiplicity_mk (X : FDRep k G) [Simple X] (W : FDRep k G) :
-    (mk X).multiplicity W = Module.finrank k (X ⟶ W) :=
-  lift_mk X
+    (mk X).multiplicity W = Module.finrank k (X ⟶ W) := lift_mk X
 
 /-- `SimpleFDRepClasses.multiplicity` is invariant under isomorphism in the target object. -/
 theorem multiplicity_congr (c : SimpleFDRepClasses k G) {W₁ W₂ : FDRep k G} (iso : W₁ ≅ W₂) :
     c.multiplicity W₁ = c.multiplicity W₂ := by
   induction c using ind with
-  | h X hX =>
-    simp only [multiplicity_mk]
-    exact (Linear.homCongr k (Iso.refl X) iso).finrank_eq
+  | h X hX => simp only [multiplicity_mk]; exact (Linear.homCongr k (Iso.refl X) iso).finrank_eq
 
 open scoped ZeroObject in
 @[simp]
-theorem multiplicity_zero (c : SimpleFDRepClasses k G) :
-    c.multiplicity (0 : FDRep k G) = 0 := by
+theorem multiplicity_zero (c : SimpleFDRepClasses k G) : c.multiplicity (0 : FDRep k G) = 0 := by
   induction c using ind with
   | h X hX =>
-    rw [multiplicity_mk]
     have : Subsingleton (X ⟶ (0 : FDRep k G)) :=
       ⟨fun f g ↦ (Limits.isZero_zero (FDRep k G)).eq_of_tgt f g⟩
-    exact Module.finrank_zero_of_subsingleton
+    rw [multiplicity_mk]; exact Module.finrank_zero_of_subsingleton
 
 open Limits in
 @[simp]
@@ -357,14 +343,13 @@ theorem multiplicity_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G)
   induction c using ind with
   | h X hX =>
     rw [multiplicity_mk, multiplicity_mk, multiplicity_mk, ← Module.finrank_prod]
-    let e : (X ⟶ W₁ ⊞ W₂) ≃ₗ[k] (X ⟶ W₁) × (X ⟶ W₂) :=
-      { toFun f := (f ≫ biprod.fst, f ≫ biprod.snd)
-        invFun p := biprod.lift p.1 p.2
-        left_inv f := biprod.hom_ext _ _ (by simp) (by simp)
-        right_inv p := Prod.ext (by simp) (by simp)
-        map_add' f g := Prod.ext (by simp) (by simp)
-        map_smul' r f := Prod.ext (by simp) (by simp) }
-    exact e.finrank_eq
+    exact ({ toFun := fun f ↦ (f ≫ biprod.fst, f ≫ biprod.snd)
+             invFun := fun p ↦ biprod.lift p.1 p.2
+             left_inv := fun f ↦ biprod.hom_ext _ _ (by simp) (by simp)
+             right_inv := fun p ↦ Prod.ext (by simp) (by simp)
+             map_add' := fun f g ↦ Prod.ext (by simp) (by simp)
+             map_smul' := fun r f ↦ Prod.ext (by simp) (by simp) } :
+      (X ⟶ W₁ ⊞ W₂) ≃ₗ[k] (X ⟶ W₁) × (X ⟶ W₂)).finrank_eq
 
 /-- Over an algebraically closed field, the multiplicity of a simple class `c` in a simple `Y` is
 `1` at `mk Y` and `0` elsewhere (Schur's lemma). -/

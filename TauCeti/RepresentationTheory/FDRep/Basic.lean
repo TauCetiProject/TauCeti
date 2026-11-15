@@ -324,13 +324,18 @@ the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
 theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
 
-open MonoidalCategory in
+section Tensor
+
+open MonoidalCategory
+open scoped TensorProduct
+
+variable {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G)
+
 /-- The `finrank` of a tensor product in `FDRep R G` is the product of the `finrank`s when the
 carriers are free (in particular, unconditionally over a field). -/
 -- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
 @[simp↓]
-theorem finrank_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G)
-    [Module.Free R X] [Module.Free R Y] :
+theorem finrank_tensor [Module.Free R X] [Module.Free R Y] :
     Module.finrank R (X ⊗ Y : FDRep R G) = Module.finrank R X * Module.finrank R Y := by
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (X ⊗ Y : FDRep R G) := Module.subsingleton R _
@@ -338,44 +343,26 @@ theorem finrank_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : 
     simp
   · exact Module.finrank_tensorProduct
 
-open MonoidalCategory in
-open scoped TensorProduct in
 /-- **The representation carried by `X ⊗ Y` in `FDRep R G` is `X.ρ.tprod Y.ρ`.** -/
-noncomputable def tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) :
+noncomputable def tensorEquivTprod :
     _root_.Representation.Equiv (X ⊗ Y : FDRep R G).ρ (_root_.Representation.tprod X.ρ Y.ρ) :=
   .mk (LinearEquiv.refl R (X ⊗[R] Y)) fun g => by
     rw [LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id, tensor_ρ,
       _root_.Representation.tprod_apply]
 
-open MonoidalCategory in
-open scoped TensorProduct in
-/-- The underlying linear equivalence of `FDRep.tensorEquivTprod` is the identity on `X ⊗[R] Y`. -/
 @[simp]
-theorem toLinearEquiv_tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) :
-    (tensorEquivTprod X Y).toLinearEquiv = LinearEquiv.refl R (X ⊗[R] Y) :=
-  (rfl)
+theorem toLinearEquiv_tensorEquivTprod :
+    (tensorEquivTprod X Y).toLinearEquiv = LinearEquiv.refl R (X ⊗[R] Y) := (rfl)
 
-open MonoidalCategory in
-open scoped TensorProduct in
-/-- `FDRep.tensorEquivTprod` is the identity on elements of `X ⊗[R] Y`. -/
 -- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
 @[simp↓]
-theorem tensorEquivTprod_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (z : X ⊗[R] Y) :
-    tensorEquivTprod X Y z = z :=
-  (rfl)
+theorem tensorEquivTprod_apply (z : X ⊗[R] Y) : tensorEquivTprod X Y z = z := (rfl)
 
-open MonoidalCategory in
-open scoped TensorProduct in
-/-- `(FDRep.tensorEquivTprod X Y).symm` is the identity on elements of `X ⊗[R] Y`. -/
 -- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
 @[simp↓]
-theorem tensorEquivTprod_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (z : X ⊗[R] Y) :
-    (tensorEquivTprod X Y).symm z = z :=
-  (rfl)
+theorem tensorEquivTprod_symm_apply (z : X ⊗[R] Y) : (tensorEquivTprod X Y).symm z = z := (rfl)
+
+end Tensor
 
 section Shrink
 

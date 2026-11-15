@@ -15,25 +15,10 @@ import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
 A node of an affine Dynkin diagram whose mark equals `1` is a **special node** in the sense of
 Bourbaki. Every graph automorphism of an affine simply-laced diagram preserves both its
 generalized Cartan matrix (`TauCeti.AffineDynkinType.cartanMatrix_graph_iso_apply`) and its marks
-(`TauCeti.AffineDynkinType.marks_graph_iso_apply`), including at `Ã₁`. Conversely, on a valid
-diagram the automorphism group acts transitively on the special nodes: every node of mark `1` can
-be moved to `TauCeti.AffineDynkinType.affineNode` by a graph automorphism
+(`TauCeti.AffineDynkinType.marks_graph_iso_apply`), `Ã₁` included. Conversely, on a valid diagram
+the automorphism group acts transitively on the special nodes: every node of mark `1` can be moved
+to `TauCeti.AffineDynkinType.affineNode` by a graph automorphism
 (`TauCeti.AffineDynkinType.exists_graph_iso_apply_eq_affineNode`).
-
-Concretely, the special nodes and the automorphisms realizing them are:
-
-* all `n + 1` nodes of `Ãₙ`, permuted cyclically by translation in `Fin (n + 1)`;
-* the four leaves `0`, `n - 2`, `n - 1` and `n` of affine `Dₙ` (`n ≥ 4`), related by swapping the
-  two leaves `0` and `n - 1` on one fork and reversing the spine together with its forks;
-* the three arm tips `2`, `4` and `6` of affine `E₆`, related by permuting its three arms of length
-  two;
-* the two long-arm tips `4` and `7` of affine `E₇`, related by swapping its two arms of length
-  three;
-* the unique special node `8` of affine `E₈`.
-
-Consequently, any isomorphism onto the graph of a valid affine diagram that sends a chosen vertex
-to a node of mark `1` can be renormalized by a diagram automorphism so as to send that vertex to
-the affine node while preserving the marks and the generalized Cartan matrix.
 
 ## Main results
 
@@ -42,10 +27,9 @@ the affine node while preserving the marks and the generalized Cartan matrix.
   the generalized Cartan matrix, `Ã₁` included.
 * `TauCeti.AffineDynkinType.marks_graph_iso_apply` and
   `TauCeti.AffineDynkinType.marks_comp_graph_iso`: every graph automorphism preserves the marks.
-* `TauCeti.AffineDynkinType.exists_graph_iso_apply_eq_affineNode`: on a valid diagram, every node
-  of mark `1` is carried to `affineNode` by a graph automorphism.
-* `TauCeti.AffineDynkinType.exists_graph_iso_apply_eq`: on a valid diagram, any two nodes of mark
-  `1` are related by a graph automorphism.
+* `TauCeti.AffineDynkinType.exists_graph_iso_apply_eq_affineNode` and
+  `TauCeti.AffineDynkinType.exists_graph_iso_apply_eq`: on a valid diagram, graph automorphisms
+  act transitively on nodes of mark `1`.
 
 ## References
 
@@ -59,47 +43,46 @@ open Finset SimpleGraph
 
 namespace TauCeti.AffineDynkinType
 
-/-! ### Invariance of the Cartan matrix and the marks under diagram automorphisms -/
-
 /-- **Every graph automorphism of an affine simply-laced diagram preserves its generalized Cartan
-matrix**, `Ã₁` included: away from `Ã₁` the matrix is `2I - A`, while at `Ã₁` it depends only on
-equality of nodes. -/
+matrix**, `Ã₁` included. -/
 @[simp]
 theorem cartanMatrix_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
     (i j : Fin t.nodes) : t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j := by
   by_cases h : t = A 1
   · subst h
-    rw [cartanMatrix_A_one_apply, cartanMatrix_A_one_apply]
-    simp only [σ.injective.eq_iff]
+    simp only [cartanMatrix_A_one_apply, σ.injective.eq_iff]
   · have hg : t.IsGraphical := isGraphical_iff_ne_A_one.mpr h
-    rw [cartanMatrix_apply hg, cartanMatrix_apply hg]
-    simp only [σ.injective.eq_iff, σ.map_adj_iff]
+    simp only [cartanMatrix_apply hg, σ.injective.eq_iff, σ.map_adj_iff]
 
 /-- Reindexing the generalized Cartan matrix along a graph automorphism leaves it unchanged. -/
 @[simp]
 theorem cartanMatrix_submatrix_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) :
-    t.cartanMatrix.submatrix σ σ = t.cartanMatrix := by
-  ext i j
-  exact cartanMatrix_graph_iso_apply σ i j
+    t.cartanMatrix.submatrix σ σ = t.cartanMatrix :=
+  Matrix.ext (cartanMatrix_graph_iso_apply σ)
 
-/-- **Every graph automorphism of an affine simply-laced diagram preserves its marks.** On a valid
-graphical diagram the marks are the unique positive primitive null vector of `2I - A`
-(`SimpleGraph.Iso.eq_gcd_smul_marks_comp`), while at `Ã₁` and outside the valid range the marks are
-constant equal to `1`. -/
+/-- **Every graph automorphism of an affine simply-laced diagram preserves its marks.** -/
 @[simp]
 theorem marks_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
     (i : Fin t.nodes) : t.marks (σ i) = t.marks i := by
   by_cases ht : t.Valid
   · by_cases hg : t.IsGraphical
-    · have heq := congrFun (σ.eq_gcd_smul_marks_comp ht hg
-        (sum_natMarks_neighborFinset_eq_two_mul ht hg)) i
-      simpa only [gcd_natMarks, Nat.cast_one, one_smul, Function.comp_apply, coe_natMarks] using
-        heq.symm
+    · let a : Fin t.nodes → ℕ := fun k ↦ (t.marks k).toNat
+      have ha_coe (k : Fin t.nodes) : (a k : ℤ) = t.marks k :=
+        Int.toNat_of_nonneg (t.marks_pos k).le
+      have ha_sum (k : Fin t.nodes) : ∑ j ∈ t.graph.neighborFinset k, a j = 2 * a k := by
+        have hs := sum_marks_neighborFinset_eq_two_mul ht hg k
+        simp_rw [← ha_coe] at hs
+        exact_mod_cast hs
+      have h1 : a t.affineNode = 1 := by
+        exact_mod_cast (ha_coe t.affineNode).trans t.marks_affineNode
+      have hgcd : univ.gcd a = 1 :=
+        Nat.dvd_one.mp (h1 ▸ univ.gcd_dvd (f := a) (mem_univ t.affineNode))
+      have heq := congrFun (σ.eq_gcd_smul_marks_comp ht hg ha_sum) i
+      simpa only [hgcd, Nat.cast_one, one_smul, Function.comp_apply, ha_coe] using heq.symm
     · rw [isGraphical_iff_ne_A_one, not_not] at hg
       subst hg
       exact (marks_A_apply 1 (σ i)).trans (marks_A_apply 1 i).symm
-  · -- Outside `Valid` the diagram is `A 0` or `D n` with `n < 4`, where all marks equal `1`.
-    cases t with
+  · cases t with
     | A n => exact (marks_A_apply n (σ i)).trans (marks_A_apply n i).symm
     | D n =>
         rw [valid_D, not_le] at ht
@@ -113,21 +96,13 @@ theorem marks_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
 /-- Composing the marks with a graph automorphism leaves them unchanged. -/
 @[simp]
 theorem marks_comp_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) :
-    t.marks ∘ σ = t.marks := by
-  ext i
-  exact marks_graph_iso_apply σ i
-
-/-! ### Explicit automorphisms moving special nodes to the affine node -/
+    t.marks ∘ σ = t.marks :=
+  funext (marks_graph_iso_apply σ)
 
 /-- Translation by `-i` as an automorphism of `(A n).graph`, sending `i` to `0`. -/
 private def isoSubRightA (n : ℕ) (i : Fin (A n).nodes) : (A n).graph ≃g (A n).graph where
-  toFun u := u - i
-  invFun u := u + i
-  left_inv u := sub_add_cancel u i
-  right_inv u := add_sub_cancel_right u i
-  map_rel_iff' {u v} := by
-    rw [graph_A]
-    exact TauCeti.cycleGraph_sub_adj_iff i u v
+  toEquiv := Equiv.subRight i
+  map_rel_iff' {u v} := by rw [graph_A]; exact TauCeti.cycleGraph_sub_adj_iff i u v
 
 private lemma dSwap_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
     (h : (D n).graph.Adj a b) :
@@ -140,11 +115,9 @@ private lemma dSwap_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
       ((Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩ x :
           Fin (D n).nodes) : ℕ) =
         if (x : ℕ) = 0 then n - 1 else if (x : ℕ) = n - 1 then 0 else (x : ℕ) := by
-    have h0 : ((0 : Fin (D n).nodes) : ℕ) = 0 := Fin.val_zero _
-    have hx0 : (x = 0) ↔ (x : ℕ) = 0 := by rw [Fin.ext_iff, h0]
+    have hx0 : (x = 0) ↔ (x : ℕ) = 0 := by rw [Fin.ext_iff, Fin.val_zero]
     have hxn1 : (x = ⟨n - 1, by rw [nodes_D]; omega⟩) ↔ (x : ℕ) = n - 1 := Fin.ext_iff
-    simp only [Equiv.swap_apply_def, hx0, hxn1]
-    split_ifs <;> simp
+    simp only [Equiv.swap_apply_def, hx0, hxn1]; split_ifs <;> simp
   have hadj_D (x y : Fin (D n).nodes) := graph_D_adj hn (i := x) (j := y)
   rw [hadj_D] at h ⊢
   rw [hs a, hs b]
@@ -153,37 +126,35 @@ private lemma dSwap_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
 /-- Swapping the two leaves `0` and `n - 1` attached to node `1` of affine `Dₙ`. -/
 private def dSwapLeft {n : ℕ} (hn : 4 ≤ n) : (D n).graph ≃g (D n).graph where
   toEquiv := Equiv.swap (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
-  map_rel_iff' {u v} :=
-    ⟨fun h ↦ by
-      have h' := dSwap_adj hn h
-      rwa [Equiv.swap_apply_self, Equiv.swap_apply_self] at h',
-     dSwap_adj hn⟩
+  map_rel_iff' := ⟨fun h ↦ by
+    have h' := dSwap_adj hn h
+    rwa [Equiv.swap_apply_self, Equiv.swap_apply_self] at h', dSwap_adj hn⟩
 
-/-- Node-number formula for reversing the spine `0 - 1 - ⋯ - (n - 2)` of affine `Dₙ` while
-exchanging the leaves `n - 1` and `n`. -/
 private def dRevVal (n k : ℕ) : ℕ :=
   if k ≤ n - 2 then n - 2 - k else if k = n - 1 then n else n - 1
 
 private lemma dRevVal_lt {n k : ℕ} (hn : 4 ≤ n) (hk : k < (D n).nodes) :
     dRevVal n k < (D n).nodes := by
-  rw [nodes_D] at hk ⊢
-  unfold dRevVal
-  split_ifs <;> omega
+  rw [nodes_D] at hk ⊢; unfold dRevVal; split_ifs <;> omega
 
 private lemma dRevVal_involutive {n k : ℕ} (hn : 4 ≤ n) (hk : k < (D n).nodes) :
     dRevVal n (dRevVal n k) = k := by
-  rw [nodes_D] at hk
-  unfold dRevVal
-  split_ifs <;> omega
+  rw [nodes_D] at hk; unfold dRevVal; split_ifs <;> omega
 
-private def dRevEquiv {n : ℕ} (hn : 4 ≤ n) : Fin (D n).nodes ≃ Fin (D n).nodes where
-  toFun k := ⟨dRevVal n k, dRevVal_lt hn k.isLt⟩
-  invFun k := ⟨dRevVal n k, dRevVal_lt hn k.isLt⟩
-  left_inv k := Fin.ext (dRevVal_involutive hn k.isLt)
-  right_inv k := Fin.ext (dRevVal_involutive hn k.isLt)
+private lemma dRevFn_involutive {n : ℕ} (hn : 4 ≤ n) :
+    Function.Involutive (fun k : Fin (D n).nodes ↦ ⟨dRevVal n k, dRevVal_lt hn k.isLt⟩) :=
+  fun k ↦ Fin.ext (dRevVal_involutive hn k.isLt)
+
+private def dRevEquiv {n : ℕ} (hn : 4 ≤ n) : Equiv.Perm (Fin (D n).nodes) :=
+  (dRevFn_involutive hn).toPerm
 
 private lemma coe_dRevEquiv {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    ((dRevEquiv hn k : Fin (n + 1)) : ℕ) = dRevVal n k := rfl
+    ((dRevEquiv hn k : Fin (D n).nodes) : ℕ) = dRevVal n k :=
+  congrArg Fin.val (congrFun (dRevFn_involutive hn).coe_toPerm k)
+
+private lemma dRevEquiv_self {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
+    dRevEquiv hn (dRevEquiv hn k) = k :=
+  (dRevFn_involutive hn).toPerm_involutive k
 
 private lemma dRevEquiv_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
     (h : (D n).graph.Adj a b) :
@@ -193,110 +164,67 @@ private lemma dRevEquiv_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
   have hadj_D (x y : Fin (D n).nodes) := graph_D_adj hn (i := x) (j := y)
   rw [hadj_D] at h ⊢
   rw [coe_dRevEquiv, coe_dRevEquiv]
-  rcases h with h | h | h | h | h | h <;>
-    (dsimp only [dRevVal]; split_ifs <;> omega)
+  rcases h with h | h | h | h | h | h <;> (dsimp only [dRevVal]; split_ifs <;> omega)
 
-private lemma dRevEquiv_self {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    dRevEquiv hn (dRevEquiv hn k) = k :=
-  (dRevEquiv hn).left_inv k
-
-/-- Reversing the spine `0 - 1 - ⋯ - (n - 2)` of affine `Dₙ` while exchanging the leaves `n - 1`
-and `n`. -/
+/-- Reversing the spine `0 - 1 - ⋯ - (n - 2)` of affine `Dₙ` while exchanging `n - 1` and `n`. -/
 private def dReverse {n : ℕ} (hn : 4 ≤ n) : (D n).graph ≃g (D n).graph where
   toEquiv := dRevEquiv hn
-  map_rel_iff' {u v} :=
-    ⟨fun h ↦ by
-      have h' := dRevEquiv_adj hn h
-      rwa [dRevEquiv_self, dRevEquiv_self] at h',
-     dRevEquiv_adj hn⟩
+  map_rel_iff' := ⟨fun h ↦ by
+    have h' := dRevEquiv_adj hn h
+    rwa [dRevEquiv_self, dRevEquiv_self] at h', dRevEquiv_adj hn⟩
 
 private lemma coe_dReverse {n : ℕ} (hn : 4 ≤ n) (k : Fin (D n).nodes) :
-    ((dReverse hn k : Fin (D n).nodes) : ℕ) = dRevVal n k := rfl
+    ((dReverse hn k : Fin (D n).nodes) : ℕ) = dRevVal n k :=
+  coe_dRevEquiv hn k
 
-/-- Swapping the arms `0 - 1 - 2` and `0 - 3 - 4` of affine `E₆`, sending `4` to `2`. -/
 private def e6SwapArm4 : E6.graph ≃g E6.graph where
   toEquiv := Equiv.swap (1 : Fin E6.nodes) 3 * Equiv.swap 2 4
-  map_rel_iff' := @fun u v ↦ by
-    revert u v
-    simp only [graph_E6_adj]
-    simp only [nodes_E6]
-    decide
+  map_rel_iff' := @fun u v ↦ by revert u v; simp only [graph_E6_adj]; simp only [nodes_E6]; decide
 
-/-- Swapping the arms `0 - 1 - 2` and `0 - 5 - 6` of affine `E₆`, sending `6` to `2`. -/
 private def e6SwapArm6 : E6.graph ≃g E6.graph where
   toEquiv := Equiv.swap (1 : Fin E6.nodes) 5 * Equiv.swap 2 6
-  map_rel_iff' := @fun u v ↦ by
-    revert u v
-    simp only [graph_E6_adj]
-    simp only [nodes_E6]
-    decide
+  map_rel_iff' := @fun u v ↦ by revert u v; simp only [graph_E6_adj]; simp only [nodes_E6]; decide
 
-/-- Swapping the two long arms `1 - 2 - 3 - 4` and `1 - 5 - 6 - 7` of affine `E₇`, sending `7` to
-`4`. -/
 private def e7SwapArms : E7.graph ≃g E7.graph where
   toEquiv := Equiv.swap (2 : Fin E7.nodes) 5 * Equiv.swap 3 6 * Equiv.swap 4 7
-  map_rel_iff' := @fun u v ↦ by
-    revert u v
-    simp only [graph_E7_adj]
-    simp only [nodes_E7]
-    decide
+  map_rel_iff' := @fun u v ↦ by revert u v; simp only [graph_E7_adj]; simp only [nodes_E7]; decide
 
 /-- **Transitivity on special nodes.** For every valid affine simply-laced diagram `t` and every
-node `i` of mark `1`, there is a graph automorphism sending `i` to `t.affineNode`.
-
-Validity is needed: at the degenerate `D 2`, all three nodes have mark `1`, while node `1` is
-isolated and node `0 = (D 2).affineNode` lies on the single edge `0 - 2`. -/
+node `i` of mark `1`, there is a graph automorphism sending `i` to `t.affineNode`. -/
 theorem exists_graph_iso_apply_eq_affineNode {t : AffineDynkinType} (ht : t.Valid)
     {i : Fin t.nodes} (hi : t.marks i = 1) :
     ∃ σ : t.graph ≃g t.graph, σ i = t.affineNode := by
   cases t with
-  | A n =>
-      refine ⟨isoSubRightA n i, ?_⟩
-      rw [affineNode_A]
-      exact sub_self i
+  | A n => exact ⟨isoSubRightA n i, by rw [affineNode_A]; exact sub_self i⟩
   | D n =>
-      rw [valid_D] at ht
-      rw [marks_D_apply] at hi
-      rw [affineNode_D]
+      rw [valid_D] at ht; rw [marks_D_apply] at hi; rw [affineNode_D]
       have hi_lt : (i : ℕ) < n + 1 := by simpa [nodes_D] using i.isLt
       have hleaf : (i : ℕ) = 0 ∨ (i : ℕ) = n - 2 ∨ (i : ℕ) = n - 1 ∨ (i : ℕ) = n := by
         split_ifs at hi <;> omega
-      have h0_val : ((0 : Fin (D n).nodes) : ℕ) = 0 := Fin.val_zero _
       rcases hleaf with h0 | hn2 | hn1 | hn
-      · exact ⟨SimpleGraph.Iso.refl, Fin.ext (h0.trans h0_val.symm)⟩
+      · exact ⟨SimpleGraph.Iso.refl, Fin.ext (h0.trans (Fin.val_zero _).symm)⟩
       · refine ⟨dReverse ht, Fin.ext ?_⟩
-        rw [coe_dReverse, h0_val]
-        dsimp only [dRevVal]
-        split_ifs <;> omega
+        rw [coe_dReverse, Fin.val_zero]; dsimp [dRevVal]; split_ifs <;> omega
       · refine ⟨dSwapLeft ht, ?_⟩
-        have hi' : i = ⟨n - 1, by rw [nodes_D]; omega⟩ := Fin.ext hn1
-        rw [hi']
-        exact Equiv.swap_apply_right (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
+        rw [show i = ⟨n - 1, by rw [nodes_D]; omega⟩ from Fin.ext hn1]
+        exact Equiv.swap_apply_right _ _
       · refine ⟨(dReverse ht).trans (dSwapLeft ht), ?_⟩
-        rw [RelIso.trans_apply]
-        have hrev : dReverse ht i = ⟨n - 1, by rw [nodes_D]; omega⟩ := by
-          apply Fin.ext
-          rw [coe_dReverse]
-          dsimp only [dRevVal]
-          split_ifs <;> omega
-        rw [hrev]
-        exact Equiv.swap_apply_right (0 : Fin (D n).nodes) ⟨n - 1, by rw [nodes_D]; omega⟩
+        rw [RelIso.trans_apply, show dReverse ht i = ⟨n - 1, by rw [nodes_D]; omega⟩ from
+          Fin.ext (by rw [coe_dReverse]; dsimp [dRevVal]; split_ifs <;> omega)]
+        exact Equiv.swap_apply_right _ _
   | E6 =>
-      rw [marks_E6] at hi
-      rw [affineNode_E6]
+      rw [marks_E6] at hi; rw [affineNode_E6]
       fin_cases i <;> simp at hi
       · exact ⟨SimpleGraph.Iso.refl, rfl⟩
       · exact ⟨e6SwapArm4, by decide⟩
       · exact ⟨e6SwapArm6, by decide⟩
   | E7 =>
-      rw [marks_E7] at hi
-      rw [affineNode_E7]
+      rw [marks_E7] at hi; rw [affineNode_E7]
       fin_cases i <;> simp at hi
       · exact ⟨SimpleGraph.Iso.refl, rfl⟩
       · exact ⟨e7SwapArms, by decide⟩
   | E8 =>
-      rw [marks_E8] at hi
-      rw [affineNode_E8]
+      rw [marks_E8] at hi; rw [affineNode_E8]
       fin_cases i <;> simp at hi
       exact ⟨SimpleGraph.Iso.refl, rfl⟩
 
@@ -307,7 +235,6 @@ theorem exists_graph_iso_apply_eq {t : AffineDynkinType} (ht : t.Valid)
     ∃ σ : t.graph ≃g t.graph, σ i = j := by
   obtain ⟨σ₁, hσ₁⟩ := exists_graph_iso_apply_eq_affineNode ht hi
   obtain ⟨σ₂, hσ₂⟩ := exists_graph_iso_apply_eq_affineNode ht hj
-  refine ⟨σ₁.trans σ₂.symm, ?_⟩
-  rw [RelIso.trans_apply, hσ₁, ← hσ₂, RelIso.symm_apply_apply]
+  exact ⟨σ₁.trans σ₂.symm, by rw [RelIso.trans_apply, hσ₁, ← hσ₂, RelIso.symm_apply_apply]⟩
 
 end TauCeti.AffineDynkinType

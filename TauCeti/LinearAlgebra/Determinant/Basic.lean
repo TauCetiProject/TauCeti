@@ -250,8 +250,7 @@ section FinTwo
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] (b : Basis (Fin 2) R V)
 
 /-- The alternating bilinear form `(x, y) ↦ b.det ![x, y]` attached to a two-element basis `b`. -/
-noncomputable def detBilinForm : LinearMap.BilinForm R V :=
-  b.det.toMultilinearMap.toBilinMap
+noncomputable def detBilinForm : LinearMap.BilinForm R V := b.det.toMultilinearMap.toBilinMap
 
 @[simp]
 theorem detBilinForm_apply (x y : V) : b.detBilinForm x y = b.det ![x, y] :=
@@ -260,40 +259,32 @@ theorem detBilinForm_apply (x y : V) : b.detBilinForm x y = b.det ![x, y] :=
 /-- In coordinates with respect to `b`, `b.detBilinForm x y` is `x₀ y₁ - y₀ x₁`. -/
 theorem detBilinForm_eq_repr (x y : V) :
     b.detBilinForm x y = b.repr x 0 * b.repr y 1 - b.repr y 0 * b.repr x 1 := by
-  rw [detBilinForm_apply, b.det_apply, Matrix.det_fin_two]
-  simp [Basis.toMatrix_apply]
+  rw [detBilinForm_apply, b.det_apply, Matrix.det_fin_two]; simp [Basis.toMatrix_apply]
 
 /-- The determinant bilinear form of a `Fin 2`-basis is alternating. -/
-theorem isAlt_detBilinForm : b.detBilinForm.IsAlt :=
-  b.det.isAlt_toBilinMap
+theorem isAlt_detBilinForm : b.detBilinForm.IsAlt := b.det.isAlt_toBilinMap
 
 /-- Evaluating `b.detBilinForm` on `(b 0, b 1)` yields `1`. -/
 theorem detBilinForm_basis_zero_one : b.detBilinForm (b 0) (b 1) = 1 := by
-  rw [detBilinForm_eq_repr]
-  simp
+  rw [detBilinForm_eq_repr]; simp
 
 /-- Evaluating `b.detBilinForm` on `(b 1, b 0)` yields `-1`. -/
 theorem detBilinForm_basis_one_zero : b.detBilinForm (b 1) (b 0) = -1 := by
-  rw [detBilinForm_eq_repr]
-  simp
+  rw [detBilinForm_eq_repr]; simp
 
 /-- Pairing against `b 1` on the right reads off the `0`-th coordinate in `b`. -/
 theorem detBilinForm_apply_basis_one (x : V) : b.detBilinForm x (b 1) = b.repr x 0 := by
-  rw [detBilinForm_eq_repr]
-  simp
+  rw [detBilinForm_eq_repr]; simp
 
 /-- Pairing against `b 0` on the right reads off minus the `1`-st coordinate in `b`. -/
 theorem detBilinForm_apply_basis_zero (x : V) : b.detBilinForm x (b 0) = -b.repr x 1 := by
-  rw [detBilinForm_eq_repr]
-  simp
+  rw [detBilinForm_eq_repr]; simp
 
 private theorem detBilinForm_sub_smul (φ : Module.Dual R V) :
     b.detBilinForm (φ (b 1) • b 0 - φ (b 0) • b 1) = φ := by
   refine b.ext <| Fin.forall_fin_two.2 ⟨?_, ?_⟩
-  · rw [detBilinForm_apply_basis_zero]
-    simp
-  · rw [detBilinForm_apply_basis_one]
-    simp
+  · rw [detBilinForm_apply_basis_zero]; simp
+  · rw [detBilinForm_apply_basis_one]; simp
 
 /-- **Unimodularity of the `Fin 2` determinant form.** Over every commutative ring `R`,
 `x ↦ b.detBilinForm x` is a bijection `V → Module.Dual R V`, with inverse
@@ -314,26 +305,21 @@ noncomputable def detBilinFormEquivDual : V ≃ₗ[R] Module.Dual R V :=
 
 @[simp]
 theorem detBilinFormEquivDual_apply (x y : V) :
-    b.detBilinFormEquivDual x y = b.detBilinForm x y :=
-  (rfl)
+    b.detBilinFormEquivDual x y = b.detBilinForm x y := (rfl)
 
-/-- The inverse of `Module.Basis.detBilinFormEquivDual` sends `φ : Module.Dual R V` to
-`φ (b 1) • b 0 - φ (b 0) • b 1`. -/
+/-- `(detBilinFormEquivDual b).symm` sends `φ` to `φ (b 1) • b 0 - φ (b 0) • b 1`. -/
 @[simp]
 theorem detBilinFormEquivDual_symm_apply (φ : Module.Dual R V) :
     b.detBilinFormEquivDual.symm φ = φ (b 1) • b 0 - φ (b 0) • b 1 :=
   b.detBilinFormEquivDual.injective
     ((b.detBilinFormEquivDual.apply_symm_apply φ).trans (b.detBilinForm_sub_smul φ).symm)
 
-/-- The determinant bilinear form of a `Fin 2`-basis is nondegenerate over every commutative
-ring. -/
+/-- The determinant bilinear form of a `Fin 2`-basis is nondegenerate over any commutative ring. -/
 theorem nondegenerate_detBilinForm : b.detBilinForm.Nondegenerate := by
-  refine ⟨fun x hx ↦ b.detBilinForm_bijective.1 ?_, fun y hy ↦ b.detBilinForm_bijective.1 ?_⟩
-  · rw [map_zero]
-    exact LinearMap.ext hx
-  · rw [map_zero]
-    refine LinearMap.ext fun x ↦ ?_
-    rw [LinearMap.zero_apply, ← b.isAlt_detBilinForm.neg_eq x y, hy x, neg_zero]
+  refine ⟨fun x hx ↦ b.detBilinForm_bijective.1 (by rw [map_zero]; exact LinearMap.ext hx),
+    fun y hy ↦ b.detBilinForm_bijective.1 <| by
+      rw [map_zero]; exact LinearMap.ext fun x ↦ by
+        rw [LinearMap.zero_apply, ← b.isAlt_detBilinForm.neg_eq x y, hy x, neg_zero]⟩
 
 end FinTwo
 

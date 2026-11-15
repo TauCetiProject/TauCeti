@@ -11,22 +11,9 @@ public import TauCeti.RepresentationTheory.SU2.Standard
 /-!
 # The McKay correspondence for finite subgroups of `SU(2)`
 
-Specializing `TauCeti.exists_isMcKayLabelling` (`TauCeti.RepresentationTheory.McKay.Basic`) to the
-tautological two-dimensional complex representation `TauCeti.SU2.stdFDRep H`
-(`TauCeti.RepresentationTheory.SU2.Standard`) gives the McKay correspondence for every nontrivial
-finite subgroup `H` of `SU(2)`.
-
-## Main results
-
-* `TauCeti.SU2.exists_isMcKayLabelling`: every nontrivial finite subgroup `H : Subgroup SU2` admits
-  a McKay labelling by a valid affine simply-laced Dynkin diagram relative to `SU2.stdFDRep H`.
-
-## References
-
-* J. McKay, *Graphs, singularities, and finite groups*, Proc. Symp. Pure Math. **37** (1980),
-  183–186.
-* R. Steinberg, *Finite subgroups of `SU₂`, Dynkin diagrams and affine Coxeter elements*, Pacific J.
-  Math. **118** (1985), 587–598.
+Specializing `TauCeti.exists_isMcKayLabelling` to `TauCeti.SU2.stdFDRep H` gives the McKay
+correspondence for every nontrivial finite subgroup `H` of `SU(2)`
+(`TauCeti.SU2.exists_isMcKayLabelling`).
 -/
 
 public section

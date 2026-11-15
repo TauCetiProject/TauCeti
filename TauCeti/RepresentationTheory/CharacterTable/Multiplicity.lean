@@ -328,13 +328,14 @@ theorem _root_.TauCeti.SimpleFDRepClasses.multiplicity_equivFinCardConjClasses_s
   rw [SimpleFDRepClasses.equivFinCardConjClasses_symm_apply, SimpleFDRepClasses.multiplicity_mk,
     FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
 
+omit [Finite G] in
 /-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
-`∑ c, c.multiplicity W * c.finrank`, deduced from
-`Representation.finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree` by reindexing along
-`SimpleFDRepClasses.equivFinCardConjClasses`. -/
+`∑ c, c.multiplicity W * c.finrank`. -/
 theorem _root_.TauCeti.finrank_eq_sum_multiplicity_mul_finrank
     [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :
     finrank k W = ∑ c : SimpleFDRepClasses k G, c.multiplicity W * c.finrank := by
+  have : Finite G :=
+    Nat.finite_of_card_ne_zero fun h ↦ (isUnit_of_invertible (Nat.card G : k)).ne_zero (by simp [h])
   rw [finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree W.ρ]
   refine Finset.sum_equiv (SimpleFDRepClasses.equivFinCardConjClasses k G).symm
     (s := Finset.univ) (t := Finset.univ) (fun _ ↦ by simp) fun i _ ↦ ?_

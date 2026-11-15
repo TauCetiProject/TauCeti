@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Action.Monoidal
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.Category.FGModuleCat.Rigid
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.PicardGroup.Contraction
+import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 
 /-!
 # Invariants of the dual representation
@@ -56,10 +60,11 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   representations.
 * `Representation.dualTprodEquivTrivial`: for an invertible module `V`, such as a line, the
   contraction `Dual V ⊗ V → k` is an equivalence onto the trivial representation.
-* `FDRep.finrank_invariants_dual_tprod`: the intertwiners `X → Y` are as many as the invariants
-  of `Dual X ⊗ Y`.
-* `FDRep.finrank_hom_comm`: when `|G|` is invertible in `k`, there are as many
-  intertwiners `X → Y` as `Y → X`.
+* `FDRep.finrank_invariants_dual_tprod` and `FDRep.finrank_hom_comm`: the intertwiners `X → Y` are
+  as many as the invariants of `Dual X ⊗ Y`, and as many as `Y → X` when `|G|` is invertible in `k`.
+* `FDRep.leftDualIso`, `FDRep.isoLeftDualOfEquivDual`, `FDRep.tensorLeftHomLinearEquivOfEquivDual`,
+  `FDRep.finrank_hom_tensor_leftDual`, and `FDRep.finrank_hom_tensor_comm_of_equiv_dual`:
+  categorical left duals `ᘁV ≅ FDRep.of V.ρ.dual` and Frobenius reciprocity in `FDRep k G`.
 -/
 
 public section
@@ -304,7 +309,7 @@ end Representation
 
 namespace FDRep
 
-open CategoryTheory Module
+open CategoryTheory MonoidalCategory Module
 
 universe u v
 
@@ -331,5 +336,75 @@ theorem finrank_hom_comm [Invertible (Nat.card G : k)] (X Y : FDRep k G) :
     (Representation.Equiv.invariantsLinearEquiv (V := TensorProduct k (Module.Dual k Y) X)
       (Representation.dualTprodEquivDualDualTprod X.ρ Y.ρ)).finrank_eq,
     TauCeti.Representation.finrank_invariants_dual (V := TensorProduct k (Module.Dual k X) Y)]
+
+/-- **The categorical left dual `ᘁV` in `FDRep k G` is `FDRep.of (Representation.dual V.ρ)`.** -/
+protected noncomputable def leftDualIso (V : FDRep k G) :
+    (ᘁV : FDRep k G) ≅ FDRep.of (Representation.dual V.ρ) :=
+  (LinearEquiv.refl k (Module.Dual k V)).toFDRepIso fun g φ ↦ by
+    have hρ := congrArg (fun f : (ᘁV.V) ⟶ ᘁV.V ↦ f.hom.hom φ) (Action.leftDual_ρ V g)
+    rwa [FGModuleCat.leftAdjointMate_hom, FDRep.hom_hom_action_ρ] at hρ
+
+@[simp]
+theorem isoToLinearEquiv_leftDualIso (V : FDRep k G) :
+    isoToLinearEquiv (FDRep.leftDualIso V) = LinearEquiv.refl k (Module.Dual k V) :=
+  isoToLinearEquiv_toFDRepIso _ _
+
+/-- The categorical left dual `ᘁV` in `FDRep k G` has the same dimension as `V`. -/
+-- Match before `Action.leftDual_v` rewrites the carrier `(ᘁV).V` to `ᘁV.V`.
+@[simp↓]
+theorem finrank_leftDual (V : FDRep k G) : finrank k (ᘁV : FDRep k G) = finrank k V := by
+  rw [(isoToLinearEquiv (FDRep.leftDualIso V)).finrank_eq, finrank_of, Subspace.dual_finrank_eq]
+
+/-- **An equivalence `V.ρ.Equiv V.ρ.dual` makes `V` isomorphic to `ᘁV` in `FDRep k G`.** -/
+noncomputable def isoLeftDualOfEquivDual {V : FDRep k G}
+    (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) : V ≅ (ᘁV : FDRep k G) :=
+  (e.toLinearEquiv.toFDRepIso fun g x ↦ by
+      rw [FDRep.of_ρ']; exact LinearMap.congr_fun (e.isIntertwining' g) x) ≪≫
+    (FDRep.leftDualIso V).symm
+
+@[simp]
+theorem isoToLinearEquiv_isoLeftDualOfEquivDual {V : FDRep k G}
+    (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) :
+    isoToLinearEquiv (isoLeftDualOfEquivDual e) = e.toLinearEquiv := by
+  rw [isoLeftDualOfEquivDual, isoToLinearEquiv_trans, isoToLinearEquiv_toFDRepIso,
+    isoToLinearEquiv_symm, isoToLinearEquiv_leftDualIso]
+  ext x; rfl
+
+/-- **Frobenius reciprocity `(V ⊗ X ⟶ Y) ≃ₗ[k] (X ⟶ V ⊗ Y)` along a self-duality of `V`.** -/
+noncomputable def tensorLeftHomLinearEquivOfEquivDual {V : FDRep k G}
+    (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) (X Y : FDRep k G) :
+    (V ⊗ X ⟶ Y) ≃ₗ[k] (X ⟶ V ⊗ Y) :=
+  (TauCeti.tensorLeftHomLinearEquiv k X (ᘁV) V Y).trans
+    (Linear.homCongr k (Iso.refl X) (whiskerRightIso (isoLeftDualOfEquivDual e).symm Y))
+
+@[simp]
+theorem tensorLeftHomLinearEquivOfEquivDual_apply {V : FDRep k G}
+    (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) (X Y : FDRep k G)
+    (f : V ⊗ X ⟶ Y) :
+    tensorLeftHomLinearEquivOfEquivDual e X Y f =
+      tensorLeftHomEquiv X (ᘁV) V Y f ≫ (isoLeftDualOfEquivDual e).inv ▷ Y := by
+  simp [tensorLeftHomLinearEquivOfEquivDual, Linear.homCongr_apply]
+
+@[simp]
+theorem tensorLeftHomLinearEquivOfEquivDual_symm_apply {V : FDRep k G}
+    (e : _root_.Representation.Equiv V.ρ (Representation.dual V.ρ)) (X Y : FDRep k G)
+    (g : X ⟶ V ⊗ Y) :
+    (tensorLeftHomLinearEquivOfEquivDual e X Y).symm g =
+      (tensorLeftHomEquiv X (ᘁV) V Y).symm (g ≫ (isoLeftDualOfEquivDual e).hom ▷ Y) := by
+  simp [tensorLeftHomLinearEquivOfEquivDual, Linear.homCongr_symm_apply]
+
+/-- **Frobenius reciprocity for tensor multiplicities.** When `|G|` is invertible in `k`,
+`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ (ᘁV) ⊗ X)`. -/
+theorem finrank_hom_tensor_leftDual [Invertible (Nat.card G : k)] (V X Y : FDRep k G) :
+    finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ (ᘁV) ⊗ X) := by
+  rw [finrank_hom_comm X (V ⊗ Y), (TauCeti.tensorLeftHomLinearEquiv k Y (ᘁV) V X).finrank_eq]
+
+/-- **Symmetry of tensor multiplicities for a self-dual representation.** -/
+theorem finrank_hom_tensor_comm_of_equiv_dual [Invertible (Nat.card G : k)] {V : FDRep k G}
+    (he : Nonempty (_root_.Representation.Equiv V.ρ (Representation.dual V.ρ)))
+    (X Y : FDRep k G) : finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ V ⊗ X) := by
+  obtain ⟨e⟩ := he
+  exact (finrank_hom_tensor_leftDual V X Y).trans
+    (Linear.homCongr k (Iso.refl Y) (whiskerRightIso (isoLeftDualOfEquivDual e).symm X)).finrank_eq
 
 end FDRep
