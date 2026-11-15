@@ -83,14 +83,14 @@ of the sheaf of hyperfunctions.
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
   points outside `S` vanish;
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
-  sheaf `F`.
+  sheaf `F`;
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
   is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`) and through which
   `H_S⁰(W, F) ≃+ Γ_S(W, F)` is natural in `F`
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
   sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
-* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation.
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation;
 * `CategoryTheory.Sheaf.isSheaf_supportedHPresheaf_of_isZero_supportedHSheaf`: if `𝓗_S^q(F) = 0`
   for `q < n`, the presheaf `W ↦ H_Sⁿ(W, F)` is a sheaf;
 * `CategoryTheory.Sheaf.supportedHSectionsEquiv`: under the same hypothesis,
@@ -964,7 +964,7 @@ private def supportedHPresheafEdgeIsoOfIsZeroSucc
 variable {n : ℕ}
 
 /-- The degenerate edge comparison in degree zero, `H_Zⁿ(-, F) ≅ H_Z⁰(-, 𝓗_Sⁿ(F))`, as an
-isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by
+isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by the inverse of
 `H_Z⁰(W, 𝓗_Sⁿ(F)) ≃+ Γ_Z(W, 𝓗_Sⁿ(F))`. -/
 private def supportedHPresheafEdgeIsoZero (h : ∀ q < n, IsZero (F.supportedHSheaf S q))
     (hZS : Z ≤ S) : F.supportedHPresheaf Z n ≅ (F.supportedHSheaf S n).supportedHPresheaf Z 0 :=
