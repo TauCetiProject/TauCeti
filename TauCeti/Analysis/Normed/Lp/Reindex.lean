@@ -38,6 +38,10 @@ sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1
 (`lp.exists_forall_hasSum_pow_smul_add_and_norm_le`): they are an absolutely convergent series of
 shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
 geometrically decaying weights.
+
+When `e : ι ≃ ι'` is a bijection of index types, reindexing along `e.symm` is a linear isometric
+equivalence `LinearIsometryEquiv.lpCongrLeft : ℓ^p(ι, E) ≃ₗᵢ[𝕜] ℓ^p(ι', E)` sending `single p i v`
+to `single p (e i) v`, the `lp` counterpart of Mathlib's `LinearIsometryEquiv.piLpCongrLeft`.
 -/
 
 public section
@@ -228,3 +232,69 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
     simpa [lp.coeFnAddMonoidHom_apply, lp.coeFn_smul, hT] using h
   · calc ‖∑' d, r ^ d • T d‖ ≤ ∑' d, ‖f‖ * r ^ d := tsum_of_norm_bounded hgeom.hasSum hbound
       _ = (1 - r)⁻¹ * ‖f‖ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, mul_comm]
+
+section lpCongrLeft
+
+open scoped lp
+
+/-- Reindexing an `ℓᵖ` sequence along an injective map preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_of_injective {f : ι → G} (hf : Memℓp f p) {g : ι' → ι}
+    (hg : Function.Injective g) : Memℓp (f ∘ g) p := by
+  simpa using hf.indicator_comp (s := Set.univ) hg.injOn
+
+variable (p : ℝ≥0∞) (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+  [IsBoundedSMul 𝕜 E] [Fact (1 ≤ p)] {ι ι' ι'' : Type*}
+
+/-- An equivalence of index types induces a linear isometric equivalence of `ℓᵖ` sequence spaces,
+the `lp` counterpart of `LinearIsometryEquiv.piLpCongrLeft`. -/
+def LinearIsometryEquiv.lpCongrLeft (e : ι ≃ ι') : ℓ^p(ι, E) ≃ₗᵢ[𝕜] ℓ^p(ι', E) where
+  toFun v := ⟨v ∘ e.symm, (lp.memℓp v).comp_of_injective e.symm.injective⟩
+  invFun v := ⟨v ∘ e, (lp.memℓp v).comp_of_injective e.injective⟩
+  map_add' _ _ := lp.ext <| funext fun _ ↦ rfl
+  map_smul' _ _ := lp.ext <| funext fun _ ↦ rfl
+  left_inv v := lp.ext <| funext fun i ↦ congr_arg v (e.symm_apply_apply i)
+  right_inv v := lp.ext <| funext fun j ↦ congr_arg v (e.apply_symm_apply j)
+  norm_map' v := by
+    have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    let v' : ℓ^p(ι', E) := ⟨v ∘ e.symm, (lp.memℓp v).comp_of_injective e.symm.injective⟩
+    refine le_antisymm
+      (lp.norm_le_of_forall_eq_indicator_comp (f' := v') hp (s := Set.univ)
+        e.symm.injective.injOn fun _ ↦ by simp [v'])
+      (lp.norm_le_of_forall_eq_indicator_comp (f := v') hp (s := Set.univ)
+        e.injective.injOn fun i ↦ by simp [v'])
+
+variable {p 𝕜 E}
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_apply (e : ι ≃ ι') (v : ℓ^p(ι, E)) (j : ι') :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E e v j = v (e.symm j) := by
+  rfl
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_symm (e : ι ≃ ι') :
+    (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e).symm =
+      LinearIsometryEquiv.lpCongrLeft p 𝕜 E e.symm := by
+  ext; rfl
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_single [DecidableEq ι] [DecidableEq ι']
+    (e : ι ≃ ι') (i : ι) (v : E) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E e (lp.single p i v) = lp.single p (e i) v := by
+  ext j
+  simp [lp.single_apply, Pi.single, Function.update, Equiv.symm_apply_eq]
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_refl :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E (Equiv.refl ι) =
+      LinearIsometryEquiv.refl 𝕜 ℓ^p(ι, E) := by
+  ext; simp
+
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_trans (e : ι ≃ ι') (e' : ι' ≃ ι'') :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 E (e.trans e') =
+      (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e).trans
+        (LinearIsometryEquiv.lpCongrLeft p 𝕜 E e') := by
+  ext; simp
+
+end lpCongrLeft
+

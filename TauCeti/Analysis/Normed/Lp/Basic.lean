@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -24,12 +25,14 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`lp.norm_le_of_norm_le_geometric`). Membership in `ℓᵖ` is unchanged by a unit scalar factor
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
-(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
+(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). Nonzero coordinate vectors are
+linearly independent (`lp.linearIndependent_single`, `lp.linearIndependent_single_one`), so over an
+infinite index type with nontrivial summands `lp E p` is not finitely generated (`lp.not_finite`),
+and vectors in the span of scalar coordinate vectors vanish outside the corresponding indices. These
+algebraic facts hold over normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum
+of single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
@@ -199,6 +202,28 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- Nonzero vectors placed in distinct coordinates of `lp` are linearly independent. -/
+theorem linearIndependent_single [DecidableEq ι] [IsCancelMulZero 𝕜]
+    [∀ i, Module.IsTorsionFree 𝕜 (E i)] {v : ∀ i, E i} (hv : ∀ i, v i ≠ 0) :
+    LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (v i)) := by
+  refine linearIndependent_iff'.2 fun s g hg i hi ↦ ?_
+  have hcoord := congr_arg (fun f : lp E p ↦ f i) hg
+  simp only [lp.coeFn_sum, Finset.sum_apply, lp.coeFn_smul, Pi.smul_apply, lp.coeFn_zero,
+    Pi.zero_apply] at hcoord
+  rw [Finset.sum_eq_single i
+    (fun j _ hji ↦ by rw [lp.single_apply_ne p j (v j) hji.symm, smul_zero])
+    (fun h ↦ absurd hi h), lp.single_apply_self] at hcoord
+  exact (smul_eq_zero.1 hcoord).resolve_right (hv i)
+
+/-- Over an infinite index type with nontrivial summands, `lp E p` is not finitely generated. -/
+theorem not_finite [IsCancelMulZero 𝕜] [StrongRankCondition 𝕜]
+    [∀ i, Module.IsTorsionFree 𝕜 (E i)] [Infinite ι] [∀ i, Nontrivial (E i)] :
+    ¬ Module.Finite 𝕜 (lp E p) := by
+  classical
+  intro hfin
+  exact hfin.not_linearIndependent_of_infinite _
+    (linearIndependent_single (p := p) (𝕜 := 𝕜) fun i ↦ (exists_ne (0 : E i)).choose_spec)
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/

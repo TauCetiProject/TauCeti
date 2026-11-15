@@ -33,6 +33,12 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
   of an eventually norm-bounded left approximate unit converges strongly to the identity.
+* `NonUnitalStarAlgHom.isNondegenerate_iff_map_one` and
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`:
+  on a unital C⋆-algebra, nondegeneracy is equivalent to `ρ 1 = 1` and upgrades `ρ` to a unital
+  `⋆`-homomorphism.
+* `NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff`: conjugation by a unitary
+  equivalence preserves nondegeneracy.
 * `NonUnitalStarAlgHom.topologicalClosure_span_range_comp_eq`,
   `NonUnitalStarAlgHom.isNondegenerate_iff_dense_span_comp`: nondegeneracy can be checked on any
   dense subset of `A`.
@@ -86,6 +92,46 @@ nondegenerate. -/
 theorem isNondegenerate_of_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ 1 = 1) : ρ.IsNondegenerate := fun ξ =>
   subset_closure <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨1, ξ, by simp [hρ]⟩
+
+/-- A nondegenerate representation of a unital C⋆-algebra maps `1` to `1`. -/
+theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
+  hρ.ext fun a => by simp [← map_mul]
+
+/-- A representation of a unital C⋆-algebra is nondegenerate if and only if it maps `1` to `1`. -/
+theorem isNondegenerate_iff_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
+    ρ.IsNondegenerate ↔ ρ 1 = 1 :=
+  ⟨IsNondegenerate.map_one, isNondegenerate_of_map_one⟩
+
+/-- Every unital `⋆`-representation of a unital C⋆-algebra is nondegenerate. -/
+@[simp]
+theorem _root_.StarAlgHom.isNondegenerate_toNonUnitalStarAlgHom {B : Type*} [CStarAlgebra B]
+    (ρ : B →⋆ₐ[ℂ] (H →L[ℂ] H)) : ρ.toNonUnitalStarAlgHom.IsNondegenerate :=
+  isNondegenerate_of_map_one (map_one ρ)
+
+/-- Upgrade a nondegenerate representation of a unital C⋆-algebra to a unital `⋆`-homomorphism. -/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  toFun := ρ
+  map_one' := hρ.map_one
+  map_mul' := map_mul ρ
+  map_zero' := map_zero ρ
+  map_add' := map_add ρ
+  map_star' := map_star ρ
+  commutes' r := by
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hρ.map_one, Algebra.algebraMap_eq_smul_one]
+
+@[simp]
+theorem IsNondegenerate.coe_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    ⇑hρ.toStarAlgHom = ⇑ρ := by
+  rfl
+
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ := by
+  ext; rfl
 
 /-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along any eventually
 norm-bounded net `e` with `e * a → a`, and the limit is a bounded operator `T` with
@@ -242,5 +288,16 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
     π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
+
+/-- Conjugating a representation by a linear isometric equivalence preserves nondegeneracy. -/
+@[simp]
+theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*} [NormedAddCommGroup K]
+    [InnerProductSpace ℂ K] [CompleteSpace K] (e : H ≃ₗᵢ[ℂ] K)
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    (e.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
+  simp only [isNondegenerate_iff_forall_apply_eq_zero]
+  refine ⟨fun h ξ hξ => e.injective <| by simpa using h (e ξ) fun a => by simp [hξ a],
+    fun h η hη => ?_⟩
+  simpa using congr_arg e (h (e.symm η) fun a => e.injective (by simpa using hη a))
 
 end NonUnitalStarAlgHom
