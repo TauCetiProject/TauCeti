@@ -12,7 +12,8 @@ public import Mathlib.Topology.ApproximateUnit
 
 An approximate unit is a proper filter along which the left and the right multiplications by
 each element converge to it; `Filter.IsApproximateUnit.iff_neBot_and_tendsto_prod` packages the
-two convergences as a single one in the product `α × α`.
+two convergences as a single one in the product `α × α`, and `Filter.IsApproximateUnit.of_le`
+transfers the property to any proper subfilter without requiring an identity element.
 
 The image of an approximate unit under a continuous surjective multiplicative map is again an
 approximate unit, `Filter.IsApproximateUnit.map`. Surjectivity is what lets every element of the
@@ -43,6 +44,14 @@ theorem iff_neBot_and_tendsto_prod {l : Filter α} :
   simp only [nhds_prod_eq, tendsto_prod_iff']
   exact ⟨fun h ↦ ⟨h.neBot, fun a ↦ ⟨h.tendsto_mul_right a, h.tendsto_mul_left a⟩⟩,
     fun ⟨_, h⟩ ↦ ⟨fun a ↦ (h a).2, fun a ↦ (h a).1⟩⟩
+
+/-- Any proper subfilter of an approximate unit is an approximate unit. Unlike
+`Filter.IsApproximateUnit.mono`, this requires only `Mul α` rather than `MulOneClass α`, so it
+applies to subnets of approximate units in nonunital algebras. -/
+theorem of_le {l l' : Filter α} (hl : l.IsApproximateUnit) (hle : l' ≤ l) [l'.NeBot] :
+    l'.IsApproximateUnit where
+  tendsto_mul_left m := (hl.tendsto_mul_left m).mono_left hle
+  tendsto_mul_right m := (hl.tendsto_mul_right m).mono_left hle
 
 /-- The image of an approximate unit under a continuous surjective multiplicative map is an
 approximate unit. -/

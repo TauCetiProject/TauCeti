@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
@@ -48,8 +48,9 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
-* `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
-  `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
+* `TwoSidedIdeal.nonUnitalCStarAlgebra` and `TwoSidedIdeal.instStarOrderedRing`: a closed two-sided
+  ideal `I : TwoSidedIdeal A` is a `NonUnitalCStarAlgebra` (and inherits `StarOrderedRing`) on its
+  subtype carrier, with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A` and `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`.
 * `NonUnitalStarSubalgebra.multiplierHom`: the canonical contractive star-algebra homomorphism
@@ -218,6 +219,23 @@ instance instCStarRing : CStarRing I where
 
 /-- Every closed two-sided ideal of a C⋆-algebra is a nonunital C⋆-algebra in its own right. -/
 noncomputable instance nonUnitalCStarAlgebra : NonUnitalCStarAlgebra I where
+
+/-- A closed two-sided ideal of a C⋆-algebra inherits `StarOrderedRing` from the ambient algebra. -/
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
+  .of_nonneg_iff'
+    (fun {x y} (h : (x : A) ≤ (y : A)) z =>
+      show (z : A) + (x : A) ≤ (z : A) + (y : A) from add_le_add_right h (z : A))
+    fun x => by
+    refine ⟨fun (hx : 0 ≤ (x : A)) => ?_, ?_⟩
+    · have hmem : cfcₙ Real.sqrt (x : A) ∈ I.toNonUnitalStarSubalgebra :=
+        cfcₙ_mem _ (I.mem_toNonUnitalStarSubalgebra.2 x.2)
+      refine ⟨⟨cfcₙ Real.sqrt (x : A), I.mem_toNonUnitalStarSubalgebra.1 hmem⟩, Subtype.ext ?_⟩
+      change (x : A) = star (cfcₙ Real.sqrt (x : A)) * cfcₙ Real.sqrt (x : A)
+      rw [IsSelfAdjoint.star_eq (by cfc_tac), ← cfcₙ_mul ..]
+      convert (cfcₙ_id' ℝ (x : A)).symm using 1
+      exact cfcₙ_congr fun r hr => by grind [Real.mul_self_sqrt]
+    · rintro ⟨s, rfl⟩
+      exact star_mul_self_nonneg (s : A)
 
 noncomputable instance nonUnitalCommCStarAlgebra {A : Type*}
     [NonUnitalCommCStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :

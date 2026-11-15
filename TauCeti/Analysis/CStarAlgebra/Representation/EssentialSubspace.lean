@@ -30,9 +30,14 @@ extension by zero via `Submodule.extendByZero` recovers `π`.
 * `NonUnitalStarAlgHom.restrictEssentialSubspace` and
   `NonUnitalStarAlgHom.isNondegenerate_restrictEssentialSubspace`: the nondegenerate compression of
   `π` to its essential subspace, with `extendByZero_restrictEssentialSubspace`.
+* `NonUnitalStarAlgHom.tendsto_apply_starProjection_essentialSubspace`: along any increasing
+  approximate unit `l` of `A`, `π e ξ` converges in norm to the orthogonal projection of `ξ` onto
+  `π.essentialSubspace`.
 
 ## References
 
+* Bruce Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*,
+  II.4.1–II.4.2.
 * Jacques Dixmier, *C*-Algebras*, Section 2.2 and Proposition 2.10.4.
 * Dana Williams, *Crossed Products of C*-Algebras*, Section 1.1.
 -/
@@ -41,6 +46,7 @@ public section
 
 noncomputable section
 
+open Filter Topology
 open scoped InnerProductSpace
 
 namespace NonUnitalStarAlgHom
@@ -189,5 +195,25 @@ theorem isNondegenerate_restrictEssentialSubspace :
       simpa using congrArg Subtype.val (hξ a)
   exact Subtype.ext <| Submodule.mem_bot ℂ |>.1 <|
     π.essentialSubspace.inf_orthogonal_eq_bot ▸ ⟨ξ.2, horth⟩
+
+/-- Along any increasing approximate unit `l` of `A`, the operators `π e` of a (not necessarily
+nondegenerate) Hilbert-space representation converge strongly to the orthogonal projection onto
+`π.essentialSubspace`. -/
+theorem tendsto_apply_starProjection_essentialSubspace [PartialOrder A] {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) (ξ : H) :
+    Tendsto (fun e => π e ξ) l (𝓝 (π.essentialSubspace.starProjection ξ)) := by
+  let η : π.essentialSubspace := π.essentialSubspace.orthogonalProjectionOnto ξ
+  have hsub := ((isNondegenerate_iff_tendsto hl).1 π.isNondegenerate_restrictEssentialSubspace η)
+  have hval : Tendsto (fun e => (π.restrictEssentialSubspace e η : H)) l (𝓝 (η : H)) :=
+    (continuous_subtype_val.tendsto η).comp hsub
+  refine hval.congr fun e => ?_
+  rw [π.coe_restrictEssentialSubspace_apply e η]
+  have hdecomp : ξ = (η : H) + (ξ - π.essentialSubspace.starProjection ξ) :=
+    (add_sub_cancel _ _).symm
+  conv_rhs => rw [hdecomp]
+  rw [map_add,
+    π.apply_eq_zero_of_mem_orthogonal_essentialSubspace
+      (π.essentialSubspace.sub_starProjection_mem_orthogonal ξ) e,
+    add_zero]
 
 end NonUnitalStarAlgHom
