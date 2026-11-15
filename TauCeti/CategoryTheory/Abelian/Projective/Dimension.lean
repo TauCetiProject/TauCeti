@@ -8,6 +8,7 @@ module
 import Mathlib.CategoryTheory.Abelian.FunctorCategory
 
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
@@ -18,7 +19,9 @@ import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
 If every bound `HasProjectiveDimensionLT X n` on one object implies the same bound on another
 object `Y`, possibly in a different abelian category, then the projective dimension of `Y` is at
 most that of `X`. This compares projective dimensions degree by degree without unfolding their
-definition as an infimum.
+definition as an infimum. Uniform bounds `< n` (and `≤ n`) on projective and injective dimensions
+across all objects of an abelian category coincide, since both express global vanishing of `Ext` in
+degrees `≥ n` (`CategoryTheory.forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT`).
 
 In an abelian category with enough projectives, every object has projective dimension at most one
 if and only if every subobject of a projective object is projective. This is the hereditary
@@ -59,6 +62,23 @@ theorem projectiveDimension_le_of_hasProjectiveDimensionLT {D : Type*} [Category
     (h : ∀ n : ℕ, HasProjectiveDimensionLT X n → HasProjectiveDimensionLT Y n) :
     projectiveDimension Y ≤ projectiveDimension X :=
   sInf_le_sInf fun _ hd i hi ↦ h i (hd i hi)
+
+variable (C) in
+/-- An abelian category has uniform projective dimension `< n` precisely when it has uniform
+injective dimension `< n`: both conditions express vanishing of `Ext X Y i` for all objects `X`, `Y`
+and all `i ≥ n`. -/
+theorem forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT (n : ℕ) :
+    (∀ X : C, HasProjectiveDimensionLT X n) ↔ ∀ Y : C, HasInjectiveDimensionLT Y n := by
+  let := HasExt.standard C
+  simp_rw [hasProjectiveDimensionLT_iff, hasInjectiveDimensionLT_iff]
+  exact ⟨fun H Y i hi X e ↦ H X i hi e, fun H X i hi Y e ↦ H Y i hi e⟩
+
+variable (C) in
+/-- An abelian category has uniform projective dimension `≤ n` precisely when it has uniform
+injective dimension `≤ n`. -/
+theorem forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE (n : ℕ) :
+    (∀ X : C, HasProjectiveDimensionLE X n) ↔ ∀ Y : C, HasInjectiveDimensionLE Y n :=
+  forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT C (n + 1)
 
 /-- A subobject of a projective object is projective if its quotient has projective dimension
 at most one. -/
