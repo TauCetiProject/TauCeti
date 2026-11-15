@@ -47,7 +47,8 @@ steps of zero-variance components. -/
 theorem cdf_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) (x : ℝ) :
     cdf (gaussianMixtureMeasure p m v) x =
       ∑ i, (p.weights i : ℝ) * cdf (gaussianReal (m i) (v i)) x := by
-  rw [gaussianMixtureMeasure_def, ← finiteMixtureMeasure_def, cdf_finiteMixtureMeasure]
+  rw [gaussianMixtureMeasure_def, ← finiteMixtureMeasure_def,
+    cdf_finiteMixtureMeasure fun _ _ ↦ inferInstance]
 
 /-- **Quantile adjunction.** At an interior level, the Gaussian-mixture quantile lies below `x`
 exactly when the mixture cdf at `x` reaches the level. -/

@@ -14,7 +14,7 @@ public import TauCeti.Probability.Quantile
 The cdf of a probability mixture is the mixing integral of the component cdfs. Combining this
 identity with the quantile--cdf adjunction characterizes its lower quantile without continuity or
 atomlessness assumptions. For a finite mixture, the integral becomes the weighted sum of the
-component cdfs.
+component cdfs given by `TauCeti.Probability.cdf_finiteMixtureMeasure`.
 
 These are adjunction formulas rather than root characterizations: atoms and flat portions of a
 mixture cdf can prevent an interior level from being attained uniquely.
@@ -23,8 +23,6 @@ mixture cdf can prevent an interior level from being attained uniquely.
 
 * `MeasureTheory.Measure.quantile_bind_le_iff` characterizes a general mixture quantile by the
   integral of its component cdfs.
-* `TauCeti.Probability.cdf_finiteMixtureMeasure` gives the cdf of a finite mixture as a weighted
-  sum.
 * `TauCeti.Probability.quantile_finiteMixtureMeasure_le_iff` specializes the quantile adjunction
   to that finite sum.
 -/
@@ -54,25 +52,15 @@ end MeasureTheory.Measure
 
 namespace TauCeti.Probability
 
-variable {I : Type*} [Fintype I] {p : StdSimplex NNReal I} {K : I → Measure ℝ}
-  [∀ i, IsProbabilityMeasure (K i)] {u x : ℝ}
-
-/-- The cdf of a finite probability mixture is the weighted sum of its component cdfs. -/
-theorem cdf_finiteMixtureMeasure (p : StdSimplex NNReal I) (K : I → Measure ℝ)
-    [∀ i, IsProbabilityMeasure (K i)] (x : ℝ) :
-    cdf (finiteMixtureMeasure p K) x =
-      ∑ i, (p.weights i : ℝ) * cdf (K i) x := by
-  rw [cdf_eq_real, measureReal_def, finiteMixtureMeasure_def, _root_.sum_apply,
-    ENNReal.toReal_sum fun i _ ↦ by simp [ENNReal.mul_eq_top]]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [_root_.smul_apply, smul_eq_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, cdf_eq_real,
-    measureReal_def]
+variable {I : Type*} [Fintype I] {p : StdSimplex NNReal I} {K : I → Measure ℝ} {u x : ℝ}
 
 /-- At an interior level, the quantile of a finite probability mixture lies below `x` exactly
-when the weighted sum of component cdfs at `x` reaches that level. -/
-theorem quantile_finiteMixtureMeasure_le_iff (hu : u ∈ Ioo 0 1) :
+when the weighted sum of component cdfs at `x` reaches that level. Only the positive-weight
+components need to be probability measures. -/
+theorem quantile_finiteMixtureMeasure_le_iff
+    (hK : ∀ i, 0 < p.weights i → IsProbabilityMeasure (K i)) (hu : u ∈ Ioo 0 1) :
     (finiteMixtureMeasure p K).quantile u ≤ x ↔
       u ≤ ∑ i, (p.weights i : ℝ) * cdf (K i) x := by
-  rw [Measure.quantile_le_iff _ hu.1 hu.2, cdf_finiteMixtureMeasure]
+  rw [Measure.quantile_le_iff _ hu.1 hu.2, cdf_finiteMixtureMeasure hK]
 
 end TauCeti.Probability
