@@ -92,6 +92,14 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
 
+/-- The section is `c` exactly when the real section coordinates are `c.re / 2` and
+`c.im / 2`. -/
+theorem sectionValue_eq_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z c : ℂ} :
+    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
+  simp only [Complex.ext_iff, sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re,
+    ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
 /-- Two fields agree at a point when their connection coordinates and their sections agree
 there. -/
 theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
