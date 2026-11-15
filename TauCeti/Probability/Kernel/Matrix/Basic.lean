@@ -69,18 +69,24 @@ theorem toMatrix_inj [Countable β]
   · rintro rfl
     rfl
 
-/-- Composition of finite kernels is matrix multiplication, in transition order. -/
-@[simp]
-theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β]
-    [MeasurableSingletonClass γ] (κ : Kernel α β) (η : Kernel β γ)
-    [IsFiniteKernel κ] [IsFiniteKernel η] :
-    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
-  funext a c
+/-- Propagating an initial finite measure is multiplication of its mass row vector by the
+transition matrix. The target space needs no measurable singletons. -/
+theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
+    (κ : Kernel α β) [IsFiniteKernel κ]
+    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
+    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
   apply ENNReal.coe_injective
-  simp only [coe_toMatrix_apply, Matrix.mul_apply, ENNReal.ofNNReal_finsetSum,
-    ENNReal.coe_mul]
-  rw [comp_apply' _ _ _ (measurableSet_singleton _), lintegral_fintype]
-  exact Finset.sum_congr rfl fun b _ => mul_comm _ _
+  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
+    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
+  simp [Measure.comp_eq_sum_of_countable]
+
+/-- Composition of finite kernels is matrix multiplication, in transition order. The final
+target space needs no measurable singletons. -/
+@[simp]
+theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β] (κ : Kernel α β)
+    (η : Kernel β γ) [IsFiniteKernel κ] [IsFiniteKernel η] :
+    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix :=
+  funext fun a => funext (comp_apply_singleton_eq_vecMul η (κ a))
 
 /-- The identity kernel has the identity transition matrix. -/
 @[simp]
@@ -108,36 +114,6 @@ theorem toMatrix_mem_rowStochastic [Fintype α] [DecidableEq α]
   apply ENNReal.coe_injective
   simp only [ENNReal.ofNNReal_finsetSum, coe_toMatrix_apply, ENNReal.coe_one]
   simp
-
-/-- Propagating an initial finite measure is multiplication of its mass row vector by the
-transition matrix. The target space needs no measurable singletons: the singleton mass is computed
-through a common measurable hull of `{b}` for the finitely many measures `κ a`. -/
-theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
-    (κ : Kernel α β) [IsFiniteKernel κ]
-    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
-    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
-  -- a common measurable hull of `{b}` for all the finitely many measures `κ a`
-  set t : Set β := ⋂ a, toMeasurable (κ a) {b}
-  have ht : MeasurableSet t := MeasurableSet.iInter fun a => measurableSet_toMeasurable _ _
-  have hbt : {b} ⊆ t := Set.subset_iInter fun a => subset_toMeasurable _ _
-  have hκt : ∀ a, κ a t = κ a {b} := fun a =>
-    le_antisymm ((measure_mono (Set.iInter_subset _ a)).trans_eq (measure_toMeasurable _))
-      (measure_mono hbt)
-  have hsum : ∀ s, MeasurableSet s → (κ ∘ₘ ν) s = ∑ a, κ a s * ν {a} := fun s hs => by
-    rw [Measure.bind_apply hs κ.aemeasurable, lintegral_fintype]
-  have hb : (κ ∘ₘ ν) {b} = ∑ a, κ a {b} * ν {a} := by
-    refine le_antisymm ?_ ?_
-    · calc (κ ∘ₘ ν) {b} ≤ (κ ∘ₘ ν) t := measure_mono hbt
-        _ = ∑ a, κ a {b} * ν {a} := by rw [hsum t ht]; simp_rw [hκt]
-    · rw [measure_eq_iInf]
-      refine le_iInf fun s => le_iInf fun hs => le_iInf fun hsm => ?_
-      rw [hsum s hsm]
-      exact Finset.sum_le_sum fun a _ => mul_le_mul_left (measure_mono hs) _
-  apply ENNReal.coe_injective
-  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
-    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
-  rw [hb]
-  exact Finset.sum_congr rfl fun a _ => mul_comm _ _
 
 end ProbabilityTheory.Kernel
 
