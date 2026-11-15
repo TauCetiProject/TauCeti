@@ -143,9 +143,9 @@ theorem isNullSet_boundary {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ
     (IsManifold.chart_mem_maximalAtlas x) hsource).mp hz.1
 
 omit [ChartedSpace H M] in
-/-- For an open subset `U` of `M`, the subset `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` of
-a finite-dimensional real model space differs from its interior only within `frontier (range I)`,
-so the difference has additive Haar measure zero. -/
+/-- For an open subset `U` of `M`, the subset `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` of a
+finite-dimensional real model space differs from its interior only within `frontier (range I)`, so
+the difference has additive Haar measure zero. -/
 theorem _root_.OpenPartialHomeomorph.measure_diff_interior_extend_eq_zero
     {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     (φ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U)
@@ -153,31 +153,27 @@ theorem _root_.OpenPartialHomeomorph.measure_diff_interior_extend_eq_zero
     μ (((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) \
       interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)) = 0 := by
   set W := I.symm ⁻¹' (φ.target ∩ φ.symm ⁻¹' U)
-  have hWopen : IsOpen W := (φ.isOpen_inter_preimage_symm hU).preimage I.continuous_symm
-  have hVeq : (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U = W ∩ range I := by
-    ext z
-    simp only [W, OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_coe_symm,
-      mem_inter_iff, mem_preimage, Function.comp_apply]
+  have hWo : IsOpen W := (φ.isOpen_inter_preimage_symm hU).preimage I.continuous_symm
+  have hV : (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U = W ∩ range I := by
+    ext z; simp only [W, OpenPartialHomeomorph.extend_target,
+      OpenPartialHomeomorph.extend_coe_symm, mem_inter_iff, mem_preimage, Function.comp_apply]
     tauto
-  refine measure_mono_null ?_ (I.convex_range.addHaar_frontier μ)
-  intro z ⟨hzV, hzint⟩
-  rw [hVeq] at hzV hzint
-  rw [interior_inter, hWopen.interior_eq] at hzint
+  refine measure_mono_null (fun z ⟨hzV, hzint⟩ ↦ ?_) (I.convex_range.addHaar_frontier μ)
+  rw [hV] at hzV hzint; rw [interior_inter, hWo.interior_eq] at hzint
   exact ⟨subset_closure hzV.2, fun hzr ↦ hzint ⟨hzV.1, hzr⟩⟩
 
 omit [ChartedSpace H M] in
 /-- Restricting an additive Haar measure on a finite-dimensional real model space to the interior
-of `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` for open `U` gives the same measure as
-restricting to the full set up to `frontier (range I)`. -/
+of `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` for open `U` agrees with restricting to the full
+set up to `frontier (range I)`. -/
 theorem _root_.OpenPartialHomeomorph.measure_restrict_interior_extend_eq
     {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     (φ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U)
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     μ.restrict (interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)) =
       μ.restrict ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
-  Measure.restrict_congr_set
-    (ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 interior_subset, measure_empty],
-      φ.measure_diff_interior_extend_eq_zero hU μ⟩)
+  Measure.restrict_congr_set (ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 interior_subset, measure_empty],
+    φ.measure_diff_interior_extend_eq_zero hU μ⟩)
 
 section Image
 

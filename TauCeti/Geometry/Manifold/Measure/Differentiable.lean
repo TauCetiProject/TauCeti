@@ -76,75 +76,56 @@ theorem IsNullSet.image_of_mdifferentiableOn (hA : IsNullSet I A)
     exact ⟨hxA, by rwa [extChartAt_source]⟩
 
 omit [LindelofSpace M] in
-/-- Within a single preferred chart at `x₀`, the interior coordinates of a `C¹` maximal-atlas chart
-`φ` landing in `A ∩ (chartAt H x₀).source` have Haar measure zero whenever `A` is null. -/
 private theorem measure_preimage_extend_symm_inter_chartAt_eq_zero (hA : IsNullSet I A)
     {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I 1 M)
     (x₀ : M) (μ : Measure E) [μ.IsAddHaarMeasure] :
     μ {z ∈ interior (φ.extend I).target |
       (φ.extend I).symm z ∈ A ∧ (φ.extend I).symm z ∈ (chartAt H x₀).source} = 0 := by
-  let S₀ := extChartAt I x₀ '' (A ∩ (extChartAt I x₀).source)
-  let U₀ := interior ((extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' φ.source)
-  have hS₀ : μ (S₀ ∩ U₀) = 0 :=
-    measure_mono_null inter_subset_left (hA.chartwise x₀ μ)
-  have hU₀sub : U₀ ⊆ (I.extendCoordChange (chartAt H x₀) φ).source := by
-    rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
-      φ.extend_source]
-    exact interior_subset
-  have hdiff : DifferentiableOn ℝ (I.extendCoordChange (chartAt H x₀) φ) (S₀ ∩ U₀) :=
+  have hdiff : DifferentiableOn ℝ (I.extendCoordChange (chartAt H x₀) φ)
+      ((extChartAt I x₀ '' (A ∩ (extChartAt I x₀).source)) ∩
+        interior ((extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' φ.source)) :=
     ((I.contDiffOn_extendCoordChange (IsManifold.chart_mem_maximalAtlas x₀) hφ).differentiableOn
-      one_ne_zero).mono (inter_subset_right.trans hU₀sub)
-  refine measure_mono_null ?_ (hdiff.addHaar_image_eq_zero μ μ le_rfl hS₀)
+      one_ne_zero).mono (inter_subset_right.trans (by
+        rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
+          φ.extend_source]; exact interior_subset))
+  refine measure_mono_null ?_ (hdiff.addHaar_image_eq_zero μ μ le_rfl
+    (measure_mono_null inter_subset_left (hA.chartwise x₀ μ)))
   rintro z ⟨hzint, hzA, hzx₀⟩
   have hzt : z ∈ (φ.extend I).target := interior_subset hzint
-  have hzxφ : (φ.extend I).symm z ∈ φ.source := by
-    rw [← φ.extend_source (I := I)]; exact (φ.extend I).map_target hzt
+  have hzxφ : (φ.extend I).symm z ∈ φ.source :=
+    φ.extend_source (I := I) ▸ (φ.extend I).map_target hzt
   have hzx₀' : (φ.extend I).symm z ∈ (extChartAt I x₀).source := by rwa [extChartAt_source]
-  refine ⟨extChartAt I x₀ ((φ.extend I).symm z), ⟨⟨_, ⟨hzA, hzx₀'⟩, rfl⟩, ?_⟩, ?_⟩
-  · have hint := ModelWithCorners.mem_interior_extend_target_of_mem_maximalAtlas one_ne_zero
-      hφ (IsManifold.chart_mem_maximalAtlas x₀) hzxφ hzx₀
-      (by rwa [(φ.extend I).right_inv hzt])
-    have hpre : (extChartAt I x₀).symm ⁻¹' φ.source ∈
-        𝓝 (extChartAt I x₀ ((φ.extend I).symm z)) := by
-      refine (continuousAt_extChartAt_symm' hzx₀').preimage_mem_nhds ?_
-      rw [(extChartAt I x₀).left_inv hzx₀']
-      exact φ.open_source.mem_nhds hzxφ
-    exact mem_interior_iff_mem_nhds.2 (inter_mem (mem_interior_iff_mem_nhds.1 hint) hpre)
-  · simp only [ModelWithCorners.extendCoordChange, PartialEquiv.coe_trans, Function.comp_apply,
-      extChartAt, (chartAt H x₀).extend_left_inv hzx₀, (φ.extend I).right_inv hzt]
+  exact ⟨extChartAt I x₀ ((φ.extend I).symm z), ⟨⟨_, ⟨hzA, hzx₀'⟩, rfl⟩,
+    mem_interior_iff_mem_nhds.2 (inter_mem (mem_interior_iff_mem_nhds.1
+      (ModelWithCorners.mem_interior_extend_target_of_mem_maximalAtlas one_ne_zero
+        hφ (IsManifold.chart_mem_maximalAtlas x₀) hzxφ hzx₀ (by rwa [(φ.extend I).right_inv hzt])))
+      ((continuousAt_extChartAt_symm' hzx₀').preimage_mem_nhds
+        (by rw [(extChartAt I x₀).left_inv hzx₀']; exact φ.open_source.mem_nhds hzxφ)))⟩,
+    by simp only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply, extChartAt,
+      (chartAt H x₀).extend_left_inv hzx₀, (φ.extend I).right_inv hzt]⟩
 
 omit [LindelofSpace M] in
-/-- For any `C¹` maximal-atlas chart `φ` and any chartwise null set `A`, the coordinates in
-`(φ.extend I).target` sent by `(φ.extend I).symm` into `A` form a Haar-null set (including along
-the boundary of `range I`, without any Lindelöf hypothesis on `M`). -/
+/-- For any `C¹` chart `φ` and null set `A`, `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' A` has
+Haar measure zero (including along `∂(range I)`, without Lindelöf hypotheses on `M`). -/
 theorem IsNullSet.measure_inter_preimage_extend_symm_eq_zero (hA : IsNullSet I A)
     {φ : OpenPartialHomeomorph M H} (hφ : φ ∈ IsManifold.maximalAtlas I 1 M)
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     μ ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' A) = 0 := by
-  have hopen : ∀ x₀ : M, IsOpen
-      (interior (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' (chartAt H x₀).source) := fun x₀ ↦
-    (φ.continuousOn_extend_symm.mono interior_subset).isOpen_inter_preimage
+  let U : M → Set E :=
+    fun x₀ ↦ interior (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' (chartAt H x₀).source
+  obtain ⟨T, hTcnt, hTcov⟩ := isOpen_iUnion_countable U fun x₀ ↦
+    ((φ.continuousOn_extend_symm (I := I)).mono interior_subset).isOpen_inter_preimage
       isOpen_interior (chartAt H x₀).open_source
-  obtain ⟨T, hTcnt, hTcov⟩ := isOpen_iUnion_countable _ hopen
-  have hint_null : μ {z ∈ interior (φ.extend I).target | (φ.extend I).symm z ∈ A} = 0 := by
-    refine measure_mono_null (t := ⋃ x₀ ∈ T, {z ∈ interior (φ.extend I).target |
-        (φ.extend I).symm z ∈ A ∧ (φ.extend I).symm z ∈ (chartAt H x₀).source})
-      (fun z ⟨hzint, hzA⟩ ↦ ?_)
-      ((measure_biUnion_null_iff hTcnt).2 fun x₀ _ ↦
-        measure_preimage_extend_symm_inter_chartAt_eq_zero hA hφ x₀ μ)
-    have hzU : z ∈ ⋃ x₀ ∈ T, interior (φ.extend I).target ∩
-        (φ.extend I).symm ⁻¹' (chartAt H x₀).source :=
-      hTcov.symm ▸ mem_iUnion.2 ⟨(φ.extend I).symm z, hzint, mem_chart_source H _⟩
+  have hint : μ {z ∈ interior (φ.extend I).target | (φ.extend I).symm z ∈ A} = 0 := by
+    refine measure_mono_null (fun z ⟨hzint, hzA⟩ ↦ ?_) ((measure_biUnion_null_iff hTcnt).2
+      fun x₀ _ ↦ measure_preimage_extend_symm_inter_chartAt_eq_zero hA hφ x₀ μ)
+    have hzU : z ∈ ⋃ x₀ ∈ T, U x₀ := by
+      rw [hTcov]; exact mem_iUnion.2 ⟨(φ.extend I).symm z, hzint, mem_chart_source H _⟩
     rcases mem_iUnion₂.1 hzU with ⟨x₀, hx₀T, _, hzx₀⟩
     exact mem_iUnion₂.2 ⟨x₀, hx₀T, hzint, hzA, hzx₀⟩
-  have hbd_null : μ (((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' univ) \
-      interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' univ)) = 0 :=
-    φ.measure_diff_interior_extend_eq_zero isOpen_univ μ
-  simp only [preimage_univ, inter_univ] at hbd_null
-  refine measure_mono_null ?_ (measure_union_null hbd_null hint_null)
-  intro z ⟨hzt, hzA⟩
-  by_cases hz : z ∈ interior (φ.extend I).target
-  · exact Or.inr ⟨hz, hzA⟩
-  · exact Or.inl ⟨hzt, hz⟩
+  have hbd := φ.measure_diff_interior_extend_eq_zero (I := I) isOpen_univ μ
+  simp only [preimage_univ, inter_univ] at hbd
+  exact measure_mono_null (fun z ⟨hzt, hzA⟩ ↦ (em (z ∈ interior (φ.extend I).target)).elim
+    (fun hz ↦ Or.inr ⟨hz, hzA⟩) (fun hz ↦ Or.inl ⟨hzt, hz⟩)) (measure_union_null hbd hint)
 
 end TauCeti
