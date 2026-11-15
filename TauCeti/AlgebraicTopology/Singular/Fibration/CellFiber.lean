@@ -452,6 +452,24 @@ lemma mapsTo_cellDiskPullbackMap (hf : f ≫ p' = p) (n : ℕ) (j : cell C n) :
         {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1}) :=
   mapsTo_preimage_of_comp_eq (cellDiskPullbackMap_comp_pullbackFst hf n j) _
 
+omit [T2Space B] in
+/-- The identifications of the fibres over the centres of the disk and of the cell intertwine
+`Pⱼ ⟶ P'ⱼ` with `f`. -/
+@[reassoc]
+lemma cellDiskPullbackFiberHomeomorph_naturality (hf : f ≫ p' = p) (n : ℕ) (j : cell C n) :
+    (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j)).hom ≫
+        preimageMap f hf {map n j 0} =
+      preimageMap (cellDiskPullbackMap C f hf n j) (cellDiskPullbackMap_comp_pullbackFst hf n j)
+          {x | (x : ULift.{u} (Fin n → ℝ)) = 0} ≫
+        (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p' C n j)).hom := by
+  ext x
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  -- Both sides are `f` applied to the point of `E` underlying `x`.
+  refine (preimageMap_apply_coe f hf _ _).trans <|
+    (congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply n j x)).trans <|
+    Eq.trans ?_ (coe_cellDiskPullbackFiberHomeomorph_apply n j _).symm
+  rw [preimageMap_apply_coe, coe_cellDiskPullbackMap_apply]
+
 variable (C f) in
 /-- The map `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹))` of consecutive stages of the skeletal
 filtrations induced by a map `f : E ⟶ E'` over `B`. -/
@@ -541,24 +559,9 @@ theorem cellDiskPullbackPairSingularHomologyIso_hom_naturality (hf : f ≫ p' = 
           (mapsTo_cellDiskPullbackMap hf n j))
           (ModuleCat.of R R) (q + n) ≫
         (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom := by
-  have hhomeo : (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j)).hom ≫
-      preimageMap f hf {map n j 0} =
-      preimageMap (cellDiskPullbackMap C f hf n j) (cellDiskPullbackMap_comp_pullbackFst hf n j)
-          {x | (x : ULift.{u} (Fin n → ℝ)) = 0} ≫
-        (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p' C n j)).hom := by
-    ext x
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
-    -- Both sides are `f` applied to the point of `E` underlying `x`.
-    refine (preimageMap_apply_coe f hf _ _).trans <|
-      (congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply n j x)).trans <|
-      Eq.trans ?_ (coe_cellDiskPullbackFiberHomeomorph_apply n j _).symm
-    rw [preimageMap_apply_coe, coe_cellDiskPullbackMap_apply]
   rw [cellDiskPullbackPairSingularHomologyIso, cellDiskPullbackPairSingularHomologyIso,
     Iso.trans_hom, Iso.trans_hom, Category.assoc, Functor.mapIso_hom, Functor.mapIso_hom,
-    ← Functor.map_comp]
-  refine (congrArg (fun φ ↦ _ ≫ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-    (ModuleCat.of R R)).map φ) hhomeo).trans ?_
-  rw [Functor.map_comp]
+    ← Functor.map_comp, cellDiskPullbackFiberHomeomorph_naturality, Functor.map_comp]
   -- The pullbacks appear with two defeq but syntactically different types, so the naturality of
   -- the disk isomorphism is applied by `exact` rather than rewritten.
   exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
