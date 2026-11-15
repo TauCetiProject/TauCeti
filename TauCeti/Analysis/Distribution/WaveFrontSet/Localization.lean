@@ -55,6 +55,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
+* `Distribution.exists_nhdsSet_cone_of_forall_isMicrolocallySmoothAt`: the same, uniformly near a
+  compact set of points of microlocal smoothness in a common direction.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -257,6 +259,58 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
   obtain ⟨g, hg, hψg⟩ := hUφ ψ hψ
   exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul hg.contDiffOn hψg hc hΓ'
     (hdecay N)
+
+/-- **Uniform rapid decay near a compact set.** If `T` is microlocally smooth at `(x, ξ)` for every
+`x` in a compact set `K`, there are a neighbourhood `V` of `K` and an open cone `Γ` containing `ξ`
+such that the localized Fourier transform of `T` decays rapidly on `Γ` for every cutoff whose
+support lies in `V` except for a part outside the support of `T`. -/
+theorem exists_nhdsSet_cone_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)} {K : Set E}
+    (hK : IsCompact K) {ξ : E} (h : ∀ x ∈ K, T.IsMicrolocallySmoothAt x ξ) :
+    ∃ V ∈ 𝓝ˢ K, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ V ∪ (dsupport T)ᶜ →
+        ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C := by
+  classical
+  -- For each point of `K`, a neighbourhood and an open cone with uniform decay.
+  choose! U hU Γ hΓ hξΓ hcone hdecay using fun x hx ↦ (h x hx).exists_nhds_cone
+  -- Finitely many of the interiors of these neighbourhoods cover `K`.
+  obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover (fun x ↦ interior (U x))
+    fun x hx ↦ interior_mem_nhds.2 (hU x hx)
+  refine ⟨⋃ x ∈ t, interior (U x),
+    (isOpen_biUnion fun _ _ ↦ isOpen_interior).mem_nhdsSet.2 hKt,
+    ⋂ x ∈ t, Γ x, isOpen_biInter_finset fun x hx ↦ hΓ x (htK x hx),
+    mem_iInter₂.2 fun x hx ↦ hξΓ x (htK x hx),
+    fun s hs η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x (htK x hx) s hs η (mem_iInter₂.1 hη x hx),
+    fun φ hφ N ↦ ?_⟩
+  -- Split `φ` into pieces supported off `dsupport T` or in one of the chosen neighbourhoods.
+  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate
+    (fun i : Option t ↦ i.elim (dsupport T)ᶜ fun x ↦ interior (U x))
+    (fun i ↦ i.rec isClosed_dsupport.isOpen_compl fun _ ↦ isOpen_interior) fun y hy ↦ by
+      rcases hφ hy with hy | hy
+      · obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 hy
+        exact mem_iUnion.2 ⟨some ⟨x, hxt⟩, hyx⟩
+      · exact mem_iUnion.2 ⟨none, hy⟩
+  -- Each piece decays rapidly on the intersection of the cones.
+  have hpiece : ∀ i : s, ∃ C, ∀ η ∈ ⋂ x ∈ t, Γ x,
+      (1 + ‖η‖) ^ N * ‖T.localFourier (ψ i) η‖ ≤ C := by
+    rintro ⟨i, hi⟩
+    have hψi := hψ ⟨i, hi⟩
+    cases i with
+    | none =>
+      refine ⟨0, fun η _ ↦ ?_⟩
+      rw [localFourier_eq_zero_of_disjoint (disjoint_left.2 fun y hy hyT ↦ hψi hy hyT),
+        norm_zero, mul_zero]
+    | some x =>
+      obtain ⟨C, hC⟩ := hdecay x (htK x x.2) _ (hψi.trans interior_subset) N
+      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.2)⟩
+  choose C hC using hpiece
+  refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
+  rw [← hsum, localFourier_sum_cutoff]
+  calc (1 + ‖η‖) ^ N * ‖∑ i, T.localFourier (ψ i) η‖
+      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.localFourier (ψ i) η‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ i, C i := Finset.sum_le_sum fun i _ ↦ hC i η hη
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}

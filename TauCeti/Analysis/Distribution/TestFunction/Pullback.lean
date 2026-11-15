@@ -50,6 +50,8 @@ used to push forward currents whose support is compact, see
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
+* `TestFunction.cutoffCompCLM`: the composition `ψ ↦ χ • (ψ ∘ Φ)` of scalar or vector-valued test
+  functions, the pullback with a cutoff of test `0`-forms.
 
 ## Implementation notes
 
@@ -489,6 +491,34 @@ theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', �
     ext v
     simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
   · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- The **composition with a cutoff** `ψ ↦ χ • (ψ ∘ Φ)` of `F`-valued test functions on `Ω'` with
+a map `Φ` smooth on `Ω`, where `χ` is a test function on `Ω`: the pullback with a cutoff of `ψ`
+viewed as a test `0`-form (`TestFunction.cutoffCompCLM_apply`). It is supported in `tsupport χ`,
+so `Φ` need not be proper. -/
+def cutoffCompCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
+    𝓓(Ω', F) →L[ℝ] 𝓓(Ω, F) :=
+  postcompCLM (𝕜 := ℝ) ((constOfIsEmptyLIE ℝ E F (Fin 0)).symm : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] F) ∘L
+    cutoffPullbackCLM χ Φ hΦ ∘L
+      postcompCLM (𝕜 := ℝ) (constOfIsEmptyLIE ℝ E' F (Fin 0) : F →L[ℝ] E' [⋀^Fin 0]→L[ℝ] F)
+
+/-- The composition with a cutoff is `x ↦ χ x • ψ (Φ x)`. -/
+@[simp]
+theorem cutoffCompCLM_apply (ψ : 𝓓(Ω', F)) (x : E) :
+    cutoffCompCLM χ Φ hΦ ψ x = χ x • ψ (Φ x) := by
+  simp [cutoffCompCLM]
+
+/-- The support of a composition with a cutoff lies in the support of the cutoff, over the support
+of the test function. -/
+theorem tsupport_cutoffCompCLM_subset (ψ : 𝓓(Ω', F)) :
+    tsupport (cutoffCompCLM χ Φ hΦ ψ) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport ψ := by
+  -- Transport the support bound for test `0`-forms through the identification with values.
+  rw [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    postcompCLM_apply]
+  refine (tsupport_comp_subset (_root_.map_zero _) _).trans <|
+    (tsupport_cutoffPullbackCLM_subset _).trans <| inter_subset_inter_right _ <| preimage_mono ?_
+  rw [postcompCLM_apply]
+  exact tsupport_comp_subset (_root_.map_zero _) _
 
 end CutoffPullback
 
