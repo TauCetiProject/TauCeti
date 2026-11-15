@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
@@ -20,7 +21,10 @@ constant symplectic form `TauCeti.SymplecticForm.constSmooth ω` on `V`. Its **r
 
 with `dλ = ω` (`TauCeti.SymplecticForm.mextDeriv_radialPrimitive`). Its Liouville field is half
 the position field, `ι_Z ω = λ` for `Z(x) = x / 2`
-(`TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`).
+(`TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`). Along a curve `β` in `V` its line
+integral is the symplectic action `½ ∫ ω(β, β')`
+(`TauCeti.SymplecticForm.pathIntegral_radialPrimitive`), which for the boundary loop of a disc is
+the symplectic area of the disc.
 
 ## Main definitions
 
@@ -30,6 +34,7 @@ the position field, `ι_Z ω = λ` for `Z(x) = x / 2`
 
 * `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`.
 * `TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`: `ι_Z ω = λ` for `Z(x) = x / 2`.
+* `TauCeti.SymplecticForm.pathIntegral_radialPrimitive`: `∫_β λ = ½ ∫ ω(β, β')`.
 
 ## References
 
@@ -89,6 +94,19 @@ theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.1 = ω.constSmo
     fin_cases i <;> rfl
   conv_rhs => rw [hv]
   exact h.symm
+
+/-- The line integral of the radial primitive `λₓ(v) = ω(x, v) / 2` along a curve `β` in `V` is
+half the integral of `ω(β, β')`. -/
+theorem pathIntegral_radialPrimitive (β : ℝ → V) (a c : ℝ) :
+    pathIntegral ω.radialPrimitive.1 β a c = 2⁻¹ * ∫ t in a..c, ω (β t) (deriv β t) := by
+  rw [pathIntegral_def, ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  have hv : (fun _ : Fin 1 ↦ Manifold.curveVelocity 𝓘(ℝ, V) β t) = ![deriv β t] := by
+    funext k
+    fin_cases k
+    exact Manifold.curveVelocity_eq_deriv
+  simp only [hv]
+  exact ω.radialPrimitive_apply (β t) (deriv β t)
 
 /-- The Liouville field of the radial primitive is half the position field:
 `ι_Z ω = λ` for `Z(x) = x / 2`. -/

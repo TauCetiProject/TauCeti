@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Symplectic.Duality
 
 /-!
 # Symplectic Stokes on a finite-energy punctured disc
@@ -29,6 +30,15 @@ disc the energy is automatically finite, which gives Stokes' formula on the clos
 loop area of the boundary circle in
 `TauCeti.SymplecticForm.integral_fderiv_apply_closedBall_eq_loopArea`, and in the real coordinates
 `ℝ × ℝ ≃ ℂ`, `TauCeti.SymplecticForm.integral_fderiv_apply_preimage_closedBall`).
+
+Holomorphic discs are usually known to be `C²` only inside, and `C¹` up to their boundary. For
+such a map Stokes' formula holds on the open disc
+(`TauCeti.SymplecticForm.integral_fderiv_apply_ball_of_contDiffOn`): apply the closed-disc formula
+on the concentric discs of radius `r < b`, and let `r` tend to `b`. The areas converge because the
+differential extends continuously to the closed disc, so the area density is integrable
+(`TauCeti.SymplecticForm.integrableOn_fderiv_apply_ball_of_contDiffOn`), and the boundary actions
+converge because they are integrals over `[-π, π]` of a function jointly continuous in the radius
+and the angle (`TauCeti.SymplecticForm.continuousOn_integral_apply_deriv_circleMap`).
 
 ## References
 
@@ -192,6 +202,130 @@ theorem integral_fderiv_apply_closedBall (ω : SymplecticForm V) {u : ℂ → V}
   rw [← setIntegral_congr_set (hD ▸ sdiff_null_ae_eq_self (measure_singleton z₀))]
   exact ω.integral_fderiv_apply_punctured_disc z₀ hb (fun z hz ↦ hu z (hsub hz))
     ((hcont.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set hsub)
+
+/-- The area density of a map which is `C¹` on a closed disc is integrable on the open disc:
+its differential extends continuously to the closed disc. -/
+theorem integrableOn_fderiv_apply_ball_of_contDiffOn (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ)
+    {b : ℝ} (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) (Metric.ball z₀ b) := by
+  rcases le_or_gt b 0 with hb | hb
+  · simp [Metric.ball_eq_empty.mpr hb]
+  have hK : UniqueDiffOn ℝ (Metric.closedBall z₀ b) :=
+    uniqueDiffOn_convex (convex_closedBall z₀ b)
+      (by rw [interior_closedBall z₀ hb.ne']; exact Metric.nonempty_ball.mpr hb)
+  have hDu := hu.continuousOn_fderivWithin hK le_rfl
+  have hc : ContinuousOn (fun z ↦ ω (fderivWithin ℝ u (Metric.closedBall z₀ b) z 1)
+      (fderivWithin ℝ u (Metric.closedBall z₀ b) z I)) (Metric.closedBall z₀ b) :=
+    ω.continuousOn_apply_comp (hDu.clm_apply continuousOn_const)
+      (hDu.clm_apply continuousOn_const)
+  refine ((hc.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
+    Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ ?_) measurableSet_ball
+  -- On the open disc the derivative within the closed disc is the derivative.
+  dsimp only
+  rw [fderivWithin_of_mem_nhds
+    (mem_of_superset (Metric.isOpen_ball.mem_nhds hz) Metric.ball_subset_closedBall)]
+
+omit [FiniteDimensional ℝ V] in
+/-- Along a circle of radius at most `b` around `z₀`, a map which is `C¹` on the closed disc
+`‖z - z₀‖ ≤ b` has the derivative given by its derivative within that disc. -/
+private theorem deriv_circleMap_eq_fderivWithin {u : ℂ → V} {z₀ : ℂ} {b s : ℝ}
+    (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) (hs : s ∈ Icc 0 b) (θ : ℝ) :
+    deriv (fun θ ↦ u (circleMap z₀ s θ)) θ =
+      fderivWithin ℝ u (Metric.closedBall z₀ b) (circleMap z₀ s θ) (circleMap 0 s θ * I) := by
+  have hmem (θ : ℝ) : circleMap z₀ s θ ∈ Metric.closedBall z₀ b := by
+    rw [Metric.mem_closedBall, dist_eq_norm, circleMap_sub_center, norm_circleMap_zero,
+      abs_of_nonneg hs.1]
+    exact hs.2
+  exact (((hu.differentiableOn one_ne_zero _ (hmem θ)).hasFDerivWithinAt).comp_hasDerivAt θ
+    (hasDerivAt_circleMap z₀ s θ) (Eventually.of_forall hmem)).deriv
+
+/-- For a map which is `C¹` on the closed disc `‖z - z₀‖ ≤ b`, the boundary actions
+`∫ ω(u, ∂_θ u)` of the concentric circles of radius `s ∈ [0, b]` depend continuously on `s`, up to
+the boundary circle. -/
+theorem continuousOn_integral_apply_deriv_circleMap (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ)
+    {b : ℝ} (hb : 0 ≤ b) (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    ContinuousOn (fun s ↦ ∫ θ in -π..π, ω (u (circleMap z₀ s θ))
+      (deriv (fun θ ↦ u (circleMap z₀ s θ)) θ)) (Icc 0 b) := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp
+  have hK : UniqueDiffOn ℝ (Metric.closedBall z₀ b) :=
+    uniqueDiffOn_convex (convex_closedBall z₀ b)
+      (by rw [interior_closedBall z₀ hb.ne']; exact Metric.nonempty_ball.mpr hb)
+  set Du := fderivWithin ℝ u (Metric.closedBall z₀ b)
+  have hDu : ContinuousOn Du (Metric.closedBall z₀ b) := hu.continuousOn_fderivWithin hK le_rfl
+  -- Clamp the radius to `[0, b]`, so that the circles stay in the closed disc.
+  set ρ : ℝ → ℝ := fun s ↦ max 0 (min s b)
+  have hmem (s θ : ℝ) : circleMap z₀ (ρ s) θ ∈ Metric.closedBall z₀ b := by
+    rw [Metric.mem_closedBall, dist_eq_norm, circleMap_sub_center, norm_circleMap_zero,
+      abs_of_nonneg (le_max_left _ _)]
+    exact max_le hb.le (min_le_right _ _)
+  have hcm : Continuous fun p : ℝ × ℝ ↦ circleMap z₀ (ρ p.1) p.2 := by
+    unfold circleMap
+    fun_prop
+  have hcm0 : Continuous fun p : ℝ × ℝ ↦ circleMap 0 (ρ p.1) p.2 := by
+    unfold circleMap
+    fun_prop
+  have hg : Continuous fun p : ℝ × ℝ ↦ ω (u (circleMap z₀ (ρ p.1) p.2))
+      (Du (circleMap z₀ (ρ p.1) p.2) (circleMap 0 (ρ p.1) p.2 * I)) :=
+    ω.continuous_apply_comp
+      (hu.continuousOn.comp_continuous hcm fun p ↦ hmem p.1 p.2)
+      ((hDu.comp_continuous hcm fun p ↦ hmem p.1 p.2).clm_apply (hcm0.mul continuous_const))
+  refine (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume)
+    (f := fun s θ ↦ ω (u (circleMap z₀ (ρ s) θ))
+      (Du (circleMap z₀ (ρ s) θ) (circleMap 0 (ρ s) θ * I))) hg (-π) π).continuousOn.congr
+    fun s hs ↦ ?_
+  simp only [ρ, max_eq_right hs.1, min_eq_left hs.2, deriv_circleMap_eq_fderivWithin hu hs, Du]
+
+/-- **Stokes' formula on a disc with `C¹` boundary values.** For a map which is `C²` on the open
+disc `‖z - z₀‖ < b` and `C¹` up to its boundary circle, the integral over the open disc of the
+pullback of a constant symplectic form is half the integral of `ω(u, ∂_θ u)` along the boundary
+circle. Unlike `TauCeti.SymplecticForm.integral_fderiv_apply_closedBall`, no second derivative is
+required at the boundary. -/
+theorem integral_fderiv_apply_ball_of_contDiffOn (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ)
+    {b : ℝ} (hb : 0 < b) (hu : ∀ z ∈ Metric.ball z₀ b, ContDiffAt ℝ 2 u z)
+    (hu₁ : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    (∫ z in Metric.ball z₀ b, ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
+        (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
+  set action : ℝ → ℝ := fun s ↦ ∫ θ in -π..π, ω (u (circleMap z₀ s θ))
+    (deriv (fun θ ↦ u (circleMap z₀ s θ)) θ)
+  -- Exhaust the open disc by the closed discs of radii `r n = b - b / (n + 2)`.
+  set r : ℕ → ℝ := fun n ↦ b - b / (n + 2)
+  have hr (n : ℕ) : 0 < r n ∧ r n < b := by
+    have h2 : (0 : ℝ) < n + 2 := by positivity
+    refine ⟨?_, sub_lt_self _ (div_pos hb h2)⟩
+    rw [sub_pos, div_lt_iff₀ h2]
+    nlinarith
+  have hrlim : Tendsto r atTop (𝓝 b) := by
+    have : Tendsto (fun n : ℕ ↦ b / ((n : ℝ) + 2)) atTop (𝓝 0) :=
+      tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+    simpa using tendsto_const_nhds.sub this
+  have hunion : (⋃ n, Metric.closedBall z₀ (r n)) = Metric.ball z₀ b := by
+    refine Subset.antisymm (iUnion_subset fun n ↦ Metric.closedBall_subset_ball (hr n).2)
+      fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := (hrlim.eventually (lt_mem_nhds (Metric.mem_ball.mp hz))).exists
+    exact mem_iUnion.mpr ⟨n, Metric.mem_closedBall.mpr hn.le⟩
+  -- The areas of the closed discs converge to the area of the open disc.
+  have hlim := tendsto_setIntegral_of_monotone (μ := volume)
+    (fun n ↦ measurableSet_closedBall)
+    (fun m n hmn ↦ Metric.closedBall_subset_closedBall (by
+      have : (m : ℝ) ≤ n := by exact_mod_cast hmn
+      simp only [r]
+      gcongr))
+    (hunion ▸ ω.integrableOn_fderiv_apply_ball_of_contDiffOn z₀ hu₁)
+  rw [hunion] at hlim
+  -- On each closed disc, Stokes' formula holds by `integral_fderiv_apply_closedBall`, and the
+  -- boundary actions converge to that of the boundary circle.
+  have heq (n : ℕ) : (∫ z in Metric.closedBall z₀ (r n), ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
+      (1 / 2 : ℝ) * action (r n) :=
+    ω.integral_fderiv_apply_closedBall z₀ (hr n).1 fun z hz ↦
+      hu z (Metric.closedBall_subset_ball (hr n).2 hz)
+  have hstokes : Tendsto (fun n ↦ (1 / 2 : ℝ) * action (r n)) atTop
+      (𝓝 ((1 / 2 : ℝ) * action b)) :=
+    ((ω.continuousOn_integral_apply_deriv_circleMap z₀ hb.le hu₁ b ⟨hb.le, le_rfl⟩).tendsto.comp
+      (tendsto_nhdsWithin_iff.mpr
+        ⟨hrlim, Eventually.of_forall fun n ↦ ⟨(hr n).1.le, (hr n).2.le⟩⟩)).const_mul _
+  exact tendsto_nhds_unique hlim (hstokes.congr fun n ↦ (heq n).symm)
 
 /-- **Stokes' formula on a closed disc, as a loop area.** For a map which is `C²` at every point
 of the closed disc `‖z - z₀‖ ≤ b`, the symplectic area over the disc is the loop area of the
