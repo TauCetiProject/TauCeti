@@ -86,7 +86,7 @@ theorem groupLieAlgebraMap_comp {F' HK' : Type*} [NormedAddCommGroup F']
 The tangent space of `G × K` at the identity is the product of the model spaces of `G` and `K`,
 so `GroupLieAlgebra (I.prod J) (G × K)` is `GroupLieAlgebra I G × GroupLieAlgebra J K`. -/
 
-variable (G K) (J : ModelWithCorners 𝕜 F HK)
+variable {J : ModelWithCorners 𝕜 F HK}
 
 /-- The differential of the first projection `G × K → G` is the first linear projection. -/
 theorem groupLieAlgebraMap_fst :
@@ -117,8 +117,6 @@ theorem groupLieAlgebraMap_inr :
       ContinuousLinearMap.inr 𝕜 (GroupLieAlgebra I G) (GroupLieAlgebra J K) := by
   rw [groupLieAlgebraMap, show ⇑(inr G K) = fun y ↦ (1, y) from funext inr_apply,
     mfderiv_prod_right]
-
-variable {G K J}
 
 /-- The first projection undoes the inclusion of the first factor. -/
 @[simp]
