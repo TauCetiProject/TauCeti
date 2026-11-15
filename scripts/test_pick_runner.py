@@ -152,7 +152,7 @@ class PickerWorkflow(unittest.TestCase):
         config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
         self.assertIs(type(config["pr_queue_limit"]), int)
         self.assertEqual(config["pr_queue_limit"], 3)
-        self.assertEqual(config["pr_order"], ["github", "namespace", "fleet"])
+        self.assertEqual(config["pr_order"], ["github", "fleet", "namespace"])
         self.assertIs(config["namespace_enabled"], True)
         self.assertEqual(config["namespace_build_cap"], 8)
 

@@ -67,7 +67,7 @@ mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 namespace_enabled = true
 namespace_build_cap = 8
-pr_order = ["github", "namespace", "fleet"]
+pr_order = ["github", "fleet", "namespace"]
 # Keep a few PR builds waiting for the next fleet runner when GitHub is full.
 # This observational limit can briefly overshoot under simultaneous pickers.
 pr_queue_limit = 3
