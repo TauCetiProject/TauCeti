@@ -323,14 +323,9 @@ theorem contDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞
     ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) => (exchangeAlmostComplex h₀ J hJ p.1
       (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
       (c, (z, x)) := by
-  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
-      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)) :=
-    contDiff_fst.contMDiff.prodMk
-      ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
-        |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
   exact ((contMDiffAt_exchangeAlmostComplex h₀ hJp
     (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff) hc ⟨_, hz⟩ x).comp
-      (c, (z, x)) hg.contMDiffAt).contDiffAt
+      (c, (z, x)) contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt
 
 end SmoothNormed
 

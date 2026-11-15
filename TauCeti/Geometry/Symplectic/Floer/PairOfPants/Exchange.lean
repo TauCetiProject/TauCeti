@@ -395,6 +395,16 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
+/-- The chart `(c, z, x) ↦ (c, (z, x))` reading the domain point of `ℂ` in real coordinates is
+`C^n` from the self-model of `ℝ × ((ℝ × ℝ) × V)` to the product of the self-models of `ℝ`, `ℂ`
+and `V`. -/
+theorem contMDiff_prodMap_equivRealProdCLM_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (Prod.map (id : ℝ → ℝ) (Prod.map Complex.equivRealProdCLM.symm (id : V → V))) :=
+  contDiff_fst.contMDiff.prodMk
+    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
+      |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+
 /-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
 space, the family is `C^n` jointly in the parameter `c`, the domain point of `S = ℂ ∖ {0, 1}`, in
 real coordinates, and the target point. -/
@@ -403,14 +413,10 @@ theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic
     (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
     ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
       exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
-  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
-      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2)) :=
-    contDiff_fst.contMDiff.prodMk
-      ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
-        |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
   exact ((contMDiffAt_exchangePerturbation hH
     (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c ⟨_, hz⟩ x).comp
-      (c, (z, x)) hg.contMDiffAt).contDiffAt.clm_apply contDiffAt_const
+      (c, (z, x)) contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt.clm_apply
+        contDiffAt_const
 
 /-- **The members are `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of
