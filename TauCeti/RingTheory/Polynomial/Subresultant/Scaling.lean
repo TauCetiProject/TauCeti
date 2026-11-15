@@ -134,7 +134,7 @@ theorem subresultant_eq_sturmSubresultantFactor_mul {p q a b : K[X]} {m i j : �
       exact natDegree_modByMonic_le_left.trans (natDegree_le_ite_of_getElem?_sturmSeq hp hc)
     have hstep := subresultant_eq_C_mul_subresultant_neg_mod
       (p := c) (q := a) (r := b.natDegree) (natDegree_le_ite_of_getElem?_sturmSeq hp hc)
-      (by rw [hrec, natDegree_neg]) hbc (by omega : j < min b.natDegree a.natDegree)
+      (by rw [hrec, natDegree_neg]) hbc (by omega)
     rw [← hrec] at hstep
     rw [ih hc ha (by omega), hstep, ← mul_assoc, ← C_mul,
       sturmSubresultantFactor_succ, hc, ha, hb]

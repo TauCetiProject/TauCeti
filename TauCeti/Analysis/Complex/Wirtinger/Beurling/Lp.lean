@@ -132,7 +132,7 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
       hp.le).locallyIntegrableOn _) hweak ?_ ?_
   · -- `T g → T f` in `L¹` on the disc.
     refine (MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.le ?_).congr fun n ↦
-      eLpNorm_one_eq_lintegral_enorm
+      eLpNorm_one_eq_lintegral_eNorm
         ((locallyIntegrable_cauchyTransform ((hg n).continuous.integrable_of_hasCompactSupport
           (hgc n))).aestronglyMeasurable.sub
             (locallyIntegrable_cauchyTransform hfint).aestronglyMeasurable).restrict
@@ -142,7 +142,7 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
       fun n ↦ eLpNorm_mono_measure _ (Measure.restrict_mono_set _ ball_subset_closedBall)
   · -- `D (T g) → D (T f)` in `L¹` on the disc.
     refine (MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.le ?_).congr fun n ↦
-      eLpNorm_one_eq_lintegral_enorm ((MemLp.wirtingerPartsCLM (Lp.memLp _)
+      eLpNorm_one_eq_lintegral_eNorm ((MemLp.wirtingerPartsCLM (Lp.memLp _)
         (hgm n)).aestronglyMeasurable.sub hD.aestronglyMeasurable).restrict
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (tendsto_eLpNorm_wirtingerPartsCLM_sub hp.le
@@ -201,12 +201,12 @@ theorem eLpNorm_wirtingerPartsCLM_beurlingLp_le (hp : 1 < p) (hp_top : p ≠ (�
   set B := beurlingLp (F := F) p hp hp_top
   set a := ⇑(B (hf.toLp f))
   have hB : eLpNorm a p volume ≤ ‖B‖₊ * eLpNorm f p volume :=
-    calc eLpNorm a p volume = ‖B (hf.toLp f)‖ₑ := (Lp.enorm_def _).symm
+    calc eLpNorm a p volume = ‖B (hf.toLp f)‖ₑ := (Lp.eNorm_def _).symm
       _ ≤ ‖B‖₊ * ‖hf.toLp f‖ₑ := by
-          simp only [enorm_eq_nnnorm]
+          simp only [eNorm_eq_nnNorm]
           exact_mod_cast B.le_opNNNorm _
       _ = ‖B‖₊ * eLpNorm f p volume := by
-          rw [Lp.enorm_def, eLpNorm_congr_ae hf.coeFn_toLp]
+          rw [Lp.eNorm_def, eLpNorm_congr_ae hf.coeFn_toLp]
   calc eLpNorm (fun w ↦ wirtingerPartsCLM (a w) (f w)) p volume
       ≤ eLpNorm a p volume + eLpNorm f p volume :=
         eLpNorm_wirtingerPartsCLM_le hp.le (Lp.aestronglyMeasurable _) hf.aestronglyMeasurable

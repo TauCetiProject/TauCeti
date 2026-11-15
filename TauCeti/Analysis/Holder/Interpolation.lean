@@ -495,9 +495,9 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le {f : E → F} {k :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 2 * M₀ / ε + M₂ * ε := by
   have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ x)
   have hlip : LipschitzWith M₂.toNNReal (iteratedFDeriv ℝ (k + 1) f) := by
-    refine lipschitzWith_of_nnnorm_fderiv_le
+    refine lipschitzWith_of_nnNorm_fderiv_le
       (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) fun y => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
     exact hM₂ y
   have h := (holderWith_one.2 hlip).norm_iteratedFDeriv_succ_le_of_norm_le
     (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) hM₀ hε x

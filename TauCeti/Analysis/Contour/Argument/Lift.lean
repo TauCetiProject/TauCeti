@@ -535,7 +535,7 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
     rcases h with h | h <;> linarith [Real.pi_pos]
   have hne : θ a ≠ θ b := hθ.apply_ne_apply_of_injOn_Ico hab hθinj
   have hθinj' : InjOn θ (Icc a b) := by
-    rw [← Ico_insert_right hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
+    rw [← insert_right_Ico hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
     refine ⟨hθinj, ?_⟩
     rintro ⟨t, ht, htb⟩
     exact hne ((congrArg θ (hinj ht ha (by simp [htb, hclosed]))).symm.trans htb)

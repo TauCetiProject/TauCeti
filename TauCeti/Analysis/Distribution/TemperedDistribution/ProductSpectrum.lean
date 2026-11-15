@@ -140,13 +140,13 @@ private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [h
   set C := eLpNorm ψ (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume
   have hC : C < ∞ := ENNReal.mul_lt_top (ψ.eLpNorm_lt_top _ volume) (Lp.eLpNorm_lt_top u)
   have hinner : ∀ x, ∫⁻ y, ‖(ψ (x - y) • u y) • (θ x • v x)‖ₑ ≤ C * ‖θ x • v x‖ₑ := fun x ↦ by
-    simp_rw [enorm_smul _ (θ x • v x)]
-    rw [lintegral_mul_const' _ _ enorm_ne_top]
+    simp_rw [eNorm_smul _ (θ x • v x)]
+    rw [lintegral_mul_const' _ _ eNorm_ne_top]
     gcongr
     have hψx : AEStronglyMeasurable (fun y ↦ ψ (x - y)) volume :=
       (ψ.continuous.comp (continuous_sub_left x)).aestronglyMeasurable
     calc ∫⁻ y, ‖ψ (x - y) • u y‖ₑ = eLpNorm ((fun y ↦ ψ (x - y)) • ⇑u) 1 volume := by
-          simp only [eLpNorm_one_eq_lintegral_enorm (hψx.smul (Lp.aestronglyMeasurable u)),
+          simp only [eLpNorm_one_eq_lintegral_eNorm (hψx.smul (Lp.aestronglyMeasurable u)),
             Pi.smul_apply']
       _ ≤ eLpNorm (fun y ↦ ψ (x - y)) (1 - p⁻¹)⁻¹ volume * eLpNorm u p volume :=
           eLpNorm_smul_le_mul_eLpNorm hψx (Lp.aestronglyMeasurable u)
@@ -155,7 +155,7 @@ private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [h
             ψ.continuous.aestronglyMeasurable (volume.measurePreserving_sub_left x)
           rw [Function.comp_def] at h
           rw [h]
-  rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
+  rw [HasFiniteIntegral, lintegral_prod _ hmeas.eNorm]
   calc ∫⁻ x, ∫⁻ y, ‖uncurry (fun x y ↦ (ψ (x - y) • u y) • (θ x • v x)) (x, y)‖ₑ
       ≤ ∫⁻ x, C * ‖θ x • v x‖ₑ := lintegral_mono hinner
     _ = C * ∫⁻ x, ‖θ x • v x‖ₑ := lintegral_const_mul' _ _ hC.ne

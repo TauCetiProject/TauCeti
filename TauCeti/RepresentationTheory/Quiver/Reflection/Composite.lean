@@ -478,7 +478,7 @@ theorem indecomposable_and_dimVector_coxeterFunctor_or_isZero [DecidableEq V]
 
 /-- **The Coxeter functor preserves the Tits form of the dimension vector.** The Tits form is
 unchanged by a simple reflection at a loopless vertex, hence by the whole Coxeter transformation
-(`TauCeti.titsForm_vertexPreReflectionList`), and no vertex of a repetition-free sink-admissible
+(`TauCeti.titsForm_vertexPreReflectionList`), and no vertex of a sink-admissible
 list carries a loop (`TauCeti.Quiver.IsSinkAdmissible.isEmpty_hom_self`). So on an indecomposable
 representation the Coxeter functor either annihilates it or leaves the Tits form of its dimension
 vector alone. This preserved invariant feeds the finite-orbit descent theorem
@@ -498,7 +498,7 @@ theorem titsForm_dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     ⟨-, h2⟩ | h
   · rw [h2]
     exact @titsForm_vertexPreReflectionList V q fV hq _ l
-      (fun i hi ↦ hl.isEmpty_hom_self hnd hi) _
+      (fun i hi ↦ hl.isEmpty_hom_self hi) _
   · exact absurd h hne
 
 end TauCeti

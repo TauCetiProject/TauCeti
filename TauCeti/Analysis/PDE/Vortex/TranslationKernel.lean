@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Energy
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Complex.OperatorNorm
 

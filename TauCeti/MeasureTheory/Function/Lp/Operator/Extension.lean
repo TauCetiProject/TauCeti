@@ -335,7 +335,7 @@ variable {α β 𝕜 E F : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSp
 `eLpNorm` form. -/
 theorem eLpNorm_apply_le_of_norm_le (T : Lp E r μ →L[𝕜] Lp F s ν) {M : ℝ≥0} (hT : ‖T‖ ≤ M)
     (f : Lp E r μ) : eLpNorm (T f) s ν ≤ M * eLpNorm f r μ := by
-  rw [← Lp.enorm_def, ← Lp.enorm_def]
+  rw [← Lp.eNorm_def, ← Lp.eNorm_def]
   refine T.le_of_opENorm_le ?_ f
   rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
   exact ENNReal.ofReal_le_ofReal hT

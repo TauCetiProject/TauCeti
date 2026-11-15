@@ -111,6 +111,12 @@ theorem coeff_divisor (hω : ∀ x, ω.MeromorphicAt x) (x : X) :
   rw [divisor, dite_eq_left hω]
   rfl
 
+/-- Off the support of its divisor, a `1`-form meromorphic everywhere has nonnegative order. -/
+theorem order_nonneg_of_notMem_support (hω : ∀ x, ω.MeromorphicAt x)
+    (hx : x ∉ ω.divisor.support) : 0 ≤ ω.order x := by
+  rw [mem_support_iff, not_not, coeff_divisor hω, WithTop.untop₀_eq_zero] at hx
+  rcases hx with h | h <;> simp [h]
+
 /-- At a point of finite order, the coefficient of the divisor is the order. -/
 theorem coe_coeff_divisor (hω : ∀ x, ω.MeromorphicAt x) (hx : ω.order x ≠ ⊤) :
     (WeilDivisor.coeff ω.divisor x : WithTop ℤ) = ω.order x := by

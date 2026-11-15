@@ -114,7 +114,7 @@ example (hα : Nat.card α = 4) :
   have hnt : Nontrivial α := by
     rw [← Finite.one_lt_card_iff_nontrivial, hα]
     norm_num
-  have _ : NeZero ((Monoid.exponent (Abelianization (alternatingGroup α)) : ℕ) : k) :=
+  have _ : NeZero ((Monoid.exponent (Group.Abelianization (alternatingGroup α)) : ℕ) : k) :=
     ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   obtain ⟨χ, hχ⟩ := exists_monoidHom_alternatingGroup_ne_one (α := α) k hα
   refine ⟨χ, inertia_ofLinearCharacter_alternatingGroup hχ,

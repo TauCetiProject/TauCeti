@@ -99,7 +99,7 @@ theorem integrableExpSet_trace_mul_wishartGramMeasure_zero
   refine Set.eq_univ_of_forall fun t ↦ ?_
   rw [integrableExpSet, Set.mem_ofPred_eq, wishartGramMeasure_zero]
   exact integrable_dirac' (selfAdjoint.continuous_exp_trace_mul_coe Θ t).stronglyMeasurable
-    enorm_lt_top
+    eNorm_lt_top
 
 /-- At degree zero the trace statistic vanishes almost everywhere, so its moment-generating
 function is constantly `1`. -/

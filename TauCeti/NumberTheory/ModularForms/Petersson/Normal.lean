@@ -30,8 +30,6 @@ simultaneous diagonalization.
   commutes with `Tₙ`.
 * `HeckeRing.GL2.isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`: on a fixed
   nebentypus space, the adjoint of a good `Tₚ` is the scalar multiple `χ(p)⁻¹ Tₚ`.
-* `HeckeRing.GL2.commute_peterssonAdjoint_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`:
-  this adjoint commutes with `Tₚ` on the fixed-nebentypus space.
 
 ## References
 
@@ -161,20 +159,6 @@ theorem isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ]
   · rw [map_inv, Units.val_inv_eq_inv_val]
   · exact heckeTCuspNat_mem_cuspFormCharSpace k χ hp g.2
-
-/-- **A good prime Hecke operator on `S_k(N, χ)` is Petersson-normal.** Its adjoint
-`χ(p)⁻¹ Tₚ` commutes with `Tₚ`, in the canonical Hecke-ring action on the fixed-nebentypus
-space. Together with
-`isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`, this is the instance-free
-normality statement on `S_k(N, χ)`. -/
-theorem commute_peterssonAdjoint_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
-    (hp : p.Prime) (hpN : p.Coprime N) :
-    Commute
-      (((χ (ZMod.unitOfCoprime p hpN) : ℂ)⁻¹) •
-        heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p))
-      (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p)) := by
-  rw [heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
-  exact (Commute.refl _).smul_left _
 
 end HeckeRing.GL2
 

@@ -74,7 +74,7 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
         (Nat.pos_of_mem_divisors d.property).ne'))⁻¹
     convert! hG.units_smul u using 1
     funext d c
-    simp [v, u, Matrix.col_apply, Pi.smul_apply', Units.smul_def, div_eq_mul_inv, mul_comm]
+    simp [v, u, Pi.smul_apply', Units.smul_def, div_eq_mul_inv, mul_comm]
   -- Differences from the divisor-one column are the negatives of the boundary vectors.
   let one : N.divisors := ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩
   have hd := (affineIndependent_iff_linearIndependent_vsub ℂ v one).mp

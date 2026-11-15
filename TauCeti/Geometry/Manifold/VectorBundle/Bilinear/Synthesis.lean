@@ -57,7 +57,7 @@ theorem contMDiffOn_bilinearComp_synthesisMap {d : ℕ}
   have hc (i j : Fin d) : ContMDiffOn IB 𝓘(ℝ) n (fun y ↦ Q y (ε i y) (ε j y)) U := fun y hy ↦ by
     have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial B ℝ)
       (b := id) (hQ y).contMDiffWithinAt (hε i y hy) (hε j y hy)
-    exact (contMDiffWithinAt_totalSpace.mp h).2
+    exact (contMDiffWithinAt_totalSpace_iff.mp h).2
   simp_rw [bilinearComp_synthesisMap_eq_sum]
   exact contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
     (hc i j).smul contMDiffOn_const
