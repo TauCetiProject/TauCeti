@@ -64,13 +64,12 @@ crossing the level attaches all the disc bundles at once
 * `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation`: across a compact band around a
   critical level, the sublevel `M_{c+ε}` strong deformation retracts onto `M_{c-ε}` with the
   negative disc bundle of a quadratic normal form attached.
-* `TauCeti.exists_sublevel_union_image_deformation`: the same, for a normal form
-  `f ∘ Θ = c - s + t` given by a partial diffeomorphism `Θ` near a compact core and all small
-  `ε > 0`. The tube is the image under `Θ` of a sublevel `{s + 2t < m}`, which for small `m` has
-  compact closed sublevels inside the source of `Θ`
-  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
 * `TauCeti.exists_sublevel_union_iUnion_image_deformation`: the same for finitely many normal forms
-  with pairwise disjoint cores, attaching all their disc bundles at once.
+  `f ∘ Θ a = c - s a + t a`, each given by a partial diffeomorphism `Θ a` near a compact core, with
+  pairwise disjoint cores and all small `ε > 0`, attaching all their disc bundles at once. The tube
+  is the union of the images under `Θ a` of sublevels `{s a + 2 t a < m}`, which for small `m` have
+  compact closed sublevels inside the source of `Θ a`
+  (`TauCeti.exists_gt_setOf_lt_subset_and_isCompact`).
 
 ## References
 
@@ -798,9 +797,11 @@ private theorem exists_sublevel_union_iUnion_image_deformation_of_tube
 
 /-- **Attaching the negative disc bundles of several normal forms with disjoint cores.** For each
 `a` in a finite index type, let `Θ a : X a → M` be a smooth partial diffeomorphism from a locally
-compact Hausdorff manifold, with a normal form `f ∘ Θ a = c - s a + t a` as in
-`TauCeti.exists_sublevel_union_image_deformation`: the smooth functions `s a, t a ≥ 0` vanish
-together exactly on a compact core `Z a` in the source of `Θ a`, and `σ a` rescales them. Suppose
+compact Hausdorff manifold, with a normal form `f ∘ Θ a = c - s a + t a` on the source of `Θ a`:
+the smooth functions `s a, t a ≥ 0` on `X a` vanish together exactly on a compact core `Z a` in the
+source of `Θ a`. Let the maps `σ a b' b : X a → X a`, continuous jointly in `b'`, `b` and the point,
+rescale `s a` by `b'²` and `t a` by `b²`; let `σ a 1 1` be the identity, `σ a 1 b` fix the points
+with `t a = 0` and be differentiable in `b` at `b = 1`, and let `σ a 0 0` map into `Z a`. Suppose
 the images `Θ a '' Z a` of the cores are pairwise disjoint; they are, for instance, the critical
 submanifolds of `f` on the level `c`.
 
@@ -869,61 +870,5 @@ theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpa
   · simp only [mem_ofPred_eq, hq_def, (hZst a x hx).1, (hZst a x hx).2, mul_zero, add_zero, hm]
 
 end Family
-
-/-! ### A single normal form -/
-
-section Single
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {c : ℝ} {F G X : Type*}
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {K : ModelWithCorners ℝ F G}
-  [TopologicalSpace X] [ChartedSpace G X]
-
-/-- **Attaching the negative disc bundle of a normal form given by a partial diffeomorphism.**
-Let `Θ : X → M` be a smooth partial diffeomorphism from a locally compact Hausdorff manifold `X`,
-and let `Z` be a compact subset of its source, the core of the normal form. On `X`, let the
-functions `s, t ≥ 0` be smooth and vanish together exactly on `Z`, with `f ∘ Θ = c - s + t` on the
-source of `Θ`. Let the maps `σ a b : X → X`, continuous jointly in `a`, `b` and the point, rescale
-`s` by `a²` and `t` by `b²`; let `σ 1 1` be the identity, `σ 1 b` fix the points with `t = 0` and be
-differentiable in `b` at `b = 1`, and let `σ 0 0` map into `Z`.
-
-Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹[c - ε, c + ε]` is compact
-and its critical points lie in `Θ '' Z`, the disc bundle `D_ε = {t = 0, s ≤ ε}` lies in the source
-of `Θ` and `{f ≤ c - ε} ∪ Θ(D_ε)` is a strong deformation retract of `{f ≤ c + ε}`: there is a
-retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the
-identity which fixes it pointwise. This is the case of a single normal form in
-`TauCeti.exists_sublevel_union_iUnion_image_deformation`. -/
-theorem exists_sublevel_union_image_deformation [LocallyCompactSpace X] [T2Space X]
-    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (Θ : PartialDiffeomorph K I X M ∞) {s t : X → ℝ}
-    (hs : ContMDiff K 𝓘(ℝ) ∞ s) (ht : ContMDiff K 𝓘(ℝ) ∞ t) (hs₀ : ∀ x, 0 ≤ s x)
-    (ht₀ : ∀ x, 0 ≤ t x) (hf : ∀ x ∈ Θ.source, f (Θ x) = c - s x + t x) {Z : Set X}
-    (hZ : IsCompact Z) (hZΘ : Z ⊆ Θ.source) (hZst : ∀ x ∈ Z, s x = 0 ∧ t x = 0)
-    (hstZ : ∀ x, s x = 0 → t x = 0 → x ∈ Z) (σ : ℝ → ℝ → X → X)
-    (hσ : Continuous fun p : (ℝ × ℝ) × X ↦ σ p.1.1 p.1.2 p.2)
-    (hσd : ∀ x, MDifferentiableAt 𝓘(ℝ) K (fun b ↦ σ 1 b x) 1)
-    (hσs : ∀ a b x, s (σ a b x) = a ^ 2 * s x) (hσt : ∀ a b x, t (σ a b x) = b ^ 2 * t x)
-    (hσ₁ : ∀ x, σ 1 1 x = x) (hσ₀ : ∀ b x, t x = 0 → σ 1 b x = x) (hσZ : ∀ x, σ 0 0 x ∈ Z) :
-    ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
-      criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ Θ '' Z →
-      {x | t x = 0 ∧ s x ≤ ε} ⊆ Θ.source ∧
-      ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
-          ({y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}))),
-        (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
-        Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
-          (ContinuousMap.id _)
-          {y | (y : M) ∈ {y | f y ≤ c - ε} ∪ Θ '' {x | t x = 0 ∧ s x ≤ ε}}) := by
-  obtain ⟨ε₀, hε₀, h⟩ := exists_sublevel_union_iUnion_image_deformation (ι := Unit)
-    (X := fun _ ↦ X) (K := fun _ ↦ K) hfs (fun _ ↦ Θ) (s := fun _ ↦ s) (t := fun _ ↦ t)
-    (fun _ ↦ hs) (fun _ ↦ ht) (fun _ ↦ hs₀) (fun _ ↦ ht₀) (fun _ ↦ hf) (Z := fun _ ↦ Z)
-    (fun _ ↦ hZ) (fun _ ↦ hZΘ) (fun _ ↦ hZst) (fun _ ↦ hstZ) (Subsingleton.pairwise)
-    (fun _ ↦ σ) (fun _ ↦ hσ) (fun _ ↦ hσd) (fun _ ↦ hσs) (fun _ ↦ hσt) (fun _ ↦ hσ₁)
-    (fun _ ↦ hσ₀) (fun _ ↦ hσZ)
-  refine ⟨ε₀, hε₀, fun ε hε hcompact hcrit ↦ ?_⟩
-  obtain ⟨hD, hr⟩ := h ε hε hcompact (by rwa [iUnion_const])
-  rw [iUnion_const] at hr
-  exact ⟨hD (), hr⟩
-
-end Single
 
 end TauCeti
