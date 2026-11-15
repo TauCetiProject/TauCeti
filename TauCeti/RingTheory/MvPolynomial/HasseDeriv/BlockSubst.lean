@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.ChainRule
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -26,7 +27,10 @@ polynomial is constructed so that these coefficients vanish whenever the weighte
 `∑ h, N (h, i) / d h` in some form `Lᵢ` is small; this is the multihomogeneous analogue of
 vanishing to high order at a point.
 
-The point of this file is that such vanishing passes to Hasse derivatives with the expected loss.
+The point of this file is that such vanishing passes to Hasse derivatives with the expected loss,
+depends on each form individually rather than on the complementary rows of `A`, and for a
+multihomogeneous polynomial upgrades automatically to two-sided concentration around the mean
+`card κ / card ι`.
 By the chain rule for block-linear substitutions, a derivative of `P` of order `I` becomes, in the
 coordinates of the forms, a combination of derivatives of `Q` whose orders `e` have the same block
 degrees `∑ j, e (h, j) = ∑ j, I (h, j)` as `I`
@@ -45,19 +49,34 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
   invertible matrix gives an automorphism.
 * `MvPolynomial.eval_blockSubst`: evaluating `blockSubst A P` at `y` evaluates `P` at the point
   whose block `h` is `A` applied to block `h` of `y`.
-* `MvPolynomial.IsMultiHomogeneous.blockSubst`: block substitution preserves the multidegree.
+* `MvPolynomial.IsMultiHomogeneous.blockSubst`,
+  `MvPolynomial.IsMultiHomogeneous.blockSubst_smul`: block substitution preserves the multidegree,
+  and scaling `A` by `c` scales a multihomogeneous polynomial of multidegree `d` by
+  `c ^ ∑ h, d h`.
+* `MvPolynomial.blockSubst_coeff_mem_of_row`,
+  `MvPolynomial.coeff_blockSubst_inv_eq_zero_of_row_eq`: vanishing of `blockSubst A⁻¹ P` below a
+  weighted-degree threshold along row `i'` of an invertible matrix `A` passes to row `i` of any
+  matrix `B` with `A i' = B i`.
 * `MvPolynomial.hasseDeriv_blockSubst`: the chain rule for a block substitution.
 * `MvPolynomial.blockSubst_inv_hasseDeriv`: a Hasse derivative of `P`, written in the coordinates
   of the rows of `A`, is a combination of the derivatives of `blockSubst A⁻¹ P` of the same block
   degrees.
-* `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero`: if the coefficients of `blockSubst A⁻¹ P`
-  vanish below the threshold `θ` in the weighted degree `∑ h, N (h, i) / d h`, then those of
-  `blockSubst A⁻¹ (hasseDeriv I P)` vanish below `θ` minus the weighted order of `I`.
+* `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero`,
+  `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_le`: if the coefficients of
+  `blockSubst A⁻¹ P` vanish below (or at most) the threshold `θ` in the weighted degree
+  `∑ h, N (h, i) / d h`, then those of `blockSubst A⁻¹ (hasseDeriv I P)` vanish below (or at most)
+  `θ` minus the weighted order of `I`.
+* `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_notMem_Ioo`: for a multihomogeneous `P` in
+  at least two variables per block, lower-tail vanishing at order zero along every row of `A`
+  forces the coefficients of `blockSubst A⁻¹ (hasseDeriv I P)` to vanish outside the open interval
+  `(m / card ι - 2 m η, m / card ι + 2 m (card ι - 1) η)`.
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §7.5.14 and Lemma 7.5.15.
+* J.-H. Evertse and H. P. Schlickewei, *A quantitative version of the Absolute Subspace Theorem*,
+  J. Reine Angew. Math. 548 (2002), 21–127.
 * W. M. Schmidt, *Diophantine Approximation*, Lecture Notes in Mathematics 785, Springer (1980),
   Chapter VI.
 -/
@@ -120,12 +139,63 @@ theorem blockSubst_mul_apply (A B : Matrix ι ι R) (P : MvPolynomial (κ × ι)
     blockSubst (A * B) P = blockSubst B (blockSubst A P) := by
   rw [blockSubst_mul, AlgHom.comp_apply]
 
+@[simp]
+theorem blockSubst_zero (P : MvPolynomial (κ × ι) R) :
+    blockSubst (0 : Matrix ι ι R) P = C (P.coeff 0) := by
+  have h0 : blockLinearForm (fun (_ : κ) (_ _ : ι) ↦ (0 : R)) = 0 :=
+    funext fun ⟨h, j⟩ ↦ by simp [blockLinearForm_apply]
+  rw [blockSubst_eq_aeval]
+  simp only [Matrix.zero_apply, h0, aeval_zero, algebraMap_eq, constantCoeff_eq]
+
+@[simp]
+theorem coeff_zero_blockSubst (A : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
+    (blockSubst A P).coeff 0 = P.coeff 0 := by
+  rw [← constantCoeff_eq, ← eval_zero, eval_blockSubst]
+  simpa only [Pi.zero_apply, mul_zero, sum_const_zero, constantCoeff_eq] using
+    DFunLike.congr_fun (eval_zero' (σ := κ × ι) (R := R)) P
+
+/-- Changing the coefficients commutes with block substitution, after mapping the matrix entries. -/
+theorem map_blockSubst {S : Type*} [CommSemiring S] (f : R →+* S) (A : Matrix ι ι R)
+    (P : MvPolynomial (κ × ι) R) :
+    map f (blockSubst A P) = blockSubst (A.map f) (map f P) := by
+  induction P using MvPolynomial.induction_on with
+  | C a => simp [blockSubst_eq_aeval]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p q hp =>
+    rcases q with ⟨h, j⟩
+    simp [hp]
+
 /-- Block substitution preserves multihomogeneity and the multidegree. -/
 theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvPolynomial (κ × ι) R}
     (hP : IsMultiHomogeneous d P) (A : Matrix ι ι R) :
     IsMultiHomogeneous d (MvPolynomial.blockSubst A P) :=
   isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
     (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
+
+/-- Rescaling the matrix by `c` rescales a multihomogeneous polynomial of multidegree `d` by
+`c ^ ∑ h, d h`. -/
+theorem IsMultiHomogeneous.blockSubst_smul [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (c : R) (A : Matrix ι ι R) :
+    MvPolynomial.blockSubst (c • A) P = c ^ (∑ h, d h) • MvPolynomial.blockSubst A P := by
+  rw [blockSubst_eq_linearSubst, blockSubst_eq_linearSubst, kronecker_smul,
+    hP.isHomogeneous.linearSubst_smul]
+
+/-- If row `i'` of `M` is the standard basis vector `Pi.single i 1`, then `blockSubst M` sends
+`X (h, i')` to `X (h, i)`, so every monomial `N'` occurring in `blockSubst M (monomial N c)` has
+exponent at least `N (h, i')` at `(h, i)` in every block `h`. -/
+theorem coeff_blockSubst_monomial_eq_zero_of_lt [DecidableEq ι] {M : Matrix ι ι R} {i i' : ι}
+    (hM : M i' = Pi.single i 1) {N N' : κ × ι →₀ ℕ} {c : R} {h : κ}
+    (hlt : N' (h, i) < N (h, i')) :
+    (blockSubst M (monomial N c)).coeff N' = 0 := by
+  classical
+  have hX : blockSubst M (X (h, i') : MvPolynomial (κ × ι) R) = X (h, i) := by
+    simp [blockSubst_X, hM, Pi.single_apply, apply_ite C, ite_mul]
+  have hsplit : monomial N c =
+      monomial (N - Finsupp.single (h, i') (N (h, i'))) c * X (h, i') ^ N (h, i') := by
+    rw [X_pow_eq_monomial, monomial_mul_monomial, mul_one,
+      tsub_add_cancel_of_le (Finsupp.single_le_iff.2 le_rfl)]
+  rw [hsplit, map_mul, map_pow, hX, X_pow_eq_monomial, coeff_mul_monomial', mul_one,
+    ite_eq_right (mt Finsupp.single_le_iff.1 hlt.not_ge)]
 
 variable [Fintype κ] [DecidableEq κ] [DecidableEq ι]
 
@@ -155,6 +225,54 @@ theorem blockSubst_inv_blockSubst (hA : IsUnit A.det) (P : MvPolynomial (κ × �
 theorem blockSubst_blockSubst_inv (hA : IsUnit A.det) (P : MvPolynomial (κ × ι) R) :
     blockSubst A (blockSubst A⁻¹ P) = P := by
   rw [← blockSubst_mul_apply, nonsing_inv_mul A hA, blockSubst_one, AlgHom.id_apply]
+
+/-- **Exponents along a shared row do not decrease** (Evertse–Schlickewei). Suppose `A` is
+invertible and row `i'` of `A` equals row `i` of `B`. Every nonzero coefficient of
+`blockSubst B⁻¹ P` at `N'` comes from some exponent vector `N` in the support of `blockSubst A⁻¹ P`
+satisfying `N (h, i') ≤ N' (h, i)` in every block `h`. -/
+theorem blockSubst_coeff_mem_of_row (hA : IsUnit A.det) {B : Matrix ι ι R} {i i' : ι}
+    (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R} {N' : κ × ι →₀ ℕ}
+    (hN' : (blockSubst B⁻¹ P).coeff N' ≠ 0) :
+    ∃ N ∈ (blockSubst A⁻¹ P).support, ∀ h, N (h, i') ≤ N' (h, i) := by
+  classical
+  by_cases hB : IsUnit B.det
+  · -- Rewrite `blockSubst B⁻¹ P` as `blockSubst (A * B⁻¹) (blockSubst A⁻¹ P)`; row `i'` of
+    -- `A * B⁻¹` is `Pi.single i 1`.
+    have hAB : (A * B⁻¹) i' = Pi.single i 1 := by
+      ext k
+      have hk := congrArg (fun M : Matrix ι ι R ↦ M i k) (mul_nonsing_inv B hB)
+      simpa [Matrix.mul_apply, congrFun hrow, Matrix.one_apply, Pi.single_apply, eq_comm] using hk
+    have hsum : blockSubst B⁻¹ P = ∑ N ∈ (blockSubst A⁻¹ P).support,
+        blockSubst (A * B⁻¹) (monomial N ((blockSubst A⁻¹ P).coeff N)) :=
+      calc blockSubst B⁻¹ P
+          = blockSubst (A * B⁻¹) (blockSubst A⁻¹ P) := by
+            rw [blockSubst_mul_apply, blockSubst_blockSubst_inv hA]
+        _ = _ := by
+            conv_lhs => arg 2; rw [(blockSubst A⁻¹ P).as_sum]
+            exact map_sum _ _ _
+    rw [hsum, coeff_sum] at hN'
+    obtain ⟨N, hN, hcoeff⟩ := exists_ne_zero_of_sum_ne_zero hN'
+    refine ⟨N, hN, fun h ↦ not_lt.1 fun hlt ↦ hcoeff ?_⟩
+    exact coeff_blockSubst_monomial_eq_zero_of_lt hAB hlt
+  · -- When `B.det` is not a unit, `B⁻¹ = 0` and only `N' = 0` can occur, matched by `N = 0`.
+    rw [nonsing_inv_apply_not_isUnit B hB, blockSubst_zero, coeff_C] at hN'
+    split_ifs at hN' with h0
+    · refine ⟨0, mem_support_iff.2 ?_, fun _ ↦ Nat.zero_le _⟩
+      rwa [coeff_zero_blockSubst]
+    · exact False.elim (hN' rfl)
+
+/-- If the coefficients of `blockSubst A⁻¹ P` vanish whenever the weighted degree along row `i'` of
+an invertible matrix `A` is at most `θ`, then the coefficients of `blockSubst B⁻¹ P` vanish
+whenever the weighted degree along a matching row `B i = A i'` is at most `θ`. -/
+theorem coeff_blockSubst_inv_eq_zero_of_row_eq [Fintype κ] (hA : IsUnit A.det) {B : Matrix ι ι R}
+    {i i' : ι} (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} {θ : ℝ}
+    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i') : ℝ) / d h ≤ θ → (blockSubst A⁻¹ P).coeff N = 0)
+    {N' : κ × ι →₀ ℕ} (hN' : ∑ h, (N' (h, i) : ℝ) / d h ≤ θ) :
+    (blockSubst B⁻¹ P).coeff N' = 0 := by
+  by_contra hc
+  obtain ⟨N, hN, hle⟩ := blockSubst_coeff_mem_of_row hA hrow hc
+  refine mem_support_iff.1 hN (hP N ((sum_le_sum fun h _ ↦ ?_).trans hN'))
+  exact div_le_div_of_nonneg_right (Nat.cast_le.2 (hle h)) (Nat.cast_nonneg _)
 
 /-- A Hasse derivative of `P`, written in the coordinates of the rows of an invertible matrix `A`,
 is a combination of the derivatives of `blockSubst A⁻¹ P` (that is, of `P` in those coordinates)
@@ -202,6 +320,80 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero [Fintype κ] (hA : IsUnit A.det)
   simp only [Finsupp.coe_add, Pi.add_apply, Nat.cast_add, add_div, sum_add_distrib]
   linarith
 
+/-- Non-strict form of `coeff_blockSubst_hasseDeriv_eq_zero`: if the coefficients of
+`blockSubst A⁻¹ P` vanish whenever `∑ h, N (h, i) / d h ≤ θ`, then those of
+`blockSubst A⁻¹ (hasseDeriv I P)` vanish whenever `∑ h, J (h, i) / d h` is at most `θ` minus the
+weighted order of `I`. -/
+theorem coeff_blockSubst_hasseDeriv_eq_zero_of_le [Fintype κ] (hA : IsUnit A.det)
+    {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} {i : ι} {θ : ℝ}
+    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i) : ℝ) / d h ≤ θ → (blockSubst A⁻¹ P).coeff N = 0)
+    {I J : κ × ι →₀ ℕ}
+    (hJ : ∑ h, (J (h, i) : ℝ) / d h ≤ θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP _ ?_
+  have hle : ∑ h, (e (h, i) : ℝ) / d h ≤ ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h := by
+    refine sum_le_sum fun h _ ↦ div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)
+    rw [← he h]
+    exact_mod_cast single_le_sum (f := fun j ↦ e (h, j)) (fun _ _ ↦ Nat.zero_le _) (mem_univ i)
+  simp only [Finsupp.coe_add, Pi.add_apply, Nat.cast_add, add_div, sum_add_distrib]
+  linarith
+
+/-- **Two-sided concentration from lower-tail vanishing** (Bombieri–Gubler, Lemma 7.5.15). Suppose
+`ι` has at least two elements, `P` is multihomogeneous of multidegree `d`, and the coefficients of
+`blockSubst A⁻¹ P` vanish whenever the weighted degree along any row `i'` of `A` is at most
+`card κ / card ι - card κ * η`. Then for every order `I` of weighted order at most `card κ * η`,
+the coefficients of `blockSubst A⁻¹ (hasseDeriv I P)` vanish at every `J` whose weighted degree
+along some row `i` lies outside the open interval
+`(card κ / card ι - 2 * card κ * η, card κ / card ι + 2 * card κ * (card ι - 1) * η)`. -/
+theorem coeff_blockSubst_hasseDeriv_eq_zero_of_notMem_Ioo [Fintype κ] [DecidableEq κ] [Nontrivial ι]
+    (hA : IsUnit A.det) {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} (hP_hom : IsMultiHomogeneous d P)
+    {η : ℝ} (hP : ∀ (i' : ι) (N : κ × ι →₀ ℕ),
+      ∑ h, (N (h, i') : ℝ) / d h ≤ (Fintype.card κ : ℝ) / Fintype.card ι - Fintype.card κ * η →
+      (blockSubst A⁻¹ P).coeff N = 0)
+    {I J : κ × ι →₀ ℕ} (hI : ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h ≤ Fintype.card κ * η)
+    {i : ι} (hJ : ∑ h, (J (h, i) : ℝ) / d h ∉
+      Set.Ioo ((Fintype.card κ : ℝ) / Fintype.card ι - 2 * Fintype.card κ * η)
+        ((Fintype.card κ : ℝ) / Fintype.card ι + 2 * Fintype.card κ * (Fintype.card ι - 1) * η)) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  by_contra hne
+  apply hJ
+  -- Every row `i'` satisfies the strict lower bound, since `coeff J ≠ 0`.
+  have hlow (i' : ι) :
+      (Fintype.card κ : ℝ) / Fintype.card ι - 2 * Fintype.card κ * η <
+        ∑ h, (J (h, i') : ℝ) / d h := by
+    by_contra! hle
+    exact hne (coeff_blockSubst_hasseDeriv_eq_zero_of_le hA (hP i') (by linarith))
+  refine ⟨hlow i, ?_⟩
+  -- Multihomogeneity bounds the sum over all rows by `card κ`; summing `hlow` over the remaining
+  -- `card ι - 1 ≥ 1` rows bounds row `i` strictly from above.
+  have htot : ∑ i', ∑ h, (J (h, i') : ℝ) / d h ≤ Fintype.card κ := by
+    rw [sum_comm]
+    refine (sum_le_sum (g := fun _ : κ ↦ (1 : ℝ)) fun h _ ↦ ?_).trans_eq (by simp)
+    rcases eq_or_ne (d h) 0 with hd0 | hd0
+    · simp [hd0]
+    · simp_rw [div_eq_mul_inv, ← sum_mul, ← div_eq_mul_inv]
+      refine (div_le_one (Nat.cast_pos.2 (Nat.pos_of_ne_zero hd0))).2 ?_
+      have hdeg := isMultiHomogeneous_iff.1 ((hP_hom.hasseDeriv I).blockSubst A⁻¹) J hne h
+      exact_mod_cast hdeg.trans_le (Nat.sub_le _ _)
+  obtain ⟨i₁, hi₁⟩ := exists_ne i
+  have hne_erase : (univ.erase i).Nonempty := ⟨i₁, mem_erase.2 ⟨hi₁, mem_univ _⟩⟩
+  have herase : ((Fintype.card ι : ℝ) - 1) *
+      ((Fintype.card κ : ℝ) / Fintype.card ι - 2 * Fintype.card κ * η) <
+      ∑ i' ∈ univ.erase i, ∑ h, (J (h, i') : ℝ) / d h := by
+    have hcard : (#(univ.erase i) : ℝ) = (Fintype.card ι : ℝ) - 1 := by
+      have hk : 1 ≤ Fintype.card ι := Nat.one_le_iff_ne_zero.2 Fintype.card_ne_zero
+      rw [card_erase_of_mem (mem_univ i), card_univ, Nat.cast_sub hk, Nat.cast_one]
+    simpa only [sum_const, nsmul_eq_mul, hcard] using
+      sum_lt_sum_of_nonempty hne_erase fun i' _ ↦ hlow i'
+  have hsplit := add_sum_erase univ (fun i' ↦ ∑ h, (J (h, i') : ℝ) / d h) (mem_univ i)
+  have hk0 : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hid : (Fintype.card κ : ℝ) - ((Fintype.card ι : ℝ) - 1) *
+      ((Fintype.card κ : ℝ) / Fintype.card ι - 2 * Fintype.card κ * η) =
+      (Fintype.card κ : ℝ) / Fintype.card ι + 2 * Fintype.card κ * (Fintype.card ι - 1) * η := by
+    field_simp
+    ring
+  linarith
+
 end CommRing
 
 /-! ### Examples -/
@@ -214,5 +406,24 @@ example : (blockSubst (1 : Matrix Unit Unit ℚ)⁻¹
     (hasseDeriv (Finsupp.single ((), ()) 1) (X ((), ()) ^ 2 : MvPolynomial (Unit × Unit) ℚ))).coeff
       (Finsupp.single ((), ()) 1) = 2 := by
   simp [X_pow_eq_monomial, hasseDeriv_monomial, coeff_monomial, ← Finsupp.single_tsub]
+
+/-- `Nontrivial ι` cannot be dropped in `coeff_blockSubst_hasseDeriv_eq_zero_of_notMem_Ioo`: with
+`ι = Unit`, `κ = Unit`, `d = 1`, `A = 1`, `P = X`, and `η = 1 / 2`, the polynomial vanishes at the
+only exponent `N = 0` below `1 - 1 / 2 = 1 / 2`, yet at `I = 0` and `J = 1` the weighted degree `1`
+lies outside `Set.Ioo 0 1` while the coefficient of `P` at `J` is `1`. -/
+example :
+    let P : MvPolynomial (Unit × Unit) ℚ := X ((), ())
+    (∀ (_ : Unit) (N : Unit × Unit →₀ ℕ),
+      (N ((), ()) : ℝ) / 1 ≤ 1 / 1 - 1 * (1 / 2) →
+      (blockSubst (1 : Matrix Unit Unit ℚ)⁻¹ P).coeff N = 0) ∧
+    ((1 : ℝ) / 1 ∉ Set.Ioo (1 / 1 - 2 * 1 * (1 / 2)) (1 / 1 + 2 * 1 * (1 - 1) * (1 / 2))) ∧
+    (blockSubst (1 : Matrix Unit Unit ℚ)⁻¹ (hasseDeriv 0 P)).coeff
+      (Finsupp.single ((), ()) 1) = 1 := by
+  refine ⟨fun _ N hN ↦ ?_, by norm_num, by simp [coeff_X]⟩
+  have h0 : N = 0 := by
+    ext ⟨⟨⟩, ⟨⟩⟩
+    have : (N ((), ()) : ℝ) < 1 := by linarith
+    exact_mod_cast Nat.lt_one_iff.1 (by exact_mod_cast this)
+  simp [h0]
 
 end MvPolynomial

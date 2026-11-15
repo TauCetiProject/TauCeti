@@ -37,7 +37,9 @@ entries have partial degrees at most `d j` and coefficients dominated by those o
 `h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`.
 This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma:
 `MvPolynomial.logHeight_det_hasseDeriv_le` bounds the height of any `n × n` determinant of Hasse
-derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`.
+derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`, while for a
+single derivative `MvPolynomial.mulHeight_hasseDeriv_le` and `MvPolynomial.logHeight_hasseDeriv_le`
+bound `H(∂^I P)` by `(2 ^ P.totalDegree) ^ totalWeight K * H(P)` without assuming `σ` is finite.
 
 Although the height of a product is not the product of the heights in general, it is when the
 two factors involve disjoint sets of variables: then the coefficients of the product are exactly
@@ -454,6 +456,59 @@ namespace MvPolynomial
 
 open Finset Height AdmissibleAbsValues
 open scoped Nat
+
+section HasseDeriv
+
+variable {K σ : Type*} [Field K] [AdmissibleAbsValues K]
+
+/-- **The multiplicative height of a Hasse derivative.** Each binomial factor in `∂^I P` is bounded
+by `2 ^ P.totalDegree` at archimedean absolute values and by `1` at nonarchimedean ones, so
+`H(∂^I P) ≤ (2 ^ P.totalDegree) ^ totalWeight K * H(P)` over any variable type `σ`. -/
+theorem mulHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
+    (hasseDeriv I P).mulHeight ≤ ((2 : ℝ) ^ P.totalDegree) ^ totalWeight K * P.mulHeight := by
+  have hC : (1 : ℝ) ≤ (2 : ℝ) ^ P.totalDegree := one_le_pow₀ one_le_two
+  rcases eq_or_ne P 0 with rfl | hP
+  · rw [map_zero, mulHeight_zero, mul_one]
+    exact one_le_pow₀ hC
+  have hx : (fun b : P.support ↦ P.coeff b) ≠ 0 := by
+    obtain ⟨b, hb⟩ := support_nonempty.mpr hP
+    exact Function.ne_iff.mpr ⟨⟨b, hb⟩, mem_support_iff.mp hb⟩
+  have hM (v : AbsoluteValue K ℝ) (b : σ →₀ ℕ) :
+      v (P.coeff b) ≤ ⨆ c : P.support, v (P.coeff c) := by
+    by_cases hb : b ∈ P.support
+    · exact Finite.le_ciSup_of_le ⟨b, hb⟩ le_rfl
+    · rw [notMem_support_iff.mp hb, map_zero]
+      exact Real.iSup_nonneg fun _ ↦ v.nonneg _
+  have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ c : P.support, v (P.coeff c) :=
+    Real.iSup_nonneg fun _ ↦ v.nonneg _
+  rw [mulHeight_eq_support, mulHeight_eq_support]
+  refine (mulHeight_le_of_forall_iSup_le hx _ hC (p := 1)
+    (fun v _ ↦ Real.iSup_le (fun m ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hM0 v)))
+    fun v hv ↦ Real.iSup_le (fun m ↦ ?_) (by simpa using hM0 v)).trans_eq (by rw [pow_one])
+  · rw [pow_one]
+    by_cases hm : P.coeff (m.1 + I) = 0
+    · rw [hasseDeriv_coeff, hm, mul_zero, map_zero]
+      exact mul_nonneg (zero_le_one.trans hC) (hM0 v)
+    · have hdeg : (m.1 + I).degree ≤ P.totalDegree := by
+        simpa only [Finsupp.degree_apply, Finsupp.sum] using le_totalDegree (mem_support_iff.mpr hm)
+      exact (abv_coeff_hasseDeriv_le v I m.1 P).trans
+        (mul_le_mul (pow_le_pow_right₀ one_le_two hdeg) (hM v (m.1 + I)) (v.nonneg _)
+          (zero_le_one.trans hC))
+  · rw [pow_one]
+    exact (abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) I m.1 P).trans
+      (hM v (m.1 + I))
+
+/-- **The logarithmic height of a Hasse derivative:**
+`h(∂^I P) ≤ h(P) + totalWeight K * (P.totalDegree * log 2)`. -/
+theorem logHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
+    (hasseDeriv I P).logHeight ≤
+      P.logHeight + totalWeight K * (P.totalDegree * Real.log 2) := by
+  have h := Real.log_le_log (mulHeight_pos _) (mulHeight_hasseDeriv_le I P)
+  rw [Real.log_mul (by positivity) (mulHeight_pos P).ne', Real.log_pow, Real.log_pow] at h
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight]
+  linarith
+
+end HasseDeriv
 
 variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
   {n : Type*} [Fintype n] [DecidableEq n]
