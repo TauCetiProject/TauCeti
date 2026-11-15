@@ -29,7 +29,9 @@ sector `|ph z| ≤ π/2 - δ` but not in the open half-plane `|ph z| < π/2`.
 * `TauCeti.exp_ofReal_mul_I_isBigO_one`: `e^{ix} = O(1)` on all of `ℝ` (DLMF 2.1.7).
 * `TauCeti.tsum_tail_isBigO_pow`: the tail from index `n` of a power series that converges near
   `0` is `O(zⁿ)` (DLMF 2.1.8).
-* `TauCeti.exp_sub_one_sub_isBigO_sq`: `e^z = 1 + z + O(z²)` as `z → 0` (DLMF 2.1.9).
+
+DLMF 2.1.9, `e^z = 1 + z + O(z²)` as `z → 0`, is the case `n = 2` of Mathlib's
+`Complex.exp_sub_sum_range_isBigO_pow`; an `example` at the end of the file records it.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
@@ -155,12 +157,9 @@ theorem tsum_tail_isBigO_pow {a : ℕ → ℂ}
   refine (h.congr' heq EventuallyEq.rfl).trans ?_
   simpa [norm_pow] using (isBigO_refl (fun z : ℂ => z ^ n) (𝓝 0)).norm_left
 
-/-- DLMF 2.1.9: `e^z = 1 + z + O(z²)` as `z → 0` in `ℂ`. -/
-theorem exp_sub_one_sub_isBigO_sq :
-    (fun z : ℂ => exp z - 1 - z) =O[𝓝 0] fun z => z ^ 2 := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [Metric.closedBall_mem_nhds (0 : ℂ) one_pos] with z hz
-  rw [mem_closedBall_zero_iff] at hz
-  simpa [norm_pow] using norm_exp_sub_one_sub_id_le hz
+/-- DLMF 2.1.9: `e^z = 1 + z + O(z²)` as `z → 0` in `ℂ`, the case `n = 2` of Mathlib's
+`Complex.exp_sub_sum_range_isBigO_pow`. -/
+example : (fun z : ℂ => exp z - 1 - z) =O[𝓝 0] fun z => z ^ 2 := by
+  simpa [Finset.sum_range_succ, sub_sub] using Complex.exp_sub_sum_range_isBigO_pow 2
 
 end TauCeti
