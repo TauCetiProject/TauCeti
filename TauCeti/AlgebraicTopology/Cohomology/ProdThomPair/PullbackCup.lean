@@ -198,12 +198,9 @@ private theorem bijective_pullbackCup_prodThomPair_of_continuousLinearEquiv
   -- The values of `ε` are units, since `u` and `u₀` both restrict to generators of the fibres.
   have hunit (b : B) : IsUnit (singularCohomologyZeroEval b ε) := by
     have hb := hu b
-    rw [← hε, singularCohomologyMap_prodThomPairFiberMap_pullbackCup_zero] at hb
-    obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1
-      (hb.symm ▸ Submodule.mem_top :
-        TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (d + 2) u₀ ∈ Submodule.span K
-          {singularCohomologyZeroEval b ε •
-            TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (d + 2) u₀})
+    rw [← hε, singularCohomologyMap_prodThomPairFiberMap_pullbackCup_zero,
+      Submodule.eq_top_iff'] at hb
+    obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1 (hb _)
     refine IsUnit.of_mul_eq_one s (mul_comm s _ ▸ sub_eq_zero.1
       (eq_zero_of_smul_singularCohomologyMap_prodThomPairFiberMap_eq_zero e b ?_))
     rw [sub_smul, mul_smul, one_smul, sub_eq_zero]
@@ -221,7 +218,7 @@ private theorem bijective_pullbackCup_prodThomPair_of_continuousLinearEquiv
       (μ := (ρ_ M).hom) (μ₂₃ := (ρ_ (ModuleCat.of K K)).hom) (μ' := (ρ_ M).hom) (by monoidal)
       rfl h (zero_add _) h _ _ _).symm
   rw [hfac]
-  exact (hA M p m h).comp (bijective_singularCup_right_of_isUnit M ε hunit p)
+  exact (hA M p m h).comp (bijective_singularCup_left_of_forall_isUnit M ε hunit p)
 
 end Sphere
 

@@ -24,8 +24,10 @@ bijective from `Hᵖ(B; M)` onto `Hᵖ⁺ʳ(E, E₀; M)`, for every degree `p` a
 (`TauCeti.IsThomClass.bijective_thomMap_of_biUnion_eq_univ`). A compact base has such a cover
 (`TauCeti.IsThomClass.bijective_thomMap`). Over a field, the homology Thom map
 `x ↦ π_*(x ⌢ u)` is the transpose of the Thom map up to sign, so it is bijective as well
-(`TauCeti.IsThomClass.bijective_homologyThomMap`): `Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; K)`. This is the
-identification of the relative homology of a disc-bundle attachment, such as the attachment of the
+(`TauCeti.IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ`, and
+`TauCeti.IsThomClass.bijective_homologyThomMap` over a compact base): `Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; K)`.
+Composed with the comparison of the disc-sphere pair with the Thom pair, this is the input for
+identifying the relative homology of a disc-bundle attachment, such as the attachment of the
 negative disc bundle of a critical submanifold of a Morse–Bott function, with the shifted homology
 of the base.
 
@@ -49,6 +51,8 @@ The ranks `0` and `1` are not treated here, nor are bases without a finite trivi
 * `TauCeti.IsThomClass.bijective_thomMap_of_biUnion_eq_univ`: **the Thom isomorphism** over a base
   covered by finitely many trivializing open sets.
 * `TauCeti.IsThomClass.bijective_thomMap`: the Thom isomorphism over a compact base.
+* `TauCeti.IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ`: the Thom isomorphism in
+  homology over a finitely trivialized base, with coefficients in a field.
 * `TauCeti.IsThomClass.bijective_homologyThomMap`: the Thom isomorphism in homology over a compact
   base, with coefficients in a field.
 
@@ -221,6 +225,22 @@ theorem IsThomClass.bijective_thomMap [CompactSpace B] [VectorBundle ℝ F E]
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) (univ_subset_iff.1 ht) h
 
+/-- **The Thom isomorphism in homology over a finitely trivialized base.** Let `E → B` be a real
+vector bundle of rank `r ≥ 2` whose base is covered by finitely many open sets, each contained in
+the base set of a linear trivialization, and let `u ∈ Hʳ(E, E₀; K)` be a Thom class with
+coefficients in a field `K`. Then the homology Thom map `x ↦ π_*(x ⌢ u)` is bijective from
+`Hₚ₊ᵣ(E, E₀; K)` onto `Hₚ(B; K)`, for every degree `p`. -/
+theorem IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ {K : Type w} [Field K]
+    (hF : 2 ≤ finrank ℝ F)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) {ι : Type*} (s : Finset ι) {W : ι → Set B}
+    (hWo : ∀ i ∈ s, IsOpen (W i))
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet)
+    (hW : ⋃ i ∈ s, W i = univ) {p m : ℕ} (h : finrank ℝ F + p = m) :
+    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
+  (bijective_homologyThomMap_iff F E h u).2
+    (hu.bijective_thomMap_of_biUnion_eq_univ _ hF s hWo hWe hW (by omega))
+
 /-- **The Thom isomorphism in homology over a compact base.** For a real vector bundle `E → B` of
 rank `r ≥ 2` over a compact base and a Thom class `u ∈ Hʳ(E, E₀; K)` with coefficients in a field
 `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is bijective from `Hₚ₊ᵣ(E, E₀; K)` onto `Hₚ(B; K)`, for
@@ -230,7 +250,12 @@ theorem IsThomClass.bijective_homologyThomMap {K : Type w} [Field K] [CompactSpa
     [VectorBundle ℝ F E] (hF : 2 ≤ finrank ℝ F)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {p m : ℕ} (h : finrank ℝ F + p = m) :
-    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
-  (bijective_homologyThomMap_iff F E h u).2 (hu.bijective_thomMap _ hF (by omega))
+    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom := by
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
+    (fun b : B ↦ (trivializationAt F E b).baseSet) (fun b ↦ (trivializationAt F E b).open_baseSet)
+    fun b _ ↦ mem_iUnion.2 ⟨b, FiberBundle.mem_baseSet_trivializationAt' b⟩
+  exact hu.bijective_homologyThomMap_of_biUnion_eq_univ hF t
+    (fun b _ ↦ (trivializationAt F E b).open_baseSet)
+    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) (univ_subset_iff.1 ht) h
 
 end TauCeti
