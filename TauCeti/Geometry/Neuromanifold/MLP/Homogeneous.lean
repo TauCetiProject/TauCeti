@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Fin.Basic
 public import TauCeti.Geometry.Neuromanifold.MLP.Polynomial
-public import TauCeti.Geometry.Neuromanifold.Polynomial.Homogeneous
 
 /-!
 # Input homogeneity of bias-free monomial MLPs
@@ -42,9 +40,10 @@ weights assembled from its parameters by any map `e`, then every collected input
 `inputPolynomial P j` is homogeneous of degree `∏ k, r k`
 (`MLPSpec.isHomogeneous_inputPolynomial_of_polynomialRealization_eq`). For the canonical tuple,
 `MLPSpec.isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial` proves homogeneity
-directly over any commutative semiring, for any `MLPSpec` with hidden polynomials `X ^ r j`;
-`MLPSpec.isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial_const` gives the
-common-exponent degree. These are statements about the coordinate polynomials themselves,
+directly over any commutative semiring from the chain-homogeneity theorem
+`isHomogeneous_inputPolynomial_polynomialChainPrefix`, for any `MLPSpec` with hidden polynomials
+`X ^ r j`; `MLPSpec.isHomogeneous_inputPolynomial_polynomialRealizeWeights_monomial_const` gives
+the common-exponent degree. These are statements about the coordinate polynomials themselves,
 not only about their values.
 
 Zero exponents are allowed: a hidden layer with exponent zero outputs the constant vector `1`,
@@ -107,21 +106,6 @@ theorem layerPolynomial_X_pow (r : Fin (L - 1) → ℕ) (i : Fin L) :
   · rw [layerPolynomial_of_val_add_one_eq _ i (by omega)]
     simp [layerExponent, h]
 
-/-- Collecting inputs in a zero-bias monomial prefix gives the weighted sum of the preceding
-input polynomials, raised to the layer exponent. -/
-private theorem inputPolynomial_prefix_succ (A : MLPSpec K L) (r : Fin (L - 1) → ℕ)
-    (i : Fin L) (o : Fin (A.width i.succ)) :
-    inputPolynomial
-        (polynomialReparametrize A.zeroBiasSubstitution
-          (A.polynomialPrefix (fun j => Polynomial.X ^ r j) i.succ)) o =
-      (∑ j, C (X ⟨i, (o, j)⟩) *
-        inputPolynomial
-          (polynomialReparametrize A.zeroBiasSubstitution
-            (A.polynomialPrefix (fun j => Polynomial.X ^ r j) i.castSucc)) j) ^
-        layerExponent r i := by
-  simp only [inputPolynomial_polynomialReparametrize, polynomialPrefix_succ]
-  simp [layerPolynomial_X_pow, inputPolynomial_def]
-
 /-- Every zero-bias monomial prefix is homogeneous in the inputs; its degree is the partial
 product of the exponents of the layers already evaluated. -/
 theorem isHomogeneous_inputPolynomial_polynomialPrefix_weights_monomial (A : MLPSpec K L)
@@ -130,13 +114,12 @@ theorem isHomogeneous_inputPolynomial_polynomialPrefix_weights_monomial (A : MLP
       (polynomialReparametrize A.zeroBiasSubstitution
         (A.polynomialPrefix (fun j => Polynomial.X ^ r j) i)) o).IsHomogeneous
       (Fin.partialProd (layerExponent r) i) := by
-  induction i using Fin.induction with
-  | zero =>
-    simpa [inputPolynomial_def, polynomialReparametrize_apply] using
-      (isHomogeneous_X (R := MvPolynomial A.WeightIndex K) o)
-  | succ i ih =>
-    rw [inputPolynomial_prefix_succ, Fin.partialProd_succ]
-    exact (IsHomogeneous.sum _ _ _ fun j _ => (ih j).C_mul _).pow _
+  rw [A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix]
+  refine isHomogeneous_inputPolynomial_polynomialChainPrefix
+    (I := fun j => Fin (A.width j)) (fun k a => ?_) i o
+  simpa only [layerPolynomial_X_pow, one_mul] using
+    isHomogeneous_inputPolynomial_aeval_X_pow
+      isHomogeneous_inputPolynomial_polynomialLinear (layerExponent r k) a
 
 /-- The jointly polynomial tuple of a bias-free monomial MLP is homogeneous in its inputs of
 degree the product of the hidden exponents, with a linear output head. -/

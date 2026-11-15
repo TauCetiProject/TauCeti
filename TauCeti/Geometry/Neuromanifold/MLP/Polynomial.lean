@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Neuromanifold.MLP.Parameters
-public import TauCeti.Geometry.Neuromanifold.Polynomial.Constructors
+public import TauCeti.Geometry.Neuromanifold.Polynomial.Chain
 
 /-!
 # MLPs with polynomial activations are jointly polynomial models
@@ -21,13 +21,19 @@ evaluations of `A` are polynomial jointly in the parameter coordinates and the i
 `MLPSpec.polynomialPrefix A q` follows the prefix recursion `h₀ = x`,
 `hᵢ₊₁ = σᵢ₊₁ (Wᵢ₊₁ hᵢ + bᵢ₊₁)` with polynomials in place of functions, where the activation
 polynomial of each layer is `MLPSpec.layerPolynomial q`: `q` on hidden layers and `X` on the
-affine output layer. Its last layer `MLPSpec.polynomialRealize A q` is a jointly polynomial
-tuple realizing `A.realize` after `A.parameterEquiv`, and substituting zero for every bias
-variable gives `MLPSpec.polynomialRealizeWeights A q`, realizing `A.realizeWeights` after
+affine output layer. Equivalently, `MLPSpec.polynomialPrefix_eq_polynomialChainPrefix` and
+`MLPSpec.polynomialRealize_eq_polynomialChain` identify `MLPSpec.polynomialPrefix A q` and its
+output layer `MLPSpec.polynomialRealize A q` with `polynomialChainPrefix` and `polynomialChain`
+applied to the dense layers `o ↦ aeval (polynomialDense o) (layerPolynomial q i)`. Evaluating
+`MLPSpec.polynomialRealize A q` realizes `A.realize` after `A.parameterEquiv`, and substituting
+zero for every bias variable gives `MLPSpec.polynomialRealizeWeights A q` — equivalently
+`polynomialChain` of the bias-free layers `o ↦ aeval (polynomialLinear o) (layerPolynomial q i)`
+(`MLPSpec.polynomialRealizeWeights_eq_polynomialChain`) — realizing `A.realizeWeights` after
 `A.weightEquiv`. Thus the coefficient extraction and uniform input-degree bound of
 `TauCeti.Geometry.Neuromanifold.Polynomial.Basic`, and the faithful coefficient presentation of
 `TauCeti.Geometry.Neuromanifold.Polynomial.Presentation`, apply to these networks. The
-identity-activation and monomial specifications are the cases `q = X` and `q j = X ^ r j`.
+identity-activation and monomial specifications are the cases `q = X` (giving `polynomialChain` of
+`polynomialDense` and of `polynomialLinear`) and `q j = X ^ r j`.
 
 The jointly polynomial setting follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
@@ -121,6 +127,21 @@ def polynomialPrefix (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
         (layerPolynomial q i) :=
   Fin.induction_succ ..
 
+/-- Every polynomial prefix of `A` is the corresponding prefix of `polynomialChainPrefix` applied
+to the dense layers followed coordinatewise by `layerPolynomial q i`. -/
+theorem polynomialPrefix_eq_polynomialChainPrefix (A : MLPSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    A.polynomialPrefix q k =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i)) k := by
+  induction k using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    funext o
+    rw [polynomialPrefix_succ, polynomialChainPrefix_succ, ← ih,
+      ← Polynomial.aeval_algHom_apply (bind₁ _)]
+    simp [polynomialDense_apply]
+
 /-- If the hidden activations of `A` evaluate the polynomials `q`, then evaluating the prefix
 polynomials at parameter coordinates `v` and input `x` gives the prefix evaluation of `A` at the
 parameters assembled from `v`. -/
@@ -142,6 +163,22 @@ def polynomialRealize (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
 /-- The jointly polynomial tuple of `A` is its output-layer prefix polynomials. -/
 theorem polynomialRealize_def (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialRealize q = A.polynomialPrefix q (Fin.last L) := (rfl)
+
+/-- The jointly polynomial tuple of `A` is `polynomialChain` of its dense layers followed
+coordinatewise by `layerPolynomial q i`. -/
+theorem polynomialRealize_eq_polynomialChain (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
+    A.polynomialRealize q =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i)) := by
+  rw [polynomialRealize_def, polynomialChain_def]
+  exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
+
+/-- With identity hidden activation polynomials `X`, the jointly polynomial tuple of `A` is
+`polynomialChain` of the affine dense layers `polynomialDense`. -/
+theorem polynomialRealize_X_eq_polynomialChain (A : MLPSpec K L) :
+    A.polynomialRealize (fun _ => Polynomial.X) =
+      polynomialChain (I := fun j => Fin (A.width j)) (fun _ => polynomialDense) := by
+  simpa using A.polynomialRealize_eq_polynomialChain fun _ => Polynomial.X
 
 /-- An MLP whose hidden activations evaluate the polynomials `q` is a jointly polynomial model:
 its polynomial tuple realizes `A.realize` on the parameters assembled from their coordinates. -/
@@ -177,6 +214,16 @@ def zeroBiasSubstitution (A : MLPSpec K L) : A.ParameterIndex → MvPolynomial A
     A.zeroBiasSubstitution ⟨i, .inr o⟩ = 0 := by
   simp [zeroBiasSubstitution]
 
+/-- `zeroBiasSubstitution` applies the single-layer zero-bias substitution `Sum.elim X 0` at each
+layer `i` and tags the weight variables with `Sigma.mk i`. -/
+theorem zeroBiasSubstitution_eq (A : MLPSpec K L) :
+    A.zeroBiasSubstitution = fun p =>
+      rename (Sigma.mk p.1)
+        (Sum.elim X (0 : Fin (A.width p.1.succ) →
+          MvPolynomial (Fin (A.width p.1.succ) × Fin (A.width p.1.castSucc)) K) p.2) := by
+  funext ⟨i, p⟩
+  cases p <;> simp
+
 /-- Evaluating the zero-bias substitution at bias-free coordinates gives the coordinates of the
 zero-bias embedding. -/
 theorem eval_zeroBiasSubstitution (A : MLPSpec K L) (v : A.WeightIndex → K) :
@@ -184,6 +231,20 @@ theorem eval_zeroBiasSubstitution (A : MLPSpec K L) (v : A.WeightIndex → K) :
       A.parameterEquiv.symm (A.zeroBias (A.weightEquiv v)) := by
   funext ⟨i, k⟩
   rcases k with ⟨o, j⟩ | o <;> simp
+
+/-- Substituting zero for the biases in prefix `k` of `A.polynomialPrefix q` gives prefix `k` of
+`polynomialChainPrefix` applied to the linear layers followed coordinatewise by
+`layerPolynomial q i`. -/
+theorem polynomialPrefix_zeroBias_eq_polynomialChainPrefix (A : MLPSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    polynomialReparametrize A.zeroBiasSubstitution (A.polynomialPrefix q k) =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i o => Polynomial.aeval (polynomialLinear o) (layerPolynomial q i)) k := by
+  rw [A.polynomialPrefix_eq_polynomialChainPrefix, A.zeroBiasSubstitution_eq,
+    polynomialChainPrefix_polynomialReparametrize
+      (fun i => Sum.elim X (0 : Fin (A.width i.succ) →
+        MvPolynomial (Fin (A.width i.succ) × Fin (A.width i.castSucc)) K))]
+  simp
 
 /-- The bias-free jointly polynomial tuple of `A` with hidden activation polynomials `q`: the
 tuple `A.polynomialRealize q` with every bias variable replaced by zero. -/
@@ -195,6 +256,23 @@ def polynomialRealizeWeights (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K
 theorem polynomialRealizeWeights_def (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialRealizeWeights q =
       polynomialReparametrize A.zeroBiasSubstitution (A.polynomialRealize q) := (rfl)
+
+/-- The bias-free jointly polynomial tuple of `A` is `polynomialChain` of its linear layers
+followed coordinatewise by `layerPolynomial q i`. -/
+theorem polynomialRealizeWeights_eq_polynomialChain (A : MLPSpec K L)
+    (q : Fin (L - 1) → Polynomial K) :
+    A.polynomialRealizeWeights q =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i o => Polynomial.aeval (polynomialLinear o) (layerPolynomial q i)) := by
+  rw [polynomialRealizeWeights_def, polynomialRealize_def, polynomialChain_def]
+  exact A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix q (Fin.last L)
+
+/-- With identity hidden activation polynomials `X`, the bias-free jointly polynomial tuple of `A`
+is `polynomialChain` of the linear layers `polynomialLinear`. -/
+theorem polynomialRealizeWeights_X_eq_polynomialChain (A : MLPSpec K L) :
+    A.polynomialRealizeWeights (fun _ => Polynomial.X) =
+      polynomialChain (I := fun j => Fin (A.width j)) (fun _ => polynomialLinear) := by
+  simpa using A.polynomialRealizeWeights_eq_polynomialChain fun _ => Polynomial.X
 
 /-- A bias-free MLP whose hidden activations evaluate the polynomials `q` is a jointly
 polynomial model: its bias-free polynomial tuple realizes `A.realizeWeights` on the weights

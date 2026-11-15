@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Neuromanifold.Convolution.Chain
-public import TauCeti.Geometry.Neuromanifold.Polynomial.Constructors
+public import TauCeti.Geometry.Neuromanifold.MLP.Polynomial
 
 /-!
 # Jointly polynomial convolutional networks
@@ -15,12 +15,19 @@ A fixed `ConvolutionSpec` with polynomial hidden activations has a jointly polyn
 realization in its filters, shared biases, and inputs. `ConvolutionSpec.parameterEquiv`
 flattens precisely these parameters, not the entries of the associated dense matrices.
 `ConvolutionSpec.polynomialRealize` supplies the polynomial tuple, whose evaluation agrees
-with convolutional realization. The bias-free tuple substitutes zero for every bias and
-retains only filter coordinates. Thus both tuples feed the coefficient extraction and
-faithful bounded-degree presentation for jointly polynomial models.
+with convolutional realization, and `ConvolutionSpec.polynomialRealize_eq_polynomialChain`
+identifies it with `polynomialChain` applied to the affine convolution layers
+`a ↦ aeval (polynomialAffineConvolution (A.length_eq i) a) (MLPSpec.layerPolynomial q i)`.
+The bias-free tuple substitutes zero for every bias and retains only filter coordinates,
+agreeing by `ConvolutionSpec.polynomialRealizeWeights_eq_polynomialChain` with `polynomialChain`
+of the bias-free convolution layers
+`a ↦ aeval (polynomialConvolution (A.length_eq i) a) (MLPSpec.layerPolynomial q i)`.
+Thus both tuples feed the coefficient extraction and faithful bounded-degree presentation for
+jointly polynomial models.
 
 With identity hidden activations, the activation polynomials `X` give the tuples of linear
-convolutional networks.
+convolutional networks (`polynomialChain` of `polynomialAffineConvolution` and of
+`polynomialConvolution`).
 
 All index types are finite, so `Fintype.equivFin` can number the coordinates by `Fin p`.
 Depth zero and empty filters are included. The output head remains affine, with no activation.
@@ -72,6 +79,28 @@ activation polynomial except at the affine output head. -/
       if h : i.val + 1 < L then Polynomial.aeval z (q ⟨i.val, by omega⟩) else z := by
   simp only [polynomialPrefix, Fin.induction_succ]
 
+/-- Every convolutional polynomial prefix is the corresponding prefix of `polynomialChainPrefix`
+applied to the affine convolution layers followed coordinatewise by
+`MLPSpec.layerPolynomial q i`. -/
+theorem polynomialPrefix_eq_polynomialChainPrefix (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    A.polynomialPrefix q k =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
+          (MLPSpec.layerPolynomial q i)) k := by
+  induction k using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    funext a
+    rw [polynomialPrefix_succ, polynomialChainPrefix_succ, ← ih,
+      ← Polynomial.aeval_algHom_apply (bind₁ _)]
+    dsimp only
+    split_ifs with h
+    · rw [MLPSpec.layerPolynomial_of_lt q i h]
+      simp [polynomialAffineConvolution_apply]
+    · rw [MLPSpec.layerPolynomial_of_val_add_one_eq q i (by omega)]
+      simp [polynomialAffineConvolution_apply]
+
 /-- Evaluating the joint polynomials recovers every convolutional prefix. -/
 theorem eval_polynomialPrefix (A : ConvolutionSpec K L)
     (q : Fin (L - 1) → Polynomial K)
@@ -102,6 +131,25 @@ def polynomialRealize (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial 
 theorem polynomialRealize_def (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialRealize q = A.polynomialPrefix q (Fin.last L) := (rfl)
 
+/-- The affine convolutional polynomial tuple is `polynomialChain` of its affine convolution
+layers followed coordinatewise by `MLPSpec.layerPolynomial q i`. -/
+theorem polynomialRealize_eq_polynomialChain (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) :
+    A.polynomialRealize q =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
+          (MLPSpec.layerPolynomial q i)) := by
+  rw [polynomialRealize_def, polynomialChain_def]
+  exact A.polynomialPrefix_eq_polynomialChainPrefix q (Fin.last L)
+
+/-- With identity hidden activation polynomials `X`, the affine convolutional polynomial tuple is
+`polynomialChain` of `polynomialAffineConvolution`. -/
+theorem polynomialRealize_X_eq_polynomialChain (A : ConvolutionSpec K L) :
+    A.polynomialRealize (fun _ => Polynomial.X) =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i => polynomialAffineConvolution (A.length_eq i)) := by
+  simpa using A.polynomialRealize_eq_polynomialChain fun _ => Polynomial.X
+
 /-- Polynomial hidden activations make the convolutional network jointly polynomial in its
 actual parameters and inputs. -/
 theorem polynomialRealization_polynomialRealize (A : ConvolutionSpec K L)
@@ -121,6 +169,26 @@ theorem realizedFunctions_polynomialRealize (A : ConvolutionSpec K L)
   rw [A.polynomialRealization_polynomialRealize q hq, realizedFunctions_def,
     realizedFunctions_def, A.parameterEquiv.surjective.range_comp]
 
+/-- Substituting zero for the shared biases in prefix `k` of `A.polynomialPrefix q` gives prefix
+`k` of `polynomialChainPrefix` applied to the bias-free convolution layers followed coordinatewise
+by `MLPSpec.layerPolynomial q i`. -/
+theorem polynomialPrefix_zeroBias_eq_polynomialChainPrefix (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    polynomialReparametrize (fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j)
+        (A.polynomialPrefix q k) =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i a => Polynomial.aeval (polynomialConvolution (A.length_eq i) a)
+          (MLPSpec.layerPolynomial q i)) k := by
+  rw [A.polynomialPrefix_eq_polynomialChainPrefix]
+  refine (congrArg (fun R => polynomialReparametrize R _)
+    (a₂ := fun p => rename (Sigma.mk p.1)
+      (Sum.elim X (0 : Unit → MvPolynomial (Fin (A.filterLength p.1)) K) p.2)) ?_).trans ?_
+  · funext ⟨i, j⟩
+    cases j <;> simp
+  · rw [polynomialChainPrefix_polynomialReparametrize
+      (fun i => Sum.elim X (0 : Unit → MvPolynomial (Fin (A.filterLength i)) K))]
+    simp
+
 /-- Joint polynomials for bias-free realization, substituting filter variables for filters
 and zero for biases. There are no artificial bias coordinates in the domain. -/
 def polynomialRealizeWeights (A : ConvolutionSpec K L)
@@ -135,6 +203,25 @@ theorem polynomialRealizeWeights_def (A : ConvolutionSpec K L)
     A.polynomialRealizeWeights q =
       polynomialReparametrize (fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j)
         (A.polynomialRealize q) := (rfl)
+
+/-- The bias-free convolutional polynomial tuple is `polynomialChain` of its bias-free convolution
+layers followed coordinatewise by `MLPSpec.layerPolynomial q i`. -/
+theorem polynomialRealizeWeights_eq_polynomialChain (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) :
+    A.polynomialRealizeWeights q =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i a => Polynomial.aeval (polynomialConvolution (A.length_eq i) a)
+          (MLPSpec.layerPolynomial q i)) := by
+  rw [polynomialRealizeWeights_def, polynomialRealize_def, polynomialChain_def]
+  exact A.polynomialPrefix_zeroBias_eq_polynomialChainPrefix q (Fin.last L)
+
+/-- With identity hidden activation polynomials `X`, the bias-free convolutional polynomial tuple
+is `polynomialChain` of `polynomialConvolution`. -/
+theorem polynomialRealizeWeights_X_eq_polynomialChain (A : ConvolutionSpec K L) :
+    A.polynomialRealizeWeights (fun _ => Polynomial.X) =
+      polynomialChain (I := fun j => Fin (A.width j))
+        (fun i => polynomialConvolution (A.length_eq i)) := by
+  simpa using A.polynomialRealizeWeights_eq_polynomialChain fun _ => Polynomial.X
 
 /-- The bias-free polynomial tuple realizes the network on precisely its filter product. -/
 theorem polynomialRealization_polynomialRealizeWeights (A : ConvolutionSpec K L)

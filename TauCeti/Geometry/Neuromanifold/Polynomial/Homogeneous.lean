@@ -30,11 +30,14 @@ model takes values in a product of homogeneous submodules:
 
 Input homogeneity is preserved by the polynomial constructors used to build bias-free networks,
 using the computations of their collected input polynomials in `Polynomial/Constructors.lean`.
-Substituting polynomials for the parameters keeps the input degree
-(`isHomogeneous_inputPolynomial_polynomialReparametrize`), and substituting a model homogeneous of
-degree `a` into one homogeneous of degree `b` gives degree `a * b`
-(`isHomogeneous_inputPolynomial_polynomialCompose`). The linear layer has degree one and the
-monomial activation `t ↦ t ^ r` has degree `r`. Zero outputs are homogeneous of every degree.
+Substituting polynomials for the parameters, in particular renaming parameter variables, keeps the
+input degree (`isHomogeneous_inputPolynomial_polynomialReparametrize`,
+`isHomogeneous_inputPolynomial_rename_sumMap`), applying the monomial `X ^ r` coordinatewise to the
+outputs multiplies the input degree by `r` (`isHomogeneous_inputPolynomial_aeval_X_pow`), and
+substituting a model homogeneous of degree `a` into one homogeneous of degree `b` gives degree
+`a * b` (`isHomogeneous_inputPolynomial_polynomialCompose`). Both the linear layer and valid
+convolution have degree one, and the monomial activation `t ↦ t ^ r` has degree `r`. Zero outputs
+are homogeneous of every degree.
 
 Homogeneous polynomial networks and their coefficient spaces follow
 Finkel–Rodriguez–Wu–Yahl, *Activation degree thresholds and expressiveness of polynomial neural
@@ -185,6 +188,23 @@ theorem isHomogeneous_inputPolynomial_polynomialReparametrize (R : W → MvPolyn
   rw [inputPolynomial_polynomialReparametrize]
   exact (hP j).map _
 
+/-- Renaming the parameter variables preserves input homogeneity. -/
+theorem isHomogeneous_inputPolynomial_rename_sumMap (f : W → W')
+    {P : J → MvPolynomial (W ⊕ I) K} {d : ℕ} (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d)
+    (j : J) : (inputPolynomial (fun k => rename (Sum.map f id) (P k)) j).IsHomogeneous d := by
+  rw [inputPolynomial_rename_sumMap]
+  exact (hP j).map _
+
+/-- Applying the monomial `X ^ r` coordinatewise to the outputs of a model whose input polynomials
+are homogeneous of degree `d` gives input polynomials homogeneous of degree `d * r`. -/
+theorem isHomogeneous_inputPolynomial_aeval_X_pow {P : J → MvPolynomial (W ⊕ I) K} {d : ℕ}
+    (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) (r : ℕ) (j : J) :
+    (inputPolynomial
+      (fun k => Polynomial.aeval (P k) (Polynomial.X ^ r : Polynomial K)) j).IsHomogeneous
+      (d * r) := by
+  rw [inputPolynomial_aeval]
+  simpa using (hP j).pow r
+
 /-- Substituting a model whose input polynomials are homogeneous of degree `a` into one whose
 input polynomials are homogeneous of degree `b` gives input polynomials homogeneous of degree
 `a * b`. -/
@@ -210,6 +230,13 @@ theorem isHomogeneous_inputPolynomial_polynomialActivation_X_pow (r : ℕ) (i : 
     IsHomogeneous
       (inputPolynomial (polynomialActivation (W := W) (Polynomial.X ^ r : Polynomial K)) i) r := by
   simpa [inputPolynomial_def] using isHomogeneous_X_pow (R := MvPolynomial W K) i r
+
+/-- Valid convolution is homogeneous of degree one in its inputs. -/
+theorem isHomogeneous_inputPolynomial_polynomialConvolution {n k s m : ℕ}
+    (h : n = s * (m - 1) + k) (i : Fin m) :
+    (inputPolynomial (polynomialConvolution (K := K) h) i).IsHomogeneous 1 := by
+  rw [inputPolynomial_polynomialConvolution]
+  exact IsHomogeneous.sum _ _ _ fun _ _ => isHomogeneous_C_mul_X _ _
 
 end Layers
 
