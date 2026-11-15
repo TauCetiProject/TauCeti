@@ -64,6 +64,17 @@ first `A₅` component and the `D₄` component in position `4`. -/
 def a5FourthD4BlockRotation : Equiv.Perm (Fin a5FourthD4.components.length) :=
   (c[1, 2, 3] : Equiv.Perm (Fin 5))
 
+/-- The rotation of the marked block is the cycle `1 ↦ 2 ↦ 3 ↦ 1`. -/
+theorem a5FourthD4BlockRotation_def :
+    a5FourthD4BlockRotation = (c[1, 2, 3] : Equiv.Perm (Fin 5)) :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block is the cycle `1 ↦ 3 ↦ 2 ↦ 1`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_eq :
+    a5FourthD4BlockRotation.symm = (c[1, 3, 2] : Equiv.Perm (Fin 5)) :=
+  Equiv.ext <| by decide
+
 /-- The generator of the indicated symmetries of a marked block of three positions between one
 leading and one trailing position is the cycle `1 ↦ 2 ↦ 3 ↦ 1`. -/
 private theorem finSumPerm_finSumPerm_finRotate_three :
@@ -98,7 +109,6 @@ theorem map_symmetries_cyclic_eq_zpowers_a5FourthD4BlockRotation
   simp only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Equiv.permCongrHom_coe]
   refine congrArg Fin.val ((Equiv.permCongr_apply _ _ _).trans ?_)
   simp only [finCongr_symm, finCongr_apply]
-  revert k
   decide +revert
 
 /-- The rotation of the marked block has order three. -/
@@ -406,10 +416,13 @@ private theorem a5FourthD4BlockTrialityIsometry_apply_d4Position
     (congrArg (x d4Position) (Fin.cast_eq_self j)))
 
 /-- On the `D₄` component, `a5FourthD4BlockTrialityIsometry` is triality. -/
+@[simp]
 theorem a5FourthD4BlockTrialityIsometry_apply_last
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4BlockTrialityIsometry x (Fin.last 4) =
       typeD4Triality (isSimplyLaced_D 4) (x (Fin.last 4)) :=
+  -- `d4Position` unfolds to `Fin.last 4`, and `d4PositionTriality` to
+  -- `typeD4Triality (isSimplyLaced_D 4)` at the component type `D 4` evaluated there.
   a5FourthD4BlockTrialityIsometry_apply_d4Position x
 
 /-- **The rotation of the marked block combined with triality has order three.** -/

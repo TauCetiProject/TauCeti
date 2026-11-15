@@ -405,9 +405,13 @@ theorem discriminantGroupEquiv_typeD4Triality_glueLabelEquiv (i : Fin 4) :
   rw [typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv,
     typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv]
   have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
-  fin_cases i <;> simp
-  · linear_combination h3
-  · linear_combination ω * h3
+  fin_cases i
+  · simp
+  · simp
+    linear_combination h3
+  · simp
+  · simp
+    linear_combination ω * h3
 
 /-- **The powers of triality act on the `D₄` glue alphabet as multiplication by the powers of
 `ω²`**, read through `typeD4GlueAlphabetQuaternaryIsometry`. Every nonzero element of `F₄` is a
