@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Contact.Slice
 public import TauCeti.Geometry.Contact.Standard
 -- Access the body of `IsLocalDiffeomorphAt` to extract its partial diffeomorphism.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -45,7 +45,8 @@ The proof reduces to the symplectic Darboux theorem along the Reeb flow:
 * By the symplectic Darboux theorem there are coordinates `ψ` on `K` in which `dβ` is the standard
   symplectic form `Σᵢ dqᵢ ∧ dpᵢ`, whose primitive is `-Σᵢ pᵢ dqᵢ`. So `β + ψ^* ⟪p, dq⟫` is closed
   near `0`, and by the Poincaré lemma it is the differential `df` of a smooth function `f`.
-* The shear `(s, t) ↦ (ψ s, t + f s)` pulls `α_std` back to `dt + β` near `0`
+* The shear `(s, t) ↦ (ψ s, t + f s)` (`Diffeomorph.prodShear`) pulls `α_std` back to `dt + β`
+  near `0`
   (`TauCeti.exists_diffeomorph_mpullback_innerProductContactForm_eq_contactization`), and the chart
   is this shear composed with the inverse of the local Reeb flow map.
 
@@ -133,10 +134,9 @@ private theorem exists_diffeomorph_fderiv_eq_add_inner {n : ℕ} (hK : finrank �
   have hdσ (x : K) : extDeriv σ x = 0 := by
     rw [← mextDeriv_eq_extDeriv]
     exact congrFun (SmoothForm.mextDeriv_mextDeriv β) x
-  have hnd : ∀ v, (∀ w, σ s₀ ![v, w] = 0) → v = 0 := fun v hv ↦
-    hβ.1 v fun w ↦ (SmoothForm.mextDeriv_eq_bilinFormAt β s₀ v w).symm.trans (hv w)
   obtain ⟨ψ, hψ₀, hψ⟩ := exists_diffeomorph_eventually_stdSymplecticForm_fderiv_eq (r := ⊤) hK
-    le_top isOpen_univ (mem_univ s₀) hσs.contDiffOn (fun x _ ↦ hdσ x) hnd
+    le_top isOpen_univ (mem_univ s₀) hσs.contDiffOn (fun x _ ↦ hdσ x)
+    fun _ ↦ SmoothForm.eq_zero_of_forall_mextDeriv_eq_zero hβ
   have hψd : ContDiff ℝ ∞ ψ := contMDiff_iff_contDiff.1 ψ.contMDiff
   -- The primitive `θ = -⟪p, dq⟫` of the standard symplectic form, read in the coordinates `ψ`.
   obtain ⟨θ, hθ, hdθ⟩ := exists_smoothForm_apply_eq_neg_inner hψd
@@ -162,67 +162,11 @@ private theorem exists_diffeomorph_fderiv_eq_add_inner {n : ℕ} (hK : finrank �
   rw [fderiv_sub_const]
   exact h
 
-omit [FiniteDimensional ℝ K] in
-/-- **The shear chart.** For Darboux coordinates `ψ` on `K` and a smooth function `f`, the map
-`(s, t) ↦ (ψ s, t + f s)` is a diffeomorphism of `K × ℝ` onto `V × V × ℝ`, with differential
-`(a, r) ↦ (dψ a, r + df a)`. -/
-private theorem exists_diffeomorph_shear {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (ψ : K ≃ₘ⟮𝓘(ℝ, K), 𝓘(ℝ, V × V)⟯ (V × V)) {f : K → ℝ} (hf : ContDiff ℝ ∞ f) :
-    ∃ G : (K × ℝ) ≃ₘ⟮𝓘(ℝ, K).prod 𝓘(ℝ), 𝓘(ℝ, V × V × ℝ)⟯ (V × V × ℝ),
-      (∀ p, G p = ((ψ p.1).1, (ψ p.1).2, p.2 + f p.1)) ∧
-      ∀ p (w : TangentSpace (𝓘(ℝ, K).prod 𝓘(ℝ)) p),
-        mfderiv (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, V × V × ℝ) G p w =
-          ((fderiv ℝ ψ p.1 (Manifold.tangentSpaceProdEquiv p w).1).1,
-            (fderiv ℝ ψ p.1 (Manifold.tangentSpaceProdEquiv p w).1).2,
-            NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p w).2 +
-              fderiv ℝ f p.1 (Manifold.tangentSpaceProdEquiv p w).1) := by
-  have hψd : ContDiff ℝ ∞ ψ := contMDiff_iff_contDiff.1 ψ.contMDiff
-  have hψD (x : K) : DifferentiableAt ℝ ψ x := hψd.differentiable (by simp) x
-  have hfD (x : K) : DifferentiableAt ℝ f x := hf.differentiable (by simp) x
-  let g : K × ℝ → V × V × ℝ := fun p ↦ ((ψ p.1).1, (ψ p.1).2, p.2 + f p.1)
-  let h : V × V × ℝ → K × ℝ := fun z ↦ (ψ.symm (z.1, z.2.1), z.2.2 - f (ψ.symm (z.1, z.2.1)))
-  have hψs : ContDiff ℝ ∞ ψ.symm := contMDiff_iff_contDiff.1 ψ.symm.contMDiff
-  have hg : ContDiff ℝ ∞ g := by
-    have h₁ : ContDiff ℝ ∞ fun p : K × ℝ ↦ ψ p.1 := hψd.comp contDiff_fst
-    exact h₁.fst.prodMk (h₁.snd.prodMk (contDiff_snd.add (hf.comp contDiff_fst)))
-  have hh₁ : ContDiff ℝ ∞ fun z : V × V × ℝ ↦ ψ.symm (z.1, z.2.1) :=
-    hψs.comp (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd))
-  have hh : ContDiff ℝ ∞ h := hh₁.prodMk ((contDiff_snd.comp contDiff_snd).sub (hf.comp hh₁))
-  refine ⟨{ toFun := g
-            invFun := h
-            left_inv := fun p ↦ by
-              simp only [g, h, Prod.mk.eta, Diffeomorph.symm_apply_apply, add_sub_cancel_right]
-            right_inv := fun z ↦ by
-              simp only [g, h, Diffeomorph.apply_symm_apply, sub_add_cancel]
-            contMDiff_toFun :=
-              contMDiff_prod_modelWithCornersSelf_iff.2 (contMDiff_iff_contDiff.2 hg)
-            contMDiff_invFun := (contMDiff_iff_contDiff.2 hh₁).prodMk
-              (contMDiff_iff_contDiff.2 hh.snd) }, fun _ ↦ rfl, fun p w ↦ ?_⟩
-  have h₁ : HasFDerivAt (fun p : K × ℝ ↦ ψ p.1)
-      ((fderiv ℝ ψ p.1).comp (ContinuousLinearMap.fst ℝ K ℝ)) p :=
-    (hψD p.1).hasFDerivAt.comp p hasFDerivAt_fst
-  have h₂ : HasFDerivAt (fun p : K × ℝ ↦ p.2 + f p.1)
-      (ContinuousLinearMap.snd ℝ K ℝ + (fderiv ℝ f p.1).comp (ContinuousLinearMap.fst ℝ K ℝ)) p :=
-    hasFDerivAt_snd.add ((hfD p.1).hasFDerivAt.comp p hasFDerivAt_fst)
-  refine (mfderiv_prod_modelWithCornersSelf_apply g p w).trans ?_
-  rw [(h₁.fst.prodMk (h₁.snd.prodMk h₂)).fderiv]
-  simp only [Manifold.tangentSpaceProdEquiv_apply, NormedSpace.fromTangentSpace_apply]
-  -- Evaluate the derivative on the pair `w`.
-  have hv (v : K × ℝ) : ((ContinuousLinearMap.fst ℝ V V).comp ((fderiv ℝ ψ p.1).comp
-      (ContinuousLinearMap.fst ℝ K ℝ))).prod (((ContinuousLinearMap.snd ℝ V V).comp
-      ((fderiv ℝ ψ p.1).comp (ContinuousLinearMap.fst ℝ K ℝ))).prod
-      (ContinuousLinearMap.snd ℝ K ℝ + (fderiv ℝ f p.1).comp (ContinuousLinearMap.fst ℝ K ℝ))) v =
-      ((fderiv ℝ ψ p.1 v.1).1, (fderiv ℝ ψ p.1 v.1).2, v.2 + fderiv ℝ f p.1 v.1) := by
-    simp
-  exact hv w
-
 /-- **Darboux coordinates for a contactization form.** Let `β` be a smooth one-form on a
 finite-dimensional real normed space `K` of dimension `2 n` whose exterior derivative is
 nondegenerate at `s₀`. Then there is a diffeomorphism `G : K × ℝ ≃ ℝⁿ × ℝⁿ × ℝ` with `G (s₀, 0) = 0`
 which, on `U × ℝ` for an open neighbourhood `U` of `s₀`, pulls the standard contact form
-`dz - Σᵢ pᵢ dqᵢ` back exactly to the contactization form `dt + β`. In coordinates `G` is the shear
-`(s, t) ↦ (ψ s, t + f s)`, where `ψ` are Darboux coordinates for `dβ` and `f` is a primitive of the
-closed form `β + ψ^* ⟪p, dq⟫`. -/
+`dz - Σᵢ pᵢ dqᵢ` back exactly to the contactization form `dt + β`. -/
 theorem exists_diffeomorph_mpullback_innerProductContactForm_eq_contactization {n : ℕ}
     (hK : finrank ℝ K = 2 * n) (β : SmoothForm 𝓘(ℝ, K) K ℝ 1) {s₀ : K}
     (hβ : ((mextDerivₗ 𝓘(ℝ, K) 1 β).bilinFormAt s₀).Nondegenerate) :
@@ -235,7 +179,25 @@ theorem exists_diffeomorph_mpullback_innerProductContactForm_eq_contactization {
           (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 p =
         (-β).contactization.1 p := by
   obtain ⟨ψ, f, hψ₀, hf₀, hf, hdf⟩ := exists_diffeomorph_fderiv_eq_add_inner hK β hβ
-  obtain ⟨G, hG, hdG⟩ := exists_diffeomorph_shear ψ hf
+  set V := EuclideanSpace ℝ (Fin n)
+  -- The shear `(s, t) ↦ (ψ s, t + f s)`, reassociated into `V × V × ℝ`.
+  set G := (ψ.prodShear (contMDiff_iff_contDiff.2 hf)).trans
+    (ContinuousLinearEquiv.prodAssoc ℝ V V ℝ).toDiffeomorph
+  have hG (p : K × ℝ) : G p = ((ψ p.1).1, (ψ p.1).2, p.2 + f p.1) := by simp [G]
+  have hdG (p : K × ℝ) (w : TangentSpace (𝓘(ℝ, K).prod 𝓘(ℝ)) p) :
+      mfderiv (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, V × V × ℝ) G p w =
+        ((fderiv ℝ ψ p.1 (Manifold.tangentSpaceProdEquiv p w).1).1,
+          (fderiv ℝ ψ p.1 (Manifold.tangentSpaceProdEquiv p w).1).2,
+          NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p w).2 +
+            fderiv ℝ f p.1 (Manifold.tangentSpaceProdEquiv p w).1) := by
+    rw [Diffeomorph.coe_trans, mfderiv_comp_apply p
+      ((ContinuousLinearEquiv.prodAssoc ℝ V V ℝ).toDiffeomorph.mdifferentiable (by simp) _)
+      ((ψ.prodShear _).mdifferentiable (by simp) p), mfderiv_eq_fderiv,
+      ContinuousLinearEquiv.coe_toDiffeomorph, ContinuousLinearEquiv.fderiv,
+      Diffeomorph.mfderiv_prodShear_apply _ _ (by simp), mvfderiv_eq_fderiv_apply,
+      mvfderiv_eq_fderiv_apply]
+    -- The tangent-space identifications of the model spaces are the identity.
+    rfl
   obtain ⟨U, hUf, hU, hs₀U⟩ := eventually_nhds_iff.1 hdf
   refine ⟨G, U, hU, hs₀U, by simp [hG, hψ₀, hf₀], fun p hp ↦ ?_⟩
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
@@ -320,17 +282,14 @@ theorem SmoothForm.IsContactForm.exists_strictDarbouxChart (hα : α.IsContactFo
         (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (chart x)
           ![mvfderiv I chart x v] = α.1 x ![v] := by
   -- A hypersurface `ι : K → M` through `x₀` transverse to the Reeb vector field.
-  have hR₀ : α.reebVectorField x₀ ≠ 0 := fun h ↦ zero_ne_one <|
-    ((α.1 x₀).map_coord_zero 0 (by simpa using h)).symm.trans (hα.apply_reebVectorField x₀)
   obtain ⟨K, ι, hι, rfl, hιinj, hRι, hdimK⟩ :=
-    exists_hypersurface_notMem_range_mfderiv (n := ⊤) le_top hR₀
+    exists_hypersurface_notMem_range_mfderiv (n := ⊤) le_top (hα.reebVectorField_ne_zero x₀)
   set β := SmoothForm.mpullback ι hι α
   have hβ := hα.nondegenerate_bilinFormAt_mextDerivₗ_mpullback hι hdimK hιinj hRι
   -- `dβ` is symplectic at `0`, so `K` has even dimension `2 n`.
   obtain ⟨n, hn⟩ : ∃ n, finrank ℝ K = 2 * n := by
-    have hnd : ∀ v, (∀ w, mextDeriv β.1 0 ![v, w] = 0) → v = 0 := fun v hv ↦
-      hβ.1 v fun w ↦ (SmoothForm.mextDeriv_eq_bilinFormAt β 0 v w).symm.trans (hv w)
-    obtain ⟨m, hm⟩ := (SymplecticForm.ofContinuousAlternatingMap (mextDeriv β.1 0) hnd).even_finrank
+    obtain ⟨m, hm⟩ := (SymplecticForm.ofContinuousAlternatingMap (mextDeriv β.1 0)
+      fun _ ↦ SmoothForm.eq_zero_of_forall_mextDeriv_eq_zero hβ).even_finrank
     exact ⟨m, hm.trans (two_mul m).symm⟩
   set V := EuclideanSpace ℝ (Fin n)
   -- Darboux coordinates `G` for `dt + β` on `K × ℝ`, and the Reeb flow chart `Φ` pulling `α` back
@@ -338,12 +297,7 @@ theorem SmoothForm.IsContactForm.exists_strictDarbouxChart (hα : α.IsContactFo
   obtain ⟨G, U, hU, h0U, hG0, hGβ⟩ :=
     exists_diffeomorph_mpullback_innerProductContactForm_eq_contactization hn β hβ
   obtain ⟨Φ, h0, hΦ0, hΦU, hΦα⟩ := exists_partialDiffeomorph_reebFlow hα hι hdimK hιinj hRι hU h0U
-  let G' : PartialDiffeomorph (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, V × V × ℝ) (K × ℝ) (V × V × ℝ) ∞ :=
-    { toPartialEquiv := G.toEquiv.toPartialEquiv
-      open_source := isOpen_univ
-      open_target := isOpen_univ
-      contMDiffOn_toFun := G.contMDiff.contMDiffOn
-      contMDiffOn_invFun := G.symm.contMDiff.contMDiffOn }
+  set G' := G.toPartialDiffeomorph
   have hG' : (⇑G' : K × ℝ → V × V × ℝ) = G := rfl
   have hsrc (x : M) : x ∈ (Φ.symm.trans G').source ↔ x ∈ Φ.target := by
     simp [G']

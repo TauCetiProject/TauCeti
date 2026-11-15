@@ -133,7 +133,7 @@ variable [I.Boundaryless] [FiniteDimensional ℝ E] {n : ℕ∞} [IsManifold I n
 `x₀` of a finite-dimensional boundaryless `C^n` manifold, `1 ≤ n`, is transverse to a `C^n`
 hypersurface through `x₀`: there are a hyperplane `K` of the model space and a `C^n` map
 `ι : K → M` with `ι 0 = x₀`, injective differential at `0`, and `v` outside the range of that
-differential. Near `0` the map `ι` is the extended chart at `x₀` read backwards along `x₀ + K`. -/
+differential. -/
 theorem exists_hypersurface_notMem_range_mfderiv (hn : 1 ≤ n) {x₀ : M} {v : TangentSpace I x₀}
     (hv : v ≠ 0) :
     ∃ (K : Submodule ℝ E) (ι : K → M), ContMDiff 𝓘(ℝ, K) I n ι ∧ ι 0 = x₀ ∧
