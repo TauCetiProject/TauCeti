@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -20,16 +21,15 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 A `C^n` section of `Bundle.Trivial M F` with normed fibre `F` is a `C^n` map `M → F`
 (`ContMDiffSection.trivialEquiv`). When the fibre `W` is instead a finite-dimensional Hausdorff
 topological module without a fixed norm (such as a real `LieAlgebra` or `GroupLieAlgebra J G`),
-`Bundle.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal model fibre without
-`AddCommGroup` diamonds on `W`, and `ContMDiffSection.modelDeriv` differentiates smooth sections
-along tangent vectors independently of any norm on `W`.
+`Bundle.TrivialModel 𝕜 W` (from `TauCeti.Geometry.Manifold.VectorBundle.Trivial`) supplies
+`Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal model fibre without `AddCommGroup` diamonds on `W`, and
+`ContMDiffSection.modelDeriv` differentiates smooth sections along tangent vectors independently of
+any norm on `W`.
 
 ## Main definitions
 
 * `ContMDiffSection.trivialEquiv`, `ContMDiffSection.trivialConst`, `ContMDiffSection.trivialCoord`:
   function equivalence, constant sections, and basis coordinates for `Bundle.Trivial M F`.
-* `Bundle.TrivialModel 𝕜 W`: coordinate normed model space equipping `Bundle.Trivial B W` with a
-  `C^n` vector bundle structure for a finite-dimensional Hausdorff topological module `W`.
 * `ContMDiffSection.modelEquiv`, `ContMDiffSection.modelConst`, `ContMDiffSection.modelCoord`,
   `ContMDiffSection.modelMap`, `ContMDiffSection.modelPullback`, `ContMDiffSection.modelDeriv`,
   `ContMDiffSection.modelLieDeriv`: section operations and norm-independent derivatives on
@@ -125,178 +125,6 @@ theorem eq_sum_trivialCoord_smul_trivialConst [Fintype ι] (b : Module.Basis ι 
 
 end Basis
 
-end ContMDiffSection
-
-/-! ### Trivial bundles with finite-dimensional topological-module fibres -/
-
-namespace Bundle
-
-/-- The coordinate normed space `Fin (Module.finrank 𝕜 W) → 𝕜` used as the model fibre of
-`Bundle.Trivial B W` when `W` is a finite-dimensional topological vector space without a fixed
-norm, avoiding instance diamonds with `Bundle.Trivial.fiberBundle`. -/
-def TrivialModel (𝕜 W : Type*) [DivisionRing 𝕜] [AddCommGroup W] [Module 𝕜 W] : Type _ :=
-  Fin (Module.finrank 𝕜 W) → 𝕜
-
-namespace TrivialModel
-
-section Normed
-
-variable {𝕜 W : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup W] [Module 𝕜 W]
-
-instance instNormedAddCommGroup : NormedAddCommGroup (TrivialModel 𝕜 W) :=
-  inferInstanceAs (NormedAddCommGroup (Fin (Module.finrank 𝕜 W) → 𝕜))
-
-instance instNormedSpace : NormedSpace 𝕜 (TrivialModel 𝕜 W) :=
-  inferInstanceAs (NormedSpace 𝕜 (Fin (Module.finrank 𝕜 W) → 𝕜))
-
-instance instFiniteDimensional : FiniteDimensional 𝕜 (TrivialModel 𝕜 W) :=
-  inferInstanceAs (FiniteDimensional 𝕜 (Fin (Module.finrank 𝕜 W) → 𝕜))
-
-instance instCompleteSpace [CompleteSpace 𝕜] : CompleteSpace (TrivialModel 𝕜 W) :=
-  inferInstanceAs (CompleteSpace (Fin (Module.finrank 𝕜 W) → 𝕜))
-
-end Normed
-
-section Bundle
-
-variable {𝕜 B W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [TopologicalSpace B] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
-  [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W] [FiniteDimensional 𝕜 W]
-
-variable (𝕜 W) in
-/-- Continuous linear equivalence between `W` and `TrivialModel 𝕜 W` via `Module.finBasis 𝕜 W`. -/
-def equiv : W ≃L[𝕜] TrivialModel 𝕜 W :=
-  LinearEquiv.toContinuousLinearEquiv ((Module.finBasis 𝕜 W).equivFun : W ≃ₗ[𝕜] TrivialModel 𝕜 W)
-
-instance instTopologicalSpaceTotalSpace :
-    TopologicalSpace (TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)) :=
-  TopologicalSpace.induced TotalSpace.proj ‹TopologicalSpace B› ⊓
-    TopologicalSpace.induced TotalSpace.snd ‹TopologicalSpace W›
-
-variable (𝕜 B W) in
-/-- Homeomorphism between the total space of `Bundle.Trivial B W` (modelled on `TrivialModel 𝕜 W`)
-and `B × TrivialModel 𝕜 W`. -/
-def homeomorphProd : TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W) ≃ₜ B × TrivialModel 𝕜 W :=
-  (Equiv.mk (fun p ↦ (p.proj, p.snd)) (fun q ↦ ⟨q.1, q.2⟩) (fun _ ↦ rfl) (fun _ ↦ rfl)
-    |>.toHomeomorphOfIsInducing
-      ⟨by simp only [instTopologicalSpaceProd, induced_inf, induced_compose]; rfl⟩).trans
-    ((Homeomorph.refl B).prodCongr (equiv 𝕜 W).toHomeomorph)
-
-@[simp] theorem homeomorphProd_apply (p : TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)) :
-    homeomorphProd 𝕜 B W p = (p.proj, equiv 𝕜 W p.snd) := (rfl)
-
-@[simp] theorem homeomorphProd_symm_apply (q : B × TrivialModel 𝕜 W) :
-    (homeomorphProd 𝕜 B W).symm q = ⟨q.1, (equiv 𝕜 W).symm q.2⟩ := (rfl)
-
-variable (𝕜 B W) in
-/-- Global trivialization of `Bundle.Trivial B W` with model fibre `TrivialModel 𝕜 W`. -/
-def trivialization :
-    Trivialization (TrivialModel 𝕜 W) (π (TrivialModel 𝕜 W) (Bundle.Trivial B W)) where
-  toOpenPartialHomeomorph := (homeomorphProd 𝕜 B W).toOpenPartialHomeomorph
-  baseSet := univ
-  open_baseSet := isOpen_univ
-  source_eq := rfl
-  target_eq := univ_prod_univ.symm
-  proj_toFun _ _ := rfl
-
-@[simp] theorem trivialization_baseSet : (trivialization 𝕜 B W).baseSet = univ := (rfl)
-
-@[simp] theorem trivialization_source : (trivialization 𝕜 B W).source = univ := (rfl)
-
-@[simp] theorem trivialization_apply (p : TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)) :
-    trivialization 𝕜 B W p = (p.proj, equiv 𝕜 W p.snd) := (rfl)
-
-@[simp] theorem toOpenPartialHomeomorph_trivialization_symm_apply (q : B × TrivialModel 𝕜 W) :
-    (trivialization 𝕜 B W).toOpenPartialHomeomorph.symm q = ⟨q.1, (equiv 𝕜 W).symm q.2⟩ := (rfl)
-
-instance instFiberBundle : FiberBundle (TrivialModel 𝕜 W) (Bundle.Trivial B W) where
-  trivializationAtlas' := {trivialization 𝕜 B W}
-  trivializationAt' _ := trivialization 𝕜 B W
-  mem_baseSet_trivializationAt' _ := by simp
-  trivialization_mem_atlas' _ := mem_singleton _
-  totalSpaceMk_isInducing' b := by
-    have hcomp : TotalSpace.mk (F := TrivialModel 𝕜 W) (E := Bundle.Trivial B W) b =
-        (homeomorphProd 𝕜 B W).symm ∘ (fun y ↦ (b, y)) ∘ equiv 𝕜 W :=
-      funext fun w ↦ (congrArg (TotalSpace.mk (F := TrivialModel 𝕜 W) (E := Bundle.Trivial B W) b)
-        ((equiv 𝕜 W).symm_apply_apply w).symm).trans
-        (homeomorphProd_symm_apply (b, equiv 𝕜 W w)).symm
-    rw [hcomp]
-    exact (homeomorphProd 𝕜 B W).symm.isInducing.comp
-      ((Topology.isInducing_const_prod.2 .id).comp (equiv 𝕜 W).toHomeomorph.isInducing)
-
-@[simp] theorem trivializationAt_eq (b : B) :
-    trivializationAt (TrivialModel 𝕜 W) (Bundle.Trivial B W) b = trivialization 𝕜 B W := (rfl)
-
-theorem eq_trivialization
-    (e : Trivialization (TrivialModel 𝕜 W) (π (TrivialModel 𝕜 W) (Bundle.Trivial B W)))
-    [h : MemTrivializationAtlas e] : e = trivialization 𝕜 B W :=
-  mem_singleton_iff.1 h.out
-
-instance instIsLinearTrivialization : (trivialization 𝕜 B W).IsLinear 𝕜 where
-  linear _ _ := ⟨(equiv 𝕜 W).map_add, (equiv 𝕜 W).map_smul⟩
-
-@[simp] theorem trivialization_symm_apply (b : B) (v : TrivialModel 𝕜 W) :
-    (trivialization 𝕜 B W).symm b v = (equiv 𝕜 W).symm v := by
-  have hv : (trivialization 𝕜 B W ⟨b, (equiv 𝕜 W).symm v⟩).2 = v := by simp
-  simpa only [hv] using
-    (trivialization 𝕜 B W).symm_apply_apply_mk (b := b) (by simp) ((equiv 𝕜 W).symm v)
-
-theorem trivialization_coordChangeL (b : B) :
-    (trivialization 𝕜 B W).coordChangeL 𝕜 (trivialization 𝕜 B W) b =
-      ContinuousLinearEquiv.refl 𝕜 (TrivialModel 𝕜 W) := by
-  ext v; rw [Trivialization.coordChangeL_apply']; · simp
-  exact ⟨mem_univ _, mem_univ _⟩
-
-instance instVectorBundle : VectorBundle 𝕜 (TrivialModel 𝕜 W) (Bundle.Trivial B W) where
-  trivialization_linear' e _ := by obtain rfl := eq_trivialization e; infer_instance
-  continuousOn_coordChange' e e' _ _ := by
-    obtain rfl := eq_trivialization e; obtain rfl := eq_trivialization e'
-    simp only [trivialization_coordChangeL]; exact continuous_const.continuousOn
-
-@[simp] theorem trivialization_continuousLinearMapAt_apply (b : B) (w : W) :
-    (trivialization 𝕜 B W).continuousLinearMapAt 𝕜 b w = equiv 𝕜 W w := by
-  rw [Trivialization.continuousLinearMapAt_apply,
-    (trivialization 𝕜 B W).coe_linearMapAt_of_mem (mem_univ b)]; rfl
-
-instance instContMDiffVectorBundle {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-    [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [ChartedSpace HB B] {n : ℕ∞ω} :
-    ContMDiffVectorBundle n (TrivialModel 𝕜 W) (Bundle.Trivial B W) IB where
-  contMDiffOn_coordChangeL e e' _ _ := by
-    obtain rfl := eq_trivialization e; obtain rfl := eq_trivialization e'
-    simp_rw [trivialization_coordChangeL]; exact contMDiff_const.contMDiffOn
-
-section ContMDiffMk
-
-variable {EB HB EM HM M : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
-  {I : ModelWithCorners 𝕜 EB HB} [ChartedSpace HB B] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-  [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
-  {n : ℕ∞ω} {b : M → B} {f : M → W}
-
-/-- A map into `TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)` is `C^n` at a point iff its
-base map and its `TrivialModel`-valued fibre map are `C^n` there. -/
-theorem contMDiffAt_mk_iff {x : M} :
-    ContMDiffAt J (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) n
-        (fun y ↦ TotalSpace.mk' (TrivialModel 𝕜 W) (E := Bundle.Trivial B W) (b y) (f y)) x ↔
-      ContMDiffAt J I n b x ∧
-        ContMDiffAt J 𝓘(𝕜, TrivialModel 𝕜 W) n (fun y ↦ equiv 𝕜 W (f y)) x := by
-  rw [Bundle.contMDiffAt_totalSpace_iff]; simp
-
-theorem contMDiff_mk_iff :
-    ContMDiff J (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) n
-        (fun y ↦ TotalSpace.mk' (TrivialModel 𝕜 W) (E := Bundle.Trivial B W) (b y) (f y)) ↔
-      ContMDiff J I n b ∧ ContMDiff J 𝓘(𝕜, TrivialModel 𝕜 W) n (fun y ↦ equiv 𝕜 W (f y)) :=
-  (forall_congr' fun _ ↦ contMDiffAt_mk_iff).trans forall_and
-
-end ContMDiffMk
-
-end Bundle
-
-end TrivialModel
-
-end Bundle
-
-namespace ContMDiffSection
-
 section TrivialModel
 
 variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -368,14 +196,19 @@ def modelMap (L : W →ₗ[𝕜] W') :
   let L_mod : Bundle.TrivialModel 𝕜 W →L[𝕜] Bundle.TrivialModel 𝕜 W' :=
     LinearMap.toContinuousLinearMap ((Bundle.TrivialModel.equiv 𝕜 W').toLinearMap.comp
       (L.comp (Bundle.TrivialModel.equiv 𝕜 W).symm.toLinearMap))
-  { toFun s := ⟨fun x ↦ L (s x), Bundle.TrivialModel.contMDiff_mk_iff.2
-      ⟨contMDiff_id, (L_mod.contMDiff.comp (modelEquiv s).contMDiff).congr fun _ ↦ by simp [L_mod]⟩⟩
-    map_add' s t := ContMDiffSection.ext fun x ↦ L.map_add (s x) (t x)
-    map_smul' f s := by ext x; simp [ContMDiffSection.smul_apply] }
+  let hid := Bundle.TrivialModel.contMDiff_mk_iff.1 (contMDiff_id (I := I.prod _))
+  have hL : ContMDiff (I.prod 𝓘(𝕜, Bundle.TrivialModel 𝕜 W))
+      (I.prod 𝓘(𝕜, Bundle.TrivialModel 𝕜 W')) n
+      (fun p : TotalSpace (Bundle.TrivialModel 𝕜 W) (Bundle.Trivial M W) ↦
+        (⟨p.proj, L p.2⟩ : TotalSpace (Bundle.TrivialModel 𝕜 W') (Bundle.Trivial M W'))) :=
+    Bundle.TrivialModel.contMDiff_mk_iff.2
+      ⟨hid.1, (L_mod.contMDiff.comp hid.2).congr fun _ ↦ by simp [L_mod]⟩
+  { (mapLinearMap (fun _ ↦ L) hL).toAddHom with
+    map_smul' := mapLinearMap_smul_function (fun _ ↦ L) hL }
 
 @[simp] theorem modelMap_apply (L : W →ₗ[𝕜] W')
     (s : Cₛ^n⟮I; Bundle.TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
-    modelMap L s x = L (s x) := (rfl)
+    modelMap L s x = L (s x) := by simp [modelMap]
 
 end PullbackMap
 
@@ -405,8 +238,6 @@ theorem eq_sum_modelCoord_smul_modelConst {ι : Type*} [Fintype ι] (b : Module.
   rw [evalLinearMap_apply] at hsum
   exact (by simp [evalLinearMap_apply, Module.Basis.coord_apply] : s x = _).trans hsum.symm
 
-section Deriv
-
 /-- Directional derivative of a smooth section `s` of `Bundle.Trivial M W` at `x : M`, independent
 of any norm on `W`. -/
 def modelDeriv (s : Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
@@ -424,10 +255,8 @@ theorem modelEquiv_modelDeriv_apply
 
 @[simp] theorem modelDeriv_modelConst (w : W) (x : M) :
     modelDeriv (modelConst I M ∞ w) x = 0 := by
-  ext v
-  have hconst : ⇑(modelEquiv (modelConst I M ∞ w)) = fun _ : M ↦ Bundle.TrivialModel.equiv 𝕜 W w :=
-    rfl
-  simp [modelDeriv, hconst, mvfderiv_const]
+  ext v; simp [modelDeriv, show ⇑(modelEquiv (modelConst I M ∞ w)) =
+    fun _ : M ↦ Bundle.TrivialModel.equiv 𝕜 W w from rfl, mvfderiv_const]
 
 theorem modelDeriv_add (s t : Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :
     modelDeriv (s + t) x = modelDeriv s x + modelDeriv t x := by
@@ -461,13 +290,11 @@ theorem modelDeriv_smul (f : C^∞⟮I, M; 𝕜⟯)
       rw [ContMDiffSection.smul_apply, map_smul]; rfl
   rw [map_add, map_smul, map_smul, modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply,
     ← modelEquiv_apply, hfs, mvfderiv_smul (f.contMDiff.mdifferentiableAt (by simp))
-      ((modelEquiv s).contMDiff.mdifferentiableAt (by simp))]
-  rfl
+      ((modelEquiv s).contMDiff.mdifferentiableAt (by simp))]; rfl
 
 /-- Directional derivative of a smooth section `s` of `Bundle.Trivial M W` along a smooth vector
 field `X`, packaged as a smooth section of `Bundle.Trivial M W`. -/
-def modelLieDeriv [IsManifold I ∞ M]
-    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+def modelLieDeriv [IsManifold I ∞ M] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
     (s : Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 W, Bundle.Trivial M W⟯) :
     Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 W, Bundle.Trivial M W⟯ :=
   modelEquiv.symm ⟨fun x ↦ mvfderiv I (modelEquiv s) x (X x),
@@ -507,8 +334,7 @@ theorem modelDeriv_modelPullback {E' H' N : Type*} [NormedAddCommGroup E'] [Norm
     (v : TangentSpace J y) :
     modelDeriv (modelPullback φ s) y v = modelDeriv s (φ y) (mfderiv J I φ y v) := by
   apply (Bundle.TrivialModel.equiv 𝕜 W).injective
-  have hcomp : ⇑(modelEquiv (modelPullback φ s)) = ⇑(modelEquiv s) ∘ ⇑φ := by
-    funext z; simp [modelPullback]
+  have hcomp : ⇑(modelEquiv (modelPullback φ s)) = ⇑(modelEquiv s) ∘ ⇑φ := funext fun _ ↦ by simp
   rw [modelEquiv_modelDeriv_apply, modelEquiv_modelDeriv_apply, hcomp]
   exact mvfderiv_comp_apply y ((modelEquiv s).contMDiff.mdifferentiableAt (by simp))
     (φ.contMDiff.mdifferentiableAt (by simp)) v
@@ -531,8 +357,7 @@ theorem modelDeriv_modelMap {W' : Type*} [AddCommGroup W'] [Module 𝕜 W']
 
 /-- When the fibre `F` is a normed space, `modelDeriv` agrees with `mvfderiv`. -/
 theorem modelDeriv_eq_mvfderiv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [FiniteDimensional 𝕜 F]
-    (s : Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 F, Bundle.Trivial M F⟯) (x : M) :
+    [FiniteDimensional 𝕜 F] (s : Cₛ^∞⟮I; Bundle.TrivialModel 𝕜 F, Bundle.Trivial M F⟯) (x : M) :
     modelDeriv s x = mvfderiv I s x := by
   let e := Bundle.TrivialModel.equiv 𝕜 F
   have hs : ⇑s = ⇑e.symm.toContinuousLinearMap ∘ ⇑(modelEquiv s) :=
@@ -540,10 +365,7 @@ theorem modelDeriv_eq_mvfderiv {F : Type*} [NormedAddCommGroup F] [NormedSpace �
   ext v; conv_rhs => rw [hs]
   rw [mvfderiv_comp_apply x e.symm.toContinuousLinearMap.mdifferentiableAt
     ((modelEquiv s).contMDiff.mdifferentiableAt (by simp)) v, mvfderiv_eq_fderiv,
-    ContinuousLinearMap.fderiv]
-  rfl
-
-end Deriv
+    ContinuousLinearMap.fderiv]; rfl
 
 end TrivialModel
 

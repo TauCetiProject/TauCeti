@@ -77,6 +77,22 @@ theorem tangent_bracket_apply (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Ty
     (tangent I M).bracket X Y x = mlieBracket I X Y x :=
   (rfl)
 
+/-- `anchorDeriv` on the tangent Lie algebroid intertwines the section bracket with the commutator
+of directional derivatives, without requiring `T2Space M`. -/
+theorem tangent_anchorDeriv_bracket
+    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    (tangent I M).anchorDeriv ((tangent I M).bracket X Y) f =
+      (tangent I M).anchorDeriv X ((tangent I M).anchorDeriv Y f) -
+        (tangent I M).anchorDeriv Y ((tangent I M).anchorDeriv X f) := by
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
+  have hZf (Z : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+      ⇑((tangent I M).anchorDeriv Z f) = fun y ↦ mvfderiv I f y (Z y) :=
+    funext fun _ ↦ by rw [anchorDeriv_apply, tangent_anchor_apply]
+  ext x; simp only [anchorDeriv_apply, tangent_anchor_apply, tangent_bracket_apply,
+    ContMDiffMap.coe_sub, Pi.sub_apply, hZf]
+  exact _root_.mvfderiv_mlieBracket f.contMDiff.contMDiffAt (by simp)
+    (X.contMDiff.mdifferentiableAt (by simp)) (Y.contMDiff.mdifferentiableAt (by simp))
+
 end LieAlgebroid
 
 end TauCeti

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -57,6 +58,8 @@ and `𝔤_x` are the image and the kernel of the differential at the identity of
   fields.
 * `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
   space by the constant vector fields of a linear map `τ`.
+* `TauCeti.InfinitesimalAction.affineLine`: the action of `LieAlgebra.AffineLine ℝ` on `ℝ` by
+  affine vector fields `x ↦ u.1 * x + u.2`.
 
 ## References
 
@@ -330,6 +333,46 @@ theorem translation_apply (τ : 𝔤 →ₗ[ℝ] V) (Z : 𝔤) (x : V) : transla
   (rfl)
 
 end translation
+
+section affineLine
+
+/-- The standard infinitesimal action of `LieAlgebra.AffineLine ℝ` on `ℝ`, sending the dilation
+`(1, 0)` to `x ↦ x` (`x ∂_x`) and the translation `(0, 1)` to `x ↦ 1` (`∂_x`). -/
+def affineLine : InfinitesimalAction (LieAlgebra.AffineLine ℝ) 𝓘(ℝ, ℝ) ℝ where
+  toLinearMap :=
+    { toFun u x := (u.1 * x + u.2 : ℝ)
+      map_add' u v := funext fun x ↦ by
+        -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
+        change (u + v).1 * x + (u + v).2 = (u.1 * x + u.2) + (v.1 * x + v.2); simp [add_mul]; ring
+      map_smul' c u := funext fun x ↦ by
+        -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
+        change (c • u).1 * x + (c • u).2 = c * (u.1 * x + u.2); simp [mul_add, mul_assoc] }
+  contMDiff_toLinearMap' _ :=
+    contMDiff_vectorSpace_iff_contDiff.2 ((contDiff_const.mul contDiff_id).add contDiff_const)
+  toLinearMap_lie' u v := funext fun x ↦ by
+    let V (w : LieAlgebra.AffineLine ℝ) : ∀ y : ℝ, TangentSpace 𝓘(ℝ, ℝ) y :=
+      fun y ↦ (w.1 * y + w.2 : ℝ)
+    have hu (w : LieAlgebra.AffineLine ℝ) :
+        HasFDerivAt (fun y : ℝ ↦ w.1 * y + w.2) (w.1 • ContinuousLinearMap.id ℝ ℝ) x := by
+      simpa using ((hasFDerivAt_id x).const_mul w.1).add_const w.2
+    -- Evaluate `toLinearMap` at `⁅u, v⁆` and expose the dependent section `V` for `mlieBracket`.
+    change ((⁅u, v⁆ : LieAlgebra.AffineLine ℝ).1 * x +
+        (⁅u, v⁆ : LieAlgebra.AffineLine ℝ).2 : ℝ) = -mlieBracket 𝓘(ℝ, ℝ) (V u) (V v) x
+    rw [mlieBracket_eq_lieBracket]
+    -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
+    change ((⁅u, v⁆ : LieAlgebra.AffineLine ℝ).1 * x +
+        (⁅u, v⁆ : LieAlgebra.AffineLine ℝ).2 : ℝ) =
+      -lieBracket ℝ (fun y : ℝ ↦ u.1 * y + u.2) (fun y : ℝ ↦ v.1 * y + v.2) x
+    rw [lieBracket_eq]; dsimp only; rw [(hu u).fderiv, (hu v).fderiv]
+    simp only [LieAlgebra.AffineLine.fst_lie, LieAlgebra.AffineLine.snd_lie,
+      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]; ring
+
+@[simp]
+theorem affineLine_apply (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :
+    affineLine u x = u.1 * x + u.2 :=
+  (rfl)
+
+end affineLine
 
 end InfinitesimalAction
 

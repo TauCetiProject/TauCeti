@@ -212,6 +212,18 @@ theorem bracket_smul_right (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ�
   ext x
   simp [A.bracket_smul_apply]
 
+/-- All Lie algebroid brackets are skew-symmetric: `bracket a b = -bracket b a`. -/
+theorem bracket_swap (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket a b = -A.bracket b a := by
+  have h := A.bracket_self (a + b)
+  simp only [map_add, LinearMap.add_apply, A.bracket_self, zero_add, add_zero] at h
+  exact eq_neg_of_add_eq_zero_right h
+
+/-- The Leibniz rule in the first argument: `[f • a, b] = f • [a, b] - (ρ(b) f) • a`. -/
+theorem bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
+    A.bracket (f • a) b = f • A.bracket a b - A.anchorDeriv b f • a := by
+  rw [A.bracket_swap (f • a) b, A.bracket_smul_right, neg_add, ← smul_neg, ← A.bracket_swap,
+    sub_eq_add_neg]
+
 section Separation
 
 variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]

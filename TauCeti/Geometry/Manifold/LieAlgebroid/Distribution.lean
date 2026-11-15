@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -68,26 +68,32 @@ def inclusionAnchor :
 `C^∞⟮I, M; ℝ⟯`. -/
 def toTangentSection :
     letI := hD.fiberBundle; letI := hD.vectorBundle
-    Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯ →ₗ[C^∞⟮I, M; ℝ⟯]
-      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
+    Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.fiberBundle; let := hD.vectorBundle
-  { toFun a := ⟨fun x ↦ (a x : TangentSpace I x),
-      hD.inclusionAnchor.contMDiff.clm_bundle_apply a.contMDiff⟩
-    map_add' _ _ := ContMDiffSection.ext fun _ ↦ rfl
-    map_smul' _ _ := ContMDiffSection.ext fun _ ↦ by simp; rfl }
+  { (ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype)
+      hD.contMDiff_totalSpace_inclusion).toAddHom with
+    map_smul' := ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype)
+      hD.contMDiff_totalSpace_inclusion }
 
 @[simp] theorem toTangentSection_apply :
     letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ (a : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯) (x : M),
-      hD.toTangentSection a x = (a x : TangentSpace I x) := fun _ _ ↦ rfl
+      hD.toTangentSection a x = (a x : TangentSpace I x) :=
+  have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  let := hD.fiberBundle; let := hD.vectorBundle
+  ContMDiffSection.mapLinearMap_apply (fun x ↦ (D x).subtype) hD.contMDiff_totalSpace_inclusion
 
 theorem toTangentSection_injective :
     letI := hD.fiberBundle; letI := hD.vectorBundle
-    Function.Injective hD.toTangentSection := by
+    Function.Injective hD.toTangentSection :=
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.fiberBundle; let := hD.vectorBundle
-  intro _ _ hab; ext x; simpa using congr($hab x)
+  ContMDiffSection.mapLinearMap_injective (fun x ↦ (D x).subtype)
+    hD.contMDiff_totalSpace_inclusion fun _ ↦ Subtype.val_injective
 
 /-- A smooth tangent vector field taking values in `D` defines a smooth section of `D`. -/
 def mkSection (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (hX : ∀ x, X x ∈ D x) :
@@ -116,8 +122,7 @@ section Distribution
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M]
-  {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+  [ChartedSpace H M] [IsManifold I ∞ M] {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
   (hD : IsContMDiffDistribution I ∞ k D)
 
 section Involutive
@@ -142,10 +147,9 @@ private theorem toTangentSection_ofDistributionBracketAux :
     letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ a b : Cₛ^∞⟮I; Fin k → ℝ, fun x ↦ D x⟯,
       hD.toTangentSection (ofDistributionBracketAux hD hinv a b) =
-        (tangent I M).bracket (hD.toTangentSection a) (hD.toTangentSection b) := by
+        (tangent I M).bracket (hD.toTangentSection a) (hD.toTangentSection b) :=
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
-  let := hD.fiberBundle; let := hD.vectorBundle
-  exact fun _ _ ↦ hD.toTangentSection_mkSection _ _
+  let := hD.fiberBundle; let := hD.vectorBundle; fun _ _ ↦ hD.toTangentSection_mkSection _ _
 
 /-- A smooth involutive rank-`k` distribution `D ⊆ TM` is a Lie algebroid with the subbundle
 inclusion anchor `x ↦ (D x).subtypeL` and the restriction of the Lie bracket of vector fields. -/
@@ -253,8 +257,6 @@ theorem ofDistributionSectionsInclusion_injective :
 
 end Involutive
 
-section Converse
-
 variable [T2Space M]
 
 /-- Over a Hausdorff base, any Lie algebroid on `D` with inclusion anchor has section bracket equal
@@ -311,10 +313,8 @@ theorem isInvolutiveDistribution_of_anchor_eq_subtypeL :
       (hρX_mem i)
   have hsX_eq (i : Fin k) : (fun y ↦ (sX i y : TangentSpace I y)) =ᶠ[𝓝 x] X i := by
     filter_upwards [ρ.eventuallyEq_one] with y hy
-    have hy1 : ρ y = 1 := hy
     -- Pointwise scalar multiplication of the dependent vector field `X i` by `ρ`.
-    change ρ y • X i y = X i y
-    rw [hy1, one_smul]
+    change ρ y • X i y = X i y; rw [show ρ y = 1 from hy, one_smul]
   have hXX (i : Fin k) (_ : i ∈ Finset.univ) (j : Fin k) (_ : j ∈ Finset.univ) :
       mlieBracket I (X i) (X j) x ∈ D x := by
     rw [(hsX_eq i).symm.mlieBracket_vectorField_eq (hsX_eq j).symm,
@@ -347,8 +347,6 @@ theorem exists_lieAlgebroid_anchor_eq_subtypeL_iff :
       IsInvolutiveDistribution I D :=
   ⟨fun ⟨_, hA⟩ ↦ isInvolutiveDistribution_of_anchor_eq_subtypeL hD hA,
     fun hinv ↦ ⟨ofDistribution hD hinv, fun _ ↦ rfl⟩⟩
-
-end Converse
 
 end Distribution
 

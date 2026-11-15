@@ -53,19 +53,6 @@ theorem bracket_smul_right_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.an
     (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
     A.bracket a (f • b) = f • A.bracket a b := by ext x; simp [hA]
 
-/-- All Lie algebroid brackets are skew-symmetric: `bracket a b = -bracket b a`. -/
-theorem bracket_swap (A : LieAlgebroid I F V) (a b : Cₛ^∞⟮I; F, V⟯) :
-    A.bracket a b = -A.bracket b a := by
-  have h := A.bracket_self (a + b)
-  simp only [map_add, LinearMap.add_apply, A.bracket_self, zero_add, add_zero] at h
-  exact eq_neg_of_add_eq_zero_right h
-
-/-- The Leibniz rule in the first argument: `[f • a, b] = f • [a, b] - (ρ(b) f) • a`. -/
-theorem bracket_smul_left (A : LieAlgebroid I F V) (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
-    A.bracket (f • a) b = f • A.bracket a b - A.anchorDeriv b f • a := by
-  rw [A.bracket_swap (f • a) b, A.bracket_smul_right, neg_add, ← smul_neg, ← A.bracket_swap,
-    sub_eq_add_neg]
-
 /-- When the anchor of a Lie algebroid vanishes, its bracket is `C^∞⟮I, M; ℝ⟯`-linear on the
 left. -/
 theorem bracket_smul_left_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
@@ -139,8 +126,7 @@ section TrivialLieAlgebra
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
-  {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤]
+  [IsManifold I ∞ M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤]
   [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
 
 omit [IsManifold I ∞ M] in
@@ -160,8 +146,7 @@ private theorem contMDiff_const_lieBracket :
     x x x x μ)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ ?_)⟩
   ext v w; dsimp only [F, μ]
   rw [inCoordinates_apply_eq₂ (by simp) (by simp) (by simp),
-    inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]
-  simp
+    inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]; simp
 
 variable (I M 𝔤) in
 /-- The trivial Lie algebra bundle algebroid `M × 𝔤 → M` of a finite-dimensional real Hausdorff
@@ -189,8 +174,8 @@ def trivialLieAlgebra : LieAlgebroid I (Bundle.TrivialModel ℝ 𝔤) (Bundle.Tr
 
 @[simp] theorem trivialLieAlgebra_bracket_modelConst (ξ η : 𝔤) :
     (trivialLieAlgebra I M 𝔤).bracket (ContMDiffSection.modelConst I M ∞ ξ)
-        (ContMDiffSection.modelConst I M ∞ η) = ContMDiffSection.modelConst I M ∞ ⁅ξ, η⁆ := by
-  ext x; simp
+        (ContMDiffSection.modelConst I M ∞ η) = ContMDiffSection.modelConst I M ∞ ⁅ξ, η⁆ :=
+  ContMDiffSection.ext fun _ ↦ by simp
 
 variable (I M 𝔤) in
 /-- Evaluation at `x : M` as a Lie algebra homomorphism from sections of `M × 𝔤` to `𝔤`. -/
@@ -228,8 +213,6 @@ theorem trivialLieAlgebraConst_injective [Nonempty M] :
   obtain ⟨x⟩ := ‹Nonempty M›
   exact Function.RightInverse.injective (trivialLieAlgebraEval_trivialLieAlgebraConst x)
 
-section Pullback
-
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
 
@@ -249,10 +232,7 @@ def trivialLieAlgebraPullback (φ : C^∞⟮J, N; I, M⟯) :
 @[simp] theorem sectionsEquiv_trivialLieAlgebraPullback_apply (φ : C^∞⟮J, N; I, M⟯)
     (s : (trivialLieAlgebra I M 𝔤).Sections) (y : N) :
     (trivialLieAlgebra J N 𝔤).sectionsEquiv (trivialLieAlgebraPullback φ s) y =
-      (trivialLieAlgebra I M 𝔤).sectionsEquiv s (φ y) := by
-  simp [trivialLieAlgebraPullback]
-
-end Pullback
+      (trivialLieAlgebra I M 𝔤).sectionsEquiv s (φ y) := by simp [trivialLieAlgebraPullback]
 
 end TrivialLieAlgebra
 

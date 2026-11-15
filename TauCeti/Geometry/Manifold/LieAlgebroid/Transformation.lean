@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -99,15 +100,19 @@ def transformationAnchor :
 `Bundle.Trivial M 𝔤`, linear over `C^∞⟮I, M; ℝ⟯`. -/
 def transformationAnchorField :
     Cₛ^∞⟮I; Bundle.TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ →ₗ[C^∞⟮I, M; ℝ⟯]
-      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ where
-  toFun a := ⟨fun x ↦ transformationAnchor α₀ x (a x),
-    (transformationAnchor α₀).contMDiff.clm_bundle_apply a.contMDiff⟩
-  map_add' _ _ := by ext x; simp
-  map_smul' _ _ := by ext x; simp
+      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
+  have h : ContMDiff (I.prod 𝓘(ℝ, Bundle.TrivialModel ℝ 𝔤)) (I.prod 𝓘(ℝ, E)) ∞
+      (fun p : TotalSpace (Bundle.TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) ↦
+        (⟨p.proj, transformationAnchor α₀ p.proj p.2⟩ : TotalSpace E (TangentSpace I))) :=
+    (contMDiff_hom_bundle_iff _).1 (transformationAnchor α₀).contMDiff
+  { (ContMDiffSection.mapLinearMap (fun x ↦ (transformationAnchor α₀ x).toLinearMap) h).toAddHom
+      with
+    map_smul' := ContMDiffSection.mapLinearMap_smul_function
+      (fun x ↦ (transformationAnchor α₀ x).toLinearMap) h }
 
 @[simp] theorem transformationAnchorField_apply
     (a : Cₛ^∞⟮I; Bundle.TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :
-    transformationAnchorField α₀ a x = α₀ (a x) x := (rfl)
+    transformationAnchorField α₀ a x = α₀ (a x) x := by simp [transformationAnchorField]
 
 @[simp] theorem transformationAnchorField_modelConst (ξ : 𝔤) :
     transformationAnchorField α₀ (ContMDiffSection.modelConst I M ∞ ξ) = α₀ ξ := by ext x; simp
@@ -177,21 +182,6 @@ theorem transformationBracket_smul_right
         (tangent I M).anchorDeriv (transformationAnchorField α₀ a) f • b := by
   ext x; rw [ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.smul_apply,
     ContMDiffSection.smul_apply, transformationBracket_smul_apply]; simp
-
-private theorem tangent_anchorDeriv_bracket
-    (X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; ℝ⟯) :
-    (tangent I M).anchorDeriv ((tangent I M).bracket X Y) f =
-      (tangent I M).anchorDeriv X ((tangent I M).anchorDeriv Y f) -
-        (tangent I M).anchorDeriv Y ((tangent I M).anchorDeriv X f) := by
-  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
-  have hYf : ⇑((tangent I M).anchorDeriv Y f) = fun y ↦ mvfderiv I f y (Y y) :=
-    funext fun _ ↦ by rw [anchorDeriv_apply, tangent_anchor_apply]
-  have hXf : ⇑((tangent I M).anchorDeriv X f) = fun y ↦ mvfderiv I f y (X y) :=
-    funext fun _ ↦ by rw [anchorDeriv_apply, tangent_anchor_apply]
-  ext x; simp only [anchorDeriv_apply, tangent_anchor_apply, tangent_bracket_apply,
-    ContMDiffMap.coe_sub, Pi.sub_apply, hYf, hXf]
-  exact _root_.mvfderiv_mlieBracket f.contMDiff.contMDiffAt (by simp)
-    (X.contMDiff.mdifferentiableAt (by simp)) (Y.contMDiff.mdifferentiableAt (by simp))
 
 /-- Whenever `α₀` intertwines Lie brackets, `transformationAnchorField α₀` intertwines
 `transformationBracket α₀` with the tangent bracket on all smooth sections. -/
@@ -293,11 +283,9 @@ theorem transformationBracket_jacobi_iff [T2Space M]
       hjac, transformationBracket_smul_apply α₀⟩
   ext x; have h := A.anchor_bracket (ContMDiffSection.modelConst I M ∞ ξ)
     (ContMDiffSection.modelConst I M ∞ η) x
-  have hξ : ⇑(A.anchorField (ContMDiffSection.modelConst I M ∞ ξ)) = ⇑(α₀ ξ) :=
+  have hc (ζ) : ⇑(A.anchorField (ContMDiffSection.modelConst I M ∞ ζ)) = ⇑(α₀ ζ) :=
     funext fun _ ↦ by simp [A]
-  have hη : ⇑(A.anchorField (ContMDiffSection.modelConst I M ∞ η)) = ⇑(α₀ η) :=
-    funext fun _ ↦ by simp [A]
-  simpa [A, hξ, hη] using h
+  simpa [A, hc] using h
 
 /-! ### The transformation Lie algebroid of a Lie algebra homomorphism -/
 
@@ -413,8 +401,6 @@ theorem transformationIsotropy_toSubmodule (x : M) :
 
 /-! ### Functoriality in the Lie algebra and in the base manifold -/
 
-section Functoriality
-
 variable {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] [TopologicalSpace 𝔥]
   [IsTopologicalAddGroup 𝔥] [ContinuousSMul ℝ 𝔥] [T2Space 𝔥] [FiniteDimensional ℝ 𝔥]
   (ψ : 𝔥 →ₗ⁅ℝ⁆ 𝔤)
@@ -453,16 +439,11 @@ def transformationMapLieHom :
     transformationIsotropy (α.comp ψ) x = (transformationIsotropy α x).comap ψ :=
   LieSubalgebra.ext _ _ fun _ ↦ by simp
 
-end Functoriality
-
 end LieHom
-
-section Pullback
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-  [IsManifold J ∞ N]
-  {α_M : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections} {α_N : 𝔤 →ₗ⁅ℝ⁆ (tangent J N).Sections}
+  [IsManifold J ∞ N] {α_M : 𝔤 →ₗ⁅ℝ⁆ (tangent I M).Sections} {α_N : 𝔤 →ₗ⁅ℝ⁆ (tangent J N).Sections}
 
 /-- Pullback of sections along a smooth map `φ : N → M` intertwining `α_N` and `α_M` is a Lie
 algebra homomorphism `(transformation α_M).Sections →ₗ⁅ℝ⁆ (transformation α_N).Sections`. -/
@@ -484,8 +465,6 @@ def transformationPullback (φ : C^∞⟮J, N; I, M⟯)
     (s : (transformation α_M).Sections) (y : N) :
     (transformation α_N).sectionsEquiv (transformationPullback φ hφ s) y =
       (transformation α_M).sectionsEquiv s (φ y) := by simp [transformationPullback]
-
-end Pullback
 
 end Homomorphism
 
@@ -522,8 +501,6 @@ def negLieHom : 𝔤 →ₗ⁅ℝ⁆ (LieAlgebroid.tangent I M).Sections where
     (LieAlgebroid.tangent I M).sectionsEquiv (act.negLieHom ξ) x = -act ξ x := by
   simp [negLieHom, ContMDiffSection.coeFn_mk]
 
-section TopologicalLieAlgebra
-
 variable [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul ℝ 𝔤]
   [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
 
@@ -532,14 +509,21 @@ variable [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤] [ContinuousSMul �
 def lieAlgebroid : LieAlgebroid I (Bundle.TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) :=
   LieAlgebroid.transformation act.negLieHom
 
+theorem lieAlgebroid_eq : act.lieAlgebroid = LieAlgebroid.transformation act.negLieHom := (rfl)
+
 @[simp] theorem lieAlgebroid_anchor_apply (x : M) (ξ : 𝔤) :
     act.lieAlgebroid.anchor x ξ = -act ξ x := by simp [lieAlgebroid]
+
+@[simp] theorem lieAlgebroid_bracket_apply
+    (a b : Cₛ^∞⟮I; Bundle.TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :
+    act.lieAlgebroid.bracket a b x =
+      ⁅a x, b x⁆ - b.modelDeriv x (act (a x) x) + a.modelDeriv x (act (b x) x) := by
+  simp only [lieAlgebroid, LieAlgebroid.transformation_bracket_apply,
+    sectionsEquiv_negLieHom_apply, map_neg]; abel
 
 @[simp] theorem lieAlgebroid_isotropy (x : M) :
     LieAlgebroid.transformationIsotropy act.negLieHom x = act.isotropy x :=
   LieSubalgebra.ext _ _ fun _ ↦ by simp
-
-end TopologicalLieAlgebra
 
 end InfinitesimalAction
 
@@ -563,17 +547,29 @@ def ofMulAction :
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   (InfinitesimalAction.fundamental J G I M).lieAlgebroid
 
+theorem ofMulAction_eq : ofMulAction J G I M =
+    (haveI : IsManifold I 1 M := .of_le (n := ∞) (by simp)
+    (InfinitesimalAction.fundamental J G I M).lieAlgebroid) := (rfl)
+
 @[simp] theorem ofMulAction_anchor_apply (x : M) (ξ : GroupLieAlgebra J G) :
     (ofMulAction J G I M).anchor x ξ = -fundamentalVectorField I ξ x := by
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp); simp [ofMulAction]
 
+@[simp] theorem ofMulAction_bracket_apply
+    (a b : Cₛ^∞⟮I; Bundle.TrivialModel ℝ (GroupLieAlgebra J G),
+      Bundle.Trivial M (GroupLieAlgebra J G)⟯) (x : M) :
+    (ofMulAction J G I M).bracket a b x =
+      ⁅a x, b x⁆ - b.modelDeriv x (fundamentalVectorField I (a x) x) +
+        a.modelDeriv x (fundamentalVectorField I (b x) x) := by
+  have : IsManifold I 1 M := .of_le (n := ∞) (by simp); simp [ofMulAction]
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N] [MulAction G N] [ContMDiffSMul J I' ∞ G N]
+
 /-- A smooth `G`-equivariant map `φ : N → M` pulls back sections of `ofMulAction J G I M` to
 sections of `ofMulAction J G I' N` as a Lie algebra homomorphism. -/
-def ofMulActionPullback {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [FiniteDimensional ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
-    [MulAction G N] [ContMDiffSMul J I' ∞ G N]
-    (φ : C^∞⟮I', N; I, M⟯) (hφ : ∀ (g : G) (y : N), φ (g • y) = g • φ y) :
+def ofMulActionPullback (φ : C^∞⟮I', N; I, M⟯) (hφ : ∀ (g : G) (y : N), φ (g • y) = g • φ y) :
     (ofMulAction J G I M).Sections →ₗ⁅ℝ⁆ (ofMulAction J G I' N).Sections :=
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold I' 1 N := .of_le (n := ∞) (by simp)
@@ -584,6 +580,15 @@ def ofMulActionPullback {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace �
     exact mfderiv_fundamentalVectorField_of_map_smul (φ.contMDiff.mdifferentiableAt (by simp))
       ((ContMDiffSMul.contMDiff_smul_const (I := J) (I' := I') (n := 1) y).mdifferentiableAt
         one_ne_zero) (fun g ↦ hφ g y) ξ
+
+@[simp] theorem sectionsEquiv_ofMulActionPullback_apply
+    (φ : C^∞⟮I', N; I, M⟯) (hφ : ∀ (g : G) (y : N), φ (g • y) = g • φ y)
+    (s : (ofMulAction J G I M).Sections) (y : N) :
+    (ofMulAction J G I' N).sectionsEquiv (ofMulActionPullback φ hφ s) y =
+      (ofMulAction J G I M).sectionsEquiv s (φ y) := by
+  have h : ofMulActionPullback φ hφ s = (ofMulAction J G I' N).sectionsEquiv.symm
+      (ContMDiffSection.modelPullback φ ((ofMulAction J G I M).sectionsEquiv s)) := rfl
+  rw [h, LinearEquiv.apply_symm_apply, ContMDiffSection.modelPullback_apply]
 
 end MulAction
 
@@ -612,11 +617,6 @@ private def translationInvSection (X : Cₛ^∞⟮𝓘(ℝ, V); V, (TangentSpace
   ⟨fun x ↦ -τ.symm (ofTangentV x (X x)), Bundle.TrivialModel.contMDiff_mk_iff.2
     ⟨contMDiff_id, (L.contMDiff.comp hX.contMDiff).congr fun _ ↦ by simp [L]⟩⟩
 
-omit [IsLieAbelian 𝔤] in
-private theorem translationInvSection_apply
-    (X : Cₛ^∞⟮𝓘(ℝ, V); V, (TangentSpace 𝓘(ℝ, V) : V → Type _)⟯) (x : V) :
-    translationInvSection τ X x = -τ.symm (ofTangentV x (X x)) := (rfl)
-
 /-- When an abelian Lie algebra `𝔤` acts on `V` by translations along `τ : 𝔤 ≃ₗ[ℝ] V`, the anchor
 `s ↦ (x ↦ -τ (s x))` is a `C^∞⟮𝓘(ℝ, V), V; ℝ⟯`-linear equivalence onto
 `(tangent 𝓘(ℝ, V) V).Sections`. -/
@@ -628,15 +628,16 @@ def translationSectionsLinearEquiv :
     invFun t := A.sectionsEquiv.symm
       (translationInvSection τ ((tangent 𝓘(ℝ, V) V).sectionsEquiv t))
     left_inv s := A.sectionsEquiv.injective <| by
-      ext x; simp only [LinearEquiv.apply_symm_apply, translationInvSection_apply]
+      ext x; simp only [LinearEquiv.apply_symm_apply, translationInvSection,
+        ContMDiffSection.coeFn_mk]
       have hA : ofTangentV x (A.anchorField (A.sectionsEquiv s) x) = -τ (A.sectionsEquiv s x) := by
         simp only [ofTangentV, anchorField_apply, A, InfinitesimalAction.lieAlgebroid_anchor_apply]
         exact (Pi.neg_apply _ _).trans
           (congrArg Neg.neg (InfinitesimalAction.translation_apply _ _ _))
       rw [hA]; simp
     right_inv t := (tangent 𝓘(ℝ, V) V).sectionsEquiv.injective <| by
-      ext x; simp only [LinearEquiv.apply_symm_apply, anchorField_apply,
-        translationInvSection_apply, A, InfinitesimalAction.lieAlgebroid_anchor_apply]
+      ext x; simp only [LinearEquiv.apply_symm_apply, anchorField_apply, translationInvSection,
+        ContMDiffSection.coeFn_mk, A, InfinitesimalAction.lieAlgebroid_anchor_apply]
       refine ((Pi.neg_apply _ _).trans
         (congrArg Neg.neg (InfinitesimalAction.translation_apply _ _ _))).trans ?_
       -- On the model manifold `V`, `TangentSpace 𝓘(ℝ, V) x` is `V`.
@@ -683,53 +684,15 @@ functions. -/
 
 end TranslationAction
 
-end LieAlgebroid
-
-section AffineLine
-
-/-- The standard infinitesimal action of `LieAlgebra.AffineLine ℝ` on `ℝ`, sending the dilation
-`(1, 0)` to `x ↦ x` (`x ∂_x`) and the translation `(0, 1)` to `x ↦ 1` (`∂_x`). -/
-def InfinitesimalAction.affineLine :
-    InfinitesimalAction (LieAlgebra.AffineLine ℝ) 𝓘(ℝ, ℝ) ℝ where
-  toLinearMap :=
-    { toFun u x := (u.1 * x + u.2 : ℝ)
-      map_add' u v := funext fun x ↦ by
-        -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
-        change (u + v).1 * x + (u + v).2 = (u.1 * x + u.2) + (v.1 * x + v.2); simp [add_mul]; ring
-      map_smul' c u := funext fun x ↦ by
-        -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
-        change (c • u).1 * x + (c • u).2 = c * (u.1 * x + u.2); simp [mul_add, mul_assoc] }
-  contMDiff_toLinearMap' _ :=
-    contMDiff_vectorSpace_iff_contDiff.2 ((contDiff_const.mul contDiff_id).add contDiff_const)
-  toLinearMap_lie' u v := funext fun x ↦ by
-    let V (w : LieAlgebra.AffineLine ℝ) : ∀ y : ℝ, TangentSpace 𝓘(ℝ, ℝ) y :=
-      fun y ↦ (w.1 * y + w.2 : ℝ)
-    have hu (w : LieAlgebra.AffineLine ℝ) :
-        HasFDerivAt (fun y : ℝ ↦ w.1 * y + w.2) (w.1 • ContinuousLinearMap.id ℝ ℝ) x := by
-      simpa using ((hasFDerivAt_id x).const_mul w.1).add_const w.2
-    -- Evaluate `toLinearMap` at `⁅u, v⁆` and expose the dependent section `V` for `mlieBracket`.
-    change ((⁅u, v⁆ : LieAlgebra.AffineLine ℝ).1 * x +
-        (⁅u, v⁆ : LieAlgebra.AffineLine ℝ).2 : ℝ) = -mlieBracket 𝓘(ℝ, ℝ) (V u) (V v) x
-    rw [mlieBracket_eq_lieBracket]
-    -- On the model manifold `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ`.
-    change ((⁅u, v⁆ : LieAlgebra.AffineLine ℝ).1 * x +
-        (⁅u, v⁆ : LieAlgebra.AffineLine ℝ).2 : ℝ) =
-      -lieBracket ℝ (fun y : ℝ ↦ u.1 * y + u.2) (fun y : ℝ ↦ v.1 * y + v.2) x
-    rw [lieBracket_eq]; dsimp only; rw [(hu u).fderiv, (hu v).fderiv]
-    simp only [LieAlgebra.AffineLine.fst_lie, LieAlgebra.AffineLine.snd_lie,
-      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]; ring
-
-@[simp] theorem InfinitesimalAction.affineLine_apply (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :
-    InfinitesimalAction.affineLine u x = u.1 * x + u.2 := (rfl)
-
-namespace LieAlgebroid
-
 /-- The un-negated linear map sending `u : LieAlgebra.AffineLine ℝ` to `x ↦ u.1 * x + u.2`. -/
 def affineLinePosLinearMap :
     LieAlgebra.AffineLine ℝ →ₗ[ℝ] Cₛ^∞⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯ where
   toFun u := ⟨InfinitesimalAction.affineLine u, InfinitesimalAction.affineLine.contMDiff u⟩
   map_add' _ _ := ContMDiffSection.ext fun _ ↦ by simp
   map_smul' _ _ := ContMDiffSection.ext fun _ ↦ by simp
+
+@[simp] private theorem affineLinePosLinearMap_apply (u : LieAlgebra.AffineLine ℝ) (x : ℝ) :
+    affineLinePosLinearMap u x = u.1 * x + u.2 := by simp [affineLinePosLinearMap]; rfl
 
 /-- Omitting the minus sign on the infinitesimal generators `x ∂_x` and `∂_x` of
 `LieAlgebra.AffineLine ℝ` violates the Jacobi identity for `transformationBracket`. -/
@@ -745,15 +708,10 @@ theorem not_transformationBracket_jacobi_affineLine_pos :
   have h0 := congr($((transformationBracket_jacobi_iff affineLinePosLinearMap).1 hjac
     (LieAlgebra.AffineLine.dilation ℝ) (LieAlgebra.AffineLine.translation ℝ)) 0)
   let Xd : ∀ x : ℝ, TangentSpace 𝓘(ℝ, ℝ) x := fun x ↦ (x : ℝ)
-  have hd : ⇑(affineLinePosLinearMap (LieAlgebra.AffineLine.dilation ℝ)) = Xd := funext fun x ↦ by
-    rw [affineLinePosLinearMap, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coeFn_mk,
-      InfinitesimalAction.affineLine_apply, LieAlgebra.AffineLine.fst_dilation,
-      LieAlgebra.AffineLine.snd_dilation, one_mul, add_zero]
+  have hd : ⇑(affineLinePosLinearMap (LieAlgebra.AffineLine.dilation ℝ)) = Xd :=
+    funext fun _ ↦ by simp [Xd]; rfl
   have ht : ⇑(affineLinePosLinearMap (LieAlgebra.AffineLine.translation ℝ)) =
-      fun _ : ℝ ↦ (1 : ℝ) := funext fun x ↦ by
-    rw [affineLinePosLinearMap, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coeFn_mk,
-      InfinitesimalAction.affineLine_apply, LieAlgebra.AffineLine.fst_translation,
-      LieAlgebra.AffineLine.snd_translation, zero_mul, zero_add]
+      fun _ : ℝ ↦ (1 : ℝ) := funext fun _ ↦ by simp; rfl
   rw [LieAlgebra.AffineLine.lie_dilation_translation, tangent_bracket_apply, hd, ht,
     mlieBracket_const_right_model_space] at h0
   -- On `ℝ`, `TangentSpace 𝓘(ℝ, ℝ) 0` is `ℝ` and `Xd` is `fun x ↦ x`.
@@ -761,7 +719,5 @@ theorem not_transformationBracket_jacobi_affineLine_pos :
   rw [fderiv_fun_id] at h0; norm_num at h0
 
 end LieAlgebroid
-
-end AffineLine
 
 end TauCeti
