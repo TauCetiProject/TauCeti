@@ -32,9 +32,9 @@ namespace TauCeti.Montgomery
 
 open WeierstrassCurve
 
-local instance : Fact (Nat.Prime 2) := ⟨by decide⟩
-local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance ladderDetectionPrimeTwo : Fact (Nat.Prime 2) := ⟨by decide⟩
+local instance ladderDetectionPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+local instance ladderDetectionPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 -- Reduction sends (22, 1) modulo 35 to (2, 1) modulo 5 and (1, 1) modulo 7, and pushes any
 -- binary ladder derivation to both prime quotients simultaneously.
@@ -288,7 +288,7 @@ example :
     (by simp only [stageTwoPointSeven, coordinates_some,
       Pair.cross_def, Pair.map_x, Pair.map_z]; decide)
     (by decide) (by decide)
-    (by simp only [ List.mem_singleton, forall_eq, Pair.cross_def, Pair.map_x, Pair.map_z]; decide)
+    (by simp only [List.mem_singleton, forall_eq, Pair.cross_def, Pair.map_x, Pair.map_z]; decide)
   exact ⟨by decide, hcert.1, hcert.2, by simp only [Pair.cross_def, List.prod_singleton]; decide⟩
 
 -- Suyama's polynomial seed (u³, v³) and polynomial doubling constants run in ZMod n without
