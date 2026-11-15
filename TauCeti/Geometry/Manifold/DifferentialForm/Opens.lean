@@ -69,6 +69,7 @@ theorem mpullback_inclusion_apply {U W : Opens M} (h : U ≤ W) (γ : RoughForm 
   rfl
 
 /-- Restricting a form on `M` to an open subset does not change its value at any point. -/
+@[simp]
 theorem mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : U) :
     mpullback I I (Subtype.val : U → M) γ x = γ x := by
   ext v

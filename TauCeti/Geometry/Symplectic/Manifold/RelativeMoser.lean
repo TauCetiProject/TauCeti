@@ -11,10 +11,8 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
-import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
@@ -26,17 +24,17 @@ import TauCeti.Geometry.Symplectic.Manifold.Opens
 Let `σ₀`, `σ₁` be closed two-forms on a boundaryless Hausdorff second-countable manifold `M` which
 agree, as bilinear forms on the full tangent spaces of `M`, at every point of a compact embedded
 submanifold `f : Q → M`, with `σ₀` nondegenerate along `f(Q)`. The **relative Moser theorem**
-(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_mpullback_eq`) gives a diffeomorphism `Φ`
-of `M` which fixes every point of `f(Q)`, moves only the points of a compact set, and pulls `σ₁`
-back to `σ₀` on a neighbourhood of `f(Q)`. Restricted to such a neighbourhood `U`, it is a
-diffeomorphism from `U` onto the open set `Φ(U)` which fixes `f(Q)` pointwise and carries `σ₀` on
-`U` to `σ₁` on `Φ(U)` (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`). Only the
-agreement of the full ambient forms along `f(Q)` is used; agreement of their pullbacks to `Q` is a
-weaker condition.
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`) gives a
+diffeomorphism `Φ` of `M` which fixes every point of `f(Q)`, moves only the points of a compact
+set, and pulls `σ₁` back to `σ₀` on a neighbourhood of `f(Q)`. Restricted to such a neighbourhood
+`U`, it is a diffeomorphism from `U` onto the open set `Φ(U)` which fixes `f(Q)` pointwise and
+carries `σ₀` on `U` to `σ₁` on `Φ(U)`
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`). Only the agreement of the full
+ambient forms along `f(Q)` is used; agreement of their pullbacks to `Q` is a weaker condition.
 
 The proof is Moser's argument relative to a compact set
-(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub`). Suppose
-`σ₁ - σ₀ = dβ` for a smooth one-form `β` which vanishes on a compact set `K`, and the path
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub`).
+Suppose `σ₁ - σ₀ = dβ` for a smooth one-form `β` which vanishes on a compact set `K`, and the path
 `σ_s = σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, is nondegenerate along `K`. Since nondegeneracy is an open
 condition and `[0, 1] × K` is compact, the path stays nondegenerate on a neighbourhood `N` of `K`.
 Reparametrize the path by the smooth step function `c = Real.smoothTransition`, which is `0` for
@@ -49,7 +47,7 @@ This time-dependent field is smooth and compactly supported, so its flow `φ_{0,
 all times; it vanishes on `K`, which the flow therefore fixes. Where `ρ = 1`, Cartan's formula gives
 Moser's equation `∂_t σ_{c(t)} + L_{X_t} σ_{c(t)} = c'(t) dβ - c'(t) dβ = 0`. Trajectories starting
 near `K` stay in this region up to time `1`, and along them the pullbacks `φ_{0,t}^* σ_{c(t)}` are
-constant (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc`).
+constant (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc`).
 So `Φ = φ_{0,1}` pulls `σ₁` back to `σ₀` near `K`.
 
 For the submanifold version, the relative Poincaré lemma
@@ -60,10 +58,10 @@ diffeomorphism of `W`, which extends by the identity to `M`.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub`: Moser's theorem
-  relative to a compact set along which a given primitive of `σ₁ - σ₀` vanishes.
-* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_mpullback_eq`: the relative Moser theorem
-  for closed two-forms agreeing along a compact embedded submanifold.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub`:
+  Moser's theorem relative to a compact set along which a given primitive of `σ₁ - σ₀` vanishes.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`: the relative
+  Moser theorem for closed two-forms agreeing along a compact embedded submanifold.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`: the same theorem as a
   diffeomorphism between open neighbourhoods of the submanifold.
 
@@ -107,15 +105,13 @@ private theorem mpullback_prodMk_moserFamily (σ₀ σ₁ : SmoothTwoForm I M) (
     SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
         (moserFamily σ₀ σ₁) = σ₀ + Real.smoothTransition t • (σ₁ - σ₀) := by
   apply Subtype.ext
-  have hι : MDifferentiable I (𝓘(ℝ, ℝ).prod I) (Prod.mk t : M → ℝ × M) :=
-    (contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) ∞ _).mdifferentiable
-      (by simp)
-  have hsnd : MDifferentiable (𝓘(ℝ, ℝ).prod I) I (Prod.snd : ℝ × M → M) :=
-    contMDiff_snd.mdifferentiable (n := ∞) (by simp)
+  -- `Prod.snd ∘ Prod.mk t` is the identity of `M`.
   have hcomp (τ : SmoothTwoForm I M) : TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
       (TauCeti.mpullback (𝓘(ℝ, ℝ).prod I) I Prod.snd τ.1) = τ.1 := by
-    rw [← mpullback_comp hι hsnd]
-    exact mpullback_id τ.1
+    simpa only [SmoothForm.coe_mpullback, LinearMap.id_apply] using
+      congrArg Subtype.val ((SmoothForm.mpullback_mpullback (Prod.mk t) Prod.snd
+        (I' := 𝓘(ℝ, ℝ).prod I) (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
+          (LinearMap.congr_fun SmoothForm.mpullback_id τ))
   simp only [moserFamily, map_add, SmoothForm.coe_mpullback, SmoothForm.add_toRoughForm, hcomp]
   -- `erw`: the coercion of `funSMulₗ` carries the `IsManifold _ 1` instance derived from the
   -- product, which differs syntactically from the one in the goal.
@@ -169,12 +165,6 @@ private theorem contMDiff_flat_moserFamily (σ₀ σ₁ : SmoothTwoForm I M) :
   have hσ := SmoothForm.contMDiff_mpullback_prodMk (moserFamily σ₀ σ₁) p
   simp only [mpullback_prodMk_moserFamily] at hσ
   simpa only [← flat_def] using contMDiffAt_sectionAlong_flatL (b := Prod.snd) hσ
-
-/-- Restricting a smooth form to an open subset does not change its values. -/
-private theorem coe_mpullback_subtype_val_apply {k : ℕ} {U : TopologicalSpace.Opens M}
-    (σ : SmoothForm I M ℝ k) (z : U) :
-    (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 z = σ.1 z :=
-  (congrFun (SmoothForm.coe_mpullback _ _ σ) z).trans (mpullback_subtype_val_apply σ.1 z)
 
 variable [FiniteDimensional ℝ E]
 
@@ -304,8 +294,9 @@ two-forms on a boundaryless manifold, with `σ₀` closed and `σ₁ - σ₀ = d
 `σ₀ + s (σ₁ - σ₀)`, `s ∈ [0, 1]`, stays nondegenerate. Then there is a diffeomorphism `Φ` of the
 manifold which fixes every point of `K`, moves only the points of a compact set, and pulls `σ₁`
 back to `σ₀` on a neighbourhood of `K`. -/
-theorem exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub {σ₀ σ₁ : SmoothTwoForm I M}
-    (h₀ : σ₀.IsClosed) {β : SmoothForm I M ℝ 1} (hβ : mextDeriv β.1 = (σ₁ - σ₀).1)
+theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
+    {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed) {β : SmoothForm I M ℝ 1}
+    (hβ : mextDeriv β.1 = (σ₁ - σ₀).1)
     {K : Set M} (hK : IsCompact K) (hβK : ∀ x ∈ K, β.1 x = 0)
     (hnd : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, ((σ₀ + s • (σ₁ - σ₀)).bilinFormAt x).Nondegenerate) :
     ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ x ∈ K, Φ x = x) ∧ (∃ C, IsCompact C ∧ ∀ x ∉ C, Φ x = x) ∧
@@ -346,9 +337,10 @@ theorem exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub {σ₀ σ₁ : S
       exact hKV hp.2
   filter_upwards [hW.mem_nhdsSet.2 hKW] with x hx
   -- Along these trajectories Moser's equation holds, so the flow carries `σ₁` back to `σ₀`.
-  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc
-    (hX.of_le (by simp)) hc ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)) zero_le_one x
-    fun t ht ↦ moserRate_eq_zero h₀ hβ hρ hinv t (huW (mk_mem_prod (hu ht) hx))
+  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc
+    (hX.of_le (by simp)) hc (fun _ _ ↦ ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)).contMDiffAt)
+    fun t ht ↦ moserRate_eq_zero h₀ hβ hρ hinv t
+      (huW (mk_mem_prod (hu ((uIcc_of_le (zero_le_one' ℝ)).subset ht)) hx))
   rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
     Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
     add_zero, add_sub_cancel] at h
@@ -360,7 +352,7 @@ second-countable Hausdorff manifold `M` which agree, as bilinear forms on the fu
 `M`, at every point of a compact embedded submanifold `f : Q → M`, and let `σ₀` be nondegenerate
 along it. Then there is a diffeomorphism `Φ` of `M` which fixes every point of `f(Q)`, moves only
 the points of a compact set, and pulls `σ₁` back to `σ₀` on a neighbourhood of `f(Q)`. -/
-theorem exists_diffeomorph_fix_embedding_mpullback_eq [SecondCountableTopology M]
+theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountableTopology M]
     {E' H' Q : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
     [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q] [CompactSpace Q]
@@ -385,8 +377,9 @@ theorem exists_diffeomorph_fix_embedding_mpullback_eq [SecondCountableTopology M
   let g : Q → W := fun q ↦ ⟨f q, hfW (mem_range_self q)⟩
   have hgK : IsCompact (range g) :=
     isCompact_range (f.contMDiff.continuous.subtype_mk fun q ↦ hfW (mem_range_self q))
-  obtain ⟨Ψ, hΨK, ⟨C, hC, hΨC⟩, hΨ⟩ := exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub
-    (σ₀ := res σ₀) (σ₁ := res σ₁) (h₀.mpullback _ _) (β := ⟨βW, hβW.mem_smoothBundleForms⟩)
+  obtain ⟨Ψ, hΨK, ⟨C, hC, hΨC⟩, hΨ⟩ :=
+    exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub (σ₀ := res σ₀)
+      (σ₁ := res σ₁) (h₀.mpullback _ _) (β := ⟨βW, hβW.mem_smoothBundleForms⟩)
     (by rw [hdβW, ← map_sub]; exact (SmoothForm.coe_mpullback _ _ _).symm) hgK
     (by rintro _ ⟨q, rfl⟩; exact hβW0 q)
     (by
@@ -401,11 +394,11 @@ theorem exists_diffeomorph_fix_embedding_mpullback_eq [SecondCountableTopology M
           smul_zero, add_zero]
       exact hb ▸ hnd q)
   -- Extend the compactly supported diffeomorphism of `W` by the identity.
-  obtain ⟨Φ, hΦW, hΦC⟩ := isLocalDiffeomorph_subtype_val.exists_diffeomorph_extend_of_isCompact
-    W.isOpen.isOpenEmbedding_subtypeVal Ψ hC hΨC
+  obtain ⟨Φ, hΦW, hΦC⟩ := Ψ.exists_extend_of_isCompact hC hΨC
   have hcomp : ⇑Φ ∘ (Subtype.val : W → M) = Subtype.val ∘ ⇑Ψ := funext hΦW
   refine ⟨Φ, fun q ↦ ?_, ⟨Subtype.val '' C, hC.image continuous_subtype_val, hΦC⟩, ?_⟩
-  · rw [show f q = (g q : M) from rfl, hΦW, hΨK _ (mem_range_self q)]
+  · -- The point `g q` of `W` lies over `f q`.
+    exact (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q)))
   -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
   obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
   refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
@@ -413,9 +406,9 @@ theorem exists_diffeomorph_fix_embedding_mpullback_eq [SecondCountableTopology M
   · rintro _ ⟨q, rfl⟩
     exact ⟨g q, hKU (mem_range_self q), rfl⟩
   · rintro _ ⟨z, hz, rfl⟩
-    rw [mem_ofPred_eq, ← coe_mpullback_subtype_val_apply,
+    rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
       SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtype_val hcomp]
-    exact (hUΨ hz).trans (coe_mpullback_subtype_val_apply σ₀ z)
+    exact (hUΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
 
 open TopologicalSpace in
 /-- **The relative Moser theorem between neighbourhoods** (Cannas da Silva, Theorem 7.4). Let `σ₀`,
@@ -436,7 +429,7 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
       SmoothForm.mpullback φ φ.contMDiff
           (SmoothForm.mpullback (Subtype.val : U₁ → M) contMDiff_subtype_val σ₁) =
         SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtype_val σ₀ := by
-  obtain ⟨Φ, hΦf, -, hΦ⟩ := exists_diffeomorph_fix_embedding_mpullback_eq f h₀ h₁ hnd heq
+  obtain ⟨Φ, hΦf, -, hΦ⟩ := exists_diffeomorph_fix_embedding_eventually_mpullback_eq f h₀ h₁ hnd heq
   -- Restrict `Φ` to an open neighbourhood `U` of `f(Q)` on which it pulls `σ₁` back to `σ₀`, and
   -- to its image `Φ(U)`, the preimage of `U` under `Φ⁻¹`.
   obtain ⟨U, ⟨hU, hfU⟩, hUΦ⟩ := (hasBasis_nhdsSet (range f)).mem_iff.1 hΦ
@@ -449,8 +442,8 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
   apply Subtype.ext
   funext z
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtype_val Φ.contMDiff
-    (funext (Φ.subtype_apply_coe hU₀₁)), coe_mpullback_subtype_val_apply,
-    coe_mpullback_subtype_val_apply]
+    (funext (Φ.subtype_apply_coe hU₀₁)), SmoothForm.coe_mpullback_subtype_val_apply,
+    SmoothForm.coe_mpullback_subtype_val_apply]
   exact hUΦ z.2
 
 end TauCeti.SmoothTwoForm

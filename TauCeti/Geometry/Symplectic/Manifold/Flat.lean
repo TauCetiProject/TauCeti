@@ -205,15 +205,8 @@ theorem toBilinForm_flat (σ : SmoothTwoForm I M) (x : M) :
 form is nondegenerate there. -/
 theorem isInvertible_flat_iff [FiniteDimensional ℝ E] {x : M} :
     (σ.flat x).IsInvertible ↔ (σ.bilinFormAt x).Nondegenerate := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ContinuousLinearMap.isInvertible_of_separatingLeft (E := E)
-    fun (v : TangentSpace I x) hv ↦ h.1 v fun w ↦ (SmoothForm.bilinFormAt_apply σ x v w).trans
-      ((flat_apply σ x v w).symm.trans (hv w))⟩
-  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (SmoothForm.isAlt_bilinFormAt σ x).isRefl).mpr
-  intro v hv
-  apply h.injective
-  ext w
-  simpa using hv w
+  rw [← toBilinForm_flat]
+  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm (E := E)
 
 /-- In finite dimensions, a two-form is nondegenerate exactly when all its flat maps are
 invertible. -/

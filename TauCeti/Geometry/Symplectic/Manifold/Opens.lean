@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 
 /-!
 # Symplectic forms on open submanifolds
@@ -37,12 +36,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Restricting a two-form to an open submanifold does not change its bilinear form at any point:
 the tangent spaces of the submanifold and of the ambient manifold are the same model space. -/
+@[simp]
 theorem bilinFormAt_mpullback_subtype_val {U : Opens M} (x : U) :
     (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).bilinFormAt x =
       σ.bilinFormAt (x : M) := by
   ext v w
-  simp only [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply, SmoothForm.coe_mpullback,
-    TauCeti.mpullback_subtype_val_apply]
+  simp only [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+    SmoothForm.coe_mpullback_subtype_val_apply]
   exact ((SmoothForm.bilinFormAt_apply σ x v w).trans (SmoothBundleForm.eval₂_apply σ x v w)).symm
 
 /-- A two-form restricted to an open submanifold is nondegenerate at a point exactly when the
