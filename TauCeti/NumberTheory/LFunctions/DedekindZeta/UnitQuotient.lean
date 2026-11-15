@@ -45,9 +45,13 @@ parameter, therefore cannot produce a partial zeta function once the unit rank i
 
 ## Main results
 
-* `TauCeti.LFunctions.hasSum_norm_cpow_idealSet`: for `Re s > 1`, the sum of `|N(x)|^(-s)` over the
-  points `x` of `J` in the fundamental cone is `w N(J)^(-s)` times the sum of `N(𝔟)^(-s)` over the
-  nonzero integral ideals `𝔟` with `𝔟 J` principal.
+* `TauCeti.LFunctions.hasSum_norm_cpow_idealLattice_fundamentalCone` and
+  `TauCeti.LFunctions.tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone`: for an
+  invertible fractional ideal `I` and `Re s > 1`, the sum of `|N(x)|^(-s)` over the points of
+  `idealLattice K I` in `fundamentalCone K` is `w N(I)^(-s)` times the sum of `N(𝔟)^(-s)` over the
+  nonzero integral ideals `𝔟` of class `[I]⁻¹`.
+* `TauCeti.LFunctions.hasSum_norm_cpow_idealSet`: the integral-ideal specialization over
+  `idealSet K J`.
 * `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum`: the Dirichlet series of an ideal class
   is that sum over ideals.
 * `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum_idealSet`: Neukirch's (5.3)–(5.4), the
@@ -68,7 +72,87 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-! ### Sum over the fundamental-cone points of a fractional-ideal lattice -/
+
+/-- **Sum of `|N(x)|^(-s)` over the points of an ideal lattice in `fundamentalCone K`.** For
+`Re s > 1`, the fundamental-cone lattice sum of an invertible fractional ideal `I` is
+`w N(I)^(-s)` times the ideal sum over `[I]⁻¹`. -/
+theorem hasSum_norm_cpow_idealLattice_fundamentalCone (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    {s : ℂ} (hs : 1 < s.re) :
+    HasSum (fun x : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} ↦
+        ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s))
+      ((torsionOrder K : ℂ) *
+        ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
+        ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+          (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
+  have hI_nonneg : 0 ≤ (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℝ) :=
+    Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg I.1)
+  let F : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} → ℂ :=
+    fun 𝔟 ↦ ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s) *
+      (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
+  have hFn : Summable fun 𝔟 ↦ ‖F 𝔟‖ := by
+    have hsum : Summable fun 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} ↦
+        (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℝ) ^ (-s.re) :=
+      ((summable_absNorm_rpow_ideal_iff (K := K)).mpr hs).subtype _
+    refine (hsum.mul_left ‖((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s)‖).congr fun 𝔟 ↦ ?_
+    rw [norm_mul, Complex.norm_natCast_cpow_of_pos (absNorm_pos_of_nonZeroDivisors 𝔟.1),
+      Complex.neg_re]
+  have h1 : Summable fun _ : torsion K ↦ ‖(1 : ℂ)‖ := Summable.of_finite
+  have hprod : HasSum
+      (fun p : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} × torsion K ↦
+        F p.1 * 1)
+      ((∑' 𝔟, F 𝔟) * ∑' _ : torsion K, (1 : ℂ)) := by
+    rw [tsum_mul_tsum_of_summable_norm hFn h1]
+    exact (summable_mul_of_summable_norm hFn h1).hasSum
+  have hval : (torsionOrder K : ℂ) * ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s) *
+      (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+        (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
+        (∑' 𝔟, F 𝔟) * ∑' _ : torsion K, (1 : ℂ) := by
+    rw [tsum_const, torsionOrder, nsmul_eq_mul, mul_one, tsum_mul_left]
+    ring
+  rw [hval]
+  refine (idealLatticeFundamentalConeEquiv I).hasSum_iff.mp (hprod.congr_fun fun p ↦ ?_)
+  rw [Function.comp_apply, coe_idealLatticeFundamentalConeEquiv, norm_unit_smul,
+    norm_mixedEmbedding_coneGen, Complex.ofReal_mul,
+    Complex.mul_cpow_ofReal_nonneg (Nat.cast_nonneg _) hI_nonneg, Complex.ofReal_natCast,
+    Complex.ofReal_ratCast, mul_one]
+  simp only [F, mul_comm]
+
+/-- **Ideal-class sum in `[I]⁻¹` as a sum over `idealLattice K I ∩ fundamentalCone K`** for
+`Re s > 1`, Neukirch (5.3)–(5.4). -/
+theorem tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
+    (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
+      ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ s /
+        (torsionOrder K : ℂ) *
+        ∑' x : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K},
+          ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
+  have hI0 : ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ≠ 0 :=
+    Rat.cast_ne_zero.mpr (FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero)
+  have hIs : ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ s ≠ 0 := by
+    rw [ne_eq, Complex.cpow_eq_zero_iff]
+    exact fun h ↦ hI0 h.1
+  have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
+  rw [(hasSum_norm_cpow_idealLattice_fundamentalCone I hs).tsum_eq, Complex.cpow_neg]
+  field_simp
+
 /-! ### The ideals of the class of `J⁻¹` -/
+
+private theorem mk0_eq_inv_mk_mk0_iff (J 𝔟 : (Ideal (𝓞 K))⁰) :
+    ClassGroup.mk0 𝔟 = (ClassGroup.mk K (FractionalIdeal.mk0 K J))⁻¹ ↔
+      IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
+  rw [ClassGroup.mk_mk0, eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2,
+    Submonoid.coe_mul]
+
+private theorem tsum_mk0_eq_inv_mk_mk0 (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
+    (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
+        ClassGroup.mk0 𝔟 = (ClassGroup.mk K (FractionalIdeal.mk0 K J))⁻¹},
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
+      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
+  rw [← (Equiv.subtypeEquivRight (mk0_eq_inv_mk_mk0_iff J)).tsum_eq]
+  exact tsum_congr fun _ ↦ by simp
 
 /-- **Multiplying by `J` matches the ideals of the class of `J⁻¹` with the principal multiples of
 `J`.** The sum of `N(I)^(-s)` over the principal ideals `I` divisible by `J` is `N(J)^(-s)` times
@@ -103,29 +187,11 @@ theorem hasSum_norm_cpow_idealSet (J : (Ideal (𝓞 K))⁰) {s : ℂ} (hs : 1 < 
       (torsionOrder K * (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (-s) *
         ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
           (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
-  -- The summand only depends on the ideal component of `idealSetEquivPrincipal`, and the torsion
-  -- component runs over a finite set of `w` elements.
-  set F : {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧ IsPrincipal (I : Ideal (𝓞 K))} → ℂ :=
-    fun I ↦ (absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-s) with hF
-  have hFn : Summable fun I ↦ ‖F I‖ := by
-    refine ((summable_absNorm_rpow_ideal_iff (K := K)).mpr hs).subtype _ |>.congr fun I ↦ ?_
-    rw [Function.comp_apply, hF, Complex.norm_natCast_cpow_of_pos
-      (absNorm_pos_of_nonZeroDivisors I.1), Complex.neg_re]
-  have h1 : Summable fun _ : torsion K ↦ ‖(1 : ℂ)‖ := Summable.of_finite
-  have hprod : HasSum (fun p : {I : (Ideal (𝓞 K))⁰ // (J : Ideal (𝓞 K)) ∣ I ∧
-      IsPrincipal (I : Ideal (𝓞 K))} × torsion K ↦ F p.1 * 1)
-      ((∑' I, F I) * ∑' _ : torsion K, (1 : ℂ)) := by
-    rw [tsum_mul_tsum_of_summable_norm hFn h1]
-    exact (summable_mul_of_summable_norm hFn h1).hasSum
-  have hval : torsionOrder K * (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (-s) *
-      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) = (∑' I, F I) * ∑' _ : torsion K, (1 : ℂ) := by
-    rw [hF, tsum_absNorm_cpow_dvd_isPrincipal, tsum_const, torsionOrder, nsmul_eq_mul, mul_one]
-    ring
-  rw [hval]
-  refine ((idealSetEquivPrincipal K J).hasSum_iff.mpr hprod).congr_fun fun a ↦ ?_
-  simp only [Function.comp_apply, hF, mul_one, ← absNorm_idealSetEquivPrincipal_fst a,
-    Complex.ofReal_natCast]
+  have h := (idealSetEquivIdealLatticeFundamentalCone K J).hasSum_iff.mpr
+    (hasSum_norm_cpow_idealLattice_fundamentalCone (FractionalIdeal.mk0 K J) hs)
+  rw [FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast,
+    tsum_mk0_eq_inv_mk_mk0 J s] at h
+  exact h.congr_fun fun a ↦ by simp
 
 /-! ### The Dirichlet series of an ideal class -/
 
@@ -172,14 +238,10 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_idealSet {c : RayClassGroup (Modulus.o
     LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s =
       (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ s / torsionOrder K *
         ∑' a : idealSet K J, ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
-  have hJ0 : (absNorm (J : Ideal (𝓞 K)) : ℂ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (absNorm_pos_of_nonZeroDivisors J).ne'
-  have hJs : (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ s ≠ 0 := by
-    rw [Ne, Complex.cpow_eq_zero_iff]
-    exact fun h ↦ hJ0 h.1
-  have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
-  rw [(hasSum_norm_cpow_idealSet J hs).tsum_eq, LSeries_rayClassCoeff_one_eq_tsum J hJ hs,
-    Complex.cpow_neg]
-  field_simp
+  rw [LSeries_rayClassCoeff_one_eq_tsum J hJ hs, ← tsum_mk0_eq_inv_mk_mk0 J s,
+    tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone (FractionalIdeal.mk0 K J) hs,
+    FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast,
+    ← (idealSetEquivIdealLatticeFundamentalCone K J).tsum_eq]
+  simp only [coe_idealSetEquivIdealLatticeFundamentalCone]
 
 end TauCeti.LFunctions

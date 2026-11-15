@@ -21,6 +21,8 @@ reaches in its share `rayClassIdealMainTerm (Modulus.one K) = dedekindZeta_resid
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.oneEquivClassGroup_idealClass`: `oneEquivClassGroup` carries the
+  trivial-modulus ray class of an integral ideal to its ordinary ideal class.
 * `TauCeti.GlobalNumberFields.sum_rayClassIdealCountingFunction_one`: at the trivial modulus,
   the class counts sum to the number of nonzero integral ideals of norm at most `x`.
 * `TauCeti.GlobalNumberFields.tendsto_rayClassIdealCountingFunction_one`: at the trivial modulus
@@ -59,6 +61,16 @@ noncomputable def integralIdealsPrimeToOneEquiv :
     ((integralIdealsPrimeToOneEquiv.symm I : integralIdealsPrimeTo (Modulus.one K)) :
       Ideal (𝓞 K)) = I := by
   rfl
+
+/-- Under `oneEquivClassGroup`, the ray class of an integral ideal at the trivial modulus is its
+ordinary ideal class. -/
+@[simp] theorem oneEquivClassGroup_idealClass (J : integralIdealsPrimeTo (Modulus.one K)) :
+    oneEquivClassGroup (idealClass (Modulus.one K) J) =
+      ClassGroup.mk0 (integralIdealsPrimeToOneEquiv J) := by
+  rw [idealClass_apply, oneEquivClassGroup_rayClassMk, ← ClassGroup.mk_mk0 K]
+  exact congrArg (ClassGroup.mk K) (Units.ext (by
+    rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, FractionalIdeal.coe_mk0,
+      integralIdealsPrimeToOneEquiv_apply_coe]))
 
 /-- **The class counts at the trivial modulus sum to the classical ideal count.** -/
 @[simp]

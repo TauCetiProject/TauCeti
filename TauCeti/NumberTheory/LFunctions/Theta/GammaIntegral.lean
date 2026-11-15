@@ -168,4 +168,12 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
 
+/-- At any positive parameter `y`, the norm of `(archNorm y) ^ (s / 2) * archGaussian y x` is
+`‖archGaussian y x‖ * archNorm y ^ (Re s / 2)`. -/
+theorem norm_archNorm_cpow_mul_archGaussian {y : realSpace K} (hy : ∀ w, 0 < y w)
+    (x : mixedSpace K) (s : ℂ) :
+    ‖(archNorm y : ℂ) ^ (s / 2) * archGaussian y x‖ =
+      ‖archGaussian y x‖ * archNorm y ^ (s.re / 2) := by
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (archNorm_pos hy), div_ofNat_re, mul_comm]
+
 end TauCeti.LFunctions

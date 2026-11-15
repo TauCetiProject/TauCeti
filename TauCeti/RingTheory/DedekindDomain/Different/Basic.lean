@@ -346,7 +346,7 @@ theorem coe_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
 
 /-- `FractionalIdeal.dualEquiv` is its own inverse. -/
 @[simp]
-theorem symm_dualEquiv :
+theorem dualEquiv_symm :
     (dualEquiv R K : Equiv.Perm (FractionalIdeal S⁰ L)ˣ).symm = dualEquiv R K :=
   (rfl)
 
@@ -355,6 +355,38 @@ theorem symm_dualEquiv :
 theorem dualEquiv_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
     dualEquiv R K (dualEquiv R K I) = I :=
   (dualEquiv R K).symm_apply_apply I
+
+/-- The trace dual of an invertible fractional ideal `I` is the inverse different `dualEquiv R K 1`
+times `I⁻¹`. -/
+theorem dualEquiv_eq_mul_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I = dualEquiv R K 1 * I⁻¹ :=
+  Units.ext <| by
+    rw [Units.val_mul, coe_dualEquiv, coe_dualEquiv, Units.val_one, Units.val_inv_eq_inv_val,
+      dual_eq_mul_inv]
+
+/-- The trace dual of `I⁻¹` is the inverse different `dualEquiv R K 1` times `I`. -/
+theorem dualEquiv_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I⁻¹ = dualEquiv R K 1 * I := by
+  rw [dualEquiv_eq_mul_inv, inv_inv]
+
+/-- Multiplying `dualEquiv R K I` on the right by `I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem dualEquiv_mul_self (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I * I = dualEquiv R K 1 := by
+  rw [dualEquiv_eq_mul_inv, mul_assoc, inv_mul_cancel, mul_one]
+
+/-- Multiplying `I` on the right by `dualEquiv R K I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem self_mul_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    I * dualEquiv R K I = dualEquiv R K 1 := by
+  rw [mul_comm, dualEquiv_mul_self]
+
+/-- The quotient of the trace duals of `J` and `I` is `I / J`. -/
+@[simp]
+theorem dualEquiv_div_dualEquiv (J I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K J / dualEquiv R K I = I / J := by
+  rw [dualEquiv_eq_mul_inv R K J, dualEquiv_eq_mul_inv R K I, mul_div_mul_comm, div_self', one_mul,
+    inv_div_inv]
 
 end DualEquiv
 

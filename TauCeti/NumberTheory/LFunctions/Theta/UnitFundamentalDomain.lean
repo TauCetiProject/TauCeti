@@ -25,7 +25,8 @@ This file sets up that action and its fundamental domains:
   The parameter `(mult w ^ 2)_w` has norm `16 ^ r₂` (`archNorm_mult_sq`).
 * `unitScale u y` is the action `y_w ↦ |u|_w² y_w` of a unit. It is continuous
   (`continuous_unitScale`), preserves the norm (`archNorm_unitScale`), and its kernel on parameters
-  with nonzero coordinates is the torsion (`unitScale_eq_self_iff`, `unitScale_of_mem_torsion`).
+  with nonzero coordinates is the torsion (`unitScale_eq_self_iff`,
+  `unitScale_eq_self_of_mem_torsion`).
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
   Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
   `surfaceInv` and `surfaceMul`. A bounded set of parameters meets `S` inside a box `[C⁻¹, C]`
@@ -187,7 +188,7 @@ theorem archNorm_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
 
 /-- Roots of unity have absolute value `1` at every infinite place, so they act trivially on all
 archimedean parameters. -/
-theorem unitScale_of_mem_torsion {u : (𝓞 K)ˣ} (hu : u ∈ torsion K) (y : realSpace K) :
+theorem unitScale_eq_self_of_mem_torsion {u : (𝓞 K)ˣ} (hu : u ∈ torsion K) (y : realSpace K) :
     unitScale u y = y := by
   rw [mem_torsion] at hu
   ext w

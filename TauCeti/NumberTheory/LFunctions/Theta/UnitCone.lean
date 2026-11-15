@@ -7,9 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
-import Mathlib.Logic.Encodable.Pi
 import Mathlib.MeasureTheory.Group.FundamentalDomain
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import TauCeti.Algebra.Group.TypeTags.Countable
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
 /-!
@@ -22,13 +22,14 @@ finite torsion subgroup `Units.torsion K` of order `w = Units.torsionOrder K` ac
 parameters. Summing over all units `u : (𝓞 K)ˣ` therefore unfolds an integral over `archHaar K` with
 multiplicity `w`:
 
-* `lintegral_archHaar_eq_tsum_unitCone`:
+* `torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone`:
   `w * ∫⁻ y, f y ∂archHaar K = ∑' u : (𝓞 K)ˣ, ∫⁻ y in unitCone D, f (unitScale u y) ∂archHaar K`.
-* `summable_setIntegral_norm_unitCone`, `hasSum_setIntegral_unitCone`, and
-  `integral_archHaar_eq_tsum_unitCone`: the corresponding absolute summability and Bochner integral
-  unfolding for any `archHaar`-integrable function.
-* `setLIntegral_unitCone_eq` and `setIntegral_unitCone_eq`: integrals of `unitScale`-invariant
-  functions over `unitCone D` do not depend on the choice of unit fundamental domain `D`.
+* `hasSum_setIntegral_unitCone`, `summable_setIntegral_norm_unitCone`, and
+  `torsionOrder_smul_integral_archHaar_eq_tsum_unitCone`: the corresponding `HasSum`, absolute
+  summability, and Bochner integral unfolding for any `archHaar`-integrable function.
+* `setLIntegral_unitCone_eq` and `setIntegral_unitCone_eq`: integrals over `unitCone D` of
+  functions invariant under `unitScale` on the positive orthant do not depend on the choice of unit
+  fundamental domain `D`.
 * `hasMellin_mellinKernel_sub`: the radial Mellin substitution identifying the Mellin transform of
   `mellinKernel D L` minus its constant term with the norm-weighted integral of `latticeTheta L - 1`
   over `unitCone D`.
@@ -51,12 +52,6 @@ variable {K : Type*} [Field K] [NumberField K]
 /-! ### Unfolding `archHaar` over unit translates of a cone -/
 
 section FreeUnitAction
-
-private local instance : Countable (Multiplicative (Fin (Units.rank K) → ℤ)) :=
-  Multiplicative.toAdd.injective.countable
-
-private theorem countable_units : Countable (𝓞 K)ˣ :=
-  (unitsMulEquivTorsionProdMultiplicative K).injective.countable
 
 private def freeUnitHom : Multiplicative (Fin (Units.rank K) → ℤ) →* (𝓞 K)ˣ :=
   (unitsMulEquivTorsionProdMultiplicative K).symm.toMonoidHom.comp (MonoidHom.inr _ _)
@@ -95,7 +90,7 @@ private theorem unitScale_symm_torsionProd (ζ : Units.torsion K)
     congr 1
     rw [unitsMulEquivTorsionProdMultiplicative_symm_apply]
     simp
-  rw [hmul, ← unitScale_unitScale, unitScale_of_mem_torsion ζ.2, freeUnits_smul_def]
+  rw [hmul, ← unitScale_unitScale, unitScale_eq_self_of_mem_torsion ζ.2, freeUnits_smul_def]
 
 /-- The cone over a unit fundamental domain is a fundamental domain for the free part of `(𝓞 K)ˣ`
 with respect to `archHaar K`. -/
@@ -127,7 +122,7 @@ private theorem isFundamentalDomain_unitCone {D : Set (realSpace K)}
 /-- **Unit-orbit unfolding of `archHaar` for nonnegative extended-real integrands.** Summing a
 cone integral over all units `u : (𝓞 K)ˣ` unfolds to `w = Units.torsionOrder K` copies of the
 integral over `realSpace K`. -/
-theorem lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace K)}
+theorem torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (f : realSpace K → ℝ≥0∞) :
     (Units.torsionOrder K : ℝ≥0∞) * ∫⁻ y, f y ∂archHaar K =
       ∑' u : (𝓞 K)ˣ, ∫⁻ y in unitCone D, f (unitScale u y) ∂archHaar K := by
@@ -143,30 +138,12 @@ theorem sum_map_unitScale_restrict_unitCone {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) :
     (Measure.sum fun u : (𝓞 K)ˣ ↦ ((archHaar K).restrict (unitCone D)).map (unitScale u)) =
       (Units.torsionOrder K : ℝ≥0∞) • archHaar K := by
-  have := countable_units (K := K)
   ext s hs
   rw [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul,
-    ← lintegral_indicator_one hs, lintegral_archHaar_eq_tsum_unitCone hD]
+    ← lintegral_indicator_one hs, torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone hD]
   refine tsum_congr fun u ↦ ?_
-  rw [Measure.map_apply (continuous_unitScale u).measurable hs,
-    ← lintegral_indicator_one ((continuous_unitScale u).measurable hs)]
-  rfl
-
-/-- If `f` is `archHaar`-integrable, the norms of its integrals over the unit translates of
-`unitCone D` are summable over `(𝓞 K)ˣ`. -/
-theorem summable_setIntegral_norm_unitCone {E : Type*} [NormedAddCommGroup E]
-    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) {f : realSpace K → E}
-    (hf : Integrable f (archHaar K)) :
-    Summable fun u : (𝓞 K)ˣ ↦ ∫ y in unitCone D, ‖f (unitScale u y)‖ ∂archHaar K := by
-  have := countable_units (K := K)
-  let μ : (𝓞 K)ˣ → Measure (realSpace K) :=
-    fun u ↦ ((archHaar K).restrict (unitCone D)).map (unitScale u)
-  have hfμ : Integrable f (Measure.sum μ) := by
-    rw [sum_map_unitScale_restrict_unitCone hD]
-    exact hf.smul_measure (ENNReal.natCast_ne_top (Units.torsionOrder K))
-  refine hfμ.summable_integral.congr fun u ↦ ?_
-  have hfu : Integrable f (μ u) := hfμ.mono_measure (Measure.le_sum _ u)
-  exact integral_map (continuous_unitScale u).measurable.aemeasurable hfu.norm.aestronglyMeasurable
+  rw [← lintegral_indicator_one hs,
+    lintegral_map (measurable_one.indicator hs) (continuous_unitScale u).measurable]
 
 /-- **Unit-orbit unfolding of `archHaar` (`HasSum` form).** For any `archHaar`-integrable `f`, the
 integrals of `y ↦ f (unitScale u y)` over `unitCone D` sum over `u : (𝓞 K)ˣ` to
@@ -189,32 +166,78 @@ theorem hasSum_setIntegral_unitCone {E : Type*} [NormedAddCommGroup E] [NormedSp
   exact (integral_map (continuous_unitScale u).measurable.aemeasurable
     hfu.aestronglyMeasurable).symm
 
-/-- **Unit-orbit unfolding of `archHaar` (`tsum` form).** -/
-theorem integral_archHaar_eq_tsum_unitCone {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+/-- If `f` is `archHaar`-integrable, the integrals of `y ↦ ‖f (unitScale u y)‖` over `unitCone D`
+(equivalently, the integrals of `‖f‖` over the unit translates of `unitCone D`) are summable over
+`(𝓞 K)ˣ`. -/
+theorem summable_setIntegral_norm_unitCone {E : Type*} [NormedAddCommGroup E]
     {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) {f : realSpace K → E}
     (hf : Integrable f (archHaar K)) :
+    Summable fun u : (𝓞 K)ˣ ↦ ∫ y in unitCone D, ‖f (unitScale u y)‖ ∂archHaar K :=
+  (hasSum_setIntegral_unitCone hD hf.norm).summable
+
+/-- **Unit-orbit unfolding of `archHaar` (`tsum` form).** -/
+theorem torsionOrder_smul_integral_archHaar_eq_tsum_unitCone {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    {f : realSpace K → E} (hf : Integrable f (archHaar K)) :
     Units.torsionOrder K • ∫ y, f y ∂archHaar K =
       ∑' u : (𝓞 K)ˣ, ∫ y in unitCone D, f (unitScale u y) ∂archHaar K :=
   (hasSum_setIntegral_unitCone hD hf).tsum_eq.symm
 
-/-- Lebesgue integrals of `unitScale`-invariant functions over `unitCone D` are independent of the
-unit fundamental domain `D`. -/
+/-- Lebesgue integrals over `unitCone D` of functions invariant under `unitScale` on the positive
+orthant are independent of the unit fundamental domain `D`. -/
 theorem setLIntegral_unitCone_eq {D₁ D₂ : Set (realSpace K)}
     (hD₁ : IsUnitFundamentalDomain K D₁) (hD₂ : IsUnitFundamentalDomain K D₂)
-    (f : realSpace K → ℝ≥0∞) (hf : ∀ u : (𝓞 K)ˣ, ∀ y, f (unitScale u y) = f y) :
-    ∫⁻ y in unitCone D₁, f y ∂archHaar K = ∫⁻ y in unitCone D₂, f y ∂archHaar K :=
-  (isFundamentalDomain_unitCone hD₁).setLIntegral_eq (isFundamentalDomain_unitCone hD₂) f
-    fun g y ↦ hf (freeUnitHom g) y
+    (f : realSpace K → ℝ≥0∞) (hf : ∀ u : (𝓞 K)ˣ, ∀ ⦃y⦄, (∀ w, 0 < y w) → f (unitScale u y) = f y) :
+    ∫⁻ y in unitCone D₁, f y ∂archHaar K = ∫⁻ y in unitCone D₂, f y ∂archHaar K := by
+  classical
+  let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
+  have hinv (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
+      P.indicator f (g • y) = P.indicator f y := by
+    rw [freeUnits_smul_def]
+    by_cases hy : y ∈ P
+    · rw [indicator_of_mem (fun w ↦ unitScale_pos (hy w) _), indicator_of_mem hy]
+      exact hf _ hy
+    · have huy : unitScale (freeUnitHom g) y ∉ P := fun h ↦
+        hy fun w ↦ by simpa [unitScale_unitScale] using unitScale_pos (h w) (freeUnitHom g)⁻¹
+      rw [indicator_of_notMem huy, indicator_of_notMem hy]
+  calc ∫⁻ y in unitCone D₁, f y ∂archHaar K
+      = ∫⁻ y in unitCone D₁, P.indicator f y ∂archHaar K :=
+        setLIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
+          (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
+    _ = ∫⁻ y in unitCone D₂, P.indicator f y ∂archHaar K :=
+        (isFundamentalDomain_unitCone hD₁).setLIntegral_eq (isFundamentalDomain_unitCone hD₂)
+          (P.indicator f) hinv
+    _ = ∫⁻ y in unitCone D₂, f y ∂archHaar K :=
+        setLIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
+          indicator_of_mem (mem_unitCone.mp hy).1 _
 
-/-- Bochner integrals of `unitScale`-invariant functions over `unitCone D` are independent of the
-unit fundamental domain `D`. -/
+/-- Bochner integrals over `unitCone D` of functions invariant under `unitScale` on the positive
+orthant are independent of the unit fundamental domain `D`. -/
 theorem setIntegral_unitCone_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {D₁ D₂ : Set (realSpace K)} (hD₁ : IsUnitFundamentalDomain K D₁)
     (hD₂ : IsUnitFundamentalDomain K D₂) {f : realSpace K → E}
-    (hf : ∀ u : (𝓞 K)ˣ, ∀ y, f (unitScale u y) = f y) :
-    ∫ y in unitCone D₁, f y ∂archHaar K = ∫ y in unitCone D₂, f y ∂archHaar K :=
-  (isFundamentalDomain_unitCone hD₁).setIntegral_eq (isFundamentalDomain_unitCone hD₂)
-    fun g y ↦ hf (freeUnitHom g) y
+    (hf : ∀ u : (𝓞 K)ˣ, ∀ ⦃y⦄, (∀ w, 0 < y w) → f (unitScale u y) = f y) :
+    ∫ y in unitCone D₁, f y ∂archHaar K = ∫ y in unitCone D₂, f y ∂archHaar K := by
+  classical
+  let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
+  have hinv (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
+      P.indicator f (g • y) = P.indicator f y := by
+    rw [freeUnits_smul_def]
+    by_cases hy : y ∈ P
+    · rw [indicator_of_mem (fun w ↦ unitScale_pos (hy w) _), indicator_of_mem hy]
+      exact hf _ hy
+    · have huy : unitScale (freeUnitHom g) y ∉ P := fun h ↦
+        hy fun w ↦ by simpa [unitScale_unitScale] using unitScale_pos (h w) (freeUnitHom g)⁻¹
+      rw [indicator_of_notMem huy, indicator_of_notMem hy]
+  calc ∫ y in unitCone D₁, f y ∂archHaar K
+      = ∫ y in unitCone D₁, P.indicator f y ∂archHaar K :=
+        setIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
+          (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
+    _ = ∫ y in unitCone D₂, P.indicator f y ∂archHaar K :=
+        (isFundamentalDomain_unitCone hD₁).setIntegral_eq (isFundamentalDomain_unitCone hD₂) hinv
+    _ = ∫ y in unitCone D₂, f y ∂archHaar K :=
+        setIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
+          indicator_of_mem (mem_unitCone.mp hy).1 _
 
 end FreeUnitAction
 
