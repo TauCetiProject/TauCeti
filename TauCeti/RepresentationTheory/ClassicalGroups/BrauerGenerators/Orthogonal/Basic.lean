@@ -40,7 +40,7 @@ sides: the cap is preserved by every `A` with `Aᵀ * A = 1`, and the cup by eve
 which side a proof uses is the visible difference between contracting a pair of inputs and
 expanding a pair of outputs.
 
-The crossing is *not* given a name of its own: it is the Layer 8 permutation action
+The crossing is *not* given a name of its own: it is the permutation action
 `TauCeti.permTensorAction k n 2 (Equiv.swap 0 1)` of the transposition, which is exactly the
 statement that the symmetric group sits inside the Brauer algebra as the diagrams with no arc.
 
@@ -83,9 +83,6 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
   Annals of Mathematics 38 (1937), 857-872.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 9.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "The invariant form and the action on `V^{⊗k}`", and the worked example "Brauer duality
-  on `(ℂ³)^{⊗2}` for `O(3)`".
 -/
 
 public section
@@ -109,7 +106,7 @@ section Cap
 implementation detail of `TauCeti.orthogonalCap`; the public interface is
 `TauCeti.orthogonalCap_tprod`. -/
 private noncomputable def orthogonalCapMultilinear :
-    MultilinearMap k (fun _ : Fin 2 => (Fin n → k)) k :=
+    MultilinearMap (RingHom.id k) (fun _ : Fin 2 => (Fin n → k)) k :=
   ∑ j : Fin n,
     (MultilinearMap.mkPiAlgebra k (Fin 2) k).compLinearMap fun _ : Fin 2 => LinearMap.proj j
 

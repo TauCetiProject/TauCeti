@@ -40,16 +40,7 @@ condition a separable isogeny is expected to satisfy.
 * `TauCeti.Isogeny.exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one`: **a degree-one isogeny is
   an isomorphism**, the first consequence of the factorisation theorem.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 1**, "The factorisation theorem — made a
-milestone in its own right, because it is what the dual is built from": for isogenies
-`φ : W₁ → W₂` and `ψ : W₁ → W₃`, `ψ` factors as `ψ = λ ∘ φ` for a unique isogeny `λ` iff
-`ψ^*K(W₃) ⊆ φ^*K(W₂)` as subfields of `K(W₁)`, with `deg ψ = deg φ · deg λ`. The same layer's
-dual-isogeny bullet asks for the route taken here — "an **unpointed induced-place map** for
-finite function-field embeddings, with the named criterion `MapsInfinity λ ↔ λ_*(O₂) = O₃`
-(equivalently its valuation/integral-closure form), and functoriality of induced places along
-`λ ∘ φ = ψ`".
+The factorisation theorem is what the dual isogeny is built from.
 
 ## Provenance
 

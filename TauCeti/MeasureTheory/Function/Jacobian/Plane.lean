@@ -63,7 +63,7 @@ theorem lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul (hs : Measurable
   rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
     (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
   refine setLIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [hf w hw, enorm_smul, Real.enorm_eq_ofReal_abs]
+  rw [hf w hw, eNorm_smul, Real.eNorm_eq_ofReal_abs]
 
 /-- **Change of variables for the positive part of a density.** If a real density `f` on a
 measurable set `s` is `|det dφ|` times `g ∘ φ`, for a change of coordinates `φ` that is injective

@@ -210,7 +210,7 @@ private theorem submatrix_geckIndexEquiv_e (hτ : ∀ i : b.support, (τ i : ι�
       Equiv.apply_eq_iff_eq,
       Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
       g.toHom.root_indexEquiv_eq_add_iff g.bijective_weightMap.injective,
-      g.toHom.chainBotCoeff_indexEquiv g.bijective_weightMap.injective]
+      Hom.chainBotCoeff_indexEquiv]
 
 /-- The entrywise computation behind `RootPairing.Equiv.reindex_geckIndexEquiv_f`: pulling back
 `RootPairing.GeckConstruction.f (τ i)` along the index equivalence gives the matrix numbered by
@@ -230,7 +230,7 @@ private theorem submatrix_geckIndexEquiv_f (hτ : ∀ i : b.support, (τ i : ι�
       Equiv.apply_eq_iff_eq,
       Base.cartanMatrixIn_def, Hom.pairingIn_indexEquiv,
       g.toHom.root_indexEquiv_eq_sub_iff g.bijective_weightMap.injective,
-      g.toHom.chainTopCoeff_indexEquiv g.bijective_weightMap.injective]
+      Hom.chainTopCoeff_indexEquiv]
 
 end RootGenerators
 

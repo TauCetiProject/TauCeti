@@ -28,6 +28,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representatives.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
+* `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
+  on `G × U`, then distinct points of `U` lie in distinct orbits.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: if there are finitely many `H`-orbits,
@@ -73,7 +75,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
-  (`SubMulAction.orbitRelQuotientMap_injective`).
+  (`SubMulAction.orbitRelQuotientMap_injective`). Then two points of `S` lie in the same `H`-orbit
+  exactly when they lie in the same `G`-orbit (`SubMulAction.orbitRel_iff`). If the stabilizer in
+  `G` of a point of `S` lies in `H`, its stabilizer in `H` is trivial exactly when its stabilizer in
+  `G` is (`SubMulAction.stabilizer_eq_bot_iff`).
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -175,11 +180,8 @@ lemma MulAction.orbitRelQuotientBot_mk_eq_iff (x y : X) :
     (Quotient.mk'' x : MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) =
         Quotient.mk'' y ↔
       x = y := by
-  constructor
-  · intro h
-    exact congrArg (MulAction.orbitRelQuotientBotEquiv (G := G) (X := X)) h
-  · intro h
-    rw [h]
+  rw [← MulAction.orbitRelQuotientBotEquiv_symm_apply,
+    ← MulAction.orbitRelQuotientBotEquiv_symm_apply, Equiv.apply_eq_iff_eq]
 
 /-- Orbit relations are monotone in the acting subgroup. -/
 lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
@@ -211,6 +213,17 @@ lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
   MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
     MulAction.orbitRel.Quotient.mem_orbit.2 h
+
+/-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
+`G × U`, then distinct points of `U` lie in distinct orbits. -/
+theorem MulAction.injOn_quotientMk_slice {S : Type*} {σ : S → X} {U : Set S}
+    (hinj : Set.InjOn (fun p : G × S ↦ p.1 • σ p.2) (Set.univ ×ˢ U)) :
+    Set.InjOn (fun s ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) U := by
+  intro s hs s' hs' hss'
+  obtain ⟨g, hg⟩ := Quotient.exact hss'
+  have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨Set.mem_univ _, hs'⟩ ⟨Set.mem_univ _, hs⟩
+    (by simpa only [one_smul] using hg)
+  exact (Prod.ext_iff.1 h1).2.symm
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/
@@ -339,12 +352,6 @@ lemma MulAction.equivSubgroupOrbitsQuotientGroup_apply_smul
     (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
     (QuotientGroup.mk (s := H) g⁻¹)
 
-private lemma orbitRelQuotientMapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
-    Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
-      (Quotient.mk'' x : MulAction.orbitRel.Quotient K X) :=
-  TauCeti.Setoid.map_of_le_mk (MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x
-
 /-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
 lemma MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE
@@ -359,7 +366,7 @@ lemma MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
   rw [MulAction.equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [orbitRelQuotientMapOfLE_mk hHK]
+  rw [TauCeti.Setoid.map_of_le_mk]
   rw [MulAction.equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)
@@ -847,10 +854,8 @@ its composite with the orbit projection is `f`. -/
   /-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly
 when its composite with the orbit projection is `f`. -/]
 theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient G X → Y} :
-    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f := by
-  refine ⟨fun h ↦ h ▸ MulAction.orbitRelQuotientLift_comp_mk, fun h ↦ funext fun q ↦ ?_⟩
-  induction q using Quotient.inductionOn with
-  | h x => exact congrFun h x
+    φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f :=
+  (Quotient.mk_surjective.injective_comp_right.eq_iff' MulAction.orbitRelQuotientLift_comp_mk).symm
 
 /-- Postcomposing the descent of `f` with a map `h` gives the descent of `h ∘ f`. -/
 theorem MulAction.comp_orbitRelQuotientLift (h : Y → Z) :
@@ -1090,5 +1095,25 @@ theorem orbitRelQuotientMap_injective
   have hgS : g ∈ H := hS g t t.2 (hg ▸ s.2)
   exact Quotient.sound (orbitRel_apply.mpr
     (mem_orbit_subMul_iff.mpr ⟨⟨g, hgS⟩, hg⟩))
+
+/-- **Orbit relations on slices.** If every element of `G` carrying a point of `S` into `S` lies in
+`H`, then two points of `S` lie in the same `H`-orbit exactly when they lie in the same
+`G`-orbit. -/
+theorem orbitRel_iff (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H) {s t : S} :
+    orbitRel H S s t ↔ orbitRel G X s t := by
+  rw [← Quotient.eq, ← Quotient.eq, ← orbitRelQuotientMap_mk, ← orbitRelQuotientMap_mk,
+    (S.orbitRelQuotientMap_injective hS).eq_iff]
+
+/-- The stabilizer in `H` of a point `s` of `S` is its stabilizer in `G`, viewed as a subgroup of
+`H`. -/
+theorem stabilizer_eq_subgroupOf (s : S) :
+    stabilizer H s = (stabilizer G (s : X)).subgroupOf H := by
+  rw [stabilizer_of_subMul, stabilizer_subgroupOf]
+
+/-- **Freeness on an invariant subset.** If the stabilizer in `G` of a point `s` of `S` lies in
+`H`, then `s` has trivial stabilizer in `H` exactly when it has trivial stabilizer in `G`. -/
+theorem stabilizer_eq_bot_iff {s : S} (hle : stabilizer G (s : X) ≤ H) :
+    stabilizer H s = ⊥ ↔ stabilizer G (s : X) = ⊥ := by
+  rw [stabilizer_eq_subgroupOf, Subgroup.subgroupOf_eq_bot, disjoint_iff, inf_eq_left.2 hle]
 
 end SubMulAction

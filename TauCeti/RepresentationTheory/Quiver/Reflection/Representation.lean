@@ -110,9 +110,7 @@ is `Q` itself only by unfolding a semireducible definition; as in the neighbouri
 
 ## References
 
-This implements the reflection at a sink of the reflection functors of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
 Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2.
 -/
 

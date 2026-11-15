@@ -17,10 +17,10 @@ public import TauCeti.Probability.Cdf
 This file develops uniform probability measures on finite discrete spaces.  It identifies the
 conditional counting measure `ProbabilityTheory.uniformOn` with Mathlib's finite Dirac-sum
 measure, computes its masses and Bochner integrals, and shows that embeddings transport finite
-uniform measures to uniform measures on their images. For labels in a measurable space, it
-computes masses by counting inputs, retaining multiplicities of repeated labels; for real labels,
-it also computes the cdf. Quantile formulas and endpoint limits are in
-`TauCeti.Probability.Distributions.Uniform.Quantile`.
+uniform measures to uniform measures on their images, including uniform `n`-element subsets. For
+labels in a measurable space, it computes masses by counting inputs, retaining multiplicities of
+repeated labels; for real labels, it also computes the cdf. Quantile formulas and endpoint limits
+are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
 
 ## Main results
 
@@ -197,6 +197,22 @@ theorem map_uniformOn_finset (e : α ↪ β) (s : Finset α) :
     (uniformOn (s : Set α)).map e = uniformOn (s.map e : Finset β) := by
   simpa only [Finset.coe_map] using
     e.injective.injOn.bijOn_image.map_uniformOn
+
+section PowersetCard
+
+variable {γ δ : Type*}
+    [MeasurableSpace (Finset γ)] [MeasurableSingletonClass (Finset γ)]
+    [MeasurableSpace (Finset δ)] [MeasurableSingletonClass (Finset δ)]
+
+/-- An embedding sends a uniform `n`-element subset of a finset `s` to a uniform `n`-element
+subset of the image of `s`. This moves positions indexed by `Fin N` into `ℕ`. -/
+theorem map_finsetMap_uniformOn_powersetCard (f : γ ↪ δ) (s : Finset γ) (n : ℕ) :
+    (uniformOn (s.powersetCard n : Set (Finset γ))).map (Finset.map f) =
+      uniformOn ((s.map f).powersetCard n : Set (Finset δ)) := by
+  rw [Finset.powersetCard_map]
+  exact (Finset.mapEmbedding f).toEmbedding.map_uniformOn_finset _
+
+end PowersetCard
 
 end Function.Embedding
 

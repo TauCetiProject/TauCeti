@@ -49,7 +49,7 @@ this is the first Neumann-invariance statement for the lattice-homology data.
 Lattice homology itself is not touched here; the file works one layer below, at the weight
 function that grades it. The weight identity and the equality locus `s ∈ {0, ε}` — the two
 exceptional multiplicities over a lattice point of `P` at which the blown-up weight is still the
-old weight — are also the combinatorial input a later invariance proof needs.
+old weight — are also the combinatorial input an invariance proof for lattice homology needs.
 
 ## Main results
 
@@ -66,12 +66,9 @@ old weight — are also the combinatorial input a later invariance proof needs.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose programme is "Plumbing trees/graphs and their lattices; Némethi's lattice (co)homology …;
-invariance under **Neumann moves**; … `d`-invariant analogues". The plumbing calculus is
-W. Neumann, *A calculus for plumbing applied to the topology of complex surface singularities and
-degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981), 299--344; the weight
-conventions and the behaviour of `χ_k` under blowing up follow Némethi,
+The plumbing calculus is W. Neumann, *A calculus for plumbing applied to the topology of complex
+surface singularities and degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981),
+299--344; the weight conventions and the behaviour of `χ_k` under blowing up follow Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Sections 2--3, after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

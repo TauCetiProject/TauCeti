@@ -389,8 +389,8 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
       _ ≤ ∫ x, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ :=
           setIntegral_le_integral hg.norm (Eventually.of_forall fun x => norm_nonneg _)
       _ = (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
-          rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable,
-            eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable]
+          rw [integral_norm_eq_lintegral_eNorm hg.aestronglyMeasurable,
+            eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
   have hLevyReal : Tendsto
       (fun n => (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal) atTop (𝓝 0) := by
     simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp

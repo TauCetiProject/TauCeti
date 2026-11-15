@@ -56,12 +56,6 @@ quadratic Clifford elements is carrier-specific and happens elsewhere; for type 
   and `TauCeti.SpinPolarizationData.two_smul_diagonalBivector_mem_integralSpinActionSubring`: the
   two combinations of diagonal bivectors realized by an orthogonal coroot are integral.
 
-## Roadmap
-
-This supplies the shared integral-spinor-lattice prerequisite for the full-weight type-`B` and
-type-`D` Chevalley carriers in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. Those carriers
-are consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
-
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.

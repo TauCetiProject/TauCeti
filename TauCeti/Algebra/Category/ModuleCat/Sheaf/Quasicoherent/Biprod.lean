@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Finite.Sum
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.Sites.CoversTop
 
 /-!
@@ -18,6 +21,8 @@ Let `R` be a sheaf of rings on a site with pullbacks. This file shows that the b
 (direct sum) `M ⊞ N` of two sheaves of `R`-modules is quasi-coherent, of finite type, finitely
 presented, or locally free as soon as `M` and `N` are. In particular, direct sums of finite
 locally free sheaves (locally free and finitely presented) are finite locally free.
+The finite-presentation object property is closed under binary products; when the site also has
+binary products, it contains a zero object and is closed under finite products.
 
 The local input is that generating sections, and presentations, of `M` and `N` give generating
 sections, and a presentation, of `M ⊞ N`: the free sheaf on `I ⊕ I'` is `free I ⊞ free I'`
@@ -321,6 +326,32 @@ instance isFinitePresentation_biprod [M.IsFinitePresentation] [N.IsFinitePresent
   exact ⟨qM.biprod qN, inferInstance⟩
 
 end Local
+
+section FiniteProducts
+
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+/-- The zero sheaf of modules is finitely presented. -/
+instance containsZero_isFinitePresentation [HasBinaryProducts C] :
+    (isFinitePresentation R).ContainsZero where
+  exists_zero := ⟨_, isZero_free PEmpty, inferInstance⟩
+
+/-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
+instance isClosedUnderBinaryProducts_isFinitePresentation [HasPullbacks C] :
+    (isFinitePresentation R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
+    let := hA
+    let := hB
+    exact isFinitePresentation_biprod
+
+/-- Finitely presented sheaves are closed under finite products. -/
+instance isClosedUnderFiniteProducts_isFinitePresentation [HasPullbacks C] [HasBinaryProducts C] :
+    (isFinitePresentation R).IsClosedUnderFiniteProducts := .mk'
+
+end FiniteProducts
 
 end SheafOfModules
 

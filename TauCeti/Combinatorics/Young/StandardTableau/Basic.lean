@@ -17,13 +17,12 @@ defines standard Young tableaux, their finite cardinality `standardCount`, and t
 underlying labeling is the existing `YoungTableau μ` type, so the general tableau API applies
 without converting between parallel representations.
 
-The labels start at zero, following the `Fin μ.card` convention in the Schur--Weyl roadmap.
+The labels are the elements of `Fin μ.card`, so they start at zero rather than at one as in the
+classical convention.
 
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 0.
 * Mathlib's `Mathlib.Combinatorics.Young.YoungDiagram`, for Young diagrams and their
   transposition.
 -/

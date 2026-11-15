@@ -29,9 +29,9 @@ dividing `N` divides every half-norm of `L`. Equality fails in general: the latt
 level `8` and content `2`, and its Fricke partner `√8 • ½ ℤ = √2 ℤ` has level `4`
 (`ZLattice.level_sqrt_level_smul_dual_span_two`). Similarly `√2 • E₈` has level `2` and content
 `2`, while its Fricke partner is `E₈`, of level `1`. More generally, in positive dimension an even
-unimodular lattice `L` scaled by `√m` has level exactly `m` and Fricke partner `L`: the level
-divides `m` because `(√m • L)^∨ = (√m)⁻¹ • L`, and it is at least `m` because the Fricke partner
-`√N • (√m)⁻¹ • L`, being integral, has determinant `(N / m)ⁿ ≥ 1`.
+unimodular lattice `L` scaled by `√m`, `m > 0`, has level exactly `m` and Fricke partner `L`: the
+level divides `m` because `(√m • L)^∨ = (√m)⁻¹ • L`, and it is at least `m` because the Fricke
+partner `√N • (√m)⁻¹ • L`, being integral, has determinant `(N / m)ⁿ ≥ 1`.
 
 The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 
@@ -40,16 +40,21 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 * `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
 * `ZLattice.det_sqrt_level_smul_dual`: for a full lattice of rank `n`,
   `det (√N • L^∨) = Nⁿ / det L`.
-* `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
-  lattice of rank `n`, `|A_L| * |A_{√N • L^∨}| = Nⁿ`.
-* `ZLattice.IsEven.level_sqrt_level_smul_dual`: for an even full lattice,
+* `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for an integral
+  lattice in a finite-dimensional space of dimension `n`,
+  `Nat.card A_L * Nat.card A_{√N • L^∨} = Nⁿ`. For a full
+  lattice these are the orders `|A_L| * |A_{√N • L^∨}|`; if `L` does not span, then `N = 0` and
+  `A_L` is infinite, so both sides are `0`.
+* `ZLattice.IsEven.level_sqrt_level_smul_dual`: for an even lattice in a finite-dimensional space,
   `level (√N • L^∨) = N / gcd (N, c_L)`.
-* `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: the level of the Fricke partner divides `N`.
-* `ZLattice.IsEven.level_sqrt_level_smul_dual_eq_level_iff`: it equals `N` exactly when `N` is
-  coprime to the content.
+* `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: in a finite-dimensional space, the level of the
+  Fricke partner divides `N`.
+* `ZLattice.IsEven.level_sqrt_level_smul_dual_eq_level_iff`: for an even full lattice, it equals `N`
+  exactly when `N` is coprime to the content.
 * `ZLattice.IsEven.level_sqrt_smul_of_isUnimodular`,
-  `ZLattice.IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular`: in positive dimension, for an
-  even unimodular `L` and `m > 0`, the lattice `√m • L` has level `m` and Fricke partner `L`.
+  `ZLattice.IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular`: for an even unimodular `L`, in
+  a finite-dimensional space of positive dimension the lattice `√m • L` has level `m` for every
+  `m : ℕ`, and for `m > 0` its Fricke partner is `L`.
 
 ## References
 
@@ -89,11 +94,23 @@ theorem det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E] :
     det (√(level L : ℝ) • dual L) = level L ^ finrank ℝ E / det L := by
   rw [det_sqrt_smul, det_dual, div_eq_mul_inv]
 
-/-- For an integral full lattice `L` of rank `n` and level `N`, the orders of the discriminant
-groups of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- For an integral lattice `L` in a finite-dimensional space of dimension `n` and level `N`, the
+cardinalities `Nat.card` of the discriminant groups of `L` and of its Fricke partner `√N • L^∨`
+multiply to `Nⁿ`. For a full lattice these are the orders of the two finite discriminant groups. If
+`L` does not span, then `N = 0` and the discriminant group of `L` is infinite, so both sides
+are `0`. -/
 theorem IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual (h : IsIntegral L) :
     Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup (√(level L : ℝ) • dual L)) =
       level L ^ finrank ℝ E := by
+  have := h.discreteTopology
+  by_cases hs : span ℝ (L : Set E) = ⊤
+  swap
+  · have : Nontrivial E := Submodule.nontrivial_iff ℝ |>.mp ⟨_, _, hs⟩
+    have := infinite_discriminantGroup_of_span_ne_top hs
+    rw [Nat.card_eq_zero_of_infinite (α := DiscriminantGroup L), zero_mul,
+      level_eq_zero_of_span_ne_top hs, zero_pow finrank_pos.ne']
+  have : IsZLattice ℝ L := ⟨hs⟩
   borelize E
   have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
   refine Nat.cast_injective (R := ℝ) ?_
@@ -120,11 +137,20 @@ private theorem IsIntegral.level_sqrt_level_smul_dual_dvd_iff (h : IsIntegral L)
   · field_simp
     linear_combination hm
 
-/-- **The level of the Fricke partner.** For an even full lattice `L` of level `N` and content
-`c_L` (the greatest common divisor of its half-norms `‖x‖² / 2`), the Fricke partner `√N • L^∨`
-has level `N / gcd (N, c_L)`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **The level of the Fricke partner.** For an even lattice `L` in a finite-dimensional space, of
+level `N` and content `c_L` (the greatest common divisor of its half-norms `‖x‖² / 2`), the Fricke
+partner `√N • L^∨` has level `N / gcd (N, c_L)`. A lattice that does not span has level `0`, and
+then both sides vanish. -/
 theorem IsEven.level_sqrt_level_smul_dual (h : IsEven L) :
     level (√(level L : ℝ) • dual L) = level L / Nat.gcd (level L) (content L) := by
+  have := h.discreteTopology
+  by_cases hs : span ℝ (L : Set E) = ⊤
+  swap
+  · have : Nontrivial E := Submodule.nontrivial_iff ℝ |>.mp ⟨_, _, hs⟩
+    rw [level_eq_zero_of_span_ne_top hs, Nat.zero_div, Nat.cast_zero, Real.sqrt_zero, zero_smul]
+    exact level_eq_zero_of_span_ne_top (by simp)
+  have : IsZLattice ℝ L := ⟨hs⟩
   have hN := h.isIntegral.level_pos
   -- Both sides have the same multiples `K`: each is characterized by `N ∣ K c_L`.
   have key (K : ℕ) : level (√(level L : ℝ) • dual L) ∣ K ↔ level L ∣ K * content L := by
@@ -152,7 +178,9 @@ theorem IsEven.level_sqrt_level_smul_dual (h : IsEven L) :
     rw [zero_mul]
     exact Nat.modEq_zero_iff_dvd.mpr ((key _).mp dvd_rfl)
 
-/-- The level of the Fricke partner `√N • L^∨` of an even full lattice of level `N` divides `N`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In a finite-dimensional space, the level of the Fricke partner `√N • L^∨` of an even lattice of
+level `N` divides `N`. -/
 theorem IsEven.level_sqrt_level_smul_dual_dvd (h : IsEven L) :
     level (√(level L : ℝ) • dual L) ∣ level L := by
   rw [h.level_sqrt_level_smul_dual]
@@ -168,11 +196,18 @@ theorem IsEven.level_sqrt_level_smul_dual_eq_level_iff (h : IsEven L) :
 
 /-! ### Scaled even unimodular lattices -/
 
-/-- **Scaled even unimodular lattices.** In positive dimension, scaling an even unimodular full
-lattice `L` by `√m`, for a positive integer `m`, gives an even lattice of level exactly `m`.
-For instance `√2 • E₈` has level `2`. -/
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **Scaled even unimodular lattices.** In a finite-dimensional space of positive dimension,
+scaling an even unimodular lattice `L` by `√m`, for a natural number `m`, gives an even lattice of
+level exactly `m`. For instance `√2 • E₈` has level `2`. For `m = 0` the lattice is `0`, whose dual
+is the whole space, so that its level is `0`. -/
 theorem IsEven.level_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
-    (hU : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) : level (√(m : ℝ) • L) = m := by
+    (hU : IsUnimodular L) {m : ℕ} : level (√(m : ℝ) • L) = m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul]
+    exact level_eq_zero_of_span_ne_top (by simp)
+  have := h.discreteTopology
+  have : IsZLattice ℝ L := ⟨hU.span_eq_top⟩
   borelize E
   have hm₀ : (0 : ℝ) < m := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)
   have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr hm₀
@@ -206,14 +241,17 @@ theorem IsEven.level_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
     exact (pow_lt_one₀ (by positivity) hlt' finrank_pos.ne').not_ge hdet
   exact Nat.le_antisymm (Nat.le_of_dvd (Nat.pos_of_ne_zero hm) hNm) (by exact_mod_cast hmN)
 
-/-- In positive dimension, the Fricke partner of `√m • L`, for an even unimodular full lattice `L`
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- The Fricke partner of `√m • L`, for an even unimodular lattice `L` in a finite-dimensional space
 and a positive integer `m`, is `L` itself: `√m • (√m • L)^∨ = L`. For instance the Fricke partner
 of `√2 • E₈` is `E₈`, of level `1`. -/
-theorem IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
+theorem IsEven.sqrt_level_smul_dual_sqrt_smul_of_isUnimodular (h : IsEven L)
     (hU : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) :
     √(level (√(m : ℝ) • L) : ℝ) • dual (√(m : ℝ) • L) = L := by
+  rcases subsingleton_or_nontrivial E with _ | _
+  · exact Subsingleton.elim _ _
   have hs : √(m : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))
-  rw [h.level_sqrt_smul_of_isUnimodular hU hm, dual_smul _ hs, hU.dual_eq, smul_smul,
+  rw [h.level_sqrt_smul_of_isUnimodular hU, dual_smul _ hs, hU.dual_eq, smul_smul,
     mul_inv_cancel₀ hs, one_smul]
 
 end FiniteDimensional

@@ -120,8 +120,7 @@ private theorem leftRightInverse_toRectangleDecomposition
           (by simpa using Grid.ne_right_of_mem_cIoo hcol))
         (E.underlying_first_isEmpty hp) (E.underlying_second_isEmpty hr) := by
   apply GridRectangleDecomposition.ext <;>
-    simp [leftRightInverse, GridRectanglePentagonDecomposition.pentagon,
-      (E.leftRightInverse_geometry hcommon hcol hp hr).2.1]
+    simp [leftRightInverse, GridRectanglePentagonDecomposition.pentagon]
 
 end TauCeti.GridPentagonRectangleDecomposition
 

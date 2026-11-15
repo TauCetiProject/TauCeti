@@ -42,10 +42,6 @@ one-dimensional, the odd block is zero and the even action is again onto.
   when the first isotropic summand is finite free.
 * `TauCeti.exists_spinAction_eq_algebraMap_of_mem_center`: under the same hypothesis, the Fock
   action sends central Clifford elements to scalars.
-
-## References
-
-* [Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md)
 -/
 
 public section

@@ -33,11 +33,11 @@ a convenience of `Metric.diam`, which vanishes on unbounded sets: in `ℝ` the u
 Nothing here needs `V` to be open, connected, or measurable, and the ambient space is an arbitrary
 real normed space: only the segment and the norm are used.
 
-The intended consumer is layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's
-boundary correspondence. There the piece of a domain that a crosscut cuts off has to be shown small,
-and what is small is its boundary — the crosscut itself together with the arc of the domain boundary
-it separates; `TauCeti.diam_frontier` is what converts that into a bound on the piece.
-`TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out that conversion.
+The intended consumer is Carathéodory's boundary correspondence. There the piece of a domain that
+a crosscut cuts off has to be shown small, and what is small is its boundary — the crosscut itself
+together with the arc of the domain boundary it separates; `TauCeti.diam_frontier` is what converts
+that into a bound on the piece. `TauCeti/Analysis/Complex/Conformal/CutDiameter.lean` carries out
+that conversion.
 
 ## Main results
 

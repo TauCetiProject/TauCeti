@@ -111,8 +111,9 @@ theorem contMDiff_apply_reebVectorField_mpullback_prodMk
   have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)).2
     (contMDiff_mpullback_prodMk β p)
-  have h := (contMDiffAt_totalSpace.1 (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ
-    (contMDiff_reebVectorField_mpullback_prodMk α hc p))).2
+  have h := (contMDiffAt_totalSpace_iff.1
+    (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ
+      (contMDiff_reebVectorField_mpullback_prodMk α hc p))).2
   simpa [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] using h
 
 /-- **Contact-Moser vector fields of a smooth family of contact forms.** If the slices

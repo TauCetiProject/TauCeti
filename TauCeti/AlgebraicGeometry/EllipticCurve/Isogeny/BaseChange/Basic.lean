@@ -70,15 +70,10 @@ proved there.
   isogeny and composition.
 * `TauCeti.Isogeny.map_id`, `TauCeti.Isogeny.map_map`: functoriality in the base map itself.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5** (README:369). Its first milestone
-(README:376-378) asks for "base change of Weierstrass equations, coordinate rings, function
-fields, points, and isogenies, compatible with identity, composition, degree, separability,
-`MapsInfinity`, duals, and induced point maps"; this file is the isogeny entry, with the identity,
-composition and `MapsInfinity` clauses. Layer 1's dual-isogeny milestone (README:529-531) opens
-"for the **separable** part, base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` **is** Galois",
-and `Isogeny.map` is the arrow that base change names there.
+This is the isogeny part of base change for Weierstrass curves, with its compatibility with the
+identity, composition and `MapsInfinity`. For the separable part of an isogeny, the dual is
+built after base change to `Kˢᵉᵖ`, where `Kˢᵉᵖ(W₁)/φ^*Kˢᵉᵖ(W₂)` is Galois; `Isogeny.map` is that
+base change.
 
 Mathlib's `WeierstrassCurve.map_id` and `WeierstrassCurve.map_map` are proved by `rfl`. Their
 affine specialisations are therefore definitional equalities too, so the identity and composition

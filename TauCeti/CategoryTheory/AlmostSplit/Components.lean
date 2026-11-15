@@ -19,9 +19,8 @@ Thus the retracts of the middle term determine the possible endpoints of arrows 
 Auslander–Reiten quiver: an irreducible map `X ⟶ C` exists exactly when one `A ⟶ X` exists.
 This is the support of the mesh relation; it does not compute arrow multiplicities.
 
-The results use local endomorphism rings for the ends and require only that the tested object
-is nonzero. In categories of finite-length modules the locality assumptions are supplied by
-indecomposability and Fitting's lemma. Minimality of the maps is derived from the almost-split
+The results require only that the tested object is nonzero. The ends of an almost-split sequence
+have local endomorphism rings, and the minimality of the maps is derived from the almost-split
 sequence, rather than assumed separately.
 
 ## References
@@ -39,12 +38,12 @@ namespace CategoryTheory.ShortComplex.IsAlmostSplit
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
   {S : ShortComplex C} {X : C}
-  [IsLocalRing (End S.X₁)] [IsLocalRing (End S.X₃)]
 
 /-- Restricting the final map of an almost-split sequence to a retract of its middle term
 gives an irreducible morphism when the retract is nonzero. -/
 theorem isIrreducibleMorphism_comp_g (hS : S.IsAlmostSplit)
     (hX : ¬ Limits.IsZero X) (i : X ⟶ S.X₂) [IsSplitMono i] : IsIrreducibleMorphism (i ≫ S.g) := by
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
   apply hS.isRightAlmostSplit_g.isIrreducibleMorphism_comp_of_isSplitMono
     hS.isIso_of_comp_g_eq i
   have hrad := comp_mem_jacobsonRadical_left i
@@ -56,6 +55,8 @@ theorem isIrreducibleMorphism_comp_g (hS : S.IsAlmostSplit)
 gives an irreducible morphism when the retract is nonzero. -/
 theorem isIrreducibleMorphism_f_comp (hS : S.IsAlmostSplit)
     (hX : ¬ Limits.IsZero X) (p : S.X₂ ⟶ X) [IsSplitEpi p] : IsIrreducibleMorphism (S.f ≫ p) := by
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
   apply hS.isLeftAlmostSplit_f.isIrreducibleMorphism_comp_of_isSplitEpi
     hS.isIso_of_f_comp_eq p
   have hrad := comp_mem_jacobsonRadical_right

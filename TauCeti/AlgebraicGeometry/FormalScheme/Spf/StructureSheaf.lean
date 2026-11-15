@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicGeometry.StructureSheaf
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.AdicRing.CompletedAway
 
+import Mathlib.Algebra.Category.Ring.Constructions
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
 import TauCeti.RingTheory.Localization.Away.Quotient
 
 /-!
@@ -66,6 +68,8 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.quotientProjection`: the projection `O_{Spf A} → O_{I ^ (n + 1)}`.
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift`: the morphism into `O_{Spf A}` induced by
   morphisms to the thickenings compatible with the reduction maps.
+* `TauCeti.FormalScheme.Spf.structureSheaf.mkSection`: the section of `O_{Spf A}` over an open `U`
+  assembled from a compatible sequence of sections of `O_{I ^ (n + 1)}` over `U`.
 * `TauCeti.FormalScheme.Spf.toQuotientSheaf`: for ideals of definition `I` and `K`, the
   projection `O_{Spf A} → O_K` from the structure sheaf built from `I`.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso`: for `I`-adically complete `A`, the isomorphism
@@ -91,8 +95,12 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.quotientProjection_comp_quotientTransition`: the projections are
   compatible with the reduction maps.
 * `TauCeti.FormalScheme.Spf.structureSheaf.lift_quotientProjection`,
-  `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`: morphisms into the structure sheaf correspond
-  to compatible families of morphisms to the thickenings.
+  `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`,
+  `TauCeti.FormalScheme.Spf.structureSheaf.quotientProjection_mkSection`,
+  `TauCeti.FormalScheme.Spf.structureSheaf.sections_ext`,
+  `TauCeti.FormalScheme.Spf.subsingleton_sections_bot`: morphisms and sections of the structure
+  sheaf correspond to compatible families over the thickenings, and sections over `⊥` are a
+  subsingleton.
 * `TauCeti.FormalScheme.Spf.toQuotientSheaf_eq`: the projection to `O_K` factors through the
   projection to `O_{I ^ (n + 1)}` for every `n` with `I ^ (n + 1) ≤ K`.
 * `TauCeti.FormalScheme.Spf.toQuotientSheaf_comp_quotientTransition`: the projections to
@@ -323,6 +331,54 @@ theorem structureSheaf.hom_ext (hI : IsAdic I)
     {f g : F ⟶ structureSheaf hI}
     (h : ∀ n, f ≫ quotientProjection hI n = g ≫ quotientProjection hI n) : f = g :=
   limit.hom_ext fun n ↦ h n.unop
+
+/-- Evaluating sections of `O_{Spf A}` over `U` in `Type u` preserves the limit cone of the
+thickenings `O_{I ^ (n + 1)}`. -/
+private noncomputable def structureSheaf.isLimitSections (hI : IsAdic I) (U : Opens (carrier A)) :
+    IsLimit ((sheafToPresheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat ⋙
+      (evaluation _ CommRingCat).obj (op U) ⋙ CategoryTheory.forget CommRingCat).mapCone
+        (limit.cone (quotientDiagram hI))) :=
+  isLimitOfPreserves _ (limit.isLimit (quotientDiagram hI))
+
+/-- Sections of `O_{Spf A}` over an open `U` are determined by their projections to the
+thickenings `O_{I ^ (n + 1)}`. -/
+theorem structureSheaf.sections_ext (hI : IsAdic I) {U : Opens (carrier A)}
+    {s t : (structureSheaf hI).obj.obj (op U)}
+    (h : ∀ n : ℕ, (quotientProjection hI n).hom.app (op U) s =
+      (quotientProjection hI n).hom.app (op U) t) :
+    s = t := by
+  apply (Types.isLimitEquivSections (structureSheaf.isLimitSections hI U)).injective
+  ext ⟨n⟩
+  exact h n
+
+/-- A compatible sequence of sections `y n ∈ Γ(U, O_{I ^ (n + 1)})` assembles to a section of
+`O_{Spf A}` over `U`. -/
+noncomputable def structureSheaf.mkSection (hI : IsAdic I) (U : Opens (carrier A))
+    (y : ∀ n : ℕ, (quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
+    (hy : ∀ {m n : ℕ} (h : m ≤ n),
+      (quotientTransition (is_ideal_adic_pow hI n.succ_pos) (is_ideal_adic_pow hI m.succ_pos)
+        (Ideal.pow_le_pow_right (Nat.succ_le_succ h))).hom.app (op U) (y n) = y m) :
+    (structureSheaf hI).obj.obj (op U) :=
+  (Types.isLimitEquivSections (structureSheaf.isLimitSections hI U)).symm
+    ⟨fun j ↦ y j.unop, fun f ↦ hy (leOfHom f.unop)⟩
+
+/-- The section `structureSheaf.mkSection` projects to `y n` in `Γ(U, O_{I ^ (n + 1)})` for every
+`n`. -/
+@[simp]
+theorem structureSheaf.quotientProjection_mkSection (hI : IsAdic I) (U : Opens (carrier A))
+    (y : ∀ n : ℕ, (quotientSheaf (is_ideal_adic_pow hI n.succ_pos)).obj.obj (op U))
+    (hy : ∀ {m n : ℕ} (h : m ≤ n),
+      (quotientTransition (is_ideal_adic_pow hI n.succ_pos) (is_ideal_adic_pow hI m.succ_pos)
+        (Ideal.pow_le_pow_right (Nat.succ_le_succ h))).hom.app (op U) (y n) = y m)
+    (n : ℕ) :
+    (quotientProjection hI n).hom.app (op U) (structureSheaf.mkSection hI U y hy) = y n :=
+  Types.isLimitEquivSections_symm_apply (structureSheaf.isLimitSections hI U)
+    ⟨fun j ↦ y j.unop, fun f ↦ hy (leOfHom f.unop)⟩ (op n)
+
+/-- Sections of `O_{Spf A}` over the empty open `⊥` form a subsingleton. -/
+instance subsingleton_sections_bot (hI : IsAdic I) :
+    Subsingleton ((structureSheaf hI).obj.obj (op (⊥ : Opens (carrier A)))) :=
+  CommRingCat.subsingleton_of_isTerminal (TopCat.Sheaf.isTerminalOfEmpty (structureSheaf hI))
 
 /-- For ideals of definition `I` and `K`, the projection `O_{Spf A} → O_K` from the structure
 sheaf built from `I` to the structure sheaf of the thickening `Spec (A ⧸ K)`: the projection to

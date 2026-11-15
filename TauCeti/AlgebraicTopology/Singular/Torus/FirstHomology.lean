@@ -75,11 +75,10 @@ def torusFirstHomologyEquiv :
   ((hurewiczHomologyAddEquiv (X := TopCat.of (∀ i, AddCircle (p i))) 0).symm.trans
     (AddEquiv.toMultiplicativeRight.symm
       ((AddCircle.piFundamentalGroupMulEquivZero hp).abelianizationCongr.trans
-        (Abelianization.equivOfComm.symm.trans
+        (Group.Abelianization.equivOfComm.symm.trans
           (MulEquiv.funMultiplicative ι ℤ).symm)))).toIntLinearEquiv
 
 /-- The class of the straight loop `TauCeti.torusLoop p n` corresponds to `n`. -/
-@[simp]
 theorem torusFirstHomologyEquiv_loopClass (n : ι → ℤ) :
     torusFirstHomologyEquiv p hp
         (H₁AddEquivHomology _ (loopClass (X := TopCat.of (∀ i, AddCircle (p i)))
@@ -154,7 +153,6 @@ theorem circleProdFirstHomologyEquiv_apply
 
 /-- The identification of the first homology of a parametrized torus with `ℤ²` sends the class of
 the `(p, q)` curve `t ↦ e (exp (2πipt), exp (2πiqt))` to `(p, q)`. -/
-@[simp]
 theorem circleProdFirstHomologyEquiv_torusCurve (p q : ℤ) :
     circleProdFirstHomologyEquiv e
         (H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous))) =

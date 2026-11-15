@@ -27,6 +27,9 @@ for both `x` and `-x` (`TauCeti.not_neg_of_exists_pos_smul_eq`); if it is moreov
 positive scaling and holds for one nonzero vector, then it holds for `x` or `-x` for every nonzero
 `x` (`TauCeti.or_neg_of_finrank_eq_one`). Two functionals positive at the same vector are positive
 multiples of each other (`TauCeti.exists_pos_smul_eq_of_apply_pos_of_finrank_eq_one`).
+
+Conversely, a nontrivial space that is not one-dimensional has rank greater than `1`
+(`TauCeti.one_lt_rank_of_finrank_ne_one`).
 -/
 
 public section
@@ -97,5 +100,15 @@ theorem exists_pos_smul_eq_of_apply_pos_of_finrank_eq_one (hM : finrank K M = 1)
   field_simp
 
 end HalfLine
+
+/-- A nontrivial module whose dimension is not `1` has rank greater than `1`. Infinite-dimensional
+modules have rank at least `ℵ₀`, and a finite-dimensional nontrivial one has `finrank ≥ 1`, hence
+`finrank > 1`. -/
+theorem one_lt_rank_of_finrank_ne_one {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [Nontrivial V] (h : finrank K V ≠ 1) : 1 < Module.rank K V := by
+  by_cases hfin : Module.Finite K V
+  · have := Module.finrank_pos (R := K) (M := V)
+    exact Module.one_lt_rank_of_one_lt_finrank (by omega)
+  · exact Cardinal.one_lt_aleph0.trans_le (not_lt.1 (mt Module.rank_lt_aleph0_iff.1 hfin))
 
 end TauCeti

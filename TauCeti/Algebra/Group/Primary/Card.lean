@@ -78,11 +78,14 @@ theorem dvd_of_prime_dvd_natCard_primaryComponent {n p : ℕ}
   exact addOrderOf_dvd_of_nsmul_eq_zero (Subtype.ext hk)
 
 /-- **The order of the `n`-primary component is monotone in the order of the group**: if
-`#A ∣ #B` for finite commutative groups, then `#A[n^∞] ∣ #B[n^∞]`. -/
-theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
+`#A ∣ #B` for commutative groups with `B` finite, then `#A[n^∞] ∣ #B[n^∞]` (`A` is then finite
+too). -/
+theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite B]
     (h : Nat.card A ∣ Nat.card B) (n : ℕ) :
     Nat.card (AddCommGroup.primaryComponent A n) ∣
       Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A :=
+    Nat.finite_of_card_ne_zero (ne_zero_of_dvd_ne_zero (Nat.card_pos (α := B)).ne' h)
   -- `#A[n^∞]` divides `#B = #B[n^∞] · [B : B[n^∞]]` and is prime to the index
   have hcop : (Nat.card (AddCommGroup.primaryComponent A n)).Coprime
       (AddCommGroup.primaryComponent B n).index :=
@@ -93,13 +96,15 @@ theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
   rw [AddSubgroup.card_mul_index]
   exact (AddSubgroup.card_addSubgroup_dvd_card _).trans h
 
-/-- **Finite commutative groups of the same order have `n`-primary components of the same
+/-- **Commutative groups of the same finite order have `n`-primary components of the same
 order.** -/
-theorem natCard_primaryComponent_eq_of_natCard_eq [Finite A] [Finite B]
+theorem natCard_primaryComponent_eq_of_natCard_eq [Finite B]
     (h : Nat.card A = Nat.card B) (n : ℕ) :
-    Nat.card (AddCommGroup.primaryComponent A n) = Nat.card (AddCommGroup.primaryComponent B n) :=
-  Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
-    (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
+    Nat.card (AddCommGroup.primaryComponent A n) =
+      Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A := Nat.finite_of_card_ne_zero (h ▸ Nat.card_pos.ne')
+  exact Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
+      (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
 
 /-- **The order of a prime-primary component** of a finite commutative group is the corresponding
 prime-power factor of the group order. -/

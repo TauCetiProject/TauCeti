@@ -18,7 +18,7 @@ Let `R` be a commutative ring, `E` an `R`-module and `A` an `R`-algebra. The Mat
 contravariant action on morphisms, shows that for injective `E` it sends projective modules to
 injective modules, and proves that evaluation `N → D_R (D_R N)` is an isomorphism of `A`-modules for
 `N` of finite length over `R`, when `E` is an injective hull of `R ⧸ J(R)` and `R ⧸ J(R)` is
-semisimple.
+semisimple. Hence dualizing is fully faithful on modules of finite length.
 
 Right `A`-modules are modules over `Aᵐᵒᵖ`.
 
@@ -30,9 +30,16 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.MatlisDual.map` and `TauCeti.MatlisDual.mapOp`: the contravariant action on morphisms of
   left and of right modules, with the isomorphisms `TauCeti.MatlisDual.congr` and
   `TauCeti.MatlisDual.congrOp`.
+* `TauCeti.MatlisDual.dualSelfEquiv`: the isomorphism `D_R (Hom_A(A, A)) ≅ D_R A` of left
+  `A`-modules.
 * `TauCeti.IsInjectiveEnvelope.matlisDualEvalEquiv` and
   `TauCeti.IsInjectiveEnvelope.matlisDualEvalEquivOp`: biduality for modules of finite length, as an
   isomorphism of left and of right `A`-modules.
+
+## Main results
+
+* `TauCeti.IsInjectiveEnvelope.bijective_map` and `TauCeti.IsInjectiveEnvelope.bijective_mapOp`:
+  for modules of finite length, dualizing is a bijection on morphisms.
 
 ## Implementation notes
 
@@ -246,6 +253,28 @@ theorem congrOp_trans {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A�
 
 end Right
 
+section Regular
+
+/-- **The dual of the endomorphisms of the regular module**: `D_R (Hom_A(A, A))` is isomorphic to
+`D_R A`, the dual of the right regular module. A functional `θ` on `Hom_A(A, A)` goes to
+`a ↦ θ (x ↦ x * a)`. This is the value `ν A` of the Nakayama functor on the regular module. -/
+def dualSelfEquiv : MatlisDual R E (Module.Dual A A) ≃ₗ[A] MatlisDual R E A :=
+  congrOp (LinearMap.ringLmapEquivSelf A Aᵐᵒᵖ A).symm
+
+@[simp]
+theorem dualSelfEquiv_apply (θ : MatlisDual R E (Module.Dual A A)) (a : A) :
+    equivLinearMap R E A (dualSelfEquiv θ) a =
+      equivLinearMap R E _ θ (LinearMap.toSpanSingleton A A a) := by
+  simp only [dualSelfEquiv, congrOp_apply, LinearMap.ringLmapEquivSelf_symm_apply,
+    Module.End.one_eq_id, LinearMap.smulRight_id]
+
+@[simp]
+theorem dualSelfEquiv_symm_apply (φ : MatlisDual R E A) (ψ : Module.Dual A A) :
+    equivLinearMap R E _ (dualSelfEquiv.symm φ) ψ = equivLinearMap R E A φ (ψ 1) := by
+  simp [dualSelfEquiv]
+
+end Regular
+
 end MatlisDual
 
 open MatlisDual
@@ -339,6 +368,38 @@ theorem IsInjectiveEnvelope.matlisDualEvalEquivOp_apply [Module Aᵐᵒᵖ N] [I
     (hf : IsInjectiveEnvelope f) (hN : IsFiniteLength R N) (x : N) (φ : MatlisDual R E N) :
     equivLinearMap R E _ (hf.matlisDualEvalEquivOp (A := A) hN x) φ = equivLinearMap R E N φ x :=
   (rfl)
+
+/-- **Matlis duality is fully faithful on left modules.** Dualizing is a bijection from morphisms
+of left `A`-modules of finite length over `R` to morphisms of their dual right modules. -/
+theorem IsInjectiveEnvelope.bijective_map [Module A N] [IsScalarTower R A N]
+    {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+    (hf : IsInjectiveEnvelope f) (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    Function.Bijective (map (R := R) (A := A) (E := E) : (N →ₗ[A] N') → _) := by
+  refine ⟨fun g h hgh => ?_, fun F => ⟨(hf.matlisDualEvalEquiv hN').symm.toLinearMap ∘ₗ
+    mapOp F ∘ₗ (hf.matlisDualEvalEquiv hN).toLinearMap, ?_⟩⟩
+  · ext x
+    refine (hf.bijective_evalₗ hN').1 (MatlisDual.ext fun φ => ?_)
+    simpa using congr(equivLinearMap R E N ($hgh φ) x)
+  · ext φ x
+    rw [map_apply, ← matlisDualEvalEquiv_apply (A := A) hf hN', LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+    simp
+
+/-- **Matlis duality is fully faithful on right modules.** Dualizing is a bijection from morphisms
+of right `A`-modules of finite length over `R` to morphisms of their dual left modules. -/
+theorem IsInjectiveEnvelope.bijective_mapOp [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+    {N' : Type*} [AddCommGroup N'] [Module R N'] [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N']
+    (hf : IsInjectiveEnvelope f) (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    Function.Bijective (mapOp (R := R) (A := A) (E := E) : (N →ₗ[Aᵐᵒᵖ] N') → _) := by
+  refine ⟨fun g h hgh => ?_, fun F => ⟨(hf.matlisDualEvalEquivOp hN').symm.toLinearMap ∘ₗ
+    map F ∘ₗ (hf.matlisDualEvalEquivOp hN).toLinearMap, ?_⟩⟩
+  · ext x
+    refine (hf.bijective_evalₗ hN').1 (MatlisDual.ext fun φ => ?_)
+    simpa using congr(equivLinearMap R E N ($hgh φ) x)
+  · ext φ x
+    rw [mapOp_apply, ← matlisDualEvalEquivOp_apply (A := A) hf hN', LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+    simp
 
 end Biduality
 

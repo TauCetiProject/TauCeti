@@ -183,6 +183,7 @@ theorem uniformContinuous_coeff (n : ℕ) :
     UniformContinuous fun f : OnOpenDisc.subring R R₀ ↦ coeff n (f : R⟦X⟧) :=
   GaussFamily.uniformContinuous_coeff isUniformInducing_restrictFamily n
 
+omit [Fact (0 < R₀)] in
 /-- The restriction image consists exactly of families with radius-independent coefficients. -/
 theorem range_restrictFamily :
     Set.range (restrictFamily (R := R) (R₀ := R₀)) =

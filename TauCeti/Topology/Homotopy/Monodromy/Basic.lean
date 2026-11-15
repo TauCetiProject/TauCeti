@@ -75,12 +75,8 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 
 ## References
 
-This is Stage 2 of `TauCetiRoadmap/UniversalCovers/README.md`: item 7 asks for the subgroup a
-pointed cover recovers and for the way it transforms when the chosen lift changes, and item 8
-splits the classification into a pointed statement about subgroups and an unpointed statement
-about conjugacy classes, phrased "via transitive `π₁(X)`-sets". Everything here is built from
-Junyan Xu's monodromy API in `Mathlib/Topology/Homotopy/Lifting.lean`; no Mathlib proof is
-vendored.
+Everything here is built from Junyan Xu's monodromy API in
+`Mathlib/Topology/Homotopy/Lifting.lean`; no Mathlib proof is vendored.
 -/
 
 public section

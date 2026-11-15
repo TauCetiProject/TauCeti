@@ -22,7 +22,9 @@ subcomodules of the regular comodule and a third subcomodule `Q` contains all pr
 When `H` is projective over the base semiring and `N` and `P` are finite submodules, the products
 of their elements lie in some finite regular subcomodule. This packages the multiplication
 map needed to compare tensor-compatible natural transformations on finite regular
-subcomodules.
+subcomodules: in Tannakian reconstruction, `TauCeti.Tannaka.localFunctional_mul` applies the
+tensor naturality of a tensor automorphism to these multiplication morphisms to show that its
+local functionals preserve products.
 
 ## Main declarations
 
@@ -38,10 +40,6 @@ subcomodules.
 The regular-comodule multiplication is the coalgebra-homomorphism part of the bialgebra
 axioms; see Sweedler, *Hopf Algebras*, Chapter 2. The finite containment argument uses the
 finite-subcomodule theorem from the same chapter.
-
-This advances the Layer 1 Tannakian reconstruction milestone of the reductive-groups
-roadmap, `ReductiveGroups/README.md` in TauCetiRoadmap: tensor naturality applied to these
-multiplication morphisms supplies the multiplicativity law for the reconstructed point.
 -/
 
 public section

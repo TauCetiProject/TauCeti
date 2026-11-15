@@ -101,6 +101,50 @@ theorem lTensor_counit_coact (m : M) :
     Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m) = m ⊗ₜ[R] 1 :=
   LinearMap.congr_fun (Comodule.lTensor_counit_comp_coact (R := R) (C := C) (M := M)) m
 
+/-- Coassociativity of the coaction with the inverse associator, evaluated at a vector. -/
+@[simp]
+theorem coassoc_symm_apply (m : M) :
+    (TensorProduct.assoc R M C C).symm
+        (Coalgebra.comul.lTensor M (coact (R := R) (C := C) (M := M) m)) =
+      (coact (R := R) (C := C) (M := M)).rTensor C (coact m) := by
+  rw [(TensorProduct.assoc R M C C).symm_apply_eq, coassoc_apply]
+
+/-- Coassociativity of the coaction with the inverse associator, as an equality of linear
+maps. -/
+@[simp]
+theorem coact_coassoc_symm :
+    (TensorProduct.assoc R M C C).symm ∘ₗ Coalgebra.comul.lTensor M ∘ₗ
+        coact (R := R) (C := C) (M := M) =
+      (coact (R := R) (C := C) (M := M)).rTensor C ∘ₗ coact (R := R) (C := C) (M := M) :=
+  LinearMap.ext coassoc_symm_apply
+
+/-- Contracting the coaction against the counit recovers the vector. -/
+theorem rid_lTensor_counit_coact (m : M) :
+    TensorProduct.rid R M (Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m)) =
+      m := by
+  rw [lTensor_counit_coact, TensorProduct.rid_tmul, one_smul]
+
+/-- The coaction is injective: contracting against the counit is a left inverse. -/
+theorem coact_injective : Function.Injective (coact (R := R) (C := C) (M := M)) :=
+  Function.LeftInverse.injective
+    (g := fun t ↦ TensorProduct.rid R M (Coalgebra.counit.lTensor M t)) rid_lTensor_counit_coact
+
+/-- Two vectors have the same coaction exactly when they are equal. -/
+@[simp]
+theorem coact_inj {m n : M} :
+    coact (R := R) (C := C) (M := M) m = coact n ↔ m = n :=
+  coact_injective.eq_iff
+
+/-- The coaction of a vector vanishes exactly when the vector is zero. -/
+@[simp]
+theorem coact_eq_zero {m : M} : coact (R := R) (C := C) (M := M) m = 0 ↔ m = 0 :=
+  (coact (R := R) (C := C) (M := M)).map_eq_zero_iff coact_injective
+
+/-- The coaction vanishes exactly on a subsingleton module. -/
+theorem coact_eq_zero_iff : coact (R := R) (C := C) (M := M) = 0 ↔ Subsingleton M := by
+  refine ⟨fun h ↦ ⟨fun m n ↦ ?_⟩, fun _ ↦ Subsingleton.elim _ _⟩
+  rw [← coact_inj (R := R) (C := C), h, LinearMap.zero_apply, LinearMap.zero_apply]
+
 /-! ## Components selected by linear functionals -/
 
 /-- Taking a tensor component commutes with a coaction on the other factor. -/
@@ -128,8 +172,8 @@ theorem coact_coactComponent (phi : C →ₗ[R] R) (m : M) :
     coact (coactComponent (R := R) (C := C) (M := M) phi m) =
       (_root_.LinearMap.tensorComponent phi ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
   rw [coactComponent_apply, ← _root_.LinearMap.tensorComponent_rTensor,
-    ← (TensorProduct.assoc R M C C).symm_apply_apply ((coact (C := C)).rTensor C (coact m)),
-    coassoc_apply, _root_.LinearMap.tensorComponent_assoc_symm, LinearMap.lTensor_comp_apply]
+    ← coassoc_symm_apply, _root_.LinearMap.tensorComponent_assoc_symm,
+    LinearMap.lTensor_comp_apply]
 
 /-- A component applied to the first factor of a coaction: `∑ m₀ φ(m₁) ⊗ m₂`, that is, the
 coaction followed by the left contraction of the comultiplication with `φ`. -/
@@ -137,8 +181,7 @@ theorem rTensor_coactComponent_coact (phi : C →ₗ[R] R) (m : M) :
     (coactComponent (R := R) (C := C) (M := M) phi).rTensor C (coact m) =
       (TensorProduct.lid R C ∘ₗ phi.rTensor C ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
   rw [coactComponent, LinearMap.rTensor_comp_apply,
-    ← (TensorProduct.assoc R M C C).symm_apply_apply ((coact (C := C)).rTensor C (coact m)),
-    coassoc_apply, _root_.LinearMap.rTensor_tensorComponent_assoc_symm,
+    ← coassoc_symm_apply, _root_.LinearMap.rTensor_tensorComponent_assoc_symm,
     ← LinearMap.lTensor_comp_apply, LinearMap.comp_assoc]
 
 /-- Coassociativity read off by two linear functionals on the coalgebra. -/

@@ -352,9 +352,13 @@ theorem mk0_mem_of_forall_le_one (v : Valuation R Γ₀) (h : ∀ r, v r ≤ 1)
 which is exactly the characteristic values of `v`. -/
 theorem mk0_mem_of_inv_le_of_le (v : Valuation R Γ₀) {H : ConvexSubgroup Γ₀ˣ}
     (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H)
-    {b c : R} (hb : v b ≠ 0) (h1 : 1 ≤ v c)
-    (hlo : (v c)⁻¹ ≤ v b) (hhi : v b ≤ v c) : Units.mk0 (v b) hb ∈ H := by
-  have hc : v c ≠ 0 := (zero_lt_one.trans_le h1).ne'
+    {b c : R} (hb : v b ≠ 0) (hlo : (v c)⁻¹ ≤ v b) (hhi : v b ≤ v c) :
+    Units.mk0 (v b) hb ∈ H := by
+  have hc : v c ≠ 0 := fun h ↦ hb (le_zero_iff.mp (h ▸ hhi))
+  have h1 : 1 ≤ v c := by
+    by_contra hlt
+    have hinv := (one_lt_inv₀ (zero_lt_iff.mpr hc)).2 (not_le.1 hlt)
+    exact lt_asymm (hinv.trans_le (hlo.trans hhi)) (not_le.1 hlt)
   have hmc : Units.mk0 (v c) hc ∈ H := hH c hc h1
   refine H.convex (inv_mem hmc) hmc ?_ ?_
   · simpa [← Units.val_le_val] using hlo
@@ -423,21 +427,23 @@ theorem restrictToConvex_eq_zero_iff (v : Valuation R Γ₀) (H : ConvexSubgroup
     simp only [hr, false_or]
     exact ⟨fun h ↦ ⟨hr, h⟩, fun ⟨_, h⟩ ↦ h⟩
 
-/-- **Dividing a restricted value by a kept value that dominates it lands at or below `1`.**
-Only the order comparison and membership of the divisor are used; nothing here is special to a
-power. -/
+/-- **Dividing a restricted value by a value that dominates it lands at or below `1`.**
+Only the order comparison is used (when the divisor is discarded, the quotient is `0`); nothing
+here is special to a power. -/
 theorem restrictToConvex_mul_inv_le_one (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ)
     (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H) {a b : R}
-    (hb : v b ≠ 0) (hmem : Units.mk0 (v b) hb ∈ H) (hab : v a ≤ v b) :
+    (hab : v a ≤ v b) :
     v.restrictToConvex H hH a * (v.restrictToConvex H hH b)⁻¹ ≤ 1 := by
-  have hbr : v.restrictToConvex H hH b ≠ 0 := by simp [restrictToConvex_apply_of_mem v H hH hb hmem]
+  by_cases hbr : v.restrictToConvex H hH b = 0
+  · simp [hbr]
   have hle : v.restrictToConvex H hH a ≤ v.restrictToConvex H hH b := by
     rw [restrictToConvex_le_iff]
     exact Or.inr ⟨hbr, hab⟩
   simpa using mul_inv_le_one_of_le₀ hle zero_le
 
 /-- **A restricted value strictly dominating a kept value stays strictly above `1` after
-dividing by it.** As with the `≤` form, only the comparison and the divisor's membership matter. -/
+dividing by it.** Unlike the `≤` form, this needs the divisor to be kept: only the comparison
+and the divisor's membership in `H` matter. -/
 theorem one_lt_restrictToConvex_mul_inv (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ)
     (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H) {a b : R}
     (hb : v b ≠ 0) (hmem : Units.mk0 (v b) hb ∈ H) (hlt : v b < v a) :
@@ -465,7 +471,7 @@ theorem restrictToConvex_mul_inv_le_one_iff (v : Valuation R Γ₀) (H : ConvexS
     rw [hg]
     exact lt_mul_of_one_lt_right (zero_lt_iff.mpr hb) (lt_of_not_ge hgt)
   · intro hg1
-    exact restrictToConvex_mul_inv_le_one v H hH hb hmem (hg ▸ mul_le_of_le_one_right' hg1)
+    exact restrictToConvex_mul_inv_le_one v H hH (hg ▸ mul_le_of_le_one_right' hg1)
 
 /-- The support can only grow under the restriction: every zero of `v` is a zero of the
 restricted valuation, alongside the discarded values. Stated over a commutative ring because

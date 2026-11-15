@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.FundamentalClass
-public import TauCeti.AlgebraicTopology.Cohomology.IntegralCup
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pairing
 public import Mathlib.LinearAlgebra.Alternating.Basic
 
 /-!
@@ -31,6 +30,16 @@ with `y + y = 0`, and `ℤ` is torsion free. For `r = 0` it is the evaluation `�
 `ν : G → H¹(X; ℤ)` (`AlternatingMap.compLinearMap`) gives alternating forms on any abelian group
 `G`.
 
+For `r = 2` and a class `l` of degree two on a four-manifold, `n = 4`, the insertion form is
+`(a, b) ↦ ⟨l ⌣ (a ⌣ b), f_*[N]⟩`, the cup pairing `TauCeti.HomologicalOrientation.cupPairing` of
+`l` with `a ⌣ b`. When `l` is characteristic for the cup pairing, all its values are even
+(`TauCeti.HomologicalOrientation.two_dvd_cupInsertionForm_two`), and halving them gives the
+integral alternating form `TauCeti.HomologicalOrientation.halfCupInsertionForm`,
+`(a, b) ↦ ⟨l ⌣ a ⌣ b, f_*[N]⟩ / 2`. For the first Chern class `l` of a `Spinᶜ` structure on a
+closed oriented four-manifold `X`, its values on a basis `α₁, …, α_b` of `H¹(X; ℤ)` are the integer
+coefficients of the class `u = ½ Σ_(i<j) ⟨l ⌣ αᵢ ⌣ αⱼ, [X]⟩ νᵢ νⱼ` on the Picard torus in the
+Seiberg–Witten wall-crossing formula.
+
 These are the integral Seiberg–Witten invariants with insertions of loops, once the moduli space is
 available: for a compact oriented moduli space `M` of dimension `d = r + 2m`, the class `β = μᵐ`
 of a power of the point class, and the map `ν : H₁(X; ℤ) → H¹(M; ℤ)` given by slant product with
@@ -41,11 +50,18 @@ the first Chern class of the universal line, the invariant is the alternating fo
 
 * `TauCeti.HomologicalOrientation.cupInsertionForm`: the alternating form
   `(a₁, …, a_r) ↦ ⟨a₁ ⌣ ⋯ ⌣ a_r ⌣ β, f_*[N]⟩`.
+* `TauCeti.HomologicalOrientation.halfCupInsertionForm`: for `l` characteristic, the integral
+  alternating form `(a, b) ↦ ⟨l ⌣ a ⌣ b, f_*[N]⟩ / 2`.
 
 ## Main results
 
 * `TauCeti.HomologicalOrientation.cupInsertionForm_apply`: the value of the insertion form, and
   `TauCeti.HomologicalOrientation.cupInsertionForm_zero`: for `r = 0` it is `⟨β, f_*[N]⟩`.
+* `TauCeti.HomologicalOrientation.cupInsertionForm_two_apply`: for `r = 2` and `l` of degree two
+  it is `(a, b) ↦ ⟨l ⌣ (a ⌣ b), f_*[N]⟩`.
+* `TauCeti.HomologicalOrientation.two_dvd_cupInsertionForm_two`: for `l` characteristic its values
+  are even, and `TauCeti.HomologicalOrientation.two_mul_halfCupInsertionForm_apply`: twice the
+  half form is the insertion form.
 
 ## References
 
@@ -104,6 +120,56 @@ theorem cupInsertionForm_zero (f : C(N, X)) (β : (TopCat.of X).integralCohomolo
       o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) f β := by
   rw [cupInsertionForm_apply, TopCat.integralCupProd_zero,
     TopCat.integralCup_integralCohomologyOne]
+
+/-- For `r = 2` and a class `l` of degree two on a four-manifold, the insertion form is the cup
+pairing `(a, b) ↦ ⟨l ⌣ (a ⌣ b), f_*[N]⟩`. -/
+theorem cupInsertionForm_two_apply (f : C(N, X)) (h : 2 + 2 = n)
+    (l : (TopCat.of X).integralCohomology 2) (v : Fin 2 → (TopCat.of X).integralCohomology 1) :
+    o.cupInsertionForm hn f l 2 h v =
+      o.cupPairing hn f 2 h l ((TopCat.of X).integralCup 1 1 2 rfl (v 0) (v 1)) := by
+  rw [cupInsertionForm_apply, cupPairing_apply, (TopCat.of X).integralCup_gradedComm h h,
+    TopCat.integralCupProd_succ, TopCat.integralCupProd_succ, TopCat.integralCupProd_zero,
+    TopCat.integralCup_integralCohomologyOne_right]
+  norm_num [Fin.tail]
+
+/-- **Half-integrality**: for a class `l` of degree two that is characteristic for the cup pairing,
+every value `⟨l ⌣ (a ⌣ b), f_*[N]⟩` of the insertion form is even. -/
+theorem two_dvd_cupInsertionForm_two (f : C(N, X)) (h : 2 + 2 = n)
+    {l : (TopCat.of X).integralCohomology 2} (hl : (o.cupPairing hn f 2 h).IsCharacteristic l)
+    (v : Fin 2 → (TopCat.of X).integralCohomology 1) : 2 ∣ o.cupInsertionForm hn f l 2 h v := by
+  rw [cupInsertionForm_two_apply]
+  exact o.two_dvd_cupPairing_integralCup hn f (p := 1) (q := 1) odd_one rfl h hl (v 0) (v 1)
+
+/-- **The half insertion form** of a class `l` of degree two that is characteristic for the cup
+pairing of a four-manifold: the integral alternating form `(a, b) ↦ ⟨l ⌣ a ⌣ b, f_*[N]⟩ / 2` on
+`H¹(X; ℤ)`, whose values are integers by `two_dvd_cupInsertionForm_two`. -/
+def halfCupInsertionForm (f : C(N, X)) (h : 2 + 2 = n) (l : (TopCat.of X).integralCohomology 2)
+    (hl : (o.cupPairing hn f 2 h).IsCharacteristic l) :
+    (TopCat.of X).integralCohomology 1 [⋀^Fin 2]→ₗ[ℤ] ℤ where
+  toMultilinearMap := MultilinearMap.mk' (fun v ↦ o.cupInsertionForm hn f l 2 h v / 2)
+    (fun v i x y ↦ by
+      rw [AlternatingMap.map_update_add, Int.add_ediv_of_dvd_left
+        (o.two_dvd_cupInsertionForm_two hn f h hl _)])
+    (fun v i c x ↦ by
+      rw [AlternatingMap.map_update_smul, smul_eq_mul, smul_eq_mul,
+        Int.mul_ediv_assoc c (o.two_dvd_cupInsertionForm_two hn f h hl _), RingHom.id_apply])
+  map_eq_zero_of_eq' v i j hv hij := by
+    simp [(o.cupInsertionForm hn f l 2 h).map_eq_zero_of_eq v hv hij]
+
+/-- The value of the half insertion form, half of the insertion form. -/
+theorem halfCupInsertionForm_apply (f : C(N, X)) (h : 2 + 2 = n)
+    {l : (TopCat.of X).integralCohomology 2} (hl : (o.cupPairing hn f 2 h).IsCharacteristic l)
+    (v : Fin 2 → (TopCat.of X).integralCohomology 1) :
+    o.halfCupInsertionForm hn f h l hl v = o.cupInsertionForm hn f l 2 h v / 2 :=
+  (rfl)
+
+/-- Twice the half insertion form is the insertion form `(a, b) ↦ ⟨l ⌣ (a ⌣ b), f_*[N]⟩`. -/
+@[simp]
+theorem two_mul_halfCupInsertionForm_apply (f : C(N, X)) (h : 2 + 2 = n)
+    {l : (TopCat.of X).integralCohomology 2} (hl : (o.cupPairing hn f 2 h).IsCharacteristic l)
+    (v : Fin 2 → (TopCat.of X).integralCohomology 1) :
+    2 * o.halfCupInsertionForm hn f h l hl v = o.cupInsertionForm hn f l 2 h v :=
+  Int.mul_ediv_cancel' (o.two_dvd_cupInsertionForm_two hn f h hl v)
 
 end HomologicalOrientation
 
