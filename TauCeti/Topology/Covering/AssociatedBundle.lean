@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
 /-!
 # Vector bundles associated with representations of a deck group
@@ -36,9 +37,13 @@ the chart through `y` the section reads `x ↦ f (localInverseAt y x)`
 
 For a character `χ : G →* 𝕜ˣ` the associated bundle is the line bundle
 `IsQuotientCoveringMap.characterCore χ`, whose transitions multiply by `χ (deckChange e e' x)`.
-The trivial character gives the identity transitions
-(`IsQuotientCoveringMap.characterCore_one_coordChange`), so the trivial line bundle is a case of
-the same construction.
+Choosing a preimage over each base point presents the same line bundle as a point-indexed
+rank-one core `IsQuotientCoveringMap.characterFiniteRankCore χ` in `TauCeti.FiniteRankBundleCore`,
+homeomorphic on total spaces via `IsQuotientCoveringMap.characterFiniteRankCoreHomeomorph` and
+compatible with the monoidal tensor product:
+* `IsQuotientCoveringMap.characterFiniteRankCoreOneIso`: `L_1 ≅ 𝟙_`;
+* `IsQuotientCoveringMap.characterFiniteRankCoreMulIso`: `L_χ ⊗ L_ψ ≅ L_{χ * ψ}`;
+* `IsQuotientCoveringMap.characterFiniteRankCoreTensorPowerIso`: `L_χ^{\otimes m} ≅ L_{χ ^ m}`.
 
 ## Main definitions
 
@@ -47,6 +52,8 @@ the same construction.
 * `IsQuotientCoveringMap.characterCore`: the line bundle associated with a character.
 * `IsQuotientCoveringMap.associatedSectionEquiv`: sections of the associated bundle are
   equivariant functions upstairs.
+* `IsQuotientCoveringMap.characterFiniteRankCore`: point-indexed rank-one core of a character,
+  together with its monoidal multiplicativity and tensor-power isomorphisms.
 
 ## References
 
@@ -160,6 +167,8 @@ theorem eventually_deckChange_eq (h : x ∈ (hp.isLocalHomeomorph.localInverseAt
 end DeckChange
 
 /-! ### The associated vector bundle -/
+
+section AssociatedCore
 
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   (ρ : G →* (F →L[𝕜] F)ˣ) {y : E}
@@ -357,5 +366,233 @@ theorem associatedSectionEquiv_apply_eq_zero_iff (σ : ∀ x, (hp.associatedCore
   rw [associatedSectionEquiv_apply_coe,
     Trivialization.apply_eq_prod_continuousLinearEquivAt 𝕜 _ _ hy]
   exact (((hp.associatedCore ρ).localTriv y).continuousLinearEquivAt 𝕜 (p y) hy).map_eq_zero_iff
+
+end AssociatedCore
+
+/-! ### Point-indexed finite-rank core of a character and tensor multiplicativity -/
+
+section CharacterFiniteRank
+
+open CategoryTheory MonoidalCategory TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+/-- The point-indexed rank-one vector-bundle core over `X` associated with a character
+`χ : G →* 𝕜ˣ` of the deck group. Its chart at `x : X` is the chart of `hp.characterCore χ`
+through `Function.surjInv hp.surjective x`, with model fibre `Fin 1 → 𝕜`. -/
+@[expose]
+noncomputable def characterFiniteRankCore (χ : G →* 𝕜ˣ) : FiniteRankBundleCore 𝕜 X where
+  rank := 1
+  core :=
+    { baseSet x :=
+        (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source
+      isOpen_baseSet x :=
+        (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).open_source
+      indexAt := id
+      mem_baseSet_at x := by
+        simpa only [id_eq, Function.surjInv_eq hp.surjective x] using
+          hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source
+            (x := Function.surjInv hp.surjective x)
+      coordChange i j x :=
+        (χ (hp.deckChange (Function.surjInv hp.surjective i)
+          (Function.surjInv hp.surjective j) x) : 𝕜) •
+          ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)
+      coordChange_self i x hx v := by
+        rw [hp.deckChange_self hx, map_one, Units.val_one, one_smul,
+          ContinuousLinearMap.id_apply]
+      continuousOn_coordChange i j x hx :=
+        ((continuousAt_const : ContinuousAt (fun _ : X ↦
+          (χ (hp.deckChange (Function.surjInv hp.surjective i)
+            (Function.surjInv hp.surjective j) x) : 𝕜) •
+            ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)) x).congr (by
+          filter_upwards [hp.eventually_deckChange_eq hx] with x' hx'
+          rw [hx'])).continuousWithinAt
+      coordChange_comp i j k x hx v := by
+        simp only [smul_apply, ContinuousLinearMap.id_apply, smul_smul]
+        rw [← Units.val_mul, ← map_mul, hp.deckChange_mul_deckChange hx] }
+  indexAt_eq _ := rfl
+
+@[simp]
+theorem rank_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
+    (hp.characterFiniteRankCore χ).rank = 1 :=
+  (rfl)
+
+theorem characterFiniteRankCore_baseSet (χ : G →* 𝕜ˣ) (x : X) :
+    (hp.characterFiniteRankCore χ).core.baseSet x =
+      (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source :=
+  (rfl)
+
+@[simp]
+theorem characterFiniteRankCore_localTriv_baseSet (χ : G →* 𝕜ˣ) (x : X) :
+    ((hp.characterFiniteRankCore χ).core.localTriv x).baseSet =
+      (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source :=
+  (rfl)
+
+@[simp]
+theorem characterFiniteRankCore_coordChange (χ : G →* 𝕜ˣ) (i j x : X) :
+    (hp.characterFiniteRankCore χ).core.coordChange i j x =
+      (χ (hp.deckChange (Function.surjInv hp.surjective i)
+        (Function.surjInv hp.surjective j) x) : 𝕜) •
+        ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) :=
+  (rfl)
+
+/-- The transition functions of `hp.characterFiniteRankCore χ` are locally constant on chart
+overlaps. -/
+theorem eventually_characterFiniteRankCore_coordChange_eq (χ : G →* 𝕜ˣ) {i j x : X}
+    (hx : x ∈ (hp.characterFiniteRankCore χ).core.baseSet i ∩
+      (hp.characterFiniteRankCore χ).core.baseSet j) :
+    ∀ᶠ x' in 𝓝 x, (hp.characterFiniteRankCore χ).core.coordChange i j x' =
+      (hp.characterFiniteRankCore χ).core.coordChange i j x := by
+  filter_upwards [hp.eventually_deckChange_eq hx] with x' hx'
+  rw [characterFiniteRankCore_coordChange, characterFiniteRankCore_coordChange, hx']
+
+/-- In preferred charts at `b : X`, evaluating a fibre vector of `hp.characterFiniteRankCore χ` at
+its unique coordinate gives the fibre coordinate in `hp.characterCore χ`. -/
+theorem trivializationAt_characterCore_snd (χ : G →* 𝕜ˣ) (b : X)
+    (p₀ : (hp.characterFiniteRankCore χ).core.TotalSpace) :
+    (trivializationAt 𝕜 (hp.characterCore χ).Fiber b
+      ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩).2 =
+      (trivializationAt (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
+        (hp.characterFiniteRankCore χ).core.Fiber b p₀).2 ⟨0, by simp⟩ := by
+  let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
+  let v : Fin (hp.characterFiniteRankCore χ).rank → 𝕜 := p₀.2
+  rw [(hp.characterCore χ).trivializationAt, ← (hp.characterCore χ).localTrivAt_def,
+    (hp.characterFiniteRankCore χ).trivializationAt_core]
+  change ((hp.characterCore χ).coordChange ((hp.characterCore χ).indexAt p₀.1)
+      ((hp.characterCore χ).indexAt b) p₀.1 (v k₀)) =
+    ((hp.characterFiniteRankCore χ).core.coordChange p₀.1 b p₀.1 v) k₀
+  rw [characterCore_coordChange_apply, characterFiniteRankCore_coordChange]
+  rfl
+
+/-- In preferred charts at `b : X`, the constant coordinate vector of `q.2` in
+`hp.characterFiniteRankCore χ` agrees in every coordinate with `q` in `hp.characterCore χ`. -/
+theorem trivializationAt_characterFiniteRankCore_snd (χ : G →* 𝕜ˣ) (b : X)
+    (q : (hp.characterCore χ).TotalSpace) (k : Fin (hp.characterFiniteRankCore χ).rank) :
+    (trivializationAt (Fin (hp.characterFiniteRankCore χ).rank → 𝕜)
+      (hp.characterFiniteRankCore χ).core.Fiber b
+        ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩).2 k =
+      (trivializationAt 𝕜 (hp.characterCore χ).Fiber b q).2 := by
+  let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
+  have hk : k = k₀ := Fin.ext (Nat.lt_one_iff.mp k.2)
+  subst hk
+  let c : 𝕜 := q.2
+  rw [(hp.characterCore χ).trivializationAt, ← (hp.characterCore χ).localTrivAt_def,
+    (hp.characterFiniteRankCore χ).trivializationAt_core]
+  change ((hp.characterFiniteRankCore χ).core.coordChange q.1 b q.1 (fun _ ↦ c)) k₀ =
+    (hp.characterCore χ).coordChange ((hp.characterCore χ).indexAt q.1)
+      ((hp.characterCore χ).indexAt b) q.1 c
+  rw [characterCore_coordChange_apply, characterFiniteRankCore_coordChange]
+  rfl
+
+/-- Total-space homeomorphism identifying `hp.characterFiniteRankCore χ` with
+`hp.characterCore χ` over `X` by evaluating `Fin 1 → 𝕜` at its unique coordinate. -/
+noncomputable def characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
+    (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₜ (hp.characterCore χ).TotalSpace where
+  toFun p₀ := ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩
+  invFun q := ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩
+  left_inv p₀ := by
+    let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
+    rcases p₀ with ⟨x, v⟩
+    refine TotalSpace.ext rfl (heq_of_eq ?_)
+    let w : Fin (hp.characterFiniteRankCore χ).rank → 𝕜 := v
+    change (fun _ : Fin (hp.characterFiniteRankCore χ).rank ↦ w k₀) = w
+    ext k
+    rw [show k = k₀ from Fin.ext (Nat.lt_one_iff.mp k.2)]
+  right_inv q := by
+    rcases q with ⟨x, c⟩
+    rfl
+  continuous_toFun := continuous_iff_continuousAt.2 fun p₀ ↦ by
+    let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
+    rw [FiberBundle.continuousAt_totalSpace]
+    refine ⟨(FiberBundle.continuous_proj _ _).continuousAt, ?_⟩
+    refine ContinuousAt.congr ?_
+      (Eventually.of_forall fun z ↦ (hp.trivializationAt_characterCore_snd χ p₀.1 z).symm)
+    exact (continuous_apply k₀).continuousAt.comp
+      (((FiberBundle.continuousAt_totalSpace _ id).1 continuousAt_id).2)
+  continuous_invFun := continuous_iff_continuousAt.2 fun q ↦ by
+    rw [FiberBundle.continuousAt_totalSpace]
+    refine ⟨(FiberBundle.continuous_proj _ _).continuousAt, continuousAt_pi.2 fun k ↦ ?_⟩
+    refine ContinuousAt.congr ?_
+      (Eventually.of_forall fun z ↦
+        (hp.trivializationAt_characterFiniteRankCore_snd χ q.1 z k).symm)
+    exact ((FiberBundle.continuousAt_totalSpace _ id).1 continuousAt_id).2
+
+@[simp]
+theorem characterFiniteRankCoreHomeomorph_apply (χ : G →* 𝕜ˣ)
+    (p₀ : (hp.characterFiniteRankCore χ).core.TotalSpace) :
+    hp.characterFiniteRankCoreHomeomorph χ p₀ =
+      ⟨p₀.1, (p₀.2 : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩ :=
+  (rfl)
+
+@[simp]
+theorem characterFiniteRankCoreHomeomorph_symm_apply (χ : G →* 𝕜ˣ)
+    (q : (hp.characterCore χ).TotalSpace) :
+    (hp.characterFiniteRankCoreHomeomorph χ).symm q =
+      ⟨q.1, (fun _ ↦ (q.2 : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩ :=
+  (rfl)
+
+/-- Equality of characters induces a constant-coordinate isomorphism between their point-indexed
+cores, whose total-space map is the identity on coordinates. -/
+noncomputable def characterFiniteRankCoreCongr {χ ψ : G →* 𝕜ˣ} (h : χ = ψ) :
+    hp.characterFiniteRankCore χ ≅ hp.characterFiniteRankCore ψ :=
+  FiniteRankBundleCore.constIso (fun _ ↦ rfl)
+    (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜)) fun i j x _ _ ↦ by
+      subst h
+      ext v k
+      rfl
+
+/-- The point-indexed core of the trivial character `1 : G →* 𝕜ˣ` is canonically isomorphic in
+`FiniteRankBundleCore 𝕜 X` to the monoidal unit. -/
+noncomputable def characterFiniteRankCoreOneIso :
+    hp.characterFiniteRankCore (1 : G →* 𝕜ˣ) ≅ 𝟙_ (FiniteRankBundleCore 𝕜 X) :=
+  FiniteRankBundleCore.isoTensorUnitOfCoordChangeEqId (hp.characterFiniteRankCore 1)
+    (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜)) fun i j x _ _ ↦ by
+      rw [characterFiniteRankCore_coordChange, MonoidHom.one_apply, Units.val_one, one_smul]
+
+/-- **Tensor multiplicativity of character line bundles.** For characters `χ, ψ : G →* 𝕜ˣ` of the
+deck group, `L_χ ⊗ L_ψ` is canonically isomorphic in `FiniteRankBundleCore 𝕜 X` to `L_{χ * ψ}`. -/
+noncomputable def characterFiniteRankCoreMulIso (χ ψ : G →* 𝕜ˣ) :
+    hp.characterFiniteRankCore χ ⊗ hp.characterFiniteRankCore ψ ≅
+      hp.characterFiniteRankCore (χ * ψ) :=
+  let e : (Fin ((hp.characterFiniteRankCore χ).rank * (hp.characterFiniteRankCore ψ).rank) → 𝕜)
+      ≃L[𝕜] (Fin (hp.characterFiniteRankCore (χ * ψ)).rank → 𝕜) :=
+    ContinuousLinearEquiv.piCongrLeft 𝕜
+      (fun _ : Fin (hp.characterFiniteRankCore (χ * ψ)).rank ↦ 𝕜) (finCongr rfl)
+  FiniteRankBundleCore.constIso (fun _ ↦ Set.inter_self _) e fun i j x _ _ ↦ by
+    let c : 𝕜 := χ (hp.deckChange (Function.surjInv hp.surjective i)
+      (Function.surjInv hp.surjective j) x)
+    let d : 𝕜 := ψ (hp.deckChange (Function.surjInv hp.surjective i)
+      (Function.surjInv hp.surjective j) x)
+    have hχ : (hp.characterFiniteRankCore χ).core.coordChange i j x =
+        c • ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) := rfl
+    have hψ : (hp.characterFiniteRankCore ψ).core.coordChange i j x =
+        d • ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore ψ).rank → 𝕜) := rfl
+    have hχψ : (hp.characterFiniteRankCore (χ * ψ)).core.coordChange i j x =
+        (c * d) • ContinuousLinearMap.id 𝕜
+          (Fin (hp.characterFiniteRankCore (χ * ψ)).rank → 𝕜) := by
+      change (↑((χ * ψ) _) : 𝕜) • _ = (c * d) • _
+      rw [MonoidHom.mul_apply, Units.val_mul]
+      rfl
+    change (e : _ →L[𝕜] _).comp
+        (((hp.characterFiniteRankCore χ).core.coordChange i j x).kronecker
+          ((hp.characterFiniteRankCore ψ).core.coordChange i j x)) =
+      ((hp.characterFiniteRankCore (χ * ψ)).core.coordChange i j x).comp (e : _ →L[𝕜] _)
+    rw [hχ, hψ, hχψ, ContinuousLinearMap.smul_kronecker, ContinuousLinearMap.kronecker_smul,
+      smul_smul, ContinuousLinearMap.id_kronecker_id, ContinuousLinearMap.comp_smul,
+      ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_id, ContinuousLinearMap.id_comp]
+
+/-- **Tensor powers of a character line bundle.** For every `m : ℕ`, the `m`-th tensor power of
+`hp.characterFiniteRankCore χ` is canonically isomorphic to `hp.characterFiniteRankCore (χ ^ m)`. -/
+noncomputable def characterFiniteRankCoreTensorPowerIso (χ : G →* 𝕜ˣ) :
+    ∀ m : ℕ, (hp.characterFiniteRankCore χ).tensorPower m ≅
+      hp.characterFiniteRankCore (χ ^ m)
+  | 0 => hp.characterFiniteRankCoreOneIso.symm ≪≫
+      hp.characterFiniteRankCoreCongr (pow_zero χ).symm
+  | m + 1 => (characterFiniteRankCoreTensorPowerIso χ m ⊗ᵢ
+        Iso.refl (hp.characterFiniteRankCore χ)) ≪≫
+      hp.characterFiniteRankCoreMulIso (χ ^ m) χ ≪≫
+      hp.characterFiniteRankCoreCongr (pow_succ χ m).symm
+
+end CharacterFiniteRank
 
 end IsQuotientCoveringMap
