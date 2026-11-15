@@ -161,13 +161,8 @@ noncomputable def iterateDirectLimitMap {N : Type*} [AddCommMonoid N] [Module R 
     T_M.IterateDirectLimit →ₗ[R] T_N.IterateDirectLimit :=
   Module.DirectLimit.map (f := T_M.iterateDirectSystem) (f' := T_N.iterateDirectSystem)
     (fun _ ↦ f) fun i j _ ↦ by
-      have hpow : ∀ k, f ∘ₗ (T_M ^ k) = (T_N ^ k) ∘ₗ f := fun k ↦ by
-        induction k with
-        | zero => simp [Module.End.one_eq_id]
-        | succ k ih =>
-          rw [pow_succ, pow_succ, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-            ← LinearMap.comp_assoc, ih, LinearMap.comp_assoc, hf, ← LinearMap.comp_assoc]
-      simpa only [iterateDirectSystem_eq] using hpow (j - i)
+      rw [iterateDirectSystem_eq, iterateDirectSystem_eq]
+      exact (Module.End.commute_pow_left_of_commute hf.symm (j - i)).symm
 
 @[simp]
 theorem iterateDirectLimitMap_ofIterateDirectLimitStage {N : Type*} [AddCommMonoid N] [Module R N]

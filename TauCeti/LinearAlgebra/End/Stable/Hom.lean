@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearMap
 public import TauCeti.LinearAlgebra.End.Stable.Constructions
-import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
 # Stability of precomposition on Hom modules
@@ -250,15 +249,8 @@ noncomputable def iInfRangePowLcompProdMapEquiv {M₁ M₂ : Type*} [AddCommGrou
       Submodule.snd R M₁ M₂ := by
     rw [← hprod.iInf_range_pow_eq]
     exact iInf_range_pow_prodMap_of_isNilpotent_of_bijective h₁ h₂
-  let eSnd₀ : ↥(Submodule.snd R M₁ M₂) ≃ₗ[R] M₂ :=
-    { toFun := fun x ↦ x.1.2
-      invFun := fun y ↦ ⟨(0, y), Submodule.mem_snd_iff.mpr rfl⟩
-      left_inv := fun ⟨⟨x, y⟩, hxy⟩ ↦ Subtype.ext (Prod.ext (Submodule.mem_snd_iff.mp hxy).symm rfl)
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  have eSnd : ↥(LinearMap.range ((T₁.prodMap T₂ : End R (M₁ × M₂)) ^ c)) ≃ₗ[R] M₂ :=
-    (LinearEquiv.ofEq _ _ hRange).trans eSnd₀
+  let eSnd : ↥(LinearMap.range ((T₁.prodMap T₂ : End R (M₁ × M₂)) ^ c)) ≃ₗ[R] M₂ :=
+    (LinearEquiv.ofEq _ _ hRange).trans (Submodule.sndEquiv R M₁ M₂)
   exact (LinearEquiv.ofEq _ _ hInf).trans
     ((hprod.rangePowLcompEquiv S D).trans (eSnd.congrLeft D S))
 

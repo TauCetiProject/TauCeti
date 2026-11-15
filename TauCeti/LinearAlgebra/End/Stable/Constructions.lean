@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.End.Stable.Basic
 import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.Submodule.Prod
 
 /-!
@@ -50,28 +51,19 @@ section Intertwiner
 
 variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
 
-/-- If `f` intertwines `T_M` and `T_N`, it intertwines all their powers. -/
-theorem comp_pow_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
-    (hf : f ∘ₗ T_M = T_N ∘ₗ f) (k : ℕ) :
-    f ∘ₗ (T_M ^ k) = (T_N ^ k) ∘ₗ f := by
-  induction k with
-  | zero => simp [Module.End.one_eq_id]
-  | succ k ih =>
-    rw [pow_succ, pow_succ, mul_eq_comp, mul_eq_comp, ← LinearMap.comp_assoc, ih,
-      LinearMap.comp_assoc, hf, ← LinearMap.comp_assoc]
-
 theorem map_ker_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) (k : ℕ) :
     (LinearMap.ker (T_M ^ k)).map f ≤ LinearMap.ker (T_N ^ k) := by
   rintro _ ⟨x, hx, rfl⟩
-  rw [LinearMap.mem_ker, ← LinearMap.comp_apply, ← comp_pow_of_comp_eq hf k,
-    LinearMap.comp_apply, LinearMap.mem_ker.mp hx, map_zero]
+  rw [LinearMap.mem_ker, ← LinearMap.comp_apply,
+    Module.End.commute_pow_left_of_commute hf.symm k, LinearMap.comp_apply,
+    LinearMap.mem_ker.mp hx, map_zero]
 
 theorem map_range_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) (k : ℕ) :
     (LinearMap.range (T_M ^ k)).map f ≤ LinearMap.range (T_N ^ k) := by
   rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-  exact ⟨f x, (LinearMap.congr_fun (comp_pow_of_comp_eq hf k) x).symm⟩
+  exact ⟨f x, LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf.symm k) x⟩
 
 theorem map_iSup_ker_pow_le_of_comp_eq {T_M : End R M} {T_N : End R N} {f : M →ₗ[R] N}
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) :
@@ -90,10 +82,10 @@ theorem IsStableAt.of_linearEquiv {T_M : End R M} {T_N : End R N} (e : M ≃ₗ[
     T_N.IsStableAt c := by
   have hker : LinearMap.ker (T_N ^ c) = (LinearMap.ker (T_M ^ c)).map e.toLinearMap :=
     (e.map_ker_of_intertwine (T_M ^ c) (T_N ^ c) fun x ↦
-      (LinearMap.congr_fun (comp_pow_of_comp_eq he c) x).symm).symm
+      LinearMap.congr_fun (Module.End.commute_pow_left_of_commute he.symm c) x).symm
   have hrange : LinearMap.range (T_N ^ c) = (LinearMap.range (T_M ^ c)).map e.toLinearMap :=
     (e.map_range_of_intertwine (T_M ^ c) (T_N ^ c) fun x ↦
-      (LinearMap.congr_fun (comp_pow_of_comp_eq he c) x).symm).symm
+      LinearMap.congr_fun (Module.End.commute_pow_left_of_commute he.symm c) x).symm
   rw [isStableAt_iff_isCompl_and_bijective_restrict_range_pow]
   refine ⟨h.one_le, ?_, ?_⟩
   · rw [hker, hrange]
@@ -148,11 +140,6 @@ section ProdPiDirectSum
 
 variable {R M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [Module R M₁] [Module R M₂]
-
-@[simp]
-theorem prodMap_pow (T₁ : End R M₁) (T₂ : End R M₂) (n : ℕ) :
-    (T₁.prodMap T₂ : End R (M₁ × M₂)) ^ n = (T₁ ^ n).prodMap (T₂ ^ n) :=
-  (map_pow (LinearMap.prodMapRingHom R M₁ M₂) (T₁, T₂) n).symm
 
 private theorem isCompl_prod_iff {p₁ q₁ : Submodule R M₁} {p₂ q₂ : Submodule R M₂} :
     IsCompl (p₁.prod p₂) (q₁.prod q₂) ↔ IsCompl p₁ q₁ ∧ IsCompl p₂ q₂ := by
@@ -539,8 +526,8 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
       rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
     obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hyM
     have hfv_ker : f v ∈ LinearMap.ker (T_N ^ c) := by
-      rw [LinearMap.mem_ker, ← LinearMap.comp_apply, ← comp_pow_of_comp_eq hf c,
-        LinearMap.comp_apply]
+      rw [LinearMap.mem_ker, ← LinearMap.comp_apply,
+        Module.End.commute_pow_left_of_commute hf.symm c, LinearMap.comp_apply]
       have hTMv : (T_M ^ c) v = x.1 := by
         rw [← hy, map_add, LinearMap.mem_ker.mp hu, zero_add]
       rw [hTMv, LinearMap.mem_ker.mp x.2]
@@ -610,11 +597,12 @@ private theorem ker_mapQ_range_pow_of_comp_eq {T_M : End R M} {T_N : End R N} {f
     obtain ⟨u, hu, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hmM
     have hyw : y - f w ∈ LinearMap.ker (T_N ^ (c + c)) := by
       have hfw : (T_N ^ c) (f w) = f ((T_M ^ c) w) :=
-        (LinearMap.congr_fun (comp_pow_of_comp_eq hf c) w).symm
+        LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf.symm c) w
       have h1 : (T_N ^ c) (y - f w) = f u := by
         rw [map_sub, ← hm, map_add, hfw, add_sub_cancel_right]
       rw [LinearMap.mem_ker, pow_add, mul_apply_eq_comp, h1, ← LinearMap.comp_apply,
-        ← comp_pow_of_comp_eq hf c, LinearMap.comp_apply, LinearMap.mem_ker.mp hu, map_zero]
+        Module.End.commute_pow_left_of_commute hf.symm c, LinearMap.comp_apply,
+        LinearMap.mem_ker.mp hu, map_zero]
     rw [hN.ker_pow_eq_of_le (Nat.le_add_right c c)] at hyw
     exact ⟨y - f w, hyw, by simp [Rf]⟩
   · rintro _ ⟨y, hy, rfl⟩

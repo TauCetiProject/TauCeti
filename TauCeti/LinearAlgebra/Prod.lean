@@ -67,6 +67,8 @@ quadratic forms with the subgroup preserving both summands.
   and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   modules, read over the base of a scalar tower, is the product map of the two multiplications.
+* `Module.End.prodMap_pow`: a power of a componentwise product of endomorphisms is the
+  componentwise product of the powers.
 -/
 
 public section
@@ -567,3 +569,15 @@ theorem lsmul_restrictScalars_prodMap (c : S) :
 end LinearMap
 
 end TauCeti
+
+namespace Module.End
+
+/-- A power of a componentwise product of endomorphisms is the componentwise product of the
+powers. -/
+@[simp]
+theorem prodMap_pow {R M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] (f : Module.End R M₁) (g : Module.End R M₂) (n : ℕ) :
+    f.prodMap g ^ n = (f ^ n).prodMap (g ^ n) :=
+  (map_pow (LinearMap.prodMapRingHom R M₁ M₂) (f, g) n).symm
+
+end Module.End
