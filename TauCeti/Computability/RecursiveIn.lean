@@ -29,9 +29,11 @@ join of two oracles.
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
 statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
-composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
-These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
-`Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
+composition, pairing, option case analysis, primitive recursion, least-witness search, and forming
+finite initial segments of a sequence. These closure proofs adapt Mathlib's `Computable.comp`,
+`Computable.pair`, `Computable.option_casesOn`, and `Computable.nat_rec` in
+`Mathlib.Computability.Partrec` and `Computable.find` in `Mathlib.Computability.RE` to
+`Nat.RecursiveIn`.
 -/
 
 public section
@@ -146,6 +148,32 @@ theorem pair {f : α → β} {g : α → γ} (hf : ComputableIn O f) (hg : Compu
   exact (Nat.RecursiveIn.pair hf hg).of_eq fun n => by
     cases decode (α := α) n <;> simp [Seq.seq]
 
+/-- Case analysis on an optional value computed relative to `O`. Only the selected branch is
+evaluated. This adapts `Computable.option_casesOn` in `Mathlib.Computability.Partrec` to
+`ComputableIn`. -/
+theorem option_casesOn {o : α → Option β} {f : α → γ} {g : α → β → γ} (ho : ComputableIn O o)
+    (hf : ComputableIn O f) (hg : ComputableIn₂ O g) :
+    ComputableIn O (fun a => Option.casesOn (motive := fun _ => γ) (o a) (f a) (g a)) := by
+  have hguard :=
+    (Computable.decode (α := α × Option β)).option_casesOn (Computable.const false)
+      (Primrec.option_isSome.to_comp.comp (Computable.snd.comp Computable.snd)).to₂
+  have hsome := Partrec.nat_iff.1 <|
+    (Computable.decode (α := α × Option β)).ofOption.bind
+      ((Computable.snd.comp Computable.snd).ofOption.map
+        (Primrec.encode.to_comp.comp
+          ((Computable.fst.comp (Computable.snd.comp Computable.fst)).pair
+            Computable.snd)).to₂).to₂
+  have hnone := Partrec.nat_iff.1 <|
+    (Computable.decode (α := α × Option β)).ofOption.map
+      (Primrec.encode.to_comp.comp (Computable.fst.comp Computable.snd)).to₂
+  have hcases : ComputableIn O
+      (fun q : α × Option β => Option.casesOn (motive := fun _ => γ) q.2 (f q.1) (g q.1)) :=
+    (Nat.RecursiveIn.cond hguard.computableIn
+      (Nat.RecursiveIn.comp hg hsome.recursiveIn)
+      (Nat.RecursiveIn.comp hf hnone.recursiveIn)).of_eq fun m => by
+      rcases decode (α := α × Option β) m with _ | ⟨a, _ | b⟩ <;> simp [encodek]
+  exact hcases.comp (ComputableIn.id.pair ho)
+
 /-- Primitive recursion of total oracle-computable functions. The recursion counter is allowed
 to depend on the parameter. -/
 theorem nat_rec {f : α → ℕ} {g : α → β} {h : α → ℕ × β → β}
@@ -171,6 +199,8 @@ end ComputableIn
 
 namespace ComputableIn₂
 
+open Encodable
+
 variable {α β : Type*} [Primcodable α] [Primcodable β] {O : Set (ℕ →. ℕ)}
 
 /-- A finite initial segment of an oracle-computable sequence can be computed uniformly in its
@@ -191,4 +221,37 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   | zero => rfl
   | succ n ih => simp [List.range_succ, ih]
 
+/-- **Partial least-witness search** for a total Boolean test computable in `O`: its domain at `a`
+is `∃ n, b a n = true`, and its value there is the least witness. -/
+theorem rfind {b : α → ℕ → Bool} (hb : ComputableIn₂ O b) :
+    RecursiveIn O (fun a => Nat.rfind fun n => Part.some (b a n)) := by
+  have hnot : ComputableIn O (fun p : α × ℕ => !b p.1 p.2) :=
+    Primrec.not.computableIn.comp hb
+  exact Nat.RecursiveIn.of_eq (Nat.RecursiveIn.rfind hnot) fun n => by
+    cases e : decode (α := α) n with
+    | none =>
+      simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
+    | some a =>
+      simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
+        Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some]
+      congr 1
+      funext m
+      cases b a m <;> rfl
+
 end ComputableIn₂
+
+namespace ComputableIn
+
+variable {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)}
+
+/-- **Oracle-computable least-witness search.** If `b : α → ℕ → Bool` is computable in `O` and
+every `a` has a witness `n` with `b a n = true`, then the least witness `Nat.find (hex a)` is
+computable in `O`. This adapts `Computable.find` in `Mathlib.Computability.RE` to
+`ComputableIn`. -/
+theorem find {b : α → ℕ → Bool} (hb : ComputableIn₂ O b) (hex : ∀ a, ∃ n, b a n = true) :
+    ComputableIn O (fun a => Nat.find (hex a)) :=
+  hb.rfind.of_eq_tot fun a => Nat.mem_rfind.2
+    ⟨Part.mem_some_iff.2 (Nat.find_spec (hex a)).symm,
+      fun hm => Part.mem_some_iff.2 (Bool.eq_false_iff.2 (Nat.find_min (hex a) hm)).symm⟩
+
+end ComputableIn

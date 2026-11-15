@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Hierarchy.Basic
+import Mathlib.Computability.Primrec.List
 
 /-!
 # Closure and quantifier contraction for arithmetical pointclasses
 
-Both existential and universal arithmetical pointclasses are closed under finite conjunction
-and disjunction. An additional existential number quantifier at a positive existential level
-can be contracted with the leading quantifier, using Mathlib's pairing of natural numbers;
-the dual statement holds for universal levels. These operations manipulate normal forms
-without increasing their alternating quantifier depth.
+Both existential and universal arithmetical pointclasses are closed under finite conjunction,
+disjunction, and number quantifiers bounded by an oracle-computable function of the parameters.
+At positive levels, an additional existential quantifier over any primitive-codable type can be
+contracted into the leading number quantifier on an existential pointclass, and the dual
+statement holds for universal pointclasses. Bounded universal quantifiers at positive existential
+levels use finite witness lists to commute the bounded universal quantifier past the leading
+existential quantifier.
 
 The classes are increasing in the level, and either class at one level is contained in the
 intersection class at the next. All statements retain the oracle and arbitrary primitive-codable
@@ -181,5 +184,198 @@ theorem IsPi.of_le (hp : IsPi Z n p) (hnm : n ≤ m) : IsPi Z m p :=
 theorem IsDelta.of_le (hp : IsDelta Z n p) (hnm : n ≤ m) : IsDelta Z m p := by
   obtain ⟨hpS, hpP⟩ := isDelta_iff.1 hp
   exact isDelta_iff.2 ⟨hpS.of_le hnm, hpP.of_le hnm⟩
+
+-- Guarding a predicate by `o = some y` preserves `Σ⁰ₙ` at every level: at level `0` only the
+-- `some` branch is evaluated, and at successor levels negation splits into `o = none` or a
+-- negated `some` branch.
+private theorem sigma_option_some {β : Type*} [Primcodable β] {r : α × β → Prop}
+    (hr : IsSigma Z n r) :
+    IsSigma Z n (fun a : α × Option β => ∃ y, a.2 = some y ∧ r (a.1, y)) := by
+  classical
+  induction n generalizing α β with
+  | zero =>
+    obtain ⟨b, hb, heq⟩ := isSigma_zero_iff.1 hr
+    have hcases : ComputableIn {Z.oracle}
+        (fun a : α × Option β =>
+          Option.casesOn (motive := fun _ => Bool) a.2 false (fun y => b (a.1, y))) :=
+      ComputableIn.option_casesOn ComputableIn.snd (ComputableIn.const false)
+        (hb.comp ((ComputableIn.fst.comp ComputableIn.fst).pair ComputableIn.snd))
+    refine isSigma_zero_iff.2 ⟨_, hcases, fun ⟨x, o⟩ => ?_⟩
+    cases o <;> simp [heq]
+  | succ n ih =>
+    obtain ⟨q, hq, heq⟩ := isSigma_succ_iff.1 hr
+    have hnone : IsSigma Z n (fun t : (α × Option β) × ℕ => t.1.2 = none) :=
+      (isSigma_zero_iff.2
+        ⟨fun t => !t.1.2.isSome,
+          (Primrec.not.comp Primrec.option_isSome).computableIn.comp
+            (ComputableIn.snd.comp ComputableIn.fst),
+          fun ⟨⟨_, o⟩, _⟩ => by cases o <;> simp⟩).of_le (Nat.zero_le n)
+    have hsome : IsSigma Z n
+        (fun t : (α × Option β) × ℕ => ∃ y, t.1.2 = some y ∧ ¬q ((t.1.1, y), t.2)) := by
+      have hq' : IsSigma Z n (fun u : (α × ℕ) × β => ¬q ((u.1.1, u.2), u.1.2)) :=
+        (isSigma_not_iff.2 hq).preimage
+          (((ComputableIn.fst.comp ComputableIn.fst).pair ComputableIn.snd).pair
+            (ComputableIn.snd.comp ComputableIn.fst))
+      exact (ih hq').preimage
+        (((ComputableIn.fst.comp ComputableIn.fst).pair ComputableIn.snd).pair
+          (ComputableIn.snd.comp ComputableIn.fst))
+    refine isSigma_succ_iff.2
+      ⟨fun t => ∃ y, t.1.2 = some y ∧ q ((t.1.1, y), t.2),
+        isSigma_not_iff.1 ((hnone.or hsome).of_eq fun ⟨⟨x, o⟩, w⟩ => ?_),
+        fun ⟨x, o⟩ => ?_⟩
+    · cases o <;> simp
+    · cases o <;> simp [heq]
+
+/-- At a positive existential level, an existential quantifier over any primitive-codable type
+contracts into the leading number quantifier via `Encodable.decode`. -/
+theorem IsSigma.exists {β : Type*} [Primcodable β] {r : α × β → Prop}
+    (hr : IsSigma Z (n + 1) r) :
+    IsSigma Z (n + 1) (fun x => ∃ y, r (x, y)) := by
+  have hdec : IsSigma Z (n + 1)
+      (fun a : α × ℕ => ∃ y, Encodable.decode (α := β) a.2 = some y ∧ r (a.1, y)) :=
+    (sigma_option_some hr).preimage
+      (ComputableIn.fst.pair (Computable.decode.computableIn.comp ComputableIn.snd))
+  refine hdec.exists_nat.of_eq fun x => ⟨fun ⟨_, y, _, hy⟩ => ⟨y, hy⟩, fun ⟨y, hy⟩ => ?_⟩
+  exact ⟨Encodable.encode y, y, Encodable.encodek y, hy⟩
+
+/-- At a positive universal level, a universal quantifier over any primitive-codable type
+contracts into the leading number quantifier via `Encodable.decode`. -/
+theorem IsPi.forall {β : Type*} [Primcodable β] {r : α × β → Prop}
+    (hr : IsPi Z (n + 1) r) :
+    IsPi Z (n + 1) (fun x => ∀ y, r (x, y)) := by
+  classical
+  exact isSigma_not_iff.1 ((isSigma_not_iff.2 hr).exists.of_eq (by simp))
+
+-- Bounded existential and universal closure must be proved together by induction on `n`:
+-- bounded universal closure at `n + 1` packages the `bound x` witnesses into a `List ℕ` and
+-- negates the resulting bounded universal `Π⁰ₙ` body into a bounded existential `Σ⁰ₙ` body.
+private theorem sigma_exists_lt_and_forall_lt {r : α × ℕ → Prop} (hr : IsSigma Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsSigma Z n (fun x => ∃ y < bound x, r (x, y)) ∧
+      IsSigma Z n (fun x => ∀ y < bound x, r (x, y)) := by
+  classical
+  induction n generalizing α with
+  | zero =>
+    obtain ⟨b, hcomp, heq⟩ := isSigma_zero_iff.1 hr
+    have hlist : ComputableIn {Z.oracle}
+        (fun x => (List.range (bound x)).map (fun y => b (x, y))) :=
+      (ComputableIn₂.list_range_map (f := fun x y => b (x, y)) hcomp).comp
+        (ComputableIn.id.pair hb)
+    have htrue : PrimrecPred (fun a : Bool => a = true) :=
+      Primrec.eq.comp Primrec.id (Primrec.const true)
+    have hex : PrimrecPred (fun L : List Bool => ∃ a ∈ L, a = true) :=
+      PrimrecPred.exists_mem_list htrue
+    have hall : PrimrecPred (fun L : List Bool => ∀ a ∈ L, a = true) :=
+      PrimrecPred.forall_mem_list htrue
+    refine ⟨isSigma_zero_iff.2 ⟨_, hex.decide.computableIn.comp hlist, fun x => by simp [heq]⟩,
+      isSigma_zero_iff.2 ⟨_, hall.decide.computableIn.comp hlist, fun x => by simp [heq]⟩⟩
+  | succ n ih =>
+    have hlt : IsSigma Z (n + 1) (fun a : α × ℕ => a.2 < bound a.1) :=
+      (isSigma_zero_iff.2
+        ⟨fun a : α × ℕ => decide (a.2 < bound a.1),
+          Primrec.nat_lt.decide.computableIn.comp
+            (ComputableIn.snd.pair (hb.comp ComputableIn.fst)),
+          fun _ => decide_eq_true_iff⟩).of_le (Nat.zero_le (n + 1))
+    refine ⟨((hlt.and hr).exists_nat).of_eq (fun _ => Iff.rfl), ?_⟩
+    obtain ⟨q, hq, heq⟩ := isSigma_succ_iff.1 hr
+    have hq' : IsSigma Z n
+        (fun t : (α × List ℕ) × ℕ => ¬q ((t.1.1, t.2), List.getD t.1.2 t.2 0)) :=
+      (isSigma_not_iff.2 hq).preimage
+        (((ComputableIn.fst.comp ComputableIn.fst).pair ComputableIn.snd).pair
+          ((Primrec.list_getD 0).computableIn.comp
+            ((ComputableIn.snd.comp ComputableIn.fst).pair ComputableIn.snd)))
+    have hbody : IsPi Z n
+        (fun u : α × List ℕ =>
+          ∀ y < bound u.1, q ((u.1, y), List.getD u.2 y 0)) :=
+      isSigma_not_iff.1
+        (((ih hq' (hb.comp ComputableIn.fst)).1).of_eq fun _ => by simp)
+    refine hbody.sigma_succ.exists.of_eq fun x => ?_
+    simp only [heq]
+    constructor
+    · rintro ⟨l, hl⟩ y hy
+      exact ⟨List.getD l y 0, hl y hy⟩
+    · intro h
+      let w : ℕ → ℕ := fun y => if hy : y < bound x then Classical.choose (h y hy) else 0
+      refine ⟨(List.range (bound x)).map w, fun y hy => ?_⟩
+      have hget : List.getD ((List.range (bound x)).map w) y 0 = w y := by
+        simp [List.getD_eq_getElem?_getD, hy]
+      rw [hget]
+      simpa [w, hy] using Classical.choose_spec (h y hy)
+
+/-- Existential pointclasses are closed under strict bounded existential number quantifiers. -/
+theorem IsSigma.exists_lt {r : α × ℕ → Prop} (hr : IsSigma Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsSigma Z n (fun x => ∃ y < bound x, r (x, y)) :=
+  (sigma_exists_lt_and_forall_lt hr hb).1
+
+/-- Existential pointclasses are closed under strict bounded universal number quantifiers. -/
+theorem IsSigma.forall_lt {r : α × ℕ → Prop} (hr : IsSigma Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsSigma Z n (fun x => ∀ y < bound x, r (x, y)) :=
+  (sigma_exists_lt_and_forall_lt hr hb).2
+
+/-- Universal pointclasses are closed under strict bounded existential number quantifiers. -/
+theorem IsPi.exists_lt {r : α × ℕ → Prop} (hr : IsPi Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsPi Z n (fun x => ∃ y < bound x, r (x, y)) := by
+  classical
+  exact isSigma_not_iff.1 (((isSigma_not_iff.2 hr).forall_lt hb).of_eq (by simp))
+
+/-- Universal pointclasses are closed under strict bounded universal number quantifiers. -/
+theorem IsPi.forall_lt {r : α × ℕ → Prop} (hr : IsPi Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsPi Z n (fun x => ∀ y < bound x, r (x, y)) := by
+  classical
+  exact isSigma_not_iff.1 (((isSigma_not_iff.2 hr).exists_lt hb).of_eq (by simp))
+
+/-- Intersection pointclasses are closed under strict bounded existential number quantifiers. -/
+theorem IsDelta.exists_lt {r : α × ℕ → Prop} (hr : IsDelta Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsDelta Z n (fun x => ∃ y < bound x, r (x, y)) := by
+  obtain ⟨hrS, hrP⟩ := isDelta_iff.1 hr
+  exact isDelta_iff.2 ⟨hrS.exists_lt hb, hrP.exists_lt hb⟩
+
+/-- Intersection pointclasses are closed under strict bounded universal number quantifiers. -/
+theorem IsDelta.forall_lt {r : α × ℕ → Prop} (hr : IsDelta Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsDelta Z n (fun x => ∀ y < bound x, r (x, y)) := by
+  obtain ⟨hrS, hrP⟩ := isDelta_iff.1 hr
+  exact isDelta_iff.2 ⟨hrS.forall_lt hb, hrP.forall_lt hb⟩
+
+/-- Existential pointclasses are closed under non-strict bounded existential number quantifiers. -/
+theorem IsSigma.exists_le {r : α × ℕ → Prop} (hr : IsSigma Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsSigma Z n (fun x => ∃ y ≤ bound x, r (x, y)) :=
+  (hr.exists_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
+
+/-- Existential pointclasses are closed under non-strict bounded universal number quantifiers. -/
+theorem IsSigma.forall_le {r : α × ℕ → Prop} (hr : IsSigma Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsSigma Z n (fun x => ∀ y ≤ bound x, r (x, y)) :=
+  (hr.forall_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
+
+/-- Universal pointclasses are closed under non-strict bounded existential number quantifiers. -/
+theorem IsPi.exists_le {r : α × ℕ → Prop} (hr : IsPi Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsPi Z n (fun x => ∃ y ≤ bound x, r (x, y)) :=
+  (hr.exists_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
+
+/-- Universal pointclasses are closed under non-strict bounded universal number quantifiers. -/
+theorem IsPi.forall_le {r : α × ℕ → Prop} (hr : IsPi Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsPi Z n (fun x => ∀ y ≤ bound x, r (x, y)) :=
+  (hr.forall_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
+
+/-- Intersection pointclasses are closed under non-strict bounded existential number quantifiers. -/
+theorem IsDelta.exists_le {r : α × ℕ → Prop} (hr : IsDelta Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsDelta Z n (fun x => ∃ y ≤ bound x, r (x, y)) :=
+  (hr.exists_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
+
+/-- Intersection pointclasses are closed under non-strict bounded universal number quantifiers. -/
+theorem IsDelta.forall_le {r : α × ℕ → Prop} (hr : IsDelta Z n r)
+    {bound : α → ℕ} (hb : ComputableIn {Z.oracle} bound) :
+    IsDelta Z n (fun x => ∀ y ≤ bound x, r (x, y)) :=
+  (hr.forall_lt (Primrec.succ.computableIn.comp hb)).of_eq fun _ => by simp [Nat.lt_succ_iff]
 
 end TauCeti.ArithmeticalHierarchy
