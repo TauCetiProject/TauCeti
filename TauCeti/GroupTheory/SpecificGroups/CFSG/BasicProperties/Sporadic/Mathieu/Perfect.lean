@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyThree
 import Mathlib.Tactic.Abel
 
@@ -19,33 +19,32 @@ The exact presentations of `M₁₁`, `M₁₂`, `M₂₂`, `M₂₃`, and `M₂
 homomorphism to a commutative group kills both generators: the exponent-sum rows of the
 defining relators span `ℤ²`. Applying this to the abelianization map proves perfectness.
 
-These are basic properties for milestone P1 of
-`TauCetiRoadmap/CFSGBasicProperties/README.md`. They do not establish finiteness, orders,
-or simplicity of the presented groups.
+Nothing here establishes finiteness, orders, or simplicity of the presented groups.
 -/
 
 public section
 
 namespace TauCeti.Sporadic.Mathieu
 
-private theorem map_transcribed_eq_one {P : GroupPresentation} {G : Type*} [Group G]
-    (f : P.Group →* G) :
-    ∀ t ∈ P.transcribed, f (PresentedGroup.mk P.relatorSet t.toFreeGroup) = 1 := by
-  intro t ht
-  rw [PresentedGroup.one_of_mem ((P.mem_relatorSet_iff _).mpr ⟨t, ht, rfl⟩), map_one]
+/-- A homomorphism from a presentation on two generators is trivial once it kills both of them. -/
+private theorem eq_one_of_two_generators {P : GroupPresentation} (hP : P.generatorCount = 2)
+    {G : Type*} [Group G] {f : P.Group →* G} (h₀ : f (PresentedGroup.of ⟨0, by omega⟩) = 1)
+    (h₁ : f (PresentedGroup.of ⟨1, by omega⟩) = 1) : f = 1 := by
+  refine PresentedGroup.ext fun i ↦ ?_
+  obtain ⟨_ | _ | n, hi⟩ := i
+  · exact h₀
+  · exact h₁
+  · exact absurd hi (by omega)
 
 /-- Every homomorphism from the transcribed `M₁₁` presentation to a commutative group is trivial. -/
 theorem m11_hom_eq_one {G : Type*} [CommGroup G] (f : m11Presentation.Group →* G) :
     f = 1 := by
-  let a : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨0, by simp [GroupPresentation.generatorCount]⟩))
-  let b : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨1, by simp [GroupPresentation.generatorCount]⟩))
-  have h := map_transcribed_eq_one f
-  rw [m11Presentation_transcribed] at h
-  simp only [List.forall_mem_cons,
-    Relator.toFreeGroup_mul, Relator.toFreeGroup_inv, Relator.toFreeGroup_gen,
-    Relator.toFreeGroup_pow, map_mul, map_inv, map_pow] at h
+  let a : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨0, by simp⟩))
+  let b : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨1, by simp⟩))
+  have h := (m11Presentation.homEquiv f).2
+  rw [GroupPresentation.homEquiv_apply, m11Presentation_transcribed] at h
+  simp only [List.forall_mem_cons, Relator.lift_toFreeGroup,
+    Relator.eval_mul, Relator.eval_inv, Relator.eval_gen, Relator.eval_pow] at h
   obtain ⟨h₁, h₂, _⟩ := h
   have h₁' := congrArg Additive.ofMul h₁
   have h₂' := congrArg Additive.ofMul h₂
@@ -67,38 +66,23 @@ theorem m11_hom_eq_one {G : Type*} [CommGroup G] (f : m11Presentation.Group →*
     calc
       b = ((-4 : ℤ) • a + 5 • b) + 4 • (a - b) := by abel
       _ = 0 := by rw [hr₁, hr₂]; simp
-  apply PresentedGroup.ext
-  intro i
-  have hi : i.val = 0 ∨ i.val = 1 := by
-    have := i.isLt
-    simp only [GroupPresentation.generatorCount, m11Presentation_generatorNames,
-      List.length_cons, List.length_nil] at this
-    omega
-  rcases hi with hi | hi
-  · have : i = ⟨0, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact ha
-  · have : i = ⟨1, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact hb
+  exact eq_one_of_two_generators (f := f) m11Presentation_generatorCount ha hb
 
 /-- The exact transcribed `M₁₁` presentation equals its commutator subgroup. -/
 theorem m11_isPerfect : Group.IsPerfect m11Presentation.Group := by
   constructor
-  rw [← Abelianization.ker_of, m11_hom_eq_one Abelianization.of]
+  rw [← Group.Abelianization.ker_of, m11_hom_eq_one Group.Abelianization.of]
   exact MonoidHom.ker_one
 
 /-- Every homomorphism from the transcribed `M₁₂` presentation to a commutative group is trivial. -/
 theorem m12_hom_eq_one {G : Type*} [CommGroup G] (f : m12Presentation.Group →* G) :
     f = 1 := by
-  let a : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨0, by simp [GroupPresentation.generatorCount]⟩))
-  let b : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨1, by simp [GroupPresentation.generatorCount]⟩))
-  have h := map_transcribed_eq_one f
-  rw [m12Presentation_transcribed] at h
-  simp only [List.forall_mem_cons, Relator.toFreeGroup_mul, Relator.toFreeGroup_inv,
-    Relator.toFreeGroup_gen, Relator.toFreeGroup_pow, map_mul, map_inv, map_pow] at h
+  let a : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨0, by simp⟩))
+  let b : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨1, by simp⟩))
+  have h := (m12Presentation.homEquiv f).2
+  rw [GroupPresentation.homEquiv_apply, m12Presentation_transcribed] at h
+  simp only [List.forall_mem_cons, Relator.lift_toFreeGroup,
+    Relator.eval_mul, Relator.eval_inv, Relator.eval_gen, Relator.eval_pow] at h
   obtain ⟨h₁, h₂, h₃, _⟩ := h
   have h₁' := congrArg Additive.ofMul h₁
   have h₂' := congrArg Additive.ofMul h₂
@@ -125,38 +109,23 @@ theorem m12_hom_eq_one {G : Type*} [CommGroup G] (f : m12Presentation.Group →*
       b = -5 • ((3 : ℤ) • a - 3 • b) - 9 • (5 • a + 6 • b) +
           10 • ((6 : ℤ) • a + 4 • b) := by abel
       _ = 0 := by rw [hr₁, h₂', hr₃]; simp
-  apply PresentedGroup.ext
-  intro i
-  have hi : i.val = 0 ∨ i.val = 1 := by
-    have := i.isLt
-    simp only [GroupPresentation.generatorCount, m12Presentation_generatorNames,
-      List.length_cons, List.length_nil] at this
-    omega
-  rcases hi with hi | hi
-  · have : i = ⟨0, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact ha
-  · have : i = ⟨1, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact hb
+  exact eq_one_of_two_generators (f := f) m12Presentation_generatorCount ha hb
 
 /-- The exact transcribed `M₁₂` presentation equals its commutator subgroup. -/
 theorem m12_isPerfect : Group.IsPerfect m12Presentation.Group := by
   constructor
-  rw [← Abelianization.ker_of, m12_hom_eq_one Abelianization.of]
+  rw [← Group.Abelianization.ker_of, m12_hom_eq_one Group.Abelianization.of]
   exact MonoidHom.ker_one
 
 /-- Every homomorphism from the transcribed `M₂₂` presentation to a commutative group is trivial. -/
 theorem m22_hom_eq_one {G : Type*} [CommGroup G] (f : m22Presentation.Group →* G) :
     f = 1 := by
-  let a : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨0, by simp [GroupPresentation.generatorCount]⟩))
-  let b : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨1, by simp [GroupPresentation.generatorCount]⟩))
-  have h := map_transcribed_eq_one f
-  rw [m22Presentation_transcribed] at h
-  simp only [List.forall_mem_cons, Relator.toFreeGroup_mul, Relator.toFreeGroup_inv,
-    Relator.toFreeGroup_gen, Relator.toFreeGroup_pow, map_mul, map_inv, map_pow] at h
+  let a : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨0, by simp⟩))
+  let b : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨1, by simp⟩))
+  have h := (m22Presentation.homEquiv f).2
+  rw [GroupPresentation.homEquiv_apply, m22Presentation_transcribed] at h
+  simp only [List.forall_mem_cons, Relator.lift_toFreeGroup,
+    Relator.eval_mul, Relator.eval_inv, Relator.eval_gen, Relator.eval_pow] at h
   obtain ⟨h₁, h₂, _⟩ := h
   have h₁' := congrArg Additive.ofMul h₁
   have h₂' := congrArg Additive.ofMul h₂
@@ -179,39 +148,24 @@ theorem m22_hom_eq_one {G : Type*} [CommGroup G] (f : m22Presentation.Group →*
     calc
       b = ((2 : ℤ) • a + 3 • b) - 2 • (a + b) := by abel
       _ = 0 := by rw [hr₁, hr₂]; simp
-  apply PresentedGroup.ext
-  intro i
-  have hi : i.val = 0 ∨ i.val = 1 := by
-    have := i.isLt
-    simp only [GroupPresentation.generatorCount, m22Presentation_generatorNames,
-      List.length_cons, List.length_nil] at this
-    omega
-  rcases hi with hi | hi
-  · have : i = ⟨0, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact ha
-  · have : i = ⟨1, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact hb
+  exact eq_one_of_two_generators (f := f) m22Presentation_generatorCount ha hb
 
 /-- The exact transcribed `M₂₂` presentation equals its commutator subgroup. -/
 theorem m22_isPerfect : Group.IsPerfect m22Presentation.Group := by
   constructor
-  rw [← Abelianization.ker_of, m22_hom_eq_one Abelianization.of]
+  rw [← Group.Abelianization.ker_of, m22_hom_eq_one Group.Abelianization.of]
   exact MonoidHom.ker_one
 
 /-- Every homomorphism from the transcribed `M₂₃` presentation to a commutative group is trivial. -/
 theorem m23_hom_eq_one {G : Type*} [CommGroup G] (f : m23Presentation.Group →* G) :
     f = 1 := by
-  let a : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨0, by simp [GroupPresentation.generatorCount]⟩))
-  let b : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨1, by simp [GroupPresentation.generatorCount]⟩))
-  have h := map_transcribed_eq_one f
-  rw [m23Presentation_transcribed] at h
-  simp only [List.forall_mem_cons, Relator.toFreeGroup_mul, Relator.toFreeGroup_inv,
-    Relator.toFreeGroup_gen, Relator.toFreeGroup_pow, Relator.toFreeGroup_comm,
-    commutatorElement_def, map_mul, map_inv, map_pow] at h
+  let a : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨0, by simp⟩))
+  let b : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨1, by simp⟩))
+  have h := (m23Presentation.homEquiv f).2
+  rw [GroupPresentation.homEquiv_apply, m23Presentation_transcribed] at h
+  simp only [List.forall_mem_cons, Relator.lift_toFreeGroup,
+    Relator.eval_mul, Relator.eval_inv, Relator.eval_gen, Relator.eval_pow, Relator.eval_comm,
+    commutatorElement_def] at h
   obtain ⟨h₁, h₂, h₃, _, _, _, h₇, _⟩ := h
   have h₁' := congrArg Additive.ofMul h₁
   have h₂' := congrArg Additive.ofMul h₂
@@ -236,39 +190,24 @@ theorem m23_hom_eq_one {G : Type*} [CommGroup G] (f : m23Presentation.Group →*
     calc
       b = 6 • (4 • b) - 23 • (a + b) + 23 • a := by abel
       _ = 0 := by rw [h₂', h₃', ha]; simp
-  apply PresentedGroup.ext
-  intro i
-  have hi : i.val = 0 ∨ i.val = 1 := by
-    have := i.isLt
-    simp only [GroupPresentation.generatorCount, m23Presentation_generatorNames,
-      List.length_cons, List.length_nil] at this
-    omega
-  rcases hi with hi | hi
-  · have : i = ⟨0, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact ha
-  · have : i = ⟨1, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact hb
+  exact eq_one_of_two_generators (f := f) m23Presentation_generatorCount ha hb
 
 /-- The exact transcribed `M₂₃` presentation equals its commutator subgroup. -/
 theorem m23_isPerfect : Group.IsPerfect m23Presentation.Group := by
   constructor
-  rw [← Abelianization.ker_of, m23_hom_eq_one Abelianization.of]
+  rw [← Group.Abelianization.ker_of, m23_hom_eq_one Group.Abelianization.of]
   exact MonoidHom.ker_one
 
 /-- Every homomorphism from the transcribed `M₂₄` presentation to a commutative group is trivial. -/
 theorem m24_hom_eq_one {G : Type*} [CommGroup G] (f : m24Presentation.Group →* G) :
     f = 1 := by
-  let a : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨0, by simp [GroupPresentation.generatorCount]⟩))
-  let b : Additive G := Additive.ofMul
-    (f (PresentedGroup.of ⟨1, by simp [GroupPresentation.generatorCount]⟩))
-  have h := map_transcribed_eq_one f
-  rw [m24Presentation_transcribed] at h
-  simp only [List.forall_mem_cons, Relator.toFreeGroup_mul, Relator.toFreeGroup_inv,
-    Relator.toFreeGroup_gen, Relator.toFreeGroup_pow, Relator.toFreeGroup_comm,
-    commutatorElement_def, map_mul, map_inv, map_pow] at h
+  let a : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨0, by simp⟩))
+  let b : Additive G := Additive.ofMul (f (PresentedGroup.of ⟨1, by simp⟩))
+  have h := (m24Presentation.homEquiv f).2
+  rw [GroupPresentation.homEquiv_apply, m24Presentation_transcribed] at h
+  simp only [List.forall_mem_cons, Relator.lift_toFreeGroup,
+    Relator.eval_mul, Relator.eval_inv, Relator.eval_gen, Relator.eval_pow, Relator.eval_comm,
+    commutatorElement_def] at h
   obtain ⟨h₁, h₂, h₃, _⟩ := h
   have h₁' := congrArg Additive.ofMul h₁
   have h₂' := congrArg Additive.ofMul h₂
@@ -285,25 +224,12 @@ theorem m24_hom_eq_one {G : Type*} [CommGroup G] (f : m24Presentation.Group →*
     calc
       b = -23 • (2 • a) - 15 • (3 • b) + 2 • (23 • (a + b)) := by abel
       _ = 0 := by rw [h₁', h₂', h₃']; simp
-  apply PresentedGroup.ext
-  intro i
-  have hi : i.val = 0 ∨ i.val = 1 := by
-    have := i.isLt
-    simp only [GroupPresentation.generatorCount, m24Presentation_generatorNames,
-      List.length_cons, List.length_nil] at this
-    omega
-  rcases hi with hi | hi
-  · have : i = ⟨0, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact ha
-  · have : i = ⟨1, by simp [GroupPresentation.generatorCount]⟩ := Fin.ext hi
-    subst i
-    exact hb
+  exact eq_one_of_two_generators (f := f) m24Presentation_generatorCount ha hb
 
 /-- The exact transcribed `M₂₄` presentation equals its commutator subgroup. -/
 theorem m24_isPerfect : Group.IsPerfect m24Presentation.Group := by
   constructor
-  rw [← Abelianization.ker_of, m24_hom_eq_one Abelianization.of]
+  rw [← Group.Abelianization.ker_of, m24_hom_eq_one Group.Abelianization.of]
   exact MonoidHom.ker_one
 
 end TauCeti.Sporadic.Mathieu
