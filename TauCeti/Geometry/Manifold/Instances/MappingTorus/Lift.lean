@@ -21,7 +21,8 @@ smooth mapping torus (`TauCeti.SmoothMappingTorus`). A map `g : M → β` which 
 `G : Y_φ → β`, `G [t, x] = g x`
 
 (`TauCeti.SmoothMappingTorus.lift φ g hg`). Pulled back along the quotient map
-`(t, x) ↦ [t, x]` it is `g ∘ Prod.snd` (`TauCeti.SmoothMappingTorus.lift_comp_uncurry_mk`). Since
+`(t, x) ↦ [t, x]` it is `g ∘ Prod.snd` (`TauCeti.SmoothMappingTorus.lift_comp_uncurry_mk`), and it
+is invariant under the suspension flow (`TauCeti.SmoothMappingTorus.lift_flow`). Since
 the quotient map is a surjective `C^n` local diffeomorphism, `G` is `C^m` at `[t, x]`, for
 `m ≤ n`, exactly when `g` is `C^m` at `x`, and `C^m` exactly when `g` is.
 
@@ -33,6 +34,7 @@ the quotient map is a surjective `C^n` local diffeomorphism, `G` is `C^m` at `[t
 ## Main results
 
 * `TauCeti.SmoothMappingTorus.lift_mk`: `G [t, x] = g x`.
+* `TauCeti.SmoothMappingTorus.lift_flow`: `G` is invariant under the suspension flow.
 * `TauCeti.SmoothMappingTorus.contMDiffAt_lift_mk_iff`,
   `TauCeti.SmoothMappingTorus.contMDiff_lift_iff`: `G` is `C^m` at `[t, x]`, or everywhere,
   exactly when `g` is `C^m` at `x`, or everywhere.
@@ -56,14 +58,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
 /-- The map `[t, x] ↦ g x` induced on the mapping torus by a map `g` invariant under `φ`. -/
 def lift (g : M → β) (hg : ∀ x, g (φ x) = g x) : SmoothMappingTorus φ → β :=
   MulAction.orbitRelQuotientLift (fun z : Cover φ ↦ g ((ofProd φ).symm z).2) fun k z ↦ by
-    -- `g` is invariant under `φ`, hence under all integer powers of `φ`. The invariance `hg` is,
-    -- by definition, a semiconjugacy from `φ` to the identity permutation.
-    have h := Function.Semiconj.perm_zpow_right
-      (show Function.Semiconj g φ.toEquiv (1 : Equiv.Perm β) from hg) (-k.toAdd)
-      ((ofProd φ).symm z).2
-    rw [one_zpow, Equiv.Perm.one_apply, ← Diffeomorph.toPerm_apply, ← map_zpow,
-      Diffeomorph.toPerm_apply, Diffeomorph.coe_toEquiv] at h
-    rwa [ofProd_symm_smul]
+    -- `g` is invariant under `φ`, hence constant on the cycle of `φ` through `x` and `φ ^ (-k) x`.
+    rw [ofProd_symm_smul]
+    refine (Equiv.Perm.SameCycle.apply_eq_of_apply_eq (σ := φ.toEquiv) ⟨-k.toAdd, ?_⟩ hg).symm
+    rw [← Diffeomorph.toPerm_apply, ← map_zpow, Diffeomorph.toPerm_apply, Diffeomorph.coe_toEquiv]
 
 variable {g : M → β} (hg : ∀ x, g (φ x) = g x)
 
@@ -75,6 +73,13 @@ theorem lift_mk (t : ℝ) (x : M) : lift φ g hg (mk φ t x) = g x := by
 /-- Pulled back to `ℝ × M`, the induced map is `g ∘ Prod.snd`. -/
 theorem lift_comp_uncurry_mk : lift φ g hg ∘ uncurry (mk φ) = g ∘ Prod.snd :=
   funext fun p ↦ lift_mk φ hg p.1 p.2
+
+/-- The induced map is invariant under the suspension flow. -/
+@[simp]
+theorem lift_flow (s : ℝ) (z : SmoothMappingTorus φ) :
+    lift φ g hg (flow φ s z) = lift φ g hg z := by
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  simp only [uncurry_apply_pair, flow_mk, lift_mk]
 
 section Manifold
 

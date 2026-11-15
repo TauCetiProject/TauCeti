@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -52,6 +53,8 @@ multiple of `x`.
 * `TauCeti.manifoldMorseIndex_sphereHeight_self` and
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
+* `TauCeti.sphereHeight_unitSphereDiffeomorph`: the restriction of a linear isometry fixing `v`
+  preserves the height function.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
@@ -288,6 +291,15 @@ theorem sphereHeight_self (v : sphere (0 : E) 1) : sphereHeight v v = 1 := by
 /-- The height of the south pole is `-1`. -/
 theorem sphereHeight_neg_self (v : sphere (0 : E) 1) : sphereHeight v (-v) = -1 := by
   simp [inner_neg_left, norm_eq_of_mem_sphere]
+
+/-- The restriction to the unit sphere of a linear isometry fixing `v` preserves the height
+`⟪x, v⟫`. -/
+theorem sphereHeight_unitSphereDiffeomorph {v : sphere (0 : E) 1} {r : E ≃ₗᵢ[ℝ] E} (hr : r v = v)
+    (k : ℕ∞ω) (x : sphere (0 : E) 1) :
+    sphereHeight v (LinearIsometryEquiv.unitSphereDiffeomorph (n := n) (k := n) r k x) =
+      sphereHeight v x := by
+  rw [sphereHeight_apply, sphereHeight_apply,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, ← hr, r.inner_map_map, hr]
 
 /-- The height function is at most `1`, its value at the north pole. -/
 theorem sphereHeight_le_one (v x : sphere (0 : E) 1) : sphereHeight v x ≤ 1 :=

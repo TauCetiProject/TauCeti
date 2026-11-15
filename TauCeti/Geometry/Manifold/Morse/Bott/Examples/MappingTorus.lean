@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus
-public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
-import TauCeti.Geometry.Manifold.Morse.Prod
-import TauCeti.Geometry.Manifold.Morse.ScalarComposition
+public import TauCeti.Geometry.Manifold.Morse.Sphere.Prod
 
 /-!
 # A Morse–Bott function with four critical circles on a mapping torus of `Sⁿ × Sᵐ`
@@ -21,9 +17,10 @@ function
 `g (x, y) = ⟪x, v⟫ + ε ⟪y, w⟫`
 
 (the height `TauCeti.sphereHeight v` on the first factor plus `ε` times the height on the second)
-is a Morse function. Its critical points are the four pairs of poles `(±v, ±w)`
-(`TauCeti.criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd`), with Morse indices `n + m`,
-`n`, `m` and `0` at `(v, w)`, `(v, -w)`, `(-v, w)` and `(-v, -w)`
+is a Morse function (`TauCeti.isMorse_sphereHeight_comp_fst_add_mul_comp_snd`, in
+`TauCeti.Geometry.Manifold.Morse.Sphere.Prod`). Its critical points are the four pairs of poles
+`(±v, ±w)` (`TauCeti.criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd`), with Morse indices
+`n + m`, `n`, `m` and `0` at `(v, w)`, `(v, -w)`, `(-v, w)` and `(-v, -w)`
 (`TauCeti.manifoldMorseIndex_sphereHeight_comp_fst_add_mul_comp_snd`, together with
 `TauCeti.manifoldMorseIndex_sphereHeight_self` and `TauCeti.manifoldMorseIndex_sphereHeight_neg`).
 
@@ -48,9 +45,10 @@ negative normal space is the tangent plane of `S²` at the north pole, on which 
 
 ## Main results
 
-* `TauCeti.criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd`: the four critical points of `g`.
-* `TauCeti.isMorse_sphereHeight_comp_fst_add_mul_comp_snd`: `g` is a Morse function.
-* `TauCeti.manifoldMorseIndex_sphereHeight_comp_fst_add_mul_comp_snd`: its Morse indices.
+* `TauCeti.sphereHeight_comp_fst_add_mul_comp_snd_apply_apply_eq`: a diffeomorphism preserving
+  both heights preserves `g`.
+* `TauCeti.apply_eq_self_of_mem_criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd`: it fixes
+  the four critical points of `g`.
 * `TauCeti.isMorseBottFamily_lift_sphereHeight_comp_fst_add_mul_comp_snd`: on the mapping torus of
   a diffeomorphism preserving both heights, the four critical circles exhibit the induced function
   as a Morse–Bott function.
@@ -75,57 +73,7 @@ open SmoothMappingTorus
 variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] {n m : ℕ}
   [Fact (finrank ℝ E = n + 1)] [Fact (finrank ℝ E' = m + 1)]
-  (v : sphere (0 : E) 1) (w : sphere (0 : E') 1) {ε : ℝ}
-
-/-- The height on the first factor plus `ε` times the height on the second is smooth. -/
-private theorem contMDiff_mul_comp_sphereHeight :
-    ContMDiff (𝓡 m) 𝓘(ℝ) ∞ ((ε * ·) ∘ sphereHeight w) :=
-  (contDiff_const.mul contDiff_id).contMDiff.comp (contMDiff_sphereHeight w)
-
-/-- **The critical points** of `(x, y) ↦ ⟪x, v⟫ + ε ⟪y, w⟫` on `Sⁿ × Sᵐ`, for `ε ≠ 0`, are the four
-pairs of poles. -/
-theorem criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd (hε : ε ≠ 0) :
-    criticalPoints ((𝓡 n).prod (𝓡 m))
-        (sphereHeight v ∘ Prod.fst + ((ε * ·) ∘ sphereHeight w) ∘ Prod.snd) =
-      ({v, -v} : Set (sphere (0 : E) 1)) ×ˢ ({w, -w} : Set (sphere (0 : E') 1)) := by
-  ext ⟨x, y⟩
-  have hy := (contMDiff_mul_comp_sphereHeight (m := m) (ε := ε) w y).mdifferentiableAt (by simp)
-  rw [mem_criticalPoints, mvfderiv_comp_fst_add_comp_snd_eq_zero_iff
-    ((contMDiff_sphereHeight (m := 1) v x).mdifferentiableAt one_ne_zero) hy,
-    ← mem_criticalPoints, ← mem_criticalPoints,
-    mem_criticalPoints_scalar_comp_iff ((contMDiff_sphereHeight (m := 1) w y).mdifferentiableAt
-      one_ne_zero) (by simpa using hε), criticalPoints_sphereHeight, criticalPoints_sphereHeight]
-  rfl
-
-/-- `(x, y) ↦ ⟪x, v⟫ + ε ⟪y, w⟫` is a Morse function on `Sⁿ × Sᵐ` for `ε ≠ 0`. -/
-theorem isMorse_sphereHeight_comp_fst_add_mul_comp_snd (hε : ε ≠ 0) :
-    IsMorse ((𝓡 n).prod (𝓡 m))
-      (sphereHeight v ∘ Prod.fst + ((ε * ·) ∘ sphereHeight w) ∘ Prod.snd) :=
-  (isMorse_sphereHeight v).comp_fst_add_comp_snd ((isMorse_sphereHeight (n := m) w).scalar_comp
-    (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt) fun _ ↦ by simpa using hε)
-
-/-- **The Morse indices** of `(x, y) ↦ ⟪x, v⟫ + ε ⟪y, w⟫` on `Sⁿ × Sᵐ`, for `ε > 0`: at a pair of
-poles the index is the sum of the indices of the two heights, so the indices at `(v, w)`,
-`(v, -w)`, `(-v, w)` and `(-v, -w)` are `n + m`, `n`, `m` and `0`. -/
-theorem manifoldMorseIndex_sphereHeight_comp_fst_add_mul_comp_snd (hε : 0 < ε)
-    (x : sphere (0 : E) 1) {y : sphere (0 : E') 1} (hy : y = w ∨ y = -w) :
-    manifoldMorseIndex ((𝓡 n).prod (𝓡 m))
-        (sphereHeight v ∘ Prod.fst + ((ε * ·) ∘ sphereHeight w) ∘ Prod.snd) (x, y) =
-      manifoldMorseIndex (𝓡 n) (sphereHeight v) x +
-        manifoldMorseIndex (𝓡 m) (sphereHeight w) y := by
-  have hyc : y ∈ criticalPoints (𝓡 m) (sphereHeight w) := by
-    rw [criticalPoints_sphereHeight]
-    exact hy
-  rw [manifoldMorseIndex_comp_fst_add_comp_snd
-    (contMDiff_sphereHeight (m := 2) v x).contDiffAt_comp_extChartAt_symm
-    ((contMDiff_mul_comp_sphereHeight (m := m) (ε := ε) w).of_le (by simp)
-      y).contDiffAt_comp_extChartAt_symm,
-    manifoldMorseIndex_scalar_comp_of_pos (φ := (ε * ·)) (contMDiff_sphereHeight (m := 2) w y)
-      (contDiff_const.mul contDiff_id).contDiffAt hyc (by simpa using hε)]
-
-section MappingTorus
-
-variable {v w}
+  {v : sphere (0 : E) 1} {w : sphere (0 : E') 1} {ε : ℝ}
   {φ : (sphere (0 : E) 1 × sphere (0 : E') 1) ≃ₘ⟮(𝓡 n).prod (𝓡 m), (𝓡 n).prod (𝓡 m)⟯
     (sphere (0 : E) 1 × sphere (0 : E') 1)}
   (hφ₁ : ∀ p, sphereHeight v (φ p).1 = sphereHeight v p.1)
@@ -133,7 +81,7 @@ variable {v w}
 include hφ₁ hφ₂
 
 /-- A diffeomorphism preserving both heights preserves `(x, y) ↦ ⟪x, v⟫ + ε ⟪y, w⟫`. -/
-theorem sphereHeight_comp_fst_add_mul_comp_snd_apply (ε : ℝ)
+theorem sphereHeight_comp_fst_add_mul_comp_snd_apply_apply_eq (ε : ℝ)
     (p : sphere (0 : E) 1 × sphere (0 : E') 1) :
     (sphereHeight v ∘ Prod.fst + ((ε * ·) ∘ sphereHeight w) ∘ Prod.snd :
         sphere (0 : E) 1 × sphere (0 : E') 1 → ℝ) (φ p) =
@@ -181,13 +129,12 @@ theorem isMorseBottFamily_lift_sphereHeight_comp_fst_add_mul_comp_snd (hε : ε 
             (minimalPeriod_eq_one_iff_isFixedPt.2
               (apply_eq_self_of_mem_criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd
                 hφ₁ hφ₂ hε p.2))))
-      (lift φ _ (sphereHeight_comp_fst_add_mul_comp_snd_apply hφ₁ hφ₂ ε)) := by
+      (lift φ _ (sphereHeight_comp_fst_add_mul_comp_snd_apply_apply_eq hφ₁ hφ₂ ε)) := by
   have hmorse := isMorse_sphereHeight_comp_fst_add_mul_comp_snd (n := n) (m := m) v w hε
   have hfix := fun p : criticalPoints ((𝓡 n).prod (𝓡 m))
       (sphereHeight v ∘ Prod.fst + ((ε * ·) ∘ sphereHeight w) ∘ Prod.snd) ↦
     apply_eq_self_of_mem_criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd hφ₁ hφ₂ hε p.2
   refine isMorseBottFamily_lift φ _ hmorse.contMDiff
-    (fun p ↦ IsFixedPt.isPeriodicPt (hfix p) 1)
     (fun p ↦ minimalPeriod_eq_one_iff_isFixedPt.2 (hfix p))
     (fun p ↦ hmorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints p.2)
     (fun p q hpq ⟨j, hj⟩ ↦ hpq (Subtype.ext ?_)) fun y hy ↦ ⟨⟨y, hy⟩, 0, rfl⟩
@@ -201,25 +148,13 @@ is `n + m`, `n`, `m` and `0` along the circles through `(v, w)`, `(v, -w)`, `(-v
 theorem manifoldMorseIndex_lift_sphereHeight_comp_fst_add_mul_comp_snd (hε : 0 < ε) (t : ℝ)
     {x : sphere (0 : E) 1} {y : sphere (0 : E') 1} (hx : x = v ∨ x = -v) (hy : y = w ∨ y = -w) :
     manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 n).prod (𝓡 m)))
-        (lift φ _ (sphereHeight_comp_fst_add_mul_comp_snd_apply hφ₁ hφ₂ ε)) (mk φ t (x, y)) =
+        (lift φ _ (sphereHeight_comp_fst_add_mul_comp_snd_apply_apply_eq hφ₁ hφ₂ ε))
+        (mk φ t (x, y)) =
       manifoldMorseIndex (𝓡 n) (sphereHeight v) x +
         manifoldMorseIndex (𝓡 m) (sphereHeight w) y := by
   have hmorse := isMorse_sphereHeight_comp_fst_add_mul_comp_snd (n := n) (m := m) v w hε.ne'
   rw [manifoldMorseIndex_lift_mk φ _ (by simp) ((hmorse.contMDiff _).of_le (by simp))
     (by rw [criticalPoints_sphereHeight_comp_fst_add_mul_comp_snd v w hε.ne']; exact ⟨hx, hy⟩),
-    manifoldMorseIndex_sphereHeight_comp_fst_add_mul_comp_snd v w hε x hy]
-
-end MappingTorus
-
-omit [Fact (finrank ℝ E' = m + 1)] in
-/-- The restriction to the unit sphere of a linear isometry fixing `v` preserves the height
-`⟪x, v⟫`. With such isometries of the two factors, `Diffeomorph.prodCongr` gives a diffeomorphism
-of `Sⁿ × Sᵐ` preserving both heights. -/
-theorem sphereHeight_unitSphereDiffeomorph {r : E ≃ₗᵢ[ℝ] E} (hr : r v = v) (k : ℕ∞ω)
-    (x : sphere (0 : E) 1) :
-    sphereHeight v (LinearIsometryEquiv.unitSphereDiffeomorph (n := n) (k := n) r k x) =
-      sphereHeight v x := by
-  rw [sphereHeight_apply, sphereHeight_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, ← hr, r.inner_map_map, hr]
+    manifoldMorseIndex_sphereHeight_comp_fst_add_mul_comp_snd v x w hε hy]
 
 end TauCeti

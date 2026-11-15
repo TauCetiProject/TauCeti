@@ -40,9 +40,10 @@ A critical point `x` of `g` of least period `d > 0` under `φ` gives the closed 
 embedding of the circle `ℝ / dℤ` whose velocity is `T`. Its image consists of critical points of
 `G`, and its tangent line is the kernel of the Hessian, so it is a Morse–Bott critical
 submanifold (`TauCeti.SmoothMappingTorus.isNondegenerateCriticalSubmanifold_lift_closedOrbit`),
-of index the Morse index of `g` at `x`. When `g` is a smooth Morse function, choosing one critical
-point on each `φ`-orbit of critical points, these closed orbits exhibit `G` as a Morse–Bott
-function (`TauCeti.SmoothMappingTorus.isMorseBottFamily_lift`).
+of index the Morse index of `g` at `x`. When `g` is a smooth Morse function whose critical points
+are periodic under `φ`, choosing one critical point on each `φ`-orbit of critical points, these
+closed orbits exhibit `G` as a Morse–Bott function
+(`TauCeti.SmoothMappingTorus.isMorseBottFamily_lift`).
 
 This is a source of Morse–Bott functions whose critical circles may have nonorientable negative
 normal bundles: at a fixed critical point `x`, going once around the circle `t ↦ [t, x]` returns
@@ -61,7 +62,7 @@ In the namespace `TauCeti.SmoothMappingTorus`:
   of `g` is spanned by the suspension vector field.
 * `isNondegenerateCriticalSubmanifold_lift_closedOrbit`: the closed orbit through a nondegenerate
   periodic critical point of `g` is a Morse–Bott critical submanifold of `G`.
-* `isMorseBottFamily_lift`: for a smooth `g`, the closed orbits through nondegenerate
+* `isMorseBottFamily_lift`: for a smooth `g`, the closed orbits through periodic nondegenerate
   representatives of the `φ`-orbits of critical points exhibit `G` as a Morse–Bott function.
 
 ## References
@@ -243,12 +244,14 @@ the mapping torus. Since `g` is invariant, every critical point is then nondegen
 a Morse function. -/
 theorem isMorseBottFamily_lift [FiniteDimensional ℝ E] (hgs : ContMDiff I 𝓘(ℝ) ∞ g)
     {ι : Type*} {c : ι → M} {d : ι → ℕ} [∀ a, Fact (0 < (d a : ℝ))]
-    (hc : ∀ a, IsPeriodicPt φ (d a) (c a)) (hmin : ∀ a, minimalPeriod φ (c a) = d a)
+    (hmin : ∀ a, minimalPeriod φ (c a) = d a)
     (hnd : ∀ a, IsManifoldNondegenerateCriticalPoint I g (c a))
     (hdisj : Pairwise fun a b ↦ ¬∃ j : ℕ, (⇑φ)^[j] (c a) = c b)
     (hcover : ∀ y ∈ criticalPoints I g, ∃ a, ∃ j : ℕ, (⇑φ)^[j] (c a) = y) :
     IsMorseBottFamily (fun a ↦ SmoothEmbedding.ofIsSmoothEmbedding _
-      ((isSmoothEmbedding_closedOrbit_iff (hc a) (by simp)).2 (hmin a))) (lift φ g hg) := by
+      ((isSmoothEmbedding_closedOrbit_iff (d := d a)
+        (hmin a ▸ isPeriodicPt_minimalPeriod φ (c a)) (by simp)).2 (hmin a))) (lift φ g hg) := by
+  have hc (a : ι) : IsPeriodicPt φ (d a) (c a) := hmin a ▸ isPeriodicPt_minimalPeriod φ (c a)
   have hrange (a : ι) : range (SmoothEmbedding.ofIsSmoothEmbedding _
       ((isSmoothEmbedding_closedOrbit_iff (hc a) (by simp)).2 (hmin a))) =
         range (closedOrbit φ (hc a)) := by
