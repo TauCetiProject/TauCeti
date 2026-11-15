@@ -249,15 +249,10 @@ theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range (hA : 
       (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
         Module.finrank ℝ
           (squareIntegrableSolutions fun s ↦ -ContinuousLinearMap.adjoint (A s)) := by
-  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
-  have hneg : -BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
-    filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
-    simp only [hs, Pi.neg_apply, hBs]
-  have hadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
-    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
-  rw [index_trajectoryOperator_of_isClosed_range (ae_eq_adjoint_of_ae_eq hAL hBL) hclosed,
-    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hadj (-BL) hneg]
+  obtain ⟨BL, hadj, hneg⟩ := exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint AL hAL
+  rw [index_trajectoryOperator_of_isClosed_range hadj hclosed,
+    finrank_ker_trajectoryOperator hA AL hAL,
+    finrank_ker_trajectoryOperator (continuous_neg_adjoint hA) (-BL) hneg]
 
 /-- **The index of the trajectory operator with hyperbolic limits counts square-integrable
 solutions.** For a continuous family `A` of operators on a finite-dimensional real inner product

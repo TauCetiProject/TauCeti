@@ -294,6 +294,20 @@ theorem pointSpectralSubspace_smul_one_of_notMem (h : μ ∉ Ω) :
   exact (Submodule.mem_bot 𝕜).2
     ((smul_eq_zero.1 (by rw [sub_smul, hx', sub_self])).resolve_left hne)
 
+/-- The point-spectral subspace of the identity selected by a set containing `1` is the whole
+space. With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_mem (h : 1 ∈ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ := by
+  simpa using pointSpectralSubspace_smul_one_of_mem (𝕜 := 𝕜) (E := E) h
+
+/-- The point-spectral subspace of the identity selected by a set not containing `1` is zero.
+With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_notMem (h : 1 ∉ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
+  simpa using pointSpectralSubspace_smul_one_of_notMem (𝕜 := 𝕜) (E := E) h
+
 /-- An endomorphism commuting with `A` maps each point-spectral subspace of `A` into itself,
 since it maps each eigenspace of `A` into itself. -/
 theorem map_pointSpectralSubspace_le_of_commute {B : Module.End 𝕜 E} (h : Commute A B) :
