@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Set.OptionRestrict
 public import TauCeti.RepresentationTheory.Crystal.Sigma
+import TauCeti.Data.Option.Basic
 
 /-!
 # Connected components of normal crystals
@@ -97,6 +98,23 @@ theorem dual_graph : c.dual.graph = c.graph := by
   ext x y
   rw [graph_adj_iff, dual_e, ← graph_adj_iff_f]
 
+/-- Elements connected by an iterated raising operator lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_eIter_eq_some {n : ℕ} (h : c.eIter i n x = some y) :
+    c.graph.Reachable x y := by
+  induction n generalizing x with
+  | zero =>
+    simp only [eIter_zero, Option.some.injEq] at h
+    exact h ▸ SimpleGraph.Reachable.refl _
+  | succ n ih =>
+    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eIter_succ n x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
+
+/-- Elements connected by an iterated lowering operator lie in the same connected component of the
+crystal graph. -/
+theorem reachable_of_fIter_eq_some {n : ℕ} (h : c.fIter i n x = some y) : c.graph.Reachable x y :=
+  (c.reachable_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
 end Graph
 
 /-! ### Restriction to a union of components -/
@@ -149,6 +167,20 @@ theorem unattach_restrict_e (x : S) : ((c.restrict S hS).e i x).unattach = c.e i
 @[simp]
 theorem unattach_restrict_f (x : S) : ((c.restrict S hS).f i x).unattach = c.f i x :=
   Set.unattach_optionRestrict (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h)) x
+
+@[simp]
+theorem unattach_restrict_eIter (n : ℕ) (x : S) :
+    ((c.restrict S hS).eIter i n x).unattach = c.eIter i n x.1 := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp [eIter_succ, ih]
+
+@[simp]
+theorem unattach_restrict_fIter (n : ℕ) (x : S) :
+    ((c.restrict S hS).fIter i n x).unattach = c.fIter i n x.1 := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih => simp [fIter_succ, ih]
 
 /-- The crystal graph of a restriction is the induced subgraph. -/
 theorem restrict_graph : (c.restrict S hS).graph = c.graph.induce S := by
