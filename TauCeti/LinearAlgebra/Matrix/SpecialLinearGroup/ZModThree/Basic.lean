@@ -148,6 +148,18 @@ theorem orderOf_sl2ZModThreeI : orderOf sl2ZModThreeI = 4 :=
   orderOf_eq_iff (by decide) |>.mpr ⟨by decide, fun m hm hpos => by
     interval_cases m <;> decide⟩
 
+/-- `TauCeti.sl2ZModThreeJ` has exact order `4`. -/
+@[simp]
+theorem orderOf_sl2ZModThreeJ : orderOf sl2ZModThreeJ = 4 :=
+  orderOf_eq_iff (by decide) |>.mpr ⟨by decide, fun m hm hpos => by
+    interval_cases m <;> decide⟩
+
+/-- `TauCeti.sl2ZModThreeT` has exact order `3`. -/
+@[simp]
+theorem orderOf_sl2ZModThreeT : orderOf sl2ZModThreeT = 3 := by
+  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
+  exact orderOf_eq_prime sl2ZModThreeT_cubed (by decide)
+
 /-- `TauCeti.sl2ZModThreeI` and `TauCeti.sl2ZModThreeT` generate `SL(2, ZMod 3)`. -/
 theorem closure_sl2ZModThreeI_T :
     Subgroup.closure ({sl2ZModThreeI, sl2ZModThreeT} : Set SL(2, ZMod 3)) = ⊤ := by
