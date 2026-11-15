@@ -40,7 +40,7 @@ the coadjoint action:
   `σ₃`, that is, when it is diagonal (`TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`). The
   stabilizer of any `ν ≠ 0` is a conjugate `g T g⁻¹` of the maximal torus
   (`TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_map_torus`), and the stabilizer of
-  `0` is all of `SU(2)`.
+  `0` is all of `SU(2)` (`Representation.stabilizer_zero`).
 
 The center `{±1}` of `SU(2)` acts trivially
 (`TauCeti.SU2.coadjointRepresentation_eq_one_of_mem_center`), so the coadjoint action factors
@@ -141,12 +141,6 @@ theorem coadjointRepresentation_eq_one_of_mem_center {g : SU2} (hg : g ∈ Subgr
 
 /-! ### Stabilizers -/
 
-/-- The third Pauli matrix `σ₃ = diag(1, -1)`. -/
-private theorem pauli_single_two :
-    pauli (Pi.single 2 1) = !![(1 : ℂ), 0; 0, -1] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [pauli_apply]
-
 /-- **The stabilizer of the axis `e₃` is the maximal torus**: the rotation induced by `g ∈ SU(2)`
 fixes `e₃` exactly when `g` is diagonal. -/
 theorem toSO3_mulVec_single_two_eq_self_iff {g : SU2} :
@@ -164,22 +158,7 @@ theorem toSO3_mulVec_single_two_eq_self_iff {g : SU2} :
           = g * pauli (Pi.single 2 1) * (star (g : Matrix (Fin 2) (Fin 2) ℂ) * g) := by
             rw [hU, mul_one]
         _ = pauli (Pi.single 2 1) * g := by rw [← mul_assoc, ← hconj]
-    rw [pauli_single_two] at hcomm
-    have h01 : -(g : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = (g : Matrix (Fin 2) (Fin 2) ℂ) 0 1 := by
-      have h := congrFun (congrFun hcomm 0) 1
-      rw [Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_two] at h
-      simpa using h
-    have h10 : (g : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = -(g : Matrix (Fin 2) (Fin 2) ℂ) 1 0 := by
-      have h := congrFun (congrFun hcomm 1) 0
-      rw [Matrix.mul_apply, Matrix.mul_apply, Fin.sum_univ_two, Fin.sum_univ_two] at h
-      simpa using h
-    rw [mem_torus_iff]
-    intro i j hij
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · exact CharZero.neg_eq_self_iff.mp h01
-    · exact CharZero.eq_neg_self_iff.mp h10
-    · exact absurd rfl hij
+    exact mem_torus_iff.mpr (isDiag_of_commute_pauli_single_two hcomm)
   · intro hg
     obtain ⟨z, rfl⟩ := mem_torus_iff_exists_torusHom.mp hg
     rw [coe_toSO3_torusHom]
@@ -213,10 +192,5 @@ theorem exists_stabilizer_coadjointRepresentation_eq_map_torus {ν : Dual ℝ li
   refine ⟨g, ?_⟩
   rw [← hg, ← coadjointRepresentation_suTwoDualEquiv, Representation.stabilizer_conj,
     stabilizer_coadjointRepresentation_suTwoDualEquiv_smul hc]
-
-/-- The stabilizer of the zero functional is all of `SU(2)`. -/
-@[simp]
-theorem stabilizer_coadjointRepresentation_zero : coadjointRepresentation.stabilizer 0 = ⊤ :=
-  Representation.stabilizer_zero _
 
 end TauCeti.SU2
