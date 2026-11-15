@@ -45,6 +45,9 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.eqOn_halfClosedImage_of_ae_eq`: continuous functions into a
+  Hausdorff space that agree almost everywhere on `A.halfImage i` agree on all of
+  `A.halfClosedImage i`, up to the real axis.
 * `TauCeti.FiniteBundleAtlas.halfTransition_mem_halfOverlap`,
   `TauCeti.FiniteBundleAtlas.differentiableOn_halfTransition`: chart transitions keep interior
   points interior and are differentiable there.
@@ -108,6 +111,11 @@ theorem halfClosedImage_eq_image_val (i : Fin A.n) :
   rintro ⟨w, hw, rfl⟩
   exact ⟨by simpa using hw, w.2⟩
 
+theorem coe_chart_mem_halfClosedImage {i : Fin A.n} {x : M} (hx : x ∈ A.dom i) :
+    (A.chart i x : ℂ) ∈ A.halfClosedImage i := by
+  rw [halfClosedImage_eq_image_val]
+  exact mem_image_of_mem _ (A.mem_image.2 ⟨x, hx, rfl⟩)
+
 theorem halfImage_subset_halfClosedImage (i : Fin A.n) :
     (A.halfImage i : Set ℂ) ⊆ A.halfClosedImage i :=
   fun _ hz ↦ ⟨hz.1, (A.mem_halfImage.1 hz).2.le⟩
@@ -132,6 +140,19 @@ theorem halfClosedImage_subset_closure_halfImage (i : Fin A.n) :
   have h := subset_closure_interior_setOfPred_le_im_inter hO
   rwa [inter_comm, interior_inter_setOf_im_nonneg hO] at h
 
+/-- Two functions into a Hausdorff space that are continuous on `A.halfClosedImage i` and agree
+almost everywhere on its interior `A.halfImage i` agree everywhere on `A.halfClosedImage i`,
+including on the real axis. -/
+theorem eqOn_halfClosedImage_of_ae_eq {G : Type*} [TopologicalSpace G] [T2Space G]
+    {i : Fin A.n} {f g : ℂ → G}
+    (hf : ContinuousOn f (A.halfClosedImage i)) (hg : ContinuousOn g (A.halfClosedImage i))
+    (hae : f =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] g) :
+    EqOn f g (A.halfClosedImage i) :=
+  (Measure.eqOn_open_of_ae_eq hae (A.halfImage i).isOpen
+    (hf.mono (A.halfImage_subset_halfClosedImage i))
+    (hg.mono (A.halfImage_subset_halfClosedImage i))).of_subset_closure
+    hf hg (A.halfImage_subset_halfClosedImage i) (A.halfClosedImage_subset_closure_halfImage i)
+
 /-- The overlap of the domains of charts `i` and `i'`, read in chart `i'`, at points of positive
 imaginary part. -/
 def halfOverlap (i i' : Fin A.n) : Set ℂ :=
@@ -152,6 +173,10 @@ theorem halfOverlap_subset_halfImage (i i' : Fin A.n) :
 /-- The chart transition from chart `i'` to chart `i`, as a function on `ℂ`. -/
 def halfTransition (i i' : Fin A.n) (z : ℂ) : ℂ :=
   A.transition i i' (closedUpperHalfPlaneModel.symm z)
+
+theorem halfTransition_def (i i' : Fin A.n) (z : ℂ) :
+    A.halfTransition i i' z = A.transition i i' (closedUpperHalfPlaneModel.symm z) :=
+  (rfl)
 
 theorem symm_halfTransition (i i' : Fin A.n) (z : ℂ) :
     closedUpperHalfPlaneModel.symm (A.halfTransition i i' z) =
@@ -230,6 +255,12 @@ private theorem closure_halfImage_subset_extChartAt_image_closure_dom (i : Fin A
       extChartAt closedUpperHalfPlaneModel (A.center i) '' closure (A.dom i) :=
   closure_minimal (A.halfImage_subset_extChartAt_image_closure_dom i)
     (A.isCompact_extChartAt_image_closure_dom i).isClosed
+
+theorem halfClosedImage_subset_halfChartSet (i : Fin A.n) :
+    A.halfClosedImage i ⊆ A.halfChartSet i :=
+  (A.halfClosedImage_subset_closure_halfImage i).trans <|
+    (A.closure_halfImage_subset_extChartAt_image_closure_dom i).trans
+      (A.extChartAt_image_closure_dom_subset_halfChartSet i)
 
 /-- The interior of the image of chart `i` in `ℂ` has compact closure. -/
 theorem isCompact_closure_halfImage (i : Fin A.n) : IsCompact (closure (A.halfImage i : Set ℂ)) :=
@@ -396,6 +427,13 @@ theorem halfOverlap_ofBaseSet (i i' : Fin A.n) :
   dsimp only [halfOverlap]
   rw [overlap_ofBaseSet]
 
+@[simp]
+theorem halfTransition_ofBaseSet (i i' : Fin A.n) :
+    (A.ofBaseSet h).halfTransition i i' = A.halfTransition i i' := by
+  ext z
+  dsimp only [halfTransition]
+  rw [transition_ofBaseSet]
+
 section Prod
 
 variable [∀ x, Zero (V x)] [∀ x, Zero (V' x)]
@@ -412,6 +450,11 @@ theorem halfClosedImage_prod (i : Fin A.n) :
 @[simp]
 theorem halfOverlap_prod (i i' : Fin A.n) : (A.prod h).halfOverlap i i' = A.halfOverlap i i' :=
   halfOverlap_ofBaseSet i i'
+
+@[simp]
+theorem halfTransition_prod (i i' : Fin A.n) :
+    (A.prod h).halfTransition i i' = A.halfTransition i i' :=
+  halfTransition_ofBaseSet i i'
 
 /-- A section of `V ×ᵇ V'` read in `ℂ` in a chart of `A.prod h` is the pair of its components read
 in the corresponding charts of `A` and `A.ofBaseSet h`. -/
@@ -456,6 +499,11 @@ theorem halfClosedImage_hom (i : Fin A.n) :
 theorem halfOverlap_hom (i i' : Fin A.n) :
     (A.hom (𝕜 := 𝕜) h).halfOverlap i i' = A.halfOverlap i i' :=
   halfOverlap_ofBaseSet i i'
+
+@[simp]
+theorem halfTransition_hom (i i' : Fin A.n) :
+    (A.hom (𝕜 := 𝕜) h).halfTransition i i' = A.halfTransition i i' :=
+  halfTransition_ofBaseSet i i'
 
 end HomSets
 
@@ -512,6 +560,12 @@ theorem halfOverlap_tangentHom (i i' : Fin A.n) :
     (A.tangentHom closedUpperHalfPlaneModel).halfOverlap i i' = A.halfOverlap i i' :=
   (halfOverlap_hom (A := A.tangent closedUpperHalfPlaneModel) i i').trans
     (halfOverlap_ofBaseSet i i')
+
+@[simp]
+theorem halfTransition_tangentHom (i i' : Fin A.n) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfTransition i i' = A.halfTransition i i' :=
+  (halfTransition_hom (A := A.tangent closedUpperHalfPlaneModel) i i').trans
+    (halfTransition_ofBaseSet i i')
 
 end TangentHomSets
 

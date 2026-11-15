@@ -38,6 +38,9 @@ differentiable.
 
 ## Main results
 
+* `TauCeti.SmoothAlmostComplexStructure.zeroOneContMDiffSections`: the real submodule of `C^n`
+  `V`-valued `(0,1)`-forms
+  (`TauCeti.SmoothAlmostComplexStructure.mem_zeroOneContMDiffSections_iff`).
 * `TauCeti.SmoothAlmostComplexStructure.zeroOnePart`: the `(0,1)`-part of a `V`-valued one-form,
   its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
   projection onto the `(0,1)`-forms (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`)
@@ -745,6 +748,52 @@ theorem antilinearPart_eq_of_eq_add (hD : IsRealCauchyRiemannOperator F j D)
 end ComplexPart
 
 end IsRealCauchyRiemannOperator
+
+end TauCeti
+
+/-! ### The submodule of `C^n` `(0,1)`-forms -/
+
+namespace TauCeti
+
+namespace SmoothAlmostComplexStructure
+
+section ContMDiffSections
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  (j : SmoothAlmostComplexStructure I M)
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (V : M → Type*) [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [VectorBundle ℝ F V]
+
+/-- The real submodule of `C^n` `V`-valued one-forms consisting of pointwise `(0,1)`-forms for
+`j`. -/
+def zeroOneContMDiffSections (n : ℕ∞ω) :
+    Submodule ℝ Cₛ^n⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯ where
+  carrier := {θ | ∀ x, j.IsZeroOneForm (θ x)}
+  zero_mem' _ := by simp [isZeroOneForm_iff]
+  add_mem' {θ₁ θ₂} h₁ h₂ x := isZeroOneForm_iff.2 fun v ↦ by
+    simp only [ContMDiffSection.coe_add, Pi.add_apply, _root_.add_apply,
+      isZeroOneForm_iff.1 (h₁ x) v, isZeroOneForm_iff.1 (h₂ x) v, smul_add, neg_add]
+  smul_mem' c {θ} h x := isZeroOneForm_iff.2 fun v ↦ by
+    simp only [ContMDiffSection.coe_smul, Pi.smul_apply, _root_.smul_apply,
+      isZeroOneForm_iff.1 (h x) v, smul_neg, smul_comm c Complex.I]
+
+variable {j F V}
+
+/-- A `C^n` `V`-valued one-form belongs to `j.zeroOneContMDiffSections F V n` iff it is a
+`(0,1)`-form for `j` at every point. -/
+@[simp]
+theorem mem_zeroOneContMDiffSections_iff {n : ℕ∞ω}
+    {θ : Cₛ^n⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯} :
+    θ ∈ j.zeroOneContMDiffSections F V n ↔ ∀ x, j.IsZeroOneForm (θ x) :=
+  Iff.rfl
+
+end ContMDiffSections
+
+end SmoothAlmostComplexStructure
 
 end TauCeti
 

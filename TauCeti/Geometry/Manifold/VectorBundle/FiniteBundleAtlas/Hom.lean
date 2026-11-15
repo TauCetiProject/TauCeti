@@ -14,7 +14,7 @@ import TauCeti.Topology.VectorBundle.Coordinates
 /-!
 # Finite bundle atlases of derived bundles
 
-The charts of a `TauCeti.FiniteBundleAtlas E M F V` serve as a finite bundle atlas of a second
+The charts of a `TauCeti.FiniteBundleAtlas H M F V` serve as a finite bundle atlas of a second
 fibre bundle `V'` whose preferred trivializations contain the closures of the chart domains
 (`TauCeti.FiniteBundleAtlas.ofBaseSet`). This file uses this to build atlases of bundles
 constructed from `V` and `V'`, so that function spaces of sections of these bundles are built on
@@ -53,9 +53,9 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
   bundles.
 * `TauCeti.FiniteBundleAtlas.coord_hom_eq_coordChange`,
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_eq_coordChange`: on an overlap, the readings of a
-  section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
-  for a `V`-valued one-form are the derivative of the chart transition and the coordinate change
-  of `V` (`TauCeti.FiniteBundleAtlas.fderiv_transition`).
+  section of the hom bundle in two charts differ by the coordinate changes of both bundles; in the
+  boundaryless case `I = 𝓘(𝕜, E)`, for a `V`-valued one-form these are the derivative of the chart
+  transition (`TauCeti.FiniteBundleAtlas.fderiv_transition`) and the coordinate change of `V`.
 -/
 
 public section
@@ -107,6 +107,10 @@ theorem image_prod (i : Fin A.n) : (A.prod h).image i = A.image i :=
 @[simp]
 theorem overlap_prod (i i' : Fin A.n) : (A.prod h).overlap i i' = A.overlap i i' :=
   overlap_ofBaseSet i i'
+
+@[simp]
+theorem transition_prod (i i' : Fin A.n) : (A.prod h).transition i i' = A.transition i i' :=
+  transition_ofBaseSet i i'
 
 end Prod
 
@@ -162,6 +166,11 @@ theorem image_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).image i = A.image i :
 @[simp]
 theorem overlap_hom (i i' : Fin A.n) : (A.hom (𝕜 := 𝕜) h).overlap i i' = A.overlap i i' :=
   overlap_ofBaseSet i i'
+
+@[simp]
+theorem transition_hom (i i' : Fin A.n) :
+    (A.hom (𝕜 := 𝕜) h).transition i i' = A.transition i i' :=
+  transition_ofBaseSet i i'
 
 end HomImage
 
@@ -240,8 +249,9 @@ variable {E : Type u} [NormedAddCommGroup E]
   (A : FiniteBundleAtlas E M F V)
   (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [IsManifold 𝓘(𝕜, E) 1 M]
 
-/-- On the overlap of charts `i` and `i'`, the derivative of the chart transition is the
-coordinate change of the tangent bundle between the trivializations of the two charts. -/
+/-- On a boundaryless manifold modelled on `𝓘(𝕜, E)`, on the overlap of charts `i` and `i'`, the
+derivative of the chart transition is the coordinate change of the tangent bundle between the
+trivializations of the two charts. -/
 theorem fderiv_transition {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
     fderiv 𝕜 (A.transition i i') y =
       ((trivializationAt E (TangentSpace 𝓘(𝕜, E)) (A.center i')).coordChangeL 𝕜
@@ -320,9 +330,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
   (A : FiniteBundleAtlas E M F V)
 
-/-- **Change of chart for one-forms.** On the overlap of charts `i` and `i'`, the reading in chart
-`i'` of a `V`-valued one-form is its reading in chart `i` at the transition point, precomposed with
-the derivative of the chart transition and followed by the coordinate change of `V`. -/
+/-- **Change of chart for one-forms.** On a boundaryless manifold modelled on `𝓘(𝕜, E)`, on the
+overlap of charts `i` and `i'`, the reading in chart `i'` of a `V`-valued one-form is its reading
+in chart `i` at the transition point, precomposed with the derivative of the chart transition and
+followed by the coordinate change of `V`. -/
 theorem coord_tangentHom_eq_coordChange {i i' : Fin A.n}
     (ω : ∀ x, TangentSpace 𝓘(𝕜, E) x →L[𝕜] V x) {y : E} (hy : y ∈ A.overlap i i') :
     (A.tangentHom 𝓘(𝕜, E)).coord i' ω y =
