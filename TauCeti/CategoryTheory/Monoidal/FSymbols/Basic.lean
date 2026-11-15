@@ -6,34 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.InvariantBasisNumber
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Fusion rules, F-symbols, and R-symbols
 
 A split semisimple linear monoidal category with finitely many simple objects `S_a` (`a : ι`) and
 scalar endomorphism rings `End(S_a) = R` is determined up to linear monoidal equivalence by its
-fusion multiplicities `N_{ab}^c` and its F-matrices `F^{abc}_d` relating the left- and
-right-associated fusion bases across the associator. A braiding on such a category is similarly
-determined by its R-matrices `R^{ab}_c` relating each fusion basis to the braided one.
+fusion multiplicities `N_{ab}^c` and F-matrices `F^{abc}_d` relating the left- and right-associated
+fusion bases across the associator; a braiding is similarly determined by its R-matrices `R^{ab}_c`.
 
-This file defines these matrix-level presentation data over a commutative ring `R` and develops
-their basic structural consequences:
+This file defines these matrix-level presentation data over a commutative ring `R`:
 
 * `TauCeti.FusionRules ι`: a distinguished unit index `u : ι` and fusion multiplicities
-  `N : ι → ι → ι → ℕ` satisfying the left and right unit laws
-  `N_{ua}^b = N_{au}^b = δ_{ab}`, along with the composite basis index types `FusionRules.Left`
-  and `FusionRules.Right` and their canonical specializations when one factor is the unit.
-* `TauCeti.FSymbols R N`: families of matrices `F^{abc}_d` and two-sided inverses `Finv^{abc}_d`
-  satisfying the pentagon and middle-unit triangle identities, extensional in `F`
-  (`TauCeti.FSymbols.ext`). From the pentagon, middle triangle, and invertibility we derive the
-  outer unit triangles `F^{ubc}_d = 1` (`TauCeti.FSymbols.F_unit_left`) and `F^{abu}_d = 1`
-  (`TauCeti.FSymbols.F_unit_right`), and over a nontrivial commutative ring the associativity of
-  fusion multiplicities (`TauCeti.FSymbols.N_assoc`).
-* `TauCeti.RSymbols P`: families of matrices `R^{ab}_c` and two-sided inverses `Rinv^{ab}_c` for
-  given F-symbols `P`, satisfying the forward and reverse hexagon identities and extensional in `R`
-  (`TauCeti.RSymbols.ext`). From the hexagons we derive the unit braiding laws `R^{ua}_a = 1` and
-  `R^{au}_a = 1`, and over a nontrivial commutative ring the commutativity of fusion multiplicities
-  (`TauCeti.RSymbols.N_comm`).
+  `N : ι → ι → ι → ℕ` satisfying `N_{ua}^b = N_{au}^b = δ_{ab}`, with composite basis index types
+  `FusionRules.Left` and `FusionRules.Right` and their unit specializations.
+* `TauCeti.FSymbols R N`: matrices `F^{abc}_d` and two-sided inverses `Finv^{abc}_d` satisfying the
+  pentagon and middle-unit triangle identities, extensional in `F` (`TauCeti.FSymbols.ext`). From
+  the pentagon, middle triangle, and invertibility we derive `F^{ubc}_d = 1` (`F_unit_left`),
+  `F^{abu}_d = 1` (`F_unit_right`), and over `[Nontrivial R]` associativity `FSymbols.N_assoc`.
+* `TauCeti.RSymbols P`: matrices `R^{ab}_c` and two-sided inverses `Rinv^{ab}_c` satisfying the
+  forward and reverse hexagon identities, extensional in `R` (`TauCeti.RSymbols.ext`). From the
+  hexagons, unit triangles, and invertibility we derive `R^{ua}_c = 1` and `R^{au}_c = 1`, and over
+  `[Nontrivial K]` commutativity `RSymbols.N_comm`.
 
 ## References
 
@@ -52,45 +47,46 @@ universe u v
 /-! ### Fusion rules and composite basis indices -/
 
 /-- **Fusion rules** on an index type `ι` with decidable equality: a unit index `unit : ι` and
-multiplicities `N a b c = N_{ab}^c`, satisfying the left and right unit laws
-`N_{ua}^b = N_{au}^b = if a = b then 1 else 0`. -/
+multiplicities `N a b c = N_{ab}^c`, satisfying `N_{ua}^b = N_{au}^b = if a = b then 1 else 0`. -/
 @[ext]
 structure FusionRules (ι : Type u) [DecidableEq ι] where
   /-- The index of the tensor unit. -/
   unit : ι
   /-- The multiplicity `N_{ab}^c` of `S_c` in `S_a ⊗ S_b`. -/
   N : ι → ι → ι → ℕ
-  /-- Left unit law: tensoring on the left with `unit` preserves each simple index with
-  multiplicity one. -/
+  /-- Left unit law: tensoring on the left with `unit` preserves each simple index. -/
   N_unit_left : ∀ a b, N unit a b = if a = b then 1 else 0
-  /-- Right unit law: tensoring on the right with `unit` preserves each simple index with
-  multiplicity one. -/
+  /-- Right unit law: tensoring on the right with `unit` preserves each simple index. -/
   N_unit_right : ∀ a b, N a unit b = if a = b then 1 else 0
 
 namespace FusionRules
 
 variable {ι : Type u} [DecidableEq ι] (N : FusionRules ι)
 
-@[simp]
-theorem N_unit_left_self (a : ι) : N.N N.unit a a = 1 := by simp [N.N_unit_left]
-
-@[simp]
-theorem N_unit_left_of_ne {a b : ι} (h : a ≠ b) : N.N N.unit a b = 0 := by simp [N.N_unit_left, h]
-
-@[simp]
-theorem N_unit_right_self (a : ι) : N.N a N.unit a = 1 := by simp [N.N_unit_right]
-
-@[simp]
-theorem N_unit_right_of_ne {a b : ι} (h : a ≠ b) : N.N a N.unit b = 0 := by simp [N.N_unit_right, h]
+@[simp] theorem N_unit_left_self (a : ι) : N.N N.unit a a = 1 := by simp [N.N_unit_left]
+@[simp] theorem N_unit_left_of_ne {a b : ι} (h : a ≠ b) : N.N N.unit a b = 0 := by
+  simp [N.N_unit_left, h]
+@[simp] theorem N_unit_right_self (a : ι) : N.N a N.unit a = 1 := by simp [N.N_unit_right]
+@[simp] theorem N_unit_right_of_ne {a b : ι} (h : a ≠ b) : N.N a N.unit b = 0 := by
+  simp [N.N_unit_right, h]
 
 /-- Row indices of `F^{abc}_d`: `Σ e, Fin N_{ab}^e × Fin N_{ec}^d`, indexing the left-associated
 fusion basis `(φ^{ab→e}_i ▷ c) ≫ φ^{ec→d}_j` of `Hom((S_a ⊗ S_b) ⊗ S_c, S_d)`. -/
 abbrev Left (a b c d : ι) : Type u := Σ e : ι, Fin (N.N a b e) × Fin (N.N e c d)
 
 /-- Column indices of `F^{abc}_d`: `Σ f, Fin N_{bc}^f × Fin N_{af}^d`, indexing the
-right-associated fusion basis `(a ◁ φ^{bc→f}_k) ≫ φ^{af→d}_l` of
-`Hom(S_a ⊗ (S_b ⊗ S_c), S_d)`. -/
+right-associated fusion basis `(a ◁ φ^{bc→f}_k) ≫ φ^{af→d}_l` of `Hom(S_a ⊗ (S_b ⊗ S_c), S_d)`. -/
 abbrev Right (a b c d : ι) : Type u := Σ f : ι, Fin (N.N b c f) × Fin (N.N a f d)
+
+theorem Left.ext {N : FusionRules ι} {a b c d : ι} {x y : N.Left a b c d}
+    (h₁ : x.1 = y.1) (h₂ : x.2.1.val = y.2.1.val) (h₃ : x.2.2.val = y.2.2.val) : x = y := by
+  rcases x with ⟨_, i₁, j₁⟩; rcases y with ⟨_, i₂, j₂⟩
+  dsimp only at h₁ h₂ h₃; subst h₁; rw [Fin.ext h₂, Fin.ext h₃]
+
+theorem Right.ext {N : FusionRules ι} {a b c d : ι} {x y : N.Right a b c d}
+    (h₁ : x.1 = y.1) (h₂ : x.2.1.val = y.2.1.val) (h₃ : x.2.2.val = y.2.2.val) : x = y := by
+  rcases x with ⟨_, k₁, l₁⟩; rcases y with ⟨_, k₂, l₂⟩
+  dsimp only at h₁ h₂ h₃; subst h₁; rw [Fin.ext h₂, Fin.ext h₃]
 
 /-- The unique basis index in `Fin N_{au}^a`. -/
 def unitRight (a : ι) : Fin (N.N a N.unit a) := ⟨0, by simp⟩
@@ -98,11 +94,8 @@ def unitRight (a : ι) : Fin (N.N a N.unit a) := ⟨0, by simp⟩
 /-- The unique basis index in `Fin N_{ua}^a`. -/
 def unitLeft (a : ι) : Fin (N.N N.unit a a) := ⟨0, by simp⟩
 
-@[simp]
-theorem val_unitRight (a : ι) : (N.unitRight a).val = 0 := (rfl)
-
-@[simp]
-theorem val_unitLeft (a : ι) : (N.unitLeft a).val = 0 := (rfl)
+@[simp] theorem val_unitRight (a : ι) : (N.unitRight a).val = 0 := (rfl)
+@[simp] theorem val_unitLeft (a : ι) : (N.unitLeft a).val = 0 := (rfl)
 
 /-- An index in `Fin N_{ua}^b` forces `a = b`. -/
 theorem eq_of_fin_unit_left {a b : ι} (i : Fin (N.N N.unit a b)) : a = b := by
@@ -120,17 +113,12 @@ instance instUniqueFinUnitRight (a : ι) : Unique (Fin (N.N a N.unit a)) where
   default := N.unitRight a
   uniq i := Fin.ext (by simpa using i.isLt)
 
-@[simp]
-theorem default_fin_unit_left (a : ι) : (default : Fin (N.N N.unit a a)) = N.unitLeft a :=
+@[simp] theorem default_fin_unit_left (a : ι) : (default : Fin (N.N N.unit a a)) = N.unitLeft a :=
   Subsingleton.elim _ _
-
-@[simp]
-theorem default_fin_unit_right (a : ι) : (default : Fin (N.N a N.unit a)) = N.unitRight a :=
+@[simp] theorem default_fin_unit_right (a : ι) : (default : Fin (N.N a N.unit a)) = N.unitRight a :=
   Subsingleton.elim _ _
-
 theorem fin_unit_left_eq (a : ι) (i : Fin (N.N N.unit a a)) : i = N.unitLeft a :=
   Subsingleton.elim i (N.unitLeft a)
-
 theorem fin_unit_right_eq (a : ι) (i : Fin (N.N a N.unit a)) : i = N.unitRight a :=
   Subsingleton.elim i (N.unitRight a)
 
@@ -139,22 +127,19 @@ section UnitSums
 variable {M : Type*} [AddCommMonoid M]
 
 theorem sum_fin_unit_left_self (a : ι) (f : Fin (N.N N.unit a a) → M) :
-    ∑ i, f i = f (N.unitLeft a) :=
-  (Fintype.sum_unique f).trans (congrArg f (Subsingleton.elim _ _))
-
+    ∑ i, f i = f (N.unitLeft a) := (Fintype.sum_unique f).trans (congrArg f (Subsingleton.elim _ _))
 theorem sum_fin_unit_right_self (a : ι) (f : Fin (N.N a N.unit a) → M) :
     ∑ i, f i = f (N.unitRight a) :=
   (Fintype.sum_unique f).trans (congrArg f (Subsingleton.elim _ _))
 
 theorem sum_fin_unit_left_of_ne {a b : ι} (h : a ≠ b) (f : Fin (N.N N.unit a b) → M) :
-    ∑ i, f i = 0 := by
+    ∑ i, f i = 0 :=
   have : IsEmpty (Fin (N.N N.unit a b)) := ⟨fun i ↦ h (N.eq_of_fin_unit_left i)⟩
-  exact Fintype.sum_empty f
-
+  Fintype.sum_empty f
 theorem sum_fin_unit_right_of_ne {a b : ι} (h : a ≠ b) (f : Fin (N.N a N.unit b) → M) :
-    ∑ i, f i = 0 := by
+    ∑ i, f i = 0 :=
   have : IsEmpty (Fin (N.N a N.unit b)) := ⟨fun i ↦ h (N.eq_of_fin_unit_right i)⟩
-  exact Fintype.sum_empty f
+  Fintype.sum_empty f
 
 variable [Fintype ι]
 
@@ -186,102 +171,81 @@ end UnitSums
 
 /-! #### Unit specializations of `Left` and `Right` -/
 
-/-- `Left a u c d` is canonically equivalent to `Fin N_{ac}^d` via `j ↦ ⟨a, unitRight a, j⟩`. -/
+/-- `Left a u c d` is equivalent to `Fin N_{ac}^d`, with inverse `j ↦ ⟨a, unitRight a, j⟩`. -/
 def leftUnitMidEquiv (a c d : ι) : N.Left a N.unit c d ≃ Fin (N.N a c d) where
   toFun x := N.eq_of_fin_unit_right x.2.1 ▸ x.2.2
   invFun j := ⟨a, N.unitRight a, j⟩
-  left_inv := by
-    rintro ⟨e, i, j⟩; obtain rfl := N.eq_of_fin_unit_right i; simp [N.fin_unit_right_eq]
+  left_inv := by rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_right i; simp [fin_unit_right_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem leftUnitMidEquiv_symm_apply (a c d : ι) (j : Fin (N.N a c d)) :
+@[simp] theorem leftUnitMidEquiv_symm_apply (a c d : ι) (j : Fin (N.N a c d)) :
     (N.leftUnitMidEquiv a c d).symm j = ⟨a, N.unitRight a, j⟩ := (rfl)
-
-@[simp]
-theorem leftUnitMidEquiv_mk (a c d : ι) (j : Fin (N.N a c d)) :
+@[simp] theorem leftUnitMidEquiv_mk (a c d : ι) (j : Fin (N.N a c d)) :
     N.leftUnitMidEquiv a c d ⟨a, N.unitRight a, j⟩ = j :=
   (N.leftUnitMidEquiv a c d).apply_symm_apply j
 
-/-- `Right a u c d` is canonically equivalent to `Fin N_{ac}^d` via `l ↦ ⟨c, unitLeft c, l⟩`. -/
+/-- `Right a u c d` is equivalent to `Fin N_{ac}^d`, with inverse `l ↦ ⟨c, unitLeft c, l⟩`. -/
 def rightUnitMidEquiv (a c d : ι) : N.Right a N.unit c d ≃ Fin (N.N a c d) where
   toFun y := N.eq_of_fin_unit_left y.2.1 ▸ y.2.2
   invFun l := ⟨c, N.unitLeft c, l⟩
-  left_inv := by rintro ⟨f, k, l⟩; obtain rfl := N.eq_of_fin_unit_left k; simp [N.fin_unit_left_eq]
+  left_inv := by rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_left k; simp [fin_unit_left_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem rightUnitMidEquiv_symm_apply (a c d : ι) (l : Fin (N.N a c d)) :
+@[simp] theorem rightUnitMidEquiv_symm_apply (a c d : ι) (l : Fin (N.N a c d)) :
     (N.rightUnitMidEquiv a c d).symm l = ⟨c, N.unitLeft c, l⟩ := (rfl)
-
-@[simp]
-theorem rightUnitMidEquiv_mk (a c d : ι) (l : Fin (N.N a c d)) :
+@[simp] theorem rightUnitMidEquiv_mk (a c d : ι) (l : Fin (N.N a c d)) :
     N.rightUnitMidEquiv a c d ⟨c, N.unitLeft c, l⟩ = l :=
   (N.rightUnitMidEquiv a c d).apply_symm_apply l
 
-/-- `Left u b c d` is canonically equivalent to `Fin N_{bc}^d` via `j ↦ ⟨b, unitLeft b, j⟩`. -/
+/-- `Left u b c d` is equivalent to `Fin N_{bc}^d`, with inverse `j ↦ ⟨b, unitLeft b, j⟩`. -/
 def leftUnitLeftEquiv (b c d : ι) : N.Left N.unit b c d ≃ Fin (N.N b c d) where
   toFun x := N.eq_of_fin_unit_left x.2.1 ▸ x.2.2
   invFun j := ⟨b, N.unitLeft b, j⟩
-  left_inv := by rintro ⟨e, i, j⟩; obtain rfl := N.eq_of_fin_unit_left i; simp [N.fin_unit_left_eq]
+  left_inv := by rintro ⟨_, i, _⟩; obtain rfl := N.eq_of_fin_unit_left i; simp [fin_unit_left_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem leftUnitLeftEquiv_symm_apply (b c d : ι) (j : Fin (N.N b c d)) :
+@[simp] theorem leftUnitLeftEquiv_symm_apply (b c d : ι) (j : Fin (N.N b c d)) :
     (N.leftUnitLeftEquiv b c d).symm j = ⟨b, N.unitLeft b, j⟩ := (rfl)
-
-@[simp]
-theorem leftUnitLeftEquiv_mk (b c d : ι) (j : Fin (N.N b c d)) :
+@[simp] theorem leftUnitLeftEquiv_mk (b c d : ι) (j : Fin (N.N b c d)) :
     N.leftUnitLeftEquiv b c d ⟨b, N.unitLeft b, j⟩ = j :=
   (N.leftUnitLeftEquiv b c d).apply_symm_apply j
 
-/-- `Right u b c d` is canonically equivalent to `Fin N_{bc}^d` via `k ↦ ⟨d, k, unitLeft d⟩`. -/
+/-- `Right u b c d` is equivalent to `Fin N_{bc}^d`, with inverse `k ↦ ⟨d, k, unitLeft d⟩`. -/
 def rightUnitLeftEquiv (b c d : ι) : N.Right N.unit b c d ≃ Fin (N.N b c d) where
   toFun y := (N.eq_of_fin_unit_left y.2.2).symm ▸ y.2.1
   invFun k := ⟨d, k, N.unitLeft d⟩
-  left_inv := by rintro ⟨f, k, l⟩; obtain rfl := N.eq_of_fin_unit_left l; simp [N.fin_unit_left_eq]
+  left_inv := by rintro ⟨_, _, l⟩; obtain rfl := N.eq_of_fin_unit_left l; simp [fin_unit_left_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem rightUnitLeftEquiv_symm_apply (b c d : ι) (k : Fin (N.N b c d)) :
+@[simp] theorem rightUnitLeftEquiv_symm_apply (b c d : ι) (k : Fin (N.N b c d)) :
     (N.rightUnitLeftEquiv b c d).symm k = ⟨d, k, N.unitLeft d⟩ := (rfl)
-
-@[simp]
-theorem rightUnitLeftEquiv_mk (b c d : ι) (k : Fin (N.N b c d)) :
+@[simp] theorem rightUnitLeftEquiv_mk (b c d : ι) (k : Fin (N.N b c d)) :
     N.rightUnitLeftEquiv b c d ⟨d, k, N.unitLeft d⟩ = k :=
   (N.rightUnitLeftEquiv b c d).apply_symm_apply k
 
-/-- `Left a b u d` is canonically equivalent to `Fin N_{ab}^d` via `i ↦ ⟨d, i, unitRight d⟩`. -/
+/-- `Left a b u d` is equivalent to `Fin N_{ab}^d`, with inverse `i ↦ ⟨d, i, unitRight d⟩`. -/
 def leftUnitRightEquiv (a b d : ι) : N.Left a b N.unit d ≃ Fin (N.N a b d) where
   toFun x := (N.eq_of_fin_unit_right x.2.2).symm ▸ x.2.1
   invFun i := ⟨d, i, N.unitRight d⟩
-  left_inv := by
-    rintro ⟨e, i, j⟩; obtain rfl := N.eq_of_fin_unit_right j; simp [N.fin_unit_right_eq]
+  left_inv := by rintro ⟨_, _, j⟩; obtain rfl := N.eq_of_fin_unit_right j; simp [fin_unit_right_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem leftUnitRightEquiv_symm_apply (a b d : ι) (i : Fin (N.N a b d)) :
+@[simp] theorem leftUnitRightEquiv_symm_apply (a b d : ι) (i : Fin (N.N a b d)) :
     (N.leftUnitRightEquiv a b d).symm i = ⟨d, i, N.unitRight d⟩ := (rfl)
-
-@[simp]
-theorem leftUnitRightEquiv_mk (a b d : ι) (i : Fin (N.N a b d)) :
+@[simp] theorem leftUnitRightEquiv_mk (a b d : ι) (i : Fin (N.N a b d)) :
     N.leftUnitRightEquiv a b d ⟨d, i, N.unitRight d⟩ = i :=
   (N.leftUnitRightEquiv a b d).apply_symm_apply i
 
-/-- `Right a b u d` is canonically equivalent to `Fin N_{ab}^d` via `l ↦ ⟨b, unitRight b, l⟩`. -/
+/-- `Right a b u d` is equivalent to `Fin N_{ab}^d`, with inverse `l ↦ ⟨b, unitRight b, l⟩`. -/
 def rightUnitRightEquiv (a b d : ι) : N.Right a b N.unit d ≃ Fin (N.N a b d) where
   toFun y := N.eq_of_fin_unit_right y.2.1 ▸ y.2.2
   invFun l := ⟨b, N.unitRight b, l⟩
-  left_inv := by
-    rintro ⟨f, k, l⟩; obtain rfl := N.eq_of_fin_unit_right k; simp [N.fin_unit_right_eq]
+  left_inv := by rintro ⟨_, k, _⟩; obtain rfl := N.eq_of_fin_unit_right k; simp [fin_unit_right_eq]
   right_inv _ := rfl
 
-@[simp]
-theorem rightUnitRightEquiv_symm_apply (a b d : ι) (l : Fin (N.N a b d)) :
+@[simp] theorem rightUnitRightEquiv_symm_apply (a b d : ι) (l : Fin (N.N a b d)) :
     (N.rightUnitRightEquiv a b d).symm l = ⟨b, N.unitRight b, l⟩ := (rfl)
-
-@[simp]
-theorem rightUnitRightEquiv_mk (a b d : ι) (l : Fin (N.N a b d)) :
+@[simp] theorem rightUnitRightEquiv_mk (a b d : ι) (l : Fin (N.N a b d)) :
     N.rightUnitRightEquiv a b d ⟨b, N.unitRight b, l⟩ = l :=
   (N.rightUnitRightEquiv a b d).apply_symm_apply l
 
@@ -293,15 +257,13 @@ end FusionRules
 families of matrices `F^{abc}_d` with two-sided inverses `Finv^{abc}_d`, satisfying the pentagon
 and middle-unit triangle identities.
 
-Because rows (`FusionRules.Left`) and columns (`FusionRules.Right`) are distinct types, the
-two-sided inverse `Finv` is carried as a field, but it is uniquely determined by `F`
-(`TauCeti.FSymbols.ext`). -/
+Because rows (`FusionRules.Left`) and columns (`FusionRules.Right`) are distinct types, `Finv` is
+carried as a field, but it is uniquely determined by `F` (`TauCeti.FSymbols.ext`). -/
 structure FSymbols (R : Type v) [CommRing R] {ι : Type u} [Fintype ι] [DecidableEq ι]
     (N : FusionRules ι) where
   /-- `F^{abc}_d`, with rows `N.Left a b c d` and columns `N.Right a b c d`. -/
   F : ∀ a b c d : ι, Matrix (N.Left a b c d) (N.Right a b c d) R
-  /-- `Finv^{abc}_d`, the two-sided inverse of `F^{abc}_d`, with rows `N.Right a b c d` and
-  columns `N.Left a b c d`. -/
+  /-- `Finv^{abc}_d`, the two-sided inverse of `F^{abc}_d`. -/
   Finv : ∀ a b c d : ι, Matrix (N.Right a b c d) (N.Left a b c d) R
   /-- Right inverse law `F^{abc}_d * Finv^{abc}_d = 1`. -/
   F_mul_Finv : ∀ a b c d, F a b c d * Finv a b c d = 1
@@ -311,8 +273,7 @@ structure FSymbols (R : Type v) [CommRing R] {ι : Type u} [Fintype ι] [Decidab
   `(α_{A,B,C} ▷ D) ≫ α_{A,BC,D} ≫ (A ◁ α_{B,C,D})`. -/
   pentagon : ∀ (A B C D E p q r s : ι) (i₁ : Fin (N.N A B p)) (i₂ : Fin (N.N p C q))
     (i₃ : Fin (N.N q D E)) (k : Fin (N.N C D r)) (m : Fin (N.N B r s)) (n : Fin (N.N A s E)),
-    ∑ l : Fin (N.N p r E),
-        F p C D E ⟨q, i₂, i₃⟩ ⟨r, k, l⟩ * F A B r E ⟨p, i₁, l⟩ ⟨s, m, n⟩ =
+    ∑ l : Fin (N.N p r E), F p C D E ⟨q, i₂, i₃⟩ ⟨r, k, l⟩ * F A B r E ⟨p, i₁, l⟩ ⟨s, m, n⟩ =
       ∑ t : ι, ∑ x : Fin (N.N B C t), ∑ y : Fin (N.N A t q), ∑ z : Fin (N.N t D s),
         F A B C q ⟨p, i₁, i₂⟩ ⟨t, x, y⟩ * F A t D E ⟨q, y, i₃⟩ ⟨s, z, n⟩ *
           F B C D s ⟨t, x, z⟩ ⟨r, k, m⟩
@@ -333,9 +294,8 @@ theorem ext {P Q : FSymbols R N}
   have hF : P.F = Q.F := by funext a b c d; exact Matrix.ext (h a b c d)
   have hFinv : P.Finv = Q.Finv := by
     funext a b c d
-    have hF' : P.F a b c d = Q.F a b c d := Matrix.ext (h a b c d)
-    rw [← Matrix.mul_one (P.Finv a b c d), ← Q.F_mul_Finv, ← hF', ← Matrix.mul_assoc,
-      P.Finv_mul_F, Matrix.one_mul]
+    exact Matrix.left_inv_eq_right_inv (by rw [← hF]; exact P.Finv_mul_F a b c d)
+      (Q.F_mul_Finv a b c d)
   cases P; cases Q; simp only [mk.injEq]; exact ⟨hF, hFinv⟩
 
 theorem F_injective : Function.Injective (FSymbols.F (R := R) (N := N)) :=
@@ -344,12 +304,8 @@ theorem F_injective : Function.Injective (FSymbols.F (R := R) (N := N)) :=
 /-- Two `FSymbols` with equal `Finv`-matrices are also equal. -/
 theorem ext_of_Finv {P Q : FSymbols R N}
     (h : ∀ a b c d y x, P.Finv a b c d y x = Q.Finv a b c d y x) : P = Q := by
-  ext a b c d x y
-  have hFinv : P.Finv a b c d = Q.Finv a b c d := Matrix.ext (h a b c d)
-  have hF : P.F a b c d = Q.F a b c d := by
-    rw [← Matrix.mul_one (P.F a b c d), ← Q.Finv_mul_F, ← hFinv, ← Matrix.mul_assoc,
-      P.F_mul_Finv, Matrix.one_mul]
-  exact congr_fun₂ hF x y
+  ext a b c d x y; refine congr_fun₂ (Matrix.left_inv_eq_right_inv ?_ (Q.Finv_mul_F a b c d)) x y
+  rw [← Matrix.ext (h a b c d)]; exact P.F_mul_Finv a b c d
 
 theorem Finv_injective : Function.Injective (FSymbols.Finv (R := R) (N := N)) :=
   fun _ _ h ↦ ext_of_Finv fun a b c d y x ↦ congrArg (fun M ↦ M a b c d y x) h
@@ -364,8 +320,7 @@ theorem sum_Finv_mul_F (P : FSymbols R N) (a b c d : ι) (y y' : N.Right a b c d
     ∑ x : N.Left a b c d, P.Finv a b c d y x * P.F a b c d x y' = if y = y' then 1 else 0 := by
   simpa [Matrix.mul_apply, Matrix.one_apply] using congr_fun₂ (P.Finv_mul_F a b c d) y y'
 
-@[simp]
-theorem triangle_self (P : FSymbols R N) (a c d : ι) (j : Fin (N.N a c d)) :
+@[simp] theorem triangle_self (P : FSymbols R N) (a c d : ι) (j : Fin (N.N a c d)) :
     P.F a N.unit c d ⟨a, N.unitRight a, j⟩ ⟨c, N.unitLeft c, j⟩ = 1 := by simp [P.triangle]
 
 theorem triangle_of_ne (P : FSymbols R N) {a c d : ι} {j l : Fin (N.N a c d)} (h : j ≠ l) :
@@ -373,73 +328,59 @@ theorem triangle_of_ne (P : FSymbols R N) {a c d : ι} {j l : Fin (N.N a c d)} (
 
 /-! #### Derived outer unit triangles -/
 
-/-- Left-unit triangle: the pentagon and middle-unit triangle force `F^{ubc}_d = 1` on the
-unit-indexed basis blocks (Etingof–Gelaki–Nikshych–Ostrik, Proposition 2.2.4). -/
+private theorem submatrix_eq_if_of_idempotent {n X Y : Type*} [Fintype n] [DecidableEq n]
+    [Fintype X] [Fintype Y] [DecidableEq X] [DecidableEq Y] {M : Matrix X Y R} {Minv : Matrix Y X R}
+    (h₁ : M * Minv = 1) (h₂ : Minv * M = 1) (e₁ : X ≃ n) (e₂ : Y ≃ n)
+    (h : IsIdempotentElem (M.submatrix e₁.symm e₂.symm)) (i j : n) :
+    M (e₁.symm i) (e₂.symm j) = if i = j then 1 else 0 := by
+  have hAB : M.submatrix e₁.symm e₂.symm * Minv.submatrix e₂.symm e₁.symm = 1 := by
+    rw [Matrix.submatrix_mul_equiv, h₁, Matrix.submatrix_one_equiv]
+  have hBA : Minv.submatrix e₂.symm e₁.symm * M.submatrix e₁.symm e₂.symm = 1 := by
+    rw [Matrix.submatrix_mul_equiv, h₂, Matrix.submatrix_one_equiv]
+  simpa [Matrix.one_apply] using
+    congr_fun₂ ((IsIdempotentElem.iff_eq_one_of_isUnit ⟨⟨_, _, hAB, hBA⟩, rfl⟩).mp h) i j
+
+/-- Left-unit triangle: `F^{ubc}_d[(b,0,j),(d,k,0)] = δ_{jk}` (EGNO, Proposition 2.2.4). -/
 theorem F_unit_left (P : FSymbols R N) (b c d : ι) (j k : Fin (N.N b c d)) :
     P.F N.unit b c d ⟨b, N.unitLeft b, j⟩ ⟨d, k, N.unitLeft d⟩ = if j = k then 1 else 0 := by
-  let A := (P.F N.unit b c d).submatrix (N.leftUnitLeftEquiv b c d).symm
-    (N.rightUnitLeftEquiv b c d).symm
-  let B := (P.Finv N.unit b c d).submatrix (N.rightUnitLeftEquiv b c d).symm
-    (N.leftUnitLeftEquiv b c d).symm
-  have hBA : B * A = 1 := by
-    rw [Matrix.submatrix_mul_equiv, P.Finv_mul_F, Matrix.submatrix_one_equiv]
-  have hAA : A * A = A := Matrix.ext fun m n ↦ by
-    have hpm := P.pentagon N.unit N.unit b c d N.unit b d d
-      (N.unitRight N.unit) (N.unitLeft b) m n (N.unitLeft d) (N.unitLeft d)
-    rw [N.sum_fin_unit_left_self, P.triangle_self, mul_one,
-      N.sum_fin_unit_left_fst b, N.sum_fin_unit_left_self] at hpm
-    simp_rw [P.triangle_self, one_mul] at hpm
-    simpa [A, Matrix.mul_apply] using hpm.symm
-  have hA : A = 1 := by
-    calc A = B * (A * A) := by rw [← Matrix.mul_assoc, hBA, Matrix.one_mul]
-      _ = 1 := by rw [hAA, hBA]
-  simpa [A, Matrix.one_apply] using congr_fun₂ hA j k
+  refine submatrix_eq_if_of_idempotent (P.F_mul_Finv _ _ _ _) (P.Finv_mul_F _ _ _ _)
+    (N.leftUnitLeftEquiv b c d) (N.rightUnitLeftEquiv b c d) (Matrix.ext fun m n ↦ ?_) j k
+  have hpm := P.pentagon N.unit N.unit b c d N.unit b d d
+    (N.unitRight N.unit) (N.unitLeft b) m n (N.unitLeft d) (N.unitLeft d)
+  rw [N.sum_fin_unit_left_self, P.triangle_self, mul_one,
+    N.sum_fin_unit_left_fst b, N.sum_fin_unit_left_self] at hpm
+  simp_rw [P.triangle_self, one_mul] at hpm; simpa [Matrix.mul_apply] using hpm.symm
 
-@[simp]
-theorem F_unit_left_self (P : FSymbols R N) (b c d : ι) (j : Fin (N.N b c d)) :
+@[simp] theorem F_unit_left_self (P : FSymbols R N) (b c d : ι) (j : Fin (N.N b c d)) :
     P.F N.unit b c d ⟨b, N.unitLeft b, j⟩ ⟨d, j, N.unitLeft d⟩ = 1 := by simp [P.F_unit_left]
 
 theorem F_unit_left_of_ne (P : FSymbols R N) {b c d : ι} {j k : Fin (N.N b c d)} (h : j ≠ k) :
     P.F N.unit b c d ⟨b, N.unitLeft b, j⟩ ⟨d, k, N.unitLeft d⟩ = 0 := by simp [P.F_unit_left, h]
 
-/-- Right-unit triangle: the pentagon and middle-unit triangle force `F^{abu}_d = 1` on the
-unit-indexed basis blocks (Etingof–Gelaki–Nikshych–Ostrik, Proposition 2.2.4). -/
+/-- Right-unit triangle: `F^{abu}_d[(d,i,0),(b,0,l)] = δ_{il}` (EGNO, Proposition 2.2.4). -/
 theorem F_unit_right (P : FSymbols R N) (a b d : ι) (i l : Fin (N.N a b d)) :
     P.F a b N.unit d ⟨d, i, N.unitRight d⟩ ⟨b, N.unitRight b, l⟩ = if i = l then 1 else 0 := by
-  let A := (P.F a b N.unit d).submatrix (N.leftUnitRightEquiv a b d).symm
-    (N.rightUnitRightEquiv a b d).symm
-  let B := (P.Finv a b N.unit d).submatrix (N.rightUnitRightEquiv a b d).symm
-    (N.leftUnitRightEquiv a b d).symm
-  have hAB : A * B = 1 := by
-    rw [Matrix.submatrix_mul_equiv, P.F_mul_Finv, Matrix.submatrix_one_equiv]
-  have hAA : A * A = A := Matrix.ext fun m n ↦ by
-    have hpm := P.pentagon a b N.unit N.unit d d d N.unit b
-      m (N.unitRight d) (N.unitRight d) (N.unitLeft N.unit) (N.unitRight b) n
-    rw [N.sum_fin_unit_right_self, P.triangle_self, one_mul, N.sum_fin_unit_right_fst b] at hpm
-    simp_rw [N.sum_fin_unit_right_self, P.triangle_self, mul_one] at hpm
-    simpa [A, Matrix.mul_apply] using hpm.symm
-  have hA : A = 1 := by
-    calc A = (A * A) * B := by rw [Matrix.mul_assoc, hAB, Matrix.mul_one]
-      _ = 1 := by rw [hAA, hAB]
-  simpa [A, Matrix.one_apply] using congr_fun₂ hA i l
+  refine submatrix_eq_if_of_idempotent (P.F_mul_Finv _ _ _ _) (P.Finv_mul_F _ _ _ _)
+    (N.leftUnitRightEquiv a b d) (N.rightUnitRightEquiv a b d) (Matrix.ext fun m n ↦ ?_) i l
+  have hpm := P.pentagon a b N.unit N.unit d d d N.unit b
+    m (N.unitRight d) (N.unitRight d) (N.unitLeft N.unit) (N.unitRight b) n
+  rw [N.sum_fin_unit_right_self, P.triangle_self, one_mul, N.sum_fin_unit_right_fst b] at hpm
+  simp_rw [N.sum_fin_unit_right_self, P.triangle_self, mul_one] at hpm
+  simpa [Matrix.mul_apply] using hpm.symm
 
-@[simp]
-theorem F_unit_right_self (P : FSymbols R N) (a b d : ι) (i : Fin (N.N a b d)) :
+@[simp] theorem F_unit_right_self (P : FSymbols R N) (a b d : ι) (i : Fin (N.N a b d)) :
     P.F a b N.unit d ⟨d, i, N.unitRight d⟩ ⟨b, N.unitRight b, i⟩ = 1 := by simp [P.F_unit_right]
 
 theorem F_unit_right_of_ne (P : FSymbols R N) {a b d : ι} {i l : Fin (N.N a b d)} (h : i ≠ l) :
-    P.F a b N.unit d ⟨d, i, N.unitRight d⟩ ⟨b, N.unitRight b, l⟩ = 0 := by
-  simp [P.F_unit_right, h]
+    P.F a b N.unit d ⟨d, i, N.unitRight d⟩ ⟨b, N.unitRight b, l⟩ = 0 := by simp [P.F_unit_right, h]
 
 /-- Inverse middle-unit triangle: `Finv^{auc}_d[(c,0,l),(a,0,j)] = δ_{lj}`. -/
 theorem Finv_triangle (P : FSymbols R N) (a c d : ι) (l j : Fin (N.N a c d)) :
     P.Finv a N.unit c d ⟨c, N.unitLeft c, l⟩ ⟨a, N.unitRight a, j⟩ = if l = j then 1 else 0 := by
   have h := P.sum_Finv_mul_F a N.unit c d ⟨c, N.unitLeft c, l⟩ ⟨c, N.unitLeft c, j⟩
-  rw [← (N.leftUnitMidEquiv a c d).symm.sum_comp] at h
-  simpa [P.triangle] using h
+  rw [← (N.leftUnitMidEquiv a c d).symm.sum_comp] at h; simpa [P.triangle] using h
 
-@[simp]
-theorem Finv_triangle_self (P : FSymbols R N) (a c d : ι) (j : Fin (N.N a c d)) :
+@[simp] theorem Finv_triangle_self (P : FSymbols R N) (a c d : ι) (j : Fin (N.N a c d)) :
     P.Finv a N.unit c d ⟨c, N.unitLeft c, j⟩ ⟨a, N.unitRight a, j⟩ = 1 := by simp [P.Finv_triangle]
 
 theorem Finv_triangle_of_ne (P : FSymbols R N) {a c d : ι} {l j : Fin (N.N a c d)} (h : l ≠ j) :
@@ -450,13 +391,10 @@ theorem Finv_triangle_of_ne (P : FSymbols R N) {a c d : ι} {l j : Fin (N.N a c 
 theorem Finv_unit_left (P : FSymbols R N) (b c d : ι) (k j : Fin (N.N b c d)) :
     P.Finv N.unit b c d ⟨d, k, N.unitLeft d⟩ ⟨b, N.unitLeft b, j⟩ = if k = j then 1 else 0 := by
   have h := P.sum_Finv_mul_F N.unit b c d ⟨d, k, N.unitLeft d⟩ ⟨d, j, N.unitLeft d⟩
-  rw [← (N.leftUnitLeftEquiv b c d).symm.sum_comp] at h
-  simpa [P.F_unit_left] using h
+  rw [← (N.leftUnitLeftEquiv b c d).symm.sum_comp] at h; simpa [P.F_unit_left] using h
 
-@[simp]
-theorem Finv_unit_left_self (P : FSymbols R N) (b c d : ι) (j : Fin (N.N b c d)) :
-    P.Finv N.unit b c d ⟨d, j, N.unitLeft d⟩ ⟨b, N.unitLeft b, j⟩ = 1 := by
-  simp [P.Finv_unit_left]
+@[simp] theorem Finv_unit_left_self (P : FSymbols R N) (b c d : ι) (j : Fin (N.N b c d)) :
+    P.Finv N.unit b c d ⟨d, j, N.unitLeft d⟩ ⟨b, N.unitLeft b, j⟩ = 1 := by simp [P.Finv_unit_left]
 
 theorem Finv_unit_left_of_ne (P : FSymbols R N) {b c d : ι} {k j : Fin (N.N b c d)} (h : k ≠ j) :
     P.Finv N.unit b c d ⟨d, k, N.unitLeft d⟩ ⟨b, N.unitLeft b, j⟩ = 0 := by
@@ -466,11 +404,9 @@ theorem Finv_unit_left_of_ne (P : FSymbols R N) {b c d : ι} {k j : Fin (N.N b c
 theorem Finv_unit_right (P : FSymbols R N) (a b d : ι) (l i : Fin (N.N a b d)) :
     P.Finv a b N.unit d ⟨b, N.unitRight b, l⟩ ⟨d, i, N.unitRight d⟩ = if l = i then 1 else 0 := by
   have h := P.sum_Finv_mul_F a b N.unit d ⟨b, N.unitRight b, l⟩ ⟨b, N.unitRight b, i⟩
-  rw [← (N.leftUnitRightEquiv a b d).symm.sum_comp] at h
-  simpa [P.F_unit_right] using h
+  rw [← (N.leftUnitRightEquiv a b d).symm.sum_comp] at h; simpa [P.F_unit_right] using h
 
-@[simp]
-theorem Finv_unit_right_self (P : FSymbols R N) (a b d : ι) (i : Fin (N.N a b d)) :
+@[simp] theorem Finv_unit_right_self (P : FSymbols R N) (a b d : ι) (i : Fin (N.N a b d)) :
     P.Finv a b N.unit d ⟨b, N.unitRight b, i⟩ ⟨d, i, N.unitRight d⟩ = 1 := by
   simp [P.Finv_unit_right]
 
@@ -478,16 +414,11 @@ theorem Finv_unit_right_of_ne (P : FSymbols R N) {a b d : ι} {l i : Fin (N.N a 
     P.Finv a b N.unit d ⟨b, N.unitRight b, l⟩ ⟨d, i, N.unitRight d⟩ = 0 := by
   simp [P.Finv_unit_right, h]
 
-/-- Over a subsingleton ring (such as the zero ring), every `FusionRules` carries a unique
-`FSymbols`. -/
+/-- Over a subsingleton ring, every `FusionRules` carries a unique `FSymbols`. -/
 instance instUniqueOfSubsingleton [Subsingleton R] : Unique (FSymbols R N) where
-  default :=
-    { F := fun _ _ _ _ ↦ 0
-      Finv := fun _ _ _ _ ↦ 0
-      F_mul_Finv := fun _ _ _ _ ↦ Subsingleton.elim _ _
-      Finv_mul_F := fun _ _ _ _ ↦ Subsingleton.elim _ _
-      pentagon := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _
-      triangle := fun _ _ _ _ _ ↦ Subsingleton.elim _ _ }
+  default := ⟨0, 0, fun _ _ _ _ ↦ Subsingleton.elim _ _, fun _ _ _ _ ↦ Subsingleton.elim _ _,
+    fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _,
+    fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
   uniq _ := ext fun _ _ _ _ _ _ ↦ Subsingleton.elim _ _
 
 /-! #### Rank consequences of invertibility -/
@@ -504,7 +435,7 @@ theorem card_left_eq_card_right (P : FSymbols R N) (a b c d : ι) :
     (P.Finv_mul_F a b c d)
 
 /-- Over a nontrivial commutative ring, `N.Left a b c d` and `N.Right a b c d` are equivalent. -/
-theorem nonempty_leftEquivRight (P : FSymbols R N) (a b c d : ι) :
+theorem nonempty_left_equiv_right (P : FSymbols R N) (a b c d : ι) :
     Nonempty (N.Left a b c d ≃ N.Right a b c d) :=
   ⟨Fintype.equivOfCardEq (P.card_left_eq_card_right a b c d)⟩
 
@@ -562,9 +493,8 @@ theorem ext {Q₁ Q₂ : RSymbols P} (h : ∀ a b c i j, Q₁.R a b c i j = Q₂
   have hR : Q₁.R = Q₂.R := by funext a b c; exact Matrix.ext (h a b c)
   have hRinv : Q₁.Rinv = Q₂.Rinv := by
     funext a b c
-    have hR' : Q₁.R a b c = Q₂.R a b c := Matrix.ext (h a b c)
-    rw [← Matrix.mul_one (Q₁.Rinv a b c), ← Q₂.R_mul_Rinv, ← hR', ← Matrix.mul_assoc,
-      Q₁.Rinv_mul_R, Matrix.one_mul]
+    exact Matrix.left_inv_eq_right_inv (by rw [← hR]; exact Q₁.Rinv_mul_R a b c)
+      (Q₂.R_mul_Rinv a b c)
   cases Q₁; cases Q₂; simp only [mk.injEq]; exact ⟨hR, hRinv⟩
 
 theorem R_injective : Function.Injective (RSymbols.R (P := P)) :=
@@ -573,12 +503,8 @@ theorem R_injective : Function.Injective (RSymbols.R (P := P)) :=
 /-- Two `RSymbols` for `P` with equal `Rinv`-matrices are also equal. -/
 theorem ext_of_Rinv {Q₁ Q₂ : RSymbols P}
     (h : ∀ a b c j i, Q₁.Rinv a b c j i = Q₂.Rinv a b c j i) : Q₁ = Q₂ := by
-  ext a b c i j
-  have hRinv : Q₁.Rinv a b c = Q₂.Rinv a b c := Matrix.ext (h a b c)
-  have hR : Q₁.R a b c = Q₂.R a b c := by
-    rw [← Matrix.mul_one (Q₁.R a b c), ← Q₂.Rinv_mul_R, ← hRinv, ← Matrix.mul_assoc,
-      Q₁.R_mul_Rinv, Matrix.one_mul]
-  exact congr_fun₂ hR i j
+  ext a b c i j; refine congr_fun₂ (Matrix.left_inv_eq_right_inv ?_ (Q₂.Rinv_mul_R a b c)) i j
+  rw [← Matrix.ext (h a b c)]; exact Q₁.R_mul_Rinv a b c
 
 theorem Rinv_injective : Function.Injective (RSymbols.Rinv (P := P)) :=
   fun _ _ h ↦ ext_of_Rinv fun a b c j i ↦ congrArg (fun M ↦ M a b c j i) h
@@ -596,37 +522,31 @@ theorem sum_Rinv_mul_R (Q : RSymbols P) (a b c : ι) (j j' : Fin (N.N b a c)) :
 /-- Transport `RSymbols` along an equality of the underlying `FSymbols`. -/
 def cast {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) : RSymbols P₂ := h ▸ Q
 
-@[simp]
-theorem cast_R {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) :
+@[simp] theorem cast_R {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) :
     (Q.cast h).R = Q.R := by cases h; rfl
 
-@[simp]
-theorem cast_Rinv {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) :
+@[simp] theorem cast_Rinv {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) :
     (Q.cast h).Rinv = Q.Rinv := by cases h; rfl
 
-@[simp]
-theorem cast_R_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁)
-    (a b c : ι) (i : Fin (N.N a b c)) (j : Fin (N.N b a c)) :
-    (Q.cast h).R a b c i j = Q.R a b c i j := by cases h; rfl
+@[simp] theorem cast_R_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) (a b c : ι)
+    (i : Fin (N.N a b c)) (j : Fin (N.N b a c)) : (Q.cast h).R a b c i j = Q.R a b c i j := by
+  cases h; rfl
 
-@[simp]
-theorem cast_Rinv_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁)
-    (a b c : ι) (j : Fin (N.N b a c)) (i : Fin (N.N a b c)) :
-    (Q.cast h).Rinv a b c j i = Q.Rinv a b c j i := by cases h; rfl
+@[simp] theorem cast_Rinv_apply {P₁ P₂ : FSymbols K N} (h : P₁ = P₂) (Q : RSymbols P₁) (a b c : ι)
+    (j : Fin (N.N b a c)) (i : Fin (N.N a b c)) : (Q.cast h).Rinv a b c j i = Q.Rinv a b c j i := by
+  cases h; rfl
 
-@[simp]
-theorem cast_rfl (Q : RSymbols P) : Q.cast rfl = Q := (rfl)
+@[simp] theorem cast_rfl (Q : RSymbols P) : Q.cast rfl = Q := (rfl)
 
-@[simp]
-theorem cast_cast {P₁ P₂ P₃ : FSymbols K N} (h₁ : P₁ = P₂) (h₂ : P₂ = P₃) (Q : RSymbols P₁) :
-    (Q.cast h₁).cast h₂ = Q.cast (h₁.trans h₂) := by cases h₁; cases h₂; rfl
+@[simp] theorem cast_cast {P₁ P₂ P₃ : FSymbols K N} (h₁ : P₁ = P₂) (h₂ : P₂ = P₃)
+    (Q : RSymbols P₁) : (Q.cast h₁).cast h₂ = Q.cast (h₁.trans h₂) := by cases h₁; cases h₂; rfl
 
 /-! #### Derived unit braiding laws -/
 
-/-- Right-unit braiding law: the forward hexagon and unit triangles force `R^{au}_a = 1`. -/
-@[simp]
-theorem R_unit_right (Q : RSymbols P) (a : ι) :
-    Q.R a N.unit a (N.unitRight a) (N.unitLeft a) = 1 := by
+/-- Right-unit braiding law: `R^{au}_c = 1` on every unit-indexed entry. -/
+@[simp] theorem R_unit_right (Q : RSymbols P) (a c : ι) (i : Fin (N.N a N.unit c))
+    (j : Fin (N.N N.unit a c)) : Q.R a N.unit c i j = 1 := by
+  obtain rfl := N.eq_of_fin_unit_right i; rw [N.fin_unit_right_eq a i, N.fin_unit_left_eq a j]
   have hhex := Q.hexagon_forward a N.unit N.unit a a a
     (N.unitRight a) (N.unitRight a) (N.unitLeft a) (N.unitLeft a)
   rw [N.sum_fin_unit_left_fst N.unit] at hhex
@@ -635,22 +555,18 @@ theorem R_unit_right (Q : RSymbols P) (a : ι) :
   have hinv : Q.R a N.unit a (N.unitRight a) (N.unitLeft a) *
       Q.Rinv a N.unit a (N.unitLeft a) (N.unitRight a) = 1 := by
     simpa using Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
-  calc Q.R a N.unit a (N.unitRight a) (N.unitLeft a)
-    _ = Q.R a N.unit a (N.unitRight a) (N.unitLeft a) *
-          (Q.R a N.unit a (N.unitRight a) (N.unitLeft a) *
-            Q.Rinv a N.unit a (N.unitLeft a) (N.unitRight a)) := by rw [hinv, mul_one]
-    _ = 1 := by rw [← mul_assoc, ← hhex, hinv]
+  exact (IsIdempotentElem.iff_eq_one_of_isUnit (.of_mul_eq_one _ hinv)).mp hhex.symm
 
-/-- Inverse right-unit braiding law: `Rinv^{au}_a = 1`. -/
-@[simp]
-theorem Rinv_unit_right (Q : RSymbols P) (a : ι) :
-    Q.Rinv a N.unit a (N.unitLeft a) (N.unitRight a) = 1 := by
+/-- Inverse right-unit braiding law: `Rinv^{au}_c = 1` on every unit-indexed entry. -/
+@[simp] theorem Rinv_unit_right (Q : RSymbols P) (a c : ι) (j : Fin (N.N N.unit a c))
+    (i : Fin (N.N a N.unit c)) : Q.Rinv a N.unit c j i = 1 := by
+  obtain rfl := N.eq_of_fin_unit_right i; rw [N.fin_unit_left_eq a j, N.fin_unit_right_eq a i]
   simpa using Q.sum_R_mul_Rinv a N.unit a (N.unitRight a) (N.unitRight a)
 
-/-- Left-unit braiding law: the reverse hexagon and inverse unit triangles force `R^{ua}_a = 1`. -/
-@[simp]
-theorem R_unit_left (Q : RSymbols P) (a : ι) :
-    Q.R N.unit a a (N.unitLeft a) (N.unitRight a) = 1 := by
+/-- Left-unit braiding law: `R^{ua}_c = 1` on every unit-indexed entry. -/
+@[simp] theorem R_unit_left (Q : RSymbols P) (a c : ι) (i : Fin (N.N N.unit a c))
+    (j : Fin (N.N a N.unit c)) : Q.R N.unit a c i j = 1 := by
+  obtain rfl := N.eq_of_fin_unit_left i; rw [N.fin_unit_left_eq a i, N.fin_unit_right_eq a j]
   have hhex := Q.hexagon_reverse N.unit N.unit a a a a
     (N.unitLeft a) (N.unitLeft a) (N.unitRight a) (N.unitRight a)
   rw [N.sum_fin_unit_left_fst N.unit] at hhex
@@ -659,27 +575,19 @@ theorem R_unit_left (Q : RSymbols P) (a : ι) :
   have hinv : Q.R N.unit a a (N.unitLeft a) (N.unitRight a) *
       Q.Rinv N.unit a a (N.unitRight a) (N.unitLeft a) = 1 := by
     simpa using Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
-  calc Q.R N.unit a a (N.unitLeft a) (N.unitRight a)
-    _ = Q.R N.unit a a (N.unitLeft a) (N.unitRight a) *
-          (Q.R N.unit a a (N.unitLeft a) (N.unitRight a) *
-            Q.Rinv N.unit a a (N.unitRight a) (N.unitLeft a)) := by rw [hinv, mul_one]
-    _ = 1 := by rw [← mul_assoc, ← hhex, hinv]
+  exact (IsIdempotentElem.iff_eq_one_of_isUnit (.of_mul_eq_one _ hinv)).mp hhex.symm
 
-/-- Inverse left-unit braiding law: `Rinv^{ua}_a = 1`. -/
-@[simp]
-theorem Rinv_unit_left (Q : RSymbols P) (a : ι) :
-    Q.Rinv N.unit a a (N.unitRight a) (N.unitLeft a) = 1 := by
+/-- Inverse left-unit braiding law: `Rinv^{ua}_c = 1` on every unit-indexed entry. -/
+@[simp] theorem Rinv_unit_left (Q : RSymbols P) (a c : ι) (j : Fin (N.N a N.unit c))
+    (i : Fin (N.N N.unit a c)) : Q.Rinv N.unit a c j i = 1 := by
+  obtain rfl := N.eq_of_fin_unit_left i; rw [N.fin_unit_right_eq a j, N.fin_unit_left_eq a i]
   simpa using Q.sum_R_mul_Rinv N.unit a a (N.unitLeft a) (N.unitLeft a)
 
 /-- Over a subsingleton ring, every `FSymbols` carries a unique `RSymbols`. -/
 instance instUniqueOfSubsingleton [Subsingleton K] : Unique (RSymbols P) where
-  default :=
-    { R := fun _ _ _ ↦ 0
-      Rinv := fun _ _ _ ↦ 0
-      R_mul_Rinv := fun _ _ _ ↦ Subsingleton.elim _ _
-      Rinv_mul_R := fun _ _ _ ↦ Subsingleton.elim _ _
-      hexagon_forward := fun _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _
-      hexagon_reverse := fun _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _ }
+  default := ⟨0, 0, fun _ _ _ ↦ Subsingleton.elim _ _, fun _ _ _ ↦ Subsingleton.elim _ _,
+    fun _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _,
+    fun _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
   uniq _ := ext fun _ _ _ _ _ ↦ Subsingleton.elim _ _
 
 /-- Over a nontrivial commutative ring, the existence of R-symbols forces the fusion multiplicities

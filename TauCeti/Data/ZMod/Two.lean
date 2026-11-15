@@ -29,6 +29,7 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 
 ## Main results
 
+* `ZMod.eq_zero_or_eq_one`: every element of `ℤ/2` is `0` or `1`.
 * `ZMod.natCast_gcd_two`: `gcd(2, n)` and `n` agree modulo two.
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^n` when `u` is.
@@ -41,6 +42,11 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 public section
 
 namespace ZMod
+
+/-- Every residue modulo two is `0` or `1`. -/
+theorem eq_zero_or_eq_one (a : ZMod 2) : a = 0 ∨ a = 1 := by
+  revert a
+  decide
 
 /-- `gcd(2, n)` and `n` have the same parity. -/
 theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by

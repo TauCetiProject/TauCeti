@@ -26,6 +26,8 @@ zero.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.left_inv_eq_right_inv`: a left inverse and a right inverse of a rectangular matrix are
+  equal.
 -/
 
 public section
@@ -81,5 +83,17 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
+
+section Semiring
+
+variable {R : Type*} [Semiring R] {m p : Type*} [Fintype m] [Fintype p]
+  [DecidableEq m] [DecidableEq p]
+
+/-- A left inverse and a right inverse of a rectangular matrix are equal. -/
+theorem left_inv_eq_right_inv {A : Matrix m p R} {B C : Matrix p m R}
+    (hBA : B * A = 1) (hAC : A * C = 1) : B = C := by
+  rw [← Matrix.mul_one B, ← hAC, ← Matrix.mul_assoc, hBA, Matrix.one_mul]
+
+end Semiring
 
 end Matrix

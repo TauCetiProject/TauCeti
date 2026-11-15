@@ -6,34 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.CategoryTheory.GradedObject.Twisted.Basic
+public import TauCeti.CategoryTheory.GradedObject.Twisted.Braided
 public import TauCeti.CategoryTheory.Monoidal.FSymbols.Map
 
 /-!
 # Pointed fusion rules, 3-cocycles, and `ℤ/2` examples
 
-A fusion rule is **pointed** when the simples form a monoid `I` and tensor product is the monoid
-operation (`N_{ab}^c = [a + b = c]`). Every composite basis space `Left a b c d` and `Right a b c d`
-then has cardinality `1` when `a + b + c = d` and `0` otherwise, so the matrix-level F-symbol and
-R-symbol equations collapse to scalar group-cohomological equations in `Rˣ`:
+A fusion rule is **pointed** when the simples form a monoid `I` and `N_{ab}^c = [a + b = c]`.
+Every composite basis space `Left a b c d` and `Right a b c d` then has cardinality `1` when
+`a + b + c = d` and `0` otherwise, collapsing the F- and R-symbol equations to scalar equations:
 
-* `TauCeti.FusionRules.ofAddMonoid I` and `TauCeti.FusionRules.ofMonoid G`: pointed fusion rules
-  attached to an additive or multiplicative monoid.
+* `TauCeti.FusionRules.ofAddMonoid I` and `TauCeti.FusionRules.ofMonoid G`: pointed fusion rules.
 * `TauCeti.FSymbols.twistingCocycleEquiv`: equivalence between `FSymbols R (ofAddMonoid I)` and
-  `TauCeti.GradedObject.TwistingCocycle I R`, matching `F^{abc}_{a+b+c} = (ω a b c)⁻¹` and
-  `Finv^{abc}_{a+b+c} = ω a b c`.
-* `TauCeti.PointedBraiding c` and `TauCeti.RSymbols.pointedBraidingEquiv`: for a commutative
-  additive monoid `I`, equivalence between `RSymbols (FSymbols.ofTwistingCocycle c)` and
-  Eilenberg–MacLane abelian `3`-cocycle braidings `r : I → I → Rˣ` for `c`.
-* `TauCeti.FSymbols.zmod2Equiv` and `TauCeti.RSymbols.zmod2Equiv`: complete classification on
-  `ZMod 2`, identifying F-symbols with `{ u : Rˣ // u * u = 1 }` via `F^{111}_1 = u` and R-symbols
-  with `{ r : Rˣ // r * r = u }` via `(R^{11}_0)^2 = F^{111}_1`, including the symmetric and super
-  braidings for `u = 1` and nonexistence over `ℤ` for `u = -1`.
+  `TauCeti.GradedObject.TwistingCocycle I R` (Quinn, §5), with `F^{abc}_{a+b+c} = (ω a b c)⁻¹`.
+* `TauCeti.RSymbols.pointedBraidingEquiv`: equivalence between `RSymbols (ofTwistingCocycle c)` and
+  abelian `3`-cocycle braidings `TauCeti.GradedObject.PointedBraiding c` (Joyal–Street, §3).
+* `TauCeti.FSymbols.zmod2Equiv` and `TauCeti.RSymbols.zmod2Equiv`: classification on `ZMod 2` via
+  `{ u : Rˣ // u * u = 1 }` (`F^{111}_1 = u`) and `{ r : Rˣ // r * r = u }` (`R^{11}_0 = r`),
+  including `RSymbols.zmod2Super` (`u = 1`, `r = -1`) and `RSymbols.instIsEmptyZMod2NegOneInt`.
 
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor Categories*][egno15], §2.3 (Ex. 2.3.8),
   §2.6 (Prop. 2.6.1), and §8.4 (abelian `3`-cocycles).
+* A. Joyal and R. Street, *Braided tensor categories*, Adv. Math. **102** (1993), 20–78, §3.
+* F. Quinn, *Group categories and their field theories*, Geom. Topol. Monogr. **2** (1999),
+  407–453, §5.
 -/
 
 public section
@@ -51,15 +49,12 @@ namespace FusionRules
 def ofAddMonoid (I : Type u) [AddMonoid I] [DecidableEq I] : FusionRules I where
   unit := 0
   N a b c := if a + b = c then 1 else 0
-  N_unit_left a b := by simp
-  N_unit_right a b := by simp
+  N_unit_left _ _ := by simp
+  N_unit_right _ _ := by simp
 
-@[simp]
-theorem ofAddMonoid_unit (I : Type u) [AddMonoid I] [DecidableEq I] : (ofAddMonoid I).unit = 0 :=
-  (rfl)
-
-@[simp]
-theorem ofAddMonoid_N (I : Type u) [AddMonoid I] [DecidableEq I] (a b c : I) :
+@[simp] theorem ofAddMonoid_unit (I : Type u) [AddMonoid I] [DecidableEq I] :
+    (ofAddMonoid I).unit = 0 := (rfl)
+@[simp] theorem ofAddMonoid_N (I : Type u) [AddMonoid I] [DecidableEq I] (a b c : I) :
     (ofAddMonoid I).N a b c = if a + b = c then 1 else 0 := (rfl)
 
 /-- Pointed fusion rules on a multiplicative monoid `G`, with `unit = 1` and
@@ -67,21 +62,17 @@ theorem ofAddMonoid_N (I : Type u) [AddMonoid I] [DecidableEq I] (a b c : I) :
 def ofMonoid (G : Type u) [Monoid G] [DecidableEq G] : FusionRules G where
   unit := 1
   N a b c := if a * b = c then 1 else 0
-  N_unit_left a b := by simp
-  N_unit_right a b := by simp
+  N_unit_left _ _ := by simp
+  N_unit_right _ _ := by simp
 
-@[simp]
-theorem ofMonoid_unit (G : Type u) [Monoid G] [DecidableEq G] : (ofMonoid G).unit = 1 := (rfl)
-
-@[simp]
-theorem ofMonoid_N (G : Type u) [Monoid G] [DecidableEq G] (a b c : G) :
+@[simp] theorem ofMonoid_unit (G : Type u) [Monoid G] [DecidableEq G] :
+    (ofMonoid G).unit = 1 := (rfl)
+@[simp] theorem ofMonoid_N (G : Type u) [Monoid G] [DecidableEq G] (a b c : G) :
     (ofMonoid G).N a b c = if a * b = c then 1 else 0 := (rfl)
 
 /-- Reindexing `ofAddMonoid (Additive G)` along `Additive.toMul` recovers `ofMonoid G`. -/
-@[simp]
-theorem reindex_ofAddMonoid_additive (G : Type u) [Monoid G] [DecidableEq G] :
-    (ofAddMonoid (Additive G)).reindex Additive.toMul = ofMonoid G := by
-  ext <;> simp [← ofMul_mul]
+@[simp] theorem reindex_ofAddMonoid_additive (G : Type u) [Monoid G] [DecidableEq G] :
+    (ofAddMonoid (Additive G)).reindex Additive.toMul = ofMonoid G := by ext <;> simp [← ofMul_mul]
 
 section AddMonoidHelpers
 
@@ -94,50 +85,54 @@ theorem eq_of_fin_ofAddMonoid {a b c : I} (i : Fin ((ofAddMonoid I).N a b c)) : 
 /-- The canonical basis index in `Fin ((ofAddMonoid I).N a b c)` when `a + b = c`. -/
 def ofAddMonoidIdx {a b c : I} (h : a + b = c) : Fin ((ofAddMonoid I).N a b c) := ⟨0, by simp [h]⟩
 
-@[simp]
-theorem val_ofAddMonoidIdx {a b c : I} (h : a + b = c) : (ofAddMonoidIdx h).val = 0 := (rfl)
+@[simp] theorem val_ofAddMonoidIdx {a b c : I} (h : a + b = c) : (ofAddMonoidIdx h).val = 0 := (rfl)
 
 theorem fin_ofAddMonoid_eq {a b c : I} (h : a + b = c) (i : Fin ((ofAddMonoid I).N a b c)) :
-    i = ofAddMonoidIdx h :=
-  Fin.ext (by simpa [h] using i.isLt)
+    i = ofAddMonoidIdx h := Fin.ext (by simpa [h] using i.isLt)
 
 theorem eq_of_left_ofAddMonoid {a b c d : I} (x : (ofAddMonoid I).Left a b c d) :
-    a + b + c = d := by
-  rw [eq_of_fin_ofAddMonoid x.2.1, eq_of_fin_ofAddMonoid x.2.2]
+    a + b + c = d := by rw [eq_of_fin_ofAddMonoid x.2.1, eq_of_fin_ofAddMonoid x.2.2]
 
 theorem eq_of_right_ofAddMonoid {a b c d : I} (y : (ofAddMonoid I).Right a b c d) :
-    a + b + c = d := by
-  rw [add_assoc, eq_of_fin_ofAddMonoid y.2.1, eq_of_fin_ofAddMonoid y.2.2]
+    a + b + c = d := by rw [add_assoc, eq_of_fin_ofAddMonoid y.2.1, eq_of_fin_ofAddMonoid y.2.2]
 
 /-- The unique element of `(ofAddMonoid I).Left a b c d` when `a + b + c = d`. -/
 def ofAddMonoidLeft {a b c d : I} (h : a + b + c = d) : (ofAddMonoid I).Left a b c d :=
   ⟨a + b, ofAddMonoidIdx rfl, ofAddMonoidIdx h⟩
 
+@[simp] theorem ofAddMonoidLeft_fst {a b c d : I} (h : a + b + c = d) :
+    (ofAddMonoidLeft h).1 = a + b := (rfl)
+theorem ofAddMonoidLeft_def {a b c d : I} (h : a + b + c = d) :
+    ofAddMonoidLeft h = ⟨a + b, ofAddMonoidIdx rfl, ofAddMonoidIdx h⟩ := (rfl)
+
 /-- The unique element of `(ofAddMonoid I).Right a b c d` when `a + b + c = d`. -/
 def ofAddMonoidRight {a b c d : I} (h : a + b + c = d) : (ofAddMonoid I).Right a b c d :=
   ⟨b + c, ofAddMonoidIdx rfl, ofAddMonoidIdx (by rwa [← add_assoc])⟩
 
+@[simp] theorem ofAddMonoidRight_fst {a b c d : I} (h : a + b + c = d) :
+    (ofAddMonoidRight h).1 = b + c := (rfl)
+theorem ofAddMonoidRight_def {a b c d : I} (h : a + b + c = d) :
+    ofAddMonoidRight h = ⟨b + c, ofAddMonoidIdx rfl, ofAddMonoidIdx (by rwa [← add_assoc])⟩ := (rfl)
+
 theorem left_ofAddMonoid_eq {a b c d : I} (h : a + b + c = d)
     (x : (ofAddMonoid I).Left a b c d) : x = ofAddMonoidLeft h := by
-  rcases x with ⟨e, i, j⟩
-  obtain rfl : a + b = e := eq_of_fin_ofAddMonoid i
-  simp [ofAddMonoidLeft, fin_ofAddMonoid_eq rfl i, fin_ofAddMonoid_eq h j]
+  rcases x with ⟨_, i, j⟩; obtain rfl := eq_of_fin_ofAddMonoid i
+  simp [ofAddMonoidLeft_def, fin_ofAddMonoid_eq rfl i, fin_ofAddMonoid_eq h j]
 
 theorem right_ofAddMonoid_eq {a b c d : I} (h : a + b + c = d)
     (y : (ofAddMonoid I).Right a b c d) : y = ofAddMonoidRight h := by
-  rcases y with ⟨f, k, l⟩
-  obtain rfl : b + c = f := eq_of_fin_ofAddMonoid k
-  have h' : a + (b + c) = d := by rwa [← add_assoc]
-  simp [ofAddMonoidRight, fin_ofAddMonoid_eq rfl k, fin_ofAddMonoid_eq h' l]
+  rcases y with ⟨_, k, l⟩; obtain rfl := eq_of_fin_ofAddMonoid k
+  simp [ofAddMonoidRight_def, fin_ofAddMonoid_eq rfl k,
+    fin_ofAddMonoid_eq (by rwa [← add_assoc]) l]
 
 theorem sum_fin_ofAddMonoid_of_eq {M : Type*} [AddCommMonoid M] {a b c : I} (h : a + b = c)
     (f : Fin ((ofAddMonoid I).N a b c) → M) : ∑ i, f i = f (ofAddMonoidIdx h) :=
   Fintype.sum_eq_single (ofAddMonoidIdx h) fun i hi ↦ (hi (fin_ofAddMonoid_eq h i)).elim
 
 theorem sum_fin_ofAddMonoid_of_ne {M : Type*} [AddCommMonoid M] {a b c : I} (h : a + b ≠ c)
-    (f : Fin ((ofAddMonoid I).N a b c) → M) : ∑ i, f i = 0 := by
+    (f : Fin ((ofAddMonoid I).N a b c) → M) : ∑ i, f i = 0 :=
   have : IsEmpty (Fin ((ofAddMonoid I).N a b c)) := ⟨fun i ↦ h (eq_of_fin_ofAddMonoid i)⟩
-  exact Fintype.sum_empty f
+  Fintype.sum_empty f
 
 theorem sum_ofAddMonoid_fst {M : Type*} [AddCommMonoid M] [Fintype I] (a b : I)
     (g : ∀ e : I, Fin ((ofAddMonoid I).N a b e) → M) :
@@ -155,177 +150,158 @@ namespace FSymbols
 
 section Pointed
 
+open FusionRules (ofAddMonoid ofAddMonoidIdx ofAddMonoidLeft ofAddMonoidRight
+  eq_of_fin_ofAddMonoid fin_ofAddMonoid_eq eq_of_left_ofAddMonoid eq_of_right_ofAddMonoid
+  left_ofAddMonoid_eq right_ofAddMonoid_eq sum_fin_ofAddMonoid_of_eq sum_ofAddMonoid_fst)
+open GradedObject (TwistingCocycle)
+
 variable {R : Type v} [CommRing R] {I : Type u} [Fintype I] [DecidableEq I] [AddMonoid I]
 
-/-- The F-symbols attached to a normalized `3`-cocycle `c : GradedObject.TwistingCocycle I R`, with
+private theorem ofAddMonoid_pentagon_sides
+    (F : ∀ a b c' d : I, Matrix ((ofAddMonoid I).Left a b c' d) ((ofAddMonoid I).Right a b c' d) R)
+    (φ : I → I → I → R) (hF : ∀ a b c' d x y, F a b c' d x y = φ a b c') {A B C D E p q r s : I}
+    (i₁ : Fin ((ofAddMonoid I).N A B p)) (i₂ : Fin ((ofAddMonoid I).N p C q))
+    (i₃ : Fin ((ofAddMonoid I).N q D E)) (k : Fin ((ofAddMonoid I).N C D r))
+    (m : Fin ((ofAddMonoid I).N B r s)) (n : Fin ((ofAddMonoid I).N A s E)) :
+    (∑ l : Fin ((ofAddMonoid I).N p r E),
+        F p C D E ⟨q, i₂, i₃⟩ ⟨r, k, l⟩ * F A B r E ⟨p, i₁, l⟩ ⟨s, m, n⟩ =
+      φ (A + B) C D * φ A B (C + D)) ∧
+    (∑ t : I, ∑ j : Fin ((ofAddMonoid I).N B C t), ∑ j' : Fin ((ofAddMonoid I).N A t q),
+        ∑ m' : Fin ((ofAddMonoid I).N t D s),
+        F A B C q ⟨p, i₁, i₂⟩ ⟨t, j, j'⟩ * F A t D E ⟨q, j', i₃⟩ ⟨s, m', n⟩ *
+          F B C D s ⟨t, j, m'⟩ ⟨r, k, m⟩ =
+      φ A B C * φ A (B + C) D * φ B C D) := by
+  obtain rfl := eq_of_fin_ofAddMonoid i₁; obtain rfl := eq_of_fin_ofAddMonoid i₂
+  obtain rfl := eq_of_fin_ofAddMonoid i₃; obtain rfl := eq_of_fin_ofAddMonoid k
+  obtain rfl := eq_of_fin_ofAddMonoid m
+  refine ⟨by rw [sum_fin_ofAddMonoid_of_eq (add_assoc (A + B) C D).symm, hF, hF], ?_⟩
+  rw [sum_ofAddMonoid_fst B C, sum_fin_ofAddMonoid_of_eq (add_assoc A B C).symm,
+    sum_fin_ofAddMonoid_of_eq (add_assoc B C D), hF, hF, hF]
+
+/-- The F-symbols attached to a normalized `3`-cocycle `c : TwistingCocycle I R`, with
 `F^{abc}_{a+b+c} = (c.ω a b c)⁻¹` and `Finv^{abc}_{a+b+c} = c.ω a b c`. -/
-def ofTwistingCocycle (c : GradedObject.TwistingCocycle I R) :
-    FSymbols R (FusionRules.ofAddMonoid I) where
+def ofTwistingCocycle (c : TwistingCocycle I R) : FSymbols R (ofAddMonoid I) where
   F a b c' _ := Matrix.of fun _ _ ↦ (((c.ω a b c')⁻¹ : Rˣ) : R)
   Finv a b c' _ := Matrix.of fun _ _ ↦ (c.ω a b c' : R)
   F_mul_Finv a b c' d := by
-    ext x₁ x₂
-    have h : a + b + c' = d := FusionRules.eq_of_left_ofAddMonoid x₁
-    rw [FusionRules.left_ofAddMonoid_eq h x₁, FusionRules.left_ofAddMonoid_eq h x₂,
-      Matrix.mul_apply, Matrix.one_apply_eq,
-      Fintype.sum_eq_single (FusionRules.ofAddMonoidRight h)
-        fun y hy ↦ (hy (FusionRules.right_ofAddMonoid_eq h y)).elim]
+    ext x₁ x₂; have h := eq_of_left_ofAddMonoid x₁
+    rw [left_ofAddMonoid_eq h x₁, left_ofAddMonoid_eq h x₂, Matrix.mul_apply, Matrix.one_apply_eq,
+      Fintype.sum_eq_single (ofAddMonoidRight h) fun y hy ↦ (hy (right_ofAddMonoid_eq h y)).elim]
     simp only [Matrix.of_apply, Units.inv_mul]
   Finv_mul_F a b c' d := by
-    ext y₁ y₂
-    have h : a + b + c' = d := FusionRules.eq_of_right_ofAddMonoid y₁
-    rw [FusionRules.right_ofAddMonoid_eq h y₁, FusionRules.right_ofAddMonoid_eq h y₂,
-      Matrix.mul_apply, Matrix.one_apply_eq,
-      Fintype.sum_eq_single (FusionRules.ofAddMonoidLeft h)
-        fun x hx ↦ (hx (FusionRules.left_ofAddMonoid_eq h x)).elim]
+    ext y₁ y₂; have h := eq_of_right_ofAddMonoid y₁
+    rw [right_ofAddMonoid_eq h y₁, right_ofAddMonoid_eq h y₂, Matrix.mul_apply, Matrix.one_apply_eq,
+      Fintype.sum_eq_single (ofAddMonoidLeft h) fun x hx ↦ (hx (left_ofAddMonoid_eq h x)).elim]
     simp only [Matrix.of_apply, Units.mul_inv]
-  pentagon A B C D E p q r s i₁ i₂ i₃ k m _ := by
-    obtain rfl : A + B = p := FusionRules.eq_of_fin_ofAddMonoid i₁
-    obtain rfl : A + B + C = q := FusionRules.eq_of_fin_ofAddMonoid i₂
-    obtain rfl : A + B + C + D = E := FusionRules.eq_of_fin_ofAddMonoid i₃
-    obtain rfl : C + D = r := FusionRules.eq_of_fin_ofAddMonoid k
-    obtain rfl : B + (C + D) = s := FusionRules.eq_of_fin_ofAddMonoid m
-    rw [FusionRules.sum_fin_ofAddMonoid_of_eq (add_assoc (A + B) C D).symm,
-      FusionRules.sum_ofAddMonoid_fst B C,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_assoc A B C).symm,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_assoc B C D)]
-    have hcoc : ((c.ω (A + B) C D)⁻¹ * (c.ω A B (C + D))⁻¹ : Rˣ) =
-        (c.ω A B C)⁻¹ * (c.ω A (B + C) D)⁻¹ * (c.ω B C D)⁻¹ := by
-      simpa [mul_inv, mul_comm, mul_left_comm, mul_assoc] using congrArg Inv.inv (c.cocycle A B C D)
-    simpa [Matrix.of_apply, Units.val_mul, mul_assoc] using congrArg Units.val hcoc
-  triangle a c' d j l := by
-    have h : a + c' = d := FusionRules.eq_of_fin_ofAddMonoid j
-    rw [FusionRules.fin_ofAddMonoid_eq h j, FusionRules.fin_ofAddMonoid_eq h l]; simp
+  pentagon A B C D _ _ _ _ _ i₁ i₂ i₃ k m n := by
+    obtain ⟨hL, hR⟩ := ofAddMonoid_pentagon_sides
+      (fun a b c' _ ↦ Matrix.of fun _ _ ↦ (((c.ω a b c')⁻¹ : Rˣ) : R))
+      (fun a b c' ↦ (((c.ω a b c')⁻¹ : Rˣ) : R)) (fun _ _ _ _ _ _ ↦ rfl) i₁ i₂ i₃ k m n
+    refine (hL.trans ?_).trans hR.symm; rw [mul_comm]
+    simpa only [mul_inv_rev, Units.val_mul, mul_assoc] using
+      congrArg (fun u : Rˣ ↦ ((u⁻¹ : Rˣ) : R)) (c.cocycle A B C D)
+  triangle _ _ _ j l := by
+    have h := eq_of_fin_ofAddMonoid j; rw [fin_ofAddMonoid_eq h j, fin_ofAddMonoid_eq h l]; simp
 
-@[simp]
-theorem ofTwistingCocycle_F_apply (c : GradedObject.TwistingCocycle I R) (a b c' d : I)
-    (x : (FusionRules.ofAddMonoid I).Left a b c' d)
-    (y : (FusionRules.ofAddMonoid I).Right a b c' d) :
-    (ofTwistingCocycle c).F a b c' d x y = (((c.ω a b c')⁻¹ : Rˣ) : R) :=
-  Matrix.of_apply _ _ _
+@[simp] theorem ofTwistingCocycle_F_apply (c : TwistingCocycle I R) (a b c' d : I)
+    (x : (ofAddMonoid I).Left a b c' d) (y : (ofAddMonoid I).Right a b c' d) :
+    (ofTwistingCocycle c).F a b c' d x y = (((c.ω a b c')⁻¹ : Rˣ) : R) := Matrix.of_apply _ _ _
 
-@[simp]
-theorem ofTwistingCocycle_Finv_apply (c : GradedObject.TwistingCocycle I R) (a b c' d : I)
-    (y : (FusionRules.ofAddMonoid I).Right a b c' d)
-    (x : (FusionRules.ofAddMonoid I).Left a b c' d) :
-    (ofTwistingCocycle c).Finv a b c' d y x = (c.ω a b c' : R) :=
-  Matrix.of_apply _ _ _
+@[simp] theorem ofTwistingCocycle_Finv_apply (c : TwistingCocycle I R) (a b c' d : I)
+    (y : (ofAddMonoid I).Right a b c' d) (x : (ofAddMonoid I).Left a b c' d) :
+    (ofTwistingCocycle c).Finv a b c' d y x = (c.ω a b c' : R) := Matrix.of_apply _ _ _
 
-/-- The invertible scalar `Finv^{abc}_{a+b+c} : Rˣ` with inverse `F^{abc}_{a+b+c}` extracted from
-pointed F-symbols. -/
-def pointedUnit (P : FSymbols R (FusionRules.ofAddMonoid I)) (a b c' : I) : Rˣ where
-  val := P.Finv a b c' (a + b + c')
-    (FusionRules.ofAddMonoidRight rfl) (FusionRules.ofAddMonoidLeft rfl)
-  inv := P.F a b c' (a + b + c')
-    (FusionRules.ofAddMonoidLeft rfl) (FusionRules.ofAddMonoidRight rfl)
-  val_inv := by
-    have h := P.sum_Finv_mul_F a b c' (a + b + c')
-      (FusionRules.ofAddMonoidRight rfl) (FusionRules.ofAddMonoidRight rfl)
-    rw [Fintype.sum_eq_single (FusionRules.ofAddMonoidLeft rfl)
-      fun x hx ↦ (hx (FusionRules.left_ofAddMonoid_eq rfl x)).elim] at h
-    simpa using h
-  inv_val := by
-    have h := P.sum_F_mul_Finv a b c' (a + b + c')
-      (FusionRules.ofAddMonoidLeft rfl) (FusionRules.ofAddMonoidLeft rfl)
-    rw [Fintype.sum_eq_single (FusionRules.ofAddMonoidRight rfl)
-      fun y hy ↦ (hy (FusionRules.right_ofAddMonoid_eq rfl y)).elim] at h
-    simpa using h
-
-@[simp]
-theorem val_pointedUnit (P : FSymbols R (FusionRules.ofAddMonoid I)) (a b c' : I) :
-    (P.pointedUnit a b c' : R) =
-      P.Finv a b c' (a + b + c')
-        (FusionRules.ofAddMonoidRight rfl) (FusionRules.ofAddMonoidLeft rfl) := (rfl)
-
-@[simp]
-theorem val_inv_pointedUnit (P : FSymbols R (FusionRules.ofAddMonoid I)) (a b c' : I) :
-    (((P.pointedUnit a b c')⁻¹ : Rˣ) : R) =
-      P.F a b c' (a + b + c')
-        (FusionRules.ofAddMonoidLeft rfl) (FusionRules.ofAddMonoidRight rfl) :=
-  (Units.inv_eq_val_inv (P.pointedUnit a b c')).symm
-
-private theorem pointed_F_eq (P : FSymbols R (FusionRules.ofAddMonoid I)) {a b c' d : I}
-    (h : a + b + c' = d) (x : (FusionRules.ofAddMonoid I).Left a b c' d)
-    (y : (FusionRules.ofAddMonoid I).Right a b c' d) :
-    P.F a b c' d x y = (((P.pointedUnit a b c')⁻¹ : Rˣ) : R) := by
-  subst h
-  rw [val_inv_pointedUnit, FusionRules.left_ofAddMonoid_eq rfl x,
-    FusionRules.right_ofAddMonoid_eq rfl y]
+private theorem pointed_F_eq_canonical (P : FSymbols R (ofAddMonoid I)) (a b c' d : I)
+    (x : (ofAddMonoid I).Left a b c' d) (y : (ofAddMonoid I).Right a b c' d) :
+    P.F a b c' d x y = P.F a b c' (a + b + c') (ofAddMonoidLeft rfl) (ofAddMonoidRight rfl) := by
+  obtain rfl := eq_of_left_ofAddMonoid x; rw [left_ofAddMonoid_eq rfl x, right_ofAddMonoid_eq rfl y]
 
 /-- Extract the normalized `3`-cocycle `ω a b c = Finv^{abc}_{a+b+c}` from pointed F-symbols. -/
-def toTwistingCocycle (P : FSymbols R (FusionRules.ofAddMonoid I)) :
-    GradedObject.TwistingCocycle I R where
-  ω := P.pointedUnit
+def toTwistingCocycle (P : FSymbols R (ofAddMonoid I)) : TwistingCocycle I R where
+  ω a b c' :=
+    { val := P.Finv a b c' (a + b + c') (ofAddMonoidRight rfl) (ofAddMonoidLeft rfl)
+      inv := P.F a b c' (a + b + c') (ofAddMonoidLeft rfl) (ofAddMonoidRight rfl)
+      val_inv := by
+        have h := P.sum_Finv_mul_F a b c' (a + b + c') (ofAddMonoidRight rfl) (ofAddMonoidRight rfl)
+        rw [Fintype.sum_eq_single (ofAddMonoidLeft rfl)
+          fun x hx ↦ (hx (left_ofAddMonoid_eq rfl x)).elim] at h; simpa using h
+      inv_val := by
+        have h := P.sum_F_mul_Finv a b c' (a + b + c') (ofAddMonoidLeft rfl) (ofAddMonoidLeft rfl)
+        rw [Fintype.sum_eq_single (ofAddMonoidRight rfl)
+          fun y hy ↦ (hy (right_ofAddMonoid_eq rfl y)).elim] at h; simpa using h }
   cocycle i₁ i₂ i₃ i₄ := by
-    have hLHS : i₁ + i₂ + (i₃ + i₄) = i₁ + i₂ + i₃ + i₄ := (add_assoc (i₁ + i₂) i₃ i₄).symm
-    have hBC : i₁ + (i₂ + i₃) = i₁ + i₂ + i₃ := (add_assoc i₁ i₂ i₃).symm
-    have hBCD : i₂ + i₃ + i₄ = i₂ + (i₃ + i₄) := add_assoc i₂ i₃ i₄
     have hBCDE : i₁ + (i₂ + (i₃ + i₄)) = i₁ + i₂ + i₃ + i₄ := by
-      rw [← hBCD, ← add_assoc i₁ (i₂ + i₃) i₄, hBC]
-    have hp := P.pentagon i₁ i₂ i₃ i₄ (i₁ + i₂ + i₃ + i₄)
-      (i₁ + i₂) (i₁ + i₂ + i₃) (i₃ + i₄) (i₂ + (i₃ + i₄))
-      (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx hBCDE)
-    rw [FusionRules.sum_fin_ofAddMonoid_of_eq hLHS, FusionRules.sum_ofAddMonoid_fst i₂ i₃,
-      FusionRules.sum_fin_ofAddMonoid_of_eq hBC, FusionRules.sum_fin_ofAddMonoid_of_eq hBCD,
-      P.pointed_F_eq rfl, P.pointed_F_eq hLHS, P.pointed_F_eq rfl, P.pointed_F_eq (by rw [hBC]),
-      P.pointed_F_eq hBCD] at hp
+      rw [← add_assoc i₂ i₃ i₄, ← add_assoc i₁ (i₂ + i₃) i₄, add_assoc i₁ i₂ i₃]
+    have hp := P.pentagon i₁ i₂ i₃ i₄ (i₁ + i₂ + i₃ + i₄) (i₁ + i₂) (i₁ + i₂ + i₃) (i₃ + i₄)
+      (i₂ + (i₃ + i₄)) (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl)
+      (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl) (ofAddMonoidIdx hBCDE)
+    obtain ⟨hL, hR⟩ := ofAddMonoid_pentagon_sides P.F _ P.pointed_F_eq_canonical
+      (ofAddMonoidIdx (a := i₁) (b := i₂) rfl) (ofAddMonoidIdx (a := i₁ + i₂) (b := i₃) rfl)
+      (ofAddMonoidIdx (a := i₁ + i₂ + i₃) (b := i₄) rfl) (ofAddMonoidIdx (a := i₃) (b := i₄) rfl)
+      (ofAddMonoidIdx (a := i₂) (b := i₃ + i₄) rfl) (ofAddMonoidIdx hBCDE)
     refine inv_inj.mp (Units.ext ?_)
-    simpa only [mul_inv, Units.val_mul, mul_comm, mul_left_comm, mul_assoc] using hp
+    simp only [mul_inv_rev, Units.val_mul, Units.inv_mk, ← mul_assoc]
+    exact (mul_comm _ _).trans ((hL.symm.trans hp).trans hR)
   ω_zero i₁ i₃ := inv_inj.mp <| Units.ext <| by
-    have j : Fin ((FusionRules.ofAddMonoid I).N i₁ i₃ (i₁ + 0 + i₃)) :=
-      FusionRules.ofAddMonoidIdx (by simp)
-    simpa using (P.pointed_F_eq rfl ⟨i₁, (FusionRules.ofAddMonoid I).unitRight i₁, j⟩
-      ⟨i₃, (FusionRules.ofAddMonoid I).unitLeft i₃, j⟩).symm.trans
-      (P.triangle_self i₁ i₃ (i₁ + 0 + i₃) j)
+    let j : Fin ((ofAddMonoid I).N i₁ i₃ (i₁ + 0 + i₃)) := ofAddMonoidIdx (by simp)
+    simpa only [inv_one, Units.inv_mk, Units.val_one] using
+      (P.pointed_F_eq_canonical i₁ 0 i₃ (i₁ + 0 + i₃) ⟨i₁, (ofAddMonoid I).unitRight i₁, j⟩
+        ⟨i₃, (ofAddMonoid I).unitLeft i₃, j⟩).symm.trans (P.triangle_self i₁ i₃ (i₁ + 0 + i₃) j)
 
-@[simp]
-theorem val_toTwistingCocycle_ω (P : FSymbols R (FusionRules.ofAddMonoid I)) (a b c' : I) :
+@[simp] theorem val_toTwistingCocycle_ω (P : FSymbols R (ofAddMonoid I)) (a b c' : I) :
     (P.toTwistingCocycle.ω a b c' : R) =
-      P.Finv a b c' (a + b + c')
-        (FusionRules.ofAddMonoidRight rfl) (FusionRules.ofAddMonoidLeft rfl) := (rfl)
+      P.Finv a b c' (a + b + c') (ofAddMonoidRight rfl) (ofAddMonoidLeft rfl) := (rfl)
 
-@[simp]
-theorem val_inv_toTwistingCocycle_ω (P : FSymbols R (FusionRules.ofAddMonoid I)) (a b c' : I) :
+@[simp] theorem val_inv_toTwistingCocycle_ω (P : FSymbols R (ofAddMonoid I)) (a b c' : I) :
     (((P.toTwistingCocycle.ω a b c')⁻¹ : Rˣ) : R) =
-      P.F a b c' (a + b + c')
-        (FusionRules.ofAddMonoidLeft rfl) (FusionRules.ofAddMonoidRight rfl) :=
-  val_inv_pointedUnit P a b c'
+      P.F a b c' (a + b + c') (ofAddMonoidLeft rfl) (ofAddMonoidRight rfl) :=
+  (Units.inv_eq_val_inv (P.toTwistingCocycle.ω a b c')).symm
+
+theorem F_eq_inv_toTwistingCocycle_ω (P : FSymbols R (ofAddMonoid I)) (a b c' d : I)
+    (x : (ofAddMonoid I).Left a b c' d) (y : (ofAddMonoid I).Right a b c' d) :
+    P.F a b c' d x y = (((P.toTwistingCocycle.ω a b c')⁻¹ : Rˣ) : R) := by
+  rw [val_inv_toTwistingCocycle_ω, pointed_F_eq_canonical]
+
+theorem Finv_eq_toTwistingCocycle_ω (P : FSymbols R (ofAddMonoid I)) (a b c' d : I)
+    (y : (ofAddMonoid I).Right a b c' d) (x : (ofAddMonoid I).Left a b c' d) :
+    P.Finv a b c' d y x = (P.toTwistingCocycle.ω a b c' : R) := by
+  obtain rfl := eq_of_right_ofAddMonoid y
+  rw [val_toTwistingCocycle_ω, right_ofAddMonoid_eq rfl y, left_ofAddMonoid_eq rfl x]
+
+@[simp] theorem toTwistingCocycle_ofTwistingCocycle (c : TwistingCocycle I R) :
+    (ofTwistingCocycle c).toTwistingCocycle = c := by ext; simp
+
+@[simp] theorem ofTwistingCocycle_toTwistingCocycle (P : FSymbols R (ofAddMonoid I)) :
+    ofTwistingCocycle P.toTwistingCocycle = P := by
+  ext a b c' d x y; rw [ofTwistingCocycle_F_apply, F_eq_inv_toTwistingCocycle_ω]
 
 /-- Equivalence between F-symbols on `FusionRules.ofAddMonoid I` and normalized `3`-cocycles
-`TauCeti.GradedObject.TwistingCocycle I R`, matching `F^{abc}_{a+b+c} = (ω a b c)⁻¹`. -/
-def twistingCocycleEquiv :
-    FSymbols R (FusionRules.ofAddMonoid I) ≃ GradedObject.TwistingCocycle I R where
+`TauCeti.GradedObject.TwistingCocycle I R`, with inverse `FSymbols.ofTwistingCocycle`. -/
+def twistingCocycleEquiv : FSymbols R (ofAddMonoid I) ≃ TwistingCocycle I R where
   toFun := toTwistingCocycle
   invFun := ofTwistingCocycle
-  left_inv P := by
-    ext a b c' d x y
-    rw [ofTwistingCocycle_F_apply, toTwistingCocycle,
-      P.pointed_F_eq (FusionRules.eq_of_left_ofAddMonoid x) x y]
-  right_inv c := by ext a b c'; rfl
+  left_inv := ofTwistingCocycle_toTwistingCocycle
+  right_inv := toTwistingCocycle_ofTwistingCocycle
 
-@[simp]
-theorem twistingCocycleEquiv_apply (P : FSymbols R (FusionRules.ofAddMonoid I)) :
+@[simp] theorem twistingCocycleEquiv_apply (P : FSymbols R (ofAddMonoid I)) :
     twistingCocycleEquiv P = P.toTwistingCocycle := (rfl)
-
-@[simp]
-theorem twistingCocycleEquiv_symm_apply (c : GradedObject.TwistingCocycle I R) :
+@[simp] theorem twistingCocycleEquiv_symm_apply (c : TwistingCocycle I R) :
     twistingCocycleEquiv.symm c = ofTwistingCocycle c := (rfl)
 
 /-- Base change commutes with `FSymbols.ofTwistingCocycle`. -/
-theorem map_ofTwistingCocycle {S : Type*} [CommRing S] (f : R →+* S)
-    (c : GradedObject.TwistingCocycle I R) :
-    (ofTwistingCocycle c).map f =
-      ofTwistingCocycle
-        { ω := fun a b c' ↦ Units.map (f : R →* S) (c.ω a b c')
-          cocycle := fun i₁ i₂ i₃ i₄ ↦ by
-            simpa [← map_mul] using congrArg (Units.map (f : R →* S)) (c.cocycle i₁ i₂ i₃ i₄)
-          ω_zero := fun _ _ ↦ by simp } := by
+@[simp] theorem map_ofTwistingCocycle {S : Type*} [CommRing S] (f : R →+* S)
+    (c : TwistingCocycle I R) :
+    (ofTwistingCocycle c).map f = ofTwistingCocycle (c.map (f : R →* S)) := by
   ext a b c' d x y
   rw [map_F_apply, ofTwistingCocycle_F_apply, ofTwistingCocycle_F_apply,
-    ← map_inv (Units.map (f : R →* S)), Units.coe_map]
-  rfl
+    TwistingCocycle.map_ω, ← map_inv (Units.map (f : R →* S)), Units.coe_map]
+  simp only [MonoidHom.coe_ofClass]
+
+@[simp] theorem toTwistingCocycle_map {S : Type*} [CommRing S] (f : R →+* S)
+    (P : FSymbols R (ofAddMonoid I)) :
+    (P.map f).toTwistingCocycle = P.toTwistingCocycle.map (f : R →* S) := by
+  rw [← toTwistingCocycle_ofTwistingCocycle (P.toTwistingCocycle.map (f : R →* S)),
+    ← map_ofTwistingCocycle, ofTwistingCocycle_toTwistingCocycle]
 
 end Pointed
 
@@ -333,181 +309,179 @@ end FSymbols
 
 /-! ### Pointed braidings and abelian 3-cocycles -/
 
-/-- A scalar braiding datum `r : I → I → Kˣ` on a commutative additive monoid `I` compatible
-with a normalized `3`-cocycle `c : GradedObject.TwistingCocycle I K`, i.e., an Eilenberg–MacLane
-abelian `3`-cocycle extending `c`. -/
-@[ext]
-structure PointedBraiding {I : Type u} [AddCommMonoid I] {K : Type v} [CommRing K]
-    (c : GradedObject.TwistingCocycle I K) where
-  /-- The scalar braiding entries `r a b = R^{ab}_{a+b}`. -/
-  r : I → I → Kˣ
-  /-- Forward scalar hexagon identity. -/
-  hexagon_forward (a b c' : I) :
-    (c.ω a b c')⁻¹ * r a (b + c') * (c.ω b c' a)⁻¹ = r a b * (c.ω b a c')⁻¹ * r a c'
-  /-- Reverse scalar hexagon identity. -/
-  hexagon_reverse (a b c' : I) :
-    c.ω a b c' * r (a + b) c' * c.ω c' a b = r b c' * c.ω a c' b * r a c'
-
-namespace PointedBraiding
-
-variable {I : Type u} [AddCommMonoid I] {K : Type v} [CommRing K]
-  {c : GradedObject.TwistingCocycle I K}
-
-@[simp]
-theorem r_zero_right (B : PointedBraiding c) (a : I) : B.r a 0 = 1 := by
-  simpa using (B.hexagon_forward a 0 0).symm
-
-@[simp]
-theorem r_zero_left (B : PointedBraiding c) (a : I) : B.r 0 a = 1 := by
-  simpa using (B.hexagon_reverse 0 0 a).symm
-
-end PointedBraiding
-
 namespace RSymbols
 
 section Pointed
 
+open FusionRules (ofAddMonoid ofAddMonoidIdx eq_of_fin_ofAddMonoid fin_ofAddMonoid_eq
+  sum_fin_ofAddMonoid_of_eq sum_ofAddMonoid_fst)
+open GradedObject (TwistingCocycle PointedBraiding)
+
 variable {K : Type v} [CommRing K] {I : Type u} [Fintype I] [DecidableEq I] [AddCommMonoid I]
-  {c : GradedObject.TwistingCocycle I K}
+  {c : TwistingCocycle I K}
+
+private theorem ofAddMonoid_hexagon_forward_sides
+    (R : ∀ a b d : I, Matrix (Fin ((ofAddMonoid I).N a b d)) (Fin ((ofAddMonoid I).N b a d)) K)
+    (ρ : I → I → K) (hR : ∀ a b d i j, R a b d i j = ρ a b) (c : TwistingCocycle I K)
+    {a b c' d e g : I} (i : Fin ((ofAddMonoid I).N a b e)) (j : Fin ((ofAddMonoid I).N e c' d))
+    (n : Fin ((ofAddMonoid I).N c' a g)) (o : Fin ((ofAddMonoid I).N b g d)) :
+    (∑ f : I, ∑ k : Fin ((ofAddMonoid I).N b c' f), ∑ l : Fin ((ofAddMonoid I).N a f d),
+        ∑ m : Fin ((ofAddMonoid I).N f a d),
+        (FSymbols.ofTwistingCocycle c).F a b c' d ⟨e, i, j⟩ ⟨f, k, l⟩ * R a f d l m *
+          (FSymbols.ofTwistingCocycle c).F b c' a d ⟨f, k, m⟩ ⟨g, n, o⟩ =
+      (((c.ω a b c')⁻¹ : Kˣ) : K) * ρ a (b + c') * (((c.ω b c' a)⁻¹ : Kˣ) : K)) ∧
+    (∑ p : Fin ((ofAddMonoid I).N b a e), ∑ q : Fin ((ofAddMonoid I).N a c' g),
+        R a b e i p * (FSymbols.ofTwistingCocycle c).F b a c' d ⟨e, p, j⟩ ⟨g, q, o⟩ *
+          R a c' g q n =
+      ρ a b * (((c.ω b a c')⁻¹ : Kˣ) : K) * ρ a c') := by
+  obtain rfl := eq_of_fin_ofAddMonoid i; obtain rfl := eq_of_fin_ofAddMonoid j
+  obtain rfl := eq_of_fin_ofAddMonoid n
+  refine ⟨?_, by rw [sum_fin_ofAddMonoid_of_eq (add_comm b a),
+    sum_fin_ofAddMonoid_of_eq (add_comm a c'), FSymbols.ofTwistingCocycle_F_apply, hR, hR]⟩
+  rw [sum_ofAddMonoid_fst b c', sum_fin_ofAddMonoid_of_eq (add_assoc a b c').symm,
+    sum_fin_ofAddMonoid_of_eq (by abel : (b + c') + a = a + b + c'),
+    FSymbols.ofTwistingCocycle_F_apply, FSymbols.ofTwistingCocycle_F_apply, hR]
+
+private theorem ofAddMonoid_hexagon_reverse_sides
+    (R : ∀ a b d : I, Matrix (Fin ((ofAddMonoid I).N a b d)) (Fin ((ofAddMonoid I).N b a d)) K)
+    (ρ : I → I → K) (hR : ∀ a b d i j, R a b d i j = ρ a b) (c : TwistingCocycle I K)
+    {a b c' d f g : I} (k : Fin ((ofAddMonoid I).N b c' f)) (l : Fin ((ofAddMonoid I).N a f d))
+    (n : Fin ((ofAddMonoid I).N c' a g)) (o : Fin ((ofAddMonoid I).N g b d)) :
+    (∑ e : I, ∑ i : Fin ((ofAddMonoid I).N a b e), ∑ j : Fin ((ofAddMonoid I).N e c' d),
+        ∑ m : Fin ((ofAddMonoid I).N c' e d),
+        (FSymbols.ofTwistingCocycle c).Finv a b c' d ⟨f, k, l⟩ ⟨e, i, j⟩ * R e c' d j m *
+          (FSymbols.ofTwistingCocycle c).Finv c' a b d ⟨e, i, m⟩ ⟨g, n, o⟩ =
+      (c.ω a b c' : K) * ρ (a + b) c' * (c.ω c' a b : K)) ∧
+    (∑ p : Fin ((ofAddMonoid I).N c' b f), ∑ q : Fin ((ofAddMonoid I).N a c' g),
+        R b c' f k p * (FSymbols.ofTwistingCocycle c).Finv a c' b d ⟨f, p, l⟩ ⟨g, q, o⟩ *
+          R a c' g q n =
+      ρ b c' * (c.ω a c' b : K) * ρ a c') := by
+  obtain rfl := eq_of_fin_ofAddMonoid k; obtain rfl := eq_of_fin_ofAddMonoid l
+  obtain rfl := eq_of_fin_ofAddMonoid n
+  refine ⟨?_, by rw [sum_fin_ofAddMonoid_of_eq (add_comm c' b),
+    sum_fin_ofAddMonoid_of_eq (add_comm a c'), FSymbols.ofTwistingCocycle_Finv_apply, hR, hR]⟩
+  rw [sum_ofAddMonoid_fst a b, sum_fin_ofAddMonoid_of_eq (add_assoc a b c'),
+    sum_fin_ofAddMonoid_of_eq (by abel : c' + (a + b) = a + (b + c')),
+    FSymbols.ofTwistingCocycle_Finv_apply, FSymbols.ofTwistingCocycle_Finv_apply, hR]
 
 /-- Construct `RSymbols` on `FSymbols.ofTwistingCocycle c` from a `PointedBraiding c`. -/
 def ofPointedBraiding (B : PointedBraiding c) : RSymbols (FSymbols.ofTwistingCocycle c) where
   R a b _ := Matrix.of fun _ _ ↦ (B.r a b : K)
   Rinv a b _ := Matrix.of fun _ _ ↦ (((B.r a b)⁻¹ : Kˣ) : K)
   R_mul_Rinv a b d := by
-    ext i₁ i₂
-    have h : a + b = d := FusionRules.eq_of_fin_ofAddMonoid i₁
-    rw [FusionRules.fin_ofAddMonoid_eq h i₁, FusionRules.fin_ofAddMonoid_eq h i₂, Matrix.mul_apply,
-      Matrix.one_apply_eq, FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm b a ▸ h)]
+    ext i₁ i₂; have h := eq_of_fin_ofAddMonoid i₁
+    rw [fin_ofAddMonoid_eq h i₁, fin_ofAddMonoid_eq h i₂, Matrix.mul_apply, Matrix.one_apply_eq,
+      sum_fin_ofAddMonoid_of_eq (add_comm b a ▸ h)]
     simp only [Matrix.of_apply, Units.mul_inv]
   Rinv_mul_R a b d := by
-    ext j₁ j₂
-    have h' : b + a = d := FusionRules.eq_of_fin_ofAddMonoid j₁
-    rw [FusionRules.fin_ofAddMonoid_eq h' j₁, FusionRules.fin_ofAddMonoid_eq h' j₂,
-      Matrix.mul_apply, Matrix.one_apply_eq,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm a b ▸ h')]
+    ext j₁ j₂; have h' := eq_of_fin_ofAddMonoid j₁
+    rw [fin_ofAddMonoid_eq h' j₁, fin_ofAddMonoid_eq h' j₂, Matrix.mul_apply, Matrix.one_apply_eq,
+      sum_fin_ofAddMonoid_of_eq (add_comm a b ▸ h')]
     simp only [Matrix.of_apply, Units.inv_mul]
-  hexagon_forward a b c' d e g i j n _ := by
-    obtain rfl : a + b = e := FusionRules.eq_of_fin_ofAddMonoid i
-    obtain rfl : a + b + c' = d := FusionRules.eq_of_fin_ofAddMonoid j
-    obtain rfl : c' + a = g := FusionRules.eq_of_fin_ofAddMonoid n
-    rw [FusionRules.sum_ofAddMonoid_fst b c',
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_assoc a b c').symm,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (by abel : (b + c') + a = a + b + c'),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm b a),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm a c')]
-    simpa [Matrix.of_apply, Units.val_mul, mul_assoc] using
-      congrArg Units.val (B.hexagon_forward a b c')
-  hexagon_reverse a b c' d f g k l n _ := by
-    obtain rfl : b + c' = f := FusionRules.eq_of_fin_ofAddMonoid k
-    obtain rfl : a + (b + c') = d := FusionRules.eq_of_fin_ofAddMonoid l
-    obtain rfl : c' + a = g := FusionRules.eq_of_fin_ofAddMonoid n
-    rw [FusionRules.sum_ofAddMonoid_fst a b,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_assoc a b c'),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (by abel : c' + (a + b) = a + (b + c')),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm c' b),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm a c')]
-    simpa [Matrix.of_apply, Units.val_mul, mul_assoc] using
-      congrArg Units.val (B.hexagon_reverse a b c')
+  hexagon_forward a b c' _ _ _ i j n o := by
+    obtain ⟨hL, hR⟩ := ofAddMonoid_hexagon_forward_sides
+      (fun a b _ ↦ Matrix.of fun _ _ ↦ (B.r a b : K)) (fun a b ↦ (B.r a b : K))
+      (fun _ _ _ _ _ ↦ rfl) c i j n o
+    refine (hL.trans ?_).trans hR.symm
+    simpa only [Units.val_mul, mul_assoc] using congrArg Units.val (B.hexagon_forward a b c')
+  hexagon_reverse a b c' _ _ _ k l n o := by
+    obtain ⟨hL, hR⟩ := ofAddMonoid_hexagon_reverse_sides
+      (fun a b _ ↦ Matrix.of fun _ _ ↦ (B.r a b : K)) (fun a b ↦ (B.r a b : K))
+      (fun _ _ _ _ _ ↦ rfl) c k l n o
+    refine (hL.trans ?_).trans hR.symm
+    simpa only [Units.val_mul, mul_assoc] using congrArg Units.val (B.hexagon_reverse a b c')
 
-@[simp]
-theorem ofPointedBraiding_R_apply (B : PointedBraiding c) (a b d : I)
-    (i : Fin ((FusionRules.ofAddMonoid I).N a b d))
-    (j : Fin ((FusionRules.ofAddMonoid I).N b a d)) :
-    (ofPointedBraiding B).R a b d i j = (B.r a b : K) :=
-  Matrix.of_apply _ _ _
+@[simp] theorem ofPointedBraiding_R_apply (B : PointedBraiding c) (a b d : I)
+    (i : Fin ((ofAddMonoid I).N a b d)) (j : Fin ((ofAddMonoid I).N b a d)) :
+    (ofPointedBraiding B).R a b d i j = (B.r a b : K) := Matrix.of_apply _ _ _
 
-@[simp]
-theorem ofPointedBraiding_Rinv_apply (B : PointedBraiding c) (a b d : I)
-    (j : Fin ((FusionRules.ofAddMonoid I).N b a d))
-    (i : Fin ((FusionRules.ofAddMonoid I).N a b d)) :
-    (ofPointedBraiding B).Rinv a b d j i = (((B.r a b)⁻¹ : Kˣ) : K) :=
-  Matrix.of_apply _ _ _
+@[simp] theorem ofPointedBraiding_Rinv_apply (B : PointedBraiding c) (a b d : I)
+    (j : Fin ((ofAddMonoid I).N b a d)) (i : Fin ((ofAddMonoid I).N a b d)) :
+    (ofPointedBraiding B).Rinv a b d j i = (((B.r a b)⁻¹ : Kˣ) : K) := Matrix.of_apply _ _ _
 
-private theorem pointed_R_eq (Q : RSymbols (FSymbols.ofTwistingCocycle c)) {x y d : I}
-    (hx : x + y = d) (i : Fin ((FusionRules.ofAddMonoid I).N x y d))
-    (j : Fin ((FusionRules.ofAddMonoid I).N y x d)) :
-    Q.R x y d i j =
-      Q.R x y (x + y) (FusionRules.ofAddMonoidIdx rfl)
-        (FusionRules.ofAddMonoidIdx (add_comm y x)) := by
-  subst hx
-  rw [FusionRules.fin_ofAddMonoid_eq rfl i, FusionRules.fin_ofAddMonoid_eq (add_comm y x) j]
+private theorem pointed_R_eq_canonical (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (x y d : I)
+    (i : Fin ((ofAddMonoid I).N x y d)) (j : Fin ((ofAddMonoid I).N y x d)) :
+    Q.R x y d i j = Q.R x y (x + y) (ofAddMonoidIdx rfl) (ofAddMonoidIdx (add_comm y x)) := by
+  obtain rfl := eq_of_fin_ofAddMonoid i
+  rw [fin_ofAddMonoid_eq rfl i, fin_ofAddMonoid_eq (add_comm y x) j]
 
 /-- Extract a `PointedBraiding c` from `RSymbols (FSymbols.ofTwistingCocycle c)`. -/
 def toPointedBraiding (Q : RSymbols (FSymbols.ofTwistingCocycle c)) : PointedBraiding c where
   r a b :=
-    { val := Q.R a b (a + b) (FusionRules.ofAddMonoidIdx rfl)
-        (FusionRules.ofAddMonoidIdx (add_comm b a))
-      inv := Q.Rinv a b (a + b) (FusionRules.ofAddMonoidIdx (add_comm b a))
-        (FusionRules.ofAddMonoidIdx rfl)
+    { val := Q.R a b (a + b) (ofAddMonoidIdx rfl) (ofAddMonoidIdx (add_comm b a))
+      inv := Q.Rinv a b (a + b) (ofAddMonoidIdx (add_comm b a)) (ofAddMonoidIdx rfl)
       val_inv := by
-        have h := Q.sum_R_mul_Rinv a b (a + b)
-          (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx rfl)
-        rw [FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm b a)] at h
-        simpa using h
+        have h := Q.sum_R_mul_Rinv a b (a + b) (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl)
+        rw [sum_fin_ofAddMonoid_of_eq (add_comm b a)] at h; simpa using h
       inv_val := by
         have h := Q.sum_Rinv_mul_R a b (a + b)
-          (FusionRules.ofAddMonoidIdx (add_comm b a)) (FusionRules.ofAddMonoidIdx (add_comm b a))
-        rw [FusionRules.sum_fin_ofAddMonoid_of_eq rfl] at h
-        simpa using h }
+          (ofAddMonoidIdx (add_comm b a)) (ofAddMonoidIdx (add_comm b a))
+        rw [sum_fin_ofAddMonoid_of_eq rfl] at h; simpa using h }
   hexagon_forward a b c' := by
-    have ha : a + (b + c') = a + b + c' := (add_assoc a b c').symm
-    have hhex := Q.hexagon_forward a b c' (a + b + c') (a + b) (c' + a)
-      (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx (by abel : b + (c' + a) = a + b + c'))
-    rw [FusionRules.sum_ofAddMonoid_fst b c', FusionRules.sum_fin_ofAddMonoid_of_eq ha,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (by abel : (b + c') + a = a + b + c'),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm b a),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm a c'),
-      Q.pointed_R_eq ha, Q.pointed_R_eq rfl, Q.pointed_R_eq (add_comm a c')] at hhex
-    ext; simpa [Units.val_mul, mul_assoc] using hhex
+    have ho : b + (c' + a) = a + b + c' := by abel
+    have hhex := Q.hexagon_forward a b c' (a + b + c') (a + b) (c' + a) (ofAddMonoidIdx rfl)
+      (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl) (ofAddMonoidIdx ho)
+    obtain ⟨hL, hR⟩ := ofAddMonoid_hexagon_forward_sides Q.R _ Q.pointed_R_eq_canonical c
+      (ofAddMonoidIdx (a := a) (b := b) rfl) (ofAddMonoidIdx (a := a + b) (b := c') rfl)
+      (ofAddMonoidIdx (a := c') (b := a) rfl) (ofAddMonoidIdx ho)
+    ext; simpa only [Units.val_mul, mul_assoc] using (hL.symm.trans hhex).trans hR
   hexagon_reverse a b c' := by
-    have habc : a + b + c' = a + (b + c') := add_assoc a b c'
-    have hhex := Q.hexagon_reverse a b c' (a + (b + c')) (b + c') (c' + a)
-      (FusionRules.ofAddMonoidIdx rfl) (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx rfl)
-      (FusionRules.ofAddMonoidIdx (by abel : (c' + a) + b = a + (b + c')))
-    rw [FusionRules.sum_ofAddMonoid_fst a b, FusionRules.sum_fin_ofAddMonoid_of_eq habc,
-      FusionRules.sum_fin_ofAddMonoid_of_eq (by abel : c' + (a + b) = a + (b + c')),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm c' b),
-      FusionRules.sum_fin_ofAddMonoid_of_eq (add_comm a c'),
-      Q.pointed_R_eq habc, Q.pointed_R_eq rfl, Q.pointed_R_eq (add_comm a c')] at hhex
-    ext; simpa [Units.val_mul, mul_assoc] using hhex
+    have ho : (c' + a) + b = a + (b + c') := by abel
+    have hhex := Q.hexagon_reverse a b c' (a + (b + c')) (b + c') (c' + a) (ofAddMonoidIdx rfl)
+      (ofAddMonoidIdx rfl) (ofAddMonoidIdx rfl) (ofAddMonoidIdx ho)
+    obtain ⟨hL, hR⟩ := ofAddMonoid_hexagon_reverse_sides Q.R _ Q.pointed_R_eq_canonical c
+      (ofAddMonoidIdx (a := b) (b := c') rfl) (ofAddMonoidIdx (a := a) (b := b + c') rfl)
+      (ofAddMonoidIdx (a := c') (b := a) rfl) (ofAddMonoidIdx ho)
+    ext; simpa only [Units.val_mul, mul_assoc] using (hL.symm.trans hhex).trans hR
 
-@[simp]
-theorem val_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (a b : I) :
+@[simp] theorem val_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (a b : I) :
     (Q.toPointedBraiding.r a b : K) =
-      Q.R a b (a + b) (FusionRules.ofAddMonoidIdx rfl)
-        (FusionRules.ofAddMonoidIdx (add_comm b a)) := (rfl)
+      Q.R a b (a + b) (ofAddMonoidIdx rfl) (ofAddMonoidIdx (add_comm b a)) := (rfl)
 
-@[simp]
-theorem val_inv_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (a b : I) :
-    (((Q.toPointedBraiding.r a b)⁻¹ : Kˣ) : K) =
-      Q.Rinv a b (a + b) (FusionRules.ofAddMonoidIdx (add_comm b a))
-        (FusionRules.ofAddMonoidIdx rfl) :=
+@[simp] theorem val_inv_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c))
+    (a b : I) : (((Q.toPointedBraiding.r a b)⁻¹ : Kˣ) : K) =
+      Q.Rinv a b (a + b) (ofAddMonoidIdx (add_comm b a)) (ofAddMonoidIdx rfl) :=
   (Units.inv_eq_val_inv (Q.toPointedBraiding.r a b)).symm
 
-/-- Equivalence between `RSymbols (FSymbols.ofTwistingCocycle c)` and `PointedBraiding c`. -/
-def pointedBraidingEquiv (c : GradedObject.TwistingCocycle I K) :
+theorem R_eq_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (a b d : I)
+    (i : Fin ((ofAddMonoid I).N a b d)) (j : Fin ((ofAddMonoid I).N b a d)) :
+    Q.R a b d i j = (Q.toPointedBraiding.r a b : K) := by
+  rw [val_toPointedBraiding_r, pointed_R_eq_canonical]
+
+theorem Rinv_eq_inv_toPointedBraiding_r (Q : RSymbols (FSymbols.ofTwistingCocycle c)) (a b d : I)
+    (j : Fin ((ofAddMonoid I).N b a d)) (i : Fin ((ofAddMonoid I).N a b d)) :
+    Q.Rinv a b d j i = (((Q.toPointedBraiding.r a b)⁻¹ : Kˣ) : K) := by
+  obtain rfl := eq_of_fin_ofAddMonoid i
+  rw [val_inv_toPointedBraiding_r, fin_ofAddMonoid_eq (add_comm b a) j, fin_ofAddMonoid_eq rfl i]
+
+@[simp] theorem toPointedBraiding_ofPointedBraiding (B : PointedBraiding c) :
+    (ofPointedBraiding B).toPointedBraiding = B := by ext; simp
+
+@[simp] theorem ofPointedBraiding_toPointedBraiding (Q : RSymbols (FSymbols.ofTwistingCocycle c)) :
+    ofPointedBraiding Q.toPointedBraiding = Q := by
+  ext a b d i j; rw [ofPointedBraiding_R_apply, R_eq_toPointedBraiding_r]
+
+/-- Equivalence between `RSymbols (FSymbols.ofTwistingCocycle c)` and
+`TauCeti.GradedObject.PointedBraiding c`, with inverse `RSymbols.ofPointedBraiding`. -/
+def pointedBraidingEquiv (c : TwistingCocycle I K) :
     RSymbols (FSymbols.ofTwistingCocycle c) ≃ PointedBraiding c where
   toFun := toPointedBraiding
   invFun := ofPointedBraiding
-  left_inv Q := by
-    ext a b d i j
-    rw [ofPointedBraiding_R_apply, val_toPointedBraiding_r,
-      Q.pointed_R_eq (FusionRules.eq_of_fin_ofAddMonoid i) i j]
-  right_inv B := by ext a b; rfl
+  left_inv := ofPointedBraiding_toPointedBraiding
+  right_inv := toPointedBraiding_ofPointedBraiding
 
-@[simp]
-theorem pointedBraidingEquiv_apply (c : GradedObject.TwistingCocycle I K)
+@[simp] theorem pointedBraidingEquiv_apply (c : TwistingCocycle I K)
     (Q : RSymbols (FSymbols.ofTwistingCocycle c)) :
     pointedBraidingEquiv c Q = Q.toPointedBraiding := (rfl)
-
-@[simp]
-theorem pointedBraidingEquiv_symm_apply (c : GradedObject.TwistingCocycle I K)
-    (B : PointedBraiding c) :
+@[simp] theorem pointedBraidingEquiv_symm_apply (c : TwistingCocycle I K) (B : PointedBraiding c) :
     (pointedBraidingEquiv c).symm B = ofPointedBraiding B := (rfl)
+
+/-- Base change commutes with `RSymbols.ofPointedBraiding` up to `RSymbols.cast`. -/
+@[simp] theorem cast_map_ofPointedBraiding {L : Type*} [CommRing L] (f : K →+* L)
+    (B : PointedBraiding c)
+    (h : (FSymbols.ofTwistingCocycle c).map f = FSymbols.ofTwistingCocycle (c.map (f : K →* L)) :=
+      FSymbols.map_ofTwistingCocycle f c) :
+    ((ofPointedBraiding B).map f).cast h = ofPointedBraiding (B.map (f : K →* L)) := by ext; simp
 
 end Pointed
 
@@ -515,71 +489,53 @@ end RSymbols
 
 /-! ### Complete classification of F-symbols and R-symbols on `ZMod 2` -/
 
-private theorem zmod2_eq_zero_or_one : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
-private theorem zmod2_one_add_one : (1 : ZMod 2) + 1 = 0 := by decide
-
 namespace FSymbols
 
 section ZMod2
 
+open FusionRules (ofAddMonoid ofAddMonoidLeft ofAddMonoidRight)
+open GradedObject (TwistingCocycle)
+
 variable {R : Type v} [CommRing R]
 
-/-- The normalized `3`-cocycle on `ZMod 2` with `ω 1 1 1 = u` (for `u * u = 1`) and `1`
-elsewhere. Note `u⁻¹ = u` since `u * u = 1`. -/
-def zmod2TwistingCocycle (u : Rˣ) (hu : u * u = 1) :
-    GradedObject.TwistingCocycle (ZMod 2) R where
-  ω a b c := if a = 1 ∧ b = 1 ∧ c = 1 then u else 1
-  cocycle i₁ i₂ i₃ i₄ := by
-    rcases zmod2_eq_zero_or_one i₁ with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one i₂ with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one i₃ with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one i₄ with rfl | rfl <;> simp [zmod2_one_add_one, hu]
-  ω_zero i₁ i₃ := by simp
-
-/-- The pointed F-symbols on `ZMod 2` with `F^{111}_1 = u` (for `u * u = 1`) and `1` on all other
+/-- The pointed F-symbols on `ZMod 2` with `F^{111}_1 = u` (`u * u = 1`) and `1` on all other
 nonempty blocks. -/
-def zmod2 (u : Rˣ) (hu : u * u = 1) : FSymbols R (FusionRules.ofAddMonoid (ZMod 2)) :=
-  ofTwistingCocycle (zmod2TwistingCocycle u hu)
+@[expose]
+def zmod2 (u : Rˣ) (hu : u * u = 1) : FSymbols R (ofAddMonoid (ZMod 2)) :=
+  ofTwistingCocycle (TwistingCocycle.zmod2 u hu)
 
-@[simp]
-theorem zmod2_F_one_one_one (u : Rˣ) (hu : u * u = 1)
-    (x : (FusionRules.ofAddMonoid (ZMod 2)).Left 1 1 1 1)
-    (y : (FusionRules.ofAddMonoid (ZMod 2)).Right 1 1 1 1) :
-    (zmod2 u hu).F 1 1 1 1 x y = (u : R) := by
-  simp [zmod2, zmod2TwistingCocycle, inv_eq_of_mul_eq_one_right hu]
+theorem zmod2_eq_ofTwistingCocycle (u : Rˣ) (hu : u * u = 1) :
+    zmod2 u hu = ofTwistingCocycle (TwistingCocycle.zmod2 u hu) := (rfl)
+
+@[simp] theorem zmod2_F_one_one_one (u : Rˣ) (hu : u * u = 1)
+    (x : (ofAddMonoid (ZMod 2)).Left 1 1 1 1) (y : (ofAddMonoid (ZMod 2)).Right 1 1 1 1) :
+    (zmod2 u hu).F 1 1 1 1 x y = (u : R) := by simp [zmod2, inv_eq_of_mul_eq_one_right hu]
+
+@[simp] theorem zmod2_Finv_one_one_one (u : Rˣ) (hu : u * u = 1)
+    (y : (ofAddMonoid (ZMod 2)).Right 1 1 1 1) (x : (ofAddMonoid (ZMod 2)).Left 1 1 1 1) :
+    (zmod2 u hu).Finv 1 1 1 1 y x = (u : R) := by simp [zmod2]
 
 /-- F-symbols on `FusionRules.ofAddMonoid (ZMod 2)` are in bijection with `{ u : Rˣ // u * u = 1 }`
-via the `(1, 1, 1)` entry `F^{111}_1 = u`. -/
-def zmod2Equiv : FSymbols R (FusionRules.ofAddMonoid (ZMod 2)) ≃ { u : Rˣ // u * u = 1 } :=
-  twistingCocycleEquiv.trans
-    { toFun := fun c ↦
-        ⟨(c.ω 1 1 1)⁻¹, by
-          have hc := c.cocycle 1 1 1 1
-          rw [zmod2_one_add_one] at hc
-          simp only [GradedObject.TwistingCocycle.ω_zero_left,
-            GradedObject.TwistingCocycle.ω_zero_right, GradedObject.TwistingCocycle.ω_zero,
-            mul_one] at hc
-          rw [← mul_inv, ← hc, inv_one]⟩
-      invFun := fun u ↦ zmod2TwistingCocycle u.1 u.2
-      left_inv := fun c ↦ by
-        have hc := c.cocycle 1 1 1 1; rw [zmod2_one_add_one] at hc
-        have hinv : (c.ω 1 1 1)⁻¹ = c.ω 1 1 1 := inv_eq_of_mul_eq_one_right (by simpa using hc.symm)
-        ext a b c'
-        rcases zmod2_eq_zero_or_one a with rfl | rfl <;>
-          rcases zmod2_eq_zero_or_one b with rfl | rfl <;>
-          rcases zmod2_eq_zero_or_one c' with rfl | rfl <;> simp [zmod2TwistingCocycle, hinv]
-      right_inv := fun ⟨u, hu⟩ ↦ by
-        ext1; simp [zmod2TwistingCocycle, inv_eq_of_mul_eq_one_right hu] }
+via the `(1, 1, 1)` entry `F^{111}_1 = u`, with inverse `FSymbols.zmod2`. -/
+def zmod2Equiv : FSymbols R (ofAddMonoid (ZMod 2)) ≃ { u : Rˣ // u * u = 1 } :=
+  twistingCocycleEquiv.trans TwistingCocycle.zmod2Equiv
 
-@[simp]
-theorem val_zmod2Equiv_apply (P : FSymbols R (FusionRules.ofAddMonoid (ZMod 2))) :
+@[simp] theorem val_zmod2Equiv_apply (P : FSymbols R (ofAddMonoid (ZMod 2))) :
     (((zmod2Equiv P).1 : Rˣ) : R) =
-      P.F 1 1 1 (1 + 1 + 1) (FusionRules.ofAddMonoidLeft rfl)
-        (FusionRules.ofAddMonoidRight rfl) := by simp [zmod2Equiv]
+      P.F 1 1 1 1 (ofAddMonoidLeft (by decide)) (ofAddMonoidRight (by decide)) := by
+  have hinv : (zmod2Equiv P).1 = ((zmod2Equiv P).1)⁻¹ :=
+    (inv_eq_of_mul_eq_one_right (zmod2Equiv P).2).symm
+  rw [hinv, P.F_eq_inv_toTwistingCocycle_ω 1 1 1 1]; simp [zmod2Equiv]
 
-@[simp]
-theorem zmod2Equiv_symm_apply (u : { u : Rˣ // u * u = 1 }) :
+@[simp] theorem zmod2Equiv_symm_apply (u : { u : Rˣ // u * u = 1 }) :
     zmod2Equiv.symm u = zmod2 u.1 u.2 := by simp [zmod2Equiv, zmod2]
+
+@[simp] theorem zmod2Equiv_zmod2 (u : Rˣ) (hu : u * u = 1) : zmod2Equiv (zmod2 u hu) = ⟨u, hu⟩ := by
+  rw [← zmod2Equiv_symm_apply ⟨u, hu⟩]; exact zmod2Equiv.apply_symm_apply ⟨u, hu⟩
+
+@[simp] theorem zmod2_zmod2Equiv (P : FSymbols R (ofAddMonoid (ZMod 2))) :
+    zmod2 (zmod2Equiv P).1 (zmod2Equiv P).2 = P := by
+  rw [← zmod2Equiv_symm_apply (zmod2Equiv P)]; exact zmod2Equiv.symm_apply_apply P
 
 end ZMod2
 
@@ -589,91 +545,70 @@ namespace RSymbols
 
 section ZMod2
 
+open FusionRules (ofAddMonoid ofAddMonoidIdx)
+open GradedObject (TwistingCocycle PointedBraiding)
+
 variable {K : Type v} [CommRing K]
 
-/-- Pointed braiding on `FSymbols.zmod2TwistingCocycle u hu` with `r 1 1 = r` (where `r * r = u`)
-and `1` elsewhere. -/
-def zmod2PointedBraiding {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
-    PointedBraiding (FSymbols.zmod2TwistingCocycle u hu) where
-  r a b := if a = 1 ∧ b = 1 then r else 1
-  hexagon_forward a b c' := by
-    have hru : r * u * r = 1 := by rw [mul_right_comm, hr, hu]
-    rcases zmod2_eq_zero_or_one a with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one b with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one c' with rfl | rfl <;>
-      simp [FSymbols.zmod2TwistingCocycle, zmod2_one_add_one, inv_eq_of_mul_eq_one_right hu,
-        hu, hru]
-  hexagon_reverse a b c' := by
-    have hru : r * u * r = 1 := by rw [mul_right_comm, hr, hu]
-    rcases zmod2_eq_zero_or_one a with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one b with rfl | rfl <;>
-      rcases zmod2_eq_zero_or_one c' with rfl | rfl <;>
-      simp [FSymbols.zmod2TwistingCocycle, zmod2_one_add_one, hu, hru]
+/-- Construct R-symbols on `FSymbols.zmod2 u hu` from a square root `r : Kˣ` of `u` (`r * r = u`),
+giving `R^{11}_0 = r` and `1` on all unit blocks. -/
+def zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) : RSymbols (FSymbols.zmod2 u hu) :=
+  ofPointedBraiding (PointedBraiding.zmod2 hu r hr)
 
-/-- Construct R-symbols on `FSymbols.zmod2 u hu` from a square root `r : Kˣ` of `u`
-(`r * r = u`), giving `R^{11}_0 = r` and `1` on all unit blocks. -/
-def zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
-    RSymbols (FSymbols.zmod2 u hu) :=
-  ofPointedBraiding (zmod2PointedBraiding hu r hr)
+theorem zmod2_eq_ofPointedBraiding {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
+    zmod2 hu r hr = ofPointedBraiding (PointedBraiding.zmod2 hu r hr) := (rfl)
 
-@[simp]
-theorem zmod2_R_one_one {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u)
-    (i j : Fin ((FusionRules.ofAddMonoid (ZMod 2)).N 1 1 0)) :
-    (zmod2 hu r hr).R 1 1 0 i j = (r : K) := by simp [zmod2, zmod2PointedBraiding]
+@[simp] theorem zmod2_R_one_one {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u)
+    (i j : Fin ((ofAddMonoid (ZMod 2)).N 1 1 0)) : (zmod2 hu r hr).R 1 1 0 i j = (r : K) := by
+  simp [zmod2]
+
+@[simp] theorem zmod2_Rinv_one_one {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u)
+    (j i : Fin ((ofAddMonoid (ZMod 2)).N 1 1 0)) :
+    (zmod2 hu r hr).Rinv 1 1 0 j i = ((r⁻¹ : Kˣ) : K) := by simp [zmod2]
 
 /-- R-symbols on `FSymbols.zmod2 u hu` are in bijection with `{ r : Kˣ // r * r = u }` via the
-nontrivial braiding entry `R^{11}_0 = r`, witnessing `(R^{11}_0)^2 = F^{111}_1`. -/
+nontrivial braiding entry `R^{11}_0 = r`, witnessing `(R^{11}_0)^2 = F^{111}_1`, with inverse
+`RSymbols.zmod2`. -/
 def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     RSymbols (FSymbols.zmod2 u hu) ≃ { r : Kˣ // r * r = u } :=
-  (pointedBraidingEquiv (FSymbols.zmod2TwistingCocycle u hu)).trans
-    { toFun := fun B ↦
-        ⟨B.r 1 1, by
-          have hhex := B.hexagon_forward 1 1 1
-          rw [zmod2_one_add_one, PointedBraiding.r_zero_right] at hhex
-          simp only [FSymbols.zmod2TwistingCocycle, and_self, ↓reduceIte,
-            inv_eq_of_mul_eq_one_right hu, mul_one] at hhex
-          calc B.r 1 1 * B.r 1 1
-            _ = (B.r 1 1 * u * B.r 1 1) * u := by
-              rw [← mul_one (B.r 1 1 * B.r 1 1), ← hu]; simp [mul_comm, mul_left_comm, mul_assoc]
-            _ = u := by rw [← hhex, hu, one_mul]⟩
-      invFun := fun r ↦ zmod2PointedBraiding hu r.1 r.2
-      left_inv := fun B ↦ by
-        ext a b
-        rcases zmod2_eq_zero_or_one a with rfl | rfl <;>
-          rcases zmod2_eq_zero_or_one b with rfl | rfl <;> simp [zmod2PointedBraiding]
-      right_inv := fun ⟨_, _⟩ ↦ by ext1; simp [zmod2PointedBraiding] }
+  (pointedBraidingEquiv (TwistingCocycle.zmod2 u hu)).trans (PointedBraiding.zmod2Equiv u hu)
 
-@[simp]
-theorem val_zmod2Equiv_apply (u : Kˣ) (hu : u * u = 1) (Q : RSymbols (FSymbols.zmod2 u hu)) :
-    (((zmod2Equiv u hu Q).1 : Kˣ) : K) =
-      Q.R 1 1 (1 + 1) (FusionRules.ofAddMonoidIdx rfl)
-        (FusionRules.ofAddMonoidIdx (add_comm 1 1)) := by
-  revert Q; unfold zmod2Equiv FSymbols.zmod2; intro Q; simp
+@[simp] theorem val_zmod2Equiv_apply (u : Kˣ) (hu : u * u = 1)
+    (Q : RSymbols (FSymbols.zmod2 u hu)) : (((zmod2Equiv u hu Q).1 : Kˣ) : K) =
+      Q.R 1 1 0 (ofAddMonoidIdx (by decide)) (ofAddMonoidIdx (by decide)) :=
+  (congrArg Units.val (PointedBraiding.coe_zmod2Equiv_apply u hu Q.toPointedBraiding)).trans
+    (R_eq_toPointedBraiding_r Q 1 1 0 _ _).symm
 
-@[simp]
-theorem zmod2Equiv_symm_apply (u : Kˣ) (hu : u * u = 1) (r : { r : Kˣ // r * r = u }) :
-    (zmod2Equiv u hu).symm r = zmod2 hu r.1 r.2 := by
-  change ((pointedBraidingEquiv (FSymbols.zmod2TwistingCocycle u hu)).trans _).symm r =
-    ofPointedBraiding (zmod2PointedBraiding hu r.1 r.2)
-  simp
+@[simp] theorem zmod2Equiv_symm_apply (u : Kˣ) (hu : u * u = 1) (r : { r : Kˣ // r * r = u }) :
+    (zmod2Equiv u hu).symm r = zmod2 hu r.1 r.2 :=
+  congrArg ofPointedBraiding (PointedBraiding.zmod2Equiv_symm_apply u hu r)
+
+@[simp] theorem zmod2Equiv_zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
+    zmod2Equiv u hu (zmod2 hu r hr) = ⟨r, hr⟩ := by
+  rw [← zmod2Equiv_symm_apply u hu ⟨r, hr⟩]; exact (zmod2Equiv u hu).apply_symm_apply ⟨r, hr⟩
+
+@[simp] theorem zmod2_zmod2Equiv (u : Kˣ) (hu : u * u = 1) (Q : RSymbols (FSymbols.zmod2 u hu)) :
+    zmod2 hu (zmod2Equiv u hu Q).1 (zmod2Equiv u hu Q).2 = Q := by
+  rw [← zmod2Equiv_symm_apply u hu (zmod2Equiv u hu Q)]; exact (zmod2Equiv u hu).symm_apply_apply Q
 
 /-- For the trivial `ZMod 2` F-symbols (`u = 1`), `r = -1` gives the super-vector-space braiding
 `R^{11}_0 = -1`. -/
-def zmod2Super : RSymbols (FSymbols.zmod2 (1 : Kˣ) (mul_one 1)) :=
-  zmod2 (mul_one 1) (-1) (by simp)
+def zmod2Super : RSymbols (FSymbols.zmod2 (1 : Kˣ) (mul_one 1)) := zmod2 (mul_one 1) (-1) (by simp)
 
-@[simp]
-theorem zmod2Super_R_one_one (i j : Fin ((FusionRules.ofAddMonoid (ZMod 2)).N 1 1 0)) :
+@[simp] theorem zmod2Super_R_one_one (i j : Fin ((ofAddMonoid (ZMod 2)).N 1 1 0)) :
     (zmod2Super : RSymbols (FSymbols.zmod2 (1 : Kˣ) (mul_one 1))).R 1 1 0 i j = -1 := by
+  simp [zmod2Super]
+
+@[simp] theorem zmod2Super_Rinv_one_one (j i : Fin ((ofAddMonoid (ZMod 2)).N 1 1 0)) :
+    (zmod2Super : RSymbols (FSymbols.zmod2 (1 : Kˣ) (mul_one 1))).Rinv 1 1 0 j i = -1 := by
   simp [zmod2Super]
 
 /-- Over `ℤ`, the nontrivial `ZMod 2` F-symbols with `F^{111}_1 = -1` admit no R-symbols, since
 `-1` is not a square in `ℤˣ`. -/
-instance instIsEmptyZMod2NegOneInt :
-    IsEmpty (RSymbols (FSymbols.zmod2 (-1 : ℤˣ) (by decide))) :=
+instance instIsEmptyZMod2NegOneInt : IsEmpty (RSymbols (FSymbols.zmod2 (-1 : ℤˣ) (by decide))) :=
   ⟨fun Q ↦ by
     obtain ⟨r, hr⟩ := zmod2Equiv (-1 : ℤˣ) (by decide) Q
-    rcases Int.units_eq_one_or r with rfl | rfl <;> revert hr <;> decide⟩
+    rcases Int.units_eq_one_or r with rfl | rfl <;> exact absurd hr (by decide)⟩
 
 end ZMod2
 
