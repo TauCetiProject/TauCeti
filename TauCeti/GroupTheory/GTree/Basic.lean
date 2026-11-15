@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import TauCeti.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 
 /-!
 # Group actions on trees
@@ -19,11 +20,15 @@ A `G`-tree is a Serre tree with an action of `G` by graph automorphisms without 
 element maps a dart to its reverse. This file sets up the vocabulary of Bass–Serre theory for
 such actions.
 
+* The quotient graph `T / G` of a `G`-tree (`GTree.quotient`) has the orbits of vertices and
+  of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
+  onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion.
+  inversion. The action maps convex sets of vertices to convex sets and commutes with convex
+  hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -48,6 +53,8 @@ exchanges the endpoints of a dart.
 ## Main declarations
 
 * `TauCeti.GTree`: a Serre tree with an action of `G` without inversions.
+* `TauCeti.GTree.quotient`, `TauCeti.GTree.quotientMap`: the quotient graph and the projection
+  onto it.
 * `TauCeti.GTree.IsElliptic`, `TauCeti.GTree.IsHyperbolic`,
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
@@ -114,6 +121,60 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+/-- The underlying graph of a `G`-tree is acyclic. -/
+@[simp] theorem isAcyclic : T.IsAcyclic :=
+  T.isTree.isAcyclic
+
+/-! ### The quotient graph -/
+
+section Quotient
+
+/-- The quotient graph `T / G` of a `G`-tree. -/
+abbrev quotient : SerreGraph.{u, v} :=
+  T.toSerreGraph.quotient T.action T.smul_ne_rev
+
+/-- The projection of a `G`-tree to its quotient graph. -/
+abbrev quotientMap : T.toSerreGraph.Hom T.quotient :=
+  T.toSerreGraph.quotientMap T.action T.smul_ne_rev
+
+/-- Every vertex of the quotient graph is the image of a vertex of the tree. -/
+theorem quotientMap_mapV_surjective : Function.Surjective T.quotientMap.mapV :=
+  SerreGraph.quotientMap_mapV_surjective _ _ _
+
+/-- Every dart of the quotient graph is the image of a dart of the tree. -/
+theorem quotientMap_mapE_surjective : Function.Surjective T.quotientMap.mapE :=
+  SerreGraph.quotientMap_mapE_surjective _ _ _
+
+/-- The quotient graph of a `G`-tree is connected. -/
+theorem quotient_connected : T.quotient.Connected :=
+  SerreGraph.quotient_connected T.isTree.connected
+
+variable {T}
+
+/-- Two vertices of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapV_eq_iff {a b : T.V} :
+    T.quotientMap.mapV a = T.quotientMap.mapV b ↔ ∃ g : G, g • a = b :=
+  SerreGraph.quotientMap_mapV_eq_iff
+
+/-- Two darts of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapE_eq_iff {e f : T.E} :
+    T.quotientMap.mapE e = T.quotientMap.mapE f ↔ ∃ g : G, g • e = f :=
+  SerreGraph.quotientMap_mapE_eq_iff
+
+/-- A vertex of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapV_smul (g : G) (a : T.V) :
+    T.quotientMap.mapV (g • a) = T.quotientMap.mapV a :=
+  SerreGraph.quotientMap_mapV_smul g a
+
+/-- A dart of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
+    T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
+  SerreGraph.quotientMap_mapE_smul g e
+
+end Quotient
 
 section Translate
 
@@ -378,6 +439,57 @@ theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup 
   refine ⟨fun h => (h.map_conj g⁻¹).mono fun x hx => ?_, fun h => h.map_conj g⟩
   refine Subgroup.mem_map.mpr ⟨MulAut.conj g x, Subgroup.mem_map_of_mem _ hx, ?_⟩
   simp [mul_assoc]
+
+/-! ### Translates of sets -/
+
+section Pointwise
+
+open scoped Pointwise
+
+variable (T)
+
+theorem smul_set_vertex_def (g : G) (S : Set T.V) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_vertex_def]
+
+theorem smul_set_dart_def (g : G) (S : Set T.E) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_dart_def]
+
+variable {T} in
+/-- The translate of a set of vertices is convex exactly when the set is. -/
+@[simp] theorem isConvex_smul_set_iff {g : G} {S : Set T.V} :
+    T.IsConvex (g • S) ↔ T.IsConvex S := by
+  rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
+
+/-- The darts induced by the translate of a set of vertices are the translates of the darts
+induced by the set. -/
+theorem smul_set_inducedDarts (g : G) (C : Set T.V) :
+    g • T.inducedDarts C = T.inducedDarts (g • C) := by
+  rw [smul_set_vertex_def, smul_set_dart_def, Aut.smul_set_inducedDarts]
+
+/-- The action commutes with convex hulls. -/
+theorem convexHull_smul_set (g : G) (S : Set T.V) :
+    T.convexHull (g • S) = g • T.convexHull S := by
+  rw [smul_set_vertex_def, smul_set_vertex_def, Aut.convexHull_smul_set]
+
+/-- The translate of the segment from `a` to `b` is the segment from `g • a` to `g • b`. -/
+theorem smul_set_convexHull_pair (g : G) (a b : T.V) :
+    g • T.convexHull {a, b} = T.convexHull {g • a, g • b} := by
+  rw [← convexHull_smul_set, Set.smul_set_insert, Set.smul_set_singleton]
+
+/-- The segment from `x` to `(g * h) • x` is contained in the union of the segment from `x` to
+`g • x` and the translate by `g` of the segment from `x` to `h • x`. -/
+theorem convexHull_pair_mul_smul_subset (g h : G) (x : T.V) :
+    T.convexHull {x, (g * h) • x} ⊆ T.convexHull {x, g • x} ∪ g • T.convexHull {x, h • x} := by
+  rw [smul_set_convexHull_pair, ← mul_smul]
+  exact T.isTree.convexHull_pair_subset_union _ _ _
+
+/-- The segment from `x` to `g⁻¹ • x` is the translate by `g⁻¹` of the segment from `x` to
+`g • x`. -/
+theorem convexHull_pair_inv_smul (g : G) (x : T.V) :
+    T.convexHull {x, g⁻¹ • x} = g⁻¹ • T.convexHull {x, g • x} := by
+  rw [smul_set_convexHull_pair, inv_smul_smul, Set.pair_comm]
+
+end Pointwise
 
 /-! ### Fixed vertices -/
 

@@ -22,7 +22,7 @@ do not detect functions which vanish identically near a point.
 
 public section
 
-open Set
+open Set Filter
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -174,6 +174,22 @@ theorem zeroCount_eq_iff_of_subset (hRS : R ⊆ S)
     hS.subset fun _ hz ↦ ⟨hz.1.1, hz.2⟩
   rw [← zeroCount_eq_zero_iff hdiff, ← zeroCount_add_sdiff hRS hS]
   omega
+
+/-- Enlargements inside a region with finite positive divisor support eventually have the
+original zero count if membership eventually introduces no supported points. -/
+theorem eventuallyEq_zeroCount_of_eventually_subset {α : Type*} {l : Filter α}
+    {R : α → Set 𝕜} {R₀ K : Set 𝕜}
+    (hfin : (K ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite)
+    (hsub : ∀ᶠ p in l, R₀ ⊆ R p ∧ R p ⊆ K)
+    (hmem : ∀ z ∈ K ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat),
+      ∀ᶠ p in l, z ∈ R p → z ∈ R₀) :
+    (fun p ↦ zeroCount f U (R p)) =ᶠ[l] fun _ ↦ zeroCount f U R₀ := by
+  filter_upwards [hsub, hfin.eventually_all.mpr hmem] with p hp hstable
+  refine ((zeroCount_eq_iff_of_subset hp.1
+    (hfin.subset fun z hz ↦ ⟨hp.2 hz.1, hz.2⟩)).2 ?_).symm
+  intro z hz
+  by_contra hne
+  exact hz.2 (hstable z ⟨hp.2 hz.1, hne⟩ hz.1)
 
 /-- If divisor values on the added region are nonnegative, unchanged count means zero divisor
 on that difference. No regularity of the chosen values at removable singularities is needed. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 
 /-!
 # The induced action on the multiplier algebra
