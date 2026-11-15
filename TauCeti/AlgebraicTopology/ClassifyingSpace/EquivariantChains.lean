@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.Equivariant
+public import TauCeti.AlgebraicTopology.Cellular.FreeAction
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.ChainComparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution
 
@@ -16,6 +16,13 @@ The cellular chains of `universalGSpace G`, with the simplicial CW structure, fo
 projective resolution in `Rep k G`. The action is induced by actual translations of the
 space, and the differential is the geometric cellular differential. This uses the original
 simplicial characteristic maps, not a newly lifted CW structure.
+
+Because translation permutes the open cells of `universalGSpace G` freely and descends to the CW
+structure on `classifyingSpace G`, the representation `universalGSpaceCellularRepresentation`
+agrees with `TauCeti.cellActionRepresentation`
+(`TauCeti.universalGSpaceCellularRepresentation_eq_cellActionRepresentation`), and in each degree
+`n` it is free over `k[G]` on any chosen lifts of the `n`-cells of `classifyingSpace G`
+(`TauCeti.universalGSpaceCellularRepIsoFree`).
 
 The cellular-to-ordered chain comparison lifts to an isomorphism of complexes of
 representations. Composing it with the explicit ordered join-to-bar comparison gives a
@@ -32,7 +39,8 @@ public section
 
 noncomputable section
 
-open CategoryTheory Set Topology
+open scoped Pointwise
+open CategoryTheory Set Topology Topology.RelCWComplex
 
 namespace TauCeti
 
@@ -171,6 +179,64 @@ theorem universalGSpaceCellularComplexIso_hom_f (n : ℕ) :
       eqToHom (universalGSpaceCellularComplex_X k G n) ≫
         (universalGSpaceCellularRepIso k G n).hom := (rfl)
 
+/-- Translation on the universal subset of `universalGSpace G` agrees with the general cellular
+action morphism `TauCeti.cellActionSMul`. -/
+theorem universalGSpaceCellularTranslation_eq_cellActionSMul (g : G) :
+    universalGSpaceCellularTranslation g =
+      cellActionSMul (univ : Set (universalGSpace G))
+        (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩) g := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (universalGSpaceCellularTranslation_apply g x).trans
+    (coe_cellActionSMul_apply _ _ g x).symm
+
+/-- The geometric cellular representation of `universalGSpace G` agrees with
+`TauCeti.cellActionRepresentation` for its open-cell translation action. -/
+theorem universalGSpaceCellularRepresentation_eq_cellActionRepresentation (n : ℕ) :
+    universalGSpaceCellularRepresentation k G n =
+      cellActionRepresentation (univ : Set (universalGSpace G))
+        (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩) k n := by
+  ext g x
+  rw [universalGSpaceCellularRepresentation_apply, cellActionRepresentation_apply]
+  have h : ∀ {f₁ f₂ : TopCat.of (univ : Set (universalGSpace G)) ⟶
+      TopCat.of (univ : Set (universalGSpace G))} (_ : f₁ = f₂)
+      (hf₁ : IsCellular univ univ f₁) (hf₂ : IsCellular univ univ f₂),
+      cellularChainGroupMap univ univ hf₁ (ModuleCat.of k k) n =
+        cellularChainGroupMap univ univ hf₂ (ModuleCat.of k k) n := by
+    rintro f _ rfl _ _
+    rfl
+  exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (h (universalGSpaceCellularTranslation_eq_cellActionSMul G g) _ _)) x
+
+/-- The identity linear map is an isomorphism in `Rep k G` between
+`universalGSpaceCellularRepresentation` and `TauCeti.cellActionRepresentation`. -/
+def universalGSpaceCellularRepIsoCellAction (n : ℕ) :
+    Rep.of (universalGSpaceCellularRepresentation k G n) ≅
+      Rep.of (cellActionRepresentation (univ : Set (universalGSpace G))
+        (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩) k n) :=
+  Rep.mkIso
+    { __ := LinearEquiv.refl k _
+      isIntertwining' g := by
+        simp [universalGSpaceCellularRepresentation_eq_cellActionRepresentation] }
+
+/-- `TauCeti.universalGSpaceCellularRepIsoCellAction` is the identity on underlying chains. -/
+@[simp]
+theorem universalGSpaceCellularRepIsoCellAction_hom_hom_apply (n : ℕ)
+    (x : (cellularChainGroup (univ : Set (universalGSpace G))
+      (ModuleCat.of k k) n : ModuleCat k)) :
+    (universalGSpaceCellularRepIsoCellAction k G n).hom.hom x = x :=
+  (rfl)
+
+/-- The inverse of `TauCeti.universalGSpaceCellularRepIsoCellAction` is the identity on underlying
+chains. -/
+@[simp]
+theorem universalGSpaceCellularRepIsoCellAction_inv_hom_apply (n : ℕ)
+    (x : (cellularChainGroup (univ : Set (universalGSpace G))
+      (ModuleCat.of k k) n : ModuleCat k)) :
+    (universalGSpaceCellularRepIsoCellAction k G n).inv.hom x = x :=
+  (rfl)
+
 end ChainComplex
 
 section Resolution
@@ -296,6 +362,57 @@ def universalGSpaceCellularStandardComparisonHomotopy :
         ((congrArg (eqToHom (universalGSpaceCellularResolution_complex k G) ≫ ·)
           (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G)).trans
           (universalGSpaceCellularResolution_π k G).symm))
+
+/-- **The `n`-th geometric cellular chain representation of `universalGSpace G` is free over
+`k[G]` on the `n`-cells of `classifyingSpace G`**: given any chosen lift `s b` of each `n`-cell
+`b` of `classifyingSpace G`, `single b (single 1 1)` corresponds to the cellular basis vector of
+`s b`. -/
+def universalGSpaceCellularRepIsoFree {n : ℕ}
+    (s : cell (univ : Set (classifyingSpace G)) n → cell (univ : Set (universalGSpace G)) n)
+    (hs : ∀ b, classifyingSpaceProj G '' openCell n (s b) = openCell n b) :
+    Rep.of (universalGSpaceCellularRepresentation k G n) ≅
+      Rep.free k G (cell (univ : Set (classifyingSpace G)) n) :=
+  universalGSpaceCellularRepIsoCellAction k G n ≪≫
+    (isQuotientCoveringMap_classifyingSpaceProj G).cellActionRepIsoFree
+      (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩)
+      (fun _ _ _ ↦ eq_one_of_smul_openCell_universalGSpace_eq) k
+      (fun _ i ↦ ⟨_, image_openCell_classifyingSpaceProj i⟩) s hs
+
+/-- Under `(universalGSpaceCellularRepIsoFree ...).inv`, `single b (single g r)` maps to `r` times
+the `g`-translate of the cellular basis vector of the chosen lift `s b`. -/
+@[simp]
+theorem universalGSpaceCellularRepIsoFree_inv_hom_single {n : ℕ}
+    (s : cell (univ : Set (classifyingSpace G)) n → cell (univ : Set (universalGSpace G)) n)
+    (hs : ∀ b, classifyingSpaceProj G '' openCell n (s b) = openCell n b)
+    (b : cell (univ : Set (classifyingSpace G)) n) (g : G) (r : k) :
+    (universalGSpaceCellularRepIsoFree k G s hs).inv.hom
+        (Finsupp.single b (MonoidAlgebra.single g r)) =
+      r • universalGSpaceCellularRepresentation k G n g
+        (cellularChainBasis (univ : Set (universalGSpace G)) k n (s b)) := by
+  simp only [universalGSpaceCellularRepIsoFree, Iso.trans_inv, Rep.hom_comp,
+    Representation.IntertwiningMap.comp_apply]
+  exact ((isQuotientCoveringMap_classifyingSpaceProj G).cellActionRepIsoFree_inv_hom_single
+    (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩)
+    (fun _ _ _ ↦ eq_one_of_smul_openCell_universalGSpace_eq) k
+    (fun _ i ↦ ⟨_, image_openCell_classifyingSpaceProj i⟩) s hs b g r).trans
+      (by rw [universalGSpaceCellularRepresentation_eq_cellActionRepresentation])
+
+/-- Under `universalGSpaceCellularRepIsoFree`, the cellular basis vector of `s b` maps to
+`single b (single 1 1)`. -/
+theorem universalGSpaceCellularRepIsoFree_hom_hom_cellularChainBasis {n : ℕ}
+    (s : cell (univ : Set (classifyingSpace G)) n → cell (univ : Set (universalGSpace G)) n)
+    (hs : ∀ b, classifyingSpaceProj G '' openCell n (s b) = openCell n b)
+    (b : cell (univ : Set (classifyingSpace G)) n) :
+    (universalGSpaceCellularRepIsoFree k G s hs).hom.hom
+        (cellularChainBasis (univ : Set (universalGSpace G)) k n (s b)) =
+      Finsupp.single b (MonoidAlgebra.single 1 1) := by
+  simp only [universalGSpaceCellularRepIsoFree, Iso.trans_hom, Rep.hom_comp,
+    Representation.IntertwiningMap.comp_apply]
+  exact
+    (isQuotientCoveringMap_classifyingSpaceProj G).cellActionRepIsoFree_hom_hom_cellularChainBasis
+      (fun g _ i ↦ ⟨g • i, smul_openCell_universalGSpace g i⟩)
+      (fun _ _ _ ↦ eq_one_of_smul_openCell_universalGSpace_eq) k
+      (fun _ i ↦ ⟨_, image_openCell_classifyingSpaceProj i⟩) s hs b
 
 end Resolution
 

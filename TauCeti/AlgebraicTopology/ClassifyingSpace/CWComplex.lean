@@ -67,9 +67,12 @@ any of its simplices followed by the orbit map; it does not depend on the chosen
 * `TauCeti.instIsCancelSMulCellUniversalGSpace` and
   `TauCeti.eq_one_of_smul_openCell_universalGSpace_eq`: the action on cells is free.
 * `TauCeti.instT2SpaceClassifyingSpace`: the classifying space is Hausdorff.
+* `TauCeti.isCellular_classifyingSpaceProj`: the orbit covering map `classifyingSpaceProj G` is
+  cellular.
 * `TauCeti.map_classifyingSpaceCellEquiv_symm_mk`: the characteristic map of the orbit of a
   simplex is its characteristic map followed by the orbit map.
 * `TauCeti.openCell_classifyingSpaceCellEquiv_symm_mk`,
+  `TauCeti.image_openCell_classifyingSpaceProj`,
   `TauCeti.closedCell_classifyingSpaceCellEquiv_symm_mk` and
   `TauCeti.cellFrontier_classifyingSpaceCellEquiv_symm_mk`: the open cells, closed cells and cell
   frontiers of the classifying space are the images of those of the countable join.
@@ -367,6 +370,18 @@ instance instT2SpaceClassifyingSpace : T2Space (classifyingSpace G) :=
     (fun g _ i => ⟨g • i, smul_openCell_universalGSpace g i⟩)
     fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
 
+variable (G) in
+/-- **Milnor's orbit covering map `classifyingSpaceProj G` is cellular** for the canonical CW
+structures on `universalGSpace G` and `classifyingSpace G`. -/
+theorem isCellular_classifyingSpaceProj :
+    IsCellular (univ : Set (universalGSpace G)) (univ : Set (classifyingSpace G))
+      (TopCat.ofHom
+        ⟨univ.restrictPreimage (classifyingSpaceProj G),
+          (continuous_classifyingSpaceProj G).restrictPreimage⟩) :=
+  (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
+    (fun g _ i => ⟨g • i, smul_openCell_universalGSpace g i⟩)
+    fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
+
 /-- The action on the cells of the countable join by which the orbit-space construction indexes
 the cells of the classifying space is the translation of simplices. -/
 private theorem cellMulAction_smul_eq (g : G) (i : cell (univ : Set (universalGSpace G)) n) :
@@ -420,6 +435,24 @@ theorem openCell_classifyingSpaceCellEquiv_symm_mk
       classifyingSpaceProj G '' {x : universalGSpace G | x.1.support = c.1.1} := by
   rw [← c.image_characteristicMap_ball, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
+
+/-- The orbit map carries each open cell of the countable join onto the open cell of its simplex
+orbit in the classifying space. -/
+@[simp]
+theorem image_openCell_classifyingSpaceProj (i : cell (univ : Set (universalGSpace G)) n) :
+    classifyingSpaceProj G '' openCell n i =
+      openCell n ((classifyingSpaceCellEquiv G n).symm
+        (Quotient.mk'' (realizationCellEquiv _ n i))) := by
+  let := cellMulAction (G := G) exists_smul_openCell_eq n
+  have hp := isQuotientCoveringMap_classifyingSpaceProj G
+  have hc : (classifyingSpaceCellEquiv G n).symm (Quotient.mk'' (realizationCellEquiv _ n i)) =
+      (hp.cellQuotientEquiv exists_smul_openCell_eq
+        (fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq) n).symm (Quotient.mk'' i) := by
+    rw [Equiv.symm_apply_eq, classifyingSpaceCellEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
+      MulAction.orbitRelQuotientCongr_mk]
+  rw [hc]
+  exact hp.image_openCell exists_smul_openCell_eq
+    (fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq) i
 
 /-- The closed cell of the orbit of a simplex of the countable join is the image of the closed
 simplex. -/
