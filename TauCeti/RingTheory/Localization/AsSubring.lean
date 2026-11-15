@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.AsSubring
 public import Mathlib.RingTheory.DedekindDomain.Dvr
+public import TauCeti.RingTheory.Localization.DenIdeal
 
 /-!
 # Membership in a localization realized inside the fraction field
@@ -15,15 +16,23 @@ Mathlib's `Localization.subalgebra.ofField K S hS` is the localization of a ring
 submonoid `S` of non-zero-divisors, realized as the `A`-subalgebra of the fraction field `K` of
 `A` consisting of the quotients `a / s` with `a ∈ A` and `s ∈ S`. This file adds the membership
 tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when some
-`s ∈ S` clears its denominator, `s * z ∈ A`, and for `S = powers x` exactly when some power of
-`x` does so. It also records that the localization of a Dedekind domain, so realized, is again a
-Dedekind domain.
+`s ∈ S` clears its denominator (`s ∈ Algebra.denIdeal K z`), and for `S = powers x` exactly when
+`x` lies in the radical of `Algebra.denIdeal K z`. Intersecting over a family of principal
+localizations `A[1 / a_i]` therefore tests whether the span of the `a_i` lies in that radical.
+It also records that inverting a finite product inverts each factor, and that the localization of
+a Dedekind domain, so realized, is again a Dedekind domain.
 
 ## Main results
 
-* `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range` and
-  `Localization.subalgebra.mem_ofField_powers_iff`: membership in `A[S⁻¹] ⊆ K`, respectively in
-  `A[1/x] ⊆ K`, by clearing denominators.
+* `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range`,
+  `Localization.subalgebra.mem_ofField_iff_exists_mem_denIdeal`,
+  `Localization.subalgebra.mem_ofField_powers_iff`, and
+  `Localization.subalgebra.mem_ofField_powers_iff_mem_radical`: membership in `A[S⁻¹] ⊆ K` and in
+  `A[1/x] ⊆ K`, by clearing denominators or via the radical of `Algebra.denIdeal K z`.
+* `Localization.subalgebra.mem_iInf_ofField_powers_iff_span_le_radical`: membership in an
+  intersection `⋂_i A[1 / a_i] ⊆ K` as `Ideal.span (Set.range a) ≤ (Algebra.denIdeal K z).radical`.
+* `Localization.subalgebra.inv_algebraMap_mem_ofField_powers_prod`: each factor of a finite
+  non-zero-divisor product has its inverse in the localization away from the product.
 * `Localization.subalgebra.isDedekindDomain_ofField`: `A[S⁻¹] ⊆ K` is a Dedekind domain when `A`
   is.
 -/
@@ -35,7 +44,10 @@ namespace Localization.subalgebra
 open scoped nonZeroDivisors
 
 variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
-  (S : Submonoid A) (hS : S ≤ A⁰)
+
+section Submonoid
+
+variable (S : Submonoid A) (hS : S ≤ A⁰)
 
 /-- **Membership in `A[S⁻¹] ⊆ K` by clearing denominators**: `z` lies in the localization exactly
 when some `s ∈ S` has `s * z ∈ A`. -/
@@ -47,6 +59,20 @@ theorem mem_ofField_iff_exists_mul_mem_range {z : K} :
   refine and_congr_right fun hs ↦ exists_congr fun a ↦ ?_
   rw [eq_mul_inv_iff_mul_eq₀ (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero, mul_comm, eq_comm]
 
+/-- Membership in `A[S⁻¹] ⊆ K` in terms of the denominator ideal: `z` lies in the localization
+precisely when `S` meets `Algebra.denIdeal K z`. -/
+theorem mem_ofField_iff_exists_mem_denIdeal {z : K} :
+    z ∈ ofField K S hS ↔ ∃ s ∈ S, s ∈ Algebra.denIdeal K z := by
+  simp only [mem_ofField_iff_exists_mul_mem_range, Algebra.mem_denIdeal_iff, RingHom.mem_range,
+    eq_comm]
+
+/-- The localization of a Dedekind domain at a submonoid of nonzero elements, realized inside its
+fraction field, is a Dedekind domain. -/
+instance isDedekindDomain_ofField [IsDedekindDomain A] : IsDedekindDomain (ofField K S hS) :=
+  IsLocalization.isDedekindDomain A hS _
+
+end Submonoid
+
 /-- **Membership in `A[1/x] ⊆ K`**: `z` lies in the localization of `A` away from `x` exactly when
 some power of `x` clears its denominator, `x ^ n * z ∈ A`. -/
 theorem mem_ofField_powers_iff (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K} :
@@ -54,9 +80,39 @@ theorem mem_ofField_powers_iff (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K
       ∃ n : ℕ, algebraMap A K x ^ n * z ∈ (algebraMap A K).range := by
   simp [mem_ofField_iff_exists_mul_mem_range, Submonoid.mem_powers_iff]
 
-/-- The localization of a Dedekind domain at a submonoid of nonzero elements, realized inside its
-fraction field, is a Dedekind domain. -/
-instance isDedekindDomain_ofField [IsDedekindDomain A] : IsDedekindDomain (ofField K S hS) :=
-  IsLocalization.isDedekindDomain A hS _
+/-- **Radical criterion for `A[1/x] ⊆ K`**: `z` lies in `A[1/x]` precisely when `x` belongs to the
+radical of the denominator ideal `Algebra.denIdeal K z`. -/
+theorem mem_ofField_powers_iff_mem_radical (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K} :
+    z ∈ ofField K (Submonoid.powers x) hx ↔ x ∈ (Algebra.denIdeal K z).radical := by
+  simp only [mem_ofField_powers_iff, Ideal.mem_radical_iff, Algebra.mem_denIdeal_iff, map_pow,
+    RingHom.mem_range, eq_comm]
+
+/-- An element `z : K` lies in the intersection `⋂_i A[1 / a_i]` inside `K` precisely when the
+ideal generated by the `a_i` is contained in the radical of `Algebra.denIdeal K z`. -/
+theorem mem_iInf_ofField_powers_iff_span_le_radical {ι : Type*} (a : ι → A)
+    (ha : ∀ i, Submonoid.powers (a i) ≤ A⁰) {z : K} :
+    z ∈ (⨅ i, ofField K (Submonoid.powers (a i)) (ha i)) ↔
+      Ideal.span (Set.range a) ≤ (Algebra.denIdeal K z).radical := by
+  rw [Algebra.mem_iInf, Ideal.span_le, Set.range_subset_iff]
+  exact forall_congr' fun i ↦ mem_ofField_powers_iff_mem_radical (a i) (ha i)
+
+/-- If the product of a finite family in `A` generates a submonoid of non-zero-divisors, then the
+inverse in `K` of each factor indexed by the finset lies in the localization away from the
+product. -/
+theorem inv_algebraMap_mem_ofField_powers_prod {ι : Type*} (s : Finset ι) (f : ι → A)
+    (hf : Submonoid.powers (∏ j ∈ s, f j) ≤ A⁰) {i : ι} (hi : i ∈ s) :
+    (algebraMap A K (f i))⁻¹ ∈ ofField K (Submonoid.powers (∏ j ∈ s, f j)) hf := by
+  classical
+  have hprod : ∏ j ∈ s, f j ∈ A⁰ := hf ⟨1, pow_one _⟩
+  have hfi : algebraMap A K (f i) ≠ 0 := by
+    intro h0
+    have hfi0 : f i = 0 := (map_eq_zero_iff _ (IsFractionRing.injective A K)).mp h0
+    have h0mem : (0 : A) ∈ A⁰ := by
+      rwa [← Finset.mul_prod_erase s f hi, hfi0, zero_mul] at hprod
+    have : Nontrivial A := (algebraMap A K).domain_nontrivial
+    exact zero_notMem_nonZeroDivisors h0mem
+  refine (mem_ofField_powers_iff _ hf).mpr ⟨1, ∏ j ∈ s.erase i, f j, ?_⟩
+  rw [pow_one, ← Finset.mul_prod_erase s f hi, map_mul, mul_right_comm, mul_inv_cancel₀ hfi,
+    one_mul]
 
 end Localization.subalgebra

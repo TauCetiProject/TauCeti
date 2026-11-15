@@ -84,20 +84,22 @@ theorem upperBound_foldl
   | nil => rfl
   | cons k w ih => exact (ih (μ k s)).trans (hinv s k)
 
+/-- The meet over all finite mutation words lies below the one-step upper bound, since the empty
+word and singleton words reach the initial and adjacent charts. -/
+theorem iInf_foldl_le_upperBound (s : V) :
+    (⨅ w : List K, L (w.foldl (fun t k ↦ μ k t) s)) ≤ upperBound μ L s := by
+  refine (le_upperBound_iff μ L).2 ⟨?_, fun k ↦ ?_⟩
+  · exact (iInf_le (fun w : List K ↦ L (w.foldl (fun t k ↦ μ k t) s)) []).trans_eq (by simp)
+  · exact (iInf_le (fun w : List K ↦ L (w.foldl (fun t k ↦ μ k t) s)) [k]).trans_eq (by simp)
+
 /-- An invariant upper bound is precisely the meet of all charts reachable by
 finite words. No finiteness or involutivity assumption is needed here. -/
 theorem upperBound_eq_iInf_foldl
     (hinv : ∀ s k, upperBound μ L (μ k s) = upperBound μ L s) (s : V) :
     upperBound μ L s = ⨅ w : List K, L (w.foldl (fun t k ↦ μ k t) s) := by
-  apply le_antisymm
-  · refine le_iInf fun w ↦ ?_
-    rw [← upperBound_foldl μ L hinv s w]
-    exact upperBound_le μ L _
-  · refine (le_upperBound_iff μ L).2 ⟨?_, fun k ↦ ?_⟩
-    · exact (iInf_le (fun w : List K ↦ L (w.foldl (fun t k ↦ μ k t) s)) []).trans_eq
-        (by simp)
-    · exact (iInf_le (fun w : List K ↦ L (w.foldl (fun t k ↦ μ k t) s)) [k]).trans_eq
-        (by simp)
+  refine le_antisymm (le_iInf fun w ↦ ?_) (iInf_foldl_le_upperBound μ L s)
+  rw [← upperBound_foldl μ L hinv s w]
+  exact upperBound_le μ L _
 
 /-- The local three-chart criterion identifies the upper bound with the
 intersection of every reachable chart. -/
