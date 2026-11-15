@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
 import TauCeti.MeasureTheory.Group.Action
 
@@ -107,9 +108,7 @@ theorem mem_range_compOfMapEqSmulₗᵢ_iff (hq : IsQuotientCoveringMap q G) (hC
       rw [smul_smul, ENNReal.inv_mul_cancel hC₀ hC, one_smul]
     -- `u` is the normalized pullback of `C ^ (1/p) • v`.
     set c : 𝕜 := ((C ^ (1 / p).toReal).toReal : 𝕜)
-    have hc : c ≠ 0 := by
-      rw [ne_eq, RCLike.ofReal_eq_zero, ← ENNReal.toReal_rpow]
-      exact (Real.rpow_pos_of_pos (ENNReal.toReal_pos hC₀ hC) _).ne'
+    have hc : c ≠ 0 := RCLike.ofReal_ne_zero.2 (ENNReal.toReal_rpow_pos hC₀ hC _).ne'
     have hqmp := QuasiMeasurePreserving.of_map_le_smul hq_meas hmap.le
     refine ⟨c • hvLp.toLp v, Lp.ext ?_⟩
     filter_upwards [Lp.coeFn_compOfMapEqSmulₗᵢ (𝕜 := 𝕜) hq_meas hC hC₀ hmap (c • hvLp.toLp v),

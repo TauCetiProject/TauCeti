@@ -58,6 +58,8 @@ set slightly thus changes its `d`-dimensional diameter sum by little, as in Haus
 approximations by open covers. In the exponent, the roots `c ^ (1 / p)` of a finite nonzero `c`
 tend to `1` as `p → ∞`, which turns a lower or upper bound weighted by a power of a measure into
 the corresponding bound in the limit of the `Lᵖ` seminorms.
+Every real power of a finite nonzero `x` is a positive real number (`ENNReal.toReal_rpow_pos`); this
+makes normalizing factors such as `C ^ (-1/p)` well defined.
 
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
@@ -408,6 +410,11 @@ theorem ofReal_toReal_mul_rpow {x : ℝ≥0∞} {q : ℝ} (h : q < 0 ∨ x ≠ �
   · simp
   rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
     ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
+
+/-- Every real power of a finite nonzero `x` is a positive real number. -/
+theorem toReal_rpow_pos {x : ℝ≥0∞} (hx₀ : x ≠ 0) (hx : x ≠ ∞) (y : ℝ) : 0 < (x ^ y).toReal := by
+  rw [← toReal_rpow]
+  exact Real.rpow_pos_of_pos (toReal_pos hx₀ hx) y
 
 end ENNReal
 

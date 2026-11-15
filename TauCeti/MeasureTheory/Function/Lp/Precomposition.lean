@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Precomposition on `Lᵖ` by a map with dominated pushforward
@@ -217,9 +218,7 @@ def compOfMapEqSmulₗᵢ (hf : Measurable f) (hC : C ≠ ∞) (hC₀ : C ≠ 0)
   toLinearMap :=
     ((C ^ (1 / p).toReal).toReal⁻¹ : 𝕜) • (compOfMapLeSmul 𝕜 hf hC hmap.le).toLinearMap
   norm_map' g := by
-    have hpos : 0 < (C ^ (1 / p).toReal).toReal := by
-      rw [← ENNReal.toReal_rpow]
-      exact Real.rpow_pos_of_pos (ENNReal.toReal_pos hC₀ hC) _
+    have hpos := ENNReal.toReal_rpow_pos hC₀ hC (1 / p).toReal
     rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, norm_smul, norm_inv,
       RCLike.norm_ofReal, abs_of_pos hpos, norm_compOfMapLeSmul_of_map_eq hf hC hC₀ hmap,
       inv_mul_cancel_left₀ hpos.ne']

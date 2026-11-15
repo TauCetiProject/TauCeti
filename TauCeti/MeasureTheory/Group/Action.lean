@@ -18,7 +18,10 @@ multiplication, that do not concern ergodicity: the restriction of an invariant 
 exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), and for a
 transitive isometric action all balls of one radius have the same invariant measure
 (`measure_ball_eq_measure_ball`). Every linear action on a finite-dimensional real space has
-measurable translations (`measurableConstSMul_of_finiteDimensional`).
+measurable translations (`measurableConstSMul_of_finiteDimensional`). Finally, a function that is
+almost everywhere invariant under each element of a countable group acting by measure-preserving
+maps has an everywhere-invariant strongly measurable representative
+(`AEStronglyMeasurable.exists_stronglyMeasurable_forall_smul_eq`).
 -/
 
 public section
