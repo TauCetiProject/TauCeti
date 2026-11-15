@@ -141,40 +141,32 @@ theorem toCompletedGroupAlgebra_dirac (γ : Γ) :
 /-- Pushing a measure forward along a continuous group homomorphism commutes with passing to the
 completed group algebra. -/
 theorem toCompletedGroupAlgebra_mapAlgHom {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
-    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ]
-    (f : Γ →ₜ* Δ) (μ : D(Γ, R)) :
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (f : Γ →ₜ* Δ) (μ : D(Γ, R)) :
     toCompletedGroupAlgebra (f.mapAlgHom μ) =
       completedGroupAlgebra.map R f.toMonoidHom f.continuous (toCompletedGroupAlgebra μ) := by
-  apply completedGroupAlgebra.ext
-  intro V
+  refine completedGroupAlgebra.ext fun V ↦ ?_
   let U : OpenNormalSubgroup Γ := V.comap f.toMonoidHom f.continuous
   let q : Γ ⧸ U.toSubgroup →* Δ ⧸ V.toSubgroup :=
     QuotientGroup.map U.toSubgroup V.toSubgroup f.toMonoidHom
       (V.toSubgroup_comap f.toMonoidHom f.continuous).le
-  have hq : (V.toSubgroup.quotientMkContinuousMonoidHom : C(Δ, Δ ⧸ V.toSubgroup)).comp
-        (f : C(Γ, Δ)) =
-      (⟨q, continuous_of_discreteTopology⟩ :
-        C(Γ ⧸ U.toSubgroup, Δ ⧸ V.toSubgroup)).comp
-        U.toSubgroup.quotientMkContinuousMonoidHom := by
-    ext
-    simp [q]
+  have hq : (V.toSubgroup.quotientMkContinuousMonoidHom : C(Δ, Δ ⧸ V.toSubgroup)).comp (f : C(Γ, Δ))
+      = (⟨q, continuous_of_discreteTopology⟩ : C(_, _)).comp
+        U.toSubgroup.quotientMkContinuousMonoidHom := by ext; simp [q]
   rw [proj_toCompletedGroupAlgebra, completedGroupAlgebra.proj_map, proj_toCompletedGroupAlgebra]
-  apply MonoidAlgebra.coeff_injective
+  refine MonoidAlgebra.coeff_injective ?_
   rw [MonoidAlgebra.coeff_mapDomain, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
     ContinuousMonoidHom.finiteProjectionAlgHom_apply, MonoidAlgebra.coeff_ofCoeff,
     MonoidAlgebra.coeff_ofCoeff, ContinuousMonoidHom.mapAlgHom_apply,
     finiteProjection_map, hq, finiteProjection_comp]
   rfl
 
-/-- Pushing a measure forward along a topological group isomorphism corresponds to
-`completedGroupAlgebra.domCongr`. -/
+/-- Pushing a measure forward along a topological group isomorphism corresponds to `domCongr`. -/
 theorem toCompletedGroupAlgebra_continuousMulEquiv {Δ : Type*} [Group Δ] [TopologicalSpace Δ]
-    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ]
-    (e : Γ ≃ₜ* Δ) (μ : D(Γ, R)) :
+    [CompactSpace Δ] [ContinuousMul Δ] [LocallyCompactSpace Δ] (e : Γ ≃ₜ* Δ) (μ : D(Γ, R)) :
     toCompletedGroupAlgebra ((⟨(e : Γ →* Δ), map_continuous e⟩ : Γ →ₜ* Δ).mapAlgHom μ) =
-      completedGroupAlgebra.domCongr R e (toCompletedGroupAlgebra μ) := by
-  rw [completedGroupAlgebra.coe_domCongr]
-  exact toCompletedGroupAlgebra_mapAlgHom ⟨(e : Γ →* Δ), map_continuous e⟩ μ
+      completedGroupAlgebra.domCongr R e (toCompletedGroupAlgebra μ) :=
+  completedGroupAlgebra.coe_domCongr R e ▸
+    toCompletedGroupAlgebra_mapAlgHom ⟨(e : Γ →* Δ), map_continuous e⟩ μ
 
 /-- Integrating a function that factors through `Γ ⧸ U` as `g` is the finite sum of the values
 of `g` against the coefficients of the projection of `toCompletedGroupAlgebra μ` at level `U`,

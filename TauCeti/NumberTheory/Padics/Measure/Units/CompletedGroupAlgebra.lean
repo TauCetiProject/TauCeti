@@ -14,52 +14,21 @@ import Mathlib.Topology.UniformSpace.UniformApproximation
 /-!
 # Integral measures on `ℤ_pˣ`, the Amice transform, and specialisation of `ℤ_p[[ℤ_pˣ]]`
 
-This file bridges the integral-measure algebra `D(ℤ_pˣ, ℤ_p)` with the completed group algebra
-`ℤ_p[[ℤ_pˣ]]`, its procyclic power-series coordinate, and evaluation at `K`-valued weights:
+This file connects the integral-measure algebra `D(ℤ_pˣ, ℤ_p)` with `ℤ_p[[ℤ_pˣ]]`, its procyclic
+power-series coordinate, and evaluation at `K`-valued weights:
 
-1. **Amice transform and procyclic power-series coordinate.** On the additive `p`-adic integers
-   viewed multiplicatively (`Multiplicative ℤ_p`), Mathlib's algebra Amice transform
-   `AbstractMeasure.amiceTransformₐ : D(Multiplicative ℤ_p, ℤ_p) →ₐ[ℤ_p] ℤ_p⟦X⟧` sends `δ_x` to
-   `PowerSeries.binomialSeries ℤ_p x.toAdd` and is continuous from `AbstractMeasure.WeakTopology`
-   to `PowerSeries.WithPiTopology`. Composing it with the procyclic completed-group-algebra
-   coordinate `completedGroupAlgebra.powerSeriesCoordinate` at `ofAdd 1` recovers the canonical
-   measure-to-completed-group-algebra comparison `AbstractMeasure.toCompletedGroupAlgebra`
-   (`TauCeti.powerSeriesCoordinate_amiceTransformₐ`). Transporting along the logarithm isomorphism
-   `TauCeti.unitsPrincipalLogEquiv p : 1 + qℤ_p ≃ₜ* Multiplicative ℤ_p` gives the corresponding
-   compatibility on principal `p`-adic units (`TauCeti.toCompletedGroupAlgebra_unitsPrincipal`).
-
-2. **Weight specialisation and bounded measure functions.** Over any complete ultrametric normed
-   field `K` over `ℚ_p`, specialising `toCompletedGroupAlgebra ν` (`ν ∈ D(ℤ_pˣ, ℤ_p)`) at a weight
-   `κ : WeightSpace p K` via `TauCeti.WeightSpace.specializeRingHom` agrees with integrating `κ`
-   against `ν` via `TauCeti.measureFun`
-   (`TauCeti.WeightSpace.specializeRingHom_toCompletedGroupAlgebra`). Consequently, assembling all
-   `K`-valued specialisations into
-   `TauCeti.completedMeasureFun K : ℤ_p[[ℤ_pˣ]] →+* (WeightSpace p K → K)` embeds `ℤ_p[[ℤ_pˣ]]`
-   injectively into functions on `WeightSpace p K` bounded in norm by `1`, with every group element
-   `[x]` attaining norm `1`.
-
-## Main definitions
-
-* `TauCeti.completedMeasureFun K`: the ring homomorphism
-  `ℤ_p[[ℤ_pˣ]] →+* (WeightSpace p K → K)` sending `x` to `κ ↦ κ.specializeRingHom x`.
-
-## Main results
-
-* `AbstractMeasure.continuous_amiceTransformₐ_weak`: `amiceTransformₐ` is continuous from the weak
-  topology on `D(Multiplicative ℤ_p, ℤ_p)` to the coefficientwise `p`-adic topology on `ℤ_p⟦X⟧`.
-* `AbstractMeasure.amiceTransformₐ_dirac`: `amiceTransformₐ (dirac ℤ_p x)` is the binomial series
-  `(1 + X) ^ x.toAdd`.
-* `TauCeti.powerSeriesCoordinate_amiceTransformₐ`: the procyclic power-series coordinate on
-  `ℤ_p[[Multiplicative ℤ_p]]` composed with `amiceTransformₐ` equals `toCompletedGroupAlgebra`.
-* `TauCeti.toCompletedGroupAlgebra_unitsPrincipal`: compatibility of `toCompletedGroupAlgebra` on
-  `D(1 + qℤ_p, ℤ_p)` with `amiceTransformₐ` along `unitsPrincipalLogEquiv p`.
-* `TauCeti.WeightSpace.specializeRingHom_toCompletedGroupAlgebra`:
-  `κ.specializeRingHom (toCompletedGroupAlgebra ν) = measureFun K ν κ`.
-* `TauCeti.WeightSpace.norm_specializeRingHom_le_one`,
-  `TauCeti.WeightSpace.norm_specializeRingHom_of`: `‖κ.specializeRingHom x‖ ≤ 1`, attained by group
-  elements.
-* `TauCeti.completedMeasureFun_injective`: `K`-valued weights jointly separate elements of
-  `ℤ_p[[ℤ_pˣ]]`.
+* **Amice transform and procyclic coordinate.** `AbstractMeasure.amiceTransformₐ` is continuous from
+  `AbstractMeasure.WeakTopology` to `PowerSeries.WithPiTopology`
+  (`AbstractMeasure.continuous_amiceTransformₐ_weak`) and sends `dirac R x` to `(1 + X) ^ x.toAdd`
+  (`AbstractMeasure.amiceTransformₐ_dirac`). Composing with `powerSeriesCoordinate` at `ofAdd 1`
+  recovers `toCompletedGroupAlgebra` (`TauCeti.powerSeriesCoordinate_amiceTransformₐ`), giving
+  `TauCeti.toCompletedGroupAlgebra_unitsPrincipal` along `TauCeti.unitsPrincipalLogEquiv p`.
+* **Weight specialisation and bounded measure functions.** Over any complete ultrametric normed
+  field `K` over `ℚ_p`, `κ.specializeRingHom (toCompletedGroupAlgebra ν) = measureFun K ν κ`
+  (`TauCeti.WeightSpace.specializeRingHom_toCompletedGroupAlgebra`), so `completedMeasureFun K`
+  embeds `ℤ_p[[ℤ_pˣ]]` injectively (`TauCeti.completedMeasureFun_injective`) into functions on
+  `WeightSpace p K` bounded in norm by `1` (`TauCeti.WeightSpace.norm_specializeRingHom_le_one`),
+  with group elements attaining norm `1` (`TauCeti.WeightSpace.norm_specializeRingHom_of`).
 
 ## References
 
@@ -76,29 +45,26 @@ namespace AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- The multiplicative integral Amice transform is continuous from the weak topology on
+/-- The multiplicative integral Amice transform is continuous from `WeakTopology` on
 `D(Multiplicative ℤ_p, ℤ_p)` to the coefficientwise `p`-adic topology on `ℤ_p⟦X⟧`. -/
 theorem continuous_amiceTransformₐ_weak :
     @Continuous _ _ (WeakTopology (X := Multiplicative ℤ_[p]) (R := ℤ_[p]) (E := ℤ_[p])) _
       (amiceTransformₐ (p := p) (R := ℤ_[p])) := by
   let : TopologicalSpace D(Multiplicative ℤ_[p], ℤ_[p]) := WeakTopology
-  have heval : Continuous (fun μ : D(Multiplicative ℤ_[p], ℤ_[p]) ↦
-      fun f : C(Multiplicative ℤ_[p], ℤ_[p]) ↦ μ f) :=
-    continuous_induced_dom
   refine continuous_iff_continuousAt.mpr fun μ ↦
     (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto ℤ_[p] _ _ _).mpr fun n ↦ ?_
   simpa only [coeff_amiceTransformₐ, ContinuousAt, Function.comp_def] using
-    ((continuous_apply (mulMahler n : C(Multiplicative ℤ_[p], ℤ_[p]))).comp heval).continuousAt
-      (x := μ)
+    ((continuous_apply (mulMahler n : C(Multiplicative ℤ_[p], ℤ_[p]))).comp
+      (continuous_induced_dom :
+        Continuous fun ν : D(Multiplicative ℤ_[p], ℤ_[p]) ↦
+          fun f : C(Multiplicative ℤ_[p], ℤ_[p]) ↦ ν f)).continuousAt (x := μ)
 
-/-- The multiplicative Amice transform of a Dirac measure is the binomial series
-`(1 + X) ^ x.toAdd`. -/
+/-- The multiplicative Amice transform of `dirac R x` is `(1 + X) ^ x.toAdd`. -/
 @[simp]
 theorem amiceTransformₐ_dirac {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
     [Algebra ℤ_[p] R] [ContinuousSMul ℤ_[p] R] (x : Multiplicative ℤ_[p]) :
     amiceTransformₐ (dirac R x) = PowerSeries.binomialSeries R x.toAdd := by
-  ext n
-  simp [coeff_amiceTransformₐ, mulMahler_apply, mahler_apply]
+  ext n; simp [coeff_amiceTransformₐ, mulMahler_apply, mahler_apply]
 
 end AbstractMeasure
 
@@ -117,13 +83,11 @@ private theorem continuous_completedGroupAlgebraEquiv_symm_weak (Γ : Type*) [Gr
   let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
   exact isHomeomorph_toCompletedGroupAlgebra_weak.isInducing.continuous_iff.mpr <|
     continuous_id.congr fun x ↦ by
-      simp only [Function.comp_apply, id_eq, ← completedGroupAlgebraEquiv_apply,
-        AlgEquiv.apply_symm_apply]
+      simp [← completedGroupAlgebraEquiv_apply]
 
 /-- **Compatibility of the Amice transform with `powerSeriesCoordinate`.** On
-`D(Multiplicative ℤ_p, ℤ_p)`, applying `AbstractMeasure.amiceTransformₐ` and then the procyclic
-power-series isomorphism `completedGroupAlgebra.powerSeriesCoordinate` at the canonical generator
-`Multiplicative.ofAdd 1` recovers `AbstractMeasure.toCompletedGroupAlgebra`. -/
+`D(Multiplicative ℤ_p, ℤ_p)`, `powerSeriesCoordinate` at `ofAdd 1` composed with `amiceTransformₐ`
+equals `toCompletedGroupAlgebra`. -/
 theorem powerSeriesCoordinate_amiceTransformₐ (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
     completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
         (topologicallyGenerates_ofAdd_one_padicInt p) (amiceTransformₐ μ) =
@@ -131,51 +95,31 @@ theorem powerSeriesCoordinate_amiceTransformₐ (μ : D(Multiplicative ℤ_[p], 
   let : TopologicalSpace D(Multiplicative ℤ_[p], ℤ_[p]) := WeakTopology
   let coord := completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
     (topologicallyGenerates_ofAdd_one_padicInt p)
-  let Φ : completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) →ₐ[ℤ_[p]]
-      completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) :=
-    (coord.toAlgHom.comp amiceTransformₐ).comp
-      (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm.toAlgHom
-  have hΦ_cont : Continuous Φ :=
-    (completedGroupAlgebra.continuous_powerSeriesCoordinate (isProP_multiplicative_padicInt p)
-      (topologicallyGenerates_ofAdd_one_padicInt p)).comp
-      (continuous_amiceTransformₐ_weak.comp
-        (continuous_completedGroupAlgebraEquiv_symm_weak (Multiplicative ℤ_[p])))
-  have hΦ_of (g : Multiplicative ℤ_[p]) :
-      Φ (completedGroupAlgebra.of ℤ_[p] (Multiplicative ℤ_[p]) g) =
-        completedGroupAlgebra.of ℤ_[p] (Multiplicative ℤ_[p]) g := by
-    have hdirac : (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm
-        (completedGroupAlgebra.of ℤ_[p] (Multiplicative ℤ_[p]) g) = dirac ℤ_[p] g :=
-      (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm_apply_eq.mpr
-        (by simp)
-    dsimp only [Φ, coord]
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-      hdirac, amiceTransformₐ_dirac,
-      completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
-      IsProP.padicPow_ofAdd_one_padicInt, ofAdd_toAdd]
-  have hspan : Set.EqOn (⇑Φ) (⇑(AlgHom.id ℤ_[p]
-      (completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]))))
-      (Submodule.span ℤ_[p]
-        (Set.range (completedGroupAlgebra.of ℤ_[p] (Multiplicative ℤ_[p])))) := by
-    intro z hz
-    induction hz using Submodule.span_induction with
-    | mem _ hy =>
-      obtain ⟨g, rfl⟩ := hy
-      exact hΦ_of g
-    | zero => simp
-    | add _ _ _ _ hx hy => simp [map_add, hx, hy]
-    | smul c x _ hx => simp [map_smul, hx]
-  have heq : ⇑Φ = _root_.id :=
-    Continuous.ext_on (completedGroupAlgebra.dense_span_range_of ℤ_[p] (Multiplicative ℤ_[p]))
-      hΦ_cont continuous_id hspan
-  have hμ : Φ (completedGroupAlgebraEquiv μ) = completedGroupAlgebraEquiv μ :=
-    congrFun heq (completedGroupAlgebraEquiv μ)
-  dsimp only [Φ, coord] at hμ
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply, completedGroupAlgebraEquiv_apply] at hμ
-  exact hμ
+  let e := coord.trans (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm
+  let Ψ : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] PowerSeries ℤ_[p] := amiceTransformₐ.comp e.toAlgHom
+  have hΨ_cont : Continuous Ψ :=
+    continuous_amiceTransformₐ_weak.comp <|
+      (continuous_completedGroupAlgebraEquiv_symm_weak (Multiplicative ℤ_[p])).comp <|
+        completedGroupAlgebra.continuous_powerSeriesCoordinate _ _
+  have hb1 : PowerSeries.binomialSeries ℤ_[p] (1 : ℤ_[p]) = 1 + PowerSeries.X := by
+    simpa using PowerSeries.binomialSeries_nat (A := ℤ_[p]) (R := ℤ_[p]) 1
+  have hdirac : (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm
+      (completedGroupAlgebra.of ℤ_[p] (Multiplicative ℤ_[p]) (.ofAdd 1)) = dirac ℤ_[p] (.ofAdd 1) :=
+    (completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)).symm_apply_eq.mpr (by simp)
+  have hΨX : Ψ PowerSeries.X = PowerSeries.X := add_left_cancel (a := (1 : PowerSeries ℤ_[p])) <| by
+    conv_lhs => rw [← map_one Ψ, ← map_add, ← hb1]
+    dsimp only [Ψ, e, coord, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply]
+    rw [completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
+      IsProP.padicPow_ofAdd_one_padicInt, hdirac, amiceTransformₐ_dirac, toAdd_ofAdd, hb1]
+  have heq : ⇑Ψ = _root_.id :=
+    (PowerSeries.WithPiTopology.denseRange_toPowerSeries ℤ_[p]).equalizer hΨ_cont continuous_id <|
+      funext fun P ↦ by
+        simp only [Function.comp_apply, id_eq, PowerSeries.algHom_coe_eq_aeval, hΨX]
+        exact (PowerSeries.algHom_coe_eq_aeval (AlgHom.id ℤ_[p] (PowerSeries ℤ_[p])) P).symm
+  have hμ : amiceTransformₐ μ = e.symm μ := by
+    simpa [Ψ] using congrFun heq (e.symm μ)
+  simpa [e, coord, completedGroupAlgebraEquiv_apply] using congrArg coord hμ
 
-/-- Applying the inverse procyclic coordinate to `toCompletedGroupAlgebra μ` recovers the
-multiplicative Amice transform `amiceTransformₐ μ`. -/
 @[simp]
 theorem symm_powerSeriesCoordinate_toCompletedGroupAlgebra
     (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
@@ -186,10 +130,9 @@ theorem symm_powerSeriesCoordinate_toCompletedGroupAlgebra
     (topologicallyGenerates_ofAdd_one_padicInt p)).symm_apply_eq.mpr
     (powerSeriesCoordinate_amiceTransformₐ μ).symm
 
-/-- **Principal-units compatibility.** Under the logarithm isomorphism
-`unitsPrincipalLogEquiv p : 1 + qℤ_p ≃ₜ* Multiplicative ℤ_p`, `toCompletedGroupAlgebra` on
-integral measures on `1 + qℤ_p` agrees with pushing forward along `unitsPrincipalLogEquiv p`,
-taking the Amice transform, and applying the procyclic power-series coordinate. -/
+/-- **Principal-units compatibility.** Under `unitsPrincipalLogEquiv p : 1 + qℤ_p ≃ₜ*
+Multiplicative ℤ_p`, `toCompletedGroupAlgebra` on `D(1 + qℤ_p, ℤ_p)` agrees with pushing forward,
+taking `amiceTransformₐ`, and applying `powerSeriesCoordinate`. -/
 theorem toCompletedGroupAlgebra_unitsPrincipal
     (μ : D(unitsPrincipal p (padicUnitsDepth p), ℤ_[p])) :
     toCompletedGroupAlgebra μ =
@@ -211,10 +154,10 @@ section MeasureFunComparison
 
 private theorem exists_one_lt_norm_of_normedAlgebra_padic (p : ℕ) [Fact p.Prime]
     (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K] [NormOneClass K] :
-    ∃ x : K, 1 < ‖x‖ := by
-  refine ⟨algebraMap ℚ_[p] K (p : ℚ_[p])⁻¹, ?_⟩
-  rw [norm_algebraMap', norm_inv, Padic.norm_p, inv_inv]
-  exact_mod_cast (Fact.out : p.Prime).one_lt
+    ∃ x : K, 1 < ‖x‖ :=
+  ⟨algebraMap ℚ_[p] K (p : ℚ_[p])⁻¹, by
+    rw [norm_algebraMap', norm_inv, Padic.norm_p, inv_inv]
+    exact_mod_cast (Fact.out : p.Prime).one_lt⟩
 
 private theorem continuous_extendCoefficients_completedGroupAlgebraEquiv_symm
     {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
@@ -235,29 +178,25 @@ private theorem continuous_extendCoefficients_completedGroupAlgebraEquiv_symm
     let q : C(ℤ_[p]ˣ, φ.discreteQuotient) := ⟨_, φ.discreteQuotient.proj_continuous⟩
     let := Fintype.ofFinite φ.discreteQuotient
     have hφ : (φ : C(ℤ_[p]ˣ, K)) = (ContinuousMap.equivFnOfDiscrete.symm φ.lift).comp q := by
-      ext x
-      exact (congrFun φ.lift_comp_proj x).symm
+      ext x; exact (congrFun φ.lift_comp_proj x).symm
     simp_rw [hφ, extendCoefficients_apply_comp_eq_sum]
-    exact continuous_finsetSum _ fun a _ ↦
-      continuous_const.mul <| continuous_padicIntAlgebraMap.comp <|
-        ((continuous_apply a).comp (continuous_finiteProjection q)).comp hsymm
+    exact continuous_finsetSum _ fun a _ ↦ continuous_const.mul <|
+      continuous_padicIntAlgebraMap.comp <| ((continuous_apply a).comp
+        (continuous_finiteProjection q)).comp hsymm
   refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
   obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
-  obtain ⟨φ, hφf⟩ :=
-    LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f hε
+  obtain ⟨φ, hφf⟩ := LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f hε
   refine ⟨_, hloc φ, fun z ↦ hεu ?_⟩
   rw [dist_eq_norm, ← map_sub, ← coe_toCLMEquiv]
-  refine (ContinuousLinearMap.le_opNorm _ _).trans_lt ?_
-  refine (mul_le_of_le_one_left (norm_nonneg _)
-    (norm_toCLMEquiv_extendCoefficients_le _ norm_padicIntAlgebraMap_le_one _)).trans_lt ?_
+  refine ((ContinuousLinearMap.le_opNorm _ _).trans
+    (mul_le_of_le_one_left (norm_nonneg _)
+      (norm_toCLMEquiv_extendCoefficients_le _ norm_padicIntAlgebraMap_le_one _))).trans_lt ?_
   rwa [dist_eq_norm] at hφf
 
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDist K]
   [CompleteSpace K]
 
-/-- **Compatibility of `specializeRingHom` with `measureFun`.** Specialising the image in
-`ℤ_p[[ℤ_pˣ]]` of an integral measure `ν ∈ D(ℤ_pˣ, ℤ_p)` at a weight `κ : WeightSpace p K` agrees
-with integrating `κ` against `ν`. -/
+/-- **Compatibility of `specializeRingHom` with `measureFun`.** -/
 @[simp]
 theorem WeightSpace.specializeRingHom_toCompletedGroupAlgebra (ν : D(ℤ_[p]ˣ, ℤ_[p]))
     (κ : WeightSpace p K) :
@@ -268,29 +207,20 @@ theorem WeightSpace.specializeRingHom_toCompletedGroupAlgebra (ν : D(ℤ_[p]ˣ,
   have hΦ_cont : Continuous Φ :=
     (continuous_extendCoefficients_completedGroupAlgebraEquiv_symm κ.weightTest).congr fun z ↦ by
       simp [Φ, measureFun_apply]
-  have hΦ_of (x : ℤ_[p]ˣ) :
-      Φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x := by
-    have hdirac : (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm
-        (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = dirac ℤ_[p] x :=
-      (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm_apply_eq.mpr (by simp)
-    simp [Φ, hdirac]
   have heq : Φ = κ.specializeRingHom :=
-    κ.eq_specializeRingHom_of_continuous hΦ_cont hΦ_of
-  have hν : Φ (completedGroupAlgebraEquiv ν) =
-      κ.specializeRingHom (completedGroupAlgebraEquiv ν) :=
-    RingHom.congr_fun heq (completedGroupAlgebraEquiv ν)
-  have hΦν : Φ (completedGroupAlgebraEquiv ν) = measureFun K ν κ := by
-    dsimp only [Φ]
-    rw [RingHom.comp_apply, RingHom.comp_apply, Pi.evalRingHom_apply]
-    change measureFun K ((completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm
-      (completedGroupAlgebraEquiv ν)) κ = _
-    rw [AlgEquiv.symm_apply_apply]
-  rw [← completedGroupAlgebraEquiv_apply, ← hν, hΦν]
+    κ.eq_specializeRingHom_of_continuous hΦ_cont fun x ↦ by
+      have hdirac : (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm
+          (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = dirac ℤ_[p] x :=
+        (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm_apply_eq.mpr (by simp)
+      simp [Φ, hdirac]
+  have hν : κ.specializeRingHom (completedGroupAlgebraEquiv ν) = measureFun K ν κ := by
+    simpa [Φ, -completedGroupAlgebraEquiv_apply] using
+      (RingHom.congr_fun heq (completedGroupAlgebraEquiv ν)).symm
+  rwa [completedGroupAlgebraEquiv_apply] at hν
 
 /-- Every field-valued weight specialisation takes values in the closed unit ball of `K`. -/
 theorem WeightSpace.norm_specializeRingHom_le_one (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ)
-    (κ : WeightSpace p K) :
-    ‖κ.specializeRingHom x‖ ≤ 1 := by
+    (κ : WeightSpace p K) : ‖κ.specializeRingHom x‖ ≤ 1 := by
   let : NontriviallyNormedField K :=
     { ‹NormedField K› with non_trivial := exists_one_lt_norm_of_normedAlgebra_padic p K }
   let ν := (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm x
@@ -307,26 +237,20 @@ theorem WeightSpace.norm_specializeRingHom_of (g : ℤ_[p]ˣ) (κ : WeightSpace 
   exact norm_measureFun_dirac g κ
 
 variable (K) in
-/-- **The completed-group-algebra evaluation map into functions on `WeightSpace p K`.** Each element
-`x ∈ ℤ_p[[ℤ_pˣ]]` goes to the bounded function `κ ↦ κ.specializeRingHom x`. -/
+/-- **The completed-group-algebra evaluation map into functions on `WeightSpace p K`.** -/
 noncomputable def completedMeasureFun :
     completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* (WeightSpace p K → K) :=
   RingHom.pi fun κ ↦ κ.specializeRingHom
 
 @[simp]
 theorem completedMeasureFun_apply (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ)
-    (κ : WeightSpace p K) :
-    completedMeasureFun K x κ = κ.specializeRingHom x :=
-  (rfl)
+    (κ : WeightSpace p K) : completedMeasureFun K x κ = κ.specializeRingHom x := (rfl)
 
-/-- Evaluating `toCompletedGroupAlgebra ν` at all `K`-valued weights recovers `measureFun K ν`. -/
 @[simp]
 theorem completedMeasureFun_toCompletedGroupAlgebra (ν : D(ℤ_[p]ˣ, ℤ_[p])) :
-    completedMeasureFun K (toCompletedGroupAlgebra ν) = measureFun K ν := by
-  ext κ
-  exact WeightSpace.specializeRingHom_toCompletedGroupAlgebra ν κ
+    completedMeasureFun K (toCompletedGroupAlgebra ν) = measureFun K ν :=
+  funext <| WeightSpace.specializeRingHom_toCompletedGroupAlgebra ν
 
-/-- `completedMeasureFun K` composed with `toCompletedGroupAlgebra` is `measureFun K`. -/
 theorem completedMeasureFun_comp_toCompletedGroupAlgebra :
     (completedMeasureFun K).comp
         (toCompletedGroupAlgebra : D(ℤ_[p]ˣ, ℤ_[p]) →ₐ[ℤ_[p]]
@@ -335,17 +259,13 @@ theorem completedMeasureFun_comp_toCompletedGroupAlgebra :
   RingHom.ext completedMeasureFun_toCompletedGroupAlgebra
 
 variable (K) in
-/-- **`K`-valued weights separate elements of `ℤ_p[[ℤ_pˣ]]`.** Because `completedMeasureFun K`
-transfers `TauCeti.measureFun K` along the isomorphism `completedGroupAlgebraEquiv`, it is
-injective. -/
+/-- **`K`-valued weights separate elements of `ℤ_p[[ℤ_pˣ]]`.** -/
 theorem completedMeasureFun_injective :
-    Function.Injective (completedMeasureFun (p := p) K) := by
-  intro x y hxy
+    Function.Injective (completedMeasureFun (p := p) K) := fun x y hxy ↦ by
   apply (completedGroupAlgebraEquiv (Γ := ℤ_[p]ˣ) (p := p)).symm.injective
   apply measureFun_injective K
-  rw [← completedMeasureFun_toCompletedGroupAlgebra, ← completedMeasureFun_toCompletedGroupAlgebra,
-    ← completedGroupAlgebraEquiv_apply, ← completedGroupAlgebraEquiv_apply,
-    AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply, hxy]
+  simpa [← completedMeasureFun_toCompletedGroupAlgebra, ← completedGroupAlgebraEquiv_apply]
+    using hxy
 
 end MeasureFunComparison
 

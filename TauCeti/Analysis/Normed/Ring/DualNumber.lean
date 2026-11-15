@@ -99,19 +99,15 @@ instance {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 K] : NormedAlgebr
 
 /-- The identification of `MaxDualNumber K` with Mathlib's dual numbers, as `R`-algebras. -/
 def ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] :
-    DualNumber K ≃ₐ[R] MaxDualNumber K :=
-  AlgEquiv.refl
+    DualNumber K ≃ₐ[R] MaxDualNumber K := AlgEquiv.refl
 
 @[simp]
 theorem coe_ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] (x : DualNumber K) :
-    ofDualNumberAlgEquiv R x = ofDualNumber x :=
-  (rfl)
+    ofDualNumberAlgEquiv R x = ofDualNumber x := (rfl)
 
 @[simp]
 theorem norm_algebraMap_self (a : K) : ‖algebraMap K (MaxDualNumber K) a‖ = ‖a‖ := by
-  rw [← (ofDualNumberAlgEquiv K).commutes, coe_ofDualNumberAlgEquiv,
-    TrivSqZeroExt.algebraMap_eq_inl, norm_ofDualNumber]
-  simp
+  simp [← (ofDualNumberAlgEquiv K).commutes, TrivSqZeroExt.algebraMap_eq_inl]
 
 section NormOneClass
 
