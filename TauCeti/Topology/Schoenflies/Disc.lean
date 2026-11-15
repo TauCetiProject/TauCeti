@@ -117,7 +117,7 @@ private theorem exists_homeomorph_closure_of_pos :
   have hcl : closure (connectedComponentIn (range σ)ᶜ y) =
       g ⁻¹' {v | 0 ≤ ⟪(v : F), (p : F)⟫} := by
     rw [connectedComponentIn_compl_range_eq_setOf_pos hEF hb.continuous hb.injective hφ hgσ hz hy,
-      hb.closure_setOf_pos hEF hE hφ hgσ hy hz]
+      hb.closure_setOf_pos hEF hφ hgσ hy hz]
     rfl
   -- The fibre of `g` over `p` is cellular, so that preimage is a disc.
   have hA : IsCellularSet (EuclideanSpace ℝ (Fin (finrank ℝ E))) (g ⁻¹' {p}) :=

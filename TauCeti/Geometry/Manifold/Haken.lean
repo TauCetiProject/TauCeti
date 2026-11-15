@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Incompressible
-public import TauCeti.Geometry.Manifold.Irreducible
+public import TauCeti.Geometry.Manifold.Irreducible.Defs
 
 /-!
 # Compact surfaces and Haken embeddings

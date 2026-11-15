@@ -85,6 +85,11 @@ space by them.
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
 * `TauCeti.connectedComponentIn_eq_of_natCard_eq_two`: if a set with exactly two connected
   components is split into two disjoint nonempty open sets, these are its components.
+* `TauCeti.disjoint_connectedComponentIn_of_ne`,
+  `TauCeti.connectedComponentIn_union_eq_of_natCard_eq_two`, and
+  `TauCeti.closure_connectedComponentIn_compl_eq_compl`: distinct components in `s` are disjoint,
+  when `s` has two components any two distinct ones cover `s`, and when `sᶜ` has two components a
+  component whose closure adds `s` has closure equal to the complement of the other component.
 * `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
   disjoint open set `v`, is a connected component of `u ∪ v`.
 -/
@@ -791,5 +796,55 @@ theorem _root_.IsPreconnected.connectedComponentIn_union_eq_left {u v : Set X}
   (isPreconnected_connectedComponentIn.subset_left_of_subset_union hu hv huv
       (connectedComponentIn_subset _ x) ⟨x, mem_connectedComponentIn (Or.inl hx), hx⟩).antisymm
     (hu'.subset_connectedComponentIn hx subset_union_left)
+
+/-- Two distinct connected components in `s` are disjoint. -/
+theorem disjoint_connectedComponentIn_of_ne {s : Set X} {x y : X}
+    (h : connectedComponentIn s x ≠ connectedComponentIn s y) :
+    Disjoint (connectedComponentIn s x) (connectedComponentIn s y) :=
+  disjoint_left.2 fun _ hzx hzy ↦
+    h ((connectedComponentIn_eq hzx).trans (connectedComponentIn_eq hzy).symm)
+
+/-- If a set `s` has exactly two connected components, then any two distinct nonempty components in
+`s` cover `s`. -/
+theorem connectedComponentIn_union_eq_of_natCard_eq_two {s : Set X}
+    (hs : Nat.card (ConnectedComponents s) = 2) {x y : X} (hx : x ∈ s) (hy : y ∈ s)
+    (hxy : connectedComponentIn s x ≠ connectedComponentIn s y) :
+    connectedComponentIn s x ∪ connectedComponentIn s y = s := by
+  refine (union_subset (connectedComponentIn_subset s x) (connectedComponentIn_subset s y)).antisymm
+    fun z hz ↦ ?_
+  have hne : ((⟨x, hx⟩ : s) : ConnectedComponents s) ≠ (⟨y, hy⟩ : s) :=
+    mt (ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hx hy).1 hxy
+  obtain ⟨c, -, hc⟩ := (Nat.card_eq_two_iff' ((⟨x, hx⟩ : s) : ConnectedComponents s)).1 hs
+  have hcy : ((⟨y, hy⟩ : s) : ConnectedComponents s) = c := hc _ hne.symm
+  by_cases hzx : ((⟨z, hz⟩ : s) : ConnectedComponents s) = (⟨x, hx⟩ : s)
+  · rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hz hx] at hzx
+    exact Or.inl (hzx ▸ mem_connectedComponentIn hz)
+  · have hzy : ((⟨z, hz⟩ : s) : ConnectedComponents s) = (⟨y, hy⟩ : s) :=
+      (hc _ hzx).trans hcy.symm
+    rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hz hy] at hzy
+    exact Or.inr (hzy ▸ mem_connectedComponentIn hz)
+
+/-- If `sᶜ` has two connected components and `closure (connectedComponentIn sᶜ v) =
+connectedComponentIn sᶜ v ∪ s`, then `closure (connectedComponentIn sᶜ v)` is the complement of any
+other nonempty component of `sᶜ`. -/
+theorem closure_connectedComponentIn_compl_eq_compl {s : Set X}
+    (hcard : Nat.card (ConnectedComponents ↥sᶜ) = 2) {p v : X} (hp : p ∉ s) (hv : v ∉ s)
+    (hpv : connectedComponentIn sᶜ p ≠ connectedComponentIn sᶜ v)
+    (hcl : closure (connectedComponentIn sᶜ v) = connectedComponentIn sᶜ v ∪ s) :
+    closure (connectedComponentIn sᶜ v) = (connectedComponentIn sᶜ p)ᶜ := by
+  have hcompl := connectedComponentIn_union_eq_of_natCard_eq_two hcard hp hv hpv
+  have hdisj := disjoint_connectedComponentIn_of_ne hpv
+  rw [hcl]
+  ext y
+  constructor
+  · rintro (hyV | hyS) hyP
+    · exact disjoint_left.1 hdisj hyP hyV
+    · exact connectedComponentIn_subset _ _ hyP hyS
+  · intro hyP
+    by_cases hyS : y ∈ s
+    · exact Or.inr hyS
+    · have hyU : y ∈ connectedComponentIn sᶜ p ∪ connectedComponentIn sᶜ v :=
+        hcompl.symm ▸ (hyS : y ∈ sᶜ)
+      exact Or.inl (hyU.resolve_left hyP)
 
 end TauCeti

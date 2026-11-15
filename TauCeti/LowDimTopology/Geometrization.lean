@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
-public import TauCeti.Geometry.Manifold.Irreducible
+public import TauCeti.Geometry.Manifold.Irreducible.Defs
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.FiniteVolume
 public import TauCeti.LowDimTopology.SeifertFibration

@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.NotSimplyConnected
-public import TauCeti.Geometry.Manifold.Irreducible
+public import TauCeti.Geometry.Manifold.Irreducible.Defs
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LowDimTopology.SeifertFibration
 public import TauCeti.Topology.ConnectedComponents

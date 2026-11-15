@@ -23,13 +23,15 @@ Consequently a path avoiding the closed set cannot leave such a component, even 
 
 * `TauCeti.closure_image_coe_connectedComponentIn_subset` describes that closure.
 * `TauCeti.not_joinedIn_compl_image_coe` separates the component from every other point by paths.
+* `TauCeti.mem_filledHull_iff_coe_notMem_connectedComponentIn_infty` characterizes membership in
+  `filledHull K` as lying outside the component of `∞` in the complement of `(↑) '' K`.
 -/
 
 public section
 
 namespace TauCeti
 
-open Bornology Set
+open Bornology Set Topology
 open scoped OnePoint
 
 variable {E : Type*} [MetricSpace E] [ProperSpace E] [LocallyConnectedSpace E]
@@ -66,5 +68,55 @@ theorem not_joinedIn_compl_image_coe {K : Set E} (hK : IsClosed K) {x : E}
     obtain ⟨y, hy | hy, hyt⟩ := closure_image_coe_connectedComponentIn_subset hK hx.1 hcl
     · exact ⟨y, hy, hyt⟩
     · exact absurd ⟨y, hy, hyt⟩ (h.somePath_mem t)
+
+/-- **Filled hull via the one-point compactification.** For a closed set `K` in a proper locally
+connected metric space `E`, a point `x : E` belongs to `filledHull K` if and only if
+`(x : OnePoint E)` does not belong to the connected component of `∞` in the complement of
+`(↑) '' K`. -/
+theorem mem_filledHull_iff_coe_notMem_connectedComponentIn_infty {K : Set E} (hK : IsClosed K)
+    {x : E} :
+    x ∈ filledHull K ↔
+      (x : OnePoint E) ∉ connectedComponentIn (((↑) : E → OnePoint E) '' K)ᶜ ∞ := by
+  set K' : Set (OnePoint E) := ((↑) : E → OnePoint E) '' K
+  refine ⟨fun hx hmem ↦ ?_, fun hnot ↦ by_contra fun hx ↦ hnot ?_⟩
+  · by_cases hxK : x ∈ K
+    · exact connectedComponentIn_subset K'ᶜ ∞ hmem ⟨x, hxK, rfl⟩
+    · set W : Set (OnePoint E) := ((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x
+      have hWo : IsOpen W :=
+        OnePoint.isOpenEmbedding_coe.isOpenMap _ hK.isOpen_compl.connectedComponentIn
+      have hcl := closure_image_coe_connectedComponentIn_subset hK hx
+      have hinf : (∞ : OnePoint E) ∈ (closure W)ᶜ := fun h ↦
+        OnePoint.infty_notMem_image_coe (hcl h)
+      have hcov : K'ᶜ ⊆ (closure W)ᶜ ∪ W := fun z hz ↦ by
+        by_cases hzc : z ∈ closure W
+        · obtain ⟨y, hy | hy, rfl⟩ := hcl hzc
+          · exact Or.inr ⟨y, hy, rfl⟩
+          · exact (hz ⟨y, hy, rfl⟩).elim
+        · exact Or.inl hzc
+      have hsub : connectedComponentIn K'ᶜ ∞ ⊆ (closure W)ᶜ :=
+        isPreconnected_connectedComponentIn.subset_left_of_subset_union
+          isClosed_closure.isOpen_compl hWo
+          (disjoint_compl_left.mono_right subset_closure)
+          ((connectedComponentIn_subset K'ᶜ ∞).trans hcov)
+          ⟨∞, mem_connectedComponentIn OnePoint.infty_notMem_image_coe, hinf⟩
+      exact hsub hmem (subset_closure ⟨x, mem_connectedComponentIn hxK, rfl⟩)
+  · have hxK : x ∉ K := fun h ↦ hx (subset_filledHull h)
+    set C := connectedComponentIn Kᶜ x
+    have hinf : (∞ : OnePoint E) ∈ closure (((↑) : E → OnePoint E) '' C) := by
+      rw [mem_closure_iff_nhds_basis OnePoint.hasBasis_nhds_infty]
+      rintro s ⟨-, hs⟩
+      obtain ⟨z, hzC, hzs⟩ : ∃ z ∈ C, z ∉ s :=
+        not_subset.1 fun hCs ↦ (mem_filledHull_iff.not.1 hx) (hs.isBounded.subset hCs)
+      exact ⟨z, ⟨z, hzC, rfl⟩, Or.inl ⟨z, hzs, rfl⟩⟩
+    have hpre : IsPreconnected (insert (∞ : OnePoint E) (((↑) : E → OnePoint E) '' C)) :=
+      (isPreconnected_connectedComponentIn.image _ OnePoint.continuous_coe.continuousOn)
+        |>.subset_closure (subset_insert _ _) (insert_subset hinf subset_closure)
+    have hsub : insert (∞ : OnePoint E) (((↑) : E → OnePoint E) '' C) ⊆ K'ᶜ := by
+      rintro _ (rfl | ⟨y, hyC, rfl⟩)
+      · exact OnePoint.infty_notMem_image_coe
+      · rintro ⟨z, hzK, hzy⟩
+        exact connectedComponentIn_subset Kᶜ x hyC (OnePoint.coe_injective hzy ▸ hzK)
+    exact hpre.subset_connectedComponentIn (mem_insert _ _) hsub
+      (mem_insert_of_mem _ ⟨x, mem_connectedComponentIn hxK, rfl⟩)
 
 end TauCeti
