@@ -321,7 +321,6 @@ lemma ObjectProperty.prop_leftDerived_obj (P : ObjectProperty D) [P.IsClosedUnde
 /-- A right-exact additive functor `F` preserving projective objects carries a projective
 resolution `P` of an `F`-acyclic object `X` (`Lₙ₊₁F(X) = 0` for all `n`) to a projective
 resolution of `F(X)`. -/
-@[expose]
 def ProjectiveResolution.mapOfIsZeroLeftDerived {X : C} (P : ProjectiveResolution X)
     (F : C ⥤ D) [F.Additive] [PreservesFiniteColimits F] [F.PreservesProjectiveObjects]
     (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
@@ -329,8 +328,9 @@ def ProjectiveResolution.mapOfIsZeroLeftDerived {X : C} (P : ProjectiveResolutio
   let K : ChainComplex D ℕ := (F.mapHomologicalComplex _).obj P.complex
   let ε : K.X 0 ⟶ F.obj X := F.map (P.π.f 0)
   have hε : K.d 1 0 ≫ ε = 0 := by
-    change F.map (P.complex.d 1 0) ≫ F.map (P.π.f 0) = 0
-    rw [← F.map_comp, P.complex_d_comp_π_f_zero, F.map_zero]
+    dsimp [K, ε]
+    exact ((F.map_comp (P.complex.d 1 0) (P.π.f 0)).symm.trans
+      (F.congr_map P.complex_d_comp_π_f_zero)).trans (F.map_zero _ _)
   have h₀ := (ShortComplex.exact_and_epi_g_iff_g_is_cokernel (ShortComplex.mk _ _ hε)).2
     ⟨CokernelCofork.mapIsColimit _ P.isColimitCokernelCofork F⟩
   haveI : Epi ε := h₀.2
@@ -345,6 +345,19 @@ theorem ProjectiveResolution.mapOfIsZeroLeftDerived_complex {X : C} (P : Project
     (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
     (P.mapOfIsZeroLeftDerived F h).complex = (F.mapHomologicalComplex _).obj P.complex :=
   (rfl)
+
+/-- The augmentation of `P.mapOfIsZeroLeftDerived F h` in degree zero is `F` applied to the
+degree-zero augmentation of `P`. -/
+@[simp]
+theorem ProjectiveResolution.mapOfIsZeroLeftDerived_π_f_zero {X : C} (P : ProjectiveResolution X)
+    (F : C ⥤ D) [F.Additive] [PreservesFiniteColimits F] [F.PreservesProjectiveObjects]
+    (h : ∀ n, IsZero ((F.leftDerived (n + 1)).obj X)) :
+    (P.mapOfIsZeroLeftDerived F h).π.f 0 =
+      eqToHom (by simp) ≫ F.map (P.π.f 0) ≫ eqToHom (by simp) := by
+  rw [conj_eqToHom_iff_heq']
+  dsimp [mapOfIsZeroLeftDerived, ChainComplex.toProjectiveResolution]
+  exact (heq_of_eq (ChainComplex.toSingle₀Equiv_symm_apply_f_zero
+    (C := (F.mapHomologicalComplex _).obj P.complex) _ _)).trans HEq.rfl
 
 end Additive
 

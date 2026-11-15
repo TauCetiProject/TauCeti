@@ -378,17 +378,6 @@ universe u
 
 variable {A B : Type u} [CommRing A] [CommRing B] (f : A →+* B)
 
-private instance preservesFiniteColimits_extendScalars :
-    PreservesFiniteColimits (extendScalars.{u, u, u} f) := by
-  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} f) :=
-    (extendRestrictScalarsAdj.{u, u, u} f).leftAdjoint_preservesColimits
-  exact PreservesColimitsOfSize.preservesFiniteColimits _
-
-private instance preservesProjectiveObjects_extendScalars :
-    (extendScalars.{u, u, u} f).PreservesProjectiveObjects :=
-  Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
-    (extendRestrictScalarsAdj.{u, u, u} f)
-
 /-- **Flat base change for the vanishing of `Tor`.** For a flat ring homomorphism `f : A →+* B`, a
 `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when `Torₙ^B(M, B ⊗[A] N)`
 vanishes. -/

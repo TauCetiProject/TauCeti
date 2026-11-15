@@ -109,7 +109,7 @@ and a perfect `A`-algebra `C`, the map `I ⊗[A] C → A ⊗[A] C` is injective,
 `Tor₁^A(A ⧸ I, C) = 0`. -/
 theorem subtype_rTensor_injective_of_isRadical [ExpChar C p] [PerfectRing C p] {I : Ideal A}
     (hI : I.IsRadical) : Function.Injective (I.subtype.rTensor C) := by
-  have := isReduced_of_perfectRing C p
+  have := isReduced_of_perfectRing C hp.out.ne_one
   -- The radical of a finitely generated ideal is a finite sum of Frobenius-root ideals.
   have fg {N : Ideal A} (hN : N.FG) : Function.Injective (N.radical.subtype.rTensor C) := by
     induction N, hN using Submodule.fg_induction with

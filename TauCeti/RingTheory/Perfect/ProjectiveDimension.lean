@@ -114,23 +114,6 @@ theorem projectiveDimension_le_of_surjective_of_isReduced [IsReduced R] {φ : P 
   ModuleCat.projectiveDimension_le_of_surjective_of_isZero_Tor φ hφ
     (TauCeti.isZero_Tor_succ_of_surjective_of_isReduced p hφ M)
 
-/-- Specialization of `RingHom.hasProjectiveDimensionLE_of_surjective_of_isReduced` to a perfect
-target ring. -/
-theorem hasProjectiveDimensionLE_of_surjective_of_perfectRing [PerfectRing R p] {φ : P →+* R}
-    (hφ : Function.Surjective φ) {M : ModuleCat.{u} R} {m : ℕ}
-    (hM : HasProjectiveDimensionLE ((ModuleCat.restrictScalars φ).obj M) m) :
-    HasProjectiveDimensionLE M m := by
-  have := TauCeti.isReduced_of_perfectRing R p
-  exact φ.hasProjectiveDimensionLE_of_surjective_of_isReduced p hφ hM
-
-/-- Specialization of `RingHom.projectiveDimension_le_of_surjective_of_isReduced` to a perfect
-target ring. -/
-theorem projectiveDimension_le_of_surjective_of_perfectRing [PerfectRing R p] {φ : P →+* R}
-    (hφ : Function.Surjective φ) (M : ModuleCat.{u} R) :
-    projectiveDimension M ≤ projectiveDimension ((ModuleCat.restrictScalars φ).obj M) := by
-  have := TauCeti.isReduced_of_perfectRing R p
-  exact φ.projectiveDimension_le_of_surjective_of_isReduced p hφ M
-
 end RingHom
 
 namespace IsPerfectClosure
@@ -257,7 +240,7 @@ theorem hasProjectiveDimensionLE_succ_of_surjective_of_perfectRing [IsRegularRin
     [PerfectRing R p] {d : ℕ} (hd : ringKrullDim K ≤ d) {φ : L →+* R}
     (hφ : Function.Surjective φ) (M : ModuleCat.{u} R) :
     HasProjectiveDimensionLE M (d + 1) := by
-  have := TauCeti.isReduced_of_perfectRing R p
+  have := TauCeti.isReduced_of_perfectRing R (Fact.out : p.Prime).ne_one
   exact hasProjectiveDimensionLE_succ_of_surjective_of_isRegularRing i p hd hφ M
 
 end Surjective

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsPerfectClosure
+public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.Homeomorph
 
 /-!
@@ -25,6 +26,8 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 
 ## Main results
 
+* `IsPRadical.pow_mem_of_finite`: finitely many elements of a `p`-radical extension have
+  `p ^ n`-th powers in the base for a common exponent `n`.
 * `IsPRadical.isIntegral`: a `p`-radical ring map is integral.
 * `IsPRadical.isHomeomorph_comap`: a `p`-radical ring map induces a homeomorphism of prime spectra.
 * `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
@@ -32,6 +35,8 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 * `IsPRadical.injective_of_isReduced`: a `p`-radical ring map from a reduced ring is injective.
 * `IsPRadical.surjective_of_surjective_comp`: a homomorphism between perfect semirings commuting
   with a surjection into the source of a `p`-radical map is surjective.
+* `MvPolynomial.isPRadical_map`: applying a `p`-radical map to coefficients gives a `p`-radical map
+  of polynomial semirings.
 
 ## References
 
@@ -44,6 +49,17 @@ ring of global sections of a perfect scheme, which is the zero ring for the empt
 public section
 
 namespace IsPRadical
+
+/-- In a `p`-radical extension `i : K →+* L`, every finite family of elements of `L` has
+`p ^ n`-th powers in the image of `K` for a common exponent `n`. -/
+theorem pow_mem_of_finite {K L ι : Type*} [CommSemiring K] [CommSemiring L] (i : K →+* L) (p : ℕ)
+    [IsPRadical i p] [Finite ι] (z : ι → L) :
+    ∃ (n : ℕ) (y : ι → K), ∀ j, i (y j) = z j ^ p ^ n := by
+  cases nonempty_fintype ι
+  choose n y hy using fun j ↦ IsPRadical.pow_mem i p (z j)
+  refine ⟨Finset.univ.sup n, fun j ↦ y j ^ p ^ (Finset.univ.sup n - n j), fun j ↦ ?_⟩
+  rw [map_pow, hy, ← pow_mul, ← pow_add,
+    Nat.add_sub_cancel' (Finset.le_sup (Finset.mem_univ j))]
 
 section Surjective
 
@@ -127,3 +143,42 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] 
   exact ⟨PerfectRing.lift i j p, PerfectRing.lift_comp i j p⟩
 
 end IsPRadical
+
+/-- Mapping coefficients along a `p`-radical homomorphism from a semiring of exponential
+characteristic `p` gives a `p`-radical homomorphism of multivariate polynomial semirings. -/
+theorem MvPolynomial.isPRadical_map {K L σ : Type*} [CommSemiring K] [CommSemiring L]
+    (i : K →+* L) (p : ℕ) [IsPRadical i p] [ExpChar K p] :
+    IsPRadical (MvPolynomial.map (σ := σ) i) p where
+  pow_mem' g := by
+    obtain _ | ⟨hp⟩ := ‹ExpChar K p›
+    · have hi : Function.Surjective i := fun z ↦ by
+        obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem i 1 z
+        exact ⟨y, by simpa using hy⟩
+      obtain ⟨h, rfl⟩ := MvPolynomial.map_surjective i hi g
+      exact ⟨0, h, by simp⟩
+    · have : Nontrivial K := CharP.nontrivial_of_char_ne_one hp.ne_one
+      have : Nontrivial L := by
+        refine (subsingleton_or_nontrivial L).resolve_left fun _ ↦ ?_
+        obtain ⟨n, hn⟩ := mem_pNilradical.1
+          (IsPRadical.ker_le i p ((RingHom.mem_ker (r := 1)).2 (Subsingleton.elim _ _)))
+        simp at hn
+      have : CharP L p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+        rw [← map_natCast i, CharP.cast_eq_zero, map_zero]
+      have : ExpChar L p := .prime hp
+      obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite i p fun m : g.support ↦ g.coeff m
+      refine ⟨n, ∑ m : g.support, MvPolynomial.monomial (p ^ n • m.1) (y m), ?_⟩
+      conv_rhs => rw [g.as_sum, ← Finset.sum_attach, sum_pow_char_pow]
+      simp [map_sum, MvPolynomial.map_monomial, hy, MvPolynomial.monomial_pow]
+  ker_le' f hf := by
+    have hcoeff (m : f.support) : f.coeff m ∈ pNilradical K p :=
+      IsPRadical.ker_le i p <| by
+        simpa [MvPolynomial.coeff_map] using congr_arg (fun g ↦ g.coeff m.1) hf
+    choose k hk using fun m ↦ mem_pNilradical.1 (hcoeff m)
+    refine mem_pNilradical.2 ⟨Finset.univ.sup k, ?_⟩
+    conv_lhs => enter [1]; rw [f.as_sum, ← Finset.sum_attach]
+    rw [sum_pow_char_pow]
+    refine Finset.sum_eq_zero fun m _ ↦ ?_
+    rw [MvPolynomial.monomial_pow,
+      pow_eq_zero_of_le (Nat.pow_le_pow_right (expChar_pos K p)
+        (Finset.le_sup (Finset.mem_univ m))) (hk m),
+      MvPolynomial.monomial_zero]

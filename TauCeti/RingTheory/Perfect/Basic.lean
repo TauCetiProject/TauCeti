@@ -15,7 +15,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 Let `R` be a perfect ring of exponential characteristic `p`. Every `x ∈ R` has a unique
 `p ^ n`-th root `(iterateFrobeniusEquiv R p n).symm x` for each `n`. This file records how these
-roots relate to each other, the fact that `R` is reduced when `p` is prime, and the fact that
+roots relate to each other, the fact that `R` is reduced when `p ≠ 1`, and the fact that
 `p`-th powers can be cancelled from annihilation relations.
 
 ## Main results
@@ -25,8 +25,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
-* `TauCeti.isReduced_of_perfectRing`: a semiring in which `x ↦ x ^ p` is bijective for a prime `p`
-  is reduced.
+* `TauCeti.isReduced_of_perfectRing`: a semiring in which `x ↦ x ^ p` is bijective for an exponent
+  `p ≠ 1` is reduced.
 * `TauCeti.mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
@@ -71,19 +71,17 @@ theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
   dvd_of_compatible_roots (r := fun n ↦ (iterateFrobeniusEquiv R p n).symm x)
     (iterateFrobeniusEquiv_symm_succ_pow x) h
 
-omit [ExpChar R p] in
-variable (R p) in
-/-- A semiring in which `x ↦ x ^ p` is bijective for a prime `p` is reduced. -/
-theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R := by
-  have h0 {x : R} (n : ℕ) : x ^ p ^ n = 0 → x = 0 := by
-    induction n with
-    | zero => intro h; simpa using h
-    | succ n ih =>
-      intro h
-      refine ih ((PerfectRing.bijective_frobenius (R := R) (p := p)).1 ?_)
-      dsimp only
-      rwa [zero_pow hp.out.ne_zero, ← pow_mul, ← pow_succ]
-  exact ⟨fun x ⟨n, hn⟩ ↦ h0 n (pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn)⟩
+omit [ExpChar R p] [PerfectRing R p] in
+/-- A semiring in which `x ↦ x ^ p` is bijective for an exponent `p ≠ 1` is reduced: for `p = 0`
+the semiring is trivial, and for `p ≥ 2` injectivity of `x ↦ x ^ p` kills nilpotents. -/
+theorem isReduced_of_perfectRing (R : Type*) [CommSemiring R] {p : ℕ} (hp : p ≠ 1)
+    [PerfectRing R p] : IsReduced R := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · obtain ⟨y, hy⟩ := (PerfectRing.bijective_frobenius (R := R) (p := 0)).2 0
+    have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hy.symm)
+    infer_instance
+  · exact (isReduced_iff_pow_one_lt p (by omega)).2 fun x hx ↦
+      (PerfectRing.bijective_frobenius (R := R) (p := p)).1 (by dsimp only; rwa [zero_pow hp0])
 
 omit [ExpChar R p] in
 /-- In a perfect ring for the exponent `p`, if `a` kills `b ^ p` then `a` kills
@@ -223,7 +221,7 @@ target ring is reduced if and only if it is perfect. -/
 theorem RingHom.isReduced_iff_perfectRing_of_surjective [Fact p.Prime] {f : R →+* S}
     (hf : Function.Surjective f) : IsReduced S ↔ PerfectRing S p :=
   ⟨fun _ ↦ f.perfectRing_of_surjective_of_isReduced p hf,
-    fun _ ↦ TauCeti.isReduced_of_perfectRing S p⟩
+    fun _ ↦ TauCeti.isReduced_of_perfectRing S (Fact.out : p.Prime).ne_one⟩
 
 /-- The quotient of a perfect ring of exponential characteristic `p` by a radical ideal is
 perfect. -/

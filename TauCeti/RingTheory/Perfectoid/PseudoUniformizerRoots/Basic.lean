@@ -367,7 +367,7 @@ noncomputable def equivOfPerfectRing :
         rw [hp]
         exact dvd_zero _ }
   left_inv ϖ := by
-    have := isReduced_of_perfectRing R p
+    have := isReduced_of_perfectRing R (Fact.out : p.Prime).ne_one
     exact eq_of_root_zero_eq (by simp [← coeffMonoidHom_roots])
   right_inv ϖ := Subtype.ext (by simp [← coeffMonoidHom_roots])
 

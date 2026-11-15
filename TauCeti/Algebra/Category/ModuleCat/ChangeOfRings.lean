@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
@@ -18,9 +19,11 @@ import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
 
-It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
+It also records facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
-* Extension of scalars is additive.
+* Extension of scalars is additive and preserves finite colimits and projective objects
+  (`ModuleCat.preservesFiniteColimits_extendScalars`,
+  `ModuleCat.preservesProjectiveObjects_extendScalars`).
 * Extension of scalars carries multiplication by a scalar to multiplication by its image
   (`ModuleCat.extendScalars_map_smul_id`). This transports the curvature equations of a
   matrix factorization when its components are extended along a ring map, so the resulting
@@ -85,6 +88,28 @@ instance (f : S →+* T) : (extendScalars f).Additive where
     exact LinearMap.baseChange_add _ _
 
 end Additive
+
+section Preserves
+
+open Limits
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- Extension of scalars preserves finite colimits, as a left adjoint of restriction of scalars. -/
+instance preservesFiniteColimits_extendScalars :
+    PreservesFiniteColimits (extendScalars.{u, v, v} f) := by
+  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, v, v} f) :=
+    (extendRestrictScalarsAdj.{v, u, v} f).leftAdjoint_preservesColimits
+  exact PreservesColimitsOfSize.preservesFiniteColimits _
+
+/-- Extension of scalars preserves projective objects, as a left adjoint of the
+epimorphism-preserving restriction of scalars. -/
+instance preservesProjectiveObjects_extendScalars :
+    (extendScalars.{u, v, v} f).PreservesProjectiveObjects :=
+  Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
+    (extendRestrictScalarsAdj.{v, u, v} f)
+
+end Preserves
 
 section SMul
 

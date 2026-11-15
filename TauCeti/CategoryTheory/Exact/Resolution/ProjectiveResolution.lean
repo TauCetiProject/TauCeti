@@ -281,7 +281,7 @@ theorem Functor.hasProjectiveDimensionLE_obj_of_isZero_leftDerived (F : C ⥤ D)
                 epi := inferInstance }⟩⟩
   obtain ⟨P, hP⟩ := exists_projectiveResolution_of_hasProjectiveDimensionLE hX
   exact (P.mapOfIsZeroLeftDerived F h).hasProjectiveDimensionLE
-    (F.map_isZero (hP (m + 1) (Nat.lt_succ_self m)))
+    (by simpa using F.map_isZero (hP (m + 1) (Nat.lt_succ_self m)))
 
 /-- Strict projective-dimension bound for a right-exact additive functor preserving projective
 objects on an `F`-acyclic object. -/

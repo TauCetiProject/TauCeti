@@ -161,7 +161,7 @@ instance of_perfectRing [CharP A p] [PerfectRing A p] : IsIntegralPerfectoid p A
     rw [← map_pow, frobeniusEquiv_symm_pow_p]
   theta_kernel_principal hp hc := by
     let : Fact (¬IsUnit (p : A)) := ⟨hp⟩
-    have := isReduced_of_perfectRing A p
+    have := isReduced_of_perfectRing A (Fact.out : p.Prime).ne_one
     exact ⟨⟨p, WittVector.ker_fontaineTheta_eq_span_p⟩⟩
 
 /-- The zero ring is integral perfectoid. -/

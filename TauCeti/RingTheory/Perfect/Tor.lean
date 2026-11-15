@@ -145,7 +145,7 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
       (ModuleCat.isZero_Tor_succ_of_flat _ _ 0)
       (subtype_rTensor_injective_of_isRadical (p := p) C hI)
   | succ n ih =>
-    have := isReduced_of_perfectRing C p
+    have := isReduced_of_perfectRing C (Fact.out : p.Prime).ne_one
     -- The radical of a finitely generated ideal is a finite sum of Frobenius-root ideals.
     have fg {N : Ideal A} (hN : Submodule.FG N) : IsZero (((Tor (ModuleCat.{u} A) (n + 1 + 1)).obj
         (ModuleCat.of A (A ⧸ N.radical))).obj (ModuleCat.of A C)) := by
@@ -238,21 +238,12 @@ theorem isZero_Tor_succ_of_surjective_of_isReduced {B : Type u} [CommRing B] [Is
         rw [ModuleCat.restrictScalars.smul_def]
         exact he a (b : B) }
   have hM : Module.IsTorsionBySet A ((ModuleCat.restrictScalars f).obj M) (RingHom.ker f) :=
-    fun m ⟨r, hr⟩ ↦ by
-      change r • m = 0
-      rw [ModuleCat.restrictScalars.smul_def, RingHom.mem_ker.1 hr, zero_smul]
-      rfl
+    (Module.isTorsionBySet_iff_subset_annihilator _ _).2 fun r hr ↦
+      Module.mem_annihilator.2 fun m ↦ by
+        rw [ModuleCat.restrictScalars.smul_def, RingHom.mem_ker.1 hr]
+        exact zero_smul _ _
   exact (isZero_Tor_succ_quotient_of_isRadical_of_isTorsionBySet p hker _ hM n).of_iso
     (((Tor (ModuleCat.{u} A) (n + 1)).mapIso eB.toModuleIso).app _)
-
-/-- **Tor of a perfect quotient of a perfect ring with any module over the quotient.** -/
-theorem isZero_Tor_succ_of_surjective_of_perfectRing {B : Type u} [CommRing B] [PerfectRing B p]
-    {f : A →+* B} (hf : Function.Surjective f) (M : ModuleCat.{u} B) (n : ℕ) :
-    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
-      ((ModuleCat.restrictScalars f).obj (ModuleCat.of B B))).obj
-        ((ModuleCat.restrictScalars f).obj M)) := by
-  have := isReduced_of_perfectRing B p
-  exact isZero_Tor_succ_of_surjective_of_isReduced p hf M n
 
 end Torsion
 
@@ -303,7 +294,7 @@ theorem isZero_Tor_quotient_radical_span_range (M : ModuleCat.{u} A) {m : ℕ} (
     {n : ℕ} (hn : m < n) :
     IsZero (((Tor (ModuleCat.{u} A) n).obj
       (ModuleCat.of A (A ⧸ (Ideal.span (Set.range f)).radical))).obj M) := by
-  have := isReduced_of_perfectRing A p
+  have := isReduced_of_perfectRing A (Fact.out : p.Prime).ne_one
   induction m generalizing n with
   | zero =>
     -- The radical of the zero ideal of a reduced ring is zero, and `A ⧸ ⊥` is flat.
