@@ -286,6 +286,29 @@ private lemma cupLift_iCycles_cyclesMap (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
       ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h a _)
         (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))))
 
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- The map to the intersection in the Mayer–Vietoris cochain sequence of the pairs sends
+`(x_U, x_V)` to the difference of the restrictions of `x_U` and `x_V` to `(U ∩ V, A ∩ B)`. -/
+private lemma mayerVietorisCochain_g_f_inl_add_inr {n : ℕ}
+    (xU : ((TopPair.ofInclusion hAU).singularChainComplex T).X n ⟶ L)
+    (xV : ((TopPair.ofInclusion hBV).singularChainComplex T).X n ⟶ L) :
+    ((SSetPair.mayerVietorisCochainShortComplex T k L
+        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).g.f n).hom
+      (((biprod.inl : (TopPair.ofInclusion hAU).singularCochainComplex T k L ⟶
+        _ ⊞ (TopPair.ofInclusion hBV).singularCochainComplex T k L).f n).hom xU +
+       ((biprod.inr : (TopPair.ofInclusion hBV).singularCochainComplex T k L ⟶
+        (TopPair.ofInclusion hAU).singularCochainComplex T k L ⊞ _).f n).hom xV) =
+      (TopPair.singularChainComplexMap (interToLeftMap hAU hBV) T).f n ≫ xU +
+        -((TopPair.singularChainComplexMap (interToRightMap hAU hBV) T).f n ≫ xV) :=
+  (map_add _ _ _).trans (congrArg₂ (· + ·) ((ModuleCat.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inl_desc_f _ _ _) _))
+    (((ModuleCat.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inr_desc_f _ _ _) _)).trans (by
+        -- Negation in the linear-Yoneda cochain module is pointwise negation of morphisms of C.
+        rw [HomologicalComplex.neg_f_apply]
+        rfl)))
+
 /-- The lift of `α ⌣ β|` in the Mayer–Vietoris sequence of the pairs: the pair of cups of the
 components `y_U`, `y_V` of a lift `x₂` of `α` with the restrictions of the relative cocycle `β`
 maps to the cup product of `α` with the restriction of `β` to `(U ∩ V, A ∩ B)`. -/
@@ -350,16 +373,8 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
         cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q (p + q) rfl
           (a₁ + -a₂) c := fun a₁ a₂ c ↦ by
     rw [map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
-  refine (map_add _ _ _).trans ?_
-  refine (congrArg₂ (· + ·) ((ModuleCat.comp_apply _ _ _).symm.trans
-      (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inl_desc_f _ _ _) _))
-    ((ModuleCat.comp_apply _ _ _).symm.trans
-      (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inr_desc_f _ _ _) _))).trans ?_
-  refine (congrArg₂ (· + ·) eU (Eq.trans (by
-    -- Negation in the linear-Yoneda cochain module is pointwise negation of morphisms of C.
-    rw [HomologicalComplex.neg_f_apply]
-    rfl)
-    (congrArg Neg.neg eV))).trans ?_
+  refine (mayerVietorisCochain_g_f_inl_add_inr k hAU hBV _ _).trans ?_
+  refine (congrArg₂ (· + ·) eU (congrArg Neg.neg eV)).trans ?_
   refine (hlin _ _ _).trans (Eq.trans ?_
     ((congrArg (fun a ↦ cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q
       (p + q) rfl a ((TopPair.singularChainComplexMap (interToUnionMap hAU hBV) S).f q ≫ b'))
@@ -583,6 +598,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ
       (p + 1) q (p + q + 1) h', moduleCat_homologyMap_homologyπ]
   exact pairMayerVietorisδ_cup_eq k hAU hBV u μ h' x₂ α ζ β hd hg
+
 /-! ### The connecting morphism and the action of ambient cohomology -/
 
 section Ambient
@@ -735,6 +751,8 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap
       (isPushout_toSmallSingularPair_right hAU hBV) (p + q) (p + q + 1) rfl,
     ← hζ, TopCat.singularCohomologyMap, moduleCat_homologyMap_homologyπ,
     TopCat.singularCohomologyMap, moduleCat_homologyMap_homologyπ]
+  -- The pair abbreviations `interPair` and `unionPair` unfold to `ofInclusion`; `erw` also
+  -- identifies the native relative chain model with its cochain-complex presentation.
   erw [TopPair.singularCup_homologyπ k (interPair hAU hBV) u μ p q (p + q) rfl,
     TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ p (q + 1) (p + q + 1) h']
   rw [map_zsmul, moduleCat_homologyMap_homologyπ, ← map_zsmul]
@@ -768,15 +786,8 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap
       ((X.singularCochainComplex R k M).iCycles p α)
       (((biprod.snd : (TopPair.ofInclusion hAU).singularCochainComplex S k N ⊞
           (TopPair.ofInclusion hBV).singularCochainComplex S k N ⟶ _).f q).hom x₂)
-    refine (map_add _ _ _).trans ?_
-    refine (congrArg₂ (· + ·) ((ModuleCat.comp_apply _ _ _).symm.trans
-        (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inl_desc_f _ _ _) _))
-      ((ModuleCat.comp_apply _ _ _).symm.trans
-        (ConcreteCategory.congr_hom (HomologicalComplex.biprod_inr_desc_f _ _ _) _))).trans ?_
-    refine (congrArg₂ (· + ·) eU (Eq.trans (by
-      -- Negation in the linear-Yoneda cochain module is pointwise negation of morphisms of C.
-      rw [HomologicalComplex.neg_f_apply]
-      rfl) (congrArg Neg.neg eV))).trans ?_
+    refine (mayerVietorisCochain_g_f_inl_add_inr k hAU hBV _ _).trans ?_
+    refine (congrArg₂ (· + ·) eU (congrArg Neg.neg eV)).trans ?_
     rw [← LinearMap.map_neg]
     refine (map_add (cupCochain k ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q
       (p + q) rfl ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V))))
@@ -816,6 +827,5 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap
     · exact cV
 
 end Ambient
-
 
 end TopCat

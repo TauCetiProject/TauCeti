@@ -194,12 +194,6 @@ private def complZeroIso :
       subspaceComplPair (X := TopCat.of F) (ContinuousMap.id F) ⊥ :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by simp
 
-variable (F) in
-/-- The Thom pair of the product bundle is the pair `(B × F, B × (F ∖ ⊥))` of the zero subspace. -/
-private def prodBotIso :
-    prodThomPair B F ≅ subspaceComplPair (X := TopCat.of (B × F)) ContinuousMap.snd ⊥ :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun p ↦ by simp
-
 /-- Some class `u ∈ Hʳ(F, F ∖ {0}; K)`, `r = dim F`, has bijective Thom maps over every base:
 `a ↦ pr₁^* a ⌣ pr₂^* u` is a bijection `Hⁿ(B; M) ⟶ Hⁿ⁺ʳ(B × F, B × (F ∖ {0}); M)`. -/
 private theorem exists_bijective_prodThomPair_singularCup :
@@ -215,17 +209,18 @@ private theorem exists_bijective_prodThomPair_singularCup :
   obtain ⟨g, hg⟩ := exists_bijective_singularCup_subspaceComplPair (K := K) (F := F)
     (finrank ℝ F) ⊥ (by simp)
   refine ⟨TopPair.singularCohomologyMap (complZeroIso F).hom _ g, fun B _ M n m h ↦ ?_⟩
-  -- Through `prodBotIso`, the Thom map is cupping with the pull-back of `g` along the projection
-  -- `B × F → F`, precomposed with the pull-back along the projection `B × F → B`.
+  -- Through `prodThomPairIsoSubspaceComplPairBot`, the Thom map is cupping with the pull-back of
+  -- `g` along the projection `B × F → F`, precomposed with the pull-back along the projection
+  -- `B × F → B`.
   let φ := subspaceComplPairMap (X := TopCat.of (B × F)) (q := ContinuousMap.snd)
     (X' := TopCat.of F) (q' := ContinuousMap.id F)
     (TopCat.ofHom (ContinuousMap.snd : C(B × F, F))) (fun _ ↦ rfl) ⊥
   -- The ambient spaces of the pairs are `B × F` and `F` only up to unfolding `TopPair.ofSubset`,
   -- so the rewrites of their ambient maps and of classes on them need `erw`.
-  have hfst : TopPair.Hom.fst (prodBotIso B F).hom = 𝟙 _ := by
-    erw [prodBotIso, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst]
-    rfl
-  have hsnd : prodThomPairSnd B F ≫ (complZeroIso F).hom = (prodBotIso B F).hom ≫ φ := by
+  have hfst : TopPair.Hom.fst (prodThomPairIsoSubspaceComplPairBot B F).hom = 𝟙 _ :=
+    TopCat.ext prodThomPairIsoSubspaceComplPairBot_hom_fst_apply
+  have hsnd : prodThomPairSnd B F ≫ (complZeroIso F).hom =
+      (prodThomPairIsoSubspaceComplPairBot B F).hom ≫ φ := by
     have h₁ : TopPair.Hom.fst (prodThomPairSnd B F) =
         TopCat.ofHom (ContinuousMap.snd : C(B × F, F)) :=
       TopCat.ext fun p ↦ prodThomPairSnd_fst_apply F p
@@ -242,20 +237,20 @@ private theorem exists_bijective_prodThomPair_singularCup :
           (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
           (TopPair.singularCohomologyMap (prodThomPairSnd B F) _
             (TopPair.singularCohomologyMap (complZeroIso F).hom _ g)) =
-        TopPair.singularCohomologyMap (prodBotIso B F).hom m
+        TopPair.singularCohomologyMap (prodThomPairIsoSubspaceComplPairBot B F).hom m
           ((subspaceComplPair (X := TopCat.of (B × F)) ContinuousMap.snd ⊥).singularCup K
             (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n (finrank ℝ F) m h
             (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
             (TopPair.singularCohomologyMap φ _ g)) := fun a ↦ by
-    have e := TopPair.singularCup_naturality K (prodBotIso B F).hom (λ_ (𝟙_ (ModuleCat.{w} K))).inv
-      (ρ_ M).hom n (finrank ℝ F) m h
+    have e := TopPair.singularCup_naturality K (prodThomPairIsoSubspaceComplPairBot B F).hom
+      (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom n (finrank ℝ F) m h
       (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.fst : C(B × F, B))) n a)
       (TopPair.singularCohomologyMap φ _ g)
     rw [hfst] at e
     erw [TopCat.singularCohomologyMap_id] at e
     have hy : TopPair.singularCohomologyMap (prodThomPairSnd B F) (finrank ℝ F)
         (TopPair.singularCohomologyMap (complZeroIso F).hom (finrank ℝ F) g) =
-        TopPair.singularCohomologyMap (prodBotIso B F).hom (finrank ℝ F)
+        TopPair.singularCohomologyMap (prodThomPairIsoSubspaceComplPairBot B F).hom (finrank ℝ F)
           (TopPair.singularCohomologyMap φ (finrank ℝ F) g) := by
       rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
         hsnd]
@@ -266,16 +261,12 @@ private theorem exists_bijective_prodThomPair_singularCup :
     have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
       (ModuleCat.of K K) K M n
     rwa [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
-  have : IsIso (TopPair.singularCohomologyMap (R := ModuleCat.of K K) (k := K) (M := M)
-      (prodBotIso B F).hom m) :=
-    (inferInstance : IsIso ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K M m).map
-      (prodBotIso B F).hom.op))
   convert (ConcreteCategory.bijective_of_isIso _).comp ((hg (TopCat.of (B × F))
     ContinuousMap.snd (isZero_singularHomology_prod_compl_halfSubspace (ModuleCat.of K K) B)
       M n m h).comp (ConcreteCategory.bijective_of_isIso _)) using 1
   · funext a
     exact key a
-  all_goals assumption
+  all_goals infer_instance
 
 /-- **The Thom isomorphism of a product bundle.** Let `u` generate the local cohomology
 `Hʳ(F, F ∖ {0}; K) ≅ K`, `r = dim F`, for instance a Thom class of a point. For every space `B`,
@@ -330,10 +321,7 @@ theorem bijective_prodThomPair_singularCup_of_span_eq_top
     have h₂ : κ * μ * e u = e u := by
       have := congrArg e (show (κ * μ) • u = u by rw [mul_smul, hμ, hx])
       rwa [map_smul, smul_eq_mul] at this
-    refine IsUnit.of_mul_eq_one μ ?_
-    calc κ * μ = κ * μ * (e u * t) := by rw [mul_comm (e u) t, h₁, mul_one]
-      _ = e u * t := by rw [← mul_assoc, h₂]
-      _ = 1 := by rw [mul_comm, h₁]
+    exact IsUnit.of_mul_eq_one μ (by linear_combination t * h₂ + (1 - κ * μ) * h₁)
   -- So the Thom map of `u` is `κ⁻¹` times the bijective Thom map of `κ • u`.
   obtain ⟨κ, rfl⟩ := hκ
   convert (MulAction.bijective κ⁻¹).comp (hu₀ B M n m h) using 1

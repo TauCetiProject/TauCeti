@@ -58,6 +58,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
   pairs.
 * `TauCeti.isZero_singularHomology_prod_compl_halfSubspace`: `B × F` is acyclic modulo the
   complement of `B` times a closed half-subspace of `F`.
+* `TauCeti.prodThomPairIsoSubspaceComplPairBot`: the Thom pair is the pair
+  `(B × F, B × (F ∖ ⊥))` of the zero subspace for the projection `B × F → F`.
 
 * `TauCeti.prodThomPairProj`, `TauCeti.prodThomPairPuncturedProj`: the projections
   `B × F → B` and `B × (F ∖ {0}) → B`.
@@ -308,6 +310,21 @@ theorem isZero_singularHomology_prod_compl_halfSubspace (W : Submodule ℝ F) (�
   · ext p
     exact (TopPair.ofSubsetMap_fst_apply _ _ p).symm
 
+variable (B F) in
+/-- The Thom pair `(B × F, B × (F ∖ {0}))` of the product bundle is the pair `(B × F, B × (F ∖ ⊥))`
+of the zero subspace for the projection `B × F → F`. -/
+def prodThomPairIsoSubspaceComplPairBot :
+    prodThomPair B F ≅ subspaceComplPair (X := TopCat.of (B × F)) ContinuousMap.snd ⊥ :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun p ↦ by
+    simp only [Set.mem_ofPred_eq]
+    rfl
+
+@[simp]
+theorem prodThomPairIsoSubspaceComplPairBot_hom_fst_apply (p : B × F) :
+    TopPair.Hom.fst (prodThomPairIsoSubspaceComplPairBot B F).hom p = p := by
+  rw [prodThomPairIsoSubspaceComplPairBot, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
 namespace ProdThomPair
 
 /-- The projection `B × F → F`. -/
@@ -334,13 +351,6 @@ private def emptyIso (n : ℕ) :
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of B) :=
   (asIso ((pair B (⊤ : Submodule ℝ F)).singularHomologyπ R n)).symm ≪≫
     (ContinuousMap.HomotopyEquiv.prodContractible B F).singularHomologyIso R n
-
-variable (F) in
-/-- The identification of `(B × F, B × (F ∖ {0}))` with `(B × F, B × (F ∖ ⊥))`. -/
-private def botIso : prodThomPair B F ≅ pair B (⊥ : Submodule ℝ F) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun p ↦ by
-    simp only [Set.mem_ofPred_eq]
-    rfl
 
 /-! ### Naturality in the base -/
 
@@ -387,12 +397,13 @@ private lemma emptyIso_hom_naturality (n : ℕ) :
         (TopPair.singularHomologyπ_naturality (pairMap g ⊤) R n)).trans
         (Category.assoc _ _ _)))))
 
-private lemma botIso_hom_naturality :
-    (botIso B F).hom ≫ pairMap g ⊥ = prodThomPairMap F g ≫ (botIso B' F).hom := by
+private lemma prodThomPairIsoSubspaceComplPairBot_hom_naturality :
+    (prodThomPairIsoSubspaceComplPairBot B F).hom ≫ pairMap g ⊥ =
+      prodThomPairMap F g ≫ (prodThomPairIsoSubspaceComplPairBot B' F).hom := by
   have h : pairMap g (⊥ : Submodule ℝ F) =
       TopPair.ofSubsetMap (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) fun _ hx ↦ hx :=
     subspaceComplPairMap_eq_ofSubsetMap _ _ _ _
-  simp only [botIso, h, prodThomPairMap, TopPair.ofSubsetIso_hom]
+  simp only [prodThomPairIsoSubspaceComplPairBot, h, prodThomPairMap, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
 
 end ProdThomPair
@@ -407,7 +418,7 @@ theorem isZero_singularHomology_prodThomPair {n : ℕ} (hn : n < finrank ℝ F) 
     IsZero ((prodThomPair B F).singularHomology R n) :=
   (isZero_singularHomology_subspaceComplPair R (proj B)
     (isZero_singularHomology_prod_compl_halfSubspace R B) n ⊥ (by simpa using hn)).of_iso
-    (asIso (TopPair.singularHomologyMap (botIso B F).hom R n))
+    (asIso (TopPair.singularHomologyMap (prodThomPairIsoSubspaceComplPairBot B F).hom R n))
 
 /-- **The homology of the Thom pair of a product bundle**: for `F` of dimension `r` and
 `m = n + r`, `Hₘ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`. In particular `Hᵣ(B × F, B × (F ∖ {0}))` is
@@ -417,7 +428,7 @@ depend on `B`, and it is natural in `B` (`TauCeti.prodThomPairSingularHomologyIs
 def prodThomPairSingularHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by lia) :
     (prodThomPair B F).singularHomology R m ≅
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of B) :=
-  asIso (TopPair.singularHomologyMap (botIso B F).hom R m) ≪≫
+  asIso (TopPair.singularHomologyMap (prodThomPairIsoSubspaceComplPairBot B F).hom R m) ≪≫
     subspaceComplPairSingularHomologyIso R (proj B)
       (isZero_singularHomology_prod_compl_halfSubspace R B) (finrank ℝ F) ⊥ (by simp) n m h ≪≫
         emptyIso R B F n
@@ -436,7 +447,8 @@ theorem prodThomPairSingularHomologyIso_hom_naturality (g : C(B, B')) (n m : ℕ
       (isZero_singularHomology_prod_compl_halfSubspace R B)
       (isZero_singularHomology_prod_compl_halfSubspace R B')
       (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl),
-    ← TopPair.singularHomologyMap_comp_assoc (botIso B F).hom, botIso_hom_naturality,
+    ← TopPair.singularHomologyMap_comp_assoc (prodThomPairIsoSubspaceComplPairBot B F).hom,
+    prodThomPairIsoSubspaceComplPairBot_hom_naturality,
     TopPair.singularHomologyMap_comp_assoc]
 
 /-- The inverse isomorphism `Hₙ(B) ≅ Hₙ₊ᵣ(B × F, B × (F ∖ {0}))` is natural in continuous maps of

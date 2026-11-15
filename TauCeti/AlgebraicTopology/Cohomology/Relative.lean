@@ -47,6 +47,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 * `TopPair.isIso_singularCohomologyMap_of_forall_isIso`: a map of pairs inducing isomorphisms on
   the cohomology of the ambient spaces and of the subspaces in every degree induces isomorphisms on
   relative cohomology.
+* `TopPair.isIso_singularCohomologyMap_hom`: an isomorphism of pairs induces isomorphisms on
+  relative cohomology.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
   exact.
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
@@ -270,6 +272,11 @@ def singularCohomologyFunctor (n : ℕ) : TopPair.{w}ᵒᵖ ⥤ ModuleCat.{v} k 
   obj P := P.unop.singularCohomology R k M n
   map f := TopPair.singularCohomologyMap f.unop n
   map_comp f g := singularCohomologyMap_comp g.unop f.unop n
+
+/-- An isomorphism of topological pairs induces isomorphisms on relative singular cohomology. -/
+instance isIso_singularCohomologyMap_hom {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) e.hom n) :=
+  (inferInstance : IsIso ((singularCohomologyFunctor R k M n).map e.hom.op))
 
 section LongExactSequence
 

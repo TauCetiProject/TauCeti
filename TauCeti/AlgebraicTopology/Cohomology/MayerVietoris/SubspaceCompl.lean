@@ -256,10 +256,6 @@ end Naturality
 
 variable {q R}
 
-private lemma isIso_singularCohomologyMap_hom {P P' : TopPair.{w}} (e : P ≅ P') (n : ℕ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := K) (M := M) e.hom n) :=
-  (inferInstance : IsIso ((TopPair.singularCohomologyFunctor R K M n).map e.hom.op))
-
 variable [Module.Projective K R]
   (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈ W → φ v = 1 → ∀ n,
     IsZero ((TopPair.ofSubset (q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology R n))
@@ -284,7 +280,7 @@ private lemma isIso_stepδ (n m : ℕ) (h : n + 1 = m) : IsIso (stepδ q s R M n
     biprod_isZero_iff _ _ |>.2
       ⟨isZero_singularCohomology_half M hq s.W' s.extend s.v s.v.2 s.extend_apply_v j,
         isZero_singularCohomology_half M hq s.W' (-s.extend) (-s.v) (neg_mem s.v.2)
-          (by simp) j⟩
+          (by simp [s.apply_v]) j⟩
   have := (TopCat.singularCohomologyPairMayerVietoris_exact₃ R K M (half_subset_univ q s s.extend)
     (half_subset_univ q s (-s.extend)) isOpen_univ_union isOpen_univ_union
     (isOpen_half_left q s) (isOpen_half_right q s) n m h).mono_g ((hz n).eq_of_src _ _)
@@ -294,8 +290,6 @@ private lemma isIso_stepδ (n m : ℕ) (h : n + 1 = m) : IsIso (stepδ q s R M n
   have := isIso_of_mono_of_epi (TopCat.singularCohomologyPairMayerVietorisδ R K M
     (half_subset_univ q s s.extend) (half_subset_univ q s (-s.extend)) isOpen_univ_union
     isOpen_univ_union (isOpen_half_left q s) (isOpen_half_right q s) n m h)
-  have := isIso_singularCohomologyMap_hom (R := R) M (interIso q s) n
-  have := isIso_singularCohomologyMap_hom (R := R) M (unionIso q s) m
   unfold stepδ
   infer_instance
 
@@ -357,6 +351,9 @@ theorem exists_bijective_singularCup_subspaceComplPair :
       (M := ModuleCat.of K K) (TopPair.Hom.fst (subspaceComplPairMap (TopCat.ofHom q)
         (q' := (ContinuousMap.id F : C(TopCat.of F, F))) (fun _ ↦ rfl) ⊤)) K
       (𝟙 (ModuleCat.of K K))]
+    -- After `simp`, the unit condition reads
+    -- `(ρ_ (𝟙_ (ModuleCat K))).inv = (ρ_ (ModuleCat.of K K)).inv`, which holds by `rfl` because the
+    -- monoidal unit of `ModuleCat K` unfolds to `ModuleCat.of K K`.
     exact TopCat.singularCup_constSingularCocycle_right X K (e := 𝟙 (ModuleCat.of K K))
       (η := 𝟙 _) (by simp only [unitors_inv_equal, whiskerLeft_id, Category.comp_id]; rfl)
       (by simp) rfl a
@@ -390,6 +387,8 @@ theorem exists_bijective_singularCup_subspaceComplPair :
         (rfl : n + c = n + c) (rfl : c + 1 = c + 1) (by omega : n + c + 1 = n + (c + 1))
         (rfl : n + (c + 1) = n + (c + 1)) a (TopPair.singularCohomologyMap
           (subspaceComplPairMap (TopCat.ofHom q) (fun _ ↦ rfl) s.W') c g')
+      -- `e` has the coefficients `𝟙_ (ModuleCat K)` where the goal has `ModuleCat.of K K`; they
+      -- agree only up to unfolding the monoidal unit, so `rw` cannot match `e`.
       erw [e]
       exact (involutive_neg_one_pow_smul n _).symm
     have hsign : Function.Bijective fun x : (subspaceComplPair q W).singularCohomology
@@ -399,6 +398,10 @@ theorem exists_bijective_singularCup_subspaceComplPair :
       (stepδ q s (ModuleCat.of K K) M (n + c) (n + (c + 1)) rfl)).comp
         (hg' X q hq M n (n + c) rfl)) using 1
     funext a
+    -- The cup product takes classes on the ambient space of `subspaceComplPair q W` with
+    -- coefficients `𝟙_ (ModuleCat K)`, while `a` and `hnat` are stated on `X` with coefficients
+    -- `ModuleCat.of K K`; these agree only up to unfolding `TopPair.ofSubset` and the monoidal
+    -- unit, so `rw` cannot rewrite with `hnat`.
     erw [← hnat]
     exact key a
 

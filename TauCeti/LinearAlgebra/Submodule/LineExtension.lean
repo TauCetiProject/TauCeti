@@ -88,8 +88,11 @@ lemma extend_comp_subtype : s.extend ∘ₗ s.W'.subtype = s.φ :=
   (LinearMap.exists_extend s.φ).choose_spec
 
 @[simp]
+lemma extend_apply_coe (x : s.W') : s.extend x = s.φ x :=
+  LinearMap.congr_fun s.extend_comp_subtype x
+
 lemma extend_apply_v : s.extend s.v = 1 :=
-  (LinearMap.congr_fun s.extend_comp_subtype s.v).trans s.apply_v
+  (s.extend_apply_coe s.v).trans s.apply_v
 
 end LineExtension
 

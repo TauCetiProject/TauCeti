@@ -158,7 +158,7 @@ private lemma isZero_biprod (s : W.LineExtension) (n : ℕ) :
     IsZero ((TopPair.ofSubset (half q s.W' s.extend)).singularHomology R n ⊞
       (TopPair.ofSubset (half q s.W' (-s.extend))).singularHomology R n) :=
   biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.2 s.extend_apply_v n,
-    hq _ _ _ (neg_mem s.v.2) (by simp) n⟩
+    hq _ _ _ (neg_mem s.v.2) (by simp [s.apply_v]) n⟩
 
 variable [FiniteDimensional ℝ F]
 
