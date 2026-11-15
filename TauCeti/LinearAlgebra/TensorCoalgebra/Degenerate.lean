@@ -250,17 +250,17 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
   exact Submodule.smul_mem _ _ (of_tprod_mem_degenerateWords _ _ ⟨i, by simp⟩)
 
-/-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
-is the homogeneous element `e` with its degree. -/
-theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
-    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
-    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
-      (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
-        of R M n (PiTensorProduct.tprod R x) ∈ S := by
+/-- Membership in a submodule for an `n`-letter pure tensor word carrying a homogeneous element `e`
+at slot `i` may be checked on tuples of homogeneous letters carrying `e` with its degree at `i`. -/
+theorem of_tprod_mem_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
+    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} (n : {n : ℕ // 0 < n})
+    (i : Fin n.1)
+    (h : ∀ (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ),
+      (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
+        of R M n (PiTensorProduct.tprod R x) ∈ S)
+    (x : Fin n.1 → M) (hi : x i = e) :
+    of R M n (PiTensorProduct.tprod R x) ∈ S := by
   classical
-  refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
-  rw [degenerateWords_le_iff]
-  rintro n x ⟨i, hi⟩
   -- Expand every letter except the `i`-th one into its homogeneous components.
   let support : Fin n.1 → Finset ℤ := fun j ↦
     if j = i then {E} else (DirectSum.decompose G.piece (x j)).support
@@ -279,11 +279,23 @@ theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M
   refine Submodule.sum_mem _ fun 𝒟 h𝒟 ↦ ?_
   have h𝒟i : 𝒟 i = E := by
     simpa [support] using Fintype.mem_piFinset.1 h𝒟 i
-  refine h n _ 𝒟 i (fun j ↦ ?_) (by simp [component]) h𝒟i
+  refine h _ 𝒟 (fun j ↦ ?_) (by simp [component]) h𝒟i
   by_cases hj : j = i
   · subst hj
     simpa [component, h𝒟i] using he
   · simp [component, hj]
+
+/-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
+is the homogeneous element `e` with its degree. -/
+theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
+    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
+    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
+      (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
+        of R M n (PiTensorProduct.tprod R x) ∈ S := by
+  refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
+  rw [degenerateWords_le_iff]
+  rintro n x ⟨i, hi⟩
+  exact of_tprod_mem_of_mem_piece G he n i (h n · · i) x hi
 
 section Coderivation
 
