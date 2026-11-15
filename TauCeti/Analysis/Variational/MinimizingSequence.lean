@@ -7,18 +7,16 @@ module
 
 public import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 public import TauCeti.Analysis.Variational.BoundedSublevels
-import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Minimizing sequences and the sequential direct method
 
-For a real-valued energy `E` bounded below on a nonempty admissible set `S`, quantitative
-minimizing sequences `u : ℕ → X` in `S` satisfying `E (u n) < sInf (E '' S) + 1 / (n + 1)` and
-`E (u n) → sInf (E '' S)` always exist (`TauCeti.exists_seq_forall_mem_and_lt_sInf_add_one_div`);
-for general first-countable conditionally complete linear orders, antitone minimizing sequences are
-provided by `TauCeti.exists_seq_forall_mem_and_tendsto_sInf` in `TauCeti.Topology.Order.IsLUB`.
+Minimizing sequences for functions bounded below on a nonempty set are provided in
+`TauCeti.Topology.Order.IsLUB` (`TauCeti.exists_seq_forall_mem_and_tendsto_sInf` for antitone
+minimizing sequences in a first-countable conditionally complete linear order, and
+`TauCeti.exists_seq_forall_mem_and_lt_sInf_add_one_div` for real-valued quantitative bounds).
 
 In a reflexive real or complex normed space (where `NormedSpace.inclusionInDoubleDual 𝕜 V` is
 surjective, without assuming completeness), every norm-bounded minimizing sequence in a subset `T`
@@ -47,30 +45,6 @@ public section
 open Bornology Filter NormedSpace Set Topology
 
 namespace TauCeti
-
-section MinimizingSequence
-
-/-- On a nonempty set where a real-valued energy `E` is bounded below, there exists a minimizing
-sequence `u` in `S` satisfying the quantitative bound `E (u n) < sInf (E '' S) + 1 / (n + 1)`. -/
-theorem exists_seq_forall_mem_and_lt_sInf_add_one_div {X : Type*} {E : X → ℝ} {S : Set X}
-    (hne : S.Nonempty) (hbdd : BddBelow (E '' S)) :
-    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ (∀ n, E (u n) < sInf (E '' S) + 1 / ((n : ℝ) + 1)) ∧
-      Tendsto (fun n ↦ E (u n)) atTop (𝓝 (sInf (E '' S))) := by
-  have hex (n : ℕ) : ∃ u ∈ S, E u < sInf (E '' S) + 1 / ((n : ℝ) + 1) := by
-    have hlt : sInf (E '' S) < sInf (E '' S) + 1 / ((n : ℝ) + 1) :=
-      lt_add_of_pos_right _ (by positivity)
-    obtain ⟨_, ⟨u, hu, rfl⟩, hu_lt⟩ := exists_lt_of_csInf_lt (hne.image E) hlt
-    exact ⟨u, hu, hu_lt⟩
-  choose u hu hEu using hex
-  refine ⟨u, hu, hEu, ?_⟩
-  have hupper : Tendsto (fun n : ℕ ↦ sInf (E '' S) + 1 / ((n : ℝ) + 1)) atTop
-      (𝓝 (sInf (E '' S))) := by
-    simpa only [add_zero] using
-      tendsto_const_nhds.add (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hupper
-    (fun n ↦ csInf_le hbdd (mem_image_of_mem E (hu n))) fun n ↦ (hEu n).le
-
-end MinimizingSequence
 
 section MinimizingSequenceConvergence
 
