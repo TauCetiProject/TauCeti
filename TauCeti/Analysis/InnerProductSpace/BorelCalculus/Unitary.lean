@@ -52,8 +52,8 @@ norm-path-connected in arbitrary Hilbert dimension (Putnam–Wintner, 1952).
 
 ## References
 
-* C. R. Putnam, A. Wintner, *The connectedness of the orthogonal and unitary groups*,
-  Amer. J. Math. **74** (1952), 52–70.
+* C. R. Putnam, A. Wintner, *The Orthogonal Group in Hilbert Space*,
+  Amer. J. Math. **74** (1952), 52–78.
 * J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Springer (1990), §IX.2.
 * R. G. Douglas, *Banach Algebra Techniques in Operator Theory*, 2nd ed., Springer (1998),
   Proposition 4.29.
@@ -238,26 +238,20 @@ variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [Comple
 
 /-- Conjugating a unitary operator by a Hilbert-space linear isometric equivalence `U : H ≃ₗᵢ[ℂ] H'`
 conjugates its Borel argument. -/
-theorem borelArg_conj (U : H ≃ₗᵢ[ℂ] H') (u : unitary (H →L[ℂ] H)) :
+theorem borelArg_conj (u : unitary (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] H') :
     (borelArg ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.2⟩ :
         H' →L[ℂ] H') =
       U.conjStarAlgEquiv (borelArg u : H →L[ℂ] H) := by
   let u' : unitary (H' →L[ℂ] H') :=
     ⟨U.conjStarAlgEquiv (u : H →L[ℂ] H), Unitary.map_mem U.conjStarAlgEquiv u.2⟩
-  have hinst : @ContinuousLinearMap.borelCalculus _ _ _ _ (u' : H' →L[ℂ] H')
-        (Unitary.coe_isStarNormal u') =
-      @ContinuousLinearMap.borelCalculus _ _ _ _ (U.conjStarAlgEquiv (u : H →L[ℂ] H))
-        (IsStarNormal.map U.conjStarAlgEquiv (u : H →L[ℂ] H)) :=
-    Subsingleton.elim (Unitary.coe_isStarNormal u')
-      (IsStarNormal.map U.conjStarAlgEquiv (u : H →L[ℂ] H)) ▸ rfl
-  change @ContinuousLinearMap.borelCalculus _ _ _ _ (u' : H' →L[ℂ] H')
-      (Unitary.coe_isStarNormal u') (borelArgSymbol u') =
-    U.conjStarAlgEquiv ((u : H →L[ℂ] H).borelCalculus (borelArgSymbol u))
-  rw [hinst, (u : H →L[ℂ] H).borelCalculus_conj U]
-  refine congrArg U.conjStarAlgEquiv (congrArg (u : H →L[ℂ] H).borelCalculus ?_)
-  ext z
-  simp only [BoundedBorelFunction.compStarAlgHom'_apply, borelArgSymbol_apply]
-  exact (borelArgSymbol_apply u' _).trans rfl
+  rw [borelArg_coe u', borelArg_coe u]
+  have hconj := (u : H →L[ℂ] H).borelCalculus_conj U (borelArgSymbol u')
+  refine Eq.trans ?_ (hconj.trans (congrArg U.conjStarAlgEquiv
+    (congrArg (u : H →L[ℂ] H).borelCalculus ?_)))
+  · congr!
+  · ext z
+    simp only [BoundedBorelFunction.compStarAlgHom'_apply, borelArgSymbol_apply]
+    exact borelArgSymbol_apply u' _
 
 end UnitaryConj
 

@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 public import TauCeti.Topology.Algebra.Star.Unitary
+import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 
 /-!
@@ -39,8 +41,7 @@ so `Aˣ` is path-connected if and only if `unitary A` is (`Units.pathConnectedSp
 
 ## Main declarations
 
-* `IsStrictlyPositive.add_nonneg_of_cfc`, `IsStrictlyPositive.convex_setOf`: `{p : A |
-  IsStrictlyPositive p}` is closed under adding nonnegative elements and convex over `ℝ`.
+* `IsStrictlyPositive.convex_setOf`: `{p : A | IsStrictlyPositive p}` is convex over `ℝ`.
 * `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) • 1 + t • p` is strictly positive for
   `t ∈ [0, 1]`.
 * `IsStrictlyPositive.isPathConnected_setOf`: `{p : A | IsStrictlyPositive p}` is path-connected.
@@ -72,57 +73,14 @@ section Convex
 
 variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
   [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
-
-private theorem real_smul_nonneg {c : ℝ} (hc : 0 ≤ c) {q : A} (hq : 0 ≤ q) : 0 ≤ c • q := by
-  have hself : IsSelfAdjoint (algebraMap ℝ A (√c)) := cfc_predicate_algebraMap (√c)
-  have hconj : 0 ≤ algebraMap ℝ A (√c) * q * star (algebraMap ℝ A (√c)) :=
-    star_right_conjugate_nonneg hq (algebraMap ℝ A (√c))
-  rwa [hself.star_eq, mul_assoc, ← Algebra.commutes (√c) q, ← mul_assoc, ← map_mul,
-    Real.mul_self_sqrt hc, ← Algebra.smul_def] at hconj
-
-variable [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
-
-/-- Adding a nonnegative element `b` to a strictly positive element `a` in a real-CFC star-ordered
-algebra yields a strictly positive element `a + b` (generalizing `IsStrictlyPositive.add_nonneg`
-from C⋆-algebras to any algebra with a real continuous functional calculus). -/
-theorem IsStrictlyPositive.add_nonneg_of_cfc {a b : A} (ha : IsStrictlyPositive a) (hb : 0 ≤ b) :
-    IsStrictlyPositive (a + b) := by
-  have hs : IsStrictlyPositive (CFC.sqrt a) := ha.sqrt
-  let u : Aˣ := hs.isUnit.unit
-  have hu_sa : IsSelfAdjoint (u : A) := hs.isSelfAdjoint
-  have hinv_sa : IsSelfAdjoint (↑u⁻¹ : A) := by
-    rw [IsSelfAdjoint, ← Units.coe_star]
-    refine congrArg Units.val (inv_eq_of_mul_eq_one_right (G := Aˣ) (Units.ext ?_)).symm
-    rw [Units.val_mul, Units.coe_star, ← hu_sa.star_eq, ← star_mul, u.inv_mul, star_one,
-      Units.val_one]
-  let q : A := (↑u⁻¹ : A) * b * star (↑u⁻¹ : A)
-  have hq0 : 0 ≤ q := star_right_conjugate_nonneg hb (↑u⁻¹ : A)
-  have h1q : IsStrictlyPositive (1 + q) := by
-    have hcfc : cfc (fun x : ℝ ↦ 1 + x) q = 1 + q := by
-      rw [cfc_add .., cfc_const _ _ hq0.isSelfAdjoint, cfc_id' ℝ q, Algebra.algebraMap_eq_smul_one,
-        one_smul]
-    rw [← hcfc]
-    exact (cfc_isStrictlyPositive_iff (fun x : ℝ ↦ 1 + x) q).2 fun x hx ↦
-      add_pos_of_pos_of_nonneg one_pos (spectrum_nonneg_of_nonneg hq0 hx)
-  have hconj : (u : A) * (1 + q) * (u : A) = a + b := by
-    have huu : (u : A) * (u : A) = a := by
-      simpa only [u, IsUnit.unit_spec] using CFC.sqrt_mul_sqrt_self a ha.nonneg
-    calc (u : A) * (1 + q) * (u : A)
-        = (u : A) * (u : A) + ((u : A) * ↑u⁻¹) * b * (↑u⁻¹ * (u : A)) := by
-            simp only [q, hinv_sa.star_eq, mul_add, add_mul, mul_one, mul_assoc]
-      _ = a + b := by rw [huu, u.mul_inv, u.inv_mul, one_mul, mul_one]
-  rw [← hconj]
-  exact IsStrictlyPositive.conjugate_of_isUnit_of_isSelfAdjoint (1 + q) (u : A) u.isUnit hu_sa h1q
+  [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
 
 /-- The cone `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex over `ℝ`. -/
 theorem IsStrictlyPositive.convex_setOf : Convex ℝ {p : A | IsStrictlyPositive p} := by
+  have : IsOrderedModule ℝ A := TauCeti.isOrderedModule_of_cfc
   rw [convex_iff_forall_pos]
   intro p hp q hq u v hu hv _
-  have hup_unit : IsUnit (u • p) :=
-    isUnit_iff_exists.2 ⟨u⁻¹ • ↑hp.isUnit.unit⁻¹, by simp [hu.ne']⟩
-  have hup : IsStrictlyPositive (u • p) :=
-    hup_unit.isStrictlyPositive (real_smul_nonneg hu.le hp.nonneg)
-  exact hup.add_nonneg_of_cfc (real_smul_nonneg hv.le hq.nonneg)
+  exact (hp.smul hu).add_nonneg_of_cfc (smul_nonneg hv.le hq.nonneg)
 
 /-- Affine interpolation `(1 - t) • 1 + t • p` between `1` and a strictly positive element `p`
 remains strictly positive for every `t ∈ [0, 1]`. -/
