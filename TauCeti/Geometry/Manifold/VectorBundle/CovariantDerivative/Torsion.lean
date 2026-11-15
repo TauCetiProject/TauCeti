@@ -36,7 +36,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M]
+
+section
+
+variable [IsManifold I 1 M]
 
 /-- A covariant derivative on the tangent bundle is torsion-free when it evaluates the Lie
 bracket of differentiable vector fields as the difference of their two covariant derivatives. -/
@@ -104,6 +107,8 @@ theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
 
 end TorsionFree
 
+end
+
 variable [CompleteSpace 𝕜] [CompleteSpace E] [FiniteDimensional 𝕜 E] [IsManifold I 2 M]
 
 /-- The named torsion-free condition is equivalent to vanishing of the bundled torsion tensor. -/
@@ -130,7 +135,8 @@ theorem symmetrize_def
 theorem symmetrize_apply
     (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
     (X : Π x : M, TangentSpace I x) (x : M) :
-    cov.symmetrize X x = cov X x + (2 : 𝕜)⁻¹ • cov.torsion x (X x) := (rfl)
+    cov.symmetrize X x = cov X x + (2 : 𝕜)⁻¹ • cov.torsion x (X x) := by
+  rw [symmetrize_def, addOneForm_apply, smul_apply]
 
 /-- Symmetrization preserves the covariant derivative at a zero of the section. -/
 theorem symmetrize_apply_of_eq_zero
