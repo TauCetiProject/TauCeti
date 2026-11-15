@@ -95,15 +95,7 @@ theorem integral_norm_wignerMatrix_sub_sq (hξ : ∀ ij, MemLp (fun ω ↦ ξ ij
 variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
   (hd : ∀ ij, IdentDistrib (ξ ij) X P P)
 
-include hd
-
-omit [IsProbabilityMeasure P] in
-private theorem identDistrib_truncation_error (R : ℝ≥0) (ij : StrictUpper) :
-    IdentDistrib (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω)
-      (fun ω ↦ X ω - centeredTruncation X P R ω) P P :=
-  ((hd ij).prodMk_centeredTruncation R).comp (measurable_fst.sub measurable_snd)
-
-include hX
+include hd hX
 
 /-- The squared Frobenius error of bounded centered off-diagonal approximation is integrable,
 regardless of the diagonal law. -/
@@ -129,7 +121,7 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
     ((hd ij).symm.memLp_snd hX).sub
       (memLp_centeredTruncation ((hd ij).symm.memLp_snd hX).aestronglyMeasurable R)
   rw [integral_norm_wignerMatrix_sub_sq hm
-    (fun ij ↦ ((identDistrib_truncation_error hd R ij).comp
+    (fun ij ↦ (((hd ij).sub_centeredTruncation R).comp
       (measurable_norm.pow_const 2)).integral_eq)]
   have he : 0 ≤ ∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P :=
     integral_nonneg fun _ ↦ sq_nonneg _
