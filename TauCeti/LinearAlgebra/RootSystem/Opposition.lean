@@ -84,7 +84,7 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 section Opposition
 
 variable [CharZero R] [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
-  [P.IsRootSystem] (b : P.Base)
+  (b : P.Base)
 
 /-- **The opposition involution** of a base: the map `i ↦ -w₀ i` on root indices, where `w₀` is the
 longest element of the Weyl group. On root vectors it is `α ↦ -w₀ α`, so it permutes the positive

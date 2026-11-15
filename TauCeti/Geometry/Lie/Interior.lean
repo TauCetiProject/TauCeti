@@ -16,20 +16,12 @@ Every point of a group manifold whose multiplication is `C^n`, for `n ≠ 0`, is
 smooth inversion is not required. It suffices to find one interior point in a chart and transport
 it to the desired point by `C^n` left multiplication.
 
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main results
 
 * `ContMDiffMul.isInteriorPoint`: every point of a group manifold with `C^n` multiplication, for
   `n ≠ 0`, is an interior point.
 * `ContMDiffMul.boundarylessManifold`: a group manifold with `C^1` multiplication is boundaryless
   (opt-in, not an instance).
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section

@@ -86,8 +86,8 @@ theorem mem_integrableExpSet_bind_iff (rho : Measure A) {K : A → Measure B}
     exact h.lintegral_lt_top
   · intro h
     refine ⟨(by fun_prop), ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
-    simp_rw [Real.enorm_eq_ofReal (Real.exp_pos _).le]
+    rw [hasFiniteIntegral_iff_eNorm]
+    simp_rw [Real.eNorm_eq_ofReal (Real.exp_pos _).le]
     rw [Measure.lintegral_bind hK (by fun_prop)]
     exact h
 

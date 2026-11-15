@@ -131,7 +131,7 @@ maximal integral curve of `-grad f` through `x` lies in the sublevel `{y | f y �
 theorem mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     MapsTo (maximalIntegralCurve (-mgradient I f) x)
       (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) (f ⁻¹' Iic (f x)) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   rintro s ⟨hs, hs0⟩
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
     (contMDiff_neg_mgradient_one hf).contMDiffAt
@@ -223,7 +223,7 @@ maximal integral curve of `-grad f` through `x` stays in a compact set, it is de
 -/
 theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
     (contMDiff_neg_mgradient_one hf) hK hmem
 
@@ -251,7 +251,7 @@ theorem mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 2 f) {z : M}
     (hz : MapClusterPt z atTop (maximalIntegralCurve (-mgradient I f) x)) :
     z ∈ criticalPoints I f := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf
   have hlim := tendsto_comp_maximalIntegralCurve_neg_mgradient hK hmem hf hz
   -- The ω-limit set is invariant under the local flow and `f` is constant on it, so `f` is

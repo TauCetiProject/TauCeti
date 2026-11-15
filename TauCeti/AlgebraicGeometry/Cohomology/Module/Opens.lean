@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
-public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
@@ -44,7 +44,8 @@ biproducts of abelian groups, make the Mayer-Vietoris sequence an exact sequence
 `Scheme.Modules.exact_mayerVietorisδLinear_mayerVietorisToProdLinear`). Five lemmas over this
 sequence carry module-theoretic properties from affine opens to quasi-compact quasi-separated
 ones. For a scheme over a commutative ring `R`, `Hⁿ(U, M)` is also an `R`-module through global
-functions (`Scheme.Modules.cohomologyOnBaseModule`).
+functions (`Scheme.Modules.cohomologyOnBaseModule`). The terminal-open comparison is also
+linear over `R` (`Scheme.Modules.cohomologyOnTopBaseLinearEquiv`).
 -/
 
 public section
@@ -379,6 +380,23 @@ instance (priority := 900) cohomologyOnBaseModule (n : ℕ) (U : X.Opens) :
 @[simp]
 lemma base_smul_cohomologyOn (n : ℕ) (U : X.Opens) (r : R) (x : cohomologyOn M n U) :
     r • x = baseRingToGlobalSections R X r • x :=
+  (rfl)
+
+/-- The terminal-open comparison is linear over the base ring of the scheme. -/
+def cohomologyOnTopBaseLinearEquiv (n : ℕ) :
+    cohomologyOn M n ⊤ ≃ₗ[R] Cohomology M n where
+  __ := (cohomologyOnTopIso M n).addCommGroupIsoToAddEquiv
+  map_smul' r x := by
+    -- Normalize the inherited additive-equivalence field to the canonical comparison.
+    change (cohomologyOnTopIso M n).hom (r • x) = r • (cohomologyOnTopIso M n).hom x
+    rw [base_smul_cohomologyOn, base_smul_cohomology]
+    simpa only [cohomologyOnTopLinearEquiv_apply] using
+      (cohomologyOnTopLinearEquiv M n).map_smul (baseRingToGlobalSections R X r) x
+
+/-- The base-linear terminal-open comparison is the canonical comparison on cohomology. -/
+@[simp]
+lemma cohomologyOnTopBaseLinearEquiv_apply (n : ℕ) (x : cohomologyOn M n ⊤) :
+    cohomologyOnTopBaseLinearEquiv M R n x = (cohomologyOnTopIso M n).hom x :=
   (rfl)
 
 end Base

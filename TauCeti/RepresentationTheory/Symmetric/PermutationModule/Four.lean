@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
 public import TauCeti.RepresentationTheory.Induction.Character
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.SymmetricFour.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
 import TauCeti.RepresentationTheory.Induction.Permutation
 
 /-!
@@ -162,13 +163,8 @@ theorem character_indFDRep_trivial_parts_two_two_eq_sum {k : Type*} [Field k]
         symmetricGroupFourCharacterTable ⟨2, by decide⟩ (symmetricGroupFourClassData.index g) +
         symmetricGroupFourCharacterTable ⟨3, by decide⟩
           (symmetricGroupFourClassData.index g) : ℤ) : k) := by
-  let A := indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))
-  have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter A.ρ)
-    (symmetricGroupFourClassData.isConj_rep_index g)
-  simp only [ClassFunction.ofCharacter_apply] at hg
-  have ha : A.character (symmetricGroupFourClassData.rep (symmetricGroupFourClassData.index g)) =
-      A.character g := hg
-  rw [← ha, character_indFDRep_trivial_parts_two_two μ hμ]
+  rw [← FDRep.character_ρ, ← symmetricGroupFourClassData.character_rep_index, FDRep.character_ρ,
+    character_indFDRep_trivial_parts_two_two μ hμ]
   generalize symmetricGroupFourClassData.index g = j
   have hc : ∀ j : SymmetricGroupFourClassIndex,
       symmetricGroupFourCharacterTable ⟨0, by decide⟩ j +
@@ -191,13 +187,8 @@ theorem character_indFDRep_trivial_parts_two_one_one_eq_sum {k : Type*} [Field k
         2 * symmetricGroupFourCharacterTable ⟨3, by decide⟩ (symmetricGroupFourClassData.index g) +
         symmetricGroupFourCharacterTable ⟨4, by decide⟩
           (symmetricGroupFourClassData.index g) : ℤ) : k) := by
-  let A := indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))
-  have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter A.ρ)
-    (symmetricGroupFourClassData.isConj_rep_index g)
-  simp only [ClassFunction.ofCharacter_apply] at hg
-  have ha : A.character (symmetricGroupFourClassData.rep (symmetricGroupFourClassData.index g)) =
-      A.character g := hg
-  rw [← ha, character_indFDRep_trivial_parts_two_one_one μ hμ]
+  rw [← FDRep.character_ρ, ← symmetricGroupFourClassData.character_rep_index, FDRep.character_ρ,
+    character_indFDRep_trivial_parts_two_one_one μ hμ]
   generalize symmetricGroupFourClassData.index g = j
   have hc : ∀ j : SymmetricGroupFourClassIndex,
       symmetricGroupFourCharacterTable ⟨0, by decide⟩ j +
@@ -228,32 +219,15 @@ theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZe
         (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 1, 0] : Fin 5 → ℕ) i := by
-  have hchar : ∀ g, V.character g =
-      (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-        (symmetricGroupFourClassData.index g) : k) := by
-    intro g
-    have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter V.ρ)
-      (symmetricGroupFourClassData.isConj_rep_index g)
-    simp only [ClassFunction.ofCharacter_apply] at hg
-    exact hg.symm.trans (hV _)
-  have hc : ∑ g : Perm (Fin 4),
-      (symmetricGroupFourCharacterTable ⟨0, by decide⟩ (symmetricGroupFourClassData.index g) +
-        symmetricGroupFourCharacterTable ⟨2, by decide⟩ (symmetricGroupFourClassData.index g) +
-        symmetricGroupFourCharacterTable ⟨3, by decide⟩ (symmetricGroupFourClassData.index g)) *
-      symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-        (symmetricGroupFourClassData.index g⁻¹) =
-      24 * ((![1, 0, 1, 1, 0] : Fin 5 → ℕ) i : ℤ) := by
-    simp only [symmetricGroupFourCharacterTable_apply]
+  rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![6, 2, 2, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
+  · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_two μ hμ]
+    generalize j.cast numClasses_symmetricGroupFourClassData = j
+    fin_cases j <;> simp
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
-  let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
-    rw [Nat.card_perm, Nat.card_fin]; norm_num)
-  apply Nat.cast_injective (R := k)
-  rw [← scalar_product_char_eq_finrank_equivariant]
-  simp_rw [character_indFDRep_trivial_parts_two_two_eq_sum μ hμ, hchar,
-    ← Int.cast_mul]
-  rw [← Int.cast_sum, hc, Int.cast_mul, Nat.card_perm, Nat.card_fin]
-  norm_num
-  ring
 
 /-- The multiplicities in the Young representation of shape `(2,1,1)`, indexed by the certified
 `S₄` character rows, are `1,0,1,2,1`. The character hypothesis selects a row. -/
@@ -265,32 +239,14 @@ theorem finrank_hom_indFDRep_trivial_parts_two_one_one {k : Type*} [Field k] [Ch
         (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
-  have hchar : ∀ g, V.character g =
-      (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-        (symmetricGroupFourClassData.index g) : k) := by
-    intro g
-    have hg := ClassFunction.eq_of_isConj (ClassFunction.ofCharacter V.ρ)
-      (symmetricGroupFourClassData.isConj_rep_index g)
-    simp only [ClassFunction.ofCharacter_apply] at hg
-    exact hg.symm.trans (hV _)
-  have hc : ∑ g : Perm (Fin 4),
-      (symmetricGroupFourCharacterTable ⟨0, by decide⟩ (symmetricGroupFourClassData.index g) +
-        symmetricGroupFourCharacterTable ⟨2, by decide⟩ (symmetricGroupFourClassData.index g) +
-        2 * symmetricGroupFourCharacterTable ⟨3, by decide⟩ (symmetricGroupFourClassData.index g) +
-        symmetricGroupFourCharacterTable ⟨4, by decide⟩ (symmetricGroupFourClassData.index g)) *
-      symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm)
-        (symmetricGroupFourClassData.index g⁻¹) =
-      24 * ((![1, 0, 1, 2, 1] : Fin 5 → ℕ) i : ℤ) := by
-    simp only [symmetricGroupFourCharacterTable_apply]
+  rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
+  refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
+    (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
+    (fun j ↦ ![12, 2, 0, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
+  · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_one_one μ hμ]
+    generalize j.cast numClasses_symmetricGroupFourClassData = j
+    fin_cases j <;> simp
+  · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
     fin_cases i <;> decide
-  let : Invertible (Nat.card (Perm (Fin 4)) : k) := invertibleOfNonzero (by
-    rw [Nat.card_perm, Nat.card_fin]; norm_num)
-  apply Nat.cast_injective (R := k)
-  rw [← scalar_product_char_eq_finrank_equivariant]
-  simp_rw [character_indFDRep_trivial_parts_two_one_one_eq_sum μ hμ, hchar,
-    ← Int.cast_mul]
-  rw [← Int.cast_sum, hc, Int.cast_mul, Nat.card_perm, Nat.card_fin]
-  norm_num
-  ring
 
 end FDRep

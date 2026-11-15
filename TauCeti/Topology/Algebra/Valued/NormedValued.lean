@@ -104,7 +104,7 @@ theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Int
       le_of_tendsto (tendsto_const_nhds.dist hL) (eventually_atTop.2 ⟨m, fun _ hn ↦ hf hn⟩)
     -- As a limit of elements of norm at most one, `L` is the image of some `l : O`.
     have hL1 : NormedField.valuation L ≤ 1 := by
-      rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnnorm]
+      rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm]
       exact le_of_tendsto' hL.norm fun n ↦ by
         simpa [← NNReal.coe_le_one] using hv.map_le_one (f n)
     obtain ⟨l, rfl⟩ := hv.exists_of_le_one hL1

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 public import TauCeti.RingTheory.WittVector.Units
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Primitive and distinguished Witt vectors
@@ -58,7 +58,10 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
   `WittVector.not_isDistinguished_of_mem_span_p_sq`, `WittVector.not_isDistinguished_teichmuller`:
   over a nonzero ring no element of `(p ^ 2)` and no Teichmüller representative is.
 * `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius.
-* `WittVector.isPrimitive_p_add_teichmuller_mul`: `p + [ϖ] α` is primitive.
+* `WittVector.isPrimitive_p_add_teichmuller_mul`,
+  `WittVector.isPrimitive_p_add_teichmuller_mul_of_isAdic`,
+  `WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete`: `p + [ϖ] α` is primitive
+  (and distinguished over an `I`-adically complete ring with `ϖ ∈ I`).
 * `WittVector.isPrimitive_iff_exists_eq_unit_mul`: the primitive elements are exactly the unit
   multiples of the elements `p + [ϖ] α` with `ϖ` topologically nilpotent.
 * `WittVector.isPrimitive_units_mul`: primitivity is invariant under multiplication by units.
@@ -248,6 +251,23 @@ theorem IsPrimitive.associated_of_dvd {ξ ξ' : 𝕎 S} (hξ : ξ.IsPrimitive)
   exact associated_mul_unit_right ξ y (hξ.isUnit_of_eq_mul hS hξ' (mul_comm ξ y))
 
 end Jacobson
+
+/-- Over an `I`-adically complete ring `S` of characteristic `p` equipped with the `I`-adic
+topology, every Witt vector of the form `p + [ϖ] α` with `ϖ ∈ I` is primitive. -/
+theorem isPrimitive_p_add_teichmuller_mul_of_isAdic {I : Ideal S} [TopologicalSpace S]
+    (hI : IsAdic I) [IsAdicComplete I S] {ϖ : S} (hϖ : ϖ ∈ I) (α : 𝕎 S) :
+    ((p : 𝕎 S) + teichmuller p ϖ * α).IsPrimitive := by
+  have := hI.isLinearTopology
+  exact isPrimitive_p_add_teichmuller_mul hI.topologicalNilradical_le_jacobson
+    (hI.isTopologicallyNilpotent_of_mem hϖ) α
+
+/-- **Elements of the form `p + [ϖ] α` are distinguished.** Over an `I`-adically complete ring `S`
+of characteristic `p`, `p + [ϖ] α` is distinguished for every `ϖ ∈ I` and `α : 𝕎 S`. -/
+theorem isDistinguished_p_add_teichmuller_mul_of_isAdicComplete {I : Ideal S}
+    [IsAdicComplete I S] {ϖ : S} (hϖ : ϖ ∈ I) (α : 𝕎 S) :
+    ((p : 𝕎 S) + teichmuller p ϖ * α).IsDistinguished := by
+  let _ : WithIdeal S := ⟨I⟩
+  exact (isPrimitive_p_add_teichmuller_mul_of_isAdic (I := I) rfl hϖ α).isDistinguished
 
 variable [PerfectRing S p]
 

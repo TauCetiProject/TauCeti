@@ -38,7 +38,7 @@ theorem signedEquiv_mem_checkerboardCarrier (u : Fin n → ℤˣ) {x : Fin n →
     (hx : x ∈ checkerboardCarrier n) : signedEquiv u (Equiv.refl _) x ∈ checkerboardCarrier n := by
   obtain ⟨hxZ, m, hm⟩ := (mem_checkerboardCarrier_iff x).1 hx
   choose w hw using hxZ
-  refine mem_checkerboardCarrier_of (fun i ↦ u i * w i) (fun i ↦ by simp [hw i]) ?_
+  refine mem_checkerboardCarrier_of_even_sum (fun i ↦ u i * w i) (fun i ↦ by simp [hw i]) ?_
   have hw2 : ∑ i, w i = 2 * m := by
     have : ((∑ i, w i : ℤ) : ℚ) = ((2 * m : ℤ) : ℚ) := by
       push_cast

@@ -268,7 +268,7 @@ private theorem contMDiff_averageInner
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x
         (@id (E →L[ℝ] E →L[ℝ] ℝ) (averageInner μ g x))) := by
   intro x₀
-  refine (contMDiffAt_section x₀).2 ?_
+  refine (contMDiffAt_section_iff x₀).2 ?_
   -- In the trivialization at `x₀`, the section is the integral of the trivialized pullbacks.
   refine (contMDiffAt_parametric_integral (μ := μ) (J := J)
     (f := fun x (a : G) ↦ (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)

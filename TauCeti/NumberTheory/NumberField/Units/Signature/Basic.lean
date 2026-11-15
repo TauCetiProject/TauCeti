@@ -18,11 +18,11 @@ We build it first on the full multiplicative group `Kˣ` — `fieldUnitSignature
 totally positive units `totallyPositiveUnits` — and then restrict along `(𝓞 K)ˣ → Kˣ` to the
 arithmetic unit group to obtain `unitSignature`, whose kernel is the totally positive integer units.
 
-The integer-unit signature is the archimedean input to the narrow class group `Cl⁺(K)` (Layer 3 of
-the multiquadratic roadmap): the *cokernel* of the signature — the full sign group modulo the
-signatures realized by units — is what contributes the kernel of the surjection `Cl⁺(K) → Cl(K)`
-between the narrow and ordinary class groups, and the `2`-rank of `Cl⁺(K)` is what the `t - 1`
-genus-theory formula computes for a real quadratic field.
+The integer-unit signature is the archimedean input to the narrow class group `Cl⁺(K)`: the
+*cokernel* of the signature — the full sign group modulo the signatures realized by units — is
+what contributes the kernel of the surjection `Cl⁺(K) → Cl(K)` between the narrow and ordinary
+class groups, and the `2`-rank of `Cl⁺(K)` is what the `t - 1` genus-theory formula computes for
+a real quadratic field.
 
 ## Main definitions and results
 

@@ -13,7 +13,7 @@ import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 /-!
 # Elementary asymptotic criteria
 
-Seven general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
+Eight general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
 elementary limit of ratios.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
@@ -35,6 +35,10 @@ In a seminormed group the norm is at most one on a neighbourhood of the origin, 
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
 remainder of one order be read as a remainder of a smaller order.
 
+A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` of a normed division ring
+gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
+centre.
+
 A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`. This is how
 rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
 theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence likewise passes to
@@ -44,7 +48,9 @@ partial sums of a sequence enters an integral against the partial-sum step funct
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
 dominated function is bounded on compact intervals and the dominating one is bounded away from
 zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
-which a summation argument can apply at infinitely many points at once.
+which a summation argument can apply at infinitely many points at once. Continuity of both
+functions on the half-line, with a nonvanishing dominating function, is another sufficient
+condition: it covers exponentially decaying majorants such as `exp (-p x)`.
 
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
@@ -65,12 +71,16 @@ evaluations of elliptic integrals.
   on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
+  `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
+* `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
+  are continuous on `[a, ∞)` and `g` does not vanish there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -126,6 +136,34 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommG
   simp only [one_mul, norm_pow, norm_norm]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
 
+/-- **An inverse-power bound about any centre is a decay bound at infinity.** If
+`‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
+theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜]
+    [SeminormedAddCommGroup E] {g : 𝕜 → E} {c : 𝕜} {R A : ℝ} (n : ℕ)
+    (hg : ∀ x, R < ‖x - c‖ → ‖g x‖ ≤ A / ‖x - c‖ ^ n) :
+    g =O[Bornology.cobounded 𝕜] fun x ↦ x⁻¹ ^ n := by
+  refine IsBigO.of_bound (2 ^ n * A) ?_
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (2 * ‖c‖ + 2 * |R| + 1)]
+    with x hx
+  have := norm_sub_norm_le x c
+  have := norm_nonneg c
+  have := le_abs_self R
+  have := abs_nonneg R
+  have hρ : 0 < ‖x - c‖ := by linarith
+  have hxR : R < ‖x - c‖ := by linarith
+  have hA : 0 ≤ A := by
+    have := (norm_nonneg _).trans (hg x hxR)
+    rwa [le_div_iff₀ (by positivity), zero_mul] at this
+  have hinv : (‖x - c‖ ^ n)⁻¹ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by
+    have hx0 : 0 < ‖x‖ := by linarith
+    calc (‖x - c‖ ^ n)⁻¹ = 2 ^ n * ((2 * ‖x - c‖) ^ n)⁻¹ := by
+          rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
+      _ ≤ 2 ^ n * (‖x‖ ^ n)⁻¹ := by gcongr; linarith
+  calc ‖g x‖ ≤ A / ‖x - c‖ ^ n := hg x hxR
+    _ = A * (‖x - c‖ ^ n)⁻¹ := div_eq_mul_inv _ _
+    _ ≤ A * (2 ^ n * (‖x‖ ^ n)⁻¹) := by gcongr
+    _ = 2 ^ n * A * ‖x⁻¹ ^ n‖ := by rw [norm_pow, norm_inv, inv_pow]; ring
+
 /-- **A power bound at infinity survives a dilation.** If `F = O(x ^ r)` as `x → ∞`, then
 `F (c x) = O(x ^ r)` for every `c > 0`. -/
 theorem IsBigO.comp_const_mul_rpow {E : Type*} [Norm E] {F : ℝ → E} {r c : ℝ}
@@ -170,6 +208,29 @@ theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ →
         rw [div_mul_eq_mul_div, le_div_iff₀ hc]
         exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
       _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
+
+/-- **An eventual big-O bound holds on a whole half-line, continuous version.** If `f = O(g)` at
+`atTop`, both functions are continuous on `[a, ∞)` and `g` does not vanish there, then
+`f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
+as for an exponentially decaying majorant. -/
+theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAddGroup E]
+    [NormedAddGroup F] {f : ℝ → E} {g : ℝ → F} {a : ℝ} (h : f =O[atTop] g)
+    (hf : ContinuousOn f (Set.Ici a)) (hg : ContinuousOn g (Set.Ici a))
+    (hg0 : ∀ x ∈ Set.Ici a, g x ≠ 0) :
+    f =O[𝓟 (Set.Ici a)] g := by
+  obtain ⟨c₀, hc₀⟩ := h.bound
+  obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
+  have hcont : ContinuousOn (fun x ↦ ‖f x‖ / ‖g x‖) (Set.Icc a b) :=
+    (hf.norm.div hg.norm fun x hx ↦ norm_ne_zero_iff.mpr (hg0 x hx)).mono
+      Set.Icc_subset_Ici_self
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
+  refine isBigO_principal.mpr ⟨max c₀ B, fun x hx ↦ ?_⟩
+  have hgx : 0 < ‖g x‖ := norm_pos_iff.mpr (hg0 x hx)
+  rcases le_or_gt b x with hbx | hbx
+  · exact (hb x hbx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hgx.le)
+  · have hBx := hB x ⟨hx, hbx.le⟩
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_le_iff₀ hgx] at hBx
+    exact hBx.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hgx.le)
 
 end Asymptotics
 

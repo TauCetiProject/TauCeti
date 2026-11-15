@@ -12,8 +12,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
 
 An elementary simplicial collapse deletes a free face together with its unique proper coface.
 This file supplies that local move for `PreAbstractSimplicialComplex`, Mathlib's type of
-downward-closed collections of nonempty finite faces.  This is the elementary substrate for the
-collapse track in layer 11 of the geometric-topology roadmap.
+downward-closed collections of nonempty finite faces.  Finite sequences of these moves are the
+simplicial collapses of `Collapse.Basic`.
 
 Following Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3, the pair
 `(σ, τ)` is free when `σ` is a proper face of `τ` and every face containing `σ` is either `σ` or

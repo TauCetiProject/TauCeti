@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Manifold.Diffeomorph.Prod
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
 # The covering map of a symplectic suspension

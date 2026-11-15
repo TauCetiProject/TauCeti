@@ -124,10 +124,6 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   have := Fintype.ofFinite ι
   subst hP
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-  have : IsLocalHom (algebraMap (P'.restrict k F).completionPlace.integers
-      P'.completionPlace.integers) := by
-    rw [algebraMap_completionIntegersExtensionAlgebra]
-    infer_instance
   have : IsHausdorff (maximalIdeal (P'.restrict k F).completionPlace.integers)
       P'.completionPlace.integers :=
     .of_map (map_maximalIdeal_le (algebraMap _ P'.completionPlace.integers))
