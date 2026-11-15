@@ -260,12 +260,10 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
         rw [HolderSpace.toBoundedContinuousFunction_apply, timeDerivL_ofTime_apply]
         exact (hbd _).trans (by push_cast; rfl)
     linarith
-  · rw [timeDerivL_ofTime_apply]
-    exact (hbd _).trans (by push_cast; rfl)
+  · rw [timeDerivL_ofTime_apply]; exact (hbd _).trans (by push_cast; rfl)
   · -- The weight cancels the factor `δ^(-(1 + α/2))` of the Hölder constant of `φ'`.
-    refine (mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2
-      (nnHolderNorm_timeDerivL_ofTime_le _ _ _ _ _ (hH.holderOnWith _))) (by positivity)).trans_eq
-      ?_
+    refine (mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2 (nnHolderNorm_timeDerivL_ofTime_le
+      _ _ _ _ _ (hH.holderOnWith _))) (by positivity)).trans_eq ?_
     push_cast
     rw [Real.rpow_neg hδ.le]
     field_simp
