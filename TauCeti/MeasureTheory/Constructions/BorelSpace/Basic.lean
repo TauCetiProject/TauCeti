@@ -22,13 +22,17 @@ Pushforward along a proper map preserves finiteness on compact sets. In particul
 proper embeddings and translations can transport locally finite measures.
 
 A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets: the image
-is a countable union of images under open embeddings of chart domains.
+is a countable union of images under open embeddings of chart domains. If it is surjective, a set
+of the codomain is therefore measurable exactly when its preimage is, so measurability of maps
+descends along it.
 
 ## Main results
 
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 * `IsLocalHomeomorph.measurableSet_image`
+* `IsLocalHomeomorph.measurableSet_preimage_iff`
+* `IsLocalHomeomorph.measurable_comp_iff`
 * `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
 
@@ -65,6 +69,25 @@ theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace 
   rw [hfe x, ← Set.image_domRestrict]
   exact (e x).isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
     (measurable_subtype_coe hs)
+
+/-- For a surjective local homeomorphism `f` out of a Lindelöf space, a set is measurable exactly
+when its preimage under `f` is. -/
+theorem IsLocalHomeomorph.measurableSet_preimage_iff {α β : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] [BorelSpace α] [LindelofSpace α] [TopologicalSpace β]
+    [MeasurableSpace β] [BorelSpace β] {f : α → β} (hf : IsLocalHomeomorph f)
+    (hsurj : Function.Surjective f) {s : Set β} : MeasurableSet (f ⁻¹' s) ↔ MeasurableSet s :=
+  ⟨fun h ↦ Set.image_preimage_eq s hsurj ▸ hf.measurableSet_image h,
+    fun h ↦ hf.continuous.measurable h⟩
+
+/-- For a surjective local homeomorphism `f` out of a Lindelöf space, a map `g` out of the
+codomain of `f` is measurable exactly when `g ∘ f` is. -/
+theorem IsLocalHomeomorph.measurable_comp_iff {α β γ : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] [BorelSpace α] [LindelofSpace α] [TopologicalSpace β]
+    [MeasurableSpace β] [BorelSpace β] [MeasurableSpace γ] {f : α → β}
+    (hf : IsLocalHomeomorph f) (hsurj : Function.Surjective f) {g : β → γ} :
+    Measurable (g ∘ f) ↔ Measurable g :=
+  ⟨fun h _ ht ↦ (hf.measurableSet_preimage_iff hsurj).1 (h ht),
+    fun h ↦ h.comp hf.continuous.measurable⟩
 
 namespace MeasureTheory.Measure
 

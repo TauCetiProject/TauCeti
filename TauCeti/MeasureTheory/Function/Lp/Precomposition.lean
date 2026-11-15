@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
@@ -31,7 +32,11 @@ precompositions are mutually inverse, giving a continuous linear equivalence
   `Lp E p ν →L[𝕜] Lp E p μ`.
 * `MeasureTheory.Lp.coeFn_compOfMapLeSmul` and `MeasureTheory.Lp.norm_compOfMapLeSmul_le`: it is
   `g ↦ g ∘ f` almost everywhere, with norm at most `C ^ (1/p)`.
+* `MeasureTheory.Lp.norm_compOfMapLeSmul_of_map_eq`: if `μ.map f = C • ν` with `C ≠ 0`, it
+  multiplies norms by exactly `C ^ (1/p)`.
 * `MeasureTheory.Lp.compOfMapLeSmul_comp`: precomposition is contravariant in `f`.
+* `MeasureTheory.Lp.compOfMapEqSmulₗᵢ`: if `μ.map f = C • ν` with `0 < C < ∞`, precomposition
+  normalized by the factor `C ^ (-1/p)`, as a linear isometry `Lp E p ν →ₗᵢ[𝕜] Lp E p μ`.
 * `MeasureTheory.Lp.compEquivOfMapLeSmul`: the continuous linear equivalence attached to a pair of
   mutually inverse maps with dominated pushforwards.
 -/
@@ -132,6 +137,16 @@ theorem norm_compOfMapLeSmul_le (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.
     ‖compOfMapLeSmul 𝕜 hf hC hmap g‖ ≤ (C ^ (1 / p).toReal).toReal * ‖g‖ :=
   norm_compOfMapLeSmulₗ_le 𝕜 hf hC hmap g
 
+/-- If `μ.map f = C • ν` with `C ≠ 0`, then precomposition with `f` multiplies `Lᵖ` norms by
+exactly `C ^ (1/p)`. -/
+theorem norm_compOfMapLeSmul_of_map_eq (hf : Measurable f) (hC : C ≠ ∞) (hC₀ : C ≠ 0)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    ‖compOfMapLeSmul 𝕜 hf hC hmap.le g‖ = (C ^ (1 / p).toReal).toReal * ‖g‖ := by
+  have hg : AEStronglyMeasurable g (μ.map f) := hmap ▸ (Lp.aestronglyMeasurable g).smul_measure C
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (coeFn_compOfMapLeSmul hf hC hmap.le g),
+    ← eLpNorm_map_measure hg hf.aemeasurable, hmap, eLpNorm_smul_measure_of_ne_zero hC₀,
+    smul_eq_mul, ENNReal.toReal_mul]
+
 /-- Precomposition is contravariant: precomposing with `g ∘ f` is precomposing with `g`, then
 with `f`. -/
 theorem compOfMapLeSmul_comp {g : β → γ} {D : ℝ≥0∞} (hf : Measurable f) (hC : C ≠ ∞)
@@ -188,6 +203,47 @@ theorem compEquivOfMapLeSmul_symm_apply (h : Lp E p μ) :
   (rfl)
 
 end Equiv
+
+end Lp
+
+namespace Lp
+
+variable (𝕜 : Type*) [RCLike 𝕜] [NormedSpace 𝕜 E] [Fact (1 ≤ p)]
+
+/-- **Normalized precomposition.** If `f` pushes `μ` forward to `C • ν` with `0 < C < ∞`, then
+`g ↦ C ^ (-1/p) • (g ∘ f)` is a linear isometry `Lᵖ(ν) → Lᵖ(μ)`. For `p = ∞` the factor is `1`. -/
+def compOfMapEqSmulₗᵢ (hf : Measurable f) (hC : C ≠ ∞) (hC₀ : C ≠ 0) (hmap : μ.map f = C • ν) :
+    Lp E p ν →ₗᵢ[𝕜] Lp E p μ where
+  toLinearMap :=
+    ((C ^ (1 / p).toReal).toReal⁻¹ : 𝕜) • (compOfMapLeSmul 𝕜 hf hC hmap.le).toLinearMap
+  norm_map' g := by
+    have hpos : 0 < (C ^ (1 / p).toReal).toReal := by
+      rw [← ENNReal.toReal_rpow]
+      exact Real.rpow_pos_of_pos (ENNReal.toReal_pos hC₀ hC) _
+    rw [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, norm_smul, norm_inv,
+      RCLike.norm_ofReal, abs_of_pos hpos, norm_compOfMapLeSmul_of_map_eq hf hC hC₀ hmap,
+      inv_mul_cancel_left₀ hpos.ne']
+
+variable {𝕜}
+
+/-- Normalized precomposition is `C ^ (-1/p)` times precomposition. -/
+@[simp]
+theorem compOfMapEqSmulₗᵢ_apply (hf : Measurable f) (hC : C ≠ ∞) (hC₀ : C ≠ 0)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    compOfMapEqSmulₗᵢ 𝕜 hf hC hC₀ hmap g =
+      ((C ^ (1 / p).toReal).toReal⁻¹ : 𝕜) • compOfMapLeSmul 𝕜 hf hC hmap.le g :=
+  (rfl)
+
+/-- Normalized precomposition is `x ↦ C ^ (-1/p) • g (f x)` almost everywhere. -/
+theorem coeFn_compOfMapEqSmulₗᵢ (hf : Measurable f) (hC : C ≠ ∞) (hC₀ : C ≠ 0)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    compOfMapEqSmulₗᵢ 𝕜 hf hC hC₀ hmap g =ᵐ[μ]
+      fun x ↦ ((C ^ (1 / p).toReal).toReal⁻¹ : 𝕜) • g (f x) := by
+  rw [compOfMapEqSmulₗᵢ_apply]
+  filter_upwards [Lp.coeFn_smul ((C ^ (1 / p).toReal).toReal⁻¹ : 𝕜)
+    (compOfMapLeSmul 𝕜 hf hC hmap.le g), coeFn_compOfMapLeSmul (𝕜 := 𝕜) hf hC hmap.le g]
+    with x h₁ h₂
+  rw [h₁, Pi.smul_apply, h₂, Function.comp_apply]
 
 end Lp
 
