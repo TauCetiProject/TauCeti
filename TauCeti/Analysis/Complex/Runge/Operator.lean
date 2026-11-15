@@ -8,14 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.Pompeiu.Basic
+import TauCeti.Analysis.Complex.Quadrature
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
-import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.MeasureTheory.MeasurableSpace.Metric
 
 /-!
@@ -108,85 +107,6 @@ theorem isRungeCompactPair_empty_left {K : Set ℂ} :
   ⟨fun h => subset_empty_iff.mp h.subset,
     fun h => h ▸ isRungeCompactPair_empty_right.mpr isOpen_empty⟩
 
-/-- Riemann-sum quadrature error on a single measurable cell `A ⊆ ball ζ δ` using uniform kernel
-variation and Cauchy's derivative bound on `ball ζ (2 * δ₀)`. -/
-private lemma norm_setIntegral_sub_volume_mul_le {A : Set ℂ} {κ f : ℂ → ℂ} {ζ : ℂ}
-    {δ δ₀ η Mκ B : ℝ} (hA_lt : volume A < ⊤) (hA_ball : A ⊆ ball ζ δ)
-    (hint : IntegrableOn (fun y => κ y * f y) A) (hδ₀ : 0 < δ₀) (hδ_le₀ : δ ≤ δ₀)
-    (hδ_le_η : δ ≤ η * δ₀ / (4 * (Mκ + 1))) (hη : 0 ≤ η) (hMκ0 : 0 ≤ Mκ) (hMκ : ‖κ ζ‖ ≤ Mκ)
-    (hκ_err : ∀ y ∈ A, ‖κ y - κ ζ‖ ≤ η / 2) (hf : DifferentiableOn ℂ f (ball ζ (2 * δ₀)))
-    (hfB : ∀ u ∈ ball ζ (2 * δ₀), ‖f u‖ ≤ B) :
-    ‖(∫ y in A, κ y * f y) - (volume.real A : ℂ) * κ ζ * f ζ‖ ≤ volume.real A * (η * B) := by
-  have hB : 0 ≤ B := (norm_nonneg (f ζ)).trans (hfB ζ (mem_ball_self (by positivity)))
-  have hconst : (volume.real A : ℂ) * κ ζ * f ζ = ∫ _ in A, κ ζ * f ζ := by
-    rw [setIntegral_const, Complex.real_smul]
-    ring
-  rw [hconst, ← integral_sub hint (integrableOn_const hA_lt.ne), mul_comm (volume.real A)]
-  refine norm_setIntegral_le_of_norm_le_const hA_lt (C := η * B) fun y hy => ?_
-  have hy_ball : y ∈ ball ζ δ := hA_ball hy
-  have hf_deriv : ∀ u ∈ ball ζ δ₀, ‖fderiv ℂ f u‖ ≤ 2 * B / δ₀ := fun u hu => by
-    have hsub : ball u δ₀ ⊆ ball ζ (2 * δ₀) := fun v hv => by
-      rw [mem_ball] at hu hv ⊢
-      linarith [dist_triangle v u ζ]
-    exact norm_fderiv_le_of_forall_mem_ball_norm_le (hf.mono hsub) hδ₀ fun v hv => hfB v (hsub hv)
-  have hf_diff : ‖f y - f ζ‖ ≤ (2 * B / δ₀) * ‖y - ζ‖ := by
-    have hf_at : ∀ u ∈ ball ζ δ₀, DifferentiableAt ℂ f u := fun u hu =>
-      hf.differentiableAt (isOpen_ball.mem_nhds (ball_subset_ball (by linarith) hu))
-    exact (convex_ball ζ δ₀).norm_image_sub_le_of_norm_fderiv_le hf_at hf_deriv
-      (mem_ball_self hδ₀) (ball_subset_ball hδ_le₀ hy_ball)
-  have hfyB : ‖f y‖ ≤ B :=
-    hfB y (ball_subset_ball (hδ_le₀.trans (by linarith)) hy_ball)
-  have hterm₁ : ‖(κ y - κ ζ) * f y‖ ≤ (η / 2) * B := by
-    rw [norm_mul]
-    exact mul_le_mul (hκ_err y hy) hfyB (norm_nonneg _) (by positivity)
-  have hterm₂ : ‖κ ζ * (f y - f ζ)‖ ≤ (η / 2) * B := by
-    rw [norm_mul]
-    calc ‖κ ζ‖ * ‖f y - f ζ‖
-        ≤ Mκ * ((2 * B / δ₀) * ‖y - ζ‖) :=
-          mul_le_mul hMκ hf_diff (norm_nonneg _) hMκ0
-      _ ≤ Mκ * ((2 * B / δ₀) * (η * δ₀ / (4 * (Mκ + 1)))) := by
-          gcongr
-          rw [← dist_eq_norm]
-          exact (mem_ball.mp hy_ball).le.trans hδ_le_η
-      _ = (Mκ / (Mκ + 1)) * ((η / 2) * B) := by field_simp; ring
-      _ ≤ 1 * ((η / 2) * B) := by
-          gcongr
-          exact (div_le_one (by linarith)).mpr (by linarith)
-      _ = (η / 2) * B := one_mul _
-  have hsplit_err : κ y * f y - κ ζ * f ζ = (κ y - κ ζ) * f y + κ ζ * (f y - f ζ) := by ring
-  calc ‖κ y * f y - κ ζ * f ζ‖
-      = ‖(κ y - κ ζ) * f y + κ ζ * (f y - f ζ)‖ := by rw [hsplit_err]
-    _ ≤ ‖(κ y - κ ζ) * f y‖ + ‖κ ζ * (f y - f ζ)‖ := norm_add_le _ _
-    _ ≤ (η / 2) * B + (η / 2) * B := add_le_add hterm₁ hterm₂
-    _ = η * B := by ring
-
-/-- Weighted sum error when replacing each Cauchy kernel `(z - ζ j)⁻¹` by its `Ω`-holomorphic
-approximant `g j z`. -/
-private lemma norm_sum_mul_inv_sub_le {N : ℕ} {w ζ : Fin N → ℂ} {g : Fin N → ℂ → ℂ}
-    {f : ℂ → ℂ} {z : ℂ} {ε B : ℝ} (hε : 0 ≤ ε) (hB : 0 ≤ B) (hfB : ∀ j, ‖f (ζ j)‖ ≤ B)
-    (hg : ∀ j, ‖(z - ζ j)⁻¹ - g j z‖ ≤ ε / (2 * (∑ i, ‖w i‖ + 1))) :
-    ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖ ≤ (ε / 2) * B := by
-  rw [← Finset.sum_sub_distrib]
-  have hterm : ∀ j : Fin N, ‖w j * f (ζ j) * (z - ζ j)⁻¹ - w j * f (ζ j) * g j z‖ ≤
-      ‖w j‖ * B * (ε / (2 * (∑ i, ‖w i‖ + 1))) := fun j => by
-    have heq : w j * f (ζ j) * (z - ζ j)⁻¹ - w j * f (ζ j) * g j z =
-        w j * f (ζ j) * ((z - ζ j)⁻¹ - g j z) := by ring
-    rw [heq, norm_mul, norm_mul]
-    exact mul_le_mul (mul_le_mul_of_nonneg_left (hfB j) (norm_nonneg _))
-      (hg j) (norm_nonneg _) (by positivity)
-  have hsum_nn : 0 ≤ ∑ j : Fin N, ‖w j‖ := Finset.sum_nonneg fun j _ => norm_nonneg (w j)
-  calc ‖∑ j, (w j * f (ζ j) * (z - ζ j)⁻¹ - w j * f (ζ j) * g j z)‖
-      ≤ ∑ j, ‖w j * f (ζ j) * (z - ζ j)⁻¹ - w j * f (ζ j) * g j z‖ := norm_sum_le _ _
-    _ ≤ ∑ j, ‖w j‖ * B * (ε / (2 * (∑ i, ‖w i‖ + 1))) := Finset.sum_le_sum fun j _ => hterm j
-    _ = ((∑ j, ‖w j‖) / (∑ i, ‖w i‖ + 1)) * ((ε / 2) * B) := by
-        rw [← Finset.sum_mul, ← Finset.sum_mul]
-        have hden : ∑ i, ‖w i‖ + 1 ≠ 0 := by linarith
-        field_simp
-    _ ≤ 1 * ((ε / 2) * B) := by
-        gcongr
-        exact (div_le_one (by linarith)).mpr (by linarith)
-    _ = (ε / 2) * B := one_mul _
-
 /-- **Finite-rank Runge operator.** For a Runge compact pair `(Ω, K)` and an open neighbourhood
 `U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside `U ∩ Ω` such that for every
 `ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
@@ -225,11 +145,8 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
     simpa using interior_subset (hα_one (subset_closure hy))
   have hdisj : Disjoint K K₁ := disjoint_left.mpr fun z hzK hzK₁ => hzK₁.2 (hKV hzK)
   obtain ⟨r₀, hr₀, hthick₀⟩ := hK₁.exists_thickening_subset_open isOpen_interior hK₁L
-  set δ₀ : ℝ := r₀ / 2
-  have hδ₀ : 0 < δ₀ := half_pos hr₀
-  have hball₀ : ∀ z ∈ K₁, ball z (2 * δ₀) ⊆ interior L := fun z hz => by
-    rw [mul_div_cancel₀ r₀ two_ne_zero]
-    exact (ball_subset_thickening hz r₀).trans hthick₀
+  have hball₀ : ∀ z ∈ K₁, ball z r₀ ⊆ interior L := fun z hz =>
+    (ball_subset_thickening hz r₀).trans hthick₀
   -- Step 2: Uniform continuity and norm bound for the kernel `κ` on `K ×ˢ K₁`.
   let β : ℂ → ℂ := fun z => conjWirtingerDeriv (fun y => (α y : ℂ)) z 1
   let κ : ℂ → ℂ → ℂ := fun w z => (Real.pi : ℂ)⁻¹ * (w - z)⁻¹ * β z
@@ -253,8 +170,8 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
   let η : ℝ := ε / (2 * max 1 (volume.real K₁))
   have hη : 0 < η := by positivity
   obtain ⟨δ₁, hδ₁, huc₁⟩ := Metric.uniformContinuousOn_iff.mp hκ_uc (η / 2) (half_pos hη)
-  let δ : ℝ := min δ₀ (min δ₁ (η * δ₀ / (4 * (Mκ + 1))))
-  have hδ : 0 < δ := lt_min hδ₀ (lt_min hδ₁ (by positivity))
+  let δ : ℝ := min r₀ (min δ₁ (η * r₀ / (4 * (Mκ + 1))))
+  have hδ : 0 < δ := lt_min hr₀ (lt_min hδ₁ (by positivity))
   obtain ⟨N, ζ, A, hζK₁, hAm, hAs, hAdisj, hAunion⟩ :=
     hK₁.totallyBounded.exists_measurable_partition_ball hK₁.isClosed.measurableSet hδ
   have hAK₁ : ∀ j, A j ⊆ K₁ := fun j => (hAs j).trans inter_subset_left
@@ -266,7 +183,7 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
       (fun hj => hdisj.le_bot ⟨hj, hζK₁ j⟩) (by positivity)
   choose g hg_diff hg_lt using happrox
   refine ⟨N, ζ, w, g, fun j => hK₁L (hζK₁ j), hg_diff, fun f hf B hB hLf z hz => ?_⟩
-  -- Step 4: Cutoff Cauchy–Pompeiu integral split across `A j` and error assembly.
+  -- Step 4: Cutoff Cauchy–Pompeiu integral split across `A j` and cell quadrature bound.
   have hrep : f z = ∫ y in K₁, κ z y * f y := by
     rw [eq_pi_inv_smul_setIntegral_of_differentiableOn hV hU (hα.of_le (by simp)) hα_cpt
       hα_eq_one hK₁U hf (hKV hz), ← integral_smul]
@@ -293,11 +210,10 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
       ring
     have hcell : ∀ j : Fin N,
         ‖(∫ y in A j, κ z y * f y) - (volume.real (A j) : ℂ) * κ z (ζ j) * f (ζ j)‖ ≤
-          volume.real (A j) * (η * B) := fun j =>
-      norm_setIntegral_sub_volume_mul_le
-        ((measure_mono (hAK₁ j)).trans_lt hK₁.measure_lt_top) (hAball j)
-        (hκf_int.mono_set (hAK₁ j)) hδ₀ (min_le_left _ _)
-        ((min_le_right _ _).trans (min_le_right _ _)) hη.le hMκ0 (hMκ z hz (ζ j) (hζK₁ j))
+          volume.real (A j) * (η * B) := fun j => by
+      have hquad := norm_setIntegral_smul_sub_measureReal_smul_le
+        ((measure_mono (hAK₁ j)).trans_lt hK₁.measure_lt_top) (hAball j) (min_le_left _ _)
+        (hκf_int.mono_set (hAK₁ j))
         (fun y hy => by
           have hpd : dist (z, y) (z, ζ j) < δ₁ := by
             rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
@@ -307,6 +223,22 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
         (hf.mono ((hball₀ (ζ j) (hζK₁ j)).trans
           (interior_subset.trans (hW₂UO.trans inter_subset_left))))
         (fun u hu => hLf u (interior_subset (hball₀ (ζ j) (hζK₁ j) hu)))
+      simp only [Complex.real_smul, smul_eq_mul] at hquad
+      rw [← mul_assoc (volume.real (A j) : ℂ)] at hquad
+      refine hquad.trans (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right ?_ hB)
+        measureReal_nonneg)
+      have hδ_le : δ ≤ η * r₀ / (4 * (Mκ + 1)) := (min_le_right _ _).trans (min_le_right _ _)
+      have hterm : 2 * ‖κ z (ζ j)‖ * δ / r₀ ≤ η / 2 := calc
+        2 * ‖κ z (ζ j)‖ * δ / r₀
+            ≤ 2 * Mκ * (η * r₀ / (4 * (Mκ + 1))) / r₀ := by
+              gcongr
+              exact hMκ z hz (ζ j) (hζK₁ j)
+          _ = (Mκ / (Mκ + 1)) * (η / 2) := by field_simp; ring
+          _ ≤ 1 * (η / 2) := by
+              gcongr
+              exact (div_le_one (by linarith)).mpr (by linarith)
+          _ = η / 2 := one_mul _
+      linarith
     rw [hrep, hsplit, hsum_eq, ← Finset.sum_sub_distrib]
     calc ‖∑ j, ((∫ y in A j, κ z y * f y) - (volume.real (A j) : ℂ) * κ z (ζ j) * f (ζ j))‖
         ≤ ∑ j, ‖(∫ y in A j, κ z y * f y) - (volume.real (A j) : ℂ) * κ z (ζ j) * f (ζ j)‖ :=
@@ -318,10 +250,22 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
           gcongr
           exact (div_le_one (lt_of_lt_of_le zero_lt_one (le_max_left _ _))).mpr (le_max_right _ _)
       _ = (ε / 2) * B := one_mul _
-  have herr₂ : ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖ ≤ (ε / 2) * B :=
-    norm_sum_mul_inv_sub_le hε.le hB
-      (fun j => hLf (ζ j) (interior_subset (hK₁L (hζK₁ j))))
-      (fun j => (hg_lt j z hz).le)
+  -- Step 5: Replace the Cauchy kernels `(z - ζ j)⁻¹` by their `Ω`-holomorphic approximants `g j`.
+  have herr₂ : ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖ ≤ (ε / 2) * B := by
+    have hsum_nn : 0 ≤ ∑ i : Fin N, ‖w i‖ := Finset.sum_nonneg fun i _ => norm_nonneg (w i)
+    calc ‖∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z‖
+        ≤ (∑ i, ‖w i‖) * (B * (ε / (2 * (∑ i, ‖w i‖ + 1)))) := by
+          have hsub := norm_sum_smul_sub_smul_le (s := Finset.univ) (a := w)
+            (u := fun j => f (ζ j) * (z - ζ j)⁻¹) (v := fun j => f (ζ j) * g j z) fun j _ => by
+              rw [← mul_sub, norm_mul]
+              exact mul_le_mul (hLf (ζ j) (interior_subset (hK₁L (hζK₁ j)))) (hg_lt j z hz).le
+                (norm_nonneg _) hB
+          simpa only [smul_eq_mul, mul_assoc] using hsub
+      _ = ((∑ i, ‖w i‖) / (∑ i, ‖w i‖ + 1)) * ((ε / 2) * B) := by field_simp
+      _ ≤ 1 * ((ε / 2) * B) := by
+          gcongr
+          exact (div_le_one (by linarith)).mpr (by linarith)
+      _ = (ε / 2) * B := one_mul _
   calc ‖f z - ∑ j, w j * f (ζ j) * g j z‖
       = ‖(f z - ∑ j, w j * f (ζ j) * (z - ζ j)⁻¹) +
           (∑ j, w j * f (ζ j) * (z - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j z)‖ := by ring_nf

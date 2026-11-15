@@ -21,6 +21,10 @@ normed spaces:
   against positive weights `r i`, the combination `∑ i ∈ s, a i • u i` has norm at most
   `(∑ i ∈ s, ‖u i‖ / r i) * b`; in particular, strict-generator representations yield uniformly
   norm-bounded preimages along linear maps.
+* `TauCeti.norm_sum_smul_le_sum_norm_mul` and `TauCeti.norm_sum_smul_sub_smul_le`: when vectors
+  satisfy `‖u i‖ ≤ C` (or perturbations satisfy `‖u i - v i‖ ≤ δ`) on `s`, the scalar-weighted sum
+  `∑ i ∈ s, a i • u i` (or difference `∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i`) has norm at most
+  `(∑ i ∈ s, ‖a i‖) * C` (respectively `(∑ i ∈ s, ‖a i‖) * δ`).
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -57,6 +61,25 @@ theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]
               mul_le_mul_of_nonneg_right ((le_div_iff₀ (hr i hi)).mpr (ha i hi)) (norm_nonneg _)
           _ = ‖u i‖ / r i * b := by ring
     _ = (∑ i ∈ s, ‖u i‖ / r i) * b := (Finset.sum_mul s _ b).symm
+
+/-- If each vector `u i` on `s` has norm at most `C`, then
+`‖∑ i ∈ s, a i • u i‖ ≤ (∑ i ∈ s, ‖a i‖) * C`. -/
+theorem norm_sum_smul_le_sum_norm_mul {ι A E : Type*} [SeminormedAddGroup A]
+    [SeminormedAddCommGroup E] [SMulZeroClass A E] [IsBoundedSMul A E] {s : Finset ι}
+    {a : ι → A} {u : ι → E} {C : ℝ} (hu : ∀ i ∈ s, ‖u i‖ ≤ C) :
+    ‖∑ i ∈ s, a i • u i‖ ≤ (∑ i ∈ s, ‖a i‖) * C := by
+  rw [Finset.sum_mul]
+  exact norm_sum_le_of_le s fun i hi ↦
+    (norm_smul_le (a i) (u i)).trans (mul_le_mul_of_nonneg_left (hu i hi) (norm_nonneg (a i)))
+
+/-- Perturbing each vector in `∑ i ∈ s, a i • u i` by at most `δ` in norm changes the sum by at
+most `(∑ i ∈ s, ‖a i‖) * δ`. -/
+theorem norm_sum_smul_sub_smul_le {ι A E : Type*} [SeminormedAddGroup A]
+    [SeminormedAddCommGroup E] [DistribSMul A E] [IsBoundedSMul A E] {s : Finset ι}
+    {a : ι → A} {u v : ι → E} {δ : ℝ} (huv : ∀ i ∈ s, ‖u i - v i‖ ≤ δ) :
+    ‖∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i‖ ≤ (∑ i ∈ s, ‖a i‖) * δ := by
+  simpa only [smul_sub, Finset.sum_sub_distrib] using
+    norm_sum_smul_le_sum_norm_mul (a := a) huv
 
 /-- The ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when `u` and `v` are scaled by the same nonzero
 scalar. -/
