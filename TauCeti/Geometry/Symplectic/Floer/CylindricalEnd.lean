@@ -159,6 +159,48 @@ theorem exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
   nlinarith [mul_nonneg ha' hc', mul_nonneg ha' h1, mul_nonneg hc' h1,
     mul_nonneg (mul_nonneg ha' hc') h1]
 
+/-- Translating the domain by `w` does not change the energy `∫ ‖∂ₛu‖²` over a disc. -/
+theorem setIntegral_ball_sub_norm_fderiv_comp_add_right_sq (u : ℂ → V) (z₀ w : ℂ) (r : ℝ) :
+    ∫ y in ball (z₀ - w) r, ‖fderiv ℝ (fun y ↦ u (y + w)) y 1‖ ^ 2 =
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  simp_rw [fderiv_comp_add_right, ← preimage_add_right_ball w z₀ r]
+  exact (measurePreserving_add_right volume w).setIntegral_preimage_emb
+    (measurableEmbedding_addRight w) (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) _
+
+/-- **Small energy over one period bounds `∂ₛu` through the mean-value inequality.** For a
+threshold `δ > 0` there is a radius `0 < r ≤ 1/2` with the following property. Let `u` be
+`i`-periodic with `∂ₛu` continuous on the closed disc of radius `r` about `z₀`, and let the energy
+`∫ ‖∂ₛu‖²` over one period `s ×ℂ [0, 1]` of a set `s ⊇ (z₀.re - r, z₀.re + r)` be at most `δ / 4`.
+If the mean-value inequality with threshold `δ` holds on this disc, then
+`‖∂ₛu(z₀)‖ ≤ 8 + 4 δ / (π r²)`. -/
+theorem exists_pos_le_forall_norm_fderiv_one_le_of_mean_value {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r > 0, r ≤ 1 / 2 ∧ ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃s : Set ℝ⦄, Periodic u I →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      Ioo (z₀.re - r) (z₀.re + r) ⊆ s →
+      ∫⁻ y in s ×ℂ Icc 0 1, ENNReal.ofReal (‖fderiv ℝ u y 1‖ ^ 2) ≤ ENNReal.ofReal (δ / 4) →
+      (π * r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+        π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤
+          7 * π * r ^ 2 + 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2) →
+      ‖fderiv ℝ u z₀ 1‖ ≤ 8 + 4 * δ / (π * r ^ 2) := by
+  -- Fix a radius `r ≤ 1/2` whose disc area `π r²` is below `δ / 2`.
+  set r : ℝ := min (1 / 2) (δ / 8)
+  have hr : 0 < r := lt_min (by norm_num) (by linarith)
+  have hr2 : r ≤ 1 / 2 := min_le_left _ _
+  have hrδ : r ≤ δ / 8 := min_le_right _ _
+  have hπr : π * r ^ 2 < δ / 2 := by nlinarith [Real.pi_le_four, Real.pi_pos]
+  have hπr0 : 0 < π * r ^ 2 := by positivity
+  refine ⟨r, hr, hr2, fun u z₀ s hper hcont hs hE hmean ↦ ?_⟩
+  -- The energy over the disc is at most twice the energy over one period.
+  have hper' : Periodic (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) I := fun y ↦ by
+    simp only [hper.fderiv y]
+  have hEb := hper'.setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2 hs (by linarith)
+    ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable measurableSet_ball) hE
+  have hmv := hmean (by linarith)
+  have hsq : ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 7 + 4 * δ / (π * r ^ 2) := by
+    rw [← sub_le_iff_le_add', le_div_iff₀ hπr0]
+    nlinarith
+  nlinarith [sq_nonneg (‖fderiv ℝ u z₀ 1‖ - 1)]
+
 end NormedSpace
 
 variable [InnerProductSpace ℝ V]
@@ -209,11 +251,7 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_periodic
     rw [mem_ball, dist_eq_norm] at hy
     rw [mem_closedBall, dist_zero_right]
     linarith [norm_le_norm_add_norm_sub' y (z₀ - w)]
-  have henergy : ∫ y in ball (z₀ - w) r, ‖fderiv ℝ (fun y ↦ u (y + w)) y 1‖ ^ 2 =
-      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    simp_rw [hdv, ← hpre]
-    exact (measurePreserving_add_right volume w).setIntegral_preimage_emb
-      (measurableEmbedding_addRight w) (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) _
+  have henergy := setIntegral_ball_sub_norm_fderiv_comp_add_right_sq u z₀ w r
   have hmapsC : MapsTo (· + w) (closedBall (z₀ - w) r) (closedBall z₀ r) := by
     rw [← preimage_add_right_closedBall]
     exact mapsTo_preimage _ _
@@ -249,35 +287,17 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_le
     hW hJ hX hK hKW hJsq hJ1 hJI hX1 hXI
   obtain ⟨A, hA0, hA⟩ := exists_forall_norm_fderiv_le_mul_one_add_norm_fderiv_one
     (hJ.continuousOn.mono hKW) (hX.continuousOn.mono hKW) hK hJ1 hJI hX1 hXI
-  -- Fix a radius `r ≤ 1/2` whose disc area `π r²` is below `δ / 2`.
-  set r : ℝ := min (1 / 2) (δ / 8)
-  have hr : 0 < r := lt_min (by norm_num) (by linarith)
-  have hr2 : r ≤ 1 / 2 := min_le_left _ _
-  have hrδ : r ≤ δ / 8 := min_le_right _ _
-  have hπr : π * r ^ 2 < δ / 2 := by nlinarith [Real.pi_le_four, Real.pi_pos]
-  have hπr0 : 0 < π * r ^ 2 := by positivity
+  obtain ⟨r, hr, hr2, hbound⟩ := exists_pos_le_forall_norm_fderiv_one_le_of_mean_value (V := V) hδ
   refine ⟨r, hr, δ / 4, by positivity, A * (1 + (8 + 4 * δ / (π * r ^ 2))),
     fun u S z₀ hS hball hu hper hCR huK hE ↦ ?_⟩
   have hcont : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) :=
     ((hu.continuousOn_fderiv_of_isOpen hS (by norm_num)).clm_apply continuousOn_const).mono hball
-  -- The energy over the disc is at most twice the energy over one period of the band.
-  have hper' : Periodic (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) I := fun y ↦ by
-    simp only [hper.fderiv y]
-  have hE' : ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1,
-      ENNReal.ofReal (‖fderiv ℝ u y 1‖ ^ 2) ≤ ENNReal.ofReal (δ / 4) := by
-    simpa only [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm] using hE
-  have hEb := hper'.setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2 subset_rfl
-    (by linarith) ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable
-      measurableSet_ball) hE'
   -- The mean-value inequality bounds `∂ₛu`, and the equation bounds `du`.
-  have hmv := hmean hr.le (by linarith) (hu.mono (ball_subset_closedBall.trans hball)) hcont
-    (fun y hy ↦ hCR y (hball (ball_subset_closedBall hy)))
-    (fun y hy ↦ huK y (hball (ball_subset_closedBall hy))) (by linarith)
-  have hsq : ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 7 + 4 * δ / (π * r ^ 2) := by
-    rw [← sub_le_iff_le_add', le_div_iff₀ hπr0]
-    nlinarith
-  have hs : ‖fderiv ℝ u z₀ 1‖ ≤ 8 + 4 * δ / (π * r ^ 2) := by
-    nlinarith [sq_nonneg (‖fderiv ℝ u z₀ 1‖ - 1)]
+  have hs := hbound hper hcont subset_rfl
+    (by simpa only [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm] using hE)
+    (hmean hr.le (by linarith) (hu.mono (ball_subset_closedBall.trans hball)) hcont
+      (fun y hy ↦ hCR y (hball (ball_subset_closedBall hy)))
+      (fun y hy ↦ huK y (hball (ball_subset_closedBall hy))))
   have hz₀ : z₀ ∈ S := hball (mem_closedBall_self hr.le)
   exact (hA (huK z₀ hz₀) (hCR z₀ hz₀)).trans (mul_le_mul_of_nonneg_left (by linarith) hA0)
 

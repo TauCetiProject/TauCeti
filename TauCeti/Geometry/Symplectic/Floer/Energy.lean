@@ -72,6 +72,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
+* `SymplecticForm.floerEnergyDensity_eq_norm_fderiv_stdComplexLineReal_sq`: for the metric
+  `ω(·, J ·)` and a perturbation `K_t dt`, the energy density of a solution is `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
@@ -522,6 +524,19 @@ theorem floerEnergyDensity_eq_of_isComplexLinearMap (ω : SymplecticForm V)
         (J (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)) := by
   rw [floerEnergyDensity_def]
   exact congrArg _ h.apply_stdComplexLineImag
+
+open scoped RealInnerProductSpace in
+/-- For the metric `g = ω(·, J ·)`, the Floer energy density of a solution of the Floer equation of
+a perturbation `K_t dt` is `‖∂s u‖²`. -/
+theorem floerEnergyDensity_eq_norm_fderiv_stdComplexLineReal_sq {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {Kt : ℝ × ℝ → E → ℝ}
+    {u : ℝ × ℝ → E} {z : ℝ × ℝ}
+    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] E)) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z = ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by
+  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap hfl, hg, real_inner_self_eq_norm_sq]
+  simp [hamiltonianVectorField_const]
 
 /-- For a solution of the Floer equation with `J` tamed by `ω`, the Floer energy density at `z`
 vanishes exactly when the perturbed derivative `du - X_K` vanishes at `z`. -/

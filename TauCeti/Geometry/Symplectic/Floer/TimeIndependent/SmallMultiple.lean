@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.SmallHamiltonian
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
-import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
+import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -20,7 +19,7 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 Let `(V, ω)` be a symplectic vector space whose inner product is the metric `g = ω(·, J ·)` of a
 constant compatible almost complex structure `J`, let `H : V → ℝ` be a `C³` autonomous Hamiltonian
 and `K ⊆ V` compact. For `δ ∈ ℝ` consider the Floer equation `∂s u + J (∂t u - δ X_H(u)) = 0` of the
-perturbation `K = δ H dt`, for maps `u` of period one in `t` with image in `K`. Its energy density
+perturbation `δ H dt`, for maps `u` of period one in `t` with image in `K`. Its energy density
 is `‖∂s u‖²` (`TauCeti.SymplecticForm.floerEnergyDensity_eq_norm_fderiv_stdComplexLineReal_sq`).
 
 `TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv` shows that such a
@@ -38,14 +37,16 @@ depend on `δ`. This file supplies that bound.
   (`Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric`).
   The data do not depend on the domain point, so it applies on a disc of a fixed small radius about
   every point. Since `u` is periodic in `t`, the energy over such a disc is at most twice the energy
-  over `ℝ × [0, 1]` (`Function.Periodic.setIntegral_ball_le_two_mul`). This bounds `∂s u`, and the
-  equation `∂t u = δ X_H(u) + J ∂s u` bounds `∂t u`.
+  over `ℝ × [0, 1]`, which bounds `∂s u`
+  (`TauCeti.Floer.exists_pos_le_forall_norm_fderiv_one_le_of_mean_value`), and the equation
+  `∂t u = δ X_H(u) + J ∂s u` bounds `∂t u`.
 * **Small multiples.** There are `ε > 0` and `δ₀ > 0` such that for `|δ| ≤ δ₀` every such solution
   of energy at most `ε` is independent of `t`, and `γ(s) = u(s, 0)` is a gradient line,
   `γ' = δ ∇H(γ)`
-  (`SymplecticForm.exists_pos_forall_eq_comp_fst_and_hasDerivAt_of_small_energy`).
+  (`SymplecticForm.exists_pos_forall_eq_comp_fst_and_hasDerivAt_gradient_of_small_energy`).
   The time-independence theorem needs bounds on the derivatives of `X_H` over all of `V`; these
-  hold after replacing `H` by `χ H` for a bump function `χ` equal to `1` near `K`, which does not
+  hold after replacing `H` by a compactly supported `C³` Hamiltonian equal to `H` near `K`
+  (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_hamiltonianVectorField_le`), which does not
   change the equation along `u`.
 
 The energy condition holds for the Floer trajectories of `δ H` that the comparison with Morse
@@ -77,20 +78,9 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {K : Set V}
-  {u : ℝ × ℝ → V}
 
-/-- For the metric `g = ω(·, J ·)`, the Floer energy density of a solution of the Floer equation of
-a perturbation `K_t dt` is `‖∂s u‖²`. -/
-theorem floerEnergyDensity_eq_norm_fderiv_stdComplexLineReal_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {Kt : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ}
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z = ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by
-  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap hfl, hg, real_inner_self_eq_norm_sq]
-  simp [hamiltonianVectorField_const]
-
-/-- The coefficient `X_δ(z, x) = X_K(e z, x) ∘ e` of the Floer equation of `K = δ H dt`, read in the
-complex coordinate `e = equivRealProdCLM`. -/
+/-- The coefficient `X_δ(z, x) = X_{δ H dt}(e z, x) ∘ e` of the Floer equation of the perturbation
+`δ H dt`, read in the complex coordinate `e = equivRealProdCLM`. -/
 private noncomputable def coordinateCoefficient (ω : SymplecticForm V) (H : V → ℝ) (δ : ℝ)
     (q : ℂ × V) : ℂ →L[ℝ] V :=
   (ω.hamiltonianOneForm (fun _ _ ↦ 0) (fun _ y ↦ δ * H y) (equivRealProdCLM q.1) q.2).comp
@@ -130,42 +120,24 @@ private theorem exists_pos_forall_norm_fderiv_one_le (hH : ContDiff ℝ 3 H) (hK
       (C := Icc (-R) R) (D := closedBall 0 1) isOpen_univ contDiffOn_const
       (contDiff_coordinateCoefficient hH).contDiffOn isCompact_Icc (isCompact_closedBall 0 1) hK
       (subset_univ _) fun _ _ _ _ _ _ v ↦ by simp
-  -- Fix a radius `r ≤ 1/2` whose disc area `π r²` is below `δmv / 2`.
-  set r : ℝ := min (1 / 2) (δmv / 8)
-  have hr : 0 < r := lt_min (by norm_num) (by linarith)
-  have hr2 : r ≤ 1 / 2 := min_le_left _ _
-  have hπr : π * r ^ 2 < δmv / 2 := by
-    nlinarith [Real.pi_le_four, Real.pi_pos, min_le_right (1 / 2 : ℝ) (δmv / 8)]
-  have hπr0 : 0 < π * r ^ 2 := by positivity
+  obtain ⟨r, hr, hr2, hbound⟩ :=
+    Floer.exists_pos_le_forall_norm_fderiv_one_le_of_mean_value (V := V) hδmv
   refine ⟨δmv / 4, by positivity, 8 + 4 * δmv / (π * r ^ 2),
     fun δ v hδ hv hvper hCR hvK hEv y₀ ↦ ?_⟩
+  refine hbound hvper ((hv.continuous_fderiv (by norm_num)).clm_apply continuous_const).continuousOn
+    (subset_univ _) hEv fun hE ↦ ?_
   -- The data do not depend on the domain point, so translate the disc about `y₀` to `0`.
-  set w : ℂ → V := fun y ↦ v (y + y₀)
-  have hdw (y : ℂ) : fderiv ℝ w y = fderiv ℝ v (y + y₀) := fderiv_comp_add_right y₀
-  have hw : ContDiff ℝ 3 w := hv.comp (contDiff_id.add contDiff_const)
-  have henergy :
-      ∫ y in ball 0 r, ‖fderiv ℝ w y 1‖ ^ 2 = ∫ y in ball y₀ r, ‖fderiv ℝ v y 1‖ ^ 2 := by
-    have hpre : (· + y₀) ⁻¹' ball y₀ r = ball 0 r := by simp
-    simp_rw [hdw, ← hpre]
-    exact (measurePreserving_add_right volume y₀).setIntegral_preimage_emb
-      (measurableEmbedding_addRight y₀) (fun y ↦ ‖fderiv ℝ v y 1‖ ^ 2) _
-  -- The energy over the disc is at most twice the energy over one period.
-  have hball : ∫ y in ball y₀ r, ‖fderiv ℝ v y 1‖ ^ 2 ≤ 2 * (δmv / 4) :=
-    (show Periodic (fun y ↦ ‖fderiv ℝ v y 1‖ ^ 2) I from fun y ↦ by
-        simp only [hvper.fderiv y]).setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2
-      (subset_univ _) (by positivity)
-      (((hv.continuous_fderiv (by norm_num)).clm_apply continuous_const).norm.pow 2
-        |>.aestronglyMeasurable) hEv
-  have hmv := hmean (p := δ) (u := w) (z₀ := 0) (abs_le.1 hδ) hr.le
+  have hdw (y : ℂ) : fderiv ℝ (fun y ↦ v (y + y₀)) y = fderiv ℝ v (y + y₀) :=
+    fderiv_comp_add_right y₀
+  have hw : ContDiff ℝ 3 fun y ↦ v (y + y₀) := hv.comp (contDiff_id.add contDiff_const)
+  have henergy := Floer.setIntegral_ball_sub_norm_fderiv_comp_add_right_sq v y₀ y₀ r
+  rw [sub_self] at henergy
+  have hmv := hmean (p := δ) (u := fun y ↦ v (y + y₀)) (z₀ := 0) (abs_le.1 hδ) hr.le
     (ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith)))
     hw.contDiffOn (((hw.continuous_fderiv (by norm_num)).clm_apply continuous_const).continuousOn)
     (fun y _ ↦ by simpa only [hdw, coordinateCoefficient_apply] using hCR (y + y₀))
-    (fun y _ ↦ hvK _) (by rw [henergy]; linarith)
-  rw [henergy, hdw, zero_add] at hmv
-  have hsq : ‖fderiv ℝ v y₀ 1‖ ^ 2 ≤ 7 + 4 * δmv / (π * r ^ 2) := by
-    rw [← sub_le_iff_le_add', le_div_iff₀ hπr0]
-    nlinarith
-  nlinarith [sq_nonneg (‖fderiv ℝ v y₀ 1‖ - 1)]
+    (fun y _ ↦ hvK _) (by rwa [henergy])
+  rwa [henergy, hdw, zero_add] at hmv
 
 /-- **A priori bound for Floer cylinders of small energy.** Let the inner product of `V` be the
 metric `ω(·, J ·)` of a constant `J`, let `H` be `C³` and `K ⊆ V` compact, and let `R ∈ ℝ`. There
@@ -232,32 +204,6 @@ theorem exists_pos_forall_norm_fderiv_le_of_small_energy (hg : ∀ v w, ω v (J 
         rwa [RCLike.I_to_complex] at h
     _ ≤ 2 * Ms + R * max B 0 := by linarith
 
-/-- A `C³` Hamiltonian agrees near a compact set with a `C³` Hamiltonian `H' = χ H`, for a bump
-function `χ`, whose Hamiltonian vector field has globally bounded first and second derivatives. -/
-private theorem exists_eventuallyEq_forall_norm_fderiv_le (hH : ContDiff ℝ 3 H) (hK : IsCompact K) :
-    ∃ H' : V → ℝ, ContDiff ℝ 3 H' ∧ (∀ x ∈ K, H' =ᶠ[𝓝 x] H) ∧ ∃ a c, ∀ x,
-      ‖fderiv ℝ (ω.hamiltonianVectorField H') x‖ ≤ a ∧
-        ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H')) x‖ ≤ c := by
-  obtain ⟨ρ, hρ⟩ := hK.isBounded.subset_closedBall 0
-  let χ : ContDiffBump (0 : V) := ⟨max ρ 0 + 1, max ρ 0 + 2, by positivity, by linarith⟩
-  have hH' : ContDiff ℝ 3 fun x ↦ χ x * H x := χ.contDiff.mul hH
-  have hX' := ω.contDiff_hamiltonianVectorField (n := 2) hH'
-  have hX'c : HasCompactSupport (ω.hamiltonianVectorField fun x ↦ χ x * H x) := by
-    have h : ω.hamiltonianVectorField (fun x ↦ χ x * H x) =
-        ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ fun x ↦ χ x * H x :=
-      funext (ω.hamiltonianVectorField_def _)
-    exact h ▸ (χ.hasCompactSupport.mul_right.fderiv ℝ).comp_left (map_zero _)
-  have hdX' := hX'.fderiv_right (m := 1) (by norm_num)
-  obtain ⟨a, ha⟩ := hdX'.continuous.bounded_above_of_compact_support (hX'c.fderiv ℝ)
-  obtain ⟨c, hc⟩ := (hdX'.continuous_fderiv one_ne_zero).bounded_above_of_compact_support
-    ((hX'c.fderiv ℝ).fderiv ℝ)
-  refine ⟨_, hH', fun x hx ↦ ?_, a, c, fun x ↦ ⟨ha x, hc x⟩⟩
-  -- `χ = 1` on a ball containing `K`.
-  have hx : x ∈ ball (0 : V) (max ρ 0 + 1) :=
-    mem_ball.2 ((mem_closedBall.1 (hρ hx)).trans_lt (by linarith [le_max_left ρ 0]))
-  filter_upwards [isOpen_ball.mem_nhds hx] with y hy
-  rw [χ.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
-
 /-- The derivative bounds of `X_H` scale with `δ` for the Hamiltonian `δ H`. -/
 private theorem norm_fderiv_hamiltonianVectorField_const_mul_le (hH : ContDiff ℝ 3 H) {a c : ℝ}
     (hac : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a ∧
@@ -265,8 +211,6 @@ private theorem norm_fderiv_hamiltonianVectorField_const_mul_le (hH : ContDiff �
     ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ δ * H y) x‖ ≤ |δ| * a ∧
       ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField fun y ↦ δ * H y)) x‖ ≤ |δ| * c := by
   have hX := ω.contDiff_hamiltonianVectorField (n := 2) hH
-  have hXδ : ω.hamiltonianVectorField (fun y ↦ δ * H y) = δ • ω.hamiltonianVectorField H :=
-    funext fun x ↦ ω.hamiltonianVectorField_const_mul δ H x
   have hd1 :
       fderiv ℝ (δ • ω.hamiltonianVectorField H) = δ • fderiv ℝ (ω.hamiltonianVectorField H) :=
     funext fun x ↦ fderiv_const_smul ((hX.differentiable (by norm_num)) x) δ
@@ -274,7 +218,8 @@ private theorem norm_fderiv_hamiltonianVectorField_const_mul_le (hH : ContDiff �
       δ • fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) :=
     funext fun x ↦ fderiv_const_smul
       (((hX.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero) x) δ
-  rw [hXδ, hd1, hd2, Pi.smul_apply, Pi.smul_apply, norm_smul, Real.norm_eq_abs]
+  rw [ω.hamiltonianVectorField_const_mul' δ H, hd1, hd2, Pi.smul_apply, Pi.smul_apply, norm_smul,
+    Real.norm_eq_abs]
   refine ⟨mul_le_mul_of_nonneg_left (hac x).1 (abs_nonneg δ),
     (ContinuousLinearMap.opNorm_smul_le δ _).trans ?_⟩
   rw [Real.norm_eq_abs]
@@ -286,7 +231,7 @@ There are an energy `ε > 0` and a threshold `δ₀ > 0` with the following prop
 and let `u` be a `C³` solution of the Floer equation `∂s u + J (∂t u - δ X_H(u)) = 0`, of period
 one in `t`, with image in `K` and energy at most `ε` over `ℝ × [0, 1]`. Then `u` does not depend on
 `t`, and `γ(s) = u(s, 0)` is a gradient line of `δ H`: `γ' = δ ∇H(γ)`. -/
-theorem exists_pos_forall_eq_comp_fst_and_hasDerivAt_of_small_energy
+theorem exists_pos_forall_eq_comp_fst_and_hasDerivAt_gradient_of_small_energy
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 3 H) (hK : IsCompact K) :
     ∃ ε > 0, ∃ δ₀ > 0, ∀ ⦃δ : ℝ⦄ ⦃u : ℝ × ℝ → V⦄, |δ| ≤ δ₀ → ContDiff ℝ 3 u →
       (∀ s t, u (s, t + 1) = u (s, t)) →
@@ -297,9 +242,11 @@ theorem exists_pos_forall_eq_comp_fst_and_hasDerivAt_of_small_energy
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ δ * H y) u z) ≤
         ENNReal.ofReal ε →
       (u = fun z ↦ u (z.1, 0)) ∧ ∀ s, HasDerivAt (fun s ↦ u (s, 0)) (δ • ∇ H (u (s, 0))) s := by
-  -- Replace `H` by `H'` equal to `H` near `K`, with global bounds `a`, `c` on `dX_{H'}` and
-  -- `d²X_{H'}`.
-  obtain ⟨H', hH', hHK, a, c, hac⟩ := exists_eventuallyEq_forall_norm_fderiv_le (ω := ω) hH hK
+  -- Replace `H` by a compactly supported `H'` equal to `H` near `K`, with global bounds `a`, `c`
+  -- on `dX_{H'}` and `d²X_{H'}`.
+  obtain ⟨H', hH', hH'c, -, -, hHK⟩ :=
+    hH.contDiffOn.exists_contDiff_eventuallyEq_on_isCompact hK isOpen_univ (subset_univ K)
+  obtain ⟨a, c, hac⟩ := ω.exists_forall_norm_fderiv_hamiltonianVectorField_le hH' hH'c
   obtain ⟨ε, hε, M, hM⟩ := exists_pos_forall_norm_fderiv_le_of_small_energy hg hH hK 1
   set a' := max a 0
   set c' := max c 0
@@ -332,8 +279,7 @@ theorem exists_pos_forall_eq_comp_fst_and_hasDerivAt_of_small_energy
       refine ContinuousLinearMap.ext fun v ↦ ?_
       simp only [perturbedFDeriv_apply,
         ω.hamiltonianVectorField_congr_of_eventuallyEq (hloc _ (huK z))]
-    rw [h]
-    exact hfl z
+    exact h ▸ hfl z
   refine ⟨eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv hg (contDiff_const.mul hH')
     (fun x ↦ (hac' x).1) (fun x ↦ (hac' x).2) ha2π hcM hu hper hfl' hdu, fun s ↦ ?_⟩
   -- The gradient of `δ H'` is `δ ∇H` near `K`.
