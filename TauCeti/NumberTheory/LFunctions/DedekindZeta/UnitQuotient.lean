@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
 # The partial zeta function of an ideal class as a sum over the fundamental cone
@@ -130,7 +131,7 @@ theorem tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone
         ∑' x : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K},
           ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
   have hI0 : ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ≠ 0 :=
-    Rat.cast_ne_zero.mpr (FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero)
+    Rat.cast_ne_zero.mpr (FractionalIdeal.absNorm_pos I.ne_zero).ne'
   have hIs : ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ s ≠ 0 := by
     rw [ne_eq, Complex.cpow_eq_zero_iff]
     exact fun h ↦ hI0 h.1

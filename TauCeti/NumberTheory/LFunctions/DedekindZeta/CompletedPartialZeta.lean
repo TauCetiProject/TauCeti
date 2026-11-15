@@ -17,6 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Norm
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
@@ -55,8 +56,8 @@ Hecke's functional equation `Z(I, 1 - s) = Z(I^∨, s)` against the trace dual
 
 ## Main results
 
-* `TauCeti.LFunctions.summable_integral_unitCone`: absolute convergence of the lattice-point
-  Gaussian integrals over `unitCone D` for `σ > 1`.
+* `TauCeti.LFunctions.summable_setIntegral_norm_archGaussian_mul_archNorm_rpow_unitCone`: absolute
+  convergence of the lattice-point Gaussian integrals over `unitCone D` for `σ > 1`.
 * `TauCeti.LFunctions.completedPartialZeta_eq_toMeromorphicNFOn`: identification of
   `completedPartialZeta I` with the normal form of
   `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)`.
@@ -134,12 +135,8 @@ theorem meromorphic_completedPartialZeta (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
 /-- `completedPartialZeta I` depends on `I` only through its ideal class in `ClassGroup (𝓞 K)`. -/
 theorem completedPartialZeta_congr_class {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     (h : ClassGroup.mk K I = ClassGroup.mk K J) :
-    completedPartialZeta I = completedPartialZeta J :=
-  congrArg (fun c ↦ meromorphicContinuation 1 fun s ↦
-    ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
-      Gammaℂ s ^ nrComplexPlaces K *
-      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = c⁻¹},
-        (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) h
+    completedPartialZeta I = completedPartialZeta J := by
+  rw [completedPartialZeta_def, completedPartialZeta_def, h]
 
 /-! ### Unfolding over the unit cone -/
 
@@ -191,9 +188,8 @@ private theorem tsum_unit_setIntegral_norm_archGaussian {D : Set (realSpace K)}
         (FractionalIdeal.absNorm I.1 : ℝ) ^ (-σ)) *
         (Ideal.absNorm (𝔟.1 : Ideal (𝓞 K)) : ℝ) ^ (-σ) := by
   have hσ0 : (0 : ℝ) < (σ : ℂ).re := by simpa using hσ_pos
-  have hI_pos : 0 < (FractionalIdeal.absNorm I.1 : ℝ) := Rat.cast_pos.mpr
-    ((FractionalIdeal.absNorm_nonneg I.1).lt_of_ne'
-      (FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero))
+  have hI_pos : 0 < (FractionalIdeal.absNorm I.1 : ℝ) :=
+    Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   let g : (𝓞 K)ˣ → ℝ := fun u ↦ ∫ y in unitCone D,
     ‖archGaussian y (idealLatticeNeZeroEquiv I (𝔟, u) : mixedSpace K)‖ *
       archNorm y ^ (σ / 2) ∂archHaar K
@@ -228,8 +224,8 @@ private theorem tsum_unit_setIntegral_norm_archGaussian {D : Set (realSpace K)}
 /-- **Absolute convergence of the lattice-point Gaussian integrals over `unitCone D`.** For `σ > 1`
 and any unit fundamental domain `D`, the integrals over `unitCone D` of
 `‖archGaussian y x‖ * archNorm y ^ (σ / 2)` are summable over all nonzero `x ∈ σ(I)`. -/
-theorem summable_integral_unitCone {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {σ : ℝ} (hσ : 1 < σ) :
+theorem summable_setIntegral_norm_archGaussian_mul_archNorm_rpow_unitCone {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {σ : ℝ} (hσ : 1 < σ) :
     Summable fun x : {x : idealLattice K I // x ≠ 0} ↦
       ∫ y in unitCone D, ‖archGaussian y (x : mixedSpace K)‖ * archNorm y ^ (σ / 2)
         ∂archHaar K := by
@@ -268,7 +264,7 @@ private theorem summable_setIntegral_norm_archNorm_cpow_mul_archGaussian {D : Se
     Summable fun x : {x : idealLattice K I // x ≠ 0} ↦
       ∫ y in unitCone D, ‖(archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)‖
         ∂archHaar K :=
-  (summable_integral_unitCone hD I hs).congr fun _ ↦
+  (summable_setIntegral_norm_archGaussian_mul_archNorm_rpow_unitCone hD I hs).congr fun _ ↦
     setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun _ hy ↦ by
       rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (archNorm_pos (mem_unitCone.mp hy).1), div_ofNat_re,
         mul_comm]
@@ -315,9 +311,7 @@ private theorem covolume_sq_idealLattice_cpow (I : (FractionalIdeal (𝓞 K)⁰ 
         (((|discr K| : ℤ) : ℂ)) ^ (s / 2) := by
   set N_I : ℝ := (FractionalIdeal.absNorm I.1 : ℝ)
   set D_K : ℝ := ((|discr K| : ℤ) : ℝ)
-  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr
-    ((FractionalIdeal.absNorm_nonneg I.1).lt_of_ne'
-      (FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero))
+  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hDK_pos : 0 < D_K := Int.cast_pos.mpr (abs_pos.mpr (discr_ne_zero K))
   have hV_pos : 0 < ZLattice.covolume (idealLattice K I) := ZLattice.covolume_pos (idealLattice K I)
   have h1 : (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) =
@@ -350,9 +344,7 @@ private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s
   set r₁ := nrRealPlaces K
   set r₂ := nrComplexPlaces K
   set N_I : ℝ := (FractionalIdeal.absNorm I.1 : ℝ)
-  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr
-    ((FractionalIdeal.absNorm_nonneg I.1).lt_of_ne'
-      (FractionalIdeal.absNorm_eq_zero_iff.not.mpr I.ne_zero))
+  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hw : (Units.torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Units.torsionOrder_ne_zero K)
   have h2gamma : (2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂ = ((2 : ℂ) ^ s) ^ r₂ * Gammaℂ s ^ r₂ := by
     rw [← mul_pow, two_mul_Gammaℝ_two_mul, mul_pow]
@@ -419,6 +411,25 @@ end Unfolding
 
 /-! ### Identification with the Mellin functional-equation pair -/
 
+/-- On `Re s > 1`, `mellinKernel D (idealLattice K I) - mellinConstant K` has Mellin transform at
+`s / 2` equal to the completed partial zeta series of `I`. -/
+private theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
+    HasMellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2)
+      (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
+        Gammaℂ s ^ nrComplexPlaces K *
+        ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
+  have hm := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded (idealLattice K I) s
+    (integrableOn_archNorm_cpow_mul_latticeTheta_sub_one hD I hs)
+  have hconst : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
+    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
+    push_cast
+    rfl
+  rwa [← hconst, unitCone_integral_eq_tsum hD I hs] at hm
+
 /-- On `Re s > 1`, `(mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` equals the completed
 partial zeta series of `I`. -/
 theorem mellinKernelFEPair_Λ_div_two_eq_tsum {D : Set (realSpace K)}
@@ -432,16 +443,8 @@ theorem mellinKernelFEPair_Λ_div_two_eq_tsum {D : Set (realSpace K)}
   have hs2 : 1 / 2 < (s / 2).re := by
     rw [div_ofNat_re]
     linarith
-  have hm1 := hasMellin_mellinKernel_sub_mellinConstant hD (idealLattice K I) hs2
-  have hm2 := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded (idealLattice K I) s
-    (integrableOn_archNorm_cpow_mul_latticeTheta_sub_one hD I hs)
-  have hconst : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
-      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
-    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
-    push_cast
-    rfl
-  rw [← hconst, unitCone_integral_eq_tsum hD I hs] at hm2
-  exact hm1.2.symm.trans hm2.2
+  exact (hasMellin_mellinKernel_sub_mellinConstant hD (idealLattice K I) hs2).2.symm.trans
+    (hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum hD I hs).2
 
 /-- `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` is meromorphic on `ℂ`. -/
 private theorem meromorphic_mellinKernelFEPair_Λ_div_two {D : Set (realSpace K)}
@@ -464,23 +467,24 @@ private theorem analyticAt_mellinKernelFEPair_Λ_div_two {D : Set (realSpace K)}
     ((mellinKernelFEPair hD (idealLattice K I)).analyticAt_Λ_iff (s / 2)).mpr ⟨.inl h0', .inl h1'⟩
   exact han.comp (f := fun w : ℂ ↦ w / 2) (analyticAt_id.div_const (c := (2 : ℂ)))
 
+/-- On `{s | 1 < s.re}`, `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` is analytic. -/
+private theorem analyticOnNhd_mellinKernelFEPair_Λ_div_two {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    AnalyticOnNhd ℂ (fun s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2))
+      {s | 1 < s.re} :=
+  fun s (hs : 1 < s.re) ↦ analyticAt_mellinKernelFEPair_Λ_div_two hD I
+    (fun h ↦ by linarith [h ▸ hs, zero_re]) (fun h ↦ by linarith [h ▸ hs, one_re])
+
 /-- **Global identification with Hecke's Mellin pair.** Over any unit fundamental domain `D`,
 `completedPartialZeta I` is the whole-plane meromorphic normal form of
 `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)`. -/
 theorem completedPartialZeta_eq_toMeromorphicNFOn {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     completedPartialZeta I =
-      toMeromorphicNFOn (fun s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)) univ := by
-  refine meromorphicContinuation_eq_toMeromorphicNFOn
-    (meromorphic_mellinKernelFEPair_Λ_div_two hD I) (fun s (hs : 1 < s.re) ↦ ?_)
-    (fun s (hs : 1 < s.re) ↦ mellinKernelFEPair_Λ_div_two_eq_tsum hD I hs)
-  refine analyticAt_mellinKernelFEPair_Λ_div_two hD I ?_ ?_
-  · intro h
-    rw [h, zero_re] at hs
-    linarith
-  · intro h
-    rw [h, one_re] at hs
-    linarith
+      toMeromorphicNFOn (fun s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)) univ :=
+  meromorphicContinuation_eq_toMeromorphicNFOn (meromorphic_mellinKernelFEPair_Λ_div_two hD I)
+    (analyticOnNhd_mellinKernelFEPair_Λ_div_two hD I)
+    fun _ hs ↦ mellinKernelFEPair_Λ_div_two_eq_tsum hD I hs
 
 /-- At every point `s : ℂ` (poles included), `completedPartialZeta I` has the same punctured germ
 as `z ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (z / 2)`. -/
@@ -512,11 +516,11 @@ theorem completedPartialZeta_eq_tsum (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s 
         Gammaℂ s ^ nrComplexPlaces K *
         ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
           (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  have h0 : s ≠ 0 := fun h ↦ by linarith [h ▸ hs, zero_re]
-  have h1 : s ≠ 1 := fun h ↦ by linarith [h ▸ hs, one_re]
-  rw [completedPartialZeta_eq_mellinKernelFEPair_Λ isUnitFundamentalDomain_unitFundamentalDomain
-      I h0 h1,
-    mellinKernelFEPair_Λ_div_two_eq_tsum isUnitFundamentalDomain_unitFundamentalDomain I hs]
+  let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
+  rw [completedPartialZeta_eq_toMeromorphicNFOn hD I,
+    toMeromorphicNFOn_apply_of_analyticAt (meromorphic_mellinKernelFEPair_Λ_div_two hD I)
+      (analyticOnNhd_mellinKernelFEPair_Λ_div_two hD I s hs),
+    mellinKernelFEPair_Λ_div_two_eq_tsum hD I hs]
 
 /-- **Principal-product ideal-sum representation on `Re s > 1`**: the sum runs over nonzero
 integral ideals `𝔟` such that `𝔟 I = (x)` for some `x : Kˣ`. -/
@@ -542,7 +546,7 @@ theorem completedPartialZeta_eq_tsum_spanSingleton (I : (FractionalIdeal (𝓞 K
             FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K))).trans <|
         Equiv.subtypeEquivRight fun 𝔟 ↦ and_congr_left' (mem_nonZeroDivisors_iff_ne_zero (x := 𝔟))
   rw [← e.tsum_eq fun 𝔟 ↦ (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)]
-  rfl
+  simp [e]
 
 /-- **Fundamental-cone lattice-sum representation on `Re s > 1`**, Neukirch VII (5.3)–(5.4):
 each ideal of class `[I]⁻¹` contributes `w = #μ(K)` generators in `fundamentalCone K`. -/
@@ -594,13 +598,8 @@ theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant {D : Set (realSpa
     (hs : 1 < s.re) :
     HasMellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2)
       (completedPartialZeta I s) := by
-  have hs2 : 1 / 2 < (s / 2).re := by
-    rw [div_ofNat_re]
-    linarith
-  have h0 : s ≠ 0 := fun h ↦ by linarith [h ▸ hs, zero_re]
-  have h1 : s ≠ 1 := fun h ↦ by linarith [h ▸ hs, one_re]
-  rw [completedPartialZeta_eq_mellinKernelFEPair_Λ hD I h0 h1]
-  exact hasMellin_mellinKernel_sub_mellinConstant hD (idealLattice K I) hs2
+  rw [completedPartialZeta_eq_tsum I hs]
+  exact hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum hD I hs
 
 /-- **Mellin-transform representation on `Re s > 1` (`mellin` form)**, Neukirch VII (5.5). -/
 theorem completedPartialZeta_eq_mellin {D : Set (realSpace K)}

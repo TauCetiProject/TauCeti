@@ -245,27 +245,25 @@ with `𝔟` in `[I]⁻¹` and `ζ : Units.torsion K` and the points of `idealLat
 `fundamentalCone K`. -/
 noncomputable def idealLatticeFundamentalConeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} × Units.torsion K ≃
-      {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
-  calc {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} × Units.torsion K
-      ≃ Units.torsion K × {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} :=
-        Equiv.prodComm _ _
-    _ ≃ {p : (𝓞 K)ˣ × {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} //
-          p.1 ∈ Units.torsion K} :=
-        (Equiv.prodSubtypeFstEquivSubtypeProd (p := (· ∈ Units.torsion K))).symm
-    _ ≃ {p : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} × (𝓞 K)ˣ //
-          p.2 ∈ Units.torsion K} :=
-        Equiv.subtypeEquiv (Equiv.prodComm _ _) fun _ ↦ Iff.rfl
-    _ ≃ {x : {x : idealLattice K I // x ≠ 0} // ((x.1 : mixedSpace K) ∈ fundamentalCone K)} :=
-        Equiv.subtypeEquiv (idealLatticeNeZeroEquiv I) fun p ↦
-          (unit_smul_mem_iff_mem_torsion (mixedEmbedding_coneGen_mem I p.1) p.2).symm
-    _ ≃ {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} :=
-        Equiv.subtypeSubtypeEquivSubtypeInter (fun x : idealLattice K I ↦ x ≠ 0)
-          (fun x : idealLattice K I ↦ (x : mixedSpace K) ∈ fundamentalCone K)
-    _ ≃ {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
-        Equiv.subtypeEquivRight fun _ ↦ and_iff_right_of_imp fun hx h0 ↦ by
-          have := norm_pos_of_mem hx
-          rw [h0, Submodule.coe_zero, map_zero] at this
-          exact lt_irrefl 0 this
+      {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} where
+  toFun p := ⟨(idealLatticeNeZeroEquiv I (p.1, p.2.1)).1, by
+    rw [coe_idealLatticeNeZeroEquiv]
+    exact (unit_smul_mem_iff_mem_torsion (mixedEmbedding_coneGen_mem I p.1) p.2.1).mpr p.2.2⟩
+  invFun x :=
+    let hx0 : x.1 ≠ 0 := fun h0 ↦ by
+      have := norm_pos_of_mem (K := K) x.2
+      rw [h0, Submodule.coe_zero, map_zero] at this
+      exact lt_irrefl 0 this
+    let q := (idealLatticeNeZeroEquiv I).symm ⟨x.1, hx0⟩
+    (q.1, ⟨q.2, (unit_smul_mem_iff_mem_torsion (mixedEmbedding_coneGen_mem I q.1) q.2).mp <| by
+      rw [← coe_idealLatticeNeZeroEquiv I q, (idealLatticeNeZeroEquiv I).apply_symm_apply]
+      exact x.2⟩)
+  left_inv p := by
+    dsimp only
+    simp only [Subtype.coe_eta, Equiv.symm_apply_apply, Prod.mk.eta]
+  right_inv x := by
+    dsimp only
+    simp only [Prod.mk.eta, Equiv.apply_symm_apply, Subtype.coe_eta]
 
 /-- `idealLatticeFundamentalConeEquiv` sends `(𝔟, ζ)` to `ζ • mixedEmbedding K (coneGen I 𝔟)`. -/
 @[simp]
@@ -273,6 +271,6 @@ theorem coe_idealLatticeFundamentalConeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K
     (p : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹} × Units.torsion K) :
     ((idealLatticeFundamentalConeEquiv I p : idealLattice K I) : mixedSpace K) =
       (p.2 : (𝓞 K)ˣ) • mixedEmbedding K (coneGen I p.1) := by
-  simp [idealLatticeFundamentalConeEquiv, Equiv.prodSubtypeFstEquivSubtypeProd, Equiv.subtypeEquiv]
+  simp only [idealLatticeFundamentalConeEquiv, Equiv.coe_fn_mk, coe_idealLatticeNeZeroEquiv]
 
 end NumberField.mixedEmbedding.fundamentalCone
