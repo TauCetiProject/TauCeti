@@ -46,6 +46,8 @@ common compact support, are statements about this map.
   (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `L²` function of
   the element of `H^s(E, F)` defined by an `L²` function `g` is `g`.
+* `TauCeti.nonneg_of_finrank_lt_two_mul`: an order `s > dim E / 2`, as in the Sobolev embedding
+  and the algebra property of `H^s(E)`, is nonnegative, so the inclusion into `L²` applies.
 -/
 
 public section
@@ -210,3 +212,13 @@ theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, F)} (h
   simp [hg]
 
 end BesselPotentialSpace
+
+namespace TauCeti
+
+/-- An order `s > dim V / 2` is nonnegative. -/
+theorem nonneg_of_finrank_lt_two_mul {V : Type*} [AddCommGroup V] [Module ℝ V] {s : ℝ}
+    (hs : Module.finrank ℝ V < 2 * s) : 0 ≤ s := by
+  have : (0 : ℝ) ≤ Module.finrank ℝ V := Nat.cast_nonneg _
+  linarith
+
+end TauCeti

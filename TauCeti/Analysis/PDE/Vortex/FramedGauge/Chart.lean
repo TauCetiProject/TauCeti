@@ -102,21 +102,16 @@ theorem toSubgroup_expGauge_apply (F : realSubmodule (E := ℂ) (zero_le_one.tra
       Circle.exp (realContinuousRep (finrank_real_complex_lt_two_mul hs) F z) := by
   simp only [expGauge, MulEquiv.apply_symm_apply]
 
-/-- Two elements of `G_s` with the same values are equal. -/
-private theorem ext_toSubgroup {u v : SobolevTopologicalGaugeGroup hs}
-    (h : ∀ z, (toSubgroup hs u : ℂ → Circle) z = (toSubgroup hs v : ℂ → Circle) z) : u = v :=
-  (toSubgroup hs).injective (Subtype.ext (funext h))
-
 /-- The exponential of the zero phase is the identity gauge. -/
 @[simp]
 theorem expGauge_zero : expGauge hs 0 = 1 :=
-  ext_toSubgroup fun z ↦ by simp
+  ext fun z ↦ by simp
 
 /-- **The exponential turns sums into products**: `exp (i (F + G)) = exp (i F) exp (i G)`. -/
 @[simp]
 theorem expGauge_add (F G : realSubmodule (E := ℂ) (zero_le_one.trans hs.le)) :
     expGauge hs (F + G) = expGauge hs F * expGauge hs G :=
-  ext_toSubgroup fun z ↦ by simp [Circle.exp_add]
+  ext fun z ↦ by simp [Circle.exp_add]
 
 /-- The exponential of `-F` is the inverse of the exponential of `F`. -/
 @[simp]
@@ -198,7 +193,7 @@ private theorem exists_expGauge_eq_of_ae_eq_arg {u : SobolevTopologicalGaugeGrou
     rw [mem_realSubmodule]
     filter_upwards [hF] with z hz
     rw [hLF, hz, ofReal_im]
-  refine ⟨⟨_, hreal⟩, ext_toSubgroup fun z ↦ ?_, rfl⟩
+  refine ⟨⟨_, hreal⟩, ext fun z ↦ ?_, rfl⟩
   -- The continuous representative of the phase is `arg u` almost everywhere, so its exponential
   -- is `exp (i arg u) = u` almost everywhere, hence everywhere by continuity.
   have hrep : (⇑(realContinuousRep hs' ⟨_, hreal⟩) : ℂ → ℝ) =ᵐ[volume]
@@ -302,10 +297,6 @@ theorem isOpen_range_expGauge : IsOpen (Set.range (expGauge hs)) :=
 
 /-! ### The exponential atlas -/
 
-/-- The Sobolev gauge group is commutative. -/
-protected theorem mul_comm (u v : SobolevTopologicalGaugeGroup hs) : u * v = v * u :=
-  (toSubgroup hs).injective (by rw [map_mul, map_mul, mul_comm])
-
 variable (hs) in
 /-- **The exponential chart at the identity**: the open partial homeomorphism `F ↦ exp (i F)` from
 `H^s(ℂ; ℝ)` onto the image of the exponential, an open neighbourhood of `1` in `G_s`. -/
@@ -353,8 +344,8 @@ instance instChartedSpace : ChartedSpace (realSubmodule (E := ℂ) (zero_le_one.
 /-- The chart of `G_s` at `u` sends `v` to the phase of `u⁻¹ v`. -/
 theorem chartAt_apply (u v : SobolevTopologicalGaugeGroup hs) :
     chartAt (realSubmodule (E := ℂ) (zero_le_one.trans hs.le)) u v =
-      (expGaugeChart hs).symm (u⁻¹ * v) :=
-  (rfl)
+      (expGaugeChart hs).symm (u⁻¹ * v) := by
+  simp [chartAt, ChartedSpace.chartAt]
 
 /-- The inverse of the chart of `G_s` at `u` sends the phase `F` to `u exp (i F)`. -/
 theorem chartAt_symm_apply (u : SobolevTopologicalGaugeGroup hs)
@@ -416,7 +407,7 @@ private theorem chartAt_mul_chartAt_symm (u v : SobolevTopologicalGaugeGroup hs)
     have hcomm : u * expGauge hs F * (v * expGauge hs G) =
         u * v * (expGauge hs F * expGauge hs G) := by
       rw [mul_assoc u, mul_assoc u, ← mul_assoc (expGauge hs F) v,
-        SobolevTopologicalGaugeGroup.mul_comm (expGauge hs F) v, mul_assoc v]
+        mul_comm (expGauge hs F) v, mul_assoc v]
     rw [hcomm, inv_mul_cancel_left, expGauge_add]
   rw [chartAt_symm_apply, chartAt_symm_apply, chartAt_apply, h, expGaugeChart_symm_expGauge]
 
@@ -426,7 +417,7 @@ private theorem chartAt_inv_chartAt_symm (u : SobolevTopologicalGaugeGroup hs)
     chartAt (realSubmodule (E := ℂ) (zero_le_one.trans hs.le)) u⁻¹
       ((chartAt (realSubmodule (E := ℂ) (zero_le_one.trans hs.le)) u).symm F)⁻¹ = -F := by
   rw [chartAt_symm_apply, chartAt_apply, inv_inv, mul_inv_rev,
-    SobolevTopologicalGaugeGroup.mul_comm _ u⁻¹, mul_inv_cancel_left, ← expGauge_neg,
+    mul_comm _ u⁻¹, mul_inv_cancel_left, ← expGauge_neg,
     expGaugeChart_symm_expGauge]
 
 /-- **`G_s` is an analytic Banach Lie group** modelled on `H^s(ℂ; ℝ)`: in the exponential charts,
@@ -443,6 +434,9 @@ instance : LieGroup 𝓘(ℝ, realSubmodule (E := ℂ) (zero_le_one.trans hs.le)
         fun q ↦ q.1 + q.2 := by
       funext q
       -- The product chart at `p` is the product of the charts at `p.1` and `p.2`.
+      simp only [extChartAt_prod, PartialEquiv.prod_symm, PartialEquiv.prod_coe, extChartAt_coe,
+        extChartAt_coe_symm, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
+        Function.comp_apply, id_eq]
       exact chartAt_mul_chartAt_symm p.1 p.2 q.1 q.2
     rw [h]
     exact (contDiff_fst.add contDiff_snd).contDiffWithinAt

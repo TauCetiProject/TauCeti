@@ -91,12 +91,19 @@ variable {hs : 1 < s}
 
 private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
 
-instance : Group (SobolevTopologicalGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
+instance : CommGroup (SobolevTopologicalGaugeGroup hs) :=
+  inferInstanceAs (CommGroup (sobolevGaugeGroup hs))
 
 variable (hs) in
 /-- The identification of `SobolevTopologicalGaugeGroup hs` with the subgroup
 `sobolevGaugeGroup hs` of `ℂ → Circle`. -/
 def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
+
+/-- Two elements of `G_s` with the same values are equal. -/
+@[ext]
+theorem ext {u v : SobolevTopologicalGaugeGroup hs}
+    (h : ∀ z, (toSubgroup hs u : ℂ → Circle) z = (toSubgroup hs v : ℂ → Circle) z) : u = v :=
+  (toSubgroup hs).injective (Subtype.ext (funext h))
 
 /-- **The element `u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`: its `L²` function is `u - 1`
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
