@@ -19,10 +19,10 @@ import TauCeti.Probability.Distributions.Gaussian.Density
 `TauCeti.Probability.gaussianEnsemble` builds an `n × n` matrix over `ℂ` from
 `g : Fin n × Fin n → ℝ`: for `β = 1` a real symmetric matrix `TauCeti.Probability.goeMatrix n g`,
 and for `β ≠ 1` a complex Hermitian matrix `TauCeti.Probability.gueMatrix n g`, bundled as
-continuous ℝ-linear maps. Pushing standard Gaussian product measure forward gives `goeMeasure n`,
-`gueMeasure n`, and `gaussianEnsembleLaw β n`, each a centered Gaussian law (with explicit
+continuous ℝ-linear maps. Pushing standard Gaussian product measure forward gives `goeMeasure n`
+and `gueMeasure n` on their real self-adjoint subspaces—each a rescaled `stdGaussian` (with explicit
 `covarianceBilin` and `charFun`) invariant under orthogonal/unitary conjugation and characterized by
-mutually independent Gaussian entries.
+mutually independent Gaussian entries—and their ambient pushforward `gaussianEnsembleLaw β n`.
 
 ## Main definitions and results
 
@@ -115,8 +115,8 @@ def gueMatrix (n : ℕ) :
   LinearMap.toContinuousLinearMap
     { toFun g := ⟨gaussianEnsemble 2 n g,
         Matrix.isHermitian_iff_isSelfAdjoint.mp (isHermitian_gaussianEnsemble 2 n g)⟩
-      map_add' g₁ g₂ := Subtype.ext (gaussianEnsemble_add 2 n g₁ g₂)
-      map_smul' c g := Subtype.ext (gaussianEnsemble_smul 2 n c g) }
+      map_add' g₁ g₂ := Subtype.ext (gaussianEnsemble_add g₁ g₂)
+      map_smul' c g := Subtype.ext (gaussianEnsemble_smul c g) }
 
 /-- Defining formula for `TauCeti.Probability.gueMatrix`. -/
 theorem gueMatrix_def (n : ℕ) (g : Fin n × Fin n → ℝ) :
@@ -281,13 +281,6 @@ theorem hasLaw_gueMatrix {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n :
     (hlaw : ∀ ij : Fin n × Fin n, HasLaw (g ij) (gaussianReal 0 1) P) :
     HasLaw (fun ω ↦ gueMatrix n (fun p ↦ g p ω)) (gueMeasure n) P :=
   (hasLaw_map (measurable_gueMatrix n).aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
-
-/-- Independent standard Gaussian entries give `gaussianEnsembleLaw β n`. -/
-theorem hasLaw_gaussianEnsemble {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {β n : ℕ}
-    (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun g P)
-    (hlaw : ∀ ij : Fin n × Fin n, HasLaw (g ij) (gaussianReal 0 1) P) :
-    HasLaw (fun ω ↦ gaussianEnsemble β n (fun p ↦ g p ω)) (gaussianEnsembleLaw β n) P :=
-  (hasLaw_map (measurable_gaussianEnsemble β n).aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
 /-- `goeMeasure n` is `stdGaussian` on the real symmetric subspace rescaled by `√2 / √n`. -/
 theorem goeMeasure_eq_map_stdGaussian (n : ℕ) :
