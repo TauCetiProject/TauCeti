@@ -54,8 +54,15 @@ Young symmetrizer would let the construction run over any commutative ring, and 
 separate topic.  What the two halves of the criterion actually use of the hypothesis is much
 less.  Vanishing needs only that `2` is invertible, which a `ℚ`-algebra gives.  Nonvanishing needs
 characteristic zero, and a `ℚ`-algebra has characteristic zero as soon as it is nontrivial, so the
-nonvanishing statements carry a `Nontrivial` hypothesis instead.  This is the characteristic-zero
-setting the roadmap works in.
+nonvanishing statements carry a `Nontrivial` hypothesis instead.
+
+The construction is named `weylModule` because what is constructed is a module, not a functor:
+the Schur functor of `μ` is a functor in the underlying module, and only its value at `kⁿ` is built
+here.  Its value at `ℂⁿ`, bundled as an object of `FDRep`, is `TauCeti.schurFunctor`.  The two
+extreme cases `S^{(d)} V ≅ Symᵈ V` and `S^{(1ᵈ)} V ≅ ⋀ᵈ V` are proved in
+`TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
+`TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without unfolding
+anything built here.
 
 ## Main definitions
 
@@ -66,7 +73,7 @@ setting the roadmap works in.
   form in `FDRep`, over a Noetherian base ring.
 * `TauCeti.weylRepOfShapeProjection`: the surjective intertwining map from the tensor power onto
   the Weyl module of a shape, given by its Young symmetrizer.
-* `TauCeti.schurFunctor`: the roadmap-pinned name, `weylFDRepOfShape` at `k = ℂ`.
+* `TauCeti.schurFunctor`: the Schur functor `𝕊^μ(ℂⁿ)`, `weylFDRepOfShape` at `k = ℂ`.
 
 ## Main results
 
@@ -91,21 +98,6 @@ setting the roadmap works in.
 
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Lecture 6, "Weyl's construction".
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", where this object is pinned as
-  `schurFunctor`.  The construction itself is named `weylModule` here because what is constructed
-  is the module, not a functor: the Schur functor of `μ` is a functor in the underlying module,
-  and only its value at `kⁿ` is built.  The pinned name is supplied as `TauCeti.schurFunctor`,
-  the definitional re-export at `k = ℂ` of the bundled form, so that later roadmap layers can
-  consume it under the name they are written against.
-
-  Of that bullet, the `GLₙ`-subrepresentation, the fixed choice of tableau, the canonical
-  isomorphism between the images for different tableaux, and the vanishing criterion are built
-  here.  The bullet's two remaining deliverables, the extreme cases `S^{(d)} V ≅ Symᵈ V` and
-  `S^{(1ᵈ)} V ≅ ⋀ᵈ V`, are proved in
-  `TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
-  `TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without
-  unfolding anything built here.
 -/
 
 public section
@@ -427,7 +419,7 @@ the canonical `μ`-tableau.  Since the Weyl modules of two `μ`-tableaux are iso
 representations, this is a legitimate shape-indexed representative of them all; the
 identification is `TauCeti.YoungTableau.weylRepEquivOfShape`.
 
-This is the object the classical-groups roadmap pins as `schurFunctor n μ`. -/
+Over `ℂ`, bundled as an object of `FDRep`, it is `TauCeti.schurFunctor n μ`. -/
 noncomputable def weylModuleOfShape (μ : YoungDiagram) :
     Subrepresentation (tensorPowerRep k n μ.card) :=
   YoungTableau.weylModule k n (StandardYoungTableau.rowSuperstandard μ).toTableau
@@ -535,13 +527,12 @@ noncomputable abbrev weylFDRepOfShape (μ : YoungDiagram) : FDRep k (GL (Fin n) 
 
 end Bundled
 
-/-- **The Schur functor** `𝕊^μ(ℂⁿ)` in the roadmap's pinned form: the Weyl module of the shape
-`μ` over `ℂ`, bundled as an object of `FDRep ℂ (GL (Fin n) ℂ)`.
+/-- **The Schur functor** `𝕊^μ(ℂⁿ)`: the Weyl module of the shape `μ` over `ℂ`, bundled as an
+object of `FDRep ℂ (GL (Fin n) ℂ)`.
 
-This is a definitional re-export of `TauCeti.weylFDRepOfShape` at `k = ℂ`, under the name later
-roadmap layers are written against; the general form, over any Noetherian commutative ring that
-is a `ℚ`-algebra, is `TauCeti.weylFDRepOfShape`, and the unbundled construction is
-`TauCeti.weylModuleOfShape`. -/
+This is `TauCeti.weylFDRepOfShape` at `k = ℂ`, by definition, under its classical name; the
+general form, over any Noetherian commutative ring that is a `ℚ`-algebra, is
+`TauCeti.weylFDRepOfShape`, and the unbundled construction is `TauCeti.weylModuleOfShape`. -/
 noncomputable abbrev schurFunctor (n : ℕ) (μ : YoungDiagram) : FDRep ℂ (GL (Fin n) ℂ) :=
   weylFDRepOfShape ℂ n μ
 

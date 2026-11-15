@@ -146,6 +146,19 @@ theorem map_coe_apply_self_lkjMeasure (hη : 0 < η) (i : Fin p) :
   rw [Measure.map_congr ((ae_diag_eq_one_lkjMeasure p η).mono fun R hR ↦ hR i),
     Measure.map_const, measure_univ, one_smul]
 
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- For `i ≠ j`, an entry of a random LKJ matrix has the corresponding centered symmetric Beta
+law. -/
+theorem hasLaw_coe_apply_lkjMeasure_of_ne
+    {R : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    (hR : HasLaw R (lkjMeasure p η) P) (hη : 0 < η) {i j : Fin p} (hij : i ≠ j) :
+    HasLaw (fun ω ↦ (R ω : Matrix (Fin p) (Fin p) ℝ) i j)
+      ((betaMeasure (η + ((p : ℝ) - 2) / 2) (η + ((p : ℝ) - 2) / 2)).map
+        (fun x ↦ -1 + 2 * x)) P :=
+  (⟨(selfAdjoint.measurable_coe_apply i j).aemeasurable,
+      map_coe_apply_lkjMeasure_of_ne hη hij⟩ : HasLaw _ _ (lkjMeasure p η)).fun_comp hR
+
 /-- **Variance of an off-diagonal LKJ entry.** For `η > 0` and `i ≠ j`, the entry `R i j` of a
 `p × p` LKJ matrix of shape `η` has variance `1 / (2 * η + p - 1)`. -/
 theorem variance_coe_apply_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin p} (hij : i ≠ j) :

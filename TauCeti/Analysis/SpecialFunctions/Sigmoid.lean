@@ -117,9 +117,9 @@ theorem memHolder_iteratedDeriv_sigmoid (n : ℕ) {α : NNReal} (hα : α ≤ 1)
   obtain ⟨C₀, hC₀⟩ := exists_abs_iteratedDeriv_sigmoid_le n
   obtain ⟨C₁, hC₁⟩ := exists_abs_iteratedDeriv_sigmoid_le (n + 1)
   have hL : LipschitzWith C₁.toNNReal (iteratedDeriv n sigmoid) := by
-    refine lipschitzWith_of_nnnorm_deriv_le
+    refine lipschitzWith_of_nnNorm_deriv_le
       (contDiff_sigmoid.differentiable_iteratedDeriv n (WithTop.coe_lt_top _)) fun x => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, ← iteratedDeriv_succ]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, ← iteratedDeriv_succ]
     exact (hC₁ x).trans (Real.le_coe_toNNReal C₁)
   have hD (x : ℝ) (_ : x ∈ Set.univ) (y : ℝ) (_ : y ∈ Set.univ) :
       dist (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y) ≤ (2 * C₀).toNNReal := by

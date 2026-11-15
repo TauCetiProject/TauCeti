@@ -60,6 +60,8 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
   finite `q ≠ 0`, and `c_{θ,∞} = 1` for `0 ≤ θ ≤ 1` (`CompatibleCouple.kMethodConst_top`); by
   `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
   `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. For instance `c_{1/2,2} = 2 ^ (1 / 2)` and `c_{1/2,∞} = 1`.
+* `CompatibleCouple.lintegral_rpow_neg_mul_min`: by dilation,
+  `∫ t ^ (-θ) min A (t B) dt / t = A ^ (1 - θ) B ^ θ c_{θ,1}` for `A, B > 0`.
 
 ## References
 
@@ -91,6 +93,42 @@ theorem kMethodConst_def (θ : ℝ) (q : ℝ≥0∞) :
     kMethodConst θ q = eLpNorm (fun t : ℝ => t ^ (-θ) * min 1 t) q multHaar :=
   (rfl)
 
+/-- `c_{θ,1}` is invariant under dilation: `∫ (t ρ) ^ (-θ) min 1 (t ρ) dt / t = c_{θ,1}` for
+`ρ > 0`. -/
+theorem lintegral_mul_rpow_neg_mul_min_one_mul (θ : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    ∫⁻ t, ENNReal.ofReal ((t * ρ) ^ (-θ) * min 1 (t * ρ)) ∂multHaar = kMethodConst θ 1 := by
+  have hmp : MeasurePreserving (ρ * ·) multHaar multHaar :=
+    ⟨measurable_const_mul ρ, map_multHaar_mul_left hρ⟩
+  have hm : Measurable fun t : ℝ => t ^ (-θ) * min 1 t := by fun_prop
+  simp_rw [mul_comm _ ρ]
+  rw [hmp.lintegral_comp hm.ennreal_ofReal, kMethodConst_def,
+    eLpNorm_one_eq_lintegral_eNorm hm.aestronglyMeasurable]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_pos_multHaar] with t ht
+  rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (le_min zero_le_one ht.le))]
+
+/-- For `A, B > 0`, `∫ t ^ (-θ) min A (t B) dt / t = A ^ (1 - θ) B ^ θ c_{θ,1}`, by the dilation
+`t ↦ (B / A) t`. -/
+theorem lintegral_rpow_neg_mul_min (θ : ℝ) {A B : ℝ} (hA : 0 < A) (hB : 0 < B) :
+    ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * min A (t * B)) ∂multHaar =
+      ENNReal.ofReal (A ^ (1 - θ) * B ^ θ) * kMethodConst θ 1 := by
+  rw [← lintegral_mul_rpow_neg_mul_min_one_mul θ (div_pos hB hA),
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_pos_multHaar] with t ht
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  have hmin : min A (t * B) = A * min 1 (t * (B / A)) := by
+    rw [mul_min_of_nonneg _ _ hA.le, mul_one]
+    field_simp
+  have := (Real.rpow_pos_of_pos hA θ).ne'
+  have := (Real.rpow_pos_of_pos hB θ).ne'
+  have := (Real.rpow_pos_of_pos ht θ).ne'
+  rw [hmin, Real.mul_rpow ht.le (by positivity), Real.div_rpow hB.le hA.le, Real.rpow_sub hA,
+    Real.rpow_one]
+  simp only [Real.rpow_neg hA.le, Real.rpow_neg hB.le, Real.rpow_neg ht.le]
+  field_simp
+
 private theorem continuousOn_rpow_neg_mul_min (θ : ℝ) :
     ContinuousOn (fun t : ℝ => t ^ (-θ) * min 1 t) (Ioi 0) :=
   (continuousOn_id.rpow_const fun _ ht => Or.inl (ne_of_gt ht)).mul
@@ -101,7 +139,7 @@ private theorem enorm_rpow_neg_mul_min_exp_rpow (θ : ℝ) {r : ℝ} (hr : 0 ≤
     ‖Real.exp s ^ (-θ) * min 1 (Real.exp s)‖ₑ ^ r =
       (Iic 0).indicator (fun s => ENNReal.ofReal (Real.exp ((1 - θ) * r * s))) s +
         (Iic 0)ᶜ.indicator (fun s => ENNReal.ofReal (Real.exp (-(θ * r) * s))) s := by
-  rw [Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_rpow_of_nonneg (by positivity) hr]
+  rw [Real.eNorm_of_nonneg (by positivity), ENNReal.ofReal_rpow_of_nonneg (by positivity) hr]
   by_cases hs : s ≤ 0
   · rw [indicator_of_mem (mem_Iic.2 hs), indicator_of_notMem (by simpa using hs), add_zero,
       min_eq_right (Real.exp_le_one_iff.2 hs)]
@@ -118,13 +156,12 @@ theorem kMethodConst_eq {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {q : ℝ≥0∞} (hq0 
   obtain ⟨hθ0, hθ1⟩ := hθ
   set r := q.toReal with hr_def
   have hr : 0 < r := ENNReal.toReal_pos hq0 hq
-  have hθ1' : 0 < 1 - θ := sub_pos.2 hθ1
   -- in the variable `t = e^s`, `c_{θ,q} ^ q` is
   -- `∫_{s ≤ 0} e^{(1 - θ) q s} ds + ∫_{s > 0} e^{-θ q s} ds`
   have hg : AEStronglyMeasurable (fun t : ℝ => t ^ (-θ) * min 1 t) (volume.map Real.exp) :=
     map_volume_exp ▸ (continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar
   rw [kMethodConst, ← map_volume_exp, eLpNorm_map_measure hg Real.measurable_exp.aemeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq
       (hg.comp_aemeasurable Real.measurable_exp.aemeasurable)]
   simp only [Function.comp_apply, ← hr_def, enorm_rpow_neg_mul_min_exp_rpow θ hr.le]
   rw [lintegral_add_left ((by fun_prop : Measurable fun s : ℝ =>
@@ -155,14 +192,14 @@ theorem kMethodConst_top {θ : ℝ} (hθ : θ ∈ Icc 0 1) : kMethodConst θ ∞
     map_volume_exp ▸ (continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar
   have hcont : Continuous fun s : ℝ => ‖Real.exp s ^ (-θ) * min 1 (Real.exp s)‖ₑ :=
     ((Real.continuous_exp.rpow_const fun s => Or.inl (Real.exp_pos s).ne').mul
-      (continuous_const.min Real.continuous_exp)).enorm
+      (continuous_const.min Real.continuous_exp)).eNorm
   rw [kMethodConst, ← map_volume_exp, eLpNorm_map_measure hg Real.measurable_exp.aemeasurable,
     eLpNorm_exponent_top (hg.comp_aemeasurable Real.measurable_exp.aemeasurable), eLpNormEssSup,
     Function.comp_def, ← iSup_eq_essSup fun s _ hs =>
       (isOpen_lt continuous_const hcont).measure_ne_zero volume ⟨s, hs⟩]
   refine le_antisymm (iSup_le fun s => ?_) (le_iSup_of_le 0 (by simp))
   have ht := Real.exp_pos s
-  rw [Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_le_one]
+  rw [Real.eNorm_of_nonneg (by positivity), ENNReal.ofReal_le_one]
   rcases le_total (Real.exp s) 1 with h | h
   · rw [min_eq_right h, ← Real.rpow_add_one ht.ne']
     exact Real.rpow_le_one ht.le h (by linarith [hθ.2])
@@ -244,18 +281,18 @@ theorem kMethodENorm_smul (c : 𝕜) (u : C.SumSpace) :
     filter_upwards [ae_pos_multHaar] with t ht
     rw [kFunctional_smul ht.le, Pi.smul_apply, smul_eq_mul]
     ring
-  rw [kMethodENorm, eLpNorm_congr_ae h, eLpNorm_const_smul, enorm_norm, kMethodENorm]
+  rw [kMethodENorm, eLpNorm_congr_ae h, eLpNorm_const_smul, eNorm_norm, kMethodENorm]
 
 @[simp]
 theorem kMethodENorm_neg (u : C.SumSpace) : C.kMethodENorm θ q (-u) = C.kMethodENorm θ q u := by
-  rw [← neg_one_smul 𝕜 u, kMethodENorm_smul, enorm_neg, enorm_one, one_mul]
+  rw [← neg_one_smul 𝕜 u, kMethodENorm_smul, eNorm_neg, eNorm_one, one_mul]
 
 /-- The `K`-method norm dominates the sum norm: `c_{θ,q} ‖u‖ ≤ ‖u‖_{θ,q}`, with equality for the
 couple `(X, X)` (`kMethodENorm_refl`). -/
 theorem kMethodConst_mul_enorm_le_kMethodENorm (u : C.SumSpace) :
     kMethodConst θ q * ‖u‖ₑ ≤ C.kMethodENorm θ q u := by
   calc kMethodConst θ q * ‖u‖ₑ = eLpNorm (‖u‖ • fun t : ℝ => t ^ (-θ) * min 1 t) q multHaar := by
-        rw [eLpNorm_const_smul, enorm_norm, mul_comm, kMethodConst]
+        rw [eLpNorm_const_smul, eNorm_norm, mul_comm, kMethodConst]
     _ ≤ C.kMethodENorm θ q u := by
         refine eLpNorm_mono_ae_real
           ((continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar.const_smul _) ?_
@@ -275,7 +312,7 @@ theorem kMethodENorm_eq_zero_iff [T1Space V] (hq : q ≠ 0) {u : C.SumSpace} :
   refine ⟨fun h => ?_, fun h => h ▸ kMethodENorm_zero⟩
   have h' := kMethodConst_mul_enorm_le_kMethodENorm (θ := θ) (q := q) u
   rw [h, nonpos_iff_eq_zero, mul_eq_zero, or_iff_right (kMethodConst_ne_zero θ hq)] at h'
-  exact norm_eq_zero.1 (by rw [← toReal_enorm, h', ENNReal.toReal_zero])
+  exact norm_eq_zero.1 (by rw [← toReal_eNorm, h', ENNReal.toReal_zero])
 
 /-- On the intersection, `‖x‖_{θ,q} ≤ c_{θ,q} ‖x‖`. -/
 theorem kMethodENorm_fstToSum_interFst_le (x : C.inter) :
@@ -290,7 +327,7 @@ theorem kMethodENorm_fstToSum_interFst_le (x : C.inter) :
               exact kFunctional_fstToSum_interFst_le ht.le x
           _ = ‖x‖ * (t ^ (-θ) * min 1 t) := by ring
     _ = kMethodConst θ q * ‖x‖ₑ := by
-        rw [eLpNorm_const_smul, enorm_norm, mul_comm, kMethodConst]
+        rw [eLpNorm_const_smul, eNorm_norm, mul_comm, kMethodConst]
 
 /-- For the couple `(X, X)`, `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. -/
 theorem kMethodENorm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
@@ -300,7 +337,7 @@ theorem kMethodENorm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X
     filter_upwards [ae_pos_multHaar] with t ht
     rw [kFunctional_refl ht.le, Pi.smul_apply, smul_eq_mul]
     ring
-  rw [kMethodENorm, eLpNorm_congr_ae h, eLpNorm_const_smul, enorm_norm, mul_comm, kMethodConst]
+  rw [kMethodENorm, eLpNorm_congr_ae h, eLpNorm_const_smul, eNorm_norm, mul_comm, kMethodConst]
 
 /-! ### The real interpolation space -/
 
@@ -314,7 +351,7 @@ def kMethod (θ : ℝ) (q : ℝ≥0∞) : Submodule 𝕜 C.SumSpace where
     eLpNorm_add_lt_top hu hv
   smul_mem' c u hu := by
     simp only [mem_ofPred_eq, kMethodENorm_smul]
-    exact ENNReal.mul_lt_top enorm_lt_top hu
+    exact ENNReal.mul_lt_top eNorm_lt_top hu
 
 theorem mem_kMethod_iff {u : C.SumSpace} : u ∈ C.kMethod θ q ↔ C.kMethodENorm θ q u < ∞ :=
   Iff.rfl
@@ -327,14 +364,14 @@ theorem mem_kMethod_iff_memLp {u : C.SumSpace} :
 theorem fstToSum_interFst_mem_kMethod (hθ : θ ∈ Ioo 0 1) (x : C.inter) :
     C.fstToSum (C.interFst x) ∈ C.kMethod θ q :=
   (kMethodENorm_fstToSum_interFst_le x).trans_lt
-    (ENNReal.mul_lt_top (kMethodConst_lt_top hθ q) enorm_lt_top)
+    (ENNReal.mul_lt_top (kMethodConst_lt_top hθ q) eNorm_lt_top)
 
 /-- For `0 < θ < 1`, the real interpolation space of the couple `(X, X)` is all of `X`. -/
 theorem kMethod_refl_eq_top {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (hθ : θ ∈ Ioo 0 1) : (refl 𝕜 X).kMethod θ q = ⊤ :=
   Submodule.eq_top_iff'.2 fun u => by
     rw [mem_kMethod_iff, kMethodENorm_refl]
-    exact ENNReal.mul_lt_top (kMethodConst_lt_top hθ q) enorm_lt_top
+    exact ENNReal.mul_lt_top (kMethodConst_lt_top hθ q) eNorm_lt_top
 
 variable (C) in
 /-- The real interpolation space `(X₀, X₁)_{θ,q}` of the `K`-method, as a type: the elements of
@@ -418,7 +455,7 @@ theorem norm_mk (u : C.SumSpace) (hu : u ∈ C.kMethod θ q) :
 
 instance : NormedSpace 𝕜 (C.KMethodSpace θ q) where
   norm_smul_le c u := by
-    rw [norm_def, norm_def, map_smul, kMethodENorm_smul, ENNReal.toReal_mul, toReal_enorm]
+    rw [norm_def, norm_def, map_smul, kMethodENorm_smul, ENNReal.toReal_mul, toReal_eNorm]
 
 /-- The inclusion into the sum space is bounded: `‖u‖ ≤ c_{θ,q}⁻¹ ‖u‖_{θ,q}`. -/
 theorem norm_toSumₗ_le (u : C.KMethodSpace θ q) :
@@ -431,10 +468,10 @@ theorem norm_toSumₗ_le (u : C.KMethodSpace θ q) :
       by_contra h0
       rw [hc, ENNReal.top_mul h0] at h
       exact ENNReal.ofReal_ne_top (top_le_iff.1 h)
-    rw [← toReal_enorm, h0, ENNReal.toReal_zero]
+    rw [← toReal_eNorm, h0, ENNReal.toReal_zero]
     exact mul_nonneg (inv_nonneg.2 ENNReal.toReal_nonneg) (norm_nonneg u)
   · rw [le_inv_mul_iff₀ (ENNReal.toReal_pos (kMethodConst_ne_zero θ q_ne_zero) hc),
-      ← toReal_enorm (toSumₗ u), ← ENNReal.toReal_mul]
+      ← toReal_eNorm (toSumₗ u), ← ENNReal.toReal_mul]
     exact ENNReal.toReal_le_of_le_ofReal (norm_nonneg u) h
 
 /-- The continuous inclusion of the real interpolation space into the sum space. -/
@@ -484,8 +521,8 @@ instance [CompleteSpace X₀] [CompleteSpace X₁] : CompleteSpace (C.KMethodSpa
 private theorem norm_mk_fstToSum_interFst_le (hθ : θ ∈ Ioo 0 1) (x : C.inter) :
     ‖mk (q := q) (C.fstToSum (C.interFst x)) (fstToSum_interFst_mem_kMethod hθ x)‖ ≤
       (kMethodConst θ q).toReal * ‖x‖ := by
-  rw [norm_mk, ← toReal_enorm x, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (kMethodConst_lt_top hθ q).ne enorm_ne_top)
+  rw [norm_mk, ← toReal_eNorm x, ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (kMethodConst_lt_top hθ q).ne eNorm_ne_top)
     (kMethodENorm_fstToSum_interFst_le x)
 
 variable (θ q) in
@@ -511,7 +548,7 @@ theorem norm_ofInter_le (hθ : θ ∈ Ioo 0 1) (x : C.inter) :
 /-- For the couple `(X, X)`, `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. -/
 theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (u : (refl 𝕜 X).KMethodSpace θ q) : ‖u‖ = (kMethodConst θ q).toReal * ‖toSumₗ u‖ := by
-  rw [norm_def, kMethodENorm_refl, ENNReal.toReal_mul, toReal_enorm]
+  rw [norm_def, kMethodENorm_refl, ENNReal.toReal_mul, toReal_eNorm]
 
 end KMethodSpace
 
@@ -559,7 +596,7 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
     _ = ENNReal.ofReal (M₀ ^ (1 - θ) * M₁ ^ θ) * C.kMethodENorm θ q u := by
         rw [eLpNorm_const_smul, eLpNorm_comp_measurePreserving
           (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hmp,
-          Real.enorm_of_nonneg (by positivity), kMethodENorm]
+          Real.eNorm_of_nonneg (by positivity), kMethodENorm]
 
 /-- **Retracts.** Let `P` be a linear map of sum spaces restricting to maps `P₀ : Y₀ → X₀` and
 `P₁ : Y₁ → X₁` with `‖P₀ y‖ ≤ N₀ ‖y‖` and `‖P₁ y‖ ≤ N₁ ‖y‖`, where `N₀`, `N₁` are positive. If `P`

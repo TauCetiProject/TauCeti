@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 import Mathlib.Tactic.GCongr
-import TauCeti.Topology.Instances.NatNat
+import TauCeti.MeasureTheory.Constructions.Polish.Capacitability
 
 /-!
 # Analytic sets are universally measurable
@@ -20,20 +20,16 @@ space is measurable after completing any s-finite measure defined on a measurabl
 the Borel sets. Equivalently, it differs from a measurable set by a null set. It also records the
 generated-measurable-space consequence used by measurable selection.
 
-The core proof is the capacity argument for finite measures; an s-finite measure has the same null
-sets as a finite one. Write an analytic set as the range of a continuous map from Baire space.
-Successively bound the coordinates in the source while spending a summable error budget; the image
-of the resulting compact product captures the range up to arbitrary outer-measure error. A
-countable union of these inner compact approximations then differs from the analytic set by a null
-set.
+Every finite Borel-compatible measure is a Choquet capacity (`TauCeti.IsChoquetCapacity.measure`),
+so Choquet's capacitability theorem (`TauCeti.IsChoquetCapacity.exists_isCompact_subset_le_add`)
+supplies inner compact approximations of arbitrary outer-measure accuracy on any Hausdorff space; an
+s-finite measure has the same null sets as an equivalent finite measure, and a countable union of
+inner compact approximations differs from the analytic set by a null set.
 
 The theorem is classically stated for Polish ambient spaces, but the argument uses neither a metric
-nor separability of the ambient space. An analytic set is by definition empty or a continuous image
-of Baire space, so it carries its own separability. The only topological input on the ambient side
-is that a point lying in the closures of the images of the finite-stage sets is the image of a
-point of the limiting compact product, which an ultrafilter argument proves in any Hausdorff space
-(`TauCeti.iInter_closure_image_subset_image_Iic`).
-Accordingly the three universal-measurability statements below assume just `T2Space`.
+nor separability of the ambient space: the Baire-space closure step
+(`TauCeti.iInter_closure_image_subset_image_Iic`) and Choquet's capacitability theorem hold in every
+Hausdorff space, so the three universal-measurability statements below assume just `T2Space`.
 `analyticSet_setOf_iInf_lt` assumes the standard Borel and second-countability hypotheses of
 Mathlib's measurable-projection theorem `MeasurableSet.analyticSet_image`.
 
@@ -53,10 +49,9 @@ Mathlib's measurable-projection theorem `MeasurableSet.analyticSet_image`.
 
 The proof is adapted from Daniel Lyng's Apache-2.0 Econlib development,
 `Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
-`003655ccf010cdf44c4f67d6675167b54ce0e9df`. The implementation is reorganized so that proof-only
-capacity lemmas are private, while the reusable consequences remain public; the closure lemma is
-reproved by an ultrafilter argument to remove the metrizability assumption, and lives in
-`TauCeti.Topology.Instances.NatNat`.
+`003655ccf010cdf44c4f67d6675167b54ce0e9df`, with the inner compact approximation factored out to
+general Choquet capacities in `TauCeti.MeasureTheory.Constructions.Polish.Capacitability` and the
+closure lemma generalized to Hausdorff spaces in `TauCeti.Topology.Instances.NatNat`.
 
 ## References
 
@@ -92,74 +87,6 @@ theorem analyticSet_setOf_iInf_lt
   ext y
   simp [iInf_lt_iff]
 
-/-- The range of a continuous map from Baire space admits inner compact approximations in outer
-measure. -/
-private lemma exists_isCompact_subset_range_measure_le
-    {X : Type*} [TopologicalSpace X] [T2Space X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    {μ : Measure X} [IsFiniteMeasure μ] {f : (ℕ → ℕ) → X} (hf : Continuous f)
-    {ε : ℝ≥0∞} (hε : ε ≠ 0) :
-    ∃ K : Set X, IsCompact K ∧ K ⊆ range f ∧ μ (range f) ≤ μ K + ε := by
-  obtain ⟨δ, hδ_pos, hδ_sum⟩ := ENNReal.exists_pos_sum_of_countable' hε ℕ
-  -- At stage `n`, bound one more Baire-space coordinate while losing at most `δ n`.
-  have hstep : ∀ (n : ℕ) (T : Set (ℕ → ℕ)),
-      ∃ M : ℕ, μ (f '' T) ≤ μ (f '' (T ∩ {β | β n ≤ M})) + δ n := by
-    intro n T
-    have hmono : Monotone fun M : ℕ => f '' (T ∩ {β | β n ≤ M}) := fun M M' hMM' =>
-      image_mono (inter_subset_inter_right _ fun _ hβ => hβ.trans hMM')
-    have hunion : ⋃ M : ℕ, f '' (T ∩ {β | β n ≤ M}) = f '' T := by
-      rw [← image_iUnion, ← inter_iUnion, iUnion_eq_univ_iff.2 fun β => ⟨β n, le_refl (β n)⟩,
-        inter_univ]
-    have hsup : μ (f '' T) + δ n = ⨆ M : ℕ, μ (f '' (T ∩ {β | β n ≤ M})) + δ n := by
-      rw [← ENNReal.iSup_add, ← hmono.measure_iUnion, hunion]
-    obtain ⟨M, hM⟩ := lt_iSup_iff.1 <|
-      (ENNReal.lt_add_right (measure_ne_top μ (f '' T)) (hδ_pos n).ne').trans_eq hsup
-    exact ⟨M, hM.le⟩
-  choose Mof hMof using hstep
-  -- Recursively choose the coordinate bounds and identify the resulting finite-stage sets.
-  set F : ℕ → Set (ℕ → ℕ) :=
-    fun n => Nat.rec univ (fun n Fn => Fn ∩ {β | β n ≤ Mof n Fn}) n
-  set N : ℕ → ℕ := fun n => Mof n (F n)
-  have hF_succ : ∀ n, F (n + 1) = F n ∩ {β | β n ≤ N n} := fun _ => rfl
-  have hF_eq : ∀ n, F n = {β | ∀ k < n, β k ≤ N k} := by
-    intro n
-    induction n with
-    | zero => simp [F]
-    | succ n ih =>
-      ext β
-      simp [hF_succ, ih, Nat.le_iff_lt_or_eq, or_imp, forall_and]
-  -- The accumulated loss stays within the error budget.
-  have hinv : ∀ n, μ (range f) ≤ μ (f '' F n) + ∑ k ∈ Finset.range n, δ k := by
-    intro n
-    induction n with
-    | zero => simp [F]
-    | succ n ih =>
-      calc
-        μ (range f) ≤ μ (f '' F n) + ∑ k ∈ Finset.range n, δ k := ih
-        _ ≤ μ (f '' F (n + 1)) + δ n + ∑ k ∈ Finset.range n, δ k := by
-          gcongr
-          exact hMof n (F n)
-        _ = μ (f '' F (n + 1)) + ∑ k ∈ Finset.range (n + 1), δ k := by
-          rw [Finset.sum_range_succ, add_right_comm, add_assoc]
-  -- Continuity from above and the closure lemma finish the approximation.
-  have hD_anti : Antitone fun n => closure (f '' F n) :=
-    antitone_nat_of_succ_le fun n =>
-      closure_mono (image_mono (by rw [hF_succ]; exact inter_subset_left))
-  have hsubset : ⋂ n, closure (f '' F n) ⊆ f '' Iic N := by
-    simpa only [← hF_eq] using iInter_closure_image_subset_image_Iic hf N
-  have hC : IsCompact (Iic N) := by simpa using isCompact_Icc (a := (⊥ : ℕ → ℕ)) (b := N)
-  refine ⟨f '' Iic N, hC.image hf, image_subset_range f _, ?_⟩
-  calc
-    μ (range f) ≤ (⨅ n, μ (closure (f '' F n))) + ε := by
-      rw [ENNReal.iInf_add]
-      refine le_iInf fun n => (hinv n).trans ?_
-      gcongr
-      · exact subset_closure
-      · exact (_root_.sum_le_tsum _).trans hδ_sum.le
-    _ = μ (⋂ n, closure (f '' F n)) + ε := by
-      rw [hD_anti.measure_iInter (fun _ => isClosed_closure.measurableSet.nullMeasurableSet)
-        ⟨0, measure_ne_top μ _⟩]
-    _ ≤ μ (f '' Iic N) + ε := by gcongr
-
 end MeasureTheory
 
 end TauCeti
@@ -174,20 +101,12 @@ sets, equivalently measurable in the completion of that measure. -/
 theorem AnalyticSet.nullMeasurableSet
     {S : Set X} (hS : AnalyticSet S) (μ : Measure X) [SFinite μ] :
     NullMeasurableSet S μ := by
-  -- Pass to an equivalent finite measure.
+  -- Pass to an equivalent finite measure and approximate `S` from inside by compact sets.
   obtain ⟨ν, _, hμν, -⟩ := exists_isFiniteMeasure_absolutelyContinuous (μ := μ)
   refine NullMeasurableSet.mono_ac ?_ hμν
-  -- `S` has compact subsets of arbitrarily close outer measure.
-  have happrox : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ K, IsCompact K ∧ K ⊆ S ∧ ν S ≤ ν K + ε := by
-    intro ε hε
-    obtain ⟨Z, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hS
-    rcases isEmpty_or_nonempty Z with _ | _
-    · exact ⟨∅, isCompact_empty, empty_subset _, by simp [range_eq_empty f]⟩
-    · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Z
-      rw [← hsurj.range_comp f]
-      exact TauCeti.MeasureTheory.exists_isCompact_subset_range_measure_le (hf.comp hg) hε
-  -- The union of a sequence of such approximations is a measurable subset of full measure.
-  choose K hK hKS hνK using fun n : ℕ => happrox (n : ℝ≥0∞)⁻¹ (by simp)
+  choose K hK hKS hνK using fun n : ℕ =>
+    (TauCeti.IsChoquetCapacity.measure ν).exists_isCompact_subset_le_add hS
+      (measure_ne_top ν S) (ε := (n : ℝ≥0∞)⁻¹) (by simp)
   have hG : MeasurableSet (⋃ n, K n) := .iUnion fun n => (hK n).isClosed.measurableSet
   have hle : ν S ≤ ν (⋃ n, K n) :=
     ge_of_tendsto' (by simpa using tendsto_const_nhds.add ENNReal.tendsto_inv_nat_nhds_zero)

@@ -55,6 +55,21 @@ private theorem measurable_dirichletMultinomialComponent (n : ℕ) :
   exact measurable_multinomialMeasure.comp (measurable_const.prodMk
     ((StdSimplex.measurable_extendWeights _).comp (by fun_prop)))
 
+/-- A simplex parameter map whose weights agree almost surely with the Dirichlet vector gives almost
+surely the same multinomial law as the canonical extension of the Dirichlet vector. -/
+private theorem ae_dirichletMultinomialComponent_eq {a : ι → ℝ} (n : ℕ)
+    (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι)
+    (hp : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i) :
+    ∀ᵐ x ∂dirichletMeasure a, multinomialMeasure n
+      ((StdSimplex.single (Classical.arbitrary ι) : StdSimplex ℝ≥0 ι).extendWeights
+        (fun i ↦ (x i).toNNReal)) = multinomialMeasure n (p x) := by
+  filter_upwards [ae_extendWeights_dirichletMeasure (a := a)
+    (StdSimplex.single (Classical.arbitrary ι)), hp] with x hx hpx
+  congr 1
+  apply StdSimplex.ext
+  ext i
+  exact (hx i).trans (hpx i).symm
+
 /-- Any simplex parameter map whose weights agree almost surely with the Dirichlet
 vector gives the same mixture. Thus choices away from the simplex do not affect the law. -/
 theorem dirichletMultinomialMeasure_eq_bind {a : ι → ℝ} (n : ℕ)
@@ -64,13 +79,7 @@ theorem dirichletMultinomialMeasure_eq_bind {a : ι → ℝ} (n : ℕ)
       (dirichletMeasure a).bind (fun x ↦ multinomialMeasure n (p x)) := by
   rw [dirichletMultinomialMeasure]
   by_cases ha : ∀ i, 0 < a i
-  · apply Measure.bind_congr_right
-    filter_upwards [ae_extendWeights_dirichletMeasure (a := a)
-      (StdSimplex.single (Classical.arbitrary ι)), hp] with x hx hpx
-    congr 1
-    apply StdSimplex.ext
-    ext i
-    exact (hx i).trans (hpx i).symm
+  · exact Measure.bind_congr_right (ae_dirichletMultinomialComponent_eq n p hp)
   · rw [dirichletMeasure_eq_zero_of_invalid (by simpa using ha)]
     simp
 
@@ -151,9 +160,6 @@ theorem dirichletMultinomialMeasure_singleton_ne_zero_iff {a : ι → ℝ}
   rw [dirichletMultinomialMeasure_singleton ha]
   split_ifs with hk
   · have hsum : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty
-    have hGamma := Real.Gamma_pos_of_pos hsum
-    have hGammaSum := Real.Gamma_pos_of_pos
-      (add_pos_of_pos_of_nonneg hsum (Nat.cast_nonneg n))
     have hGammaProd : 0 < ∏ i, Real.Gamma (a i + k i) / Real.Gamma (a i) :=
       Finset.prod_pos fun i _ ↦ div_pos
         (Real.Gamma_pos_of_pos (add_pos_of_pos_of_nonneg (ha i) (Nat.cast_nonneg _)))
@@ -272,18 +278,19 @@ theorem integral_map_multinomialToEuclidean_dirichletMultinomialMeasure
     ite_eq_left (Finset.mem_piAntidiag.mp hk).1]
 
 /-- Integrate a count observable by first taking its multinomial expectation, then its
-Dirichlet expectation. Any measurable choice of simplex parameters with the correct
+Dirichlet expectation. Any choice of simplex parameters with the correct
 almost-sure weights may be used. -/
 theorem integral_dirichletMultinomialMeasure_eq_integral {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : (ι → ℕ) → E) {a : ι → ℝ} (n : ℕ)
-    (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι) (hp : Measurable p)
+    (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι)
     (hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i) :
     ∫ k, f k ∂dirichletMultinomialMeasure n a =
       ∫ x, ∫ k, f k ∂multinomialMeasure n (p x) ∂dirichletMeasure a := by
   have hf := integrable_dirichletMultinomialMeasure f n a
   rw [dirichletMultinomialMeasure_eq_bind n p hweights] at hf ⊢
   exact Measure.integral_bind
-    (measurable_multinomialMeasure.comp (measurable_const.prodMk hp)).aemeasurable hf
+    ((measurable_dirichletMultinomialComponent n).aemeasurable.congr
+      (ae_dirichletMultinomialComponent_eq n p hweights)) hf
 
 /-- The Dirichlet-multinomial family is jointly measurable in the trial count and every
 concentration coordinate, including invalid parameters. -/

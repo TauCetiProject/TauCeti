@@ -66,7 +66,7 @@ theorem iteratedFDeriv_comp_right_of_rightInverse (g : G →L[𝕜] E) (s : E �
       (iteratedFDeriv 𝕜 i f (g x)).compContinuousLinearMap fun _ ↦ g := by
   induction i generalizing x with
   | zero =>
-    ext m
+    ext _
     simp [iteratedFDeriv_zero_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   | succ i ih =>
     let Φ := ContinuousMultilinearMap.compContinuousLinearMapL (F := F) (fun _ : Fin i ↦ g)

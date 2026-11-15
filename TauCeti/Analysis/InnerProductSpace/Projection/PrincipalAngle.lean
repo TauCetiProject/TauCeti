@@ -357,7 +357,7 @@ theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.pri
 /-- The largest principal sine from `U` to `V` is the directed gap `‖P_{Vᗮ} P_U‖`. -/
 theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
   rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
-    ContinuousLinearMap.singularValue_zero, coe_nnnorm, norm_sinThetaMap]
+    ContinuousLinearMap.singularValue_zero, coe_nnNorm, norm_sinThetaMap]
 
 /-- All principal sines from `U` to `V` are below `c` exactly when the largest one, the directed
 gap `‖P_{Vᗮ} P_U‖`, is. -/
@@ -780,7 +780,7 @@ theorem inner_sub_leftSingularVector_eq_ite
     U X.toLinearMap (i := j)
   have hvv := (LinearMap.rightSingularBasis
     (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
-  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) with hS
+  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
   have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
       if i = j then 1 else 0 := by
     simpa using orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)

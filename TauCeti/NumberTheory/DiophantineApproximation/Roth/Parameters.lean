@@ -103,7 +103,6 @@ theorem inv_mul_add_lt_floor_div_mul {n k : ℕ} {h : ℕ → ℝ} {D L M σ C�
     have hmul : D / h k * h k = D := div_mul_cancel₀ D hk.ne'
     nlinarith
   have hσL : 5 * C₁ / 2 + 5 * n ≤ σ * L := by rwa [inv_mul_le_iff₀ hσ] at hLC
-  have hDL : 0 ≤ D / L := div_nonneg hD₀ hL.le
   rw [inv_mul_lt_iff₀ hσ]
   calc H + 4 * n * ⌊D / h 0⌋₊ ≤ C₁ * (2 * D / L) + 4 * n * (D / L) := by
         gcongr

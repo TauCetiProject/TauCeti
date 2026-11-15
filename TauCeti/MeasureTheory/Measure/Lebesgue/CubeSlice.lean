@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.Lebesgue.GaussianBall
 -- Proof-only: negation-invariant restrictions and densities, the product comparison on symmetric
 -- convex sets, Tonelli along an orthogonal decomposition, products of densities, the volume of
 -- `PiLp 2` as a product and the area of a disc.
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.SymmetricConvexComparison
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -181,7 +178,7 @@ private lemma mul_volume_closedBall_le_setLIntegral (V : Submodule ℝ E) (ε : 
     rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, ← mul_add, norm_add_sq_real,
       V.inner_left_of_mem_orthogonal v.2 w.2, mul_zero, add_zero]
   calc ENNReal.ofReal (Real.exp (-π * ε ^ 2)) * volume (closedBall (0 : Vᗮ) ε)
-      = ∫⁻ w in closedBall (0 : Vᗮ) ε, ENNReal.ofReal (Real.exp (-π * ε ^ 2)) :=
+      = ∫⁻ _ in closedBall (0 : Vᗮ) ε, ENNReal.ofReal (Real.exp (-π * ε ^ 2)) :=
         (setLIntegral_const _ _).symm
     _ ≤ ∫⁻ w in closedBall (0 : Vᗮ) ε, g w :=
         setLIntegral_mono' measurableSet_closedBall fun w hw ↦ by

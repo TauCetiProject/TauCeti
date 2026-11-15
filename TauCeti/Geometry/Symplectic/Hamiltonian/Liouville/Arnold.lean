@@ -159,7 +159,7 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
           Fintype.linearCombination_apply]
     have := LinearMap.injective_coprod_linearCombination
       (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
-      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+      (fun i ↦ (TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
         fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
     have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
     exact h2
@@ -333,7 +333,7 @@ then no vector near `0` other than `0` fixes `x`. -/
 theorem eventually_eq_zero_of_hamiltonianFlowAction_apply_eq {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) :
     ∀ᶠ v in 𝓝 (0 : ι → ℝ), (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x = x → v = 0 := by
-  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
+  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x
   have ho0 : o 0 = x := hσ.hamiltonianFlowAction_zero_apply hF hcomm hc x
   have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (o 0) := ho0 ▸ hx
   have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I o 0) :=

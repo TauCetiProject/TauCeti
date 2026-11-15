@@ -350,7 +350,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
-      k β γ hk hβ hγ hadd
+      k β γ hk hγ hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
         f4ShortRootLieIdealBasis b :=

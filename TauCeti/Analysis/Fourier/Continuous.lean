@@ -100,8 +100,8 @@ theorem tendstoUniformly_fourier {ι : Type*} {l : Filter ι} {g : ι → V → 
     (gt_mem_nhds (by simpa using hε))] with i hi ξ
   rw [dist_eq_norm', ← Pi.sub_apply (𝓕 (g i)), ← (hg i).fourier_sub hf]
   refine (Real.norm_fourier_le_integral_norm _ _).trans_lt ?_
-  rwa [integral_norm_eq_lintegral_enorm ((hg i).1.sub hf.1),
-    ← eLpNorm_one_eq_lintegral_enorm ((hg i).1.sub hf.1)]
+  rwa [integral_norm_eq_lintegral_eNorm ((hg i).1.sub hf.1),
+    ← eLpNorm_one_eq_lintegral_eNorm ((hg i).1.sub hf.1)]
 
 end MeasureTheory.Integrable
 
@@ -115,11 +115,11 @@ variable {V E : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
 theorem eLpNorm_fourier_top_le (f : V → E) : eLpNorm (𝓕 f) ∞ volume ≤ eLpNorm f 1 volume := by
   by_cases hf : Integrable f
   · rw [eLpNorm_exponent_top hf.continuous_fourier.aestronglyMeasurable,
-      eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
-    refine eLpNormEssSup_le_of_ae_enorm_bound (ae_of_all _ fun ξ => ?_)
+      eLpNorm_one_eq_lintegral_eNorm hf.aestronglyMeasurable]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun ξ => ?_)
     rw [Real.fourier_eq]
-    refine (enorm_integral_le_lintegral_enorm _).trans_eq ?_
-    simp only [Circle.enorm_smul]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans_eq ?_
+    simp only [Circle.eNorm_smul]
   · have h : eLpNorm f 1 volume = ∞ := by
       by_contra h
       exact hf (memLp_one_iff_integrable.1 (memLp_iff.2 (lt_top_iff_ne_top.2 h)))

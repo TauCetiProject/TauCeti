@@ -16,11 +16,10 @@ half-space in tangential and inward-normal coordinates. This file proves that th
 manifold modeled on `(𝓡 n).prod (𝓡∂ 1)` whenever the original half-space charted space is a
 `C^k` manifold.
 
-This is the local product-manifold step in Layer 1's collar-neighbourhood target of the
-GeometricTopology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`). It is deliberately not
-the global collar theorem: a collar chart still has an arbitrary open target in the product model,
-not a target of the form `V × [0, ε)`. The global step must shrink and patch these local product
-coordinates along the entire boundary.
+This is the local product-manifold step towards the collar-neighbourhood theorem. It is
+deliberately not the global collar theorem: a collar chart still has an arbitrary open target in
+the product model, not a target of the form `V × [0, ε)`. The global step must shrink and patch
+these local product coordinates along the entire boundary.
 
 For ambient atlas charts `e` and `e'`, their collar transition is the composite of the smooth
 inverse of `collarChart e` with the smooth map `collarChart e'`. The only bookkeeping left after

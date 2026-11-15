@@ -174,7 +174,7 @@ private theorem blockPoly_eq_sum (hs : s.Nonempty) :
   beta_reduce at h
   rw [hL] at h
   rw [h]
-  refine sum_congr rfl fun x hx => ?_
+  refine sum_congr rfl fun x _ => ?_
   congr 1
   · refine sum_X_mul_prod_filter _ _ fun hne => ?_
     obtain ⟨y, hy⟩ := hne
@@ -245,8 +245,7 @@ private theorem narayanaSeries_eq :
     rw [mul_assoc, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_mul,
       Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, coeff_narayanaSeries,
       ite_eq_right n.succ_ne_zero, narayanaPoly_succ]
-    refine sum_congr rfl fun i hi => ?_
-    have hi' := mem_range_succ_iff.1 hi
+    refine sum_congr rfl fun i _ => ?_
     congr 1
     · by_cases h : i = 0
       · simp [h, constantCoeff_narayanaSeries]

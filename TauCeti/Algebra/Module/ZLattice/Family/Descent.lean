@@ -68,7 +68,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y),
     b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
@@ -86,7 +85,7 @@ theorem isSubmersionOfComplement_torusFamilyAffineProjection_orbitRelQuotientMap
       ∀ g, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g)) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     haveI := continuousConstVAdd_periodAddAction P fun l ↦ (hP l).continuous
     haveI := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
     haveI : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
@@ -94,16 +93,16 @@ theorem isSubmersionOfComplement_torusFamilyAffineProjection_orbitRelQuotientMap
     haveI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     haveI := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
-      hbone hbmul
-    haveI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+      hbmul
+    haveI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
       hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) fun g ↦ (hbc g).continuous
-    haveI := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    haveI := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     Manifold.IsSubmersionOfComplement E (I.prod 𝓘(𝕜, E)) I n
       (MulActionHom.orbitRelQuotientMap
-        (torusFamilyAffineProjectionHom R hone hmul P ρ hequiv b hb hbone hbmul)) := by
+        (torusFamilyAffineProjectionHom R hone hmul P ρ hequiv b hb hbmul)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstVAdd_periodAddAction P fun l ↦ (hP l).continuous
   have := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
   have : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
@@ -111,12 +110,12 @@ theorem isSubmersionOfComplement_torusFamilyAffineProjection_orbitRelQuotientMap
   have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
     AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
   have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
-    hbone hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+    hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) fun g ↦ (hbc g).continuous
-  have := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := isManifold_torusFamily P hinj hP
-  have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul hbone
+  have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul
     hbmul hR hbc
   refine isSubmersionOfComplement_orbitRelQuotientMap ?_
   rw [coe_torusFamilyAffineProjectionHom]

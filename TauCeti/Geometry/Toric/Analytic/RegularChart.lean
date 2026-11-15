@@ -65,10 +65,6 @@ namespace TauCeti.Toric
 
 variable {S : Type*} [AddCommMonoid S] {ι κ : Type*} {r : ℕ}
 
--- Source: the names `regularAffinePointEquiv` and `regularAffinePointHomeomorph`, the
--- coordinate model `(ι →₀ ℕ) × (κ →₀ ℤ)` and the shape of the two statements follow the target
--- signatures in `AnalyticToricGeometry/Suggested.lean` of the TauCetiProject/TauCetiRoadmap
--- repository.
 /-- The mixed coordinates of the complex points of an affine semigroup `S` split as
 `(ι →₀ ℕ) × (κ →₀ ℤ)`: a complex point is the same data as a family of complex numbers indexed by
 `ι`, the values on the generators of the free commutative monoid factor, and a family of units

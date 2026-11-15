@@ -49,6 +49,8 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietoris_exact₁`, `SSet.mayerVietoris_exact₂`, `SSet.mayerVietoris_exact₃`:
   exactness at `Hₘ(X₁)`, at `Hₙ(X₂) ⊞ Hₙ(X₃)` and at `Hₙ(X₄)`.
 * `SSet.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `SSet.mayerVietorisShortComplexMap`: the map of Mayer–Vietoris short exact sequences induced by
+  a map of pushout squares.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
 
 ## References
@@ -144,6 +146,52 @@ lemma mayerVietorisFromBiprod_naturality (hr : r ≫ φ₄ = φ₂ ≫ r') (hb :
         mayerVietorisFromBiprod R r' b' n := by
   ext <;> simp [← homologyMap_comp, hr, hb]
 
+variable {φ₁ φ₂ φ₃ φ₄} in
+/-- The map of Mayer–Vietoris short complexes of chain complexes induced by a map of pushout
+squares: `C(φ₁)`, `C(φ₂) ⊞ C(φ₃)` and `C(φ₄)` on the three terms. -/
+def mayerVietorisShortComplexMap (sq : IsPushout t l r b) (sq' : IsPushout t' l' r' b')
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') :
+    (sq.map ((chainComplexFunctor C).obj R)).shortComplex ⟶
+      (sq'.map ((chainComplexFunctor C).obj R)).shortComplex where
+  τ₁ := chainComplexMap φ₁ R
+  τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
+  τ₃ := chainComplexMap φ₄ R
+  comm₁₂ := by
+    -- Expose the two `f` maps to check the square on both biproduct projections.
+    change chainComplexMap φ₁ R ≫
+        biprod.lift (chainComplexMap t' R) (-chainComplexMap l' R) =
+      biprod.lift (chainComplexMap t R) (-chainComplexMap l R) ≫
+        biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
+    apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
+  comm₂₃ := by
+    -- Expose the two `g` maps to check the square on both biproduct inclusions.
+    change biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) ≫
+        biprod.desc (chainComplexMap r' R) (chainComplexMap b' R) =
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) ≫ chainComplexMap φ₄ R
+    apply biprod.hom_ext' <;> simp [← Functor.map_comp, hr, hb]
+
+section
+
+variable {φ₁ φ₂ φ₃ φ₄} (sq : IsPushout t l r b) (sq' : IsPushout t' l' r' b')
+  (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+  (hb : b ≫ φ₄ = φ₃ ≫ b')
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₁ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₁ = chainComplexMap φ₁ R := (rfl)
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₂ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₂ =
+      biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) := (rfl)
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₃ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₃ = chainComplexMap φ₄ R := (rfl)
+
+end
+
 private lemma mayerVietorisToBiprod_eq (t : X₁ ⟶ X₂) (l : X₁ ⟶ X₃) (n : ℕ) :
     mayerVietorisToBiprod R t l n =
       biprod.lift (SSet.homologyMap t R n)
@@ -229,25 +277,8 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
     (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
     (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : m + 1 = n := by lia) :
     mayerVietorisδ R sq n m h ≫ SSet.homologyMap φ₁ R m =
-      SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h := by
-  let ψ : (sq.map ((chainComplexFunctor C).obj R)).shortComplex ⟶
-      (sq'.map ((chainComplexFunctor C).obj R)).shortComplex :=
-    { τ₁ := chainComplexMap φ₁ R
-      τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
-      τ₃ := chainComplexMap φ₄ R
-      comm₁₂ := by
-        -- Expose the two `f` maps to check the square on both biproduct projections.
-        change chainComplexMap φ₁ R ≫
-            biprod.lift (chainComplexMap t' R) (-chainComplexMap l' R) =
-          biprod.lift (chainComplexMap t R) (-chainComplexMap l R) ≫
-            biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
-        apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
-      comm₂₃ := by
-        -- Expose the two `g` maps to check the square on both biproduct inclusions.
-        change biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) ≫
-            biprod.desc (chainComplexMap r' R) (chainComplexMap b' R) =
-          biprod.desc (chainComplexMap r R) (chainComplexMap b R) ≫ chainComplexMap φ₄ R
-        apply biprod.hom_ext' <;> simp [← Functor.map_comp, hr, hb] }
-  exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m h
+      SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
 
 end SSet

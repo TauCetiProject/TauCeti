@@ -367,7 +367,7 @@ noncomputable def toAInfinityFunctor : AInfinityFunctor ℬ 𝒞 where
   toAInfinityHom := F.totalHom.toAInfinityHom
   isPathCompatible_component_of_pos n hn := by
     rcases eq_or_ne n 1 with rfl | h₁
-    · refine ⟨fun X x ↦ ?_, fun s t x i j hij hne ↦ by omega⟩
+    · refine ⟨fun X x ↦ ?_, fun s t x i j hij _ ↦ by omega⟩
       rw [AInfinityHom.component_one, MultilinearMap.ofSubsingleton_apply_apply,
         AInfinityStrictHom.linearPart_toAInfinityHom, AInfinityStrictHom.coe_toLinearMap,
         totalHom_homInclusion]

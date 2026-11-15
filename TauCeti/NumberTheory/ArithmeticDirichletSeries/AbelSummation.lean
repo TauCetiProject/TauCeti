@@ -224,11 +224,11 @@ theorem summatory_mul_eq_sub_integral_mul_of_le {a : ℝ}
 
 /-! ### Imaginary-power twists -/
 
-private theorem integrableOn_deriv_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) (x : ℝ) :
+private theorem integrableOn_deriv_ofReal_cpow_neg (z : ℂ) (x : ℝ) :
     IntegrableOn (deriv fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Icc 1 x) := by
   refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).congr_fun
-    (fun t ht ↦ (Complex.deriv_ofReal_cpow_const (by linarith [ht.1])
-      (neg_ne_zero.mpr hz)).symm) measurableSet_Icc
+    (fun t ht ↦ (Complex.deriv_ofReal_cpow_const (-z)
+      (show (0 : ℝ) < t by linarith [ht.1]).ne').symm) measurableSet_Icc
   exact continuousWithinAt_const.mul
     (Complex.continuousAt_ofReal_cpow_const t (-z - 1)
       (Or.inr (by linarith [ht.1]))).continuousWithinAt
@@ -237,11 +237,11 @@ private theorem norm_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) {t : ℝ} (ht : 0
     ‖(t : ℂ) ^ (-z)‖ = 1 := by
   rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.neg_re, hz, neg_zero, Real.rpow_zero]
 
-private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z ≠ 0)
+private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0)
     {t : ℝ} (ht : 0 < t) :
     ‖deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t‖ = ‖z‖ * t⁻¹ := by
   have hneg : -z.re - 1 = (-1 : ℝ) := by rw [hz]; norm_num
-  rw [Complex.deriv_ofReal_cpow_const ht.ne' (neg_ne_zero.mpr hz0), norm_mul, norm_neg,
+  rw [Complex.deriv_ofReal_cpow_const (-z) ht.ne', norm_mul, norm_neg,
     Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hneg,
     Real.rpow_neg_one]
 
@@ -249,7 +249,7 @@ private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z �
 derivative of `t ↦ t ^ (-z)` has norm `‖z‖ / t`, so a partial-sum bound `C t ^ θ` integrates to
 `(‖z‖ C / θ) x ^ θ`. The exponent is unchanged; the `1 / t` is what the integration absorbs. -/
 private theorem norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le (w : ι → ℂ)
-    {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ) (z : ℂ) (hz : z.re = 0) (hz0 : z ≠ 0) (hC0 : 0 ≤ C)
+    {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ) (z : ℂ) (hz : z.re = 0) (hC0 : 0 ≤ C)
     (hC : ∀ t ∈ Set.Icc 1 x, ‖summatory N w t‖ ≤ C * t ^ θ) :
     ‖∫ t in Set.Ioc 1 x, deriv (fun t : ℝ ↦ (t : ℂ) ^ (-z)) t * summatory N w t‖ ≤
       (‖z‖ * C / θ) * x ^ θ := by
@@ -266,7 +266,7 @@ private theorem norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le (w : ι →
           calc
             ‖deriv (fun t : ℝ ↦ (t : ℂ) ^ (-z)) t * summatory N w t‖ =
                 ‖z‖ * t⁻¹ * ‖summatory N w t‖ := by
-                  rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz hz0 ht0]
+                  rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz ht0]
             _ ≤ ‖z‖ * t⁻¹ * (C * t ^ θ) :=
                   mul_le_mul_of_nonneg_left (hC t (Set.Ioc_subset_Icc_self ht))
                     (mul_nonneg (norm_nonneg _) hinv)
@@ -293,14 +293,14 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
     (hC : ∀ t ∈ Set.Icc 1 x, ‖summatory N w t‖ ≤ C * t ^ θ) :
     ‖summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x‖ ≤
       C * (1 + ‖z‖ / θ) * x ^ θ := by
-  rcases eq_or_ne z 0 with rfl | hz0
+  rcases eq_or_ne z 0 with rfl | -
   · simpa using hC x ⟨hx, le_rfl⟩
   let g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-z)
   have hg_diff : ∀ t ∈ Set.Icc (1 : ℝ) x, DifferentiableAt ℝ g t :=
-    fun t ht ↦ differentiableAt_id.ofReal_cpow_const
-      (by simpa only [id_eq] using (show t ≠ 0 by linarith [ht.1])) (neg_ne_zero.mpr hz0)
+    fun t ht ↦ differentiableAt_id.ofReal_cpow_const (-z)
+      (by simpa only [id_eq] using (show t ≠ 0 by linarith [ht.1]))
   have hg_int : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) x) :=
-    integrableOn_deriv_ofReal_cpow_neg z hz0 x
+    integrableOn_deriv_ofReal_cpow_neg z x
   have hformula : summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x =
       g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t := by
     have hcast : ∀ i, ((N i : ℝ) : ℂ) = (N i : ℂ) := fun _ ↦ by norm_num
@@ -311,7 +311,7 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
   have hbound_int :
       ‖∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖ ≤
         (‖z‖ * C / θ) * x ^ θ :=
-    norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le N w hx hθ z hz hz0 hC0 hC
+    norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le N w hx hθ z hz hC0 hC
   rw [hformula]
   calc
     ‖g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖
@@ -399,7 +399,7 @@ theorem summatory_mul_le_of_summatory_le {a : ℝ} (hN : ∀ i, a ≤ N i) (w : 
     summatory N (fun i ↦ w i * g (N i)) x ≤ C * g a := by
   -- `g` is nonincreasing on `[a, x]`, so `deriv g` is integrable there.
   have hg_int : IntegrableOn (deriv g) (Set.Icc a x) := by
-    refine (integrableOn_Icc_iff_integrableOn_Ioc enorm_ne_top).2 ?_
+    refine (integrableOn_Icc_iff_integrableOn_Ioc eNorm_ne_top).2 ?_
     have h := intervalIntegral.integrableOn_deriv_of_nonneg
       (g := fun t ↦ -g t) (g' := fun t ↦ -deriv g t) (a := a) (b := x)
       (fun t ht ↦ (hg_diff t ht).continuousAt.neg.continuousWithinAt)
@@ -517,8 +517,8 @@ private theorem primeCount_eq_primeSummatory (S : Set (HeightOneSpectrum (𝓞 K
   rw [primeCount_apply, primeSummatory_apply]
 
 /-- **Chebyshev's `ϑ` from `π`.**  The logarithmically weighted prime count is recovered from the
-unweighted one by Abel summation, with the inclusive cutoff and the half-open integration range
-fixed by the roadmap's conventions. -/
+unweighted one by Abel summation, with the inclusive cutoff `N𝔭 ≤ x` and the half-open
+integration range `Set.Ioc 2 x`. -/
 theorem primeTheta_eq_log_mul_primeCount_sub_integral (S : Set (HeightOneSpectrum (𝓞 K)))
     (x : ℝ) :
     primeTheta K S x =
@@ -547,8 +547,9 @@ theorem primeTheta_eq_log_mul_primeCount_sub_integral (S : Set (HeightOneSpectru
   rw [key, hI]
 
 /-- **Chebyshev's `π` from `ϑ`.**  The unweighted prime count is recovered from the logarithmically
-weighted one by Abel summation.  This is the finite identity whose two terms Layer 6.2 estimates
-in order to turn `ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`. -/
+weighted one by Abel summation.  This is the finite identity whose two terms
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean` estimates in order to turn
+`ϑ(x) ∼ δx` into `π(x) ∼ δ Li(x)`. -/
 theorem primeCount_eq_primeTheta_div_log_add_integral (S : Set (HeightOneSpectrum (𝓞 K)))
     (x : ℝ) :
     primeCount K S x = primeTheta K S x / Real.log x +

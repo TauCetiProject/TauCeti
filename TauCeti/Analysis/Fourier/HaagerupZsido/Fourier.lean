@@ -92,8 +92,6 @@ private theorem integral_exp_mul_I_mul_kernelIntegrand {y : ℝ} (hy : 0 < y) (x
   simp only [hpt]
   rw [integral_const_mul, integral_sub (hint _) (hint _), integral_exp_mul_I_mul_exp_neg_mul_abs hy,
     integral_exp_mul_I_mul_exp_neg_mul_abs hy]
-  have h₁ : 0 < y ^ 2 + (x - 1) ^ 2 := by positivity
-  have h₂ : 0 < y ^ 2 + (x + 1) ^ 2 := by positivity
   push_cast
   field_simp
   ring

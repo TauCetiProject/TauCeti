@@ -11,10 +11,10 @@ public import Mathlib.Order.LiminfLimsup
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
+import TauCeti.Analysis.Normed.Module.RelativeApproximation
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
-import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 
 /-!
 # The density theorem for rectifiable sets
@@ -47,7 +47,7 @@ within a relative error `δ` of an injective linear map `A`
 (`LipschitzWith.exists_linear_approximation_cover`). On each piece, the parametrization is
 `(1 + δ)`-Lipschitz with `(1 - δ)⁻¹`-Lipschitz inverse when read from the image of the piece under
 the approximating injective linear map `A`
-(`TauCeti.lipschitzOnWith_and_antilipschitzWith_of_approx`).
+(`Function.Injective.lipschitzOnWith_and_antilipschitzWith_of_approx`).
 This image lies in the `k`-plane `range A`, so the upper and lower densities of `E` on the piece
 lie between `((1 + δ) / (1 - δ)) ^ (±k)` almost everywhere
 (`Isometry.ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_div`), since the
@@ -92,7 +92,7 @@ private theorem ae_density_bounds_of_approx (hEm : NullMeasurableSet E μHE[k])
   · exact ae_of_all _ fun y hy => by simp at hy
   obtain ⟨L, hL⟩ := exists_antilipschitzWith_domRestrict_of_approx hA (by exact_mod_cast hε) happ
   replace hA := hA hP
-  obtain ⟨hlip, hanti⟩ := lipschitzOnWith_and_antilipschitzWith_of_approx hA hε happ
+  obtain ⟨hlip, hanti⟩ := hA.lipschitzOnWith_and_antilipschitzWith_of_approx hε happ
   -- The isometric polar factor of `A` parametrizes the `k`-plane `range A`.
   set ι := (A : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] V).polarIsometry hA
   have hιA : range ι = range A := LinearMap.range_polarIsometry _ hA

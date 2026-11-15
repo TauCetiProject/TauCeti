@@ -189,12 +189,8 @@ theorem IsMorse.finsum_neg_one_pow_mul_finrank_singularHomology (hf : IsMorse I 
         ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
   rw [finsum_eq_sum_of_support_subset _ (s := Finset.range (finrank ℝ E + 1)) fun i hi ↦ ?_]
   · exact hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V le_rfl
-  -- Above the dimension there are no critical points, so the weak inequality kills homology.
   by_contra hlt
-  have hle := hf.finrank_singularHomology_le V i
-  rw [criticalCount_eq_zero_of_finrank_lt (by simpa using hlt), ENat.toNat_zero, zero_mul,
-    Nat.le_zero] at hle
-  simp [hle] at hi
+  simp [hf.finrank_singularHomology_eq_zero_of_finrank_lt V (by simpa using hlt)] at hi
 
 /-- **The signed critical count is the Euler characteristic.** For a Morse function on a compact
 boundaryless manifold `M` of finite CW type, `∑ᵢ (-1)ⁱ cᵢ = χ(M)`, where `cᵢ` is the number of

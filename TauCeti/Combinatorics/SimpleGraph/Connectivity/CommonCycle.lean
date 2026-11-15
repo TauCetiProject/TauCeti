@@ -154,7 +154,7 @@ theorem isVertexConnected_two_iff_forall_exists_isCycle_mem_edges [Finite V]
   · exact fun hG v _ he ↦ hG.exists_isCycle_mem_edges v he
   · intro hcyc
     apply (isVertexConnected_two_iff_forall_exists_isCycle_mem_support hcard).2
-    intro u v huv
+    intro u v _
     have hcardEN : (3 : ℕ∞) ≤ ENat.card V := by
       rw [ENat.card_eq_coe_natCard]
       exact Nat.cast_le.2 hcard

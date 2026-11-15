@@ -40,7 +40,7 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
   have hc (i : ι) (hi : i ∉ s) : ∃ c, g i = fun _ => c :=
     ⟨(hf i hi).choose, by simp [g, hi]⟩
   rw [iIndepFun_iff_measure_inter_preimage_eq_mul]
-  intro S sets hsets
+  intro S sets _
   by_cases hbad : ∃ i ∈ S, ∃ c, g i = (fun _ => c) ∧ c ∉ sets i
   · obtain ⟨i, hi, c, hgi, hci⟩ := hbad
     have hempty : g i ⁻¹' sets i = ∅ := by simp [hgi, hci]

@@ -169,9 +169,9 @@ private theorem not_forall_nonneg_on_progression_of_neg {a b c m x₀ y : ℤ} (
   have hB0 : 0 ≤ |c * y ^ 2| := abs_nonneg _
   -- The progression reaches past `M`, and there the square already dominates the rest.
   set M : ℤ := |b * y| + |c * y ^ 2| + 1
-  set k : ℤ := M + |x₀| with hk
+  set k : ℤ := M + |x₀|
   have hk0 : 0 ≤ k := by have := abs_nonneg x₀; omega
-  set x : ℤ := x₀ + m * k with hx
+  set x : ℤ := x₀ + m * k
   have hxM : M ≤ x := by
     have h1 : k ≤ m * k := le_mul_of_one_le_left hk0 hm
     have h2 : -|x₀| ≤ x₀ := neg_abs_le x₀

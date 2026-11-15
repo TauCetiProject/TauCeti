@@ -456,7 +456,7 @@ private theorem relabel_toOrientedPDCode_insertKink_eq_zero (τ : Fin 2 × Bool 
 private theorem reidemeisterEquiv_toOrientedPDCode_insertKink_zero :
     OrientedPDCode.ReidemeisterEquiv D.toOrientedPDCode (D.insertKink k o s).toOrientedPDCode := by
   obtain ⟨τ, hτ, b, r, hedge, horient, hslot, hb⟩ : ∃ τ : Fin 2 × Bool → Fin 4,
-      ∃ hτ : Function.Bijective τ, ∃ b : Bool, ∃ r : ℕ,
+      ∃ _ : Function.Bijective τ, ∃ b : Bool, ∃ r : ℕ,
       (∀ t, PDCode.slotSmoothing true (τ (t, true)) = τ (t + 1, false)) ∧
       (∀ t b', ![false, true, true, false] (τ (t, b')) = b') ∧
       (∀ slot : Fin 4, τ (if decide (slot = 0 ∨ slot = 2) = o then 0 else 1,

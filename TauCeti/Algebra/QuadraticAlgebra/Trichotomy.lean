@@ -62,7 +62,7 @@ theorem isField_iff_not_isSquare : IsField (QuadraticAlgebra K r 0) ↔ ¬IsSqua
 nonzero square. -/
 theorem nonempty_algEquiv_prod_iff [NeZero (2 : K)] :
     Nonempty (QuadraticAlgebra K r 0 ≃ₐ[K] K × K) ↔ IsSquare r ∧ r ≠ 0 := by
-  refine ⟨fun ⟨e⟩ ↦ ⟨by_contra fun h ↦ ?_, fun hr ↦ ?_⟩, fun ⟨⟨u, hu⟩, hr⟩ ↦ ?_⟩
+  refine ⟨fun ⟨e⟩ ↦ ⟨by_contra fun h ↦ ?_, fun hr ↦ ?_⟩, fun ⟨⟨u, hu⟩, _⟩ ↦ ?_⟩
   · have := (e.symm.toMulEquiv.isField (isField_iff_not_isSquare.mpr h)).isDomain
     exact false_of_nontrivial_of_product_domain K K
   · subst hr

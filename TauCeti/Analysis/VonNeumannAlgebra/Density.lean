@@ -48,6 +48,7 @@ double commutant theorem and its amplification proof.
 public section
 
 open scoped InnerProductSpace
+open scoped Pointwise
 
 namespace StarSubalgebra
 

@@ -25,8 +25,8 @@ no curve regularity beyond continuity of `γ` and interval-integrability of the 
   integral of `f`, giving `∫ t in a..b, deriv γ t • f (γ t) = 0`.
 
 Both take the pointwise vanishing `dixonFunction … = 0` as a hypothesis. Discharging it through
-`dixonFunction_eq_zero` for a null-homologous closed curve yields the roadmap target
-`homologyCauchyTheorem` (`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3).
+`dixonFunction_eq_zero` for a null-homologous closed curve yields the homology Cauchy theorem
+`homologyCauchyTheorem`.
 
 ## Main results
 
@@ -72,7 +72,7 @@ since `g (γ t) / (γ t - w₀) = f (γ t)` for `γ` off `w₀`, that Cauchy-typ
 integral of `f`. Hence `∫ t in a..b, deriv γ t • f (γ t) = 0`, given the pointwise vanishing
 `dixonFunction (fun z ↦ (z - w₀) * f z) U γ a b w₀ = 0`, interval-integrability of the contour
 integrand `deriv γ • f ∘ γ`, and of the index integrand. Discharging the vanishing via
-`dixonFunction_eq_zero` yields the roadmap `homologyCauchyTheorem`. -/
+`dixonFunction_eq_zero` yields `homologyCauchyTheorem`. -/
 theorem intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero {f : ℂ → ℂ} {U : Set ℂ}
     {γ : ℝ → ℂ} {a b : ℝ} (h_cont : ContinuousOn γ (uIcc a b)) (w₀ : ℂ) (hw₀_in_U : w₀ ∈ U)
     (hw₀_off : ∀ t ∈ uIcc a b, γ t ≠ w₀)

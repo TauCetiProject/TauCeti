@@ -15,6 +15,7 @@ import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.MaximumModulus
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 
 /-!
@@ -47,6 +48,9 @@ value of the reduction of the minimal polynomial at `x` is the value of `f` at a
   Gauss norm.
 * `TauCeti.IsAffinoidAlgebra.exists_pointNorm_eq_supSeminorm`: **the maximum modulus principle**,
   the supremum seminorm of a nonzero affinoid algebra is attained at a classical point.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_map_sub_algebraMap_constantCoeff_le`: a Tate series of
+  Gauss norm at most one, mapped by a homomorphism sending the variables to elements with
+  `|·|sup ≤ ε ≤ 1`, differs from its constant coefficient by an element with `|·|sup ≤ ε`.
 
 ## References
 
@@ -96,7 +100,7 @@ theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm 
   have : IsUltrametricDist E :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := E) a b
-  have : CompleteSpace E := FiniteDimensional.complete K E
+  have : CompleteSpace E := FiniteDimensional.completeSpace K E
   have hφ (r : K) : ‖algebraMap K E r‖ = ‖r‖ := norm_algebraMap' E r
   have hmE : ‖(m : E)‖ = 1 := by rw [← map_natCast (algebraMap K E), hφ, hm]
   obtain ⟨x, hx, -, hfx⟩ := exists_norm_restrictedEval₂_eq_norm (algebraMap K E) hφ
@@ -176,6 +180,65 @@ theorem supSeminorm_lt_iff {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffino
   | inr _ =>
     obtain ⟨x, hx⟩ := hA.exists_pointNorm_eq_supSeminorm f
     exact hx ▸ h x
+
+
+open TauCeti.MvPowerSeries in
+/-- A Tate series of Gauss norm at most one, mapped to an affinoid algebra `B` by a homomorphism
+sending the variables to elements of supremum seminorm at most `ε ≤ 1`, differs from its constant
+coefficient by an element of supremum seminorm at most `ε`. -/
+theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {B : Type*} [CommRing B] [Algebra K B]
+    {n : ℕ} (hB : IsAffinoidAlgebra K B)
+    (ψ : IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1) →ₐ[K] B) {ε : ℝ} (hε0 : 0 < ε)
+    (hε1 : ε ≤ 1) (hX : ∀ i, supSeminorm K (ψ ⟨X i, isRestricted_X _ i⟩) ≤ ε)
+    {g : IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)} (hg : ‖g‖ ≤ 1) :
+    supSeminorm K (ψ g - algebraMap K B (constantCoeff (g : MvPowerSeries (Fin n) K))) ≤ ε := by
+  have hT := isAffinoidAlgebra_tate (K := K) (σ := Fin n)
+  -- Approximate `g` within `ε` by a polynomial `p`.
+  obtain ⟨p, hp⟩ := (denseRange_polynomialToRestricted (R := K)
+    (c := fun _ : Fin n ↦ 1)).exists_dist_lt g hε0
+  rw [dist_eq_norm] at hp
+  set P := polynomialToRestricted (fun _ : Fin n ↦ (1 : ℝ)) p with hP
+  have hPg : ‖P‖ ≤ 1 := by
+    have h := (IsUltrametricDist.norm_add_le_max g (P - g)).trans
+      (max_le hg ((norm_sub_rev P g).trans_le (hp.le.trans hε1)))
+    rwa [add_sub_cancel] at h
+  -- On polynomials, `ψ` is evaluation at the images of the variables.
+  have hψp : ψ P = MvPolynomial.aeval (fun i ↦ ψ ⟨X i, isRestricted_X _ i⟩) p := by
+    rw [← AlgHom.comp_apply]
+    congr 1
+    exact MvPolynomial.algHom_ext fun i ↦ by simp
+  set c₀ := p.coeff 0
+  have hcoeff : constantCoeff (g : MvPowerSeries (Fin n) K) = c₀ +
+      constantCoeff ((g - P : IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :
+        MvPowerSeries (Fin n) K) := by
+    simp only [c₀, hP, AddSubgroupClass.coe_sub, coe_polynomialToRestricted, map_sub,
+      ← _root_.MvPowerSeries.coeff_zero_eq_constantCoeff_apply, MvPolynomial.coeff_coe]
+    ring
+  -- `ψ g - g₀ = ψ (g - p) - (g - p)₀ + (ψ p - p₀)`, and each part is at most `ε`.
+  have hsplit : ψ g - algebraMap K B (constantCoeff (g : MvPowerSeries (Fin n) K)) =
+      (ψ (g - P) - algebraMap K B (constantCoeff ((g - P :
+        IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) : MvPowerSeries (Fin n) K))) +
+        MvPolynomial.aeval (fun i ↦ ψ ⟨X i, isRestricted_X _ i⟩) (p - MvPolynomial.C c₀) := by
+    rw [hcoeff, map_sub, map_sub, map_add, MvPolynomial.aeval_C, ← hψp]
+    ring
+  rw [hsplit]
+  refine (hB.supSeminorm_add_le _ _).trans (max_le ?_ ?_)
+  · have h₁ : supSeminorm K (ψ (g - P)) ≤ ε :=
+      (hT.supSeminorm_map_le hB ψ _).trans ((supSeminorm_eq_norm _).trans_le hp.le)
+    have h₂ : supSeminorm K (algebraMap K B (constantCoeff ((g - P :
+        IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) : MvPowerSeries (Fin n) K))) ≤ ε := by
+      refine supSeminorm_le hε0.le fun y ↦ ?_
+      rw [pointNorm_algebraMap]
+      exact (norm_constantCoeff_le _).trans hp.le
+    rw [sub_eq_add_neg]
+    exact (hB.supSeminorm_add_le _ _).trans (max_le h₁ ((supSeminorm_neg _).trans_le h₂))
+  · refine hB.supSeminorm_aeval_le hε0.le hε1 hX (by simp [c₀]) fun t ↦ ?_
+    rcases eq_or_ne t 0 with rfl | ht
+    · simp [c₀]
+    · rw [MvPolynomial.coeff_sub, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
+      have h := norm_coeff_le_norm P t
+      rw [hP, coe_polynomialToRestricted, MvPolynomial.coeff_coe] at h
+      exact h.trans hPg
 
 end IsAffinoidAlgebra
 

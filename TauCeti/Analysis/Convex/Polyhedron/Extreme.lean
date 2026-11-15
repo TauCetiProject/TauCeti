@@ -46,8 +46,11 @@ constraint in `s` is active.
 ## Main results
 
 * `TauCeti.convex_polyhedron`: a polyhedron is convex.
+* `TauCeti.activeSet_comp`: relabelling the constraints pulls back the active constraints.
 * `TauCeti.isExtreme_polyhedron_inter_setOf_subset_activeSet`: the face where a set of
   constraints is active is an extreme subset.
+* `TauCeti.exists_pos_forall_add_smul_mem_polyhedron`: the inactive constraints leave room to move
+  a little from a point in any direction that does not decrease the active ones.
 * `TauCeti.mem_extremePoints_polyhedron_iff`: the vertices are the points of the polyhedron at
   which the active functionals have no common nonzero zero.
 
@@ -71,6 +74,12 @@ def activeSet (f : ι → Module.Dual 𝕜 E) (c : ι → 𝕜) (x : E) : Set ι
 @[simp]
 theorem mem_activeSet {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x : E} {j : ι} :
     j ∈ activeSet f c x ↔ f j x = c j := Iff.rfl
+
+/-- Listing the constraints along `e` pulls the active constraints back along `e`. -/
+@[simp]
+theorem activeSet_comp {ι' : Type*} {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} (e : ι' → ι)
+    (x : E) : activeSet (f ∘ e) (c ∘ e) x = e ⁻¹' activeSet f c x :=
+  (rfl)
 
 variable [LinearOrder 𝕜]
 
@@ -117,39 +126,48 @@ theorem isExtreme_polyhedron_inter_setOf_subset_activeSet (s : Set ι) :
   refine ⟨inter_subset_left, fun x₁ hx₁ x₂ hx₂ x hx hseg ↦ ?_⟩
   exact ⟨hx₁, fun j hj ↦ (mem_activeSet_of_mem_openSegment hx₁ hx₂ hseg (hx.2 hj)).1⟩
 
+/-- **Slack of the inactive constraints.** At a point `x` of a polyhedron cut out by finitely many
+half-spaces, there is `t > 0` such that, for `|s| ≤ t`, the point `x + s • w` stays in the
+polyhedron as soon as the move does not decrease any constraint active at `x`. -/
+theorem exists_pos_forall_add_smul_mem_polyhedron [Finite ι] (hx : x ∈ polyhedron f c) (w : E) :
+    ∃ t > 0, ∀ s : 𝕜, |s| ≤ t → (∀ j ∈ activeSet f c x, 0 ≤ s * f j w) →
+      x + s • w ∈ polyhedron f c := by
+  have := Fintype.ofFinite ι
+  -- The time `t = (1 + S)⁻¹` uses less than the slack of every inactive constraint, where `S`
+  -- bounds every ratio `|f j w| / (f j x - c j)`.
+  set S := ∑ j, |f j w| / (f j x - c j)
+  have hterm (j : ι) : 0 ≤ |f j w| / (f j x - c j) :=
+    div_nonneg (abs_nonneg _) (sub_nonneg.2 (hx j))
+  have hS₀ : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ hterm j
+  refine ⟨(1 + S)⁻¹, inv_pos.2 (by linarith), fun s hs hact j ↦ ?_⟩
+  simp only [map_add, map_smul, smul_eq_mul]
+  rcases (hx j).eq_or_lt with h | h
+  · linarith [hact j h.symm]
+  · have hle : |f j w| / (f j x - c j) ≤ S :=
+      Finset.single_le_sum (fun j _ ↦ hterm j) (Finset.mem_univ j)
+    rw [div_le_iff₀ (sub_pos.2 h)] at hle
+    have hbound : (1 + S)⁻¹ * |f j w| ≤ f j x - c j := by
+      rw [inv_mul_le_iff₀ (by linarith)]
+      nlinarith [abs_nonneg (f j w)]
+    have : |s * f j w| ≤ (1 + S)⁻¹ * |f j w| := by
+      rw [abs_mul]
+      exact mul_le_mul_of_nonneg_right hs (abs_nonneg _)
+    linarith [neg_abs_le (s * f j w)]
+
 /-- **Vertices of a polyhedron.** A point `x` of a polyhedron cut out by finitely many
 half-spaces is an extreme point exactly when the only vector annihilated by all the functionals
 active at `x` is zero. -/
 theorem mem_extremePoints_polyhedron_iff [Finite ι] :
     x ∈ extremePoints 𝕜 (polyhedron f c) ↔
       x ∈ polyhedron f c ∧ ∀ w, (∀ j ∈ activeSet f c x, f j w = 0) → w = 0 := by
-  have := Fintype.ofFinite ι
   constructor
   · rintro ⟨hx, hext⟩
     refine ⟨hx, fun w hw ↦ ?_⟩
-    -- The inactive constraints have slack at `x`, so `x ± t w` stays in the polyhedron for
-    -- `t = (1 + S)⁻¹`, where `S` bounds every ratio `|f j w| / (f j x - c j)`.
-    set S := ∑ j, |f j w| / (f j x - c j) with hS
-    have hterm (j : ι) : 0 ≤ |f j w| / (f j x - c j) :=
-      div_nonneg (abs_nonneg _) (sub_nonneg.2 (hx j))
-    have hS₀ : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ hterm j
-    set t := (1 + S)⁻¹ with ht
-    have ht₀ : 0 < t := inv_pos.2 (by linarith)
-    have hbound (j : ι) : t * |f j w| ≤ f j x - c j := by
-      rcases (sub_nonneg.2 (hx j)).eq_or_lt with h | h
-      · rw [hw j (sub_eq_zero.1 h.symm)]
-        simp [← h]
-      · have hle : |f j w| / (f j x - c j) ≤ S :=
-          Finset.single_le_sum (fun j _ ↦ hterm j) (Finset.mem_univ j)
-        rw [div_le_iff₀ h] at hle
-        rw [ht, inv_mul_le_iff₀ (by linarith)]
-        nlinarith [abs_nonneg (f j w)]
-    have hmem (s : 𝕜) (hs : |s| ≤ t) : x + s • w ∈ polyhedron f c := fun j ↦ by
-      have h := hbound j
-      have : |s * f j w| ≤ t * |f j w| := by
-        rw [abs_mul]; exact mul_le_mul_of_nonneg_right hs (abs_nonneg _)
-      simp only [map_add, map_smul, smul_eq_mul]
-      linarith [neg_abs_le (s * f j w)]
+    -- The inactive constraints have slack at `x`, so `x ± t w` stays in the polyhedron for a
+    -- small `t > 0`.
+    obtain ⟨t, ht₀, hslack⟩ := exists_pos_forall_add_smul_mem_polyhedron hx w
+    have hmem (s : 𝕜) (hs : |s| ≤ t) : x + s • w ∈ polyhedron f c :=
+      hslack s hs fun j hj ↦ by simp [hw j hj]
     have hseg : x ∈ openSegment 𝕜 (x + t • w) (x + (-t) • w) :=
       ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num, by
         rw [smul_add, smul_add, add_add_add_comm, ← add_smul, ← smul_assoc, ← smul_assoc,

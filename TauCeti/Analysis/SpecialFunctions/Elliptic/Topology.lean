@@ -26,6 +26,8 @@ topological group.
 
 ## Main results
 
+* `PeriodPair.exists_analyticAt_mk_eq_weierstrassPoint_toProjective`: the point map has local
+  holomorphic nonsingular homogeneous coordinates.
 * `PeriodPair.continuous_weierstrassPoint_toProjective`: the point map is continuous.
 * `PeriodPair.weierstrassPointContinuousAddEquiv`: `ℂ / Λ ≃ₜ+ E_Λ(ℂ)`.
 * `WeierstrassCurve.Projective.Point.instConnectedSpace`: the points of a complex elliptic curve
@@ -43,15 +45,15 @@ open scoped Topology
 
 namespace PeriodPair
 
-/-- The Weierstrass point map, including its extension at lattice points, is continuous in the
-analytic topology on the native projective curve. -/
-theorem continuous_weierstrassPoint_toProjective (L : PeriodPair) :
-    Continuous (fun z ↦ (L.weierstrassPoint z).toProjective) := by
-  classical
-  apply continuous_iff_continuousAt.mpr
-  intro z₀
+/-- Near every `z₀`, the projective point `(℘(z), ℘'(z) / 2)`, the point at infinity for
+`z ∈ Λ`, is the point of nonsingular homogeneous coordinates depending holomorphically on `z`. -/
+theorem exists_analyticAt_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) (z₀ : ℂ) :
+    ∃ P : ℂ → Fin 3 → ℂ, AnalyticAt ℂ P z₀ ∧ ∀ᶠ z in 𝓝 z₀,
+      ∃ h : L.weierstrassCurve.toProjective.Nonsingular (P z),
+        Projective.Point.mk ((Projective.nonsingularLift_iff (P z)).mpr h) =
+          (L.weierstrassPoint z).toProjective := by
   obtain ⟨P, hP, h⟩ := L.exists_analyticAt_toAffine_eq_weierstrassPoint z₀
-  apply Projective.Point.continuousAt_of_eventually_eq_mk hP.continuousAt
+  refine ⟨P, hP, ?_⟩
   filter_upwards [h] with z hz
   refine ⟨hz.1, ?_⟩
   apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
@@ -59,6 +61,14 @@ theorem continuous_weierstrassPoint_toProjective (L : PeriodPair) :
   simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
     ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
       (L.weierstrassPoint z)).symm
+
+/-- The Weierstrass point map, including its extension at lattice points, is continuous in the
+analytic topology on the native projective curve. -/
+theorem continuous_weierstrassPoint_toProjective (L : PeriodPair) :
+    Continuous (fun z ↦ (L.weierstrassPoint z).toProjective) := by
+  refine continuous_iff_continuousAt.mpr fun z₀ ↦ ?_
+  obtain ⟨P, hP, h⟩ := L.exists_analyticAt_mk_eq_weierstrassPoint_toProjective z₀
+  exact Projective.Point.continuousAt_of_eventually_eq_mk hP.continuousAt h
 
 open Classical in
 /-- **Complex uniformization as topological groups**: the Weierstrass point map induces an

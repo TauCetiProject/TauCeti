@@ -35,6 +35,8 @@ the initial condition, and the joint continuity required by `Flow` is
   `y` when the fields agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
+* `TauCeti.flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero`: an orbit that meets a rest point
+  is constant.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
@@ -149,6 +151,20 @@ theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
   · have hconst : ∀ s : ℝ, HasDerivAt (fun _ : ℝ ↦ x) (v ((fun _ : ℝ ↦ x) s)) s := fun s ↦ by
       simpa [h] using hasDerivAt_const s x
     simpa using (eq_flowOfLipschitz hv hconst t).symm
+
+/-- **An orbit through a rest point is constant.** If the flow carries `x` at some time `s` to a
+zero of the vector field, then the flow fixes `x` at every time. -/
+theorem flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero (hv : LipschitzWith K v) {x : E}
+    {s : ℝ} (hs : v (flowOfLipschitz v hv s x) = 0) (t : ℝ) : flowOfLipschitz v hv t x = x := by
+  have hrest := (forall_flowOfLipschitz_eq_self_iff hv _).2 hs
+  -- Flowing the rest point back for time `s` returns to `x`, so `x` is that rest point.
+  have hx : flowOfLipschitz v hv s x = x := by
+    have h := hrest (-s)
+    rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at h
+    exact h.symm
+  calc flowOfLipschitz v hv t x = flowOfLipschitz v hv t (flowOfLipschitz v hv s x) := by rw [hx]
+    _ = flowOfLipschitz v hv s x := hrest t
+    _ = x := hx
 
 
 /-- **Flows agree where the fields agree.** If the Lipschitz fields `v` and `w` coincide along the

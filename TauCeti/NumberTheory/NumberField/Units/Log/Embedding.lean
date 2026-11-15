@@ -323,8 +323,6 @@ theorem logHeight₁_eq_sum_posPart_logEmbedding_iff (u : (𝓞 L)ˣ) :
     nlinarith
   · intro h
     have hlog := (Real.log_nonpos_iff (by positivity)).mpr h
-    have hmult : (0 : ℝ) < (w₀ (K := L)).mult := by
-      exact_mod_cast InfinitePlace.mult_pos
     nlinarith
 
 open Classical in

@@ -125,6 +125,58 @@ theorem steinberg_C {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.C n q).Valid)
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp [LieTypeIndex.usesHalfFrobenius_iff]⟩ :=
   (rfl)
 
+/-- On `²Aₙ(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_twistedA {n : ℕ} {q : PrimePower}
+    (hv : (LieTypeIndex.twistedA n q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `Dₙ(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_D {n : ℕ} {q : PrimePower} (hv : (LieTypeIndex.D n q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²Dₙ(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_twistedD {n : ℕ} {q : PrimePower}
+    (hv : (LieTypeIndex.twistedD n q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₆(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_E6 {q : PrimePower} (hv : (LieTypeIndex.E6 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₇(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_E7 {q : PrimePower} (hv : (LieTypeIndex.E7 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₈(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_E8 {q : PrimePower} (hv : (LieTypeIndex.E8 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `F₄(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_F4 {q : PrimePower} (hv : (LieTypeIndex.F4 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `G₂(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_G2 {q : PrimePower} (hv : (LieTypeIndex.G2 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²E₆(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_twistedE6 {q : PrimePower} (hv : (LieTypeIndex.twistedE6 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `³D₄(q)` the Steinberg map is that of the graph-twisted assembly. -/
+theorem steinberg_trialityD4 {q : PrimePower} (hv : (LieTypeIndex.trialityD4 q).Valid) :
+    steinberg ⟨_, hv⟩ = GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
 end Branches
 
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action

@@ -73,7 +73,7 @@ theorem exists_isDisplacementInterpolation [IsGeodesicSpace X] (hp : 1 ≤ p)
     (μ₀ μ₁ : ProbabilityMeasure X)
     (hfin : wassersteinEDist p (μ₀ : Measure X) (μ₁ : Measure X) ≠ ∞) :
     ∃ μ : I → ProbabilityMeasure X, IsDisplacementInterpolation p μ ∧ μ 0 = μ₀ ∧ μ 1 = μ₁ := by
-  obtain ⟨η, hηF, hη, h0, h1, hopt, -⟩ :=
+  obtain ⟨η, _, hη, h0, h1, hopt, -⟩ :=
     exists_ae_mem_geodesicPaths_wassersteinEDist_timeMarginal_eq hp _ _ hfin
   have : IsProbabilityMeasure η := by
     rw [← Measure.isProbabilityMeasure_map_iff (ContinuousMap.measurable_eval 0).aemeasurable,
@@ -99,7 +99,7 @@ theorem IsDisplacementInterpolation.eq_of_ae_subsingleton
     (hgeo : ∀ᵐ z ∂π, {c | c ∈ geodesicPaths X ∧ c 0 = z.1 ∧ c 1 = z.2}.Subsingleton) :
     μ = ν := by
   obtain ⟨η, hηP, hη, hmarg, hopt⟩ := isDisplacementInterpolation_iff.1 hμ
-  obtain ⟨η', hη'P, hη', hmarg', hopt'⟩ := isDisplacementInterpolation_iff.1 hν
+  obtain ⟨η', _, hη', hmarg', hopt'⟩ := isDisplacementInterpolation_iff.1 hν
   have hηπ : η.endpointLaw = π := hπ _ (by
     simpa only [← Measure.endpointLaw_def, hmarg] using η.isCoupling_map_timeMarginal 0 1) hopt
   have hη'π : η'.endpointLaw = π := hπ _ (by

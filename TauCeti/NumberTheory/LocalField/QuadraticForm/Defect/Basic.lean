@@ -81,6 +81,8 @@ a uniformizer or a unit of maximal or positive odd defect.
   representative for each odd exponent.
 * `TauCeti.defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration`: every nonsquare in
   `U(K, 2 v_K(2))` has the maximal defect exponent `2 v_K(2)`.
+* `TauCeti.exists_eisenstein_coefficients_of_defectExponent_eq_odd`: Eisenstein coefficients
+  `t = 2b / π^k ∈ 𝓂[K]` and irreducible `c = (b² - u) / π^(2k)` from an odd unit defect.
 
 ## References
 
@@ -619,7 +621,6 @@ theorem exists_mul_sq_cases_of_not_isSquare
       dsimp only [c]
       rw [normalizedValuation_zpow_of_eq_ofAdd_one ((isUniformizer_def π).mp hπ),
         toAdd_ofAdd]
-    have hdiv : n % 2 + 2 * (n / 2) = n := Int.emod_add_mul_ediv n 2
     simp only [b, map_mul, map_pow, toAdd_mul, toAdd_pow, hc, nsmul_eq_mul]
     omega
   have hb : ¬IsSquare b := by
@@ -758,6 +759,44 @@ theorem quadraticDefect_eq_maximalIdeal_zpow_or_odd (h2 : (2 : K) ≠ 0) {u : K�
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hu hsq with h | ⟨k, hk, h⟩
   · exact Or.inl (quadraticDefect_eq_maximalIdeal_zpow h)
   · exact Or.inr ⟨k, hk, quadraticDefect_eq_maximalIdeal_zpow h⟩
+
+/-- **Eisenstein coefficients from an odd unit defect** (O'Meara §63A). For a uniformizer `π` and a
+unit `u` with defect exponent `2k + 1`, an optimal square approximation `b²` of `u` yields
+`t = 2b / π^k ∈ 𝓂[K]` and an irreducible `c = (b² - u) / π^(2k) ∈ 𝒪[K]`. -/
+theorem exists_eisenstein_coefficients_of_defectExponent_eq_odd {π : 𝒪[K]} (hπ : Irreducible π)
+    {u : Kˣ} (hu : valuation K (u : K) = 1) {k : ℕ}
+    (hd : defectExponent u = ((2 * k + 1 : ℕ) : ℤ)) :
+    ∃ (b : K) (t c : 𝒪[K]),
+      valuation K ((u : K) - b ^ 2) = valuation K (π : K) ^ (2 * k + 1) ∧
+      t ∈ 𝓂[K] ∧ Irreducible c ∧
+      (t : K) = 2 * b / (π : K) ^ k ∧
+      (c : K) = (b ^ 2 - (u : K)) / (π : K) ^ (2 * k) := by
+  have hsq := not_isSquare_of_defectExponent_eq hd
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπpos : 0 < valuation K (π : K) := Valuation.integer.v_irreducible_pos hπ
+  obtain ⟨b, y, hy, hyd⟩ := exists_defectExponent_eq hsq
+  rw [hd, WithTop.coe_inj] at hyd
+  have hyv : valuation K (y : K) = valuation K (π : K) ^ (2 * k + 1) := by
+    simpa only [Units.val_mk0, zpow_natCast] using
+      (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+        (normalizedValuation_irreducible hπ) _ y).mp hyd
+  have hcv : valuation K ((b ^ 2 - (u : K)) / (π : K) ^ (2 * k)) = valuation K (π : K) := by
+    rw [map_div₀, ← neg_sub, Valuation.map_neg, ← hy, hyv, map_pow, pow_succ,
+      mul_div_cancel_left₀ _ (pow_ne_zero _ hπpos.ne')]
+  have htv : valuation K (2 * b / (π : K) ^ k) < 1 := by
+    by_cases h2 : (2 : K) = 0
+    · simp [h2]
+    · have hb : valuation K b ≤ 1 := valuation_le_one_of_sub_sq_le_one hu.le
+        (hy ▸ hyv ▸ pow_le_one₀ zero_le hπ1.le)
+      have hk : k < natCastValuation K 2 h2 := by
+        have h := defectExponent_le_two_mul_natCastValuation h2 hu hsq
+        rw [hd, WithTop.coe_le_coe, Nat.cast_le] at h; omega
+      rw [map_div₀, map_mul, show valuation K (2 : K) = _ from valuation_natCast_eq_pow hπ 2 h2,
+        map_pow, div_lt_one₀ (pow_pos hπpos k)]
+      exact (mul_le_mul' le_rfl hb).trans_lt
+        (by simpa only [mul_one] using pow_lt_pow_right_of_lt_one₀ hπpos hπ1 hk)
+  exact ⟨b, ⟨_, htv.le⟩, ⟨_, hcv.trans_le hπ1.le⟩, hy ▸ hyv,
+    (valuation K).mem_maximalIdeal_iff.mpr htv, irreducible_of_valuation_eq hπ hcv, rfl, rfl⟩
 
 end UnitDefect
 

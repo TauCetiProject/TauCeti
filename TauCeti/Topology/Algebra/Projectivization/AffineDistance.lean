@@ -108,7 +108,6 @@ theorem affineChartInvOneAddDistSq_mk (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) 
     congr 2
     ext j
     simp [div_eq_inv_mul]
-  have hn : 0 < ‖v i‖ := norm_pos_iff.2 h
   rw [hsub, norm_smul, norm_inv]
   field_simp
 

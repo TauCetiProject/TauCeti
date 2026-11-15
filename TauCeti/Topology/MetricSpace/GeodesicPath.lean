@@ -36,6 +36,8 @@ in optimal transport.
 
 * `TauCeti.mem_geodesicPaths_iff_isGeodesicSegment`: a path is a geodesic path exactly when its
   extension to `ℝ` is a geodesic segment between its endpoints.
+* `TauCeti.mem_geodesicPaths_of_lipschitzWith`: a path whose Lipschitz constant is the distance
+  between its endpoints is a geodesic path.
 * `TauCeti.exists_mem_geodesicPaths_iff`: two points are the endpoints of a geodesic path exactly
   when they are joined by a geodesic segment; `TauCeti.isGeodesicSpace_iff_exists_mem_geodesicPaths`
   restates the geodesic-space condition this way.
@@ -95,6 +97,15 @@ theorem IsGeodesicSegment.restrict_mem_geodesicPaths {γ : ℝ → X} (h : IsGeo
   have h1 : γ ((1 : I) : ℝ) = y := h.target
   simp only [ContinuousMap.coe_mk, domRestrict_apply, h0, h1]
   exact h.dist_eq s s.2 t t.2
+
+/-- A path whose Lipschitz constant is the distance between its endpoints is a geodesic path. -/
+theorem mem_geodesicPaths_of_lipschitzWith (hγ : LipschitzWith (dist (γ 0) (γ 1)).toNNReal γ) :
+    γ ∈ geodesicPaths X :=
+  mem_geodesicPaths_iff_isGeodesicSegment.2 <|
+    isGeodesicSegment_of_dist_le (IccExtend_left ..) (IccExtend_right ..) fun s hs t ht hst ↦ by
+      simpa only [IccExtend_of_mem _ _ hs, IccExtend_of_mem _ _ ht, Real.coe_toNNReal _ dist_nonneg,
+        Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hst), neg_sub, mul_comm] using
+        hγ.dist_le_mul ⟨s, hs⟩ ⟨t, ht⟩
 
 /-- Two points are the endpoints of a geodesic path exactly when they are joined by a geodesic
 segment. -/

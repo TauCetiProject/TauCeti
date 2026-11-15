@@ -45,6 +45,8 @@ Source: https://github.com/yuma-mizuno-lean/Mei/blob/68536122a97fed8e87bc6870b94
 
 public section
 
+open scoped Pointwise
+
 namespace LinearMap
 
 /-- A linear map whose kernel contains the direction of a set is constant on that set. -/

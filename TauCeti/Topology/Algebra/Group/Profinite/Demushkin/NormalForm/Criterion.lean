@@ -56,7 +56,7 @@ attribute [local instance 2000] Ring.toAddCommGroup
 section NormalForm
 
 variable {p : ℕ} [Fact p.Prime] {n : ℕ} {r : freeProP p (Fin n)}
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hr : r ∈ proPFrattini p (freeProP p (Fin n))) (e : presentedProP p (Fin n) {r} ≃ₜ* G)
   (hG : IsDemushkin p G)
 include hr e hG
@@ -91,7 +91,7 @@ end NormalForm
 section Dyadic
 
 variable {n : ℕ} {r : freeProP 2 (Fin n)}
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n))) (e : presentedProP 2 (Fin n) {r} ≃ₜ* G)
   (hG : IsDemushkin 2 G) (hnalt : ∃ a : cohomFp 2 G 1, cupFp 2 G a a ≠ 0)
 include hr e hG hnalt

@@ -40,10 +40,9 @@ The generic path facts used in the counting argument are
 ## References
 
 The positive definiteness of the Tits form is the numerical side of the ADE condition in Gabriel's
-theorem, Layer 5 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; this
-file supplies the acyclicity that the reflection-functor induction there assumes separately. See
-Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
-Ch. VII.
+theorem; this file supplies the acyclicity that the reflection-functor induction assumes
+separately. See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative
+Algebras* I, Ch. VII.
 -/
 
 public section
