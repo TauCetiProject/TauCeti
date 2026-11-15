@@ -46,7 +46,8 @@ concatenated, and it does not change the piecewise-linear path that the list pre
   list**.
 * `TauCeti.LSPath.dirDurations_ofLinked` and `TauCeti.LSPath.ofLinked_dirDurations`: on lists with
   positive durations and distinct consecutive directions, `TauCeti.LSPath.ofLinked` inverts
-  `TauCeti.LSPath.dirDurations`.
+  `TauCeti.LSPath.dirDurations`; `TauCeti.LSPath.dirDurations_ofLinked_eq` shows that the resulting
+  `dirDurations` depends only on the list, not on the shape `λ`.
 
 ## References
 
@@ -513,6 +514,17 @@ private theorem dirDurations_ofLinked_eq_mergeDirs (l : List (P.weylGroup × ℚ
   rw [Fin.val_succ, Fin.val_castSucc, List.take_succ_eq_append_getElem hk₂, List.map_append,
     List.sum_append]
   simp
+
+/-- Two LS paths built from the same linked list (possibly for different shapes `λ` and `λ'`) have
+the same directions and durations. -/
+theorem dirDurations_ofLinked_eq {lam' : M} (l : List (P.weylGroup × ℚ))
+    (hmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
+    (hmin' : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam') p.1)
+    (hnonneg : ∀ p ∈ l, 0 ≤ p.2) (hsum : (l.map Prod.snd).sum = 1)
+    (hl : Linked P b lam 0 l) (hl' : Linked P b lam' 0 l) :
+    (ofLinked l hmin hnonneg hsum hl).dirDurations =
+      (ofLinked l hmin' hnonneg hsum hl').dirDurations := by
+  rw [dirDurations_ofLinked_eq_mergeDirs, dirDurations_ofLinked_eq_mergeDirs]
 
 /-- An LS path is determined by its directions and durations. -/
 theorem dirDurations_injective :

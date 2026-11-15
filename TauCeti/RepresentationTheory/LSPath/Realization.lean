@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -19,9 +20,11 @@ an injective map from encodings to timed presentations.
 If distinct realized orbit weights never lie in the same ray, the distinguished-presentation
 uniqueness theorem also recovers the timed presentation from the unparametrized path. Thus
 `LSPath.toPLPath_injective` identifies encodings with their realized paths, rather than merely
-counting presentations. This allows root operators on paths to be transferred to encodings
-once their stability is established. Zero and central shapes are included; no regularity of
-the dominant shape is required.
+counting presentations. In particular, when linear forms on `V` agree with all simple coroots of
+`b` on `f (M)`, both the orbit-injectivity and non-collinearity hypotheses hold automatically
+(`LSPath.toPLPath_injective_of_apply_eq_coroot'`). This allows root operators on paths to be
+transferred to encodings once their stability is established. Zero and central shapes are
+included; no regularity of the dominant shape is required.
 
 ## References
 
@@ -89,6 +92,13 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
       subst time'
       rfl
 
+/-- If linear forms on `V` agree with all simple coroots along `f`, the timed presentation
+determines the LS encoding of a dominant shape. -/
+theorem timed_injective_of_apply_eq_coroot' (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜)) :
+    Function.Injective (fun π : LSPath P b lam ↦ π.timed 𝕜 f) :=
+  timed_injective hlam (P.injOn_orbit_weylGroup_of_apply_eq_coroot' b hF lam)
+
 end Timed
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
@@ -115,5 +125,24 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
       fun u v ↦ ¬ SameRay 𝕜 u v) {π π' : LSPath P b lam} :
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
+
+/-- Over a linearly ordered field, if linear forms on `V` agree with all simple coroots along `f`,
+the unparametrized piecewise-linear path determines the LS encoding of a dominant shape, even when
+`f` kills central weights. -/
+theorem toPLPath_injective_of_apply_eq_coroot' (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜)) :
+    Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) := by
+  refine toPLPath_injective hlam (P.injOn_orbit_weylGroup_of_apply_eq_coroot' b hF lam) ?_
+  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ huv
+  exact P.pairwise_not_sameRay_image_orbit_weylGroup b hF lam ⟨_, ⟨w₁, rfl⟩, rfl⟩
+    ⟨_, ⟨w₂, rfl⟩, rfl⟩ huv
+
+/-- Equality of realized LS paths under a simple-coroot-compatible realization is equality of
+encodings. -/
+theorem toPLPath_inj_of_apply_eq_coroot' (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜))
+    {π π' : LSPath P b lam} :
+    π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
+  (toPLPath_injective_of_apply_eq_coroot' hlam hF).eq_iff
 
 end TauCeti.LSPath
