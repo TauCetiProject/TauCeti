@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Hom
+import TauCeti.Analysis.Normed.Module.Orientation
 
 /-!
 # Transporting orientations along fibrewise isomorphisms
@@ -22,15 +23,19 @@ family of fibre orientations that `φ` carries to `o`
 
 These fibre orientations vary continuously because, read in linear trivializations of `E'` and
 `E`, the fibrewise isomorphism is a continuous family of linear maps `F' → F`
-(`TauCeti.continuousOn_fiberwise_inCoordinates`): composed with
-the inverse of its value at a base point, it is a continuous family of endomorphisms of `F'` with
-determinant `1` at that point, hence of positive determinant nearby, and such endomorphisms fix
-orientations.
+(`TauCeti.continuousOn_continuousLinearMapAt_comp_symmL`), and near a base point such a family
+transports orientations as its value at that point does
+(`Orientation.eventually_map_eq_map_of_continuousAt`).
+
+Transport along the identity is the identity (`TauCeti.VectorBundleOrientation.comap_id`), along
+a composite it is the composite of the transports (`TauCeti.VectorBundleOrientation.comap_comp`),
+and it commutes with reindexing (`TauCeti.VectorBundleOrientation.comap_reindex`).
 
 The pullback of an orientation along a continuous map of bases
 (`TauCeti.VectorBundleOrientation.pullback`) is the case where `E'` is the pullback bundle and
-every `φ b'` is the identity. The Thom and Euler classes of transported orientations are computed
-in `TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv`.
+every `φ b'` is the identity (`TauCeti.VectorBundleOrientation.comap_refl_eq_pullback`). The Thom
+and Euler classes of transported orientations are computed in
+`TauCeti.Topology.VectorBundle.Orientation.FiberwiseEquiv`.
 
 ## Main definitions
 
@@ -63,32 +68,6 @@ variable {B : Type*} [TopologicalSpace B]
   {ι : Type*} [Fintype ι] {g : C(B', B)} {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
 
 namespace VectorBundleOrientation
-
-/-- Near `x₀`, a linear equivalence `f : F' ≃ F` transports an orientation `c` of `F'` as `f₀` does
-whenever `f₀⁻¹ ∘ f` is the value at `x` of a family `L` of endomorphisms of `F'` that is continuous
-at `x₀` with value the identity there: the determinant of `L x` stays positive near `x₀`. -/
-private theorem eventually_map_eq_map_of_continuousAt {X : Type*} [TopologicalSpace X] {x₀ : X}
-    (hι : Fintype.card ι = finrank ℝ F') (c : Orientation ℝ F' ι) (f₀ : F' ≃L[ℝ] F)
-    {L : X → F' →L[ℝ] F'} (hL : FiniteDimensional ℝ F' → ContinuousAt L x₀)
-    (hL₀ : L x₀ = ContinuousLinearMap.id ℝ F') :
-    ∀ᶠ x in 𝓝 x₀, ∀ f : F' ≃L[ℝ] F, (f.trans f₀.symm : F' →L[ℝ] F') = L x →
-      Orientation.map ι f.toLinearEquiv c = Orientation.map ι f₀.toLinearEquiv c := by
-  rcases isEmpty_or_nonempty ι with hι₀ | hι₀
-  · -- With `ι` empty, transport along any self-equivalence of `F'` fixes every orientation.
-    refine Eventually.of_forall fun x f _ ↦ ?_
-    have h := Orientation.map_of_isEmpty (x := c)
-      (f := f.toLinearEquiv.trans f₀.toLinearEquiv.symm)
-    rw [Orientation.map_trans, ← Orientation.map_symm, Equiv.symm_apply_eq] at h
-    exact h
-  -- Otherwise `F'` is finite-dimensional, and the determinant of `L x` is positive near `x₀`.
-  have : FiniteDimensional ℝ F' := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-  have hLb : (L x₀).det = 1 := by
-    rw [hL₀, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id]
-  filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp (hL this)).eventually
-    (lt_mem_nhds (hLb ▸ one_pos))] with x hx f hf
-  refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
-  rw [Function.comp_apply, ← hf] at hx
-  simpa [ContinuousLinearMap.det] using hx
 
 /-- Near a point `b'`, the fibre orientations obtained by pulling back `o` along `φ` are locally
 constant when read in the preferred trivialization of `E'` at `b'`. -/
@@ -128,17 +107,17 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
   -- It remains to see that near `b'` the readings `T x` transport `c` as `T b'` does.
   have hU : e'.baseSet ∩ g ⁻¹' e.baseSet ∈ 𝓝 b' :=
     (e'.open_baseSet.inter (e.open_baseSet.preimage g.continuous)).mem_nhds ⟨hb', hb⟩
-  -- Read without membership hypotheses, `(T b')⁻¹ ∘ T x` is continuous at `b'`.
-  let L (x : B') : F' →L[ℝ] F' := ((T b' hb' hb).symm : F →L[ℝ] F').comp
-    ((e.continuousLinearMapAt ℝ (g x)).comp ((φ x : E' x →L[ℝ] E (g x)).comp (e'.symmL ℝ x)))
+  -- Read without membership hypotheses, `T x` is continuous at `b'`.
+  let L (x : B') : F' →L[ℝ] F :=
+    (e.continuousLinearMapAt ℝ (g x)).comp ((φ x : E' x →L[ℝ] E (g x)).comp (e'.symmL ℝ x))
   have hL (x : B') (hx' : x ∈ e'.baseSet) (hx : g x ∈ e.baseSet) :
-      ((T x hx' hx).trans (T b' hb' hb).symm : F' →L[ℝ] F') = L x := by
+      (T x hx' hx : F' →L[ℝ] F) = L x := by
     ext v
     simp [L, T, e.coe_continuousLinearEquivAt_eq hx, e'.symm_continuousLinearEquivAt_eq hx']
-  have hS := eventually_map_eq_map_of_continuousAt hι c (T b' hb' hb) (L := L)
-    (fun _ ↦ (continuousOn_const.clm_comp (continuousOn_fiberwise_inCoordinates
-      (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b'))) hφ e e')).continuousAt hU)
-    (by rw [← hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm, ContinuousLinearEquiv.coe_refl])
+  have hS := Orientation.eventually_map_eq_map_of_continuousAt hι c (f₀ := T b' hb' hb) (L := L)
+    (fun _ ↦ (continuousOn_continuousLinearMapAt_comp_symmL
+      (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b'))) hφ e e').continuousAt hU)
+    (hL b' hb' hb).symm
   filter_upwards [hU, g.continuous.continuousAt.eventually (o.eventually_mapOrientation_eq' (g b')),
     hS] with x hxU hxo hxS hx'
   refine (Orientation.map ι (T x hx' hxU.2).toLinearEquiv).injective ?_
@@ -183,6 +162,52 @@ theorem eq_comap_iff (o' : VectorBundleOrientation F' E' ι) :
 @[simp]
 theorem comap_neg : (-o).comap hι hφ = -o.comap hι hφ :=
   ext fun b' ↦ Module.Ray.map_neg _ (o (g b'))
+
+/-- Transport commutes with reindexing the orientation. -/
+@[simp]
+theorem comap_reindex {ι' : Type*} [Fintype ι'] (f : ι ≃ ι')
+    (hι' : Fintype.card ι' = finrank ℝ F') :
+    (reindex f o).comap hι' hφ = reindex f (o.comap ((Fintype.card_congr f).trans hι') hφ) :=
+  ext fun b' ↦ by
+    rw [comap_apply, reindex_apply, reindex_apply, comap_apply, Orientation.map_reindex]
+
+/-- Transport along a composite of fibrewise isomorphisms is the composite of the transports. -/
+theorem comap_comp {B'' : Type*} [TopologicalSpace B''] {F'' : Type*} [NormedAddCommGroup F'']
+    [NormedSpace ℝ F''] {E'' : B'' → Type*} [TopologicalSpace (TotalSpace F'' E'')]
+    [∀ b, AddCommMonoid (E'' b)] [∀ b, Module ℝ (E'' b)] [∀ b, TopologicalSpace (E'' b)]
+    [FiberBundle F'' E''] [VectorBundle ℝ F'' E''] {g' : C(B'', B')}
+    {ψ : ∀ b'', E'' b'' ≃L[ℝ] E' (g' b'')} (hι' : Fintype.card ι = finrank ℝ F'')
+    (hψ : Continuous fun v : TotalSpace F'' E'' ↦ TotalSpace.mk' F' (g' v.proj) (ψ v.proj v.2)) :
+    (o.comap hι hφ).comap hι' hψ =
+      o.comap (g := g.comp g') (φ := fun b'' ↦ (ψ b'').trans (φ (g' b''))) hι' (hφ.comp hψ) :=
+  ext fun b'' ↦ by
+    rw [comap_apply, comap_apply, ← Orientation.map_trans]
+    exact (comap_apply (g := g.comp g') (φ := fun b'' ↦ (ψ b'').trans (φ (g' b''))) hι' o
+      (hφ.comp hψ) b'').symm
+
+end VectorBundleOrientation
+
+namespace VectorBundleOrientation
+
+variable (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι)
+
+/-- Transport along the identity fibre maps over the identity of the base is the identity. -/
+@[simp]
+theorem comap_id :
+    o.comap (g := ContinuousMap.id B) (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (E b)) hι
+      continuous_id = o :=
+  ext fun b ↦ (comap_apply _ o _ b).trans
+    (DFunLike.congr_fun (Orientation.map_refl (R := ℝ) (M := E b) ι) (o b))
+
+/-- The pullback of an orientation along a continuous map `g` of bases is its transport along the
+identity fibre maps `(g^* E)_{b'} = E_{g b'}` of the pullback bundle. -/
+theorem comap_refl_eq_pullback :
+    o.comap (E' := (⇑g) *ᵖ E) (φ := fun b' ↦ ContinuousLinearEquiv.refl ℝ (E (g b'))) hι
+      (Pullback.continuous_lift F E g) = o.pullback g :=
+  -- On each fibre, transport along the identity of `(g^* E)_{b'}` fixes the orientation.
+  ext fun b' ↦ (comap_apply _ o _ b').trans <|
+    (DFunLike.congr_fun (Orientation.map_refl (R := ℝ) (M := (⇑g *ᵖ E) b') ι) (o (g b'))).trans
+      (pullback_apply g o b').symm
 
 end VectorBundleOrientation
 
