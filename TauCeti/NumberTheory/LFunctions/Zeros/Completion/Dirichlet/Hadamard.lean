@@ -44,7 +44,9 @@ so `Re (Λ₀'/Λ₀ (s)) = ∑_ρ m_ρ Re (1 / (s - ρ))` off the zeros. Realit
   `Re B(χ) = -∑_ρ m_ρ Re (1 / ρ)`.
 * `TauCeti.LFunctions.re_logDeriv_dirichletData_entireCompletion_eq_tsum` and
   `TauCeti.LFunctions.tsum_divisor_mul_re_one_div_sub_dirichletData_entireCompletion_nonneg`:
-  the real part of `Λ₀'/Λ₀` as a sum over zeros, nonnegative for `1 ≤ Re s`.
+  the real part of `Λ₀'/Λ₀` as a sum over zeros, nonnegative for `1 ≤ Re s`, with each summand at
+  a zero positive there
+  (`TauCeti.LFunctions.divisor_mul_re_one_div_sub_dirichletData_entireCompletion_pos`).
 
 ## References
 
@@ -134,7 +136,7 @@ theorem summable_divisor_mul_re_one_div_dirichletData_entireCompletion (hne : χ
         (1 / (ρ : ℂ)).re) :=
   ((dirichletData_entireCompletion_orderLE_one χ hχ hne).summable_divisor_toNat_mul_norm_inv_sq
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) (by norm_num)).of_nonneg_of_le
+    (by norm_num)).of_nonneg_of_le
     (fun ρ ↦ (divisor_mul_re_one_div_mem_Icc_dirichletData_entireCompletion χ hχ hne ρ).1)
     (fun ρ ↦ (divisor_mul_re_one_div_mem_Icc_dirichletData_entireCompletion χ hχ hne ρ).2)
 
@@ -233,8 +235,7 @@ theorem re_logDeriv_dirichletData_entireCompletion_eq_tsum (hne : χ ≠ 1) {s :
     re_logDeriv_dirichletData_entireCompletion_zero χ hχ hne]
   ring
 
-/-- For `1 ≤ Re s`, each weighted summand `m_ρ Re (1 / (s - ρ))` is nonnegative, and positive at
-a zero. -/
+/-- For `1 ≤ Re s`, each weighted summand `m_ρ Re (1 / (s - ρ))` is nonnegative. -/
 theorem divisor_mul_re_one_div_sub_dirichletData_entireCompletion_nonneg (hne : χ ≠ 1) {s : ℂ}
     (hs : 1 ≤ s.re) (ρ : ℂ) :
     0 ≤ ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
@@ -247,6 +248,19 @@ theorem divisor_mul_re_one_div_sub_dirichletData_entireCompletion_nonneg (hne : 
   refine mul_nonneg (Nat.cast_nonneg m) ?_
   rw [one_div, inv_re, sub_re]
   exact div_nonneg (by linarith [hρ.2]) (normSq_nonneg _)
+
+/-- For `1 ≤ Re s`, the weighted summand `m_ρ Re (1 / (s - ρ))` at a zero `ρ` is positive, since
+`Re ρ < 1 ≤ Re s`. -/
+theorem divisor_mul_re_one_div_sub_dirichletData_entireCompletion_pos (hne : χ ≠ 1) {s ρ : ℂ}
+    (hs : 1 ≤ s.re)
+    (hρ : 0 < MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ) :
+    0 < ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℝ) *
+      (1 / (s - ρ)).re := by
+  have hre := re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos χ hχ hne hρ
+  have hsub : 0 < (s - ρ).re := by rw [sub_re]; linarith [hre.2]
+  refine mul_pos (Nat.cast_pos.mpr (Int.pos_iff_toNat_pos.mp hρ)) ?_
+  rw [one_div, inv_re]
+  exact div_pos hsub (normSq_pos.mpr fun h ↦ by simp [h] at hsub)
 
 /-- **Positivity of the sum over zeros.** For `1 ≤ Re s`, `0 ≤ ∑_ρ m_ρ Re (1 / (s - ρ))`, an
 absolutely convergent sum of nonnegative terms. -/
