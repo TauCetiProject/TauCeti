@@ -16,8 +16,9 @@ import TauCeti.Analysis.Matrix.Exponential.Block
 import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
-import TauCeti.Geometry.Lie.Subgroup.Unitary
+import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 
 /-!
 # The matrix Lie algebra of a closed subgroup of the unitary group
@@ -40,17 +41,16 @@ Differentiating the invariance of a bilinear form under `Ad(exp (t • X))` at `
 `Ad(G)`-invariant form on `𝔤` is also invariant under `ad X = ⁅X, ·⁆`. The trace form
 `⟨X, Y⟩ = -Re tr (X Y)` is an `Ad(G)`-invariant inner product on `𝔤` for every closed `G`.
 For closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, the block-diagonal product
-`{diag(g₁, g₂)} ≤ U(n ⊕ m)` is closed, with Lie algebra the block-diagonal matrices
-`diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
+`ClosedSubgroup.fromBlocksProd`, the closed subgroup `{diag(g₁, g₂)} ≤ U(n ⊕ m)`, has Lie algebra
+the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 ## Main definitions
 
 * `ClosedSubgroup.matrixLieAlgebra`: the Lie algebra of a closed subgroup of `U(n)`.
 * `ClosedSubgroup.matrixAdjointRepresentation`: its adjoint representation `X ↦ g X g⁻¹`.
 * `ClosedSubgroup.matrixTraceForm`: the trace form `⟨X, Y⟩ = -Re tr (X Y)`.
-* `ClosedSubgroup.fromBlocksProd`: the block-diagonal product of two closed subgroups.
-* `ClosedSubgroup.matrixLieAlgebraFromBlocksProdEquiv`: the Lie algebra of the product is the
-  product of the Lie algebras.
+* `ClosedSubgroup.matrixLieAlgebraFromBlocksProdEquiv`: the Lie algebra of the block-diagonal
+  product `ClosedSubgroup.fromBlocksProd` is the product of the Lie algebras.
 
 ## Main results
 
@@ -118,7 +118,8 @@ private theorem forall_exp_mem_iff (G : ClosedSubgroup (Matrix.unitaryGroup n �
   refine forall_congr' fun t ↦ ?_
   simp only [toGL, Subgroup.mem_map, Units.ext_iff, Unitary.val_toUnits_apply,
     expUnit_coe]
-  rfl
+  -- Membership in `G` and in its underlying subgroup `(G : Subgroup _)` agree by definition.
+  exact Iff.rfl
 
 private theorem conjTranspose_eq_neg_of_forall_exp_mem
     (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) {X : Matrix n n 𝕜}
@@ -150,28 +151,7 @@ private theorem hasDerivAt_linearMap_exp_mul_mul_exp_neg (ℓ : Matrix n n 𝕜 
   (LinearMap.toContinuousLinearMap ℓ).hasFDerivAt.comp_hasDerivAt 0
     (hasDerivAt_exp_mul_const_mul_exp_neg X Y)
 
-/-- A matrix entry of `X` is the derivative at `0` of that entry of `exp (t • X)`. -/
-private theorem hasDerivAt_exp_smul_apply {m : Type*} [Fintype m] [DecidableEq m]
-    (X : Matrix m m 𝕜) (i j : m) :
-    HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := by
-  let ℓ : Matrix m m 𝕜 →ₗ[ℝ] 𝕜 :=
-    { toFun M := M i j
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  have h := (LinearMap.toContinuousLinearMap ℓ).hasFDerivAt.comp_hasDerivAt 0
-    (hasDerivAt_exp_smul_const X (0 : ℝ))
-  rw [zero_smul, exp_zero, one_mul] at h
-  exact h
-
 end Transport
-
-/-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
-private theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {m : Type*} [Fintype m]
-    [DecidableEq m] {X : Matrix m m 𝕜} {i j : m} (h : ∀ t : ℝ, exp (t • X) i j = 0) :
-    X i j = 0 := by
-  have hX : HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := hasDerivAt_exp_smul_apply X i j
-  simp only [h] at hX
-  exact hX.unique (hasDerivAt_const 0 0)
 
 /-- The Lie algebra of a closed subgroup `G` of the unitary group `U(n)`, as a real Lie subalgebra
 of the `n × n` matrices: the matrices `X` whose exponential line `t ↦ exp (t • X)` stays in `G`.
@@ -213,6 +193,14 @@ theorem mul_mul_star_mem_matrixLieAlgebra {g : Matrix.unitaryGroup n 𝕜} (hg :
   rw [← Matrix.smul_mul, ← Matrix.mul_smul, hconj, ← hht]
   simp
 
+/-- Conjugation by a unitary matrix is multiplicative: `(g X g⁻¹) (g Y g⁻¹) = g (X Y) g⁻¹`. -/
+private theorem mul_mul_star_mul_mul_mul_star (g : Matrix.unitaryGroup n 𝕜) (X Y : Matrix n n 𝕜) :
+    (g : Matrix n n 𝕜) * X * star (g : Matrix n n 𝕜) *
+        ((g : Matrix n n 𝕜) * Y * star (g : Matrix n n 𝕜)) =
+      (g : Matrix n n 𝕜) * (X * Y) * star (g : Matrix n n 𝕜) := by
+  simp only [mul_assoc]
+  rw [← mul_assoc (star (g : Matrix n n 𝕜)), Matrix.UnitaryGroup.star_mul_self, one_mul]
+
 variable (G) in
 /-- The adjoint representation `Ad(g) X = g X g⁻¹` of a closed subgroup `G` of `U(n)` on its Lie
 algebra. For a unitary `g` the inverse `g⁻¹` is the conjugate transpose `star g`. -/
@@ -238,11 +226,9 @@ theorem matrixAdjointRepresentation_lie (g : G) (X Y : G.matrixLieAlgebra) :
     G.matrixAdjointRepresentation g ⁅X, Y⁆ =
       ⁅G.matrixAdjointRepresentation g X, G.matrixAdjointRepresentation g Y⁆ := by
   ext1
-  have h : star (g : Matrix n n 𝕜) * g = 1 := Matrix.UnitaryGroup.star_mul_self _
   simp only [coe_matrixAdjointRepresentation_apply, LieSubalgebra.coe_bracket,
     LieRing.of_associative_ring_bracket]
-  simp only [mul_sub, sub_mul, mul_assoc]
-  simp [← mul_assoc (star (g : Matrix n n 𝕜)), h]
+  rw [mul_sub, sub_mul, mul_mul_star_mul_mul_mul_star, mul_mul_star_mul_mul_mul_star]
 
 /-- For an `Ad(G)`-invariant form `B`, `B (Ad(exp (t X)) Y) Z = B Y (Ad(exp (-t X)) Z)`, written
 in the ambient matrices through a linear retraction `P` of the matrices onto the Lie algebra. -/
@@ -339,14 +325,9 @@ theorem posDef_matrixTraceForm : G.matrixTraceForm.toQuadraticMap.PosDef := by
 theorem isInvariantForm_matrixTraceForm :
     TauCeti.Representation.IsInvariantForm G.matrixAdjointRepresentation G.matrixTraceForm := by
   refine TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ ?_
-  have h : star (g : Matrix n n 𝕜) * g = 1 := Matrix.UnitaryGroup.star_mul_self _
-  have hconj : (g : Matrix n n 𝕜) * X * star (g : Matrix n n 𝕜) *
-      ((g : Matrix n n 𝕜) * Y * star (g : Matrix n n 𝕜)) =
-      (g : Matrix n n 𝕜) * (X * Y) * star (g : Matrix n n 𝕜) := by
-    simp only [mul_assoc]
-    rw [← mul_assoc (star (g : Matrix n n 𝕜)), h, one_mul]
-  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply, hconj]
-  rw [Matrix.trace_mul_comm, ← mul_assoc, h, one_mul]
+  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply,
+    mul_mul_star_mul_mul_mul_star]
+  rw [Matrix.trace_mul_comm, ← mul_assoc, Matrix.UnitaryGroup.star_mul_self, one_mul]
 
 section FromBlocks
 
@@ -358,43 +339,16 @@ private theorem exp_smul_fromBlocks_zero (t : ℝ) (A : Matrix n n 𝕜) (D : Ma
   rw [Matrix.fromBlocks_smul, smul_zero, smul_zero]
   exact Matrix.exp_fromBlocks_diagonal _ _
 
-/-- The block-diagonal product `G₁ × G₂ ≤ U(n ⊕ m)` of closed subgroups `G₁ ≤ U(n)` and
-`G₂ ≤ U(m)`: the matrices `diag(g₁, g₂)` with `g₁ ∈ G₁` and `g₂ ∈ G₂`. -/
-def fromBlocksProd (G₁ : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
-    (G₂ : ClosedSubgroup (Matrix.unitaryGroup m 𝕜)) :
-    ClosedSubgroup (Matrix.unitaryGroup (n ⊕ m) 𝕜) where
-  toSubgroup := ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum
-  isClosed' := by
-    convert (((isCompact_coe G₁).prod (isCompact_coe G₂)).image
-      Matrix.UnitaryGroup.continuous_sum).isClosed using 1
-    ext g
-    simp only [Subgroup.mem_carrier, Subgroup.mem_map, Subgroup.mem_prod, Set.mem_image,
-      Set.mem_prod, SetLike.mem_coe]
-    -- Membership in `Gᵢ` and in its underlying subgroup `(Gᵢ : Subgroup _)` agree by definition.
-    exact Iff.rfl
+/-- A matrix with vanishing off-diagonal blocks is the block-diagonal matrix of its diagonal
+blocks. -/
+private theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero {p q α : Type*} [Zero α]
+    {X : Matrix (p ⊕ q) (p ⊕ q) α}
+    (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
+    X = Matrix.fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
+  rw [← h₁₂, ← h₂₁, Matrix.fromBlocks_toBlocks]
 
 variable {G₁ : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
   {G₂ : ClosedSubgroup (Matrix.unitaryGroup m 𝕜)}
-
-/-- An element of `U(n ⊕ m)` lies in the block-diagonal product exactly when it is `diag(g₁, g₂)`
-with `g₁ ∈ G₁` and `g₂ ∈ G₂`. -/
-theorem mem_fromBlocksProd_iff {g : Matrix.unitaryGroup (n ⊕ m) 𝕜} :
-    g ∈ G₁.fromBlocksProd G₂ ↔ ∃ g₁ ∈ G₁, ∃ g₂ ∈ G₂,
-      (g : Matrix (n ⊕ m) (n ⊕ m) 𝕜) = Matrix.fromBlocks (g₁ : Matrix n n 𝕜) 0 0 g₂ := by
-  -- The underlying subgroup of `fromBlocksProd` is, by definition, the image of `G₁ × G₂`.
-  change g ∈ ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum ↔ _
-  simp only [Subgroup.mem_map, Subgroup.mem_prod, Prod.exists]
-  constructor
-  · rintro ⟨g₁, g₂, ⟨h₁, h₂⟩, rfl⟩
-    exact ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
-  · rintro ⟨g₁, h₁, g₂, h₂, hg⟩
-    exact ⟨g₁, g₂, ⟨h₁, h₂⟩, Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩
-
-/-- The block-diagonal sum `diag(g₁, g₂)` of `g₁ ∈ G₁` and `g₂ ∈ G₂` lies in the product. -/
-theorem fromBlocks_mem_fromBlocksProd {g₁ : Matrix.unitaryGroup n 𝕜}
-    {g₂ : Matrix.unitaryGroup m 𝕜} (h₁ : g₁ ∈ G₁) (h₂ : g₂ ∈ G₂) :
-    Matrix.UnitaryGroup.sum (g₁, g₂) ∈ G₁.fromBlocksProd G₂ :=
-  mem_fromBlocksProd_iff.mpr ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
 
 /-- **The Lie algebra of a block-diagonal product** consists of the block-diagonal matrices
 `diag(X₁, X₂)` with `X₁` in the Lie algebra of `G₁` and `X₂` in that of `G₂`. -/
@@ -409,26 +363,27 @@ theorem mem_matrixLieAlgebra_fromBlocksProd_iff {X : Matrix (n ⊕ m) (n ⊕ m) 
       obtain ⟨g, hg, hgt⟩ := hX t
       obtain ⟨g₁, h₁, g₂, h₂, hg'⟩ := mem_fromBlocksProd_iff.mp hg
       exact ⟨g₁, h₁, g₂, h₂, hgt.symm.trans hg'⟩
-    have h₁₂ : X.toBlocks₁₂ = 0 := Matrix.ext fun i j ↦
-      apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ by
+    -- The off-diagonal entries of `exp (t • X)` vanish for every `t`, hence so do those of `X`.
+    have hoff : X.toBlocks₁₂ = 0 ∧ X.toBlocks₂₁ = 0 := by
+      refine ⟨?_, ?_⟩ <;>
+      · refine Matrix.ext fun i j ↦ Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ ?_
         obtain ⟨g₁, -, g₂, -, he⟩ := hexp t
         simp [he]
-    have h₂₁ : X.toBlocks₂₁ = 0 := Matrix.ext fun i j ↦
-      apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ by
-        obtain ⟨g₁, -, g₂, -, he⟩ := hexp t
-        simp [he]
-    have hX' : X = Matrix.fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
-      rw [← h₁₂, ← h₂₁, Matrix.fromBlocks_toBlocks]
-    refine ⟨h₁₂, h₂₁, fun t ↦ ?_, fun t ↦ ?_⟩ <;>
-    · obtain ⟨g₁, h₁, g₂, h₂, he⟩ := hexp t
-      rw [hX', exp_smul_fromBlocks_zero, Matrix.fromBlocks_inj] at he
-      first
-        | exact ⟨g₁, h₁, he.1.symm⟩
-        | exact ⟨g₂, h₂, he.2.2.2.symm⟩
+    have hdiag (t : ℝ) : ∃ g₁ ∈ G₁, ∃ g₂ ∈ G₂, (g₁ : Matrix n n 𝕜) = exp (t • X.toBlocks₁₁) ∧
+        (g₂ : Matrix m m 𝕜) = exp (t • X.toBlocks₂₂) := by
+      obtain ⟨g₁, h₁, g₂, h₂, he⟩ := hexp t
+      rw [eq_fromBlocks_of_toBlocks₁₂_eq_zero hoff.1 hoff.2, exp_smul_fromBlocks_zero,
+        Matrix.fromBlocks_inj] at he
+      exact ⟨g₁, h₁, g₂, h₂, he.1.symm, he.2.2.2.symm⟩
+    refine ⟨hoff.1, hoff.2, fun t ↦ ?_, fun t ↦ ?_⟩
+    · obtain ⟨g₁, h₁, -, -, he, -⟩ := hdiag t
+      exact ⟨g₁, h₁, he⟩
+    · obtain ⟨-, -, g₂, h₂, -, he⟩ := hdiag t
+      exact ⟨g₂, h₂, he⟩
   · rintro ⟨h₁₂, h₂₁, h₁, h₂⟩ t
     obtain ⟨g₁, hg₁, hg₁t⟩ := h₁ t
     obtain ⟨g₂, hg₂, hg₂t⟩ := h₂ t
-    refine ⟨_, fromBlocks_mem_fromBlocksProd hg₁ hg₂, ?_⟩
+    refine ⟨_, sum_mem_fromBlocksProd hg₁ hg₂, ?_⟩
     rw [Matrix.UnitaryGroup.coe_sum, ← Matrix.fromBlocks_toBlocks X, h₁₂, h₂₁,
       exp_smul_fromBlocks_zero, hg₁t, hg₂t]
 
@@ -444,7 +399,7 @@ theorem eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd {X : Matrix (n ⊕ 
     (hX : X ∈ (G₁.fromBlocksProd G₂).matrixLieAlgebra) :
     X = Matrix.fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   obtain ⟨h₁₂, h₂₁, -, -⟩ := mem_matrixLieAlgebra_fromBlocksProd_iff.mp hX
-  rw [← h₁₂, ← h₂₁, Matrix.fromBlocks_toBlocks]
+  exact eq_fromBlocks_of_toBlocks₁₂_eq_zero h₁₂ h₂₁
 
 variable (G₁ G₂) in
 /-- The Lie algebra of the block-diagonal product `G₁ × G₂` is the product of the Lie algebras,
@@ -501,7 +456,7 @@ theorem matrixLieAlgebraFromBlocksProdEquiv_matrixAdjointRepresentation {g₁ g�
     (h₁ : g₁ ∈ G₁) (h₂ : g₂ ∈ G₂) (X : (G₁.fromBlocksProd G₂).matrixLieAlgebra) :
     G₁.matrixLieAlgebraFromBlocksProdEquiv G₂
         ((G₁.fromBlocksProd G₂).matrixAdjointRepresentation
-          ⟨_, fromBlocks_mem_fromBlocksProd h₁ h₂⟩ X) =
+          ⟨_, sum_mem_fromBlocksProd h₁ h₂⟩ X) =
       (G₁.matrixAdjointRepresentation ⟨g₁, h₁⟩ (G₁.matrixLieAlgebraFromBlocksProdEquiv G₂ X).1,
         G₂.matrixAdjointRepresentation ⟨g₂, h₂⟩
           (G₁.matrixLieAlgebraFromBlocksProdEquiv G₂ X).2) := by

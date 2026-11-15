@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Subgroup.UnitaryMatrix
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 
 /-!
 # Compact matrix structure groups
@@ -214,7 +214,7 @@ def prod (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGr
   isInvariantForm_innerForm := Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
     obtain ⟨g₁, h₁, g₂, h₂, hg⟩ := ClosedSubgroup.mem_fromBlocksProd_iff.mp g.2
     have hg' : g = ⟨Matrix.UnitaryGroup.sum (g₁, g₂),
-        ClosedSubgroup.fromBlocks_mem_fromBlocksProd h₁ h₂⟩ :=
+        ClosedSubgroup.sum_mem_fromBlocksProd h₁ h₂⟩ :=
       Subtype.ext (Subtype.ext (by simpa using hg))
     subst hg'
     simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
