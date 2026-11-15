@@ -286,11 +286,11 @@ theorem coordsHomeomorph_symm_apply (z : E × ℝ) :
 
 @[fun_prop]
 theorem continuous_space : Continuous (space : ParabolicSpaceTime E → E) :=
-  (continuous_fst.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  WithLp.continuous_fst 1 E ParabolicTime
 
 @[fun_prop]
 theorem continuous_time : Continuous (time : ParabolicSpaceTime E → ℝ) :=
-  (continuous_snd.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  Snowflaking.continuous_ofSnowflaking.comp (WithLp.continuous_snd 1 E ParabolicTime)
 
 /-- Building a point from its coordinates is jointly continuous in `(x, t)`. -/
 @[fun_prop]
@@ -368,8 +368,8 @@ theorem timeReverse_symm (T : ℝ) :
 theorem preimage_timeReverse_slab (T a b : ℝ) :
     timeReverse T ⁻¹' slab (E := E) a b = slab (T - b) (T - a) := by
   ext p
-  simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  simp only [mem_preimage, mem_slab, time_timeReverse,
+    ← Set.mem_preimage (f := (T - ·)) (a := p.time), Set.preimage_const_sub_Icc]
 
 /-- Time reversal `t ↦ T - t`, as an isometry from the slab `E × [a', b']` onto the slab
 `E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
