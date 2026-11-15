@@ -58,31 +58,7 @@ noncomputable section
 
 open CategoryTheory Limits Set Topology Module
 
-universe w
-
 namespace TauCeti
-
-/-- If a homomorphism out of the local homology of `M` at `z` carries `l` to the image of a
-generator `ρ` of infinite order under an isomorphism `δ`, and the local homology at `z` has a
-local orientation, then `l` is a local orientation. -/
-private lemma isLocalOrientation_of_addMonoidHom_eq {M : Type w} [TopologicalSpace M] {z : M}
-    {d : ℕ} {γ l : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
-      ({z} : Set M) d} (hγ : IsLocalOrientation z d γ) {G H : Type*} [AddCommGroup G]
-    [AddCommGroup H]
-    (J : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({z} : Set M) d →+ G)
-    (δ : H ≃+ G) {ρ : H} (hρ : ∀ h, ∃ a : ℤ, a • ρ = h) (hρ₀ : ∀ a : ℤ, a • ρ = 0 → a = 0)
-    (hJ : J l = δ ρ) : IsLocalOrientation z d l := by
-  rw [isLocalOrientation_iff] at hγ ⊢
-  obtain ⟨k, rfl⟩ := hγ l
-  obtain ⟨j, hj⟩ := hρ (δ.symm (J γ))
-  have hkj : k * j = 1 := by
-    have h : (k * j - 1) • ρ = 0 := by
-      rw [sub_smul, one_smul, mul_smul, hj, ← map_zsmul, ← map_zsmul, hJ, δ.symm_apply_apply,
-        sub_self]
-    linarith [hρ₀ _ h]
-  intro y
-  obtain ⟨a, rfl⟩ := hγ y
-  exact ⟨a * j, by rw [smul_smul, mul_assoc, mul_comm j k, hkj, mul_one]⟩
 
 namespace HomologicalOrientation
 
@@ -106,6 +82,12 @@ private lemma localHomologyRestriction_fundamentalClassRel_generator (x : M) :
   rw [hρ, ← map_zsmul] at ha
   simpa using congrArg e.inv ha
 
+omit [TopologicalSpace X] [TopologicalSpace M] [TopologicalSpace N] [T2Space M] in
+include hιf in
+/-- A point outside the interior `ι(M)` lies on the boundary `f(N)`. -/
+private lemma mem_range_of_mem_compl_range {z : X} (hz : z ∈ (range ι)ᶜ) : z ∈ range f := by
+  simpa [hιf] using hz
+
 omit [TopologicalSpace M] [T2Space M] [T2Space X] [CompactSpace X] in
 include hιf hf in
 /-- Every boundary point lies in the source of a chart of the boundary, read through `f` from a
@@ -113,7 +95,7 @@ chart of `N`. -/
 private lemma exists_mem_source {E' : Type} [NormedAddCommGroup E'] [ChartedSpace E' N]
     (z : ((range ι)ᶜ : Set X)) :
     ∃ χ : OpenPartialHomeomorph ((range ι)ᶜ : Set X) E', z ∈ χ.source := by
-  obtain ⟨y, hy⟩ : (z : X) ∈ range f := by simpa [hιf] using z.2
+  obtain ⟨y, hy⟩ := mem_range_of_mem_compl_range hιf z.2
   let h : ((range ι)ᶜ : Set X) ≃ₜ N :=
     (Homeomorph.setCongr (by rw [hιf, compl_compl])).trans hf.isEmbedding.toHomeomorph.symm
   have hhz : h z = y := hf.isEmbedding.toHomeomorph.symm_apply_eq.2 (Subtype.ext hy.symm)
@@ -126,7 +108,7 @@ private lemma eq_of_mem_image_singleton_prod {c : N × Ico (0 : ℝ) 1 → X} (h
     {y : N} {S : Set (Ico (0 : ℝ) 1)} {w : ((range ι)ᶜ : Set X)}
     (hw : (w : X) ∈ c '' ({y} ×ˢ S)) : (w : X) = f y := by
   obtain ⟨q, ⟨hq₁, -⟩, hqw⟩ := hw
-  obtain ⟨y', hy'⟩ : (w : X) ∈ range f := by simpa [hιf] using w.2
+  obtain ⟨y', hy'⟩ := mem_range_of_mem_compl_range hιf w.2
   have hq := hc.isOpenEmbedding.injective (hqw.trans (hy'.symm.trans (hc.apply_zero y').symm))
   have hyy : y' = y := (congrArg Prod.fst hq).symm.trans (mem_singleton_iff.1 hq₁)
   rw [← hy', hyy]
@@ -182,22 +164,24 @@ private lemma exists_localHomology_map_eq {c : N × Ico (0 : ℝ) 1 → X} (hc :
     ext w
     exact congrArg (ContinuousMap.inclusion hA) (TopPair.ofSubsetMap_fst_apply _ _ w)
   -- Naturality of the connecting morphisms along `φ`, and of `Hₘ(∂X) ⟶ Hₘ(∂X, ∂X ∖ {z})`
-  -- along `r ≫ J`.
+  -- along `r ≫ J`, make the square from `H_{m+1}(X, ∂X)` to `Hₘ(X ∖ {ι x}, X ∖ Q)` commute.
   let δ := asIso (T.singularHomologyδ R (m + 1) m rfl)
+  have key : P.singularHomologyδ R (m + 1) m rfl ≫
+      (TopPair.ofSubset ((univ : Set (TopCat.of ((range ι)ᶜ : Set X)))ᶜ)).singularHomologyπ R m ≫
+      TopPair.singularHomologyMap r R m ≫ TopPair.singularHomologyMap J R m =
+        TopPair.singularHomologyMap φ R (m + 1) ≫ δ.hom := by
+    rw [← TopPair.singularHomologyMap_comp]
+    refine (P.singularHomologyδ R (m + 1) m rfl ≫=
+      (TopPair.singularHomologyπ_naturality (f := r ≫ J) (R := R) m).symm).trans ?_
+    rw [hfst]
+    exact (TopPair.singularHomologyδ_naturality_assoc R φ (m + 1) m rfl _).trans
+      (TopPair.singularHomologyMap φ R (m + 1) ≫=
+        (T.singularHomologyδ_eq_comp_singularHomologyπ R (m + 1) m rfl).symm)
   refine ⟨_, TopPair.singularHomologyMap J R m, δ, ?_⟩
-  set w := (P.singularHomologyδ R (m + 1) m rfl) μ
-  have h₁ := congrArg (fun F ↦ F w) (TopPair.singularHomologyπ_naturality (f := r ≫ J) (R := R) m)
-  have h₂ := congrArg (fun F ↦ F μ)
-    (TopPair.singularHomologyδ_naturality (f := φ) (R := R) (n := m + 1) (m := m) (h := rfl))
-  have h₃ := congrArg (fun F ↦ F (TopPair.singularHomologyMap φ R (m + 1) μ))
-    (T.singularHomologyδ_eq_comp_singularHomologyπ R (m + 1) m rfl)
-  have h₄ := congrArg (fun F ↦ F (TopPair.singularHomologyπ _ R m w))
-    (TopPair.singularHomologyMap_comp (f := r) (g := J) (R := R) (n := m))
-  have h₅ := congrArg (fun g ↦ (SSet.homologyMap (TopCat.toSSet.map g) R m ≫
-    (TopTriple.innerPair.obj T).singularHomologyπ R m) w) hfst
-  refine (congrArg _ (singularHomologyToLocalHomology_apply R z w)).trans ?_
+  refine (congrArg _ (singularHomologyToLocalHomology_apply R z
+    (P.singularHomologyδ R (m + 1) m rfl μ))).trans ?_
   rw [localHomologyRestriction_def, localHomologyRestriction_def]
-  exact h₄.symm.trans (h₁.symm.trans (h₅.trans ((congrArg _ h₂).trans h₃.symm)))
+  exact congrArg (fun F ↦ F μ) key
 
 /-- **The boundary of the relative fundamental class is a fundamental class.** Let `X` be a
 compact Hausdorff space and `ι : M → X` an open embedding of an `(m + 1)`-manifold `M` oriented by
@@ -213,7 +197,7 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {E' : Type}
   refine (isFundamentalClass_iff_forall_isLocalOrientation _).2 fun z ↦ ?_
   obtain ⟨c, hc⟩ := isCollared_iff.1 hf
   -- The boundary point `z` is `f y`, and `ι x = c (y, 1 / 2)` is an interior point above it.
-  obtain ⟨y, hy⟩ : (z : X) ∈ range f := by simpa [hιf] using z.2
+  obtain ⟨y, hy⟩ := mem_range_of_mem_compl_range hιf z.2
   obtain ⟨x, hx⟩ : c (y, ⟨1 / 2, by norm_num, by norm_num⟩) ∈ range ι := by
     rw [hιf]
     rintro ⟨y', hy'⟩
@@ -226,7 +210,7 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel {E' : Type}
   by_cases hm : finrank ℝ E' = m
   · subst hm
     obtain ⟨hρ, hρ₀⟩ := o.localHomologyRestriction_fundamentalClassRel_generator hn hι hιf hf x
-    exact isLocalOrientation_of_addMonoidHom_eq (isLocalOrientation_inv_one
+    exact IsLocalOrientation.of_addMonoidHom_eq (isLocalOrientation_inv_one
       (singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ (ULift.{0} ℤ)) χ hzχ))
       J.hom.toAddMonoidHom δ.toLinearEquiv.toAddEquiv ((isLocalOrientation_iff _ _ _).1 hρ) hρ₀ hJ
   · have := ModuleCat.subsingleton_of_isZero (isZero_singularHomology_complSingleton_of_ne
