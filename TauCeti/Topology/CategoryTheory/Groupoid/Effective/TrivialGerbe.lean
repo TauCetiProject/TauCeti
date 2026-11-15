@@ -14,60 +14,49 @@ public import TauCeti.Topology.Homeomorph.Quotient
 /-!
 # The trivial gerbe and its effective reduction
 
-For a group `K` and a topological space `N`, the product groupoid `SingleObj K × Discrete N` is the
-*trivial `K`-gerbe* `K × N ⇒ N`: its object space is homeomorphic to `N`, its total-arrow space is
-homeomorphic to `K × N`, and both source and target project `K × N` to `N`. Every arrow is an
-automorphism of its source, and the isotropy group at each point is isomorphic to `K`. Using the
-product `SingleObj K × Discrete N` avoids introducing a redundant carrier or a global trivial
-`MulAction K N` instance on `N`.
+For a group `K` and a topological space `N`, the product `SingleObj K × Discrete N` is the *trivial
+`K`-gerbe* `K × N ⇒ N`: its object space is homeomorphic to `N`, its total-arrow space to `K × N`,
+both source and target project to `N`, and each isotropy group is `K`. Using the product avoids a
+redundant carrier or a global trivial `MulAction K N` instance.
 
-When `K` carries the discrete topology, `SingleObj K × Discrete N` is an étale topological
-groupoid, and when `K` is compact and `N` is Hausdorff its source-target map is proper (in
-particular for finite discrete `K`). Because source and target agree identically on all arrows,
-every arrow is ineffective: `ineffectiveArrows (SingleObj K × Discrete N) = Set.univ`, and every
-ineffective kernel is the whole isotropy group, of order `Nat.card K`.
+When `K` is discrete, `SingleObj K × Discrete N` is étale, and when `K` is compact and `N` is
+Hausdorff its source-target map is proper. Because source and target coincide, every arrow is
+ineffective (`ineffectiveArrows = Set.univ`), and every ineffective kernel is `⊤` of order
+`Nat.card K`.
 
-Passing to the effective quotient collapses the `K`-isotropy while keeping `N` as the coarse space:
+Effective reduction collapses `K` while preserving the coarse space `N`:
 `TauCeti.TrivialGerbe.effectiveQuotientEquivalence` identifies
-`EffectiveQuotient (SingleObj K × Discrete N)` with the unit groupoid `Discrete N` by an
-equivalence of categories that is simultaneously a homeomorphism on objects and on total arrows.
-When `K` is nontrivial and `N` is nonempty, however, there is no faithful functor from
-`SingleObj K × Discrete N` to `Discrete N`, hence no equivalence of categories with `Discrete N` or
-with `EffectiveQuotient (SingleObj K × Discrete N)`
-(`TauCeti.TrivialGerbe.isEmpty_equivalence_effectiveQuotient`). Since any weak equivalence (and
-therefore any zig-zag of weak equivalences, i.e. Morita equivalence) of topological or Lie
-groupoids induces an equivalence of the underlying categories, effective reduction induces a
-homeomorphism on coarse spaces without being a categorical or Morita equivalence.
+`EffectiveQuotient (SingleObj K × Discrete N)` with `Discrete N` by an equivalence of categories
+that is a homeomorphism on objects and total arrows. For nontrivial `K` and nonempty `N`, no functor
+`SingleObj K × Discrete N ⥤ Discrete N` is faithful, so `SingleObj K × Discrete N` is not
+categorically equivalent to `Discrete N` or to its effective quotient
+(`TauCeti.TrivialGerbe.isEmpty_equivalence_effectiveQuotient`); since weak (hence Morita)
+equivalences of topological or Lie groupoids induce categorical equivalences, effective reduction is
+neither a categorical nor a Morita equivalence.
 
 ## Main declarations
 
-* `TauCeti.TrivialGerbe.objectHomeomorph` and `TauCeti.TrivialGerbe.arrowHomeomorph`: explicit
-  coordinate homeomorphisms `(SingleObj K × Discrete N) ≃ₜ N` and
+* `TauCeti.TrivialGerbe.objectHomeomorph`, `TauCeti.TrivialGerbe.arrowHomeomorph`: coordinate
+  homeomorphisms `(SingleObj K × Discrete N) ≃ₜ N` and
   `Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N`.
 * `TauCeti.TrivialGerbe.isLocalHomeomorph_source`, `TauCeti.TrivialGerbe.isLocalHomeomorph_target`,
-  `TauCeti.TrivialGerbe.isProperMap_source_target`: étale and proper-presentation hypotheses for
-  `SingleObj K × Discrete N`.
-* `TauCeti.TrivialGerbe.autMulEquiv`: the isotropy isomorphism `K ≃* Aut x` at each object `x`.
-* `TauCeti.TrivialGerbe.ineffectiveArrows_eq_univ` and
-  `TauCeti.TrivialGerbe.ineffectiveKernel_eq_top`: every arrow of the trivial gerbe is
-  ineffective.
-* `TauCeti.TrivialGerbe.isomorphismClassesHomeomorph`: the coarse space of
-  `SingleObj K × Discrete N` is homeomorphic to `N`.
+  `TauCeti.TrivialGerbe.isProperMap_source_target`: étale and properness results.
+* `TauCeti.TrivialGerbe.autMulEquiv`, `TauCeti.TrivialGerbe.ineffectiveArrows_eq_univ`,
+  `TauCeti.TrivialGerbe.ineffectiveKernel_eq_top`: isotropy `K ≃* Aut x` and full ineffectiveness.
+* `TauCeti.TrivialGerbe.isomorphismClassesHomeomorph`: coarse homeomorphism with `N`.
 * `TauCeti.TrivialGerbe.effectiveQuotientEquivalence`,
-  `TauCeti.TrivialGerbe.effectiveQuotientObjectHomeomorph`, and
-  `TauCeti.TrivialGerbe.effectiveQuotientArrowHomeomorph`: the effective quotient of
-  `SingleObj K × Discrete N` is `Discrete N`, categorically and topologically on objects and
-  arrows.
+  `TauCeti.TrivialGerbe.effectiveQuotientObjectHomeomorph`,
+  `TauCeti.TrivialGerbe.effectiveQuotientArrowHomeomorph`: effective reduction to `Discrete N`.
 * `TauCeti.TrivialGerbe.not_faithful_toEffectiveQuotient`,
-  `TauCeti.TrivialGerbe.isEmpty_faithful_functor_discrete`, and
+  `TauCeti.TrivialGerbe.isEmpty_faithful_functor_discrete`,
   `TauCeti.TrivialGerbe.isEmpty_equivalence_effectiveQuotient`: for nontrivial `K` and nonempty `N`,
   the trivial gerbe is not categorically equivalent (`≌`) to its effective quotient.
 
 ## References
 
 * I. Moerdijk, *Orbifolds as groupoids: an introduction*, Section 2.
-* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge Tracts in
-  Mathematics 171, Cambridge University Press, 2007, Chapter 1, Section 1.2.
+* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge University Press,
+  2007, Chapter 1, Section 1.2.
 -/
 
 public section
@@ -101,15 +90,13 @@ def objectHomeomorph : SingleObj K × Discrete N ≃ₜ N :=
 omit [Monoid K] [TopologicalSpace K] in
 @[simp]
 theorem objectHomeomorph_apply (x : SingleObj K × Discrete N) :
-    objectHomeomorph K N x = x.2.as := by
-  simp [objectHomeomorph]
+    objectHomeomorph K N x = x.2.as := by simp [objectHomeomorph]
 
 omit [Monoid K] [TopologicalSpace K] in
 @[simp]
 theorem objectHomeomorph_symm_apply (y : N) :
-    (objectHomeomorph K N).symm y = (SingleObj.star K, ⟨y⟩) := by
-  simp [objectHomeomorph]
-  rfl
+    (objectHomeomorph K N).symm y = (SingleObj.star K, ⟨y⟩) :=
+  (objectHomeomorph K N).injective (by simp)
 
 /-- The total-arrow space of `SingleObj K × Discrete N` is homeomorphic to `K × N`. -/
 def arrowHomeomorph : Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N :=
@@ -118,8 +105,7 @@ def arrowHomeomorph : Quiver.Total (SingleObj K × Discrete N) ≃ₜ K × N :=
 
 @[simp]
 theorem arrowHomeomorph_apply (a : Quiver.Total (SingleObj K × Discrete N)) :
-    arrowHomeomorph K N a = (a.hom.1, a.left.2.as) := by
-  simp [arrowHomeomorph]
+    arrowHomeomorph K N a = (a.hom.1, a.left.2.as) := by simp [arrowHomeomorph]
 
 @[simp]
 theorem arrowHomeomorph_symm_apply (p : K × N) :
@@ -129,8 +115,7 @@ theorem arrowHomeomorph_symm_apply (p : K × N) :
 
 /-- Every arrow of `SingleObj K × Discrete N` is ineffective. -/
 @[simp]
-theorem ineffectiveArrows_eq_univ :
-    ineffectiveArrows (SingleObj K × Discrete N) = Set.univ :=
+theorem ineffectiveArrows_eq_univ : ineffectiveArrows (SingleObj K × Discrete N) = Set.univ :=
   eq_univ_of_forall fun _ ↦ mem_ineffectiveArrows_iff.mpr
     (Filter.Eventually.of_forall fun b ↦ (right_eq_left K N b).symm)
 
@@ -148,7 +133,7 @@ theorem isLocalHomeomorph_target [DiscreteTopology K] :
   isLocalHomeomorph_target_prod (OneObjectGroupoid.isLocalHomeomorph_target K)
     (UnitGroupoid.isLocalHomeomorph_target N)
 
-/-- For compact `K` (for instance finite discrete `K`) and Hausdorff `N`, the source-target map of
+/-- For compact `K` (e.g. finite discrete `K`) and Hausdorff `N`, `(source, target)` on
 `SingleObj K × Discrete N` is proper. -/
 theorem isProperMap_source_target [CompactSpace K] [T2Space N] :
     IsProperMap fun a : Quiver.Total (SingleObj K × Discrete N) ↦ (a.left, a.right) :=
@@ -176,18 +161,15 @@ def autMulEquiv (x : SingleObj K × Discrete N) : K ≃* Aut x where
 
 @[simp]
 theorem autMulEquiv_apply_asIso_hom (x : SingleObj K × Discrete N) (k : K) :
-    (autMulEquiv K N x k).asIso.hom = (k, 𝟙 x.2) :=
-  (rfl)
+    (autMulEquiv K N x k).asIso.hom = (k, 𝟙 x.2) := (rfl)
 
 @[simp]
 theorem autMulEquiv_apply_asIso_inv (x : SingleObj K × Discrete N) (k : K) :
-    (autMulEquiv K N x k).asIso.inv = (k⁻¹, 𝟙 x.2) :=
-  (rfl)
+    (autMulEquiv K N x k).asIso.inv = (k⁻¹, 𝟙 x.2) := (rfl)
 
 @[simp]
 theorem autMulEquiv_symm_apply (x : SingleObj K × Discrete N) (e : Aut x) :
-    (autMulEquiv K N x).symm e = e.asIso.hom.1 :=
-  (rfl)
+    (autMulEquiv K N x).symm e = e.asIso.hom.1 := (rfl)
 
 theorem nontrivial_aut (x : SingleObj K × Discrete N) [Nontrivial K] : Nontrivial (Aut x) :=
   (autMulEquiv K N x).symm.toEquiv.nontrivial
@@ -207,9 +189,7 @@ omit [TopologicalSpace K] in
 @[simp]
 theorem isomorphismClassesHomeomorph_mk (x : SingleObj K × Discrete N) :
     isomorphismClassesHomeomorph K N (_root_.Quotient.mk _ x) = x.2.as := by
-  simp only [isomorphismClassesHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.Quotient.congrRight_mk]
-  exact objectHomeomorph_apply K N x
+  simp [isomorphismClassesHomeomorph]; rfl
 
 omit [TopologicalSpace K] in
 @[simp]
@@ -217,10 +197,9 @@ theorem isomorphismClassesHomeomorph_symm_apply (y : N) :
     (isomorphismClassesHomeomorph K N).symm y = _root_.Quotient.mk _ (SingleObj.star K, ⟨y⟩) :=
   (isomorphismClassesHomeomorph K N).injective (by simp)
 
-/-- Projection from the effective quotient of `SingleObj K × Discrete N` to the unit groupoid
-`Discrete N`, induced by the second projection. -/
-def effectiveQuotientToDiscrete :
-    EffectiveQuotient (SingleObj K × Discrete N) ⥤ Discrete N :=
+/-- Projection from `EffectiveQuotient (SingleObj K × Discrete N)` to `Discrete N`, induced by the
+second projection. -/
+def effectiveQuotientToDiscrete : EffectiveQuotient (SingleObj K × Discrete N) ⥤ Discrete N :=
   CategoryTheory.Quotient.lift (germRel (SingleObj K × Discrete N))
     (CategoryTheory.Prod.snd (SingleObj K) (Discrete N)) fun _ _ _ _ _ ↦ Subsingleton.elim _ _
 
@@ -232,36 +211,29 @@ theorem toEffectiveQuotient_comp_effectiveQuotientToDiscrete :
 
 @[simp]
 theorem effectiveQuotientToDiscrete_obj_toEffectiveQuotient_obj (x : SingleObj K × Discrete N) :
-    (effectiveQuotientToDiscrete K N).obj ((toEffectiveQuotient _).obj x) = x.2 :=
-  (rfl)
+    (effectiveQuotientToDiscrete K N).obj ((toEffectiveQuotient _).obj x) = x.2 := (rfl)
 
 @[simp]
 theorem effectiveQuotientToDiscrete_mapTotal_mapTotal
     (a : Quiver.Total (SingleObj K × Discrete N)) :
     (effectiveQuotientToDiscrete K N).toPrefunctor.mapTotal
-        ((toEffectiveQuotient _).toPrefunctor.mapTotal a) =
-      ⟨a.left.2, a.right.2, a.hom.2⟩ :=
-  (rfl)
+        ((toEffectiveQuotient _).toPrefunctor.mapTotal a) = ⟨a.left.2, a.right.2, a.hom.2⟩ := (rfl)
 
-/-- Inclusion of `Discrete N` into `EffectiveQuotient (SingleObj K × Discrete N)` along the
-trivial arrow `1 : K`. -/
-def discreteToEffectiveQuotient :
-    Discrete N ⥤ EffectiveQuotient (SingleObj K × Discrete N) :=
+/-- Inclusion of `Discrete N` into `EffectiveQuotient (SingleObj K × Discrete N)` along `1 : K`. -/
+def discreteToEffectiveQuotient : Discrete N ⥤ EffectiveQuotient (SingleObj K × Discrete N) :=
   CategoryTheory.Prod.sectR (SingleObj.star K) (Discrete N) ⋙
     toEffectiveQuotient (SingleObj K × Discrete N)
 
 theorem discreteToEffectiveQuotient_obj (z : Discrete N) :
     (discreteToEffectiveQuotient K N).obj z =
-      (toEffectiveQuotient (SingleObj K × Discrete N)).obj (SingleObj.star K, z) :=
-  (rfl)
+      (toEffectiveQuotient (SingleObj K × Discrete N)).obj (SingleObj.star K, z) := (rfl)
 
 @[simp]
 theorem discreteToEffectiveQuotient_mapTotal (b : Quiver.Total (Discrete N)) :
     (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal b =
       (toEffectiveQuotient (SingleObj K × Discrete N)).toPrefunctor.mapTotal
         ⟨(SingleObj.star K, b.left), (SingleObj.star K, b.right),
-          (𝟙 (SingleObj.star K), b.hom)⟩ :=
-  (rfl)
+          (𝟙 (SingleObj.star K), b.hom)⟩ := (rfl)
 
 @[simp]
 theorem discreteToEffectiveQuotient_obj_effectiveQuotientToDiscrete_obj
@@ -273,8 +245,7 @@ theorem discreteToEffectiveQuotient_obj_effectiveQuotientToDiscrete_obj
 
 @[simp]
 theorem effectiveQuotientToDiscrete_obj_discreteToEffectiveQuotient_obj (z : Discrete N) :
-    (effectiveQuotientToDiscrete K N).obj ((discreteToEffectiveQuotient K N).obj z) = z :=
-  (rfl)
+    (effectiveQuotientToDiscrete K N).obj ((discreteToEffectiveQuotient K N).obj z) = z := (rfl)
 
 /-- The object map of `effectiveQuotientToDiscrete` is a homeomorphism onto `Discrete N`. -/
 def effectiveQuotientObjectHomeomorph :
@@ -291,15 +262,12 @@ theorem coe_effectiveQuotientObjectHomeomorph :
 
 @[simp]
 theorem coe_effectiveQuotientObjectHomeomorph_symm :
-    ⇑(effectiveQuotientObjectHomeomorph K N).symm = (discreteToEffectiveQuotient K N).obj := by
-  funext z
-  simp [effectiveQuotientObjectHomeomorph, discreteToEffectiveQuotient_obj]
-  rfl
+    ⇑(effectiveQuotientObjectHomeomorph K N).symm = (discreteToEffectiveQuotient K N).obj :=
+  funext fun _ ↦ (effectiveQuotientObjectHomeomorph K N).injective (by simp)
 
 /-- In `EffectiveQuotient (SingleObj K × Discrete N)`, all parallel arrows are identified. -/
 instance instSubsingletonHomEffectiveQuotient
-    (y₁ y₂ : EffectiveQuotient (SingleObj K × Discrete N)) :
-    Subsingleton (y₁ ⟶ y₂) :=
+    (y₁ y₂ : EffectiveQuotient (SingleObj K × Discrete N)) : Subsingleton (y₁ ⟶ y₂) :=
   ⟨fun f g ↦ by
     obtain ⟨f₀, rfl⟩ := (toEffectiveQuotient _).map_surjective f
     obtain ⟨g₀, rfl⟩ := (toEffectiveQuotient _).map_surjective g
@@ -319,13 +287,11 @@ def effectiveQuotientEquivalence :
 
 @[simp]
 theorem effectiveQuotientEquivalence_functor :
-    (effectiveQuotientEquivalence K N).functor = effectiveQuotientToDiscrete K N :=
-  (rfl)
+    (effectiveQuotientEquivalence K N).functor = effectiveQuotientToDiscrete K N := (rfl)
 
 @[simp]
 theorem effectiveQuotientEquivalence_inverse :
-    (effectiveQuotientEquivalence K N).inverse = discreteToEffectiveQuotient K N :=
-  (rfl)
+    (effectiveQuotientEquivalence K N).inverse = discreteToEffectiveQuotient K N := (rfl)
 
 /-- The arrow map of `effectiveQuotientToDiscrete` is a homeomorphism between the total arrows of
 `EffectiveQuotient (SingleObj K × Discrete N)` and `Quiver.Total (Discrete N)`. -/
@@ -336,59 +302,42 @@ def effectiveQuotientArrowHomeomorph :
   left_inv a := by
     obtain ⟨⟨⟨u₁, x₁⟩, ⟨u₂, x₂⟩, f⟩, rfl⟩ :=
       EffectiveQuotient.mapTotal_surjective (C := SingleObj K × Discrete N) a
-    obtain rfl : u₁ = SingleObj.star K := Subsingleton.elim _ _
-    obtain rfl : u₂ = SingleObj.star K := Subsingleton.elim _ _
-    rw [effectiveQuotientToDiscrete_mapTotal_mapTotal, discreteToEffectiveQuotient_mapTotal]
-    simp only [Prefunctor.mapTotal_mk]
-    congr 1
-    exact Subsingleton.elim _ _
+    cases Subsingleton.elim u₁ (SingleObj.star K); cases Subsingleton.elim u₂ (SingleObj.star K)
+    exact congrArg (Quiver.Total.mk _ _) (Subsingleton.elim _ _)
   right_inv b := by
     rw [discreteToEffectiveQuotient_mapTotal, effectiveQuotientToDiscrete_mapTotal_mapTotal]
-  continuous_toFun := by
-    rw [EffectiveQuotient.isQuotientMap_mapTotal.continuous_iff]
-    refine (UnitGroupoid.arrowHomeomorph N).isInducing.continuous_iff.mpr ?_
-    convert continuous_snd.comp (arrowHomeomorph K N).continuous using 1
-    funext a
-    simp
+  continuous_toFun :=
+    EffectiveQuotient.isQuotientMap_mapTotal.continuous_iff.mpr <|
+      (UnitGroupoid.arrowHomeomorph N).isInducing.continuous_iff.mpr <| by
+        simpa [Function.comp_def] using continuous_snd.comp (arrowHomeomorph K N).continuous
   continuous_invFun := by
-    let ι : Quiver.Total (Discrete N) → Quiver.Total (SingleObj K × Discrete N) :=
-      fun b ↦ ⟨(SingleObj.star K, b.left), (SingleObj.star K, b.right),
-        (𝟙 (SingleObj.star K), b.hom)⟩
-    have hι : Continuous ι := by
-      refine (arrowHomeomorph K N).isInducing.continuous_iff.mpr ?_
-      convert (continuous_const (y := 𝟙 (SingleObj.star K))).prodMk
-        (UnitGroupoid.arrowHomeomorph N).continuous using 1
-      funext b
-      simp [ι]
-    convert EffectiveQuotient.isQuotientMap_mapTotal.continuous.comp hι using 1
-    funext b
-    simp [ι]
+    rw [funext (discreteToEffectiveQuotient_mapTotal K N)]
+    exact EffectiveQuotient.isQuotientMap_mapTotal.continuous.comp <|
+      (arrowHomeomorph K N).isInducing.continuous_iff.mpr <| by
+        simpa [Function.comp_def] using (continuous_const (y := 𝟙 (SingleObj.star K))).prodMk
+          (UnitGroupoid.arrowHomeomorph N).continuous
 
 @[simp]
 theorem coe_effectiveQuotientArrowHomeomorph :
     ⇑(effectiveQuotientArrowHomeomorph K N) =
-      (effectiveQuotientToDiscrete K N).toPrefunctor.mapTotal :=
-  (rfl)
+      (effectiveQuotientToDiscrete K N).toPrefunctor.mapTotal := (rfl)
 
 @[simp]
 theorem coe_effectiveQuotientArrowHomeomorph_symm :
     ⇑(effectiveQuotientArrowHomeomorph K N).symm =
-      (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal :=
-  (rfl)
+      (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal := (rfl)
 
 omit [TopologicalSpace K] [TopologicalSpace N] in
 /-- At every object of `SingleObj K × Discrete N`, the automorphism group has order `Nat.card K`. -/
 @[simp]
-theorem card_aut (x : SingleObj K × Discrete N) :
-    Nat.card (Aut x) = Nat.card K :=
+theorem card_aut (x : SingleObj K × Discrete N) : Nat.card (Aut x) = Nat.card K :=
   Nat.card_congr (autMulEquiv K N x).toEquiv.symm
 
 section Etale
 
 variable [DiscreteTopology K]
 
-/-- Every ineffective kernel of the trivial gerbe `SingleObj K × Discrete N` is the whole isotropy
-group. -/
+/-- Every ineffective kernel of `SingleObj K × Discrete N` is the whole isotropy group. -/
 @[simp]
 theorem ineffectiveKernel_eq_top (x : SingleObj K × Discrete N) :
     ineffectiveKernel (isLocalHomeomorph_source K N) x = ⊤ :=
@@ -396,10 +345,9 @@ theorem ineffectiveKernel_eq_top (x : SingleObj K × Discrete N) :
 
 /-- At every object of `SingleObj K × Discrete N`, the ineffective kernel has order `Nat.card K`. -/
 theorem card_ineffectiveKernel (x : SingleObj K × Discrete N) :
-    Nat.card (ineffectiveKernel (isLocalHomeomorph_source K N) x) = Nat.card K := by
-  simp
+    Nat.card (ineffectiveKernel (isLocalHomeomorph_source K N) x) = Nat.card K := by simp
 
-/-- On the coarse space of `SingleObj K × Discrete N`, the ineffective-kernel order is the constant
+/-- On the coarse space of `SingleObj K × Discrete N`, the ineffective-kernel order is
 `Nat.card K`. -/
 @[simp]
 theorem coarseCardIneffectiveKernel_eq_card
@@ -413,18 +361,17 @@ end Etale
 section Nontrivial
 
 omit [TopologicalSpace K] [TopologicalSpace N] in
-/-- When `K` is nontrivial and `N` is nonempty, no functor from `SingleObj K × Discrete N` to
-`Discrete N` is faithful. -/
+/-- When `K` is nontrivial and `N` is nonempty, no functor `SingleObj K × Discrete N ⥤ Discrete N`
+is faithful. -/
 theorem isEmpty_faithful_functor_discrete [Nontrivial K] [Nonempty N] :
     IsEmpty {F : SingleObj K × Discrete N ⥤ Discrete N // F.Faithful} :=
-  ⟨fun ⟨F, hF⟩ ↦ by
-    obtain ⟨y⟩ := ‹Nonempty N›
-    obtain ⟨k₁, k₂, hk⟩ := exists_pair_ne K
+  ⟨fun ⟨F, hF⟩ ↦
+    let ⟨y⟩ := ‹Nonempty N›
+    let ⟨k₁, k₂, hk⟩ := exists_pair_ne K
     let x : SingleObj K × Discrete N := (SingleObj.star K, Discrete.mk y)
-    have hmap : F.map ((k₁, 𝟙 (Discrete.mk y)) : x ⟶ x) =
-        F.map ((k₂, 𝟙 (Discrete.mk y)) : x ⟶ x) :=
-      Subsingleton.elim _ _
-    exact hk (congrArg Prod.fst (hF.map_injective hmap))⟩
+    hk <| congrArg Prod.fst <| hF.map_injective
+      (Subsingleton.elim (F.map ((k₁, 𝟙 (Discrete.mk y)) : x ⟶ x))
+        (F.map ((k₂, 𝟙 (Discrete.mk y)) : x ⟶ x)))⟩
 
 omit [TopologicalSpace K] [TopologicalSpace N] in
 /-- When `K` is nontrivial and `N` is nonempty, `SingleObj K × Discrete N` is not categorically
@@ -438,8 +385,7 @@ theorem isEmpty_equivalence_discrete [Nontrivial K] [Nonempty N] :
 theorem not_faithful_toEffectiveQuotient [Nontrivial K] [Nonempty N] :
     ¬ (toEffectiveQuotient (SingleObj K × Discrete N)).Faithful := fun hF ↦
   (isEmpty_faithful_functor_discrete K N).false
-    ⟨toEffectiveQuotient (SingleObj K × Discrete N) ⋙
-      (effectiveQuotientEquivalence K N).functor,
+    ⟨toEffectiveQuotient _ ⋙ (effectiveQuotientEquivalence K N).functor,
       haveI := hF; Functor.Faithful.comp _ _⟩
 
 /-- **Effective reduction is not an equivalence of categories.** When `K` is nontrivial and `N` is
@@ -447,8 +393,7 @@ nonempty, `SingleObj K × Discrete N` is not categorically equivalent (`≌`) to
 quotient, even though their coarse spaces are homeomorphic. -/
 theorem isEmpty_equivalence_effectiveQuotient [Nontrivial K] [Nonempty N] :
     IsEmpty (SingleObj K × Discrete N ≌ EffectiveQuotient (SingleObj K × Discrete N)) :=
-  ⟨fun e ↦ (isEmpty_equivalence_discrete K N).false
-    (e.trans (effectiveQuotientEquivalence K N))⟩
+  ⟨fun e ↦ (isEmpty_equivalence_discrete K N).false (e.trans (effectiveQuotientEquivalence K N))⟩
 
 end Nontrivial
 

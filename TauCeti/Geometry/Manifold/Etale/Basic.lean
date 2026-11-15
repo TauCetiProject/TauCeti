@@ -138,12 +138,9 @@ variable {D : Type*} [Category D] [IsGroupoid D]
 `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_unit
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total D → D)) :
-    IsLocalDiffeomorph I J n fun x : D ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total D) := by
-  intro x
-  have hcomp : IsLocalDiffeomorphAt I I n
-      (Quiver.Total.left ∘ fun y : D ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total D)) x :=
-    (Diffeomorph.refl I D n).isLocalDiffeomorph x
-  exact hcomp.of_comp_left (hs ⟨x, x, 𝟙 x⟩) continuous_unit.continuousAt
+    IsLocalDiffeomorph I J n fun x : D ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total D) := fun x ↦
+  IsLocalDiffeomorphAt.of_comp_left (f := Quiver.Total.left)
+    ((Diffeomorph.refl I D n).isLocalDiffeomorph x) (hs ⟨x, x, 𝟙 x⟩) continuous_unit.continuousAt
 
 /-- In a topological groupoid whose source is a `C^n` local diffeomorphism, the unit map is
 `C^n`. -/
@@ -158,21 +155,16 @@ theorem isLocalDiffeomorph_inverse
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total D → D))
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total D → D)) :
     IsLocalDiffeomorph J J n
-      fun a : Quiver.Total D ↦ (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total D) := by
-  intro a
-  have hcomp : IsLocalDiffeomorphAt J I n
-      (Quiver.Total.left ∘
-        fun b : Quiver.Total D ↦ (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total D)) a :=
-    ht a
-  exact hcomp.of_comp_left (hs _) continuous_inverse.continuousAt
+      fun a : Quiver.Total D ↦ (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total D) := fun a ↦
+  IsLocalDiffeomorphAt.of_comp_left (f := Quiver.Total.left)
+    (ht a) (hs _) continuous_inverse.continuousAt
 
 /-- In a topological groupoid whose source and target are `C^n` local diffeomorphisms, inversion is
 `C^n`. -/
 theorem contMDiff_inverse
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total D → D))
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total D → D)) :
-    ContMDiff J J n
-      fun a : Quiver.Total D ↦ (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total D) :=
+    ContMDiff J J n fun a : Quiver.Total D ↦ (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total D) :=
   (isLocalDiffeomorph_inverse hs ht).contMDiff
 
 /-- Inversion on the total arrows of a topological groupoid with `C^n` locally diffeomorphic
@@ -192,17 +184,13 @@ noncomputable def inverseDiffeomorph
 theorem inverseDiffeomorph_apply
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total D → D))
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total D → D))
-    (a : Quiver.Total D) :
-    inverseDiffeomorph hs ht a = ⟨a.right, a.left, inv a.hom⟩ :=
-  (rfl)
+    (a : Quiver.Total D) : inverseDiffeomorph hs ht a = ⟨a.right, a.left, inv a.hom⟩ := (rfl)
 
 @[simp]
 theorem inverseDiffeomorph_symm_apply
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total D → D))
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total D → D))
-    (a : Quiver.Total D) :
-    (inverseDiffeomorph hs ht).symm a = ⟨a.right, a.left, inv a.hom⟩ :=
-  (rfl)
+    (a : Quiver.Total D) : (inverseDiffeomorph hs ht).symm a = ⟨a.right, a.left, inv a.hom⟩ := (rfl)
 
 @[simp]
 theorem inverseDiffeomorph_toHomeomorph
@@ -239,8 +227,8 @@ theorem isLocalDiffeomorph_composablePairs_snd
   (((isLocalHomeomorph_source_iff_target D).mp hs).pullback_snd
     continuous_source).isLocalDiffeomorph_chartedSpaceComap
 
-/-- For an étale topological groupoid, a map into composable pairs is `C^n` if and only if it is
-continuous and its second projection is `C^n`. -/
+/-- For an étale topological groupoid, a map into composable pairs is `C^n` iff it is continuous and
+its second projection is `C^n`. -/
 theorem contMDiff_composablePairs_iff
     {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
     {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
@@ -261,18 +249,12 @@ theorem isLocalDiffeomorph_composablePairs_fst
     IsLocalDiffeomorph J J n
       (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.1.1) := by
   let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
-  intro p
-  have hcomp : IsLocalDiffeomorphAt J I n
-      (Quiver.Total.right ∘
-        fun q : {q : Quiver.Total D × Quiver.Total D // q.1.right = q.2.left} ↦ q.1.1) p := by
-    have heq : (Quiver.Total.right ∘
-        fun q : {q : Quiver.Total D × Quiver.Total D // q.1.right = q.2.left} ↦ q.1.1) =
-        Quiver.Total.left ∘ fun q ↦ q.1.2 :=
-      funext fun q ↦ q.2
-    rw [heq]
-    exact (isLocalDiffeomorph_composablePairs_snd (J := J) (n := n) hs.isLocalHomeomorph p).comp
+  refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (ht p.1.1)
+    (continuous_fst.comp continuous_subtype_val).continuousAt
+  simpa only [Function.comp_def, funext fun q : {q : Quiver.Total D × Quiver.Total D //
+    q.1.right = q.2.left} ↦ q.2] using
+    (isLocalDiffeomorph_composablePairs_snd (J := J) (n := n) hs.isLocalHomeomorph p).comp
       (hg := hs p.1.2)
-  exact hcomp.of_comp_left (ht p.1.1) (continuous_fst.comp continuous_subtype_val).continuousAt
 
 /-- Composition of composable pairs is a `C^n` local diffeomorphism when source and target are `C^n`
 local diffeomorphisms. -/
@@ -284,19 +266,9 @@ theorem isLocalDiffeomorph_comp
       fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
         p.1.1.comp p.1.2 p.2 := by
   let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
-  intro p
-  have hcomp : IsLocalDiffeomorphAt J I n
-      (Quiver.Total.left ∘
-        fun q : {q : Quiver.Total D × Quiver.Total D // q.1.right = q.2.left} ↦
-          q.1.1.comp q.1.2 q.2) p := by
-    have heq : (Quiver.Total.left ∘
-        fun q : {q : Quiver.Total D × Quiver.Total D // q.1.right = q.2.left} ↦
-          q.1.1.comp q.1.2 q.2) =
-        Quiver.Total.left ∘ fun q ↦ q.1.1 :=
-      funext fun q ↦ Quiver.Total.comp_left q.1.1 q.1.2 q.2
-    rw [heq]
-    exact (isLocalDiffeomorph_composablePairs_fst hs ht p).comp (hg := hs p.1.1)
-  exact hcomp.of_comp_left (hs _) continuous_comp.continuousAt
+  refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (hs _) continuous_comp.continuousAt
+  simpa only [Function.comp_def, Quiver.Total.comp_left] using
+    (isLocalDiffeomorph_composablePairs_fst hs ht p).comp (hg := hs p.1.1)
 
 /-- Composition of composable pairs is `C^n` when source and target are `C^n` local
 diffeomorphisms. -/
@@ -306,9 +278,9 @@ theorem contMDiff_comp
     letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
     ContMDiff J J n
       fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
-        p.1.1.comp p.1.2 p.2 := by
-  let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
-  exact (isLocalDiffeomorph_comp hs ht).contMDiff
+        p.1.1.comp p.1.2 p.2 :=
+  letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
+  (isLocalDiffeomorph_comp hs ht).contMDiff
 
 end StructureMaps
 

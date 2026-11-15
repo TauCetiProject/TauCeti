@@ -13,25 +13,20 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.TrivialGerbe
 # Smooth trivial gerbes and their effective reduction
 
 Given a `C^n` manifold `N` and a discrete group `K`, the trivial gerbe `SingleObj K × Discrete N`
-inherits `C^n` étale manifold structures on objects and total arrows: object charts are pulled back
-from `N` along `TauCeti.TrivialGerbe.objectHomeomorph` (`Homeomorph.pullbackChartedSpace`), and
-arrow charts are pulled back from objects along its locally homeomorphic source
-(`IsLocalHomeomorph.chartedSpaceComap`). Under these charts, source and target are `C^n` local
-diffeomorphisms (and proper with Hausdorff arrow space when `K` is finite and `N` is Hausdorff).
+inherits `C^n` étale manifold structures on objects (`Homeomorph.pullbackChartedSpace` along
+`TauCeti.TrivialGerbe.objectHomeomorph`) and total arrows (`IsLocalHomeomorph.chartedSpaceComap`
+along source), making source and target `C^n` local diffeomorphisms.
 
-Passing to the effective quotient collapses the ineffective `K`-isotropy: comparing with the smooth
-unit groupoid `Discrete N` (`TauCeti.Geometry.Manifold.Groupoid.Examples`), the equivalence
-`TauCeti.TrivialGerbe.effectiveQuotientEquivalence K N :
-EffectiveQuotient (SingleObj K × Discrete N) ≌ Discrete N` is a `C^n` diffeomorphism on both
-objects (`TauCeti.TrivialGerbe.effectiveQuotientObjectDiffeomorph`) and total arrows
-(`TauCeti.TrivialGerbe.effectiveQuotientArrowDiffeomorph`), while for nontrivial `K` and nonempty
-`N` the presentation `SingleObj K × Discrete N` admits no categorical equivalence with `Discrete N`
-(`TauCeti.TrivialGerbe.isEmpty_equivalence_discrete`).
+Comparing with the smooth unit groupoid `Discrete N`
+(`TauCeti.Geometry.Manifold.Groupoid.Examples`), `TauCeti.TrivialGerbe.effectiveQuotientEquivalence`
+upgrades to `C^n` diffeomorphisms on objects (`effectiveQuotientObjectDiffeomorph`) and total arrows
+(`effectiveQuotientArrowDiffeomorph`), while for nontrivial `K` and nonempty `N` there is no
+categorical equivalence with `Discrete N` (`TauCeti.TrivialGerbe.isEmpty_equivalence_discrete`).
 
 ## References
 
-* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge Tracts in
-  Mathematics 171, Cambridge University Press, 2007, Chapter 1, Section 1.2.
+* A. Adem, J. Leida and Y. Ruan, *Orbifolds and Stringy Topology*, Cambridge University Press,
+  2007, Chapter 1, Section 1.2.
 * I. Moerdijk, *Orbifolds as groupoids: an introduction*, Section 2.4.
 -/
 
@@ -40,15 +35,12 @@ public section
 open CategoryTheory Topology
 open scoped Manifold ContDiff
 
-namespace TauCeti
+namespace TauCeti.TrivialGerbe
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H]
-
-namespace TrivialGerbe
-
-variable (K N : Type*) [TopologicalSpace N] [ChartedSpace H N]
+  (K N : Type*) [TopologicalSpace N] [ChartedSpace H N]
 
 /-- Objects of the trivial gerbe `SingleObj K × Discrete N` carry the charted-space structure
 pulled back from `N` along `objectHomeomorph`. -/
@@ -73,22 +65,19 @@ theorem objectDiffeomorph_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
     (x : SingleObj K × Discrete N) :
     letI := chartedSpaceObjects (H := H) K N
     objectDiffeomorph K N I n x = x.2.as := by
-  let := chartedSpaceObjects (H := H) K N
-  simp [objectDiffeomorph]
+  let := chartedSpaceObjects (H := H) K N; simp [objectDiffeomorph]
 
 @[simp]
 theorem objectDiffeomorph_symm_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (y : N) :
     letI := chartedSpaceObjects (H := H) K N
     (objectDiffeomorph K N I n).symm y = (SingleObj.star K, ⟨y⟩) := by
-  let := chartedSpaceObjects (H := H) K N
-  simp [objectDiffeomorph]
+  let := chartedSpaceObjects (H := H) K N; simp [objectDiffeomorph]
 
 @[simp]
 theorem objectDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
     letI := chartedSpaceObjects (H := H) K N
     (objectDiffeomorph K N I n).toHomeomorph = objectHomeomorph K N := by
-  let := chartedSpaceObjects (H := H) K N
-  simp [objectDiffeomorph]
+  let := chartedSpaceObjects (H := H) K N; simp [objectDiffeomorph]
 
 section Monoid
 
@@ -107,10 +96,10 @@ noncomputable def chartedSpaceArrows :
 theorem isManifold_arrows (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) [IsManifold I n N] :
     letI := chartedSpaceObjects (H := H) K N
     letI := chartedSpaceArrows (H := H) K N
-    IsManifold I n (Quiver.Total (SingleObj K × Discrete N)) := by
-  let := chartedSpaceObjects (H := H) K N
-  have := isManifold_objects K N I n
-  exact (isLocalHomeomorph_source K N).isManifold_chartedSpaceComap
+    IsManifold I n (Quiver.Total (SingleObj K × Discrete N)) :=
+  letI := chartedSpaceObjects (H := H) K N
+  haveI := isManifold_objects K N I n
+  (isLocalHomeomorph_source K N).isManifold_chartedSpaceComap
 
 /-- The source map of `SingleObj K × Discrete N` is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_source (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
@@ -131,8 +120,8 @@ theorem isLocalDiffeomorph_target (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
         Quiver.Total (SingleObj K × Discrete N) → SingleObj K × Discrete N) :=
   target_eq_source K N ▸ isLocalDiffeomorph_source K N I n
 
-/-- For discrete `K`, a map into `Quiver.Total (SingleObj K × Discrete N)` is `C^n` if and only if
-it is continuous and its composite with the source is `C^n`. -/
+/-- For discrete `K`, a map into `Quiver.Total (SingleObj K × Discrete N)` is `C^n` iff it is
+continuous and its composite with the source is `C^n`. -/
 theorem contMDiff_arrows_iff
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
@@ -175,13 +164,7 @@ theorem coe_effectiveQuotientObjectDiffeomorph_symm (I : ModelWithCorners 𝕜 E
     ⇑(effectiveQuotientObjectDiffeomorph K N I n).symm =
       (discreteToEffectiveQuotient K N).obj := by
   let := chartedSpaceObjects (H := H) K N
-  funext z
-  have hz : effectiveQuotientObjectDiffeomorph K N I n
-      ((discreteToEffectiveQuotient K N).obj z) = z := by
-    rw [coe_effectiveQuotientObjectDiffeomorph]
-    exact effectiveQuotientToDiscrete_obj_discreteToEffectiveQuotient_obj K N z
-  exact (effectiveQuotientObjectDiffeomorph K N I n).injective
-    (((effectiveQuotientObjectDiffeomorph K N I n).apply_symm_apply z).trans hz.symm)
+  exact funext fun z ↦ (effectiveQuotientObjectDiffeomorph K N I n).injective (by simp)
 
 @[simp]
 theorem effectiveQuotientObjectDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
@@ -206,63 +189,45 @@ noncomputable def effectiveQuotientArrowDiffeomorph (I : ModelWithCorners 𝕜 E
   letI := chartedSpaceObjects (H := H) K N
   letI := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
   { toEquiv := (effectiveQuotientArrowHomeomorph K N).toEquiv
-    contMDiff_toFun := by
-      refine ContMDiff.of_comp_isLocalDiffeomorph UnitGroupoid.isLocalDiffeomorph_source
-        (effectiveQuotientArrowHomeomorph K N).continuous ?_
-      have heq : Quiver.Total.left ∘ ⇑(effectiveQuotientArrowHomeomorph K N).toEquiv =
-          ⇑(effectiveQuotientObjectDiffeomorph K N I n) ∘ Quiver.Total.left := by
-        funext a
-        simp [Prefunctor.mapTotal_left]
-      rw [heq]
-      exact (effectiveQuotientObjectDiffeomorph K N I n).contMDiff.comp
-        (EffectiveQuotient.contMDiff_source (isLocalHomeomorph_source K N))
-    contMDiff_invFun := by
-      refine (EffectiveQuotient.contMDiff_arrows_iff (isLocalHomeomorph_source K N)).mpr
-        ⟨(effectiveQuotientArrowHomeomorph K N).symm.continuous, ?_⟩
-      have heq : Quiver.Total.left ∘ ⇑(effectiveQuotientArrowHomeomorph K N).toEquiv.symm =
-          ⇑(effectiveQuotientObjectDiffeomorph K N I n).symm ∘ Quiver.Total.left := by
-        funext b
-        simp [discreteToEffectiveQuotient_obj]
-      rw [heq]
-      exact (effectiveQuotientObjectDiffeomorph K N I n).symm.contMDiff.comp
-        UnitGroupoid.isLocalDiffeomorph_source.contMDiff }
+    contMDiff_toFun :=
+      ContMDiff.of_comp_isLocalDiffeomorph UnitGroupoid.isLocalDiffeomorph_source
+        (effectiveQuotientArrowHomeomorph K N).continuous <| by
+          simpa [Function.comp_def, Prefunctor.mapTotal_left] using
+            (effectiveQuotientObjectDiffeomorph K N I n).contMDiff.comp
+              (EffectiveQuotient.contMDiff_source (isLocalHomeomorph_source K N))
+    contMDiff_invFun :=
+      (EffectiveQuotient.contMDiff_arrows_iff (isLocalHomeomorph_source K N)).mpr
+        ⟨(effectiveQuotientArrowHomeomorph K N).symm.continuous, by
+          simpa [Function.comp_def, discreteToEffectiveQuotient_obj] using
+            (effectiveQuotientObjectDiffeomorph K N I n).symm.contMDiff.comp
+              UnitGroupoid.isLocalDiffeomorph_source.contMDiff⟩ }
 
 @[simp]
 theorem coe_effectiveQuotientArrowDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
     letI := chartedSpaceObjects (H := H) K N
     letI := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
     ⇑(effectiveQuotientArrowDiffeomorph K N I n) =
-      (effectiveQuotientToDiscrete K N).toPrefunctor.mapTotal := by
-  let := chartedSpaceObjects (H := H) K N
-  let := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
-  funext a
-  exact congrFun (coe_effectiveQuotientArrowHomeomorph K N) a
+      (effectiveQuotientToDiscrete K N).toPrefunctor.mapTotal :=
+  coe_effectiveQuotientArrowHomeomorph K N
 
 @[simp]
 theorem coe_effectiveQuotientArrowDiffeomorph_symm (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
     letI := chartedSpaceObjects (H := H) K N
     letI := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
     ⇑(effectiveQuotientArrowDiffeomorph K N I n).symm =
-      (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal := by
-  let := chartedSpaceObjects (H := H) K N
-  let := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
-  funext b
-  exact congrFun (coe_effectiveQuotientArrowHomeomorph_symm K N) b
+      (discreteToEffectiveQuotient K N).toPrefunctor.mapTotal :=
+  coe_effectiveQuotientArrowHomeomorph_symm K N
 
 @[simp]
 theorem effectiveQuotientArrowDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
     letI := chartedSpaceObjects (H := H) K N
     letI := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
     (effectiveQuotientArrowDiffeomorph K N I n).toHomeomorph =
-      effectiveQuotientArrowHomeomorph K N := by
-  let := chartedSpaceObjects (H := H) K N
-  let := EffectiveQuotient.chartedSpaceArrows (H := H) (isLocalHomeomorph_source K N)
-  exact Homeomorph.ext fun a ↦ by simp
+      effectiveQuotientArrowHomeomorph K N :=
+  Homeomorph.ext fun _ ↦ rfl
 
 end Etale
 
 end Group
 
-end TrivialGerbe
-
-end TauCeti
+end TauCeti.TrivialGerbe
