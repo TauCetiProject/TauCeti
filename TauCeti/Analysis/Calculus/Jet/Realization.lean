@@ -25,6 +25,7 @@ zero or symmetry assumptions.
 is its finite Taylor sum about the chosen center. The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
+* `contDiff_finiteJetPolynomial_uncurry`: joint smoothness in the jet, the center and the point;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
@@ -129,6 +130,32 @@ theorem contDiff_finiteJetPolynomial (r : ℕ)
   intro y
   exact ((finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).cpolynomialAt_of_mem
     (by simp)).contDiffAt
+
+/-- The finite Taylor polynomial depends additively on the jet. -/
+theorem finiteJetPolynomial_add (r : ℕ) (A B : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) :
+    finiteJetPolynomial r (A + B) x y =
+      finiteJetPolynomial r A x y + finiteJetPolynomial r B x y := by
+  simp [finiteJetPolynomial_apply, smul_add, Finset.sum_add_distrib]
+
+/-- The finite Taylor polynomial is homogeneous in the jet. -/
+theorem finiteJetPolynomial_smul (r : ℕ) (c : 𝕜) (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
+    (x y : E) : finiteJetPolynomial r (c • A) x y = c • finiteJetPolynomial r A x y := by
+  simp [finiteJetPolynomial_apply, Finset.smul_sum, smul_comm c]
+
+/-- The finite Taylor polynomial is jointly smooth (and in fact polynomial) in the jet, the center
+and the point. -/
+theorem contDiff_finiteJetPolynomial_uncurry (r : ℕ) {n : ℕ∞ω} :
+    ContDiff 𝕜 n (fun p : ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) × E × E ↦
+      finiteJetPolynomial r p.1 p.2.1 p.2.2) := by
+  simp_rw [finiteJetPolynomial_apply]
+  refine ContDiff.sum fun i _ ↦ ContDiff.const_smul _ ?_
+  -- Evaluation of a multilinear map is polynomial jointly in the map and its arguments.
+  have happ : ContDiff 𝕜 n (fun q : (E [×i.val]→L[𝕜] F) × (Fin i.val → E) ↦ q.1 q.2) :=
+    contDiff_iff_contDiffAt.2 fun _ ↦ CPolynomialAt.contDiffAt
+      ((ContinuousLinearMap.id 𝕜 (E [×i.val]→L[𝕜] F)).cpolynomialAt_uncurry_of_multilinear
+        (Em := fun _ : Fin i.val ↦ E))
+  exact happ.comp (((contDiff_apply 𝕜 (fun i : Fin (r + 1) ↦ E [×i.val]→L[𝕜] F) i).comp
+    contDiff_fst).prodMk (contDiff_pi.2 fun _ ↦ contDiff_snd.snd.sub contDiff_snd.fst))
 
 /-- All derivatives above the prescribed jet order vanish everywhere, without any symmetry
 or characteristic-zero assumption on the prescribed coefficients. -/
