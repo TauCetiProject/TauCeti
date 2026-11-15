@@ -465,9 +465,10 @@ variable [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
 /-- An element of a weak-derivative graph over an open subset of the line, from a value `x` and
 the weak derivative `g` of the selected field `base x` in the direction `1`. Its adjoined weak
 Fréchet derivative is the field `s ↦ (t ↦ t • g s)`. -/
-def mkLine {Omega : Opens ℝ} (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
-    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
-    (h : HasWeakLineDerivOn volume Omega (base x) g 1) : WeakDerivStep volume Omega p base :=
+def mkLine {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (mu.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (mu.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn mu Omega (base x) g 1) : WeakDerivStep mu Omega p base :=
   mk base x
     ((ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
       g) <| by
@@ -481,17 +482,19 @@ def mkLine {Omega : Opens ℝ} (base : X →L[ℝ] Lp F p (volume.restrict (Omeg
     simp [ht]
 
 @[simp]
-theorem prev_mkLine {Omega : Opens ℝ} (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ)))
-    (x : X) (g : Lp F p (volume.restrict (Omega : Set ℝ)))
-    (h : HasWeakLineDerivOn volume Omega (base x) g 1) : prev base (mkLine base x g h) = x :=
+theorem prev_mkLine {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (mu.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (mu.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn mu Omega (base x) g 1) : prev base (mkLine base x g h) = x :=
   prev_mk _ _ _ _
 
 /-- The weak derivative of `mkLine base x g h` in the direction `1` is `g`. -/
 @[simp]
-theorem apply_one_compLp_weakFDeriv_mkLine {Omega : Opens ℝ}
-    (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
-    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
-    (h : HasWeakLineDerivOn volume Omega (base x) g 1) :
+theorem apply_one_compLp_weakFDeriv_mkLine {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu]
+    {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (mu.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (mu.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
     (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base (mkLine base x g h)) = g := by
   rw [mkLine, weakFDeriv_mk]
   refine Lp.ext ?_
@@ -503,10 +506,10 @@ theorem apply_one_compLp_weakFDeriv_mkLine {Omega : Opens ℝ}
 
 /-- The adjoined weak derivative of `mkLine base x g h` has the norm of `g`. -/
 @[simp]
-theorem norm_weakFDeriv_mkLine {Omega : Opens ℝ}
-    (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
-    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
-    (h : HasWeakLineDerivOn volume Omega (base x) g 1) :
+theorem norm_weakFDeriv_mkLine {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (mu.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (mu.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn mu Omega (base x) g 1) :
     ‖weakFDeriv base (mkLine base x g h)‖ = ‖g‖ := by
   rw [← Lp.norm_apply_one_compLp, apply_one_compLp_weakFDeriv_mkLine]
 
