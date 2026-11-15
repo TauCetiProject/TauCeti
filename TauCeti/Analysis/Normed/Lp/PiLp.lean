@@ -30,6 +30,7 @@ coordinates of `Lᵖ(Fin n, E)`, for `k ≤ n`, places its coordinates in the sl
 vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
+Reindexing the coordinates along the identity bijection is the identity.
 
 For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
 `PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
@@ -306,3 +307,17 @@ theorem piMap_comp (S : ∀ i, F i →L[𝕜] G i) (T : ∀ i, E i →L[𝕜] F 
   (rfl)
 
 end PiLp
+
+namespace LinearIsometryEquiv
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {ι : Type*} [Fintype ι]
+
+/-- Reindexing the coordinates of `Lᵖ(ι, E)` along the identity of `ι` is the identity. -/
+@[simp]
+theorem piLpCongrLeft_refl :
+    piLpCongrLeft p 𝕜 E (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 (PiLp p fun _ : ι ↦ E) := by
+  ext x i
+  simp [piLpCongrLeft_apply, Equiv.piCongrLeft'_refl]
+
+end LinearIsometryEquiv
