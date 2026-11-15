@@ -43,8 +43,8 @@ functions, which lie in `H^(k+1)` because `H^(k+1)(ℂ)` is an algebra for `k �
 
 The fields are pointwise representatives and the operators are classical differential expressions,
 so the statements assume `C¹` regularity of the field, variation or phase. These are membership
-statements: no bound in the Sobolev norm, smoothness of the equation map or Fredholm property is
-asserted.
+statements: no bound in the Sobolev norm or Fredholm property is asserted. The equation map as a
+smooth map between Sobolev spaces is in `TauCeti.Analysis.PDE.Vortex.EquationMap.Smooth`.
 
 ## References
 
