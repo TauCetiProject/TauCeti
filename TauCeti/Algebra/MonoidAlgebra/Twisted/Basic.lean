@@ -298,6 +298,17 @@ noncomputable def twistedMonoidAlgebra : Subalgebra k (Module.End k (G →₀ k)
       simp only [SetLike.mem_coe, twistedTranslation_mul]
       exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g * h, rfl⟩))
 
+section Ring
+
+variable {R H : Type*} [CommRing R] [Monoid H] {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Over a commutative coefficient ring, the twisted algebra inherits its canonical ring
+structure from its ambient endomorphism ring. -/
+noncomputable instance : Ring (twistedMonoidAlgebra R H β) :=
+  Subalgebra.toRing (R := R) (A := Module.End R (H →₀ R)) (twistedMonoidAlgebra R H β)
+
+end Ring
+
 @[simp]
 theorem toSubmodule_twistedMonoidAlgebra :
     Subalgebra.toSubmodule (twistedMonoidAlgebra k G α) =
