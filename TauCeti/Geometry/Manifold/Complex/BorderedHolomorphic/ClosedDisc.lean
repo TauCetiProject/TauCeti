@@ -30,9 +30,9 @@ inclusion of the closed disc into `ℂ` is smooth up to the boundary, and the in
 interior into `ℂ` is analytic for the complex structure induced on the interior.
 
 Mathlib's `closedBall (0 : ℂ) 1` already carries the half-space atlas
-`TauCeti.instChartedSpaceClosedBallComplex` modelled on `EuclideanHalfSpace 2`, and the model of a
-charted space is an `outParam`, so the Cayley atlas is put on the type synonym
-`Complex.UnitClosedDisc` instead.
+`TauCeti.instChartedSpaceClosedBallComplex` modelled on `EuclideanHalfSpace 2`. The Cayley atlas
+is put on the type synonym `Complex.UnitClosedDisc` instead, which keeps the two charted space
+structures on separate types.
 
 ## Main declarations
 
@@ -42,8 +42,9 @@ charted space is an `outParam`, so the Cayley atlas is put on the type synonym
   transition maps, so the closed disc is a Riemann surface with boundary.
 * `Complex.UnitClosedDisc.mem_borderedInterior_iff` and
   `Complex.UnitClosedDisc.compl_borderedInterior`: the interior is the open disc and its
-  complement is the unit circle, which `Complex.UnitClosedDisc.image_compl_borderedInterior`
-  identifies with `TauCeti.DoubleAlong.discBoundary`.
+  complement is the unit circle, which
+  `Complex.UnitClosedDisc.image_homeomorphClosedBall_compl_borderedInterior` identifies with
+  `TauCeti.DoubleAlong.discBoundary`.
 * `Complex.UnitClosedDisc.contMDiff_coe`: the inclusion of the closed disc into `ℂ` is smooth up
   to the boundary.
 * `Complex.UnitClosedDisc.contMDiff_coe_borderedInterior`: the inclusion of the interior into
@@ -229,7 +230,7 @@ theorem cayleyChart_symm_trans_mem_borderedHolomorphicGroupoid (ζ ζ' : ℂ) (h
   have hsymm : ((cayleyChart ζ hζ).symm ≫ₕ cayleyChart ζ' hζ').symm =
       (cayleyChart ζ' hζ').symm ≫ₕ cayleyChart ζ hζ := by
     rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-  refine ClosedUpperHalfPlane.mem_borderedHolomorphicGroupoid_of_contDiffAt
+  refine mem_borderedHolomorphicGroupoid_of_contDiffAt
     (G := fun w ↦ I * (ζ - ζ' * (I - w) / (w + I)) / (ζ + ζ' * (I - w) / (w + I)))
     (cayleyChart_symm_trans_apply ζ ζ' hζ hζ') ?_
   rw [← OpenPartialHomeomorph.symm_source, hsymm]
@@ -264,7 +265,7 @@ theorem compl_borderedInterior :
 /-- The complement of the interior of the closed unit disc is the boundary circle
 `TauCeti.DoubleAlong.discBoundary` along which `TauCeti.DoubleAlong` doubles the disc to the
 Riemann sphere. -/
-theorem image_compl_borderedInterior :
+theorem image_homeomorphClosedBall_compl_borderedInterior :
     homeomorphClosedBall '' (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ = DoubleAlong.discBoundary := by
   rw [compl_borderedInterior, homeomorphClosedBall.image_eq_preimage_symm]
   ext z
