@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The equator of a unit sphere orthogonal to a vector
@@ -125,13 +126,11 @@ theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V)
   obtain ⟨v, hv⟩ : (sphere (0 : (ℝ ∙ (p : V))ᗮ) 1).Nonempty :=
     NormedSpace.sphere_nonempty.2 zero_le_one
   have hpv : ⟪(p : V), (v : V)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
-  -- `⟪p, p⟫ = 1` and `⟪p, -p⟫ = -1`, while `⟪p, v⟫ = 0`.
+  -- `v = p` would give `⟪p, p⟫ = 0`, so `p = 0`; `v ≠ -p` since `v` is orthogonal to `p ≠ 0`.
   refine ⟨⟨v, by simpa using hv⟩, fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [show (v : V) = p from congrArg Subtype.val h, real_inner_self_eq_norm_sq,
-      norm_eq_of_mem_sphere p] at hpv
-    norm_num at hpv
-  · rw [show (v : V) = -p from congrArg Subtype.val h, inner_neg_right,
-      real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p] at hpv
-    norm_num at hpv
+  · refine ne_zero_of_mem_unit_sphere p (inner_self_eq_zero (𝕜 := ℝ).1 ?_)
+    rwa [show (v : V) = p from Subtype.ext_iff.1 h] at hpv
+  · exact ne_neg_of_inner_eq_zero (ne_zero_of_mem_unit_sphere p) (by rwa [real_inner_comm])
+      (Subtype.ext_iff.1 h)
 
 end TauCeti
