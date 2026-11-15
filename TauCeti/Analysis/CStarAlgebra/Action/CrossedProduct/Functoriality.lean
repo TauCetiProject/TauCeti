@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Full
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
+public import TauCeti.Analysis.CStarAlgebra.Action.Equivariant
 
 /-!
 # Functoriality of full crossed products
@@ -31,6 +32,9 @@ No nondegeneracy, unitality, separability or global σ-finiteness is assumed.
   `TauCeti.CStarAction.Hom.fullCrossedProductMap_comp`: the functor laws.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull_fullCrossedProductMap_apply`:
   compatibility with integration of covariant pairs.
+* `StarAlgEquiv.fullCrossedProductEquiv`, `TauCeti.CStarAction.Hom.fullCrossedProductEquiv`, and
+  `TauCeti.CStarAction.Hom.bijective_fullCrossedProductMap`: isometric `⋆`-isomorphisms of full
+  crossed products induced by equivariant coefficient `⋆`-isomorphisms.
 
 ## References
 
@@ -129,7 +133,7 @@ end Hom
 
 namespace CovariantRepresentation
 
-variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] (P : CovariantRepresentation β H) (φ : Hom α β)
 
 /-- Pulling back a covariant pair commutes with integrating it on the full crossed product. -/
@@ -172,3 +176,134 @@ theorem forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff :
 end CovariantRepresentation
 
 end TauCeti.CStarAction
+
+namespace StarAlgEquiv
+
+open TauCeti TauCeti.CStarAction TauCeti.CStarAction.FullCrossedProduct
+
+universe u v
+
+variable {G : Type u} {A B C : Type v} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
+  {α : CStarAction G A} {β : CStarAction G B} {γ : CStarAction G C}
+
+/-- An equivariant `⋆`-isomorphism of coefficient C⋆-algebras induces an isometric `⋆`-isomorphism
+of full crossed products. -/
+def fullCrossedProductEquiv (e : A ≃⋆ₐ[ℂ] B) (he : α.IsEquivariant β e.toNonUnitalStarAlgHom)
+    (μ : Measure G) [μ.IsHaarMeasure] :
+    FullCrossedProduct α μ ≃⋆ₐ[ℂ] FullCrossedProduct β μ :=
+  let φ : Hom α β := ⟨e.toNonUnitalStarAlgHom, he.apply⟩
+  let ψ : Hom β α := ⟨e.symm.toNonUnitalStarAlgHom, (e.isEquivariant_symm he).apply⟩
+  StarAlgEquiv.ofNonUnitalStarAlgHom (φ.fullCrossedProductMap μ) (ψ.fullCrossedProductMap μ)
+    (by
+      rw [← Hom.fullCrossedProductMap_comp, ← Hom.fullCrossedProductMap_id]
+      congr 1
+      ext a
+      simp [φ, ψ])
+    (by
+      rw [← Hom.fullCrossedProductMap_comp, ← Hom.fullCrossedProductMap_id]
+      congr 1
+      ext b
+      simp [φ, ψ])
+
+@[simp]
+theorem toNonUnitalStarAlgHom_fullCrossedProductEquiv (e : A ≃⋆ₐ[ℂ] B)
+    (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) (μ : Measure G) [μ.IsHaarMeasure] :
+    (e.fullCrossedProductEquiv he μ).toNonUnitalStarAlgHom =
+      (⟨e.toNonUnitalStarAlgHom, he.apply⟩ : Hom α β).fullCrossedProductMap μ :=
+  (rfl)
+
+theorem fullCrossedProductEquiv_apply (e : A ≃⋆ₐ[ℂ] B)
+    (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) (μ : Measure G) [μ.IsHaarMeasure]
+    (x : FullCrossedProduct α μ) :
+    e.fullCrossedProductEquiv he μ x =
+      (⟨e.toNonUnitalStarAlgHom, he.apply⟩ : Hom α β).fullCrossedProductMap μ x :=
+  (rfl)
+
+@[simp]
+theorem fullCrossedProductEquiv_of (e : A ≃⋆ₐ[ℂ] B)
+    (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) (μ : Measure G) [μ.IsHaarMeasure]
+    (f : ConvolutionAlgebra α μ) :
+    e.fullCrossedProductEquiv he μ (of α μ f) =
+      of β μ ((⟨e.toNonUnitalStarAlgHom, he.apply⟩ : Hom α β).convolutionMap μ f) :=
+  Hom.fullCrossedProductMap_of μ _ f
+
+@[simp]
+theorem fullCrossedProductEquiv_symm (e : A ≃⋆ₐ[ℂ] B)
+    (he : α.IsEquivariant β e.toNonUnitalStarAlgHom) (μ : Measure G) [μ.IsHaarMeasure] :
+    (e.fullCrossedProductEquiv he μ).symm =
+      e.symm.fullCrossedProductEquiv (e.isEquivariant_symm he) μ :=
+  (rfl)
+
+@[simp]
+theorem fullCrossedProductEquiv_refl
+    (he : α.IsEquivariant α (StarAlgEquiv.refl ℂ A).toNonUnitalStarAlgHom)
+    (μ : Measure G) [μ.IsHaarMeasure] :
+    (StarAlgEquiv.refl ℂ A).fullCrossedProductEquiv he μ =
+      StarAlgEquiv.refl ℂ (FullCrossedProduct α μ) := by
+  have hid : (⟨(StarAlgEquiv.refl ℂ A).toNonUnitalStarAlgHom, he.apply⟩ : Hom α α) = Hom.id α := by
+    ext a
+    simp
+  ext x
+  rw [fullCrossedProductEquiv_apply, hid, Hom.fullCrossedProductMap_id]
+  rfl
+
+theorem fullCrossedProductEquiv_trans (e₁ : A ≃⋆ₐ[ℂ] B) (e₂ : B ≃⋆ₐ[ℂ] C)
+    (he₁ : α.IsEquivariant β e₁.toNonUnitalStarAlgHom)
+    (he₂ : β.IsEquivariant γ e₂.toNonUnitalStarAlgHom)
+    (he₁₂ : α.IsEquivariant γ (e₁.trans e₂).toNonUnitalStarAlgHom)
+    (μ : Measure G) [μ.IsHaarMeasure] :
+    (e₁.trans e₂).fullCrossedProductEquiv he₁₂ μ =
+      (e₁.fullCrossedProductEquiv he₁ μ).trans (e₂.fullCrossedProductEquiv he₂ μ) := by
+  let φ₁ : Hom α β := ⟨e₁.toNonUnitalStarAlgHom, he₁.apply⟩
+  let φ₂ : Hom β γ := ⟨e₂.toNonUnitalStarAlgHom, he₂.apply⟩
+  have hcomp : (⟨(e₁.trans e₂).toNonUnitalStarAlgHom, he₁₂.apply⟩ : Hom α γ) =
+      φ₂.comp φ₁ := by
+    ext a
+    rw [← Hom.coe_toNonUnitalStarAlgHom, Hom.comp_apply]
+    rfl
+  ext x
+  rw [fullCrossedProductEquiv_apply, hcomp, Hom.fullCrossedProductMap_comp]
+  rfl
+
+end StarAlgEquiv
+
+namespace TauCeti.CStarAction.Hom
+
+universe u v
+
+variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  {α : CStarAction G A} {β : CStarAction G B}
+  (μ : Measure G) [μ.IsHaarMeasure] (φ : Hom α β)
+
+/-- A bijective equivariant coefficient homomorphism induces an isometric `⋆`-isomorphism of full
+crossed products, without assuming `T2Space G`. -/
+def fullCrossedProductEquiv (hφ : Function.Bijective φ) :
+    FullCrossedProduct α μ ≃⋆ₐ[ℂ] FullCrossedProduct β μ :=
+  (StarAlgEquiv.ofBijective φ.toNonUnitalStarAlgHom hφ).fullCrossedProductEquiv
+    (CStarAction.isEquivariant_iff.mpr fun g a => φ.map_action g a) μ
+
+@[simp]
+theorem toNonUnitalStarAlgHom_fullCrossedProductEquiv (hφ : Function.Bijective φ) :
+    (φ.fullCrossedProductEquiv μ hφ).toNonUnitalStarAlgHom = φ.fullCrossedProductMap μ := by
+  rw [fullCrossedProductEquiv, StarAlgEquiv.toNonUnitalStarAlgHom_fullCrossedProductEquiv]
+  congr 1
+
+@[simp]
+theorem fullCrossedProductEquiv_apply (hφ : Function.Bijective φ) (x : FullCrossedProduct α μ) :
+    φ.fullCrossedProductEquiv μ hφ x = φ.fullCrossedProductMap μ x :=
+  DFunLike.congr_fun (φ.toNonUnitalStarAlgHom_fullCrossedProductEquiv μ hφ) x
+
+/-- A bijective equivariant coefficient homomorphism induces a bijective homomorphism of full
+crossed products. -/
+theorem bijective_fullCrossedProductMap (hφ : Function.Bijective φ) :
+    Function.Bijective (φ.fullCrossedProductMap μ) := by
+  have hfn : ⇑(φ.fullCrossedProductMap μ) = ⇑(φ.fullCrossedProductEquiv μ hφ) :=
+    funext fun x => (φ.fullCrossedProductEquiv_apply μ hφ x).symm
+  rw [hfn]
+  exact (φ.fullCrossedProductEquiv μ hφ).bijective
+
+end TauCeti.CStarAction.Hom

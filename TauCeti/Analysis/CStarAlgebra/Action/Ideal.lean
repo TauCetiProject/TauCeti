@@ -73,16 +73,34 @@ theorem ker (f : CStarAction.Hom α β) :
   rw [SetLike.mem_coe, TwoSidedIdeal.mem_ker, CStarAction.Hom.coe_toNonUnitalStarAlgHom] at ha ⊢
   rw [f.map_action, ha, map_zero]
 
-private theorem isInvariant_toNonUnitalStarSubalgebra {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+/-- The zero two-sided ideal is invariant under any C⋆-action. -/
+theorem bot_ideal (α : CStarAction G A) :
+    _root_.IsInvariant (fun g a => α g a) ((⊥ : TwoSidedIdeal A) : Set A) := by
+  simp only [TwoSidedIdeal.coe_bot, IsInvariant.singleton_zero]
+
+/-- The top two-sided ideal is invariant under any C⋆-action. -/
+theorem top_ideal (α : CStarAction G A) :
+    _root_.IsInvariant (fun g a => α g a) ((⊤ : TwoSidedIdeal A) : Set A) :=
+  fun _ _ _ => Set.mem_univ _
+
+/-- A closed two-sided ideal is invariant if and only if its underlying nonunital `⋆`-subalgebra is
+invariant. -/
+theorem toNonUnitalStarSubalgebra_iff {I : TwoSidedIdeal A} [IsClosed (I : Set A)] :
+    _root_.IsInvariant (fun g a => α g a) (I.toNonUnitalStarSubalgebra : Set A) ↔
+      _root_.IsInvariant (fun g a => α g a) (I : Set A) := by
+  simp only [TwoSidedIdeal.coe_toNonUnitalStarSubalgebra]
+
+/-- The underlying nonunital `⋆`-subalgebra of a closed invariant two-sided ideal is invariant. -/
+theorem toNonUnitalStarSubalgebra {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     _root_.IsInvariant (fun g a => α g a) (I.toNonUnitalStarSubalgebra : Set A) :=
-  fun g _ ha => I.mem_toNonUnitalStarSubalgebra.mpr (hI g (I.mem_toNonUnitalStarSubalgebra.mp ha))
+  toNonUnitalStarSubalgebra_iff.mpr hI
 
 /-- Restrict an automorphism from an action to a closed invariant two-sided ideal. -/
 def restrictIdealEquiv {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) : I ≃⋆ₐ[ℂ] I :=
   I.toNonUnitalStarSubalgebraEquiv.trans
-    (((isInvariant_toNonUnitalStarSubalgebra hI).restrictEquiv g).trans
+    ((hI.toNonUnitalStarSubalgebra.restrictEquiv g).trans
       I.toNonUnitalStarSubalgebraEquiv.symm)
 
 @[simp]
@@ -94,7 +112,7 @@ theorem restrictIdealEquiv_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 /-- Restrict a C⋆-action to a closed invariant two-sided ideal. -/
 def restrictIdeal {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) : CStarAction G I :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).restrict.conjugate
+  hI.toNonUnitalStarSubalgebra.restrict.conjugate
     I.toNonUnitalStarSubalgebraEquiv.symm
 
 @[simp]
@@ -114,11 +132,11 @@ equivariant homomorphism. -/
 def idealSubtypeHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     CStarAction.Hom hI.restrictIdeal α :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).subtypeHom.comp
+  hI.toNonUnitalStarSubalgebra.subtypeHom.comp
     ⟨I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom,
       (I.toNonUnitalStarSubalgebraEquiv.symm.isEquivariant_symm
         (CStarAction.IsEquivariant.conjugate
-          (isInvariant_toNonUnitalStarSubalgebra hI).restrict
+          hI.toNonUnitalStarSubalgebra.restrict
           I.toNonUnitalStarSubalgebraEquiv.symm)).apply⟩
 
 @[simp]

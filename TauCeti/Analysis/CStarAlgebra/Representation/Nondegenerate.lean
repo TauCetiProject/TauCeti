@@ -243,4 +243,17 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
 
+/-- Composing a representation `π` with a dense-range `⋆`-homomorphism `φ` preserves and reflects
+nondegeneracy. -/
+theorem isNondegenerate_comp_iff {B : Type*} [NonUnitalCStarAlgebra B] {φ : B →⋆ₙₐ[ℂ] A}
+    (hφ : DenseRange φ) : (π.comp φ).IsNondegenerate ↔ π.IsNondegenerate :=
+  (π.isNondegenerate_iff_dense_span_comp hφ).symm
+
+/-- Precomposing a nondegenerate representation with a surjective `⋆`-homomorphism yields a
+nondegenerate representation. -/
+theorem isNondegenerate_comp_of_surjective {B : Type*} [NonUnitalCStarAlgebra B]
+    {φ : B →⋆ₙₐ[ℂ] A} (hφ : Function.Surjective φ) (hπ : π.IsNondegenerate) :
+    (π.comp φ).IsNondegenerate :=
+  (π.isNondegenerate_comp_iff hφ.denseRange).2 hπ
+
 end NonUnitalStarAlgHom

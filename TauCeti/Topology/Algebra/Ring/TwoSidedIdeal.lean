@@ -141,6 +141,20 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
 
 end TopologicalClosure
 
+section ClosedLattice
+
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+
+/-- The top two-sided ideal of a topological ring is closed. -/
+instance isClosed_top : IsClosed ((⊤ : TwoSidedIdeal A) : Set A) :=
+  TwoSidedIdeal.coe_top A ▸ isClosed_univ
+
+/-- The zero two-sided ideal of a `T₁` topological ring is closed. -/
+instance isClosed_bot [T1Space A] : IsClosed ((⊥ : TwoSidedIdeal A) : Set A) :=
+  TwoSidedIdeal.coe_bot A ▸ isClosed_singleton
+
+end ClosedLattice
+
 section ClosedKer
 
 variable {A B F : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]

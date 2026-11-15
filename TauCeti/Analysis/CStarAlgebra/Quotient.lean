@@ -451,6 +451,13 @@ theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₙₐ[ℂ] B} (hφ : Func
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   φ.quotientKerHom_mk a
 
+@[simp]
+theorem quotientKerEquivOfSurjective_symm_apply {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ)
+    (a : A) :
+    (quotientKerEquivOfSurjective hφ).symm (φ a) =
+      TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a :=
+  (quotientKerEquivOfSurjective hφ).symm_apply_eq.mpr (quotientKerEquivOfSurjective_mk hφ a).symm
+
 end NonUnitalStarAlgHom
 
 namespace StarAlgHom
@@ -483,6 +490,13 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₐ[ℂ] B} (hφ : 
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk (φ := φ.toNonUnitalStarAlgHom) hφ a
+
+@[simp]
+theorem quotientKerEquivOfSurjective_symm_apply {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ)
+    (a : A) :
+    (quotientKerEquivOfSurjective hφ).symm (φ a) =
+      TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a :=
+  NonUnitalStarAlgHom.quotientKerEquivOfSurjective_symm_apply (φ := φ.toNonUnitalStarAlgHom) hφ a
 
 /-- First isometric `⋆`-isomorphism theorem for unital C⋆-algebras: `A ⧸ ker φ ≃⋆ₐ[ℂ] φ.range`. -/
 noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[ℂ] φ.range :=

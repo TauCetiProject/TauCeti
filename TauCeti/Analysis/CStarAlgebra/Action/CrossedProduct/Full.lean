@@ -256,6 +256,11 @@ theorem norm_star_mul_self (f : FullConvolutionAlgebra α μ) : ‖star f * f‖
   simpa only [norm_def, ofFull_mul, ofFull_star] using
     ConvolutionAlgebra.fullSeminorm_star_mul_self (ofFull f)
 
+/-- When the coefficient C⋆-algebra is trivial, the full convolution algebra is trivial. -/
+instance [Subsingleton A] : Subsingleton (FullConvolutionAlgebra α μ) :=
+  ⟨fun _ _ => ofFull.injective <| ConvolutionAlgebra.ext <|
+    DFunLike.ext _ _ fun _ => Subsingleton.elim _ _⟩
+
 end FullConvolutionAlgebra
 
 open FullConvolutionAlgebra
@@ -338,6 +343,13 @@ prove it on the twisted convolution algebra. -/
 theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedProduct α μ)
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
   Completion.induction_on (p := p) x hp fun f => coe_toFull_eq_of (ofFull f) ▸ ih (ofFull f)
+
+/-- When the coefficient C⋆-algebra is trivial, the full crossed product is trivial. -/
+instance [Subsingleton A] : Subsingleton (FullCrossedProduct α μ) :=
+  subsingleton_of_forall_eq 0 fun x =>
+    induction_on x (isClosed_eq continuous_id continuous_const) fun f => by
+      have hf : f = 0 := ConvolutionAlgebra.ext <| DFunLike.ext _ _ fun _ => Subsingleton.elim _ _
+      rw [hf, map_zero]
 
 /-- If `A` has a faithful representation on a Hilbert space `H` and `μ` is inner regular for compact
 sets on sets of finite measure, the canonical map from the twisted convolution algebra into the full
