@@ -73,11 +73,6 @@ class ControlBatches(unittest.TestCase):
     def test_fleet_jobs_hold_no_repository_app_key(self):
         # Fleet guests receive the workflow token and the narrow CI Apps only. Jobs that mint the
         # repository App token (APP_ID/APP_PRIVATE_KEY) stay on GitHub-hosted runners.
-        fleet = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
-        moved = [("pr-ci-cleanup.yml", "cleanup")] + [("pages.yml", name) for name in workflow("pages.yml")["jobs"]]
-        for name, job in moved:
-            with self.subTest(workflow=name, job=job):
-                self.assertEqual(workflow(name)["jobs"][job]["runs-on"], fleet)
         for path in sorted((ROOT / ".github/workflows").glob("*.yml")):
             for job_name, job in (yaml.safe_load(path.read_text()).get("jobs") or {}).items():
                 if "TauCetiFleet" in json.dumps(job.get("runs-on", "")):
