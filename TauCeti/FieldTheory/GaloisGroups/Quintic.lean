@@ -174,9 +174,7 @@ theorem hasGaloisLabel_five_four_of_not_isSquare_discr_of_forall_not_isRoot (hf 
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hchar).mpr hp)
   have hlt : (j : ℕ) < 5 := by simpa [numTransitiveGroups_five] using j.isLt
-  have hval : (j : ℕ) = 4 := by omega
-  have : j = ⟨4, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 4 by omega) : j = ⟨4, by simp⟩) ▸ hj
 
 /-- **The second row of the quintic table: `5T4`.** Away from characteristic `2`, an irreducible
 separable monic quintic whose discriminant is a square and whose `F₂₀` resolvent has no root in
@@ -190,9 +188,7 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_forall_not_isRoot (hf : f
   have hsol : ¬ (j : ℕ) < 3 := fun hlt =>
     (hj.exists_isRoot_specialize_quinticF20Spec_of_lt_three hf hlt).elim hroot
   have hpar := (hj.isSquare_discr_iff_five hchar).mp hdisc
-  have hval : (j : ℕ) = 3 := by omega
-  have : j = ⟨3, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 3 by omega) : j = ⟨3, by simp⟩) ▸ hj
 
 /-- **The third row of the quintic table: `5T3`.** An irreducible monic quintic whose
 discriminant is not a square (so the characteristic is not `2`) and whose separable `F₂₀`
@@ -209,9 +205,7 @@ theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf : f.Monic)
   have hsol := (hj.exists_isRoot_specialize_quinticF20Spec_iff hf hres).mp ⟨a, ha⟩
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hchar).mpr hp)
-  have hval : (j : ℕ) = 2 := by omega
-  have : j = ⟨2, by simp⟩ := Fin.ext hval
-  exact this ▸ hj
+  exact (Fin.ext (show (j : ℕ) = 2 by omega) : j = ⟨2, by simp⟩) ▸ hj
 
 /-- **The fourth row of the quintic table: `5T1` or `5T2`.** Away from characteristic `2`, an
 irreducible separable monic quintic whose discriminant is a square and whose separable `F₂₀`
