@@ -154,4 +154,86 @@ theorem IsSigma.one_of_zero (h : IsSigma Z 0 p) : IsSigma Z 1 p := by
   exact isSigma_one_iff.2 ⟨fun a => b a.1, hb.comp ComputableIn.fst, fun x => by
     simpa using (heq x).symm⟩
 
+/-- Σ⁰ₙ is closed downward under many-one reducibility. -/
+theorem IsSigma.of_manyOneReducible {r : β → Prop} (hp : IsSigma Z n p)
+    (hr : ManyOneReducible r p) : IsSigma Z n r := by
+  obtain ⟨f, hf, heq⟩ := hr
+  exact (hp.preimage hf.computableIn).of_eq fun x => (heq x).symm
+
+/-- Π⁰ₙ is closed downward under many-one reducibility. -/
+theorem IsPi.of_manyOneReducible {r : β → Prop} (hp : IsPi Z n p)
+    (hr : ManyOneReducible r p) : IsPi Z n r := by
+  obtain ⟨f, hf, heq⟩ := hr
+  exact (hp.preimage hf.computableIn).of_eq fun x => (heq x).symm
+
+/-- Δ⁰ₙ is closed downward under many-one reducibility. -/
+theorem IsDelta.of_manyOneReducible {r : β → Prop} (hp : IsDelta Z n p)
+    (hr : ManyOneReducible r p) : IsDelta Z n r :=
+  ⟨hp.1.of_manyOneReducible hr, hp.2.of_manyOneReducible hr⟩
+
+/-- Turing reducibility of the oracle transports Σ⁰ₙ membership upward. -/
+theorem IsSigma.mono_oracle {Y : Set ℕ} (h : IsSigma Y n p)
+    (hYZ : TuringReducible Y.oracle Z.oracle) : IsSigma Z n p := by
+  induction n generalizing α with
+  | zero =>
+    obtain ⟨b, hb, heq⟩ := h
+    refine ⟨b, hb.subst fun g hg => ?_, heq⟩
+    rw [Set.mem_singleton_iff.1 hg]
+    exact hYZ
+  | succ n ih =>
+    obtain ⟨q, hq, heq⟩ := h
+    exact ⟨q, ih hq, heq⟩
+
+/-- Turing reducibility of the oracle transports Π⁰ₙ membership upward. -/
+theorem IsPi.mono_oracle {Y : Set ℕ} (h : IsPi Y n p)
+    (hYZ : TuringReducible Y.oracle Z.oracle) : IsPi Z n p :=
+  IsSigma.mono_oracle h hYZ
+
+/-- Turing reducibility of the oracle transports Δ⁰ₙ membership upward. -/
+theorem IsDelta.mono_oracle {Y : Set ℕ} (h : IsDelta Y n p)
+    (hYZ : TuringReducible Y.oracle Z.oracle) : IsDelta Z n p :=
+  ⟨h.1.mono_oracle hYZ, h.2.mono_oracle hYZ⟩
+
+/-- Turing equivalent oracles define the same Σ⁰ₙ pointclass. -/
+theorem isSigma_congr_oracle {Y : Set ℕ} (hYZ : TuringEquivalent Y.oracle Z.oracle) :
+    IsSigma Y n p ↔ IsSigma Z n p :=
+  ⟨fun h => h.mono_oracle hYZ.1, fun h => h.mono_oracle hYZ.2⟩
+
+/-- Turing equivalent oracles define the same Π⁰ₙ pointclass. -/
+theorem isPi_congr_oracle {Y : Set ℕ} (hYZ : TuringEquivalent Y.oracle Z.oracle) :
+    IsPi Y n p ↔ IsPi Z n p :=
+  isSigma_congr_oracle hYZ
+
+/-- Turing equivalent oracles define the same Δ⁰ₙ pointclass. -/
+theorem isDelta_congr_oracle {Y : Set ℕ} (hYZ : TuringEquivalent Y.oracle Z.oracle) :
+    IsDelta Y n p ↔ IsDelta Z n p :=
+  and_congr (isSigma_congr_oracle hYZ) (isPi_congr_oracle hYZ)
+
+/-- Membership in a set of naturals is Σ⁰₀ relative to `Z` exactly when the set is Turing
+reducible to `Z`. -/
+theorem isSigma_zero_mem_iff_turingReducible {C : Set ℕ} :
+    IsSigma Z 0 (· ∈ C) ↔ TuringReducible C.oracle Z.oracle := by
+  classical
+  rw [isSigma_zero_iff, C.turingReducible_iff_computableIn_indicator]
+  constructor
+  · rintro ⟨b, hb, heq⟩
+    refine RecursiveIn.of_eq
+      ((Primrec.cond Primrec.id (Primrec.const 1) (Primrec.const 0)).computableIn.comp hb)
+      fun n => congrArg Part.some ?_
+    cases hbn : b n <;> simp [← heq n, hbn]
+  · intro hχ
+    refine ⟨fun n => C.indicator 1 n == 1,
+      Primrec.beq.computableIn.comp (hχ.pair (ComputableIn.const 1)), fun n => ?_⟩
+    by_cases hn : n ∈ C <;> simp [hn]
+
+/-- At the empty oracle, Σ⁰₀ agrees with Mathlib's `ComputablePred`. -/
+theorem isSigma_zero_empty_iff_computablePred : IsSigma ∅ 0 p ↔ ComputablePred p := by
+  rw [isSigma_zero_iff, ComputablePred.computable_iff]
+  constructor
+  · rintro ⟨b, hb, heq⟩
+    rw [ComputableIn, Set.oracle_empty] at hb
+    exact ⟨b, hb.partrec_of_const, funext fun x => propext (heq x).symm⟩
+  · rintro ⟨b, hb, rfl⟩
+    exact ⟨b, hb.computableIn, fun _ => Iff.rfl⟩
+
 end TauCeti.ArithmeticalHierarchy

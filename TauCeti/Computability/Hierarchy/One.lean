@@ -18,7 +18,9 @@ the reverse implication uses finite successful computations of an oracle program
 oracle is essential to computing bounded simulation.
 
 This gives the ordinary characterization by `REPred` at the empty oracle, the index presentation
-by oracle-program domains, and one-one completeness of the relative jump for Σ⁰₁ predicates.
+by oracle-program domains, one-one completeness of the relative jump for Σ⁰₁ predicates, the
+identification of Δ⁰₁ relative to `Z` with Σ⁰₀ relative to `Z`, and the separation of Σ⁰₁ from
+Π⁰₁ by the relative jump.
 No program index is extracted computably from a semantic pointclass-membership proof.
 
 ## References
@@ -134,5 +136,65 @@ theorem IsSigma.oneOneReducible_jump (h : IsSigma Z 1 p) :
       (fun n => (Part.bind (decode (α := α) n) fun x => (f x).map encode).Dom) :=
     ⟨encode, Computable.encode, encode_injective, fun x => by simpa using heq x⟩
   exact hred.trans (Z.oneOneReducible_jump_of_recursiveIn hf)
+
+/-- A predicate is Σ⁰₁ relative to `Z` exactly when it reduces one-one to the jump `Z'`. -/
+theorem isSigma_one_iff_oneOneReducible_jump :
+    IsSigma Z 1 p ↔ OneOneReducible p (· ∈ Z.jump) :=
+  ⟨IsSigma.oneOneReducible_jump, fun h => isSigma_one_jump.of_manyOneReducible h.to_many_one⟩
+
+/-- A predicate is Σ⁰₁ relative to `Z` exactly when it reduces many-one to the jump `Z'`. -/
+theorem isSigma_one_iff_manyOneReducible_jump :
+    IsSigma Z 1 p ↔ ManyOneReducible p (· ∈ Z.jump) :=
+  ⟨fun h => h.oneOneReducible_jump.to_many_one, isSigma_one_jump.of_manyOneReducible⟩
+
+/-- **First-level complement theorem.** A predicate is Δ⁰₁ relative to `Z`—both Σ⁰₁ and Π⁰₁
+relative to `Z`—exactly when it is Σ⁰₀ relative to `Z`. -/
+@[simp]
+theorem isDelta_one_iff : IsDelta Z 1 p ↔ IsSigma Z 0 p := by
+  classical
+  constructor
+  · intro h
+    obtain ⟨hp, hnp⟩ := isDelta_iff.1 h
+    obtain ⟨b₁, hb₁, heq₁⟩ := isSigma_one_iff.1 hp
+    obtain ⟨b₂, hb₂, heq₂⟩ := isSigma_one_iff.1 (isSigma_not_iff.2 hnp)
+    have hex : ∀ x, ∃ y, (b₁ (x, y) || b₂ (x, y)) = true := fun x => by
+      by_cases hx : p x
+      · obtain ⟨y, hy⟩ := (heq₁ x).1 hx
+        exact ⟨y, by simp [hy]⟩
+      · obtain ⟨y, hy⟩ := (heq₂ x).1 hx
+        exact ⟨y, by simp [hy]⟩
+    have hnot : ComputableIn {Z.oracle} (fun a : α × ℕ => !(b₁ a || b₂ a)) :=
+      Primrec.not.computableIn.comp (Primrec.or.computableIn.comp (hb₁.pair hb₂))
+    have hw : ComputableIn {Z.oracle} (fun x : α => Nat.find (hex x)) := by
+      unfold ComputableIn RecursiveIn at hnot ⊢
+      refine hnot.rfind.of_eq fun n => ?_
+      cases e : decode (α := α) n with
+      | none =>
+        simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
+      | some x =>
+        simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
+          Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some,
+          encode_nat]
+        refine (congrArg Nat.rfind (funext fun y => ?_)).trans (Part.eq_some_iff.2 <|
+          Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec (hex x)).symm,
+            fun {m} hm => Part.mem_some_iff.2 (Bool.eq_false_iff.2 (Nat.find_min (hex x) hm)).symm⟩)
+        cases b₁ (x, y) || b₂ (x, y) <;> rfl
+    refine isSigma_zero_iff.2 ⟨fun x => b₁ (x, Nat.find (hex x)),
+      hb₁.comp (ComputableIn.id.pair hw), fun x => ?_⟩
+    constructor
+    · intro htrue
+      exact (heq₁ x).2 ⟨_, htrue⟩
+    · intro hx
+      rcases Bool.or_eq_true_iff.1 (Nat.find_spec (hex x)) with h₁ | h₂
+      · exact h₁
+      · exact False.elim (((heq₂ x).2 ⟨_, h₂⟩) hx)
+  · intro h
+    exact isDelta_iff.2
+      ⟨h.one_of_zero, isSigma_not_iff.1 (isSigma_not_iff.2 (isPi_zero_iff.2 h)).one_of_zero⟩
+
+/-- The diagonal halting set `Z'` is not Π⁰₁ relative to `Z`. -/
+theorem not_isPi_one_jump : ¬IsPi Z 1 (· ∈ Z.jump) := fun h =>
+  Z.not_jump_turingReducible <|
+    isSigma_zero_mem_iff_turingReducible.1 (isDelta_one_iff.1 (isDelta_iff.2 ⟨isSigma_one_jump, h⟩))
 
 end TauCeti.ArithmeticalHierarchy
