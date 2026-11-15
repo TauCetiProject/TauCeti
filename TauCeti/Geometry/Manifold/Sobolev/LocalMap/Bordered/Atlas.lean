@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered
+-- Reuse its chart gluing proofs, parameterized by the planar calculus, privately.
+import all TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Geometry.Manifold.Complex.Analytic
@@ -156,41 +158,14 @@ theorem memWkpLocMapOnBordered_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : I
     MemWkpLocMapOnBordered I p k u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
       MemWkpLoc p ((φ.extend closedUpperHalfPlaneModel).target ∩
         (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k
-        (ψ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm) := by
-  refine ⟨fun hu ↦ ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ hu.memWkpLoc_chart (hA hφ) (hB hψ)⟩,
-    fun ⟨hc, h⟩ ↦ ?_⟩
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
-  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
-  refine memWkpLocMapOnGroupoid_iff.2 ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
-  -- Change the bordered holomorphic chart, for each chart of `B`.
-  have h1 : ∀ ψ ∈ B, MemWkpLoc p ((φ'.extend closedUpperHalfPlaneModel).target ∩
-      (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) 1
-      (ψ.extend I ∘ u ∘ (φ'.extend closedUpperHalfPlaneModel).symm) := by
-    intro ψ hψ
-    refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
-    obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
-    refine ⟨_, inter_mem_nhdsWithin _ ((φ'.continuousAt_extend_symm' hz.1).preimage_mem_nhds
-      (φ.open_source.mem_nhds hxφ)), ?_⟩
-    refine (memWkpLoc_comp_bordered_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ)
-      (inter_subset_inter_left _ inter_subset_left) fun w hw ↦ ?_).congr fun w hw ↦ ?_
-    · obtain ⟨⟨-, hws, hwψ⟩, hwφ⟩ := hw
-      refine ⟨(φ.extend closedUpperHalfPlaneModel).map_source (by rwa [φ.extend_source]), ?_⟩
-      rw [mem_preimage, Function.comp_apply, φ.extend_left_inv hwφ]
-      exact ⟨hws, hwψ⟩
-    · have hwφ : φ'.symm (closedUpperHalfPlaneModel.symm w) ∈ φ.source := by
-        simpa only [mem_preimage, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply]
-          using hw.2
-      simp [φ.left_inv hwφ]
-  -- Change the chart of `M`.
-  refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
-  obtain ⟨ψ, hψB, hxψ⟩ := hBs _ hz.2.1
-  have hO := hc.isOpen_inter_preimage hs ψ.open_source
-  refine ⟨_, inter_mem_nhdsWithin _ ((φ'.continuousAt_extend_symm' hz.1).preimage_mem_nhds
-    (hO.mem_nhds ⟨hz.2.1, hxψ⟩)), ?_⟩
-  exact memWkpLoc_extend_comp (hB hψB) hψ' contMDiffOn_id isOpen_univ
-    ((h1 ψ hψB).mono fun w hw ↦ ⟨hw.1.1, hw.2⟩)
-    ((hc.extend_comp_extend_symm φ' ψ).mono fun w hw ↦ ⟨hw.1.1, hw.2⟩)
-    fun w hw ↦ ⟨hw.2.2, mem_univ _, hw.1.2.2⟩
+        (ψ.extend I ∘ u ∘ (φ.extend closedUpperHalfPlaneModel).symm) :=
+  memWkpLocMapOnGroupoid_iff_of_subset_maximalAtlas_of_planar
+    (fun _ _ _ hφ hφ' _ _ _ _ _ hg hW hmaps ↦
+      memWkpLoc_comp_bordered_transition hφ hφ' hk hg hW hmaps)
+    (fun hk' _ _ _ _ _ _ _ hv hvc hO hg hmaps ↦ by
+      obtain rfl := le_antisymm hk hk'
+      exact hv.contDiffOn_comp hvc hO hg hmaps)
+    hs hA hAs hB hBs
 
 /-- **Chart independence up to the boundary on the whole surface.** For `k ≤ 1`, it suffices to
 test the coordinate expressions in the charts of a family `A` of bordered holomorphic charts
@@ -378,12 +353,20 @@ theorem memWkpLocMapOnBordered_sqrt_im (hp : p < 2) :
           (fun z : ClosedUpperHalfPlane ↦ √(z : ℂ).im) ⁻¹' (chartAt ℝ y).source) =
       Metric.ball (0 : ℂ) 1 ∩ {z | 0 ≤ z.im} := by
     ext z
-    suffices 0 ≤ z.im → (‖(closedUpperHalfPlaneModel.symm z : ℂ)‖ < 1 ↔ ‖z‖ < 1) by
-      simpa [chartAt_self_eq, extChartAt, range_closedUpperHalfPlaneModel, and_comm] using this
-    intro hz
-    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
+    simp only [extChartAt_target, extChartAt_coe_symm, chartAt_self_eq,
+      OpenPartialHomeomorph.refl_target, OpenPartialHomeomorph.refl_symm,
+      OpenPartialHomeomorph.refl_source, range_closedUpperHalfPlaneModel, mem_inter_iff,
+      mem_preimage, mem_ofPred_eq, mem_univ, Function.comp_apply, OpenPartialHomeomorph.refl_apply,
+      id_eq, preimage_univ, and_true, true_and, Metric.mem_ball, dist_zero_right]
+    constructor
+    · rintro ⟨hz, hzs⟩
+      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] at hzs
+      exact ⟨hzs, hz⟩
+    · rintro ⟨hzs, hz⟩
+      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
+      exact ⟨hz, hzs⟩
   rw [hset]
   refine (memWkpLoc_sqrt_im_iff.2 hp).congr fun z hz ↦ ?_
-  simp [chartAt_self_eq, extChartAt, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz.2]
+  simp [chartAt_self_eq, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz.2]
 
 end TauCeti
