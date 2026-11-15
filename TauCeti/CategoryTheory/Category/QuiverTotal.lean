@@ -160,32 +160,21 @@ theorem mk_homOfEq_comp_homOfEq (a b : Quiver.Total C) {y z w : C} (hy : a.left 
 theorem comp_assoc (a b c : Quiver.Total C) (hab : a.right = b.left) (hbc : b.right = c.left)
     (habc₁ : (a.comp b hab).right = c.left) (habc₂ : a.right = (b.comp c hbc).left) :
     (a.comp b hab).comp c habc₁ = a.comp (b.comp c hbc) habc₂ := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨y', z, g⟩ := b
-  obtain ⟨z', w, k⟩ := c
-  dsimp only at hab hbc
-  subst hab hbc
-  simp [comp_def]
+  rcases a, b, c with ⟨⟨_, _, _⟩, ⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases hab; cases hbc; simp [comp_def]
 
 /-- Precomposing a total arrow with the identity arrow at its source leaves it unchanged. -/
 @[simp]
 theorem id_comp (a : Quiver.Total C) {x : C}
     (h : (⟨x, x, 𝟙 x⟩ : Quiver.Total C).right = a.left) :
     (⟨x, x, 𝟙 x⟩ : Quiver.Total C).comp a h = a := by
-  obtain ⟨x', y, f⟩ := a
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a with ⟨_, _, _⟩; cases h; simp [comp_def]
 
 /-- Postcomposing a total arrow with the identity arrow at its target leaves it unchanged. -/
 @[simp]
 theorem comp_id (a : Quiver.Total C) {y : C}
     (h : a.right = (⟨y, y, 𝟙 y⟩ : Quiver.Total C).left) :
     a.comp ⟨y, y, 𝟙 y⟩ h = a := by
-  obtain ⟨x, y', f⟩ := a
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a with ⟨_, _, _⟩; cases h; simp [comp_def]
 
 section IsGroupoid
 
@@ -196,56 +185,38 @@ variable [IsGroupoid C]
 theorem comp_inv_self (a : Quiver.Total C)
     (h : a.right = (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).left) :
     a.comp ⟨a.right, a.left, inv a.hom⟩ h = ⟨a.left, a.left, 𝟙 a.left⟩ := by
-  obtain ⟨x, y, f⟩ := a
-  simp [comp_def]
+  rcases a with ⟨_, _, _⟩; simp [comp_def]
 
 /-- Composing the inverse of a total arrow with the arrow gives the identity arrow at its target. -/
 @[simp]
 theorem inv_self_comp (a : Quiver.Total C)
     (h : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = a.left) :
     (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp a h = ⟨a.right, a.right, 𝟙 a.right⟩ := by
-  obtain ⟨x, y, f⟩ := a
-  simp [comp_def]
+  rcases a with ⟨_, _, _⟩; simp [comp_def]
 
 /-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
 theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
     (h' : a.right = ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h).left) :
     a.comp ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h) h' = c := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨x', z, g⟩ := c
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a, c with ⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases h; simp [comp_def]
 
 /-- Following the inverse of `a` by the composite of `a` with `b` gives back `b`. -/
 theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
     (h' : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = (a.comp b h).left) :
     (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp (a.comp b h) h' = b := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨y', z, g⟩ := b
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a, b with ⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases h; simp [comp_def]
 
 /-- Postcomposing `a ≫ b` with the inverse of `b` recovers `a`. -/
 theorem comp_inv_cancel_right (a b : Quiver.Total C) (h : a.right = b.left)
     (h' : (a.comp b h).right = (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).left) :
     (a.comp b h).comp ⟨b.right, b.left, inv b.hom⟩ h' = a := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨y', z, g⟩ := b
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a, b with ⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases h; simp [comp_def]
 
 /-- Postcomposing `a ≫ b⁻¹` with `b` recovers `a`. -/
 theorem inv_comp_cancel_right (a b : Quiver.Total C) (h : a.right = b.right)
     (h' : (a.comp ⟨b.right, b.left, inv b.hom⟩ h).right = b.left) :
     (a.comp ⟨b.right, b.left, inv b.hom⟩ h).comp b h' = a := by
-  obtain ⟨x, z, f⟩ := a
-  obtain ⟨y, z', g⟩ := b
-  dsimp only at h
-  subst h
-  simp [comp_def]
+  rcases a, b with ⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases h; simp [comp_def]
 
 /-- Inverting a composite of total arrows reverses their order and inverts each arrow. -/
 theorem inv_comp_eq (a b : Quiver.Total C) (h : a.right = b.left)
@@ -253,12 +224,7 @@ theorem inv_comp_eq (a b : Quiver.Total C) (h : a.right = b.left)
       (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).left) :
     (⟨(a.comp b h).right, (a.comp b h).left, inv (a.comp b h).hom⟩ : Quiver.Total C) =
       (⟨b.right, b.left, inv b.hom⟩ : Quiver.Total C).comp ⟨a.right, a.left, inv a.hom⟩ h' := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨y', z, g⟩ := b
-  dsimp only at h
-  subst h
-  rw [mk_comp_mk]
-  simp
+  rcases a, b with ⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩; cases h; rw [mk_comp_mk]; simp
 
 end IsGroupoid
 
