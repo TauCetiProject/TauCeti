@@ -266,22 +266,20 @@ theorem compatible_puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀)
     (hJc : ∀ i t x, ω.Compatible (J i t x)) (hJoutc : ∀ t x, ω.Compatible (Jout t x)) (w : ℂ)
     (x : M) : ω.Compatible (puncturedSphereAlmostComplex h₀ c a J Jout w x) := by
   by_cases h : puncturedSphereCayley J₀ c a J Jout w x ∈ ω.cayleyBall J₀
-  · refine (h₀.cayley_mem_compatibleCayleyBall_iff
-      (tames_puncturedSphereAlmostComplex h₀ w x)).mp ?_
-    rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ h]
+  · have hJt : ω.Tames (puncturedSphereAlmostComplex h₀ c a J Jout w x) :=
+      tames_puncturedSphereAlmostComplex h₀ w x
     -- The Cayley transforms of compatible structures are self-adjoint for `ω(·, J₀ ·)`, and so is
     -- their weighted sum.
     have hsa {K : AlmostComplexStructure V} (hK : ω.Compatible K) :
-        J₀.cayley K ∈ (ω.associatedBilinForm J₀).selfAdjointSubmodule :=
-      (SymplecticForm.mem_compatibleCayleyBall.1
-        ((h₀.cayley_mem_compatibleCayleyBall_iff hK.tames).2 hK)).2
-    have hmem : puncturedSphereCayley J₀ c a J Jout w x ∈
-        (ω.associatedBilinForm J₀).selfAdjointSubmodule := by
-      rw [puncturedSphereCayley_def]
-      exact Submodule.add_mem _
-        (Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ (hsa (hJc i _ x)))
-        (Submodule.smul_mem _ _ (hsa (hJoutc _ x)))
-    exact SymplecticForm.mem_compatibleCayleyBall.2 ⟨h, hmem⟩
+        J₀.cayley K ∈ (ω.associatedBilinForm J₀).selfAdjointSubmodule := by
+      rw [LinearMap.mem_selfAdjointSubmodule, h₀.isSelfAdjoint_cayley_iff hK.tames]
+      exact hK.invariant
+    rw [SymplecticForm.compatible_iff, ← h₀.isSelfAdjoint_cayley_iff hJt,
+      ← LinearMap.mem_selfAdjointSubmodule, cayley_puncturedSphereAlmostComplex_of_mem h₀ h,
+      puncturedSphereCayley_def]
+    exact ⟨Submodule.add_mem _
+      (Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ (hsa (hJc i _ x)))
+      (Submodule.smul_mem _ _ (hsa (hJoutc _ x))), hJt⟩
   · rw [puncturedSphereAlmostComplex_of_notMem h₀ h]
     exact h₀
 

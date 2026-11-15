@@ -394,8 +394,9 @@ private lemma Compatible.cayley_inverseCayley [FiniteDimensional ℝ V] (h₀ : 
 /-- The inverse Cayley transform of the Cayley transform of a tame structure `J` is `J`. -/
 private lemma Compatible.inverseCayley_cayley [FiniteDimensional ℝ V] (h₀ : ω.Compatible J₀)
     (h : ω.Tames J) :
-    (inverseCayley (h₀.cayley_mem_cayleyBall h)).toLinearMap = J.toLinearMap :=
-  h₀.tames.mul_one_add_cayley_mul_ringInverse h
+    (inverseCayley (h₀.cayley_mem_cayleyBall h)).toLinearMap = J.toLinearMap := by
+  rw [inverseCayley_toLinearMap]
+  exact h₀.tames.mul_one_add_cayley_mul_ringInverse h
 
 variable [FiniteDimensional ℝ V]
 

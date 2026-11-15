@@ -270,10 +270,12 @@ theorem Tames.contMDiffAt_of_eventually_cayley_eq (h₀ : ω.Tames J₀)
   -- Pass to the algebra equivalence `Module.End.toContinuousLinearMap`, which is
   -- `LinearMap.toContinuousLinearMap` as a function, to move the inverse Cayley formula across.
   set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
+  have he (g : Module.End ℝ V) : e g = LinearMap.toContinuousLinearMap g := rfl
   have key {J : AlmostComplexStructure V} (hJ : ω.Tames J) {C : V →L[ℝ] V}
       (hC : J₀.cayley J = C.toLinearMap) :
       IsUnit (1 - C) ∧ e J.toLinearMap = e J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
-    have hCe : e (J₀.cayley J) = C := by rw [hC]; rfl
+    have hCe : e (J₀.cayley J) = C := by
+      rw [he, LinearMap.toContinuousLinearMap_eq_iff_eq_toLinearMap, hC]
     refine ⟨?_, ?_⟩
     · simpa only [map_sub, map_one, hCe] using (h₀.isUnit_one_sub_cayley hJ).map e
     · rw [← h₀.mul_one_add_cayley_mul_ringInverse hJ, map_mul, map_mul, map_ringInverse, map_add,
@@ -281,6 +283,7 @@ theorem Tames.contMDiffAt_of_eventually_cayley_eq (h₀ : ω.Tames J₀)
   refine (contMDiffAt_mul_one_add_ringInverse (contMDiffAt_const (c := e J₀.toLinearMap)) hCs
     (key hf.self_of_nhds hfC.self_of_nhds).1).congr_of_eventuallyEq ?_
   filter_upwards [hf, hfC] with y hy hyC
+  rw [← he]
   exact (key hy hyC).2
 
 /-- The inverse Cayley chart relative to an `ω`-compatible `J₀` sends a family in the tame Cayley
