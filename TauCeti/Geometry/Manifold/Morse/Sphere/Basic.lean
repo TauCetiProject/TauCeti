@@ -53,6 +53,7 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.sphereHeight_ne_zero_of_mem_criticalPoints`: the height does not vanish at them.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
@@ -400,6 +401,12 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- The height function does not vanish at its critical points, the poles, where it is `±1`. -/
+theorem sphereHeight_ne_zero_of_mem_criticalPoints {v x : sphere (0 : E) 1}
+    (hx : x ∈ criticalPoints (𝓡 n) (sphereHeight v)) : sphereHeight v x ≠ 0 := by
+  rw [criticalPoints_sphereHeight, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
+  rcases hx with rfl | rfl <;> simp
 
 /-- **Every level of the height except the poles is regular.** The only critical points of the
 height function are the poles, where its values are `1` and `-1`. -/

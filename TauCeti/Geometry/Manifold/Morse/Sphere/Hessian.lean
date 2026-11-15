@@ -38,6 +38,8 @@ differential of the inclusion of the sphere is isometric at the centre of the ch
 * `TauCeti.criticalHessian_sphereHeight_neg`: the critical Hessian at the south pole.
 * `TauCeti.criticalHessian_sphereHeight`: the critical Hessian at a critical point `x` is
   `-h_v(x)` times the inner product.
+* `TauCeti.criticalPoints_mul_sphereHeight` and `TauCeti.isMorse_mul_sphereHeight`: for `c ≠ 0`,
+  the rescaled height `c h_v` is a Morse function with critical points `±v`.
 * `TauCeti.criticalHessian_mul_sphereHeight` and `TauCeti.manifoldMorseIndex_mul_sphereHeight`:
   for `c ≠ 0`, the critical Hessian of the rescaled height `c h_v` at a critical point `x` is
   `-c h_v(x)` times the inner product, so its Morse index is `n` when `c h_v(x) > 0` and `0`
@@ -110,6 +112,20 @@ theorem criticalHessian_mul_sphereHeight (c : ℝ) {v x : sphere (0 : E) 1}
   simp only [smul_apply, smul_eq_mul, criticalHessian_sphereHeight hx, deriv_const_mul_id]
   ring
 
+/-- For `c ≠ 0`, the critical points of the rescaled height `c h_v` are the poles `±v`. -/
+theorem criticalPoints_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) (v : sphere (0 : E) 1) :
+    criticalPoints (𝓡 n) (fun y ↦ c * sphereHeight v y) = {v, -v} := by
+  ext x
+  rw [← criticalPoints_sphereHeight (n := n) v]
+  exact mem_criticalPoints_scalar_comp_iff (φ := fun t ↦ c * t)
+    ((contMDiff_sphereHeight (m := 1) v x).mdifferentiableAt one_ne_zero) (by simpa using hc)
+
+/-- For `c ≠ 0`, the rescaled height `c h_v` is a Morse function. -/
+theorem isMorse_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) (v : sphere (0 : E) 1) :
+    IsMorse (𝓡 n) fun y ↦ c * sphereHeight v y :=
+  (isMorse_sphereHeight v).scalar_comp (φ := fun t ↦ c * t)
+    (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt) fun _ ↦ by simpa using hc
+
 /-- **The Morse index of a rescaled height.** For `c ≠ 0`, at a critical point `x` of the height
 `h_v`, the Morse index of `c h_v` is `n` when its Hessian `-c h_v(x) ⟪·, ·⟫` is negative definite
 and `0` when it is positive definite. -/
@@ -117,27 +133,19 @@ theorem manifoldMorseIndex_mul_sphereHeight {c : ℝ} (hc : c ≠ 0) {v x : sphe
     (hx : x ∈ criticalPoints (𝓡 n) (sphereHeight v)) :
     manifoldMorseIndex (𝓡 n) (fun y ↦ c * sphereHeight v y) x =
       if 0 < c * sphereHeight v x then n else 0 := by
-  have hh : sphereHeight v x ≠ 0 := by
-    rw [criticalPoints_sphereHeight, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
-    rcases hx with rfl | rfl <;> simp
-  have hcomp : (fun y ↦ c * sphereHeight v y) = (fun t ↦ c * t) ∘ sphereHeight v := rfl
   split_ifs with hpos
   · have h := (manifoldMorseIndex_eq_finrank_iff (I := 𝓡 n)).2 fun a ha ↦ by
       rw [criticalHessian_mul_sphereHeight c hx]
       exact mul_neg_of_neg_of_pos (neg_neg_of_pos hpos)
         (inner_mvfderiv_subtypeVal_sphere_self_pos x ha)
     rwa [finrank_euclideanSpace_fin] at h
-  · have hneg : c * sphereHeight v x < 0 :=
-      lt_of_le_of_ne (not_lt.1 hpos) (mul_ne_zero hc hh)
+  · have hneg : c * sphereHeight v x < 0 := lt_of_le_of_ne (not_lt.1 hpos)
+      (mul_ne_zero hc (sphereHeight_ne_zero_of_mem_criticalPoints hx))
     have hcrit : x ∈ criticalPoints (𝓡 n) (fun y ↦ c * sphereHeight v y) := by
-      rw [hcomp, mem_criticalPoints_scalar_comp_iff
-        ((contMDiff_sphereHeight (m := 1) v x).mdifferentiableAt one_ne_zero) (by simpa using hc)]
+      rw [criticalPoints_mul_sphereHeight hc, ← criticalPoints_sphereHeight (n := n)]
       exact hx
-    have hnd := (hcomp ▸ (isMorse_sphereHeight v).scalar_comp
-      (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt) fun _ ↦ by simpa using hc
-      ).isManifoldNondegenerateCriticalPoint
-        ((mvfderiv_eq_fderiv_comp_extChartAt_symm (I := 𝓡 n)).symm.trans
-          (mem_criticalPoints.1 hcrit))
+    have hnd := IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (isMorse_mul_sphereHeight hc v) hcrit
     refine hnd.manifoldMorseIndex_eq_zero_iff.2 fun a ha ↦ ?_
     rw [criticalHessian_mul_sphereHeight c hx]
     exact mul_pos (neg_pos_of_neg hneg) (inner_mvfderiv_subtypeVal_sphere_self_pos x ha)

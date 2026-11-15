@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Hessian
 public import TauCeti.Geometry.Symplectic.Coadjoint.Sphere
 
-import TauCeti.Geometry.Manifold.Morse.ScalarComposition
-
 /-!
 # Height functions on the coadjoint spheres of `SO(3)`
 
@@ -100,10 +98,8 @@ theorem criticalPoints_soThreeDualEquiv_smul_apply_soThreeEquiv_smul {r a : ℝ}
     criticalPoints (𝓡 2)
         (fun x : S² ↦ soThreeDualEquiv ℝ (r • ofLp (x : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³)))) =
       {Z, -Z} := by
-  ext x
-  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp,
-    mem_criticalPoints_scalar_comp_iff ((contMDiff_sphereHeight (m := 1) Z x).mdifferentiableAt
-      one_ne_zero) (by simpa using hra), criticalPoints_sphereHeight]
+  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
+  exact criticalPoints_mul_sphereHeight hra Z
 
 /-- **The Hessian of a height on a coadjoint sphere of `SO(3)`.** At a critical point `x = ±Z` of
 the height of `X = a Ẑ` on the coadjoint sphere of radius `r`, the critical Hessian is
@@ -139,8 +135,7 @@ theorem isMorse_soThreeDualEquiv_smul_apply_soThreeEquiv_smul {r a : ℝ} (hra :
     IsMorse (𝓡 2)
       fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))) := by
   rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
-  exact (isMorse_sphereHeight Z).scalar_comp (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt)
-    fun _ ↦ by simpa using hra
+  exact isMorse_mul_sphereHeight hra Z
 
 /-- The Morse index of the height of `X = a Ẑ` on the coadjoint sphere of radius `r` at `Z` is
 `2` when `r a > 0`, where `Z` is the maximum, and `0` when `r a < 0`, where it is the minimum. -/
