@@ -7,10 +7,8 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
-import Mathlib.MeasureTheory.MeasurableSpace.Pi
 import TauCeti.ModelTheory.Interpolation.Craig
-import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
-import TauCeti.ModelTheory.Sublanguage
+import TauCeti.ModelTheory.RelationalConfiguration.Sublanguage
 import TauCeti.Topology.Instances.CantorSpace
 
 /-!
@@ -32,16 +30,16 @@ theorem establishes the converse and its analytic separation strengthening:
 * **Relative López–Escobar** (`exists_sentence_mem_modelsOf_iff_of_analyticSet_image`,
   `exists_sentence_mem_modelsOf_iff_of_continuous`, and `exists_sentence_mem_modelsOf_iff`): if a
   subset `U ⊆ X` is saturated under isomorphism of fibers of `f : X → RelationalConfiguration L V`
-  and `f '' U` and `f '' Uᶜ` are analytic — in particular, when `X` is Polish and `f` is continuous
-  into any relational vocabulary, or when `X` is standard Borel and `f` is measurable into a
-  countable relational vocabulary — then `U` is the preimage of `modelsOf θ` for some `L_{ω₁ω}`
-  sentence `θ`.
+  and `f '' U` and `f '' Uᶜ` are analytic — in particular, for measurable `U` when `X` is Polish
+  with its Borel σ-algebra and `f` is continuous into any relational vocabulary, or when `X` is
+  standard Borel and `f` is measurable into a countable relational vocabulary — then `U` is the
+  preimage of `modelsOf θ` for some `L_{ω₁ω}` sentence `θ`.
 
 Neither analytic separation, invariant Borel definability, nor continuous relative López–Escobar
 requires countability of `L` or nonemptiness of `V` (whereas measurable relative López–Escobar
-genuinely needs `[∀ n, Countable (L.Relations n)]`, since an injective measurable family indexed by
-`ℝ` using uncountably many nullary relations can separate individual reals while any `L_{ω₁ω}`
-sentence mentions only countably many symbols):
+genuinely needs `[∀ n, Countable (L.Relations n)]`, since mapping each `x : ℝ` to the indicator of
+`{x}` on `ℝ`-many nullary relations is measurable and injective — making `[0, 1]` fiber-invariant —
+yet is constant outside the countable set of symbols occurring in any `L_{ω₁ω}` sentence):
 
 1. For a countable relational vocabulary and a nonempty countable carrier `V`, the isomorphism
    saturation of the range of a continuous map `f : (ℕ → ℕ) → RelationalConfiguration L V` is
@@ -57,13 +55,12 @@ sentence mentions only countably many symbols):
 3. For an arbitrary relational language `L`, the Lindelöf property of the second-countable product
    space `(ℕ → ℕ) × (ℕ → ℕ) × (V → V)` (with discrete `V`) extracts a countable symbol sublanguage
    `L.symbSublang ∅ R` on which the reducts remain non-isomorphic, lifting analytic separation
-   without vocabulary bounds. Likewise, every set in the product σ-algebra depends on countably
-   many relation symbols, reducing invariant Borel definability to that countable sublanguage.
+   without vocabulary bounds. Likewise, every set in the product σ-algebra factors through a
+   countable relation sublanguage (`exists_countable_sublanguage_measurableSet`), reducing
+   invariant Borel definability to that countable sublanguage.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes of infinitary
-  sentences are isomorphism invariant.
 * `TauCeti.RelationalConfiguration.exists_sentence_separating_of_disjoint_image_quotientMk` and
   `TauCeti.RelationalConfiguration.exists_sentence_separating`: analytic sets with disjoint
   isomorphism saturations are separated by an `L_{ω₁ω}` sentence.
@@ -87,16 +84,16 @@ sentence mentions only countably many symbols):
 * The projective-class presentation of continuous Baire-space families over `L.sum (auxLang V)` and
   its combination with `pcSeparation` follow `InfinitaryLogic/Descriptive/LopezEscobar.lean` in
   Cameron Freer's `cameronfreer/infinitary-logic` (checkpoint
-  `518a366cba97b1ae8c4dc64a297a39bc3e0b`, Apache-2.0), generalized here from nonempty countable
-  carriers in countable `Language.{0, 0}` to arbitrary countable carriers `V : Type w` (including
-  empty carriers), arbitrary relational languages `L : Language.{u, v}` without vocabulary
-  countability hypotheses via Lindelöf open-cover and coordinate-generator sublanguage reductions,
-  quotient-disjoint analytic pairs, and relative López–Escobar.
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, Apache-2.0), generalized here from nonempty
+  countable carriers in countable `Language.{0, 0}` to arbitrary countable carriers `V : Type w`
+  (including empty carriers), arbitrary relational languages `L : Language.{u, v}` without
+  vocabulary countability hypotheses via Lindelöf open-cover and coordinate-generator sublanguage
+  reductions, quotient-disjoint analytic pairs, and relative López–Escobar.
 -/
 
 public section
 
-universe u v w uι
+universe u v w
 
 open FirstOrder FirstOrder.Language MeasureTheory PiNat Set TopologicalSpace
 
@@ -104,72 +101,50 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
 
-/-- Model classes of infinitary sentences are invariant under isomorphism, on any carrier and for
-any branching index type. -/
-@[simp]
-theorem isomorphismInvariant_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) :=
-  isomorphismInvariant_iff.2 fun _ _ h =>
-    (isoSetoid_apply.1 h).elim fun e => (e.mem_modelsOf_iff φ).mp
-
 /-! ### Empty carrier -/
 
 section EmptyCarrier
-
-/-- On an empty carrier, a single-atom coordinate cylinder in any subset of `Bool` is the model
-class of an `L_{ω₁ω}` sentence. -/
-private theorem exists_modelsOf_eq_setOf_eval_of_isEmpty [IsEmpty V] (a : Atom L V)
-    (s : Set Bool) :
-    ∃ θ : L.Sentenceω,
-      {c : RelationalConfiguration L V | c.eval a ∈ s} = modelsOf (V := V) θ := by
-  induction a using Atom.induction_atom with
-  | @h n R tup =>
-    cases n with
-    | succ m => exact isEmptyElim (tup 0)
-    | zero =>
-      have htup : tup = Fin.elim0 := Subsingleton.elim _ _
-      let φ : L.Sentenceω := BoundedFormulaInf.rel R Fin.elim0
-      have hφ (c : RelationalConfiguration L V) : c ∈ modelsOf φ ↔ c.eval (atom R tup) = true := by
-        let : L.Structure V := c.toStructure
-        rw [mem_modelsOf, SentenceInf.realize_def, FormulaInf.realize_def,
-          BoundedFormulaInf.realize_rel, toStructure_relMap, htup]
-        exact iff_of_eq (congrArg (fun x => c.eval (atom R x) = true) (Subsingleton.elim _ _))
-      by_cases ht : true ∈ s <;> by_cases hf : false ∈ s
-      · have hs : s = univ := Set.ext fun | true => by simp [ht] | false => by simp [hf]
-        exact ⟨⊤, by simp [hs]⟩
-      · have hs : s = {true} := Set.ext fun | true => by simp [ht] | false => by simp [hf]
-        refine ⟨φ, Set.ext fun c => ?_⟩
-        rw [hs, mem_ofPred_eq, mem_singleton_iff, hφ]
-      · have hs : s = {false} := Set.ext fun | true => by simp [ht] | false => by simp [hf]
-        refine ⟨φ.not, Set.ext fun c => ?_⟩
-        rw [hs, modelsOf_not, mem_compl_iff, mem_ofPred_eq, mem_singleton_iff, hφ, Bool.not_eq_true]
-      · have hs : s = ∅ := Set.ext fun | true => by simp [ht] | false => by simp [hf]
-        exact ⟨⊥, by simp [hs]⟩
 
 /-- On an empty carrier, every measurable set for the product σ-algebra is the model class of an
 `L_{ω₁ω}` sentence. -/
 private theorem exists_modelsOf_eq_of_isEmpty [IsEmpty V]
     {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C) :
-    ∃ θ : L.Sentenceω, C = modelsOf θ := by
-  -- The ambient σ-algebra on `RelationalConfiguration L V` is `MeasurableSpace.pi` by definition.
-  change MeasurableSet[MeasurableSpace.pi] C at hC
-  rw [MeasurableSpace.pi_eq_generateFrom_projections] at hC
-  induction C, hC using MeasurableSpace.generateFrom_induction with
+    ∃ θ : L.Sentenceω, modelsOf θ = C := by
+  let m : MeasurableSpace (RelationalConfiguration L V) :=
+    MeasurableSpace.generateFrom
+      (range fun a : Atom L V => {c : RelationalConfiguration L V | c.eval a = true})
+  have hgen : MeasurableSet[m] C := by
+    refine (@measurable_iff L V _ m id).2 (fun a s _ => ?_) hC
+    have heq : (fun ω : RelationalConfiguration L V => (id ω).eval a) ⁻¹' s =
+        ({c | c.eval a = true} ∩ {_c | true ∈ s}) ∪
+          ({c | c.eval a = true}ᶜ ∩ {_c | false ∈ s}) := by
+      ext c
+      rcases Bool.dichotomy (c.eval a) with hb | hb <;> simp [hb]
+    rw [heq]
+    have ha : MeasurableSet[m] {c | c.eval a = true} :=
+      MeasurableSpace.measurableSet_generateFrom ⟨a, rfl⟩
+    exact (ha.inter (.const _)).union (ha.compl.inter (.const _))
+  clear hC
+  induction C, hgen using MeasurableSpace.generateFrom_induction with
   | hC B hB _ =>
-    obtain ⟨a, s, -, rfl⟩ := hB
-    have hB_eq : (Function.eval a ⁻¹' s : Set (Atom L V → Bool)) =
-        {c : RelationalConfiguration L V | c.eval a ∈ s} :=
-      Set.ext fun c : RelationalConfiguration L V =>
-        iff_of_eq (congrArg (· ∈ s) (eval_def c a).symm)
-    rw [hB_eq]
-    exact exists_modelsOf_eq_setOf_eval_of_isEmpty a s
-  | empty => exact ⟨⊥, modelsOf_bot.symm⟩
+    obtain ⟨a, rfl⟩ := hB
+    induction a using Atom.induction_atom with
+    | @h n R tup =>
+      cases n with
+      | succ m => exact isEmptyElim (tup 0)
+      | zero =>
+        refine ⟨BoundedFormulaInf.rel R Fin.elim0, Set.ext fun c => ?_⟩
+        let : L.Structure V := c.toStructure
+        rw [mem_modelsOf, SentenceInf.realize_def, FormulaInf.realize_def,
+          BoundedFormulaInf.realize_rel, toStructure_relMap, mem_ofPred_eq]
+        exact iff_of_eq (congrArg (fun x => c.eval (atom R x) = true) (Subsingleton.elim _ _))
+  | empty => exact ⟨⊥, modelsOf_bot⟩
   | compl B _ ih =>
     obtain ⟨θ, rfl⟩ := ih
-    exact ⟨θ.not, (modelsOf_not θ).symm⟩
+    exact ⟨θ.not, modelsOf_not θ⟩
   | iUnion f _ ih =>
     choose θ hθ using ih
-    exact ⟨BoundedFormulaInf.iSup θ, by simp [← hθ]⟩
+    exact ⟨BoundedFormulaInf.iSup θ, by simp [hθ]⟩
 
 /-- Disjoint analytic sets of configurations on an empty carrier in a countable relational
 vocabulary are separated by an `L_{ω₁ω}` sentence. -/
@@ -375,22 +350,13 @@ private theorem realize_relSentence [∀ n, Countable (L.Relations n)] [Countabl
           @Structure.RelMap L V (f x).toStructure n R tup := by
   rw [relSentence, SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_iInfAlong]
-  constructor
-  · intro h n R tup
-    have ha := h ⟨n, R, tup⟩
-    have hopen : IsOpen {y : ℕ → ℕ | (f y).eval (atom R tup) = true} :=
-      (isClopen_discrete {true}).2.preimage ((continuous_eval (atom R tup)).comp hf)
-    rw [BoundedFormulaInf.realize_iff, ← FormulaInf.realize_def, ← FormulaInf.realize_def,
-      ← SentenceInf.realize_def, ← SentenceInf.realize_def, realize_atomRelSentence,
-      realize_openSetSentence hx hopen, mem_ofPred_eq, ← toStructure_relMap] at ha
-    exact ha
-  · rintro h ⟨n, R, tup⟩
-    have hopen : IsOpen {y : ℕ → ℕ | (f y).eval (atom R tup) = true} :=
-      (isClopen_discrete {true}).2.preimage ((continuous_eval (atom R tup)).comp hf)
-    rw [BoundedFormulaInf.realize_iff, ← FormulaInf.realize_def, ← FormulaInf.realize_def,
-      ← SentenceInf.realize_def, ← SentenceInf.realize_def, realize_atomRelSentence,
-      realize_openSetSentence hx hopen, mem_ofPred_eq, ← toStructure_relMap]
-    exact h R tup
+  simp only [Sigma.forall, Prod.forall]
+  refine forall_congr' fun n => forall₂_congr fun R tup => ?_
+  have hopen : IsOpen {y : ℕ → ℕ | (f y).eval (atom R tup) = true} :=
+    (isClopen_setOf_eval (atom R tup) true).isOpen.preimage hf
+  rw [BoundedFormulaInf.realize_iff, ← FormulaInf.realize_def, ← FormulaInf.realize_def,
+    ← SentenceInf.realize_def, ← SentenceInf.realize_def, realize_atomRelSentence,
+    realize_openSetSentence hx hopen, mem_ofPred_eq, ← toStructure_relMap]
 
 /-- Full `PC_{ω₁ω}` defining sentence for the isomorphism saturation of `range f`. -/
 private noncomputable def rangeSentence [∀ n, Countable (L.Relations n)] [Countable V]
@@ -528,10 +494,10 @@ private theorem exists_countable_sublanguage_disjoint [Countable V]
   simp only [Function.comp_apply, ← LHom.reductConfiguration_perm_smul] at hσ
   let z : (ℕ → ℕ) × (ℕ → ℕ) × (V → V) := (x, y, σ.symm)
   have hz_not : z ∉ ⋃ s ∈ R, disagreeSet f g s := by
-    rintro ⟨_, ⟨s, rfl⟩, _, ⟨hsR, rfl⟩, _, ⟨tup, rfl⟩, hne⟩
-    apply hne
-    have heval := congrArg (fun c => c.eval (atom ⟨s.2, hsR⟩ tup)) hσ
-    simpa [z, perm_smul_def, Equiv.Perm.inv_def] using heval
+    simp only [mem_iUnion, disagreeSet, mem_ofPred_eq, not_exists, not_ne_iff]
+    intro s hsR tup
+    simpa [z, perm_smul_def, Equiv.Perm.inv_def] using
+      congrArg (fun c => c.eval (atom ⟨s.2, hsR⟩ tup)) hσ
   have hz_in : z ∈ ⋃ s, disagreeSet f g s := by
     by_contra hz
     have heq : σ • f x = g y := ext fun a => by
@@ -601,94 +567,43 @@ theorem exists_sentence_separating [Countable V]
   rintro _ ⟨c, hcA, rfl⟩ ⟨d, hdB, hcd⟩
   exact disjoint_left.1 hAB hcA ((hBinv.mem_iff (Quotient.exact hcd)).1 hdB)
 
-omit [L.IsRelational] in
-/-- Every measurable set of configurations in the product σ-algebra is the preimage of a measurable
-set on a countable symbol sublanguage `L.symbSublang ∅ R`. -/
-private theorem exists_countable_sublanguage_measurableSet
-    {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C) :
-    ∃ R : Set (Σ n, L.Relations n), R.Countable ∧
-      ∃ C₀ : Set (RelationalConfiguration (L.symbSublang ∅ R) V),
-        MeasurableSet C₀ ∧ C = (symbSublangIncl ∅ R).reductConfiguration ⁻¹' C₀ := by
-  -- The ambient σ-algebra on `RelationalConfiguration L V` is `MeasurableSpace.pi` by definition.
-  change MeasurableSet[MeasurableSpace.pi] C at hC
-  rw [MeasurableSpace.pi_eq_generateFrom_projections] at hC
-  induction C, hC using MeasurableSpace.generateFrom_induction with
-  | hC B hB _ =>
-    obtain ⟨a, s, hs, rfl⟩ := hB
-    have hB_eq : (Function.eval a ⁻¹' s : Set (Atom L V → Bool)) =
-        {c : RelationalConfiguration L V | c.eval a ∈ s} :=
-      Set.ext fun c : RelationalConfiguration L V =>
-        iff_of_eq (congrArg (· ∈ s) (eval_def c a).symm)
-    rw [hB_eq]
-    induction a using Atom.induction_atom with
-    | @h n r tup =>
-      refine ⟨{⟨n, r⟩}, countable_singleton _,
-        (fun c₀ => c₀.eval (atom ⟨r, mem_singleton _⟩ tup)) ⁻¹' s,
-        measurable_eval _ hs, ?_⟩
-      ext c
-      simp
-  | empty => exact ⟨∅, countable_empty, ∅, MeasurableSet.empty, rfl⟩
-  | compl B _ ih =>
-    obtain ⟨R, hR, C₀, hC₀, rfl⟩ := ih
-    exact ⟨R, hR, C₀ᶜ, hC₀.compl, rfl⟩
-  | iUnion f _ ih =>
-    choose R hR C₀ hC₀ hf_eq using ih
-    have hex (k : ℕ) : ∃ j : L.symbSublang ∅ (R k) →ᴸ L.symbSublang ∅ (⋃ i, R i),
-        (symbSublangIncl ∅ (⋃ i, R i)).comp j = symbSublangIncl ∅ (R k) :=
-      (symbSublangIncl ∅ (⋃ i, R i)).exists_comp_eq_symbSublangIncl (empty_subset _)
-        fun s hs => ⟨⟨s.1, ⟨s.2, mem_iUnion_of_mem k hs⟩⟩, by simp⟩
-    choose j hj using hex
-    refine ⟨⋃ i, R i, countable_iUnion hR,
-      ⋃ k, (j k).reductConfiguration ⁻¹' C₀ k,
-      MeasurableSet.iUnion fun k => (LHom.measurable_reductConfiguration _) (hC₀ k), ?_⟩
-    ext c
-    simp only [mem_iUnion, hf_eq, mem_preimage, ← hj, LHom.comp_reductConfiguration]
-
 /-- **López–Escobar theorem (hard direction).** Every isomorphism-invariant measurable set of
 configurations on a countable carrier `V` is the model class of an `L_{ω₁ω}` sentence, with no
 countability assumption on `L`. -/
 theorem IsomorphismInvariant.exists_modelsOf_eq [Countable V]
     {A : Set (RelationalConfiguration L V)} (hA : IsomorphismInvariant A) (hm : MeasurableSet A) :
-    ∃ θ : L.Sentenceω, A = modelsOf θ := by
-  obtain ⟨R, hRcount, A₀, hA₀m, rfl⟩ := exists_countable_sublanguage_measurableSet hm
+    ∃ θ : L.Sentenceω, modelsOf θ = A := by
+  obtain ⟨R, hRcount, A₀, hA₀m, rfl⟩ := exists_countable_sublanguage_measurableSet ∅ hm
   have : Countable R := hRcount.to_subtype
   have : ∀ n, Countable ((L.symbSublang ∅ R).Relations n) :=
     countable_relations_of_countable_sigma (L := L.symbSublang ∅ R)
   have hA₀inv : IsomorphismInvariant A₀ := isomorphismInvariant_iff.2 fun c₀ _ hcd hc₀ => by
+    classical
     obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hcd
-    let S : L.Structure V :=
+    let _ : L.Structure V :=
       { funMap := fun fn => isEmptyElim fn
-        RelMap := fun {n} r tup =>
-          open Classical in
-          if hr : ⟨n, r⟩ ∈ R then c₀.eval (atom ⟨r, hr⟩ tup) = true else False }
-    let c : RelationalConfiguration L V := @ofStructure L V S
-    have hrc : (symbSublangIncl ∅ R).reductConfiguration c = c₀ := by
-      let : L.Structure V := S
-      refine ext fun a => Atom.induction_atom (fun {n} r tup => ?_) a
-      rw [LHom.eval_reductConfiguration, LHom.onAtom_atom, symbSublangIncl_onRelation,
-        eval_ofStructure, Bool.eq_iff_iff, @decide_eq_true_eq _ (Classical.propDecidable _)]
-      -- Unfold the class projection `@Structure.RelMap L V S` to `S`'s `RelMap` field.
-      change (open Classical in
-        if hr : ⟨n, r.1⟩ ∈ R then c₀.eval (atom ⟨r.1, hr⟩ tup) = true else False) ↔
-          c₀.eval (atom r tup) = true
-      simp [r.2]
-    have hsmul := (hA.mem_iff (isoSetoid_perm_smul σ c)).1 (by simpa only [mem_preimage, hrc])
-    simpa only [mem_preimage, LHom.reductConfiguration_perm_smul, hrc] using hsmul
+        RelMap := fun {n} r tup => ∃ hr : ⟨n, r⟩ ∈ R, c₀.eval (atom ⟨r, hr⟩ tup) = true }
+    let c : RelationalConfiguration L V := ofStructure L V
+    have hrc : (symbSublangIncl ∅ R).reductConfiguration c = c₀ := ext fun a => by
+      induction a using Atom.induction_atom with
+      | @h _ r _ => simp +zetaDelta [Structure.RelMap, r.2]
+    simpa only [mem_preimage, LHom.reductConfiguration_perm_smul, hrc] using
+      (hA.mem_iff (isoSetoid_perm_smul σ c)).1 (by simpa only [mem_preimage, hrc] using hc₀)
   obtain ⟨θ₀, hA₀_sub, hA₀_disj⟩ :=
     exists_sentence_separating hA₀m.analyticSet hA₀m.compl.analyticSet hA₀inv.compl
       disjoint_compl_right
-  have hA₀_eq : A₀ = modelsOf θ₀ :=
-    Subset.antisymm hA₀_sub (disjoint_compl_left_iff_subset.1 hA₀_disj)
+  have hA₀_eq : modelsOf θ₀ = A₀ :=
+    Subset.antisymm (disjoint_compl_left_iff_subset.1 hA₀_disj) hA₀_sub
   refine ⟨(symbSublangIncl ∅ R).onBoundedFormulaInf θ₀, ?_⟩
   ext c
-  rw [mem_preimage, hA₀_eq, mem_modelsOf, mem_modelsOf,
-    (symbSublangIncl ∅ R).realize_sentenceInf_reductConfiguration]
+  rw [mem_modelsOf, (symbSublangIncl ∅ R).realize_sentenceInf_reductConfiguration, ← mem_modelsOf,
+    hA₀_eq, mem_preimage]
 
 /-- **The López–Escobar theorem.** On a countable carrier `V` in any relational language `L`, a
 set of configurations is the model class of an `L_{ω₁ω}` sentence if and only if it is measurable
 for the product σ-algebra and isomorphism invariant. -/
 theorem exists_modelsOf_eq_iff [Countable V] {A : Set (RelationalConfiguration L V)} :
-    (∃ θ : L.Sentenceω, A = modelsOf θ) ↔ MeasurableSet A ∧ IsomorphismInvariant A :=
+    (∃ θ : L.Sentenceω, modelsOf θ = A) ↔ MeasurableSet A ∧ IsomorphismInvariant A :=
   ⟨fun ⟨θ, hθ⟩ => hθ ▸ ⟨measurableSet_modelsOf θ, isomorphismInvariant_modelsOf θ⟩,
     fun ⟨hm, hinv⟩ => hinv.exists_modelsOf_eq hm⟩
 
@@ -699,13 +614,13 @@ under isomorphism of fibers, if `f '' U` and `f '' Uᶜ` are analytic, then some
 theorem exists_sentence_mem_modelsOf_iff_of_analyticSet_image [Countable V] {X : Type*}
     {f : X → RelationalConfiguration L V} {U : Set X}
     (hU : AnalyticSet (f '' U)) (hUc : AnalyticSet (f '' Uᶜ))
-    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)) :
+    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U) :
     ∃ θ : L.Sentenceω, ∀ x, f x ∈ modelsOf θ ↔ x ∈ U := by
   have hdisj : Disjoint (Quotient.mk (isoSetoid L V) '' (f '' U))
       (Quotient.mk (isoSetoid L V) '' (f '' Uᶜ)) := by
     refine disjoint_left.2 ?_
     rintro _ ⟨_, ⟨x, hxU, rfl⟩, rfl⟩ ⟨_, ⟨y, hyU, rfl⟩, hxy⟩
-    exact hyU ((hinv (Quotient.exact hxy)).2 hxU)
+    exact hyU (hinv (Quotient.exact hxy.symm) hxU)
   obtain ⟨θ, hθU, hθUc⟩ :=
     exists_sentence_separating_of_disjoint_image_quotientMk hU hUc hdisj
   refine ⟨θ, fun x => ⟨fun hxθ => by_contra fun hxU => ?_,
@@ -719,7 +634,7 @@ isomorphism of fibers is the preimage of `modelsOf θ` for some `L_{ω₁ω}` se
 theorem exists_sentence_mem_modelsOf_iff_of_continuous [Countable V]
     {X : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
     {f : X → RelationalConfiguration L V} (hf : Continuous f) {U : Set X} (hU : MeasurableSet U)
-    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)) :
+    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U) :
     ∃ θ : L.Sentenceω, ∀ x, f x ∈ modelsOf θ ↔ x ∈ U :=
   exists_sentence_mem_modelsOf_iff_of_analyticSet_image
     (hU.analyticSet.image_of_continuous hf) (hU.compl.analyticSet.image_of_continuous hf) hinv
@@ -727,12 +642,12 @@ theorem exists_sentence_mem_modelsOf_iff_of_continuous [Countable V]
 /-- **Relative López–Escobar.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
 in a countable relational vocabulary. If `U ⊆ X` is measurable and respects isomorphism of fibers
-(`isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)`), then some `L_{ω₁ω}` sentence `θ` satisfies
+(`isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U`), then some `L_{ω₁ω}` sentence `θ` satisfies
 `f x ∈ modelsOf θ ↔ x ∈ U` for every `x : X`. -/
 theorem exists_sentence_mem_modelsOf_iff [∀ n, Countable (L.Relations n)] [Countable V]
     {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
     {f : X → RelationalConfiguration L V} (hf : Measurable f) {U : Set X} (hU : MeasurableSet U)
-    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)) :
+    (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U) :
     ∃ θ : L.Sentenceω, ∀ x, f x ∈ modelsOf θ ↔ x ∈ U :=
   exists_sentence_mem_modelsOf_iff_of_analyticSet_image
     (hU.analyticSet_image hf) (hU.compl.analyticSet_image hf) hinv
