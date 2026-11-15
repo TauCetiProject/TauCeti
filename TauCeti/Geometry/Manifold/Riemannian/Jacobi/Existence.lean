@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Space
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -95,58 +94,6 @@ private theorem exists_isJacobiFieldOn_maximalGeodesic_initialData
   refine ⟨variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2), hJ, ?_, hD⟩
   rw [variationField_maximalGeodesic_zero, hu]
 
-/-- Surjectivity at zero on the full natural interval is the starting point for changing the
-initial time by finite-dimensional linear algebra. -/
-private theorem jacobiInitialData_surjective_maximalGeodesic_zero
-    (p : M) (v : TangentSpace I p) :
-    Function.Surjective (jacobiInitialData
-      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
-      zero_mem_geodesicInterval) := by
-  rintro ⟨u, w⟩
-  obtain ⟨V, hV, hu, hw⟩ := exists_isJacobiFieldOn_maximalGeodesic_initialData p v u w
-  refine ⟨hV.toJacobiFieldSpace, ?_⟩
-  rw [jacobiInitialData_apply, hV.toJacobiFieldSpace_apply zero_mem_geodesicInterval,
-    hV.alongCurveWithin_toJacobiFieldSpace zero_mem_geodesicInterval, hu, hw]
-
-/-- The full natural interval has the expected dimension, before choosing any initial time. -/
-private theorem finrank_jacobiFieldSpace_maximalGeodesic_full
-    (p : M) (v : TangentSpace I p) :
-    Module.finrank ℝ (jacobiFieldSpace
-      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn) =
-        2 * Module.finrank ℝ E := by
-  let e := LinearEquiv.ofBijective (jacobiInitialData
-    (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn zero_mem_geodesicInterval)
-    ⟨jacobiInitialData_injective _ isPreconnected_geodesicInterval zero_mem_geodesicInterval,
-      jacobiInitialData_surjective_maximalGeodesic_zero p v⟩
-  simpa [Module.finrank_prod, TauCeti.finrank_tangentSpace, two_mul] using e.finrank_eq
-
-/-- At every initial time, arbitrary Jacobi data are realized on any subset of the maximal
-geodesic interval having unique derivatives. The subset need not contain time zero or be
-preconnected: restrict the solution from the full natural interval. -/
-theorem jacobiInitialData_surjective_maximalGeodesic
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s) :
-    Function.Surjective (jacobiInitialData
-      ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono hs hsub) ha) := by
-  let hγ := (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
-  let := finiteDimensional_jacobiFieldSpace hγ isPreconnected_geodesicInterval
-    zero_mem_geodesicInterval
-  have hdim : Module.finrank ℝ (jacobiFieldSpace hγ) =
-      Module.finrank ℝ (TangentSpace I (maximalGeodesic I M p v a) ×
-        TangentSpace I (maximalGeodesic I M p v a)) := by
-    rw [finrank_jacobiFieldSpace_maximalGeodesic_full, Module.finrank_prod,
-      TauCeti.finrank_tangentSpace, two_mul]
-  have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp
-    (jacobiInitialData_injective hγ isPreconnected_geodesicInterval (hsub ha))
-  rintro ⟨u, w⟩
-  obtain ⟨V, hV⟩ := hsurj (u, w)
-  have hJ := isJacobiFieldOn_of_mem_jacobiFieldSpace V
-  have hJs := hJ.mono hs hsub
-  refine ⟨hJs.toJacobiFieldSpace, ?_⟩
-  rw [jacobiInitialData_apply, hJs.toJacobiFieldSpace_apply ha,
-    hJs.alongCurveWithin_toJacobiFieldSpace ha, hJ.alongCurveWithin_subset (hs a ha) hsub ha]
-  simpa only [jacobiInitialData_apply] using hV
-
 /-! ### Arbitrary geodesics on preconnected parameter sets -/
 
 /-- **Existence of Jacobi fields with prescribed initial data.** Along any geodesic `γ` on a
@@ -165,33 +112,24 @@ theorem IsGeodesicCurveOn.exists_isJacobiFieldOn
   have hmaps : MapsTo (fun t : ℝ ↦ 1 * t + (-a)) s (geodesicInterval I M p v) := fun t ht ↦ by
     simpa only [one_mul, ← sub_eq_add_neg] using
       hγ.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
-  have hW := hV₀.comp_affine 1 (-a) hγ.uniqueDiffOn hmaps
   have hcurve : EqOn γ (maximalGeodesic I M p v ∘ fun t : ℝ ↦ 1 * t + (-a)) s := fun t ht ↦ by
     simpa only [Function.comp_apply, one_mul, ← sub_eq_add_neg] using
       (hγ.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
   let X : ∀ t, TangentSpace I (γ t) := fun t ↦
     tangentSpaceCast I (maximalGeodesic I M p v (1 * t + (-a))) (γ t) (V₀ (1 * t + (-a)))
-  have hEq (t : ℝ) (ht : t ∈ s) :
-      TotalSpace.mk' E (γ t) (X t) =
-        TotalSpace.mk' E (maximalGeodesic I M p v (1 * t + (-a))) (V₀ (1 * t + (-a))) :=
-    TotalSpace.ext (hcurve ht) (TauCeti.heq_tangentSpaceCast (hcurve ht).symm _)
-  have hX : IsJacobiFieldOn I γ X s := hW.congr_totalSpace hEq
+  have hX : IsJacobiFieldOn I γ X s :=
+    hV₀.comp_affine_of_eqOn 1 (-a) hγ.uniqueDiffOn hmaps hcurve
   have hzero : 1 * a + (-a) = 0 := by ring
   have hXa : X a = u := by
-    have h1 : HEq (X a) (V₀ (1 * a + (-a))) := (TotalSpace.ext_iff.mp (hEq a ha)).2
+    have h1 : HEq (X a) (V₀ (1 * a + (-a))) :=
+      TauCeti.heq_tangentSpaceCast (hcurve ha).symm _
     have h2 : HEq (V₀ (1 * a + (-a))) u := by
       rw [hzero]
       exact heq_of_eq hu₀
     exact eq_of_heq (h1.trans h2)
   have hDXa : alongCurveWithin cov γ X s a = w := by
-    have hheq : ∀ t ∈ s, HEq (X t) (V₀ (1 * t + (-a))) :=
-      fun t ht ↦ (TotalSpace.ext_iff.mp (hEq t ht)).2
-    have hD1 : HEq (alongCurveWithin cov γ X s a)
-        (alongCurveWithin cov (maximalGeodesic I M p v ∘ fun t : ℝ ↦ 1 * t + (-a))
-          (fun r ↦ V₀ (1 * r + (-a))) s a) :=
-      alongCurveWithin_congr_heq cov X (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin)
-        (hcurve ha) (mem_of_superset self_mem_nhdsWithin hheq) (hheq a ha)
-    rw [hV₀.alongCurveWithin_comp_affine 1 (-a) hγ.uniqueDiffOn hmaps ha, one_smul] at hD1
+    have hD1 := hV₀.heq_alongCurveWithin_comp_affine_of_eqOn 1 (-a) hγ.uniqueDiffOn hmaps hcurve ha
+    rw [one_smul] at hD1
     have hD2 : HEq (alongCurveWithin cov (maximalGeodesic I M p v) V₀
         (geodesicInterval I M p v) (1 * a + (-a))) w := by
       rw [hzero]
@@ -231,6 +169,14 @@ def jacobiInitialDataEquiv
   LinearEquiv.ofBijective (jacobiInitialData hγ ha)
     ⟨jacobiInitialData_injective hγ hs ha, jacobiInitialData_surjective hγ hs ha⟩
 
+/-- Coercing `jacobiInitialDataEquiv` to a linear map recovers `jacobiInitialData`. -/
+@[simp]
+theorem toLinearMap_jacobiInitialDataEquiv
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    (jacobiInitialDataEquiv hγ hs ha).toLinearMap = jacobiInitialData hγ ha :=
+  (rfl)
+
 /-- The initial-data equivalence evaluates to the value and covariant derivative of the field. -/
 @[simp]
 theorem jacobiInitialDataEquiv_apply
@@ -242,23 +188,23 @@ theorem jacobiInitialDataEquiv_apply
 
 /-- The inverse initial-data equivalence has the prescribed value at the initial parameter. -/
 @[simp]
-theorem jacobiInitialDataEquiv_symm_apply_value
+theorem jacobiInitialDataEquiv_symm_apply_self
     {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
-    {a : ℝ} (ha : a ∈ s) (u w : TangentSpace I (γ a)) :
-    ((jacobiInitialDataEquiv hγ hs ha).symm (u, w)).val a = u := by
-  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply (u, w)
+    {a : ℝ} (ha : a ∈ s) (d : TangentSpace I (γ a) × TangentSpace I (γ a)) :
+    ((jacobiInitialDataEquiv hγ hs ha).symm d).val a = d.1 := by
+  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply d
   rw [jacobiInitialDataEquiv_apply] at h
   exact congrArg Prod.fst h
 
 /-- The inverse initial-data equivalence has the prescribed covariant derivative at the initial
 parameter. -/
 @[simp]
-theorem alongCurveWithin_jacobiInitialDataEquiv_symm
+theorem alongCurveWithin_jacobiInitialDataEquiv_symm_self
     {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
-    {a : ℝ} (ha : a ∈ s) (u w : TangentSpace I (γ a)) :
+    {a : ℝ} (ha : a ∈ s) (d : TangentSpace I (γ a) × TangentSpace I (γ a)) :
     alongCurveWithin (leviCivitaConnection I M) γ
-      ((jacobiInitialDataEquiv hγ hs ha).symm (u, w)).val s a = w := by
-  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply (u, w)
+      ((jacobiInitialDataEquiv hγ hs ha).symm d).val s a = d.2 := by
+  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply d
   rw [jacobiInitialDataEquiv_apply] at h
   exact congrArg Prod.snd h
 
@@ -274,21 +220,40 @@ theorem finrank_jacobiFieldSpace
 
 /-! ### Smooth dependence on initial data -/
 
-/-- Expanding an element of the Jacobi-field space in the basis transported from `finBasis` of the
-initial-data space expresses it pointwise as a linear combination of the basis Jacobi fields. -/
-private theorem jacobiInitialDataEquiv_symm_eq_sum
-    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
-    {a : ℝ} (ha : a ∈ s) :
-    let D := TangentSpace I (γ a) × TangentSpace I (γ a)
-    let b := Module.finBasis ℝ D
-    ∀ (d : D) (t : ℝ),
-      ((jacobiInitialDataEquiv hγ hs ha).symm d).val t =
-        ∑ i, b.repr d i • ((jacobiInitialDataEquiv hγ hs ha).symm (b i)).val t := by
-  intro D b d t
-  conv_lhs => rw [← b.sum_repr d]
+omit [T2Space M] in
+/-- Any family of sections along a geodesic `γ` on `s` depending linearly on a finite-dimensional
+parameter space `D`, whose evaluations at fixed parameters in `D` are smooth along `γ`, is jointly
+smooth on `univ ×ˢ s`. -/
+private theorem contMDiffOn_totalSpaceMk_of_linear_sectionAlong
+    {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D]
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s)
+    (W : D → ∀ t, TangentSpace I (γ t))
+    (L : (t : ℝ) → t ∈ s → D →ₗ[ℝ] TangentSpace I (γ t))
+    (hWL : ∀ (d : D) (t : ℝ) (ht : t ∈ s), W d t = L t ht d)
+    (hsec : ∀ d : D, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
+      (fun t ↦ TotalSpace.mk' E (γ t) (W d t)) s) :
+    ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
+      (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) (W q.1 q.2)) (univ ×ˢ s) := by
+  let b := Module.finBasis ℝ D
+  have hbase : ContMDiffOn 𝓘(ℝ, D × ℝ) I ∞ (fun q : D × ℝ ↦ γ q.2) (univ ×ˢ s) :=
+    hγ.contMDiffOn_infty.comp contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
+  have hterm (i : Fin (Module.finrank ℝ D)) :
+      ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
+        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) (b.repr q.1 i • W (b i) q.2))
+        (univ ×ˢ s) := by
+    have hcoeff : ContMDiffOn 𝓘(ℝ, D × ℝ) 𝓘(ℝ, ℝ) ∞ (fun q : D × ℝ ↦ b.repr q.1 i) (univ ×ˢ s) :=
+      (((b.coord i).toContinuousLinearMap.comp
+        (ContinuousLinearMap.fst ℝ D ℝ)).contMDiff).contMDiffOn
+    exact hcoeff.smul_totalSpace ((hsec (b i)).comp
+      contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2))
+  refine (ContMDiffOn.sum_sectionAlong (b := fun q : D × ℝ ↦ γ q.2) Finset.univ
+    (fun i q ↦ b.repr q.1 i • W (b i) q.2) hbase fun i _ ↦ hterm i).congr ?_
+  intro q hq
+  refine congrArg (TotalSpace.mk' E (γ q.2)) ?_
+  rw [hWL q.1 q.2 hq.2]
+  conv_lhs => rw [← b.sum_repr q.1]
   rw [map_sum]
-  simp only [map_smul, Submodule.coe_sum, Finset.sum_apply, Submodule.coe_smul_of_tower,
-    Pi.smul_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hWL (b i) q.2 hq.2]
 
 /-- **Smooth dependence of Jacobi fields on initial data.** Along a geodesic on a preconnected
 parameter set `s`, the tangent-bundle lift of the Jacobi field with prescribed initial data at
@@ -299,29 +264,13 @@ theorem contMDiffOn_jacobiInitialDataEquiv_symm
     ContMDiffOn 𝓘(ℝ, (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ) I.tangent ∞
       (fun q : (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ ↦
         TotalSpace.mk' E (γ q.2) (((jacobiInitialDataEquiv hγ hs ha).symm q.1).val q.2))
-      (univ ×ˢ s) := by
-  let D := TangentSpace I (γ a) × TangentSpace I (γ a)
-  let b := Module.finBasis ℝ D
-  let e := (jacobiInitialDataEquiv hγ hs ha).symm
-  have hbase : ContMDiffOn 𝓘(ℝ, D × ℝ) I ∞ (fun q : D × ℝ ↦ γ q.2) (univ ×ˢ s) :=
-    hγ.contMDiffOn_infty.comp contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
-  have hterm (i : Fin (Module.finrank ℝ D)) :
-      ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) (b.repr q.1 i • (e (b i)).val q.2))
-        (univ ×ˢ s) := by
-    have hcoeff : ContMDiffOn 𝓘(ℝ, D × ℝ) 𝓘(ℝ, ℝ) ∞ (fun q : D × ℝ ↦ b.repr q.1 i) (univ ×ˢ s) :=
-      (((b.coord i).toContinuousLinearMap.comp
-        (ContinuousLinearMap.fst ℝ D ℝ)).contMDiff).contMDiffOn
-    have hsec : ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) ((e (b i)).val q.2)) (univ ×ˢ s) :=
-      (isJacobiFieldOn_of_mem_jacobiFieldSpace (e (b i))).contMDiffOn_infty.comp
-        contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
-    exact hcoeff.smul_totalSpace hsec
-  refine (ContMDiffOn.sum_sectionAlong (b := fun q : D × ℝ ↦ γ q.2) Finset.univ
-    (fun i q ↦ b.repr q.1 i • (e (b i)).val q.2) hbase fun i _ ↦ hterm i).congr ?_
-  intro q _
-  exact congrArg (TotalSpace.mk' E (γ q.2))
-    (jacobiInitialDataEquiv_symm_eq_sum hγ hs ha q.1 q.2)
+      (univ ×ˢ s) :=
+  contMDiffOn_totalSpaceMk_of_linear_sectionAlong hγ
+    (fun d t ↦ ((jacobiInitialDataEquiv hγ hs ha).symm d).val t)
+    (fun t ht ↦ ((LinearMap.fst ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap)
+    (fun _ _ _ ↦ by simp)
+    (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_infty)
 
 /-- **Smooth dependence of the covariant derivative on Jacobi initial data.** Along a geodesic on
 a preconnected parameter set `s`, the tangent-bundle lift of the covariant derivative of the
@@ -335,40 +284,13 @@ theorem contMDiffOn_alongCurveWithin_jacobiInitialDataEquiv_symm
         TotalSpace.mk' E (γ q.2)
           (alongCurveWithin (leviCivitaConnection I M) γ
             ((jacobiInitialDataEquiv hγ hs ha).symm q.1).val s q.2))
-      (univ ×ˢ s) := by
-  let cov := leviCivitaConnection I M
-  let D := TangentSpace I (γ a) × TangentSpace I (γ a)
-  let b := Module.finBasis ℝ D
-  let e := (jacobiInitialDataEquiv hγ hs ha).symm
-  have hbase : ContMDiffOn 𝓘(ℝ, D × ℝ) I ∞ (fun q : D × ℝ ↦ γ q.2) (univ ×ˢ s) :=
-    hγ.contMDiffOn_infty.comp contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
-  have hterm (i : Fin (Module.finrank ℝ D)) :
-      ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2)
-          (b.repr q.1 i • alongCurveWithin cov γ (e (b i)).val s q.2))
-        (univ ×ˢ s) := by
-    have hcoeff : ContMDiffOn 𝓘(ℝ, D × ℝ) 𝓘(ℝ, ℝ) ∞ (fun q : D × ℝ ↦ b.repr q.1 i) (univ ×ˢ s) :=
-      (((b.coord i).toContinuousLinearMap.comp
-        (ContinuousLinearMap.fst ℝ D ℝ)).contMDiff).contMDiffOn
-    have hsec : ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2)
-          (alongCurveWithin cov γ (e (b i)).val s q.2)) (univ ×ˢ s) :=
-      (isJacobiFieldOn_of_mem_jacobiFieldSpace (e (b i))).contMDiffOn_alongCurveWithin_infty.comp
-        contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
-    exact hcoeff.smul_totalSpace hsec
-  refine (ContMDiffOn.sum_sectionAlong (b := fun q : D × ℝ ↦ γ q.2) Finset.univ
-    (fun i q ↦ b.repr q.1 i • alongCurveWithin cov γ (e (b i)).val s q.2)
-    hbase fun i _ ↦ hterm i).congr ?_
-  intro q hq
-  have hexp (r : ℝ) : (e q.1).val r = ∑ i, b.repr q.1 i • (e (b i)).val r :=
-    jacobiInitialDataEquiv_symm_eq_sum hγ hs ha q.1 r
-  refine congrArg (TotalSpace.mk' E (γ q.2)) ?_
-  rw [funext hexp, alongCurveWithin_sum cov γ Finset.univ
-    (fun i r ↦ b.repr q.1 i • (e (b i)).val r)]
-  · refine Finset.sum_congr rfl fun i _ ↦ alongCurveWithin_const_smul cov γ _ _ s q.2
-  · intro i _
-    rw [sectionCoord_smul (F := E) γ (e (b i)).val (fun _ ↦ b.repr q.1 i) (γ q.2)]
-    exact ((isJacobiFieldOn_of_mem_jacobiFieldSpace
-      (e (b i))).differentiableWithinAt_sectionCoord hq.2).const_smul (b.repr q.1 i)
+      (univ ×ˢ s) :=
+  contMDiffOn_totalSpaceMk_of_linear_sectionAlong hγ
+    (fun d t ↦ alongCurveWithin (leviCivitaConnection I M) γ
+      ((jacobiInitialDataEquiv hγ hs ha).symm d).val s t)
+    (fun t ht ↦ ((LinearMap.snd ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap)
+    (fun _ _ _ ↦ by simp)
+    (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_alongCurveWithin_infty)
 
 end TauCeti.Manifold

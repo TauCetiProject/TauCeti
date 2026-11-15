@@ -31,8 +31,8 @@ length-minimizing curve whose endpoints lie on the boundary of a domain.
 For a smooth metric, applying this two-sided extension to the closed subinterval between any two
 parameters identifies every geodesic on a preconnected parameter set — open, closed, half-open, or
 unbounded — with a time-translated restriction of the maximal geodesic determined by its value and
-velocity at any chosen parameter. In particular every geodesic on a nonempty preconnected parameter
-set agrees there with a geodesic defined on an open interval containing that set.
+velocity at any chosen parameter. In particular every geodesic on a preconnected parameter set
+agrees there with a geodesic defined on an open preconnected superset.
 
 The endpoint extension theorems need a `C²` metric on a `C³` manifold without boundary; the
 maximal-geodesic identification uses a smooth metric to match `maximalGeodesic`. Nothing is assumed
@@ -53,12 +53,13 @@ about the completeness of the manifold.
   `TauCeti.Manifold.IsGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected`: on any
   preconnected parameter set, a geodesic is a time-translated piece of the maximal geodesic from
   any of its parameters.
-* `TauCeti.Manifold.IsGeodesicCurveOnFrom.subset_geodesicInterval_of_isPreconnected` and
+* `TauCeti.Manifold.IsGeodesicCurveOnFrom.subset_geodesicInterval_of_isPreconnected`,
+  `TauCeti.Manifold.IsGeodesicCurveOn.subset_geodesicInterval_of_maximalGeodesic`, and
   `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_maximalGeodesic_of_isPreconnected`: any geodesic
   with initial data `(p, v)` on a preconnected parameter set is defined inside
   `geodesicInterval I M p v` and agrees there with `maximalGeodesic I M p v`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.exists_isOpen_isPreconnected_superset`: every geodesic on a
-  nonempty preconnected parameter set extends to an open preconnected interval containing it.
+  preconnected parameter set extends to an open preconnected superset.
 
 ## References
 
@@ -276,6 +277,27 @@ theorem IsGeodesicCurveOnFrom.subset_geodesicInterval_of_isPreconnected
   rw [sub_zero, hdom] at hmem
   exact hmem
 
+/-- If `maximalGeodesic I M p v` is a geodesic on a preconnected parameter set containing `0`, then
+that parameter set lies inside `geodesicInterval I M p v`. -/
+theorem IsGeodesicCurveOn.subset_geodesicInterval_of_maximalGeodesic
+    {p : M} {v : TangentSpace I p} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I (maximalGeodesic I M p v) s) (hs : IsPreconnected s)
+    (h0 : (0 : ℝ) ∈ s) :
+    s ⊆ geodesicInterval I M p v := by
+  refine IsGeodesicCurveOnFrom.subset_geodesicInterval_of_isPreconnected ⟨hγ, h0, ?_⟩ hs
+  have hmax := isGeodesicCurveOnFrom_maximalGeodesic (I := I) p v
+  have hd : MDifferentiableAt 𝓘(ℝ, ℝ) I (maximalGeodesic I M p v) 0 :=
+    (hmax.isGeodesicCurveOn.mdifferentiableOn 0 zero_mem_geodesicInterval).mdifferentiableAt
+      (isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval)
+  have hvel : curveVelocityWithin I (maximalGeodesic I M p v) s 0 =
+      curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) 0 :=
+    (curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      (hasMFDerivAt_curveVelocity hd).hasMFDerivWithinAt (hγ.uniqueDiffOn 0 h0)).trans
+      (curveVelocityWithin_of_mem_nhds
+        (isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval)).symm
+  rw [hvel]
+  exact hmax.initial_eq
+
 /-- Every geodesic with initial data `(p, v)` on a preconnected parameter set agrees there with
 `maximalGeodesic I M p v`. -/
 theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic_of_isPreconnected
@@ -289,13 +311,15 @@ theorem IsGeodesicCurveOnFrom.eqOn_maximalGeodesic_of_isPreconnected
   simpa only [sub_zero] using
     hγ.isGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected hs hγ.zero_mem ht
 
-/-- **Extension of a geodesic from any nonempty preconnected parameter set to an open interval.**
-Every geodesic on a preconnected parameter set containing a parameter `τ` agrees on that set with
-a geodesic defined on an open preconnected superset. -/
+/-- **Extension of a geodesic from any preconnected parameter set to an open interval.** Every
+geodesic on a preconnected parameter set agrees on that set with a geodesic defined on an open
+preconnected superset. -/
 theorem IsGeodesicCurveOn.exists_isOpen_isPreconnected_superset
-    {s : Set ℝ} {τ : ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) (hτ : τ ∈ s) :
+    {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s) :
     ∃ U : Set ℝ, IsOpen U ∧ IsPreconnected U ∧ s ⊆ U ∧
       ∃ δ : ℝ → M, IsGeodesicCurveOn I δ U ∧ EqOn δ γ s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨τ, hτ⟩
+  · exact ⟨∅, isOpen_empty, isPreconnected_empty, Subset.rfl, γ, hγ, eqOn_refl γ ∅⟩
   let I₀ := geodesicInterval I M (γ τ) (curveVelocityWithin I γ s τ)
   let U : Set ℝ := (fun t : ℝ ↦ 1 * t + (-τ)) ⁻¹' I₀
   have hU_open : IsOpen U := isOpen_geodesicInterval.preimage (by fun_prop)

@@ -35,8 +35,10 @@ the ball, the map is an injective local diffeomorphism, and for open `W` its ima
 
 * `TauCeti.Manifold.contMDiffOn_prodMk_proj_riemannianExp`: the map `(x, v) ↦ (x, exp_x v)` is
   smooth where the exponential map is defined.
-* `TauCeti.Manifold.mfderiv_prodMk_proj_riemannianExp_zeroSection_apply`: the differential of
-  `(x, v) ↦ (x, exp_x v)` at a zero vector is `(u, v) ↦ (u, u + v)`.
+* `TauCeti.Manifold.mfderiv_prodMk_proj_riemannianExp_zeroSection_apply`,
+  `TauCeti.Manifold.mfderiv_riemannianExp_tangentBundle_zeroSection_apply`: the differentials of
+  `(x, v) ↦ (x, exp_x v)` and `(x, v) ↦ exp_x v` at a zero vector are `(u, v) ↦ (u, u + v)` and
+  `(u, v) ↦ u + v`.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection`: the
   variable-base inverse function theorem, `(x, v) ↦ (x, exp_x v)` is a local diffeomorphism at
   every zero vector.
@@ -126,6 +128,24 @@ theorem mfderiv_prodMk_proj_riemannianExp_zeroSection_apply (p : M) (u v : Tange
       (Prod.ext (zero_apply 1) hv))
   rw [h1, h2]
   exact (Prod.mk_add_mk u 0 u v).trans (congrArg (·, u + v) (add_zero u))
+
+/-- **The differential of `(x, v) ↦ exp_x v` at a zero vector.** In the horizontal and vertical
+splitting `TauCeti.Bundle.zeroSectionTangentEquiv` of `T_{0_p}(TM)`, the differential sends `(u, w)`
+to `u + w`. -/
+theorem mfderiv_riemannianExp_tangentBundle_zeroSection_apply
+    (p : M) (u w : TangentSpace I p) :
+    mfderiv I.tangent I (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      (zeroSection E (TangentSpace I) p)
+      ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) p).symm (u, w)) = u + w := by
+  let F : TangentBundle I M → M × M := fun z ↦ (z.proj, riemannianExp I M z.proj z.2)
+  have hFd : MDifferentiableAt I.tangent (I.prod I) F (zeroSection E (TangentSpace I) p) :=
+    ((contMDiffOn_prodMk_proj_riemannianExp _ (zero_mem_expDomain p)).contMDiffAt
+      (isOpen_setOfPred_mem_expDomain.mem_nhds (zero_mem_expDomain p))).mdifferentiableAt
+      (by simp)
+  have hcomp := mfderiv_comp_apply (zeroSection E (TangentSpace I) p)
+    mdifferentiableAt_snd hFd ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) p).symm (u, w))
+  rw [mfderiv_prodMk_proj_riemannianExp_zeroSection_apply, mfderiv_snd] at hcomp
+  exact hcomp
 
 /-- **The variable-base inverse function theorem.** The map `(x, v) ↦ (x, exp_x v)` from the
 tangent bundle to `M × M` is a local diffeomorphism at every zero vector. -/

@@ -19,7 +19,8 @@ the zero section and preserves the projection, without a choice of global trivia
 More generally, over a `𝕜`-charted base, scalar multiplication by `𝕜'`-valued maps along a normed
 field extension `𝕜 ⊆ 𝕜'` preserves `C^n` regularity and equips `C^n` sections with compatible
 `Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`);
-multiplication by a constant of `𝕜'` also preserves differentiability of sections
+multiplication by a constant of `𝕜'` preserves both `C^n` regularity of the total-space endomorphism
+(`TauCeti.contMDiff_totalSpaceMk_smul`) and differentiability of sections
 (`MDifferentiableAt.const_smul_section`).
 
 For normal bundles, positive rescaling converts unit-radius fibre coordinates to a radius
@@ -102,6 +103,13 @@ theorem MDifferentiableAt.const_smul_section {σ : Π b, V b} {x : B} (hσ : MDi
   exact (e.linear 𝕜' hy).map_smul c (σ y)
 
 namespace TauCeti
+
+/-- Fibrewise scalar multiplication `(b, v) ↦ (b, c • v)` by a constant scalar is `C^n` on the
+total space of a vector bundle. -/
+theorem contMDiff_totalSpaceMk_smul (c : 𝕜') :
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F)) n
+      (fun w : TotalSpace F V ↦ TotalSpace.mk' F w.proj (c • w.2)) :=
+  (contMDiff_const (c := c)).smul_totalSpace contMDiff_id
 
 /-- A nowhere-zero `C^n` scalar function on the base rescales each fibre by a `C^n`
 diffeomorphism of the total space. Its inverse multiplies by the reciprocal scalar. -/
