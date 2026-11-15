@@ -45,6 +45,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `neg_morseTrajectorySlice`: reversing the pseudo-gradient reverses the trajectories.
 * `morseTrajectorySlice_eq_image_of_stableSet_subset`: the trajectories into `q` read off a
   decomposition of the stable set of `q` into orbits.
+* `morseTrajectorySlice_eq_image_of_unstableSet_subset`: the trajectories out of `p` read off a
+  decomposition of the unstable set of `p` into orbits.
 * `IsMorseSmale.finite_morseTrajectorySlice`: for consecutive indices it is finite.
 * `natCard_orbitQuotient_eq_ncard_morseTrajectorySlice`: the slice has as many points as there are
   unparametrized trajectories from `p` to `q`.
@@ -141,6 +143,41 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset
       hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (hai ▸ hpq) (hy i)
     refine ⟨i, hai, ?_⟩
     rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
+  · rintro ⟨i, rfl, rfl⟩
+    exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1,
+      (Flow.apply_mem_stableSet_iff _ _).2 (hy i).2, hτ i⟩
+
+/-- **Trajectories read off a decomposition of an unstable set.** Suppose that, apart from `p`
+itself, the unstable set of a point `p` is covered by the orbits of points `y i`, where `y i` flows
+from `p` to a point `b i` and crosses the middle level between `p` and `b i` at time `τ i`. Then
+the trajectories from `p` to a point `q ≠ p` are the crossings of the orbits ending at `q`. -/
+theorem morseTrajectorySlice_eq_image_of_unstableSet_subset
+    {ι : Type*} {p q : M} {b y : ι → M} {τ : ι → ℝ}
+    (hpq : p ≠ q)
+    (hW : hX.flow.unstableSet p ⊆ insert p (⋃ i, hX.flow.orbit (y i)))
+    (hy : ∀ i, y i ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet (b i))
+    (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f p + f (b i)) / 2) :
+    hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | b i = q} := by
+  ext w
+  simp only [mem_morseTrajectorySlice, mem_image, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hwu, hws, hwc⟩
+    -- The rest point `p` lies in no stable set but its own, so `w` lies on some orbit `y i`.
+    have hwp : w ≠ p := by
+      rintro rfl
+      exact Flow.disjoint_stableSet hpq |>.ne_of_mem
+        (Flow.self_mem_stableSet_iff.2 (Flow.fixed_of_mem_unstableSet hwu)) hws rfl
+    obtain ⟨i, t, rfl⟩ : ∃ i t, hX.flow t (y i) = w := by
+      simpa [hwp, Flow.mem_orbit_iff] using hW hwu
+    have hbi : b i = q := by
+      by_contra hne
+      exact Flow.disjoint_stableSet hne |>.ne_of_mem
+        ((Flow.apply_mem_stableSet_iff _ _).2 (hy i).2) hws rfl
+    -- The orbit of `y i` crosses the middle level only once.
+    obtain ⟨s, -, hs⟩ :=
+      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (hbi ▸ hpq) (hy i)
+    refine ⟨i, hbi, ?_⟩
+    rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hbi]))]
   · rintro ⟨i, rfl, rfl⟩
     exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1,
       (Flow.apply_mem_stableSet_iff _ _).2 (hy i).2, hτ i⟩
