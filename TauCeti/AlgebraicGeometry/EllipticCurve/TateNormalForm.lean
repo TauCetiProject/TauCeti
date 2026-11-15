@@ -151,6 +151,15 @@ theorem isUnit_of_isUnit_tateNormalForm_Δ {a b : R} (h : IsUnit (tateNormalForm
 theorem equation_tateNormalForm_zero : (tateNormalForm a b).toAffine.Equation 0 0 :=
   Affine.equation_zero.mpr (tateNormalForm_a₆ a b)
 
+/-- The point `(-b, b(a - 1))`, which is `2 · (0, 0)` when the curve is elliptic, lies on the
+Tate normal form `Y² + aXY + bY = X³ + bX²`. -/
+theorem equation_tateNormalForm_dbl :
+    (tateNormalForm a b).toAffine.Equation (-b) (b * (a - 1)) := by
+  rw [Affine.equation_iff]
+  simp only [tateNormalForm_a₁, tateNormalForm_a₂, tateNormalForm_a₃, tateNormalForm_a₄,
+    tateNormalForm_a₆]
+  ring
+
 /-- The Tate normal form commutes with base change. -/
 @[simp]
 theorem map_tateNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :

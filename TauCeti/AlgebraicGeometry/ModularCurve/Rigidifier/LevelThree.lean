@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.LevelThreeNormalForm
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
+import Mathlib.RingTheory.Etale.StandardEtale
 
 /-!
 # The fine moduli scheme of naive full level-three structures
@@ -33,11 +34,14 @@ to `aP + bQ` is injective on every fibre
 the universal level-three normal form (`ModuliProblem.gammaNaiveThreeRepresentableBy`): its base
 `B × Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is the fine moduli scheme of naive full level three over `B`.
 It is affine over `B`, and affine when `B` is (`EllObj.isAffineHom_prodCurve_structureMap` and
-`EllObj.isAffine_prodCurve_base`). No hypothesis on `B` is needed: a naive `[Γ(3)]`-structure can
-only exist over a base on which `3` is invertible, and the coefficient ring already contains `1/3`.
-Over `B = Spec ℤ[1/3]` this is the affine universal family of naive full level three of Katz and
-Mazur (KM 2.2.11), one of the two rigidifiers through which they prove that a relatively
-representable, affine, rigid moduli problem is representable (KM 4.7.0).
+`EllObj.isAffine_prodCurve_base`), and smooth of relative dimension `1` over `B`
+(`EllObj.smoothOfRelativeDimension_one_universalLevelThree_structureMap`) because
+`ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is standard smooth of relative dimension `1` over `ℤ`. No hypothesis
+on `B` is needed: a naive `[Γ(3)]`-structure can only exist over a base on which `3` is invertible,
+and the coefficient ring already contains `1/3`. Over `B = Spec ℤ[1/3]` this is the affine
+universal family of naive full level three of Katz and Mazur (KM 2.2.11), one of the two
+rigidifiers through which they prove that a relatively representable, affine, rigid moduli problem
+is representable (KM 4.7.0).
 
 ## Main definitions
 
@@ -51,6 +55,10 @@ representable, affine, rigid moduli problem is representable (KM 4.7.0).
 
 ## Main results
 
+* `WeierstrassCurve.UniversalLevelThree.isStandardSmoothOfRelativeDimension_one_ring` and
+  `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_universalLevelThree_structureMap`:
+  the universal level-three base ring is standard smooth of relative dimension `1` over `ℤ`, and
+  `EllObj.universalLevelThree B` is smooth of relative dimension `1` over `B`.
 * `TauCeti.AlgebraicGeometry.EllObj.existsUnique_hom_universalLevelThree`: the universal property
   of the universal level-three normal form in `Ell/B`.
 * `ModuliProblem.naiveLevelEquiv_gammaNaiveThreeRepresentableBy_homEquiv_fst` and
@@ -69,6 +77,119 @@ public section
 universe u
 
 open CategoryTheory Limits MonoidalCategory Opposite AlgebraicGeometry MonObj
+
+namespace WeierstrassCurve.UniversalLevelThree
+
+/-! ### Smoothness of relative dimension one of the universal level-three ring -/
+
+-- The standard étale pair `(X² + X + 1, 3)` presenting `ℤ[1/3, ζ₃]` over `ℤ`:
+-- `(2X + 1)(-2X - 1) + 4(X² + X + 1) = 3`.
+@[simps]
+private noncomputable def cyclotomicThreePair : StandardEtalePair ℤ where
+  f := Polynomial.X ^ 2 + Polynomial.X + 1
+  monic_f := by monicity!
+  g := Polynomial.C 3
+  cond := ⟨-(2 * Polynomial.X + 1), Polynomial.C 4, 1, by simp; ring⟩
+
+private abbrev CyclotomicPoly : Type := MvPolynomial (Fin 1) cyclotomicThreePair.Ring
+
+private abbrev ModelRing : Type :=
+  Localization.Away (MvPolynomial.X 0 ^ 3 - 1 : CyclotomicPoly)
+
+private noncomputable def rootOfUnityRingHom : cyclotomicThreePair.Ring →+* Ring :=
+  have hE : (levelThreeNormalForm parameter).IsElliptic := curve_eq ▸ inferInstance
+  let h := (isElliptic_levelThreeNormalForm_iff parameter).mp hE
+  (cyclotomicThreePair.lift rootOfUnity
+    ⟨by simpa using rootOfUnity_sq_add_rootOfUnity_add_one,
+      by simpa [map_ofNat] using h.1⟩).toRingHom
+
+@[simp]
+private theorem rootOfUnityRingHom_X :
+    rootOfUnityRingHom cyclotomicThreePair.X = rootOfUnity :=
+  cyclotomicThreePair.lift_X _ _
+
+private noncomputable def modelToRing : ModelRing →+* Ring :=
+  have hE : (levelThreeNormalForm parameter).IsElliptic := curve_eq ▸ inferInstance
+  let h := (isElliptic_levelThreeNormalForm_iff parameter).mp hE
+  IsLocalization.Away.lift (MvPolynomial.X 0 ^ 3 - 1 : CyclotomicPoly)
+    (g := MvPolynomial.eval₂Hom rootOfUnityRingHom ![parameter]) (by simpa using h.2)
+
+private noncomputable def ringToModel : Ring →+* ModelRing :=
+  let cHom : cyclotomicThreePair.Ring →+* ModelRing :=
+    (algebraMap CyclotomicPoly ModelRing).comp MvPolynomial.C
+  have h3S : IsUnit (3 : ModelRing) := by
+    have h3P : IsUnit (3 : cyclotomicThreePair.Ring) := by
+      simpa [map_ofNat] using cyclotomicThreePair.hasMap_X.2
+    simpa [map_ofNat] using h3P.map cHom
+  have hμS : IsUnit (algebraMap CyclotomicPoly ModelRing (MvPolynomial.X 0) ^ 3 - 1) := by
+    rw [← map_pow, ← map_one (algebraMap CyclotomicPoly ModelRing), ← map_sub]
+    exact IsLocalization.Away.algebraMap_isUnit (S := ModelRing) _
+  have hζS : cHom cyclotomicThreePair.X ^ 2 + cHom cyclotomicThreePair.X + 1 = 0 := by
+    have hζP : cyclotomicThreePair.X ^ 2 + cyclotomicThreePair.X + 1 = 0 := by
+      simpa using cyclotomicThreePair.hasMap_X.1
+    simpa using congrArg cHom hζP
+  lift ((isElliptic_levelThreeNormalForm_iff _).mpr ⟨h3S, hμS⟩).isUnit hζS
+
+-- Identify `Localization.Away (μ³ - 1)` over `cyclotomicThreePair.Ring[μ]` with `Ring`.
+private noncomputable def modelAlgEquiv : ModelRing ≃ₐ[ℤ] Ring := by
+  refine AlgEquiv.ofRingEquiv
+    (f := RingEquiv.ofRingHom modelToRing ringToModel ?_ ?_) (fun _ ↦ by simp)
+  · ext <;> simp [modelToRing, ringToModel]
+  · apply IsLocalization.ringHom_ext (.powers (MvPolynomial.X 0 ^ 3 - 1 : CyclotomicPoly))
+    refine MvPolynomial.ringHom_ext' ?_ (Fin.forall_fin_one.mpr ?_)
+    · let cHom : cyclotomicThreePair.Ring →+* ModelRing :=
+        (algebraMap CyclotomicPoly ModelRing).comp MvPolynomial.C
+      have hlr := cyclotomicThreePair.hom_ext
+        (f := { ringToModel.comp (modelToRing.comp cHom) with commutes' := fun _ ↦ by simp })
+        (g := { cHom with commutes' := fun _ ↦ by simp })
+        (by simp [cHom, modelToRing, ringToModel])
+      exact congrArg AlgHom.toRingHom hlr
+    · simp [modelToRing, ringToModel]
+
+/-- The universal level-three coefficient ring `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is standard smooth of
+relative dimension `1` over `ℤ`: it is `ℤ[1/3, ζ₃][μ]` localized away from `μ³ - 1`, over the
+standard étale `ℤ`-algebra `ℤ[1/3, ζ₃]`. -/
+instance isStandardSmoothOfRelativeDimension_one_ring :
+    Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ Ring := by
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 ℤ cyclotomicThreePair.Ring :=
+    (Algebra.IsStandardEtale.nonempty_standardEtalePresentation
+      (R := ℤ) (S := cyclotomicThreePair.Ring)).some
+      |>.toSubmersivePresentation.isStandardSmoothOfRelativeDimension
+      (by simp [Algebra.Presentation.dimension])
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 CyclotomicPoly ModelRing :=
+    .localization_away (MvPolynomial.X 0 ^ 3 - 1 : CyclotomicPoly)
+  have : Algebra.IsStandardSmoothOfRelativeDimension (1 + 0) ℤ CyclotomicPoly :=
+    .trans 0 1 ℤ cyclotomicThreePair.Ring CyclotomicPoly
+  have hS : Algebra.IsStandardSmoothOfRelativeDimension (0 + (1 + 0)) ℤ ModelRing :=
+    .trans (1 + 0) 0 ℤ CyclotomicPoly ModelRing
+  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ ModelRing := by simpa using hS
+  exact .of_algEquiv 1 modelAlgEquiv
+
+/-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth of
+relative dimension `1` over `Spec ℤ`, the terminal scheme. -/
+instance smoothOfRelativeDimension_one_terminal_from :
+    SmoothOfRelativeDimension 1 (terminal.from (Spec (.of (ULift.{u} Ring)))) := by
+  let f : ULift.{u} ℤ →+* ULift.{u} Ring :=
+    ULift.ringEquiv.symm.toRingHom.comp ((algebraMap ℤ Ring).comp ULift.ringEquiv.toRingHom)
+  have hf : f.IsStandardSmoothOfRelativeDimension 1 := by
+    have h₁ := RingHom.IsStandardSmoothOfRelativeDimension.equiv
+      (ULift.ringEquiv : ULift.{u} Ring ≃+* Ring).symm
+    have h₂ : (algebraMap ℤ Ring).IsStandardSmoothOfRelativeDimension 1 :=
+      (RingHom.isStandardSmoothOfRelativeDimension_algebraMap 1).mpr inferInstance
+    have h₃ := RingHom.IsStandardSmoothOfRelativeDimension.equiv
+      (ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ)
+    dsimp only [f]
+    simpa using h₁.comp (h₂.comp h₃)
+  have : SmoothOfRelativeDimension 1 (Spec.map (CommRingCat.ofHom f)) :=
+    HasRingHomProperty.Spec_iff.mpr
+      (RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hf)
+  have e := specULiftZIsTerminal.{u}.uniqueUpToIso terminalIsTerminal
+  rw [terminal.hom_ext (terminal.from _) (Spec.map (CommRingCat.ofHom f) ≫ e.hom)]
+  have hcomp : SmoothOfRelativeDimension (1 + 0) (Spec.map (CommRingCat.ofHom f) ≫ e.hom) :=
+    inferInstance
+  simpa using hcomp
+
+end WeierstrassCurve.UniversalLevelThree
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -130,6 +251,12 @@ projection, as an object of `Ell/B` through the first projection. Its basis of t
 `prodCurvePoint B firstPointHom`, `prodCurvePoint B secondPointHom`. -/
 noncomputable abbrev universalLevelThree : EllObj B :=
   prodCurve B curveGeom.{u}
+
+/-- The universal level-three normal form over `B` has structure morphism smooth of relative
+dimension `1` over `B`. -/
+instance smoothOfRelativeDimension_one_universalLevelThree_structureMap :
+    SmoothOfRelativeDimension 1 (universalLevelThree B).structureMap :=
+  MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
 
 variable {B} {X : EllObj B}
 

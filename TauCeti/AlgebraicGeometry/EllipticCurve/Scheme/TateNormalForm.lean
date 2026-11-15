@@ -45,6 +45,10 @@ sections is a change of variables
 * `WeierstrassCurve.tateNormalForm_iso_ext`: such an isomorphism is unique.
 * `WeierstrassCurve.exists_iso_tateNormalForm_iff`: such an isomorphism exists exactly when `P`,
   `2P` and `3P` miss the zero section everywhere.
+* `WeierstrassCurve.projModelAffinePoint_zero_projModelMulBy_two` and
+  `WeierstrassCurve.projModelAffinePoint_zero_projModelMulBy_four_eq_projModelZero_iff`: on an
+  elliptic Tate normal form `Y² + aXY + bY = X³ + bX²`, twice `(0, 0)` is `(-b, b(a - 1))`, and
+  `4 · (0, 0) = 0` if and only if `a = 1`.
 
 ## References
 
@@ -55,7 +59,7 @@ sections is a change of variables
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry MonoidalCategory MonObj
 
 universe u
 
@@ -142,7 +146,7 @@ theorem existsUnique_tateNormalForm {P : Spec (.of R) ⟶ W.projModel}
 
 /-- **The hypotheses of the Tate normal form are necessary.** A section `P` of the projective model
 of an elliptic Weierstrass curve `W` over `Spec R` is the image of the point `(0, 0)` under some
-isomorphism `projModel (tateNormalForm a b) ≅ projModel W` over `Spec R` carrying the zero section
+isomorphism `projModel (tateNormalForm a b) ≅ W.projModel` over `Spec R` carrying the zero section
 to the zero section exactly when none of `P`, `2P` and `3P` meets the zero section over any point
 of `Spec R`. -/
 theorem exists_iso_tateNormalForm_iff {P : Spec (.of R) ⟶ W.projModel}
@@ -186,5 +190,64 @@ theorem tateNormalForm_iso_ext {a b : R} {e e' : (tateNormalForm a b).projModel 
     (eq_toTateNormalForm hψ₂ hΨ₃ hee'.1.symm hee'.2.symm hC').symm
   subst hCC'
   exact Iso.ext (heC.trans heC'.symm)
+
+/-- **Doubling `(0, 0)` on an elliptic Tate normal form.** On the projective model of an elliptic
+Tate normal form `Y² + aXY + bY = X³ + bX²`, twice the section `(0, 0)` is the section
+`(-b, b(a - 1))` (Kubert, Table 3). -/
+theorem projModelAffinePoint_zero_projModelMulBy_two {a b : R} [(tateNormalForm a b).IsElliptic] :
+    (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_zero a b) ≫
+      (tateNormalForm a b).projModelMulBy 2 =
+        (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_dbl a b) := by
+  set W' := tateNormalForm a b
+  have hb : IsUnit b := isUnit_of_isUnit_tateNormalForm_Δ W'.isUnit_Δ
+  have h₀ := equation_tateNormalForm_zero a b
+  have hW' : W'.toProjective.map (RingHom.id R) = W'.toProjective := W'.map_id
+  have hE : W'.toProjective.Equation ![0, 0, 1] := (Projective.equation_some _ _).mpr h₀
+  have hdbl : (W'.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] =
+      W'.toProjective.dblXYZ ![0, 0, 1] := by
+    rw [Projective.dblAddXYZ_self (hW' ▸ hE), hW']
+  have hm : IsUnit ((W'.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] 2) := by
+    rw [hdbl, Projective.dblXYZ_some h₀]
+    simpa [W'] using hb.pow 3
+  rw [comp_projModelMulBy_two, projModelAffinePoint_def, projModelAffinePoint_def,
+    lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
+    projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h₀]
+  refine ⟨rfl, (hb.pow 3).unit, ?_⟩
+  ext i
+  fin_cases i <;> simp [Units.smul_def, Affine.negY, Affine.evalEval_polynomialX]; ring
+
+/-- **The `4`-torsion condition on `(0, 0)` in Tate normal form.** On the projective model of an
+elliptic Tate normal form `Y² + aXY + bY = X³ + bX²`, the section `(0, 0)` is killed by
+multiplication by `4` if and only if `a = 1`, that is, the curve has the `X₁(4)` normal form
+`Y² + XY + bY = X³ + bX²` (Kubert, Table 3). -/
+theorem projModelAffinePoint_zero_projModelMulBy_four_eq_projModelZero_iff {a b : R}
+    [(tateNormalForm a b).IsElliptic] :
+    (tateNormalForm a b).projModelAffinePoint (equation_tateNormalForm_zero a b) ≫
+      (tateNormalForm a b).projModelMulBy 4 = (tateNormalForm a b).projModelZero ↔ a = 1 := by
+  set W' := tateNormalForm a b
+  have hb : IsUnit b := isUnit_of_isUnit_tateNormalForm_Δ W'.isUnit_Δ
+  set P := W'.projModelAffinePoint (equation_tateNormalForm_zero a b)
+  let Q := W'.projModelAffinePoint (equation_tateNormalForm_dbl a b)
+  have hP : P ≫ W'.projModelOver = 𝟙 _ := projModelAffinePoint_projModelOver _
+  have hQ : Q ≫ W'.projModelOver = 𝟙 _ := projModelAffinePoint_projModelOver _
+  -- `4P = 2(2P) = 2Q`, so `4P = 0` means `Q = -Q`
+  have h4 : P ≫ W'.projModelMulBy 4 = Q ≫ W'.projModelMulBy (1 + 1) := by
+    have hPQ : (Over.homMk P (by simpa using hP) :
+        𝟙_ (Over (Spec (.of R))) ⟶ Over.mk W'.projModelOver) ^ (2 : ℤ) =
+          Over.homMk Q (by simpa using hQ) := by
+      ext1
+      rw [← comp_projModelMulBy_eq_homMk_zpow_left hP 2]
+      exact projModelAffinePoint_zero_projModelMulBy_two
+    rw [comp_projModelMulBy_eq_homMk_zpow_left hP 4,
+      comp_projModelMulBy_eq_homMk_zpow_left hQ (1 + 1), ← hPQ, ← zpow_mul]
+    rfl
+  have hQ1 : Q ≫ W'.projModelMulBy 1 = Q := by
+    simp [comp_projModelMulBy_eq_homMk_zpow_left hQ 1]
+  rw [h4, comp_projModelMulBy_add_one_eq_projModelZero_iff hQ 1, hQ1]
+  dsimp only [Q]
+  rw [projModelAffinePoint_projModelNeg, projModelAffinePoint_inj]
+  simp only [W', Affine.negY, tateNormalForm_a₁, tateNormalForm_a₃, true_and]
+  refine ⟨fun h ↦ sub_eq_zero.mp (hb.mul_left_eq_zero.mp ?_), fun ha ↦ by rw [ha]; ring⟩
+  linear_combination h
 
 end WeierstrassCurve
