@@ -42,6 +42,11 @@ its coefficients.
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.continuous_Gamma_add_mul_I`, `Complex.continuous_Gamma_sub_mul_I`,
+  `Complex.exists_norm_Gamma_add_mul_I_le`, `Complex.exists_norm_Gamma_sub_mul_I_le`,
+  `Complex.integrable_Gamma_add_mul_I`, `Complex.integrable_Gamma_sub_mul_I`: continuity,
+  uniform boundedness, and integrability of `y ↦ Γ(z ± i y)` when `Re z` is not a nonpositive
+  integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
@@ -170,5 +175,54 @@ theorem integral_cpow_neg_mul_Gamma {σ : ℝ} (hσ : 0 < σ) {y : ℝ} (hy : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `y ↦ Γ(z + i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_add_mul_I {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (z + y * I) := by
+  refine continuous_iff_continuousAt.mpr fun y ↦ ?_
+  refine (differentiableAt_Gamma _ fun m h ↦ hz m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re h
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `y ↦ Γ(z - i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_sub_mul_I {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (z - y * I) := by
+  have hfun : (fun y : ℝ ↦ Gamma (z - y * I)) = fun y : ℝ ↦ Gamma (z + (-y : ℝ) * I) := by
+    ext y
+    simp [sub_eq_add_neg]
+  rw [hfun]
+  exact (continuous_Gamma_add_mul_I hz).comp continuous_neg
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `‖Γ(z + i y)‖` is uniformly bounded in
+`y : ℝ`. -/
+theorem exists_norm_Gamma_add_mul_I_le {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    ∃ C : ℝ, ∀ y : ℝ, ‖Gamma (z + y * I)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hz 0
+  refine ⟨C, fun y ↦ ?_⟩
+  have hz_eq : z + y * I = ↑z.re + ↑(z.im + y) * I := by
+    apply Complex.ext <;> simp
+  simpa [hz_eq] using hC (z.im + y)
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `‖Γ(z - i y)‖` is uniformly bounded in
+`y : ℝ`. -/
+theorem exists_norm_Gamma_sub_mul_I_le {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    ∃ C : ℝ, ∀ y : ℝ, ‖Gamma (z - y * I)‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_add_mul_I_le hz
+  exact ⟨C, fun y ↦ by simpa [sub_eq_add_neg] using hC (-y)⟩
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `y ↦ Γ(z + i y)` is integrable on `ℝ`. -/
+theorem integrable_Gamma_add_mul_I {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (z + y * I) := by
+  have h := (verticalIntegrable_Gamma hz).comp_add_left z.im
+  refine h.congr (Eventually.of_forall fun y ↦ ?_)
+  have hz_eq : (z.re : ℂ) + ↑(z.im + y) * I = z + y * I := by
+    apply Complex.ext <;> simp
+  exact congrArg Gamma hz_eq
+
+/-- For `z : ℂ` with `Re z` not a nonpositive integer, `y ↦ Γ(z - i y)` is integrable on `ℝ`. -/
+theorem integrable_Gamma_sub_mul_I {z : ℂ} (hz : ∀ n : ℕ, z.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (z - y * I) := by
+  have h := (integrable_Gamma_add_mul_I hz).comp_neg
+  refine h.congr (Eventually.of_forall fun y ↦ ?_)
+  simp [sub_eq_add_neg]
 
 end Complex

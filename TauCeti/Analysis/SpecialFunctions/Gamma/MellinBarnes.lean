@@ -41,6 +41,9 @@ Barnes's first lemma.
   `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
 * `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
   vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
+* `Complex.integrable_Gamma_add_mul_Gamma_sub`,
+  `Complex.integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub`: the symmetric two-parameter forms for
+  `y ↦ Γ(a + i y) Γ(b - i y)` along the imaginary axis.
 
 ## References
 
@@ -173,5 +176,32 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- For `a, b : ℂ` with neither `Re a` nor `Re b` a nonpositive integer, the product
+`y ↦ Γ(a + i y) Γ(b - i y)` is integrable on `ℝ`. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {a b : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n)
+    (hb : ∀ n : ℕ, b.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (a + y * I) * Gamma (b - y * I) := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_sub_mul_I_le hb
+  exact (integrable_Gamma_add_mul_I ha).mul_bdd
+    (continuous_Gamma_sub_mul_I hb).aestronglyMeasurable (Eventually.of_forall hC)
+
+/-- **The Mellin–Barnes integral of `(1 + u)^{-(a + b)}`** in symmetric two-parameter form: for
+`Re a > 0`, `Re b > 0`, and `u > 0`,
+`∫ u^{-(a + i y)} Γ(a + i y) Γ(b - i y) dy = 2π Γ(a + b) (1 + u)^{-(a + b)}`. -/
+theorem integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub {a b : ℂ} (ha : 0 < a.re) (hb : 0 < b.re)
+    {u : ℝ} (hu : 0 < u) :
+    ∫ y : ℝ, (u : ℂ) ^ (-(a + y * I)) * (Gamma (a + y * I) * Gamma (b - y * I)) =
+      2 * π * (Gamma (a + b) * (1 + (u : ℂ)) ^ (-(a + b))) := by
+  have h := integral_cpow_neg_mul_Gamma_mul_Gamma_sub (a := a + b) ha
+    (by simp [add_re]; linarith) hu
+  rw [← integral_add_left_eq_self
+    (fun t : ℝ ↦ (u : ℂ) ^ (-(↑a.re + ↑t * I)) *
+      (Gamma (↑a.re + ↑t * I) * Gamma (a + b - (↑a.re + ↑t * I)))) a.im] at h
+  refine (integral_congr_ae (Eventually.of_forall fun y ↦ ?_)).trans h
+  have ha_eq : (a.re : ℂ) + ((a.im + y : ℝ) : ℂ) * I = a + y * I := by
+    apply Complex.ext <;> simp
+  have hb_eq : a + b - (a + y * I) = b - y * I := by ring
+  rw [ha_eq, hb_eq]
 
 end Complex
