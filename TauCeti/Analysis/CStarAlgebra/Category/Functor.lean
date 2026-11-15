@@ -42,7 +42,7 @@ omit [DaggerPreadditive C] [DaggerLinear ℂ C] [∀ X Y : C, Norm (X ⟶ Y)] [C
 /-- The square of the norm of `F.map f` is the norm of `F.map (f ≫ dagger f)`. -/
 private theorem sq_norm_map {X Y : C} (f : X ⟶ Y) :
     ‖F.map f‖ ^ 2 = ‖F.mapEndStarAlgHom ℂ X (.of (f ≫ dagger f))‖ := by
-  rw [mapEndStarAlgHom_apply, End.norm_of, F.map_comp, F.map_dagger,
+  rw [End.norm_def, mapEndStarAlgHom_asHom, F.map_comp, F.map_dagger,
     CStarCategory.norm_self_comp_dagger]
 
 /-- A complex linear dagger functor between C*-categories is contractive on Hom spaces. -/
@@ -54,10 +54,12 @@ theorem norm_map_le {X Y : C} (f : X ⟶ Y) : ‖F.map f‖ ≤ ‖f‖ := by
 
 /-- A faithful complex linear dagger functor between C*-categories is isometric on Hom
 spaces. -/
-theorem norm_map [F.Faithful] {X Y : C} (f : X ⟶ Y) : ‖F.map f‖ = ‖f‖ := by
+@[simp] theorem norm_map [F.Faithful] {X Y : C} (f : X ⟶ Y) : ‖F.map f‖ = ‖f‖ := by
   refine (pow_left_inj₀ (CStarCategory.norm_nonneg _) (CStarCategory.norm_nonneg f)
     two_ne_zero).1 ?_
+  have hinj := F.mapEndAlgHom_injective ℂ X
+  rw [← toAlgHom_mapEndStarAlgHom, StarAlgHom.coe_toAlgHom] at hinj
   rw [sq_norm_map, ← CStarCategory.norm_self_comp_dagger, ← End.norm_of]
-  exact NonUnitalStarAlgHom.norm_map _ (F.mapEndStarAlgHom_injective X) _
+  exact NonUnitalStarAlgHom.norm_map _ hinj _
 
 end CategoryTheory.Functor

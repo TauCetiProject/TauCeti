@@ -177,11 +177,14 @@ variable [Preadditive C] [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C]
 /-- The normed space axioms for `End X`, transported from the Hom space of `X`. -/
 theorem normedSpaceCore (X : C) : NormedSpace.Core ℂ (End X) where
   norm_nonneg a := CStarCategory.norm_nonneg a.asHom
-  norm_smul c a := (CStarCategory.normedSpaceCore X X).norm_smul c a.asHom
-  norm_triangle a b := (CStarCategory.normedSpaceCore X X).norm_triangle a.asHom b.asHom
+  norm_smul c a := by
+    simpa only [norm_def, smul_asHom] using
+      (CStarCategory.normedSpaceCore X X).norm_smul c a.asHom
+  norm_triangle a b := by
+    simpa only [norm_def, add_asHom] using
+      (CStarCategory.normedSpaceCore X X).norm_triangle a.asHom b.asHom
   norm_eq_zero_iff a := by
-    rw [norm_def, CStarCategory.norm_eq_zero, ← End.ext_iff]
-    rfl
+    rw [norm_def, CStarCategory.norm_eq_zero, End.ext_iff, zero_asHom]
 
 /-- `End X` is a normed group for the norm of its underlying arrows. -/
 instance instNormedAddCommGroup : NormedAddCommGroup (End X) :=
@@ -210,7 +213,8 @@ instance instCompleteSpace : CompleteSpace (End X) := by
 
 /-- The C*-identity in `End X`, from the C*-inequality of the category. -/
 instance instCStarRing : CStarRing (End X) where
-  norm_mul_self_le a := CStarCategory.norm_mul_self_le a.asHom
+  norm_mul_self_le a := by
+    simpa only [norm_def, mul_asHom, star_asHom] using CStarCategory.norm_mul_self_le a.asHom
 
 /-- Each endomorphism algebra of a C*-category is a unital C*-algebra, with the dagger as
 star and Mathlib's operator-order multiplication. -/
@@ -226,7 +230,7 @@ instance instStarOrderedRing : StarOrderedRing (End X) :=
 
 /-- For an arrow `f` out of `X`, the endomorphism `f†f`, that is `f ≫ dagger f`, is
 positive in the C*-algebra `End X`. -/
-theorem nonneg_of_self_comp_dagger {Y : C} (f : X ⟶ Y) : 0 ≤ End.of (f ≫ dagger f) := by
+theorem self_comp_dagger_nonneg {Y : C} (f : X ⟶ Y) : 0 ≤ End.of (f ≫ dagger f) := by
   obtain ⟨g, hg⟩ := CStarCategory.exists_self_comp_dagger_eq f
   rw [hg]
   exact star_mul_self_nonneg (End.of g)
@@ -236,8 +240,8 @@ theorem nonneg_of_self_comp_dagger {Y : C} (f : X ⟶ Y) : 0 ≤ End.of (f ≫ d
 theorem nonneg_iff {a : End X} : 0 ≤ a ↔ ∃ (Y : C) (f : X ⟶ Y), a = End.of (f ≫ dagger f) := by
   refine ⟨fun ha => ?_, ?_⟩
   · obtain ⟨b, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 ha
-    exact ⟨X, b.asHom, rfl⟩
+    exact ⟨X, b.asHom, End.ext (by simp)⟩
   · rintro ⟨Y, f, rfl⟩
-    exact nonneg_of_self_comp_dagger f
+    exact self_comp_dagger_nonneg f
 
 end CategoryTheory.End

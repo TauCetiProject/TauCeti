@@ -7,8 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Dagger.Basic
 public import Mathlib.Algebra.Star.StarAlgHom
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.NatIso
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Dagger-preserving functors and natural transformations
@@ -77,25 +77,20 @@ variable (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger]
 
 variable (R) in
 /-- A linear dagger-preserving functor as a unital star algebra homomorphism between
-endomorphism algebras. -/
+endomorphism algebras: the algebra homomorphism `CategoryTheory.Functor.mapEndAlgHom`, which
+also preserves the star. -/
 def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
-  toFun a := .of (F.map a.asHom)
-  map_one' := by ext; simp
-  map_mul' a b := by ext; simp
-  map_zero' := by ext; simp
-  map_add' a b := by ext; simp
-  commutes' r := by ext; simp [Algebra.algebraMap_eq_smul_one, Functor.map_smul]
+  __ := F.mapEndAlgHom R X
   map_star' a := by ext; simp
 
-/-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
-@[simp] theorem mapEndStarAlgHom_apply (X : C) (a : End X) :
-    F.mapEndStarAlgHom R X a = .of (F.map a.asHom) := (rfl)
+/-- The underlying algebra homomorphism of `F.mapEndStarAlgHom R X` is `F.mapEndAlgHom R X`. -/
+@[simp] theorem toAlgHom_mapEndStarAlgHom (X : C) :
+    (F.mapEndStarAlgHom R X).toAlgHom = F.mapEndAlgHom R X := (rfl)
 
-/-- A faithful functor gives injective maps of endomorphism algebras. -/
-theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
-    Function.Injective (F.mapEndStarAlgHom R X) := fun a b h => by
-  ext
-  exact F.map_injective (congrArg End.asHom h)
+/-- The star algebra homomorphism of a functor applies the functor to the underlying arrow. -/
+@[simp] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
+    (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
+  F.mapEndAlgHom_asHom R X a
 
 end Linear
 
