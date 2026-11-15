@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
@@ -15,6 +16,11 @@ The trivial line bundle is constructed as the free sheaf on one generator. This 
 canonical base-linear comparison between its cohomology and the cohomology of the structure sheaf,
 and shows that on a nonempty scheme `H⁰(X, 𝒪_X)` has rank one over the global functions
 (`AlgebraicGeometry.Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one`).
+Through the base-linear identification of `H⁰(X, 𝒪_X)` with `Γ(X, 𝒪_X)`, Mathlib's finiteness of
+global functions on an integral scheme universally closed and locally of finite type over a field
+makes `H⁰(X, 𝒪_X)` finite-dimensional
+(`AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed`),
+so on an integral proper curve only the finiteness of `H¹(X, 𝒪_X)` has to be supplied.
 -/
 
 public section
@@ -83,5 +89,23 @@ theorem finrank_globalSections_cohomology_zero_trivial_eq_one {X : Scheme.{u}} [
   have : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.arbitrary X, trivial⟩⟩
   have : Nontrivial Γ(X, ⊤) := X.component_nontrivial ⊤
   exact Module.finrank_self Γ(X, ⊤)
+
+/-- On an integral scheme universally closed and locally of finite type over a field `k`, for
+instance an integral proper `k`-scheme, `H⁰(X, 𝒪_X)` is finite-dimensional over `k`. -/
+theorem finiteDimensional_cohomology_zero_trivial_of_universallyClosed (k : Type u) [Field k]
+    (X : Scheme.{u}) [X.Over (Spec (.of k))] [IsIntegral X] [UniversallyClosed (X ↘ Spec (.of k))]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0) := by
+  let : Algebra k Γ(X, ⊤) := ((X.baseRingToStructurePresheaf k).app (.op ⊤)).hom.toAlgebra
+  have : Module.Finite k Γ(X, ⊤) := by
+    change ((X.baseRingToStructurePresheaf k).app (.op ⊤)).hom.Finite
+    have h : baseRingToGlobalSections k X =
+        (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
+      RingHom.ext (baseRingToGlobalSections_apply k X)
+    rw [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.hom_ofHom, h]
+    exact (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
+      (.of_surjective _ (Scheme.ΓSpecIso (.of k)).commRingCatIsoToRingEquiv.symm.surjective)
+  exact .equiv ((trivialCohomologyBaseLinearEquiv k X 0).trans
+    ((cohomologyZeroBaseLinearEquiv k X _).trans (structureSheafSectionsBaseLinearEquiv k X))).symm
 
 end AlgebraicGeometry.Scheme.Modules

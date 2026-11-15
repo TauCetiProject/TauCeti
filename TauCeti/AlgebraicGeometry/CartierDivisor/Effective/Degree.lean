@@ -44,7 +44,7 @@ curve over a discrete valuation ring, are covered here.
   `LineBundleClass.eulerDegree_inv_of_isIntegral`: the degree is additive on the Picard group.
 * `LineBundleClass.eulerDegree_pow_of_isIntegral` and
   `LineBundleClass.eulerDegree_zpow_of_isIntegral`: the degree of a tensor power is the multiple
-  of the degree.
+  of the degree; these need only `H¹(X, 𝒪_X)` to be finite-dimensional.
 
 ## References
 
@@ -224,11 +224,13 @@ theorem eulerDegree_inv_of_isIntegral (a : LineBundleClass X) :
   rw [inv_mul_cancel, eulerDegree_one] at h
   linarith
 
+omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)] in
 /-- The degree of a tensor power is the multiple of the degree, on an integral proper curve over
-`k` with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`. -/
+`k` with finite-dimensional `H¹(X, 𝒪_X)`. -/
 @[simp]
 theorem eulerDegree_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
     eulerDegree k (a ^ n) = n * eulerDegree k a := by
+  have := Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed k X
   induction n with
   | zero => simp
   | succ n ih =>
@@ -236,11 +238,13 @@ theorem eulerDegree_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
     push_cast
     ring
 
+omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)] in
 /-- The degree of an integer tensor power is the multiple of the degree, on an integral proper
-curve over `k` with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`. -/
+curve over `k` with finite-dimensional `H¹(X, 𝒪_X)`. -/
 @[simp]
 theorem eulerDegree_zpow_of_isIntegral (a : LineBundleClass X) (n : ℤ) :
     eulerDegree k (a ^ n) = n * eulerDegree k a := by
+  have := Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed k X
   cases n with
   | ofNat n => simp
   | negSucc n =>

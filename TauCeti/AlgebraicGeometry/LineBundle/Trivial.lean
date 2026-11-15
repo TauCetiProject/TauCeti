@@ -11,18 +11,28 @@ public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 /-!
 # Nonvanishing loci on line bundles of trivial class
 
-A line bundle `L` of trivial class is isomorphic to `𝒪_X`, and nonvanishing loci depend only on
-the isomorphism class (`Scheme.Modules.range_nonvanishingLocus_eq_of_iso`). So the nonvanishing
-loci of the sections of `L` over an open `U` are exactly the basic open sets `X_r` of the regular
-functions `r` on `U`. When the global functions on `X` form a field, a global section of `L` is
-therefore either zero, vanishing everywhere, or a unit, vanishing nowhere.
+Line bundles usually enter as representatives of a class in the Picard group: ampleness, for
+instance, provides some line bundle `L` with `mk L = (mk M) ^ n`, not a specific sheaf. When that
+class is trivial, `L` is only isomorphic to `𝒪_X`, not equal to it. Since nonvanishing loci depend
+only on the isomorphism class (`Scheme.Modules.range_nonvanishingLocus_eq_of_iso`), the
+nonvanishing loci of the sections of such an `L` over an open `U` are still exactly the basic open
+sets `X_r` of the regular functions `r` on `U`. When the global functions on `X` form a field, as
+on an integral scheme universally closed over a field
+(`AlgebraicGeometry.isField_of_universallyClosed`), a global section of `L` is therefore either
+zero, vanishing everywhere, or a unit, vanishing nowhere.
+
+These facts feed the characterization of ampleness of the trivial class by quasi-affineness
+(`TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`) and the positivity of the degree of
+an ample line bundle on an integral proper curve
+(`TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.eulerDegree_pos`).
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq_one`: the
-  nonvanishing loci of sections of a line bundle of trivial class are the basic open sets.
-* `InvertibleSheaf.nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one`: when `Γ(X, ⊤)`
-  is a field, a global section of a line bundle of trivial class vanishes everywhere or nowhere.
+* `InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one`:
+  the nonvanishing loci of sections of a line bundle of trivial class are the basic open sets.
+* `InvertibleSheaf.nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one`:
+  when `Γ(X, ⊤)` is a field, a global section of a line bundle of trivial class vanishes
+  everywhere or nowhere.
 -/
 
 public section
@@ -35,33 +45,27 @@ universe u
 
 variable {X : Scheme.{u}}
 
-namespace LineBundleClass
+namespace InvertibleSheaf
 
 /-- The nonvanishing loci of the sections over `U` of a line bundle of trivial class are exactly the
 basic open sets of the regular functions on `U`. -/
-theorem range_nonvanishingLocus_eq_of_mk_eq_one {L : InvertibleSheaf X} (hL : mk L = 1)
-    (U : X.Opens) :
+theorem range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one {L : InvertibleSheaf X}
+    (hL : LineBundleClass.mk L = 1) (U : X.Opens) :
     Set.range (L.obj.nonvanishingLocus (U := U)) = Set.range (X.basicOpen (U := U)) := by
-  let O : InvertibleSheaf X := ⟨SheafOfModules.unit X.ringCatSheaf, inferInstance⟩
   -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
-  have hO : mk O = 1 := mk_eq_one_iff.mpr ⟨Iso.refl _⟩
-  obtain ⟨e⟩ := mk_eq_mk_iff.mp (hL.trans hO.symm)
+  obtain ⟨e⟩ : Nonempty (L.obj ≅ SheafOfModules.unit X.ringCatSheaf) :=
+    LineBundleClass.mk_eq_one_iff.mp hL
   rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e U]
   exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
 
-end LineBundleClass
-
-namespace InvertibleSheaf
-
 /-- When the global functions on `X` form a field, for instance on an integral scheme universally
 closed over a field, a global section of a line bundle of trivial class vanishes either everywhere
-or nowhere: under an isomorphism with `𝒪_X` it becomes a global function, which is zero or a
-unit. -/
+or nowhere. -/
 theorem nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one (hX : IsField Γ(X, ⊤))
     {L : InvertibleSheaf X} (hL : LineBundleClass.mk L = 1) (s : Γ(L.obj, ⊤)) :
     L.obj.nonvanishingLocus s = ⊥ ∨ L.obj.nonvanishingLocus s = ⊤ := by
   obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
-    rw [← LineBundleClass.range_nonvanishingLocus_eq_of_mk_eq_one hL ⊤]
+    rw [← range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one hL ⊤]
     exact ⟨s, rfl⟩
   let := hX.toField
   rw [← hr]

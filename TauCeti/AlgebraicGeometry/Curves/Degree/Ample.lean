@@ -12,12 +12,14 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Trivial
 public import TauCeti.AlgebraicGeometry.Morphisms.Proper
 
 /-!
-# Ample line bundles have positive degree on proper curves
+# Ample line bundles have positive degree on integral proper curves
 
 Let `X` be an integral scheme, proper over a field `k` with fibres of dimension at most one, with
-finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`, and with more than one point; for instance an
-integral proper curve over `k`, singular or not. Then every ample line bundle on `X` has positive
+finite-dimensional `H¹(X, 𝒪_X)`, and with more than one point; for instance an integral proper
+curve over `k`, singular or not. Then every ample line bundle on `X` has positive
 Euler-characteristic degree (`TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.eulerDegree_pos`).
+Finiteness of `H⁰(X, 𝒪_X)` is automatic
+(`AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed`).
 
 The argument uses only the definition of ampleness. Some positive power `L^⊗n` has a global section
 `s` whose nonvanishing locus `X_s` is affine and nonempty. Since `X` has more than one point, it is
@@ -61,15 +63,15 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsInte
 namespace LineBundleClass
 
 variable [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
-  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
   [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
-/-- **An ample line bundle on a proper curve has positive degree.** Let `X` be an integral scheme
-with more than one point, proper over `k` with fibres of dimension at most one, such that
-`H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)` are finite-dimensional. Then every ample line-bundle class on `X`
-has positive Euler-characteristic degree. The curve `X` may be singular, and `k` is arbitrary. -/
+/-- **An ample line bundle on an integral proper curve has positive degree.** Let `X` be an
+integral scheme with more than one point, proper over `k` with fibres of dimension at most one,
+such that `H¹(X, 𝒪_X)` is finite-dimensional. Then every ample line-bundle class on `X` has
+positive Euler-characteristic degree. The curve `X` may be singular, and `k` is arbitrary. -/
 theorem IsAmple.eulerDegree_pos [Nontrivial X] {a : LineBundleClass X} (ha : a.IsAmple) :
     0 < eulerDegree k a := by
+  have := Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed k X
   obtain ⟨x⟩ := (inferInstance : Nonempty X)
   obtain ⟨n, -, L, hL, s, hx, hs⟩ := ha.exists_isAffineOpen_nonvanishingLocus x
   have hs₀ : s ≠ 0 := by

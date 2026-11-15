@@ -63,7 +63,7 @@ theorem IsCurveOver.coheight_le_one [X.IsCurveOver k] (x : X) : Order.coheight x
     (IsCurveOver.topologicalKrullDim_eq_one k).le
 
 variable (k X) in
-/-- A curve over a field has at least two points: a one-point space has dimension zero. -/
+/-- A curve over a field has at least two points. -/
 theorem IsCurveOver.nontrivial [X.IsCurveOver k] : Nontrivial X := by
   by_contra h
   have : Subsingleton X := not_nontrivial_iff_subsingleton.mp h
@@ -72,8 +72,7 @@ theorem IsCurveOver.nontrivial [X.IsCurveOver k] : Nontrivial X := by
   exact absurd hX (by decide)
 
 variable (k X) in
-/-- **A proper curve is not affine.** An integral affine scheme proper over a field is a single
-point, while a curve has at least two. -/
+/-- A curve over a field is not affine. -/
 theorem IsCurveOver.not_isAffine [X.IsCurveOver k] : ¬ IsAffine X := fun _ ↦
   have := IsCurveOver.nontrivial k X
   not_subsingleton X (X ↘ Spec (.of k)).subsingleton_of_isAffine_of_universallyClosed
