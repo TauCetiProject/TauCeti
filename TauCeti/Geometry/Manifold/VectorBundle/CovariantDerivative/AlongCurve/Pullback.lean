@@ -48,7 +48,8 @@ acceleration of the curve on this computation.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_curveVelocityWithin`: a `C^(n + 1)` curve has a
   `C^n` coordinate velocity field; its `C²` differentiability specializations are
   `TauCeti.Manifold.differentiableWithinAt_sectionCoord_curveVelocityWithin` and
-  `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity`.
+  `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity`, with
+  `ContMDiffAt.differentiableAt_sectionCoord_curveVelocity` for regularity at a single parameter.
 * `TauCeti.Manifold.derivWithin_sectionCoord_pullback`: the derivative of the coordinate reading
   of a pulled-back field is the reading of the flat frame derivative in the direction of the
   velocity.
@@ -186,6 +187,17 @@ theorem differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
     rw [sectionCoord_apply, sectionCoord_apply,
       curveVelocityWithin_of_mem_nhds (hs.mem_nhds hr)]
   exact heq.differentiableAt_iff.mp hwithin
+
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
+/-- The coordinate velocity of a curve that is `C²` at a parameter is differentiable there. -/
+theorem _root_.ContMDiffAt.differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
+    {γ : 𝕜 → M} {t : 𝕜} (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I 2 γ t) :
+    DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ t)) t := by
+  obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγ
+  exact TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity γ
+    (hγu.mono interior_subset)
+    isOpen_interior (mem_interior_iff_mem_nhds.mpr hu)
 
 omit [FiniteDimensional 𝕜 E]
   [IsManifold I 1 M]

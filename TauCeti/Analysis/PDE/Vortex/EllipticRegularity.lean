@@ -12,7 +12,6 @@ import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
-import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 
 /-!
@@ -51,19 +50,17 @@ multiplication by the transposed matrix.
 * `exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq`: at a bounded `C¹` plane
   vortex with `|α| → 1`, every `f ∈ L²` is `L_x y` weakly for some `y ∈ H¹`, so the `H¹ → L²`
   realization of `L_x` has zero cokernel.
-* `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq` and
-  `mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq`: the elliptic bootstrap. If `x` is
-  smooth and its coordinates have bounded derivatives through order `k`, a weak `L²` solution of
-  `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the coefficients of
-  `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
+* `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`: the elliptic
+  bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
+  weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
+  coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
 * `mem_sobolevFields_add_one_of_integral_inner_gaugeFixedOperator_vacuumField_eq`,
-  `mem_sobolevFields_one_of_integral_inner_gaugeFixedOperator_eq`,
-  `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq` and
-  `mem_sobolevFields_of_integral_inner_gaugeFixedOperator_eq`: the parallel statements for weak
-  solutions of `L_x* η = g`, in the sense that `∫ ⟪η, L_x v⟫ = ∫ ⟪g, v⟫` for every smooth compactly
-  supported test field `v`. With `g = 0` they show that the weak `L²` cokernel of `L_x` lies in `H¹`
-  at an essentially bounded measurable field, and in `H^(k+1)` at a smooth field whose coordinates
-  have bounded derivatives through order `k`.
+  `mem_sobolevFields_one_of_integral_inner_gaugeFixedOperator_eq` and
+  `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq`: the parallel
+  statements for weak solutions of `L_x* η = g`, in the sense that `∫ ⟪η, L_x v⟫ = ∫ ⟪g, v⟫` for
+  every smooth compactly supported test field `v`. With `g = 0` they show that the weak `L²`
+  cokernel of `L_x` lies in `H¹` at an essentially bounded measurable field, and in `H^(k+1)` at a
+  smooth field whose coordinates have bounded derivatives through order `k`.
 * `exists_contDiff_ae_eq_and_gaugeFixedOperator_eq`,
   `exists_mem_sobolevFields_add_one_gaugeFixedOperator_eq` and
   `exists_contDiff_ae_eq_and_gaugeFixedAdjoint_eq`: for `k ≥ 2` and continuous right-hand side in
@@ -76,14 +73,14 @@ multiplication by the transposed matrix.
   `weakGaugeFixedKernel hx.continuous` agrees almost everywhere with a unique element of
   `gaugeFixedKernel x`.
 * `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq`,
-  `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedOperator_eq` and
-  `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`:
-  regularity of weak solutions of `L_x` and `L_x*` and of the weak right inverse `Q` at fields of
-  `A_m^s`, `s > 1`.
+  `mem_sobolevFields_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedOperator_eq`,
+  `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields` and
+  `exists_mem_sobolevFields_add_one_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace`:
+  regularity and classical Sobolev solvability at fields of `A_m^s`.
 
-These are regularity and classical-solvability statements. The dimension of the kernel is treated
-in `TauCeti.Analysis.PDE.Vortex.KernelDimension`; the Fredholm property between completed Sobolev
-spaces is not treated here.
+These are regularity and classical-solvability statements. All-order smoothness on `⋂_k H^k` is
+treated in `TauCeti.Analysis.PDE.Vortex.SobolevScale`, and the dimension of the kernel is treated
+in `TauCeti.Analysis.PDE.Vortex.KernelDimension`.
 
 ## References
 
@@ -446,20 +443,6 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
       rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField,
         gaugeFixedZerothOrder_eq_toEuclideanLin]) hx hbound hy hf hweak
 
-/-- **Smooth elliptic bootstrap.** If `x` is smooth with bounded derivatives of all orders and `f`
-lies in `H^k` for every natural `k`, then every `L²` weak solution of `L_x y = f` lies in
-`sobolevFields s` for every real `s`. -/
-theorem mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq
-    {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hy : MemLp y 2 volume) (hf : ∀ k : ℕ, f ∈ sobolevFields k)
-    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) (s : ℝ) :
-    y ∈ sobolevFields s :=
-  sobolevFields_mono (s := (⌈s⌉₊ : ℝ) + 1) (by linarith [Nat.le_ceil s])
-    (mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
-      (⌈s⌉₊) hx (fun i n _ ↦ hbound i n) hy (hf ⌈s⌉₊) hweak)
-
 /-! ### Weak solutions of `L_x* η = g` -/
 
 /-- **Elliptic regularity of the adjoint at the vacuum.** Let `η` be a square-integrable field
@@ -508,49 +491,7 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_e
     (inner_gaugeFixedOperator_eq_add_inner_toEuclideanLin_transpose · vacuumField) hx hbound hη hg
     hweak
 
-/-- **Smooth elliptic bootstrap for the adjoint.** If `x` is smooth with bounded derivatives of all
-orders and `g` lies in `H^k` for every natural `k`, then every `L²` weak solution of `L_x* η = g`
-lies in `sobolevFields s` for every real `s`. -/
-theorem mem_sobolevFields_of_integral_inner_gaugeFixedOperator_eq
-    {x η g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hη : MemLp η 2 volume) (hg : ∀ k : ℕ, g ∈ sobolevFields k)
-    (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
-      ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ = ∫ z, ⟪g z, v z⟫) (s : ℝ) :
-    η ∈ sobolevFields s :=
-  sobolevFields_mono (s := (⌈s⌉₊ : ℝ) + 1) (by linarith [Nat.le_ceil s])
-    (mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq
-      (⌈s⌉₊) hx (fun i n _ ↦ hbound i n) hη (hg ⌈s⌉₊) hweak)
-
 /-! ### Classical solutions of `L_x y = f` and `L_x* η = g` -/
-
-/-- Two continuous fields on `ℂ` with the same `L²` pairing against every smooth compactly
-supported test field are equal everywhere. -/
-private theorem eq_of_forall_integral_inner_eq {u f : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : Continuous u) (hf : Continuous f)
-    (h : ∀ φ : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∫ z, ⟪u z, φ z⟫ = ∫ z, ⟪f z, φ z⟫) (z : ℂ) :
-    u z = f z := by
-  have hae : u =ᵐ[volume.restrict (⊤ : TopologicalSpace.Opens ℂ)] f :=
-    TauCeti.ae_eq_of_forall_integral_inner_eq
-      ((hu.locallyIntegrable (μ := volume)).locallyIntegrableOn _)
-      ((hf.locallyIntegrable (μ := volume)).locallyIntegrableOn _) fun φ ↦ by
-        simpa only [real_inner_comm] using h φ φ.contDiff φ.hasCompactSupport
-  rw [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at hae
-  exact congrFun ((hu.ae_eq_iff_eq volume hf).1 hae) z
-
-/-- **Weak solutions of class `C¹` are classical solutions.** If `x` and `f` are continuous and
-`y` is a `C¹` field satisfying `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every smooth compactly supported
-test field `η`, then `L_x y = f` everywhere on `ℂ`. -/
-theorem gaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-    {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hy : ContDiff ℝ 1 y)
-    (hf : Continuous f)
-    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) (z : ℂ) :
-    gaugeFixedOperator x y z = f z :=
-  eq_of_forall_integral_inner_eq (continuous_gaugeFixedOperator hx hy) hf (fun φ hφ hc ↦ by
-    rw [← integral_inner_gaugeFixedAdjoint hx hy (hφ.of_le (mod_cast le_top)) hc,
-      hweak φ hφ hc]) z
 
 /-- **Classical regularity of weak solutions in `H^k`.** Let `k ≥ 2`, let `x` be a smooth field
 whose coordinates have bounded derivatives through order `k`, and let `f` be a continuous field in
@@ -570,43 +511,11 @@ theorem exists_contDiff_ae_eq_and_gaugeFixedOperator_eq {k : ℕ} (hk : 1 < k)
   obtain ⟨y₀, hy₀S, hy₀c, hae⟩ := exists_contDiff_ae_eq_of_mem_sobolevFields (k := k - 1)
     (by push_cast [Nat.le_of_lt hk]; linarith) hyS
   have hy₀1 : ContDiff ℝ 1 y₀ := hy₀c.of_le (by norm_cast; omega)
-  refine ⟨y₀, hy₀S, hy₀c, hae, gaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-    hx.continuous hy₀1 hfc fun η hη hc ↦ ?_⟩
+  refine ⟨y₀, hy₀S, hy₀c, hae,
+    (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx.continuous hy₀1 hfc).1
+      fun η hη hc ↦ ?_⟩
   rw [← hweak η hη hc]
   exact integral_congr_ae (hae.symm.mono fun z hz ↦ by simp only [hz])
-
-/-- **Smooth classical representative of a weak solution.** If `x` is smooth with bounded
-derivatives of all orders and `f` is a continuous field lying in `H^k` for every natural `k`, then
-every `L²` weak solution `y` of `L_x y = f` agrees almost everywhere with a smooth field `y₀` lying
-in every `sobolevFields s` and solving `L_x y₀ = f` everywhere. -/
-theorem exists_contDiff_infty_ae_eq_and_gaugeFixedOperator_eq
-    {x y f : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hy : MemLp y 2 volume) (hf : ∀ k : ℕ, f ∈ sobolevFields k) (hfc : Continuous f)
-    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) :
-    ∃ y₀, (∀ s : ℝ, y₀ ∈ sobolevFields s) ∧ ContDiff ℝ ∞ y₀ ∧ y =ᵐ[volume] y₀ ∧
-      ∀ z, gaugeFixedOperator x y₀ z = f z := by
-  obtain ⟨y₀, hy₀s, hy₀c, hae⟩ := exists_contDiff_ae_eq_of_forall_mem_sobolevFields fun k ↦
-    mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq hx hbound hy hf hweak k
-  refine ⟨y₀, hy₀s, hy₀c, hae, gaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-    hx.continuous (hy₀c.of_le (by simp)) hfc fun η hη hc ↦ ?_⟩
-  rw [← hweak η hη hc]
-  exact integral_congr_ae (hae.symm.mono fun z hz ↦ by simp only [hz])
-
-/-- **Weak solutions of the adjoint of class `C¹` are classical solutions.** If `x` and `g` are
-continuous and `η` is a `C¹` field satisfying `∫ ⟪η, L_x v⟫ = ∫ ⟪g, v⟫` for every smooth compactly
-supported test field `v`, then `L_x* η = g` everywhere on `ℂ`. -/
-theorem gaugeFixedAdjoint_eq_of_integral_inner_gaugeFixedOperator_eq
-    {x η g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hη : ContDiff ℝ 1 η)
-    (hg : Continuous g)
-    (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
-      ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ = ∫ z, ⟪g z, v z⟫) (z : ℂ) :
-    gaugeFixedAdjoint x η z = g z :=
-  eq_of_forall_integral_inner_eq (continuous_gaugeFixedAdjoint hx hη) hg (fun v hv hc ↦
-    (integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)).trans <|
-      (integral_inner_gaugeFixedOperator hx (hv.of_le (mod_cast le_top)) hc hη).symm.trans <|
-        (integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)).trans (hweak v hv hc)) z
 
 /-- **Classical regularity of weak solutions of the adjoint in `H^k`.** Let `k ≥ 2`, let `x` be a
 smooth field whose coordinates have bounded derivatives through order `k`, and let `g` be a
@@ -626,27 +535,9 @@ theorem exists_contDiff_ae_eq_and_gaugeFixedAdjoint_eq {k : ℕ} (hk : 1 < k)
   obtain ⟨η₀, hη₀S, hη₀c, hae⟩ := exists_contDiff_ae_eq_of_mem_sobolevFields (k := k - 1)
     (by push_cast [Nat.le_of_lt hk]; linarith) hηS
   have hη₀1 : ContDiff ℝ 1 η₀ := hη₀c.of_le (by norm_cast; omega)
-  refine ⟨η₀, hη₀S, hη₀c, hae, gaugeFixedAdjoint_eq_of_integral_inner_gaugeFixedOperator_eq
-    hx.continuous hη₀1 hgc fun v hv hc ↦ ?_⟩
-  rw [← hweak v hv hc]
-  exact integral_congr_ae (hae.symm.mono fun z hz ↦ by simp only [hz])
-
-/-- **Smooth classical representative of a weak solution of the adjoint.** If `x` is smooth with
-bounded derivatives of all orders and `g` is a continuous field lying in `H^k` for every natural
-`k`, then every `L²` weak solution `η` of `L_x* η = g` agrees almost everywhere with a smooth field
-`η₀` lying in every `sobolevFields s` and solving `L_x* η₀ = g` everywhere. -/
-theorem exists_contDiff_infty_ae_eq_and_gaugeFixedAdjoint_eq
-    {x η g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hη : MemLp η 2 volume) (hg : ∀ k : ℕ, g ∈ sobolevFields k) (hgc : Continuous g)
-    (hweak : ∀ v : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ v → HasCompactSupport v →
-      ∫ z, ⟪η z, gaugeFixedOperator x v z⟫ = ∫ z, ⟪g z, v z⟫) :
-    ∃ η₀, (∀ s : ℝ, η₀ ∈ sobolevFields s) ∧ ContDiff ℝ ∞ η₀ ∧ η =ᵐ[volume] η₀ ∧
-      ∀ z, gaugeFixedAdjoint x η₀ z = g z := by
-  obtain ⟨η₀, hη₀s, hη₀c, hae⟩ := exists_contDiff_ae_eq_of_forall_mem_sobolevFields fun k ↦
-    mem_sobolevFields_of_integral_inner_gaugeFixedOperator_eq hx hbound hη hg hweak k
-  refine ⟨η₀, hη₀s, hη₀c, hae, gaugeFixedAdjoint_eq_of_integral_inner_gaugeFixedOperator_eq
-    hx.continuous (hη₀c.of_le (by simp)) hgc fun v hv hc ↦ ?_⟩
+  refine ⟨η₀, hη₀S, hη₀c, hae,
+    (forall_integral_inner_gaugeFixedOperator_eq_iff (μ := volume) hx.continuous hη₀1 hgc).1
+      fun v hv hc ↦ ?_⟩
   rw [← hweak v hv hc]
   exact integral_congr_ae (hae.symm.mono fun z hz ↦ by simp only [hz])
 
@@ -661,7 +552,7 @@ private theorem integral_inner_gaugeFixedAdjoint_eq_zero_of_ae_eq
       = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ :=
         integral_congr_ae (hae.mono fun z hz ↦ by simp only [hz])
     _ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ :=
-        integral_inner_gaugeFixedAdjoint hx (hyc.of_le one_le_two) hη hc
+        (integral_inner_gaugeFixedOperator hx (hyc.of_le one_le_two) hη (.inr hc)).symm
     _ = 0 := by simp [hyk]
 
 /-- **Classical Sobolev solvability of `L_x` at a plane vortex.** Let `k ≥ 2`, and let `x` be a
@@ -760,22 +651,6 @@ theorem gaugeFixedKernelToWeak_injective {x : ℂ → EuclideanSpace ℝ (Fin 4)
     ((Lp.ext_iff.1 hLp).trans (mem_gaugeFixedKernel.1 v.2).2.1.coeFn_toLp)
   exact Subtype.ext (((mem_gaugeFixedKernel.1 y.2).1.continuous.ae_eq_iff_eq volume
     (mem_gaugeFixedKernel.1 v.2).1.continuous).1 hae)
-
-/-- **Elliptic regularity of `C¹` `L²` kernel elements.** When `x` is smooth with bounded
-derivatives of all orders, every `C¹` square-integrable solution of `L_x y = 0` is smooth and lies
-in `sobolevFields s` for every real `s`. -/
-theorem contDiff_and_mem_sobolevFields_of_gaugeFixedOperator_eq_zero
-    {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hy : ContDiff ℝ 1 y) (hyL : MemLp y 2 volume)
-    (hker : ∀ z, gaugeFixedOperator x y z = 0) :
-    ContDiff ℝ ∞ y ∧ ∀ s : ℝ, y ∈ sobolevFields s := by
-  have hyS (s : ℝ) : y ∈ sobolevFields s :=
-    mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq (f := 0) hx hbound hyL
-      (fun k ↦ zero_mem _) (fun η hη hc ↦ by
-        rw [integral_inner_gaugeFixedAdjoint hx.continuous hy (hη.of_le (mod_cast le_top)) hc]
-        simp [hker]) s
-  exact ⟨contDiff_of_forall_mem_sobolevFields (fun k ↦ hyS k) hy.continuous, hyS⟩
 
 /-- **The classical and weak `L²` kernels of `L_x` agree.** When `x` is smooth and its coordinates
 have bounded derivatives through order `3`, sending a classical kernel element to its `L²` class is
@@ -1005,9 +880,8 @@ theorem exists_mem_sobolevFields_add_one_gaugeFixedOperator_eq_of_forall_mem_fra
       (∀ z, gaugeFixedOperator x y z = g z) ∧
       ∀ u ∈ gaugeFixedKernel x, ∫ z, ⟪y z, u z⟫ = 0 :=
   exists_mem_sobolevFields_add_one_gaugeFixedOperator_eq hk
-    (contDiff_of_forall_mem_framedFieldSpace hx hcont)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace
-      (s := ((n + 2 : ℕ) : ℝ)) (by push_cast; linarith) (hx (n + 2)) hcont i)
+    (contDiff_of_forall_mem_framedFieldSpace hcont hx)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2)))
     hsol (tendsto_normSq_of_mem_framedFieldSpace (s := 2) one_lt_two (hx 2) hcont) hg hgc
 
 end TauCeti.Vortex

@@ -762,7 +762,7 @@ theorem finrank_gaugeFixedKernel_of_forall_mem_framedFieldSpace {f : ContDiffBum
     (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j) (hcont : Continuous x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (gaugeFixedKernel x) = 2 * m :=
-  finrank_gaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hx hcont) hhol
+  finrank_gaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx) hhol
     (tendsto_sectionValue_mul_inv_pow (s := 2) one_lt_two (hx 2) hcont)
 
 /-- For a continuous field lying in every affine Sobolev space `A_m^j` and satisfying the
@@ -772,9 +772,8 @@ theorem finiteDimensional_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j)
     (hcont : Continuous x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     FiniteDimensional ℝ (weakGaugeFixedKernel hcont) :=
-  finiteDimensional_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hx hcont)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace
-      (s := ((n + 2 : ℕ) : ℝ)) (by push_cast; linarith) (hx (n + 2)) hcont i)
+  finiteDimensional_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2)))
     hhol (tendsto_normSq_of_mem_framedFieldSpace (s := 2) one_lt_two (hx 2) hcont)
 
 /-- For a continuous field lying in every affine Sobolev space `A_m^j` and satisfying the
@@ -784,9 +783,8 @@ theorem finrank_weakGaugeFixedKernel_of_forall_mem_framedFieldSpace {f : ContDif
     {m : ℕ} (hx : ∀ j : ℕ, x ∈ framedFieldSpace f m j) (hcont : Continuous x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) :
     Module.finrank ℝ (weakGaugeFixedKernel hcont) = 2 * m :=
-  finrank_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hx hcont)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace
-      (s := ((n + 2 : ℕ) : ℝ)) (by push_cast; linarith) (hx (n + 2)) hcont i)
+  finrank_weakGaugeFixedKernel (contDiff_of_forall_mem_framedFieldSpace hcont hx)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hcont i n (hx (n + 2)))
     hhol (tendsto_sectionValue_mul_inv_pow (s := 2) one_lt_two (hx 2) hcont)
 
 /-- **Kernel dimension at a Coulomb-slice Sobolev vortex.** Let `x ∈ A_m^k` (`k ≥ 2`) be a `C¹`
