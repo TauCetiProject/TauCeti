@@ -45,6 +45,8 @@ such points with the cut-off of its action on `T`.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
 * `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: where `φ = 1`, derivatives and
   products of `φ T` are those of `T`.
+* `TestFunction.hasTemperateGrowth_mul`: the product `χ f` of a test function with a smooth
+  function has temperate growth.
 
 ## References
 
@@ -59,9 +61,16 @@ noncomputable section
 open Complex Filter Set TopologicalSpace TestFunction MeasureTheory
 open scoped Distributions Topology SchwartzMap ContDiff
 
-namespace Distribution
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+
+/-- The product of a complex test function with a smooth function has temperate growth: it is
+smooth with compact support. Such products are the multipliers that localize a differential
+operator near the support of the test function. -/
+theorem TestFunction.hasTemperateGrowth_mul (χ : 𝓓(Ω, ℂ)) {f : E → ℂ} (hf : ContDiff ℝ ∞ f) :
+    (fun x ↦ χ x * f x).HasTemperateGrowth :=
+  χ.hasCompactSupport.mul_right.hasTemperateGrowth (χ.contDiff.mul hf)
+
+namespace Distribution
 
 /-! ### The tempered distribution `φ T` -/
 
@@ -183,6 +192,7 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
 
 /-- The cut-off of a finite sum of distributions is the sum of their cut-offs. -/
+@[simp]
 theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
   map_sum (AddMonoidHom.mk' (cutoffTempered · φ) fun T S ↦ cutoffTempered_add T S φ) T s
@@ -225,8 +235,7 @@ theorem smulLeftCLM_iteratedLineDerivOp_cutoffTempered {T : 𝓓'(Ω, ℂ)} {φ 
   have hh' : h = fun x ↦ χ x * g x := funext hh
   have hht : h.HasTemperateGrowth := by
     rw [hh']
-    exact χ.hasCompactSupport.mul_right.hasTemperateGrowth
-      (χ.contDiff.mul (ofRealCLM.contDiff.comp hg))
+    exact χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp hg)
   ext f
   rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def,
     complexPairing_smulLeftCLM]

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Distribution.TestFunction.ContDiffBump
 import TauCeti.Analysis.Pseudodifferential.InteriorRegularity
 import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 
@@ -71,26 +72,6 @@ namespace Distribution
 variable {d : ℕ} {Ω : Opens (CoordinateSpace d)} {ι : Type*} {t : Finset ι} {c : ι → ℂ}
   {g : ι → CoordinateSpace d → ℝ} {n : ι → ℕ} {m : ∀ i, Fin (n i) → CoordinateSpace d} {k : ℕ}
 
-/-- The differential symbol of the top-order part of an operator with scalar coefficients `b i` is
-invertible wherever its geometric top-order symbol `∑ b i ∏ⱼ ⟪ξ, m i j⟫` is nonzero: the two
-differ by the factor `i ^ k`. -/
-private theorem isInvertible_differentialSymbol_filter (b : ι → CoordinateSpace d → ℂ)
-    {x ξ : CoordinateSpace d} (h : ∑ i ∈ t with n i = k, b i x * ∏ j, (⟪ξ, m i j⟫ : ℂ) ≠ 0) :
-    (differentialSymbol {i ∈ t | n i = k} m (fun i x ↦ b i x • ContinuousLinearMap.id ℂ ℂ)
-      (x, ξ)).IsInvertible := by
-  have hsum : ∑ i ∈ t with n i = k, (∏ j, (I * (⟪ξ, m i j⟫ : ℂ))) * b i x =
-      I ^ k * ∑ i ∈ t with n i = k, b i x * ∏ j, (⟪ξ, m i j⟫ : ℂ) := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-      show I ^ n i = I ^ k by rw [(Finset.mem_filter.1 hi).2]]
-    ring
-  rw [differentialSymbol_def]
-  simp_rw [smul_smul]
-  rw [← Finset.sum_smul, hsum, ContinuousLinearMap.isInvertible_smul_iff
-    (mul_ne_zero (pow_ne_zero _ I_ne_zero) h)]
-  simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ ℂ)
-
 /-- **Freezing the coefficients.** If `P` is elliptic near `x₀`, there are a closed ball around `x₀`
 and a classical symbol of order `k`, elliptic at every point, that agrees on that ball with the
 symbol of `P`. Its coefficients are those of `P` composed with a smooth map equal to the identity
@@ -126,7 +107,7 @@ private theorem exists_isElliptic_coefficient_eq (hg : ∀ i, ContDiff ℝ ∞ (
       (fun i x ↦ (c i * g i (y x) : ℂ) • ContinuousLinearMap.id ℂ ℂ) :=
     ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol ..
   refine ⟨δ / 2, half_pos hδ, a, (ClassicalSymbol.isElliptic_ofDifferentialSymbol_iff ..).2
-    fun x ξ hξ ↦ isInvertible_differentialSymbol_filter _ (hδP (y x) (hyδ x) ξ hξ),
+    fun x ξ hξ ↦ isInvertible_differentialSymbol_filter_smul_id t m _ k (hδP (y x) (hyδ x) ξ hξ),
     fun x hx ξ ↦ ?_⟩
   simp only [haC, differentialSymbol_def, hyx x hx]
 
@@ -140,11 +121,11 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered (hg : ∀ i, 
   rw [cutoffTempered_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have htg : (fun x ↦ χ x * (g i x : ℂ)).HasTemperateGrowth :=
-    χ.hasCompactSupport.mul_right.hasTemperateGrowth
-      (χ.contDiff.mul (ofRealCLM.contDiff.comp (hg i)))
+    χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp (hg i))
   rw [cutoffTempered_smul, ← smulLeftCLM_iteratedLineDerivOp_cutoffTempered hφ (hg i)
     (h := fun x ↦ χ x * g i x) (fun x ↦ rfl),
-    show (fun x ↦ c i * (χ x * g i x)) = c i • fun x ↦ χ x * (g i x : ℂ) from rfl,
+    show (fun x ↦ c i * (χ x * g i x)) = c i • fun x ↦ χ x * (g i x : ℂ) from
+      funext fun x ↦ by rw [Pi.smul_apply, smul_eq_mul],
     TemperedDistribution.smulLeftCLM_smul htg, _root_.smul_apply]
 
 variable {T : 𝓓'(Ω, ℂ)} {x₀ : CoordinateSpace d} {s : ℝ}
@@ -163,11 +144,12 @@ private theorem memSobolev_cutoffTempered_of_isElliptic (hg : ∀ i, ContDiff �
     (T.cutoffTempered ψ).MemSobolev (s + k) 2 := by
   obtain ⟨b, hab⟩ := ha.exists_isAsymptoticSum_sharpTerm_left
   let ψS : 𝓢(CoordinateSpace d, ℂ) := ψ.hasCompactSupport.toSchwartzMap ψ.contDiff
-  have hψS (x : CoordinateSpace d) : ψS x = ψ x := (rfl)
+  have hψS (x : CoordinateSpace d) : ψS x = ψ x :=
+    HasCompactSupport.toSchwartzMap_toFun ψ.hasCompactSupport ψ.contDiff x
   -- The symbol `p` of the operator with the coefficients `χ c i g i`, with compact spatial support.
   have htg (i : ι) : (fun x ↦ c i * (χ x * g i x)).HasTemperateGrowth :=
-    χ.hasCompactSupport.mul_right.mul_left.hasTemperateGrowth
-      (contDiff_const.mul (χ.contDiff.mul (ofRealCLM.contDiff.comp (hg i))))
+    (Function.HasTemperateGrowth.const (c i)).fun_mul
+      (χ.hasTemperateGrowth_mul (ofRealCLM.contDiff.comp (hg i)))
   let p := ClassicalSymbol.ofDifferentialSymbol k t m
     (fun i x ↦ (c i * (χ x * g i x)) • ContinuousLinearMap.id ℂ ℂ)
     (fun i _ ↦ (htg i).1.smul contDiff_const) hk
@@ -216,35 +198,33 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
   let βφ : ContDiffBump x₀ := ⟨3 * ε / 4, ε, by positivity, by linarith⟩
   have hsub {r : ℝ} (hr : r ≤ ε) : closedBall x₀ r ⊆ Ω :=
     (closedBall_subset_closedBall hr).trans fun x hx ↦ (hεU hx).1.2
-  have hbump (β : ContDiffBump x₀) (hβ : β.rOut ≤ ε) : ∃ φ : 𝓓(Ω, ℂ), ∀ x, φ x = β x :=
-    ⟨⟨fun x ↦ (β x : ℂ), ofRealCLM.contDiff.comp β.contDiff,
-      β.hasCompactSupport.comp_left ofReal_zero,
-      (tsupport_comp_subset ofReal_zero _).trans (β.tsupport_eq ▸ hsub hβ)⟩, fun _ ↦ rfl⟩
-  obtain ⟨ψ, hψ⟩ := hbump βψ (by simp [βψ]; linarith)
-  obtain ⟨χ, hχ⟩ := hbump βχ (by simp [βχ]; linarith)
-  obtain ⟨φ, hφ⟩ := hbump βφ le_rfl
-  have htsupp {β : ContDiffBump x₀} {f : CoordinateSpace d → ℂ} (hf : ∀ x, f x = β x) :
-      tsupport f ⊆ closedBall x₀ β.rOut := by
-    rw [show f = fun x ↦ (β x : ℂ) from funext hf, ← β.tsupport_eq]
-    exact tsupport_comp_subset ofReal_zero _
-  have hφ1 {β : ContDiffBump x₀} {f : CoordinateSpace d → ℂ} (hf : ∀ x, f x = β x)
-      (hβ : β.rOut ≤ 3 * ε / 4) : ∀ x ∈ tsupport f, φ x = 1 := fun x hx ↦ by
-    rw [hφ, βφ.one_of_mem_closedBall (closedBall_subset_closedBall hβ (htsupp hf hx)), ofReal_one]
+  have hψΩ : closedBall x₀ βψ.rOut ⊆ Ω := hsub (by simp [βψ]; linarith)
+  have hχΩ : closedBall x₀ βχ.rOut ⊆ Ω := hsub (by simp [βχ]; linarith)
+  have hφ1 {β : ContDiffBump x₀} (hβ : closedBall x₀ β.rOut ⊆ Ω) (hβε : β.rOut ≤ 3 * ε / 4) :
+      ∀ x ∈ tsupport (β.toTestFunction ℂ hβ), βφ.toTestFunction ℂ (hsub le_rfl) x = 1 :=
+    fun x hx ↦ by
+      rw [ContDiffBump.tsupport_toTestFunction] at hx
+      rw [ContDiffBump.toTestFunction_apply,
+        βφ.one_of_mem_closedBall (closedBall_subset_closedBall hβε hx), RCLike.ofReal_one]
   -- On the ball of radius `2 ε / 3`, `χ = 1` and `a` is the symbol of `P`.
-  have haψ : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, a.toSymbol.coefficient (x, ξ) = differentialSymbol t m
-      (fun i x ↦ (c i * (χ x * g i x)) • ContinuousLinearMap.id ℂ ℂ) (x, ξ) := by
-    refine Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2 ((htsupp hψ).trans
-      (closedBall_subset_ball (show ε / 2 < 2 * ε / 3 by linarith)))) fun x hx ξ ↦ ?_
+  have haψ : ∀ᶠ x in 𝓝ˢ (tsupport (βψ.toTestFunction ℂ hψΩ)), ∀ ξ,
+      a.toSymbol.coefficient (x, ξ) = differentialSymbol t m
+        (fun i x ↦ (c i * (βχ.toTestFunction ℂ hχΩ x * g i x)) • ContinuousLinearMap.id ℂ ℂ)
+        (x, ξ) := by
+    rw [ContDiffBump.tsupport_toTestFunction]
+    refine Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2
+      (closedBall_subset_ball (show ε / 2 < 2 * ε / 3 by linarith))) fun x hx ξ ↦ ?_
     rw [haP x (hεU (ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
       hx)).2]
-    simp only [differentialSymbol_def, hχ, βχ.one_of_mem_closedBall (ball_subset_closedBall hx),
-      ofReal_one, one_mul]
-  refine isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2 ⟨ψ, ?_,
-    memSobolev_cutoffTempered_of_isElliptic hg hk ha (hφ1 hχ le_rfl)
-      (hφ1 hψ (by simp [βψ]; linarith)) haψ (hUs χ ((htsupp hχ).trans
+    simp only [differentialSymbol_def, ContDiffBump.toTestFunction_apply,
+      βχ.one_of_mem_closedBall (ball_subset_closedBall hx), RCLike.ofReal_one, one_mul]
+  refine isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2 ⟨βψ.toTestFunction ℂ hψΩ, ?_,
+    memSobolev_cutoffTempered_of_isElliptic hg hk ha (hφ1 hχΩ le_rfl)
+      (hφ1 hψΩ (by simp [βψ]; linarith)) haψ (hUs _ ((βχ.tsupport_toTestFunction ℂ hχΩ).le.trans
         ((closedBall_subset_closedBall (show 3 * ε / 4 ≤ ε by linarith)).trans
           fun x hx ↦ (hεU hx).1.1)))⟩
-  rw [hψ, βψ.one_of_mem_closedBall (mem_closedBall_self (by positivity)), ofReal_one]
+  rw [ContDiffBump.toTestFunction_apply,
+    βψ.one_of_mem_closedBall (mem_closedBall_self (by positivity)), RCLike.ofReal_one]
   exact one_ne_zero
 
 /-- **Elliptic operators shift local Sobolev regularity by exactly their order.** For a
