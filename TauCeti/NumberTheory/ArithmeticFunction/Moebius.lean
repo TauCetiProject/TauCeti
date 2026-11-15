@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
 import Mathlib.Algebra.Module.BigOperators
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Convolution square of the Möbius function and divisor-count inversion
@@ -33,6 +34,8 @@ and along multiples of a fixed divisor `c ∣ N`.
 * `ArithmeticFunction.isMultiplicative_moebius_mul_moebius`: `μ * μ` is multiplicative.
 * `ArithmeticFunction.moebius_mul_moebius_apply_prime_pow` (with specializations at `1`, `p`, `p²`,
   and `p ^ k` for `3 ≤ k`): prime-power values of `μ * μ`.
+* `ArithmeticFunction.sum_divisors_smul_eq_of_mul_eq_one_on`: general Dirichlet-inverse inversion on
+  a divisor-closed set for `α * β = 1`.
 * `ArithmeticFunction.sum_card_divisors_smul_eq_iff_sum_moebius_mul_moebius_smul_eq` and its `_on`
   and ring-multiplication variants: equivalence between divisor-count weighted sums and `(μ * μ)`
   inversion sums.
@@ -90,6 +93,10 @@ theorem coe_sigma_zero_mul_coe_moebius_mul_coe_moebius [Ring R] :
 theorem isMultiplicative_moebius_mul_moebius : IsMultiplicative (μ * μ) :=
   isMultiplicative_moebius.mul isMultiplicative_moebius
 
+-- The pointwise evaluations below are not `@[simp]`: Mathlib marks
+-- `ArithmeticFunction.mul_apply` `@[simp]`, rewriting `(μ * μ) n` to an antidiagonal sum
+-- (so `simp` already proves `n = 1` and `simpNF` rejects `@[simp]` on prime powers).
+
 /-- At `1`, `(μ * μ) 1 = 1`. -/
 theorem moebius_mul_moebius_apply_one : (μ * μ) 1 = 1 :=
   isMultiplicative_moebius_mul_moebius.map_one
@@ -135,29 +142,32 @@ theorem moebius_mul_moebius_apply_prime_pow_eq_zero {p k : ℕ} (hp : p.Prime) (
 
 /-! ### Divisor-count (`σ 0`) and `μ * μ` inversion -/
 
-/-- Reassociating a nested `divisorsAntidiagonal` sum over `ℤ`: convolving `φ` with `β` and then `α`
-is the same as convolving `φ` with the Dirichlet product of `α` and `β`. Stated for plain functions
-`ℕ → ℤ` and `ℕ → R` so no zero-at-`0` normalization is required. -/
-private lemma sum_divisorsAntidiagonal_smul_sum [AddCommGroup R]
-    (α β : ℕ → ℤ) (φ : ℕ → R) (n : ℕ) :
-    ∑ x ∈ n.divisorsAntidiagonal, α x.1 • ∑ y ∈ x.2.divisorsAntidiagonal, β y.1 • φ y.2 =
-      ∑ z ∈ n.divisorsAntidiagonal,
-        (∑ w ∈ z.1.divisorsAntidiagonal, α w.1 * β w.2) • φ z.2 := by
-  simp only [Finset.smul_sum, Finset.sum_smul, mul_smul, sum_sigma']
-  refine Finset.sum_nbij' (fun ⟨⟨i, _j⟩, ⟨k, l⟩⟩ ↦ ⟨(i * k, l), (i, k)⟩)
-    (fun ⟨⟨_m, l⟩, ⟨i, k⟩⟩ ↦ ⟨(i, k * l), (k, l)⟩) ?_ ?_ ?_ ?_ ?_ <;>
-    aesop (add simp mul_assoc)
-
-/-- Collapsing a convolution against the Dirichlet identity `1` at `n > 0`. -/
-private lemma sum_divisorsAntidiagonal_one_apply_smul [AddCommGroup R] (φ : ℕ → R) {n : ℕ}
-    (hn : 0 < n) :
-    ∑ z ∈ n.divisorsAntidiagonal, (1 : ArithmeticFunction ℤ) z.1 • φ z.2 = φ n := by
-  rw [Nat.sum_divisorsAntidiagonal fun a b ↦ (1 : ArithmeticFunction ℤ) a • φ b,
-    Finset.sum_eq_single 1]
-  · simp
-  · intro d _ hd1
-    rw [one_apply_ne hd1, zero_smul]
-  · exact fun h ↦ absurd (Nat.one_mem_divisors.mpr hn.ne') h
+/-- **General Dirichlet-inverse inversion on a divisor-closed set.** If `α * β = 1` in
+`ArithmeticFunction S` and `g n = ∑_{d ∣ n} β (n / d) • f d` for every positive `n ∈ s` in a
+divisor-closed set `s`, then `f n = ∑_{d ∣ n} α (n / d) • g d` for every positive `n ∈ s`. -/
+theorem sum_divisors_smul_eq_of_mul_eq_one_on {S : Type*} [Semiring S] [AddCommMonoid R]
+    [Module S R] {α β : ArithmeticFunction S} (hαβ : α * β = 1) {f g : ℕ → R} (s : Set ℕ)
+    (hs : ∀ m n, m ∣ n → n ∈ s → m ∈ s)
+    (h : ∀ n > 0, n ∈ s → ∑ d ∈ n.divisors, β (n / d) • f d = g n) :
+    ∀ n > 0, n ∈ s → ∑ d ∈ n.divisors, α (n / d) • g d = f n := by
+  let f' : ArithmeticFunction R := ⟨fun x ↦ if x = 0 then 0 else f x, ite_eq_left rfl⟩
+  intro n hn hns
+  have hβ : ∀ d ∈ n.divisors, (β • f') d = g d := fun d hd ↦ by
+    have hd_pos : 0 < d := Nat.pos_of_mem_divisors hd
+    rw [ArithmeticFunction.smul_apply,
+      Nat.sum_divisorsAntidiagonal' (f := fun x y ↦ β x • f' y),
+      ← h d hd_pos (hs d n (Nat.dvd_of_mem_divisors hd) hns)]
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    simp only [f', coe_mk, ite_eq_right (Nat.pos_of_mem_divisors hk).ne']
+  calc ∑ d ∈ n.divisors, α (n / d) • g d
+      = ∑ d ∈ n.divisors, α (n / d) • (β • f') d :=
+        Finset.sum_congr rfl fun d hd ↦ by rw [hβ d hd]
+    _ = (α • (β • f')) n := by
+        rw [ArithmeticFunction.smul_apply,
+          Nat.sum_divisorsAntidiagonal' (f := fun x y ↦ α x • (β • f') y)]
+    _ = f n := by
+        rw [← mul_smul, hαβ, one_smul]
+        simp only [f', coe_mk, ite_eq_right hn.ne']
 
 /-- **Möbius-square inversion on a divisor-closed set, for an `AddCommGroup`.** Since `σ 0` and
 `μ * μ` are Dirichlet inverses over `ℤ`, weighting divisor sums by `#(n / d).divisors` is inverted
@@ -166,41 +176,12 @@ theorem sum_card_divisors_smul_eq_iff_sum_moebius_mul_moebius_smul_eq_on [AddCom
     {f g : ℕ → R} (s : Set ℕ) (hs : ∀ m n, m ∣ n → n ∈ s → m ∈ s) :
     (∀ n > 0, n ∈ s → ∑ d ∈ n.divisors, #(n / d).divisors • f d = g n) ↔
       ∀ n > 0, n ∈ s → ∑ d ∈ n.divisors, (μ * μ) (n / d) • g d = f n := by
-  constructor <;> intro h n hn hns
-  · rw [← Nat.sum_divisorsAntidiagonal' (f := fun a b ↦ (μ * μ) a • g b)]
-    have hcongr : ∑ x ∈ n.divisorsAntidiagonal, (μ * μ) x.1 • g x.2 =
-        ∑ x ∈ n.divisorsAntidiagonal, (μ * μ) x.1 •
-          ∑ y ∈ x.2.divisorsAntidiagonal, (σ 0 y.1 : ℤ) • f y.2 := by
-      refine Finset.sum_congr rfl fun x hx ↦ congrArg ((μ * μ) x.1 • ·) ?_
-      have hx_dvd : x.2 ∣ n := Nat.dvd_of_mem_divisors (Nat.snd_mem_divisors_of_mem_antidiagonal hx)
-      rw [← h x.2 (Nat.pos_of_dvd_of_pos hx_dvd hn) (hs x.2 n hx_dvd hns),
-        ← Nat.sum_divisorsAntidiagonal' (f := fun a b ↦ #a.divisors • f b)]
-      exact Finset.sum_congr rfl fun y _ ↦ by rw [sigma_zero_apply, natCast_zsmul]
-    rw [hcongr, sum_divisorsAntidiagonal_smul_sum (fun k ↦ (μ * μ) k) (fun k ↦ (σ 0 k : ℤ)) f n]
-    have hmul : ∀ z ∈ n.divisorsAntidiagonal,
-        (∑ w ∈ z.1.divisorsAntidiagonal, (μ * μ) w.1 * (σ 0 w.2 : ℤ)) =
-          (1 : ArithmeticFunction ℤ) z.1 := fun z _ ↦ by
-      change ((μ * μ) * (σ 0 : ArithmeticFunction ℤ)) z.1 = _
-      rw [moebius_mul_moebius_mul_coe_sigma_zero]
-    rw [Finset.sum_congr rfl fun z hz ↦ by rw [hmul z hz]]
-    exact sum_divisorsAntidiagonal_one_apply_smul f hn
-  · rw [← Nat.sum_divisorsAntidiagonal' (f := fun a b ↦ #a.divisors • f b)]
-    have hcongr : ∑ x ∈ n.divisorsAntidiagonal, #x.1.divisors • f x.2 =
-        ∑ x ∈ n.divisorsAntidiagonal, (σ 0 x.1 : ℤ) •
-          ∑ y ∈ x.2.divisorsAntidiagonal, (μ * μ) y.1 • g y.2 := by
-      refine Finset.sum_congr rfl fun x hx ↦ ?_
-      have hx_dvd : x.2 ∣ n := Nat.dvd_of_mem_divisors (Nat.snd_mem_divisors_of_mem_antidiagonal hx)
-      rw [sigma_zero_apply, natCast_zsmul,
-        ← h x.2 (Nat.pos_of_dvd_of_pos hx_dvd hn) (hs x.2 n hx_dvd hns),
-        Nat.sum_divisorsAntidiagonal' (f := fun a b ↦ (μ * μ) a • g b)]
-    rw [hcongr, sum_divisorsAntidiagonal_smul_sum (fun k ↦ (σ 0 k : ℤ)) (fun k ↦ (μ * μ) k) g n]
-    have hmul : ∀ z ∈ n.divisorsAntidiagonal,
-        (∑ w ∈ z.1.divisorsAntidiagonal, (σ 0 w.1 : ℤ) * (μ * μ) w.2) =
-          (1 : ArithmeticFunction ℤ) z.1 := fun z _ ↦ by
-      change ((σ 0 : ArithmeticFunction ℤ) * (μ * μ)) z.1 = _
-      rw [coe_sigma_zero_mul_moebius_mul_moebius]
-    rw [Finset.sum_congr rfl fun z hz ↦ by rw [hmul z hz]]
-    exact sum_divisorsAntidiagonal_one_apply_smul g hn
+  have hσ (n : ℕ) : (∑ d ∈ n.divisors, #(n / d).divisors • f d) =
+      ∑ d ∈ n.divisors, ((σ 0 : ArithmeticFunction ℤ) (n / d)) • f d :=
+    Finset.sum_congr rfl fun d _ ↦ by rw [natCoe_apply, sigma_zero_apply, natCast_zsmul]
+  simp_rw [hσ]
+  exact ⟨sum_divisors_smul_eq_of_mul_eq_one_on moebius_mul_moebius_mul_coe_sigma_zero s hs,
+    sum_divisors_smul_eq_of_mul_eq_one_on coe_sigma_zero_mul_moebius_mul_moebius s hs⟩
 
 /-- **Möbius-square inversion for functions to an `AddCommGroup`.** -/
 theorem sum_card_divisors_smul_eq_iff_sum_moebius_mul_moebius_smul_eq [AddCommGroup R]
@@ -243,17 +224,6 @@ theorem eq_sum_divisors_moebius_mul_moebius_mul [NonAssocRing R] {f g : ℕ → 
   simp_rw [← zsmul_eq_mul]
   exact eq_sum_divisors_moebius_mul_moebius_smul hN h
 
-/-- The divisors of `c * m` that are multiples of `c > 0` are `c` times the divisors of `m`. -/
-private lemma filter_dvd_divisors_mul {c m : ℕ} (hc : c ≠ 0) :
-    {d ∈ (c * m).divisors | c ∣ d} = m.divisors.map ⟨(c * ·), mul_right_injective₀ hc⟩ := by
-  ext d
-  simp only [mem_filter, mem_divisors, mem_map, Function.Embedding.coeFn_mk]
-  constructor
-  · rintro ⟨⟨hdcm, hcm0⟩, k, rfl⟩
-    exact ⟨k, ⟨(mul_dvd_mul_iff_left hc).mp hdcm, right_ne_zero_of_mul hcm0⟩, rfl⟩
-  · rintro ⟨k, ⟨hkm, hm0⟩, rfl⟩
-    exact ⟨⟨mul_dvd_mul_left c hkm, mul_ne_zero hc hm0⟩, dvd_mul_right c k⟩
-
 /-- **Single-level Möbius-square inversion restricted to multiples of a divisor `c ∣ N`.** When a
 relation `g M = ∑_{c ∣ d ∣ M} #(M / d).divisors • f d` holds for every intermediate multiple
 `c ∣ M ∣ N` (for instance, when `c` is the conductor of a Dirichlet character mod `N`), rescaling
@@ -268,11 +238,11 @@ theorem eq_sum_divisors_filter_dvd_moebius_mul_moebius_smul [AddCommGroup R] {f 
   have hQ : 0 < Q := Nat.pos_of_ne_zero (right_ne_zero_of_mul hN.ne')
   have key := eq_sum_divisors_moebius_mul_moebius_smul (f := fun m ↦ f (c * m))
     (g := fun m ↦ g (c * m)) hQ fun m hmQ ↦ by
-      rw [h (c * m) (dvd_mul_right c m) (mul_dvd_mul_left c hmQ), filter_dvd_divisors_mul hc0,
+      rw [h (c * m) (dvd_mul_right c m) (mul_dvd_mul_left c hmQ), Nat.filter_dvd_divisors_mul hc0,
         Finset.sum_map]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
       simp [Nat.mul_div_mul_left m k hcpos]
-  rw [key, filter_dvd_divisors_mul hc0, Finset.sum_map]
+  rw [key, Nat.filter_dvd_divisors_mul hc0, Finset.sum_map]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   simp [Nat.mul_div_mul_left Q m hcpos]
 

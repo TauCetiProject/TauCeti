@@ -9,7 +9,12 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.ModularForms.Newforms.Decomposition
 public import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 
-import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.Data.ZMod.Units
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
+import TauCeti.LinearAlgebra.Submodule.Independent
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.Divisors
+import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # Linear independence of level-raised newforms and newspace dimension formulas
@@ -41,7 +46,7 @@ Linear independence is assembled in three steps:
 2. Within a fixed nebentypus space `S_k(N, χ)`, distinct pairs `(M, g)` whose nebentypes pull back
    to `χ` lie in distinct joint eigenspaces of the good Hecke operators `Tₚ` (`p ∤ N`) by
    cross-level strong multiplicity one
-   (`HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq`).
+   (`HeckeRing.GL2.Newform.eigenvalue_injective_of_comp_unitsMap_eq`).
 3. Across nebentypes `χ`, the character subspaces `S_k(N, χ)` are independent
    (`TauCeti.iSupIndep_cuspFormCharSpace`).
 
@@ -56,6 +61,8 @@ Linear independence is assembled in three steps:
 
 * `HeckeRing.GL2.Newform.finrank_cuspFormsNew`: `dim S_k(Γ₁(N))ⁿᵉʷ` equals the number of newforms
   of level `N` and weight `k`.
+* `HeckeRing.GL2.Newform.eigenvalue_injective_of_comp_unitsMap_eq`: distinct pairs `(M, g)` at a
+  fixed lifted nebentypus `χ` have distinct good-prime eigenvalue systems.
 * `HeckeRing.GL2.Newform.linearIndependent_levelRaise_of_comp_unitsMap_eq`,
   `HeckeRing.GL2.Newform.linearIndependent_levelRaise`: linear independence of the level-raised
   newforms at a fixed nebentypus and across all nebentypes.
@@ -63,7 +70,7 @@ Linear independence is assembled in three steps:
   `TauCeti.iSupIndep_map_levelRaiseₗ_cuspFormsNew`,
   `TauCeti.isInternal_map_levelRaiseₗ_cuspFormsNew`: internal direct-sum decomposition of
   `S_k(Γ₁(N))` into `V_d S_k(Γ₁(M))ⁿᵉʷ` over all pairs `(M, d)` with `d * M ∣ N`.
-* `TauCeti.iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace`,
+* `TauCeti.iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace`,
   `TauCeti.iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace`,
   `TauCeti.isInternal_comap_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace`: the
   fixed-character refinement on `S_k(N, χ)` over pairs `(M, d)` with `d * M ∣ N` and `cond χ ∣ M`.
@@ -71,10 +78,11 @@ Linear independence is assembled in three steps:
   `TauCeti.finrank_cuspFormCharSpace_eq_sum_divisors`,
   `TauCeti.finrank_cuspForm_Gamma0_eq_sum_divisors`: forward dimension identities weighted by
   `#(N / M).divisors`.
-* `TauCeti.natCast_finrank_cuspFormsNew`,
-  `TauCeti.natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace`,
-  `TauCeti.natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_one`: Möbius-square (`μ * μ`)
-  dimension formulas for `S_k(Γ₁(N))ⁿᵉʷ`, `S_k(N, χ)ⁿᵉʷ`, and `S_k(Γ₀(N))ⁿᵉʷ`.
+* `TauCeti.natCast_finrank_cuspFormsNew_eq_sum_divisors_moebius_mul_moebius`,
+  `natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_eq_sum_divisors_moebius_mul_moebius`,
+  `natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_one_eq_sum_divisors_moebius_mul_moebius`:
+  Möbius-square (`μ * μ`) dimension formulas for `S_k(Γ₁(N))ⁿᵉʷ`, `S_k(N, χ)ⁿᵉʷ`, and
+  `S_k(Γ₀(N))ⁿᵉʷ`.
 
 ## References
 
@@ -88,18 +96,6 @@ public section
 open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup Finset
 open scoped MatrixGroups ArithmeticFunction.Moebius
 
-/-! ### Gluing linearly independent families across an independent family of submodules -/
-
-private lemma linearIndependent_sigma_of_iSupIndep {R M η α : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] {ι : η → Type*} {f : ∀ j : η, ι j → M} {W : α → Submodule R M} {e : η → α}
-    (hli : ∀ j, LinearIndependent R (f j)) (hW : iSupIndep W) (he : Function.Injective e)
-    (hfW : ∀ j k, f j k ∈ W (e j)) :
-    LinearIndependent R (fun jk : Σ j, ι j ↦ f jk.1 jk.2) := by
-  refine linearIndependent_iUnion_finite hli fun i t _ hit ↦ (hW (e i)).mono ?_ ?_
-  · exact Submodule.span_le.mpr (Set.range_subset_iff.mpr (hfW i))
-  · refine iSup₂_le fun j hjt ↦ le_iSup₂_of_le (e j) (he.ne fun hji ↦ hit (hji ▸ hjt)) ?_
-    exact Submodule.span_le.mpr (Set.range_subset_iff.mpr (hfW j))
-
 namespace HeckeRing.GL2.Newform
 
 open TauCeti _root_.CuspForm
@@ -110,6 +106,27 @@ open TauCeti _root_.CuspForm
 theorem finrank_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
     Module.finrank ℂ (cuspFormsNew N k) = Nat.card (Newform N k) :=
   Module.finrank_eq_nat_card_basis (basis N k)
+
+/-- **Cross-level injectivity of good-prime Hecke eigenvalues at a fixed nebentypus.** Distinct
+pairs `(M, g)` of a divisor level `M ∣ N` and a newform `g` of level `M` whose nebentypus pulls back
+to `χ` have distinct eigenvalue systems at the primes `p ∤ N`. -/
+theorem eigenvalue_injective_of_comp_unitsMap_eq (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
+    Function.Injective
+      (fun (mg : Σ M : {M : ℕ // M ∣ N},
+          letI : NeZero M.1 := NeZero.of_dvd M.2
+          {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ})
+        (p : {p : ℕ // p.Prime ∧ Nat.Coprime p N}) ↦
+        letI : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
+        mg.2.1.eigenvalue ⟨p.1, p.2.1.pos⟩ (p.2.2.coprime_dvd_right mg.1.2)) := by
+  rintro ⟨⟨M₁, hM₁⟩, g₁, hg₁⟩ ⟨⟨M₂, hM₂⟩, g₂, hg₂⟩ h
+  have : NeZero M₁ := NeZero.of_dvd hM₁
+  have : NeZero M₂ := NeZero.of_dvd hM₂
+  obtain ⟨rfl, hcoe⟩ := level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ hg₁ hg₂ (S := ∅)
+    fun p hp hpN _ ↦ congr_fun h ⟨p, hp, hpN⟩
+  have hg : g₁ = g₂ := Newform.ext (DFunLike.coe_injective hcoe)
+  subst hg
+  rfl
 
 /-- **Linear independence of the level-raised newforms at a fixed nebentypus** (Diamond–Shurman,
 Theorem 5.8.3). For a character `χ` modulo `N`, the level-raises `V_d g` over divisor levels
@@ -132,25 +149,15 @@ theorem linearIndependent_levelRaise_of_comp_unitsMap_eq (N : ℕ) [NeZero N] (k
   let η := Σ M : {M : ℕ // M ∣ N},
     letI : NeZero M.1 := NeZero.of_dvd M.2
     {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}
-  let eig : η → P → ℂ := fun mg p ↦
-    letI : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
-    mg.2.1.eigenvalue ⟨p.1, p.2.1.pos⟩ (p.2.2.coprime_dvd_right mg.1.2)
-  have heig : Function.Injective eig := by
-    rintro ⟨⟨M₁, hM₁⟩, g₁, hg₁⟩ ⟨⟨M₂, hM₂⟩, g₂, hg₂⟩ h
-    have : NeZero M₁ := NeZero.of_dvd hM₁
-    have : NeZero M₂ := NeZero.of_dvd hM₂
-    obtain ⟨rfl, hcoe⟩ := level_eq_and_coe_eq_of_comp_unitsMap_eq g₁ g₂ hM₁ hM₂ hg₁ hg₂ (S := ∅)
-      fun p hp hpN _ ↦ congr_fun h ⟨p, hp, hpN⟩
-    have hg : g₁ = g₂ := Newform.ext (DFunLike.coe_injective hcoe)
-    subst hg
-    rfl
   let fam : ∀ mg : η, {d : ℕ // d * mg.1.1 ∣ N} → CuspForm ((Gamma1 N).map (mapGL ℝ)) k :=
     fun mg d ↦
       letI : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
       letI : NeZero d.1 := NeZero.of_dvd (dvd_of_mul_right_dvd d.2)
       CuspForm.levelRaise d.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd d.2) mg.2.1.toCuspForm
-  have hli_sigma := linearIndependent_sigma_of_iSupIndep (f := fam)
-    (W := fun a : P → ℂ ↦ ⨅ p, (T p).eigenspace (a p)) (e := eig)
+  -- Step 1 (`_root_.CuspForm.linearIndependent_levelRaise`) gives independence of `V_d g` for each
+  -- `(M, g)`; Step 2 (`eigenvalue_injective_of_comp_unitsMap_eq`) separates distinct `(M, g)` into
+  -- independent joint `Tₚ`-eigenspaces (`p ∤ N`).
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep (f := fam)
     (fun mg ↦ by
       have : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
       have : ∀ d : {d : ℕ // d * mg.1.1 ∣ N}, NeZero d.1 :=
@@ -158,12 +165,13 @@ theorem linearIndependent_levelRaise_of_comp_unitsMap_eq (N : ℕ) [NeZero N] (k
       exact _root_.CuspForm.linearIndependent_levelRaise (one_mem_strictPeriods_Gamma1_map mg.1.1)
         mg.2.1.ne_zero Subtype.val_injective
         fun d ↦ Gamma1_map_le_conjAct_scaleGL_of_dvd d.2)
-    (iSupIndep_iInf_eigenspace T) heig
+    ((iSupIndep_iInf_eigenspace T).comp (eigenvalue_injective_of_comp_unitsMap_eq N k χ))
     fun mg d ↦ by
       have : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
       have : NeZero d.1 := NeZero.of_dvd (dvd_of_mul_right_dvd d.2)
       exact (Submodule.mem_iInf _).mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
         (mg.2.1.heckeTCuspNat_levelRaise_eq_eigenvalue_smul d.2 p.2.1 p.2.2)
+  -- Reassociate `(M, (g, d))` with `((M, g), d)` to match the sigma-indexed family `fam`.
   let reindex :
       (Σ M : {M : ℕ // M ∣ N},
         (letI : NeZero M.1 := NeZero.of_dvd M.2;
@@ -187,10 +195,12 @@ theorem linearIndependent_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
         letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
         CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2)
           i.2.1.toCuspForm) := by
-  have hli_sigma := linearIndependent_sigma_of_iSupIndep
-    (W := cuspFormCharSpace (N := N) k) (e := id)
+  -- Step 3: glue the fixed-character families across the independent subspaces `S_k(N, χ)`, then
+  -- group each `(M, g, d)` under its lifted nebentypus `χ = g.χ ∘ unitsMap`.
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep
+    (W := cuspFormCharSpace (N := N) k)
     (fun χ ↦ linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
-    (iSupIndep_cuspFormCharSpace k) Function.injective_id
+    (iSupIndep_cuspFormCharSpace k)
     fun χ i ↦ by
       have : NeZero i.1.1 := NeZero.of_dvd i.1.2
       have : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
@@ -383,49 +393,10 @@ theorem isInternal_map_levelRaiseₗ_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ)
     (iSupIndep_map_levelRaiseₗ_cuspFormsNew N k)
     (iSup_map_levelRaiseₗ_cuspFormsNew_eq_top N k)
 
-/-! ### Character-descent helpers for fixed-nebentypus decompositions and dimensions -/
-
-private lemma primitiveCharacter_toUnitHom_comp_unitsMap {N : ℕ} (χ : (ZMod N)ˣ →* ℂˣ) :
-    (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
-      (ZMod.unitsMap (DirichletCharacter.conductor_dvd_level (MulChar.ofUnitHom χ))) = χ := by
-  rw [← DirichletCharacter.changeLevel_toUnitHom, DirichletCharacter.changeLevel_primitiveCharacter,
-    MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply]
-
-private lemma conductor_dvd_of_comp_unitsMap_eq {N M d : ℕ} [NeZero N] {χ : (ZMod N)ˣ →* ℂˣ}
-    (hdM : d ∣ M) (hcM : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M)
-    (hMN : M ∣ N) {ψ : (ZMod d)ˣ →* ℂˣ}
-    (hψ : ψ.comp (ZMod.unitsMap hdM) =
-      (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
-        (ZMod.unitsMap hcM)) :
-    DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d := by
-  have hdN : d ∣ N := hdM.trans hMN
-  have hψN : ψ.comp (ZMod.unitsMap hdN) = χ := by
-    calc ψ.comp (ZMod.unitsMap hdN)
-        = (ψ.comp (ZMod.unitsMap hdM)).comp (ZMod.unitsMap hMN) := by
-          rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
-      _ = ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
-            (ZMod.unitsMap hcM)).comp (ZMod.unitsMap hMN) := by rw [hψ]
-      _ = χ := by
-          rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
-          exact primitiveCharacter_toUnitHom_comp_unitsMap χ
-  refine DirichletCharacter.conductor_dvd_of_mem_conductorSet _ ?_
-  simpa only [DirichletCharacter.mem_conductorSet_iff, DirichletCharacter.changeLevel_def,
-    MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply, hψN] using
-    DirichletCharacter.changeLevel_factorsThrough (MulChar.ofUnitHom ψ) hdN
-
-private lemma comp_unitsMap_eq_iff {c d M : ℕ} [NeZero M] (hcd : c ∣ d) (hdM : d ∣ M)
-    (hcM : c ∣ M) {ψ : (ZMod d)ˣ →* ℂˣ} {χ₀ : (ZMod c)ˣ →* ℂˣ} :
-    ψ.comp (ZMod.unitsMap hdM) = χ₀.comp (ZMod.unitsMap hcM) ↔ ψ = χ₀.comp (ZMod.unitsMap hcd) := by
-  have hcomp : (χ₀.comp (ZMod.unitsMap hcd)).comp (ZMod.unitsMap hdM) =
-      χ₀.comp (ZMod.unitsMap hcM) := by
-    rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
-  rw [← hcomp]
-  exact MonoidHom.cancel_right (ZMod.unitsMap_surjective hdM)
-
 /-- **The level-raised character newspaces `V_d S_k(M, χ_M)ⁿᵉʷ` (`d * M ∣ N`, `cond χ ∣ M`) span
 `S_k(N, χ)`** (Diamond–Shurman, Theorem 5.8.3). -/
-theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZero N] (k : ℤ)
-    (χ : (ZMod N)ˣ →* ℂˣ) :
+theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace (N : ℕ)
+    [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     (⨆ md : {md : ℕ × ℕ //
         md.2 * md.1 ∣ N ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ md.1},
       letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2.1)
@@ -442,7 +413,7 @@ theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZ
     rw [CuspForm.levelRaiseₗ_apply]
     have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd md.2.1 _ hg.2
     rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp,
-      primitiveCharacter_toUnitHom_comp_unitsMap] at hmem
+      DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap] at hmem
   · have hbasis : (⟨F, hF⟩ : cuspFormCharSpace k χ) ∈
         Submodule.span ℂ (Set.range (Newform.levelRaiseBasisCharSpace N k χ)) := by
       rw [(Newform.levelRaiseBasisCharSpace N k χ).span_eq]
@@ -454,14 +425,12 @@ theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZ
     have : NeZero i.1.1 := NeZero.of_dvd i.1.2
     have : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
     have hcM : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ i.1.1 :=
-      conductor_dvd_of_comp_unitsMap_eq i.1.2
-        (DirichletCharacter.conductor_dvd_level (MulChar.ofUnitHom χ)) dvd_rfl
-        (i.2.1.2.trans (primitiveCharacter_toUnitHom_comp_unitsMap χ).symm)
+      DirichletCharacter.conductor_ofUnitHom_dvd_of_comp_unitsMap_eq i.1.2 i.2.1.2
     have hgχ : i.2.1.1.χ =
         (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
           (ZMod.unitsMap hcM) :=
-      (comp_unitsMap_eq_iff hcM i.1.2 _).mp
-        (i.2.1.2.trans (primitiveCharacter_toUnitHom_comp_unitsMap χ).symm)
+      (ZMod.comp_unitsMap_eq_iff hcM i.1.2 _).mp
+        (i.2.1.2.trans (DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap χ).symm)
     refine Submodule.mem_iSup_of_mem ⟨(i.1.1, i.2.2.1), i.2.2.2, hcM⟩
       ⟨i.2.1.1.toCuspForm, ⟨i.2.1.1.isNew, hgχ ▸ i.2.1.1.mem_charSpace⟩, ?_⟩
     simp [CuspForm.levelRaiseₗ_apply]
@@ -485,34 +454,6 @@ theorem iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ)
     fun h ↦ hne (Subtype.ext (Subtype.mk.inj h))
   exact le_iSup₂_of_le ⟨md'.1, md'.2.1⟩ hne' (Submodule.map_mono inf_le_left)
 
-private lemma isInternal_comap_subtype_of_iSupIndep_of_iSup_eq {R M ι : Type*} [DecidableEq ι]
-    [Ring R] [AddCommGroup M] [Module R M] {W : Submodule R M} {U : ι → Submodule R M}
-    (hU : iSupIndep U) (hsup : ⨆ i, U i = W) :
-    DirectSum.IsInternal (fun i ↦ (U i).comap W.subtype) := by
-  have hle (i : ι) : U i ≤ LinearMap.range W.subtype := by
-    rw [Submodule.range_subtype]
-    exact hsup ▸ le_iSup U i
-  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
-  · refine iSupIndep_def.mpr fun i ↦ Submodule.disjoint_def.mpr fun x hx₁ hx₂ ↦ ?_
-    have hmap := Submodule.mem_map_of_mem (f := W.subtype) hx₂
-    rw [Submodule.map_iSup] at hmap
-    have hsub : (⨆ j, (⨆ (_ : j ≠ i), (U j).comap W.subtype).map W.subtype) ≤
-        ⨆ j ≠ i, U j := by
-      refine iSup_le fun j ↦ ?_
-      by_cases h : j = i
-      · rw [iSup_neg (not_not.mpr h), Submodule.map_bot]
-        exact bot_le
-      · simpa only [iSup_pos h, Submodule.map_comap_eq_self (hle j)] using
-          le_iSup₂ (f := fun j (_ : j ≠ i) ↦ U j) j h
-    exact Subtype.ext
-      ((Submodule.disjoint_def.mp (iSupIndep_def.mp hU i)) x.1 hx₁ (hsub hmap))
-  · refine eq_top_iff.mpr fun x _ ↦ ?_
-    have hx : (x : M) ∈ (⨆ i, (U i).comap W.subtype).map W.subtype := by
-      rw [Submodule.map_iSup]
-      simpa only [Submodule.map_comap_eq_self (hle _), hsup] using x.2
-    obtain ⟨y, hy, hyx⟩ := Submodule.mem_map.mp hx
-    rwa [← Subtype.ext hyx]
-
 /-- **Internal direct-sum decomposition of `S_k(N, χ)`** into the level-raised character newspaces
 `V_d S_k(M, χ_M)ⁿᵉʷ` over all pairs `(M, d)` with `d * M ∣ N` and `cond χ ∣ M` (Diamond–Shurman,
 Theorem 5.8.3). -/
@@ -527,67 +468,31 @@ theorem isInternal_comap_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N
           (ZMod.unitsMap md.2.2))).map
         (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2.1))).comap
         (cuspFormCharSpace k χ).subtype) :=
-  isInternal_comap_subtype_of_iSupIndep_of_iSup_eq
+  DirectSum.isInternal_comap_subtype_of_iSupIndep_of_iSup_eq
     (iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ)
-    (iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ)
+    (iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace N k χ)
 
 /-! ### Forward divisor-count dimension identities -/
 
-private def divisorsEquiv (N : ℕ) [NeZero N] : ↥N.divisors ≃ {M : ℕ // M ∣ N} where
-  toFun M := ⟨M.1, Nat.dvd_of_mem_divisors M.2⟩
-  invFun M := ⟨M.1, Nat.mem_divisors.mpr ⟨M.2, NeZero.ne N⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-private lemma divisorsEquiv_apply (N : ℕ) [NeZero N] (M : ↥N.divisors) :
-    divisorsEquiv N M = ⟨M.1, Nat.dvd_of_mem_divisors M.2⟩ :=
-  rfl
-
-private def mulDvdEquivDivDivisors {M N : ℕ} [NeZero N] (hM : M ∣ N) :
-    {d : ℕ // d * M ∣ N} ≃ ↥(N / M).divisors where
-  toFun d := ⟨d.1, Nat.mem_divisors.mpr
-    ⟨by
-      have hM0 : M ≠ 0 := (NeZero.of_dvd hM).out
-      refine (mul_dvd_mul_iff_left hM0).mp ?_
-      rw [mul_comm, Nat.mul_div_cancel' hM]
-      exact d.2,
-      fun h0 ↦ NeZero.ne N
-        (by have := Nat.mul_div_cancel' hM; rw [h0, mul_zero] at this; exact this.symm)⟩⟩
-  invFun d := ⟨d.1,
-    (mul_comm d.1 M ▸ mul_dvd_mul_left M (Nat.dvd_of_mem_divisors d.2)).trans
-      (dvd_of_eq (Nat.mul_div_cancel' hM))⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-private lemma finite_mul_dvd {M N : ℕ} [NeZero N] (hM : M ∣ N) :
-    Finite {d : ℕ // d * M ∣ N} :=
-  Finite.of_equiv _ (mulDvdEquivDivDivisors hM).symm
-
-private lemma natCard_mul_dvd {M N : ℕ} [NeZero N] (hM : M ∣ N) :
-    Nat.card {d : ℕ // d * M ∣ N} = #(N / M).divisors := by
-  rw [Nat.card_congr (mulDvdEquivDivDivisors hM), Nat.card_eq_fintype_card, Fintype.card_coe]
-
-/-- **Divisor-count dimension formula for `S_k(Γ₁(N))`** (Diamond–Shurman, Theorem 5.8.3):
-`dim S_k(Γ₁(N)) = ∑_{M ∣ N} #(N / M).divisors · dim S_k(Γ₁(M))ⁿᵉʷ`. -/
+/-- **Divisor-count dimension formula for `S_k(Γ₁(N))`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3): `dim S_k(Γ₁(N)) = ∑_{M ∣ N} #(N / M).divisors · dim S_k(Γ₁(M))ⁿᵉʷ`. -/
 theorem finrank_cuspForm_Gamma1_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ) :
     Module.finrank ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ∑ M ∈ N.divisors.attach,
         letI : NeZero M.1 := NeZero.of_dvd (Nat.dvd_of_mem_divisors M.2)
         #(N / M.1).divisors * Module.finrank ℂ (cuspFormsNew M.1 k) := by
   have : ∀ a : ↥N.divisors,
-      Finite ((letI : NeZero (divisorsEquiv N a).1 := NeZero.of_dvd (divisorsEquiv N a).2;
-        Newform (divisorsEquiv N a).1 k) × {d : ℕ // d * (divisorsEquiv N a).1 ∣ N}) :=
+      Finite ((letI : NeZero (Nat.divisorsEquiv N a).1 := NeZero.of_dvd (Nat.divisorsEquiv N a).2;
+        Newform (Nat.divisorsEquiv N a).1 k) × {d : ℕ // d * (Nat.divisorsEquiv N a).1 ∣ N}) :=
     fun a ↦
-      letI : NeZero (divisorsEquiv N a).1 := NeZero.of_dvd (divisorsEquiv N a).2
-      letI := finite_mul_dvd (divisorsEquiv N a).2
+      letI : NeZero (Nat.divisorsEquiv N a).1 := NeZero.of_dvd (Nat.divisorsEquiv N a).2
       inferInstance
   rw [Module.finrank_eq_nat_card_basis (Newform.levelRaiseBasis N k),
-    ← Nat.card_congr (Equiv.sigmaCongrLeft (divisorsEquiv N)), Nat.card_sigma]
+    ← Nat.card_congr (Equiv.sigmaCongrLeft (Nat.divisorsEquiv N)), Nat.card_sigma]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   have hM : M.1 ∣ N := Nat.dvd_of_mem_divisors M.2
   have : NeZero M.1 := NeZero.of_dvd hM
-  rw [divisorsEquiv_apply, Nat.card_prod, natCard_mul_dvd hM, Newform.finrank_cuspFormsNew,
+  rw [Nat.divisorsEquiv_apply, Nat.card_prod, Nat.card_mul_dvd hM, Newform.finrank_cuspFormsNew,
     mul_comm]
 
 private lemma finrank_cuspFormCharSpace_eq_sum_divisors_natCard (M : ℕ) [NeZero M] (k : ℤ)
@@ -599,20 +504,19 @@ private lemma finrank_cuspFormCharSpace_eq_sum_divisors_natCard (M : ℕ) [NeZer
           Nat.card {g : Newform d.1 k //
             g.χ.comp (ZMod.unitsMap (Nat.dvd_of_mem_divisors d.2)) = ψ} := by
   have : ∀ a : ↥M.divisors,
-      Finite ((letI : NeZero (divisorsEquiv M a).1 := NeZero.of_dvd (divisorsEquiv M a).2;
-        {g : Newform (divisorsEquiv M a).1 k //
-          g.χ.comp (ZMod.unitsMap (divisorsEquiv M a).2) = ψ}) ×
-        {e : ℕ // e * (divisorsEquiv M a).1 ∣ M}) :=
+      Finite ((letI : NeZero (Nat.divisorsEquiv M a).1 := NeZero.of_dvd (Nat.divisorsEquiv M a).2;
+        {g : Newform (Nat.divisorsEquiv M a).1 k //
+          g.χ.comp (ZMod.unitsMap (Nat.divisorsEquiv M a).2) = ψ}) ×
+        {e : ℕ // e * (Nat.divisorsEquiv M a).1 ∣ M}) :=
     fun a ↦
-      letI : NeZero (divisorsEquiv M a).1 := NeZero.of_dvd (divisorsEquiv M a).2
-      letI := finite_mul_dvd (divisorsEquiv M a).2
+      letI : NeZero (Nat.divisorsEquiv M a).1 := NeZero.of_dvd (Nat.divisorsEquiv M a).2
       inferInstance
   rw [Module.finrank_eq_nat_card_basis (Newform.levelRaiseBasisCharSpace M k ψ),
-    ← Nat.card_congr (Equiv.sigmaCongrLeft (divisorsEquiv M)), Nat.card_sigma]
+    ← Nat.card_congr (Equiv.sigmaCongrLeft (Nat.divisorsEquiv M)), Nat.card_sigma]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   have hdM : d.1 ∣ M := Nat.dvd_of_mem_divisors d.2
   have : NeZero d.1 := NeZero.of_dvd hdM
-  rw [divisorsEquiv_apply, Nat.card_prod, natCard_mul_dvd hdM, mul_comm]
+  rw [Nat.divisorsEquiv_apply, Nat.card_prod, Nat.card_mul_dvd hdM, mul_comm]
 
 private lemma natCard_newform_comp_unitsMap_eq {N M d : ℕ} [NeZero N] {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} (hdM : d ∣ M)
@@ -632,17 +536,27 @@ private lemma natCard_newform_comp_unitsMap_eq {N M d : ℕ} [NeZero N] {k : ℤ
   have : NeZero d := NeZero.of_dvd (hdM.trans hMN)
   split_ifs with hcd
   · rw [Newform.finrank_cuspFormsNew_comap_cuspFormCharSpace]
-    exact Nat.card_congr (Equiv.subtypeEquivRight fun g ↦ comp_unitsMap_eq_iff hcd hdM hcM)
+    exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ ZMod.comp_unitsMap_eq_iff hcd hdM hcM)
   · have : IsEmpty {g : Newform d k //
         g.χ.comp (ZMod.unitsMap hdM) =
           (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
             (ZMod.unitsMap hcM)} :=
-      ⟨fun ⟨g, hg⟩ ↦ hcd (conductor_dvd_of_comp_unitsMap_eq hdM hcM hMN hg)⟩
+      ⟨fun ⟨g, hg⟩ ↦ hcd <| by
+        have hgN : g.χ.comp (ZMod.unitsMap (hdM.trans hMN)) = χ := by
+          calc g.χ.comp (ZMod.unitsMap (hdM.trans hMN))
+              = (g.χ.comp (ZMod.unitsMap hdM)).comp (ZMod.unitsMap hMN) := by
+                rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
+            _ = ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+                  (ZMod.unitsMap hcM)).comp (ZMod.unitsMap hMN) := by rw [hg]
+            _ = χ := by
+                rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp,
+                  DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap]
+        exact DirichletCharacter.conductor_ofUnitHom_dvd_of_comp_unitsMap_eq (hdM.trans hMN) hgN⟩
     exact Nat.card_of_isEmpty
 
-/-- **Divisor-count dimension formula for `S_k(N, χ)`** (Diamond–Shurman, Theorem 5.8.3):
-`dim S_k(N, χ) = ∑_{cond χ ∣ M ∣ N} #(N / M).divisors · dim S_k(M, χ_M)ⁿᵉʷ`, where `χ_M` is the
-descent of `χ` to level `M`. -/
+/-- **Divisor-count dimension formula for `S_k(N, χ)`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3): `dim S_k(N, χ) = ∑_{cond χ ∣ M ∣ N} #(N / M).divisors · dim S_k(M, χ_M)ⁿᵉʷ`, where
+`χ_M` is the descent of `χ` to level `M`. -/
 theorem finrank_cuspFormCharSpace_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ)
     (χ : (ZMod N)ˣ →* ℂˣ) :
     Module.finrank ℂ (cuspFormCharSpace k χ) =
@@ -659,29 +573,12 @@ theorem finrank_cuspFormCharSpace_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ)
   have hMN : M.1 ∣ N := Nat.dvd_of_mem_divisors M.2
   have hcard := natCard_newform_comp_unitsMap_eq (k := k) (χ := χ) hMN
     (DirichletCharacter.conductor_dvd_level (MulChar.ofUnitHom χ)) dvd_rfl
-  rw [primitiveCharacter_toUnitHom_comp_unitsMap] at hcard
+  rw [DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap] at hcard
   rw [hcard]
   split_ifs <;> simp
 
-private lemma ofUnitHom_one (N : ℕ) :
-    (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ) : DirichletCharacter ℂ N) = 1 :=
-  MulChar.ext fun _ ↦ by simp
-
-private lemma primitiveCharacter_ofUnitHom_one_comp_unitsMap {N M : ℕ} [NeZero N]
-    (hc : DirichletCharacter.conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) ∣ M) :
-    (DirichletCharacter.primitiveCharacter
-        (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ))).toUnitHom.comp (ZMod.unitsMap hc) =
-      (1 : (ZMod M)ˣ →* ℂˣ) := by
-  have h1 : DirichletCharacter.primitiveCharacter
-      (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) = 1 := by
-    rw [ofUnitHom_one]
-    exact DirichletCharacter.primitiveCharacter_one
-  rw [h1]
-  exact MonoidHom.ext fun u ↦ Units.ext <| by
-    rw [MonoidHom.comp_apply, MulChar.coe_toUnitHom, MulChar.one_apply_coe,
-      MonoidHom.one_apply, Units.val_one]
-
-/-- **Divisor-count dimension formula for `S_k(Γ₀(N))`** (Diamond–Shurman, Theorem 5.8.3). -/
+/-- **Divisor-count dimension formula for `S_k(Γ₀(N))`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3). -/
 theorem finrank_cuspForm_Gamma0_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ) :
     Module.finrank ℂ (CuspForm ((Gamma0 N).map (mapGL ℝ)) k) =
       ∑ M ∈ N.divisors.attach,
@@ -692,15 +589,19 @@ theorem finrank_cuspForm_Gamma0_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ) :
   rw [← (cuspFormCharSpaceOneEquiv N k).finrank_eq, finrank_cuspFormCharSpace_eq_sum_divisors]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   have hc : DirichletCharacter.conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) ∣ M.1 := by
-    rw [ofUnitHom_one, DirichletCharacter.conductor_one]
+    rw [MulChar.ofUnitHom_one, DirichletCharacter.conductor_one]
     exact one_dvd M.1
-  rw [dite_eq_left_of_eq_true (eq_true hc), primitiveCharacter_ofUnitHom_one_comp_unitsMap hc]
+  rw [dite_eq_left_of_eq_true (eq_true hc),
+    DirichletCharacter.primitiveCharacter_ofUnitHom_one_comp_unitsMap hc]
 
 /-! ### Möbius-square (`μ * μ`) newspace dimension formulas -/
 
-/-- **Möbius-square dimension formula for `S_k(Γ₁(N))ⁿᵉʷ`** (Diamond–Shurman, Theorem 5.8.3):
+/-- **Möbius-square dimension formula for `S_k(Γ₁(N))ⁿᵉʷ`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3, via `(μ * μ)`-inversion
+`ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul`):
 `dim S_k(Γ₁(N))ⁿᵉʷ = ∑_{M ∣ N} (μ * μ)(N / M) · dim S_k(Γ₁(M))`. -/
-theorem natCast_finrank_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
+theorem natCast_finrank_cuspFormsNew_eq_sum_divisors_moebius_mul_moebius (N : ℕ) [NeZero N]
+    (k : ℤ) :
     (Module.finrank ℂ (cuspFormsNew N k) : ℤ) =
       ∑ M ∈ N.divisors, (μ * μ) (N / M) *
         (Module.finrank ℂ (CuspForm ((Gamma1 M).map (mapGL ℝ)) k) : ℤ) := by
@@ -724,10 +625,39 @@ theorem natCast_finrank_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
   dsimp only [f]
   rw [dite_eq_left_of_eq_true (eq_true hd0)]
 
-/-- **Möbius-square dimension formula for `S_k(N, χ)ⁿᵉʷ`** (Diamond–Shurman, Theorem 5.8.3):
+private lemma natCast_finrank_cuspFormCharSpace_eq_sum_divisors_filter {N M : ℕ} [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) (hcM : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M)
+    (hMN : M ∣ N) :
+    (Module.finrank ℂ (cuspFormCharSpace k
+      ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+        (ZMod.unitsMap hcM))) : ℤ) =
+      ∑ d ∈ M.divisors with DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d,
+        (#(M / d).divisors : ℤ) *
+          if hm : d ≠ 0 ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d then
+            letI : NeZero d := ⟨hm.1⟩
+            (Module.finrank ℂ ((cuspFormsNew d k).comap
+              (cuspFormCharSpace k
+                ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+                  (ZMod.unitsMap hm.2))).subtype) : ℤ)
+          else 0 := by
+  have : NeZero M := NeZero.of_dvd hMN
+  rw [finrank_cuspFormCharSpace_eq_sum_divisors_natCard M k _,
+    Nat.cast_sum, Finset.sum_filter, ← Finset.sum_attach M.divisors]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  have hdM : d.1 ∣ M := Nat.dvd_of_mem_divisors d.2
+  have hd0 : d.1 ≠ 0 := (Nat.pos_of_mem_divisors d.2).ne'
+  rw [Nat.cast_mul, natCard_newform_comp_unitsMap_eq (k := k) (χ := χ) hdM hcM hMN]
+  by_cases hcd : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ d.1
+  · rw [dite_eq_left_of_eq_true (eq_true hcd), ite_eq_left hcd,
+      dite_eq_left_of_eq_true (eq_true ⟨hd0, hcd⟩)]
+  · rw [dite_eq_right_of_eq_false (eq_false hcd), ite_eq_right hcd, Nat.cast_zero, mul_zero]
+
+/-- **Möbius-square dimension formula for `S_k(N, χ)ⁿᵉʷ`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3, via `(μ * μ)`-inversion
+`ArithmeticFunction.eq_sum_divisors_filter_dvd_moebius_mul_moebius_mul`):
 `dim S_k(N, χ)ⁿᵉʷ = ∑_{cond χ ∣ M ∣ N} (μ * μ)(N / M) · dim S_k(M, χ_M)`. -/
-theorem natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace (N : ℕ) [NeZero N] (k : ℤ)
-    (χ : (ZMod N)ˣ →* ℂˣ) :
+theorem natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_eq_sum_divisors_moebius_mul_moebius
+    (N : ℕ) [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     (Module.finrank ℂ ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) : ℤ) =
       ∑ M ∈ N.divisors,
         if hc : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M then
@@ -753,43 +683,34 @@ theorem natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace (N : ℕ) [NeZero N
       (Module.finrank ℂ ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) : ℤ) := by
     dsimp only [f, χ₀]
     rw [dite_eq_left_of_eq_true (eq_true ⟨NeZero.ne N, hcN⟩),
-      primitiveCharacter_toUnitHom_comp_unitsMap]
+      DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap]
   have hinv := ArithmeticFunction.eq_sum_divisors_filter_dvd_moebius_mul_moebius_mul (f := f)
     (g := g) hcN (NeZero.pos N) fun M hcM hMN ↦ by
-      have : NeZero M := NeZero.of_dvd hMN
-      dsimp only [g]
-      rw [dite_eq_left_of_eq_true (eq_true hcM),
-        finrank_cuspFormCharSpace_eq_sum_divisors_natCard M k (χ₀.comp (ZMod.unitsMap hcM)),
-        Nat.cast_sum, Finset.sum_filter, ← Finset.sum_attach M.divisors]
-      refine Finset.sum_congr rfl fun d _ ↦ ?_
-      have hdM : d.1 ∣ M := Nat.dvd_of_mem_divisors d.2
-      have hd0 : d.1 ≠ 0 := (Nat.pos_of_mem_divisors d.2).ne'
-      have hcard := natCard_newform_comp_unitsMap_eq (k := k) (χ := χ) hdM hcM hMN
-      rw [Nat.cast_mul, hcard]
-      by_cases hcd : c ∣ d.1
-      · rw [dite_eq_left_of_eq_true (eq_true hcd), ite_eq_left hcd]
-        dsimp only [f]
-        rw [dite_eq_left_of_eq_true (eq_true ⟨hd0, hcd⟩)]
-      · rw [dite_eq_right_of_eq_false (eq_false hcd), ite_eq_right hcd, Nat.cast_zero, mul_zero]
+      dsimp only [g, f, χ₀]
+      rw [dite_eq_left_of_eq_true (eq_true hcM)]
+      exact natCast_finrank_cuspFormCharSpace_eq_sum_divisors_filter k χ hcM hMN
   rw [← hfN, hinv, Finset.sum_filter]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   dsimp only [g, χ₀]
   split_ifs <;> rfl
 
-/-- **Möbius-square dimension formula for `S_k(Γ₀(N))ⁿᵉʷ`** (Diamond–Shurman, Theorem 5.8.3):
+/-- **Möbius-square dimension formula for `S_k(Γ₀(N))ⁿᵉʷ`** (a consequence of Diamond–Shurman,
+Theorem 5.8.3, via `(μ * μ)`-inversion):
 `dim S_k(Γ₀(N))ⁿᵉʷ = ∑_{M ∣ N} (μ * μ)(N / M) · dim S_k(Γ₀(M))`. -/
-theorem natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_one (N : ℕ) [NeZero N] (k : ℤ) :
+theorem natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_one_eq_sum_divisors_moebius_mul_moebius
+    (N : ℕ) [NeZero N] (k : ℤ) :
     (Module.finrank ℂ
       ((cuspFormsNew N k).comap (cuspFormCharSpace k (1 : (ZMod N)ˣ →* ℂˣ)).subtype) : ℤ) =
       ∑ M ∈ N.divisors, (μ * μ) (N / M) *
         (Module.finrank ℂ (CuspForm ((Gamma0 M).map (mapGL ℝ)) k) : ℤ) := by
-  rw [natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace]
+  rw [natCast_finrank_cuspFormsNew_comap_cuspFormCharSpace_eq_sum_divisors_moebius_mul_moebius]
   refine Finset.sum_congr rfl fun M hM ↦ ?_
   have : NeZero M := ⟨(Nat.pos_of_mem_divisors hM).ne'⟩
   have hc : DirichletCharacter.conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) ∣ M := by
-    rw [ofUnitHom_one, DirichletCharacter.conductor_one]
+    rw [MulChar.ofUnitHom_one, DirichletCharacter.conductor_one]
     exact one_dvd M
-  rw [dite_eq_left_of_eq_true (eq_true hc), primitiveCharacter_ofUnitHom_one_comp_unitsMap hc,
+  rw [dite_eq_left_of_eq_true (eq_true hc),
+    DirichletCharacter.primitiveCharacter_ofUnitHom_one_comp_unitsMap hc,
     (cuspFormCharSpaceOneEquiv M k).finrank_eq]
 
 end TauCeti

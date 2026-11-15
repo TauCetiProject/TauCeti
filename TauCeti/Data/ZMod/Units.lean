@@ -52,6 +52,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   modulus. Its consumers are the descent arguments of
   `TauCeti/NumberTheory/ModularForms/Newforms/Descent/`, which carry a nebentypus lowered modulo
   `M / p` along a chain of divisibilities.
+* `ZMod.comp_unitsMap_eq_iff` — cancelling restriction along `ZMod.unitsMap` onto a nonzero
+  multiple modulus.
 * `ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq` and `ZMod.unitsMap_eq_one_of_intCast_eq` —
   a unit that is the class of an integer `c` with `c n ≡ 1`, respectively `c ≡ 1`, modulo a divisor
   `Q` of the modulus reduces to `ZMod.unitOfCoprime n` inverted, respectively to `1`, modulo `Q`.
@@ -128,6 +130,19 @@ theorem ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [MulOne G] {p M M'
   rw [hcomp, MonoidHom.comp_assoc, ZMod.unitsMap_comp] at h
   refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hN'M')).mp (h.trans ?_)
   rw [MonoidHom.comp_assoc, MonoidHom.comp_assoc, ZMod.unitsMap_comp, ZMod.unitsMap_comp]
+
+/-- **Cancelling restriction along `ZMod.unitsMap`.** For `c ∣ d` and `d ∣ M` with `M ≠ 0`, a unit
+homomorphism `ψ` modulo `d` agrees with `χ₀` modulo `c` after restricting both to `(ZMod M)ˣ` if
+and only if `ψ` is the pullback of `χ₀` along `ZMod.unitsMap hcd`. -/
+theorem ZMod.comp_unitsMap_eq_iff {G : Type*} [MulOne G] {c d M : ℕ} [NeZero M]
+    (hcd : c ∣ d) (hdM : d ∣ M) (hcM : c ∣ M) {ψ : (ZMod d)ˣ →* G} {χ₀ : (ZMod c)ˣ →* G} :
+    ψ.comp (ZMod.unitsMap hdM) = χ₀.comp (ZMod.unitsMap hcM) ↔
+      ψ = χ₀.comp (ZMod.unitsMap hcd) := by
+  have hcomp : (χ₀.comp (ZMod.unitsMap hcd)).comp (ZMod.unitsMap hdM) =
+      χ₀.comp (ZMod.unitsMap hcM) := by
+    rw [MonoidHom.comp_assoc, ZMod.unitsMap_comp]
+  rw [← hcomp]
+  exact MonoidHom.cancel_right (ZMod.unitsMap_surjective hdM)
 
 /-- **A lowered unit homomorphism stays lowered after restricting to a multiple.** If `χ` modulo
 `N` is pulled back from `χ₀` modulo `N / p`, then restricting `χ` to the units modulo `N * L` is

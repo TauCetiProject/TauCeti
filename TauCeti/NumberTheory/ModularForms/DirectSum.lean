@@ -31,6 +31,7 @@ vanishing at the infinitely many units `-n m z + 1` (`m : ℕ`), which vanishes 
 
 * `SlashInvariantForm.evalDirectSum`: pointwise evaluation
   `(⨁ k : ℤ, SlashInvariantForm Γ k) →+ (ℍ → ℂ)`.
+* `ModularForm.coeLinearMap`, `CuspForm.coeLinearMap`: coercion to `ℍ → ℂ` as a `ℂ`-linear map.
 * `ModularForm.evalDirectSum`: pointwise evaluation as a ring homomorphism
   `(⨁ k : ℤ, ModularForm Γ k) →+* (ℍ → ℂ)`.
 * `ModularForm.evalDirectSumAlgHom`: pointwise evaluation as a `ℂ`-algebra homomorphism
@@ -38,6 +39,8 @@ vanishing at the infinitely many units `-n m z + 1` (`m : ℕ`), which vanishes 
 
 ## Main results
 
+* `ModularForm.linearIndependent_coe_iff`, `CuspForm.linearIndependent_coe_iff`: modular or cusp
+  forms of fixed weight are linearly independent iff their underlying functions on `ℍ` are.
 * `SlashInvariantForm.evalDirectSum_injective`: slash-invariant forms of distinct weights
   are linearly independent under `[Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]`.
 * `ModularForm.evalDirectSum_injective`,
@@ -156,6 +159,16 @@ theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
     coeLinearMap Γ k f = ⇑f :=
   (rfl)
 
+theorem coeLinearMap_injective [Γ.HasDetOne] (k : ℤ) :
+    Function.Injective (coeLinearMap Γ k) :=
+  DFunLike.coe_injective
+
+/-- Modular forms of weight `k` are `ℂ`-linearly independent if and only if their underlying
+functions `ℍ → ℂ` are `ℂ`-linearly independent. -/
+theorem linearIndependent_coe_iff [Γ.HasDetOne] {ι : Type*} {k : ℤ} {v : ι → ModularForm Γ k} :
+    LinearIndependent ℂ (fun i ↦ (v i : ℍ → ℂ)) ↔ LinearIndependent ℂ v :=
+  (coeLinearMap Γ k).linearIndependent_iff_of_injOn (coeLinearMap_injective k).injOn
+
 /-- Pointwise evaluation of the graded ring `⨁ k : ℤ, ModularForm Γ k` as a ring homomorphism into
 `ℍ → ℂ`. -/
 def evalDirectSum [Γ.HasDetPlusMinusOne] :
@@ -244,5 +257,32 @@ theorem evalDirectSumAlgHom_inj [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ �
   evalDirectSumAlgHom_injective.eq_iff
 
 end ModularForm
+
+namespace CuspForm
+
+/-- Coercion of a cusp form of weight `k` to a function `ℍ → ℂ`, as a `ℂ`-linear map when
+`[Γ.HasDetOne]`. -/
+def coeLinearMap (Γ : Subgroup (GL (Fin 2) ℝ)) [Γ.HasDetOne] (k : ℤ) :
+    CuspForm Γ k →ₗ[ℂ] (ℍ → ℂ) where
+  toFun f := ⇑f
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : CuspForm Γ k) :
+    coeLinearMap Γ k f = ⇑f :=
+  (rfl)
+
+theorem coeLinearMap_injective [Γ.HasDetOne] (k : ℤ) :
+    Function.Injective (coeLinearMap Γ k) :=
+  DFunLike.coe_injective
+
+/-- Cusp forms of weight `k` are `ℂ`-linearly independent if and only if their underlying functions
+`ℍ → ℂ` are `ℂ`-linearly independent. -/
+theorem linearIndependent_coe_iff [Γ.HasDetOne] {ι : Type*} {k : ℤ} {v : ι → CuspForm Γ k} :
+    LinearIndependent ℂ (fun i ↦ (v i : ℍ → ℂ)) ↔ LinearIndependent ℂ v :=
+  (coeLinearMap Γ k).linearIndependent_iff_of_injOn (coeLinearMap_injective k).injOn
+
+end CuspForm
 
 end

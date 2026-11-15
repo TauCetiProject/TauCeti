@@ -31,7 +31,8 @@ A character of order dividing two is `1` at the square of every unit
 (`MulChar.ringHomComp_intCast_apply_of_apply_eq`).
 
 The trivial character is quadratic (`MulChar.isQuadratic_one`), and it corresponds to the trivial
-homomorphism of unit groups (`MulChar.equivToUnitHom_one`, `MulChar.toUnitHom_one`).
+homomorphism of unit groups (`MulChar.equivToUnitHom_one`, `MulChar.toUnitHom_one`,
+`MulChar.equivToUnitHom_symm_one`, `MulChar.ofUnitHom_one`).
 
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
@@ -79,6 +80,21 @@ theorem equivToUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
 theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
     (1 : MulChar R R').toUnitHom = 1 :=
   equivToUnitHom_one
+
+/-- The trivial homomorphism of unit groups corresponds to the trivial multiplicative character
+under `MulChar.equivToUnitHom.symm`. -/
+@[simp]
+theorem equivToUnitHom_symm_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 :=
+  map_one mulEquivToUnitHom.symm
+
+-- Not `@[simp]`: `MulChar.ofUnitHom_eq` simplifies the left-hand side to `equivToUnitHom.symm 1`,
+-- which `MulChar.equivToUnitHom_symm_one` then reduces to `1`.
+/-- Extending the trivial homomorphism of unit groups by zero on nonunits gives the trivial
+multiplicative character. -/
+theorem ofUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    ofUnitHom (1 : Rˣ →* R'ˣ) = 1 :=
+  equivToUnitHom_symm_one
 
 /-- A multiplicative character takes a value at `-1` whose square is `1`. -/
 @[simp]
