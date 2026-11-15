@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differentiating along a curve in a manifold
@@ -260,6 +261,19 @@ theorem curveVelocityWithin_subset {u : Set 𝕜} (hus : u ⊆ s)
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply,
     mfderivWithin_subset hus hu.uniqueMDiffWithinAt hγ]
 
+/-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
+within `s`. -/
+@[simp]
+theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
+    curveVelocityWithin 𝓘(𝕜, F) γ s t = derivWithin γ s t := by
+  rw [curveVelocityWithin_apply, mfderivWithin_eq_fderivWithin]
+  exact fderivWithin_derivWithin (f := γ) (s := s) (x := t)
+
+/-- The velocity of a curve in a normed space, read in its own model, is its derivative. -/
+@[simp]
+theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) γ t = deriv γ t := by
+  rw [← curveVelocityWithin_univ, curveVelocityWithin_eq_derivWithin, derivWithin_univ]
+
 end TauCeti.Manifold
 
 namespace MDifferentiableAt
@@ -280,20 +294,9 @@ applied to `w`. -/
 theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
     (hf : MDifferentiableAt 𝓘(𝕜, F) I f (g t)) (hg : HasDerivAt g w t) :
     curveVelocity I (f ∘ g) t = mfderiv 𝓘(𝕜, F) I f (g t) w := by
-  have hcomp := hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt
-  have hwithin : curveVelocityWithin I (f ∘ g) Set.univ t =
-      mfderiv 𝓘(𝕜, F) I f (g t) w := by
-    apply curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (w := mfderiv 𝓘(𝕜, F) I f (g t) w) _ uniqueDiffWithinAt_univ
-    apply hcomp.hasMFDerivWithinAt.congr_mfderiv
-    apply ContinuousLinearMap.ext
-    intro z
-    -- The source model of a scalar curve is one-dimensional; exposing its scalar coordinate lets
-    -- linearity identify the derivative on `z` with its value on `1`.
-    change mfderiv 𝓘(𝕜, F) I f (g t) ((show 𝕜 from z) • w) =
-      (show 𝕜 from z) • mfderiv 𝓘(𝕜, F) I f (g t) w
-    exact map_smul _ _ _
-  simpa only [curveVelocityWithin_univ] using hwithin
+  simpa only [curveVelocityWithin_univ, curveVelocity_eq_deriv, hg.deriv] using
+    curveVelocityWithin_map hf uniqueDiffWithinAt_univ
+      hg.differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
 
 end MDifferentiableAt
 
@@ -410,14 +413,58 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
 
-/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
-differentiable, its velocity at `t + c` is its velocity at `t`. -/
-theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+/-- Translating a curve's parameter preserves differentiability at the corresponding point. -/
+theorem mdifferentiableAt_comp_add_right_iff {c : 𝕜} :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun s ↦ γ (s + c)) t ↔
+      MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c) := by
+  constructor
+  · intro ht
+    have hc := ht.comp_of_eq (x := t + c)
+      (differentiableAt_fun_id.sub_const c).mdifferentiableAt (add_sub_cancel_right t c)
+    simpa only [Function.comp_def, sub_add_cancel] using hc
+  · intro ht
+    simpa only [Function.comp_def] using
+      ht.comp t (differentiableAt_fun_id.add_const c).mdifferentiableAt
+
+variable (I) in
+/-- Translating the parameter translates the velocity, including at points where the curve is
+not differentiable. -/
+theorem curveVelocity_comp_add_right (γ : 𝕜 → M) (t c : 𝕜) :
+    curveVelocity I (fun s ↦ γ (s + c)) t = curveVelocity I γ (t + c) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)
+  · simpa only [Function.comp_def, one_smul] using
+      curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+  have hshift := mt mdifferentiableAt_comp_add_right_iff.mp hγ
+  rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hshift,
+    mfderiv_zero_of_not_mdifferentiableAt hγ]
+  exact (zero_apply _).trans (zero_apply _).symm
+
+/-- Reflecting the parameter negates the velocity, including at nondifferentiable points. -/
+theorem curveVelocity_comp_const_sub (γ : 𝕜 → M) (d t : 𝕜) :
+    curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (d - t)
+  · simpa only [Function.comp_def, id_eq, neg_smul, one_smul] using
+      curveVelocity_comp ((hasDerivAt_id t).const_sub d) hγ
+  · have hγ' : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun r ↦ γ (d - r)) t := fun h ↦ hγ <| by
+      simpa only [Function.comp_def, sub_sub_cancel, id_eq] using h.comp_of_eq (d - t)
+        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.const_sub d))
+        (sub_sub_cancel d t)
+    rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hγ']
+    exact neg_zero.symm
+
+/-- Differentiability of a periodic curve is unchanged by shifting by a period. -/
+theorem _root_.Function.Periodic.mdifferentiableAt_add {c : 𝕜} (h : Function.Periodic γ c) :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c) ↔ MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t := by
+  simpa only [h.funext] using
+    (mdifferentiableAt_comp_add_right_iff (I := I) (γ := γ) (t := t) (c := c)).symm
+
+/-- The velocity of a `c`-periodic curve is `c`-periodic: its velocity at `t + c` is its velocity
+at `t`. Both vanish when the curve is not differentiable at these points. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c) :
     curveVelocity I γ (t + c) = curveVelocity I γ t := by
-  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
-  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
-  exact h'.symm
+  -- Tangent spaces at different base points are definitionally the model vector space `E`.
+  rw [← curveVelocity_comp_add_right, h.funext]
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
@@ -443,19 +490,6 @@ would otherwise keep `simp` from reaching. -/
 @[simp]
 theorem curveVelocity_const (x : M) : curveVelocity I (fun _ : 𝕜 ↦ x) t = 0 := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_const]
-
-/-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
-within `s`. -/
-@[simp]
-theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
-    curveVelocityWithin 𝓘(𝕜, F) γ s t = derivWithin γ s t := by
-  rw [curveVelocityWithin_apply, mfderivWithin_eq_fderivWithin]
-  exact fderivWithin_derivWithin (f := γ) (s := s) (x := t)
-
-/-- The velocity of a curve in a normed space, read in its own model, is its derivative. -/
-@[simp]
-theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) γ t = deriv γ t := by
-  rw [← curveVelocityWithin_univ, curveVelocityWithin_eq_derivWithin, derivWithin_univ]
 
 /-- A map `(a, b) ↦ x b` of the plane, which depends only on the second coordinate, has zero
 differential in the direction of the first coordinate. -/
@@ -638,16 +672,9 @@ theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : �
     tangentMapWithin 𝓘(𝕜, 𝕜) I γ u
         (TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
       curveVelocityLiftWithin I γ u t := by
-  have hunit : (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm (1 : 𝕜) =
-      (1 : 𝕜) := by
-    apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).injective
-    rw [ContinuousLinearEquiv.apply_symm_apply]
-    rfl
-  apply TotalSpace.ext
-  · exact tangentMapWithin_proj
-  · rw [tangentMapWithin_snd, curveVelocityLiftWithin_snd, hunit,
-      curveVelocityWithin_apply]
-    rfl
+  rw [curveVelocityLiftWithin_apply, curveVelocityWithin_apply]
+  ext <;> simp only [tangentMapWithin_proj, tangentMapWithin_snd, heq_eq_eq]
+  rw [NormedSpace.fromTangentSpace_symm_apply]
 
 /-- Tangent maps carry the velocity lift within a parameter set to the velocity lift of the
 image curve. This is the tangent-bundle form of the within-domain chain rule. -/
