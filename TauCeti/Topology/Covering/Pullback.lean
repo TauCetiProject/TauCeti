@@ -67,7 +67,7 @@ the projection `X ×_Y Z → X` of the fibre product of `f` and `g`. -/
 theorem IsEvenlyCovered.pullback_fst {I : Type*} [TopologicalSpace I] {x : X} (hf : Continuous f)
     (h : IsEvenlyCovered g (f x) I) :
     IsEvenlyCovered (Pullback.fst : f.Pullback g → X) x I := by
-  obtain ⟨hI, U, hxU, hU, hgU, H, hH⟩ := h
+  obtain ⟨hI, U, hxU, hU, _, H, hH⟩ := h
   -- The point of `g ⁻¹' U` under a point of the fibre product over `f ⁻¹' U`.
   let k (w : Pullback.fst ⁻¹' (f ⁻¹' U)) : g ⁻¹' U :=
     ⟨w.1.snd, by

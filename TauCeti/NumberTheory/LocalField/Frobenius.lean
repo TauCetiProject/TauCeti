@@ -184,7 +184,7 @@ theorem frobeniusAlgEquiv_restrictNormal :
       (algebraMap 𝒪[L] 𝒪[M] y)
     have hdM : algebraMap 𝒪[L] 𝒪[M] d ∈ IsLocalRing.maximalIdeal 𝒪[M] := by
       apply (Valuation.mem_maximalIdeal_iff (v := valuation M)).2
-      rw [coe_algebraMap_integerRing, hdcoe, map_sub, map_pow,
+      rw [Valuation.HasExtension.val_algebraMap, hdcoe, map_sub, map_pow,
         AlgEquiv.restrictNormal_commutes]
       exact hσ
     exact (Valuation.HasExtension.algebraMap_mem_maximalIdeal_iff
@@ -233,9 +233,10 @@ theorem frobeniusAlgEquiv_restrictScalars_restrictNormal [IsUnramified K L] [IsU
   have hσ := valuation_frobeniusAlgEquiv_sub_pow (K := K') (L := L') (algebraMap 𝒪[L] 𝒪[L'] y)
   have hd : algebraMap 𝒪[L] 𝒪[L'] (σ • y - y ^ Nat.card 𝓀[K']) ∈ 𝓂[L'] := by
     refine (Valuation.mem_maximalIdeal_iff (v := valuation L')).2 ?_
-    rwa [coe_algebraMap_integerRing, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow,
+    rwa [Valuation.HasExtension.val_algebraMap, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow,
       AlgEquiv.coe_smul_integerRing, map_sub, map_pow, AlgEquiv.restrictNormal_commutes,
-      AlgEquiv.restrictScalars_apply, ← coe_algebraMap_integerRing]
+      AlgEquiv.restrictScalars_apply,
+      ← Valuation.HasExtension.val_algebraMap (vA := valuation L')]
   exact (Valuation.HasExtension.algebraMap_mem_maximalIdeal_iff (valuation L) (valuation L')).mp hd
 
 end BaseChange

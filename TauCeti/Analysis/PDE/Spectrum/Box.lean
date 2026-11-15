@@ -97,7 +97,7 @@ theorem boxSineMode_def (a b : ι → ℝ) (k : ι → ℕ) (x : EuclideanSpace 
 /-- The separated modes are smooth on the whole Euclidean space. -/
 theorem contDiff_boxSineMode (a b : ι → ℝ) (k : ι → ℕ) :
     ContDiff ℝ ⊤ (boxSineMode a b k) := by
-  have h : ContDiff ℝ ⊤ (WithLp.ofLp : EuclideanSpace ℝ ι → (ι → ℝ)) :=
+  have _ : ContDiff ℝ ⊤ (WithLp.ofLp : EuclideanSpace ℝ ι → (ι → ℝ)) :=
     PiLp.contDiff_ofLp
   unfold boxSineMode
   fun_prop

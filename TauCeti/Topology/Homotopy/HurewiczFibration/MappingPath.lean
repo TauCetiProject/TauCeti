@@ -194,7 +194,7 @@ theorem fiberHomotopyEquiv_natural {E' B' : Type*} [TopologicalSpace E']
   apply Subtype.ext
   simp only [MappingPathFiber.map_val, fiberHomotopyEquiv_apply_val]
   refine Prod.ext rfl ?_
-  ext t
+  ext _
   exact ContinuousMap.congr_fun h x
 
 end LiftingFunction

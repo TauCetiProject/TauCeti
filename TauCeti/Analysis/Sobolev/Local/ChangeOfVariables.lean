@@ -181,23 +181,31 @@ theorem MemWkpLoc.ball_one_comp_two_mul {u : ℂ → F}
     linarith
 
 /-- The dilation `z ↦ 2 z` scales the first weak derivative by `2`: if `Du` is a weak derivative
+of `u` on `V`, then `z ↦ 2 • Du (2 z)` is a weak derivative of `z ↦ u (2 z)` on every open set
+mapped into `V` by `z ↦ 2 z`. -/
+theorem HasWeakFDerivOn.comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F} {U V : Opens ℂ}
+    (hu : HasWeakFDerivOn volume V u Du) (hUV : MapsTo (2 * ·) (U : Set ℂ) V) :
+    HasWeakFDerivOn volume U (fun z => u (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
+  set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
+  have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
+  have h := hu.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz => by
+    simpa [hA] using hUV hz
+  convert h using 2 with z
+  · simp [hA]
+  · ext v
+    simp [hA, Complex.real_smul, ← map_smul]
+
+/-- The dilation `z ↦ 2 z` scales the first weak derivative by `2`: if `Du` is a weak derivative
 of `u` on `ball 0 2`, then `z ↦ 2 • Du (2 z)` is a weak derivative of `z ↦ u (2 z)` on
 `ball 0 1`. -/
 theorem HasWeakFDerivOn.ball_one_comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F}
     (hu : HasWeakFDerivOn volume ⟨Metric.ball 0 2, Metric.isOpen_ball⟩ u Du) :
     HasWeakFDerivOn volume ⟨Metric.ball 0 1, Metric.isOpen_ball⟩ (fun z => u (2 * z))
-      (fun z => (2 : ℝ) • Du (2 * z)) := by
-  set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
-  have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
-  have h := hu.comp_continuousLinearEquiv_add (U := ⟨Metric.ball 0 1, Metric.isOpen_ball⟩) A 0
-    (fun z hz => by
-      simp only [SetLike.mem_coe, Opens.mem_mk, Metric.mem_ball, dist_zero_right, hA, add_zero,
-        norm_mul, Complex.norm_ofNat] at hz ⊢
-      linarith)
-  convert h using 2 with z
-  · simp [hA]
-  · ext v
-    simp [hA, Complex.real_smul, ← map_smul]
+      (fun z => (2 : ℝ) • Du (2 * z)) :=
+  hu.comp_two_mul fun z hz => by
+    simp only [Opens.coe_mk, Metric.mem_ball, dist_zero_right, norm_mul, Complex.norm_ofNat]
+      at hz ⊢
+    linarith
 
 /-- Complex conjugation preserves every local Sobolev class on sets it maps into one another. -/
 theorem MemWkpLoc.comp_conj {u : ℂ → F} (hu : MemWkpLoc p V k u)

@@ -88,8 +88,8 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` adapts the same AINTLIB file's declaration at the roadmap's NagellLutz
-pin `dev/modular-curves @ 9fec8eba7652`. It specialises the universal parameters using Mathlib's
+`universalNormEDS_ne_zero` adapts the same AINTLIB file's declaration at
+`dev/modular-curves @ 9fec8eba7652`. It specialises the universal parameters using Mathlib's
 `normEDS_two_three_two`.
 -/
 

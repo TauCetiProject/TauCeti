@@ -125,13 +125,13 @@ theorem exists_rational_axis_generators (D : ℤ) [Fact (¬ IsSquare D)]
       z ∈ I ↔ ∃ m n : ℤ, m • (α : QuadraticAlgebra ℚ (D : ℚ) 0) + n • (β : _) = z := by
     constructor
     · intro hz
-      let zI : J := ⟨z, (FractionalIdeal.mem_coe (I := I)).mpr hz⟩
+      let zI : J := ⟨z, (FractionalIdeal.mem_coeToSubmodule (I := I)).mpr hz⟩
       obtain ⟨m, n, hmn⟩ := hcoordinates zI
       have hvec : m • α + n • β = zI := by
         simpa only [α, β, hp, hr] using hmn
       exact ⟨m, n, by simpa using congrArg Subtype.val hvec⟩
     · rintro ⟨m, n, rfl⟩
-      exact (FractionalIdeal.mem_coe (I := I)).mp
+      exact (FractionalIdeal.mem_coeToSubmodule (I := I)).mp
         (by simpa [J] using (m • α + n • β).property)
   have hβ : (β : QuadraticAlgebra ℚ (D : ℚ) 0).im ≠ 0 := by
     intro hzero

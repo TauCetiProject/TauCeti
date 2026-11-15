@@ -21,7 +21,8 @@ compares with the number itself in `EReal`, that the coercion from `ℝ≥0∞` 
 infima, how combinations `s a + t b - r` with real weights and subtrahend behave, and that
 negation distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
-installing a coercion; it is additive.
+installing a coercion; it is additive. Finally, the adjunction `a + b ≤ c ↔ b ≤ c - a` is
+recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`.
 
 ## Main results
 
@@ -64,6 +65,8 @@ installing a coercion; it is additive.
 * `EReal.coe_add_add_eq_of_add_add_eq` — an equation between two sums of an extended nonnegative
   real and two real numbers follows from an equation of `ℝ≥0∞` sums and of real differences.
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`.
+* `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
+  hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -342,6 +345,15 @@ theorem coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
   rw [← div_le_iff_le_mul hc' (coe_ne_top c), ← mul_div,
     mul_div_cancel (coe_ne_bot c) (coe_ne_top c) hc'.ne']
+
+/-- Unconditional form of `EReal.le_sub_iff_add_le`: `a + b ≤ c` bounds `b` by `c - a`, except
+that there is no bound when `c = ⊤` or `a = ⊥`. For each `a` this is a Galois connection between
+`(a + ·)` and the right-hand side. -/
+theorem add_le_iff_le_ite {a b c : EReal} :
+    a + b ≤ c ↔ b ≤ if c = ⊤ ∨ a = ⊥ then ⊤ else c - a := by
+  by_cases h : c = ⊤ ∨ a = ⊥
+  · rcases h with rfl | rfl <;> simp
+  · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
 
 end EReal
 

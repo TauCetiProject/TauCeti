@@ -237,7 +237,7 @@ theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctio
     rw [span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top hF hex h P']
     exact Submodule.mem_top
   induction hy using Submodule.span_induction with
-  | mem x hx => exact hx
+  | mem _ hx => exact hx
   | zero => exact ⟨0, map_zero ι⟩
   | add x y _ _ hx hy => exact ι.range.add_mem hx hy
   | smul r x _ hx => exact Algebra.smul_def r x ▸ ι.range.mul_mem (hmem r) hx

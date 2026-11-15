@@ -47,9 +47,6 @@ not reduced, and with a character of order `p`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This is the character-group calculation used in Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -76,11 +73,13 @@ theorem single_mul_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P] (x :
   rw [groupAlgebraSubgroupAverage, mul_smul_comm, single_mul_subgroupCharSum]
   simp
 
-/-- The normalized sum of a finite subgroup is idempotent when its cardinality is nonzero in the
-base field. -/
-theorem isIdempotentElem_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P]
-    (hP : (Fintype.card P : k) ≠ 0) :
+/-- The normalized sum of a finite subgroup is idempotent. When its cardinality vanishes in the
+base field the average is `0`, since `0⁻¹ = 0`. -/
+theorem isIdempotentElem_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P] :
     IsIdempotentElem (groupAlgebraSubgroupAverage k P) := by
+  by_cases hP : (Fintype.card P : k) = 0
+  · rw [groupAlgebraSubgroupAverage, hP, inv_zero, zero_smul]
+    exact IsIdempotentElem.zero
   rw [IsIdempotentElem, groupAlgebraSubgroupAverage, smul_mul_smul,
     subgroupCharSum_mul_self, Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul k, smul_smul]
   simp [hP]
@@ -134,7 +133,6 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
         simpa using (Fintype.card_congr (finEquivZPowers hyfinite)).symm
       exact hcard'.trans hy_order
     have havg := isIdempotentElem_groupAlgebraSubgroupAverage k P
-      (by simpa only [hcard] using hchar)
     rcases havg.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · exact groupAlgebraSubgroupAverage_ne_zero k P
         (by simpa only [hcard] using hchar) hzero

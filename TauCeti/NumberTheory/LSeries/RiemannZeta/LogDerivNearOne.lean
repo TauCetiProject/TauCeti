@@ -44,7 +44,7 @@ theorem IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le {K : Set �
     (hK : IsCompact K) (hK₁ : K ⊆ {s | 1 ≤ s.re}) :
     ∃ C, ∀ s ∈ K, s ≠ 1 → ‖logDeriv riemannZeta s + (s - 1)⁻¹‖ ≤ C := by
   have hcont := (continuousOn_neg_logDeriv_LFunctionTrivChar₁ 1).mono fun s hs ↦ by
-    rcases eq_or_ne s 1 with rfl | hs₁
+    rcases eq_or_ne s 1 with rfl | _
     · exact .inl rfl
     · refine .inr ?_
       rw [LFunctionTrivChar, LFunction_modOne_eq]

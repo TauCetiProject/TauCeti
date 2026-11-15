@@ -352,7 +352,7 @@ theorem prepend_mem_nonComposableWords_of_ne {X Y Y' Z : C} {u : TotalHom R C}
     prepend R _ u w ∈ nonComposableWords R C := by
   induction hw using Submodule.span_induction with
   | mem w hw =>
-    obtain ⟨n, hn, a, b, z, hz, hab, rfl, rfl, rfl⟩ := hw
+    obtain ⟨n, hn, a, b, z, hz, _, rfl, rfl, rfl⟩ := hw
     rw [prepend_of_tprod_cons]
     exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
       fun h ↦ hne (h.eq 0 (by omega))
@@ -755,11 +755,11 @@ theorem koszulTwist_shift_mem_range (c q : ℤ) {X Y : C} {u : TotalHom R C}
   exact Submodule.smul_mem _ _ (koszulTwist_mem_range_homInclusion q hu)
 
 /-- The natural-indexed string with its first `p` morphisms Koszul-twisted. -/
-private noncomputable def twistNat (G : InternalGrading R (TotalHom R C)) (q : ℤ)
+private noncomputable def twistNat (G : InternalGrading R (TotalHom R C) ℤ) (q : ℤ)
     (z : ℕ → TotalHom R C) (p : ℕ) : ℕ → TotalHom R C :=
   fun i ↦ if i < p then G.koszulTwist q (z i) else z i
 
-private theorem twistedTuple_eq_twistNat (G : InternalGrading R (TotalHom R C)) (q : ℤ) {n : ℕ}
+private theorem twistedTuple_eq_twistNat (G : InternalGrading R (TotalHom R C) ℤ) (q : ℤ) {n : ℕ}
     (z : ℕ → TotalHom R C) (p : ℕ) :
     G.twistedTuple q (fun i : Fin n ↦ z i) 0 p = fun i : Fin n ↦ twistNat G q z p i := by
   funext i
@@ -847,7 +847,7 @@ theorem IsWordPathCompatible.comp_gradedCoderiv {D : Type u'} [GradedLinearQuive
 letterwise map `Θ` relates the Taylor maps `t` and `t₁` on composable words, it relates their graded
 Taylor expansions on composable words. -/
 theorem map_gradedCoderiv_of_mem_composableWords {M₁ : Type*} [AddCommMonoid M₁] [Module R M₁]
-    {G : InternalGrading R (TotalHom R C)} {G₁ : InternalGrading R M₁}
+    {G : InternalGrading R (TotalHom R C) ℤ} {G₁ : InternalGrading R M₁ ℤ}
     {Θ : TotalHom R C →ₗ[R] M₁} (hΘ : LinearMap.IsHomogeneous Θ G.piece G₁.piece 0)
     {t₁ : ReducedTensorWords R M₁ →ₗ[R] M₁}
     (h : ∀ X Y : C, ∀ w ∈ composableWords R X Y,

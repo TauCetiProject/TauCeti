@@ -80,6 +80,8 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
   generate the lattice and number at most `rank N`.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
+* `TauCeti.Toric.IsDelzant.facetPairing_ne_zero`: for an injective lattice map, the facet
+  pairings of a Delzant polytope are nonzero.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
@@ -113,10 +115,19 @@ def facetPairing (j : ι) : Module.Dual ℝ (StrongDual ℝ V) :=
 theorem facetPairing_apply (j : ι) (x : StrongDual ℝ V) : facetPairing i u j x = x (i (u j)) :=
   (rfl)
 
+/-- Evaluation on a facet normal is continuous on the dual space. -/
+theorem continuous_facetPairing (j : ι) : Continuous (facetPairing i u j) :=
+  (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
+
 /-- The polyhedron `{x ∈ V* | ∀ j, c j ≤ ⟨x, u j⟩}` cut out by the half-spaces with inward
 normals `u j` and support constants `c j`. -/
 def facetPolyhedron : Set (StrongDual ℝ V) :=
   polyhedron (facetPairing i u) c
+
+/-- A facet polyhedron is the polyhedron of its facet pairings and support constants. -/
+theorem facetPolyhedron_eq_polyhedron :
+    facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
 
 /-- A point `x` of `V*` is a *smooth vertex* of the facet presentation when the normals of the
 constraints active at `x` form a basis of the lattice `N`. -/
@@ -142,10 +153,22 @@ structure IsDelzant : Prop where
 
 variable {i u c}
 
+theorem facetPolyhedron_def : facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
+
 @[simp]
 theorem mem_facetPolyhedron {x : StrongDual ℝ V} :
     x ∈ facetPolyhedron i u c ↔ ∀ j, c j ≤ x (i (u j)) := by
   simp [facetPolyhedron]
+
+/-- The pairing with the `j`-th facet normal vanishes exactly when that normal maps to zero in
+`V`. -/
+@[simp]
+theorem facetPairing_eq_zero_iff {j : ι} : facetPairing i u j = 0 ↔ i (u j) = 0 := by
+  refine ⟨fun h ↦ SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun x ↦ ?_, fun h ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h x
+  · ext x
+    simp [h]
 
 theorem isSmoothVertex_def {x : StrongDual ℝ V} :
     IsSmoothVertex i u c x ↔
@@ -176,7 +199,7 @@ theorem isClosed_facetPolyhedron : IsClosed (facetPolyhedron i u c) := by
     ext; simp
   rw [this]
   exact isClosed_iInter fun j ↦
-    isClosed_le continuous_const (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
+    isClosed_le continuous_const (continuous_facetPairing i u j)
 
 /-- **Vertices of a facet polyhedron.** A point `x` of the polyhedron is a vertex exactly when
 no nonzero point of `V*` vanishes on all the normals active at `x`. -/
@@ -245,9 +268,9 @@ theorem exists_mem_extremePoints_activeSet_subset (hc : IsCompact (facetPolyhedr
   set s := activeSet (facetPairing i u) c x
   have hF := isExtreme_polyhedron_inter_setOf_subset_activeSet (f := facetPairing i u) (c := c) s
   have hclosed : IsClosed {y : StrongDual ℝ V | s ⊆ activeSet (facetPairing i u) c y} := by
-    simp only [Set.subset_def, mem_activeSet, facetPairing_apply, ofPred_forall]
+    simp only [Set.subset_def, mem_activeSet, ofPred_forall]
     exact isClosed_biInter fun j _ ↦
-      isClosed_eq (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous continuous_const
+      isClosed_eq (continuous_facetPairing i u j) continuous_const
   obtain ⟨v, hv⟩ := (hc.inter_right hclosed).extremePoints_nonempty ⟨x, hx, Set.Subset.rfl⟩
   exact ⟨v, hF.extremePoints_subset_extremePoints hv, (extremePoints_subset hv).2⟩
 
@@ -286,6 +309,10 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
+
+/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
+theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
+  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
 
 /-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
 Delzant polytope lies on none of its facets. -/

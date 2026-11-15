@@ -23,9 +23,8 @@ lattice are imposed by the arithmetic results that use them, rather than being r
 of this abbreviation.
 
 The opposed-filtration convention follows Deligne, *Théorie de Hodge II*, §1.2.1. It is the
-convention fixed by the Hodge structures roadmap and by the `#mathlib4` discussion
-*Complexifications with a view towards Hodge theory* involving Johan Commelin, Andrew Yang, Kevin
-Buzzard, and Joël Riou.
+convention fixed by the `#mathlib4` discussion *Complexifications with a view towards Hodge theory*
+involving Johan Commelin, Andrew Yang, Kevin Buzzard, and Joël Riou.
 
 ## Main declarations
 

@@ -30,7 +30,7 @@ theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) 
   · let w : ℝ := 1 / s.card
     have hcard : (s.card : ℝ) ≠ 0 := by
       exact_mod_cast (card_ne_zero.mpr hs)
-    have hw : ∑ i ∈ s, w = 1 := by
+    have hw : ∑ _ ∈ s, w = 1 := by
       simp only [sum_const, nsmul_eq_mul]
       dsimp [w]
       field_simp

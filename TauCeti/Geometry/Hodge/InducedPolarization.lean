@@ -72,8 +72,9 @@ noncomputable def hodgeStructure :
   · intro p
     rw [latticeConjugation_integralSubmoduleToComplex,
       Conjugation.map_restrict_comap_subtype, ← hs.conjF_def]
-    exact TauCeti.Submodule.isCompl_comap_subtype (hs.isCompl_F_conjF p).disjoint
-      (h.le_inf_F_sup_inf_conjF p)
+    exact Submodule.isCompl_comap_subtype_iff.2
+      ⟨(hs.isCompl_F_conjF p).disjoint.mono inf_le_right inf_le_right,
+        h.le_inf_F_sup_inf_conjF p⟩
 
 /-- The filtration on the induced Hodge structure is the trace of the ambient filtration. -/
 @[simp]

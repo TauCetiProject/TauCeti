@@ -29,18 +29,10 @@ hypothesis is needed for this upper bound.
 * `TauCeti.TitsSystem.inv_bruhatCell`: inversion of a Weyl-indexed cell.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple_right`: right multiplication
   by a simple cell.
-* `TauCeti.TitsSystem.subset_bruhatCell_mul_of_mem_simple_right` and
-  `TauCeti.TitsSystem.bruhatCell_mul_subset_union_of_mem_simple_right`: the adjacent cell always
-  occurs in the product with a simple cell on the right, and nothing beyond the adjacent and the
-  original cell does.
+* `TauCeti.TitsSystem.bruhatCell_mul_subset_union_of_mem_simple_right`: for a simple cell, the
+  product on the right contains nothing beyond the adjacent and the original cell.
 * `TauCeti.TitsSystem.exists_sublist_of_mem_prod_bruhatCell`: the subword expansion for a product
   of simple cells.
-
-## Roadmap
-
-This is the next combinatorial input toward injectivity of the Weyl-to-double-coset map and the
-Coxeter-system consequences of a Tits system in Layer 7, "Bruhat decomposition and BN-pairs /
-Tits systems", of `TauCetiRoadmap/ReductiveGroups/README.md`.
 
 ## References
 
@@ -80,14 +72,6 @@ theorem bruhatCell_mul_eq_or_eq_union_of_mem_simple_right (w : T.WeylGroup)
   · right
     have h' := congrArg Inv.inv h
     simpa only [mul_inv_rev, inv_bruhatCell, inv_inv, T.inv_simple hs, Set.union_inv] using h'
-
-/-- The adjacent cell always occurs in the product with a simple cell on the right. -/
-theorem subset_bruhatCell_mul_of_mem_simple_right (w : T.WeylGroup) {s : T.WeylGroup}
-    (hs : s ∈ T.simple) : T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
-  rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple_right w hs with h | h
-  · rw [h]
-  · rw [h]
-    exact Set.subset_union_left
 
 /-- The product with a simple cell on the right lies in the union of the adjacent and the original
 cell. -/

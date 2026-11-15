@@ -193,7 +193,7 @@ theorem windingNumber_ellipse_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     (by simpa only [zero_add] using (periodic_circleMap 0 (a + b) 0).symm)
     (ellipse_closed a b)]
   · exact Contour.windingNumber_circleMap_eq_one_of_dist_lt (by simpa using hR)
-  intro t ht
+  intro t _
   rw [dist_eq_norm, dist_zero_right, norm_circleMap_zero, abs_of_pos hR]
   have hre : (ellipse a b t - circleMap 0 (a + b) t).re = -b * Real.cos t := by
     rw [ellipse_apply]
@@ -293,8 +293,8 @@ theorem windingWeight_ellipse {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (z : ℂ) :
 theorem volume_ellipse_image_ball (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
     volume (affineMap (ellipseCoordinates a b ha hb) 0 '' Metric.ball (0 : ℂ) 1) =
       ENNReal.ofReal (Real.pi * |a * b|) := by
-  rw [volume_affineMap_image _ _ measurableSet_ball.nullMeasurableSet,
-    det_ellipseCoordinates, Complex.volume_ball]
+  rw [volume_affineMap_image _ _, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    det_ellipseCoordinates a b ha hb, Complex.volume_ball]
   simp only [ENNReal.ofReal_one, one_pow, one_mul]
   rw [ENNReal.ofReal_mul Real.pi_pos.le, ← NNReal.coe_real_pi, ENNReal.ofReal_coe_nnreal]
   exact mul_comm _ _

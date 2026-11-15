@@ -242,3 +242,15 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   exact variance_id_map_cast_poissonMeasure r
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+/-- A real random variable with Poisson law has centered second moment equal to the rate. -/
+theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) :
+    ∫ ω, (X ω - r) ^ 2 ∂P = r := by
+  have h := TauCeti.Probability.variance_of_hasLaw_map_cast_poissonMeasure hX
+  rwa [variance_eq_integral hX.aemeasurable,
+    TauCeti.Probability.integral_of_hasLaw_map_cast_poissonMeasure hX] at h
+
+end ProbabilityTheory.HasLaw

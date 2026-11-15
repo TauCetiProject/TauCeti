@@ -137,7 +137,7 @@ private def tautologicalTangentOrientation :
         ((trivializationAt E (TangentSpace I) p.proj).mapOrientation _ hp p.orientation) :=
       VectorBundleOrientationCover.mem_sheet_iff.mpr ⟨hp, rfl⟩
     filter_upwards [(VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds hs]
-      with q hq hmem
+      with q hq _
     exact (VectorBundleOrientationCover.mem_sheet_iff.mp hq).choose_spec
 
 /-- The canonical orientation of the orientation cover: the derivative of the projection at

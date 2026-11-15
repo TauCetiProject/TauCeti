@@ -95,7 +95,7 @@ theorem ofReal_mul_measure_compl_closedBall_le_wassersteinEDist (x : X) (μ : Pr
       wassersteinEDist p (Measure.dirac x) μ := by
   have hsub : (Metric.closedBall x r)ᶜ ⊆ {y | ENNReal.ofReal r ≤ ‖edist x y‖ₑ} := fun y hy ↦ by
     rw [mem_compl_iff, Metric.mem_closedBall, not_le, dist_comm] at hy
-    rw [mem_ofPred_eq, enorm_eq_self, edist_dist]
+    rw [mem_ofPred_eq, eNorm_eq_self, edist_dist]
     exact ENNReal.ofReal_le_ofReal hy.le
   calc ENNReal.ofReal r * (μ : Measure X) (Metric.closedBall x r)ᶜ
       ≤ ENNReal.ofReal r ^ (1 : ℝ≥0∞).toReal *

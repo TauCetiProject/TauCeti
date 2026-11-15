@@ -362,7 +362,7 @@ noncomputable def toAInfinityCategory : AInfinityCategory R C where
   isPathCompatible_m_of_pos n hn := by
     match n, hn with
     | 1, _ =>
-      refine ⟨fun X x ↦ ?_, fun s t x i j hij hne ↦ by omega⟩
+      refine ⟨fun X x ↦ ?_, fun s t x i j hij _ ↦ by omega⟩
       rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply, totalDiff_homInclusion]
       -- The endpoints `X (0 : Fin 1).rev.castSucc` and `X (0 : Fin 1).rev.succ` of the single
       -- morphism are `X 0` and `X (Fin.last 1)` by computation on `Fin 2`.

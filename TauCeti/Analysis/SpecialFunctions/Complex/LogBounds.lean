@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
-# Taylor series bounds for `-log (1 - ·)`
+# Taylor series bounds for `-log (1 - ·)` and `log (1 + ·)`
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
@@ -32,6 +32,10 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
+Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
+re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
+term takes.
+
 ## Main results
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
@@ -46,6 +50,10 @@ factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler
   for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, bounded by `2 / p ^ (n + 1)`.
 * `Complex.one_sub_div_natCast_ne_zero`: for `‖w‖ ≤ 1` and a natural number `p > 1`, the factor
   `1 - w / p` is nonzero.
+* `Complex.hasSum_taylorSeries_log'`: `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for
+  `‖z‖ < 1`.
+* `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
+  `(n + 1)⁻¹`.
 -/
 
 public section
@@ -106,6 +114,25 @@ theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖
   · rw [tsum_eq_zero_of_not_summable hg]
     refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
     exact (hS.hasSum.prod_fiberwise hfib).summable
+
+/-- The Taylor series of `log (1 + z)` without its vanishing constant term:
+`log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for `‖z‖ < 1`. -/
+theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ ↦ (-1) ^ n / (n + 1) * z ^ (n + 1)) (log (1 + z)) := by
+  have h := (hasSum_nat_add_iff' 1).2 (hasSum_taylorSeries_log hz)
+  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
+    sub_zero] at h
+  convert h using 1
+  ext n
+  push_cast
+  ring
+
+/-- The coefficients of the Taylor series of `log (1 + z)` have norm
+`‖(-1) ^ n / (n + 1)‖ = (n + 1)⁻¹`. -/
+theorem norm_neg_one_pow_div_add_one (n : ℕ) :
+    ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
+  rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
+    Complex.norm_natCast, Nat.cast_add_one]
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within

@@ -15,7 +15,8 @@ public import TauCeti.Algebra.HopfAlgebra.FiniteDual.CartierDuality.Basic
 Extension of scalars carries a finite locally free bicommutative Hopf algebra over `R` to one
 over an `R`-algebra `S`, and `TauCeti.ConvolutionDual.baseChangeBialgEquiv` says that it commutes
 with finite dualization. This file records both facts in the category
-`TauCeti.FiniteLocallyFreeBicommutativeHopfAlgCat`, where Cartier duality lives.
+`TauCeti.FiniteLocallyFreeBicommutativeHopfAlgCat`, where Cartier duality lives. Compatibility with
+pullback of the base is what makes Cartier duality usable on fibres and after field extension.
 
 ## Main declarations
 
@@ -31,9 +32,6 @@ with finite dualization. This file records both facts in the category
 ## References
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This advances Layer 4, "Cartier duality", of the ReductiveGroups roadmap: compatibility with
-pullback of the base is what makes Cartier duality usable on fibres and after field extension.
 -/
 
 public section

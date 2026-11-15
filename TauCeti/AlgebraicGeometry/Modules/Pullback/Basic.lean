@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
@@ -71,7 +71,9 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
   an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
-  isomorphism exactly when its pullbacks to the members of an open cover are;
+  isomorphism exactly when its pullbacks to the members of an open cover are, and
+  `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
+  immersions whose images cover the scheme;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
   `f⁻¹ V`, with `pullbackOverUnitIso` and `pullbackOverObjIso` comparing it with the structure
   sheaves and with the pullback of `𝒪_Y`-modules;
@@ -298,22 +300,22 @@ section Monoidal
 variable (f : X ⟶ Y)
 
 /-- Pushforward of modules along a morphism of schemes is lax monoidal
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
+(`SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
 is induced by `m ⊗ n ↦ m ⊗ n` on sections, and its unit map `𝒪_Y ⟶ f_* 𝒪_X` is given by `f` on
 sections (`pushforward_ε`). -/
 instance pushforwardLaxMonoidal : (pushforward f).LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
 
 /-- Pushforward of modules along a scheme morphism respects the symmetry of tensor products. -/
 instance pushforwardLaxBraided : (pushforward f).LaxBraided :=
-  TauCeti.SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
 
 /-- The unit map `𝒪_Y ⟶ f_* 𝒪_X` of the pushforward of modules is given by `f` on sections. -/
 @[simp]
 lemma pushforward_ε :
     Functor.LaxMonoidal.ε (pushforward f) =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  TauCeti.SheafOfModules.pushforward_ε f.toRingCatSheafHom
+  SheafOfModules.pushforward_ε f.toRingCatSheafHom
 
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
@@ -365,9 +367,9 @@ instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 
 /-- The identification `pushforward f ⋙ pushforward g ≅ pushforward (f ≫ g)` is an isomorphism of
-lax monoidal functors (`TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
+lax monoidal functors (`SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
 instance isMonoidal_pushforwardComp_hom : NatTrans.IsMonoidal (pushforwardComp f g).hom :=
-  TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
+  SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The identification `pushforward f ≅ pushforward f'` for equal morphisms `f = f'` is an
 isomorphism of lax monoidal functors. -/
@@ -391,7 +393,7 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
-  TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+  SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
 agrees with the successive tensor comparisons followed by the composition isomorphisms on
@@ -511,6 +513,19 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   have : IsIso ((overEquiv (U i)).functor.map (φ.over (U i))) :=
     (NatIso.isIso_map_iff (overFunctorEquiv (U i)) φ).mpr this
   exact isIso_of_reflects_iso (φ.over (U i)) (overEquiv (U i)).functor
+
+/-- A morphism of modules is an isomorphism exactly when its pullbacks along a family of open
+immersions whose images cover the scheme are isomorphisms. -/
+theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {U : ι → Scheme.{u}} (f : ∀ i, U i ⟶ X)
+    [∀ i, IsOpenImmersion (f i)] (hf : TopologicalSpace.IsOpenCover fun i ↦ (f i).opensRange)
+    {A B : X.Modules} (φ : A ⟶ B) : IsIso φ ↔ ∀ i, IsIso ((pullback (f i)).map φ) := by
+  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ (isIso_iff_of_isOpenCover hf φ).mpr fun i ↦ ?_⟩
+  -- The inclusion of the image of `f i` is `f i` precomposed with an isomorphism.
+  have : IsIso ((pullback (f i) ⋙ pullback (f i).isoOpensRange.inv).map φ) := by
+    rw [Functor.comp_map]
+    infer_instance
+  exact (NatIso.isIso_map_iff (pullbackComp _ _ ≪≫
+    pullbackCongr (f i).isoOpensRange_inv_comp) φ).mp this
 
 /-- Monomorphisms of module sheaves can be checked after pullback to an open cover. -/
 theorem mono_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}

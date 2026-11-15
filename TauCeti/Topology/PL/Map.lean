@@ -76,8 +76,7 @@ such a family of affine pieces.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
-This is part of the structure-group track of layer 1 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`); the groupoid built from it lives in
+The piecewise-linear groupoid built from it lives in
 `TauCeti/Geometry/Manifold/PLGroupoid/Basic.lean`.
 -/
 

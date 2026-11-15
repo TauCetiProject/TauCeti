@@ -49,10 +49,8 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructure.Hom.commutes_weilOperator`: morphisms commute with `C`.
 * `TauCeti.Hodge.tate_weilOperator`: the Weil operator of `ℤ(m)` is the identity.
 
-This supplies the Weil operator targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The sign conventions are those of Voisin, *Hodge
-Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge
-Structures*, §2.
+The sign conventions are those of Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
+§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section

@@ -124,6 +124,26 @@ theorem gradedResolutionDifferential_lof (n : ℕ) (x : (resolutionX X (n + 1)).
     resolutionModuleComplex_d_apply] at h
   exact h
 
+/-- The total differential has degree one: the degree-`n + 1` component of `d x` is the original
+resolution differential `d (n + 1)` applied to the degree-`n` component of `x`. -/
+@[simp]
+theorem component_gradedResolutionDifferential_succ (n : ℕ) (x : X.gradedResolutionModule) :
+    DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1)
+        (X.gradedResolutionDifferential x) =
+      (d X (n + 1)).hom
+        (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) := by
+  classical
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of m y =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionDifferential_lof, DirectSum.component.of,
+      DirectSum.component.of]
+    by_cases h : m = n
+    · subst h
+      simp
+    · simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- The differential of the total shifted resolution squares to zero. -/
 @[simp]
 theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
@@ -440,6 +460,15 @@ theorem gradedResolutionProjection_lof_succ (n : ℕ)
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1) F) = 0 := by
   rw [gradedResolutionProjection, LinearMap.comp_apply, DirectSum.component.of,
     dite_eq_right n.succ_ne_zero, map_zero]
+
+/-- The projection only sees the degree-zero component. -/
+theorem gradedResolutionProjection_lof_component_zero [DecidableEq ℕ]
+    (w : X.gradedResolutionModule) :
+    X.gradedResolutionProjection
+        (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0
+          (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 w)) =
+      X.gradedResolutionProjection w := by
+  simp [gradedResolutionProjection]
 
 /-- The projection retracts the augmentation. -/
 @[simp↓]
