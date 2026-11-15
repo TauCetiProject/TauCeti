@@ -44,12 +44,16 @@ Equality in Hadamard's inequality characterizes the calibrated planes
 2. `Im(e^(-iθ) Ω v) = 0` (the phase matches `θ` modulo `π`); and
 3. `0 < Re(e^(-iθ) Ω v)` (the orientation agrees with the positive branch rather than `-1`).
 
-All three conditions are independent: non-Lagrangian planes can have real positive `e^(-iθ) Ω v`
-with modulus strictly below `1`, Lagrangian planes of other phases violate the imaginary equation,
-and reversing orientation negates `e^(-iθ) Ω v` while preserving the first two equations. For an
-arbitrary `ℝ`-linearly independent `n`-frame `v`, Gram–Schmidt reduction on its real span yields
-the coordinate-free calibrated-plane criterion `φ_θ v = ‖v₁ ∧ ⋯ ∧ vₙ‖` under the same three
-conditions (`TauCeti.standardSpecialLagrangianForm_apply_eq_norm_ιMulti_iff`).
+For `2 ≤ n`, all three conditions are independent: non-Lagrangian frames can have real positive
+`e^(-iθ) Ω v` with modulus strictly below `1`, Lagrangian frames of intermediate phases can satisfy
+`0 < Re(e^(-iθ) Ω v)` while `Im(e^(-iθ) Ω v) ≠ 0`, and reversing orientation negates `e^(-iθ) Ω v`
+while preserving the first two equations. In low dimensions condition (1) degenerates: for `n = 1`
+every real line in `ℂ¹` is automatically Lagrangian (`Im ⟪v 0, v 0⟫_ℂ = 0`) while conditions (2)
+and (3) remain independent across unit vectors, and for `n = 0` condition (1) is vacuous and the
+unique frame `![]` fixes `Ω ![] = 1`. For an arbitrary `ℝ`-linearly independent `n`-frame `v`,
+Gram–Schmidt reduction on its real span yields the coordinate-free calibrated-plane criterion
+`φ_θ v = ‖v₁ ∧ ⋯ ∧ vₙ‖` under the same three conditions
+(`TauCeti.standardSpecialLagrangianForm_apply_eq_norm_ιMulti_iff`).
 
 ## Main declarations
 
@@ -465,7 +469,7 @@ theorem specialLagrangianFrame_iff (n : ℕ) (θ : ℝ)
       (∀ i j, (inner ℂ (v i) (v j)).im = 0) ∧
       (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).im = 0 ∧
       0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re := by
-  set z : ℂ := Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v
+  set z : ℂ := Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v with hz_def
   have hnorm_exp : ‖Complex.exp (-(θ : ℂ) * Complex.I)‖ = 1 := by
     simpa using Complex.norm_exp_ofReal_mul_I (-θ)
   refine ⟨fun h1 ↦ ?_, fun ⟨hlag, him, hpos⟩ ↦ ?_⟩
@@ -475,55 +479,19 @@ theorem specialLagrangianFrame_iff (n : ℕ) (θ : ℝ)
       rw [hΩ]
       exact Complex.norm_exp_ofReal_mul_I θ
     have hz : z = 1 := by
-      dsimp only [z]
-      rw [hΩ, ← Complex.exp_add]
+      rw [hz_def, hΩ, ← Complex.exp_add]
       simp
     exact ⟨(norm_standardComplexVolume_apply_eq_one_iff n hv).mp hnorm_Ω,
       by simp [hz], by simp [hz]⟩
   · have hnorm_Ω : ‖standardComplexVolume n v‖ = 1 :=
       (norm_standardComplexVolume_apply_eq_one_iff n hv).mpr hlag
     have hnorm_z : ‖z‖ = 1 := by
-      dsimp only [z]
-      rw [norm_mul, hnorm_exp, hnorm_Ω, mul_one]
+      rw [hz_def, norm_mul, hnorm_exp, hnorm_Ω, mul_one]
     have hsq : z.re ^ 2 + z.im ^ 2 = 1 := by
       simpa [Complex.normSq_apply, sq, Complex.normSq_eq_norm_sq, hnorm_z] using
         (Complex.normSq_eq_norm_sq z)
-    rw [standardSpecialLagrangianForm_apply]
-    change z.re = 1
+    rw [standardSpecialLagrangianForm_apply, ← hz_def]
     nlinarith [him, hpos]
-
-/-- Two spans of families in a complex inner product space have vanishing imaginary inner products
-simultaneously, since `(x, y) ↦ Im ⟪x, y⟫_ℂ` is `ℝ`-bilinear. -/
-private theorem forall_im_inner_eq_zero_of_mem_span {m k : Type*} {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    {u : m → E} {w : k → E}
-    (hu : ∀ i j, (⟪u i, u j⟫_ℂ).im = 0)
-    (hw : ∀ a, w a ∈ Submodule.span ℝ (Set.range u)) :
-    ∀ a b, (⟪w a, w b⟫_ℂ).im = 0 := by
-  let S : Submodule ℝ E :=
-    { carrier := {x | ∀ y ∈ Submodule.span ℝ (Set.range u), (⟪x, y⟫_ℂ).im = 0}
-      zero_mem' := fun y _ ↦ by simp
-      add_mem' := fun {x₁ x₂} hx₁ hx₂ y hy ↦ by
-        rw [inner_add_left, Complex.add_im, hx₁ y hy, hx₂ y hy, add_zero]
-      smul_mem' := fun r x hx y hy ↦ by
-        rw [RCLike.real_smul_eq_coe_smul (K := ℂ), inner_smul_real_left]
-        simp [hx y hy] }
-  have hrange : Set.range u ⊆ S := by
-    rintro _ ⟨i, rfl⟩ y hy
-    let T : Submodule ℝ E :=
-      { carrier := {y | (⟪u i, y⟫_ℂ).im = 0}
-        zero_mem' := by simp
-        add_mem' := fun {y₁ y₂} hy₁ hy₂ ↦ by
-          simp only [Set.mem_ofPred_eq] at hy₁ hy₂ ⊢
-          rw [inner_add_right, Complex.add_im, hy₁, hy₂, add_zero]
-        smul_mem' := fun r y hy' ↦ by
-          simp only [Set.mem_ofPred_eq] at hy' ⊢
-          rw [RCLike.real_smul_eq_coe_smul (K := ℂ), inner_smul_real_right]
-          simp [hy'] }
-    have hT : Set.range u ⊆ T := by rintro _ ⟨j, rfl⟩; exact hu i j
-    exact Submodule.span_le.mpr hT hy
-  intro a b
-  exact Submodule.span_le.mpr hrange (hw a) (w b) (hw b)
 
 /-- **Calibrated-plane criterion for arbitrary linearly independent frames**: an `ℝ`-linearly
 independent `n`-frame `v` in `ℂⁿ` achieves equality `φ_θ v = ‖v₁ ∧ ⋯ ∧ vₙ‖` in the calibration
@@ -592,8 +560,10 @@ theorem standardSpecialLagrangianForm_apply_eq_norm_ιMulti_iff (n : ℕ) (θ : 
     rwa [Submodule.map_span, ← Set.range_comp] at hmap
   have hspan_uv : ∀ i, u i ∈ Submodule.span ℝ (Set.range v) := fun i ↦ (e i).2
   have hlag_iff : (∀ i j, (⟪v i, v j⟫_ℂ).im = 0) ↔ ∀ i j, (⟪u i, u j⟫_ℂ).im = 0 :=
-    ⟨fun h ↦ forall_im_inner_eq_zero_of_mem_span h hspan_uv,
-      fun h ↦ forall_im_inner_eq_zero_of_mem_span h hspan_vu⟩
+    ⟨fun h i j ↦ (Pairwise.range_pairwise (f := v) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
+        (hspan_uv i) (hspan_uv j),
+      fun h i j ↦ (Pairwise.range_pairwise (f := u) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
+        (hspan_vu i) (hspan_vu j)⟩
   have hz_scale :
       Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v =
         (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) *
