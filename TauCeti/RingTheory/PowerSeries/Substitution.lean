@@ -81,8 +81,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
 * `PowerSeries.subst_eq_zero_iff` and `PowerSeries.substAlgHom_injective`: substitution of a
-  nonzero `q` of zero constant coefficient over a faithful algebra without zero divisors has
-  trivial kernel and is injective.
+  nonzero substitutable `q` (of zero constant coefficient) over a faithful algebra without zero
+  divisors has trivial kernel and is injective.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
@@ -268,15 +268,15 @@ theorem subst_eq_zero_iff {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisor
       map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hc
     exact (constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf₀) hc
 
-/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient over a
-faithful `R`-algebra without zero divisors into `R⟦X⟧` is injective. -/
+/-- Substituting a nonzero substitutable multivariate power series `q` over a faithful `R`-algebra
+without zero divisors into `R⟦X⟧` is injective. -/
 theorem substAlgHom_injective {R S : Type*} [CommRing R] [CommRing S] [NoZeroDivisors S]
     [Algebra R S] [FaithfulSMul R S] {σ : Type*} {q : MvPowerSeries σ S}
-    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) :
-    Function.Injective (substAlgHom (R := R) (.of_constantCoeff_zero hq)) :=
+    (hq : HasSubst q) (hq₀ : q ≠ 0) :
+    Function.Injective (substAlgHom (R := R) hq) :=
   (injective_iff_map_eq_zero _).mpr fun _ hf ↦ by
     rw [coe_substAlgHom] at hf
-    exact (subst_eq_zero_iff hq hq₀).mp hf
+    exact (subst_eq_zero_iff hq.eq_zero hq₀).mp hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.DivisorPullback
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Restrict
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 import TauCeti.RingTheory.LaurentSeries.Basic
@@ -137,7 +137,9 @@ theorem order_formalSeries_eq_one_of_isSeparable
 
 /-- **The order of the formal series of an isogeny to an elliptic curve is its inseparable degree**
 (Silverman II.2.12, III.4.10(b), IV.4). -/
-@[simp]
+-- Handle composites and `[n]` before `formalSeries_comp` or `formalSeries_mulByIntIsogeny`
+-- rewrites `.formalSeries`.
+@[simp↓]
 theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
   -- Factoring `φ = χ ∘ F^r` with `χ` separable gives
   -- `φ.formalSeries = χ.formalSeries(X ^ (p ^ r))`.

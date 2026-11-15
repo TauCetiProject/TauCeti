@@ -323,8 +323,8 @@ theorem pointMap_map_algebraMap_genericPoint [DecidableEq W₁.FunctionField] (f
   simp only [CoordinatePullback.xCoord_tautologicalPoint,
     CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
     CoordinatePullback.map_of_X, CoordinatePullback.map_root]
-  exact ⟨W₁.valuation_genericPointPlace_map_sub_algebraMap_lt_one _,
-    W₁.valuation_genericPointPlace_map_sub_algebraMap_lt_one _⟩
+  exact ⟨W₁.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one _,
+    W₁.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one _⟩
 
 /-- **Evaluating a base-changed morphism at an `F`-algebra image of the generic point pushes the
 tautological point forward along that `F`-algebra map.** -/

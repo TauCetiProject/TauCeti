@@ -62,8 +62,9 @@ coordinate points `X 0`, `X 1` and their sum `(formalGroup W₁)(X 0, X 1)` via 
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.formalPointAddHom_injective` and `TauCeti.Isogeny.Hom.formalSeries_inj`:
-  morphisms into an elliptic curve are uniquely determined by their formal power series.
+* `TauCeti.Isogeny.Hom.formalPointAddHom_injective`, `TauCeti.Isogeny.Hom.formalSeries_inj`, and
+  `TauCeti.Isogeny.formalGroupHom_inj`: morphisms and isogenies are uniquely determined by their
+  formal power series and formal-group homomorphisms.
 * `TauCeti.Isogeny.Hom.formalSeries_add`, `TauCeti.Isogeny.Hom.formalSeries_neg`,
   `TauCeti.Isogeny.Hom.formalSeries_sub`, `TauCeti.Isogeny.Hom.formalSeries_nsmul`,
   `TauCeti.Isogeny.Hom.formalSeries_zsmul`: formal-group addition, inversion, subtraction and scalar
@@ -72,7 +73,7 @@ coordinate points `X 0`, `X 1` and their sum `(formalGroup W₁)(X 0, X 1)` via 
   `TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero_natCast`: the formal series of `[n]` is
   `(formalGroup W).zsmulSeries n` (and `(formalGroup W).nsmulSeries n` for `n : ℕ`).
 * `TauCeti.Isogeny.pointMap_ofIsogeny_mvPowerSeriesPointHom` and
-  `TauCeti.Isogeny.Hom.formalPointAddHom_comp_ofIsogeny`: equivariance of
+  `TauCeti.Isogeny.Hom.formalPointAddHom_ofIsogeny_comp`: equivariance of
   `WeierstrassCurve.mvPowerSeriesPointHom` and `Hom.formalPointAddHom` under `φ.formalGroupHom`.
 * `TauCeti.Isogeny.formalGroupHom_id`, `TauCeti.Isogeny.formalGroupHom_comp`,
   `TauCeti.Isogeny.formalGroupHom_negIsogeny`, and `TauCeti.Isogeny.formalGroupHom_mulByIntIsogeny`:
@@ -114,17 +115,38 @@ theorem formalSeries_ofIsogeny (φ : Isogeny W₁.toAffine W₂.toAffine) :
   rw [formalSeries, dite_eq_right_of_eq_false (eq_false (ofIsogeny_ne_zero φ)),
     toIsogeny_ofIsogeny]
 
-@[simp]
+-- Handle composites before `formalSeries_comp` rewrites them to substitutions.
+@[simp↓]
 theorem constantCoeff_formalSeries (f : Hom W₁.toAffine W₂.toAffine) :
     PowerSeries.constantCoeff f.formalSeries = 0 := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩ <;> simp
 
-@[simp]
+-- Handle composites before `formalSeries_comp` rewrites them to substitutions.
+@[simp↓]
 theorem formalSeries_eq_zero_iff {f : Hom W₁.toAffine W₂.toAffine} :
     f.formalSeries = 0 ↔ f = 0 := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · simp
   · simp [φ.formalSeries_ne_zero, ofIsogeny_ne_zero]
+
+/-- **A morphism is uniquely determined by its formal power series.** -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro f g h
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · rw [formalSeries_zero] at h
+    exact (formalSeries_eq_zero_iff.mp h.symm).symm
+  · rcases eq_zero_or_exists_ofIsogeny g with rfl | ⟨ψ, rfl⟩
+    · rw [formalSeries_zero] at h
+      exact (ofIsogeny_ne_zero φ (formalSeries_eq_zero_iff.mp h)).elim
+    · rw [formalSeries_ofIsogeny, formalSeries_ofIsogeny] at h
+      exact congrArg ofIsogeny (Isogeny.formalSeries_injective h)
+
+-- Handle composites before `formalSeries_comp` rewrites them to substitutions.
+@[simp↓]
+theorem formalSeries_inj {f g : Hom W₁.toAffine W₂.toAffine} :
+    f.formalSeries = g.formalSeries ↔ f = g :=
+  formalSeries_injective.eq_iff
 
 @[simp]
 theorem formalSeries_id (W : WeierstrassCurve K) :
@@ -164,11 +186,8 @@ private theorem map_mvSubstAlgHom_tautologicalPoint [W₂.IsElliptic] {σ : Type
   · have hz : evalFormalPoint (0 : Hom W₁.toAffine W₂.toAffine) hq = 0 :=
       Subtype.ext (by simp [evalFormalPoint, PowerSeries.subst_zero])
     rw [tautologicalPoint_zero, _root_.map_zero, hz, _root_.map_zero]
-  · have hφq0 : (evalFormalPoint (ofIsogeny φ) hq).val ≠ 0 := by
-      simpa only [evalFormalPoint, formalSeries_ofIsogeny] using
-        (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr φ.formalSeries_ne_zero
-    rw [tautologicalPoint_ofIsogeny, tautologicalPoint_eq_map_genericPoint, Point.map_map]
-    refine W₂.map_genericPoint_eq_mvPowerSeriesPointHom σ KK (ev.comp φ.fieldPullback) hφq0 ?_ ?_
+  · rw [tautologicalPoint_ofIsogeny, tautologicalPoint_eq_map_genericPoint, Point.map_map]
+    refine W₂.map_genericPoint_eq_mvPowerSeriesPointHom σ KK (ev.comp φ.fieldPullback) ?_ ?_
     · simp only [ev, evalFormalPoint, AlgHom.comp_apply, formalSeries_ofIsogeny,
         ← φ.coe_formalSeries, TauCeti.LaurentSeries.mvSubstAlgHom_coe]
     · simp only [ev, evalFormalPoint, AlgHom.comp_apply, formalSeries_ofIsogeny,
@@ -228,16 +247,6 @@ theorem formalPointAddHom_injective :
     Function.Injective (formalPointAddHom (W₁ := W₁) (W₂ := W₂)) :=
   (injective_iff_map_eq_zero _).mpr fun _ hf ↦
     formalSeries_eq_zero_iff.mp (congrArg Subtype.val hf)
-
-/-- **A morphism into an elliptic curve is uniquely determined by its formal power series.** -/
-theorem formalSeries_injective :
-    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := fun _ _ h ↦
-  formalPointAddHom_injective (Subtype.ext h)
-
-@[simp]
-theorem formalSeries_inj {f g : Hom W₁.toAffine W₂.toAffine} :
-    f.formalSeries = g.formalSeries ↔ f = g :=
-  formalSeries_injective.eq_iff
 
 /-- **The formal series of a sum of morphisms into an elliptic curve is the formal-group sum of
 their formal series** (Silverman IV.4). -/
@@ -333,13 +342,14 @@ private theorem pointMap_ofIsogeny_mvPowerSeriesPointHom_of_ne_zero [W₁.IsElli
   let ev : W₁.toAffine.FunctionField →ₐ[K] KK :=
     (TauCeti.LaurentSeries.mvSubstAlgHom KK hq hq0).comp W₁.functionFieldLaurentExpansion
   have hsrc : Point.map ev W₁.toAffine.genericPoint = W₁.mvPowerSeriesPointHom σ KK q := by
-    refine W₁.map_genericPoint_eq_mvPowerSeriesPointHom σ KK ev hq0 ?_ ?_
+    refine W₁.map_genericPoint_eq_mvPowerSeriesPointHom σ KK ev ?_ ?_
     · simp only [ev, AlgHom.comp_apply, W₁.functionFieldLaurentExpansion_neg_genericX_div_genericY,
         TauCeti.LaurentSeries.mvSubstAlgHom_coe, PowerSeries.subst_X q.prop]
     · simp only [ev, AlgHom.comp_apply, W₁.functionFieldLaurentExpansion_neg_inv_genericY,
         TauCeti.LaurentSeries.mvSubstAlgHom_coe]
-  erw [← hsrc, Hom.pointMap_map_algebraMap_map_genericPoint]
-  exact Hom.map_mvSubstAlgHom_tautologicalPoint KK (Hom.ofIsogeny φ) hq hq0
+  refine (congrArg ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap hsrc.symm).trans ?_
+  exact (Hom.pointMap_map_algebraMap_map_genericPoint (Hom.ofIsogeny φ) ev).trans
+    (Hom.map_mvSubstAlgHom_tautologicalPoint KK (Hom.ofIsogeny φ) hq hq0)
 
 /-- **The formal-group homomorphism attached to an isogeny** `φ : W₁ → W₂` to an elliptic curve:
 `φ.formalSeries` satisfies `φ.formalSeries((formalGroup W₁)(X, Y)) =
@@ -357,8 +367,7 @@ noncomputable def formalGroupHom [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W
     have hq₁ : q₁.val ≠ 0 := nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
     have hsum_val : (q₀ + q₁).val = (formalGroup W₁).toPowerSeries := by
       rw [FormalGroup.add_apply]
-      change MvPowerSeries.subst ![X 0, X 1] (formalGroup W₁).toPowerSeries = _
-      rw [finTwo_X_eq_X, subst_self, id_eq]
+      simp only [q₀, q₁, finTwo_X_eq_X, subst_self, id_eq]
     have hsum0 : (q₀ + q₁).val ≠ 0 := by
       rw [hsum_val]
       intro h0
@@ -388,6 +397,18 @@ theorem formalGroupHom_toPowerSeries [W₂.IsElliptic] (φ : Isogeny W₁.toAffi
     φ.formalGroupHom.toPowerSeries = φ.formalSeries :=
   FormalGroupHom.ofHomDefectEqZero_toPowerSeries _ _
 
+/-- **An isogeny to an elliptic curve is uniquely determined by its formal-group homomorphism.** -/
+theorem formalGroupHom_injective [W₂.IsElliptic] :
+    Function.Injective (formalGroupHom (W₁ := W₁) (W₂ := W₂)) := fun _ _ h ↦
+  formalSeries_injective <| by
+    simpa only [formalGroupHom_toPowerSeries] using congrArg FormalGroupHom.toPowerSeries h
+
+-- Handle composites before `formalGroupHom_comp` rewrites them.
+@[simp↓]
+theorem formalGroupHom_inj [W₂.IsElliptic] {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalGroupHom = ψ.formalGroupHom ↔ φ = ψ :=
+  formalGroupHom_injective.eq_iff
+
 /-- **Evaluating a base-changed isogeny on a power-series formal point pushes the formal point
 forward along `φ.formalGroupHom`.** -/
 theorem pointMap_ofIsogeny_mvPowerSeriesPointHom [W₁.IsElliptic] [W₂.IsElliptic] {σ : Type*}
@@ -397,8 +418,11 @@ theorem pointMap_ofIsogeny_mvPowerSeriesPointHom [W₁.IsElliptic] [W₂.IsEllip
     ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap (W₁.mvPowerSeriesPointHom σ KK q) =
       W₂.mvPowerSeriesPointHom σ KK (φ.formalGroupHom.applyPoint q) := by
   rcases eq_or_ne q 0 with rfl | hq
-  · erw [_root_.map_zero, Hom.pointMap_zero, FormalGroupHom.applyPoint_zero, _root_.map_zero]
-    rfl
+  · refine (congrArg ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap
+      (W₁.mvPowerSeriesPointHom σ KK).map_zero).trans ?_
+    refine (Hom.pointMap_zero ((Hom.ofIsogeny φ).map (algebraMap K KK))).trans ?_
+    exact ((congrArg (W₂.mvPowerSeriesPointHom σ KK) φ.formalGroupHom.applyPoint_zero).trans
+      (W₂.mvPowerSeriesPointHom σ KK).map_zero).symm
   · have hq0 : q.val ≠ 0 := fun h ↦ hq (Subtype.ext h)
     refine (pointMap_ofIsogeny_mvPowerSeriesPointHom_of_ne_zero KK φ hq0).trans ?_
     congr 1
@@ -407,7 +431,7 @@ theorem pointMap_ofIsogeny_mvPowerSeriesPointHom [W₁.IsElliptic] [W₂.IsEllip
 /-- **Postcomposing `f : Hom W₁ W₂` with an isogeny `ψ : W₂ → W₃` between elliptic curves acts on
 `Hom.formalPointAddHom` via `ψ.formalGroupHom.applyPoint`.** -/
 @[simp]
-theorem Hom.formalPointAddHom_comp_ofIsogeny [W₂.IsElliptic] [W₃.IsElliptic]
+theorem Hom.formalPointAddHom_ofIsogeny_comp [W₂.IsElliptic] [W₃.IsElliptic]
     (ψ : Isogeny W₂.toAffine W₃.toAffine) (f : Hom W₁.toAffine W₂.toAffine) :
     Hom.formalPointAddHom ((Hom.ofIsogeny ψ).comp f) =
       ψ.formalGroupHom.applyPoint (Hom.formalPointAddHom f) :=
@@ -465,10 +489,8 @@ theorem formalGroupIso_invHom_toPowerSeries [W₂.IsElliptic] (φ : Isogeny W₁
       φ.formalSeries.substInvOfIsUnit
         (φ.isUnit_coeff_one_formalSeries_iff_isSeparable.mpr inferInstance) := by
   rw [formalGroupIso, FormalGroupHom.toIso_invHom_toPowerSeries]
-  generalize_proofs h₁
-  revert h₁
-  rw [formalGroupHom_toPowerSeries]
-  exact fun _ ↦ rfl
+  congr! 1
+  exact φ.formalGroupHom_toPowerSeries
 
 end FormalGroupHom
 

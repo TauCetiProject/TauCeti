@@ -202,15 +202,15 @@ theorem isSupersingular_iff_one_lt_height_formalGroup :
 /-- **An elliptic curve in prime characteristic `p` is ordinary if and only if the coefficient of
 `T ^ (p - 1)` in the invariant differential of its formal group is nonzero** (Hasse invariant
 criterion; Katz–Mazur §12.4, Silverman IV.4, IV.7 and V.3.1). -/
-theorem isOrdinary_iff_coeff_invariantDifferential_ne_zero :
+theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero :
     W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
   rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
 
 /-- **An elliptic curve in prime characteristic `p` is supersingular if and only if the coefficient
 of `T ^ (p - 1)` in the invariant differential of its formal group vanishes.** -/
-theorem isSupersingular_iff_coeff_invariantDifferential_eq_zero :
+theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
     W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
-  rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_ne_zero, not_not]
+  rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
 
 end CharP
 
