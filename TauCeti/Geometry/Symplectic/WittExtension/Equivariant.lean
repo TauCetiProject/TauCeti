@@ -9,8 +9,8 @@ public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel
 public import TauCeti.Geometry.Symplectic.LinearReduction
 public import TauCeti.Geometry.Symplectic.Prod.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Ker
 import TauCeti.Geometry.Symplectic.Invariants
-import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -42,7 +42,8 @@ compact group (`Representation.isSemisimpleRepresentation_of_continuous`), then 
 
 `(W × K*) × V ≃ E`, `((w, 0), 0) ↦ ι w`,
 
-from the direct sum of the coisotropic model and `(V, ω_V)`. This is the linear part of the
+from the direct sum of the coisotropic model and `(V, ω_V)`, which maps each `((0, 0), v)` into
+`(ι W)^ω` with class `v` in `V`. This is the linear part of the
 Marle–Guillemin–Sternberg local normal form of a Hamiltonian action near an orbit through `p`:
 there `W` is the orbit tangent space `𝔤 ⧸ 𝔤_p`, `H = G_p` is the stabilizer,
 `K ≅ 𝔤_{μ(p)} ⧸ 𝔤_p`, `V` is the symplectic slice, and the tangent space of the model
@@ -63,13 +64,11 @@ Semisimplicity cannot be dropped: the shear `(q, p) ↦ (q + p, p)` of `ℝ²` g
 action of `ℤ` fixing the Lagrangian line `W = ℝ × 0`, on which `B = 0`, `K = W` and `V = 0`; the
 model `W × W*` then carries the trivial action, which is not conjugate to the shear.
 
-## Main definitions
-
-* `LinearMap.BilinForm.kerRepresentation`: the action on the kernel of an invariant form.
-* `LinearMap.BilinForm.kerDualRepresentation`: the contragredient action on its dual.
-
 ## Main results
 
+* `TauCeti.SymplecticForm.exists_equivariant_section_reducedSpace`: for a semisimple symplectic
+  representation, the quotient map of an invariant subspace onto its reduced space has an
+  equivariant linear section.
 * `LinearMap.BilinForm.IsAlt.isSymplectomorphism_coisotropicModel_prodCongr`: for an equivariant
   projection, the group acts on the coisotropic model by symplectomorphisms.
 * `LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel_prod`:
@@ -89,47 +88,10 @@ public section
 
 open Module TauCeti TauCeti.SymplecticForm
 
-namespace LinearMap.BilinForm
+namespace LinearMap.BilinForm.IsAlt
 
-variable {H W : Type*} [Group H] [AddCommGroup W] [Module ℝ W] (B : LinearMap.BilinForm ℝ W)
-
-/-- A representation of `H` on `W` preserving `B` restricts to a representation on the kernel of
-`B`. -/
-noncomputable def kerRepresentation (ρ : H →* W ≃ₗ[ℝ] W) (hρ : ∀ h, B.IsOrthogonal (ρ h)) :
-    H →* LinearMap.ker B ≃ₗ[ℝ] LinearMap.ker B where
-  toFun h := (ρ h).ofSubmodules _ _ (⟨ρ h, hρ h⟩ : B.IsometryEquiv B).map_ker
-  map_one' := by ext; simp
-  map_mul' g h := by ext; simp
-
-variable {B}
-
-/-- The action on the kernel is the restriction of the action on `W`. -/
-@[simp]
-theorem coe_kerRepresentation_apply {ρ : H →* W ≃ₗ[ℝ] W}
-    (hρ : ∀ h, B.IsOrthogonal (ρ h)) (h : H) (k : LinearMap.ker B) :
-    (B.kerRepresentation ρ hρ h k : W) = ρ h k :=
-  (rfl)
-
-variable (B) in
-/-- The contragredient action `a ↦ a ∘ ρ(h⁻¹)` of `H` on the dual of the kernel of a form `B`
-preserved by `ρ`. -/
-noncomputable def kerDualRepresentation (ρ : H →* W ≃ₗ[ℝ] W) (hρ : ∀ h, B.IsOrthogonal (ρ h)) :
-    H →* Dual ℝ (LinearMap.ker B) ≃ₗ[ℝ] Dual ℝ (LinearMap.ker B) where
-  toFun h := (B.kerRepresentation ρ hρ h⁻¹).dualMap
-  map_one' := by ext; simp
-  map_mul' g h := by ext; simp
-
-/-- The contragredient action is `a ↦ a ∘ ρ(h⁻¹)`. -/
-@[simp]
-theorem kerDualRepresentation_apply_apply {ρ : H →* W ≃ₗ[ℝ] W}
-    (hρ : ∀ h, B.IsOrthogonal (ρ h)) (h : H) (a : Dual ℝ (LinearMap.ker B))
-    (k : LinearMap.ker B) :
-    B.kerDualRepresentation ρ hρ h a k = a (B.kerRepresentation ρ hρ h⁻¹ k) :=
-  (rfl)
-
-namespace IsAlt
-
-variable (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMap.ker B} (hP : ∀ k : LinearMap.ker B, P k = k)
+variable {H W : Type*} [Group H] [AddCommGroup W] [Module ℝ W] {B : LinearMap.BilinForm ℝ W}
+  (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMap.ker B} (hP : ∀ k : LinearMap.ker B, P k = k)
   {ρ : H →* W ≃ₗ[ℝ] W} (hρ : ∀ h, B.IsOrthogonal (ρ h))
 
 /-- For a projection `P` of `W` onto the kernel `K` of `B` which commutes with the action of `H`,
@@ -143,9 +105,7 @@ theorem isSymplectomorphism_coisotropicModel_prodCongr
   rintro ⟨w, a⟩ ⟨w', a'⟩
   simp [hPρ, hρ h w w']
 
-end IsAlt
-
-end LinearMap.BilinForm
+end LinearMap.BilinForm.IsAlt
 
 /-! ### Invariant choices in a semisimple symplectic representation -/
 
@@ -154,9 +114,16 @@ namespace TauCeti.SymplecticForm
 variable {H E : Type*} [Group H] [AddCommGroup E] [Module ℝ E] {ω : SymplecticForm E}
   {ρ : H →* E ≃ₗ[ℝ] E}
 
-/-- The quotient map of an invariant subspace `U` onto its reduced space has an equivariant linear
-section, whose image is an invariant complement of the radical `U ∩ U^ω` in `U`. -/
-private theorem exists_section_reducedSpace
+/-- `IsSymplectomorphism.apply`, with the form written through `toBilinForm`. -/
+private theorem isSymplectomorphism_toBilinForm_apply {e : E ≃ₗ[ℝ] E}
+    (he : IsSymplectomorphism ω ω e) (u u' : E) :
+    ω.toBilinForm (e u) (e u') = ω.toBilinForm u u' :=
+  he.apply u u'
+
+/-- For a semisimple representation by symplectomorphisms, the quotient map of an invariant
+subspace `U` onto its reduced space has an equivariant linear section, whose image is an invariant
+complement of the radical `U ∩ U^ω` in `U`. -/
+theorem exists_equivariant_section_reducedSpace
     [Representation.IsSemisimpleRepresentation
       (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp ρ)]
     (hρ : ∀ h, IsSymplectomorphism ω ω (ρ h)) {U : Submodule ℝ E}
@@ -190,7 +157,7 @@ private theorem exists_section_reducedSpace
     rw [hv]
     exact Submodule.quotientEquivOfIsCompl_apply_mk_right hpq y
   rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy]
-  rfl
+  simp [y]
 
 /-- For an injective linear map `f` with invariant image, there is a linear map `L : X* → E`
 with `ω (f x) (L φ) = φ x`, with values in an invariant subspace `D` on which pairing against the
@@ -220,8 +187,9 @@ private theorem exists_dual_lift [FiniteDimensional ℝ E]
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
     intro y hy
     have hy' : (y : E) ∈ ω.orthogonal (LinearMap.range f) := by
+      rw [mem_orthogonal_iff]
       rintro _ ⟨x, rfl⟩
-      exact LinearMap.congr_fun hy x
+      simpa [hΨ] using LinearMap.congr_fun (LinearMap.mem_ker.1 hy) x
     exact Subtype.ext ((Submodule.disjoint_def.1 hD.disjoint) _ hy' y.2)
   have hdim : finrank ℝ D.toSubmodule = finrank ℝ (Dual ℝ X) := by
     have h₁ : finrank ℝ (ω.orthogonal (LinearMap.range f)) + finrank ℝ D.toSubmodule =
@@ -230,8 +198,7 @@ private theorem exists_dual_lift [FiniteDimensional ℝ E]
     have h₂ := ω.finrank_add_finrank_orthogonal (LinearMap.range f)
     rw [Subspace.dual_finrank_eq, ← LinearMap.finrank_range_of_inj hf]
     omega
-  let Ψe := LinearEquiv.ofBijective Ψ
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
+  let Ψe := Ψ.linearEquivOfInjective hinj hdim
   refine ⟨D.toSubmodule.subtype ∘ₗ Ψe.symm.toLinearMap, D.toSubmodule, fun φ x ↦ ?_,
     fun φ ↦ (Ψe.symm φ).2, fun h y hy ↦ D.apply_mem_toSubmodule h hy, fun y hy h₀ ↦ ?_⟩
   · rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply, ← hΨ]
@@ -275,10 +242,10 @@ private theorem exists_lift_pairing (hρW : ∀ h, B.IsOrthogonal (ρW h))
   have hx : ι.coprod s (w, v) = ρ h (ι.coprod s (ρW h⁻¹ w, σ h⁻¹ v)) := by
     rw [LinearMap.coprod_apply, LinearMap.coprod_apply, map_add, ← hιρ, ← hsρ]
     simp
-  have hρ' (u u' : E) : ω.toBilinForm (ρ h u) (ρ h u') = ω.toBilinForm u u' := (hρ h).apply u u'
   have hPρ' (w : W) : P ((ρW h).symm w) = (B.kerRepresentation ρW hρW h).symm (P w) := by
     rw [LinearEquiv.eq_symm_apply, ← hPρ, LinearEquiv.apply_symm_apply]
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, map_sub, hL, hx, hρ', hL, sub_eq_zero]
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, map_sub, hL, hx,
+    isSymplectomorphism_toBilinForm_apply (hρ h), hL, sub_eq_zero]
   simp [LinearMap.dualMap_apply', hPρ']
 
 /-- An equivariant `ℓ : K* → E` with isotropic image, `ω`-orthogonal to the image of `s`, and with
@@ -313,9 +280,8 @@ private theorem exists_isotropic_lift (hB : B.IsAlt) (hP : ∀ k : LinearMap.ker
     have h₁ : a' (B.kerRepresentation ρW hρW h (κ a)) =
         B.kerDualRepresentation ρW hρW h⁻¹ a' (κ a) := by
       rw [kerDualRepresentation_apply_apply, inv_inv]
-    have hρ' (u u' : E) : ω.toBilinForm (ρ h u) (ρ h u') = ω.toBilinForm u u' := (hρ h).apply u u'
     simp only [evalEquiv_apply, Dual.eval_apply, h₁, hκ, hℓ₀ρ]
-    rw [← hρ' (ℓ₀ a)]
+    rw [← isSymplectomorphism_toBilinForm_apply (hρ h) (ℓ₀ a)]
     simp
   refine ⟨ℓ₀ + ι ∘ₗ (LinearMap.ker B).subtype ∘ₗ κ, fun a w ↦ ?_, fun a v ↦ ?_,
     fun a a' ↦ ?_, fun h a ↦ ?_⟩
@@ -380,7 +346,8 @@ private theorem exists_isSymplectomorphism_of_lift (hB : B.IsAlt)
     beta_reduce at h₁ h₂ h₃ hω hsι hs hℓι hℓs hℓℓ
     simp only [f, LinearMap.coprod_apply, map_add, LinearMap.add_apply, h₁, h₂, h₃, hω, hsι, hs,
       hℓι, hℓs, hℓℓ]
-    simp
+    simp only [neg_zero, add_zero, zero_add, SymplecticForm.prod_apply, coisotropicModel_apply,
+      add_left_inj]
     ring
   -- An isometry out of a nondegenerate form is injective, and the dimensions agree.
   have hinj : Function.Injective f := by
@@ -390,9 +357,8 @@ private theorem exists_isSymplectomorphism_of_lift (hB : B.IsAlt)
     rw [← hfω, LinearMap.mem_ker.1 hx, map_zero, LinearMap.zero_apply]
   have hdim' : finrank ℝ ((W × Dual ℝ (LinearMap.ker B)) × V) = finrank ℝ E := by
     rw [Module.finrank_prod, Module.finrank_prod, Subspace.dual_finrank_eq, hdim]
-  let e := LinearEquiv.ofBijective f
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').1 hinj⟩
-  have he (x) : e x = f x := LinearEquiv.ofBijective_apply f x
+  let e := f.linearEquivOfInjective hinj hdim'
+  have he (x) : e x = f x := LinearMap.linearEquivOfInjective_apply hinj hdim' x
   exact ⟨e, isSymplectomorphism_iff.2 fun x y ↦ by rw [he, he]; exact hfω x y,
     fun w a v ↦ he _⟩
 
@@ -407,8 +373,10 @@ extends to an equivariant linear symplectomorphism
 `(W × K*) × V ≃ E`, `((w, 0), 0) ↦ ι w`,
 
 from the direct sum of the coisotropic model on `W × K*` and the reduced space
-`V = (ι W)^ω ⧸ (ι W ∩ (ι W)^ω)`. The group acts on the model through `ρ_W` on `W`, the
-contragredient action on `K*` and the induced action on `V`. -/
+`V = (ι W)^ω ⧸ (ι W ∩ (ι W)^ω)`, which maps each `((0, 0), v)` to a vector of `(ι W)^ω` with
+class `v`, so that it identifies `V` with an invariant complement of the radical. The group acts
+on the model through `ρ_W` on `W`, the contragredient action on `K*` and the induced action on
+`V`. -/
 theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod (hB : B.IsAlt)
     (hP : ∀ k : LinearMap.ker B, P k = k) (hρW : ∀ h, B.IsOrthogonal (ρW h))
     (hPρ : ∀ h w, P (ρW h w) = B.kerRepresentation ρW hρW h (P w)) (ω : SymplecticForm E)
@@ -422,14 +390,16 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod (hB : B.IsA
         ≃ₗ[ℝ] E,
       IsSymplectomorphism ((hB.coisotropicModel P hP).prod (ω.reduction _)) ω e ∧
         (∀ w, e ((w, 0), 0) = ι w) ∧
+        (∀ v, ∃ hv : e ((0, 0), v) ∈ ω.orthogonal (LinearMap.range ι),
+          Submodule.Quotient.mk ⟨_, hv⟩ = v) ∧
         ∀ h x v, e ((ρW h).prodCongr (B.kerDualRepresentation ρW hρW h) x,
           ω.reducedSpaceRepresentation ρ hρ _ hU h v) = ρ h (e (x, v)) := by
   have : FiniteDimensional ℝ W := .of_injective ι hι
   set U := ω.orthogonal (LinearMap.range ι)
   -- The equivariant section `s` of `U → V`, and the isotropic lift `ℓ` of `K*`.
-  obtain ⟨s₀, hs₀, hs₀ρ⟩ := TauCeti.SymplecticForm.exists_section_reducedSpace hρ hU
+  obtain ⟨s₀, hs₀, hs₀ρ⟩ := TauCeti.SymplecticForm.exists_equivariant_section_reducedSpace hρ hU
   have hsι (w : W) (v : ω.ReducedSpace U) : ω.toBilinForm (ι w) (s₀ v) = 0 :=
-    (s₀ v).2 _ ⟨w, rfl⟩
+    mem_orthogonal_iff.1 (s₀ v).2 _ ⟨w, rfl⟩
   have hs (v v' : ω.ReducedSpace U) :
       ω.toBilinForm (s₀ v) (s₀ v') = (ω.reduction U).toBilinForm v v' := by
     conv_rhs => rw [← hs₀ v, ← hs₀ v']
@@ -449,7 +419,11 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod (hB : B.IsA
       LinearMap.finrank_range_of_inj hι] at h₁
     omega
   obtain ⟨e, he, hef⟩ := exists_isSymplectomorphism_of_lift hB hP hι hω hsι hs hℓι hℓs hℓℓ hdim
-  refine ⟨e, he, fun w ↦ by simp [hef], fun h ⟨w, a⟩ v ↦ ?_⟩
+  have he₀ (v : ω.ReducedSpace U) : e ((0, 0), v) = s₀ v := by simp [hef]
+  refine ⟨e, he, fun w ↦ by simp [hef], fun v ↦ ⟨by rw [he₀]; exact (s₀ v).2, ?_⟩,
+    fun h ⟨w, a⟩ v ↦ ?_⟩
+  · conv_rhs => rw [← hs₀ v]
+    exact congrArg Submodule.Quotient.mk (Subtype.ext (he₀ v))
   simp only [LinearEquiv.prodCongr_apply, hef, LinearMap.comp_apply, Submodule.subtype_apply,
     map_add, hιρ, hℓρ]
   rw [hs₀ρ h v]
