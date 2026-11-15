@@ -28,15 +28,12 @@ triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
 * Hence the cellular cycles are `Hₙ(Xⁿ, X⁻¹; L)` (`TauCeti.twistedCellularCyclesIso`), and the
   cellular homology in degree `n` is `Hₙ(Xⁿ⁺¹, X⁻¹; L)` (`TauCeti.twistedCellularHomologyIso`).
 * The inclusions `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹, X⁻¹)` induce isomorphisms on `Hₖ` for `k < n`
-  (`TauCeti.isIso_twistedHomologySkeletonBasePairToSucc`), so for a finite-dimensional complex the
-  inclusion `(Xᵐ, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism on `Hₖ` for `k < m`
-  (`TauCeti.isIso_twistedHomologySkeletonBasePairToComplex`). Whenever this holds for `m = n + 1`
-  and `k = n`, the cellular homology is the twisted relative singular homology `Hₙ(C, D; L)` of the
-  complex (`TauCeti.twistedCellularSingularHomologyIso`).
+  (`TauCeti.isIso_twistedHomologySkeletonBasePairToSucc`).
 
-For infinite-dimensional complexes the isomorphism hypothesis of
-`TauCeti.twistedCellularSingularHomologyIso` is not established here: it needs the compact-support
-property of twisted singular homology.
+From the last point and the compact supports of twisted singular homology,
+`TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Comparison` deduces that the inclusion
+`(Xⁿ⁺¹, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism on `Hₙ`, and so identifies the cellular homology
+with the twisted relative singular homology `Hₙ(C, X⁻¹; L)` of the complex.
 
 The base `X⁻¹` is `skeletonLT C 0`, as in `TauCeti.skeletonBasePair`. In degree `0` the pairs
 `(X⁰, X⁻¹)` and `(X⁰, X⁻¹)` of `TauCeti.skeletonBasePair` and `TauCeti.skeletonPair` coincide, and
@@ -480,58 +477,5 @@ theorem isIso_twistedHomologySkeletonBasePairToComplex_of_eq {m : ℕ}
     (eqToHom (skeletonSystem_eq_pullback C L m))
     (Iso.isIso_hom (eqToIso (skeletonSystem_eq_pullback C L m))) k
   exact IsIso.comp_isIso
-
-/-- If the `(m + j)`-skeleton is the whole complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
-isomorphism for `k < m`: it factors through the isomorphisms
-`TauCeti.isIso_twistedHomologySkeletonBasePairToSucc`. -/
-theorem isIso_twistedHomologySkeletonBasePairToComplex_of_lt_of_eq {m k : ℕ} (hk : k < m) (j : ℕ)
-    (hj : (skeletonLT C ((m + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
-    IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
-  induction j generalizing m with
-  | zero => exact isIso_twistedHomologySkeletonBasePairToComplex_of_eq C L hj k
-  | succ j ih =>
-    have := isIso_twistedHomologySkeletonBasePairToSucc C L hk
-    have := ih (m := m + 1) (by lia) (by rwa [Nat.add_right_comm m 1 j])
-    rw [← twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex]
-    infer_instance
-
-/-- For a finite-dimensional relative CW complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
-isomorphism for `k < m`. -/
-theorem isIso_twistedHomologySkeletonBasePairToComplex [FiniteDimensional C] {m k : ℕ}
-    (hk : k < m) : IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
-    (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
-  exact isIso_twistedHomologySkeletonBasePairToComplex_of_lt_of_eq C L hk N
-    (skeletonLT_eq_complex_of_isEmpty_cell C (m + N + 1) fun j hj ↦ hN j (by lia))
-
-/-- For a finite-dimensional relative CW complex, `(Xⁿ⁺¹, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism
-on `Hₙ` with local coefficients. -/
-instance isIso_twistedHomologySkeletonBasePairToComplex_succ_of_finiteDimensional
-    [FiniteDimensional C] (n : ℕ) :
-    IsIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n) :=
-  isIso_twistedHomologySkeletonBasePairToComplex C L (by lia)
-
-variable (n : ℕ) [IsIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n)]
-
-/-- **Cellular homology with local coefficients is twisted singular homology**: the homology of
-the cellular chain complex with coefficients in `L` is the twisted relative singular homology
-`Hₙ(C, X⁻¹; L)` of the complex. The second map is induced by the inclusion of the
-`(n + 1)`-skeleton into the complex, an isomorphism on `Hₙ` for every finite-dimensional complex
-(`TauCeti.isIso_twistedHomologySkeletonBasePairToComplex_succ_of_finiteDimensional`). -/
-def twistedCellularSingularHomologyIso :
-    (twistedCellularChainComplex C L).homology n ≅ (complexBasePair C).twistedHomology L n :=
-  twistedCellularHomologyIso C L n ≪≫
-    asIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n)
-
-/-- The cellular–singular comparison with local coefficients on cycles is the map induced by the
-inclusion of the `n`-skeleton into the complex. -/
-@[reassoc (attr := simp)]
-lemma homologyπ_comp_twistedCellularSingularHomologyIso_hom :
-    (twistedCellularChainComplex C L).homologyπ n ≫
-        (twistedCellularSingularHomologyIso C L n).hom =
-      (twistedCellularCyclesIso C L n).hom ≫ twistedHomologySkeletonBasePairToComplex C L n n := by
-  rw [twistedCellularSingularHomologyIso, Iso.trans_hom, asIso_hom,
-    homologyπ_comp_twistedCellularHomologyIso_hom_assoc,
-    twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex]
 
 end TauCeti

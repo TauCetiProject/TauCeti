@@ -255,6 +255,40 @@ lemma twistedChainComplexMap_comp :
     LocalCoefficientSystem.twistedChainComplexMap_comp]
   simp only [Iso.app_hom, Category.assoc]
 
+variable {f} in
+/-- Equal maps of pairs induce the same map on relative twisted chains, after the canonical
+identification of their pulled-back coefficient systems. -/
+lemma twistedChainComplexMap_congr {f' : P ⟶ Q} (h : f = f') :
+    twistedChainComplexMap f L =
+      P.twistedChainComplexCoefficientMap
+          (eqToHom (congrArg (fun g : P ⟶ Q ↦
+            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) ≫
+        twistedChainComplexMap f' L := by
+  subst h
+  simp
+
+/-- The map on relative twisted chains induced by a map of pairs is injective in every degree
+when the map is injective on the ambient spaces and the subspace of the source contains the
+preimage of the subspace of the target, as for an inclusion of pairs `(Y, A) ⊆ (X, A)`. -/
+lemma injective_twistedChainComplexMap_f [Mono (Hom.fst f)]
+    (hf : Hom.fst f ⁻¹' Set.range Q.map ⊆ Set.range P.map) (k : ℕ) :
+    Function.Injective ((twistedChainComplexMap f L).f k).hom := by
+  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
+  obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective _ y
+  refine P.twistedChainComplex_ext_coeff _ fun σ hσ ↦ ?_
+  -- The image of `σ` does not lie in the subspace of the target, and the coefficient of the image
+  -- chain on it is the coefficient of `a` on `σ`.
+  have hσ' : ¬Set.range (TopCat.simplexMap ((TopCat.toSSet.map (Hom.fst f)).app _ σ)) ⊆
+      Set.range Q.map := fun h ↦ hσ fun _ ⟨p, hp⟩ ↦ hp ▸ hf (h ⟨p, rfl⟩)
+  have := congrArg (Q.twistedChainComplexCoeff L _ hσ').hom hy
+  rw [twistedChainComplexMap_f_twistedChainComplexπ_f_apply,
+    twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+    LocalCoefficientSystem.twistedChainComplexCoeff_twistedChainComplexMap_f_apply,
+    map_zero] at this
+  rw [twistedChainComplexCoeff_twistedChainComplexπ_f_apply]
+  -- The two zeros live in fibres of `L` and of its pullback, which agree only definitionally.
+  exact this.trans (map_zero _).symm
+
 /-- The morphism between the short exact sequences of twisted chains induced by a map of
 topological pairs. -/
 def twistedChainComplexShortComplexMap :
