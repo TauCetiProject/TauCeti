@@ -103,6 +103,17 @@ lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) :
     (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i = 0 :=
   (K.isZero_stupidTrunc_embeddingUpIntLE_X n hi).eq_of_tgt _ _
 
+/-- The projection `K ⟶ σ^{≤ n} K` onto the brutal truncation is an epimorphism: it is an
+isomorphism in degrees `≤ n` and its codomain vanishes in degrees `> n`. -/
+instance epi_πStupidTrunc : Epi (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)) := by
+  refine HomologicalComplex.epi_of_epi_f _ fun i ↦ ?_
+  by_cases hi : i ≤ n
+  · have : IsIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE n)).f i) :=
+      K.isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE n) (i := (n - i).natAbs) (i' := i)
+        (by simp [Int.natAbs_of_nonneg (sub_nonneg.mpr hi)])
+    infer_instance
+  · exact ⟨fun _ _ _ ↦ (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by lia)).eq_of_src _ _⟩
+
 section Top
 
 variable [K.IsStrictlyLE n]
@@ -223,6 +234,13 @@ instance (b : ℤ) [K.IsStrictlyLE b] : CochainComplex.IsStrictlyLE
     rw [IsZero.iff_id_eq_zero,
       ← cancel_mono ((kernel.ι (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))).f i)]
     exact (K.isZero_of_isStrictlyLE b i hi).eq_of_tgt _ _
+
+/-- The kernel of `K ⟶ σ^{≤ n} K` vanishes in degrees `≤ n`, so it is strictly supported in
+degrees `≥ n + 1`. -/
+instance isStrictlyGE_kernel_πStupidTruncLE :
+    CochainComplex.IsStrictlyGE
+      (kernel (K.πStupidTrunc (ComplexShape.embeddingUpIntLE n))) (n + 1) :=
+  (isStrictlyGE_iff _ _).2 fun _ hi ↦ K.isZero_kernel_πStupidTruncLE_X n (by lia)
 
 /-- The sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ ⋯` of brutal truncations of `K`. Its `m`-th term is
 the kernel of `K ⟶ σ^{≤ -m-1} K`, the subcomplex of the terms of `K` in degrees `≥ -m`. -/

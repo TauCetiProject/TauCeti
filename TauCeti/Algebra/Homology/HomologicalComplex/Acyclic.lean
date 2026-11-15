@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Additive
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
+public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
@@ -20,9 +23,19 @@ and `B` in `P` also `C` lies in `P`, and `F` sends such a sequence to a short ex
 (`HomologicalComplex.Acyclic.map_of_shortExact`). The cycles `Zⁿ` lie in `P` by induction, using
 the short exact sequences `0 ⟶ Zⁿ ⟶ Qⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, and `F` keeps these exact.
 
+Transporting along an upward-truncation embedding `e : (ComplexShape.up ℕ).Embedding c` extends
+this to any acyclic complex strictly supported on `e` whose terms in the image of `e` lie in `P`
+(`HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlySupported`), and in particular to
+bounded-below `ℤ`-indexed cochain complexes
+(`HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE`). The lower-boundedness hypothesis
+cannot be dropped: over the self-injective ring `R = k[x]/(x²)` (`k` a field), `P = Injective`
+satisfies the hypotheses for `F = Hom_R(k, -)`, and the unbounded two-periodic complex
+`⋯ --x→ R --x→ R --x→ ⋯` is acyclic with injective terms while `F` maps it to a complex with zero
+differentials and nonzero cohomology `k` in every degree.
+
 ## References
 
-* The Stacks Project, Derived Categories, Lemma 13.15.6 (tag 05T8).
+* The Stacks Project, Derived Categories, Lemma 13.15.6 (tag 05T8) and Lemma 13.16.6 (tag 015D).
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006,
   Definition 13.3.4, where such classes are called `F`-injective.
 -/
@@ -119,5 +132,39 @@ theorem map_of_shortExact (hQ : Q.Acyclic) (hQP : ∀ n, P (Q.X n)) :
     exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ').1
       ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
         (shortExact_map_cyclesSequence F P hP hF hQ hQP n).exact)
+
+include hP hF in
+/-- **`F` preserves acyclicity of complexes strictly supported on an upward `ℕ`-embedding.** Let
+`e : (ComplexShape.up ℕ).Embedding c` be an upward-truncation embedding. If `Q'` is acyclic,
+strictly supported on `e`, and its terms in the image of `e` lie in the `F`-adapted class `P`,
+then `(F.mapHomologicalComplex c).obj Q'` is acyclic. -/
+theorem map_of_shortExact_of_isStrictlySupported {ι : Type*} {c : ComplexShape ι}
+    {Q' : HomologicalComplex C c} (e : (ComplexShape.up ℕ).Embedding c) [e.IsTruncGE]
+    [Q'.IsStrictlySupported e] (hQ' : Q'.Acyclic) (hQP : ∀ n, P (Q'.X (e.f n))) :
+    ((F.mapHomologicalComplex c).obj Q').Acyclic := by
+  have hres : (Q'.restriction e).Acyclic := fun n ↦
+    ((Q'.restriction e).extend_exactAt_iff e rfl).1
+      ((exactAt_iff_of_quasiIsoAt (Q'.ιStupidTrunc e) (e.f n)).2 (hQ' (e.f n)))
+  have hmap : ((F.mapHomologicalComplex _).obj (Q'.restriction e)).Acyclic :=
+    map_of_shortExact F P hP hF hres fun n ↦ P.prop_of_iso (Q'.restrictionXIso e rfl).symm (hQP n)
+  have hmap_res (n : ℕ) : (((F.mapHomologicalComplex c).obj Q').restriction e).ExactAt n :=
+    (exactAt_iff_of_quasiIsoAt (e.mapRestrictionIso F Q').hom n).1 (hmap n)
+  intro i
+  refine (exactAt_iff_of_quasiIsoAt (((F.mapHomologicalComplex c).obj Q').ιStupidTrunc e) i).1 ?_
+  by_cases hi : ∃ n, e.f n = i
+  · obtain ⟨n, rfl⟩ := hi
+    exact (((F.mapHomologicalComplex c).obj Q').restriction e).extend_exactAt_iff e rfl |>.2
+      (hmap_res n)
+  · exact extend_exactAt _ e i (by simpa using hi)
+
+include hP hF in
+/-- **`F` preserves acyclicity of bounded-below `ℤ`-indexed cochain complexes in an adapted
+class.** If `Q'` is acyclic, strictly supported in degrees `≥ b`, and `Q'.X q` lies in `P` for
+every `q ≥ b`, then `(F.mapHomologicalComplex _).obj Q'` is acyclic. -/
+theorem map_of_shortExact_of_isStrictlyGE {Q' : CochainComplex C ℤ} (b : ℤ) [Q'.IsStrictlyGE b]
+    (hQ' : Q'.Acyclic) (hQP : ∀ q, b ≤ q → P (Q'.X q)) :
+    ((F.mapHomologicalComplex _).obj Q').Acyclic :=
+  map_of_shortExact_of_isStrictlySupported F P hP hF (ComplexShape.embeddingUpIntGE b) hQ'
+    fun n ↦ hQP _ (by simp)
 
 end HomologicalComplex.Acyclic
