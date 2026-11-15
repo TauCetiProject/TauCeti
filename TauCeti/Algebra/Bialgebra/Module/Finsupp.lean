@@ -74,6 +74,19 @@ left factor. -/
     rw [hs, LinearEquiv.apply_symm_apply]
     by_cases hji : j = i <;> simp [hji]
 
+/-- Each coordinate of `finsuppLeft` is the tensor product of the corresponding evaluation
+with the identity. -/
+theorem finsuppLeft_apply (x : Tensor R H (ι →₀ M) N) (i : ι) :
+    finsuppLeft R H ι M N x i = tensorMap R H (Finsupp.lapply i) LinearMap.id x := by
+  induction x using Tensor.inductionOn with
+  | htmul f n => simp
+  | hadd x y hx hy => simp [hx, hy]
+
+/-- The left comparison sends a pure tensor of a single to a single. -/
+@[simp] theorem finsuppLeft_single_tmul (i : ι) (m : M) (n : N) :
+    finsuppLeft R H ι M N (tmul R H (Finsupp.single i m) n) = Finsupp.single i (tmul R H m n) :=
+  (LinearEquiv.eq_symm_apply _).mp (by simp)
+
 /-- Coproduct tensor products distribute over finitely supported functions in their right
 factor. -/
 def finsuppRight : Tensor R H N (ι →₀ M) ≃ₗ[H] ι →₀ Tensor R H N M :=
@@ -113,5 +126,18 @@ right factor. -/
         (finsuppRight R H ι M N).symm (Finsupp.single j (tmul R H n m)) := by simp
     rw [hs, LinearEquiv.apply_symm_apply]
     by_cases hji : j = i <;> simp [hji]
+
+/-- Each coordinate of `finsuppRight` is the tensor product of the identity with the
+corresponding evaluation. -/
+theorem finsuppRight_apply (x : Tensor R H N (ι →₀ M)) (i : ι) :
+    finsuppRight R H ι M N x i = tensorMap R H LinearMap.id (Finsupp.lapply i) x := by
+  induction x using Tensor.inductionOn with
+  | htmul n f => simp
+  | hadd x y hx hy => simp [hx, hy]
+
+/-- The right comparison sends a pure tensor with a single to a single. -/
+@[simp] theorem finsuppRight_tmul_single (i : ι) (n : N) (m : M) :
+    finsuppRight R H ι M N (tmul R H n (Finsupp.single i m)) = Finsupp.single i (tmul R H n m) :=
+  (LinearEquiv.eq_symm_apply _).mp (by simp)
 
 end TauCeti.BialgebraModule

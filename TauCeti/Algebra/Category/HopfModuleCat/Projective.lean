@@ -9,9 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Category.HopfModuleCat.Monoidal
 public import TauCeti.Algebra.HopfAlgebra.Module.Projective
-public import TauCeti.CategoryTheory.Monoidal.Envelope.Quotient.Basic
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.FactorThrough
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Functor
+public import TauCeti.CategoryTheory.Monoidal.Envelope.Quotient.FactorThrough
 
 /-!
 # Projective modules form a tensor ideal
@@ -27,13 +25,16 @@ algebra that quotient is the stable module category, on which the tensor product
 induces a monoidal structure.
 
 The module-theoretic input is `TauCeti.BialgebraModule.projective_tensor_left` and
-`TauCeti.BialgebraModule.projective_tensor_right`. Categorical projectivity in `ModuleCat` is
-translated to module projectivity through Mathlib's `ModuleCat.projective_of_module_projective`,
-which asks that `H` be small relative to the universe of `k`; this holds for finite-dimensional
-`H`.
+`TauCeti.BialgebraModule.projective_tensor_right`. Categorical projectivity in
+`HopfModuleCat k H`, whose category structure is that of `ModuleCat H`, is translated to module
+projectivity (`TauCeti.HopfModuleCat.projective_iff_module_projective`) through Mathlib's
+`ModuleCat.projective_of_module_projective`, which asks that `H` be small relative to the
+universe of `k`; this holds for finite-dimensional `H`.
 
 ## Main declarations
 
+* `TauCeti.HopfModuleCat.projective_iff_module_projective`: an object is projective exactly when
+  it is a projective `H`-module.
 * `TauCeti.HopfModuleCat.projective_tensorObj_left`,
   `TauCeti.HopfModuleCat.projective_tensorObj_right`: tensoring with a projective module on
   either side gives a projective module.
@@ -55,52 +56,46 @@ universe u v
 
 namespace TauCeti.HopfModuleCat
 
-variable {k : Type u} [Field k] {H : Type v} [Ring H] [_root_.HopfAlgebra k H] [Small.{u} H]
+variable {k : Type u} {H : Type v} [Ring H] [Small.{u} H]
+
+-- `HopfModuleCat k H` is `ModuleCat H` with the same category instance, so this is Mathlib's
+-- comparison in `ModuleCat H` applied to the underlying object.
+/-- An object of `HopfModuleCat k H` is projective exactly when it is a projective `H`-module. -/
+theorem projective_iff_module_projective (M : HopfModuleCat k H) :
+    Projective M ↔ Module.Projective H M :=
+  ⟨fun _ ↦ ModuleCat.projective_of_module_projective (R := H) M,
+    fun _ ↦ ModuleCat.projective_of_categoryTheory_projective (R := H) M⟩
+
+variable [Field k] [_root_.HopfAlgebra k H]
 
 /-- The tensor product `P ⊗ M` of a projective module `P` with any module `M` is projective. -/
 instance projective_tensorObj_left (P M : HopfModuleCat k H) [Projective P] :
     Projective (P ⊗ M) := by
-  have : Module.Projective H P := ModuleCat.projective_of_module_projective (R := H) P
-  have := BialgebraModule.projective_tensor_left k H M P
-  exact ModuleCat.projective_of_categoryTheory_projective (R := H)
-    (ModuleCat.of H (BialgebraModule.Tensor k H P M))
+  have := (projective_iff_module_projective P).1 ‹_›
+  rw [tensorObj_def, projective_iff_module_projective]
+  infer_instance
 
 /-- For a bijective antipode, the tensor product `M ⊗ P` of any module `M` with a projective
 module `P` is projective. -/
 theorem projective_tensorObj_right (hS : Function.Bijective (antipode k : H →ₗ[k] H))
     (M P : HopfModuleCat k H) [Projective P] : Projective (M ⊗ P) := by
-  have : Module.Projective H P := ModuleCat.projective_of_module_projective (R := H) P
-  have := BialgebraModule.projective_tensor_right k H M P hS
-  exact ModuleCat.projective_of_categoryTheory_projective (R := H)
-    (ModuleCat.of H (BialgebraModule.Tensor k H M P))
+  have := (projective_iff_module_projective P).1 ‹_›
+  rw [tensorObj_def, projective_iff_module_projective]
+  exact BialgebraModule.projective_tensor_right k H M P hS
 
 /-- For a bijective antipode, the morphisms factoring through a projective module form a tensor
 ideal of the category of all modules. -/
-def projectiveIdeal (hS : Function.Bijective (antipode k : H →ₗ[k] H)) :
-    MonoidalIdeal (HopfModuleCat k H) where
-  toMorphismIdeal := (isProjective (HopfModuleCat k H)).factorIdeal
-  whiskerLeft_mem W {_ _} f hf := by
-    have hle : (isProjective (HopfModuleCat k H)).factorIdeal ≤
-        ((isProjective (HopfModuleCat k H)).factorIdeal).comap (tensorLeft W) :=
-      ObjectProperty.factorIdeal_le_iff.2 fun {_ _ Z} hZ i p => by
-        have : Projective Z := hZ
-        rw [MorphismIdeal.mem_comap_hom, Functor.map_comp]
-        exact ObjectProperty.comp_mem_factorIdeal (projective_tensorObj_right hS W Z) _ _
-    exact (MorphismIdeal.mem_comap_hom _ _).1 (MorphismIdeal.le_def.1 hle f hf)
-  whiskerRight_mem {_ _} f W hf := by
-    have hle : (isProjective (HopfModuleCat k H)).factorIdeal ≤
-        ((isProjective (HopfModuleCat k H)).factorIdeal).comap (tensorRight W) :=
-      ObjectProperty.factorIdeal_le_iff.2 fun {_ _ Z} hZ i p => by
-        have : Projective Z := hZ
-        rw [MorphismIdeal.mem_comap_hom, Functor.map_comp]
-        exact ObjectProperty.comp_mem_factorIdeal (projective_tensorObj_left Z W) _ _
-    exact (MorphismIdeal.mem_comap_hom _ _).1 (MorphismIdeal.le_def.1 hle f hf)
+noncomputable def projectiveIdeal (hS : Function.Bijective (antipode k : H →ₗ[k] H)) :
+    MonoidalIdeal (HopfModuleCat k H) :=
+  (isProjective (HopfModuleCat k H)).factorMonoidalIdeal
+    (fun W Z (_ : Projective Z) ↦ projective_tensorObj_right hS W Z)
+    (fun W Z (_ : Projective Z) ↦ projective_tensorObj_left Z W)
 
 /-- The underlying morphism ideal of `projectiveIdeal` is generated by the morphisms factoring
 through a projective module. -/
 @[simp]
 theorem projectiveIdeal_toMorphismIdeal (hS : Function.Bijective (antipode k : H →ₗ[k] H)) :
     (projectiveIdeal hS).toMorphismIdeal = (isProjective (HopfModuleCat k H)).factorIdeal :=
-  (rfl)
+  ObjectProperty.factorMonoidalIdeal_toMorphismIdeal _ _ _
 
 end TauCeti.HopfModuleCat
