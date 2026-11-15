@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Jacobian
@@ -42,6 +43,11 @@ with invertible derivative has a density, so preimages of null sets are null.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn`: invariance under a holomorphic map,
   injective with nonvanishing derivative, between arbitrary sets `U → U'` (half-discs allowed),
   holomorphic on an open neighbourhood of `U`; `comp_differentiableOn_of_isOpen` is the open form.
+* `TauCeti.isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph`: for a holomorphic open
+  partial homeomorphism `φ`, the invariance is an equivalence, since the inverse is holomorphic
+  with derivative `1 / φ'` (`TauCeti.OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn`)
+  and, when `J² = -1`, the map `a + b i ↦ a - b J` is multiplicative, so the two transformations
+  of `η` compose to multiplication by `φ'(z) · (1 / φ'(z)) = 1`.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous`: the homogeneous equation is
   invariant.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_real_mul_add`: real dilations and translations, with the
@@ -135,6 +141,61 @@ theorem IsWeakCauchyRiemannOn.comp_differentiableOn_of_isOpen {Ω Ω' : Opens �
   h.comp_differentiableOn Ω.isOpen hφ subset_rfl hinj hφ' hmaps fun z hz =>
     hJ z (interior_subset hz)
 
+/-- **Invariance under a biholomorphic change of the domain chart, as an equivalence.** Let `φ`
+be an open partial homeomorphism of `ℂ`, holomorphic on its source, with `φ' = a + b i`, let `U` be
+a subset of its source, and let `J(w, u w)` square to `-1` on the interior of `φ '' U`. Then `u` is
+a weak solution on `φ '' U` if and only if `u ∘ φ` is a weak solution on `U` for the field `J ∘ φ`
+and the term `a η(φ z, x) - b J(φ z, x) η(φ z, x)`. -/
+theorem isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph
+    {φ : OpenPartialHomeomorph ℂ ℂ} (hφ : DifferentiableOn ℂ φ φ.source) (hU : U ⊆ φ.source)
+    (hJ : ∀ w ∈ interior (φ '' U), J w (u w) * J w (u w) = -1) :
+    IsWeakCauchyRiemannOn p (φ '' U) J η u ↔
+      IsWeakCauchyRiemannOn p U (fun z => J (φ z))
+        (fun z x => (deriv φ z).re • η (φ z) x - (deriv φ z).im • J (φ z) x (η (φ z) x))
+        (fun z => u (φ z)) := by
+  have hφ' : ∀ z ∈ φ.source, deriv φ z ≠ 0 := fun z hz =>
+    deriv_ne_zero_of_injOn hφ φ.open_source φ.injOn hz
+  have hUt : φ '' U ⊆ φ.target := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact φ.map_source (hU hz)
+  constructor
+  · intro h
+    refine h.comp_differentiableOn φ.open_source hφ hU (φ.injOn.mono hU)
+      (fun z hz => hφ' z (hU hz)) (mapsTo_image _ _) fun z hz => hJ _ ?_
+    exact interior_maximal (image_mono interior_subset)
+      (φ.isOpen_image_of_subset_source isOpen_interior (interior_subset.trans hU)) ⟨z, hz, rfl⟩
+  · intro h
+    have hsd : ∀ {w}, w ∈ φ.target → HasDerivAt φ.symm (deriv φ (φ.symm w))⁻¹ w :=
+      OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn hφ
+    have h₂ := h.comp_differentiableOn φ.open_target
+      (fun w hw => (hsd hw).differentiableAt.differentiableWithinAt) hUt (φ.symm.injOn.mono hUt)
+      (fun w hw => by
+        rw [(hsd (hUt hw)).deriv]
+        exact inv_ne_zero (hφ' _ (φ.map_target (hUt hw))))
+      (by
+        rintro _ ⟨z, hz, rfl⟩
+        rwa [φ.left_inv (hU hz)])
+      (fun w hw => by
+        rw [φ.right_inv (hUt (interior_subset hw))]
+        exact hJ w hw)
+    have h₃ := h₂.congr (v := u) fun w hw => by
+      simp only [φ.right_inv (hUt hw)]
+    refine (isWeakCauchyRiemannOn_congr_ae ?_ ?_).1 h₃ <;>
+      refine (ae_restrict_iff' measurableSet_interior).2 (.of_forall fun w hw => ?_)
+    · simp only [φ.right_inv (hUt (interior_subset hw))]
+    · have hwt := hUt (interior_subset hw)
+      set c := deriv φ (φ.symm w)
+      have hc : c ≠ 0 := hφ' _ (φ.map_target hwt)
+      have hcc : c⁻¹ * c = 1 := inv_mul_cancel₀ hc
+      have hre := congrArg Complex.re hcc
+      have him := congrArg Complex.im hcc
+      rw [mul_re, one_re] at hre
+      rw [mul_im, one_im] at him
+      have hJJ (y : V) : J w (u w) (J w (u w) y) = -y := by
+        simpa using congrArg (fun T : V →L[ℝ] V => T y) (hJ w hw)
+      rw [(hsd hwt).deriv, φ.right_inv hwt, map_sub, map_smul, map_smul, hJJ]
+      linear_combination (norm := module) hre • η w (u w) - him • J w (u w) (η w (u w))
+
 /-- **The homogeneous equation is invariant** under biholomorphic changes of the domain variable,
 with the field `J ∘ φ`. -/
 theorem IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous
@@ -216,15 +277,6 @@ example (h : IsWeakCauchyRiemannOn p (Metric.ball 0 2) J η u) :
         Complex.norm_ofNat] at hz ⊢
       linarith
   simpa using h.comp_real_mul_add (c := 2) two_ne_zero 0 hmaps
-
-/-- Conjugation solves `∂ₛu + i ∂ₜu = 2` on every open set: `1 + i·(-i) = 2`. -/
-private theorem isWeakCauchyRiemannOn_conj_two {Ω : Opens ℂ} :
-    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 2)
-      conj := by
-  refine isWeakCauchyRiemannOn_of_contDiffOn conjCLE.contDiff.contDiffOn fun z _ => ?_
-  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
-  rw [hconj, conjCLE.fderiv]
-  norm_num [Complex.ext_iff]
 
 /-- **Rotation.** The rotation `φ z = i z` has `φ' = i`, so `a = 0`, `b = 1`, and it
 carries the solution `conj z` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
