@@ -207,7 +207,8 @@ theorem NormalizedCubicalChain.prismLast_leftAct (H : f.Homotopy g)
     | ofCube a =>
       simp only [NormalizedCubicalChain.leftAct_ofCube, NormalizedCubicalChain.prismLast_ofCube,
         map_zsmul, smul_smul, ← pow_add]
-      rw [show (-1 : ℤ) ^ (p + q + 1) = (-1) ^ (p + (q + 1)) by rw [← add_assoc]]
+      -- Reassociate only the sign exponent: the cast also depends on `p + q + 1`.
+      rw (occs := .pos [1]) [add_assoc]
       congr 1
       rw [NormalizedCubicalChain.cast_ofCube]
       apply congrArg (NormalizedCubicalChain.ofCube Y R)
