@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -18,7 +18,7 @@ Let `f : X ⟶ S` be a morphism of schemes and `g : Spec L ⟶ S` a point with v
 trivial (`TauCeti.AlgebraicGeometry.relativePicardPresheafObjMulEquiv`). This file identifies the
 value of the degree-zero subfunctor `Pic⁰_{X/S}` at `g` inside it.
 
-When `f` is quasi-compact with affine diagonal, a geometric point `Spec Ω ⟶ Spec L` only extends the
+When `f` is quasi-compact and quasi-separated, a geometric point `Spec Ω ⟶ Spec L` only extends the
 ground field of `X_L`, which does not change the Euler-characteristic degree of a line bundle
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback`). So the fibre degree of a
 class on `X_L` at every geometric point is its degree over `L`, and the class lies in
@@ -69,11 +69,11 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 
 section FieldPoint
 
-variable [QuasiCompact f] [IsAffineHom (pullback.diagonal f)] {L : Type u} [Field L]
+variable [QuasiCompact f] [QuasiSeparated f] {L : Type u} [Field L]
   (g : Spec (.of L) ⟶ S)
 
 /-- **At a field-valued point, the fibre degree is the degree on the fibre.** For `f`
-quasi-compact with affine diagonal and a point `g : Spec L ⟶ S`, the degree of a line-bundle
+quasi-compact and quasi-separated and a point `g : Spec L ⟶ S`, the degree of a line-bundle
 class on `X_L = Spec L ×_S X` on the fibre over any point `Spec Ω ⟶ Spec L` is its degree over
 `L`: extending the ground field does not change the degree. -/
 theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
@@ -91,7 +91,6 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   -- `X_L` is quasi-compact and quasi-separated, as a base change of `f`.
   have : CompactSpace ↥(pullback g f) :=
     (quasiCompact_iff_compactSpace (pullback.fst g f)).mp inferInstance
-  have : QuasiSeparated f := ⟨inferInstance⟩
   have : QuasiSeparatedSpace ↥(pullback g f) :=
     quasiSeparatedSpace_of_quasiSeparated (pullback.fst g f)
   -- The fibre over `ξ` is the base change of `X_L` along `ξ`.
@@ -107,7 +106,7 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   exact (relativePicardFiberDegree_mk f (T := op (Over.mk g)) ξ a).trans
     (LineBundleClass.eulerDegree_pullback H a)
 
-/-- **`Pic⁰_{X/S}` at a field-valued point.** For `f` quasi-compact with affine diagonal and a
+/-- **`Pic⁰_{X/S}` at a field-valued point.** For `f` quasi-compact and quasi-separated and a
 point `g : Spec L ⟶ S`, a section of `Pic(X_L) / Pic(Spec L) = Pic(X_L)` at `g`, with
 `X_L = Spec L ×_S X`, lies in `Pic⁰_{X/S}` exactly when its line-bundle class on `X_L` has degree
 zero over `L`. -/
