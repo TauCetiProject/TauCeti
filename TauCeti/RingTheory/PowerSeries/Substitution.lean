@@ -16,7 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
-import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -80,9 +80,9 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff` and `PowerSeries.subst_ne_zero_of_ne_zero`: substitution of a
-  nonzero series of zero constant coefficient (univariate or multivariate) has trivial kernel, so
-  its composite into any fraction ring is injective (`PowerSeries.injective_substAlgHom_coe`).
+* `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero (possibly multivariate) series of
+  zero constant coefficient over a ring without zero divisors has trivial kernel, so its composite
+  into any fraction ring is injective (`PowerSeries.toAlgHom_comp_substAlgHom_injective`).
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
@@ -228,64 +228,54 @@ theorem toNat_order_ne_zero {R : Type*} [Semiring R] {φ : R⟦X⟧} (hφ : cons
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {φ : R⟦X⟧}
 
+private theorem order_subst_mvPowerSeries {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (f : R⟦X⟧) :
+    (f.subst q).order = q.order * f.order := by
+  have ha : HasSubst q := .of_constantCoeff_zero hq
+  rcases eq_or_ne f 0 with rfl | hf
+  · rw [subst_zero, MvPowerSeries.order_zero, order_zero, ENat.mul_top]
+    exact Order.one_le_iff_ne_zero.mp (MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hq)
+  have : Nontrivial R := have := nontrivial_of_ne f 0 hf; (C (R := R)).domain_nontrivial
+  have hg : (f.divXPowOrder.subst q).order = 0 := by
+    rw [← not_ne_iff, ← Order.one_le_iff_ne_zero,
+      MvPowerSeries.one_le_order_iff_constCoeff_eq_zero,
+      constantCoeff_subst_of_constantCoeff_zero hq, Algebra.algebraMap_self_apply]
+    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf
+  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := f)]
+  rw [subst_mul ha, subst_pow ha, subst_X ha, MvPowerSeries.order_mul, MvPowerSeries.order_pow,
+    hg, add_zero, nsmul_eq_mul, coe_toNat_order hf, mul_comm]
+
 /-- Substituting a power series `φ` of zero constant coefficient multiplies orders:
 `ord (f (φ)) = ord φ * ord f`. -/
 theorem order_subst (hφ : constantCoeff φ = 0) (f : R⟦X⟧) :
     PowerSeries.order (f.subst φ) = φ.order * f.order := by
-  have ha : HasSubst φ := .of_constantCoeff_zero' hφ
-  rcases eq_or_ne f 0 with rfl | hf
-  · rw [← coe_substAlgHom ha, map_zero, order_zero, ENat.mul_top]
-    exact order_ne_zero_iff_constCoeff_eq_zero.mpr hφ
-  have : Nontrivial R := have := nontrivial_of_ne f 0 hf; (C (R := R)).domain_nontrivial
-  -- Write `f = X ^ m * g` with `m = ord f`; then `g (φ)` has the nonzero constant coefficient
-  -- of `g`, so it has order zero.
-  have hg : PowerSeries.order (f.divXPowOrder.subst φ) = 0 := by
-    rw [← not_ne_iff, order_ne_zero_iff_constCoeff_eq_zero]
-    have h := constantCoeff_subst_of_constantCoeff_zero hφ f.divXPowOrder
-    rw [Algebra.algebraMap_self_apply] at h
-    -- `h` is stated with the multivariate constant coefficient, which is the univariate one
-    rw [show constantCoeff (f.divXPowOrder.subst φ) = f.divXPowOrder.constantCoeff from h]
-    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf
-  nth_rw 1 [← X_pow_order_mul_divXPowOrder (f := f)]
-  rw [subst_mul ha, subst_pow ha, subst_X ha, order_mul, order_pow, hg, add_zero, nsmul_eq_mul,
-    coe_toNat_order hf, mul_comm]
+  rw [order_eq_order, order_eq_order (φ := φ), order_subst_mvPowerSeries hφ]
 
-/-- Substituting a nonzero power series `φ` of zero constant coefficient sends only `0` to `0`. -/
-theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : R⟦X⟧} :
-    (f.subst φ : R⟦X⟧) = 0 ↔ f = 0 := by
-  have h₀ := order_ne_zero_iff_constCoeff_eq_zero.mpr hφ
-  have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
-  rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
+/-- Substituting a nonzero (possibly multivariate) power series `q` of zero constant coefficient
+into a power series over a ring without zero divisors sends only `0` to `0`. -/
+theorem subst_eq_zero_iff {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) {f : R⟦X⟧} :
+    f.subst q = 0 ↔ f = 0 := by
+  have h₀ : q.order ≠ 0 :=
+    Order.one_le_iff_ne_zero.mp (MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hq)
+  have h₁ : q.order ≠ ⊤ := MvPowerSeries.order_eq_top_iff.not.mpr hq0
+  rw [← MvPowerSeries.order_eq_top_iff, ← order_eq_top (φ := f), order_subst_mvPowerSeries hq]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
 
-/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into a
-nonzero power series over a ring without zero divisors produces a nonzero series. -/
-theorem subst_ne_zero_of_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
-    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) {f : R⟦X⟧} (hf : f ≠ 0) :
-    f.subst q ≠ 0 := by
-  have hc0 : MvPowerSeries.constantCoeff (f.divXPowOrder.subst q) ≠ 0 := by
-    rw [constantCoeff_subst_of_constantCoeff_zero hq, Algebra.algebraMap_self_apply]
-    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf
-  have hu : f.divXPowOrder.subst q ≠ 0 := fun h ↦ hc0 (by simp [h])
-  rw [← X_pow_order_mul_divXPowOrder (f := f), subst_mul (.of_constantCoeff_zero hq),
-    subst_pow (.of_constantCoeff_zero hq), subst_X (.of_constantCoeff_zero hq)]
-  exact mul_ne_zero (pow_ne_zero _ hq0) hu
-
-/-- Over an integral domain `R₀`, substituting a nonzero multivariate power series `q` of zero
-constant coefficient into `R₀⟦X⟧`, followed by the algebra map into a fraction ring `L` of
-`MvPowerSeries σ R₀`, is injective. -/
-theorem injective_substAlgHom_coe {R₀ : Type*} [CommRing R₀] [IsDomain R₀] {σ : Type*}
-    {q : MvPowerSeries σ R₀} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0)
-    {L : Type*} [CommRing L] [Algebra R₀ L] [Algebra (MvPowerSeries σ R₀) L]
-    [IsScalarTower R₀ (MvPowerSeries σ R₀) L] [IsFractionRing (MvPowerSeries σ R₀) L] :
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into `R⟦X⟧`,
+followed by the algebra map into a fraction ring `L` of `MvPowerSeries σ R`, is injective. -/
+theorem toAlgHom_comp_substAlgHom_injective {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0)
+    {L : Type*} [CommRing L] [Algebra R L] [Algebra (MvPowerSeries σ R) L]
+    [IsScalarTower R (MvPowerSeries σ R) L] [IsFractionRing (MvPowerSeries σ R) L] :
     Function.Injective
-      ((IsScalarTower.toAlgHom R₀ (MvPowerSeries σ R₀) L).comp
-        (substAlgHom (R := R₀) (.of_constantCoeff_zero hq))) := by
+      ((IsScalarTower.toAlgHom R (MvPowerSeries σ R) L).comp
+        (substAlgHom (R := R) (.of_constantCoeff_zero hq))) := by
   refine (injective_iff_map_eq_zero _).mpr fun f hf ↦ ?_
-  by_contra hf0
   rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', coe_substAlgHom,
-    map_eq_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R₀) L)] at hf
-  exact subst_ne_zero_of_ne_zero hq hq0 hf0 hf
+    map_eq_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R) L),
+    subst_eq_zero_iff hq hq0] at hf
+  exact hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

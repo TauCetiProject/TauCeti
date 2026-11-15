@@ -8,9 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
 import Mathlib.RingTheory.Ideal.Operations
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
-import TauCeti.RingTheory.QuotSMulTop
-import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Higher height ideals and Landweber regularity for Weierstrass formal groups
@@ -40,8 +37,9 @@ the unit ideal for all `n ≥ 3`.
 Consequently, on any smooth-or-nodal Weierstrass curve at `p`, multiplication by `v₂` on
 `M ⧸ I₂(Ê) M` is an isomorphism and `M ⧸ I₃(Ê) M = 0`, so every Landweber sequence
 `(p, v₁, v₂, …, v_{n-1})` of length `n ≥ 2` is weakly regular on an `R`-module `M` if and only if
-`(p, A)` is weakly regular on `M`
-(`WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff`).
+`(p, A)` is weakly regular on `M` (see
+`isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff_of_span_natCast_c₄_Δ_eq_top` and
+`WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff`).
 
 ## Main results
 
@@ -54,9 +52,10 @@ Consequently, on any smooth-or-nodal Weierstrass curve at `p`, multiplication by
 * `WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`: Landweber's `v₂` is a unit in
   `R ⧸ I₂(Ê)` if and only if `Ideal.span {(p : R), W.c₄, W.Δ} = ⊤`, with specializations to
   `Ideal.span {W.c₄, W.Δ} = ⊤` and `[W.IsElliptic]`.
-* `WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff`: when
-  `Ideal.span {(p : R), W.c₄, W.Δ} = ⊤` and `n ≥ 2`, weak regularity of `(v₀, …, v_{n-1})` on `M`
-  is equivalent to weak regularity of `(p, A)` on `M`.
+* `isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff_of_span_natCast_c₄_Δ_eq_top` and
+  `WeierstrassCurve.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff`: when
+  `Ideal.span {(p : R), W.c₄, W.Δ} = ⊤` (in particular when `[W.IsElliptic]`) and `n ≥ 2`, weak
+  regularity of `(v₀, …, v_{n-1})` on `M` is equivalent to weak regularity of `(p, A)` on `M`.
 
 ## References
 
@@ -110,7 +109,7 @@ theorem heightIdeal_formalGroup_le_prime_iff (hp : p.Prime) {n : ℕ} (hn : 3 �
   · rintro ⟨hpP, hc₄P, hΔP⟩
     have := hchar hpP
     have htop : (formalGroup (W.map φ)).height p = ⊤ :=
-      (W.map φ).height_formalGroup_eq_top_of_c₄_eq_zero
+      (W.map φ).height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero
         (by simpa using hmem.mpr hΔP) (by simpa using hmem.mpr hc₄P)
     rw [← hker, FormalGroup.heightIdeal_le_ker_iff, ← map_formalGroup,
       ((formalGroup (W.map φ)).height_eq_top_iff).mp htop, PowerSeries.order_zero]
@@ -147,7 +146,7 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
         (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) ↔
       Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
-  rw [Ideal.Quotient.isUnit_mk_iff, sup_comm, ← (formalGroup W).heightIdeal_succ hp 2,
+  rw [(formalGroup W).isUnit_mk_coeff_nsmulSeries_iff hp 2,
     W.heightIdeal_formalGroup_eq_top_iff hp le_rfl]
 
 /-- **On the smooth-or-nodal locus `(c₄, Δ) = ⊤`, Landweber's `v₂` is a unit modulo `I₂(Ê)`.** -/
@@ -169,51 +168,32 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup [W.IsElliptic] (hp : p.Prime) :
 `Ideal.span {(p : R), W.c₄, W.Δ} = ⊤`, a Landweber sequence `(v₀, v₁, …, v_{n-1})` of length
 `n ≥ 2` for `formalGroup W` at a prime `p` is weakly regular on an `R`-module `M` if and only if
 `(p, A)` is weakly regular on `M`, where `A` is the Hasse invariant. -/
-theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime)
-    (hW : Ideal.span {(p : R), W.c₄, W.Δ} = ⊤) {n : ℕ} (hn : 2 ≤ n) (M : Type*)
+theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff_of_span_natCast_c₄_Δ_eq_top
+    (hp : p.Prime) (hW : Ideal.span {(p : R), W.c₄, W.Δ} = ⊤) {n : ℕ} (hn : 2 ≤ n) (M : Type*)
     [AddCommGroup M] [Module R M] :
     IsWeaklyRegular M
         (List.ofFn fun i : Fin n ↦
           PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) ↔
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  set v : ℕ → R := fun i ↦ PowerSeries.coeff (p ^ i) ((formalGroup W).nsmulSeries p) with hv
-  obtain ⟨k, rfl⟩ : ∃ k, n = 2 + k := ⟨n - 2, by omega⟩
-  have hhead : (List.ofFn fun i : Fin 2 ↦ v i) = [(p : R), v 1] := by
-    simp [List.ofFn_succ, v, pow_one]
-  simp_rw [← congrFun hv]
-  rw [List.ofFn_add]
-  simp only [Fin.val_castLE, hhead, isWeaklyRegular_append_iff']
-  refine (and_iff_left ?_).trans ?_
-  swap
-  · simpa [v] using W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M
-  rcases k with _ | k
-  · simp [IsWeaklyRegular.nil]
-  · set I := Ideal.ofList [(p : R), v 1] with hI_def
-    have hI : I = (formalGroup W).heightIdeal p 2 := by
-      rw [hI_def, ← hhead, Ideal.ofList_ofFn, (formalGroup W).heightIdeal_eq_span hp 2]
-      congr 1
-      ext x
-      simp [Fin.exists_iff, v]
-    obtain ⟨u, hu⟩ : IsUnit (Ideal.Quotient.mk I (v 2)) :=
-      hI.symm ▸ (W.isUnit_mk_coeff_nsmulSeries_formalGroup_iff hp).mpr hW
-    simp only [List.ofFn_succ, Fin.val_natAdd, Fin.val_zero, add_zero, List.map_cons,
-      isWeaklyRegular_cons_iff]
-    rw [← hu]
-    have := QuotSMulTop.subsingleton_of_isUnit (M := M ⧸ (I • ⊤ : Submodule R M)) u.isUnit
-    exact ⟨u.isSMulRegular _, IsWeaklyRegular.of_subsingleton _⟩
+  have h3 : (formalGroup W).heightIdeal p 3 = ⊤ :=
+    (W.heightIdeal_formalGroup_eq_top_iff hp le_rfl).mpr hW
+  rw [(formalGroup W).isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top
+    hp h3 hn M]
+  simpa [List.ofFn_succ, pow_one] using W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M
 
 /-- **Landweber regularity for an elliptic curve reduces to `(p, A)`.** For an elliptic curve `W`
 over `R`, a prime `p`, and `n ≥ 2`, the Landweber sequence `(v₀, v₁, …, v_{n-1})` is weakly regular
 on `M` if and only if `(p, A)` is weakly regular on `M`. -/
-theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff_of_isElliptic [W.IsElliptic]
+theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff [W.IsElliptic]
     (hp : p.Prime) {n : ℕ} (hn : 2 ≤ n) (M : Type*) [AddCommGroup M] [Module R M] :
     IsWeaklyRegular M
         (List.ofFn fun i : Fin n ↦
           PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) ↔
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  refine W.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff hp ?_ hn M
+  refine W.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff_of_span_natCast_c₄_Δ_eq_top
+    hp ?_ hn M
   rw [Ideal.span_insert, Ideal.span_insert, Ideal.span_singleton_eq_top.mpr W.isUnit_Δ,
     sup_top_eq, sup_top_eq]
 

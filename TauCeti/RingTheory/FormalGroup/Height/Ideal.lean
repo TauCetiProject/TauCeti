@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # The height ideals of a formal group law
@@ -79,6 +82,9 @@ of `v_n` modulo `I_n`.
   unit ideal exactly when all characteristic-`p` field specializations have height below the index.
 * `FormalGroup.isUnit_mk_coeff_nsmulSeries_iff`: `v_n` is a unit modulo `I_n` exactly when
   `I_(n+1)` is the unit ideal.
+* `FormalGroup.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top`: when
+  `I_(m+1) = ⊤` and `m ≤ n`, weak regularity of `(v₀, …, v_(n-1))` on `M` is equivalent to weak
+  regularity of `(v₀, …, v_(m-1))` on `M`.
 
 ## References
 
@@ -88,6 +94,8 @@ of `v_n` modulo `I_n`.
 -/
 
 public section
+
+open RingTheory.Sequence
 
 namespace FormalGroup
 
@@ -291,6 +299,39 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
     have hI : Set.Iio (n + 1) = insert n (Set.Iio n) := by
       ext; simp
     rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
+
+/-- **Truncation of Landweber sequences above a unit height ideal.** For a commutative formal group
+law `F`, if `I_(m+1)(F) = ⊤` and `m ≤ n`, then the Landweber sequence `(v₀, …, v_(n-1))` is weakly
+regular on an `R`-module `M` if and only if its prefix `(v₀, …, v_(m-1))` is weakly regular on
+`M`: `v_m` acts as a unit on `M ⧸ I_m(F) M`, killing the quotient for all subsequent terms. -/
+theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    {m n : ℕ} (hF : F.heightIdeal p (m + 1) = ⊤) (hmn : m ≤ n) (M : Type*) [AddCommGroup M]
+    [Module R M] :
+    IsWeaklyRegular M
+        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) ↔
+      IsWeaklyRegular M
+        (List.ofFn fun i : Fin m ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) := by
+  set v : ℕ → R := fun i ↦ PowerSeries.coeff (p ^ i) (F.nsmulSeries p) with hv
+  obtain ⟨k, rfl⟩ : ∃ k, n = m + k := ⟨n - m, by omega⟩
+  simp_rw [← congrFun hv]
+  rw [List.ofFn_add]
+  simp only [Fin.val_castLE, isWeaklyRegular_append_iff']
+  refine and_iff_left ?_
+  rcases k with _ | k
+  · simp [IsWeaklyRegular.nil]
+  · set I := Ideal.ofList (List.ofFn fun i : Fin m ↦ v i) with hI_def
+    have hI : I = F.heightIdeal p m := by
+      rw [hI_def, Ideal.ofList_ofFn, F.heightIdeal_eq_span hp m]
+      congr 1
+      ext x
+      simp [Fin.exists_iff, v]
+    obtain ⟨u, hu⟩ : IsUnit (Ideal.Quotient.mk I (v m)) :=
+      hI.symm ▸ (F.isUnit_mk_coeff_nsmulSeries_iff hp m).mpr hF
+    simp only [List.ofFn_succ, Fin.val_natAdd, Fin.val_zero, List.map_cons,
+      isWeaklyRegular_cons_iff]
+    rw [Nat.add_zero, ← hu]
+    have := QuotSMulTop.subsingleton_of_isUnit (M := M ⧸ (I • ⊤ : Submodule R M)) u.isUnit
+    exact ⟨u.isSMulRegular _, IsWeaklyRegular.of_subsingleton _⟩
 
 omit [F.IsComm] in
 /-- The height ideals of a formal group law are finitely generated. -/

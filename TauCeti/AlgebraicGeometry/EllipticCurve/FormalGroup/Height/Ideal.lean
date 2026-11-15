@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.Algebra.Field.ZMod
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The Hasse invariant as Landweber's `v₁` for Weierstrass formal groups

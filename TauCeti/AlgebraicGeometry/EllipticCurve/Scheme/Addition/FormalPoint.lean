@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FormalPoint
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
@@ -44,6 +43,10 @@ particular `R` need not be reduced.
 
 ## Main results
 
+* `WeierstrassCurve.nonsingular_algebraMap_comp_formalW` and
+  `WeierstrassCurve.toAffine_algebraMap_comp_formalW_eq_thetaPoint`: over a field `KK` extending
+  `MvPowerSeries σ O` on which `fracCurve W σ KK` has nonzero discriminant, `[q : -1 : w(q)]` is
+  nonsingular and, over a fraction field when `q ≠ 0`, represents `W.thetaPoint`.
 * `WeierstrassCurve.isUnit_dblAddY_formalW`: the `Y`-coordinate of `dblAddXYZ` at the points
   `[z₁ : -1 : w(z₁)]` and `[z₂ : -1 : w(z₂)]` is a unit of `R⟦z₁, z₂⟧`.
 * `WeierstrassCurve.dblAddXYZ_formalW_eq_smul`: the value of `dblAddXYZ` at these points is a unit
@@ -93,11 +96,11 @@ theorem isUnit_dblAddY_formalW :
 section FractionField
 
 variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
-  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK] [IsFractionRing (MvPowerSeries σ O) KK]
+  {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK]
 
-omit [IsFractionRing (MvPowerSeries σ O) KK] in
--- The point `[q : -1 : w(q)]`, read in `KK`, is a nonsingular point of `W` over `KK`.
-private theorem nonsingular_algebraMap_comp (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+/-- The projective point `[q : -1 : w(q)]`, read in a field `KK` over `MvPowerSeries σ O` on which
+`fracCurve W σ KK` has nonzero discriminant, is nonsingular. -/
+theorem nonsingular_algebraMap_comp_formalW (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
     (fracCurve W σ KK).toProjective.Nonsingular
       (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) := by
@@ -107,15 +110,18 @@ private theorem nonsingular_algebraMap_comp (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   exact ((W.toProjective.equation_neg_one_iff_wEquation q _).mpr
     (W.subst_formalW_wEquation (PowerSeries.HasSubst.of_constantCoeff_zero hq))).map _
 
--- The point `[q : -1 : w(q)]`, read in `KK`, is the parametrized point `θ(q)`.
-private theorem toAffine_algebraMap_comp_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+variable [IsFractionRing (MvPowerSeries σ O) KK]
+
+/-- For a nonzero parameter `q` with zero constant coefficient, the affine point represented by
+`[q : -1 : w(q)]` in a fraction field `KK` of `MvPowerSeries σ O` is `W.thetaPoint`. -/
+theorem toAffine_algebraMap_comp_formalW_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     Projective.Point.toAffine (fracCurve W σ KK).toProjective
       (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) =
         W.thetaPoint hΔ hq hq0 := by
   have hz : (algebraMap (MvPowerSeries σ O) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
     W.algebraMap_subst_formalW_ne_zero hq hq0
-  have hN := W.nonsingular_algebraMap_comp hΔ hq
+  have hN := W.nonsingular_algebraMap_comp_formalW hΔ hq
   rw [Projective.Point.toAffine_of_Z_ne_zero hN hz, W.thetaPoint_eq_some hΔ hq hq0
     (by simpa using (Projective.nonsingular_of_Z_ne_zero hz).mp hN)]
   simp
@@ -161,8 +167,8 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
   have hF0 : F ≠ 0 := W.subst_pair_formalAdd_ne_zero hχ hz₁ hz₂ hχ₁ hχ₂
   -- read in `KK`, the law `dblAddXYZ` is nonzero, since its `Y`-coordinate is a unit, so it
   -- represents the sum of the two points, which is the parametrized point `θ(F)`
-  have hN₁ := W.nonsingular_algebraMap_comp hΔ' hz₁
-  have hN₂ := W.nonsingular_algebraMap_comp hΔ' hz₂
+  have hN₁ := W.nonsingular_algebraMap_comp_formalW hΔ' hz₁
+  have hN₂ := W.nonsingular_algebraMap_comp_formalW hΔ' hz₂
   have hD : W'.toProjective.dblAddXYZ (ρ ∘ ![z₁, -1, PowerSeries.subst z₁ W.formalW])
       (ρ ∘ ![z₂, -1, PowerSeries.subst z₂ W.formalW]) = ρ ∘ D := by
     rw [hW', fracCurve_def, ← map_map]
@@ -173,16 +179,17 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
       Projective.Point.toAffine W'.toProjective (ρ ∘ ![F, -1, PowerSeries.subst F W.formalW]) := by
     rw [← hD,
       Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ (hD ▸ hD0)),
-      Projective.Point.toAffine_add hN₁ hN₂, W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₁ hz₁0,
-      W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₂ hz₂0,
-      W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hFc hF0]
+      Projective.Point.toAffine_add hN₁ hN₂,
+      W.toAffine_algebraMap_comp_formalW_eq_thetaPoint hΔ' hz₁ hz₁0,
+      W.toAffine_algebraMap_comp_formalW_eq_thetaPoint hΔ' hz₂ hz₂0,
+      W.toAffine_algebraMap_comp_formalW_eq_thetaPoint hΔ' hFc hF0]
     exact W.thetaPoint_add_of_subst_separates hΔ' hχ hz₁ hz₂ hz₁0 hz₂0 hχ₁ hχ₂ hFc hF0
   have hDN : W'.toProjective.Nonsingular (ρ ∘ D) :=
     (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ' hD0).mp
       (hD ▸ hN₁.left.dblAddXYZ hN₂.left)
   -- equal affine points are projectively equivalent: `ρ ∘ D = u • ρ ∘ (F, -1, w(F))`
   obtain ⟨u, hu⟩ := (Projective.Point.toAffine_eq_toAffine_iff hDN
-    (W.nonsingular_algebraMap_comp hΔ' hFc)).mp hsum
+    (W.nonsingular_algebraMap_comp_formalW hΔ' hFc)).mp hsum
   have h₁ : ρ (D 1) = -u := by simpa [Units.smul_def] using (congrFun hu 1).symm
   rw [← hF, ← Projective.dblAddXYZ_Y, ← hDdef]
   clear_value D

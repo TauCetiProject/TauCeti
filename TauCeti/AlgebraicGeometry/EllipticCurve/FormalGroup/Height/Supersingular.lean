@@ -65,9 +65,10 @@ height `⊤` if and only if `c₄ = 0` and `Δ = 0`, and height `1` or `2` other
 * `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two` and
   `WeierstrassCurve.height_formalGroup_le_two`: in prime characteristic `p`, the formal group of an
   elliptic curve has height `1` or `2`.
-* `WeierstrassCurve.height_formalGroup_eq_one_of_c₄_ne_zero` and
-  `WeierstrassCurve.height_formalGroup_eq_top_of_c₄_eq_zero`: nodal curves (`Δ = 0`, `c₄ ≠ 0`) have
-  formal-group height `1`, and cuspidal curves (`Δ = 0`, `c₄ = 0`) have height `⊤`.
+* `WeierstrassCurve.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero` and
+  `WeierstrassCurve.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero`: nodal curves
+  (`Δ = 0`, `c₄ ≠ 0`) have formal-group height `1`, and cuspidal curves (`Δ = 0`, `c₄ = 0`) have
+  height `⊤`.
 * `WeierstrassCurve.height_formalGroup_eq_top_iff`,
   `WeierstrassCurve.height_formalGroup_le_two_iff`, and
   `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_iff`: for any Weierstrass curve in prime
@@ -236,8 +237,8 @@ private theorem exists_height_formalGroup_eq_of_Δ_eq_zero (hΔ : W.Δ = 0) :
 
 /-- **A nodal Weierstrass curve (`Δ = 0`, `c₄ ≠ 0`) in prime characteristic `p` has formal-group
 height `1`.** -/
-theorem height_formalGroup_eq_one_of_c₄_ne_zero [Fact p.Prime] [CharP K p] (hΔ : W.Δ = 0)
-    (hc₄ : W.c₄ ≠ 0) : (formalGroup W).height p = 1 := by
+theorem height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero [Fact p.Prime] [CharP K p]
+    (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) : (formalGroup W).height p = 1 := by
   have : CharP (AlgebraicClosure K) p :=
     charP_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
   obtain ⟨V, hv₂, hv₃, hv₄, hv₆, hVc₄, hht⟩ :=
@@ -249,8 +250,8 @@ theorem height_formalGroup_eq_one_of_c₄_ne_zero [Fact p.Prime] [CharP K p] (h�
 
 /-- **A cuspidal Weierstrass curve (`Δ = 0`, `c₄ = 0`) in characteristic `p` has formal-group height
 `⊤`.** -/
-theorem height_formalGroup_eq_top_of_c₄_eq_zero [CharP K p] (hΔ : W.Δ = 0) (hc₄ : W.c₄ = 0) :
-    (formalGroup W).height p = ⊤ := by
+theorem height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero [CharP K p] (hΔ : W.Δ = 0)
+    (hc₄ : W.c₄ = 0) : (formalGroup W).height p = ⊤ := by
   have : CharP (AlgebraicClosure K) p :=
     charP_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
   obtain ⟨V, hv₂, hv₃, hv₄, hv₆, hVc₄, hht⟩ :=
@@ -262,7 +263,8 @@ theorem height_formalGroup_eq_top_of_c₄_eq_zero [CharP K p] (hΔ : W.Δ = 0) (
 formal group of a Weierstrass curve `W` has height `⊤` if and only if `W.c₄ = 0` and `W.Δ = 0`. -/
 theorem height_formalGroup_eq_top_iff [Fact p.Prime] [CharP K p] :
     (formalGroup W).height p = ⊤ ↔ W.c₄ = 0 ∧ W.Δ = 0 := by
-  refine ⟨fun htop ↦ ?_, fun ⟨hc₄, hΔ⟩ ↦ W.height_formalGroup_eq_top_of_c₄_eq_zero hΔ hc₄⟩
+  refine ⟨fun htop ↦ ?_,
+    fun ⟨hc₄, hΔ⟩ ↦ W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄⟩
   have hΔ : W.Δ = 0 := by
     by_contra hΔ
     have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
@@ -271,7 +273,7 @@ theorem height_formalGroup_eq_top_iff [Fact p.Prime] [CharP K p] :
     exact absurd hle (by decide)
   refine ⟨?_, hΔ⟩
   by_contra hc₄
-  have h1 := W.height_formalGroup_eq_one_of_c₄_ne_zero (p := p) hΔ hc₄
+  have h1 := W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero (p := p) hΔ hc₄
   rw [htop] at h1
   exact ENat.top_ne_one h1
 
@@ -284,8 +286,9 @@ theorem height_formalGroup_le_two_iff [Fact p.Prime] [CharP K p] :
   · rw [htop] at hle
     exact absurd hle (by decide)
   · by_cases hΔ : W.Δ = 0
-    · have hc₄ : W.c₄ ≠ 0 := fun hc₄ ↦ hne (W.height_formalGroup_eq_top_of_c₄_eq_zero hΔ hc₄)
-      rw [W.height_formalGroup_eq_one_of_c₄_ne_zero hΔ hc₄]
+    · have hc₄ : W.c₄ ≠ 0 :=
+        fun hc₄ ↦ hne (W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ hc₄)
+      rw [W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ hc₄]
       decide
     · have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
       exact W.height_formalGroup_le_two
@@ -298,7 +301,8 @@ theorem height_formalGroup_eq_one_or_eq_two_iff [Fact p.Prime] [CharP K p] :
   refine ⟨fun h ↦ W.height_formalGroup_le_two_iff.mp ?_, fun h ↦ ?_⟩
   · rcases h with h | h <;> rw [h]; decide
   · by_cases hΔ : W.Δ = 0
-    · exact Or.inl (W.height_formalGroup_eq_one_of_c₄_ne_zero hΔ (h.resolve_right (not_not.mpr hΔ)))
+    · exact Or.inl (W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ
+        (h.resolve_right (not_not.mpr hΔ)))
     · have : W.IsElliptic := ⟨IsUnit.mk0 _ hΔ⟩
       exact W.height_formalGroup_eq_one_or_eq_two
 

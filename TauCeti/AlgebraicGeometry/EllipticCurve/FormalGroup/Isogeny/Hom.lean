@@ -11,8 +11,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.ZSMul
--- Proof-only: `w(q) ≠ 0` in the fraction field of multivariate power series.
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 -- Proof-only: morphisms act additively on points over every field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 -- Proof-only: the source of an isogeny to an elliptic curve is elliptic.
@@ -21,7 +19,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 -- Proof-only: equivalence of projective point representatives and affine points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
--- Proof-only: the Bosma–Lenstra addition law at formal parameters.
+-- Proof-only: the Bosma–Lenstra addition law and parametrized formal points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
 -- Proof-only: multivariate power series over a domain form a domain.
 import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
@@ -171,19 +169,34 @@ private theorem paramPoint_zero : paramPoint (KK := KK) W (0 : MvPowerSeries σ 
 
 variable [W.IsElliptic] [IsScalarTower K (MvPowerSeries σ K) KK]
 
+private theorem fracCurve_Δ_ne_zero_of_isElliptic : (fracCurve W σ KK).Δ ≠ 0 := by
+  rw [W.fracCurve_eq_baseChange σ KK]
+  exact (W⁄KK).isUnit_Δ.ne_zero
+
+private theorem nonsingular_of_eq {V₁ V₂ : WeierstrassCurve KK} (e : V₁ = V₂)
+    {P : Fin 3 → KK} (h : V₁.toProjective.Nonsingular P) : V₂.toProjective.Nonsingular P := by
+  subst e; exact h
+
 private theorem nonsingular_paramVec {q : MvPowerSeries σ K} (hq : constantCoeff q = 0) :
-    (W⁄KK).toProjective.Nonsingular (paramVec (KK := KK) W q) := by
-  refine (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero (W⁄KK).isUnit_Δ.ne_zero
-    fun h ↦ by simpa [paramVec] using congrFun h 1).mp ?_
-  have hmap : W⁄KK =
-      (W.map (algebraMap K (MvPowerSeries σ K))).map (algebraMap (MvPowerSeries σ K) KK) := by
-    rw [WeierstrassCurve.map_map, ← IsScalarTower.algebraMap_eq]
-    rfl
-  rw [hmap]
-  exact ((W.toProjective.equation_neg_one_iff_wEquation q _).mpr
-    (W.subst_formalW_wEquation (.of_constantCoeff_zero hq))).map _
+    (W⁄KK).toProjective.Nonsingular (paramVec (KK := KK) W q) :=
+  nonsingular_of_eq (W.fracCurve_eq_baseChange σ KK)
+    (W.nonsingular_algebraMap_comp_formalW (fracCurve_Δ_ne_zero_of_isElliptic (KK := KK) W) hq)
 
 section FractionRing
+
+private theorem exists_toAffine_eq_some_of_eq {V₁ V₂ : WeierstrassCurve KK} (e : V₁ = V₂)
+    {x y : KK} {P : Fin 3 → KK} {h₁ : V₁.toAffine.Nonsingular x y}
+    (hp : Projective.Point.toAffine V₁.toProjective P = .some _ _ h₁) :
+    ∃ h₂ : V₂.toAffine.Nonsingular x y,
+      Projective.Point.toAffine V₂.toProjective P = .some _ _ h₂ := by
+  subst e; exact ⟨h₁, hp⟩
+
+private theorem toAffine_eq_iff_of_eq {V₁ V₂ : WeierstrassCurve KK} (e : V₁ = V₂)
+    (P Q : Fin 3 → KK) :
+    Projective.Point.toAffine V₂.toProjective P = Projective.Point.toAffine V₂.toProjective Q ↔
+      Projective.Point.toAffine V₁.toProjective P =
+        Projective.Point.toAffine V₁.toProjective Q := by
+  subst e; rfl
 
 variable [IsFractionRing (MvPowerSeries σ K) KK]
 
@@ -194,12 +207,11 @@ private theorem paramPoint_eq_some {q : MvPowerSeries σ K} (hq : constantCoeff 
           algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q W.formalW))
         (-1 / algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q W.formalW)),
       paramPoint (KK := KK) W q = .some _ _ h := by
-  have hz : paramVec (KK := KK) W q 2 ≠ 0 := by
-    simpa [paramVec] using W.algebraMap_subst_formalW_ne_zero (KK := KK) hq hq0
-  have hN := nonsingular_paramVec (KK := KK) W hq
-  refine ⟨by simpa [paramVec] using (Projective.nonsingular_of_Z_ne_zero hz).mp hN, ?_⟩
-  rw [paramPoint, Projective.Point.toAffine_of_Z_ne_zero hN hz]
-  simp [paramVec]
+  obtain ⟨_, hθ⟩ := W.exists_thetaPoint_eq_some (fracCurve_Δ_ne_zero_of_isElliptic (KK := KK) W)
+    hq hq0
+  exact exists_toAffine_eq_some_of_eq (W.fracCurve_eq_baseChange σ KK)
+    ((W.toAffine_algebraMap_comp_formalW_eq_thetaPoint
+      (fracCurve_Δ_ne_zero_of_isElliptic (KK := KK) W) hq hq0).trans hθ)
 
 private theorem paramPoint_injective {q₁ q₂ : MvPowerSeries σ K}
     (hq₁ : constantCoeff q₁ = 0) (hq₂ : constantCoeff q₂ = 0)
@@ -214,23 +226,12 @@ private theorem paramPoint_injective {q₁ q₂ : MvPowerSeries σ K}
     · obtain ⟨_, h₁⟩ := paramPoint_eq_some (KK := KK) W hq₁ hq₁0
       rw [h₁, paramPoint_zero] at h
       cases h
-    · obtain ⟨_, h₁⟩ := paramPoint_eq_some (KK := KK) W hq₁ hq₁0
-      obtain ⟨_, h₂⟩ := paramPoint_eq_some (KK := KK) W hq₂ hq₂0
-      rw [h₁, h₂, Point.some.injEq] at h
-      have hw₁ : algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q₁ W.formalW) ≠ 0 :=
-        W.algebraMap_subst_formalW_ne_zero hq₁ hq₁0
-      have hw₂ : algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q₂ W.formalW) ≠ 0 :=
-        W.algebraMap_subst_formalW_ne_zero hq₂ hq₂0
-      have hw : algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q₁ W.formalW) =
-          algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q₂ W.formalW) := by
-        have hy := h.2
-        rw [div_eq_div_iff hw₁ hw₂] at hy
-        linear_combination hy
-      have hq : algebraMap (MvPowerSeries σ K) KK q₁ =
-          algebraMap (MvPowerSeries σ K) KK q₂ := by
-        have hx := h.1
-        rwa [hw, div_left_inj₀ hw₂] at hx
-      exact IsFractionRing.injective (MvPowerSeries σ K) KK hq
+    · rw [paramPoint, paramPoint, toAffine_eq_iff_of_eq (W.fracCurve_eq_baseChange σ KK),
+        paramVec, paramVec, W.toAffine_algebraMap_comp_formalW_eq_thetaPoint
+          (fracCurve_Δ_ne_zero_of_isElliptic (KK := KK) W) hq₁ hq₁0,
+        W.toAffine_algebraMap_comp_formalW_eq_thetaPoint
+          (fracCurve_Δ_ne_zero_of_isElliptic (KK := KK) W) hq₂ hq₂0] at h
+      exact (W.thetaPoint_inj _ hq₁ hq₂ hq₁0 hq₂0).mp h
 
 end FractionRing
 
@@ -279,21 +280,21 @@ variable {K : Type*} [Field K] {W₁ W₂ W₃ : WeierstrassCurve K}
 
 open scoped Classical in
 /-- Evaluating the tautological point of `ψ : W₁ → W₂` along
-`LaurentSeries.liftLaurentSubst hq hq0 ∘ W₁.functionFieldLaurentExpansion` gives
-`paramPoint W₂ (PowerSeries.subst q ψ.formalSeries)`. -/
-private theorem point_map_liftLaurentSubst_tautologicalPoint [W₂.IsElliptic]
+`LaurentSeries.mvSubstAlgHom hq hq0 ∘ W₁.functionFieldLaurentExpansion` in any fraction field `KK`
+of `MvPowerSeries σ K` gives `paramPoint W₂ (PowerSeries.subst q ψ.formalSeries)`. -/
+private theorem point_map_mvSubstAlgHom_tautologicalPoint [W₂.IsElliptic]
     (ψ : Isogeny W₁.toAffine W₂.toAffine) {σ : Type*} {q : MvPowerSeries σ K}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    Point.map ((LaurentSeries.liftLaurentSubst hq hq0).comp W₁.functionFieldLaurentExpansion)
-        ψ.pullback.tautologicalPoint =
-      paramPoint (KK := FractionRing (MvPowerSeries σ K)) W₂
-        (PowerSeries.subst q ψ.formalSeries) := by
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
+    {KK : Type*} [Field KK] [Algebra K KK] [Algebra (MvPowerSeries σ K) KK]
+    [IsScalarTower K (MvPowerSeries σ K) KK] [IsFractionRing (MvPowerSeries σ K) KK] :
+    Point.map ((LaurentSeries.mvSubstAlgHom (L := KK) hq hq0).comp
+        W₁.functionFieldLaurentExpansion) ψ.pullback.tautologicalPoint =
+      paramPoint (KK := KK) W₂ (PowerSeries.subst q ψ.formalSeries) := by
   have hqc : constantCoeff (PowerSeries.subst q ψ.formalSeries) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero hq _ ψ.constantCoeff_formalSeries
   have hqψ0 : PowerSeries.subst q ψ.formalSeries ≠ 0 :=
-    PowerSeries.subst_ne_zero_of_ne_zero hq hq0 ψ.formalSeries_ne_zero
-  obtain ⟨_, hparam⟩ :=
-    paramPoint_eq_some (KK := FractionRing (MvPowerSeries σ K)) W₂ hqc hqψ0
+    (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr ψ.formalSeries_ne_zero
+  obtain ⟨_, hparam⟩ := paramPoint_eq_some (KK := KK) W₂ hqc hqψ0
   rw [Isogeny.tautologicalPoint_eq_map_genericPoint, Point.map_map, hparam, genericPoint_eq_some,
     Point.map_some]
   refine Point.eq_of_coords (Point.some_ne_zero _) (Point.some_ne_zero _) ?_ ?_
@@ -302,13 +303,13 @@ private theorem point_map_liftLaurentSubst_tautologicalPoint [W₂.IsElliptic]
       W₂.functionFieldLaurentExpansion_genericX_eq_X_div_formalW, map_div₀,
       LaurentSeries.substAlgHom_coe,
       PowerSeries.subst_X (.of_constantCoeff_zero' ψ.constantCoeff_formalSeries),
-      LaurentSeries.liftLaurentSubst_coe,
+      LaurentSeries.mvSubstAlgHom_coe,
       PowerSeries.subst_comp_subst_apply (.of_constantCoeff_zero ψ.constantCoeff_formalSeries)
         (.of_constantCoeff_zero hq)]
   · simp only [Point.yCoord_some, AlgHom.comp_apply,
       ψ.functionFieldLaurentExpansion_fieldPullback,
       W₂.functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW, map_div₀, map_neg,
-      map_one, LaurentSeries.substAlgHom_coe, LaurentSeries.liftLaurentSubst_coe,
+      map_one, LaurentSeries.substAlgHom_coe, LaurentSeries.mvSubstAlgHom_coe,
       PowerSeries.subst_comp_subst_apply (.of_constantCoeff_zero ψ.constantCoeff_formalSeries)
         (.of_constantCoeff_zero hq)]
 
@@ -422,19 +423,32 @@ section Add
 
 variable [W₂.IsElliptic]
 
+-- `Point.map` along `W₁.functionFieldLaurentExpansion : W₁.toAffine.FunctionField →ₐ[K] K⸨X⸩`
+-- asks for `IsScalarTower K K K⸨X⸩` with `Algebra.toSMul`, whereas `HahnSeries` registers
+-- `IsScalarTower` for its coefficientwise `SMul`.
+private theorem instIsScalarTower_laurentSeries :
+    @IsScalarTower K K K⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+  .of_algebraMap_eq fun _ ↦ by
+    simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
+      Algebra.algebraMap_self, RingHom.id_apply]
+
+attribute [local instance] instIsScalarTower_laurentSeries
+
 open scoped Classical in
-/-- Reading `W₁.functionFieldLaurentExpansion` in `FractionRing K⟦X⟧` sends the tautological point
-of `f` to `paramPoint W₂ f.formalSeries`. -/
+/-- Evaluating along `W₁.functionFieldLaurentExpansion` in `K⸨X⸩` sends the tautological point of
+`f` to `paramPoint W₂ f.formalSeries`. -/
 private theorem point_map_tautologicalPoint_eq_paramPoint (f : Hom W₁.toAffine W₂.toAffine) :
-    Point.map ((LaurentSeries.liftLaurentSubst (q := (X () : MvPowerSeries Unit K))
-        (constantCoeff_X ()) PowerSeries.X_ne_zero).comp
-        W₁.functionFieldLaurentExpansion) f.tautologicalPoint =
-      paramPoint (KK := FractionRing K⟦X⟧) W₂ f.formalSeries := by
+    Point.map W₁.functionFieldLaurentExpansion f.tautologicalPoint =
+      paramPoint (KK := K⸨X⸩) W₂ f.formalSeries := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · rw [tautologicalPoint_zero, map_zero, formalSeries_zero, paramPoint_zero]
-  · rw [tautologicalPoint_ofIsogeny, formalSeries_ofIsogeny,
-      point_map_liftLaurentSubst_tautologicalPoint φ (constantCoeff_X ()) PowerSeries.X_ne_zero]
-    exact congrArg (paramPoint (KK := FractionRing K⟦X⟧) W₂) (PowerSeries.X_subst _)
+  · have hid := (LaurentSeries.substAlgHom_eq_mvSubstAlgHom
+      PowerSeries.constantCoeff_X PowerSeries.X_ne_zero).symm.trans
+      (LaurentSeries.substAlgHom_X (K := K))
+    have h := point_map_mvSubstAlgHom_tautologicalPoint (KK := K⸨X⸩) φ
+      PowerSeries.constantCoeff_X PowerSeries.X_ne_zero
+    rwa [hid, AlgHom.id_comp, PowerSeries.X_subst, ← tautologicalPoint_ofIsogeny,
+      ← formalSeries_ofIsogeny] at h
 
 open scoped Classical in
 /-- **The formal series of a sum of morphisms is the formal-group sum of their series.** -/
@@ -448,10 +462,10 @@ theorem formalSeries_add (f g : Hom W₁.toAffine W₂.toAffine) :
         (.of_constantCoeff_zero g.constantCoeff_formalSeries))
       (fun i ↦ by fin_cases i; exacts [f.constantCoeff_formalSeries, g.constantCoeff_formalSeries])
       (formalGroup W₂).zero_constantCoeff
-  refine paramPoint_injective (KK := FractionRing K⟦X⟧) W₂ (f + g).constantCoeff_formalSeries hc ?_
+  refine paramPoint_injective (KK := K⸨X⸩) W₂ (f + g).constantCoeff_formalSeries hc ?_
   rw [← point_map_tautologicalPoint_eq_paramPoint, tautologicalPoint_add, (Point.map _).map_add,
     point_map_tautologicalPoint_eq_paramPoint, point_map_tautologicalPoint_eq_paramPoint,
-    paramPoint_subst_formalGroup (KK := FractionRing K⟦X⟧) W₂ f.constantCoeff_formalSeries
+    paramPoint_subst_formalGroup (KK := K⸨X⸩) W₂ f.constantCoeff_formalSeries
       g.constantCoeff_formalSeries]
 
 /-- **The formal series of a difference of morphisms is the formal-group difference of their
@@ -531,18 +545,20 @@ theorem formalSeries_mulByIntIsogeny_natCast (W : WeierstrassCurve K) [W.IsEllip
 section FormalGroupHom
 
 open scoped Classical in
-private theorem pointMap_ofIsogeny_paramPoint [W₁.IsElliptic] [W₂.IsElliptic]
+private theorem pointMap_map_algebraMap_paramPoint [W₁.IsElliptic] [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) {σ : Type*} {q : MvPowerSeries σ K}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    (Hom.ofIsogeny (φ.baseChange (FractionRing (MvPowerSeries σ K)))).pointMap
-        (paramPoint (KK := FractionRing (MvPowerSeries σ K)) W₁ q) =
-      paramPoint (KK := FractionRing (MvPowerSeries σ K)) W₂
-        (PowerSeries.subst q φ.formalSeries) := by
-  have hid := point_map_liftLaurentSubst_tautologicalPoint (Isogeny.id W₁.toAffine) hq hq0
+    (hq : constantCoeff q = 0) (hq0 : q ≠ 0)
+    {KK : Type*} [Field KK] [DecidableEq KK] [Algebra K KK] [Algebra (MvPowerSeries σ K) KK]
+    [IsScalarTower K (MvPowerSeries σ K) KK] [IsFractionRing (MvPowerSeries σ K) KK] :
+    ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap (paramPoint (KK := KK) W₁ q) =
+      paramPoint (KK := KK) W₂ (PowerSeries.subst q φ.formalSeries) := by
+  have hid := point_map_mvSubstAlgHom_tautologicalPoint (KK := KK) (Isogeny.id W₁.toAffine) hq hq0
   rw [Isogeny.id_pullback, CoordinatePullback.tautologicalPoint_id, Isogeny.formalSeries_id,
     PowerSeries.subst_X (.of_constantCoeff_zero hq)] at hid
-  rw [← hid, Hom.pointMap_ofIsogeny_map_genericPoint,
-    point_map_liftLaurentSubst_tautologicalPoint φ hq hq0]
+  refine (congrArg ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap hid.symm).trans ?_
+  refine (Hom.pointMap_map_algebraMap_map_genericPoint (Hom.ofIsogeny φ) _).trans ?_
+  rw [Hom.tautologicalPoint_ofIsogeny]
+  exact point_map_mvSubstAlgHom_tautologicalPoint (KK := KK) φ hq hq0
 
 open scoped Classical in
 /-- **Every isogeny's formal series satisfies the formal-group homomorphism equation**
@@ -552,43 +568,42 @@ theorem subst_formalGroup_formalSeries [W₂.IsElliptic] (φ : Isogeny W₁.toAf
       subst (fun i ↦ φ.formalSeries.toMvPowerSeries i) (formalGroup W₂).toPowerSeries := by
   have := φ.isElliptic
   let KK := FractionRing (MvPowerSeries (Fin 2) K)
-  set X₀ : MvPowerSeries (Fin 2) K := X 0 with hX₀_def
-  set X₁ : MvPowerSeries (Fin 2) K := X 1 with hX₁_def
-  have hX0c : constantCoeff X₀ = 0 := constantCoeff_X 0
-  have hX1c : constantCoeff X₁ = 0 := constantCoeff_X 1
-  have hX0 : X₀ ≠ 0 := nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
-  have hX1 : X₁ ≠ 0 := nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
+  have hX0 : (X 0 : MvPowerSeries (Fin 2) K) ≠ 0 := nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
+  have hX1 : (X 1 : MvPowerSeries (Fin 2) K) ≠ 0 := nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have hF₁c : constantCoeff (formalGroup W₁).toPowerSeries = 0 :=
     (formalGroup W₁).zero_constantCoeff
-  have hF₁0 : (formalGroup W₁).toPowerSeries ≠ 0 := by
-    intro h0
-    have hlin := (formalGroup W₁).lin_coeff_X
-    rw [h0, map_zero] at hlin
-    exact one_ne_zero hlin.symm
+  have hF₁0 : (formalGroup W₁).toPowerSeries ≠ 0 := fun h0 ↦
+    zero_ne_one ((map_zero _).symm.trans (h0 ▸ (formalGroup W₁).lin_coeff_X))
   have hL : constantCoeff (PowerSeries.subst (formalGroup W₁).toPowerSeries φ.formalSeries) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero hF₁c _ φ.constantCoeff_formalSeries
-  set φ₀ : MvPowerSeries (Fin 2) K := PowerSeries.subst X₀ φ.formalSeries
-  set φ₁ : MvPowerSeries (Fin 2) K := PowerSeries.subst X₁ φ.formalSeries
+  set φ₀ : MvPowerSeries (Fin 2) K := PowerSeries.subst (X 0) φ.formalSeries
+  set φ₁ : MvPowerSeries (Fin 2) K := PowerSeries.subst (X 1) φ.formalSeries
   have hφ0c : constantCoeff φ₀ = 0 :=
-    PowerSeries.constantCoeff_subst_eq_zero hX0c _ φ.constantCoeff_formalSeries
+    PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 0) _ φ.constantCoeff_formalSeries
   have hφ1c : constantCoeff φ₁ = 0 :=
-    PowerSeries.constantCoeff_subst_eq_zero hX1c _ φ.constantCoeff_formalSeries
+    PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 1) _ φ.constantCoeff_formalSeries
   have hpair : (fun i : Fin 2 ↦ φ.formalSeries.toMvPowerSeries i) = ![φ₀, φ₁] := by
-    funext i; fin_cases i <;> simp [φ₀, φ₁, X₀, X₁, PowerSeries.toMvPowerSeries_eq_subst]
+    funext i; fin_cases i <;> simp [φ₀, φ₁, PowerSeries.toMvPowerSeries_eq_subst]
   rw [hpair]
   have hR : constantCoeff (subst ![φ₀, φ₁] (formalGroup W₂).toPowerSeries) = 0 :=
     constantCoeff_subst_eq_zero
       (hasSubst_finTwo (.of_constantCoeff_zero hφ0c) (.of_constantCoeff_zero hφ1c))
-      (fun i ↦ by fin_cases i; exacts [hφ0c, hφ1c])
-      (formalGroup W₂).zero_constantCoeff
+      (fun i ↦ by fin_cases i; exacts [hφ0c, hφ1c]) (formalGroup W₂).zero_constantCoeff
   refine paramPoint_injective (KK := KK) W₂ hL hR ?_
   have hF₁_self : (formalGroup W₁).toPowerSeries =
-      subst ![X₀, X₁] (formalGroup W₁).toPowerSeries := by
-    rw [hX₀_def, hX₁_def, finTwo_X_eq_X, subst_self, id_eq]
-  rw [← pointMap_ofIsogeny_paramPoint φ hF₁c hF₁0,
-    paramPoint_subst_formalGroup (KK := KK) W₂ hφ0c hφ1c,
-    ← pointMap_ofIsogeny_paramPoint φ hX0c hX0, ← pointMap_ofIsogeny_paramPoint φ hX1c hX1,
-    ← Hom.pointMap_add, ← paramPoint_subst_formalGroup (KK := KK) W₁ hX0c hX1c, ← hF₁_self]
+      subst ![X 0, X 1] (formalGroup W₁).toPowerSeries := by
+    rw [finTwo_X_eq_X, subst_self, id_eq]
+  have hadd₁ : paramPoint (KK := KK) W₁ (formalGroup W₁).toPowerSeries =
+      paramPoint (KK := KK) W₁ (X (0 : Fin 2)) + paramPoint (KK := KK) W₁ (X (1 : Fin 2)) := by
+    rw [hF₁_self, paramPoint_subst_formalGroup (KK := KK) W₁ (constantCoeff_X (0 : Fin 2))
+      (constantCoeff_X (1 : Fin 2))]
+  refine (pointMap_map_algebraMap_paramPoint (KK := KK) φ hF₁c hF₁0).symm.trans ?_
+  refine (congrArg ((Hom.ofIsogeny φ).map (algebraMap K KK)).pointMap hadd₁).trans ?_
+  refine (Hom.pointMap_add ((Hom.ofIsogeny φ).map (algebraMap K KK)) _ _).trans ?_
+  refine Eq.trans ?_ (paramPoint_subst_formalGroup (KK := KK) W₂ hφ0c hφ1c).symm
+  exact congrArg₂ (· + ·)
+    (pointMap_map_algebraMap_paramPoint (KK := KK) φ (constantCoeff_X (0 : Fin 2)) hX0)
+    (pointMap_map_algebraMap_paramPoint (KK := KK) φ (constantCoeff_X (1 : Fin 2)) hX1)
 
 /-- **The formal group homomorphism induced by an isogeny.** -/
 noncomputable def formalGroupHom [W₂.IsElliptic] (φ : Isogeny W₁.toAffine W₂.toAffine) :
@@ -764,7 +779,7 @@ theorem Hom.formalGroupHom_zsmul_applyPoint [W₂.IsElliptic] (n : ℤ)
 theorem Hom.formalGroupHom_nsmul_applyPoint [W₂.IsElliptic] (n : ℕ)
     (f : Hom W₁.toAffine W₂.toAffine) {σ : Type*} (x : (formalGroup W₁).Point σ) :
     (n • f).formalGroupHom.applyPoint x = n • f.formalGroupHom.applyPoint x := by
-  rw [← natCast_zsmul, Hom.formalGroupHom_zsmul_applyPoint, natCast_zsmul]
+  simp
 
 end FormalGroupHom
 

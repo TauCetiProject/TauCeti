@@ -334,13 +334,6 @@ private abbrev UnivSeries := MvPowerSeries (Fin 2) (MvPolynomial Coeff ℤ)
 /-- The fraction field of `UnivSeries`. -/
 private abbrev UnivField := FractionRing UnivSeries
 
-/-- The curve on which the points with series parameters live is the base change of the universal
-curve to `UnivField`. -/
-private theorem fracCurve_eq_baseChange :
-    fracCurve Universal.curve (Fin 2) UnivField = Universal.curve⁄UnivField := by
-  rw [fracCurve_def, ← IsScalarTower.algebraMap_eq]
-  rfl
-
 /-- The point with series parameter `q` is the affine point `(q / w(q), -1 / w(q))`. -/
 private theorem coords_thetaPoint (hΔ : (fracCurve Universal.curve (Fin 2) UnivField).Δ ≠ 0)
     {q : UnivSeries} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
