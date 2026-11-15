@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier
+public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.DisplacementInterpolation
 import Mathlib.Analysis.InnerProductSpace.Convex
 
