@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 
 /-!
 # The cokernel of the gauge-fixed vortex operator on the Sobolev scale
@@ -36,7 +36,8 @@ The proof combines three facts.
 * **Weak solutions are classical.** A `C¹` weak solution of `L_x y = g` solves it almost
   everywhere (`gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`): integration by
   parts against compactly supported test fields
-  (`integral_inner_gaugeFixedOperator`) and the fundamental lemma of the calculus of variations.
+  (`integral_inner_gaugeFixedOperator`) and the fundamental lemma of the calculus of variations
+  (`TauCeti.ae_eq_of_forall_integral_inner_eq`).
   For `k ≥ 2` the field `Q g ∈ H^(k+1)` has a `C^(k-1)` representative, which is such a solution.
 
 The kernel of `L_x : H^(k+1) → H^k` and its dimension are not treated here.
@@ -97,24 +98,14 @@ theorem gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq {μ : Me
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪g z, η z⟫ ∂μ) :
     gaugeFixedOperator x y =ᵐ[μ] g := by
   have hLy : Continuous (gaugeFixedOperator x y) := continuous_gaugeFixedOperator hx hy
-  have hF : LocallyIntegrable (gaugeFixedOperator x y - g) μ :=
-    hLy.locallyIntegrable.sub hg
-  refine (ae_eq_zero_of_integral_contDiff_smul_eq_zero hF fun φ hφ hφc ↦ ?_).mono
-    fun z hz ↦ sub_eq_zero.1 hz
-  have hint₁ : Integrable (fun z ↦ φ z • gaugeFixedOperator x y z) μ :=
-    hLy.locallyIntegrable.integrable_smul_left_of_hasCompactSupport hφ.continuous hφc
-  have hint₂ : Integrable (fun z ↦ φ z • g z) μ :=
-    hg.integrable_smul_left_of_hasCompactSupport hφ.continuous hφc
-  -- Test the weak equation against `η = φ • e` for each constant vector `e`.
-  refine ext_inner_left ℝ fun e ↦ ?_
-  have hη : ContDiff ℝ ∞ fun z ↦ φ z • e := hφ.smul contDiff_const
-  have hηc : HasCompactSupport fun z ↦ φ z • e := hφc.smul_right
-  have h := hweak _ hη hηc
-  rw [← integral_inner_gaugeFixedOperator hx hy (hη.of_le (by simp)) (.inr hηc)] at h
-  simp only [Pi.sub_apply, smul_sub, inner_zero_right]
-  rw [integral_sub hint₁ hint₂, inner_sub_right, ← integral_inner hint₁, ← integral_inner hint₂]
-  simp only [inner_smul_right, real_inner_comm e] at h ⊢
-  rw [h, sub_self]
+  have h := ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
+    (hLy.locallyIntegrable.locallyIntegrableOn _) (hg.locallyIntegrableOn _) fun φ ↦ ?_
+  · simpa using h
+  -- Test the weak equation against `φ`, moving `L_x` onto it by integration by parts.
+  simp only [real_inner_comm _ (φ _)]
+  rw [integral_inner_gaugeFixedOperator hx hy (φ.contDiff.of_le (by simp))
+    (.inr φ.hasCompactSupport)]
+  exact hweak φ φ.contDiff φ.hasCompactSupport
 
 /-! ### The Sobolev right inverse and the vanishing of the cokernel -/
 
