@@ -36,8 +36,8 @@ backward tail estimates.
 * `TauCeti.IsSeqColimitCone` and `TauCeti.IsSeqColimitCone.lift`: predicate characterizing a
   compatible colimit cone into a C⋆-algebra by density of the union of stage images and convergence
   of stage norms along `seqTransHom`, with universal lift `lift` (`lift_apply`, `lift_comp`,
-  `lift_unique`) and constructors `.const`, `.of_isometry`, `.of_subalgebra`, and
-  `.of_norm_eq_ciInf`.
+  `lift_unique`), extensionality (`hom_ext`, `hom_ext_of_approx`), and constructors `.const`,
+  `.of_isometry`, `.of_subalgebra`, and `.of_norm_eq_ciInf`.
 * `TauCeti.IsApproxCocone` and `TauCeti.IsApproxCocone.hom`: one-sided limit `⋆`-homomorphism from
   an approximate cocone, with uniqueness and tail estimate `IsApproxCocone.norm_hom_sub_le`.
 * `TauCeti.IsApproximateIntertwining` and `TauCeti.IsApproximateIntertwining.equiv`: two-sided
@@ -97,11 +97,8 @@ theorem comp_apply (hι : IsSeqColimitCone α ι) (n : ℕ) (a : A n) :
   DFunLike.congr_fun (hι.comp_eq n) a
 
 theorem comp_seqTransHom (hι : IsSeqColimitCone α ι) {m n : ℕ} (h : m ≤ n) :
-    (ι n).comp (seqTransHom α h) = ι m := by
-  induction n, h using Nat.le_induction with
-  | base => simp
-  | succ k hmk ih =>
-    rw [seqTransHom_succ α hmk, ← NonUnitalStarAlgHom.comp_assoc, hι.comp_eq, ih]
+    (ι n).comp (seqTransHom α h) = ι m :=
+  comp_seqTransHom_of_comp_eq hι.comp_eq h
 
 @[simp]
 theorem comp_seqTransHom_apply (hι : IsSeqColimitCone α ι) {m n : ℕ} (h : m ≤ n) (a : A m) :
@@ -150,15 +147,6 @@ theorem const (C : Type*) [NonUnitalCStarAlgebra C] :
     simp_rw [hconst]
     exact tendsto_const_nhds
 
-private theorem comp_seqTransHom_of_comp_eq {D : Type*} [NonUnitalCStarAlgebra D]
-    {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n)
-    (a : A m) : ξ n (seqTransHom α h a) = ξ m a := by
-  induction n, h using Nat.le_induction with
-  | base => simp
-  | succ k hmk ih =>
-    rw [seqTransHom_succ α hmk, NonUnitalStarAlgHom.comp_apply,
-      ← NonUnitalStarAlgHom.comp_apply (ξ (k + 1)), hξ k, ih]
-
 /-- Any compatible cone of isometric `⋆`-homomorphisms whose ranges have dense union is a
 sequential colimit cone. -/
 theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
@@ -168,7 +156,7 @@ theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
   dense_iUnion_range := hdense
   tendsto_norm n a := by
     have hnorm (k : ℕ) : ‖seqTransHom α (Nat.le_add_right n k) a‖ = ‖ι n a‖ := by
-      rw [← hiso (n + k), comp_seqTransHom_of_comp_eq hcomp]
+      rw [← hiso (n + k), comp_seqTransHom_apply_of_comp_eq hcomp]
     simp_rw [hnorm]
     exact tendsto_const_nhds
 
@@ -185,22 +173,47 @@ theorem of_subalgebra {S : ℕ → NonUnitalStarSubalgebra ℂ C} [∀ n, IsClos
   simp_rw [hr]
   exact hdense
 
+/-- If stage subsets `F n ⊆ A n` asymptotically approximate every stage element along `α`, then
+the union of their stage images `⋃ n, ι n '' F n` is dense in `C`. -/
+theorem dense_iUnion_image_of_approx (hι : IsSeqColimitCone α ι) {F : ∀ n, Set (A n)}
+    (happrox : ∀ n (a : A n) (r : ℝ),
+      0 < r → ∃ k, ∃ x ∈ F (n + k), ‖seqTransHom α (Nat.le_add_right n k) a - x‖ < r) :
+    Dense (⋃ n, ι n '' F n) := by
+  refine (hι.dense_iUnion_range.mono ?_).of_closure
+  refine Set.iUnion_subset fun n ↦ Set.range_subset_iff.mpr fun a ↦
+    Metric.mem_closure_iff.mpr fun r hr ↦ ?_
+  obtain ⟨k, x, hxF, hax⟩ := happrox n a r hr
+  refine ⟨ι (n + k) x, Set.mem_iUnion.mpr ⟨n + k, x, hxF, rfl⟩, ?_⟩
+  rw [dist_eq_norm, ← hι.comp_seqTransHom_apply (Nat.le_add_right n k) a, ← map_sub]
+  exact (NonUnitalStarAlgHom.norm_apply_le _ _).trans_lt hax
+
+/-- Two `⋆`-homomorphisms out of `C` that agree on stage subsets `F n ⊆ A n` asymptotically
+approximating every stage element along `α` are equal. -/
+theorem hom_ext_of_approx {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
+    {F : ∀ n, Set (A n)}
+    (happrox : ∀ n (a : A n) (r : ℝ),
+      0 < r → ∃ k, ∃ x ∈ F (n + k), ‖seqTransHom α (Nat.le_add_right n k) a - x‖ < r)
+    {Φ₁ Φ₂ : C →⋆ₙₐ[ℂ] D} (h : ∀ n ⦃a⦄, a ∈ F n → Φ₁ (ι n a) = Φ₂ (ι n a)) :
+    Φ₁ = Φ₂ := by
+  have heq : Set.EqOn Φ₁ Φ₂ (closure (⋃ n, ι n '' F n)) := by
+    refine Set.EqOn.closure (fun x hx ↦ ?_) (map_continuous Φ₁) (map_continuous Φ₂)
+    rcases Set.mem_iUnion.mp hx with ⟨n, a, ha, rfl⟩
+    exact h n ha
+  ext x
+  exact heq (hι.dense_iUnion_image_of_approx happrox x)
+
 /-- Two `⋆`-homomorphisms out of `C` that agree on every stage of a sequential colimit cone are
 equal. -/
 theorem hom_ext {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
-    {Φ₁ Φ₂ : C →⋆ₙₐ[ℂ] D} (h : ∀ n a, Φ₁ (ι n a) = Φ₂ (ι n a)) : Φ₁ = Φ₂ := by
-  have heq : Set.EqOn Φ₁ Φ₂ (closure (⋃ n, Set.range (ι n))) := by
-    refine Set.EqOn.closure (fun x hx ↦ ?_) (map_continuous Φ₁) (map_continuous Φ₂)
-    rcases Set.mem_iUnion.mp hx with ⟨n, a, rfl⟩
-    exact h n a
-  ext x
-  exact heq (hι.dense_iUnion_range x)
+    {Φ₁ Φ₂ : C →⋆ₙₐ[ℂ] D} (h : ∀ n a, Φ₁ (ι n a) = Φ₂ (ι n a)) : Φ₁ = Φ₂ :=
+  hι.hom_ext_of_approx (F := fun _ ↦ Set.univ)
+    (fun _ a _ hr ↦ ⟨0, a, trivial, by simpa using hr⟩) fun n a _ ↦ h n a
 
 private theorem norm_le_of_comp_eq {D : Type*} [NonUnitalCStarAlgebra D]
     (hι : IsSeqColimitCone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
     (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (n : ℕ) (a : A n) : ‖ξ n a‖ ≤ ‖ι n a‖ :=
   ge_of_tendsto' (hι.tendsto_norm n a) fun k ↦ by
-    rw [← comp_seqTransHom_of_comp_eq hξ (Nat.le_add_right n k) a]
+    rw [← comp_seqTransHom_apply_of_comp_eq hξ (Nat.le_add_right n k) a]
     exact NonUnitalStarAlgHom.norm_apply_le _ _
 
 /-- Induced contractive map on the dense subtype `↥(⋃ n, Set.range (ι n))`. -/
@@ -224,7 +237,8 @@ private theorem unionFun_apply {D : Type*} [NonUnitalCStarAlgebra D]
     rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, hmb, sub_self]
   have h0 : ξ N (seqTransHom α (le_max_left m n) b - seqTransHom α (le_max_right m n) a) = 0 :=
     norm_le_zero_iff.mp <| (hι.norm_le_of_comp_eq hξ N _).trans (by simp [hN])
-  rw [map_sub, comp_seqTransHom_of_comp_eq hξ, comp_seqTransHom_of_comp_eq hξ, sub_eq_zero] at h0
+  rw [map_sub, comp_seqTransHom_apply_of_comp_eq hξ, comp_seqTransHom_apply_of_comp_eq hξ,
+    sub_eq_zero] at h0
   exact h0
 
 private theorem lipschitzWith_unionFun {D : Type*} [NonUnitalCStarAlgebra D]
@@ -237,8 +251,8 @@ private theorem lipschitzWith_unionFun {D : Type*} [NonUnitalCStarAlgebra D]
   rcases Set.mem_iUnion.mp hu₂ with ⟨n₂, a₂, rfl⟩
   rw [NNReal.coe_one, one_mul, dist_eq_norm,
     hι.unionFun_apply hξ n₁ a₁ hu₁, hι.unionFun_apply hξ n₂ a₂ hu₂,
-    ← comp_seqTransHom_of_comp_eq hξ (le_max_left n₁ n₂) a₁,
-    ← comp_seqTransHom_of_comp_eq hξ (le_max_right n₁ n₂) a₂, ← map_sub]
+    ← comp_seqTransHom_apply_of_comp_eq hξ (le_max_left n₁ n₂) a₁,
+    ← comp_seqTransHom_apply_of_comp_eq hξ (le_max_right n₁ n₂) a₂, ← map_sub]
   refine (hι.norm_le_of_comp_eq hξ (max n₁ n₂) _).trans ?_
   rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, Subtype.dist_eq, dist_eq_norm]
 
@@ -674,26 +688,7 @@ private theorem backward_comp_forward (h : IsApproximateIntertwining α β φ ψ
           ((_root_.tendsto_sum_nat_add fun i ↦ ε i + δ i).comp hshift₁).add
           (h.summable_δ.tendsto_atTop_zero.comp hshift₂)
     exact tendsto_nhds_unique hlim₁ hlim₂
-  refine hιA.hom_ext fun n a ↦ ?_
-  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
-  refine sub_eq_zero.mp <| norm_le_zero_iff.mp <| le_of_forall_pos_le_add fun r hr ↦ ?_
-  obtain ⟨k, x, hxF, hax⟩ := h.approx_A n a (r / 2) (half_pos hr)
-  rw [zero_add, ← hιA.comp_seqTransHom_apply (Nat.le_add_right n k) a]
-  set a' := seqTransHom α (Nat.le_add_right n k) a
-  have hdiff : Ψ (Φ (ιA (n + k) a')) - ιA (n + k) a' =
-      Ψ (Φ (ιA (n + k) (a' - x))) - ιA (n + k) (a' - x) := by
-    simp [map_sub, hmem_eq hxF, sub_sub_sub_cancel_right]
-  rw [hdiff]
-  calc
-    ‖Ψ (Φ (ιA (n + k) (a' - x))) - ιA (n + k) (a' - x)‖
-      ≤ ‖Ψ (Φ (ιA (n + k) (a' - x)))‖ + ‖ιA (n + k) (a' - x)‖ := norm_sub_le _ _
-    _ ≤ ‖a' - x‖ + ‖a' - x‖ := add_le_add
-        ((NonUnitalStarAlgHom.norm_apply_le _ _).trans <|
-          (NonUnitalStarAlgHom.norm_apply_le _ _).trans <|
-          NonUnitalStarAlgHom.norm_apply_le _ _)
-        (NonUnitalStarAlgHom.norm_apply_le _ _)
-    _ ≤ r / 2 + r / 2 := add_le_add hax.le hax.le
-    _ = r := add_halves r
+  exact hιA.hom_ext_of_approx h.approx_A fun _ _ hx ↦ hmem_eq hx
 
 private theorem forward_comp_backward (h : IsApproximateIntertwining α β φ ψ F G δ ε)
     (hιA : IsSeqColimitCone α ιA) (hιB : IsSeqColimitCone β ιB) :
@@ -742,26 +737,7 @@ private theorem forward_comp_backward (h : IsApproximateIntertwining α β φ ψ
           ((_root_.tendsto_sum_nat_add fun i ↦ δ i + ε (i + 1)).comp hshift).add
           (h.summable_ε.tendsto_atTop_zero.comp hshift)
     exact tendsto_nhds_unique hlim₁ hlim₂
-  refine hιB.hom_ext fun n b ↦ ?_
-  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
-  refine sub_eq_zero.mp <| norm_le_zero_iff.mp <| le_of_forall_pos_le_add fun r hr ↦ ?_
-  obtain ⟨k, y, hyG, hby⟩ := h.approx_B n b (r / 2) (half_pos hr)
-  rw [zero_add, ← hιB.comp_seqTransHom_apply (Nat.le_add_right n k) b]
-  set b' := seqTransHom β (Nat.le_add_right n k) b
-  have hdiff : Φ (Ψ (ιB (n + k) b')) - ιB (n + k) b' =
-      Φ (Ψ (ιB (n + k) (b' - y))) - ιB (n + k) (b' - y) := by
-    simp [map_sub, hmem_eq hyG, sub_sub_sub_cancel_right]
-  rw [hdiff]
-  calc
-    ‖Φ (Ψ (ιB (n + k) (b' - y))) - ιB (n + k) (b' - y)‖
-      ≤ ‖Φ (Ψ (ιB (n + k) (b' - y)))‖ + ‖ιB (n + k) (b' - y)‖ := norm_sub_le _ _
-    _ ≤ ‖b' - y‖ + ‖b' - y‖ := add_le_add
-        ((NonUnitalStarAlgHom.norm_apply_le _ _).trans <|
-          (NonUnitalStarAlgHom.norm_apply_le _ _).trans <|
-          NonUnitalStarAlgHom.norm_apply_le _ _)
-        (NonUnitalStarAlgHom.norm_apply_le _ _)
-    _ ≤ r / 2 + r / 2 := add_le_add hby.le hby.le
-    _ = r := add_halves r
+  exact hιB.hom_ext_of_approx h.approx_B fun _ _ hy ↦ hmem_eq hy
 
 /-- Elliott's approximate-intertwining `⋆`-isomorphism `C ≃⋆ₐ[ℂ] D` constructed from mutually
 inverse forward and backward approximate cocones (Rørdam, Proposition 2.3.2). -/

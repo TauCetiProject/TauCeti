@@ -14,13 +14,16 @@ public import Mathlib.Order.DirectedInverseSystem
 Given a sequence of non-unital `⋆`-algebras `A : ℕ → Type*` over `R` connected by step
 `⋆`-homomorphisms `α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)`, iterating composition produces composite
 transition `⋆`-homomorphisms `seqTransHom α h : A m →⋆ₙₐ[R] A n` for `m ≤ n` satisfying the
-directed-system laws (`seqTransHom_self`, `seqTransHom_comp`) and preserving any family of subsets
-invariant under each single step (`seqTransHom_mem`).
+directed-system laws (`seqTransHom_self`, `seqTransHom_comp`), propagating compatible cocones
+(`comp_seqTransHom_of_comp_eq`), and preserving any family of subsets invariant under each single
+step (`seqTransHom_mem`).
 
 ## Main definitions and results
 
 * `TauCeti.seqTransHom`: composite connecting `⋆`-homomorphism `A m →⋆ₙₐ[R] A n` for `m ≤ n`.
 * `TauCeti.directedSystem_seqTransHom`: `DirectedSystem` instance on `A` given by `seqTransHom α`.
+* `TauCeti.comp_seqTransHom_of_comp_eq`: propagation of step-compatible cocones along
+  `seqTransHom`.
 * `TauCeti.seqTransHom_mem`: propagation of step-invariant subsets `F n ⊆ A n` along `seqTransHom`.
 -/
 
@@ -78,6 +81,25 @@ instance directedSystem_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) 
     DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransHom α h)) where
   map_self _ a := by simp
   map_map _ _ _ hij hjk a := seqTransHom_comp_apply α hij hjk a
+
+/-- If a family of `⋆`-homomorphisms `ξ n : A n →⋆ₙₐ[R] B` is compatible with each step map
+`α n`, then it is compatible with all composite transition maps `seqTransHom α h`. -/
+theorem comp_seqTransHom_of_comp_eq {B : Type*} [NonUnitalNonAssocSemiring B]
+    [DistribMulAction R B] [Star B] {α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)}
+    {ξ : ∀ n, A n →⋆ₙₐ[R] B} (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n) :
+    (ξ n).comp (seqTransHom α h) = ξ m := by
+  induction n, h using Nat.le_induction with
+  | base => rw [seqTransHom_self, NonUnitalStarAlgHom.comp_id]
+  | succ k hmk ih =>
+    rw [seqTransHom_succ α hmk, ← NonUnitalStarAlgHom.comp_assoc, hξ k, ih]
+
+/-- Elementwise form of `comp_seqTransHom_of_comp_eq`: a step-compatible family of
+`⋆`-homomorphisms is invariant along composite transition maps `seqTransHom α h`. -/
+theorem comp_seqTransHom_apply_of_comp_eq {B : Type*} [NonUnitalNonAssocSemiring B]
+    [DistribMulAction R B] [Star B] {α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)}
+    {ξ : ∀ n, A n →⋆ₙₐ[R] B} (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n)
+    (a : A m) : ξ n (seqTransHom α h a) = ξ m a :=
+  DFunLike.congr_fun (comp_seqTransHom_of_comp_eq hξ h) a
 
 /-- If a family of subsets `F n ⊆ A n` is preserved by each step map `α n`, then it is preserved
 by all composite transition maps `seqTransHom α h`. -/
