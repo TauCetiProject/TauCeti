@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Stabilizer
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Lie.Adjoint.Splitting
+public import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
-
-import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 
 /-!
 # The invariant splitting of the Lie algebra at a point with compact stabilizer
@@ -19,15 +18,18 @@ Let a Lie group `G` act on `(M, σ)` with a coadjoint-equivariant moment map `μ
 coadjoint stabilizer of `ν`, `𝔥 = 𝔤_p` for the isotropy algebra and `𝔨 = 𝔤_ν` for the infinitesimal
 coadjoint stabilizer. Equivariance gives `H ≤ K`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`)
-and `𝔥 ≤ 𝔨`, and both `𝔥` and `𝔨` are invariant under the adjoint action of `H`.
+and `𝔥 ≤ 𝔨` (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isotropy_le_lieAnnihilator`), and both
+`𝔥` and `𝔨` are subrepresentations of the adjoint representation of `H`
+(`TauCeti.isotropySubrepresentation`, `TauCeti.Lie.lieAnnihilatorSubrepresentation`), with
+`𝔥 ≤ 𝔨` as subrepresentations (`isotropySubrepresentation_le_lieAnnihilatorSubrepresentation` in
+the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`).
 
-When `H` is compact, as it is for a proper action, averaging an inner product over `H` therefore
-splits
+When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮`,  `𝔥 ⊕ 𝔪 = 𝔨`,
 
 with `Ad(H)`-invariant `𝔪` and `𝔮`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.exists_adjoint_invariant_splitting`). No
+(`exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact` in the same namespace). No
 `Ad(G)`-invariant inner product is used, and `G` need be neither compact nor connected. This is
 the splitting of the Marle–Guillemin–Sternberg local model `G ×_H (𝔪* × V)` of the action near
 the orbit of `p`: `𝔪*` is included into `𝔤*` by extending forms by zero on `𝔥 ⊕ 𝔮`
@@ -36,11 +38,12 @@ the orbit of `p`: `𝔪*` is included into `𝔤*` by extending forms by zero on
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`:
-  `G_p ≤ G_{μ(p)}`.
-* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.exists_adjoint_invariant_splitting`: for a compact
-  stabilizer `G_p`, `Ad(G_p)`-invariant complements `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮` with
-  `𝔤_p ⊕ 𝔪 = 𝔤_{μ(p)}`.
+Both in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`:
+
+* `isotropySubrepresentation_le_lieAnnihilatorSubrepresentation`: `𝔤_p ≤ 𝔤_{μ(p)}` as
+  subrepresentations of the adjoint representation of a subgroup of `G_p`.
+* `exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact`: for a compact stabilizer
+  `G_p`, `Ad(G_p)`-invariant complements `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮` with `𝔤_p ⊕ 𝔪 = 𝔤_{μ(p)}`.
 
 ## References
 
@@ -67,57 +70,40 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
-local instance : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
-    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
-
-/-- **The stabilizer of a point fixes its moment value**: for a coadjoint-equivariant moment map,
-the stabilizer `G_p` lies in the coadjoint stabilizer `G_{μ(p)}`. -/
-theorem stabilizer_le_stabilizer_coadjointRepresentation (h : σ.IsEquivariantMomentMap μ)
-    (p : M) :
-    MulAction.stabilizer G p ≤ (Lie.coadjointRepresentation ℝ I G).stabilizer (μ p) :=
-  fun g hg ↦ by
-    rw [Representation.mem_stabilizer, ← h.apply_smul, MulAction.mem_stabilizer_iff.mp hg]
+attribute [local instance] lieGroupOne
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
+/-- **The isotropy algebra lies in the coadjoint stabilizer, as subrepresentations.** For a
+coadjoint-equivariant moment map `μ` and a subgroup `K` of the stabilizer `G_p`, the isotropy
+algebra `𝔤_p` lies in the infinitesimal coadjoint stabilizer `𝔤_{μ(p)}` as subrepresentations of
+the adjoint representation of `K`. -/
+theorem isotropySubrepresentation_le_lieAnnihilatorSubrepresentation
+    (h : σ.IsEquivariantMomentMap μ) {p : M} {K : Subgroup G} (hK : K ≤ MulAction.stabilizer G p) :
+    isotropySubrepresentation I I' p hK ≤
+      Lie.lieAnnihilatorSubrepresentation (μ p)
+        (hK.trans (h.stabilizer_le_stabilizer_coadjointRepresentation p)) := fun _ hξ ↦
+  Lie.mem_lieAnnihilatorSubrepresentation_iff.mpr
+    (h.isotropy_le_lieAnnihilator p (mem_isotropySubrepresentation_iff.mp hξ))
+
 /-- **The invariant splitting of the Lie algebra at a point with compact stabilizer.** For a
 coadjoint-equivariant moment map `μ` and a point `p` whose stabilizer `H = G_p` is compact, there
-are subspaces `𝔪` and `𝔮` of `𝔤`, invariant under the adjoint action of `H`, such that `𝔪`
+are subrepresentations `𝔪` and `𝔮` of the adjoint representation of `H` such that `𝔪`
 complements the isotropy algebra `𝔤_p` in the coadjoint stabilizer `𝔤_{μ(p)}` and `𝔮` complements
 `𝔤_{μ(p)}` in `𝔤`. Thus `𝔤 = 𝔤_p ⊕ 𝔪 ⊕ 𝔮`, with each summand complementary to the sum of the
 other two. -/
-theorem exists_adjoint_invariant_splitting (h : σ.IsEquivariantMomentMap μ) (p : M)
-    (hp : IsCompact (MulAction.stabilizer G p : Set G)) :
+theorem exists_isotropy_sup_eq_lieAnnihilator_and_isCompl_of_isCompact
+    (h : σ.IsEquivariantMomentMap μ) (p : M) (hp : IsCompact (MulAction.stabilizer G p : Set G)) :
     ∃ 𝔪 𝔮 : Subrepresentation
         ((Lie.adjointRepresentation ℝ I G).comp (MulAction.stabilizer G p).subtype),
-      ((InfinitesimalAction.fundamental I G I' M).isotropy p).toSubmodule ⊔ 𝔪.toSubmodule =
-          (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ p)).toSubmodule ∧
-        IsCompl (lieAnnihilator ℝ (GroupLieAlgebra I G) (μ p)).toSubmodule 𝔮.toSubmodule ∧
-        IsCompl ((InfinitesimalAction.fundamental I G I' M).isotropy p).toSubmodule
-          (𝔪.toSubmodule ⊔ 𝔮.toSubmodule) ∧
-        IsCompl 𝔪.toSubmodule
-          (((InfinitesimalAction.fundamental I G I' M).isotropy p).toSubmodule ⊔
-            𝔮.toSubmodule) := by
-  -- The isotropy algebra and the coadjoint stabilizer, as `Ad(G_p)`-invariant subspaces.
-  let 𝔥 : Subrepresentation
-      ((Lie.adjointRepresentation ℝ I G).comp (MulAction.stabilizer G p).subtype) :=
-    ⟨((InfinitesimalAction.fundamental I G I' M).isotropy p).toSubmodule, fun g _ hξ ↦ by
-      simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
-        Lie.adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
-        adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer g.2 hξ⟩
-  let 𝔨 : Subrepresentation
-      ((Lie.adjointRepresentation ℝ I G).comp (MulAction.stabilizer G p).subtype) :=
-    ⟨(lieAnnihilator ℝ (GroupLieAlgebra I G) (μ p)).toSubmodule, fun g _ hξ ↦ by
-      simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
-        Lie.adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
-        Lie.adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer
-          (h.stabilizer_le_stabilizer_coadjointRepresentation p g.2) hξ⟩
-  have hle : 𝔥 ≤ 𝔨 := Subrepresentation.toSubmodule_le_toSubmodule.mp fun _ hξ ↦
-    h.toIsMomentMap.isotropy_le_lieAnnihilator (h.momentCocycle_eq_zero p) hξ
-  obtain ⟨𝔪, 𝔮, hsup, h𝔨, h𝔥, h𝔪⟩ := Lie.exists_adjoint_invariant_splitting hp hle
-  exact ⟨𝔪, 𝔮, congrArg Subrepresentation.toSubmodule hsup,
-    Subrepresentation.isCompl_toSubmodule.mpr h𝔨, Subrepresentation.isCompl_toSubmodule.mpr h𝔥,
-    Subrepresentation.isCompl_toSubmodule.mpr h𝔪⟩
+      isotropySubrepresentation I I' p le_rfl ⊔ 𝔪 =
+          Lie.lieAnnihilatorSubrepresentation (μ p)
+            (h.stabilizer_le_stabilizer_coadjointRepresentation p) ∧
+        IsCompl (Lie.lieAnnihilatorSubrepresentation (μ p)
+          (h.stabilizer_le_stabilizer_coadjointRepresentation p)) 𝔮 ∧
+        IsCompl (isotropySubrepresentation I I' p le_rfl) (𝔪 ⊔ 𝔮) ∧
+        IsCompl 𝔪 (isotropySubrepresentation I I' p le_rfl ⊔ 𝔮) :=
+  Lie.exists_sup_eq_and_isCompl_of_isCompact hp
+    (h.isotropySubrepresentation_le_lieAnnihilatorSubrepresentation le_rfl)
 
 end TauCeti.SmoothTwoForm.IsEquivariantMomentMap

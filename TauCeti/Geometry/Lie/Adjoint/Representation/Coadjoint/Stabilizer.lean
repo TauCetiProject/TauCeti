@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Stabilizer
+public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Invariance
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The coadjoint stabilizer and its Lie algebra
@@ -54,7 +56,8 @@ The computation of the Lie algebra rests on the derivative of the curve
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation`: **the Lie algebra of
   `G_ν` is `𝔤_ν`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer`: `G_ν` maps `𝔤_ν`
-  into itself under the adjoint action.
+  into itself under the adjoint action; `TauCeti.Lie.lieAnnihilatorSubrepresentation` records `𝔤_ν`
+  as a subrepresentation of the adjoint representation of any subgroup of `G_ν`.
 
 ## References
 
@@ -187,9 +190,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [LieGroup I (minSmoothness 𝕜 3) G]
 
-local instance : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
-    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+attribute [local instance] lieGroupOne
 
 /-- **The infinitesimal stabilizer is invariant under the stabilizer**: for `g` in the coadjoint
 stabilizer `G_ν`, `Ad_g` maps the infinitesimal stabilizer `𝔤_ν` into itself. -/
@@ -202,6 +203,36 @@ theorem adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer
   rw [Representation.mem_stabilizer.mp (inv_mem hg), inv_inv] at h
   rw [h] at hξ
   rwa [LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom, tangentAd_apply] at hξ
+
+/-- The infinitesimal coadjoint stabilizer `𝔤_ν`, as a subrepresentation of the adjoint
+representation of a subgroup `K` of the coadjoint stabilizer `G_ν`. -/
+def lieAnnihilatorSubrepresentation (ν : Module.Dual 𝕜 (GroupLieAlgebra I G)) {K : Subgroup G}
+    (hK : K ≤ (coadjointRepresentation 𝕜 I G).stabilizer ν) :
+    Subrepresentation ((adjointRepresentation 𝕜 I G).comp K.subtype) where
+  toSubmodule := (lieAnnihilator 𝕜 (GroupLieAlgebra I G) ν).toSubmodule
+  apply_mem_toSubmodule g _ hξ := by
+    simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
+      adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
+      adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer (hK g.2) hξ
+
+/-- The underlying submodule of `TauCeti.Lie.lieAnnihilatorSubrepresentation` is `𝔤_ν`. -/
+@[simp]
+theorem toSubmodule_lieAnnihilatorSubrepresentation (ν : Module.Dual 𝕜 (GroupLieAlgebra I G))
+    {K : Subgroup G} (hK : K ≤ (coadjointRepresentation 𝕜 I G).stabilizer ν) :
+    (lieAnnihilatorSubrepresentation ν hK).toSubmodule =
+      (lieAnnihilator 𝕜 (GroupLieAlgebra I G) ν).toSubmodule :=
+  -- `(rfl)`, not `rfl`: the body of `lieAnnihilatorSubrepresentation` is not `@[expose]`d, so this
+  -- must not be inferred `@[defeq]`.
+  (rfl)
+
+/-- Membership in `TauCeti.Lie.lieAnnihilatorSubrepresentation` is membership in `𝔤_ν`. -/
+@[simp]
+theorem mem_lieAnnihilatorSubrepresentation_iff {ν : Module.Dual 𝕜 (GroupLieAlgebra I G)}
+    {K : Subgroup G} {hK : K ≤ (coadjointRepresentation 𝕜 I G).stabilizer ν}
+    {ξ : GroupLieAlgebra I G} :
+    ξ ∈ lieAnnihilatorSubrepresentation ν hK ↔ ξ ∈ lieAnnihilator 𝕜 (GroupLieAlgebra I G) ν := by
+  rw [← Subrepresentation.mem_toSubmodule, toSubmodule_lieAnnihilatorSubrepresentation,
+    LieSubalgebra.mem_toSubmodule]
 
 end Invariance
 

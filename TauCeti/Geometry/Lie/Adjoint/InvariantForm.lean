@@ -254,8 +254,8 @@ end AverageAdjoint
 omit [T2Space G] in
 /-- **An inner product on the Lie algebra invariant under a compact subgroup.** The tangent Lie
 algebra of a Lie group carries a continuous symmetric positive form invariant under the adjoint
-action of a given compact subgroup `K`, obtained by averaging over `K`. Neither `G` nor `K` need be
-connected, and `G` need not be compact; no form invariant under all of `G` is asserted. -/
+action of a given compact subgroup `K`. Neither `G` nor `K` need be connected, and `G` need not be
+compact; no form invariant under all of `G` is asserted. -/
 theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact
     {K : Subgroup G} (hK : IsCompact (K : Set G)) :
     ∃ b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ,
@@ -287,7 +287,8 @@ theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompac
     simp only [e, adjointContinuousLinearMap_apply,
       leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph]
     rw [← continuousAdjointRepresentation_apply, ← continuousAdjointRepresentation_apply]
-    exact hAd.apply ⟨g, hg⟩ (e.symm a) (e.symm c)
+    simpa only [ContRepresentation.toRepresentation_apply, ContRepresentation.restrict_apply_apply,
+      Subgroup.coe_subtype] using hAd.apply ⟨g, hg⟩ (e.symm a) (e.symm c)
 
 omit [T2Space G] in
 /-- The tangent Lie algebra of a compact Lie group has a continuous symmetric positive form

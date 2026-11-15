@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
@@ -114,6 +115,10 @@ point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
   case of a trivial stabilizer.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: conversely, the cocycle of
   a group-level moment map vanishes at every point.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`
+  and `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isotropy_le_lieAnnihilator`: the stabilizer
+  `G_x` lies in the coadjoint stabilizer `G_{μ(x)}`, and the isotropy algebra `𝔤_x` in the
+  infinitesimal coadjoint stabilizer `𝔤_{μ(x)}`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_smul_iff`: `dμ_{g • x}` is
   surjective exactly when `dμ_x` is, and
   `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`: a group-level
@@ -349,6 +354,14 @@ theorem isEquivariantMomentMap_iff_exists_eq_add [PreconnectedSpace M]
   · rintro ⟨ν, hν, rfl⟩
     exact (h.add_const_iff ν).2 hν
 
+/-- **The stabilizer of a point fixes its moment value**: for a coadjoint-equivariant moment map,
+the stabilizer `G_p` lies in the coadjoint stabilizer `G_{μ(p)}`. -/
+theorem stabilizer_le_stabilizer_coadjointRepresentation (h : σ.IsEquivariantMomentMap μ)
+    (p : M) :
+    MulAction.stabilizer G p ≤ (Lie.coadjointRepresentation ℝ I G).stabilizer (μ p) :=
+  fun g hg ↦ by
+    rw [Representation.mem_stabilizer, ← h.apply_smul, MulAction.mem_stabilizer_iff.mp hg]
+
 end IsEquivariantMomentMap
 
 end Complete
@@ -504,6 +517,13 @@ theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
   have hd := h.toIsMomentMap.mvfderiv_momentDefect_one x ξ η
   rw [hθ, mvfderiv_const, momentCocycle_apply, LinearEquiv.apply_symm_apply] at hd
   exact (sub_eq_zero.1 (by simpa using hd.symm))
+
+/-- **The isotropy algebra of a point lies in the coadjoint stabilizer of its moment value**: for
+a coadjoint-equivariant moment map, `𝔤_x ≤ 𝔤_{μ(x)}`. -/
+theorem isotropy_le_lieAnnihilator (h : σ.IsEquivariantMomentMap μ) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x ≤
+      lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x) :=
+  h.toIsMomentMap.isotropy_le_lieAnnihilator (h.momentCocycle_eq_zero x)
 
 end IsEquivariantMomentMap
 

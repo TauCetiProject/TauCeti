@@ -339,20 +339,27 @@ theorem equivProdOfIsCompl_symm_apply {ρ₁ ρ₂ : Subrepresentation ρ} (h : 
   -- inferred `@[defeq]`.
   (rfl)
 
-/-- **The projection onto a summand along a complementary subrepresentation intertwines.** The
-linear projection `Submodule.projectionOnto` of `W` onto `ρ₁` along `ρ₂` is the first component of
-the splitting `Subrepresentation.equivProdOfIsCompl`, so it commutes with the action. -/
+/-- **The projection onto a summand along a complementary subrepresentation intertwines.** For
+complementary subrepresentations `ρ₁` and `ρ₂` of `ρ`, the linear projection
+`Submodule.projectionOnto` of `W` onto `ρ₁` along `ρ₂` intertwines `ρ` with `ρ₁`. -/
 theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
     Representation.IsIntertwiningMap ρ ρ₁.toRepresentation
-      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) :=
-  -- Mathlib defines `Submodule.projectionOnto` as the first component of the inverse of
+      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) := by
+  refine ⟨fun g v ↦ ?_⟩
+  -- `Submodule.projectionOnto` is the first component of the inverse of
   -- `Submodule.prodEquivOfIsCompl`, which is the linear map of `equivProdOfIsCompl h`.
-  ⟨fun g v ↦ congrArg Prod.fst (LinearMap.congr_fun ((equivProdOfIsCompl h).isIntertwining' g) v)⟩
+  have h' := congrArg Prod.fst (Representation.IntertwiningMap.isIntertwining _ _
+    (equivProdOfIsCompl h).toIntertwiningMap g v)
+  simp only [Representation.Equiv.coe_toIntertwiningMap, equivProdOfIsCompl_apply,
+    Representation.prod_apply_apply] at h'
+  simpa only [Submodule.projectionOnto, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.fst_apply] using h'
 
-/-- **Extending linear forms by zero along a complementary subrepresentation intertwines.** The
-transpose of `Submodule.projectionOnto` sends a linear form `η` on `ρ₁` to the linear form on `W`
-that agrees with `η` on `ρ₁` and vanishes on `ρ₂`. It intertwines the dual of `ρ₁` with the dual
-of `ρ`, so it includes `ρ₁*` into `W*` equivariantly. -/
+/-- **Extending linear forms by zero along a complementary subrepresentation intertwines.** For
+complementary subrepresentations `τ₁` and `τ₂` of `τ`, the transpose of `Submodule.projectionOnto`
+sends a linear form `η` on `τ₁` to the linear form on `V` that agrees with `η` on `τ₁` and
+vanishes on `τ₂`. It intertwines the dual of `τ₁` with the dual of `τ`, so it includes `τ₁*` into
+`V*` equivariantly. -/
 theorem isIntertwiningMap_dualMap_projectionOnto {k H V : Type*} [CommRing k] [Group H]
     [AddCommGroup V] [Module k V] {τ : Representation k H V} {τ₁ τ₂ : Subrepresentation τ}
     (h : IsCompl τ₁ τ₂) :
