@@ -6,23 +6,26 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
+public import TauCeti.AlgebraicGeometry.Pullback.Over
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Uniqueness
 public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
-# Orbit schemes under extension of algebraically closed fields
+# Orbit schemes under field extensions
 
 Extending the ground field commutes with the locally closed scheme image of an
-orbit morphism. The comparison respects the immersion into the ambient scheme
-and the parametrization by the acting group. It preserves the entire scheme
-structure, without reducedness or smoothness assumptions on the group or the
-acted-on scheme.
+orbit morphism. The comparison respects the immersion into the ambient scheme,
+the parametrization by the acting group, and the restricted algebraic action on
+the orbit scheme. It preserves the entire scheme structure across any field
+extension `K / k`, without algebraic closedness, reducedness or smoothness
+assumptions on the ground fields, the group or the acted-on scheme.
 
 The action after base change is the native action transported by the monoidal
 pullback functor. Its orbit morphism is the pullback of the original one.
 Surjectivity and schematic dominance of the orbit factorization survive this
 flat base change; uniqueness of locally closed image factorizations then gives
-the comparison.
+the comparison, and monomorphicity of the pulled-back inclusion gives
+equivariance.
 
 ## References
 
@@ -39,7 +42,7 @@ namespace TauCeti.SchemeAction
 
 universe u
 
-variable {k K : Type u} [Field k] [Field K] [IsAlgClosed k]
+variable {k K : Type u} [Field k] [Field K]
   (f : Spec (.of K) ⟶ Spec (.of k))
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
@@ -47,16 +50,6 @@ variable {k K : Type u} [Field k] [Field K] [IsAlgClosed k]
   (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
 attribute [local instance] Functor.modObjObj
-
-local instance (Y : Over (Spec (.of k))) [LocallyOfFiniteType Y.hom] :
-    LocallyOfFiniteType ((Over.pullback f).obj Y).hom := by
-  dsimp only [Over.pullback, Over.mk_hom]
-  infer_instance
-
-local instance (Y : Over (Spec (.of k))) [CompactSpace Y.left] :
-    CompactSpace ((Over.pullback f).obj Y).left := by
-  dsimp only [Over.pullback, Over.mk_left]
-  infer_instance
 
 local instance : IsLocallyNoetherian ((Over.pullback f).obj X).left :=
   LocallyOfFiniteType.isLocallyNoetherian ((Over.pullback f).obj X).hom
@@ -81,10 +74,8 @@ local instance : IsImmersion ((Over.pullback f).map (orbitInclusion G x)).left :
   exact MorphismProperty.of_isPullback
     (Over.isPullback_pullback_map_left f (orbitInclusion G x)).flip inferInstance
 
-variable [IsAlgClosed K]
-
-/-- Extending algebraically closed ground fields identifies the new orbit scheme with
-the pullback of the original orbit scheme, including its nonreduced structure. -/
+/-- Extending the ground field identifies the new orbit scheme with the pullback of
+the original orbit scheme, including any nonreduced structure. -/
 def orbitBaseChangeIso :
     orbitScheme ((Over.pullback f).obj G)
         (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) ≅
@@ -160,5 +151,106 @@ theorem orbitBaseChangeIso_inv_toBase :
           (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) =
       pullback.snd (orbitToBase G x) f := by
   rw [Iso.inv_comp_eq, orbitBaseChangeIso_hom_snd]
+
+/-- Extending the ground field identifies the orbit scheme over `K` with the pullback of the
+original orbit scheme, as schemes over `Spec K`. -/
+def orbitOverBaseChangeIso :
+    letI := (Over.pullback f).modObjObj G X
+    orbitOver ((Over.pullback f).obj G)
+        (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) ≅
+      (Over.pullback f).obj (orbitOver G x) :=
+  Over.isoMk (orbitBaseChangeIso f G x) (orbitBaseChangeIso_hom_snd f G x)
+
+/-- Forgetting the extended ground field recovers `orbitBaseChangeIso.hom`. -/
+@[simp]
+theorem orbitOverBaseChangeIso_hom_left :
+    (orbitOverBaseChangeIso f G x).hom.left = (orbitBaseChangeIso f G x).hom := (rfl)
+
+/-- Forgetting the extended ground field on the inverse recovers `orbitBaseChangeIso.inv`. -/
+@[simp]
+theorem orbitOverBaseChangeIso_inv_left :
+    (orbitOverBaseChangeIso f G x).inv.left = (orbitBaseChangeIso f G x).inv := (rfl)
+
+/-- The comparison over `Spec K` intertwines the orbit inclusions. -/
+@[reassoc]
+theorem orbitOverBaseChangeIso_hom_inclusion :
+    (orbitOverBaseChangeIso f G x).hom ≫ (Over.pullback f).map (orbitInclusion G x) =
+      orbitInclusion ((Over.pullback f).obj G)
+        (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) := by
+  ext
+  simpa using orbitBaseChangeIso_hom_inclusion f G x
+
+/-- The inverse comparison over `Spec K` intertwines the orbit inclusions. -/
+@[reassoc (attr := simp)]
+theorem orbitOverBaseChangeIso_inv_inclusion :
+    (orbitOverBaseChangeIso f G x).inv ≫
+        orbitInclusion ((Over.pullback f).obj G)
+          (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) =
+      (Over.pullback f).map (orbitInclusion G x) := by
+  rw [Iso.inv_comp_eq, orbitOverBaseChangeIso_hom_inclusion]
+
+/-- The comparison over `Spec K` intertwines the projections from the base-changed group. -/
+@[reassoc (attr := simp)]
+theorem orbitProjection_orbitOverBaseChangeIso_hom :
+    orbitProjection ((Over.pullback f).obj G)
+        (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) ≫
+        (orbitOverBaseChangeIso f G x).hom =
+      (Over.pullback f).map (orbitProjection G x) := by
+  ext
+  simp
+
+/-- The base-change comparison of orbit schemes is equivariant for the restricted action of the
+base-changed group. -/
+theorem isModHom_orbitOverBaseChangeIso_hom :
+    letI := (Over.pullback f).modObjObj G X
+    letI := (Over.pullback f).modObjObj G (orbitOver G x)
+    IsModHom ((Over.pullback f).obj G) (orbitOverBaseChangeIso f G x).hom := by
+  let := (Over.pullback f).modObjObj G X
+  let := (Over.pullback f).modObjObj G (orbitOver G x)
+  have : IsModHom ((Over.pullback f).obj G) ((Over.pullback f).map (orbitInclusion G x)) :=
+    (Over.pullback f).modObjObj_isModHom G (orbitInclusion G x)
+  have : Mono ((Over.pullback f).map (orbitInclusion G x)) := Over.mono_of_mono_left _
+  refine ⟨(cancel_mono ((Over.pullback f).map (orbitInclusion G x))).mp ?_⟩
+  simp only [Category.assoc, IsModHom.smul_hom,
+    MonoidalCategory.selfLeftAction_actionHomRight, orbitOverBaseChangeIso_hom_inclusion]
+  rw [← whiskerLeft_comp_assoc, orbitOverBaseChangeIso_hom_inclusion]
+
+/-- The inverse base-change comparison of orbit schemes is also equivariant for the restricted
+action of the base-changed group. -/
+theorem isModHom_orbitOverBaseChangeIso_inv :
+    letI := (Over.pullback f).modObjObj G X
+    letI := (Over.pullback f).modObjObj G (orbitOver G x)
+    IsModHom ((Over.pullback f).obj G) (orbitOverBaseChangeIso f G x).inv := by
+  let := (Over.pullback f).modObjObj G X
+  let := (Over.pullback f).modObjObj G (orbitOver G x)
+  let := isModHom_orbitOverBaseChangeIso_hom f G x
+  infer_instance
+
+/-- Extending the ground field gives a cartesian square relating the structure morphisms of the
+base-changed and original orbit schemes. -/
+theorem isPullback_orbitToBase_baseChange :
+    IsPullback
+      (orbitToBase ((Over.pullback f).obj G)
+        (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x))
+      ((orbitBaseChangeIso f G x).hom ≫ pullback.fst (orbitToBase G x) f)
+      f (orbitToBase G x) :=
+  (IsPullback.of_hasPullback (orbitToBase G x) f).flip.of_iso
+    (orbitBaseChangeIso f G x).symm (.refl _) (.refl _) (.refl _)
+    (by simp) (by simp) (by simp) (by simp)
+
+/-- Extending the ground field gives a cartesian square relating the projections from the
+base-changed and original groups onto their orbit schemes. -/
+theorem isPullback_toOrbit_baseChange :
+    IsPullback
+      (toOrbit ((Over.pullback f).obj G)
+        (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x))
+      (pullback.fst G.hom f)
+      ((orbitBaseChangeIso f G x).hom ≫ pullback.fst (orbitToBase G x) f)
+      (toOrbit G x) :=
+  (isPullback_orbitProjection f G x).of_iso
+    (.refl _) (orbitBaseChangeIso f G x).symm (.refl _) (.refl _)
+    (by rw [Iso.refl_hom, Category.id_comp, Iso.symm_hom, Iso.comp_inv_eq,
+      toOrbit_orbitBaseChangeIso_hom])
+    (by simp) (by simp) (by simp)
 
 end TauCeti.SchemeAction
