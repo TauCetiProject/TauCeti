@@ -49,6 +49,9 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
+* `TauCeti.loopPointChain_one`, `TauCeti.loopPointChain_mul`,
+  `TauCeti.loopChainMap_loopPointChain`: point chains are multiplicative, unital and natural in
+  based maps.
 * `TauCeti.loopChainToGroupAlgebra_differential`,
   `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`: it kills boundaries and elements of nonzero
   cohomological degree.
@@ -154,6 +157,26 @@ theorem loopChainAugmentation_loopPointChain (γ : MooreLoopSpace B b) :
     loopChainAugmentation B b R (loopPointChain R γ) = 1 := by
   rw [loopPointChain_def, loopChainAugmentation_lof_zero, NormalizedCubicalChain.augment_ofCube]
 
+/-- The point chain of the constant loop is the unit of `C_*(Ω_b B; R)`. -/
+@[simp]
+theorem loopPointChain_one : loopPointChain R (1 : MooreLoopSpace B b) = 1 := by
+  rw [loopPointChain_def, DirectSum.one_def, ← DirectSum.lof_eq_of R,
+    NormalizedCubicalChain.gOne_one, NormalizedCubicalChain.one_def]
+
+/-- The point chain of a concatenation of Moore loops is the Pontryagin product of their point
+chains. -/
+@[simp]
+theorem loopPointChain_mul (γ δ : MooreLoopSpace B b) :
+    loopPointChain R (γ * δ) = loopPointChain R γ * loopPointChain R δ := by
+  have h : (mulMap (MooreLoopSpace B b)).comp
+      (SingularCube.crossProduct (SingularCube.point γ) (SingularCube.point δ)) =
+        SingularCube.point (γ * δ) := by
+    refine ContinuousMap.ext fun t ↦ ?_
+    rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply, mulMap_apply,
+      SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]
+  rw [loopPointChain_def, loopPointChain_def, loopPointChain_def, cubicalChainLof_mul,
+    NormalizedCubicalChain.mul_ofCube, h]
+
 end Algebra
 
 section Map
@@ -193,6 +216,19 @@ theorem loopChainMap_comp (g : C(B', B'')) (f : C(B, B')) (hg : g b' = b'') (hf 
 theorem loopChainAugmentation_comp_loopChainMap (f : C(B, B')) (hf : f b = b') :
     (loopChainAugmentation B' b' R).comp (loopChainMap R f hf) = loopChainAugmentation B b R :=
   cubicalChainAugmentation_comp_dgAlgHom _
+
+/-- `C_*(Ωf)` sends the point chain of a Moore loop `γ` to the point chain of `Ωf γ`. -/
+@[simp]
+theorem loopChainMap_loopPointChain (f : C(B, B')) (hf : f b = b') (γ : MooreLoopSpace B b) :
+    loopChainMap R f hf (loopPointChain R γ) = loopPointChain R (MooreLoopSpace.map f hf γ) := by
+  have h : (MooreLoopSpace.map f hf).toContinuousMap.comp (SingularCube.point γ) =
+      SingularCube.point (MooreLoopSpace.map f hf γ) := by
+    refine ContinuousMap.ext fun t ↦ ?_
+    rw [ContinuousMap.comp_apply, SingularCube.point_apply, SingularCube.point_apply]
+    -- The underlying continuous map of `Ωf` evaluates as `Ωf` itself.
+    rfl
+  rw [loopPointChain_def, loopPointChain_def, loopChainMap_lof, NormalizedCubicalChain.map_ofCube,
+    h]
 
 end Map
 
