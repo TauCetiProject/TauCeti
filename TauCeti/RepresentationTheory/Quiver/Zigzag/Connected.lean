@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
@@ -166,6 +167,14 @@ theorem length_walkToPath {i j : V} (p : G.Walk i j) :
   induction p with
   | nil => rfl
   | cons h p ih => simp [ih, Nat.add_comm]
+
+/-- The vertices of the doubled-quiver path of a graph walk are the support vertices of the walk. -/
+@[simp]
+theorem vertices_walkToPath {i j : V} (p : G.Walk i j) :
+    (walkToPath G p).vertices = p.support.map (vertex G) := by
+  induction p with
+  | nil => rfl
+  | cons h p ih => simp [ih]
 
 private theorem length_pathToWalkAux {i j : DoubledQuiver G} (p : Quiver.Path i j) :
     (pathToWalkAux G p).length = p.length := by

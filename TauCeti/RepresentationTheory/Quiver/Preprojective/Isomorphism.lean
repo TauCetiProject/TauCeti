@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
@@ -130,5 +131,24 @@ theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : Simp
     AlgEquiv.trans_apply, AlgEquiv.trans_apply,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+
+/-- Graph relabelling preserves and reflects the induced path-length grading of the signless
+preprojective algebra. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff
+    (e : G ≃g H) {d : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    signlessPreprojectiveAlgebraEquiv k e x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hxy⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver H)).mp hx
+    have h := congrArg (signlessPreprojectiveAlgebraEquiv k e).symm hxy
+    rw [AlgEquiv.symm_apply_apply, signlessPreprojectiveAlgebraEquiv_symm,
+      signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk] at h
+    rw [← h]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e.symm).mpr hy)
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).mp hx
+    rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 end TauCeti

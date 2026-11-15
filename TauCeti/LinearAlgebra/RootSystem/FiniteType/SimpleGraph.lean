@@ -136,20 +136,18 @@ theorem graphCartanMatrix_diagramGraph_cartanMatrix {t : DynkinType}
   have hzero := DynkinType.cartanMatrix_apply_eq_zero_iff_symm t i j
   rcases ht hij with h | h <;> simp [h] at hzero <;> simp [hij, h, hzero]
 
-/-- Every standard Dynkin diagram is isomorphic to the diagram of a simply-laced Dynkin type of the
-same rank (preserving validity), since the underlying simple graphs of `Bₙ`, `Cₙ`, `F₄`, and `G₂`
-are path graphs. -/
-theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : DynkinType) :
-    ∃ s : DynkinType, s.IsSimplyLaced ∧ (t.Valid → s.Valid) ∧
-      Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph s.cartanMatrix) := by
+/-- The underlying simple graph of every non-simply-laced standard Dynkin diagram (`Bₙ`, `Cₙ`,
+`F₄`, `G₂`) is isomorphic to the type-`A` diagram of the same rank. -/
+theorem _root_.TauCeti.DynkinType.nonempty_diagramGraph_iso_A_of_not_isSimplyLaced
+    {t : DynkinType} (ht : ¬ t.IsSimplyLaced) :
+    Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph (DynkinType.A t.rank).cartanMatrix) := by
   have hpath {n : ℕ} {G : SimpleGraph (Fin n)} (hG : G = pathGraph n) :
       Nonempty (G ≃g diagramGraph (CartanMatrix.A n)) := by
     rw [hG, DynkinType.diagramGraph_cartanMatrix_A]
     exact ⟨Iso.refl⟩
   cases t with
-  | A n | D n | E6 | E7 | E8 => exact ⟨_, by simp, id, ⟨Iso.refl⟩⟩
+  | A _ | D _ | E6 | E7 | E8 => exact absurd (by simp) ht
   | B n =>
-    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_B.mp h; simp; omega, ?_⟩
     simpa only [DynkinType.rank_B, DynkinType.cartanMatrix_B, DynkinType.rank_A,
       DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.B n)) <| by
       ext i j
@@ -157,7 +155,6 @@ theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : Dyn
       simp [CartanMatrix.B, Fin.ext_iff]
       omega
   | C n =>
-    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_C.mp h; simp; omega, ?_⟩
     simpa only [DynkinType.rank_C, DynkinType.cartanMatrix_C, DynkinType.rank_A,
       DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.C n)) <| by
       ext i j
@@ -165,17 +162,31 @@ theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : Dyn
       simp [CartanMatrix.C, Fin.ext_iff]
       omega
   | F4 =>
-    refine ⟨.A 4, by simp, fun _ => by simp, ?_⟩
     simpa only [DynkinType.rank_F4, DynkinType.cartanMatrix_F4, DynkinType.rank_A,
       DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.F₄) <| by
       ext i j
       fin_cases i <;> fin_cases j <;> decide
   | G2 =>
-    refine ⟨.A 2, by simp, fun _ => by simp, ?_⟩
     simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2, DynkinType.rank_A,
       DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.G₂.transpose) <| by
       ext i j
       fin_cases i <;> fin_cases j <;> decide
+
+/-- Every standard Dynkin diagram is isomorphic to the diagram of a simply-laced Dynkin type of the
+same rank (preserving validity), since the underlying simple graphs of `Bₙ`, `Cₙ`, `F₄`, and `G₂`
+are path graphs. -/
+theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : DynkinType) :
+    ∃ s : DynkinType, s.IsSimplyLaced ∧ (t.Valid → s.Valid) ∧
+      Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph s.cartanMatrix) := by
+  by_cases ht : t.IsSimplyLaced
+  · exact ⟨t, ht, id, ⟨Iso.refl⟩⟩
+  · refine ⟨.A t.rank, by simp, fun hv => ?_,
+      t.nonempty_diagramGraph_iso_A_of_not_isSimplyLaced ht⟩
+    cases t with
+    | A _ | D _ | E6 | E7 | E8 => exact absurd (by simp) ht
+    | B n => have := DynkinType.valid_B.mp hv; simp; omega
+    | C n => have := DynkinType.valid_C.mp hv; simp; omega
+    | F4 | G2 => simp
 
 omit [Finite V] in
 /-- **A graph isomorphic to the diagram of a standard Cartan matrix has a positive definite
