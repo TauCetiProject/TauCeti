@@ -18,15 +18,12 @@ import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 The tangent-space adjoint action is the differential at the identity of conjugation. We first prove
 that this differential transports left-invariant vector fields. Naturality of the manifold Lie
 bracket then shows that it is a Lie algebra automorphism, and the composition law for conjugation
-gives the representation law. A subsequent file transports this construction to the roadmap-facing
-Lie algebra of left-invariant derivations.
+gives the representation law. A subsequent file transports this construction to the Lie algebra
+of left-invariant derivations.
 
 The construction works over any nontrivially normed field. Its differential only requires a
 `C¹` Lie group; preservation of the bracket uses Mathlib's regularity threshold
 `minSmoothness 𝕜 3`, which is `3` over the real and complex numbers.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -45,8 +42,6 @@ This advances Deliverable A, Layer 1 of
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 * Sébastien Gouëzel's `Mathlib.Geometry.Manifold.GroupLieAlgebra`, especially
   `inverse_mfderiv_mul_left`, `mpullback_mulInvariantVectorField`, and
   `mulInvariantVector_mlieBracket`; the corresponding conjugation arguments below adapt the
@@ -148,6 +143,13 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (x := conjDiffeomorph (I := I) (n := 1) h 1) (x' := 1)
     (by simp)]
   rfl
+
+/-- The adjoint action of `g` undoes that of `g⁻¹`: `Ad_g (Ad_{g⁻¹} X) = X`. -/
+theorem adjointContinuousLinearMap_adjointContinuousLinearMap_inv (g : G)
+    (X : GroupLieAlgebra I G) :
+    adjointContinuousLinearMap (I := I) g (adjointContinuousLinearMap (I := I) g⁻¹ X) = X := by
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, mul_inv_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
 
 /-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
 actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity

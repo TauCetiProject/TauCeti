@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
+import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Lp
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -33,13 +32,27 @@ ingredients of a chart of `G_s` at the identity modelled on `H^s(ℂ; ℝ)`.
   (`TauCeti.Vortex.exists_continuous_mem_realSobolevFunctions_eq_exp`). The proof takes
   `f = arg u`: here `log u = log (1 + (u - 1))` is the logarithm series in `u - 1`, which
   converges in `H^s` once `‖u - 1‖_{H^s}` is small
-  (`TemperedDistribution.exists_hasSum_mul_pow`), and `log u = i arg u` because `|u| = 1`.
+  (`TemperedDistribution.exists_memSobolev_ae_eq_log_one_add`), and `log u = i arg u` because
+  `|u| = 1`.
+* **It is locally Lipschitz in `H^s` coordinates.** If the complexified phases `F, G` have
+  `H^s` norm at most `R`, then `‖(exp (i f) - 1) - (exp (i g) - 1)‖_{H^s} ≤ exp (C R) ‖F - G‖_{H^s}`
+  (`TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`), by the Lipschitz
+  estimate for the exponential series on `H^s`
+  (`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp_sub_one`).
+* **Its inverse is Lipschitz near the identity.** If `‖u - 1‖_{H^s}, ‖u' - 1‖_{H^s} ≤ R` with
+  `C R < 1`, then the phases `arg u, arg u'` lie in `H^s` and
+  `‖arg u - arg u'‖_{H^s} ≤ (1 - C R)⁻¹ ‖u - u'‖_{H^s}`
+  (`TauCeti.Vortex.exists_memSobolev_ae_eq_arg_and_norm_sub_le`), since
+  `i arg u = log (1 + (u - 1))` and the logarithm series is Lipschitz on `H^s`
+  (`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add`).
 
 Since `G_s` is abelian and `exp (i (f + g)) = exp (i f) exp (i g)`, the exponential is an
 injective homomorphism from the additive group of continuous real `H^s` phases into `G_s`, whose
-image contains every element of `G_s` that is `H^s`-close to `1`. No topology on `G_s` is
-constructed here, and the continuity of the exponential and of its inverse is not treated, so
-these results do not yet make the exponential a chart.
+image contains every element of `G_s` that is `H^s`-close to `1`. In the coordinates `F` of the
+phase and `u - 1` of the gauge, the exponential is Lipschitz on `H^s` balls about `0`, and the
+phase `arg u` lies in `H^s` and is Lipschitz in `u - 1` on small `H^s` balls about `0`. These are
+the estimates for a chart of `G_s` at the identity; no topology or manifold structure on `G_s` is
+constructed here.
 
 ## Main results
 
@@ -47,6 +60,10 @@ these results do not yet make the exponential a chart.
 * `TauCeti.Vortex.injOn_exp`: the exponential is injective on continuous real `H^s` phases.
 * `TauCeti.Vortex.exists_continuous_mem_realSobolevFunctions_eq_exp`: the elements of `G_s` close
   to `1` in `H^s` are exponentials of continuous real `H^s` phases.
+* `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`: the exponential is
+  locally Lipschitz from `H^s` phases to `H^s` coordinates of gauges.
+* `TauCeti.Vortex.exists_memSobolev_ae_eq_arg_and_norm_sub_le`: near the identity,
+  the phase `arg u` lies in `H^s` and is Lipschitz in the coordinate `u - 1`.
 
 ## References
 
@@ -113,7 +130,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
       ∃ f : ℂ → ℝ, Continuous f ∧ f ∈ realSobolevFunctions ℂ s 2 ∧
         u = fun z ↦ Circle.exp (f z) := by
   have hs' := finrank_real_complex_lt_two_mul hs
-  obtain ⟨C, hC, hser⟩ := exists_hasSum_mul_pow hs'
+  obtain ⟨C, hC, hlog⟩ := exists_memSobolev_ae_eq_log_one_add hs'
   obtain ⟨C₂, hC₂, hsup⟩ :=
     exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := ℂ) (F := ℂ) hs'
   refine ⟨(C + C₂ + 1)⁻¹, by positivity,
@@ -125,17 +142,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
       _ = 1 := mul_inv_cancel₀ (by positivity)
   have hCR : C * R < 1 := by nlinarith
   have hC₂R : C₂ * R < 1 := by nlinarith
-  -- The logarithm series `∑ₙ (-1)ⁿ wⁿ⁺¹ / (n + 1)`, majorized by the geometric series.
-  set a : ℕ → ℂ := fun n ↦ (-1) ^ n / (n + 1)
-  have hsum : Summable fun n ↦ ‖a n‖ * (C * R) ^ n := by
-    refine (summable_geometric_of_lt_one (by positivity) hCR).of_nonneg_of_le
-      (fun n ↦ by positivity) fun n ↦ ?_
-    refine mul_le_of_le_one_left (by positivity) ?_
-    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow]
-    refine div_le_one_of_le₀ ?_ (norm_nonneg _)
-    rw [← Nat.cast_add_one, Complex.norm_natCast]
-    exact_mod_cast Nat.le_add_left 1 n
-  obtain ⟨v, hv, hvs, -⟩ := hser hh hsum
+  obtain ⟨v, hv, hvs⟩ := hlog hh hCR
   have hu_cont : Continuous fun z ↦ (u z : ℂ) :=
     continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
   -- Pointwise, `‖u - 1‖ < 1` everywhere: almost everywhere by the Sobolev embedding, then
@@ -150,25 +157,95 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
   refine ⟨fun z ↦ arg (u z : ℂ), ?_, ?_, ?_⟩
   · exact continuous_iff_continuousAt.2 fun z ↦
       (continuousAt_arg (hslit z)).comp_of_eq hu_cont.continuousAt rfl
-  · -- `arg u = -i log u`, and `log u` is the sum of the logarithm series in `u - 1`.
-    refine mem_realSobolevFunctions_of_ae_eq_ofReal (v := (-I) • v) ?_ ?_
-    · rw [Lp.toTemperedDistribution_smul]
-      exact hvs.smul _
-    · filter_upwards [Lp.coeFn_smul (-I) v, hv, hhu] with z hz hvz hhz
-      rw [hhz] at hvz
-      have hlog := (hasSum_nat_add_iff' 1).2
-        (hasSum_taylorSeries_log ((hsmall z).trans_lt hC₂R))
-      simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
-        sub_zero, add_sub_cancel] at hlog
-      have hval : v z = log (u z : ℂ) := hvz.unique <| by
-        convert hlog using 1
-        ext n
-        simp only [a]
-        push_cast
-        ring
-      rw [hz, Pi.smul_apply, smul_eq_mul, hval]
-      apply Complex.ext <;> simp [log_re, log_im]
+  · -- `arg u = -i log u`, and `log u = log (1 + (u - 1))` lies in `H^s`.
+    exact mem_realSobolevFunctions_of_ae_eq_ofReal (v := (-I) • v)
+      (hvs.toTemperedDistribution_smul _) (Circle.neg_I_smul_ae_eq_arg hhu hv)
   · funext z
     exact (Circle.exp_arg (u z)).symm
+
+/-- **The exponential chart is locally Lipschitz in `H^s` coordinates.** For `s > 1` there is a
+constant `C` with the following property. Let `f, g` be real phases on the plane whose
+complexifications are `L²` functions `F, G ∈ H^s(ℂ; ℂ)` with `‖F‖_{H^s}, ‖G‖_{H^s} ≤ R`, and let
+`h, h'` be `L²` functions in `H^s` agreeing almost everywhere with `exp (i f) - 1` and
+`exp (i g) - 1`. When `f` and `g` are continuous, these are the coordinates of the gauges
+`exp (i f)` and `exp (i g)` of `G_s` (`exp_mem_sobolevGaugeGroup`). Then
+`‖h - h'‖_{H^s} ≤ exp (C R) ‖F - G‖_{H^s}`. -/
+theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp {s : ℝ}
+    (hs : 1 < s) :
+    ∃ C, 0 ≤ C ∧ ∀ {f g : ℂ → ℝ} {F G : Lp ℂ 2 (volume : Measure ℂ)},
+      F =ᵐ[volume] (fun z ↦ (f z : ℂ)) → G =ᵐ[volume] (fun z ↦ (g z : ℂ)) →
+      ∀ (hF : MemSobolev s 2 (F : 𝓢'(ℂ, ℂ))) (hG : MemSobolev s 2 (G : 𝓢'(ℂ, ℂ))) {R : ℝ},
+      ‖hF.toBesselPotentialSpace‖ ≤ R → ‖hG.toBesselPotentialSpace‖ ≤ R →
+      ∀ {h h' : Lp ℂ 2 (volume : Measure ℂ)},
+      h =ᵐ[volume] (fun z ↦ (Circle.exp (f z) : ℂ) - 1) →
+      h' =ᵐ[volume] (fun z ↦ (Circle.exp (g z) : ℂ) - 1) →
+      ∀ (hh : MemSobolev s 2 (h : 𝓢'(ℂ, ℂ))) (hh' : MemSobolev s 2 (h' : 𝓢'(ℂ, ℂ))),
+      ‖hh.toBesselPotentialSpace - hh'.toBesselPotentialSpace‖ ≤
+        Real.exp (C * R) * ‖hF.toBesselPotentialSpace - hG.toBesselPotentialSpace‖ := by
+  obtain ⟨C, hC, hlip⟩ :=
+    exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp_sub_one
+      (finrank_real_complex_lt_two_mul hs)
+  refine ⟨C, hC, fun {f g F G} hFf hGg hF hG {R} hFR hGR {h h'} hhf hhg hh hh' ↦ ?_⟩
+  -- `exp (i f) - 1 = exp (U) - 1` for the `H^s` function `U = i F`.
+  have hU := hF.toTemperedDistribution_smul I
+  have hW := hG.toTemperedDistribution_smul I
+  have hUF := hF.toBesselPotentialSpace_toTemperedDistribution_smul I hU
+  have hWG := hG.toBesselPotentialSpace_toTemperedDistribution_smul I hW
+  have hexp {X : Lp ℂ 2 (volume : Measure ℂ)} {k : ℂ → ℝ} {Y : Lp ℂ 2 (volume : Measure ℂ)}
+      (hXk : X =ᵐ[volume] (fun z ↦ (k z : ℂ)))
+      (hY : Y =ᵐ[volume] (fun z ↦ (Circle.exp (k z) : ℂ) - 1)) :
+      Y =ᵐ[volume] (fun z ↦ exp ((I • X : Lp ℂ 2 (volume : Measure ℂ)) z) - 1) := by
+    filter_upwards [hY, hXk, Lp.coeFn_smul I X] with z hz hzk hzI
+    rw [hz, hzI, Pi.smul_apply, hzk, smul_eq_mul, Circle.coe_exp, mul_comm]
+  have h := hlip hU hW (R := R) (by rwa [hUF, norm_smul, norm_I, one_mul])
+    (by rwa [hWG, norm_smul, norm_I, one_mul]) hh hh' (hexp hFf hhf) (hexp hGg hhg)
+  rwa [hUF, hWG, ← smul_sub, norm_smul, norm_I, one_mul] at h
+
+/-- **The inverse of the exponential chart is Lipschitz near the identity.** For `s > 1` there is a
+constant `C` with the following property. Let `u, u'` be circle-valued maps on the plane whose
+coordinates `u - 1`, `u' - 1` are represented by `L²` functions `h, h' ∈ H^s(ℂ; ℂ)` with
+`‖h‖_{H^s}, ‖h'‖_{H^s} ≤ R` and `C R < 1`. Then the phases `arg u` and `arg u'` are represented by
+`L²` functions `F, F' ∈ H^s`, and `‖F - F'‖_{H^s} ≤ (1 - C R)⁻¹ ‖h - h'‖_{H^s}`. -/
+theorem exists_memSobolev_ae_eq_arg_and_norm_sub_le {s : ℝ}
+    (hs : 1 < s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u u' : ℂ → Circle} {h h' : Lp ℂ 2 (volume : Measure ℂ)},
+      h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) → h' =ᵐ[volume] (fun z ↦ (u' z : ℂ) - 1) →
+      ∀ (hh : MemSobolev s 2 (h : 𝓢'(ℂ, ℂ))) (hh' : MemSobolev s 2 (h' : 𝓢'(ℂ, ℂ))) {R : ℝ},
+      ‖hh.toBesselPotentialSpace‖ ≤ R → ‖hh'.toBesselPotentialSpace‖ ≤ R → C * R < 1 →
+      ∃ F F' : Lp ℂ 2 (volume : Measure ℂ),
+        F =ᵐ[volume] (fun z ↦ (arg (u z : ℂ) : ℂ)) ∧
+        F' =ᵐ[volume] (fun z ↦ (arg (u' z : ℂ) : ℂ)) ∧
+        ∃ (hF : MemSobolev s 2 (F : 𝓢'(ℂ, ℂ))) (hF' : MemSobolev s 2 (F' : 𝓢'(ℂ, ℂ))),
+        ‖hF.toBesselPotentialSpace - hF'.toBesselPotentialSpace‖ ≤
+          (1 - C * R)⁻¹ * ‖hh.toBesselPotentialSpace - hh'.toBesselPotentialSpace‖ := by
+  have hs' := finrank_real_complex_lt_two_mul hs
+  obtain ⟨C₁, hC₁, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add hs'
+  obtain ⟨C₂, hC₂, hlog⟩ := exists_memSobolev_ae_eq_log_one_add hs'
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁,
+    fun {u u' h h'} hhu hhu' hh hh' {R} hhR hhR' hCR ↦ ?_⟩
+  have hR : 0 ≤ R := (norm_nonneg _).trans hhR
+  have hC₁R : C₁ * R ≤ max C₁ C₂ * R := mul_le_mul_of_nonneg_right (le_max_left _ _) hR
+  have hC₂R : C₂ * R ≤ max C₁ C₂ * R := mul_le_mul_of_nonneg_right (le_max_right _ _) hR
+  -- `log (1 + h)` lies in `H^s`, and `arg u = -i log u = -i log (1 + h)`, since `|u| = 1`.
+  have harg {v : ℂ → Circle} {X : Lp ℂ 2 (volume : Measure ℂ)}
+      (hX : X =ᵐ[volume] (fun z ↦ (v z : ℂ) - 1)) (hXs : MemSobolev s 2 (X : 𝓢'(ℂ, ℂ)))
+      (hXR : ‖hXs.toBesselPotentialSpace‖ ≤ R) :
+      ∃ L : Lp ℂ 2 (volume : Measure ℂ), L =ᵐ[volume] (fun z ↦ log (1 + X z)) ∧
+        ∃ _ : MemSobolev s 2 (L : 𝓢'(ℂ, ℂ)),
+        ((-I) • L : Lp ℂ 2 (volume : Measure ℂ)) =ᵐ[volume] (fun z ↦ (arg (v z : ℂ) : ℂ)) := by
+    obtain ⟨L, hL, hLs⟩ := hlog hXs ((mul_le_mul_of_nonneg_left hXR hC₂).trans_lt
+      (hC₂R.trans_lt hCR))
+    exact ⟨L, hL, hLs, Circle.neg_I_smul_ae_eq_arg hX hL⟩
+  obtain ⟨L, hL, hLs, hLu⟩ := harg hhu hh hhR
+  obtain ⟨L', hL', hLs', hLu'⟩ := harg hhu' hh' hhR'
+  have h := hlip hh hh' hhR hhR' (hC₁R.trans_lt hCR) hLs hLs' hL hL'
+  have hF := hLs.toTemperedDistribution_smul (-I)
+  have hF' := hLs'.toTemperedDistribution_smul (-I)
+  refine ⟨_, _, hLu, hLu', hF, hF', ?_⟩
+  rw [hLs.toBesselPotentialSpace_toTemperedDistribution_smul (-I) hF,
+    hLs'.toBesselPotentialSpace_toTemperedDistribution_smul (-I) hF', ← smul_sub, norm_smul,
+    norm_neg, norm_I, one_mul]
+  exact h.trans (mul_le_mul_of_nonneg_right (inv_anti₀ (by linarith) (by linarith))
+    (norm_nonneg _))
 
 end TauCeti.Vortex

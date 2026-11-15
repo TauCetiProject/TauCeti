@@ -25,7 +25,7 @@ ENV = dict(STATUS_SHA="a" * 40, BUILD_JOB_RESULT="success", BUILD_STATE="success
 def job(status="completed", conclusion="success", confirmed=True):
     return dict(id=7, name=finalizer.PUBLISHER, status=status, conclusion=conclusion,
                 runner_name="nsc-publisher" if status != "queued" else "",
-                labels=[finalizer.MACHINE_LABEL, "namespace-features:github.run-id=12"],
+                labels=[finalizer.MACHINE_LABEL],
                 steps=[dict(name=finalizer.CONFIRM, conclusion="success" if confirmed else "skipped")])
 
 
@@ -236,7 +236,7 @@ class FinalizerTests(unittest.TestCase):
 
 
 class WorkflowBoundaryTests(unittest.TestCase):
-    def test_isolation_matcher_accepts_real_namespace_canary_label_encoding(self):
+    def test_retired_namespace_canary_is_not_current_publication_evidence(self):
         fixture = json.loads((ROOT / "scripts/publication_capacity_fixture.json").read_text())
         self.assertEqual(fixture["workflow_sha"], "d596be5aa001a0187cc3a3c7890314d7b0782e4a")
         by_name = {item["name"]: item for item in fixture["jobs"]}
@@ -249,7 +249,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 f"namespace-features:github.run-id={fixture['run_id']}"})
         # Only the sandbox identity is synthetic; publisher labels/name are verbatim API evidence.
         sandbox = dict(name="sandboxed-build", runner_name="fixture-sandbox")
-        self.assertTrue(finalizer.isolated_runner(dict(jobs=[sandbox]), by_name["publisher-capacity"], fixture["run_id"]))
+        self.assertFalse(finalizer.isolated_runner(dict(jobs=[sandbox]), by_name["publisher-capacity"], fixture["run_id"]))
 
     def test_separate_unprivileged_priority_runner_and_scoped_tokens(self):
         report = PR["finalize-merge-group-build"]
@@ -259,9 +259,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
             self.assertEqual(expression(part["runs-on"], event="repository_dispatch", action="tauceti-bors-staging"),
                              ["self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
                               "fleet-74773fc7f54d4877add11d80113fe340"])
-            self.assertEqual(expression(part["runs-on"]),
-                             [f"nscloud-ubuntu-24.04-amd64-{shape}-with-features;job.priority=0",
-                              "namespace-features:github.run-id=42"])
+            self.assertEqual(expression(part["runs-on"]), "ubuntu-24.04")
         self.assertEqual(report["needs"], "sandboxed-build")
         self.assertEqual(report["permissions"], {"contents": "read", "actions": "read", "statuses": "write"})
         self.assertEqual(report["timeout-minutes"], 30)

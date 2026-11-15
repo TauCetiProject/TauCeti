@@ -251,10 +251,9 @@ theorem hessian_div_eq_mvfderiv_add [IsManifold I 2 M]
         mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
         mvfderiv I f x (CovariantDerivative.leviCivitaConnection I M Y x (X x)) / f x =
       hessian I f x (X x) (Y x) / f x := by
-  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := 2) (by simp)
   have hfx : MDiffAt f x := hf.mdifferentiableAt (by simp)
   have hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) x :=
-    mdifferentiableAt_mvfderiv_apply (n := 2) hf (by simp) hY
+    mdifferentiableAt_mvfderiv_apply hf le_rfl hY
   rw [hessian_apply_eq_mvfderiv_sub x hf X Y hY]
   have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
       -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
@@ -488,17 +487,36 @@ theorem laplaceBeltrami_const (c : ℝ) (x : M) :
 theorem laplaceBeltrami_zero (x : M) : laplaceBeltrami I (0 : M → ℝ) x = 0 :=
   laplaceBeltrami_const I 0 x
 
-/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
-theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+/-- The Laplace–Beltrami operator is additive at a point where both functions are `C²`. -/
+theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami,
-    mgradient_add (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
-  exact divergence_add I _ _ x
-    (mdifferentiable_mgradient (I := I) hf x)
-    (mdifferentiable_mgradient (I := I) hg x)
+  have hgrad {u : M → ℝ} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) :
+      MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I u y⟩ : TangentBundle I M)) x :=
+    (contMDiffAt_mgradient (I := I) (n := 1)
+      (by simpa only [one_add_one_eq_two] using hu)).mdifferentiableAt (by simp)
+  -- Both functions are differentiable near `x`, so the gradient is additive there.
+  have hev : ∀ᶠ y in nhds x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
+    filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf,
+      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg] with y hfy hgy
+    apply ext_inner_right ℝ
+    intro v
+    rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
+      mvfderiv_add (hfy.mdifferentiableAt (by simp)) (hgy.mdifferentiableAt (by simp))]
+    rfl
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [laplaceBeltrami_def, divergence_def, hcov.congr_of_eventuallyEq (hgrad (hf.add hg))
+    (mdifferentiableAt_add_section (hgrad hf) (hgrad hg)) Filter.univ_mem hev,
+    ← divergence_def, divergence_add I _ _ x (hgrad hf) (hgrad hg), laplaceBeltrami_def,
+    laplaceBeltrami_def]
+
+/-- The Laplace–Beltrami operator is additive on `C²` functions. -/
+theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
+  laplaceBeltrami_add_of_contMDiffAt I (hf x) (hg x)
 
 /- The product rule below is the manifold counterpart of
 `ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
@@ -539,14 +557,21 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     ← inner_mgradient (I := I) (f := g) (x := x), real_inner_comm]
   ring
 
-/-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
-theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
+function is `C²`. -/
+theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   simp only [laplaceBeltrami, mgradient_smul]
-  exact divergence_smul I c _ x
-    (mdifferentiable_mgradient (I := I) hf x)
+  exact divergence_smul I c _ x ((contMDiffAt_mgradient (I := I) (n := 1)
+    (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp))
+
+/-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
+theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
+  laplaceBeltrami_smul_of_contMDiffAt I c (hf x)
 
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :

@@ -10,7 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Density
@@ -50,11 +50,10 @@ that the beta law is carried by `[0, 1]`, so every exponential moment exists.
 
 The moment calculation rewrites the density integral as Euler's beta integral — the real-valued
 `TauCeti.integral_rpow_mul_one_sub_rpow`, proved in
-`TauCeti/Analysis/SpecialFunctions/Beta.lean` — and then uses the Gamma quotient.
+`TauCeti/Analysis/SpecialFunctions/Beta/Basic.lean` — and then uses the Gamma quotient.
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Beta".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   2nd ed., Wiley, 1995.
 -/
