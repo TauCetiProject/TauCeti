@@ -32,10 +32,14 @@ The pointwise supremum of finitely many integrable lattice-valued functions is i
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
 integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
 a set containing the support of an integrable function keeps it integrable
-(`MeasureTheory.Integrable.smul_of_support_subset`).
+(`MeasureTheory.Integrable.smul_of_support_subset`). The reciprocal of a density over a finite
+base measure is integrable under the weighted measure, even when that measure is infinite
+(`MeasureTheory.integrable_inv_toReal_withDensity`).
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -116,6 +120,26 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- The reciprocal of a density is integrable under the changed measure when the
+original measure is finite, even if the changed measure is infinite. Zero and infinite
+density values give reciprocal zero by totalization. No lower bound is required. -/
+theorem integrable_inv_toReal_withDensity {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsFiniteMeasure μ] {w : Ω → ℝ≥0∞} (hw : AEMeasurable w μ) :
+    Integrable (fun x ↦ ((w x).toReal)⁻¹) (μ.withDensity w) := by
+  have hi : AEStronglyMeasurable (fun x ↦ ((w x).toReal)⁻¹) μ :=
+    hw.ennreal_toReal.inv.aestronglyMeasurable
+  refine ⟨hi.mono_ac (withDensity_absolutelyContinuous μ w), ?_⟩
+  rw [HasFiniteIntegral, lintegral_withDensity_eq_lintegral_mul₀ hw hi.eNorm]
+  have hb (x : Ω) : w x * ‖((w x).toReal)⁻¹‖ₑ ≤ 1 := by
+    by_cases ht : w x = ∞
+    · simp [ht]
+    by_cases hz : w x = 0
+    · simp [hz]
+    rw [Real.eNorm_eq_ofReal (inv_nonneg.mpr ENNReal.toReal_nonneg),
+      ENNReal.ofReal_inv_of_pos (ENNReal.toReal_pos hz ht), ENNReal.ofReal_toReal ht,
+      ENNReal.mul_inv_cancel hz ht]
+  exact (lintegral_mono hb).trans_lt (by simp [measure_lt_top])
 
 end MeasureTheory
 

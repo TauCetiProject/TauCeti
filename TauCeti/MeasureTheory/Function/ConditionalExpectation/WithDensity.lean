@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -21,6 +22,8 @@ The observable may take values in any real Banach space and need only be integra
 under `Q`, not under `μ`. These identities allow conditional prices and martingale
 identities to be transported across a change of measure. We use native conditional
 expectation, its integral characterization and its unbounded-multiplier pull-out rule.
+For equivalent finite measures, the conditional mean of the reciprocal terminal density
+is the reciprocal conditional density (`condExp_inv_toReal_withDensity`).
 
 ## References
 
@@ -166,5 +169,28 @@ theorem AEStronglyMeasurable.setIntegral_condExp_toReal_smul
     _ = ∫ x in s, f x ∂μ.withDensity w :=
       (setIntegral_withDensity_eq_setIntegral_toReal_smul₀ hw.restrict
         (ae_restrict_of_ae htop) _ (hm s hs)).symm
+
+/-- For an equivalent finite density change, the conditional expectation of the reciprocal
+terminal density is the reciprocal conditional density. This is the reverse density process;
+the reciprocal need not be integrable under the original measure. -/
+theorem condExp_inv_toReal_withDensity [IsFiniteMeasure μ]
+    (hw : AEMeasurable w μ) [IsFiniteMeasure (μ.withDensity w)]
+    (hpos : ∀ᵐ x ∂μ, w x ≠ 0) :
+    (μ.withDensity w)[fun x ↦ ((w x).toReal)⁻¹ | m] =ᵐ[μ.withDensity w]
+      fun x ↦ (μ[fun y ↦ (w y).toReal | m] x)⁻¹ := by
+  by_cases hm : m ≤ mΩ
+  swap
+  · simp only [condExp_of_not_le hm, Pi.zero_apply, inv_zero]
+    exact Filter.EventuallyEq.rfl
+  have hmass := isFiniteMeasure_withDensity_iff.mp
+    (inferInstance : IsFiniteMeasure (μ.withDensity w))
+  have hcancel : (fun x ↦ (w x).toReal * ((w x).toReal)⁻¹) =ᵐ[μ] (fun _ ↦ (1 : ℝ)) := by
+    filter_upwards [hpos, ae_lt_top' hw hmass] with x hx hxt
+    exact mul_inv_cancel₀ (ENNReal.toReal_ne_zero.mpr ⟨hx, hxt.ne⟩)
+  have hce : μ[fun x ↦ (w x).toReal * ((w x).toReal)⁻¹ | m] =ᵐ[μ] (fun _ ↦ (1 : ℝ)) := by
+    simpa only [condExp_const hm] using condExp_congr_ae (m := m) hcancel
+  filter_upwards [condExp_withDensity_eq_div hm hw (integrable_inv_toReal_withDensity hw),
+    (withDensity_absolutelyContinuous μ w).ae_le hce] with x hx hcx
+  simpa only [hcx, one_div] using hx
 
 end MeasureTheory
