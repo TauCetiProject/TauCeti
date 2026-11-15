@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 
 /-!
-# Naturality of the spectral object of a filtered complex on graded pieces
+# Naturality of the spectral object and spectral sequence of a filtered complex
 
 A natural transformation `α : F ⟶ G` of functors `ι ⥤ CochainComplex C ℤ` induces a morphism of
 spectral objects `CochainComplex.spectralObjectMap α` (in
@@ -23,11 +23,11 @@ A morphism of complexes `f : K ⟶ L` sending each piece `F n` of an increasing 
 into the piece `G n` of an increasing filtration of `L` induces a morphism of their functors
 `CochainComplex.filtrationFunctorMap f hf : filtrationFunctor F hF ⟶ filtrationFunctor G hG`,
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
-their spectral sequences. On the first page, computed as the cohomology of the graded pieces, this
-morphism is the map in cohomology of the induced morphism of graded pieces
-(`CochainComplex.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIsoCokernel_hom`), and on
-the abutment, identified with the cohomology of the filtered complex by `filtrationAbutmentIso`, it
-is the map in cohomology of the morphism of complexes
+their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
+that morphism is the map in cohomology of the induced morphisms of graded pieces
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`). On the abutment,
+identified with the cohomology of the filtered complex by `filtrationAbutmentIso`, the morphism of
+spectral objects is the map in cohomology of the morphism of complexes
 (`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`).
 
 ## Main definitions
@@ -39,12 +39,14 @@ is the map in cohomology of the morphism of complexes
 
 * `CochainComplex.spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom`: on graded pieces,
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
+* `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
+  on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
+  of graded pieces.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
-* `CochainComplex.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIsoCokernel_hom`: the
-  induced morphism on the first page.
 * `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`:
-  the induced morphism on the abutment.
+  on the abutment, the morphism of spectral objects is the map in cohomology of the morphism of
+  complexes.
 -/
 
 public section
@@ -164,29 +166,29 @@ section FirstPage
 
 variable {F G : EInt ⥤ CochainComplex C ℤ}
 
-/-- **The induced morphism on the first page.** Let `α : F ⟶ G` be a morphism of functors
-`EInt ⥤ CochainComplex C ℤ` whose maps `F_q ⟶ F_{q+1}` and `G_q ⟶ G_{q+1}` are monomorphisms, for
-instance the morphism `filtrationFunctorMap` of a morphism of filtered complexes. Through the
-identifications `spectralSequenceFirstPageXIsoCokernel` of the objects of the first page with the
-cohomology of the graded pieces, the induced morphism of spectral sequences is the map in
-cohomology of the induced morphism of graded pieces `F_{q+1}/F_q ⟶ G_{q+1}/G_q`. -/
+/-- **The morphism of spectral sequences on the first page.** Let `α : F ⟶ G` be a morphism of
+functors `EInt ⥤ CochainComplex C ℤ` whose transition maps `F_q ⟶ F_{q+1}` and `G_q ⟶ G_{q+1}`
+are monomorphisms. On the first page, whose object at `(p, q)` is the cohomology
+`H^{p+q}(F_{q+1}/F_q)` of a graded piece, the morphism of spectral sequences induced by `α` is the
+map in cohomology of the induced morphism of graded pieces `F_{q+1}/F_q ⟶ G_{q+1}/G_q`. -/
 @[reassoc]
-lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIsoCokernel_hom (α : F ⟶ G)
-    (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ)
+lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
+    (α : F ⟶ G) (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ)
     (hn : n = pq.1 + pq.2) [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))]
     [Mono (G.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))] :
-    spectralSequencePageXMap coreE₂Cohomological (spectralObjectMap α) 2 le_rfl pq ≫
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom 2 le_rfl).f pq ≫
         (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
       (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
-        HomologicalComplex.homologyMap (cokernel.map _ _ (α.app i₁) (α.app i₂)
-          (α.naturality _)) n := by
-  rw [spectralSequenceFirstPageXIsoCokernel_eq, spectralSequenceFirstPageXIsoCokernel_eq,
-    Iso.trans_hom, Iso.trans_hom, Category.assoc]
-  -- `rw` cannot match the degree equation `hn` against `coreE₂Cohomological.deg pq`, its
-  -- unfolding, so the first-page lemma is applied with `refine`.
-  refine (spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc _ _ pq _ _ _ _ n hn
-    _).trans ?_
-  rw [spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
+        HomologicalComplex.homologyMap
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+  simp only [spectralSequenceMap_hom, spectralSequencePageMap_f,
+    spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom]
+  -- The degree of the recipe `coreE₂Cohomological` at `pq` is only definitionally
+  -- `pq.1 + pq.2`, so the general first-page lemma is instantiated before rewriting with it.
+  have h := spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom coreE₂Cohomological
+    (spectralObjectMap α) pq (i₁ : EInt) (i₂ : EInt) (by simp [hi₁]) (by simp [hi₂]) n hn
+  rw [reassoc_of% h, spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
+  exact (Category.assoc _ _ _).symm
 
 end FirstPage
 
