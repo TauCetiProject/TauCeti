@@ -39,7 +39,7 @@ but it may meet every block of lower index. So the block `Δₖ ∑ⱼ fⱼ` inv
 absolutely in `Lᵖ`, and along the tail the weights `2^{(k - j)s}` decay geometrically too. Splitting
 each block at `j = k` bounds `2^{ks} ‖Δₖ ∑ⱼ fⱼ‖_p` by a window sum of `a` below `k` plus a
 geometric tail sum of `a` above it (`TauCeti.two_rpow_mul_norm_tsum_le`), and both have `ℓ^q` norm
-controlled by `‖a‖` (`lp.norm_le_of_forall_eq_sum_Ico_sub_add`,
+controlled by `‖a‖` (`lp.exists_eq_sum_Ico_sub_add_and_norm_le`,
 `lp.exists_forall_hasSum_pow_smul_add_and_norm_le`).
 
 The positivity of `s` is needed: the pieces `fⱼ = Δ₀ u` for every `j`, with `u` a fixed nonzero
@@ -120,11 +120,7 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
       simp only [Function.comp_apply, Lp.toTemperedDistributionCLM_apply, hg]
     · rw [Lp.toTemperedDistributionCLM_apply]
   obtain ⟨T, hT, hTn⟩ := lp.exists_forall_hasSum_pow_smul_add_and_norm_le a hρ0 hρ1
-  set A : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun k ↦ ∑ j ∈ Finset.Ico (k - N) (k + N), a j, (lp.memℓp a).sum_Ico_sub_add N⟩
-  -- The entries of the anonymous `lp` element `A` are its defining window sums by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hA (k : ℕ) : A k = ∑ j ∈ Finset.Ico (k - N) (k + N), a j := rfl
+  obtain ⟨A, hA, hAn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le a N
   have hGn (k : ℕ) : 2 ^ (s * k) * ‖G k‖ ≤ ((K * 2 ^ (|s| * N)) • A + K • T) k := by
     rw [lp.coeFn_add, lp.coeFn_smul, lp.coeFn_smul, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
       smul_eq_mul, smul_eq_mul, hA]
@@ -136,9 +132,7 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
         refine (norm_add_le _ _).trans_eq ?_
         rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
           Real.norm_of_nonneg (by positivity)]
-    _ ≤ K * 2 ^ (|s| * N) * (2 * N * ‖a‖) + K * ((1 - ρ)⁻¹ * ‖a‖) := by
-        gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add N hA
+    _ ≤ K * 2 ^ (|s| * N) * (2 * N * ‖a‖) + K * ((1 - ρ)⁻¹ * ‖a‖) := by gcongr
     _ = (K * 2 ^ (|s| * N) * (2 * N) + K * (1 - ρ)⁻¹) * ‖a‖ := by ring
 
 end TauCeti.BesovSpace
