@@ -129,10 +129,13 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_ratFunc_algebr
       algebraMap (RatFunc k') F' RatFunc.X)
     {ι : Type*} {c : ι → F} (hc : LinearIndependent (RatFunc k) c) :
     LinearIndependent (RatFunc k') (algebraMap F F' ∘ c) := by
+  have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) :=
+    (transcendental_algebraMap_iff
+      (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
   have hc₁ : LinearIndependent k⟮algebraMap (RatFunc k) F RatFunc.X⟯ c := by
-    simpa using hc.map_of_surjective_injectiveₛ (ratFuncAlgEquivAdjoinAlgebraMapX k F) (.id F)
-      (ratFuncAlgEquivAdjoinAlgebraMapX k F).surjective Function.injective_id
-      fun r m ↦ (ratFuncAlgEquivAdjoinAlgebraMapX_smul r m).symm
+    simpa using hc.map_of_surjective_injectiveₛ (RatFunc.algEquivOfTranscendental _ hx) (.id F)
+      (RatFunc.algEquivOfTranscendental _ hx).surjective Function.injective_id
+      fun r m ↦ (algEquivOfTranscendental_algebraMap_X_smul r m).symm
   simpa using (H.linearIndependent_adjoin_algebraMap_comp _ hc₁).map_of_surjective_injectiveₛ
     (adjoinRangeAlgEquivRatFunc hX) (.id F') (adjoinRangeAlgEquivRatFunc hX).surjective
     Function.injective_id fun r m ↦ (adjoinRangeAlgEquivRatFunc_smul hX r m).symm
@@ -149,8 +152,12 @@ noncomputable def constantExtensionRatFuncBasis
     [Algebra.IsAlgebraic (RatFunc k) F] {ι : Type*} (b : Module.Basis ι (RatFunc k) F) :
     Module.Basis ι (RatFunc k') F' :=
   haveI := (isAlgebraic_adjoin_algebraMap_X_iff (k := k) (F := F)).mpr ‹_›
+  have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) :=
+    (transcendental_algebraMap_iff
+      (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
   (constantExtensionBasisOfLinearDisjoint H h _
-    (b.mapCoeffs (ratFuncAlgEquivAdjoinAlgebraMapX k F).toRingEquiv (fun _ _ ↦ by simp))).mapCoeffs
+    (b.mapCoeffs (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
+      (fun _ _ ↦ by simp))).mapCoeffs
     (adjoinRangeAlgEquivRatFunc hX).toRingEquiv (fun _ _ ↦ by simp)
 
 /-- The transported `RatFunc k'`-basis consists of the images of the original basis vectors. -/
