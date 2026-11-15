@@ -74,6 +74,6 @@ theorem IsAdditive.isMultiplicative_of_eq_monoidHom {A R : Type*} [AddZeroClass 
   · simpa [hf.map_one] using hg 1 one_ne_zero
   intro m n hm hn hmn
   rw [hg (m * n) (mul_ne_zero hm hn), hf.map_mul hm hn hmn,
-    Multiplicative.ofAdd_add, map_mul, hg m hm, hg n hn]
+    ofAdd_add, map_mul, hg m hm, hg n hn]
 
 end ArithmeticFunction
