@@ -70,7 +70,7 @@ public section
 
 noncomputable section
 
-open Filter Set
+open Filter
 open scoped Nat Topology Real
 
 namespace Real

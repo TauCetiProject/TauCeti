@@ -84,7 +84,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory
 open scoped Nat Real Topology
 
 namespace Complex
