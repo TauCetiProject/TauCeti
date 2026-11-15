@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -26,7 +28,10 @@ by endpoint projection is absolutely continuous and has derivative in `Lᵖ(a,b)
 particular the characterization retains derivative integrability at `p = 2`; absolute
 continuity alone does not characterize `H¹`. A constant plus the primitive of an `Lᵖ` function is
 such a representative, with weak gradient that function
-(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`).
+(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`). So is the composition `Φ ∘ ū`
+of a representative with a `C¹` function `Φ`, whose weak gradient is given by the chain rule
+`Φ'(ū) u'` (`TauCeti.W1p.exists_intervalRepresentativeL_eq_comp_and_gradient_ae_eq`); unlike the
+chain rule on a general open set, this holds for every `1 ≤ p ≤ ∞` and needs no bound on `Φ'`.
 
 ## References
 
@@ -170,5 +175,40 @@ theorem exists_intervalRepresentativeL_eq_and_gradient_ae_eq (hab : a < b) {t₀
   filter_upwards [Ioo_mem_nhds htI.1 htI.2] with s hs
   rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hs)]
   exact hu ⟨s, Ioo_subset_Icc_self hs⟩
+
+/-- **The chain rule on an interval.** Let `u ∈ W^{1,p}(a, b)` have continuous representative `ū`
+and let `Φ` be `C¹`. Then `Φ ∘ ū` is the continuous representative of a Sobolev class whose weak
+gradient is `Φ'(ū) u'`. This holds for every `1 ≤ p ≤ ∞`, and `Φ'` need not be bounded, since `ū`
+takes values in a compact set. -/
+theorem exists_intervalRepresentativeL_eq_comp_and_gradient_ae_eq (hab : a < b) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    ∃ w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      (∀ t : Icc a b, intervalRepresentativeL hab w t = Φ (intervalRepresentativeL hab u t)) ∧
+      gradient w =ᵐ[volume.restrict (Ioo a b)]
+        fun t ↦ deriv Φ (intervalRepresentativeL hab u (projIcc a b hab.le t)) * gradient u t := by
+  set U : ℝ → ℝ := fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)
+  have hW : AbsolutelyContinuousOnInterval (Φ ∘ U) a b :=
+    (absolutelyContinuousOnInterval_intervalRepresentativeL hab u).comp_of_contDiffAt
+      fun _ _ ↦ hΦ.contDiffAt
+  -- The classical chain rule at the points where `U` has derivative `u'`.
+  have hderiv : deriv (Φ ∘ U) =ᵐ[volume.restrict (Ioo a b)]
+      fun t ↦ deriv Φ (U t) * gradient u t := by
+    refine (ae_restrict_iff' measurableSet_Ioo).2 ?_
+    filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht htI
+    exact ((hΦ.differentiable one_ne_zero (U t)).hasDerivAt.comp t
+      (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI))).deriv
+  -- `Φ'` is bounded on the compact range of `ū`, so `Φ'(ū) u' ∈ Lᵖ`.
+  obtain ⟨C, hC⟩ := (isCompact_range (intervalRepresentativeL hab u).continuous)
+    |>.exists_bound_of_continuousOn (hΦ.continuous_deriv le_rfl).continuousOn
+  have hdW : MemLp (deriv (Φ ∘ U)) p (volume.restrict (Ioo a b)) := by
+    refine (Lp.memLp (gradient u)).of_le_mul (c := C) (measurable_deriv _).aestronglyMeasurable ?_
+    filter_upwards [hderiv] with t ht
+    rw [ht, norm_mul]
+    exact mul_le_mul_of_nonneg_right (hC _ (mem_range_self _)) (norm_nonneg _)
+  obtain ⟨w, hwv, hwg⟩ := hW.exists_w1p_value_gradient_ae_eq hdW
+  have hrep : intervalRepresentativeL hab w =
+      (⟨Φ, hΦ.continuous⟩ : C(ℝ, ℝ)).comp (intervalRepresentativeL hab u) :=
+    (intervalRepresentativeL_eq_iff hab w _).2 hwv
+  exact ⟨w, fun t ↦ congrArg (fun g : C(Icc a b, ℝ) ↦ g t) hrep, hwg.trans hderiv⟩
 
 end TauCeti.W1p
