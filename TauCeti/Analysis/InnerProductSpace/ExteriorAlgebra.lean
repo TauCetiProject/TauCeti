@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
-import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.LinearAlgebra.ExteriorPower.Projection
 
 /-!
 # The exterior Gram metric on real and complexified exterior algebras
@@ -48,8 +48,8 @@ making the complexified increasing wedge basis orthonormal.
   `TauCeti.ExteriorAlgebra.gramBilinForm_ιMulti_ιMulti`: `gramBilinForm V` restricts to the Gram
   inner product on each `⋀[ℝ]^k V`, makes distinct degrees orthogonal, and evaluates as the
   `k × k` Gram determinant on decomposable `k`-vectors.
-* `ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra` and
-  `TauCeti.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra_apply`: for every ordered
+* `ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂` and
+  `TauCeti.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra`: for every ordered
   orthonormal basis `e` of `V`, `gramBilinForm V` agrees with the form making
   `e.toBasis.ExteriorAlgebra` orthonormal.
 * `TauCeti.ExteriorAlgebra.isSymm_gramBilinForm` and
@@ -90,20 +90,18 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-- **The exterior Gram bilinear form** on `ExteriorAlgebra ℝ V`: the orthogonal direct sum across
 all degrees `k : ℕ` of Mathlib's Gram inner product `innerₗ (⋀[ℝ]^k V)` along the homogeneous
-grading `DirectSum.decomposeLinearEquiv (fun k : ℕ ↦ ⋀[ℝ]^k V)`. -/
+projections `TauCeti.exteriorPower.proj ℝ V k`. -/
 def gramBilinForm (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [FiniteDimensional ℝ V] : LinearMap.BilinForm ℝ (_root_.ExteriorAlgebra ℝ V) :=
-  let d := DirectSum.decomposeLinearEquiv (fun k : ℕ ↦ ⋀[ℝ]^k V)
   DirectSum.toModule ℝ ℕ _
-    (fun k ↦ (innerₗ (⋀[ℝ]^k V)).compl₂
-      (DirectSum.component ℝ ℕ (fun i ↦ ⋀[ℝ]^i V) k ∘ₗ d.toLinearMap)) ∘ₗ
-    d.toLinearMap
+    (fun k ↦ (innerₗ (⋀[ℝ]^k V)).compl₂ (TauCeti.exteriorPower.proj ℝ V k)) ∘ₗ
+    (DirectSum.decomposeLinearEquiv (fun k : ℕ ↦ ⋀[ℝ]^k V)).toLinearMap
 
 /-- On each homogeneous exterior power `⋀[ℝ]^k V`, `gramBilinForm V` is the Gram inner product. -/
 @[simp]
 theorem gramBilinForm_coe_coe {k : ℕ} (x y : ⋀[ℝ]^k V) :
     gramBilinForm V x y = ⟪x, y⟫ := by
-  simp [gramBilinForm, DirectSum.component.lof_self]
+  simp [gramBilinForm, TauCeti.exteriorPower.proj_coe]
 
 /-- The restriction of `gramBilinForm V` to `⋀[ℝ]^k V` is `innerₗ (⋀[ℝ]^k V)`. -/
 @[simp]
@@ -115,12 +113,12 @@ theorem gramBilinForm_restrict (k : ℕ) :
 theorem gramBilinForm_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
     {x y : _root_.ExteriorAlgebra ℝ V} (hx : x ∈ ⋀[ℝ]^p V) (hy : y ∈ ⋀[ℝ]^q V) :
     gramBilinForm V x y = 0 := by
+  have hy' : TauCeti.exteriorPower.proj ℝ V p y = 0 :=
+    Subtype.ext (by simp [TauCeti.exteriorPower.coe_proj_of_mem hy, hpq.symm])
   let x' : ⋀[ℝ]^p V := ⟨x, hx⟩
-  let y' : ⋀[ℝ]^q V := ⟨y, hy⟩
   have hx' : x = x' := rfl
-  have hy' : y = y' := rfl
-  rw [hx', hy']
-  simp [gramBilinForm, DirectSum.component.of, hpq.symm]
+  rw [hx']
+  simp [gramBilinForm, hy']
 
 /-- **Gram-determinant formula** for `gramBilinForm V`: on decomposable `k`-vectors,
 `gramBilinForm V` evaluates as `det (⟪xᵢ, yⱼ⟫)`. -/
@@ -151,7 +149,7 @@ theorem gramBilinForm_ι_ι (x y : V) :
 /-- **Every ordered orthonormal basis of `V` induces an orthonormal wedge basis for
 `gramBilinForm V`**: `gramBilinForm V` agrees with the form making `e.toBasis.ExteriorAlgebra`
 orthonormal. -/
-theorem _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra {I : Type*} [Fintype I]
+theorem _root_.ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂ {I : Type*} [Fintype I]
     [LinearOrder I] (e : OrthonormalBasis I ℝ V) (x y : _root_.ExteriorAlgebra ℝ V) :
     gramBilinForm V x y =
       toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra e.toBasis.ExteriorAlgebra
@@ -166,26 +164,26 @@ theorem _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra {I : Type*}
 
 /-- The increasing wedge basis of an ordered orthonormal basis of `V` is orthonormal for
 `gramBilinForm V`. -/
-theorem gramBilinForm_toBasis_exteriorAlgebra_apply {I : Type*} [Fintype I] [LinearOrder I]
+theorem gramBilinForm_toBasis_exteriorAlgebra {I : Type*} [Fintype I] [LinearOrder I]
     (e : OrthonormalBasis I ℝ V) (S T : Finset I) :
     gramBilinForm V (e.toBasis.ExteriorAlgebra S) (e.toBasis.ExteriorAlgebra T) =
       if S = T then 1 else 0 := by
-  rw [_root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra e, toLinearMapₛₗ₂_apply_basis,
+  rw [_root_.ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂ e, toLinearMapₛₗ₂_apply_basis,
     Matrix.one_apply]
 
 /-- `gramBilinForm V` is symmetric. -/
 theorem isSymm_gramBilinForm : (gramBilinForm V).IsSymm :=
   ⟨fun x y ↦ by
     let e := stdOrthonormalBasis ℝ V
-    rw [_root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra e,
-      _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra e,
+    rw [_root_.ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂ e,
+      _root_.ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂ e,
       ← star_toLinearMapₛₗ₂_one_apply, star_trivial]⟩
 
 /-- `gramBilinForm V` is positive definite. -/
 theorem posDef_toQuadraticMap_gramBilinForm : (gramBilinForm V).toQuadraticMap.PosDef := by
   intro x hx
   rw [LinearMap.BilinMap.toQuadraticMap_apply,
-    _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra (stdOrthonormalBasis ℝ V)]
+    _root_.ExteriorAlgebra.gramBilinForm_eq_toLinearMapₛₗ₂ (stdOrthonormalBasis ℝ V)]
   exact lt_of_le_of_ne (toLinearMapₛₗ₂_one_self_nonneg _ x)
     (Ne.symm fun h ↦ hx ((toLinearMapₛₗ₂_one_self_eq_zero_iff _).mp h))
 
@@ -289,7 +287,7 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
       _root_.ExteriorAlgebra.baseChangeEquiv_tmul_basis, one_smul, one_smul,
       toLinearMapₛₗ₂_apply_basis, Matrix.one_apply,
       LinearMap.BilinForm.sesqComplexification_tmul_tmul,
-      gramBilinForm_toBasis_exteriorAlgebra_apply e S T]
+      gramBilinForm_toBasis_exteriorAlgebra e S T]
     split_ifs <;> simp
   exact LinearMap.congr_fun₂ key x y
 

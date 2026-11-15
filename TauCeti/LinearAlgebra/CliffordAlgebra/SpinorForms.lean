@@ -34,8 +34,8 @@ becomes conjugation by spinor chirality, hence the tensor product `Γ_S ⊗ Γ_S
 transpose. The transpose is the induced dual parity; the chirality of the reverse-dual Clifford
 action has the additional sign `(-1) ^ (dim V / 2)`
 (`AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff`,
-`AlgEquiv.cliffordFormsEquivTensor_involute_eq_cliffordReverseDual`). These comparisons include
-dimension zero and both orientations. No Hermitian metric is needed for these algebraic
+`AlgEquiv.cliffordFormsEquivTensor_involute_eq_smul_map_cliffordReverseDual`). These comparisons
+include dimension zero and both orientations. No Hermitian metric is needed for these algebraic
 identifications.
 
 ## References
@@ -251,13 +251,17 @@ variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- Exterior parity corresponds to conjugation by spinor chirality. This is different from
 Clifford multiplication by the volume element (`AlgEquiv.cliffordFormsEquivEnd_action`), which acts
-only on the left. -/
+only on the left. No parity hypothesis on `n` is needed: the full spinor representation `ρ` forces
+`n` to be even (`CliffordAlgebra.even_finrank_of_algEquiv_end`). -/
 theorem cliffordFormsEquivEnd_involute
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
+    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     ρ.cliffordFormsEquivEnd (involute.toLinearMap.baseChange ℂ x) =
       ρ (complexVolume Q o) * ρ.cliffordFormsEquivEnd x * ρ (complexVolume Q o) := by
+  have hn : Even n := by
+    simpa only [Module.finrank_baseChange, Fact.out (p := Module.finrank ℝ V = n), one_mul] using
+      even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy, mul_add, add_mul]
   | tmul z x =>
@@ -271,27 +275,27 @@ theorem cliffordFormsEquivEnd_involute
 of spinor chirality, not the chirality of the reverse-dual Clifford representation. -/
 theorem cliffordFormsEquivTensor_involute [FiniteDimensional ℂ S]
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
+    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     ρ.cliffordFormsEquivTensor (involute.toLinearMap.baseChange ℂ x) =
       TensorProduct.map (ρ (complexVolume Q o)) (ρ (complexVolume Q o)).dualMap
         (ρ.cliffordFormsEquivTensor x) := by
   rw [ρ.cliffordFormsEquivTensor_eq_map_iff]
-  exact ρ.cliffordFormsEquivEnd_involute o hQ hn x
+  exact ρ.cliffordFormsEquivEnd_involute o hQ x
 
 /-- On spinor tensors `S ⊗[ℂ] Dual ℂ S`, exterior parity differs from `Γ_S ⊗ Γ_{S^*}` (built from
 the reverse-dual chirality `Γ_{S^*} = ρ.toAlgHom.cliffordReverseDual (complexVolume Q o)`) by the
 sign `(-1) ^ (n / 2)`. -/
-theorem cliffordFormsEquivTensor_involute_eq_cliffordReverseDual [FiniteDimensional ℂ S]
+theorem cliffordFormsEquivTensor_involute_eq_smul_map_cliffordReverseDual [FiniteDimensional ℂ S]
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
+    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     ρ.cliffordFormsEquivTensor (involute.toLinearMap.baseChange ℂ x) =
       (-1 : ℂ) ^ (n / 2) •
         TensorProduct.map (ρ (complexVolume Q o))
           (ρ.toAlgHom.cliffordReverseDual (complexVolume Q o))
           (ρ.cliffordFormsEquivTensor x) := by
-  rw [ρ.cliffordFormsEquivTensor_involute o hQ hn x]
+  rw [ρ.cliffordFormsEquivTensor_involute o hQ x]
   simp [TensorProduct.map_smul_right, smul_smul, ← mul_pow]
 
 end AlgEquiv

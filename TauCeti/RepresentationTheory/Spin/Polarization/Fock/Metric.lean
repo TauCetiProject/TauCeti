@@ -91,11 +91,11 @@ open scoped TensorProduct
 
 namespace TauCeti.AlmostComplexStructure
 
-section Metric
+section PolarizationMetric
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
-  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [LinearOrder ι]
+  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [DecidableEq ι]
   (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W)
 
 variable (hb : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b i : ℂ ⊗[ℝ] V)) (b j) =
@@ -127,25 +127,10 @@ theorem toLinearMapₛₗ₂_apply_eq_sesqComplexification {g : LinearMap.BilinF
     (hg : g.IsSymm) (hQg : ∀ v, Q v = -g v v) (x y : (J.spinPolarizationData hQJ hQ).W) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) b b (1 : Matrix ι ι ℂ) x y =
       g.sesqComplexification (x : ℂ ⊗[ℝ] V) y := by
-  have hpol : Q.polarBilin = (-2 : ℝ) • g := LinearMap.ext₂ fun u w ↦ by
-    rw [polarBilin_apply_apply, polar, hQg, hQg, hQg]
-    simp only [map_add, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hg.eq w u]
-    ring
-  have hbase (z w : ℂ ⊗[ℝ] V) :
-      polar (Q.baseChange ℂ) z w = (-2 : ℂ) * g.baseChange ℂ z w := by
-    rw [← polarBilin_apply_apply, QuadraticForm.polarBilin_baseChange, hpol]
-    induction z using TensorProduct.inductionOn with
-    | add z₁ z₂ hz₁ hz₂ => simp only [map_add, LinearMap.add_apply, hz₁, hz₂, mul_add]
-    | tmul c u =>
-      induction w using TensorProduct.inductionOn with
-      | add w₁ w₂ hw₁ hw₂ => simp only [map_add, hw₁, hw₂, mul_add]
-      | tmul d v =>
-        simp only [LinearMap.BilinForm.baseChange_tmul, LinearMap.smul_apply, smul_eq_mul,
-          Complex.real_smul]
-        push_cast
-        ring
-  rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb, hbase,
-    LinearMap.BilinForm.sesqComplexification_apply]
+  rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb,
+    QuadraticForm.polar_baseChange_tmulConj_eq_two_mul_sesqComplexification hg.neg
+      (fun v ↦ by simp [hQg v]),
+    LinearMap.BilinForm.sesqComplexification_neg, LinearMap.neg_apply, LinearMap.neg_apply]
   ring
 
 /-- The polar pairing of the conjugate of `x` is `-2` times the Hermitian form `h (x, ·)`. -/
@@ -157,6 +142,19 @@ private theorem pairingEquiv_tmulConj (x : (J.spinPolarizationData hQJ hQ).W) :
   rw [SpinPolarizationData.pairingEquiv_apply, polar_comm, LinearMap.smul_apply,
     J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb, smul_eq_mul, ← mul_assoc]
   norm_num
+
+end PolarizationMetric
+
+section Metric
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
+  {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
+  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [LinearOrder ι]
+  (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W)
+
+variable (hb : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b i : ℂ ⊗[ℝ] V)) (b j) =
+  if i = j then -2 else 0)
+include hb
 
 /-- **Creation is adjoint to annihilation**: for an orthonormal basis `b` of `W` and the metric `H`
 making its wedge basis orthonormal, exterior multiplication by `x ∈ W` is adjoint to `-(1/2)`

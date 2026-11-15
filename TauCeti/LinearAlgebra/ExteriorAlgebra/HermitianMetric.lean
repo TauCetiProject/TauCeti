@@ -205,10 +205,7 @@ theorem toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p �
   | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rcases q with _ | q
-    · rw [_root_.ExteriorAlgebra.exteriorPower, pow_zero] at ht
-      obtain ⟨r, rfl⟩ := Submodule.mem_one.mp ht
-      rw [Algebra.algebraMap_eq_smul_one, map_smul, toLinearMapₛₗ₂_ι_mul_left,
-        contractLeft_one, map_zero, smul_zero]
+    · rw [toLinearMapₛₗ₂_ι_mul_left, contractLeft_eq_zero_of_mem_exteriorPower_zero _ ht, map_zero]
     · rw [toLinearMapₛₗ₂_ι_mul_left]
       exact ih (fun h ↦ hpq (congrArg (· + 1) h)) (contractLeft_mem_exteriorPower _ ht)
 
