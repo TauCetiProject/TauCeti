@@ -36,6 +36,8 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
 * `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
   test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
+* `Distribution.complexPairing_iteratedLineDerivOp`: the same for iterated derivatives of order
+  `k`, `(∂^{m} T) φ = (-1)^k T (∂^{m'} φ)` with the directions `m'` of `m` in reverse order.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
@@ -125,6 +127,19 @@ theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, �
   simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
     TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
   ring
+
+/-- The complex-linear extension of an iterated derivative of order `n` of `T` is `(-1)^n` times
+the extension of `T` applied to the iterated derivative of the test function in the reversed
+directions. -/
+theorem complexPairing_iteratedLineDerivOp (T : 𝓓'(Ω, ℂ)) {k : ℕ} (m : Fin k → E)
+    (φ : 𝓓(Ω, ℂ)) :
+    (∂^{m} T).complexPairing φ = (-1 : ℂ) ^ k * T.complexPairing (∂^{m ∘ Fin.rev} φ) := by
+  induction k generalizing φ with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, complexPairing_lineDerivOp, ih,
+      iteratedLineDerivOp_succ_right, pow_succ]
+    simp [Fin.init_def, Fin.tail_def, Function.comp_def, Fin.rev_castSucc]
 
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
 function at `x`. -/
