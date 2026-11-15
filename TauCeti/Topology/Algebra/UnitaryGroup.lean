@@ -54,6 +54,7 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   group over `ℝ` or `ℂ` is compact.
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
   in `U(r + m)` is continuous.
+* `Matrix.SpecialUnitaryGroup.continuous_fromBlocksOne`: the same for `SU(m)` in `SU(r + m)`.
 -/
 
 public section
@@ -170,3 +171,17 @@ theorem continuous_fromBlocksOne (m : ℕ) :
     continuous_subtype_val).matrix_reindex _ _
 
 end Matrix.UnitaryGroup
+
+namespace Matrix.SpecialUnitaryGroup
+
+variable {𝕜 : Type*} [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜] {r : ℕ}
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `SU(m)` in `SU(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtype_val).matrix_reindex _ _
+
+end Matrix.SpecialUnitaryGroup

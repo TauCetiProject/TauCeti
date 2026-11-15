@@ -11,16 +11,17 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
-# Block-diagonal embeddings of unitary and special orthogonal groups
+# Block-diagonal embeddings of unitary, special unitary and special orthogonal groups
 
 For natural numbers `r` and `m`, a matrix `B` of size `m` gives the block-diagonal matrix
 `diag(1_r, B)` of size `r + m`, the identity block occupying the first `r` coordinates of
 `Fin (r + m)` (through `finSumFinEquiv`). This is a block matrix `Matrix.fromBlocks 1 0 0 B`,
-and it is unitary, respectively special orthogonal, exactly when `B` is. So it embeds `U(m)` in
-`U(r + m)` and `SO(m)` in `SO(r + m)`.
+and it is unitary, respectively special unitary or special orthogonal, exactly when `B` is. So it
+embeds `U(m)` in `U(r + m)`, `SU(m)` in `SU(r + m)` and `SO(m)` in `SO(r + m)`.
 
 Its image is the subgroup fixing the first `r` standard basis vectors
 (`Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
+`Matrix.SpecialUnitaryGroup.mem_range_fromBlocksOne_iff`,
 `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`): a unitary matrix whose first `r`
 columns are standard basis vectors also has those standard basis vectors as its first `r` rows,
 since its inverse is its conjugate transpose. This identifies the stabilizer of an orthonormal
@@ -36,6 +37,7 @@ spanned by `e₀`.
 ## Main definitions
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
+* `Matrix.SpecialUnitaryGroup.fromBlocksOne`: the embedding of `SU(m)` in `SU(r + m)`.
 * `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
 * `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices, as a
   group morphism `U(n) × U(m) →* U(n + m)`.
@@ -48,6 +50,7 @@ spanned by `e₀`.
   `Matrix.reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)`, possibly reindexed,
   is unitary exactly when both `A` and `B` are.
 * `Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
+  `Matrix.SpecialUnitaryGroup.mem_range_fromBlocksOne_iff`,
   `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`: the image of the embedding is the
   subgroup fixing the first `r` standard basis vectors.
 * `Matrix.UnitaryGroup.mem_range_prodBlockSucc_iff`: the image of `U(1) × U(m)` is the subgroup of
@@ -326,6 +329,59 @@ theorem sum_injective : Function.Injective (sum : unitaryGroup n α × unitaryGr
     exact Prod.ext (Subtype.ext h₁) (Subtype.ext h₂)
 
 end UnitaryGroup
+
+namespace SpecialUnitaryGroup
+
+variable (α) (r : ℕ) {m : ℕ}
+
+variable (m) in
+/-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special unitary group `SU(m)` in
+`SU(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. Its matrices
+are those of `Matrix.UnitaryGroup.fromBlocksOne`, since `det diag(1_r, B) = det B`. -/
+def fromBlocksOne : specialUnitaryGroup (Fin m) α →* specialUnitaryGroup (Fin (r + m)) α where
+  toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
+    submatrix_equiv_mem_unitary.2
+      (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.2.1⟩),
+    by simpa [det_fromBlocks_zero₂₁] using B.2.2⟩
+  map_one' := Subtype.ext <| by simp [fromBlocks_one]
+  map_mul' A B := Subtype.ext <| by
+    simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
+      Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+
+theorem coe_fromBlocksOne (B : specialUnitaryGroup (Fin m) α) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) =
+      reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)) :=
+  (rfl)
+
+/-- The block-diagonal embedding of special unitary groups is injective. -/
+theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := fun A B h ↦
+  Subtype.ext <| funext fun k ↦ funext fun l ↦ by
+    simpa [coe_fromBlocksOne] using
+      congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
+
+variable {α r}
+
+/-- **The block-diagonal special unitary matrices are the stabilizer of the first `r` basis
+vectors**: a special unitary matrix of size `r + m` lies in the image of `SU(m)` exactly when it
+fixes the standard basis vectors `e₀, …, e_{r-1}`. -/
+theorem mem_range_fromBlocksOne_iff {A : specialUnitaryGroup (Fin (r + m)) α} :
+    A ∈ (fromBlocksOne α r m).range ↔
+      ∀ i : Fin r, A.1 *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 := by
+  refine ⟨?_, fun hA ↦ ?_⟩
+  · rintro ⟨B, rfl⟩
+    exact (UnitaryGroup.mem_range_fromBlocksOne_iff (A := ⟨_, (fromBlocksOne α r m B).2.1⟩)).1
+      ⟨⟨B.1, B.2.1⟩, rfl⟩
+  -- The unitary block `B` has the determinant of `A`, which is `1`.
+  obtain ⟨B, hB⟩ := (UnitaryGroup.mem_range_fromBlocksOne_iff
+    (A := (⟨A.1, A.2.1⟩ : unitaryGroup (Fin (r + m)) α))).2 hA
+  have hdet : (B : Matrix (Fin m) (Fin m) α).det = 1 := by
+    have h := A.2.2
+    rw [← congrArg Subtype.val hB] at h
+    simpa [UnitaryGroup.coe_fromBlocksOne, det_fromBlocks_zero₂₁] using h
+  exact ⟨⟨B, B.2, hdet⟩, Subtype.ext <| (coe_fromBlocksOne α r _).trans <|
+    (UnitaryGroup.coe_fromBlocksOne α r B).symm.trans (congrArg Subtype.val hB)⟩
+
+end SpecialUnitaryGroup
 
 end Unitary
 
