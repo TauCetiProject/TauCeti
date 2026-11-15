@@ -5,48 +5,66 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.BoundedContinuous
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
-import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.LocallyConvex.Separation
-import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
-# Amenable discrete groups have Følner sets
+# Amenable discrete groups, Reiter's `ℓ¹` condition, and Følner sets
 
-Let `G` be a discrete group. We prove that `G` is amenable, in the sense of a left-invariant mean
-on `TauCeti.UCB G` (which for discrete `G` consists of all bounded functions), exactly when it has
-Følner sets: for every finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ G` with
-`|gF △ F| < ε · |F|` for all `g ∈ K`.
+Let a group `G` act on `X` and let `K ⊆ G` be finite. The continuous linear operator
+`TauCeti.leftTranslationSubPiLp X K` sends `p ∈ ℓ¹(X)` to the family `(L_g p - p)_{g ∈ K}` in the
+sum-normed product `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)`, whose norm is literally
+`∑ g ∈ K, ‖L_g p - p‖`. On Mathlib's finitely supported probability distributions
+`w : Convexity.StdSimplex ℝ X`, the vectors `leftTranslationSubPiLp X K (w.toLp 1)` form a convex
+set equal to the convex hull of the point-mass differences `(δ_{g • x} - δ_x)_{g ∈ K}`, and `0`
+lies in its norm closure if and only if for every `δ > 0` there is `w : StdSimplex ℝ X` with
+`∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ`.
 
-The implication from Følner sets to amenability is `TauCeti.Amenable.of_hasFoelnerSets`. For the
-converse we first establish **Reiter's condition**: for every finite `K ⊆ G` and `ε > 0` there is
-a finitely supported probability density `p : G → ℝ` with
+When `X` carries the discrete topology, `BoundedContinuousFunction.piLpOneDualEquiv` identifies
+continuous linear functionals `Λ` on `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)` with families of
+bounded functions `f_g = (piLpOneDualEquiv ℝ K X).symm Λ g : X →ᵇ ℝ`, where
+`f_g y = Λ (PiLp.single 1 g (lp.single 1 y 1))` and `‖f_g‖ ≤ ‖Λ‖`. If `0` is outside the norm
+closure of `{leftTranslationSubPiLp X K (w.toLp 1) : w ∈ StdSimplex ℝ X}`, Hahn–Banach separation
+yields `Λ` and `u > 0` such that
 
 ```text
-∑_{g ∈ K} ∑_x |p (g⁻¹ x) - p x| < ε.
+u < ∑_{g ∈ K} (f_g (g • x) - f_g x)     for every x ∈ X.
 ```
 
-The proof is by Hahn–Banach separation in the finite product `K → ℓ¹(G)`. The vectors
-`(p (g⁻¹ ·) - p)_{g ∈ K}` for finitely supported probabilities `p` form the convex hull of the
-vectors `(δ_{g x} - δ_x)_{g ∈ K}`. If `0` were not in the closure of this convex set, a
-continuous functional `Λ` would separate them, so that `Λ (δ_{g x} - δ_x)_{g ∈ K} ≥ u > 0` for
-every `x`. Writing `f_g y = Λ (ι_g δ_y)`, these functions are bounded by `‖Λ‖`, and the bounded
-function `x ↦ ∑_{g ∈ K} (f_g (g x) - f_g x)` is at least `u` everywhere; but a left-invariant mean
-assigns it the value `0`. Reiter's condition then yields Følner sets among the superlevel sets of
-`p`, by `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`.
+Specializing to the left multiplication action of a discrete group `G` on itself, a left-invariant
+mean on `TauCeti.UCB G` assigns mean `0` to `x ↦ ∑_{g ∈ K} (f_g (g * x) - f_g x)`, ruling out any
+such strict separator and establishing **Reiter's condition** in both `ℓ¹` probability form and
+coordinatewise series form. Superlevel-set averaging
+(`TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`) then produces **Følner sets**,
+completing the equivalence between amenability, Reiter's condition, and Følner sets on discrete
+groups.
+
+## Main definitions
+
+* `TauCeti.leftTranslationSubPiLp X K`: the continuous linear operator
+  `p ↦ (L_g p - p)_{g ∈ K}` from `ℓ¹(X)` to `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)`.
 
 ## Main results
 
-* `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt`: an amenable discrete group satisfies Reiter's
-  condition.
-* `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`: a discrete group is amenable exactly when it
-  satisfies Reiter's condition.
-* `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
-* `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
-  sets.
-* `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* `TauCeti.norm_leftTranslationSubPiLp`:
+  `‖leftTranslationSubPiLp X K p‖ = ∑ g ∈ K, ‖L_g p - p‖`.
+* `TauCeti.zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex_iff`: `0` lies in the norm
+  closure of the probability translation differences if and only if every `δ > 0` admits
+  `w : StdSimplex ℝ X` with `∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ`.
+* `TauCeti.exists_pos_lt_sum_piLpOneDualEquiv_symm_of_zero_notMem_closure`: if `0` is outside that
+  closure on discrete `X`, a functional `Λ` and `u > 0` give a uniform positive lower bound for
+  `x ↦ ∑ g : K, (f_g (g • x) - f_g x)` where `f = (piLpOneDualEquiv ℝ K X).symm Λ`.
+* `TauCeti.Amenable.exists_stdSimplex_sum_norm_leftTranslation_sub_lt` and
+  `TauCeti.amenable_iff_exists_stdSimplex_sum_norm_leftTranslation_sub_lt`: Reiter's `ℓ¹`
+  probability characterization of amenable discrete groups.
+* `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt` and
+  `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`: Reiter's coordinatewise characterization.
+* `TauCeti.Amenable.hasFoelnerSets`, `TauCeti.amenable_iff_hasFoelnerSets`, and
+  `TauCeti.amenable_iff_exists_finset`: the Følner-set characterizations of amenable discrete
+  groups.
 
 ## References
 
@@ -59,46 +77,198 @@ public section
 
 noncomputable section
 
-open Finset Function
-open scoped Pointwise symmDiff
+open Convexity Finset Function
+open scoped ENNReal BoundedContinuousFunction Pointwise symmDiff
 
 namespace TauCeti
 
+section MulAction
+
+variable {G : Type*} [Group G] (X : Type*) [MulAction G X]
+
+/-- The continuous linear operator `p ↦ (L_g p - p)_{g ∈ K}` from `ℓ¹(X)` into the sum-normed
+finite product `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)`. -/
+def leftTranslationSubPiLp (K : Finset G) :
+    lp (fun _ : X ↦ ℝ) 1 →L[ℝ] PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1) :=
+  (PiLp.continuousLinearEquiv 1 ℝ
+    (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi fun g : K ↦
+      (lp.leftTranslation X 1 ℝ ℝ (g : G)).toLinearIsometry.toContinuousLinearMap -
+        ContinuousLinearMap.id ℝ _)
+
+variable {X}
+
+/-- Evaluating `leftTranslationSubPiLp X K p` at `g : K` gives `L_g p - p`. -/
+@[simp]
+theorem leftTranslationSubPiLp_apply (K : Finset G) (p : lp (fun _ : X ↦ ℝ) 1) (g : K) :
+    leftTranslationSubPiLp X K p g = lp.leftTranslation X 1 ℝ ℝ (g : G) p - p :=
+  (rfl)
+
+/-- The norm of `leftTranslationSubPiLp X K p` in the sum-normed product is
+`∑ g ∈ K, ‖L_g p - p‖`. -/
+theorem norm_leftTranslationSubPiLp (K : Finset G) (p : lp (fun _ : X ↦ ℝ) 1) :
+    ‖leftTranslationSubPiLp X K p‖ = ∑ g ∈ K, ‖lp.leftTranslation X 1 ℝ ℝ g p - p‖ := by
+  rw [PiLp.norm_eq_of_L1]
+  simpa only [leftTranslationSubPiLp_apply] using
+    (Finset.sum_coe_sort K fun g ↦ ‖lp.leftTranslation X 1 ℝ ℝ g p - p‖)
+
+/-- The norm of `leftTranslationSubPiLp X K p` expands as
+`∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x|`. -/
+theorem norm_leftTranslationSubPiLp_eq_sum_tsum (K : Finset G) (p : lp (fun _ : X ↦ ℝ) 1) :
+    ‖leftTranslationSubPiLp X K p‖ = ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| := by
+  rw [norm_leftTranslationSubPiLp]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  simpa only [Real.norm_eq_abs] using lp.norm_leftTranslation_sub_one g p
+
+/-- The translation-difference vectors `leftTranslationSubPiLp X K (w.toLp 1)` for
+`w : StdSimplex ℝ X` form a convex set in `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)`. -/
+theorem convex_range_leftTranslationSubPiLp_stdSimplex (K : Finset G) :
+    Convex ℝ (Set.range fun w : StdSimplex ℝ X ↦ leftTranslationSubPiLp X K (w.toLp 1)) := by
+  have h : (Set.range fun w : StdSimplex ℝ X ↦ leftTranslationSubPiLp X K (w.toLp 1)) =
+      leftTranslationSubPiLp X K '' Set.range (StdSimplex.toLp 1) :=
+    Set.range_comp (leftTranslationSubPiLp X K) (StdSimplex.toLp 1)
+  rw [h]
+  exact (StdSimplex.convex_range_toLp 1).linear_image (leftTranslationSubPiLp X K).toLinearMap
+
+/-- The set of translation-difference vectors of finitely supported probabilities equals the convex
+hull of the point-mass differences `(δ_{g • x} - δ_x)_{g ∈ K}`. -/
+theorem range_leftTranslationSubPiLp_stdSimplex_eq_convexHull [DecidableEq X] (K : Finset G) :
+    Set.range (fun w : StdSimplex ℝ X ↦ leftTranslationSubPiLp X K (w.toLp 1)) =
+      convexHull ℝ (Set.range fun x : X ↦ leftTranslationSubPiLp X K (lp.single 1 x 1)) := by
+  have h₁ : (Set.range fun w : StdSimplex ℝ X ↦ leftTranslationSubPiLp X K (w.toLp 1)) =
+      leftTranslationSubPiLp X K '' Set.range (StdSimplex.toLp 1) :=
+    Set.range_comp (leftTranslationSubPiLp X K) (StdSimplex.toLp 1)
+  have h₂ : (Set.range fun x : X ↦ leftTranslationSubPiLp X K (lp.single 1 x 1)) =
+      leftTranslationSubPiLp X K '' Set.range fun x : X ↦ lp.single 1 x (1 : ℝ) :=
+    Set.range_comp (leftTranslationSubPiLp X K) fun x : X ↦ lp.single 1 x (1 : ℝ)
+  rw [h₁, h₂, StdSimplex.range_toLp_eq_convexHull_single 1]
+  exact (leftTranslationSubPiLp X K).toLinearMap.image_convexHull _
+
+/-- Zero lies in the norm closure of `{leftTranslationSubPiLp X K (w.toLp 1) : w ∈ StdSimplex ℝ X}`
+if and only if every `δ > 0` admits `w : StdSimplex ℝ X` with
+`∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ`. -/
+theorem zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex_iff (K : Finset G) :
+    0 ∈ closure (Set.range fun w : StdSimplex ℝ X ↦ leftTranslationSubPiLp X K (w.toLp 1)) ↔
+      ∀ δ : ℝ, 0 < δ → ∃ w : StdSimplex ℝ X,
+        ∑ g ∈ K, ‖lp.leftTranslation X 1 ℝ ℝ g (w.toLp 1) - w.toLp 1‖ < δ := by
+  rw [Metric.mem_closure_iff]
+  refine ⟨fun h δ hδ ↦ ?_, fun h δ hδ ↦ ?_⟩
+  · obtain ⟨_, ⟨w, rfl⟩, hw⟩ := h δ hδ
+    rw [dist_zero_left, norm_leftTranslationSubPiLp] at hw
+    exact ⟨w, hw⟩
+  · obtain ⟨w, hw⟩ := h δ hδ
+    refine ⟨leftTranslationSubPiLp X K (w.toLp 1), ⟨w, rfl⟩, ?_⟩
+    rwa [dist_zero_left, norm_leftTranslationSubPiLp]
+
+/-- Existence of `w : StdSimplex ℝ X` with `∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ` is
+equivalent to existence of a nonnegative finitely supported function `p : X → ℝ` with
+`∑' x, p x = 1` and `∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| < δ`. -/
+theorem exists_stdSimplex_sum_norm_leftTranslation_sub_lt_iff (K : Finset G) (δ : ℝ) :
+    (∃ w : StdSimplex ℝ X,
+      ∑ g ∈ K, ‖lp.leftTranslation X 1 ℝ ℝ g (w.toLp 1) - w.toLp 1‖ < δ) ↔
+    ∃ p : X → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| < δ := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨⇑(w.toLp 1), w.toLp_nonneg 1, w.hasFiniteSupport_toLp 1, w.tsum_toLp 1, ?_⟩
+    rwa [← norm_leftTranslationSubPiLp, norm_leftTranslationSubPiLp_eq_sum_tsum] at hw
+  · rintro ⟨p, hp0, hpfin, hpsum, hp⟩
+    obtain ⟨w, hw⟩ := (StdSimplex.mem_range_toLp_iff (p := 1)
+      (f := ⟨p, hpfin.memℓp 1⟩)).mpr ⟨hp0, hpfin, hpsum⟩
+    refine ⟨w, ?_⟩
+    rwa [← norm_leftTranslationSubPiLp, hw, norm_leftTranslationSubPiLp_eq_sum_tsum]
+
+section DiscreteSeparation
+
+variable [TopologicalSpace X] [DiscreteTopology X]
+
+/-- On a discrete space `X`, evaluating a continuous linear functional `Λ` on
+`leftTranslationSubPiLp X K p` pairs `p` against the differences `f_g (g • ·) - f_g`, where
+`f = (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ`. -/
+theorem apply_leftTranslationSubPiLp (K : Finset G)
+    (Λ : StrongDual ℝ (PiLp 1 fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)) (p : lp (fun _ : X ↦ ℝ) 1) :
+    Λ (leftTranslationSubPiLp X K p) =
+      ∑ g : K, BoundedContinuousFunction.toLpOneDual ℝ X
+        (((BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g).compContinuous
+          ⟨((g : G) • ·), continuous_of_discreteTopology⟩ -
+          (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g) p := by
+  have : ContinuousConstSMul G X := ⟨fun _ ↦ continuous_of_discreteTopology⟩
+  conv_lhs => rw [← (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).apply_symm_apply Λ]
+  rw [BoundedContinuousFunction.piLpOneDualEquiv_apply]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  rw [leftTranslationSubPiLp_apply, BoundedContinuousFunction.toLpOneDual_leftTranslation_sub]
+
+/-- On a discrete space `X`, evaluating `Λ` at a point-mass translation difference
+`leftTranslationSubPiLp X K (lp.single 1 x 1)` gives `∑ g : K, (f_g (g • x) - f_g x)`, where
+`f = (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ`. -/
+theorem apply_leftTranslationSubPiLp_single [DecidableEq X] (K : Finset G)
+    (Λ : StrongDual ℝ (PiLp 1 fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)) (x : X) :
+    Λ (leftTranslationSubPiLp X K (lp.single 1 x 1)) =
+      ∑ g : K, ((BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g ((g : G) • x) -
+        (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g x) := by
+  rw [apply_leftTranslationSubPiLp]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  rw [BoundedContinuousFunction.toLpOneDual_apply_single]
+  simp
+
+variable (X) in
+/-- **Hahn–Banach separation for translation differences of probabilities.** On a discrete `G`-set
+`X`, if `0` does not lie in the norm closure of
+`{leftTranslationSubPiLp X K (w.toLp 1) : w ∈ StdSimplex ℝ X}`, then there exist a continuous
+linear functional `Λ` on `PiLp 1 (fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)` and `u > 0` such that the
+bounded functions `f_g = (piLpOneDualEquiv ℝ K X).symm Λ g` satisfy
+`u < ∑ g : K, (f_g (g • x) - f_g x)` for every `x : X`. -/
+theorem exists_pos_lt_sum_piLpOneDualEquiv_symm_of_zero_notMem_closure (K : Finset G)
+    (h : 0 ∉ closure (Set.range fun w : StdSimplex ℝ X ↦
+      leftTranslationSubPiLp X K (w.toLp 1))) :
+    ∃ (Λ : StrongDual ℝ (PiLp 1 fun _ : K ↦ lp (fun _ : X ↦ ℝ) 1)) (u : ℝ),
+      0 < u ∧ ∀ x : X, u < ∑ g : K,
+        ((BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g ((g : G) • x) -
+          (BoundedContinuousFunction.piLpOneDualEquiv ℝ K X).symm Λ g x) := by
+  classical
+  obtain ⟨Λ, u, hu0, hΛ⟩ := geometric_hahn_banach_point_closed
+    (convex_range_leftTranslationSubPiLp_stdSimplex K).closure isClosed_closure h
+  rw [map_zero] at hu0
+  refine ⟨Λ, u, hu0, fun x ↦ ?_⟩
+  rw [← apply_leftTranslationSubPiLp_single]
+  exact hΛ _ (subset_closure ⟨StdSimplex.single x, by simp⟩)
+
+end DiscreteSeparation
+
+end MulAction
+
+section DiscreteGroup
+
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- The vector `(δ_{g x} - δ_x)_{g ∈ K}` in the finite product `K → ℓ¹(G)`. -/
-private def translateSubSingle [DecidableEq G] (K : Finset G) (x : G) : K → lp (fun _ : G ↦ ℝ) 1 :=
-  fun g ↦ lp.single 1 ((g : G) * x) 1 - lp.single 1 x 1
-
-/-- For an amenable discrete group, `0` lies in the closure of the convex hull of the vectors
-`(δ_{g x} - δ_x)_{g ∈ K}`. Otherwise a separating functional `Λ` gives bounded functions
-`f_g y = Λ (ι_g δ_y)` with `∑_{g ∈ K} (f_g (g x) - f_g x)` bounded below by a positive constant,
-contradicting left invariance of a mean. -/
-private theorem zero_mem_closure_convexHull_range_translateSubSingle [DiscreteTopology G]
-    [Amenable G] [DecidableEq G] (K : Finset G) :
-    0 ∈ closure (convexHull ℝ (Set.range (translateSubSingle K))) := by
-  classical
+/-- For an amenable discrete group `G` and finite `K ⊆ G`, `0` lies in the norm closure of
+`{leftTranslationSubPiLp G K (w.toLp 1) : w ∈ StdSimplex ℝ G}` in the sum-normed product
+`PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)`. -/
+theorem Amenable.zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex [DiscreteTopology G]
+    [Amenable G] (K : Finset G) :
+    0 ∈ closure (Set.range fun w : StdSimplex ℝ G ↦ leftTranslationSubPiLp G K (w.toLp 1)) := by
   by_contra h
-  obtain ⟨Λ, u, hΛ0, hΛ⟩ :=
-    geometric_hahn_banach_point_closed (convex_convexHull ℝ _).closure isClosed_closure h
-  rw [map_zero] at hΛ0
-  set f : K → G → ℝ := fun g y ↦ Λ (Pi.single g (lp.single 1 y 1))
-  have hf (g : K) (y : G) : ‖f g y‖ ≤ ‖Λ‖ := by
-    simpa [f, Pi.norm_single] using Λ.le_opNorm (Pi.single g (lp.single 1 y 1))
-  have hv (x : G) : Λ (translateSubSingle K x) = ∑ g : K, (f g (g * x) - f g x) := by
-    conv_lhs => rw [← Finset.univ_sum_single (translateSubSingle K x)]
-    simp only [translateSubSingle, map_sum, Pi.single_sub, map_sub, sum_sub_distrib, f]
-  -- The functions `f g` are bounded, hence lie in `UCB G` since `G` is discrete.
+  obtain ⟨Λ, u, hu0, hu⟩ := exists_pos_lt_sum_piLpOneDualEquiv_symm_of_zero_notMem_closure G K h
   let F (g : K) : UCB G :=
-    ⟨.ofNormedAddCommGroupDiscrete (f g) ‖Λ‖ (hf g), by simp [ucb_eq_top]⟩
+    (UCB.discreteAlgEquiv G).symm ((BoundedContinuousFunction.piLpOneDualEquiv ℝ K G).symm Λ g)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   have h0 : m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) = 0 := by
     simp only [map_sum, map_sub, hm.apply_leftTranslation, sub_self, sum_const_zero]
-  -- `map_inv` would turn `UCB.leftTranslation g⁻¹` into `(UCB.leftTranslation g).symm`.
-  have hu : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
+  -- `map_inv` would rewrite `UCB.leftTranslation g⁻¹` to `(UCB.leftTranslation g).symm`.
+  have hum : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
     m.le_apply_of_forall_le fun x ↦ by
-      simpa [hv, F, -map_inv] using (hΛ _ (subset_closure (subset_convexHull ℝ _ ⟨x, rfl⟩))).le
+      simpa [F, -map_inv] using (hu x).le
   linarith
+
+/-- **Reiter's condition (`ℓ¹` probability form).** In an amenable discrete group, for every finite
+`K ⊆ G` and `δ > 0` there is a finitely supported probability distribution `w : StdSimplex ℝ G`
+with `∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ`. -/
+theorem Amenable.exists_stdSimplex_sum_norm_leftTranslation_sub_lt [DiscreteTopology G]
+    [Amenable G] (K : Finset G) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ w : StdSimplex ℝ G,
+      ∑ g ∈ K, ‖lp.leftTranslation G 1 ℝ ℝ g (w.toLp 1) - w.toLp 1‖ < δ :=
+  (zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex_iff K).mp
+    (Amenable.zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex K) δ hδ
 
 /-- **Reiter's condition.** In an amenable discrete group, for every finite `K` and `ε > 0` there
 is a finitely supported probability density `p` with `∑_{g ∈ K} ∑_x |p (g⁻¹ x) - p x| < ε`. -/
@@ -106,44 +276,9 @@ theorem Amenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology G] [Amenable G] (K
     {ε : ℝ} (hε : 0 < ε) :
     ∃ p : G → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
       ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε := by
-  classical
-  obtain ⟨c, hc, hcε⟩ := Metric.mem_closure_iff.1
-    (zero_mem_closure_convexHull_range_translateSubSingle K) (ε / (#K + 1)) (by positivity)
-  rw [dist_zero_left] at hcε
-  rw [convexHull_range_eq_exists_affineCombination] at hc
-  obtain ⟨s, w, hw0, hw1, rfl⟩ := hc
-  rw [affineCombination_eq_linear_combination _ _ _ hw1] at hcε
-  -- The convex combination `∑_{x ∈ s} w x • (δ_{g x} - δ_x)_{g ∈ K}` has components
-  -- `p (g⁻¹ ·) - p` for the density `p = ∑_{x ∈ s} w x • δ_x`.
-  set p : G → ℝ := fun y ↦ if y ∈ s then w y else 0
-  have hcomp (g : K) :
-      ⇑((∑ x ∈ s, w x • translateSubSingle K x) g) = fun y ↦ p ((g : G)⁻¹ * y) - p y := by
-    ext y
-    rw [Finset.sum_apply, lp.coeFn_sum, Finset.sum_apply]
-    simp only [translateSubSingle, Pi.smul_apply, lp.coeFn_smul, lp.coeFn_sub, lp.coeFn_single,
-      Pi.sub_apply, Pi.single_apply, smul_eq_mul, mul_sub, sum_sub_distrib, mul_ite, mul_one,
-      mul_zero, ← inv_mul_eq_iff_eq_mul, sum_ite_eq, p]
-  have hnorm (g : K) : ∑' y, |p ((g : G)⁻¹ * y) - p y| ≤
-      ‖∑ x ∈ s, w x • translateSubSingle K x‖ := by
-    refine le_of_eq_of_le ?_ (norm_le_pi_norm _ g)
-    rw [lp.norm_eq_tsum_rpow (by simp), hcomp]
-    simp
-  refine ⟨p, fun y ↦ ?_, ?_, ?_, ?_⟩
-  · by_cases hy : y ∈ s <;> simp [p, hy, hw0]
-  · rw [HasFiniteSupport]
-    refine s.finite_toSet.subset fun y hy ↦ ?_
-    by_contra hys
-    exact hy (ite_eq_right hys)
-  · rw [tsum_eq_sum fun y hy ↦ ite_eq_right hy, ← hw1]
-    exact sum_congr rfl fun y hy ↦ ite_eq_left hy
-  · calc ∑ g ∈ K, ∑' y, |p (g⁻¹ * y) - p y|
-        = ∑ g : K, ∑' y, |p ((g : G)⁻¹ * y) - p y| := (sum_coe_sort K _).symm
-      _ ≤ ∑ _g : K, ‖∑ x ∈ s, w x • translateSubSingle K x‖ := sum_le_sum fun g _ ↦ hnorm g
-      _ = #K * ‖∑ x ∈ s, w x • translateSubSingle K x‖ := by simp
-      _ ≤ #K * (ε / (#K + 1)) := by gcongr
-      _ < ε := by
-        rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
-        nlinarith
+  simpa only [smul_eq_mul] using
+    (exists_stdSimplex_sum_norm_leftTranslation_sub_lt_iff K ε).mp
+      (Amenable.exists_stdSimplex_sum_norm_leftTranslation_sub_lt K hε)
 
 /-- A discrete group is amenable exactly when it satisfies **Reiter's condition**: for every
 finite `K` and `ε > 0` there is a finitely supported probability density `p` with
@@ -154,6 +289,27 @@ theorem amenable_iff_exists_sum_tsum_abs_sub_lt [DiscreteTopology G] :
         ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε :=
   ⟨fun _ K _ hε ↦ Amenable.exists_sum_tsum_abs_sub_lt K hε,
     fun h ↦ .of_hasFoelnerSets (hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt h)⟩
+
+/-- A discrete group is amenable if and only if for every finite `K ⊆ G` and `δ > 0` there is a
+finitely supported probability distribution `w : StdSimplex ℝ G` with
+`∑ g ∈ K, ‖L_g (w.toLp 1) - w.toLp 1‖ < δ`. -/
+theorem amenable_iff_exists_stdSimplex_sum_norm_leftTranslation_sub_lt [DiscreteTopology G] :
+    Amenable G ↔ ∀ K : Finset G, ∀ δ : ℝ, 0 < δ →
+      ∃ w : StdSimplex ℝ G,
+        ∑ g ∈ K, ‖lp.leftTranslation G 1 ℝ ℝ g (w.toLp 1) - w.toLp 1‖ < δ := by
+  simp only [amenable_iff_exists_sum_tsum_abs_sub_lt,
+    exists_stdSimplex_sum_norm_leftTranslation_sub_lt_iff, smul_eq_mul]
+
+/-- A discrete group is amenable if and only if for every finite `K ⊆ G`, zero lies in the norm
+closure of `{leftTranslationSubPiLp G K (w.toLp 1) : w ∈ StdSimplex ℝ G}` in the sum-normed product
+`PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)`. -/
+theorem amenable_iff_zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex
+    [DiscreteTopology G] :
+    Amenable G ↔ ∀ K : Finset G,
+      0 ∈ closure (Set.range fun w : StdSimplex ℝ G ↦
+        leftTranslationSubPiLp G K (w.toLp 1)) := by
+  simp only [zero_mem_closure_range_leftTranslationSubPiLp_stdSimplex_iff,
+    amenable_iff_exists_stdSimplex_sum_norm_leftTranslation_sub_lt]
 
 /-- An amenable discrete group has Følner sets. -/
 theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSets G :=
@@ -170,5 +326,7 @@ theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
     Amenable G ↔ ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
   rw [amenable_iff_hasFoelnerSets, hasFoelnerSets_iff]
+
+end DiscreteGroup
 
 end TauCeti
