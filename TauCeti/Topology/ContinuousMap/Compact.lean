@@ -32,13 +32,16 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `ContinuousMap.eventually_forall_dist_smul_lt`: when a monoid `M` acts jointly continuously on a
+  compact space `X`, `dist (f (u • x)) (f x) < ε` holds uniformly in `x : X` for `u` near `1 : M`.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
   uniformly positive functions is nonpositive on the nonnegative functions.
 -/
 
 public section
 
-open Metric
+open Filter Metric
+open scoped Topology
 
 namespace ContinuousMap
 
@@ -83,6 +86,19 @@ theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X
     [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
+
+/-- If a monoid `M` acts jointly continuously on a compact space `X`, any continuous map
+`f : C(X, β)` into a pseudometric space moves every point `x : X` by less than `ε` under elements
+`u` in a neighborhood of `1 : M`. -/
+theorem eventually_forall_dist_smul_lt {M X β : Type*} [Monoid M] [TopologicalSpace M]
+    [TopologicalSpace X] [CompactSpace X] [MulAction M X] [ContinuousSMul M X]
+    [PseudoMetricSpace β] (f : C(X, β)) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ u in 𝓝 (1 : M), ∀ x : X, dist (f (u • x)) (f x) < ε := by
+  simpa using isCompact_univ.eventually_forall_of_forall_eventually (x₀ := (1 : M)) fun x _ => by
+    have hc : Continuous fun p : M × X => dist (f (p.1 • p.2)) (f p.2) :=
+      (f.continuous.comp (continuous_fst.smul continuous_snd)).dist
+        (f.continuous.comp continuous_snd)
+    exact hc.continuousAt (Iio_mem_nhds (by simpa using hε))
 
 end ContinuousMap
 
