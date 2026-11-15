@@ -13,7 +13,6 @@ public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
-import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # The unblocked grid complex `GC⁻`
@@ -66,8 +65,6 @@ assignment, which `SignAssignment/Differential.lean` does.
   relabels columns and renames the coefficient variables.
 * `TauCeti.GridChain.renameMatrixMap`: the semilinear map on `GC⁻` over a renaming of the
   variables with prescribed matrix coefficients.
-* `TauCeti.GridChain.gaugeEquiv`: the diagonal automorphism `x ↦ f(x) x` of `GC⁻` for a sign
-  `f(x) ∈ ℤˣ` on each grid state.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -292,38 +289,6 @@ theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinu
   rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
   obtain ⟨d, hd, rfl⟩ := hd'
   exact ⟨x, d, hd, w, hw, rfl⟩
-
-end GridChain
-
-/-! ### The diagonal gauge automorphism -/
-
-namespace GridChain
-
-variable {n : ℕ} (R : Type*) [CommRing R]
-
-/-- The diagonal automorphism of `GC⁻` multiplying the generator of each grid state `x` by the
-sign `f x`. It is its own inverse. -/
-noncomputable def gaugeEquiv (f : GridState n → ℤˣ) :
-    GridChainMinus R n ≃ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.signEquiv (MvPolynomial (Fin n) R) f
-
-/-- The gauge automorphism multiplies the generator of a grid state by its sign. -/
-@[simp]
-theorem gaugeEquiv_single (f : GridState n → ℤˣ) (x : GridState n)
-    (a : MvPolynomial (Fin n) R) :
-    gaugeEquiv R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) :=
-  Finsupp.signEquiv_single x a
-
-/-- The gauge automorphism multiplies the coefficient of each grid state `y` by its sign. -/
-@[simp]
-theorem gaugeEquiv_apply_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
-    gaugeEquiv R f c y = (f y : ℤ) • c y :=
-  Finsupp.signEquiv_apply c y
-
-/-- The gauge automorphism is its own inverse. -/
-@[simp]
-theorem gaugeEquiv_symm (f : GridState n → ℤˣ) : (gaugeEquiv R f).symm = gaugeEquiv R f :=
-  Finsupp.signEquiv_symm
 
 end GridChain
 
