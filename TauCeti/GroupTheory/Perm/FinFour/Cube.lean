@@ -110,6 +110,18 @@ theorem mulVec_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3)
   rw [← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply, ← h, monomialEquiv_apply,
     ← Units.val_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one]
 
+/-- A rotation of the cube is an orthogonal matrix: `Aᵀ A = 1`. -/
+theorem transpose_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
+    (hA : A ∈ cubeRotationGroup) : (A : Matrix (Fin 3) (Fin 3) ℤ)ᵀ * A = 1 := by
+  obtain ⟨σ, ε, h⟩ := mem_cubeRotationGroup_iff.mp hA
+  ext i j
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, h, Matrix.one_apply, ite_mul, zero_mul,
+    mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, σ.injective.eq_iff]
+  split_ifs with hij
+  · subst hij
+    rw [← Units.val_mul, Int.units_mul_self, Units.val_one]
+  · rfl
+
 /-- The rotation group of the cube acts on the vertices `{-1, 1}³ = Fin 3 → ℤˣ` by matrix
 multiplication. -/
 instance : SMul cubeRotationGroup (Fin 3 → ℤˣ) where
@@ -216,6 +228,11 @@ instance : MulAction cubeRotationGroup cubeEdgeSet where
 product `1`: `(1, 1, 1)`, `(1, -1, -1)`, `(-1, 1, -1)` and `(-1, -1, 1)`. -/
 def cubeBodyDiagonal : Fin 4 → Fin 3 → ℤˣ :=
   ![![1, 1, 1], ![1, -1, -1], ![-1, 1, -1], ![-1, -1, 1]]
+
+/-- The coordinates of the labelled endpoints of the body diagonals. -/
+theorem cubeBodyDiagonal_def :
+    cubeBodyDiagonal = ![![1, 1, 1], ![1, -1, -1], ![-1, 1, -1], ![-1, -1, 1]] :=
+  (rfl)
 
 /-- The label of the body diagonal through a vertex, read off from which coordinates agree. -/
 def cubeBodyDiagonalIndex (v : Fin 3 → ℤˣ) : Fin 4 :=
