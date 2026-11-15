@@ -62,14 +62,6 @@ theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
     (α.multiplier g m).snd a = α g (m.snd (α g⁻¹ a)) := by
   simp [multiplier_apply]
 
-theorem multiplier_apply_fst_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
-    (α.multiplier g m).fst (α g a) = α g (m.fst a) := by
-  simp
-
-theorem multiplier_apply_snd_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
-    (α.multiplier g m).snd (α g a) = α g (m.snd a) := by
-  simp
-
 /-- The inverse of an automorphism of the induced action is the action of the inverse element. -/
 @[simp]
 theorem multiplier_symm_apply (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) :

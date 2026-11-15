@@ -113,23 +113,6 @@ theorem mul_projective (s t : G) :
       P.coefficient.multiplierExtension P.isNondegenerate (ω s t : 𝓜(ℂ, A)) *
         (P.unitaryMap (s * t) : H →L[ℂ] H) := P.mul_projective' s t
 
-/-- Moving `U_g` across the inner product yields `star U_g` on the right. -/
-theorem inner_unitaryMap_left (g : G) (v w : H) :
-    ⟪(P.unitaryMap g : H →L[ℂ] H) v, w⟫_ℂ = ⟪v, (star (P.unitaryMap g : H →L[ℂ] H)) w⟫_ℂ := by
-  rw [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right]
-
-/-- Each operator `U_g` preserves the Hilbert-space inner product. -/
-@[simp] theorem inner_unitaryMap_self (g : G) (v w : H) :
-    ⟪(P.unitaryMap g : H →L[ℂ] H) v, (P.unitaryMap g : H →L[ℂ] H) w⟫_ℂ = ⟪v, w⟫_ℂ := by
-  rw [P.inner_unitaryMap_left, ← mul_apply_eq_comp,
-    (Unitary.mem_iff.mp (P.unitaryMap g).prop).1, one_apply_eq_self]
-
-/-- Each operator `U_g` is an isometry on `H`. -/
-@[simp] theorem norm_unitaryMap_apply (g : G) (v : H) :
-    ‖(P.unitaryMap g : H →L[ℂ] H) v‖ = ‖v‖ := by
-  rw [norm_eq_sqrt_re_inner (𝕜 := ℂ) ((P.unitaryMap g : H →L[ℂ] H) v),
-    norm_eq_sqrt_re_inner (𝕜 := ℂ) v, P.inner_unitaryMap_self]
-
 /-- Inverse formula for the projective unitary family: `U_{g⁻¹} = U_g* M(π)(ω(g, g⁻¹))`. -/
 theorem unitaryMap_inv_eq (g : G) :
     (P.unitaryMap g⁻¹ : H →L[ℂ] H) =
@@ -184,7 +167,7 @@ private theorem norm_integral_le (f : C_c(G, A)) (v : H) :
   rw [← integral_mul_const]
   refine norm_integral_le_of_norm_le (f.integrable.norm.mul_const _) (.of_forall fun g => ?_)
   refine ((P.coefficient (f g)).le_opNorm _).trans ?_
-  rw [P.norm_unitaryMap_apply]
+  rw [Unitary.norm_map]
   exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
 
 /-- The vector-valued integrated form on `C_c(G, A)`, sending `f` to the bounded operator
@@ -434,7 +417,8 @@ def toCovariantRepresentation (P : CentralCovariantPair (1 : CentralCocycle α) 
         { toFun g := (P.unitaryMap g : H →L[ℂ] H)
           map_one' := P.coe_unitaryMap_one
           map_mul' s t := by simpa using (P.mul_projective s t).symm } }
-  isUnitary := (ContRepresentation.isUnitary_iff_norm_map _).mpr P.norm_unitaryMap_apply
+  isUnitary := (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g v =>
+    Unitary.norm_map (P.unitaryMap g) v
   continuous_orbit := P.continuous_orbit
   covariance g a v := P.covariance_apply g a v
 
