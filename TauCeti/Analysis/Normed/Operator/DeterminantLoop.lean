@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
+public import TauCeti.Topology.Homotopy.Cube.SquareBoundary
 
 /-!
 # Normalized determinants of loops of operators
@@ -20,12 +21,15 @@ loop `δ` in the circle of normalized determinants, `det (P t) = ‖det (P t)‖
 determinants, the quantity that enters the product axiom of the Maslov index
 (`TauCeti.TotallyRealLoop.maslovIndex_map`).
 
-The loop `δ` is the loop of determinant phases `ContinuousLinearMap.detPhase` of `P`.
+The loop `δ` is the loop of determinant phases `ContinuousLinearMap.detPhase` of `P`. If `P` is
+the restriction to the boundary of the square of a continuous family of invertible operators over
+the whole square, this loop has degree zero
+(`TauCeti.degree_eq_zero_of_eq_detPhase_squareBoundaryLoop`).
 -/
 
 public section
 
-open scoped unitInterval
+open scoped unitInterval Topology
 
 namespace TauCeti
 
@@ -42,5 +46,13 @@ theorem exists_path_det_eq_norm_mul {P : I → E →L[ℂ] E} (hP : Continuous P
     ContinuousLinearMap.continuous_detPhase hP hdet⟩, rfl, by simp only [hP01]⟩, fun t => ?_⟩
   rw [Path.coe_mk_mk]
   exact (P t).det_eq_norm_mul_detPhase
+
+/-- A loop of determinant phases of invertible operators which extend continuously over the
+square has degree zero: it contracts through the square to its corner. -/
+theorem degree_eq_zero_of_eq_detPhase_squareBoundaryLoop {A : (I^Fin 2) → E →L[ℂ] E}
+    (hA : Continuous A) (hdet : ∀ y, (A y).det ≠ 0) {c : Circle} (δ : Path c c)
+    (hδ : ∀ t, δ t = (A (squareBoundaryLoop t)).detPhase) : Circle.degree δ = 0 := by
+  rw [← degree_squareBoundaryLoop_map (ContinuousLinearMap.continuous_detPhase hA hdet)]
+  exact Circle.degree_congr _ _ fun t ↦ by rw [hδ, Path.map_coe, Function.comp_apply]
 
 end TauCeti

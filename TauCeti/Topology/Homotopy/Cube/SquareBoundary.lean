@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+public import TauCeti.Topology.Circle.Degree
 import Mathlib.Tactic.FinCases
+import TauCeti.Topology.Path.Map
 
 /-!
 # The boundary loop of the square
@@ -27,10 +29,15 @@ of the four edges of the square (`TauCeti.squareBoundaryLoop_def`).
 * `TauCeti.firstHalf_squareEdge₀`, `TauCeti.secondHalf_squareEdge₃` and their analogues: the maps
   `TauCeti.Cube.firstHalf 0` and `TauCeti.Cube.secondHalf 0` of the square onto its halves send
   the edges of the square to halves of edges, edges, or the seam `y 0 = 1 / 2`.
+* `TauCeti.degree_squareBoundaryLoop_map`: a continuous map from the square to the circle has
+  degree zero along the boundary loop.
+* `TauCeti.degree_squareBoundaryLoop_map'_eq_add`: the degree of a map to the circle along the
+  boundary loop of the square is the sum of its degrees along the boundary loops of the halves.
 -/
 
 public section
 
+open Set
 open scoped unitInterval Topology
 
 namespace TauCeti
@@ -152,5 +159,106 @@ traversed backwards. -/
 theorem secondHalf_squareEdge₃ (t : I) :
     Cube.secondHalf 0 (squareEdge₃ t) = Cube.firstHalf 0 (squareEdge₁ (σ t)) := by
   ext j; fin_cases j <;> simp
+
+/-! ### Maps from the square to the circle -/
+
+/-- A continuous map `G` from the square to the circle has degree zero along the boundary loop of
+the square: the loop contracts through the square to its corner. -/
+theorem degree_squareBoundaryLoop_map {G : (I^Fin 2) → Circle} (hG : Continuous G) :
+    Circle.degree (squareBoundaryLoop.map hG) = 0 := by
+  let K : C(I × I, Circle) := ⟨fun p ↦ G fun i ↦ σ p.1 * squareBoundaryLoop p.2 i, by fun_prop⟩
+  refine (Circle.degree_eq_of_homotopy _ (Path.refl (G 0)) K
+    (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans (Circle.degree_refl _)
+  · simp only [K, ContinuousMap.coe_mk, unitInterval.symm_zero, one_mul, Path.map_coe,
+      Function.comp_apply]
+  · simp only [K, ContinuousMap.coe_mk, unitInterval.symm_one, zero_mul, Path.refl_apply,
+      ← Pi.zero_def]
+  · simp only [K, ContinuousMap.coe_mk, Path.source, Path.target]
+
+/-- **Subdivision of the square.** Let `H` be a map from the square to the circle, continuous on
+a set `U` that contains the boundary of the square and the boundaries of its two halves
+`Cube.firstHalf 0` and `Cube.secondHalf 0`. The degree of `H` along the boundary loop of the square
+is the sum of its degrees along the boundary loops of the halves: these run along the seam
+`y 0 = 1 / 2` in opposite directions, so the angles swept along the seam cancel, and the halves of
+the bottom and top edges add up. -/
+theorem degree_squareBoundaryLoop_map'_eq_add {H : (I^Fin 2) → Circle} {U : Set (I^Fin 2)}
+    (hH : ContinuousOn H U) (hb : Cube.boundary (Fin 2) ⊆ U)
+    (hl : MapsTo (Cube.firstHalf 0) (Cube.boundary (Fin 2)) U)
+    (hr : MapsTo (Cube.secondHalf 0) (Cube.boundary (Fin 2)) U) :
+    Circle.degree (squareBoundaryLoop.map' (hH.mono (range_subset_iff.2 fun t ↦
+        hb (squareBoundaryLoop_mem_boundary t)))) =
+      Circle.degree ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map'
+          (hH.mono (range_subset_iff.2 fun t ↦ hl (squareBoundaryLoop_mem_boundary t)))) +
+        Circle.degree ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map'
+          (hH.mono (range_subset_iff.2 fun t ↦ hr (squareBoundaryLoop_mem_boundary t)))) := by
+  have hm {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ U) : ContinuousOn H (range c) :=
+    hH.mono (range_subset_iff.2 hc)
+  -- Images of paths along the boundary of the square in the two halves.
+  have hl' {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c.map (Cube.continuous_firstHalf 0) t ∈ U := by
+    rw [Path.map_coe, Function.comp_apply]
+    exact hl (hc t)
+  have hr' {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c.map (Cube.continuous_secondHalf 0) t ∈ U := by
+    rw [Path.map_coe, Function.comp_apply]
+    exact hr (hc t)
+  have hb' {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
+      c t ∈ U :=
+    hb (hc t)
+  -- Continuous lifts of `H` along the edges of the square and the seam.
+  obtain ⟨θB, hθB⟩ := Circle.exists_lift (squareEdge₀.map' (hm (hb' squareEdge₀_mem_boundary)))
+  obtain ⟨θR, hθR⟩ := Circle.exists_lift (squareEdge₁.map' (hm (hb' squareEdge₁_mem_boundary)))
+  obtain ⟨θT, hθT⟩ := Circle.exists_lift (squareEdge₂.map' (hm (hb' squareEdge₂_mem_boundary)))
+  obtain ⟨θL, hθL⟩ := Circle.exists_lift (squareEdge₃.map' (hm (hb' squareEdge₃_mem_boundary)))
+  obtain ⟨θS, hθS⟩ := Circle.exists_lift
+    ((squareEdge₁.map (Cube.continuous_firstHalf 0)).map' (hm (hl' squareEdge₁_mem_boundary)))
+  -- The angle swept along each piece, read off from the lifts along the edges and the seam.
+  have F₀ := Circle.angleChange_eq_sub _ θB.continuous hθB
+  have F₁ := Circle.angleChange_eq_sub _ θR.continuous hθR
+  have F₂ := Circle.angleChange_eq_sub _ θT.continuous hθT
+  have F₃ := Circle.angleChange_eq_sub _ θL.continuous hθL
+  have L₁ := Circle.angleChange_eq_sub _ θS.continuous hθS
+  have L₀ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl' squareEdge₀_mem_boundary)
+    (hb' squareEdge₀_mem_boundary) θB.continuous hθB
+    (r := fun t ↦ projIcc 0 1 zero_le_one ((t : ℝ) / 2)) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, firstHalf_squareEdge₀]
+  have R₀ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr' squareEdge₀_mem_boundary)
+    (hb' squareEdge₀_mem_boundary) θB.continuous hθB
+    (r := fun t ↦ projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, secondHalf_squareEdge₀]
+  have L₂ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl' squareEdge₂_mem_boundary)
+    (hb' squareEdge₂_mem_boundary) θT.continuous hθT
+    (r := fun t ↦ σ (projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, firstHalf_squareEdge₂]
+  have R₂ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr' squareEdge₂_mem_boundary)
+    (hb' squareEdge₂_mem_boundary) θT.continuous hθT
+    (r := fun t ↦ σ (projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) (by fun_prop) fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, secondHalf_squareEdge₂]
+  have L₃ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl' squareEdge₃_mem_boundary)
+    (hb' squareEdge₃_mem_boundary) θL.continuous hθL (r := id) continuous_id fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, firstHalf_squareEdge₃, id]
+  have R₁ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr' squareEdge₁_mem_boundary)
+    (hb' squareEdge₁_mem_boundary) θR.continuous hθR (r := id) continuous_id fun t ↦ by
+      rw [Path.map_coe, Function.comp_apply, secondHalf_squareEdge₁, id]
+  have R₃ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr' squareEdge₃_mem_boundary)
+    (hl' squareEdge₁_mem_boundary) θS.continuous hθS (r := σ) unitInterval.continuous_symm
+    fun t ↦ by
+      rw [Path.map_coe, Path.map_coe, Function.comp_apply, Function.comp_apply,
+        secondHalf_squareEdge₃]
+  -- Each boundary loop is a concatenation of four pieces. The angles along the seam cancel, and
+  -- the halves of the bottom and top edges add up.
+  have key :
+      Circle.angleChange (squareBoundaryLoop.map' (hm (hb' squareBoundaryLoop_mem_boundary))) =
+      Circle.angleChange ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map'
+          (hm (hl' squareBoundaryLoop_mem_boundary))) +
+        Circle.angleChange ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map'
+          (hm (hr' squareBoundaryLoop_mem_boundary))) := by
+    simp only [squareBoundaryLoop_def, Path.map_trans, Path.map'_trans, Circle.angleChange_trans]
+    rw [F₀, F₁, F₂, F₃, L₀, L₁, L₂, L₃, R₀, R₁, R₂, R₃]
+    norm_num [unitInterval.symm_zero, unitInterval.symm_one]
+    ring
+  rw [Circle.angleChange_eq_degree_mul, Circle.angleChange_eq_degree_mul,
+    Circle.angleChange_eq_degree_mul, ← add_mul] at key
+  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) key
 
 end TauCeti

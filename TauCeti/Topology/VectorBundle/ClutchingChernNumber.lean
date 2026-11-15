@@ -139,21 +139,6 @@ theorem det_clutchingFunction_squareBoundaryLoop_ne_zero (γ : Ω^ (Fin 2) X x)
     rw [GenLoop.boundary γ _ (squareBoundaryLoop_mem_boundary t)]
     exact FiberBundle.mem_baseSet_trivializationAt' x
 
-/-- A loop of phases of determinants of invertible operators which extend continuously over the
-square has degree zero: it contracts through the square to its corner. -/
-private theorem degree_eq_zero_of_continuous {A : (I^Fin 2) → F →L[ℂ] F} (hA : Continuous A)
-    (hdet : ∀ y, (A y).det ≠ 0) {c : Circle} (δ : Path c c)
-    (hδ : ∀ t, δ t = (A (squareBoundaryLoop t)).detPhase) : Circle.degree δ = 0 := by
-  let G : C(I × I, Circle) :=
-    ⟨fun p ↦ (A fun i ↦ σ p.1 * squareBoundaryLoop p.2 i).detPhase,
-      ContinuousLinearMap.continuous_detPhase (hA.comp (by fun_prop)) fun _ ↦ hdet _⟩
-  refine (Circle.degree_eq_of_homotopy δ (Path.refl (A 0).detPhase) G
-    (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans (Circle.degree_refl _)
-  · simp only [G, ContinuousMap.coe_mk, unitInterval.symm_zero, one_mul, hδ]
-  · simp only [G, ContinuousMap.coe_mk, unitInterval.symm_one, zero_mul, Path.refl_apply,
-      ← Pi.zero_def]
-  · simp only [G, ContinuousMap.coe_mk, Path.source, Path.target]
-
 variable [FiniteDimensional ℂ F]
 
 /-- The loop of phases of the determinant of the clutching function along the boundary of the
@@ -213,7 +198,8 @@ private theorem degree_clutchingLoop_eq (γ : Ω^ (Fin 2) X x) {Φ Ψ : ∀ y, E
         (hA.comp squareBoundaryLoop.continuous) fun _ ↦ hdet _
       source' := rfl
       target' := by simp only [Path.source, Path.target] }
-  have hδ : Circle.degree δ = 0 := degree_eq_zero_of_continuous hA hdet δ fun _ ↦ rfl
+  have hδ : Circle.degree δ = 0 :=
+    degree_eq_zero_of_eq_detPhase_squareBoundaryLoop hA hdet δ fun _ ↦ rfl
   rw [← zero_add (Circle.degree (clutchingLoop γ hΦ)), ← hδ, ← Circle.degree_mul]
   refine Circle.degree_congr _ _ fun t ↦ ?_
   rw [Path.mul_apply, clutchingLoop_apply, clutchingLoop_apply, hcomp]
@@ -313,9 +299,8 @@ theorem clutchingChernNumber_transAt (q p : Ω^ (Fin 2) X x) :
     clutchingChernNumber F E (GenLoop.transAt 0 q p) =
       clutchingChernNumber F E q + clutchingChernNumber F E p := by
   -- Read all three clutching numbers from one trivialization `Φ` of the concatenation `γ`: on
-  -- the halves of the square, `γ` restricts to `q` and `p`. Each boundary loop splits into four
-  -- pieces, along the edges of the square and the seam, and the angle swept along each piece is
-  -- read off from a lift of the phase along that edge or the seam.
+  -- the halves of the square, `γ` restricts to `q` and `p`. The degrees of the phase along the
+  -- three boundary loops are then related by `degree_squareBoundaryLoop_map'_eq_add`.
   set γ := GenLoop.transAt 0 q p
   obtain ⟨Φ, hΦ⟩ := exists_isPullbackTrivialization (F := F) (E := E) γ
   have hx : x ∈ (trivializationAt F E x).baseSet := FiberBundle.mem_baseSet_trivializationAt' x
@@ -336,82 +321,29 @@ theorem clutchingChernNumber_transAt (q p : Ω^ (Fin 2) X x) :
     rw [Path.map'_coe, comp_apply, ContinuousLinearMap.coe_detPhase
       (det_clutchingFunction_ne_zero Φ (hc t))]
   -- Paths along the boundary of the square and their images in the two halves lie in `U`.
-  have hb {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
-      c t ∈ U :=
-    memU (GenLoop.boundary γ _ (hc t))
-  have hl {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
-      c.map (Cube.continuous_firstHalf 0) t ∈ U := by
-    rw [Path.map_coe, comp_apply]
-    exact memU ((GenLoop.transAt_firstHalf 0 q p _).trans (GenLoop.boundary q _ (hc t)))
-  have hr {a b : I^Fin 2} {c : Path a b} (hc : ∀ t, c t ∈ Cube.boundary (Fin 2)) (t : I) :
-      c.map (Cube.continuous_secondHalf 0) t ∈ U := by
-    rw [Path.map_coe, comp_apply]
-    exact memU ((GenLoop.transAt_secondHalf 0 q p _).trans (GenLoop.boundary p _ (hc t)))
+  have hb : Cube.boundary (Fin 2) ⊆ U := fun y hy ↦ memU (GenLoop.boundary γ y hy)
+  have hl : MapsTo (Cube.firstHalf 0) (Cube.boundary (Fin 2)) U := fun y hy ↦
+    memU ((GenLoop.transAt_firstHalf 0 q p y).trans (GenLoop.boundary q y hy))
+  have hr : MapsTo (Cube.secondHalf 0) (Cube.boundary (Fin 2)) U := fun y hy ↦
+    memU ((GenLoop.transAt_secondHalf 0 q p y).trans (GenLoop.boundary p y hy))
   have hβ := squareBoundaryLoop_mem_boundary
   -- The three clutching numbers as degrees of loops of phases.
-  have hγ : clutchingChernNumber F E γ = Circle.degree (squareBoundaryLoop.map' (hm (hb hβ))) :=
-    clutchingChernNumber_eq_degree γ hΦ _ (hHc (hb hβ))
-  have hq : clutchingChernNumber F E q =
-      Circle.degree ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map' (hm (hl hβ))) :=
+  have hγ : clutchingChernNumber F E γ =
+      Circle.degree (squareBoundaryLoop.map' (hm fun t ↦ hb (hβ t))) :=
+    clutchingChernNumber_eq_degree γ hΦ _ (hHc fun t ↦ hb (hβ t))
+  have hq : clutchingChernNumber F E q = Circle.degree
+      ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map' (hm fun t ↦ hl (hβ t))) :=
     clutchingChernNumber_eq_degree_comp γ q hΦ (Cube.continuous_firstHalf 0)
-      (GenLoop.transAt_firstHalf 0 q p) _ fun t ↦ by rw [hHc (hl hβ), Path.map_coe, comp_apply]
-  have hp : clutchingChernNumber F E p =
-      Circle.degree ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map' (hm (hr hβ))) :=
+      (GenLoop.transAt_firstHalf 0 q p) _ fun t ↦ by
+        rw [hHc fun t ↦ hl (hβ t), Path.map_coe, comp_apply]
+  have hp : clutchingChernNumber F E p = Circle.degree
+      ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map' (hm fun t ↦ hr (hβ t))) :=
     clutchingChernNumber_eq_degree_comp γ p hΦ (Cube.continuous_secondHalf 0)
-      (GenLoop.transAt_secondHalf 0 q p) _ fun t ↦ by rw [hHc (hr hβ), Path.map_coe, comp_apply]
-  -- Continuous lifts of the phase along the edges of the square and the seam.
-  obtain ⟨θB, hθB⟩ := Circle.exists_lift (squareEdge₀.map' (hm (hb squareEdge₀_mem_boundary)))
-  obtain ⟨θR, hθR⟩ := Circle.exists_lift (squareEdge₁.map' (hm (hb squareEdge₁_mem_boundary)))
-  obtain ⟨θT, hθT⟩ := Circle.exists_lift (squareEdge₂.map' (hm (hb squareEdge₂_mem_boundary)))
-  obtain ⟨θL, hθL⟩ := Circle.exists_lift (squareEdge₃.map' (hm (hb squareEdge₃_mem_boundary)))
-  obtain ⟨θS, hθS⟩ := Circle.exists_lift
-    ((squareEdge₁.map (Cube.continuous_firstHalf 0)).map' (hm (hl squareEdge₁_mem_boundary)))
-  -- The angle swept along each piece, read off from the lifts along the edges and the seam.
-  have F₀ := Circle.angleChange_eq_sub _ θB.continuous hθB
-  have F₁ := Circle.angleChange_eq_sub _ θR.continuous hθR
-  have F₂ := Circle.angleChange_eq_sub _ θT.continuous hθT
-  have F₃ := Circle.angleChange_eq_sub _ θL.continuous hθL
-  have L₁ := Circle.angleChange_eq_sub _ θS.continuous hθS
-  have L₀ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₀_mem_boundary)
-    (hb squareEdge₀_mem_boundary) θB.continuous hθB
-    (r := fun t ↦ projIcc 0 1 zero_le_one ((t : ℝ) / 2)) (by fun_prop) fun t ↦ by
-      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₀]
-  have R₀ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₀_mem_boundary)
-    (hb squareEdge₀_mem_boundary) θB.continuous hθB
-    (r := fun t ↦ projIcc 0 1 zero_le_one (((t : ℝ) + 1) / 2)) (by fun_prop) fun t ↦ by
-      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₀]
-  have L₂ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₂_mem_boundary)
-    (hb squareEdge₂_mem_boundary) θT.continuous hθT
-    (r := fun t ↦ σ (projIcc 0 1 zero_le_one ((σ t : ℝ) / 2))) (by fun_prop) fun t ↦ by
-      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₂]
-  have R₂ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₂_mem_boundary)
-    (hb squareEdge₂_mem_boundary) θT.continuous hθT
-    (r := fun t ↦ σ (projIcc 0 1 zero_le_one (((σ t : ℝ) + 1) / 2))) (by fun_prop) fun t ↦ by
-      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₂]
-  have L₃ := Circle.angleChange_map'_eq_sub_of_reparam hH (hl squareEdge₃_mem_boundary)
-    (hb squareEdge₃_mem_boundary) θL.continuous hθL (r := id) continuous_id fun t ↦ by
-      rw [Path.map_coe, comp_apply, firstHalf_squareEdge₃, id]
-  have R₁ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₁_mem_boundary)
-    (hb squareEdge₁_mem_boundary) θR.continuous hθR (r := id) continuous_id fun t ↦ by
-      rw [Path.map_coe, comp_apply, secondHalf_squareEdge₁, id]
-  have R₃ := Circle.angleChange_map'_eq_sub_of_reparam hH (hr squareEdge₃_mem_boundary)
-    (hl squareEdge₁_mem_boundary) θS.continuous hθS (r := σ) unitInterval.continuous_symm
-    fun t ↦ by rw [Path.map_coe, Path.map_coe, comp_apply, comp_apply, secondHalf_squareEdge₃]
-  -- Each boundary loop is a concatenation of four pieces. The angles along the seam cancel, and
-  -- the halves of the bottom and top edges add up.
-  have key : Circle.angleChange (squareBoundaryLoop.map' (hm (hb hβ))) =
-      Circle.angleChange
-          ((squareBoundaryLoop.map (Cube.continuous_firstHalf 0)).map' (hm (hl hβ))) +
-        Circle.angleChange
-          ((squareBoundaryLoop.map (Cube.continuous_secondHalf 0)).map' (hm (hr hβ))) := by
-    simp only [squareBoundaryLoop_def, Path.map_trans, Path.map'_trans, Circle.angleChange_trans]
-    rw [F₀, F₁, F₂, F₃, L₀, L₁, L₂, L₃, R₀, R₁, R₂, R₃]
-    norm_num [unitInterval.symm_zero, unitInterval.symm_one]
-    ring
-  rw [Circle.angleChange_eq_degree_mul, Circle.angleChange_eq_degree_mul,
-    Circle.angleChange_eq_degree_mul, ← add_mul] at key
+      (GenLoop.transAt_secondHalf 0 q p) _ fun t ↦ by
+        rw [hHc fun t ↦ hr (hβ t), Path.map_coe, comp_apply]
+  -- They are related by subdividing the square into its two halves.
   rw [hγ, hq, hp]
-  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) key
+  exact degree_squareBoundaryLoop_map'_eq_add hH hb hl hr
 
 private theorem lift_clutchingChernNumber_mul (a b : HomotopyGroup (Fin 2) X x) :
     Quotient.lift (clutchingChernNumber F E) (fun _ _ ↦ clutchingChernNumber_eq_of_homotopic)
