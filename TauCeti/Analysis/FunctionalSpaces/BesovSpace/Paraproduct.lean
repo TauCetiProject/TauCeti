@@ -392,41 +392,33 @@ total regularity.
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
 
 /-- **The windows of the resonant term.** For `v ∈ B^s_{p,q}` and a gap `N`, the sums
-`∑_{|k - j| ≤ N} Δₖ v` satisfy `2^{js} ‖∑_{|k - j| ≤ N} Δₖ v‖_p ≤ 2^{|s| N} Wⱼ` for a sequence
-`W ∈ ℓ^q` of norm at most `2 (N + 1) ‖v‖`. -/
+`∑_{|k - j| ≤ N} Δₖ v` satisfy `2^{js} ‖∑_{|k - j| ≤ N} Δₖ v‖_p ≤ 2^{|s| (N + 1)} Wⱼ` for a
+sequence `W ∈ ℓ^q` of norm at most `2 (N + 1) ‖v‖`. -/
 private theorem exists_lp_rpow_mul_norm_sum_block_le [Fact (1 ≤ q)] (v : BesovSpace G φ s p q)
     (N : ℕ) :
-    ∃ W : lp (fun _ : ℕ ↦ ℝ) q, (∀ j : ℕ,
-      2 ^ (s * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤ 2 ^ (|s| * N) * W j) ∧
+    ∃ W : lp (fun _ : ℕ ↦ ℝ) q, (∀ j : ℕ, 2 ^ (s * j) *
+      ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤ 2 ^ (|s| * (N + 1 : ℕ)) * W j) ∧
       ‖W‖ ≤ 2 * (N + 1 : ℕ) * ‖v‖ := by
-  obtain ⟨b, hb, hbv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  set b := lp.toNorm v.weightedBlocks
   -- The window sums of the weighted block norms of `v`, as an element of `ℓ^q`.
   set W : lp (fun _ : ℕ ↦ ℝ) q :=
     ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b k, (lp.memℓp b).sum_Ico_sub_add _⟩
   -- The entries of the anonymous `lp` element `W` are its defining sequence by definition.
   have hW (j : ℕ) : W j = ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b k := rfl
-  refine ⟨W, fun j ↦ ?_, (lp.norm_le_of_forall_eq_sum_Ico_sub_add _ hW).trans (by gcongr)⟩
-  calc 2 ^ (s * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖
-      ≤ ∑ k ∈ Finset.Icc (j - N) (j + N), 2 ^ (s * j) * ‖v.block k‖ := by
-        rw [← Finset.mul_sum]
-        gcongr
-        exact norm_sum_le _ _
-    _ ≤ ∑ k ∈ Finset.Icc (j - N) (j + N), 2 ^ (|s| * N) * b k := by
-        refine Finset.sum_le_sum fun k hk ↦ ?_
-        rw [Finset.mem_Icc] at hk
-        rw [hb, ← mul_assoc]
-        gcongr
-        refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
-          (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-        all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-    _ ≤ 2 ^ (|s| * N) * W j := by
-        rw [← Finset.mul_sum, hW]
-        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
-          (fun k hk ↦ ?_) fun k _ _ ↦ ?_) (by positivity)
-        · simp only [Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
-          omega
-        · rw [hb]
-          positivity
+  refine ⟨W, fun j ↦ ?_, (lp.norm_le_of_forall_eq_sum_Ico_sub_add _ hW).trans_eq
+    (by rw [lp.norm_toNorm, norm_weightedBlocks])⟩
+  -- Extend the window `|k - j| ≤ N` by zeros to `j - (N + 1) ≤ k < j + (N + 1)`.
+  have hsub : Finset.Icc (j - N) (j + N) ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) :=
+    fun k hk ↦ by
+      simp only [Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
+      omega
+  have hg (k : ℕ) :
+      ‖if k ∈ Finset.Icc (j - N) (j + N) then v.block k else 0‖ ≤ 1 * ‖v.block k‖ := by
+    split_ifs <;> simp
+  have h := TauCeti.two_rpow_mul_norm_sum_Ico_le s hg j (N + 1)
+  rw [Finset.sum_ite_mem, Finset.inter_eq_right.2 hsub, max_eq_left zero_le_one, one_mul] at h
+  refine h.trans_eq ?_
+  simp only [hW, b, lp.toNorm_coe, norm_weightedBlocks_apply]
 
 variable (φ) in
 /-- **Summing the terms of a paraproduct.** Let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is
@@ -449,21 +441,21 @@ private theorem exists_hasSum_toDistr_and_norm_le_of_le_block (t : ℝ) {N : ℕ
     linarith
   obtain ⟨C, hC⟩ := exists_hasSum_toDistr_and_norm_le_of_annulus (F := F) φ t ha (2 * φ.rOut)
   refine ⟨max C 0, le_max_right C 0, fun {p r q} _ _ _ g v K hK hg hgv ↦ ?_⟩
-  obtain ⟨b, hb, hbv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  set b := lp.toNorm v.weightedBlocks
   have hball (j : ℕ) : ball (0 : E) (2 ^ j * ((φ.rIn - φ.rOut / 2 ^ N) / 2)) ⊆
       (closedBall 0 (2 ^ j * (2 * φ.rOut)) \ ball 0 (2 ^ j * ((φ.rIn - φ.rOut / 2 ^ N) / 2)))ᶜ :=
     fun _ hx hx' ↦ hx'.2 hx
   obtain ⟨w, hw, hwn⟩ := hC g (K • b) (fun j ↦ (hg j).mono (compl_subset_compl.2 sdiff_subset))
     (fun j _ ↦ (hg j).mono (hball j))
-    (fun j ↦ by rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hb]; exact hgv j)
+    (fun j ↦ by
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.toNorm_coe, norm_weightedBlocks_apply]
+      exact hgv j)
   refine ⟨w, hw, hwn.trans ?_⟩
   calc C * ‖K • b‖ ≤ max C 0 * (K * ‖b‖) := by
         rw [norm_smul, Real.norm_of_nonneg hK]
         gcongr
         exact le_max_left C 0
-    _ ≤ max C 0 * K * ‖v‖ := by
-        rw [mul_assoc]
-        gcongr
+    _ = max C 0 * K * ‖v‖ := by rw [lp.norm_toNorm, norm_weightedBlocks, mul_assoc]
 
 variable {s' : ℝ}
 
@@ -528,15 +520,6 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (s : ℝ) {N 
         _ = K₀ * ‖g‖ * (2 ^ (s * j) * ‖u.block j‖) := by ring
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
-/-- For `s < 0` and `m ≤ j`, the bound `2^{-s m}` of the cut-off `S_m` of an element of `B^s`
-trades the weight `2^{(s + s') j}` for `2^{s' j}`. -/
-private theorem two_rpow_add_mul_mul_two_rpow_neg_mul_le {s : ℝ} (hs : s < 0) (s' : ℝ) {m j : ℕ}
-    (hmj : m ≤ j) : (2 : ℝ) ^ ((s + s') * j) * 2 ^ (-s * m) ≤ 2 ^ (s' * j) := by
-  rw [← Real.rpow_add two_pos]
-  refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
-  have : (m : ℝ) ≤ j := by exact_mod_cast hmj
-  nlinarith
-
 variable (φ) in
 /-- **The paraproduct `T_u v` at negative regularity of `u`** (Bahouri–Chemin–Danchin,
 Theorem 2.82). Let `s < 0` and let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
@@ -571,7 +554,8 @@ theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_neg {s : ℝ} (hs : s < 
             (‖u‖ / (2 ^ (-s) - 1) * ‖v.block j‖) := by ring
         _ ≤ 2 ^ (s' * j) * (‖u‖ / (2 ^ (-s) - 1) * ‖v.block j‖) := by
             gcongr
-            exact two_rpow_add_mul_mul_two_rpow_neg_mul_le hs s' (Nat.sub_le j N)
+            exact Real.rpow_add_mul_mul_rpow_neg_mul_le one_le_two hs.le s'
+              (by exact_mod_cast Nat.sub_le j N)
         _ = ‖u‖ / (2 ^ (-s) - 1) * (2 ^ (s' * j) * ‖v.block j‖) := by ring
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
@@ -609,7 +593,8 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (s : ℝ) (hs' : s' 
             (‖v‖ / (2 ^ (-s') - 1) * ‖u.block j‖) := by rw [add_comm s s']; ring
         _ ≤ 2 ^ (s * j) * (‖v‖ / (2 ^ (-s') - 1) * ‖u.block j‖) := by
             gcongr
-            exact two_rpow_add_mul_mul_two_rpow_neg_mul_le hs' s (Nat.sub_le j N)
+            exact Real.rpow_add_mul_mul_rpow_neg_mul_le one_le_two hs'.le s
+              (by exact_mod_cast Nat.sub_le j N)
         _ = ‖v‖ / (2 ^ (-s') - 1) * (2 ^ (s * j) * ‖u.block j‖) := by ring
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
@@ -629,7 +614,7 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le (hss' : 0 < s + s') (N : 
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   obtain ⟨C, hC0, hC⟩ :=
     exists_hasSum_toDistr_and_norm_le_of_ball (F := F) φ hss' ((1 + 2 ^ N) * φ.rOut)
-  set K : ℝ := 2 ^ (|s'| * N)
+  set K : ℝ := 2 ^ (|s'| * (N + 1 : ℕ))
   refine ⟨C * K * (2 * (N + 1 : ℕ)), by positivity,
     fun {p₁ p₂ r q q'} _ _ _ _ _ _ u v ↦ ?_⟩
   obtain ⟨W, hwin, hWn⟩ := exists_lp_rpow_mul_norm_sum_block_le v N
