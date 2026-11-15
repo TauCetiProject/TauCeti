@@ -66,6 +66,8 @@ there.
 * `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
   conservation of the squared angular momentum in every dimension, `{ℓ², H} = 0`.
 * `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
+* `TauCeti.centralForceHamiltonian_eq_of_hasDerivAt`: `H` is constant along integral curves of `H`
+  avoiding the collision set.
 * `TauCeti.stdSymplecticForm_poissonBracket_inner_rungeLenz`: conservation of the Runge–Lenz
   vector, `{⟪A, e⟫, H} = 0`.
 * `TauCeti.norm_rungeLenz_sq`: `‖A‖² = (m κ)² + 2 m H (‖q‖² ‖p‖² - ⟪q, p⟫²)`.
@@ -349,6 +351,13 @@ theorem rungeLenz_eq_neg_smul_of_inner_sq_eq (m κ : ℝ) {x : V × V}
   rw [hℓ, sub_self, mul_zero, sq_eq_zero_iff, norm_eq_zero] at h
   rw [rungeLenz, h, zero_sub]
 
+/-- **The squared angular momentum is nonnegative.** `0 ≤ ‖q‖² ‖p‖² - ⟪q, p⟫²`, by the
+Cauchy–Schwarz inequality. -/
+theorem sq_sub_inner_sq_nonneg (x : V × V) : 0 ≤ ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 := by
+  have := real_inner_mul_inner_self_le x.1 x.2
+  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
+  linear_combination this
+
 /-- **Perihelion bound.** `‖q‖² ‖p‖² - ⟪q, p⟫² ≤ ‖q‖ (m κ + ‖A‖)`. Hence at a point with
 nonzero angular momentum `ℓ`, the distance `‖q‖` is at least `ℓ² / (m κ + ‖A‖) > 0`; as `ℓ` and
 `A` are conserved, such orbits stay away from the collision set. -/
@@ -376,11 +385,8 @@ theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 <
   have hq : x.1 ≠ 0 := by
     rintro hq
     simp [hq] at hℓ
-  have hpos : 0 < ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 := by
-    refine lt_of_le_of_ne ?_ hℓ.symm
-    have := real_inner_mul_inner_self_le x.1 x.2
-    rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
-    linear_combination this
+  have hpos : 0 < ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 :=
+    (sq_sub_inner_sq_nonneg x).lt_of_ne hℓ.symm
   rcases le_or_gt κ 0 with hκ | hκ
   · have hH : 0 ≤ centralForceHamiltonian m (fun r ↦ -κ / r) x :=
       add_nonneg (by positivity) (div_nonneg (neg_nonneg.2 hκ) (norm_nonneg _))
@@ -490,6 +496,23 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
     (f := (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) (f' := fun _ ↦ 0)
     (C := 0) (fun x hx ↦ (hderiv x hx).hasDerivWithinAt) (fun x _ ↦ by simp) ht₀ ht
   exact sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))
+
+/-- **Conservation of energy along the motion.** Let `γ` be an integral curve of the Hamiltonian
+vector field of a central-force Hamiltonian `H` on a preconnected set `s` of times, avoiding the
+collision set, with `U` differentiable along it. Then `H` takes the same value at all times
+`t₀, t ∈ s`. -/
+theorem centralForceHamiltonian_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V}
+    {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
+    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
+    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    centralForceHamiltonian m U (γ t) = centralForceHamiltonian m U (γ t₀) :=
+  stdSymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField hs
+    (fun u hu ↦ (hγ u hu).hasDerivWithinAt)
+    (fun u hu ↦
+      (hasFDerivAt_centralForceHamiltonian (hU u hu).hasDerivAt (hq u hu)).differentiableAt)
+    ht₀ ht
 
 /-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
 specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.

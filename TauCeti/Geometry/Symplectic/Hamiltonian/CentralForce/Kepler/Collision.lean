@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Collision
+import TauCeti.Analysis.Real.Inequalities
 
 /-!
 # The collision domain of the Kepler problem
@@ -108,30 +109,12 @@ theorem isBounded_of_hasDerivAt_kepler_of_centralForceHamiltonian_neg (hm : 0 < 
     have h2 : 0 ≤ ‖(γ t).1‖ * -E := mul_nonneg (hr t ht).le (neg_pos.2 hE).le
     nlinarith
   -- The lifetime bound is a quadratic inequality in `t - τ` with positive leading coefficient.
-  set a := E ^ 2 / κ
-  have hapos : 0 < a := div_pos (by nlinarith) hκ
-  set p := radialMomentum (γ τ)
-  set R := m * ‖(γ τ).1‖
-  have hR : 0 < R := mul_pos hm (hr τ hτ)
+  have ha : 0 < E ^ 2 / κ / 2 := by have : E ≠ 0 := hE.ne; positivity
   rw [Metric.isBounded_iff_subset_closedBall τ]
-  refine ⟨2 * (|p| + R) / a + 1, fun t ht ↦ ?_⟩
-  have hlt := mul_sq_sub_radialMomentum_mul_lt_of_sq_sub_inner_sq_eq_zero hm hs hγ hq hU hforce hτ
-    hℓ ht
+  refine ⟨max 1 ((|radialMomentum (γ τ)| + |m * ‖(γ τ).1‖|) / (E ^ 2 / κ / 2)), fun t ht ↦ ?_⟩
   rw [Metric.mem_closedBall, Real.dist_eq]
-  by_contra hfar
-  rw [not_le] at hfar
-  set x := t - τ
-  have hC : a / 2 * (2 * (|p| + R) / a + 1) = |p| + R + a / 2 := by field_simp
-  have hC0 : 0 ≤ 2 * (|p| + R) / a := by positivity
-  have hx1 : 1 ≤ |x| := by linarith
-  have hpx : p * x ≤ |p| * |x| := by rw [← abs_mul]; exact le_abs_self _
-  have hsq : a / 2 * x ^ 2 = |x| * (a / 2 * |x|) := by rw [← sq_abs x]; ring
-  have hbig : |p| + R + a / 2 < a / 2 * |x| := by
-    rw [← hC]; exact mul_lt_mul_of_pos_left hfar (by positivity)
-  have h1 : |x| * (R + a / 2) < |x| * (a / 2 * |x| - |p|) :=
-    mul_lt_mul_of_pos_left (by linarith) (by linarith)
-  have h2 : R + a / 2 ≤ |x| * (R + a / 2) := le_mul_of_one_le_left (by positivity) hx1
-  linarith
+  exact Real.abs_le_max_of_mul_sq_sub_mul_lt ha
+    (mul_sq_sub_radialMomentum_mul_lt_of_sq_sub_inner_sq_eq_zero hm hs hγ hq hU hforce hτ hℓ ht)
 
 /-! ### Motions with nonzero angular momentum -/
 
@@ -164,10 +147,8 @@ theorem sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler (hm : m ≠ 0) (hs 
   rw [sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hτ ht,
     norm_rungeLenz_eq_of_hasDerivAt_kepler hm hs hγ hq hτ ht] at h
   rcases le_or_gt (m * κ + ‖rungeLenz m κ (γ τ)‖) 0 with hD | hD
-  · exact (div_nonpos_of_nonneg_of_nonpos (by
-      have := real_inner_mul_inner_self_le (γ τ).1 (γ τ).2
-      rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
-      nlinarith [sq_nonneg ⟪(γ τ).1, (γ τ).2⟫_ℝ]) hD).trans (norm_nonneg _)
+  · exact (div_nonpos_of_nonneg_of_nonpos (sq_sub_inner_sq_nonneg (γ τ)) hD).trans
+      (norm_nonneg _)
   · rwa [div_le_iff₀ hD]
 
 /-- **Kepler motions with nonzero angular momentum do not collide.** For `m ≠ 0`, along an integral
@@ -182,11 +163,8 @@ theorem exists_pos_forall_le_norm_fst_of_hasDerivAt_kepler (hm : m ≠ 0) (hs : 
     ∃ c, 0 < c ∧ ∀ t ∈ s, c ≤ ‖(γ t).1‖ := by
   refine ⟨_, ?_, fun t ht ↦ sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler hm hs hγ hq hτ ht⟩
   -- At time `τ` itself, `0 < ℓ² ≤ ‖q‖ (m κ + ‖A‖)`, so both factors of the quotient are positive.
-  have hℓpos : 0 < ‖(γ τ).1‖ ^ 2 * ‖(γ τ).2‖ ^ 2 - ⟪(γ τ).1, (γ τ).2⟫_ℝ ^ 2 := by
-    refine lt_of_le_of_ne ?_ hℓ.symm
-    have := real_inner_mul_inner_self_le (γ τ).1 (γ τ).2
-    rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
-    nlinarith [sq_nonneg ⟪(γ τ).1, (γ τ).2⟫_ℝ]
+  have hℓpos : 0 < ‖(γ τ).1‖ ^ 2 * ‖(γ τ).2‖ ^ 2 - ⟪(γ τ).1, (γ τ).2⟫_ℝ ^ 2 :=
+    (sq_sub_inner_sq_nonneg (γ τ)).lt_of_ne hℓ.symm
   have h := sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz m κ (γ τ)
   have hD : 0 < m * κ + ‖rungeLenz m κ (γ τ)‖ :=
     pos_of_mul_pos_right (hℓpos.trans_le h) (norm_nonneg _)

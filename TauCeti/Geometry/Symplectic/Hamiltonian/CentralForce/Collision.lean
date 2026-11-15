@@ -51,12 +51,8 @@ complete** (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_puncturedP
 particle thrown straight at the centre reaches it in finite time. This covers the free particle,
 the attractive Kepler potential `-κ / r` and all attractive power laws.
 
-Along the way, the energy is conserved along every motion avoiding the collision set
-(`TauCeti.centralForceHamiltonian_eq_of_hasDerivAt`).
-
 ## Main results
 
-* `TauCeti.centralForceHamiltonian_eq_of_hasDerivAt`: conservation of energy.
 * `TauCeti.norm_fst_le_of_sq_sub_inner_sq_eq_zero`: the radius of a radial motion lies below its
   osculating parabola.
 * `TauCeti.mul_sq_sub_radialMomentum_mul_lt_of_sq_sub_inner_sq_eq_zero`: the times at which a
@@ -85,28 +81,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {m : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-
-/-! ### Conservation of energy -/
-
-/-- **Conservation of energy.** Let `γ` be an integral curve of the Hamiltonian vector field of a
-central-force Hamiltonian `H` on a preconnected set `s` of times, avoiding the collision set, with
-`U` differentiable along it. Then `H` takes the same value at all times `t₀, t ∈ s`. -/
-theorem centralForceHamiltonian_eq_of_hasDerivAt (hs : IsPreconnected s)
-    (hγ : ∀ t ∈ s, HasDerivAt γ
-      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
-    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ t : ℝ}
-    (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    centralForceHamiltonian m U (γ t) = centralForceHamiltonian m U (γ t₀) := by
-  -- The derivative of `H` along `γ` is `dH(X_H) = 0`.
-  have hderiv (u : ℝ) (hu : u ∈ s) :
-      HasDerivAt (centralForceHamiltonian m U ∘ γ) 0 u := by
-    have hH := hasFDerivAt_centralForceHamiltonian (m := m) (hU u hu).hasDerivAt (hq u hu)
-    have h := hH.comp_hasDerivAt u (hγ u hu)
-    rwa [← hH.fderiv, SymplecticForm.fderiv_apply_hamiltonianVectorField] at h
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := centralForceHamiltonian m U ∘ γ) (f' := fun _ ↦ 0) (C := 0)
-    (fun u hu ↦ (hderiv u hu).hasDerivWithinAt) (fun u _ ↦ by simp) ht₀ ht
-  exact sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))
 
 /-! ### Radial motions -/
 
@@ -304,7 +278,10 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
   have h := lt_add_div_of_radialMomentum_neg hm isPreconnected_univ
     (fun t _ ↦ (hmap t (mem_univ t)).hasDerivAt Filter.univ_mem) hq'
     (fun t _ ↦ (hU.differentiableOn two_ne_zero _ (hr t)).differentiableAt (Ioi_mem_nhds (hr t)))
-    (fun t _ ↦ hU' _ (hr t)) (mem_univ 0) (by simp [hγ0]; ring)
+    (fun t _ ↦ hU' _ (hr t)) (mem_univ 0)
+    (by
+      simp only [Function.comp_apply, hγ0, norm_neg, inner_neg_right, real_inner_self_eq_norm_sq]
+      ring)
     (by rw [hp]; exact neg_neg_of_pos (norm_pos_iff.2 hq))
     (mem_univ (0 + m * ‖((Subtype.val ∘ γ) 0).1‖ / -radialMomentum ((Subtype.val ∘ γ) 0)))
   exact lt_irrefl _ h
