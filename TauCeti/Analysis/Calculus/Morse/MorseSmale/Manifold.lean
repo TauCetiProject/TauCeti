@@ -86,13 +86,13 @@ theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : Is
   refine exists_isManifold_of_finrankSubspaceCharts fun y ⟨⟨hyu, hys⟩, hyc⟩ ↦ ?_
   have htr := h.transverse_at hp hq ⟨hyu, hys⟩
   obtain ⟨e, hye, he, hes, hmem⟩ :=
-    hp.exists_unstableSet_inter_stableSet_level_chart hq hn hfs hf hpq hyu hys htr hyc
+    hp.exists_unstableSet_inter_stableSet_level_chart hq hn hfs hf hyu hys htr hyc
   refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
     ?_⟩
   have hfs2 : ContDiff ℝ 2 f := hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))
   have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIndex hq
     hfs2 hf hpq hyu hys htr hyc
-  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs2 hf hpq hyu hys htr hyc]
+  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs2 hf hyu hys htr hyc]
     at hdim
   omega
 

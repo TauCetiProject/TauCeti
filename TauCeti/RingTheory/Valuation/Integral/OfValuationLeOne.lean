@@ -18,9 +18,9 @@ If every valuation of `R` that is bounded by `1` on a subring `B` is also bounde
 `x`, then `x` is integral over `B`.
 
 This is the hard direction of the correspondence Wedhorn records as Proposition 7.18, for
-which he gives only the citation [Hu2, Lemma 3.3]. It is the substantial ingredient of the
-comparison between two presentations of a rational subset, which Layer 3.1 of the roadmap
-asks for and which `presentationRingEquiv` currently takes as a hypothesis.
+which he gives only the citation [Hu2, Lemma 3.3]. Its strengthening to continuous valuations,
+Wedhorn's Proposition 7.18(1), is `TauCeti.Huber.isIntegral_of_forall_continuous_valuation_le_one`;
+that form is the one the comparison between two presentations of a rational subset uses.
 
 ## Method
 

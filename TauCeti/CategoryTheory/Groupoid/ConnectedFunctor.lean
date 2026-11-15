@@ -70,7 +70,7 @@ include hconn in
 /-- A natural isomorphism between functors out of a groupoid is determined by its component at
 a weakly initial object. -/
 theorem natIso_ext {α β : F ≅ G} (h : α.app x₀ = β.app x₀) : α = β :=
-  Iso.ext (natTrans_ext hconn (by simpa using congrArg Iso.hom h))
+  Iso.ext (natTrans_ext hconn (by simpa only [Iso.app_hom] using congrArg Iso.hom h))
 
 /-- A chosen isomorphism from the weakly initial object `x₀` to an arbitrary object. -/
 private def chosenIso (x : C) : x₀ ≅ x :=
@@ -102,8 +102,7 @@ private theorem natTransOfEnd_app (φ : F.obj x₀ ⟶ G.obj x₀)
 theorem natTransOfEnd_app_self (φ : F.obj x₀ ⟶ G.obj x₀)
     (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) :
     (natTransOfEnd hconn φ hφ).app x₀ = φ := by
-  rw [natTransOfEnd_app, ← hφ (chosenIso hconn x₀).hom, ← Category.assoc, ← F.map_comp,
-    Iso.inv_hom_id, F.map_id, Category.id_comp]
+  rw [natTransOfEnd_app, ← hφ (chosenIso hconn x₀).hom, Iso.inv_hom_id_map_assoc]
 
 /-- The extension is the only natural transformation restricting to the given morphism at the
 weakly initial object. -/

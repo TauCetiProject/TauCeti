@@ -52,12 +52,9 @@ simplicity statement is involved.
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius` and uses the carrier's functorial
   points API.
 
-This advances the Layer 9 target "points over an algebraically closed field as a group,
-functorially in the field" of `TauCetiRoadmap/ReductiveGroups/README.md`, which names the
-`q`-power Frobenius as its first consumer-facing case. Milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md` will consume this carrier Frobenius and its root-subgroup
-equation in a future construction of the ordinary `E₆(q)` Steinberg map. The identification of
-this carrier with the required pinned simply connected reductive group remains pending.
+On the pinned simply connected reductive group of type `E₆`, the `q`-power Frobenius is the
+Steinberg map whose fixed points give the ordinary family `E₆(q)`. The identification of this
+carrier with that group is not proved here.
 -/
 
 public section

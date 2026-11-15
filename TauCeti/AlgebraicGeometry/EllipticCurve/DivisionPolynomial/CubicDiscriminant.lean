@@ -49,14 +49,14 @@ with the integrality of the coordinates. Both of those are point-level results t
 not contain. Read the hypothesis as the shape a later torsion argument is expected to supply, not
 as a consequence of torsion.
 
-This is an ingredient for the Nagell–Lutz milestone of `TauCetiRoadmap/EllipticCurves/README.md`,
-Layer 6, item "The torsion subgroup and Nagell–Lutz", whose short-model target `lutz_nagell` asks
-for `y = 0 ∨ y² ∣ Δ`; it is the sharp algebraic form of that second conjunct's divisibility step.
+This is an ingredient for the Nagell–Lutz theorem, whose short-model form `lutz_nagell` concludes
+`x, y ∈ ℤ` and `y = 0 ∨ y² ∣ Δ`; it is the sharp algebraic form of that second conjunct's
+divisibility step.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDMain.lean`, the algebraic core of
 `lutz_nagell_cubicDisc_discriminant` (:438). The source states the conclusion as the raw polynomial
 `4a₄³ + 27a₆² + 4a₂³a₆ − a₂²a₄² − 18a₂a₄a₆` and reaches it inside a torsion argument; here it is

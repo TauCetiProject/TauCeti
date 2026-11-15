@@ -145,7 +145,7 @@ theorem action_mapPoints_one_tmul
     (GeneralLinear.mapScalarExtensionAutomorphisms_apply_scalarExtensionMap
       (V := V) phi (Theta.action A x) (1 ⊗ₜ[R] v))
 
-private noncomputable def rawPointAction (rho : Comodule R H V)
+private noncomputable def rawPointAction (_ : Comodule R H V)
     (A : CommAlgCat.{max u v w} R) :
     points (H := H) A ⟶ GeneralLinear.scalarExtensionAutomorphisms (V := V) A :=
   GrpCat.ofHom <|
@@ -747,18 +747,14 @@ universal point. -/
 theorem pointRepresentationEquivComodule_apply
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) :
     pointRepresentationEquivComodule Theta = PointRepresentation.toComodule Theta :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 /-- The inverse map of the representation--comodule equivalence is the point action induced by a
 coaction. -/
 @[simp]
 theorem pointRepresentationEquivComodule_symm_apply (rho : Comodule R H V) :
     pointRepresentationEquivComodule.symm rho = PointRepresentation.ofComodule rho :=
-  by
-    unfold pointRepresentationEquivComodule
-    rfl
+  (rfl)
 
 end HopfAlgebra
 

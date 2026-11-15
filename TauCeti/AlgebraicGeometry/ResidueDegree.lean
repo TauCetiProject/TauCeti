@@ -21,8 +21,10 @@ infinite.
 The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
 composite with the product of the two successive residue degrees. We also characterize when a
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
-as a closed immersion, has residue degree one everywhere. These facts supply the residue-field
-weights used in degree and pushforward constructions.
+as a closed immersion, has residue degree one everywhere. The comparison
+`finrank_residueField_stalk` computes this degree from the residue field of the local ring with
+any compatible base-field algebra structure. These facts supply the residue-field weights used in
+degree and pushforward constructions.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
@@ -91,5 +93,42 @@ theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnSt
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩
   rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
+
+/-- For a morphism to the spectrum of a field, the residue degree at a point is the
+base-field dimension of the residue field of its local ring, with the compatible algebra
+structure on that local ring. -/
+theorem finrank_residueField_stalk {K : Type u} [Field K] {X : Scheme.{u}}
+    (f : X ⟶ Spec (.of K)) (x : X) [Algebra K (X.presheaf.stalk x)]
+    (hx : algebraMap K (X.presheaf.stalk x) =
+      (X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x)).hom.comp
+        ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom) :
+    Module.finrank K (IsLocalRing.ResidueField (X.presheaf.stalk x)) = f.residueDegree x := by
+  let : Algebra K (X.residueField x) := Algebra.compHom (X.residueField x)
+    ((X.Γevaluation x).hom.comp ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom)
+  rw [f.residueDegree_eq_finrank]
+  let q := CommRingCat.ofHom (IsLocalRing.residue (X.presheaf.stalk x))
+  have : IsLocalHom q.hom := inferInstanceAs
+    (IsLocalHom (IsLocalRing.residue (X.presheaf.stalk x)))
+  let e := X.descResidueField q
+  have he : Function.Bijective e.hom := by
+    refine ⟨e.hom.injective, fun a ↦ ?_⟩
+    obtain ⟨t, ht⟩ := IsLocalRing.residue_surjective (R := X.presheaf.stalk x) a
+    refine ⟨X.residue x t, ?_⟩
+    rw [← ht, ← CommRingCat.comp_apply, Scheme.residue_descResidueField]
+    rfl
+  have hc : X.Γevaluation x ≫ e = X.presheaf.germ ⊤ x (TopologicalSpace.Opens.mem_top x) ≫ q := by
+    dsimp only [Scheme.Γevaluation]
+    rw [← X.germ_residue (U := ⊤) x trivial, Category.assoc, Scheme.residue_descResidueField]
+  refine (Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl K)
+    (RingEquiv.ofBijective e.hom he) ?_).symm
+  ext c
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    RingEquiv.coe_refl, id_eq, RingEquiv.coe_ofBijective, Algebra.compHom_algebraMap_apply,
+    Algebra.algebraMap_self, RingHom.id_apply]
+  rw [IsScalarTower.algebraMap_apply K (X.presheaf.stalk x)
+    (IsLocalRing.ResidueField (X.presheaf.stalk x)), hx, RingHom.comp_apply]
+  exact (congrArg (fun g : Γ(X, ⊤) ⟶ CommRingCat.of
+    (IsLocalRing.ResidueField (X.presheaf.stalk x)) ↦
+      g (((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom c)) hc).symm
 
 end AlgebraicGeometry.Scheme.Hom

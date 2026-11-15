@@ -116,7 +116,7 @@ theorem isSemianalytic_of_mem_stackCells (hS : IsSemianalytic S)
     have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → (Fin n → ℝ)) := by fun_prop
     filter_upwards [htail.continuousAt.preimage_mem_nhds
       (isClosed_closure.isOpen_compl.mem_nhds hy)] with z hz
-    simp only [mem_empty_iff_false, eq_iff_iff, false_iff]
+    simp only [mem_empty_iff_false, false_iff]
     intro hzT
     have hzS : Fin.tail z ∈ S := by
       rw [← image_tail_of_mem_stackCells D.strictMono_root hT]

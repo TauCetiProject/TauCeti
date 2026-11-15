@@ -21,7 +21,8 @@ preserves it, and packages the resulting equivariant self-duality.
 * `TauCeti.symplecticGroupToGL` is the canonical inclusion into the general linear group.
 * `TauCeti.stdSymplecticRep` is the standard representation of `Matrix.symplecticGroup`.
 * `TauCeti.stdSymplecticBilinForm` is the nondegenerate invariant alternating form; its value on
-  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`.
+  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`, and its value
+  against the all-ones vector is `TauCeti.stdSymplecticBilinForm_one_right`.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
 
 ## References
@@ -127,6 +128,14 @@ theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
     stdSymplecticBilinForm k n (Pi.single x (1 : k)) (Pi.single y (1 : k)) =
       Matrix.J (Fin n) k x y := by
   simp [stdSymplecticBilinForm_apply]
+
+/-- The standard alternating form against the all-ones vector, in coordinates. -/
+theorem stdSymplecticBilinForm_one_right (w : (Fin n ⊕ Fin n) → k) :
+    stdSymplecticBilinForm k n w 1 =
+      ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, w a * Matrix.J (Fin n) k a b := by
+  rw [stdSymplecticBilinForm_apply, ← Matrix.toBilin'_apply' (Matrix.J (Fin n) k),
+    Matrix.toBilin'_apply]
+  simp
 
 /-- The standard symplectic form is alternating. -/
 theorem isAlt_stdSymplecticBilinForm : (stdSymplecticBilinForm k n).IsAlt := by

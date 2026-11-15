@@ -25,6 +25,8 @@ unit of `K` and `a ↦ a • x` is bijective.
 
 * `LinearEquiv.span_singleton_apply_eq_top_iff`: a linear equivalence carries generators to
   generators.
+* `LinearEquiv.span_singleton_eq_top_iff_isUnit`: an element of a module isomorphic to the base
+  ring generates it exactly when its image is a unit.
 * `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a commutative semiring whose
   only unit is `1` has a single generator.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
@@ -43,16 +45,24 @@ theorem span_singleton_apply_eq_top_iff {R M N : Type*} [Semiring R] [AddCommMon
     Submodule.span R {e x} = ⊤ ↔ Submodule.span R {x} = ⊤ := by
   rw [← Set.image_singleton, Submodule.span_image_linearEquiv, Submodule.map_eq_top_iff]
 
+/-- **Generators of a module isomorphic to the base ring are units**: for `e : M ≃ₗ[R] R`, an
+element `x` spans `M` if and only if `e x` is a unit of `R`. Over a noncommutative ring this needs
+every left inverse to be a two-sided inverse. -/
+theorem span_singleton_eq_top_iff_isUnit {R M : Type*} [Semiring R] [IsDedekindFiniteMonoid R]
+    [AddCommMonoid M] [Module R M] (e : M ≃ₗ[R] R) {x : M} :
+    Submodule.span R {x} = ⊤ ↔ IsUnit (e x) := by
+  rw [← e.span_singleton_apply_eq_top_iff, Ideal.eq_top_iff_one, Submodule.mem_span_singleton,
+    isUnit_iff_exists_inv']
+  simp only [smul_eq_mul]
+
 /-- **A module isomorphic to `K` has a single generator when `1` is the only unit of `K`**: two
 elements `x` and `y` of a module `N ≃ₗ[K] K` with `span K {x} = ⊤` and `span K {y} = ⊤` are
 equal. -/
 theorem eq_of_span_singleton_eq_top {K N : Type*} [CommSemiring K] [Subsingleton Kˣ]
     [AddCommMonoid N] [Module K N] (φ : N ≃ₗ[K] K) {x y : N}
     (hx : Submodule.span K {x} = ⊤) (hy : Submodule.span K {y} = ⊤) : x = y := by
-  -- A generator is carried by `φ` to a generator of the ideal `⊤`, that is to a unit.
-  have hunit {z : N} (hz : Submodule.span K {z} = ⊤) : IsUnit (φ z) := by
-    rw [← Ideal.span_singleton_eq_top]
-    exact φ.span_singleton_apply_eq_top_iff.2 hz
+  have hunit {z : N} (hz : Submodule.span K {z} = ⊤) : IsUnit (φ z) :=
+    φ.span_singleton_eq_top_iff_isUnit.1 hz
   exact φ.injective (by
     rw [← (hunit hx).unit_spec, ← (hunit hy).unit_spec, Subsingleton.elim (hunit hx).unit])
 

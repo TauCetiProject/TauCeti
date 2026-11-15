@@ -89,9 +89,11 @@ theorem differentExponent_ratFunc_eq_differentExponent_adjoin (hF : IsFunctionFi
 element `x`, only finitely many rational places `P` with `ord_P x ≥ 0` admit no constant `a` with
 `ord_P (x - a) = 1`. -/
 theorem finite_setOf_forall_ord_sub_algebraMap_ne_one (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    [Algebra.IsSeparable k⟮x⟯ F] :
     {P : Place k F | P.degree = 1 ∧ 0 ≤ P.ord x ∧
       ∀ a : k, P.ord (x - algebraMap k F a) ≠ 1}.Finite := by
+  have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
+  have hx : Transcendental k x := transcendental_of_isAlgebraic_adjoin
   let _ := ratFuncAlgebraOfTranscendental hx
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
   let _ := isFunctionField_iff_functionField.mp hF
@@ -146,8 +148,10 @@ theorem finite_setOf_forall_irreducible_ord_aeval_ne_one (hF : IsFunctionField k
 field these include the places above all but finitely many rational places `X - a` of `k(x)`, where
 `F / k(x)` is unramified; over a finite field every place qualifies. -/
 theorem infinite_setOf_isSeparable_residueField (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    [Algebra.IsSeparable k⟮x⟯ F] :
     {P : Place k F | Algebra.IsSeparable k P.ResidueField}.Infinite := by
+  have : Algebra.Transcendental k F := Algebra.transcendental_def.mpr hF.exists_transcendental
+  have hx : Transcendental k x := transcendental_of_isAlgebraic_adjoin
   rcases finite_or_infinite k with hk | hk
   · -- A finite field is perfect, so every residue field is separable over it.
     have := infinite hF
@@ -186,11 +190,11 @@ infinitely many places of `E` have residue field separable over `k`. They includ
 of the places of `F` with separable residue field, and the restriction map has finite fibres. -/
 theorem infinite_setOf_isSeparable_residueField_of_finiteDimensional {E : Type*} [Field E]
     [Algebra k E] [Algebra E F] [IsScalarTower k E F] [FiniteDimensional E F]
-    (hF : IsFunctionField k F) {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    (hF : IsFunctionField k F) {x : F} [Algebra.IsSeparable k⟮x⟯ F] :
     {Q : Place k E | Algebra.IsSeparable k Q.ResidueField}.Infinite := by
   have : Algebra.IsAlgebraic E F := Algebra.IsAlgebraic.of_finite E F
   intro hfin
-  refine infinite_setOf_isSeparable_residueField hF hx ((hfin.preimage' fun Q _ ↦
+  refine infinite_setOf_isSeparable_residueField hF (x := x) ((hfin.preimage' fun Q _ ↦
     finite_setOf_restrict_eq (k' := k) (F' := F) k E Q).subset fun P (hP : Algebra.IsSeparable k
       P.ResidueField) ↦ ?_)
   -- The residue field of the restriction of `P` to `E` lies inside the residue field of `P`.

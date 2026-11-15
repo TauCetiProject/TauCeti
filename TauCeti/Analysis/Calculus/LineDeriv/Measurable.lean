@@ -31,8 +31,9 @@ The results here only ask for measurability on `s` and for a line derivative alm
 an arbitrary candidate `u'`; this is the form in which a.e. derivatives of locally Lipschitz
 functions (Rademacher's theorem) enter the theory of weak derivatives.
 
-Finally, multiplying an integrable function by the directional derivative of a Lipschitz function
-keeps it integrable (`LipschitzWith.integrable_lineDeriv_smul`).
+Finally, over a locally compact field `𝕜`, multiplying an integrable function by the line
+derivative of a Lipschitz function `E → 𝕜` keeps it integrable
+(`LipschitzWith.integrable_lineDeriv_smul`).
 -/
 
 public section
@@ -100,18 +101,15 @@ theorem LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt
   have hb := hC.norm_sub_le (hrl ht).1.1 (hrl hyB).1.1
   simpa [norm_smul, mul_assoc, mul_comm, mul_left_comm] using hb
 
-section Lipschitz
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {ν : Measure E} {g : E → F} {ψ : E → ℝ} {v : E}
-  {K : ℝ≥0}
-
-/-- Multiplying an integrable function by the directional derivative of a Lipschitz function
-keeps it integrable. -/
+variable [LocallyCompactSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [OpensMeasurableSpace E]
+  {g : E → F} {ψ : E → 𝕜} {K : ℝ≥0} in
+/-- Over a locally compact field `𝕜`, multiplying an integrable function by the line derivative of
+a Lipschitz function `ψ : E → 𝕜` keeps it integrable. -/
 theorem LipschitzWith.integrable_lineDeriv_smul
-    (hψ : LipschitzWith K ψ) (hg : Integrable g ν) :
-    Integrable (fun x => lineDeriv ℝ ψ x v • g x) ν :=
-  hg.bdd_smul (K * ‖v‖) (measurable_lineDeriv hψ.continuous).aestronglyMeasurable
-    (Eventually.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hψ)
-
-end Lipschitz
+    (hψ : LipschitzWith K ψ) (hg : Integrable g μ) :
+    Integrable (fun x => lineDeriv 𝕜 ψ x v • g x) μ := by
+  -- A locally compact normed field is proper, hence complete and second countable, as Mathlib's
+  -- measurability of `lineDeriv` requires.
+  have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
+  exact hg.bdd_smul (K * ‖v‖) (aestronglyMeasurable_lineDeriv hψ.continuous μ)
+    (Eventually.of_forall fun _ => norm_lineDeriv_le_of_lipschitz 𝕜 hψ)

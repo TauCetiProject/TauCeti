@@ -231,8 +231,8 @@ private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ :
           simp only [← ofReal_norm]
           rw [hfac, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
           exact ENNReal.ofReal_le_ofReal (by linarith)
-        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
-            enorm_ne_top, ENNReal.mul_rpow_of_ne_top enorm_ne_top enorm_ne_top]
+        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top)
+            eNorm_ne_top, ENNReal.mul_rpow_of_ne_top eNorm_ne_top eNorm_ne_top]
           exact hle x
     _ = K * ((∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ)) +
           (∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) +
@@ -359,8 +359,6 @@ private theorem ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul {r : ℝ → ℝ} 
   have hnormDet : (fderiv ℝ r x).normDet = |c * sx| := by
     rw [hd.hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
     simp
-  have hsx' : 0 < |sx| := abs_pos.mpr hsx
-  have hΨx : 0 < √a := Real.sqrt_pos.mpr ha
   rw [hnormDet, hΨ, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
     Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
   congr 1
@@ -521,10 +519,7 @@ theorem setLIntegral_Ioo_eq_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e
     have hx₁ : x - e₁ ≠ 0 := by rw [mem_Ioi] at hx; linarith
     have hd := (((hasDerivAt_id x).sub_const e₁).inv hx₁).const_mul k |>.const_add e₁
     exact (hd.congr_deriv (by simp only [id_eq]; field_simp)).hasDerivWithinAt
-  have hinj : InjOn f (Ioi e₃) := fun a ha b hb hab ↦ by
-    rw [mem_Ioi] at ha hb
-    have ha₁ : a - e₁ ≠ 0 := by linarith
-    have hb₁ : b - e₁ ≠ 0 := by linarith
+  have hinj : InjOn f (Ioi e₃) := fun a _ b _ hab ↦ by
     simp only [f, add_right_inj, mul_right_inj' hk.ne', inv_inj, sub_left_inj] at hab
     exact hab
   have himage : f '' Ioi e₃ = Ioo e₁ e₂ := by

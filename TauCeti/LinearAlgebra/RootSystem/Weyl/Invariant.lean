@@ -71,11 +71,10 @@ data in which `ρ` is not a weight.
 
 ## References
 
-This is the "a product of a Weyl-invariant and an alternating element" step of the Weyl character
-formula route fixed by Layer 6 ("the Weyl character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. As with `TauCeti.weylNumerator`
-and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract
-root pairing and the Lie-algebra statement is a specialization rather than a rebuild.
+This is the step of the proof of the Weyl character formula showing that a product of a
+Weyl-invariant and an alternating element is alternating. As with `TauCeti.weylNumerator` and
+`TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract root
+pairing and the Lie-algebra statement is a specialization rather than a rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.2.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.

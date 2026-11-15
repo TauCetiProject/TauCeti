@@ -69,8 +69,6 @@ private theorem hessian_apply (hα : 0 < α) (hα₂ : α ≤ 2)
         (p : ParabolicSpaceTime E).time) (p : ParabolicSpaceTime E).space := by
   simp only [hessian, heatDuhamelPotentialHolderL_apply, time_slabMk, space_slabMk, coe_slabTime]
 
-variable [CompleteSpace F]
-
 private theorem exists_holderWith_hessian (hα : 0 < α) (hα₁ : α < 1) :
     ∃ C : ℝ≥0, ∀ (T : ℝ≥0) (f : HolderSpace α (slab (E := E) 0 T) F),
       HolderWith (C * ‖f‖₊) α (hessian hα (hα₁.le.trans (by norm_num)) f) := by
@@ -108,7 +106,7 @@ private theorem norm_hessian_le (hα : 0 < α) (hα₁ : α < 1)
     rw [coe_slabTime] at hp
     rw [abs_of_nonneg hp.1]
     exact Real.sqrt_le_sqrt hp.2
-  simpa only [hzero, dist_zero_right, NNReal.coe_mul, coe_nnnorm] using
+  simpa only [hzero, dist_zero_right, NNReal.coe_mul, coe_nnNorm] using
     (holderWith_hessian hα hα₁ f).dist_le_of_le hd
 
 private def hessianHolder (hα : 0 < α) (hα₁ : α < 1)

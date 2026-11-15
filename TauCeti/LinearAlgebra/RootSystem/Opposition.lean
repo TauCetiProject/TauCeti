@@ -19,6 +19,19 @@ positive roots — that is `TauCeti.mem_support_iff_isPos_and_forall_ne_add`, pr
 `TauCeti/LinearAlgebra/RootSystem/Positive.lean` — and `α ↦ -w₀ α` is an additive bijection of the
 positive roots, so it preserves that description.
 
+Restricting `-w₀` to the base is what lets a condition imposed on the values of the *simple* coroot
+functionals be transported along it. Its companion `LongestElement.lean` already transports one
+such condition: `TauCeti.neg_smul_mem_dominantChamber_longestElement` says `-(w₀ • x)` is dominant
+whenever `x` is, and that argument needs only that `-w₀` carries positive roots to positive roots.
+Integrality is the condition that needs the restriction to the base itself.
+`TauCeti.IsDominantIntegral` in `TauCeti/Algebra/Lie/HighestWeight/Basic.lean` is such a condition
+— `∀ i ∈ b.support, ∃ n : ℕ, lam (coroot i) = (n : K)` — and transporting it along `-w₀` asks for
+the natural value of `lam` at the *simple* index `opposition i`, so it needs exactly
+`TauCeti.opposition_mem_support` and `TauCeti.coroot'_opposition`. That transport is
+`TauCeti.IsDominantIntegral.neg_longestElement_smul` in
+`TauCeti/Algebra/Lie/HighestWeight/LowestWeight.lean`; the statements here involve root pairings
+alone.
+
 ## Main definitions
 
 * `TauCeti.opposition` is the opposition involution `i ↦ -w₀ i` on root indices.
@@ -49,31 +62,9 @@ transparency, which blocks `rw` and `simp` on `TauCeti.coe_oppositionPerm`.
 
 ## References
 
-This file belongs to the "longest element" item, last in Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` — the stage implemented by its sole
-import `TauCeti/LinearAlgebra/RootSystem/LongestElement.lean`. That item pins `w₀` by
-`w₀ • posRoots b = negRoots b` and `w₀ ^ 2 = 1`, which say exactly that `-w₀` is an involutive
-permutation of the positive roots; proved here is *which* permutation it is, namely one that
-restricts to the base. Every stage the argument stands on is on `main`: the positivity and height
-API of Layer 1 (`TauCeti/LinearAlgebra/RootSystem/Positive.lean`, where the indecomposability
-characterisation it consumes lives), and the chamber, fundamental-domain and longest-element
-results of Layer 4.
-
-Restricting `-w₀` to the base is what lets a condition imposed on the values of the *simple* coroot
-functionals be transported along it. Its companion `LongestElement.lean` already transports one
-such condition: `TauCeti.neg_smul_mem_dominantChamber_longestElement` says `-(w₀ • x)` is dominant
-whenever `x` is, and that argument needs only that `-w₀` carries positive roots to positive roots.
-Integrality is the condition that needs the restriction to the base itself.
-`TauCeti.IsDominantIntegral` in `TauCeti/Algebra/Lie/HighestWeight/Basic.lean` is such a condition
-— `∀ i ∈ b.support, ∃ n : ℕ, lam (coroot i) = (n : K)` — and transporting it along `-w₀` asks for
-the natural value of `lam` at the *simple* index `opposition i`, so it needs exactly
-`TauCeti.opposition_mem_support` and `TauCeti.coroot'_opposition`. That transport is one conjunct
-of `exists_invariantForm_iff_neg_longest_smul_eq` in
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/Suggested.lean`; the conjunct mentions no Lie
-algebra and no Verma module, and nothing here depends on the enveloping-algebra layers on which the
-rest of that target rests. The argument is the one in J. E. Humphreys, *Introduction to Lie
-Algebras and Representation Theory*, GTM 9, Ch. III, §10.3 and §13.1, and in N. Bourbaki, *Groupes
-et algèbres de Lie*, Ch. VI, §1.6.
+The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, GTM 9, Ch. III, §10.3 and §13.1, and in N. Bourbaki, *Groupes et algèbres de Lie*,
+Ch. VI, §1.6.
 -/
 
 public section
@@ -93,7 +84,7 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 section Opposition
 
 variable [CharZero R] [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
-  [P.IsRootSystem] (b : P.Base)
+  (b : P.Base)
 
 /-- **The opposition involution** of a base: the map `i ↦ -w₀ i` on root indices, where `w₀` is the
 longest element of the Weyl group. On root vectors it is `α ↦ -w₀ α`, so it permutes the positive

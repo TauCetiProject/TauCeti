@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
@@ -20,10 +21,14 @@ measurability of maps into its domain.
 Pushforward along a proper map preserves finiteness on compact sets. In particular,
 proper embeddings and translations can transport locally finite measures.
 
+A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets: the image
+is a countable union of images under open embeddings of chart domains.
+
 ## Main results
 
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
+* `IsLocalHomeomorph.measurableSet_image`
 * `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
 
@@ -45,6 +50,21 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     Measurable (f ∘ g) ↔ Measurable g := by
   rw [measurable_iff_comap_le, measurable_iff_comap_le, ← MeasurableSpace.comap_comp,
     BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
+
+/-- A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets. -/
+theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] [BorelSpace α] [LindelofSpace α] [TopologicalSpace β]
+    [MeasurableSpace β] [BorelSpace β] {f : α → β} (hf : IsLocalHomeomorph f) {s : Set α}
+    (hs : MeasurableSet s) : MeasurableSet (f '' s) := by
+  choose e he hfe using hf
+  obtain ⟨t, ht, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ (e x).source)
+    fun x ↦ (e x).open_source.mem_nhds (he x)
+  rw [← Set.inter_univ s, ← hcover, Set.inter_iUnion₂, Set.image_iUnion₂]
+  refine .biUnion ht fun x _ ↦ ?_
+  -- On the source of `e x`, the map `f` is the open embedding `(e x).source.domRestrict (e x)`.
+  rw [hfe x, ← Set.image_domRestrict]
+  exact (e x).isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
+    (measurable_subtype_coe hs)
 
 namespace MeasureTheory.Measure
 

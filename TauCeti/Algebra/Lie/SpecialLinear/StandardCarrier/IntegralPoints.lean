@@ -21,10 +21,6 @@ generation of the integral special linear group by transvections.
   `SL_{r+1}(ℤ)` in `GL_{r+1}(ℤ)`.
 * `TauCeti.SlStd.mem_points_int_iff_det_eq_one`: integral carrier-point membership is equivalent
   to having determinant one.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it records the integral-points consequence of the
-ring-general generation statement for the explicit full-weight type `A` carrier.
 -/
 
 public section

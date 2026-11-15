@@ -175,7 +175,6 @@ private lemma tendsto_mul_I_mul_resolvent (x : ℝ) :
   refine h.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with y hy
   have hy' : (y : ℂ) ≠ 0 := ofReal_ne_zero.2 hy
-  have hxz : (x : ℂ) - y * I ≠ 0 := fun h ↦ hy (by simpa using (congrArg Complex.im h).symm)
   rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
   field_simp
 
@@ -194,7 +193,7 @@ theorem tendsto_mul_I_pow_mul_resolventTransform_add_sum [IsFiniteMeasure μ] {r
       (Eventually.of_forall fun y ↦ by fun_prop) ?_
       (by simpa only [Real.norm_eq_abs, abs_pow] using hr.norm)
       (ae_of_all _ fun x ↦ tendsto_const_nhds.mul (tendsto_mul_I_mul_resolvent x))
-    filter_upwards [eventually_ne_atTop 0] with y hy
+    filter_upwards [eventually_ne_atTop 0] with y _
     refine ae_of_all _ fun x ↦ ?_
     rw [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, resolvent, Ring.inverse_eq_inv',
       norm_mul, norm_inv, ← div_eq_mul_inv]
