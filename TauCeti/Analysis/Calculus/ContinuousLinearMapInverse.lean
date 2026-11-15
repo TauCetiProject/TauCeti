@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -44,8 +45,14 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   family is invertible.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
   Banach spaces, on any domain, is differentiable at an invertible base point.
+* `ContDiffWithinAt.continuousLinearEquiv_symm`, `ContDiffAt.continuousLinearEquiv_symm`,
+  `ContDiffOn.continuousLinearEquiv_symm`, `ContDiff.continuousLinearEquiv_symm`: the same for the
+  inverses of a family of continuous linear equivalences between Banach spaces.
+* `HasFDerivAt.clm_inverse_of_eventually_isInvertible`: the derivative of the inverse of a
+  differentiable family that is invertible near the base point, with no completeness assumption.
 * `DifferentiableAt.continuousLinearEquiv_symm`, `Differentiable.continuousLinearEquiv_symm`: the
-  same for the inverses of a family of continuous linear equivalences.
+  inverses of a differentiable family of continuous linear equivalences are differentiable, with no
+  completeness assumption.
 * `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
   `DifferentiableAt.fderiv_clm_inverse`: the derivative `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹` of an inverse
   family along a direction.
@@ -249,20 +256,91 @@ theorem DifferentiableAt.clm_inverse_of_completeSpace [CompleteSpace G]
   ((hx.contDiffAt_map_inverse (𝕜 := 𝕜') (n := 1)).differentiableAt one_ne_zero).restrictScalars 𝕜
     |>.comp x hf
 
-/-- A family of continuous linear equivalences between Banach spaces, differentiable at a point,
-has inverse operators differentiable there. -/
-theorem DifferentiableAt.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+open Asymptotics Filter in
+/-- The derivative of the inverse of a family of continuous linear maps that is invertible near the
+base point, with no completeness assumption: `D(f⁻¹)(v) = -f⁻¹ (f' v) f⁻¹`. -/
+theorem HasFDerivAt.clm_inverse_of_eventually_isInvertible {f' : E →L[𝕜] G →L[𝕜'] H}
+    (hf : HasFDerivAt f f' x) (h : ∀ᶠ y in 𝓝 x, (f y).IsInvertible) :
+    HasFDerivAt (fun y => (f y).inverse)
+      (-(((ContinuousLinearMap.compL 𝕜' H H G).bilinearRestrictScalars 𝕜 (f x).inverse).comp
+        ((((ContinuousLinearMap.compL 𝕜' H G H).bilinearRestrictScalars 𝕜).flip
+          (f x).inverse).comp f'))) x := by
+  set g : E → H →L[𝕜'] G := fun y => (f y).inverse
+  set r : E → G →L[𝕜'] H := fun y => f y - f x - f' (y - x)
+  have hg : ContinuousAt g x := hf.continuousAt.clm_inverse_of_eventually_isInvertible h
+  have h₁ : (fun y => ‖g y‖ * ‖g x‖ * ‖r y‖) =o[𝓝 x] fun y => ‖y - x‖ := by
+    simpa only [one_mul] using
+      ((hg.norm.mul_const ‖g x‖).isBigO_one ℝ).mul_isLittleO hf.isLittleO.norm_norm
+  have h₂ : (fun y => ‖g y - g x‖ * ‖f'‖ * ‖g x‖ * ‖y - x‖) =o[𝓝 x] fun y => ‖y - x‖ := by
+    have ht : Tendsto (fun y => ‖g y - g x‖ * ‖f'‖ * ‖g x‖) (𝓝 x) (𝓝 0) := by
+      simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 hg).mul_const ‖f'‖).mul_const ‖g x‖
+    simpa using ((isLittleO_one_iff ℝ).2 ht).mul_isBigO (isBigO_refl (fun y => ‖y - x‖) _)
+  refine .of_isLittleO <| IsLittleO.of_norm_right <| IsBigO.trans_isLittleO ?_ (h₁.add h₂)
+  refine .of_bound 1 ?_
+  filter_upwards [h] with y hy
+  -- The remainder is `-(f y)⁻¹ (r y) (f x)⁻¹ - ((f y)⁻¹ - (f x)⁻¹) (f' (y - x)) (f x)⁻¹`, where
+  -- `r y` is the remainder of `f`.
+  have he : g y - g x - (-(((ContinuousLinearMap.compL 𝕜' H H G).bilinearRestrictScalars 𝕜
+        (g x)).comp ((((ContinuousLinearMap.compL 𝕜' H G H).bilinearRestrictScalars 𝕜).flip
+          (g x)).comp f'))) (y - x) =
+      -(g y ∘L r y ∘L g x) - (g y - g x) ∘L f' (y - x) ∘L g x := by
+    ext v
+    simp [g, r, hy.inverse_apply_self, h.self_of_nhds.self_apply_inverse]
+    abel
+  rw [he, one_mul, Real.norm_of_nonneg (by positivity)]
+  refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+  · calc ‖-(g y ∘L r y ∘L g x)‖ ≤ ‖g y‖ * (‖r y‖ * ‖g x‖) := by
+          rw [norm_neg]
+          exact (opNorm_comp_le _ _).trans (by gcongr; exact opNorm_comp_le _ _)
+      _ = _ := by ring
+  · calc ‖(g y - g x) ∘L f' (y - x) ∘L g x‖ ≤ ‖g y - g x‖ * (‖f' (y - x)‖ * ‖g x‖) :=
+          (opNorm_comp_le _ _).trans (by gcongr; exact opNorm_comp_le _ _)
+      _ ≤ ‖g y - g x‖ * (‖f'‖ * ‖y - x‖ * ‖g x‖) := by gcongr; exact f'.le_opNorm _
+      _ = _ := by ring
+
+/-- A family of continuous linear equivalences, differentiable at a point, has inverse operators
+differentiable there, with no completeness assumption. -/
+theorem DifferentiableAt.continuousLinearEquiv_symm {A : E → G ≃L[𝕜'] H}
     (hA : DifferentiableAt 𝕜 (fun y ↦ (A y : G →L[𝕜'] H)) x) :
     DifferentiableAt 𝕜 (fun y ↦ ((A y).symm : H →L[𝕜'] G)) x := by
   simpa only [ContinuousLinearMap.inverse_equiv] using
-    hA.clm_inverse_of_completeSpace ⟨A x, rfl⟩
+    (hA.hasFDerivAt.clm_inverse_of_eventually_isInvertible
+      (.of_forall fun _ ↦ isInvertible_equiv)).differentiableAt
 
-/-- A differentiable family of continuous linear equivalences between Banach spaces has a
-differentiable family of inverse operators. -/
-theorem Differentiable.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+/-- A differentiable family of continuous linear equivalences has a differentiable family of
+inverse operators, with no completeness assumption. -/
+theorem Differentiable.continuousLinearEquiv_symm {A : E → G ≃L[𝕜'] H}
     (hA : Differentiable 𝕜 fun y ↦ (A y : G →L[𝕜'] H)) :
     Differentiable 𝕜 fun y ↦ ((A y).symm : H →L[𝕜'] G) :=
   fun y ↦ (hA y).continuousLinearEquiv_symm
+
+/-- A family of continuous linear equivalences between Banach spaces, `C^n` within a set at a
+point, has inverse operators `C^n` within the set there. -/
+theorem ContDiffWithinAt.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : ContDiffWithinAt 𝕜 n (fun y ↦ (A y : G →L[𝕜'] H)) s x) :
+    ContDiffWithinAt 𝕜 n (fun y ↦ ((A y).symm : H →L[𝕜'] G)) s x := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using hA.clm_inverse ⟨A x, rfl⟩
+
+/-- A family of continuous linear equivalences between Banach spaces, `C^n` at a point, has
+inverse operators `C^n` there. -/
+theorem ContDiffAt.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : ContDiffAt 𝕜 n (fun y ↦ (A y : G →L[𝕜'] H)) x) :
+    ContDiffAt 𝕜 n (fun y ↦ ((A y).symm : H →L[𝕜'] G)) x := by
+  simpa only [ContinuousLinearMap.inverse_equiv] using hA.clm_inverse ⟨A x, rfl⟩
+
+/-- A family of continuous linear equivalences between Banach spaces, `C^n` on a set, has inverse
+operators `C^n` on that set. -/
+theorem ContDiffOn.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : ContDiffOn 𝕜 n (fun y ↦ (A y : G →L[𝕜'] H)) s) :
+    ContDiffOn 𝕜 n (fun y ↦ ((A y).symm : H →L[𝕜'] G)) s :=
+  fun y hy ↦ (hA y hy).continuousLinearEquiv_symm
+
+/-- A `C^n` family of continuous linear equivalences between Banach spaces has a `C^n` family of
+inverse operators. -/
+theorem ContDiff.continuousLinearEquiv_symm [CompleteSpace G] {A : E → G ≃L[𝕜'] H}
+    (hA : ContDiff 𝕜 n fun y ↦ (A y : G →L[𝕜'] H)) :
+    ContDiff 𝕜 n fun y ↦ ((A y).symm : H →L[𝕜'] G) :=
+  contDiff_iff_contDiffAt.2 fun y ↦ (hA.contDiffAt (x := y)).continuousLinearEquiv_symm
 
 /-- The derivative of the inverse of a differentiable family of continuous linear maps between
 Banach spaces at an invertible base point: `D(f⁻¹)(v) = -f⁻¹ (f' v) f⁻¹`. -/

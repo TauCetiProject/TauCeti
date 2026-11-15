@@ -23,9 +23,10 @@ the **gauge transform**
 
 `S^Φ_t = Φ_t⁻¹ (S_t Φ_t - Φ_t')`
 
-(`TauCeti.Floer.gaugeTransform`, `TauCeti.Floer.deriv_comp_sub_apply`). If each `Φ_t` is complex
+(`TauCeti.Floer.gaugeTransform`,
+`TauCeti.Floer.deriv_apply_sub_apply_eq_apply_sub_gaugeTransform`). If each `Φ_t` is complex
 linear from `(U, J'_t)` to `(V, J_t)`, the asymptotic operator transforms in the same way
-(`TauCeti.Floer.asymptoticOperator_comp_eq`):
+(`TauCeti.Floer.asymptoticOperator_apply_eq_apply_asymptoticOperator_gaugeTransform`):
 
 `A_{J, S} (Φ η) = Φ (A_{J', S^Φ} η)`.
 
@@ -59,7 +60,8 @@ symmetric for the fixed `L²` inner product of `E` on `C¹` one-periodic loops
 
 ## Main results
 
-* `TauCeti.Floer.asymptoticOperator_comp_eq`: the asymptotic operator in a complex frame.
+* `TauCeti.Floer.asymptoticOperator_apply_eq_apply_asymptoticOperator_gaugeTransform`: the
+  asymptotic operator in a complex frame.
 * `TauCeti.Floer.symplecticForm_gaugeTransform_apply_add_eq_zero`: symplectic frames preserve
   infinitesimal symplecticity.
 * `TauCeti.Floer.forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff`: periodic
@@ -93,8 +95,8 @@ variable {U V : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] [NormedAddComm
 /-- The **gauge transform** `Φ_t⁻¹ (S_t Φ_t - Φ_t')` of a family `S_t` of endomorphisms of `V` by
 a family of isomorphisms `Φ_t : U ≃ V`. For a frame differentiable in `t`, a differentiable loop
 `η` solves `η' = S^Φ_t η` exactly when `Φ η` solves `ζ' = S_t ζ`
-(`TauCeti.Floer.deriv_comp_sub_apply`), so this is the coefficient of the linear equation in the
-moving frame `Φ`. -/
+(`TauCeti.Floer.deriv_apply_sub_apply_eq_apply_sub_gaugeTransform`), so this is the coefficient
+of the linear equation in the moving frame `Φ`. -/
 noncomputable def gaugeTransform (Φ : ℝ → U ≃L[ℝ] V) (S : ℝ → V →L[ℝ] V) (t : ℝ) : U →L[ℝ] U :=
   ((Φ t).symm : V →L[ℝ] U) ∘L
     (S t ∘L (Φ t : U →L[ℝ] V) - deriv (fun s ↦ (Φ s : U →L[ℝ] V)) t)
@@ -126,8 +128,8 @@ theorem gaugeTransform_const (e : U ≃L[ℝ] V) (S : ℝ → V →L[ℝ] V) (t 
 /-- **The linear equation in a moving frame.** For a frame `Φ` and a loop `ζ` differentiable at
 `t`, `(Φ ζ)' - S_t (Φ ζ) = Φ_t (ζ' - S^Φ_t ζ)` at `t`. In particular `Φ ζ` solves `ζ' = S_t ζ` at
 `t` exactly when `ζ` solves `ζ' = S^Φ_t ζ` there. -/
-theorem deriv_comp_sub_apply (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U →L[ℝ] V)) t)
-    (hζ : DifferentiableAt ℝ ζ t) :
+theorem deriv_apply_sub_apply_eq_apply_sub_gaugeTransform
+    (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U →L[ℝ] V)) t) (hζ : DifferentiableAt ℝ ζ t) :
     deriv (fun s ↦ Φ s (ζ s)) t - S t (Φ t (ζ t)) =
       Φ t (deriv ζ t - gaugeTransform Φ S t (ζ t)) := by
   have hd := hΦ.hasDerivAt.clm_apply hζ.hasDerivAt
@@ -139,20 +141,23 @@ theorem deriv_comp_sub_apply (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U �
 `(V, J_t)`, that is `Φ_t ∘ J'_t = J_t ∘ Φ_t`, and differentiable in `t`, then for a loop `ζ`
 differentiable at `t`, `A_{J, S} (Φ ζ) = Φ (A_{J', S^Φ} ζ)` at `t`, for the gauge transform `S^Φ` of
 `S` by `Φ`. -/
-theorem asymptoticOperator_comp_eq (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U →L[ℝ] V)) t)
+theorem asymptoticOperator_apply_eq_apply_asymptoticOperator_gaugeTransform
+    (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U →L[ℝ] V)) t)
     (hΦJ : ∀ u, Φ t (J' t u) = J t (Φ t u)) (hζ : DifferentiableAt ℝ ζ t) :
     asymptoticOperator J S (fun s ↦ Φ s (ζ s)) t =
       Φ t (asymptoticOperator J' (gaugeTransform Φ S) ζ t) := by
-  rw [asymptoticOperator_def, asymptoticOperator_def, deriv_comp_sub_apply hΦ hζ, hΦJ]
+  rw [asymptoticOperator_def, asymptoticOperator_def,
+    deriv_apply_sub_apply_eq_apply_sub_gaugeTransform hΦ hζ, hΦJ]
 
 /-- A frame identifies the kernels of the two asymptotic operators pointwise, for any complex
 structures `J_t` and `J'_t`. -/
-theorem asymptoticOperator_comp_eq_zero_iff
+theorem asymptoticOperator_apply_eq_zero_iff_asymptoticOperator_gaugeTransform_eq_zero
     (hΦ : DifferentiableAt ℝ (fun s ↦ (Φ s : U →L[ℝ] V)) t) (hζ : DifferentiableAt ℝ ζ t) :
     asymptoticOperator J S (fun s ↦ Φ s (ζ s)) t = 0 ↔
       asymptoticOperator J' (gaugeTransform Φ S) ζ t = 0 := by
   rw [asymptoticOperator_def, asymptoticOperator_def, AlmostComplexStructure.map_eq_zero_iff,
-    AlmostComplexStructure.map_eq_zero_iff, deriv_comp_sub_apply hΦ hζ, (Φ t).map_eq_zero_iff]
+    AlmostComplexStructure.map_eq_zero_iff,
+    deriv_apply_sub_apply_eq_apply_sub_gaugeTransform hΦ hζ, (Φ t).map_eq_zero_iff]
 
 /-- **Symplectic frames preserve infinitesimal symplecticity.** If every `Φ_s` is symplectic from
 `(U, ω')` to `(V, ω)`, the frame is differentiable at `t` and `S_t` is infinitesimally symplectic
@@ -166,12 +171,9 @@ theorem symplecticForm_gaugeTransform_apply_add_eq_zero [FiniteDimensional ℝ V
   set Φ' := deriv (fun s ↦ (Φ s : U →L[ℝ] V)) t
   -- Differentiating `ω (Φ_s u) (Φ_s v) = ω' u v` at `s = t`.
   have hd : ω (Φ' u) (Φ t v) + ω (Φ t u) (Φ' v) = 0 := by
-    have h₁ := ω.hasDerivAt_apply_comp (hΦ.hasDerivAt.clm_apply (hasDerivAt_const t u))
-      (hΦ.hasDerivAt.clm_apply (hasDerivAt_const t v))
-    have h₂ : HasDerivAt (fun s ↦ ω (Φ s u) (Φ s v)) 0 t := by
-      simp only [hΦω]
-      exact hasDerivAt_const t _
-    simpa using h₁.unique (by simpa using h₂)
+    simpa using ω.toBilinForm.toContinuousBilinearMap.apply_add_apply_eq_zero_of_const
+      (hΦ.hasDerivAt.clm_apply (hasDerivAt_const t u))
+      (hΦ.hasDerivAt.clm_apply (hasDerivAt_const t v)) fun s ↦ by simpa using hΦω s u v
   have key : ∀ a w, ω' ((Φ t).symm a) w = ω a (Φ t w) := fun a w ↦ by
     rw [← hΦω t, ContinuousLinearEquiv.apply_symm_apply]
   have e₁ := ω'.neg_eq ((Φ t).symm (S t (Φ t v) - Φ' v)) u
@@ -199,8 +201,8 @@ theorem continuous_gaugeTransform (hΦ : ContDiff ℝ 1 fun s ↦ (Φ s : U →L
 `Φ_t` and any complex structures `J_t` and `J'_t`, the asymptotic operator `A_{J', S^Φ}` of the
 gauge transform `S^Φ` has no nonzero differentiable `c`-periodic kernel element exactly when
 `A_{J, S}` has none. -/
-theorem forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff [CompleteSpace U]
-    {c : ℝ} (hΦd : Differentiable ℝ fun s ↦ (Φ s : U →L[ℝ] V)) (hΦp : Periodic Φ c) :
+theorem forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff {c : ℝ}
+    (hΦd : Differentiable ℝ fun s ↦ (Φ s : U →L[ℝ] V)) (hΦp : Periodic Φ c) :
     (∀ ζ : ℝ → U, Differentiable ℝ ζ → Periodic ζ c →
         (∀ t, asymptoticOperator J' (gaugeTransform Φ S) ζ t = 0) → ζ = 0) ↔
       ∀ η : ℝ → V, Differentiable ℝ η → Periodic η c →
@@ -209,19 +211,19 @@ theorem forall_eq_zero_of_asymptoticOperator_gaugeTransform_eq_zero_iff [Complet
   · intro h η hη hηp hA
     -- Pull `η` back to the loop `Φ⁻¹ η`, which is differentiable since inversion is smooth.
     set ζ : ℝ → U := fun s ↦ (Φ s).symm (η s)
-    have hζ : Differentiable ℝ ζ := fun s ↦ ((hΦd.continuousLinearEquiv_symm s).hasDerivAt.clm_apply
-      (hη s).hasDerivAt).differentiableAt
+    have hζ : Differentiable ℝ ζ := hΦd.continuousLinearEquiv_symm.clm_apply hη
     have hΦζ : (fun s ↦ Φ s (ζ s)) = η := funext fun s ↦ by simp [ζ]
     have h0 := h ζ hζ (fun s ↦ by simp only [ζ, hΦp s, hηp s]) fun t ↦
-      (asymptoticOperator_comp_eq_zero_iff (hΦd t) (hζ t)).1 (hΦζ ▸ hA t)
+      (asymptoticOperator_apply_eq_zero_iff_asymptoticOperator_gaugeTransform_eq_zero (hΦd t)
+        (hζ t)).1 (hΦζ ▸ hA t)
     rw [← hΦζ, h0]
     funext s
     simp
   · intro h ζ hζ hζp hA
-    have hη : Differentiable ℝ fun s ↦ Φ s (ζ s) := fun s ↦
-      ((hΦd s).hasDerivAt.clm_apply (hζ s).hasDerivAt).differentiableAt
+    have hη : Differentiable ℝ fun s ↦ Φ s (ζ s) := hΦd.clm_apply hζ
     have h0 := h _ hη (fun s ↦ by simp only [hΦp s, hζp s]) fun t ↦
-      (asymptoticOperator_comp_eq_zero_iff (hΦd t) (hζ t)).2 (hA t)
+      (asymptoticOperator_apply_eq_zero_iff_asymptoticOperator_gaugeTransform_eq_zero (hΦd t)
+        (hζ t)).2 (hA t)
     funext s
     simpa using congrFun h0 s
 
@@ -246,11 +248,11 @@ theorem asymptoticOperator_unitaryTransport_eq (hJ₀ : ∀ u v, ω u (J₀ v) =
     asymptoticOperator J S (fun s ↦ ω.unitaryTransport (J s) (ζ s)) t =
       ω.unitaryTransport (J t) (asymptoticOperator (fun _ ↦ J₀)
         (gaugeTransform (fun s ↦ unitaryTransportEquiv (hJc s)) S) ζ t) := by
-  have h := asymptoticOperator_comp_eq (J := J) (S := S)
+  have h := asymptoticOperator_apply_eq_apply_asymptoticOperator_gaugeTransform (J := J) (S := S)
     (Φ := fun s ↦ unitaryTransportEquiv (hJc s)) (t := t) (J' := fun _ ↦ J₀) ?_
     (fun u ↦ by simpa using unitaryTransport_apply_eq_apply_unitaryTransport hJ₀ (hJc t) u) hζ
   · simpa using h
-  · simpa using hJd.unitaryTransport hJc
+  · simpa using hJd.unitaryTransport (.of_forall hJc)
 
 /-- **The unitary gauge at a nondegenerate orbit.** Let `x` be a one-periodic orbit of a
 one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally

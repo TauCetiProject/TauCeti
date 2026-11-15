@@ -32,7 +32,7 @@ isomorphism from `(E, ω, J₀)` to `(E, ω, J)`
 * it depends smoothly, indeed analytically, on `J`: a smooth family of compatible structures has
   a smooth family of unitary transports (`ContDiffOn.unitaryTransport`), and likewise for
   continuous and differentiable families (`ContinuousOn.unitaryTransport`,
-  `DifferentiableWithinAt.unitaryTransport`).
+  `DifferentiableWithinAt.unitaryTransport`, `DifferentiableOn.unitaryTransport`).
 
 The Riesz operator of `g_J` is `H = -J₀ J`
 (`SymplecticForm.continuousLinearMapOfBilin_associatedBilinForm`), and the key identity is
@@ -66,6 +66,7 @@ with `t`, to an operator with the constant complex structure `J₀`.
 public section
 
 open InnerProductSpace
+open scoped Topology
 
 
 namespace TauCeti
@@ -174,6 +175,20 @@ theorem unitaryTransport_mul_unitaryTransportEquiv_symm (hJ : ω.Compatible J) :
   ext v
   simp
 
+@[simp]
+theorem unitaryTransportEquiv_symm_comp_unitaryTransport (hJ : ω.Compatible J) :
+    ((unitaryTransportEquiv hJ).symm : E →L[ℝ] E) ∘L ω.unitaryTransport J =
+      ContinuousLinearMap.id ℝ E := by
+  ext v
+  simp
+
+@[simp]
+theorem unitaryTransport_comp_unitaryTransportEquiv_symm (hJ : ω.Compatible J) :
+    ω.unitaryTransport J ∘L ((unitaryTransportEquiv hJ).symm : E →L[ℝ] E) =
+      ContinuousLinearMap.id ℝ E := by
+  ext v
+  simp
+
 /-- The unitary transport of an `ω`-compatible structure is a strictly positive operator. -/
 theorem Compatible.isStrictlyPositive_unitaryTransport (hJ : ω.Compatible J) :
     IsStrictlyPositive (ω.unitaryTransport J) :=
@@ -205,23 +220,30 @@ theorem unitaryTransport_eq_one : ω.unitaryTransport J₀ = 1 := by
       innerSL_apply_apply]
   rw [unitaryTransport_def, h, ContinuousLinearMap.metricChangeTransport_innerSL]
 
+/-- If the inner product of `E` is the metric `ω(·, J₀ ·)` of `J₀`, then the unitary transport
+equivalence of `J₀` itself is the identity. -/
+@[simp]
+theorem unitaryTransportEquiv_eq_refl (hJ : ω.Compatible J₀) :
+    unitaryTransportEquiv hJ = ContinuousLinearEquiv.refl ℝ E := by
+  ext v
+  simp [unitaryTransport_eq_one hJ₀]
+
 /-- **Conjugation by `J₀` inverts the Riesz operator** `H` of the metric `g_J = ω(·, J ·)`: if the
-inner product of `E` is the metric `ω(·, J₀ ·)` of `J₀` and `J` preserves `ω`, then
-`H J₀ H = J₀`. -/
-theorem continuousLinearMapOfBilin_associatedBilinForm_mul_mul (hJ : ω.Invariant J) :
+inner product of `E` is the metric `ω(·, J₀ ·)` of `J₀`, then `H J₀ H = J₀`. -/
+theorem continuousLinearMapOfBilin_associatedBilinForm_mul_mul :
     (ω.associatedBilinForm J).toContinuousBilinearMap♯ *
         LinearMap.toContinuousLinearMap J₀.toLinearMap *
         (ω.associatedBilinForm J).toContinuousBilinearMap♯ =
       LinearMap.toContinuousLinearMap J₀.toLinearMap := by
-  set A := LinearMap.toContinuousLinearMap J₀.toLinearMap
-  set B := LinearMap.toContinuousLinearMap J.toLinearMap
-  have hAA : A * A = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
-  have hBB : B * B = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J
-  -- `H = -J₀ J`, so `H J₀ H = J₀ J J₀ J₀ J = -J₀ J J = J₀`.
-  calc _ = -(A * B) * A * -(A * B) := by
-        rw [continuousLinearMapOfBilin_associatedBilinForm hJ₀ hJ]
-    _ = A * B * (A * A) * B := by noncomm_ring
-    _ = A := by rw [hAA, mul_neg_one, neg_mul, mul_assoc, hBB]; simp
+  have hH (v w : E) : ⟪(ω.associatedBilinForm J).toContinuousBilinearMap♯ v, w⟫_ℝ = ω v (J w) := by
+    rw [continuousLinearMapOfBilin_apply, LinearMap.toContinuousBilinearMap_apply,
+      associatedBilinForm_apply]
+  have h₀ := ω.inner_apply_left_eq_of_apply_apply_eq_inner hJ₀
+  ext u
+  refine ext_inner_right ℝ fun w ↦ ?_
+  -- `⟪H J₀ H u, w⟫ = ω(J₀ H u, J w) = ⟪J₀ J₀ H u, J w⟫ = -ω(u, J J w) = ω(u, w) = ⟪J₀ u, w⟫`.
+  simp only [mul_apply_eq_comp, LinearMap.coe_toContinuousLinearMap', hH, ← h₀,
+    AlmostComplexStructure.apply_apply, inner_neg_left, inner_neg_right, neg_neg]
 
 /-- **The unitary transport as a conjugate square root**: if the inner product of `E` is the metric
 `ω(·, J₀ ·)` of `J₀` and `J` is `ω`-compatible, then `T_J = J₀ H^(1/2) J₀⁻¹ = -J₀ H^(1/2) J₀`,
@@ -235,7 +257,7 @@ theorem unitaryTransport_eq_neg_mul_sqrt_mul (hJ : ω.Compatible J) :
   have hpos := hJ.isStrictlyPositive_continuousLinearMapOfBilin
   have hAA : A * A = -1 := AlmostComplexStructure.toContinuousLinearMap_mul_self J₀
   have hHAH : H * A * H = A :=
-    continuousLinearMapOfBilin_associatedBilinForm_mul_mul hJ₀ hJ.invariant
+    continuousLinearMapOfBilin_associatedBilinForm_mul_mul hJ₀
   -- `X = J₀ H J₀` is the inverse of `H`, so it commutes with `H^(1/2)`.
   set X := A * H * A
   have hHX : H * X = -1 := by simp only [X, ← mul_assoc, hHAH, hAA]
@@ -330,6 +352,7 @@ end Reference
 
 /-- **The inverse unitary transport is an isometry** from the metric `g_J = ω(·, J ·)` of an
 `ω`-compatible structure to the inner product of `E`. -/
+@[simp]
 theorem inner_unitaryTransportEquiv_symm_unitaryTransportEquiv_symm (hJ : ω.Compatible J)
     (u v : E) :
     ⟪(unitaryTransportEquiv hJ).symm u, (unitaryTransportEquiv hJ).symm v⟫_ℝ = ω u (J v) := by
@@ -400,14 +423,21 @@ theorem _root_.DifferentiableWithinAt.unitaryTransport
     one_ne_zero) _ hx.isStrictlyPositive_continuousLinearMapOfBilin).comp x hg fun y hy ↦
       (hc y hy).isStrictlyPositive_continuousLinearMapOfBilin
 
-/-- A family of `ω`-compatible complex structures that is differentiable at `x` in the operator
-norm has a family of unitary transports differentiable at `x`. -/
+/-- A family of complex structures, `ω`-compatible near `x`, that is differentiable at `x` in the
+operator norm has a family of unitary transports differentiable at `x`. -/
 theorem _root_.DifferentiableAt.unitaryTransport
     (hJ : DifferentiableAt ℝ (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) x)
-    (hc : ∀ y, ω.Compatible (J y)) :
+    (hc : ∀ᶠ y in 𝓝 x, ω.Compatible (J y)) :
     DifferentiableAt ℝ (fun x ↦ ω.unitaryTransport (J x)) x :=
-  differentiableWithinAt_univ.1 <|
-    hJ.differentiableWithinAt.unitaryTransport (fun y _ ↦ hc y) (hc x)
+  (hJ.differentiableWithinAt.unitaryTransport (fun _ hy ↦ hy) hc.self_of_nhds).differentiableAt hc
+
+/-- A family of `ω`-compatible complex structures that is differentiable on `s` in the operator
+norm has a family of unitary transports differentiable on `s`. -/
+theorem _root_.DifferentiableOn.unitaryTransport
+    (hJ : DifferentiableOn ℝ (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) s)
+    (hc : ∀ x ∈ s, ω.Compatible (J x)) :
+    DifferentiableOn ℝ (fun x ↦ ω.unitaryTransport (J x)) s :=
+  fun x hx ↦ (hJ x hx).unitaryTransport hc (hc x hx)
 
 /-- A differentiable family of `ω`-compatible complex structures has a differentiable family of
 unitary transports. -/
@@ -415,7 +445,7 @@ theorem _root_.Differentiable.unitaryTransport
     (hJ : Differentiable ℝ fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap)
     (hc : ∀ y, ω.Compatible (J y)) :
     Differentiable ℝ fun x ↦ ω.unitaryTransport (J x) :=
-  fun x ↦ (hJ x).unitaryTransport hc
+  fun x ↦ (hJ x).unitaryTransport (.of_forall hc)
 
 /-- **The unitary transport depends smoothly on the complex structure.** A family of
 `ω`-compatible complex structures that is `C^n` in the operator norm has a `C^n` family of unitary
