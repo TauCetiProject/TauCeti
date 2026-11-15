@@ -226,50 +226,6 @@ theorem isEquationallyNoetherian_specialLinearGroup (ι : G →* SpecialLinearGr
 
 /-! ### Free groups -/
 
-/-- A system `S` equivalent to none of its finite subsystems gives an increasing sequence of
-systems `T k`, points `v k` solving `T k` and equations `s k ∈ T (k + 1)` failing at `v k`. -/
-private theorem exists_seq_of_forall_finite_V_ne {ι : G →* H} {S : Set (GX G X)}
-    (hS : ∀ S₀ ⊆ S, S₀.Finite → V ι S₀ ≠ V ι S) :
-    ∃ (T : ℕ → Set (GX G X)) (v : ℕ → X → H) (s : ℕ → GX G X), Monotone T ∧
-      ∀ k, v k ∈ V ι (T k) ∧ s k ∈ T (k + 1) ∧ eval ι (v k) (s k) ≠ 1 := by
-  -- Every finite subsystem has a solution at which some equation of `S` fails.
-  have key (T : Set (GX G X)) (hT : T ⊆ S) (hfin : T.Finite) :
-      ∃ s ∈ S, ∃ v ∈ V ι T, eval ι v s ≠ 1 := by
-    obtain ⟨v, hvT, hvS⟩ := Set.exists_of_ssubset
-      ((V_antitone ι hT).ssubset_of_ne (hS T hT hfin).symm)
-    obtain ⟨s, hs, hvs⟩ : ∃ s ∈ S, eval ι v s ≠ 1 := by simpa using hvS
-    exact ⟨s, hs, v, hvT, hvs⟩
-  choose! s hs v hv hsv using key
-  -- Add these equations one at a time, starting from the empty system.
-  let T (k : ℕ) : Set (GX G X) := k.rec ∅ fun _ T => insert (s T) T
-  have hT (k : ℕ) : T k ⊆ S ∧ (T k).Finite := by
-    induction k with
-    | zero => exact ⟨Set.empty_subset S, Set.finite_empty⟩
-    | succ k ih => exact ⟨Set.insert_subset (hs _ ih.1 ih.2) ih.1, ih.2.insert _⟩
-  exact ⟨T, fun k => v (T k), fun k => s (T k),
-    monotone_nat_of_le_succ fun k => Set.subset_insert _ _,
-    fun k => ⟨hv _ (hT k).1 (hT k).2, Set.mem_insert _ _, hsv _ (hT k).1 (hT k).2⟩⟩
-
-/-- Countably many elements of a free group lie in a free factor of countable rank, onto which the
-free group retracts: some homomorphism to the free group on a countable set `β` of basis elements
-sends none of the nontrivial ones to `1`. -/
-private theorem exists_countable_retraction {α : Type*} (u : ℕ → FreeGroup α) :
-    ∃ β : Set α, β.Countable ∧ ∃ r : FreeGroup α →* FreeGroup β, ∀ k, r (u k) = 1 → u k = 1 := by
-  classical
-  choose t ht using fun k => FreeGroup.exists_finset_mem_closure (u k)
-  let β : Set α := ⋃ k, (t k : Set α)
-  -- The retraction onto the basis elements in `β` is the identity on the subgroup they generate.
-  let r : FreeGroup α →* FreeGroup β :=
-    FreeGroup.lift fun a => if h : a ∈ β then FreeGroup.of ⟨a, h⟩ else 1
-  have hr : Set.EqOn ((FreeGroup.map ((↑) : β → α)).comp r) (MonoidHom.id _)
-      (Subgroup.closure (FreeGroup.of '' β)) := by
-    refine MonoidHom.eqOn_closure ?_
-    rintro _ ⟨a, ha, rfl⟩
-    simp [r, ha]
-  refine ⟨β, Set.countable_iUnion fun k => (t k).countable_toSet, r, fun k hk => ?_⟩
-  simpa [hk] using (hr (Subgroup.closure_mono
-    (Set.image_mono (Set.subset_iUnion (fun k => (t k : Set α)) k)) (ht k))).symm
-
 /-- The free group on any type is equationally Noetherian over any coefficients. In particular,
 so is every free group `FreeGroup (Fin n)` of finite rank. The general case reduces to free groups
 of countable rank by a retraction, see the module docstring. -/
@@ -281,7 +237,8 @@ theorem isEquationallyNoetherian_freeGroup {α : Type*} (ι : G →* FreeGroup �
   obtain ⟨T, v, s, hT, hv⟩ := exists_seq_of_forall_finite_V_ne hS
   -- The values of the failing equations survive the retraction `r` onto a free factor `F(β)` of
   -- countable rank, which embeds in `SL(2, ℤ)`.
-  obtain ⟨β, hβ, r, hr⟩ := exists_countable_retraction fun k => eval (.id _) (v k) (s k)
+  obtain ⟨β, hβ, r, -, hr⟩ :=
+    FreeGroup.exists_countable_retraction fun k => eval (.id _) (v k) (s k)
   have := hβ.to_subtype
   obtain ⟨f, hf⟩ := exists_injective_freeGroup_SL β
   -- Over `F(β)`, the algebraic sets of the systems `T k` stabilize.
@@ -289,11 +246,13 @@ theorem isEquationallyNoetherian_freeGroup {α : Type*} (ι : G →* FreeGroup �
     (SpecialLinearGroup.toGL.comp f) (SpecialLinearGroup.toGL_injective.comp hf)
     ).exists_forall_ge_V_eq (S := T) ((V_antitone r).comp_monotone hT)
   -- So the image of `v m` solves `T (m + 1)`, and in particular `s m`.
+  obtain ⟨-, -, hvT, hsT, hvs⟩ := hv m
   let φ : GHom (MonoidHom.id (FreeGroup α)) r := ⟨r, fun _ => rfl⟩
   have hvm : φ ∘ v m ∈ V r (T (m + 1)) := by
     rw [hm _ m.le_succ]
-    exact φ.comp_mem_V (hv m).1
-  exact (hv m).2.2 (hr m ((map_eval φ (s m)).trans (mem_V.1 hvm _ (hv m).2.1)))
+    exact φ.comp_mem_V hvT
+  have hrm : r (eval (.id _) (v m) (s m)) = 1 := (map_eval φ (s m)).trans (mem_V.1 hvm _ hsT)
+  exact hvs (by rw [← hr m, hrm, map_one])
 
 /-- **Free groups are equationally Noetherian.** A group with a free basis, of any rank, is
 equationally Noetherian over any coefficients; for free groups of finite rank this is Guba's
