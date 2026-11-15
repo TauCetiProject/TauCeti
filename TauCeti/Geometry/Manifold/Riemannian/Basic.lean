@@ -41,6 +41,10 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
   space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
+* `TauCeti.inner_tangentSpace_congr` and `TauCeti.norm_tangentSpace_congr`: inner products and
+  norms of vectors in the tangent spaces at two equal points agree.
+* `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
+  preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
 -/
 
 public section
@@ -259,3 +263,42 @@ theorem ContMDiffOn.contDiffOn_inner_mfderiv {f : F → M} {U : Set F} {m n : �
     (hf.contMDiffOn_totalSpaceMk_mfderiv_apply hmn hU η)
 
 end NormMFDeriv
+
+namespace TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- The inner products of two vectors in the tangent spaces at two equal points agree. Both
+tangent spaces are the model space, so the vectors are compared there. -/
+theorem inner_tangentSpace_congr {q p : M} (h : q = p) {u w : TangentSpace I q}
+    {u' w' : TangentSpace I p} (hu : (u : E) = u') (hw : (w : E) = w') :
+    inner ℝ u w = inner ℝ u' w' := by
+  subst h hu hw
+  rfl
+
+/-- The norms of a vector in the tangent spaces at two equal points agree. Both tangent spaces
+are the model space, so the vectors are compared there. -/
+theorem norm_tangentSpace_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_congr h hw hw]
+
+/-- **Ball stability at a fixed point.** If `f` fixes `p` and its differential at `p` preserves
+the metric there, that differential maps every ball around the origin of `T_p M` into itself. -/
+theorem mfderiv_mem_ball_of_apply_eq_self {f : M → M} {p : M} (hfp : f p = p)
+    (hf : ∀ u w : TangentSpace I p,
+      inner ℝ (mfderiv I I f p u) (mfderiv I I f p w) = inner ℝ u w)
+    {r : ℝ} {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
+    mfderiv I I f p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
+  -- Read the norm of `mfderiv I I f p w` at `f p` and at `p`.
+  have hn : @norm (TangentSpace I p) _ (mfderiv I I f p w) = ‖w‖ := by
+    rw [← norm_tangentSpace_congr (I := I) hfp (w := mfderiv I I f p w) rfl,
+      norm_eq_sqrt_real_inner, hf w w, ← norm_eq_sqrt_real_inner]
+  refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
+  rw [hn]
+  exact mem_ball_zero_iff.1 hw
+
+end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.AGraph
+public import TauCeti.GroupTheory.GraphOfGroups.AGraph.Basic
 public import Mathlib.Tactic.Group
 
 /-!
