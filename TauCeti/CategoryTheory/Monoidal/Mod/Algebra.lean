@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 public import TauCeti.CategoryTheory.Monoidal.Mod.Symmetric
 public import TauCeti.CategoryTheory.Monoidal.Mon
 
@@ -56,8 +57,9 @@ underlying monoid of symmetric sequences with module spectra over the ring spect
 
 * `Mod.tensorπ_comapRegular_mul_hom`, `Mod.comapRegular_one_hom`: multiplication and unit of
   `comapRegular f` on representatives.
-* `Mod.tensorπ_comapRegularMod_obj_smul_hom`, `Mod.whiskerRight_tensorπ_smul_hom`: characterization
-  of the `comapRegular f`-action on representatives and recovery of the `A`-action along `f`.
+* `Mod.tensorπ_comapRegularMod_obj_smul_hom`, `Mod.whiskerRight_tensorπ_comapRegular_smul_hom`:
+  characterization of the `comapRegular f`-action on representatives and recovery of the `A`-action
+  along `f`.
 
 ## References
 
@@ -99,6 +101,8 @@ lemma comapRegular_X : (comapRegular f).X = B :=
   (rfl)
 
 /-- `A` acts on `B` through `f`, followed by the multiplication of `B`. -/
+-- Not `@[simp]`: `Mod.scalarRestriction_smul` and `ModObj.smul_eq_mul` already simplify the LHS.
+@[reassoc]
 lemma comapRegular_smul : γ[A, (comapRegular f).X] = f ▷ B ≫ μ :=
   (rfl)
 
@@ -107,6 +111,7 @@ lemma comapRegular_smul : γ[A, (comapRegular f).X] = f ▷ B ≫ μ :=
 def comapRegularMap {B' : C} [MonObj B'] (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ]
     (w : f ≫ φ = f' := by cat_disch) : comapRegular f ⟶ comapRegular f' :=
   Hom.mk' φ (by
+    -- Unfold the carriers and restricted actions to morphisms in `C` so `IsMonHom.mul_hom` applies.
     change (f ▷ B ≫ μ) ≫ φ = A ◁ φ ≫ f' ▷ B' ≫ μ
     rw [Category.assoc, IsMonHom.mul_hom, tensorHom_def_assoc, ← comp_whiskerRight_assoc, w,
       ← tensorHom_def_assoc, ← tensorHom_def'_assoc])
@@ -141,78 +146,6 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)] [IsCommMonObj A] in
-/- The multiplication of `B` identifies the two actions of `A` on `B ⊗ B`. -/
-private lemma mul_tensorπ_condition :
-    ((β_ A (comapRegular f).X).inv ≫ γ[A, (comapRegular f).X]) ▷ (comapRegular f).X ≫
-        (μ : B ⊗ B ⟶ B) =
-      (α_ (comapRegular f).X A (comapRegular f).X).hom ≫
-        (comapRegular f).X ◁ γ[A, (comapRegular f).X] ≫ (μ : B ⊗ B ⟶ B) := by
-  -- The action on `comapRegular f` is `f ▷ B ≫ μ` only after unfolding, so the statement is
-  -- restated in `C` before rewriting.
-  change ((β_ A B).inv ≫ f ▷ B ≫ μ) ▷ B ≫ μ = (α_ B A B).hom ≫ B ◁ (f ▷ B ≫ μ) ≫ μ
-  rw [braiding_inv_whiskerRight_mul, whiskerLeft_comp_assoc, mul_assoc_flip,
-    associator_inv_naturality_middle_assoc, Iso.hom_inv_id_assoc, comp_whiskerRight_assoc]
-
-/-- The multiplication of `B`, descended to the balanced tensor product `B ⊗_A B`. -/
-noncomputable def comapRegularMul : comapRegular f ⊗ comapRegular f ⟶ comapRegular f :=
-  Hom.mk' (tensorDesc (μ : B ⊗ B ⟶ B) (mul_tensorπ_condition f)) (by
-    rw [← cancel_epi (A ◁ tensorπ _ _), whiskerLeft_tensorπ_smul_assoc, tensorπ_tensorDesc,
-      selfLeftAction_actionHomRight, whiskerLeft_tensorπ_tensorDesc_assoc]
-    -- Rewriting with `comapRegular_smul` leaves `(comapRegular f).X` in the associators and
-    -- whiskerings, where the naturality lemmas need `B` syntactically, and `comapRegular_X`
-    -- cannot be rewritten there (the motive is not type correct). So the goal is restated in `C`.
-    change (α_ A B B).inv ≫ (f ▷ B ≫ μ) ▷ B ≫ μ = A ◁ μ ≫ f ▷ B ≫ μ
-    rw [comp_whiskerRight_assoc, MonObj.mul_assoc, ← associator_inv_naturality_left_assoc,
-      Iso.inv_hom_id_assoc, whisker_exchange_assoc])
-
-/-- A commutative monoid `B` under a commutative monoid `A` is a monoid object of `A`-modules, with
-multiplication that of `B` on representatives and unit `f : A ⟶ B`. -/
-noncomputable instance monObjComapRegular : MonObj (comapRegular f) where
-  one := Hom.mk' (M := 𝟙_ (Mod C A)) f (by
-    rw [comapRegular_smul]
-    exact (IsMonHom.mul_hom f).trans (by rw [tensorHom_def', Category.assoc]; rfl))
-  mul := comapRegularMul f
-  one_mul := by
-    ext
-    simp only [comapRegularMul, comp_hom', tensorπ_whiskerRight_hom_assoc, Hom.mk'_hom,
-      tensorπ_tensorDesc, tensorπ_leftUnitor_hom_hom]
-    rfl
-  mul_one := by
-    ext
-    simp only [comapRegularMul, comp_hom', tensorπ_whiskerLeft_hom_assoc, Hom.mk'_hom,
-      tensorπ_tensorDesc, tensorπ_rightUnitor_hom_hom]
-    exact (braiding_inv_whiskerRight_mul f).symm
-  mul_assoc := by
-    apply hom_ext
-    rw [← cancel_epi (tensorπ _ _ ▷ _ ≫ tensorπ _ _)]
-    simp [comapRegularMul, tensorπ_associator_hom_hom_assoc, MonObj.mul_assoc]
-
-/-- On representatives, the multiplication `B ⊗_A B ⟶ B` is the multiplication of `B`. -/
-@[reassoc (attr := simp)]
-lemma tensorπ_comapRegular_mul_hom :
-    tensorπ _ _ ≫ (μ : comapRegular f ⊗ comapRegular f ⟶ _).hom = (μ : B ⊗ B ⟶ B) :=
-  tensorπ_tensorDesc _ _
-
-/-- The unit of `B` as a monoid of `A`-modules is `f : A ⟶ B`. -/
-@[simp]
-lemma comapRegular_one_hom : (η : 𝟙_ (Mod C A) ⟶ comapRegular f).hom = f :=
-  (rfl)
-
-/-- A morphism of commutative monoids `φ : B ⟶ B'` under `A` induces a morphism of monoid objects
-`comapRegular f ⟶ comapRegular f'` in `Mod C A`. -/
-instance isMonHom_comapRegularMap {B' : C} [MonObj B'] [IsCommMonObj B'] (f' : A ⟶ B')
-    [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') :
-    IsMonHom (comapRegularMap f f' φ w) where
-  one_hom := hom_ext _ _ w
-  mul_hom := by
-    apply hom_ext
-    rw [← cancel_epi (tensorπ _ _)]
-    simp [IsMonHom.mul_hom φ]
-
-section Module
-
-omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)] [IsCommMonObj A] in
 /- The action of `B` on a `B`-module `M` identifies the two actions of `A` on `B ⊗ M.X`. -/
 private lemma smul_tensorπ_condition (M : Mod C B) :
     ((β_ A (comapRegular f).X).inv ≫ γ[A, (comapRegular f).X]) ▷ ((comap f).obj M).X ≫
@@ -242,12 +175,75 @@ noncomputable def comapRegularSmul (M : Mod C B) :
     A ◁ γ[B, M.X] ≫ f ▷ M.X ≫ γ[B, M.X]
   rw [comp_whiskerRight_assoc, ModObj.mul_smul_self, ← associator_inv_naturality_left_assoc,
     Iso.inv_hom_id_assoc, whisker_exchange_assoc]
-  rfl
+  simp only [selfLeftAction_actionObj]
 
 @[reassoc (attr := simp)]
 lemma tensorπ_comapRegularSmul_hom (M : Mod C B) :
     tensorπ (comapRegular f) ((comap f).obj M) ≫ (comapRegularSmul f M).hom = γ[B, M.X] :=
   tensorπ_tensorDesc _ _
+
+/-- The multiplication of `B`, descended to the balanced tensor product `B ⊗_A B`. -/
+noncomputable def comapRegularMul : comapRegular f ⊗ comapRegular f ⟶ comapRegular f :=
+  comapRegularSmul f (regular B)
+
+private lemma tensorπ_comapRegularMul_hom :
+    tensorπ (comapRegular f) (comapRegular f) ≫ (comapRegularMul f).hom = (μ : B ⊗ B ⟶ B) :=
+  tensorπ_comapRegularSmul_hom f (regular B)
+
+/-- A commutative monoid `B` under a commutative monoid `A` is a monoid object of `A`-modules, with
+multiplication that of `B` on representatives and unit `f : A ⟶ B`. -/
+noncomputable instance monObjComapRegular : MonObj (comapRegular f) where
+  one := Hom.mk' (M := 𝟙_ (Mod C A)) f (by
+    rw [comapRegular_smul]
+    exact (IsMonHom.mul_hom f).trans (by
+      rw [tensorHom_def', Category.assoc]
+      exact (selfLeftAction_actionHomRight C A _ _ f =≫ _).symm))
+  mul := comapRegularMul f
+  one_mul := by
+    ext
+    simp only [comp_hom', tensorπ_whiskerRight_hom_assoc, tensorπ_comapRegularMul_hom,
+      tensorπ_leftUnitor_hom_hom]
+    exact (comapRegular_smul f).symm
+  mul_one := by
+    ext
+    simp only [comp_hom', tensorπ_whiskerLeft_hom_assoc,
+      tensorπ_comapRegularMul_hom, tensorπ_rightUnitor_hom_hom, comapRegular_smul]
+    exact (braiding_inv_whiskerRight_mul f).symm
+  mul_assoc := by
+    apply hom_ext
+    rw [← cancel_epi (tensorπ _ _ ▷ _ ≫ tensorπ _ _)]
+    simp only [comp_hom', Category.assoc, tensorπ_whiskerRight_hom_assoc,
+      ← comp_whiskerRight_assoc, tensorπ_comapRegularMul_hom,
+      tensorπ_associator_hom_hom_assoc, tensorπ_whiskerLeft_hom_assoc,
+      ← whiskerLeft_comp_assoc]
+    exact MonObj.mul_assoc B
+
+/-- On representatives, the multiplication `B ⊗_A B ⟶ B` is the multiplication of `B`. -/
+@[reassoc (attr := simp)]
+lemma tensorπ_comapRegular_mul_hom :
+    tensorπ _ _ ≫ (μ : comapRegular f ⊗ comapRegular f ⟶ _).hom = (μ : B ⊗ B ⟶ B) := by
+  exact tensorπ_comapRegularMul_hom f
+
+/-- The unit of `B` as a monoid of `A`-modules is `f : A ⟶ B`. -/
+@[simp]
+lemma comapRegular_one_hom : (η : 𝟙_ (Mod C A) ⟶ comapRegular f).hom = f := by
+  rfl
+
+/-- A morphism of commutative monoids `φ : B ⟶ B'` under `A` induces a morphism of monoid objects
+`comapRegular f ⟶ comapRegular f'` in `Mod C A`. -/
+instance isMonHom_comapRegularMap {B' : C} [MonObj B'] [IsCommMonObj B'] (f' : A ⟶ B')
+    [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') :
+    IsMonHom (comapRegularMap f f' φ w) where
+  one_hom := by
+    ext
+    simp only [comp_hom', comapRegular_one_hom, comapRegularMap_hom]
+    exact w
+  mul_hom := by
+    apply hom_ext
+    rw [← cancel_epi (tensorπ _ _)]
+    simp [IsMonHom.mul_hom φ]
+
+section Module
 
 /-- Restricting a `B`-module `M` along `f : A ⟶ B` equips `(comap f).obj M` with an action of the
 monoid `comapRegular f` in `Mod C A`. -/
@@ -255,36 +251,24 @@ monoid `comapRegular f` in `Mod C A`. -/
 noncomputable def comapRegularModObj (M : Mod C B) : ModObj (comapRegular f) ((comap f).obj M) where
   smul := comapRegularSmul f M
   one_smul := by
-    change (η : 𝟙_ (Mod C A) ⟶ comapRegular f) ▷ (comap f).obj M ≫ comapRegularSmul f M =
-      (λ_ ((comap f).obj M)).hom
     apply hom_ext
-    rw [← cancel_epi (tensorπ _ _), comp_hom', tensorπ_whiskerRight_hom_assoc,
-      comapRegular_one_hom, tensorπ_comapRegularSmul_hom, tensorπ_leftUnitor_hom_hom]
-    rfl
+    rw [← cancel_epi (tensorπ _ _)]
+    simp only [selfLeftAction_actionHomLeft, selfLeftAction_actionUnitIso, comp_hom',
+      tensorπ_whiskerRight_hom_assoc, comapRegular_one_hom, tensorπ_comapRegularSmul_hom,
+      tensorπ_leftUnitor_hom_hom]
+    exact (comap_obj_smul f M).symm
   mul_smul := by
-    change (μ : comapRegular f ⊗ comapRegular f ⟶ comapRegular f) ▷ (comap f).obj M ≫
-        comapRegularSmul f M =
-      (α_ (comapRegular f) (comapRegular f) ((comap f).obj M)).hom ≫
-        comapRegular f ◁ comapRegularSmul f M ≫ comapRegularSmul f M
     apply hom_ext
     rw [← cancel_epi (tensorπ _ _ ▷ _ ≫ tensorπ _ _)]
-    have hL : (tensorπ (comapRegular f) (comapRegular f) ▷ ((comap f).obj M).X ≫
-        tensorπ (comapRegular f ⊗ comapRegular f) ((comap f).obj M)) ≫
-          ((μ : comapRegular f ⊗ comapRegular f ⟶ comapRegular f) ▷ (comap f).obj M ≫
-            comapRegularSmul f M).hom =
-        (μ : B ⊗ B ⟶ B) ▷ M.X ≫ γ[B, M.X] := by
-      rw [comp_hom', Category.assoc, tensorπ_whiskerRight_hom_assoc, ← comp_whiskerRight_assoc,
-        tensorπ_comapRegular_mul_hom, tensorπ_comapRegularSmul_hom]
-      rfl
-    have hR : (tensorπ (comapRegular f) (comapRegular f) ▷ ((comap f).obj M).X ≫
-        tensorπ (comapRegular f ⊗ comapRegular f) ((comap f).obj M)) ≫
-          ((α_ (comapRegular f) (comapRegular f) ((comap f).obj M)).hom ≫
-            comapRegular f ◁ comapRegularSmul f M ≫ comapRegularSmul f M).hom =
-        (α_ B B M.X).hom ≫ B ◁ γ[B, M.X] ≫ γ[B, M.X] := by
-      rw [comp_hom', comp_hom', Category.assoc, tensorπ_associator_hom_hom_assoc,
-        tensorπ_whiskerLeft_hom_assoc, ← whiskerLeft_comp_assoc, tensorπ_comapRegularSmul_hom]
-      rfl
-    exact hL.trans ((ModObj.mul_smul_self B M.X).trans hR.symm)
+    simp only [selfLeftAction_actionHomLeft, selfLeftAction_actionHomRight,
+      selfLeftAction_actionAssocIso, comp_hom', Category.assoc, tensorπ_whiskerRight_hom_assoc,
+      ← comp_whiskerRight_assoc, tensorπ_comapRegular_mul_hom,
+      tensorπ_associator_hom_hom_assoc, tensorπ_whiskerLeft_hom_assoc, ← whiskerLeft_comp_assoc]
+    let g : (comapRegular f).X ⊗ ((comap f).obj M).X ⟶ ((comap f).obj M).X := γ[B, M.X]
+    have hg : tensorπ (comapRegular f) ((comap f).obj M) ≫ (comapRegularSmul f M).hom = g :=
+      tensorπ_comapRegularSmul_hom f M
+    rw [hg]
+    exact ModObj.mul_smul_self B M.X
 
 /-- A morphism `g : M ⟶ N` of `B`-modules becomes a morphism of `comapRegular f`-modules in
 `Mod C A` after restricting scalars along `f`. -/
@@ -292,16 +276,14 @@ lemma isModHom_comapRegular_comap_map {M N : Mod C B} (g : M ⟶ N) :
     letI := comapRegularModObj f M
     letI := comapRegularModObj f N
     IsModHom (comapRegular f) ((comap f).map g) := by
-  let := comapRegularModObj f M
-  let := comapRegularModObj f N
+  let instM := comapRegularModObj f M
+  let instN := comapRegularModObj f N
   refine ⟨hom_ext _ _ ?_⟩
   rw [← cancel_epi (tensorπ _ _)]
-  change tensorπ (comapRegular f) ((comap f).obj M) ≫
-      (comapRegularSmul f M).hom ≫ ((comap f).map g).hom =
-    tensorπ (comapRegular f) ((comap f).obj M) ≫
-      (comapRegular f ◁ (comap f).map g).hom ≫ (comapRegularSmul f N).hom
-  rw [tensorπ_comapRegularSmul_hom_assoc, tensorπ_whiskerLeft_hom_assoc,
-    tensorπ_comapRegularSmul_hom, comap_map_hom]
+  dsimp only [ModObj.smul, instM, instN, comapRegularModObj]
+  simp only [comp_hom', selfLeftAction_actionHomRight, tensorπ_whiskerLeft_hom_assoc,
+    tensorπ_comapRegularSmul_hom_assoc, tensorπ_comapRegularSmul_hom]
+  dsimp only [comap, comapRegular]
   exact IsModHom.smul_hom (A := B) (f := g.hom)
 
 /-- Upgrading `B`-modules in `C` to modules over `comapRegular f` in `Mod C A`. -/
@@ -337,7 +319,8 @@ lemma tensorπ_comapRegularMod_obj_smul_hom (M : Mod C B) :
 
 /-- Restricting the descended `B`-action on `N : Mod (Mod C A) (comapRegular f)` along `f : A ⟶ B`
 recovers the original `A`-action on `N.X`. -/
-lemma whiskerRight_tensorπ_smul_hom (N : Mod (Mod C A) (comapRegular f)) :
+@[reassoc (attr := simp)]
+lemma whiskerRight_tensorπ_comapRegular_smul_hom (N : Mod (Mod C A) (comapRegular f)) :
     f ▷ N.X.X ≫ tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom = γ[A, N.X.X] := by
   have h₁ : (η : 𝟙_ (Mod C A) ⟶ comapRegular f) ▷ N.X ≫ γ[comapRegular f, N.X] = (λ_ N.X).hom :=
     ModObj.one_smul_self (comapRegular f) N.X
@@ -352,9 +335,8 @@ quotient map `B ⊗ N.X.X ⟶ (comapRegular f ⊗_A N.X).X` defines a `B`-module
 noncomputable def ofComapRegularModObj (N : Mod (Mod C A) (comapRegular f)) : ModObj B N.X.X where
   smul := tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom
   one_smul := by
-    change (η : 𝟙_ C ⟶ B) ▷ N.X.X ≫ tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom =
-      (λ_ N.X.X).hom
-    rw [← IsMonHom.one_hom f, comp_whiskerRight_assoc, whiskerRight_tensorπ_smul_hom,
+    simp only [selfLeftAction_actionHomLeft, selfLeftAction_actionUnitIso]
+    rw [← IsMonHom.one_hom f, comp_whiskerRight_assoc, whiskerRight_tensorπ_comapRegular_smul_hom,
       ModObj.one_smul_self]
   mul_smul := by
     have h₁ : (μ : comapRegular f ⊗ comapRegular f ⟶ comapRegular f) ▷ N.X ≫
@@ -376,14 +358,14 @@ lemma isModHom_ofComapRegularMod {N N' : Mod (Mod C A) (comapRegular f)} (g : N 
     letI := ofComapRegularModObj f N
     letI := ofComapRegularModObj f N'
     IsModHom B g.hom.hom := by
-  let := ofComapRegularModObj f N
-  let := ofComapRegularModObj f N'
+  let instN := ofComapRegularModObj f N
+  let instN' := ofComapRegularModObj f N'
   refine ⟨?_⟩
   have h := tensorπ (comapRegular f) N.X ≫=
     congrArg Hom.hom (IsModHom.smul_hom (A := comapRegular f) (f := g.hom))
   simp only [comp_hom', selfLeftAction_actionHomRight, tensorπ_whiskerLeft_hom_assoc] at h
-  change (tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom) ≫ g.hom.hom =
-    B ◁ g.hom.hom ≫ tensorπ (comapRegular f) N'.X ≫ γ[comapRegular f, N'.X].hom
+  dsimp only [comapRegular] at h
+  dsimp only [ModObj.smul, instN, instN', ofComapRegularModObj, selfLeftAction_actionHomRight]
   rw [Category.assoc]
   exact h
 
@@ -417,77 +399,56 @@ lemma ofComapRegularMod_obj_smul (N : Mod (Mod C A) (comapRegular f)) :
 /-- A `B`-module `M` is isomorphic, by the identity of `M.X`, to the `B`-module underlying
 `(comapRegularMod f).obj M`. -/
 noncomputable def comapRegularModUnitIsoApp (M : Mod C B) :
-    M ≅ (ofComapRegularMod f).obj ((comapRegularMod f).obj M) where
-  hom := Hom.mk' (𝟙 M.X) <|
-    (Category.comp_id _).trans <| (tensorπ_comapRegularMod_obj_smul_hom f M).symm.trans <|
-      ((MonoidalLeftAction.actionHomRight_id B _ =≫ _).trans (Category.id_comp _)).symm
-  inv := Hom.mk' (𝟙 M.X) <|
-    (Category.comp_id _).trans <| (tensorπ_comapRegularMod_obj_smul_hom f M).trans <|
-      ((MonoidalLeftAction.actionHomRight_id B _ =≫ _).trans (Category.id_comp _)).symm
-  hom_inv_id := Hom.ext (Category.id_comp _)
-  inv_hom_id := Hom.ext (Category.id_comp _)
+    M ≅ (ofComapRegularMod f).obj ((comapRegularMod f).obj M) :=
+  isoOfSmulEq (X := M.X) M.mod (ofComapRegularModObj f ((comapRegularMod f).obj M))
+    (tensorπ_comapRegularMod_obj_smul_hom f M).symm
 
 @[simp]
 lemma comapRegularModUnitIsoApp_hom_hom (M : Mod C B) :
-    (comapRegularModUnitIsoApp f M).hom.hom = 𝟙 M.X :=
-  (rfl)
+    (comapRegularModUnitIsoApp f M).hom.hom = 𝟙 M.X := by
+  unfold comapRegularModUnitIsoApp
+  exact isoOfSmulEq_hom_hom _ _ _
 
 @[simp]
 lemma comapRegularModUnitIsoApp_inv_hom (M : Mod C B) :
-    (comapRegularModUnitIsoApp f M).inv.hom = 𝟙 M.X :=
-  (rfl)
-
-private def mkModIso {R : Mod C A} [MonObj R] {N₁ N₂ : Mod (Mod C A) R}
-    (e : N₁.X ≅ N₂.X) (h : IsModHom R e.hom) : N₁ ≅ N₂ :=
-  letI : ModObj R N₁.X := N₁.mod
-  letI : ModObj R N₂.X := N₂.mod
-  letI : IsModHom R e.hom := h
-  { hom := ⟨e.hom⟩
-    inv := ⟨e.inv⟩
-    hom_inv_id := Hom.ext e.hom_inv_id
-    inv_hom_id := Hom.ext e.inv_hom_id }
+    (comapRegularModUnitIsoApp f M).inv.hom = 𝟙 M.X := by
+  unfold comapRegularModUnitIsoApp
+  exact isoOfSmulEq_inv_hom _ _ _
 
 /-- A `comapRegular f`-module `N` is isomorphic, by the identity of `N.X.X`, to the upgrade of its
 underlying `B`-module. -/
 noncomputable def comapRegularModCounitIsoApp (N : Mod (Mod C A) (comapRegular f)) :
-    (comapRegularMod f).obj ((ofComapRegularMod f).obj N) ≅ N := by
-  let M₀ := (ofComapRegularMod f).obj N
-  let N₀ := (comapRegularMod f).obj M₀
-  let e : N₀.X ≅ N.X :=
-    { hom := Hom.mk' (𝟙 N.X.X) <|
-        (Category.comp_id _).trans <| (whiskerRight_tensorπ_smul_hom f N).trans <|
-          ((MonoidalLeftAction.actionHomRight_id A _ =≫ _).trans (Category.id_comp _)).symm
-      inv := Hom.mk' (𝟙 N.X.X) <|
-        (Category.comp_id _).trans <| (whiskerRight_tensorπ_smul_hom f N).symm.trans <|
-          ((MonoidalLeftAction.actionHomRight_id A _ =≫ _).trans (Category.id_comp _)).symm
-      hom_inv_id := Hom.ext (Category.id_comp _)
-      inv_hom_id := Hom.ext (Category.id_comp _) }
-  refine mkModIso e ⟨hom_ext _ _ ?_⟩
-  rw [← cancel_epi (tensorπ _ _)]
-  have hL : tensorπ (comapRegular f) N₀.X ≫ (γ[comapRegular f, N₀.X] ≫ e.hom).hom =
-      tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom := by
-    rw [comp_hom', tensorπ_comapRegularMod_obj_smul_hom_assoc]
-    exact Category.comp_id _
-  have hR : tensorπ (comapRegular f) N₀.X ≫
-      (comapRegular f ⊴ₗ e.hom ≫ γ[comapRegular f, N.X]).hom =
-      tensorπ (comapRegular f) N.X ≫ γ[comapRegular f, N.X].hom := by
-    rw [selfLeftAction_actionHomRight, comp_hom', tensorπ_whiskerLeft_hom_assoc]
-    exact (whiskerLeft_id B N.X.X =≫ _).trans (Category.id_comp _)
-  exact hL.trans hR.symm
+    (comapRegularMod f).obj ((ofComapRegularMod f).obj N) ≅ N :=
+  let e : ((comapRegularMod f).obj ((ofComapRegularMod f).obj N)).X ≅ N.X :=
+    isoOfSmulEq (X := N.X.X) (scalarRestriction f ((ofComapRegularMod f).obj N).X) N.X.mod
+      (whiskerRight_tensorπ_comapRegular_smul_hom f N)
+  mkIso e <| hom_ext _ _ <| by
+    have he : e.hom.hom = 𝟙 N.X.X := isoOfSmulEq_hom_hom _ _ _
+    rw [← cancel_epi (tensorπ _ _)]
+    simp only [selfLeftAction_actionHomRight, comp_hom', tensorπ_whiskerLeft_hom_assoc,
+      tensorπ_comapRegularMod_obj_smul_hom_assoc, ofComapRegularMod_obj_smul]
+    dsimp only [ofComapRegularMod, comapRegularMod, comap] at he ⊢
+    simp [he]
 
 @[simp]
 lemma comapRegularModCounitIsoApp_hom_hom_hom (N : Mod (Mod C A) (comapRegular f)) :
-    (comapRegularModCounitIsoApp f N).hom.hom.hom = 𝟙 N.X.X :=
-  (rfl)
+    (comapRegularModCounitIsoApp f N).hom.hom.hom = 𝟙 N.X.X := by
+  unfold comapRegularModCounitIsoApp
+  dsimp only
+  exact (congrArg Hom.hom (mkIso_hom_hom _ _)).trans (isoOfSmulEq_hom_hom _ _ _)
 
 @[simp]
 lemma comapRegularModCounitIsoApp_inv_hom_hom (N : Mod (Mod C A) (comapRegular f)) :
-    (comapRegularModCounitIsoApp f N).inv.hom.hom = 𝟙 N.X.X :=
-  (rfl)
+    (comapRegularModCounitIsoApp f N).inv.hom.hom = 𝟙 N.X.X := by
+  unfold comapRegularModCounitIsoApp
+  dsimp only
+  exact (congrArg Hom.hom (mkIso_inv_hom _ _)).trans (isoOfSmulEq_inv_hom _ _ _)
 
 /-- The equivalence of categories between `B`-modules in `C` and modules over `comapRegular f` in
 `Mod C A`. Both functors preserve underlying objects in `C`, and the unit and counit are identities
 on them. -/
+-- Exposed so `.functor` and `.inverse` reduce in public signatures, giving the unit and counit
+-- component projections codomain `M.X` and `N.X.X` without `eqToHom`.
 @[expose] noncomputable def comapRegularModEquivalence :
     Mod C B ≌ Mod (Mod C A) (comapRegular f) where
   functor := comapRegularMod f
@@ -495,17 +456,17 @@ on them. -/
   unitIso := NatIso.ofComponents (comapRegularModUnitIsoApp f) fun _ ↦ by
     ext
     simp only [Functor.id_obj, Functor.comp_obj, comp_hom', comapRegularModUnitIsoApp_hom_hom]
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
+    simp [ofComapRegularMod, comapRegularMod, comap]
   counitIso := NatIso.ofComponents (comapRegularModCounitIsoApp f) fun _ ↦ by
     ext
     simp only [Functor.comp_obj, Functor.id_obj, comp_hom',
       comapRegularModCounitIsoApp_hom_hom_hom]
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
+    simp [ofComapRegularMod, comapRegularMod, comap]
   functor_unitIso_comp _ := by
     ext
     simp only [Functor.id_obj, Functor.comp_obj, NatIso.ofComponents_hom_app, comp_hom',
       comapRegularMod_map_hom, id_hom']
-    exact Category.id_comp _
+    simp [ofComapRegularMod, comapRegularMod, comap]
 
 @[simp]
 lemma comapRegularModEquivalence_functor :
@@ -519,112 +480,92 @@ lemma comapRegularModEquivalence_inverse :
 
 @[simp]
 lemma comapRegularModEquivalence_unitIso_hom_app_hom (M : Mod C B) :
-    ((comapRegularModEquivalence f).unitIso.hom.app M).hom = 𝟙 M.X :=
-  (rfl)
+    ((comapRegularModEquivalence f).unitIso.hom.app M).hom = 𝟙 M.X := by
+  simpa only [comapRegularModEquivalence, NatIso.ofComponents_hom_app] using
+    comapRegularModUnitIsoApp_hom_hom f M
 
 @[simp]
 lemma comapRegularModEquivalence_unitIso_inv_app_hom (M : Mod C B) :
-    ((comapRegularModEquivalence f).unitIso.inv.app M).hom = 𝟙 M.X :=
-  (rfl)
+    ((comapRegularModEquivalence f).unitIso.inv.app M).hom = 𝟙 M.X := by
+  simpa only [comapRegularModEquivalence, NatIso.ofComponents_inv_app] using
+    comapRegularModUnitIsoApp_inv_hom f M
 
 @[simp]
 lemma comapRegularModEquivalence_counitIso_hom_app_hom_hom
     (N : Mod (Mod C A) (comapRegular f)) :
-    (((comapRegularModEquivalence f).counitIso.hom.app N).hom).hom = 𝟙 N.X.X :=
-  (rfl)
+    (((comapRegularModEquivalence f).counitIso.hom.app N).hom).hom = 𝟙 N.X.X := by
+  simpa only [comapRegularModEquivalence, NatIso.ofComponents_hom_app] using
+    comapRegularModCounitIsoApp_hom_hom_hom f N
 
 @[simp]
 lemma comapRegularModEquivalence_counitIso_inv_app_hom_hom
     (N : Mod (Mod C A) (comapRegular f)) :
-    (((comapRegularModEquivalence f).counitIso.inv.app N).hom).hom = 𝟙 N.X.X :=
-  (rfl)
-
-private lemma comapRegularMod_regular_smul_eq :
-    γ[comapRegular f, ((comapRegularMod f).obj (regular B)).X] =
-      γ[comapRegular f, (regular (comapRegular f)).X] := by
-  apply hom_ext
-  rw [← cancel_epi (tensorπ _ _), tensorπ_comapRegularMod_obj_smul_hom]
-  exact (tensorπ_comapRegular_mul_hom f).symm
+    (((comapRegularModEquivalence f).counitIso.inv.app N).hom).hom = 𝟙 N.X.X := by
+  simpa only [comapRegularModEquivalence, NatIso.ofComponents_inv_app] using
+    comapRegularModCounitIsoApp_inv_hom_hom f N
 
 /-- Under `comapRegularMod f`, the regular `B`-module corresponds to the regular
 `comapRegular f`-module, by the identity of `B`. -/
 noncomputable def comapRegularModRegularIso :
-    (comapRegularMod f).obj (regular B) ≅ regular (comapRegular f) where
-  hom := Hom.mk' (𝟙 (comapRegular f)) <|
-    (Category.comp_id _).trans <| (comapRegularMod_regular_smul_eq f).trans <|
-      ((MonoidalLeftAction.actionHomRight_id (comapRegular f) _ =≫ _).trans
-        (Category.id_comp _)).symm
-  inv := Hom.mk' (𝟙 (comapRegular f)) <|
-    (Category.comp_id _).trans <| (comapRegularMod_regular_smul_eq f).symm.trans <|
-      ((MonoidalLeftAction.actionHomRight_id (comapRegular f) _ =≫ _).trans
-        (Category.id_comp _)).symm
-  hom_inv_id := Hom.ext (Category.id_comp _)
-  inv_hom_id := Hom.ext (Category.id_comp _)
+    (comapRegularMod f).obj (regular B) ≅ regular (comapRegular f) :=
+  isoOfSmulEq (X := comapRegular f)
+    (comapRegularModObj f (regular B)) (ModObj.regular (comapRegular f))
+    (hom_ext _ _ <| by
+      rw [← cancel_epi (tensorπ _ _)]
+      dsimp only [ModObj.smul, comapRegularModObj, ModObj.regular]
+      rw [tensorπ_comapRegular_mul_hom]
+      exact tensorπ_comapRegularMul_hom f)
 
 @[simp]
 lemma comapRegularModRegularIso_hom_hom :
-    (comapRegularModRegularIso f).hom.hom = 𝟙 (comapRegular f) :=
-  (rfl)
+    (comapRegularModRegularIso f).hom.hom = 𝟙 (comapRegular f) := by
+  unfold comapRegularModRegularIso
+  exact isoOfSmulEq_hom_hom _ _ _
 
 @[simp]
 lemma comapRegularModRegularIso_inv_hom :
-    (comapRegularModRegularIso f).inv.hom = 𝟙 (comapRegular f) :=
-  (rfl)
-
-private lemma tensorπ_comap_smul_hom {R₁ R₂ : Mod C A} [MonObj R₁] [MonObj R₂]
-    (ψ : R₁ ⟶ R₂) [IsMonHom ψ] (N : Mod (Mod C A) R₂) :
-    tensorπ R₁ ((comap ψ).obj N).X ≫ γ[R₁, ((comap ψ).obj N).X].hom =
-      ψ.hom ▷ N.X.X ≫ tensorπ R₂ N.X ≫ γ[R₂, N.X].hom :=
-  tensorπ_whiskerRight_hom_assoc ψ N.X γ[R₂, N.X].hom
+    (comapRegularModRegularIso f).inv.hom = 𝟙 (comapRegular f) := by
+  unfold comapRegularModRegularIso
+  exact isoOfSmulEq_inv_hom _ _ _
 
 /-- Component isomorphism identifying restriction along `φ : B ⟶ B'` before `comapRegularMod f`
 with `comapRegularMod f'` followed by restriction along `comapRegularMap f f' φ w`. -/
 noncomputable def comapRegularModComapIsoApp {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') (M : Mod C B') :
     (comapRegularMod f).obj ((comap φ).obj M) ≅
-      (comap (comapRegularMap f f' φ w)).obj ((comapRegularMod f').obj M) := by
-  let N₁ := (comapRegularMod f).obj ((comap φ).obj M)
-  let N₂ := (comapRegularMod f').obj M
-  let N₂' := (comap (comapRegularMap f f' φ w)).obj N₂
-  let e : N₁.X ≅ N₂'.X :=
-    { hom := Hom.mk' (𝟙 M.X) (by
-        change (f ▷ M.X ≫ φ ▷ M.X ≫ γ[B', M.X]) ≫ 𝟙 M.X =
-          A ◁ 𝟙 M.X ≫ f' ▷ M.X ≫ γ[B', M.X]
-        simp [← comp_whiskerRight_assoc, w])
-      inv := Hom.mk' (𝟙 M.X) (by
-        change (f' ▷ M.X ≫ γ[B', M.X]) ≫ 𝟙 M.X =
-          A ◁ 𝟙 M.X ≫ f ▷ M.X ≫ φ ▷ M.X ≫ γ[B', M.X]
-        simp [← comp_whiskerRight_assoc, w])
-      hom_inv_id := Hom.ext (Category.id_comp _)
-      inv_hom_id := Hom.ext (Category.id_comp _) }
-  have hγ : tensorπ (comapRegular f) N₂'.X ≫ γ[comapRegular f, N₂'.X].hom =
-      φ ▷ M.X ≫ γ[B', M.X] := by
-    rw [tensorπ_comap_smul_hom, comapRegularMap_hom, tensorπ_comapRegularMod_obj_smul_hom]
-    rfl
-  refine mkModIso e ⟨hom_ext _ _ ?_⟩
-  rw [← cancel_epi (tensorπ _ _)]
-  have hL : tensorπ (comapRegular f) N₁.X ≫ (γ[comapRegular f, N₁.X] ≫ e.hom).hom =
-      φ ▷ M.X ≫ γ[B', M.X] := by
-    rw [comp_hom', tensorπ_comapRegularMod_obj_smul_hom_assoc]
-    exact Category.comp_id _
-  have hR : tensorπ (comapRegular f) N₁.X ≫
-      (comapRegular f ⊴ₗ e.hom ≫ γ[comapRegular f, N₂'.X]).hom =
-      φ ▷ M.X ≫ γ[B', M.X] := by
-    rw [selfLeftAction_actionHomRight, comp_hom', tensorπ_whiskerLeft_hom_assoc, hγ]
-    exact (whiskerLeft_id B M.X =≫ _).trans (Category.id_comp _)
-  exact hL.trans hR.symm
+      (comap (comapRegularMap f f' φ w)).obj ((comapRegularMod f').obj M) :=
+  let e : ((comapRegularMod f).obj ((comap φ).obj M)).X ≅
+      ((comap (comapRegularMap f f' φ w)).obj ((comapRegularMod f').obj M)).X :=
+    isoOfSmulEq (X := M.X) (scalarRestriction f ((comap φ).obj M).X) (scalarRestriction f' M.X)
+      (by dsimp only [ModObj.smul, scalarRestriction]
+          rw [comap_obj_smul]
+          dsimp only [comap, selfLeftAction_actionHomLeft]
+          rw [← comp_whiskerRight_assoc, w])
+  mkIso e <| hom_ext _ _ <| by
+    have he : e.hom.hom = 𝟙 M.X := isoOfSmulEq_hom_hom _ _ _
+    have hR := tensorπ_comapRegularMod_obj_smul_hom f' M
+    rw [← cancel_epi (tensorπ _ _)]
+    simp only [selfLeftAction_actionHomRight, comp_hom', tensorπ_whiskerLeft_hom_assoc,
+      tensorπ_comapRegularMod_obj_smul_hom_assoc]
+    simp only [comap_obj_smul, selfLeftAction_actionHomLeft, comp_hom']
+    dsimp only [comap, comapRegularMod] at he hR ⊢
+    simp [he, hR]
 
 @[simp]
 lemma comapRegularModComapIsoApp_hom_hom_hom {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') (M : Mod C B') :
-    (comapRegularModComapIsoApp f f' φ w M).hom.hom.hom = 𝟙 M.X :=
-  (rfl)
+    (comapRegularModComapIsoApp f f' φ w M).hom.hom.hom = 𝟙 M.X := by
+  unfold comapRegularModComapIsoApp
+  dsimp only
+  exact (congrArg Hom.hom (mkIso_hom_hom _ _)).trans (isoOfSmulEq_hom_hom _ _ _)
 
 @[simp]
 lemma comapRegularModComapIsoApp_inv_hom_hom {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') (M : Mod C B') :
-    (comapRegularModComapIsoApp f f' φ w M).inv.hom.hom = 𝟙 M.X :=
-  (rfl)
+    (comapRegularModComapIsoApp f f' φ w M).inv.hom.hom = 𝟙 M.X := by
+  unfold comapRegularModComapIsoApp
+  dsimp only
+  exact (congrArg Hom.hom (mkIso_inv_hom _ _)).trans (isoOfSmulEq_inv_hom _ _ _)
 
 /-- Restricting a `B'`-module along a morphism of commutative monoids `φ : B ⟶ B'` under `A`
 corresponds under `comapRegularMod` to restricting along `comapRegularMap f f' φ w`. -/
@@ -632,20 +573,25 @@ noncomputable def comapRegularModComapIso {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') :
     comap φ ⋙ comapRegularMod f ≅
       comapRegularMod f' ⋙ comap (comapRegularMap f f' φ w) :=
-  NatIso.ofComponents (comapRegularModComapIsoApp f f' φ w) fun _ ↦
-    Hom.ext (Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm))
+  NatIso.ofComponents (comapRegularModComapIsoApp f f' φ w) fun _ ↦ by
+    ext
+    simp only [Functor.comp_obj, Functor.comp_map, comp_hom', comapRegularMod_map_hom,
+      comap_map_hom]
+    simp [comapRegularMod, comap]
 
 @[simp]
 lemma comapRegularModComapIso_hom_app_hom_hom {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') (M : Mod C B') :
-    ((comapRegularModComapIso f f' φ w).hom.app M).hom.hom = 𝟙 M.X :=
-  (rfl)
+    ((comapRegularModComapIso f f' φ w).hom.app M).hom.hom = 𝟙 M.X := by
+  simpa only [comapRegularModComapIso, NatIso.ofComponents_hom_app] using
+    comapRegularModComapIsoApp_hom_hom_hom f f' φ w M
 
 @[simp]
 lemma comapRegularModComapIso_inv_app_hom_hom {B' : C} [MonObj B'] [IsCommMonObj B']
     (f' : A ⟶ B') [IsMonHom f'] (φ : B ⟶ B') [IsMonHom φ] (w : f ≫ φ = f') (M : Mod C B') :
-    ((comapRegularModComapIso f f' φ w).inv.app M).hom.hom = 𝟙 M.X :=
-  (rfl)
+    ((comapRegularModComapIso f f' φ w).inv.app M).hom.hom = 𝟙 M.X := by
+  simpa only [comapRegularModComapIso, NatIso.ofComponents_inv_app] using
+    comapRegularModComapIsoApp_inv_hom_hom f f' φ w M
 
 end Module
 

@@ -104,7 +104,7 @@ open CategoryTheory MonoidalCategory
 
 namespace TauCeti
 
-open scoped DayFunctor
+open scoped DayFunctor CategoryTheory.MonObj
 
 noncomputable section
 
@@ -292,8 +292,7 @@ lemma eilenbergMacLaneMap_hom (φ : R →+* S) :
 lemma eilenbergMacLaneMap_id :
     eilenbergMacLaneMap (RingHom.id R) = 𝟙 (eilenbergMacLane R) := by
   ext : 1
-  rw [eilenbergMacLaneMap_hom, SymmetricSequence.eilenbergMacLaneMap_id]
-  rfl
+  simp [Mod.comapRegular]
 
 lemma eilenbergMacLaneMap_comp (φ : R →+* S) (ψ : S →+* T) :
     eilenbergMacLaneMap (ψ.comp φ) = eilenbergMacLaneMap φ ≫ eilenbergMacLaneMap ψ := by
@@ -401,17 +400,15 @@ lemma eilenbergMacLaneModuleSemilinearMap_hom_natTrans_app
     (eilenbergMacLaneModuleSemilinearMap φ g).hom.natTrans.app k =
       (PointedSSet.reducedFreeTensorSemilinearMap φ g).app
         (PointedSSet.circle.smashPow (Fin k.len)) := by
-  simp [eilenbergMacLaneModuleSemilinearMap]
-  rfl
+  simp [eilenbergMacLaneModuleSemilinearMap, Mod.comap]
 
 @[simp]
-lemma eilenbergMacLaneModuleSemilinearMap_id_ringHom_hom (g : M →ₗ[R] N) :
+lemma eilenbergMacLaneModuleSemilinearMap_ringHomId_hom (g : M →ₗ[R] N) :
     (eilenbergMacLaneModuleSemilinearMap (RingHom.id R) g).hom =
       (eilenbergMacLaneModuleMap R g).hom := by
   apply DayFunctor.hom_ext
   ext k : 2
-  simp
-  rfl
+  simp [Mod.comap]
 
 lemma eilenbergMacLaneModuleSemilinearMap_comp_hom
     {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ]
@@ -421,10 +418,7 @@ lemma eilenbergMacLaneModuleSemilinearMap_comp_hom
         (eilenbergMacLaneModuleSemilinearMap ψ h).hom := by
   apply DayFunctor.hom_ext
   ext k : 2
-  change _ = (eilenbergMacLaneModuleSemilinearMap φ g).hom.natTrans.app k ≫
-    (eilenbergMacLaneModuleSemilinearMap ψ h).hom.natTrans.app k
-  simp [PointedSSet.reducedFreeTensorSemilinearMap_comp]
-  rfl
+  simp [DayFunctor.comp_natTrans, PointedSSet.reducedFreeTensorSemilinearMap_comp, Mod.comap]
 
 end SemilinearMap
 
@@ -432,80 +426,46 @@ section SelfIso
 
 /-- For a commutative ring `R`, `eilenbergMacLaneModule R R` is isomorphic as an `HR`-module of
 symmetric sequences to the regular `HR`-module `Mod.regular (eilenbergMacLane R)`, via
-`reducedFreeTensorRingIso R` on every sphere level. -/
+`reducedFreeTensorSelfIso R` on every sphere level. -/
 def eilenbergMacLaneModuleSelfIso :
     eilenbergMacLaneModule R R ≅ Mod.regular (eilenbergMacLane R) :=
-  let e₀ := Functor.isoWhiskerLeft (PointedSSet.smashPowFunctor PointedSSet.circle)
-    (PointedSSet.reducedFreeTensorRingIso R)
-  let e : (eilenbergMacLaneModule R R).X ≅ (Mod.regular (eilenbergMacLane R)).X :=
-    { hom := .mk e₀.hom
-      inv := .mk e₀.inv
-      hom_inv_id := by
-        apply DayFunctor.hom_ext
-        exact e₀.hom_inv_id
-      inv_hom_id := by
-        apply DayFunctor.hom_ext
-        exact e₀.inv_hom_id }
-  letI : ModObj (eilenbergMacLane R) (eilenbergMacLaneModule R R).X :=
-    (eilenbergMacLaneModule R R).mod
-  letI : ModObj (eilenbergMacLane R) (Mod.regular (eilenbergMacLane R)).X :=
-    (Mod.regular (eilenbergMacLane R)).mod
-  have hMod : IsModHom (eilenbergMacLane R) e.hom :=
-    (Mod.isModHom_iff_dayStructureMap (X := eilenbergMacLaneModule R R)
-      (Y := Mod.regular (eilenbergMacLane R)) e.hom).mpr fun p q ↦
-      (Mod.dayStructureMap_dayMk _ _ _ _ p q =≫ e.hom.natTrans.app (p ⊗ q)).trans <|
-        (PointedSSet.reducedFreeTensorCompAct_app_comp_reducedFreeTensorRingIso_hom_app
-          (PointedSSet.smashPowFunctor PointedSSet.circle) p q).trans <|
-        ((eilenbergMacLane R).functor.obj p ◁ e.hom.natTrans.app q ≫=
-          (DayFunctor.η_app_comp_mul_natTrans_app (eilenbergMacLane R) p q).symm.trans
-            (Mod.dayStructureMap_def (Mod.regular (eilenbergMacLane R)) p q).symm)
-  let mkIso (f : (eilenbergMacLaneModule R R).X ≅ (Mod.regular (eilenbergMacLane R)).X)
-      (_ : IsModHom (eilenbergMacLane R) f.hom) :
-      eilenbergMacLaneModule R R ≅ Mod.regular (eilenbergMacLane R) :=
-    letI : IsModHom (eilenbergMacLane R) f.hom := ‹_›
-    { hom := ⟨f.hom⟩
-      inv := ⟨f.inv⟩
-      hom_inv_id := Mod.Hom.ext f.hom_inv_id
-      inv_hom_id := Mod.Hom.ext f.inv_hom_id }
-  mkIso e hMod
+  Mod.mkIso
+    ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).inverse.mapIso
+      (Functor.isoWhiskerLeft (PointedSSet.smashPowFunctor PointedSSet.circle)
+        (PointedSSet.reducedFreeTensorSelfIso R))) <| by
+    refine ((Mod.isModHom_iff_dayStructureMap (X := eilenbergMacLaneModule R R)
+      (Y := Mod.regular (eilenbergMacLane R)) _).mpr fun p q ↦ ?_).smul_hom
+    rw [Mod.dayStructureMap_dayMk, Mod.dayStructureMap_def]
+    dsimp only [Mod.regular, ModObj.smul, ModObj.regular]
+    simp [DayFunctor.η_app_comp_mul_natTrans_app]
 
 @[simp]
 lemma eilenbergMacLaneModuleSelfIso_hom_hom_natTrans_app (k : FiniteBijection) :
     (eilenbergMacLaneModuleSelfIso R).hom.hom.natTrans.app k =
-      (PointedSSet.reducedFreeTensorRingIso R).hom.app
+      (PointedSSet.reducedFreeTensorSelfIso R).hom.app
         (PointedSSet.circle.smashPow (Fin k.len)) := by
-  simp [eilenbergMacLaneModuleSelfIso]
-  rfl
+  simp [eilenbergMacLaneModuleSelfIso, DayFunctor.equiv, Mod.regular]
 
 @[simp]
 lemma eilenbergMacLaneModuleSelfIso_inv_hom_natTrans_app (k : FiniteBijection) :
     (eilenbergMacLaneModuleSelfIso R).inv.hom.natTrans.app k =
-      (PointedSSet.reducedFreeTensorRingIso R).inv.app
+      (PointedSSet.reducedFreeTensorSelfIso R).inv.app
         (PointedSSet.circle.smashPow (Fin k.len)) := by
-  simp [eilenbergMacLaneModuleSelfIso]
-  rfl
+  simp [eilenbergMacLaneModuleSelfIso, DayFunctor.equiv, Mod.regular]
 
 variable {R} in
 /-- Under `eilenbergMacLaneModuleSelfIso`, the semilinear map induced by `φ : R →+* S` agrees with
 the monoid map `eilenbergMacLaneMap φ`. -/
 @[reassoc]
-lemma eilenbergMacLaneModuleSemilinearMap_toSemilinearMap_comp_selfIso_hom
+lemma
+  eilenbergMacLaneModuleSemilinearMap_toSemilinearMap_hom_comp_eilenbergMacLaneModuleSelfIso_hom_hom
     {S : Type} [CommRing S] (φ : R →+* S) :
     (eilenbergMacLaneModuleSemilinearMap φ φ.toSemilinearMap).hom ≫
         (eilenbergMacLaneModuleSelfIso S).hom.hom =
       (eilenbergMacLaneModuleSelfIso R).hom.hom ≫ eilenbergMacLaneMap φ := by
   apply DayFunctor.hom_ext
   ext k : 2
-  change (eilenbergMacLaneModuleSemilinearMap φ φ.toSemilinearMap).hom.natTrans.app k ≫
-      (eilenbergMacLaneModuleSelfIso S).hom.hom.natTrans.app k =
-    (eilenbergMacLaneModuleSelfIso R).hom.hom.natTrans.app k ≫
-      (eilenbergMacLaneMap φ).natTrans.app k
-  rw [eilenbergMacLaneModuleSemilinearMap_hom_natTrans_app,
-    eilenbergMacLaneModuleSelfIso_hom_hom_natTrans_app,
-    eilenbergMacLaneModuleSelfIso_hom_hom_natTrans_app, eilenbergMacLaneMap_natTrans_app]
-  exact
-    PointedSSet.reducedFreeTensorSemilinearMap_toSemilinearMap_comp_reducedFreeTensorRingIso_hom_app
-      φ (PointedSSet.circle.smashPow (Fin k.len))
+  simp [DayFunctor.comp_natTrans, Mod.comap, Mod.regular]
 
 end SelfIso
 
@@ -578,21 +538,23 @@ lemma eilenbergMacLaneMod_X :
 
 /-- On representatives in `HR ⊗ HM`, the `HR ∧_S HM ⟶ HM` action of `eilenbergMacLaneMod R M` is
 the `HR`-action on symmetric sequences. -/
+@[reassoc (attr := simp)]
 lemma tensorπ_eilenbergMacLaneMod_smul_hom :
-    Mod.tensorπ (eilenbergMacLane R) (eilenbergMacLaneModule R M) ≫
-        (eilenbergMacLaneMod R M).mod.smul.hom =
+    Mod.tensorπ (eilenbergMacLane R) (eilenbergMacLaneMod R M).X ≫
+        γ[eilenbergMacLane R, (eilenbergMacLaneMod R M).X].hom =
       (SymmetricSequence.eilenbergMacLaneModule R M).mod.smul :=
   Mod.tensorπ_comapRegularMod_obj_smul_hom _ _
 
 /-- Precomposing the `HR ∧_S HM ⟶ HM` action on representatives with the sphere unit `S ⟶ HR`
 recovers the sphere action of the symmetric spectrum `HM`. -/
-lemma sphereToEilenbergMacLane_comp_tensorπ_eilenbergMacLaneMod_smul_hom :
+@[reassoc]
+lemma sphereToEilenbergMacLane_whiskerRight_tensorπ_eilenbergMacLaneMod_smul_hom :
     SymmetricSequence.sphereToEilenbergMacLane R ▷ (eilenbergMacLaneModule R M).X ≫
-        Mod.tensorπ (eilenbergMacLane R) (eilenbergMacLaneModule R M) ≫
-        (eilenbergMacLaneMod R M).mod.smul.hom =
-      (eilenbergMacLaneModule R M).mod.smul := by
-  rw [tensorπ_eilenbergMacLaneMod_smul_hom]
-  rfl
+        Mod.tensorπ (eilenbergMacLane R) (eilenbergMacLaneMod R M).X ≫
+        γ[eilenbergMacLane R, (eilenbergMacLaneMod R M).X].hom =
+      γ[SymmetricSequence.sphere, (eilenbergMacLaneModule R M).X] :=
+  Mod.whiskerRight_tensorπ_comapRegular_smul_hom
+    (SymmetricSequence.sphereToEilenbergMacLane R) (eilenbergMacLaneMod R M)
 
 variable {M} {N P : Type} [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
 
@@ -613,10 +575,7 @@ lemma eilenbergMacLaneModuleMap_hom (g : M →ₗ[R] N) :
 lemma eilenbergMacLaneModuleMap_id :
     eilenbergMacLaneModuleMap R (LinearMap.id : M →ₗ[R] M) = 𝟙 _ := by
   ext : 1
-  -- The identity of `HM` is that of the `HR`-module `n ↦ M~[Sⁿ]` after unfolding the restriction
-  -- of scalars.
-  rw [eilenbergMacLaneModuleMap_hom, SymmetricSequence.eilenbergMacLaneModuleMap_id]
-  rfl
+  simp [eilenbergMacLaneModule]
 
 lemma eilenbergMacLaneModuleMap_comp (g : M →ₗ[R] N) (h : N →ₗ[R] P) :
     eilenbergMacLaneModuleMap R (h ∘ₗ g) =
@@ -679,18 +638,17 @@ lemma eilenbergMacLaneModSemilinearMap_hom (φ : R →+* S) (g : M →ₛₗ[φ]
 @[simp]
 lemma eilenbergMacLaneModuleSemilinearMap_hom (φ : R →+* S) (g : M →ₛₗ[φ] Q) :
     (eilenbergMacLaneModuleSemilinearMap φ g).hom =
-      (SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g).hom := by
-  change (SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g).hom ≫
-    (Mod.comapRegularModComapIsoApp (SymmetricSequence.sphereToEilenbergMacLane R)
+      (SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g).hom :=
+  ((SymmetricSequence.eilenbergMacLaneModuleSemilinearMap φ g).hom ≫=
+    Mod.comapRegularModComapIsoApp_hom_hom_hom
+      (SymmetricSequence.sphereToEilenbergMacLane R)
       (SymmetricSequence.sphereToEilenbergMacLane S)
       (SymmetricSequence.eilenbergMacLaneMap φ)
       (SymmetricSequence.sphereToEilenbergMacLane_comp_eilenbergMacLaneMap φ)
-      (SymmetricSequence.eilenbergMacLaneModule S Q)).hom.hom.hom = _
-  rw [Mod.comapRegularModComapIsoApp_hom_hom_hom]
-  exact Category.comp_id _
+      (SymmetricSequence.eilenbergMacLaneModule S Q)).trans (Category.comp_id _)
 
 @[simp]
-lemma eilenbergMacLaneModuleSemilinearMap_id_ringHom (g : M →ₗ[R] N) :
+lemma eilenbergMacLaneModuleSemilinearMap_ringHomId (g : M →ₗ[R] N) :
     eilenbergMacLaneModuleSemilinearMap (RingHom.id R) g = eilenbergMacLaneModuleMap R g := by
   ext : 1
   simp
@@ -701,17 +659,15 @@ lemma eilenbergMacLaneModuleSemilinearMap_comp
     eilenbergMacLaneModuleSemilinearMap χ (h.comp g) =
       eilenbergMacLaneModuleSemilinearMap φ g ≫ eilenbergMacLaneModuleSemilinearMap ψ h := by
   ext : 1
-  rw [Mod.comp_hom', eilenbergMacLaneModuleSemilinearMap_hom,
-    eilenbergMacLaneModuleSemilinearMap_hom, eilenbergMacLaneModuleSemilinearMap_hom,
-    SymmetricSequence.eilenbergMacLaneModuleSemilinearMap_comp_hom]
-  rfl
+  simp only [Mod.comp_hom', eilenbergMacLaneModuleSemilinearMap_hom]
+  exact SymmetricSequence.eilenbergMacLaneModuleSemilinearMap_comp_hom g h
 
 end SemilinearMap
 
 section SelfIso
 
 /-- As an `HR`-module spectrum, `eilenbergMacLaneMod R R` is isomorphic to the regular `HR`-module
-`Mod.regular (eilenbergMacLane R)`, via `reducedFreeTensorRingIso R` on every sphere level. -/
+`Mod.regular (eilenbergMacLane R)`, via `reducedFreeTensorSelfIso R` on every sphere level. -/
 def eilenbergMacLaneModSelfIso :
     eilenbergMacLaneMod R R ≅ Mod.regular (eilenbergMacLane R) :=
   (Mod.comapRegularMod (SymmetricSequence.sphereToEilenbergMacLane R)).mapIso
@@ -719,55 +675,50 @@ def eilenbergMacLaneModSelfIso :
     Mod.comapRegularModRegularIso (SymmetricSequence.sphereToEilenbergMacLane R)
 
 /-- As a symmetric spectrum, `eilenbergMacLaneModule R R` is isomorphic to `eilenbergMacLane R`,
-via `reducedFreeTensorRingIso R` on every sphere level. -/
+via `reducedFreeTensorSelfIso R` on every sphere level. -/
 def eilenbergMacLaneModuleSelfIso :
     eilenbergMacLaneModule R R ≅ eilenbergMacLane R :=
   (Mod.forget (eilenbergMacLane R)).mapIso (eilenbergMacLaneModSelfIso R)
 
 @[simp]
-lemma eilenbergMacLaneModSelfIso_hom :
+lemma eilenbergMacLaneModSelfIso_hom_hom :
     (eilenbergMacLaneModSelfIso R).hom.hom = (eilenbergMacLaneModuleSelfIso R).hom :=
   (rfl)
 
 @[simp]
-lemma eilenbergMacLaneModSelfIso_inv :
+lemma eilenbergMacLaneModSelfIso_inv_hom :
     (eilenbergMacLaneModSelfIso R).inv.hom = (eilenbergMacLaneModuleSelfIso R).inv :=
   (rfl)
 
 @[simp]
 lemma eilenbergMacLaneModuleSelfIso_hom_hom :
     (eilenbergMacLaneModuleSelfIso R).hom.hom =
-      (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).hom.hom := by
-  change (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).hom.hom ≫
-    ((Mod.comapRegularModRegularIso
-      (SymmetricSequence.sphereToEilenbergMacLane R)).hom.hom).hom = _
-  rw [Mod.comapRegularModRegularIso_hom_hom, Mod.id_hom']
-  exact Category.comp_id _
+      (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).hom.hom :=
+  let h := congrArg Mod.Hom.hom
+    (Mod.comapRegularModRegularIso_hom_hom (SymmetricSequence.sphereToEilenbergMacLane R))
+  ((SymmetricSequence.eilenbergMacLaneModuleSelfIso R).hom.hom ≫= h).trans (Category.comp_id _)
 
 @[simp]
 lemma eilenbergMacLaneModuleSelfIso_inv_hom :
     (eilenbergMacLaneModuleSelfIso R).inv.hom =
-      (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).inv.hom := by
-  change ((Mod.comapRegularModRegularIso
-      (SymmetricSequence.sphereToEilenbergMacLane R)).inv.hom).hom ≫
-    (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).inv.hom = _
-  rw [Mod.comapRegularModRegularIso_inv_hom, Mod.id_hom']
-  exact Category.id_comp _
+      (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).inv.hom :=
+  (congrArg Mod.Hom.hom (Mod.comapRegularModRegularIso_inv_hom
+    (SymmetricSequence.sphereToEilenbergMacLane R)) =≫
+    (SymmetricSequence.eilenbergMacLaneModuleSelfIso R).inv.hom).trans (Category.id_comp _)
 
 variable {R} in
 /-- Under `eilenbergMacLaneModuleSelfIso`, the semilinear spectrum map induced by `φ : R →+* S`
 agrees with the ring spectrum map `eilenbergMacLaneMap φ : HR ⟶ HS`. -/
 @[reassoc]
-lemma eilenbergMacLaneModuleSemilinearMap_toSemilinearMap_comp_selfIso_hom
+lemma eilenbergMacLaneModuleSemilinearMap_toSemilinearMap_comp_eilenbergMacLaneModuleSelfIso_hom
     {S : Type} [CommRing S] (φ : R →+* S) :
     eilenbergMacLaneModuleSemilinearMap φ φ.toSemilinearMap ≫
         (eilenbergMacLaneModuleSelfIso S).hom =
       (eilenbergMacLaneModuleSelfIso R).hom ≫ eilenbergMacLaneMap φ := by
   ext : 1
-  rw [Mod.comp_hom', Mod.comp_hom', eilenbergMacLaneModuleSemilinearMap_hom,
-    eilenbergMacLaneModuleSelfIso_hom_hom, eilenbergMacLaneModuleSelfIso_hom_hom,
-    eilenbergMacLaneMap_hom]
-  exact SymmetricSequence.eilenbergMacLaneModuleSemilinearMap_toSemilinearMap_comp_selfIso_hom φ
+  apply DayFunctor.hom_ext
+  ext k : 2
+  simp [DayFunctor.comp_natTrans, Mod.comap, Mod.regular]
 
 end SelfIso
 

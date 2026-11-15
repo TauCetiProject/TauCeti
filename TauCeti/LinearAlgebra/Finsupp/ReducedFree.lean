@@ -43,7 +43,7 @@ free modules.
 * `ReducedFreeModule.induction_on`: induction on elements through sums of multiples of
   generators, `ReducedFreeModule.linearMap_ext`: semilinear maps out of a reduced free module are
   determined by their values on generators, and `ReducedFreeModule.linearMap_ext₂`: likewise for
-  curried bilinear maps out of two reduced free modules.
+  curried semilinear maps out of two reduced free modules.
 * `ReducedFreeModule.lift_mk`, `ReducedFreeModule.lift_unique`: the universal property of the
   reduced free module.
 * `ReducedFreeModule.mapRing_map`, `ReducedFreeModule.mapRing_map₂`: compatibility of `mapRing`
@@ -114,9 +114,10 @@ lemma linearMap_ext {S : Type*} [Semiring S] {σ : R →+* S} {M : Type*} [AddCo
 
 /-- Curried semilinear maps out of two reduced free modules are determined by their values on
 pairs of generators. -/
-lemma linearMap_ext₂ {S : Type*} [CommSemiring S] {σ₁ σ₂ : R →+* S} {M : Type*} [AddCommMonoid M]
-    [Module S M] {f g : ReducedFreeModule R a →ₛₗ[σ₁] ReducedFreeModule R b →ₛₗ[σ₂] M}
-    (h : ∀ x y, f (mk R x) (mk R y) = g (mk R x) (mk R y)) : f = g :=
+lemma linearMap_ext₂ {R₂ S₁ S₂ : Type*} [Ring R₂] [Semiring S₁] [Semiring S₂] {σ₁ : R →+* S₁}
+    {σ₂ : R₂ →+* S₂} {M : Type*} [AddCommMonoid M] [Module S₁ M] [Module S₂ M]
+    [SMulCommClass S₂ S₁ M] {f g : ReducedFreeModule R a →ₛₗ[σ₁] ReducedFreeModule R₂ b →ₛₗ[σ₂] M}
+    (h : ∀ x y, f (mk R x) (mk R₂ y) = g (mk R x) (mk R₂ y)) : f = g :=
   linearMap_ext fun x ↦ linearMap_ext fun y ↦ h x y
 
 variable (R)
