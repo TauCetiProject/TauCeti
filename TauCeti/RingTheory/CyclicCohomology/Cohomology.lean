@@ -50,8 +50,9 @@ its forced unitization, and in general differs from the cohomology of this compl
 * `TauCeti.cyclicCohomology.mk`: the class of a cyclic cocycle.
 * `TauCeti.cyclicCohomology.desc`: the linear map out of cyclic cohomology induced by a linear map
   on cyclic cocycles vanishing on cyclic coboundaries.
-* `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`: pullback along a
-  homomorphism of nonunital algebras, induced by `TauCeti.cyclicCochainsMap`.
+* `TauCeti.cyclicCochainComplexMap`, `TauCeti.cyclicCohomology.map`,
+  `TauCeti.cyclicCohomology.pullback`: pullback along a homomorphism of nonunital algebras,
+  induced by `TauCeti.cyclicCochainsMap`.
 
 ## Main results
 
@@ -147,7 +148,7 @@ theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
         (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
 
-variable {R A M} {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
+variable {R A M} {B : Type*} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
   [SMulCommClass R B B]
 
 /-- The pullback of a cyclic cocycle is a cyclic cocycle. -/
@@ -156,6 +157,19 @@ theorem cyclicCochainsMap_mem_cyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
     cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCocycles R A M n := by
   rw [cyclicCocycles, LinearMap.mem_ker, cyclicHochschildCoboundary_cyclicCochainsMap,
     LinearMap.mem_ker.1 hφ, map_zero]
+
+/-- The pullback of a cyclic coboundary is a cyclic coboundary. -/
+theorem cyclicCochainsMap_mem_cyclicCoboundaries (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : cyclicCochains R B M n} (hφ : φ ∈ cyclicCoboundaries R B M n) :
+    cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCoboundaries R A M n := by
+  cases n with
+  | zero =>
+    rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ ⊢
+    rw [hφ, map_zero]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
+    exact (mem_cyclicCoboundaries_succ_iff _ _ _).2
+      ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n ψ, cyclicHochschildCoboundary_cyclicCochainsMap f ψ⟩
 
 end Cocycles
 
@@ -433,6 +447,29 @@ theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
   rw [map, map, map, cyclicCochainComplexMap_comp, HomologicalComplex.homologyMap_comp]
 
 end Map
+
+section Pullback
+
+variable {R A M} {B : Type*} [Ring B] [Algebra R B]
+
+variable (M) in
+/-- Contravariant pullback on cyclic cohomology along a homomorphism of nonunital algebras between
+unital algebras in arbitrary universes. -/
+def pullback (f : A →ₙₐ[R] B) (n : ℕ) :
+    cyclicCohomology R B M n →ₗ[R] cyclicCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ (cyclicCochainsMap M (f : A →ₗ[R] B) n).restrict
+      fun _ ↦ cyclicCochainsMap_mem_cyclicCocycles f)
+    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 (cyclicCochainsMap_mem_cyclicCoboundaries f hφ)
+
+/-- Pullback on cyclic cohomology sends the class of a cocycle to the class of its pullback. -/
+@[simp]
+theorem pullback_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
+    pullback M f n (mk R B M n φ) =
+      mk R A M n
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ :=
+  desc_mk _ _ _ φ
+
+end Pullback
 
 end cyclicCohomology
 

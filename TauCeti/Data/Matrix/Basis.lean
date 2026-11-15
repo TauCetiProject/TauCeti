@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
 
 /-!
@@ -12,11 +13,14 @@ public import Mathlib.Data.Matrix.Basis
 
 `Matrix.single_mul_single_eq_ite` combines the matching-index and unequal-index product
 identities into one formula for rectangular matrix units with arbitrary coefficients.
-Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_single` writes a
+Only the shared index type needs to be finite. `Matrix.single_mul_eq_sum_single` and
+`Matrix.mul_single_eq_sum_single` expand left and right multiplication by a matrix unit along the
+matching row or column. `Matrix.smul_vecMulVec_single_single` writes a
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
-and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
-expands a linear map on matrices along the matrix units.
+and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `Matrix.singleNonUnitalAlgHom` bundles
+inclusion into a diagonal corner as a nonunital algebra homomorphism, and
+`LinearMap.apply_eq_sum_sum_smul_single` expands a linear map on matrices along the matrix units.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -29,6 +33,66 @@ public theorem Matrix.single_mul_single_eq_ite {l m n R : Type*}
   · subst k
     simp only [Matrix.single_mul_single_same, ↓reduceIte]
   · simp only [Matrix.single_mul_single_of_ne (c := c) i j k h d, h, ↓reduceIte]
+
+/-- Left multiplication by a matrix unit expands along the matching row of the right factor. -/
+public theorem Matrix.single_mul_eq_sum_single {l m n R : Type*}
+    [NonUnitalNonAssocSemiring R] [DecidableEq l] [DecidableEq m] [DecidableEq n]
+    [Fintype m] [Fintype n] (i : l) (j : m) (c : R) (A : Matrix m n R) :
+    Matrix.single i j c * A = ∑ k : n, Matrix.single i k (c * A j k) := by
+  ext a b
+  rw [Matrix.mul_apply, Matrix.sum_apply, Finset.sum_eq_single j, Finset.sum_eq_single b]
+  · by_cases h : i = a <;> simp [Matrix.single, h]
+  · intro k _ hk
+    simp [hk]
+  · intro hb
+    exact (hb (Finset.mem_univ b)).elim
+  · intro r _ hr
+    simp [hr.symm]
+  · intro hj
+    exact (hj (Finset.mem_univ j)).elim
+
+/-- Right multiplication by a matrix unit expands along the matching column of the left factor. -/
+public theorem Matrix.mul_single_eq_sum_single {l m n R : Type*}
+    [NonUnitalNonAssocSemiring R] [DecidableEq l] [DecidableEq m] [DecidableEq n]
+    [Fintype l] [Fintype m] (A : Matrix l m R) (j : m) (k : n) (c : R) :
+    A * Matrix.single j k c = ∑ i : l, Matrix.single i k (A i j * c) := by
+  ext a b
+  rw [Matrix.mul_apply, Matrix.sum_apply, Finset.sum_eq_single j, Finset.sum_eq_single a]
+  · by_cases h : k = b <;> simp [Matrix.single, h]
+  · intro i _ hi
+    simp [Matrix.single_apply_of_row_ne hi]
+  · intro ha
+    exact (ha (Finset.mem_univ a)).elim
+  · intro r _ hr
+    simp [Matrix.single_apply_of_row_ne hr.symm]
+  · intro hj
+    exact (hj (Finset.mem_univ j)).elim
+
+/-- Inclusion into a diagonal matrix corner as a nonunital algebra homomorphism. -/
+public def Matrix.singleNonUnitalAlgHom (R α : Type*) {n : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [Fintype n] [DecidableEq n] (i : n) :
+    α →ₙₐ[R] Matrix n n α where
+  toFun := Matrix.single i i
+  map_zero' := Matrix.single_zero i i
+  map_add' := Matrix.single_add i i
+  map_smul' r a := by simp
+  map_mul' a b := (Matrix.single_mul_single_same a i i i b).symm
+
+/-- `Matrix.singleNonUnitalAlgHom` places its argument in the `(i, i)` matrix entry. -/
+@[simp]
+public theorem Matrix.singleNonUnitalAlgHom_apply {R α n : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [Fintype n] [DecidableEq n]
+    (i : n) (a : α) :
+    Matrix.singleNonUnitalAlgHom R α i a = Matrix.single i i a :=
+  (rfl)
+
+/-- As a linear map, `Matrix.singleNonUnitalAlgHom` is `Matrix.singleLinearMap` at the diagonal
+entry `(i, i)`. -/
+@[simp]
+public theorem Matrix.coe_singleNonUnitalAlgHom_linearMap {R α n : Type*} [Semiring R]
+    [NonUnitalNonAssocSemiring α] [Module R α] [Fintype n] [DecidableEq n] (i : n) :
+    (Matrix.singleNonUnitalAlgHom R α i : α →ₗ[R] Matrix n n α) = Matrix.singleLinearMap R i i :=
+  (rfl)
 
 /-- A scaled outer product of two coordinate vectors is a matrix unit. -/
 public theorem Matrix.smul_vecMulVec_single_single {m n R : Type*} [MulZeroOneClass R]

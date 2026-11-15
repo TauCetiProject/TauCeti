@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Continuous.Cohomology
-public import TauCeti.RingTheory.CyclicCohomology.Matrix
+public import TauCeti.RingTheory.CyclicCohomology.Matrix.Basic
 public import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -23,7 +23,7 @@ and cyclic pairings. No Morita isomorphism is asserted here. In particular, boun
 are not replaced by their closures, and cohomology need not be Hausdorff.
 
 The algebraic identities are reused from
-`TauCeti.RingTheory.CyclicCohomology.Matrix`. The construction uses Mathlib's
+`TauCeti.RingTheory.CyclicCohomology.Matrix.Basic`. The construction uses Mathlib's
 `ContinuousMultilinearMap.compContinuousLinearMapL`.
 
 ## References
