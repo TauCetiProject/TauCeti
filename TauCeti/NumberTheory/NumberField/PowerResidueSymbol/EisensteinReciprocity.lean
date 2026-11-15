@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.EisensteinPrimary
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 import Mathlib.RingTheory.Ideal.Int
+import TauCeti.Data.ZMod.Pow
+import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Primary
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
@@ -61,8 +63,6 @@ Fermat quotient of `|a|` base `p`
 
 ## Main results
 
-* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_toInteger`: for a prime `p` and `p ∤ a`,
-  `(ζ / a)_p = ζ ^ ((|a| ^ (p - 1) - 1) / p)`.
 * `TauCeti.IsEisensteinPrimary.eisenstein_reciprocity_absNorm`: `(α / N 𝔅)_p = (N 𝔅 / α)_p` for
   odd prime `p`, primary `α`, and `(N 𝔅).Coprime p`.
 * `TauCeti.IsEisensteinPrimary.eisenstein_reciprocity_natCast`: `(α / a)_p = (a / α)_p` for
@@ -83,33 +83,6 @@ Fermat quotient of `|a|` base `p`
 public section
 
 open NumberField Ideal UniqueFactorizationMonoid
-
-namespace IsPrimitiveRoot
-
-/-- **The `p`-th power residue symbol of a primitive `p`-th root of unity at a rational integer.**
-In `K = ℚ(ζ_p)` for a prime `p`, if `p ∤ a`, then `(ζ / a 𝓞 K)_p = ζ ^ ((|a| ^ (p - 1) - 1) / p)`.
-This holds for `p = 2` as well as odd `p`. -/
-theorem powerResidueSymbolIdeal_span_intCast_toInteger {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
-    [NumberField K] [IsCyclotomicExtension {p} ℚ K] {ζ : K} (hζ : IsPrimitiveRoot ζ p) {a : ℤ}
-    (ha : ¬ (p : ℤ) ∣ a) :
-    powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p
-        (Ideal.Quotient.mk (span {(a : 𝓞 K)}) hζ.toInteger) =
-      hζ.toInteger ^ ((a.natAbs ^ (p - 1) - 1) / p) := by
-  have hp : p.Prime := Fact.out
-  have hfin : Module.finrank ℤ (𝓞 K) = p - 1 := by
-    rw [RingOfIntegers.rank, IsCyclotomicExtension.finrank K
-      (Polynomial.cyclotomic.irreducible_rat hp.pos), Nat.totient_prime hp]
-  have hmap : (span {a}).map (algebraMap ℤ (𝓞 K)) = span {(a : 𝓞 K)} := by
-    rw [Ideal.map_span, Set.image_singleton, eq_intCast]
-  have hnorm : absNorm (span {(a : 𝓞 K)}) = a.natAbs ^ (p - 1) := by
-    rw [← hmap, absNorm_algebraMap, Int.absNorm_span_singleton, hfin]
-  have ha' : ¬ p ∣ a.natAbs := fun h ↦ ha (Int.dvd_natAbs.mp (Int.natCast_dvd_natCast.mpr h))
-  have hcop : (absNorm (span {(a : 𝓞 K)})).Coprime p := by
-    rw [hnorm]
-    exact ((hp.coprime_iff_not_dvd.mpr ha').symm).pow_left (p - 1)
-  rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hcop hζ.toInteger_isPrimitiveRoot.pow_eq_one, hnorm]
-
-end IsPrimitiveRoot
 
 namespace TauCeti
 
@@ -183,7 +156,7 @@ theorem IsEisensteinPrimary.eisenstein_reciprocity_natCast
       powerResidueSymbolIdeal_mul_right (by simpa using hq_prime.ne_zero) (by simpa using hb₀),
       map_mul, map_mul, ih fun h ↦ ha (h.trans (dvd_mul_left b q))]
     congr 1
-    -- Pick a prime `P` of `𝓞 K` above `q`: `N P = q ^ f` with `f ∣ p - 1`, so `(f : ZMod p) ≠ 0`.
+    -- Pick a prime `P` of `𝓞 K` above `q`: `N P = q ^ f` with `f ∣ p - 1`, so `f.Coprime p`.
     have : Fact q.Prime := ⟨hq_prime⟩
     have : (span {(q : ℤ)}).IsMaximal := Int.ideal_span_isMaximal_of_prime q
     obtain ⟨P, _, _⟩ := exists_maximal_ideal_liesOver_of_isIntegral (span {(q : ℤ)}) (S := 𝓞 K)
@@ -191,16 +164,12 @@ theorem IsEisensteinPrimary.eisenstein_reciprocity_natCast
     set f := inertiaDeg P ℤ
     have hNP : q ^ f = absNorm P := pow_inertiaDeg q P
     have hPcop : (absNorm P).Coprime p := hNP ▸ ((hp.coprime_iff_not_dvd.mpr hpq).symm).pow_left f
-    have hf_lt : f < p := by
+    have hfcop : f.Coprime p := by
       have hf_ord : f = orderOf (q : ZMod p) :=
         IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd q K P hqp
       have hq_ne : (q : ZMod p) ≠ 0 := (ZMod.natCast_eq_zero_iff q p).not.mpr hpq
-      have hf_dvd : f ∣ p - 1 :=
-        hf_ord ▸ orderOf_dvd_of_pow_eq_one (ZMod.pow_card_sub_one_eq_one hq_ne)
-      exact lt_of_le_of_lt (Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt) hf_dvd)
-        (Nat.sub_lt hp.pos Nat.one_pos)
-    have hf0 : (f : ZMod p) ≠ 0 := (ZMod.natCast_eq_zero_iff f p).not.mpr
-      (Nat.not_dvd_of_pos_of_lt (inertiaDeg_pos P ℤ) hf_lt)
+      exact ((Nat.coprime_self_sub_left hp.pos).mpr (Nat.coprime_one_left p)).coprime_dvd_left
+        (hf_ord ▸ ZMod.orderOf_dvd_card_sub_one hq_ne)
     have hpow := hα.eisenstein_reciprocity_absNorm hp2 hPcop
     rw [← hNP, Nat.cast_pow, ← span_singleton_pow, powerResidueSymbolIdeal_pow_right, map_pow,
       map_pow] at hpow
@@ -208,16 +177,11 @@ theorem IsEisensteinPrimary.eisenstein_reciprocity_natCast
     swap
     · rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr hcop,
         powerResidueSymbolIdeal_mk_eq_zero_iff.mpr (mt IsCoprime.symm hcop)]
-    let m := ((f : ZMod p)⁻¹).val
-    have hm : f * m % p = 1 := by
-      have : Fact (1 < p) := ⟨hp.one_lt⟩
-      rw [← ZMod.val_natCast, Nat.cast_mul, ZMod.natCast_zmod_val, mul_inv_cancel₀ hf0,
-        ZMod.val_one]
     have hpow1 {𝔞 : Ideal (𝓞 K)} {x : 𝓞 K} (hc : IsCoprime (span {x}) 𝔞) :
-        (powerResidueSymbolIdeal 𝔞 p (Ideal.Quotient.mk 𝔞 x) ^ f) ^ m =
+        (powerResidueSymbolIdeal 𝔞 p (Ideal.Quotient.mk 𝔞 x) ^ f) ^ (f⁻¹ : ZMod p).val =
           powerResidueSymbolIdeal 𝔞 p (Ideal.Quotient.mk 𝔞 x) := by
-      rw [← pow_mul, pow_eq_pow_mod _ (powerResidueSymbolIdeal_pow_eq_one
-        (Ideal.Quotient.isUnit_mk_iff.mpr (isCoprime_iff_sup_eq.mp hc))), hm, pow_one]
+      rw [← pow_mul, pow_mul_val_inv (powerResidueSymbolIdeal_pow_eq_one
+        (Ideal.Quotient.isUnit_mk_iff.mpr (isCoprime_iff_sup_eq.mp hc))) hfcop]
     rw [← hpow1 hcop, hpow, hpow1 hcop.symm]
 
 /-- **The Eisenstein reciprocity law.** Let `p` be an odd prime, `K = ℚ(ζ_p)`, and `α ∈ 𝓞 K`

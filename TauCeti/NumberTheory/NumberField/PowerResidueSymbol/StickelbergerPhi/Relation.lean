@@ -67,8 +67,9 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 * S. A. Katre, *Gauss–Jacobi sums and Stickelberger's theorem*, §3, Lemmas 2–3 and
   Propositions 2, 3 and 3′; §4, Lemma 4 and Proposition 4 (i).
 * S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4, Propositions 4.3
-  and 4.4 (iii).
-* L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., §6.2.
+  and 4.4 (iii), and the derivation of (25).
+* N. Xu, *Reciprocity Laws*, §6, Theorem 6.9 and Corollary 6.13.
+* L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., §6.2 and §14.1.
 -/
 
 public section
@@ -398,13 +399,12 @@ private theorem powerResidueSymbol_stickelbergerProduct_of_isMaximal (hm : 2 ≤
   refine Finset.prod_congr rfl fun σ _ ↦ ?_
   rw [map_pow, map_pow]
   let e := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-  have hPσ : σ • P = P.map e := rfl
   have hrhs : powerResidueSymbolIdeal (σ • P) m (Quotient.mk (σ • P) α) =
       σ • powerResidueSymbol P m (Quotient.mk P (σ⁻¹ • α)) := by
     have hα : α = e (σ⁻¹ • α) := by simp [e]
     nth_rw 1 [hα]
-    rw [hPσ, ← map_powerResidueSymbolIdeal, powerResidueSymbolIdeal_of_isMaximal,
-      MulSemiringAction.toRingEquiv_apply_apply]
+    rw [P.pointwise_smul_eq_map_toRingEquiv, ← map_powerResidueSymbolIdeal,
+      powerResidueSymbolIdeal_of_isMaximal, MulSemiringAction.toRingEquiv_apply_apply]
   rw [hrhs]
   rcases eq_or_ne (Quotient.mk P (σ⁻¹ • α)) 0 with hx | hx
   · have hc : (galEquivZMod m K σ : ZMod m).val ≠ 0 := by

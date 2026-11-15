@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.RamificationInertia.Basic
 -- finiteness and freeness of a Galois extension of `ℤ`.
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.DedekindDomain.Factorization
-import Mathlib.RingTheory.DedekindDomain.Instances
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 
 /-!
@@ -157,7 +156,8 @@ theorem prod_smul_eq_map_relNorm (G : Type*) [Group G] [Fintype G] [MulSemiringA
     rw [map_relNorm, span_le]
     rintro _ ⟨x, hx, rfl⟩
     rw [Function.comp_apply, Algebra.algebraMap_intNorm_of_isGalois,
-      ← (IsGaloisGroup.mulEquivAlgEquiv G A B).toEquiv.prod_comp]
+      ← Fintype.prod_equiv (IsGaloisGroup.mulEquivAlgEquiv G A B).toEquiv (fun g ↦ g • x) _
+        fun _ ↦ by simp]
     exact prod_mem_prod fun g _ ↦ smul_mem_pointwise_smul g x I hx
   -- Both ideals have relative norm `(relNorm A I) ^ |G|` over `A`.
   have hnorm : relNorm A ((relNorm A I).map (algebraMap A B)) = relNorm A (∏ g : G, g • I) := by
