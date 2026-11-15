@@ -30,7 +30,7 @@ existence of a common refinement for two arbitrary chosen extensions is proved i
   `TauCeti.FiniteDVRExtension.finiteDVRExtensionCategory`.
 * `TauCeti.FiniteDVRExtension.Hom.comap_prime`: the chosen places correspond under the field
   component of a map.
-* `TauCeti.FiniteDVRExtension.Hom.ext_field`: a map is determined by its field component.
+* `TauCeti.FiniteDVRExtension.Hom.ext`: a map is determined by its field component.
 * `TauCeti.FiniteDVRExtension.Hom.ofAlgHom`: the map extending a field embedding under which the
   chosen places correspond.
 -/
@@ -70,19 +70,6 @@ structure Hom (E F : FiniteDVRExtension R K) where
 attribute [instance] Hom.isLocalHom_localMap
 attribute [simp] Hom.field_local
 
-namespace Hom
-
-/-- Two maps are equal when their field and local-ring components agree. -/
-lemma ext {E F : FiniteDVRExtension R K} {f g : Hom E F}
-    (hfield : f.field = g.field) (hlocal : f.localMap = g.localMap) : f = g := by
-  cases f
-  cases g
-  cases hfield
-  cases hlocal
-  congr
-
-end Hom
-
 /-- Chosen extensions and their compatible maps form a category over a fixed `R` and `K`. -/
 instance finiteDVRExtensionCategory : Category (FiniteDVRExtension R K) where
   Hom := Hom
@@ -90,48 +77,14 @@ instance finiteDVRExtensionCategory : Category (FiniteDVRExtension R K) where
     { field := AlgHom.id K E.extensionField
       localMap := AlgHom.id R E.localRing
       field_local := fun x ↦ by simp
-      isLocalHom_localMap := by
-        have h : (AlgHom.id R E.localRing).toRingHom = RingHom.id E.localRing := by
-          ext x
-          simp
-        rw [h]
-        exact isLocalHom_id _ }
+      isLocalHom_localMap := isLocalHom_id E.localRing }
   comp f g :=
     { field := g.field.comp f.field
       localMap := g.localMap.comp f.localMap
       field_local := fun x ↦ by
         simp only [AlgHom.comp_apply]
         rw [f.field_local x, g.field_local (f.localMap x)]
-      isLocalHom_localMap := by
-        let _ : IsLocalHom g.localMap.toRingHom := g.isLocalHom_localMap
-        let _ : IsLocalHom f.localMap.toRingHom := f.isLocalHom_localMap
-        have h : (g.localMap.comp f.localMap).toRingHom =
-            g.localMap.toRingHom.comp f.localMap.toRingHom := by
-          ext x
-          rfl
-        rw [h]
-        exact RingHom.isLocalHom_comp _ _ }
-  id_comp := by
-    intro E F f
-    apply Hom.ext
-    · ext x
-      rfl
-    · ext x
-      rfl
-  comp_id := by
-    intro E F f
-    apply Hom.ext
-    · ext x
-      rfl
-    · ext x
-      rfl
-  assoc := by
-    intro E F G H f g h
-    apply Hom.ext
-    · ext x
-      rfl
-    · ext x
-      rfl
+      isLocalHom_localMap := RingHom.isLocalHom_comp g.localMap.toRingHom f.localMap.toRingHom }
 
 namespace Hom
 
@@ -180,9 +133,15 @@ theorem comap_prime (T : E ⟶ F) :
 
 /-- A map of chosen extensions is determined by its field component. -/
 @[ext (iff := false)]
-theorem ext_field {f g : E ⟶ F} (h : f.field = g.field) : f = g :=
-  Hom.ext h <| AlgHom.ext fun x => IsFractionRing.injective F.localRing F.extensionField <| by
-    rw [← f.field_local, ← g.field_local, h]
+theorem ext {f g : E ⟶ F} (h : f.field = g.field) : f = g := by
+  have hlocal : f.localMap = g.localMap :=
+    AlgHom.ext fun x ↦ IsFractionRing.injective F.localRing F.extensionField <| by
+      rw [← f.field_local, ← g.field_local, h]
+  cases f
+  cases g
+  cases h
+  cases hlocal
+  rfl
 
 /-- The map of chosen extensions extending a `K`-embedding `φ` of the extension fields under which
 the chosen places correspond. Its local-ring component is the localisation of the restriction of
