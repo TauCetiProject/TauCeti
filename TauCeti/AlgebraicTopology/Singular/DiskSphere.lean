@@ -62,24 +62,10 @@ lemma diskBoundary_singularHomologyMap_zero_isIso {n : ℕ} (hn : 2 ≤ n) :
     IsIso (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map
       (TopCat.diskBoundaryInclusion (n := n) :
         (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}))) := by
-  let i : (TopCat.diskBoundary n : TopCat.{w}) ⟶ (TopCat.disk n : TopCat.{w}) :=
-    TopCat.diskBoundaryInclusion n
-  let hp : IsIso (TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R) := by
-    let _ : ContractibleSpace (TopCat.disk n : TopCat.{w}) :=
-      TauCeti.TopCat.contractibleSpace_disk n
-    infer_instance
-  let hq : IsIso (TopCat.singularHomology₀ε (TopCat.diskBoundary n : TopCat.{w}) R) := by
-    let _ : PathConnectedSpace (TopCat.diskBoundary n : TopCat.{w}) :=
-      TauCeti.TopCat.pathConnectedSpace_diskBoundary hn
-    infer_instance
-  let hcomp : IsIso
-      (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map i ≫
-        TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R) := by
-    rw [TauCeti.singularHomologyMap_singularHomology₀ε R i]
-    exact hq
-  exact IsIso.of_isIso_comp_right
-    (((AlgebraicTopology.singularHomologyFunctor C 0).obj R).map i)
-    (TopCat.singularHomology₀ε (TopCat.disk n : TopCat.{w}) R)
+  have : ContractibleSpace (TopCat.disk n : TopCat.{w}) := TauCeti.TopCat.contractibleSpace_disk n
+  have : PathConnectedSpace (TopCat.diskBoundary n : TopCat.{w}) :=
+    TauCeti.TopCat.pathConnectedSpace_diskBoundary hn
+  exact isIso_singularHomologyMap_zero_of_pathConnectedSpace R _
 
 /-- The degree-zero relative homology of a positive-dimensional disk and its boundary vanishes. -/
 lemma isZero_singularHomology_diskBoundaryPair_zero {n : ℕ} (hn : 1 ≤ n) :

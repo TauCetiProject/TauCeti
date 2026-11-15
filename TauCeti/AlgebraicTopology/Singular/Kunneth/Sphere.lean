@@ -94,23 +94,6 @@ private lemma isIso_ιTensorObj_sphere {m : ℕ}
       simp only [zero_add] at hpq
       rw [hpq])) h
 
-include hE in
-/-- The inclusion of a point of the sphere is an isomorphism on `H₀`, the sphere being path
-connected. -/
-private lemma isIso_singularHomologyMap_zero_const (x₀ : sphere (0 : E) 1) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).map
-      (TopCat.ofHom (ContinuousMap.const (𝟙_ TopCat.{w}) x₀))) := by
-  have : FiniteDimensional ℝ E := .of_finrank_eq_succ hE
-  have : PathConnectedSpace (sphere (0 : E) 1) := isPathConnected_iff_pathConnectedSpace.mp
-    (isPathConnected_sphere (by rw [← Module.finrank_eq_rank, hE]; exact_mod_cast (by omega))
-      0 zero_le_one)
-  have : PathConnectedSpace (𝟙_ TopCat.{w}) := inferInstanceAs (PathConnectedSpace PUnit)
-  have h := singularHomologyMap_singularHomology₀ε (ModuleCat.of k k)
-    (TopCat.ofHom (ContinuousMap.const (𝟙_ TopCat.{w}) x₀))
-  rw [← IsIso.eq_comp_inv] at h
-  rw [h]
-  infer_instance
-
 variable [IsDomain k] [IsPrincipalIdealRing k]
 
 include hE in
@@ -206,7 +189,10 @@ theorem isIso_singularHomologyMap_prodMk_const_sphere {m : ℕ} (x₀ : sphere (
         subst h0
         simp only [zero_add] at hpq
         rw [hpq]))
-  have := isIso_singularHomologyMap_zero_const hE (k := k) x₀
+  -- `c` is an isomorphism on `H₀`, the sphere being path connected.
+  have : PathConnectedSpace S := isPathConnected_iff_pathConnectedSpace.mp
+    (isPathConnected_sphere (Module.one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one)
+  have := isIso_singularHomologyMap_zero_of_pathConnectedSpace R c
   -- The Künneth maps intertwine `c × 𝟙` with `c_* ⊗ 𝟙` on the summand of degree `(0, m + 1)`.
   have key := (GradedObject.Monoidal.ι_tensorHom_assoc (fun p ↦ (H p R).map c)
       (fun q ↦ (H q R).map (𝟙 (TopCat.of F))) 0 (m + 1) (m + 1) (zero_add _)
