@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Delete
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -159,6 +162,29 @@ theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.reverse.toSimpleGraph = p.toSimpleGraph.reverse := by
   conv_lhs => rw [← toGraph_toSimpleGraph p, ← SimpleGraph.Walk.toGraph_reverse,
     SimpleGraph.Walk.toSimpleGraph_toGraph]
+
+/-- The traced graph of a walk in `Graph.ofSimpleGraph H` becomes the subgraph traced by the
+corresponding simple-graph walk. -/
+@[simp]
+theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
+    (h : (Graph.ofSimpleGraph H).walkGraph p ≤ Graph.ofSimpleGraph H) :
+    ((Graph.ofSimpleGraph H).walkGraph p).toSimpleGraphSubgraph h =
+      p.toSimpleGraph.toSubgraph := by
+  ext a b
+  · simp
+  · rw [← SimpleGraph.Subgraph.mem_edgeSet, ← SimpleGraph.Subgraph.mem_edgeSet]
+    simp
+
+/-- Converting the subgraph traced by a simple-graph walk to a graph recovers the graph traced by
+the corresponding edge-labelled walk. -/
+@[simp]
+theorem _root_.SimpleGraph.Walk.toGraph_toSubgraph (p : H.Walk x y) :
+    p.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p.toGraph := by
+  have h := Graph.Walk.toSimpleGraphSubgraph_walkGraph p.toGraph
+    (p.toGraph.walkGraph_le (by simp))
+  apply_fun SimpleGraph.Subgraph.toGraph at h
+  rw [Graph.toGraph_toSimpleGraphSubgraph, SimpleGraph.Walk.toSimpleGraph_toGraph] at h
+  exact h.symm
 
 @[simp]
 theorem nil_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x y) :

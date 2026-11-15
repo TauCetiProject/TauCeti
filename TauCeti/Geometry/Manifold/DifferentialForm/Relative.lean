@@ -47,8 +47,8 @@ degree on `M`, with `r ≥ 1`, has a `C^r` form `β` with `d β = η - ρ^* η` 
 and the bundle to be `C^(r + 1)`. This is the primitive used to compare two symplectic forms
 relative to a submanifold.
 
-The flat counterpart on a convex set stable under scaling the normal coordinate is
-`Convex.exists_contDiffOn_relative_primitive`. The base may have boundary or corners and the
+The flat counterpart on an open set stable under scaling the normal coordinate is
+`IsOpen.exists_contDiffOn_relative_primitive`. The base may have boundary or corners and the
 coefficient space is any Banach space.
 
 ## Main declarations
