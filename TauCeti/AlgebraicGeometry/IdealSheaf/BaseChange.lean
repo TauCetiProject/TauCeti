@@ -47,11 +47,11 @@ for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
 closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
 change over `S` of the closed subscheme of `I`
-(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`), and sections of `V(I)`
-base-change to sections of `V(I.comap g)` via
-`AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if the closed
-subscheme of `I` is finite over a base `S` and `g` is finite, so is the closed subscheme of
-`I.comap g` (`AlgebraicGeometry.Scheme.IdealSheafData.isFinite_comap_subschemeι_comp`). If the
+(`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`, preserving finiteness,
+flatness, and finite presentation over the base), and sections of `V(I)` base-change to sections of
+`V(I.comap g)` via `AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if
+the closed subscheme of `I` is finite over a base `S` and `g` is finite, so is the closed subscheme
+of `I.comap g` (`AlgebraicGeometry.Scheme.IdealSheafData.isFinite_comap_subschemeι_comp`). If the
 closed subscheme of `I` is finite and flat over `S` and `g` is finite and flat of constant rank
 `n`, the rank over `S` of the closed subscheme of `I.comap g` is `n` times that of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_subschemeι_comp`). For relative effective
@@ -299,8 +299,31 @@ theorem _root_.CategoryTheory.IsPullback.ker_eq_comap_of_comp_eq_id {X' S' : Sch
 section PullbackSubschemeSection
 
 variable (I : X.IdealSheafData) {X' S' : Scheme.{u}} {f : X ⟶ S} {pX : X' ⟶ X} {f' : X' ⟶ S'}
-  {t : S' ⟶ S} (H : IsPullback pX f' f t) {ι : Type*} (s : ι → (S ⟶ I.subscheme))
-  (hs : ∀ i, s i ≫ (I.subschemeι ≫ f) = 𝟙 S)
+  {t : S' ⟶ S} (H : IsPullback pX f' f t)
+
+section
+include H
+
+/-- Finiteness of a closed subscheme over the base is preserved along any pullback square. -/
+theorem isFinite_comap_subschemeι_comp_of_isPullback [IsFinite (I.subschemeι ≫ f)] :
+    IsFinite ((I.comap pX).subschemeι ≫ f') :=
+  MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) ‹_›
+
+/-- Flatness of a closed subscheme over the base is preserved along any pullback square. -/
+theorem flat_comap_subschemeι_comp_of_isPullback [Flat (I.subschemeι ≫ f)] :
+    Flat ((I.comap pX).subschemeι ≫ f') :=
+  MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) ‹_›
+
+/-- Finite presentation of a closed subscheme over the base is preserved along any pullback
+square. -/
+theorem locallyOfFinitePresentation_comap_subschemeι_comp_of_isPullback
+    [LocallyOfFinitePresentation (I.subschemeι ≫ f)] :
+    LocallyOfFinitePresentation ((I.comap pX).subschemeι ≫ f') :=
+  MorphismProperty.of_isPullback (I.isPullback_subschemeMap_comap f H) ‹_›
+
+end
+
+variable {ι : Type*} (s : ι → (S ⟶ I.subscheme)) (hs : ∀ i, s i ≫ (I.subschemeι ≫ f) = 𝟙 S)
 
 /-- **Base change of sections of a closed subscheme** along a pullback square `H`. -/
 noncomputable def pullbackSubschemeSection (i : ι) : S' ⟶ (I.comap pX).subscheme :=

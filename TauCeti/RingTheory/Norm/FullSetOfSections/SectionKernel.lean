@@ -92,6 +92,9 @@ private noncomputable def kerEquiv : B' ≃ₗ[A] (RingHom.ker σ).restrictScala
 private noncomputable def kerIncl : B' →ₗ[A] B :=
   ((RingHom.ker σ).restrictScalars A).subtype.comp (kerEquiv hπ hσ hkerπ).toLinearMap
 
+private lemma coe_kerIncl_apply (y : B') :
+    kerIncl hπ hσ hkerπ y = (kerEquiv hπ hσ hkerπ y : B) := rfl
+
 private noncomputable def kerProj : B →ₗ[A] B' :=
   (kerEquiv hπ hσ hkerπ).symm.toLinearMap.comp (kerProjSub σ)
 
@@ -100,9 +103,8 @@ private lemma splitBaseChangeEquiv_left_inv (T : Type*) [CommRing T] [Algebra A 
       (LinearMap.prod ((kerProj hπ hσ hkerπ).baseChange T) (σ.sectionBaseChange T).toLinearMap) =
         LinearMap.id := by
   have hφρ (b : B) : kerIncl hπ hσ hkerπ (kerProj hπ hσ hkerπ b) + algebraMap A B (σ b) = b := by
-    change (kerEquiv hπ hσ hkerπ (kerProj hπ hσ hkerπ b) : B) + algebraMap A B (σ b) = b
-    rw [kerProj, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.apply_symm_apply,
-      coe_kerProjSub_apply, sub_add_cancel]
+    rw [coe_kerIncl_apply, kerProj, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearEquiv.apply_symm_apply, coe_kerProjSub_apply, sub_add_cancel]
   refine LinearMap.ext fun x ↦ ?_
   induction x using TensorProduct.inductionOn with
   | tmul t b =>
@@ -123,7 +125,7 @@ private lemma splitBaseChangeEquiv_right_inv (T : Type*) [CommRing T] [Algebra A
     RingHom.mem_ker.mp (kerEquiv hπ hσ hkerπ y).2
   have hρφ (y : B') : kerProj hπ hσ hkerπ (kerIncl hπ hσ hkerπ y) = y :=
     (congrArg (kerEquiv hπ hσ hkerπ).symm (Subtype.ext
-      (by rw [coe_kerProjSub_apply, hσy y, map_zero, sub_zero]; rfl))).trans
+      (by rw [coe_kerProjSub_apply, hσy y, map_zero, sub_zero, coe_kerIncl_apply]))).trans
       ((kerEquiv hπ hσ hkerπ).symm_apply_apply y)
   have hρ1 : kerProj hπ hσ hkerπ 1 = 0 := by
     rw [kerProj, LinearMap.comp_apply, ← map_zero (kerEquiv hπ hσ hkerπ).symm]
@@ -159,7 +161,7 @@ private lemma splitBaseChangeEquiv_conj_apply {T : Type*} [CommRing T] [Algebra 
   have hsnd (x : T ⊗[A] B) : ((splitBaseChangeEquiv hπ hσ hkerπ T).symm x).2 =
       σ.sectionBaseChange T x := rfl
   have hker (y : B') : kerIncl hπ hσ hkerπ y = (mulSpanEquiv hπ hkerπ y : B) := by
-    simp [kerIncl, kerEquiv]
+    simp [coe_kerIncl_apply, kerEquiv]
   refine ⟨e.injective ?_, ?_⟩
   · rw [e.apply_symm_apply]; simp only [e, he, map_zero, add_zero]
     induction f using TensorProduct.inductionOn with
@@ -202,24 +204,36 @@ theorem Algebra.norm_eq_mul_of_ker_span_singleton [Module.Free A B'] [Module.Fin
     e.symm.toLinearMap ∘ₗ Algebra.lmul T (T ⊗[A] B) f ∘ₗ e.toLinearMap
   have hdet : LinearMap.det (Algebra.lmul T (T ⊗[A] B) f) = LinearMap.det M := by
     simpa [M] using (LinearMap.det_conj (Algebra.lmul T (T ⊗[A] B) f) e.symm).symm
+  have hM_inl (z : T ⊗[A] B') :
+      M (z, 0) = (Algebra.TensorProduct.map (AlgHom.id T T) π f * z, 0) :=
+    (splitBaseChangeEquiv_conj_apply hπ hσ hkerπ f z 0).1
+  have hM_inr_snd : (M (0, 1)).2 = σ.sectionBaseChange T f :=
+    ((splitBaseChangeEquiv_conj_apply hπ hσ hkerπ f 0 1).2).trans (mul_one _)
   let b₁ := Module.Free.chooseBasis T (T ⊗[A] B')
-  let b₂ : Module.Basis Unit T T := Module.Basis.singleton Unit T; let b := b₁.prod b₂
+  let b₂ : Module.Basis Unit T T := Module.Basis.singleton Unit T
   let A₁₁ := LinearMap.toMatrix b₁ b₁
     (Algebra.lmul T (T ⊗[A] B') (Algebra.TensorProduct.map (AlgHom.id T T) π f))
   let A₁₂ := Matrix.of fun i (_ : Unit) ↦ b₁.repr (M (0, 1)).1 i
   let A₂₂ := LinearMap.toMatrix b₂ b₂ (Algebra.lmul T T (σ.sectionBaseChange T f))
-  have hmat : LinearMap.toMatrix b b M = Matrix.fromBlocks A₁₁ A₁₂ 0 A₂₂ := by
+  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂) M =
+      Matrix.fromBlocks A₁₁ A₁₂ 0 A₂₂ := by
     ext (i | _) (j | _)
-    · simp [b, M, e, A₁₁, LinearMap.toMatrix_apply,
-        (splitBaseChangeEquiv_conj_apply hπ hσ hkerπ f (b₁ j) 0).1]
-    · simp [b, b₂, A₁₂, LinearMap.toMatrix_apply]
-    · simp [b, M, e, LinearMap.toMatrix_apply,
-        (splitBaseChangeEquiv_conj_apply hπ hσ hkerπ f (b₁ j) 0).1]
-    · simp [b, b₂, M, e, A₂₂, LinearMap.toMatrix_apply,
-        (splitBaseChangeEquiv_conj_apply hπ hσ hkerπ f 0 1).2]
-  rw [Algebra.norm_apply, hdet, ← LinearMap.det_toMatrix b, hmat, Matrix.det_fromBlocks_zero₂₁,
-    LinearMap.det_toMatrix b₁, LinearMap.det_toMatrix b₂, ← Algebra.norm_apply,
-    ← Algebra.norm_apply, Algebra.norm_self, MonoidHom.id_apply, mul_comm]
+    · simp only [LinearMap.toMatrix_apply, Module.Basis.prod_apply, Sum.elim_inl,
+        Function.comp_apply, LinearMap.inl_apply, Module.Basis.prod_repr_inl, hM_inl,
+        Matrix.fromBlocks_apply₁₁, A₁₁, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+    · simp only [LinearMap.toMatrix_apply, Module.Basis.prod_apply, Sum.elim_inr,
+        Function.comp_apply, LinearMap.inr_apply, Module.Basis.prod_repr_inl, b₂,
+        Module.Basis.singleton_apply, Matrix.fromBlocks_apply₁₂, A₁₂, Matrix.of_apply]
+    · simp only [LinearMap.toMatrix_apply, Module.Basis.prod_apply, Sum.elim_inl,
+        Function.comp_apply, LinearMap.inl_apply, Module.Basis.prod_repr_inr, hM_inl, map_zero,
+        Finsupp.zero_apply, Matrix.fromBlocks_apply₂₁, Matrix.zero_apply]
+    · simp only [LinearMap.toMatrix_apply, Module.Basis.prod_apply, Sum.elim_inr,
+        Function.comp_apply, LinearMap.inr_apply, Module.Basis.prod_repr_inr, hM_inr_snd, b₂,
+        Module.Basis.singleton_apply, Matrix.fromBlocks_apply₂₂, A₂₂, Algebra.coe_lmul_eq_mul,
+        LinearMap.mul_apply', mul_one]
+  rw [Algebra.norm_apply, hdet, ← LinearMap.det_toMatrix (b₁.prod b₂), hmat,
+    Matrix.det_fromBlocks_zero₂₁, LinearMap.det_toMatrix b₁, LinearMap.det_toMatrix b₂,
+    ← Algebra.norm_apply, ← Algebra.norm_apply, Algebra.norm_self, MonoidHom.id_apply, mul_comm]
 
 /-- **Extending a full set of sections across a principal section kernel.** Suppose `B'` is finite
 free over `A`, `σ : B →ₐ[A] A`, `π : B →ₐ[A] B'` is surjective, `ker σ = (u)` and `ker π = Ann(u)`.

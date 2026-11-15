@@ -79,18 +79,26 @@ private lemma isFullSetOfSections_option_of_ker_span_singleton {Y Z Z' : Scheme.
   let : Algebra Γ(Y, ⊤) Γ(Z', ⊤) := g'.appTop.hom.toAlgebra
   have : Module.Finite Γ(Y, ⊤) Γ(Z', ⊤) := g'.finite_appTop; have := g'.free_appTop
   let π := ι_map.appTopAlgHom hιg
+  let σ (k : Option ι) : Γ(Z, ⊤) →ₐ[Γ(Y, ⊤)] Γ(Y, ⊤) := sectionAlgHom g (hs k) ⊤
+  let σ' (j : ι) : Γ(Z', ⊤) →ₐ[Γ(Y, ⊤)] Γ(Y, ⊤) := sectionAlgHom g' (hs' j) ⊤
+  have hσ (k : Option ι) (b : Γ(Z, ⊤)) : σ k b = (s k).appTop b :=
+    sectionAlgHom_top_apply g (hs k) b
+  have hσ' (j : ι) (c : Γ(Z', ⊤)) : σ' j c = (s' j).appTop c :=
+    sectionAlgHom_top_apply g' (hs' j) c
   have hπ : Function.Surjective π :=
     ι_map.coe_appTopAlgHom hιg ▸ (IsClosedImmersion.isAffine_surjective_of_isAffine ι_map).2
-  have hker_σ0 : RingHom.ker (sectionTopAlgHom g (hs none)) = Ideal.span {u} := by
-    rw [AlgHom.ker_coe, toRingHom_sectionTopAlgHom, hker_s0]
+  have hker_σ0 : RingHom.ker (σ none) = Ideal.span {u} := by
+    ext b; simp [RingHom.mem_ker, hσ, ← hker_s0]
   have hann' : RingHom.ker π = (Ideal.span {u}).annihilator := by
     rw [AlgHom.ker_coe, ι_map.toRingHom_appTopAlgHom hιg, hann]
-  have hopt := ((isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g' s' hs').1 ih)
-    |>.optionElim_of_ker_span_singleton hπ hker_σ0 hann'
-  rw [isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine]
-  refine (Iff.of_eq (congrArg TauCeti.IsFullSetOfSections (funext fun o ↦ AlgHom.ext fun b ↦ ?_))).1
-    hopt
-  rcases o with _ | j <;> simp [π, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hcomp]
+  have ih' : TauCeti.IsFullSetOfSections σ' := (isFullSetOfSections_iff_of_isAffine g' s' hs').1 ih
+  have hopt := ih'.optionElim_of_ker_span_singleton hπ hker_σ0 hann'
+  have hfull : TauCeti.IsFullSetOfSections σ :=
+    (Iff.of_eq (congrArg TauCeti.IsFullSetOfSections (funext fun o ↦ AlgHom.ext fun b ↦ by
+      rcases o with _ | j
+      · rfl
+      · simp [π, hσ, hσ', ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, hcomp]))).1 hopt
+  exact (isFullSetOfSections_iff_of_isAffine g s hs).2 hfull
 
 private lemma isFullSetOfSections_option_prodKerSection_of_isLocalRing
     {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} {f : X ⟶ Spec (.of R)}
@@ -154,8 +162,8 @@ private lemma isFullSetOfSections_prodKerSection_of_isLocalRing
   · intro x hx; let D₀ := ∏ k : PEmpty, (x k).ker; have := isFinite_prod_ker hx
     have hD₀ : D₀ = ⊤ := Finset.prod_empty.trans one_eq_top
     have : IsEmpty D₀.subscheme := hD₀ ▸ inferInstance
-    rw [isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine]
-    let : Algebra Γ(Spec (.of R), ⊤) Γ(D₀.subscheme, ⊤) := (D₀.subschemeι ≫ f).appTop.hom.toAlgebra
+    refine (isFullSetOfSections_iff_of_isAffine _ _ _).2 ?_
+    let := ((D₀.subschemeι ≫ f).app ⊤).hom.toAlgebra
     exact TauCeti.isFullSetOfSections_of_subsingleton _
   · exact fun _ _ ih _ hx ↦
       isFullSetOfSections_option_prodKerSection_of_isLocalRing hx (ih _ fun j ↦ hx (some j))
@@ -204,9 +212,10 @@ private lemma prod_comap_ofIdealTop_span_le_ker {Y Z W : Scheme.{u}} [IsAffine Y
   let : Algebra Γ(Y, ⊤) Γ(Z, ⊤) := g.appTop.hom.toAlgebra
   let : Algebra Γ(Y, ⊤) Γ(W, ⊤) := w.appTop.hom.toAlgebra
   have : Module.Finite Γ(Y, ⊤) Γ(Z, ⊤) := g.finite_appTop; have := g.free_appTop
-  have htop := (isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g s hs).1 hfull
-  have hprod : (∏ i, (s i).appTop u) = ∏ i, sectionTopAlgHom g (hs i) u :=
-    Finset.prod_congr rfl fun i _ ↦ (sectionTopAlgHom_apply g (hs i) u).symm
+  let σ (i : ι) : Γ(Z, ⊤) →ₐ[Γ(Y, ⊤)] Γ(Y, ⊤) := sectionAlgHom g (hs i) ⊤
+  have htop : TauCeti.IsFullSetOfSections σ := (isFullSetOfSections_iff_of_isAffine g s hs).1 hfull
+  have hprod : (∏ i, (s i).appTop u) = ∏ i, σ i u :=
+    Finset.prod_congr rfl fun i _ ↦ (sectionAlgHom_top_apply g (hs i) u).symm
   rw [prod_comap_ofIdealTop_span_singleton s Finset.univ u, hprod, ← htop.norm_eq_prod u,
     ofIdealTop_le_ker_iff, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   refine (ℓ.appTopAlgHom hℓg).algebraMap_norm_eq_zero_of_map_eq_zero ?_
@@ -262,13 +271,12 @@ theorem prod_ker_le_of_isFullSetOfSections {I : X.IdealSheafData} [IsFinite (I.s
   refine le_of_comap_Spec_isLocalRing fun R _ _ φ ↦ ?_
   let t := φ ≫ f; let f' := Limits.pullback.fst t f; let pX := Limits.pullback.snd t f
   have H : IsPullback pX f' f t := (IsPullback.of_hasPullback t f).flip
-  have H_I := I.isPullback_subschemeMap_comap f H
-  let _ : IsFinite ((I.comap pX).subschemeι ≫ f') := MorphismProperty.of_isPullback H_I ‹_›
-  let _ : Flat ((I.comap pX).subschemeι ≫ f') := MorphismProperty.of_isPullback H_I ‹_›
-  let _ : LocallyOfFinitePresentation ((I.comap pX).subschemeι ≫ f') :=
-    MorphismProperty.of_isPullback H_I ‹_›
-  have hfull' := (fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs H_I
-    (I.pullbackSubschemeSection_comp H s hs) (I.pullbackSubschemeSection_subschemeMap H s hs)).1
+  have := I.isFinite_comap_subschemeι_comp_of_isPullback H
+  have := I.flat_comap_subschemeι_comp_of_isPullback H
+  have := I.locallyOfFinitePresentation_comap_subschemeι_comp_of_isPullback H
+  have hfull' := (fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs
+    (I.isPullback_subschemeMap_comap f H) (I.pullbackSubschemeSection_comp H s hs)
+    (I.pullbackSubschemeSection_subschemeMap H s hs)).1
     (((isFullSetOfSections_iff_fullSetLocus_eq_bot _ _ _).1 hfull).symm ▸ bot_le)
   have hδφ : graphSection (T := Over.mk t) (Over.homMk φ rfl) ≫ pX = φ :=
     graphSection_snd (T := Over.mk t) (Over.homMk φ rfl)
@@ -336,13 +344,12 @@ theorem fullSetLocus_subschemeι_comp_eq_equalityLocus {I : X.IdealSheafData}
   refine eq_of_forall_le_ker_iff fun r ↦ ?_
   let f' := Limits.pullback.fst r f; let pX := Limits.pullback.snd r f
   have H : IsPullback pX f' f r := (IsPullback.of_hasPullback r f).flip
-  have H_I := I.isPullback_subschemeMap_comap f H
-  let _ : IsFinite ((I.comap pX).subschemeι ≫ f') := MorphismProperty.of_isPullback H_I ‹_›
-  let _ : Flat ((I.comap pX).subschemeι ≫ f') := MorphismProperty.of_isPullback H_I ‹_›
-  let _ : LocallyOfFinitePresentation ((I.comap pX).subschemeι ≫ f') :=
-    MorphismProperty.of_isPullback H_I ‹_›
-  rw [fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs H_I
-    (I.pullbackSubschemeSection_comp H s hs) (I.pullbackSubschemeSection_subschemeMap H s hs),
+  have := I.isFinite_comap_subschemeι_comp_of_isPullback H
+  have := I.flat_comap_subschemeι_comp_of_isPullback H
+  have := I.locallyOfFinitePresentation_comap_subschemeι_comp_of_isPullback H
+  rw [fullSetLocus_le_ker_iff_of_isPullback (I.subschemeι ≫ f) s hs
+    (I.isPullback_subschemeMap_comap f H) (I.pullbackSubschemeSection_comp H s hs)
+    (I.pullbackSubschemeSection_subschemeMap H s hs),
     isFullSetOfSections_subschemeι_comp_iff, I.prod_ker_pullbackSubschemeSection H s hs,
     equalityLocus_le_ker_iff_of_isPullback I D H]
 

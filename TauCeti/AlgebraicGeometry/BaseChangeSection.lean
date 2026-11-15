@@ -23,9 +23,9 @@ its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
 (`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
 
 Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
-giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`, and
-`sectionTopAlgHom` on `Γ(Z, ⊤)`). More generally, a morphism `f : X ⟶ Y` over `S` induces a
-`Γ(S, ⊤)`-algebra homomorphism `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`). More generally, a
+morphism `f : X ⟶ Y` over `S` induces a `Γ(S, ⊤)`-algebra homomorphism
+`Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
 -/
 
 public section
@@ -194,13 +194,10 @@ theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
     sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
   (rfl)
 
-/-- On global sections, `sectionAlgHom g hσ ⊤` transports `b : Γ(Z, g ⁻¹ᵁ ⊤)` along
-`g.preimage_top` and applies `σ.appTop`. -/
-theorem sectionAlgHom_top_apply (b : Γ(Z, g ⁻¹ᵁ ⊤)) :
-    sectionAlgHom g hσ ⊤ b =
-      σ.appTop (Z.presheaf.map (eqToHom g.preimage_top.symm).op b) := by
-  have happ : σ.appLE ⊤ ⊤ σ.preimage_top.ge = σ.appTop := σ.appLE_eq_app
-  rw [sectionAlgHom_apply, ← CommRingCat.comp_apply, ← happ, Scheme.Hom.map_appLE]
+/-- On global sections, `sectionAlgHom g hσ ⊤` applies `σ.appTop`. -/
+theorem sectionAlgHom_top_apply (b : Γ(Z, ⊤)) :
+    sectionAlgHom g hσ ⊤ b = σ.appTop b :=
+  (sectionAlgHom_apply g hσ ⊤ b).trans congr($(σ.appLE_eq_app).hom b)
 
 /-- A morphism `f : X ⟶ Y` over `S` (`f ≫ g = h`) induces `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)`. -/
 noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom {X Y S : Scheme.{u}}
@@ -226,24 +223,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}
 @[simp, norm_cast] theorem _root_.AlgebraicGeometry.Scheme.Hom.toRingHom_appTopAlgHom
     {X Y S : Scheme.{u}} (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
     (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
-
-/-- The `Γ(S, ⊤)`-algebra retraction `Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤)` of a section `σ` of `g`. -/
-noncomputable def sectionTopAlgHom :
-    letI := g.appTop.hom.toAlgebra; Γ(Z, ⊤) →ₐ[Γ(S, ⊤)] Γ(S, ⊤) := σ.appTopAlgHom hσ
-
-/-- Evaluating `sectionTopAlgHom g hσ` applies `σ.appTop`. -/
-@[simp] theorem sectionTopAlgHom_apply (u : Γ(Z, ⊤)) : sectionTopAlgHom g hσ u = σ.appTop u := (rfl)
-
-/-- Coercing `sectionTopAlgHom g hσ` to a ring homomorphism recovers `σ.appTop.hom`. -/
-@[simp, norm_cast] theorem toRingHom_sectionTopAlgHom :
-    (sectionTopAlgHom g hσ : Γ(Z, ⊤) →+* Γ(S, ⊤)) = σ.appTop.hom := (rfl)
-
-/-- Evaluating `sectionAlgHom g hσ ⊤` after transport along `g.preimage_top` gives `σ.appTop u`. -/
-theorem sectionAlgHom_top_map_apply (u : Γ(Z, ⊤)) :
-    sectionAlgHom g hσ ⊤ (Z.presheaf.map (eqToHom g.preimage_top).op u) = σ.appTop u := by
-  rw [sectionAlgHom_top_apply, ← CommRingCat.comp_apply (Z.presheaf.map _) (Z.presheaf.map _),
-    ← Functor.map_comp, eqToHom_op, eqToHom_op, eqToHom_trans, eqToHom_refl,
-    CategoryTheory.Functor.map_id, CommRingCat.id_apply]
 
 end SectionAlgHom
 

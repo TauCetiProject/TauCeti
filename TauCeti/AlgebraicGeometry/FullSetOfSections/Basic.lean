@@ -59,9 +59,8 @@ full set of sections of `Z_T` over `T` (`fullSetLocus_le_ker_iff`).
   change.
 * `TauCeti.AlgebraicGeometry.isFullSetOfSections_pullback_subschemeι_fullSetLocus`: over the
   full-set locus, the base-changed sections are a full set of sections.
-* `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_isAffine` and
-  `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine`: over an affine
-  base, a full set of sections of an affine morphism is detected on global sections alone.
+* `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_isAffine`: over an affine base, a full set
+  of sections of an affine morphism is detected on global sections alone.
 * `TauCeti.AlgebraicGeometry.isFullSetOfSections_iff_of_iso`,
   `TauCeti.AlgebraicGeometry.isFullSetOfSections_subschemeι_comp_iff_of_eq`,
   `TauCeti.AlgebraicGeometry.fullSetLocus_eq_of_iso`,
@@ -370,20 +369,6 @@ theorem isFullSetOfSections_iff_of_isAffine [IsAffine S] [IsAffineHom g] :
     (IsPullback.of_horiz_isIso ⟨by simp⟩ : IsPullback (𝟙 Z) g g (𝟙 S)) hs (fun i ↦ by simp) U V
     le_top).2 (h.baseChange_of_univ Γ(S, V))
 
-omit [IsFinite g] [Flat g] [LocallyOfFinitePresentation g] in
-/-- **Over an affine base, a full set of sections of an affine morphism is detected on `Γ(Z, ⊤)` via
-`sectionTopAlgHom`.** -/
-theorem isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine [IsAffine S] [IsAffineHom g] :
-    IsFullSetOfSections g s hs ↔
-      letI := g.appTop.hom.toAlgebra
-      TauCeti.IsFullSetOfSections (fun i ↦ sectionTopAlgHom g (hs i)) := by
-  rw [isFullSetOfSections_iff_of_isAffine]
-  let := g.appTop.hom.toAlgebra; let := (g.app ⊤).hom.toAlgebra
-  refine (TauCeti.isFullSetOfSections_comp_algEquiv_iff g.preimageTopAlgEquiv).symm.trans
-    (Iff.of_eq (congrArg TauCeti.IsFullSetOfSections (funext fun i ↦ AlgHom.ext fun u ↦ ?_)))
-  rw [AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, g.preimageTopAlgEquiv_apply,
-    sectionAlgHom_top_map_apply, sectionTopAlgHom_apply]
-
 /-- **The full-set locus is invariant under isomorphisms over `S`.** -/
 theorem fullSetLocus_eq_of_iso {Z' : Scheme.{u}} {g' : Z' ⟶ S} [IsFinite g'] [Flat g']
     [LocallyOfFinitePresentation g'] (e : Z' ≅ Z) (heg : e.hom ≫ g = g') {s' : ι → (S ⟶ Z')}
@@ -475,16 +460,16 @@ theorem IsFullSetOfSections.finrank_eq_card (h : IsFullSetOfSections g s hs) (p 
   obtain ⟨_, ⟨U, hU, rfl⟩, hpU, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
     (Set.mem_univ p) isOpen_univ
   have hle : (⊤ : (Spec (S.residueField p)).Opens) ≤ r ⁻¹ᵁ U := fun q _ ↦ by simpa [r] using hpU
-  have hfiber : IsFullSetOfSections g_p (fun i ↦ baseChangeSection g (s i) (hs i) (Over.mk r))
-      (fun i ↦ baseChangeSection_fst g (s i) (hs i) (Over.mk r)) := by
-    rw [isFullSetOfSections_iff_of_isAffine]
+  let : Algebra Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) := g_p.appTop.hom.toAlgebra
+  let σ_p (i : ι) : Γ(Limits.pullback r g, ⊤) →ₐ[Γ(Spec (S.residueField p), ⊤)]
+      Γ(Spec (S.residueField p), ⊤) :=
+    sectionAlgHom g_p (baseChangeSection_fst g (s i) (hs i) (Over.mk r)) ⊤
+  have htop : TauCeti.IsFullSetOfSections σ_p := by
     let := (g.app U).hom.toAlgebra; let := (r.appLE U ⊤ hle).hom.toAlgebra
     exact (isFullSetOfSections_sectionAlgHom_iff_of_isPullback g s hs
       (IsPullback.of_hasPullback r g).flip _
       (fun i ↦ baseChangeSection_snd g (s i) (hs i) (Over.mk r)) ⟨U, hU⟩ ⟨⊤, isAffineOpen_top _⟩
       hle).2 ((h ⟨U, hU⟩).baseChange_of_univ _)
-  have htop := (isFullSetOfSections_iff_sectionTopAlgHom_of_isAffine g_p _ _).1 hfiber
-  let : Algebra Γ(Spec (S.residueField p), ⊤) Γ(Limits.pullback r g, ⊤) := g_p.appTop.hom.toAlgebra
   let eA := (Scheme.ΓSpecIso (S.residueField p)).commRingCatIsoToRingEquiv
   have := eA.toEquiv.nontrivial; have := eA.symm.isLocalRing
   have := g_p.finite_appTop; have := g_p.free_appTop

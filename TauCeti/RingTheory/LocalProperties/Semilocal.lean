@@ -89,7 +89,8 @@ theorem exists_eq_span_singleton_of_finite_maximalSpectrum {B : Type*} [CommRing
   · have h := hc j m; rwa [Pi.single_eq_of_ne' hj, Ideal.Quotient.eq_zero_iff_mem] at h
 
 /-- **Locally principal ideals and their annihilators over a semilocal ring.** If `I` is principal
-and `J` agrees with `Ann(I)` at every maximal ideal of `B`, then `I = (u)` and `J = Ann(u)`. -/
+at every maximal ideal of `B` and `J` agrees with its annihilator there, then `I = (u)` and
+`J = Ann(u)` for a global `u : B`. -/
 theorem exists_eq_span_singleton_and_annihilator_of_finite_maximalSpectrum {B : Type*} [CommRing B]
     [Finite (MaximalSpectrum B)] (I J : Ideal B)
     (hIJ : ∀ (M : Ideal B) [M.IsMaximal], ∃ x : Localization.AtPrime M,
