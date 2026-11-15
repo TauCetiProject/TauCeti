@@ -63,7 +63,6 @@ In the statements, `n = m + 1`, so that `Sⁿ⁻¹ = Sᵐ` is modelled on `ℝ�
 * `TauCeti.isInvertible_mfderiv_sphereRotationFamily`: its derivative is invertible where
   `Im z ≠ 0`.
 * `Orientation.orientationSign_sphereRotationFamily`: its orientation sign there.
-* `TauCeti.exists_ne_and_ne_neg_sphere`: the sphere has points other than `±p`.
 * `TauCeti.isRegularValue_sphereRotationFamily`: every point other than `±p` is a regular value.
 * `Orientation.degreeAtRegularValue_sphereRotationFamily`: the degree is `1 + (-1)ⁿ⁻¹` there.
 
@@ -507,26 +506,6 @@ theorem _root_.Orientation.orientationSign_sphereRotationFamily_of_im_neg
     sign_pos (by linarith : (0 : ℝ) < -1 * (x.2 : ℂ).im), one_pow, SignType.coe_one]
 
 /-! ### Regular values and the degree -/
-
-include m in
-/-- **The sphere `Sᵐ⁺¹` has points other than `±p`**, for instance any unit vector orthogonal to
-`p`. These are the regular values of the rotation family
-(`TauCeti.isRegularValue_sphereRotationFamily`). -/
-theorem exists_ne_and_ne_neg_sphere (p : sphere (0 : E) 1) :
-    ∃ q : sphere (0 : E) 1, q ≠ p ∧ q ≠ -p := by
-  have : Nontrivial (ℝ ∙ (p : E))ᗮ :=
-    Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ (ℝ ∙ (p : E))ᗮ = m + 1)
-  obtain ⟨v, hv⟩ : (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1).Nonempty :=
-    NormedSpace.sphere_nonempty.2 zero_le_one
-  have hpv : ⟪(p : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
-  -- `⟪p, p⟫ = 1` and `⟪p, -p⟫ = -1`, while `⟪p, v⟫ = 0`.
-  refine ⟨⟨v, by simpa using hv⟩, fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [show (v : E) = p from congrArg Subtype.val h, real_inner_self_eq_norm_sq,
-      norm_eq_of_mem_sphere p] at hpv
-    norm_num at hpv
-  · rw [show (v : E) = -p from congrArg Subtype.val h, inner_neg_right,
-      real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p] at hpv
-    norm_num at hpv
 
 /-- Every point of the sphere other than `±p` is a regular value of the rotation family. -/
 theorem isRegularValue_sphereRotationFamily (p : sphere (0 : E) 1) {q : sphere (0 : E) 1}

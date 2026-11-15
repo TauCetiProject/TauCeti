@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Sphere.Connected
+import TauCeti.Geometry.Sphere.Equator
 
 /-!
 # The rotation family of a sphere as a family of diffeomorphisms
@@ -244,7 +245,8 @@ private theorem isCoveredByDiffeomorphisms_sphereOrientation_two
   -- Read on `P'`, the rotation family still has degree `2` at a point `q ≠ ±p`, a regular value.
   let f : P → sphere (0 : F) 1 := sphereRotationFamily p
   have hf : ContMDiff ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) ∞ f := contMDiff_sphereRotationFamily p
-  obtain ⟨q, hqp, hqp'⟩ := exists_ne_and_ne_neg_sphere (m := m) p
+  obtain ⟨q, hqp, hqp'⟩ := exists_ne_and_ne_neg_sphere
+    (by rw [Fact.out (p := finrank ℝ F = m + 1 + 1)]; omega) p
   have hreg : IsRegularValue (𝓡 (m + 1)) (𝓡 (m + 1)) (f ∘ ι) q :=
     isRegularValue_iff.2 fun x hx ↦
       ((isRegularValue_sphereRotationFamily p hqp hqp').isRegularPoint hx).comp

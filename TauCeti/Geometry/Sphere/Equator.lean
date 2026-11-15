@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
 # The equator of a unit sphere orthogonal to a vector
@@ -25,13 +27,15 @@ continuously onto this equator.
   `LinearIsometryEquiv.surjective_sphereToEquator`.
 * `TauCeti.orthogonalSphereToEquator u`: its case `e = id`, the unit sphere of `u⊥` as the
   equator.
+* `TauCeti.exists_ne_and_ne_neg_sphere`: in dimension at least two, the unit sphere has points
+  other than `±p`, for instance the points of the equator orthogonal to `p`.
 -/
 
 public section
 
 noncomputable section
 
-open Metric
+open Metric Module
 open scoped RealInnerProductSpace
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
@@ -109,5 +113,25 @@ theorem injective_orthogonalSphereToEquator (u : V) :
 theorem surjective_orthogonalSphereToEquator (u : V) :
     Function.Surjective (orthogonalSphereToEquator u) :=
   (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).surjective_sphereToEquator
+
+/-- **The unit sphere has points other than `±p`** in dimension at least two, for instance any unit
+vector orthogonal to `p`. -/
+theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V) 1) :
+    ∃ q : sphere (0 : V) 1, q ≠ p ∧ q ≠ -p := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (by omega)
+  have h := (ℝ ∙ (p : V)).finrank_add_finrank_orthogonal
+  rw [finrank_span_singleton (ne_zero_of_mem_unit_sphere p)] at h
+  have : Nontrivial (ℝ ∙ (p : V))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨v, hv⟩ : (sphere (0 : (ℝ ∙ (p : V))ᗮ) 1).Nonempty :=
+    NormedSpace.sphere_nonempty.2 zero_le_one
+  have hpv : ⟪(p : V), (v : V)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
+  -- `⟪p, p⟫ = 1` and `⟪p, -p⟫ = -1`, while `⟪p, v⟫ = 0`.
+  refine ⟨⟨v, by simpa using hv⟩, fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [show (v : V) = p from congrArg Subtype.val h, real_inner_self_eq_norm_sq,
+      norm_eq_of_mem_sphere p] at hpv
+    norm_num at hpv
+  · rw [show (v : V) = -p from congrArg Subtype.val h, inner_neg_right,
+      real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p] at hpv
+    norm_num at hpv
 
 end TauCeti
