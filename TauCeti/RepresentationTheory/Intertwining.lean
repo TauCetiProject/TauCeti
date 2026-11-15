@@ -55,8 +55,11 @@ taking invariants under it.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
-* `Representation.IntertwiningMap.stabilizer_apply_of_injective`: an injective intertwining map
-  preserves the stabilizer of every vector.
+* `Representation.IntertwiningMap.stabilizer_apply_of_injective`,
+  `Representation.Equiv.stabilizer_apply`: an injective intertwining map, in particular an
+  equivalence, preserves the stabilizer of every vector.
+* `Representation.stabilizer_comp`: the stabilizers of a restriction `ρ.comp f` are the preimages
+  under `f` of those of `ρ`.
 
 -/
 
@@ -215,6 +218,18 @@ end Stabilizer
 
 end Representation.IntertwiningMap
 
+namespace Representation
+
+/-- The stabilizer of a vector for the restriction `ρ.comp f` along a homomorphism `f : H →* G` is
+the preimage under `f` of its stabilizer for `ρ`. -/
+theorem stabilizer_comp {A G H V : Type*} [Semiring A] [Group G] [Group H] [AddCommMonoid V]
+    [Module A V] (ρ : Representation A G V) (f : H →* G) (v : V) :
+    stabilizer (ρ.comp f) v = (ρ.stabilizer v).comap f := by
+  ext h
+  simp
+
+end Representation
+
 namespace Representation.Equiv
 
 section Basis
@@ -341,6 +356,19 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
   (rfl)
 
 end Dual
+
+section Stabilizer
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- An equivalence of representations preserves the stabilizer of every vector. -/
+@[simp]
+theorem stabilizer_apply (e : Equiv ρ σ) (v : V) : σ.stabilizer (e v) = ρ.stabilizer v :=
+  e.toIntertwiningMap.stabilizer_apply_of_injective (EquivLike.injective e) v
+
+end Stabilizer
 
 section Congr
 

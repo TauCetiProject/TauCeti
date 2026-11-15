@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Subrepresentation
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Smooth representations and smooth vectors
@@ -43,7 +44,8 @@ class asserting open stabilizers, and the smooth vectors form a `Subrepresentati
   when every vector is fixed by some open subgroup.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to the source of an injective and to the target of a surjective intertwining map; in
-  particular subrepresentations and quotients of smooth representations are smooth.
+  particular subrepresentations and quotients of smooth representations are smooth, and
+  equivalent representations are smooth together (`Representation.Equiv.isSmooth_iff`).
 * `Representation.isSmooth_ofMulAction_iff`: a permutation representation `A[X]` over a nonzero
   ring is smooth exactly when the point stabilizers of `X` are open; in particular `A[G ⧸ U]` is
   smooth for an open subgroup `U`.
@@ -51,6 +53,8 @@ class asserting open stabilizers, and the smooth vectors form a `Subrepresentati
   vectors are smooth.
 * `Representation.le_smoothVectors_iff`: the smooth vectors form the largest smooth
   subrepresentation.
+* `Representation.smoothVectors_leftRegular_eq_bot`: in a `T₁` group in which `{1}` is not open,
+  the left regular representation has no nonzero smooth vector.
 
 ## References
 
@@ -74,8 +78,13 @@ variable {A G V W : Type*} [Semiring A] [Group G] [TopologicalSpace G]
 involved. -/
 @[mk_iff]
 class IsSmooth (ρ : Representation A G V) : Prop where
-  /-- The stabilizer of every vector is open. -/
-  isOpen_stabilizer (v : V) : IsOpen (ρ.stabilizer v : Set G)
+  /-- The stabilizer of every vector is open. Use `Representation.isOpen_stabilizer` instead. -/
+  out (v : V) : IsOpen (ρ.stabilizer v : Set G)
+
+/-- In a smooth representation the stabilizer of every vector is open. -/
+theorem isOpen_stabilizer (ρ : Representation A G V) [IsSmooth ρ] (v : V) :
+    IsOpen (ρ.stabilizer v : Set G) :=
+  IsSmooth.out v
 
 /-- A vector has open stabilizer exactly when it is fixed by some open subgroup. -/
 theorem isOpen_stabilizer_iff_exists_openSubgroup [SeparatelyContinuousMul G]
@@ -94,14 +103,22 @@ theorem isSmooth_iff_forall_exists_openSubgroup [SeparatelyContinuousMul G]
 /-- In a smooth representation every vector is fixed by some open subgroup. -/
 theorem IsSmooth.exists_openSubgroup (ρ : Representation A G V) [IsSmooth ρ] (v : V) :
     ∃ U : OpenSubgroup G, ∀ g ∈ U, ρ g v = v :=
-  ⟨⟨ρ.stabilizer v, IsSmooth.isOpen_stabilizer v⟩, fun _ hg ↦ hg⟩
+  ⟨⟨ρ.stabilizer v, ρ.isOpen_stabilizer v⟩, fun _ hg ↦ hg⟩
 
-/-- The trivial representation is smooth: every stabilizer is the whole group. -/
-instance isSmooth_trivial : IsSmooth (trivial A G V) :=
+/-- A trivial representation, for instance `Representation.trivial`, is smooth: every stabilizer
+is the whole group. -/
+instance isSmooth_of_isTrivial (ρ : Representation A G V) [ρ.IsTrivial] : IsSmooth ρ :=
   ⟨fun v ↦ by
     convert isOpen_univ
     ext g
-    simp [trivial_apply]⟩
+    simp [isTrivial_apply]⟩
+
+/-- A representation on a space with at most one vector is smooth. -/
+instance isSmooth_of_subsingleton [Subsingleton V] (ρ : Representation A G V) : IsSmooth ρ :=
+  ⟨fun v ↦ by
+    convert isOpen_univ
+    ext g
+    simp [Subsingleton.elim (ρ g v) v]⟩
 
 /-- Every representation of a discrete group is smooth. -/
 instance isSmooth_of_discreteTopology [DiscreteTopology G] (ρ : Representation A G V) :
@@ -110,16 +127,18 @@ instance isSmooth_of_discreteTopology [DiscreteTopology G] (ρ : Representation 
 
 /-- **Restriction preserves smoothness.** The restriction of a smooth representation along a
 continuous homomorphism, for instance to a subgroup, is smooth: its stabilizers are the preimages
-of those of `ρ`. -/
+of those of `ρ` (`Representation.stabilizer_comp`). -/
 theorem IsSmooth.comp {H : Type*} [Group H] [TopologicalSpace H] (ρ : Representation A G V)
     [IsSmooth ρ] {f : H →* G} (hf : Continuous f) : IsSmooth (ρ.comp f) :=
-  ⟨fun v ↦ (IsSmooth.isOpen_stabilizer (ρ := ρ) v).preimage hf⟩
+  ⟨fun v ↦ by
+    rw [stabilizer_comp, Subgroup.coe_comap]
+    exact (ρ.isOpen_stabilizer v).preimage hf⟩
 
 /-- **Subobjects of smooth representations are smooth.** Smoothness passes to the source of an
 injective intertwining map, which has the same stabilizers. -/
 theorem IsSmooth.of_injective {ρ : Representation A G V} {σ : Representation A G W} [IsSmooth σ]
     (f : IntertwiningMap ρ σ) (hf : Injective f) : IsSmooth ρ :=
-  ⟨fun v ↦ f.stabilizer_apply_of_injective hf v ▸ IsSmooth.isOpen_stabilizer (f v)⟩
+  ⟨fun v ↦ f.stabilizer_apply_of_injective hf v ▸ σ.isOpen_stabilizer (f v)⟩
 
 /-- **Quotients of smooth representations are smooth.** Smoothness passes to the target of a
 surjective intertwining map, since the stabilizer of `f v` contains that of `v`. -/
@@ -128,12 +147,29 @@ theorem IsSmooth.of_surjective [SeparatelyContinuousMul G] {ρ : Representation 
     IsSmooth σ :=
   ⟨fun w ↦ by
     obtain ⟨v, rfl⟩ := hf w
-    exact Subgroup.isOpen_mono (f.stabilizer_le v) (IsSmooth.isOpen_stabilizer v)⟩
+    exact Subgroup.isOpen_mono (f.stabilizer_le v) (ρ.isOpen_stabilizer v)⟩
+
+/-- Equivalent representations are smooth together, since an equivalence preserves stabilizers. -/
+theorem Equiv.isSmooth_iff {ρ : Representation A G V} {σ : Representation A G W}
+    (e : Equiv ρ σ) : IsSmooth ρ ↔ IsSmooth σ := by
+  refine ⟨fun _ ↦ ⟨fun w ↦ ?_⟩, fun _ ↦ ⟨fun v ↦ ?_⟩⟩
+  · rw [← e.apply_symm_apply w, e.stabilizer_apply]
+    exact ρ.isOpen_stabilizer _
+  · rw [← e.stabilizer_apply]
+    exact σ.isOpen_stabilizer _
 
 /-- A subrepresentation of a smooth representation is smooth. -/
 instance _root_.Subrepresentation.isSmooth_toRepresentation {ρ : Representation A G V} [IsSmooth ρ]
     (σ : Subrepresentation ρ) : IsSmooth σ.toRepresentation :=
   IsSmooth.of_injective σ.subtype σ.subtype_injective
+
+/-- The restriction of a smooth representation to an invariant submodule is smooth. -/
+instance isSmooth_subrepresentation (ρ : Representation A G V) [IsSmooth ρ] (W : Submodule A V)
+    (le_comap : ∀ g, W ≤ W.comap (ρ g)) : IsSmooth (ρ.subrepresentation W le_comap) :=
+  ⟨fun w ↦ by
+    convert ρ.isOpen_stabilizer (w : V) using 2
+    ext g
+    simp [Subtype.ext_iff]⟩
 
 /-- The quotient of a smooth representation by an invariant submodule is smooth. -/
 instance isSmooth_quotient [SeparatelyContinuousMul G] {A V : Type*} [Ring A] [AddCommGroup V]
@@ -141,56 +177,13 @@ instance isSmooth_quotient [SeparatelyContinuousMul G] {A V : Type*} [Ring A] [A
     (le_comap : ∀ g, W ≤ W.comap (ρ g)) : IsSmooth (ρ.quotient W le_comap) :=
   ⟨fun x ↦ by
     obtain ⟨v, rfl⟩ := W.mkQ_surjective x
-    exact Subgroup.isOpen_mono (fun g hg ↦ by simp_all) (IsSmooth.isOpen_stabilizer (ρ := ρ) v)⟩
+    exact Subgroup.isOpen_mono (fun g hg ↦ by simp_all) (ρ.isOpen_stabilizer v)⟩
 
 /-- The quotient of a smooth representation by a subrepresentation is smooth. -/
 instance _root_.Subrepresentation.isSmooth_quotient [SeparatelyContinuousMul G] {A V : Type*}
     [Ring A] [AddCommGroup V] [Module A V] {ρ : Representation A G V} [IsSmooth ρ]
     (σ : Subrepresentation ρ) : IsSmooth σ.quotient :=
   Representation.isSmooth_quotient ρ _ _
-
-/-- A permutation representation `A[X]` is smooth when every point of `X` has an open stabilizer:
-a finitely supported function is fixed by the open subgroup fixing each point of its support. -/
-theorem isSmooth_ofMulAction [SeparatelyContinuousMul G] {X : Type*} [MulAction G X]
-    (h : ∀ x : X, IsOpen (MulAction.stabilizer G x : Set G)) : IsSmooth (ofMulAction A G X) := by
-  refine ⟨fun f ↦ ?_⟩
-  set S : Set G := ⋂ x ∈ f.coeff.support, (MulAction.stabilizer G x : Set G)
-  have hS : IsOpen S := isOpen_biInter_finset fun x _ ↦ h x
-  refine Subgroup.isOpen_of_mem_nhds _ (g := 1) (Filter.mem_of_superset
-    (hS.mem_nhds (by simp [S])) fun g hg ↦ ?_)
-  have hfix : ∀ x ∈ f.coeff.support, g • x = x := fun x hx ↦ by
-    simpa using Set.mem_iInter₂.mp hg x hx
-  rw [SetLike.mem_coe, mem_stabilizer]
-  ext y
-  rw [coeff_ofMulAction]
-  by_cases hy : y ∈ f.coeff.support
-  · rw [← hfix y hy, inv_smul_smul, hfix y hy]
-  · have hgy : g⁻¹ • y ∉ f.coeff.support := fun hgy ↦ hy <| by
-      have hy' : y = g⁻¹ • y := by simpa using hfix _ hgy
-      rwa [hy']
-    rw [Finsupp.notMem_support_iff.mp hy, Finsupp.notMem_support_iff.mp hgy]
-
-/-- **Smooth permutation representations.** Over a nonzero ring, the permutation representation
-`A[X]` is smooth exactly when every point of `X` has an open stabilizer: the stabilizer of the
-basis vector at `x` is the stabilizer of `x`. -/
-theorem isSmooth_ofMulAction_iff [SeparatelyContinuousMul G] [Nontrivial A] {X : Type*}
-    [MulAction G X] :
-    IsSmooth (ofMulAction A G X) ↔ ∀ x : X, IsOpen (MulAction.stabilizer G x : Set G) := by
-  refine ⟨fun h x ↦ ?_, isSmooth_ofMulAction⟩
-  convert h.isOpen_stabilizer (MonoidAlgebra.single x (1 : A)) using 2
-  ext g
-  simp [ofMulAction_single, MonoidAlgebra.single_left_inj]
-
-/-- The permutation representation `A[G ⧸ U]` on the cosets of an open subgroup is smooth: the
-stabilizer of the coset `g U` is the open subgroup `g U g⁻¹`. -/
-instance isSmooth_ofMulAction_quotient [SeparatelyContinuousMul G] (U : OpenSubgroup G) :
-    IsSmooth (ofMulAction A G (G ⧸ (U : Subgroup G))) :=
-  isSmooth_ofMulAction fun x ↦ by
-    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-    have hg : ((g : G ⧸ (U : Subgroup G))) = g • ((1 : G) : G ⧸ (U : Subgroup G)) := by simp
-    rw [hg, MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
-      Subgroup.coe_map]
-    exact (Homeomorph.mulLeft g |>.trans (Homeomorph.mulRight g⁻¹)).isOpenMap _ U.isOpen
 
 end IsSmooth
 
@@ -201,13 +194,10 @@ variable {A G V : Type*} [Semiring A] [Group G] [TopologicalSpace G] [Separately
 
 /-- A vector has open stabilizer exactly when each of its translates does: the stabilizer of
 `ρ g v` is the conjugate `g (ρ.stabilizer v) g⁻¹`. -/
+@[simp, grind =]
 theorem isOpen_stabilizer_apply_iff (g : G) {v : V} :
     IsOpen (ρ.stabilizer (ρ g v) : Set G) ↔ IsOpen (ρ.stabilizer v : Set G) := by
-  have key : ∀ (g : G) (v : V), IsOpen (ρ.stabilizer v : Set G) →
-      IsOpen (ρ.stabilizer (ρ g v) : Set G) := fun g v hv ↦ by
-    rw [stabilizer_conj, Subgroup.coe_map]
-    exact (Homeomorph.mulLeft g |>.trans (Homeomorph.mulRight g⁻¹)).isOpenMap _ hv
-  exact ⟨fun h ↦ by simpa using key g⁻¹ _ h, key g v⟩
+  rw [stabilizer_conj, Subgroup.isOpen_map_conj_iff]
 
 variable (ρ) in
 /-- The **smooth vectors** `V^∞` of a representation of a group with separately continuous
@@ -223,7 +213,7 @@ def smoothVectors : Subrepresentation ρ where
       smul_mem' c v hv := Subgroup.isOpen_mono (le_stabilizer_smul ρ c v) hv }
   apply_mem_toSubmodule g _ hv := (isOpen_stabilizer_apply_iff g).mpr hv
 
-@[simp]
+@[simp, grind =]
 theorem mem_smoothVectors {v : V} : v ∈ ρ.smoothVectors ↔ IsOpen (ρ.stabilizer v : Set G) :=
   Iff.rfl
 
@@ -241,10 +231,9 @@ instance isSmooth_smoothVectors : IsSmooth ρ.smoothVectors.toRepresentation :=
 
 /-- A representation is smooth exactly when all of its vectors are smooth. -/
 theorem smoothVectors_eq_top_iff : ρ.smoothVectors = ⊤ ↔ IsSmooth ρ := by
-  rw [eq_top_iff, isSmooth_iff]
-  exact ⟨fun h v ↦ h (Set.mem_univ v), fun h v _ ↦ h v⟩
+  simp [eq_top_iff, IsConcreteLE.le_iff, isSmooth_iff]
 
-@[simp]
+@[simp, grind =]
 theorem smoothVectors_eq_top [IsSmooth ρ] : ρ.smoothVectors = ⊤ :=
   smoothVectors_eq_top_iff.mpr ‹_›
 
@@ -256,5 +245,71 @@ theorem IntertwiningMap.apply_mem_smoothVectors {W : Type*} [AddCommMonoid W] [M
   Subgroup.isOpen_mono (f.stabilizer_le v) hv
 
 end SmoothVectors
+
+section OfMulAction
+
+variable {A G : Type*} [Semiring A] [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- A permutation representation `A[X]` is smooth when every point of `X` has an open stabilizer:
+the stabilizer of the basis vector at `x` contains the stabilizer of `x`, and the smooth vectors
+are closed under sums. -/
+theorem isSmooth_ofMulAction {X : Type*} [MulAction G X]
+    (h : ∀ x : X, IsOpen (MulAction.stabilizer G x : Set G)) : IsSmooth (ofMulAction A G X) := by
+  refine smoothVectors_eq_top_iff.mp <| eq_top_iff.mpr fun f hf ↦ ?_
+  clear hf
+  rw [← Subrepresentation.mem_toSubmodule]
+  induction f using MonoidAlgebra.induction_linear with
+  | zero => exact zero_mem _
+  | add f₁ f₂ h₁ h₂ => exact add_mem h₁ h₂
+  | single x a =>
+    refine Subgroup.isOpen_mono (fun g hg ↦ ?_) (h x)
+    rw [MulAction.mem_stabilizer_iff] at hg
+    rw [mem_stabilizer, ofMulAction_single, hg]
+
+/-- **Smooth permutation representations.** Over a nonzero ring, the permutation representation
+`A[X]` is smooth exactly when every point of `X` has an open stabilizer: the stabilizer of the
+basis vector at `x` is the stabilizer of `x`. -/
+theorem isSmooth_ofMulAction_iff [Nontrivial A] {X : Type*} [MulAction G X] :
+    IsSmooth (ofMulAction A G X) ↔ ∀ x : X, IsOpen (MulAction.stabilizer G x : Set G) := by
+  refine ⟨fun h x ↦ ?_, isSmooth_ofMulAction⟩
+  convert (ofMulAction A G X).isOpen_stabilizer (MonoidAlgebra.single x (1 : A)) using 2
+  ext g
+  simp [ofMulAction_single, MonoidAlgebra.single_left_inj]
+
+/-- The permutation representation `A[G ⧸ U]` on the cosets of an open subgroup is smooth: the
+stabilizer of the coset `g U` is the open subgroup `g U g⁻¹`. -/
+instance isSmooth_ofMulAction_quotient (U : OpenSubgroup G) :
+    IsSmooth (ofMulAction A G (G ⧸ (U : Subgroup G))) :=
+  isSmooth_ofMulAction fun x ↦ by
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+    have hg : ((g : G ⧸ (U : Subgroup G))) = g • ((1 : G) : G ⧸ (U : Subgroup G)) := by simp
+    rw [hg, MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
+      MulEquiv.toMonoidHom_eq_coe, Subgroup.isOpen_map_conj_iff]
+    exact U.isOpen
+
+/-- In a `T₁` group in which `{1}` is not open, the left regular representation has no
+nonzero smooth vector: the open stabilizer of a vector `f` would act freely on the finite support
+of `f`, so it would be a finite open subgroup, and `{1}` would be open. -/
+theorem smoothVectors_leftRegular_eq_bot [T1Space G] (hG : ¬IsOpen ({1} : Set G)) :
+    (leftRegular A G).smoothVectors = ⊥ := by
+  refine eq_bot_iff.mpr fun f hf ↦ ?_
+  rw [Subrepresentation.mem_bot]
+  by_contra hf0
+  obtain ⟨x, hx⟩ : f.coeff.support.Nonempty := by
+    rwa [Finsupp.support_nonempty_iff, Ne, MonoidAlgebra.coeff_eq_zero]
+  set H : Set G := ((leftRegular A G).stabilizer f : Set G)
+  have hH : IsOpen H := mem_smoothVectors.mp hf
+  -- Each `h ∈ H` fixes `f`, so it moves the point `x` of the support to `h * x` in the support.
+  have hfin : H.Finite := by
+    refine Set.Finite.of_finite_image (f := (· * x)) ?_ (mul_left_injective x).injOn
+    refine f.coeff.support.finite_toSet.subset ?_
+    rintro _ ⟨h, hh, rfl⟩
+    have hfix : leftRegular A G h f = f := hh
+    rw [Finset.mem_coe, Finsupp.mem_support_iff, ← hfix, coeff_ofMulAction, smul_eq_mul,
+      inv_mul_cancel_left]
+    exact Finsupp.mem_support_iff.mp hx
+  exact hG (isOpen_singleton_of_finite_mem_nhds 1 (hH.mem_nhds (one_mem _)) hfin)
+
+end OfMulAction
 
 end Representation

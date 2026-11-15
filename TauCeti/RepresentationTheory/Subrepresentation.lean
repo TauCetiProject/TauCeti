@@ -16,7 +16,8 @@ Mathlib's `Subrepresentation` API records how `toSubmodule` interacts with the l
 operations — `Subrepresentation.toSubmodule_sup` and `Subrepresentation.toSubmodule_inf`, both
 `@[simp]` and both true by `rfl` — but not how it interacts with the bounded-lattice structure,
 nor how it interacts with the order relations themselves, nor how it interacts with membership.
-This file adds the six missing counterparts, in the same shape. It also records that the
+This file adds the six missing counterparts, in the same shape, together with the carriers of
+`⊥` and `⊤` and membership in them. It also records that the
 representation action on a subrepresentation is the restriction of the original action, when an
 intertwining map is zero and when it is surjective in terms of the subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
@@ -109,6 +110,22 @@ lemma toSubmodule_bot : (⊥ : Subrepresentation ρ).toSubmodule = ⊥ := rfl
 /-- The top subrepresentation carries the top subspace. -/
 @[simp]
 lemma toSubmodule_top : (⊤ : Subrepresentation ρ).toSubmodule = ⊤ := rfl
+
+/-- The bottom subrepresentation consists of the zero vector. -/
+@[simp, norm_cast]
+lemma coe_bot : ((⊥ : Subrepresentation ρ) : Set W) = {0} := Submodule.bot_coe
+
+/-- The top subrepresentation consists of every vector. -/
+@[simp, norm_cast]
+lemma coe_top : ((⊤ : Subrepresentation ρ) : Set W) = Set.univ := Submodule.top_coe
+
+/-- A vector lies in the bottom subrepresentation exactly when it is zero. -/
+@[simp, grind =]
+lemma mem_bot {v : W} : v ∈ (⊥ : Subrepresentation ρ) ↔ v = 0 := Submodule.mem_bot A
+
+/-- Every vector lies in the top subrepresentation. -/
+@[simp]
+lemma mem_top {v : W} : v ∈ (⊤ : Subrepresentation ρ) := Submodule.mem_top
 
 /-- The subrepresentation lattice of a nontrivial representation is nontrivial. -/
 instance instNontrivial [Nontrivial W] : Nontrivial (Subrepresentation ρ) :=
