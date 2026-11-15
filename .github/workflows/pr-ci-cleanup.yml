@@ -24,7 +24,11 @@ jobs:
     concurrency:
       group: pr-ci-cleanup
       cancel-in-progress: false
-    runs-on: ubuntu-24.04
+    # Fleet CI pool (the class nightly-verify uses), not the backlogged GitHub-hosted pool.
+    # No App private key enters this job; it holds only the workflow token.
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262

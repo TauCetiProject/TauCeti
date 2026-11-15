@@ -44,6 +44,46 @@ class ControlBatches(unittest.TestCase):
         )
         self.assertNotEqual(tracked.returncode, 0, "the PR-posting entrypoint must not be tracked")
 
+    def test_pr_status_ignores_its_own_lifecycle_label_writes(self):
+        import re
+        import sys
+        sys.path.insert(0, str(ROOT / "scripts/pr_status"))
+        import labels
+        condition = workflow("pr-status.yml")["jobs"]["reconcile"]["if"]
+        found = re.search(r"contains\(fromJSON\('(\[[^']*\])'\),\s*github\.event\.label\.name\)", condition)
+        self.assertIsNotNone(found, "label events must be filtered by name")
+        self.assertEqual(json.loads(found.group(1)), labels.STATUS_LABELS)
+        self.assertIn("!((github.event.action == 'labeled' || github.event.action == 'unlabeled')", condition)
+        for label in ("self-tested", "full-lint", "lint-repair", "hold"):
+            self.assertNotIn(label, labels.STATUS_LABELS)
+        sweep = next(s for s in workflow("pr-labels.yml")["jobs"]["sweep"]["steps"]
+                     if s.get("name") == "Reconcile open PRs")
+        self.assertEqual(json.loads(sweep["env"]["LIFECYCLE"]), labels.STATUS_LABELS)
+
+    def test_scheduled_label_sweep_is_bounded_and_keeps_a_manual_full_pass(self):
+        job = workflow("pr-labels.yml")["jobs"]["sweep"]
+        self.assertLess(job["timeout-minutes"], 60, "the App installation token expires after an hour")
+        step = next(s for s in job["steps"] if s.get("name") == "Reconcile open PRs")
+        self.assertLess(int(step["env"]["BUDGET_SECONDS"]), job["timeout-minutes"] * 60)
+        self.assertIn("gh api graphql --paginate", step["run"])
+        self.assertIn("labels.py reconcile \"$pr\"", step["run"])
+        self.assertIn("exec python3 scripts/pr_status/labels.py reconcile-all", step["run"])
+        self.assertEqual(step["env"]["FULL_PASS"], "${{ github.event_name == 'workflow_dispatch' && '1' || '' }}")
+
+    def test_fleet_jobs_hold_no_repository_app_key(self):
+        # Fleet guests receive the workflow token and the narrow CI Apps only. Jobs that mint the
+        # repository App token (APP_ID/APP_PRIVATE_KEY) stay on GitHub-hosted runners.
+        fleet = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
+        moved = [("pr-ci-cleanup.yml", "cleanup")] + [("pages.yml", name) for name in workflow("pages.yml")["jobs"]]
+        for name, job in moved:
+            with self.subTest(workflow=name, job=job):
+                self.assertEqual(workflow(name)["jobs"][job]["runs-on"], fleet)
+        for path in sorted((ROOT / ".github/workflows").glob("*.yml")):
+            for job_name, job in (yaml.safe_load(path.read_text()).get("jobs") or {}).items():
+                if "TauCetiFleet" in json.dumps(job.get("runs-on", "")):
+                    with self.subTest(workflow=path.name, job=job_name):
+                        self.assertNotIn("secrets.APP_PRIVATE_KEY", yaml.dump(job))
+
     def test_admission_has_no_actions_execution_or_sweep_wake(self):
         for name in ("auto-merge.yml", "merge-sweep.yml", "queue-release.yml"):
             self.assertFalse((ROOT / ".github/workflows" / name).exists())

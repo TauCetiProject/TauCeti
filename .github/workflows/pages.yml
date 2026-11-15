@@ -95,8 +95,12 @@ jobs:
   # will not compile cannot discard the prepared data cache and artifact; generation and
   # publication failures are reported separately.
   build-data:
-    # Data and publication must not wait behind the hosted build backlog.
-    runs-on: ubuntu-24.04
+    # Data and publication must not wait behind the hosted build backlog, so every job in this
+    # workflow runs on the Fleet CI pool (the class nightly-verify uses). No secrets enter these
+    # jobs; they hold only the workflow token.
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     env:
       REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
     outputs:
@@ -516,7 +520,9 @@ jobs:
     # this job wants from build-data is the artifact, and it copes with that being absent.
     needs: build-data
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     env:
       # Preserve the four-worker setting of the previous hosted build shape.
       LEAN_NUM_THREADS: "4"
@@ -809,7 +815,9 @@ jobs:
     # an unexplained skip must not authorize publishing an old site over the live one. And
     # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
     if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     outputs:
       # Which cached site was republished. report-data-freshness compares it against this run's
       # own key, because "the site could not be built" and "the site built and then the upload
@@ -896,7 +904,9 @@ jobs:
     # Skipped only when neither produced anything, which is the case where there is genuinely
     # nothing to publish.
     if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -932,7 +942,9 @@ jobs:
     # there is anything worth reporting is a question for the step, which can see the deploy result.
     # It is not a question the `if:` has the information to answer.
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     steps:
       - name: Report what is serving stale data
         env:
@@ -1019,7 +1031,9 @@ jobs:
     if: ${{ !cancelled()
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     permissions:
       contents: write
     steps:
