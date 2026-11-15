@@ -333,21 +333,15 @@ theorem finrank_hilbertClassField_rayClassField_two (hK : finrank ℚ K = 2)
       (Modulus.spanNat_infinitePart (K := K) 2)
   rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_two hK,
     index_unitsCongruenceSubgroup_spanNat_two hK] at hrel
-  have hq := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
-  by_cases h4 : discr K = -4
-  · have hc2 := (char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1
-    rw [hc2, h4] at hrel
-    simp only [h4, true_or, ↓reduceIte]
-    norm_num at hrel ⊢
-    omega
-  · by_cases h3 : discr K = -3
-    · have hc2 := (char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1
-      rw [hc2, h3] at hrel
-      simp only [h3, or_true, ↓reduceIte]
-      norm_num at hrel ⊢
-      omega
-    · simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-      rcases hq with hc | hc | hc <;> rw [hc] at hrel ⊢ <;> omega
+  rcases eq_or_ne (discr K) (-4) with h4 | h4
+  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1, h4] at hrel
+    simp only [h4, true_or, ↓reduceIte]; norm_num at hrel ⊢; omega
+  rcases eq_or_ne (discr K) (-3) with h3 | h3
+  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1, h3] at hrel
+    simp only [h3, or_true, ↓reduceIte]; norm_num at hrel ⊢; omega
+  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
+  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
+    <;> rw [hc] at hrel ⊢ <;> omega
 
 /-- Specialization of `finrank_hilbertClassField_rayClassField_two` to `discr K < -4`. -/
 theorem finrank_hilbertClassField_rayClassField_two_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
@@ -373,21 +367,15 @@ theorem finrank_hilbertClassField_rayClassField_three (hK : finrank ℚ K = 2)
       (Modulus.spanNat_infinitePart (K := K) 3)
   rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_three hK,
     index_unitsCongruenceSubgroup_spanNat_of_three_le hK (le_refl 3)] at hrel
-  have hq := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 3
-  by_cases h4 : discr K = -4
-  · have hc3 := (char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).2
-    rw [hc3, h4] at hrel
-    simp only [h4, ↓reduceIte]
-    norm_num at hrel ⊢
-    omega
-  · by_cases h3 : discr K = -3
-    · have hc3 := (char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).2
-      rw [hc3, h3] at hrel
-      simp only [h3, ↓reduceIte]
-      norm_num at hrel ⊢
-      omega
-    · simp only [h4, h3, ↓reduceIte] at hrel ⊢
-      rcases hq with hc | hc | hc <;> rw [hc] at hrel ⊢ <;> omega
+  rcases eq_or_ne (discr K) (-4) with h4 | h4
+  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).2, h4] at hrel
+    simp only [h4, ↓reduceIte]; norm_num at hrel ⊢; omega
+  rcases eq_or_ne (discr K) (-3) with h3 | h3
+  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).2, h3] at hrel
+    simp only [h3, ↓reduceIte]; norm_num at hrel ⊢; omega
+  simp only [h4, h3, ↓reduceIte] at hrel ⊢
+  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 3 with hc | hc | hc
+    <;> rw [hc] at hrel ⊢ <;> omega
 
 /-- Specialization of `finrank_hilbertClassField_rayClassField_three` to `discr K < -4`. -/
 theorem finrank_hilbertClassField_rayClassField_three_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
@@ -396,9 +384,8 @@ theorem finrank_hilbertClassField_rayClassField_three_of_discr_lt_neg_four (hK :
     [IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 3))] :
     Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K 3)) =
       (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
-  have h4 : discr K ≠ -4 := by omega
-  have h3 : discr K ≠ -3 := by omega
-  simp [finrank_hilbertClassField_rayClassField_three hK, h4, h3]
+  simp [finrank_hilbertClassField_rayClassField_three hK, show discr K ≠ -4 by omega,
+    show discr K ≠ -3 by omega]
 
 /-- **Degree of `K_(6)` over the Hilbert class field** for all imaginary quadratic fields. -/
 theorem finrank_hilbertClassField_rayClassField_six (hK : finrank ℚ K = 2)
@@ -415,23 +402,17 @@ theorem finrank_hilbertClassField_rayClassField_six (hK : finrank ℚ K = 2)
     index_unitsCongruenceSubgroup_spanNat_of_three_le hK (by decide)] at hrel
   have hq2 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
   have hq3 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 3
-  by_cases h4 : discr K = -4
+  rcases eq_or_ne (discr K) (-4) with h4 | h4
   · obtain ⟨hc2, hc3⟩ := char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4
-    rw [hc2, hc3, h4] at hrel
-    simp only [h4, true_or, ↓reduceIte]
-    rw [hc3]
-    norm_num at hrel ⊢
-    omega
-  · by_cases h3 : discr K = -3
-    · obtain ⟨hc2, hc3⟩ := char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3
-      rw [hc2, hc3, h3] at hrel
-      simp only [h3, or_true, ↓reduceIte]
-      rw [hc3]
-      norm_num at hrel ⊢
-      omega
-    · simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-      rcases hq2 with hc2 | hc2 | hc2 <;> rcases hq3 with hc3 | hc3 | hc3 <;>
-        (rw [hc2, hc3] at hrel ⊢; rw [← Int.toNat_mul (by omega) (by omega)]; omega)
+    rw [hc2, hc3, h4] at hrel; simp only [h4, true_or, ↓reduceIte]; rw [hc3]
+    norm_num at hrel ⊢; omega
+  rcases eq_or_ne (discr K) (-3) with h3 | h3
+  · obtain ⟨hc2, hc3⟩ := char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3
+    rw [hc2, hc3, h3] at hrel; simp only [h3, or_true, ↓reduceIte]; rw [hc3]
+    norm_num at hrel ⊢; omega
+  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
+  rcases hq2 with hc2 | hc2 | hc2 <;> rcases hq3 with hc3 | hc3 | hc3 <;>
+    (rw [hc2, hc3] at hrel ⊢; rw [← Int.toNat_mul (by omega) (by omega)]; omega)
 
 /-- **Degree of `K_(8)` over the Hilbert class field** for all imaginary quadratic fields. -/
 theorem finrank_hilbertClassField_rayClassField_eight (hK : finrank ℚ K = 2)
@@ -446,21 +427,15 @@ theorem finrank_hilbertClassField_rayClassField_eight (hK : finrank ℚ K = 2)
       (Modulus.spanNat_infinitePart (K := K) 8)
   rw [Nat.cast_mul, Modulus.spanNat_finitePart, Nat.cast_ofNat, card_units_quotient_span_eight hK,
     index_unitsCongruenceSubgroup_spanNat_of_three_le hK (by decide)] at hrel
-  have hq2 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
-  by_cases h4 : discr K = -4
-  · have hc2 := (char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1
-    rw [hc2, h4] at hrel
-    simp only [h4, true_or, ↓reduceIte]
-    norm_num at hrel ⊢
-    omega
-  · by_cases h3 : discr K = -3
-    · have hc2 := (char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1
-      rw [hc2, h3] at hrel
-      simp only [h3, or_true, ↓reduceIte]
-      norm_num at hrel ⊢
-      omega
-    · simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
-      rcases hq2 with hc2 | hc2 | hc2 <;> rw [hc2] at hrel ⊢ <;> omega
+  rcases eq_or_ne (discr K) (-4) with h4 | h4
+  · rw [(char_of_eq_neg_four (isFundamentalDiscr_discr hK) h4).1, h4] at hrel
+    simp only [h4, true_or, ↓reduceIte]; norm_num at hrel ⊢; omega
+  rcases eq_or_ne (discr K) (-3) with h3 | h3
+  · rw [(char_of_eq_neg_three (isFundamentalDiscr_discr hK) h3).1, h3] at hrel
+    simp only [h3, or_true, ↓reduceIte]; norm_num at hrel ⊢; omega
+  simp only [h4, h3, or_self, ↓reduceIte] at hrel ⊢
+  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
+    <;> rw [hc] at hrel ⊢ <;> omega
 
 omit [IsTotallyComplex K] in
 /-- Relate `[rayClassField 𝔪 : K]` to `classNumber K * [rayClassField 𝔪 : hilbertClassField K]`
@@ -502,6 +477,15 @@ private theorem finrank_mul_finrank_via_hilbertClassField {𝔪 𝔫 : Modulus K
     ← classNumber_mul_eq_finrank_rayClassField 𝔫 h𝔫, mul_assoc] at hmul
   exact Nat.mul_left_cancel (NumberField.classNumber_pos K) hmul
 
+omit [IsTotallyComplex K] in
+/-- Positivity of the level-`2` factor `[K_(2) : H_K]`. -/
+private theorem levelTwoFactor_pos (hK : finrank ℚ K = 2) :
+    0 < if discr K = -4 ∨ discr K = -3 then 1
+      else (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat := by
+  split_ifs; · omega
+  rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2 with hc | hc | hc
+    <;> rw [hc] <;> omega
+
 /-- **Unconditional relative degree `[K_(6) : K_(2)] = 3 - χ_D(3)`** for every imaginary quadratic
 field `K` (including `D = -4` and `D = -3`, since the unit congruence subgroup shrinks from `{±1}`
 to `{1}` between levels `2` and `6`). -/
@@ -511,17 +495,10 @@ theorem finrank_rayClassField_two_six (hK : finrank ℚ K = 2)
       (rayClassField (Modulus.spanNat K 6))] :
     Module.finrank (rayClassField (Modulus.spanNat K 2))
         (rayClassField (Modulus.spanNat K 6)) =
-      (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
-  have hmul := finrank_mul_finrank_via_hilbertClassField
+      (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat :=
+  Nat.mul_left_cancel (levelTwoFactor_pos hK) <| finrank_mul_finrank_via_hilbertClassField
     (finrank_hilbertClassField_rayClassField_two hK)
     (finrank_hilbertClassField_rayClassField_six hK)
-  have hq2 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
-  have hpos : 0 < (if discr K = -4 ∨ discr K = -3 then 1
-      else (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat) := by
-    split_ifs
-    · omega
-    · rcases hq2 with hc | hc | hc <;> rw [hc] <;> omega
-  exact Nat.mul_left_cancel hpos hmul
 
 /-- **Unconditional relative degree `[K_(8) : K_(2)] = 8`** for every imaginary quadratic field `K`
 (including `D = -4` and `D = -3`). -/
@@ -534,14 +511,7 @@ theorem finrank_rayClassField_two_eight (hK : finrank ℚ K = 2)
   have hmul := finrank_mul_finrank_via_hilbertClassField
     (finrank_hilbertClassField_rayClassField_two hK)
     (finrank_hilbertClassField_rayClassField_eight hK)
-  rw [mul_comm 8] at hmul
-  have hq2 := fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) 2
-  have hpos : 0 < (if discr K = -4 ∨ discr K = -3 then 1
-      else (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat) := by
-    split_ifs
-    · omega
-    · rcases hq2 with hc | hc | hc <;> rw [hc] <;> omega
-  exact Nat.mul_left_cancel hpos hmul
+  exact Nat.mul_left_cancel (levelTwoFactor_pos hK) (hmul.trans (mul_comm 8 _))
 
 end Degrees
 

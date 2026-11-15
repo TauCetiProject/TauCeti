@@ -103,21 +103,15 @@ theorem ker_unitsMap_quotient_span_natCast {a b : ℤ} (hd : discr a b < 0) {N :
       ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq, mem_span_natCast_iff]
     simp
   split_ifs with h1 h2
-  · subst h1
-    rw [Subgroup.eq_top_iff']
-    intro u
-    rw [hmem]
-    simp
+  · subst h1; rw [Subgroup.eq_top_iff']; exact fun u ↦ (hmem u).mpr (by simp)
   · subst h2
-    refine le_antisymm (fun u hu ↦ ?_) ?_
-    · obtain ⟨_, him⟩ := (hmem u).mp hu
-      rcases units_re_or_im_of_discr_lt_zero hd u with (rfl | rfl) | (him1 | him1)
-      · exact ⟨0, by simp⟩
-      · exact ⟨1, by simp⟩
-      · rw [him1] at him; omega
-      · rw [him1] at him; omega
-    · rw [Subgroup.zpowers_le, hmem]
-      simp
+    refine le_antisymm (fun u hu ↦ ?_) (Subgroup.zpowers_le.mpr ((hmem _).mpr (by simp)))
+    obtain ⟨_, him⟩ := (hmem u).mp hu
+    rcases units_re_or_im_of_discr_lt_zero hd u with (rfl | rfl) | (him1 | him1)
+    · exact ⟨0, by simp⟩
+    · exact ⟨1, by simp⟩
+    · rw [him1] at him; omega
+    · rw [him1] at him; omega
   · have hN3 : 3 ≤ N := by omega
     rw [Subgroup.eq_bot_iff_forall]
     intro u hu
@@ -125,17 +119,10 @@ theorem ker_unitsMap_quotient_span_natCast {a b : ℤ} (hd : discr a b < 0) {N :
     rcases units_re_or_im_of_discr_lt_zero hd u with (rfl | rfl) | (him1 | him1)
     · rfl
     · simp only [Units.val_neg, Units.val_one, re_neg, re_one] at hre
-      have h2 : (N : ℤ) ∣ 2 := by
-        convert dvd_neg.mpr hre using 1
-        norm_num
-      have hle := Int.le_of_dvd (by omega) h2
-      omega
-    · rw [him1] at him
-      have hle := Int.le_of_dvd (by omega) him
-      omega
-    · rw [him1] at him
-      have hle := Int.le_of_dvd (by omega) (dvd_neg.mpr him)
-      omega
+      have h2 : (N : ℤ) ∣ 2 := by convert dvd_neg.mpr hre using 1; norm_num
+      have := Int.le_of_dvd (by omega) h2; omega
+    · rw [him1] at him; have := Int.le_of_dvd (by omega) him; omega
+    · rw [him1] at him; have := Int.le_of_dvd (by omega) (dvd_neg.mpr him); omega
 
 end QuadraticAlgebra
 
@@ -147,21 +134,16 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- Linear coefficient `B` of the canonical monic quadratic `X² + B X + C` satisfied by the
 period generator `τ_D = √D / 2` (`D ≡ 0 (mod 4)`) or `τ_D = (3 + √D) / 2` (`D ≡ 1 (mod 4)`). -/
-def periodCoeffB (D : ℤ) : ℤ :=
-  if D % 4 = 0 then 0 else -3
+def periodCoeffB (D : ℤ) : ℤ := if D % 4 = 0 then 0 else -3
 
 /-- Constant coefficient `C` of the canonical monic quadratic `X² + B X + C` satisfied by `τ_D`. -/
-def periodCoeffC (D : ℤ) : ℤ :=
-  if D % 4 = 0 then -D / 4 else (9 - D) / 4
+def periodCoeffC (D : ℤ) : ℤ := if D % 4 = 0 then -D / 4 else (9 - D) / 4
 
 /-- Unfolding lemma for `periodCoeffB`. -/
-theorem periodCoeffB_def (D : ℤ) :
-    periodCoeffB D = if D % 4 = 0 then 0 else -3 :=
-  (rfl)
+theorem periodCoeffB_def (D : ℤ) : periodCoeffB D = if D % 4 = 0 then 0 else -3 := (rfl)
 
 /-- Unfolding lemma for `periodCoeffC`. -/
-theorem periodCoeffC_def (D : ℤ) :
-    periodCoeffC D = if D % 4 = 0 then -D / 4 else (9 - D) / 4 :=
+theorem periodCoeffC_def (D : ℤ) : periodCoeffC D = if D % 4 = 0 then -D / 4 else (9 - D) / 4 :=
   (rfl)
 
 /-- For `D ≡ 0, 1 (mod 4)`, the quadratic algebra `QuadraticAlgebra ℤ (-periodCoeffC D)
@@ -191,14 +173,8 @@ theorem neg_periodCoeffB_neg_three : -periodCoeffB (-3) = 3 := by decide
 theorem neg_periodCoeff_zmod_three_of_emod_twenty_four {D : ℤ} (hD : D % 24 = 21) :
     ((-periodCoeffC D : ℤ) : ZMod 3) = 0 ∧ ((-periodCoeffB D : ℤ) : ZMod 3) = 0 := by
   have h4 : D % 4 ≠ 0 := by omega
-  have hC : (3 : ℤ) ∣ -periodCoeffC D := by
-    simp only [periodCoeffC_def, h4, ↓reduceIte]
-    omega
-  have hB : (3 : ℤ) ∣ -periodCoeffB D := by
-    simp only [periodCoeffB_def, h4, ↓reduceIte]
-    omega
-  exact ⟨(ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mpr hC,
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mpr hB⟩
+  rw [ZMod.intCast_zmod_eq_zero_iff_dvd, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  simp only [periodCoeffC_def, periodCoeffB_def, h4, ↓reduceIte]; omega
 
 /-- For a fundamental discriminant `D`, `2` is inert (`χ_D(2) = -1`) and `3` ramifies
 (`χ_D(3) = 0`) if and only if `D ≡ 21 (mod 24)`. -/
@@ -208,16 +184,13 @@ theorem emod_twenty_four_eq_twenty_one_iff {D : ℤ} (hD : Int.IsFundamentalDisc
       D % 24 = 21 := by
   have h4 := hD.emod_four_eq_zero_or_one
   have h2 : fundamentalDiscriminantChar D hD 2 = -1 ↔ D % 8 = 5 := by
-    rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
-    split_ifs <;> simp <;> omega
+    rw [fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]; split_ifs <;> simp <;> omega
   have h3 : fundamentalDiscriminantChar D hD 3 = 0 ↔ D % 3 = 0 := by
     have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
     rw [show (3 : ZMod D.natAbs) = ((3 : ℕ) : ℤ) by norm_num,
       fundamentalDiscriminantChar_natCast_eq_legendreSym hD (by decide),
-      legendreSym.eq_zero_iff 3 D, ZMod.intCast_zmod_eq_zero_iff_dvd]
-    omega
-  rw [h2, h3]
-  omega
+      legendreSym.eq_zero_iff 3 D, ZMod.intCast_zmod_eq_zero_iff_dvd]; omega
+  rw [h2, h3]; omega
 
 /-- An algebraic integer generating `𝓞 K` over `ℤ` and not lying in `ℤ` presents `𝓞 K` as an
 integral quadratic algebra. -/
@@ -231,19 +204,14 @@ private noncomputable def ringOfIntegersAlgEquivOfAdjoin {g : 𝓞 K} {a b : ℤ
     rw [RingHom.injective_iff_ker_eq_bot, RingHom.ker_eq_bot_iff_eq_zero]
     intro z hz
     have hzK : (z.re : K) + (z.im : K) * (g : K) = 0 := by
-      have := congrArg (algebraMap (𝓞 K) K) hz
-      simpa [f, zsmul_eq_mul] using this
+      simpa [f, zsmul_eq_mul] using congrArg (algebraMap (𝓞 K) K) hz
     have him : z.im = 0 := by
       by_contra hne
-      apply hg_notMem
-      refine ⟨-(z.re : ℚ) / (z.im : ℚ), ?_⟩
-      have hrat : algebraMap ℚ K (-(z.re : ℚ) / (z.im : ℚ)) = -(z.re : K) / (z.im : K) := by
-        simp
-      rw [hrat, div_eq_iff (by exact_mod_cast hne)]
+      refine hg_notMem ⟨-(z.re : ℚ) / (z.im : ℚ), ?_⟩
+      rw [show algebraMap ℚ K (-(z.re : ℚ) / (z.im : ℚ)) = -(z.re : K) / (z.im : K) by simp,
+        div_eq_iff (by exact_mod_cast hne)]
       linear_combination -hzK
-    have hre : z.re = 0 := by
-      simpa [him] using hzK
-    exact QuadraticAlgebra.ext hre him
+    exact QuadraticAlgebra.ext (by simpa [him] using hzK) him
   exact (AlgEquiv.ofBijective f ⟨hinj, hsurj⟩).symm
 
 /-- **Canonical period-algebra presentation of `𝓞 K`**: for any quadratic number field `K` of

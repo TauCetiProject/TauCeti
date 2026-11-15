@@ -357,13 +357,8 @@ theorem algebraMap_norm_hilbertClassField_of_infinitePart_eq_empty {𝔪 : Modul
       ∏ᶠ g : (𝓞 K ⧸ 𝔪.finitePart)ˣ ⧸
         (Units.map (Ideal.Quotient.mk 𝔪.finitePart : 𝓞 K →* 𝓞 K ⧸ 𝔪.finitePart)).range,
           residueUnitsQuotientArtinEquiv h g y := by
-  classical
-  have : IsGalois (hilbertClassField K) (rayClassField 𝔪) :=
-    IsGalois.tower_top_of_isGalois K (hilbertClassField K) (rayClassField 𝔪)
-  have : FiniteDimensional (hilbertClassField K) (rayClassField 𝔪) :=
-    FiniteDimensional.right K (hilbertClassField K) (rayClassField 𝔪)
-  rw [Algebra.norm_eq_prod_automorphisms, ← finprod_eq_prod_of_fintype,
-    ← finprod_comp_equiv (residueUnitsQuotientArtinEquiv h).toEquiv]
-  rfl
+  rw [algebraMap_norm_hilbertClassField_rayClassField 𝔪,
+    ← finprod_comp_equiv (residueUnitsQuotientEquivKerRayClassToClassGroup h).toEquiv]
+  simp [residueUnitsQuotientArtinEquiv]
 
 end TauCeti.ClassFieldTheory
