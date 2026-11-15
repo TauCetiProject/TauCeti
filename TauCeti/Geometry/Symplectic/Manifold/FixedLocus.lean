@@ -84,10 +84,12 @@ theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsFinra
   obtain ⟨C, hC, hemb⟩ := exists_isSmoothEmbedding_fixedPointsFinrank hK hL
   refine ⟨C, hC, (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hemb).2
     (hasSymplecticTangentImages_iff_forall.2 fun x ↦ ?_)⟩
+  have hd : ∀ k ∈ stabilizer K (x : M), MDifferentiableAt I I (fun y : M ↦ k • y) x := fun k _ ↦
+    (contMDiff_const_smul (I := I) (n := ∞) k).mdifferentiableAt (by simp)
   rw [range_mfderiv_eq_tangentInvariants (fun y ↦ y.2) hL
-    (hemb.isImmersion.mfderiv_injective (by simp) x)]
+    (hemb.isImmersion.mfderiv_injective (by simp) x), tangentInvariants_eq hd]
   exact hσ.isSymplectic_invariants_tangentRepresentation_of_inner (fun k _ ↦ hK k x)
-    (fun k _ ↦ hσK k) _
+    (fun k _ ↦ hσK k) hd
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
   [T2Space M] in
@@ -95,10 +97,11 @@ omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.B
 fixed point, the invariant tangent vectors form a symplectic subspace. -/
 theorem IsNondegenerate.even_of_mem_fixedPointsFinrank (hσ : σ.IsNondegenerate) {d : ℕ} {p : M}
     (hp : p ∈ fixedPointsFinrank I K M d) : Even d := by
-  have h := hσ.isSymplectic_invariants_tangentRepresentation_of_inner (x := p)
-    (fun k _ ↦ hK k p) (fun k _ ↦ hσK k) fun k _ ↦
-      (contMDiff_const_smul (I := I) (n := ∞) k).mdifferentiableAt (by simp)
-  rw [← (mem_fixedPointsFinrank_iff.1 hp).2]
+  have hd : ∀ k ∈ stabilizer K p, MDifferentiableAt I I (k • ·) p := fun k _ ↦
+    (contMDiff_const_smul (I := I) (n := ∞) k).mdifferentiableAt (by simp)
+  have h := hσ.isSymplectic_invariants_tangentRepresentation_of_inner (fun k _ ↦ hK k p)
+    (fun k _ ↦ hσK k) hd
+  rw [← (mem_fixedPointsFinrank_iff.1 hp).2, tangentInvariants_eq hd]
   exact ((hσ.symplecticFormAt p).restrict _ h.nondegenerate_restrict).even_finrank
 
 /-- **The restriction of a symplectic form to a stratum of the fixed set is symplectic.** For a

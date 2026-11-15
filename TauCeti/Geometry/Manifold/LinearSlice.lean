@@ -31,6 +31,18 @@ in `TauCeti.Geometry.Lie.Subgroup.Manifold`, without its group translations. The
 `exists_isManifold_of_finrankSubspaceCharts`, in which the flattening subspace may change from
 point to point and only its dimension is fixed, assumes a finite-dimensional model over a complete
 field: there linear isomorphisms are continuous and every subspace has a closed complement.
+The two chart conversions behind these results are stated separately:
+`exists_linearSliceCharts_of_linearSubspaceCharts` turns charts flattening the subset onto a
+complemented subspace into linear-slice charts, and `linearSubspaceCharts_of_finrankSubspaceCharts`
+turns charts flattening it onto subspaces of the same dimension into charts flattening it onto a
+single subspace.
+
+For an arbitrary model, the inclusion of the subset with its linear-slice atlas of class `C^n`,
+`n ≠ 0`, has injective differential at every point
+(`injective_mfderiv_subtypeVal_linearSliceChartedSpace`). Over `ℝ` or `ℂ`, for a boundaryless
+ambient `C^n` manifold modelled on a finite-dimensional space with `1 ≤ n`, the finite-dimensional
+variant therefore makes the subset a `C^n` embedded submanifold: its inclusion is a smooth embedding
+(`exists_isSmoothEmbedding_of_finrankSubspaceCharts`).
 
 ## References
 
@@ -206,7 +218,7 @@ theorem injective_mfderiv_subtypeVal_linearSliceChartedSpace (hn : n ≠ 0)
 omit e he hsmooth hinv in
 /-- Charts flattening a subset onto a complemented linear subspace `L`, composed with the splitting
 `E ≃ L × N`, flatten it onto the standard slice `L × {0}`. -/
-private theorem exists_linearSliceCharts_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
+theorem exists_linearSliceCharts_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
     (hcompl : Submodule.IsTopCompl L N)
     (hcharts : ∀ y : s, ∃ q : OpenPartialHomeomorph M E, (y : M) ∈ q.source ∧
       (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
@@ -266,7 +278,7 @@ theorem exists_isManifold_of_linearSubspaceCharts {L N : Submodule 𝕜 E}
 omit e he hsmooth hinv in
 /-- Charts flattening a subset onto subspaces of the same dimension as `L`, composed with linear
 automorphisms of the model, flatten it onto `L`. -/
-private theorem linearSubspaceCharts_of_finrankSubspaceCharts [CompleteSpace 𝕜]
+theorem linearSubspaceCharts_of_finrankSubspaceCharts [CompleteSpace 𝕜]
     [FiniteDimensional 𝕜 E] {L : Submodule 𝕜 E}
     (hcharts : ∀ y ∈ s, ∃ (q : OpenPartialHomeomorph M E) (V : Submodule 𝕜 E), y ∈ q.source ∧
       (∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z) ∧
@@ -304,7 +316,6 @@ theorem exists_isManifold_of_finrankSubspaceCharts [CompleteSpace 𝕜] [FiniteD
     (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN
       L.isClosed_of_finiteDimensional)
     (linearSubspaceCharts_of_finrankSubspaceCharts hcharts)
-
 
 section Embedding
 
