@@ -200,7 +200,7 @@ theorem squareIntegrableSolutions_neg_hessianOperator_separatedSum_birthDeathPot
     hgd.continuous.continuousAt hz hbot htop).exists
   have hsnd : ∀ t, (z t).snd = y := fun t ↦ by simpa using congrArg WithLp.snd (congrFun hτ t)
   have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
-  exact squareIntegrableSolutions_eq_bot_of_withLp
+  exact squareIntegrableSolutions_eq_bot_of_apply_eq_toLp
     (A₁ := fun t ↦ -hessianOperator (birthDeathPotential s) (z t).fst)
     (A₂ := fun _ ↦ -hessianOperator g y)
     (fun t w ↦ by
